@@ -41,6 +41,13 @@ char kTSanDefaultSuppressions[] =
 "race:webrtc/modules/audio_processing/aec/aec_core.c\n"
 "race:webrtc/modules/audio_processing/aec/aec_rdft.c\n"
 
+// rtc_unittest
+// https://code.google.com/p/webrtc/issues/detail?id=3911 for details.
+"race:ThreadTest_ThreeThreadsInvoke_Test::TestBody()::LocalFuncs::SetAndInvokeSet\n"
+"race:rtc::FireAndForgetAsyncClosure<FunctorB>::Execute\n"
+"race:rtc::MessageQueueManager::Clear\n"
+"race:rtc::Thread::Clear\n"
+
 // libjingle_p2p_unittest
 // https://code.google.com/p/webrtc/issues/detail?id=2079
 "race:webrtc/base/testclient.cc\n"

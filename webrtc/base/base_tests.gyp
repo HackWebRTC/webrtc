@@ -105,7 +105,7 @@
           'task_unittest.cc',
           'testclient_unittest.cc',
           'thread_checker_unittest.cc',
-          #'thread_unittest.cc',
+          'thread_unittest.cc',
           #'timeutils_unittest.cc',
           'urlencode_unittest.cc',
           #'versionparsing_unittest.cc',

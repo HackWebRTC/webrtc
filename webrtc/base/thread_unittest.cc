@@ -247,7 +247,9 @@ TEST(ThreadTest, DISABLED_ON_MAC(Priorities)) {
 
 }
 
-TEST(ThreadTest, DISABLED_ON_MAC(Wrap)) {
+TEST(ThreadTest, Wrap) {
+  Thread* current_thread = Thread::Current();
+  current_thread->UnwrapCurrent();
   CustomThread* cthread = new CustomThread();
   EXPECT_TRUE(cthread->WrapCurrent());
   EXPECT_TRUE(cthread->RunningForTest());
@@ -255,6 +257,7 @@ TEST(ThreadTest, DISABLED_ON_MAC(Wrap)) {
   cthread->UnwrapCurrent();
   EXPECT_FALSE(cthread->RunningForTest());
   delete cthread;
+  current_thread->WrapCurrent();
 }
 
 TEST(ThreadTest, DISABLED_ON_MAC(Invoke)) {
@@ -377,7 +380,7 @@ class AsyncInvokeTest : public testing::Test {
   Thread* expected_thread_;
 };
 
-TEST_F(AsyncInvokeTest, DISABLED_FireAndForget) {
+TEST_F(AsyncInvokeTest, FireAndForget) {
   AsyncInvoker invoker;
   // Create and start the thread.
   Thread thread;

@@ -213,7 +213,8 @@ class Thread : public MessageQueue {
   // value. Must be called on this thread.
   bool SetAllowBlockingCalls(bool allow);
 
- protected:
+  // These functions are public to avoid injecting test hooks. Don't call them
+  // outside of tests.
   // This method should be called when thread is created using non standard
   // method, like derived implementation of rtc::Thread and it can not be
   // started by calling Start(). This will set started flag to true and
@@ -221,6 +222,7 @@ class Thread : public MessageQueue {
   bool WrapCurrent();
   void UnwrapCurrent();
 
+ protected:
   // Same as WrapCurrent except that it never fails as it does not try to
   // acquire the synchronization access of the thread. The caller should never
   // call Stop() or Join() on this thread.
