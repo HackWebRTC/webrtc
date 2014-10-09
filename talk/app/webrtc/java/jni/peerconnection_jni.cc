@@ -2048,6 +2048,7 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   // Global references; must be deleted in Release().
   std::vector<jobject> input_buffers_;
   jobject surface_texture_;
+  jobject previous_surface_texture_;
 
   // Render EGL context.
   static jobject render_egl_context_;
@@ -2082,6 +2083,8 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(JNIEnv* jni)
   : key_frame_required_(true),
     inited_(false),
     error_count_(0),
+    surface_texture_(NULL),
+    previous_surface_texture_(NULL),
     codec_thread_(new Thread()),
     j_media_codec_video_decoder_class_(
         jni,
@@ -2156,6 +2159,12 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(JNIEnv* jni)
 MediaCodecVideoDecoder::~MediaCodecVideoDecoder() {
   // Call Release() to ensure no more callbacks to us after we are deleted.
   Release();
+  // Delete global references.
+  JNIEnv* jni = AttachCurrentThreadIfNeeded();
+  if (previous_surface_texture_ != NULL)
+    jni->DeleteGlobalRef(previous_surface_texture_);
+  if (surface_texture_ != NULL)
+    jni->DeleteGlobalRef(surface_texture_);
 }
 
 int32_t MediaCodecVideoDecoder::InitDecode(const VideoCodec* inst,
@@ -2233,6 +2242,10 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
   if (use_surface_) {
     jobject surface_texture = GetObjectField(
         jni, *j_media_codec_video_decoder_, j_surface_texture_field_);
+    if (previous_surface_texture_ != NULL) {
+      jni->DeleteGlobalRef(previous_surface_texture_);
+    }
+    previous_surface_texture_ = surface_texture_;
     surface_texture_ = jni->NewGlobalRef(surface_texture);
   }
   codec_thread_->PostDelayed(kMediaCodecPollMs, this);
@@ -2257,18 +2270,6 @@ int32_t MediaCodecVideoDecoder::ReleaseOnCodecThread() {
     jni->DeleteGlobalRef(input_buffers_[i]);
   }
   input_buffers_.clear();
-  if (use_surface_) {
-    // Before deleting texture object make sure it is no longer referenced
-    // by any TextureVideoFrame.
-    int32_t waitTimeoutUs = 3000000;  // 3 second wait
-    while (waitTimeoutUs > 0 && native_handle_.ref_count() > 0) {
-      ALOGD("Current Texture RefCnt: %d", native_handle_.ref_count());
-      usleep(30000);
-      waitTimeoutUs -= 30000;
-    }
-    ALOGD("TextureRefCnt: %d", native_handle_.ref_count());
-    jni->DeleteGlobalRef(surface_texture_);
-  }
   jni->CallVoidMethod(*j_media_codec_video_decoder_, j_release_method_);
   CHECK_EXCEPTION(jni);
   rtc::MessageQueueManager::Clear(this);

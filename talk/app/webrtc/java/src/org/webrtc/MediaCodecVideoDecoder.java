@@ -365,8 +365,6 @@ class MediaCodecVideoDecoder {
     mediaCodecThread = null;
     if (useSurface) {
       surface.release();
-      surface = null;
-      surfaceTexture = null;
       if (textureID >= 0) {
         int[] textures = new int[1];
         textures[0] = textureID;
