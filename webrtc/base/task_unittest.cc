@@ -289,7 +289,7 @@ class TaskTest : public sigslot::has_slots<> {
   TaskInfo happy_[HAPPY_TASK_COUNT];
 };
 
-TEST(start_task_test, DISABLED_ON_MAC(Timeout)) {
+TEST(start_task_test, Timeout) {
   TaskTest task_test;
   task_test.Start();
   task_test.check_passed();
@@ -336,7 +336,7 @@ class TaskAbortTest : public sigslot::has_slots<> {
   DISALLOW_EVIL_CONSTRUCTORS(TaskAbortTest);
 };
 
-TEST(start_task_test, DISABLED_ON_MAC(Abort)) {
+TEST(start_task_test, Abort) {
   TaskAbortTest abort_test;
   abort_test.Start();
 }
@@ -399,7 +399,7 @@ class AbortShouldWakeTest : public sigslot::has_slots<> {
   DISALLOW_EVIL_CONSTRUCTORS(AbortShouldWakeTest);
 };
 
-TEST(start_task_test, DISABLED_ON_MAC(AbortShouldWake)) {
+TEST(start_task_test, AbortShouldWake) {
   AbortShouldWakeTest abort_should_wake_test;
   abort_should_wake_test.Start();
 }
@@ -480,7 +480,7 @@ class TimeoutChangeTest : public sigslot::has_slots<> {
   DISALLOW_EVIL_CONSTRUCTORS(TimeoutChangeTest);
 };
 
-TEST(start_task_test, DISABLED_ON_MAC(TimeoutChange)) {
+TEST(start_task_test, TimeoutChange) {
   TimeoutChangeTest timeout_change_test;
   timeout_change_test.Start();
 }
@@ -497,7 +497,7 @@ class DeleteTestTaskRunner : public TaskRunner {
   DISALLOW_EVIL_CONSTRUCTORS(DeleteTestTaskRunner);
 };
 
-TEST(unstarted_task_test, DISABLED_ON_MAC(DeleteTask)) {
+TEST(unstarted_task_test, DeleteTask) {
   // This test ensures that we don't
   // crash if a task is deleted without running it.
   DeleteTestTaskRunner task_runner;
@@ -512,7 +512,7 @@ TEST(unstarted_task_test, DISABLED_ON_MAC(DeleteTask)) {
   task_runner.RunTasks();
 }
 
-TEST(unstarted_task_test, DISABLED_ON_MAC(DoNotDeleteTask1)) {
+TEST(unstarted_task_test, DoNotDeleteTask1) {
   // This test ensures that we don't
   // crash if a task runner is deleted without
   // running a certain task.
@@ -526,7 +526,7 @@ TEST(unstarted_task_test, DISABLED_ON_MAC(DoNotDeleteTask1)) {
   // Never run the tasks
 }
 
-TEST(unstarted_task_test, DISABLED_ON_MAC(DoNotDeleteTask2)) {
+TEST(unstarted_task_test, DoNotDeleteTask2) {
   // This test ensures that we don't
   // crash if a taskrunner is delete with a
   // task that has never been started.

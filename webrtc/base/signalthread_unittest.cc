@@ -134,7 +134,7 @@ class OwnerThread : public Thread, public sigslot::has_slots<> {
 // Test for when the main thread goes away while the
 // signal thread is still working.  This may happen
 // when shutting down the process.
-TEST_F(SignalThreadTest, DISABLED_ON_MAC(OwnerThreadGoesAway)) {
+TEST_F(SignalThreadTest, OwnerThreadGoesAway) {
   {
     scoped_ptr<OwnerThread> owner(new OwnerThread(this));
     main_thread_ = owner.get();
@@ -157,7 +157,7 @@ TEST_F(SignalThreadTest, DISABLED_ON_MAC(OwnerThreadGoesAway)) {
   EXPECT_EQ(stopped, thread_stopped_); \
   EXPECT_EQ(deleted, thread_deleted_);
 
-TEST_F(SignalThreadTest, DISABLED_ON_MAC(ThreadFinishes)) {
+TEST_F(SignalThreadTest, ThreadFinishes) {
   thread_->Start();
   EXPECT_STATE(1, 0, 0, 0, 0);
   Thread::SleepMs(500);
@@ -166,7 +166,7 @@ TEST_F(SignalThreadTest, DISABLED_ON_MAC(ThreadFinishes)) {
   EXPECT_STATE(1, 1, 1, 0, 1);
 }
 
-TEST_F(SignalThreadTest, DISABLED_ON_MAC(ReleasedThreadFinishes)) {
+TEST_F(SignalThreadTest, ReleasedThreadFinishes) {
   thread_->Start();
   EXPECT_STATE(1, 0, 0, 0, 0);
   thread_->Release();
@@ -178,7 +178,7 @@ TEST_F(SignalThreadTest, DISABLED_ON_MAC(ReleasedThreadFinishes)) {
   EXPECT_STATE(1, 1, 1, 0, 1);
 }
 
-TEST_F(SignalThreadTest, DISABLED_ON_MAC(DestroyedThreadCleansUp)) {
+TEST_F(SignalThreadTest, DestroyedThreadCleansUp) {
   thread_->Start();
   EXPECT_STATE(1, 0, 0, 0, 0);
   thread_->Destroy(true);
@@ -187,7 +187,7 @@ TEST_F(SignalThreadTest, DISABLED_ON_MAC(DestroyedThreadCleansUp)) {
   EXPECT_STATE(1, 0, 0, 1, 1);
 }
 
-TEST_F(SignalThreadTest, DISABLED_ON_MAC(DeferredDestroyedThreadCleansUp)) {
+TEST_F(SignalThreadTest, DeferredDestroyedThreadCleansUp) {
   thread_->Start();
   EXPECT_STATE(1, 0, 0, 0, 0);
   thread_->Destroy(false);

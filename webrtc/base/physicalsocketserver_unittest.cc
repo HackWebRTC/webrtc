@@ -107,11 +107,11 @@ TEST_F(PhysicalSocketTest, TestCloseInClosedCallbackIPv6) {
   SocketTest::TestCloseInClosedCallbackIPv6();
 }
 
-TEST_F(PhysicalSocketTest, DISABLED_ON_MAC(TestSocketServerWaitIPv4)) {
+TEST_F(PhysicalSocketTest, TestSocketServerWaitIPv4) {
   SocketTest::TestSocketServerWaitIPv4();
 }
 
-TEST_F(PhysicalSocketTest, DISABLED_ON_MAC(TestSocketServerWaitIPv6)) {
+TEST_F(PhysicalSocketTest, TestSocketServerWaitIPv6) {
   SocketTest::TestSocketServerWaitIPv6();
 }
 
@@ -141,7 +141,7 @@ TEST_F(PhysicalSocketTest, TestUdpReadyToSendIPv4) {
 
 #endif // if !defined(THREAD_SANITIZER)
 
-TEST_F(PhysicalSocketTest, DISABLED_ON_WIN(TestUdpReadyToSendIPv6)) {
+TEST_F(PhysicalSocketTest, TestUdpReadyToSendIPv6) {
   SocketTest::TestUdpReadyToSendIPv6();
 }
 
@@ -207,7 +207,7 @@ Thread *PosixSignalDeliveryTest::signaled_thread_ = NULL;
 
 // Test receiving a synchronous signal while not in Wait() and then entering
 // Wait() afterwards.
-TEST_F(PosixSignalDeliveryTest, DISABLED_ON_MAC(RaiseThenWait)) {
+TEST_F(PosixSignalDeliveryTest, RaiseThenWait) {
   ASSERT_TRUE(ss_->SetPosixSignalHandler(SIGTERM, &RecordSignal));
   raise(SIGTERM);
   EXPECT_TRUE(ss_->Wait(0, true));
@@ -217,7 +217,7 @@ TEST_F(PosixSignalDeliveryTest, DISABLED_ON_MAC(RaiseThenWait)) {
 
 // Test that we can handle getting tons of repeated signals and that we see all
 // the different ones.
-TEST_F(PosixSignalDeliveryTest, DISABLED_ON_MAC(InsanelyManySignals)) {
+TEST_F(PosixSignalDeliveryTest, InsanelyManySignals) {
   ss_->SetPosixSignalHandler(SIGTERM, &RecordSignal);
   ss_->SetPosixSignalHandler(SIGINT, &RecordSignal);
   for (int i = 0; i < 10000; ++i) {
@@ -232,7 +232,7 @@ TEST_F(PosixSignalDeliveryTest, DISABLED_ON_MAC(InsanelyManySignals)) {
 }
 
 // Test that a signal during a Wait() call is detected.
-TEST_F(PosixSignalDeliveryTest, DISABLED_ON_MAC(SignalDuringWait)) {
+TEST_F(PosixSignalDeliveryTest, SignalDuringWait) {
   ss_->SetPosixSignalHandler(SIGALRM, &RecordSignal);
   alarm(1);
   EXPECT_TRUE(ss_->Wait(1500, true));
@@ -257,7 +257,7 @@ class RaiseSigTermRunnable : public Runnable {
 
 // Test that it works no matter what thread the kernel chooses to give the
 // signal to (since it's not guaranteed to be the one that Wait() runs on).
-TEST_F(PosixSignalDeliveryTest, DISABLED_ON_MAC(SignalOnDifferentThread)) {
+TEST_F(PosixSignalDeliveryTest, SignalOnDifferentThread) {
   ss_->SetPosixSignalHandler(SIGTERM, &RecordSignal);
   // Mask out SIGTERM so that it can't be delivered to this thread.
   sigset_t mask;

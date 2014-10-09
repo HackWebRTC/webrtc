@@ -52,11 +52,11 @@ void TestTcpInternal(const SocketAddress& loopback) {
 }
 
 // Tests whether the TestClient can send UDP to itself.
-TEST(TestClientTest, DISABLED_ON_MAC(TestUdpIPv4)) {
+TEST(TestClientTest, TestUdpIPv4) {
   TestUdpInternal(SocketAddress("127.0.0.1", 0));
 }
 
-TEST(TestClientTest, DISABLED_ON_MAC(TestUdpIPv6)) {
+TEST(TestClientTest, TestUdpIPv6) {
   if (HasIPv6Enabled()) {
     TestUdpInternal(SocketAddress("::1", 0));
   } else {
@@ -65,11 +65,11 @@ TEST(TestClientTest, DISABLED_ON_MAC(TestUdpIPv6)) {
 }
 
 // Tests whether the TestClient can connect to a server and exchange data.
-TEST(TestClientTest, DISABLED_ON_MAC(TestTcpIPv4)) {
+TEST(TestClientTest, TestTcpIPv4) {
   TestTcpInternal(SocketAddress("127.0.0.1", 0));
 }
 
-TEST(TestClientTest, DISABLED_ON_MAC(TestTcpIPv6)) {
+TEST(TestClientTest, TestTcpIPv6) {
   if (HasIPv6Enabled()) {
     TestTcpInternal(SocketAddress("::1", 0));
   } else {

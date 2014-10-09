@@ -105,7 +105,7 @@ class DeleteThreadCheckerClassOnThread : public Thread {
 
 }  // namespace
 
-TEST(ThreadCheckerTest, DISABLED_ON_MAC(CallsAllowedOnSameThread)) {
+TEST(ThreadCheckerTest, CallsAllowedOnSameThread) {
   scoped_ptr<ThreadCheckerClass> thread_checker_class(
       new ThreadCheckerClass);
 
@@ -116,7 +116,7 @@ TEST(ThreadCheckerTest, DISABLED_ON_MAC(CallsAllowedOnSameThread)) {
   thread_checker_class.reset();
 }
 
-TEST(ThreadCheckerTest, DISABLED_ON_MAC(DestructorAllowedOnDifferentThread)) {
+TEST(ThreadCheckerTest, DestructorAllowedOnDifferentThread) {
   scoped_ptr<ThreadCheckerClass> thread_checker_class(
       new ThreadCheckerClass);
 
@@ -129,7 +129,7 @@ TEST(ThreadCheckerTest, DISABLED_ON_MAC(DestructorAllowedOnDifferentThread)) {
   delete_on_thread.Join();
 }
 
-TEST(ThreadCheckerTest, DISABLED_ON_MAC(DetachFromThread)) {
+TEST(ThreadCheckerTest, DetachFromThread) {
   scoped_ptr<ThreadCheckerClass> thread_checker_class(
       new ThreadCheckerClass);
 

@@ -77,7 +77,7 @@ TEST_F(FileLockTest, TestLockX2) {
   EXPECT_TRUE(lock2.get() == NULL);
 }
 
-TEST_F(FileLockTest, DISABLED_ON_MAC(TestThreadedLock)) {
+TEST_F(FileLockTest, TestThreadedLock) {
   scoped_ptr<FileLock> lock(FileLock::TryLock(temp_file_.pathname()));
   EXPECT_TRUE(lock.get() != NULL);
 

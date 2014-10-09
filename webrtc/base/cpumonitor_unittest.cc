@@ -338,7 +338,7 @@ TEST(CpuMonitorTest, TestGetSystemLoadForceFallback) {
 #endif
 
 // Tests both process and system functions in use at same time.
-TEST(CpuMonitorTest, DISABLED_ON_MAC(TestGetBothLoad)) {
+TEST(CpuMonitorTest, TestGetBothLoad) {
   TestCpuSampler(true, true, false);
 }
 

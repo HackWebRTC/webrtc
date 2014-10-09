@@ -127,7 +127,7 @@ class AsyncHttpRequestTest : public testing::Test,
   TestHttpServer server_;
 };
 
-TEST_F(AsyncHttpRequestTest, DISABLED_ON_MAC(TestGetSuccess)) {
+TEST_F(AsyncHttpRequestTest, TestGetSuccess) {
   AsyncHttpRequest* req = CreateGetRequest(
       kServerHostnameAddr.hostname(), server().address().port(),
       kServerGetPath);
@@ -144,7 +144,7 @@ TEST_F(AsyncHttpRequestTest, DISABLED_ON_MAC(TestGetSuccess)) {
   req->Release();
 }
 
-TEST_F(AsyncHttpRequestTest, DISABLED_ON_MAC(TestGetNotFound)) {
+TEST_F(AsyncHttpRequestTest, TestGetNotFound) {
   AsyncHttpRequest* req = CreateGetRequest(
       kServerHostnameAddr.hostname(), server().address().port(),
       "/bad");
@@ -158,7 +158,7 @@ TEST_F(AsyncHttpRequestTest, DISABLED_ON_MAC(TestGetNotFound)) {
   req->Release();
 }
 
-TEST_F(AsyncHttpRequestTest, DISABLED_ON_MAC(TestGetToNonServer)) {
+TEST_F(AsyncHttpRequestTest, TestGetToNonServer) {
   AsyncHttpRequest* req = CreateGetRequest(
       "127.0.0.1", server().address().port(),
       kServerGetPath);
@@ -188,7 +188,7 @@ TEST_F(AsyncHttpRequestTest, DISABLED_TestGetToInvalidHostname) {
   req->Release();
 }
 
-TEST_F(AsyncHttpRequestTest, DISABLED_ON_MAC(TestPostSuccess)) {
+TEST_F(AsyncHttpRequestTest, TestPostSuccess) {
   AsyncHttpRequest* req = CreatePostRequest(
       kServerHostnameAddr.hostname(), server().address().port(),
       kServerPostPath, "text/plain", new MemoryStream("abcd1234"));
@@ -204,7 +204,7 @@ TEST_F(AsyncHttpRequestTest, DISABLED_ON_MAC(TestPostSuccess)) {
 }
 
 // Ensure that we shut down properly even if work is outstanding.
-TEST_F(AsyncHttpRequestTest, DISABLED_ON_MAC(TestCancel)) {
+TEST_F(AsyncHttpRequestTest, TestCancel) {
   AsyncHttpRequest* req = CreateGetRequest(
       kServerHostnameAddr.hostname(), server().address().port(),
       kServerGetPath);
@@ -212,7 +212,7 @@ TEST_F(AsyncHttpRequestTest, DISABLED_ON_MAC(TestCancel)) {
   req->Destroy(true);
 }
 
-TEST_F(AsyncHttpRequestTest, DISABLED_ON_MAC(TestGetSuccessDelay)) {
+TEST_F(AsyncHttpRequestTest, TestGetSuccessDelay) {
   AsyncHttpRequest* req = CreateGetRequest(
       kServerHostnameAddr.hostname(), server().address().port(),
       kServerGetPath);

@@ -80,7 +80,7 @@ TEST_F(MessageQueueTest,
   DelayedPostsWithIdenticalTimesAreProcessedInFifoOrder(&q_nullss);
 }
 
-TEST_F(MessageQueueTest, DISABLED_ON_MAC(DisposeNotLocked)) {
+TEST_F(MessageQueueTest, DisposeNotLocked) {
   bool was_locked = true;
   bool deleted = false;
   DeletedLockChecker* d = new DeletedLockChecker(this, &was_locked, &deleted);

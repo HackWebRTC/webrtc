@@ -100,26 +100,26 @@ class AutoDetectProxyTest : public testing::Test, public sigslot::has_slots<> {
   bool done_;
 };
 
-TEST_F(AutoDetectProxyTest, DISABLED_ON_MAC(TestDetectUnresolvedProxy)) {
+TEST_F(AutoDetectProxyTest, TestDetectUnresolvedProxy) {
   TestCopesWithProxy(rtc::SocketAddress("localhost", 9999));
 }
 
-TEST_F(AutoDetectProxyTest, DISABLED_ON_MAC(TestDetectUnresolvableProxy)) {
+TEST_F(AutoDetectProxyTest, TestDetectUnresolvableProxy) {
   TestCopesWithProxy(rtc::SocketAddress("invalid", 9999));
 }
 
-TEST_F(AutoDetectProxyTest, DISABLED_ON_MAC(TestDetectIPv6Proxy)) {
+TEST_F(AutoDetectProxyTest, TestDetectIPv6Proxy) {
   TestCopesWithProxy(rtc::SocketAddress("::1", 9999));
 }
 
-TEST_F(AutoDetectProxyTest, DISABLED_ON_MAC(TestDetectIPv4Proxy)) {
+TEST_F(AutoDetectProxyTest, TestDetectIPv4Proxy) {
   TestCopesWithProxy(rtc::SocketAddress("127.0.0.1", 9999));
 }
 
 // Test that proxy detection completes successfully. (Does not actually verify
 // the correct detection result since we don't know what proxy to expect on an
 // arbitrary machine.)
-TEST_F(AutoDetectProxyTest, DISABLED_ON_MAC(TestProxyDetection)) {
+TEST_F(AutoDetectProxyTest, TestProxyDetection) {
   ASSERT_TRUE(Create(kUserAgent,
                      kPath,
                      kHost,

@@ -28,7 +28,7 @@ class NullSocketServerTest
   NullSocketServer ss_;
 };
 
-TEST_F(NullSocketServerTest, DISABLED_ON_MAC(WaitAndSet)) {
+TEST_F(NullSocketServerTest, WaitAndSet) {
   Thread thread;
   EXPECT_TRUE(thread.Start());
   thread.Post(this, 0);

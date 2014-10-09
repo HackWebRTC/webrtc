@@ -120,7 +120,7 @@ TEST(AtomicOpsTest, Simple) {
   EXPECT_EQ(0, value);
 }
 
-TEST(AtomicOpsTest, DISABLED_ON_MAC(Increment)) {
+TEST(AtomicOpsTest, Increment) {
   // Create and start lots of threads.
   AtomicOpRunner<IncrementOp> runner(0);
   ScopedPtrCollection<Thread> threads;
@@ -132,7 +132,7 @@ TEST(AtomicOpsTest, DISABLED_ON_MAC(Increment)) {
   EXPECT_EQ(kOperationsToRun * kNumThreads, runner.value());
 }
 
-TEST(AtomicOpsTest, DISABLED_ON_MAC(Decrement)) {
+TEST(AtomicOpsTest, Decrement) {
   // Create and start lots of threads.
   AtomicOpRunner<DecrementOp> runner(kOperationsToRun * kNumThreads);
   ScopedPtrCollection<Thread> threads;

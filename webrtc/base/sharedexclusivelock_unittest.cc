@@ -133,7 +133,7 @@ class SharedExclusiveLockTest
 };
 
 // Flaky: https://code.google.com/p/webrtc/issues/detail?id=3318
-TEST_F(SharedExclusiveLockTest, DISABLED_TestSharedShared) {
+TEST_F(SharedExclusiveLockTest, TestSharedShared) {
   int value0, value1;
   bool done0, done1;
   ReadTask reader0(shared_exclusive_lock_.get(), &value_, &done0);
@@ -158,7 +158,7 @@ TEST_F(SharedExclusiveLockTest, DISABLED_TestSharedShared) {
   EXPECT_LE(reader1.waiting_time_in_ms(), kNoWaitThresholdInMs);
 }
 
-TEST_F(SharedExclusiveLockTest, DISABLED_ON_MAC(TestSharedExclusive)) {
+TEST_F(SharedExclusiveLockTest, TestSharedExclusive) {
   bool done;
   WriteTask writer(shared_exclusive_lock_.get(), &value_, &done);
 
@@ -177,7 +177,7 @@ TEST_F(SharedExclusiveLockTest, DISABLED_ON_MAC(TestSharedExclusive)) {
   EXPECT_GE(writer.waiting_time_in_ms(), kWaitThresholdInMs);
 }
 
-TEST_F(SharedExclusiveLockTest, DISABLED_ON_MAC(TestExclusiveShared)) {
+TEST_F(SharedExclusiveLockTest, TestExclusiveShared) {
   int value;
   bool done;
   ReadTask reader(shared_exclusive_lock_.get(), &value_, &done);
@@ -197,7 +197,7 @@ TEST_F(SharedExclusiveLockTest, DISABLED_ON_MAC(TestExclusiveShared)) {
   EXPECT_GE(reader.waiting_time_in_ms(), kWaitThresholdInMs);
 }
 
-TEST_F(SharedExclusiveLockTest, DISABLED_ON_MAC(TestExclusiveExclusive)) {
+TEST_F(SharedExclusiveLockTest, TestExclusiveExclusive) {
   bool done;
   WriteTask writer(shared_exclusive_lock_.get(), &value_, &done);
 

@@ -237,11 +237,11 @@ void TestPhysicalInternal(const SocketAddress& int_addr) {
   TestFilters(int_pss.get(), int_addr, ext_pss.get(), ext_addrs);
 }
 
-TEST(NatTest, DISABLED_ON_MAC(TestPhysicalIPv4)) {
+TEST(NatTest, TestPhysicalIPv4) {
   TestPhysicalInternal(SocketAddress("127.0.0.1", 0));
 }
 
-TEST(NatTest, DISABLED_ON_MAC(TestPhysicalIPv6)) {
+TEST(NatTest, TestPhysicalIPv6) {
   if (HasIPv6Enabled()) {
     TestPhysicalInternal(SocketAddress("::1", 0));
   } else {
@@ -279,11 +279,11 @@ void TestVirtualInternal(int family) {
   TestFilters(int_vss.get(), int_addr, ext_vss.get(), ext_addrs);
 }
 
-TEST(NatTest, DISABLED_ON_MAC(TestVirtualIPv4)) {
+TEST(NatTest, TestVirtualIPv4) {
   TestVirtualInternal(AF_INET);
 }
 
-TEST(NatTest, DISABLED_ON_MAC(TestVirtualIPv6)) {
+TEST(NatTest, TestVirtualIPv6) {
   if (HasIPv6Enabled()) {
     TestVirtualInternal(AF_INET6);
   } else {

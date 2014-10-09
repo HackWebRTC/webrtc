@@ -83,7 +83,7 @@ class LogThread : public Thread {
   }
 };
 
-TEST(LogTest, DISABLED_ON_MAC(MultipleThreads)) {
+TEST(LogTest, MultipleThreads) {
   int sev = LogMessage::GetLogToStream(NULL);
 
   LogThread thread1, thread2, thread3;
