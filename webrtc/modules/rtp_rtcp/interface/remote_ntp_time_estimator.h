@@ -17,7 +17,6 @@
 namespace webrtc {
 
 class Clock;
-class RtpRtcp;
 class TimestampExtrapolator;
 
 // RemoteNtpTimeEstimator can be used to estimate a given RTP timestamp's NTP
@@ -30,9 +29,10 @@ class RemoteNtpTimeEstimator {
 
   ~RemoteNtpTimeEstimator();
 
-  // Updates the estimator with the timestamp from newly received RTCP SR for
-  // |ssrc|. The RTCP SR is read from |rtp_rtcp|.
-  bool UpdateRtcpTimestamp(uint32_t ssrc, RtpRtcp* rtp_rtcp);
+  // Updates the estimator with round trip time |rtt|, NTP seconds |ntp_secs|,
+  // NTP fraction |ntp_frac| and RTP timestamp |rtcp_timestamp|.
+  bool UpdateRtcpTimestamp(uint16_t rtt, uint32_t ntp_secs, uint32_t ntp_frac,
+                           uint32_t rtp_timestamp);
 
   // Estimates the NTP timestamp in local timebase from |rtp_timestamp|.
   // Returns the NTP timestamp in ms when success. -1 if failed.

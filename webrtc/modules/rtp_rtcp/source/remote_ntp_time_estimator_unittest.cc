@@ -12,7 +12,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/interface/remote_ntp_time_estimator.h"
-#include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 
 using ::testing::_;
 using ::testing::DoAll;
@@ -25,7 +25,6 @@ static const int kTestRtt = 10;
 static const int64_t kLocalClockInitialTimeMs = 123;
 static const int64_t kRemoteClockInitialTimeMs = 345;
 static const uint32_t kTimestampOffset = 567;
-static const int kTestSsrc = 789;
 
 class RemoteNtpTimeEstimatorTest : public ::testing::Test {
  protected:
@@ -52,41 +51,31 @@ class RemoteNtpTimeEstimatorTest : public ::testing::Test {
     remote_clock_.CurrentNtp(ntp_seconds, ntp_fractions);
 
     AdvanceTimeMilliseconds(kTestRtt / 2);
-    ReceiveRtcpSr(rtcp_timestamp, ntp_seconds, ntp_fractions);
+    ReceiveRtcpSr(kTestRtt, rtcp_timestamp, ntp_seconds, ntp_fractions);
   }
 
-  void UpdateRtcpTimestamp(MockRtpRtcp* rtp_rtcp, bool expected_result) {
-    if (rtp_rtcp) {
-      EXPECT_CALL(*rtp_rtcp, RTT(_, _, _, _, _))
-          .WillOnce(DoAll(SetArgPointee<1>(kTestRtt),
-                          Return(0)));
-    }
+  void UpdateRtcpTimestamp(uint16_t rtt, uint32_t ntp_secs, uint32_t ntp_frac,
+                           uint32_t rtp_timestamp, bool expected_result) {
     EXPECT_EQ(expected_result,
-              estimator_.UpdateRtcpTimestamp(kTestSsrc, rtp_rtcp));
+              estimator_.UpdateRtcpTimestamp(rtt, ntp_secs, ntp_frac,
+                                             rtp_timestamp));
   }
 
-  void ReceiveRtcpSr(uint32_t rtcp_timestamp,
+  void ReceiveRtcpSr(uint16_t rtt,
+                     uint32_t rtcp_timestamp,
                      uint32_t ntp_seconds,
                      uint32_t ntp_fractions) {
-    EXPECT_CALL(rtp_rtcp_, RemoteNTP(_, _, _, _, _))
-        .WillOnce(DoAll(SetArgPointee<0>(ntp_seconds),
-                        SetArgPointee<1>(ntp_fractions),
-                        SetArgPointee<4>(rtcp_timestamp),
-                        Return(0)));
-
-    UpdateRtcpTimestamp(&rtp_rtcp_, true);
+    UpdateRtcpTimestamp(rtt, ntp_seconds, ntp_fractions, rtcp_timestamp, true);
   }
 
   SimulatedClock local_clock_;
   SimulatedClock remote_clock_;
-  MockRtpRtcp rtp_rtcp_;
   RemoteNtpTimeEstimator estimator_;
 };
 
 TEST_F(RemoteNtpTimeEstimatorTest, Estimate) {
-  // Failed without any RTCP SR, where RemoteNTP returns without valid NTP.
-  EXPECT_CALL(rtp_rtcp_, RemoteNTP(_, _, _, _, _)).WillOnce(Return(0));
-  UpdateRtcpTimestamp(&rtp_rtcp_, false);
+  // Failed without valid NTP.
+  UpdateRtcpTimestamp(kTestRtt, 0, 0, 0, false);
 
   AdvanceTimeMilliseconds(1000);
   // Remote peer sends first RTCP SR.

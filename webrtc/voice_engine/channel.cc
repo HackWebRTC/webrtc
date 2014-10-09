@@ -1898,8 +1898,20 @@ int32_t Channel::ReceivedRTCPPacket(const int8_t* data, int32_t length) {
 
   {
     CriticalSectionScoped lock(ts_stats_lock_.get());
-    ntp_estimator_.UpdateRtcpTimestamp(rtp_receiver_->SSRC(),
-                                       _rtpRtcpModule.get());
+    uint16_t rtt = GetRTT();
+    if (rtt == 0) {
+      // Waiting for valid RTT.
+      return 0;
+    }
+    uint32_t ntp_secs = 0;
+    uint32_t ntp_frac = 0;
+    uint32_t rtp_timestamp = 0;
+    if (0 != _rtpRtcpModule->RemoteNTP(&ntp_secs, &ntp_frac, NULL, NULL,
+                                       &rtp_timestamp)) {
+      // Waiting for RTCP.
+      return 0;
+    }
+    ntp_estimator_.UpdateRtcpTimestamp(rtt, ntp_secs, ntp_frac, rtp_timestamp);
   }
   return 0;
 }

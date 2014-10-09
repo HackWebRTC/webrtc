@@ -10,7 +10,6 @@
 
 #include "webrtc/modules/rtp_rtcp/interface/remote_ntp_time_estimator.h"
 
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/timestamp_extrapolator.h"
 
@@ -26,30 +25,13 @@ RemoteNtpTimeEstimator::RemoteNtpTimeEstimator(Clock* clock)
 
 RemoteNtpTimeEstimator::~RemoteNtpTimeEstimator() {}
 
-bool RemoteNtpTimeEstimator::UpdateRtcpTimestamp(uint32_t ssrc,
-                                                 RtpRtcp* rtp_rtcp) {
-  assert(rtp_rtcp);
-  uint16_t rtt = 0;
-  rtp_rtcp->RTT(ssrc, &rtt, NULL, NULL, NULL);
-  if (rtt == 0) {
-    // Waiting for valid rtt.
-    return true;
-  }
-  // Update RTCP list
-  uint32_t ntp_secs = 0;
-  uint32_t ntp_frac = 0;
-  uint32_t rtp_timestamp = 0;
-  if (0 != rtp_rtcp->RemoteNTP(&ntp_secs,
-                               &ntp_frac,
-                               NULL,
-                               NULL,
-                               &rtp_timestamp)) {
-    // Waiting for RTCP.
-    return true;
-  }
+bool RemoteNtpTimeEstimator::UpdateRtcpTimestamp(uint16_t rtt,
+                                                 uint32_t ntp_secs,
+                                                 uint32_t ntp_frac,
+                                                 uint32_t rtcp_timestamp) {
   bool new_rtcp_sr = false;
   if (!UpdateRtcpList(
-      ntp_secs, ntp_frac, rtp_timestamp, &rtcp_list_, &new_rtcp_sr)) {
+      ntp_secs, ntp_frac, rtcp_timestamp, &rtcp_list_, &new_rtcp_sr)) {
     return false;
   }
   if (!new_rtcp_sr) {

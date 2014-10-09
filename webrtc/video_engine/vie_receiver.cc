@@ -338,7 +338,21 @@ int ViEReceiver::InsertRTCPPacket(const uint8_t* rtcp_packet,
     return ret;
   }
 
-  ntp_estimator_->UpdateRtcpTimestamp(rtp_receiver_->SSRC(), rtp_rtcp_);
+  uint16_t rtt = 0;
+  rtp_rtcp_->RTT(rtp_receiver_->SSRC(), &rtt, NULL, NULL, NULL);
+  if (rtt == 0) {
+    // Waiting for valid rtt.
+    return 0;
+  }
+  uint32_t ntp_secs = 0;
+  uint32_t ntp_frac = 0;
+  uint32_t rtp_timestamp = 0;
+  if (0 != rtp_rtcp_->RemoteNTP(&ntp_secs, &ntp_frac, NULL, NULL,
+                                &rtp_timestamp)) {
+    // Waiting for RTCP.
+    return 0;
+  }
+  ntp_estimator_->UpdateRtcpTimestamp(rtt, ntp_secs, ntp_frac, rtp_timestamp);
 
   return 0;
 }
