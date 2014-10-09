@@ -27,8 +27,8 @@ class PacketGenerator {
  public:
   PacketGenerator(uint16_t seq_no, uint32_t ts, uint8_t pt, int frame_size);
   virtual ~PacketGenerator() {}
+  void Reset(uint16_t seq_no, uint32_t ts, uint8_t pt, int frame_size);
   Packet* NextPacket(int payload_size_bytes);
-  void SkipPacket();
 
   uint16_t seq_no_;
   uint32_t ts_;
@@ -37,11 +37,16 @@ class PacketGenerator {
 };
 
 PacketGenerator::PacketGenerator(uint16_t seq_no, uint32_t ts, uint8_t pt,
-                                 int frame_size)
-    : seq_no_(seq_no),
-      ts_(ts),
-      pt_(pt),
-      frame_size_(frame_size) {
+                                 int frame_size) {
+  Reset(seq_no, ts, pt, frame_size);
+}
+
+void PacketGenerator::Reset(uint16_t seq_no, uint32_t ts, uint8_t pt,
+                            int frame_size) {
+  seq_no_ = seq_no;
+  ts_ = ts;
+  pt_ = pt;
+  frame_size_ = frame_size;
 }
 
 Packet* PacketGenerator::NextPacket(int payload_size_bytes) {
@@ -61,11 +66,16 @@ Packet* PacketGenerator::NextPacket(int payload_size_bytes) {
   return packet;
 }
 
-void PacketGenerator::SkipPacket() {
-  ++seq_no_;
-  ts_ += frame_size_;
-}
-
+struct PacketsToInsert {
+  uint16_t sequence_number;
+  uint32_t timestamp;
+  uint8_t payload_type;
+  bool primary;
+  // Order of this packet to appear upon extraction, after inserting a series
+  // of packets. A negative number means that it should have been discarded
+  // before extraction.
+  int extract_order;
+};
 
 // Start of test definitions.
 
@@ -219,86 +229,63 @@ TEST(PacketBuffer, InsertPacketListChangePayloadType) {
   EXPECT_CALL(decoder_database, Die());  // Called when object is deleted.
 }
 
-// Test inserting a number of packets, and verifying correct extraction order.
-// The packets inserted are as follows:
-// Packet no.  Seq. no.    Primary TS    Secondary TS
-// 0           0xFFFD      0xFFFFFFD7    -
-// 1           0xFFFE      0xFFFFFFE1    0xFFFFFFD7
-// 2           0xFFFF      0xFFFFFFEB    0xFFFFFFE1
-// 3           0x0000      0xFFFFFFF5    0xFFFFFFEB
-// 4           0x0001      0xFFFFFFFF    0xFFFFFFF5
-// 5           0x0002      0x0000000A    0xFFFFFFFF
-// 6  MISSING--0x0003------0x00000014----0x0000000A--MISSING
-// 7           0x0004      0x0000001E    0x00000014
-// 8           0x0005      0x00000028    0x0000001E
-// 9           0x0006      0x00000032    0x00000028
 TEST(PacketBuffer, ExtractOrderRedundancy) {
   PacketBuffer buffer(100);  // 100 packets.
-  const uint32_t ts_increment = 10;  // Samples per packet.
-  const uint16_t start_seq_no = 0xFFFF - 2;  // Wraps after 3 packets.
-  const uint32_t start_ts = 0xFFFFFFFF -
-      4 * ts_increment;  // Wraps after 5 packets.
-  const uint8_t primary_pt = 0;
-  const uint8_t secondary_pt = 1;
-  PacketGenerator gen(start_seq_no, start_ts, primary_pt, ts_increment);
-  // Insert secondary payloads too. (Simulating RED.)
-  PacketGenerator red_gen(start_seq_no + 1, start_ts, secondary_pt,
-                          ts_increment);
+  const int kPackets = 18;
+  const int kFrameSize = 10;
+  const int kPayloadLength = 10;
 
-  // Insert 9 small packets (skip one).
-  for (int i = 0; i < 10; ++i) {
-    const int payload_len = 10;
-    if (i == 6) {
-      // Skip this packet.
-      gen.SkipPacket();
-      red_gen.SkipPacket();
-      continue;
-    }
-    // Primary payload.
-    Packet* packet = gen.NextPacket(payload_len);
+  PacketsToInsert packet_facts[kPackets] = {
+    {0xFFFD, 0xFFFFFFD7, 0, true, 0},
+    {0xFFFE, 0xFFFFFFE1, 0, true, 1},
+    {0xFFFE, 0xFFFFFFD7, 1, false, -1},
+    {0xFFFF, 0xFFFFFFEB, 0, true, 2},
+    {0xFFFF, 0xFFFFFFE1, 1, false, -1},
+    {0x0000, 0xFFFFFFF5, 0, true, 3},
+    {0x0000, 0xFFFFFFEB, 1, false, -1},
+    {0x0001, 0xFFFFFFFF, 0, true, 4},
+    {0x0001, 0xFFFFFFF5, 1, false, -1},
+    {0x0002, 0x0000000A, 0, true, 5},
+    {0x0002, 0xFFFFFFFF, 1, false, -1},
+    {0x0003, 0x0000000A, 1, false, -1},
+    {0x0004, 0x0000001E, 0, true, 7},
+    {0x0004, 0x00000014, 1, false, 6},
+    {0x0005, 0x0000001E, 0, true, -1},
+    {0x0005, 0x00000014, 1, false, -1},
+    {0x0006, 0x00000028, 0, true, 8},
+    {0x0006, 0x0000001E, 1, false, -1},
+  };
+
+  const int kExpectPacketsInBuffer = 9;
+
+  std::vector<Packet*> expect_order(kExpectPacketsInBuffer);
+
+  PacketGenerator gen(0, 0, 0, kFrameSize);
+
+  for (int i = 0; i < kPackets; ++i) {
+    gen.Reset(packet_facts[i].sequence_number,
+              packet_facts[i].timestamp,
+              packet_facts[i].payload_type,
+              kFrameSize);
+    Packet* packet = gen.NextPacket(kPayloadLength);
+    packet->primary = packet_facts[i].primary;
     EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacket(packet));
-    if (i >= 1) {
-      // Secondary payload.
-      packet = red_gen.NextPacket(payload_len);
-      packet->primary = false;
-      EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacket(packet));
+    if (packet_facts[i].extract_order >= 0) {
+      expect_order[packet_facts[i].extract_order] = packet;
     }
   }
-  EXPECT_EQ(17, buffer.NumPacketsInBuffer());  // 9 primary + 8 secondary
 
-  uint16_t current_seq_no = start_seq_no;
-  uint32_t current_ts = start_ts;
+  EXPECT_EQ(kExpectPacketsInBuffer, buffer.NumPacketsInBuffer());
 
-  for (int i = 0; i < 10; ++i) {
-    // Extract packets.
-    int drop_count = 0;
+  int drop_count;
+  for (int i = 0; i < kExpectPacketsInBuffer; ++i) {
     Packet* packet = buffer.GetNextPacket(&drop_count);
-    ASSERT_FALSE(packet == NULL);
-    if (i == 6) {
-      // Special case for the dropped primary payload.
-      // Expect secondary payload, and one step higher sequence number.
-      EXPECT_EQ(current_seq_no + 1, packet->header.sequenceNumber);
-      EXPECT_EQ(current_ts, packet->header.timestamp);
-      EXPECT_FALSE(packet->primary);
-      EXPECT_EQ(1, packet->header.payloadType);
-      EXPECT_EQ(0, drop_count);
-    } else {
-      EXPECT_EQ(current_seq_no, packet->header.sequenceNumber);
-      EXPECT_EQ(current_ts, packet->header.timestamp);
-      EXPECT_TRUE(packet->primary);
-      EXPECT_EQ(0, packet->header.payloadType);
-      if (i == 5 || i == 9) {
-        // No duplicate TS for dropped packet or for last primary payload.
-        EXPECT_EQ(0, drop_count);
-      } else {
-        EXPECT_EQ(1, drop_count);
-      }
-    }
-    ++current_seq_no;
-    current_ts += ts_increment;
-    delete [] packet->payload;
+    EXPECT_EQ(0, drop_count);
+    EXPECT_EQ(packet, expect_order[i]);  // Compare pointer addresses.
+    delete[] packet->payload;
     delete packet;
   }
+  EXPECT_TRUE(buffer.Empty());
 }
 
 TEST(PacketBuffer, DiscardPackets) {

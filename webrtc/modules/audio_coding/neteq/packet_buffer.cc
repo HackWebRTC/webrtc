@@ -71,7 +71,28 @@ int PacketBuffer::InsertPacket(Packet* packet) {
   PacketList::reverse_iterator rit = std::find_if(
       buffer_.rbegin(), buffer_.rend(),
       NewTimestampIsLarger(packet));
-  buffer_.insert(rit.base(), packet);  // Insert the packet at that position.
+
+  // The new packet is to be inserted to the right of |rit|. If it has the same
+  // timestamp as |rit|, which has a higher priority, do not insert the new
+  // packet to list.
+  if (rit != buffer_.rend() &&
+      packet->header.timestamp == (*rit)->header.timestamp) {
+    delete [] packet->payload;
+    delete packet;
+    return return_val;
+  }
+
+  // The new packet is to be inserted to the left of |it|. If it has the same
+  // timestamp as |it|, which has a lower priority, replace |it| with the new
+  // packet.
+  PacketList::iterator it = rit.base();
+  if (it != buffer_.end() &&
+      packet->header.timestamp == (*it)->header.timestamp) {
+    delete [] (*it)->payload;
+    delete *it;
+    it = buffer_.erase(it);
+  }
+  buffer_.insert(it, packet);  // Insert the packet at that position.
 
   return return_val;
 }
@@ -163,20 +184,24 @@ Packet* PacketBuffer::GetNextPacket(int* discard_count) {
   // Assert that the packet sanity checks in InsertPacket method works.
   assert(packet && packet->payload);
   buffer_.pop_front();
+
   // Discard other packets with the same timestamp. These are duplicates or
   // redundant payloads that should not be used.
-  if (discard_count) {
-    *discard_count = 0;
-  }
+  int discards = 0;
+
   while (!Empty() &&
       buffer_.front()->header.timestamp == packet->header.timestamp) {
     if (DiscardNextPacket() != kOK) {
       assert(false);  // Must be ok by design.
     }
-    if (discard_count) {
-      ++(*discard_count);
-    }
+    ++discards;
   }
+  // The way of inserting packet should not cause any packet discarding here.
+  // TODO(minyue): remove |discard_count|.
+  assert(discards == 0);
+  if (discard_count)
+    *discard_count = discards;
+
   return packet;
 }
 
