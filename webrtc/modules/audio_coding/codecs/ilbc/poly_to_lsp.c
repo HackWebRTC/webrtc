@@ -117,7 +117,7 @@ void WebRtcIlbcfix_Poly2Lsp(
         sign = y;
         y = WEBRTC_SPL_ABS_W16(y);
         shifts = (int16_t)WebRtcSpl_NormW32(y)-16;
-        y = WEBRTC_SPL_LSHIFT_W16(y, shifts);
+        y <<= shifts;
         y = (int16_t)WebRtcSpl_DivW32W16(536838144, y); /* 1/(yhigh-ylow) */
 
         tmpW32 = WEBRTC_SPL_MUL_16_16_RSFT(x, y, (19-shifts));

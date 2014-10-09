@@ -90,7 +90,6 @@
 // Shifting with negative numbers not allowed
 // We cannot do casting here due to signed/unsigned problem
 #define WEBRTC_SPL_RSHIFT_W16(x, c)     ((x) >> (c))
-#define WEBRTC_SPL_LSHIFT_W16(x, c)     ((x) << (c))
 #define WEBRTC_SPL_RSHIFT_W32(x, c)     ((x) >> (c))
 #define WEBRTC_SPL_LSHIFT_W32(x, c)     ((x) << (c))
 

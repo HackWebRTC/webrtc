@@ -35,7 +35,7 @@ void WebRtcSpl_AToK_JSK(
   int32_t tmp_inv_denum32;
   int16_t tmp_inv_denum16;
 
-  k16[useOrder-1]= WEBRTC_SPL_LSHIFT_W16(a16[useOrder], 4); //Q11<<4 => Q15
+  k16[useOrder-1] = a16[useOrder] << 4;  // Q11<<4 => Q15
 
   for (m=useOrder-1; m>0; m--) {
     tmp_inv_denum32 = ((int32_t) 1073741823) - WEBRTC_SPL_MUL_16_16(k16[m], k16[m]); // (1 - k^2) in Q30
@@ -346,17 +346,14 @@ static const int16_t kPolyVecHi[6] = {
 
 static __inline int32_t log2_Q8_LPC( uint32_t x ) {
 
-  int32_t zeros, lg2;
+  int32_t zeros;
   int16_t frac;
 
   zeros=WebRtcSpl_NormU32(x);
   frac=(int16_t)WEBRTC_SPL_RSHIFT_W32(((uint32_t)WEBRTC_SPL_LSHIFT_W32(x, zeros)&0x7FFFFFFF), 23);
 
   /* log2(x) */
-
-  lg2= (WEBRTC_SPL_LSHIFT_W16((31-zeros), 8)+frac);
-  return lg2;
-
+  return ((31 - zeros) << 8) + frac;
 }
 
 static const int16_t kMulPitchGain = -25; /* 200/256 in Q5 */
@@ -424,13 +421,13 @@ void WebRtcIsacfix_GetVars(const int16_t *input, const int16_t *pitchGains_Q12,
     tmp16_2 = (0x0400 | (tmp16 & 0x03FF));
     tmp16_1 = ((uint16_t)(tmp16 ^ 0xFFFF) >> 10) - 3;  /* Gives result in Q14 */
     if (tmp16_1<0)
-      expPg=(int16_t) -WEBRTC_SPL_LSHIFT_W16(tmp16_2, -tmp16_1);
+      expPg = -(tmp16_2 << -tmp16_1);
     else
       expPg = -(tmp16_2 >> tmp16_1);
   } else
     expPg = (int16_t) -16384; /* 1 in Q14, since 2^0=1 */
 
-  expPg32 = (int32_t)WEBRTC_SPL_LSHIFT_W16((int32_t)expPg, 8); /* Q22 */
+  expPg32 = (int32_t)expPg << 8;  /* Q22 */
   divVal = WebRtcSpl_DivW32W16ResW16(expPg32, chngQ); /* Q22/Q12=Q10 */
 
   tmp16=(int16_t)WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(kExp2,divVal,13);/* Q13*Q10>>13 => Q10*/
@@ -438,7 +435,7 @@ void WebRtcIsacfix_GetVars(const int16_t *input, const int16_t *pitchGains_Q12,
     tmp16_2 = (0x0400 | (tmp16 & 0x03FF));
     tmp16_1 = ((uint16_t)(tmp16 ^ 0xFFFF) >> 10) - 3;  /* Gives result in Q14 */
     if (tmp16_1<0)
-      expPg=(int16_t) WEBRTC_SPL_LSHIFT_W16(tmp16_2, -tmp16_1);
+      expPg = tmp16_2 << -tmp16_1;
     else
       expPg = tmp16_2 >> tmp16_1;
   } else
@@ -459,7 +456,7 @@ static __inline int16_t  exp2_Q10_T(int16_t x) { // Both in and out in Q10
   if(tmp16_1>0)
     return tmp16_2 >> tmp16_1;
   else
-    return (int16_t) WEBRTC_SPL_LSHIFT_W16(tmp16_2, -tmp16_1);
+    return tmp16_2 << -tmp16_1;
 
 }
 
@@ -734,10 +731,13 @@ void WebRtcIsacfix_GetLpcCoef(int16_t *inLoQ0,
           tmp = WEBRTC_SPL_MUL_16_32_RSFT15(alpha, tmp);
         } else if ((sh-shMem)<7){
           tmp = WEBRTC_SPL_SHIFT_W32(maskdata->CorrBufLoQQ[n], shMem); // Shift up CorrBufLoQQ as much as possible
-          tmp = WEBRTC_SPL_MUL_16_32_RSFT15(WEBRTC_SPL_LSHIFT_W16(alpha, (sh-shMem)), tmp); // Shift alpha the number of times required to get tmp in QdomLO
+          // Shift |alpha| the number of times required to get |tmp| in QdomLO.
+          tmp = WEBRTC_SPL_MUL_16_32_RSFT15(alpha << (sh - shMem), tmp);
         } else {
           tmp = WEBRTC_SPL_SHIFT_W32(maskdata->CorrBufLoQQ[n], shMem); // Shift up CorrBufHiQQ as much as possible
-          tmp = WEBRTC_SPL_MUL_16_32_RSFT15(WEBRTC_SPL_LSHIFT_W16(alpha, 6), tmp); // Shift alpha as much as possible without overflow the number of times required to get tmp in QdomHI
+          // Shift |alpha| as much as possible without overflow the number of
+          // times required to get |tmp| in QdomLO.
+          tmp = WEBRTC_SPL_MUL_16_32_RSFT15(alpha << 6, tmp);
           tmpCorr = WEBRTC_SPL_RSHIFT_W32(corrloQQ[n], sh-shMem-6);
           tmp = tmp + tmpCorr;
           maskdata->CorrBufLoQQ[n] = tmp;
@@ -784,14 +784,17 @@ void WebRtcIsacfix_GetLpcCoef(int16_t *inLoQ0,
           maskdata->CorrBufHiQdom[n] = QdomHI;
         } else if ((sh-shMem)<7) {
           tmp = WEBRTC_SPL_SHIFT_W32(maskdata->CorrBufHiQQ[n], shMem); // Shift up CorrBufHiQQ as much as possible
-          tmp = WEBRTC_SPL_MUL_16_32_RSFT15(WEBRTC_SPL_LSHIFT_W16(alpha, (sh-shMem)), tmp); // Shift alpha the number of times required to get tmp in QdomHI
+          // Shift |alpha| the number of times required to get |tmp| in QdomHI.
+          tmp = WEBRTC_SPL_MUL_16_32_RSFT15(alpha << (sh - shMem), tmp);
           tmpCorr = corrhiQQ[n];
           tmp = tmp + tmpCorr;
           maskdata->CorrBufHiQQ[n] = tmp;
           maskdata->CorrBufHiQdom[n] = QdomHI;
         } else {
           tmp = WEBRTC_SPL_SHIFT_W32(maskdata->CorrBufHiQQ[n], shMem); // Shift up CorrBufHiQQ as much as possible
-          tmp = WEBRTC_SPL_MUL_16_32_RSFT15(WEBRTC_SPL_LSHIFT_W16(alpha, 6), tmp); // Shift alpha as much as possible without overflow the number of times required to get tmp in QdomHI
+          // Shift |alpha| as much as possible without overflow the number of
+          // times required to get |tmp| in QdomHI.
+          tmp = WEBRTC_SPL_MUL_16_32_RSFT15(alpha << 6, tmp);
           tmpCorr = WEBRTC_SPL_RSHIFT_W32(corrhiQQ[n], sh-shMem-6);
           tmp = tmp + tmpCorr;
           maskdata->CorrBufHiQQ[n] = tmp;

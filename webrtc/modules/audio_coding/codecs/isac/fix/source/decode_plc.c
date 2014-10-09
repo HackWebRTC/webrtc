@@ -93,16 +93,14 @@ static int16_t plc_filterma_Fast(
 
 static __inline int32_t log2_Q8_T( uint32_t x ) {
 
-  int32_t zeros, lg2;
+  int32_t zeros;
   int16_t frac;
 
   zeros=WebRtcSpl_NormU32(x);
   frac=(int16_t)WEBRTC_SPL_RSHIFT_W32(((uint32_t)WEBRTC_SPL_LSHIFT_W32(x, zeros)&0x7FFFFFFF), 23);
+
   /* log2(magn(i)) */
-
-  lg2= (WEBRTC_SPL_LSHIFT_W16((31-zeros), 8)+frac);
-  return lg2;
-
+  return ((31 - zeros) << 8) + frac;
 }
 
 static __inline int16_t  exp2_Q10_T(int16_t x) { // Both in and out in Q10
@@ -114,7 +112,7 @@ static __inline int16_t  exp2_Q10_T(int16_t x) { // Both in and out in Q10
   if(tmp16_1>0)
     return tmp16_2 >> tmp16_1;
   else
-    return (int16_t) WEBRTC_SPL_LSHIFT_W16(tmp16_2, -tmp16_1);
+    return tmp16_2 << -tmp16_1;
 
 }
 

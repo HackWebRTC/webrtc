@@ -205,8 +205,7 @@ void WebRtcIsacfix_PitchFilterGains(const int16_t* indatQ0,
       // Update parameters for each segment.
       curLagQ7 += lagdeltaQ7;
       indW16 = (int16_t)CalcLrIntQ(curLagQ7, 7);
-      tmpW16 = WEBRTC_SPL_LSHIFT_W16(indW16, 7);
-      tmpW16 -= curLagQ7;
+      tmpW16 = (indW16 << 7) - curLagQ7;
       frcQQ = (tmpW16 >> 4) + 4;
 
       if (frcQQ == PITCH_FRACS) {

@@ -67,7 +67,6 @@ TEST_F(SplTest, MacroTest) {
     // Shifting with negative numbers not allowed
     // We cannot do casting here due to signed/unsigned problem
     EXPECT_EQ(8191, WEBRTC_SPL_RSHIFT_W16(a, 1));
-    EXPECT_EQ(32766, WEBRTC_SPL_LSHIFT_W16(a, 1));
     EXPECT_EQ(8191, WEBRTC_SPL_RSHIFT_W32(a, 1));
     EXPECT_EQ(32766, WEBRTC_SPL_LSHIFT_W32(a, 1));
 

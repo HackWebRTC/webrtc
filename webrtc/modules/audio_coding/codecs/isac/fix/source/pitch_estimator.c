@@ -49,7 +49,7 @@ static __inline int16_t Exp2Q10(int16_t x) { // Both in and out in Q10
   if(tmp16_1>0)
     return tmp16_2 >> tmp16_1;
   else
-    return (int16_t) WEBRTC_SPL_LSHIFT_W16(tmp16_2, -tmp16_1);
+    return tmp16_2 << -tmp16_1;
 
 }
 
