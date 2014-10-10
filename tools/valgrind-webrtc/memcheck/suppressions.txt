@@ -480,29 +480,6 @@
 #-----------------------------------------------------------------------
 # 2. libjingle stuff (talk folder)
 {
-   bug_1976_1_tmp
-   Memcheck:Unaddressable
-   fun:pthread_mutex_unlock
-   fun:_ZN9talk_base15CriticalSection5LeaveEv
-   fun:_ZN9talk_base9CritScopeD1Ev
-   ...
-   fun:_ZN9talk_base6Thread15ProcessMessagesEi
-   fun:_ZN9talk_base6Thread3RunEv
-   fun:_ZN9talk_base6Thread6PreRunEPv
-}
-{
-   bug_1976_2_tmp
-   Memcheck:Leak
-   fun:calloc
-   obj:/usr/lib/x86_64-linux-gnu/libnss3.so
-   ...
-   fun:NSS_NoDB_Init
-   fun:_ZN9talk_base10NSSContext13InitializeSSLEPFbPvE
-   fun:_ZN9talk_base13InitializeSSLEPFbPvE
-   fun:_ZN9talk_base10RandomTest13SetUpTestCaseEv
-   fun:_ZN7testing8TestCase16RunSetUpTestCaseEv
-}
-{
    bug_2056_1
    Memcheck:Leak
    fun:malloc
@@ -528,75 +505,6 @@
    Memcheck:Uninitialized
    fun:bcmp
    fun:_ZN23SSLStreamAdapterTestTLS12TestTransferEi
-   ...
-}
-{
-   bug_2100_3_tmp
-   Memcheck:Uninitialized
-   fun:tls1_enc
-   fun:ssl3_get_record
-   fun:ssl3_read_bytes
-   fun:ssl3_read_internal
-   fun:ssl3_read
-   fun:SSL_read
-   fun:_ZN9talk_base20OpenSSLStreamAdapter4ReadEPvmPmPi
-   ...
-}
-{
-   bug_2100_4_tmp
-   Memcheck:Uninitialized
-   fun:_ZN7testing8internal11CmpHelperEQIjhEENS_15AssertionResultEPKcS4_RKT_RKT0_
-   fun:_ZN7testing8internal8EqHelperILb0EE7CompareIjhEENS_15AssertionResultEPKcS6_RKT_RKT0_
-   fun:_ZN24SSLStreamAdapterTestDTLS8ReadDataEPN9talk_base15StreamInterfaceE
-   ...
-}
-{
-   bug_2100_5_tmp
-   Memcheck:Uninitialized
-   fun:dtls1_process_record
-   fun:dtls1_get_record
-   fun:dtls1_read_bytes
-   fun:ssl3_read_internal
-   fun:ssl3_read
-   fun:SSL_read
-   fun:_ZN9talk_base20OpenSSLStreamAdapter4ReadEPvmPmPi
-   ...
-}
-# For BIO_new_mem_buf
-# http://www.openssl.org/support/faq.html#PROG13
-{
-   BIO_new_mem_buf_1_tmp
-   Memcheck:Leak
-   fun:malloc
-   fun:default_malloc_ex
-   fun:CRYPTO_malloc
-   fun:BUF_MEM_new
-   fun:mem_new
-   fun:BIO_set
-   fun:BIO_new
-   fun:BIO_new_mem_buf
-   fun:_ZN9talk_base18OpenSSLCertificate13FromPEMStringERKSs
-   ...
-}
-{
-   BIO_new_mem_buf_2_tmp
-   Memcheck:Leak
-   fun:malloc
-   fun:default_malloc_ex
-   fun:CRYPTO_malloc
-   fun:BUF_MEM_new
-   fun:mem_new
-   fun:BIO_set
-   fun:BIO_new
-   fun:BIO_new_mem_buf
-   fun:_ZN9talk_base15OpenSSLIdentity14FromPEMStringsERKSsS2_
-}
-# For HttpServer.SignalsCloseAfterForcedCloseAll
-{
-   SignalsCloseAfterForcedCloseAll_tmp
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN9talk_base10HttpServer10Connection12BeginProcessEPNS_15StreamInterfaceE
    ...
 }
 # For tests that create XMPPClient which can only be deleted by task runner.
@@ -647,14 +555,6 @@
    Memcheck:Leak
    fun:_Znw*
    fun:_ZN*PubSubTasksTest*Ev
-}
-# For tests that leaks by design.
-{
-   DoNotDeleteTask2_tmp
-   Memcheck:Leak
-   fun:_Znw*
-   ...
-   fun:_ZN9talk_base41unstarted_task_test_DoNotDeleteTask2_Test8TestBodyEv
 }
 # failures which can't be reproduced locally
 {

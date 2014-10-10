@@ -87,12 +87,4 @@ leak:PingTaskTest::SetUp
 leak:PingXmppClient::SendStanza
 leak:PubSubClientTest::PubSubClientTest
 leak:PubSubTasksTest::PubSubTasksTest
-leak:talk_base::HttpData::changeHeader
-leak:talk_base::HttpParser::ProcessLine
-leak:talk_base::HttpServer::Connection::BeginProcess
-leak:talk_base::IdTimeoutTask::IdTimeoutTask
-leak:talk_base::OpenSSLCertificate::FromPEMString
-leak:talk_base::OpenSSLIdentity::FromPEMStrings
-leak:talk_base::TaskParent::TaskParent
-leak:talk_base::unstarted_task_test_DoNotDeleteTask2_Test::TestBody
 
