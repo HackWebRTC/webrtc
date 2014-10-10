@@ -18,9 +18,6 @@ The Chrome valgrind directory we use as a DEPS dependency contains the following
 suppression files:
   valgrind/memcheck/suppressions.txt
   valgrind/memcheck/suppressions_mac.txt
-  valgrind/tsan/suppressions.txt
-  valgrind/tsan/suppressions_mac.txt
-  valgrind/tsan/suppressions_win32.txt
 Since they're referenced from the chrome_tests.py script, we have similar files
 below the directory of this script. When executing, this script will setup both
 Chrome's suppression files and our own, so we can easily maintain WebRTC
@@ -65,7 +62,7 @@ class WebRTCTest(chrome_tests.ChromeTests):
                                                 cmd)
 
     # When ChromeTests._DefaultCommand has executed, it has setup suppression
-    # files based on what's found in the memcheck/ or tsan/ subdirectories of
+    # files based on what's found in the memcheck/ subdirectory of
     # this script's location. If Mac or Windows is executing, additional
     # platform specific files have also been added.
     # Since only the ones located below this directory are added, we must also

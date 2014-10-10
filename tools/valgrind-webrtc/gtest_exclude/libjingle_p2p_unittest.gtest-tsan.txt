@@ -1,4 +1,0 @@
-# TODO(wu): Reenable P2PTransportChannelTest after issue 2158 is resolved.
-P2PTransportChannelTest.*
-PortTest.TestSendStunMessageAsIce
-VoiceChannelTest.TestKeyboardMute
