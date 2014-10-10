@@ -56,9 +56,9 @@ hooks = [
     "name": "check_root_dir_name",
     "pattern": ".",
     "action": ["python","-c",
-               ("import os, sys;"
-                "script = os.path.join('trunk', 'check_root_dir.py');"
-                "_ = os.system('%s %s' % (sys.executable, script)) "
+               ("import os,sys;"
+                "script = os.path.join('trunk','check_root_dir.py');"
+                "_ = os.system('%s %s' % (sys.executable,script)) "
                 "if os.path.exists(script) else 0")],
   },
   {
