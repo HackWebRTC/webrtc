@@ -19,6 +19,9 @@
 #include "webrtc/call.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
+#include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -220,6 +223,58 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
   receiver_transport.StopSending();
 
   DestroyStreams();
+}
+
+TEST_F(EndToEndTest, SendsAndReceivesVP9) {
+  class VP9Observer : public test::EndToEndTest, public VideoRenderer {
+   public:
+    VP9Observer()
+        : EndToEndTest(2 * kDefaultTimeoutMs),
+          encoder_(VideoEncoder::Create(VideoEncoder::kVp9)),
+          decoder_(VP9Decoder::Create()),
+          frame_counter_(0) {}
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting for enough frames to be decoded.";
+    }
+
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) OVERRIDE {
+      send_config->encoder_settings.encoder = encoder_.get();
+      send_config->encoder_settings.payload_name = "VP9";
+      send_config->encoder_settings.payload_type = VCM_VP9_PAYLOAD_TYPE;
+      encoder_config->streams[0].min_bitrate_bps = 50000;
+      encoder_config->streams[0].target_bitrate_bps =
+          encoder_config->streams[0].max_bitrate_bps = 2000000;
+
+      (*receive_configs)[0].renderer = this;
+      VideoCodec codec =
+          test::CreateDecoderVideoCodec(send_config->encoder_settings);
+      (*receive_configs)[0].codecs.resize(1);
+      (*receive_configs)[0].codecs[0] = codec;
+      (*receive_configs)[0].external_decoders.resize(1);
+      (*receive_configs)[0].external_decoders[0].payload_type =
+          send_config->encoder_settings.payload_type;
+      (*receive_configs)[0].external_decoders[0].decoder = decoder_.get();
+    }
+
+    virtual void RenderFrame(const I420VideoFrame& video_frame,
+                             int time_to_render_ms) OVERRIDE {
+      const int kRequiredFrames = 500;
+      if (++frame_counter_ == kRequiredFrames)
+        observation_complete_->Set();
+    }
+
+   private:
+    scoped_ptr<webrtc::VideoEncoder> encoder_;
+    scoped_ptr<webrtc::VideoDecoder> decoder_;
+    int frame_counter_;
+  } test;
+
+  RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, SendsAndReceivesH264) {
