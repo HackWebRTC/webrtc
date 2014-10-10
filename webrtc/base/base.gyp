@@ -46,6 +46,8 @@
         'md5.cc',
         'md5.h',
         'md5digest.h',
+        'platform_file.cc',
+        'platform_file.h',
         'stringencode.cc',
         'stringencode.h',
         'stringutils.cc',

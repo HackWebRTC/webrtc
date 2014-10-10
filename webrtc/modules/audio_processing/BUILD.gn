@@ -157,6 +157,7 @@ source_set("audio_processing") {
   }
 
   deps += [
+    "../../base:rtc_base_approved",
     "../../common_audio",
     "../../system_wrappers",
   ]

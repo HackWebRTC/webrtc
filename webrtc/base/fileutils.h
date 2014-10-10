@@ -13,9 +13,7 @@
 
 #include <string>
 
-#if defined(WEBRTC_WIN)
-#include "webrtc/base/win32.h"
-#else
+#if !defined(WEBRTC_WIN)
 #include <dirent.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -25,6 +23,7 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/common.h"
+#include "webrtc/base/platform_file.h"
 #include "webrtc/base/scoped_ptr.h"
 
 namespace rtc {
@@ -435,24 +434,6 @@ class FilesystemScope{
 // decreases the chance of a temporary filename collision with another
 // process).
 bool CreateUniqueFile(Pathname& path, bool create_empty);
-
-// Taken from Chromium's base/platform_file.h.
-// Don't use ClosePlatformFile to close a file opened with FdopenPlatformFile.
-// Use fclose instead.
-// TODO(grunell): Remove when Chromium has started to use AEC in each source.
-// http://crbug.com/264611.
-#if defined(WEBRTC_WIN)
-typedef HANDLE PlatformFile;
-const PlatformFile kInvalidPlatformFileValue = INVALID_HANDLE_VALUE;
-#elif defined(WEBRTC_POSIX)
-typedef int PlatformFile;
-const PlatformFile kInvalidPlatformFileValue = -1;
-#else
-#error Unsupported platform
-#endif
-
-FILE* FdopenPlatformFileForWriting(PlatformFile file);
-bool ClosePlatformFile(PlatformFile file);
 
 }  // namespace rtc
 

@@ -10,13 +10,6 @@
 
 #include <assert.h>
 
-#if defined(WEBRTC_WIN)
-// TODO(grunell): Remove io.h includes when Chromium has started
-// to use AEC in each source. http://crbug.com/264611.
-#include <io.h>
-#include "webrtc/base/win32.h"
-#endif
-
 #include "webrtc/base/pathutils.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/stringutils.h"
@@ -277,30 +270,6 @@ bool CreateUniqueFile(Pathname& path, bool create_empty) {
     path.SetBasename(version_base);
   }
   return true;
-}
-
-// Taken from Chromium's base/platform_file_*.cc.
-// TODO(grunell): Remove when Chromium has started to use AEC in each source.
-// http://crbug.com/264611.
-FILE* FdopenPlatformFileForWriting(PlatformFile file) {
-#if defined(WEBRTC_WIN)
-  if (file == kInvalidPlatformFileValue)
-    return NULL;
-  int fd = _open_osfhandle(reinterpret_cast<intptr_t>(file), 0);
-  if (fd < 0)
-    return NULL;
-  return _fdopen(fd, "w");
-#else
-  return fdopen(file, "w");
-#endif
-}
-
-bool ClosePlatformFile(PlatformFile file) {
-#if defined(WEBRTC_WIN)
-  return CloseHandle(file) != 0;
-#else
-  return close(file);
-#endif
 }
 
 }  // namespace rtc

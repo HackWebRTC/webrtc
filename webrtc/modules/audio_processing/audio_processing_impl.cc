@@ -12,6 +12,7 @@
 
 #include <assert.h>
 
+#include "webrtc/base/platform_file.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
@@ -714,6 +715,12 @@ int AudioProcessingImpl::StartDebugRecording(FILE* handle) {
 #else
   return kUnsupportedFunctionError;
 #endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
+}
+
+int AudioProcessingImpl::StartDebugRecordingForPlatformFile(
+    rtc::PlatformFile handle) {
+  FILE* stream = rtc::FdopenPlatformFileForWriting(handle);
+  return StartDebugRecording(stream);
 }
 
 int AudioProcessingImpl::StopDebugRecording() {
