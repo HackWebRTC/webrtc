@@ -30,12 +30,14 @@ class TestTransport : public Transport {
     rtcp_receiver_(rtcp_receiver) {
   }
 
-  virtual int SendPacket(int /*channel*/, const void* /*data*/, int /*len*/) {
+  virtual int SendPacket(int /*channel*/,
+                         const void* /*data*/,
+                         int /*len*/) OVERRIDE {
     return -1;
   }
   virtual int SendRTCPPacket(int /*channel*/,
                              const void *packet,
-                             int packetLength) {
+                             int packetLength) OVERRIDE {
     RTCPUtility::RTCPParserV2 rtcpParser((uint8_t*)packet,
                                          (int32_t)packetLength,
                                          true); // Allow non-compound RTCP
@@ -71,8 +73,8 @@ class RtcpFormatRembTest : public ::testing::Test {
                 system_clock_,
                 kMimdControl,
                 kRemoteBitrateEstimatorMinBitrateBps)) {}
-  virtual void SetUp();
-  virtual void TearDown();
+  virtual void SetUp() OVERRIDE;
+  virtual void TearDown() OVERRIDE;
 
   OverUseDetectorOptions over_use_detector_options_;
   Clock* system_clock_;

@@ -96,7 +96,6 @@
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 
 class MediaProcessImpl;
-class ConnectionObserver;
 class RxCallback;
 class MyTransport;
 
@@ -161,7 +160,6 @@ private:
 
     MyTransport*            _transportPtr;
     MediaProcessImpl*       _externalMediaPtr;
-    ConnectionObserver*     _connectionObserverPtr;
     RxCallback*             _rxVadObserverPtr;
 
 private:

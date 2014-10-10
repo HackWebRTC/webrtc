@@ -28,7 +28,7 @@ class VerifyingAudioReceiver : public NullRtpData {
   virtual int32_t OnReceivedPayloadData(
       const uint8_t* payloadData,
       const uint16_t payloadSize,
-      const webrtc::WebRtcRTPHeader* rtpHeader) {
+      const webrtc::WebRtcRTPHeader* rtpHeader) OVERRIDE {
     if (rtpHeader->header.payloadType == 98 ||
         rtpHeader->header.payloadType == 99) {
       EXPECT_EQ(4, payloadSize);
@@ -67,34 +67,12 @@ class RTPCallback : public NullRtpFeedback {
       const char payloadName[RTP_PAYLOAD_NAME_SIZE],
       const int frequency,
       const uint8_t channels,
-      const uint32_t rate) {
+      const uint32_t rate) OVERRIDE {
     if (payloadType == 96) {
       EXPECT_EQ(test_rate, rate) <<
           "The rate should be 64K for this payloadType";
     }
     return 0;
-  }
-};
-
-class AudioFeedback : public NullRtpAudioFeedback {
-  virtual void OnReceivedTelephoneEvent(const int32_t id,
-                                        const uint8_t event,
-                                        const bool end) {
-    static uint8_t expectedEvent = 0;
-
-    if (end) {
-      uint8_t oldEvent = expectedEvent-1;
-      if (expectedEvent == 32) {
-        oldEvent = 15;
-      }
-      EXPECT_EQ(oldEvent, event);
-    } else {
-      EXPECT_EQ(expectedEvent, event);
-      expectedEvent++;
-    }
-    if (expectedEvent == 16) {
-      expectedEvent = 32;
-    }
   }
 };
 
@@ -110,8 +88,8 @@ class RtpRtcpAudioTest : public ::testing::Test {
   }
   ~RtpRtcpAudioTest() {}
 
-  virtual void SetUp() {
-    audioFeedback = new AudioFeedback();
+  virtual void SetUp() OVERRIDE {
+    audioFeedback = new NullRtpAudioFeedback();
     data_receiver1 = new VerifyingAudioReceiver();
     data_receiver2 = new VerifyingAudioReceiver();
     rtp_callback = new RTPCallback();
@@ -155,7 +133,7 @@ class RtpRtcpAudioTest : public ::testing::Test {
                               rtp_receiver1_.get(), receive_statistics1_.get());
   }
 
-  virtual void TearDown() {
+  virtual void TearDown() OVERRIDE {
     delete module1;
     delete module2;
     delete transport1;
@@ -179,7 +157,7 @@ class RtpRtcpAudioTest : public ::testing::Test {
   VerifyingAudioReceiver* data_receiver2;
   LoopBackTransport* transport1;
   LoopBackTransport* transport2;
-  AudioFeedback* audioFeedback;
+  NullRtpAudioFeedback* audioFeedback;
   RTPCallback* rtp_callback;
   uint32_t test_ssrc;
   uint32_t test_timestamp;

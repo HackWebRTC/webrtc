@@ -68,8 +68,6 @@ public:
 
     int32_t SetPacketTimeout(const uint32_t timeoutMS);
 
-    bool timeOutTriggered () { return (_timeOut); };
-
     // Inherited from RtpFeedback
     virtual int32_t OnInitializeDecoder(
         const int32_t id,
@@ -80,14 +78,6 @@ public:
         const uint32_t rate) OVERRIDE {
       return 0;
     }
-
-    virtual void OnPacketTimeout(const int32_t id);
-
-    virtual void OnReceivedPacket(const int32_t id,
-                                  const RtpRtcpPacketType packetType);
-
-    virtual void OnPeriodicDeadOrAlive(const int32_t id,
-                                       const RTPAliveType alive) {};
 
     virtual void OnIncomingSSRCChanged(const int32_t id,
                                        const uint32_t SSRC) OVERRIDE {}
@@ -159,7 +149,6 @@ private:
     TestLoadGenerator* _loadGenerator;
     bool _isSender;
     bool _isReceiver;
-    bool _timeOut;
     SendRecCB * _sendRecCB;
     uint32_t _lastBytesReceived;
     int64_t _lastTime;

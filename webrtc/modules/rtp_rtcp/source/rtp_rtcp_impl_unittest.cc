@@ -39,10 +39,10 @@ class RtcpRttStatsTestImpl : public RtcpRttStats {
   RtcpRttStatsTestImpl() : rtt_ms_(0) {}
   virtual ~RtcpRttStatsTestImpl() {}
 
-  virtual void OnRttUpdate(uint32_t rtt_ms) {
+  virtual void OnRttUpdate(uint32_t rtt_ms) OVERRIDE {
     rtt_ms_ = rtt_ms;
   }
-  virtual uint32_t LastProcessedRtt() const {
+  virtual uint32_t LastProcessedRtt() const OVERRIDE {
     return rtt_ms_;
   }
   uint32_t rtt_ms_;
@@ -65,7 +65,7 @@ class SendTransport : public Transport,
     clock_ = clock;
     delay_ms_ = delay_ms;
   }
-  virtual int SendPacket(int /*ch*/, const void* data, int len) {
+  virtual int SendPacket(int /*ch*/, const void* data, int len) OVERRIDE {
     RTPHeader header;
     scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     EXPECT_TRUE(parser->Parse(static_cast<const uint8_t*>(data),
@@ -75,7 +75,7 @@ class SendTransport : public Transport,
     last_rtp_header_ = header;
     return len;
   }
-  virtual int SendRTCPPacket(int /*ch*/, const void *data, int len) {
+  virtual int SendRTCPPacket(int /*ch*/, const void *data, int len) OVERRIDE {
     if (clock_) {
       clock_->AdvanceTimeMilliseconds(delay_ms_);
     }
@@ -348,7 +348,7 @@ class RtpSendingTestTransport : public Transport {
  public:
   void ResetCounters() { bytes_received_.clear(); }
 
-  virtual int SendPacket(int channel, const void* data, int length) {
+  virtual int SendPacket(int channel, const void* data, int length) OVERRIDE {
     RTPHeader header;
     scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     EXPECT_TRUE(parser->Parse(static_cast<const uint8_t*>(data),
@@ -359,7 +359,9 @@ class RtpSendingTestTransport : public Transport {
     return length;
   }
 
-  virtual int SendRTCPPacket(int channel, const void* data, int length) {
+  virtual int SendRTCPPacket(int channel,
+                             const void* data,
+                             int length) OVERRIDE {
     return length;
   }
 

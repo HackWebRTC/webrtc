@@ -54,28 +54,6 @@ char* TcharToChar(TCHAR* str, int len)
 }
 
 // ----------------------------------------------------------------------------
-//    VoEConnectionObserver
-// ----------------------------------------------------------------------------
-
-class ConnectionObserver : public  VoEConnectionObserver
-{
-public:
-    ConnectionObserver();
-    virtual void OnPeriodicDeadOrAlive(int channel, bool alive);
-};
-
-ConnectionObserver::ConnectionObserver()
-{
-}
-
-void ConnectionObserver::OnPeriodicDeadOrAlive(int channel, bool alive)
-{
-    CString str;
-    str.Format(_T("OnPeriodicDeadOrAlive(channel=%d) => alive=%d"), channel, alive);
-    OutputDebugString(str);
-}
-
-// ----------------------------------------------------------------------------
 //    VoiceEngineObserver
 // ----------------------------------------------------------------------------
 
@@ -151,8 +129,8 @@ class MyTransport : public Transport
 {
 public:
     MyTransport(VoENetwork* veNetwork);
-    virtual int SendPacket(int channel, const void *data, int len);
-    virtual int SendRTCPPacket(int channel, const void *data, int len);
+    virtual int SendPacket(int channel, const void *data, int len) OVERRIDE;
+    virtual int SendRTCPPacket(int channel, const void *data, int len) OVERRIDE;
 private:
     VoENetwork* _veNetworkPtr;
 };
@@ -1115,7 +1093,6 @@ CWinTestDlg::CWinTestDlg(CWnd* pParent /*=NULL*/)
         _veRtpRtcpPtr = VoERTP_RTCP::GetInterface(_vePtr);
         _transportPtr = new MyTransport(_veNetworkPtr);
         _externalMediaPtr = new MediaProcessImpl();
-        _connectionObserverPtr = new ConnectionObserver();
         _rxVadObserverPtr = new RxCallback();
     }
 
@@ -1131,7 +1108,6 @@ CWinTestDlg::CWinTestDlg(CWnd* pParent /*=NULL*/)
 
 CWinTestDlg::~CWinTestDlg()
 {
-    if (_connectionObserverPtr) delete _connectionObserverPtr;
     if (_externalMediaPtr) delete _externalMediaPtr;
     if (_transportPtr) delete _transportPtr;
     if (_rxVadObserverPtr) delete _rxVadObserverPtr;
