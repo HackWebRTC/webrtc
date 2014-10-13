@@ -818,10 +818,8 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * aecm,
         {
             if (aecm->farEnergyVAD > aecm->farLogEnergy)
             {
-                aecm->farEnergyVAD += WEBRTC_SPL_RSHIFT_W16(aecm->farLogEnergy +
-                                                            tmp16 -
-                                                            aecm->farEnergyVAD,
-                                                            6);
+                aecm->farEnergyVAD +=
+                    (aecm->farLogEnergy + tmp16 - aecm->farEnergyVAD) >> 6;
                 aecm->vadUpdateCount = 0;
             } else
             {

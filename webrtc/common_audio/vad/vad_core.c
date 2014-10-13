@@ -639,10 +639,10 @@ int WebRtcVad_CalcVad32khz(VadInstT* inst, const int16_t* speech_frame,
     // Downsample signal 32->16->8 before doing VAD
     WebRtcVad_Downsampling(speech_frame, speechWB, &(inst->downsampling_filter_states[2]),
                            frame_length);
-    len = WEBRTC_SPL_RSHIFT_W16(frame_length, 1);
+    len = frame_length / 2;
 
     WebRtcVad_Downsampling(speechWB, speechNB, inst->downsampling_filter_states, len);
-    len = WEBRTC_SPL_RSHIFT_W16(len, 1);
+    len /= 2;
 
     // Do VAD on an 8 kHz signal
     vad = WebRtcVad_CalcVad8khz(inst, speechNB, len);
@@ -660,7 +660,7 @@ int WebRtcVad_CalcVad16khz(VadInstT* inst, const int16_t* speech_frame,
     WebRtcVad_Downsampling(speech_frame, speechNB, inst->downsampling_filter_states,
                            frame_length);
 
-    len = WEBRTC_SPL_RSHIFT_W16(frame_length, 1);
+    len = frame_length / 2;
     vad = WebRtcVad_CalcVad8khz(inst, speechNB, len);
 
     return vad;
