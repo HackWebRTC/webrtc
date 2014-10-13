@@ -216,7 +216,7 @@ extern "C" {
 
   int16_t WebRtcIsac_Decode(
       ISACStruct*           ISAC_main_inst,
-      const uint16_t* encoded,
+      const uint8_t* encoded,
       int16_t         len,
       int16_t*        decoded,
       int16_t*        speechType);
@@ -703,7 +703,7 @@ extern "C" {
    */
   int16_t WebRtcIsac_DecodeRcu(
       ISACStruct*           ISAC_main_inst,
-      const uint16_t* encoded,
+      const uint8_t* encoded,
       int16_t         len,
       int16_t*        decoded,
       int16_t*        speechType);

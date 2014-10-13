@@ -252,7 +252,7 @@ extern "C" {
    */
 
   int16_t WebRtcIsacfix_Decode(ISACFIX_MainStruct *ISAC_main_inst,
-                               const uint16_t *encoded,
+                               const uint8_t* encoded,
                                int16_t len,
                                int16_t *decoded,
                                int16_t *speechType);

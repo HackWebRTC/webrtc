@@ -746,8 +746,12 @@ int main(int argc, char* argv[])
           /* Call getFramelen, only used here for function test */
           err = WebRtcIsacfix_ReadFrameLen(
               reinterpret_cast<const uint8_t*>(streamdata), stream_len, &FL);
-          declen = WebRtcIsacfix_Decode( ISAC_main_inst, streamdata, stream_len,
-                                         decoded, speechType );
+          declen = WebRtcIsacfix_Decode(
+              ISAC_main_inst,
+              reinterpret_cast<const uint8_t*>(streamdata),
+              stream_len,
+              decoded,
+              speechType);
           /* Error check */
           if (err<0 || declen<0 || FL!=declen) {
             errtype=WebRtcIsacfix_GetErrorCode(ISAC_main_inst);

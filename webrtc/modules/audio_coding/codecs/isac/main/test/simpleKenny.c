@@ -458,16 +458,24 @@ valid values are 8 and 16.\n", sampFreqKHz);
 
 			if((rand() % 100) < packetLossPercent)
 			{
-				declen = WebRtcIsac_DecodeRcu(ISAC_main_inst, payloadRCU,
-					rcuStreamLen, decoded, speechType);
+                                declen = WebRtcIsac_DecodeRcu(
+                                    ISAC_main_inst,
+                                    (const uint8_t*)payloadRCU,
+                                    rcuStreamLen,
+                                    decoded,
+                                    speechType);
 				lostPacketCntr++;
 			}
 			else
 			{
-				declen = WebRtcIsac_Decode(ISAC_main_inst, payload,
-					stream_len, decoded, speechType);
-			}
-			if(declen <= 0)
+                                declen = WebRtcIsac_Decode(
+                                    ISAC_main_inst,
+                                    (const uint8_t*)payload,
+                                    stream_len,
+                                    decoded,
+                                    speechType);
+                        }
+                        if(declen <= 0)
 			{
 				//errType=WebRtcIsac_GetErrorCode(ISAC_main_inst);
 				fprintf(stderr,"\nError in decoder.\n");

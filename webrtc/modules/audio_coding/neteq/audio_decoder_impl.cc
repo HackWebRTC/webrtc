@@ -165,7 +165,7 @@ int AudioDecoderIsac::Decode(const uint8_t* encoded, size_t encoded_len,
                              int16_t* decoded, SpeechType* speech_type) {
   int16_t temp_type = 1;  // Default is speech.
   int16_t ret = WebRtcIsac_Decode(static_cast<ISACStruct*>(state_),
-                                  reinterpret_cast<const uint16_t*>(encoded),
+                                  encoded,
                                   static_cast<int16_t>(encoded_len), decoded,
                                   &temp_type);
   *speech_type = ConvertSpeechType(temp_type);
@@ -177,7 +177,7 @@ int AudioDecoderIsac::DecodeRedundant(const uint8_t* encoded,
                                       SpeechType* speech_type) {
   int16_t temp_type = 1;  // Default is speech.
   int16_t ret = WebRtcIsac_DecodeRcu(static_cast<ISACStruct*>(state_),
-                                     reinterpret_cast<const uint16_t*>(encoded),
+                                     encoded,
                                      static_cast<int16_t>(encoded_len), decoded,
                                      &temp_type);
   *speech_type = ConvertSpeechType(temp_type);
@@ -236,7 +236,7 @@ int AudioDecoderIsacFix::Decode(const uint8_t* encoded, size_t encoded_len,
                                 int16_t* decoded, SpeechType* speech_type) {
   int16_t temp_type = 1;  // Default is speech.
   int16_t ret = WebRtcIsacfix_Decode(static_cast<ISACFIX_MainStruct*>(state_),
-                                     reinterpret_cast<const uint16_t*>(encoded),
+                                     encoded,
                                      static_cast<int16_t>(encoded_len), decoded,
                                      &temp_type);
   *speech_type = ConvertSpeechType(temp_type);

@@ -1046,7 +1046,7 @@ int16_t WebRtcIsac_UpdateBwEstimate(ISACStruct* ISAC_main_inst,
 }
 
 static int16_t Decode(ISACStruct* ISAC_main_inst,
-                      const uint16_t* encoded,
+                      const uint8_t* encoded,
                       int16_t lenEncodedBytes,
                       int16_t* decoded,
                       int16_t* speechType,
@@ -1065,7 +1065,6 @@ static int16_t Decode(ISACStruct* ISAC_main_inst,
   int16_t lenEncodedLBBytes;
   int16_t validChecksum = 1;
   int16_t k;
-  uint8_t* ptrEncodedUW8 = (uint8_t*)encoded;
   uint16_t numLayer;
   int16_t totSizeBytes;
   int16_t err;
@@ -1094,7 +1093,7 @@ static int16_t Decode(ISACStruct* ISAC_main_inst,
       STREAM_SIZE_MAX : lenEncodedBytes;
 
   /* Copy to lower-band bit-stream structure. */
-  memcpy(instISAC->instLB.ISACdecLB_obj.bitstr_obj.stream, ptrEncodedUW8,
+  memcpy(instISAC->instLB.ISACdecLB_obj.bitstr_obj.stream, encoded,
          lenEncodedLBBytes);
 
   /* Regardless of that the current codec is setup to work in
@@ -1116,12 +1115,12 @@ static int16_t Decode(ISACStruct* ISAC_main_inst,
   totSizeBytes = numDecodedBytesLB;
   while (totSizeBytes != lenEncodedBytes) {
     if ((totSizeBytes > lenEncodedBytes) ||
-        (ptrEncodedUW8[totSizeBytes] == 0) ||
+        (encoded[totSizeBytes] == 0) ||
         (numLayer > MAX_NUM_LAYERS)) {
       instISAC->errorCode = ISAC_LENGTH_MISMATCH;
       return -1;
     }
-    totSizeBytes += ptrEncodedUW8[totSizeBytes];
+    totSizeBytes += encoded[totSizeBytes];
     numLayer++;
   }
 
@@ -1160,7 +1159,7 @@ static int16_t Decode(ISACStruct* ISAC_main_inst,
       instISAC->resetFlag_8kHz = 2;
     } else {
       /* This includes the checksum and the bytes that stores the length. */
-      int16_t lenNextStream = ptrEncodedUW8[numDecodedBytesLB];
+      int16_t lenNextStream = encoded[numDecodedBytesLB];
 
       /* Is this garbage or valid super-wideband bit-stream?
        * Check if checksum is valid. */
@@ -1170,14 +1169,13 @@ static int16_t Decode(ISACStruct* ISAC_main_inst,
         validChecksum = 0;
       } else {
         /* Run CRC to see if the checksum match. */
-        WebRtcIsac_GetCrc((int16_t*)(
-                            &ptrEncodedUW8[numDecodedBytesLB + 1]),
+        WebRtcIsac_GetCrc((int16_t*)(&encoded[numDecodedBytesLB + 1]),
                           lenNextStream - LEN_CHECK_SUM_WORD8 - 1, &crc);
 
         validChecksum = 1;
         for (k = 0; k < LEN_CHECK_SUM_WORD8; k++) {
           validChecksum &= (((crc >> (24 - k * 8)) & 0xFF) ==
-                            ptrEncodedUW8[numDecodedBytesLB + lenNextStream -
+                            encoded[numDecodedBytesLB + lenNextStream -
                                           LEN_CHECK_SUM_WORD8 + k]);
         }
       }
@@ -1209,7 +1207,7 @@ static int16_t Decode(ISACStruct* ISAC_main_inst,
         lenNextStream -= (LEN_CHECK_SUM_WORD8 + 1);
 
         memcpy(decInstUB->bitstr_obj.stream,
-               &ptrEncodedUW8[numDecodedBytesLB + 1], lenNextStream);
+               &encoded[numDecodedBytesLB + 1], lenNextStream);
 
         /* Reset bit-stream object, this is the first decoding. */
         WebRtcIsac_ResetBitstream(&(decInstUB->bitstr_obj));
@@ -1283,7 +1281,7 @@ static int16_t Decode(ISACStruct* ISAC_main_inst,
         /* It might be less due to garbage. */
         if ((numDecodedBytesUB != lenNextStream) &&
             (numDecodedBytesUB != (lenNextStream -
-                ptrEncodedUW8[numDecodedBytesLB + 1 + numDecodedBytesUB]))) {
+                encoded[numDecodedBytesLB + 1 + numDecodedBytesUB]))) {
           instISAC->errorCode = ISAC_LENGTH_MISMATCH;
           return -1;
         }
@@ -1346,7 +1344,7 @@ static int16_t Decode(ISACStruct* ISAC_main_inst,
  */
 
 int16_t WebRtcIsac_Decode(ISACStruct* ISAC_main_inst,
-                          const uint16_t* encoded,
+                          const uint8_t* encoded,
                           int16_t lenEncodedBytes,
                           int16_t* decoded,
                           int16_t* speechType) {
@@ -1378,7 +1376,7 @@ int16_t WebRtcIsac_Decode(ISACStruct* ISAC_main_inst,
 
 
 int16_t WebRtcIsac_DecodeRcu(ISACStruct* ISAC_main_inst,
-                             const uint16_t* encoded,
+                             const uint8_t* encoded,
                              int16_t lenEncodedBytes,
                              int16_t* decoded,
                              int16_t* speechType) {

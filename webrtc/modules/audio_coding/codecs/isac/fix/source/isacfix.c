@@ -805,7 +805,7 @@ int16_t WebRtcIsacfix_UpdateBwEstimate(ISACFIX_MainStruct *ISAC_main_inst,
 
 
 int16_t WebRtcIsacfix_Decode(ISACFIX_MainStruct *ISAC_main_inst,
-                             const uint16_t   *encoded,
+                             const uint8_t* encoded,
                              int16_t          len,
                              int16_t          *decoded,
                              int16_t     *speechType)
@@ -844,10 +844,13 @@ int16_t WebRtcIsacfix_Decode(ISACFIX_MainStruct *ISAC_main_inst,
   /* convert bitstream from int16_t to bytes */
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
   for (k=0; k<(len>>1); k++) {
-    (ISAC_inst->ISACdec_obj.bitstr_obj).stream[k] = (uint16_t) ((encoded[k] >> 8)|((encoded[k] & 0xFF)<<8));
+    uint16_t ek = ((const uint16_t*)encoded)[k];
+    ISAC_inst->ISACdec_obj.bitstr_obj.stream[k] =
+        (uint16_t)((ek >> 8) | ((ek & 0xff) << 8));
   }
   if (len & 0x0001)
-    (ISAC_inst->ISACdec_obj.bitstr_obj).stream[k] = (uint16_t) ((encoded[k] & 0xFF)<<8);
+    ISAC_inst->ISACdec_obj.bitstr_obj.stream[k] =
+        (uint16_t)((((const uint16_t*)encoded)[k] & 0xff) << 8);
 #else
   memcpy(ISAC_inst->ISACdec_obj.bitstr_obj.stream, encoded, len);
 #endif

@@ -730,7 +730,7 @@ int ACMISAC::Decode(const uint8_t* encoded,
   CriticalSectionScoped lock(codec_inst_crit_sect_.get());
   int ret =
       ACM_ISAC_DECODE_B(static_cast<ACM_ISAC_STRUCT*>(codec_inst_ptr_->inst),
-                        reinterpret_cast<const uint16_t*>(encoded),
+                        encoded,
                         static_cast<int16_t>(encoded_len),
                         decoded,
                         &temp_type);
@@ -769,7 +769,7 @@ int ACMISAC::DecodeRedundant(const uint8_t* encoded,
   CriticalSectionScoped lock(codec_inst_crit_sect_.get());
   int16_t ret =
       ACM_ISAC_DECODERCU(static_cast<ACM_ISAC_STRUCT*>(codec_inst_ptr_->inst),
-                         reinterpret_cast<const uint16_t*>(encoded),
+                         encoded,
                          static_cast<int16_t>(encoded_len),
                          decoded,
                          &temp_type);

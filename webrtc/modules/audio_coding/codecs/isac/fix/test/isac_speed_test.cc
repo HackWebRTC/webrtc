@@ -86,7 +86,7 @@ float IsacSpeedTest::DecodeABlock(const uint8_t* bit_stream, int encoded_bytes,
   int16_t audio_type;
   clock_t clocks = clock();
   value = WebRtcIsacfix_Decode(ISACFIX_main_inst_,
-                               reinterpret_cast<const uint16_t*>(bit_stream),
+                               bit_stream,
                                encoded_bytes, out_data, &audio_type);
   clocks = clock() - clocks;
   EXPECT_EQ(output_length_sample_, value);

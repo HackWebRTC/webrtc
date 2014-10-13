@@ -909,26 +909,39 @@ int main(int argc, char* argv[])
 
             if(lostFrame)
             {
-                declen = WebRtcIsac_DecodeRcu(ISAC_main_inst, streamdata,
-                    stream_len, decoded, speechType);
+                declen = WebRtcIsac_DecodeRcu(
+                    ISAC_main_inst,
+                    reinterpret_cast<const uint8_t*>(streamdata),
+                    stream_len,
+                    decoded,
+                    speechType);
 
                 if(doTransCoding)
                 {
-                    declenTC = WebRtcIsac_DecodeRcu(decoderTransCoding,
-                        streamDataTransCoding, streamLenTransCoding,
-                        decodedTC, speechType);
+                    declenTC = WebRtcIsac_DecodeRcu(
+                        decoderTransCoding,
+                        reinterpret_cast<const uint8_t*>(streamDataTransCoding),
+                        streamLenTransCoding,
+                        decodedTC,
+                        speechType);
                 }
             }
             else
             {
-                declen = WebRtcIsac_Decode(ISAC_main_inst, streamdata,
-                    stream_len, decoded, speechType);
-
+                declen = WebRtcIsac_Decode(
+                    ISAC_main_inst,
+                    reinterpret_cast<const uint8_t*>(streamdata),
+                    stream_len,
+                    decoded,
+                    speechType);
                 if(doTransCoding)
                 {
-                    declenTC = WebRtcIsac_Decode(decoderTransCoding,
-                        streamDataTransCoding, streamLenTransCoding,
-                        decodedTC, speechType);
+                    declenTC = WebRtcIsac_Decode(
+                        decoderTransCoding,
+                        reinterpret_cast<const uint8_t*>(streamDataTransCoding),
+                        streamLenTransCoding,
+                        decodedTC,
+                        speechType);
                 }
             }
 
