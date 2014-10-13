@@ -405,21 +405,7 @@ void WebRtcVideoEngine2::SetExternalDecoderFactory(
 
 void WebRtcVideoEngine2::SetExternalEncoderFactory(
     WebRtcVideoEncoderFactory* encoder_factory) {
-  if (external_encoder_factory_ == encoder_factory) {
-    return;
-  }
-  if (external_encoder_factory_) {
-    external_encoder_factory_->RemoveObserver(this);
-  }
   external_encoder_factory_ = encoder_factory;
-  if (external_encoder_factory_) {
-    external_encoder_factory_->AddObserver(this);
-  }
-
-  // Invoke OnCodecAvailable() here in case the list of codecs is already
-  // available when the encoder factory is installed. If not the encoder
-  // factory will invoke the callback later when the codecs become available.
-  OnCodecsAvailable();
 }
 
 bool WebRtcVideoEngine2::EnableTimedRender() {
@@ -509,9 +495,6 @@ WebRtcVideoEncoderFactory2* WebRtcVideoEngine2::GetVideoEncoderFactory() {
   return &default_video_encoder_factory_;
 }
 
-void WebRtcVideoEngine2::OnCodecsAvailable() {
-  // TODO(pbos): Implement.
-}
 // Thin map between VideoFrame and an existing webrtc::I420VideoFrame
 // to avoid having to copy the rendered VideoFrame prematurely.
 // This implementation is only safe to use in a const context and should never

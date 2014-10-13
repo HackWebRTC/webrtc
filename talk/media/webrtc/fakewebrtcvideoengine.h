@@ -206,16 +206,6 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
     delete encoder;
   }
 
-  virtual void AddObserver(WebRtcVideoEncoderFactory::Observer* observer) {
-    bool inserted = observers_.insert(observer).second;
-    EXPECT_TRUE(inserted);
-  }
-
-  virtual void RemoveObserver(WebRtcVideoEncoderFactory::Observer* observer) {
-    size_t erased = observers_.erase(observer);
-    EXPECT_EQ(erased, 1UL);
-  }
-
   virtual const std::vector<WebRtcVideoEncoderFactory::VideoCodec>& codecs()
       const {
     return codecs_;
@@ -226,12 +216,6 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
     supported_codec_types_.insert(type);
     codecs_.push_back(
         WebRtcVideoEncoderFactory::VideoCodec(type, name, 1280, 720, 30));
-  }
-
-  void NotifyCodecsAvailable() {
-    std::set<WebRtcVideoEncoderFactory::Observer*>::iterator it;
-    for (it = observers_.begin(); it != observers_.end(); ++it)
-      (*it)->OnCodecsAvailable();
   }
 
   int GetNumCreatedEncoders() {
@@ -246,7 +230,6 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
   std::set<webrtc::VideoCodecType> supported_codec_types_;
   std::vector<WebRtcVideoEncoderFactory::VideoCodec> codecs_;
   std::vector<FakeWebRtcVideoEncoder*> encoders_;
-  std::set<WebRtcVideoEncoderFactory::Observer*> observers_;
   int num_created_encoders_;
 };
 

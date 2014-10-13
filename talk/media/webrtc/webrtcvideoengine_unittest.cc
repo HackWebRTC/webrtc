@@ -2006,7 +2006,6 @@ TEST_F(WebRtcVideoEngineTestFake, ExternalCodecFeedbackParams) {
   encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecGeneric,
                                               "GENERIC");
   engine_.SetExternalEncoderFactory(&encoder_factory_);
-  encoder_factory_.NotifyCodecsAvailable();
   EXPECT_TRUE(SetupEngine());
 
   std::vector<cricket::VideoCodec> codecs(engine_.codecs());
@@ -2016,17 +2015,15 @@ TEST_F(WebRtcVideoEngineTestFake, ExternalCodecFeedbackParams) {
   VerifyCodecFeedbackParams(codecs[pos]);
 }
 
-// Test external codec with be added to the end of the supported codec list.
+// Test external codec will be added to the end of the supported codec list.
 TEST_F(WebRtcVideoEngineTestFake, ExternalCodecAddedToTheEnd) {
+  encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecGeneric,
+                                              "GENERIC");
+  engine_.SetExternalEncoderFactory(&encoder_factory_);
   EXPECT_TRUE(SetupEngine());
 
   std::vector<cricket::VideoCodec> codecs(engine_.codecs());
   EXPECT_EQ("VP8", codecs[0].name);
-
-  encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecGeneric,
-                                              "GENERIC");
-  engine_.SetExternalEncoderFactory(&encoder_factory_);
-  encoder_factory_.NotifyCodecsAvailable();
 
   codecs = engine_.codecs();
   cricket::VideoCodec internal_codec = codecs[0];
@@ -2037,17 +2034,15 @@ TEST_F(WebRtcVideoEngineTestFake, ExternalCodecAddedToTheEnd) {
   EXPECT_GE(internal_codec.preference, external_codec.preference);
 }
 
-// Test that external codec with be ignored if it has the same name as one of
-// the internal codecs.
+// Test that external codecs that we support internally are not added as
+// duplicate entries to the codecs list.
 TEST_F(WebRtcVideoEngineTestFake, ExternalCodecIgnored) {
+  encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  engine_.SetExternalEncoderFactory(&encoder_factory_);
   EXPECT_TRUE(SetupEngine());
 
   std::vector<cricket::VideoCodec> internal_codecs(engine_.codecs());
   EXPECT_EQ("VP8", internal_codecs[0].name);
-
-  encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
-  engine_.SetExternalEncoderFactory(&encoder_factory_);
-  encoder_factory_.NotifyCodecsAvailable();
 
   std::vector<cricket::VideoCodec> codecs = engine_.codecs();
   EXPECT_EQ("VP8", codecs[0].name);
@@ -2055,27 +2050,6 @@ TEST_F(WebRtcVideoEngineTestFake, ExternalCodecIgnored) {
   EXPECT_EQ(internal_codecs[0].width, codecs[0].width);
   // Verify the last codec is not the external codec.
   EXPECT_NE("VP8", codecs[codecs.size() - 1].name);
-}
-
-TEST_F(WebRtcVideoEngineTestFake, UpdateEncoderCodecsAfterSetFactory) {
-  engine_.SetExternalEncoderFactory(&encoder_factory_);
-  EXPECT_TRUE(SetupEngine());
-  int channel_num = vie_.GetLastChannel();
-
-  encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
-  encoder_factory_.NotifyCodecsAvailable();
-  std::vector<cricket::VideoCodec> codecs;
-  codecs.push_back(kVP8Codec);
-  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
-
-  EXPECT_TRUE(channel_->AddSendStream(
-      cricket::StreamParams::CreateLegacy(kSsrc)));
-
-  EXPECT_TRUE(vie_.ExternalEncoderRegistered(channel_num, 100));
-  EXPECT_EQ(1, vie_.GetNumExternalEncoderRegistered(channel_num));
-
-  // Remove stream previously added to free the external encoder instance.
-  EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
 }
 
 #ifdef USE_WEBRTC_DEV_BRANCH

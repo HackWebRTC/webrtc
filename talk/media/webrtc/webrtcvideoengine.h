@@ -86,8 +86,7 @@ struct CapturedFrame;
 struct Device;
 
 class WebRtcVideoEngine : public sigslot::has_slots<>,
-                          public webrtc::TraceCallback,
-                          public WebRtcVideoEncoderFactory::Observer {
+                          public webrtc::TraceCallback {
  public:
   // Creates the WebRtcVideoEngine with internal VideoCaptureModule.
   WebRtcVideoEngine();
@@ -209,9 +208,6 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   virtual void Print(webrtc::TraceLevel level,
                      const char* trace,
                      int length) OVERRIDE;
-
-  // WebRtcVideoEncoderFactory::Observer implementation.
-  virtual void OnCodecsAvailable() OVERRIDE;
 
   rtc::Thread* worker_thread_;
   rtc::scoped_ptr<ViEWrapper> vie_wrapper_;

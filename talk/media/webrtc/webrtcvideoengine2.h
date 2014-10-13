@@ -138,8 +138,7 @@ class WebRtcCallFactory {
 };
 
 // WebRtcVideoEngine2 is used for the new native WebRTC Video API (webrtc:1667).
-class WebRtcVideoEngine2 : public sigslot::has_slots<>,
-                           public WebRtcVideoEncoderFactory::Observer {
+class WebRtcVideoEngine2 : public sigslot::has_slots<> {
  public:
   // Creates the WebRtcVideoEngine2 with internal VideoCaptureModule.
   WebRtcVideoEngine2();
@@ -193,8 +192,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<>,
   virtual WebRtcVideoEncoderFactory2* GetVideoEncoderFactory();
 
  private:
-  virtual void OnCodecsAvailable() OVERRIDE;
-
   rtc::Thread* worker_thread_;
   WebRtcVoiceEngine* voice_engine_;
   std::vector<VideoCodec> video_codecs_;

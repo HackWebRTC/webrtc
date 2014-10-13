@@ -53,32 +53,14 @@ class WebRtcVideoEncoderFactory {
     }
   };
 
-  class Observer {
-   public:
-    // Invoked when the list of supported codecs becomes available.
-    // This will not be invoked if the list of codecs is already available when
-    // the factory is installed. Otherwise this will be invoked only once if the
-    // list of codecs is not yet available when the factory is installed.
-    virtual void OnCodecsAvailable() = 0;
-
-   protected:
-    virtual ~Observer() {}
-  };
+  virtual ~WebRtcVideoEncoderFactory() {}
 
   // Caller takes the ownership of the returned object and it should be released
   // by calling DestroyVideoEncoder().
   virtual webrtc::VideoEncoder* CreateVideoEncoder(
       webrtc::VideoCodecType type) = 0;
-  virtual ~WebRtcVideoEncoderFactory() {}
-
-  // Adds/removes observer to receive OnCodecsChanged notifications.
-  // Factory must outlive Observer. Observer is responsible for removing itself
-  // from the Factory by the time its dtor is done.
-  virtual void AddObserver(Observer* observer) {}
-  virtual void RemoveObserver(Observer* observer) {}
 
   // Returns a list of supported codecs in order of preference.
-  // The list is empty if the list of codecs is not yet available.
   virtual const std::vector<VideoCodec>& codecs() const = 0;
 
   virtual void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) = 0;

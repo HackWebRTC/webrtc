@@ -988,9 +988,6 @@ WebRtcVideoEngine::~WebRtcVideoEngine() {
   if (initialized_) {
     Terminate();
   }
-  if (encoder_factory_) {
-    encoder_factory_->RemoveObserver(this);
-  }
   tracing_->SetTraceCallback(NULL);
   // Test to see if the media processor was deregistered properly.
   ASSERT(SignalMediaFrame.is_empty());
@@ -1539,21 +1536,8 @@ void WebRtcVideoEngine::SetExternalEncoderFactory(
   if (encoder_factory_ == encoder_factory)
     return;
 
-  if (encoder_factory_) {
-    encoder_factory_->RemoveObserver(this);
-  }
   encoder_factory_ = encoder_factory;
-  if (encoder_factory_) {
-    encoder_factory_->AddObserver(this);
-  }
 
-  // Invoke OnCodecAvailable() here in case the list of codecs is already
-  // available when the encoder factory is installed. If not the encoder
-  // factory will invoke the callback later when the codecs become available.
-  OnCodecsAvailable();
-}
-
-void WebRtcVideoEngine::OnCodecsAvailable() {
   // Rebuild codec list while reapplying the current default codec format.
   VideoCodec max_codec(kVideoCodecPrefs[0].payload_type,
                        kVideoCodecPrefs[0].name,

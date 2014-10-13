@@ -1916,8 +1916,6 @@ class MediaCodecVideoEncoderFactory
   // WebRtcVideoEncoderFactory implementation.
   virtual webrtc::VideoEncoder* CreateVideoEncoder(webrtc::VideoCodecType type)
       OVERRIDE;
-  virtual void AddObserver(Observer* observer) OVERRIDE;
-  virtual void RemoveObserver(Observer* observer) OVERRIDE;
   virtual const std::vector<VideoCodec>& codecs() const OVERRIDE;
   virtual void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) OVERRIDE;
 
@@ -1952,11 +1950,6 @@ webrtc::VideoEncoder* MediaCodecVideoEncoderFactory::CreateVideoEncoder(
     return NULL;
   return new MediaCodecVideoEncoder(AttachCurrentThreadIfNeeded());
 }
-
-// Since the available codec list is never going to change, we ignore the
-// Observer-related interface here.
-void MediaCodecVideoEncoderFactory::AddObserver(Observer* observer) {}
-void MediaCodecVideoEncoderFactory::RemoveObserver(Observer* observer) {}
 
 const std::vector<MediaCodecVideoEncoderFactory::VideoCodec>&
 MediaCodecVideoEncoderFactory::codecs() const {
