@@ -636,7 +636,7 @@ int16_t WebRtcIsacfix_DecoderInit(ISACFIX_MainStruct *ISAC_main_inst)
  */
 
 int16_t WebRtcIsacfix_UpdateBwEstimate1(ISACFIX_MainStruct *ISAC_main_inst,
-                                        const uint16_t   *encoded,
+                                        const uint8_t* encoded,
                                         int32_t          packet_size,
                                         uint16_t         rtp_seq_number,
                                         uint32_t         arr_ts)
@@ -673,7 +673,8 @@ int16_t WebRtcIsacfix_UpdateBwEstimate1(ISACFIX_MainStruct *ISAC_main_inst,
 
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
   for (k = 0; k < kRequiredEncodedLenBytes / 2; k++) {
-    streamdata.stream[k] = (uint16_t) (((uint16_t)encoded[k] >> 8)|((encoded[k] & 0xFF)<<8));
+    uint16_t ek = ((const uint16_t*)encoded)[k];
+    streamdata.stream[k] = (uint16_t) ((ek >> 8)|((ek & 0xff) << 8));
   }
 #else
   memcpy(streamdata.stream, encoded, kRequiredEncodedLenBytes);
@@ -717,7 +718,7 @@ int16_t WebRtcIsacfix_UpdateBwEstimate1(ISACFIX_MainStruct *ISAC_main_inst,
  */
 
 int16_t WebRtcIsacfix_UpdateBwEstimate(ISACFIX_MainStruct *ISAC_main_inst,
-                                       const uint16_t   *encoded,
+                                       const uint8_t* encoded,
                                        int32_t          packet_size,
                                        uint16_t         rtp_seq_number,
                                        uint32_t         send_ts,
@@ -758,7 +759,8 @@ int16_t WebRtcIsacfix_UpdateBwEstimate(ISACFIX_MainStruct *ISAC_main_inst,
 
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
   for (k = 0; k < kRequiredEncodedLenBytes / 2; k++) {
-    streamdata.stream[k] = (uint16_t) ((encoded[k] >> 8)|((encoded[k] & 0xFF)<<8));
+    uint16_t ek = ((const uint16_t*)encoded)[k];
+    streamdata.stream[k] = (uint16_t) ((ek >> 8)|((ek & 0xff) <<8 ));
   }
 #else
   memcpy(streamdata.stream, encoded, kRequiredEncodedLenBytes);

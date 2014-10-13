@@ -401,9 +401,12 @@ valid values are 8 and 16.\n", sampFreqKHz);
 			get_arrival_time(cur_framesmpls, stream_len, bottleneck, &packetData,
 				sampFreqKHz * 1000, sampFreqKHz * 1000);
 			if(WebRtcIsac_UpdateBwEstimate(ISAC_main_inst,
-				payload,  stream_len, packetData.rtp_number,
-				packetData.sample_count,
-				packetData.arrival_time) < 0)
+                                                       (const uint8_t*)payload,
+                                                       stream_len,
+                                                       packetData.rtp_number,
+                                                       packetData.sample_count,
+                                                       packetData.arrival_time)
+                           < 0)
 			{
 				printf(" BWE Error at client\n");
 				return -1;

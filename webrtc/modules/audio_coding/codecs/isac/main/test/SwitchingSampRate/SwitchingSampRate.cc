@@ -411,11 +411,13 @@ int main(int argc, char* argv[])
         }
 
         // BWE
-        if(WebRtcIsac_UpdateBwEstimate(codecInstance[receiverIdx],
-                                       bitStream,  streamLen, packetData[senderIdx]->rtp_number,
-                                       packetData[senderIdx]->sample_count,
-                                       packetData[senderIdx]->arrival_time) < 0)
-        {
+        if (WebRtcIsac_UpdateBwEstimate(
+                codecInstance[receiverIdx],
+                reinterpret_cast<const uint8_t*>(bitStream),
+                streamLen,
+                packetData[senderIdx]->rtp_number,
+                packetData[senderIdx]->sample_count,
+                packetData[senderIdx]->arrival_time) < 0) {
           printf(" BWE Error at client %d \n", receiverIdx + 1);
           return -1;
         }

@@ -199,7 +199,7 @@ int AudioDecoderIsac::IncomingPacket(const uint8_t* payload,
                                      uint32_t rtp_timestamp,
                                      uint32_t arrival_timestamp) {
   return WebRtcIsac_UpdateBwEstimate(static_cast<ISACStruct*>(state_),
-                                     reinterpret_cast<const uint16_t*>(payload),
+                                     payload,
                                      static_cast<int32_t>(payload_len),
                                      rtp_sequence_number,
                                      rtp_timestamp,
@@ -254,7 +254,7 @@ int AudioDecoderIsacFix::IncomingPacket(const uint8_t* payload,
                                         uint32_t arrival_timestamp) {
   return WebRtcIsacfix_UpdateBwEstimate(
       static_cast<ISACFIX_MainStruct*>(state_),
-      reinterpret_cast<const uint16_t*>(payload),
+      payload,
       static_cast<int32_t>(payload_len),
       rtp_sequence_number, rtp_timestamp, arrival_timestamp);
 }

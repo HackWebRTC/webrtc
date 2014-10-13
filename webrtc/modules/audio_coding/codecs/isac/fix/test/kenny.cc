@@ -700,12 +700,13 @@ int main(int argc, char* argv[])
       }
 
       if (testNum != 9) {
-        err = WebRtcIsacfix_UpdateBwEstimate(ISAC_main_inst,
-                                             streamdata,
-                                             stream_len,
-                                             BN_data.rtp_number,
-                                             BN_data.send_time,
-                                             BN_data.arrival_time);
+        err = WebRtcIsacfix_UpdateBwEstimate(
+            ISAC_main_inst,
+            reinterpret_cast<const uint8_t*>(streamdata),
+            stream_len,
+            BN_data.rtp_number,
+            BN_data.send_time,
+            BN_data.arrival_time);
 
         if (err < 0) {
           /* exit if returned with error */

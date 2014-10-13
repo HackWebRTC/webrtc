@@ -754,7 +754,7 @@ int ACMISAC::IncomingPacket(const uint8_t* payload,
   CriticalSectionScoped lock(codec_inst_crit_sect_.get());
   return ACM_ISAC_DECODE_BWE(
       static_cast<ACM_ISAC_STRUCT*>(codec_inst_ptr_->inst),
-      reinterpret_cast<const uint16_t*>(payload),
+      payload,
       static_cast<uint32_t>(payload_len),
       rtp_sequence_number,
       rtp_timestamp,

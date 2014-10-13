@@ -996,7 +996,7 @@ int16_t WebRtcIsac_DecoderInit(ISACStruct* ISAC_main_inst) {
  *                              -1 - Error
  */
 int16_t WebRtcIsac_UpdateBwEstimate(ISACStruct* ISAC_main_inst,
-                                    const uint16_t* encoded,
+                                    const uint8_t* encoded,
                                     int32_t packet_size,
                                     uint16_t rtp_seq_number,
                                     uint32_t send_ts,
@@ -1026,8 +1026,8 @@ int16_t WebRtcIsac_UpdateBwEstimate(ISACStruct* ISAC_main_inst,
 
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
   for (k = 0; k < 10; k++) {
-    streamdata.stream[k] = (uint8_t)((encoded[k >> 1] >>
-                                            ((k & 1) << 3)) & 0xFF);
+    uint16_t ek = ((const uint16_t*)encoded)[k >> 1];
+    streamdata.stream[k] = (uint8_t)((ek >> ((k & 1) << 3)) & 0xff);
   }
 #else
   memcpy(streamdata.stream, encoded, 10);

@@ -187,7 +187,7 @@ extern "C" {
 
   int16_t WebRtcIsac_UpdateBwEstimate(
       ISACStruct*         ISAC_main_inst,
-      const uint16_t* encoded,
+      const uint8_t* encoded,
       int32_t         packet_size,
       uint16_t        rtp_seq_number,
       uint32_t        send_ts,

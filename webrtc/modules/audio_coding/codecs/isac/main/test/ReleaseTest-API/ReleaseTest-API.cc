@@ -857,9 +857,13 @@ int main(int argc, char* argv[])
 
             if(testNum != 9)
             {
-                err = WebRtcIsac_UpdateBwEstimate(ISAC_main_inst, streamdata,
-                    stream_len, BN_data.rtp_number, BN_data.sample_count,
-                    BN_data.arrival_time);
+              err = WebRtcIsac_UpdateBwEstimate(
+                  ISAC_main_inst,
+                  reinterpret_cast<const uint8_t*>(streamdata),
+                  stream_len,
+                  BN_data.rtp_number,
+                  BN_data.sample_count,
+                  BN_data.arrival_time);
 
                 if(err < 0)
                 {
