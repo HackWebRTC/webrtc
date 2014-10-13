@@ -69,7 +69,6 @@ typedef struct NSinst_t_ {
   int counter[SIMULT];
   int updates;
   // parameters for Wiener filter
-  float previousEstimateStsa[HALF_ANAL_BLOCKL];
   float smooth[HALF_ANAL_BLOCKL];
   float overdrive;
   float denoiseBound;
@@ -83,8 +82,12 @@ typedef struct NSinst_t_ {
   int modelUpdatePars[4];  // parameters for updating or estimating
   // thresholds/weights for prior model
   float priorModelPars[7];  // parameters for prior model
+  float noise[HALF_ANAL_BLOCKL];      // noise spectrum from current frame
   float noisePrev[HALF_ANAL_BLOCKL];  // noise spectrum from previous frame
-  float magnPrev[HALF_ANAL_BLOCKL];  // magnitude spectrum of previous frame
+  // magnitude spectrum of previous analyze frame
+  float magnPrevAnalyze[HALF_ANAL_BLOCKL];
+  // magnitude spectrum of previous process frame
+  float magnPrevProcess[HALF_ANAL_BLOCKL];
   float logLrtTimeAvg[HALF_ANAL_BLOCKL];  // log lrt factor with time-smoothing
   float priorSpeechProb;  // prior speech/noise probability
   float featureData[7];  // data for features
