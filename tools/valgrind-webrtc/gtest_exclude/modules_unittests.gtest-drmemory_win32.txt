@@ -12,6 +12,7 @@ TestVideoSenderWithVp8.*
 TestVp8Impl.BaseUnitTest
 VideoProcessingModuleTest.Denoising
 VideoProcessorIntegrationTest.ProcessNoLossChangeBitRate
+VideoProcessorIntegrationTest.*VP9
 VideoSendersTest.*
 
 # https://code.google.com/p/webrtc/issues/detail?id=2323
