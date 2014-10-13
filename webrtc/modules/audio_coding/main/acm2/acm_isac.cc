@@ -211,7 +211,7 @@ static int16_t ACMISACFixGetNewBitstream(ACM_ISAC_STRUCT* inst,
                                          int16_t bwe_index,
                                          int16_t /* jitter_index */,
                                          int32_t rate,
-                                         int16_t* bitstream,
+                                         uint8_t* bitstream,
                                          bool is_red) {
   if (is_red) {
     // RED not supported with iSACFIX
@@ -437,7 +437,7 @@ int16_t ACMISAC::Transcode(uint8_t* bitstream,
 
   *bitstream_len_byte = ACM_ISAC_GETNEWBITSTREAM(
       codec_inst_ptr_->inst, q_bwe, jitter_info, rate,
-      reinterpret_cast<int16_t*>(bitstream), (is_red) ? 1 : 0);
+      bitstream, (is_red) ? 1 : 0);
 
   if (*bitstream_len_byte < 0) {
     // error happened
@@ -591,9 +591,7 @@ int32_t ACMISAC::GetRedPayloadSafe(
 #else
     uint8_t* red_payload, int16_t* payload_bytes) {
   CriticalSectionScoped lock(codec_inst_crit_sect_.get());
-  int16_t bytes =
-      WebRtcIsac_GetRedPayload(
-          codec_inst_ptr_->inst, reinterpret_cast<int16_t*>(red_payload));
+  int16_t bytes = WebRtcIsac_GetRedPayload(codec_inst_ptr_->inst, red_payload);
   if (bytes < 0) {
     return -1;
   }

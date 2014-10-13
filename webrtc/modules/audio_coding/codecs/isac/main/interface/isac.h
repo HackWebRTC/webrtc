@@ -319,7 +319,7 @@ extern "C" {
 
   int16_t WebRtcIsac_ReadFrameLen(
       ISACStruct*          ISAC_main_inst,
-      const int16_t* encoded,
+      const uint8_t* encoded,
       int16_t*       frameLength);
 
 
@@ -574,7 +574,7 @@ extern "C" {
       int16_t  bweIndex,
       int16_t  jitterInfo,
       int32_t  rate,
-      int16_t* encoded,
+      uint8_t* encoded,
       int16_t  isRCU);
 
 
@@ -631,7 +631,7 @@ extern "C" {
    */
 
   int16_t WebRtcIsac_ReadBwIndex(
-      const int16_t* encoded,
+      const uint8_t* encoded,
       int16_t*       bweIndex);
 
 
@@ -679,7 +679,7 @@ extern "C" {
    */
   int16_t WebRtcIsac_GetRedPayload(
       ISACStruct*    ISAC_main_inst,
-      int16_t* encoded);
+      uint8_t* encoded);
 
 
   /****************************************************************************

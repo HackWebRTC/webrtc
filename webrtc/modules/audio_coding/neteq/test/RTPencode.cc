@@ -261,7 +261,7 @@ int main(int argc, char* argv[])
     uint32_t red_TS[2] = {0};
     uint16_t red_len[2] = {0};
     int RTPheaderLen=12;
-	unsigned char red_data[8000];
+    uint8_t red_data[8000];
 #ifdef INSERT_OLD_PACKETS
 	uint16_t old_length, old_plen;
 	int old_enc_len;
@@ -755,7 +755,8 @@ int main(int argc, char* argv[])
                 if(usedCodec==webrtc::kDecoderISAC)
                 {
                     assert(!usingStereo); // Cannot handle stereo yet
-                    red_len[0] = WebRtcIsac_GetRedPayload(ISAC_inst[0], (int16_t*)red_data);
+                    red_len[0] =
+                        WebRtcIsac_GetRedPayload(ISAC_inst[0], red_data);
                 }
                 else
                 {

@@ -287,8 +287,10 @@ int main(int argc, char* argv[])
                                     (uint8_t*)bitStream);
       int16_t ggg;
       if (streamLen > 0) {
-        if((  WebRtcIsac_ReadFrameLen(codecInstance[receiverIdx],
-                                      (short *) bitStream, &ggg))<0)
+        if ((WebRtcIsac_ReadFrameLen(
+                codecInstance[receiverIdx],
+                reinterpret_cast<const uint8_t*>(bitStream),
+                &ggg)) < 0)
           printf("ERROR\n");
       }
 

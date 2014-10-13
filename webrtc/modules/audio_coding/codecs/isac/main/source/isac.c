@@ -786,7 +786,7 @@ int16_t WebRtcIsac_GetNewBitStream(ISACStruct*  ISAC_main_inst,
                                    int16_t  bweIndex,
                                    int16_t  jitterInfo,
                                    int32_t  rate,
-                                   int16_t* encoded,
+                                   uint8_t* encoded,
                                    int16_t  isRCU) {
   Bitstr iSACBitStreamInst;   /* Local struct for bitstream handling */
   int16_t streamLenLB;
@@ -799,7 +799,6 @@ int16_t WebRtcIsac_GetNewBitStream(ISACStruct*  ISAC_main_inst,
   double rateLB;
   double rateUB;
   int32_t currentBN;
-  uint8_t* encodedPtrUW8 = (uint8_t*)encoded;
   uint32_t crc;
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
   int16_t  k;
@@ -885,20 +884,20 @@ int16_t WebRtcIsac_GetNewBitStream(ISACStruct*  ISAC_main_inst,
   }
 
   totalStreamLen = streamLenLB + streamLenUB + 1 + LEN_CHECK_SUM_WORD8;
-  encodedPtrUW8[streamLenLB] = streamLenUB + 1 + LEN_CHECK_SUM_WORD8;
+  encoded[streamLenLB] = streamLenUB + 1 + LEN_CHECK_SUM_WORD8;
 
-  memcpy(&encodedPtrUW8[streamLenLB + 1], iSACBitStreamInst.stream,
+  memcpy(&encoded[streamLenLB + 1], iSACBitStreamInst.stream,
          streamLenUB);
 
-  WebRtcIsac_GetCrc((int16_t*)(&(encodedPtrUW8[streamLenLB + 1])),
+  WebRtcIsac_GetCrc((int16_t*)(&(encoded[streamLenLB + 1])),
                     streamLenUB, &crc);
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
   for (k = 0; k < LEN_CHECK_SUM_WORD8; k++) {
-    encodedPtrUW8[totalStreamLen - LEN_CHECK_SUM_WORD8 + k] =
+    encoded[totalStreamLen - LEN_CHECK_SUM_WORD8 + k] =
       (uint8_t)((crc >> (24 - k * 8)) & 0xFF);
   }
 #else
-  memcpy(&encodedPtrUW8[streamLenLB + streamLenUB + 1], &crc,
+  memcpy(&encoded[streamLenLB + streamLenUB + 1], &crc,
          LEN_CHECK_SUM_WORD8);
 #endif
   return totalStreamLen;
@@ -1734,7 +1733,7 @@ int16_t WebRtcIsac_UpdateUplinkBw(ISACStruct* ISAC_main_inst,
  *        - bweIndex          : Bandwidth estimate in bit-stream
  *
  */
-int16_t WebRtcIsac_ReadBwIndex(const int16_t* encoded,
+int16_t WebRtcIsac_ReadBwIndex(const uint8_t* encoded,
                                int16_t* bweIndex) {
   Bitstr streamdata;
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
@@ -1746,8 +1745,8 @@ int16_t WebRtcIsac_ReadBwIndex(const int16_t* encoded,
 
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
   for (k = 0; k < 10; k++) {
-    streamdata.stream[k] = (uint8_t)((encoded[k >> 1] >>
-        ((k & 1) << 3)) & 0xFF);
+    int16_t ek2 = ((const int16_t*)encoded)[k >> 1];
+    streamdata.stream[k] = (uint8_t)((ek2 >> ((k & 1) << 3)) & 0xff);
   }
 #else
   memcpy(streamdata.stream, encoded, 10);
@@ -1783,7 +1782,7 @@ int16_t WebRtcIsac_ReadBwIndex(const int16_t* encoded,
  *
  */
 int16_t WebRtcIsac_ReadFrameLen(ISACStruct* ISAC_main_inst,
-                                const int16_t* encoded,
+                                const uint8_t* encoded,
                                 int16_t* frameLength) {
   Bitstr streamdata;
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
@@ -1796,8 +1795,8 @@ int16_t WebRtcIsac_ReadFrameLen(ISACStruct* ISAC_main_inst,
 
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
   for (k = 0; k < 10; k++) {
-    streamdata.stream[k] = (uint8_t)((encoded[k >> 1] >>
-                                            ((k & 1) << 3)) & 0xFF);
+    int16_t ek2 = ((const int16_t*)encoded)[k >> 1];
+    streamdata.stream[k] = (uint8_t)((ek2 >> ((k & 1) << 3)) & 0xff);
   }
 #else
   memcpy(streamdata.stream, encoded, 10);
@@ -2096,13 +2095,12 @@ int16_t WebRtcIsac_SetMaxRate(ISACStruct* ISAC_main_inst,
  *                            : -1 - Error
  */
 int16_t WebRtcIsac_GetRedPayload(ISACStruct* ISAC_main_inst,
-                                 int16_t* encoded) {
+                                 uint8_t* encoded) {
   Bitstr iSACBitStreamInst;
   int16_t streamLenLB;
   int16_t streamLenUB;
   int16_t streamLen;
   int16_t totalLenUB;
-  uint8_t* ptrEncodedUW8 = (uint8_t*)encoded;
   ISACMainStruct* instISAC = (ISACMainStruct*)ISAC_main_inst;
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
   int k;
@@ -2125,7 +2123,7 @@ int16_t WebRtcIsac_GetRedPayload(ISACStruct* ISAC_main_inst,
   }
 
   /* convert from bytes to int16_t. */
-  memcpy(ptrEncodedUW8, iSACBitStreamInst.stream, streamLenLB);
+  memcpy(encoded, iSACBitStreamInst.stream, streamLenLB);
   streamLen = streamLenLB;
   if (instISAC->bandwidthKHz == isac8kHz) {
     return streamLenLB;
@@ -2154,19 +2152,19 @@ int16_t WebRtcIsac_GetRedPayload(ISACStruct* ISAC_main_inst,
       (streamLenUB > 0)) {
     uint32_t crc;
     streamLen += totalLenUB;
-    ptrEncodedUW8[streamLenLB] = (uint8_t)totalLenUB;
-    memcpy(&ptrEncodedUW8[streamLenLB + 1], iSACBitStreamInst.stream,
+    encoded[streamLenLB] = (uint8_t)totalLenUB;
+    memcpy(&encoded[streamLenLB + 1], iSACBitStreamInst.stream,
            streamLenUB);
 
-    WebRtcIsac_GetCrc((int16_t*)(&(ptrEncodedUW8[streamLenLB + 1])),
+    WebRtcIsac_GetCrc((int16_t*)(&(encoded[streamLenLB + 1])),
                       streamLenUB, &crc);
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
     for (k = 0; k < LEN_CHECK_SUM_WORD8; k++) {
-      ptrEncodedUW8[streamLen - LEN_CHECK_SUM_WORD8 + k] =
+      encoded[streamLen - LEN_CHECK_SUM_WORD8 + k] =
         (uint8_t)((crc >> (24 - k * 8)) & 0xFF);
     }
 #else
-    memcpy(&ptrEncodedUW8[streamLenLB + streamLenUB + 1], &crc,
+    memcpy(&encoded[streamLenLB + streamLenUB + 1], &crc,
            LEN_CHECK_SUM_WORD8);
 #endif
   }

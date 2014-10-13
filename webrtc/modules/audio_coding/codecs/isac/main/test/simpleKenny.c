@@ -395,7 +395,8 @@ valid values are 8 and 16.\n", sampFreqKHz);
 				break;
 			}
 
-			rcuStreamLen = WebRtcIsac_GetRedPayload(ISAC_main_inst, (int16_t*)payloadRCU);
+                        rcuStreamLen = WebRtcIsac_GetRedPayload(
+                            ISAC_main_inst, (uint8_t*)payloadRCU);
 
 			get_arrival_time(cur_framesmpls, stream_len, bottleneck, &packetData,
 				sampFreqKHz * 1000, sampFreqKHz * 1000);

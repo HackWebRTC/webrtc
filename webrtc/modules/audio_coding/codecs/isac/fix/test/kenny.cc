@@ -572,12 +572,14 @@ int main(int argc, char* argv[])
           if (stream_len>0) {
             if (testCE == 1) {
               err = WebRtcIsacfix_ReadBwIndex(
-                  (int16_t*)streamdata, stream_len, &bwe);
+                  reinterpret_cast<const uint8_t*>(streamdata),
+                  stream_len,
+                  &bwe);
               stream_len = WebRtcIsacfix_GetNewBitStream(
                   ISAC_main_inst,
                   bwe,
                   scale,
-                  (int16_t*)streamdata);
+                  reinterpret_cast<uint8_t*>(streamdata));
             } else if (testCE == 2) {
               /* transcode function not supported */
             } else if (testCE == 3) {
@@ -742,7 +744,7 @@ int main(int argc, char* argv[])
           short FL;
           /* Call getFramelen, only used here for function test */
           err = WebRtcIsacfix_ReadFrameLen(
-              (int16_t*)streamdata, stream_len, &FL);
+              reinterpret_cast<const uint8_t*>(streamdata), stream_len, &FL);
           declen = WebRtcIsacfix_Decode( ISAC_main_inst, streamdata, stream_len,
                                          decoded, speechType );
           /* Error check */

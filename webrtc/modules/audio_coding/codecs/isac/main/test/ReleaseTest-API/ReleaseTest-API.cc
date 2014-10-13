@@ -687,8 +687,12 @@ int main(int argc, char* argv[])
                         /************************* Main Transcoding stream *******************************/
                         WebRtcIsac_GetDownLinkBwIndex(ISAC_main_inst, &bnIdxTC, &jitterInfoTC);
                         streamLenTransCoding = WebRtcIsac_GetNewBitStream(
-                            ISAC_main_inst, bnIdxTC, jitterInfoTC, rateTransCoding,
-                            (int16_t*)streamDataTransCoding, false);
+                            ISAC_main_inst,
+                            bnIdxTC,
+                            jitterInfoTC,
+                            rateTransCoding,
+                            reinterpret_cast<uint8_t*>(streamDataTransCoding),
+                            false);
                         if(streamLenTransCoding < 0)
                         {
                             fprintf(stderr, "Error in trans-coding\n");
@@ -714,9 +718,10 @@ int main(int argc, char* argv[])
                           return -1;
                         }
 
-                        WebRtcIsac_ReadBwIndex((int16_t*)streamDataTransCoding, &indexStream);
-                        if(indexStream != bnIdxTC)
-                        {
+                        WebRtcIsac_ReadBwIndex(reinterpret_cast<const uint8_t*>(
+                                                   streamDataTransCoding),
+                                               &indexStream);
+                        if (indexStream != bnIdxTC) {
                             fprintf(stderr, "Error in inserting Bandwidth index into transcoding stream.\n");
                             exit(0);
                         }
@@ -780,14 +785,18 @@ int main(int argc, char* argv[])
         // RED.
         if(lostFrame)
         {
-            stream_len = WebRtcIsac_GetRedPayload(ISAC_main_inst,
-                (int16_t*)streamdata);
+            stream_len = WebRtcIsac_GetRedPayload(
+                ISAC_main_inst, reinterpret_cast<uint8_t*>(streamdata));
 
             if(doTransCoding)
             {
                 streamLenTransCoding = WebRtcIsac_GetNewBitStream(
-                    ISAC_main_inst, bnIdxTC, jitterInfoTC, rateTransCoding,
-                    (int16_t*)streamDataTransCoding, true);
+                    ISAC_main_inst,
+                    bnIdxTC,
+                    jitterInfoTC,
+                    rateTransCoding,
+                    reinterpret_cast<uint8_t*>(streamDataTransCoding),
+                    true);
                 if(streamLenTransCoding < 0)
                 {
                     fprintf(stderr, "Error in RED trans-coding\n");
@@ -872,8 +881,10 @@ int main(int argc, char* argv[])
             }
 
             /* Call getFramelen, only used here for function test */
-            err = WebRtcIsac_ReadFrameLen(ISAC_main_inst,
-                (int16_t*)streamdata, &FL);
+            err = WebRtcIsac_ReadFrameLen(
+                ISAC_main_inst,
+                reinterpret_cast<const uint8_t*>(streamdata),
+                &FL);
             if(err < 0)
             {
                 /* exit if returned with error */

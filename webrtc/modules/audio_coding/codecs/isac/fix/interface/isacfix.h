@@ -357,7 +357,7 @@ extern "C" {
    *
    */
 
-  int16_t WebRtcIsacfix_ReadFrameLen(const int16_t* encoded,
+  int16_t WebRtcIsacfix_ReadFrameLen(const uint8_t* encoded,
                                      int encoded_len_bytes,
                                      int16_t* frameLength);
 
@@ -557,7 +557,7 @@ extern "C" {
   int16_t WebRtcIsacfix_GetNewBitStream(ISACFIX_MainStruct *ISAC_main_inst,
                                         int16_t          bweIndex,
                                         float              scale,
-                                        int16_t        *encoded);
+                                        uint8_t* encoded);
 
 
   /****************************************************************************
@@ -608,7 +608,7 @@ extern "C" {
    *
    */
 
-  int16_t WebRtcIsacfix_ReadBwIndex(const int16_t* encoded,
+  int16_t WebRtcIsacfix_ReadBwIndex(const uint8_t* encoded,
                                     int encoded_len_bytes,
                                     int16_t* rateIndex);
 
