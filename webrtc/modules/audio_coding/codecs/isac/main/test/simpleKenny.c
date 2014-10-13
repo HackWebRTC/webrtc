@@ -102,8 +102,8 @@ int main(int argc, char* argv[])
     unsigned int  tmpSumStreamLen = 0;
     unsigned int  packetCntr = 0;
     unsigned int  lostPacketCntr = 0;
-    uint16_t  payload[600];
-    uint16_t  payloadRCU[600];
+    uint8_t  payload[1200];
+    uint8_t  payloadRCU[1200];
     uint16_t  packetLossPercent = 0;
     int16_t   rcuStreamLen = 0;
 	int onlyEncode;
@@ -376,7 +376,7 @@ valid values are 8 and 16.\n", sampFreqKHz);
                                 stream_len = WebRtcIsac_Encode(
                                         ISAC_main_inst,
                                         shortdata,
-                                        (uint8_t*)payload);
+                                        payload);
 
 				if(stream_len < 0)
 				{
@@ -396,12 +396,12 @@ valid values are 8 and 16.\n", sampFreqKHz);
 			}
 
                         rcuStreamLen = WebRtcIsac_GetRedPayload(
-                            ISAC_main_inst, (uint8_t*)payloadRCU);
+                            ISAC_main_inst, payloadRCU);
 
 			get_arrival_time(cur_framesmpls, stream_len, bottleneck, &packetData,
 				sampFreqKHz * 1000, sampFreqKHz * 1000);
 			if(WebRtcIsac_UpdateBwEstimate(ISAC_main_inst,
-                                                       (const uint8_t*)payload,
+                                                       payload,
                                                        stream_len,
                                                        packetData.rtp_number,
                                                        packetData.sample_count,
@@ -460,7 +460,7 @@ valid values are 8 and 16.\n", sampFreqKHz);
 			{
                                 declen = WebRtcIsac_DecodeRcu(
                                     ISAC_main_inst,
-                                    (const uint8_t*)payloadRCU,
+                                    payloadRCU,
                                     rcuStreamLen,
                                     decoded,
                                     speechType);
@@ -470,7 +470,7 @@ valid values are 8 and 16.\n", sampFreqKHz);
 			{
                                 declen = WebRtcIsac_Decode(
                                     ISAC_main_inst,
-                                    (const uint8_t*)payload,
+                                    payload,
                                     stream_len,
                                     decoded,
                                     speechType);

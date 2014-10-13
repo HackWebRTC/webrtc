@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
     //FILE logFile;
     bool doTransCoding = false;
     int32_t rateTransCoding = 0;
-    uint16_t streamDataTransCoding[600];
+    uint8_t streamDataTransCoding[1200];
     int16_t streamLenTransCoding = 0;
     FILE* transCodingFile = NULL;
     FILE* transcodingBitstream = NULL;
@@ -691,7 +691,7 @@ int main(int argc, char* argv[])
                             bnIdxTC,
                             jitterInfoTC,
                             rateTransCoding,
-                            reinterpret_cast<uint8_t*>(streamDataTransCoding),
+                            streamDataTransCoding,
                             false);
                         if(streamLenTransCoding < 0)
                         {
@@ -710,7 +710,7 @@ int main(int argc, char* argv[])
                           return -1;
                         }
 
-                        if (fwrite((uint8_t*)streamDataTransCoding,
+                        if (fwrite(streamDataTransCoding,
                                    sizeof(uint8_t),
                                    streamLenTransCoding,
                                    transcodingBitstream) !=
@@ -718,8 +718,7 @@ int main(int argc, char* argv[])
                           return -1;
                         }
 
-                        WebRtcIsac_ReadBwIndex(reinterpret_cast<const uint8_t*>(
-                                                   streamDataTransCoding),
+                        WebRtcIsac_ReadBwIndex(streamDataTransCoding,
                                                &indexStream);
                         if (indexStream != bnIdxTC) {
                             fprintf(stderr, "Error in inserting Bandwidth index into transcoding stream.\n");
@@ -795,7 +794,7 @@ int main(int argc, char* argv[])
                     bnIdxTC,
                     jitterInfoTC,
                     rateTransCoding,
-                    reinterpret_cast<uint8_t*>(streamDataTransCoding),
+                    streamDataTransCoding,
                     true);
                 if(streamLenTransCoding < 0)
                 {
@@ -920,7 +919,7 @@ int main(int argc, char* argv[])
                 {
                     declenTC = WebRtcIsac_DecodeRcu(
                         decoderTransCoding,
-                        reinterpret_cast<const uint8_t*>(streamDataTransCoding),
+                        streamDataTransCoding,
                         streamLenTransCoding,
                         decodedTC,
                         speechType);
@@ -938,7 +937,7 @@ int main(int argc, char* argv[])
                 {
                     declenTC = WebRtcIsac_Decode(
                         decoderTransCoding,
-                        reinterpret_cast<const uint8_t*>(streamDataTransCoding),
+                        streamDataTransCoding,
                         streamLenTransCoding,
                         decodedTC,
                         speechType);
