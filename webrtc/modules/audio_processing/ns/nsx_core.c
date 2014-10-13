@@ -407,13 +407,11 @@ static void NoiseEstimationC(NsxInst_t* inst,
         // +=QUANTILE*delta/(inst->counter[s]+1) QUANTILE=0.25, =1 in Q2
         // CounterDiv=1/(inst->counter[s]+1) in Q15
         tmp16 += 2;
-        tmp16no1 = WEBRTC_SPL_RSHIFT_W16(tmp16, 2);
-        inst->noiseEstLogQuantile[offset + i] += tmp16no1;
+        inst->noiseEstLogQuantile[offset + i] += tmp16 / 4;
       } else {
         tmp16 += 1;
-        tmp16no1 = WEBRTC_SPL_RSHIFT_W16(tmp16, 1);
         // *(1-QUANTILE), in Q2 QUANTILE=0.25, 1-0.25=0.75=3 in Q2
-        tmp16no2 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(tmp16no1, 3, 1);
+        tmp16no2 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(tmp16 / 2, 3, 1);
         inst->noiseEstLogQuantile[offset + i] -= tmp16no2;
         if (inst->noiseEstLogQuantile[offset + i] < logval) {
           // This is the smallest fixed point representation we can
@@ -611,7 +609,7 @@ void WebRtcNsx_CalcParametricNoiseEstimate(NsxInst_t* inst,
     // Piecewise linear approximation of 'b' in
     // 2^(int_part+frac_part) = 2^int_part * (1 + b)
     // 'b' is given in Q11 and below stored in frac_part.
-    if (WEBRTC_SPL_RSHIFT_W16(frac_part, 10)) {
+    if (frac_part >> 10) {
       // Upper fractional part
       tmp32no2 = WEBRTC_SPL_MUL_16_16(2048 - frac_part, 1244); // Q21
       tmp32no2 = 2048 - WEBRTC_SPL_RSHIFT_W32(tmp32no2, 10);
@@ -669,7 +667,7 @@ int32_t WebRtcNsx_InitCore(NsxInst_t* inst, uint32_t fs) {
     inst->maxLrt = 0x0080000;
     inst->minLrt = 104858;
   }
-  inst->anaLen2 = WEBRTC_SPL_RSHIFT_W16(inst->anaLen, 1);
+  inst->anaLen2 = inst->anaLen / 2;
   inst->magnLen = inst->anaLen2 + 1;
 
   if (inst->real_fft != NULL) {
@@ -1410,7 +1408,7 @@ void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, uint16_t* magnU
       tmpU32no1 >>= zeros;
     }
     tmp_2_w32 -= (int32_t)WEBRTC_SPL_UMUL_32_16(tmpU32no1, tmp_u16); // Q(11-zeros)
-    matrix_determinant = WEBRTC_SPL_RSHIFT_W16(matrix_determinant, zeros); // Q(-zeros)
+    matrix_determinant >>= zeros;  // Q(-zeros)
     tmp_2_w32 = WebRtcSpl_DivW32W16(tmp_2_w32, matrix_determinant); // Q11
     tmp_2_w32 += (int32_t)net_norm << 11;  // Q11
     if (tmp_2_w32 < 0) {

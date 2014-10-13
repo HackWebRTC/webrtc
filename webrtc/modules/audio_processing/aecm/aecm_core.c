@@ -691,10 +691,10 @@ int16_t WebRtcAecm_AsymFilt(const int16_t filtOld, const int16_t inVal,
     retVal = filtOld;
     if (filtOld > inVal)
     {
-        retVal -= WEBRTC_SPL_RSHIFT_W16(filtOld - inVal, stepSizeNeg);
+        retVal -= (filtOld - inVal) >> stepSizeNeg;
     } else
     {
-        retVal += WEBRTC_SPL_RSHIFT_W16(inVal - filtOld, stepSizePos);
+        retVal += (inVal - filtOld) >> stepSizePos;
     }
 
     return retVal;

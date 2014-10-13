@@ -507,7 +507,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
     {
         if (gate < 2500)
         {
-            gain_adj = WEBRTC_SPL_RSHIFT_W16(2500 - gate, 5);
+            gain_adj = (2500 - gate) >> 5;
         } else
         {
             gain_adj = 0;

@@ -17,6 +17,8 @@
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
+#include <assert.h>
+
 int32_t WebRtcSpl_SqrtLocal(int32_t in);
 
 int32_t WebRtcSpl_SqrtLocal(int32_t in)
@@ -154,15 +156,15 @@ int32_t WebRtcSpl_Sqrt(int32_t value)
 
     x_norm = (int16_t)WEBRTC_SPL_RSHIFT_W32(A, 16); // x_norm = AH
 
-    nshift = WEBRTC_SPL_RSHIFT_W16(sh, 1); // nshift = sh>>1
-    nshift = -nshift; // Negate the power for later de-normalization
+    nshift = (sh / 2);
+    assert(nshift >= 0);
 
     A = (int32_t)WEBRTC_SPL_LSHIFT_W32((int32_t)x_norm, 16);
     A = WEBRTC_SPL_ABS_W32(A); // A = abs(x_norm<<16)
     A = WebRtcSpl_SqrtLocal(A); // A = sqrt(A)
 
-    if ((-2 * nshift) == sh)
-    { // Even shift value case
+    if (2 * nshift == sh) {
+        // Even shift value case
 
         t16 = (int16_t)WEBRTC_SPL_RSHIFT_W32(A, 16); // t16 = AH
 
@@ -178,7 +180,7 @@ int32_t WebRtcSpl_Sqrt(int32_t value)
     }
 
     A = A & ((int32_t)0x0000ffff);
-    A = (int32_t)WEBRTC_SPL_SHIFT_W32(A, nshift); // De-normalize the result
+    A >>= nshift;  // De-normalize the result.
 
     return A;
 }

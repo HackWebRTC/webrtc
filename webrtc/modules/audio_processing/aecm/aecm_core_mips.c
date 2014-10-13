@@ -988,7 +988,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t* aecm,
       if (zeros32 > tmp16no1) {
         echoEst32Gained = WEBRTC_SPL_UMUL_32_16(
                             (uint32_t)aecm->echoFilt[i],
-                            (uint16_t)WEBRTC_SPL_RSHIFT_W16(supGain, tmp16no1));
+                            supGain >> tmp16no1);
       } else {
         // Result in Q-(RESOLUTION_CHANNEL+RESOLUTION_SUPGAIN-16)
         echoEst32Gained = WEBRTC_SPL_UMUL_32_16(

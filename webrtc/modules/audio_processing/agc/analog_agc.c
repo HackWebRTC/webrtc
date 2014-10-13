@@ -296,7 +296,7 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
         ptr = stt->Rxx16w32_array[0];
     }
 
-    for (i = 0; i < WEBRTC_SPL_RSHIFT_W16(M, 1); i++)
+    for (i = 0; i < M / 2; i++)
     {
         if (stt->fs == 16000)
         {
@@ -546,7 +546,7 @@ void WebRtcAgc_UpdateAgcThresholds(Agc_t *stt)
     {
         /* Lower the analog target level since we have reached its maximum */
         zeros = WebRtcSpl_NormW32(stt->Rxx160_LPw32);
-        stt->targetIdxOffset = WEBRTC_SPL_RSHIFT_W16((3 * zeros) - stt->targetIdx - 2, 2);
+        stt->targetIdxOffset = (3 * zeros - stt->targetIdx - 2) / 4;
     }
 #endif
 
@@ -696,7 +696,7 @@ void WebRtcAgc_SpeakerInactiveCtrl(Agc_t *stt)
         if (stt->vadMic.stdLongTerm < 4500)
         {
             /* Scale between min and max threshold */
-            vadThresh += WEBRTC_SPL_RSHIFT_W16(4500 - stt->vadMic.stdLongTerm, 1);
+            vadThresh += (4500 - stt->vadMic.stdLongTerm) / 2;
         }
 
         /* stt->vadThreshold = (31 * stt->vadThreshold + vadThresh) / 32; */
