@@ -42,6 +42,7 @@ class RemoteNtpTimeEstimator {
   Clock* clock_;
   scoped_ptr<TimestampExtrapolator> ts_extrapolator_;
   RtcpList rtcp_list_;
+  int64_t last_timing_log_ms_;
   DISALLOW_COPY_AND_ASSIGN(RemoteNtpTimeEstimator);
 };
 

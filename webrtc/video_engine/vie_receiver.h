@@ -105,6 +105,7 @@ class ViEReceiver : public RtpData {
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
 
   scoped_ptr<CriticalSectionWrapper> receive_cs_;
+  Clock* clock_;
   scoped_ptr<RtpHeaderParser> rtp_header_parser_;
   scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
   scoped_ptr<RtpReceiver> rtp_receiver_;
@@ -122,6 +123,7 @@ class ViEReceiver : public RtpData {
   uint8_t restored_packet_[kViEMaxMtu];
   bool restored_packet_in_use_;
   bool receiving_ast_enabled_;
+  int64_t last_packet_log_ms_;
 };
 
 }  // namespace webrt
