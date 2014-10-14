@@ -477,6 +477,7 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
         sent_intra_frame_(false),
         requested_intra_frame_(false),
         max_bps_(-1) {}
+
   ~FakeVideoMediaChannel();
 
   const std::vector<VideoCodec>& recv_codecs() const { return recv_codecs_; }
@@ -885,12 +886,14 @@ class FakeVideoEngine : public FakeBaseEngine {
     return default_encoder_config_;
   }
 
-  VideoMediaChannel* CreateChannel(VoiceMediaChannel* channel) {
+  VideoMediaChannel* CreateChannel(const VideoOptions& options,
+                                   VoiceMediaChannel* channel) {
     if (fail_create_channel_) {
       return NULL;
     }
 
     FakeVideoMediaChannel* ch = new FakeVideoMediaChannel(this);
+    ch->SetOptions(options);
     channels_.push_back(ch);
     return ch;
   }

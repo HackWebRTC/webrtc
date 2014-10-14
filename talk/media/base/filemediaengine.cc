@@ -88,6 +88,7 @@ VoiceMediaChannel* FileMediaEngine::CreateChannel() {
 }
 
 VideoMediaChannel* FileMediaEngine::CreateVideoChannel(
+    const VideoOptions& options,
     VoiceMediaChannel* voice_ch) {
   rtc::FileStream* input_file_stream = NULL;
   rtc::FileStream* output_file_stream = NULL;
@@ -114,8 +115,10 @@ VideoMediaChannel* FileMediaEngine::CreateVideoChannel(
     }
   }
 
-  return new FileVideoChannel(input_file_stream, output_file_stream,
-                              rtp_sender_thread_);
+  FileVideoChannel* channel = new FileVideoChannel(
+      input_file_stream, output_file_stream, rtp_sender_thread_);
+  channel->SetOptions(options);
+  return channel;
 }
 
 ///////////////////////////////////////////////////////////////////////////

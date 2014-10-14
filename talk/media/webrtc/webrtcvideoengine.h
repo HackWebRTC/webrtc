@@ -110,7 +110,11 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   bool SetDefaultEncoderConfig(const VideoEncoderConfig& config);
   VideoEncoderConfig GetDefaultEncoderConfig() const;
 
+  // TODO(pbos): Remove when all call sites use VideoOptions.
   virtual WebRtcVideoMediaChannel* CreateChannel(
+      VoiceMediaChannel* voice_channel);
+  virtual WebRtcVideoMediaChannel* CreateChannel(
+      const VideoOptions& options,
       VoiceMediaChannel* voice_channel);
 
   const std::vector<VideoCodec>& codecs() const;

@@ -1533,12 +1533,8 @@ bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
 
 bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content) {
   video_channel_.reset(channel_manager_->CreateVideoChannel(
-      this, content->name, true, voice_channel_.get()));
-  if (!video_channel_.get())
-    return false;
-
-  video_channel_->SetChannelOptions(video_options_);
-  return true;
+      this, content->name, true, video_options_, voice_channel_.get()));
+  return video_channel_.get() != NULL;
 }
 
 bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content) {

@@ -1113,11 +1113,21 @@ bool WebRtcVideoEngine::SetDefaultCodec(const VideoCodec& codec) {
 
 WebRtcVideoMediaChannel* WebRtcVideoEngine::CreateChannel(
     VoiceMediaChannel* voice_channel) {
+  return CreateChannel(VideoOptions(), voice_channel);
+}
+
+WebRtcVideoMediaChannel* WebRtcVideoEngine::CreateChannel(
+    const VideoOptions& options,
+    VoiceMediaChannel* voice_channel) {
   WebRtcVideoMediaChannel* channel =
       new WebRtcVideoMediaChannel(this, voice_channel);
   if (!channel->Init()) {
     delete channel;
-    channel = NULL;
+    return NULL;
+  }
+
+  if (!channel->SetOptions(options)) {
+    LOG(LS_WARNING) << "Failed to set options while creating channel.";
   }
   return channel;
 }

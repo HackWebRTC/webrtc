@@ -427,7 +427,8 @@ TEST_F(WebRtcVideoEngine2Test, SupportsAbsoluteSenderTimeHeaderExtension) {
 
 TEST_F(WebRtcVideoEngine2Test, SetSendFailsBeforeSettingCodecs) {
   engine_.Init(rtc::Thread::Current());
-  rtc::scoped_ptr<VideoMediaChannel> channel(engine_.CreateChannel(NULL));
+  rtc::scoped_ptr<VideoMediaChannel> channel(
+      engine_.CreateChannel(cricket::VideoOptions(), NULL));
 
   EXPECT_TRUE(channel->AddSendStream(StreamParams::CreateLegacy(123)));
 
@@ -439,7 +440,8 @@ TEST_F(WebRtcVideoEngine2Test, SetSendFailsBeforeSettingCodecs) {
 
 TEST_F(WebRtcVideoEngine2Test, GetStatsWithoutSendCodecsSetDoesNotCrash) {
   engine_.Init(rtc::Thread::Current());
-  rtc::scoped_ptr<VideoMediaChannel> channel(engine_.CreateChannel(NULL));
+  rtc::scoped_ptr<VideoMediaChannel> channel(
+      engine_.CreateChannel(cricket::VideoOptions(), NULL));
   EXPECT_TRUE(channel->AddSendStream(StreamParams::CreateLegacy(123)));
   VideoMediaInfo info;
   channel->GetStats(&info);
@@ -483,7 +485,8 @@ VideoMediaChannel* WebRtcVideoEngine2Test::SetUpForExternalEncoderFactory(
   engine_.SetExternalEncoderFactory(encoder_factory);
   engine_.Init(rtc::Thread::Current());
 
-  VideoMediaChannel* channel = engine_.CreateChannel(NULL);
+  VideoMediaChannel* channel =
+      engine_.CreateChannel(cricket::VideoOptions(), NULL);
   EXPECT_TRUE(channel->SetSendCodecs(codecs));
 
   return channel;
@@ -685,7 +688,7 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test,
   virtual void SetUp() OVERRIDE {
     engine_.SetCallFactory(this);
     engine_.Init(rtc::Thread::Current());
-    channel_.reset(engine_.CreateChannel(NULL));
+    channel_.reset(engine_.CreateChannel(cricket::VideoOptions(), NULL));
     ASSERT_TRUE(fake_call_ != NULL) << "Call not created through factory.";
     last_ssrc_ = 123;
     ASSERT_TRUE(channel_->SetSendCodecs(engine_.codecs()));

@@ -127,9 +127,8 @@ TEST_F(ChannelManagerTest, CreateDestroyChannels) {
   cricket::VoiceChannel* voice_channel = cm_->CreateVoiceChannel(
       session_, cricket::CN_AUDIO, false);
   EXPECT_TRUE(voice_channel != NULL);
-  cricket::VideoChannel* video_channel =
-      cm_->CreateVideoChannel(session_, cricket::CN_VIDEO,
-                              false, voice_channel);
+  cricket::VideoChannel* video_channel = cm_->CreateVideoChannel(
+      session_, cricket::CN_VIDEO, false, VideoOptions(), voice_channel);
   EXPECT_TRUE(video_channel != NULL);
   cricket::DataChannel* data_channel =
       cm_->CreateDataChannel(session_, cricket::CN_DATA,
@@ -151,9 +150,8 @@ TEST_F(ChannelManagerTest, CreateDestroyChannelsOnThread) {
   cricket::VoiceChannel* voice_channel = cm_->CreateVoiceChannel(
       session_, cricket::CN_AUDIO, false);
   EXPECT_TRUE(voice_channel != NULL);
-  cricket::VideoChannel* video_channel =
-      cm_->CreateVideoChannel(session_, cricket::CN_VIDEO,
-                              false, voice_channel);
+  cricket::VideoChannel* video_channel = cm_->CreateVideoChannel(
+      session_, cricket::CN_VIDEO, false, VideoOptions(), voice_channel);
   EXPECT_TRUE(video_channel != NULL);
   cricket::DataChannel* data_channel =
       cm_->CreateDataChannel(session_, cricket::CN_DATA,
@@ -178,9 +176,8 @@ TEST_F(ChannelManagerTest, NoTransportChannelTest) {
   cricket::VoiceChannel* voice_channel = cm_->CreateVoiceChannel(
       session_, cricket::CN_AUDIO, false);
   EXPECT_TRUE(voice_channel == NULL);
-  cricket::VideoChannel* video_channel =
-      cm_->CreateVideoChannel(session_, cricket::CN_VIDEO,
-                              false, voice_channel);
+  cricket::VideoChannel* video_channel = cm_->CreateVideoChannel(
+      session_, cricket::CN_VIDEO, false, VideoOptions(), voice_channel);
   EXPECT_TRUE(video_channel == NULL);
   cricket::DataChannel* data_channel =
       cm_->CreateDataChannel(session_, cricket::CN_DATA,

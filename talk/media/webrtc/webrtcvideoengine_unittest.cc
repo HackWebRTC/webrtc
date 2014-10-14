@@ -101,7 +101,7 @@ class WebRtcVideoEngineTestFake : public testing::Test,
   bool SetupEngine() {
     bool result = engine_.Init(rtc::Thread::Current());
     if (result) {
-      channel_ = engine_.CreateChannel(voice_channel_);
+      channel_ = engine_.CreateChannel(cricket::VideoOptions(), voice_channel_);
       channel_->SignalMediaError.connect(this,
           &WebRtcVideoEngineTestFake::OnMediaError);
       result = (channel_ != NULL);
@@ -342,7 +342,7 @@ TEST_F(WebRtcVideoEngineTest, WebRtcShouldNotLog) {
 // Tests that we can create and destroy a channel.
 TEST_F(WebRtcVideoEngineTestFake, CreateChannel) {
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  channel_ = engine_.CreateChannel(voice_channel_);
+  channel_ = engine_.CreateChannel(cricket::VideoOptions(), voice_channel_);
   EXPECT_TRUE(channel_ != NULL);
   EXPECT_EQ(1, engine_.GetNumOfChannels());
   delete channel_;
@@ -354,7 +354,7 @@ TEST_F(WebRtcVideoEngineTestFake, CreateChannel) {
 TEST_F(WebRtcVideoEngineTestFake, CreateChannelFail) {
   vie_.set_fail_create_channel(true);
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  channel_ = engine_.CreateChannel(voice_channel_);
+  channel_ = engine_.CreateChannel(cricket::VideoOptions(), voice_channel_);
   EXPECT_TRUE(channel_ == NULL);
 }
 
@@ -362,7 +362,7 @@ TEST_F(WebRtcVideoEngineTestFake, CreateChannelFail) {
 TEST_F(WebRtcVideoEngineTestFake, AllocateExternalCaptureDeviceFail) {
   vie_.set_fail_alloc_capturer(true);
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  channel_ = engine_.CreateChannel(voice_channel_);
+  channel_ = engine_.CreateChannel(cricket::VideoOptions(), voice_channel_);
   EXPECT_TRUE(channel_ == NULL);
 }
 
@@ -2311,7 +2311,8 @@ TEST_F(WebRtcVideoEngineTest, DISABLED_CheckCoInitialize) {
 
 TEST_F(WebRtcVideoEngineTest, CreateChannel) {
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  cricket::VideoMediaChannel* channel = engine_.CreateChannel(NULL);
+  cricket::VideoMediaChannel* channel =
+      engine_.CreateChannel(cricket::VideoOptions(), NULL);
   EXPECT_TRUE(channel != NULL);
   delete channel;
 }

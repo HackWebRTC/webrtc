@@ -84,7 +84,8 @@ class FileMediaEngine : public MediaEngineInterface {
   virtual void Terminate() {}
   virtual int GetCapabilities();
   virtual VoiceMediaChannel* CreateChannel();
-  virtual VideoMediaChannel* CreateVideoChannel(VoiceMediaChannel* voice_ch);
+  virtual VideoMediaChannel* CreateVideoChannel(const VideoOptions& options,
+                                                VoiceMediaChannel* voice_ch);
   virtual SoundclipMedia* CreateSoundclip() { return NULL; }
   virtual AudioOptions GetAudioOptions() const { return AudioOptions(); }
   virtual bool SetAudioOptions(const AudioOptions& options) { return true; }

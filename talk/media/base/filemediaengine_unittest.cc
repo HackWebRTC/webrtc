@@ -139,7 +139,7 @@ class FileMediaEngineTest : public testing::Test {
     engine_->set_rtp_sender_thread(rtc::Thread::Current());
 
     voice_channel_.reset(engine_->CreateChannel());
-    video_channel_.reset(engine_->CreateVideoChannel(NULL));
+    video_channel_.reset(engine_->CreateVideoChannel(VideoOptions(), NULL));
 
     return ret;
   }
@@ -247,7 +247,7 @@ TEST_F(FileMediaEngineTest, TestBadFilePath) {
   engine_->set_voice_input_filename(kFakeFileName);
   engine_->set_video_input_filename(kFakeFileName);
   EXPECT_TRUE(engine_->CreateChannel() == NULL);
-  EXPECT_TRUE(engine_->CreateVideoChannel(NULL) == NULL);
+  EXPECT_TRUE(engine_->CreateVideoChannel(VideoOptions(), NULL) == NULL);
 }
 
 TEST_F(FileMediaEngineTest, TestCodecs) {

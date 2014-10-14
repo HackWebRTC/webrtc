@@ -80,7 +80,8 @@ class MediaEngineInterface {
   virtual VoiceMediaChannel *CreateChannel() = 0;
   // Creates a video media channel, paired with the specified voice channel.
   // Returns NULL on failure.
-  virtual VideoMediaChannel *CreateVideoChannel(
+  virtual VideoMediaChannel* CreateVideoChannel(
+      const VideoOptions& options,
       VoiceMediaChannel* voice_media_channel) = 0;
 
   // Creates a soundclip object for playing sounds on. Returns NULL on failure.
@@ -198,8 +199,9 @@ class CompositeMediaEngine : public MediaEngineInterface {
   virtual VoiceMediaChannel *CreateChannel() {
     return voice_.CreateChannel();
   }
-  virtual VideoMediaChannel *CreateVideoChannel(VoiceMediaChannel* channel) {
-    return video_.CreateChannel(channel);
+  virtual VideoMediaChannel* CreateVideoChannel(const VideoOptions& options,
+                                                VoiceMediaChannel* channel) {
+    return video_.CreateChannel(options, channel);
   }
   virtual SoundclipMedia *CreateSoundclip() {
     return voice_.CreateSoundclip();

@@ -495,7 +495,7 @@ class VideoMediaChannelTest : public testing::Test,
   virtual void SetUp() {
     cricket::Device device("test", "device");
     EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-    channel_.reset(engine_.CreateChannel(NULL));
+    channel_.reset(engine_.CreateChannel(cricket::VideoOptions(), NULL));
     EXPECT_TRUE(channel_.get() != NULL);
     ConnectVideoChannelError();
     network_interface_.SetDestination(channel_.get());

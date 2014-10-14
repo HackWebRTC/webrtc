@@ -90,9 +90,8 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
 
 class MockVideoMediaChannel : public cricket::FakeVideoMediaChannel {
  public:
-  MockVideoMediaChannel()
-    : cricket::FakeVideoMediaChannel(NULL) {
-  }
+  MockVideoMediaChannel() : cricket::FakeVideoMediaChannel(NULL) {}
+
   // MOCK_METHOD0(transport_channel, cricket::TransportChannel*());
   MOCK_METHOD2(GetStats, bool(const StatsOptions&, cricket::VideoMediaInfo*));
 };

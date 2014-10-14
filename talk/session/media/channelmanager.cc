@@ -362,22 +362,48 @@ void ChannelManager::DestroyVoiceChannel_w(VoiceChannel* voice_channel) {
 }
 
 VideoChannel* ChannelManager::CreateVideoChannel(
-    BaseSession* session, const std::string& content_name, bool rtcp,
+    BaseSession* session,
+    const std::string& content_name,
+    bool rtcp,
     VoiceChannel* voice_channel) {
   return worker_thread_->Invoke<VideoChannel*>(
-      Bind(&ChannelManager::CreateVideoChannel_w, this, session,
-           content_name, rtcp, voice_channel));
+      Bind(&ChannelManager::CreateVideoChannel_w,
+           this,
+           session,
+           content_name,
+           rtcp,
+           VideoOptions(),
+           voice_channel));
+}
+
+VideoChannel* ChannelManager::CreateVideoChannel(
+    BaseSession* session,
+    const std::string& content_name,
+    bool rtcp,
+    const VideoOptions& options,
+    VoiceChannel* voice_channel) {
+  return worker_thread_->Invoke<VideoChannel*>(
+      Bind(&ChannelManager::CreateVideoChannel_w,
+           this,
+           session,
+           content_name,
+           rtcp,
+           options,
+           voice_channel));
 }
 
 VideoChannel* ChannelManager::CreateVideoChannel_w(
-    BaseSession* session, const std::string& content_name, bool rtcp,
+    BaseSession* session,
+    const std::string& content_name,
+    bool rtcp,
+    const VideoOptions& options,
     VoiceChannel* voice_channel) {
   // This is ok to alloc from a thread other than the worker thread
   ASSERT(initialized_);
   VideoMediaChannel* media_channel =
       // voice_channel can be NULL in case of NullVoiceEngine.
-      media_engine_->CreateVideoChannel(voice_channel ?
-          voice_channel->media_channel() : NULL);
+      media_engine_->CreateVideoChannel(
+          options, voice_channel ? voice_channel->media_channel() : NULL);
   if (media_channel == NULL)
     return NULL;
 

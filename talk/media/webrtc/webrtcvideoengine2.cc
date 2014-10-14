@@ -414,6 +414,7 @@ VideoEncoderConfig WebRtcVideoEngine2::GetDefaultEncoderConfig() const {
 }
 
 WebRtcVideoChannel2* WebRtcVideoEngine2::CreateChannel(
+    const VideoOptions& options,
     VoiceMediaChannel* voice_channel) {
   assert(initialized_);
   LOG(LS_INFO) << "CreateChannel: "
@@ -429,6 +430,7 @@ WebRtcVideoChannel2* WebRtcVideoEngine2::CreateChannel(
     delete channel;
     return NULL;
   }
+  channel->SetOptions(options);
   channel->SetRecvCodecs(video_codecs_);
   return channel;
 }

@@ -113,11 +113,18 @@ class ChannelManager : public rtc::MessageHandler,
       BaseSession* session, const std::string& content_name, bool rtcp);
   // Destroys a voice channel created with the Create API.
   void DestroyVoiceChannel(VoiceChannel* voice_channel);
+  // TODO(pbos): Remove as soon as all call sites specify VideoOptions.
+  VideoChannel* CreateVideoChannel(BaseSession* session,
+                                   const std::string& content_name,
+                                   bool rtcp,
+                                   VoiceChannel* voice_channel);
   // Creates a video channel, synced with the specified voice channel, and
   // associated with the specified session.
-  VideoChannel* CreateVideoChannel(
-      BaseSession* session, const std::string& content_name, bool rtcp,
-      VoiceChannel* voice_channel);
+  VideoChannel* CreateVideoChannel(BaseSession* session,
+                                   const std::string& content_name,
+                                   bool rtcp,
+                                   const VideoOptions& options,
+                                   VoiceChannel* voice_channel);
   // Destroys a video channel created with the Create API.
   void DestroyVideoChannel(VideoChannel* video_channel);
   DataChannel* CreateDataChannel(
@@ -261,9 +268,11 @@ class ChannelManager : public rtc::MessageHandler,
   VoiceChannel* CreateVoiceChannel_w(
       BaseSession* session, const std::string& content_name, bool rtcp);
   void DestroyVoiceChannel_w(VoiceChannel* voice_channel);
-  VideoChannel* CreateVideoChannel_w(
-      BaseSession* session, const std::string& content_name, bool rtcp,
-      VoiceChannel* voice_channel);
+  VideoChannel* CreateVideoChannel_w(BaseSession* session,
+                                     const std::string& content_name,
+                                     bool rtcp,
+                                     const VideoOptions& options,
+                                     VoiceChannel* voice_channel);
   void DestroyVideoChannel_w(VideoChannel* video_channel);
   DataChannel* CreateDataChannel_w(
       BaseSession* session, const std::string& content_name,
