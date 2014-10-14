@@ -47,15 +47,40 @@ class AcmReceiveTestOldApi {
   // Runs the test and returns true if successful.
   void Run();
 
- private:
+ protected:
+  // Method is called after each block of output audio is received from ACM.
+  virtual void AfterGetAudio() {}
+
   SimulatedClock clock_;
   scoped_ptr<AudioCodingModule> acm_;
   PacketSource* packet_source_;
   AudioSink* audio_sink_;
-  const int output_freq_hz_;
+  int output_freq_hz_;
   NumOutputChannels exptected_output_channels_;
 
   DISALLOW_COPY_AND_ASSIGN(AcmReceiveTestOldApi);
+};
+
+// This test toggles the output frequency every |toggle_period_ms|. The test
+// starts with |output_freq_hz_1|. Except for the toggling, it does the same
+// thing as AcmReceiveTestOldApi.
+class AcmReceiveTestToggleOutputFreqOldApi : public AcmReceiveTestOldApi {
+ public:
+  AcmReceiveTestToggleOutputFreqOldApi(
+      PacketSource* packet_source,
+      AudioSink* audio_sink,
+      int output_freq_hz_1,
+      int output_freq_hz_2,
+      int toggle_period_ms,
+      NumOutputChannels exptected_output_channels);
+
+ protected:
+  void AfterGetAudio() OVERRIDE;
+
+  const int output_freq_hz_1_;
+  const int output_freq_hz_2_;
+  const int toggle_period_ms_;
+  int64_t last_toggle_time_ms_;
 };
 
 }  // namespace test

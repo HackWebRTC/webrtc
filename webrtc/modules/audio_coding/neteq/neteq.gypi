@@ -185,6 +185,8 @@
             'tools/audio_loop.cc',
             'tools/audio_loop.h',
             'tools/audio_sink.h',
+            'tools/constant_pcm_packet_source.cc',
+            'tools/constant_pcm_packet_source.h',
             'tools/input_audio_file.cc',
             'tools/input_audio_file.h',
             'tools/output_audio_file.h',

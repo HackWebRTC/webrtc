@@ -164,6 +164,7 @@ void AcmReceiveTestOldApi::Run() {
       }
       ASSERT_TRUE(audio_sink_->WriteAudioFrame(output_frame));
       clock_.AdvanceTimeMilliseconds(10);
+      AfterGetAudio();
     }
 
     // Insert packet after converting from RTPHeader to WebRtcRTPHeader.
@@ -180,6 +181,32 @@ void AcmReceiveTestOldApi::Run() {
         << "  PT = " << static_cast<int>(header.header.payloadType) << std::endl
         << "  TS = " << header.header.timestamp << std::endl
         << "  SN = " << header.header.sequenceNumber;
+  }
+}
+
+AcmReceiveTestToggleOutputFreqOldApi::AcmReceiveTestToggleOutputFreqOldApi(
+    PacketSource* packet_source,
+    AudioSink* audio_sink,
+    int output_freq_hz_1,
+    int output_freq_hz_2,
+    int toggle_period_ms,
+    NumOutputChannels exptected_output_channels)
+    : AcmReceiveTestOldApi(packet_source,
+                           audio_sink,
+                           output_freq_hz_1,
+                           exptected_output_channels),
+      output_freq_hz_1_(output_freq_hz_1),
+      output_freq_hz_2_(output_freq_hz_2),
+      toggle_period_ms_(toggle_period_ms),
+      last_toggle_time_ms_(clock_.TimeInMilliseconds()) {
+}
+
+void AcmReceiveTestToggleOutputFreqOldApi::AfterGetAudio() {
+  if (clock_.TimeInMilliseconds() >= last_toggle_time_ms_ + toggle_period_ms_) {
+    output_freq_hz_ = (output_freq_hz_ == output_freq_hz_1_)
+                          ? output_freq_hz_2_
+                          : output_freq_hz_1_;
+    last_toggle_time_ms_ = clock_.TimeInMilliseconds();
   }
 }
 

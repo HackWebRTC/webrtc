@@ -20,6 +20,7 @@
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_checksum.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
+#include "webrtc/modules/audio_coding/neteq/tools/constant_pcm_packet_source.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/output_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet.h"
@@ -935,4 +936,105 @@ TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms) {
       test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
+// This test fixture is implemented to run ACM and change the desired output
+// frequency during the call. The input packets are simply PCM16b-wb encoded
+// payloads with a constant value of |kSampleValue|. The test fixture itself
+// acts as PacketSource in between the receive test class and the constant-
+// payload packet source class. The output is both written to file, and analyzed
+// in this test fixture.
+class AcmSwitchingOutputFrequencyOldApi : public ::testing::Test,
+                                          public test::PacketSource,
+                                          public test::AudioSink {
+ protected:
+  static const size_t kTestNumPackets = 100;
+  static const int kEncodedSampleRateHz = 16000;
+  static const size_t kPayloadLenSamples = 30 * kEncodedSampleRateHz / 1000;
+  static const int kPayloadType = 108;  // Default payload type for PCM16b-wb.
+
+  AcmSwitchingOutputFrequencyOldApi()
+      : first_output_(true),
+        num_packets_(0),
+        packet_source_(kPayloadLenSamples,
+                       kSampleValue,
+                       kEncodedSampleRateHz,
+                       kPayloadType),
+        high_output_freq_(0),
+        has_toggled_(false) {}
+
+  void Run(int low_output_freq, int high_output_freq, int toggle_period_ms) {
+    // Set up the receiver used to decode the packets and verify the decoded
+    // output.
+    const std::string output_file_name =
+        webrtc::test::OutputPath() +
+        ::testing::UnitTest::GetInstance()
+            ->current_test_info()
+            ->test_case_name() +
+        "_" + ::testing::UnitTest::GetInstance()->current_test_info()->name() +
+        "_output.pcm";
+    test::OutputAudioFile output_file(output_file_name);
+    // Have the output audio sent both to file and to the WriteArray method in
+    // this class.
+    test::AudioSinkFork output(this, &output_file);
+    test::AcmReceiveTestToggleOutputFreqOldApi receive_test(
+        this,
+        &output,
+        low_output_freq,
+        high_output_freq,
+        toggle_period_ms,
+        test::AcmReceiveTestOldApi::kMonoOutput);
+    ASSERT_NO_FATAL_FAILURE(receive_test.RegisterDefaultCodecs());
+    high_output_freq_ = high_output_freq;
+
+    // This is where the actual test is executed.
+    receive_test.Run();
+  }
+
+  // Inherited from test::PacketSource.
+  test::Packet* NextPacket() OVERRIDE {
+    // Check if it is time to terminate the test. The packet source is of type
+    // ConstantPcmPacketSource, which is infinite, so we must end the test
+    // "manually".
+    if (num_packets_++ > kTestNumPackets) {
+      EXPECT_TRUE(has_toggled_);
+      return NULL;  // Test ended.
+    }
+
+    // Get the next packet from the source.
+    return packet_source_.NextPacket();
+  }
+
+  // Inherited from test::AudioSink.
+  bool WriteArray(const int16_t* audio, size_t num_samples) {
+    // Skip checking the first output frame, since it has a number of zeros
+    // due to how NetEq is initialized.
+    if (first_output_) {
+      first_output_ = false;
+      return true;
+    }
+    for (size_t i = 0; i < num_samples; ++i) {
+      EXPECT_EQ(kSampleValue, audio[i]);
+    }
+    if (num_samples ==
+        static_cast<size_t>(high_output_freq_ / 100))  // Size of 10 ms frame.
+      has_toggled_ = true;
+    // The return value does not say if the values match the expectation, just
+    // that the method could process the samples.
+    return true;
+  }
+
+  const int16_t kSampleValue = 1000;
+  bool first_output_;
+  size_t num_packets_;
+  test::ConstantPcmPacketSource packet_source_;
+  int high_output_freq_;
+  bool has_toggled_;
+};
+
+TEST_F(AcmSwitchingOutputFrequencyOldApi, TestWithoutToggling) {
+  Run(16000, 16000, 1000);
+}
+
+TEST_F(AcmSwitchingOutputFrequencyOldApi, DISABLED_TestWithToggling) {
+  Run(16000, 32000, 1000);
+}
 }  // namespace webrtc
