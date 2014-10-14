@@ -392,6 +392,7 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
   send_config_.encoder_settings.encoder = encoder.get();
   send_config_.encoder_settings.payload_name = "VP8";
   send_config_.encoder_settings.payload_type = 124;
+  send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
 
   VideoStream* stream = &encoder_config_.streams[0];
   stream->width = params.clip.width;
@@ -403,6 +404,7 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
 
   CreateMatchingReceiveConfigs();
   receive_configs_[0].renderer = &analyzer;
+  receive_configs_[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
 
   CreateStreams();
   analyzer.input_ = send_stream_->Input();
@@ -454,6 +456,20 @@ TEST_F(FullStackTest, ForemanCifWithoutPacketLoss) {
                                      0.0,
                                      0.0
                                     };
+  RunTest(foreman_cif);
+}
+
+TEST_F(FullStackTest, ForemanCifPlr5) {
+  FullStackTestParams foreman_cif = {"foreman_cif_delay_50_0_plr_5",
+                                     {"foreman_cif", 352, 288, 30},
+                                     30000,
+                                     500000,
+                                     2000000,
+                                     0.0,
+                                     0.0
+                                    };
+  foreman_cif.link.loss_percent = 5;
+  foreman_cif.link.queue_delay_ms = 50;
   RunTest(foreman_cif);
 }
 
