@@ -28,6 +28,7 @@
 #include "talk/p2p/base/transportdescription.h"
 
 #include "talk/p2p/base/constants.h"
+#include "webrtc/base/stringutils.h"
 
 namespace cricket {
 
@@ -40,7 +41,7 @@ bool StringToConnectionRole(const std::string& role_str, ConnectionRole* role) {
   };
 
   for (size_t i = 0; i < ARRAY_SIZE(roles); ++i) {
-    if (stricmp(roles[i], role_str.c_str()) == 0) {
+    if (_stricmp(roles[i], role_str.c_str()) == 0) {
       *role = static_cast<ConnectionRole>(CONNECTIONROLE_ACTIVE + i);
       return true;
     }
@@ -69,4 +70,3 @@ bool ConnectionRoleToString(const ConnectionRole& role, std::string* role_str) {
 }
 
 }  // namespace cricket
-
