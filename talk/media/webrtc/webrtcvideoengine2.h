@@ -72,7 +72,6 @@ class WebRtcDecoderObserver;
 class WebRtcEncoderObserver;
 class WebRtcLocalStreamInfo;
 class WebRtcRenderAdapter;
-class WebRtcVideoChannel2;
 class WebRtcVideoChannelRecvInfo;
 class WebRtcVideoChannelSendInfo;
 class WebRtcVoiceEngine;
@@ -80,7 +79,6 @@ class WebRtcVoiceEngine;
 struct CapturedFrame;
 struct Device;
 
-class WebRtcVideoChannel2;
 class WebRtcVideoRenderer;
 
 class UnsignalledSsrcHandler {
@@ -116,17 +114,11 @@ class WebRtcVideoEncoderFactory2 {
       const VideoOptions& options,
       size_t num_streams);
 
-  virtual webrtc::VideoEncoder* CreateVideoEncoder(
-      const VideoCodec& codec,
-      const VideoOptions& options);
-
   virtual void* CreateVideoEncoderSettings(const VideoCodec& codec,
                                            const VideoOptions& options);
 
   virtual void DestroyVideoEncoderSettings(const VideoCodec& codec,
                                            void* encoder_settings);
-
-  virtual bool SupportsCodec(const cricket::VideoCodec& codec);
 };
 
 // CallFactory, overridden for testing to verify that webrtc::Call is configured
@@ -192,6 +184,8 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   virtual WebRtcVideoEncoderFactory2* GetVideoEncoderFactory();
 
  private:
+  std::vector<VideoCodec> GetSupportedCodecs() const;
+
   rtc::Thread* worker_thread_;
   WebRtcVoiceEngine* voice_engine_;
   std::vector<VideoCodec> video_codecs_;
@@ -217,6 +211,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
  public:
   WebRtcVideoChannel2(WebRtcCallFactory* call_factory,
                       VoiceMediaChannel* voice_channel,
+                      WebRtcVideoEncoderFactory* external_encoder_factory,
+                      WebRtcVideoDecoderFactory* external_decoder_factory,
                       WebRtcVideoEncoderFactory2* encoder_factory);
   ~WebRtcVideoChannel2();
   bool Init();
@@ -292,6 +288,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
    public:
     WebRtcVideoSendStream(
         webrtc::Call* call,
+        WebRtcVideoEncoderFactory* external_encoder_factory,
         WebRtcVideoEncoderFactory2* encoder_factory,
         const VideoOptions& options,
         const Settable<VideoCodecSettings>& codec_settings,
@@ -337,6 +334,19 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
       webrtc::VideoEncoderConfig encoder_config;
     };
 
+    struct AllocatedEncoder {
+      AllocatedEncoder(webrtc::VideoEncoder* encoder,
+                       webrtc::VideoCodecType type,
+                       bool external)
+          : encoder(encoder), type(type), external(external) {}
+      webrtc::VideoEncoder* encoder;
+      webrtc::VideoCodecType type;
+      bool external;
+    };
+
+    AllocatedEncoder CreateVideoEncoder(const VideoCodec& codec)
+        EXCLUSIVE_LOCKS_REQUIRED(lock_);
+    void DestroyVideoEncoder(AllocatedEncoder* encoder);
     void SetCodecAndOptions(const VideoCodecSettings& codec,
                             const VideoOptions& options)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
@@ -346,11 +356,13 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
     webrtc::Call* const call_;
+    WebRtcVideoEncoderFactory* const external_encoder_factory_;
     WebRtcVideoEncoderFactory2* const encoder_factory_;
 
     rtc::CriticalSection lock_;
     webrtc::VideoSendStream* stream_ GUARDED_BY(lock_);
     VideoSendStreamParameters parameters_ GUARDED_BY(lock_);
+    AllocatedEncoder allocated_encoder_ GUARDED_BY(lock_);
 
     VideoCapturer* capturer_ GUARDED_BY(lock_);
     bool sending_ GUARDED_BY(lock_);
@@ -436,6 +448,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   Settable<VideoCodecSettings> send_codec_;
   std::vector<webrtc::RtpExtension> send_rtp_extensions_;
 
+  WebRtcVideoEncoderFactory* const external_encoder_factory_;
+  WebRtcVideoDecoderFactory* const external_decoder_factory_;
   WebRtcVideoEncoderFactory2* const encoder_factory_;
   std::vector<VideoCodecSettings> recv_codecs_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;

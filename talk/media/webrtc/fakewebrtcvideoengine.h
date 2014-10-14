@@ -38,8 +38,10 @@
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"
 #include "talk/media/webrtc/webrtcvie.h"
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/base/thread_annotations.h"
 
 namespace cricket {
 
@@ -146,7 +148,7 @@ class FakeWebRtcVideoDecoderFactory : public WebRtcVideoDecoderFactory {
 // Fake class for mocking out webrtc::VideoEnoder
 class FakeWebRtcVideoEncoder : public webrtc::VideoEncoder {
  public:
-  FakeWebRtcVideoEncoder() {}
+  FakeWebRtcVideoEncoder() : num_frames_encoded_(0) {}
 
   virtual int32 InitEncode(const webrtc::VideoCodec* codecSettings,
                            int32 numberOfCores,
@@ -158,6 +160,8 @@ class FakeWebRtcVideoEncoder : public webrtc::VideoEncoder {
       const webrtc::I420VideoFrame& inputImage,
             const webrtc::CodecSpecificInfo* codecSpecificInfo,
             const std::vector<webrtc::VideoFrameType>* frame_types) {
+    rtc::CritScope lock(&crit_);
+    ++num_frames_encoded_;
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
@@ -179,6 +183,15 @@ class FakeWebRtcVideoEncoder : public webrtc::VideoEncoder {
                          uint32 frameRate) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
+
+  int GetNumEncodedFrames() {
+    rtc::CritScope lock(&crit_);
+    return num_frames_encoded_;
+  }
+
+ private:
+  rtc::CriticalSection crit_;
+  int num_frames_encoded_ GUARDED_BY(crit_);
 };
 
 // Fake class for mocking out WebRtcVideoEncoderFactory.
