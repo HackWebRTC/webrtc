@@ -944,29 +944,10 @@ TEST_F(WebRtcVideoEngineTestFake, LeakyBucketTest) {
   int first_send_channel = vie_.GetLastChannel();
   EXPECT_TRUE(vie_.GetTransmissionSmoothingStatus(first_send_channel));
 
-  // Disable the experiment and verify.
-  cricket::VideoOptions options;
-  options.conference_mode.Set(true);
-  options.video_leaky_bucket.Set(false);
-  EXPECT_TRUE(channel_->SetOptions(options));
-  EXPECT_FALSE(vie_.GetTransmissionSmoothingStatus(first_send_channel));
-
-  // Add a receive channel and verify leaky bucket isn't enabled.
-  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(2)));
-  int recv_channel_num = vie_.GetLastChannel();
-  EXPECT_NE(first_send_channel, recv_channel_num);
-  EXPECT_FALSE(vie_.GetTransmissionSmoothingStatus(recv_channel_num));
-
-  // Add a new send stream and verify leaky bucket is disabled from start.
+  // Add a new send stream and verify leaky bucket is enabled.
   EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(3)));
   int second_send_channel = vie_.GetLastChannel();
   EXPECT_NE(first_send_channel, second_send_channel);
-  EXPECT_FALSE(vie_.GetTransmissionSmoothingStatus(second_send_channel));
-
-  // Reenable leaky bucket.
-  options.video_leaky_bucket.Set(true);
-  EXPECT_TRUE(channel_->SetOptions(options));
-  EXPECT_TRUE(vie_.GetTransmissionSmoothingStatus(first_send_channel));
   EXPECT_TRUE(vie_.GetTransmissionSmoothingStatus(second_send_channel));
 }
 
@@ -1037,8 +1018,9 @@ TEST_F(WebRtcVideoEngineTestFake, BufferedModeLatency) {
 
 TEST_F(WebRtcVideoEngineTestFake, AdditiveVideoOptions) {
   EXPECT_TRUE(SetupEngine());
-
   EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(1)));
+  channel_->SetSendCodecs(engine_.codecs());
+
   int first_send_channel = vie_.GetLastChannel();
   EXPECT_EQ(0, vie_.GetSenderTargetDelay(first_send_channel));
   EXPECT_EQ(0, vie_.GetReceiverTargetDelay(first_send_channel));
@@ -1050,20 +1032,16 @@ TEST_F(WebRtcVideoEngineTestFake, AdditiveVideoOptions) {
   EXPECT_EQ(100, vie_.GetReceiverTargetDelay(first_send_channel));
   EXPECT_TRUE(vie_.GetTransmissionSmoothingStatus(first_send_channel));
 
+  int kBoostedStartBandwidthKbps = 1000;
   cricket::VideoOptions options2;
-  options2.video_leaky_bucket.Set(false);
+  options2.video_start_bitrate.Set(kBoostedStartBandwidthKbps);
   EXPECT_TRUE(channel_->SetOptions(options2));
-  EXPECT_FALSE(vie_.GetTransmissionSmoothingStatus(first_send_channel));
-  // The buffered_mode_latency still takes effect.
+  // Check that start bitrate has changed to the new value.
+  VerifyVP8SendCodec(first_send_channel, kVP8Codec.width, kVP8Codec.height, 0,
+      kMaxBandwidthKbps, kMinBandwidthKbps, kBoostedStartBandwidthKbps);
+  // The buffered_mode_latency should still take effect.
   EXPECT_EQ(100, vie_.GetSenderTargetDelay(first_send_channel));
   EXPECT_EQ(100, vie_.GetReceiverTargetDelay(first_send_channel));
-
-  options1.buffered_mode_latency.Set(50);
-  EXPECT_TRUE(channel_->SetOptions(options1));
-  EXPECT_EQ(50, vie_.GetSenderTargetDelay(first_send_channel));
-  EXPECT_EQ(50, vie_.GetReceiverTargetDelay(first_send_channel));
-  // The video_leaky_bucket still takes effect.
-  EXPECT_FALSE(vie_.GetTransmissionSmoothingStatus(first_send_channel));
 }
 
 TEST_F(WebRtcVideoEngineTestFake, SetCpuOveruseOptionsWithCaptureJitterMethod) {

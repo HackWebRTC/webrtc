@@ -179,10 +179,7 @@ bool NewFormatWithConstraints(
     // Subtract 0.0005 to avoid rounding problems. Same as above.
     const double kRoundingTruncation = 0.0005;
     return  (value >= ratio - kRoundingTruncation);
-  } else if (constraint.key == MediaConstraintsInterface::kNoiseReduction ||
-             constraint.key == MediaConstraintsInterface::kLeakyBucket ||
-             constraint.key ==
-                 MediaConstraintsInterface::kTemporalLayeredScreencast) {
+  } else if (constraint.key == MediaConstraintsInterface::kNoiseReduction) {
     // These are actually options, not constraints, so they can be satisfied
     // regardless of the format.
     return true;
@@ -294,12 +291,6 @@ bool ExtractVideoOptions(const MediaConstraintsInterface* all_constraints,
   all_valid &= ExtractOption(all_constraints,
       MediaConstraintsInterface::kNoiseReduction,
       &(options->video_noise_reduction));
-  all_valid &= ExtractOption(all_constraints,
-      MediaConstraintsInterface::kLeakyBucket,
-      &(options->video_leaky_bucket));
-  all_valid &= ExtractOption(all_constraints,
-      MediaConstraintsInterface::kTemporalLayeredScreencast,
-      &(options->video_temporal_layer_screencast));
 
   return all_valid;
 }

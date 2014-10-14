@@ -1981,7 +1981,7 @@ class VideoChannelTest
     EXPECT_TRUE(media_channel2_->GetOptions(&o2));
     EXPECT_EQ(o1, o2);
 
-    o1.video_leaky_bucket.Set(true);
+    o1.video_start_bitrate.Set(123);
     channel1_->SetChannelOptions(o1);
     channel2_->SetChannelOptions(o1);
     EXPECT_TRUE(media_channel1_->GetOptions(&o2));

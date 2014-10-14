@@ -2964,24 +2964,6 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
     LogSendCodecChange("SetOptions()");
   }
 
-  bool enable_leaky_bucket;
-  if (Changed(options.video_leaky_bucket,
-              original.video_leaky_bucket,
-              &enable_leaky_bucket)) {
-    LOG(LS_INFO) << "Leaky bucket is enabled? " << enable_leaky_bucket;
-    for (SendChannelMap::iterator it = send_channels_.begin();
-        it != send_channels_.end(); ++it) {
-      // TODO(holmer): This API will be removed as we move to the new
-      // webrtc::Call API. We should clean up this experiment when that is
-      // happening.
-      if (engine()->vie()->rtp()->SetTransmissionSmoothingStatus(
-          it->second->channel_id(), enable_leaky_bucket) != 0) {
-        LOG_RTCERR2(SetTransmissionSmoothingStatus, it->second->channel_id(),
-                    enable_leaky_bucket);
-      }
-    }
-  }
-
   int buffer_latency;
   if (Changed(options.buffered_mode_latency,
               original.buffered_mode_latency,
@@ -3509,12 +3491,10 @@ bool WebRtcVideoMediaChannel::ConfigureSending(int channel_id,
     return false;
   }
 
-  if (options_.video_leaky_bucket.GetWithDefaultIfUnset(true)) {
-    if (engine()->vie()->rtp()->SetTransmissionSmoothingStatus(channel_id,
-                                                               true) != 0) {
-      LOG_RTCERR2(SetTransmissionSmoothingStatus, channel_id, true);
-      return false;
-    }
+  if (engine()->vie()->rtp()->SetTransmissionSmoothingStatus(channel_id,
+                                                             true) != 0) {
+    LOG_RTCERR2(SetTransmissionSmoothingStatus, channel_id, true);
+    return false;
   }
 
   int buffer_latency =
@@ -3911,7 +3891,6 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
   }
   int screencast_min_bitrate =
       options_.screencast_min_bitrate.GetWithDefaultIfUnset(0);
-  bool leaky_bucket = options_.video_leaky_bucket.GetWithDefaultIfUnset(true);
   StreamParams* send_params = send_channel->stream_params();
   bool reset_send_codec =
     target_width != cur_width || target_height != cur_height;
@@ -3946,18 +3925,12 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
     if (is_screencast) {
       engine()->vie()->rtp()->SetMinTransmitBitrate(channel_id,
                                                     screencast_min_bitrate);
-      // If screencast and min bitrate set, force enable pacer.
-      if (screencast_min_bitrate > 0) {
-        engine()->vie()->rtp()->SetTransmissionSmoothingStatus(channel_id,
-                                                               true);
-      }
     } else {
       // In case of switching from screencast to regular capture, set
       // min bitrate padding and pacer back to defaults.
       engine()->vie()->rtp()->SetMinTransmitBitrate(channel_id, 0);
-      engine()->vie()->rtp()->SetTransmissionSmoothingStatus(channel_id,
-                                                             leaky_bucket);
     }
+    engine()->vie()->rtp()->SetTransmissionSmoothingStatus(channel_id, true);
     // TODO(sriniv): SetSendCodec already sets ssrc's like below.
     // Consider removing.
     if (send_params) {

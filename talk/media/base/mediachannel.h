@@ -306,9 +306,6 @@ struct VideoOptions {
     video_adapt_third.SetFrom(change.video_adapt_third);
     video_noise_reduction.SetFrom(change.video_noise_reduction);
     video_start_bitrate.SetFrom(change.video_start_bitrate);
-    video_temporal_layer_screencast.SetFrom(
-        change.video_temporal_layer_screencast);
-    video_leaky_bucket.SetFrom(change.video_leaky_bucket);
     video_highest_bitrate.SetFrom(change.video_highest_bitrate);
     cpu_overuse_detection.SetFrom(change.cpu_overuse_detection);
     cpu_underuse_threshold.SetFrom(change.cpu_underuse_threshold);
@@ -339,9 +336,6 @@ struct VideoOptions {
            video_adapt_third == o.video_adapt_third &&
            video_noise_reduction == o.video_noise_reduction &&
            video_start_bitrate == o.video_start_bitrate &&
-           video_temporal_layer_screencast ==
-               o.video_temporal_layer_screencast &&
-           video_leaky_bucket == o.video_leaky_bucket &&
            video_highest_bitrate == o.video_highest_bitrate &&
            cpu_overuse_detection == o.cpu_overuse_detection &&
            cpu_underuse_threshold == o.cpu_underuse_threshold &&
@@ -373,9 +367,6 @@ struct VideoOptions {
     ost << ToStringIfSet("video adapt third", video_adapt_third);
     ost << ToStringIfSet("noise reduction", video_noise_reduction);
     ost << ToStringIfSet("start bitrate", video_start_bitrate);
-    ost << ToStringIfSet("video temporal layer screencast",
-                         video_temporal_layer_screencast);
-    ost << ToStringIfSet("leaky bucket", video_leaky_bucket);
     ost << ToStringIfSet("highest video bitrate", video_highest_bitrate);
     ost << ToStringIfSet("cpu overuse detection", cpu_overuse_detection);
     ost << ToStringIfSet("cpu underuse threshold", cpu_underuse_threshold);
@@ -413,10 +404,6 @@ struct VideoOptions {
   Settable<bool> video_noise_reduction;
   // Experimental: Enable WebRtc higher start bitrate?
   Settable<int> video_start_bitrate;
-  // Experimental: Enable WebRTC layered screencast.
-  Settable<bool> video_temporal_layer_screencast;
-  // Enable WebRTC leaky bucket when sending media packets.
-  Settable<bool> video_leaky_bucket;
   // Set highest bitrate mode for video.
   Settable<HighestBitrate> video_highest_bitrate;
   // Enable WebRTC Cpu Overuse Detection, which is a new version of the CPU

@@ -66,9 +66,6 @@ const char MediaConstraintsInterface::kAudioMirroring[] = "googAudioMirroring";
 
 // Google-specific constraint keys for a local video source (getUserMedia).
 const char MediaConstraintsInterface::kNoiseReduction[] = "googNoiseReduction";
-const char MediaConstraintsInterface::kLeakyBucket[] = "googLeakyBucket";
-const char MediaConstraintsInterface::kTemporalLayeredScreencast[] =
-    "googTemporalLayeredScreencast";
 
 // Constraint keys for CreateOffer / CreateAnswer defined in W3C specification.
 const char MediaConstraintsInterface::kOfferToReceiveAudio[] =
