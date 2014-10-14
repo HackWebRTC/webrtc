@@ -104,7 +104,7 @@ void Loopback() {
   pipe_config.delay_standard_deviation_ms = flags::StdPropagationDelayMs();
   test::DirectTransport transport(pipe_config);
   Call::Config call_config(&transport);
-  call_config.start_bitrate_bps =
+  call_config.stream_start_bitrate_bps =
       static_cast<int>(flags::StartBitrate()) * 1000;
   scoped_ptr<Call> call(Call::Create(call_config));
 

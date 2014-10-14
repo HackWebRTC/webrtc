@@ -66,7 +66,9 @@ class Call {
           send_transport(send_transport),
           voice_engine(NULL),
           overuse_callback(NULL),
-          start_bitrate_bps(-1) {}
+          stream_start_bitrate_bps(kDefaultStartBitrateBps) {}
+
+    static const int kDefaultStartBitrateBps;
 
     webrtc::Config* webrtc_config;
 
@@ -79,10 +81,11 @@ class Call {
     // captured frames. 'NULL' disables the callback.
     LoadObserver* overuse_callback;
 
-    // Start bitrate used before a valid bitrate estimate is calculated. '-1'
-    // lets the call decide start bitrate.
-    // Note: This currently only affects video.
-    int start_bitrate_bps;
+    // Start bitrate used before a valid bitrate estimate is calculated.
+    // Note: This is currently set only for video and is per-stream rather of
+    // for the entire link.
+    // TODO(pbos): Set start bitrate for entire Call.
+    int stream_start_bitrate_bps;
   };
 
   static Call* Create(const Call::Config& config);

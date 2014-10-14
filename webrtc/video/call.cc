@@ -54,6 +54,8 @@ VideoEncoder* VideoEncoder::Create(VideoEncoder::EncoderType codec_type) {
   return NULL;
 }
 
+const int Call::Config::kDefaultStartBitrateBps = 300000;
+
 namespace internal {
 
 class CpuOveruseObserverProxy : public webrtc::CpuOveruseObserver {
@@ -153,8 +155,6 @@ Call* Call::Create(const Call::Config& config) {
 
 namespace internal {
 
-const int kDefaultVideoStreamBitrateBps = 300000;
-
 Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
     : config_(config),
       network_enabled_crit_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -203,16 +203,15 @@ VideoSendStream* Call::CreateVideoSendStream(
 
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
   // the call has already started.
-  VideoSendStream* send_stream = new VideoSendStream(
-      config_.send_transport,
-      overuse_observer_proxy_.get(),
-      video_engine_,
-      config,
-      encoder_config,
-      suspended_send_ssrcs_,
-      base_channel_id_,
-      config_.start_bitrate_bps != -1 ? config_.start_bitrate_bps
-                                      : kDefaultVideoStreamBitrateBps);
+  VideoSendStream* send_stream =
+      new VideoSendStream(config_.send_transport,
+                          overuse_observer_proxy_.get(),
+                          video_engine_,
+                          config,
+                          encoder_config,
+                          suspended_send_ssrcs_,
+                          base_channel_id_,
+                          config_.stream_start_bitrate_bps);
 
   // This needs to be taken before send_crit_ as both locks need to be held
   // while changing network state.
