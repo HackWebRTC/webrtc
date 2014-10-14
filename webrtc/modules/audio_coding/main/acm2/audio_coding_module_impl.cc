@@ -2047,6 +2047,7 @@ void AudioCodingModuleImpl::GetDecodingCallStatistics(
 
 bool AudioCodingImpl::RegisterSendCodec(AudioEncoder* send_codec) {
   FATAL() << "Not implemented yet.";
+  return false;
 }
 
 bool AudioCodingImpl::RegisterSendCodec(int encoder_type,
@@ -2071,6 +2072,7 @@ bool AudioCodingImpl::RegisterSendCodec(int encoder_type,
 
 const AudioEncoder* AudioCodingImpl::GetSenderInfo() const {
   FATAL() << "Not implemented yet.";
+  return reinterpret_cast<const AudioEncoder*>(NULL);
 }
 
 const CodecInst* AudioCodingImpl::GetSenderCodecInst() {
@@ -2089,10 +2091,12 @@ int AudioCodingImpl::Add10MsAudio(const AudioFrame& audio_frame) {
 
 const ReceiverInfo* AudioCodingImpl::GetReceiverInfo() const {
   FATAL() << "Not implemented yet.";
+  return reinterpret_cast<const ReceiverInfo*>(NULL);
 }
 
 bool AudioCodingImpl::RegisterReceiveCodec(AudioDecoder* receive_codec) {
   FATAL() << "Not implemented yet.";
+  return false;
 }
 
 bool AudioCodingImpl::RegisterReceiveCodec(int decoder_type,
@@ -2123,22 +2127,27 @@ bool AudioCodingImpl::InsertPayload(const uint8_t* incoming_payload,
                                     uint8_t payload_type,
                                     uint32_t timestamp) {
   FATAL() << "Not implemented yet.";
+  return false;
 }
 
 bool AudioCodingImpl::SetMinimumPlayoutDelay(int time_ms) {
   FATAL() << "Not implemented yet.";
+  return false;
 }
 
 bool AudioCodingImpl::SetMaximumPlayoutDelay(int time_ms) {
   FATAL() << "Not implemented yet.";
+  return false;
 }
 
 int AudioCodingImpl::LeastRequiredDelayMs() const {
   FATAL() << "Not implemented yet.";
+  return -1;
 }
 
 bool AudioCodingImpl::PlayoutTimestamp(uint32_t* timestamp) {
   FATAL() << "Not implemented yet.";
+  return false;
 }
 
 bool AudioCodingImpl::Get10MsAudio(AudioFrame* audio_frame) {
@@ -2148,14 +2157,18 @@ bool AudioCodingImpl::Get10MsAudio(AudioFrame* audio_frame) {
 bool AudioCodingImpl::NetworkStatistics(
     ACMNetworkStatistics* network_statistics) {
   FATAL() << "Not implemented yet.";
+  return false;
 }
 
 bool AudioCodingImpl::EnableNack(size_t max_nack_list_size) {
   FATAL() << "Not implemented yet.";
+  return false;
 }
 
 void AudioCodingImpl::DisableNack() {
-  FATAL() << "Not implemented yet.";
+  // A bug in the linker of Visual Studio 2013 Update 3 prevent us from using
+  // FATAL() here, if we do so then the linker hang when the WPO is turned on.
+  // TODO(sebmarchand): Re-evaluate this when we upgrade the toolchain.
 }
 
 bool AudioCodingImpl::SetVad(bool enable_dtx,
