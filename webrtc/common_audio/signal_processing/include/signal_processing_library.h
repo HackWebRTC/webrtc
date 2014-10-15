@@ -117,9 +117,6 @@ extern "C" {
 // functions.
 void WebRtcSpl_Init();
 
-// Get SPL Version
-int16_t WebRtcSpl_get_version(char* version, int16_t length_in_bytes);
-
 int16_t WebRtcSpl_GetScalingSquare(int16_t* in_vector,
                                    int in_vector_length,
                                    int times);
@@ -1683,17 +1680,4 @@ void WebRtcSpl_SynthesisQMF(const int16_t* low_band,
 //      - c    : The value of an 32-bit integer.
 //
 // Return Value: The value of a * b + c.
-//
-
-// int16_t WebRtcSpl_get_version(...)
-//
-// This function gives the version string of the Signal Processing Library.
-//
-// Input:
-//      - length_in_bytes : The size of Allocated space (in Bytes) where
-//                          the version number is written to (in string format).
-//
-// Output:
-//      - version         : Pointer to a buffer where the version number is
-//                          written to.
 //

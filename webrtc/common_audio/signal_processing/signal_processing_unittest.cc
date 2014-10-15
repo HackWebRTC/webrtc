@@ -96,7 +96,6 @@ TEST_F(SplTest, InlineTest) {
     int16_t b16 = -17;
     int32_t a32 = 111121;
     int32_t b32 = -1711;
-    char bVersion[8];
 
     EXPECT_EQ(17, WebRtcSpl_GetSizeInBits(a32));
 
@@ -136,8 +135,6 @@ TEST_F(SplTest, InlineTest) {
     a32 = 0x80000000;
     b32 = 0x7fffffff;
     EXPECT_EQ(static_cast<int>(0x80000000), WebRtcSpl_SubSatW32(a32, b32));
-
-    EXPECT_EQ(0, WebRtcSpl_get_version(bVersion, 8));
 }
 
 TEST_F(SplTest, MathOperationsTest) {
