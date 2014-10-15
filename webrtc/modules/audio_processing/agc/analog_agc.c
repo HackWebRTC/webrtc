@@ -228,8 +228,7 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
         for (i = 0; i < samples; i++)
         {
             // For lower band
-            tmp32 = WEBRTC_SPL_MUL_16_U16(in_mic[i], gain);
-            sample = WEBRTC_SPL_RSHIFT_W32(tmp32, 12);
+            sample = (in_mic[i] * gain) >> 12;
             if (sample > 32767)
             {
                 in_mic[i] = 32767;
@@ -244,8 +243,7 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
             // For higher band
             if (stt->fs == 32000)
             {
-                tmp32 = WEBRTC_SPL_MUL_16_U16(in_mic_H[i], gain);
-                sample = WEBRTC_SPL_RSHIFT_W32(tmp32, 12);
+                sample = (in_mic_H[i] * gain) >> 12;
                 if (sample > 32767)
                 {
                     in_mic_H[i] = 32767;
@@ -482,7 +480,7 @@ int WebRtcAgc_VirtualMic(void *agcInst, int16_t *in_near, int16_t *in_near_H,
     }
     for (ii = 0; ii < samples; ii++)
     {
-        tmpFlt = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_MUL_16_U16(in_near[ii], gain), 10);
+        tmpFlt = (in_near[ii] * gain) >> 10;
         if (tmpFlt > 32767)
         {
             tmpFlt = 32767;
@@ -510,8 +508,7 @@ int WebRtcAgc_VirtualMic(void *agcInst, int16_t *in_near, int16_t *in_near_H,
         in_near[ii] = (int16_t)tmpFlt;
         if (stt->fs == 32000)
         {
-            tmpFlt = WEBRTC_SPL_MUL_16_U16(in_near_H[ii], gain);
-            tmpFlt = WEBRTC_SPL_RSHIFT_W32(tmpFlt, 10);
+            tmpFlt = (in_near_H[ii] * gain) >> 10;
             if (tmpFlt > 32767)
             {
                 tmpFlt = 32767;
@@ -526,7 +523,7 @@ int WebRtcAgc_VirtualMic(void *agcInst, int16_t *in_near, int16_t *in_near_H,
     /* Set the level we (finally) used */
     stt->micGainIdx = gainIdx;
 //    *micLevelOut = stt->micGainIdx;
-    *micLevelOut = WEBRTC_SPL_RSHIFT_W32(stt->micGainIdx, stt->scale);
+    *micLevelOut = stt->micGainIdx >> stt->scale;
     /* Add to Mic as if it was the output from a true microphone */
     if (WebRtcAgc_AddMic(agcInst, in_near, in_near_H, samples) != 0)
     {
@@ -594,7 +591,7 @@ void WebRtcAgc_SaturationCtrl(Agc_t *stt, uint8_t *saturated, int32_t *env)
     /* Check if the signal is saturated */
     for (i = 0; i < 10; i++)
     {
-        tmpW16 = (int16_t)WEBRTC_SPL_RSHIFT_W32(env[i], 20);
+        tmpW16 = (int16_t)(env[i] >> 20);
         if (tmpW16 > 875)
         {
             stt->envSum += tmpW16;
@@ -645,12 +642,11 @@ void WebRtcAgc_ZeroCtrl(Agc_t *stt, int32_t *inMicLevel, int32_t *env)
         stt->msZero = 0;
 
         /* Increase microphone level only if it's less than 50% */
-        midVal = WEBRTC_SPL_RSHIFT_W32(stt->maxAnalog + stt->minLevel + 1, 1);
+        midVal = (stt->maxAnalog + stt->minLevel + 1) / 2;
         if (*inMicLevel < midVal)
         {
             /* *inMicLevel *= 1.1; */
-            tmp32 = 1126 * *inMicLevel;
-            *inMicLevel = WEBRTC_SPL_RSHIFT_W32(tmp32, 10);
+            *inMicLevel = (1126 * *inMicLevel) >> 10;
             /* Reduces risk of a muted mic repeatedly triggering excessive levels due
              * to zero signal detection. */
             *inMicLevel = WEBRTC_SPL_MIN(*inMicLevel, stt->zeroCtrlMax);
@@ -702,7 +698,7 @@ void WebRtcAgc_SpeakerInactiveCtrl(Agc_t *stt)
         /* stt->vadThreshold = (31 * stt->vadThreshold + vadThresh) / 32; */
         tmp32 = (int32_t)vadThresh;
         tmp32 += WEBRTC_SPL_MUL_16_16((int16_t)31, stt->vadThreshold);
-        stt->vadThreshold = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32, 5);
+        stt->vadThreshold = (int16_t)(tmp32 >> 5);
     }
 }
 
@@ -793,7 +789,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
     {
         int32_t tmpVol;
         stt->firstCall = 1;
-        tmp32 = WEBRTC_SPL_RSHIFT_W32((stt->maxLevel - stt->minLevel) * (int32_t)51, 9);
+        tmp32 = ((stt->maxLevel - stt->minLevel) * 51) >> 9;
         tmpVol = (stt->minLevel + tmp32);
 
         /* If the mic level is very low at start, increase it! */
@@ -813,7 +809,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
     /* If the mic level was manually changed to a very low value raise it! */
     if ((inMicLevelTmp != stt->micVol) && (inMicLevelTmp < stt->minOutput))
     {
-        tmp32 = WEBRTC_SPL_RSHIFT_W32((stt->maxLevel - stt->minLevel) * (int32_t)51, 9);
+        tmp32 = ((stt->maxLevel - stt->minLevel) * 51) >> 9;
         inMicLevelTmp = (stt->minLevel + tmp32);
         stt->micVol = inMicLevelTmp;
 #ifdef MIC_LEVEL_FEEDBACK
@@ -935,7 +931,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
         Rxx16w32 = stt->Rxx16w32_array[0][i];
 
         /* Rxx160w32 in Q(-7) */
-        tmp32 = WEBRTC_SPL_RSHIFT_W32(Rxx16w32 - stt->Rxx16_vectorw32[stt->Rxx16pos], 3);
+        tmp32 = (Rxx16w32 - stt->Rxx16_vectorw32[stt->Rxx16pos]) >> 3;
         stt->Rxx160w32 = stt->Rxx160w32 + tmp32;
         stt->Rxx16_vectorw32[stt->Rxx16pos] = Rxx16w32;
 
@@ -947,7 +943,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
         }
 
         /* Rxx16_LPw32 in Q(-4) */
-        tmp32 = WEBRTC_SPL_RSHIFT_W32(Rxx16w32 - stt->Rxx16_LPw32, kAlphaShortTerm);
+        tmp32 = (Rxx16w32 - stt->Rxx16_LPw32) >> kAlphaShortTerm;
         stt->Rxx16_LPw32 = (stt->Rxx16_LPw32) + tmp32;
 
         if (vadLogRatio > stt->vadThreshold)
@@ -969,11 +965,11 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
             } else if (stt->activeSpeech == 250)
             {
                 stt->activeSpeech += 2;
-                tmp32 = WEBRTC_SPL_RSHIFT_W32(stt->Rxx16_LPw32Max, 3);
+                tmp32 = stt->Rxx16_LPw32Max >> 3;
                 stt->Rxx160_LPw32 = tmp32 * RXX_BUFFER_LEN;
             }
 
-            tmp32 = WEBRTC_SPL_RSHIFT_W32(stt->Rxx160w32 - stt->Rxx160_LPw32, kAlphaLongTerm);
+            tmp32 = (stt->Rxx160w32 - stt->Rxx160_LPw32) >> kAlphaLongTerm;
             stt->Rxx160_LPw32 = stt->Rxx160_LPw32 + tmp32;
 
             if (stt->Rxx160_LPw32 > stt->upperSecondaryLimit)
@@ -988,15 +984,13 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
 
                     /* Lower the recording level */
                     /* Multiply by 0.828125 which corresponds to decreasing ~0.8dB */
-                    tmp32 = WEBRTC_SPL_RSHIFT_W32(stt->Rxx160_LPw32, 6);
+                    tmp32 = stt->Rxx160_LPw32 >> 6;
                     stt->Rxx160_LPw32 = tmp32 * 53;
 
                     /* Reduce the max gain to avoid excessive oscillation
                      * (but never drop below the maximum analog level).
-                     * stt->maxLevel = (15 * stt->maxLevel + stt->micVol) / 16;
                      */
-                    tmp32 = (15 * stt->maxLevel) + stt->micVol;
-                    stt->maxLevel = WEBRTC_SPL_RSHIFT_W32(tmp32, 4);
+                    stt->maxLevel = (15 * stt->maxLevel + stt->micVol) / 16;
                     stt->maxLevel = WEBRTC_SPL_MAX(stt->maxLevel, stt->maxAnalog);
 
                     stt->zeroCtrlMax = stt->micVol;
@@ -1039,15 +1033,12 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
                     /* Lower the recording level */
                     stt->msTooHigh = 0;
                     /* Multiply by 0.828125 which corresponds to decreasing ~0.8dB */
-                    tmp32 = WEBRTC_SPL_RSHIFT_W32(stt->Rxx160_LPw32, 6);
-                    stt->Rxx160_LPw32 = tmp32 * 53;
+                    stt->Rxx160_LPw32 = (stt->Rxx160_LPw32 / 64) * 53;
 
                     /* Reduce the max gain to avoid excessive oscillation
                      * (but never drop below the maximum analog level).
-                     * stt->maxLevel = (15 * stt->maxLevel + stt->micVol) / 16;
                      */
-                    tmp32 = (15 * stt->maxLevel) + stt->micVol;
-                    stt->maxLevel = WEBRTC_SPL_RSHIFT_W32(tmp32, 4);
+                    stt->maxLevel = (15 * stt->maxLevel + stt->micVol) / 16;
                     stt->maxLevel = WEBRTC_SPL_MAX(stt->maxLevel, stt->maxAnalog);
 
                     stt->zeroCtrlMax = stt->micVol;
@@ -1104,8 +1095,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
                                                                          volNormFIX, 13);
 
                     /* stt->Rxx160_LPw32 *= 1.047 [~0.2 dB]; */
-                    tmp32 = WEBRTC_SPL_RSHIFT_W32(stt->Rxx160_LPw32, 6);
-                    stt->Rxx160_LPw32 = tmp32 * 67;
+                    stt->Rxx160_LPw32 = (stt->Rxx160_LPw32 / 64) * 67;
 
                     tmp32 = inMicLevelTmp - stt->minLevel;
                     tmpU32 = ((uint32_t)weightFIX * (uint32_t)(inMicLevelTmp - stt->minLevel));
@@ -1165,8 +1155,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
                                                                          volNormFIX, 13);
 
                     /* stt->Rxx160_LPw32 *= 1.047 [~0.2 dB]; */
-                    tmp32 = WEBRTC_SPL_RSHIFT_W32(stt->Rxx160_LPw32, 6);
-                    stt->Rxx160_LPw32 = tmp32 * 67;
+                    stt->Rxx160_LPw32 = (stt->Rxx160_LPw32 / 64) * 67;
 
                     tmp32 = inMicLevelTmp - stt->minLevel;
                     tmpU32 = ((uint32_t)weightFIX * (uint32_t)(inMicLevelTmp - stt->minLevel));
@@ -1255,11 +1244,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
         stt->micVol = stt->minOutput;
     }
 
-    *outMicLevel = WEBRTC_SPL_RSHIFT_W32(stt->micVol, stt->scale);
-    if (*outMicLevel > WEBRTC_SPL_RSHIFT_W32(stt->maxAnalog, stt->scale))
-    {
-        *outMicLevel = WEBRTC_SPL_RSHIFT_W32(stt->maxAnalog, stt->scale);
-    }
+    *outMicLevel = WEBRTC_SPL_MIN(stt->micVol, stt->maxAnalog) >> stt->scale;
 
     return 0;
 }
@@ -1624,7 +1609,7 @@ int WebRtcAgc_Init(void *agcInst, int32_t minLevel, int32_t maxLevel,
     }
     /* The maximum supplemental volume range is based on a vague idea
      * of how much lower the gain will be than the real analog gain. */
-    max_add = WEBRTC_SPL_RSHIFT_W32(maxLevel - minLevel, 2);
+    max_add = (maxLevel - minLevel) / 4;
 
     /* Minimum/maximum volume level that can be set */
     stt->minLevel = minLevel;
@@ -1656,7 +1641,7 @@ int WebRtcAgc_Init(void *agcInst, int32_t minLevel, int32_t maxLevel,
 #endif
 
     /* Minimum output volume is 4% higher than the available lowest volume level */
-    tmp32 = WEBRTC_SPL_RSHIFT_W32((stt->maxLevel - stt->minLevel) * (int32_t)10, 8);
+    tmp32 = ((stt->maxLevel - stt->minLevel) * 10) >> 8;
     stt->minOutput = (stt->minLevel + tmp32);
 
     stt->msTooLow = 0;

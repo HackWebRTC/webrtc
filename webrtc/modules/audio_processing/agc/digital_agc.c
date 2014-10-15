@@ -204,10 +204,10 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
         tmp32no1 = WEBRTC_SPL_SHIFT_W32(den, zeros - 8); // Q(zeros)
         if (numFIX < 0)
         {
-            numFIX -= WEBRTC_SPL_RSHIFT_W32(tmp32no1, 1);
+            numFIX -= tmp32no1 / 2;
         } else
         {
-            numFIX += WEBRTC_SPL_RSHIFT_W32(tmp32no1, 1);
+            numFIX += tmp32no1 / 2;
         }
         y32 = numFIX / tmp32no1;  // in Q14
         if (limiterEnable && (i < limiterIdx))
@@ -219,31 +219,30 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
         if (y32 > 39000)
         {
             tmp32 = (y32 >> 1) * kLog10 + 4096;  // in Q27
-            tmp32 = WEBRTC_SPL_RSHIFT_W32(tmp32, 13); // in Q14
+            tmp32 >>= 13;  // In Q14.
         } else
         {
             tmp32 = y32 * kLog10 + 8192;  // in Q28
-            tmp32 = WEBRTC_SPL_RSHIFT_W32(tmp32, 14); // in Q14
+            tmp32 >>= 14;  // In Q14.
         }
         tmp32 += 16 << 14;  // in Q14 (Make sure final output is in Q16)
 
         // Calculate power
         if (tmp32 > 0)
         {
-            intPart = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32, 14);
+            intPart = (int16_t)(tmp32 >> 14);
             fracPart = (uint16_t)(tmp32 & 0x00003FFF); // in Q14
-            if (WEBRTC_SPL_RSHIFT_W32(fracPart, 13))
+            if ((fracPart >> 13) != 0)
             {
                 tmp16 = (2 << 14) - constLinApprox;
                 tmp32no2 = (1 << 14) - fracPart;
                 tmp32no2 *= tmp16;
-                tmp32no2 = WEBRTC_SPL_RSHIFT_W32(tmp32no2, 13);
+                tmp32no2 >>= 13;
                 tmp32no2 = (1 << 14) - tmp32no2;
             } else
             {
                 tmp16 = constLinApprox - (1 << 14);
-                tmp32no2 = fracPart * tmp16;
-                tmp32no2 = WEBRTC_SPL_RSHIFT_W32(tmp32no2, 13);
+                tmp32no2 = (fracPart * tmp16) >> 13;
             }
             fracPart = (uint16_t)tmp32no2;
             gainTable[i] =
@@ -353,7 +352,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
     if (stt->vadFarend.counter > 10)
     {
         tmp32 = WEBRTC_SPL_MUL_16_16(3, logratio);
-        logratio = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32 - stt->vadFarend.logRatio, 2);
+        logratio = (int16_t)((tmp32 - stt->vadFarend.logRatio) >> 2);
     }
 
     // Determine decay factor depending on VAD
@@ -374,7 +373,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
         //       * (2^27/(DecayTime*(upper_thr-lower_thr)))) >> 10);
         // SUBSTITUTED: 2^27/(DecayTime*(upper_thr-lower_thr))  ->  65
         tmp32 = WEBRTC_SPL_MUL_16_16((lower_thr - logratio), 65);
-        decay = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32, 10);
+        decay = (int16_t)(tmp32 >> 10);
     }
 
     // adjust decay factor for long silence (detected as low standard deviation)
@@ -388,7 +387,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
         {
             // decay = (int16_t)(((stt->vadNearend.stdLongTerm - 4000) * decay) >> 12);
             tmp32 = WEBRTC_SPL_MUL_16_16((stt->vadNearend.stdLongTerm - 4000), decay);
-            decay = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32, 12);
+            decay = (int16_t)(tmp32 >> 12);
         }
 
         if (lowlevelSignal != 0)
@@ -462,9 +461,9 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
             zeros = 31;
         }
         tmp32 = (cur_level << zeros) & 0x7FFFFFFF;
-        frac = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32, 19); // Q12
+        frac = (int16_t)(tmp32 >> 19);  // Q12.
         tmp32 = (stt->gainTable[zeros-1] - stt->gainTable[zeros]) * frac;
-        gains[k + 1] = stt->gainTable[zeros] + WEBRTC_SPL_RSHIFT_W32(tmp32, 12);
+        gains[k + 1] = stt->gainTable[zeros] + (tmp32 >> 12);
 #ifdef WEBRTC_AGC_DEBUG_DUMP
         if (k == 0) {
           fprintf(stt->logFile,
@@ -488,7 +487,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
     }
     tmp32 = (stt->capacitorFast << zeros_fast) & 0x7FFFFFFF;
     zeros_fast <<= 9;
-    zeros_fast -= (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32, 22);
+    zeros_fast -= (int16_t)(tmp32 >> 22);
 
     gate = 1000 + zeros_fast - zeros - stt->vadNearend.stdShortTerm;
 
@@ -498,7 +497,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
     } else
     {
         tmp32 = WEBRTC_SPL_MUL_16_16(stt->gatePrevious, 7);
-        gate = (int16_t)WEBRTC_SPL_RSHIFT_W32((int32_t)gate + tmp32, 3);
+        gate = (int16_t)((gate + tmp32) >> 3);
         stt->gatePrevious = gate;
     }
     // gate < 0     -> no gate
@@ -517,12 +516,12 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
             if ((gains[k + 1] - stt->gainTable[0]) > 8388608)
             {
                 // To prevent wraparound
-                tmp32 = WEBRTC_SPL_RSHIFT_W32((gains[k+1] - stt->gainTable[0]), 8);
+                tmp32 = (gains[k + 1] - stt->gainTable[0]) >> 8;
                 tmp32 *= 178 + gain_adj;
             } else
             {
                 tmp32 = (gains[k+1] - stt->gainTable[0]) * (178 + gain_adj);
-                tmp32 = WEBRTC_SPL_RSHIFT_W32(tmp32, 8);
+                tmp32 >>= 8;
             }
             gains[k + 1] = stt->gainTable[0] + tmp32;
         }
@@ -537,10 +536,10 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
         {
             zeros = 16 - WebRtcSpl_NormW32(gains[k + 1]);
         }
-        gain32 = WEBRTC_SPL_RSHIFT_W32(gains[k+1], zeros) + 1;
+        gain32 = (gains[k + 1] >> zeros) + 1;
         gain32 *= gain32;
         // check for overflow
-        while (AGC_MUL32(WEBRTC_SPL_RSHIFT_W32(env[k], 12) + 1, gain32)
+        while (AGC_MUL32((env[k] >> 12) + 1, gain32)
                 > WEBRTC_SPL_SHIFT_W32((int32_t)32767, 2 * (1 - zeros + 10)))
         {
             // multiply by 253/256 ==> -0.1 dB
@@ -552,7 +551,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
             {
                 gains[k + 1] = (gains[k+1] * 253) / 256;
             }
-            gain32 = WEBRTC_SPL_RSHIFT_W32(gains[k+1], zeros) + 1;
+            gain32 = (gains[k + 1] >> zeros) + 1;
             gain32 *= gain32;
         }
     }
@@ -576,7 +575,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
     {
         // For lower band
         tmp32 = out[n] * ((gain32 + 127) >> 7);
-        out_tmp = WEBRTC_SPL_RSHIFT_W32(tmp32 , 16);
+        out_tmp = tmp32 >> 16;
         if (out_tmp > 4095)
         {
             out[n] = (int16_t)32767;
@@ -586,13 +585,13 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
         } else
         {
             tmp32 = out[n] * (gain32 >> 4);
-            out[n] = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32 , 16);
+            out[n] = (int16_t)(tmp32 >> 16);
         }
         // For higher band
         if (FS == 32000)
         {
             tmp32 = out_H[n] * ((gain32 + 127) >> 7);
-            out_tmp = WEBRTC_SPL_RSHIFT_W32(tmp32 , 16);
+            out_tmp = tmp32 >> 16;
             if (out_tmp > 4095)
             {
                 out_H[n] = (int16_t)32767;
@@ -602,7 +601,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
             } else
             {
                 tmp32 = out_H[n] * (gain32 >> 4);
-                out_H[n] = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32 , 16);
+                out_H[n] = (int16_t)(tmp32 >> 16);
             }
         }
         //
@@ -619,12 +618,12 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
         {
             // For lower band
             tmp32 = out[k * L + n] * (gain32 >> 4);
-            out[k * L + n] = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32 , 16);
+            out[k * L + n] = (int16_t)(tmp32 >> 16);
             // For higher band
             if (FS == 32000)
             {
                 tmp32 = out_H[k * L + n] * (gain32 >> 4);
-                out_H[k * L + n] = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32 , 16);
+                out_H[k * L + n] = (int16_t)(tmp32 >> 16);
             }
             gain32 += delta;
         }
@@ -684,7 +683,7 @@ int16_t WebRtcAgc_ProcessVad(AgcVad_t *state, // (i) VAD state
             for (k = 0; k < 8; k++)
             {
                 tmp32 = (int32_t)in[2 * k] + (int32_t)in[2 * k + 1];
-                tmp32 = WEBRTC_SPL_RSHIFT_W32(tmp32, 1);
+                tmp32 >>= 1;
                 buf1[k] = (int16_t)tmp32;
             }
             in += 16;
@@ -701,8 +700,8 @@ int16_t WebRtcAgc_ProcessVad(AgcVad_t *state, // (i) VAD state
         {
             out = buf2[k] + HPstate;
             tmp32 = 600 * out;
-            HPstate = (int16_t)(WEBRTC_SPL_RSHIFT_W32(tmp32, 10) - buf2[k]);
-            nrg += WEBRTC_SPL_RSHIFT_W32(out * out, 6);
+            HPstate = (int16_t)((tmp32 >> 10) - buf2[k]);
+            nrg += (out * out) >> 6;
         }
     }
     state->HPstate = HPstate;
@@ -745,12 +744,12 @@ int16_t WebRtcAgc_ProcessVad(AgcVad_t *state, // (i) VAD state
 
     // update short-term estimate of mean energy level (Q10)
     tmp32 = (WEBRTC_SPL_MUL_16_16(state->meanShortTerm, 15) + (int32_t)dB);
-    state->meanShortTerm = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32, 4);
+    state->meanShortTerm = (int16_t)(tmp32 >> 4);
 
     // update short-term estimate of variance in energy level (Q8)
-    tmp32 = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_MUL_16_16(dB, dB), 12);
+    tmp32 = (dB * dB) >> 12;
     tmp32 += state->varianceShortTerm * 15;
-    state->varianceShortTerm = WEBRTC_SPL_RSHIFT_W32(tmp32, 4);
+    state->varianceShortTerm = tmp32 / 16;
 
     // update short-term estimate of standard deviation in energy level (Q10)
     tmp32 = WEBRTC_SPL_MUL_16_16(state->meanShortTerm, state->meanShortTerm);
@@ -763,7 +762,7 @@ int16_t WebRtcAgc_ProcessVad(AgcVad_t *state, // (i) VAD state
         tmp32, WebRtcSpl_AddSatW16(state->counter, 1));
 
     // update long-term estimate of variance in energy level (Q8)
-    tmp32 = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_MUL_16_16(dB, dB), 12);
+    tmp32 = (dB * dB) >> 12;
     tmp32 += state->varianceLongTerm * state->counter;
     state->varianceLongTerm = WebRtcSpl_DivW32W16(
         tmp32, WebRtcSpl_AddSatW16(state->counter, 1));
@@ -779,9 +778,9 @@ int16_t WebRtcAgc_ProcessVad(AgcVad_t *state, // (i) VAD state
     tmp32 = WebRtcSpl_DivW32W16(tmp32, state->stdLongTerm);
     tmpU16 = (13 << 12);
     tmp32b = WEBRTC_SPL_MUL_16_U16(state->logRatio, tmpU16);
-    tmp32 += WEBRTC_SPL_RSHIFT_W32(tmp32b, 10);
+    tmp32 += tmp32b >> 10;
 
-    state->logRatio = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32, 6);
+    state->logRatio = (int16_t)(tmp32 >> 6);
 
     // limit
     if (state->logRatio > 2048)
