@@ -44,7 +44,6 @@ char kTSanDefaultSuppressions[] =
 
 // rtc_unittest
 // https://code.google.com/p/webrtc/issues/detail?id=3911 for details.
-"race:ThreadTest_ThreeThreadsInvoke_Test::TestBody()::LocalFuncs::SetAndInvokeSet\n"
 "race:rtc::FireAndForgetAsyncClosure<FunctorB>::Execute\n"
 "race:rtc::MessageQueueManager::Clear\n"
 "race:rtc::Thread::Clear\n"

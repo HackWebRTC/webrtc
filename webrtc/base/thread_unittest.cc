@@ -313,42 +313,64 @@ TEST(ThreadTest, ThreeThreadsInvoke) {
   thread_b.Start();
   thread_c.Start();
 
+  class LockedBool {
+   public:
+    explicit LockedBool(bool value) : value_(value) {}
+
+    void Set(bool value) {
+      CritScope lock(&crit_);
+      value_ = value;
+    }
+
+    bool Get() {
+      CritScope lock(&crit_);
+      return value_;
+    }
+
+   private:
+    CriticalSection crit_;
+    bool value_ GUARDED_BY(crit_);
+  };
+
   struct LocalFuncs {
-    static void Set(bool* out) { *out = true; }
-    static void InvokeSet(Thread* thread, bool* out) {
+    static void Set(LockedBool* out) { out->Set(true); }
+    static void InvokeSet(Thread* thread, LockedBool* out) {
       thread->Invoke<void>(Bind(&Set, out));
     }
 
     // Set |out| true and call InvokeSet on |thread|.
-    static void SetAndInvokeSet(bool* out, Thread* thread, bool* out_inner) {
-      *out = true;
+    static void SetAndInvokeSet(LockedBool* out,
+                                Thread* thread,
+                                LockedBool* out_inner) {
+      out->Set(true);
       InvokeSet(thread, out_inner);
     }
 
     // Asynchronously invoke SetAndInvokeSet on |thread1| and wait until
     // |thread1| starts the call.
     static void AsyncInvokeSetAndWait(
-        Thread* thread1, Thread* thread2, bool* out) {
-      bool async_invoked = false;
+        Thread* thread1, Thread* thread2, LockedBool* out) {
+      CriticalSection crit;
+      LockedBool async_invoked(false);
 
       AsyncInvoker invoker;
       invoker.AsyncInvoke<void>(
           thread1, Bind(&SetAndInvokeSet, &async_invoked, thread2, out));
 
-      EXPECT_TRUE_WAIT(async_invoked, 2000);
+      EXPECT_TRUE_WAIT(async_invoked.Get(), 2000);
     }
   };
 
-  bool thread_a_called = false;
+  LockedBool thread_a_called(false);
 
   // Start the sequence A --(invoke)--> B --(async invoke)--> C --(invoke)--> A.
   // Thread B returns when C receives the call and C should be blocked until A
   // starts to process messages.
   thread_b.Invoke<void>(Bind(&LocalFuncs::AsyncInvokeSetAndWait,
                              &thread_c, thread_a, &thread_a_called));
-  EXPECT_FALSE(thread_a_called);
+  EXPECT_FALSE(thread_a_called.Get());
 
-  EXPECT_TRUE_WAIT(thread_a_called, 2000);
+  EXPECT_TRUE_WAIT(thread_a_called.Get(), 2000);
 }
 
 class AsyncInvokeTest : public testing::Test {
