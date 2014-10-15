@@ -17,12 +17,7 @@ access its exposed API. Details are in botmanager.js.
 == How to run the test ==
  $ cd trunk/webrtc/tool/rtcbot
  $ npm install express browserify ws websocket-stream dnode
- $ node test.js <bot_type> <test_file_path>
-
- <bot_type> — the type of the running bot. For example:
-  - chrome: chrome on host machine.
-  - android: android device. Details in "Android" Section.
-  - android-chrome: chrome on android device. Details in "Android" Section.
+ $ node test.js <test_file_path>
 
 == Example on how to install nodejs ==
  $ cd /work/tools/
@@ -30,6 +25,12 @@ access its exposed API. Details are in botmanager.js.
  $ export NVM_DIR=/work/tools/nvm; source $NVM_DIR/nvm.sh
  $ nvm install 0.10
  $ nvm use 0.10
+
+== Supported Bot Types ==
+  - "chrome": chrome on host machine.
+  - "android-chrome": chrome on android device. Details in "Android" Section.
+
+ * Bot type is specified for each spawned bot in the test file.
 
 == Android ==
 Before running test with Android one MUST forward the device port 8080 to the

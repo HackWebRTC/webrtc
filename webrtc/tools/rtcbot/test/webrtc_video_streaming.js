@@ -24,7 +24,9 @@ function testVideoStreaming(bot1, bot2) {
     onPeerConnectionCreated);
 
   function createPeerConnection(done) {
-    this.createPeerConnection(done, test.fail);
+    this.asyncCreateTurnConfig(function(config) {
+      this.createPeerConnection(config, done, test.fail);
+    }.bind(this), test.fail);
   }
 
   function onPeerConnectionCreated(peer1, peer2) {
@@ -101,6 +103,6 @@ function testVideoStreaming(bot1, bot2) {
   }
 }
 
-test.wait( [ test.spawnBot.bind(test, "alice"),
-             test.spawnBot.bind(test, "bob") ],
+test.wait( [ test.spawnBot.bind(test, "alice", "chrome"),
+             test.spawnBot.bind(test, "bob", "android-chrome") ],
           testVideoStreaming);

@@ -16,11 +16,10 @@ var fs = require('fs');
 var vm = require('vm');
 var BotManager = require('./botmanager.js');
 
-function Test(botType) {
+function Test() {
   this.timeout_ = setTimeout(
       this.fail.bind(this, "Test timeout!"),
       100000);
-  this.botType_ = botType;
 }
 
 Test.prototype = {
@@ -67,11 +66,11 @@ Test.prototype = {
     }
   },
 
-  spawnBot: function (name, doneCallback) {
+  spawnBot: function (name, botType, doneCallback) {
     // Lazy initialization of botmanager.
     if (!this.botManager_)
       this.botManager_ = new BotManager();
-    this.botManager_.spawnNewBot(name, this.botType_, doneCallback);
+    this.botManager_.spawnNewBot(name, botType, doneCallback);
   },
 
   createStatisticsReport: function (outputFileName) {
@@ -137,11 +136,11 @@ StatisticsReport.prototype = {
   },
 }
 
-function runTest(botType, testfile) {
+function runTest(testfile) {
   console.log("Running test: " + testfile);
   var script = vm.createScript(fs.readFileSync(testfile), testfile);
-  script.runInNewContext({ test: new Test(botType), setInterval: setInterval,
+  script.runInNewContext({ test: new Test(), setInterval: setInterval,
       setTimeout: setTimeout });
 }
 
-runTest(process.argv[2], process.argv[3]);
+runTest(process.argv[2]);

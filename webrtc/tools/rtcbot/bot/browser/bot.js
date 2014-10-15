@@ -25,10 +25,10 @@ function getUserMedia(constraints, onSuccessCallback, onFailCallback){
   }
 }
 
-function createPeerConnection(doneCallback, failCallback) {
+function createPeerConnection(config, doneCallback, failCallback) {
   console.log("Creating peer connection");
   var obj = {};
-  var pc = new webkitRTCPeerConnection(null);
+  var pc = new webkitRTCPeerConnection(config);
 
   expose(obj, pc, "close");
   expose(obj, pc, "createOffer");
@@ -113,9 +113,38 @@ function getStreamFromIdentifier_(id) {
   return null;
 };
 
+// Ask computeengineondemand to give us TURN server credentials and URIs.
+function asyncCreateTurnConfig(onSuccess, onError) {
+  var CEOD_URL = ('https://computeengineondemand.appspot.com/turn?' +
+                'username=1234&key=5678');
+  var xhr = new XMLHttpRequest();
+  function onResult() {
+    if (xhr.readyState != 4)
+      return;
+
+    if (xhr.status != 200) {
+      onError('TURN request failed');
+      return;
+    }
+
+    var response = JSON.parse(xhr.responseText);
+    var iceServer = {
+      'username': response.username,
+      'credential': response.password,
+      'urls': response.uris
+    };
+    onSuccess({ 'iceServers': [ iceServer ] });
+  }
+
+  xhr.onreadystatechange = onResult;
+  xhr.open('GET', CEOD_URL, true);
+  xhr.send();
+};
+
 connectToServer({
   ping: ping,
   getUserMedia: getUserMedia,
   createPeerConnection: createPeerConnection,
   showStream: showStream,
+  asyncCreateTurnConfig: asyncCreateTurnConfig,
 });

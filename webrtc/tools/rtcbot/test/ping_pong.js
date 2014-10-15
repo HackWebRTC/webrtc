@@ -16,4 +16,4 @@ function testPingPong(bot) {
   }
 }
 
-test.spawnBot("alice", testPingPong);
+test.spawnBot("alice", "chrome", testPingPong);

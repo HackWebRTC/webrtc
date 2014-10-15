@@ -17,7 +17,7 @@ function testOfferAnswer(peer1, peer2) {
     establishCall);
 
   function createPeerConnection(done) {
-    this.createPeerConnection(done, test.fail);
+    this.createPeerConnection(null, done, test.fail);
   }
 
   function establishCall(pc1, pc2) {
@@ -49,6 +49,6 @@ function expectedCall() {
     test.done();
 }
 
-test.wait( [ test.spawnBot.bind(test, "alice"),
-             test.spawnBot.bind(test, "bob") ],
+test.wait( [ test.spawnBot.bind(test, "alice", "chrome"),
+             test.spawnBot.bind(test, "bob", "chrome") ],
           testOfferAnswer);
