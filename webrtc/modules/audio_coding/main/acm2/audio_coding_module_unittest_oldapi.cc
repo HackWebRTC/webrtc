@@ -946,7 +946,7 @@ class AcmSwitchingOutputFrequencyOldApi : public ::testing::Test,
                                           public test::PacketSource,
                                           public test::AudioSink {
  protected:
-  static const size_t kTestNumPackets = 100;
+  static const size_t kTestNumPackets = 50;
   static const int kEncodedSampleRateHz = 16000;
   static const size_t kPayloadLenSamples = 30 * kEncodedSampleRateHz / 1000;
   static const int kPayloadType = 108;  // Default payload type for PCM16b-wb.
@@ -958,10 +958,10 @@ class AcmSwitchingOutputFrequencyOldApi : public ::testing::Test,
                        kSampleValue,
                        kEncodedSampleRateHz,
                        kPayloadType),
-        high_output_freq_(0),
+        output_freq_2_(0),
         has_toggled_(false) {}
 
-  void Run(int low_output_freq, int high_output_freq, int toggle_period_ms) {
+  void Run(int output_freq_1, int output_freq_2, int toggle_period_ms) {
     // Set up the receiver used to decode the packets and verify the decoded
     // output.
     const std::string output_file_name =
@@ -978,12 +978,12 @@ class AcmSwitchingOutputFrequencyOldApi : public ::testing::Test,
     test::AcmReceiveTestToggleOutputFreqOldApi receive_test(
         this,
         &output,
-        low_output_freq,
-        high_output_freq,
+        output_freq_1,
+        output_freq_2,
         toggle_period_ms,
         test::AcmReceiveTestOldApi::kMonoOutput);
     ASSERT_NO_FATAL_FAILURE(receive_test.RegisterDefaultCodecs());
-    high_output_freq_ = high_output_freq;
+    output_freq_2_ = output_freq_2;
 
     // This is where the actual test is executed.
     receive_test.Run();
@@ -1015,7 +1015,7 @@ class AcmSwitchingOutputFrequencyOldApi : public ::testing::Test,
       EXPECT_EQ(kSampleValue, audio[i]);
     }
     if (num_samples ==
-        static_cast<size_t>(high_output_freq_ / 100))  // Size of 10 ms frame.
+        static_cast<size_t>(output_freq_2_ / 100))  // Size of 10 ms frame.
       has_toggled_ = true;
     // The return value does not say if the values match the expectation, just
     // that the method could process the samples.
@@ -1026,7 +1026,7 @@ class AcmSwitchingOutputFrequencyOldApi : public ::testing::Test,
   bool first_output_;
   size_t num_packets_;
   test::ConstantPcmPacketSource packet_source_;
-  int high_output_freq_;
+  int output_freq_2_;
   bool has_toggled_;
 };
 
@@ -1034,7 +1034,19 @@ TEST_F(AcmSwitchingOutputFrequencyOldApi, TestWithoutToggling) {
   Run(16000, 16000, 1000);
 }
 
-TEST_F(AcmSwitchingOutputFrequencyOldApi, DISABLED_TestWithToggling) {
+TEST_F(AcmSwitchingOutputFrequencyOldApi, DISABLED_Toggle16KhzTo32Khz) {
   Run(16000, 32000, 1000);
+}
+
+TEST_F(AcmSwitchingOutputFrequencyOldApi, Toggle32KhzTo16Khz) {
+  Run(32000, 16000, 1000);
+}
+
+TEST_F(AcmSwitchingOutputFrequencyOldApi, DISABLED_Toggle16KhzTo8Khz) {
+  Run(16000, 8000, 1000);
+}
+
+TEST_F(AcmSwitchingOutputFrequencyOldApi, Toggle8KhzTo16Khz) {
+  Run(8000, 16000, 1000);
 }
 }  // namespace webrtc
