@@ -991,10 +991,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t* aecm,
                             supGain >> tmp16no1);
       } else {
         // Result in Q-(RESOLUTION_CHANNEL+RESOLUTION_SUPGAIN-16)
-        echoEst32Gained = WEBRTC_SPL_UMUL_32_16(
-                            (uint32_t)WEBRTC_SPL_RSHIFT_W32(aecm->echoFilt[i],
-                                                            tmp16no1),
-                            (uint16_t)supGain);
+        echoEst32Gained = (aecm->echoFilt[i] >> tmp16no1) * supGain;
       }
     }
 
@@ -1014,7 +1011,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t* aecm,
     }
 
     tmp32no1 = (int32_t)(tmp16no2 - tmp16no1);
-    tmp16no2 = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32no1, 4);
+    tmp16no2 = (int16_t)(tmp32no1 >> 4);
     tmp16no2 += tmp16no1;
     zeros16 = WebRtcSpl_NormW16(tmp16no2);
     if ((tmp16no2) & (-qDomainDiff > zeros16)) {

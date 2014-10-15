@@ -93,9 +93,8 @@ int Filter(FilterState* hpf, int16_t* data, int length) {
                                tmp_int32,
                                static_cast<int32_t>(-134217728));
 
-    // Convert back to Q0 and use rounding
-    data[i] = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp_int32, 12);
-
+    // Convert back to Q0 and use rounding.
+    data[i] = (int16_t)(tmp_int32 >> 12);
   }
 
   return AudioProcessing::kNoError;

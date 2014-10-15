@@ -1472,7 +1472,7 @@ void WebRtcNsx_DataSynthesis(NsxInst_t* inst, short* outFrame) {
                                        - inst->scaleEnergyIn);
     } else {
       // |energyIn| is currently in Q(|scaleEnergyIn|), but to later on end up
-      // with an |energyRation| in Q8 we need to change the Q-domain to
+      // with an |energyRatio| in Q8 we need to change the Q-domain to
       // Q(-8-scaleEnergyOut).
       inst->energyIn >>= 8 + scaleEnergyOut - inst->scaleEnergyIn;
     }

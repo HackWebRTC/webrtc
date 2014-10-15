@@ -958,9 +958,8 @@ void WebRtcAecm_UpdateChannel(AecmCore_t * aecm,
             {
                 // We need to shift down before multiplication
                 shiftChFar = 32 - zerosCh - zerosFar;
-                tmpU32no1 = WEBRTC_SPL_UMUL_32_16(
-                    WEBRTC_SPL_RSHIFT_W32(aecm->channelAdapt32[i], shiftChFar),
-                    far_spectrum[i]);
+                tmpU32no1 = (aecm->channelAdapt32[i] >> shiftChFar) *
+                    far_spectrum[i];
             }
             // Determine Q-domain of numerator
             zerosNum = WebRtcSpl_NormU32(tmpU32no1);
@@ -1019,14 +1018,10 @@ void WebRtcAecm_UpdateChannel(AecmCore_t * aecm,
                     shiftNum = 32 - (zerosNum + zerosFar);
                     if (tmp32no1 > 0)
                     {
-                        tmp32no2 = (int32_t)WEBRTC_SPL_UMUL_32_16(
-                                WEBRTC_SPL_RSHIFT_W32(tmp32no1, shiftNum),
-                                far_spectrum[i]);
+                        tmp32no2 = (tmp32no1 >> shiftNum) * far_spectrum[i];
                     } else
                     {
-                        tmp32no2 = -(int32_t)WEBRTC_SPL_UMUL_32_16(
-                                WEBRTC_SPL_RSHIFT_W32(-tmp32no1, shiftNum),
-                                far_spectrum[i]);
+                        tmp32no2 = -((-tmp32no1 >> shiftNum) * far_spectrum[i]);
                     }
                 }
                 // Normalize with respect to frequency bin
@@ -1047,8 +1042,8 @@ void WebRtcAecm_UpdateChannel(AecmCore_t * aecm,
                     // We can never have negative channel gain
                     aecm->channelAdapt32[i] = 0;
                 }
-                aecm->channelAdapt16[i]
-                        = (int16_t)WEBRTC_SPL_RSHIFT_W32(aecm->channelAdapt32[i], 16);
+                aecm->channelAdapt16[i] =
+                    (int16_t)(aecm->channelAdapt32[i] >> 16);
             }
         }
     }
