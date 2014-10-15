@@ -105,9 +105,9 @@ void WebRtcNsx_SpeechNoiseProb(NsxInst_t* inst,
     logLrtTimeAvgKsumFX += r2;
   }
 
-  inst->featureLogLrt = WEBRTC_SPL_RSHIFT_W32(logLrtTimeAvgKsumFX * 5,
-                                              inst->stages + 10);
-                                                  // 5 = BIN_SIZE_LRT / 2
+  inst->featureLogLrt = (logLrtTimeAvgKsumFX * BIN_SIZE_LRT) >>
+      (inst->stages + 11);
+
   // done with computation of LR factor
 
   //
@@ -130,7 +130,7 @@ void WebRtcNsx_SpeechNoiseProb(NsxInst_t* inst,
   }
   tmp32no1 = WEBRTC_SPL_SHIFT_W32(tmp32no1, nShifts); // Q14
   // compute indicator function: sigmoid map
-  tableIndex = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32no1, 14);
+  tableIndex = (int16_t)(tmp32no1 >> 14);
   if ((tableIndex < 16) && (tableIndex >= 0)) {
     tmp16no2 = kIndicatorTable[tableIndex];
     tmp16no1 = kIndicatorTable[tableIndex + 1] - kIndicatorTable[tableIndex];

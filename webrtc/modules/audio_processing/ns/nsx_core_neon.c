@@ -89,7 +89,7 @@ static void UpdateNoiseEstimateNeon(NsxInst_t* inst, int offset) {
     int32x4_t v32x4A = vandq_s32(v32x4B, constA32x4);
     v32x4A = vorrq_s32(v32x4A, constB32x4);
 
-    // tmp16 = (int16_t) WEBRTC_SPL_RSHIFT_W32(tmp32no2, 21);
+    // tmp16 = (int16_t)(tmp32no2 >> 21);
     v32x4B = vshrq_n_s32(v32x4B, 21);
 
     // tmp16 -= 21;// shift 21 to get result in Q0
@@ -100,7 +100,7 @@ static void UpdateNoiseEstimateNeon(NsxInst_t* inst, int offset) {
     v32x4B = vaddq_s32(v32x4B, qNoise32x4);
 
     // if (tmp16 < 0) {
-    //   tmp32no1 = WEBRTC_SPL_RSHIFT_W32(tmp32no1, -tmp16);
+    //   tmp32no1 >>= -tmp16;
     // } else {
     //   tmp32no1 <<= tmp16;
     // }
@@ -121,11 +121,11 @@ static void UpdateNoiseEstimateNeon(NsxInst_t* inst, int offset) {
                                           *ptr_noiseEstLogQuantile);
   int32_t tmp32no1 = (0x00200000 | (tmp32no2 & 0x001FFFFF)); // 2^21 + frac
 
-  tmp16 = (int16_t) WEBRTC_SPL_RSHIFT_W32(tmp32no2, 21);
+  tmp16 = (int16_t)(tmp32no2 >> 21);
   tmp16 -= 21;// shift 21 to get result in Q0
   tmp16 += (int16_t) inst->qNoise; //shift to get result in Q(qNoise)
   if (tmp16 < 0) {
-    tmp32no1 = WEBRTC_SPL_RSHIFT_W32(tmp32no1, -tmp16);
+    tmp32no1 >>= -tmp16;
   } else {
     tmp32no1 <<= tmp16;
   }
