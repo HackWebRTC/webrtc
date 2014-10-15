@@ -28,7 +28,7 @@
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/rtpdump.h"
 #include "talk/media/base/testutils.h"
-#include "talk/p2p/base/fakesession.h"
+#include "webrtc/p2p/base/fakesession.h"
 #include "talk/session/media/channel.h"
 #include "talk/session/media/mediarecorder.h"
 #include "webrtc/base/bytebuffer.h"

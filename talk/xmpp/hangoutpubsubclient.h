@@ -32,9 +32,9 @@
 #include <string>
 #include <vector>
 
-#include "talk/xmpp/jid.h"
-#include "talk/xmpp/pubsubclient.h"
-#include "talk/xmpp/pubsubstateclient.h"
+#include "webrtc/libjingle/xmpp/jid.h"
+#include "webrtc/libjingle/xmpp/pubsubclient.h"
+#include "webrtc/libjingle/xmpp/pubsubstateclient.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sigslotrepeater.h"

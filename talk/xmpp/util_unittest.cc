@@ -5,8 +5,8 @@
 #include <sstream>
 #include <string>
 #include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "talk/xmpp/util_unittest.h"
-#include "talk/xmpp/xmppengine.h"
+#include "webrtc/libjingle/xmpp/util_unittest.h"
+#include "webrtc/libjingle/xmpp/xmppengine.h"
 #include "webrtc/base/gunit.h"
 
 namespace buzz {

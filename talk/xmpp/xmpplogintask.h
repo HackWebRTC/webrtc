@@ -31,8 +31,8 @@
 #include <string>
 #include <vector>
 
-#include "talk/xmpp/jid.h"
-#include "talk/xmpp/xmppengine.h"
+#include "webrtc/libjingle/xmpp/jid.h"
+#include "webrtc/libjingle/xmpp/xmppengine.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 

@@ -25,10 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/xmpp/xmppstanzaparser.h"
+#include "webrtc/libjingle/xmpp/xmppstanzaparser.h"
 
 #include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "talk/xmpp/constants.h"
+#include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/base/common.h"
 #ifdef EXPAT_RELATIVE_PATH
 #include "expat.h"

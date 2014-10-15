@@ -25,10 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_BASICPACKETSOCKETFACTORY_H_
-#define TALK_P2P_BASE_BASICPACKETSOCKETFACTORY_H_
+#ifndef WEBRTC_P2P_BASE_BASICPACKETSOCKETFACTORY_H_
+#define WEBRTC_P2P_BASE_BASICPACKETSOCKETFACTORY_H_
 
-#include "talk/p2p/base/packetsocketfactory.h"
+#include "webrtc/p2p/base/packetsocketfactory.h"
 
 namespace rtc {
 
@@ -65,4 +65,4 @@ class BasicPacketSocketFactory : public PacketSocketFactory {
 
 }  // namespace rtc
 
-#endif  // TALK_P2P_BASE_BASICPACKETSOCKETFACTORY_H_
+#endif  // WEBRTC_P2P_BASE_BASICPACKETSOCKETFACTORY_H_

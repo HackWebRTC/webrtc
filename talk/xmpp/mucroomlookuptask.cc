@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/xmpp/mucroomlookuptask.h"
+#include "webrtc/libjingle/xmpp/mucroomlookuptask.h"
 
-#include "talk/xmpp/constants.h"
+#include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 

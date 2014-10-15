@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/xmpp/pubsubstateclient.h"
+#include "webrtc/libjingle/xmpp/pubsubstateclient.h"
 
 namespace buzz {
 

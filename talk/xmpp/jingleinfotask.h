@@ -30,9 +30,9 @@
 
 #include <vector>
 
-#include "talk/p2p/client/httpportallocator.h"
-#include "talk/xmpp/xmppengine.h"
-#include "talk/xmpp/xmpptask.h"
+#include "webrtc/p2p/client/httpportallocator.h"
+#include "webrtc/libjingle/xmpp/xmppengine.h"
+#include "webrtc/libjingle/xmpp/xmpptask.h"
 #include "webrtc/base/sigslot.h"
 
 namespace buzz {

@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/p2p/base/sessiondescription.h"
+#include "webrtc/p2p/base/sessiondescription.h"
 
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 

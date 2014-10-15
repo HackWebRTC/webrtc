@@ -25,22 +25,22 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_SESSION_H_
-#define TALK_P2P_BASE_SESSION_H_
+#ifndef WEBRTC_P2P_BASE_SESSION_H_
+#define WEBRTC_P2P_BASE_SESSION_H_
 
 #include <list>
 #include <map>
 #include <string>
 #include <vector>
 
-#include "talk/p2p/base/parsing.h"
-#include "talk/p2p/base/port.h"
-#include "talk/p2p/base/sessionclient.h"
-#include "talk/p2p/base/sessionmanager.h"
-#include "talk/p2p/base/sessionmessages.h"
-#include "talk/p2p/base/transport.h"
+#include "webrtc/p2p/base/parsing.h"
+#include "webrtc/p2p/base/port.h"
+#include "webrtc/p2p/base/sessionclient.h"
+#include "webrtc/p2p/base/sessionmanager.h"
+#include "webrtc/p2p/base/sessionmessages.h"
+#include "webrtc/p2p/base/transport.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "talk/xmpp/constants.h"
+#include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
@@ -744,4 +744,4 @@ class Session : public BaseSession {
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_SESSION_H_
+#endif  // WEBRTC_P2P_BASE_SESSION_H_

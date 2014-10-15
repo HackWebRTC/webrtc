@@ -26,8 +26,8 @@
  */
 
 #include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "talk/xmpp/constants.h"
-#include "talk/xmpp/saslmechanism.h"
+#include "webrtc/libjingle/xmpp/constants.h"
+#include "webrtc/libjingle/xmpp/saslmechanism.h"
 #include "webrtc/base/base64.h"
 
 using rtc::Base64;

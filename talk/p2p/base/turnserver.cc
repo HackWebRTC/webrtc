@@ -25,12 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/p2p/base/turnserver.h"
+#include "webrtc/p2p/base/turnserver.h"
 
-#include "talk/p2p/base/asyncstuntcpsocket.h"
-#include "talk/p2p/base/common.h"
-#include "talk/p2p/base/packetsocketfactory.h"
-#include "talk/p2p/base/stun.h"
+#include "webrtc/p2p/base/asyncstuntcpsocket.h"
+#include "webrtc/p2p/base/common.h"
+#include "webrtc/p2p/base/packetsocketfactory.h"
+#include "webrtc/p2p/base/stun.h"
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"

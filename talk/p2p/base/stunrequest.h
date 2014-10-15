@@ -25,12 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_STUNREQUEST_H_
-#define TALK_P2P_BASE_STUNREQUEST_H_
+#ifndef WEBRTC_P2P_BASE_STUNREQUEST_H_
+#define WEBRTC_P2P_BASE_STUNREQUEST_H_
 
 #include <map>
 #include <string>
-#include "talk/p2p/base/stun.h"
+#include "webrtc/p2p/base/stun.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
 
@@ -130,4 +130,4 @@ private:
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_STUNREQUEST_H_
+#endif  // WEBRTC_P2P_BASE_STUNREQUEST_H_

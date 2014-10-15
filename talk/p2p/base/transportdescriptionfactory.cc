@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/p2p/base/transportdescriptionfactory.h"
+#include "webrtc/p2p/base/transportdescriptionfactory.h"
 
-#include "talk/p2p/base/transportdescription.h"
+#include "webrtc/p2p/base/transportdescription.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"

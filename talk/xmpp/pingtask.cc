@@ -1,9 +1,9 @@
 // Copyright 2011 Google Inc. All Rights Reserved.
 
 
-#include "talk/xmpp/pingtask.h"
+#include "webrtc/libjingle/xmpp/pingtask.h"
 
-#include "talk/xmpp/constants.h"
+#include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 

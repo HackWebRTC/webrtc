@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-#include "talk/p2p/base/constants.h"
+#include "webrtc/p2p/base/constants.h"
 #include "talk/session/media/mediasessionclient.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/base/gunit.h"

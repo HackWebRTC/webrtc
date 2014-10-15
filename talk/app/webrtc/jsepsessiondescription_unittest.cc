@@ -29,9 +29,9 @@
 
 #include "talk/app/webrtc/jsepicecandidate.h"
 #include "talk/app/webrtc/jsepsessiondescription.h"
-#include "talk/p2p/base/candidate.h"
-#include "talk/p2p/base/constants.h"
-#include "talk/p2p/base/sessiondescription.h"
+#include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/sessiondescription.h"
 #include "talk/session/media/mediasession.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"

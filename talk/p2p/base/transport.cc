@@ -25,16 +25,16 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/p2p/base/transport.h"
+#include "webrtc/p2p/base/transport.h"
 
-#include "talk/p2p/base/candidate.h"
-#include "talk/p2p/base/constants.h"
-#include "talk/p2p/base/parsing.h"
-#include "talk/p2p/base/port.h"
-#include "talk/p2p/base/sessionmanager.h"
-#include "talk/p2p/base/transportchannelimpl.h"
+#include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/parsing.h"
+#include "webrtc/p2p/base/port.h"
+#include "webrtc/p2p/base/sessionmanager.h"
+#include "webrtc/p2p/base/transportchannelimpl.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "talk/xmpp/constants.h"
+#include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"

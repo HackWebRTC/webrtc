@@ -25,12 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/p2p/base/port.h"
+#include "webrtc/p2p/base/port.h"
 
 #include <algorithm>
 #include <vector>
 
-#include "talk/p2p/base/common.h"
+#include "webrtc/p2p/base/common.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/crc32.h"
 #include "webrtc/base/helpers.h"

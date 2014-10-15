@@ -31,7 +31,7 @@
 // also part of the API
 #include "webrtc/libjingle/xmllite/qname.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "talk/xmpp/jid.h"
+#include "webrtc/libjingle/xmpp/jid.h"
 
 
 namespace buzz {

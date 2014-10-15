@@ -25,13 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_PORTALLOCATOR_H_
-#define TALK_P2P_BASE_PORTALLOCATOR_H_
+#ifndef WEBRTC_P2P_BASE_PORTALLOCATOR_H_
+#define WEBRTC_P2P_BASE_PORTALLOCATOR_H_
 
 #include <string>
 #include <vector>
 
-#include "talk/p2p/base/portinterface.h"
+#include "webrtc/p2p/base/portinterface.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/proxyinfo.h"
 #include "webrtc/base/sigslot.h"
@@ -206,4 +206,4 @@ class PortAllocator : public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_PORTALLOCATOR_H_
+#endif  // WEBRTC_P2P_BASE_PORTALLOCATOR_H_

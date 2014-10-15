@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/xmpp/constants.h"
-#include "talk/xmpp/receivetask.h"
+#include "webrtc/libjingle/xmpp/constants.h"
+#include "webrtc/libjingle/xmpp/receivetask.h"
 
 namespace buzz {
 

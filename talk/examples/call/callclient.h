@@ -34,12 +34,12 @@
 
 #include "talk/examples/call/console.h"
 #include "talk/media/base/mediachannel.h"
-#include "talk/p2p/base/session.h"
+#include "webrtc/p2p/base/session.h"
 #include "talk/session/media/mediamessages.h"
 #include "talk/session/media/mediasessionclient.h"
-#include "talk/xmpp/hangoutpubsubclient.h"
-#include "talk/xmpp/presencestatus.h"
-#include "talk/xmpp/xmppclient.h"
+#include "webrtc/libjingle/xmpp/hangoutpubsubclient.h"
+#include "webrtc/libjingle/xmpp/presencestatus.h"
+#include "webrtc/libjingle/xmpp/xmppclient.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sslidentity.h"
 

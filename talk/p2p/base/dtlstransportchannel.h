@@ -26,13 +26,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_DTLSTRANSPORTCHANNEL_H_
-#define TALK_P2P_BASE_DTLSTRANSPORTCHANNEL_H_
+#ifndef WEBRTC_P2P_BASE_DTLSTRANSPORTCHANNEL_H_
+#define WEBRTC_P2P_BASE_DTLSTRANSPORTCHANNEL_H_
 
 #include <string>
 #include <vector>
 
-#include "talk/p2p/base/transportchannelimpl.h"
+#include "webrtc/p2p/base/transportchannelimpl.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sslstreamadapter.h"
@@ -261,4 +261,4 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_DTLSTRANSPORTCHANNEL_H_
+#endif  // WEBRTC_P2P_BASE_DTLSTRANSPORTCHANNEL_H_

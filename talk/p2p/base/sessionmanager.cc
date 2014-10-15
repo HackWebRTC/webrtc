@@ -25,13 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/p2p/base/sessionmanager.h"
+#include "webrtc/p2p/base/sessionmanager.h"
 
-#include "talk/p2p/base/constants.h"
-#include "talk/p2p/base/session.h"
-#include "talk/p2p/base/sessionmessages.h"
-#include "talk/xmpp/constants.h"
-#include "talk/xmpp/jid.h"
+#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/session.h"
+#include "webrtc/p2p/base/sessionmessages.h"
+#include "webrtc/libjingle/xmpp/constants.h"
+#include "webrtc/libjingle/xmpp/jid.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"

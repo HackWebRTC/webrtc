@@ -27,7 +27,7 @@
 
 #include <string>
 
-#include "talk/p2p/base/stunserver.h"
+#include "webrtc/p2p/base/stunserver.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/physicalsocketserver.h"

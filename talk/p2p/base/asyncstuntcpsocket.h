@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_ASYNCSTUNTCPSOCKET_H_
-#define TALK_P2P_BASE_ASYNCSTUNTCPSOCKET_H_
+#ifndef WEBRTC_P2P_BASE_ASYNCSTUNTCPSOCKET_H_
+#define WEBRTC_P2P_BASE_ASYNCSTUNTCPSOCKET_H_
 
 #include "webrtc/base/asynctcpsocket.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -64,4 +64,4 @@ class AsyncStunTCPSocket : public rtc::AsyncTCPSocketBase {
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_ASYNCSTUNTCPSOCKET_H_
+#endif  // WEBRTC_P2P_BASE_ASYNCSTUNTCPSOCKET_H_

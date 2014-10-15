@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/p2p/base/stunserver.h"
+#include "webrtc/p2p/base/stunserver.h"
 
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/logging.h"

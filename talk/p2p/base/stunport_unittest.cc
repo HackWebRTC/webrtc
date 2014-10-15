@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/p2p/base/basicpacketsocketfactory.h"
-#include "talk/p2p/base/stunport.h"
-#include "talk/p2p/base/teststunserver.h"
+#include "webrtc/p2p/base/basicpacketsocketfactory.h"
+#include "webrtc/p2p/base/stunport.h"
+#include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/physicalsocketserver.h"

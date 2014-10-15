@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/p2p/base/portallocator.h"
+#include "webrtc/p2p/base/portallocator.h"
 
-#include "talk/p2p/base/portallocatorsessionproxy.h"
+#include "webrtc/p2p/base/portallocatorsessionproxy.h"
 
 namespace cricket {
 

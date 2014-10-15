@@ -25,15 +25,15 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_TRANSPORTINFO_H_
-#define TALK_P2P_BASE_TRANSPORTINFO_H_
+#ifndef WEBRTC_P2P_BASE_TRANSPORTINFO_H_
+#define WEBRTC_P2P_BASE_TRANSPORTINFO_H_
 
 #include <string>
 #include <vector>
 
-#include "talk/p2p/base/candidate.h"
-#include "talk/p2p/base/constants.h"
-#include "talk/p2p/base/transportdescription.h"
+#include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/transportdescription.h"
 #include "webrtc/base/helpers.h"
 
 namespace cricket {
@@ -57,4 +57,4 @@ typedef std::vector<TransportInfo> TransportInfos;
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_TRANSPORTINFO_H_
+#endif  // WEBRTC_P2P_BASE_TRANSPORTINFO_H_

@@ -28,9 +28,9 @@
 #include <string>
 #include <vector>
 
-#include "talk/p2p/base/constants.h"
-#include "talk/p2p/base/transportdescription.h"
-#include "talk/p2p/base/transportdescriptionfactory.h"
+#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/transportdescription.h"
+#include "webrtc/p2p/base/transportdescriptionfactory.h"
 #include "webrtc/base/fakesslidentity.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/ssladapter.h"

@@ -30,8 +30,8 @@
 
 #include <vector>
 
-#include "talk/xmpp/iqtask.h"
-#include "talk/xmpp/receivetask.h"
+#include "webrtc/libjingle/xmpp/iqtask.h"
+#include "webrtc/libjingle/xmpp/receivetask.h"
 #include "webrtc/base/sigslot.h"
 
 namespace buzz {

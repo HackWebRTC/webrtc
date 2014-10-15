@@ -35,7 +35,7 @@
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/app/webrtc/mediastreamhandler.h"
 #include "talk/app/webrtc/streamcollection.h"
-#include "talk/p2p/client/basicportallocator.h"
+#include "webrtc/p2p/client/basicportallocator.h"
 #include "talk/session/media/channelmanager.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"

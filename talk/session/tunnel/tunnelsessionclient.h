@@ -30,14 +30,14 @@
 
 #include <vector>
 
-#include "talk/p2p/base/constants.h"
-#include "talk/p2p/base/pseudotcp.h"
-#include "talk/p2p/base/session.h"
-#include "talk/p2p/base/sessionclient.h"
-#include "talk/p2p/base/sessiondescription.h"
-#include "talk/p2p/base/sessionmanager.h"
+#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/pseudotcp.h"
+#include "webrtc/p2p/base/session.h"
+#include "webrtc/p2p/base/sessionclient.h"
+#include "webrtc/p2p/base/sessiondescription.h"
+#include "webrtc/p2p/base/sessionmanager.h"
 #include "webrtc/libjingle/xmllite/qname.h"
-#include "talk/xmpp/constants.h"
+#include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/stream.h"
 
