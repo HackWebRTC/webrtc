@@ -11,11 +11,7 @@
 // and then write these stats to a file.
 //
 // Note: the source of the video and audio stream is getUserMedia().
-//
-function testVideoStreaming(bot1, bot2) {
-  var pc1 = null;
-  var pc2 = null;
-
+function testOneWayVideo(test, bot1, bot2) {
   var report = test.createStatisticsReport("webrtc_video_streaming");
 
   test.wait([
@@ -29,10 +25,8 @@ function testVideoStreaming(bot1, bot2) {
     }.bind(this), test.fail);
   }
 
-  function onPeerConnectionCreated(peer1, peer2) {
+  function onPeerConnectionCreated(pc1, pc2) {
     test.log("RTC Peers created.");
-    pc1 = peer1;
-    pc2 = peer2;
     pc1.addEventListener('addstream', test.fail);
     pc2.addEventListener('addstream', onAddStream);
     pc1.addEventListener('icecandidate', onIceCandidate.bind(pc2));
@@ -45,7 +39,7 @@ function testVideoStreaming(bot1, bot2) {
       pc1.addStream(stream);
       bot1.showStream(stream.id, true, true);
 
-      createOfferAndAnswer();
+      createOfferAndAnswer(pc1, pc2);
     }
   }
 
@@ -55,18 +49,18 @@ function testVideoStreaming(bot1, bot2) {
   }
 
   function onIceCandidate(event) {
-    if(event.candidate){
+    if(event.candidate) {
       test.log(event.candidate.candidate);
       this.addIceCandidate(event.candidate,
          onAddIceCandidateSuccess, test.fail);
-    };
+    }
 
     function onAddIceCandidateSuccess() {
       test.log("Candidate added successfully");
-    };
+    }
   }
 
-  function createOfferAndAnswer() {
+  function createOfferAndAnswer(pc1, pc2) {
     test.log("Creating offer.");
     pc1.createOffer(gotOffer, test.fail);
 
@@ -103,6 +97,5 @@ function testVideoStreaming(bot1, bot2) {
   }
 }
 
-test.wait( [ test.spawnBot.bind(test, "alice", "chrome"),
-             test.spawnBot.bind(test, "bob", "android-chrome") ],
-          testVideoStreaming);
+registerBotTest('testOneWayVideo/chrome=>chrome',
+                testOneWayVideo, ['chrome', 'chrome']);

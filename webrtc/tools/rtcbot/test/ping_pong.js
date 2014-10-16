@@ -6,8 +6,9 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 //
-function testPingPong(bot) {
-  test.log('bot:alice > Sending Ping to bot');
+function testPingPong(test, bot) {
+  test.assert(typeof bot.ping === 'function', 'Bot does not exposes ping.');
+
   bot.ping(gotAnswer);
 
   function gotAnswer(answer) {
@@ -16,4 +17,4 @@ function testPingPong(bot) {
   }
 }
 
-test.spawnBot("alice", "chrome", testPingPong);
+registerBotTest('testPingPong/chrome', testPingPong, ['chrome']);

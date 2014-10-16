@@ -10,17 +10,12 @@
 //
 // Note: This test does not performs ice candidate exchange and
 // does not verifies that media can flow between the peers.
-function testOfferAnswer(peer1, peer2) {
-  test.wait([
-      createPeerConnection.bind(peer1),
-      createPeerConnection.bind(peer2) ],
-    establishCall);
+function testOfferAnswer(test, bot1, bot2) {
+  test.wait( [ bot1.createPeerConnection.bind(bot1, null),
+               bot2.createPeerConnection.bind(bot2, null) ],
+            run);
 
-  function createPeerConnection(done) {
-    this.createPeerConnection(null, done, test.fail);
-  }
-
-  function establishCall(pc1, pc2) {
+  function run(pc1, pc2) {
     test.log("Establishing call.");
     pc1.createOffer(gotOffer);
 
@@ -38,17 +33,16 @@ function testOfferAnswer(peer1, peer2) {
       pc2.setLocalDescription(answer, expectedCall, test.fail);
       pc1.setRemoteDescription(answer, expectedCall, test.fail);
     }
+
+    // TODO(andresp): Implement utilities in test to write expectations
+    // that certain methods must be called.
+    var expectedCalls = 0;
+    function expectedCall() {
+      if (++expectedCalls == 6)
+        test.done();
+    }
   }
 }
 
-// TODO(andresp): Implement utilities in test to write expectations that certain
-// methods must be called.
-var expectedCalls = 0;
-function expectedCall() {
-  if (++expectedCalls == 6)
-    test.done();
-}
-
-test.wait( [ test.spawnBot.bind(test, "alice", "chrome"),
-             test.spawnBot.bind(test, "bob", "chrome") ],
-          testOfferAnswer);
+registerBotTest('testOfferAnswer/chrome=>chrome',
+                testOfferAnswer, ['chrome', 'chrome']);

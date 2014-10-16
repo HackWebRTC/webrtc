@@ -6,14 +6,9 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 //
-// This script loads the test file in the virtual machine and runs it in a
-// context that only exposes a test variable with methods for testing and to
-// spawn bots.
-//
-// Note: an important part of this script is to keep nodejs-isms away from test
-// code and isolate it from implementation details.
+// Provides a Test class that exposes api to the tests.
+// Read test.prototype to see what methods are exposed.
 var fs = require('fs');
-var vm = require('vm');
 var BotManager = require('./botmanager.js');
 
 function Test() {
@@ -134,13 +129,6 @@ StatisticsReport.prototype = {
         doneCallback);
     }
   },
-}
+};
 
-function runTest(testfile) {
-  console.log("Running test: " + testfile);
-  var script = vm.createScript(fs.readFileSync(testfile), testfile);
-  script.runInNewContext({ test: new Test(), setInterval: setInterval,
-      setTimeout: setTimeout });
-}
-
-runTest(process.argv[2]);
+module.exports = Test;
