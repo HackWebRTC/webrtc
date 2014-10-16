@@ -35,10 +35,12 @@ class AudioEncoder {
                  const int16_t* audio,
                  size_t num_samples,
                  size_t max_encoded_bytes,
-                 uint8_t* encoded) {
+                 uint8_t* encoded,
+                 uint32_t* encoded_timestamp) {
     CHECK_EQ(num_samples,
              static_cast<size_t>(sample_rate_hz() / 100 * num_channels()));
-    ssize_t num_bytes = Encode(timestamp, audio, max_encoded_bytes, encoded);
+    ssize_t num_bytes =
+        Encode(timestamp, audio, max_encoded_bytes, encoded, encoded_timestamp);
     CHECK_LE(num_bytes,
              static_cast<ssize_t>(std::min(
                  max_encoded_bytes,
@@ -57,7 +59,8 @@ class AudioEncoder {
   virtual ssize_t Encode(uint32_t timestamp,
                          const int16_t* audio,
                          size_t max_encoded_bytes,
-                         uint8_t* encoded) = 0;
+                         uint8_t* encoded,
+                         uint32_t* encoded_timestamp) = 0;
 };
 
 }  // namespace webrtc
