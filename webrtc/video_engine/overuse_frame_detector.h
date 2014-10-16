@@ -61,7 +61,7 @@ class OveruseFrameDetector : public Module {
   void SetOptions(const CpuOveruseOptions& options);
 
   // Called for each captured frame.
-  void FrameCaptured(int width, int height);
+  void FrameCaptured(int width, int height, int64_t capture_time_ms);
 
   // Called when the processing of a captured frame is started.
   void FrameProcessingStarted();
@@ -69,14 +69,19 @@ class OveruseFrameDetector : public Module {
   // Called for each encoded frame.
   void FrameEncoded(int encode_time_ms);
 
+  // Called for each sent frame.
+  void FrameSent(int64_t capture_time_ms);
+
   // Accessors.
 
   // Returns CpuOveruseMetrics where
   // capture_jitter_ms: The estimated jitter based on incoming captured frames.
   // avg_encode_time_ms: Running average of reported encode time
   //                     (FrameEncoded()). Only used for stats.
-  // encode_usage_percent: The average encode time divided by the average time
-  //                       difference between incoming captured frames.
+  // TODO(asapersson): Rename metric.
+  // encode_usage_percent: The average processing time of a frame on the
+  //                       send-side divided by the average time difference
+  //                       between incoming captured frames.
   // capture_queue_delay_ms_per_s: The current time delay between an incoming
   //                               captured frame (FrameCaptured()) until the
   //                               frame is being processed
@@ -87,7 +92,10 @@ class OveruseFrameDetector : public Module {
   //                               Only used for stats.
   void GetCpuOveruseMetrics(CpuOveruseMetrics* metrics) const;
 
+  // Only public for testing.
   int CaptureQueueDelayMsPerS() const;
+  int LastProcessingTimeMs() const;
+  int FramesInQueue() const;
 
   // Implements Module.
   virtual int32_t TimeUntilNextProcess() OVERRIDE;
@@ -95,9 +103,12 @@ class OveruseFrameDetector : public Module {
 
  private:
   class EncodeTimeAvg;
-  class EncodeTimeRsd;
-  class EncodeUsage;
+  class SendProcessingRsd;
+  class SendProcessingUsage;
   class CaptureQueueDelay;
+  class FrameQueue;
+
+  void AddProcessingTime(int elapsed_ms);
 
   bool IsOverusing();
   bool IsUnderusing(int64_t time_now);
@@ -135,8 +146,11 @@ class OveruseFrameDetector : public Module {
 
   int64_t last_encode_sample_ms_;
   scoped_ptr<EncodeTimeAvg> encode_time_;
-  scoped_ptr<EncodeTimeRsd> encode_rsd_;
-  scoped_ptr<EncodeUsage> encode_usage_;
+
+  scoped_ptr<SendProcessingRsd> rsd_;
+  scoped_ptr<SendProcessingUsage> usage_;
+  scoped_ptr<FrameQueue> frame_queue_;
+  int64_t last_sample_time_ms_;
 
   scoped_ptr<CaptureQueueDelay> capture_queue_delay_;
 

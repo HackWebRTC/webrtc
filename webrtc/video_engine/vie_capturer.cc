@@ -343,6 +343,10 @@ void ViECapturer::OnIncomingCapturedFrame(const int32_t capture_id,
   // the camera, and not when the camera actually captured the frame.
   video_frame.set_render_time_ms(video_frame.render_time_ms() - FrameDelay());
 
+  overuse_detector_->FrameCaptured(video_frame.width(),
+                                   video_frame.height(),
+                                   video_frame.render_time_ms());
+
   TRACE_EVENT_ASYNC_BEGIN1("webrtc", "Video", video_frame.render_time_ms(),
                            "render_time", video_frame.render_time_ms());
 
@@ -354,8 +358,6 @@ void ViECapturer::OnIncomingCapturedFrame(const int32_t capture_id,
     captured_frame_->SwapFrame(&video_frame);
   }
   capture_event_.Set();
-  overuse_detector_->FrameCaptured(captured_frame_->width(),
-                                   captured_frame_->height());
 }
 
 void ViECapturer::OnCaptureDelayChanged(const int32_t id,
@@ -450,11 +452,13 @@ bool ViECapturer::ViECaptureThreadFunction(void* obj) {
 }
 
 bool ViECapturer::ViECaptureProcess() {
+  int64_t capture_time = -1;
   if (capture_event_.Wait(kThreadWaitTimeMs) == kEventSignaled) {
     overuse_detector_->FrameProcessingStarted();
     int64_t encode_start_time = -1;
     deliver_cs_->Enter();
     if (SwapCapturedAndDeliverFrameIfAvailable()) {
+      capture_time = deliver_frame_->render_time_ms();
       encode_start_time = Clock::GetRealTimeClock()->TimeInMilliseconds();
       DeliverI420Frame(deliver_frame_.get());
       if (deliver_frame_->native_handle() != NULL)
@@ -475,6 +479,9 @@ bool ViECapturer::ViECaptureProcess() {
     }
   }
   // We're done!
+  if (capture_time != -1) {
+    overuse_detector_->FrameSent(capture_time);
+  }
   return true;
 }
 
