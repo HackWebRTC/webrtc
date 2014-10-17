@@ -28,8 +28,8 @@
 
 #include <set>
 
-#include "webrtc/p2p/base/dtlstransport.h"
-#include "webrtc/p2p/base/fakesession.h"
+#include "talk/p2p/base/dtlstransport.h"
+#include "talk/p2p/base/fakesession.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/gunit.h"

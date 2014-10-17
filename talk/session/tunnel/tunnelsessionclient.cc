@@ -26,8 +26,8 @@
  */
 
 #include "pseudotcpchannel.h"
-#include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/transportchannel.h"
+#include "talk/p2p/base/constants.h"
+#include "talk/p2p/base/transportchannel.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "tunnelsessionclient.h"
 #include "webrtc/base/basicdefs.h"

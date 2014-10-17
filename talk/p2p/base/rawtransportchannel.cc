@@ -25,20 +25,20 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/p2p/base/rawtransportchannel.h"
+#include "talk/p2p/base/rawtransportchannel.h"
 
 #include <string>
 #include <vector>
-#include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/portallocator.h"
-#include "webrtc/p2p/base/portinterface.h"
-#include "webrtc/p2p/base/rawtransport.h"
-#include "webrtc/p2p/base/relayport.h"
-#include "webrtc/p2p/base/sessionmanager.h"
-#include "webrtc/p2p/base/stunport.h"
+#include "talk/p2p/base/constants.h"
+#include "talk/p2p/base/portallocator.h"
+#include "talk/p2p/base/portinterface.h"
+#include "talk/p2p/base/rawtransport.h"
+#include "talk/p2p/base/relayport.h"
+#include "talk/p2p/base/sessionmanager.h"
+#include "talk/p2p/base/stunport.h"
 #include "webrtc/libjingle/xmllite/qname.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "webrtc/libjingle/xmpp/constants.h"
+#include "talk/xmpp/constants.h"
 #include "webrtc/base/common.h"
 
 #if defined(FEATURE_ENABLE_PSTN)

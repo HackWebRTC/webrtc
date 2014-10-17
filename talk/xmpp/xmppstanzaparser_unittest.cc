@@ -5,7 +5,7 @@
 #include <sstream>
 #include <string>
 #include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "webrtc/libjingle/xmpp/xmppstanzaparser.h"
+#include "talk/xmpp/xmppstanzaparser.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/gunit.h"
 

@@ -30,7 +30,7 @@
 
 #include <map>
 #include <string>
-#include "webrtc/libjingle/xmpp/iqtask.h"
+#include "talk/xmpp/iqtask.h"
 
 namespace buzz {
 

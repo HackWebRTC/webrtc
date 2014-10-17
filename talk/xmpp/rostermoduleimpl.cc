@@ -31,8 +31,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/libjingle/xmpp/rostermoduleimpl.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/rostermoduleimpl.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/stringencode.h"
 

@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/libjingle/xmpp/xmpppump.h"
+#include "talk/xmpp/xmpppump.h"
 
-#include "webrtc/libjingle/xmpp/xmppauth.h"
+#include "talk/xmpp/xmppauth.h"
 
 namespace buzz {
 

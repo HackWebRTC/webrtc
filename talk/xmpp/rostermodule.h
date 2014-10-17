@@ -28,7 +28,7 @@
 #ifndef TALK_XMPP_ROSTERMODULE_H_
 #define TALK_XMPP_ROSTERMODULE_H_
 
-#include "webrtc/libjingle/xmpp/module.h"
+#include "talk/xmpp/module.h"
 
 namespace buzz {
 

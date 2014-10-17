@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/p2p/base/constants.h"
+#include "talk/p2p/base/constants.h"
 
 #include <string>
 

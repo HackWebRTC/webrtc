@@ -43,16 +43,16 @@
 // It is not possible to do so here because the subclass constructor will
 // already have run.
 
-#ifndef WEBRTC_P2P_BASE_TRANSPORT_H_
-#define WEBRTC_P2P_BASE_TRANSPORT_H_
+#ifndef TALK_P2P_BASE_TRANSPORT_H_
+#define TALK_P2P_BASE_TRANSPORT_H_
 
 #include <map>
 #include <string>
 #include <vector>
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/sessiondescription.h"
-#include "webrtc/p2p/base/transportinfo.h"
+#include "talk/p2p/base/candidate.h"
+#include "talk/p2p/base/constants.h"
+#include "talk/p2p/base/sessiondescription.h"
+#include "talk/p2p/base/transportinfo.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/sigslot.h"
@@ -527,4 +527,4 @@ TransportProtocol TransportProtocolFromDescription(
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_TRANSPORT_H_
+#endif  // TALK_P2P_BASE_TRANSPORT_H_

@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/base/relayport.h"
-#include "webrtc/p2p/base/relayserver.h"
+#include "talk/p2p/base/basicpacketsocketfactory.h"
+#include "talk/p2p/base/relayport.h"
+#include "talk/p2p/base/relayserver.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"

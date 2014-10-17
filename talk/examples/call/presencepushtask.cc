@@ -28,7 +28,7 @@
 #include "talk/examples/call/presencepushtask.h"
 
 #include "talk/examples/call/muc.h"
-#include "webrtc/libjingle/xmpp/constants.h"
+#include "talk/xmpp/constants.h"
 #include "webrtc/base/stringencode.h"
 
 

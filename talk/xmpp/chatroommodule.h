@@ -28,8 +28,8 @@
 #ifndef TALK_XMPP_CHATROOMMODULE_H_
 #define TALK_XMPP_CHATROOMMODULE_H_
 
-#include "webrtc/libjingle/xmpp/module.h"
-#include "webrtc/libjingle/xmpp/rostermodule.h"
+#include "talk/xmpp/module.h"
+#include "talk/xmpp/rostermodule.h"
 
 namespace buzz {
 

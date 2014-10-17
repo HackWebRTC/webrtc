@@ -27,8 +27,8 @@
 
 #include <string>
 #include "pseudotcpchannel.h"
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/transportchannel.h"
+#include "talk/p2p/base/candidate.h"
+#include "talk/p2p/base/transportchannel.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"

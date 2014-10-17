@@ -25,10 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
+#include "talk/p2p/base/basicpacketsocketfactory.h"
 
-#include "webrtc/p2p/base/asyncstuntcpsocket.h"
-#include "webrtc/p2p/base/stun.h"
+#include "talk/p2p/base/asyncstuntcpsocket.h"
+#include "talk/p2p/base/stun.h"
 #include "webrtc/base/asynctcpsocket.h"
 #include "webrtc/base/asyncudpsocket.h"
 #include "webrtc/base/logging.h"

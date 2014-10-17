@@ -25,15 +25,15 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_TRANSPORTCHANNEL_H_
-#define WEBRTC_P2P_BASE_TRANSPORTCHANNEL_H_
+#ifndef TALK_P2P_BASE_TRANSPORTCHANNEL_H_
+#define TALK_P2P_BASE_TRANSPORTCHANNEL_H_
 
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/transport.h"
-#include "webrtc/p2p/base/transportdescription.h"
+#include "talk/p2p/base/candidate.h"
+#include "talk/p2p/base/transport.h"
+#include "talk/p2p/base/transportdescription.h"
 #include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/dscp.h"
@@ -157,4 +157,4 @@ class TransportChannel : public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_TRANSPORTCHANNEL_H_
+#endif  // TALK_P2P_BASE_TRANSPORTCHANNEL_H_

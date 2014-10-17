@@ -34,9 +34,9 @@
 
 #include "webrtc/libjingle/xmllite/qname.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/libjingle/xmpp/jid.h"
-#include "webrtc/libjingle/xmpp/pubsubclient.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/jid.h"
+#include "talk/xmpp/pubsubclient.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sigslotrepeater.h"

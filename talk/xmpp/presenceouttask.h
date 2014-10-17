@@ -28,9 +28,9 @@
 #ifndef TALK_XMPP_PRESENCEOUTTASK_H_
 #define TALK_XMPP_PRESENCEOUTTASK_H_
 
-#include "webrtc/libjingle/xmpp/presencestatus.h"
-#include "webrtc/libjingle/xmpp/xmppengine.h"
-#include "webrtc/libjingle/xmpp/xmpptask.h"
+#include "talk/xmpp/presencestatus.h"
+#include "talk/xmpp/xmppengine.h"
+#include "talk/xmpp/xmpptask.h"
 
 namespace buzz {
 

@@ -26,9 +26,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/p2p/base/dtlstransportchannel.h"
+#include "talk/p2p/base/dtlstransportchannel.h"
 
-#include "webrtc/p2p/base/common.h"
+#include "talk/p2p/base/common.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/messagequeue.h"

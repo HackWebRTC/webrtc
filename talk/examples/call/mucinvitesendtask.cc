@@ -26,8 +26,8 @@
  */
 
 #include "talk/examples/call/mucinvitesendtask.h"
-#include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/libjingle/xmpp/xmppclient.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/xmppclient.h"
 
 namespace buzz {
 

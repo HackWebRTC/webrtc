@@ -31,8 +31,8 @@
 #include <map>
 #include <string>
 #include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "webrtc/libjingle/xmpp/jid.h"
-#include "webrtc/libjingle/xmpp/xmpptask.h"
+#include "talk/xmpp/jid.h"
+#include "talk/xmpp/xmpptask.h"
 
 namespace buzz {
 

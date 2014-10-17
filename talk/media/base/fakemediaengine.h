@@ -38,7 +38,7 @@
 #include "talk/media/base/mediaengine.h"
 #include "talk/media/base/rtputils.h"
 #include "talk/media/base/streamparams.h"
-#include "webrtc/p2p/base/sessiondescription.h"
+#include "talk/p2p/base/sessiondescription.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/stringutils.h"
 

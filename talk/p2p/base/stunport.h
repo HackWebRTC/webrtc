@@ -25,13 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_STUNPORT_H_
-#define WEBRTC_P2P_BASE_STUNPORT_H_
+#ifndef TALK_P2P_BASE_STUNPORT_H_
+#define TALK_P2P_BASE_STUNPORT_H_
 
 #include <string>
 
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/p2p/base/stunrequest.h"
+#include "talk/p2p/base/port.h"
+#include "talk/p2p/base/stunrequest.h"
 #include "webrtc/base/asyncpacketsocket.h"
 
 // TODO(mallinath) - Rename stunport.cc|h to udpport.cc|h.
@@ -252,4 +252,4 @@ class StunPort : public UDPPort {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_STUNPORT_H_
+#endif  // TALK_P2P_BASE_STUNPORT_H_

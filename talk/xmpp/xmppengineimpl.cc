@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/libjingle/xmpp/xmppengineimpl.h"
+#include "talk/xmpp/xmppengineimpl.h"
 
 #include <algorithm>
 #include <sstream>
@@ -33,9 +33,9 @@
 
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/libjingle/xmllite/xmlprinter.h"
-#include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/libjingle/xmpp/saslhandler.h"
-#include "webrtc/libjingle/xmpp/xmpplogintask.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/saslhandler.h"
+#include "talk/xmpp/xmpplogintask.h"
 #include "webrtc/base/common.h"
 
 namespace buzz {

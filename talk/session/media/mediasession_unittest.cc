@@ -30,9 +30,9 @@
 
 #include "talk/media/base/codec.h"
 #include "talk/media/base/testutils.h"
-#include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/transportdescription.h"
-#include "webrtc/p2p/base/transportinfo.h"
+#include "talk/p2p/base/constants.h"
+#include "talk/p2p/base/transportdescription.h"
+#include "talk/p2p/base/transportinfo.h"
 #include "talk/session/media/mediasession.h"
 #include "talk/session/media/srtpfilter.h"
 #include "webrtc/base/fakesslidentity.h"

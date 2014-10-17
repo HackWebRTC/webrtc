@@ -28,7 +28,7 @@
 #ifndef TALK_XMPP_PINGTASK_H_
 #define TALK_XMPP_PINGTASK_H_
 
-#include "webrtc/libjingle/xmpp/xmpptask.h"
+#include "talk/xmpp/xmpptask.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/messagequeue.h"
 

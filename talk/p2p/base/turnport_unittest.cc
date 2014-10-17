@@ -28,12 +28,12 @@
 #include <dirent.h>
 #endif
 
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/tcpport.h"
-#include "webrtc/p2p/base/testturnserver.h"
-#include "webrtc/p2p/base/turnport.h"
-#include "webrtc/p2p/base/udpport.h"
+#include "talk/p2p/base/basicpacketsocketfactory.h"
+#include "talk/p2p/base/constants.h"
+#include "talk/p2p/base/tcpport.h"
+#include "talk/p2p/base/testturnserver.h"
+#include "talk/p2p/base/turnport.h"
+#include "talk/p2p/base/udpport.h"
 #include "webrtc/base/asynctcpsocket.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/dscp.h"

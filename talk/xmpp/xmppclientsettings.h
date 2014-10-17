@@ -28,8 +28,8 @@
 #ifndef TALK_XMPP_XMPPCLIENTSETTINGS_H_
 #define TALK_XMPP_XMPPCLIENTSETTINGS_H_
 
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/libjingle/xmpp/xmppengine.h"
+#include "talk/p2p/base/port.h"
+#include "talk/xmpp/xmppengine.h"
 #include "webrtc/base/cryptstring.h"
 
 namespace buzz {

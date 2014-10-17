@@ -25,10 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
-#define WEBRTC_P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
+#ifndef TALK_P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
+#define TALK_P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
 
-#include "webrtc/p2p/base/transportdescription.h"
+#include "talk/p2p/base/transportdescription.h"
 
 namespace rtc {
 class SSLIdentity;
@@ -80,4 +80,4 @@ class TransportDescriptionFactory {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
+#endif  // TALK_P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_

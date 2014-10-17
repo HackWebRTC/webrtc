@@ -28,9 +28,9 @@
 #ifndef TALK_XMPP_XMPPPUMP_H_
 #define TALK_XMPP_XMPPPUMP_H_
 
-#include "webrtc/libjingle/xmpp/xmppclient.h"
-#include "webrtc/libjingle/xmpp/xmppengine.h"
-#include "webrtc/libjingle/xmpp/xmpptask.h"
+#include "talk/xmpp/xmppclient.h"
+#include "talk/xmpp/xmppengine.h"
+#include "talk/xmpp/xmpptask.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/taskrunner.h"
 #include "webrtc/base/thread.h"

@@ -25,12 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_CLIENT_SOCKETMONITOR_H_
-#define WEBRTC_P2P_CLIENT_SOCKETMONITOR_H_
+#ifndef TALK_P2P_CLIENT_SOCKETMONITOR_H_
+#define TALK_P2P_CLIENT_SOCKETMONITOR_H_
 
 #include <vector>
 
-#include "webrtc/p2p/base/transportchannel.h"
+#include "talk/p2p/base/transportchannel.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
@@ -68,4 +68,4 @@ class SocketMonitor : public rtc::MessageHandler,
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_CLIENT_SOCKETMONITOR_H_
+#endif  // TALK_P2P_CLIENT_SOCKETMONITOR_H_

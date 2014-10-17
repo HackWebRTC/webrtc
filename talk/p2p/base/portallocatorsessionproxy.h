@@ -25,13 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_PORTALLOCATORSESSIONPROXY_H_
-#define WEBRTC_P2P_BASE_PORTALLOCATORSESSIONPROXY_H_
+#ifndef TALK_P2P_BASE_PORTALLOCATORSESSIONPROXY_H_
+#define TALK_P2P_BASE_PORTALLOCATORSESSIONPROXY_H_
 
 #include <string>
 
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/portallocator.h"
+#include "talk/p2p/base/candidate.h"
+#include "talk/p2p/base/portallocator.h"
 
 namespace cricket {
 class PortAllocator;
@@ -120,4 +120,4 @@ class PortAllocatorSessionProxy : public PortAllocatorSession {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_PORTALLOCATORSESSIONPROXY_H_
+#endif  // TALK_P2P_BASE_PORTALLOCATORSESSIONPROXY_H_

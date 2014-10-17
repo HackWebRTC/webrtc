@@ -25,14 +25,14 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_TRANSPORTCHANNELPROXY_H_
-#define WEBRTC_P2P_BASE_TRANSPORTCHANNELPROXY_H_
+#ifndef TALK_P2P_BASE_TRANSPORTCHANNELPROXY_H_
+#define TALK_P2P_BASE_TRANSPORTCHANNELPROXY_H_
 
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "webrtc/p2p/base/transportchannel.h"
+#include "talk/p2p/base/transportchannel.h"
 #include "webrtc/base/messagehandler.h"
 
 namespace rtc {
@@ -109,4 +109,4 @@ class TransportChannelProxy : public TransportChannel,
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_TRANSPORTCHANNELPROXY_H_
+#endif  // TALK_P2P_BASE_TRANSPORTCHANNELPROXY_H_

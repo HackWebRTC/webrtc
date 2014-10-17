@@ -29,9 +29,9 @@
 #include <vector>
 
 #include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/libjingle/xmpp/fakexmppclient.h"
-#include "webrtc/libjingle/xmpp/mucroomconfigtask.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/fakexmppclient.h"
+#include "talk/xmpp/mucroomconfigtask.h"
 #include "webrtc/base/faketaskrunner.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/sigslot.h"

@@ -25,13 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/libjingle/xmpp/pubsubtasks.h"
+#include "talk/xmpp/pubsubtasks.h"
 
 #include <string>
 #include <vector>
 
-#include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/libjingle/xmpp/receivetask.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/receivetask.h"
 
 // An implementation of the tasks for XEP-0060
 // (http://xmpp.org/extensions/xep-0060.html).

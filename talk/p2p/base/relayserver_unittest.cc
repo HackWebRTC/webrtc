@@ -27,7 +27,7 @@
 
 #include <string>
 
-#include "webrtc/p2p/base/relayserver.h"
+#include "talk/p2p/base/relayserver.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"

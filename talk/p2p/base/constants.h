@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_CONSTANTS_H_
-#define WEBRTC_P2P_BASE_CONSTANTS_H_
+#ifndef TALK_P2P_BASE_CONSTANTS_H_
+#define TALK_P2P_BASE_CONSTANTS_H_
 
 #include <string>
 #include "webrtc/libjingle/xmllite/qname.h"
@@ -273,4 +273,4 @@ extern const char CONNECTIONROLE_HOLDCONN_STR[];
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_CONSTANTS_H_
+#endif  // TALK_P2P_BASE_CONSTANTS_H_

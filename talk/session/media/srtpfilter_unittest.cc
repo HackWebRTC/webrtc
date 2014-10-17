@@ -27,7 +27,7 @@
 
 #include "talk/media/base/cryptoparams.h"
 #include "talk/media/base/fakertp.h"
-#include "webrtc/p2p/base/sessiondescription.h"
+#include "talk/p2p/base/sessiondescription.h"
 #include "talk/session/media/srtpfilter.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/gunit.h"

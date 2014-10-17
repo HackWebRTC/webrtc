@@ -27,8 +27,8 @@
 
 #include "talk/app/webrtc/portallocatorfactory.h"
 
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/client/basicportallocator.h"
+#include "talk/p2p/base/basicpacketsocketfactory.h"
+#include "talk/p2p/client/basicportallocator.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/thread.h"

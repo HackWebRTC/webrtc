@@ -31,7 +31,7 @@
 #include "talk/media/base/rtpdump.h"
 #include "talk/media/base/screencastid.h"
 #include "talk/media/base/testutils.h"
-#include "webrtc/p2p/base/fakesession.h"
+#include "talk/p2p/base/fakesession.h"
 #include "talk/session/media/channel.h"
 #include "talk/session/media/mediamessages.h"
 #include "talk/session/media/mediarecorder.h"

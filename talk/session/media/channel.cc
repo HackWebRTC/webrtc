@@ -29,7 +29,7 @@
 
 #include "talk/media/base/constants.h"
 #include "talk/media/base/rtputils.h"
-#include "webrtc/p2p/base/transportchannel.h"
+#include "talk/p2p/base/transportchannel.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/mediamessages.h"
 #include "talk/session/media/typingmonitor.h"

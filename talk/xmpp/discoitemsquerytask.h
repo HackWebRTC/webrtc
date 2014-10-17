@@ -54,7 +54,7 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/libjingle/xmpp/iqtask.h"
+#include "talk/xmpp/iqtask.h"
 
 namespace buzz {
 

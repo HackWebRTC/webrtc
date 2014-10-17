@@ -25,17 +25,17 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_FAKESESSION_H_
-#define WEBRTC_P2P_BASE_FAKESESSION_H_
+#ifndef TALK_P2P_BASE_FAKESESSION_H_
+#define TALK_P2P_BASE_FAKESESSION_H_
 
 #include <map>
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/session.h"
-#include "webrtc/p2p/base/transport.h"
-#include "webrtc/p2p/base/transportchannel.h"
-#include "webrtc/p2p/base/transportchannelimpl.h"
+#include "talk/p2p/base/session.h"
+#include "talk/p2p/base/transport.h"
+#include "talk/p2p/base/transportchannel.h"
+#include "talk/p2p/base/transportchannelimpl.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/fakesslidentity.h"
 #include "webrtc/base/messagequeue.h"
@@ -506,4 +506,4 @@ class FakeSession : public BaseSession {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_FAKESESSION_H_
+#endif  // TALK_P2P_BASE_FAKESESSION_H_

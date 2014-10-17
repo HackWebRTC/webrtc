@@ -25,13 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/libjingle/xmpp/xmppauth.h"
+#include "talk/xmpp/xmppauth.h"
 
 #include <algorithm>
 
-#include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/libjingle/xmpp/saslcookiemechanism.h"
-#include "webrtc/libjingle/xmpp/saslplainmechanism.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/saslcookiemechanism.h"
+#include "talk/xmpp/saslplainmechanism.h"
 
 XmppAuth::XmppAuth() : done_(false) {
 }

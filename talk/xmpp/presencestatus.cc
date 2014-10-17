@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/libjingle/xmpp/presencestatus.h"
+#include "talk/xmpp/presencestatus.h"
 
 namespace buzz {
 PresenceStatus::PresenceStatus()

@@ -25,14 +25,14 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/fakesession.h"
-#include "webrtc/p2p/base/p2ptransport.h"
-#include "webrtc/p2p/base/parsing.h"
-#include "webrtc/p2p/base/rawtransport.h"
-#include "webrtc/p2p/base/sessionmessages.h"
+#include "talk/p2p/base/constants.h"
+#include "talk/p2p/base/fakesession.h"
+#include "talk/p2p/base/p2ptransport.h"
+#include "talk/p2p/base/parsing.h"
+#include "talk/p2p/base/rawtransport.h"
+#include "talk/p2p/base/sessionmessages.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "webrtc/libjingle/xmpp/constants.h"
+#include "talk/xmpp/constants.h"
 #include "webrtc/base/fakesslidentity.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/thread.h"

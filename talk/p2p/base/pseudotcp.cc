@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/p2p/base/pseudotcp.h"
+#include "talk/p2p/base/pseudotcp.h"
 
 #include <stdio.h>
 #include <stdlib.h>

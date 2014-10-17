@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_STUN_H_
-#define WEBRTC_P2P_BASE_STUN_H_
+#ifndef TALK_P2P_BASE_STUN_H_
+#define TALK_P2P_BASE_STUN_H_
 
 // This file contains classes for dealing with the STUN protocol, as specified
 // in RFC 5389, and its descendants.
@@ -646,4 +646,4 @@ class IceMessage : public StunMessage {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_STUN_H_
+#endif  // TALK_P2P_BASE_STUN_H_

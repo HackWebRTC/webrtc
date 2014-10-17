@@ -25,12 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_P2PTRANSPORT_H_
-#define WEBRTC_P2P_BASE_P2PTRANSPORT_H_
+#ifndef TALK_P2P_BASE_P2PTRANSPORT_H_
+#define TALK_P2P_BASE_P2PTRANSPORT_H_
 
 #include <string>
 #include <vector>
-#include "webrtc/p2p/base/transport.h"
+#include "talk/p2p/base/transport.h"
 
 namespace cricket {
 
@@ -100,4 +100,4 @@ class P2PTransportParser : public TransportParser {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_P2PTRANSPORT_H_
+#endif  // TALK_P2P_BASE_P2PTRANSPORT_H_

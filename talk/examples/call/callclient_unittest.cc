@@ -30,7 +30,7 @@
 #include "talk/examples/call/callclient.h"
 #include "talk/media/base/filemediaengine.h"
 #include "talk/media/base/mediaengine.h"
-#include "webrtc/libjingle/xmpp/xmppthread.h"
+#include "talk/xmpp/xmppthread.h"
 #include "webrtc/base/gunit.h"
 
 TEST(CallClientTest, CreateCallClientWithDefaultMediaEngine) {

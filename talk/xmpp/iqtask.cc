@@ -25,10 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/libjingle/xmpp/iqtask.h"
+#include "talk/xmpp/iqtask.h"
 
-#include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/libjingle/xmpp/xmppclient.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/xmppclient.h"
 
 namespace buzz {
 

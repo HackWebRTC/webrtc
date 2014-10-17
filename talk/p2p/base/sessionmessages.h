@@ -25,17 +25,17 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_SESSIONMESSAGES_H_
-#define WEBRTC_P2P_BASE_SESSIONMESSAGES_H_
+#ifndef TALK_P2P_BASE_SESSIONMESSAGES_H_
+#define TALK_P2P_BASE_SESSIONMESSAGES_H_
 
 #include <map>
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/parsing.h"
-#include "webrtc/p2p/base/sessiondescription.h"  // Needed to delete contents.
-#include "webrtc/p2p/base/transportinfo.h"
+#include "talk/p2p/base/constants.h"
+#include "talk/p2p/base/parsing.h"
+#include "talk/p2p/base/sessiondescription.h"  // Needed to delete contents.
+#include "talk/p2p/base/transportinfo.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/base/basictypes.h"
 
@@ -240,4 +240,4 @@ bool FindSessionRedirect(const buzz::XmlElement* stanza,
                          SessionRedirect* redirect);
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_SESSIONMESSAGES_H_
+#endif  // TALK_P2P_BASE_SESSIONMESSAGES_H_

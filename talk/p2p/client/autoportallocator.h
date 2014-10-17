@@ -25,15 +25,15 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_CLIENT_AUTOPORTALLOCATOR_H_
-#define WEBRTC_P2P_CLIENT_AUTOPORTALLOCATOR_H_
+#ifndef TALK_P2P_CLIENT_AUTOPORTALLOCATOR_H_
+#define TALK_P2P_CLIENT_AUTOPORTALLOCATOR_H_
 
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/client/httpportallocator.h"
-#include "webrtc/libjingle/xmpp/jingleinfotask.h"
-#include "webrtc/libjingle/xmpp/xmppclient.h"
+#include "talk/p2p/client/httpportallocator.h"
+#include "talk/xmpp/jingleinfotask.h"
+#include "talk/xmpp/xmppclient.h"
 #include "webrtc/base/sigslot.h"
 
 // This class sets the relay and stun servers using XmppClient.
@@ -66,4 +66,4 @@ class AutoPortAllocator : public cricket::HttpPortAllocator {
   }
 };
 
-#endif  // WEBRTC_P2P_CLIENT_AUTOPORTALLOCATOR_H_
+#endif  // TALK_P2P_CLIENT_AUTOPORTALLOCATOR_H_

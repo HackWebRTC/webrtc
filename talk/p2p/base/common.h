@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_COMMON_H_
-#define WEBRTC_P2P_BASE_COMMON_H_
+#ifndef TALK_P2P_BASE_COMMON_H_
+#define TALK_P2P_BASE_COMMON_H_
 
 #include "webrtc/base/logging.h"
 
@@ -34,4 +34,4 @@
 #define LOG_J(sev, obj) LOG(sev) << "Jingle:" << obj->ToString() << ": "
 #define LOG_JV(sev, obj) LOG_V(sev) << "Jingle:" << obj->ToString() << ": "
 
-#endif  // WEBRTC_P2P_BASE_COMMON_H_
+#endif  // TALK_P2P_BASE_COMMON_H_

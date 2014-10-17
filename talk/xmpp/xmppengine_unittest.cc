@@ -5,11 +5,11 @@
 #include <sstream>
 #include <string>
 #include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/libjingle/xmpp/plainsaslhandler.h"
-#include "webrtc/libjingle/xmpp/saslplainmechanism.h"
-#include "webrtc/libjingle/xmpp/util_unittest.h"
-#include "webrtc/libjingle/xmpp/xmppengine.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/plainsaslhandler.h"
+#include "talk/xmpp/saslplainmechanism.h"
+#include "talk/xmpp/util_unittest.h"
+#include "talk/xmpp/xmppengine.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/gunit.h"
 

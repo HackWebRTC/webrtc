@@ -25,12 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/libjingle/xmpp/hangoutpubsubclient.h"
+#include "talk/xmpp/hangoutpubsubclient.h"
 
 #include "webrtc/libjingle/xmllite/qname.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/libjingle/xmpp/jid.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/jid.h"
 #include "webrtc/base/logging.h"
 
 

@@ -25,16 +25,16 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_RELAYPORT_H_
-#define WEBRTC_P2P_BASE_RELAYPORT_H_
+#ifndef TALK_P2P_BASE_RELAYPORT_H_
+#define TALK_P2P_BASE_RELAYPORT_H_
 
 #include <deque>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/p2p/base/stunrequest.h"
+#include "talk/p2p/base/port.h"
+#include "talk/p2p/base/stunrequest.h"
 
 namespace cricket {
 
@@ -115,4 +115,4 @@ class RelayPort : public Port {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_RELAYPORT_H_
+#endif  // TALK_P2P_BASE_RELAYPORT_H_

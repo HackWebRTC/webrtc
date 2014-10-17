@@ -25,14 +25,14 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_CLIENT_BASICPORTALLOCATOR_H_
-#define WEBRTC_P2P_CLIENT_BASICPORTALLOCATOR_H_
+#ifndef TALK_P2P_CLIENT_BASICPORTALLOCATOR_H_
+#define TALK_P2P_CLIENT_BASICPORTALLOCATOR_H_
 
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/p2p/base/portallocator.h"
+#include "talk/p2p/base/port.h"
+#include "talk/p2p/base/portallocator.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -255,4 +255,4 @@ struct PortConfiguration : public rtc::MessageData {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_CLIENT_BASICPORTALLOCATOR_H_
+#endif  // TALK_P2P_CLIENT_BASICPORTALLOCATOR_H_

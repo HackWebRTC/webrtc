@@ -28,8 +28,8 @@
 #ifndef TALK_XMPP_XMPPTHREAD_H_
 #define TALK_XMPP_XMPPTHREAD_H_
 
-#include "webrtc/libjingle/xmpp/moduleimpl.h"
-#include "webrtc/libjingle/xmpp/rostermodule.h"
+#include "talk/xmpp/moduleimpl.h"
+#include "talk/xmpp/rostermodule.h"
 
 namespace buzz {
 

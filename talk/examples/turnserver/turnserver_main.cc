@@ -27,8 +27,8 @@
 
 #include <iostream>  // NOLINT
 
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/base/turnserver.h"
+#include "talk/p2p/base/basicpacketsocketfactory.h"
+#include "talk/p2p/base/turnserver.h"
 #include "webrtc/base/asyncudpsocket.h"
 #include "webrtc/base/optionsfile.h"
 #include "webrtc/base/stringencode.h"

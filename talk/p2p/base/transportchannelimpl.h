@@ -25,12 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_TRANSPORTCHANNELIMPL_H_
-#define WEBRTC_P2P_BASE_TRANSPORTCHANNELIMPL_H_
+#ifndef TALK_P2P_BASE_TRANSPORTCHANNELIMPL_H_
+#define TALK_P2P_BASE_TRANSPORTCHANNELIMPL_H_
 
 #include <string>
-#include "webrtc/p2p/base/transport.h"
-#include "webrtc/p2p/base/transportchannel.h"
+#include "talk/p2p/base/transport.h"
+#include "talk/p2p/base/transportchannel.h"
 
 namespace buzz { class XmlElement; }
 
@@ -125,4 +125,4 @@ class TransportChannelImpl : public TransportChannel {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_TRANSPORTCHANNELIMPL_H_
+#endif  // TALK_P2P_BASE_TRANSPORTCHANNELIMPL_H_

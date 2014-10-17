@@ -40,9 +40,9 @@
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/mediaengine.h"  // For DataChannelType
 #include "talk/media/base/streamparams.h"
-#include "webrtc/p2p/base/sessiondescription.h"
-#include "webrtc/p2p/base/transport.h"
-#include "webrtc/p2p/base/transportdescriptionfactory.h"
+#include "talk/p2p/base/sessiondescription.h"
+#include "talk/p2p/base/transport.h"
+#include "talk/p2p/base/transportdescriptionfactory.h"
 #include "webrtc/base/scoped_ptr.h"
 
 namespace cricket {

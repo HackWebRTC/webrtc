@@ -25,16 +25,16 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_TURNPORT_H_
-#define WEBRTC_P2P_BASE_TURNPORT_H_
+#ifndef TALK_P2P_BASE_TURNPORT_H_
+#define TALK_P2P_BASE_TURNPORT_H_
 
 #include <stdio.h>
 #include <list>
 #include <set>
 #include <string>
 
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/p2p/client/basicportallocator.h"
+#include "talk/p2p/base/port.h"
+#include "talk/p2p/client/basicportallocator.h"
 #include "webrtc/base/asyncpacketsocket.h"
 
 namespace rtc {
@@ -251,4 +251,4 @@ class TurnPort : public Port {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_TURNPORT_H_
+#endif  // TALK_P2P_BASE_TURNPORT_H_

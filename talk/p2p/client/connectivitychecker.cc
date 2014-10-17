@@ -27,14 +27,14 @@
 
 #include <string>
 
-#include "webrtc/p2p/client/connectivitychecker.h"
+#include "talk/p2p/client/connectivitychecker.h"
 
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/common.h"
-#include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/p2p/base/relayport.h"
-#include "webrtc/p2p/base/stunport.h"
+#include "talk/p2p/base/candidate.h"
+#include "talk/p2p/base/common.h"
+#include "talk/p2p/base/constants.h"
+#include "talk/p2p/base/port.h"
+#include "talk/p2p/base/relayport.h"
+#include "talk/p2p/base/stunport.h"
 #include "webrtc/base/asynchttprequest.h"
 #include "webrtc/base/autodetectproxy.h"
 #include "webrtc/base/helpers.h"

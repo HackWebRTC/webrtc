@@ -30,8 +30,8 @@
 
 #include "webrtc/libjingle/xmllite/qname.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/libjingle/xmpp/saslmechanism.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/saslmechanism.h"
 
 namespace buzz {
 

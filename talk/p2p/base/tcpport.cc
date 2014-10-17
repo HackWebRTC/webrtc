@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/p2p/base/tcpport.h"
+#include "talk/p2p/base/tcpport.h"
 
-#include "webrtc/p2p/base/common.h"
+#include "talk/p2p/base/common.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 

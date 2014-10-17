@@ -25,15 +25,15 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_RELAYSERVER_H_
-#define WEBRTC_P2P_BASE_RELAYSERVER_H_
+#ifndef TALK_P2P_BASE_RELAYSERVER_H_
+#define TALK_P2P_BASE_RELAYSERVER_H_
 
 #include <map>
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/p2p/base/stun.h"
+#include "talk/p2p/base/port.h"
+#include "talk/p2p/base/stun.h"
 #include "webrtc/base/asyncudpsocket.h"
 #include "webrtc/base/socketaddresspair.h"
 #include "webrtc/base/thread.h"
@@ -249,4 +249,4 @@ class RelayServerBinding : public rtc::MessageHandler {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_RELAYSERVER_H_
+#endif  // TALK_P2P_BASE_RELAYSERVER_H_

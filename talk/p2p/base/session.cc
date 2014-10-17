@@ -25,16 +25,16 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/p2p/base/session.h"
+#include "talk/p2p/base/session.h"
 
-#include "webrtc/p2p/base/dtlstransport.h"
-#include "webrtc/p2p/base/p2ptransport.h"
-#include "webrtc/p2p/base/sessionclient.h"
-#include "webrtc/p2p/base/transport.h"
-#include "webrtc/p2p/base/transportchannelproxy.h"
-#include "webrtc/p2p/base/transportinfo.h"
-#include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/libjingle/xmpp/jid.h"
+#include "talk/p2p/base/dtlstransport.h"
+#include "talk/p2p/base/p2ptransport.h"
+#include "talk/p2p/base/sessionclient.h"
+#include "talk/p2p/base/transport.h"
+#include "talk/p2p/base/transportchannelproxy.h"
+#include "talk/p2p/base/transportinfo.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/jid.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/helpers.h"
@@ -42,7 +42,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sslstreamadapter.h"
 
-#include "webrtc/p2p/base/constants.h"
+#include "talk/p2p/base/constants.h"
 
 namespace cricket {
 

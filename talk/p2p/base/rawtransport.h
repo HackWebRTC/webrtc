@@ -25,11 +25,11 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_RAWTRANSPORT_H_
-#define WEBRTC_P2P_BASE_RAWTRANSPORT_H_
+#ifndef TALK_P2P_BASE_RAWTRANSPORT_H_
+#define TALK_P2P_BASE_RAWTRANSPORT_H_
 
 #include <string>
-#include "webrtc/p2p/base/transport.h"
+#include "talk/p2p/base/transport.h"
 
 #if defined(FEATURE_ENABLE_PSTN)
 namespace cricket {
@@ -78,4 +78,4 @@ class RawTransport : public Transport, public TransportParser {
 
 #endif  // defined(FEATURE_ENABLE_PSTN)
 
-#endif  // WEBRTC_P2P_BASE_RAWTRANSPORT_H_
+#endif  // TALK_P2P_BASE_RAWTRANSPORT_H_

@@ -26,7 +26,7 @@
  */
 
 #include <sstream>
-#include "webrtc/p2p/base/transportchannel.h"
+#include "talk/p2p/base/transportchannel.h"
 
 namespace cricket {
 

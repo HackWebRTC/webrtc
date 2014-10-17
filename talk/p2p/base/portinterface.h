@@ -25,12 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_PORTINTERFACE_H_
-#define WEBRTC_P2P_BASE_PORTINTERFACE_H_
+#ifndef TALK_P2P_BASE_PORTINTERFACE_H_
+#define TALK_P2P_BASE_PORTINTERFACE_H_
 
 #include <string>
 
-#include "webrtc/p2p/base/transport.h"
+#include "talk/p2p/base/transport.h"
 #include "webrtc/base/socketaddress.h"
 
 namespace rtc {
@@ -140,4 +140,4 @@ class PortInterface {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_PORTINTERFACE_H_
+#endif  // TALK_P2P_BASE_PORTINTERFACE_H_

@@ -27,8 +27,8 @@
 
 #include <algorithm>
 #include <vector>
-#include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/libjingle/xmpp/xmppengineimpl.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/xmppengineimpl.h"
 #include "webrtc/base/common.h"
 
 namespace buzz {

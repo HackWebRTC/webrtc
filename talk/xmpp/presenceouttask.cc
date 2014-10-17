@@ -27,9 +27,9 @@
 
 #include <time.h>
 #include <sstream>
-#include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/libjingle/xmpp/presenceouttask.h"
-#include "webrtc/libjingle/xmpp/xmppclient.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/presenceouttask.h"
+#include "talk/xmpp/xmppclient.h"
 #include "webrtc/base/stringencode.h"
 
 namespace buzz {

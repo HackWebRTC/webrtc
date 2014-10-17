@@ -25,11 +25,11 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/p2p/base/p2ptransportchannel.h"
-#include "webrtc/p2p/base/testrelayserver.h"
-#include "webrtc/p2p/base/teststunserver.h"
-#include "webrtc/p2p/base/testturnserver.h"
-#include "webrtc/p2p/client/basicportallocator.h"
+#include "talk/p2p/base/p2ptransportchannel.h"
+#include "talk/p2p/base/testrelayserver.h"
+#include "talk/p2p/base/teststunserver.h"
+#include "talk/p2p/base/testturnserver.h"
+#include "talk/p2p/client/basicportallocator.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/fakenetwork.h"
 #include "webrtc/base/firewallsocketserver.h"

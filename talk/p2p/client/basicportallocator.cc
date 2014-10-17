@@ -25,19 +25,19 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/p2p/client/basicportallocator.h"
+#include "talk/p2p/client/basicportallocator.h"
 
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/base/common.h"
-#include "webrtc/p2p/base/port.h"
-#include "webrtc/p2p/base/relayport.h"
-#include "webrtc/p2p/base/stunport.h"
-#include "webrtc/p2p/base/tcpport.h"
-#include "webrtc/p2p/base/turnport.h"
-#include "webrtc/p2p/base/udpport.h"
+#include "talk/p2p/base/basicpacketsocketfactory.h"
+#include "talk/p2p/base/common.h"
+#include "talk/p2p/base/port.h"
+#include "talk/p2p/base/relayport.h"
+#include "talk/p2p/base/stunport.h"
+#include "talk/p2p/base/tcpport.h"
+#include "talk/p2p/base/turnport.h"
+#include "talk/p2p/base/udpport.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"

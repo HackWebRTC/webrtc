@@ -25,13 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_SESSIONDESCRIPTION_H_
-#define WEBRTC_P2P_BASE_SESSIONDESCRIPTION_H_
+#ifndef TALK_P2P_BASE_SESSIONDESCRIPTION_H_
+#define TALK_P2P_BASE_SESSIONDESCRIPTION_H_
 
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/transportinfo.h"
+#include "talk/p2p/base/transportinfo.h"
 #include "webrtc/base/constructormagic.h"
 
 namespace cricket {
@@ -199,4 +199,4 @@ enum ContentSource {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_SESSIONDESCRIPTION_H_
+#endif  // TALK_P2P_BASE_SESSIONDESCRIPTION_H_

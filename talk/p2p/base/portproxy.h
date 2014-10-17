@@ -25,10 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_PORTPROXY_H_
-#define WEBRTC_P2P_BASE_PORTPROXY_H_
+#ifndef TALK_P2P_BASE_PORTPROXY_H_
+#define TALK_P2P_BASE_PORTPROXY_H_
 
-#include "webrtc/p2p/base/portinterface.h"
+#include "talk/p2p/base/portinterface.h"
 #include "webrtc/base/sigslot.h"
 
 namespace rtc {
@@ -101,4 +101,4 @@ class PortProxy : public PortInterface, public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_PORTPROXY_H_
+#endif  // TALK_P2P_BASE_PORTPROXY_H_

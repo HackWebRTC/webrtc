@@ -25,12 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/libjingle/xmpp/xmppclient.h"
+#include "talk/xmpp/xmppclient.h"
 
-#include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/libjingle/xmpp/plainsaslhandler.h"
-#include "webrtc/libjingle/xmpp/prexmppauth.h"
-#include "webrtc/libjingle/xmpp/saslplainmechanism.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/plainsaslhandler.h"
+#include "talk/xmpp/prexmppauth.h"
+#include "talk/xmpp/saslplainmechanism.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"

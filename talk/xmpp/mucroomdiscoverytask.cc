@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/libjingle/xmpp/mucroomdiscoverytask.h"
+#include "talk/xmpp/mucroomdiscoverytask.h"
 
-#include "webrtc/libjingle/xmpp/constants.h"
+#include "talk/xmpp/constants.h"
 
 namespace buzz {
 

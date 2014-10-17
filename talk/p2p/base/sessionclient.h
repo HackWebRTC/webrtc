@@ -25,10 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBRTC_P2P_BASE_SESSIONCLIENT_H_
-#define WEBRTC_P2P_BASE_SESSIONCLIENT_H_
+#ifndef TALK_P2P_BASE_SESSIONCLIENT_H_
+#define TALK_P2P_BASE_SESSIONCLIENT_H_
 
-#include "webrtc/p2p/base/constants.h"
+#include "talk/p2p/base/constants.h"
 
 namespace buzz {
 class XmlElement;
@@ -92,4 +92,4 @@ class SessionClient : public ContentParser {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_SESSIONCLIENT_H_
+#endif  // TALK_P2P_BASE_SESSIONCLIENT_H_

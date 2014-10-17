@@ -28,8 +28,8 @@
 #ifndef TALK_XMPP_MODULEIMPL_H_
 #define TALK_XMPP_MODULEIMPL_H_
 
-#include "webrtc/libjingle/xmpp/module.h"
-#include "webrtc/libjingle/xmpp/xmppengine.h"
+#include "talk/xmpp/module.h"
+#include "talk/xmpp/xmppengine.h"
 
 namespace buzz {
 

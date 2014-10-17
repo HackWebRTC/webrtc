@@ -41,8 +41,8 @@
 
 #include "talk/media/base/mediachannel.h"  // For RtpHeaderExtension
 #include "talk/media/base/streamparams.h"
-#include "webrtc/p2p/base/parsing.h"
-#include "webrtc/p2p/base/sessiondescription.h"
+#include "talk/p2p/base/parsing.h"
+#include "talk/p2p/base/sessiondescription.h"
 #include "webrtc/base/basictypes.h"
 
 namespace cricket {
