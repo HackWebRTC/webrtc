@@ -9,6 +9,7 @@
 // Provides a Test class that exposes api to the tests.
 // Read test.prototype to see what methods are exposed.
 var fs = require('fs');
+var request = require('request');
 var BotManager = require('./botmanager.js');
 
 function Test() {
@@ -70,6 +71,26 @@ Test.prototype = {
 
   createStatisticsReport: function (outputFileName) {
     return new StatisticsReport(outputFileName);
+  },
+
+  // Ask computeengineondemand to give us TURN server credentials and URIs.
+  createTurnConfig: function (onSuccess, onError) {
+    request('https://computeengineondemand.appspot.com/turn?username=1234&key=5678',
+        function (error, response, body) {
+          if (error || response.statusCode != 200) {
+            onError('TURN request failed');
+            return;
+          }
+
+          var response = JSON.parse(body);
+          var iceServer = {
+            'username': response.username,
+            'credential': response.password,
+            'urls': response.uris
+          };
+          onSuccess({ 'iceServers': [ iceServer ] });
+        }
+      );
   },
 }
 

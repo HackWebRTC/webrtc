@@ -20,9 +20,11 @@ function testOneWayVideo(test, bot1, bot2) {
     onPeerConnectionCreated);
 
   function createPeerConnection(done) {
-    this.asyncCreateTurnConfig(function(config) {
+    test.createTurnConfig(onTrunConfig.bind(this), test.fail);
+
+    function onTurnConfig(config) {
       this.createPeerConnection(config, done, test.fail);
-    }.bind(this), test.fail);
+    };
   }
 
   function onPeerConnectionCreated(pc1, pc2) {
