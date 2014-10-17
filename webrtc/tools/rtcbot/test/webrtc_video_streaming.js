@@ -97,5 +97,5 @@ function testOneWayVideo(test, bot1, bot2) {
   }
 }
 
-registerBotTest('testOneWayVideo/chrome=>chrome',
+registerBotTest('testOneWayVideo/chrome-chrome',
                 testOneWayVideo, ['chrome', 'chrome']);

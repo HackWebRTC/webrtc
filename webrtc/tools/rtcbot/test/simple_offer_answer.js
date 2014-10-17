@@ -44,5 +44,5 @@ function testOfferAnswer(test, bot1, bot2) {
   }
 }
 
-registerBotTest('testOfferAnswer/chrome=>chrome',
+registerBotTest('testOfferAnswer/chrome-chrome',
                 testOfferAnswer, ['chrome', 'chrome']);
