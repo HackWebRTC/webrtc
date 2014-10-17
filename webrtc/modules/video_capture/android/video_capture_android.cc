@@ -37,6 +37,7 @@ void JNICALL ProvideCameraFrame(
     jobject,
     jbyteArray javaCameraFrame,
     jint length,
+    jint rotation,
     jlong timeStamp,
     jlong context) {
   webrtc::videocapturemodule::VideoCaptureAndroid* captureModule =
@@ -44,28 +45,8 @@ void JNICALL ProvideCameraFrame(
           context);
   jbyte* cameraFrame = env->GetByteArrayElements(javaCameraFrame, NULL);
   captureModule->OnIncomingFrame(
-      reinterpret_cast<uint8_t*>(cameraFrame), length, 0);
+      reinterpret_cast<uint8_t*>(cameraFrame), length, rotation, 0);
   env->ReleaseByteArrayElements(javaCameraFrame, cameraFrame, JNI_ABORT);
-}
-
-// Called by Java when the device orientation has changed.
-void JNICALL OnOrientationChanged(
-    JNIEnv* env, jobject, jlong context, jint degrees) {
-  webrtc::videocapturemodule::VideoCaptureAndroid* captureModule =
-      reinterpret_cast<webrtc::videocapturemodule::VideoCaptureAndroid*>(
-          context);
-  degrees = (360 + degrees) % 360;
-  assert(degrees >= 0 && degrees < 360);
-  VideoCaptureRotation rotation =
-      (degrees <= 45 || degrees > 315) ? kCameraRotate0 :
-      (degrees > 45 && degrees <= 135) ? kCameraRotate90 :
-      (degrees > 135 && degrees <= 225) ? kCameraRotate180 :
-      (degrees > 225 && degrees <= 315) ? kCameraRotate270 :
-      kCameraRotate0;  // Impossible.
-  int32_t status =
-      captureModule->VideoCaptureImpl::SetCaptureRotation(rotation);
-  RTC_UNUSED(status);
-  assert(status == 0);
 }
 
 int32_t SetCaptureAndroidVM(JavaVM* javaVM, jobject context) {
@@ -88,14 +69,11 @@ int32_t SetCaptureAndroidVM(JavaVM* javaVM, jobject context) {
         {"GetContext",
          "()Landroid/content/Context;",
          reinterpret_cast<void*>(&GetContext)},
-        {"OnOrientationChanged",
-         "(JI)V",
-         reinterpret_cast<void*>(&OnOrientationChanged)},
         {"ProvideCameraFrame",
-         "([BIJJ)V",
+         "([BIIJJ)V",
          reinterpret_cast<void*>(&ProvideCameraFrame)}};
     if (ats.env()->RegisterNatives(g_java_capturer_class,
-                                   native_methods, 3) != 0)
+                                   native_methods, 2) != 0)
       assert(false);
   } else {
     if (g_jvm) {
@@ -129,9 +107,23 @@ VideoCaptureModule* VideoCaptureImpl::Create(
 
 int32_t VideoCaptureAndroid::OnIncomingFrame(uint8_t* videoFrame,
                                              int32_t videoFrameLength,
+                                             int32_t degrees,
                                              int64_t captureTime) {
   if (!_captureStarted)
     return 0;
+  VideoCaptureRotation current_rotation =
+      (degrees <= 45 || degrees > 315) ? kCameraRotate0 :
+      (degrees > 45 && degrees <= 135) ? kCameraRotate90 :
+      (degrees > 135 && degrees <= 225) ? kCameraRotate180 :
+      (degrees > 225 && degrees <= 315) ? kCameraRotate270 :
+      kCameraRotate0;  // Impossible.
+  if (_rotation != current_rotation) {
+    LOG(LS_INFO) << "New camera rotation: " << degrees;
+    _rotation = current_rotation;
+    int32_t status = VideoCaptureImpl::SetCaptureRotation(_rotation);
+    if (status != 0)
+      return status;
+  }
   return IncomingFrame(
       videoFrame, videoFrameLength, _captureCapability, captureTime);
 }
@@ -165,6 +157,7 @@ int32_t VideoCaptureAndroid::Init(const int32_t id,
   _jCapturer = env->NewGlobalRef(
       env->NewObject(g_java_capturer_class, ctor, camera_id, j_this));
   assert(_jCapturer);
+  _rotation = kCameraRotate0;
   return 0;
 }
 

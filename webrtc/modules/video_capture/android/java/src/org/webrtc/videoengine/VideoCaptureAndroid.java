@@ -24,9 +24,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
-import android.view.OrientationEventListener;
+import android.view.Surface;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceHolder;
+import android.view.WindowManager;
 
 // Wrapper for android Camera, with support for direct local preview rendering.
 // Threading notes: this class is called from ViE C++ code, and from Camera &
@@ -44,10 +45,9 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
   private Camera camera;  // Only non-null while capturing.
   private CameraThread cameraThread;
   private Handler cameraThreadHandler;
+  private Context context;
   private final int id;
   private final Camera.CameraInfo info;
-  private final OrientationEventListener orientationListener;
-  private boolean orientationListenerEnabled;
   private final long native_capturer;  // |VideoCaptureAndroid*| in C++.
   private SurfaceTexture cameraSurfaceTexture;
   private int[] cameraGlTextures = null;
@@ -70,34 +70,13 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
   public VideoCaptureAndroid(int id, long native_capturer) {
     this.id = id;
     this.native_capturer = native_capturer;
+    this.context = GetContext();
     this.info = new Camera.CameraInfo();
     Camera.getCameraInfo(id, info);
-
-    // Must be the last thing in the ctor since we pass a reference to |this|!
-    final VideoCaptureAndroid self = this;
-    orientationListener = new OrientationEventListener(GetContext()) {
-        @Override public void onOrientationChanged(int degrees) {
-          if (!self.orientationListenerEnabled) {
-            return;
-          }
-          if (degrees == OrientationEventListener.ORIENTATION_UNKNOWN) {
-            return;
-          }
-          if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-            degrees = (info.orientation - degrees + 360) % 360;
-          } else {  // back-facing
-            degrees = (info.orientation + degrees) % 360;
-          }
-          self.OnOrientationChanged(self.native_capturer, degrees);
-        }
-      };
-    // Don't add any code here; see the comment above |self| above!
   }
 
   // Return the global application context.
   private static native Context GetContext();
-  // Request frame rotation post-capture.
-  private native void OnOrientationChanged(long captureObject, int degrees);
 
   private class CameraThread extends Thread {
     private Exchanger<Handler> handlerExchanger;
@@ -137,8 +116,6 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
         }
       });
     boolean startResult = exchange(result, false); // |false| is a dummy value.
-    orientationListenerEnabled = true;
-    orientationListener.enable();
     return startResult;
   }
 
@@ -184,6 +161,8 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
         }
       }
 
+      Log.d(TAG, "Camera orientation: " + info.orientation +
+          " .Device orientation: " + getDeviceOrientation());
       Camera.Parameters parameters = camera.getParameters();
       Log.d(TAG, "isVideoStabilizationSupported: " +
           parameters.isVideoStabilizationSupported());
@@ -223,8 +202,6 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
   // Called by native code.  Returns true when camera is known to be stopped.
   private synchronized boolean stopCapture() {
     Log.d(TAG, "stopCapture");
-    orientationListener.disable();
-    orientationListenerEnabled = false;
     final Exchanger<Boolean> result = new Exchanger<Boolean>();
     cameraThreadHandler.post(new Runnable() {
         @Override public void run() {
@@ -279,8 +256,32 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     return;
   }
 
+  private int getDeviceOrientation() {
+    int orientation = 0;
+    if (context != null) {
+      WindowManager wm = (WindowManager) context.getSystemService(
+          Context.WINDOW_SERVICE);
+      switch(wm.getDefaultDisplay().getRotation()) {
+        case Surface.ROTATION_90:
+          orientation = 90;
+          break;
+        case Surface.ROTATION_180:
+          orientation = 180;
+          break;
+        case Surface.ROTATION_270:
+          orientation = 270;
+          break;
+        case Surface.ROTATION_0:
+        default:
+          orientation = 0;
+          break;
+      }
+    }
+    return orientation;
+  }
+
   private native void ProvideCameraFrame(
-      byte[] data, int length, long timeStamp, long captureObject);
+      byte[] data, int length, int rotation, long timeStamp, long captureObject);
 
   // Called on cameraThread so must not "synchronized".
   @Override
@@ -306,7 +307,15 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
       }
     }
     lastCaptureTimeMs = captureTimeMs;
-    ProvideCameraFrame(data, data.length, captureTimeMs, native_capturer);
+
+    int rotation = getDeviceOrientation();
+    if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+      rotation = 360 - rotation;
+    }
+    rotation = (info.orientation + rotation) % 360;
+
+    ProvideCameraFrame(data, data.length, rotation,
+        captureTimeMs, native_capturer);
     camera.addCallbackBuffer(data);
   }
 

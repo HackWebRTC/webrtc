@@ -108,9 +108,14 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
   virtual void OnIncomingCapturedFrame(const int32_t id,
                                        webrtc::I420VideoFrame& videoFrame) {
     CriticalSectionScoped cs(capture_cs_.get());
-
     int height = videoFrame.height();
     int width = videoFrame.width();
+#if ANDROID
+    // Android camera frames may be rotated depending on test device
+    // orientation.
+    EXPECT_TRUE(height == capability_.height || height == capability_.width);
+    EXPECT_TRUE(width == capability_.width || width == capability_.height);
+#else
     if (rotate_frame_ == webrtc::kCameraRotate90 ||
         rotate_frame_ == webrtc::kCameraRotate270) {
       EXPECT_EQ(width, capability_.height);
@@ -119,6 +124,7 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
       EXPECT_EQ(height, capability_.height);
       EXPECT_EQ(width, capability_.width);
     }
+#endif
     // RenderTimstamp should be the time now.
     EXPECT_TRUE(
         videoFrame.render_time_ms() >= TickTime::MillisecondTimestamp()-30 &&
