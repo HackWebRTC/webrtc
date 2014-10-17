@@ -2,4 +2,12 @@
 # https://code.google.com/p/webrtc/issues/detail?id=1976
 PhysicalSocketTest.TestUdpReadyToSendIPv4
 ThreadTest.Release
+# TODO(wu): Reenable P2PTransportChannelTest after issue 2158 is resolved.
+P2PTransportChannelTest.*
+P2PTransportChannelSameNatTest.TestConesBehindSameCone
+PortTest.TestSendStunMessageAsIce
+PseudoTcpTest.TestSendBothUseLargeWindowScale
+# Issue 3447
+P2PTransportChannelMultihomedTest.TestFailover
+P2PTransportChannelMultihomedTest.TestDrain
 
