@@ -45,7 +45,7 @@ import android.webkit.WebViewClient;
  * "androidMessageHandler".
  */
 public class GAEChannelClient {
-  private static final String TAG = "GAEChannelClient";
+  private static final String TAG = "GAERTCClient";
   private WebView webView;
   private final ProxyingMessageHandler proxyingMessageHandler;
 
@@ -55,7 +55,7 @@ public class GAEChannelClient {
    * Methods are guaranteed to be invoked on the UI thread of |activity| passed
    * to GAEChannelClient's constructor.
    */
-  public interface MessageHandler {
+  public interface GAEMessageHandler {
     public void onOpen();
     public void onMessage(String data);
     public void onClose();
@@ -65,7 +65,7 @@ public class GAEChannelClient {
   /** Asynchronously open an AppEngine channel. */
   @SuppressLint("SetJavaScriptEnabled")
   public GAEChannelClient(
-      Activity activity, String token, MessageHandler handler) {
+      Activity activity, String token, GAEMessageHandler handler) {
     webView = new WebView(activity);
     webView.getSettings().setJavaScriptEnabled(true);
     webView.setWebChromeClient(new WebChromeClient() {  // Purely for debugging.
@@ -105,12 +105,12 @@ public class GAEChannelClient {
   // (private, background) thread to the Activity's UI thread.
   private static class ProxyingMessageHandler {
     private final Activity activity;
-    private final MessageHandler handler;
+    private final GAEMessageHandler handler;
     private final boolean[] disconnected = { false };
     private final String token;
 
     public
-     ProxyingMessageHandler(Activity activity, MessageHandler handler,
+     ProxyingMessageHandler(Activity activity, GAEMessageHandler handler,
                             String token) {
       this.activity = activity;
       this.handler = handler;

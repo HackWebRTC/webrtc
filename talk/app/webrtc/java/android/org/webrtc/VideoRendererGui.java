@@ -490,6 +490,15 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       updateTextureProperties = true;
     }
 
+    public void setPosition(int x, int y, int width, int height,
+        ScalingType scalingType) {
+      texLeft = (x - 50) / 50.0f;
+      texTop = (50 - y) / 50.0f;
+      texRight = Math.min(1.0f, (x + width - 50) / 50.0f);
+      texBottom = Math.max(-1.0f, (50 - y - height) / 50.0f);
+      updateTextureProperties = true;
+    }
+
     @Override
     public void setSize(final int width, final int height) {
       Log.d(TAG, "ID: " + id + ". YuvImageRenderer.setSize: " +
@@ -634,6 +643,23 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       instance.yuvImageRenderers.add(yuvImageRenderer);
     }
     return yuvImageRenderer;
+  }
+
+  public static void update(
+      VideoRenderer.Callbacks renderer,
+      int x, int y, int width, int height, ScalingType scalingType) {
+    Log.d(TAG, "VideoRendererGui.update");
+    if (instance == null) {
+      throw new RuntimeException(
+          "Attempt to update yuv renderer before setting GLSurfaceView");
+    }
+    synchronized (instance.yuvImageRenderers) {
+      for (YuvImageRenderer yuvImageRenderer : instance.yuvImageRenderers) {
+        if (yuvImageRenderer == renderer) {
+          yuvImageRenderer.setPosition(x, y, width, height, scalingType);
+        }
+      }
+    }
   }
 
   @Override

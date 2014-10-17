@@ -325,8 +325,10 @@
                 'examples/android/src/org/appspot/apprtc/AppRTCClient.java',
                 'examples/android/src/org/appspot/apprtc/AppRTCDemoActivity.java',
                 'examples/android/src/org/appspot/apprtc/AppRTCGLView.java',
-                'examples/android/src/org/appspot/apprtc/UnhandledExceptionHandler.java',
                 'examples/android/src/org/appspot/apprtc/GAEChannelClient.java',
+                'examples/android/src/org/appspot/apprtc/GAERTCClient.java',
+                'examples/android/src/org/appspot/apprtc/PeerConnectionClient.java',
+                'examples/android/src/org/appspot/apprtc/UnhandledExceptionHandler.java',
               ],
               'outputs': [
                 '<(PRODUCT_DIR)/AppRTCDemo-debug.apk',
