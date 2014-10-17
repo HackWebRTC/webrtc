@@ -110,8 +110,9 @@ class DelegatingWebRtcMediaEngine : public cricket::MediaEngineInterface {
     return delegate_->CreateChannel();
   }
   virtual VideoMediaChannel* CreateVideoChannel(
+      const VideoOptions& options,
       VoiceMediaChannel* voice_media_channel) OVERRIDE {
-    return delegate_->CreateVideoChannel(voice_media_channel);
+    return delegate_->CreateVideoChannel(options, voice_media_channel);
   }
   virtual SoundclipMedia* CreateSoundclip() OVERRIDE {
     return delegate_->CreateSoundclip();
