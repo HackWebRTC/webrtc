@@ -597,45 +597,35 @@ struct VideoCodecVP8 {
   }
 };
 
-// VP9 specific
-struct VideoCodecVP9 {
-  VideoCodecComplexity complexity;
-  int                  resilience;
-  unsigned char        numberOfTemporalLayers;
-  bool                 denoisingOn;
-  bool                 frameDroppingOn;
-  int                  keyFrameInterval;
-  bool                 adaptiveQpMode;
-};
-
 // H264 specific.
-struct VideoCodecH264 {
-  VideoCodecProfile profile;
-  bool           frameDroppingOn;
-  int            keyFrameInterval;
-  // These are NULL/0 if not externally negotiated.
-  const uint8_t* spsData;
-  size_t         spsLen;
-  const uint8_t* ppsData;
-  size_t         ppsLen;
+struct VideoCodecH264
+{
+    VideoCodecProfile profile;
+    bool           frameDroppingOn;
+    int            keyFrameInterval;
+    // These are NULL/0 if not externally negotiated.
+    const uint8_t* spsData;
+    size_t         spsLen;
+    const uint8_t* ppsData;
+    size_t         ppsLen;
 };
 
 // Video codec types
-enum VideoCodecType {
-  kVideoCodecVP8,
-  kVideoCodecVP9,
-  kVideoCodecH264,
-  kVideoCodecI420,
-  kVideoCodecRED,
-  kVideoCodecULPFEC,
-  kVideoCodecGeneric,
-  kVideoCodecUnknown
+enum VideoCodecType
+{
+    kVideoCodecVP8,
+    kVideoCodecH264,
+    kVideoCodecI420,
+    kVideoCodecRED,
+    kVideoCodecULPFEC,
+    kVideoCodecGeneric,
+    kVideoCodecUnknown
 };
 
-union VideoCodecUnion {
-  VideoCodecVP8       VP8;
-  VideoCodecVP9       VP9;
-  VideoCodecH264      H264;
+union VideoCodecUnion
+{
+    VideoCodecVP8       VP8;
+    VideoCodecH264      H264;
 };
 
 

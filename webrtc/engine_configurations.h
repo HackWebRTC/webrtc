@@ -51,7 +51,6 @@
 
 #define VIDEOCODEC_I420
 #define VIDEOCODEC_VP8
-#define VIDEOCODEC_VP9
 #define VIDEOCODEC_H264
 
 // ============================================================================

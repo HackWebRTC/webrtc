@@ -305,8 +305,6 @@ bool VideoSendStream::ReconfigureVideoEncoder(
   memset(&video_codec, 0, sizeof(video_codec));
   if (config_.encoder_settings.payload_name == "VP8") {
     video_codec.codecType = kVideoCodecVP8;
-  } else if (config_.encoder_settings.payload_name == "VP9") {
-    video_codec.codecType = kVideoCodecVP9;
   } else if (config_.encoder_settings.payload_name == "H264") {
     video_codec.codecType = kVideoCodecH264;
   } else {
@@ -323,8 +321,6 @@ bool VideoSendStream::ReconfigureVideoEncoder(
 
   if (video_codec.codecType == kVideoCodecVP8) {
     video_codec.codecSpecific.VP8 = VideoEncoder::GetDefaultVp8Settings();
-  } else if (video_codec.codecType == kVideoCodecVP9) {
-    video_codec.codecSpecific.VP9 = VideoEncoder::GetDefaultVp9Settings();
   } else if (video_codec.codecType == kVideoCodecH264) {
     video_codec.codecSpecific.H264 = VideoEncoder::GetDefaultH264Settings();
   }

@@ -77,7 +77,6 @@ source_set("video_coding") {
     ":video_coding_utility",
     ":webrtc_i420",
     ":webrtc_vp8",
-    ":webrtc_vp9",
     "../../common_video",
     "../../system_wrappers",
   ]
@@ -134,38 +133,6 @@ source_set("webrtc_vp8") {
     "codecs/vp8/vp8_factory.cc",
     "codecs/vp8/vp8_impl.cc",
     "codecs/vp8/vp8_impl.h",
-  ]
-
-  configs += [ "../..:common_config" ]
-  public_configs = [ "../..:common_inherited_config" ]
-
-  if (is_clang) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
-  }
-
-  # TODO(kjellander): Remove once libvpx has changed it's libvpx_config to be
-  # in direct_dependent_configs.
-  configs += [ "//third_party/libvpx:libvpx_config" ]
-
-  deps = [
-    ":video_coding_utility",
-    "../../common_video",
-    "../../system_wrappers",
-  ]
-  if (rtc_build_libvpx) {
-    deps += [
-      "//third_party/libvpx",
-    ]
-  }
-}
-
-source_set("webrtc_vp9") {
-  sources = [
-    "codecs/vp9/include/vp9.h",
-    "codecs/vp9/vp9_impl.cc",
-    "codecs/vp9/vp9_impl.h",
   ]
 
   configs += [ "../..:common_config" ]

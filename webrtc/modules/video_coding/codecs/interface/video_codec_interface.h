@@ -41,19 +41,6 @@ struct CodecSpecificInfoVP8 {
   int8_t keyIdx;  // Negative value to skip keyIdx.
 };
 
-struct CodecSpecificInfoVP9 {
-  bool hasReceivedSLI;
-  uint8_t pictureIdSLI;
-  bool hasReceivedRPSI;
-  uint64_t pictureIdRPSI;
-  int16_t pictureId;  // Negative value to skip pictureId.
-  bool nonReference;
-  uint8_t temporalIdx;
-  bool layerSync;
-  int tl0PicIdx;  // Negative value to skip tl0PicIdx.
-  int8_t keyIdx;  // Negative value to skip keyIdx.
-};
-
 struct CodecSpecificInfoGeneric {
   uint8_t simulcast_idx;
 };
@@ -63,7 +50,6 @@ struct CodecSpecificInfoH264 {};
 union CodecSpecificInfoUnion {
   CodecSpecificInfoGeneric generic;
   CodecSpecificInfoVP8 VP8;
-  CodecSpecificInfoVP9 VP9;
   CodecSpecificInfoH264 H264;
 };
 
