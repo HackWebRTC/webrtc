@@ -488,7 +488,7 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
       // Calculate scaled_energy1 / scaled_energy2 in Q13.
       int32_t energy_ratio = WebRtcSpl_DivW32W16(
           WEBRTC_SPL_SHIFT_W32(energy1, -scaled_energy1),
-          WEBRTC_SPL_RSHIFT_W32(energy2, scaled_energy2));
+          energy2 >> scaled_energy2);
       // Calculate sqrt ratio in Q13 (sqrt of en1/en2 in Q26).
       amplitude_ratio = WebRtcSpl_SqrtFloor(energy_ratio << 13);
       // Copy the two vectors and give them the same energy.
