@@ -273,11 +273,19 @@ class ClassReferenceHolder {
     LoadClass(jni, "org/webrtc/IceCandidate");
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
     LoadClass(jni, "android/graphics/SurfaceTexture");
-    LoadClass(jni, "android/opengl/EGLContext");
     LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder");
     LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder$OutputBufferInfo");
     LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder");
     LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$DecoderOutputBufferInfo");
+    jclass j_decoder_class = GetClass("org/webrtc/MediaCodecVideoDecoder");
+    jmethodID j_is_egl14_supported_method = jni->GetStaticMethodID(
+        j_decoder_class, "isEGL14Supported", "()Z");
+    bool is_egl14_supported = jni->CallStaticBooleanMethod(
+        j_decoder_class, j_is_egl14_supported_method);
+    CHECK_EXCEPTION(jni);
+    if (is_egl14_supported) {
+      LoadClass(jni, "android/opengl/EGLContext");
+    }
 #endif
     LoadClass(jni, "org/webrtc/MediaSource$State");
     LoadClass(jni, "org/webrtc/MediaStream");

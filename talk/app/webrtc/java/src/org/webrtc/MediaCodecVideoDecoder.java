@@ -95,6 +95,10 @@ class MediaCodecVideoDecoder {
   private EGLDisplay eglDisplay = EGL14.EGL_NO_DISPLAY;
   private EGLContext eglContext = EGL14.EGL_NO_CONTEXT;
   private EGLSurface eglSurface = EGL14.EGL_NO_SURFACE;
+  private static final int EGL14_SDK_VERSION =
+      android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
+  private static final int CURRENT_SDK_VERSION =
+      android.os.Build.VERSION.SDK_INT;
 
 
   private MediaCodecVideoDecoder() { }
@@ -164,6 +168,11 @@ class MediaCodecVideoDecoder {
       }
     }
     return null;  // No HW VP8 decoder.
+  }
+
+  private static boolean isEGL14Supported() {
+    Log.d(TAG, "SDK version: " + CURRENT_SDK_VERSION);
+    return (CURRENT_SDK_VERSION >= EGL14_SDK_VERSION);
   }
 
   private static boolean isPlatformSupported() {

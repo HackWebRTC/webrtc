@@ -80,6 +80,11 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   //    aspect ratio is changed if necessary.
   public static enum ScalingType
       { SCALE_ASPECT_FIT, SCALE_ASPECT_FILL, SCALE_FILL };
+  private static final int EGL14_SDK_VERSION =
+      android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
+  // Current SDK version.
+  private static final int CURRENT_SDK_VERSION =
+      android.os.Build.VERSION.SDK_INT;
 
   private final String VERTEX_SHADER_STRING =
       "varying vec2 interp_tc;\n" +
@@ -666,8 +671,10 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   public void onSurfaceCreated(GL10 unused, EGLConfig config) {
     Log.d(TAG, "VideoRendererGui.onSurfaceCreated");
     // Store render EGL context
-    eglContext = EGL14.eglGetCurrentContext();
-    Log.d(TAG, "VideoRendererGui EGL Context: " + eglContext);
+    if (CURRENT_SDK_VERSION >= EGL14_SDK_VERSION) {
+      eglContext = EGL14.eglGetCurrentContext();
+      Log.d(TAG, "VideoRendererGui EGL Context: " + eglContext);
+    }
 
     // Create YUV and OES programs.
     yuvProgram = createProgram(VERTEX_SHADER_STRING,
