@@ -419,10 +419,11 @@ WebRtcVideoChannel2* WebRtcVideoEngine2::CreateChannel(
   assert(initialized_);
   LOG(LS_INFO) << "CreateChannel: "
                << (voice_channel != NULL ? "With" : "Without")
-               << " voice channel.";
+               << " voice channel. Options: " << options.ToString();
   WebRtcVideoChannel2* channel =
       new WebRtcVideoChannel2(call_factory_,
                               voice_channel,
+                              options,
                               external_encoder_factory_,
                               external_decoder_factory_,
                               GetVideoEncoderFactory());
@@ -430,7 +431,6 @@ WebRtcVideoChannel2* WebRtcVideoEngine2::CreateChannel(
     delete channel;
     return NULL;
   }
-  channel->SetOptions(options);
   channel->SetRecvCodecs(video_codecs_);
   return channel;
 }
@@ -745,6 +745,7 @@ class WebRtcVideoRenderFrame : public VideoFrame {
 WebRtcVideoChannel2::WebRtcVideoChannel2(
     WebRtcCallFactory* call_factory,
     VoiceMediaChannel* voice_channel,
+    const VideoOptions& options,
     WebRtcVideoEncoderFactory* external_encoder_factory,
     WebRtcVideoDecoderFactory* external_decoder_factory,
     WebRtcVideoEncoderFactory2* encoder_factory)
@@ -753,15 +754,21 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
       external_decoder_factory_(external_decoder_factory),
       encoder_factory_(encoder_factory) {
   // TODO(pbos): Connect the video and audio with |voice_channel|.
+  SetDefaultOptions();
+  options_.SetAll(options);
   webrtc::Call::Config config(this);
   config.overuse_callback = this;
+
+  // Set start bitrate for the call. A default is provided by SetDefaultOptions.
+  int start_bitrate_kbps;
+  options_.video_start_bitrate.Get(&start_bitrate_kbps);
+  config.stream_start_bitrate_bps = start_bitrate_kbps * 1000;
+
   call_.reset(call_factory->CreateCall(config));
 
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
   sending_ = false;
   default_send_ssrc_ = 0;
-
-  SetDefaultOptions();
 }
 
 void WebRtcVideoChannel2::SetDefaultOptions() {
@@ -769,6 +776,8 @@ void WebRtcVideoChannel2::SetDefaultOptions() {
   options_.suspend_below_min_bitrate.Set(false);
   options_.use_payload_padding.Set(false);
   options_.video_noise_reduction.Set(true);
+  options_.video_start_bitrate.Set(
+      webrtc::Call::Config::kDefaultStartBitrateBps / 1000);
 }
 
 WebRtcVideoChannel2::~WebRtcVideoChannel2() {

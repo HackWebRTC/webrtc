@@ -330,6 +330,9 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
   VideoMediaChannel* SetUpForExternalEncoderFactory(
       cricket::WebRtcVideoEncoderFactory* encoder_factory,
       const std::vector<VideoCodec>& codecs);
+
+  void TestStartBitrate(bool override_start_bitrate, int start_bitrate_bps);
+
   WebRtcVideoEngine2 engine_;
   VideoCodec default_codec_;
   VideoCodec default_red_codec_;
@@ -423,6 +426,58 @@ TEST_F(WebRtcVideoEngine2Test, SupportsAbsoluteSenderTimeHeaderExtension) {
     }
   }
   FAIL() << "Absolute Sender Time extension not in header-extension list.";
+}
+
+void WebRtcVideoEngine2Test::TestStartBitrate(bool override_start_bitrate,
+                                              int start_bitrate_bps) {
+  class FakeCallFactory : public WebRtcCallFactory {
+   public:
+    FakeCallFactory() : fake_call_(NULL) {}
+
+    FakeCall* GetCall() {
+      return fake_call_;
+    }
+
+   private:
+    virtual webrtc::Call* CreateCall(
+        const webrtc::Call::Config& config) OVERRIDE {
+      assert(fake_call_ == NULL);
+      fake_call_ = new FakeCall(config);
+      return fake_call_;
+    }
+
+    FakeCall* fake_call_;
+  };
+
+  FakeCallFactory call_factory;
+  engine_.SetCallFactory(&call_factory);
+
+  engine_.Init(rtc::Thread::Current());
+
+  cricket::VideoOptions options;
+  if (override_start_bitrate) {
+    options.video_start_bitrate.Set(start_bitrate_bps / 1000);
+  }
+
+  rtc::scoped_ptr<VideoMediaChannel> channel(
+      engine_.CreateChannel(options, NULL));
+
+  EXPECT_EQ(override_start_bitrate
+                ? start_bitrate_bps
+                : webrtc::Call::Config::kDefaultStartBitrateBps,
+            call_factory.GetCall()->GetConfig().stream_start_bitrate_bps);
+}
+
+TEST_F(WebRtcVideoEngine2Test, UsesCorrectDefaultStartBitrate) {
+  TestStartBitrate(false, -1);
+}
+
+TEST_F(WebRtcVideoEngine2Test, CreateChannelCanUseIncreasedStartBitrate) {
+  TestStartBitrate(true, 2 * webrtc::Call::Config::kDefaultStartBitrateBps);
+}
+
+TEST_F(WebRtcVideoEngine2Test, CreateChannelCanUseDecreasedStartBitrate) {
+  TestStartBitrate(true, webrtc::Call::Config::kDefaultStartBitrateBps / 2);
 }
 
 TEST_F(WebRtcVideoEngine2Test, SetSendFailsBeforeSettingCodecs) {

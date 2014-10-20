@@ -212,6 +212,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
  public:
   WebRtcVideoChannel2(WebRtcCallFactory* call_factory,
                       VoiceMediaChannel* voice_channel,
+                      const VideoOptions& options,
                       WebRtcVideoEncoderFactory* external_encoder_factory,
                       WebRtcVideoDecoderFactory* external_decoder_factory,
                       WebRtcVideoEncoderFactory2* encoder_factory);
