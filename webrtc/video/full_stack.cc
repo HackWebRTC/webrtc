@@ -360,8 +360,8 @@ class VideoAnalyzer : public PacketReceiver,
   std::map<uint32_t, int64_t> send_times_ GUARDED_BY(crit_);
   std::map<uint32_t, int64_t> recv_times_ GUARDED_BY(crit_);
   I420VideoFrame* first_send_frame_ GUARDED_BY(crit_);
-  double avg_psnr_threshold_ GUARDED_BY(crit_);
-  double avg_ssim_threshold_ GUARDED_BY(crit_);
+  const double avg_psnr_threshold_;
+  const double avg_ssim_threshold_;
 
   const scoped_ptr<CriticalSectionWrapper> comparison_lock_;
   const scoped_ptr<ThreadWrapper> comparison_thread_;
