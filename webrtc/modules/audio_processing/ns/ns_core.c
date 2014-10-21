@@ -827,6 +827,24 @@ static float Energy(const float* buffer, int length) {
   return energy;
 }
 
+// Windows a buffer.
+// Inputs:
+//   * |window| is the window by which to multiply.
+//   * |data| is the data without windowing.
+//   * |length| is the length of the window and data.
+// Output:
+//   * |data_windowed| is the windowed data.
+static void Windowing(const float* window,
+                      const float* data,
+                      int length,
+                      float* data_windowed) {
+  int i;
+
+  for (i = 0; i < length; ++i) {
+    data_windowed[i] = window[i] * data[i];
+  }
+}
+
 int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   int i;
   const int kStartBand = 5;  // Skip first frequency bins during estimation.
@@ -861,9 +879,7 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   UpdateBuffer(speechFrame, inst->blockLen, inst->anaLen, inst->analyzeBuf);
 
   // windowing
-  for (i = 0; i < inst->anaLen; i++) {
-    winData[i] = inst->window[i] * inst->analyzeBuf[i];
-  }
+  Windowing(inst->window, inst->analyzeBuf, inst->anaLen, winData);
   energy = Energy(winData, inst->anaLen);
   if (energy == 0.0) {
     // we want to avoid updating statistics in this case:
@@ -1144,9 +1160,7 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
   }
 
   // windowing
-  for (i = 0; i < inst->anaLen; i++) {
-    winData[i] = inst->window[i] * inst->dataBuf[i];
-  }
+  Windowing(inst->window, inst->dataBuf, inst->anaLen, winData);
   energy1 = Energy(winData, inst->anaLen);
   if (energy1 == 0.0) {
     // synthesize the special case of zero input
@@ -1283,9 +1297,11 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
              (1.f - inst->priorSpeechProb) * factor2;
   }  // out of inst->gainmap==1
 
+  Windowing(inst->window, winData, inst->anaLen, winData);
+
   // synthesis
   for (i = 0; i < inst->anaLen; i++) {
-    inst->syntBuf[i] += factor * inst->window[i] * winData[i];
+    inst->syntBuf[i] += factor * winData[i];
   }
   // read out fully processed segment
   for (i = inst->windShift; i < inst->blockLen + inst->windShift; i++) {
