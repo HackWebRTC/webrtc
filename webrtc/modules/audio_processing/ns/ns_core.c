@@ -811,6 +811,22 @@ static void IFFT(NSinst_t* const self,
   }
 }
 
+// Calculates the energy of a buffer.
+// Inputs:
+//   * |buffer| is the buffer over which the energy is calculated.
+//   * |length| is the length of the buffer.
+// Returns the calculated energy.
+static float Energy(const float* buffer, int length) {
+  int i;
+  float energy = 0.f;
+
+  for (i = 0; i < length; ++i) {
+    energy += buffer[i] * buffer[i];
+  }
+
+  return energy;
+}
+
 int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   int i;
   const int kStartBand = 5;  // Skip first frequency bins during estimation.
@@ -845,11 +861,10 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   UpdateBuffer(speechFrame, inst->blockLen, inst->anaLen, inst->analyzeBuf);
 
   // windowing
-  energy = 0.0;
   for (i = 0; i < inst->anaLen; i++) {
     winData[i] = inst->window[i] * inst->analyzeBuf[i];
-    energy += winData[i] * winData[i];
   }
+  energy = Energy(winData, inst->anaLen);
   if (energy == 0.0) {
     // we want to avoid updating statistics in this case:
     // Updating feature statistics when we have zeros only will cause
@@ -1129,11 +1144,10 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
   }
 
   // windowing
-  energy1 = 0.0;
   for (i = 0; i < inst->anaLen; i++) {
     winData[i] = inst->window[i] * inst->dataBuf[i];
-    energy1 += winData[i] * winData[i];
   }
+  energy1 = Energy(winData, inst->anaLen);
   if (energy1 == 0.0) {
     // synthesize the special case of zero input
     // read out fully processed segment
@@ -1245,10 +1259,7 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
     factor1 = 1.f;
     factor2 = 1.f;
 
-    energy2 = 0.0;
-    for (i = 0; i < inst->anaLen; i++) {
-      energy2 += winData[i] * winData[i];
-    }
+    energy2 = Energy(winData, inst->anaLen);
     gain = (float)sqrt(energy2 / (energy1 + 1.f));
 
     // scaling for new version
