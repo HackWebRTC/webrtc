@@ -334,7 +334,8 @@ class AcmReceiver {
   ACMResampler resampler_ GUARDED_BY(crit_sect_);
   // Used in GetAudio, declared as member to avoid allocating every 10ms.
   // TODO(henrik.lundin) Stack-allocate in GetAudio instead?
-  int16_t audio_buffer_[AudioFrame::kMaxDataSizeSamples] GUARDED_BY(crit_sect_);
+  scoped_ptr<int16_t[]> audio_buffer_ GUARDED_BY(crit_sect_);
+  scoped_ptr<int16_t[]> last_audio_buffer_ GUARDED_BY(crit_sect_);
   scoped_ptr<Nack> nack_ GUARDED_BY(crit_sect_);
   bool nack_enabled_ GUARDED_BY(crit_sect_);
   CallStatistics call_stats_ GUARDED_BY(crit_sect_);
@@ -342,6 +343,7 @@ class AcmReceiver {
   Decoder decoders_[ACMCodecDB::kMaxNumCodecs];
   bool vad_enabled_;
   Clock* clock_;  // TODO(henrik.lundin) Make const if possible.
+  bool resampled_last_output_frame_ GUARDED_BY(crit_sect_);
 
   // Indicates if a non-zero initial delay is set, and the receiver is in
   // AV-sync mode.

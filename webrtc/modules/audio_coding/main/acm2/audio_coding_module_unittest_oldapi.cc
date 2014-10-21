@@ -1034,7 +1034,7 @@ TEST_F(AcmSwitchingOutputFrequencyOldApi, TestWithoutToggling) {
   Run(16000, 16000, 1000);
 }
 
-TEST_F(AcmSwitchingOutputFrequencyOldApi, DISABLED_Toggle16KhzTo32Khz) {
+TEST_F(AcmSwitchingOutputFrequencyOldApi, Toggle16KhzTo32Khz) {
   Run(16000, 32000, 1000);
 }
 
@@ -1042,7 +1042,7 @@ TEST_F(AcmSwitchingOutputFrequencyOldApi, Toggle32KhzTo16Khz) {
   Run(32000, 16000, 1000);
 }
 
-TEST_F(AcmSwitchingOutputFrequencyOldApi, DISABLED_Toggle16KhzTo8Khz) {
+TEST_F(AcmSwitchingOutputFrequencyOldApi, Toggle16KhzTo8Khz) {
   Run(16000, 8000, 1000);
 }
 
