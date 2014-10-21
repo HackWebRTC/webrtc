@@ -316,10 +316,6 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   virtual int SendPacket(int channel, const void* data, int len) OVERRIDE;
   virtual int SendRTCPPacket(int channel, const void* data, int len) OVERRIDE;
 
-  bool ConferenceModeIsEnabled() const {
-    return options_.conference_mode.GetWithDefaultIfUnset(false);
-  }
-
   // Checks the current bitrate estimate and modifies the bitrates
   // accordingly, including converting kAutoBandwidth to the correct defaults.
   virtual void SanitizeBitrates(
@@ -391,7 +387,7 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   bool SendIntraFrame(int channel_id);
 
   bool HasReadySendChannels();
-  bool DefaultSendChannelIsActive();
+  bool DefaultSendChannelInUse();
 
   // Returns the ssrc key corresponding to the provided local SSRC in
   // |ssrc_key|. The return value is true upon success.  If the local
@@ -424,8 +420,8 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   bool RemoveCapturer(uint32 ssrc);
 
   rtc::MessageQueue* worker_thread() { return engine_->worker_thread(); }
-  void QueueBlackFrame(uint32 ssrc, int64 timestamp, int interval);
-  void FlushBlackFrame(uint32 ssrc, int64 timestamp, int interval);
+  void QueueBlackFrame(uint32 ssrc, int64 timestamp, int framerate);
+  void FlushBlackFrame(uint32 ssrc, int64 timestamp);
 
   void SetNetworkTransmissionState(bool is_transmitting);
 
