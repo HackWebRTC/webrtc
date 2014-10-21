@@ -588,10 +588,18 @@ void TurnPort::OnStunAddress(const rtc::SocketAddress& address) {
 void TurnPort::OnAllocateSuccess(const rtc::SocketAddress& address,
                                  const rtc::SocketAddress& stun_address) {
   connected_ = true;
+
+  rtc::SocketAddress related_address = stun_address;
+    if (!(candidate_filter() & CF_REFLEXIVE)) {
+    // If candidate filter only allows relay type of address, empty raddr to
+    // avoid local address leakage.
+    related_address = rtc::EmptySocketAddressWithFamily(stun_address.family());
+  }
+
   // For relayed candidate, Base is the candidate itself.
-  AddAddress(address,  // Candidate address.
-             address,  // Base address.
-             stun_address,  // Related address.
+  AddAddress(address,          // Candidate address.
+             address,          // Base address.
+             related_address,  // Related address.
              UDP_PROTOCOL_NAME,
              "",  // TCP canddiate type, empty for turn candidates.
              RELAY_PORT_TYPE,

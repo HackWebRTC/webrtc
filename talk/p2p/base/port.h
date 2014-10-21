@@ -308,6 +308,10 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // Returns if Hybrid ICE protocol is used.
   bool IsHybridIce() const;
 
+  void set_candidate_filter(uint32 candidate_filter) {
+    candidate_filter_ = candidate_filter;
+  }
+
  protected:
   enum {
     MSG_CHECKTIMEOUT = 0,
@@ -351,6 +355,8 @@ class Port : public PortInterface, public rtc::MessageHandler,
     return rtc::DSCP_NO_CHANGE;
   }
 
+  uint32 candidate_filter() { return candidate_filter_; }
+
  private:
   void Construct();
   // Called when one of our connections deletes itself.
@@ -391,6 +397,12 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // Information to use when going through a proxy.
   std::string user_agent_;
   rtc::ProxyInfo proxy_;
+
+  // Candidate filter is pushed down to Port such that each Port could
+  // make its own decision on how to create candidates. For example,
+  // when IceTransportsType is set to relay, both RelayPort and
+  // TurnPort will hide raddr to avoid local address leakage.
+  uint32 candidate_filter_;
 
   friend class Connection;
 };

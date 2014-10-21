@@ -497,6 +497,9 @@ void BasicPortAllocatorSession::AddAllocatedPort(Port* port,
   port->set_send_retransmit_count_attribute((allocator_->flags() &
       PORTALLOCATOR_ENABLE_STUN_RETRANSMIT_ATTRIBUTE) != 0);
 
+  // Push down the candidate_filter to individual port.
+  port->set_candidate_filter(allocator_->candidate_filter());
+
   PortData data(port, seq);
   ports_.push_back(data);
 
