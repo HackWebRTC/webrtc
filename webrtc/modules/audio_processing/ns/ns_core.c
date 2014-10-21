@@ -778,6 +778,39 @@ static void UpdateBuffer(const float* frame,
   }
 }
 
+// Transforms the signal from frequency to time domain.
+// Inputs:
+//   * |real| is the real part of the frequency domain.
+//   * |imag| is the imaginary part of the frequency domain.
+//   * |magnitude_length| is the length of the spectrum magnitude, which equals
+//     the length of both |real| and |imag|.
+//   * |time_data_length| is the length of the analysis buffer
+//     (2 * (magnitude_length - 1)).
+// Output:
+//   * |time_data| is the signal in the time domain.
+static void IFFT(NSinst_t* const self,
+                 const float* real,
+                 const float* imag,
+                 int magnitude_length,
+                 int time_data_length,
+                 float* time_data) {
+  int i;
+
+  assert(time_data_length == 2 * (magnitude_length - 1));
+
+  time_data[0] = real[0];
+  time_data[1] = real[magnitude_length - 1];
+  for (i = 1; i < magnitude_length - 1; ++i) {
+    time_data[2 * i] = real[i];
+    time_data[2 * i + 1] = imag[i];
+  }
+  WebRtc_rdft(time_data_length, -1, time_data, self->ip, self->wfft);
+
+  for (i = 0; i < time_data_length; ++i) {
+    time_data[i] *= 2.f / time_data_length;  // FFT scaling.
+  }
+}
+
 int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   int i;
   const int kStartBand = 5;  // Skip first frequency bins during estimation.
@@ -1204,17 +1237,7 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
   memcpy(inst->magnPrevProcess, magn, sizeof(*magn) * inst->magnLen);
   memcpy(inst->noisePrev, inst->noise, sizeof(inst->noise[0]) * inst->magnLen);
   // back to time domain
-  winData[0] = real[0];
-  winData[1] = real[inst->magnLen - 1];
-  for (i = 1; i < inst->magnLen - 1; i++) {
-    winData[2 * i] = real[i];
-    winData[2 * i + 1] = imag[i];
-  }
-  WebRtc_rdft(inst->anaLen, -1, winData, inst->ip, inst->wfft);
-
-  for (i = 0; i < inst->anaLen; i++) {
-    real[i] = 2.f * winData[i] / inst->anaLen;  // fft scaling
-  }
+  IFFT(inst, real, imag, inst->magnLen, inst->anaLen, winData);
 
   // scale factor: only do it after END_STARTUP_LONG time
   factor = 1.f;
@@ -1224,7 +1247,7 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
 
     energy2 = 0.0;
     for (i = 0; i < inst->anaLen; i++) {
-      energy2 += (float)real[i] * (float)real[i];
+      energy2 += winData[i] * winData[i];
     }
     gain = (float)sqrt(energy2 / (energy1 + 1.f));
 
@@ -1251,7 +1274,7 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
 
   // synthesis
   for (i = 0; i < inst->anaLen; i++) {
-    inst->syntBuf[i] += factor * inst->window[i] * (float)real[i];
+    inst->syntBuf[i] += factor * inst->window[i] * winData[i];
   }
   // read out fully processed segment
   for (i = inst->windShift; i < inst->blockLen + inst->windShift; i++) {
