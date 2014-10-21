@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_ENCODER_H_
 
 #include <algorithm>
-#include <limits>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/typedefs.h"
@@ -28,24 +27,27 @@ class AudioEncoder {
   // Accepts one 10 ms block of input audio (i.e., sample_rate_hz() / 100 *
   // num_channels() samples). Multi-channel audio must be sample-interleaved.
   // If successful, the encoder produces zero or more bytes of output in
-  // |encoded|, and returns the number of bytes. In case of error, -1 is
-  // returned. It is an error for the encoder to attempt to produce more than
-  // |max_encoded_bytes| bytes of output.
-  ssize_t Encode(uint32_t timestamp,
-                 const int16_t* audio,
-                 size_t num_samples,
-                 size_t max_encoded_bytes,
-                 uint8_t* encoded,
-                 uint32_t* encoded_timestamp) {
+  // |encoded|, and provides the number of encoded bytes in |encoded_bytes|.
+  // In case of error, false is returned, otherwise true. It is an error for the
+  // encoder to attempt to produce more than |max_encoded_bytes| bytes of
+  // output.
+  bool Encode(uint32_t timestamp,
+              const int16_t* audio,
+              size_t num_samples,
+              size_t max_encoded_bytes,
+              uint8_t* encoded,
+              size_t* encoded_bytes,
+              uint32_t* encoded_timestamp) {
     CHECK_EQ(num_samples,
              static_cast<size_t>(sample_rate_hz() / 100 * num_channels()));
-    ssize_t num_bytes =
-        Encode(timestamp, audio, max_encoded_bytes, encoded, encoded_timestamp);
-    CHECK_LE(num_bytes,
-             static_cast<ssize_t>(std::min(
-                 max_encoded_bytes,
-                 static_cast<size_t>(std::numeric_limits<ssize_t>::max()))));
-    return num_bytes;
+    bool ret = Encode(timestamp,
+                      audio,
+                      max_encoded_bytes,
+                      encoded,
+                      encoded_bytes,
+                      encoded_timestamp);
+    CHECK_LE(*encoded_bytes, max_encoded_bytes);
+    return ret;
   }
 
   // Returns the input sample rate in Hz, the number of input channels, and the
@@ -56,11 +58,12 @@ class AudioEncoder {
   virtual int num_10ms_frames_per_packet() const = 0;
 
  protected:
-  virtual ssize_t Encode(uint32_t timestamp,
-                         const int16_t* audio,
-                         size_t max_encoded_bytes,
-                         uint8_t* encoded,
-                         uint32_t* encoded_timestamp) = 0;
+  virtual bool Encode(uint32_t timestamp,
+                      const int16_t* audio,
+                      size_t max_encoded_bytes,
+                      uint8_t* encoded,
+                      size_t* encoded_bytes,
+                      uint32_t* encoded_timestamp) = 0;
 };
 
 }  // namespace webrtc

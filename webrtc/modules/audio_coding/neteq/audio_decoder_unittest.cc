@@ -21,6 +21,7 @@
 #include "webrtc/modules/audio_coding/codecs/celt/include/celt_interface.h"
 #endif
 #include "webrtc/modules/audio_coding/codecs/g711/include/g711_interface.h"
+#include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
@@ -28,6 +29,7 @@
 #include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
 #include "webrtc/system_wrappers/interface/data_log.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -35,15 +37,16 @@ namespace webrtc {
 class AudioDecoderTest : public ::testing::Test {
  protected:
   AudioDecoderTest()
-    : input_fp_(NULL),
-      input_(NULL),
-      encoded_(NULL),
-      decoded_(NULL),
-      frame_size_(0),
-      data_length_(0),
-      encoded_bytes_(0),
-      channels_(1),
-      decoder_(NULL) {
+      : input_fp_(NULL),
+        input_(NULL),
+        encoded_(NULL),
+        decoded_(NULL),
+        frame_size_(0),
+        data_length_(0),
+        encoded_bytes_(0),
+        channels_(1),
+        output_timestamp_(0),
+        decoder_(NULL) {
     input_file_ = webrtc::test::ProjectRootPath() +
         "resources/audio_coding/testfile32kHz.pcm";
   }
@@ -90,9 +93,25 @@ class AudioDecoderTest : public ::testing::Test {
 
   virtual void InitEncoder() { }
 
-  // This method must be implemented for all tests derived from this class.
-  virtual int EncodeFrame(const int16_t* input, size_t input_len,
-                          uint8_t* output) = 0;
+  // TODO(henrik.lundin) Change return type to size_t once most/all overriding
+  // implementations are gone.
+  virtual int EncodeFrame(const int16_t* input,
+                          size_t input_len_samples,
+                          uint8_t* output) {
+    size_t enc_len_bytes = 0;
+    for (int i = 0; i < audio_encoder_->num_10ms_frames_per_packet(); ++i) {
+      EXPECT_EQ(0u, enc_len_bytes);
+      EXPECT_TRUE(audio_encoder_->Encode(0,
+                                         input,
+                                         audio_encoder_->sample_rate_hz() / 100,
+                                         data_length_ * 2,
+                                         output,
+                                         &enc_len_bytes,
+                                         &output_timestamp_));
+    }
+    EXPECT_EQ(input_len_samples, enc_len_bytes);
+    return static_cast<int>(enc_len_bytes);
+  }
 
   // Encodes and decodes audio. The absolute difference between the input and
   // output is compared vs |tolerance|, and the mean-squared error is compared
@@ -217,7 +236,9 @@ class AudioDecoderTest : public ::testing::Test {
   size_t data_length_;
   size_t encoded_bytes_;
   size_t channels_;
+  uint32_t output_timestamp_;
   AudioDecoder* decoder_;
+  scoped_ptr<AudioEncoder> audio_encoder_;
 };
 
 class AudioDecoderPcmUTest : public AudioDecoderTest {
@@ -226,17 +247,9 @@ class AudioDecoderPcmUTest : public AudioDecoderTest {
     frame_size_ = 160;
     data_length_ = 10 * frame_size_;
     decoder_ = new AudioDecoderPcmU;
-    assert(decoder_);
-  }
-
-  virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
-                          uint8_t* output) {
-    int enc_len_bytes =
-        WebRtcG711_EncodeU(NULL, const_cast<int16_t*>(input),
-                           static_cast<int>(input_len_samples),
-                           reinterpret_cast<int16_t*>(output));
-    EXPECT_EQ(input_len_samples, static_cast<size_t>(enc_len_bytes));
-    return enc_len_bytes;
+    AudioEncoderPcmU::Config config;
+    config.frame_size_ms = static_cast<int>(frame_size_ / 8);
+    audio_encoder_.reset(new AudioEncoderPcmU(config));
   }
 };
 
@@ -246,17 +259,9 @@ class AudioDecoderPcmATest : public AudioDecoderTest {
     frame_size_ = 160;
     data_length_ = 10 * frame_size_;
     decoder_ = new AudioDecoderPcmA;
-    assert(decoder_);
-  }
-
-  virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
-                          uint8_t* output) {
-    int enc_len_bytes =
-        WebRtcG711_EncodeA(NULL, const_cast<int16_t*>(input),
-                           static_cast<int>(input_len_samples),
-                           reinterpret_cast<int16_t*>(output));
-    EXPECT_EQ(input_len_samples, static_cast<size_t>(enc_len_bytes));
-    return enc_len_bytes;
+    AudioEncoderPcmA::Config config;
+    config.frame_size_ms = static_cast<int>(frame_size_ / 8);
+    audio_encoder_.reset(new AudioEncoderPcmA(config));
   }
 };
 
