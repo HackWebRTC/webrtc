@@ -56,8 +56,10 @@ void WebRtcIlbcfix_Poly2Lsp(
   (*f1ptr) = 1024; /* 1.0 in Q10 */
   (*f2ptr) = 1024; /* 1.0 in Q10 */
   for (i = 0; i < 5; i++) {
-    (*(f1ptr+1)) = (int16_t)(WEBRTC_SPL_RSHIFT_W32(((int32_t)(*a_i_ptr)+(*a_10mi_ptr)), 2) - (*f1ptr));
-    (*(f2ptr+1)) = (int16_t)(WEBRTC_SPL_RSHIFT_W32(((int32_t)(*a_i_ptr)-(*a_10mi_ptr)), 2) + (*f2ptr));
+    *(f1ptr + 1) =
+        (int16_t)((((int32_t)(*a_i_ptr) + *a_10mi_ptr) >> 2) - *f1ptr);
+    *(f2ptr + 1) =
+        (int16_t)((((int32_t)(*a_i_ptr) - *a_10mi_ptr) >> 2) + *f2ptr);
     a_i_ptr++;
     a_10mi_ptr--;
     f1ptr++;

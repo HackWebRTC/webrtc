@@ -31,8 +31,7 @@ int32_t WebRtcIlbcfix_Smooth_odata(
   int32_t errs;
 
   for(i=0;i<80;i++) {
-    odata[i]= (int16_t)WEBRTC_SPL_RSHIFT_W32(
-        (WEBRTC_SPL_MUL_16_16(C, surround[i])+1024), 11);
+    odata[i]= (int16_t)((C * surround[i] + 1024) >> 11);
   }
 
   errs=0;

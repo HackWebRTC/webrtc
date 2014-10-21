@@ -81,7 +81,7 @@ void WebRtcIlbcfix_Refiner(
 
   if (scalefact>0) {
     for (i=0;i<corrdim;i++) {
-      corrVec[i]=(int16_t)WEBRTC_SPL_RSHIFT_W32(corrVecTemp[i], scalefact);
+      corrVec[i] = (int16_t)(corrVecTemp[i] >> scalefact);
     }
   } else {
     for (i=0;i<corrdim;i++) {
