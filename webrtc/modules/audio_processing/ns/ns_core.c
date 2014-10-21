@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <assert.h>
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
@@ -750,6 +751,33 @@ void WebRtcNs_SpeechNoiseProb(NSinst_t* inst,
   }
 }
 
+// Updates |buffer| with a new |frame|.
+// Inputs:
+//   * |frame| is a new speech frame or NULL for setting to zero.
+//   * |frame_length| is the length of the new frame.
+//   * |buffer_length| is the length of the buffer.
+// Output:
+//   * |buffer| is the updated buffer.
+static void UpdateBuffer(const float* frame,
+                         int frame_length,
+                         int buffer_length,
+                         float* buffer) {
+  assert(buffer_length < 2 * frame_length);
+
+  memcpy(buffer,
+         buffer + frame_length,
+         sizeof(*buffer) * (buffer_length - frame_length));
+  if (frame) {
+    memcpy(buffer + buffer_length - frame_length,
+           frame,
+           sizeof(*buffer) * frame_length);
+  } else {
+    memset(buffer + buffer_length - frame_length,
+           0,
+           sizeof(*buffer) * frame_length);
+  }
+}
+
 int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   int i;
   const int kStartBand = 5;  // Skip first frequency bins during estimation.
@@ -781,12 +809,7 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   //
 
   // update analysis buffer for L band
-  memcpy(inst->analyzeBuf,
-         inst->analyzeBuf + inst->blockLen,
-         sizeof(float) * (inst->anaLen - inst->blockLen));
-  memcpy(inst->analyzeBuf + inst->anaLen - inst->blockLen,
-         speechFrame,
-         sizeof(float) * inst->blockLen);
+  UpdateBuffer(speechFrame, inst->blockLen, inst->anaLen, inst->analyzeBuf);
 
   // windowing
   energy = 0.0;
@@ -1065,21 +1088,11 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
   }
 
   // update analysis buffer for L band
-  memcpy(inst->dataBuf,
-         inst->dataBuf + inst->blockLen,
-         sizeof(float) * (inst->anaLen - inst->blockLen));
-  memcpy(inst->dataBuf + inst->anaLen - inst->blockLen,
-         speechFrame,
-         sizeof(float) * inst->blockLen);
+  UpdateBuffer(speechFrame, inst->blockLen, inst->anaLen, inst->dataBuf);
 
   if (flagHB == 1) {
     // update analysis buffer for H band
-    memcpy(inst->dataBufHB,
-           inst->dataBufHB + inst->blockLen,
-           sizeof(float) * (inst->anaLen - inst->blockLen));
-    memcpy(inst->dataBufHB + inst->anaLen - inst->blockLen,
-           speechFrameHB,
-           sizeof(float) * inst->blockLen);
+    UpdateBuffer(speechFrameHB, inst->blockLen, inst->anaLen, inst->dataBufHB);
   }
 
   // windowing
@@ -1095,12 +1108,7 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
       fout[i - inst->windShift] = inst->syntBuf[i];
     }
     // update synthesis buffer
-    memcpy(inst->syntBuf,
-           inst->syntBuf + inst->blockLen,
-           sizeof(float) * (inst->anaLen - inst->blockLen));
-    memset(inst->syntBuf + inst->anaLen - inst->blockLen,
-           0,
-           sizeof(float) * inst->blockLen);
+    UpdateBuffer(NULL, inst->blockLen, inst->anaLen, inst->syntBuf);
 
     for (i = 0; i < inst->blockLen; ++i)
       outFrame[i] =
@@ -1250,12 +1258,7 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
     fout[i - inst->windShift] = inst->syntBuf[i];
   }
   // update synthesis buffer
-  memcpy(inst->syntBuf,
-         inst->syntBuf + inst->blockLen,
-         sizeof(float) * (inst->anaLen - inst->blockLen));
-  memset(inst->syntBuf + inst->anaLen - inst->blockLen,
-         0,
-         sizeof(float) * inst->blockLen);
+  UpdateBuffer(NULL, inst->blockLen, inst->anaLen, inst->syntBuf);
 
   for (i = 0; i < inst->blockLen; ++i)
     outFrame[i] =
