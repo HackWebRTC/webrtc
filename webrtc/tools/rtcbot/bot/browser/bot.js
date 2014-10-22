@@ -113,9 +113,28 @@ function getStreamFromIdentifier_(id) {
   return null;
 };
 
+function downloadFile(path, onSuccess, onError) {
+  var xhr = new XMLHttpRequest();
+  function onResult() {
+    if (xhr.readyState != 4)
+      return;
+
+    if (xhr.status != 200) {
+      onError("Download request failed!");
+      return;
+    }
+    onSuccess(xhr.responseText);
+  }
+
+  xhr.onreadystatechange = onResult;
+  xhr.open('GET', path, true);
+  xhr.send();
+};
+
 connectToServer({
   ping: ping,
   getUserMedia: getUserMedia,
   createPeerConnection: createPeerConnection,
   showStream: showStream,
+  downloadFile: downloadFile,
 });
