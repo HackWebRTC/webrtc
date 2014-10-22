@@ -896,60 +896,6 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test,
   uint32 last_ssrc_;
 };
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_MaxBitrateResetsWithConferenceMode) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_StartSendBitrate) {
-  // TODO(pbos): Is this test testing vie_ ? this is confusing. No API to set
-  // start send bitrate from outside? Add defaults here that should be kept?
-  std::vector<cricket::VideoCodec> codec_list;
-  codec_list.push_back(kVp8Codec);
-  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
-  const unsigned int kVideoMinSendBitrateKbps = 50;
-  const unsigned int kVideoTargetSendBitrateKbps = 300;
-  const unsigned int kVideoMaxSendBitrateKbps = 2000;
-  FakeVideoSendStream* stream = AddSendStream();
-  std::vector<webrtc::VideoStream> video_streams = stream->GetVideoStreams();
-  ASSERT_EQ(1u, video_streams.size());
-  EXPECT_EQ(kVideoMinSendBitrateKbps,
-            video_streams.back().min_bitrate_bps / 1000);
-  EXPECT_EQ(kVideoTargetSendBitrateKbps,
-            video_streams.back().target_bitrate_bps / 1000);
-  EXPECT_EQ(kVideoMaxSendBitrateKbps,
-            video_streams.back().max_bitrate_bps / 1000);
-#if 0
-  // TODO(pbos): un-#if
-  VerifyVP8SendCodec(send_channel, kVP8Codec.width, kVP8Codec.height, 0,
-                     kVideoMaxSendBitrateKbps, kVideoMinSendBitrateKbps,
-                     kVideoDefaultStartSendBitrateKbps);
-  EXPECT_EQ(0, vie_.StartSend(send_channel));
-
-  // Increase the send bitrate and verify it is used as start bitrate.
-  const unsigned int kVideoSendBitrateBps = 768000;
-  vie_.SetSendBitrates(send_channel, kVideoSendBitrateBps, 0, 0);
-  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
-  VerifyVP8SendCodec(send_channel, kVP8Codec.width, kVP8Codec.height, 0,
-                     kVideoMaxSendBitrateKbps, kVideoMinSendBitrateKbps,
-                     kVideoSendBitrateBps / 1000);
-
-  // Never set a start bitrate higher than the max bitrate.
-  vie_.SetSendBitrates(send_channel, kVideoMaxSendBitrateKbps + 500, 0, 0);
-  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
-  VerifyVP8SendCodec(send_channel, kVP8Codec.width, kVP8Codec.height, 0,
-                     kVideoMaxSendBitrateKbps, kVideoMinSendBitrateKbps,
-                     kVideoDefaultStartSendBitrateKbps);
-
-  // Use the default start bitrate if the send bitrate is lower.
-  vie_.SetSendBitrates(send_channel, kVideoDefaultStartSendBitrateKbps - 50, 0,
-                       0);
-  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
-  VerifyVP8SendCodec(send_channel, kVP8Codec.width, kVP8Codec.height, 0,
-                     kVideoMaxSendBitrateKbps, kVideoMinSendBitrateKbps,
-                     kVideoDefaultStartSendBitrateKbps);
-#endif
-}
-
 TEST_F(WebRtcVideoChannel2Test, RecvStreamWithSimAndRtx) {
   EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
   EXPECT_TRUE(channel_->SetSend(true));
@@ -1733,24 +1679,7 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_SetOptionsWithMaxBitrate) {
   FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_SetOptionsWithLoweredBitrate) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_SetOptionsSucceedsWhenSending) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
 TEST_F(WebRtcVideoChannel2Test, DISABLED_ResetCodecOnScreencast) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_DontResetCodecOnSendFrame) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test,
-       DISABLED_DontRegisterDecoderIfFactoryIsNotGiven) {
   FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 
@@ -1766,19 +1695,7 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_DontRegisterDecoderForNonVP8) {
   FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_FeedbackParamsForNonVP8) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_ExternalCodecAddedToTheEnd) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
 TEST_F(WebRtcVideoChannel2Test, DISABLED_ExternalCodecIgnored) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_UpdateEncoderCodecsAfterSetFactory) {
   FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 
@@ -1792,7 +1709,4 @@ TEST_F(WebRtcVideoChannel2Test, OnReadyToSendSignalsNetworkState) {
   EXPECT_EQ(webrtc::Call::kNetworkUp, fake_call_->GetNetworkState());
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_CaptureFrameTimestampToNtpTimestamp) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
 }  // namespace cricket
