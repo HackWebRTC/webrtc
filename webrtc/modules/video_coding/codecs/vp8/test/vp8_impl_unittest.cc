@@ -192,7 +192,13 @@ class TestVp8Impl : public ::testing::Test {
   VideoCodec codec_inst_;
 };
 
+// Disabled on MemorySanitizer as it's breaking on generic libvpx.
+// https://code.google.com/p/webrtc/issues/detail?id=3904
+#if defined(MEMORY_SANITIZER)
+TEST_F(TestVp8Impl, DISABLED_BaseUnitTest) {
+#else
 TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(BaseUnitTest)) {
+#endif
   // TODO(mikhal): Remove dependency. Move all test code here.
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
   UnitTest unittest;
