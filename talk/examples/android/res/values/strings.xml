@@ -1,4 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AppRTC</string>
+    <string name="app_name" translatable="no">AppRTC</string>
+    <string name="disconnect_call">Disconnect Call</string>
+    <string name="apprtc_url">URL:</string>
+    <string name="room_name">Room name:</string>
+    <string name="room_description">
+        Please enter a room name. Room names are shared with everyone, so think
+        of something unique and send it to a friend.
+    </string>
+    <string name="connect_text">Connect</string>
+    <string name="loopback_text">Loopback connection</string>
+    <string name="invalid_url_title">Invalid URL</string>
+    <string name="invalid_url_text">The URL or room name you entered resulted in an invalid URL: %1$s
+    </string>
+    <string name="connecting_to">Connecting to: %1$s</string>
+    <string name="missing_url">FATAL ERROR: Missing URL to connect to.</string>
+    <string name="ok">OK</string>
 </resources>

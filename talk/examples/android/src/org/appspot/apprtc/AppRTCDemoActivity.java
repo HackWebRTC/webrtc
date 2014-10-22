@@ -29,19 +29,24 @@ package org.appspot.apprtc;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Fragment;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.graphics.Color;
-import android.graphics.Point;
 import android.media.AudioManager;
+import android.net.Uri;
+import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
+import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -66,13 +71,16 @@ public class AppRTCDemoActivity extends Activity
   private PeerConnectionClient pc;
   private AppRTCClient appRtcClient = new GAERTCClient(this, this);
   private AppRTCSignalingParameters appRtcParameters;
-  private AppRTCGLView vsv;
+  private View rootView;
+  private View menuBar;
+  private GLSurfaceView videoView;
   private VideoRenderer.Callbacks localRender;
   private VideoRenderer.Callbacks remoteRender;
   private Toast logToast;
   private final LayoutParams hudLayout =
       new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
   private TextView hudView;
+  private TextView roomName;
   // Synchronize on quit[0] to avoid teardown-related crashes.
   private final Boolean[] quit = new Boolean[] { false };
 
@@ -80,29 +88,66 @@ public class AppRTCDemoActivity extends Activity
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
+    // Set window styles for fullscreen-window size. Needs to be done before
+    // adding content.
+    requestWindowFeature(Window.FEATURE_NO_TITLE);
+    getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    getWindow().getDecorView().setSystemUiVisibility(
+        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+        View.SYSTEM_UI_FLAG_FULLSCREEN |
+        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+
+    setContentView(R.layout.activity_fullscreen);
+
     Thread.setDefaultUncaughtExceptionHandler(
         new UnhandledExceptionHandler(this));
 
-    getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    rootView = findViewById(android.R.id.content);
+    menuBar = findViewById(R.id.menubar_fragment);
+    roomName = (TextView) findViewById(R.id.room_name);
+    videoView = (GLSurfaceView) findViewById(R.id.glview);
 
-    Point displaySize = new Point();
-    getWindowManager().getDefaultDisplay().getRealSize(displaySize);
-
-    vsv = new AppRTCGLView(this, displaySize);
-    VideoRendererGui.setView(vsv);
+    VideoRendererGui.setView(videoView);
     remoteRender = VideoRendererGui.create(0, 0, 100, 100,
         VideoRendererGui.ScalingType.SCALE_ASPECT_FIT);
     localRender = VideoRendererGui.create(0, 0, 100, 100,
         VideoRendererGui.ScalingType.SCALE_ASPECT_FIT);
 
-    vsv.setOnClickListener(new View.OnClickListener() {
-        @Override public void onClick(View v) {
-          toggleHUD();
-        }
-      });
-    setContentView(vsv);
-    logAndToast("Tap the screen to toggle stats visibility");
+    videoView.setOnClickListener(
+        new View.OnClickListener() {
+          @Override
+          public void onClick(View view) {
+            int visibility = menuBar.getVisibility() == View.VISIBLE
+                    ? View.INVISIBLE : View.VISIBLE;
+            menuBar.setVisibility(visibility);
+            roomName.setVisibility(visibility);
+            if (visibility == View.VISIBLE) {
+              menuBar.bringToFront();
+              roomName.bringToFront();
+              rootView.invalidate();
+            }
+          }
+        });
+
+    ((ImageButton) findViewById(R.id.button_disconnect)).setOnClickListener(
+        new View.OnClickListener() {
+          @Override
+          public void onClick(View view) {
+            logAndToast("Disconnecting call.");
+            disconnect();
+          }
+        });
+
+    ((ImageButton) findViewById(R.id.button_toggle_debug)).setOnClickListener(
+        new View.OnClickListener() {
+          @Override
+          public void onClick(View view) {
+            int visibility = hudView.getVisibility() == View.VISIBLE
+                ? View.INVISIBLE : View.VISIBLE;
+            hudView.setVisibility(visibility);
+          }
+        });
 
     hudView = new TextView(this);
     hudView.setTextColor(Color.BLACK);
@@ -123,17 +168,40 @@ public class AppRTCDemoActivity extends Activity
     audioManager.setSpeakerphoneOn(!isWiredHeadsetOn);
 
     final Intent intent = getIntent();
-    if ("android.intent.action.VIEW".equals(intent.getAction())) {
-      connectToRoom(intent.getData().toString());
-      return;
+    Uri url = intent.getData();
+    if (url != null) {
+      String room = url.getQueryParameter("r");
+      String loopback = url.getQueryParameter("debug");
+      if ((room != null && !room.equals("")) ||
+          (loopback != null && loopback.equals("loopback"))) {
+        logAndToast(getString(R.string.connecting_to, url));
+        appRtcClient.connectToRoom(url.toString());
+        roomName.setText(room);
+      } else {
+        logAndToast("Empty or missing room name!");
+        finish();
+      }
+    } else {
+      logAndToast(getString(R.string.missing_url));
+      Log.wtf(TAG, "Didn't get any URL in intent!");
+      finish();
     }
-    showGetRoomUI();
+  }
+
+  public static class MenuBarFragment extends Fragment {
+    @Override
+    public View onCreateView(
+        LayoutInflater inflater,
+        ViewGroup container,
+        Bundle savedInstanceState) {
+      return inflater.inflate(R.layout.fragment_menubar, container, false);
+    }
   }
 
   @Override
   public void onPause() {
     super.onPause();
-    vsv.onPause();
+    videoView.onPause();
     if (pc != null) {
       pc.stopVideoSource();
     }
@@ -142,57 +210,16 @@ public class AppRTCDemoActivity extends Activity
   @Override
   public void onResume() {
     super.onResume();
-    vsv.onResume();
+    videoView.onResume();
     if (pc != null) {
       pc.startVideoSource();
     }
   }
 
   @Override
-  public void onConfigurationChanged (Configuration newConfig) {
-    Point displaySize = new Point();
-    getWindowManager().getDefaultDisplay().getSize(displaySize);
-    vsv.updateDisplaySize(displaySize);
-    super.onConfigurationChanged(newConfig);
-  }
-
-  @Override
   protected void onDestroy() {
-    disconnectAndExit();
+    disconnect();
     super.onDestroy();
-  }
-
-  private void showGetRoomUI() {
-    final EditText roomInput = new EditText(this);
-    roomInput.setText("https://apprtc.appspot.com/?r=");
-    roomInput.setSelection(roomInput.getText().length());
-    DialogInterface.OnClickListener listener =
-        new DialogInterface.OnClickListener() {
-          @Override
-          public void onClick(DialogInterface dialog, int which) {
-            abortUnless(which == DialogInterface.BUTTON_POSITIVE, "lolwat?");
-            dialog.dismiss();
-            connectToRoom(roomInput.getText().toString());
-          }
-        };
-    AlertDialog.Builder builder = new AlertDialog.Builder(this);
-    builder
-        .setMessage("Enter room URL").setView(roomInput)
-        .setPositiveButton("Go!", listener).show();
-  }
-
-  private void connectToRoom(String roomUrl) {
-    logAndToast("Connecting to room...");
-    appRtcClient.connectToRoom(roomUrl);
-  }
-
-  // Toggle visibility of the heads-up display.
-  private void toggleHUD() {
-    if (hudView.getVisibility() == View.VISIBLE) {
-      hudView.setVisibility(View.INVISIBLE);
-    } else {
-      hudView.setVisibility(View.VISIBLE);
-    }
   }
 
   // Update the heads-up display with information from |reports|.
@@ -243,7 +270,7 @@ public class AppRTCDemoActivity extends Activity
   }
 
   // Disconnect from remote resources, dispose of local resources, and exit.
-  private void disconnectAndExit() {
+  private void disconnect() {
     synchronized (quit[0]) {
       if (quit[0]) {
         return;
@@ -300,7 +327,7 @@ public class AppRTCDemoActivity extends Activity
               }
               final Runnable runnableThis = this;
               if (hudView.getVisibility() == View.INVISIBLE) {
-                vsv.postDelayed(runnableThis, 1000);
+                videoView.postDelayed(runnableThis, 1000);
                 return;
               }
               boolean success = finalPC.getStats(new StatsObserver() {
@@ -313,7 +340,7 @@ public class AppRTCDemoActivity extends Activity
                     for (StatsReport report : reports) {
                       Log.d(TAG, "Stats: " + report.toString());
                     }
-                    vsv.postDelayed(runnableThis, 1000);
+                    videoView.postDelayed(runnableThis, 1000);
                   }
                 }, null);
               if (!success) {
@@ -322,7 +349,7 @@ public class AppRTCDemoActivity extends Activity
             }
           }
         };
-      vsv.postDelayed(repeatedStatsLogger, 1000);
+      videoView.postDelayed(repeatedStatsLogger, 1000);
     }
 
     logAndToast("Waiting for remote connection...");
@@ -358,13 +385,13 @@ public class AppRTCDemoActivity extends Activity
   @Override
   public void onChannelClose() {
     logAndToast("Remote end hung up; dropping PeerConnection");
-    disconnectAndExit();
+    disconnect();
   }
 
   @Override
   public void onChannelError(int code, String description) {
     logAndToast("Channel error: " + code + ". " + description);
-    disconnectAndExit();
+    disconnect();
   }
 
   // -----Implementation of PeerConnectionClient.PeerConnectionEvents.---------

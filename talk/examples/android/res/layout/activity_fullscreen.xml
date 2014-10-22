@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+    <android.opengl.GLSurfaceView
+            android:id="@+id/glview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    <TextView
+        android:id="@+id/room_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@+id/menubar_fragment"
+        android:textSize="24sp"
+        android:layout_margin="8dp"/>
+    <fragment
+        android:name="org.appspot.apprtc.AppRTCDemoActivity$MenuBarFragment"
+        android:id="@+id/menubar_fragment"
+        android:layout_centerHorizontal="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="32dp"
+        tools:layout="@layout/fragment_menubar"/>
+
+</RelativeLayout>
