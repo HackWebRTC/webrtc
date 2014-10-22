@@ -8,7 +8,8 @@
 //
 // botmanager.js module allows a test to spawn bots that expose an RPC API
 // to be controlled by tests.
-var http = require('http');
+var https = require('https');
+var fs = require('fs');
 var child = require('child_process');
 var Browserify = require('browserify');
 var Dnode = require('dnode');
@@ -16,7 +17,7 @@ var Express = require('express');
 var WebSocketServer = require('ws').Server;
 var WebSocketStream = require('websocket-stream');
 
-// BotManager runs a HttpServer that serves bots assets and and WebSocketServer
+// BotManager runs a HttpsServer that serves bots assets and and WebSocketServer
 // that listens to incoming connections. Once a connection is available it
 // connects it to bots pending endpoints.
 //
@@ -66,7 +67,11 @@ BotManager.prototype = {
 
     this.app_.use('/bot/', Express.static(__dirname + '/bot'));
 
-    this.server_ = http.createServer(this.app_);
+    var options = options = {
+      key: fs.readFileSync('configurations/priv.pem', 'utf8'),
+      cert: fs.readFileSync('configurations/cert.crt', 'utf8')
+    };
+    this.server_ = https.createServer(options, this.app_);
 
     this.webSocketServer_ = new WebSocketServer({ server: this.server_ });
     this.webSocketServer_.on('connection', this.onConnection_.bind(this));
@@ -116,7 +121,7 @@ Bot.prototype = {
   }
 }
 
-// BrowserBot spawns a process to open "http://localhost:8080/bot/browser".
+// BrowserBot spawns a process to open "https://localhost:8080/bot/browser".
 //
 // That page once loaded, connects to the websocket server run by BotManager
 // and exposes the bot api.
@@ -128,14 +133,14 @@ BrowserBot = function (name, callback) {
 BrowserBot.prototype = {
   spawnBotProcess_: function () {
     this.log('Spawning browser');
-    child.exec('google-chrome "http://localhost:8080/bot/browser/"');
+    child.exec('google-chrome "https://localhost:8080/bot/browser/"');
   },
 
   __proto__: Bot.prototype
 }
 
 // AndroidChromeBot spawns a process to open
-// "http://localhost:8080/bot/browser/" on chrome for Android.
+// "https://localhost:8080/bot/browser/" on chrome for Android.
 AndroidChromeBot = function (name, androidDeviceManager, callback) {
   Bot.call(this, name, callback);
   androidDeviceManager.getNewDevice(function (serialNumber) {
@@ -149,7 +154,7 @@ AndroidChromeBot.prototype = {
     this.log('Spawning Android device with serial ' + this.serialNumber_);
     var runChrome = 'adb -s ' + this.serialNumber_ + ' shell am start ' +
     '-n com.android.chrome/com.google.android.apps.chrome.Main ' +
-    '-d http://localhost:8080/bot/browser/';
+    '-d https://localhost:8080/bot/browser/';
     child.exec(runChrome, function (error, stdout, stderr) {
       if (error) {
         this.log(error);

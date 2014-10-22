@@ -17,7 +17,17 @@ access its exposed API. Details are in botmanager.js.
 == How to run the test ==
  $ cd trunk/webrtc/tool/rtcbot
  $ npm install express browserify ws websocket-stream dnode
+ $ mkdir configurations
+ $ cd configurations
+ $ openssl genrsa -out priv.pem 1024
+ $ openssl req -x509 -new -key priv.pem -days 3650 -out cert.crt
+ $ cd trunk/webrtc/tool/rtcbot
  $ node main.js "<test_name>"
+
+* Note:
+    In first time you will use rtcBot you will receive a warning telling
+  you that your connection is not private. Just avoid this warning and
+  click Proceed to localhost (unsafe).
 
 == How can I see the list of available tests? ==
  $ node main.js
@@ -28,6 +38,10 @@ access its exposed API. Details are in botmanager.js.
  $ export NVM_DIR=/work/tools/nvm; source $NVM_DIR/nvm.sh
  $ nvm install 0.10
  $ nvm use 0.10
+
+== Why generating the private key and self signed certificate? ==
+  - Private key and certificate are used for creating HTTPs server in
+    rtcBot for loading the required files on the different types of the bots.
 
 == Supported Bot Types ==
   - "chrome": chrome on host machine.

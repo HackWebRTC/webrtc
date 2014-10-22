@@ -15,7 +15,7 @@ var WebSocketStream = require('websocket-stream');
 var Dnode = require('dnode');
 
 function connectToServer(api) {
-  var stream = new WebSocketStream("ws://127.0.0.1:8080/");
+  var stream = new WebSocketStream("wss://localhost:8080/");
   var dnode = new Dnode(api);
   dnode.on('error', function (error) { console.log(error); });
   dnode.pipe(stream).pipe(dnode);
