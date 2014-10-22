@@ -125,6 +125,7 @@ VideoSendStream::VideoSendStream(
       suspended_ssrcs_(suspended_ssrcs),
       external_codec_(NULL),
       channel_(-1),
+      use_default_bitrate_(true),
       stats_proxy_(config) {
   video_engine_base_ = ViEBase::GetInterface(video_engine);
   video_engine_base_->CreateChannel(channel_, base_channel);
@@ -378,8 +379,13 @@ bool VideoSendStream::ReconfigureVideoEncoder(
     video_codec.qpMax = std::max(video_codec.qpMax,
                                  static_cast<unsigned int>(streams[i].max_qp));
   }
+  unsigned int start_bitrate_bps;
+  if (codec_->GetCodecTargetBitrate(channel_, &start_bitrate_bps) != 0 ||
+      use_default_bitrate_) {
+    start_bitrate_bps = start_bitrate_bps_;
+  }
   video_codec.startBitrate =
-      static_cast<unsigned int>(start_bitrate_bps_) / 1000;
+      static_cast<unsigned int>(start_bitrate_bps) / 1000;
 
   if (video_codec.minBitrate < kViEMinCodecBitrate)
     video_codec.minBitrate = kViEMinCodecBitrate;
@@ -398,7 +404,11 @@ bool VideoSendStream::ReconfigureVideoEncoder(
   assert(streams[0].max_framerate > 0);
   video_codec.maxFramerate = streams[0].max_framerate;
 
-  return codec_->SetSendCodec(channel_, video_codec) == 0;
+  if (codec_->SetSendCodec(channel_, video_codec) != 0)
+    return false;
+
+  use_default_bitrate_ = false;
+  return true;
 }
 
 bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {

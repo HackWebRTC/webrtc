@@ -19,6 +19,7 @@ CallTest::CallTest()
       send_stream_(NULL),
       fake_encoder_(clock_) {
 }
+
 CallTest::~CallTest() {
 }
 

@@ -1791,6 +1791,19 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
     encoder_config_.streams[i].max_bitrate_bps = 20000;
   }
 
+  // Use the same total bitrates when sending a single stream to avoid lowering
+  // the bitrate estimate and requiring a subsequent rampup.
+  VideoEncoderConfig one_stream = encoder_config_;
+  one_stream.streams.resize(1);
+  for (size_t i = 1; i < encoder_config_.streams.size(); ++i) {
+    one_stream.streams.front().min_bitrate_bps +=
+        encoder_config_.streams[i].min_bitrate_bps;
+    one_stream.streams.front().target_bitrate_bps +=
+        encoder_config_.streams[i].target_bitrate_bps;
+    one_stream.streams.front().max_bitrate_bps +=
+        encoder_config_.streams[i].max_bitrate_bps;
+  }
+
   CreateMatchingReceiveConfigs();
 
   CreateStreams();
@@ -1807,8 +1820,6 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
     sender_call_->DestroyVideoSendStream(send_stream_);
 
     // Re-create VideoSendStream with only one stream.
-    VideoEncoderConfig one_stream = encoder_config_;
-    one_stream.streams.resize(1);
     send_stream_ =
         sender_call_->CreateVideoSendStream(send_config_, one_stream);
     send_stream_->Start();
