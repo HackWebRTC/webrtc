@@ -418,9 +418,6 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   WebRtcVideoChannelRecvInfo* GetDefaultRecvChannel();
   WebRtcVideoChannelRecvInfo* GetRecvChannelBySsrc(uint32 ssrc);
 
-  bool InConferenceMode() const {
-    return options_.conference_mode.GetWithDefaultIfUnset(false);
-  }
   bool RemoveCapturer(uint32 ssrc);
 
   rtc::MessageQueue* worker_thread() { return engine_->worker_thread(); }

@@ -78,6 +78,10 @@ cricket::VideoFormat VideoFormatFromCodec(const cricket::VideoCodec& codec) {
   return CreateVideoFormat(codec.width, codec.height, codec.framerate);
 }
 
+cricket::VideoFormat VideoFormatFromVieCodec(const webrtc::VideoCodec& codec) {
+  return CreateVideoFormat(codec.width, codec.height, codec.maxFramerate);
+}
+
 template <class T>
 bool Changed(cricket::Settable<T> proposed,
              cricket::Settable<T> original) {
@@ -606,6 +610,15 @@ class WebRtcOveruseObserver : public webrtc::CpuOveruseObserver {
 class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
  public:
   typedef std::map<int, webrtc::VideoEncoder*> EncoderMap;  // key: payload type
+
+  enum AdaptFormatType {
+    // This is how we make SetSendStreamFormat take precedence over
+    // SetSendCodecs.
+    kAdaptFormatTypeNone = 0,  // Unset
+    kAdaptFormatTypeCodec = 1,  // From SetSendCodec
+    kAdaptFormatTypeStream = 2,  // From SetStreamFormat
+  };
+
   WebRtcVideoChannelSendInfo(int channel_id, int capture_id,
                              webrtc::ViEExternalCapture* external_capture,
                              rtc::CpuMonitor* cpu_monitor)
@@ -617,7 +630,8 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
         encoder_observer_(channel_id),
         external_capture_(external_capture),
         cpu_monitor_(cpu_monitor),
-        old_adaptation_changes_(0) {
+        old_adaptation_changes_(0),
+        adapt_format_type_(kAdaptFormatTypeNone) {
   }
 
   int channel_id() const { return channel_id_; }
@@ -633,15 +647,33 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
 
   WebRtcEncoderObserver* encoder_observer() { return &encoder_observer_; }
   webrtc::ViEExternalCapture* external_capture() { return external_capture_; }
-  const VideoFormat& video_format() const {
-    return video_format_;
+  const VideoFormat& adapt_format() const { return adapt_format_; }
+  AdaptFormatType adapt_format_type() const { return adapt_format_type_; }
+  bool adapt_format_set() const {
+    return adapt_format_type() != kAdaptFormatTypeNone;
   }
-  void set_video_format(const VideoFormat& video_format) {
-    video_format_ = video_format;
-    CoordinatedVideoAdapter* adapter = video_adapter();
-    if (adapter) {
-      adapter->OnOutputFormatRequest(video_format_);
+
+  // Tells the video adapter to adapt down to a given format.  The
+  // type indicates where the format came from, where different types
+  // have slightly different behavior and priority.
+  void SetAdaptFormat(const VideoFormat& format, AdaptFormatType type) {
+    if (type < adapt_format_type_) {
+      // Formats from SetSendStream format are higher priority than
+      // ones from SetSendCodecs wich is higher priority than not
+      // being set.  If something lower-prioirty comes in, just ignore
+      // it.
+      return;
     }
+
+    // TODO(pthatcher): Use the adapter for all max size enforcement,
+    // both codec-based and SetSendStreamFormat-based.  For now, we
+    // can't do that without fixing a lot of unit tests.
+    if (video_adapter() && type == kAdaptFormatTypeStream) {
+      video_adapter()->OnOutputFormatRequest(format);
+    }
+
+    adapt_format_ = format;
+    adapt_format_type_ = type;
   }
 
   int CurrentAdaptReason() const {
@@ -696,6 +728,13 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
 
     CoordinatedVideoAdapter* adapter = video_adapter();
     ASSERT(adapter && "Video adapter should not be null here.");
+
+    // TODO(pthatcher): Use the adapter for all max size enforcement,
+    // both codec-based and SetSendStreamFormat-based. For now, we
+    // can't do that without fixing a lot of unit tests.
+    if (adapt_format_type_ == kAdaptFormatTypeStream) {
+      adapter->OnOutputFormatRequest(adapt_format_);
+    }
 
     UpdateAdapterCpuOptions();
 
@@ -834,8 +873,6 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   webrtc::ViEExternalCapture* external_capture_;
   EncoderMap registered_encoders_;
 
-  VideoFormat video_format_;
-
   rtc::scoped_ptr<StreamParams> stream_params_;
 
   WebRtcLocalStreamInfo local_stream_info_;
@@ -846,6 +883,9 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   int old_adaptation_changes_;
 
   VideoOptions video_options_;
+
+  VideoFormat adapt_format_;
+  AdaptFormatType adapt_format_type_;
 };
 
 const WebRtcVideoEngine::VideoCodecPref
@@ -859,17 +899,6 @@ const WebRtcVideoEngine::VideoCodecPref
 const VideoFormatPod WebRtcVideoEngine::kDefaultMaxVideoFormat =
   {640, 400, FPS_TO_INTERVAL(30), FOURCC_ANY};
 // TODO(ronghuawu): Change to 640x360.
-
-static void UpdateVideoCodec(const cricket::VideoFormat& video_format,
-                             webrtc::VideoCodec* target_codec) {
-  if ((!target_codec) || (video_format == cricket::VideoFormat())) {
-    return;
-  }
-  target_codec->width = video_format.width;
-  target_codec->height = video_format.height;
-  target_codec->maxFramerate = cricket::VideoFormat::IntervalToFps(
-      video_format.interval);
-}
 
 static bool GetCpuOveruseOptions(const VideoOptions& options,
                                  webrtc::CpuOveruseOptions* overuse_options) {
@@ -1809,7 +1838,9 @@ bool WebRtcVideoMediaChannel::SetSendStreamFormat(uint32 ssrc,
     LOG(LS_ERROR) << "The specified ssrc " << ssrc << " is not in use.";
     return false;
   }
-  send_channel->set_video_format(format);
+
+  send_channel->SetAdaptFormat(
+      format, WebRtcVideoChannelSendInfo::kAdaptFormatTypeStream);
   return true;
 }
 
@@ -3139,11 +3170,12 @@ bool WebRtcVideoMediaChannel::SendFrame(
     // Send codec has not been set. No reason to process the frame any further.
     return false;
   }
-  const VideoFormat& video_format = send_channel->video_format();
+
+  // TODO(pthatcher): Move drop logic to adapter.
   // If the frame should be dropped.
-  const bool video_format_set = video_format != cricket::VideoFormat();
-  if (video_format_set &&
-      (video_format.width == 0 && video_format.height == 0)) {
+  if (send_channel->adapt_format_set() &&
+      send_channel->adapt_format().width == 0 &&
+      send_channel->adapt_format().height == 0) {
     return true;
   }
 
@@ -3601,6 +3633,10 @@ bool WebRtcVideoMediaChannel::SetSendCodec(
     return false;
   }
 
+  send_channel->SetAdaptFormat(
+      VideoFormatFromVieCodec(codec),
+      WebRtcVideoChannelSendInfo::kAdaptFormatTypeCodec);
+
   const int channel_id = send_channel->channel_id();
   // Make a copy of the codec
   webrtc::VideoCodec target_codec = codec;
@@ -3620,9 +3656,14 @@ bool WebRtcVideoMediaChannel::SetSendCodec(
 
   MaybeRegisterExternalEncoder(send_channel, target_codec);
 
-  // Resolution and framerate may vary for different send channels.
-  const VideoFormat& video_format = send_channel->video_format();
-  UpdateVideoCodec(video_format, &target_codec);
+  // TODO(pthatcher): We should rely on the adapter to adapt the
+  // resolution, and not do it here.
+  if (send_channel->adapt_format_set()) {
+    target_codec.width = send_channel->adapt_format().width;
+    target_codec.height = send_channel->adapt_format().height;
+    target_codec.maxFramerate = cricket::VideoFormat::IntervalToFps(
+        send_channel->adapt_format().interval);
+  }
 
   if (target_codec.width == 0 && target_codec.height == 0) {
     const uint32 ssrc = send_channel->stream_params()->first_ssrc();
@@ -3850,8 +3891,14 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
   ASSERT(send_codec_.get() != NULL);
 
   webrtc::VideoCodec target_codec = *send_codec_;
-  const VideoFormat& video_format = send_channel->video_format();
-  UpdateVideoCodec(video_format, &target_codec);
+  // TODO(pthatcher): We should rely on the adapter to adapt the
+  // resolution, and not do it here.
+  if (send_channel->adapt_format_set()) {
+    target_codec.width = send_channel->adapt_format().width;
+    target_codec.height = send_channel->adapt_format().height;
+    target_codec.maxFramerate = cricket::VideoFormat::IntervalToFps(
+        send_channel->adapt_format().interval);
+  }
 
   // Vie send codec size should not exceed target_codec.
   int target_width = new_width;
