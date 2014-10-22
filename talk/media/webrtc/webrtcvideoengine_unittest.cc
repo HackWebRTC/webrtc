@@ -1475,7 +1475,7 @@ TEST_F(WebRtcVideoEngineTestFake, SetStartBandwidthOption) {
       kMaxBandwidthKbps, kMinBandwidthKbps, kStartBandwidthKbps);
 
   // Set the start bitrate option.
-  int kBoostedStartBandwidthKbps = 1000;
+  unsigned int kBoostedStartBandwidthKbps = 1000;
   ASSERT_NE(kStartBandwidthKbps, kBoostedStartBandwidthKbps);
   cricket::VideoOptions options;
   options.video_start_bitrate.Set(kBoostedStartBandwidthKbps);
