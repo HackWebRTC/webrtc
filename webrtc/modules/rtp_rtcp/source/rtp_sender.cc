@@ -954,7 +954,6 @@ int32_t RTPSender::SendToNetwork(
   uint32_t length = payload_length + rtp_header_length;
   if (!SendPacketToNetwork(buffer, length))
     return -1;
-  assert(payload_length - rtp_header.paddingLength > 0);
   {
     CriticalSectionScoped lock(send_critsect_);
     media_has_been_sent_ = true;
