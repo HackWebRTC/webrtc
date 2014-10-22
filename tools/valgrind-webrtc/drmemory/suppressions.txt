@@ -702,3 +702,16 @@ name=https://code.google.com/p/webrtc/issues/detail?id=3490 (4)
 *!testing::internal::EqHelper<>::Compare<>
 *!rtc::AsyncWriteTest_TestWrite_Test::TestBody
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/libyuv/issues/detail?id=377
+*!CopyRow_AVX
+*!CopyPlane
+*!I420Copy
+*!I420Rotate
+*!ConvertToI420
+*!cricket::WebRtcVideoFrame::Reset
+*!cricket::WebRtcVideoFrame::Init
+*!WebRtcVideoFrameTest::TestInit
+*!WebRtcVideoFrameTest_InitEvenSize_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
