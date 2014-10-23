@@ -42,6 +42,8 @@ namespace webrtc {
 #define VCM_I420_PAYLOAD_TYPE      124
 #define VCM_H264_PAYLOAD_TYPE      127
 
+enum { kDefaultStartBitrateKbps = 300 };
+
 enum VCMVideoProtection {
   kProtectionNack,                // Both send-side and receive-side
   kProtectionNackSender,          // Send-side only

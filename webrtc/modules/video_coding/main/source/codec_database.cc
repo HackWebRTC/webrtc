@@ -114,7 +114,7 @@ bool VCMCodecDataBase::Codec(int list_id,
       settings->codecType = kVideoCodecVP8;
       // 96 to 127 dynamic payload types for video codecs.
       settings->plType = VCM_VP8_PAYLOAD_TYPE;
-      settings->startBitrate = 100;
+      settings->startBitrate = kDefaultStartBitrateKbps;
       settings->minBitrate = VCM_MIN_BITRATE;
       settings->maxBitrate = 0;
       settings->maxFramerate = VCM_DEFAULT_FRAME_RATE;
@@ -132,7 +132,7 @@ bool VCMCodecDataBase::Codec(int list_id,
       settings->codecType = kVideoCodecH264;
       // 96 to 127 dynamic payload types for video codecs.
       settings->plType = VCM_H264_PAYLOAD_TYPE;
-      settings->startBitrate = 100;
+      settings->startBitrate = kDefaultStartBitrateKbps;
       settings->minBitrate = VCM_MIN_BITRATE;
       settings->maxBitrate = 0;
       settings->maxFramerate = VCM_DEFAULT_FRAME_RATE;

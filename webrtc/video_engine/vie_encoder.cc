@@ -109,8 +109,10 @@ class ViEPacedSenderCallback : public PacedSender::Callback {
       : owner_(owner) {
   }
   virtual ~ViEPacedSenderCallback() {}
-  virtual bool TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
-                                int64_t capture_time_ms, bool retransmission) {
+  virtual bool TimeToSendPacket(uint32_t ssrc,
+                                uint16_t sequence_number,
+                                int64_t capture_time_ms,
+                                bool retransmission) {
     return owner_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms,
                                     retransmission);
   }
@@ -162,9 +164,12 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
   default_rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
   bitrate_observer_.reset(new ViEBitrateObserver(this));
   pacing_callback_.reset(new ViEPacedSenderCallback(this));
-  paced_sender_.reset(
-      new PacedSender(Clock::GetRealTimeClock(), pacing_callback_.get(),
-                      PacedSender::kDefaultInitialPaceKbps, 0));
+  paced_sender_.reset(new PacedSender(
+      Clock::GetRealTimeClock(),
+      pacing_callback_.get(),
+      kDefaultStartBitrateKbps,
+      PacedSender::kDefaultPaceMultiplier * kDefaultStartBitrateKbps,
+      0));
 }
 
 bool ViEEncoder::Init() {
@@ -368,6 +373,7 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
     pad_up_to_bitrate_kbps = min_transmit_bitrate_kbps_;
 
   paced_sender_->UpdateBitrate(
+      video_codec.startBitrate,
       PacedSender::kDefaultPaceMultiplier * video_codec.startBitrate,
       pad_up_to_bitrate_kbps);
 
@@ -885,6 +891,7 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
       pad_up_to_bitrate_kbps = bitrate_kbps;
 
     paced_sender_->UpdateBitrate(
+        bitrate_kbps,
         PacedSender::kDefaultPaceMultiplier * bitrate_kbps,
         pad_up_to_bitrate_kbps);
     default_rtp_rtcp_->SetTargetSendBitrate(stream_bitrates);

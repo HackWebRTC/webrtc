@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_PACED_SENDER_H_
-#define WEBRTC_MODULES_PACED_SENDER_H_
+#ifndef WEBRTC_MODULES_PACING_INCLUDE_PACED_SENDER_H_
+#define WEBRTC_MODULES_PACING_INCLUDE_PACED_SENDER_H_
 
 #include <list>
 #include <set>
@@ -20,6 +20,7 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+class BitrateProber;
 class Clock;
 class CriticalSectionWrapper;
 
@@ -67,7 +68,10 @@ class PacedSender : public Module {
   // overshoots from the encoder.
   static const float kDefaultPaceMultiplier;
 
-  PacedSender(Clock* clock, Callback* callback, int max_bitrate_kbps,
+  PacedSender(Clock* clock,
+              Callback* callback,
+              int bitrate_kbps,
+              int max_bitrate_kbps,
               int min_bitrate_kbps);
 
   virtual ~PacedSender();
@@ -83,9 +87,14 @@ class PacedSender : public Module {
   // Resume sending packets.
   void Resume();
 
-  // Set target bitrates for the pacer. Padding packets will be utilized to
-  // reach |min_bitrate| unless enough media packets are available.
-  void UpdateBitrate(int max_bitrate_kbps, int min_bitrate_kbps);
+  // Set target bitrates for the pacer.
+  // We will pace out bursts of packets at a bitrate of |max_bitrate_kbps|.
+  // |bitrate_kbps| is our estimate of what we are allowed to send on average.
+  // Padding packets will be utilized to reach |min_bitrate| unless enough media
+  // packets are available.
+  void UpdateBitrate(int bitrate_kbps,
+                     int max_bitrate_kbps,
+                     int min_bitrate_kbps);
 
   // Returns true if we send the packet now, else it will add the packet
   // information to the queue and call TimeToSendPacket when it's time to send.
@@ -103,6 +112,8 @@ class PacedSender : public Module {
   // Returns the time since the oldest queued packet was enqueued.
   virtual int QueueInMs() const;
 
+  virtual size_t QueueSizePackets() const;
+
   // Returns the number of milliseconds until the module want a worker thread
   // to call Process.
   virtual int32_t TimeUntilNextProcess() OVERRIDE;
@@ -110,10 +121,13 @@ class PacedSender : public Module {
   // Process any pending packets in the queue(s).
   virtual int32_t Process() OVERRIDE;
 
+ protected:
+  virtual bool ProbingExperimentIsEnabled() const;
+
  private:
   // Return true if next packet in line should be transmitted.
   // Return packet list that contains the next packet.
-  bool ShouldSendNextPacket(paced_sender::PacketList** packet_list)
+  bool ShouldSendNextPacket(paced_sender::PacketList** packet_list, bool probe)
       EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   // Local helper function to GetNextPacket.
@@ -146,8 +160,12 @@ class PacedSender : public Module {
   scoped_ptr<paced_sender::IntervalBudget> padding_budget_
       GUARDED_BY(critsect_);
 
+  scoped_ptr<BitrateProber> prober_ GUARDED_BY(critsect_);
+  int bitrate_bps_ GUARDED_BY(critsect_);
+
   int64_t time_last_update_us_ GUARDED_BY(critsect_);
-  int64_t time_last_send_us_ GUARDED_BY(critsect_);
+  // Only accessed via process thread.
+  int64_t time_last_media_send_us_;
   int64_t capture_time_ms_last_queued_ GUARDED_BY(critsect_);
   int64_t capture_time_ms_last_sent_ GUARDED_BY(critsect_);
 
@@ -159,4 +177,4 @@ class PacedSender : public Module {
       GUARDED_BY(critsect_);
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_PACED_SENDER_H_
+#endif  // WEBRTC_MODULES_PACING_INCLUDE_PACED_SENDER_H_

@@ -180,6 +180,7 @@
             'desktop_capture/win/cursor_unittest_resources.rc',
             'media_file/source/media_file_unittest.cc',
             'module_common_types_unittest.cc',
+            'pacing/bitrate_prober_unittest.cc',
             'pacing/paced_sender_unittest.cc',
             'remote_bitrate_estimator/bwe_simulations.cc',
             'remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h',

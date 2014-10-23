@@ -16,8 +16,11 @@
 #include <set>
 
 #include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/pacing/bitrate_prober.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/field_trial.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace {
@@ -69,6 +72,17 @@ class PacketList {
 
   Packet front() const {
     return packet_list_.front();
+  }
+
+  size_t size() const {
+    size_t sum = 0;
+    for (std::map<uint32_t, std::set<uint16_t> >::const_iterator it =
+             sequence_number_set_.begin();
+         it != sequence_number_set_.end();
+         ++it) {
+      sum += it->second.size();
+    }
+    return sum;
   }
 
   void pop_front() {
@@ -131,6 +145,7 @@ const float PacedSender::kDefaultPaceMultiplier = 2.5f;
 
 PacedSender::PacedSender(Clock* clock,
                          Callback* callback,
+                         int bitrate_kbps,
                          int max_bitrate_kbps,
                          int min_bitrate_kbps)
     : clock_(clock),
@@ -141,7 +156,10 @@ PacedSender::PacedSender(Clock* clock,
       max_queue_length_ms_(kDefaultMaxQueueLengthMs),
       media_budget_(new paced_sender::IntervalBudget(max_bitrate_kbps)),
       padding_budget_(new paced_sender::IntervalBudget(min_bitrate_kbps)),
+      prober_(new BitrateProber()),
+      bitrate_bps_(1000 * bitrate_kbps),
       time_last_update_us_(clock->TimeInMicroseconds()),
+      time_last_media_send_us_(-1),
       capture_time_ms_last_queued_(0),
       capture_time_ms_last_sent_(0),
       high_priority_packets_(new paced_sender::PacketList),
@@ -172,11 +190,13 @@ bool PacedSender::Enabled() const {
   return enabled_;
 }
 
-void PacedSender::UpdateBitrate(int max_bitrate_kbps,
+void PacedSender::UpdateBitrate(int bitrate_kbps,
+                                int max_bitrate_kbps,
                                 int min_bitrate_kbps) {
   CriticalSectionScoped cs(critsect_.get());
   media_budget_->set_target_rate_kbps(max_bitrate_kbps);
   padding_budget_->set_target_rate_kbps(min_bitrate_kbps);
+  bitrate_bps_ = 1000 * bitrate_kbps;
 }
 
 bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
@@ -187,6 +207,12 @@ bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
   if (!enabled_) {
     return true;  // We can send now.
   }
+  // Enable probing if the probing experiment is enabled.
+  if (!prober_->IsProbing() && ProbingExperimentIsEnabled()) {
+    prober_->SetEnabled(true);
+  }
+  prober_->MaybeInitializeProbe(bitrate_bps_);
+
   if (capture_time_ms < 0) {
     capture_time_ms = clock_->TimeInMilliseconds();
   }
@@ -244,12 +270,19 @@ int PacedSender::QueueInMs() const {
   return now_ms - oldest_packet_enqueue_time;
 }
 
+size_t PacedSender::QueueSizePackets() const {
+  CriticalSectionScoped cs(critsect_.get());
+  return low_priority_packets_->size() + normal_priority_packets_->size() +
+         high_priority_packets_->size();
+}
+
 int32_t PacedSender::TimeUntilNextProcess() {
   CriticalSectionScoped cs(critsect_.get());
-  int64_t elapsed_time_ms = (clock_->TimeInMicroseconds() -
-      time_last_update_us_ + 500) / 1000;
-  if (elapsed_time_ms <= 0) {
-    return kMinPacketLimitMs;
+  int64_t elapsed_time_us = clock_->TimeInMicroseconds() - time_last_update_us_;
+  int elapsed_time_ms = static_cast<int>((elapsed_time_us + 500) / 1000);
+  if (prober_->IsProbing()) {
+    int next_probe = prober_->TimeUntilNextProbe(clock_->TimeInMilliseconds());
+    return next_probe;
   }
   if (elapsed_time_ms >= kMinPacketLimitMs) {
     return 0;
@@ -271,12 +304,15 @@ int32_t PacedSender::Process() {
       UpdateBytesPerInterval(delta_time_ms);
     }
     paced_sender::PacketList* packet_list;
-    while (ShouldSendNextPacket(&packet_list)) {
+    while (ShouldSendNextPacket(&packet_list, prober_->IsProbing())) {
       if (!SendPacketFromList(packet_list))
         return 0;
+      // Send one packet per Process() call when probing, so that we have
+      // better control over the delta between packets.
+      if (prober_->IsProbing())
+        return 0;
     }
-    if (high_priority_packets_->empty() &&
-        normal_priority_packets_->empty() &&
+    if (high_priority_packets_->empty() && normal_priority_packets_->empty() &&
         low_priority_packets_->empty() &&
         padding_budget_->bytes_remaining() > 0) {
       int padding_needed = padding_budget_->bytes_remaining();
@@ -325,12 +361,13 @@ void PacedSender::UpdateBytesPerInterval(uint32_t delta_time_ms) {
   padding_budget_->IncreaseBudget(delta_time_ms);
 }
 
-bool PacedSender::ShouldSendNextPacket(paced_sender::PacketList** packet_list) {
+bool PacedSender::ShouldSendNextPacket(paced_sender::PacketList** packet_list,
+                                       bool probe) {
   *packet_list = NULL;
-  if (media_budget_->bytes_remaining() <= 0) {
+  if (!probe && media_budget_->bytes_remaining() <= 0) {
     // All bytes consumed for this interval.
     // Check if we have not sent in a too long time.
-    if (clock_->TimeInMicroseconds() - time_last_send_us_ >
+    if (clock_->TimeInMicroseconds() - time_last_media_send_us_ >
         kMaxQueueTimeWithoutSendingUs) {
       if (!high_priority_packets_->empty()) {
         *packet_list = high_priority_packets_.get();
@@ -383,9 +420,14 @@ paced_sender::Packet PacedSender::GetNextPacketFromList(
 }
 
 void PacedSender::UpdateMediaBytesSent(int num_bytes) {
-  time_last_send_us_ = clock_->TimeInMicroseconds();
+  prober_->PacketSent(clock_->TimeInMilliseconds(), num_bytes);
+  time_last_media_send_us_ = clock_->TimeInMicroseconds();
   media_budget_->UseBudget(num_bytes);
   padding_budget_->UseBudget(num_bytes);
 }
 
+bool PacedSender::ProbingExperimentIsEnabled() const {
+  return webrtc::field_trial::FindFullName("WebRTC-BitrateProbing") ==
+         "Enabled";
+}
 }  // namespace webrtc

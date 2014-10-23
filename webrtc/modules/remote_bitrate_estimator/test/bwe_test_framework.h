@@ -387,8 +387,12 @@ class PacketSender : public PacketProcessor {
 
 class VideoSender : public PacketSender {
  public:
-  VideoSender(int flow_id, PacketProcessorListener* listener, float fps,
-              uint32_t kbps, uint32_t ssrc, float first_frame_offset);
+  VideoSender(int flow_id,
+              PacketProcessorListener* listener,
+              float fps,
+              uint32_t kbps,
+              uint32_t ssrc,
+              float first_frame_offset);
   virtual ~VideoSender() {}
 
   uint32_t max_payload_size_bytes() const { return kMaxPayloadSizeBytes; }
@@ -399,6 +403,10 @@ class VideoSender : public PacketSender {
   virtual void RunFor(int64_t time_ms, Packets* in_out) OVERRIDE;
 
  protected:
+  virtual uint32_t NextFrameSize();
+  virtual uint32_t NextPacketSize(uint32_t frame_size,
+                                  uint32_t remaining_payload);
+
   const uint32_t kMaxPayloadSizeBytes;
   const uint32_t kTimestampBase;
   const double frame_period_ms_;
@@ -427,6 +435,30 @@ class AdaptiveVideoSender : public VideoSender {
   DISALLOW_IMPLICIT_CONSTRUCTORS(AdaptiveVideoSender);
 };
 
+class PeriodicKeyFrameSender : public AdaptiveVideoSender {
+ public:
+  PeriodicKeyFrameSender(int flow_id,
+                         PacketProcessorListener* listener,
+                         float fps,
+                         uint32_t kbps,
+                         uint32_t ssrc,
+                         float first_frame_offset,
+                         int key_frame_interval);
+  virtual ~PeriodicKeyFrameSender() {}
+
+ protected:
+  virtual uint32_t NextFrameSize() OVERRIDE;
+  virtual uint32_t NextPacketSize(uint32_t frame_size,
+                                  uint32_t remaining_payload) OVERRIDE;
+
+ private:
+  int key_frame_interval_;
+  uint32_t frame_counter_;
+  int compensation_bytes_;
+  int compensation_per_frame_;
+  DISALLOW_IMPLICIT_CONSTRUCTORS(PeriodicKeyFrameSender);
+};
+
 class PacedVideoSender : public PacketSender, public PacedSender::Callback {
  public:
   PacedVideoSender(PacketProcessorListener* listener,
@@ -445,12 +477,28 @@ class PacedVideoSender : public PacketSender, public PacedSender::Callback {
   virtual int TimeToSendPadding(int bytes) OVERRIDE;
 
  private:
+  class ProbingPacedSender : public PacedSender {
+   public:
+    ProbingPacedSender(Clock* clock,
+                       Callback* callback,
+                       int bitrate_kbps,
+                       int max_bitrate_kbps,
+                       int min_bitrate_kbps)
+        : PacedSender(clock,
+                      callback,
+                      bitrate_kbps,
+                      max_bitrate_kbps,
+                      min_bitrate_kbps) {}
+
+    virtual bool ProbingExperimentIsEnabled() const OVERRIDE { return true; }
+  };
+
   void QueuePackets(Packets* batch, int64_t end_of_batch_time_us);
 
   static const int64_t kInitialTimeMs = 0;
   SimulatedClock clock_;
   int64_t start_of_run_ms_;
-  PacedSender pacer_;
+  ProbingPacedSender pacer_;
   Packets pacer_queue_;
   Packets queue_;
   AdaptiveVideoSender* source_;

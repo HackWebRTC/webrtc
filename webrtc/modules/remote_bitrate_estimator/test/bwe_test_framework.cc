@@ -155,6 +155,7 @@ void Packet::set_send_time_us(int64_t send_time_us) {
 }
 
 void Packet::SetAbsSendTimeMs(int64_t abs_send_time_ms) {
+  header_.extension.hasAbsoluteSendTime = true;
   header_.extension.absoluteSendTime = ((static_cast<int64_t>(abs_send_time_ms *
     (1 << 18)) + 500) / 1000) & 0x00fffffful;
 }
@@ -543,8 +544,11 @@ PacketSender::PacketSender(PacketProcessorListener* listener,
 
 }
 
-VideoSender::VideoSender(int flow_id, PacketProcessorListener* listener,
-                         float fps, uint32_t kbps, uint32_t ssrc,
+VideoSender::VideoSender(int flow_id,
+                         PacketProcessorListener* listener,
+                         float fps,
+                         uint32_t kbps,
+                         uint32_t ssrc,
                          float first_frame_offset)
     : PacketSender(listener, FlowIds(1, flow_id)),
       kMaxPayloadSizeBytes(1200),
@@ -566,6 +570,15 @@ uint32_t VideoSender::GetCapacityKbps() const {
   return (bytes_per_second_ * 8) / 1000;
 }
 
+uint32_t VideoSender::NextFrameSize() {
+  return frame_size_bytes_;
+}
+
+uint32_t VideoSender::NextPacketSize(uint32_t frame_size,
+                                     uint32_t remaining_payload) {
+  return std::min(kMaxPayloadSizeBytes, remaining_payload);
+}
+
 void VideoSender::RunFor(int64_t time_ms, Packets* in_out) {
   assert(in_out);
   now_ms_ += time_ms;
@@ -580,10 +593,12 @@ void VideoSender::RunFor(int64_t time_ms, Packets* in_out) {
     // one packet, we will see a number of equally sized packets followed by
     // one smaller at the tail.
     int64_t send_time_us = next_frame_ms_ * 1000.0;
-    uint32_t payload_size = frame_size_bytes_;
+    uint32_t frame_size = NextFrameSize();
+    uint32_t payload_size = frame_size;
+
     while (payload_size > 0) {
       ++prototype_header_.sequenceNumber;
-      uint32_t size = std::min(kMaxPayloadSizeBytes, payload_size);
+      uint32_t size = NextPacketSize(frame_size, payload_size);
       new_packets.push_back(Packet(flow_ids()[0], send_time_us, size,
                                    prototype_header_));
       new_packets.back().SetAbsSendTimeMs(next_frame_ms_);
@@ -601,11 +616,67 @@ AdaptiveVideoSender::AdaptiveVideoSender(int flow_id,
                                          uint32_t kbps,
                                          uint32_t ssrc,
                                          float first_frame_offset)
-    : VideoSender(flow_id, listener, fps, kbps, ssrc, first_frame_offset) {}
+    : VideoSender(flow_id, listener, fps, kbps, ssrc, first_frame_offset) {
+}
 
 void AdaptiveVideoSender::GiveFeedback(const PacketSender::Feedback& feedback) {
-  bytes_per_second_ = feedback.estimated_bps / 8;
+  bytes_per_second_ = std::min(feedback.estimated_bps / 8, 2500000u / 8);
   frame_size_bytes_ = (bytes_per_second_ * frame_period_ms_ + 500) / 1000;
+}
+
+PeriodicKeyFrameSender::PeriodicKeyFrameSender(
+    int flow_id,
+    PacketProcessorListener* listener,
+    float fps,
+    uint32_t kbps,
+    uint32_t ssrc,
+    float first_frame_offset,
+    int key_frame_interval)
+    : AdaptiveVideoSender(flow_id,
+                          listener,
+                          fps,
+                          kbps,
+                          ssrc,
+                          first_frame_offset),
+      key_frame_interval_(key_frame_interval),
+      frame_counter_(0),
+      compensation_bytes_(0),
+      compensation_per_frame_(0) {
+}
+
+uint32_t PeriodicKeyFrameSender::NextFrameSize() {
+  uint32_t payload_size = frame_size_bytes_;
+  if (frame_counter_ == 0) {
+    payload_size = kMaxPayloadSizeBytes * 12;
+    compensation_bytes_ = 4 * frame_size_bytes_;
+    compensation_per_frame_ = compensation_bytes_ / 30;
+  } else if (key_frame_interval_ > 0 &&
+             (frame_counter_ % key_frame_interval_ == 0)) {
+    payload_size *= 5;
+    compensation_bytes_ = payload_size - frame_size_bytes_;
+    compensation_per_frame_ = compensation_bytes_ / 30;
+  } else if (compensation_bytes_ > 0) {
+    if (compensation_per_frame_ > static_cast<int>(payload_size)) {
+      // Skip this frame.
+      compensation_bytes_ -= payload_size;
+      payload_size = 0;
+    } else {
+      payload_size -= compensation_per_frame_;
+      compensation_bytes_ -= compensation_per_frame_;
+    }
+  }
+  if (compensation_bytes_ < 0)
+    compensation_bytes_ = 0;
+  ++frame_counter_;
+  return payload_size;
+}
+
+uint32_t PeriodicKeyFrameSender::NextPacketSize(uint32_t frame_size,
+                                                uint32_t remaining_payload) {
+  uint32_t fragments =
+      (frame_size + (kMaxPayloadSizeBytes - 1)) / kMaxPayloadSizeBytes;
+  uint32_t avg_size = (frame_size + fragments - 1) / fragments;
+  return std::min(avg_size, remaining_payload);
 }
 
 PacedVideoSender::PacedVideoSender(PacketProcessorListener* listener,
@@ -617,22 +688,40 @@ PacedVideoSender::PacedVideoSender(PacketProcessorListener* listener,
     : PacketSender(listener, source->flow_ids()),
       clock_(0),
       start_of_run_ms_(0),
-      pacer_(&clock_, this, PacedSender::kDefaultPaceMultiplier * kbps, 0),
-      source_(source) {}
+      pacer_(&clock_, this, kbps, PacedSender::kDefaultPaceMultiplier* kbps, 0),
+      source_(source) {
+}
 
 void PacedVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
   start_of_run_ms_ = clock_.TimeInMilliseconds();
   Packets generated_packets;
   source_->RunFor(time_ms, &generated_packets);
-  Packets::iterator it = generated_packets.begin();
   // Run process periodically to allow the packets to be paced out.
-  const int kProcessIntervalMs = 10;
-  for (int64_t current_time = 0; current_time < time_ms;
-       current_time += kProcessIntervalMs) {
-    int64_t end_of_interval_us =
-        1000 * (clock_.TimeInMilliseconds() + kProcessIntervalMs);
-    while (it != generated_packets.end() &&
-           end_of_interval_us >= it->send_time_us()) {
+  int64_t end_time_ms = clock_.TimeInMilliseconds() + time_ms;
+  Packets::iterator it = generated_packets.begin();
+  while (clock_.TimeInMilliseconds() <= end_time_ms) {
+    int time_until_process_ms = pacer_.TimeUntilNextProcess();
+    if (time_until_process_ms < 0)
+      time_until_process_ms = 0;
+    int time_until_packet_ms = time_ms;
+    if (it != generated_packets.end())
+      time_until_packet_ms =
+          (it->send_time_us() + 500) / 1000 - clock_.TimeInMilliseconds();
+    assert(time_until_packet_ms >= 0);
+    int time_until_next_event_ms = time_until_packet_ms;
+    if (time_until_process_ms < time_until_packet_ms &&
+        pacer_.QueueSizePackets() > 0)
+      time_until_next_event_ms = time_until_process_ms;
+
+    if (clock_.TimeInMilliseconds() + time_until_next_event_ms > end_time_ms) {
+      clock_.AdvanceTimeMilliseconds(end_time_ms - clock_.TimeInMilliseconds());
+      break;
+    }
+    clock_.AdvanceTimeMilliseconds(time_until_next_event_ms);
+    if (time_until_process_ms < time_until_packet_ms) {
+      // Time to process.
+      pacer_.Process();
+    } else {
       // Time to send next packet to pacer.
       pacer_.SendPacket(PacedSender::kNormalPriority,
                         it->header().ssrc,
@@ -641,16 +730,14 @@ void PacedVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
                         it->payload_size(),
                         false);
       pacer_queue_.push_back(*it);
-      const size_t kMaxPacerQueueSize = 1000;
+      const size_t kMaxPacerQueueSize = 10000;
       if (pacer_queue_.size() > kMaxPacerQueueSize) {
         pacer_queue_.pop_front();
       }
       ++it;
     }
-    clock_.AdvanceTimeMilliseconds(kProcessIntervalMs);
-    pacer_.Process();
   }
-  QueuePackets(in_out, (start_of_run_ms_ + time_ms) * 1000);
+  QueuePackets(in_out, end_time_ms * 1000);
 }
 
 void PacedVideoSender::QueuePackets(Packets* batch,
@@ -673,7 +760,9 @@ void PacedVideoSender::QueuePackets(Packets* batch,
 void PacedVideoSender::GiveFeedback(const PacketSender::Feedback& feedback) {
   source_->GiveFeedback(feedback);
   pacer_.UpdateBitrate(
-      PacedSender::kDefaultPaceMultiplier * feedback.estimated_bps / 1000, 0);
+      feedback.estimated_bps / 1000,
+      PacedSender::kDefaultPaceMultiplier * feedback.estimated_bps / 1000,
+      0);
 }
 
 bool PacedVideoSender::TimeToSendPacket(uint32_t ssrc,
@@ -686,7 +775,7 @@ bool PacedVideoSender::TimeToSendPacket(uint32_t ssrc,
       int64_t pace_out_time_ms = clock_.TimeInMilliseconds();
       // Make sure a packet is never paced out earlier than when it was put into
       // the pacer.
-      assert(1000 * pace_out_time_ms >= it->send_time_us());
+      assert(pace_out_time_ms >= (it->send_time_us() + 500) / 1000);
       it->SetAbsSendTimeMs(pace_out_time_ms);
       it->set_send_time_us(1000 * pace_out_time_ms);
       queue_.push_back(*it);
