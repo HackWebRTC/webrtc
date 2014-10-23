@@ -810,6 +810,44 @@ static void UpdateBuffer(const float* frame,
   }
 }
 
+// Transforms the signal from time to frequency domain.
+// Inputs:
+//   * |time_data| is the signal in the time domain.
+//   * |time_data_length| is the length of the analysis buffer.
+//   * |magnitude_length| is the length of the spectrum magnitude, which equals
+//     the length of both |real| and |imag| (time_data_length / 2 + 1).
+// Outputs:
+//   * |time_data| is the signal in the frequency domain.
+//   * |real| is the real part of the frequency domain.
+//   * |imag| is the imaginary part of the frequency domain.
+//   * |magn| is the calculated signal magnitude in the frequency domain.
+static void FFT(NSinst_t* const self,
+                float* time_data,
+                int time_data_length,
+                int magnitude_length,
+                float* real,
+                float* imag,
+                float* magn) {
+  int i;
+
+  assert(magnitude_length == time_data_length / 2 + 1);
+
+  WebRtc_rdft(time_data_length, 1, time_data, self->ip, self->wfft);
+
+  imag[0] = 0;
+  real[0] = time_data[0];
+  magn[0] = fabs(real[0]) + 1.f;
+  imag[magnitude_length - 1] = 0;
+  real[magnitude_length - 1] = time_data[1];
+  magn[magnitude_length - 1] = fabs(real[magnitude_length - 1]) + 1.f;
+  for (i = 1; i < magnitude_length - 1; ++i) {
+    real[i] = time_data[2 * i];
+    imag[i] = time_data[2 * i + 1];
+    // Magnitude spectrum.
+    magn[i] = sqrtf(real[i] * real[i] + imag[i] * imag[i]) + 1.f;
+  }
+}
+
 // Transforms the signal from frequency to time domain.
 // Inputs:
 //   * |real| is the real part of the frequency domain.
@@ -882,10 +920,11 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   const int kStartBand = 5;  // Skip first frequency bins during estimation.
   int updateParsFlag;
   float energy;
-  float signalEnergy, sumMagn;
+  float signalEnergy = 0.f;
+  float sumMagn = 0.f;
   float tmpFloat1, tmpFloat2, tmpFloat3, probSpeech, probNonSpeech;
   float gammaNoiseTmp, gammaNoiseOld;
-  float noiseUpdateTmp, fTmp;
+  float noiseUpdateTmp;
   float winData[ANAL_BLOCKL_MAX];
   float magn[HALF_ANAL_BLOCKL], noise[HALF_ANAL_BLOCKL];
   float snrLocPost[HALF_ANAL_BLOCKL], snrLocPrior[HALF_ANAL_BLOCKL];
@@ -927,33 +966,10 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   //
   inst->blockInd++;  // Update the block index only when we process a block.
   // FFT
-  WebRtc_rdft(inst->anaLen, 1, winData, inst->ip, inst->wfft);
+  FFT(inst, winData, inst->anaLen, inst->magnLen, real, imag, magn);
 
-  imag[0] = 0;
-  real[0] = winData[0];
-  magn[0] = fabs(real[0]) + 1.f;
-  imag[inst->magnLen - 1] = 0;
-  real[inst->magnLen - 1] = winData[1];
-  magn[inst->magnLen - 1] = fabs(real[inst->magnLen - 1]) + 1.f;
-  signalEnergy = (float)(real[0] * real[0]) +
-                 (float)(real[inst->magnLen - 1] * real[inst->magnLen - 1]);
-  sumMagn = magn[0] + magn[inst->magnLen - 1];
-  if (inst->blockInd < END_STARTUP_SHORT) {
-    tmpFloat2 = log((float)(inst->magnLen - 1));
-    sum_log_i = tmpFloat2;
-    sum_log_i_square = tmpFloat2 * tmpFloat2;
-    tmpFloat1 = log(magn[inst->magnLen - 1]);
-    sum_log_magn = tmpFloat1;
-    sum_log_i_log_magn = tmpFloat2 * tmpFloat1;
-  }
-  for (i = 1; i < inst->magnLen - 1; i++) {
-    real[i] = winData[2 * i];
-    imag[i] = winData[2 * i + 1];
-    // magnitude spectrum
-    fTmp = real[i] * real[i];
-    fTmp += imag[i] * imag[i];
-    signalEnergy += fTmp;
-    magn[i] = ((float)sqrt(fTmp)) + 1.f;
+  for (i = 0; i < inst->magnLen; i++) {
+    signalEnergy += real[i] * real[i] + imag[i] * imag[i];
     sumMagn += magn[i];
     if (inst->blockInd < END_STARTUP_SHORT) {
       if (i >= kStartBand) {
@@ -1133,7 +1149,6 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
   float energy1, energy2, gain, factor, factor1, factor2;
   float snrPrior, previousEstimateStsa, currentEstimateStsa;
   float tmpFloat1, tmpFloat2;
-  float fTmp;
   float fout[BLOCKL_MAX];
   float winData[ANAL_BLOCKL_MAX];
   float magn[HALF_ANAL_BLOCKL];
@@ -1197,26 +1212,10 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
     return 0;
   }
   // FFT
-  WebRtc_rdft(inst->anaLen, 1, winData, inst->ip, inst->wfft);
+  FFT(inst, winData, inst->anaLen, inst->magnLen, real, imag, magn);
 
-  imag[0] = 0;
-  real[0] = winData[0];
-  magn[0] = fabs(real[0]) + 1.f;
-  imag[inst->magnLen - 1] = 0;
-  real[inst->magnLen - 1] = winData[1];
-  magn[inst->magnLen - 1] = fabs(real[inst->magnLen - 1]) + 1.f;
   if (inst->blockInd < END_STARTUP_SHORT) {
-    inst->initMagnEst[0] += magn[0];
-    inst->initMagnEst[inst->magnLen - 1] += magn[inst->magnLen - 1];
-  }
-  for (i = 1; i < inst->magnLen - 1; i++) {
-    real[i] = winData[2 * i];
-    imag[i] = winData[2 * i + 1];
-    // magnitude spectrum
-    fTmp = real[i] * real[i];
-    fTmp += imag[i] * imag[i];
-    magn[i] = ((float)sqrt(fTmp)) + 1.f;
-    if (inst->blockInd < END_STARTUP_SHORT) {
+    for (i = 0; i < inst->magnLen; i++) {
       inst->initMagnEst[i] += magn[i];
     }
   }
