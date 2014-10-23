@@ -638,6 +638,9 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   int capture_id() const { return capture_id_; }
   void set_sending(bool sending) { sending_ = sending; }
   bool sending() const { return sending_; }
+  const Settable<CapturedFrameInfo>& last_captured_frame_info() const {
+    return last_captured_frame_info_;
+  }
   void set_muted(bool on) {
     // TODO(asapersson): add support.
     // video_adapter_.SetBlackOutput(on);
@@ -651,6 +654,23 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   AdaptFormatType adapt_format_type() const { return adapt_format_type_; }
   bool adapt_format_set() const {
     return adapt_format_type() != kAdaptFormatTypeNone;
+  }
+
+  // Returns true if the last captured frame info changed.
+  void SetLastCapturedFrameInfo(
+      const VideoFrame* frame, bool screencast, bool* changed) {
+    CapturedFrameInfo last;
+    if (last_captured_frame_info_.Get(&last) &&
+        frame->GetWidth() == last.width &&
+        frame->GetHeight() == last.height &&
+        screencast == last.screencast) {
+      *changed = false;
+      return;
+    }
+
+    last_captured_frame_info_.Set(CapturedFrameInfo(
+        frame->GetWidth(), frame->GetHeight(), screencast));
+    *changed = true;
   }
 
   // Tells the video adapter to adapt down to a given format.  The
@@ -866,6 +886,8 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
  private:
   int channel_id_;
   int capture_id_;
+  // TODO(pthatcher): Merge CapturedFrameInfo and LocalStreamInfo.
+  Settable<CapturedFrameInfo> last_captured_frame_info_;
   bool sending_;
   bool muted_;
   VideoCapturer* video_capturer_;
@@ -3179,15 +3201,20 @@ bool WebRtcVideoMediaChannel::SendFrame(
     return true;
   }
 
-  // Checks if we need to reset vie send codec.
-  if (!MaybeResetVieSendCodec(send_channel,
-                              static_cast<int>(frame->GetWidth()),
-                              static_cast<int>(frame->GetHeight()),
-                              is_screencast, NULL)) {
-    LOG(LS_ERROR) << "MaybeResetVieSendCodec failed with "
-                  << frame->GetWidth() << "x" << frame->GetHeight();
-    return false;
+  bool changed;
+  send_channel->SetLastCapturedFrameInfo(frame, is_screencast, &changed);
+  if (changed) {
+    // If the last captured frame info changed, then calling
+    // SendParams will update to the latest resolution.
+    if (!SetSendParams(send_channel, send_channel->stream_params())) {
+      LOG(LS_ERROR) << "SetSendParams from SendFrame failed with "
+                    << frame->GetWidth() << "x" << frame->GetHeight()
+                    << " screencast? " << is_screencast;
+      return false;
+    }
+    LogSendCodecChange("Captured frame size changed");
   }
+
   const VideoFrame* frame_out = frame;
   rtc::scoped_ptr<VideoFrame> processed_frame;
   // TODO(hellner): Remove the need for disabling mute when screencasting.
@@ -3879,16 +3906,16 @@ int WebRtcVideoMediaChannel::GetRecvChannelId(uint32 ssrc) {
 // only by the 'jec' logic.
 // TODO(pthatcher): Get rid of this function, so we only ever set up
 // codecs in a single place.
-bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
+bool WebRtcVideoMediaChannel::SetSendParams(
     WebRtcVideoChannelSendInfo* send_channel,
-    int new_width,
-    int new_height,
-    bool is_screencast,
-    bool* reset) {
-  if (reset) {
-    *reset = false;
-  }
+    const StreamParams* send_params) {
   ASSERT(send_codec_.get() != NULL);
+
+  CapturedFrameInfo frame;
+  if (!send_channel->last_captured_frame_info().Get(&frame)) {
+    // No captured frame yet, so nothing to set.
+    return true;
+  }
 
   webrtc::VideoCodec target_codec = *send_codec_;
   // TODO(pthatcher): We should rely on the adapter to adapt the
@@ -3901,10 +3928,11 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
   }
 
   // Vie send codec size should not exceed target_codec.
-  int target_width = new_width;
-  int target_height = new_height;
-  if (!is_screencast &&
-      (new_width > target_codec.width || new_height > target_codec.height)) {
+  int target_width = static_cast<int>(frame.width);
+  int target_height = static_cast<int>(frame.height);
+  if (!frame.screencast &&
+      (target_width > target_codec.width ||
+       target_height > target_codec.height)) {
     target_width = target_codec.width;
     target_height = target_codec.height;
   }
@@ -3923,21 +3951,20 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
   // automatic resize needs to be turned off when screencasting and on when
   // not screencasting.
   // Don't allow automatic resizing for screencasting.
-  bool automatic_resize = !is_screencast;
+  bool automatic_resize = !frame.screencast;
   // Turn off VP8 frame dropping when screensharing as the current model does
   // not work well at low fps.
-  bool vp8_frame_dropping = !is_screencast;
+  bool vp8_frame_dropping = !frame.screencast;
   // TODO(pbos): Remove |video_noise_reduction| and enable it for all
   // non-screencast.
   bool enable_denoising =
       options_.video_noise_reduction.GetWithDefaultIfUnset(true);
   // Disable denoising for screencasting.
-  if (is_screencast) {
+  if (frame.screencast) {
     enable_denoising = false;
   }
   int screencast_min_bitrate =
       options_.screencast_min_bitrate.GetWithDefaultIfUnset(0);
-  StreamParams* send_params = send_channel->stream_params();
   bool reset_send_codec =
     target_width != cur_width || target_height != cur_height;
   if (vie_codec.codecType == webrtc::kVideoCodecVP8) {
@@ -3968,7 +3995,7 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
       return false;
     }
 
-    if (is_screencast) {
+    if (frame.screencast) {
       engine()->vie()->rtp()->SetMinTransmitBitrate(channel_id,
                                                     screencast_min_bitrate);
     } else {
@@ -3983,9 +4010,6 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
       if (!SetSendSsrcs(channel_id, *send_params, target_codec)) {
         return false;
       }
-    }
-    if (reset) {
-      *reset = true;
     }
     LogSendCodecChange("Capture size changed");
   }

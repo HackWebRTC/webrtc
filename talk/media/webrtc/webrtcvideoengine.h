@@ -234,6 +234,16 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   rtc::scoped_ptr<rtc::CpuMonitor> cpu_monitor_;
 };
 
+struct CapturedFrameInfo {
+  CapturedFrameInfo() : width(0), height(0), screencast(false) {}
+  CapturedFrameInfo(size_t width, size_t height, bool screencast) :
+      width(width), height(height), screencast(screencast) {}
+
+  size_t width;
+  size_t height;
+  bool screencast;
+};
+
 class WebRtcVideoMediaChannel : public rtc::MessageHandler,
                                 public VideoMediaChannel,
                                 public webrtc::Transport {
@@ -363,6 +373,10 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   bool SetSendCodec(const webrtc::VideoCodec& codec);
   bool SetSendCodec(WebRtcVideoChannelSendInfo* send_channel,
                     const webrtc::VideoCodec& codec);
+  // TODO(pthatcher): Include codec and VideoOptions as well as StreamParams.
+  bool SetSendParams(WebRtcVideoChannelSendInfo* send_channel,
+                     const StreamParams* params);
+
   // Prepares the channel with channel id |info->channel_id()| to receive all
   // codecs in |receive_codecs_| and start receive packets.
   bool SetReceiveCodecs(WebRtcVideoChannelRecvInfo* info);
@@ -374,12 +388,6 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   bool MaybeRegisterExternalEncoder(
       WebRtcVideoChannelSendInfo* send_channel,
       const webrtc::VideoCodec& codec);
-  // Given captured video frame size, checks if we need to reset vie send codec.
-  // |reset| is set to whether resetting has happened on vie or not.
-  // Returns false on error.
-  bool MaybeResetVieSendCodec(WebRtcVideoChannelSendInfo* send_channel,
-                              int new_width, int new_height, bool is_screencast,
-                              bool* reset);
   // Helper function for starting the sending of media on all channels or
   // |channel_id|. Note that these two function do not change |sending_|.
   bool StartSend();
