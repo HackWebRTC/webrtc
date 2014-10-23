@@ -324,7 +324,7 @@ void WebRtcNs_NoiseEstimation(NSinst_t* inst, float* magn, float* noise) {
 // flag 0 means update histogram only, flag 1 means compute the
 // thresholds/weights
 // threshold and weights are returned in: inst->priorModelPars
-void WebRtcNs_FeatureParameterExtraction(NSinst_t* inst, int flag) {
+static void FeatureParameterExtraction(NSinst_t* const self, int flag) {
   int i, useFeatureSpecFlat, useFeatureSpecDiff, numHistLrt;
   int maxPeak1, maxPeak2;
   int weightPeak1SpecFlat, weightPeak2SpecFlat, weightPeak1SpecDiff,
@@ -335,74 +335,74 @@ void WebRtcNs_FeatureParameterExtraction(NSinst_t* inst, int flag) {
   float fluctLrt, avgHistLrt, avgSquareHistLrt, avgHistLrtCompl;
 
   // 3 features: lrt, flatness, difference
-  // lrt_feature = inst->featureData[3];
-  // flat_feature = inst->featureData[0];
-  // diff_feature = inst->featureData[4];
+  // lrt_feature = self->featureData[3];
+  // flat_feature = self->featureData[0];
+  // diff_feature = self->featureData[4];
 
   // update histograms
   if (flag == 0) {
     // LRT
-    if ((inst->featureData[3] <
-         HIST_PAR_EST * inst->featureExtractionParams.binSizeLrt) &&
-        (inst->featureData[3] >= 0.0)) {
-      i = (int)(inst->featureData[3] /
-                inst->featureExtractionParams.binSizeLrt);
-      inst->histLrt[i]++;
+    if ((self->featureData[3] <
+         HIST_PAR_EST * self->featureExtractionParams.binSizeLrt) &&
+        (self->featureData[3] >= 0.0)) {
+      i = (int)(self->featureData[3] /
+                self->featureExtractionParams.binSizeLrt);
+      self->histLrt[i]++;
     }
     // Spectral flatness
-    if ((inst->featureData[0] <
-         HIST_PAR_EST * inst->featureExtractionParams.binSizeSpecFlat) &&
-        (inst->featureData[0] >= 0.0)) {
-      i = (int)(inst->featureData[0] /
-                inst->featureExtractionParams.binSizeSpecFlat);
-      inst->histSpecFlat[i]++;
+    if ((self->featureData[0] <
+         HIST_PAR_EST * self->featureExtractionParams.binSizeSpecFlat) &&
+        (self->featureData[0] >= 0.0)) {
+      i = (int)(self->featureData[0] /
+                self->featureExtractionParams.binSizeSpecFlat);
+      self->histSpecFlat[i]++;
     }
     // Spectral difference
-    if ((inst->featureData[4] <
-         HIST_PAR_EST * inst->featureExtractionParams.binSizeSpecDiff) &&
-        (inst->featureData[4] >= 0.0)) {
-      i = (int)(inst->featureData[4] /
-                inst->featureExtractionParams.binSizeSpecDiff);
-      inst->histSpecDiff[i]++;
+    if ((self->featureData[4] <
+         HIST_PAR_EST * self->featureExtractionParams.binSizeSpecDiff) &&
+        (self->featureData[4] >= 0.0)) {
+      i = (int)(self->featureData[4] /
+                self->featureExtractionParams.binSizeSpecDiff);
+      self->histSpecDiff[i]++;
     }
   }
 
   // extract parameters for speech/noise probability
   if (flag == 1) {
     // lrt feature: compute the average over
-    // inst->featureExtractionParams.rangeAvgHistLrt
+    // self->featureExtractionParams.rangeAvgHistLrt
     avgHistLrt = 0.0;
     avgHistLrtCompl = 0.0;
     avgSquareHistLrt = 0.0;
     numHistLrt = 0;
     for (i = 0; i < HIST_PAR_EST; i++) {
-      binMid = ((float)i + 0.5f) * inst->featureExtractionParams.binSizeLrt;
-      if (binMid <= inst->featureExtractionParams.rangeAvgHistLrt) {
-        avgHistLrt += inst->histLrt[i] * binMid;
-        numHistLrt += inst->histLrt[i];
+      binMid = ((float)i + 0.5f) * self->featureExtractionParams.binSizeLrt;
+      if (binMid <= self->featureExtractionParams.rangeAvgHistLrt) {
+        avgHistLrt += self->histLrt[i] * binMid;
+        numHistLrt += self->histLrt[i];
       }
-      avgSquareHistLrt += inst->histLrt[i] * binMid * binMid;
-      avgHistLrtCompl += inst->histLrt[i] * binMid;
+      avgSquareHistLrt += self->histLrt[i] * binMid * binMid;
+      avgHistLrtCompl += self->histLrt[i] * binMid;
     }
     if (numHistLrt > 0) {
       avgHistLrt = avgHistLrt / ((float)numHistLrt);
     }
-    avgHistLrtCompl = avgHistLrtCompl / ((float)inst->modelUpdatePars[1]);
-    avgSquareHistLrt = avgSquareHistLrt / ((float)inst->modelUpdatePars[1]);
+    avgHistLrtCompl = avgHistLrtCompl / ((float)self->modelUpdatePars[1]);
+    avgSquareHistLrt = avgSquareHistLrt / ((float)self->modelUpdatePars[1]);
     fluctLrt = avgSquareHistLrt - avgHistLrt * avgHistLrtCompl;
     // get threshold for lrt feature:
-    if (fluctLrt < inst->featureExtractionParams.thresFluctLrt) {
+    if (fluctLrt < self->featureExtractionParams.thresFluctLrt) {
       // very low fluct, so likely noise
-      inst->priorModelPars[0] = inst->featureExtractionParams.maxLrt;
+      self->priorModelPars[0] = self->featureExtractionParams.maxLrt;
     } else {
-      inst->priorModelPars[0] =
-          inst->featureExtractionParams.factor1ModelPars * avgHistLrt;
+      self->priorModelPars[0] =
+          self->featureExtractionParams.factor1ModelPars * avgHistLrt;
       // check if value is within min/max range
-      if (inst->priorModelPars[0] < inst->featureExtractionParams.minLrt) {
-        inst->priorModelPars[0] = inst->featureExtractionParams.minLrt;
+      if (self->priorModelPars[0] < self->featureExtractionParams.minLrt) {
+        self->priorModelPars[0] = self->featureExtractionParams.minLrt;
       }
-      if (inst->priorModelPars[0] > inst->featureExtractionParams.maxLrt) {
-        inst->priorModelPars[0] = inst->featureExtractionParams.maxLrt;
+      if (self->priorModelPars[0] > self->featureExtractionParams.maxLrt) {
+        self->priorModelPars[0] = self->featureExtractionParams.maxLrt;
       }
     }
     // done with lrt feature
@@ -419,20 +419,20 @@ void WebRtcNs_FeatureParameterExtraction(NSinst_t* inst, int flag) {
     // peaks for flatness
     for (i = 0; i < HIST_PAR_EST; i++) {
       binMid =
-          (i + 0.5f) * inst->featureExtractionParams.binSizeSpecFlat;
-      if (inst->histSpecFlat[i] > maxPeak1) {
+          (i + 0.5f) * self->featureExtractionParams.binSizeSpecFlat;
+      if (self->histSpecFlat[i] > maxPeak1) {
         // Found new "first" peak
         maxPeak2 = maxPeak1;
         weightPeak2SpecFlat = weightPeak1SpecFlat;
         posPeak2SpecFlat = posPeak1SpecFlat;
 
-        maxPeak1 = inst->histSpecFlat[i];
-        weightPeak1SpecFlat = inst->histSpecFlat[i];
+        maxPeak1 = self->histSpecFlat[i];
+        weightPeak1SpecFlat = self->histSpecFlat[i];
         posPeak1SpecFlat = binMid;
-      } else if (inst->histSpecFlat[i] > maxPeak2) {
+      } else if (self->histSpecFlat[i] > maxPeak2) {
         // Found new "second" peak
-        maxPeak2 = inst->histSpecFlat[i];
-        weightPeak2SpecFlat = inst->histSpecFlat[i];
+        maxPeak2 = self->histSpecFlat[i];
+        weightPeak2SpecFlat = self->histSpecFlat[i];
         posPeak2SpecFlat = binMid;
       }
     }
@@ -447,20 +447,20 @@ void WebRtcNs_FeatureParameterExtraction(NSinst_t* inst, int flag) {
     // peaks for spectral difference
     for (i = 0; i < HIST_PAR_EST; i++) {
       binMid =
-          ((float)i + 0.5f) * inst->featureExtractionParams.binSizeSpecDiff;
-      if (inst->histSpecDiff[i] > maxPeak1) {
+          ((float)i + 0.5f) * self->featureExtractionParams.binSizeSpecDiff;
+      if (self->histSpecDiff[i] > maxPeak1) {
         // Found new "first" peak
         maxPeak2 = maxPeak1;
         weightPeak2SpecDiff = weightPeak1SpecDiff;
         posPeak2SpecDiff = posPeak1SpecDiff;
 
-        maxPeak1 = inst->histSpecDiff[i];
-        weightPeak1SpecDiff = inst->histSpecDiff[i];
+        maxPeak1 = self->histSpecDiff[i];
+        weightPeak1SpecDiff = self->histSpecDiff[i];
         posPeak1SpecDiff = binMid;
-      } else if (inst->histSpecDiff[i] > maxPeak2) {
+      } else if (self->histSpecDiff[i] > maxPeak2) {
         // Found new "second" peak
-        maxPeak2 = inst->histSpecDiff[i];
-        weightPeak2SpecDiff = inst->histSpecDiff[i];
+        maxPeak2 = self->histSpecDiff[i];
+        weightPeak2SpecDiff = self->histSpecDiff[i];
         posPeak2SpecDiff = binMid;
       }
     }
@@ -469,30 +469,30 @@ void WebRtcNs_FeatureParameterExtraction(NSinst_t* inst, int flag) {
     useFeatureSpecFlat = 1;
     // merge the two peaks if they are close
     if ((fabs(posPeak2SpecFlat - posPeak1SpecFlat) <
-         inst->featureExtractionParams.limitPeakSpacingSpecFlat) &&
+         self->featureExtractionParams.limitPeakSpacingSpecFlat) &&
         (weightPeak2SpecFlat >
-         inst->featureExtractionParams.limitPeakWeightsSpecFlat *
+         self->featureExtractionParams.limitPeakWeightsSpecFlat *
              weightPeak1SpecFlat)) {
       weightPeak1SpecFlat += weightPeak2SpecFlat;
       posPeak1SpecFlat = 0.5f * (posPeak1SpecFlat + posPeak2SpecFlat);
     }
     // reject if weight of peaks is not large enough, or peak value too small
     if (weightPeak1SpecFlat <
-            inst->featureExtractionParams.thresWeightSpecFlat ||
-        posPeak1SpecFlat < inst->featureExtractionParams.thresPosSpecFlat) {
+            self->featureExtractionParams.thresWeightSpecFlat ||
+        posPeak1SpecFlat < self->featureExtractionParams.thresPosSpecFlat) {
       useFeatureSpecFlat = 0;
     }
     // if selected, get the threshold
     if (useFeatureSpecFlat == 1) {
       // compute the threshold
-      inst->priorModelPars[1] =
-          inst->featureExtractionParams.factor2ModelPars * posPeak1SpecFlat;
+      self->priorModelPars[1] =
+          self->featureExtractionParams.factor2ModelPars * posPeak1SpecFlat;
       // check if value is within min/max range
-      if (inst->priorModelPars[1] < inst->featureExtractionParams.minSpecFlat) {
-        inst->priorModelPars[1] = inst->featureExtractionParams.minSpecFlat;
+      if (self->priorModelPars[1] < self->featureExtractionParams.minSpecFlat) {
+        self->priorModelPars[1] = self->featureExtractionParams.minSpecFlat;
       }
-      if (inst->priorModelPars[1] > inst->featureExtractionParams.maxSpecFlat) {
-        inst->priorModelPars[1] = inst->featureExtractionParams.maxSpecFlat;
+      if (self->priorModelPars[1] > self->featureExtractionParams.maxSpecFlat) {
+        self->priorModelPars[1] = self->featureExtractionParams.maxSpecFlat;
       }
     }
     // done with flatness feature
@@ -501,51 +501,51 @@ void WebRtcNs_FeatureParameterExtraction(NSinst_t* inst, int flag) {
     useFeatureSpecDiff = 1;
     // merge the two peaks if they are close
     if ((fabs(posPeak2SpecDiff - posPeak1SpecDiff) <
-         inst->featureExtractionParams.limitPeakSpacingSpecDiff) &&
+         self->featureExtractionParams.limitPeakSpacingSpecDiff) &&
         (weightPeak2SpecDiff >
-         inst->featureExtractionParams.limitPeakWeightsSpecDiff *
+         self->featureExtractionParams.limitPeakWeightsSpecDiff *
              weightPeak1SpecDiff)) {
       weightPeak1SpecDiff += weightPeak2SpecDiff;
       posPeak1SpecDiff = 0.5f * (posPeak1SpecDiff + posPeak2SpecDiff);
     }
     // get the threshold value
-    inst->priorModelPars[3] =
-        inst->featureExtractionParams.factor1ModelPars * posPeak1SpecDiff;
+    self->priorModelPars[3] =
+        self->featureExtractionParams.factor1ModelPars * posPeak1SpecDiff;
     // reject if weight of peaks is not large enough
     if (weightPeak1SpecDiff <
-        inst->featureExtractionParams.thresWeightSpecDiff) {
+        self->featureExtractionParams.thresWeightSpecDiff) {
       useFeatureSpecDiff = 0;
     }
     // check if value is within min/max range
-    if (inst->priorModelPars[3] < inst->featureExtractionParams.minSpecDiff) {
-      inst->priorModelPars[3] = inst->featureExtractionParams.minSpecDiff;
+    if (self->priorModelPars[3] < self->featureExtractionParams.minSpecDiff) {
+      self->priorModelPars[3] = self->featureExtractionParams.minSpecDiff;
     }
-    if (inst->priorModelPars[3] > inst->featureExtractionParams.maxSpecDiff) {
-      inst->priorModelPars[3] = inst->featureExtractionParams.maxSpecDiff;
+    if (self->priorModelPars[3] > self->featureExtractionParams.maxSpecDiff) {
+      self->priorModelPars[3] = self->featureExtractionParams.maxSpecDiff;
     }
     // done with spectral difference feature
 
     // don't use template feature if fluctuation of lrt feature is very low:
     //  most likely just noise state
-    if (fluctLrt < inst->featureExtractionParams.thresFluctLrt) {
+    if (fluctLrt < self->featureExtractionParams.thresFluctLrt) {
       useFeatureSpecDiff = 0;
     }
 
     // select the weights between the features
-    // inst->priorModelPars[4] is weight for lrt: always selected
-    // inst->priorModelPars[5] is weight for spectral flatness
-    // inst->priorModelPars[6] is weight for spectral difference
+    // self->priorModelPars[4] is weight for lrt: always selected
+    // self->priorModelPars[5] is weight for spectral flatness
+    // self->priorModelPars[6] is weight for spectral difference
     featureSum = (float)(1 + useFeatureSpecFlat + useFeatureSpecDiff);
-    inst->priorModelPars[4] = 1.f / featureSum;
-    inst->priorModelPars[5] = ((float)useFeatureSpecFlat) / featureSum;
-    inst->priorModelPars[6] = ((float)useFeatureSpecDiff) / featureSum;
+    self->priorModelPars[4] = 1.f / featureSum;
+    self->priorModelPars[5] = ((float)useFeatureSpecFlat) / featureSum;
+    self->priorModelPars[6] = ((float)useFeatureSpecDiff) / featureSum;
 
     // set hists to zero for next update
-    if (inst->modelUpdatePars[0] >= 1) {
+    if (self->modelUpdatePars[0] >= 1) {
       for (i = 0; i < HIST_PAR_EST; i++) {
-        inst->histLrt[i] = 0;
-        inst->histSpecFlat[i] = 0;
-        inst->histSpecDiff[i] = 0;
+        self->histLrt[i] = 0;
+        self->histSpecFlat[i] = 0;
+        self->histSpecDiff[i] = 0;
       }
     }
   }  // end of flag == 1
@@ -554,7 +554,7 @@ void WebRtcNs_FeatureParameterExtraction(NSinst_t* inst, int flag) {
 // Compute spectral flatness on input spectrum
 // magnIn is the magnitude spectrum
 // spectral flatness is returned in inst->featureData[0]
-void WebRtcNs_ComputeSpectralFlatness(NSinst_t* inst, float* magnIn) {
+static void ComputeSpectralFlatness(NSinst_t* const self, const float* magnIn) {
   int i;
   int shiftLP = 1;  // option to remove first bin(s) from spectral measures
   float avgSpectralFlatnessNum, avgSpectralFlatnessDen, spectralTmp;
@@ -562,29 +562,29 @@ void WebRtcNs_ComputeSpectralFlatness(NSinst_t* inst, float* magnIn) {
   // comute spectral measures
   // for flatness
   avgSpectralFlatnessNum = 0.0;
-  avgSpectralFlatnessDen = inst->sumMagn;
+  avgSpectralFlatnessDen = self->sumMagn;
   for (i = 0; i < shiftLP; i++) {
     avgSpectralFlatnessDen -= magnIn[i];
   }
   // compute log of ratio of the geometric to arithmetic mean: check for log(0)
   // case
-  for (i = shiftLP; i < inst->magnLen; i++) {
+  for (i = shiftLP; i < self->magnLen; i++) {
     if (magnIn[i] > 0.0) {
       avgSpectralFlatnessNum += (float)log(magnIn[i]);
     } else {
-      inst->featureData[0] -= SPECT_FL_TAVG * inst->featureData[0];
+      self->featureData[0] -= SPECT_FL_TAVG * self->featureData[0];
       return;
     }
   }
   // normalize
-  avgSpectralFlatnessDen = avgSpectralFlatnessDen / inst->magnLen;
-  avgSpectralFlatnessNum = avgSpectralFlatnessNum / inst->magnLen;
+  avgSpectralFlatnessDen = avgSpectralFlatnessDen / self->magnLen;
+  avgSpectralFlatnessNum = avgSpectralFlatnessNum / self->magnLen;
 
   // ratio and inverse log: check for case of log(0)
   spectralTmp = (float)exp(avgSpectralFlatnessNum) / avgSpectralFlatnessDen;
 
   // time-avg update of spectral flatness feature
-  inst->featureData[0] += SPECT_FL_TAVG * (spectralTmp - inst->featureData[0]);
+  self->featureData[0] += SPECT_FL_TAVG * (spectralTmp - self->featureData[0]);
   // done with flatness feature
 }
 
@@ -625,44 +625,45 @@ static void ComputeSnr(const NSinst_t* const self,
 // magnIn is the input spectrum
 // the reference/template spectrum is inst->magnAvgPause[i]
 // returns (normalized) spectral difference in inst->featureData[4]
-void WebRtcNs_ComputeSpectralDifference(NSinst_t* inst, float* magnIn) {
+static void ComputeSpectralDifference(NSinst_t* const self,
+                                      const float* magnIn) {
   // avgDiffNormMagn = var(magnIn) - cov(magnIn, magnAvgPause)^2 /
   // var(magnAvgPause)
   int i;
   float avgPause, avgMagn, covMagnPause, varPause, varMagn, avgDiffNormMagn;
 
   avgPause = 0.0;
-  avgMagn = inst->sumMagn;
+  avgMagn = self->sumMagn;
   // compute average quantities
-  for (i = 0; i < inst->magnLen; i++) {
+  for (i = 0; i < self->magnLen; i++) {
     // conservative smooth noise spectrum from pause frames
-    avgPause += inst->magnAvgPause[i];
+    avgPause += self->magnAvgPause[i];
   }
-  avgPause = avgPause / ((float)inst->magnLen);
-  avgMagn = avgMagn / ((float)inst->magnLen);
+  avgPause = avgPause / ((float)self->magnLen);
+  avgMagn = avgMagn / ((float)self->magnLen);
 
   covMagnPause = 0.0;
   varPause = 0.0;
   varMagn = 0.0;
   // compute variance and covariance quantities
-  for (i = 0; i < inst->magnLen; i++) {
-    covMagnPause += (magnIn[i] - avgMagn) * (inst->magnAvgPause[i] - avgPause);
+  for (i = 0; i < self->magnLen; i++) {
+    covMagnPause += (magnIn[i] - avgMagn) * (self->magnAvgPause[i] - avgPause);
     varPause +=
-        (inst->magnAvgPause[i] - avgPause) * (inst->magnAvgPause[i] - avgPause);
+        (self->magnAvgPause[i] - avgPause) * (self->magnAvgPause[i] - avgPause);
     varMagn += (magnIn[i] - avgMagn) * (magnIn[i] - avgMagn);
   }
-  covMagnPause = covMagnPause / ((float)inst->magnLen);
-  varPause = varPause / ((float)inst->magnLen);
-  varMagn = varMagn / ((float)inst->magnLen);
+  covMagnPause = covMagnPause / ((float)self->magnLen);
+  varPause = varPause / ((float)self->magnLen);
+  varMagn = varMagn / ((float)self->magnLen);
   // update of average magnitude spectrum
-  inst->featureData[6] += inst->signalEnergy;
+  self->featureData[6] += self->signalEnergy;
 
   avgDiffNormMagn =
       varMagn - (covMagnPause * covMagnPause) / (varPause + 0.0001f);
   // normalize and compute time-avg update of difference feature
-  avgDiffNormMagn = (float)(avgDiffNormMagn / (inst->featureData[5] + 0.0001f));
-  inst->featureData[4] +=
-      SPECT_DIFF_TAVG * (avgDiffNormMagn - inst->featureData[4]);
+  avgDiffNormMagn = (float)(avgDiffNormMagn / (self->featureData[5] + 0.0001f));
+  self->featureData[4] +=
+      SPECT_DIFF_TAVG * (avgDiffNormMagn - self->featureData[4]);
 }
 
 // Compute speech/noise probability
@@ -671,10 +672,10 @@ void WebRtcNs_ComputeSpectralDifference(NSinst_t* inst, float* magnIn) {
 // noise is the noise spectrum
 // snrLocPrior is the prior snr for each freq.
 // snr loc_post is the post snr for each freq.
-void WebRtcNs_SpeechNoiseProb(NSinst_t* inst,
-                              float* probSpeechFinal,
-                              float* snrLocPrior,
-                              float* snrLocPost) {
+static void SpeechNoiseProb(NSinst_t* const self,
+                            float* probSpeechFinal,
+                            const float* snrLocPrior,
+                            const float* snrLocPost) {
   int i, sgnMap;
   float invLrt, gainPrior, indPrior;
   float logLrtTimeAvgKsum, besselTmp;
@@ -690,31 +691,31 @@ void WebRtcNs_SpeechNoiseProb(NSinst_t* inst,
   widthPrior2 = 2.f * WIDTH_PR_MAP;  // for spectral-difference measure
 
   // threshold parameters for features
-  threshPrior0 = inst->priorModelPars[0];
-  threshPrior1 = inst->priorModelPars[1];
-  threshPrior2 = inst->priorModelPars[3];
+  threshPrior0 = self->priorModelPars[0];
+  threshPrior1 = self->priorModelPars[1];
+  threshPrior2 = self->priorModelPars[3];
 
   // sign for flatness feature
-  sgnMap = (int)(inst->priorModelPars[2]);
+  sgnMap = (int)(self->priorModelPars[2]);
 
   // weight parameters for features
-  weightIndPrior0 = inst->priorModelPars[4];
-  weightIndPrior1 = inst->priorModelPars[5];
-  weightIndPrior2 = inst->priorModelPars[6];
+  weightIndPrior0 = self->priorModelPars[4];
+  weightIndPrior1 = self->priorModelPars[5];
+  weightIndPrior2 = self->priorModelPars[6];
 
   // compute feature based on average LR factor
   // this is the average over all frequencies of the smooth log lrt
   logLrtTimeAvgKsum = 0.0;
-  for (i = 0; i < inst->magnLen; i++) {
+  for (i = 0; i < self->magnLen; i++) {
     tmpFloat1 = 1.f + 2.f * snrLocPrior[i];
     tmpFloat2 = 2.f * snrLocPrior[i] / (tmpFloat1 + 0.0001f);
     besselTmp = (snrLocPost[i] + 1.f) * tmpFloat2;
-    inst->logLrtTimeAvg[i] +=
-        LRT_TAVG * (besselTmp - (float)log(tmpFloat1) - inst->logLrtTimeAvg[i]);
-    logLrtTimeAvgKsum += inst->logLrtTimeAvg[i];
+    self->logLrtTimeAvg[i] +=
+        LRT_TAVG * (besselTmp - (float)log(tmpFloat1) - self->logLrtTimeAvg[i]);
+    logLrtTimeAvgKsum += self->logLrtTimeAvg[i];
   }
-  logLrtTimeAvgKsum = (float)logLrtTimeAvgKsum / (inst->magnLen);
-  inst->featureData[3] = logLrtTimeAvgKsum;
+  logLrtTimeAvgKsum = (float)logLrtTimeAvgKsum / (self->magnLen);
+  self->featureData[3] = logLrtTimeAvgKsum;
   // done with computation of LR factor
 
   //
@@ -733,7 +734,7 @@ void WebRtcNs_SpeechNoiseProb(NSinst_t* inst,
       ((float)tanh(widthPrior * (logLrtTimeAvgKsum - threshPrior0)) + 1.f);
 
   // spectral flatness feature
-  tmpFloat1 = inst->featureData[0];
+  tmpFloat1 = self->featureData[0];
   widthPrior = widthPrior0;
   // use larger width in tanh map for pause regions
   if (sgnMap == 1 && (tmpFloat1 > threshPrior1)) {
@@ -749,7 +750,7 @@ void WebRtcNs_SpeechNoiseProb(NSinst_t* inst,
        1.f);
 
   // for template spectrum-difference
-  tmpFloat1 = inst->featureData[4];
+  tmpFloat1 = self->featureData[4];
   widthPrior = widthPrior0;
   // use larger width in tanh map for pause regions
   if (tmpFloat1 < threshPrior2) {
@@ -765,22 +766,120 @@ void WebRtcNs_SpeechNoiseProb(NSinst_t* inst,
   // done with computing indicator function
 
   // compute the prior probability
-  inst->priorSpeechProb += PRIOR_UPDATE * (indPrior - inst->priorSpeechProb);
+  self->priorSpeechProb += PRIOR_UPDATE * (indPrior - self->priorSpeechProb);
   // make sure probabilities are within range: keep floor to 0.01
-  if (inst->priorSpeechProb > 1.f) {
-    inst->priorSpeechProb = 1.f;
+  if (self->priorSpeechProb > 1.f) {
+    self->priorSpeechProb = 1.f;
   }
-  if (inst->priorSpeechProb < 0.01f) {
-    inst->priorSpeechProb = 0.01f;
+  if (self->priorSpeechProb < 0.01f) {
+    self->priorSpeechProb = 0.01f;
   }
 
   // final speech probability: combine prior model with LR factor:
-  gainPrior = (1.f - inst->priorSpeechProb) / (inst->priorSpeechProb + 0.0001f);
-  for (i = 0; i < inst->magnLen; i++) {
-    invLrt = (float)exp(-inst->logLrtTimeAvg[i]);
+  gainPrior = (1.f - self->priorSpeechProb) / (self->priorSpeechProb + 0.0001f);
+  for (i = 0; i < self->magnLen; i++) {
+    invLrt = (float)exp(-self->logLrtTimeAvg[i]);
     invLrt = (float)gainPrior * invLrt;
     probSpeechFinal[i] = 1.f / (1.f + invLrt);
   }
+}
+
+// Update the noise features.
+// Inputs:
+//   * |magn| is the signal magnitude spectrum estimate.
+//   * |updateParsFlag| is an update flag for parameters.
+static void FeatureUpdate(NSinst_t* const self,
+                          const float* magn,
+                          int updateParsFlag) {
+  // Compute spectral flatness on input spectrum.
+  ComputeSpectralFlatness(self, magn);
+  // Compute difference of input spectrum with learned/estimated noise spectrum.
+  ComputeSpectralDifference(self, magn);
+  // Compute histograms for parameter decisions (thresholds and weights for
+  // features).
+  // Parameters are extracted once every window time.
+  // (=self->modelUpdatePars[1])
+  if (updateParsFlag >= 1) {
+    // Counter update.
+    self->modelUpdatePars[3]--;
+    // Update histogram.
+    if (self->modelUpdatePars[3] > 0) {
+      FeatureParameterExtraction(self, 0);
+    }
+    // Compute model parameters.
+    if (self->modelUpdatePars[3] == 0) {
+      FeatureParameterExtraction(self, 1);
+      self->modelUpdatePars[3] = self->modelUpdatePars[1];
+      // If wish to update only once, set flag to zero.
+      if (updateParsFlag == 1) {
+        self->modelUpdatePars[0] = 0;
+      } else {
+        // Update every window:
+        // Get normalization for spectral difference for next window estimate.
+        self->featureData[6] =
+            self->featureData[6] / ((float)self->modelUpdatePars[1]);
+        self->featureData[5] =
+            0.5f * (self->featureData[6] + self->featureData[5]);
+        self->featureData[6] = 0.f;
+      }
+    }
+  }
+}
+
+// Update the noise estimate.
+// Inputs:
+//   * |magn| is the signal magnitude spectrum estimate.
+//   * |snrLocPrior| is the prior SNR.
+//   * |snrLocPost| is the post SNR.
+// Output:
+//   * |noise| is the updated noise magnitude spectrum estimate.
+static void UpdateNoiseEstimate(NSinst_t* const self,
+                                const float* magn,
+                                const float* snrLocPrior,
+                                const float* snrLocPost,
+                                float* noise) {
+  int i;
+  float probSpeech, probNonSpeech;
+  // Time-avg parameter for noise update.
+  float gammaNoiseTmp = NOISE_UPDATE;
+  float gammaNoiseOld;
+  float noiseUpdateTmp;
+
+  for (i = 0; i < self->magnLen; i++) {
+    probSpeech = self->speechProb[i];
+    probNonSpeech = 1.f - probSpeech;
+    // Temporary noise update:
+    // Use it for speech frames if update value is less than previous.
+    noiseUpdateTmp = gammaNoiseTmp * self->noisePrev[i] +
+                     (1.f - gammaNoiseTmp) * (probNonSpeech * magn[i] +
+                                              probSpeech * self->noisePrev[i]);
+    //
+    // Time-constant based on speech/noise state.
+    gammaNoiseOld = gammaNoiseTmp;
+    gammaNoiseTmp = NOISE_UPDATE;
+    // Increase gamma (i.e., less noise update) for frame likely to be speech.
+    if (probSpeech > PROB_RANGE) {
+      gammaNoiseTmp = SPEECH_UPDATE;
+    }
+    // Conservative noise update.
+    if (probSpeech < PROB_RANGE) {
+      self->magnAvgPause[i] += GAMMA_PAUSE * (magn[i] - self->magnAvgPause[i]);
+    }
+    // Noise update.
+    if (gammaNoiseTmp == gammaNoiseOld) {
+      noise[i] = noiseUpdateTmp;
+    } else {
+      noise[i] = gammaNoiseTmp * self->noisePrev[i] +
+                 (1.f - gammaNoiseTmp) * (probNonSpeech * magn[i] +
+                                          probSpeech * self->noisePrev[i]);
+      // Allow for noise update downwards:
+      // If noise update decreases the noise, it is safe, so allow it to
+      // happen.
+      if (noiseUpdateTmp < noise[i]) {
+        noise[i] = noiseUpdateTmp;
+      }
+    }
+  }  // End of freq loop.
 }
 
 // Updates |buffer| with a new |frame|.
@@ -922,9 +1021,7 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   float energy;
   float signalEnergy = 0.f;
   float sumMagn = 0.f;
-  float tmpFloat1, tmpFloat2, tmpFloat3, probSpeech, probNonSpeech;
-  float gammaNoiseTmp, gammaNoiseOld;
-  float noiseUpdateTmp;
+  float tmpFloat1, tmpFloat2, tmpFloat3;
   float winData[ANAL_BLOCKL_MAX];
   float magn[HALF_ANAL_BLOCKL], noise[HALF_ANAL_BLOCKL];
   float snrLocPost[HALF_ANAL_BLOCKL], snrLocPrior[HALF_ANAL_BLOCKL];
@@ -986,8 +1083,6 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   inst->signalEnergy = signalEnergy;
   inst->sumMagn = sumMagn;
 
-  // compute spectral flatness on input spectrum
-  WebRtcNs_ComputeSpectralFlatness(inst, magn);
   // quantile noise estimate
   WebRtcNs_NoiseEstimation(inst, magn, noise);
   // compute simplified noise model during startup
@@ -1056,79 +1151,9 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   // Post and prior SNR needed for WebRtcNs_SpeechNoiseProb.
   ComputeSnr(inst, magn, noise, snrLocPrior, snrLocPost);
 
-  // STEP 2: compute speech/noise likelihood
-  // compute difference of input spectrum with learned/estimated noise
-  // spectrum
-  WebRtcNs_ComputeSpectralDifference(inst, magn);
-  // compute histograms for parameter decisions (thresholds and weights for
-  // features)
-  // parameters are extracted once every window time
-  // (=inst->modelUpdatePars[1])
-  if (updateParsFlag >= 1) {
-    // counter update
-    inst->modelUpdatePars[3]--;
-    // update histogram
-    if (inst->modelUpdatePars[3] > 0) {
-      WebRtcNs_FeatureParameterExtraction(inst, 0);
-    }
-    // compute model parameters
-    if (inst->modelUpdatePars[3] == 0) {
-      WebRtcNs_FeatureParameterExtraction(inst, 1);
-      inst->modelUpdatePars[3] = inst->modelUpdatePars[1];
-      // if wish to update only once, set flag to zero
-      if (updateParsFlag == 1) {
-        inst->modelUpdatePars[0] = 0;
-      } else {
-        // update every window:
-        // get normalization for spectral difference for next window estimate
-        inst->featureData[6] =
-            inst->featureData[6] / ((float)inst->modelUpdatePars[1]);
-        inst->featureData[5] =
-            0.5f * (inst->featureData[6] + inst->featureData[5]);
-        inst->featureData[6] = 0.f;
-      }
-    }
-  }
-  // compute speech/noise probability
-  WebRtcNs_SpeechNoiseProb(inst, inst->speechProb, snrLocPrior, snrLocPost);
-  // time-avg parameter for noise update
-  gammaNoiseTmp = NOISE_UPDATE;
-  for (i = 0; i < inst->magnLen; i++) {
-    probSpeech = inst->speechProb[i];
-    probNonSpeech = 1.f - probSpeech;
-    // temporary noise update:
-    // use it for speech frames if update value is less than previous
-    noiseUpdateTmp = gammaNoiseTmp * inst->noisePrev[i] +
-                     (1.f - gammaNoiseTmp) * (probNonSpeech * magn[i] +
-                                              probSpeech * inst->noisePrev[i]);
-    //
-    // time-constant based on speech/noise state
-    gammaNoiseOld = gammaNoiseTmp;
-    gammaNoiseTmp = NOISE_UPDATE;
-    // increase gamma (i.e., less noise update) for frame likely to be speech
-    if (probSpeech > PROB_RANGE) {
-      gammaNoiseTmp = SPEECH_UPDATE;
-    }
-    // conservative noise update
-    if (probSpeech < PROB_RANGE) {
-      inst->magnAvgPause[i] += GAMMA_PAUSE * (magn[i] - inst->magnAvgPause[i]);
-    }
-    // noise update
-    if (gammaNoiseTmp == gammaNoiseOld) {
-      noise[i] = noiseUpdateTmp;
-    } else {
-      noise[i] = gammaNoiseTmp * inst->noisePrev[i] +
-                 (1.f - gammaNoiseTmp) * (probNonSpeech * magn[i] +
-                                          probSpeech * inst->noisePrev[i]);
-      // allow for noise update downwards:
-      // if noise update decreases the noise, it is safe, so allow it to
-      // happen
-      if (noiseUpdateTmp < noise[i]) {
-        noise[i] = noiseUpdateTmp;
-      }
-    }
-  }  // end of freq loop
-  // done with step 2: noise update
+  FeatureUpdate(inst, magn, updateParsFlag);
+  SpeechNoiseProb(inst, inst->speechProb, snrLocPrior, snrLocPost);
+  UpdateNoiseEstimate(inst, magn, snrLocPrior, snrLocPost, noise);
 
   // keep track of noise spectrum for next frame
   memcpy(inst->noise, noise, sizeof(*noise) * inst->magnLen);
