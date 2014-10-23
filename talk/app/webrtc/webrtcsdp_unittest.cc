@@ -212,9 +212,9 @@ static const char kSdpString[] =
     "s=-\r\n"
     "t=0 0\r\n"
     "a=msid-semantic: WMS local_stream_1 local_stream_2\r\n"
-    "m=audio 1 RTP/SAVPF 111 103 104\r\n"
-    "c=IN IP4 0.0.0.0\r\n"
-    "a=rtcp:1 IN IP4 0.0.0.0\r\n"
+    "m=audio 9 RTP/SAVPF 111 103 104\r\n"
+    "c=IN IP6 ::\r\n"
+    "a=rtcp:9 IN IP6 ::\r\n"
     "a=ice-ufrag:ufrag_voice\r\na=ice-pwd:pwd_voice\r\n"
     "a=mid:audio_content_name\r\n"
     "a=sendrecv\r\n"
@@ -233,9 +233,9 @@ static const char kSdpString[] =
     "a=ssrc:4 msid:local_stream_2 audio_track_id_2\r\n"
     "a=ssrc:4 mslabel:local_stream_2\r\n"
     "a=ssrc:4 label:audio_track_id_2\r\n"
-    "m=video 1 RTP/SAVPF 120\r\n"
-    "c=IN IP4 0.0.0.0\r\n"
-    "a=rtcp:1 IN IP4 0.0.0.0\r\n"
+    "m=video 9 RTP/SAVPF 120\r\n"
+    "c=IN IP6 ::\r\n"
+    "a=rtcp:9 IN IP6 ::\r\n"
     "a=ice-ufrag:ufrag_video\r\na=ice-pwd:pwd_video\r\n"
     "a=mid:video_content_name\r\n"
     "a=sendrecv\r\n"
@@ -261,9 +261,9 @@ static const char kSdpString[] =
     "a=ssrc:6 label:video_track_id_3\r\n";
 
 static const char kSdpRtpDataChannelString[] =
-    "m=application 1 RTP/SAVPF 101\r\n"
-    "c=IN IP4 0.0.0.0\r\n"
-    "a=rtcp:1 IN IP4 0.0.0.0\r\n"
+    "m=application 9 RTP/SAVPF 101\r\n"
+    "c=IN IP6 ::\r\n"
+    "a=rtcp:9 IN IP6 ::\r\n"
     "a=ice-ufrag:ufrag_data\r\n"
     "a=ice-pwd:pwd_data\r\n"
     "a=mid:data_content_name\r\n"
@@ -277,8 +277,8 @@ static const char kSdpRtpDataChannelString[] =
     "a=ssrc:10 label:data_channeld0\r\n";
 
 static const char kSdpSctpDataChannelString[] =
-    "m=application 1 DTLS/SCTP 5000\r\n"
-    "c=IN IP4 0.0.0.0\r\n"
+    "m=application 9 DTLS/SCTP 5000\r\n"
+    "c=IN IP6 ::\r\n"
     "a=ice-ufrag:ufrag_data\r\n"
     "a=ice-pwd:pwd_data\r\n"
     "a=mid:data_content_name\r\n"
@@ -286,10 +286,10 @@ static const char kSdpSctpDataChannelString[] =
 
 // draft-ietf-mmusic-sctp-sdp-07
 static const char kSdpSctpDataChannelStringWithSctpPort[] =
-    "m=application 1 DTLS/SCTP webrtc-datachannel\r\n"
+    "m=application 9 DTLS/SCTP webrtc-datachannel\r\n"
     "a=fmtp:webrtc-datachannel max-message-size=100000\r\n"
     "a=sctp-port 5000\r\n"
-    "c=IN IP4 0.0.0.0\r\n"
+    "c=IN IP6 ::\r\n"
     "a=ice-ufrag:ufrag_data\r\n"
     "a=ice-pwd:pwd_data\r\n"
     "a=mid:data_content_name\r\n";
@@ -315,11 +315,11 @@ static const char kSdpConferenceString[] =
     "s=-\r\n"
     "t=0 0\r\n"
     "a=msid-semantic: WMS\r\n"
-    "m=audio 1 RTP/SAVPF 111 103 104\r\n"
-    "c=IN IP4 0.0.0.0\r\n"
+    "m=audio 9 RTP/SAVPF 111 103 104\r\n"
+    "c=IN IP6 ::\r\n"
     "a=x-google-flag:conference\r\n"
-    "m=video 1 RTP/SAVPF 120\r\n"
-    "c=IN IP4 0.0.0.0\r\n"
+    "m=video 9 RTP/SAVPF 120\r\n"
+    "c=IN IP6 ::\r\n"
     "a=x-google-flag:conference\r\n";
 
 static const char kSdpSessionString[] =
@@ -330,9 +330,9 @@ static const char kSdpSessionString[] =
     "a=msid-semantic: WMS local_stream\r\n";
 
 static const char kSdpAudioString[] =
-    "m=audio 1 RTP/SAVPF 111\r\n"
-    "c=IN IP4 0.0.0.0\r\n"
-    "a=rtcp:1 IN IP4 0.0.0.0\r\n"
+    "m=audio 9 RTP/SAVPF 111\r\n"
+    "c=IN IP6 ::\r\n"
+    "a=rtcp:9 IN IP6 ::\r\n"
     "a=ice-ufrag:ufrag_voice\r\na=ice-pwd:pwd_voice\r\n"
     "a=mid:audio_content_name\r\n"
     "a=sendrecv\r\n"
@@ -343,9 +343,9 @@ static const char kSdpAudioString[] =
     "a=ssrc:1 label:audio_track_id_1\r\n";
 
 static const char kSdpVideoString[] =
-    "m=video 1 RTP/SAVPF 120\r\n"
-    "c=IN IP4 0.0.0.0\r\n"
-    "a=rtcp:1 IN IP4 0.0.0.0\r\n"
+    "m=video 9 RTP/SAVPF 120\r\n"
+    "c=IN IP6 ::\r\n"
+    "a=rtcp:9 IN IP6 ::\r\n"
     "a=ice-ufrag:ufrag_video\r\na=ice-pwd:pwd_video\r\n"
     "a=mid:video_content_name\r\n"
     "a=sendrecv\r\n"
@@ -1195,7 +1195,7 @@ class WebRtcSdpTest : public testing::Test {
         // description.
         "a=msid-semantic: WMS\r\n"
         // Pl type 111 preferred.
-        "m=audio 1 RTP/SAVPF 111 104 103 102\r\n"
+        "m=audio 9 RTP/SAVPF 111 104 103 102\r\n"
         // Pltype 111 listed before 103 and 104 in the map.
         "a=rtpmap:111 opus/48000/2\r\n"
         // Pltype 103 listed before 104.
@@ -1217,7 +1217,7 @@ class WebRtcSdpTest : public testing::Test {
     os.clear();
     os.str("");
     // Pl type 100 preferred.
-    os << "m=video 1 RTP/SAVPF 99 95\r\n"
+    os << "m=video 9 RTP/SAVPF 99 95\r\n"
        << "a=rtpmap:99 VP8/90000\r\n"
        << "a=rtpmap:95 RTX/90000\r\n"
        << "a=fmtp:95 apt=99;rtx-time=1000\r\n";
@@ -1279,7 +1279,7 @@ class WebRtcSdpTest : public testing::Test {
         // this parser, and will be added to the SDP when serializing a session
         // description.
         "a=msid-semantic: WMS\r\n"
-        "m=audio 1 RTP/SAVPF 111\r\n"
+        "m=audio 9 RTP/SAVPF 111\r\n"
         "a=rtpmap:111 opus/48000/2\r\n"
         "a=rtcp-fb:111 nack\r\n"
         "m=video 3457 RTP/SAVPF 101\r\n"
@@ -1596,7 +1596,7 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithDataChannelAndBandwidth) {
   // TODO(pthatcher): We need to temporarily allow the SDP to control
   // this for backwards-compatibility.  Once we don't need that any
   // more, remove this.
-  InjectAfter("m=application 1 RTP/SAVPF 101\r\nc=IN IP4 0.0.0.0\r\n",
+  InjectAfter("m=application 9 RTP/SAVPF 101\r\nc=IN IP6 ::\r\n",
               "b=AS:100\r\n",
               &expected_sdp);
   EXPECT_EQ(expected_sdp, message);
@@ -2308,7 +2308,7 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithReorderedPltypes) {
       "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
       "s=-\r\n"
       "t=0 0\r\n"
-      "m=audio 1 RTP/SAVPF 104 103\r\n"  // Pl type 104 preferred.
+      "m=audio 9 RTP/SAVPF 104 103\r\n"  // Pl type 104 preferred.
       "a=rtpmap:111 opus/48000/2\r\n"  // Pltype 111 listed before 103 and 104
                                        // in the map.
       "a=rtpmap:103 ISAC/16000\r\n"  // Pltype 103 listed before 104 in the map.

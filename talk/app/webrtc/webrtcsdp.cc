@@ -197,13 +197,17 @@ static const char kSessionName[] = "s=-";
 static const char kTimeDescription[] = "t=0 0";
 static const char kAttrGroup[] = "a=group:BUNDLE";
 static const char kConnectionNettype[] = "IN";
-static const char kConnectionAddrtype[] = "IP4";
+static const char kConnectionIpv4Addrtype[] = "IP4";
+static const char kConnectionIpv6Addrtype[] = "IP6";
 static const char kMediaTypeVideo[] = "video";
 static const char kMediaTypeAudio[] = "audio";
 static const char kMediaTypeData[] = "application";
 static const char kMediaPortRejected[] = "0";
-static const char kDefaultAddress[] = "0.0.0.0";
-static const char kDefaultPort[] = "1";
+// draft-ietf-mmusic-trickle-ice-01
+// When no candidates have been gathered, set the connection
+// address to IP6 ::.
+static const char kDummyAddress[] = "::";
+static const char kDummyPort[] = "9";
 // RFC 3556
 static const char kApplicationSpecificMaximum[] = "AS";
 
@@ -667,10 +671,13 @@ static int GetCandidatePreferenceFromType(const std::string& type) {
 // The value of |component_id| currently supported are 1 (RTP) and 2 (RTCP).
 // TODO: Decide the default destination in webrtcsession and
 // pass it down via SessionDescription.
-static bool GetDefaultDestination(const std::vector<Candidate>& candidates,
-    int component_id, std::string* port, std::string* ip) {
-  *port = kDefaultPort;
-  *ip = kDefaultAddress;
+static void GetDefaultDestination(
+    const std::vector<Candidate>& candidates,
+    int component_id, std::string* port,
+    std::string* ip, std::string* addr_type) {
+  *addr_type = kConnectionIpv6Addrtype;
+  *port = kDummyPort;
+  *ip = kDummyAddress;
   int current_preference = kPreferenceUnknown;
   for (std::vector<Candidate>::const_iterator it = candidates.begin();
        it != candidates.end(); ++it) {
@@ -685,8 +692,13 @@ static bool GetDefaultDestination(const std::vector<Candidate>& candidates,
     current_preference = preference;
     *port = it->address().PortAsString();
     *ip = it->address().ipaddr().ToString();
+    int family = it->address().ipaddr().family();
+    if (family == AF_INET) {
+      addr_type->assign(kConnectionIpv4Addrtype);
+    } else if (family == AF_INET6) {
+      addr_type->assign(kConnectionIpv6Addrtype);
+    }
   }
-  return true;
 }
 
 // Update |mline|'s default destination and append a c line after it.
@@ -705,55 +717,52 @@ static void UpdateMediaDefaultDestination(
   }
 
   std::ostringstream os;
-  std::string rtp_port, rtp_ip;
-  if (GetDefaultDestination(candidates, ICE_CANDIDATE_COMPONENT_RTP,
-                            &rtp_port, &rtp_ip)) {
-    // Found default RTP candidate.
-    // RFC 5245
-    // The default candidates are added to the SDP as the default
-    // destination for media.  For streams based on RTP, this is done by
-    // placing the IP address and port of the RTP candidate into the c and m
-    // lines, respectively.
-
-    // Update the port in the m line.
-    // If this is a m-line with port equal to 0, we don't change it.
-    if (fields[1] != kMediaPortRejected) {
-      new_lines.replace(fields[0].size() + 1,
-                        fields[1].size(),
-                        rtp_port);
-    }
-    // Add the c line.
-    // RFC 4566
-    // c=<nettype> <addrtype> <connection-address>
-    InitLine(kLineTypeConnection, kConnectionNettype, &os);
-    os << " " << kConnectionAddrtype << " " << rtp_ip;
-    AddLine(os.str(), &new_lines);
+  std::string rtp_port, rtp_ip, addr_type;
+  GetDefaultDestination(candidates, ICE_CANDIDATE_COMPONENT_RTP,
+                        &rtp_port, &rtp_ip, &addr_type);
+  // Found default RTP candidate.
+  // RFC 5245
+  // The default candidates are added to the SDP as the default
+  // destination for media.  For streams based on RTP, this is done by
+  // placing the IP address and port of the RTP candidate into the c and m
+  // lines, respectively.
+  // Update the port in the m line.
+  // If this is a m-line with port equal to 0, we don't change it.
+  if (fields[1] != kMediaPortRejected) {
+    new_lines.replace(fields[0].size() + 1,
+                      fields[1].size(),
+                      rtp_port);
   }
+  // Add the c line.
+  // RFC 4566
+  // c=<nettype> <addrtype> <connection-address>
+  InitLine(kLineTypeConnection, kConnectionNettype, &os);
+  os << " " << addr_type << " " << rtp_ip;
+  AddLine(os.str(), &new_lines);
   message->append(new_lines);
 }
 
 // Gets "a=rtcp" line if found default RTCP candidate from |candidates|.
 static std::string GetRtcpLine(const std::vector<Candidate>& candidates) {
-  std::string rtcp_line, rtcp_port, rtcp_ip;
-  if (GetDefaultDestination(candidates, ICE_CANDIDATE_COMPONENT_RTCP,
-                            &rtcp_port, &rtcp_ip)) {
-    // Found default RTCP candidate.
-    // RFC 5245
-    // If the agent is utilizing RTCP, it MUST encode the RTCP candidate
-    // using the a=rtcp attribute as defined in RFC 3605.
+  std::string rtcp_line, rtcp_port, rtcp_ip, addr_type;
+  GetDefaultDestination(candidates, ICE_CANDIDATE_COMPONENT_RTCP,
+                        &rtcp_port, &rtcp_ip, &addr_type);
+  // Found default RTCP candidate.
+  // RFC 5245
+  // If the agent is utilizing RTCP, it MUST encode the RTCP candidate
+  // using the a=rtcp attribute as defined in RFC 3605.
 
-    // RFC 3605
-    // rtcp-attribute =  "a=rtcp:" port  [nettype space addrtype space
-    // connection-address] CRLF
-    std::ostringstream os;
-    InitAttrLine(kAttributeRtcp, &os);
-    os << kSdpDelimiterColon
-       << rtcp_port << " "
-       << kConnectionNettype << " "
-       << kConnectionAddrtype << " "
-       << rtcp_ip;
-    rtcp_line = os.str();
-  }
+  // RFC 3605
+  // rtcp-attribute =  "a=rtcp:" port  [nettype space addrtype space
+  // connection-address] CRLF
+  std::ostringstream os;
+  InitAttrLine(kAttributeRtcp, &os);
+  os << kSdpDelimiterColon
+     << rtcp_port << " "
+     << kConnectionNettype << " "
+     << addr_type << " "
+     << rtcp_ip;
+  rtcp_line = os.str();
   return rtcp_line;
 }
 
@@ -1243,7 +1252,7 @@ void BuildMediaDescription(const ContentInfo* content_info,
   // To reject an offered stream, the port number in the corresponding stream in
   // the answer MUST be set to zero.
   const std::string port = content_info->rejected ?
-      kMediaPortRejected : kDefaultPort;
+      kMediaPortRejected : kDummyPort;
 
   rtc::SSLFingerprint* fp = (transport_info) ?
       transport_info->description.identity_fingerprint.get() : NULL;
