@@ -15,11 +15,6 @@
 //
 // Note: the source of the video and audio stream is getUserMedia().
 //
-// // TODO(houssainy)
-// This test is still not working properly because we still missing the
-// Cross-Origin Resource Sharing (CORS) to be able to download the file
-// from non localhost domain.
-//
 function testOneWayVideoWithDownloading(test, bot1, bot2) {
   var report = test.createStatisticsReport("testOneWayVideoWithDownloading");
 
@@ -112,7 +107,7 @@ function testOneWayVideoWithDownloading(test, bot1, bot2) {
     }
 
     function downloadFile(bot, name) {
-      bot.downloadFile("http://test-needs-a-file-server",
+      bot.downloadFile("https://test.webrtc.org/test-download-file/9000KB.data",
           onDownloadSuccess.bind(null, name), test.fail);
 
       function onDownloadSuccess(name, data) {
