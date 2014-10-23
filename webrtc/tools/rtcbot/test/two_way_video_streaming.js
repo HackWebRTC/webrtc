@@ -29,7 +29,7 @@ function testTwoWayVideoStreaming(test, bot1, bot2) {
       test.createTurnConfig(onTurnConfig.bind(this), test.fail);
 
       function onTurnConfig(config) {
-        this.createPeerConnection(null, addAndShowStream.bind(this),
+        this.createPeerConnection(config, addAndShowStream.bind(this),
             test.fail);
       };
 
