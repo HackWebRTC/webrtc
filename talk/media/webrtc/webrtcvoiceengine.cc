@@ -405,22 +405,28 @@ static bool IsOpusStereoEnabled(const AudioCodec& codec) {
   return codec.GetParam(kCodecParamStereo, &value) && value == 1;
 }
 
-// TODO(minyue): Clamp bitrate when invalid.
-static bool IsValidOpusBitrate(int bitrate) {
-  return (bitrate >= kOpusMinBitrate && bitrate <= kOpusMaxBitrate);
-}
-
-// Returns 0 if params[kCodecParamMaxAverageBitrate] is not defined or invalid.
-// Returns the value of params[kCodecParamMaxAverageBitrate] otherwise.
-static int GetOpusBitrateFromParams(const AudioCodec& codec) {
+// Use params[kCodecParamMaxAverageBitrate] if it is defined, use codec.bitrate
+// otherwise. If the value (either from params or codec.bitrate) <=0, use the
+// default configuration. If the value is beyond feasible bit rate of Opus,
+// clamp it. Returns the Opus bit rate for operation.
+static int GetOpusBitrate(const AudioCodec& codec) {
   int bitrate = 0;
+  bool use_param = true;
   if (!codec.GetParam(kCodecParamMaxAverageBitrate, &bitrate)) {
-    return 0;
+    bitrate = codec.bitrate;
+    use_param = false;
   }
-  if (!IsValidOpusBitrate(bitrate)) {
-    LOG(LS_WARNING) << "Codec parameter \"maxaveragebitrate\" has an "
-                    << "invalid value: " << bitrate;
-    return 0;
+  if (bitrate <= 0) {
+    bitrate = IsOpusStereoEnabled(codec) ? kOpusStereoBitrate :
+        kOpusMonoBitrate;
+  } else if (bitrate < kOpusMinBitrate || bitrate > kOpusMaxBitrate) {
+    bitrate = (bitrate < kOpusMinBitrate) ? kOpusMinBitrate : kOpusMaxBitrate;
+    std::string rate_source =
+        use_param ? "Codec parameter \"maxaveragebitrate\"" :
+            "Supplied Opus bitrate";
+    LOG(LS_WARNING) << rate_source
+                    << " is invalid and is replaced by: "
+                    << bitrate;
   }
   return bitrate;
 }
@@ -450,39 +456,14 @@ static void GetOpusConfig(const AudioCodec& codec, webrtc::CodecInst* voe_codec,
   // If OPUS, change what we send according to the "stereo" codec
   // parameter, and not the "channels" parameter.  We set
   // voe_codec.channels to 2 if "stereo=1" and 1 otherwise.  If
-  // the bitrate is not specified, i.e. is zero, we set it to the
+  // the bitrate is not specified, i.e. is <= zero, we set it to the
   // appropriate default value for mono or stereo Opus.
 
   // TODO(minyue): The determination of bit rate might take the maximum playback
   // rate into account.
 
-  if (IsOpusStereoEnabled(codec)) {
-    voe_codec->channels = 2;
-    if (!IsValidOpusBitrate(codec.bitrate)) {
-      if (codec.bitrate != 0) {
-        LOG(LS_WARNING) << "Overrides the invalid supplied bitrate("
-                        << codec.bitrate
-                        << ") with default opus stereo bitrate: "
-                        << kOpusStereoBitrate;
-      }
-      voe_codec->rate = kOpusStereoBitrate;
-    }
-  } else {
-    voe_codec->channels = 1;
-    if (!IsValidOpusBitrate(codec.bitrate)) {
-      if (codec.bitrate != 0) {
-        LOG(LS_WARNING) << "Overrides the invalid supplied bitrate("
-                        << codec.bitrate
-                        << ") with default opus mono bitrate: "
-                        << kOpusMonoBitrate;
-      }
-      voe_codec->rate = kOpusMonoBitrate;
-    }
-  }
-  int bitrate_from_params = GetOpusBitrateFromParams(codec);
-  if (bitrate_from_params != 0) {
-    voe_codec->rate = bitrate_from_params;
-  }
+  voe_codec->channels = IsOpusStereoEnabled(codec) ? 2 : 1;
+  voe_codec->rate = GetOpusBitrate(codec);
 }
 
 void WebRtcVoiceEngine::ConstructCodecs() {

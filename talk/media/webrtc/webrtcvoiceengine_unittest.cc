@@ -876,21 +876,20 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecOpusGoodXBitrate0Stereo) {
   codecs[0].params["stereo"] = "0";
   webrtc::CodecInst gcodec;
 
-  // bitrate that's out of the range between 6000 and 510000 will be considered
-  // as invalid and ignored.
+  // bitrate that's out of the range between 6000 and 510000 will be clamped.
   codecs[0].bitrate = 5999;
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
   EXPECT_STREQ("opus", gcodec.plname);
   EXPECT_EQ(1, gcodec.channels);
-  EXPECT_EQ(32000, gcodec.rate);
+  EXPECT_EQ(6000, gcodec.rate);
 
   codecs[0].bitrate = 510001;
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
   EXPECT_STREQ("opus", gcodec.plname);
   EXPECT_EQ(1, gcodec.channels);
-  EXPECT_EQ(32000, gcodec.rate);
+  EXPECT_EQ(510000, gcodec.rate);
 }
 
 // Test that with bitrate=0 and stereo=1,
@@ -920,21 +919,20 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecOpusGoodXBitrate1Stereo) {
   codecs[0].params["stereo"] = "1";
   webrtc::CodecInst gcodec;
 
-  // bitrate that's out of the range between 6000 and 510000 will be considered
-  // as invalid and ignored.
+  // bitrate that's out of the range between 6000 and 510000 will be clamped.
   codecs[0].bitrate = 5999;
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
   EXPECT_STREQ("opus", gcodec.plname);
   EXPECT_EQ(2, gcodec.channels);
-  EXPECT_EQ(64000, gcodec.rate);
+  EXPECT_EQ(6000, gcodec.rate);
 
   codecs[0].bitrate = 510001;
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
   EXPECT_STREQ("opus", gcodec.plname);
   EXPECT_EQ(2, gcodec.channels);
-  EXPECT_EQ(64000, gcodec.rate);
+  EXPECT_EQ(510000, gcodec.rate);
 }
 
 // Test that with bitrate=N and stereo unset,
@@ -1020,13 +1018,13 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecOpusMaxAverageBitrate) {
   codecs[0].params["maxaveragebitrate"] = "5999";
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
-  EXPECT_EQ(30000, gcodec.rate);
+  EXPECT_EQ(6000, gcodec.rate);
 
   // Ignore if larger than 510000.
   codecs[0].params["maxaveragebitrate"] = "510001";
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
-  EXPECT_EQ(30000, gcodec.rate);
+  EXPECT_EQ(510000, gcodec.rate);
 
   codecs[0].params["maxaveragebitrate"] = "200000";
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
