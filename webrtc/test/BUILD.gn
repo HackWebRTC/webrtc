@@ -95,6 +95,7 @@ source_set("test_support_main") {
   deps = [
     ":field_trial",
     ":test_support",
+    "../system_wrappers:metrics_default",
     "//testing/gmock",
     "//testing/gtest",
     "//third_party/gflags",

@@ -44,6 +44,7 @@
         '../interface/fix_interlocked_exchange_pointer_win.h',
         '../interface/logcat_trace_context.h',
         '../interface/logging.h',
+        '../interface/metrics.h',
         '../interface/ref_count.h',
         '../interface/rtp_to_ntp.h',
         '../interface/rw_lock_wrapper.h',
@@ -203,6 +204,22 @@
       ],
       'dependencies': [
         'system_wrappers',
+      ]
+    }, {
+      'target_name': 'metrics_default',
+      'type': 'static_library',
+      'sources': [
+        'metrics_default.cc',
+      ],
+      'dependencies': [
+        'system_wrappers',
+      ]
+    }, {
+      'target_name': 'system_wrappers_default',
+      'type': 'static_library',
+      'dependencies': [
+        'field_trial_default',
+        'metrics_default',
       ]
     },
   ], # targets

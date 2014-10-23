@@ -13,7 +13,7 @@
       'type': 'executable',
       'dependencies': [
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:metrics_default',
         '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
         '<(webrtc_root)/modules/modules.gyp:video_render_module_internal_impl',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',

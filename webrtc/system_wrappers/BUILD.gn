@@ -35,6 +35,7 @@ static_library("system_wrappers") {
     "interface/file_wrapper.h",
     "interface/fix_interlocked_exchange_pointer_win.h",
     "interface/logging.h",
+    "interface/metrics.h",
     "interface/ref_count.h",
     "interface/rtp_to_ntp.h",
     "interface/rw_lock_wrapper.h",
@@ -213,6 +214,42 @@ source_set("field_trial_default") {
 
   deps = [
     ":system_wrappers",
+  ]
+}
+
+source_set("metrics_default") {
+  sources = [
+    "source/metrics_default.cc",
+  ]
+
+  configs += [ "..:common_config" ]
+  public_configs = [ "..:common_inherited_config" ]
+
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  deps = [
+    ":system_wrappers",
+  ]
+}
+
+source_set("system_wrappers_default") {
+
+  configs += [ "..:common_config" ]
+  public_configs = [ "..:common_inherited_config" ]
+
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  deps = [
+    ":field_trial_default",
+    ":metrics_default",
   ]
 }
 
