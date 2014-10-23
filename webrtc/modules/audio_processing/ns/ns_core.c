@@ -1014,6 +1014,35 @@ static void Windowing(const float* window,
   }
 }
 
+// Estimate prior SNR decision-directed and compute DD based Wiener Filter.
+// Input:
+//   * |magn| is the signal magnitude spectrum estimate.
+// Output:
+//   * |theFilter| is the frequency response of the computed Wiener filter.
+static void ComputeDdBasedWienerFilter(const NSinst_t* const self,
+                                       const float* magn,
+                                       float* theFilter) {
+  int i;
+  float snrPrior, previousEstimateStsa, currentEstimateStsa;
+
+  for (i = 0; i < self->magnLen; i++) {
+    // Previous estimate: based on previous frame with gain filter.
+    previousEstimateStsa = self->magnPrevProcess[i] /
+                           (self->noisePrev[i] + 0.0001f) * self->smooth[i];
+    // Post and prior SNR.
+    currentEstimateStsa = 0.f;
+    if (magn[i] > self->noise[i]) {
+      currentEstimateStsa = magn[i] / (self->noise[i] + 0.0001f) - 1.f;
+    }
+    // DD estimate is sum of two terms: current estimate and previous estimate.
+    // Directed decision update of |snrPrior|.
+    snrPrior = DD_PR_SNR * previousEstimateStsa +
+               (1.f - DD_PR_SNR) * currentEstimateStsa;
+    // Gain filter.
+    theFilter[i] = snrPrior / (self->overdrive + snrPrior);
+  }  // End of loop over frequencies.
+}
+
 int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   int i;
   const int kStartBand = 5;  // Skip first frequency bins during estimation.
@@ -1172,8 +1201,6 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
   int i;
 
   float energy1, energy2, gain, factor, factor1, factor2;
-  float snrPrior, previousEstimateStsa, currentEstimateStsa;
-  float tmpFloat1, tmpFloat2;
   float fout[BLOCKL_MAX];
   float winData[ANAL_BLOCKL_MAX];
   float magn[HALF_ANAL_BLOCKL];
@@ -1245,26 +1272,7 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
     }
   }
 
-  // Compute dd update of prior snr and post snr based on new noise estimate
-  for (i = 0; i < inst->magnLen; i++) {
-    // previous estimate: based on previous frame with gain filter
-    previousEstimateStsa = inst->magnPrevProcess[i] /
-                           (inst->noisePrev[i] + 0.0001f) * inst->smooth[i];
-    // post and prior snr
-    currentEstimateStsa = 0.f;
-    if (magn[i] > inst->noise[i]) {
-      currentEstimateStsa = magn[i] / (inst->noise[i] + 0.0001f) - 1.f;
-    }
-    // DD estimate is sume of two terms: current estimate and previous
-    // estimate
-    // directed decision update of snrPrior
-    snrPrior = DD_PR_SNR * previousEstimateStsa +
-               (1.f - DD_PR_SNR) * currentEstimateStsa;
-    // gain filter
-    tmpFloat1 = inst->overdrive + snrPrior;
-    tmpFloat2 = (float)snrPrior / tmpFloat1;
-    theFilter[i] = (float)tmpFloat2;
-  }  // end of loop over freqs
+  ComputeDdBasedWienerFilter(inst, magn, theFilter);
 
   for (i = 0; i < inst->magnLen; i++) {
     // flooring bottom
