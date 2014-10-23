@@ -588,6 +588,38 @@ void WebRtcNs_ComputeSpectralFlatness(NSinst_t* inst, float* magnIn) {
   // done with flatness feature
 }
 
+// Compute prior and post snr based on quantile noise estimation.
+// Compute DD estimate of prior SNR.
+// Inputs:
+//   * |magn| is the signal magnitude spectrum estimate.
+//   * |noise| is the magnitude noise spectrum estimate.
+// Outputs:
+//   * |snrLocPrior| is the computed prior SNR.
+//   * |snrLocPost| is the computed post SNR.
+static void ComputeSnr(const NSinst_t* const self,
+                       const float* magn,
+                       const float* noise,
+                       float* snrLocPrior,
+                       float* snrLocPost) {
+  int i;
+
+  for (i = 0; i < self->magnLen; i++) {
+    // Previous post SNR.
+    // Previous estimate: based on previous frame with gain filter.
+    float previousEstimateStsa = self->magnPrevAnalyze[i] /
+        (self->noisePrev[i] + 0.0001f) * self->smooth[i];
+    // Post SNR.
+    snrLocPost[i] = 0.f;
+    if (magn[i] > noise[i]) {
+      snrLocPost[i] = magn[i] / (noise[i] + 0.0001f) - 1.f;
+    }
+    // DD estimate is sum of two terms: current estimate and previous estimate
+    // directed decision update of snrPrior.
+    snrLocPrior[i] =
+        DD_PR_SNR * previousEstimateStsa + (1.f - DD_PR_SNR) * snrLocPost[i];
+  }  // End of loop over frequencies.
+}
+
 // Compute the difference measure between input spectrum and a template/learned
 // noise spectrum
 // magnIn is the input spectrum
@@ -857,7 +889,6 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   float winData[ANAL_BLOCKL_MAX];
   float magn[HALF_ANAL_BLOCKL], noise[HALF_ANAL_BLOCKL];
   float snrLocPost[HALF_ANAL_BLOCKL], snrLocPrior[HALF_ANAL_BLOCKL];
-  float previousEstimateStsa[HALF_ANAL_BLOCKL];
   float real[ANAL_BLOCKL_MAX], imag[HALF_ANAL_BLOCKL];
   // Variables during startup
   float sum_log_i = 0.0;
@@ -1006,26 +1037,8 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
     inst->featureData[5] /= (inst->blockInd + 1);
   }
 
-  // start processing at frames == converged+1
-  // STEP 1: compute  prior and post snr based on quantile noise est
-  // compute DD estimate of prior SNR: needed for new method
-  for (i = 0; i < inst->magnLen; i++) {
-    // post snr
-    snrLocPost[i] = 0.f;
-    if (magn[i] > noise[i]) {
-      snrLocPost[i] = magn[i] / (noise[i] + 0.0001f) - 1.f;
-    }
-    // previous post snr
-    // previous estimate: based on previous frame with gain filter
-    previousEstimateStsa[i] = inst->magnPrevAnalyze[i] /
-                              (inst->noisePrev[i] + 0.0001f) * inst->smooth[i];
-    // DD estimate is sum of two terms: current estimate and previous estimate
-    // directed decision update of snrPrior
-    snrLocPrior[i] =
-        DD_PR_SNR * previousEstimateStsa[i] + (1.f - DD_PR_SNR) * snrLocPost[i];
-    // post and prior snr needed for step 2
-  }  // end of loop over freqs
-     // done with step 1: dd computation of prior and post snr
+  // Post and prior SNR needed for WebRtcNs_SpeechNoiseProb.
+  ComputeSnr(inst, magn, noise, snrLocPrior, snrLocPost);
 
   // STEP 2: compute speech/noise likelihood
   // compute difference of input spectrum with learned/estimated noise
