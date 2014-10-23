@@ -52,6 +52,7 @@
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         'test/webrtc_test_common.gyp:webrtc_test_common',
         'test/webrtc_test_common.gyp:webrtc_test_renderer',
+        '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
         '<(webrtc_root)/modules/modules.gyp:video_render_module_impl',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
         'webrtc',
@@ -78,6 +79,7 @@
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         'test/webrtc_test_common.gyp:webrtc_test_common',
         'test/webrtc_test_common.gyp:webrtc_test_renderer',
+        '<(webrtc_root)/modules/modules.gyp:video_capture_module_impl',
         '<(webrtc_root)/modules/modules.gyp:video_render_module_impl',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
         'webrtc',
@@ -97,6 +99,7 @@
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
+        '<(webrtc_root)/modules/modules.gyp:video_capture_module_impl',
         '<(webrtc_root)/modules/modules.gyp:video_render_module_impl',
         'test/metrics.gyp:metrics',
         'test/webrtc_test_common.gyp:webrtc_test_common',
@@ -125,6 +128,7 @@
         '<(DEPTH)/testing/gtest.gyp:gtest',
         'modules/modules.gyp:neteq_test_support',  # Needed by neteq_performance_unittest.
         'modules/modules.gyp:rtp_rtcp',
+        '<(webrtc_root)/modules/modules.gyp:video_capture_module_impl',
         'test/webrtc_test_common.gyp:webrtc_test_common',
         'test/test.gyp:test_main',
         'webrtc',
