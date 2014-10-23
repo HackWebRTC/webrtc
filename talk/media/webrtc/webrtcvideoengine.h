@@ -244,6 +244,11 @@ struct CapturedFrameInfo {
   bool screencast;
 };
 
+// TODO(pthatcher): Add codec and VideoOptions.
+struct VideoSendParams {
+  StreamParams stream;
+};
+
 class WebRtcVideoMediaChannel : public rtc::MessageHandler,
                                 public VideoMediaChannel,
                                 public webrtc::Transport {
@@ -373,9 +378,8 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   bool SetSendCodec(const webrtc::VideoCodec& codec);
   bool SetSendCodec(WebRtcVideoChannelSendInfo* send_channel,
                     const webrtc::VideoCodec& codec);
-  // TODO(pthatcher): Include codec and VideoOptions as well as StreamParams.
   bool SetSendParams(WebRtcVideoChannelSendInfo* send_channel,
-                     const StreamParams* params);
+                     const VideoSendParams& params);
 
   // Prepares the channel with channel id |info->channel_id()| to receive all
   // codecs in |receive_codecs_| and start receive packets.

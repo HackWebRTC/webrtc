@@ -638,6 +638,12 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   int capture_id() const { return capture_id_; }
   void set_sending(bool sending) { sending_ = sending; }
   bool sending() const { return sending_; }
+  void set_send_params(const VideoSendParams& send_params) {
+    send_params_ = send_params;
+  }
+  const VideoSendParams& send_params() const {
+    return send_params_;
+  }
   const Settable<CapturedFrameInfo>& last_captured_frame_info() const {
     return last_captured_frame_info_;
   }
@@ -709,12 +715,20 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
     return old_adaptation_changes_ + video_adapter()->adaptation_changes();
   }
 
-  StreamParams* stream_params() { return stream_params_.get(); }
   void set_stream_params(const StreamParams& sp) {
-    stream_params_.reset(new StreamParams(sp));
+    send_params_.stream = sp;
   }
-  bool IsActive() { return stream_params() != NULL; }
-  void Deactivate() { stream_params_.reset(); }
+  const StreamParams& stream_params() const { return send_params_.stream; }
+  // A default send channel can be non-active if a stream hasn't been
+  // added yet, or if all streams have been removed (at which point,
+  // Deactive is called).
+  bool IsActive() {
+    return stream_params().first_ssrc() != 0;
+  }
+  void Deactivate() {
+    send_params_.stream = StreamParams();
+  }
+
   WebRtcLocalStreamInfo* local_stream_info() {
     return &local_stream_info_;
   }
@@ -886,6 +900,7 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
  private:
   int channel_id_;
   int capture_id_;
+  VideoSendParams send_params_;
   // TODO(pthatcher): Merge CapturedFrameInfo and LocalStreamInfo.
   Settable<CapturedFrameInfo> last_captured_frame_info_;
   bool sending_;
@@ -894,8 +909,6 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   WebRtcEncoderObserver encoder_observer_;
   webrtc::ViEExternalCapture* external_capture_;
   EncoderMap registered_encoders_;
-
-  rtc::scoped_ptr<StreamParams> stream_params_;
 
   WebRtcLocalStreamInfo local_stream_info_;
 
@@ -2289,8 +2302,7 @@ bool WebRtcVideoMediaChannel::GetSendChannelSsrcKey(uint32 local_ssrc,
     for (SendChannelMap::iterator iter = send_channels_.begin();
          iter != send_channels_.end(); ++iter) {
       WebRtcVideoChannelSendInfo* send_channel = iter->second;
-      if (send_channel->stream_params() != NULL &&
-          send_channel->stream_params()->has_ssrc(local_ssrc)) {
+      if (send_channel->stream_params().has_ssrc(local_ssrc)) {
         *ssrc_key = iter->first;
         return true;
       }
@@ -2360,10 +2372,7 @@ int WebRtcVideoMediaChannel::GetSendChannelNum(VideoCapturer* capturer) {
 }
 
 uint32 WebRtcVideoMediaChannel::GetDefaultSendChannelSsrc() {
-  if (!DefaultSendChannelIsActive()) {
-    return 0;
-  }
-  return GetDefaultSendChannel()->stream_params()->first_ssrc();
+  return GetDefaultSendChannel()->stream_params().first_ssrc();
 }
 
 bool WebRtcVideoMediaChannel::DeleteSendChannel(uint32 ssrc_key) {
@@ -2489,9 +2498,9 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
       WebRtcLocalStreamInfo* channel_stream_info =
           send_channel->local_stream_info();
 
-      const StreamParams* send_params = send_channel->stream_params();
-      for (size_t i = 0; i < send_params->ssrcs.size(); ++i) {
-        sinfo.add_ssrc(send_params->ssrcs[i]);
+      const StreamParams& sp = send_channel->stream_params();
+      for (size_t i = 0; i < sp.ssrcs.size(); ++i) {
+        sinfo.add_ssrc(sp.ssrcs[i]);
       }
       sinfo.codec_name = send_codec_->plName;
       sinfo.bytes_sent = bytes_sent;
@@ -3205,8 +3214,8 @@ bool WebRtcVideoMediaChannel::SendFrame(
   send_channel->SetLastCapturedFrameInfo(frame, is_screencast, &changed);
   if (changed) {
     // If the last captured frame info changed, then calling
-    // SendParams will update to the latest resolution.
-    if (!SetSendParams(send_channel, send_channel->stream_params())) {
+    // SetSendParams will update to the latest resolution.
+    if (!SetSendParams(send_channel, send_channel->send_params())) {
       LOG(LS_ERROR) << "SetSendParams from SendFrame failed with "
                     << frame->GetWidth() << "x" << frame->GetHeight()
                     << " screencast? " << is_screencast;
@@ -3693,11 +3702,11 @@ bool WebRtcVideoMediaChannel::SetSendCodec(
   }
 
   if (target_codec.width == 0 && target_codec.height == 0) {
-    const uint32 ssrc = send_channel->stream_params()->first_ssrc();
+    const uint32 ssrc = send_channel->stream_params().first_ssrc();
     LOG(LS_INFO) << "0x0 resolution selected. Captured frames will be dropped "
                  << "for ssrc: " << ssrc << ".";
   } else {
-    StreamParams* send_params = send_channel->stream_params();
+    const StreamParams& sp = send_channel->stream_params();
     SanitizeBitrates(channel_id, &target_codec);
     webrtc::VideoCodec current_codec;
     if (!engine()->vie()->codec()->GetSendCodec(channel_id, current_codec)) {
@@ -3713,8 +3722,8 @@ bool WebRtcVideoMediaChannel::SetSendCodec(
       return false;
     }
 
-    if (send_params) {
-      if (!SetSendSsrcs(channel_id, *send_params, target_codec)) {
+    if (send_channel->IsActive()) {
+      if (!SetSendSsrcs(channel_id, sp, target_codec)) {
         return false;
       }
     }
@@ -3908,7 +3917,7 @@ int WebRtcVideoMediaChannel::GetRecvChannelId(uint32 ssrc) {
 // codecs in a single place.
 bool WebRtcVideoMediaChannel::SetSendParams(
     WebRtcVideoChannelSendInfo* send_channel,
-    const StreamParams* send_params) {
+    const VideoSendParams& send_params) {
   ASSERT(send_codec_.get() != NULL);
 
   CapturedFrameInfo frame;
@@ -4006,8 +4015,9 @@ bool WebRtcVideoMediaChannel::SetSendParams(
     engine()->vie()->rtp()->SetTransmissionSmoothingStatus(channel_id, true);
     // TODO(sriniv): SetSendCodec already sets ssrc's like below.
     // Consider removing.
-    if (send_params) {
-      if (!SetSendSsrcs(channel_id, *send_params, target_codec)) {
+
+    if (send_channel->IsActive() && !frame.screencast) {
+      if (!SetSendSsrcs(channel_id, send_params.stream, target_codec)) {
         return false;
       }
     }
