@@ -1653,15 +1653,16 @@ TEST_F(EndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
         encoder_config->streams[i].target_bitrate_bps = 15000;
         encoder_config->streams[i].max_bitrate_bps = 20000;
       }
-      // Significantly higher than max bitrates for all video streams -> forcing
-      // padding to trigger redundant padding on all RTX SSRCs.
-      send_config->rtp.min_transmit_bitrate_bps = 100000;
 
       send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
       send_config->rtp.rtx.pad_with_redundant_payloads = true;
 
       for (size_t i = 0; i < kNumSsrcs; ++i)
         send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[i]);
+
+      // Significantly higher than max bitrates for all video streams -> forcing
+      // padding to trigger redundant padding on all RTX SSRCs.
+      encoder_config->min_transmit_bitrate_bps = 100000;
     }
 
     virtual void PerformTest() OVERRIDE {

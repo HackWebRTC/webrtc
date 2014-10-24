@@ -60,6 +60,7 @@ class VideoSendStream {
 
     struct EncoderSettings {
       EncoderSettings() : payload_type(-1), encoder(NULL) {}
+
       std::string ToString() const;
 
       std::string payload_name;
@@ -72,20 +73,13 @@ class VideoSendStream {
 
     static const size_t kDefaultMaxPacketSize = 1500 - 40;  // TCP over IPv4.
     struct Rtp {
-      Rtp()
-          : max_packet_size(kDefaultMaxPacketSize),
-            min_transmit_bitrate_bps(0) {}
+      Rtp() : max_packet_size(kDefaultMaxPacketSize) {}
       std::string ToString() const;
 
       std::vector<uint32_t> ssrcs;
 
       // Max RTP packet size delivered to send transport from VideoEngine.
       size_t max_packet_size;
-
-      // Padding will be used up to this bitrate regardless of the bitrate
-      // produced by the encoder. Padding above what's actually produced by the
-      // encoder helps maintaining a higher bitrate estimate.
-      int min_transmit_bitrate_bps;
 
       // RTP header extensions to use for this send stream.
       std::vector<RtpExtension> extensions;

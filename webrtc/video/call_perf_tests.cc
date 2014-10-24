@@ -543,9 +543,9 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) OVERRIDE {
       if (pad_to_min_bitrate_) {
-        send_config->rtp.min_transmit_bitrate_bps = kMinTransmitBitrateBps;
+        encoder_config->min_transmit_bitrate_bps = kMinTransmitBitrateBps;
       } else {
-        assert(send_config->rtp.min_transmit_bitrate_bps == 0);
+        assert(encoder_config->min_transmit_bitrate_bps == 0);
       }
     }
 

@@ -66,8 +66,6 @@ std::string VideoSendStream::Config::Rtp::ToString() const {
   ss << '}';
 
   ss << ", max_packet_size: " << max_packet_size;
-  if (min_transmit_bitrate_bps != 0)
-    ss << ", min_transmit_bitrate_bps: " << min_transmit_bitrate_bps;
 
   ss << ", extensions: {";
   for (size_t i = 0; i < extensions.size(); ++i) {
@@ -136,10 +134,6 @@ VideoSendStream::VideoSendStream(
   assert(rtp_rtcp_ != NULL);
 
   assert(config_.rtp.ssrcs.size() > 0);
-
-  assert(config_.rtp.min_transmit_bitrate_bps >= 0);
-  rtp_rtcp_->SetMinTransmitBitrate(channel_,
-                                   config_.rtp.min_transmit_bitrate_bps / 1000);
 
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
     const std::string& extension = config_.rtp.extensions[i].name;
@@ -298,6 +292,7 @@ void VideoSendStream::Stop() {
 
 bool VideoSendStream::ReconfigureVideoEncoder(
     const VideoEncoderConfig& config) {
+  LOG(LS_INFO) << "(Re)configureVideoEncoder: " << config.ToString();
   const std::vector<VideoStream>& streams = config.streams;
   assert(!streams.empty());
   assert(config_.rtp.ssrcs.size() >= streams.size());
@@ -406,6 +401,10 @@ bool VideoSendStream::ReconfigureVideoEncoder(
 
   if (codec_->SetSendCodec(channel_, video_codec) != 0)
     return false;
+
+  assert(config.min_transmit_bitrate_bps >= 0);
+  rtp_rtcp_->SetMinTransmitBitrate(channel_,
+                                   config.min_transmit_bitrate_bps / 1000);
 
   use_default_bitrate_ = false;
   return true;

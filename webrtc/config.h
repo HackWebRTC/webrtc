@@ -115,11 +115,21 @@ struct VideoEncoderConfig {
   };
 
   VideoEncoderConfig()
-      : content_type(kRealtimeVideo), encoder_specific_settings(NULL) {}
+      : content_type(kRealtimeVideo),
+        encoder_specific_settings(NULL),
+        min_transmit_bitrate_bps(0) {}
+
+  std::string ToString() const;
 
   std::vector<VideoStream> streams;
   ContentType content_type;
   void* encoder_specific_settings;
+
+  // Padding will be used up to this bitrate regardless of the bitrate produced
+  // by the encoder. Padding above what's actually produced by the encoder helps
+  // maintaining a higher bitrate estimate. Padding will however not be sent
+  // unless the estimated bandwidth indicates that the link can handle it.
+  int min_transmit_bitrate_bps;
 };
 
 }  // namespace webrtc

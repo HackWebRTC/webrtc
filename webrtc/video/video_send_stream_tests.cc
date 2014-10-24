@@ -1075,7 +1075,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) OVERRIDE {
-      send_config->rtp.min_transmit_bitrate_bps = kMinTransmitBitrateBps;
+      encoder_config->min_transmit_bitrate_bps = kMinTransmitBitrateBps;
     }
 
     virtual void PerformTest() OVERRIDE {
