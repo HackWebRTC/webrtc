@@ -43,6 +43,8 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import org.webrtc.MediaCodecVideoEncoder;
+
 /**
  * Handles the initial setup where the user selects which room to join.
  */
@@ -97,6 +99,10 @@ public class ConnectActivity extends Activity {
           url += "/?debug=loopback";
         } else {
           url += "/?r=" + roomEditText.getText();
+        }
+
+        if (MediaCodecVideoEncoder.isPlatformSupported()) {
+          url += "&hd=true";
         }
         // TODO(kjellander): Add support for custom parameters to the URL.
         connectToRoom(url);
