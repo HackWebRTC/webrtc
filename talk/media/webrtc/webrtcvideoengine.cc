@@ -3947,14 +3947,12 @@ bool WebRtcVideoMediaChannel::SetSendParams(
   }
 
   // Get current vie codec.
-  webrtc::VideoCodec vie_codec;
+  webrtc::VideoCodec current;
   const int channel_id = send_channel->channel_id();
-  if (engine()->vie()->codec()->GetSendCodec(channel_id, vie_codec) != 0) {
+  if (engine()->vie()->codec()->GetSendCodec(channel_id, current) != 0) {
     LOG_RTCERR1(GetSendCodec, channel_id);
     return false;
   }
-  const int cur_width = vie_codec.width;
-  const int cur_height = vie_codec.height;
 
   // Only reset send codec when there is a size change. Additionally,
   // automatic resize needs to be turned off when screencasting and on when
@@ -3974,54 +3972,46 @@ bool WebRtcVideoMediaChannel::SetSendParams(
   }
   int screencast_min_bitrate =
       options_.screencast_min_bitrate.GetWithDefaultIfUnset(0);
-  bool reset_send_codec =
-    target_width != cur_width || target_height != cur_height;
+
+  // Set the new codec on vie.
+  webrtc::VideoCodec vie_codec = current;
+  vie_codec.width = target_width;
+  vie_codec.height = target_height;
+  vie_codec.maxFramerate = target_codec.maxFramerate;
+  vie_codec.startBitrate = target_codec.startBitrate;
+  vie_codec.minBitrate = target_codec.minBitrate;
+  vie_codec.maxBitrate = target_codec.maxBitrate;
+  vie_codec.targetBitrate = 0;
   if (vie_codec.codecType == webrtc::kVideoCodecVP8) {
-    reset_send_codec = reset_send_codec ||
-      automatic_resize != vie_codec.codecSpecific.VP8.automaticResizeOn ||
-      enable_denoising != vie_codec.codecSpecific.VP8.denoisingOn ||
-      vp8_frame_dropping != vie_codec.codecSpecific.VP8.frameDroppingOn;
+    vie_codec.codecSpecific.VP8.automaticResizeOn = automatic_resize;
+    vie_codec.codecSpecific.VP8.denoisingOn = enable_denoising;
+    vie_codec.codecSpecific.VP8.frameDroppingOn = vp8_frame_dropping;
   }
+  SanitizeBitrates(channel_id, &vie_codec);
 
-  if (reset_send_codec) {
-    // Set the new codec on vie.
-    vie_codec.width = target_width;
-    vie_codec.height = target_height;
-    vie_codec.maxFramerate = target_codec.maxFramerate;
-    vie_codec.startBitrate = target_codec.startBitrate;
-    vie_codec.minBitrate = target_codec.minBitrate;
-    vie_codec.maxBitrate = target_codec.maxBitrate;
-    vie_codec.targetBitrate = 0;
-    if (vie_codec.codecType == webrtc::kVideoCodecVP8) {
-      vie_codec.codecSpecific.VP8.automaticResizeOn = automatic_resize;
-      vie_codec.codecSpecific.VP8.denoisingOn = enable_denoising;
-      vie_codec.codecSpecific.VP8.frameDroppingOn = vp8_frame_dropping;
-    }
-    SanitizeBitrates(channel_id, &vie_codec);
-
+  if (current != vie_codec) {
     if (engine()->vie()->codec()->SetSendCodec(channel_id, vie_codec) != 0) {
       LOG_RTCERR1(SetSendCodec, channel_id);
       return false;
     }
+  }
 
-    if (frame.screencast) {
-      engine()->vie()->rtp()->SetMinTransmitBitrate(channel_id,
-                                                    screencast_min_bitrate);
-    } else {
-      // In case of switching from screencast to regular capture, set
-      // min bitrate padding and pacer back to defaults.
-      engine()->vie()->rtp()->SetMinTransmitBitrate(channel_id, 0);
-    }
-    engine()->vie()->rtp()->SetTransmissionSmoothingStatus(channel_id, true);
-    // TODO(sriniv): SetSendCodec already sets ssrc's like below.
-    // Consider removing.
+  if (frame.screencast) {
+    engine()->vie()->rtp()->SetMinTransmitBitrate(channel_id,
+                                                  screencast_min_bitrate);
+  } else {
+    // In case of switching from screencast to regular capture, set
+    // min bitrate padding and pacer back to defaults.
+    engine()->vie()->rtp()->SetMinTransmitBitrate(channel_id, 0);
+  }
+  engine()->vie()->rtp()->SetTransmissionSmoothingStatus(channel_id, true);
+  // TODO(sriniv): SetSendCodec already sets ssrc's like below.
+  // Consider removing.
 
-    if (send_channel->IsActive() && !frame.screencast) {
-      if (!SetSendSsrcs(channel_id, send_params.stream, target_codec)) {
-        return false;
-      }
+  if (send_channel->IsActive() && !frame.screencast) {
+    if (!SetSendSsrcs(channel_id, send_params.stream, target_codec)) {
+      return false;
     }
-    LogSendCodecChange("Capture size changed");
   }
 
   return true;
