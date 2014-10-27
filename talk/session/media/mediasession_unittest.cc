@@ -628,6 +628,33 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateSctpDataOffer) {
   EXPECT_TRUE(offer->GetContentByName("data") != NULL);
 }
 
+// Test creating an sctp data channel from an already generated offer.
+TEST_F(MediaSessionDescriptionFactoryTest, TestCreateImplicitSctpDataOffer) {
+  MediaSessionOptions opts;
+  opts.recv_audio = false;
+  opts.bundle_enabled = true;
+  opts.data_channel_type = cricket::DCT_SCTP;
+  f1_.set_secure(SEC_ENABLED);
+  rtc::scoped_ptr<SessionDescription> offer1(f1_.CreateOffer(opts, NULL));
+  ASSERT_TRUE(offer1.get() != NULL);
+  const ContentInfo* data = offer1->GetContentByName("data");
+  ASSERT_TRUE(data != NULL);
+  const MediaContentDescription* mdesc =
+      static_cast<const MediaContentDescription*>(data->description);
+  ASSERT_EQ(cricket::kMediaProtocolSctp, mdesc->protocol());
+
+  // Now set data_channel_type to 'none' (default) and make sure that the
+  // datachannel type that gets generated from the previous offer, is of the
+  // same type.
+  opts.data_channel_type = cricket::DCT_NONE;
+  rtc::scoped_ptr<SessionDescription> offer2(
+      f1_.CreateOffer(opts, offer1.get()));
+  data = offer2->GetContentByName("data");
+  ASSERT_TRUE(data != NULL);
+  mdesc = static_cast<const MediaContentDescription*>(data->description);
+  EXPECT_EQ(cricket::kMediaProtocolSctp, mdesc->protocol());
+}
+
 // Create an audio, video offer without legacy StreamParams.
 TEST_F(MediaSessionDescriptionFactoryTest,
        TestCreateOfferWithoutLegacyStreams) {

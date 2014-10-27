@@ -1191,8 +1191,14 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
         }
         video_added = true;
       } else if (IsMediaContentOfType(&*it, MEDIA_TYPE_DATA)) {
-        if (!AddDataContentForOffer(options, current_description, &data_codecs,
-                                    &current_streams, offer.get())) {
+        MediaSessionOptions options_copy(options);
+        if (IsSctp(static_cast<const MediaContentDescription*>(
+                it->description))) {
+          options_copy.data_channel_type = DCT_SCTP;
+        }
+        if (!AddDataContentForOffer(options_copy, current_description,
+                                    &data_codecs, &current_streams,
+                                    offer.get())) {
           return NULL;
         }
         data_added = true;
