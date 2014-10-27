@@ -150,7 +150,7 @@ bool SrtpFilter::SetRtpParams(const std::string& send_cs,
                               const uint8* send_key, int send_key_len,
                               const std::string& recv_cs,
                               const uint8* recv_key, int recv_key_len) {
-  if (state_ == ST_ACTIVE) {
+  if (IsActive()) {
     LOG(LS_ERROR) << "Tried to set SRTP Params when filter already active";
     return false;
   }
@@ -212,6 +212,7 @@ bool SrtpFilter::ProtectRtp(void* p, int in_len, int max_len, int* out_len) {
     LOG(LS_WARNING) << "Failed to ProtectRtp: SRTP not active";
     return false;
   }
+  ASSERT(send_session_ != NULL);
   return send_session_->ProtectRtp(p, in_len, max_len, out_len);
 }
 
@@ -221,7 +222,7 @@ bool SrtpFilter::ProtectRtp(void* p, int in_len, int max_len, int* out_len,
     LOG(LS_WARNING) << "Failed to ProtectRtp: SRTP not active";
     return false;
   }
-
+  ASSERT(send_session_ != NULL);
   return send_session_->ProtectRtp(p, in_len, max_len, out_len, index);
 }
 
@@ -233,6 +234,7 @@ bool SrtpFilter::ProtectRtcp(void* p, int in_len, int max_len, int* out_len) {
   if (send_rtcp_session_) {
     return send_rtcp_session_->ProtectRtcp(p, in_len, max_len, out_len);
   } else {
+    ASSERT(send_session_ != NULL);
     return send_session_->ProtectRtcp(p, in_len, max_len, out_len);
   }
 }
@@ -242,6 +244,7 @@ bool SrtpFilter::UnprotectRtp(void* p, int in_len, int* out_len) {
     LOG(LS_WARNING) << "Failed to UnprotectRtp: SRTP not active";
     return false;
   }
+  ASSERT(recv_session_ != NULL);
   return recv_session_->UnprotectRtp(p, in_len, out_len);
 }
 
@@ -253,6 +256,7 @@ bool SrtpFilter::UnprotectRtcp(void* p, int in_len, int* out_len) {
   if (recv_rtcp_session_) {
     return recv_rtcp_session_->UnprotectRtcp(p, in_len, out_len);
   } else {
+    ASSERT(recv_session_ != NULL);
     return recv_session_->UnprotectRtcp(p, in_len, out_len);
   }
 }
@@ -263,13 +267,16 @@ bool SrtpFilter::GetRtpAuthParams(uint8** key, int* key_len, int* tag_len) {
     return false;
   }
 
+  ASSERT(send_session_ != NULL);
   return send_session_->GetRtpAuthParams(key, key_len, tag_len);
 }
 
 void SrtpFilter::set_signal_silent_time(uint32 signal_silent_time_in_ms) {
   signal_silent_time_in_ms_ = signal_silent_time_in_ms;
-  if (state_ == ST_ACTIVE) {
+  if (IsActive()) {
+    ASSERT(send_session_ != NULL);
     send_session_->set_signal_silent_time(signal_silent_time_in_ms);
+    ASSERT(recv_session_ != NULL);
     recv_session_->set_signal_silent_time(signal_silent_time_in_ms);
     if (send_rtcp_session_)
       send_rtcp_session_->set_signal_silent_time(signal_silent_time_in_ms);
@@ -292,7 +299,7 @@ bool SrtpFilter::StoreParams(const std::vector<CryptoParams>& params,
   offer_params_ = params;
   if (state_ == ST_INIT) {
     state_ = (source == CS_LOCAL) ? ST_SENTOFFER : ST_RECEIVEDOFFER;
-  } else {  // state >= ST_ACTIVE
+  } else if (state_ == ST_ACTIVE) {
     state_ =
         (source == CS_LOCAL) ? ST_SENTUPDATEDOFFER : ST_RECEIVEDUPDATEDOFFER;
   }

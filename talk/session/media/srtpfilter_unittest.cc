@@ -82,9 +82,12 @@ class SrtpFilterTest : public testing::Test {
                      const std::vector<CryptoParams>& params2) {
     EXPECT_TRUE(f1_.SetOffer(params1, CS_LOCAL));
     EXPECT_TRUE(f2_.SetOffer(params1, CS_REMOTE));
+    EXPECT_FALSE(f1_.IsActive());
+    EXPECT_FALSE(f2_.IsActive());
     EXPECT_TRUE(f2_.SetAnswer(params2, CS_LOCAL));
     EXPECT_TRUE(f1_.SetAnswer(params2, CS_REMOTE));
     EXPECT_TRUE(f1_.IsActive());
+    EXPECT_TRUE(f2_.IsActive());
   }
   void TestProtectUnprotect(const std::string& cs1, const std::string& cs2) {
     char rtp_packet[sizeof(kPcmuFrame) + 10];
@@ -139,6 +142,7 @@ class SrtpFilterTest : public testing::Test {
 // Test that we can set up the session and keys properly.
 TEST_F(SrtpFilterTest, TestGoodSetupOneCipherSuite) {
   EXPECT_TRUE(f1_.SetOffer(MakeVector(kTestCryptoParams1), CS_LOCAL));
+  EXPECT_FALSE(f1_.IsActive());
   EXPECT_TRUE(f1_.SetAnswer(MakeVector(kTestCryptoParams2), CS_REMOTE));
   EXPECT_TRUE(f1_.IsActive());
 }
@@ -153,6 +157,7 @@ TEST_F(SrtpFilterTest, TestGoodSetupMultipleCipherSuites) {
   answer[0].tag = 2;
   answer[0].cipher_suite = CS_AES_CM_128_HMAC_SHA1_32;
   EXPECT_TRUE(f1_.SetOffer(offer, CS_LOCAL));
+  EXPECT_FALSE(f1_.IsActive());
   EXPECT_TRUE(f1_.SetAnswer(answer, CS_REMOTE));
   EXPECT_TRUE(f1_.IsActive());
 }
@@ -188,6 +193,7 @@ TEST_F(SrtpFilterTest, TestBadSetup) {
 TEST_F(SrtpFilterTest, TestGoodSetupMultipleOffers) {
   EXPECT_TRUE(f1_.SetOffer(MakeVector(kTestCryptoParams1), CS_LOCAL));
   EXPECT_TRUE(f1_.SetOffer(MakeVector(kTestCryptoParams2), CS_LOCAL));
+  EXPECT_FALSE(f1_.IsActive());
   EXPECT_TRUE(f1_.SetAnswer(MakeVector(kTestCryptoParams2), CS_REMOTE));
   EXPECT_TRUE(f1_.IsActive());
   EXPECT_TRUE(f1_.SetOffer(MakeVector(kTestCryptoParams1), CS_LOCAL));
@@ -196,6 +202,7 @@ TEST_F(SrtpFilterTest, TestGoodSetupMultipleOffers) {
 
   EXPECT_TRUE(f2_.SetOffer(MakeVector(kTestCryptoParams1), CS_REMOTE));
   EXPECT_TRUE(f2_.SetOffer(MakeVector(kTestCryptoParams2), CS_REMOTE));
+  EXPECT_FALSE(f2_.IsActive());
   EXPECT_TRUE(f2_.SetAnswer(MakeVector(kTestCryptoParams2), CS_LOCAL));
   EXPECT_TRUE(f2_.IsActive());
   EXPECT_TRUE(f2_.SetOffer(MakeVector(kTestCryptoParams1), CS_REMOTE));
@@ -206,6 +213,7 @@ TEST_F(SrtpFilterTest, TestGoodSetupMultipleOffers) {
 TEST_F(SrtpFilterTest, TestBadSetupMultipleOffers) {
   EXPECT_TRUE(f1_.SetOffer(MakeVector(kTestCryptoParams1), CS_LOCAL));
   EXPECT_FALSE(f1_.SetOffer(MakeVector(kTestCryptoParams2), CS_REMOTE));
+  EXPECT_FALSE(f1_.IsActive());
   EXPECT_TRUE(f1_.SetAnswer(MakeVector(kTestCryptoParams1), CS_REMOTE));
   EXPECT_TRUE(f1_.IsActive());
   EXPECT_TRUE(f1_.SetOffer(MakeVector(kTestCryptoParams2), CS_LOCAL));
@@ -214,6 +222,7 @@ TEST_F(SrtpFilterTest, TestBadSetupMultipleOffers) {
 
   EXPECT_TRUE(f2_.SetOffer(MakeVector(kTestCryptoParams2), CS_REMOTE));
   EXPECT_FALSE(f2_.SetOffer(MakeVector(kTestCryptoParams1), CS_LOCAL));
+  EXPECT_FALSE(f2_.IsActive());
   EXPECT_TRUE(f2_.SetAnswer(MakeVector(kTestCryptoParams2), CS_LOCAL));
   EXPECT_TRUE(f2_.IsActive());
   EXPECT_TRUE(f2_.SetOffer(MakeVector(kTestCryptoParams2), CS_REMOTE));
@@ -402,6 +411,8 @@ TEST_F(SrtpFilterTest, TestProvisionalAnswer) {
 
   EXPECT_TRUE(f1_.SetOffer(offer, CS_LOCAL));
   EXPECT_TRUE(f2_.SetOffer(offer, CS_REMOTE));
+  EXPECT_FALSE(f1_.IsActive());
+  EXPECT_FALSE(f2_.IsActive());
   EXPECT_TRUE(f2_.SetProvisionalAnswer(answer, CS_LOCAL));
   EXPECT_TRUE(f1_.SetProvisionalAnswer(answer, CS_REMOTE));
   EXPECT_TRUE(f1_.IsActive());
@@ -425,8 +436,37 @@ TEST_F(SrtpFilterTest, TestProvisionalAnswerWithoutCrypto) {
 
   EXPECT_TRUE(f1_.SetOffer(offer, CS_LOCAL));
   EXPECT_TRUE(f2_.SetOffer(offer, CS_REMOTE));
+  EXPECT_FALSE(f1_.IsActive());
+  EXPECT_FALSE(f2_.IsActive());
   EXPECT_TRUE(f2_.SetProvisionalAnswer(answer, CS_LOCAL));
   EXPECT_TRUE(f1_.SetProvisionalAnswer(answer, CS_REMOTE));
+  EXPECT_FALSE(f1_.IsActive());
+  EXPECT_FALSE(f2_.IsActive());
+
+  answer.push_back(kTestCryptoParams2);
+  EXPECT_TRUE(f2_.SetAnswer(answer, CS_LOCAL));
+  EXPECT_TRUE(f1_.SetAnswer(answer, CS_REMOTE));
+  EXPECT_TRUE(f1_.IsActive());
+  EXPECT_TRUE(f2_.IsActive());
+  TestProtectUnprotect(CS_AES_CM_128_HMAC_SHA1_80, CS_AES_CM_128_HMAC_SHA1_80);
+}
+
+// Test that if we get a new local offer after a provisional answer
+// with no crypto, that we are in an inactive state.
+TEST_F(SrtpFilterTest, TestLocalOfferAfterProvisionalAnswerWithoutCrypto) {
+  std::vector<CryptoParams> offer(MakeVector(kTestCryptoParams1));
+  std::vector<CryptoParams> answer;
+
+  EXPECT_TRUE(f1_.SetOffer(offer, CS_LOCAL));
+  EXPECT_TRUE(f2_.SetOffer(offer, CS_REMOTE));
+  EXPECT_TRUE(f1_.SetProvisionalAnswer(answer, CS_REMOTE));
+  EXPECT_TRUE(f2_.SetProvisionalAnswer(answer, CS_LOCAL));
+  EXPECT_FALSE(f1_.IsActive());
+  EXPECT_FALSE(f2_.IsActive());
+  // The calls to set an offer after a provisional answer fail, so the
+  // state doesn't change.
+  EXPECT_FALSE(f1_.SetOffer(offer, CS_LOCAL));
+  EXPECT_FALSE(f2_.SetOffer(offer, CS_REMOTE));
   EXPECT_FALSE(f1_.IsActive());
   EXPECT_FALSE(f2_.IsActive());
 
