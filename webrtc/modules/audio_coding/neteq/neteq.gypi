@@ -155,6 +155,14 @@
             'audio_decoder_unittest.cc',
             'audio_decoder.cc',
             'interface/audio_decoder.h',
+            # The files below are from the neteq_unittest_tools target, but that
+            # target depends (through long dependency chains) on the neteq
+            # target, which creates a conflict with the audio_decoder_impl.*
+            # files.
+            'tools/input_audio_file.cc',
+            'tools/input_audio_file.h',
+            'tools/resample_input_audio_file.cc',
+            'tools/resample_input_audio_file.h',
           ],
           'conditions': [
             ['OS=="android"', {
@@ -193,6 +201,8 @@
             'tools/packet.cc',
             'tools/packet.h',
             'tools/packet_source.h',
+            'tools/resample_input_audio_file.cc',
+            'tools/resample_input_audio_file.h',
             'tools/rtp_file_source.cc',
             'tools/rtp_file_source.h',
             'tools/rtp_generator.cc',
