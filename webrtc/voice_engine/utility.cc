@@ -22,8 +22,7 @@ namespace webrtc {
 namespace voe {
 
 // TODO(ajm): There is significant overlap between RemixAndResample and
-// ConvertToCodecFormat, but if we're to consolidate we should probably make a
-// real converter class.
+// ConvertToCodecFormat. Consolidate using AudioConverter.
 void RemixAndResample(const AudioFrame& src_frame,
                       PushResampler<int16_t>* resampler,
                       AudioFrame* dst_frame) {
