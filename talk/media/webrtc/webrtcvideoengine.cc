@@ -3664,81 +3664,34 @@ bool WebRtcVideoMediaChannel::SetSendCodec(const webrtc::VideoCodec& codec) {
 
 bool WebRtcVideoMediaChannel::SetSendCodec(
     WebRtcVideoChannelSendInfo* send_channel,
-    const webrtc::VideoCodec& target) {
+    const webrtc::VideoCodec& codec) {
   if (!send_channel) {
     return false;
   }
 
   send_channel->SetAdaptFormat(
-      VideoFormatFromVieCodec(target),
+      VideoFormatFromVieCodec(codec),
       WebRtcVideoChannelSendInfo::kAdaptFormatTypeCodec);
-
-  const int channel_id = send_channel->channel_id();
-  // Make a copy of the codec
-  webrtc::VideoCodec codec = target;
-
-  // Set the default number of temporal layers for VP8.
-  if (webrtc::kVideoCodecVP8 == codec.codecType) {
-    codec.codecSpecific.VP8.numberOfTemporalLayers =
-        kDefaultNumberOfTemporalLayers;
-
-    // Turn off the VP8 error resilience
-    codec.codecSpecific.VP8.resilience = webrtc::kResilienceOff;
-
-    bool enable_denoising =
-        options_.video_noise_reduction.GetWithDefaultIfUnset(true);
-    codec.codecSpecific.VP8.denoisingOn = enable_denoising;
-  }
 
   MaybeRegisterExternalEncoder(send_channel, codec);
 
-  // TODO(pthatcher): We should rely on the adapter to adapt the
-  // resolution, and not do it here.
-  if (send_channel->adapt_format_set()) {
-    codec.width = send_channel->adapt_format().width;
-    codec.height = send_channel->adapt_format().height;
-    codec.maxFramerate = cricket::VideoFormat::IntervalToFps(
-        send_channel->adapt_format().interval);
-  }
-
-  if (codec.width == 0 && codec.height == 0) {
-    const uint32 ssrc = send_channel->stream_params().first_ssrc();
-    LOG(LS_INFO) << "0x0 resolution selected. Captured frames will be dropped "
-                 << "for ssrc: " << ssrc << ".";
-    return true;
-  }
-
-  const StreamParams& sp = send_channel->stream_params();
-  SanitizeBitrates(channel_id, &codec);
-  webrtc::VideoCodec current_codec;
-  if (!engine()->vie()->codec()->GetSendCodec(channel_id, current_codec)) {
-    // Compare against existing configured send codec.
-    if (current_codec == codec) {
-      // Codec is already configured on channel. no need to apply.
-      return true;
-    }
-  }
-
-  if (0 != engine()->vie()->codec()->SetSendCodec(channel_id, codec)) {
-    LOG_RTCERR2(SetSendCodec, channel_id, codec.plName);
+  VideoSendParams send_params = send_channel->send_params();
+  send_params.codec = codec;
+  if (!SetSendParams(send_channel, send_params)) {
     return false;
-  }
-
-  if (send_channel->IsActive()) {
-    if (!SetSendSsrcs(channel_id, sp, codec)) {
-      return false;
-    }
   }
 
   // NOTE: SetRtxSendPayloadType must be called after all simulcast SSRCs
   // are configured. Otherwise ssrc's configured after this point will use
   // the primary PT for RTX.
+  const int channel_id = send_channel->channel_id();
   if (send_rtx_type_ != -1 &&
       engine()->vie()->rtp()->SetRtxSendPayloadType(channel_id,
                                                     send_rtx_type_) != 0) {
     LOG_RTCERR2(SetRtxSendPayloadType, channel_id, send_rtx_type_);
     return false;
   }
+
   return true;
 }
 
@@ -3911,54 +3864,41 @@ int WebRtcVideoMediaChannel::GetRecvChannelId(uint32 ssrc) {
   return recv_channel_id;
 }
 
-// If the new frame size is different from the send codec size we set on vie,
-// we need to reset the send codec on vie.
-// The new send codec size should not exceed send_codec_ which is controlled
-// only by the 'jec' logic.
-// TODO(pthatcher): Get rid of this function, so we only ever set up
-// codecs in a single place.
 bool WebRtcVideoMediaChannel::SetSendParams(
     WebRtcVideoChannelSendInfo* send_channel,
     const VideoSendParams& send_params) {
-  ASSERT(send_codec_.get() != NULL);
+  const int channel_id = send_channel->channel_id();
 
   CapturedFrameInfo frame;
-  if (!send_channel->last_captured_frame_info().Get(&frame)) {
-    // No captured frame yet, so nothing to set.
-    return true;
-  }
+  send_channel->last_captured_frame_info().Get(&frame);
 
-  // TODO(pthatcher): This is only needed because some unit tests
-  // bypass the VideoAdapter, and others expect behavior from the
-  // adapter different than what it actually does.  We should fix the
-  // tests and remove this.
+  // TODO(pthatcher): This checking of the max height and width is
+  // only needed because some unit tests bypass the VideoAdapter, and
+  // others expect behavior from the adapter different than what it
+  // actually does.  We should fix the tests and remove this block.
   int frame_width = static_cast<int>(frame.width);
   int frame_height = static_cast<int>(frame.height);
-  if (!frame.screencast && send_channel->adapt_format_set()) {
-    VideoFormat max = send_channel->adapt_format();
-    if (frame_width > max.width || frame_height > max.height) {
-      frame_width = max.width;
-      frame_height = max.height;
-    }
-  }
-
-  // Get current vie codec.
-  webrtc::VideoCodec current;
-  const int channel_id = send_channel->channel_id();
-  if (engine()->vie()->codec()->GetSendCodec(channel_id, current) != 0) {
-    LOG_RTCERR1(GetSendCodec, channel_id);
-    return false;
+  VideoFormat max = send_channel->adapt_format();
+  if (!send_channel->last_captured_frame_info().IsSet() ||
+      (!frame.screencast &&
+       (frame_width > max.width || frame_height > max.height))) {
+    frame_width = max.width;
+    frame_height = max.height;
   }
 
   // Set the new codec on vie.
-  webrtc::VideoCodec codec = current;
+  webrtc::VideoCodec codec = send_params.codec;
+
+  // Settings for both screencast and non-screencast
   codec.width = frame_width;
   codec.height = frame_height;
-  codec.maxFramerate = send_channel->adapt_format().framerate();
-  codec.startBitrate = send_codec_->startBitrate;
-  codec.minBitrate = send_codec_->minBitrate;
-  codec.maxBitrate = send_codec_->maxBitrate;
+  codec.maxFramerate = max.framerate();
   codec.targetBitrate = 0;
+  if (codec.codecType == webrtc::kVideoCodecVP8) {
+    codec.codecSpecific.VP8.numberOfTemporalLayers =
+        kDefaultNumberOfTemporalLayers;
+    codec.codecSpecific.VP8.resilience = webrtc::kResilienceOff;
+  }
   if (frame.screencast) {
     // Settings for screencast
     codec.mode = webrtc::kScreensharing;
@@ -3979,6 +3919,13 @@ bool WebRtcVideoMediaChannel::SetSendParams(
   }
   SanitizeBitrates(channel_id, &codec);
 
+  // Get current vie codec.
+  webrtc::VideoCodec current;
+  if (engine()->vie()->codec()->GetSendCodec(channel_id, current) != 0) {
+    LOG_RTCERR1(GetSendCodec, channel_id);
+    return false;
+  }
+
   if (current != codec) {
     if (engine()->vie()->codec()->SetSendCodec(channel_id, codec) != 0) {
       LOG_RTCERR1(SetSendCodec, channel_id);
@@ -3998,13 +3945,13 @@ bool WebRtcVideoMediaChannel::SetSendParams(
   }
   engine()->vie()->rtp()->SetTransmissionSmoothingStatus(channel_id, true);
 
-  // TODO(sriniv): SetSendCodec already sets ssrc's like below.
-  // Consider removing.
   if (send_channel->IsActive()) {
     if (!SetSendSsrcs(channel_id, send_params.stream, codec)) {
       return false;
     }
   }
+
+  send_channel->set_send_params(send_params);
   return true;
 }
 

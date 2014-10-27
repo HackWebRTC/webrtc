@@ -244,8 +244,9 @@ struct CapturedFrameInfo {
   bool screencast;
 };
 
-// TODO(pthatcher): Add codec and VideoOptions.
+// TODO(pthatcher): Add VideoOptions.
 struct VideoSendParams {
+  webrtc::VideoCodec codec;
   StreamParams stream;
 };
 
