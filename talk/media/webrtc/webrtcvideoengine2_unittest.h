@@ -41,7 +41,8 @@ class FakeVideoSendStream : public webrtc::VideoSendStream,
  public:
   FakeVideoSendStream(const webrtc::VideoSendStream::Config& config,
                       const webrtc::VideoEncoderConfig& encoder_config);
-  webrtc::VideoSendStream::Config GetConfig();
+  webrtc::VideoSendStream::Config GetConfig() const;
+  webrtc::VideoEncoderConfig GetEncoderConfig() const;
   std::vector<webrtc::VideoStream> GetVideoStreams();
 
   bool IsSending() const;

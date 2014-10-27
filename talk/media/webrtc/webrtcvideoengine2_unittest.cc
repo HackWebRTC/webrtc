@@ -79,8 +79,12 @@ FakeVideoSendStream::FakeVideoSendStream(
   ReconfigureVideoEncoder(encoder_config);
 }
 
-webrtc::VideoSendStream::Config FakeVideoSendStream::GetConfig() {
+webrtc::VideoSendStream::Config FakeVideoSendStream::GetConfig() const {
   return config_;
+}
+
+webrtc::VideoEncoderConfig FakeVideoSendStream::GetEncoderConfig() const {
+  return encoder_config_;
 }
 
 std::vector<webrtc::VideoStream> FakeVideoSendStream::GetVideoStreams() {
@@ -725,7 +729,7 @@ TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_SendVp8HdAndReceiveAdaptedVp8Vga) {
   EXPECT_TRUE(channel_->SetCapturer(kSsrc, video_capturer_.get()));
 
   // Capture format HD -> adapt (OnOutputFormatRequest VGA) -> VGA.
-  cricket::VideoCodec codec(100, "VP8", 1280, 720, 30, 0);
+  cricket::VideoCodec codec = kVp8Codec720p;
   EXPECT_TRUE(SetOneCodec(codec));
   codec.width /= 2;
   codec.height /= 2;
@@ -1189,8 +1193,60 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_SetBandwidthInConference) {
   FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_SetBandwidthScreencast) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+TEST_F(WebRtcVideoChannel2Test, UsesCorrectSettingsForScreencast) {
+  static const int kScreenshareMinBitrateKbps = 800;
+  cricket::VideoCodec codec = kVp8Codec360p;
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  VideoOptions options;
+  options.screencast_min_bitrate.Set(kScreenshareMinBitrateKbps);
+  channel_->SetOptions(options);
+
+  AddSendStream();
+
+  cricket::FakeVideoCapturer capturer;
+  capturer.SetScreencast(false);
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
+  cricket::VideoFormat capture_format_hd =
+      capturer.GetSupportedFormats()->front();
+  EXPECT_EQ(1280, capture_format_hd.width);
+  EXPECT_EQ(720, capture_format_hd.height);
+  EXPECT_EQ(cricket::CS_RUNNING, capturer.Start(capture_format_hd));
+
+  EXPECT_TRUE(channel_->SetSend(true));
+
+  EXPECT_TRUE(capturer.CaptureFrame());
+  ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
+  FakeVideoSendStream* send_stream = fake_call_->GetVideoSendStreams().front();
+
+  EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
+
+  // Verify non-screencast settings.
+  webrtc::VideoEncoderConfig encoder_config = send_stream->GetEncoderConfig();
+  EXPECT_EQ(webrtc::VideoEncoderConfig::kRealtimeVideo,
+            encoder_config.content_type);
+  EXPECT_EQ(codec.width, encoder_config.streams.front().width);
+  EXPECT_EQ(codec.height, encoder_config.streams.front().height);
+  EXPECT_EQ(0, encoder_config.min_transmit_bitrate_bps)
+      << "Non-screenshare shouldn't use min-transmit bitrate.";
+
+  capturer.SetScreencast(true);
+  EXPECT_TRUE(capturer.CaptureFrame());
+
+  EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
+
+  // Verify screencast settings.
+  encoder_config = send_stream->GetEncoderConfig();
+  EXPECT_EQ(webrtc::VideoEncoderConfig::kScreenshare,
+            encoder_config.content_type);
+  EXPECT_EQ(kScreenshareMinBitrateKbps * 1000,
+            encoder_config.min_transmit_bitrate_bps);
+
+  EXPECT_EQ(capture_format_hd.width, encoder_config.streams.front().width);
+  EXPECT_EQ(capture_format_hd.height, encoder_config.streams.front().height);
+
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
 }
 
 TEST_F(WebRtcVideoChannel2Test, DISABLED_SetSendSsrcAndCname) {
@@ -1290,7 +1346,7 @@ TEST_F(WebRtcVideoChannel2Test, DoesNotAdaptOnOveruseWhenDisabled) {
 }
 
 void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse) {
-  cricket::VideoCodec codec(100, "VP8", 1280, 720, 30, 0);
+  cricket::VideoCodec codec = kVp8Codec720p;
   std::vector<cricket::VideoCodec> codecs;
   codecs.push_back(codec);
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));

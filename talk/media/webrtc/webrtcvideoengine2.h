@@ -346,6 +346,13 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
       bool external;
     };
 
+    struct LastDimensions {
+      LastDimensions() : width(-1), height(-1), is_screencast(false) {}
+      int width;
+      int height;
+      bool is_screencast;
+    };
+
     AllocatedEncoder CreateVideoEncoder(const VideoCodec& codec)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
     void DestroyVideoEncoder(AllocatedEncoder* encoder);
@@ -353,8 +360,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
                             const VideoOptions& options)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
     void RecreateWebRtcStream() EXCLUSIVE_LOCKS_REQUIRED(lock_);
-    // When |override_max| is false constrain width/height to codec dimensions.
-    void SetDimensions(int width, int height, bool override_max)
+    void SetDimensions(int width, int height, bool is_screencast)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
     webrtc::Call* const call_;
@@ -365,6 +371,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     webrtc::VideoSendStream* stream_ GUARDED_BY(lock_);
     VideoSendStreamParameters parameters_ GUARDED_BY(lock_);
     AllocatedEncoder allocated_encoder_ GUARDED_BY(lock_);
+    LastDimensions last_dimensions_ GUARDED_BY(lock_);
 
     VideoCapturer* capturer_ GUARDED_BY(lock_);
     bool sending_ GUARDED_BY(lock_);

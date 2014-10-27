@@ -778,6 +778,7 @@ void WebRtcVideoChannel2::SetDefaultOptions() {
   options_.video_noise_reduction.Set(true);
   options_.video_start_bitrate.Set(
       webrtc::Call::Config::kDefaultStartBitrateBps / 1000);
+  options_.screencast_min_bitrate.Set(0);
 }
 
 WebRtcVideoChannel2::~WebRtcVideoChannel2() {
@@ -1672,29 +1673,46 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetRtpExtensions(
 void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(
     int width,
     int height,
-    bool override_max) {
+    bool is_screencast) {
+  if (last_dimensions_.width == width && last_dimensions_.height == height &&
+      last_dimensions_.is_screencast == is_screencast) {
+    // Configured using the same parameters, do not reconfigure.
+    return;
+  }
+
+  last_dimensions_.width = width;
+  last_dimensions_.height = height;
+  last_dimensions_.is_screencast = is_screencast;
+
   assert(!parameters_.encoder_config.streams.empty());
   LOG(LS_VERBOSE) << "SetDimensions: " << width << "x" << height;
 
   VideoCodecSettings codec_settings;
   parameters_.codec_settings.Get(&codec_settings);
   // Restrict dimensions according to codec max.
-  if (!override_max) {
+  if (!is_screencast) {
     if (codec_settings.codec.width < width)
       width = codec_settings.codec.width;
     if (codec_settings.codec.height < height)
       height = codec_settings.codec.height;
   }
 
-  if (parameters_.encoder_config.streams.back().width == width &&
-      parameters_.encoder_config.streams.back().height == height) {
-    return;
-  }
-
   webrtc::VideoEncoderConfig encoder_config = parameters_.encoder_config;
   encoder_config.encoder_specific_settings =
       encoder_factory_->CreateVideoEncoderSettings(codec_settings.codec,
                                                    parameters_.options);
+
+  if (is_screencast) {
+    int screencast_min_bitrate_kbps;
+    parameters_.options.screencast_min_bitrate.Get(
+        &screencast_min_bitrate_kbps);
+    encoder_config.min_transmit_bitrate_bps =
+        screencast_min_bitrate_kbps * 1000;
+    encoder_config.content_type = webrtc::VideoEncoderConfig::kScreenshare;
+  } else {
+    encoder_config.min_transmit_bitrate_bps = 0;
+    encoder_config.content_type = webrtc::VideoEncoderConfig::kRealtimeVideo;
+  }
 
   VideoCodec codec = codec_settings.codec;
   codec.width = width;
