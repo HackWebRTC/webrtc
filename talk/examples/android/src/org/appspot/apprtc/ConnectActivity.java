@@ -31,9 +31,15 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
@@ -51,15 +57,24 @@ import org.webrtc.MediaCodecVideoEncoder;
 public class ConnectActivity extends Activity {
 
   private static final String TAG = "ConnectActivity";
-  public static final String CONNECT_URL_EXTRA = "connect_url";
   private Button connectButton;
-  private EditText urlEditText;
   private EditText roomEditText;
   private CheckBox loopbackCheckBox;
+  private SharedPreferences sharedPref;
+  private String keyprefUrl;
+  private String keyprefResolution;
+  private String keyprefRoom;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+
+    // Get setting keys.
+    PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+    sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+    keyprefUrl = getString(R.string.pref_url_key);
+    keyprefResolution = getString(R.string.pref_resolution_key);
+    keyprefRoom = getString(R.string.pref_room_key);
 
     // If an implicit VIEW intent is launching the app, go directly to that URL.
     final Intent intent = getIntent();
@@ -69,8 +84,6 @@ public class ConnectActivity extends Activity {
     }
 
     setContentView(R.layout.activity_connect);
-
-    urlEditText = (EditText) findViewById(R.id.url_edittext);
 
     loopbackCheckBox = (CheckBox) findViewById(R.id.check_loopback);
     loopbackCheckBox.setChecked(false);
@@ -94,20 +107,72 @@ public class ConnectActivity extends Activity {
     connectButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View view) {
-        String url = urlEditText.getText().toString();
+        String url = sharedPref.getString(keyprefUrl,
+            getString(R.string.pref_url_default));
         if (loopbackCheckBox.isChecked()) {
           url += "/?debug=loopback";
         } else {
           url += "/?r=" + roomEditText.getText();
         }
 
-        if (MediaCodecVideoEncoder.isPlatformSupported()) {
-          url += "&hd=true";
+        // Add video resolution constraints.
+        String resolution = sharedPref.getString(keyprefResolution,
+            getString(R.string.pref_resolution_default));
+        String[] dimensions = resolution.split("[ x]+");
+        if (dimensions.length == 2) {
+          try {
+            int maxWidth = Integer.parseInt(dimensions[0]);
+            int maxHeight = Integer.parseInt(dimensions[1]);
+            if (maxWidth > 0 && maxHeight > 0) {
+              url += "&video=minHeight=" + maxHeight + ",maxHeight=" +
+                  maxHeight + ",minWidth=" + maxWidth + ",maxWidth=" + maxWidth;
+            }
+          } catch (NumberFormatException e) {
+            Log.e(TAG, "Wrong video resolution setting: " + resolution);
+          }
+        } else {
+          if (MediaCodecVideoEncoder.isPlatformSupported()) {
+            url += "&hd=true";
+          }
         }
         // TODO(kjellander): Add support for custom parameters to the URL.
         connectToRoom(url);
       }
     });
+  }
+
+  @Override
+  public boolean onCreateOptionsMenu(Menu menu) {
+    getMenuInflater().inflate(R.menu.connect_menu, menu);
+    return true;
+  }
+
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item) {
+    // Handle presses on the action bar items.
+    if (item.getItemId() == R.id.action_settings) {
+      Intent intent = new Intent(this, SettingsActivity.class);
+      startActivity(intent);
+      return true;
+    } else {
+      return super.onOptionsItemSelected(item);
+    }
+  }
+
+  @Override
+  public void onPause() {
+    super.onPause();
+    String room = roomEditText.getText().toString();
+    SharedPreferences.Editor editor = sharedPref.edit();
+    editor.putString(keyprefRoom, room);
+    editor.commit();
+  }
+
+  @Override
+  public void onResume() {
+    super.onResume();
+    String room = sharedPref.getString(keyprefRoom, "");
+    roomEditText.setText(room);
   }
 
   private void connectToRoom(String roomUrl) {

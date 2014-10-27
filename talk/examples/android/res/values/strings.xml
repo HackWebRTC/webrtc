@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="no">AppRTC</string>
+    <string name="settings_name" translatable="no">AppRTC Settings</string>
     <string name="disconnect_call">Disconnect Call</string>
-    <string name="apprtc_url">URL:</string>
     <string name="room_name">Room name:</string>
     <string name="room_description">
         Please enter a room name. Room names are shared with everyone, so think
@@ -16,4 +16,20 @@
     <string name="connecting_to">Connecting to: %1$s</string>
     <string name="missing_url">FATAL ERROR: Missing URL to connect to.</string>
     <string name="ok">OK</string>
+    <string name="action_settings">Settings</string>
+
+    <!-- Settings strings. -->
+    <string name="pref_room_key">room_preference</string>
+
+    <string name="pref_url_key">url_preference</string>
+    <string name="pref_url_title">Connection URL:</string>
+    <string name="pref_url_summary">AppRTC connection server URL.</string>
+    <string name="pref_url_dlg">Enter AppRTC connection server URL.</string>
+    <string name="pref_url_default">https://apprtc.appspot.com</string>
+
+    <string name="pref_resolution_key">resolution_preference</string>
+    <string name="pref_resolution_title">Video resolution.</string>
+    <string name="pref_resolution_summary">Video resolution.</string>
+    <string name="pref_resolution_dlg">Enter AppRTC local video resolution.</string>
+    <string name="pref_resolution_default">Default</string>
 </resources>

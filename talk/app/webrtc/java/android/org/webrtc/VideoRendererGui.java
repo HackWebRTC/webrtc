@@ -324,6 +324,8 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       float texLeft = this.texLeft;
       float texTop = this.texTop;
       float texBottom = this.texBottom;
+      float texOffsetU = 0;
+      float texOffsetV = 0;
       float displayWidth = (texRight - texLeft) * screenWidth / 2;
       float displayHeight = (texTop - texBottom) * screenHeight / 2;
       Log.d(TAG, "ID: "  + id + ". Display: " + displayWidth +
@@ -346,36 +348,33 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
             texTop -= deltaY;
             texBottom += deltaY;
           }
-          Log.d(TAG, "  Texture vertices: (" + texLeft + "," + texBottom +
-              ") - (" + texRight + "," + texTop + ")");
-          // Re-allocate vertices buffer to adjust to video aspect ratio.
-          float textureVeticesFloat[] = new float[] {
-              texLeft, texTop,
-              texLeft, texBottom,
-              texRight, texTop,
-              texRight, texBottom
-          };
-          textureVertices = directNativeFloatBuffer(textureVeticesFloat);
         }
         if (scalingType == ScalingType.SCALE_ASPECT_FILL) {
-          float texOffsetU = 0;
-          float texOffsetV = 0;
           // Need to re-adjust UV coordinates to match display AR.
           if (displayAspectRatio > videoAspectRatio) {
             texOffsetV = (1.0f - videoAspectRatio / displayAspectRatio) / 2.0f;
           } else {
             texOffsetU = (1.0f - displayAspectRatio / videoAspectRatio) / 2.0f;
           }
-          Log.d(TAG, "  Texture UV offsets: " + texOffsetU + ", " + texOffsetV);
-          // Re-allocate coordinates buffer to adjust to display aspect ratio.
-          float textureCoordinatesFloat[] = new float[] {
-              texOffsetU, texOffsetV,               // left top
-              texOffsetU, 1.0f - texOffsetV,        // left bottom
-              1.0f - texOffsetU, texOffsetV,        // right top
-              1.0f - texOffsetU, 1.0f - texOffsetV  // right bottom
-          };
-          textureCoords = directNativeFloatBuffer(textureCoordinatesFloat);
         }
+        Log.d(TAG, "  Texture vertices: (" + texLeft + "," + texBottom +
+            ") - (" + texRight + "," + texTop + ")");
+        float textureVeticesFloat[] = new float[] {
+            texLeft, texTop,
+            texLeft, texBottom,
+            texRight, texTop,
+            texRight, texBottom
+        };
+        textureVertices = directNativeFloatBuffer(textureVeticesFloat);
+
+        Log.d(TAG, "  Texture UV offsets: " + texOffsetU + ", " + texOffsetV);
+        float textureCoordinatesFloat[] = new float[] {
+            texOffsetU, texOffsetV,               // left top
+            texOffsetU, 1.0f - texOffsetV,        // left bottom
+            1.0f - texOffsetU, texOffsetV,        // right top
+            1.0f - texOffsetU, 1.0f - texOffsetV  // right bottom
+        };
+        textureCoords = directNativeFloatBuffer(textureCoordinatesFloat);
       }
       updateTextureProperties = false;
     }
@@ -501,6 +500,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       texTop = (50 - y) / 50.0f;
       texRight = Math.min(1.0f, (x + width - 50) / 50.0f);
       texBottom = Math.max(-1.0f, (50 - y - height) / 50.0f);
+      this.scalingType = scalingType;
       updateTextureProperties = true;
     }
 
@@ -690,7 +690,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       onSurfaceCreatedCalled = true;
     }
     checkNoGLES2Error();
-    GLES20.glClearColor(0.0f, 0.0f, 0.1f, 1.0f);
+    GLES20.glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
   }
 
   @Override

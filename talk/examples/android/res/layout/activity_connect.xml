@@ -10,19 +10,7 @@
     <TextView
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:text="@string/apprtc_url"/>
-    <EditText
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/url_edittext"
-            android:inputType="textWebEmailAddress"
-            android:text="https://apprtc.appspot.com"
-            android:imeOptions="actionNext"/>
-    <TextView
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
+            android:layout_marginTop="15dp"
             android:lines="1"
             android:maxLines="1"
             android:textAppearance="?android:attr/textAppearanceMedium"
@@ -37,7 +25,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:layout_margin="5dp"
+            android:layout_margin="15dp"
             android:text="@string/room_description"/>
     <CheckBox
             android:id="@+id/check_loopback"
