@@ -345,6 +345,35 @@ int16_t WebRtcIsacfix_EncoderInit(ISACFIX_MainStruct *ISAC_main_inst,
   return statusInit;
 }
 
+/* Read the given number of bytes of big-endian 16-bit integers from |src| and
+   write them to |dest| in host endian. If |nbytes| is odd, the number of
+   output elements is rounded up, and the least significant byte of the last
+   element is set to 0. */
+static void read_be16(const uint8_t* src, size_t nbytes, uint16_t* dest) {
+  size_t i;
+  for (i = 0; i < nbytes / 2; ++i)
+    dest[i] = src[2 * i] << 8 | src[2 * i + 1];
+  if (nbytes % 2 == 1)
+    dest[nbytes / 2] = src[nbytes - 1] << 8;
+}
+
+/* Read the given number of bytes of host-endian 16-bit integers from |src| and
+   write them to |dest| in big endian. If |nbytes| is odd, the number of source
+   elements is rounded up (but only the most significant byte of the last
+   element is used), and the number of output bytes written will be
+   nbytes + 1. */
+static void write_be16(const uint16_t* src, size_t nbytes, uint8_t* dest) {
+  size_t i;
+  for (i = 0; i < nbytes / 2; ++i) {
+    dest[2 * i] = src[i] >> 8;
+    dest[2 * i + 1] = src[i];
+  }
+  if (nbytes % 2 == 1) {
+    dest[nbytes - 1] = src[nbytes / 2] >> 8;
+    dest[nbytes] = 0;
+  }
+}
+
 /****************************************************************************
  * WebRtcIsacfix_Encode(...)
  *
@@ -372,10 +401,7 @@ int16_t WebRtcIsacfix_Encode(ISACFIX_MainStruct *ISAC_main_inst,
                              uint8_t* encoded)
 {
   ISACFIX_SubStruct *ISAC_inst;
-  int16_t stream_len, stream_len_even;
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  int k;
-#endif
+  int16_t stream_len;
 
   /* typecast pointer to rela structure */
   ISAC_inst = (ISACFIX_SubStruct *)ISAC_main_inst;
@@ -396,29 +422,7 @@ int16_t WebRtcIsacfix_Encode(ISACFIX_MainStruct *ISAC_main_inst,
     return -1;
   }
 
-  /* One would think that only even stream lengths would make sense here. We do
-     in fact observe odd lengths, however, and in those cases we copy an extra
-     byte. */
-  stream_len_even = stream_len % 2 == 0 ? stream_len : stream_len + 1;
-
-  /* convert from bytes to int16_t */
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  /* The encoded data vector is supposesd to be big-endian, but our internal
-     representation is little-endian. So byteswap. */
-  for (k = 0; k < stream_len_even / 2; ++k) {
-    uint16_t s = ISAC_inst->ISACenc_obj.bitstr_obj.stream[k];
-    /* In big-endian, we have... */
-    encoded[2 * k] = s >> 8;  /* ...most significant byte at low address... */
-    encoded[2 * k + 1] = s;  /* ...least significant byte at high address. */
-  }
-#else
-  /* The encoded data vector and our internal representation are both
-     big-endian. */
-  memcpy(encoded, ISAC_inst->ISACenc_obj.bitstr_obj.stream, stream_len_even);
-#endif
-
-
-
+  write_be16(ISAC_inst->ISACenc_obj.bitstr_obj.stream, stream_len, encoded);
   return stream_len;
 
 }
@@ -495,20 +499,9 @@ int16_t WebRtcIsacfix_EncodeNb(ISACFIX_MainStruct *ISAC_main_inst,
     return -1;
   }
 
-
-  /* convert from bytes to int16_t */
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  for (k=0;k<(stream_len+1)>>1;k++) {
-    encoded[k] = (int16_t)(((uint16_t)(ISAC_inst->ISACenc_obj.bitstr_obj).stream[k] >> 8)
-                                 | (((ISAC_inst->ISACenc_obj.bitstr_obj).stream[k] & 0x00FF) << 8));
-  }
-
-#else
-  WEBRTC_SPL_MEMCPY_W16(encoded, (ISAC_inst->ISACenc_obj.bitstr_obj).stream, (stream_len + 1)>>1);
-#endif
-
-
-
+  write_be16(ISAC_inst->ISACenc_obj.bitstr_obj.stream,
+             stream_len,
+             (uint8_t*)encoded);
   return stream_len;
 }
 #endif  /* WEBRTC_ISAC_FIX_NB_CALLS_ENABLED */
@@ -540,9 +533,6 @@ int16_t WebRtcIsacfix_GetNewBitStream(ISACFIX_MainStruct *ISAC_main_inst,
 {
   ISACFIX_SubStruct *ISAC_inst;
   int16_t stream_len;
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  int k;
-#endif
 
   /* typecast pointer to rela structure */
   ISAC_inst = (ISACFIX_SubStruct *)ISAC_main_inst;
@@ -562,19 +552,8 @@ int16_t WebRtcIsacfix_GetNewBitStream(ISACFIX_MainStruct *ISAC_main_inst,
     return -1;
   }
 
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  for (k=0;k<(stream_len+1)>>1;k++) {
-    ((int16_t*)encoded)[k] = (int16_t)(
-        ((uint16_t)(ISAC_inst->ISACenc_obj.bitstr_obj).stream[k] >> 8) |
-        (((ISAC_inst->ISACenc_obj.bitstr_obj).stream[k] & 0x00FF) << 8));
-  }
-
-#else
-  WEBRTC_SPL_MEMCPY_W16(encoded, (ISAC_inst->ISACenc_obj.bitstr_obj).stream, (stream_len + 1)>>1);
-#endif
-
+  write_be16(ISAC_inst->ISACenc_obj.bitstr_obj.stream, stream_len, encoded);
   return stream_len;
-
 }
 
 
@@ -643,9 +622,6 @@ int16_t WebRtcIsacfix_UpdateBwEstimate1(ISACFIX_MainStruct *ISAC_main_inst,
 {
   ISACFIX_SubStruct *ISAC_inst;
   Bitstr_dec streamdata;
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  int k;
-#endif
   int16_t err;
   const int kRequiredEncodedLenBytes = 10;
 
@@ -671,14 +647,7 @@ int16_t WebRtcIsacfix_UpdateBwEstimate1(ISACFIX_MainStruct *ISAC_main_inst,
 
   InitializeDecoderBitstream(packet_size, &streamdata);
 
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  for (k = 0; k < kRequiredEncodedLenBytes / 2; k++) {
-    uint16_t ek = ((const uint16_t*)encoded)[k];
-    streamdata.stream[k] = (uint16_t) ((ek >> 8)|((ek & 0xff) << 8));
-  }
-#else
-  memcpy(streamdata.stream, encoded, kRequiredEncodedLenBytes);
-#endif
+  read_be16(encoded, kRequiredEncodedLenBytes, streamdata.stream);
 
   err = WebRtcIsacfix_EstimateBandwidth(&ISAC_inst->bwestimator_obj,
                                         &streamdata,
@@ -726,9 +695,6 @@ int16_t WebRtcIsacfix_UpdateBwEstimate(ISACFIX_MainStruct *ISAC_main_inst,
 {
   ISACFIX_SubStruct *ISAC_inst;
   Bitstr_dec streamdata;
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  int k;
-#endif
   int16_t err;
   const int kRequiredEncodedLenBytes = 10;
 
@@ -757,14 +723,7 @@ int16_t WebRtcIsacfix_UpdateBwEstimate(ISACFIX_MainStruct *ISAC_main_inst,
 
   InitializeDecoderBitstream(packet_size, &streamdata);
 
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  for (k = 0; k < kRequiredEncodedLenBytes / 2; k++) {
-    uint16_t ek = ((const uint16_t*)encoded)[k];
-    streamdata.stream[k] = (uint16_t) ((ek >> 8)|((ek & 0xff) <<8 ));
-  }
-#else
-  memcpy(streamdata.stream, encoded, kRequiredEncodedLenBytes);
-#endif
+  read_be16(encoded, kRequiredEncodedLenBytes, streamdata.stream);
 
   err = WebRtcIsacfix_EstimateBandwidth(&ISAC_inst->bwestimator_obj,
                                         &streamdata,
@@ -814,9 +773,6 @@ int16_t WebRtcIsacfix_Decode(ISACFIX_MainStruct *ISAC_main_inst,
   /* number of samples (480 or 960), output from decoder */
   /* that were actually used in the encoder/decoder (determined on the fly) */
   int16_t     number_of_samples;
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  int k;
-#endif
   int16_t declen = 0;
 
   /* typecast pointer to real structure */
@@ -841,19 +797,7 @@ int16_t WebRtcIsacfix_Decode(ISACFIX_MainStruct *ISAC_main_inst,
 
   InitializeDecoderBitstream(len, &ISAC_inst->ISACdec_obj.bitstr_obj);
 
-  /* convert bitstream from int16_t to bytes */
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  for (k=0; k<(len>>1); k++) {
-    uint16_t ek = ((const uint16_t*)encoded)[k];
-    ISAC_inst->ISACdec_obj.bitstr_obj.stream[k] =
-        (uint16_t)((ek >> 8) | ((ek & 0xff) << 8));
-  }
-  if (len & 0x0001)
-    ISAC_inst->ISACdec_obj.bitstr_obj.stream[k] =
-        (uint16_t)((((const uint16_t*)encoded)[k] & 0xff) << 8);
-#else
-  memcpy(ISAC_inst->ISACdec_obj.bitstr_obj.stream, encoded, len);
-#endif
+  read_be16(encoded, len, ISAC_inst->ISACdec_obj.bitstr_obj.stream);
 
   /* added for NetEq purposes (VAD/DTX related) */
   *speechType=1;
@@ -922,9 +866,6 @@ int16_t WebRtcIsacfix_DecodeNb(ISACFIX_MainStruct *ISAC_main_inst,
   /* twice the number of samples (480 or 960), output from decoder */
   /* that were actually used in the encoder/decoder (determined on the fly) */
   int16_t     number_of_samples;
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  int k;
-#endif
   int16_t declen = 0;
   int16_t dummy[FRAMESAMPLES/2];
 
@@ -950,16 +891,7 @@ int16_t WebRtcIsacfix_DecodeNb(ISACFIX_MainStruct *ISAC_main_inst,
 
   InitializeDecoderBitstream(len, &ISAC_inst->ISACdec_obj.bitstr_obj);
 
-  /* convert bitstream from int16_t to bytes */
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  for (k=0; k<(len>>1); k++) {
-    (ISAC_inst->ISACdec_obj.bitstr_obj).stream[k] = (uint16_t) ((encoded[k] >> 8)|((encoded[k] & 0xFF)<<8));
-  }
-  if (len & 0x0001)
-    (ISAC_inst->ISACdec_obj.bitstr_obj).stream[k] = (uint16_t) ((encoded[k] & 0xFF)<<8);
-#else
-  memcpy(ISAC_inst->ISACdec_obj.bitstr_obj.stream, encoded, len);
-#endif
+  read_be16(encoded, len, ISAC_inst->ISACdec_obj.bitstr_obj.stream);
 
   /* added for NetEq purposes (VAD/DTX related) */
   *speechType=1;
@@ -1326,9 +1258,6 @@ int16_t WebRtcIsacfix_ReadFrameLen(const uint8_t* encoded,
                                    int16_t* frameLength)
 {
   Bitstr_dec streamdata;
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  int k;
-#endif
   int16_t err;
   const int kRequiredEncodedLenBytes = 10;
 
@@ -1338,14 +1267,7 @@ int16_t WebRtcIsacfix_ReadFrameLen(const uint8_t* encoded,
 
   InitializeDecoderBitstream(encoded_len_bytes, &streamdata);
 
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  for (k = 0; k < kRequiredEncodedLenBytes / 2; k++) {
-    uint16_t ek = ((uint16_t*)encoded)[k];
-    streamdata.stream[k] = (uint16_t)((ek >> 8) | ((ek & 0xff) << 8));
-  }
-#else
-  memcpy(streamdata.stream, encoded, kRequiredEncodedLenBytes);
-#endif
+  read_be16(encoded, kRequiredEncodedLenBytes, streamdata.stream);
 
   /* decode frame length */
   err = WebRtcIsacfix_DecodeFrameLen(&streamdata, frameLength);
@@ -1375,9 +1297,6 @@ int16_t WebRtcIsacfix_ReadBwIndex(const uint8_t* encoded,
                                   int16_t* rateIndex)
 {
   Bitstr_dec streamdata;
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  int k;
-#endif
   int16_t err;
   const int kRequiredEncodedLenBytes = 10;
 
@@ -1387,14 +1306,7 @@ int16_t WebRtcIsacfix_ReadBwIndex(const uint8_t* encoded,
 
   InitializeDecoderBitstream(encoded_len_bytes, &streamdata);
 
-#ifndef WEBRTC_ARCH_BIG_ENDIAN
-  for (k = 0; k < kRequiredEncodedLenBytes / 2; k++) {
-    uint16_t ek = ((uint16_t*)encoded)[k];
-    streamdata.stream[k] = (uint16_t)((ek >> 8) | ((ek & 0xff) << 8));
-  }
-#else
-  memcpy(streamdata.stream, encoded, kRequiredEncodedLenBytes);
-#endif
+  read_be16(encoded, kRequiredEncodedLenBytes, streamdata.stream);
 
   /* decode frame length, needed to get to the rateIndex in the bitstream */
   err = WebRtcIsacfix_DecodeFrameLen(&streamdata, rateIndex);
