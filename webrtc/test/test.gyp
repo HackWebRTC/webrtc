@@ -53,11 +53,13 @@
       ],
     },
     {
-      'target_name': 'rtcp_packet_parser',
+      'target_name': 'rtp_test_utils',
       'type': 'static_library',
       'sources': [
         'rtcp_packet_parser.cc',
         'rtcp_packet_parser.h',
+        'rtp_file_reader.cc',
+        'rtp_file_reader.h',
       ],
       'dependencies': [
         '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',

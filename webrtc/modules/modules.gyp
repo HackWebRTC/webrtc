@@ -98,9 +98,9 @@
             '<(webrtc_root)/modules/modules.gyp:video_capture_module_impl',
             '<(webrtc_root)/modules/video_coding/codecs/vp8/vp8.gyp:webrtc_vp8',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
             '<(webrtc_root)/test/test.gyp:frame_generator',
-            '<(webrtc_root)/test/test.gyp:rtcp_packet_parser',
+            '<(webrtc_root)/test/test.gyp:rtp_test_utils',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
             'audio_coding/main/acm2/acm_opus_unittest.cc',
