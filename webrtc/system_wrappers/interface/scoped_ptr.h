@@ -567,18 +567,20 @@ class scoped_ptr<T[], D> {
   template <class U> bool operator!=(scoped_ptr<U> const& p2) const;
 };
 
+}  // namespace webrtc
+
 template <class T, class D>
-void swap(scoped_ptr<T, D>& p1, scoped_ptr<T, D>& p2) {
+void swap(webrtc::scoped_ptr<T, D>& p1, webrtc::scoped_ptr<T, D>& p2) {
   p1.swap(p2);
 }
 
 template <class T, class D>
-bool operator==(T* p1, const scoped_ptr<T, D>& p2) {
+bool operator==(T* p1, const webrtc::scoped_ptr<T, D>& p2) {
   return p1 == p2.get();
 }
 
 template <class T, class D>
-bool operator!=(T* p1, const scoped_ptr<T, D>& p2) {
+bool operator!=(T* p1, const webrtc::scoped_ptr<T, D>& p2) {
   return p1 != p2.get();
 }
 
@@ -586,10 +588,8 @@ bool operator!=(T* p1, const scoped_ptr<T, D>& p2) {
 // Doing e.g. make_scoped_ptr(new FooBarBaz<type>(arg)) is a shorter notation
 // for scoped_ptr<FooBarBaz<type> >(new FooBarBaz<type>(arg))
 template <typename T>
-scoped_ptr<T> make_scoped_ptr(T* ptr) {
-  return scoped_ptr<T>(ptr);
+webrtc::scoped_ptr<T> rtc_make_scoped_ptr(T* ptr) {
+  return webrtc::scoped_ptr<T>(ptr);
 }
-
-}  // namespace webrtc
 
 #endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_SCOPED_PTR_H_
