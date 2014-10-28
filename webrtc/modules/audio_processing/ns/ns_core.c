@@ -20,7 +20,7 @@
 #include "webrtc/modules/audio_processing/utility/fft4g.h"
 
 // Set Feature Extraction Parameters.
-void WebRtcNs_set_feature_extraction_parameters(NSinst_t* inst) {
+static void set_feature_extraction_parameters(NSinst_t* inst) {
   // Bin size of histogram.
   inst->featureExtractionParams.binSizeLrt = 0.1f;
   inst->featureExtractionParams.binSizeSpecFlat = 0.05f;
@@ -208,7 +208,7 @@ int WebRtcNs_InitCore(NSinst_t* inst, uint32_t fs) {
   inst->pinkNoiseNumerator = 0.0;
   inst->pinkNoiseExp = 0.0;
 
-  WebRtcNs_set_feature_extraction_parameters(inst);
+  set_feature_extraction_parameters(inst);
 
   // Default mode.
   WebRtcNs_set_policy_core(inst, 0);
@@ -217,38 +217,8 @@ int WebRtcNs_InitCore(NSinst_t* inst, uint32_t fs) {
   return 0;
 }
 
-int WebRtcNs_set_policy_core(NSinst_t* inst, int mode) {
-  // Allow for modes: 0, 1, 2, 3.
-  if (mode < 0 || mode > 3) {
-    return (-1);
-  }
-
-  inst->aggrMode = mode;
-  if (mode == 0) {
-    inst->overdrive = 1.f;
-    inst->denoiseBound = 0.5f;
-    inst->gainmap = 0;
-  } else if (mode == 1) {
-    // inst->overdrive = 1.25f;
-    inst->overdrive = 1.f;
-    inst->denoiseBound = 0.25f;
-    inst->gainmap = 1;
-  } else if (mode == 2) {
-    // inst->overdrive = 1.25f;
-    inst->overdrive = 1.1f;
-    inst->denoiseBound = 0.125f;
-    inst->gainmap = 1;
-  } else if (mode == 3) {
-    // inst->overdrive = 1.3f;
-    inst->overdrive = 1.25f;
-    inst->denoiseBound = 0.09f;
-    inst->gainmap = 1;
-  }
-  return 0;
-}
-
 // Estimate noise.
-void WebRtcNs_NoiseEstimation(NSinst_t* inst, float* magn, float* noise) {
+static void NoiseEstimation(NSinst_t* inst, float* magn, float* noise) {
   int i, s, offset;
   float lmagn[HALF_ANAL_BLOCKL], delta;
 
@@ -1037,6 +1007,40 @@ static void ComputeDdBasedWienerFilter(const NSinst_t* const self,
   }  // End of loop over frequencies.
 }
 
+// Changes the aggressiveness of the noise suppression method.
+// |mode| = 0 is mild (6dB), |mode| = 1 is medium (10dB) and |mode| = 2 is
+// aggressive (15dB).
+// Returns 0 on success and -1 otherwise.
+int WebRtcNs_set_policy_core(NSinst_t* inst, int mode) {
+  // Allow for modes: 0, 1, 2, 3.
+  if (mode < 0 || mode > 3) {
+    return (-1);
+  }
+
+  inst->aggrMode = mode;
+  if (mode == 0) {
+    inst->overdrive = 1.f;
+    inst->denoiseBound = 0.5f;
+    inst->gainmap = 0;
+  } else if (mode == 1) {
+    // inst->overdrive = 1.25f;
+    inst->overdrive = 1.f;
+    inst->denoiseBound = 0.25f;
+    inst->gainmap = 1;
+  } else if (mode == 2) {
+    // inst->overdrive = 1.25f;
+    inst->overdrive = 1.1f;
+    inst->denoiseBound = 0.125f;
+    inst->gainmap = 1;
+  } else if (mode == 3) {
+    // inst->overdrive = 1.3f;
+    inst->overdrive = 1.25f;
+    inst->denoiseBound = 0.09f;
+    inst->gainmap = 1;
+  }
+  return 0;
+}
+
 int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   int i;
   const int kStartBand = 5;  // Skip first frequency bins during estimation.
@@ -1103,7 +1107,7 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   inst->sumMagn = sumMagn;
 
   // Quantile noise estimate.
-  WebRtcNs_NoiseEstimation(inst, magn, noise);
+  NoiseEstimation(inst, magn, noise);
   // Compute simplified noise model during startup.
   if (inst->blockInd < END_STARTUP_SHORT) {
     // Estimate White noise.
