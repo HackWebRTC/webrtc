@@ -30,8 +30,8 @@
 
 #include <sstream>
 #include <vector>
-#include "talk/xmpp/xmppengine.h"
-#include "talk/xmpp/xmppstanzaparser.h"
+#include "webrtc/libjingle/xmpp/xmppengine.h"
+#include "webrtc/libjingle/xmpp/xmppstanzaparser.h"
 
 namespace buzz {
 

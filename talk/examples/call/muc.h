@@ -29,8 +29,8 @@
 #define _MUC_H_
 
 #include <map>
-#include "talk/xmpp/jid.h"
-#include "talk/xmpp/presencestatus.h"
+#include "webrtc/libjingle/xmpp/jid.h"
+#include "webrtc/libjingle/xmpp/presencestatus.h"
 
 namespace buzz {
 

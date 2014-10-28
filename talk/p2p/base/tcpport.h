@@ -25,12 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_TCPPORT_H_
-#define TALK_P2P_BASE_TCPPORT_H_
+#ifndef WEBRTC_P2P_BASE_TCPPORT_H_
+#define WEBRTC_P2P_BASE_TCPPORT_H_
 
 #include <list>
 #include <string>
-#include "talk/p2p/base/port.h"
+#include "webrtc/p2p/base/port.h"
 #include "webrtc/base/asyncpacketsocket.h"
 
 namespace cricket {
@@ -150,4 +150,4 @@ class TCPConnection : public Connection {
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_TCPPORT_H_
+#endif  // WEBRTC_P2P_BASE_TCPPORT_H_

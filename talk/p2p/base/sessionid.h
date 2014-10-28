@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_SESSIONID_H_
-#define TALK_P2P_BASE_SESSIONID_H_
+#ifndef WEBRTC_P2P_BASE_SESSIONID_H_
+#define WEBRTC_P2P_BASE_SESSIONID_H_
 
 // TODO: Remove this file.
 
@@ -34,4 +34,4 @@ namespace cricket {
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_SESSIONID_H_
+#endif  // WEBRTC_P2P_BASE_SESSIONID_H_

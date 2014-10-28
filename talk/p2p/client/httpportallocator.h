@@ -25,14 +25,14 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_CLIENT_HTTPPORTALLOCATOR_H_
-#define TALK_P2P_CLIENT_HTTPPORTALLOCATOR_H_
+#ifndef WEBRTC_P2P_CLIENT_HTTPPORTALLOCATOR_H_
+#define WEBRTC_P2P_CLIENT_HTTPPORTALLOCATOR_H_
 
 #include <list>
 #include <string>
 #include <vector>
 
-#include "talk/p2p/client/basicportallocator.h"
+#include "webrtc/p2p/client/basicportallocator.h"
 
 class HttpPortAllocatorTest_TestSessionRequestUrl_Test;
 
@@ -187,4 +187,4 @@ class HttpPortAllocatorSession : public HttpPortAllocatorSessionBase {
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_CLIENT_HTTPPORTALLOCATOR_H_
+#endif  // WEBRTC_P2P_CLIENT_HTTPPORTALLOCATOR_H_

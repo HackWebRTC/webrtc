@@ -35,7 +35,7 @@
 #include "talk/app/webrtc/videotrack.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/devices/fakedevicemanager.h"
-#include "talk/p2p/base/fakesession.h"
+#include "webrtc/p2p/base/fakesession.h"
 #include "talk/session/media/channelmanager.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"

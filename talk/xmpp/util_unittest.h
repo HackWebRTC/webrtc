@@ -30,7 +30,7 @@
 
 #include <sstream>
 #include <string>
-#include "talk/xmpp/xmppengine.h"
+#include "webrtc/libjingle/xmpp/xmppengine.h"
 
 namespace buzz {
 

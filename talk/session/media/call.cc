@@ -28,7 +28,7 @@
 #include <string>
 #include "talk/media/base/constants.h"
 #include "talk/media/base/screencastid.h"
-#include "talk/p2p/base/parsing.h"
+#include "webrtc/p2p/base/parsing.h"
 #include "talk/session/media/call.h"
 #include "talk/session/media/currentspeakermonitor.h"
 #include "talk/session/media/mediasessionclient.h"

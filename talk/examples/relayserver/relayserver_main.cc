@@ -27,7 +27,7 @@
 
 #include <iostream>  // NOLINT
 
-#include "talk/p2p/base/relayserver.h"
+#include "webrtc/p2p/base/relayserver.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread.h"
 

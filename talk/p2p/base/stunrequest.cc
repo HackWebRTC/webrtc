@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/p2p/base/stunrequest.h"
+#include "webrtc/p2p/base/stunrequest.h"
 
 #include "webrtc/base/common.h"
 #include "webrtc/base/helpers.h"

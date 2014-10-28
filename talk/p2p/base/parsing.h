@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_PARSING_H_
-#define TALK_P2P_BASE_PARSING_H_
+#ifndef WEBRTC_P2P_BASE_PARSING_H_
+#define WEBRTC_P2P_BASE_PARSING_H_
 
 #include <string>
 #include <vector>
@@ -154,4 +154,4 @@ std::vector<buzz::XmlElement*> CopyOfXmlChildren(const buzz::XmlElement* elem);
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_PARSING_H_
+#endif  // WEBRTC_P2P_BASE_PARSING_H_

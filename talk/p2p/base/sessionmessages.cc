@@ -25,19 +25,19 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/p2p/base/sessionmessages.h"
+#include "webrtc/p2p/base/sessionmessages.h"
 
 #include <stdio.h>
 #include <string>
 
-#include "talk/p2p/base/constants.h"
-#include "talk/p2p/base/p2ptransport.h"
-#include "talk/p2p/base/parsing.h"
-#include "talk/p2p/base/sessionclient.h"
-#include "talk/p2p/base/sessiondescription.h"
-#include "talk/p2p/base/transport.h"
+#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/p2ptransport.h"
+#include "webrtc/p2p/base/parsing.h"
+#include "webrtc/p2p/base/sessionclient.h"
+#include "webrtc/p2p/base/sessiondescription.h"
+#include "webrtc/p2p/base/transport.h"
 #include "webrtc/libjingle/xmllite/xmlconstants.h"
-#include "talk/xmpp/constants.h"
+#include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringutils.h"

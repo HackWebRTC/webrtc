@@ -29,8 +29,8 @@
 #define TALK_XMPP_PLAINSASLHANDLER_H_
 
 #include <algorithm>
-#include "talk/xmpp/saslhandler.h"
-#include "talk/xmpp/saslplainmechanism.h"
+#include "webrtc/libjingle/xmpp/saslhandler.h"
+#include "webrtc/libjingle/xmpp/saslplainmechanism.h"
 #include "webrtc/base/cryptstring.h"
 
 namespace buzz {

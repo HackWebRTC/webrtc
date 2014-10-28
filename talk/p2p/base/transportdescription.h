@@ -25,15 +25,15 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_TRANSPORTDESCRIPTION_H_
-#define TALK_P2P_BASE_TRANSPORTDESCRIPTION_H_
+#ifndef WEBRTC_P2P_BASE_TRANSPORTDESCRIPTION_H_
+#define WEBRTC_P2P_BASE_TRANSPORTDESCRIPTION_H_
 
 #include <algorithm>
 #include <string>
 #include <vector>
 
-#include "talk/p2p/base/candidate.h"
-#include "talk/p2p/base/constants.h"
+#include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/constants.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sslfingerprint.h"
 
@@ -185,4 +185,4 @@ struct TransportDescription {
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_TRANSPORTDESCRIPTION_H_
+#endif  // WEBRTC_P2P_BASE_TRANSPORTDESCRIPTION_H_

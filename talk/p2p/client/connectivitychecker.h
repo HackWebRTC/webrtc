@@ -1,14 +1,14 @@
 // Copyright 2011 Google Inc. All Rights Reserved.
 
 
-#ifndef TALK_P2P_CLIENT_CONNECTIVITYCHECKER_H_
-#define TALK_P2P_CLIENT_CONNECTIVITYCHECKER_H_
+#ifndef WEBRTC_P2P_CLIENT_CONNECTIVITYCHECKER_H_
+#define WEBRTC_P2P_CLIENT_CONNECTIVITYCHECKER_H_
 
 #include <map>
 #include <string>
 
-#include "talk/p2p/base/basicpacketsocketfactory.h"
-#include "talk/p2p/client/httpportallocator.h"
+#include "webrtc/p2p/base/basicpacketsocketfactory.h"
+#include "webrtc/p2p/client/httpportallocator.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/network.h"
@@ -271,4 +271,4 @@ class ConnectivityChecker
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_CLIENT_CONNECTIVITYCHECKER_H_
+#endif  // WEBRTC_P2P_CLIENT_CONNECTIVITYCHECKER_H_

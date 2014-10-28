@@ -25,14 +25,14 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/xmpp/pubsubclient.h"
+#include "webrtc/libjingle/xmpp/pubsubclient.h"
 
 #include <string>
 #include <vector>
 
-#include "talk/xmpp/constants.h"
-#include "talk/xmpp/jid.h"
-#include "talk/xmpp/pubsubtasks.h"
+#include "webrtc/libjingle/xmpp/constants.h"
+#include "webrtc/libjingle/xmpp/jid.h"
+#include "webrtc/libjingle/xmpp/pubsubtasks.h"
 
 namespace buzz {
 

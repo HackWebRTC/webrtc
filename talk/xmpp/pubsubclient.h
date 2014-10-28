@@ -31,8 +31,8 @@
 #include <string>
 #include <vector>
 
-#include "talk/xmpp/jid.h"
-#include "talk/xmpp/pubsubtasks.h"
+#include "webrtc/libjingle/xmpp/jid.h"
+#include "webrtc/libjingle/xmpp/pubsubtasks.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/base/task.h"

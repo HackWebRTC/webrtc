@@ -25,14 +25,14 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_RAWTRANSPORTCHANNEL_H_
-#define TALK_P2P_BASE_RAWTRANSPORTCHANNEL_H_
+#ifndef WEBRTC_P2P_BASE_RAWTRANSPORTCHANNEL_H_
+#define WEBRTC_P2P_BASE_RAWTRANSPORTCHANNEL_H_
 
 #include <string>
 #include <vector>
-#include "talk/p2p/base/candidate.h"
-#include "talk/p2p/base/rawtransport.h"
-#include "talk/p2p/base/transportchannelimpl.h"
+#include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/rawtransport.h"
+#include "webrtc/p2p/base/transportchannelimpl.h"
 #include "webrtc/base/messagequeue.h"
 
 #if defined(FEATURE_ENABLE_PSTN)
@@ -203,4 +203,4 @@ class RawTransportChannel : public TransportChannelImpl,
 }  // namespace cricket
 
 #endif  // defined(FEATURE_ENABLE_PSTN)
-#endif  // TALK_P2P_BASE_RAWTRANSPORTCHANNEL_H_
+#endif  // WEBRTC_P2P_BASE_RAWTRANSPORTCHANNEL_H_

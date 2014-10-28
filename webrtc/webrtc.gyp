@@ -10,6 +10,8 @@
     ['include_tests==1', {
       'includes': [
         'libjingle/xmllite/xmllite_tests.gypi',
+        'libjingle/xmpp/xmpp_tests.gypi',
+        'p2p/p2p_tests.gypi',
         'sound/sound_tests.gypi',
         'webrtc_tests.gypi',
       ],
@@ -27,7 +29,9 @@
       'common_audio/common_audio.gyp:*',
       'common_video/common_video.gyp:*',
       'libjingle/xmllite/xmllite.gyp:*',
+      'libjingle/xmpp/xmpp.gyp:*',
       'modules/modules.gyp:*',
+      'p2p/p2p.gyp:*',
       'system_wrappers/source/system_wrappers.gyp:*',
       'video_engine/video_engine.gyp:*',
       'voice_engine/voice_engine.gyp:*',

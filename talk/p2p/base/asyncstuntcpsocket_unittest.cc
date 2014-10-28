@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/p2p/base/asyncstuntcpsocket.h"
+#include "webrtc/p2p/base/asyncstuntcpsocket.h"
 #include "webrtc/base/asyncsocket.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/physicalsocketserver.h"

@@ -31,9 +31,9 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include "talk/xmpp/chatroommodule.h"
-#include "talk/xmpp/constants.h"
-#include "talk/xmpp/moduleimpl.h"
+#include "webrtc/libjingle/xmpp/chatroommodule.h"
+#include "webrtc/libjingle/xmpp/constants.h"
+#include "webrtc/libjingle/xmpp/moduleimpl.h"
 #include "webrtc/base/common.h"
 
 namespace buzz {

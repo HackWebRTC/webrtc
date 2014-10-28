@@ -28,7 +28,7 @@
 #ifndef TALK_XMPP_PREXMPPAUTH_H_
 #define TALK_XMPP_PREXMPPAUTH_H_
 
-#include "talk/xmpp/saslhandler.h"
+#include "webrtc/libjingle/xmpp/saslhandler.h"
 #include "webrtc/base/cryptstring.h"
 #include "webrtc/base/sigslot.h"
 

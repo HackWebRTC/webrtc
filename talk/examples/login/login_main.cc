@@ -29,10 +29,10 @@
 
 #include <iostream>
 
-#include "talk/xmpp/constants.h"
-#include "talk/xmpp/xmppclientsettings.h"
-#include "talk/xmpp/xmppengine.h"
-#include "talk/xmpp/xmppthread.h"
+#include "webrtc/libjingle/xmpp/constants.h"
+#include "webrtc/libjingle/xmpp/xmppclientsettings.h"
+#include "webrtc/libjingle/xmpp/xmppengine.h"
+#include "webrtc/libjingle/xmpp/xmppthread.h"
 #include "webrtc/base/thread.h"
 
 int main(int argc, char **argv) {

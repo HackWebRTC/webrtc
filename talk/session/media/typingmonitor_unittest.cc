@@ -26,7 +26,7 @@
  */
 
 #include "talk/media/base/fakemediaengine.h"
-#include "talk/p2p/base/fakesession.h"
+#include "webrtc/p2p/base/fakesession.h"
 #include "talk/session/media/channel.h"
 #include "talk/session/media/currentspeakermonitor.h"
 #include "talk/session/media/typingmonitor.h"

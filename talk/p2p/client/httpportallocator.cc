@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/p2p/client/httpportallocator.h"
+#include "webrtc/p2p/client/httpportallocator.h"
 
 #include <algorithm>
 #include <map>

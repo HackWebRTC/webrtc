@@ -33,7 +33,7 @@
 
 #include "talk/media/base/capturemanager.h"
 #include "talk/media/base/mediaengine.h"
-#include "talk/p2p/base/session.h"
+#include "webrtc/p2p/base/session.h"
 #include "talk/session/media/voicechannel.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/fileutils.h"

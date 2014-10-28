@@ -25,15 +25,15 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_TURNSERVER_H_
-#define TALK_P2P_BASE_TURNSERVER_H_
+#ifndef WEBRTC_P2P_BASE_TURNSERVER_H_
+#define WEBRTC_P2P_BASE_TURNSERVER_H_
 
 #include <list>
 #include <map>
 #include <set>
 #include <string>
 
-#include "talk/p2p/base/portinterface.h"
+#include "webrtc/p2p/base/portinterface.h"
 #include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/sigslot.h"
@@ -204,4 +204,4 @@ class TurnServer : public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_TURNSERVER_H_
+#endif  // WEBRTC_P2P_BASE_TURNSERVER_H_

@@ -29,7 +29,7 @@
 #define TALK_SESSION_MEDIA_AUDIOMONITOR_H_
 
 #include <vector>
-#include "talk/p2p/base/port.h"
+#include "webrtc/p2p/base/port.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
 

@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/p2p/base/transportdescription.h"
+#include "webrtc/p2p/base/transportdescription.h"
 
-#include "talk/p2p/base/constants.h"
+#include "webrtc/p2p/base/constants.h"
 #include "webrtc/base/stringutils.h"
 
 namespace cricket {

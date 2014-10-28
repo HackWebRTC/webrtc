@@ -34,18 +34,18 @@
 // When all of the available connections become invalid (non-writable), we
 // kick off a process of determining more candidates and more connections.
 //
-#ifndef TALK_P2P_BASE_P2PTRANSPORTCHANNEL_H_
-#define TALK_P2P_BASE_P2PTRANSPORTCHANNEL_H_
+#ifndef WEBRTC_P2P_BASE_P2PTRANSPORTCHANNEL_H_
+#define WEBRTC_P2P_BASE_P2PTRANSPORTCHANNEL_H_
 
 #include <map>
 #include <string>
 #include <vector>
-#include "talk/p2p/base/candidate.h"
-#include "talk/p2p/base/p2ptransport.h"
-#include "talk/p2p/base/portallocator.h"
-#include "talk/p2p/base/portinterface.h"
-#include "talk/p2p/base/transport.h"
-#include "talk/p2p/base/transportchannelimpl.h"
+#include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/p2ptransport.h"
+#include "webrtc/p2p/base/portallocator.h"
+#include "webrtc/p2p/base/portinterface.h"
+#include "webrtc/p2p/base/transport.h"
+#include "webrtc/p2p/base/transportchannelimpl.h"
 #include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/sigslot.h"
 
@@ -256,4 +256,4 @@ class P2PTransportChannel : public TransportChannelImpl,
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_P2PTRANSPORTCHANNEL_H_
+#endif  // WEBRTC_P2P_BASE_P2PTRANSPORTCHANNEL_H_

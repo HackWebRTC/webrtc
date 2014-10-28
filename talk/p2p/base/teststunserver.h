@@ -25,10 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_TESTSTUNSERVER_H_
-#define TALK_P2P_BASE_TESTSTUNSERVER_H_
+#ifndef WEBRTC_P2P_BASE_TESTSTUNSERVER_H_
+#define WEBRTC_P2P_BASE_TESTSTUNSERVER_H_
 
-#include "talk/p2p/base/stunserver.h"
+#include "webrtc/p2p/base/stunserver.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/thread.h"
 
@@ -72,4 +72,4 @@ class TestStunServer : StunServer {
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_TESTSTUNSERVER_H_
+#endif  // WEBRTC_P2P_BASE_TESTSTUNSERVER_H_

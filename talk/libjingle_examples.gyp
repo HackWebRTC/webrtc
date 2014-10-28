@@ -39,8 +39,8 @@
         'libjingle.gyp:libjingle_p2p',
       ],
       'sources': [
-        'xmpp/jingleinfotask.cc',
-        'xmpp/jingleinfotask.h',
+        '<(webrtc_root)/libjingle/xmpp/jingleinfotask.cc',
+        '<(webrtc_root)/libjingle/xmpp/jingleinfotask.h',
       ],
     },  # target libjingle_xmpphelp
     {

@@ -25,15 +25,15 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_TESTTURNSERVER_H_
-#define TALK_P2P_BASE_TESTTURNSERVER_H_
+#ifndef WEBRTC_P2P_BASE_TESTTURNSERVER_H_
+#define WEBRTC_P2P_BASE_TESTTURNSERVER_H_
 
 #include <string>
 #include <vector>
 
-#include "talk/p2p/base/basicpacketsocketfactory.h"
-#include "talk/p2p/base/stun.h"
-#include "talk/p2p/base/turnserver.h"
+#include "webrtc/p2p/base/basicpacketsocketfactory.h"
+#include "webrtc/p2p/base/stun.h"
+#include "webrtc/p2p/base/turnserver.h"
 #include "webrtc/base/asyncudpsocket.h"
 #include "webrtc/base/thread.h"
 
@@ -117,4 +117,4 @@ class TestTurnServer : public TurnAuthInterface {
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_TESTTURNSERVER_H_
+#endif  // WEBRTC_P2P_BASE_TESTTURNSERVER_H_

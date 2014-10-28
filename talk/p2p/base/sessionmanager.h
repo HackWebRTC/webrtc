@@ -25,16 +25,16 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_SESSIONMANAGER_H_
-#define TALK_P2P_BASE_SESSIONMANAGER_H_
+#ifndef WEBRTC_P2P_BASE_SESSIONMANAGER_H_
+#define WEBRTC_P2P_BASE_SESSIONMANAGER_H_
 
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "talk/p2p/base/portallocator.h"
-#include "talk/p2p/base/transportdescriptionfactory.h"
+#include "webrtc/p2p/base/portallocator.h"
+#include "webrtc/p2p/base/transportdescriptionfactory.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
 
@@ -208,4 +208,4 @@ class SessionManager : public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_SESSIONMANAGER_H_
+#endif  // WEBRTC_P2P_BASE_SESSIONMANAGER_H_

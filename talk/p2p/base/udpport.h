@@ -25,10 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_UDPPORT_H_
-#define TALK_P2P_BASE_UDPPORT_H_
+#ifndef WEBRTC_P2P_BASE_UDPPORT_H_
+#define WEBRTC_P2P_BASE_UDPPORT_H_
 
 // StunPort will be handling UDPPort functionality.
-#include "talk/p2p/base/stunport.h"
+#include "webrtc/p2p/base/stunport.h"
 
-#endif  // TALK_P2P_BASE_UDPPORT_H_
+#endif  // WEBRTC_P2P_BASE_UDPPORT_H_

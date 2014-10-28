@@ -25,10 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_TESTRELAYSERVER_H_
-#define TALK_P2P_BASE_TESTRELAYSERVER_H_
+#ifndef WEBRTC_P2P_BASE_TESTRELAYSERVER_H_
+#define WEBRTC_P2P_BASE_TESTRELAYSERVER_H_
 
-#include "talk/p2p/base/relayserver.h"
+#include "webrtc/p2p/base/relayserver.h"
 #include "webrtc/base/asynctcpsocket.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
@@ -115,4 +115,4 @@ class TestRelayServer : public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_TESTRELAYSERVER_H_
+#endif  // WEBRTC_P2P_BASE_TESTRELAYSERVER_H_

@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/p2p/base/relayserver.h"
+#include "webrtc/p2p/base/relayserver.h"
 
 #ifdef POSIX
 #include <errno.h>

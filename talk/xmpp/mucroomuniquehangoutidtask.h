@@ -4,7 +4,7 @@
 #ifndef TALK_XMPP_MUCROOMUNIQUEHANGOUTIDTASK_H_
 #define TALK_XMPP_MUCROOMUNIQUEHANGOUTIDTASK_H_
 
-#include "talk/xmpp/iqtask.h"
+#include "webrtc/libjingle/xmpp/iqtask.h"
 
 namespace buzz {
 

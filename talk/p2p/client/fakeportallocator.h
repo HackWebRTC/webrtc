@@ -25,13 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_CLIENT_FAKEPORTALLOCATOR_H_
-#define TALK_P2P_CLIENT_FAKEPORTALLOCATOR_H_
+#ifndef WEBRTC_P2P_CLIENT_FAKEPORTALLOCATOR_H_
+#define WEBRTC_P2P_CLIENT_FAKEPORTALLOCATOR_H_
 
 #include <string>
-#include "talk/p2p/base/basicpacketsocketfactory.h"
-#include "talk/p2p/base/portallocator.h"
-#include "talk/p2p/base/udpport.h"
+#include "webrtc/p2p/base/basicpacketsocketfactory.h"
+#include "webrtc/p2p/base/portallocator.h"
+#include "webrtc/p2p/base/udpport.h"
 #include "webrtc/base/scoped_ptr.h"
 
 namespace rtc {
@@ -135,4 +135,4 @@ class FakePortAllocator : public cricket::PortAllocator {
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_CLIENT_FAKEPORTALLOCATOR_H_
+#endif  // WEBRTC_P2P_CLIENT_FAKEPORTALLOCATOR_H_

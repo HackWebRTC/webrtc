@@ -36,7 +36,7 @@
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/statstypes.h"
 #include "talk/media/base/mediachannel.h"
-#include "talk/p2p/base/session.h"
+#include "webrtc/p2p/base/session.h"
 #include "talk/session/media/mediasession.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"

@@ -26,7 +26,7 @@
  */
 
 #include "talk/examples/call/friendinvitesendtask.h"
-#include "talk/xmpp/constants.h"
+#include "webrtc/libjingle/xmpp/constants.h"
 
 namespace buzz {
 

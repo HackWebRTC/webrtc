@@ -40,7 +40,7 @@
 #include "talk/media/webrtc/fakewebrtcvoiceengine.h"
 #include "talk/media/webrtc/webrtcvie.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
-#include "talk/p2p/base/fakesession.h"
+#include "webrtc/p2p/base/fakesession.h"
 #include "talk/session/media/channel.h"
 
 // Tests for the WebRtcVoiceEngine/VoiceChannel code.

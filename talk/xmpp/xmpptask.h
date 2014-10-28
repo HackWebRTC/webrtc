@@ -30,7 +30,7 @@
 
 #include <deque>
 #include <string>
-#include "talk/xmpp/xmppengine.h"
+#include "webrtc/libjingle/xmpp/xmppengine.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/task.h"
 #include "webrtc/base/taskparent.h"

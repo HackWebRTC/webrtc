@@ -25,20 +25,20 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_PORT_H_
-#define TALK_P2P_BASE_PORT_H_
+#ifndef WEBRTC_P2P_BASE_PORT_H_
+#define WEBRTC_P2P_BASE_PORT_H_
 
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
 
-#include "talk/p2p/base/candidate.h"
-#include "talk/p2p/base/packetsocketfactory.h"
-#include "talk/p2p/base/portinterface.h"
-#include "talk/p2p/base/stun.h"
-#include "talk/p2p/base/stunrequest.h"
-#include "talk/p2p/base/transport.h"
+#include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/packetsocketfactory.h"
+#include "webrtc/p2p/base/portinterface.h"
+#include "webrtc/p2p/base/stun.h"
+#include "webrtc/p2p/base/stunrequest.h"
+#include "webrtc/p2p/base/transport.h"
 #include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/proxyinfo.h"
@@ -616,4 +616,4 @@ class ProxyConnection : public Connection {
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_PORT_H_
+#endif  // WEBRTC_P2P_BASE_PORT_H_

@@ -25,13 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_CLIENT_SESSIONMANAGERTASK_H_
-#define TALK_P2P_CLIENT_SESSIONMANAGERTASK_H_
+#ifndef WEBRTC_P2P_CLIENT_SESSIONMANAGERTASK_H_
+#define WEBRTC_P2P_CLIENT_SESSIONMANAGERTASK_H_
 
-#include "talk/p2p/base/sessionmanager.h"
-#include "talk/p2p/client/sessionsendtask.h"
-#include "talk/xmpp/xmppengine.h"
-#include "talk/xmpp/xmpptask.h"
+#include "webrtc/p2p/base/sessionmanager.h"
+#include "webrtc/p2p/client/sessionsendtask.h"
+#include "webrtc/libjingle/xmpp/xmppengine.h"
+#include "webrtc/libjingle/xmpp/xmpptask.h"
 
 namespace cricket {
 
@@ -90,4 +90,4 @@ class SessionManagerTask : public buzz::XmppTask {
 
 }  // namespace cricket
 
-#endif // TALK_P2P_CLIENT_SESSIONMANAGERTASK_H_
+#endif // WEBRTC_P2P_CLIENT_SESSIONMANAGERTASK_H_

@@ -25,10 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_P2P_BASE_STUNSERVER_H_
-#define TALK_P2P_BASE_STUNSERVER_H_
+#ifndef WEBRTC_P2P_BASE_STUNSERVER_H_
+#define WEBRTC_P2P_BASE_STUNSERVER_H_
 
-#include "talk/p2p/base/stun.h"
+#include "webrtc/p2p/base/stun.h"
 #include "webrtc/base/asyncudpsocket.h"
 #include "webrtc/base/scoped_ptr.h"
 
@@ -80,4 +80,4 @@ class StunServer : public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // TALK_P2P_BASE_STUNSERVER_H_
+#endif  // WEBRTC_P2P_BASE_STUNSERVER_H_

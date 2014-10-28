@@ -30,7 +30,7 @@
 
 #include <string>
 #include "webrtc/libjingle/xmllite/qname.h"
-#include "talk/xmpp/jid.h"
+#include "webrtc/libjingle/xmpp/jid.h"
 
 namespace buzz {
 
