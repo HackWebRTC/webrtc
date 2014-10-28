@@ -783,10 +783,7 @@ class VideoMediaChannelTest : public testing::Test,
   void SetSendSetsTransportBufferSizes() {
     EXPECT_TRUE(SetOneCodec(DefaultCodec()));
     EXPECT_TRUE(SetSend(true));
-    // TODO(sriniv): Remove or re-enable this.
-    // As part of b/8030474, send-buffer is size now controlled through
-    // portallocator flags. Its not set by channels.
-    // EXPECT_EQ(64 * 1024, network_interface_.sendbuf_size());
+    EXPECT_EQ(64 * 1024, network_interface_.sendbuf_size());
     EXPECT_EQ(64 * 1024, network_interface_.recvbuf_size());
   }
   // Tests that we can send frames and the right payload type is used.

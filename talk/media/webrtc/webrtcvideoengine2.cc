@@ -1294,12 +1294,13 @@ void WebRtcVideoChannel2::SetInterface(NetworkInterface* iface) {
                           rtc::Socket::OPT_RCVBUF,
                           kVideoRtpBufferSize);
 
-  // TODO(sriniv): Remove or re-enable this.
-  // As part of b/8030474, send-buffer is size now controlled through
-  // portallocator flags.
-  // network_interface_->SetOption(NetworkInterface::ST_RTP,
-  //                              rtc::Socket::OPT_SNDBUF,
-  //                              kVideoRtpBufferSize);
+  // Speculative change to increase the outbound socket buffer size.
+  // In b/15152257, we are seeing a significant number of packets discarded
+  // due to lack of socket buffer space, although it's not yet clear what the
+  // ideal value should be.
+  MediaChannel::SetOption(NetworkInterface::ST_RTP,
+                          rtc::Socket::OPT_SNDBUF,
+                          kVideoRtpBufferSize);
 }
 
 void WebRtcVideoChannel2::UpdateAspectRatio(int ratio_w, int ratio_h) {
