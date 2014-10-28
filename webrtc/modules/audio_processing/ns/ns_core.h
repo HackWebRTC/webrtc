@@ -14,36 +14,36 @@
 #include "webrtc/modules/audio_processing/ns/defines.h"
 
 typedef struct NSParaExtract_t_ {
-  // bin size of histogram
+  // Bin size of histogram.
   float binSizeLrt;
   float binSizeSpecFlat;
   float binSizeSpecDiff;
-  // range of histogram over which lrt threshold is computed
+  // Range of histogram over which LRT threshold is computed.
   float rangeAvgHistLrt;
-  // scale parameters: multiply dominant peaks of the histograms by scale factor
-  // to obtain thresholds for prior model
-  float factor1ModelPars;  // for lrt and spectral difference
-  float factor2ModelPars;  // for spectral_flatness: used when noise is flatter
-                           // than speech
-  // peak limit for spectral flatness (varies between 0 and 1)
+  // Scale parameters: multiply dominant peaks of the histograms by scale factor
+  // to obtain thresholds for prior model.
+  float factor1ModelPars;  // For LRT and spectral difference.
+  float factor2ModelPars;  // For spectral_flatness: used when noise is flatter
+                           // than speech.
+  // Peak limit for spectral flatness (varies between 0 and 1).
   float thresPosSpecFlat;
-  // limit on spacing of two highest peaks in histogram: spacing determined by
-  // bin size
+  // Limit on spacing of two highest peaks in histogram: spacing determined by
+  // bin size.
   float limitPeakSpacingSpecFlat;
   float limitPeakSpacingSpecDiff;
-  // limit on relevance of second peak:
+  // Limit on relevance of second peak.
   float limitPeakWeightsSpecFlat;
   float limitPeakWeightsSpecDiff;
-  // limit on fluctuation of lrt feature
+  // Limit on fluctuation of LRT feature.
   float thresFluctLrt;
-  // limit on the max and min values for the feature thresholds
+  // Limit on the max and min values for the feature thresholds.
   float maxLrt;
   float minLrt;
   float maxSpecFlat;
   float minSpecFlat;
   float maxSpecDiff;
   float minSpecDiff;
-  // criteria of weight of histogram peak  to accept/reject feature
+  // Criteria of weight of histogram peak to accept/reject feature.
   int thresWeightSpecFlat;
   int thresWeightSpecDiff;
 
@@ -62,51 +62,53 @@ typedef struct NSinst_t_ {
   float syntBuf[ANAL_BLOCKL_MAX];
 
   int initFlag;
-  // parameters for quantile noise estimation
+  // Parameters for quantile noise estimation.
   float density[SIMULT * HALF_ANAL_BLOCKL];
   float lquantile[SIMULT * HALF_ANAL_BLOCKL];
   float quantile[HALF_ANAL_BLOCKL];
   int counter[SIMULT];
   int updates;
-  // parameters for Wiener filter
+  // Parameters for Wiener filter.
   float smooth[HALF_ANAL_BLOCKL];
   float overdrive;
   float denoiseBound;
   int gainmap;
-  // fft work arrays.
+  // FFT work arrays.
   int ip[IP_LENGTH];
   float wfft[W_LENGTH];
 
-  // parameters for new method: some not needed, will reduce/cleanup later
-  int32_t blockInd;  // frame index counter
-  int modelUpdatePars[4];  // parameters for updating or estimating
-  // thresholds/weights for prior model
-  float priorModelPars[7];  // parameters for prior model
-  float noise[HALF_ANAL_BLOCKL];      // noise spectrum from current frame
-  float noisePrev[HALF_ANAL_BLOCKL];  // noise spectrum from previous frame
-  // magnitude spectrum of previous analyze frame
+  // Parameters for new method: some not needed, will reduce/cleanup later.
+  int32_t blockInd;  // Frame index counter.
+  int modelUpdatePars[4];  // Parameters for updating or estimating.
+  // Thresholds/weights for prior model.
+  float priorModelPars[7];  // Parameters for prior model.
+  float noise[HALF_ANAL_BLOCKL];  // Noise spectrum from current frame.
+  float noisePrev[HALF_ANAL_BLOCKL];  // Noise spectrum from previous frame.
+  // Magnitude spectrum of previous analyze frame.
   float magnPrevAnalyze[HALF_ANAL_BLOCKL];
-  // magnitude spectrum of previous process frame
+  // Magnitude spectrum of previous process frame.
   float magnPrevProcess[HALF_ANAL_BLOCKL];
-  float logLrtTimeAvg[HALF_ANAL_BLOCKL];  // log lrt factor with time-smoothing
-  float priorSpeechProb;  // prior speech/noise probability
-  float featureData[7];  // data for features
-  float magnAvgPause[HALF_ANAL_BLOCKL];  // conservative noise spectrum estimate
-  float signalEnergy;  // energy of magn
-  float sumMagn;  // sum of magn
-  float whiteNoiseLevel;  // initial noise estimate
-  float initMagnEst[HALF_ANAL_BLOCKL];  // initial magnitude spectrum estimate
-  float pinkNoiseNumerator;  // pink noise parameter: numerator
-  float pinkNoiseExp;  // pink noise parameter: power of freq
+  float logLrtTimeAvg[HALF_ANAL_BLOCKL];  // Log LRT factor with time-smoothing.
+  float priorSpeechProb;  // Prior speech/noise probability.
+  float featureData[7];
+  // Conservative noise spectrum estimate.
+  float magnAvgPause[HALF_ANAL_BLOCKL];
+  float signalEnergy;  // Energy of |magn|.
+  float sumMagn;
+  float whiteNoiseLevel;  // Initial noise estimate.
+  float initMagnEst[HALF_ANAL_BLOCKL];  // Initial magnitude spectrum estimate.
+  float pinkNoiseNumerator;  // Pink noise parameter: numerator.
+  float pinkNoiseExp;  // Pink noise parameter: power of frequencies.
   float parametricNoise[HALF_ANAL_BLOCKL];
-  NSParaExtract_t featureExtractionParams;  // parameters for feature extraction
-  // histograms for parameter estimation
+  // Parameters for feature extraction.
+  NSParaExtract_t featureExtractionParams;
+  // Histograms for parameter estimation.
   int histLrt[HIST_PAR_EST];
   int histSpecFlat[HIST_PAR_EST];
   int histSpecDiff[HIST_PAR_EST];
-  // quantities for high band estimate
-  float speechProb[HALF_ANAL_BLOCKL];  // final speech/noise prob: prior + LRT
-  float dataBufHB[ANAL_BLOCKL_MAX];  // buffering data for HB
+  // Quantities for high band estimate.
+  float speechProb[HALF_ANAL_BLOCKL];  // Final speech/noise prob: prior + LRT.
+  float dataBufHB[ANAL_BLOCKL_MAX];  // Buffering data for HB.
 
 } NSinst_t;
 
