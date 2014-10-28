@@ -122,16 +122,16 @@ extern "C" {
  * This function initializes a noise suppression instance
  *
  * Input:
- *      - inst          : Instance that should be initialized
+ *      - self          : Instance that should be initialized
  *      - fs            : Sampling frequency
  *
  * Output:
- *      - inst          : Initialized instance
+ *      - self          : Initialized instance
  *
  * Return value         :  0 - Ok
  *                        -1 - Error
  */
-int WebRtcNs_InitCore(NSinst_t* inst, uint32_t fs);
+int WebRtcNs_InitCore(NSinst_t* self, uint32_t fs);
 
 /****************************************************************************
  * WebRtcNs_set_policy_core(...)
@@ -139,16 +139,16 @@ int WebRtcNs_InitCore(NSinst_t* inst, uint32_t fs);
  * This changes the aggressiveness of the noise suppression method.
  *
  * Input:
- *      - inst          : Instance that should be initialized
+ *      - self          : Instance that should be initialized
  *      - mode          : 0: Mild (6dB), 1: Medium (10dB), 2: Aggressive (15dB)
  *
  * Output:
- *      - NS_inst      : Initialized instance
+ *      - self          : Initialized instance
  *
  * Return value         :  0 - Ok
  *                        -1 - Error
  */
-int WebRtcNs_set_policy_core(NSinst_t* inst, int mode);
+int WebRtcNs_set_policy_core(NSinst_t* self, int mode);
 
 /****************************************************************************
  * WebRtcNs_AnalyzeCore
@@ -156,16 +156,16 @@ int WebRtcNs_set_policy_core(NSinst_t* inst, int mode);
  * Estimate the background noise.
  *
  * Input:
- *      - inst          : Instance that should be initialized
+ *      - self          : Instance that should be initialized
  *      - speechFrame   : Input speech frame for lower band
  *
  * Output:
- *      - inst          : Updated instance
+ *      - self          : Updated instance
  *
  * Return value         :  0 - OK
  *                        -1 - Error
  */
-int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame);
+int WebRtcNs_AnalyzeCore(NSinst_t* self, float* speechFrame);
 
 /****************************************************************************
  * WebRtcNs_ProcessCore
@@ -173,19 +173,19 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame);
  * Do noise suppression.
  *
  * Input:
- *      - inst          : Instance that should be initialized
+ *      - self          : Instance that should be initialized
  *      - inFrameLow    : Input speech frame for lower band
  *      - inFrameHigh   : Input speech frame for higher band
  *
  * Output:
- *      - inst          : Updated instance
+ *      - self          : Updated instance
  *      - outFrameLow   : Output speech frame for lower band
  *      - outFrameHigh  : Output speech frame for higher band
  *
  * Return value         :  0 - OK
  *                        -1 - Error
  */
-int WebRtcNs_ProcessCore(NSinst_t* inst,
+int WebRtcNs_ProcessCore(NSinst_t* self,
                          float* inFrameLow,
                          float* inFrameHigh,
                          float* outFrameLow,
