@@ -300,7 +300,7 @@ int16_t WebRtcIsacfix_DecLogisticMulti2(int16_t *dataQ7,
       candQ7 = - *dataQ7 + 64;
       cdfTmp = WebRtcIsacfix_Piecewise(WEBRTC_SPL_MUL_16_U16(candQ7, tmpARSpecQ8));
 
-      W_tmp = WEBRTC_SPL_UMUL_16_16(cdfTmp, W_upper_MSB);
+      W_tmp = (uint32_t)cdfTmp * W_upper_MSB;
       W_tmp += ((uint32_t)cdfTmp * (uint32_t)W_upper_LSB) >> 16;
 
       if (streamVal > W_tmp)
@@ -309,7 +309,7 @@ int16_t WebRtcIsacfix_DecLogisticMulti2(int16_t *dataQ7,
         candQ7 += 128;
         cdfTmp = WebRtcIsacfix_Piecewise(WEBRTC_SPL_MUL_16_U16(candQ7, tmpARSpecQ8));
 
-        W_tmp = WEBRTC_SPL_UMUL_16_16(cdfTmp, W_upper_MSB);
+        W_tmp = (uint32_t)cdfTmp * W_upper_MSB;
         W_tmp += ((uint32_t)cdfTmp * (uint32_t)W_upper_LSB) >> 16;
 
         while (streamVal > W_tmp)
@@ -319,7 +319,7 @@ int16_t WebRtcIsacfix_DecLogisticMulti2(int16_t *dataQ7,
           cdfTmp = WebRtcIsacfix_Piecewise(
               WEBRTC_SPL_MUL_16_U16(candQ7, tmpARSpecQ8));
 
-          W_tmp = WEBRTC_SPL_UMUL_16_16(cdfTmp, W_upper_MSB);
+          W_tmp = (uint32_t)cdfTmp * W_upper_MSB;
           W_tmp += ((uint32_t)cdfTmp * (uint32_t)W_upper_LSB) >> 16;
 
           /* error check */
@@ -338,7 +338,7 @@ int16_t WebRtcIsacfix_DecLogisticMulti2(int16_t *dataQ7,
         candQ7 -= 128;
         cdfTmp = WebRtcIsacfix_Piecewise(WEBRTC_SPL_MUL_16_U16(candQ7, tmpARSpecQ8));
 
-        W_tmp = WEBRTC_SPL_UMUL_16_16(cdfTmp, W_upper_MSB);
+        W_tmp = (uint32_t)cdfTmp * W_upper_MSB;
         W_tmp += ((uint32_t)cdfTmp * (uint32_t)W_upper_LSB) >> 16;
 
         while ( !(streamVal > W_tmp) )
@@ -348,7 +348,7 @@ int16_t WebRtcIsacfix_DecLogisticMulti2(int16_t *dataQ7,
           cdfTmp = WebRtcIsacfix_Piecewise(
               WEBRTC_SPL_MUL_16_U16(candQ7, tmpARSpecQ8));
 
-          W_tmp = WEBRTC_SPL_UMUL_16_16(cdfTmp, W_upper_MSB);
+          W_tmp = (uint32_t)cdfTmp * W_upper_MSB;
           W_tmp += ((uint32_t)cdfTmp * (uint32_t)W_upper_LSB) >> 16;
 
           /* error check */
