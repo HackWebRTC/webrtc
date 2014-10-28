@@ -71,7 +71,7 @@ static __inline uint16_t WebRtcIsacfix_Piecewise(int32_t xinQ15) {
   /* Find index for x-value */
   qtmp1 = WEBRTC_SPL_SAT(kHistEdges[50],xinQ15,kHistEdges[0]);
   ind = WEBRTC_SPL_MUL(5, qtmp1 - kHistEdges[0]);
-  ind =  WEBRTC_SPL_RSHIFT_W32(ind, 16);
+  ind >>= 16;
 
   /* Calculate corresponding y-value ans return*/
   qtmp1 = qtmp1 - kHistEdges[ind];

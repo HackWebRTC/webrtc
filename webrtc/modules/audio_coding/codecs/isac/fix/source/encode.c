@@ -194,7 +194,8 @@ int WebRtcIsacfix_EncodeImpl(int16_t      *in,
     }
     return status;
   }
-  AvgPitchGain_Q12 = WEBRTC_SPL_RSHIFT_W32(PitchGains_Q12[0] + PitchGains_Q12[1] + PitchGains_Q12[2] + PitchGains_Q12[3], 2);
+  AvgPitchGain_Q12 = (PitchGains_Q12[0] + PitchGains_Q12[1] +
+      PitchGains_Q12[2] + PitchGains_Q12[3]) >> 2;
 
   /* find coefficients for perceptual pre-filters */
   WebRtcIsacfix_GetLpcCoef(LPandHP, HP16a+QLOOKAHEAD, &ISACenc_obj->maskfiltstr_obj,

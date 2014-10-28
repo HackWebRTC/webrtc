@@ -141,7 +141,7 @@ void WebRtcIsacfix_HighpassFilterFixDec32C(int16_t *io,
         (WEBRTC_SPL_MUL_16_32_RSFT16(coefficient[2], state1) >> 16);
 #endif
 
-    c = ((int32_t)in) + WEBRTC_SPL_RSHIFT_W32(a1+b1, 7);  // Q0
+    c = in + ((a1 + b1) >> 7);  // Q0.
     io[k] = (int16_t)WebRtcSpl_SatW32ToW16(c);  // Write output as Q0.
 
     c = WEBRTC_SPL_LSHIFT_W32((int32_t)in, 2) - a2 - b2;  // In Q2.
@@ -223,9 +223,9 @@ void WebRtcIsacfix_SplitAndFilter1(int16_t *pin,
     int32_t tmp1, tmp2, tmp3;
     tmp1 = (int32_t)tempin_ch1[k]; // Q0 -> Q0
     tmp2 = (int32_t)tempin_ch2[k]; // Q0 -> Q0
-    tmp3 = (int32_t)WEBRTC_SPL_RSHIFT_W32((tmp1 + tmp2), 1);/* low pass signal*/
+    tmp3 = (tmp1 + tmp2) >> 1;  /* Low pass signal. */
     LP16[k] = (int16_t)WebRtcSpl_SatW32ToW16(tmp3); /*low pass */
-    tmp3 = (int32_t)WEBRTC_SPL_RSHIFT_W32((tmp1 - tmp2), 1);/* high pass signal*/
+    tmp3 = (tmp1 - tmp2) >> 1;  /* High pass signal. */
     HP16[k] = (int16_t)WebRtcSpl_SatW32ToW16(tmp3); /*high pass */
   }
 
@@ -282,9 +282,9 @@ void WebRtcIsacfix_SplitAndFilter2(int16_t *pin,
     int32_t tmp1, tmp2, tmp3;
     tmp1 = (int32_t)tempin_ch1[k]; // Q0 -> Q0
     tmp2 = (int32_t)tempin_ch2[k]; // Q0 -> Q0
-    tmp3 = (int32_t)WEBRTC_SPL_RSHIFT_W32((tmp1 + tmp2), 1);/* low pass signal*/
+    tmp3 = (tmp1 + tmp2) >> 1;  /* Low pass signal. */
     LP16[k] = (int16_t)WebRtcSpl_SatW32ToW16(tmp3); /*low pass */
-    tmp3 = (int32_t)WEBRTC_SPL_RSHIFT_W32((tmp1 - tmp2), 1);/* high pass signal*/
+    tmp3 = (tmp1 - tmp2) >> 1;  /* High pass signal. */
     HP16[k] = (int16_t)WebRtcSpl_SatW32ToW16(tmp3); /*high pass */
   }
 

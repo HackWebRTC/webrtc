@@ -41,7 +41,7 @@ void WebRtcIsacfix_PitchFilterCore(int loopNumber,
     /* Saturate to avoid overflow in tmpW16. */
     tmpW32 = WEBRTC_SPL_SAT(536862719, tmpW32, -536879104);
     tmpW32 += 8192;
-    tmpW16 = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmpW32, 14);
+    tmpW16 = (int16_t)(tmpW32 >> 14);
 
     /* Shift low pass filter state. */
     memmove(&inputState[1], &inputState[0],
@@ -60,7 +60,7 @@ void WebRtcIsacfix_PitchFilterCore(int loopNumber,
     /* Saturate to avoid overflow in tmpW16. */
     tmpW32 = WEBRTC_SPL_SAT(1073725439, tmpW32, -1073758208);
     tmpW32 += 16384;
-    tmpW16 = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmpW32, 15);
+    tmpW16 = (int16_t)(tmpW32 >> 15);
 
     /* Subtract from input and update buffer. */
     tmpW32 = inputBuf[*index2] - WEBRTC_SPL_MUL_16_16(sign, tmpW16);
@@ -71,4 +71,3 @@ void WebRtcIsacfix_PitchFilterCore(int loopNumber,
     (*index2)++;
   }
 }
-

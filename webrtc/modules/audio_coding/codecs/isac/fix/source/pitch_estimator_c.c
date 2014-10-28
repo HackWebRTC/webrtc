@@ -44,8 +44,7 @@ void WebRtcIsacfix_PCorr2Q32(const int16_t* in, int32_t* logcorQ8) {
                                         scaling);  // Q0
   }
   logcorQ8 += PITCH_LAG_SPAN2 - 1;
-  lys = WebRtcIsacfix_Log2Q8((uint32_t)ysum32);    // Q8
-  lys = WEBRTC_SPL_RSHIFT_W32(lys, 1);  //sqrt(ysum);
+  lys = WebRtcIsacfix_Log2Q8((uint32_t)ysum32) >> 1; // Q8, sqrt(ysum)
   if (csum32 > 0) {
     lcs = WebRtcIsacfix_Log2Q8((uint32_t)csum32);  // 2log(csum) in Q8
     if (lcs > (lys + oneQ8)) {          // csum/sqrt(ysum) > 2 in Q8
@@ -105,8 +104,7 @@ void WebRtcIsacfix_PCorr2Q32(const int16_t* in, int32_t* logcorQ8) {
 
     logcorQ8--;
 
-    lys = WebRtcIsacfix_Log2Q8((uint32_t)ysum32);  // Q8
-    lys = WEBRTC_SPL_RSHIFT_W32(lys, 1);  //sqrt(ysum);
+    lys = WebRtcIsacfix_Log2Q8((uint32_t)ysum32) >> 1; // Q8, sqrt(ysum)
 
     if (csum32 > 0) {
       lcs = WebRtcIsacfix_Log2Q8((uint32_t)csum32);  // 2log(csum) in Q8

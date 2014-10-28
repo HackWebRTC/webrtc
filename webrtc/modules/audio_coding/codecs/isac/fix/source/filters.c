@@ -76,13 +76,12 @@ static void AllpassFilterForDec32(int16_t         *InOut16, //Q0
       a = WEBRTC_SPL_MUL_16_32_RSFT16(InOut16[n], APSectionFactors[j]); //Q0*Q31=Q31 shifted 16 gives Q15
       a = WEBRTC_SPL_LSHIFT_W32(a, 1); // Q15 -> Q16
       b = WebRtcSpl_AddSatW32(a, FilterState[j]);  //Q16+Q16=Q16
-      a = WEBRTC_SPL_MUL_16_32_RSFT16(
-          (int16_t) WEBRTC_SPL_RSHIFT_W32(b, 16),
-          -APSectionFactors[j]); //Q0*Q31=Q31 shifted 16 gives Q15
+      // |a| in Q15 (Q0*Q31=Q31 shifted 16 gives Q15).
+      a = WEBRTC_SPL_MUL_16_32_RSFT16(b >> 16, -APSectionFactors[j]);
       FilterState[j] = WebRtcSpl_AddSatW32(
           WEBRTC_SPL_LSHIFT_W32(a,1),
           WEBRTC_SPL_LSHIFT_W32((uint32_t)InOut16[n], 16)); // Q15<<1 + Q0<<16 = Q16 + Q16 = Q16
-      InOut16[n] = (int16_t) WEBRTC_SPL_RSHIFT_W32(b, 16); //Save as Q0
+      InOut16[n] = (int16_t)(b >> 16);  // Save as Q0.
     }
   }
 }
@@ -102,7 +101,7 @@ void WebRtcIsacfix_DecimateAllpass32(const int16_t *in,
   memcpy(data_vec+1, in, WEBRTC_SPL_MUL_16_16(sizeof(int16_t), (N-1)));
 
 
-  data_vec[0] = (int16_t) WEBRTC_SPL_RSHIFT_W32(state_in[WEBRTC_SPL_MUL_16_16(2, ALLPASSSECTIONS)],16);   //the z^(-1) state
+  data_vec[0] = (int16_t)(state_in[2 * ALLPASSSECTIONS] >> 16);  // z^-1 state.
   state_in[WEBRTC_SPL_MUL_16_16(2, ALLPASSSECTIONS)] = WEBRTC_SPL_LSHIFT_W32((uint32_t)in[N-1],16);
 
 

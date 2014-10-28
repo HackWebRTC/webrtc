@@ -54,7 +54,7 @@ int16_t WebRtcIsacfix_DecodeImpl(int16_t       *signal_out16,
   int16_t AvgPitchGain_Q12;
 
   int16_t tmp_1, tmp_2;
-  int32_t tmp32a, tmp32b;
+  int32_t tmp32a;
   int16_t gainQ13;
 
 
@@ -113,7 +113,8 @@ int16_t WebRtcIsacfix_DecodeImpl(int16_t       *signal_out16,
     WebRtcIsacfix_Spec2Time(Vector_Word16_1, Vector_Word16_2, Vector_Word32_1, Vector_Word32_2);
 
     for (k=0; k<FRAMESAMPLES/2; k++) {
-      Vector_Word16_1[k] = (int16_t)WEBRTC_SPL_RSHIFT_W32(Vector_Word32_1[k]+64, 7); //Q16 -> Q9
+      // Q16 -> Q9.
+      Vector_Word16_1[k] = (int16_t)((Vector_Word32_1[k] + 64) >> 7);
     }
 
     /* ----  If this is recovery frame ---- */
@@ -176,8 +177,7 @@ int16_t WebRtcIsacfix_DecodeImpl(int16_t       *signal_out16,
     /* reduce gain to compensate for pitch enhancer */
     /* gain = 1.0f - 0.45f * AvgPitchGain; */
     tmp32a = WEBRTC_SPL_MUL_16_16_RSFT(AvgPitchGain_Q12, 29, 0); // Q18
-    tmp32b = 262144 - tmp32a;  // Q18
-    gainQ13 = (int16_t) WEBRTC_SPL_RSHIFT_W32(tmp32b, 5); // Q13
+    gainQ13 = (int16_t)((262144 - tmp32a) >> 5);  // Q18 -> Q13.
 
     for (k = 0; k < FRAMESAMPLES/2; k++)
     {
