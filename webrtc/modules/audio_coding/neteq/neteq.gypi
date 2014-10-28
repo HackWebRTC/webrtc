@@ -136,6 +136,7 @@
           'type': '<(gtest_target_type)',
           'dependencies': [
             '<@(codecs)',
+            'neteq_unittest_tools',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
             '<(webrtc_root)/test/test.gyp:test_support_main',
@@ -155,14 +156,6 @@
             'audio_decoder_unittest.cc',
             'audio_decoder.cc',
             'interface/audio_decoder.h',
-            # The files below are from the neteq_unittest_tools target, but that
-            # target depends (through long dependency chains) on the neteq
-            # target, which creates a conflict with the audio_decoder_impl.*
-            # files.
-            'tools/input_audio_file.cc',
-            'tools/input_audio_file.h',
-            'tools/resample_input_audio_file.cc',
-            'tools/resample_input_audio_file.h',
           ],
           'conditions': [
             ['OS=="android"', {
@@ -178,7 +171,7 @@
           'type': 'static_library',
           'dependencies': [
             'rtp_rtcp',
-            '<(webrtc_root)/test/webrtc_test_common.gyp:webrtc_test_common',
+            '<(webrtc_root)/test/test.gyp:rtp_test_utils',
           ],
           'direct_dependent_settings': {
             'include_dirs': [
