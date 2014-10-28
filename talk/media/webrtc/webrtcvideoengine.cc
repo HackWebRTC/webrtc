@@ -3215,7 +3215,10 @@ bool WebRtcVideoMediaChannel::SendFrame(
   if (changed) {
     // If the last captured frame info changed, then calling
     // SetSendParams will update to the latest resolution.
-    if (!SetSendParams(send_channel, send_channel->send_params())) {
+    VideoSendParams send_params = send_channel->send_params();
+    // Note: We must copy the send_params because otherwise the memory
+    // checker will complain.
+    if (!SetSendParams(send_channel, send_params)) {
       LOG(LS_ERROR) << "SetSendParams from SendFrame failed with "
                     << frame->GetWidth() << "x" << frame->GetHeight()
                     << " screencast? " << is_screencast;
