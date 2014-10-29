@@ -843,7 +843,6 @@ struct VideoSenderInfo : public MediaSenderInfo {
         capture_jitter_ms(0),
         avg_encode_ms(0),
         encode_usage_percent(0),
-        encode_rsd(0),
         capture_queue_delay_ms_per_s(0) {
   }
 
@@ -865,7 +864,6 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int capture_jitter_ms;
   int avg_encode_ms;
   int encode_usage_percent;
-  int encode_rsd;
   int capture_queue_delay_ms_per_s;
   VariableInfo<int> adapt_frame_drops;
   VariableInfo<int> effects_frame_drops;

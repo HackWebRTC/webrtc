@@ -2553,7 +2553,6 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
       sinfo.capture_jitter_ms = metrics.capture_jitter_ms;
       sinfo.avg_encode_ms = metrics.avg_encode_time_ms;
       sinfo.encode_usage_percent = metrics.encode_usage_percent;
-      sinfo.encode_rsd = metrics.encode_rsd;
       sinfo.capture_queue_delay_ms_per_s = metrics.capture_queue_delay_ms_per_s;
 #else
       sinfo.capture_jitter_ms = -1;

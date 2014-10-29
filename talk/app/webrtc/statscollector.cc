@@ -89,8 +89,6 @@ const char StatsReport::kStatsValueNameEchoReturnLoss[] =
 const char StatsReport::kStatsValueNameEchoReturnLossEnhancement[] =
     "googEchoCancellationReturnLossEnhancement";
 
-const char StatsReport::kStatsValueNameEncodeRelStdDev[] =
-    "googEncodeRelStdDev";
 const char StatsReport::kStatsValueNameEncodeUsagePercent[] =
     "googEncodeUsagePercent";
 const char StatsReport::kStatsValueNameExpandRate[] = "googExpandRate";
@@ -459,8 +457,6 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
                    info.capture_queue_delay_ms_per_s);
   report->AddValue(StatsReport::kStatsValueNameEncodeUsagePercent,
                    info.encode_usage_percent);
-  report->AddValue(StatsReport::kStatsValueNameEncodeRelStdDev,
-                   info.encode_rsd);
 }
 
 void ExtractStats(const cricket::BandwidthEstimationInfo& info,
