@@ -280,11 +280,11 @@ int32_t VideoReceiver::InitializeReceiver() {
   if (ret < 0) {
     return ret;
   }
-  _codecDataBase.ResetReceiver();
-  _timing.Reset();
 
   {
     CriticalSectionScoped receive_cs(_receiveCritSect);
+    _codecDataBase.ResetReceiver();
+    _timing.Reset();
     _receiverInited = true;
   }
 
@@ -369,6 +369,7 @@ int VideoReceiver::RegisterRenderBufferSizeCallback(
 // Should be called as often as possible to get the most out of the decoder.
 int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
   int64_t nextRenderTimeMs;
+  bool supports_render_scheduling;
   {
     CriticalSectionScoped cs(_receiveCritSect);
     if (!_receiverInited) {
@@ -377,6 +378,7 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
     if (!_codecDataBase.DecoderRegistered()) {
       return VCM_NO_CODEC_REGISTERED;
     }
+    supports_render_scheduling = _codecDataBase.SupportsRenderScheduling();
   }
 
   const bool dualReceiverEnabledNotReceiving = (
@@ -385,7 +387,7 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
   VCMEncodedFrame* frame =
       _receiver.FrameForDecoding(maxWaitTimeMs,
                                  nextRenderTimeMs,
-                                 _codecDataBase.SupportsRenderScheduling(),
+                                 supports_render_scheduling,
                                  &_dualReceiver);
 
   if (dualReceiverEnabledNotReceiving && _dualReceiver.State() == kReceiving) {

@@ -87,7 +87,6 @@ class FakeVideoReceiveStream : public webrtc::VideoReceiveStream {
 
   virtual void Start() OVERRIDE;
   virtual void Stop() OVERRIDE;
-  virtual void GetCurrentReceiveCodec(webrtc::VideoCodec* codec);
 
   webrtc::VideoReceiveStream::Config config_;
   bool receiving_;

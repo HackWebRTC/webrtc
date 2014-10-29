@@ -42,6 +42,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/call.h"
+#include "webrtc/video_decoder.h"
 #include "webrtc/video_encoder.h"
 
 #define UNIMPLEMENTED                                                 \
@@ -1008,8 +1009,8 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp) {
 
   webrtc::VideoReceiveStream::Config config;
   ConfigureReceiverRtp(&config, sp);
-  receive_streams_[ssrc] =
-      new WebRtcVideoReceiveStream(call_.get(), config, recv_codecs_);
+  receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
+      call_.get(), external_decoder_factory_, config, recv_codecs_);
 
   return true;
 }
@@ -1854,11 +1855,13 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
 
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     webrtc::Call* call,
+    WebRtcVideoDecoderFactory* external_decoder_factory,
     const webrtc::VideoReceiveStream::Config& config,
     const std::vector<VideoCodecSettings>& recv_codecs)
     : call_(call),
       stream_(NULL),
       config_(config),
+      external_decoder_factory_(external_decoder_factory),
       renderer_(NULL),
       last_width_(-1),
       last_height_(-1) {
@@ -1869,6 +1872,7 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
 
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::~WebRtcVideoReceiveStream() {
   call_->DestroyVideoReceiveStream(stream_);
+  ClearDecoders();
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRecvCodecs(
@@ -1877,24 +1881,18 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRecvCodecs(
   // TODO(pbos): Base receive codecs off recv_codecs_ and set up using a
   // DecoderFactory similar to send side. Pending webrtc:2854.
   // Also set up default codecs if there's nothing in recv_codecs_.
-  webrtc::VideoCodec codec;
-  memset(&codec, 0, sizeof(codec));
+  ClearDecoders();
 
-  codec.plType = kDefaultVideoCodecPref.payload_type;
-  strcpy(codec.plName, kDefaultVideoCodecPref.name);
-  codec.codecType = webrtc::kVideoCodecVP8;
-  codec.codecSpecific.VP8.resilience = webrtc::kResilientStream;
-  codec.codecSpecific.VP8.numberOfTemporalLayers = 1;
-  codec.codecSpecific.VP8.denoisingOn = true;
-  codec.codecSpecific.VP8.errorConcealmentOn = false;
-  codec.codecSpecific.VP8.automaticResizeOn = false;
-  codec.codecSpecific.VP8.frameDroppingOn = true;
-  codec.codecSpecific.VP8.keyFrameInterval = 3000;
-  // Bitrates don't matter and are ignored for the receiver. This is put in to
-  // have the current underlying implementation accept the VideoCodec.
-  codec.minBitrate = codec.startBitrate = codec.maxBitrate = 300;
-  config_.codecs.clear();
-  config_.codecs.push_back(codec);
+  AllocatedDecoder allocated_decoder(
+      webrtc::VideoDecoder::Create(webrtc::VideoDecoder::kVp8), false);
+  allocated_decoders_.push_back(allocated_decoder);
+
+  webrtc::VideoReceiveStream::Decoder decoder;
+  decoder.decoder = allocated_decoder.decoder;
+  decoder.payload_type = kDefaultVideoCodecPref.payload_type;
+  decoder.payload_name = "VP8";
+
+  config_.decoders.push_back(decoder);
 
   config_.rtp.fec = recv_codecs.front().fec;
 
@@ -1917,6 +1915,18 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {
   }
   stream_ = call_->CreateVideoReceiveStream(config_);
   stream_->Start();
+}
+
+void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ClearDecoders() {
+  for (size_t i = 0; i < allocated_decoders_.size(); ++i) {
+    if (allocated_decoders_[i].external) {
+      external_decoder_factory_->DestroyVideoDecoder(
+          allocated_decoders_[i].decoder);
+    } else {
+      delete allocated_decoders_[i].decoder;
+    }
+  }
+  allocated_decoders_.clear();
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(

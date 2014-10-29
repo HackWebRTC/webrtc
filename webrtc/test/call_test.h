@@ -74,7 +74,7 @@ class CallTest : public ::testing::Test {
 
   scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer_;
   test::FakeEncoder fake_encoder_;
-  ScopedVector<test::FakeDecoder> fake_decoders_;
+  ScopedVector<VideoDecoder> allocated_decoders_;
 };
 
 class BaseTest : public RtpRtcpObserver {

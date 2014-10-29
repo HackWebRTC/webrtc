@@ -19,6 +19,7 @@
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/video/receive_statistics_proxy.h"
+#include "webrtc/video_encoder.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_engine/include/vie_codec.h"
@@ -31,6 +32,35 @@
 
 namespace webrtc {
 namespace internal {
+namespace {
+VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
+  VideoCodec codec;
+  memset(&codec, 0, sizeof(codec));
+
+  codec.plType = decoder.payload_type;
+  strcpy(codec.plName, decoder.payload_name.c_str());
+  if (decoder.payload_name == "VP8") {
+    codec.codecType = kVideoCodecVP8;
+  } else if (decoder.payload_name == "H264") {
+    codec.codecType = kVideoCodecH264;
+  } else {
+    codec.codecType = kVideoCodecGeneric;
+  }
+
+  if (codec.codecType == kVideoCodecVP8) {
+    codec.codecSpecific.VP8 = VideoEncoder::GetDefaultVp8Settings();
+  } else if (codec.codecType == kVideoCodecH264) {
+    codec.codecSpecific.H264 = VideoEncoder::GetDefaultH264Settings();
+  }
+
+  codec.width = 320;
+  codec.height = 180;
+  codec.startBitrate = codec.minBitrate = codec.maxBitrate =
+      Call::Config::kDefaultStartBitrateBps / 1000;
+
+  return codec;
+}
+}  // namespace
 
 VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
                                        const VideoReceiveStream::Config& config,
@@ -118,15 +148,6 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
     }
   }
 
-  assert(!config_.codecs.empty());
-  for (size_t i = 0; i < config_.codecs.size(); ++i) {
-    if (codec_->SetReceiveCodec(channel_, config_.codecs[i]) != 0) {
-      // TODO(pbos): Abort gracefully, this can be a runtime error.
-      //             Factor out to an Init() method.
-      abort();
-    }
-  }
-
   stats_proxy_.reset(new ReceiveStatisticsProxy(
       config_.rtp.local_ssrc, clock_, rtp_rtcp_, codec_, channel_));
 
@@ -142,8 +163,9 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
     abort();
 
   external_codec_ = ViEExternalCodec::GetInterface(video_engine);
-  for (size_t i = 0; i < config_.external_decoders.size(); ++i) {
-    const ExternalVideoDecoder& decoder = config_.external_decoders[i];
+  assert(!config_.decoders.empty());
+  for (size_t i = 0; i < config_.decoders.size(); ++i) {
+    const Decoder& decoder = config_.decoders[i];
     if (external_codec_->RegisterExternalReceiveCodec(
             channel_,
             decoder.payload_type,
@@ -151,6 +173,14 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
             decoder.renderer,
             decoder.expected_delay_ms) != 0) {
       // TODO(pbos): Abort gracefully? Can this be a runtime error?
+      abort();
+    }
+
+    VideoCodec codec = CreateDecoderVideoCodec(decoder);
+
+    if (codec_->SetReceiveCodec(channel_, codec) != 0) {
+      // TODO(pbos): Abort gracefully, this can be a runtime error.
+      //             Factor out to an Init() method.
       abort();
     }
   }
@@ -183,9 +213,9 @@ VideoReceiveStream::~VideoReceiveStream() {
 
   render_->RemoveRenderer(channel_);
 
-  for (size_t i = 0; i < config_.external_decoders.size(); ++i) {
+  for (size_t i = 0; i < config_.decoders.size(); ++i) {
     external_codec_->DeRegisterExternalReceiveCodec(
-        channel_, config_.external_decoders[i].payload_type);
+        channel_, config_.decoders[i].payload_type);
   }
 
   network_->DeregisterSendTransport(channel_);
@@ -223,10 +253,6 @@ void VideoReceiveStream::Stop() {
 
 VideoReceiveStream::Stats VideoReceiveStream::GetStats() const {
   return stats_proxy_->GetStats();
-}
-
-void VideoReceiveStream::GetCurrentReceiveCodec(VideoCodec* receive_codec) {
-  // TODO(pbos): Implement
 }
 
 bool VideoReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {

@@ -1377,6 +1377,9 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(0, renderer_.num_rendered_frames());
     EXPECT_TRUE(SendFrame());
     EXPECT_FRAME_WAIT(1, 640, 400, kTimeout);
+    // Wait for one frame so they don't get dropped because we send frames too
+    // tightly.
+    rtc::Thread::Current()->ProcessMessages(30);
     // Remove the capturer.
     EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
     // Wait for one black frame for removing the capturer.

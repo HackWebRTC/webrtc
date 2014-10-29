@@ -159,9 +159,9 @@ void Loopback() {
   receive_config.rtp.rtx[kRtxPayloadType].ssrc = kSendRtxSsrc;
   receive_config.rtp.rtx[kRtxPayloadType].payload_type = kRtxPayloadType;
   receive_config.renderer = loopback_video.get();
-  VideoCodec codec =
-      test::CreateDecoderVideoCodec(send_config.encoder_settings);
-  receive_config.codecs.push_back(codec);
+  VideoReceiveStream::Decoder decoder =
+      test::CreateMatchingDecoder(send_config.encoder_settings);
+  receive_config.decoders.push_back(decoder);
 
   VideoReceiveStream* receive_stream =
       call->CreateVideoReceiveStream(receive_config);
@@ -178,6 +178,8 @@ void Loopback() {
 
   call->DestroyVideoReceiveStream(receive_stream);
   call->DestroyVideoSendStream(send_stream);
+
+  delete decoder.decoder;
 
   transport.StopSending();
 }

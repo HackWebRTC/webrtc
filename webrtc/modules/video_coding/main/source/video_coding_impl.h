@@ -186,7 +186,8 @@ class VideoReceiver {
   void RegisterPreDecodeImageCallback(EncodedImageCallback* observer);
 
  protected:
-  int32_t Decode(const webrtc::VCMEncodedFrame& frame);
+  int32_t Decode(const webrtc::VCMEncodedFrame& frame)
+      EXCLUSIVE_LOCKS_REQUIRED(_receiveCritSect);
   int32_t RequestKeyFrame();
   int32_t RequestSliceLossIndication(const uint64_t pictureID) const;
   int32_t NackList(uint16_t* nackList, uint16_t* size);
@@ -230,7 +231,7 @@ class VideoReceiver {
   size_t max_nack_list_size_ GUARDED_BY(process_crit_sect_);
   EncodedImageCallback* pre_decode_image_callback_ GUARDED_BY(_receiveCritSect);
 
-  VCMCodecDataBase _codecDataBase;
+  VCMCodecDataBase _codecDataBase GUARDED_BY(_receiveCritSect);
   VCMProcessTimer _receiveStatsTimer;
   VCMProcessTimer _retransmissionTimer;
   VCMProcessTimer _keyRequestTimer;

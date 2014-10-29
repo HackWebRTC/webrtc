@@ -151,11 +151,7 @@ class BitrateEstimatorTest : public test::CallTest {
     encoder_config_.streams = test::CreateVideoStreams(1);
 
     receive_config_ = VideoReceiveStream::Config();
-    assert(receive_config_.codecs.empty());
-    VideoCodec codec =
-        test::CreateDecoderVideoCodec(send_config_.encoder_settings);
-    receive_config_.codecs.push_back(codec);
-    // receive_config_.external_decoders will be set by every stream separately.
+    // receive_config_.decoders will be set by every stream separately.
     receive_config_.rtp.remote_ssrc = send_config_.rtp.ssrcs[0];
     receive_config_.rtp.local_ssrc = kReceiverLocalSsrc;
     receive_config_.rtp.extensions.push_back(
@@ -206,12 +202,13 @@ class BitrateEstimatorTest : public test::CallTest {
       send_stream_->Start();
       frame_generator_capturer_->Start();
 
-      ExternalVideoDecoder decoder;
+      VideoReceiveStream::Decoder decoder;
       decoder.decoder = &fake_decoder_;
       decoder.payload_type = test_->send_config_.encoder_settings.payload_type;
+      decoder.payload_name = test_->send_config_.encoder_settings.payload_name;
+      test_->receive_config_.decoders.push_back(decoder);
       test_->receive_config_.rtp.remote_ssrc = test_->send_config_.rtp.ssrcs[0];
       test_->receive_config_.rtp.local_ssrc++;
-      test_->receive_config_.external_decoders.push_back(decoder);
       receive_stream_ = test_->receiver_call_->CreateVideoReceiveStream(
           test_->receive_config_);
       receive_stream_->Start();

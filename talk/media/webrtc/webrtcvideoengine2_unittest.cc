@@ -174,9 +174,6 @@ void FakeVideoReceiveStream::Stop() {
   receiving_ = false;
 }
 
-void FakeVideoReceiveStream::GetCurrentReceiveCodec(webrtc::VideoCodec* codec) {
-}
-
 FakeCall::FakeCall(const webrtc::Call::Config& config)
     : config_(config), network_state_(kNetworkUp) {
   SetVideoCodecs(GetDefaultVideoCodecs());
@@ -1622,8 +1619,8 @@ TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsAcceptDefaultCodecs) {
 
   FakeVideoReceiveStream* stream = AddRecvStream();
   webrtc::VideoReceiveStream::Config config = stream->GetConfig();
-  EXPECT_STREQ(engine_.codecs()[0].name.c_str(), config.codecs[0].plName);
-  EXPECT_EQ(engine_.codecs()[0].id, config.codecs[0].plType);
+  EXPECT_EQ(engine_.codecs()[0].name, config.decoders[0].payload_name);
+  EXPECT_EQ(engine_.codecs()[0].id, config.decoders[0].payload_type);
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsRejectUnsupportedCodec) {

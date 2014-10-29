@@ -53,8 +53,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   virtual void Stop() OVERRIDE;
   virtual Stats GetStats() const OVERRIDE;
 
-  virtual void GetCurrentReceiveCodec(VideoCodec* receive_codec) OVERRIDE;
-
   // Overrides I420FrameCallback.
   virtual void FrameCallback(I420VideoFrame* video_frame) OVERRIDE;
 

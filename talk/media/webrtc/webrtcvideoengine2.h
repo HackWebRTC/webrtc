@@ -389,6 +389,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
    public:
     WebRtcVideoReceiveStream(
         webrtc::Call*,
+        WebRtcVideoDecoderFactory* external_decoder_factory,
         const webrtc::VideoReceiveStream::Config& config,
         const std::vector<VideoCodecSettings>& recv_codecs);
     ~WebRtcVideoReceiveStream();
@@ -405,13 +406,25 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     VideoReceiverInfo GetVideoReceiverInfo();
 
    private:
+    struct AllocatedDecoder {
+      AllocatedDecoder(webrtc::VideoDecoder* decoder, bool external)
+          : decoder(decoder), external(external) {}
+      webrtc::VideoDecoder* decoder;
+      bool external;
+    };
+
     void SetSize(int width, int height);
     void RecreateWebRtcStream();
+
+    void ClearDecoders();
 
     webrtc::Call* const call_;
 
     webrtc::VideoReceiveStream* stream_;
     webrtc::VideoReceiveStream::Config config_;
+
+    WebRtcVideoDecoderFactory* const external_decoder_factory_;
+    std::vector<AllocatedDecoder> allocated_decoders_;
 
     rtc::CriticalSection renderer_lock_;
     cricket::VideoRenderer* renderer_ GUARDED_BY(renderer_lock_);

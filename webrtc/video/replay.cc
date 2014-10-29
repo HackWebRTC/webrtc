@@ -30,6 +30,7 @@
 #include "webrtc/test/video_capturer.h"
 #include "webrtc/test/video_renderer.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/video_decoder.h"
 
 namespace webrtc {
 namespace flags {
@@ -212,8 +213,9 @@ void RtpReplay() {
   VideoSendStream::Config::EncoderSettings encoder_settings;
   encoder_settings.payload_name = flags::Codec();
   encoder_settings.payload_type = flags::PayloadType();
-  VideoCodec codec = test::CreateDecoderVideoCodec(encoder_settings);
-  receive_config.codecs.push_back(codec);
+  VideoReceiveStream::Decoder decoder =
+      test::CreateMatchingDecoder(encoder_settings);
+  receive_config.decoders.push_back(decoder);
 
   VideoReceiveStream* receive_stream =
       call->CreateVideoReceiveStream(receive_config);
@@ -271,6 +273,8 @@ void RtpReplay() {
   }
 
   call->DestroyVideoReceiveStream(receive_stream);
+
+  delete decoder.decoder;
 }
 }  // namespace webrtc
 

@@ -51,6 +51,15 @@ VideoEncoder* VideoEncoder::Create(VideoEncoder::EncoderType codec_type) {
   return NULL;
 }
 
+VideoDecoder* VideoDecoder::Create(VideoDecoder::DecoderType codec_type) {
+  switch (codec_type) {
+    case kVp8:
+      return VP8Decoder::Create();
+  }
+  assert(false);
+  return NULL;
+}
+
 const int Call::Config::kDefaultStartBitrateBps = 300000;
 
 namespace internal {

@@ -247,14 +247,12 @@ TEST_F(EndToEndTest, SendsAndReceivesH264) {
           encoder_config->streams[0].max_bitrate_bps = 2000000;
 
       (*receive_configs)[0].renderer = this;
-      VideoCodec codec =
-          test::CreateDecoderVideoCodec(send_config->encoder_settings);
-      (*receive_configs)[0].codecs.resize(1);
-      (*receive_configs)[0].codecs[0] = codec;
-      (*receive_configs)[0].external_decoders.resize(1);
-      (*receive_configs)[0].external_decoders[0].payload_type =
+      (*receive_configs)[0].decoders.resize(1);
+      (*receive_configs)[0].decoders[0].payload_type =
           send_config->encoder_settings.payload_type;
-      (*receive_configs)[0].external_decoders[0].decoder = &fake_decoder_;
+      (*receive_configs)[0].decoders[0].payload_name =
+          send_config->encoder_settings.payload_name;
+      (*receive_configs)[0].decoders[0].decoder = &fake_decoder_;
     }
 
     virtual void RenderFrame(const I420VideoFrame& video_frame,
@@ -977,6 +975,7 @@ TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
   for (size_t i = 0; i < kNumStreams; ++i)
     encoders[i].reset(VideoEncoder::Create(VideoEncoder::kVp8));
 
+  ScopedVector<VideoDecoder> allocated_decoders;
   for (size_t i = 0; i < kNumStreams; ++i) {
     uint32_t ssrc = codec_settings[i].ssrc;
     int width = codec_settings[i].width;
@@ -1004,9 +1003,10 @@ TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
     receive_config.renderer = observers[i];
     receive_config.rtp.remote_ssrc = ssrc;
     receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
-    VideoCodec codec =
-        test::CreateDecoderVideoCodec(send_config.encoder_settings);
-    receive_config.codecs.push_back(codec);
+    VideoReceiveStream::Decoder decoder =
+        test::CreateMatchingDecoder(send_config.encoder_settings);
+    allocated_decoders.push_back(decoder.decoder);
+    receive_config.decoders.push_back(decoder);
     receive_streams[i] =
         receiver_call->CreateVideoReceiveStream(receive_config);
     receive_streams[i]->Start();

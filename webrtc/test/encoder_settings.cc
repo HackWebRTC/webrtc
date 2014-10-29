@@ -12,8 +12,8 @@
 #include <assert.h>
 #include <string.h>
 
-#include "webrtc/video_encoder.h"
-#include "webrtc/video_engine/vie_defines.h"
+#include "webrtc/test/fake_decoder.h"
+#include "webrtc/video_decoder.h"
 
 namespace webrtc {
 namespace test {
@@ -53,33 +53,17 @@ std::vector<VideoStream> CreateVideoStreams(size_t num_streams) {
   return stream_settings;
 }
 
-VideoCodec CreateDecoderVideoCodec(
+VideoReceiveStream::Decoder CreateMatchingDecoder(
     const VideoSendStream::Config::EncoderSettings& encoder_settings) {
-  VideoCodec codec;
-  memset(&codec, 0, sizeof(codec));
-
-  codec.plType = encoder_settings.payload_type;
-  strcpy(codec.plName, encoder_settings.payload_name.c_str());
+  VideoReceiveStream::Decoder decoder;
+  decoder.payload_type = encoder_settings.payload_type;
+  decoder.payload_name = encoder_settings.payload_name;
   if (encoder_settings.payload_name == "VP8") {
-    codec.codecType = kVideoCodecVP8;
-  } else if (encoder_settings.payload_name == "H264") {
-    codec.codecType = kVideoCodecH264;
+    decoder.decoder = VideoDecoder::Create(VideoDecoder::kVp8);
   } else {
-    codec.codecType = kVideoCodecGeneric;
+    decoder.decoder = new FakeDecoder();
   }
-
-  if (codec.codecType == kVideoCodecVP8) {
-    codec.codecSpecific.VP8 = VideoEncoder::GetDefaultVp8Settings();
-  } else if (codec.codecType == kVideoCodecH264) {
-    codec.codecSpecific.H264 = VideoEncoder::GetDefaultH264Settings();
-  }
-
-  codec.width = 320;
-  codec.height = 180;
-  codec.startBitrate = codec.minBitrate = codec.maxBitrate = 300;
-
-  return codec;
+  return decoder;
 }
-
 }  // namespace test
 }  // namespace webrtc
