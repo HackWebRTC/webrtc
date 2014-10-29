@@ -33,13 +33,13 @@ class AudioEncoder {
   // output.
   bool Encode(uint32_t timestamp,
               const int16_t* audio,
-              size_t num_samples,
+              size_t num_samples_per_channel,
               size_t max_encoded_bytes,
               uint8_t* encoded,
               size_t* encoded_bytes,
               uint32_t* encoded_timestamp) {
-    CHECK_EQ(num_samples,
-             static_cast<size_t>(sample_rate_hz() / 100 * num_channels()));
+    CHECK_EQ(num_samples_per_channel,
+             static_cast<size_t>(sample_rate_hz() / 100));
     bool ret = Encode(timestamp,
                       audio,
                       max_encoded_bytes,

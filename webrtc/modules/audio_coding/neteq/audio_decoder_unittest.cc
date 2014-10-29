@@ -26,7 +26,7 @@
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
-#include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
+#include "webrtc/modules/audio_coding/codecs/opus/interface/audio_encoder_opus.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/tools/resample_input_audio_file.h"
 #include "webrtc/system_wrappers/interface/data_log.h"
@@ -140,17 +140,20 @@ class AudioDecoderTest : public ::testing::Test {
                           size_t input_len_samples,
                           uint8_t* output) {
     size_t enc_len_bytes = 0;
+    scoped_ptr<int16_t[]> interleaved_input(
+        new int16_t[channels_ * input_len_samples]);
     for (int i = 0; i < audio_encoder_->num_10ms_frames_per_packet(); ++i) {
       EXPECT_EQ(0u, enc_len_bytes);
-      EXPECT_TRUE(audio_encoder_->Encode(0,
-                                         input,
-                                         audio_encoder_->sample_rate_hz() / 100,
-                                         data_length_ * 2,
-                                         output,
-                                         &enc_len_bytes,
-                                         &output_timestamp_));
+
+      // Duplicate the mono input signal to however many channels the test
+      // wants.
+      test::InputAudioFile::DuplicateInterleaved(
+          input, input_len_samples, channels_, interleaved_input.get());
+
+      EXPECT_TRUE(audio_encoder_->Encode(
+          0, interleaved_input.get(), audio_encoder_->sample_rate_hz() / 100,
+          data_length_ * 2, output, &enc_len_bytes, &output_timestamp_));
     }
-    EXPECT_EQ(input_len_samples, enc_len_bytes);
     return static_cast<int>(enc_len_bytes);
   }
 
@@ -636,56 +639,22 @@ class AudioDecoderOpusTest : public AudioDecoderTest {
     frame_size_ = 480;
     data_length_ = 10 * frame_size_;
     decoder_ = new AudioDecoderOpus(kDecoderOpus);
-    assert(decoder_);
-    WebRtcOpus_EncoderCreate(&encoder_, 1);
+    AudioEncoderOpus::Config config;
+    config.frame_size_ms = static_cast<int>(frame_size_) / 48;
+    audio_encoder_.reset(new AudioEncoderOpus(config));
   }
-
-  ~AudioDecoderOpusTest() {
-    WebRtcOpus_EncoderFree(encoder_);
-  }
-
-  virtual void InitEncoder() {}
-
-  virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
-                          uint8_t* output) OVERRIDE {
-    int enc_len_bytes = WebRtcOpus_Encode(encoder_, const_cast<int16_t*>(input),
-        static_cast<int16_t>(input_len_samples),
-        static_cast<int16_t>(data_length_), output);
-    EXPECT_GT(enc_len_bytes, 0);
-    return enc_len_bytes;
-  }
-
-  OpusEncInst* encoder_;
 };
 
 class AudioDecoderOpusStereoTest : public AudioDecoderOpusTest {
  protected:
   AudioDecoderOpusStereoTest() : AudioDecoderOpusTest() {
     channels_ = 2;
-    WebRtcOpus_EncoderFree(encoder_);
     delete decoder_;
     decoder_ = new AudioDecoderOpus(kDecoderOpus_2ch);
-    assert(decoder_);
-    WebRtcOpus_EncoderCreate(&encoder_, 2);
-  }
-
-  virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
-                          uint8_t* output) OVERRIDE {
-    // Create stereo by duplicating each sample in |input|.
-    const int input_stereo_samples = static_cast<int>(input_len_samples) * 2;
-    scoped_ptr<int16_t[]> input_stereo(new int16_t[input_stereo_samples]);
-    test::InputAudioFile::DuplicateInterleaved(
-        input, input_len_samples, 2, input_stereo.get());
-
-    // Note that the input length is given as samples per channel.
-    int enc_len_bytes =
-        WebRtcOpus_Encode(encoder_,
-                          input_stereo.get(),
-                          static_cast<int16_t>(input_len_samples),
-                          static_cast<int16_t>(data_length_),
-                          output);
-    EXPECT_GT(enc_len_bytes, 0);
-    return enc_len_bytes;
+    AudioEncoderOpus::Config config;
+    config.frame_size_ms = static_cast<int>(frame_size_) / 48;
+    config.num_channels = 2;
+    audio_encoder_.reset(new AudioEncoderOpus(config));
   }
 };
 
