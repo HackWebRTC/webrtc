@@ -592,13 +592,6 @@ TEST_F(RtcpReceiverTest, InjectXrPacketWithUnknownReportBlock) {
   EXPECT_FALSE(rtcp_packet_info_.xr_dlrr_item);
 }
 
-TEST(RtcpUtilityTest, MidNtp) {
-  const uint32_t kNtpSec = 0x12345678;
-  const uint32_t kNtpFrac = 0x23456789;
-  const uint32_t kNtpMid = 0x56782345;
-  EXPECT_EQ(kNtpMid, RTCPUtility::MidNtp(kNtpSec, kNtpFrac));
-}
-
 TEST_F(RtcpReceiverTest, TestXrRrRttInitiallyFalse) {
   uint16_t rtt_ms;
   EXPECT_FALSE(rtcp_receiver_->GetAndResetXrRrRtt(&rtt_ms));

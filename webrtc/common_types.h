@@ -202,17 +202,31 @@ struct RtcpPacketTypeCounter {
   RtcpPacketTypeCounter()
     : nack_packets(0),
       fir_packets(0),
-      pli_packets(0) {}
+      pli_packets(0),
+      nack_requests(0),
+      unique_nack_requests(0) {}
 
   void Add(const RtcpPacketTypeCounter& other) {
     nack_packets += other.nack_packets;
     fir_packets += other.fir_packets;
     pli_packets += other.pli_packets;
+    nack_requests += other.nack_requests;
+    unique_nack_requests += other.unique_nack_requests;
   }
 
-  uint32_t nack_packets;
-  uint32_t fir_packets;
-  uint32_t pli_packets;
+  int UniqueNackRequestsInPercent() const {
+    if (nack_requests == 0) {
+      return 0;
+    }
+    return static_cast<int>(
+        (unique_nack_requests * 100.0f / nack_requests) + 0.5f);
+  }
+
+  uint32_t nack_packets;          // Number of RTCP NACK packets.
+  uint32_t fir_packets;           // Number of RTCP FIR packets.
+  uint32_t pli_packets;           // Number of RTCP PLI packets.
+  uint32_t nack_requests;         // Number of NACKed RTP packets.
+  uint32_t unique_nack_requests;  // Number of unique NACKed RTP packets.
 };
 
 // Data usage statistics for a (rtp) stream

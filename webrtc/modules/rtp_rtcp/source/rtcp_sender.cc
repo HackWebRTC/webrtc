@@ -1354,7 +1354,6 @@ RTCPSender::BuildNACK(uint8_t* rtcpbuffer,
     RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _remoteSSRC);
     pos += 4;
 
-    NACKStringBuilder stringBuilder;
     // Build NACK bitmasks and write them to the RTCP message.
     // The nack list should be sorted and not contain duplicates if one
     // wants to build the smallest rtcp nack packet.
@@ -1363,13 +1362,11 @@ RTCPSender::BuildNACK(uint8_t* rtcpbuffer,
                                       (IP_PACKET_SIZE - pos) / 4);
     int i = 0;
     while (i < nackSize && numOfNackFields < maxNackFields) {
-      stringBuilder.PushNACK(nackList[i]);
       uint16_t nack = nackList[i++];
       uint16_t bitmask = 0;
       while (i < nackSize) {
         int shift = static_cast<uint16_t>(nackList[i] - nack) - 1;
         if (shift >= 0 && shift <= 15) {
-          stringBuilder.PushNACK(nackList[i]);
           bitmask |= (1 << shift);
           ++i;
         } else {
@@ -1384,11 +1381,21 @@ RTCPSender::BuildNACK(uint8_t* rtcpbuffer,
       pos += 2;
       numOfNackFields++;
     }
-    if (i != nackSize) {
-      LOG(LS_WARNING) << "Nack list to large for one packet.";
-    }
     rtcpbuffer[nackSizePos] = static_cast<uint8_t>(2 + numOfNackFields);
+
+    if (i != nackSize) {
+      LOG(LS_WARNING) << "Nack list too large for one packet.";
+    }
+
+    // Report stats.
+    NACKStringBuilder stringBuilder;
+    for (int idx = 0; idx < i; ++idx) {
+      stringBuilder.PushNACK(nackList[idx]);
+      nack_stats_.ReportRequest(nackList[idx]);
+    }
     *nackString = stringBuilder.GetResult();
+    packet_type_counter_.nack_requests = nack_stats_.requests();
+    packet_type_counter_.unique_nack_requests = nack_stats_.unique_requests();
     return 0;
 }
 

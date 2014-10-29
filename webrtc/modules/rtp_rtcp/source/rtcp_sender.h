@@ -360,6 +360,8 @@ private:
 
     RtcpPacketTypeCounter packet_type_counter_
         GUARDED_BY(_criticalSectionRTCPSender);
+
+    RTCPUtility::NackStats nack_stats_ GUARDED_BY(_criticalSectionRTCPSender);
 };
 }  // namespace webrtc
 

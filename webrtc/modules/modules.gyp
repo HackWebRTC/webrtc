@@ -213,6 +213,7 @@
             'rtp_rtcp/source/rtcp_packet_unittest.cc',
             'rtp_rtcp/source/rtcp_receiver_unittest.cc',
             'rtp_rtcp/source/rtcp_sender_unittest.cc',
+            'rtp_rtcp/source/rtcp_utility_unittest.cc',
             'rtp_rtcp/source/rtp_fec_unittest.cc',
             'rtp_rtcp/source/rtp_format_h264_unittest.cc',
             'rtp_rtcp/source/rtp_format_vp8_unittest.cc',

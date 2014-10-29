@@ -833,6 +833,8 @@ RTCPReceiver::HandleNACK(RTCPUtility::RTCPParserV2& rtcpParser,
 
     if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpNack) {
       ++packet_type_counter_.nack_packets;
+      packet_type_counter_.nack_requests = nack_stats_.requests();
+      packet_type_counter_.unique_nack_requests = nack_stats_.unique_requests();
     }
 }
 
@@ -842,6 +844,7 @@ RTCPReceiver::HandleNACKItem(const RTCPUtility::RTCPPacket& rtcpPacket,
                              RTCPPacketInformation& rtcpPacketInformation)
 {
     rtcpPacketInformation.AddNACKPacket(rtcpPacket.NACKItem.PacketID);
+    nack_stats_.ReportRequest(rtcpPacket.NACKItem.PacketID);
 
     uint16_t bitMask = rtcpPacket.NACKItem.BitMask;
     if(bitMask)
@@ -851,6 +854,7 @@ RTCPReceiver::HandleNACKItem(const RTCPUtility::RTCPPacket& rtcpPacket,
             if(bitMask & 0x01)
             {
                 rtcpPacketInformation.AddNACKPacket(rtcpPacket.NACKItem.PacketID + i);
+                nack_stats_.ReportRequest(rtcpPacket.NACKItem.PacketID + i);
             }
             bitMask = bitMask >>1;
         }

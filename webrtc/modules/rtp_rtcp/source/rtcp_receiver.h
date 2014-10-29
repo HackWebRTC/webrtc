@@ -270,6 +270,8 @@ protected:
   RtcpStatisticsCallback* stats_callback_;
 
   RtcpPacketTypeCounter packet_type_counter_;
+
+  RTCPUtility::NackStats nack_stats_;
 };
 }  // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_H_

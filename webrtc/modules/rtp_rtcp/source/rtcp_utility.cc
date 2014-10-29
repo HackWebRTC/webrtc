@@ -17,6 +17,23 @@
 namespace webrtc {
 
 namespace RTCPUtility {
+
+NackStats::NackStats()
+    : max_sequence_number_(0),
+      requests_(0),
+      unique_requests_(0) {}
+
+NackStats::~NackStats() {}
+
+void NackStats::ReportRequest(uint16_t sequence_number) {
+  if (requests_ == 0 ||
+      webrtc::IsNewerSequenceNumber(sequence_number, max_sequence_number_)) {
+    max_sequence_number_ =  sequence_number;
+    ++unique_requests_;
+  }
+  ++requests_;
+}
+
 uint32_t MidNtp(uint32_t ntp_sec, uint32_t ntp_frac) {
   return (ntp_sec << 16) + (ntp_frac >> 16);
 }  // end RTCPUtility
