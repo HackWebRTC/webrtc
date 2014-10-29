@@ -103,7 +103,6 @@ class OveruseFrameDetector : public Module {
 
  private:
   class EncodeTimeAvg;
-  class SendProcessingRsd;
   class SendProcessingUsage;
   class CaptureQueueDelay;
   class FrameQueue;
@@ -146,8 +145,6 @@ class OveruseFrameDetector : public Module {
 
   int64_t last_encode_sample_ms_;
   scoped_ptr<EncodeTimeAvg> encode_time_;
-
-  scoped_ptr<SendProcessingRsd> rsd_;
   scoped_ptr<SendProcessingUsage> usage_;
   scoped_ptr<FrameQueue> frame_queue_;
   int64_t last_sample_time_ms_;

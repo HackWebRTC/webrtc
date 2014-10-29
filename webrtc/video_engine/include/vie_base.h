@@ -63,6 +63,7 @@ struct CpuOveruseOptions {
   bool enable_encode_usage_method;
   int low_encode_usage_threshold_percent;  // Threshold for triggering underuse.
   int high_encode_usage_threshold_percent; // Threshold for triggering overuse.
+  // TODO(asapersson): Remove options, not used.
   int low_encode_time_rsd_threshold;   // Additional threshold for triggering
                                        // underuse (used in addition to
                                        // threshold above if configured).
@@ -117,6 +118,7 @@ struct CpuOveruseMetrics {
   int avg_encode_time_ms;   // The average encode time in ms.
   int encode_usage_percent; // The average encode time divided by the average
                             // time difference between incoming captured frames.
+  // TODO(asapersson): Remove metric, not used.
   int encode_rsd;           // The relative std dev of encode time of frames.
   int capture_queue_delay_ms_per_s;  // The current time delay between an
                                      // incoming captured frame until the frame

@@ -71,12 +71,6 @@ class OveruseFrameDetectorTest : public ::testing::Test {
              options_.high_encode_usage_threshold_percent) / 2.0f) + 0.5;
   }
 
-  int InitialRsd() {
-    return std::max(
-        ((options_.low_encode_time_rsd_threshold +
-          options_.high_encode_time_rsd_threshold) / 2.0f) + 0.5f, 0.0f);
-  }
-
   void InsertFramesWithInterval(
       size_t num_frames, int interval_ms, int width, int height) {
     while (num_frames-- > 0) {
@@ -120,18 +114,6 @@ class OveruseFrameDetectorTest : public ::testing::Test {
     }
   }
 
-  void TriggerOveruseWithRsd(int num_times) {
-    const int kDelayMs1 = 10;
-    const int kDelayMs2 = 25;
-    for (int i = 0; i < num_times; ++i) {
-      InsertAndSendFramesWithInterval(
-          200, kFrameInterval33ms, kWidth, kHeight, kDelayMs1);
-      InsertAndSendFramesWithInterval(
-          10, kFrameInterval33ms, kWidth, kHeight, kDelayMs2);
-      overuse_detector_->Process();
-    }
-  }
-
   void TriggerUnderuseWithProcessingUsage() {
     const int kDelayMs1 = 5;
     const int kDelayMs2 = 6;
@@ -158,12 +140,6 @@ class OveruseFrameDetectorTest : public ::testing::Test {
     CpuOveruseMetrics metrics;
     overuse_detector_->GetCpuOveruseMetrics(&metrics);
     return metrics.encode_usage_percent;
-  }
-
-  int Rsd() {
-    CpuOveruseMetrics metrics;
-    overuse_detector_->GetCpuOveruseMetrics(&metrics);
-    return metrics.encode_rsd;
   }
 
   CpuOveruseOptions options_;
@@ -571,73 +547,4 @@ TEST_F(OveruseFrameDetectorTest,
   TriggerUnderuseWithProcessingUsage();
 }
 
-TEST_F(OveruseFrameDetectorTest, RsdResetAfterChangingThreshold) {
-  EXPECT_EQ(InitialRsd(), Rsd());
-  options_.high_encode_time_rsd_threshold = 100;
-  overuse_detector_->SetOptions(options_);
-  EXPECT_EQ(InitialRsd(), Rsd());
-  options_.low_encode_time_rsd_threshold = 20;
-  overuse_detector_->SetOptions(options_);
-  EXPECT_EQ(InitialRsd(), Rsd());
-}
-
-// enable_encode_usage_method = true;
-// low/high_encode_time_rsd_threshold >= 0
-// UsagePercent() > high_encode_usage_threshold_percent ||
-// Rsd() > high_encode_time_rsd_threshold => overuse.
-// UsagePercent() < low_encode_usage_threshold_percent &&
-// Rsd() < low_encode_time_rsd_threshold => underuse.
-TEST_F(OveruseFrameDetectorTest, TriggerOveruseWithRsd) {
-  options_.enable_capture_jitter_method = false;
-  options_.enable_encode_usage_method = true;
-  options_.high_encode_time_rsd_threshold = 80;
-  overuse_detector_->SetOptions(options_);
-  // rsd > high, usage < high => overuse
-  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
-  TriggerOveruseWithRsd(options_.high_threshold_consecutive_count);
-  EXPECT_LT(UsagePercent(), options_.high_encode_usage_threshold_percent);
-}
-
-TEST_F(OveruseFrameDetectorTest, OveruseAndRecoverWithRsd) {
-  options_.enable_capture_jitter_method = false;
-  options_.enable_encode_usage_method = true;
-  options_.low_encode_time_rsd_threshold = 25;
-  options_.high_encode_time_rsd_threshold = 80;
-  overuse_detector_->SetOptions(options_);
-  // rsd > high, usage < high => overuse
-  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
-  TriggerOveruseWithRsd(options_.high_threshold_consecutive_count);
-  EXPECT_LT(UsagePercent(), options_.high_encode_usage_threshold_percent);
-  // rsd < low, usage < low => underuse
-  EXPECT_CALL(*(observer_.get()), NormalUsage()).Times(testing::AtLeast(1));
-  TriggerUnderuseWithProcessingUsage();
-}
-
-TEST_F(OveruseFrameDetectorTest, NoUnderuseWithRsd_UsageGtLowThreshold) {
-  options_.enable_capture_jitter_method = false;
-  options_.enable_encode_usage_method = true;
-  options_.low_encode_usage_threshold_percent = 1;
-  options_.low_encode_time_rsd_threshold = 25;
-  options_.high_encode_time_rsd_threshold = 90;
-  overuse_detector_->SetOptions(options_);
-  // rsd < low, usage > low => no underuse
-  EXPECT_CALL(*(observer_.get()), NormalUsage()).Times(0);
-  TriggerUnderuseWithProcessingUsage();
-  EXPECT_LT(Rsd(), options_.low_encode_time_rsd_threshold);
-  EXPECT_GT(UsagePercent(), options_.low_encode_usage_threshold_percent);
-}
-
-TEST_F(OveruseFrameDetectorTest, NoUnderuseWithRsd_RsdGtLowThreshold) {
-  options_.enable_capture_jitter_method = false;
-  options_.enable_encode_usage_method = true;
-  options_.low_encode_usage_threshold_percent = 20;
-  options_.low_encode_time_rsd_threshold = 1;
-  options_.high_encode_time_rsd_threshold = 90;
-  overuse_detector_->SetOptions(options_);
-  // rsd > low, usage < low => no underuse
-  EXPECT_CALL(*(observer_.get()), NormalUsage()).Times(0);
-  TriggerUnderuseWithProcessingUsage();
-  EXPECT_GT(Rsd(), options_.low_encode_time_rsd_threshold);
-  EXPECT_LT(UsagePercent(), options_.low_encode_usage_threshold_percent);
-}
 }  // namespace webrtc
