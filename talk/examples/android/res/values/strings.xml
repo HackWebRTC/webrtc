@@ -16,6 +16,7 @@
     <string name="connecting_to">Connecting to: %1$s</string>
     <string name="missing_url">FATAL ERROR: Missing URL to connect to.</string>
     <string name="ok">OK</string>
+    <string name="switch_camera">Switch front/back camera</string>
     <string name="action_settings">Settings</string>
 
     <!-- Settings strings. -->

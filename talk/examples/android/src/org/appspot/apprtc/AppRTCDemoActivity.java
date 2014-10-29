@@ -139,6 +139,14 @@ public class AppRTCDemoActivity extends Activity
           }
         });
 
+    ((ImageButton) findViewById(R.id.button_switch_camera)).setOnClickListener(
+        new View.OnClickListener() {
+          @Override
+          public void onClick(View view) {
+            pc.switchCamera();
+          }
+        });
+
     ((ImageButton) findViewById(R.id.button_toggle_debug)).setOnClickListener(
         new View.OnClickListener() {
           @Override

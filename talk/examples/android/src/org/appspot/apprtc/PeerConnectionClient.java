@@ -60,13 +60,17 @@ public class PeerConnectionClient {
   private boolean videoSourceStopped;
   private final PCObserver pcObserver = new PCObserver();
   private final SDPObserver sdpObserver = new SDPObserver();
+  private final MediaConstraints videoConstraints;
+  private final VideoRenderer.Callbacks localRender;
   private final VideoRenderer.Callbacks remoteRender;
   private LinkedList<IceCandidate> queuedRemoteCandidates =
       new LinkedList<IceCandidate>();
-  private MediaConstraints sdpMediaConstraints;
-  private PeerConnectionEvents events;
+  private final MediaConstraints sdpMediaConstraints;
+  private final PeerConnectionEvents events;
   private boolean isInitiator;
+  private boolean useFrontFacingCamera = true;
   private SessionDescription localSdp = null; // either offer or answer SDP
+  private MediaStream videoMediaStream = null;
 
   public PeerConnectionClient(
       Activity activity,
@@ -75,6 +79,8 @@ public class PeerConnectionClient {
       AppRTCSignalingParameters appRtcParameters,
       PeerConnectionEvents events) {
     this.activity = activity;
+    this.videoConstraints = appRtcParameters.videoConstraints;
+    this.localRender = localRender;
     this.remoteRender = remoteRender;
     this.events = events;
     isInitiator = appRtcParameters.initiator;
@@ -101,23 +107,19 @@ public class PeerConnectionClient {
     //     EnumSet.of(Logging.TraceLevel.TRACE_ALL),
     //     Logging.Severity.LS_SENSITIVE);
 
-    Log.d(TAG, "Creating local video source");
-    MediaStream lMS = factory.createLocalMediaStream("ARDAMS");
-    if (appRtcParameters.videoConstraints != null) {
-      VideoCapturer capturer = getVideoCapturer();
-      videoSource = factory.createVideoSource(
-          capturer, appRtcParameters.videoConstraints);
-      VideoTrack videoTrack =
-          factory.createVideoTrack("ARDAMSv0", videoSource);
-      videoTrack.addRenderer(new VideoRenderer(localRender));
-      lMS.addTrack(videoTrack);
+    if (videoConstraints != null) {
+      videoMediaStream = factory.createLocalMediaStream("ARDAMSVideo");
+      videoMediaStream.addTrack(createVideoTrack(useFrontFacingCamera));
+      pc.addStream(videoMediaStream, new MediaConstraints());
     }
+
     if (appRtcParameters.audioConstraints != null) {
+      MediaStream lMS = factory.createLocalMediaStream("ARDAMSAudio");
       lMS.addTrack(factory.createAudioTrack(
           "ARDAMSa0",
           factory.createAudioSource(appRtcParameters.audioConstraints)));
+      pc.addStream(lMS, new MediaConstraints());
     }
-    pc.addStream(lMS, new MediaConstraints());
   }
 
   public boolean getStats(StatsObserver observer, MediaStreamTrack track) {
@@ -202,11 +204,15 @@ public class PeerConnectionClient {
 
   // Cycle through likely device names for the camera and return the first
   // capturer that works, or crash if none do.
-  private VideoCapturer getVideoCapturer() {
+  private VideoCapturer getVideoCapturer(boolean useFrontFacing) {
     String[] cameraFacing = { "front", "back" };
-    int[] cameraIndex = { 0, 1 };
-    int[] cameraOrientation = { 0, 90, 180, 270 };
+    if (!useFrontFacing) {
+      cameraFacing[0] = "back";
+      cameraFacing[1] = "front";
+    }
     for (String facing : cameraFacing) {
+      int[] cameraIndex = { 0, 1 };
+      int[] cameraOrientation = { 0, 90, 180, 270 };
       for (int index : cameraIndex) {
         for (int orientation : cameraOrientation) {
           String name = "Camera " + index + ", Facing " + facing +
@@ -220,6 +226,22 @@ public class PeerConnectionClient {
       }
     }
     throw new RuntimeException("Failed to open capturer");
+  }
+
+  private VideoTrack createVideoTrack(boolean frontFacing) {
+      VideoCapturer capturer = getVideoCapturer(frontFacing);
+      if (videoSource != null) {
+        videoSource.stop();
+        videoSource.dispose();
+      }
+
+      videoSource = factory.createVideoSource(
+          capturer, videoConstraints);
+      String trackExtension = frontFacing ? "frontFacing" : "backFacing";
+      VideoTrack videoTrack =
+          factory.createVideoTrack("ARDAMSv0" + trackExtension, videoSource);
+      videoTrack.addRenderer(new VideoRenderer(localRender));
+      return videoTrack;
   }
 
   // Poor-man's assert(): die with |msg| unless |condition| is true.
@@ -283,6 +305,49 @@ public class PeerConnectionClient {
       pc.addIceCandidate(candidate);
     }
     queuedRemoteCandidates = null;
+  }
+
+  public void switchCamera() {
+    if (videoConstraints == null)
+      return;  // No video is sent.
+
+    if (pc.signalingState() != PeerConnection.SignalingState.STABLE) {
+      Log.e(TAG, "Switching camera during negotiation is not handled.");
+      return;
+    }
+
+    pc.removeStream(videoMediaStream);
+    VideoTrack currentTrack = videoMediaStream.videoTracks.get(0);
+    videoMediaStream.removeTrack(currentTrack);
+
+    String trackId = currentTrack.id();
+    // On Android, there can only be one camera open at the time and we
+    // need to release our implicit references to the videoSource before the
+    // PeerConnectionFactory is released. Since createVideoTrack creates a new
+    // videoSource and frees the old one, we need to release the track here.
+    currentTrack.dispose();
+
+    useFrontFacingCamera = !useFrontFacingCamera;
+    VideoTrack newTrack = createVideoTrack(useFrontFacingCamera);
+    videoMediaStream.addTrack(newTrack);
+    pc.addStream(videoMediaStream, new MediaConstraints());
+
+    SessionDescription remoteDesc = pc.getRemoteDescription();
+    if (localSdp == null || remoteDesc == null) {
+      Log.d(TAG, "Switching camera before the negotiation started.");
+      return;
+    }
+
+    localSdp = new SessionDescription(localSdp.type,
+        localSdp.description.replaceAll(trackId, newTrack.id()));
+
+    if (isInitiator) {
+      pc.setLocalDescription(new SwitchCameraSdbObserver(), localSdp);
+      pc.setRemoteDescription(new SwitchCameraSdbObserver(), remoteDesc);
+    } else {
+      pc.setRemoteDescription(new SwitchCameraSdbObserver(), remoteDesc);
+      pc.setLocalDescription(new SwitchCameraSdbObserver(), localSdp);
+    }
   }
 
   // Implementation detail: observe ICE & stream changes and react accordingly.
@@ -440,6 +505,30 @@ public class PeerConnectionClient {
             throw new RuntimeException("setSDP error: " + error);
           }
         });
+    }
+  }
+
+  private class SwitchCameraSdbObserver implements SdpObserver {
+    @Override
+    public void onCreateSuccess(SessionDescription sdp) {
+    }
+
+    @Override
+    public void onSetSuccess() {
+      Log.d(TAG, "Camera switch SDP set succesfully");
+    }
+
+    @Override
+    public void onCreateFailure(final String error) {
+    }
+
+    @Override
+    public void onSetFailure(final String error) {
+      activity.runOnUiThread(new Runnable() {
+        public void run() {
+          throw new RuntimeException("setSDP error while switching camera: " + error);
+        }
+      });
     }
   }
 }

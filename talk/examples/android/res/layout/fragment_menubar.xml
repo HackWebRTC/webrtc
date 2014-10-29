@@ -19,6 +19,13 @@
     <!-- TODO(kjellander): Add audio and video mute buttons. -->
 
     <ImageButton
+        android:id="@+id/button_switch_camera"
+        android:background="@android:drawable/ic_menu_camera"
+        android:contentDescription="@string/switch_camera"
+        android:layout_width="48dp"
+        android:layout_height="48dp"/>
+
+    <ImageButton
         android:id="@+id/button_toggle_debug"
         android:background="@android:drawable/ic_menu_info_details"
         android:contentDescription="@string/disconnect_call"
