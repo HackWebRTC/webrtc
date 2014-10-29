@@ -435,7 +435,7 @@ class WebRtcVoiceMediaChannel
     return channel_id == voe_channel();
   }
   bool SetSendCodecs(int channel, const std::vector<AudioCodec>& codecs);
-  bool SetSendBandwidthInternal(int bps);
+  bool SetSendBitrateInternal(int bps);
 
   bool SetHeaderExtension(ExtensionSetterFunction setter, int channel_id,
                           const RtpHeaderExtension* extension);
@@ -453,8 +453,8 @@ class WebRtcVoiceMediaChannel
   std::vector<AudioCodec> recv_codecs_;
   std::vector<AudioCodec> send_codecs_;
   rtc::scoped_ptr<webrtc::CodecInst> send_codec_;
-  bool send_bw_setting_;
-  int send_bw_bps_;
+  bool send_bitrate_setting_;
+  int send_bitrate_bps_;
   AudioOptions options_;
   bool dtmf_allowed_;
   bool desired_playout_;

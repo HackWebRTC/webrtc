@@ -495,7 +495,7 @@ void WebRtcVoiceEngine::ConstructCodecs() {
                          ARRAY_SIZE(kCodecPrefs) - (pref - kCodecPrefs));
         LOG(LS_INFO) << ToString(codec);
         if (IsIsac(codec)) {
-          // Indicate auto-bandwidth in signaling.
+          // Indicate auto-bitrate in signaling.
           codec.bitrate = 0;
         }
         if (IsOpus(codec)) {
@@ -1227,7 +1227,7 @@ bool WebRtcVoiceEngine::FindWebRtcCodec(const AudioCodec& in,
           // Apply codec-specific settings.
           if (IsIsac(codec)) {
             // If ISAC and an explicit bitrate is not specified,
-            // enable auto bandwidth adjustment.
+            // enable auto bitrate adjustment.
             voe_codec.rate = (in.bitrate > 0) ? in.bitrate : -1;
           }
           *out = voe_codec;
@@ -1792,8 +1792,8 @@ WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(WebRtcVoiceEngine *engine)
     : WebRtcMediaChannel<VoiceMediaChannel, WebRtcVoiceEngine>(
           engine,
           engine->CreateMediaVoiceChannel()),
-      send_bw_setting_(false),
-      send_bw_bps_(0),
+      send_bitrate_setting_(false),
+      send_bitrate_bps_(0),
       options_(),
       dtmf_allowed_(false),
       desired_playout_(false),
@@ -2028,9 +2028,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   bool nack_enabled = nack_enabled_;
   bool enable_codec_fec = false;
 
-  // max_playback_rate <= 0 will not trigger setting of maximum encoding
-  // bandwidth.
-  int max_playback_rate = 0;
+  int opus_max_playback_rate = 0;
 
   // Set send codec (the first non-telephone-event/CN codec)
   for (std::vector<AudioCodec>::const_iterator it = codecs.begin();
@@ -2047,7 +2045,6 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       // Skip telephone-event/CN codec, which will be handled later.
       continue;
     }
-
 
     // We'll use the first codec in the list to actually send audio data.
     // Be sure to use the payload type requested by the remote side.
@@ -2080,7 +2077,8 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       // For Opus as the send codec, we are to enable inband FEC if requested
       // and set maximum playback rate.
       if (IsOpus(*it)) {
-        GetOpusConfig(*it, &send_codec, &enable_codec_fec, &max_playback_rate);
+        GetOpusConfig(*it, &send_codec, &enable_codec_fec,
+                      &opus_max_playback_rate);
       }
     }
     found_send_codec = true;
@@ -2116,15 +2114,16 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   }
 
   // maxplaybackrate should be set after SetSendCodec.
-  if (max_playback_rate > 0) {
+  // If opus_max_playback_rate <= 0, the default maximum playback rate of 48 kHz
+  // will be used.
+  if (opus_max_playback_rate > 0) {
     LOG(LS_INFO) << "Attempt to set maximum playback rate to "
-                 << max_playback_rate
+                 << opus_max_playback_rate
                  << " Hz on channel "
                  << channel;
 #ifdef USE_WEBRTC_DEV_BRANCH
-    // (max_playback_rate + 1) >> 1 is to obtain ceil(max_playback_rate / 2.0).
     if (engine()->voe()->codec()->SetOpusMaxPlaybackRate(
-        channel, max_playback_rate) == -1) {
+        channel, opus_max_playback_rate) == -1) {
       LOG(LS_WARNING) << "Could not set maximum playback rate.";
     }
 #endif
@@ -2133,8 +2132,8 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   // Always update the |send_codec_| to the currently set send codec.
   send_codec_.reset(new webrtc::CodecInst(send_codec));
 
-  if (send_bw_setting_) {
-    SetSendBandwidthInternal(send_bw_bps_);
+  if (send_bitrate_setting_) {
+    SetSendBitrateInternal(send_bitrate_bps_);
   }
 
   // Loop through the codecs list again to config the telephone-event/CN codec.
@@ -3187,25 +3186,27 @@ bool WebRtcVoiceMediaChannel::MuteStream(uint32 ssrc, bool muted) {
   return true;
 }
 
+// TODO(minyue): SetMaxSendBandwidth() is subject to be renamed to
+// SetMaxSendBitrate() in future.
 bool WebRtcVoiceMediaChannel::SetMaxSendBandwidth(int bps) {
-  LOG(LS_INFO) << "WebRtcVoiceMediaChanne::SetSendBandwidth.";
+  LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetMaxSendBandwidth.";
 
-  return SetSendBandwidthInternal(bps);
+  return SetSendBitrateInternal(bps);
 }
 
-bool WebRtcVoiceMediaChannel::SetSendBandwidthInternal(int bps) {
-  LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetSendBandwidthInternal.";
+bool WebRtcVoiceMediaChannel::SetSendBitrateInternal(int bps) {
+  LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetSendBitrateInternal.";
 
-  send_bw_setting_ = true;
-  send_bw_bps_ = bps;
+  send_bitrate_setting_ = true;
+  send_bitrate_bps_ = bps;
 
   if (!send_codec_) {
     LOG(LS_INFO) << "The send codec has not been set up yet. "
-                 << "The send bandwidth setting will be applied later.";
+                 << "The send bitrate setting will be applied later.";
     return true;
   }
 
-  // Bandwidth is auto by default.
+  // Bitrate is auto by default.
   // TODO(bemasc): Fix this so that if SetMaxSendBandwidth(50) is followed by
   // SetMaxSendBandwith(0), the second call removes the previous limit.
   if (bps <= 0)
