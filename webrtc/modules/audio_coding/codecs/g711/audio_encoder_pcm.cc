@@ -48,7 +48,7 @@ int AudioEncoderPcm::sample_rate_hz() const {
 int AudioEncoderPcm::num_channels() const {
   return num_channels_;
 }
-int AudioEncoderPcm::num_10ms_frames_per_packet() const {
+int AudioEncoderPcm::Num10MsFramesInNextPacket() const {
   return num_10ms_frames_per_packet_;
 }
 

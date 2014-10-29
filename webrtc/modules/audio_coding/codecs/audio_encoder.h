@@ -50,12 +50,17 @@ class AudioEncoder {
     return ret;
   }
 
-  // Returns the input sample rate in Hz, the number of input channels, and the
-  // number of 10 ms frames the encoder puts in one output packet. These are
-  // constants set at instantiation time.
+  // Return the input sample rate in Hz and the number of input channels.
+  // These are constants set at instantiation time.
   virtual int sample_rate_hz() const = 0;
   virtual int num_channels() const = 0;
-  virtual int num_10ms_frames_per_packet() const = 0;
+
+  // Returns the number of 10 ms frames the encoder will put in the next
+  // packet. This value may only change when Encode() outputs a packet; i.e.,
+  // the encoder may vary the number of 10 ms frames from packet to packet, but
+  // it must decide the length of the next packet no later than when outputting
+  // the preceding packet.
+  virtual int Num10MsFramesInNextPacket() const = 0;
 
  protected:
   virtual bool Encode(uint32_t timestamp,

@@ -67,7 +67,7 @@ int AudioEncoderOpus::num_channels() const {
   return num_channels_;
 }
 
-int AudioEncoderOpus::num_10ms_frames_per_packet() const {
+int AudioEncoderOpus::Num10MsFramesInNextPacket() const {
   return num_10ms_frames_per_packet_;
 }
 

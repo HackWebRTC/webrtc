@@ -142,7 +142,7 @@ class AudioDecoderTest : public ::testing::Test {
     size_t enc_len_bytes = 0;
     scoped_ptr<int16_t[]> interleaved_input(
         new int16_t[channels_ * input_len_samples]);
-    for (int i = 0; i < audio_encoder_->num_10ms_frames_per_packet(); ++i) {
+    for (int i = 0; i < audio_encoder_->Num10MsFramesInNextPacket(); ++i) {
       EXPECT_EQ(0u, enc_len_bytes);
 
       // Duplicate the mono input signal to however many channels the test

@@ -32,7 +32,7 @@ class AudioEncoderOpus : public AudioEncoder {
 
   virtual int sample_rate_hz() const OVERRIDE;
   virtual int num_channels() const OVERRIDE;
-  virtual int num_10ms_frames_per_packet() const OVERRIDE;
+  virtual int Num10MsFramesInNextPacket() const OVERRIDE;
 
  protected:
   virtual bool Encode(uint32_t timestamp,
