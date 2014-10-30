@@ -117,15 +117,6 @@ static const int kNackMaxPackets = 250;
 
 // Codec parameters for Opus.
 // draft-spittka-payload-rtp-opus-03
-
-// Recommended bitrates:
-// 8-12 kb/s for NB speech,
-// 16-20 kb/s for WB speech,
-// 28-40 kb/s for FB speech,
-// 48-64 kb/s for FB mono music, and
-// 64-128 kb/s for FB stereo music.
-// The current implementation applies the following values to mono signals,
-// and multiplies them by 2 for stereo.
 static const int kOpusBitrateNb = 12000;
 static const int kOpusBitrateWb = 20000;
 static const int kOpusBitrateFb = 32000;
@@ -422,7 +413,7 @@ static bool IsOpusStereoEnabled(const AudioCodec& codec) {
 // otherwise. If the value (either from params or codec.bitrate) <=0, use the
 // default configuration. If the value is beyond feasible bit rate of Opus,
 // clamp it. Returns the Opus bit rate for operation.
-static int GetOpusBitrate(const AudioCodec& codec, int max_playback_rate) {
+static int GetOpusBitrate(const AudioCodec& codec) {
   int bitrate = 0;
   bool use_param = true;
   if (!codec.GetParam(kCodecParamMaxAverageBitrate, &bitrate)) {
@@ -430,17 +421,8 @@ static int GetOpusBitrate(const AudioCodec& codec, int max_playback_rate) {
     use_param = false;
   }
   if (bitrate <= 0) {
-    if (max_playback_rate <= 8000) {
-      bitrate = kOpusBitrateNb;
-    } else if (max_playback_rate <= 16000) {
-      bitrate = kOpusBitrateWb;
-    } else {
-      bitrate = kOpusBitrateFb;
-    }
-
-    if (IsOpusStereoEnabled(codec)) {
-      bitrate *= 2;
-    }
+    bitrate = IsOpusStereoEnabled(codec) ? kOpusStereoBitrate :
+        kOpusMonoBitrate;
   } else if (bitrate < kOpusMinBitrate || bitrate > kOpusMaxBitrate) {
     bitrate = (bitrate < kOpusMinBitrate) ? kOpusMinBitrate : kOpusMaxBitrate;
     std::string rate_source =
@@ -481,8 +463,11 @@ static void GetOpusConfig(const AudioCodec& codec, webrtc::CodecInst* voe_codec,
   // the bitrate is not specified, i.e. is <= zero, we set it to the
   // appropriate default value for mono or stereo Opus.
 
+  // TODO(minyue): The determination of bit rate might take the maximum playback
+  // rate into account.
+
   voe_codec->channels = IsOpusStereoEnabled(codec) ? 2 : 1;
-  voe_codec->rate = GetOpusBitrate(codec, *max_playback_rate);
+  voe_codec->rate = GetOpusBitrate(codec);
 }
 
 void WebRtcVoiceEngine::ConstructCodecs() {
