@@ -26,17 +26,7 @@ void ExpectArraysEq(const float* ref, const float* test, int length) {
   }
 }
 
-TEST(AudioUtilTest, RoundToInt16) {
-  const int kSize = 7;
-  const float kInput[kSize] = {
-      0.f, 0.4f, 0.5f, -0.4f, -0.5f, 32768.f, -32769.f};
-  const int16_t kReference[kSize] = {0, 0, 1, 0, -1, 32767, -32768};
-  int16_t output[kSize];
-  RoundToInt16(kInput, kSize, output);
-  ExpectArraysEq(kReference, output, kSize);
-}
-
-TEST(AudioUtilTest, ScaleAndRoundToInt16) {
+TEST(AudioUtilTest, FloatToS16) {
   const int kSize = 9;
   const float kInput[kSize] = {
       0.f, 0.4f / 32767.f, 0.6f / 32767.f, -0.4f / 32768.f, -0.6f / 32768.f,
@@ -44,17 +34,51 @@ TEST(AudioUtilTest, ScaleAndRoundToInt16) {
   const int16_t kReference[kSize] = {
     0, 0, 1, 0, -1, 32767, -32768, 32767, -32768};
   int16_t output[kSize];
-  ScaleAndRoundToInt16(kInput, kSize, output);
+  FloatToS16(kInput, kSize, output);
   ExpectArraysEq(kReference, output, kSize);
 }
 
-TEST(AudioUtilTest, ScaleToFloat) {
+TEST(AudioUtilTest, S16ToFloat) {
   const int kSize = 7;
   const int16_t kInput[kSize] = {0, 1, -1, 16384, -16384, 32767, -32768};
   const float kReference[kSize] = {
       0.f, 1.f / 32767.f, -1.f / 32768.f, 16384.f / 32767.f, -0.5f, 1.f, -1.f};
   float output[kSize];
-  ScaleToFloat(kInput, kSize, output);
+  S16ToFloat(kInput, kSize, output);
+  ExpectArraysEq(kReference, output, kSize);
+}
+
+TEST(AudioUtilTest, FloatS16ToS16) {
+  const int kSize = 7;
+  const float kInput[kSize] = {
+      0.f, 0.4f, 0.5f, -0.4f, -0.5f, 32768.f, -32769.f};
+  const int16_t kReference[kSize] = {0, 0, 1, 0, -1, 32767, -32768};
+  int16_t output[kSize];
+  FloatS16ToS16(kInput, kSize, output);
+  ExpectArraysEq(kReference, output, kSize);
+}
+
+TEST(AudioUtilTest, FloatToFloatS16) {
+  const int kSize = 9;
+  const float kInput[kSize] = {
+      0.f, 0.4f / 32767.f, 0.6f / 32767.f, -0.4f / 32768.f, -0.6f / 32768.f,
+      1.f, -1.f, 1.1f, -1.1f};
+  const float kReference[kSize] = {
+    0.f, 0.4f, 0.6f, -0.4f, -0.6f, 32767.f, -32768.f, 36043.7f, -36044.8f};
+  float output[kSize];
+  FloatToFloatS16(kInput, kSize, output);
+  ExpectArraysEq(kReference, output, kSize);
+}
+
+TEST(AudioUtilTest, FloatS16ToFloat) {
+  const int kSize = 9;
+  const float kInput[kSize] = {
+    0.f, 0.4f, 0.6f, -0.4f, -0.6f, 32767.f, -32768.f, 36043.7f, -36044.8f};
+  const float kReference[kSize] = {
+      0.f, 0.4f / 32767.f, 0.6f / 32767.f, -0.4f / 32768.f, -0.6f / 32768.f,
+      1.f, -1.f, 1.1f, -1.1f};
+  float output[kSize];
+  FloatS16ToFloat(kInput, kSize, output);
   ExpectArraysEq(kReference, output, kSize);
 }
 

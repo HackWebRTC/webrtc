@@ -68,7 +68,7 @@ void WavFile::WriteSamples(const float* samples, size_t num_samples) {
   for (size_t i = 0; i < num_samples; i += kChunksize) {
     int16_t isamples[kChunksize];
     const size_t chunk = std::min(kChunksize, num_samples - i);
-    RoundToInt16(samples + i, chunk, isamples);
+    FloatS16ToS16(samples + i, chunk, isamples);
     WriteSamples(isamples, chunk);
   }
 }

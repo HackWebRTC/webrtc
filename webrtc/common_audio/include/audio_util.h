@@ -20,18 +20,11 @@ namespace webrtc {
 
 typedef std::numeric_limits<int16_t> limits_int16;
 
-static inline int16_t RoundToInt16(float v) {
-  const float kMaxRound = limits_int16::max() - 0.5f;
-  const float kMinRound = limits_int16::min() + 0.5f;
-  if (v > 0)
-    return v >= kMaxRound ? limits_int16::max() :
-                            static_cast<int16_t>(v + 0.5f);
-  return v <= kMinRound ? limits_int16::min() :
-                          static_cast<int16_t>(v - 0.5f);
-}
-
-// Scale (from [-1, 1]) and round to full-range int16 with clamping.
-static inline int16_t ScaleAndRoundToInt16(float v) {
+// The conversion functions use the following naming convention:
+// S16:      int16_t [-32768, 32767]
+// Float:    float   [-1.0, 1.0]
+// FloatS16: float   [-32768.0, 32767.0]
+static inline int16_t FloatToS16(float v) {
   if (v > 0)
     return v >= 1 ? limits_int16::max() :
                     static_cast<int16_t>(v * limits_int16::max() + 0.5f);
@@ -39,22 +32,37 @@ static inline int16_t ScaleAndRoundToInt16(float v) {
                    static_cast<int16_t>(-v * limits_int16::min() - 0.5f);
 }
 
-// Scale to float [-1, 1].
-static inline float ScaleToFloat(int16_t v) {
-  const float kMaxInt16Inverse = 1.f / limits_int16::max();
-  const float kMinInt16Inverse = 1.f / limits_int16::min();
+static inline float S16ToFloat(int16_t v) {
+  static const float kMaxInt16Inverse = 1.f / limits_int16::max();
+  static const float kMinInt16Inverse = 1.f / limits_int16::min();
   return v * (v > 0 ? kMaxInt16Inverse : -kMinInt16Inverse);
 }
 
-// Round |size| elements of |src| to int16 with clamping and write to |dest|.
-void RoundToInt16(const float* src, size_t size, int16_t* dest);
+static inline int16_t FloatS16ToS16(float v) {
+  static const float kMaxRound = limits_int16::max() - 0.5f;
+  static const float kMinRound = limits_int16::min() + 0.5f;
+  if (v > 0)
+    return v >= kMaxRound ? limits_int16::max() :
+                            static_cast<int16_t>(v + 0.5f);
+  return v <= kMinRound ? limits_int16::min() :
+                          static_cast<int16_t>(v - 0.5f);
+}
 
-// Scale (from [-1, 1]) and round |size| elements of |src| to full-range int16
-// with clamping and write to |dest|.
-void ScaleAndRoundToInt16(const float* src, size_t size, int16_t* dest);
+static inline float FloatToFloatS16(float v) {
+  return v > 0 ? v * limits_int16::max() : -v * limits_int16::min();
+}
 
-// Scale |size| elements of |src| to float [-1, 1] and write to |dest|.
-void ScaleToFloat(const int16_t* src, size_t size, float* dest);
+static inline float FloatS16ToFloat(float v) {
+  static const float kMaxInt16Inverse = 1.f / limits_int16::max();
+  static const float kMinInt16Inverse = 1.f / limits_int16::min();
+  return v * (v > 0 ? kMaxInt16Inverse : -kMinInt16Inverse);
+}
+
+void FloatToS16(const float* src, size_t size, int16_t* dest);
+void S16ToFloat(const int16_t* src, size_t size, float* dest);
+void FloatS16ToS16(const float* src, size_t size, int16_t* dest);
+void FloatToFloatS16(const float* src, size_t size, float* dest);
+void FloatS16ToFloat(const float* src, size_t size, float* dest);
 
 // Deinterleave audio from |interleaved| to the channel buffers pointed to
 // by |deinterleaved|. There must be sufficient space allocated in the

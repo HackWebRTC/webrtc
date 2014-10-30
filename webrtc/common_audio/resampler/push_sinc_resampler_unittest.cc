@@ -160,16 +160,15 @@ void PushSincResamplerTest::ResampleTest(bool int_format) {
   resampler_source.Run(input_samples, source.get());
   if (int_format) {
     for (int i = 0; i < kNumBlocks; ++i) {
-      ScaleAndRoundToInt16(
-          &source[i * input_block_size], input_block_size, source_int.get());
+      FloatToS16(&source[i * input_block_size], input_block_size,
+               source_int.get());
       EXPECT_EQ(output_block_size,
                 resampler.Resample(source_int.get(),
                                    input_block_size,
                                    destination_int.get(),
                                    output_block_size));
-      ScaleToFloat(destination_int.get(),
-                   output_block_size,
-                   &resampled_destination[i * output_block_size]);
+      S16ToFloat(destination_int.get(), output_block_size,
+               &resampled_destination[i * output_block_size]);
     }
   } else {
     for (int i = 0; i < kNumBlocks; ++i) {

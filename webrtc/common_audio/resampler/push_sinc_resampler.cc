@@ -40,7 +40,7 @@ int PushSincResampler::Resample(const int16_t* source,
   source_ptr_int_ = source;
   // Pass NULL as the float source to have Run() read from the int16 source.
   Resample(NULL, source_length, float_buffer_.get(), destination_frames_);
-  RoundToInt16(float_buffer_.get(), destination_frames_, destination);
+  FloatS16ToS16(float_buffer_.get(), destination_frames_, destination);
   source_ptr_int_ = NULL;
   return destination_frames_;
 }
