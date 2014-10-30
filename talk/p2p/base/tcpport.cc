@@ -304,20 +304,23 @@ void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
   // the one we asked for. This is seen in Chrome, where TCP sockets cannot be
   // given a binding address, and the platform is expected to pick the
   // correct local address.
-  if (socket->GetLocalAddress().ipaddr() == port()->ip()) {
+  const rtc::IPAddress& socket_ip = socket->GetLocalAddress().ipaddr();
+  if (socket_ip == port()->ip()) {
     LOG_J(LS_VERBOSE, this) << "Connection established to "
                             << socket->GetRemoteAddress().ToSensitiveString();
     set_connected(true);
   } else {
-    LOG_J(LS_WARNING, this) << "Dropping connection as TCP socket bound to a "
-                            << "different address from the local candidate.";
+    LOG_J(LS_WARNING, this) << "Dropping connection as TCP socket bound to IP "
+                            << socket_ip.ToSensitiveString()
+                            << ", different from the local candidate IP "
+                            << port()->ip().ToSensitiveString();
     socket_->Close();
   }
 }
 
 void TCPConnection::OnClose(rtc::AsyncPacketSocket* socket, int error) {
   ASSERT(socket == socket_);
-  LOG_J(LS_VERBOSE, this) << "Connection closed with error " << error;
+  LOG_J(LS_INFO, this) << "Connection closed with error " << error;
   set_connected(false);
   set_write_state(STATE_WRITE_TIMEOUT);
 }

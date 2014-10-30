@@ -1337,7 +1337,7 @@ void Connection::HandleRoleConflictFromPeer() {
 void Connection::OnMessage(rtc::Message *pmsg) {
   ASSERT(pmsg->message_id == MSG_DELETE);
 
-  LOG_J(LS_INFO, this) << "Connection deleted";
+  LOG_J(LS_INFO, this) << "Connection deleted due to read or write timeout";
   SignalDestroyed(this);
   delete this;
 }
