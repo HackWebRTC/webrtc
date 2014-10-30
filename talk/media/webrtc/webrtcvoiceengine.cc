@@ -110,13 +110,17 @@ static const int kDefaultAudioDeviceId = 0;
 
 static const char kIsacCodecName[] = "ISAC";
 static const char kL16CodecName[] = "L16";
-// Codec parameters for Opus.
-static const int kOpusMonoBitrate = 32000;
+
 // Parameter used for NACK.
 // This value is equivalent to 5 seconds of audio data at 20 ms per packet.
 static const int kNackMaxPackets = 250;
-static const int kOpusStereoBitrate = 64000;
+
+// Codec parameters for Opus.
 // draft-spittka-payload-rtp-opus-03
+static const int kOpusBitrateNb = 12000;
+static const int kOpusBitrateWb = 20000;
+static const int kOpusBitrateFb = 32000;
+
 // Opus bitrate should be in the range between 6000 and 510000.
 static const int kOpusMinBitrate = 6000;
 static const int kOpusMaxBitrate = 510000;
