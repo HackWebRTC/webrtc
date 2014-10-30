@@ -75,6 +75,36 @@ public class VideoCaptureDeviceInfoAndroid {
           sizes.put(size);
         }
 
+        boolean is30fpsRange = false;
+        boolean is15fpsRange = false;
+        // If there is constant 30 fps mode, but no 15 fps - add 15 fps
+        // mode to the list of supported ranges. Frame drop will be done
+        // in software.
+        for (int[] range : supportedFpsRanges) {
+          if (range[Parameters.PREVIEW_FPS_MIN_INDEX] == 30000 &&
+              range[Parameters.PREVIEW_FPS_MAX_INDEX] == 30000) {
+            is30fpsRange = true;
+          }
+          if (range[Parameters.PREVIEW_FPS_MIN_INDEX] == 15000 &&
+              range[Parameters.PREVIEW_FPS_MAX_INDEX] == 15000) {
+            is15fpsRange = true;
+          }
+        }
+        if (is30fpsRange && !is15fpsRange) {
+          Log.d(TAG, "Adding 15 fps support");
+          int[] newRange = new int [Parameters.PREVIEW_FPS_MAX_INDEX + 1];
+          newRange[Parameters.PREVIEW_FPS_MIN_INDEX] = 15000;
+          newRange[Parameters.PREVIEW_FPS_MAX_INDEX] = 15000;
+          for (int j = 0; j < supportedFpsRanges.size(); j++ ) {
+            int[] range = supportedFpsRanges.get(j);
+            if (range[Parameters.PREVIEW_FPS_MAX_INDEX] >
+                newRange[Parameters.PREVIEW_FPS_MAX_INDEX]) {
+              supportedFpsRanges.add(j, newRange);
+              break;
+            }
+          }
+        }
+
         JSONArray mfpsRanges = new JSONArray();
         for (int[] range : supportedFpsRanges) {
           JSONObject mfpsRange = new JSONObject();

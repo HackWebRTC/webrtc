@@ -11,11 +11,13 @@
 package org.webrtc.videoengine;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.Exchanger;
 
 import android.content.Context;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
+import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera;
 import android.opengl.GLES11Ext;
@@ -58,6 +60,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
   private double averageDurationMs;
   private long lastCaptureTimeMs;
   private int frameCount;
+  private int frameDropRatio;
 
   // Requests future capturers to send their frames to |localPreview| directly.
   public static void setLocalPreview(SurfaceHolder localPreview) {
@@ -170,7 +173,38 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
         parameters.setVideoStabilization(true);
       }
       parameters.setPreviewSize(width, height);
+
+      // Check if requested fps range is supported by camera,
+      // otherwise calculate frame drop ratio.
+      List<int[]> supportedFpsRanges = parameters.getSupportedPreviewFpsRange();
+      frameDropRatio = Integer.MAX_VALUE;
+      for (int i = 0; i < supportedFpsRanges.size(); i++) {
+        int[] range = supportedFpsRanges.get(i);
+        if (range[Parameters.PREVIEW_FPS_MIN_INDEX] == min_mfps &&
+            range[Parameters.PREVIEW_FPS_MAX_INDEX] == max_mfps) {
+          frameDropRatio = 1;
+          break;
+        }
+        if (range[Parameters.PREVIEW_FPS_MIN_INDEX] % min_mfps == 0 &&
+            range[Parameters.PREVIEW_FPS_MAX_INDEX] % max_mfps == 0) {
+          int dropRatio = range[Parameters.PREVIEW_FPS_MAX_INDEX] / max_mfps;
+          frameDropRatio = Math.min(dropRatio, frameDropRatio);
+        }
+      }
+      if (frameDropRatio == Integer.MAX_VALUE) {
+        Log.e(TAG, "Can not find camera fps range");
+        error = new RuntimeException("Can not find camera fps range");
+        exchange(result, false);
+        return;
+      }
+      if (frameDropRatio > 1) {
+        Log.d(TAG, "Frame dropper is enabled. Ratio: " + frameDropRatio);
+      }
+      min_mfps *= frameDropRatio;
+      max_mfps *= frameDropRatio;
+      Log.d(TAG, "Camera preview mfps range: " + min_mfps + " - " + max_mfps);
       parameters.setPreviewFpsRange(min_mfps, max_mfps);
+
       int format = ImageFormat.NV21;
       parameters.setPreviewFormat(format);
       camera.setParameters(parameters);
@@ -180,7 +214,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
       }
       camera.setPreviewCallbackWithBuffer(this);
       frameCount = 0;
-      averageDurationMs = 1000 / max_mfps;
+      averageDurationMs = 1000000.0f / (max_mfps / frameDropRatio);
       camera.startPreview();
       exchange(result, true);
       return;
@@ -296,8 +330,13 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
       throw new RuntimeException("Unexpected camera in callback!");
     }
     frameCount++;
+    // Check if frame needs to be dropped.
+    if ((frameDropRatio > 1) && (frameCount % frameDropRatio) > 0) {
+      camera.addCallbackBuffer(data);
+      return;
+    }
     long captureTimeMs = SystemClock.elapsedRealtime();
-    if (frameCount > 1) {
+    if (frameCount > frameDropRatio) {
       double durationMs = captureTimeMs - lastCaptureTimeMs;
       averageDurationMs = 0.9 * averageDurationMs + 0.1 * durationMs;
       if ((frameCount % 30) == 0) {
