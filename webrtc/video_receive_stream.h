@@ -85,7 +85,7 @@ class VideoReceiveStream {
     Config()
         : renderer(NULL),
           render_delay_ms(0),
-          audio_channel_id(0),
+          audio_channel_id(-1),
           pre_decode_callback(NULL),
           pre_render_callback(NULL),
           target_delay_ms(0) {}

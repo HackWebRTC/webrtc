@@ -423,6 +423,7 @@ WebRtcVideoChannel2* WebRtcVideoEngine2::CreateChannel(
                << " voice channel. Options: " << options.ToString();
   WebRtcVideoChannel2* channel =
       new WebRtcVideoChannel2(call_factory_,
+                              voice_engine_,
                               voice_channel,
                               options,
                               external_encoder_factory_,
@@ -745,20 +746,24 @@ class WebRtcVideoRenderFrame : public VideoFrame {
 
 WebRtcVideoChannel2::WebRtcVideoChannel2(
     WebRtcCallFactory* call_factory,
+    WebRtcVoiceEngine* voice_engine,
     VoiceMediaChannel* voice_channel,
     const VideoOptions& options,
     WebRtcVideoEncoderFactory* external_encoder_factory,
     WebRtcVideoDecoderFactory* external_decoder_factory,
     WebRtcVideoEncoderFactory2* encoder_factory)
     : unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_),
+      voice_channel_(voice_channel),
       external_encoder_factory_(external_encoder_factory),
       external_decoder_factory_(external_decoder_factory),
       encoder_factory_(encoder_factory) {
-  // TODO(pbos): Connect the video and audio with |voice_channel|.
   SetDefaultOptions();
   options_.SetAll(options);
   webrtc::Call::Config config(this);
   config.overuse_callback = this;
+  if (voice_engine != NULL) {
+    config.voice_engine = voice_engine->voe()->engine();
+  }
 
   // Set start bitrate for the call. A default is provided by SetDefaultOptions.
   int start_bitrate_kbps;
@@ -1009,6 +1014,18 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp) {
 
   webrtc::VideoReceiveStream::Config config;
   ConfigureReceiverRtp(&config, sp);
+
+  // Set up A/V sync if there is a VoiceChannel.
+  // TODO(pbos): The A/V is synched by the receiving channel. So we need to know
+  // the SSRC of the remote audio channel in order to sync the correct webrtc
+  // VoiceEngine channel. For now sync the first channel in non-conference to
+  // match existing behavior in WebRtcVideoEngine.
+  if (voice_channel_ != NULL && receive_streams_.empty() &&
+      !options_.conference_mode.GetWithDefaultIfUnset(false)) {
+    config.audio_channel_id =
+        static_cast<WebRtcVoiceMediaChannel*>(voice_channel_)->voe_channel();
+  }
+
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
       call_.get(), external_decoder_factory_, config, recv_codecs_);
 

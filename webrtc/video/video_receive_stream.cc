@@ -190,7 +190,7 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
 
   render_->AddRenderCallback(channel_, this);
 
-  if (voice_engine) {
+  if (voice_engine && config_.audio_channel_id != -1) {
     video_engine_base_->SetVoiceEngine(voice_engine);
     video_engine_base_->ConnectAudioChannel(channel_, config_.audio_channel_id);
   }

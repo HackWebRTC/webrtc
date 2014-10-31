@@ -34,6 +34,7 @@
 #include "talk/media/webrtc/webrtcvideochannelfactory.h"
 #include "talk/media/webrtc/webrtcvideoengine2.h"
 #include "talk/media/webrtc/webrtcvideoengine2_unittest.h"
+#include "talk/media/webrtc/webrtcvoiceengine.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/video_encoder.h"
@@ -328,6 +329,22 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
   }
 
  protected:
+  class FakeCallFactory : public WebRtcCallFactory {
+   public:
+    FakeCallFactory() : fake_call_(NULL) {}
+    FakeCall* GetCall() { return fake_call_; }
+
+   private:
+    virtual webrtc::Call* CreateCall(
+        const webrtc::Call::Config& config) OVERRIDE {
+      assert(fake_call_ == NULL);
+      fake_call_ = new FakeCall(config);
+      return fake_call_;
+    }
+
+    FakeCall* fake_call_;
+  };
+
   VideoMediaChannel* SetUpForExternalEncoderFactory(
       cricket::WebRtcVideoEncoderFactory* encoder_factory,
       const std::vector<VideoCodec>& codecs);
@@ -341,9 +358,42 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
   VideoCodec default_rtx_codec_;
 };
 
-// TODO(pbos): Add test that verifies that sync is configured properly.
-TEST_F(WebRtcVideoEngine2Test, DISABLED_CreateChannelWithVoiceEngine) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+TEST_F(WebRtcVideoEngine2Test, ConfiguresAvSyncForFirstReceiveChannel) {
+  FakeCallFactory call_factory;
+  engine_.SetCallFactory(&call_factory);
+
+  WebRtcVoiceEngine voice_engine;
+  engine_.SetVoiceEngine(&voice_engine);
+  voice_engine.Init(rtc::Thread::Current());
+  engine_.Init(rtc::Thread::Current());
+
+  rtc::scoped_ptr<VoiceMediaChannel> voice_channel(
+      voice_engine.CreateChannel());
+  ASSERT_TRUE(voice_channel.get() != NULL);
+  WebRtcVoiceMediaChannel* webrtc_voice_channel =
+      static_cast<WebRtcVoiceMediaChannel*>(voice_channel.get());
+  ASSERT_NE(webrtc_voice_channel->voe_channel(), -1);
+  rtc::scoped_ptr<VideoMediaChannel> channel(
+      engine_.CreateChannel(cricket::VideoOptions(), voice_channel.get()));
+
+  FakeCall* fake_call = call_factory.GetCall();
+  ASSERT_TRUE(fake_call != NULL);
+
+  webrtc::Call::Config call_config = fake_call->GetConfig();
+
+  ASSERT_TRUE(voice_engine.voe()->engine() != NULL);
+  ASSERT_EQ(voice_engine.voe()->engine(), call_config.voice_engine);
+
+  EXPECT_TRUE(channel->AddRecvStream(StreamParams::CreateLegacy(kSsrc)));
+  EXPECT_TRUE(channel->AddRecvStream(StreamParams::CreateLegacy(kSsrc + 1)));
+  std::vector<FakeVideoReceiveStream*> receive_streams =
+      fake_call->GetVideoReceiveStreams();
+
+  ASSERT_EQ(2u, receive_streams.size());
+  EXPECT_EQ(webrtc_voice_channel->voe_channel(),
+            receive_streams[0]->GetConfig().audio_channel_id);
+  EXPECT_EQ(-1, receive_streams[1]->GetConfig().audio_channel_id)
+      << "AV sync should only be set up for the first receive channel.";
 }
 
 TEST_F(WebRtcVideoEngine2Test, FindCodec) {
@@ -431,25 +481,6 @@ TEST_F(WebRtcVideoEngine2Test, SupportsAbsoluteSenderTimeHeaderExtension) {
 
 void WebRtcVideoEngine2Test::TestStartBitrate(bool override_start_bitrate,
                                               int start_bitrate_bps) {
-  class FakeCallFactory : public WebRtcCallFactory {
-   public:
-    FakeCallFactory() : fake_call_(NULL) {}
-
-    FakeCall* GetCall() {
-      return fake_call_;
-    }
-
-   private:
-    virtual webrtc::Call* CreateCall(
-        const webrtc::Call::Config& config) OVERRIDE {
-      assert(fake_call_ == NULL);
-      fake_call_ = new FakeCall(config);
-      return fake_call_;
-    }
-
-    FakeCall* fake_call_;
-  };
-
   FakeCallFactory call_factory;
   engine_.SetCallFactory(&call_factory);
 

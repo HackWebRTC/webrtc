@@ -211,6 +211,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
                             public webrtc::LoadObserver {
  public:
   WebRtcVideoChannel2(WebRtcCallFactory* call_factory,
+                      WebRtcVoiceEngine* voice_engine,
                       VoiceMediaChannel* voice_channel,
                       const VideoOptions& options,
                       WebRtcVideoEncoderFactory* external_encoder_factory,
@@ -470,6 +471,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   Settable<VideoCodecSettings> send_codec_;
   std::vector<webrtc::RtpExtension> send_rtp_extensions_;
 
+  VoiceMediaChannel* const voice_channel_;
   WebRtcVideoEncoderFactory* const external_encoder_factory_;
   WebRtcVideoDecoderFactory* const external_decoder_factory_;
   WebRtcVideoEncoderFactory2* const encoder_factory_;
