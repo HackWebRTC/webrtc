@@ -96,14 +96,13 @@ int TruncateToMultipleOf10(int value) {
 
 void MixStereoToMono(const float* stereo, float* mono,
                      int samples_per_channel) {
-  for (int i = 0; i < samples_per_channel; ++i) {
+  for (int i = 0; i < samples_per_channel; ++i)
     mono[i] = (stereo[i * 2] + stereo[i * 2 + 1]) / 2;
-  }
 }
 
 void MixStereoToMono(const int16_t* stereo, int16_t* mono,
                      int samples_per_channel) {
-  for (int i = 0; i < samples_per_channel; i++)
+  for (int i = 0; i < samples_per_channel; ++i)
     mono[i] = (stereo[i * 2] + stereo[i * 2 + 1]) >> 1;
 }
 
@@ -1650,7 +1649,7 @@ TEST_F(ApmTest, DebugDumpFromFileHandle) {
 #endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 }
 
-TEST_F(ApmTest, FloatAndIntInterfacesGiveIdenticalResults) {
+TEST_F(ApmTest, FloatAndIntInterfacesGiveSimilarResults) {
   audioproc::OutputData ref_data;
   OpenFileAndReadMessage(ref_filename_, &ref_data);
 
@@ -1679,7 +1678,8 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveIdenticalResults) {
     Init(fapm.get());
 
     ChannelBuffer<int16_t> output_cb(samples_per_channel, num_input_channels);
-    scoped_ptr<int16_t[]> output_int16(new int16_t[output_length]);
+    ChannelBuffer<int16_t> output_int16(samples_per_channel,
+                                        num_input_channels);
 
     int analog_level = 127;
     while (ReadFrame(far_file_, revframe_, revfloat_cb_.get()) &&
@@ -1701,7 +1701,9 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveIdenticalResults) {
       EXPECT_NOERR(fapm->gain_control()->set_stream_analog_level(analog_level));
 
       EXPECT_NOERR(apm_->ProcessStream(frame_));
-      // TODO(ajm): Update to support different output rates.
+      Deinterleave(frame_->data_, samples_per_channel, num_output_channels,
+                   output_int16.channels());
+
       EXPECT_NOERR(fapm->ProcessStream(
           float_cb_->channels(),
           samples_per_channel,
@@ -1711,24 +1713,34 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveIdenticalResults) {
           LayoutFromChannels(num_output_channels),
           float_cb_->channels()));
 
-      // Convert to interleaved int16.
       FloatToS16(float_cb_->data(), output_length, output_cb.data());
-      Interleave(output_cb.channels(),
-                 samples_per_channel,
-                 num_output_channels,
-                 output_int16.get());
-      // Verify float and int16 paths produce identical output.
-      EXPECT_EQ(0, memcmp(frame_->data_, output_int16.get(), output_length));
+      for (int j = 0; j < num_output_channels; ++j) {
+        float variance = 0;
+        float snr = ComputeSNR(output_int16.channel(j), output_cb.channel(j),
+                               samples_per_channel, &variance);
+  #if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
+        // There are a few chunks in the fixed-point profile that give low SNR.
+        // Listening confirmed the difference is acceptable.
+        const float kVarianceThreshold = 150;
+        const float kSNRThreshold = 10;
+  #else
+        const float kVarianceThreshold = 20;
+        const float kSNRThreshold = 20;
+  #endif
+        // Skip frames with low energy.
+        if (sqrt(variance) > kVarianceThreshold) {
+          EXPECT_LT(kSNRThreshold, snr);
+        }
+      }
 
       analog_level = fapm->gain_control()->stream_analog_level();
       EXPECT_EQ(apm_->gain_control()->stream_analog_level(),
                 fapm->gain_control()->stream_analog_level());
       EXPECT_EQ(apm_->echo_cancellation()->stream_has_echo(),
                 fapm->echo_cancellation()->stream_has_echo());
-      EXPECT_EQ(apm_->voice_detection()->stream_has_voice(),
-                fapm->voice_detection()->stream_has_voice());
-      EXPECT_EQ(apm_->noise_suppression()->speech_probability(),
-                fapm->noise_suppression()->speech_probability());
+      EXPECT_NEAR(apm_->noise_suppression()->speech_probability(),
+                  fapm->noise_suppression()->speech_probability(),
+                  0.0005);
 
       // Reset in case of downmixing.
       frame_->num_channels_ = test->num_input_channels();
@@ -2109,7 +2121,9 @@ class AudioProcessingTest
                             int num_output_channels,
                             int num_reverse_channels,
                             std::string output_file_prefix) {
-    scoped_ptr<AudioProcessing> ap(AudioProcessing::Create());
+    Config config;
+    config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
+    scoped_ptr<AudioProcessing> ap(AudioProcessing::Create(config));
     EnableAllAPComponents(ap.get());
     ap->Initialize(input_rate,
                    output_rate,

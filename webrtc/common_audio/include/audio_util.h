@@ -49,7 +49,7 @@ static inline int16_t FloatS16ToS16(float v) {
 }
 
 static inline float FloatToFloatS16(float v) {
-  return v > 0 ? v * limits_int16::max() : -v * limits_int16::min();
+  return v * (v > 0 ? limits_int16::max() : -limits_int16::min());
 }
 
 static inline float FloatS16ToFloat(float v) {
