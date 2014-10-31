@@ -490,110 +490,91 @@ void WebRtcNsx_DenormalizeNeon(NsxInst_t* inst, int16_t* in, int factor) {
 void WebRtcNsx_SynthesisUpdateNeon(NsxInst_t* inst,
                                    int16_t* out_frame,
                                    int16_t gain_factor) {
-  int16_t* ptr_real = &inst->real[0];
-  int16_t* ptr_syn = &inst->synthesisBuffer[0];
-  const int16_t* ptr_window = &inst->window[0];
+  assert(inst->anaLen % 16 == 0);
+  assert(inst->blockLen10ms % 16 == 0);
 
-  // synthesis
-  __asm__ __volatile__("vdup.16 d24, %0" : : "r"(gain_factor) : "d24");
-  // Loop unrolled once. All pointers are incremented in the assembly code.
-  for (; ptr_syn < &inst->synthesisBuffer[inst->anaLen];) {
-    __asm__ __volatile__(
-      // Load variables.
-      "vld1.16 d22, [%[ptr_real]]!\n\t"
-      "vld1.16 d23, [%[ptr_window]]!\n\t"
-      "vld1.16 d25, [%[ptr_syn]]\n\t"
-      // tmp16a = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(
-      //           inst->window[i], inst->real[i], 14); // Q0, window in Q14
-      "vmull.s16 q11, d22, d23\n\t"
-      "vrshrn.i32 d22, q11, #14\n\t"
-      // tmp32 = WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(tmp16a, gain_factor, 13);
-      "vmull.s16 q11, d24, d22\n\t"
-      // tmp16b = WebRtcSpl_SatW32ToW16(tmp32); // Q0
-      "vqrshrn.s32 d22, q11, #13\n\t"
-      // inst->synthesisBuffer[i] = WebRtcSpl_AddSatW16(
-      //     inst->synthesisBuffer[i], tmp16b); // Q0
-      "vqadd.s16 d25, d22\n\t"
-      "vst1.16 d25, [%[ptr_syn]]!\n\t"
+  int16_t* preal_start = inst->real;
+  const int16_t* pwindow = inst->window;
+  int16_t* preal_end = preal_start + inst->anaLen;
+  int16_t* psynthesis_buffer = inst->synthesisBuffer;
 
-      // Load variables.
-      "vld1.16 d26, [%[ptr_real]]!\n\t"
-      "vld1.16 d27, [%[ptr_window]]!\n\t"
-      "vld1.16 d28, [%[ptr_syn]]\n\t"
-      // tmp16a = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(
-      //           inst->window[i], inst->real[i], 14); // Q0, window in Q14
-      "vmull.s16 q13, d26, d27\n\t"
-      "vrshrn.i32 d26, q13, #14\n\t"
-      // tmp32 = WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(tmp16a, gain_factor, 13);
-      "vmull.s16 q13, d24, d26\n\t"
-      // tmp16b = WebRtcSpl_SatW32ToW16(tmp32); // Q0
-      "vqrshrn.s32 d26, q13, #13\n\t"
-      // inst->synthesisBuffer[i] = WebRtcSpl_AddSatW16(
-      //     inst->synthesisBuffer[i], tmp16b); // Q0
-      "vqadd.s16 d28, d26\n\t"
-      "vst1.16 d28, [%[ptr_syn]]!\n\t"
+  while (preal_start < preal_end) {
+    // Loop unroll.
+    int16x8_t window_0 = vld1q_s16(pwindow);
+    int16x8_t real_0 = vld1q_s16(preal_start);
+    int16x8_t synthesis_buffer_0 = vld1q_s16(psynthesis_buffer);
 
-      // Specify constraints.
-      :[ptr_real]"+r"(ptr_real),
-       [ptr_window]"+r"(ptr_window),
-       [ptr_syn]"+r"(ptr_syn)
-      :
-      :"d22", "d23", "d24", "d25", "d26", "d27", "d28", "q11", "q12", "q13"
-    );
+    int16x8_t window_1 = vld1q_s16(pwindow + 8);
+    int16x8_t real_1 = vld1q_s16(preal_start + 8);
+    int16x8_t synthesis_buffer_1 = vld1q_s16(psynthesis_buffer + 8);
+
+    int32x4_t tmp32a_0_low = vmull_s16(vget_low_s16(real_0),
+                                       vget_low_s16(window_0));
+    int32x4_t tmp32a_0_high = vmull_s16(vget_high_s16(real_0),
+                                        vget_high_s16(window_0));
+
+    int32x4_t tmp32a_1_low = vmull_s16(vget_low_s16(real_1),
+                                       vget_low_s16(window_1));
+    int32x4_t tmp32a_1_high = vmull_s16(vget_high_s16(real_1),
+                                        vget_high_s16(window_1));
+
+    int16x4_t tmp16a_0_low = vqrshrn_n_s32(tmp32a_0_low, 14);
+    int16x4_t tmp16a_0_high = vqrshrn_n_s32(tmp32a_0_high, 14);
+
+    int16x4_t tmp16a_1_low = vqrshrn_n_s32(tmp32a_1_low, 14);
+    int16x4_t tmp16a_1_high = vqrshrn_n_s32(tmp32a_1_high, 14);
+
+    int32x4_t tmp32b_0_low = vmull_n_s16(tmp16a_0_low, gain_factor);
+    int32x4_t tmp32b_0_high = vmull_n_s16(tmp16a_0_high, gain_factor);
+
+    int32x4_t tmp32b_1_low = vmull_n_s16(tmp16a_1_low, gain_factor);
+    int32x4_t tmp32b_1_high = vmull_n_s16(tmp16a_1_high, gain_factor);
+
+    int16x4_t tmp16b_0_low = vqrshrn_n_s32(tmp32b_0_low, 13);
+    int16x4_t tmp16b_0_high = vqrshrn_n_s32(tmp32b_0_high, 13);
+
+    int16x4_t tmp16b_1_low = vqrshrn_n_s32(tmp32b_1_low, 13);
+    int16x4_t tmp16b_1_high = vqrshrn_n_s32(tmp32b_1_high, 13);
+
+    synthesis_buffer_0 = vqaddq_s16(vcombine_s16(tmp16b_0_low, tmp16b_0_high),
+                                    synthesis_buffer_0);
+    synthesis_buffer_1 = vqaddq_s16(vcombine_s16(tmp16b_1_low, tmp16b_1_high),
+                                    synthesis_buffer_1);
+    vst1q_s16(psynthesis_buffer, synthesis_buffer_0);
+    vst1q_s16(psynthesis_buffer + 8, synthesis_buffer_1);
+
+    pwindow += 16;
+    preal_start += 16;
+    psynthesis_buffer += 16;
   }
 
-  int16_t* ptr_out = &out_frame[0];
-  ptr_syn = &inst->synthesisBuffer[0];
-  // read out fully processed segment
-  for (; ptr_syn < &inst->synthesisBuffer[inst->blockLen10ms];) {
-    // Loop unrolled once. Both pointers are incremented in the assembly code.
-    __asm__ __volatile__(
-      // out_frame[i] = inst->synthesisBuffer[i]; // Q0
-      "vld1.16 {d22, d23}, [%[ptr_syn]]!\n\t"
-      "vld1.16 {d24, d25}, [%[ptr_syn]]!\n\t"
-      "vst1.16 {d22, d23}, [%[ptr_out]]!\n\t"
-      "vst1.16 {d24, d25}, [%[ptr_out]]!\n\t"
-      :[ptr_syn]"+r"(ptr_syn),
-       [ptr_out]"+r"(ptr_out)
-      :
-      :"d22", "d23", "d24", "d25"
-    );
+  // Read out fully processed segment.
+  int16_t * p_start = inst->synthesisBuffer;
+  int16_t * p_end = inst->synthesisBuffer + inst->blockLen10ms;
+  int16_t * p_frame = out_frame;
+  while (p_start < p_end) {
+    int16x8_t frame_0 = vld1q_s16(p_start);
+    vst1q_s16(p_frame, frame_0);
+    p_start += 8;
+    p_frame += 8;
   }
 
   // Update synthesis buffer.
-  // C code:
-  // WEBRTC_SPL_MEMCPY_W16(inst->synthesisBuffer,
-  //                      inst->synthesisBuffer + inst->blockLen10ms,
-  //                      inst->anaLen - inst->blockLen10ms);
-  ptr_out = &inst->synthesisBuffer[0],
-  ptr_syn = &inst->synthesisBuffer[inst->blockLen10ms];
-  for (; ptr_syn < &inst->synthesisBuffer[inst->anaLen];) {
-    // Loop unrolled once. Both pointers are incremented in the assembly code.
-    __asm__ __volatile__(
-      "vld1.16 {d22, d23}, [%[ptr_syn]]!\n\t"
-      "vld1.16 {d24, d25}, [%[ptr_syn]]!\n\t"
-      "vst1.16 {d22, d23}, [%[ptr_out]]!\n\t"
-      "vst1.16 {d24, d25}, [%[ptr_out]]!\n\t"
-      :[ptr_syn]"+r"(ptr_syn),
-       [ptr_out]"+r"(ptr_out)
-      :
-      :"d22", "d23", "d24", "d25"
-    );
+  int16_t* p_start_src = inst->synthesisBuffer + inst->blockLen10ms;
+  int16_t* p_end_src = inst->synthesisBuffer + inst->anaLen;
+  int16_t* p_start_dst = inst->synthesisBuffer;
+  while (p_start_src < p_end_src) {
+    int16x8_t frame = vld1q_s16(p_start_src);
+    vst1q_s16(p_start_dst, frame);
+    p_start_src += 8;
+    p_start_dst += 8;
   }
 
-  // C code:
-  // WebRtcSpl_ZerosArrayW16(inst->synthesisBuffer
-  //    + inst->anaLen - inst->blockLen10ms, inst->blockLen10ms);
-  __asm__ __volatile__("vdup.16 q10, %0" : : "r"(0) : "q10");
-  for (; ptr_out < &inst->synthesisBuffer[inst->anaLen];) {
-    // Loop unrolled once. Pointer is incremented in the assembly code.
-    __asm__ __volatile__(
-      "vst1.16 {d20, d21}, [%[ptr_out]]!\n\t"
-      "vst1.16 {d20, d21}, [%[ptr_out]]!\n\t"
-      :[ptr_out]"+r"(ptr_out)
-      :
-      :"d20", "d21"
-    );
+  p_start = inst->synthesisBuffer + inst->anaLen - inst->blockLen10ms;
+  p_end = p_start + inst->blockLen10ms;
+  int16x8_t zero = vdupq_n_s16(0);
+  for (;p_start < p_end; p_start += 8) {
+    vst1q_s16(p_start, zero);
   }
 }
 
