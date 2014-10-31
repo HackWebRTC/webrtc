@@ -250,6 +250,11 @@
           }],
         ],
       }],
+      ['target_arch=="arm64"', {
+        'defines': [
+          'WEBRTC_ARCH_ARM',
+        ],
+      }],
       ['target_arch=="arm" or target_arch=="armv7"', {
         'defines': [
           'WEBRTC_ARCH_ARM',

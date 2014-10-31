@@ -971,7 +971,7 @@ struct BandwidthEstimationInfo {
   // StatsOptions::include_received_propagation_stats is true.
   int total_received_propagation_delta_ms;
   std::vector<int> recent_received_propagation_delta_ms;
-  std::vector<int64> recent_received_packet_group_arrival_time_ms;
+  std::vector<int64_t> recent_received_packet_group_arrival_time_ms;
 };
 
 struct VoiceMediaInfo {

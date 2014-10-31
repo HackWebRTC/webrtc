@@ -120,6 +120,10 @@ config("common_config") {
     }
   }
 
+  if (cpu_arch == "arm64") {
+    defines += [ "WEBRTC_ARCH_ARM" ]
+  }
+
   if (cpu_arch == "arm") {
     defines += [ "WEBRTC_ARCH_ARM" ]
     if (arm_version == 7) {
