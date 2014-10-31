@@ -137,7 +137,6 @@
           ],
           'includes': [
             '../../../build/isolate.gypi',
-            'vie_auto_test.isolate',
           ],
           'sources': [
             'vie_auto_test.isolate',

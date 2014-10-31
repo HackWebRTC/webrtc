@@ -9,7 +9,7 @@
   'conditions': [
     ['OS=="android"', {
       'variables': {
-        'isolate_dependency_untracked': [
+        'files': [
           '<(DEPTH)/data/',
           '<(DEPTH)/resources/',
         ],
@@ -21,12 +21,9 @@
           '<(DEPTH)/testing/test_env.py',
           '<(PRODUCT_DIR)/voe_auto_test<(EXECUTABLE_SUFFIX)',
         ],
-        'isolate_dependency_tracked': [
+        'files': [
           '<(DEPTH)/testing/test_env.py',
           '<(PRODUCT_DIR)/voe_auto_test<(EXECUTABLE_SUFFIX)',
-        ],
-        'isolate_dependency_untracked': [
-          '<(DEPTH)/tools/swarming_client/',
         ],
       },
     }],

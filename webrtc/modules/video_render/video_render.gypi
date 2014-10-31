@@ -205,7 +205,6 @@
               ],
               'includes': [
                 '../../build/isolate.gypi',
-                'video_render_tests.isolate',
               ],
               'sources': [
                 'video_render_tests.isolate',

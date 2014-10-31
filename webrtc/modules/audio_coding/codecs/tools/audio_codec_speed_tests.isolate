@@ -9,7 +9,7 @@
   'conditions': [
     ['OS=="android"', {
       'variables': {
-        'isolate_dependency_untracked': [
+        'files': [
           '<(DEPTH)/resources/',
           '<(DEPTH)/data/',
         ],
@@ -21,18 +21,13 @@
           '<(DEPTH)/testing/test_env.py',
           '<(PRODUCT_DIR)/audio_codec_speed_tests<(EXECUTABLE_SUFFIX)',
         ],
-        'isolate_dependency_touched': [
+        'files': [
           '<(DEPTH)/DEPS',
-        ],
-        'isolate_dependency_tracked': [
           '<(DEPTH)/resources/audio_coding/music_stereo_48kHz.pcm',
           '<(DEPTH)/resources/audio_coding/speech_mono_16kHz.pcm',
           '<(DEPTH)/resources/audio_coding/speech_mono_32_48kHz.pcm',
           '<(DEPTH)/testing/test_env.py',
           '<(PRODUCT_DIR)/audio_codec_speed_tests<(EXECUTABLE_SUFFIX)',
-        ],
-        'isolate_dependency_untracked': [
-          '<(DEPTH)/tools/swarming_client/',
         ],
       },
     }],

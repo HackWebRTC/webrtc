@@ -161,7 +161,7 @@
           'type': '<(gtest_target_type)',
           'dependencies': [
             'video_capture_module',
-	    'video_capture_module_internal_impl',
+            'video_capture_module_internal_impl',
             'webrtc_utility',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(DEPTH)/testing/gtest.gyp:gtest',
@@ -192,13 +192,13 @@
               'dependencies': [
                 '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
               ],
-	      # Need to disable error due to the line in
-	      # base/android/jni_android.h triggering it:
-	      # const BASE_EXPORT jobject GetApplicationContext()
-	      # error: type qualifiers ignored on function return type
-	      'cflags': [
-	        '-Wno-ignored-qualifiers',
-	      ],
+              # Need to disable error due to the line in
+              # base/android/jni_android.h triggering it:
+              # const BASE_EXPORT jobject GetApplicationContext()
+              # error: type qualifiers ignored on function return type
+              'cflags': [
+                '-Wno-ignored-qualifiers',
+              ],
             }],
             ['OS=="mac"', {
               'dependencies': [
@@ -243,7 +243,6 @@
               ],
               'includes': [
                 '../../build/isolate.gypi',
-                'video_capture_tests.isolate',
               ],
               'sources': [
                 'video_capture_tests.isolate',

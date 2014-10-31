@@ -9,7 +9,7 @@
   'conditions': [
     ['OS=="android"', {
       'variables': {
-        'isolate_dependency_untracked': [
+        'files': [
           '<(DEPTH)/data/',
           '<(DEPTH)/resources/',
         ],
@@ -20,15 +20,12 @@
         'command': [
           '<(PRODUCT_DIR)/webrtc_perf_tests<(EXECUTABLE_SUFFIX)',
         ],
-        'isolate_dependency_tracked': [
+        'files': [
           '<(DEPTH)/DEPS',
           '<(DEPTH)/resources/foreman_cif.yuv',
           '<(DEPTH)/resources/paris_qcif.yuv',
           '<(DEPTH)/resources/voice_engine/audio_long16.pcm',
           '<(PRODUCT_DIR)/webrtc_perf_tests<(EXECUTABLE_SUFFIX)',
-        ],
-        'isolate_dependency_untracked': [
-          '<(DEPTH)/tools/swarming_client/',
         ],
       },
     }],

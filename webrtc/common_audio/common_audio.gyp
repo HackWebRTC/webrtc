@@ -285,7 +285,6 @@
               ],
               'includes': [
                 '../build/isolate.gypi',
-                'common_audio_unittests.isolate',
               ],
               'sources': [
                 'common_audio_unittests.isolate',

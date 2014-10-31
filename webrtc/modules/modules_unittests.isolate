@@ -9,15 +9,9 @@
   'conditions': [
     ['OS=="android"', {
       'variables': {
-        'isolate_dependency_untracked': [
+        'files': [
           '<(DEPTH)/data/',
           '<(DEPTH)/resources/',
-        ],
-        'isolate_dependency_tracked': [
-          '<(DEPTH)/resources/short_mixed_mono_48.dat',
-          '<(DEPTH)/resources/short_mixed_mono_48.pcm',
-          '<(DEPTH)/resources/short_mixed_stereo_48.dat',
-          '<(DEPTH)/resources/short_mixed_stereo_48.pcm',
         ],
       },
     }],
@@ -27,7 +21,7 @@
           '<(DEPTH)/testing/test_env.py',
           '<(PRODUCT_DIR)/modules_unittests<(EXECUTABLE_SUFFIX)',
         ],
-        'isolate_dependency_tracked': [
+        'files': [
           '<(DEPTH)/DEPS',
           '<(DEPTH)/data/audio_processing/output_data_float.pb',
           '<(DEPTH)/data/voice_engine/audio_tiny48.wav',
@@ -104,9 +98,6 @@
           '<(DEPTH)/resources/video_coding/ssrcs-3.pcap',
           '<(DEPTH)/testing/test_env.py',
           '<(PRODUCT_DIR)/modules_unittests<(EXECUTABLE_SUFFIX)',
-        ],
-        'isolate_dependency_untracked': [
-          '<(DEPTH)/tools/swarming_client/',
         ],
       },
     }],

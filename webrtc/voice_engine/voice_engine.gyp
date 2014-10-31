@@ -293,7 +293,6 @@
               ],
               'includes': [
                 '../build/isolate.gypi',
-                'voice_engine_unittests.isolate',
               ],
               'sources': [
                 'voice_engine_unittests.isolate',
@@ -307,7 +306,6 @@
               ],
               'includes': [
                 '../build/isolate.gypi',
-                'voe_auto_test.isolate',
               ],
               'sources': [
                 'voe_auto_test.isolate',

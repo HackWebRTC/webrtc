@@ -80,7 +80,6 @@
           ],
           'includes': [
             '../../build/isolate.gypi',
-            'system_wrappers_unittests.isolate',
           ],
           'sources': [
             'system_wrappers_unittests.isolate',

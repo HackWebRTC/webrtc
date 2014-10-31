@@ -175,7 +175,6 @@
           ],
           'includes': [
             'build/isolate.gypi',
-            'rtc_unittests.isolate',
           ],
           'sources': [
             'rtc_unittests.isolate',
@@ -189,7 +188,6 @@
           ],
           'includes': [
             'build/isolate.gypi',
-            'video_engine_tests.isolate',
           ],
           'sources': [
             'video_engine_tests.isolate',
@@ -203,7 +201,6 @@
           ],
           'includes': [
             'build/isolate.gypi',
-            'webrtc_perf_tests.isolate',
           ],
           'sources': [
             'webrtc_perf_tests.isolate',

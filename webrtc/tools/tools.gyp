@@ -165,7 +165,6 @@
               ],
               'includes': [
                 '../build/isolate.gypi',
-                'tools_unittests.isolate',
               ],
               'sources': [
                 'tools_unittests.isolate',

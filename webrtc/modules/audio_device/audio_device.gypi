@@ -260,7 +260,6 @@
               ],
               'includes': [
                 '../../build/isolate.gypi',
-                'audio_device_tests.isolate',
               ],
               'sources': [
                 'audio_device_tests.isolate',

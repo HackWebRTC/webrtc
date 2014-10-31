@@ -397,7 +397,6 @@
               ],
               'includes': [
                 '../build/isolate.gypi',
-                'modules_tests.isolate',
               ],
               'sources': [
                 'modules_tests.isolate',
@@ -411,7 +410,6 @@
               ],
               'includes': [
                 '../build/isolate.gypi',
-                'modules_unittests.isolate',
               ],
               'sources': [
                 'modules_unittests.isolate',

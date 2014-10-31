@@ -31,11 +31,8 @@
         'command': [
           '<(PRODUCT_DIR)/libjingle_sound_unittest<(EXECUTABLE_SUFFIX)',
         ],
-        'isolate_dependency_tracked': [
+        'files': [
           '<(PRODUCT_DIR)/libjingle_sound_unittest<(EXECUTABLE_SUFFIX)',
-        ],
-        'isolate_dependency_untracked': [
-          '<(DEPTH)/tools/swarming_client/',
         ],
       },
     }],

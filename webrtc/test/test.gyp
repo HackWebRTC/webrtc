@@ -224,7 +224,6 @@
           ],
           'includes': [
             '../build/isolate.gypi',
-            'test_support_unittests.isolate',
           ],
           'sources': [
             'test_support_unittests.isolate',

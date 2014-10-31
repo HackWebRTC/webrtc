@@ -60,7 +60,6 @@
           ],
           'includes': [
             '../build/isolate.gypi',
-            'common_video_unittests.isolate',
           ],
           'sources': [
             'common_video_unittests.isolate',

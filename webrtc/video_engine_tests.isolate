@@ -9,7 +9,7 @@
   'conditions': [
     ['OS=="android"', {
       'variables': {
-        'isolate_dependency_untracked': [
+        'files': [
           '<(DEPTH)/data/',
           '<(DEPTH)/resources/',
         ],
@@ -20,13 +20,10 @@
         'command': [
           '<(PRODUCT_DIR)/video_engine_tests<(EXECUTABLE_SUFFIX)',
         ],
-        'isolate_dependency_tracked': [
+        'files': [
           '<(DEPTH)/DEPS',
           '<(DEPTH)/resources/foreman_cif_short.yuv',
           '<(PRODUCT_DIR)/video_engine_tests<(EXECUTABLE_SUFFIX)',
-        ],
-        'isolate_dependency_untracked': [
-          '<(DEPTH)/tools/swarming_client/',
         ],
       },
     }],

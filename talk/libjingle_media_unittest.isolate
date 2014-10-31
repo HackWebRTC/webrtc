@@ -31,12 +31,9 @@
         'command': [
           '<(PRODUCT_DIR)/libjingle_media_unittest<(EXECUTABLE_SUFFIX)',
         ],
-        'isolate_dependency_tracked': [
-          'media/testdata/captured-320x240-2s-48.frames',
+        'files': [
           '<(PRODUCT_DIR)/libjingle_media_unittest<(EXECUTABLE_SUFFIX)',
-        ],
-        'isolate_dependency_untracked': [
-          '<(DEPTH)/tools/swarming_client/',
+          'media/testdata/captured-320x240-2s-48.frames',
         ],
       },
     }],

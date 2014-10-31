@@ -225,7 +225,6 @@
               ],
               'includes': [
                 '../../../build/isolate.gypi',
-                'audio_decoder_unittests.isolate',
               ],
               'sources': [
                 'audio_decoder_unittests.isolate',

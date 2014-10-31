@@ -9,7 +9,7 @@
   'conditions': [
     ['OS=="android"', {
       'variables': {
-        'isolate_dependency_untracked': [
+        'files': [
           '<(DEPTH)/resources/',
           '<(DEPTH)/data/',
         ],
@@ -21,16 +21,11 @@
           '<(DEPTH)/testing/test_env.py',
           '<(PRODUCT_DIR)/audio_decoder_unittests<(EXECUTABLE_SUFFIX)',
         ],
-        'isolate_dependency_touched': [
+        'files': [
           '<(DEPTH)/DEPS',
-        ],
-        'isolate_dependency_tracked': [
           '<(DEPTH)/resources/audio_coding/testfile32kHz.pcm',
           '<(DEPTH)/testing/test_env.py',
           '<(PRODUCT_DIR)/audio_decoder_unittests<(EXECUTABLE_SUFFIX)',
-        ],
-        'isolate_dependency_untracked': [
-          '<(DEPTH)/tools/swarming_client/',
         ],
       },
     }],

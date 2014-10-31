@@ -402,7 +402,6 @@
           ],
           'includes': [
             'build/isolate.gypi',
-            'libjingle_media_unittest.isolate',
           ],
           'sources': [
             'libjingle_media_unittest.isolate',
@@ -416,7 +415,6 @@
           ],
           'includes': [
             'build/isolate.gypi',
-            'libjingle_p2p_unittest.isolate',
           ],
           'sources': [
             'libjingle_p2p_unittest.isolate',
@@ -430,7 +428,6 @@
           ],
           'includes': [
             'build/isolate.gypi',
-            'libjingle_peerconnection_unittest.isolate',
           ],
           'sources': [
             'libjingle_peerconnection_unittest.isolate',
