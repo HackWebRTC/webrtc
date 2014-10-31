@@ -85,8 +85,8 @@ source_set("common_audio") {
     "vad/vad_sp.h",
     "wav_header.cc",
     "wav_header.h",
-    "wav_writer.cc",
-    "wav_writer.h",
+    "wav_file.cc",
+    "wav_file.h",
     "window_generator.cc",
     "window_generator.h",
   ]

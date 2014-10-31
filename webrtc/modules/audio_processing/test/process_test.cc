@@ -489,7 +489,7 @@ void void_main(int argc, char* argv[]) {
   FILE* aecm_echo_path_in_file = NULL;
   FILE* aecm_echo_path_out_file = NULL;
 
-  scoped_ptr<WavFile> output_wav_file;
+  scoped_ptr<WavWriter> output_wav_file;
   scoped_ptr<RawFile> output_raw_file;
 
   if (pb_filename) {
@@ -637,9 +637,9 @@ void void_main(int argc, char* argv[]) {
         if (!raw_output) {
           // The WAV file needs to be reset every time, because it cant change
           // it's sample rate or number of channels.
-          output_wav_file.reset(new WavFile(out_filename + ".wav",
-                                            output_sample_rate,
-                                            msg.num_output_channels()));
+          output_wav_file.reset(new WavWriter(out_filename + ".wav",
+                                              output_sample_rate,
+                                              msg.num_output_channels()));
         }
 
       } else if (event_msg.type() == Event::REVERSE_STREAM) {
@@ -876,9 +876,9 @@ void void_main(int argc, char* argv[]) {
         if (!raw_output) {
           // The WAV file needs to be reset every time, because it can't change
           // it's sample rate or number of channels.
-          output_wav_file.reset(new WavFile(out_filename + ".wav",
-                                            sample_rate_hz,
-                                            num_capture_output_channels));
+          output_wav_file.reset(new WavWriter(out_filename + ".wav",
+                                              sample_rate_hz,
+                                              num_capture_output_channels));
         }
 
         if (verbose) {
@@ -1029,9 +1029,9 @@ void void_main(int argc, char* argv[]) {
           output_raw_file.reset(new RawFile(out_filename + ".pcm"));
         }
         if (!raw_output && !output_wav_file) {
-          output_wav_file.reset(new WavFile(out_filename + ".wav",
-                                            sample_rate_hz,
-                                            num_capture_output_channels));
+          output_wav_file.reset(new WavWriter(out_filename + ".wav",
+                                              sample_rate_hz,
+                                              num_capture_output_channels));
         }
         WriteIntData(near_frame.data_,
                      size,

@@ -1351,7 +1351,7 @@ int WebRtcAec_FreeAec(AecCore* aec) {
 #ifdef WEBRTC_AEC_DEBUG_DUMP
 // Open a new Wav file for writing. If it was already open with a different
 // sample frequency, close it first.
-static void ReopenWav(rtc_WavFile** wav_file,
+static void ReopenWav(rtc_WavWriter** wav_file,
                       const char* name,
                       int seq1,
                       int seq2,

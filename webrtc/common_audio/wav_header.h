@@ -11,11 +11,12 @@
 #ifndef WEBRTC_COMMON_AUDIO_WAV_HEADER_H_
 #define WEBRTC_COMMON_AUDIO_WAV_HEADER_H_
 
+#include <stddef.h>
 #include <stdint.h>
 
 namespace webrtc {
 
-static const int kWavHeaderSize = 44;
+static const size_t kWavHeaderSize = 44;
 
 enum WavFormat {
   kWavFormatPcm   = 1,  // PCM, each sample of size bytes_per_sample
@@ -33,13 +34,22 @@ bool CheckWavParameters(int num_channels,
 // Write a kWavHeaderSize bytes long WAV header to buf. The payload that
 // follows the header is supposed to have the specified number of interleaved
 // channels and contain the specified total number of samples of the specified
-// type.
-void WriteWavHeader(uint8_t* buf,
+// type. Returns false if any of the input parameters are invalid.
+bool WriteWavHeader(uint8_t* buf,
                     int num_channels,
                     int sample_rate,
                     WavFormat format,
                     int bytes_per_sample,
                     uint32_t num_samples);
+
+// Read a kWavHeaderSize bytes long WAV header from buf and parse the values
+// into the provided output parameters. Returns false if the header is invalid.
+bool ReadWavHeader(const uint8_t* buf,
+                   int* num_channels,
+                   int* sample_rate,
+                   WavFormat* format,
+                   int* bytes_per_sample,
+                   uint32_t* num_samples);
 
 }  // namespace webrtc
 

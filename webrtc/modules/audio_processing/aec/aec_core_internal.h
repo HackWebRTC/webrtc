@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_INTERNAL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_INTERNAL_H_
 
-#include "webrtc/common_audio/wav_writer.h"
+#include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 #include "webrtc/modules/audio_processing/utility/ring_buffer.h"
@@ -147,10 +147,10 @@ struct AecCore {
   int debug_dump_count;
 
   RingBuffer* far_time_buf;
-  rtc_WavFile* farFile;
-  rtc_WavFile* nearFile;
-  rtc_WavFile* outFile;
-  rtc_WavFile* outLinearFile;
+  rtc_WavWriter* farFile;
+  rtc_WavWriter* nearFile;
+  rtc_WavWriter* outFile;
+  rtc_WavWriter* outLinearFile;
 #endif
 };
 

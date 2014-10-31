@@ -13,7 +13,7 @@
 
 #include "webrtc/audio_processing/debug.pb.h"
 #include "webrtc/common_audio/include/audio_util.h"
-#include "webrtc/common_audio/wav_writer.h"
+#include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/interface/module_common_types.h"
@@ -50,7 +50,7 @@ class RawFile {
 
 static inline void WriteIntData(const int16_t* data,
                                 size_t length,
-                                WavFile* wav_file,
+                                WavWriter* wav_file,
                                 RawFile* raw_file) {
   if (wav_file) {
     wav_file->WriteSamples(data, length);
@@ -63,7 +63,7 @@ static inline void WriteIntData(const int16_t* data,
 static inline void WriteFloatData(const float* const* data,
                                   size_t samples_per_channel,
                                   int num_channels,
-                                  WavFile* wav_file,
+                                  WavWriter* wav_file,
                                   RawFile* raw_file) {
   size_t length = num_channels * samples_per_channel;
   scoped_ptr<float[]> buffer(new float[length]);

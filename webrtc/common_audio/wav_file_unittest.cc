@@ -17,7 +17,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/compile_assert.h"
 #include "webrtc/common_audio/wav_header.h"
-#include "webrtc/common_audio/wav_writer.h"
+#include "webrtc/common_audio/wav_file.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 static const float kSamples[] = {0.0, 10.0, 4e4, -1e9};
@@ -27,7 +27,7 @@ TEST(WavWriterTest, CPP) {
   const std::string outfile = webrtc::test::OutputPath() + "wavtest1.wav";
   static const uint32_t kNumSamples = 3;
   {
-    webrtc::WavFile w(outfile, 14099, 1);
+    webrtc::WavWriter w(outfile, 14099, 1);
     EXPECT_EQ(14099, w.sample_rate());
     EXPECT_EQ(1, w.num_channels());
     EXPECT_EQ(0u, w.num_samples());
@@ -62,12 +62,24 @@ TEST(WavWriterTest, CPP) {
   ASSERT_EQ(1u, fread(contents, kContentSize, 1, f));
   EXPECT_EQ(0, fclose(f));
   EXPECT_EQ(0, memcmp(kExpectedContents, contents, kContentSize));
+
+  {
+    webrtc::WavReader r(outfile);
+    EXPECT_EQ(14099, r.sample_rate());
+    EXPECT_EQ(1, r.num_channels());
+    EXPECT_EQ(kNumSamples, r.num_samples());
+    static const float kTruncatedSamples[] = {0.0, 10.0, 32767.0};
+    float samples[kNumSamples];
+    EXPECT_EQ(kNumSamples, r.ReadSamples(kNumSamples, samples));
+    EXPECT_EQ(0, memcmp(kTruncatedSamples, samples, sizeof(samples)));
+    EXPECT_EQ(0u, r.ReadSamples(kNumSamples, samples));
+  }
 }
 
 // Write a tiny WAV file with the C interface and verify the result.
 TEST(WavWriterTest, C) {
   const std::string outfile = webrtc::test::OutputPath() + "wavtest2.wav";
-  rtc_WavFile *w = rtc_WavOpen(outfile.c_str(), 11904, 2);
+  rtc_WavWriter *w = rtc_WavOpen(outfile.c_str(), 11904, 2);
   EXPECT_EQ(11904, rtc_WavSampleRate(w));
   EXPECT_EQ(2, rtc_WavNumChannels(w));
   EXPECT_EQ(0u, rtc_WavNumSamples(w));
@@ -125,7 +137,7 @@ TEST(WavWriterTest, LargeFile) {
     samples[i + 1] = std::pow(std::cos(t * 2 * 2 * M_PI), 10) * x;
   }
   {
-    webrtc::WavFile w(outfile, kSampleRate, kNumChannels);
+    webrtc::WavWriter w(outfile, kSampleRate, kNumChannels);
     EXPECT_EQ(kSampleRate, w.sample_rate());
     EXPECT_EQ(kNumChannels, w.num_channels());
     EXPECT_EQ(0u, w.num_samples());
@@ -134,4 +146,18 @@ TEST(WavWriterTest, LargeFile) {
   }
   EXPECT_EQ(sizeof(int16_t) * kNumSamples + webrtc::kWavHeaderSize,
             webrtc::test::GetFileSize(outfile));
+
+  {
+    webrtc::WavReader r(outfile);
+    EXPECT_EQ(kSampleRate, r.sample_rate());
+    EXPECT_EQ(kNumChannels, r.num_channels());
+    EXPECT_EQ(kNumSamples, r.num_samples());
+
+    float read_samples[kNumSamples];
+    EXPECT_EQ(kNumSamples, r.ReadSamples(kNumSamples, read_samples));
+    for (size_t i = 0; i < kNumSamples; ++i)
+      EXPECT_NEAR(samples[i], read_samples[i], 1);
+
+    EXPECT_EQ(0u, r.ReadSamples(kNumSamples, read_samples));
+  }
 }

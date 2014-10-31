@@ -73,9 +73,9 @@ int do_main(int argc, char* argv[]) {
   int num_reverse_channels = 0;
   int num_input_channels = 0;
   int num_output_channels = 0;
-  scoped_ptr<WavFile> reverse_wav_file;
-  scoped_ptr<WavFile> input_wav_file;
-  scoped_ptr<WavFile> output_wav_file;
+  scoped_ptr<WavWriter> reverse_wav_file;
+  scoped_ptr<WavWriter> input_wav_file;
+  scoped_ptr<WavWriter> output_wav_file;
   scoped_ptr<RawFile> reverse_raw_file;
   scoped_ptr<RawFile> input_raw_file;
   scoped_ptr<RawFile> output_raw_file;
@@ -235,15 +235,15 @@ int do_main(int argc, char* argv[]) {
       if (!FLAGS_raw) {
         // The WAV files need to be reset every time, because they cant change
         // their sample rate or number of channels.
-        reverse_wav_file.reset(new WavFile(FLAGS_reverse_file + ".wav",
-                                           reverse_sample_rate,
-                                           num_reverse_channels));
-        input_wav_file.reset(new WavFile(FLAGS_input_file + ".wav",
-                                         input_sample_rate,
-                                         num_input_channels));
-        output_wav_file.reset(new WavFile(FLAGS_output_file + ".wav",
-                                          output_sample_rate,
-                                          num_output_channels));
+        reverse_wav_file.reset(new WavWriter(FLAGS_reverse_file + ".wav",
+                                             reverse_sample_rate,
+                                             num_reverse_channels));
+        input_wav_file.reset(new WavWriter(FLAGS_input_file + ".wav",
+                                           input_sample_rate,
+                                           num_input_channels));
+        output_wav_file.reset(new WavWriter(FLAGS_output_file + ".wav",
+                                            output_sample_rate,
+                                            num_output_channels));
       }
     }
   }

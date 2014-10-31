@@ -18,15 +18,45 @@
 #include <cstring>
 #include <limits>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/include/audio_util.h"
 
 namespace webrtc {
+namespace {
 
 struct ChunkHeader {
   uint32_t ID;
   uint32_t Size;
 };
 COMPILE_ASSERT(sizeof(ChunkHeader) == 8, chunk_header_size);
+
+// We can't nest this definition in WavHeader, because VS2013 gives an error
+// on sizeof(WavHeader::fmt): "error C2070: 'unknown': illegal sizeof operand".
+struct FmtSubchunk {
+  ChunkHeader header;
+  uint16_t AudioFormat;
+  uint16_t NumChannels;
+  uint32_t SampleRate;
+  uint32_t ByteRate;
+  uint16_t BlockAlign;
+  uint16_t BitsPerSample;
+};
+COMPILE_ASSERT(sizeof(FmtSubchunk) == 24, fmt_subchunk_size);
+const uint32_t kFmtSubchunkSize = sizeof(FmtSubchunk) - sizeof(ChunkHeader);
+
+struct WavHeader {
+  struct {
+    ChunkHeader header;
+    uint32_t Format;
+  } riff;
+  FmtSubchunk fmt;
+  struct {
+    ChunkHeader header;
+  } data;
+};
+COMPILE_ASSERT(sizeof(WavHeader) == kWavHeaderSize, no_padding_in_header);
+
+}  // namespace
 
 bool CheckWavParameters(int num_channels,
                         int sample_rate,
@@ -91,54 +121,54 @@ static inline void WriteFourCC(uint32_t* f, char a, char b, char c, char d) {
       | static_cast<uint32_t>(c) << 16
       | static_cast<uint32_t>(d) << 24;
 }
+
+static inline uint16_t ReadLE16(uint16_t x) { return x; }
+static inline uint32_t ReadLE32(uint32_t x) { return x; }
+static inline std::string ReadFourCC(uint32_t x) {
+  return std::string(reinterpret_cast<char*>(&x), 4);
+}
 #else
 #error "Write be-to-le conversion functions"
 #endif
 
-void WriteWavHeader(uint8_t* buf,
+static inline uint32_t RiffChunkSize(uint32_t bytes_in_payload) {
+  return bytes_in_payload + kWavHeaderSize - sizeof(ChunkHeader);
+}
+
+static inline uint32_t ByteRate(int num_channels, int sample_rate,
+                                int bytes_per_sample) {
+  return static_cast<uint32_t>(num_channels) * sample_rate * bytes_per_sample;
+}
+
+static inline uint16_t BlockAlign(int num_channels, int bytes_per_sample) {
+  return num_channels * bytes_per_sample;
+}
+
+bool WriteWavHeader(uint8_t* buf,
                     int num_channels,
                     int sample_rate,
                     WavFormat format,
                     int bytes_per_sample,
                     uint32_t num_samples) {
-  assert(CheckWavParameters(num_channels, sample_rate, format,
-                            bytes_per_sample, num_samples));
+  if (!CheckWavParameters(num_channels, sample_rate, format,
+                          bytes_per_sample, num_samples))
+    return false;
 
-  struct {
-    struct {
-      ChunkHeader header;
-      uint32_t Format;
-    } riff;
-    struct {
-      ChunkHeader header;
-      uint16_t AudioFormat;
-      uint16_t NumChannels;
-      uint32_t SampleRate;
-      uint32_t ByteRate;
-      uint16_t BlockAlign;
-      uint16_t BitsPerSample;
-    } fmt;
-    struct {
-      ChunkHeader header;
-    } data;
-  } header;
-  COMPILE_ASSERT(sizeof(header) == kWavHeaderSize, no_padding_in_header);
-
+  WavHeader header;
   const uint32_t bytes_in_payload = bytes_per_sample * num_samples;
 
   WriteFourCC(&header.riff.header.ID, 'R', 'I', 'F', 'F');
-  WriteLE32(&header.riff.header.Size,
-            bytes_in_payload + kWavHeaderSize - sizeof(ChunkHeader));
+  WriteLE32(&header.riff.header.Size, RiffChunkSize(bytes_in_payload));
   WriteFourCC(&header.riff.Format, 'W', 'A', 'V', 'E');
 
   WriteFourCC(&header.fmt.header.ID, 'f', 'm', 't', ' ');
-  WriteLE32(&header.fmt.header.Size, sizeof(header.fmt) - sizeof(ChunkHeader));
+  WriteLE32(&header.fmt.header.Size, kFmtSubchunkSize);
   WriteLE16(&header.fmt.AudioFormat, format);
   WriteLE16(&header.fmt.NumChannels, num_channels);
   WriteLE32(&header.fmt.SampleRate, sample_rate);
-  WriteLE32(&header.fmt.ByteRate, (static_cast<uint32_t>(num_channels)
-                                   * sample_rate * bytes_per_sample));
-  WriteLE16(&header.fmt.BlockAlign, num_channels * bytes_per_sample);
+  WriteLE32(&header.fmt.ByteRate, ByteRate(num_channels, sample_rate,
+                                           bytes_per_sample));
+  WriteLE16(&header.fmt.BlockAlign, BlockAlign(num_channels, bytes_per_sample));
   WriteLE16(&header.fmt.BitsPerSample, 8 * bytes_per_sample);
 
   WriteFourCC(&header.data.header.ID, 'd', 'a', 't', 'a');
@@ -147,6 +177,52 @@ void WriteWavHeader(uint8_t* buf,
   // Do an extra copy rather than writing everything to buf directly, since buf
   // might not be correctly aligned.
   memcpy(buf, &header, kWavHeaderSize);
+  return true;
 }
+
+bool ReadWavHeader(const uint8_t* buf,
+                   int* num_channels,
+                   int* sample_rate,
+                   WavFormat* format,
+                   int* bytes_per_sample,
+                   uint32_t* num_samples) {
+  WavHeader header;
+  memcpy(&header, buf, kWavHeaderSize);
+
+  // Parse needed fields.
+  *format = static_cast<WavFormat>(ReadLE16(header.fmt.AudioFormat));
+  *num_channels = ReadLE16(header.fmt.NumChannels);
+  *sample_rate = ReadLE32(header.fmt.SampleRate);
+  *bytes_per_sample = ReadLE16(header.fmt.BitsPerSample) / 8;
+  const uint32_t bytes_in_payload = ReadLE32(header.data.header.Size);
+  if (*bytes_per_sample <= 0)
+    return false;
+  *num_samples = bytes_in_payload / *bytes_per_sample;
+
+  // Sanity check remaining fields.
+  if (ReadFourCC(header.riff.header.ID) != "RIFF")
+    return false;
+  if (ReadFourCC(header.riff.Format) != "WAVE")
+    return false;
+  if (ReadFourCC(header.fmt.header.ID) != "fmt ")
+    return false;
+  if (ReadFourCC(header.data.header.ID) != "data")
+    return false;
+
+  if (ReadLE32(header.riff.header.Size) != RiffChunkSize(bytes_in_payload))
+    return false;
+  if (ReadLE32(header.fmt.header.Size) != kFmtSubchunkSize)
+    return false;
+  if (ReadLE32(header.fmt.ByteRate) !=
+      ByteRate(*num_channels, *sample_rate, *bytes_per_sample))
+    return false;
+  if (ReadLE16(header.fmt.BlockAlign) !=
+      BlockAlign(*num_channels, *bytes_per_sample))
+    return false;
+
+  return CheckWavParameters(*num_channels, *sample_rate, *format,
+                            *bytes_per_sample, *num_samples);
+}
+
 
 }  // namespace webrtc
