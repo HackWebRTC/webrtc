@@ -110,13 +110,26 @@ static const int kDefaultAudioDeviceId = 0;
 
 static const char kIsacCodecName[] = "ISAC";
 static const char kL16CodecName[] = "L16";
-// Codec parameters for Opus.
-static const int kOpusMonoBitrate = 32000;
+
 // Parameter used for NACK.
 // This value is equivalent to 5 seconds of audio data at 20 ms per packet.
 static const int kNackMaxPackets = 250;
-static const int kOpusStereoBitrate = 64000;
+
+// Codec parameters for Opus.
 // draft-spittka-payload-rtp-opus-03
+
+// Recommended bitrates:
+// 8-12 kb/s for NB speech,
+// 16-20 kb/s for WB speech,
+// 28-40 kb/s for FB speech,
+// 48-64 kb/s for FB mono music, and
+// 64-128 kb/s for FB stereo music.
+// The current implementation applies the following values to mono signals,
+// and multiplies them by 2 for stereo.
+static const int kOpusBitrateNb = 12000;
+static const int kOpusBitrateWb = 20000;
+static const int kOpusBitrateFb = 32000;
+
 // Opus bitrate should be in the range between 6000 and 510000.
 static const int kOpusMinBitrate = 6000;
 static const int kOpusMaxBitrate = 510000;
@@ -417,8 +430,17 @@ static int GetOpusBitrate(const AudioCodec& codec, int max_playback_rate) {
     use_param = false;
   }
   if (bitrate <= 0) {
-    bitrate = IsOpusStereoEnabled(codec) ? kOpusStereoBitrate :
-        kOpusMonoBitrate;
+    if (max_playback_rate <= 8000) {
+      bitrate = kOpusBitrateNb;
+    } else if (max_playback_rate <= 16000) {
+      bitrate = kOpusBitrateWb;
+    } else {
+      bitrate = kOpusBitrateFb;
+    }
+
+    if (IsOpusStereoEnabled(codec)) {
+      bitrate *= 2;
+    }
   } else if (bitrate < kOpusMinBitrate || bitrate > kOpusMaxBitrate) {
     bitrate = (bitrate < kOpusMinBitrate) ? kOpusMinBitrate : kOpusMaxBitrate;
     std::string rate_source =
@@ -458,9 +480,6 @@ static void GetOpusConfig(const AudioCodec& codec, webrtc::CodecInst* voe_codec,
   // voe_codec.channels to 2 if "stereo=1" and 1 otherwise.  If
   // the bitrate is not specified, i.e. is <= zero, we set it to the
   // appropriate default value for mono or stereo Opus.
-
-  // TODO(minyue): The determination of bit rate might take the maximum playback
-  // rate into account.
 
   voe_codec->channels = IsOpusStereoEnabled(codec) ? 2 : 1;
   voe_codec->rate = GetOpusBitrate(codec, *max_playback_rate);

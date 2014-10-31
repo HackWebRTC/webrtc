@@ -1254,9 +1254,12 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOpusMaxPlaybackRateNb) {
   webrtc::CodecInst gcodec;
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
   EXPECT_STREQ("opus", gcodec.plname);
-  // TODO(minyue): Default bit rate is not but can in future be affected by
-  // kCodecParamMaxPlaybackRate.
-  EXPECT_EQ(32000, gcodec.rate);
+
+  EXPECT_EQ(12000, gcodec.rate);
+  codecs[0].SetParam(cricket::kCodecParamStereo, "1");
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(24000, gcodec.rate);
 }
 
 // Test 8000 < maxplaybackrate <= 12000 triggers Opus medium band mode.
@@ -1273,9 +1276,12 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOpusMaxPlaybackRateMb) {
   webrtc::CodecInst gcodec;
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
   EXPECT_STREQ("opus", gcodec.plname);
-  // TODO(minyue): Default bit rate is not but can in future be affected by
-  // kCodecParamMaxPlaybackRate.
-  EXPECT_EQ(32000, gcodec.rate);
+
+  EXPECT_EQ(20000, gcodec.rate);
+  codecs[0].SetParam(cricket::kCodecParamStereo, "1");
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(40000, gcodec.rate);
 }
 
 // Test 12000 < maxplaybackrate <= 16000 triggers Opus wide band mode.
@@ -1292,9 +1298,12 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOpusMaxPlaybackRateWb) {
   webrtc::CodecInst gcodec;
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
   EXPECT_STREQ("opus", gcodec.plname);
-  // TODO(minyue): Default bit rate is not but can in future be affected by
-  // kCodecParamMaxPlaybackRate.
-  EXPECT_EQ(32000, gcodec.rate);
+
+  EXPECT_EQ(20000, gcodec.rate);
+  codecs[0].SetParam(cricket::kCodecParamStereo, "1");
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(40000, gcodec.rate);
 }
 
 // Test 16000 < maxplaybackrate <= 24000 triggers Opus super wide band mode.
@@ -1311,9 +1320,12 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOpusMaxPlaybackRateSwb) {
   webrtc::CodecInst gcodec;
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
   EXPECT_STREQ("opus", gcodec.plname);
-  // TODO(minyue): Default bit rate is not but can in future be affected by
-  // kCodecParamMaxPlaybackRate.
+
   EXPECT_EQ(32000, gcodec.rate);
+  codecs[0].SetParam(cricket::kCodecParamStereo, "1");
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(64000, gcodec.rate);
 }
 
 // Test 24000 < maxplaybackrate triggers Opus full band mode.
@@ -1330,9 +1342,12 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOpusMaxPlaybackRateFb) {
   webrtc::CodecInst gcodec;
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
   EXPECT_STREQ("opus", gcodec.plname);
-  // TODO(minyue): Default bit rate is not but can in future be affected by
-  // kCodecParamMaxPlaybackRate.
+
   EXPECT_EQ(32000, gcodec.rate);
+  codecs[0].SetParam(cricket::kCodecParamStereo, "1");
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(64000, gcodec.rate);
 }
 
 // Test Opus that without maxplaybackrate, default playback rate is used.
