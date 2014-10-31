@@ -14,7 +14,7 @@
 
 namespace webrtc {
 
-enum { kMtu = 1200 };
+enum { kMtu = 1200, kAcceptedBitrateErrorBps = 50000u };
 
 namespace testing {
 
@@ -225,6 +225,7 @@ void RemoteBitrateEstimatorTest::IncomingPacket(uint32_t ssrc,
   memset(&header, 0, sizeof(header));
   header.ssrc = ssrc;
   header.timestamp = rtp_timestamp;
+  header.extension.hasAbsoluteSendTime = true;
   header.extension.absoluteSendTime = absolute_send_time;
   bitrate_estimator_->IncomingPacket(arrival_time + kArrivalTimeClockOffsetMs,
       payload_size, header);
@@ -340,7 +341,7 @@ void RemoteBitrateEstimatorTest::InitialBehaviorTestHelper(
   EXPECT_TRUE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_bps));
   ASSERT_EQ(1u, ssrcs.size());
   EXPECT_EQ(kDefaultSsrc, ssrcs.front());
-  EXPECT_EQ(expected_converge_bitrate, bitrate_bps);
+  EXPECT_NEAR(expected_converge_bitrate, bitrate_bps, kAcceptedBitrateErrorBps);
   EXPECT_TRUE(bitrate_observer_->updated());
   bitrate_observer_->Reset();
   EXPECT_EQ(bitrate_observer_->latest_bitrate(), bitrate_bps);
@@ -372,7 +373,9 @@ void RemoteBitrateEstimatorTest::RateIncreaseReorderingTestHelper(
   }
   bitrate_estimator_->Process();
   EXPECT_TRUE(bitrate_observer_->updated());
-  EXPECT_EQ(expected_bitrate_bps, bitrate_observer_->latest_bitrate());
+  EXPECT_NEAR(expected_bitrate_bps,
+              bitrate_observer_->latest_bitrate(),
+              kAcceptedBitrateErrorBps);
   for (int i = 0; i < 10; ++i) {
     clock_.AdvanceTimeMilliseconds(2 * kFrameIntervalMs);
     timestamp += 2 * 90 * kFrameIntervalMs;
@@ -387,15 +390,17 @@ void RemoteBitrateEstimatorTest::RateIncreaseReorderingTestHelper(
   }
   bitrate_estimator_->Process();
   EXPECT_TRUE(bitrate_observer_->updated());
-  EXPECT_EQ(expected_bitrate_bps, bitrate_observer_->latest_bitrate());
+  EXPECT_NEAR(expected_bitrate_bps,
+              bitrate_observer_->latest_bitrate(),
+              kAcceptedBitrateErrorBps);
 }
 
 // Make sure we initially increase the bitrate as expected.
-void RemoteBitrateEstimatorTest::RateIncreaseRtpTimestampsTestHelper() {
+void RemoteBitrateEstimatorTest::RateIncreaseRtpTimestampsTestHelper(
+    int expected_iterations) {
   // This threshold corresponds approximately to increasing linearly with
   // bitrate(i) = 1.04 * bitrate(i-1) + 1000
   // until bitrate(i) > 500000, with bitrate(1) ~= 30000.
-  const int kExpectedIterations = 1621;
   unsigned int bitrate_bps = 30000;
   int iterations = 0;
   AddDefaultStream();
@@ -412,15 +417,14 @@ void RemoteBitrateEstimatorTest::RateIncreaseRtpTimestampsTestHelper() {
       bitrate_observer_->Reset();
     }
     ++iterations;
-    ASSERT_LE(iterations, kExpectedIterations);
+    ASSERT_LE(iterations, expected_iterations);
   }
-  ASSERT_EQ(kExpectedIterations, iterations);
+  ASSERT_EQ(expected_iterations, iterations);
 }
 
 void RemoteBitrateEstimatorTest::CapacityDropTestHelper(
     int number_of_streams,
     bool wrap_time_stamp,
-    unsigned int expected_converge_bitrate,
     unsigned int expected_bitrate_drop_delta) {
   const int kFramerate = 30;
   const int kStartBitrate = 900e3;
@@ -430,14 +434,11 @@ void RemoteBitrateEstimatorTest::CapacityDropTestHelper(
   const unsigned int kReducedCapacityBps = 500e3;
 
   int steady_state_time = 0;
-  int expected_overuse_start_time = 0;
   if (number_of_streams <= 1) {
     steady_state_time = 10;
-    expected_overuse_start_time = 10000;
     AddDefaultStream();
   } else {
     steady_state_time = 8 * number_of_streams;
-    expected_overuse_start_time = 8000;
     int bitrate_sum = 0;
     int kBitrateDenom = number_of_streams * (number_of_streams - 1);
     for (int i = 0; i < number_of_streams; i++) {
@@ -471,13 +472,12 @@ void RemoteBitrateEstimatorTest::CapacityDropTestHelper(
                                             kMinExpectedBitrate,
                                             kMaxExpectedBitrate,
                                             kInitialCapacityBps);
-  EXPECT_EQ(expected_converge_bitrate, bitrate_bps);
+  EXPECT_NEAR(kInitialCapacityBps, bitrate_bps, 100000u);
   bitrate_observer_->Reset();
 
   // Reduce the capacity and verify the decrease time.
   stream_generator_->set_capacity_bps(kReducedCapacityBps);
   int64_t overuse_start_time = clock_.TimeInMilliseconds();
-  EXPECT_EQ(expected_overuse_start_time, overuse_start_time);
   int64_t bitrate_drop_time = -1;
   for (int i = 0; i < 100 * number_of_streams; ++i) {
     GenerateAndProcessFrame(kDefaultSsrc, bitrate_bps);
