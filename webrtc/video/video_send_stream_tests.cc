@@ -201,7 +201,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
 
     virtual void PerformTest() OVERRIDE {
       EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out while waiting single RTP packet.";
+          << "Timed out while waiting for a single RTP packet.";
     }
 
     class DelayedEncoder : public test::FakeEncoder {
@@ -1440,8 +1440,8 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesVp8Config) {
       send_config->encoder_settings.payload_name = "VP8";
 
       for (size_t i = 0; i < encoder_config->streams.size(); ++i) {
-        encoder_config->streams[i].temporal_layers.resize(
-            kNumberOfTemporalLayers);
+        encoder_config->streams[i].temporal_layer_thresholds_bps.resize(
+            kNumberOfTemporalLayers - 1);
       }
 
       encoder_config->encoder_specific_settings = &vp8_settings_;
@@ -1550,4 +1550,44 @@ TEST_F(VideoSendStreamTest, RtcpSenderReportContainsMediaBytesSent) {
   RunBaseTest(&test);
 }
 
+TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
+  static const int kScreencastTargetBitrateKbps = 200;
+  class ScreencastTargetBitrateTest : public test::SendTest,
+                                      public test::FakeEncoder {
+   public:
+    ScreencastTargetBitrateTest()
+        : SendTest(kDefaultTimeoutMs),
+          test::FakeEncoder(Clock::GetRealTimeClock()) {}
+
+   private:
+    virtual int32_t InitEncode(const VideoCodec* config,
+                               int32_t number_of_cores,
+                               uint32_t max_payload_size) {
+      EXPECT_EQ(static_cast<unsigned int>(kScreencastTargetBitrateKbps),
+                config->targetBitrate);
+      observation_complete_->Set();
+      return test::FakeEncoder::InitEncode(
+          config, number_of_cores, max_payload_size);
+    }
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) OVERRIDE {
+      send_config->encoder_settings.encoder = this;
+      EXPECT_EQ(1u, encoder_config->streams.size());
+      EXPECT_TRUE(
+          encoder_config->streams[0].temporal_layer_thresholds_bps.empty());
+      encoder_config->streams[0].temporal_layer_thresholds_bps.push_back(
+          kScreencastTargetBitrateKbps * 1000);
+      encoder_config->content_type = VideoEncoderConfig::kScreenshare;
+    }
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting for the encoder to be initialized.";
+    }
+  } test;
+
+  RunBaseTest(&test);
+}
 }  // namespace webrtc

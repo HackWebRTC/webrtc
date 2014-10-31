@@ -306,12 +306,18 @@ bool VideoSendStream::ReconfigureVideoEncoder(
   } else {
     video_codec.codecType = kVideoCodecGeneric;
   }
+
   switch (config.content_type) {
     case VideoEncoderConfig::kRealtimeVideo:
       video_codec.mode = kRealtimeVideo;
       break;
     case VideoEncoderConfig::kScreenshare:
       video_codec.mode = kScreensharing;
+      if (config.streams.size() == 1 &&
+          config.streams[0].temporal_layer_thresholds_bps.size() == 1) {
+        video_codec.targetBitrate =
+            config.streams[0].temporal_layer_thresholds_bps[0] / 1000;
+      }
       break;
   }
 
@@ -327,7 +333,8 @@ bool VideoSendStream::ReconfigureVideoEncoder(
                                           config.encoder_specific_settings);
     }
     video_codec.codecSpecific.VP8.numberOfTemporalLayers =
-        static_cast<unsigned char>(streams.back().temporal_layers.size());
+        static_cast<unsigned char>(
+            streams.back().temporal_layer_thresholds_bps.size() + 1);
   } else {
     // TODO(pbos): Support encoder_settings codec-agnostically.
     assert(config.encoder_specific_settings == NULL);
@@ -360,8 +367,8 @@ bool VideoSendStream::ReconfigureVideoEncoder(
     sim_stream->targetBitrate = streams[i].target_bitrate_bps / 1000;
     sim_stream->maxBitrate = streams[i].max_bitrate_bps / 1000;
     sim_stream->qpMax = streams[i].max_qp;
-    sim_stream->numberOfTemporalLayers =
-        static_cast<unsigned char>(streams[i].temporal_layers.size());
+    sim_stream->numberOfTemporalLayers = static_cast<unsigned char>(
+        streams[i].temporal_layer_thresholds_bps.size() + 1);
 
     video_codec.width = std::max(video_codec.width,
                                  static_cast<unsigned short>(streams[i].width));

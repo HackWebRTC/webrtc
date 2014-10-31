@@ -104,8 +104,17 @@ struct VideoStream {
 
   int max_qp;
 
-  // Bitrate thresholds for enabling additional temporal layers.
-  std::vector<int> temporal_layers;
+  // Bitrate thresholds for enabling additional temporal layers. Since these are
+  // thresholds in between layers, we have one additional layer. One threshold
+  // gives two temporal layers, one below the threshold and one above, two give
+  // three, and so on.
+  // The VideoEncoder may redistribute bitrates over the temporal layers so a
+  // bitrate threshold of 100k and an estimate of 105k does not imply that we
+  // get 100k in one temporal layer and 5k in the other, just that the bitrate
+  // in the first temporal layer should not exceed 100k.
+  // TODO(pbos): Apart from a special case for two-layer screencast these
+  // thresholds are not propagated to the VideoEncoder. To be implemented.
+  std::vector<int> temporal_layer_thresholds_bps;
 };
 
 struct VideoEncoderConfig {

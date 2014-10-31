@@ -1273,6 +1273,43 @@ TEST_F(WebRtcVideoChannel2Test, UsesCorrectSettingsForScreencast) {
 
   EXPECT_EQ(capture_format_hd.width, encoder_config.streams.front().width);
   EXPECT_EQ(capture_format_hd.height, encoder_config.streams.front().height);
+  EXPECT_TRUE(encoder_config.streams[0].temporal_layer_thresholds_bps.empty());
+
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
+}
+
+TEST_F(WebRtcVideoChannel2Test,
+       ConferenceModeScreencastConfiguresTemporalLayer) {
+  static const int kConferenceScreencastTemporalBitrateBps = 100000;
+  VideoOptions options;
+  options.conference_mode.Set(true);
+  channel_->SetOptions(options);
+
+  AddSendStream();
+
+  cricket::FakeVideoCapturer capturer;
+  capturer.SetScreencast(true);
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
+  cricket::VideoFormat capture_format_hd =
+      capturer.GetSupportedFormats()->front();
+  EXPECT_EQ(cricket::CS_RUNNING, capturer.Start(capture_format_hd));
+
+  EXPECT_TRUE(channel_->SetSend(true));
+
+  EXPECT_TRUE(capturer.CaptureFrame());
+  ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
+  FakeVideoSendStream* send_stream = fake_call_->GetVideoSendStreams().front();
+
+  webrtc::VideoEncoderConfig encoder_config = send_stream->GetEncoderConfig();
+
+  // Verify screencast settings.
+  encoder_config = send_stream->GetEncoderConfig();
+  EXPECT_EQ(webrtc::VideoEncoderConfig::kScreenshare,
+            encoder_config.content_type);
+  ASSERT_EQ(1u, encoder_config.streams.size());
+  ASSERT_EQ(1u, encoder_config.streams[0].temporal_layer_thresholds_bps.size());
+  EXPECT_EQ(kConferenceScreencastTemporalBitrateBps,
+            encoder_config.streams[0].temporal_layer_thresholds_bps[0]);
 
   EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
 }

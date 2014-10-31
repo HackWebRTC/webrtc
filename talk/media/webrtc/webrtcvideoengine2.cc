@@ -118,6 +118,8 @@ static const int kDefaultQpMax = 56;
 
 static const int kDefaultRtcpReceiverReportSsrc = 1;
 
+static const int kConferenceModeTemporalLayerBitrateBps = 100000;
+
 // External video encoders are given payloads 120-127. This also means that we
 // only support up to 8 external payload types.
 static const int kExternalVideoPayloadTypeBase = 120;
@@ -1739,6 +1741,14 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(
 
   encoder_config.streams = encoder_factory_->CreateVideoStreams(
       codec, parameters_.options, parameters_.config.rtp.ssrcs.size());
+
+  // Conference mode screencast uses 2 temporal layers split at 100kbit.
+  if (parameters_.options.conference_mode.GetWithDefaultIfUnset(false) &&
+      is_screencast && encoder_config.streams.size() == 1) {
+    encoder_config.streams[0].temporal_layer_thresholds_bps.clear();
+    encoder_config.streams[0].temporal_layer_thresholds_bps.push_back(
+        kConferenceModeTemporalLayerBitrateBps);
+  }
 
   bool stream_reconfigured = stream_->ReconfigureVideoEncoder(encoder_config);
 
