@@ -31,7 +31,7 @@ private:
     bool DelayChangeDetection(double error);
     RWLockWrapper*        _rwLock;
     double                _w[2];
-    double                _P[2][2];
+    double                _pP[2][2];
     int64_t         _startMs;
     int64_t         _prevMs;
     uint32_t        _firstTimestamp;
@@ -48,7 +48,7 @@ private:
     const double        _alarmThreshold;
     const double        _accDrift;
     const double        _accMaxError;
-    const double        _P11;
+    const double        _pP11;
 };
 
 }  // namespace webrtc
