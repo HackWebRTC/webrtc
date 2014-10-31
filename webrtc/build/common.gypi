@@ -272,7 +272,7 @@
           }],
         ],
       }],
-      ['target_arch=="mipsel"', {
+      ['target_arch=="mipsel" and mips_arch_variant!="r6"', {
         'defines': [
           'MIPS32_LE',
         ],
