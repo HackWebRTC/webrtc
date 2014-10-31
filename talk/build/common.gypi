@@ -39,9 +39,7 @@
     'libpeer_target_type%': 'static_library',
     'conditions': [
       ['OS=="android" or OS=="linux"', {
-        # TODO(henrike): make sure waterfall bots have $JAVA_HOME configured
-        # properly and remove the default value below. See issue 2113.
-        'java_home%': '<!(python -c "import os; dir=os.getenv(\'JAVA_HOME\', \'/usr/lib/jvm/java-6-sun\'); assert os.path.exists(os.path.join(dir, \'include/jni.h\')), \'Point \\$JAVA_HOME or the java_home gyp variable to a directory containing include/jni.h!\'; print dir")',
+        'java_home%': '<!(python -c "import os; dir=os.getenv(\'JAVA_HOME\', \'/usr/lib/jvm/java-7-openjdk-amd64\'); assert os.path.exists(os.path.join(dir, \'include/jni.h\')), \'Point \\$JAVA_HOME or the java_home gyp variable to a directory containing include/jni.h!\'; print dir")',
       }],
     ],
   },
