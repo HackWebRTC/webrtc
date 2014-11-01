@@ -695,7 +695,7 @@ TEST_F(VideoProcessorIntegrationTest,
   SetQualityMetrics(&quality_metrics, 30.0, 18.0, 0.80, 0.40);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[3];
-  SetRateControlMetrics(rc_metrics, 0, 30, 30, 60, 15, 40, 0);
+  SetRateControlMetrics(rc_metrics, 0, 30, 30, 70, 15, 40, 0);
   SetRateControlMetrics(rc_metrics, 1, 15, 0, 50, 10, 30, 0);
   SetRateControlMetrics(rc_metrics, 2, 5, 0, 38, 10, 30, 0);
   ProcessFramesAndVerify(quality_metrics,
