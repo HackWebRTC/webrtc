@@ -503,7 +503,7 @@ void APITest::RunTest(char thread) {
       break;
     default:
       fprintf(stderr, "Wrong Test Number\n");
-      getchar();
+      getc(stdin);
       exit(1);
   }
 }

@@ -383,7 +383,7 @@ valid values are 8 and 16.\n", sampFreqKHz);
 					// exit if returned with error
 					//errType=WebRtcIsac_GetErrorCode(ISAC_main_inst);
 					fprintf(stderr,"\nError in encoder\n");
-					getchar();
+					getc(stdin);
 					exit(EXIT_FAILURE);
 				}
 
@@ -479,7 +479,7 @@ valid values are 8 and 16.\n", sampFreqKHz);
 			{
 				//errType=WebRtcIsac_GetErrorCode(ISAC_main_inst);
 				fprintf(stderr,"\nError in decoder.\n");
-				getchar();
+				getc(stdin);
 				exit(1);
 			}
 

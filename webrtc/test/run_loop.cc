@@ -16,7 +16,7 @@ namespace test {
 
 void PressEnterToContinue() {
   puts(">> Press ENTER to continue...");
-  while (getchar() != '\n' && !feof(stdin));
+  while (getc(stdin) != '\n' && !feof(stdin));
 }
 }  // namespace test
 }  // namespace webrtc

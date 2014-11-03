@@ -448,7 +448,7 @@ int main(int argc, char* argv[])
     {
 		printf("  Error iSAC Cannot write file %s.\n", outname);
         cout << flush;
-        getchar();
+        getc(stdin);
 		exit(1);
 	}
 	if(VADusage)

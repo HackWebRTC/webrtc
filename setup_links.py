@@ -86,6 +86,7 @@ if 'android' in get_target_os_list():
     'third_party/libxml',
     'third_party/modp_b64',
     'tools/android',
+    'tools/relocation_packer'
   ]
 
 FILES = {

@@ -106,10 +106,10 @@ int ViEAutoTestMain::AskUserForNumber(int min_allowed, int max_allowed) {
   int result;
   if (scanf("%d", &result) <= 0) {
     ViETest::Log("\nPlease enter a number instead, then hit enter.");
-    getchar();
+    getc(stdin);
     return kInvalidChoice;
   }
-  getchar();  // Consume enter key.
+  getc(stdin);  // Consume enter key.
 
   if (result < min_allowed || result > max_allowed) {
     ViETest::Log("%d-%d are valid choices. Please try again.", min_allowed,
