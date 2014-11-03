@@ -92,6 +92,9 @@ static const bool isac_dummy =
 DEFINE_int32(isac_swb, 104, "RTP payload type for iSAC-swb (32 kHz)");
 static const bool isac_swb_dummy =
     google::RegisterFlagValidator(&FLAGS_isac_swb, &ValidatePayloadType);
+DEFINE_int32(opus, 111, "RTP payload type for Opus");
+static const bool opus_dummy =
+    google::RegisterFlagValidator(&FLAGS_opus, &ValidatePayloadType);
 DEFINE_int32(pcm16b, 93, "RTP payload type for PCM16b-nb (8 kHz)");
 static const bool pcm16b_dummy =
     google::RegisterFlagValidator(&FLAGS_pcm16b, &ValidatePayloadType);
@@ -366,6 +369,8 @@ std::string CodecName(webrtc::NetEqDecoder codec) {
       return "iSAC";
     case webrtc::kDecoderISACswb:
       return "iSAC-swb (32 kHz)";
+    case webrtc::kDecoderOpus:
+      return "Opus";
     case webrtc::kDecoderPCM16B:
       return "PCM16b-nb (8 kHz)";
     case webrtc::kDecoderPCM16Bwb:
@@ -426,6 +431,12 @@ void RegisterPayloadTypes(NetEq* neteq) {
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_isac_swb <<
         " as " << CodecName(webrtc::kDecoderISACswb).c_str() << std::endl;
+    exit(1);
+  }
+  error = neteq->RegisterPayloadType(webrtc::kDecoderOpus, FLAGS_opus);
+  if (error) {
+    std::cerr << "Cannot register payload type " << FLAGS_opus << " as "
+              << CodecName(webrtc::kDecoderOpus).c_str() << std::endl;
     exit(1);
   }
   error = neteq->RegisterPayloadType(webrtc::kDecoderPCM16B, FLAGS_pcm16b);
@@ -514,6 +525,8 @@ void PrintCodecMapping() {
       std::endl;
   std::cout << CodecName(webrtc::kDecoderISACswb).c_str() << ": " <<
       FLAGS_isac_swb << std::endl;
+  std::cout << CodecName(webrtc::kDecoderOpus).c_str() << ": " << FLAGS_opus
+            << std::endl;
   std::cout << CodecName(webrtc::kDecoderPCM16B).c_str() << ": " <<
       FLAGS_pcm16b << std::endl;
   std::cout << CodecName(webrtc::kDecoderPCM16Bwb).c_str() << ": " <<
@@ -637,8 +650,8 @@ int CodecSampleRate(uint8_t payload_type) {
       payload_type == FLAGS_pcm16b_swb32 ||
       payload_type == FLAGS_cn_swb32) {
     return 32000;
-  } else if (payload_type == FLAGS_pcm16b_swb48 ||
-      payload_type == FLAGS_cn_swb48) {
+  } else if (payload_type == FLAGS_opus || payload_type == FLAGS_pcm16b_swb48 ||
+             payload_type == FLAGS_cn_swb48) {
     return 48000;
   } else if (payload_type == FLAGS_avt ||
       payload_type == FLAGS_red) {
