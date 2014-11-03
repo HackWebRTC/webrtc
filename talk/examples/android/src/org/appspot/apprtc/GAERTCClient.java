@@ -29,7 +29,6 @@ package org.appspot.apprtc;
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.webkit.JavascriptInterface;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -41,7 +40,6 @@ import org.webrtc.SessionDescription;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.LinkedList;
@@ -83,11 +81,6 @@ public class GAERTCClient implements AppRTCClient {
    */
   @Override
   public void connectToRoom(String url) {
-    while (url.indexOf('?') < 0) {
-      // Keep redirecting until we get a room number.
-      (new RedirectResolver()).execute(url);
-      return;  // RedirectResolver above calls us back with the next URL.
-    }
     (new RoomParameterGetter()).execute(url);
   }
 
@@ -97,6 +90,7 @@ public class GAERTCClient implements AppRTCClient {
   @Override
   public void disconnect() {
     if (channelClient != null) {
+      Log.d(TAG, "Closing GAE Channel.");
       sendMessage("{\"type\": \"bye\"}");
       channelClient.close();
       channelClient = null;
@@ -151,68 +145,36 @@ public class GAERTCClient implements AppRTCClient {
     }
   }
 
-  // Load the given URL and return the value of the Location header of the
-  // resulting 302 response.  If the result is not a 302, throws.
-  private class RedirectResolver extends AsyncTask<String, Void, String> {
-    @Override
-    protected String doInBackground(String... urls) {
-      if (urls.length != 1) {
-        throw new RuntimeException("Must be called with a single URL");
-      }
-      try {
-        return followRedirect(urls[0]);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    @Override
-    protected void onPostExecute(String url) {
-      connectToRoom(url);
-    }
-
-    private String followRedirect(String url) throws IOException {
-      HttpURLConnection connection = (HttpURLConnection)
-          new URL(url).openConnection();
-      connection.setInstanceFollowRedirects(false);
-      int code = connection.getResponseCode();
-      if (code != HttpURLConnection.HTTP_MOVED_TEMP) {
-        throw new IOException("Unexpected response: " + code + " for " + url +
-            ", with contents: " + drainStream(connection.getInputStream()));
-      }
-      int n = 0;
-      String name, value;
-      while ((name = connection.getHeaderFieldKey(n)) != null) {
-        value = connection.getHeaderField(n);
-        if (name.equals("Location")) {
-          return value;
-        }
-        ++n;
-      }
-      throw new IOException("Didn't find Location header!");
-    }
-  }
-
   // AsyncTask that converts an AppRTC room URL into the set of signaling
   // parameters to use with that room.
   private class RoomParameterGetter
       extends AsyncTask<String, Void, AppRTCSignalingParameters> {
+    private Exception exception = null;
+
     @Override
     protected AppRTCSignalingParameters doInBackground(String... urls) {
       if (urls.length != 1) {
-        throw new RuntimeException("Must be called with a single URL");
+        exception = new RuntimeException("Must be called with a single URL");
+        return null;
       }
       try {
+        exception = null;
         return getParametersForRoomUrl(urls[0]);
       } catch (JSONException e) {
-        throw new RuntimeException(e);
+        exception = e;
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        exception = e;
       }
+      return null;
     }
 
     @Override
     protected void onPostExecute(AppRTCSignalingParameters params) {
+      if (exception != null) {
+        Log.e(TAG, "Room connection error: " + exception.toString());
+        events.onChannelError(0, exception.getMessage());
+        return;
+      }
       channelClient =
           new GAEChannelClient(activity, channelToken, gaeHandler);
       synchronized (sendQueue) {
@@ -445,42 +407,67 @@ public class GAERTCClient implements AppRTCClient {
   // Implementation detail: handler for receiving GAE messages and dispatching
   // them appropriately.
   private class GAEHandler implements GAEChannelClient.GAEMessageHandler {
-    @JavascriptInterface public void onOpen() {
-      events.onChannelOpen();
-    }
+    private boolean channelOpen = false;
 
-    @JavascriptInterface public void onMessage(String msg) {
-      Log.d(TAG, "RECEIVE: " + msg);
-      try {
-        JSONObject json = new JSONObject(msg);
-        String type = (String) json.get("type");
-        if (type.equals("candidate")) {
-          IceCandidate candidate = new IceCandidate(
-              (String) json.get("id"),
-              json.getInt("label"),
-              (String) json.get("candidate"));
-          events.onRemoteIceCandidate(candidate);
-        } else if (type.equals("answer") || type.equals("offer")) {
-          SessionDescription sdp = new SessionDescription(
-              SessionDescription.Type.fromCanonicalForm(type),
-              (String)json.get("sdp"));
-          events.onRemoteDescription(sdp);
-        } else if (type.equals("bye")) {
-          events.onChannelClose();
-        } else {
-          throw new RuntimeException("Unexpected message: " + msg);
+    public void onOpen() {
+      activity.runOnUiThread(new Runnable() {
+        public void run() {
+          events.onChannelOpen();
+          channelOpen = true;
         }
-      } catch (JSONException e) {
-        throw new RuntimeException(e);
-      }
+      });
     }
 
-    @JavascriptInterface public void onClose() {
-      events.onChannelClose();
+    public void onMessage(final String msg) {
+      Log.d(TAG, "RECEIVE: " + msg);
+      activity.runOnUiThread(new Runnable() {
+        public void run() {
+          if (!channelOpen) {
+            return;
+          }
+          try {
+            JSONObject json = new JSONObject(msg);
+            String type = (String) json.get("type");
+            if (type.equals("candidate")) {
+              IceCandidate candidate = new IceCandidate(
+                  (String) json.get("id"),
+                  json.getInt("label"),
+                  (String) json.get("candidate"));
+              events.onRemoteIceCandidate(candidate);
+            } else if (type.equals("answer") || type.equals("offer")) {
+              SessionDescription sdp = new SessionDescription(
+                  SessionDescription.Type.fromCanonicalForm(type),
+                  (String)json.get("sdp"));
+              events.onRemoteDescription(sdp);
+            } else if (type.equals("bye")) {
+              events.onChannelClose();
+            } else {
+              events.onChannelError(1, "Unexpected channel message: " + msg);
+            }
+          } catch (JSONException e) {
+            events.onChannelError(1, "Channel message JSON parsing error: " +
+                e.toString());
+          }
+        }
+      });
     }
 
-    @JavascriptInterface public void onError(int code, String description) {
-      events.onChannelError(code, description);
+    public void onClose() {
+      activity.runOnUiThread(new Runnable() {
+        public void run() {
+          events.onChannelClose();
+          channelOpen = false;
+        }
+      });
+    }
+
+    public void onError(final int code, final String description) {
+      activity.runOnUiThread(new Runnable() {
+        public void run() {
+          events.onChannelError(code, description);
+          channelOpen = false;
+        }
+      });
     }
   }
 

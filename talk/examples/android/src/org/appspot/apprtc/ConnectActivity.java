@@ -32,7 +32,6 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -44,12 +43,19 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
 import android.webkit.URLUtil;
-import android.widget.Button;
-import android.widget.CheckBox;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ListView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.webrtc.MediaCodecVideoEncoder;
+
 
 /**
  * Handles the initial setup where the user selects which room to join.
@@ -57,13 +63,20 @@ import org.webrtc.MediaCodecVideoEncoder;
 public class ConnectActivity extends Activity {
 
   private static final String TAG = "ConnectActivity";
-  private Button connectButton;
+  private ImageButton addRoomButton;
+  private ImageButton removeRoomButton;
+  private ImageButton connectButton;
+  private ImageButton connectLoopbackButton;
   private EditText roomEditText;
-  private CheckBox loopbackCheckBox;
+  private ListView roomListView;
   private SharedPreferences sharedPref;
   private String keyprefUrl;
   private String keyprefResolution;
+  private String keyprefFps;
   private String keyprefRoom;
+  private String keyprefRoomList;
+  private ArrayList<String> roomList;
+  private ArrayAdapter<String> adapter;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -74,7 +87,9 @@ public class ConnectActivity extends Activity {
     sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
     keyprefUrl = getString(R.string.pref_url_key);
     keyprefResolution = getString(R.string.pref_resolution_key);
+    keyprefFps = getString(R.string.pref_fps_key);
     keyprefRoom = getString(R.string.pref_room_key);
+    keyprefRoomList = getString(R.string.pref_room_list_key);
 
     // If an implicit VIEW intent is launching the app, go directly to that URL.
     final Intent intent = getIntent();
@@ -85,17 +100,14 @@ public class ConnectActivity extends Activity {
 
     setContentView(R.layout.activity_connect);
 
-    loopbackCheckBox = (CheckBox) findViewById(R.id.check_loopback);
-    loopbackCheckBox.setChecked(false);
-
     roomEditText = (EditText) findViewById(R.id.room_edittext);
     roomEditText.setOnEditorActionListener(
         new TextView.OnEditorActionListener() {
           @Override
           public boolean onEditorAction(
               TextView textView, int i, KeyEvent keyEvent) {
-            if (i == EditorInfo.IME_ACTION_GO) {
-              connectButton.performClick();
+            if (i == EditorInfo.IME_ACTION_DONE) {
+              addRoomButton.performClick();
               return true;
             }
             return false;
@@ -103,42 +115,18 @@ public class ConnectActivity extends Activity {
     });
     roomEditText.requestFocus();
 
-    connectButton = (Button) findViewById(R.id.connect_button);
-    connectButton.setOnClickListener(new OnClickListener() {
-      @Override
-      public void onClick(View view) {
-        String url = sharedPref.getString(keyprefUrl,
-            getString(R.string.pref_url_default));
-        if (loopbackCheckBox.isChecked()) {
-          url += "/?debug=loopback";
-        } else {
-          url += "/?r=" + roomEditText.getText();
-        }
+    roomListView = (ListView) findViewById(R.id.room_listview);
+    roomListView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 
-        // Add video resolution constraints.
-        String resolution = sharedPref.getString(keyprefResolution,
-            getString(R.string.pref_resolution_default));
-        String[] dimensions = resolution.split("[ x]+");
-        if (dimensions.length == 2) {
-          try {
-            int maxWidth = Integer.parseInt(dimensions[0]);
-            int maxHeight = Integer.parseInt(dimensions[1]);
-            if (maxWidth > 0 && maxHeight > 0) {
-              url += "&video=minHeight=" + maxHeight + ",maxHeight=" +
-                  maxHeight + ",minWidth=" + maxWidth + ",maxWidth=" + maxWidth;
-            }
-          } catch (NumberFormatException e) {
-            Log.e(TAG, "Wrong video resolution setting: " + resolution);
-          }
-        } else {
-          if (MediaCodecVideoEncoder.isPlatformSupported()) {
-            url += "&hd=true";
-          }
-        }
-        // TODO(kjellander): Add support for custom parameters to the URL.
-        connectToRoom(url);
-      }
-    });
+    addRoomButton = (ImageButton) findViewById(R.id.add_room_button);
+    addRoomButton.setOnClickListener(addRoomListener);
+    removeRoomButton = (ImageButton) findViewById(R.id.remove_room_button);
+    removeRoomButton.setOnClickListener(removeRoomListener);
+    connectButton = (ImageButton) findViewById(R.id.connect_button);
+    connectButton.setOnClickListener(connectListener);
+    connectLoopbackButton =
+        (ImageButton) findViewById(R.id.connect_loopback_button);
+    connectLoopbackButton.setOnClickListener(connectListener);
   }
 
   @Override
@@ -163,8 +151,10 @@ public class ConnectActivity extends Activity {
   public void onPause() {
     super.onPause();
     String room = roomEditText.getText().toString();
+    String roomListJson = new JSONArray(roomList).toString();
     SharedPreferences.Editor editor = sharedPref.edit();
     editor.putString(keyprefRoom, room);
+    editor.putString(keyprefRoomList, roomListJson);
     editor.commit();
   }
 
@@ -173,7 +163,99 @@ public class ConnectActivity extends Activity {
     super.onResume();
     String room = sharedPref.getString(keyprefRoom, "");
     roomEditText.setText(room);
+    roomList = new ArrayList<String>();
+    String roomListJson = sharedPref.getString(keyprefRoomList, null);
+    if (roomListJson != null) {
+      try {
+        JSONArray jsonArray = new JSONArray(roomListJson);
+        for (int i = 0; i < jsonArray.length(); i++) {
+          roomList.add(jsonArray.get(i).toString());
+        }
+      } catch (JSONException e) {
+        Log.e(TAG, "Failed to load room list: " + e.toString());
+      }
+    }
+    adapter = new ArrayAdapter<String>(
+        this, android.R.layout.simple_list_item_1, roomList);
+    roomListView.setAdapter(adapter);
+    if (adapter.getCount() > 0) {
+      roomListView.requestFocus();
+      roomListView.setItemChecked(0, true);
+    }
   }
+
+  private final OnClickListener connectListener = new OnClickListener() {
+    @Override
+    public void onClick(View view) {
+      boolean loopback = false;
+      if (view.getId() == R.id.connect_loopback_button) {
+        loopback = true;
+      }
+      String url = sharedPref.getString(keyprefUrl,
+          getString(R.string.pref_url_default));
+      if (loopback) {
+        url += "/?debug=loopback";
+      } else {
+        String roomName = getSelectedItem();
+        if (roomName == null) {
+          roomName = roomEditText.getText().toString();
+        }
+        url += "/?r=" + roomName;
+      }
+      String parametersResolution = null;
+      String parametersFps = null;
+      // Add video resolution constraints.
+      String resolution = sharedPref.getString(keyprefResolution,
+          getString(R.string.pref_resolution_default));
+      String[] dimensions = resolution.split("[ x]+");
+      if (dimensions.length == 2) {
+        try {
+          int maxWidth = Integer.parseInt(dimensions[0]);
+          int maxHeight = Integer.parseInt(dimensions[1]);
+          if (maxWidth > 0 && maxHeight > 0) {
+            parametersResolution = "minHeight=" + maxHeight + ",maxHeight=" +
+                maxHeight + ",minWidth=" + maxWidth + ",maxWidth=" + maxWidth;
+          }
+        } catch (NumberFormatException e) {
+          Log.e(TAG, "Wrong video resolution setting: " + resolution);
+        }
+      }
+      // Add camera fps constraints.
+      String fps = sharedPref.getString(keyprefFps,
+          getString(R.string.pref_fps_default));
+      String[] fpsValues = fps.split("[ x]+");
+      if (fpsValues.length == 2) {
+        try {
+          int cameraFps = Integer.parseInt(fpsValues[0]);
+          if (cameraFps > 0) {
+            parametersFps = "minFrameRate=" + cameraFps +
+                ",maxFrameRate=" + cameraFps;
+          }
+        } catch (NumberFormatException e) {
+          Log.e(TAG, "Wrong camera fps setting: " + fps);
+        }
+      }
+      // Modify connection URL.
+      if (parametersResolution != null || parametersFps != null) {
+        url += "&video=";
+        if (parametersResolution != null) {
+          url += parametersResolution;
+          if (parametersFps != null) {
+            url += ",";
+          }
+        }
+        if (parametersFps != null) {
+          url += parametersFps;
+        }
+      } else {
+        if (MediaCodecVideoEncoder.isPlatformSupported()) {
+          url += "&hd=true";
+        }
+      }
+      // TODO(kjellander): Add support for custom parameters to the URL.
+      connectToRoom(url);
+    }
+  };
 
   private void connectToRoom(String roomUrl) {
     if (validateUrl(roomUrl)) {
@@ -199,4 +281,42 @@ public class ConnectActivity extends Activity {
           }).create().show();
     return false;
   }
+
+  private final OnClickListener addRoomListener = new OnClickListener() {
+    @Override
+    public void onClick(View view) {
+      String newRoom = roomEditText.getText().toString();
+      if (newRoom.length() > 0 && !roomList.contains(newRoom)) {
+        adapter.add(newRoom);
+        adapter.notifyDataSetChanged();
+      }
+    }
+  };
+
+  private final OnClickListener removeRoomListener = new OnClickListener() {
+    @Override
+    public void onClick(View view) {
+      String selectedRoom = getSelectedItem();
+      if (selectedRoom != null) {
+        adapter.remove(selectedRoom);
+        adapter.notifyDataSetChanged();
+      }
+    }
+  };
+
+  private String getSelectedItem() {
+    int position = AdapterView.INVALID_POSITION;
+    if (roomListView.getCheckedItemCount() > 0 && adapter.getCount() > 0) {
+      position = roomListView.getCheckedItemPosition();
+      if (position >= adapter.getCount()) {
+        position = AdapterView.INVALID_POSITION;
+      }
+    }
+    if (position != AdapterView.INVALID_POSITION) {
+      return adapter.getItem(position);
+    } else {
+      return null;
+    }
+  }
+
 }

@@ -253,6 +253,8 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     private FloatBuffer textureCoords;
     // Flag if texture vertices or coordinates update is needed.
     private boolean updateTextureProperties;
+    // Texture properties update lock.
+    private final Object updateTextureLock = new Object();
     // Viewport dimensions.
     private int screenWidth;
     private int screenHeight;
@@ -319,64 +321,68 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
           scalingType == ScalingType.SCALE_FILL) {
         return;
       }
-      // Re - calculate texture vertices to preserve video aspect ratio.
-      float texRight = this.texRight;
-      float texLeft = this.texLeft;
-      float texTop = this.texTop;
-      float texBottom = this.texBottom;
-      float texOffsetU = 0;
-      float texOffsetV = 0;
-      float displayWidth = (texRight - texLeft) * screenWidth / 2;
-      float displayHeight = (texTop - texBottom) * screenHeight / 2;
-      Log.d(TAG, "ID: "  + id + ". Display: " + displayWidth +
-          " x " + displayHeight + ". Video: " + videoWidth +
-          " x " + videoHeight);
-      if (displayWidth > 1 && displayHeight > 1 &&
-          videoWidth > 1 && videoHeight > 1) {
-        float displayAspectRatio = displayWidth / displayHeight;
-        float videoAspectRatio = (float)videoWidth / videoHeight;
-        if (scalingType == ScalingType.SCALE_ASPECT_FIT) {
-          // Need to re-adjust vertices width or height to match video AR.
-          if (displayAspectRatio > videoAspectRatio) {
-            float deltaX = (displayWidth - videoAspectRatio * displayHeight) /
-                    instance.screenWidth;
-            texRight -= deltaX;
-            texLeft += deltaX;
-          } else {
-            float deltaY = (displayHeight - displayWidth / videoAspectRatio) /
-                    instance.screenHeight;
-            texTop -= deltaY;
-            texBottom += deltaY;
+      synchronized(updateTextureLock) {
+        // Re - calculate texture vertices to preserve video aspect ratio.
+        float texRight = this.texRight;
+        float texLeft = this.texLeft;
+        float texTop = this.texTop;
+        float texBottom = this.texBottom;
+        float texOffsetU = 0;
+        float texOffsetV = 0;
+        float displayWidth = (texRight - texLeft) * screenWidth / 2;
+        float displayHeight = (texTop - texBottom) * screenHeight / 2;
+        Log.d(TAG, "ID: "  + id + ". Display: " + displayWidth +
+            " x " + displayHeight + ". Video: " + videoWidth +
+            " x " + videoHeight);
+        if (displayWidth > 1 && displayHeight > 1 &&
+            videoWidth > 1 && videoHeight > 1) {
+          float displayAspectRatio = displayWidth / displayHeight;
+          float videoAspectRatio = (float)videoWidth / videoHeight;
+          if (scalingType == ScalingType.SCALE_ASPECT_FIT) {
+            // Need to re-adjust vertices width or height to match video AR.
+            if (displayAspectRatio > videoAspectRatio) {
+              float deltaX = (displayWidth - videoAspectRatio * displayHeight) /
+                      instance.screenWidth;
+              texRight -= deltaX;
+              texLeft += deltaX;
+            } else {
+              float deltaY = (displayHeight - displayWidth / videoAspectRatio) /
+                      instance.screenHeight;
+              texTop -= deltaY;
+              texBottom += deltaY;
+            }
           }
-        }
-        if (scalingType == ScalingType.SCALE_ASPECT_FILL) {
-          // Need to re-adjust UV coordinates to match display AR.
-          if (displayAspectRatio > videoAspectRatio) {
-            texOffsetV = (1.0f - videoAspectRatio / displayAspectRatio) / 2.0f;
-          } else {
-            texOffsetU = (1.0f - displayAspectRatio / videoAspectRatio) / 2.0f;
+          if (scalingType == ScalingType.SCALE_ASPECT_FILL) {
+            // Need to re-adjust UV coordinates to match display AR.
+            if (displayAspectRatio > videoAspectRatio) {
+              texOffsetV = (1.0f - videoAspectRatio / displayAspectRatio) /
+                  2.0f;
+            } else {
+              texOffsetU = (1.0f - displayAspectRatio / videoAspectRatio) /
+                  2.0f;
+            }
           }
-        }
-        Log.d(TAG, "  Texture vertices: (" + texLeft + "," + texBottom +
-            ") - (" + texRight + "," + texTop + ")");
-        float textureVeticesFloat[] = new float[] {
-            texLeft, texTop,
-            texLeft, texBottom,
-            texRight, texTop,
-            texRight, texBottom
-        };
-        textureVertices = directNativeFloatBuffer(textureVeticesFloat);
+          Log.d(TAG, "  Texture vertices: (" + texLeft + "," + texBottom +
+              ") - (" + texRight + "," + texTop + ")");
+          float textureVeticesFloat[] = new float[] {
+              texLeft, texTop,
+              texLeft, texBottom,
+              texRight, texTop,
+              texRight, texBottom
+          };
+          textureVertices = directNativeFloatBuffer(textureVeticesFloat);
 
-        Log.d(TAG, "  Texture UV offsets: " + texOffsetU + ", " + texOffsetV);
-        float textureCoordinatesFloat[] = new float[] {
-            texOffsetU, texOffsetV,               // left top
-            texOffsetU, 1.0f - texOffsetV,        // left bottom
-            1.0f - texOffsetU, texOffsetV,        // right top
-            1.0f - texOffsetU, 1.0f - texOffsetV  // right bottom
-        };
-        textureCoords = directNativeFloatBuffer(textureCoordinatesFloat);
+          Log.d(TAG, "  Texture UV offsets: " + texOffsetU + ", " + texOffsetV);
+          float textureCoordinatesFloat[] = new float[] {
+              texOffsetU, texOffsetV,               // left top
+              texOffsetU, 1.0f - texOffsetV,        // left bottom
+              1.0f - texOffsetU, texOffsetV,        // right top
+              1.0f - texOffsetU, 1.0f - texOffsetV  // right bottom
+          };
+          textureCoords = directNativeFloatBuffer(textureCoordinatesFloat);
+        }
+        updateTextureProperties = false;
       }
-      updateTextureProperties = false;
     }
 
     private void draw() {
@@ -489,19 +495,23 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     }
 
     public void setScreenSize(final int screenWidth, final int screenHeight) {
-      this.screenWidth = screenWidth;
-      this.screenHeight = screenHeight;
-      updateTextureProperties = true;
+      synchronized(updateTextureLock) {
+        this.screenWidth = screenWidth;
+        this.screenHeight = screenHeight;
+        updateTextureProperties = true;
+      }
     }
 
     public void setPosition(int x, int y, int width, int height,
         ScalingType scalingType) {
-      texLeft = (x - 50) / 50.0f;
-      texTop = (50 - y) / 50.0f;
-      texRight = Math.min(1.0f, (x + width - 50) / 50.0f);
-      texBottom = Math.max(-1.0f, (50 - y - height) / 50.0f);
-      this.scalingType = scalingType;
-      updateTextureProperties = true;
+      synchronized(updateTextureLock) {
+        texLeft = (x - 50) / 50.0f;
+        texTop = (50 - y) / 50.0f;
+        texRight = Math.min(1.0f, (x + width - 50) / 50.0f);
+        texBottom = Math.max(-1.0f, (50 - y - height) / 50.0f);
+        this.scalingType = scalingType;
+        updateTextureProperties = true;
+      }
     }
 
     @Override

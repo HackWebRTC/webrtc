@@ -38,12 +38,14 @@ public class SettingsActivity extends Activity
   private SettingsFragment settingsFragment;
   private String keyprefUrl;
   private String keyprefResolution;
+  private String keyprefFps;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     keyprefUrl = getString(R.string.pref_url_key);
     keyprefResolution = getString(R.string.pref_resolution_key);
+    keyprefFps = getString(R.string.pref_fps_key);
 
     // Display the fragment as the main content.
     settingsFragment = new SettingsFragment();
@@ -61,6 +63,7 @@ public class SettingsActivity extends Activity
     sharedPreferences.registerOnSharedPreferenceChangeListener(this);
     updateSummary(sharedPreferences, keyprefUrl);
     updateSummary(sharedPreferences, keyprefResolution);
+    updateSummary(sharedPreferences, keyprefFps);
   }
 
   @Override
@@ -74,7 +77,8 @@ public class SettingsActivity extends Activity
   @Override
   public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
       String key) {
-    if (key.equals(keyprefUrl) || key.equals(keyprefResolution)) {
+    if (key.equals(keyprefUrl) || key.equals(keyprefResolution) ||
+        key.equals(keyprefFps)) {
       updateSummary(sharedPreferences, key);
     }
   }

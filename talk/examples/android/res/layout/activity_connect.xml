@@ -7,37 +7,66 @@
         android:weightSum="1"
         android:layout_margin="8dp"
         android:layout_centerHorizontal="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+            <ImageButton
+                android:id="@+id/add_room_button"
+                android:background="@android:drawable/ic_menu_add"
+                android:contentDescription="@string/add_room_description"
+                android:layout_marginRight="20dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"/>
+            <ImageButton
+                android:id="@+id/remove_room_button"
+                android:background="@android:drawable/ic_delete"
+                android:contentDescription="@string/remove_room_description"
+                android:layout_marginRight="20dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"/>
+            <ImageButton
+                android:id="@+id/connect_button"
+                android:background="@android:drawable/sym_action_call"
+                android:contentDescription="@string/connect_description"
+                android:layout_marginRight="20dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"/>
+            <ImageButton
+                android:id="@+id/connect_loopback_button"
+                android:background="@drawable/ic_loopback_call"
+                android:contentDescription="@string/connect_loopback_description"
+                android:layout_width="48dp"
+                android:layout_height="48dp"/>
+    </LinearLayout>
     <TextView
+            android:id="@+id/room_edittext_description"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="15dp"
-            android:lines="1"
-            android:maxLines="1"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:text="@string/room_name"/>
+            android:layout_margin="5dp"
+            android:text="@string/room_description"/>
     <EditText
+            android:id="@+id/room_edittext"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:singleLine="true"
-            android:id="@+id/room_edittext"
-            android:imeOptions="actionGo"/>
+            android:imeOptions="actionDone"/>
     <TextView
+            android:id="@+id/room_listview_description"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:lines="1"
+            android:maxLines="1"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:layout_margin="15dp"
-            android:text="@string/room_description"/>
-    <CheckBox
-            android:id="@+id/check_loopback"
+            android:text="@string/room_names"/>
+    <ListView
+            android:id="@+id/room_listview"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:text="@string/loopback_text" />
-    <Button
-            android:id="@+id/connect_button"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/connect_text"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
+            android:choiceMode="singleChoice"
+            android:listSelector="@android:color/darker_gray"
+            android:drawSelectorOnTop="false" />
 
 </LinearLayout>

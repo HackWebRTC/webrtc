@@ -80,7 +80,9 @@ public interface AppRTCClient {
   }
 
   /**
-   * Signaling callbacks.
+   * Callback interface for messages delivered on signalling channel.
+   *
+   * Methods are guaranteed to be invoked on the UI thread of |activity|.
    */
   public static interface AppRTCSignalingEvents {
     /**

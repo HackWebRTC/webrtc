@@ -3,24 +3,29 @@
     <string name="app_name" translatable="no">AppRTC</string>
     <string name="settings_name" translatable="no">AppRTC Settings</string>
     <string name="disconnect_call">Disconnect Call</string>
-    <string name="room_name">Room name:</string>
+    <string name="room_names">Room names:</string>
     <string name="room_description">
         Please enter a room name. Room names are shared with everyone, so think
         of something unique and send it to a friend.
     </string>
     <string name="connect_text">Connect</string>
-    <string name="loopback_text">Loopback connection</string>
     <string name="invalid_url_title">Invalid URL</string>
     <string name="invalid_url_text">The URL or room name you entered resulted in an invalid URL: %1$s
     </string>
+    <string name="channel_error_title">Connection error</string>
     <string name="connecting_to">Connecting to: %1$s</string>
     <string name="missing_url">FATAL ERROR: Missing URL to connect to.</string>
     <string name="ok">OK</string>
     <string name="switch_camera">Switch front/back camera</string>
     <string name="action_settings">Settings</string>
+    <string name="add_room_description">Add new room to the list</string>
+    <string name="remove_room_description">Remove room from the list</string>
+    <string name="connect_description">Connect to the room</string>
+    <string name="connect_loopback_description">Loopback connection</string>
 
     <!-- Settings strings. -->
     <string name="pref_room_key">room_preference</string>
+    <string name="pref_room_list_key">room_list_preference</string>
 
     <string name="pref_url_key">url_preference</string>
     <string name="pref_url_title">Connection URL:</string>
@@ -33,4 +38,10 @@
     <string name="pref_resolution_summary">Video resolution.</string>
     <string name="pref_resolution_dlg">Enter AppRTC local video resolution.</string>
     <string name="pref_resolution_default">Default</string>
+
+    <string name="pref_fps_key">fps_preference</string>
+    <string name="pref_fps_title">Camera fps.</string>
+    <string name="pref_fps_summary">Camera fps.</string>
+    <string name="pref_fps_dlg">Enter local camera fps.</string>
+    <string name="pref_fps_default">Default</string>
 </resources>

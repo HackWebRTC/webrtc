@@ -13,6 +13,7 @@
         android:id="@+id/button_disconnect"
         android:background="@drawable/disconnect"
         android:contentDescription="@string/disconnect_call"
+        android:layout_marginRight="16dp"
         android:layout_width="48dp"
         android:layout_height="48dp"/>
 
@@ -22,12 +23,21 @@
         android:id="@+id/button_switch_camera"
         android:background="@android:drawable/ic_menu_camera"
         android:contentDescription="@string/switch_camera"
+        android:layout_marginRight="8dp"
         android:layout_width="48dp"
         android:layout_height="48dp"/>
 
     <ImageButton
         android:id="@+id/button_toggle_debug"
         android:background="@android:drawable/ic_menu_info_details"
+        android:contentDescription="@string/disconnect_call"
+        android:layout_marginRight="8dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"/>
+
+    <ImageButton
+        android:id="@+id/button_scaling_mode"
+        android:background="@drawable/ic_action_return_from_full_screen"
         android:contentDescription="@string/disconnect_call"
         android:layout_width="48dp"
         android:layout_height="48dp"/>

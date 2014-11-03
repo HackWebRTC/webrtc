@@ -15,4 +15,12 @@
         android:dialogTitle="@string/pref_resolution_dlg"
         android:entries="@array/videoResolutions"
         android:entryValues="@array/videoResolutionsValues" />
+    <ListPreference
+        android:key="@string/pref_fps_key"
+        android:title="@string/pref_fps_title"
+        android:summary="@string/pref_fps_summary"
+        android:defaultValue="@string/pref_fps_default"
+        android:dialogTitle="@string/pref_fps_dlg"
+        android:entries="@array/cameraFps"
+        android:entryValues="@array/cameraFps" />
 </PreferenceScreen>

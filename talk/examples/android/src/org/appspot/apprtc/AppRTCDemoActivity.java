@@ -32,6 +32,7 @@ import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.media.AudioManager;
 import android.net.Uri;
@@ -45,7 +46,6 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -58,6 +58,7 @@ import org.webrtc.StatsObserver;
 import org.webrtc.StatsReport;
 import org.webrtc.VideoRenderer;
 import org.webrtc.VideoRendererGui;
+import org.webrtc.VideoRendererGui.ScalingType;
 
 /**
  * Main Activity of the AppRTCDemo Android app demonstrating interoperability
@@ -76,13 +77,14 @@ public class AppRTCDemoActivity extends Activity
   private GLSurfaceView videoView;
   private VideoRenderer.Callbacks localRender;
   private VideoRenderer.Callbacks remoteRender;
+  private ScalingType scalingType;
   private Toast logToast;
   private final LayoutParams hudLayout =
       new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
   private TextView hudView;
   private TextView roomName;
-  // Synchronize on quit[0] to avoid teardown-related crashes.
-  private final Boolean[] quit = new Boolean[] { false };
+  private ImageButton videoScalingButton;
+  private boolean iceConnected;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -102,6 +104,7 @@ public class AppRTCDemoActivity extends Activity
 
     Thread.setDefaultUncaughtExceptionHandler(
         new UnhandledExceptionHandler(this));
+    iceConnected = false;
 
     rootView = findViewById(android.R.id.content);
     menuBar = findViewById(R.id.menubar_fragment);
@@ -109,10 +112,9 @@ public class AppRTCDemoActivity extends Activity
     videoView = (GLSurfaceView) findViewById(R.id.glview);
 
     VideoRendererGui.setView(videoView);
-    remoteRender = VideoRendererGui.create(0, 0, 100, 100,
-        VideoRendererGui.ScalingType.SCALE_ASPECT_FILL);
-    localRender = VideoRendererGui.create(0, 0, 100, 100,
-        VideoRendererGui.ScalingType.SCALE_ASPECT_FILL);
+    scalingType = ScalingType.SCALE_ASPECT_FILL;
+    remoteRender = VideoRendererGui.create(0, 0, 100, 100, scalingType);
+    localRender = VideoRendererGui.create(0, 0, 100, 100, scalingType);
 
     videoView.setOnClickListener(
         new View.OnClickListener() {
@@ -143,7 +145,9 @@ public class AppRTCDemoActivity extends Activity
         new View.OnClickListener() {
           @Override
           public void onClick(View view) {
-            pc.switchCamera();
+            if (pc != null) {
+              pc.switchCamera();
+            }
           }
         });
 
@@ -154,6 +158,24 @@ public class AppRTCDemoActivity extends Activity
             int visibility = hudView.getVisibility() == View.VISIBLE
                 ? View.INVISIBLE : View.VISIBLE;
             hudView.setVisibility(visibility);
+          }
+        });
+
+    videoScalingButton = (ImageButton) findViewById(R.id.button_scaling_mode);
+    videoScalingButton.setOnClickListener(
+        new View.OnClickListener() {
+          @Override
+          public void onClick(View view) {
+            if (scalingType == ScalingType.SCALE_ASPECT_FILL) {
+              videoScalingButton.setBackgroundResource(
+                  R.drawable.ic_action_full_screen);
+              scalingType = ScalingType.SCALE_ASPECT_FIT;
+            } else {
+              videoScalingButton.setBackgroundResource(
+                  R.drawable.ic_action_return_from_full_screen);
+              scalingType = ScalingType.SCALE_ASPECT_FILL;
+            }
+            updateVideoView();
           }
         });
 
@@ -184,7 +206,11 @@ public class AppRTCDemoActivity extends Activity
           (loopback != null && loopback.equals("loopback"))) {
         logAndToast(getString(R.string.connecting_to, url));
         appRtcClient.connectToRoom(url.toString());
-        roomName.setText(room);
+        if (room != null && !room.equals("")) {
+          roomName.setText(room);
+        } else {
+          roomName.setText("loopback");
+        }
       } else {
         logAndToast("Empty or missing room name!");
         finish();
@@ -228,6 +254,16 @@ public class AppRTCDemoActivity extends Activity
   protected void onDestroy() {
     disconnect();
     super.onDestroy();
+  }
+
+  private void updateVideoView() {
+    VideoRendererGui.update(remoteRender, 0, 0, 100, 100, scalingType);
+    if (iceConnected) {
+      VideoRendererGui.update(localRender, 70, 70, 28, 28,
+          ScalingType.SCALE_ASPECT_FIT);
+    } else {
+      VideoRendererGui.update(localRender, 0, 0, 100, 100, scalingType);
+    }
   }
 
   // Update the heads-up display with information from |reports|.
@@ -279,21 +315,28 @@ public class AppRTCDemoActivity extends Activity
 
   // Disconnect from remote resources, dispose of local resources, and exit.
   private void disconnect() {
-    synchronized (quit[0]) {
-      if (quit[0]) {
-        return;
-      }
-      quit[0] = true;
-      if (pc != null) {
-        pc.close();
-        pc = null;
-      }
-      if (appRtcClient != null) {
-        appRtcClient.disconnect();
-        appRtcClient = null;
-      }
-      finish();
+    if (appRtcClient != null) {
+      appRtcClient.disconnect();
+      appRtcClient = null;
     }
+    if (pc != null) {
+      pc.close();
+      pc = null;
+    }
+    finish();
+  }
+
+  private void disconnectWithMessage(String errorMessage) {
+    new AlertDialog.Builder(this)
+    .setTitle(getText(R.string.channel_error_title))
+    .setMessage(errorMessage)
+    .setCancelable(false)
+    .setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface dialog, int id) {
+          dialog.cancel();
+          disconnect();
+        }
+      }).create().show();
   }
 
   // Poor-man's assert(): die with |msg| unless |condition| is true.
@@ -324,39 +367,41 @@ public class AppRTCDemoActivity extends Activity
     logAndToast("Creating peer connection...");
     pc = new PeerConnectionClient(
         this, localRender, remoteRender, appRtcParameters, this);
+    if (pc.isHDVideo()) {
+      setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+    } else {
+      setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+    }
 
     {
-      final PeerConnectionClient finalPC = pc;
       final Runnable repeatedStatsLogger = new Runnable() {
-          public void run() {
-            synchronized (quit[0]) {
-              if (quit[0]) {
-                return;
-              }
-              final Runnable runnableThis = this;
-              if (hudView.getVisibility() == View.INVISIBLE) {
-                videoView.postDelayed(runnableThis, 1000);
-                return;
-              }
-              boolean success = finalPC.getStats(new StatsObserver() {
-                  public void onComplete(final StatsReport[] reports) {
-                    runOnUiThread(new Runnable() {
-                        public void run() {
-                          updateHUD(reports);
-                        }
-                      });
-                    for (StatsReport report : reports) {
-                      Log.d(TAG, "Stats: " + report.toString());
-                    }
-                    videoView.postDelayed(runnableThis, 1000);
+        public void run() {
+            if (pc == null) {
+              return;
+            }
+            final Runnable runnableThis = this;
+            if (hudView.getVisibility() == View.INVISIBLE) {
+              videoView.postDelayed(runnableThis, 1000);
+              return;
+            }
+            boolean success = pc.getStats(new StatsObserver() {
+                public void onComplete(final StatsReport[] reports) {
+                  runOnUiThread(new Runnable() {
+                      public void run() {
+                        updateHUD(reports);
+                      }
+                    });
+                  for (StatsReport report : reports) {
+                    Log.d(TAG, "Stats: " + report.toString());
                   }
-                }, null);
-              if (!success) {
-                throw new RuntimeException("getStats() return false!");
-              }
+                  videoView.postDelayed(runnableThis, 1000);
+                }
+              }, null);
+            if (!success) {
+              throw new RuntimeException("getStats() return false!");
             }
           }
-        };
+      };
       videoView.postDelayed(repeatedStatsLogger, 1000);
     }
 
@@ -365,6 +410,9 @@ public class AppRTCDemoActivity extends Activity
 
   @Override
   public void onChannelOpen() {
+    if (pc == null) {
+      return;
+    }
     if (appRtcParameters.initiator) {
       logAndToast("Creating OFFER...");
       // Create offer. Offer SDP will be sent to answering client in
@@ -375,6 +423,9 @@ public class AppRTCDemoActivity extends Activity
 
   @Override
   public void onRemoteDescription(final SessionDescription sdp) {
+    if (pc == null) {
+      return;
+    }
     logAndToast("Received remote " + sdp.type + " ...");
     pc.setRemoteDescription(sdp);
     if (!appRtcParameters.initiator) {
@@ -387,7 +438,9 @@ public class AppRTCDemoActivity extends Activity
 
   @Override
   public void onRemoteIceCandidate(final IceCandidate candidate) {
-    pc.addRemoteIceCandidate(candidate);
+    if (pc != null) {
+      pc.addRemoteIceCandidate(candidate);
+    }
   }
 
   @Override
@@ -398,8 +451,7 @@ public class AppRTCDemoActivity extends Activity
 
   @Override
   public void onChannelError(int code, String description) {
-    logAndToast("Channel error: " + code + ". " + description);
-    disconnect();
+    disconnectWithMessage(description);
   }
 
   // -----Implementation of PeerConnectionClient.PeerConnectionEvents.---------
@@ -407,19 +459,35 @@ public class AppRTCDemoActivity extends Activity
   // All callbacks are invoked from UI thread.
   @Override
   public void onLocalDescription(final SessionDescription sdp) {
-    logAndToast("Sending " + sdp.type + " ...");
-    appRtcClient.sendLocalDescription(sdp);
+    if (appRtcClient != null) {
+      logAndToast("Sending " + sdp.type + " ...");
+      appRtcClient.sendLocalDescription(sdp);
+    }
   }
 
   @Override
   public void onIceCandidate(final IceCandidate candidate) {
-    appRtcClient.sendLocalIceCandidate(candidate);
+    if (appRtcClient != null) {
+      appRtcClient.sendLocalIceCandidate(candidate);
+    }
   }
 
   @Override
   public void onIceConnected() {
     logAndToast("ICE connected");
-    VideoRendererGui.update(localRender, 70, 70, 28, 28,
-        VideoRendererGui.ScalingType.SCALE_ASPECT_FIT);
+    iceConnected = true;
+    updateVideoView();
   }
+
+  @Override
+  public void onIceDisconnected() {
+    logAndToast("ICE disconnected");
+    disconnect();
+  }
+
+  @Override
+  public void onPeerConnectionError(String description) {
+    disconnectWithMessage(description);
+  }
+
 }
