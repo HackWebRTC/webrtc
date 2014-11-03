@@ -25,6 +25,7 @@
 #include "webrtc/modules/video_render/include/video_render_defines.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/interface/metrics.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/video_engine/call_stats.h"
 #include "webrtc/video_engine/include/vie_codec.h"
@@ -147,7 +148,8 @@ ViEChannel::ViEChannel(int32_t channel_id,
       sender_(sender),
       nack_history_size_sender_(kSendSidePacketHistorySize),
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
-      pre_render_callback_(NULL) {
+      pre_render_callback_(NULL),
+      start_ms_(Clock::GetRealTimeClock()->TimeInMilliseconds()) {
   RtpRtcp::Configuration configuration;
   configuration.id = ViEModuleId(engine_id, channel_id);
   configuration.audio = false;
@@ -222,6 +224,7 @@ int32_t ViEChannel::Init() {
 }
 
 ViEChannel::~ViEChannel() {
+  UpdateHistograms();
   // Make sure we don't get more callbacks from the RTP module.
   module_process_thread_.DeRegisterModule(vie_receiver_.GetReceiveStatistics());
   module_process_thread_.DeRegisterModule(rtp_rtcp_.get());
@@ -244,6 +247,55 @@ ViEChannel::~ViEChannel() {
   }
   // Release modules.
   VideoCodingModule::Destroy(vcm_);
+}
+
+void ViEChannel::UpdateHistograms() {
+  const float kMinCallLengthInMinutes = 0.5f;
+  float elapsed_minutes =
+      (Clock::GetRealTimeClock()->TimeInMilliseconds() - start_ms_) / 60000.0f;
+  if (elapsed_minutes < kMinCallLengthInMinutes) {
+    return;
+  }
+  RtcpPacketTypeCounter rtcp_sent;
+  RtcpPacketTypeCounter rtcp_received;
+  GetRtcpPacketTypeCounters(&rtcp_sent, &rtcp_received);
+
+  if (sender_) {
+    if (rtcp_received.nack_requests > 0) {
+      RTC_HISTOGRAM_PERCENTAGE(
+          "WebRTC.Video.UniqueNackRequestsReceivedInPercent",
+              rtcp_received.UniqueNackRequestsInPercent());
+    }
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.NackPacketsReceivedPerMinute",
+        rtcp_received.nack_packets / elapsed_minutes);
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FirPacketsReceivedPerMinute",
+        rtcp_received.fir_packets / elapsed_minutes);
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PliPacketsReceivedPerMinute",
+        rtcp_received.pli_packets / elapsed_minutes);
+  } else if (vie_receiver_.GetRemoteSsrc() > 0)  {
+    // Get receive stats if we are receiving packets, i.e. there is a remote
+    // ssrc.
+    if (rtcp_sent.nack_requests > 0) {
+      RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.UniqueNackRequestsSentInPercent",
+          rtcp_sent.UniqueNackRequestsInPercent());
+    }
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.NackPacketsSentPerMinute",
+        rtcp_sent.nack_packets / elapsed_minutes);
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FirPacketsSentPerMinute",
+        rtcp_sent.fir_packets / elapsed_minutes);
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PliPacketsSentPerMinute",
+        rtcp_sent.pli_packets / elapsed_minutes);
+
+    webrtc::VCMFrameCount frames;
+    if (vcm_->ReceivedFrameCount(frames) == VCM_OK) {
+      uint32_t total_frames = frames.numKeyFrames + frames.numDeltaFrames;
+      if (total_frames > 0) {
+        RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.KeyFramesReceivedInPermille",
+            static_cast<int>((frames.numKeyFrames * 1000.0f / total_frames) +
+                0.5f));
+      }
+    }
+  }
 }
 
 int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,

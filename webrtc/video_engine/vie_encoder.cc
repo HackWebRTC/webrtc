@@ -26,6 +26,7 @@
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/interface/metrics.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video_engine/include/vie_codec.h"
@@ -156,7 +157,8 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
     picture_id_rpsi_(0),
     qm_callback_(NULL),
     video_suspended_(false),
-    pre_encode_callback_(NULL) {
+    pre_encode_callback_(NULL),
+    start_ms_(Clock::GetRealTimeClock()->TimeInMilliseconds()) {
   RtpRtcp::Configuration configuration;
   configuration.id = ViEModuleId(engine_id_, channel_id_);
   configuration.audio = false;  // Video.
@@ -225,6 +227,7 @@ bool ViEEncoder::Init() {
 }
 
 ViEEncoder::~ViEEncoder() {
+  UpdateHistograms();
   if (bitrate_controller_) {
     bitrate_controller_->RemoveBitrateObserver(bitrate_observer_.get());
   }
@@ -235,6 +238,25 @@ ViEEncoder::~ViEEncoder() {
   VideoCodingModule::Destroy(&vcm_);
   VideoProcessingModule::Destroy(&vpm_);
   delete qm_callback_;
+}
+
+void ViEEncoder::UpdateHistograms() {
+  const float kMinCallLengthInMinutes = 0.5f;
+  float elapsed_minutes =
+      (Clock::GetRealTimeClock()->TimeInMilliseconds() - start_ms_) / 60000.0f;
+  if (elapsed_minutes < kMinCallLengthInMinutes) {
+    return;
+  }
+  webrtc::VCMFrameCount frames;
+  if (vcm_.SentFrameCount(frames) != VCM_OK) {
+    return;
+  }
+  uint32_t total_frames = frames.numKeyFrames + frames.numDeltaFrames;
+  if (total_frames > 0) {
+    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.KeyFramesSentInPermille",
+        static_cast<int>(
+            (frames.numKeyFrames * 1000.0f / total_frames) + 0.5f));
+  }
 }
 
 int ViEEncoder::Owner() const {

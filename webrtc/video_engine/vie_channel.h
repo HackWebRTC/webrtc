@@ -383,6 +383,8 @@ class ViEChannel
   int GetRequiredNackListSize(int target_delay_ms);
   void SetRtxSendStatus(bool enable);
 
+  void UpdateHistograms();
+
   // ViEChannel exposes methods that allow to modify observers and callbacks
   // to be modified. Such an API-style is cumbersome to implement and maintain
   // at all the levels when comparing to only setting them at construction. As
@@ -499,6 +501,7 @@ class ViEChannel
   int nack_history_size_sender_;
   int max_nack_reordering_threshold_;
   I420FrameCallback* pre_render_callback_;
+  const int64_t start_ms_;
 
   std::map<uint32_t, RTCPReportBlock> prev_report_blocks_;
 };

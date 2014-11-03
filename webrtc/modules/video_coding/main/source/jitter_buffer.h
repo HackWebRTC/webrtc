@@ -103,6 +103,12 @@ class VCMJitterBuffer {
   // won't be able to decode them.
   int num_not_decodable_packets() const;
 
+  // Gets number of packets received.
+  int num_packets() const;
+
+  // Gets number of duplicated packets received.
+  int num_duplicated_packets() const;
+
   // Gets number of packets discarded by the jitter buffer.
   int num_discarded_packets() const;
 
@@ -271,6 +277,8 @@ class VCMJitterBuffer {
 
   uint16_t EstimatedLowSequenceNumber(const VCMFrameBuffer& frame) const;
 
+  void UpdateHistograms();
+
   Clock* clock_;
   // If we are running (have started) or not.
   bool running_;
@@ -303,6 +311,10 @@ class VCMJitterBuffer {
   int num_consecutive_old_frames_;
   // Number of packets in a row that have been too old.
   int num_consecutive_old_packets_;
+  // Number of packets received.
+  int num_packets_;
+  // Number of duplicated packets received.
+  int num_duplicated_packets_;
   // Number of packets discarded by the jitter buffer.
   int num_discarded_packets_;
 

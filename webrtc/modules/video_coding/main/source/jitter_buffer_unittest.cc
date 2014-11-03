@@ -512,6 +512,8 @@ TEST_F(TestBasicJitterBuffer, DuplicatePackets) {
   packet_->markerBit = false;
   packet_->seqNum = seq_num_;
   packet_->timestamp = timestamp_;
+  EXPECT_EQ(0, jitter_buffer_->num_packets());
+  EXPECT_EQ(0, jitter_buffer_->num_duplicated_packets());
 
   bool retransmitted = false;
   EXPECT_EQ(kIncomplete, jitter_buffer_->InsertPacket(*packet_,
@@ -520,6 +522,8 @@ TEST_F(TestBasicJitterBuffer, DuplicatePackets) {
   VCMEncodedFrame* frame_out = DecodeCompleteFrame();
 
   EXPECT_TRUE(frame_out == NULL);
+  EXPECT_EQ(1, jitter_buffer_->num_packets());
+  EXPECT_EQ(0, jitter_buffer_->num_duplicated_packets());
 
   packet_->isFirstPacket = false;
   packet_->markerBit = true;
@@ -527,6 +531,8 @@ TEST_F(TestBasicJitterBuffer, DuplicatePackets) {
   // Insert a packet into a frame.
   EXPECT_EQ(kDuplicatePacket, jitter_buffer_->InsertPacket(*packet_,
                                                            &retransmitted));
+  EXPECT_EQ(2, jitter_buffer_->num_packets());
+  EXPECT_EQ(1, jitter_buffer_->num_duplicated_packets());
 
   seq_num_++;
   packet_->seqNum = seq_num_;
@@ -539,6 +545,8 @@ TEST_F(TestBasicJitterBuffer, DuplicatePackets) {
   CheckOutFrame(frame_out, 2 * size_, false);
 
   EXPECT_EQ(kVideoFrameKey, frame_out->FrameType());
+  EXPECT_EQ(3, jitter_buffer_->num_packets());
+  EXPECT_EQ(1, jitter_buffer_->num_duplicated_packets());
 }
 
 TEST_F(TestBasicJitterBuffer, H264InsertStartCode) {

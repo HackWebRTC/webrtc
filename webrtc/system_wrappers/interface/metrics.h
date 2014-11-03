@@ -69,12 +69,26 @@
 // Also consider changing string to const char* when switching to atomics.
 
 // Histogram for counters.
+#define RTC_HISTOGRAM_COUNTS_100(name, sample) RTC_HISTOGRAM_COUNTS( \
+    name, sample, 1, 100, 50)
+
+#define RTC_HISTOGRAM_COUNTS_1000(name, sample) RTC_HISTOGRAM_COUNTS( \
+    name, sample, 1, 1000, 50)
+
+#define RTC_HISTOGRAM_COUNTS_10000(name, sample) RTC_HISTOGRAM_COUNTS( \
+    name, sample, 1, 10000, 50)
+
 #define RTC_HISTOGRAM_COUNTS(name, sample, min, max, bucket_count) \
     RTC_HISTOGRAM_COMMON_BLOCK(name, sample, \
         webrtc::metrics::HistogramFactoryGetCounts( \
             name, min, max, bucket_count))
 
+// Histogram for percentage.
+#define RTC_HISTOGRAM_PERCENTAGE(name, sample) \
+    RTC_HISTOGRAM_ENUMERATION(name, sample, 101)
+
 // Histogram for enumerators.
+// |boundary| should be above the max enumerator sample.
 #define RTC_HISTOGRAM_ENUMERATION(name, sample, boundary) \
     RTC_HISTOGRAM_COMMON_BLOCK(name, sample, \
         webrtc::metrics::HistogramFactoryGetEnumeration(name, boundary))

@@ -25,6 +25,7 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/interface/metrics.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
@@ -143,6 +144,8 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock, EventFactory* event_factory)
       drop_count_(0),
       num_consecutive_old_frames_(0),
       num_consecutive_old_packets_(0),
+      num_packets_(0),
+      num_duplicated_packets_(0),
       num_discarded_packets_(0),
       jitter_estimate_(clock),
       inter_frame_delay_(clock_->TimeInMilliseconds()),
@@ -190,6 +193,8 @@ void VCMJitterBuffer::CopyFrom(const VCMJitterBuffer& rhs) {
     drop_count_ = rhs.drop_count_;
     num_consecutive_old_frames_ = rhs.num_consecutive_old_frames_;
     num_consecutive_old_packets_ = rhs.num_consecutive_old_packets_;
+    num_packets_ = rhs.num_packets_;
+    num_duplicated_packets_ = rhs.num_duplicated_packets_;
     num_discarded_packets_ = rhs.num_discarded_packets_;
     jitter_estimate_ = rhs.jitter_estimate_;
     inter_frame_delay_ = rhs.inter_frame_delay_;
@@ -238,6 +243,15 @@ void VCMJitterBuffer::CopyFrames(FrameList* to_list,
   }
 }
 
+void VCMJitterBuffer::UpdateHistograms() {
+  if (num_packets_ > 0) {
+    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.DiscardedPacketsInPercent",
+        num_discarded_packets_ * 100 / num_packets_);
+    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.DuplicatedPacketsInPercent",
+        num_duplicated_packets_ * 100 / num_packets_);
+  }
+}
+
 void VCMJitterBuffer::Start() {
   CriticalSectionScoped cs(crit_sect_);
   running_ = true;
@@ -250,6 +264,8 @@ void VCMJitterBuffer::Start() {
 
   num_consecutive_old_frames_ = 0;
   num_consecutive_old_packets_ = 0;
+  num_packets_ = 0;
+  num_duplicated_packets_ = 0;
   num_discarded_packets_ = 0;
 
   // Start in a non-signaled state.
@@ -265,6 +281,7 @@ void VCMJitterBuffer::Start() {
 
 void VCMJitterBuffer::Stop() {
   crit_sect_->Enter();
+  UpdateHistograms();
   running_ = false;
   last_decoded_state_.Reset();
   free_frames_.clear();
@@ -311,6 +328,16 @@ void VCMJitterBuffer::Flush() {
 std::map<FrameType, uint32_t> VCMJitterBuffer::FrameStatistics() const {
   CriticalSectionScoped cs(crit_sect_);
   return receive_statistics_;
+}
+
+int VCMJitterBuffer::num_packets() const {
+  CriticalSectionScoped cs(crit_sect_);
+  return num_packets_;
+}
+
+int VCMJitterBuffer::num_duplicated_packets() const {
+  CriticalSectionScoped cs(crit_sect_);
+  return num_duplicated_packets_;
 }
 
 int VCMJitterBuffer::num_discarded_packets() const {
@@ -543,6 +570,7 @@ void VCMJitterBuffer::ReleaseFrame(VCMEncodedFrame* frame) {
 // Gets frame to use for this timestamp. If no match, get empty frame.
 VCMFrameBufferEnum VCMJitterBuffer::GetFrame(const VCMPacket& packet,
                                              VCMFrameBuffer** frame) {
+  ++num_packets_;
   // Does this packet belong to an old frame?
   if (last_decoded_state_.IsOldPacket(&packet)) {
     // Account only for media packets.
@@ -747,6 +775,7 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
     case kNoError:
     case kOutOfBoundsPacket:
     case kDuplicatePacket: {
+      ++num_duplicated_packets_;
       break;
     }
     case kFlushIndicator:
