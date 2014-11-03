@@ -336,6 +336,18 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
     return options_.conference_mode.GetWithDefaultIfUnset(false);
   }
 
+  // We take lots of things as input from applications (packaged in
+  // params), but ViE wants lots of those packed instead as a
+  // webrtc::VideoCodec.  This is where we convert between the inputs
+  // we get from the applications and the input to give to ViE.  We
+  // also configure the codec differently depending on the latest
+  // frame that we have received (in particular, depending on the
+  // resolution and whether the it was a screencast frame or not).
+  virtual bool ConfigureVieCodecFromSendParams(
+      int channel_id,
+      const VideoSendParams& send_params,
+      const CapturedFrameInfo& last_captured_frame_info,
+      webrtc::VideoCodec* codec);
   // Checks the current bitrate estimate and modifies the bitrates
   // accordingly, including converting kAutoBandwidth to the correct defaults.
   virtual void SanitizeBitrates(

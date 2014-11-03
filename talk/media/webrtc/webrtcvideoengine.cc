@@ -3879,47 +3879,22 @@ bool WebRtcVideoMediaChannel::SetSendParams(
   // only needed because some unit tests bypass the VideoAdapter, and
   // others expect behavior from the adapter different than what it
   // actually does.  We should fix the tests and remove this block.
-  int frame_width = static_cast<int>(frame.width);
-  int frame_height = static_cast<int>(frame.height);
   VideoFormat max = send_channel->adapt_format();
+  size_t max_width = static_cast<size_t>(max.width);
+  size_t max_height = static_cast<size_t>(max.height);
   if (!send_channel->last_captured_frame_info().IsSet() ||
       (!frame.screencast &&
-       (frame_width > max.width || frame_height > max.height))) {
-    frame_width = max.width;
-    frame_height = max.height;
+       (frame.width > max_width || frame.height > max_height))) {
+    frame.width = max_width;
+    frame.height = max_height;
   }
 
-  // Set the new codec on vie.
-  webrtc::VideoCodec codec = send_params.codec;
-
-  // Settings for both screencast and non-screencast
-  codec.width = frame_width;
-  codec.height = frame_height;
+  webrtc::VideoCodec codec;
+  ConfigureVieCodecFromSendParams(channel_id, send_params, frame, &codec);
+  // TODO(pthatcher): Figure out a clean way to configure the max
+  // framerate and sanitize the bitrates inside of
+  // ConfigureVieCodecFromSendParams.
   codec.maxFramerate = max.framerate();
-  codec.targetBitrate = 0;
-  if (codec.codecType == webrtc::kVideoCodecVP8) {
-    codec.codecSpecific.VP8.numberOfTemporalLayers =
-        kDefaultNumberOfTemporalLayers;
-    codec.codecSpecific.VP8.resilience = webrtc::kResilienceOff;
-  }
-  if (frame.screencast) {
-    // Settings for screencast
-    codec.mode = webrtc::kScreensharing;
-    if (codec.codecType == webrtc::kVideoCodecVP8) {
-      codec.codecSpecific.VP8.denoisingOn = false;
-      codec.codecSpecific.VP8.automaticResizeOn = false;
-      codec.codecSpecific.VP8.frameDroppingOn = false;
-    }
-  } else {
-    // Settings for non-screencast
-    codec.mode = webrtc::kRealtimeVideo;
-    if (codec.codecType == webrtc::kVideoCodecVP8) {
-      codec.codecSpecific.VP8.denoisingOn =
-          options_.video_noise_reduction.GetWithDefaultIfUnset(true);
-      codec.codecSpecific.VP8.automaticResizeOn = true;
-      codec.codecSpecific.VP8.frameDroppingOn = true;
-    }
-  }
   SanitizeBitrates(channel_id, &codec);
 
   // Get current vie codec.
@@ -3955,6 +3930,44 @@ bool WebRtcVideoMediaChannel::SetSendParams(
   }
 
   send_channel->set_send_params(send_params);
+  return true;
+}
+
+bool WebRtcVideoMediaChannel::ConfigureVieCodecFromSendParams(
+    int channel_id,
+    const VideoSendParams& send_params,
+    const CapturedFrameInfo& last_captured_frame_info,
+    webrtc::VideoCodec* codec_out) {
+  webrtc::VideoCodec codec = send_params.codec;
+
+  codec.width = static_cast<int>(last_captured_frame_info.width);
+  codec.height = static_cast<int>(last_captured_frame_info.height);
+  codec.targetBitrate = 0;
+  if (codec.codecType == webrtc::kVideoCodecVP8) {
+    codec.codecSpecific.VP8.numberOfTemporalLayers =
+        kDefaultNumberOfTemporalLayers;
+    codec.codecSpecific.VP8.resilience = webrtc::kResilienceOff;
+  }
+
+  if (last_captured_frame_info.screencast) {
+    codec.mode = webrtc::kScreensharing;
+    if (codec.codecType == webrtc::kVideoCodecVP8) {
+      codec.codecSpecific.VP8.denoisingOn = false;
+      codec.codecSpecific.VP8.automaticResizeOn = false;
+      codec.codecSpecific.VP8.frameDroppingOn = false;
+    }
+  } else {
+    codec.mode = webrtc::kRealtimeVideo;
+    if (codec.codecType == webrtc::kVideoCodecVP8) {
+      // TODO(pthatcher): Pass in options in VideoSendParams.
+      codec.codecSpecific.VP8.denoisingOn =
+          options_.video_noise_reduction.GetWithDefaultIfUnset(true);
+      codec.codecSpecific.VP8.automaticResizeOn = true;
+      codec.codecSpecific.VP8.frameDroppingOn = true;
+    }
+  }
+
+  *codec_out = codec;
   return true;
 }
 
