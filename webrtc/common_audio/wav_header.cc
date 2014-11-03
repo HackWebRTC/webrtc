@@ -144,15 +144,14 @@ static inline uint16_t BlockAlign(int num_channels, int bytes_per_sample) {
   return num_channels * bytes_per_sample;
 }
 
-bool WriteWavHeader(uint8_t* buf,
+void WriteWavHeader(uint8_t* buf,
                     int num_channels,
                     int sample_rate,
                     WavFormat format,
                     int bytes_per_sample,
                     uint32_t num_samples) {
-  if (!CheckWavParameters(num_channels, sample_rate, format,
-                          bytes_per_sample, num_samples))
-    return false;
+  CHECK(CheckWavParameters(num_channels, sample_rate, format,
+                           bytes_per_sample, num_samples));
 
   WavHeader header;
   const uint32_t bytes_in_payload = bytes_per_sample * num_samples;
@@ -177,7 +176,6 @@ bool WriteWavHeader(uint8_t* buf,
   // Do an extra copy rather than writing everything to buf directly, since buf
   // might not be correctly aligned.
   memcpy(buf, &header, kWavHeaderSize);
-  return true;
 }
 
 bool ReadWavHeader(const uint8_t* buf,

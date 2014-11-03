@@ -34,8 +34,8 @@ bool CheckWavParameters(int num_channels,
 // Write a kWavHeaderSize bytes long WAV header to buf. The payload that
 // follows the header is supposed to have the specified number of interleaved
 // channels and contain the specified total number of samples of the specified
-// type. Returns false if any of the input parameters are invalid.
-bool WriteWavHeader(uint8_t* buf,
+// type. CHECKs the input parameters for validity.
+void WriteWavHeader(uint8_t* buf,
                     int num_channels,
                     int sample_rate,
                     WavFormat format,

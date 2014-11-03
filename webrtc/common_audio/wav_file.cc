@@ -127,8 +127,8 @@ void WavWriter::WriteSamples(const float* samples, size_t num_samples) {
 void WavWriter::Close() {
   CHECK_EQ(0, fseek(file_handle_, 0, SEEK_SET));
   uint8_t header[kWavHeaderSize];
-  CHECK(WriteWavHeader(header, num_channels_, sample_rate_, kWavFormat,
-                       kBytesPerSample, num_samples_));
+  WriteWavHeader(header, num_channels_, sample_rate_, kWavFormat,
+                 kBytesPerSample, num_samples_);
   CHECK_EQ(1u, fwrite(header, kWavHeaderSize, 1, file_handle_));
   CHECK_EQ(0, fclose(file_handle_));
   file_handle_ = NULL;

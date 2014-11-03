@@ -48,7 +48,7 @@ TEST(WavHeaderTest, CheckWavParameters) {
       webrtc::CheckWavParameters(3, 8000, webrtc::kWavFormatPcm, 1, 5));
 }
 
-TEST(WavHeaderTest, ReadWavHeader) {
+TEST(WavHeaderTest, ReadWavHeaderWithErrors) {
   int num_channels = 0;
   int sample_rate = 0;
   webrtc::WavFormat format = webrtc::kWavFormatPcm;
@@ -120,13 +120,13 @@ TEST(WavHeaderTest, ReadWavHeader) {
                             &format, &bytes_per_sample, &num_samples));
 }
 
-// Try writing a WAV header and make sure it looks OK.
+// Try writing and reading a valid WAV header and make sure it looks OK.
 TEST(WavHeaderTest, WriteAndReadWavHeader) {
   static const int kSize = 4 + webrtc::kWavHeaderSize + 4;
   uint8_t buf[kSize];
   memset(buf, 0xa4, sizeof(buf));
-  EXPECT_TRUE(webrtc::WriteWavHeader(
-      buf + 4, 17, 12345, webrtc::kWavFormatALaw, 1, 123457689));
+  webrtc::WriteWavHeader(
+      buf + 4, 17, 12345, webrtc::kWavFormatALaw, 1, 123457689);
   static const uint8_t kExpectedBuf[] = {
     0xa4, 0xa4, 0xa4, 0xa4,  // untouched bytes before header
     'R', 'I', 'F', 'F',
