@@ -57,10 +57,18 @@ static bool CodecNameMatches(const std::string& name1,
   return _stricmp(name1.c_str(), name2.c_str()) == 0;
 }
 
+const char* kInternallySupportedCodecs[] = {
+    kVp8CodecName,
+};
+
 // True if codec is supported by a software implementation that's always
 // available.
 static bool CodecIsInternallySupported(const std::string& codec_name) {
-  return CodecNameMatches(codec_name, kVp8CodecName);
+  for (size_t i = 0; i < ARRAY_SIZE(kInternallySupportedCodecs); ++i) {
+    if (CodecNameMatches(codec_name, kInternallySupportedCodecs[i]))
+      return true;
+  }
+  return false;
 }
 
 static std::string CodecVectorToString(const std::vector<VideoCodec>& codecs) {
@@ -807,6 +815,37 @@ WebRtcVideoChannel2::~WebRtcVideoChannel2() {
 
 bool WebRtcVideoChannel2::Init() { return true; }
 
+bool WebRtcVideoChannel2::CodecIsExternallySupported(
+    const std::string& name) const {
+  if (external_encoder_factory_ == NULL) {
+    return false;
+  }
+
+  const std::vector<WebRtcVideoEncoderFactory::VideoCodec> external_codecs =
+      external_encoder_factory_->codecs();
+  for (size_t c = 0; c < external_codecs.size(); ++c) {
+    if (CodecNameMatches(name, external_codecs[c].name)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::vector<WebRtcVideoChannel2::VideoCodecSettings>
+WebRtcVideoChannel2::FilterSupportedCodecs(
+    const std::vector<WebRtcVideoChannel2::VideoCodecSettings>& mapped_codecs)
+    const {
+  std::vector<VideoCodecSettings> supported_codecs;
+  for (size_t i = 0; i < mapped_codecs.size(); ++i) {
+    const VideoCodecSettings& codec = mapped_codecs[i];
+    if (CodecIsInternallySupported(codec.codec.name) ||
+        CodecIsExternallySupported(codec.codec.name)) {
+      supported_codecs.push_back(codec);
+    }
+  }
+  return supported_codecs;
+}
+
 bool WebRtcVideoChannel2::SetRecvCodecs(const std::vector<VideoCodec>& codecs) {
   LOG(LS_INFO) << "SetRecvCodecs: " << CodecVectorToString(codecs);
   if (!ValidateCodecFormats(codecs)) {
@@ -815,21 +854,19 @@ bool WebRtcVideoChannel2::SetRecvCodecs(const std::vector<VideoCodec>& codecs) {
 
   const std::vector<VideoCodecSettings> mapped_codecs = MapCodecs(codecs);
   if (mapped_codecs.empty()) {
-    LOG(LS_ERROR) << "SetRecvCodecs called without video codec payloads.";
+    LOG(LS_ERROR) << "SetRecvCodecs called without any video codecs.";
     return false;
   }
 
-  // TODO(pbos): Add a decoder factory which controls supported codecs.
-  // Blocked on webrtc:2854.
-  for (size_t i = 0; i < mapped_codecs.size(); ++i) {
-    if (!CodecNameMatches(mapped_codecs[i].codec.name, kVp8CodecName)) {
-      LOG(LS_ERROR) << "SetRecvCodecs called with unsupported codec: '"
-                    << mapped_codecs[i].codec.name << "'";
-      return false;
-    }
+  const std::vector<VideoCodecSettings> supported_codecs =
+      FilterSupportedCodecs(mapped_codecs);
+
+  if (mapped_codecs.size() != supported_codecs.size()) {
+    LOG(LS_ERROR) << "SetRecvCodecs called with unsupported video codecs.";
+    return false;
   }
 
-  recv_codecs_ = mapped_codecs;
+  recv_codecs_ = supported_codecs;
 
   rtc::CritScope stream_lock(&stream_crit_);
   for (std::map<uint32, WebRtcVideoReceiveStream*>::iterator it =
@@ -1899,34 +1936,67 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
 
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::~WebRtcVideoReceiveStream() {
   call_->DestroyVideoReceiveStream(stream_);
-  ClearDecoders();
+  ClearDecoders(&allocated_decoders_);
+}
+
+WebRtcVideoChannel2::WebRtcVideoReceiveStream::AllocatedDecoder
+WebRtcVideoChannel2::WebRtcVideoReceiveStream::CreateOrReuseVideoDecoder(
+    std::vector<AllocatedDecoder>* old_decoders,
+    const VideoCodec& codec) {
+  webrtc::VideoCodecType type = CodecTypeFromName(codec.name);
+
+  for (size_t i = 0; i < old_decoders->size(); ++i) {
+    if ((*old_decoders)[i].type == type) {
+      AllocatedDecoder decoder = (*old_decoders)[i];
+      (*old_decoders)[i] = old_decoders->back();
+      old_decoders->pop_back();
+      return decoder;
+    }
+  }
+
+  if (external_decoder_factory_ != NULL) {
+    webrtc::VideoDecoder* decoder =
+        external_decoder_factory_->CreateVideoDecoder(type);
+    if (decoder != NULL) {
+      return AllocatedDecoder(decoder, type, true);
+    }
+  }
+
+  if (type == webrtc::kVideoCodecVP8) {
+    return AllocatedDecoder(
+        webrtc::VideoDecoder::Create(webrtc::VideoDecoder::kVp8), type, false);
+  }
+
+  // This shouldn't happen, we should not be trying to create something we don't
+  // support.
+  assert(false);
+  return AllocatedDecoder(NULL, webrtc::kVideoCodecUnknown, false);
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRecvCodecs(
     const std::vector<VideoCodecSettings>& recv_codecs) {
+  std::vector<AllocatedDecoder> old_decoders = allocated_decoders_;
+  allocated_decoders_.clear();
+  config_.decoders.clear();
+  for (size_t i = 0; i < recv_codecs.size(); ++i) {
+    AllocatedDecoder allocated_decoder =
+        CreateOrReuseVideoDecoder(&old_decoders, recv_codecs[i].codec);
+    allocated_decoders_.push_back(allocated_decoder);
+
+    webrtc::VideoReceiveStream::Decoder decoder;
+    decoder.decoder = allocated_decoder.decoder;
+    decoder.payload_type = recv_codecs[i].codec.id;
+    decoder.payload_name = recv_codecs[i].codec.name;
+    config_.decoders.push_back(decoder);
+  }
+
   // TODO(pbos): Reconfigure RTX based on incoming recv_codecs.
-  // TODO(pbos): Base receive codecs off recv_codecs_ and set up using a
-  // DecoderFactory similar to send side. Pending webrtc:2854.
-  // Also set up default codecs if there's nothing in recv_codecs_.
-  ClearDecoders();
-
-  AllocatedDecoder allocated_decoder(
-      webrtc::VideoDecoder::Create(webrtc::VideoDecoder::kVp8), false);
-  allocated_decoders_.push_back(allocated_decoder);
-
-  webrtc::VideoReceiveStream::Decoder decoder;
-  decoder.decoder = allocated_decoder.decoder;
-  decoder.payload_type = kDefaultVideoCodecPref.payload_type;
-  decoder.payload_name = "VP8";
-
-  config_.decoders.push_back(decoder);
-
   config_.rtp.fec = recv_codecs.front().fec;
-
   config_.rtp.nack.rtp_history_ms =
       IsNackEnabled(recv_codecs.begin()->codec) ? kNackHistoryMs : 0;
   config_.rtp.remb = IsRembEnabled(recv_codecs.begin()->codec);
 
+  ClearDecoders(&old_decoders);
   RecreateWebRtcStream();
 }
 
@@ -1944,16 +2014,17 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {
   stream_->Start();
 }
 
-void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ClearDecoders() {
-  for (size_t i = 0; i < allocated_decoders_.size(); ++i) {
-    if (allocated_decoders_[i].external) {
+void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ClearDecoders(
+    std::vector<AllocatedDecoder>* allocated_decoders) {
+  for (size_t i = 0; i < allocated_decoders->size(); ++i) {
+    if ((*allocated_decoders)[i].external) {
       external_decoder_factory_->DestroyVideoDecoder(
-          allocated_decoders_[i].decoder);
+          (*allocated_decoders)[i].decoder);
     } else {
-      delete allocated_decoders_[i].decoder;
+      delete (*allocated_decoders)[i].decoder;
     }
   }
-  allocated_decoders_.clear();
+  allocated_decoders->clear();
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
@@ -2113,31 +2184,6 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
   }
 
   return video_codecs;
-}
-
-std::vector<WebRtcVideoChannel2::VideoCodecSettings>
-WebRtcVideoChannel2::FilterSupportedCodecs(
-    const std::vector<WebRtcVideoChannel2::VideoCodecSettings>& mapped_codecs) {
-  std::vector<VideoCodecSettings> supported_codecs;
-  for (size_t i = 0; i < mapped_codecs.size(); ++i) {
-    const VideoCodecSettings& codec = mapped_codecs[i];
-    if (CodecIsInternallySupported(codec.codec.name)) {
-      supported_codecs.push_back(codec);
-    }
-
-    if (external_encoder_factory_ == NULL) {
-      continue;
-    }
-    const std::vector<WebRtcVideoEncoderFactory::VideoCodec> external_codecs =
-        external_encoder_factory_->codecs();
-    for (size_t c = 0; c < external_codecs.size(); ++c) {
-      if (CodecNameMatches(codec.codec.name, external_codecs[c].name)) {
-        supported_codecs.push_back(codec);
-        break;
-      }
-    }
-  }
-  return supported_codecs;
 }
 
 }  // namespace cricket

@@ -349,6 +349,10 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
       cricket::WebRtcVideoEncoderFactory* encoder_factory,
       const std::vector<VideoCodec>& codecs);
 
+  VideoMediaChannel* SetUpForExternalDecoderFactory(
+      cricket::WebRtcVideoDecoderFactory* decoder_factory,
+      const std::vector<VideoCodec>& codecs);
+
   void TestStartBitrate(bool override_start_bitrate, int start_bitrate_bps);
 
   WebRtcVideoEngine2 engine_;
@@ -579,6 +583,19 @@ VideoMediaChannel* WebRtcVideoEngine2Test::SetUpForExternalEncoderFactory(
   return channel;
 }
 
+VideoMediaChannel* WebRtcVideoEngine2Test::SetUpForExternalDecoderFactory(
+    cricket::WebRtcVideoDecoderFactory* decoder_factory,
+    const std::vector<VideoCodec>& codecs) {
+  engine_.SetExternalDecoderFactory(decoder_factory);
+  engine_.Init(rtc::Thread::Current());
+
+  VideoMediaChannel* channel =
+      engine_.CreateChannel(cricket::VideoOptions(), NULL);
+  EXPECT_TRUE(channel->SetRecvCodecs(codecs));
+
+  return channel;
+}
+
 TEST_F(WebRtcVideoEngine2Test, ChannelWithExternalH264CanChangeToInternalVp8) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
   encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
@@ -630,6 +647,50 @@ TEST_F(WebRtcVideoEngine2Test, ReportSupportedExternalCodecs) {
   // The external codec will appear at last.
   EXPECT_EQ("VP8", internal_codec.name);
   EXPECT_EQ("H264", external_codec.name);
+}
+
+TEST_F(WebRtcVideoEngine2Test, RegisterExternalDecodersIfSupported) {
+  cricket::FakeWebRtcVideoDecoderFactory decoder_factory;
+  decoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8);
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kVp8Codec);
+
+  rtc::scoped_ptr<VideoMediaChannel> channel(
+      SetUpForExternalDecoderFactory(&decoder_factory, codecs));
+
+  EXPECT_TRUE(
+      channel->AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrc)));
+  ASSERT_EQ(1u, decoder_factory.decoders().size());
+
+  // Setting codecs of the same type should not reallocate the decoder.
+  EXPECT_TRUE(channel->SetRecvCodecs(codecs));
+  EXPECT_EQ(1, decoder_factory.GetNumCreatedDecoders());
+
+  // Remove stream previously added to free the external decoder instance.
+  EXPECT_TRUE(channel->RemoveRecvStream(kSsrc));
+  EXPECT_EQ(0u, decoder_factory.decoders().size());
+}
+
+// Verifies that we can set up decoders that are not internally supported.
+TEST_F(WebRtcVideoEngine2Test, RegisterExternalH264DecoderIfSupported) {
+  // TODO(pbos): Do not assume that encoder/decoder support is symmetric. We
+  // can't even query the WebRtcVideoDecoderFactory for supported codecs.
+  // For now we add a FakeWebRtcVideoEncoderFactory to add H264 to supported
+  // codecs.
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
+  engine_.SetExternalEncoderFactory(&encoder_factory);
+  cricket::FakeWebRtcVideoDecoderFactory decoder_factory;
+  decoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264);
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kH264Codec);
+
+  rtc::scoped_ptr<VideoMediaChannel> channel(
+      SetUpForExternalDecoderFactory(&decoder_factory, codecs));
+
+  EXPECT_TRUE(
+      channel->AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrc)));
+  ASSERT_EQ(1u, decoder_factory.decoders().size());
 }
 
 class WebRtcVideoEngine2BaseTest
@@ -1797,26 +1858,6 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_TestSetDscpOptions) {
 }
 
 TEST_F(WebRtcVideoChannel2Test, DISABLED_SetOptionsWithMaxBitrate) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_ResetCodecOnScreencast) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_RegisterDecoderIfFactoryIsGiven) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_DontRegisterDecoderMultipleTimes) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_DontRegisterDecoderForNonVP8) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_ExternalCodecIgnored) {
   FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 

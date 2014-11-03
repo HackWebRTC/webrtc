@@ -276,6 +276,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
  private:
   void ConfigureReceiverRtp(webrtc::VideoReceiveStream::Config* config,
                             const StreamParams& sp) const;
+  bool CodecIsExternallySupported(const std::string& name) const;
 
   struct VideoCodecSettings {
     VideoCodecSettings();
@@ -408,16 +409,22 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
    private:
     struct AllocatedDecoder {
-      AllocatedDecoder(webrtc::VideoDecoder* decoder, bool external)
-          : decoder(decoder), external(external) {}
+      AllocatedDecoder(webrtc::VideoDecoder* decoder,
+                       webrtc::VideoCodecType type,
+                       bool external)
+          : decoder(decoder), type(type), external(external) {}
       webrtc::VideoDecoder* decoder;
+      webrtc::VideoCodecType type;
       bool external;
     };
 
     void SetSize(int width, int height);
     void RecreateWebRtcStream();
 
-    void ClearDecoders();
+    AllocatedDecoder CreateOrReuseVideoDecoder(
+        std::vector<AllocatedDecoder>* old_decoder,
+        const VideoCodec& codec);
+    void ClearDecoders(std::vector<AllocatedDecoder>* allocated_decoders);
 
     webrtc::Call* const call_;
 
@@ -445,7 +452,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   static std::vector<VideoCodecSettings> MapCodecs(
       const std::vector<VideoCodec>& codecs);
   std::vector<VideoCodecSettings> FilterSupportedCodecs(
-      const std::vector<VideoCodecSettings>& mapped_codecs);
+      const std::vector<VideoCodecSettings>& mapped_codecs) const;
 
   void FillSenderStats(VideoMediaInfo* info);
   void FillReceiverStats(VideoMediaInfo* info);
