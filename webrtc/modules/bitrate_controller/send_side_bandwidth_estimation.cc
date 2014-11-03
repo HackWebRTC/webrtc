@@ -13,6 +13,7 @@
 #include <cmath>
 
 #include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/interface/metrics.h"
 
 namespace webrtc {
 namespace {
@@ -20,6 +21,7 @@ enum { kBweIncreaseIntervalMs = 1000 };
 enum { kBweDecreaseIntervalMs = 300 };
 enum { kLimitNumPackets = 20 };
 enum { kAvgPacketSizeBytes = 1000 };
+enum { kStartPhaseMs = 2000 };
 
 // Calculate the rate that TCP-Friendly Rate Control (TFRC) would apply.
 // The formula in RFC 3448, Section 3.1, is used.
@@ -57,7 +59,9 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation()
       last_round_trip_time_ms_(0),
       bwe_incoming_(0),
       time_last_decrease_ms_(0),
-      first_report_time_ms_(-1) {
+      first_report_time_ms_(-1),
+      initially_lost_packets_(0),
+      uma_updated_(false) {
 }
 
 SendSideBandwidthEstimation::~SendSideBandwidthEstimation() {}
@@ -97,8 +101,6 @@ void SendSideBandwidthEstimation::UpdateReceiverBlock(uint8_t fraction_loss,
                                                       uint32_t rtt,
                                                       int number_of_packets,
                                                       uint32_t now_ms) {
-  if (first_report_time_ms_ == -1)
-    first_report_time_ms_ = now_ms;
   // Update RTT.
   last_round_trip_time_ms_ = rtt;
 
@@ -125,12 +127,28 @@ void SendSideBandwidthEstimation::UpdateReceiverBlock(uint8_t fraction_loss,
   }
   time_last_receiver_block_ms_ = now_ms;
   UpdateEstimate(now_ms);
+
+  if (first_report_time_ms_ == -1) {
+    first_report_time_ms_ = now_ms;
+  } else if (IsInStartPhase(now_ms)) {
+    initially_lost_packets_ += (fraction_loss * number_of_packets) >> 8;
+  } else if (!uma_updated_) {
+    uma_updated_ = true;
+    RTC_HISTOGRAM_COUNTS(
+        "WebRTC.BWE.InitiallyLostPackets", initially_lost_packets_, 0, 100, 50);
+    RTC_HISTOGRAM_COUNTS("WebRTC.BWE.InitialRtt", rtt, 0, 2000, 50);
+    RTC_HISTOGRAM_COUNTS("WebRTC.BWE.InitialBandwidthEstimate",
+                         (bitrate_ + 500) / 1000,
+                         0,
+                         2000,
+                         50);
+  }
 }
 
 void SendSideBandwidthEstimation::UpdateEstimate(uint32_t now_ms) {
   // We trust the REMB during the first 2 seconds if we haven't had any
   // packet loss reported, to allow startup bitrate probing.
-  if (last_fraction_loss_ == 0 && now_ms - first_report_time_ms_ < 2000 &&
+  if (last_fraction_loss_ == 0 && IsInStartPhase(now_ms) &&
       bwe_incoming_ > bitrate_) {
     bitrate_ = CapBitrateToThresholds(bwe_incoming_);
     min_bitrate_history_.clear();
@@ -185,6 +203,11 @@ void SendSideBandwidthEstimation::UpdateEstimate(uint32_t now_ms) {
     }
   }
   bitrate_ = CapBitrateToThresholds(bitrate_);
+}
+
+bool SendSideBandwidthEstimation::IsInStartPhase(int64_t now_ms) const {
+  return first_report_time_ms_ == -1 ||
+         now_ms - first_report_time_ms_ < kStartPhaseMs;
 }
 
 void SendSideBandwidthEstimation::UpdateMinHistory(uint32_t now_ms) {
