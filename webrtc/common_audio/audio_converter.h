@@ -40,6 +40,10 @@ class AudioConverter {
                float* const* dest);
 
  private:
+  const int src_channels_;
+  const int src_frames_;
+  const int dst_channels_;
+  const int dst_frames_;
   scoped_ptr<ChannelBuffer<float>> downmix_buffer_;
   ScopedVector<PushSincResampler> resamplers_;
 

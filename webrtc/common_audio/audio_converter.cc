@@ -43,10 +43,13 @@ void UpmixFromMono(const float* src,
 }  // namespace
 
 AudioConverter::AudioConverter(int src_channels, int src_frames,
-                               int dst_channels, int dst_frames) {
+                               int dst_channels, int dst_frames)
+    : src_channels_(src_channels),
+      src_frames_(src_frames),
+      dst_channels_(dst_channels),
+      dst_frames_(dst_frames) {
   CHECK(dst_channels == src_channels || dst_channels == 1 || src_channels == 1);
-  const int resample_channels = src_channels < dst_channels ? src_channels :
-                                                              dst_channels;
+  const int resample_channels = std::min(src_channels, dst_channels);
 
   // Prepare buffers as needed for intermediate stages.
   if (dst_channels < src_channels)
@@ -66,8 +69,11 @@ void AudioConverter::Convert(const float* const* src,
                              int dst_channels,
                              int dst_frames,
                              float* const* dst) {
-  DCHECK(dst_channels == src_channels || dst_channels == 1 ||
-         src_channels == 1);
+  DCHECK_EQ(src_channels_, src_channels);
+  DCHECK_EQ(src_frames_, src_frames);
+  DCHECK_EQ(dst_channels_, dst_channels);
+  DCHECK_EQ(dst_frames_, dst_frames);;
+
   if (src_channels == dst_channels && src_frames == dst_frames) {
     // Shortcut copy.
     if (src != dst) {
