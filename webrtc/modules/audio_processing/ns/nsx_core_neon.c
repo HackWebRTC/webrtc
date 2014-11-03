@@ -582,75 +582,64 @@ void WebRtcNsx_SynthesisUpdateNeon(NsxInst_t* inst,
 void WebRtcNsx_AnalysisUpdateNeon(NsxInst_t* inst,
                                   int16_t* out,
                                   int16_t* new_speech) {
-
-  int16_t* ptr_ana = &inst->analysisBuffer[inst->blockLen10ms];
-  int16_t* ptr_out = &inst->analysisBuffer[0];
+  assert(inst->blockLen10ms % 16 == 0);
+  assert(inst->anaLen % 16 == 0);
 
   // For lower band update analysis buffer.
   // WEBRTC_SPL_MEMCPY_W16(inst->analysisBuffer,
   //                      inst->analysisBuffer + inst->blockLen10ms,
   //                      inst->anaLen - inst->blockLen10ms);
-  for (; ptr_out < &inst->analysisBuffer[inst->anaLen - inst->blockLen10ms];) {
-    // Loop unrolled once, so both pointers are incremented by 8 twice.
-    __asm__ __volatile__(
-      "vld1.16 {d20, d21}, [%[ptr_ana]]!\n\t"
-      "vst1.16 {d20, d21}, [%[ptr_out]]!\n\t"
-      "vld1.16 {d22, d23}, [%[ptr_ana]]!\n\t"
-      "vst1.16 {d22, d23}, [%[ptr_out]]!\n\t"
-      :[ptr_ana]"+r"(ptr_ana),
-       [ptr_out]"+r"(ptr_out)
-      :
-      :"d20", "d21", "d22", "d23"
-    );
+  int16_t* p_start_src = inst->analysisBuffer + inst->blockLen10ms;
+  int16_t* p_end_src = inst->analysisBuffer + inst->anaLen;
+  int16_t* p_start_dst = inst->analysisBuffer;
+  while (p_start_src < p_end_src) {
+    int16x8_t frame = vld1q_s16(p_start_src);
+    vst1q_s16(p_start_dst, frame);
+
+    p_start_src += 8;
+    p_start_dst += 8;
   }
 
   // WEBRTC_SPL_MEMCPY_W16(inst->analysisBuffer
   //    + inst->anaLen - inst->blockLen10ms, new_speech, inst->blockLen10ms);
-  for (ptr_ana = new_speech; ptr_out < &inst->analysisBuffer[inst->anaLen];) {
-    // Loop unrolled once, so both pointers are incremented by 8 twice.
-    __asm__ __volatile__(
-      "vld1.16 {d20, d21}, [%[ptr_ana]]!\n\t"
-      "vst1.16 {d20, d21}, [%[ptr_out]]!\n\t"
-      "vld1.16 {d22, d23}, [%[ptr_ana]]!\n\t"
-      "vst1.16 {d22, d23}, [%[ptr_out]]!\n\t"
-      :[ptr_ana]"+r"(ptr_ana),
-       [ptr_out]"+r"(ptr_out)
-      :
-      :"d20", "d21", "d22", "d23"
-    );
+  p_start_src = new_speech;
+  p_end_src = new_speech + inst->blockLen10ms;
+  p_start_dst = inst->analysisBuffer + inst->anaLen - inst->blockLen10ms;
+  while (p_start_src < p_end_src) {
+    int16x8_t frame = vld1q_s16(p_start_src);
+    vst1q_s16(p_start_dst, frame);
+
+    p_start_src += 8;
+    p_start_dst += 8;
   }
 
-  // Window data before FFT
-  const int16_t* ptr_window = &inst->window[0];
-  ptr_out = &out[0];
-  ptr_ana = &inst->analysisBuffer[0];
-  for (; ptr_out < &out[inst->anaLen];) {
+  // Window data before FFT.
+  int16_t* p_start_window = (int16_t*) inst->window;
+  int16_t* p_start_buffer = inst->analysisBuffer;
+  int16_t* p_start_out = out;
+  const int16_t* p_end_out = out + inst->anaLen;
 
-    // Loop unrolled once, so all pointers are incremented by 4 twice.
-    __asm__ __volatile__(
-      "vld1.16 d20, [%[ptr_ana]]!\n\t"
-      "vld1.16 d21, [%[ptr_window]]!\n\t"
-      // out[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(
-      //           inst->window[i], inst->analysisBuffer[i], 14); // Q0
-      "vmull.s16 q10, d20, d21\n\t"
-      "vrshrn.i32 d20, q10, #14\n\t"
-      "vst1.16 d20, [%[ptr_out]]!\n\t"
+  // Load the first element to reduce pipeline bubble.
+  int16x8_t window = vld1q_s16(p_start_window);
+  int16x8_t buffer = vld1q_s16(p_start_buffer);
+  p_start_window += 8;
+  p_start_buffer += 8;
 
-      "vld1.16 d22, [%[ptr_ana]]!\n\t"
-      "vld1.16 d23, [%[ptr_window]]!\n\t"
-      // out[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(
-      //           inst->window[i], inst->analysisBuffer[i], 14); // Q0
-      "vmull.s16 q11, d22, d23\n\t"
-      "vrshrn.i32 d22, q11, #14\n\t"
-      "vst1.16 d22, [%[ptr_out]]!\n\t"
+  while (p_start_out < p_end_out) {
+    // Unroll loop.
+    int32x4_t tmp32_low = vmull_s16(vget_low_s16(window), vget_low_s16(buffer));
+    int32x4_t tmp32_high = vmull_s16(vget_high_s16(window),
+                                     vget_high_s16(buffer));
+    window = vld1q_s16(p_start_window);
+    buffer = vld1q_s16(p_start_buffer);
 
-      // Specify constraints.
-      :[ptr_ana]"+r"(ptr_ana),
-       [ptr_window]"+r"(ptr_window),
-       [ptr_out]"+r"(ptr_out)
-      :
-      :"d20", "d21", "d22", "d23", "q10", "q11"
-    );
+    int16x4_t result_low = vrshrn_n_s32(tmp32_low, 14);
+    int16x4_t result_high = vrshrn_n_s32(tmp32_high, 14);
+    vst1q_s16(p_start_out, vcombine_s16(result_low, result_high));
+
+    p_start_buffer += 8;
+    p_start_window += 8;
+    p_start_out += 8;
   }
 }
 
