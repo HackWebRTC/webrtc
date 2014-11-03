@@ -3893,6 +3893,12 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
     // This value is fixed during the capturing session.
     //
     UINT32 bufferLength = 0;
+    if (_ptrClientIn == NULL)
+    {
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+        "input state has been modified before capture loop starts.");
+      return 1;
+    }
     hr = _ptrClientIn->GetBufferSize(&bufferLength);
     EXIT_ON_ERROR(hr);
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "[CAPT] size of buffer       : %u", bufferLength);
@@ -4113,7 +4119,10 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
 
     // ---------------------------- THREAD LOOP ---------------------------- <<
 
-    hr = _ptrClientIn->Stop();
+    if (_ptrClientIn)
+    {
+        hr = _ptrClientIn->Stop();
+    }
 
 Exit:
     if (FAILED(hr))
