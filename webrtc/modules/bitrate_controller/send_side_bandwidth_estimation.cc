@@ -22,6 +22,7 @@ enum { kBweDecreaseIntervalMs = 300 };
 enum { kLimitNumPackets = 20 };
 enum { kAvgPacketSizeBytes = 1000 };
 enum { kStartPhaseMs = 2000 };
+enum { kBweConverganceTimeMs = 20000 };
 
 // Calculate the rate that TCP-Friendly Rate Control (TFRC) would apply.
 // The formula in RFC 3448, Section 3.1, is used.
@@ -61,7 +62,8 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation()
       time_last_decrease_ms_(0),
       first_report_time_ms_(-1),
       initially_lost_packets_(0),
-      uma_updated_(false) {
+      bitrate_at_2_seconds_kbps_(0),
+      uma_update_state_(kNoUpdate) {
 }
 
 SendSideBandwidthEstimation::~SendSideBandwidthEstimation() {}
@@ -130,18 +132,35 @@ void SendSideBandwidthEstimation::UpdateReceiverBlock(uint8_t fraction_loss,
 
   if (first_report_time_ms_ == -1) {
     first_report_time_ms_ = now_ms;
-  } else if (IsInStartPhase(now_ms)) {
-    initially_lost_packets_ += (fraction_loss * number_of_packets) >> 8;
-  } else if (!uma_updated_) {
-    uma_updated_ = true;
+  } else {
+    UpdateUmaStats(now_ms, rtt, (fraction_loss * number_of_packets) >> 8);
+  }
+}
+
+void SendSideBandwidthEstimation::UpdateUmaStats(int64_t now_ms,
+                                                 int rtt,
+                                                 int lost_packets) {
+  if (IsInStartPhase(now_ms)) {
+    initially_lost_packets_ += lost_packets;
+  } else if (uma_update_state_ == kNoUpdate) {
+    uma_update_state_ = kFirstDone;
+    bitrate_at_2_seconds_kbps_ = (bitrate_ + 500) / 1000;
     RTC_HISTOGRAM_COUNTS(
         "WebRTC.BWE.InitiallyLostPackets", initially_lost_packets_, 0, 100, 50);
     RTC_HISTOGRAM_COUNTS("WebRTC.BWE.InitialRtt", rtt, 0, 2000, 50);
     RTC_HISTOGRAM_COUNTS("WebRTC.BWE.InitialBandwidthEstimate",
-                         (bitrate_ + 500) / 1000,
+                         bitrate_at_2_seconds_kbps_,
                          0,
                          2000,
                          50);
+  } else if (uma_update_state_ == kFirstDone &&
+             now_ms - first_report_time_ms_ >= kBweConverganceTimeMs) {
+    uma_update_state_ = kDone;
+    int bitrate_diff_kbps = std::max(
+        bitrate_at_2_seconds_kbps_ - static_cast<int>((bitrate_ + 500) / 1000),
+        0);
+    RTC_HISTOGRAM_COUNTS(
+        "WebRTC.BWE.InitialVsConvergedDiff", bitrate_diff_kbps, 0, 2000, 50);
   }
 }
 

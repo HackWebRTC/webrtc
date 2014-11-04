@@ -43,7 +43,11 @@ class SendSideBandwidthEstimation {
   void SetMinBitrate(uint32_t min_bitrate);
 
  private:
+  enum UmaState { kNoUpdate, kFirstDone, kDone };
+
   bool IsInStartPhase(int64_t now_ms) const;
+
+  void UpdateUmaStats(int64_t now_ms, int rtt, int lost_packets);
 
   // Returns the input bitrate capped to the thresholds defined by the max,
   // min and incoming bandwidth.
@@ -72,7 +76,8 @@ class SendSideBandwidthEstimation {
   uint32_t time_last_decrease_ms_;
   int64_t first_report_time_ms_;
   int initially_lost_packets_;
-  bool uma_updated_;
+  int bitrate_at_2_seconds_kbps_;
+  UmaState uma_update_state_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
