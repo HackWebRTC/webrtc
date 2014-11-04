@@ -67,19 +67,19 @@ Operations DecisionLogicNormal::GetDecisionSpecialized(
     return kNormal;
   }
 
+  const uint32_t five_seconds_samples = 5 * 8000 * fs_mult_;
   // Check if the required packet is available.
   if (target_timestamp == available_timestamp) {
     return ExpectedPacketAvailable(prev_mode, play_dtmf);
-  } else if (IsNewerTimestamp(available_timestamp, target_timestamp)) {
+  } else if (!PacketBuffer::IsObsoleteTimestamp(
+                 available_timestamp, target_timestamp, five_seconds_samples)) {
     return FuturePacketAvailable(sync_buffer, expand, decoder_frame_length,
                                  prev_mode, target_timestamp,
                                  available_timestamp, play_dtmf);
   } else {
     // This implies that available_timestamp < target_timestamp, which can
-    // happen when a new stream or codec is received. Do Expand instead, and
-    // wait for a newer packet to arrive, or for the buffer to flush (resulting
-    // in a master reset).
-    return kExpand;
+    // happen when a new stream or codec is received. Signal for a reset.
+    return kUndefined;
   }
 }
 

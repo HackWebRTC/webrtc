@@ -32,9 +32,11 @@ using ::testing::Return;
 using ::testing::ReturnNull;
 using ::testing::_;
 using ::testing::SetArgPointee;
+using ::testing::SetArrayArgument;
 using ::testing::InSequence;
 using ::testing::Invoke;
 using ::testing::WithArg;
+using ::testing::Pointee;
 
 namespace webrtc {
 
@@ -492,6 +494,97 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
   // up with what was already played out.
   EXPECT_EQ(kPayloadLengthSamples - output[samples_per_channel - 1],
             static_cast<int>(sync_buffer->FutureLength()));
+}
+
+TEST_F(NetEqImplTest, ReorderedPacket) {
+  UseNoMocks();
+  CreateInstance();
+
+  const uint8_t kPayloadType = 17;   // Just an arbitrary number.
+  const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
+  const int kSampleRateHz = 8000;
+  const int kPayloadLengthSamples = 10 * kSampleRateHz / 1000;  // 10 ms.
+  const size_t kPayloadLengthBytes = kPayloadLengthSamples;
+  uint8_t payload[kPayloadLengthBytes] = {0};
+  WebRtcRTPHeader rtp_header;
+  rtp_header.header.payloadType = kPayloadType;
+  rtp_header.header.sequenceNumber = 0x1234;
+  rtp_header.header.timestamp = 0x12345678;
+  rtp_header.header.ssrc = 0x87654321;
+
+  // Create a mock decoder object.
+  MockAudioDecoder mock_decoder;
+  EXPECT_CALL(mock_decoder, Init()).WillRepeatedly(Return(0));
+  EXPECT_CALL(mock_decoder, IncomingPacket(_, kPayloadLengthBytes, _, _, _))
+      .WillRepeatedly(Return(0));
+  int16_t dummy_output[kPayloadLengthSamples] = {0};
+  // The below expectation will make the mock decoder write
+  // |kPayloadLengthSamples| zeros to the output array, and mark it as speech.
+  EXPECT_CALL(mock_decoder, Decode(Pointee(0), kPayloadLengthBytes, _, _))
+      .WillOnce(DoAll(SetArrayArgument<2>(dummy_output,
+                                          dummy_output + kPayloadLengthSamples),
+                      SetArgPointee<3>(AudioDecoder::kSpeech),
+                      Return(kPayloadLengthSamples)));
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->RegisterExternalDecoder(
+                &mock_decoder, kDecoderPCM16B, kPayloadType));
+
+  // Insert one packet.
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->InsertPacket(
+                rtp_header, payload, kPayloadLengthBytes, kReceiveTime));
+
+  // Pull audio once.
+  const int kMaxOutputSize = 10 * kSampleRateHz / 1000;
+  int16_t output[kMaxOutputSize];
+  int samples_per_channel;
+  int num_channels;
+  NetEqOutputType type;
+  EXPECT_EQ(
+      NetEq::kOK,
+      neteq_->GetAudio(
+          kMaxOutputSize, output, &samples_per_channel, &num_channels, &type));
+  ASSERT_EQ(kMaxOutputSize, samples_per_channel);
+  EXPECT_EQ(1, num_channels);
+  EXPECT_EQ(kOutputNormal, type);
+
+  // Insert two more packets. The first one is out of order, and is already too
+  // old, the second one is the expected next packet.
+  rtp_header.header.sequenceNumber -= 1;
+  rtp_header.header.timestamp -= kPayloadLengthSamples;
+  payload[0] = 1;
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->InsertPacket(
+                rtp_header, payload, kPayloadLengthBytes, kReceiveTime));
+  rtp_header.header.sequenceNumber += 2;
+  rtp_header.header.timestamp += 2 * kPayloadLengthSamples;
+  payload[0] = 2;
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->InsertPacket(
+                rtp_header, payload, kPayloadLengthBytes, kReceiveTime));
+
+  // Expect only the second packet to be decoded (the one with "2" as the first
+  // payload byte).
+  EXPECT_CALL(mock_decoder, Decode(Pointee(2), kPayloadLengthBytes, _, _))
+      .WillOnce(DoAll(SetArrayArgument<2>(dummy_output,
+                                          dummy_output + kPayloadLengthSamples),
+                      SetArgPointee<3>(AudioDecoder::kSpeech),
+                      Return(kPayloadLengthSamples)));
+
+  // Pull audio once.
+  EXPECT_EQ(
+      NetEq::kOK,
+      neteq_->GetAudio(
+          kMaxOutputSize, output, &samples_per_channel, &num_channels, &type));
+  ASSERT_EQ(kMaxOutputSize, samples_per_channel);
+  EXPECT_EQ(1, num_channels);
+  EXPECT_EQ(kOutputNormal, type);
+
+  // Now check the packet buffer, and make sure it is empty, since the
+  // out-of-order packet should have been discarded.
+  EXPECT_TRUE(packet_buffer_->Empty());
+
+  EXPECT_CALL(mock_decoder, Die());
 }
 
 }  // namespace webrtc

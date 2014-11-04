@@ -216,12 +216,12 @@ int PacketBuffer::DiscardNextPacket() {
   return kOK;
 }
 
-int PacketBuffer::DiscardOldPackets(uint32_t timestamp_limit) {
-  while (!Empty() &&
-      timestamp_limit != buffer_.front()->header.timestamp &&
-      static_cast<uint32_t>(timestamp_limit
-                            - buffer_.front()->header.timestamp) <
-                            0xFFFFFFFF / 2) {
+int PacketBuffer::DiscardOldPackets(uint32_t timestamp_limit,
+                                    uint32_t horizon_samples) {
+  while (!Empty() && timestamp_limit != buffer_.front()->header.timestamp &&
+         IsObsoleteTimestamp(buffer_.front()->header.timestamp,
+                             timestamp_limit,
+                             horizon_samples)) {
     if (DiscardNextPacket() != kOK) {
       assert(false);  // Must be ok by design.
     }

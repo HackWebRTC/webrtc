@@ -44,7 +44,9 @@ class MockPacketBuffer : public PacketBuffer {
       Packet*(int* discard_count));
   MOCK_METHOD0(DiscardNextPacket,
       int());
-  MOCK_METHOD1(DiscardOldPackets,
+  MOCK_METHOD2(DiscardOldPackets,
+      int(uint32_t timestamp_limit, uint32_t horizon_samples));
+  MOCK_METHOD1(DiscardAllOldPackets,
       int(uint32_t timestamp_limit));
   MOCK_CONST_METHOD0(NumPacketsInBuffer,
       int());

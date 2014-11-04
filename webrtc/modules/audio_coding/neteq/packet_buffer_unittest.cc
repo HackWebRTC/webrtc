@@ -391,7 +391,7 @@ TEST(PacketBuffer, Failures) {
   EXPECT_EQ(NULL, buffer->NextRtpHeader());
   EXPECT_EQ(NULL, buffer->GetNextPacket(NULL));
   EXPECT_EQ(PacketBuffer::kBufferEmpty, buffer->DiscardNextPacket());
-  EXPECT_EQ(0, buffer->DiscardOldPackets(0));  // 0 packets discarded.
+  EXPECT_EQ(0, buffer->DiscardAllOldPackets(0));  // 0 packets discarded.
 
   // Insert one packet to make the buffer non-empty.
   packet = gen.NextPacket(payload_len);
@@ -513,4 +513,61 @@ TEST(PacketBuffer, DeleteAllPackets) {
   EXPECT_FALSE(PacketBuffer::DeleteFirstPacket(&list));
 }
 
+namespace {
+void TestIsObsoleteTimestamp(uint32_t limit_timestamp) {
+  // Check with zero horizon, which implies that the horizon is at 2^31, i.e.,
+  // half the timestamp range.
+  static const uint32_t kZeroHorizon = 0;
+  static const uint32_t k2Pow31Minus1 = 0x7FFFFFFF;
+  // Timestamp on the limit is not old.
+  EXPECT_FALSE(PacketBuffer::IsObsoleteTimestamp(
+      limit_timestamp, limit_timestamp, kZeroHorizon));
+  // 1 sample behind is old.
+  EXPECT_TRUE(PacketBuffer::IsObsoleteTimestamp(
+      limit_timestamp - 1, limit_timestamp, kZeroHorizon));
+  // 2^31 - 1 samples behind is old.
+  EXPECT_TRUE(PacketBuffer::IsObsoleteTimestamp(
+      limit_timestamp - k2Pow31Minus1, limit_timestamp, kZeroHorizon));
+  // 1 sample ahead is not old.
+  EXPECT_FALSE(PacketBuffer::IsObsoleteTimestamp(
+      limit_timestamp + 1, limit_timestamp, kZeroHorizon));
+  // 2^31 samples ahead is not old.
+  EXPECT_FALSE(PacketBuffer::IsObsoleteTimestamp(
+      limit_timestamp + (1 << 31), limit_timestamp, kZeroHorizon));
+
+  // Fixed horizon at 10 samples.
+  static const uint32_t kHorizon = 10;
+  // Timestamp on the limit is not old.
+  EXPECT_FALSE(PacketBuffer::IsObsoleteTimestamp(
+      limit_timestamp, limit_timestamp, kHorizon));
+  // 1 sample behind is old.
+  EXPECT_TRUE(PacketBuffer::IsObsoleteTimestamp(
+      limit_timestamp - 1, limit_timestamp, kHorizon));
+  // 9 samples behind is old.
+  EXPECT_TRUE(PacketBuffer::IsObsoleteTimestamp(
+      limit_timestamp - 9, limit_timestamp, kHorizon));
+  // 10 samples behind is not old.
+  EXPECT_FALSE(PacketBuffer::IsObsoleteTimestamp(
+      limit_timestamp - 10, limit_timestamp, kHorizon));
+  // 2^31 - 1 samples behind is not old.
+  EXPECT_FALSE(PacketBuffer::IsObsoleteTimestamp(
+      limit_timestamp - k2Pow31Minus1, limit_timestamp, kHorizon));
+  // 1 sample ahead is not old.
+  EXPECT_FALSE(PacketBuffer::IsObsoleteTimestamp(
+      limit_timestamp + 1, limit_timestamp, kHorizon));
+  // 2^31 samples ahead is not old.
+  EXPECT_FALSE(PacketBuffer::IsObsoleteTimestamp(
+      limit_timestamp + (1 << 31), limit_timestamp, kHorizon));
+}
+}  // namespace
+
+// Test the IsObsoleteTimestamp method with different limit timestamps.
+TEST(PacketBuffer, IsObsoleteTimestamp) {
+  TestIsObsoleteTimestamp(0);
+  TestIsObsoleteTimestamp(1);
+  TestIsObsoleteTimestamp(0xFFFFFFFF);  // -1 in uint32_t.
+  TestIsObsoleteTimestamp(0x80000000);  // 2^31.
+  TestIsObsoleteTimestamp(0x80000001);  // 2^31 + 1.
+  TestIsObsoleteTimestamp(0x7FFFFFFF);  // 2^31 - 1.
+}
 }  // namespace webrtc

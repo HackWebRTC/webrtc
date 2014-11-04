@@ -308,6 +308,8 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderTest {
       case kExpandPhase: {
         if (output_type == kOutputPLCtoCNG) {
           test_state_ = kFadedExpandPhase;
+        } else if (output_type == kOutputNormal) {
+          test_state_ = kRecovered;
         }
         break;
       }
@@ -337,9 +339,14 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderTest {
   }
 
   int NumExpectedDecodeCalls(int num_loops) const OVERRIDE {
-    // Some packets won't be decoded because of the buffer being flushed after
-    // the timestamp jump.
-    return num_loops - (config_.max_packets_in_buffer + 1);
+    // Some packets at the end of the stream won't be decoded. When the jump in
+    // timestamp happens, NetEq will do Expand during one GetAudio call. In the
+    // next call it will decode the packet after the jump, but the net result is
+    // that the delay increased by 1 packet. In another call, a Pre-emptive
+    // Expand operation is performed, leading to delay increase by 1 packet. In
+    // total, the test will end with a 2-packet delay, which results in the 2
+    // last packets not being decoded.
+    return num_loops - 2;
   }
 
   TestStates test_state_;
