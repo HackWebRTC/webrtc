@@ -222,7 +222,6 @@ VideoReceiveStream::~VideoReceiveStream() {
 
   video_engine_base_->SetVoiceEngine(NULL);
   image_process_->Release();
-  video_engine_base_->Release();
   external_codec_->Release();
   codec_->DeregisterDecoderObserver(channel_);
   rtp_rtcp_->DeregisterReceiveChannelRtpStatisticsCallback(channel_,
@@ -233,6 +232,8 @@ VideoReceiveStream::~VideoReceiveStream() {
   network_->Release();
   render_->Release();
   rtp_rtcp_->Release();
+  video_engine_base_->DeleteChannel(channel_);
+  video_engine_base_->Release();
 }
 
 void VideoReceiveStream::Start() {
