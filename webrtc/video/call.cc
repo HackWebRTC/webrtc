@@ -58,6 +58,8 @@ VideoDecoder* VideoDecoder::Create(VideoDecoder::DecoderType codec_type) {
   switch (codec_type) {
     case kVp8:
       return VP8Decoder::Create();
+    case kVp9:
+      return VP9Decoder::Create();
   }
   assert(false);
   return NULL;

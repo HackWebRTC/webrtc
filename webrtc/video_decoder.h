@@ -40,6 +40,7 @@ class VideoDecoder {
  public:
   enum DecoderType {
     kVp8,
+    kVp9
   };
 
   static VideoDecoder* Create(DecoderType codec_type);

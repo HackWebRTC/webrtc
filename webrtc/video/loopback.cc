@@ -142,6 +142,8 @@ void Loopback() {
   scoped_ptr<VideoEncoder> encoder;
   if (flags::Codec() == "VP8") {
     encoder.reset(VideoEncoder::Create(VideoEncoder::kVp8));
+  } else if (flags::Codec() == "VP9") {
+    encoder.reset(VideoEncoder::Create(VideoEncoder::kVp9));
   } else {
     // Codec not supported.
     assert(false && "Codec not supported!");
