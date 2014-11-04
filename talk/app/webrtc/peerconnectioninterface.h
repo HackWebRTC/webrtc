@@ -252,17 +252,18 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   virtual rtc::scoped_refptr<StreamCollectionInterface>
       remote_streams() = 0;
 
-  // Deprecated:
-  // TODO(perkj): Remove once its not used by Chrome.
-  virtual bool AddStream(MediaStreamInterface* stream,
-                           const MediaConstraintsInterface* constraints) {
-    return AddStream(stream);
-  }
-
   // Add a new MediaStream to be sent on this PeerConnection.
   // Note that a SessionDescription negotiation is needed before the
   // remote peer can receive the stream.
-  virtual bool AddStream(MediaStreamInterface* stream) = 0;
+  // TODO(perkj): Make pure virtual once Chrome mocks have implemented.
+  virtual bool AddStream(MediaStreamInterface* stream) { return false;}
+
+  // Deprecated:
+  // TODO(perkj): Remove once its not used by Chrome.
+  virtual bool AddStream(MediaStreamInterface* stream,
+                         const MediaConstraintsInterface* constraints) {
+    return false;
+  }
 
   // Remove a MediaStream from this PeerConnection.
   // Note that a SessionDescription negotiation is need before the
