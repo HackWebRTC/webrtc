@@ -50,12 +50,17 @@ RTPSender::RTPSender(const int32_t id,
                      FrameCountObserver* frame_count_observer,
                      SendSideDelayObserver* send_side_delay_observer)
     : clock_(clock),
+      // TODO(holmer): Remove this conversion when we remove the use of
+      // TickTime.
+      clock_delta_ms_(clock_->TimeInMilliseconds() -
+                      TickTime::MillisecondTimestamp()),
       bitrate_sent_(clock, this),
       id_(id),
       audio_configured_(audio),
       audio_(NULL),
       video_(NULL),
       paced_sender_(paced_sender),
+      last_capture_time_ms_sent_(0),
       send_critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       transport_(transport),
       sending_media_(true),                      // Default to sending media.
@@ -622,15 +627,10 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
     }
     // Convert from TickTime to Clock since capture_time_ms is based on
     // TickTime.
-    // TODO(holmer): Remove this conversion when we remove the use of TickTime.
-    int64_t clock_delta_ms = clock_->TimeInMilliseconds() -
-        TickTime::MillisecondTimestamp();
-    if (!paced_sender_->SendPacket(PacedSender::kHighPriority,
-                                   header.ssrc,
-                                   header.sequenceNumber,
-                                   capture_time_ms + clock_delta_ms,
-                                   length - header.headerLength,
-                                   true)) {
+    int64_t corrected_capture_tims_ms = capture_time_ms + clock_delta_ms_;
+    if (!paced_sender_->SendPacket(
+            PacedSender::kHighPriority, header.ssrc, header.sequenceNumber,
+            corrected_capture_tims_ms, length - header.headerLength, true)) {
       // We can't send the packet right now.
       // We will be called when it is time.
       return length;
@@ -819,6 +819,10 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
   RtpUtility::RtpHeaderParser rtp_parser(buffer, length);
   RTPHeader rtp_header;
   rtp_parser.Parse(rtp_header);
+  if (!is_retransmit && rtp_header.markerBit) {
+    TRACE_EVENT_ASYNC_END0("webrtc_rtp", "PacedSend", capture_time_ms);
+  }
+
   TRACE_EVENT_INSTANT2("webrtc_rtp", "PrepareAndSendPacket",
                        "timestamp", rtp_header.timestamp,
                        "seqnum", rtp_header.sequenceNumber);
@@ -937,12 +941,18 @@ int32_t RTPSender::SendToNetwork(
   }
 
   if (paced_sender_ && storage != kDontStore) {
-    int64_t clock_delta_ms = clock_->TimeInMilliseconds() -
-        TickTime::MillisecondTimestamp();
+    // Correct offset between implementations of millisecond time stamps in
+    // TickTime and Clock.
+    int64_t corrected_time_ms = capture_time_ms + clock_delta_ms_;
     if (!paced_sender_->SendPacket(priority, rtp_header.ssrc,
-                                   rtp_header.sequenceNumber,
-                                   capture_time_ms + clock_delta_ms,
+                                   rtp_header.sequenceNumber, corrected_time_ms,
                                    payload_length, false)) {
+      if (last_capture_time_ms_sent_ == 0 ||
+          corrected_time_ms > last_capture_time_ms_sent_) {
+        last_capture_time_ms_sent_ = corrected_time_ms;
+        TRACE_EVENT_ASYNC_BEGIN1("webrtc_rtp", "PacedSend", corrected_time_ms,
+                                 "capture_time_ms", corrected_time_ms);
+      }
       // We can't send the packet right now.
       // We will be called when it is time.
       return 0;

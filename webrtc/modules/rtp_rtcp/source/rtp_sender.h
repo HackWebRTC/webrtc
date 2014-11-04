@@ -336,6 +336,7 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   bool IsFecPacket(const uint8_t* buffer, const RTPHeader& header) const;
 
   Clock* clock_;
+  int64_t clock_delta_ms_;
   Bitrate bitrate_sent_;
 
   int32_t id_;
@@ -344,6 +345,7 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   RTPSenderVideo *video_;
 
   PacedSender *paced_sender_;
+  int64_t last_capture_time_ms_sent_;
   CriticalSectionWrapper *send_critsect_;
 
   Transport *transport_;

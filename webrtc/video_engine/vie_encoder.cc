@@ -470,7 +470,29 @@ bool ViEEncoder::EncoderPaused() const {
         std::max(static_cast<int>(target_delay_ms_ * kEncoderPausePacerMargin),
                  kMinPacingDelayMs);
   }
+  if (paced_sender_->ExpectedQueueTimeMs() >
+      PacedSender::kDefaultMaxQueueLengthMs) {
+    // Too much data in pacer queue, drop frame.
+    return true;
+  }
   return !network_is_transmitting_;
+}
+
+void ViEEncoder::TraceFrameDropStart() {
+  // Start trace event only on the first frame after encoder is paused.
+  if (!encoder_paused_and_dropped_frame_) {
+    TRACE_EVENT_ASYNC_BEGIN0("webrtc", "EncoderPaused", this);
+  }
+  encoder_paused_and_dropped_frame_ = true;
+  return;
+}
+
+void ViEEncoder::TraceFrameDropEnd() {
+  // End trace event on first frame after encoder resumes, if frame was dropped.
+  if (encoder_paused_and_dropped_frame_) {
+    TRACE_EVENT_ASYNC_END0("webrtc", "EncoderPaused", this);
+  }
+  encoder_paused_and_dropped_frame_ = false;
 }
 
 RtpRtcp* ViEEncoder::SendRtpRtcpModule() {
@@ -489,16 +511,10 @@ void ViEEncoder::DeliverFrame(int id,
     CriticalSectionScoped cs(data_cs_.get());
     time_of_last_incoming_frame_ms_ = TickTime::MillisecondTimestamp();
     if (EncoderPaused()) {
-      if (!encoder_paused_and_dropped_frame_) {
-        TRACE_EVENT_ASYNC_BEGIN0("webrtc", "EncoderPaused", this);
-      }
-      encoder_paused_and_dropped_frame_ = true;
+      TraceFrameDropStart();
       return;
     }
-    if (encoder_paused_and_dropped_frame_) {
-      TRACE_EVENT_ASYNC_END0("webrtc", "EncoderPaused", this);
-    }
-    encoder_paused_and_dropped_frame_ = false;
+    TraceFrameDropEnd();
   }
 
   // Convert render time, in ms, to RTP timestamp.
@@ -702,15 +718,10 @@ void ViEEncoder::SetSenderBufferingMode(int target_delay_ms) {
     // Disable external frame-droppers.
     vcm_.EnableFrameDropper(false);
     vpm_.EnableTemporalDecimation(false);
-    // We don't put any limits on the pacer queue when running in buffered mode
-    // since the encoder will be paused if the queue grow too large.
-    paced_sender_->set_max_queue_length_ms(-1);
   } else {
     // Real-time mode - enable frame droppers.
     vpm_.EnableTemporalDecimation(true);
     vcm_.EnableFrameDropper(true);
-    paced_sender_->set_max_queue_length_ms(
-        PacedSender::kDefaultMaxQueueLengthMs);
   }
 }
 

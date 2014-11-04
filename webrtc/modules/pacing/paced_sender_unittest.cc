@@ -639,34 +639,40 @@ TEST_F(PacedSenderTest, ResendPacket) {
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 }
 
-TEST_F(PacedSenderTest, MaxQueueLength) {
+TEST_F(PacedSenderTest, ExpectedQueueTimeMs) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
-  EXPECT_EQ(0, send_bucket_->QueueInMs());
+  const int32_t kNumPackets = 60;
+  const int32_t kPacketSize = 1200;
+  const int32_t kMaxBitrate = kPaceMultiplier * 30;
+  EXPECT_EQ(0, send_bucket_->ExpectedQueueTimeMs());
 
-  send_bucket_->UpdateBitrate(30, kPaceMultiplier * 30, 0);
-  for (int i = 0; i < 30; ++i) {
-    SendAndExpectPacket(PacedSender::kNormalPriority,
-                        ssrc,
-                        sequence_number++,
-                        clock_.TimeInMilliseconds(),
-                        1200,
-                        false);
+  send_bucket_->UpdateBitrate(30, kMaxBitrate, 0);
+  for (int i = 0; i < kNumPackets; ++i) {
+    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
+                        clock_.TimeInMilliseconds(), kPacketSize, false);
   }
 
-  clock_.AdvanceTimeMilliseconds(2001);
-  SendAndExpectPacket(PacedSender::kNormalPriority,
-                      ssrc,
-                      sequence_number++,
-                      clock_.TimeInMilliseconds(),
-                      1200,
-                      false);
-  EXPECT_EQ(2001, send_bucket_->QueueInMs());
-  send_bucket_->Process();
-  EXPECT_EQ(0, send_bucket_->QueueInMs());
-  clock_.AdvanceTimeMilliseconds(31);
+  // Queue in ms = 1000 * (bytes in queue) / (kbit per second * 1000 / 8)
+  int32_t queue_in_ms = kNumPackets * kPacketSize * 8 / kMaxBitrate;
+  EXPECT_EQ(queue_in_ms, send_bucket_->ExpectedQueueTimeMs());
 
-  send_bucket_->Process();
+  int64_t time_start = clock_.TimeInMilliseconds();
+  while (send_bucket_->QueueSizePackets() > 0) {
+    int time_until_process = send_bucket_->TimeUntilNextProcess();
+    if (time_until_process <= 0) {
+      send_bucket_->Process();
+    } else {
+      clock_.AdvanceTimeMilliseconds(time_until_process);
+    }
+  }
+  int64_t duration = clock_.TimeInMilliseconds() - time_start;
+
+  EXPECT_EQ(0, send_bucket_->ExpectedQueueTimeMs());
+
+  // Allow for aliasing, duration should be in [expected(n - 1), expected(n)].
+  EXPECT_LE(duration, queue_in_ms);
+  EXPECT_GE(duration, queue_in_ms - (kPacketSize * 8 / kMaxBitrate));
 }
 
 TEST_F(PacedSenderTest, QueueTimeGrowsOverTime) {
@@ -738,5 +744,79 @@ TEST_F(PacedSenderTest, ProbingWithInitialFrame) {
     }
   }
 }
+
+TEST_F(PacedSenderTest, PriorityInversion) {
+  uint32_t ssrc = 12346;
+  uint16_t sequence_number = 1234;
+  const int32_t kPacketSize = 1200;
+
+  EXPECT_FALSE(send_bucket_->SendPacket(
+      PacedSender::kHighPriority, ssrc, sequence_number + 3,
+      clock_.TimeInMilliseconds() + 33, kPacketSize, true));
+
+  EXPECT_FALSE(send_bucket_->SendPacket(
+      PacedSender::kHighPriority, ssrc, sequence_number + 2,
+      clock_.TimeInMilliseconds() + 33, kPacketSize, true));
+
+  EXPECT_FALSE(send_bucket_->SendPacket(
+      PacedSender::kHighPriority, ssrc, sequence_number,
+      clock_.TimeInMilliseconds(), kPacketSize, true));
+
+  EXPECT_FALSE(send_bucket_->SendPacket(
+      PacedSender::kHighPriority, ssrc, sequence_number + 1,
+      clock_.TimeInMilliseconds(), kPacketSize, true));
+
+  // Packets from earlier frames should be sent first.
+  {
+    ::testing::InSequence sequence;
+    EXPECT_CALL(callback_, TimeToSendPacket(ssrc, sequence_number,
+                                            clock_.TimeInMilliseconds(), true))
+        .WillOnce(Return(true));
+    EXPECT_CALL(callback_, TimeToSendPacket(ssrc, sequence_number + 1,
+                                            clock_.TimeInMilliseconds(), true))
+        .WillOnce(Return(true));
+    EXPECT_CALL(callback_, TimeToSendPacket(ssrc, sequence_number + 3,
+                                            clock_.TimeInMilliseconds() + 33,
+                                            true)).WillOnce(Return(true));
+    EXPECT_CALL(callback_, TimeToSendPacket(ssrc, sequence_number + 2,
+                                            clock_.TimeInMilliseconds() + 33,
+                                            true)).WillOnce(Return(true));
+
+    while (send_bucket_->QueueSizePackets() > 0) {
+      int time_until_process = send_bucket_->TimeUntilNextProcess();
+      if (time_until_process <= 0) {
+        send_bucket_->Process();
+      } else {
+        clock_.AdvanceTimeMilliseconds(time_until_process);
+      }
+    }
+  }
+}
+
+TEST_F(PacedSenderTest, PaddingOveruse) {
+  uint32_t ssrc = 12346;
+  uint16_t sequence_number = 1234;
+  const int32_t kPacketSize = 1200;
+
+  // Min bitrate 0 => no padding, padding budget will stay at 0.
+  send_bucket_->UpdateBitrate(60, 90, 0);
+  SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
+                      clock_.TimeInMilliseconds(), kPacketSize, false);
+  send_bucket_->Process();
+
+  // Add 30kbit padding. When increasing budget, media budget will increase from
+  // negative (overuse) while padding budget will increase form 0.
+  clock_.AdvanceTimeMilliseconds(5);
+  send_bucket_->UpdateBitrate(60, 90, 30);
+
+  EXPECT_FALSE(send_bucket_->SendPacket(
+      PacedSender::kHighPriority, ssrc, sequence_number++,
+      clock_.TimeInMilliseconds(), kPacketSize, false));
+
+  // Don't send padding if queue is non-empty, even if padding budget > 0.
+  EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
+  send_bucket_->Process();
+}
+
 }  // namespace test
 }  // namespace webrtc

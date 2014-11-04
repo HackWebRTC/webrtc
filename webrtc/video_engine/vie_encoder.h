@@ -192,6 +192,8 @@ class ViEEncoder
   int TimeToSendPadding(int bytes);
  private:
   bool EncoderPaused() const EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
+  void TraceFrameDropStart() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
+  void TraceFrameDropEnd() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
 
   void UpdateHistograms();
 

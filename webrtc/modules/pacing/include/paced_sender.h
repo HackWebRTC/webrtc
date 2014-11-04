@@ -27,7 +27,7 @@ class CriticalSectionWrapper;
 namespace paced_sender {
 class IntervalBudget;
 struct Packet;
-class PacketList;
+class PacketQueue;
 }  // namespace paced_sender
 
 class PacedSender : public Module {
@@ -105,14 +105,14 @@ class PacedSender : public Module {
                           int bytes,
                           bool retransmission);
 
-  // Sets the max length of the pacer queue in milliseconds.
-  // A negative queue size is interpreted as infinite.
-  virtual void set_max_queue_length_ms(int max_queue_length_ms);
-
   // Returns the time since the oldest queued packet was enqueued.
   virtual int QueueInMs() const;
 
   virtual size_t QueueSizePackets() const;
+
+  // Returns the number of milliseconds it will take to send the current
+  // packets in the queue, given the current size and bitrate, ignoring prio.
+  virtual int ExpectedQueueTimeMs() const;
 
   // Returns the number of milliseconds until the module want a worker thread
   // to call Process.
@@ -125,24 +125,13 @@ class PacedSender : public Module {
   virtual bool ProbingExperimentIsEnabled() const;
 
  private:
-  // Return true if next packet in line should be transmitted.
-  // Return packet list that contains the next packet.
-  bool ShouldSendNextPacket(paced_sender::PacketList** packet_list, bool probe)
-      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-
-  // Local helper function to GetNextPacket.
-  paced_sender::Packet GetNextPacketFromList(paced_sender::PacketList* packets)
-      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-
-  bool SendPacketFromList(paced_sender::PacketList* packet_list)
-      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-
   // Updates the number of bytes that can be sent for the next time interval.
   void UpdateBytesPerInterval(uint32_t delta_time_in_ms)
       EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
-  // Updates the buffers with the number of bytes that we sent.
-  void UpdateMediaBytesSent(int num_bytes) EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  bool SendPacket(const paced_sender::Packet& packet)
+      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  void SendPadding(int padding_needed) EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   Clock* const clock_;
   Callback* const callback_;
@@ -150,7 +139,6 @@ class PacedSender : public Module {
   scoped_ptr<CriticalSectionWrapper> critsect_;
   bool enabled_ GUARDED_BY(critsect_);
   bool paused_ GUARDED_BY(critsect_);
-  int max_queue_length_ms_ GUARDED_BY(critsect_);
   // This is the media budget, keeping track of how many bits of media
   // we can pace out during the current interval.
   scoped_ptr<paced_sender::IntervalBudget> media_budget_ GUARDED_BY(critsect_);
@@ -164,17 +152,9 @@ class PacedSender : public Module {
   int bitrate_bps_ GUARDED_BY(critsect_);
 
   int64_t time_last_update_us_ GUARDED_BY(critsect_);
-  // Only accessed via process thread.
-  int64_t time_last_media_send_us_;
-  int64_t capture_time_ms_last_queued_ GUARDED_BY(critsect_);
-  int64_t capture_time_ms_last_sent_ GUARDED_BY(critsect_);
 
-  scoped_ptr<paced_sender::PacketList> high_priority_packets_
-      GUARDED_BY(critsect_);
-  scoped_ptr<paced_sender::PacketList> normal_priority_packets_
-      GUARDED_BY(critsect_);
-  scoped_ptr<paced_sender::PacketList> low_priority_packets_
-      GUARDED_BY(critsect_);
+  scoped_ptr<paced_sender::PacketQueue> packets_ GUARDED_BY(critsect_);
+  uint64_t packet_counter_ GUARDED_BY(critsect_);
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_PACING_INCLUDE_PACED_SENDER_H_
