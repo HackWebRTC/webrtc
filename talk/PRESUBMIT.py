@@ -23,9 +23,6 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# List of files that should not be committed to
-DO_NOT_SUBMIT_FILES = ["talk/media/webrtc/webrtcvideoengine.cc"]
-
 def _LicenseHeader(input_api):
   """Returns the license header regexp."""
   # Accept any year number from start of project to the current year
@@ -79,26 +76,11 @@ def _LicenseHeader(input_api):
   }
   return license_header
 
-def _ProtectedFiles(input_api, output_api):
-  results = []
-  changed_files = []
-  for f in input_api.AffectedFiles():
-    changed_files.append(f.LocalPath())
-  bad_files = list(set(DO_NOT_SUBMIT_FILES) & set(changed_files))
-  if bad_files:
-    error_type = output_api.PresubmitError
-    results.append(error_type(
-        'The following affected files are only allowed to be updated when '
-        'importing libjingle',
-        bad_files))
-  return results
-
 def _CommonChecks(input_api, output_api):
   """Checks common to both upload and commit."""
   results = []
   results.extend(input_api.canned_checks.CheckLicense(
       input_api, output_api, _LicenseHeader(input_api)))
-  results.extend(_ProtectedFiles(input_api, output_api))
   return results
 
 def CheckChangeOnUpload(input_api, output_api):
