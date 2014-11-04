@@ -82,8 +82,7 @@ bool AudioEncoderPcm::Encode(uint32_t timestamp,
 int16_t AudioEncoderPcmA::EncodeCall(const int16_t* audio,
                                      size_t input_len,
                                      uint8_t* encoded) {
-  return WebRtcG711_EncodeA(NULL,
-                            const_cast<int16_t*>(audio),
+  return WebRtcG711_EncodeA(const_cast<int16_t*>(audio),
                             static_cast<int16_t>(input_len),
                             reinterpret_cast<int16_t*>(encoded));
 }
@@ -91,8 +90,7 @@ int16_t AudioEncoderPcmA::EncodeCall(const int16_t* audio,
 int16_t AudioEncoderPcmU::EncodeCall(const int16_t* audio,
                                      size_t input_len,
                                      uint8_t* encoded) {
-  return WebRtcG711_EncodeU(NULL,
-                            const_cast<int16_t*>(audio),
+  return WebRtcG711_EncodeU(const_cast<int16_t*>(audio),
                             static_cast<int16_t>(input_len),
                             reinterpret_cast<int16_t*>(encoded));
 }

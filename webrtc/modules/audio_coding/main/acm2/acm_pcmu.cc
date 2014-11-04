@@ -27,7 +27,7 @@ ACMPCMU::~ACMPCMU() {}
 int16_t ACMPCMU::InternalEncode(uint8_t* bitstream,
                                 int16_t* bitstream_len_byte) {
   *bitstream_len_byte = WebRtcG711_EncodeU(
-      NULL, &in_audio_[in_audio_ix_read_], frame_len_smpl_ * num_channels_,
+      &in_audio_[in_audio_ix_read_], frame_len_smpl_ * num_channels_,
       reinterpret_cast<int16_t*>(bitstream));
 
   // Increment the read index this tell the caller that how far
