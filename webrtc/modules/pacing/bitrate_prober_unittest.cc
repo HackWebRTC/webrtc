@@ -30,17 +30,11 @@ TEST(BitrateProberTest, VerifyStatesAndTimeBetweenProbes) {
   EXPECT_EQ(0, prober.TimeUntilNextProbe(now_ms));
   prober.PacketSent(now_ms, 1000);
 
-  for (int i = 0; i < 4; ++i) {
-    EXPECT_EQ(10, prober.TimeUntilNextProbe(now_ms));
-    now_ms += 5;
-    EXPECT_EQ(5, prober.TimeUntilNextProbe(now_ms));
-    now_ms += 5;
-    EXPECT_EQ(0, prober.TimeUntilNextProbe(now_ms));
-    prober.PacketSent(now_ms, 1000);
-  }
   for (int i = 0; i < 5; ++i) {
-    EXPECT_EQ(6, prober.TimeUntilNextProbe(now_ms));
-    now_ms += 6;
+    EXPECT_EQ(8, prober.TimeUntilNextProbe(now_ms));
+    now_ms += 4;
+    EXPECT_EQ(4, prober.TimeUntilNextProbe(now_ms));
+    now_ms += 4;
     EXPECT_EQ(0, prober.TimeUntilNextProbe(now_ms));
     prober.PacketSent(now_ms, 1000);
   }

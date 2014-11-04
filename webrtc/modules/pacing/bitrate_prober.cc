@@ -55,16 +55,18 @@ void BitrateProber::MaybeInitializeProbe(int bitrate_bps) {
     return;
   probe_bitrates_.clear();
   // Max number of packets used for probing.
-  const int kMaxProbeLength = 15;
-  const int kMaxNumProbes = 3;
-  const int kPacketsPerProbe = kMaxProbeLength / kMaxNumProbes;
-  const float kProbeBitrateMultipliers[kMaxNumProbes] = {2.5, 4, 6};
+  const int kMaxNumProbes = 2;
+  const int kPacketsPerProbe = 5;
+  const float kProbeBitrateMultipliers[kMaxNumProbes] = {3, 6};
   int bitrates_bps[kMaxNumProbes];
   std::stringstream bitrate_log;
   bitrate_log << "Start probing for bandwidth, bitrates:";
   for (int i = 0; i < kMaxNumProbes; ++i) {
     bitrates_bps[i] = kProbeBitrateMultipliers[i] * bitrate_bps;
     bitrate_log << " " << bitrates_bps[i];
+    // We need one extra to get 5 deltas for the first probe.
+    if (i == 0)
+      probe_bitrates_.push_back(bitrates_bps[i]);
     for (int j = 0; j < kPacketsPerProbe; ++j)
       probe_bitrates_.push_back(bitrates_bps[i]);
   }

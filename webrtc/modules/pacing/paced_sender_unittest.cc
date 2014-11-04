@@ -711,13 +711,14 @@ class ProbingPacedSender : public PacedSender {
 };
 
 TEST_F(PacedSenderTest, ProbingWithInitialFrame) {
-  const int kNumPackets = 15;
+  const int kNumPackets = 11;
+  const int kNumDeltas = kNumPackets - 1;
   const int kPacketSize = 1200;
   const int kInitialBitrateKbps = 300;
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
-  const int expected_deltas[kNumPackets - 1] = {
-      12, 12, 12, 12, 8, 8, 8, 8, 8, 5, 5, 5, 5, 5};
+  const int expected_deltas[kNumDeltas] = {
+      10, 10, 10, 10, 10, 5, 5, 5, 5, 5};
   std::list<int> expected_deltas_list(expected_deltas,
                                       expected_deltas + kNumPackets - 1);
   PacedSenderProbing callback(expected_deltas_list, &clock_);
