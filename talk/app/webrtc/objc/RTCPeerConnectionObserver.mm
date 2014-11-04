@@ -46,10 +46,6 @@ RTCPeerConnectionObserver::RTCPeerConnectionObserver(
 RTCPeerConnectionObserver::~RTCPeerConnectionObserver() {
 }
 
-void RTCPeerConnectionObserver::OnError() {
-  [_peerConnection.delegate peerConnectionOnError:_peerConnection];
-}
-
 void RTCPeerConnectionObserver::OnSignalingChange(
     PeerConnectionInterface::SignalingState new_state) {
   RTCSignalingState state =

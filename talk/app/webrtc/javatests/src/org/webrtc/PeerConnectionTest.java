@@ -117,11 +117,6 @@ public class PeerConnectionTest extends TestCase {
       ++expectedErrors;
     }
 
-    @Override
-    public synchronized void onError() {
-      assertTrue(--expectedErrors >= 0);
-    }
-
     public synchronized void expectSetSize() {
       if (RENDER_TO_GUI) {
         // When new frames are delivered to the GUI renderer we don't get
@@ -489,7 +484,7 @@ public class PeerConnectionTest extends TestCase {
     lMS.addTrack(videoTrack);
     lMS.addTrack(factory.createAudioTrack(
         audioTrackId, factory.createAudioSource(new MediaConstraints())));
-    pc.addStream(lMS, new MediaConstraints());
+    pc.addStream(lMS);
     return new WeakReference<MediaStream>(lMS);
   }
 

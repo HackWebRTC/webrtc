@@ -65,8 +65,7 @@ class PeerConnection : public PeerConnectionInterface,
       PeerConnectionObserver* observer);
   virtual rtc::scoped_refptr<StreamCollectionInterface> local_streams();
   virtual rtc::scoped_refptr<StreamCollectionInterface> remote_streams();
-  virtual bool AddStream(MediaStreamInterface* local_stream,
-                         const MediaConstraintsInterface* constraints);
+  virtual bool AddStream(MediaStreamInterface* local_stream);
   virtual void RemoveStream(MediaStreamInterface* local_stream);
 
   virtual rtc::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(

@@ -58,7 +58,6 @@ class Conductor
     MEDIA_CHANNELS_INITIALIZED = 1,
     PEER_CONNECTION_CLOSED,
     SEND_MESSAGE_TO_PEER,
-    PEER_CONNECTION_ERROR,
     NEW_STREAM_ADDED,
     STREAM_REMOVED,
   };
@@ -80,11 +79,11 @@ class Conductor
   //
   // PeerConnectionObserver implementation.
   //
-  virtual void OnError();
   virtual void OnStateChange(
       webrtc::PeerConnectionObserver::StateType state_changed) {}
   virtual void OnAddStream(webrtc::MediaStreamInterface* stream);
   virtual void OnRemoveStream(webrtc::MediaStreamInterface* stream);
+  virtual void OnDataChannel(webrtc::DataChannelInterface* channel) {}
   virtual void OnRenegotiationNeeded() {}
   virtual void OnIceChange() {}
   virtual void OnIceCandidate(const webrtc::IceCandidateInterface* candidate);

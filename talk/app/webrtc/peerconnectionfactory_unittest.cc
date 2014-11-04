@@ -40,6 +40,7 @@
 #include "webrtc/base/thread.h"
 
 using webrtc::FakeVideoTrackRenderer;
+using webrtc::DataChannelInterface;
 using webrtc::MediaStreamInterface;
 using webrtc::PeerConnectionFactoryInterface;
 using webrtc::PeerConnectionInterface;
@@ -83,13 +84,13 @@ static const char kTurnIceServerWithIPv6Address[] =
 
 class NullPeerConnectionObserver : public PeerConnectionObserver {
  public:
-  virtual void OnError() {}
   virtual void OnMessage(const std::string& msg) {}
   virtual void OnSignalingMessage(const std::string& msg) {}
   virtual void OnSignalingChange(
       PeerConnectionInterface::SignalingState new_state) {}
   virtual void OnAddStream(MediaStreamInterface* stream) {}
   virtual void OnRemoveStream(MediaStreamInterface* stream) {}
+  virtual void OnDataChannel(DataChannelInterface* data_channel) {}
   virtual void OnRenegotiationNeeded() {}
   virtual void OnIceConnectionChange(
       PeerConnectionInterface::IceConnectionState new_state) {}

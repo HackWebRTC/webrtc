@@ -151,11 +151,6 @@
 
 #pragma mark - RTCPeerConnectionDelegate methods
 
-- (void)peerConnectionOnError:(RTCPeerConnection*)peerConnection {
-  NSLog(@"RTCPeerConnectionDelegate::onError");
-  NSAssert(--_expectedErrors >= 0, @"Unexpected error");
-}
-
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
     signalingStateChanged:(RTCSignalingState)stateChanged {
   int expectedState = [self popFirstElementAsInt:_expectedSignalingChanges];

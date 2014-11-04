@@ -41,8 +41,6 @@ class RTCPeerConnectionObserver : public PeerConnectionObserver {
   RTCPeerConnectionObserver(RTCPeerConnection* peerConnection);
   virtual ~RTCPeerConnectionObserver();
 
-  virtual void OnError() OVERRIDE;
-
   // Triggered when the SignalingState changed.
   virtual void OnSignalingChange(
       PeerConnectionInterface::SignalingState new_state) OVERRIDE;

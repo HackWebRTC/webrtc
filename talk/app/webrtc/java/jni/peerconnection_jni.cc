@@ -586,13 +586,6 @@ class PCOJava : public PeerConnectionObserver {
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
 
-  virtual void OnError() OVERRIDE {
-    ScopedLocalRefFrame local_ref_frame(jni());
-    jmethodID m = GetMethodID(jni(), *j_observer_class_, "onError", "()V");
-    jni()->CallVoidMethod(*j_observer_global_, m);
-    CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
-  }
-
   virtual void OnSignalingChange(
       PeerConnectionInterface::SignalingState new_state) OVERRIDE {
     ScopedLocalRefFrame local_ref_frame(jni());
@@ -3144,12 +3137,9 @@ JOW(jboolean, PeerConnection_nativeAddIceCandidate)(
 }
 
 JOW(jboolean, PeerConnection_nativeAddLocalStream)(
-    JNIEnv* jni, jobject j_pc, jlong native_stream, jobject j_constraints) {
-  scoped_ptr<ConstraintsWrapper> constraints(
-      new ConstraintsWrapper(jni, j_constraints));
+    JNIEnv* jni, jobject j_pc, jlong native_stream) {
   return ExtractNativePC(jni, j_pc)->AddStream(
-      reinterpret_cast<MediaStreamInterface*>(native_stream),
-      constraints.get());
+      reinterpret_cast<MediaStreamInterface*>(native_stream));
 }
 
 JOW(void, PeerConnection_nativeRemoveLocalStream)(

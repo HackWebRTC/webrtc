@@ -57,7 +57,6 @@ class PeerConnectionTestWrapper
       const webrtc::DataChannelInit& init);
 
   // Implements PeerConnectionObserver.
-  virtual void OnError() {}
   virtual void OnSignalingChange(
      webrtc::PeerConnectionInterface::SignalingState new_state) {}
   virtual void OnStateChange(

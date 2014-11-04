@@ -404,8 +404,7 @@ PeerConnection::remote_streams() {
   return mediastream_signaling_->remote_streams();
 }
 
-bool PeerConnection::AddStream(MediaStreamInterface* local_stream,
-                               const MediaConstraintsInterface* constraints) {
+bool PeerConnection::AddStream(MediaStreamInterface* local_stream) {
   if (IsClosed()) {
     return false;
   }
@@ -413,7 +412,6 @@ bool PeerConnection::AddStream(MediaStreamInterface* local_stream,
                               local_stream))
     return false;
 
-  // TODO(perkj): Implement support for MediaConstraints in AddStream.
   if (!mediastream_signaling_->AddLocalStream(local_stream)) {
     return false;
   }

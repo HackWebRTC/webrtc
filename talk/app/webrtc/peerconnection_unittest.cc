@@ -179,7 +179,7 @@ class PeerConnectionTestClientBase
       stream->AddTrack(CreateLocalVideoTrack(stream_label));
     }
 
-    EXPECT_TRUE(peer_connection_->AddStream(stream, NULL));
+    EXPECT_TRUE(peer_connection_->AddStream(stream));
   }
 
   size_t NumberOfLocalMediaStreams() {
@@ -426,7 +426,6 @@ class PeerConnectionTestClientBase
   }
 
   // PeerConnectionObserver callbacks.
-  virtual void OnError() {}
   virtual void OnMessage(const std::string&) {}
   virtual void OnSignalingMessage(const std::string& /*msg*/) {}
   virtual void OnSignalingChange(

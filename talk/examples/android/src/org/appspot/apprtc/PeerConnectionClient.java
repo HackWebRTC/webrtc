@@ -110,7 +110,7 @@ public class PeerConnectionClient {
     if (videoConstraints != null) {
       videoMediaStream = factory.createLocalMediaStream("ARDAMSVideo");
       videoMediaStream.addTrack(createVideoTrack(useFrontFacingCamera));
-      pc.addStream(videoMediaStream, new MediaConstraints());
+      pc.addStream(videoMediaStream);
     }
 
     if (appRtcParameters.audioConstraints != null) {
@@ -118,7 +118,7 @@ public class PeerConnectionClient {
       lMS.addTrack(factory.createAudioTrack(
           "ARDAMSa0",
           factory.createAudioSource(appRtcParameters.audioConstraints)));
-      pc.addStream(lMS, new MediaConstraints());
+      pc.addStream(lMS);
     }
   }
 
@@ -409,7 +409,7 @@ public class PeerConnectionClient {
     useFrontFacingCamera = !useFrontFacingCamera;
     VideoTrack newTrack = createVideoTrack(useFrontFacingCamera);
     videoMediaStream.addTrack(newTrack);
-    pc.addStream(videoMediaStream, new MediaConstraints());
+    pc.addStream(videoMediaStream);
 
     SessionDescription remoteDesc = pc.getRemoteDescription();
     if (localSdp == null || remoteDesc == null) {
@@ -438,11 +438,6 @@ public class PeerConnectionClient {
           events.onIceCandidate(candidate);
         }
       });
-    }
-
-    @Override
-    public void onError() {
-      reportError("PeerConnection error!");
     }
 
     @Override

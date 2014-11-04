@@ -151,10 +151,8 @@ class RTCStatsObserver : public StatsObserver {
   return self.peerConnection->AddIceCandidate(iceCandidate.get());
 }
 
-- (BOOL)addStream:(RTCMediaStream*)stream
-      constraints:(RTCMediaConstraints*)constraints {
-  BOOL ret = self.peerConnection->AddStream(stream.mediaStream,
-                                            constraints.constraints);
+- (BOOL)addStream:(RTCMediaStream*)stream {
+  BOOL ret = self.peerConnection->AddStream(stream.mediaStream);
   if (!ret) {
     return NO;
   }

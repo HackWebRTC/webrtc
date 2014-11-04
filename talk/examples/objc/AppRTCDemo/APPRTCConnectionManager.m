@@ -170,7 +170,7 @@
 #endif
 
   [lms addAudioTrack:[self.peerConnectionFactory audioTrackWithID:@"ARDAMSa0"]];
-  [self.peerConnection addStream:lms constraints:constraints];
+  [self.peerConnection addStream:lms];
   [self.logger logMessage:@"onICEServers - added local stream."];
 }
 
@@ -242,16 +242,6 @@
 }
 
 #pragma mark - RTCPeerConnectionDelegate
-
-- (void)peerConnectionOnError:(RTCPeerConnection*)peerConnection {
-  dispatch_async(dispatch_get_main_queue(), ^{
-    NSString* message = @"PeerConnection error";
-    NSLog(@"%@", message);
-    NSAssert(NO, @"PeerConnection failed.");
-    [self.delegate connectionManager:self
-                 didErrorWithMessage:message];
-  });
-}
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
     signalingStateChanged:(RTCSignalingState)stateChanged {

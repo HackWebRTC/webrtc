@@ -253,7 +253,7 @@ void PeerConnectionTestWrapper::GetAndAddUserMedia(
     bool video, const webrtc::FakeConstraints& video_constraints) {
   rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
       GetUserMedia(audio, audio_constraints, video, video_constraints);
-  EXPECT_TRUE(peer_connection_->AddStream(stream, NULL));
+  EXPECT_TRUE(peer_connection_->AddStream(stream));
 }
 
 rtc::scoped_refptr<webrtc::MediaStreamInterface>

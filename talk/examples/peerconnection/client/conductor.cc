@@ -137,11 +137,6 @@ void Conductor::EnsureStreamingUI() {
 // PeerConnectionObserver implementation.
 //
 
-void Conductor::OnError() {
-  LOG(LS_ERROR) << __FUNCTION__;
-  main_wnd_->QueueUIThreadCallback(PEER_CONNECTION_ERROR, NULL);
-}
-
 // Called when a remote stream is added
 void Conductor::OnAddStream(webrtc::MediaStreamInterface* stream) {
   LOG(INFO) << __FUNCTION__ << " " << stream->label();
@@ -373,7 +368,7 @@ void Conductor::AddStreams() {
 
   stream->AddTrack(audio_track);
   stream->AddTrack(video_track);
-  if (!peer_connection_->AddStream(stream, NULL)) {
+  if (!peer_connection_->AddStream(stream)) {
     LOG(LS_ERROR) << "Adding stream to PeerConnection failed";
   }
   typedef std::pair<std::string,
@@ -439,10 +434,6 @@ void Conductor::UIThreadCallback(int msg_id, void* data) {
 
       break;
     }
-
-    case PEER_CONNECTION_ERROR:
-      main_wnd_->MessageBox("Error", "an unknown error occurred", true);
-      break;
 
     case NEW_STREAM_ADDED: {
       webrtc::MediaStreamInterface* stream =

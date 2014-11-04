@@ -89,8 +89,7 @@
   [localMediaStream addVideoTrack:videoTrack];
   RTCAudioTrack* audioTrack = [factory audioTrackWithID:audioTrackID];
   [localMediaStream addAudioTrack:audioTrack];
-  RTCMediaConstraints* constraints = [[RTCMediaConstraints alloc] init];
-  [pc addStream:localMediaStream constraints:constraints];
+  [pc addStream:localMediaStream];
   return localMediaStream;
 }
 
