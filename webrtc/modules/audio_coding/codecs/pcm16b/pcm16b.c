@@ -61,8 +61,7 @@ int16_t WebRtcPcm16b_Encode(int16_t *speech16b,
 
 
 /* Decoder with int16_t Input instead of char when the int16_t Encoder is used */
-int16_t WebRtcPcm16b_DecodeW16(void *inst,
-                               int16_t *speechIn16b,
+int16_t WebRtcPcm16b_DecodeW16(int16_t *speechIn16b,
                                int16_t length_bytes,
                                int16_t *speechOut16b,
                                int16_t* speechType)
@@ -79,9 +78,6 @@ int16_t WebRtcPcm16b_DecodeW16(void *inst,
 #endif
 
     *speechType=1;
-
-    // Avoid warning.
-    (void)(inst = NULL);
 
     return length_bytes >> 1;
 }

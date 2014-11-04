@@ -73,8 +73,7 @@ int16_t WebRtcPcm16b_Encode(int16_t *speech16b,
  * Returned value    : Samples in speechOut16b
  */
 
-int16_t WebRtcPcm16b_DecodeW16(void *inst,
-                               int16_t *speechIn16b,
+int16_t WebRtcPcm16b_DecodeW16(int16_t *speechIn16b,
                                int16_t length_bytes,
                                int16_t *speechOut16b,
                                int16_t* speechType);

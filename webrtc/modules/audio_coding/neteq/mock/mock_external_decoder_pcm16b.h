@@ -33,7 +33,7 @@ class ExternalPcm16B : public AudioDecoder {
                      int16_t* decoded, SpeechType* speech_type) {
     int16_t temp_type;
     int16_t ret = WebRtcPcm16b_DecodeW16(
-        state_, reinterpret_cast<int16_t*>(const_cast<uint8_t*>(encoded)),
+        reinterpret_cast<int16_t*>(const_cast<uint8_t*>(encoded)),
         static_cast<int16_t>(encoded_len), decoded, &temp_type);
     *speech_type = ConvertSpeechType(temp_type);
     return ret;
