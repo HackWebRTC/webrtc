@@ -262,8 +262,7 @@ static uint16_t ACMISACFixGetDecSampRate(ACM_ISAC_STRUCT* /* inst */) {
 #endif
 
 ACMISAC::ACMISAC(int16_t codec_id)
-    : AudioDecoder(ACMCodecDB::neteq_decoders_[codec_id]),
-      codec_inst_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
+    : codec_inst_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       is_enc_initialized_(false),
       isac_coding_mode_(CHANNEL_INDEPENDENT),
       enforce_frame_size_(false),

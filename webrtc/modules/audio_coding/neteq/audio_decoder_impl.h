@@ -26,7 +26,7 @@ namespace webrtc {
 
 class AudioDecoderPcmU : public AudioDecoder {
  public:
-  AudioDecoderPcmU() : AudioDecoder(kDecoderPCMu) {}
+  AudioDecoderPcmU() {}
   virtual int Decode(const uint8_t* encoded, size_t encoded_len,
                      int16_t* decoded, SpeechType* speech_type);
   virtual int Init() { return 0; }
@@ -38,7 +38,7 @@ class AudioDecoderPcmU : public AudioDecoder {
 
 class AudioDecoderPcmA : public AudioDecoder {
  public:
-  AudioDecoderPcmA() : AudioDecoder(kDecoderPCMa) {}
+  AudioDecoderPcmA() {}
   virtual int Decode(const uint8_t* encoded, size_t encoded_len,
                      int16_t* decoded, SpeechType* speech_type);
   virtual int Init() { return 0; }
@@ -75,7 +75,7 @@ class AudioDecoderPcmAMultiCh : public AudioDecoderPcmA {
 // The type is specified in the constructor parameter |type|.
 class AudioDecoderPcm16B : public AudioDecoder {
  public:
-  explicit AudioDecoderPcm16B(enum NetEqDecoder type);
+  AudioDecoderPcm16B();
   virtual int Decode(const uint8_t* encoded, size_t encoded_len,
                      int16_t* decoded, SpeechType* speech_type);
   virtual int Init() { return 0; }
@@ -90,7 +90,7 @@ class AudioDecoderPcm16B : public AudioDecoder {
 // of channels is derived from the type.
 class AudioDecoderPcm16BMultiCh : public AudioDecoderPcm16B {
  public:
-  explicit AudioDecoderPcm16BMultiCh(enum NetEqDecoder type);
+  explicit AudioDecoderPcm16BMultiCh(int num_channels);
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcm16BMultiCh);
@@ -116,7 +116,7 @@ class AudioDecoderIlbc : public AudioDecoder {
 #ifdef WEBRTC_CODEC_ISAC
 class AudioDecoderIsac : public AudioDecoder {
  public:
-  AudioDecoderIsac();
+  explicit AudioDecoderIsac(int decode_sample_rate_hz);
   virtual ~AudioDecoderIsac();
   virtual int Decode(const uint8_t* encoded, size_t encoded_len,
                      int16_t* decoded, SpeechType* speech_type);
@@ -134,22 +134,6 @@ class AudioDecoderIsac : public AudioDecoder {
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderIsac);
-};
-
-class AudioDecoderIsacSwb : public AudioDecoderIsac {
- public:
-  AudioDecoderIsacSwb();
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderIsacSwb);
-};
-
-class AudioDecoderIsacFb : public AudioDecoderIsacSwb {
- public:
-  AudioDecoderIsacFb();
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderIsacFb);
 };
 #endif
 
@@ -215,7 +199,7 @@ class AudioDecoderG722Stereo : public AudioDecoderG722 {
 #ifdef WEBRTC_CODEC_CELT
 class AudioDecoderCelt : public AudioDecoder {
  public:
-  explicit AudioDecoderCelt(enum NetEqDecoder type);
+  explicit AudioDecoderCelt(int num_channels);
   virtual ~AudioDecoderCelt();
 
   virtual int Decode(const uint8_t* encoded, size_t encoded_len,
@@ -232,7 +216,7 @@ class AudioDecoderCelt : public AudioDecoder {
 #ifdef WEBRTC_CODEC_OPUS
 class AudioDecoderOpus : public AudioDecoder {
  public:
-  explicit AudioDecoderOpus(enum NetEqDecoder type);
+  explicit AudioDecoderOpus(int num_channels);
   virtual ~AudioDecoderOpus();
   virtual int Decode(const uint8_t* encoded, size_t encoded_len,
                      int16_t* decoded, SpeechType* speech_type);
@@ -257,7 +241,7 @@ class AudioDecoderOpus : public AudioDecoder {
 // specific CngDecoder class could both inherit from that class.
 class AudioDecoderCng : public AudioDecoder {
  public:
-  explicit AudioDecoderCng(enum NetEqDecoder type);
+  explicit AudioDecoderCng();
   virtual ~AudioDecoderCng();
   virtual int Decode(const uint8_t* encoded, size_t encoded_len,
                      int16_t* decoded, SpeechType* speech_type) { return -1; }

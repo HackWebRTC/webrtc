@@ -63,12 +63,7 @@ class AudioDecoder {
   // Used by PacketDuration below. Save the value -1 for errors.
   enum { kNotImplemented = -2 };
 
-  explicit AudioDecoder(enum NetEqDecoder type)
-    : codec_type_(type),
-      channels_(1),
-      state_(NULL) {
-  }
-
+  AudioDecoder() : channels_(1), state_(NULL) {}
   virtual ~AudioDecoder() {}
 
   // Decodes |encode_len| bytes from |encoded| and writes the result in
@@ -119,8 +114,6 @@ class AudioDecoder {
   // Returns true if the packet has FEC and false otherwise.
   virtual bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const;
 
-  virtual NetEqDecoder codec_type() const;
-
   // Returns the underlying decoder state.
   void* state() { return state_; }
 
@@ -140,7 +133,6 @@ class AudioDecoder {
  protected:
   static SpeechType ConvertSpeechType(int16_t type);
 
-  enum NetEqDecoder codec_type_;
   size_t channels_;
   void* state_;
 

@@ -298,7 +298,7 @@ class AudioDecoderPcm16BTest : public AudioDecoderTest {
     codec_input_rate_hz_ = 8000;
     frame_size_ = 160;
     data_length_ = 10 * frame_size_;
-    decoder_ = new AudioDecoderPcm16B(kDecoderPCM16B);
+    decoder_ = new AudioDecoderPcm16B;
     assert(decoder_);
   }
 
@@ -369,7 +369,7 @@ class AudioDecoderIsacFloatTest : public AudioDecoderTest {
     input_size_ = 160;
     frame_size_ = 480;
     data_length_ = 10 * frame_size_;
-    decoder_ = new AudioDecoderIsac;
+    decoder_ = new AudioDecoderIsac(16000);
     assert(decoder_);
     WebRtcIsac_Create(&encoder_);
     WebRtcIsac_SetEncSampRate(encoder_, 16000);
@@ -407,7 +407,7 @@ class AudioDecoderIsacSwbTest : public AudioDecoderTest {
     input_size_ = 320;
     frame_size_ = 960;
     data_length_ = 10 * frame_size_;
-    decoder_ = new AudioDecoderIsacSwb;
+    decoder_ = new AudioDecoderIsac(32000);
     assert(decoder_);
     WebRtcIsac_Create(&encoder_);
     WebRtcIsac_SetEncSampRate(encoder_, 32000);
@@ -436,19 +436,6 @@ class AudioDecoderIsacSwbTest : public AudioDecoderTest {
 
   ISACStruct* encoder_;
   int input_size_;
-};
-
-// This test is identical to AudioDecoderIsacSwbTest, except that it creates
-// an AudioDecoderIsacFb decoder object.
-class AudioDecoderIsacFbTest : public AudioDecoderIsacSwbTest {
- protected:
-  AudioDecoderIsacFbTest() : AudioDecoderIsacSwbTest() {
-    // Delete the |decoder_| that was created by AudioDecoderIsacSwbTest and
-    // create an AudioDecoderIsacFb object instead.
-    delete decoder_;
-    decoder_ = new AudioDecoderIsacFb;
-    assert(decoder_);
-  }
 };
 
 class AudioDecoderIsacFixTest : public AudioDecoderTest {
@@ -638,7 +625,7 @@ class AudioDecoderOpusTest : public AudioDecoderTest {
     codec_input_rate_hz_ = 48000;
     frame_size_ = 480;
     data_length_ = 10 * frame_size_;
-    decoder_ = new AudioDecoderOpus(kDecoderOpus);
+    decoder_ = new AudioDecoderOpus(1);
     AudioEncoderOpus::Config config;
     config.frame_size_ms = static_cast<int>(frame_size_) / 48;
     audio_encoder_.reset(new AudioEncoderOpus(config));
@@ -650,7 +637,7 @@ class AudioDecoderOpusStereoTest : public AudioDecoderOpusTest {
   AudioDecoderOpusStereoTest() : AudioDecoderOpusTest() {
     channels_ = 2;
     delete decoder_;
-    decoder_ = new AudioDecoderOpus(kDecoderOpus_2ch);
+    decoder_ = new AudioDecoderOpus(2);
     AudioEncoderOpus::Config config;
     config.frame_size_ms = static_cast<int>(frame_size_) / 48;
     config.num_channels = 2;
@@ -711,17 +698,6 @@ TEST_F(AudioDecoderIsacFloatTest, EncodeDecode) {
 }
 
 TEST_F(AudioDecoderIsacSwbTest, EncodeDecode) {
-  int tolerance = 19757;
-  double mse = 8.18e6;
-  int delay = 160;  // Delay from input to output.
-  EXPECT_TRUE(AudioDecoder::CodecSupported(kDecoderISACswb));
-  EncodeDecodeTest(0, tolerance, mse, delay);
-  ReInitTest();
-  EXPECT_TRUE(decoder_->HasDecodePlc());
-  DecodePlcTest();
-}
-
-TEST_F(AudioDecoderIsacFbTest, EncodeDecode) {
   int tolerance = 19757;
   double mse = 8.18e6;
   int delay = 160;  // Delay from input to output.

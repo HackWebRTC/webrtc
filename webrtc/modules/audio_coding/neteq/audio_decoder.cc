@@ -51,8 +51,6 @@ bool AudioDecoder::PacketHasFec(const uint8_t* encoded,
   return false;
 }
 
-NetEqDecoder AudioDecoder::codec_type() const { return codec_type_; }
-
 bool AudioDecoder::CodecSupported(NetEqDecoder codec_type) {
   switch (codec_type) {
     case kDecoderPCMu:
@@ -197,26 +195,24 @@ AudioDecoder* AudioDecoder::CreateAudioDecoder(NetEqDecoder codec_type) {
       return new AudioDecoderIsacFix;
 #elif defined(WEBRTC_CODEC_ISAC)
     case kDecoderISAC:
-      return new AudioDecoderIsac;
-#endif
-#ifdef WEBRTC_CODEC_ISAC
+      return new AudioDecoderIsac(16000);
     case kDecoderISACswb:
-      return new AudioDecoderIsacSwb;
     case kDecoderISACfb:
-      return new AudioDecoderIsacFb;
+      return new AudioDecoderIsac(32000);
 #endif
 #ifdef WEBRTC_CODEC_PCM16
     case kDecoderPCM16B:
     case kDecoderPCM16Bwb:
     case kDecoderPCM16Bswb32kHz:
     case kDecoderPCM16Bswb48kHz:
-      return new AudioDecoderPcm16B(codec_type);
+      return new AudioDecoderPcm16B;
     case kDecoderPCM16B_2ch:
     case kDecoderPCM16Bwb_2ch:
     case kDecoderPCM16Bswb32kHz_2ch:
     case kDecoderPCM16Bswb48kHz_2ch:
+      return new AudioDecoderPcm16BMultiCh(2);
     case kDecoderPCM16B_5ch:
-      return new AudioDecoderPcm16BMultiCh(codec_type);
+      return new AudioDecoderPcm16BMultiCh(5);
 #endif
 #ifdef WEBRTC_CODEC_G722
     case kDecoderG722:
@@ -226,19 +222,21 @@ AudioDecoder* AudioDecoder::CreateAudioDecoder(NetEqDecoder codec_type) {
 #endif
 #ifdef WEBRTC_CODEC_CELT
     case kDecoderCELT_32:
+      return new AudioDecoderCelt(1);
     case kDecoderCELT_32_2ch:
-      return new AudioDecoderCelt(codec_type);
+      return new AudioDecoderCelt(2);
 #endif
 #ifdef WEBRTC_CODEC_OPUS
     case kDecoderOpus:
+      return new AudioDecoderOpus(1);
     case kDecoderOpus_2ch:
-      return new AudioDecoderOpus(codec_type);
+      return new AudioDecoderOpus(2);
 #endif
     case kDecoderCNGnb:
     case kDecoderCNGwb:
     case kDecoderCNGswb32kHz:
     case kDecoderCNGswb48kHz:
-      return new AudioDecoderCng(codec_type);
+      return new AudioDecoderCng;
     case kDecoderRED:
     case kDecoderAVT:
     case kDecoderArbitrary:

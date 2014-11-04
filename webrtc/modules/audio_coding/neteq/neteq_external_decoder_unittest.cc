@@ -47,7 +47,7 @@ class NetEqExternalDecoderTest : public ::testing::Test {
         frame_size_ms_(10),
         frame_size_samples_(frame_size_ms_ * samples_per_ms_),
         output_size_samples_(frame_size_ms_ * samples_per_ms_),
-        external_decoder_(new MockExternalPcm16B(kDecoderPCM16Bswb32kHz)),
+        external_decoder_(new MockExternalPcm16B),
         rtp_generator_(new test::RtpGenerator(samples_per_ms_)),
         payload_size_bytes_(0),
         last_send_time_(0),
@@ -241,7 +241,7 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderTest {
     frame_size_samples_ = frame_size_ms_ * samples_per_ms_;
     output_size_samples_ = frame_size_ms_ * samples_per_ms_;
     EXPECT_CALL(*external_decoder_, Die()).Times(1);
-    external_decoder_.reset(new MockExternalPcm16B(kDecoderPCM16B));
+    external_decoder_.reset(new MockExternalPcm16B);
   }
 
   void SetUp() OVERRIDE {

@@ -422,8 +422,7 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
   // sample, and then increasing by 1 for each sample.
   class CountingSamplesDecoder : public AudioDecoder {
    public:
-    explicit CountingSamplesDecoder(enum NetEqDecoder type)
-        : AudioDecoder(type), next_value_(1) {}
+    CountingSamplesDecoder() : next_value_(1) {}
 
     // Produce as many samples as input bytes (|encoded_len|).
     virtual int Decode(const uint8_t* encoded,
@@ -446,7 +445,7 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
 
    private:
     int16_t next_value_;
-  } decoder_(kDecoderPCM16B);
+  } decoder_;
 
   EXPECT_EQ(NetEq::kOK,
             neteq_->RegisterExternalDecoder(
