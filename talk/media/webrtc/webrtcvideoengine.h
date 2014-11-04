@@ -177,6 +177,10 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   rtc::CpuMonitor* cpu_monitor() { return cpu_monitor_.get(); }
 
  protected:
+  bool initialized() const {
+    return initialized_;
+  }
+
   // When a video processor registers with the engine.
   // SignalMediaFrame will be invoked for every video frame.
   // See videoprocessor.h for param reference.
