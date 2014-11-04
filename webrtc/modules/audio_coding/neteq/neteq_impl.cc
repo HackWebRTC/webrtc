@@ -352,7 +352,7 @@ bool NetEqImpl::GetPlayoutTimestamp(uint32_t* timestamp) {
   return true;
 }
 
-int NetEqImpl::LastError() {
+int NetEqImpl::LastError() const {
   CriticalSectionScoped lock(crit_sect_.get());
   return error_code_;
 }

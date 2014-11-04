@@ -248,7 +248,7 @@ class NetEq {
 
   // Returns the error code for the last occurred error. If no error has
   // occurred, 0 is returned.
-  virtual int LastError() = 0;
+  virtual int LastError() const = 0;
 
   // Returns the error code last returned by a decoder (audio or comfort noise).
   // When LastError() returns kDecoderErrorCode or kComfortNoiseErrorCode, check

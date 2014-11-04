@@ -178,7 +178,7 @@ class NetEqImpl : public webrtc::NetEq {
 
   // Returns the error code for the last occurred error. If no error has
   // occurred, 0 is returned.
-  virtual int LastError() OVERRIDE;
+  virtual int LastError() const OVERRIDE;
 
   // Returns the error code last returned by a decoder (audio or comfort noise).
   // When LastError() returns kDecoderErrorCode or kComfortNoiseErrorCode, check

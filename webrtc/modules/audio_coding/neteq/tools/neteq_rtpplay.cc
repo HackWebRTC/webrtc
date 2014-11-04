@@ -289,8 +289,24 @@ int main(int argc, char* argv[]) {
                               static_cast<int>(payload_len),
                               packet->time_ms() * sample_rate_hz / 1000);
       if (error != NetEq::kOK) {
-        std::cerr << "InsertPacket returned error code " << neteq->LastError()
-                  << std::endl;
+        if (neteq->LastError() == NetEq::kUnknownRtpPayloadType) {
+          std::cerr << "RTP Payload type "
+                    << static_cast<int>(rtp_header.header.payloadType)
+                    << " is unknown." << std::endl;
+          std::cerr << "Use --codec_map to view default mapping." << std::endl;
+          std::cerr << "Use --helpshort for information on how to make custom "
+                       "mappings." << std::endl;
+        } else {
+          std::cerr << "InsertPacket returned error code " << neteq->LastError()
+                    << std::endl;
+          std::cerr << "Header data:" << std::endl;
+          std::cerr << "  PT = "
+                    << static_cast<int>(rtp_header.header.payloadType)
+                    << std::endl;
+          std::cerr << "  SN = " << rtp_header.header.sequenceNumber
+                    << std::endl;
+          std::cerr << "  TS = " << rtp_header.header.timestamp << std::endl;
+        }
       }
 
       // Get next packet from file.
