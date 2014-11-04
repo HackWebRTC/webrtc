@@ -55,6 +55,7 @@
 #ifndef TALK_APP_WEBRTC_PROXY_H_
 #define TALK_APP_WEBRTC_PROXY_H_
 
+#include "webrtc/base/event.h"
 #include "webrtc/base/thread.h"
 
 namespace webrtc {
@@ -92,6 +93,34 @@ class ReturnType<void> {
   void value() {}
 };
 
+namespace internal {
+
+class SynchronousMethodCall
+    : public rtc::MessageData,
+      public rtc::MessageHandler {
+ public:
+  SynchronousMethodCall(rtc::MessageHandler* proxy)
+      : e_(), proxy_(proxy) {}
+  ~SynchronousMethodCall() {}
+
+  void Invoke(rtc::Thread* t) {
+    if (t->IsCurrent()) {
+      proxy_->OnMessage(NULL);
+    } else {
+      e_.reset(new rtc::Event(false, false));
+      t->Post(this, 0);
+      e_->Wait(rtc::kForever);
+    }
+  }
+
+ private:
+  void OnMessage(rtc::Message*) { proxy_->OnMessage(NULL); e_->Set(); }
+  rtc::scoped_ptr<rtc::Event> e_;
+  rtc::MessageHandler* proxy_;
+};
+
+}  // internal
+
 template <typename C, typename R>
 class MethodCall0 : public rtc::Message,
                     public rtc::MessageHandler {
@@ -100,12 +129,12 @@ class MethodCall0 : public rtc::Message,
   MethodCall0(C* c, Method m) : c_(c), m_(m) {}
 
   R Marshal(rtc::Thread* t) {
-    t->Send(this, 0);
+    internal::SynchronousMethodCall(this).Invoke(t);
     return r_.value();
   }
 
  private:
-  void OnMessage(rtc::Message*) {  r_.Invoke(c_, m_);}
+  void OnMessage(rtc::Message*) {  r_.Invoke(c_, m_); }
 
   C* c_;
   Method m_;
@@ -120,7 +149,7 @@ class ConstMethodCall0 : public rtc::Message,
   ConstMethodCall0(C* c, Method m) : c_(c), m_(m) {}
 
   R Marshal(rtc::Thread* t) {
-    t->Send(this, 0);
+    internal::SynchronousMethodCall(this).Invoke(t);
     return r_.value();
   }
 
@@ -140,7 +169,7 @@ class MethodCall1 : public rtc::Message,
   MethodCall1(C* c, Method m, T1 a1) : c_(c), m_(m), a1_(a1) {}
 
   R Marshal(rtc::Thread* t) {
-    t->Send(this, 0);
+    internal::SynchronousMethodCall(this).Invoke(t);
     return r_.value();
   }
 
@@ -161,7 +190,7 @@ class ConstMethodCall1 : public rtc::Message,
   ConstMethodCall1(C* c, Method m, T1 a1) : c_(c), m_(m), a1_(a1) {}
 
   R Marshal(rtc::Thread* t) {
-    t->Send(this, 0);
+    internal::SynchronousMethodCall(this).Invoke(t);
     return r_.value();
   }
 
@@ -182,7 +211,7 @@ class MethodCall2 : public rtc::Message,
   MethodCall2(C* c, Method m, T1 a1, T2 a2) : c_(c), m_(m), a1_(a1), a2_(a2) {}
 
   R Marshal(rtc::Thread* t) {
-    t->Send(this, 0);
+    internal::SynchronousMethodCall(this).Invoke(t);
     return r_.value();
   }
 
@@ -205,7 +234,7 @@ class MethodCall3 : public rtc::Message,
       : c_(c), m_(m), a1_(a1), a2_(a2), a3_(a3) {}
 
   R Marshal(rtc::Thread* t) {
-    t->Send(this, 0);
+    internal::SynchronousMethodCall(this).Invoke(t);
     return r_.value();
   }
 
