@@ -450,7 +450,7 @@ bool AudioDecoderOpus::PacketHasFec(const uint8_t* encoded,
 #endif
 
 AudioDecoderCng::AudioDecoderCng() {
-  DCHECK_EQ(0, WebRtcCng_CreateDec(&dec_state_));
+  CHECK_EQ(0, WebRtcCng_CreateDec(&dec_state_));
 }
 
 AudioDecoderCng::~AudioDecoderCng() {
