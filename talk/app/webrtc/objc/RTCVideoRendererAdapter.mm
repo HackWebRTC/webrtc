@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2014, Google Inc.
+ * Copyright 2013, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,12 +25,51 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import <Foundation/Foundation.h>
+#if !defined(__has_feature) || !__has_feature(objc_arc)
+#error "This file requires ARC support."
+#endif
 
-#import "RTCEAGLVideoView.h"
-#import "RTCVideoRenderer.h"
+#import "RTCVideoRendererAdapter.h"
+#import "RTCI420Frame+Internal.h"
 
-// TODO(tkchin): Move declaration to implementation file. Exposed here in order
-// to support deprecated methods in RTCVideoRenderer.
-@interface RTCEAGLVideoView (Internal) <RTCVideoRendererDelegate>
+namespace webrtc {
+
+class RTCVideoRendererNativeAdapter : public VideoRendererInterface {
+ public:
+  RTCVideoRendererNativeAdapter(RTCVideoRendererAdapter* adapter) {
+    _adapter = adapter;
+  }
+
+  virtual void SetSize(int width, int height) OVERRIDE {
+    [_adapter.videoRenderer setSize:CGSizeMake(width, height)];
+  }
+
+  virtual void RenderFrame(const cricket::VideoFrame* frame) OVERRIDE {
+    RTCI420Frame* i420Frame = [[RTCI420Frame alloc] initWithVideoFrame:frame];
+    [_adapter.videoRenderer renderFrame:i420Frame];
+  }
+
+ private:
+  __weak RTCVideoRendererAdapter* _adapter;
+};
+}
+
+@implementation RTCVideoRendererAdapter {
+  id<RTCVideoRenderer> _videoRenderer;
+  rtc::scoped_ptr<webrtc::RTCVideoRendererNativeAdapter> _adapter;
+}
+
+- (instancetype)initWithVideoRenderer:(id<RTCVideoRenderer>)videoRenderer {
+  NSParameterAssert(videoRenderer);
+  if (self = [super init]) {
+    _videoRenderer = videoRenderer;
+    _adapter.reset(new webrtc::RTCVideoRendererNativeAdapter(self));
+  }
+  return self;
+}
+
+- (webrtc::VideoRendererInterface*)nativeVideoRenderer {
+  return _adapter.get();
+}
+
 @end

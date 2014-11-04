@@ -33,10 +33,10 @@
 
 #import <CoreVideo/CVDisplayLink.h>
 #import <OpenGL/gl3.h>
+#import "RTCI420Frame.h"
 #import "RTCOpenGLVideoRenderer.h"
-#import "RTCVideoRenderer.h"
 
-@interface RTCNSGLVideoView () <RTCVideoRendererDelegate>
+@interface RTCNSGLVideoView ()
 // |i420Frame| is set when we receive a frame from a worker thread and is read
 // from the display link callback so atomicity is required.
 @property(atomic, strong) RTCI420Frame* i420Frame;
@@ -57,15 +57,6 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
 
 @implementation RTCNSGLVideoView {
   CVDisplayLinkRef _displayLink;
-  RTCVideoRenderer* _videoRenderer;
-}
-
-- (instancetype)initWithFrame:(NSRect)frame
-                  pixelFormat:(NSOpenGLPixelFormat*)format {
-  if (self = [super initWithFrame:frame pixelFormat:format]) {
-    _videoRenderer = [[RTCVideoRenderer alloc] initWithDelegate:self];
-  }
-  return self;
 }
 
 - (void)dealloc {
@@ -109,37 +100,16 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
   [super clearGLContext];
 }
 
-- (void)setVideoTrack:(RTCVideoTrack*)videoTrack {
-  if (_videoTrack == videoTrack) {
-    return;
-  }
-  if (_videoTrack) {
-    [_videoTrack removeRenderer:_videoRenderer];
-    CVDisplayLinkStop(_displayLink);
-    // Clear contents.
-    self.i420Frame = nil;
-    [self drawFrame];
-  }
-  _videoTrack = videoTrack;
-  if (_videoTrack) {
-    [_videoTrack addRenderer:_videoRenderer];
-    CVDisplayLinkStart(_displayLink);
-  }
-}
+#pragma mark - RTCVideoRenderer
 
-#pragma mark - RTCVideoRendererDelegate
-
-// These methods are called when the video track has frame information to
-// provide. This occurs on non-main thread.
-- (void)renderer:(RTCVideoRenderer*)renderer
-      didSetSize:(CGSize)size {
+// These methods may be called on non-main thread.
+- (void)setSize:(CGSize)size {
   dispatch_async(dispatch_get_main_queue(), ^{
     [self.delegate videoView:self didChangeVideoSize:size];
   });
 }
 
-- (void)renderer:(RTCVideoRenderer*)renderer
-    didReceiveFrame:(RTCI420Frame*)frame {
+- (void)renderFrame:(RTCI420Frame*)frame {
   self.i420Frame = frame;
 }
 
@@ -174,9 +144,7 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
   CGLPixelFormatObj cglPixelFormat = [[self pixelFormat] CGLPixelFormatObj];
   CVDisplayLinkSetCurrentCGDisplayFromOpenGLContext(
       _displayLink, cglContext, cglPixelFormat);
-  if (_videoTrack) {
-    CVDisplayLinkStart(_displayLink);
-  }
+  CVDisplayLinkStart(_displayLink);
 }
 
 - (void)teardownDisplayLink {

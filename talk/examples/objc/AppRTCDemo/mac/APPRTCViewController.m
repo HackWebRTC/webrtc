@@ -30,6 +30,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import "APPRTCConnectionManager.h"
 #import "RTCNSGLVideoView.h"
+#import "RTCVideoTrack.h"
 
 static NSUInteger const kContentWidth = 1280;
 static NSUInteger const kContentHeight = 720;
@@ -227,6 +228,8 @@ static NSUInteger const kLogViewHeight = 280;
 
 @implementation APPRTCViewController {
   APPRTCConnectionManager* _connectionManager;
+  RTCVideoTrack* _localVideoTrack;
+  RTCVideoTrack* _remoteVideoTrack;
 }
 
 - (instancetype)initWithNibName:(NSString*)nibName
@@ -258,12 +261,13 @@ static NSUInteger const kLogViewHeight = 280;
 
 - (void)connectionManager:(APPRTCConnectionManager*)manager
     didReceiveLocalVideoTrack:(RTCVideoTrack*)localVideoTrack {
-  self.mainView.localVideoView.videoTrack = localVideoTrack;
+  _localVideoTrack = localVideoTrack;
 }
 
 - (void)connectionManager:(APPRTCConnectionManager*)manager
     didReceiveRemoteVideoTrack:(RTCVideoTrack*)remoteVideoTrack {
-  self.mainView.remoteVideoView.videoTrack = remoteVideoTrack;
+  _remoteVideoTrack = remoteVideoTrack;
+  [_remoteVideoTrack addRenderer:self.mainView.remoteVideoView];
 }
 
 - (void)connectionManagerDidReceiveHangup:(APPRTCConnectionManager*)manager {
@@ -305,7 +309,9 @@ static NSUInteger const kLogViewHeight = 280;
 }
 
 - (void)disconnect {
-  self.mainView.remoteVideoView.videoTrack = nil;
+  [_remoteVideoTrack removeRenderer:self.mainView.remoteVideoView];
+  _remoteVideoTrack = nil;
+  [self.mainView.remoteVideoView renderFrame:nil];
   [_connectionManager disconnect];
 }
 

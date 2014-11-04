@@ -29,8 +29,12 @@
 
 #include "talk/app/webrtc/mediastreaminterface.h"
 
-@interface RTCVideoRenderer (Internal)
+@interface RTCVideoRendererAdapter : NSObject
 
-@property(nonatomic, readonly) webrtc::VideoRendererInterface* videoRenderer;
+@property(nonatomic, readonly) id<RTCVideoRenderer> videoRenderer;
+@property(nonatomic, readonly)
+    webrtc::VideoRendererInterface* nativeVideoRenderer;
+
+- (instancetype)initWithVideoRenderer:(id<RTCVideoRenderer>)videoRenderer;
 
 @end

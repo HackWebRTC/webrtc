@@ -204,8 +204,8 @@
             'app/webrtc/objc/RTCStatsReport.mm',
             'app/webrtc/objc/RTCVideoCapturer+Internal.h',
             'app/webrtc/objc/RTCVideoCapturer.mm',
-            'app/webrtc/objc/RTCVideoRenderer+Internal.h',
-            'app/webrtc/objc/RTCVideoRenderer.mm',
+            'app/webrtc/objc/RTCVideoRendererAdapter.h',
+            'app/webrtc/objc/RTCVideoRendererAdapter.mm',
             'app/webrtc/objc/RTCVideoSource+Internal.h',
             'app/webrtc/objc/RTCVideoSource.mm',
             'app/webrtc/objc/RTCVideoTrack+Internal.h',
@@ -259,7 +259,6 @@
           'conditions': [
             ['OS=="ios"', {
               'sources': [
-                'app/webrtc/objc/RTCEAGLVideoView+Internal.h',
                 'app/webrtc/objc/RTCEAGLVideoView.m',
                 'app/webrtc/objc/public/RTCEAGLVideoView.h',
               ],

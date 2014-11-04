@@ -46,6 +46,16 @@
 #error "This file requires ARC support."
 #endif
 
+@interface RTCFakeRenderer : NSObject <RTCVideoRenderer>
+@end
+
+@implementation RTCFakeRenderer
+
+- (void)setSize:(CGSize)size {}
+- (void)renderFrame:(RTCI420Frame*)frame {}
+
+@end
+
 @interface RTCPeerConnectionTest : NSObject
 
 // Returns whether the two sessions are of the same type.
@@ -80,8 +90,7 @@
   RTCMediaStream* localMediaStream = [factory mediaStreamWithLabel:streamLabel];
   RTCVideoTrack* videoTrack =
       [factory videoTrackWithID:videoTrackID source:videoSource];
-  RTCVideoRenderer* videoRenderer =
-      [[RTCVideoRenderer alloc] initWithDelegate:nil];
+  RTCFakeRenderer* videoRenderer = [[RTCFakeRenderer alloc] init];
   [videoTrack addRenderer:videoRenderer];
   [localMediaStream addVideoTrack:videoTrack];
   // Test that removal/re-add works.

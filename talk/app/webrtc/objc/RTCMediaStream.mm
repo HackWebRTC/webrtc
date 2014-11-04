@@ -71,7 +71,7 @@
 }
 
 - (BOOL)addVideoTrack:(RTCVideoTrack*)track {
-  if (self.mediaStream->AddTrack(track.videoTrack)) {
+  if (self.mediaStream->AddTrack(track.nativeVideoTrack)) {
     [_videoTracks addObject:track];
     return YES;
   }
@@ -93,7 +93,8 @@
   NSUInteger index = [_videoTracks indexOfObjectIdenticalTo:track];
   NSAssert(index != NSNotFound,
            @"|removeAudioTrack| called on unexpected RTCVideoTrack");
-  if (index != NSNotFound && self.mediaStream->RemoveTrack(track.videoTrack)) {
+  if (index != NSNotFound &&
+      self.mediaStream->RemoveTrack(track.nativeVideoTrack)) {
     [_videoTracks removeObjectAtIndex:index];
     return YES;
   }
