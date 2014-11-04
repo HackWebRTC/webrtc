@@ -104,7 +104,7 @@ def _CheckNoRtcBaseDeps(input_api, gyp_files, output_api):
         'base_tests.gyp',
         'desktop_capture.gypi',
         'libjingle.gyp',
-        'libjingle_tests.gyp'
+        'libjingle_tests.gyp',
         'sound.gyp',
         'webrtc_test_common.gyp',
         'webrtc_tests.gypi',
