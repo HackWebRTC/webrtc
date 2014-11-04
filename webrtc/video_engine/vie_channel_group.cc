@@ -41,7 +41,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
         engine_id_(engine_id),
         min_bitrate_bps_(config.Get<RemoteBitrateEstimatorMinRate>().min_rate),
-        rate_control_type_(kMimdControl),
+        rate_control_type_(kAimdControl),
         rbe_(RemoteBitrateEstimatorFactory().Create(observer_,
                                                     clock_,
                                                     rate_control_type_,
