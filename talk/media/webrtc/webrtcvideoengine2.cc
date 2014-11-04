@@ -249,8 +249,9 @@ std::vector<webrtc::VideoStream> WebRtcVideoEncoderFactory2::CreateVideoStreams(
     const VideoOptions& options,
     size_t num_streams) {
   if (num_streams != 1) {
-    LOG(LS_ERROR) << "Unsupported number of streams: " << num_streams;
-    return std::vector<webrtc::VideoStream>();
+    LOG(LS_WARNING) << "Unsupported number of streams (" << num_streams
+                    << "), falling back to one.";
+    num_streams = 1;
   }
 
   webrtc::VideoStream stream;
@@ -261,6 +262,12 @@ std::vector<webrtc::VideoStream> WebRtcVideoEncoderFactory2::CreateVideoStreams(
 
   int min_bitrate = kMinVideoBitrate;
   codec.GetParam(kCodecParamMinBitrate, &min_bitrate);
+  // Clamp the min video bitrate, this is set from JavaScript directly and needs
+  // to be sanitized.
+  if (min_bitrate < kMinVideoBitrate) {
+    min_bitrate = kMinVideoBitrate;
+  }
+
   int max_bitrate = kMaxVideoBitrate;
   codec.GetParam(kCodecParamMaxBitrate, &max_bitrate);
   stream.min_bitrate_bps = min_bitrate * 1000;

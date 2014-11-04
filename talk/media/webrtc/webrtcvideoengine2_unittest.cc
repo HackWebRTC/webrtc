@@ -1634,13 +1634,13 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsChangesExistingStreams) {
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithMinMaxBitrate) {
-  SetSendCodecsShouldWorkForBitrates("10", "20");
+  SetSendCodecsShouldWorkForBitrates("100", "200");
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSendCodecsRejectsMaxLessThanMinBitrate) {
   std::vector<VideoCodec> video_codecs = engine_.codecs();
-  video_codecs[0].params[kCodecParamMinBitrate] = "30";
-  video_codecs[0].params[kCodecParamMaxBitrate] = "20";
+  video_codecs[0].params[kCodecParamMinBitrate] = "300";
+  video_codecs[0].params[kCodecParamMaxBitrate] = "200";
   EXPECT_FALSE(channel_->SetSendCodecs(video_codecs));
 }
 
