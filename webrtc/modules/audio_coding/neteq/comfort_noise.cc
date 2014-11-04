@@ -36,7 +36,7 @@ int ComfortNoise::UpdateParameters(Packet* packet) {
     return kUnknownPayloadType;
   }
   decoder_database_->SetActiveCngDecoder(packet->header.payloadType);
-  CNG_dec_inst* cng_inst = static_cast<CNG_dec_inst*>(cng_decoder->state());
+  CNG_dec_inst* cng_inst = cng_decoder->CngDecoderInstance();
   int16_t ret = WebRtcCng_UpdateSid(cng_inst,
                                     packet->payload,
                                     packet->payload_length);
@@ -72,7 +72,7 @@ int ComfortNoise::Generate(size_t requested_length,
   if (!cng_decoder) {
     return kUnknownPayloadType;
   }
-  CNG_dec_inst* cng_inst = static_cast<CNG_dec_inst*>(cng_decoder->state());
+  CNG_dec_inst* cng_inst = cng_decoder->CngDecoderInstance();
   // The expression &(*output)[0][0] is a pointer to the first element in
   // the first channel.
   if (WebRtcCng_Generate(cng_inst, &(*output)[0][0],

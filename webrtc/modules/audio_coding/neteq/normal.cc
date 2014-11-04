@@ -147,9 +147,9 @@ int Normal::Process(const int16_t* input,
     AudioDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
 
     if (cng_decoder) {
-      CNG_dec_inst* cng_inst = static_cast<CNG_dec_inst*>(cng_decoder->state());
       // Generate long enough for 32kHz.
-      if (WebRtcCng_Generate(cng_inst, cng_output, kCngLength, 0) < 0) {
+      if (WebRtcCng_Generate(cng_decoder->CngDecoderInstance(), cng_output,
+                             kCngLength, 0) < 0) {
         // Error returned; set return vector to all zeros.
         memset(cng_output, 0, sizeof(cng_output));
       }
