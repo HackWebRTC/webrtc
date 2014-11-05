@@ -330,6 +330,7 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   virtual void OnMessage(rtc::Message* msg) OVERRIDE;
 
  protected:
+  void Terminate();
   int GetLastEngineError() { return engine()->GetLastEngineError(); }
 
   // webrtc::Transport:

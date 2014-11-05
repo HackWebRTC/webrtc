@@ -1661,10 +1661,12 @@ bool WebRtcVideoMediaChannel::Init() {
 }
 
 WebRtcVideoMediaChannel::~WebRtcVideoMediaChannel() {
-  const bool send = false;
-  SetSend(send);
-  const bool render = false;
-  SetRender(render);
+  Terminate();
+}
+
+void WebRtcVideoMediaChannel::Terminate() {
+  SetSend(false);
+  SetRender(false);
 
   while (!send_channels_.empty()) {
     if (!DeleteSendChannel(send_channels_.begin()->first)) {
