@@ -66,7 +66,7 @@ TEST_F(FileUtilsTest, ProjectRootPath) {
 }
 
 // Similar to the above test, but for the output dir
-TEST_F(FileUtilsTest, OutputPathFromUnchangedWorkingDir) {
+TEST_F(FileUtilsTest, DISABLED_ON_ANDROID(OutputPathFromUnchangedWorkingDir)) {
   std::string path = webrtc::test::OutputPath();
   std::string expected_end = "out";
   expected_end = kPathDelimiter + expected_end + kPathDelimiter;
@@ -80,10 +80,11 @@ TEST_F(FileUtilsTest, DISABLED_ON_ANDROID(OutputPathFromRootWorkingDir)) {
   ASSERT_EQ("./", webrtc::test::OutputPath());
 }
 
-TEST_F(FileUtilsTest, DISABLED_ON_ANDROID(TempFilename)) {
+TEST_F(FileUtilsTest, TempFilename) {
   std::string temp_filename = webrtc::test::TempFilename(
       webrtc::test::OutputPath(), "TempFilenameTest");
-  ASSERT_TRUE(webrtc::test::FileExists(temp_filename));
+  ASSERT_TRUE(webrtc::test::FileExists(temp_filename))
+      << "Couldn't find file: " << temp_filename;
   remove(temp_filename.c_str());
 }
 

@@ -67,10 +67,7 @@ source_set("test_support") {
   ]
 
   if (is_android) {
-    sources += [ "testsupport/android/root_path_android_chromium.cc" ]
     deps += [ "//base:base" ]
-  } else {
-    sources += [ "testsupport/android/root_path_android.cc" ]
   }
 
   configs += [ "..:common_config" ]

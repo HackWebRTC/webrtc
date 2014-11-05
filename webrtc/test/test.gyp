@@ -98,8 +98,6 @@
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
-        'testsupport/android/root_path_android.cc',
-        'testsupport/android/root_path_android_chromium.cc',
         'testsupport/fileutils.cc',
         'testsupport/fileutils.h',
         'testsupport/frame_reader.cc',
@@ -116,20 +114,6 @@
         'testsupport/perf_test.h',
         'testsupport/trace_to_stderr.cc',
         'testsupport/trace_to_stderr.h',
-      ],
-      'conditions': [
-        ['OS=="android"', {
-          'dependencies': [
-            '<(DEPTH)/base/base.gyp:base',
-          ],
-          'sources!': [
-            'testsupport/android/root_path_android.cc',
-          ],
-        }, {
-          'sources!': [
-            'testsupport/android/root_path_android_chromium.cc',
-          ],
-        }],
       ],
     },
     {
