@@ -1987,14 +1987,21 @@ bool WebRtcVideoMediaChannel::AddSendStream(const StreamParams& sp) {
     SetReceiverReportSsrc(sp.first_ssrc());
   }
 
-  send_channel->set_stream_params(sp);
-
-  // Reset send codec after stream parameters changed.
   if (send_codec_) {
-    if (!SetSendCodec(send_channel, *send_codec_)) {
+    send_channel->SetAdaptFormat(
+        VideoFormatFromVieCodec(*send_codec_),
+        WebRtcVideoChannelSendInfo::kAdaptFormatTypeCodec);
+
+    VideoSendParams send_params;
+    send_params.codec = *send_codec_;
+    send_params.stream = sp;
+    if (!SetSendParams(send_channel, send_params)) {
       return false;
     }
-    LogSendCodecChange("SetSendStreamFormat()");
+    LogSendCodecChange("AddStream()");
+  } else {
+    // Save the stream params for later, when we have a codec.
+    send_channel->set_stream_params(sp);
   }
 
   if (sending_) {
@@ -2990,39 +2997,40 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   VideoOptions original = options_;
   options_.SetAll(options);
 
-  // Set CPU options for all send channels.
+  // Set CPU options and codec options for all send channels.
   for (SendChannelMap::iterator iter = send_channels_.begin();
        iter != send_channels_.end(); ++iter) {
     WebRtcVideoChannelSendInfo* send_channel = iter->second;
     send_channel->ApplyCpuOptions(options_);
+
+    if (send_codec_) {
+      VideoSendParams send_params = send_channel->send_params();
+
+      bool conference_mode_turned_off = (
+          original.conference_mode.IsSet() &&
+          options.conference_mode.IsSet() &&
+          original.conference_mode.GetWithDefaultIfUnset(false) &&
+          !options.conference_mode.GetWithDefaultIfUnset(false));
+      if (conference_mode_turned_off) {
+        // This is a special case for turning conference mode off.
+        // Max bitrate should go back to the default maximum value instead
+        // of the current maximum.
+        send_params.codec.maxBitrate = kAutoBandwidth;
+      }
+
+      // TODO(pthatcher): Remove this.  We don't need 4 ways to set bitrates.
+      int new_start_bitrate;
+      if (options.video_start_bitrate.Get(&new_start_bitrate)) {
+        send_params.codec.startBitrate = new_start_bitrate;
+      }
+
+      if (!SetSendParams(send_channel, send_params)) {
+        return false;
+      }
+      LogSendCodecChange("SetOptions()");
+    }
   }
 
-  if (send_codec_) {
-    webrtc::VideoCodec new_codec = *send_codec_;
-
-    bool conference_mode_turned_off = (
-        original.conference_mode.IsSet() &&
-        options.conference_mode.IsSet() &&
-        original.conference_mode.GetWithDefaultIfUnset(false) &&
-        !options.conference_mode.GetWithDefaultIfUnset(false));
-    if (conference_mode_turned_off) {
-      // This is a special case for turning conference mode off.
-      // Max bitrate should go back to the default maximum value instead
-      // of the current maximum.
-      new_codec.maxBitrate = kAutoBandwidth;
-    }
-
-    // TODO(pthatcher): Remove this.  We don't need 4 ways to set bitrates.
-    int new_start_bitrate;
-    if (options.video_start_bitrate.Get(&new_start_bitrate)) {
-      new_codec.startBitrate = new_start_bitrate;
-    }
-
-    if (!SetSendCodec(new_codec)) {
-      return false;
-    }
-    LogSendCodecChange("SetOptions()");
-  }
 
   int buffer_latency;
   if (Changed(options.buffered_mode_latency,
@@ -3676,26 +3684,9 @@ bool WebRtcVideoMediaChannel::SetSendCodec(
       VideoFormatFromVieCodec(codec),
       WebRtcVideoChannelSendInfo::kAdaptFormatTypeCodec);
 
-  MaybeRegisterExternalEncoder(send_channel, codec);
-
   VideoSendParams send_params = send_channel->send_params();
   send_params.codec = codec;
-  if (!SetSendParams(send_channel, send_params)) {
-    return false;
-  }
-
-  // NOTE: SetRtxSendPayloadType must be called after all simulcast SSRCs
-  // are configured. Otherwise ssrc's configured after this point will use
-  // the primary PT for RTX.
-  const int channel_id = send_channel->channel_id();
-  if (send_rtx_type_ != -1 &&
-      engine()->vie()->rtp()->SetRtxSendPayloadType(channel_id,
-                                                    send_rtx_type_) != 0) {
-    LOG_RTCERR2(SetRtxSendPayloadType, channel_id, send_rtx_type_);
-    return false;
-  }
-
-  return true;
+  return SetSendParams(send_channel, send_params);
 }
 
 static std::string ToString(webrtc::VideoCodecComplexity complexity) {
@@ -3872,6 +3863,8 @@ bool WebRtcVideoMediaChannel::SetSendParams(
     const VideoSendParams& send_params) {
   const int channel_id = send_channel->channel_id();
 
+  MaybeRegisterExternalEncoder(send_channel, send_params.codec);
+
   CapturedFrameInfo frame;
   send_channel->last_captured_frame_info().Get(&frame);
 
@@ -3923,10 +3916,18 @@ bool WebRtcVideoMediaChannel::SetSendParams(
   }
   engine()->vie()->rtp()->SetTransmissionSmoothingStatus(channel_id, true);
 
-  if (send_channel->IsActive()) {
-    if (!SetSendSsrcs(channel_id, send_params.stream, codec)) {
-      return false;
-    }
+  if (!SetSendSsrcs(channel_id, send_params.stream, codec)) {
+    return false;
+  }
+
+  // NOTE: SetRtxSendPayloadType must be called after all SSRCs are
+  // configured. Otherwise ssrc's configured after this point will use
+  // the primary PT for RTX.
+  if (send_rtx_type_ != -1 &&
+      engine()->vie()->rtp()->SetRtxSendPayloadType(channel_id,
+                                                    send_rtx_type_) != 0) {
+    LOG_RTCERR2(SetRtxSendPayloadType, channel_id, send_rtx_type_);
+    return false;
   }
 
   send_channel->set_send_params(send_params);
