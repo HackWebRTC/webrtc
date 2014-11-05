@@ -72,7 +72,6 @@ class TraceImpl : public Trace {
   virtual int32_t AddTime(char* trace_message,
                           const TraceLevel level) const = 0;
 
-  virtual int32_t AddBuildInfo(char* trace_message) const = 0;
   virtual int32_t AddDateTimeInfo(char* trace_message) const = 0;
 
   static bool Run(void* obj);

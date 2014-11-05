@@ -10,7 +10,6 @@
 
 #include "webrtc/video_engine/vie_base_impl.h"
 
-#include <sstream>
 #include <string>
 #include <utility>
 
@@ -329,23 +328,8 @@ int ViEBaseImpl::StopReceive(const int video_channel) {
 }
 
 int ViEBaseImpl::GetVersion(char version[1024]) {
-  assert(kViEVersionMaxMessageSize == 1024);
-  if (!version) {
-    shared_data_.SetLastError(kViEBaseInvalidArgument);
-    return -1;
-  }
-
-  // Add WebRTC Version.
-  std::stringstream version_stream;
-  version_stream << "VideoEngine 39" << std::endl;
-
-  // Add build info.
-  version_stream << "Build: " << BUILDINFO << std::endl;
-
-  int version_length = version_stream.tellp();
-  assert(version_length < 1024);
-  memcpy(version, version_stream.str().c_str(), version_length);
-  version[version_length] = '\0';
+  assert(version != NULL);
+  strcpy(version, "VideoEngine 39");
   return 0;
 }
 

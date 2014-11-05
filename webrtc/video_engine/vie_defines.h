@@ -35,8 +35,6 @@ enum { kViEMinKeyRequestIntervalMs = 300 };
 
 // ViEBase
 enum { kViEMaxNumberOfChannels = 64 };
-enum { kViEVersionMaxMessageSize = 1024 };
-enum { kViEMaxModuleVersionSize = 960 };
 
 // ViECapture
 enum { kViEMaxCaptureDevices = 256 };
@@ -100,21 +98,6 @@ inline int ViEModuleId(const int vieId, const int channelId = -1) {
 inline int ChannelId(const int moduleId) {
   return static_cast<int>(moduleId & 0xffff);
 }
-
-//  Build information macros
-#if defined(_DEBUG) || defined(DEBUG)
-#define BUILDMODE "d"
-#elif defined(NDEBUG)
-#define BUILDMODE "r"
-#else
-#define BUILDMODE "?"
-#endif
-
-#define BUILDTIME __TIME__
-#define BUILDDATE __DATE__
-
-// Example: "Oct 10 2002 12:05:30 r".
-#define BUILDINFO BUILDDATE " " BUILDTIME " " BUILDMODE
 
 // Windows specific.
 #if defined(_WIN32)

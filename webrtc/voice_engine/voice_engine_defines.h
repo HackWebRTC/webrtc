@@ -128,26 +128,6 @@ enum { kVoiceEngineMaxRtpExtensionId = 14 };
 }  // namespace webrtc
 
 // ----------------------------------------------------------------------------
-//  Build information macros
-// ----------------------------------------------------------------------------
-
-#if defined(_DEBUG)
-#define BUILDMODE "d"
-#elif defined(DEBUG)
-#define BUILDMODE "d"
-#elif defined(NDEBUG)
-#define BUILDMODE "r"
-#else
-#define BUILDMODE "?"
-#endif
-
-#define BUILDTIME __TIME__
-#define BUILDDATE __DATE__
-
-// Example: "Oct 10 2002 12:05:30 r"
-#define BUILDINFO BUILDDATE " " BUILDTIME " " BUILDMODE
-
-// ----------------------------------------------------------------------------
 //  Macros
 // ----------------------------------------------------------------------------
 

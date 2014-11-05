@@ -553,15 +553,6 @@ void TraceImpl::WriteToFile() {
           trace_file_.Write(message, length);
           row_count_text_++;
         }
-        length = AddBuildInfo(message);
-        if (length != -1) {
-          message[length + 1] = 0;
-          message[length] = '\n';
-          message[length - 1] = '\n';
-          trace_file_.Write(message, length + 1);
-          row_count_text_++;
-          row_count_text_++;
-        }
       }
       uint16_t length = length_[local_queue_active][idx];
       message_queue_[local_queue_active][idx][length] = 0;

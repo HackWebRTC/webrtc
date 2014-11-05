@@ -146,7 +146,6 @@ private:
                         int64_t* elapsed_time_ms,
                         int64_t* ntp_time_ms);
 
-    int32_t AddBuildInfo(char* str) const;
     int32_t AddVoEVersion(char* str) const;
 
     // Initialize channel by setting Engine Information then initializing
