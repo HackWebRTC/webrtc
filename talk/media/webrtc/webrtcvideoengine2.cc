@@ -1202,7 +1202,21 @@ void WebRtcVideoChannel2::FillReceiverStats(VideoMediaInfo* video_media_info) {
 
 void WebRtcVideoChannel2::FillBandwidthEstimationStats(
     VideoMediaInfo* video_media_info) {
-  // TODO(pbos): Implement.
+  BandwidthEstimationInfo bwe_info;
+  webrtc::Call::Stats stats = call_->GetStats();
+  bwe_info.available_send_bandwidth = stats.send_bandwidth_bps;
+  bwe_info.available_recv_bandwidth = stats.recv_bandwidth_bps;
+  bwe_info.bucket_delay = stats.pacer_delay_ms;
+
+  // Get send stream bitrate stats.
+  rtc::CritScope stream_lock(&stream_crit_);
+  for (std::map<uint32, WebRtcVideoSendStream*>::iterator stream =
+           send_streams_.begin();
+       stream != send_streams_.end();
+       ++stream) {
+    stream->second->FillBandwidthEstimationInfo(&bwe_info);
+  }
+  video_media_info->bw_estimations.push_back(bwe_info);
 }
 
 bool WebRtcVideoChannel2::SetCapturer(uint32 ssrc, VideoCapturer* capturer) {
@@ -1842,12 +1856,12 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
   info.framerate_input = stats.input_frame_rate;
   info.framerate_sent = stats.encode_frame_rate;
 
-  for (std::map<uint32_t, webrtc::StreamStats>::iterator it =
+  for (std::map<uint32_t, webrtc::SsrcStats>::iterator it =
            stats.substreams.begin();
        it != stats.substreams.end();
        ++it) {
     // TODO(pbos): Wire up additional stats, such as padding bytes.
-    webrtc::StreamStats stream_stats = it->second;
+    webrtc::SsrcStats stream_stats = it->second;
     info.bytes_sent += stream_stats.rtp_stats.bytes +
                        stream_stats.rtp_stats.header_bytes +
                        stream_stats.rtp_stats.padding_bytes;
@@ -1857,7 +1871,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
 
   if (!stats.substreams.empty()) {
     // TODO(pbos): Report fraction lost per SSRC.
-    webrtc::StreamStats first_stream_stats = stats.substreams.begin()->second;
+    webrtc::SsrcStats first_stream_stats = stats.substreams.begin()->second;
     info.fraction_lost =
         static_cast<float>(first_stream_stats.rtcp_stats.fraction_lost) /
         (1 << 8);
@@ -1882,6 +1896,23 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
   info.rtt_ms = -1;
 
   return info;
+}
+
+void WebRtcVideoChannel2::WebRtcVideoSendStream::FillBandwidthEstimationInfo(
+    BandwidthEstimationInfo* bwe_info) {
+  rtc::CritScope cs(&lock_);
+  if (stream_ == NULL) {
+    return;
+  }
+  webrtc::VideoSendStream::Stats stats = stream_->GetStats();
+  for (std::map<uint32_t, webrtc::SsrcStats>::iterator it =
+           stats.substreams.begin();
+       it != stats.substreams.end();
+       ++it) {
+    bwe_info->transmit_bitrate += it->second.total_bitrate_bps;
+    bwe_info->retransmit_bitrate += it->second.retransmit_bitrate_bps;
+  }
+  bwe_info->actual_enc_bitrate = stats.media_bitrate_bps;
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::OnCpuResolutionRequest(

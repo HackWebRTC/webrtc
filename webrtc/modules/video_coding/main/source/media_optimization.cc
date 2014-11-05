@@ -542,7 +542,7 @@ void MediaOptimization::UpdateSentBitrate(int64_t now_ms) {
       now_ms - encoded_frame_samples_.front().time_complete_ms);
   if (denom >= 1.0f) {
     avg_sent_bit_rate_bps_ =
-        static_cast<uint32_t>(framesize_sum * 8 * 1000 / denom + 0.5f);
+        static_cast<uint32_t>(framesize_sum * 8.0f * 1000.0f / denom + 0.5f);
   } else {
     avg_sent_bit_rate_bps_ = framesize_sum * 8;
   }

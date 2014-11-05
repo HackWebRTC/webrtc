@@ -415,10 +415,12 @@ class ViEChannel
 
   class RegisterableBitrateStatisticsObserver:
     public RegisterableCallback<BitrateStatisticsObserver> {
-    virtual void Notify(const BitrateStatistics& stats, uint32_t ssrc) {
+    virtual void Notify(const BitrateStatistics& total_stats,
+                        const BitrateStatistics& retransmit_stats,
+                        uint32_t ssrc) {
       CriticalSectionScoped cs(critsect_.get());
       if (callback_)
-        callback_->Notify(stats, ssrc);
+        callback_->Notify(total_stats, retransmit_stats, ssrc);
     }
   }
   send_bitrate_observer_;

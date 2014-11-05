@@ -1202,6 +1202,53 @@ TEST_F(EndToEndTest, ReceiveStreamSendsRemb) {
   RunBaseTest(&test);
 }
 
+TEST_F(EndToEndTest, VerifyBandwidthStats) {
+  class RtcpObserver : public test::EndToEndTest, public PacketReceiver {
+   public:
+    RtcpObserver()
+        : EndToEndTest(kDefaultTimeoutMs),
+          sender_call_(NULL),
+          receiver_call_(NULL),
+          has_seen_pacer_delay_(false) {}
+
+    virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
+                                         size_t length) OVERRIDE {
+      Call::Stats sender_stats = sender_call_->GetStats();
+      Call::Stats receiver_stats = receiver_call_->GetStats();
+      if (!has_seen_pacer_delay_)
+        has_seen_pacer_delay_ = sender_stats.pacer_delay_ms > 0;
+      if (sender_stats.send_bandwidth_bps > 0 &&
+          receiver_stats.recv_bandwidth_bps > 0 && has_seen_pacer_delay_)
+        observation_complete_->Set();
+      return receiver_call_->Receiver()->DeliverPacket(packet, length);
+    }
+
+    virtual void OnCallsCreated(Call* sender_call,
+                                Call* receiver_call) OVERRIDE {
+      sender_call_ = sender_call;
+      receiver_call_ = receiver_call;
+    }
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait()) << "Timed out while waiting for "
+                                           "non-zero bandwidth stats.";
+    }
+
+    virtual void SetReceivers(
+        PacketReceiver* send_transport_receiver,
+        PacketReceiver* receive_transport_receiver) OVERRIDE {
+      test::RtpRtcpObserver::SetReceivers(this, receive_transport_receiver);
+    }
+
+   private:
+    Call* sender_call_;
+    Call* receiver_call_;
+    bool has_seen_pacer_delay_;
+  } test;
+
+  RunBaseTest(&test);
+}
+
 void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
   static const int kNumRtcpReportPacketsToObserve = 5;
   class RtcpXrObserver : public test::EndToEndTest {
@@ -1434,7 +1481,7 @@ TEST_F(EndToEndTest, GetStats) {
       // Make sure all fields have been populated.
 
       receive_stats_filled_["IncomingRate"] |=
-          stats.network_frame_rate != 0 || stats.bitrate_bps != 0;
+          stats.network_frame_rate != 0 || stats.total_bitrate_bps != 0;
 
       receive_stats_filled_["FrameCallback"] |= stats.decode_frame_rate != 0;
 
@@ -1465,7 +1512,7 @@ TEST_F(EndToEndTest, GetStats) {
       send_stats_filled_["NumStreams"] |=
           stats.substreams.size() == expected_send_ssrcs_.size();
 
-      for (std::map<uint32_t, StreamStats>::const_iterator it =
+      for (std::map<uint32_t, SsrcStats>::const_iterator it =
                stats.substreams.begin();
            it != stats.substreams.end();
            ++it) {
@@ -1475,7 +1522,7 @@ TEST_F(EndToEndTest, GetStats) {
         send_stats_filled_[CompoundKey("IncomingRate", it->first)] |=
             stats.input_frame_rate != 0;
 
-        const StreamStats& stream_stats = it->second;
+        const SsrcStats& stream_stats = it->second;
 
         send_stats_filled_[CompoundKey("StatisticsUpdated", it->first)] |=
             stream_stats.rtcp_stats.cumulative_lost != 0 ||
@@ -1490,7 +1537,7 @@ TEST_F(EndToEndTest, GetStats) {
 
         send_stats_filled_[CompoundKey("BitrateStatisticsObserver",
                                        it->first)] |=
-            stream_stats.bitrate_bps != 0;
+            stream_stats.total_bitrate_bps != 0;
 
         send_stats_filled_[CompoundKey("FrameCountObserver", it->first)] |=
             stream_stats.delta_frames != 0 || stream_stats.key_frames != 0;

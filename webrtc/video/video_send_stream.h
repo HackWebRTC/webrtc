@@ -74,6 +74,8 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   void SignalNetworkState(Call::NetworkState state);
 
+  int GetPacerQueuingDelayMs() const;
+
  private:
   void ConfigureSsrcs();
   TransportAdapter transport_adapter_;

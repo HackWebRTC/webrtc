@@ -88,6 +88,14 @@ class Call {
     int stream_start_bitrate_bps;
   };
 
+  struct Stats {
+    Stats() : send_bandwidth_bps(0), recv_bandwidth_bps(0), pacer_delay_ms(0) {}
+
+    int send_bandwidth_bps;
+    int recv_bandwidth_bps;
+    int pacer_delay_ms;
+  };
+
   static Call* Create(const Call::Config& config);
 
   static Call* Create(const Call::Config& config,
@@ -109,13 +117,9 @@ class Call {
   // Call instance exists.
   virtual PacketReceiver* Receiver() = 0;
 
-  // Returns the estimated total send bandwidth. Note: this can differ from the
-  // actual encoded bitrate.
-  virtual uint32_t SendBitrateEstimate() = 0;
-
-  // Returns the total estimated receive bandwidth for the call. Note: this can
-  // differ from the actual receive bitrate.
-  virtual uint32_t ReceiveBitrateEstimate() = 0;
+  // Returns the call statistics, such as estimated send and receive bandwidth,
+  // pacing delay, etc.
+  virtual Stats GetStats() const = 0;
 
   virtual void SignalNetworkState(NetworkState state) = 0;
 

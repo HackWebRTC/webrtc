@@ -46,7 +46,9 @@ class SendStatisticsProxy : public RtcpStatisticsCallback,
                                    uint32_t ssrc) OVERRIDE;
 
   // From BitrateStatisticsObserver.
-  virtual void Notify(const BitrateStatistics& stats, uint32_t ssrc) OVERRIDE;
+  virtual void Notify(const BitrateStatistics& total_stats,
+                      const BitrateStatistics& retransmit_stats,
+                      uint32_t ssrc) OVERRIDE;
 
   // From FrameCountObserver.
   virtual void FrameCountUpdated(FrameType frame_type,
@@ -75,7 +77,7 @@ class SendStatisticsProxy : public RtcpStatisticsCallback,
                                     uint32_t ssrc) OVERRIDE;
 
  private:
-  StreamStats* GetStatsEntry(uint32_t ssrc) EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  SsrcStats* GetStatsEntry(uint32_t ssrc) EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   const VideoSendStream::Config config_;
   scoped_ptr<CriticalSectionWrapper> crit_;

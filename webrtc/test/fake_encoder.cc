@@ -51,7 +51,8 @@ int32_t FakeEncoder::Encode(
   assert(config_.maxFramerate > 0);
   int time_since_last_encode_ms = 1000 / config_.maxFramerate;
   int64_t time_now_ms = clock_->TimeInMilliseconds();
-  if (last_encode_time_ms_ > 0) {
+  const bool first_encode = last_encode_time_ms_ == 0;
+  if (!first_encode) {
     // For all frames but the first we can estimate the display time by looking
     // at the display time of the previous frame.
     time_since_last_encode_ms = time_now_ms - last_encode_time_ms_;
@@ -80,6 +81,12 @@ int32_t FakeEncoder::Encode(
     int stream_bits = (bits_available > max_stream_bits) ? max_stream_bits :
         bits_available;
     int stream_bytes = (stream_bits + 7) / 8;
+    if (first_encode) {
+      // The first frame is a key frame and should be larger.
+      // TODO(holmer): The FakeEncoder should store the bits_available between
+      // encodes so that it can compensate for oversized frames.
+      stream_bytes *= 10;
+    }
     if (static_cast<size_t>(stream_bytes) > sizeof(encoded_buffer_))
       stream_bytes = sizeof(encoded_buffer_);
 
@@ -96,7 +103,6 @@ int32_t FakeEncoder::Encode(
     assert(callback_ != NULL);
     if (callback_->Encoded(encoded, &specifics, NULL) != 0)
       return -1;
-
     bits_available -= encoded._length * 8;
   }
   return 0;

@@ -294,12 +294,9 @@ webrtc::PacketReceiver* FakeCall::Receiver() {
   return NULL;
 }
 
-uint32_t FakeCall::SendBitrateEstimate() {
-  return 0;
-}
-
-uint32_t FakeCall::ReceiveBitrateEstimate() {
-  return 0;
+webrtc::Call::Stats FakeCall::GetStats() const {
+  webrtc::Call::Stats stats;
+  return stats;
 }
 
 void FakeCall::SignalNetworkState(webrtc::Call::NetworkState state) {

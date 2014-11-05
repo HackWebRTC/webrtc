@@ -33,16 +33,19 @@ struct RtpStatistics {
   int extended_max_sequence_number;
 };
 
-struct StreamStats {
-  StreamStats()
+struct SsrcStats {
+  SsrcStats()
       : key_frames(0),
         delta_frames(0),
-        bitrate_bps(0),
+        total_bitrate_bps(0),
+        retransmit_bitrate_bps(0),
         avg_delay_ms(0),
         max_delay_ms(0) {}
   uint32_t key_frames;
   uint32_t delta_frames;
-  int32_t bitrate_bps;
+  // TODO(holmer): Move bitrate_bps out to the webrtc::Call layer.
+  int total_bitrate_bps;
+  int retransmit_bitrate_bps;
   int avg_delay_ms;
   int max_delay_ms;
   StreamDataCounters rtp_stats;

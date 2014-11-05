@@ -315,6 +315,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     void Stop();
 
     VideoSenderInfo GetVideoSenderInfo();
+    void FillBandwidthEstimationInfo(BandwidthEstimationInfo* bwe_info);
 
     void OnCpuResolutionRequest(
         CoordinatedVideoAdapter::AdaptRequest adapt_request);

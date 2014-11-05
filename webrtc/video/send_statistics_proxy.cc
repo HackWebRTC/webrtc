@@ -29,6 +29,7 @@ void SendStatisticsProxy::OutgoingRate(const int video_channel,
                                        const unsigned int bitrate) {
   CriticalSectionScoped lock(crit_.get());
   stats_.encode_frame_rate = framerate;
+  stats_.media_bitrate_bps = bitrate;
 }
 
 void SendStatisticsProxy::SuspendChange(int video_channel, bool is_suspended) {
@@ -47,8 +48,8 @@ VideoSendStream::Stats SendStatisticsProxy::GetStats() const {
   return stats_;
 }
 
-StreamStats* SendStatisticsProxy::GetStatsEntry(uint32_t ssrc) {
-  std::map<uint32_t, StreamStats>::iterator it = stats_.substreams.find(ssrc);
+SsrcStats* SendStatisticsProxy::GetStatsEntry(uint32_t ssrc) {
+  std::map<uint32_t, SsrcStats>::iterator it = stats_.substreams.find(ssrc);
   if (it != stats_.substreams.end())
     return &it->second;
 
@@ -66,7 +67,7 @@ StreamStats* SendStatisticsProxy::GetStatsEntry(uint32_t ssrc) {
 void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
                                             uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
-  StreamStats* stats = GetStatsEntry(ssrc);
+  SsrcStats* stats = GetStatsEntry(ssrc);
   if (stats == NULL)
     return;
 
@@ -77,28 +78,30 @@ void SendStatisticsProxy::DataCountersUpdated(
     const StreamDataCounters& counters,
     uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
-  StreamStats* stats = GetStatsEntry(ssrc);
+  SsrcStats* stats = GetStatsEntry(ssrc);
   if (stats == NULL)
     return;
 
   stats->rtp_stats = counters;
 }
 
-void SendStatisticsProxy::Notify(const BitrateStatistics& bitrate,
+void SendStatisticsProxy::Notify(const BitrateStatistics& total_stats,
+                                 const BitrateStatistics& retransmit_stats,
                                  uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
-  StreamStats* stats = GetStatsEntry(ssrc);
+  SsrcStats* stats = GetStatsEntry(ssrc);
   if (stats == NULL)
     return;
 
-  stats->bitrate_bps = bitrate.bitrate_bps;
+  stats->total_bitrate_bps = total_stats.bitrate_bps;
+  stats->retransmit_bitrate_bps = retransmit_stats.bitrate_bps;
 }
 
 void SendStatisticsProxy::FrameCountUpdated(FrameType frame_type,
                                             uint32_t frame_count,
                                             const unsigned int ssrc) {
   CriticalSectionScoped lock(crit_.get());
-  StreamStats* stats = GetStatsEntry(ssrc);
+  SsrcStats* stats = GetStatsEntry(ssrc);
   if (stats == NULL)
     return;
 
@@ -120,7 +123,7 @@ void SendStatisticsProxy::SendSideDelayUpdated(int avg_delay_ms,
                                                int max_delay_ms,
                                                uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
-  StreamStats* stats = GetStatsEntry(ssrc);
+  SsrcStats* stats = GetStatsEntry(ssrc);
   if (stats == NULL)
     return;
   stats->avg_delay_ms = avg_delay_ms;

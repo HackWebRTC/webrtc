@@ -127,8 +127,7 @@ class FakeCall : public webrtc::Call {
       webrtc::VideoReceiveStream* receive_stream) OVERRIDE;
   virtual webrtc::PacketReceiver* Receiver() OVERRIDE;
 
-  virtual uint32_t SendBitrateEstimate() OVERRIDE;
-  virtual uint32_t ReceiveBitrateEstimate() OVERRIDE;
+  virtual webrtc::Call::Stats GetStats() const OVERRIDE;
 
   virtual void SignalNetworkState(webrtc::Call::NetworkState state) OVERRIDE;
 

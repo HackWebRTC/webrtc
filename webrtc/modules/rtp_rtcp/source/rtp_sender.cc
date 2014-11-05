@@ -40,6 +40,57 @@ const char* FrameTypeToString(const FrameType frame_type) {
 
 }  // namespace
 
+class BitrateAggregator {
+ public:
+  explicit BitrateAggregator(BitrateStatisticsObserver* bitrate_callback)
+      : callback_(bitrate_callback),
+        total_bitrate_observer_(*this),
+        retransmit_bitrate_observer_(*this),
+        ssrc_(0) {}
+
+  void OnStatsUpdated() const {
+    if (callback_)
+      callback_->Notify(total_bitrate_observer_.statistics(),
+                        retransmit_bitrate_observer_.statistics(),
+                        ssrc_);
+  }
+
+  Bitrate::Observer* total_bitrate_observer() {
+    return &total_bitrate_observer_;
+  }
+  Bitrate::Observer* retransmit_bitrate_observer() {
+    return &retransmit_bitrate_observer_;
+  }
+
+  void set_ssrc(uint32_t ssrc) { ssrc_ = ssrc; }
+
+ private:
+  // We assume that these observers are called on the same thread, which is
+  // true for RtpSender as they are called on the Process thread.
+  class BitrateObserver : public Bitrate::Observer {
+   public:
+    explicit BitrateObserver(const BitrateAggregator& aggregator)
+        : aggregator_(aggregator) {}
+
+    // Implements Bitrate::Observer.
+    virtual void BitrateUpdated(const BitrateStatistics& stats) OVERRIDE {
+      statistics_ = stats;
+      aggregator_.OnStatsUpdated();
+    }
+
+    BitrateStatistics statistics() const { return statistics_; }
+
+   private:
+    BitrateStatistics statistics_;
+    const BitrateAggregator& aggregator_;
+  };
+
+  BitrateStatisticsObserver* const callback_;
+  BitrateObserver total_bitrate_observer_;
+  BitrateObserver retransmit_bitrate_observer_;
+  uint32_t ssrc_;
+};
+
 RTPSender::RTPSender(const int32_t id,
                      const bool audio,
                      Clock* clock,
@@ -54,7 +105,8 @@ RTPSender::RTPSender(const int32_t id,
       // TickTime.
       clock_delta_ms_(clock_->TimeInMilliseconds() -
                       TickTime::MillisecondTimestamp()),
-      bitrate_sent_(clock, this),
+      bitrates_(new BitrateAggregator(bitrate_callback)),
+      total_bitrate_sent_(clock, bitrates_->total_bitrate_observer()),
       id_(id),
       audio_configured_(audio),
       audio_(NULL),
@@ -74,12 +126,11 @@ RTPSender::RTPSender(const int32_t id,
       // NACK.
       nack_byte_count_times_(),
       nack_byte_count_(),
-      nack_bitrate_(clock, NULL),
+      nack_bitrate_(clock, bitrates_->retransmit_bitrate_observer()),
       packet_history_(clock),
       // Statistics
       statistics_crit_(CriticalSectionWrapper::CreateCriticalSection()),
       rtp_stats_callback_(NULL),
-      bitrate_callback_(bitrate_callback),
       frame_count_observer_(frame_count_observer),
       send_side_delay_observer_(send_side_delay_observer),
       // RTP variables
@@ -108,6 +159,7 @@ RTPSender::RTPSender(const int32_t id,
   srand(static_cast<uint32_t>(clock_->TimeInMilliseconds()));
   ssrc_ = ssrc_db_.CreateSSRC();  // Can't be 0.
   ssrc_rtx_ = ssrc_db_.CreateSSRC();  // Can't be 0.
+  bitrates_->set_ssrc(ssrc_);
   // Random start, 16 bits. Can't be 0.
   sequence_number_rtx_ = static_cast<uint16_t>(rand() + 1) & 0x7FFF;
   sequence_number_ = static_cast<uint16_t>(rand() + 1) & 0x7FFF;
@@ -149,7 +201,7 @@ uint32_t RTPSender::GetTargetBitrate() {
 }
 
 uint16_t RTPSender::ActualSendBitrateKbit() const {
-  return (uint16_t)(bitrate_sent_.BitrateNow() / 1000);
+  return (uint16_t)(total_bitrate_sent_.BitrateNow() / 1000);
 }
 
 uint32_t RTPSender::VideoBitrateSent() const {
@@ -864,7 +916,7 @@ void RTPSender::UpdateRtpStats(const uint8_t* buffer,
     counters = &rtp_stats_;
   }
 
-  bitrate_sent_.Update(size);
+  total_bitrate_sent_.Update(size);
   ++counters->packets;
   if (IsFecPacket(buffer, header)) {
     ++counters->fec_packets;
@@ -997,7 +1049,7 @@ void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
 
 void RTPSender::ProcessBitrate() {
   CriticalSectionScoped cs(send_critsect_);
-  bitrate_sent_.Process();
+  total_bitrate_sent_.Process();
   nack_bitrate_.Process();
   if (audio_configured_) {
     return;
@@ -1420,6 +1472,7 @@ void RTPSender::SetSendingStatus(bool enabled) {
       // Generate a new SSRC.
       ssrc_db_.ReturnSSRC(ssrc_);
       ssrc_ = ssrc_db_.CreateSSRC();  // Can't be 0.
+      bitrates_->set_ssrc(ssrc_);
     }
     // Don't initialize seq number if SSRC passed externally.
     if (!sequence_number_forced_ && !ssrc_forced_) {
@@ -1470,6 +1523,7 @@ uint32_t RTPSender::GenerateNewSSRC() {
     return 0;
   }
   ssrc_ = ssrc_db_.CreateSSRC();  // Can't be 0.
+  bitrates_->set_ssrc(ssrc_);
   return ssrc_;
 }
 
@@ -1484,6 +1538,7 @@ void RTPSender::SetSSRC(uint32_t ssrc) {
   ssrc_db_.ReturnSSRC(ssrc_);
   ssrc_db_.RegisterSSRC(ssrc);
   ssrc_ = ssrc;
+  bitrates_->set_ssrc(ssrc_);
   if (!sequence_number_forced_) {
     sequence_number_ =
         rand() / (RAND_MAX / MAX_INIT_RTP_SEQ_NUMBER);  // NOLINT
@@ -1681,17 +1736,8 @@ StreamDataCountersCallback* RTPSender::GetRtpStatisticsCallback() const {
   return rtp_stats_callback_;
 }
 
-uint32_t RTPSender::BitrateSent() const { return bitrate_sent_.BitrateLast(); }
-
-void RTPSender::BitrateUpdated(const BitrateStatistics& stats) {
-  uint32_t ssrc;
-  {
-    CriticalSectionScoped ssrc_lock(send_critsect_);
-    ssrc = ssrc_;
-  }
-  if (bitrate_callback_) {
-    bitrate_callback_->Notify(stats, ssrc);
-  }
+uint32_t RTPSender::BitrateSent() const {
+  return total_bitrate_sent_.BitrateLast();
 }
 
 void RTPSender::SetRtpState(const RtpState& rtp_state) {

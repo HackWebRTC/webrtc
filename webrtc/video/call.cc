@@ -114,8 +114,7 @@ class Call : public webrtc::Call, public PacketReceiver {
   virtual void DestroyVideoReceiveStream(
       webrtc::VideoReceiveStream* receive_stream) OVERRIDE;
 
-  virtual uint32_t SendBitrateEstimate() OVERRIDE;
-  virtual uint32_t ReceiveBitrateEstimate() OVERRIDE;
+  virtual Stats GetStats() const OVERRIDE;
 
   virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
                                        size_t length) OVERRIDE;
@@ -321,14 +320,26 @@ void Call::DestroyVideoReceiveStream(
   delete receive_stream_impl;
 }
 
-uint32_t Call::SendBitrateEstimate() {
-  // TODO(pbos): Return send-bitrate estimate
-  return 0;
-}
-
-uint32_t Call::ReceiveBitrateEstimate() {
-  // TODO(pbos): Return receive-bitrate estimate
-  return 0;
+Call::Stats Call::GetStats() const {
+  Stats stats;
+  // Ignoring return values.
+  uint32_t send_bandwidth = 0;
+  rtp_rtcp_->GetEstimatedSendBandwidth(base_channel_id_, &send_bandwidth);
+  stats.send_bandwidth_bps = send_bandwidth;
+  uint32_t recv_bandwidth = 0;
+  rtp_rtcp_->GetEstimatedReceiveBandwidth(base_channel_id_, &recv_bandwidth);
+  stats.recv_bandwidth_bps = recv_bandwidth;
+  {
+    ReadLockScoped read_lock(*send_crit_);
+    for (std::map<uint32_t, VideoSendStream*>::const_iterator it =
+             send_ssrcs_.begin();
+         it != send_ssrcs_.end();
+         ++it) {
+      stats.pacer_delay_ms =
+          std::max(it->second->GetPacerQueuingDelayMs(), stats.pacer_delay_ms);
+    }
+  }
+  return stats;
 }
 
 void Call::SignalNetworkState(NetworkState state) {

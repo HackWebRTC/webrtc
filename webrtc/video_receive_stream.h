@@ -63,7 +63,7 @@ class VideoReceiveStream {
     int expected_delay_ms;
   };
 
-  struct Stats : public StreamStats {
+  struct Stats : public SsrcStats {
     Stats()
         : network_frame_rate(0),
           decode_frame_rate(0),

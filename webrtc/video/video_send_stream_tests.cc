@@ -962,8 +962,8 @@ TEST_F(VideoSendStreamTest, ProducesStats) {
                 config_.rtp.ssrcs.begin(), config_.rtp.ssrcs.end(), ssrc));
         // Check for data populated by various sources. RTCP excluded as this
         // data is received from remote side. Tested in call tests instead.
-        const StreamStats& entry = stats.substreams[ssrc];
-        if (entry.key_frames > 0u && entry.bitrate_bps > 0 &&
+        const SsrcStats& entry = stats.substreams[ssrc];
+        if (entry.key_frames > 0u && entry.total_bitrate_bps > 0 &&
             entry.rtp_stats.packets > 0u && entry.avg_delay_ms > 0 &&
             entry.max_delay_ms > 0) {
           return true;
@@ -1045,20 +1045,20 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
       VideoSendStream::Stats stats = stream_->GetStats();
       if (!stats.substreams.empty()) {
         EXPECT_EQ(1u, stats.substreams.size());
-        int bitrate_bps = stats.substreams.begin()->second.bitrate_bps;
-        test::PrintResult(
-            "bitrate_stats_",
-            "min_transmit_bitrate_low_remb",
-            "bitrate_bps",
-            static_cast<size_t>(bitrate_bps),
-            "bps",
-            false);
-        if (bitrate_bps > kHighBitrateBps) {
+        int total_bitrate_bps =
+            stats.substreams.begin()->second.total_bitrate_bps;
+        test::PrintResult("bitrate_stats_",
+                          "min_transmit_bitrate_low_remb",
+                          "bitrate_bps",
+                          static_cast<size_t>(total_bitrate_bps),
+                          "bps",
+                          false);
+        if (total_bitrate_bps > kHighBitrateBps) {
           rtp_rtcp_->SetREMBData(kRembBitrateBps, 1, &header.ssrc);
           rtp_rtcp_->Process();
           bitrate_capped_ = true;
         } else if (bitrate_capped_ &&
-                   bitrate_bps < kRembRespectedBitrateBps) {
+                   total_bitrate_bps < kRembRespectedBitrateBps) {
           observation_complete_->Set();
         }
       }

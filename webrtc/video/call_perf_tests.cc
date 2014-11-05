@@ -502,7 +502,8 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
       VideoSendStream::Stats stats = send_stream_->GetStats();
       if (stats.substreams.size() > 0) {
         assert(stats.substreams.size() == 1);
-        int bitrate_kbps = stats.substreams.begin()->second.bitrate_bps / 1000;
+        int bitrate_kbps =
+            stats.substreams.begin()->second.total_bitrate_bps / 1000;
         if (bitrate_kbps > 0) {
           test::PrintResult(
               "bitrate_stats_",

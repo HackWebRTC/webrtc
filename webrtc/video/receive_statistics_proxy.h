@@ -52,7 +52,7 @@ class ReceiveStatisticsProxy : public ViEDecoderObserver,
                                     const VideoCodec& video_codec) OVERRIDE {}
   virtual void IncomingRate(const int video_channel,
                             const unsigned int framerate,
-                            const unsigned int bitrate) OVERRIDE;
+                            const unsigned int bitrate_bps) OVERRIDE;
   virtual void DecoderTiming(int decode_ms,
                              int max_decode_ms,
                              int current_delay_ms,

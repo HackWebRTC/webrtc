@@ -492,5 +492,12 @@ void VideoSendStream::SignalNetworkState(Call::NetworkState state) {
     rtp_rtcp_->SetRTCPStatus(channel_, kRtcpNone);
 }
 
+int VideoSendStream::GetPacerQueuingDelayMs() const {
+  int pacer_delay_ms = 0;
+  if (rtp_rtcp_->GetPacerQueuingDelayMs(channel_, &pacer_delay_ms) != 0) {
+    return 0;
+  }
+  return pacer_delay_ms;
+}
 }  // namespace internal
 }  // namespace webrtc

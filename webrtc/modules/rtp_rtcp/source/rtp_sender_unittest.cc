@@ -855,20 +855,22 @@ TEST_F(RtpSenderTest, FrameCountCallbacks) {
 TEST_F(RtpSenderTest, BitrateCallbacks) {
   class TestCallback : public BitrateStatisticsObserver {
    public:
-    TestCallback()
-        : BitrateStatisticsObserver(), num_calls_(0), ssrc_(0), bitrate_() {}
+    TestCallback() : BitrateStatisticsObserver(), num_calls_(0), ssrc_(0) {}
     virtual ~TestCallback() {}
 
-    virtual void Notify(const BitrateStatistics& stats,
+    virtual void Notify(const BitrateStatistics& total_stats,
+                        const BitrateStatistics& retransmit_stats,
                         uint32_t ssrc) OVERRIDE {
       ++num_calls_;
       ssrc_ = ssrc;
-      bitrate_ = stats;
+      total_stats_ = total_stats;
+      retransmit_stats_ = retransmit_stats;
     }
 
     uint32_t num_calls_;
     uint32_t ssrc_;
-    BitrateStatistics bitrate_;
+    BitrateStatistics total_stats_;
+    BitrateStatistics retransmit_stats_;
   } callback;
   rtp_sender_.reset(new RTPSender(0, false, &fake_clock_, &transport_, NULL,
                                   &mock_paced_sender_, &callback, NULL, NULL));
@@ -909,13 +911,15 @@ TEST_F(RtpSenderTest, BitrateCallbacks) {
 
   const uint32_t expected_packet_rate = 1000 / kPacketInterval;
 
-  EXPECT_EQ(1U, callback.num_calls_);
+  // We get one call for every stats updated, thus two calls since both the
+  // stream stats and the retransmit stats are updated once.
+  EXPECT_EQ(2u, callback.num_calls_);
   EXPECT_EQ(ssrc, callback.ssrc_);
   EXPECT_EQ(start_time + (kNumPackets * kPacketInterval),
-            callback.bitrate_.timestamp_ms);
-  EXPECT_EQ(expected_packet_rate, callback.bitrate_.packet_rate);
+            callback.total_stats_.timestamp_ms);
+  EXPECT_EQ(expected_packet_rate, callback.total_stats_.packet_rate);
   EXPECT_EQ((kPacketOverhead + sizeof(payload)) * 8 * expected_packet_rate,
-            callback.bitrate_.bitrate_bps);
+            callback.total_stats_.bitrate_bps);
 
   rtp_sender_.reset();
 }
