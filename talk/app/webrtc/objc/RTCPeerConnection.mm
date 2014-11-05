@@ -68,6 +68,7 @@ class RTCCreateSessionDescriptionObserver
     [_delegate peerConnection:_peerConnection
         didCreateSessionDescription:session
                               error:nil];
+    delete desc;
   }
 
   virtual void OnFailure(const std::string& error) OVERRIDE {
