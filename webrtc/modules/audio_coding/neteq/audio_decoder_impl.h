@@ -19,6 +19,22 @@
 #include "webrtc/engine_configurations.h"
 #endif
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/audio_coding/codecs/cng/include/webrtc_cng.h"
+#ifdef WEBRTC_CODEC_G722
+#include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
+#endif
+#ifdef WEBRTC_CODEC_ILBC
+#include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
+#endif
+#ifdef WEBRTC_CODEC_ISACFX
+#include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
+#endif
+#ifdef WEBRTC_CODEC_ISAC
+#include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
+#endif
+#ifdef WEBRTC_CODEC_OPUS
+#include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
+#endif
 #include "webrtc/modules/audio_coding/neteq/interface/audio_decoder.h"
 #include "webrtc/typedefs.h"
 
@@ -109,6 +125,7 @@ class AudioDecoderIlbc : public AudioDecoder {
   virtual int Init();
 
  private:
+  iLBC_decinst_t* dec_state_;
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderIlbc);
 };
 #endif
@@ -133,6 +150,7 @@ class AudioDecoderIsac : public AudioDecoder {
   virtual int ErrorCode();
 
  private:
+  ISACStruct* isac_state_;
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderIsac);
 };
 #endif
@@ -153,6 +171,7 @@ class AudioDecoderIsacFix : public AudioDecoder {
   virtual int ErrorCode();
 
  private:
+  ISACFIX_MainStruct* isac_state_;
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderIsacFix);
 };
 #endif
@@ -169,10 +188,11 @@ class AudioDecoderG722 : public AudioDecoder {
   virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len);
 
  private:
+  G722DecInst* dec_state_;
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderG722);
 };
 
-class AudioDecoderG722Stereo : public AudioDecoderG722 {
+class AudioDecoderG722Stereo : public AudioDecoder {
  public:
   AudioDecoderG722Stereo();
   virtual ~AudioDecoderG722Stereo();
@@ -189,8 +209,8 @@ class AudioDecoderG722Stereo : public AudioDecoderG722 {
   void SplitStereoPacket(const uint8_t* encoded, size_t encoded_len,
                          uint8_t* encoded_deinterleaved);
 
-  void* const state_left_;
-  void* state_right_;
+  G722DecInst* dec_state_left_;
+  G722DecInst* dec_state_right_;
 
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderG722Stereo);
 };
@@ -229,6 +249,7 @@ class AudioDecoderOpus : public AudioDecoder {
   virtual bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const;
 
  private:
+  OpusDecInst* dec_state_;
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderOpus);
 };
 #endif
@@ -252,7 +273,10 @@ class AudioDecoderCng : public AudioDecoder {
                              uint32_t rtp_timestamp,
                              uint32_t arrival_timestamp) { return -1; }
 
+  virtual CNG_dec_inst* CngDecoderInstance() OVERRIDE { return dec_state_; }
+
  private:
+  CNG_dec_inst* dec_state_;
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderCng);
 };
 

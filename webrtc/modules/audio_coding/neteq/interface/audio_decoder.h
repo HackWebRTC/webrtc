@@ -14,6 +14,7 @@
 #include <stdlib.h>  // NULL
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/audio_coding/codecs/cng/include/webrtc_cng.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -63,7 +64,7 @@ class AudioDecoder {
   // Used by PacketDuration below. Save the value -1 for errors.
   enum { kNotImplemented = -2 };
 
-  AudioDecoder() : channels_(1), state_(NULL) {}
+  AudioDecoder() : channels_(1) {}
   virtual ~AudioDecoder() {}
 
   // Decodes |encode_len| bytes from |encoded| and writes the result in
@@ -114,8 +115,9 @@ class AudioDecoder {
   // Returns true if the packet has FEC and false otherwise.
   virtual bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const;
 
-  // Returns the underlying decoder state.
-  void* state() { return state_; }
+  // If this is a CNG decoder, return the underlying CNG_dec_inst*. If this
+  // isn't a CNG decoder, don't call this method.
+  virtual CNG_dec_inst* CngDecoderInstance();
 
   // Returns true if |codec_type| is supported.
   static bool CodecSupported(NetEqDecoder codec_type);
@@ -134,7 +136,6 @@ class AudioDecoder {
   static SpeechType ConvertSpeechType(int16_t type);
 
   size_t channels_;
-  void* state_;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AudioDecoder);

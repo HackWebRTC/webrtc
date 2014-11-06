@@ -12,6 +12,7 @@
 
 #include <assert.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
 
 namespace webrtc {
@@ -49,6 +50,11 @@ int AudioDecoder::PacketDurationRedundant(const uint8_t* encoded,
 bool AudioDecoder::PacketHasFec(const uint8_t* encoded,
                                 size_t encoded_len) const {
   return false;
+}
+
+CNG_dec_inst* AudioDecoder::CngDecoderInstance() {
+  FATAL() << "Not a CNG decoder";
+  return NULL;
 }
 
 bool AudioDecoder::CodecSupported(NetEqDecoder codec_type) {

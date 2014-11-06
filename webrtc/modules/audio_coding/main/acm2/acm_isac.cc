@@ -277,7 +277,6 @@ ACMISAC::ACMISAC(int16_t codec_id)
     return;
   }
   codec_inst_ptr_->inst = NULL;
-  state_ = codec_inst_ptr_;
 }
 
 ACMISAC::~ACMISAC() {
