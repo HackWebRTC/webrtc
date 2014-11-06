@@ -427,10 +427,6 @@ bool WebRtcVideoEngine2::SetDefaultEncoderConfig(
   return true;
 }
 
-VideoEncoderConfig WebRtcVideoEngine2::GetDefaultEncoderConfig() const {
-  return VideoEncoderConfig(DefaultVideoCodec());
-}
-
 WebRtcVideoChannel2* WebRtcVideoEngine2::CreateChannel(
     const VideoOptions& options,
     VoiceMediaChannel* voice_channel) {

@@ -145,7 +145,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
 
   int GetCapabilities();
   bool SetDefaultEncoderConfig(const VideoEncoderConfig& config);
-  VideoEncoderConfig GetDefaultEncoderConfig() const;
 
   WebRtcVideoChannel2* CreateChannel(const VideoOptions& options,
                                      VoiceMediaChannel* voice_channel);

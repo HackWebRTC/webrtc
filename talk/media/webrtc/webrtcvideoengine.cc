@@ -1144,17 +1144,6 @@ bool WebRtcVideoEngine::SetDefaultEncoderConfig(
   return SetDefaultCodec(config.max_codec);
 }
 
-VideoEncoderConfig WebRtcVideoEngine::GetDefaultEncoderConfig() const {
-  ASSERT(!video_codecs_.empty());
-  VideoCodec max_codec(kVideoCodecPrefs[0].payload_type,
-                       kVideoCodecPrefs[0].name,
-                       video_codecs_[0].width,
-                       video_codecs_[0].height,
-                       video_codecs_[0].framerate,
-                       0);
-  return VideoEncoderConfig(max_codec);
-}
-
 // SetDefaultCodec may be called while the capturer is running. For example, a
 // test call is started in a page with QVGA default codec, and then a real call
 // is started in another page with VGA default codec. This is the corner case

@@ -93,9 +93,6 @@ class FileMediaEngine : public MediaEngineInterface {
   virtual bool SetDefaultVideoEncoderConfig(const VideoEncoderConfig& config) {
     return true;
   }
-  virtual VideoEncoderConfig GetDefaultVideoEncoderConfig() const {
-    return VideoEncoderConfig();
-  }
   virtual bool SetSoundDevices(const Device* in_dev, const Device* out_dev) {
     return true;
   }
