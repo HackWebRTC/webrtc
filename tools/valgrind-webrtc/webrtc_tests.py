@@ -100,9 +100,6 @@ def main(_):
                     help='Argument for --gtest_repeat')
   parser.add_option("--gtest_shuffle", action="store_true", default=False,
                     help="Randomize tests' orders on every iteration.")
-  parser.add_option('', '--gtest_output',
-                    help=('Argument for --gtest_output (ignored but included '
-                          'for compatibility).'))
   parser.add_option('-v', '--verbose', action='store_true', default=False,
                     help='Verbose output - enable debug log messages')
   parser.add_option('', '--tool', dest='valgrind_tool', default='memcheck',
