@@ -662,7 +662,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
   RateControlMetrics rc_metrics[3];
   SetRateControlMetrics(rc_metrics, 0, 0, 30, 20, 20, 20, 0);
   SetRateControlMetrics(rc_metrics, 1, 2, 0, 20, 20, 60, 0);
-  SetRateControlMetrics(rc_metrics, 2, 0, 0, 20, 20, 30, 0);
+  SetRateControlMetrics(rc_metrics, 2, 0, 0, 20, 20, 40, 0);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,
