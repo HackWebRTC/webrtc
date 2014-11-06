@@ -100,12 +100,17 @@ static bool WriteStunMessage(const StunMessage* msg, ByteBuffer* buf) {
 // Stub port class for testing STUN generation and processing.
 class TestPort : public Port {
  public:
-  TestPort(rtc::Thread* thread, const std::string& type,
-           rtc::PacketSocketFactory* factory, rtc::Network* network,
-           const rtc::IPAddress& ip, int min_port, int max_port,
-           const std::string& username_fragment, const std::string& password)
-      : Port(thread, type, factory, network, ip,
-             min_port, max_port, username_fragment, password) {
+  TestPort(rtc::Thread* thread,
+           const std::string& type,
+           rtc::PacketSocketFactory* factory,
+           rtc::Network* network,
+           const rtc::IPAddress& ip,
+           uint16 min_port,
+           uint16 max_port,
+           const std::string& username_fragment,
+           const std::string& password)
+      : Port(thread, type, factory, network, ip, min_port, max_port,
+             username_fragment, password) {
   }
   ~TestPort() {}
 
@@ -762,19 +767,21 @@ class FakePacketSocketFactory : public rtc::PacketSocketFactory {
         next_server_tcp_socket_(NULL),
         next_client_tcp_socket_(NULL) {
   }
-  virtual ~FakePacketSocketFactory() { }
+  ~FakePacketSocketFactory() override { }
 
-  virtual AsyncPacketSocket* CreateUdpSocket(
-      const SocketAddress& address, int min_port, int max_port) {
+  AsyncPacketSocket* CreateUdpSocket(const SocketAddress& address,
+                                     uint16 min_port,
+                                     uint16 max_port) override {
     EXPECT_TRUE(next_udp_socket_ != NULL);
     AsyncPacketSocket* result = next_udp_socket_;
     next_udp_socket_ = NULL;
     return result;
   }
 
-  virtual AsyncPacketSocket* CreateServerTcpSocket(
-      const SocketAddress& local_address, int min_port, int max_port,
-      int opts) {
+  AsyncPacketSocket* CreateServerTcpSocket(const SocketAddress& local_address,
+                                           uint16 min_port,
+                                           uint16 max_port,
+                                           int opts) override {
     EXPECT_TRUE(next_server_tcp_socket_ != NULL);
     AsyncPacketSocket* result = next_server_tcp_socket_;
     next_server_tcp_socket_ = NULL;
@@ -783,10 +790,11 @@ class FakePacketSocketFactory : public rtc::PacketSocketFactory {
 
   // TODO: |proxy_info| and |user_agent| should be set
   // per-factory and not when socket is created.
-  virtual AsyncPacketSocket* CreateClientTcpSocket(
-      const SocketAddress& local_address, const SocketAddress& remote_address,
-      const rtc::ProxyInfo& proxy_info,
-      const std::string& user_agent, int opts) {
+  AsyncPacketSocket* CreateClientTcpSocket(const SocketAddress& local_address,
+                                           const SocketAddress& remote_address,
+                                           const rtc::ProxyInfo& proxy_info,
+                                           const std::string& user_agent,
+                                           int opts) override {
     EXPECT_TRUE(next_client_tcp_socket_ != NULL);
     AsyncPacketSocket* result = next_client_tcp_socket_;
     next_client_tcp_socket_ = NULL;

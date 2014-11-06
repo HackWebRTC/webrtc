@@ -36,9 +36,13 @@ class RelayPort : public Port {
 
   // RelayPort doesn't yet do anything fancy in the ctor.
   static RelayPort* Create(
-      rtc::Thread* thread, rtc::PacketSocketFactory* factory,
-      rtc::Network* network, const rtc::IPAddress& ip,
-      int min_port, int max_port, const std::string& username,
+      rtc::Thread* thread,
+      rtc::PacketSocketFactory* factory,
+      rtc::Network* network,
+      const rtc::IPAddress& ip,
+      uint16 min_port,
+      uint16 max_port,
+      const std::string& username,
       const std::string& password) {
     return new RelayPort(thread, factory, network, ip, min_port, max_port,
                          username, password);
@@ -66,9 +70,13 @@ class RelayPort : public Port {
   sigslot::signal1<const ProtocolAddress*> SignalSoftTimeout;
 
  protected:
-  RelayPort(rtc::Thread* thread, rtc::PacketSocketFactory* factory,
-            rtc::Network*, const rtc::IPAddress& ip,
-            int min_port, int max_port, const std::string& username,
+  RelayPort(rtc::Thread* thread,
+            rtc::PacketSocketFactory* factory,
+            rtc::Network*,
+            const rtc::IPAddress& ip,
+            uint16 min_port,
+            uint16 max_port,
+            const std::string& username,
             const std::string& password);
   bool Init();
 

@@ -29,17 +29,23 @@ class PacketSocketFactory {
   PacketSocketFactory() { }
   virtual ~PacketSocketFactory() { }
 
-  virtual AsyncPacketSocket* CreateUdpSocket(
-      const SocketAddress& address, int min_port, int max_port) = 0;
+  virtual AsyncPacketSocket* CreateUdpSocket(const SocketAddress& address,
+                                             uint16 min_port,
+                                             uint16 max_port) = 0;
   virtual AsyncPacketSocket* CreateServerTcpSocket(
-      const SocketAddress& local_address, int min_port, int max_port,
+      const SocketAddress& local_address,
+      uint16 min_port,
+      uint16 max_port,
       int opts) = 0;
 
   // TODO: |proxy_info| and |user_agent| should be set
   // per-factory and not when socket is created.
   virtual AsyncPacketSocket* CreateClientTcpSocket(
-      const SocketAddress& local_address, const SocketAddress& remote_address,
-      const ProxyInfo& proxy_info, const std::string& user_agent, int opts) = 0;
+      const SocketAddress& local_address,
+      const SocketAddress& remote_address,
+      const ProxyInfo& proxy_info,
+      const std::string& user_agent,
+      int opts) = 0;
 
   virtual AsyncResolverInterface* CreateAsyncResolver() = 0;
 

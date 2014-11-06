@@ -24,21 +24,28 @@ class BasicPacketSocketFactory : public PacketSocketFactory {
   BasicPacketSocketFactory();
   explicit BasicPacketSocketFactory(Thread* thread);
   explicit BasicPacketSocketFactory(SocketFactory* socket_factory);
-  virtual ~BasicPacketSocketFactory();
+  ~BasicPacketSocketFactory() override;
 
-  virtual AsyncPacketSocket* CreateUdpSocket(
-      const SocketAddress& local_address, int min_port, int max_port);
-  virtual AsyncPacketSocket* CreateServerTcpSocket(
-      const SocketAddress& local_address, int min_port, int max_port, int opts);
-  virtual AsyncPacketSocket* CreateClientTcpSocket(
-      const SocketAddress& local_address, const SocketAddress& remote_address,
-      const ProxyInfo& proxy_info, const std::string& user_agent, int opts);
+  AsyncPacketSocket* CreateUdpSocket(const SocketAddress& local_address,
+                                     uint16 min_port,
+                                     uint16 max_port) override;
+  AsyncPacketSocket* CreateServerTcpSocket(const SocketAddress& local_address,
+                                           uint16 min_port,
+                                           uint16 max_port,
+                                           int opts) override;
+  AsyncPacketSocket* CreateClientTcpSocket(const SocketAddress& local_address,
+                                           const SocketAddress& remote_address,
+                                           const ProxyInfo& proxy_info,
+                                           const std::string& user_agent,
+                                           int opts) override;
 
-  virtual AsyncResolverInterface* CreateAsyncResolver();
+  AsyncResolverInterface* CreateAsyncResolver() override;
 
  private:
-  int BindSocket(AsyncSocket* socket, const SocketAddress& local_address,
-                 int min_port, int max_port);
+  int BindSocket(AsyncSocket* socket,
+                 const SocketAddress& local_address,
+                 uint16 min_port,
+                 uint16 max_port);
 
   SocketFactory* socket_factory();
 

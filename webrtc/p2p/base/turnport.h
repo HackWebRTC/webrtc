@@ -42,16 +42,16 @@ class TurnPort : public Port {
                           const ProtocolAddress& server_address,
                           const RelayCredentials& credentials,
                           int server_priority) {
-    return new TurnPort(thread, factory, network, socket,
-                        username, password, server_address,
-                        credentials, server_priority);
+    return new TurnPort(thread, factory, network, socket, username, password,
+                        server_address, credentials, server_priority);
   }
 
   static TurnPort* Create(rtc::Thread* thread,
                           rtc::PacketSocketFactory* factory,
                           rtc::Network* network,
                           const rtc::IPAddress& ip,
-                          int min_port, int max_port,
+                          uint16 min_port,
+                          uint16 max_port,
                           const std::string& username,  // ice username.
                           const std::string& password,  // ice password.
                           const ProtocolAddress& server_address,
@@ -135,7 +135,8 @@ class TurnPort : public Port {
            rtc::PacketSocketFactory* factory,
            rtc::Network* network,
            const rtc::IPAddress& ip,
-           int min_port, int max_port,
+           uint16 min_port,
+           uint16 max_port,
            const std::string& username,
            const std::string& password,
            const ProtocolAddress& server_address,

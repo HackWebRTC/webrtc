@@ -162,7 +162,8 @@ UDPPort::UDPPort(rtc::Thread* thread,
                  rtc::PacketSocketFactory* factory,
                  rtc::Network* network,
                  rtc::AsyncPacketSocket* socket,
-                 const std::string& username, const std::string& password)
+                 const std::string& username,
+                 const std::string& password)
     : Port(thread, factory, network, socket->GetLocalAddress().ipaddr(),
            username, password),
       requests_(thread),
@@ -175,8 +176,11 @@ UDPPort::UDPPort(rtc::Thread* thread,
 UDPPort::UDPPort(rtc::Thread* thread,
                  rtc::PacketSocketFactory* factory,
                  rtc::Network* network,
-                 const rtc::IPAddress& ip, int min_port, int max_port,
-                 const std::string& username, const std::string& password)
+                 const rtc::IPAddress& ip,
+                 uint16 min_port,
+                 uint16 max_port,
+                 const std::string& username,
+                 const std::string& password)
     : Port(thread, LOCAL_PORT_TYPE, factory, network, ip, min_port, max_port,
            username, password),
       requests_(thread),

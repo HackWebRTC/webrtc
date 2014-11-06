@@ -44,7 +44,7 @@ BasicPacketSocketFactory::~BasicPacketSocketFactory() {
 }
 
 AsyncPacketSocket* BasicPacketSocketFactory::CreateUdpSocket(
-    const SocketAddress& address, int min_port, int max_port) {
+    const SocketAddress& address, uint16 min_port, uint16 max_port) {
   // UDP sockets are simple.
   rtc::AsyncSocket* socket =
       socket_factory()->CreateAsyncSocket(
@@ -62,7 +62,8 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateUdpSocket(
 }
 
 AsyncPacketSocket* BasicPacketSocketFactory::CreateServerTcpSocket(
-    const SocketAddress& local_address, int min_port, int max_port, int opts) {
+    const SocketAddress& local_address, uint16 min_port, uint16 max_port,
+    int opts) {
 
   // Fail if TLS is required.
   if (opts & PacketSocketFactory::OPT_TLS) {
@@ -177,7 +178,7 @@ AsyncResolverInterface* BasicPacketSocketFactory::CreateAsyncResolver() {
 
 int BasicPacketSocketFactory::BindSocket(
     AsyncSocket* socket, const SocketAddress& local_address,
-    int min_port, int max_port) {
+    uint16 min_port, uint16 max_port) {
   int ret = -1;
   if (min_port == 0 && max_port == 0) {
     // If there's no port range, let the OS pick a port for us.

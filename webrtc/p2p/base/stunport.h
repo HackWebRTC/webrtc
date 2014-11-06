@@ -34,8 +34,8 @@ class UDPPort : public Port {
                          rtc::AsyncPacketSocket* socket,
                          const std::string& username,
                          const std::string& password) {
-    UDPPort* port = new UDPPort(thread, factory, network, socket,
-                                username, password);
+    UDPPort* port =
+        new UDPPort(thread, factory, network, socket, username, password);
     if (!port->Init()) {
       delete port;
       port = NULL;
@@ -47,12 +47,12 @@ class UDPPort : public Port {
                          rtc::PacketSocketFactory* factory,
                          rtc::Network* network,
                          const rtc::IPAddress& ip,
-                         int min_port, int max_port,
+                         uint16 min_port,
+                         uint16 max_port,
                          const std::string& username,
                          const std::string& password) {
-    UDPPort* port = new UDPPort(thread, factory, network,
-                                ip, min_port, max_port,
-                                username, password);
+    UDPPort* port = new UDPPort(thread, factory, network, ip, min_port,
+                                max_port, username, password);
     if (!port->Init()) {
       delete port;
       port = NULL;
@@ -98,14 +98,21 @@ class UDPPort : public Port {
   }
 
  protected:
-  UDPPort(rtc::Thread* thread, rtc::PacketSocketFactory* factory,
-          rtc::Network* network, const rtc::IPAddress& ip,
-          int min_port, int max_port,
-          const std::string& username, const std::string& password);
+  UDPPort(rtc::Thread* thread,
+          rtc::PacketSocketFactory* factory,
+          rtc::Network* network,
+          const rtc::IPAddress& ip,
+          uint16 min_port,
+          uint16 max_port,
+          const std::string& username,
+          const std::string& password);
 
-  UDPPort(rtc::Thread* thread, rtc::PacketSocketFactory* factory,
-          rtc::Network* network, rtc::AsyncPacketSocket* socket,
-          const std::string& username, const std::string& password);
+  UDPPort(rtc::Thread* thread,
+          rtc::PacketSocketFactory* factory,
+          rtc::Network* network,
+          rtc::AsyncPacketSocket* socket,
+          const std::string& username,
+          const std::string& password);
 
   bool Init();
 
@@ -194,18 +201,16 @@ class UDPPort : public Port {
 
 class StunPort : public UDPPort {
  public:
-  static StunPort* Create(
-      rtc::Thread* thread,
-      rtc::PacketSocketFactory* factory,
-      rtc::Network* network,
-      const rtc::IPAddress& ip,
-      int min_port, int max_port,
-      const std::string& username,
-      const std::string& password,
-      const ServerAddresses& servers) {
-    StunPort* port = new StunPort(thread, factory, network,
-                                  ip, min_port, max_port,
-                                  username, password, servers);
+  static StunPort* Create(rtc::Thread* thread,
+                          rtc::PacketSocketFactory* factory,
+                          rtc::Network* network,
+                          const rtc::IPAddress& ip,
+                          uint16 min_port, uint16 max_port,
+                          const std::string& username,
+                          const std::string& password,
+                          const ServerAddresses& servers) {
+    StunPort* port = new StunPort(thread, factory, network, ip, min_port,
+                                  max_port, username, password, servers);
     if (!port->Init()) {
       delete port;
       port = NULL;
@@ -220,10 +225,14 @@ class StunPort : public UDPPort {
   }
 
  protected:
-  StunPort(rtc::Thread* thread, rtc::PacketSocketFactory* factory,
-           rtc::Network* network, const rtc::IPAddress& ip,
-           int min_port, int max_port,
-           const std::string& username, const std::string& password,
+  StunPort(rtc::Thread* thread,
+           rtc::PacketSocketFactory* factory,
+           rtc::Network* network,
+           const rtc::IPAddress& ip,
+           uint16 min_port,
+           uint16 max_port,
+           const std::string& username,
+           const std::string& password,
            const ServerAddresses& servers)
      : UDPPort(thread, factory, network, ip, min_port, max_port, username,
                password) {

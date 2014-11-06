@@ -152,9 +152,12 @@ static std::string ComputeFoundation(
   return rtc::ToString<uint32>(rtc::ComputeCrc32(ost.str()));
 }
 
-Port::Port(rtc::Thread* thread, rtc::PacketSocketFactory* factory,
-           rtc::Network* network, const rtc::IPAddress& ip,
-           const std::string& username_fragment, const std::string& password)
+Port::Port(rtc::Thread* thread,
+           rtc::PacketSocketFactory* factory,
+           rtc::Network* network,
+           const rtc::IPAddress& ip,
+           const std::string& username_fragment,
+           const std::string& password)
     : thread_(thread),
       factory_(factory),
       send_retransmit_count_attribute_(false),
@@ -176,10 +179,14 @@ Port::Port(rtc::Thread* thread, rtc::PacketSocketFactory* factory,
   Construct();
 }
 
-Port::Port(rtc::Thread* thread, const std::string& type,
+Port::Port(rtc::Thread* thread,
+           const std::string& type,
            rtc::PacketSocketFactory* factory,
-           rtc::Network* network, const rtc::IPAddress& ip,
-           int min_port, int max_port, const std::string& username_fragment,
+           rtc::Network* network,
+           const rtc::IPAddress& ip,
+           uint16 min_port,
+           uint16 max_port,
+           const std::string& username_fragment,
            const std::string& password)
     : thread_(thread),
       factory_(factory),

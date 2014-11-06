@@ -32,13 +32,13 @@ class TCPPort : public Port {
                          rtc::PacketSocketFactory* factory,
                          rtc::Network* network,
                          const rtc::IPAddress& ip,
-                         int min_port, int max_port,
+                         uint16 min_port,
+                         uint16 max_port,
                          const std::string& username,
                          const std::string& password,
                          bool allow_listen) {
-    TCPPort* port = new TCPPort(thread, factory, network,
-                                ip, min_port, max_port,
-                                username, password, allow_listen);
+    TCPPort* port = new TCPPort(thread, factory, network, ip, min_port,
+                                max_port, username, password, allow_listen);
     if (!port->Init()) {
       delete port;
       port = NULL;
@@ -57,10 +57,15 @@ class TCPPort : public Port {
   virtual int GetError();
 
  protected:
-  TCPPort(rtc::Thread* thread, rtc::PacketSocketFactory* factory,
-          rtc::Network* network, const rtc::IPAddress& ip,
-          int min_port, int max_port, const std::string& username,
-          const std::string& password, bool allow_listen);
+  TCPPort(rtc::Thread* thread,
+          rtc::PacketSocketFactory* factory,
+          rtc::Network* network,
+          const rtc::IPAddress& ip,
+          uint16 min_port,
+          uint16 max_port,
+          const std::string& username,
+          const std::string& password,
+          bool allow_listen);
   bool Init();
 
   // Handles sending using the local TCP socket.

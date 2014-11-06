@@ -107,13 +107,20 @@ typedef std::set<rtc::SocketAddress> ServerAddresses;
 class Port : public PortInterface, public rtc::MessageHandler,
              public sigslot::has_slots<> {
  public:
-  Port(rtc::Thread* thread, rtc::PacketSocketFactory* factory,
-       rtc::Network* network, const rtc::IPAddress& ip,
-       const std::string& username_fragment, const std::string& password);
-  Port(rtc::Thread* thread, const std::string& type,
+  Port(rtc::Thread* thread,
        rtc::PacketSocketFactory* factory,
-       rtc::Network* network, const rtc::IPAddress& ip,
-       int min_port, int max_port, const std::string& username_fragment,
+       rtc::Network* network,
+       const rtc::IPAddress& ip,
+       const std::string& username_fragment,
+       const std::string& password);
+  Port(rtc::Thread* thread,
+       const std::string& type,
+       rtc::PacketSocketFactory* factory,
+       rtc::Network* network,
+       const rtc::IPAddress& ip,
+       uint16 min_port,
+       uint16 max_port,
+       const std::string& username_fragment,
        const std::string& password);
   virtual ~Port();
 
@@ -256,8 +263,8 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // Debugging description of this port
   virtual std::string ToString() const;
   rtc::IPAddress& ip() { return ip_; }
-  int min_port() { return min_port_; }
-  int max_port() { return max_port_; }
+  uint16 min_port() { return min_port_; }
+  uint16 max_port() { return max_port_; }
 
   // Timeout shortening function to speed up unit tests.
   void set_timeout_delay(int delay) { timeout_delay_ = delay; }
@@ -354,8 +361,8 @@ class Port : public PortInterface, public rtc::MessageHandler,
   bool send_retransmit_count_attribute_;
   rtc::Network* network_;
   rtc::IPAddress ip_;
-  int min_port_;
-  int max_port_;
+  uint16 min_port_;
+  uint16 max_port_;
   std::string content_name_;
   int component_;
   uint32 generation_;
