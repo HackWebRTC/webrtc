@@ -255,15 +255,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // Add a new MediaStream to be sent on this PeerConnection.
   // Note that a SessionDescription negotiation is needed before the
   // remote peer can receive the stream.
-  // TODO(perkj): Make pure virtual once Chrome mocks have implemented.
-  virtual bool AddStream(MediaStreamInterface* stream) { return false;}
-
-  // Deprecated:
-  // TODO(perkj): Remove once its not used by Chrome.
-  virtual bool AddStream(MediaStreamInterface* stream,
-                         const MediaConstraintsInterface* constraints) {
-    return false;
-  }
+  virtual bool AddStream(MediaStreamInterface* stream) = 0;
 
   // Remove a MediaStream from this PeerConnection.
   // Note that a SessionDescription negotiation is need before the
@@ -350,10 +342,6 @@ class PeerConnectionObserver {
     kSignalingState,
     kIceState,
   };
-
-  // Deprecated.
-  // TODO(perkj): Remove once its not used by Chrome.
-  virtual void OnError() {}
 
   // Triggered when the SignalingState changed.
   virtual void OnSignalingChange(

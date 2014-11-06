@@ -420,11 +420,6 @@ bool PeerConnection::AddStream(MediaStreamInterface* local_stream) {
   return true;
 }
 
-bool PeerConnection::AddStream(MediaStreamInterface* local_stream,
-                               const MediaConstraintsInterface* constraints) {
-  return AddStream(local_stream);
-}
-
 void PeerConnection::RemoveStream(MediaStreamInterface* local_stream) {
   mediastream_signaling_->RemoveLocalStream(local_stream);
   if (IsClosed()) {
