@@ -407,6 +407,24 @@ bool OpenSlesOutput::CreateAudioPlayer() {
                                              &audio_source, &audio_sink,
                                              kNumInterfaces, ids, req),
       false);
+
+  SLAndroidConfigurationItf player_config;
+  OPENSL_RETURN_ON_FAILURE(
+      (*sles_player_)->GetInterface(sles_player_,
+                                    SL_IID_ANDROIDCONFIGURATION,
+                                    &player_config),
+      false);
+
+  // Set audio player configuration to SL_ANDROID_STREAM_VOICE which corresponds
+  // to android.media.AudioManager.STREAM_VOICE_CALL.
+  SLint32 stream_type = SL_ANDROID_STREAM_VOICE;
+  OPENSL_RETURN_ON_FAILURE(
+      (*player_config)->SetConfiguration(player_config,
+                                         SL_ANDROID_KEY_STREAM_TYPE,
+                                         &stream_type,
+                                         sizeof(SLint32)),
+      false);
+
   // Realize the player in synchronous mode.
   OPENSL_RETURN_ON_FAILURE((*sles_player_)->Realize(sles_player_,
                                                     SL_BOOLEAN_FALSE),

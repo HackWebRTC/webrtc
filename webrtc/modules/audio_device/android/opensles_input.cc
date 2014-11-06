@@ -360,6 +360,24 @@ bool OpenSlesInput::CreateAudioRecorder() {
                                                req),
       false);
 
+  SLAndroidConfigurationItf recorder_config;
+  OPENSL_RETURN_ON_FAILURE(
+      (*sles_recorder_)->GetInterface(sles_recorder_,
+                                      SL_IID_ANDROIDCONFIGURATION,
+                                      &recorder_config),
+      false);
+
+  // Set audio recorder configuration to
+  // SL_ANDROID_RECORDING_PRESET_VOICE_COMMUNICATION which ensures that we
+  // use the main microphone tuned for audio communications.
+  SLint32 stream_type = SL_ANDROID_RECORDING_PRESET_VOICE_COMMUNICATION;
+  OPENSL_RETURN_ON_FAILURE(
+      (*recorder_config)->SetConfiguration(recorder_config,
+                                           SL_ANDROID_KEY_RECORDING_PRESET,
+                                           &stream_type,
+                                           sizeof(SLint32)),
+      false);
+
   // Realize the recorder in synchronous mode.
   OPENSL_RETURN_ON_FAILURE((*sles_recorder_)->Realize(sles_recorder_,
                                                       SL_BOOLEAN_FALSE),
