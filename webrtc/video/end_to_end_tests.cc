@@ -225,8 +225,7 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
   DestroyStreams();
 }
 
-// TODO(marpan): Re-enable this test on the next libvpx roll.
-TEST_F(EndToEndTest, DISABLED_SendsAndReceivesVP9) {
+TEST_F(EndToEndTest, SendsAndReceivesVP9) {
   class VP9Observer : public test::EndToEndTest, public VideoRenderer {
    public:
     VP9Observer()

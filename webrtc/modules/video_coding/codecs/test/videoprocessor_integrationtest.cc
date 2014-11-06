@@ -604,7 +604,7 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossVP9) {
                      false, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
-  SetQualityMetrics(&quality_metrics, 37.5, 36.0, 0.94, 0.93);
+  SetQualityMetrics(&quality_metrics, 37.0, 36.0, 0.93, 0.92);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[1];
   SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 15, 0);
@@ -657,7 +657,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
                      false, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
-  SetQualityMetrics(&quality_metrics, 36.0, 32.0, 0.90, 0.85);
+  SetQualityMetrics(&quality_metrics, 36.0, 31.8, 0.90, 0.85);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[3];
   SetRateControlMetrics(rc_metrics, 0, 0, 30, 20, 20, 20, 0);
@@ -692,11 +692,11 @@ TEST_F(VideoProcessorIntegrationTest,
                      false, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
-  SetQualityMetrics(&quality_metrics, 30.0, 18.0, 0.80, 0.40);
+  SetQualityMetrics(&quality_metrics, 29.0, 17.0, 0.80, 0.40);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[3];
-  SetRateControlMetrics(rc_metrics, 0, 35, 55, 70, 15, 40, 0);
-  SetRateControlMetrics(rc_metrics, 1, 15, 0, 50, 10, 30, 0);
+  SetRateControlMetrics(rc_metrics, 0, 50, 60, 100, 15, 45, 0);
+  SetRateControlMetrics(rc_metrics, 1, 30, 0, 65, 10, 35, 0);
   SetRateControlMetrics(rc_metrics, 2, 5, 0, 38, 10, 30, 0);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,

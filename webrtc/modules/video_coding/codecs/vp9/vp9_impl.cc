@@ -189,11 +189,8 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
   // Only positive speeds, currently: 0 - 7.
-  // O means slowest/best quality, 7 means fastest/lowest quality.
-  // TODO(marpan): Speeds 5-7 are speed settings for real-time mode, on desktop.
-  // Currently set to 5, update to 6 (for faster encoding) after some subjective
-  // quality tests.
-  cpu_speed_ = 5;
+  // O means slowest/best quality, 7 means fastest/lower quality.
+  cpu_speed_ = 6;
   // Note: some of these codec controls still use "VP8" in the control name.
   // TODO(marpan): Update this in the next/future libvpx version.
   vpx_codec_control(encoder_, VP8E_SET_CPUUSED, cpu_speed_);
