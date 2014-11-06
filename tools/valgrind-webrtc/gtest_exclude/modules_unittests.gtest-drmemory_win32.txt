@@ -1,6 +1,6 @@
 # Too slow to run with Dr Memory on Windows.
 ApmTest.EchoCancellationReportsCorrectDelays
-ApmTest.FloatAndIntInterfacesGiveIdenticalResults
+ApmTest.FloatAndIntInterfacesGiveSimilarResults
 ApmTest.IdenticalInputChannelsResultInIdenticalOutputChannels
 ApmTest.VerifyDebugDumpFloat
 ApmTest.VerifyDebugDumpInt
