@@ -344,6 +344,7 @@
                 'examples/android/res/values/arrays.xml',
                 'examples/android/res/values/strings.xml',
                 'examples/android/res/xml/preferences.xml',
+                'examples/android/src/org/appspot/apprtc/AppRTCAudioManager.java',
                 'examples/android/src/org/appspot/apprtc/AppRTCClient.java',
                 'examples/android/src/org/appspot/apprtc/AppRTCDemoActivity.java',
                 'examples/android/src/org/appspot/apprtc/ConnectActivity.java',
