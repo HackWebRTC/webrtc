@@ -34,6 +34,7 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/openssl.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/base/sslroots.h"
 #include "webrtc/base/stringutils.h"
 
@@ -141,7 +142,7 @@ static int socket_write(BIO* b, const char* in, int inl) {
 }
 
 static int socket_puts(BIO* b, const char* str) {
-  return socket_write(b, str, strlen(str));
+  return socket_write(b, str, rtc::checked_cast<int>(strlen(str)));
 }
 
 static long socket_ctrl(BIO* b, int cmd, long num, void* ptr) {
@@ -448,7 +449,7 @@ OpenSSLAdapter::Send(const void* pv, size_t cb) {
 
   ssl_write_needs_read_ = false;
 
-  int code = SSL_write(ssl_, pv, cb);
+  int code = SSL_write(ssl_, pv, checked_cast<int>(cb));
   switch (SSL_get_error(ssl_, code)) {
   case SSL_ERROR_NONE:
     //LOG(LS_INFO) << " -- success";
@@ -503,7 +504,7 @@ OpenSSLAdapter::Recv(void* pv, size_t cb) {
 
   ssl_read_needs_write_ = false;
 
-  int code = SSL_read(ssl_, pv, cb);
+  int code = SSL_read(ssl_, pv, checked_cast<int>(cb));
   switch (SSL_get_error(ssl_, code)) {
   case SSL_ERROR_NONE:
     //LOG(LS_INFO) << " -- success";
@@ -843,7 +844,8 @@ bool OpenSSLAdapter::ConfigureTrustedRootCertificates(SSL_CTX* ctx) {
   for (int i = 0; i < ARRAY_SIZE(kSSLCertCertificateList); i++) {
     const unsigned char* cert_buffer = kSSLCertCertificateList[i];
     size_t cert_buffer_len = kSSLCertCertificateSizeList[i];
-    X509* cert = d2i_X509(NULL, &cert_buffer, cert_buffer_len);
+    X509* cert = d2i_X509(NULL, &cert_buffer,
+                          checked_cast<long>(cert_buffer_len));
     if (cert) {
       int return_value = X509_STORE_add_cert(SSL_CTX_get_cert_store(ctx), cert);
       if (return_value == 0) {

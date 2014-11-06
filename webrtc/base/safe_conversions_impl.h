@@ -15,6 +15,8 @@
 
 #include <limits>
 
+#include "webrtc/base/compile_assert.h"
+
 namespace rtc {
 namespace internal {
 

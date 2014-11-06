@@ -26,6 +26,7 @@
 
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/openssl.h"
 #include "webrtc/base/openssladapter.h"
@@ -114,7 +115,7 @@ static int stream_read(BIO* b, char* out, int outl) {
   int error;
   StreamResult result = stream->Read(out, outl, &read, &error);
   if (result == SR_SUCCESS) {
-    return read;
+    return checked_cast<int>(read);
   } else if (result == SR_EOS) {
     b->num = 1;
   } else if (result == SR_BLOCK) {
@@ -132,7 +133,7 @@ static int stream_write(BIO* b, const char* in, int inl) {
   int error;
   StreamResult result = stream->Write(in, inl, &written, &error);
   if (result == SR_SUCCESS) {
-    return written;
+    return checked_cast<int>(written);
   } else if (result == SR_BLOCK) {
     BIO_set_retry_write(b);
   }
@@ -140,7 +141,7 @@ static int stream_write(BIO* b, const char* in, int inl) {
 }
 
 static int stream_puts(BIO* b, const char* str) {
-  return stream_write(b, str, strlen(str));
+  return stream_write(b, str, checked_cast<int>(strlen(str)));
 }
 
 static long stream_ctrl(BIO* b, int cmd, long num, void* ptr) {
@@ -364,7 +365,7 @@ StreamResult OpenSSLStreamAdapter::Write(const void* data, size_t data_len,
 
   ssl_write_needs_read_ = false;
 
-  int code = SSL_write(ssl_, data, data_len);
+  int code = SSL_write(ssl_, data, checked_cast<int>(data_len));
   int ssl_error = SSL_get_error(ssl_, code);
   switch (ssl_error) {
   case SSL_ERROR_NONE:
@@ -425,7 +426,7 @@ StreamResult OpenSSLStreamAdapter::Read(void* data, size_t data_len,
 
   ssl_read_needs_write_ = false;
 
-  int code = SSL_read(ssl_, data, data_len);
+  int code = SSL_read(ssl_, data, checked_cast<int>(data_len));
   int ssl_error = SSL_get_error(ssl_, code);
   switch (ssl_error) {
     case SSL_ERROR_NONE:

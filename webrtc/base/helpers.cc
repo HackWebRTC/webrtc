@@ -47,36 +47,17 @@ class RandomGenerator {
 };
 
 #if defined(SSL_USE_OPENSSL)
-// The OpenSSL RNG. Need to make sure it doesn't run out of entropy.
+// The OpenSSL RNG.
 class SecureRandomGenerator : public RandomGenerator {
  public:
-  SecureRandomGenerator() : inited_(false) {
-  }
-  ~SecureRandomGenerator() {
-  }
+  SecureRandomGenerator() {}
+  ~SecureRandomGenerator() {}
   virtual bool Init(const void* seed, size_t len) {
-    // By default, seed from the system state.
-    if (!inited_) {
-      if (RAND_poll() <= 0) {
-        return false;
-      }
-      inited_ = true;
-    }
-    // Allow app data to be mixed in, if provided.
-    if (seed) {
-      RAND_seed(seed, len);
-    }
     return true;
   }
   virtual bool Generate(void* buf, size_t len) {
-    if (!inited_ && !Init(NULL, 0)) {
-      return false;
-    }
     return (RAND_bytes(reinterpret_cast<unsigned char*>(buf), len) > 0);
   }
-
- private:
-  bool inited_;
 };
 
 #elif defined(SSL_USE_NSS_RNG)
