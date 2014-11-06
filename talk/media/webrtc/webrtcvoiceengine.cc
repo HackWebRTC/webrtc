@@ -110,7 +110,6 @@ static const int kDefaultAudioDeviceId = 0;
 
 static const char kIsacCodecName[] = "ISAC";
 static const char kL16CodecName[] = "L16";
-static const char kG722CodecName[] = "G722";
 
 // Parameter used for NACK.
 // This value is equivalent to 5 seconds of audio data at 20 ms per packet.
@@ -486,24 +485,12 @@ static void GetOpusConfig(const AudioCodec& codec, webrtc::CodecInst* voe_codec,
   voe_codec->rate = GetOpusBitrate(codec, *max_playback_rate);
 }
 
-// Changes RTP timestamp rate of G722. This is due to the "bug" in the RFC
-// which says that G722 should be advertised as 8 kHz although it is a 16 kHz
-// codec.
-static void MaybeFixupG722(webrtc::CodecInst* voe_codec, int new_plfreq) {
-  if (_stricmp(voe_codec->plname, kG722CodecName) == 0) {
-    // If the ASSERT triggers, the codec definition in WebRTC VoiceEngine
-    // has changed, and this special case is no longer needed.
-    ASSERT(voe_codec->plfreq != new_plfreq);
-    voe_codec->plfreq = new_plfreq;
-  }
-}
-
 void WebRtcVoiceEngine::ConstructCodecs() {
   LOG(LS_INFO) << "WebRtc VoiceEngine codecs:";
   int ncodecs = voe_wrapper_->codec()->NumOfCodecs();
   for (int i = 0; i < ncodecs; ++i) {
     webrtc::CodecInst voe_codec;
-    if (GetVoeCodec(i, voe_codec)) {
+    if (voe_wrapper_->codec()->GetCodec(i, voe_codec) != -1) {
       // Skip uncompressed formats.
       if (_stricmp(voe_codec.plname, kL16CodecName) == 0) {
         continue;
@@ -551,15 +538,6 @@ void WebRtcVoiceEngine::ConstructCodecs() {
   }
   // Make sure they are in local preference order.
   std::sort(codecs_.begin(), codecs_.end(), &AudioCodec::Preferable);
-}
-
-bool WebRtcVoiceEngine::GetVoeCodec(int index, webrtc::CodecInst& codec) {
-  if (voe_wrapper_->codec()->GetCodec(index, codec) != -1) {
-    // Change the sample rate of G722 to 8000 to match SDP.
-    MaybeFixupG722(&codec, 8000);
-    return true;
-  }
-  return false;
 }
 
 WebRtcVoiceEngine::~WebRtcVoiceEngine() {
@@ -1246,7 +1224,7 @@ bool WebRtcVoiceEngine::FindWebRtcCodec(const AudioCodec& in,
   int ncodecs = voe_wrapper_->codec()->NumOfCodecs();
   for (int i = 0; i < ncodecs; ++i) {
     webrtc::CodecInst voe_codec;
-    if (GetVoeCodec(i, voe_codec)) {
+    if (voe_wrapper_->codec()->GetCodec(i, voe_codec) != -1) {
       AudioCodec codec(voe_codec.pltype, voe_codec.plname, voe_codec.plfreq,
                        voe_codec.rate, voe_codec.channels, 0);
       bool multi_rate = IsCodecMultiRate(voe_codec);
@@ -1264,9 +1242,6 @@ bool WebRtcVoiceEngine::FindWebRtcCodec(const AudioCodec& in,
           if (multi_rate && in.bitrate != 0) {
             voe_codec.rate = in.bitrate;
           }
-
-          // Reset G722 sample rate to 16000 to match WebRTC.
-          MaybeFixupG722(&voe_codec, 16000);
 
           // Apply codec-specific settings.
           if (IsIsac(codec)) {
