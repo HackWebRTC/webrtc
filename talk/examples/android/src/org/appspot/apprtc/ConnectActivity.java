@@ -73,7 +73,6 @@ public class ConnectActivity extends Activity {
   private String keyprefUrl;
   private String keyprefResolution;
   private String keyprefFps;
-  private String keyprefCpuUsageDetection;
   private String keyprefRoom;
   private String keyprefRoomList;
   private ArrayList<String> roomList;
@@ -89,7 +88,6 @@ public class ConnectActivity extends Activity {
     keyprefUrl = getString(R.string.pref_url_key);
     keyprefResolution = getString(R.string.pref_resolution_key);
     keyprefFps = getString(R.string.pref_fps_key);
-    keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
     keyprefRoom = getString(R.string.pref_room_key);
     keyprefRoomList = getString(R.string.pref_room_list_key);
 
@@ -253,14 +251,6 @@ public class ConnectActivity extends Activity {
         if (MediaCodecVideoEncoder.isPlatformSupported()) {
           url += "&hd=true";
         }
-      }
-      // Test if CpuOveruseDetection should be disabled. By default is on.
-      boolean cpuOveruseDetection = sharedPref.getBoolean(
-          keyprefCpuUsageDetection,
-          Boolean.valueOf(
-              getString(R.string.pref_cpu_usage_detection_default)));
-      if (!cpuOveruseDetection) {
-        url += "&googCpuOveruseDetection=false";
       }
       // TODO(kjellander): Add support for custom parameters to the URL.
       connectToRoom(url);

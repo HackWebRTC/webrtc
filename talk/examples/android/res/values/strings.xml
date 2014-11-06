@@ -29,23 +29,19 @@
 
     <string name="pref_url_key">url_preference</string>
     <string name="pref_url_title">Connection URL:</string>
+    <string name="pref_url_summary">AppRTC connection server URL.</string>
     <string name="pref_url_dlg">Enter AppRTC connection server URL.</string>
     <string name="pref_url_default">https://apprtc.appspot.com</string>
 
     <string name="pref_resolution_key">resolution_preference</string>
     <string name="pref_resolution_title">Video resolution.</string>
+    <string name="pref_resolution_summary">Video resolution.</string>
     <string name="pref_resolution_dlg">Enter AppRTC local video resolution.</string>
     <string name="pref_resolution_default">Default</string>
 
     <string name="pref_fps_key">fps_preference</string>
     <string name="pref_fps_title">Camera fps.</string>
+    <string name="pref_fps_summary">Camera fps.</string>
     <string name="pref_fps_dlg">Enter local camera fps.</string>
     <string name="pref_fps_default">Default</string>
-
-    <string name="pref_cpu_usage_detection_key">cpu_usage_detection</string>
-    <string name="pref_cpu_usage_detection_title">CPU overuse detection.</string>
-    <string name="pref_cpu_usage_detection_dlg">Adapt transmission to CPU status.</string>
-    <string name="pref_cpu_usage_detection_default">true</string>
-    <string name="pref_cpu_usage_detection_on">Enabled</string>
-    <string name="pref_cpu_usage_detection_off">Disabled</string>
 </resources>

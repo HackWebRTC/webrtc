@@ -39,7 +39,6 @@ public class SettingsActivity extends Activity
   private String keyprefUrl;
   private String keyprefResolution;
   private String keyprefFps;
-  private String keyprefCpuUsageDetection;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +46,6 @@ public class SettingsActivity extends Activity
     keyprefUrl = getString(R.string.pref_url_key);
     keyprefResolution = getString(R.string.pref_resolution_key);
     keyprefFps = getString(R.string.pref_fps_key);
-    keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
 
     // Display the fragment as the main content.
     settingsFragment = new SettingsFragment();
@@ -66,7 +64,6 @@ public class SettingsActivity extends Activity
     updateSummary(sharedPreferences, keyprefUrl);
     updateSummary(sharedPreferences, keyprefResolution);
     updateSummary(sharedPreferences, keyprefFps);
-    updateSummaryB(sharedPreferences, keyprefCpuUsageDetection);
   }
 
   @Override
@@ -83,8 +80,6 @@ public class SettingsActivity extends Activity
     if (key.equals(keyprefUrl) || key.equals(keyprefResolution) ||
         key.equals(keyprefFps)) {
       updateSummary(sharedPreferences, key);
-    } else if (key.equals(keyprefCpuUsageDetection)) {
-      updateSummaryB(sharedPreferences, key);
     }
   }
 
@@ -92,13 +87,6 @@ public class SettingsActivity extends Activity
     Preference updatedPref = settingsFragment.findPreference(key);
     // Set summary to be the user-description for the selected value
     updatedPref.setSummary(sharedPreferences.getString(key, ""));
-  }
-
-  private void updateSummaryB(SharedPreferences sharedPreferences, String key) {
-    Preference updatedPref = settingsFragment.findPreference(key);
-    updatedPref.setSummary(sharedPreferences.getBoolean(key, true)
-        ? getString(R.string.pref_cpu_usage_detection_on)
-        : getString(R.string.pref_cpu_usage_detection_off));
   }
 
 }

@@ -3,12 +3,14 @@
     <EditTextPreference
         android:key="@string/pref_url_key"
         android:title="@string/pref_url_title"
+        android:summary="@string/pref_url_summary"
         android:defaultValue="@string/pref_url_default"
         android:inputType="textWebEmailAddress"
         android:dialogTitle="@string/pref_url_dlg" />
     <ListPreference
         android:key="@string/pref_resolution_key"
         android:title="@string/pref_resolution_title"
+        android:summary="@string/pref_resolution_summary"
         android:defaultValue="@string/pref_resolution_default"
         android:dialogTitle="@string/pref_resolution_dlg"
         android:entries="@array/videoResolutions"
@@ -16,14 +18,9 @@
     <ListPreference
         android:key="@string/pref_fps_key"
         android:title="@string/pref_fps_title"
+        android:summary="@string/pref_fps_summary"
         android:defaultValue="@string/pref_fps_default"
         android:dialogTitle="@string/pref_fps_dlg"
         android:entries="@array/cameraFps"
         android:entryValues="@array/cameraFps" />
-    <CheckBoxPreference
-        android:key="@string/pref_cpu_usage_detection_key"
-        android:title="@string/pref_cpu_usage_detection_title"
-        android:dialogTitle="@string/pref_cpu_usage_detection_dlg"
-        android:defaultValue="@string/pref_cpu_usage_detection_default" />
-
 </PreferenceScreen>
