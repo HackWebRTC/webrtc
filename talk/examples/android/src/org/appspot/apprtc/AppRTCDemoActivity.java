@@ -34,6 +34,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
@@ -71,7 +72,6 @@ public class AppRTCDemoActivity extends Activity
   private PeerConnectionClient pc;
   private AppRTCClient appRtcClient = new GAERTCClient(this, this);
   private AppRTCSignalingParameters appRtcParameters;
-  private AppRTCAudioManager audioManager = null;
   private View rootView;
   private View menuBar;
   private GLSurfaceView videoView;
@@ -187,9 +187,15 @@ public class AppRTCDemoActivity extends Activity
     hudView.setVisibility(View.INVISIBLE);
     addContentView(hudView, hudLayout);
 
-    // Create and audio manager that will take care of audio routing,
-    // audio modes, audio device enumeration etc.
-    audioManager = AppRTCAudioManager.create(this);
+    AudioManager audioManager =
+        ((AudioManager) getSystemService(AUDIO_SERVICE));
+    // TODO(fischman): figure out how to do this Right(tm) and remove the
+    // suppression.
+    @SuppressWarnings("deprecation")
+    boolean isWiredHeadsetOn = audioManager.isWiredHeadsetOn();
+    audioManager.setMode(isWiredHeadsetOn ?
+        AudioManager.MODE_IN_CALL : AudioManager.MODE_IN_COMMUNICATION);
+    audioManager.setSpeakerphoneOn(!isWiredHeadsetOn);
 
     final Intent intent = getIntent();
     Uri url = intent.getData();
@@ -247,10 +253,6 @@ public class AppRTCDemoActivity extends Activity
   @Override
   protected void onDestroy() {
     disconnect();
-    if (audioManager != null) {
-      audioManager.close();
-      audioManager = null;
-    }
     super.onDestroy();
   }
 
@@ -358,12 +360,6 @@ public class AppRTCDemoActivity extends Activity
   // All events are called from UI thread.
   @Override
   public void onConnectedToRoom(final AppRTCSignalingParameters params) {
-    if (audioManager != null) {
-      // Store existing audio settings and change audio mode to
-      // MODE_IN_COMMUNICATION for best possible VoIP performance.
-      logAndToast("Initializing the audio manager...");
-      audioManager.init();
-    }
     appRtcParameters = params;
     abortUnless(PeerConnectionFactory.initializeAndroidGlobals(
       this, true, true, VideoRendererGui.getEGLContext()),
