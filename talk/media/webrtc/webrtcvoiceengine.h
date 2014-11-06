@@ -199,6 +199,7 @@ class WebRtcVoiceEngine
 
   void Construct();
   void ConstructCodecs();
+  bool GetVoeCodec(int index, webrtc::CodecInst& codec);
   bool InitInternal();
   bool EnsureSoundclipEngineInit();
   void SetTraceFilter(int filter);
