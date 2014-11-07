@@ -213,8 +213,8 @@ static const char kSdpString[] =
     "t=0 0\r\n"
     "a=msid-semantic: WMS local_stream_1 local_stream_2\r\n"
     "m=audio 9 RTP/SAVPF 111 103 104\r\n"
-    "c=IN IP6 ::\r\n"
-    "a=rtcp:9 IN IP6 ::\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
+    "a=rtcp:9 IN IP4 0.0.0.0\r\n"
     "a=ice-ufrag:ufrag_voice\r\na=ice-pwd:pwd_voice\r\n"
     "a=mid:audio_content_name\r\n"
     "a=sendrecv\r\n"
@@ -234,8 +234,8 @@ static const char kSdpString[] =
     "a=ssrc:4 mslabel:local_stream_2\r\n"
     "a=ssrc:4 label:audio_track_id_2\r\n"
     "m=video 9 RTP/SAVPF 120\r\n"
-    "c=IN IP6 ::\r\n"
-    "a=rtcp:9 IN IP6 ::\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
+    "a=rtcp:9 IN IP4 0.0.0.0\r\n"
     "a=ice-ufrag:ufrag_video\r\na=ice-pwd:pwd_video\r\n"
     "a=mid:video_content_name\r\n"
     "a=sendrecv\r\n"
@@ -262,8 +262,8 @@ static const char kSdpString[] =
 
 static const char kSdpRtpDataChannelString[] =
     "m=application 9 RTP/SAVPF 101\r\n"
-    "c=IN IP6 ::\r\n"
-    "a=rtcp:9 IN IP6 ::\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
+    "a=rtcp:9 IN IP4 0.0.0.0\r\n"
     "a=ice-ufrag:ufrag_data\r\n"
     "a=ice-pwd:pwd_data\r\n"
     "a=mid:data_content_name\r\n"
@@ -278,7 +278,7 @@ static const char kSdpRtpDataChannelString[] =
 
 static const char kSdpSctpDataChannelString[] =
     "m=application 9 DTLS/SCTP 5000\r\n"
-    "c=IN IP6 ::\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
     "a=ice-ufrag:ufrag_data\r\n"
     "a=ice-pwd:pwd_data\r\n"
     "a=mid:data_content_name\r\n"
@@ -289,7 +289,7 @@ static const char kSdpSctpDataChannelStringWithSctpPort[] =
     "m=application 9 DTLS/SCTP webrtc-datachannel\r\n"
     "a=fmtp:webrtc-datachannel max-message-size=100000\r\n"
     "a=sctp-port 5000\r\n"
-    "c=IN IP6 ::\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
     "a=ice-ufrag:ufrag_data\r\n"
     "a=ice-pwd:pwd_data\r\n"
     "a=mid:data_content_name\r\n";
@@ -316,10 +316,10 @@ static const char kSdpConferenceString[] =
     "t=0 0\r\n"
     "a=msid-semantic: WMS\r\n"
     "m=audio 9 RTP/SAVPF 111 103 104\r\n"
-    "c=IN IP6 ::\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
     "a=x-google-flag:conference\r\n"
     "m=video 9 RTP/SAVPF 120\r\n"
-    "c=IN IP6 ::\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
     "a=x-google-flag:conference\r\n";
 
 static const char kSdpSessionString[] =
@@ -331,8 +331,8 @@ static const char kSdpSessionString[] =
 
 static const char kSdpAudioString[] =
     "m=audio 9 RTP/SAVPF 111\r\n"
-    "c=IN IP6 ::\r\n"
-    "a=rtcp:9 IN IP6 ::\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
+    "a=rtcp:9 IN IP4 0.0.0.0\r\n"
     "a=ice-ufrag:ufrag_voice\r\na=ice-pwd:pwd_voice\r\n"
     "a=mid:audio_content_name\r\n"
     "a=sendrecv\r\n"
@@ -344,8 +344,8 @@ static const char kSdpAudioString[] =
 
 static const char kSdpVideoString[] =
     "m=video 9 RTP/SAVPF 120\r\n"
-    "c=IN IP6 ::\r\n"
-    "a=rtcp:9 IN IP6 ::\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
+    "a=rtcp:9 IN IP4 0.0.0.0\r\n"
     "a=ice-ufrag:ufrag_video\r\na=ice-pwd:pwd_video\r\n"
     "a=mid:video_content_name\r\n"
     "a=sendrecv\r\n"
@@ -1596,7 +1596,7 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithDataChannelAndBandwidth) {
   // TODO(pthatcher): We need to temporarily allow the SDP to control
   // this for backwards-compatibility.  Once we don't need that any
   // more, remove this.
-  InjectAfter("m=application 9 RTP/SAVPF 101\r\nc=IN IP6 ::\r\n",
+  InjectAfter("m=application 9 RTP/SAVPF 101\r\nc=IN IP4 0.0.0.0\r\n",
               "b=AS:100\r\n",
               &expected_sdp);
   EXPECT_EQ(expected_sdp, message);
