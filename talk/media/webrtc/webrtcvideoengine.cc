@@ -64,6 +64,7 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/experiments.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/system_wrappers/interface/field_trial.h"
 
 namespace {
 
@@ -106,6 +107,7 @@ const int kVideoMtu = 1200;
 const int kVideoRtpBufferSize = 65536;
 
 const char kVp8CodecName[] = "VP8";
+const char kVp9CodecName[] = "VP9";
 
 // TODO(ronghuawu): Change to 640x360.
 const int kDefaultVideoMaxWidth = 640;
@@ -221,11 +223,21 @@ bool CodecIsInternallySupported(const std::string& codec_name) {
   if (CodecNameMatches(codec_name, kVp8CodecName)) {
     return true;
   }
+  if (CodecNameMatches(codec_name, kVp9CodecName)) {
+    const std::string group_name =
+        webrtc::field_trial::FindFullName("WebRTC-SupportVP9");
+    return group_name == "Enabled" || group_name == "EnabledByFlag";
+  }
   return false;
 }
 
 std::vector<VideoCodec> DefaultVideoCodecList() {
   std::vector<VideoCodec> codecs;
+  if (CodecIsInternallySupported(kVp9CodecName)) {
+    codecs.push_back(
+        MakeVideoCodecWithDefaultFeedbackParams(101, kVp9CodecName));
+    // TODO(andresp): Add rtx codec for vp9 and verify it works.
+  }
   codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(100, kVp8CodecName));
   codecs.push_back(MakeRtxCodec(96, 100));
   codecs.push_back(MakeVideoCodec(116, kRedCodecName));

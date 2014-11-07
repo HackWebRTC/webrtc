@@ -230,6 +230,12 @@ void* WebRtcVideoEncoderFactory2::CreateVideoEncoderSettings(
     options.video_noise_reduction.Get(&settings->denoisingOn);
     return settings;
   }
+  if (CodecNameMatches(codec.name, kVp9CodecName)) {
+    webrtc::VideoCodecVP9* settings = new webrtc::VideoCodecVP9(
+        webrtc::VideoEncoder::GetDefaultVp9Settings());
+    options.video_noise_reduction.Get(&settings->denoisingOn);
+    return settings;
+  }
   return NULL;
 }
 
@@ -241,6 +247,9 @@ void WebRtcVideoEncoderFactory2::DestroyVideoEncoderSettings(
   }
   if (CodecNameMatches(codec.name, kVp8CodecName)) {
     delete reinterpret_cast<webrtc::VideoCodecVP8*>(encoder_settings);
+  }
+  if (CodecNameMatches(codec.name, kVp9CodecName)) {
+    delete reinterpret_cast<webrtc::VideoCodecVP9*>(encoder_settings);
   }
 }
 
@@ -1604,6 +1613,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
 webrtc::VideoCodecType CodecTypeFromName(const std::string& name) {
   if (CodecNameMatches(name, kVp8CodecName)) {
     return webrtc::kVideoCodecVP8;
+  } else if (CodecNameMatches(name, kVp9CodecName)) {
+    return webrtc::kVideoCodecVP9;
   } else if (CodecNameMatches(name, kH264CodecName)) {
     return webrtc::kVideoCodecH264;
   }
@@ -1631,6 +1642,9 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoder(
   if (type == webrtc::kVideoCodecVP8) {
     return AllocatedEncoder(
         webrtc::VideoEncoder::Create(webrtc::VideoEncoder::kVp8), type, false);
+  } else if (type == webrtc::kVideoCodecVP9) {
+    return AllocatedEncoder(
+        webrtc::VideoEncoder::Create(webrtc::VideoEncoder::kVp9), type, false);
   }
 
   // This shouldn't happen, we should not be trying to create something we don't

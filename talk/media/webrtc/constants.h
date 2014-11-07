@@ -33,6 +33,7 @@ extern const int kVideoMtu;
 extern const int kVideoRtpBufferSize;
 
 extern const char kVp8CodecName[];
+extern const char kVp9CodecName[];
 extern const char kH264CodecName[];
 
 extern const int kDefaultVideoMaxWidth;
