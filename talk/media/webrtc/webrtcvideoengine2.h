@@ -280,6 +280,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   struct VideoCodecSettings {
     VideoCodecSettings();
 
+    bool operator ==(const VideoCodecSettings& other) const;
+
     VideoCodec codec;
     webrtc::FecConfig fec;
     int rtx_payload_type;
@@ -348,8 +350,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
       bool external;
     };
 
-    struct LastDimensions {
-      LastDimensions() : width(-1), height(-1), is_screencast(false) {}
+    struct Dimensions {
+      Dimensions() : width(-1), height(-1), is_screencast(false) {}
       int width;
       int height;
       bool is_screencast;
@@ -357,23 +359,28 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
     AllocatedEncoder CreateVideoEncoder(const VideoCodec& codec)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
-    void DestroyVideoEncoder(AllocatedEncoder* encoder);
+    void DestroyVideoEncoder(AllocatedEncoder* encoder)
+        EXCLUSIVE_LOCKS_REQUIRED(lock_);
     void SetCodecAndOptions(const VideoCodecSettings& codec,
                             const VideoOptions& options)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
     void RecreateWebRtcStream() EXCLUSIVE_LOCKS_REQUIRED(lock_);
+    webrtc::VideoEncoderConfig CreateVideoEncoderConfig(
+        const Dimensions& dimensions,
+        const VideoCodec& codec) const EXCLUSIVE_LOCKS_REQUIRED(lock_);
     void SetDimensions(int width, int height, bool is_screencast)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
     webrtc::Call* const call_;
-    WebRtcVideoEncoderFactory* const external_encoder_factory_;
-    WebRtcVideoEncoderFactory2* const encoder_factory_;
+    WebRtcVideoEncoderFactory* const external_encoder_factory_
+        GUARDED_BY(lock_);
+    WebRtcVideoEncoderFactory2* const encoder_factory_ GUARDED_BY(lock_);
 
     rtc::CriticalSection lock_;
     webrtc::VideoSendStream* stream_ GUARDED_BY(lock_);
     VideoSendStreamParameters parameters_ GUARDED_BY(lock_);
     AllocatedEncoder allocated_encoder_ GUARDED_BY(lock_);
-    LastDimensions last_dimensions_ GUARDED_BY(lock_);
+    Dimensions last_dimensions_ GUARDED_BY(lock_);
 
     VideoCapturer* capturer_ GUARDED_BY(lock_);
     bool sending_ GUARDED_BY(lock_);
