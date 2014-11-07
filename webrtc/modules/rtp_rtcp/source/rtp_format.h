@@ -53,12 +53,10 @@ class RtpPacketizer {
 class RtpDepacketizer {
  public:
   struct ParsedPayload {
-    explicit ParsedPayload(WebRtcRTPHeader* rtp_header)
-        : payload(NULL), payload_length(0), header(rtp_header) {}
-
     const uint8_t* payload;
     size_t payload_length;
-    WebRtcRTPHeader* header;
+    FrameType frame_type;
+    RTPTypeHeader type;
   };
 
   static RtpDepacketizer* Create(RtpVideoCodecTypes type);

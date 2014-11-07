@@ -79,13 +79,15 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
   }
 
   rtp_header->type.Video.isFirstPacket = is_first_packet;
-  RtpDepacketizer::ParsedPayload parsed_payload(rtp_header);
+  RtpDepacketizer::ParsedPayload parsed_payload;
   if (!depacketizer->Parse(&parsed_payload, payload, payload_data_length))
     return -1;
 
+  rtp_header->frameType = parsed_payload.frame_type;
+  rtp_header->type = parsed_payload.type;
   return data_callback_->OnReceivedPayloadData(parsed_payload.payload,
                                                parsed_payload.payload_length,
-                                               parsed_payload.header) == 0
+                                               rtp_header) == 0
              ? 0
              : -1;
 }

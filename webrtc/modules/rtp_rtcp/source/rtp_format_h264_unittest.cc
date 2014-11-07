@@ -399,17 +399,15 @@ class RtpDepacketizerH264Test : public ::testing::Test {
 
 TEST_F(RtpDepacketizerH264Test, TestSingleNalu) {
   uint8_t packet[2] = {0x05, 0xFF};  // F=0, NRI=0, Type=5.
-
-  WebRtcRTPHeader expected_header;
-  memset(&expected_header, 0, sizeof(expected_header));
-  RtpDepacketizer::ParsedPayload payload(&expected_header);
+  RtpDepacketizer::ParsedPayload payload;
 
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
   ExpectPacket(&payload, packet, sizeof(packet));
-  EXPECT_EQ(kVideoFrameKey, payload.header->frameType);
-  EXPECT_TRUE(payload.header->type.Video.isFirstPacket);
-  EXPECT_TRUE(payload.header->type.Video.codecHeader.H264.single_nalu);
-  EXPECT_FALSE(payload.header->type.Video.codecHeader.H264.stap_a);
+  EXPECT_EQ(kVideoFrameKey, payload.frame_type);
+  EXPECT_EQ(kRtpVideoH264, payload.type.Video.codec);
+  EXPECT_TRUE(payload.type.Video.isFirstPacket);
+  EXPECT_TRUE(payload.type.Video.codecHeader.H264.single_nalu);
+  EXPECT_FALSE(payload.type.Video.codecHeader.H264.stap_a);
 }
 
 TEST_F(RtpDepacketizerH264Test, TestStapAKey) {
@@ -417,17 +415,15 @@ TEST_F(RtpDepacketizerH264Test, TestStapAKey) {
                         // Length, nal header, payload.
                         0,      0x02, kIdr, 0xFF, 0,    0x03, kIdr, 0xFF,
                         0x00,   0,    0x04, kIdr, 0xFF, 0x00, 0x11};
-
-  WebRtcRTPHeader expected_header;
-  memset(&expected_header, 0, sizeof(expected_header));
-  RtpDepacketizer::ParsedPayload payload(&expected_header);
+  RtpDepacketizer::ParsedPayload payload;
 
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
   ExpectPacket(&payload, packet, sizeof(packet));
-  EXPECT_EQ(kVideoFrameKey, payload.header->frameType);
-  EXPECT_TRUE(payload.header->type.Video.isFirstPacket);
-  EXPECT_TRUE(payload.header->type.Video.codecHeader.H264.single_nalu);
-  EXPECT_TRUE(payload.header->type.Video.codecHeader.H264.stap_a);
+  EXPECT_EQ(kVideoFrameKey, payload.frame_type);
+  EXPECT_EQ(kRtpVideoH264, payload.type.Video.codec);
+  EXPECT_TRUE(payload.type.Video.isFirstPacket);
+  EXPECT_TRUE(payload.type.Video.codecHeader.H264.single_nalu);
+  EXPECT_TRUE(payload.type.Video.codecHeader.H264.stap_a);
 }
 
 TEST_F(RtpDepacketizerH264Test, TestStapADelta) {
@@ -435,17 +431,15 @@ TEST_F(RtpDepacketizerH264Test, TestStapADelta) {
                         // Length, nal header, payload.
                         0,      0x02, kSlice, 0xFF,   0,    0x03, kSlice, 0xFF,
                         0x00,   0,    0x04,   kSlice, 0xFF, 0x00, 0x11};
-
-  WebRtcRTPHeader expected_header;
-  memset(&expected_header, 0, sizeof(expected_header));
-  RtpDepacketizer::ParsedPayload payload(&expected_header);
+  RtpDepacketizer::ParsedPayload payload;
 
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
   ExpectPacket(&payload, packet, sizeof(packet));
-  EXPECT_EQ(kVideoFrameDelta, payload.header->frameType);
-  EXPECT_TRUE(payload.header->type.Video.isFirstPacket);
-  EXPECT_TRUE(payload.header->type.Video.codecHeader.H264.single_nalu);
-  EXPECT_TRUE(payload.header->type.Video.codecHeader.H264.stap_a);
+  EXPECT_EQ(kVideoFrameDelta, payload.frame_type);
+  EXPECT_EQ(kRtpVideoH264, payload.type.Video.codec);
+  EXPECT_TRUE(payload.type.Video.isFirstPacket);
+  EXPECT_TRUE(payload.type.Video.codecHeader.H264.single_nalu);
+  EXPECT_TRUE(payload.type.Video.codecHeader.H264.stap_a);
 }
 
 TEST_F(RtpDepacketizerH264Test, TestFuA) {
@@ -470,33 +464,36 @@ TEST_F(RtpDepacketizerH264Test, TestFuA) {
   };
   const uint8_t kExpected3[1] = {0x03};
 
-  WebRtcRTPHeader expected_header;
-  memset(&expected_header, 0, sizeof(expected_header));
-  RtpDepacketizer::ParsedPayload payload(&expected_header);
+  RtpDepacketizer::ParsedPayload payload;
 
   // We expect that the first packet is one byte shorter since the FU-A header
   // has been replaced by the original nal header.
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet1, sizeof(packet1)));
   ExpectPacket(&payload, kExpected1, sizeof(kExpected1));
-  EXPECT_EQ(kVideoFrameKey, payload.header->frameType);
-  EXPECT_TRUE(payload.header->type.Video.isFirstPacket);
-  EXPECT_FALSE(payload.header->type.Video.codecHeader.H264.single_nalu);
-  EXPECT_FALSE(payload.header->type.Video.codecHeader.H264.stap_a);
+  EXPECT_EQ(kVideoFrameKey, payload.frame_type);
+  EXPECT_EQ(kRtpVideoH264, payload.type.Video.codec);
+  EXPECT_TRUE(payload.type.Video.isFirstPacket);
+  EXPECT_FALSE(payload.type.Video.codecHeader.H264.single_nalu);
+  EXPECT_FALSE(payload.type.Video.codecHeader.H264.stap_a);
 
   // Following packets will be 2 bytes shorter since they will only be appended
   // onto the first packet.
+  payload = RtpDepacketizer::ParsedPayload();
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet2, sizeof(packet2)));
   ExpectPacket(&payload, kExpected2, sizeof(kExpected2));
-  EXPECT_EQ(kVideoFrameKey, payload.header->frameType);
-  EXPECT_FALSE(payload.header->type.Video.isFirstPacket);
-  EXPECT_FALSE(payload.header->type.Video.codecHeader.H264.single_nalu);
-  EXPECT_FALSE(payload.header->type.Video.codecHeader.H264.stap_a);
+  EXPECT_EQ(kVideoFrameKey, payload.frame_type);
+  EXPECT_EQ(kRtpVideoH264, payload.type.Video.codec);
+  EXPECT_FALSE(payload.type.Video.isFirstPacket);
+  EXPECT_FALSE(payload.type.Video.codecHeader.H264.single_nalu);
+  EXPECT_FALSE(payload.type.Video.codecHeader.H264.stap_a);
 
+  payload = RtpDepacketizer::ParsedPayload();
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet3, sizeof(packet3)));
   ExpectPacket(&payload, kExpected3, sizeof(kExpected3));
-  EXPECT_EQ(kVideoFrameKey, payload.header->frameType);
-  EXPECT_FALSE(payload.header->type.Video.isFirstPacket);
-  EXPECT_FALSE(payload.header->type.Video.codecHeader.H264.single_nalu);
-  EXPECT_FALSE(payload.header->type.Video.codecHeader.H264.stap_a);
+  EXPECT_EQ(kVideoFrameKey, payload.frame_type);
+  EXPECT_EQ(kRtpVideoH264, payload.type.Video.codec);
+  EXPECT_FALSE(payload.type.Video.isFirstPacket);
+  EXPECT_FALSE(payload.type.Video.codecHeader.H264.single_nalu);
+  EXPECT_FALSE(payload.type.Video.codecHeader.H264.stap_a);
 }
 }  // namespace webrtc
