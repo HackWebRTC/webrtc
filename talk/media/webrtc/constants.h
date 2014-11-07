@@ -35,7 +35,9 @@ extern const int kVideoRtpBufferSize;
 extern const char kVp8CodecName[];
 extern const char kH264CodecName[];
 
-extern const int kDefaultFramerate;
+extern const int kDefaultVideoMaxWidth;
+extern const int kDefaultVideoMaxHeight;
+extern const int kDefaultVideoMaxFramerate;
 extern const int kMinVideoBitrate;
 extern const int kStartVideoBitrate;
 extern const int kMaxVideoBitrate;

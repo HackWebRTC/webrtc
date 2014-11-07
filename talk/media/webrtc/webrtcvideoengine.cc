@@ -55,6 +55,7 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/byteorder.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/cpumonitor.h"
 #include "webrtc/base/logging.h"
@@ -106,7 +107,10 @@ const int kVideoRtpBufferSize = 65536;
 
 const char kVp8CodecName[] = "VP8";
 
-const int kDefaultFramerate = 30;
+// TODO(ronghuawu): Change to 640x360.
+const int kDefaultVideoMaxWidth = 640;
+const int kDefaultVideoMaxHeight = 400;
+const int kDefaultVideoMaxFramerate = 30;
 const int kMinVideoBitrate = 30;
 const int kStartVideoBitrate = 300;
 const int kMaxVideoBitrate = 2000;
@@ -176,15 +180,57 @@ static const bool kNotSending = false;
 static const rtc::DiffServCodePoint kVideoDscpValue =
     rtc::DSCP_AF41;
 
-static bool IsNackEnabled(const VideoCodec& codec) {
-  return codec.HasFeedbackParam(FeedbackParam(kRtcpFbParamNack,
-                                              kParamValueEmpty));
+bool IsNackEnabled(const VideoCodec& codec) {
+  return codec.HasFeedbackParam(
+      FeedbackParam(kRtcpFbParamNack, kParamValueEmpty));
 }
 
-// Returns true if Receiver Estimated Max Bitrate is enabled.
-static bool IsRembEnabled(const VideoCodec& codec) {
-  return codec.HasFeedbackParam(FeedbackParam(kRtcpFbParamRemb,
-                                              kParamValueEmpty));
+bool IsRembEnabled(const VideoCodec& codec) {
+  return codec.HasFeedbackParam(
+      FeedbackParam(kRtcpFbParamRemb, kParamValueEmpty));
+}
+
+void AddDefaultFeedbackParams(VideoCodec* codec) {
+  codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamCcm, kRtcpFbCcmParamFir));
+  codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamNack, kParamValueEmpty));
+  codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamNack, kRtcpFbNackParamPli));
+  codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamRemb, kParamValueEmpty));
+}
+
+bool CodecNameMatches(const std::string& name1, const std::string& name2) {
+  return _stricmp(name1.c_str(), name2.c_str()) == 0;
+}
+
+static VideoCodec MakeVideoCodecWithDefaultFeedbackParams(int payload_type,
+                                                          const char* name) {
+  VideoCodec codec(payload_type, name, kDefaultVideoMaxWidth,
+                   kDefaultVideoMaxHeight, kDefaultVideoMaxFramerate, 0);
+  AddDefaultFeedbackParams(&codec);
+  return codec;
+}
+
+static VideoCodec MakeVideoCodec(int payload_type, const char* name) {
+  return VideoCodec(payload_type, name, 0, 0, 0, 0);
+}
+
+static VideoCodec MakeRtxCodec(int payload_type, int associated_payload_type) {
+  return VideoCodec::CreateRtxCodec(payload_type, associated_payload_type);
+}
+
+bool CodecIsInternallySupported(const std::string& codec_name) {
+  if (CodecNameMatches(codec_name, kVp8CodecName)) {
+    return true;
+  }
+  return false;
+}
+
+std::vector<VideoCodec> DefaultVideoCodecList() {
+  std::vector<VideoCodec> codecs;
+  codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(100, kVp8CodecName));
+  codecs.push_back(MakeRtxCodec(96, 100));
+  codecs.push_back(MakeVideoCodec(116, kRedCodecName));
+  codecs.push_back(MakeVideoCodec(117, kUlpfecCodecName));
+  return codecs;
 }
 
 struct FlushBlackFrameData : public rtc::MessageData {
@@ -923,18 +969,6 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   AdaptFormatType adapt_format_type_;
 };
 
-const WebRtcVideoEngine::VideoCodecPref
-    WebRtcVideoEngine::kVideoCodecPrefs[] = {
-    {kVp8CodecName, 100, -1, 0},
-    {kRedCodecName, 116, -1, 1},
-    {kUlpfecCodecName, 117, -1, 2},
-    {kRtxCodecName, 96, 100, 3},
-};
-
-const VideoFormatPod WebRtcVideoEngine::kDefaultMaxVideoFormat =
-  {640, 400, FPS_TO_INTERVAL(30), FOURCC_ANY};
-// TODO(ronghuawu): Change to 640x360.
-
 static bool GetCpuOveruseOptions(const VideoOptions& options,
                                  webrtc::CpuOveruseOptions* overuse_options) {
   int underuse_threshold = 0;
@@ -1018,20 +1052,14 @@ void WebRtcVideoEngine::Construct(ViEWrapper* vie_wrapper,
     LOG_RTCERR1(SetTraceCallback, this);
   }
 
+  default_video_codec_list_ = DefaultVideoCodecList();
+
   // Set default quality levels for our supported codecs. We override them here
   // if we know your cpu performance is low, and they can be updated explicitly
   // by calling SetDefaultCodec.  For example by a flute preference setting, or
   // by the server with a jec in response to our reported system info.
-  VideoCodec max_codec(kVideoCodecPrefs[0].payload_type,
-                       kVideoCodecPrefs[0].name,
-                       kDefaultMaxVideoFormat.width,
-                       kDefaultMaxVideoFormat.height,
-                       VideoFormat::IntervalToFps(
-                           kDefaultMaxVideoFormat.interval),
-                       0);
-  if (!SetDefaultCodec(max_codec)) {
-    LOG(LS_ERROR) << "Failed to initialize list of supported codec types";
-  }
+  CHECK(SetDefaultCodec(default_video_codec_list_.front()))
+      << "Failed to initialize list of supported codec types.";
 
   // Consider jitter, packet loss, etc when rendering.  This will
   // theoretically make rendering more smooth.
@@ -1214,13 +1242,12 @@ bool WebRtcVideoEngine::FindCodec(const VideoCodec& in) {
         return true;
     }
   }
-  for (size_t j = 0; j < ARRAY_SIZE(kVideoCodecPrefs); ++j) {
-    VideoCodec codec(kVideoCodecPrefs[j].payload_type,
-                     kVideoCodecPrefs[j].name, 0, 0, 0, 0);
-    if (codec.Matches(in)) {
+  for (size_t j = 0; j != default_video_codec_list_.size(); ++j) {
+    if (default_video_codec_list_[j].Matches(in)) {
       return true;
     }
   }
+
   return false;
 }
 
@@ -1428,17 +1455,6 @@ void WebRtcVideoEngine::SetTraceOptions(const std::string& options) {
   }
 }
 
-static void AddDefaultFeedbackParams(VideoCodec* codec) {
-  const FeedbackParam kFir(kRtcpFbParamCcm, kRtcpFbCcmParamFir);
-  codec->AddFeedbackParam(kFir);
-  const FeedbackParam kNack(kRtcpFbParamNack, kParamValueEmpty);
-  codec->AddFeedbackParam(kNack);
-  const FeedbackParam kPli(kRtcpFbParamNack, kRtcpFbNackParamPli);
-  codec->AddFeedbackParam(kPli);
-  const FeedbackParam kRemb(kRtcpFbParamRemb, kParamValueEmpty);
-  codec->AddFeedbackParam(kRemb);
-}
-
 // Rebuilds the codec list to be only those that are less intensive
 // than the specified codec. Prefers internal codec over external with
 // higher preference field.
@@ -1448,27 +1464,17 @@ bool WebRtcVideoEngine::RebuildCodecList(const VideoCodec& in_codec) {
 
   video_codecs_.clear();
 
-  bool found = false;
   std::set<std::string> internal_codec_names;
-  for (size_t i = 0; i < ARRAY_SIZE(kVideoCodecPrefs); ++i) {
-    const VideoCodecPref& pref(kVideoCodecPrefs[i]);
-    if (!found)
-      found = (in_codec.name == pref.name);
-    if (found) {
-      VideoCodec codec(pref.payload_type, pref.name,
-                       in_codec.width, in_codec.height, in_codec.framerate,
-                       static_cast<int>(ARRAY_SIZE(kVideoCodecPrefs) - i));
-      if (_stricmp(kVp8CodecName, codec.name.c_str()) == 0) {
-        AddDefaultFeedbackParams(&codec);
-      }
-      if (pref.associated_payload_type != -1) {
-        codec.SetParam(kCodecParamAssociatedPayloadType,
-                       pref.associated_payload_type);
-      }
-      video_codecs_.push_back(codec);
-      internal_codec_names.insert(codec.name);
-    }
+  for (size_t i = 0; i != default_video_codec_list_.size(); ++i) {
+    VideoCodec codec = default_video_codec_list_[i];
+    codec.width = in_codec.width;
+    codec.height = in_codec.height;
+    codec.framerate = in_codec.framerate;
+    video_codecs_.push_back(codec);
+
+    internal_codec_names.insert(codec.name);
   }
+
   if (encoder_factory_) {
     const std::vector<WebRtcVideoEncoderFactory::VideoCodec>& codecs =
         encoder_factory_->codecs();
@@ -1476,8 +1482,6 @@ bool WebRtcVideoEngine::RebuildCodecList(const VideoCodec& in_codec) {
       bool is_internal_codec = internal_codec_names.find(codecs[i].name) !=
           internal_codec_names.end();
       if (!is_internal_codec) {
-        if (!found)
-          found = (in_codec.name == codecs[i].name);
         VideoCodec codec(
             GetExternalVideoPayloadType(static_cast<int>(i)),
             codecs[i].name,
@@ -1492,7 +1496,6 @@ bool WebRtcVideoEngine::RebuildCodecList(const VideoCodec& in_codec) {
       }
     }
   }
-  ASSERT(found);
   return true;
 }
 
@@ -1598,12 +1601,10 @@ void WebRtcVideoEngine::SetExternalEncoderFactory(
   encoder_factory_ = encoder_factory;
 
   // Rebuild codec list while reapplying the current default codec format.
-  VideoCodec max_codec(kVideoCodecPrefs[0].payload_type,
-                       kVideoCodecPrefs[0].name,
-                       video_codecs_[0].width,
-                       video_codecs_[0].height,
-                       video_codecs_[0].framerate,
-                       0);
+  VideoCodec max_codec = default_video_codec_list_[0];
+  max_codec.width = video_codecs_[0].width;
+  max_codec.height = video_codecs_[0].height;
+  max_codec.framerate = video_codecs_[0].framerate;
   if (!RebuildCodecList(max_codec)) {
     LOG(LS_ERROR) << "Failed to initialize list of supported codec types";
   }

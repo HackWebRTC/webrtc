@@ -85,6 +85,15 @@ class WebRtcVoiceEngine;
 struct CapturedFrame;
 struct Device;
 
+// This set of methods is declared here for the sole purpose of sharing code
+// between webrtc video engine v1 and v2.
+std::vector<VideoCodec> DefaultVideoCodecList();
+bool CodecNameMatches(const std::string& name1, const std::string& name2);
+bool CodecIsInternallySupported(const std::string& codec_name);
+bool IsNackEnabled(const VideoCodec& codec);
+bool IsRembEnabled(const VideoCodec& codec);
+void AddDefaultFeedbackParams(VideoCodec* codec);
+
 class WebRtcVideoEngine : public sigslot::has_slots<>,
                           public webrtc::TraceCallback {
  public:
@@ -187,18 +196,6 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
 
  private:
   typedef std::vector<WebRtcVideoMediaChannel*> VideoChannels;
-  struct VideoCodecPref {
-    const char* name;
-    int payload_type;
-    // For RTX, this field is the payload-type that RTX applies to.
-    // For other codecs, it should be set to -1.
-    int associated_payload_type;
-    int pref;
-  };
-
-  static const VideoCodecPref kVideoCodecPrefs[];
-  static const VideoFormatPod kVideoFormats[];
-  static const VideoFormatPod kDefaultMaxVideoFormat;
 
   void Construct(ViEWrapper* vie_wrapper,
                  ViETraceWrapper* tracing,
@@ -225,6 +222,7 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   WebRtcVideoEncoderFactory* encoder_factory_;
   WebRtcVideoDecoderFactory* decoder_factory_;
   std::vector<VideoCodec> video_codecs_;
+  std::vector<VideoCodec> default_video_codec_list_;
   std::vector<RtpHeaderExtension> rtp_header_extensions_;
   VideoFormat default_codec_format_;
 

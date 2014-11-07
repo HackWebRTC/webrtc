@@ -36,6 +36,7 @@
 #include "talk/media/base/videorenderer.h"
 #include "talk/media/webrtc/constants.h"
 #include "talk/media/webrtc/webrtcvideocapturer.h"
+#include "talk/media/webrtc/webrtcvideoengine.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
 #include "webrtc/base/buffer.h"
@@ -51,26 +52,6 @@
 
 namespace cricket {
 namespace {
-
-static bool CodecNameMatches(const std::string& name1,
-                             const std::string& name2) {
-  return _stricmp(name1.c_str(), name2.c_str()) == 0;
-}
-
-const char* kInternallySupportedCodecs[] = {
-    kVp8CodecName,
-};
-
-// True if codec is supported by a software implementation that's always
-// available.
-static bool CodecIsInternallySupported(const std::string& codec_name) {
-  for (size_t i = 0; i < ARRAY_SIZE(kInternallySupportedCodecs); ++i) {
-    if (CodecNameMatches(codec_name, kInternallySupportedCodecs[i]))
-      return true;
-  }
-  return false;
-}
-
 static std::string CodecVectorToString(const std::vector<VideoCodec>& codecs) {
   std::stringstream out;
   out << '{';
@@ -116,6 +97,29 @@ static std::string RtpExtensionsToString(
   return out.str();
 }
 
+// Merges two fec configs and logs an error if a conflict arises
+// such that merging in diferent order would trigger a diferent output.
+static void MergeFecConfig(const webrtc::FecConfig& other,
+                           webrtc::FecConfig* output) {
+  if (other.ulpfec_payload_type != -1) {
+    if (output->ulpfec_payload_type != -1 &&
+        output->ulpfec_payload_type != other.ulpfec_payload_type) {
+      LOG(LS_WARNING) << "Conflict merging ulpfec_payload_type configs: "
+                      << output->ulpfec_payload_type << " and "
+                      << other.ulpfec_payload_type;
+    }
+    output->ulpfec_payload_type = other.ulpfec_payload_type;
+  }
+  if (other.red_payload_type != -1) {
+    if (output->red_payload_type != -1 &&
+        output->red_payload_type != other.red_payload_type) {
+      LOG(LS_WARNING) << "Conflict merging red_payload_type configs: "
+                      << output->red_payload_type << " and "
+                      << other.red_payload_type;
+    }
+    output->red_payload_type = other.red_payload_type;
+  }
+}
 }  // namespace
 
 // This constant is really an on/off, lower-level configurable NACK history
@@ -135,18 +139,7 @@ static const int kExternalVideoPayloadTypeBase = 120;
 static const size_t kMaxExternalVideoCodecs = 8;
 #endif
 
-struct VideoCodecPref {
-  int payload_type;
-  int width;
-  int height;
-  const char* name;
-  int rtx_payload_type;
-} kDefaultVideoCodecPref = {100, 640, 400, kVp8CodecName, 96};
-
 const char kH264CodecName[] = "H264";
-
-VideoCodecPref kRedPref = {116, -1, -1, kRedCodecName, -1};
-VideoCodecPref kUlpfecPref = {117, -1, -1, kUlpfecCodecName, -1};
 
 static bool FindFirstMatchingCodec(const std::vector<VideoCodec>& codecs,
                                    const VideoCodec& requested_codec,
@@ -158,59 +151,6 @@ static bool FindFirstMatchingCodec(const std::vector<VideoCodec>& codecs,
     }
   }
   return false;
-}
-
-static void AddDefaultFeedbackParams(VideoCodec* codec) {
-  const FeedbackParam kFir(kRtcpFbParamCcm, kRtcpFbCcmParamFir);
-  codec->AddFeedbackParam(kFir);
-  const FeedbackParam kNack(kRtcpFbParamNack, kParamValueEmpty);
-  codec->AddFeedbackParam(kNack);
-  const FeedbackParam kPli(kRtcpFbParamNack, kRtcpFbNackParamPli);
-  codec->AddFeedbackParam(kPli);
-  const FeedbackParam kRemb(kRtcpFbParamRemb, kParamValueEmpty);
-  codec->AddFeedbackParam(kRemb);
-}
-
-static bool IsNackEnabled(const VideoCodec& codec) {
-  return codec.HasFeedbackParam(
-      FeedbackParam(kRtcpFbParamNack, kParamValueEmpty));
-}
-
-static bool IsRembEnabled(const VideoCodec& codec) {
-  return codec.HasFeedbackParam(
-      FeedbackParam(kRtcpFbParamRemb, kParamValueEmpty));
-}
-
-static VideoCodec DefaultVideoCodec() {
-  VideoCodec default_codec(kDefaultVideoCodecPref.payload_type,
-                           kDefaultVideoCodecPref.name,
-                           kDefaultVideoCodecPref.width,
-                           kDefaultVideoCodecPref.height,
-                           kDefaultFramerate,
-                           0);
-  AddDefaultFeedbackParams(&default_codec);
-  return default_codec;
-}
-
-static VideoCodec DefaultRedCodec() {
-  return VideoCodec(kRedPref.payload_type, kRedPref.name, 0, 0, 0, 0);
-}
-
-static VideoCodec DefaultUlpfecCodec() {
-  return VideoCodec(kUlpfecPref.payload_type, kUlpfecPref.name, 0, 0, 0, 0);
-}
-
-static std::vector<VideoCodec> DefaultVideoCodecs() {
-  std::vector<VideoCodec> codecs;
-  codecs.push_back(DefaultVideoCodec());
-  codecs.push_back(DefaultRedCodec());
-  codecs.push_back(DefaultUlpfecCodec());
-  if (kDefaultVideoCodecPref.rtx_payload_type != -1) {
-    codecs.push_back(
-        VideoCodec::CreateRtxCodec(kDefaultVideoCodecPref.rtx_payload_type,
-                                   kDefaultVideoCodecPref.payload_type));
-  }
-  return codecs;
 }
 
 static bool ValidateRtpHeaderExtensionIds(
@@ -258,7 +198,7 @@ std::vector<webrtc::VideoStream> WebRtcVideoEncoderFactory2::CreateVideoStreams(
   stream.width = codec.width;
   stream.height = codec.height;
   stream.max_framerate =
-      codec.framerate != 0 ? codec.framerate : kDefaultFramerate;
+      codec.framerate != 0 ? codec.framerate : kDefaultVideoMaxFramerate;
 
   int min_bitrate = kMinVideoBitrate;
   codec.GetParam(kCodecParamMinBitrate, &min_bitrate);
@@ -350,9 +290,9 @@ void DefaultUnsignalledSsrcHandler::SetDefaultRenderer(
 WebRtcVideoEngine2::WebRtcVideoEngine2()
     : worker_thread_(NULL),
       voice_engine_(NULL),
-      default_codec_format_(kDefaultVideoCodecPref.width,
-                            kDefaultVideoCodecPref.height,
-                            FPS_TO_INTERVAL(kDefaultFramerate),
+      default_codec_format_(kDefaultVideoMaxWidth,
+                            kDefaultVideoMaxHeight,
+                            FPS_TO_INTERVAL(kDefaultVideoMaxFramerate),
                             FOURCC_ANY),
       initialized_(false),
       cpu_monitor_(new rtc::CpuMonitor(NULL)),
@@ -571,7 +511,7 @@ WebRtcVideoEncoderFactory2* WebRtcVideoEngine2::GetVideoEncoderFactory() {
 }
 
 std::vector<VideoCodec> WebRtcVideoEngine2::GetSupportedCodecs() const {
-  std::vector<VideoCodec> supported_codecs = DefaultVideoCodecs();
+  std::vector<VideoCodec> supported_codecs = DefaultVideoCodecList();
 
   if (external_encoder_factory_ == NULL) {
     return supported_codecs;
@@ -1097,19 +1037,19 @@ void WebRtcVideoChannel2::ConfigureReceiverRtp(
   }
 
   for (size_t i = 0; i < recv_codecs_.size(); ++i) {
-    if (recv_codecs_[i].codec.id == kDefaultVideoCodecPref.payload_type) {
-      config->rtp.fec = recv_codecs_[i].fec;
-      uint32 rtx_ssrc;
-      if (recv_codecs_[i].rtx_payload_type != -1 &&
-          sp.GetFidSsrc(ssrc, &rtx_ssrc)) {
-        config->rtp.rtx[kDefaultVideoCodecPref.payload_type].ssrc = rtx_ssrc;
-        config->rtp.rtx[kDefaultVideoCodecPref.payload_type].payload_type =
-            recv_codecs_[i].rtx_payload_type;
-      }
-      break;
-    }
+    MergeFecConfig(recv_codecs_[i].fec, &config->rtp.fec);
   }
 
+  for (size_t i = 0; i < recv_codecs_.size(); ++i) {
+    uint32 rtx_ssrc;
+    if (recv_codecs_[i].rtx_payload_type != -1 &&
+        sp.GetFidSsrc(ssrc, &rtx_ssrc)) {
+      webrtc::VideoReceiveStream::Config::Rtp::Rtx& rtx =
+          config->rtp.rtx[recv_codecs_[i].codec.id];
+      rtx.ssrc = rtx_ssrc;
+      rtx.payload_type = recv_codecs_[i].rtx_payload_type;
+    }
+  }
 }
 
 bool WebRtcVideoChannel2::RemoveRecvStream(uint32 ssrc) {
