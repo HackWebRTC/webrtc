@@ -61,7 +61,7 @@ static const cricket::AudioCodec kAudioCodecs[] = {
   cricket::AudioCodec(119, "ISACLC", 16000, 40000, 1, 16),
   cricket::AudioCodec(99,  "speex",  16000, 22000, 1, 15),
   cricket::AudioCodec(97,  "IPCMWB", 16000, 80000, 1, 14),
-  cricket::AudioCodec(9,   "G722",   16000, 64000, 1, 13),
+  cricket::AudioCodec(9,   "G722",   8000,  64000, 1, 13),
   cricket::AudioCodec(102, "iLBC",   8000,  13300, 1, 12),
   cricket::AudioCodec(98,  "speex",  8000,  11000, 1, 11),
   cricket::AudioCodec(3,   "GSM",    8000,  13000, 1, 10),
@@ -81,7 +81,7 @@ static const cricket::AudioCodec kAudioCodecs[] = {
 static const cricket::AudioCodec kAudioCodecsDifferentPreference[] = {
   cricket::AudioCodec(104, "ISAC",   32000, -1,    1, 17),
   cricket::AudioCodec(97,  "IPCMWB", 16000, 80000, 1, 14),
-  cricket::AudioCodec(9,   "G722",   16000, 64000, 1, 13),
+  cricket::AudioCodec(9,   "G722",   8000,  64000, 1, 13),
   cricket::AudioCodec(119, "ISACLC", 16000, 40000, 1, 16),
   cricket::AudioCodec(103, "ISAC",   16000, -1,    1, 18),
   cricket::AudioCodec(99,  "speex",  16000, 22000, 1, 15),
@@ -197,7 +197,7 @@ const std::string kGingleInitiate(
      "      <payload-type xmlns='http://www.google.com/session/phone' " \
      "        id='97' name='IPCMWB' clockrate='16000' bitrate='80000' />   " \
      "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='9' name='G722' clockrate='16000' bitrate='64000' /> " \
+     "        id='9' name='G722' clockrate='8000' bitrate='64000' /> " \
      "      <payload-type xmlns='http://www.google.com/session/phone' " \
      "        id='102' name='iLBC' clockrate='8000' bitrate='13300' />" \
      "      <payload-type xmlns='http://www.google.com/session/phone' " \
@@ -248,7 +248,7 @@ const std::string kJingleInitiate(
      "          <parameter name='bitrate' value='80000'/>               " \
      "        </payload-type>                                           " \
      "        <payload-type                                             " \
-     "          id='9' name='G722' clockrate='16000'>                   " \
+     "          id='9' name='G722' clockrate='8000'>                   " \
      "          <parameter name='bitrate' value='64000'/>               " \
      "        </payload-type>                                           " \
      "        <payload-type                                             " \
@@ -1918,7 +1918,7 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
      e = NextFromPayloadType(e);
     ASSERT_TRUE(e != NULL);
     codec = AudioCodecFromPayloadType(e);
-    VerifyAudioCodec(codec, 9, "G722", 16000, 64000, 1);
+    VerifyAudioCodec(codec, 9, "G722", 8000, 64000, 1);
 
     e = NextFromPayloadType(e);
     ASSERT_TRUE(e != NULL);
@@ -2112,7 +2112,7 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
     codec = AudioCodecFromPayloadType(e);
     ASSERT_EQ(9, codec.id);
     ASSERT_EQ("G722", codec.name);
-    ASSERT_EQ(16000, codec.clockrate);
+    ASSERT_EQ(8000, codec.clockrate);
     ASSERT_EQ(64000, codec.bitrate);
     ASSERT_EQ(1, codec.channels);
 

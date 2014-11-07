@@ -52,14 +52,16 @@ static const cricket::AudioCodec kPcmuCodec(0, "PCMU", 8000, 64000, 1, 0);
 static const cricket::AudioCodec kIsacCodec(103, "ISAC", 16000, 32000, 1, 0);
 static const cricket::AudioCodec kCeltCodec(110, "CELT", 32000, 64000, 2, 0);
 static const cricket::AudioCodec kOpusCodec(111, "opus", 48000, 64000, 2, 0);
+static const cricket::AudioCodec kG722CodecVoE(9, "G722", 16000, 64000, 1, 0);
+static const cricket::AudioCodec kG722CodecSdp(9, "G722", 8000, 64000, 1, 0);
 static const cricket::AudioCodec kRedCodec(117, "red", 8000, 0, 1, 0);
 static const cricket::AudioCodec kCn8000Codec(13, "CN", 8000, 0, 1, 0);
 static const cricket::AudioCodec kCn16000Codec(105, "CN", 16000, 0, 1, 0);
 static const cricket::AudioCodec
     kTelephoneEventCodec(106, "telephone-event", 8000, 0, 1, 0);
 static const cricket::AudioCodec* const kAudioCodecs[] = {
-    &kPcmuCodec, &kIsacCodec, &kCeltCodec, &kOpusCodec, &kRedCodec,
-    &kCn8000Codec, &kCn16000Codec, &kTelephoneEventCodec,
+    &kPcmuCodec, &kIsacCodec, &kCeltCodec, &kOpusCodec, &kG722CodecVoE,
+    &kRedCodec, &kCn8000Codec, &kCn16000Codec, &kTelephoneEventCodec,
 };
 const char kRingbackTone[] = "RIFF____WAVE____ABCD1234";
 static uint32 kSsrc1 = 0x99;
@@ -768,6 +770,20 @@ TEST_F(WebRtcVoiceEngineTestFake, DontResetSetSendCodec) {
   // In this case media channel shouldn't send codec to VoE.
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
   EXPECT_EQ(1, voe_.GetNumSetSendCodecs());
+}
+
+// Verify that G722 is set with 16000 samples per second to WebRTC.
+TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecG722) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kG722CodecSdp);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  webrtc::CodecInst gcodec;
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_STREQ("G722", gcodec.plname);
+  EXPECT_EQ(1, gcodec.channels);
+  EXPECT_EQ(16000, gcodec.plfreq);
 }
 
 // Test that if clockrate is not 48000 for opus, we fail.
@@ -3208,7 +3224,7 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
   EXPECT_TRUE(engine.FindCodec(
       cricket::AudioCodec(96, "PCMA", 8000, 0, 1, 0)));
   EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(96, "G722", 16000, 0, 1, 0)));
+      cricket::AudioCodec(96, "G722", 8000, 0, 1, 0)));
   EXPECT_TRUE(engine.FindCodec(
       cricket::AudioCodec(96, "red", 8000, 0, 1, 0)));
   EXPECT_TRUE(engine.FindCodec(
@@ -3225,7 +3241,7 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
   EXPECT_TRUE(engine.FindCodec(
       cricket::AudioCodec(8, "", 8000, 0, 1, 0)));   // PCMA
   EXPECT_TRUE(engine.FindCodec(
-      cricket::AudioCodec(9, "", 16000, 0, 1, 0)));  // G722
+      cricket::AudioCodec(9, "", 8000, 0, 1, 0)));  // G722
   EXPECT_TRUE(engine.FindCodec(
       cricket::AudioCodec(13, "", 8000, 0, 1, 0)));  // CN
   // Check sample/bitrate matching.
@@ -3248,7 +3264,7 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
       EXPECT_EQ(103, it->id);
     } else if (it->name == "ISAC" && it->clockrate == 32000) {
       EXPECT_EQ(104, it->id);
-    } else if (it->name == "G722" && it->clockrate == 16000) {
+    } else if (it->name == "G722" && it->clockrate == 8000) {
       EXPECT_EQ(9, it->id);
     } else if (it->name == "telephone-event") {
       EXPECT_EQ(126, it->id);
