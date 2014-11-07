@@ -248,9 +248,7 @@ void ConnectivityChecker::OnRequestDone(rtc::AsyncHttpRequest* request) {
     int port = request->port();
     uint32 now = rtc::Time();
     NicInfo* nic_info = &i->second;
-    if (port == rtc::HTTP_DEFAULT_PORT) {
-      nic_info->http.rtt = now - nic_info->http.start_time_ms;
-    } else if (port == rtc::HTTP_SECURE_PORT) {
+    if (port == rtc::HTTP_SECURE_PORT) {
       nic_info->https.rtt = now - nic_info->https.start_time_ms;
     } else {
       LOG(LS_ERROR) << "Got response with unknown port: " << port;
@@ -521,7 +519,7 @@ void ConnectivityChecker::InitiateProxyDetection() {
   if (!proxy_detect_) {
     proxy_detect_ = new rtc::AutoDetectProxy(user_agent_);
     rtc::Url<char> host_url("/", "relay.google.com",
-                                  rtc::HTTP_DEFAULT_PORT);
+                                  rtc::HTTP_SECURE_PORT);
     host_url.set_secure(true);
     proxy_detect_->set_server_url(host_url.url());
     proxy_detect_->SignalWorkDone.connect(
@@ -545,13 +543,11 @@ void ConnectivityChecker::AllocateRelayPorts() {
   allocator_session->SignalRequestDone.connect(
       this, &ConnectivityChecker::OnRequestDone);
 
-  // Try both http and https.
+  // Try https only since using http would result in credentials being sent
+  // over the network unprotected.
   RegisterHttpStart(rtc::HTTP_SECURE_PORT);
   allocator_session->SendSessionRequest("relay.l.google.com",
                                         rtc::HTTP_SECURE_PORT);
-  RegisterHttpStart(rtc::HTTP_DEFAULT_PORT);
-  allocator_session->SendSessionRequest("relay.l.google.com",
-                                        rtc::HTTP_DEFAULT_PORT);
 
   sessions_.push_back(allocator_session);
 }
@@ -575,9 +571,7 @@ void ConnectivityChecker::RegisterHttpStart(int port) {
   if (i != nics_.end()) {
     uint32 now = rtc::Time();
     NicInfo* nic_info = &i->second;
-    if (port == rtc::HTTP_DEFAULT_PORT) {
-      nic_info->http.start_time_ms = now;
-    } else if (port == rtc::HTTP_SECURE_PORT) {
+    if (port == rtc::HTTP_SECURE_PORT) {
       nic_info->https.start_time_ms = now;
     } else {
       LOG(LS_ERROR) << "Registering start time for unknown port: " << port;
