@@ -294,8 +294,8 @@ class VideoAnalyzer : public PacketReceiver,
         PrintResult("psnr", psnr_, " dB");
         PrintResult("ssim", ssim_, "");
         PrintResult("sender_time", sender_time_, " ms");
-        printf(
-            "RESULT dropped_frames: %s = %d\n", test_label_, dropped_frames_);
+        printf("RESULT dropped_frames: %s = %d frames\n", test_label_,
+               dropped_frames_);
         PrintResult("receiver_time", receiver_time_, " ms");
         PrintResult("total_delay_incl_network", end_to_end_, " ms");
         PrintResult("time_between_rendered_frames", rendered_delta_, " ms");
