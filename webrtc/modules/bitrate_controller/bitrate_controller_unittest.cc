@@ -83,27 +83,6 @@ TEST_F(BitrateControllerTest, Basic) {
   controller_->RemoveBitrateObserver(&bitrate_observer);
 }
 
-TEST_F(BitrateControllerTest, InitialRemb) {
-  TestBitrateObserver bitrate_observer;
-  controller_->SetBitrateObserver(&bitrate_observer, 200000, 100000, 1500000);
-  const uint32_t kRemb = 1000000u;
-  const uint32_t kSecondRemb = kRemb + 500000u;
-
-  // Initial REMB applies immediately.
-  bandwidth_observer_->OnReceivedEstimatedBitrate(kRemb);
-  webrtc::ReportBlockList report_blocks;
-  report_blocks.push_back(CreateReportBlock(1, 2, 0, 1));
-  bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, 50, 1);
-  report_blocks.clear();
-  EXPECT_EQ(kRemb, bitrate_observer.last_bitrate_);
-
-  // Second REMB doesn't apply immediately.
-  bandwidth_observer_->OnReceivedEstimatedBitrate(kRemb + 500000);
-  report_blocks.push_back(CreateReportBlock(1, 2, 0, 21));
-  bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, 50, 2001);
-  EXPECT_LT(bitrate_observer.last_bitrate_, kSecondRemb);
-}
-
 TEST_F(BitrateControllerTest, UpdatingBitrateObserver) {
   TestBitrateObserver bitrate_observer;
   controller_->SetBitrateObserver(&bitrate_observer, 200000, 100000, 1500000);

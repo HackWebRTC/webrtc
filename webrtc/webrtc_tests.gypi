@@ -58,7 +58,7 @@
         'test/webrtc_test_common.gyp:webrtc_test_renderer',
         '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
         '<(webrtc_root)/modules/modules.gyp:video_render_module_impl',
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers_default',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         'test/test.gyp:test_main',
         'webrtc',
       ],
