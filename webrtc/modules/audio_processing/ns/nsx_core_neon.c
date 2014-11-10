@@ -207,9 +207,7 @@ void WebRtcNsx_NoiseEstimationNeon(NsxInst_t* inst,
     int16x8_t tmp16x8_1;
     int16x8_t tmp16x8_2;
     int16x8_t tmp16x8_3;
-    // Initialize tmp16x8_4 to zero to avoid compilaton error.
-    int16x8_t tmp16x8_4 = vdupq_n_s16(0);
-    int16x8_t tmp16x8_5;
+    uint16x8_t tmp16x8_4;
     int32x4_t tmp32x4;
 
     for (i = 0; i < inst->magnLen - 7; i += 8) {
@@ -270,12 +268,8 @@ void WebRtcNsx_NoiseEstimationNeon(NsxInst_t* inst,
 
       // Do the if-else branches:
       tmp16x8_3 = vld1q_s16(&lmagn[i]); // keep for several lines
-      tmp16x8_5 = vsubq_s16(tmp16x8_3, tmp16x8_2);
-      __asm__("vcgt.s16 %q0, %q1, #0"::"w"(tmp16x8_4), "w"(tmp16x8_5));
-      __asm__("vbit %q0, %q1, %q2"::
-              "w"(tmp16x8_2), "w"(tmp16x8_1), "w"(tmp16x8_4));
-      __asm__("vbif %q0, %q1, %q2"::
-              "w"(tmp16x8_2), "w"(tmp16x8_0), "w"(tmp16x8_4));
+      tmp16x8_4 = vcgtq_s16(tmp16x8_3, tmp16x8_2);
+      tmp16x8_2 = vbslq_s16(tmp16x8_4, tmp16x8_1, tmp16x8_0);
       vst1q_s16(&inst->noiseEstLogQuantile[offset + i], tmp16x8_2);
 
       // Update density estimate
@@ -288,8 +282,7 @@ void WebRtcNsx_NoiseEstimationNeon(NsxInst_t* inst,
       tmp16x8_3 = vsubq_s16(tmp16x8_3, tmp16x8_2);
       tmp16x8_3 = vabsq_s16(tmp16x8_3);
       tmp16x8_4 = vcgtq_s16(WIDTHQ8_16x8, tmp16x8_3);
-      __asm__("vbit %q0, %q1, %q2"::
-              "w"(tmp16x8_1), "w"(tmp16x8_0), "w"(tmp16x8_4));
+      tmp16x8_1 = vbslq_s16(tmp16x8_4, tmp16x8_0, tmp16x8_1);
       vst1q_s16(&inst->noiseEstDensity[offset + i], tmp16x8_1);
     }  // End loop over magnitude spectrum
 
@@ -447,44 +440,6 @@ void WebRtcNsx_PrepareSpectrumNeon(NsxInst_t* inst, int16_t* freq_buf) {
   freq_buf[inst->anaLen + 1] = -inst->imag[inst->anaLen2];
 }
 
-// Denormalize the input buffer.
-void WebRtcNsx_DenormalizeNeon(NsxInst_t* inst, int16_t* in, int factor) {
-  int16_t* ptr_real = &inst->real[0];
-  int16_t* ptr_in = &in[0];
-
-  __asm__ __volatile__("vdup.32 q10, %0" ::
-                       "r"((int32_t)(factor - inst->normData)) : "q10");
-  for (; ptr_real < &inst->real[inst->anaLen];) {
-
-    // Loop unrolled once. Both pointers are incremented.
-    __asm__ __volatile__(
-      // tmp32 = WEBRTC_SPL_SHIFT_W32((int32_t)in[j],
-      //                             factor - inst->normData);
-      "vld2.16 {d24, d25}, [%[ptr_in]]!\n\t"
-      "vmovl.s16 q12, d24\n\t"
-      "vshl.s32 q12, q10\n\t"
-      // inst->real[i] = WebRtcSpl_SatW32ToW16(tmp32); // Q0
-      "vqmovn.s32 d24, q12\n\t"
-      "vst1.16 d24, [%[ptr_real]]!\n\t"
-
-      // tmp32 = WEBRTC_SPL_SHIFT_W32((int32_t)in[j],
-      //                             factor - inst->normData);
-      "vld2.16 {d22, d23}, [%[ptr_in]]!\n\t"
-      "vmovl.s16 q11, d22\n\t"
-      "vshl.s32 q11, q10\n\t"
-      // inst->real[i] = WebRtcSpl_SatW32ToW16(tmp32); // Q0
-      "vqmovn.s32 d22, q11\n\t"
-      "vst1.16 d22, [%[ptr_real]]!\n\t"
-
-      // Specify constraints.
-      :[ptr_in]"+r"(ptr_in),
-       [ptr_real]"+r"(ptr_real)
-      :
-      :"d22", "d23", "d24", "d25"
-    );
-  }
-}
-
 // For the noise supress process, synthesis, read out fully processed segment,
 // and update synthesis buffer.
 void WebRtcNsx_SynthesisUpdateNeon(NsxInst_t* inst,
@@ -640,49 +595,5 @@ void WebRtcNsx_AnalysisUpdateNeon(NsxInst_t* inst,
     p_start_buffer += 8;
     p_start_window += 8;
     p_start_out += 8;
-  }
-}
-
-// Create a complex number buffer (out[]) as the intput (in[]) interleaved with
-// zeros, and normalize it.
-void WebRtcNsx_CreateComplexBufferNeon(NsxInst_t* inst,
-                                       int16_t* in,
-                                       int16_t* out) {
-  int16_t* ptr_out = &out[0];
-  int16_t* ptr_in = &in[0];
-
-  __asm__ __volatile__("vdup.16 d25, %0" : : "r"(0) : "d25");
-  __asm__ __volatile__("vdup.16 q10, %0" : : "r"(inst->normData) : "q10");
-  for (; ptr_in < &in[inst->anaLen];) {
-
-    // Loop unrolled once, so ptr_in is incremented by 8 twice,
-    // and ptr_out is incremented by 8 four times.
-    __asm__ __volatile__(
-      // out[j] = in[i] << inst->normData;  // Q(normData)
-      "vld1.16 {d22, d23}, [%[ptr_in]]!\n\t"
-      "vshl.s16 q11, q10\n\t"
-      "vmov d24, d23\n\t"
-
-      // out[j + 1] = 0; // Insert zeros in imaginary part
-      "vmov d23, d25\n\t"
-      "vst2.16 {d22, d23}, [%[ptr_out]]!\n\t"
-      "vst2.16 {d24, d25}, [%[ptr_out]]!\n\t"
-
-      // out[j] = in[i] << inst->normData;  // Q(normData)
-      "vld1.16 {d22, d23}, [%[ptr_in]]!\n\t"
-      "vshl.s16 q11, q10\n\t"
-      "vmov d24, d23\n\t"
-
-      // out[j + 1] = 0; // Insert zeros in imaginary part
-      "vmov d23, d25\n\t"
-      "vst2.16 {d22, d23}, [%[ptr_out]]!\n\t"
-      "vst2.16 {d24, d25}, [%[ptr_out]]!\n\t"
-
-      // Specify constraints.
-      :[ptr_in]"+r"(ptr_in),
-       [ptr_out]"+r"(ptr_out)
-      :
-      :"d22", "d23", "d24", "d25", "q10", "q11"
-    );
   }
 }
