@@ -322,24 +322,39 @@ void WebRtcAecm_StoreAdaptiveChannelNeon(AecmCore_t* aecm,
 }
 
 void WebRtcAecm_ResetAdaptiveChannelNeon(AecmCore_t* aecm) {
-  int i;
-
   assert((uintptr_t)(aecm->channelStored) % 16 == 0);
   assert((uintptr_t)(aecm->channelAdapt16) % 16 == 0);
   assert((uintptr_t)(aecm->channelAdapt32) % 32 == 0);
 
-  for (i = 0; i < PART_LEN - 7; i += 8) {
-    // aecm->channelAdapt16[i] = aecm->channelStored[i];
-    // aecm->channelAdapt32[i] = (int32_t)aecm->channelStored[i] << 16;
-    __asm __volatile("vld1.16 {d24, d25}, [%0, :128]" : :
-            "r"(&aecm->channelStored[i]) : "q12");
-    __asm __volatile("vst1.16 {d24, d25}, [%0, :128]" : :
-            "r"(&aecm->channelAdapt16[i]) : "q12");
-    __asm __volatile("vshll.s16 q10, d24, #16" : : : "q12", "q13", "q10");
-    __asm __volatile("vshll.s16 q11, d25, #16" : : : "q12", "q13", "q11");
-    __asm __volatile("vst1.16 {d20, d21, d22, d23}, [%0, :256]" : :
-            "r"(&aecm->channelAdapt32[i]): "q10", "q11");
+  // The C code of following optimized code.
+  // for (i = 0; i < PART_LEN1; i++) {
+  //   aecm->channelAdapt16[i] = aecm->channelStored[i];
+  //   aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32(
+  //              (int32_t)aecm->channelStored[i], 16);
+  // }
+
+  int16_t* start_stored_p = aecm->channelStored;
+  int16_t* start_adapt16_p = aecm->channelAdapt16;
+  int32_t* start_adapt32_p = aecm->channelAdapt32;
+  const int16_t* end_stored_p = start_stored_p + PART_LEN;
+
+  int16x8_t stored_v;
+  int32x4_t adapt32_v_low, adapt32_v_high;
+
+  while (start_stored_p < end_stored_p) {
+    stored_v = vld1q_s16(start_stored_p);
+    vst1q_s16(start_adapt16_p, stored_v);
+
+    adapt32_v_low = vshll_n_s16(vget_low_s16(stored_v), 16);
+    adapt32_v_high = vshll_n_s16(vget_high_s16(stored_v), 16);
+
+    vst1q_s32(start_adapt32_p, adapt32_v_low);
+    vst1q_s32(start_adapt32_p + 4, adapt32_v_high);
+
+    start_stored_p += 8;
+    start_adapt16_p += 8;
+    start_adapt32_p += 8;
   }
-  aecm->channelAdapt16[i] = aecm->channelStored[i];
-  aecm->channelAdapt32[i] = (int32_t)aecm->channelStored[i] << 16;
+  aecm->channelAdapt16[PART_LEN] = aecm->channelStored[PART_LEN];
+  aecm->channelAdapt32[PART_LEN] = (int32_t)aecm->channelStored[PART_LEN] << 16;
 }
