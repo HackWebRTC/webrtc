@@ -13,6 +13,7 @@
 #include <assert.h>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
 #include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
 
 namespace webrtc {
@@ -200,11 +201,17 @@ AudioDecoder* AudioDecoder::CreateAudioDecoder(NetEqDecoder codec_type) {
     case kDecoderISAC:
       return new AudioDecoderIsacFix;
 #elif defined(WEBRTC_CODEC_ISAC)
-    case kDecoderISAC:
-      return new AudioDecoderIsac(16000);
+    case kDecoderISAC: {
+      AudioEncoderDecoderIsac::Config config;
+      config.sample_rate_hz = 16000;
+      return new AudioEncoderDecoderIsac(config);
+    }
     case kDecoderISACswb:
-    case kDecoderISACfb:
-      return new AudioDecoderIsac(32000);
+    case kDecoderISACfb: {
+      AudioEncoderDecoderIsac::Config config;
+      config.sample_rate_hz = 32000;
+      return new AudioEncoderDecoderIsac(config);
+    }
 #endif
 #ifdef WEBRTC_CODEC_PCM16
     case kDecoderPCM16B:

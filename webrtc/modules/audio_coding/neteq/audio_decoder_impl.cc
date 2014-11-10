@@ -130,67 +130,6 @@ int AudioDecoderIlbc::Init() {
 }
 #endif
 
-// iSAC float
-#ifdef WEBRTC_CODEC_ISAC
-AudioDecoderIsac::AudioDecoderIsac(int decode_sample_rate_hz) {
-  DCHECK(decode_sample_rate_hz == 16000 || decode_sample_rate_hz == 32000);
-  WebRtcIsac_Create(&isac_state_);
-  WebRtcIsac_SetDecSampRate(isac_state_, decode_sample_rate_hz);
-}
-
-AudioDecoderIsac::~AudioDecoderIsac() {
-  WebRtcIsac_Free(isac_state_);
-}
-
-int AudioDecoderIsac::Decode(const uint8_t* encoded, size_t encoded_len,
-                             int16_t* decoded, SpeechType* speech_type) {
-  int16_t temp_type = 1;  // Default is speech.
-  int16_t ret = WebRtcIsac_Decode(isac_state_,
-                                  encoded,
-                                  static_cast<int16_t>(encoded_len), decoded,
-                                  &temp_type);
-  *speech_type = ConvertSpeechType(temp_type);
-  return ret;
-}
-
-int AudioDecoderIsac::DecodeRedundant(const uint8_t* encoded,
-                                      size_t encoded_len, int16_t* decoded,
-                                      SpeechType* speech_type) {
-  int16_t temp_type = 1;  // Default is speech.
-  int16_t ret = WebRtcIsac_DecodeRcu(isac_state_,
-                                     encoded,
-                                     static_cast<int16_t>(encoded_len), decoded,
-                                     &temp_type);
-  *speech_type = ConvertSpeechType(temp_type);
-  return ret;
-}
-
-int AudioDecoderIsac::DecodePlc(int num_frames, int16_t* decoded) {
-  return WebRtcIsac_DecodePlc(isac_state_, decoded, num_frames);
-}
-
-int AudioDecoderIsac::Init() {
-  return WebRtcIsac_DecoderInit(isac_state_);
-}
-
-int AudioDecoderIsac::IncomingPacket(const uint8_t* payload,
-                                     size_t payload_len,
-                                     uint16_t rtp_sequence_number,
-                                     uint32_t rtp_timestamp,
-                                     uint32_t arrival_timestamp) {
-  return WebRtcIsac_UpdateBwEstimate(isac_state_,
-                                     payload,
-                                     static_cast<int32_t>(payload_len),
-                                     rtp_sequence_number,
-                                     rtp_timestamp,
-                                     arrival_timestamp);
-}
-
-int AudioDecoderIsac::ErrorCode() {
-  return WebRtcIsac_GetErrorCode(isac_state_);
-}
-#endif
-
 // iSAC fix
 #ifdef WEBRTC_CODEC_ISACFX
 AudioDecoderIsacFix::AudioDecoderIsacFix() {
