@@ -359,9 +359,17 @@ int WebRtcVideoEngine2::GetCapabilities() { return VIDEO_RECV | VIDEO_SEND; }
 bool WebRtcVideoEngine2::SetDefaultEncoderConfig(
     const VideoEncoderConfig& config) {
   const VideoCodec& codec = config.max_codec;
-  // TODO(pbos): Make use of external encoder factory.
-  if (!CodecIsInternallySupported(codec.name)) {
-    LOG(LS_ERROR) << "SetDefaultEncoderConfig, codec not supported:"
+  bool supports_codec = false;
+  for (size_t i = 0; i < video_codecs_.size(); ++i) {
+    if (CodecNameMatches(video_codecs_[i].name, codec.name)) {
+      video_codecs_[i] = codec;
+      supports_codec = true;
+      break;
+    }
+  }
+
+  if (!supports_codec) {
+    LOG(LS_ERROR) << "SetDefaultEncoderConfig, codec not supported: "
                   << codec.ToString();
     return false;
   }
@@ -371,8 +379,6 @@ bool WebRtcVideoEngine2::SetDefaultEncoderConfig(
                   codec.height,
                   VideoFormat::FpsToInterval(codec.framerate),
                   FOURCC_ANY);
-  video_codecs_.clear();
-  video_codecs_.push_back(codec);
   return true;
 }
 
