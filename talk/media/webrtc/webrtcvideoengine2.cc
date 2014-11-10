@@ -747,6 +747,7 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
 
 void WebRtcVideoChannel2::SetDefaultOptions() {
   options_.cpu_overuse_detection.Set(false);
+  options_.dscp.Set(false);
   options_.suspend_below_min_bitrate.Set(false);
   options_.use_payload_padding.Set(false);
   options_.video_noise_reduction.Set(true);
@@ -1319,6 +1320,10 @@ bool WebRtcVideoChannel2::SetOptions(const VideoOptions& options) {
     // No new options to set.
     return true;
   }
+  rtc::DiffServCodePoint dscp = options_.dscp.GetWithDefaultIfUnset(false)
+                                    ? rtc::DSCP_AF41
+                                    : rtc::DSCP_DEFAULT;
+  MediaChannel::SetDscp(dscp);
   rtc::CritScope stream_lock(&stream_crit_);
   for (std::map<uint32, WebRtcVideoSendStream*>::iterator it =
            send_streams_.begin();

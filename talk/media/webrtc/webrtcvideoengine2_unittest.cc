@@ -1698,10 +1698,6 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsAcceptAllValidPayloadTypes) {
   }
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_ResetVieSendCodecOnNewFrameSize) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
 TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsWithOnlyVp8) {
   std::vector<cricket::VideoCodec> codecs;
   codecs.push_back(kVp8Codec);
@@ -1850,12 +1846,23 @@ TEST_F(WebRtcVideoChannel2Test, SetSend) {
       << "Send stream created after SetSend(true) not sending initially.";
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_TestSetDscpOptions) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_SetOptionsWithMaxBitrate) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+// This test verifies DSCP settings are properly applied on video media channel.
+TEST_F(WebRtcVideoChannel2Test, TestSetDscpOptions) {
+  rtc::scoped_ptr<cricket::FakeNetworkInterface> network_interface(
+      new cricket::FakeNetworkInterface);
+  channel_->SetInterface(network_interface.get());
+  cricket::VideoOptions options;
+  options.dscp.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  EXPECT_EQ(rtc::DSCP_AF41, network_interface->dscp());
+  // Verify previous value is not modified if dscp option is not set.
+  cricket::VideoOptions options1;
+  EXPECT_TRUE(channel_->SetOptions(options1));
+  EXPECT_EQ(rtc::DSCP_AF41, network_interface->dscp());
+  options.dscp.Set(false);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface->dscp());
+  channel_->SetInterface(NULL);
 }
 
 TEST_F(WebRtcVideoChannel2Test, OnReadyToSendSignalsNetworkState) {
