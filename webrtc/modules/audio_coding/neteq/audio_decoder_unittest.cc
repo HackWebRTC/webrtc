@@ -25,7 +25,7 @@
 #include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
-#include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
 #include "webrtc/modules/audio_coding/codecs/opus/interface/audio_encoder_opus.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/tools/resample_input_audio_file.h"
@@ -366,36 +366,76 @@ class AudioDecoderIsacFloatTest : public AudioDecoderTest {
  protected:
   AudioDecoderIsacFloatTest() : AudioDecoderTest() {
     codec_input_rate_hz_ = 16000;
+    input_size_ = 160;
     frame_size_ = 480;
     data_length_ = 10 * frame_size_;
-    AudioEncoderDecoderIsac::Config config;
-    config.sample_rate_hz = codec_input_rate_hz_;
-    config.frame_size_ms =
-        1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
-
-    // We need to create separate AudioEncoderDecoderIsac objects for encoding
-    // and decoding, because the test class destructor destroys them both.
-    audio_encoder_.reset(new AudioEncoderDecoderIsac(config));
-    decoder_ = new AudioEncoderDecoderIsac(config);
+    decoder_ = new AudioDecoderIsac(16000);
+    assert(decoder_);
+    WebRtcIsac_Create(&encoder_);
+    WebRtcIsac_SetEncSampRate(encoder_, 16000);
   }
+
+  ~AudioDecoderIsacFloatTest() {
+    WebRtcIsac_Free(encoder_);
+  }
+
+  virtual void InitEncoder() {
+    ASSERT_EQ(0, WebRtcIsac_EncoderInit(encoder_, 1));  // Fixed mode.
+    ASSERT_EQ(0, WebRtcIsac_Control(encoder_, 32000, 30));  // 32 kbps, 30 ms.
+  }
+
+  virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
+                          uint8_t* output) {
+    // Insert 3 * 10 ms. Expect non-zero output on third call.
+    EXPECT_EQ(0, WebRtcIsac_Encode(encoder_, input, output));
+    input += input_size_;
+    EXPECT_EQ(0, WebRtcIsac_Encode(encoder_, input, output));
+    input += input_size_;
+    int enc_len_bytes = WebRtcIsac_Encode(encoder_, input, output);
+    EXPECT_GT(enc_len_bytes, 0);
+    return enc_len_bytes;
+  }
+
+  ISACStruct* encoder_;
+  int input_size_;
 };
 
 class AudioDecoderIsacSwbTest : public AudioDecoderTest {
  protected:
   AudioDecoderIsacSwbTest() : AudioDecoderTest() {
     codec_input_rate_hz_ = 32000;
+    input_size_ = 320;
     frame_size_ = 960;
     data_length_ = 10 * frame_size_;
-    AudioEncoderDecoderIsac::Config config;
-    config.sample_rate_hz = codec_input_rate_hz_;
-    config.frame_size_ms =
-        1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
-
-    // We need to create separate AudioEncoderDecoderIsac objects for encoding
-    // and decoding, because the test class destructor destroys them both.
-    audio_encoder_.reset(new AudioEncoderDecoderIsac(config));
-    decoder_ = new AudioEncoderDecoderIsac(config);
+    decoder_ = new AudioDecoderIsac(32000);
+    assert(decoder_);
+    WebRtcIsac_Create(&encoder_);
+    WebRtcIsac_SetEncSampRate(encoder_, 32000);
   }
+
+  ~AudioDecoderIsacSwbTest() {
+    WebRtcIsac_Free(encoder_);
+  }
+
+  virtual void InitEncoder() {
+    ASSERT_EQ(0, WebRtcIsac_EncoderInit(encoder_, 1));  // Fixed mode.
+    ASSERT_EQ(0, WebRtcIsac_Control(encoder_, 32000, 30));  // 32 kbps, 30 ms.
+  }
+
+  virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
+                          uint8_t* output) {
+    // Insert 3 * 10 ms. Expect non-zero output on third call.
+    EXPECT_EQ(0, WebRtcIsac_Encode(encoder_, input, output));
+    input += input_size_;
+    EXPECT_EQ(0, WebRtcIsac_Encode(encoder_, input, output));
+    input += input_size_;
+    int enc_len_bytes = WebRtcIsac_Encode(encoder_, input, output);
+    EXPECT_GT(enc_len_bytes, 0);
+    return enc_len_bytes;
+  }
+
+  ISACStruct* encoder_;
+  int input_size_;
 };
 
 class AudioDecoderIsacFixTest : public AudioDecoderTest {

@@ -25,12 +25,10 @@
         ],
       },
       'sources': [
-        '../interface/audio_encoder_isac.h',
         '../interface/isac.h',
         'arith_routines.c',
         'arith_routines_hist.c',
         'arith_routines_logist.c',
-        'audio_encoder_isac.cc',
         'bandwidth_estimator.c',
         'crc.c',
         'decode.c',
