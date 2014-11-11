@@ -298,27 +298,59 @@ void WebRtcAecm_CalcLinearEnergiesNeon(AecmCore_t* aecm,
 void WebRtcAecm_StoreAdaptiveChannelNeon(AecmCore_t* aecm,
                                          const uint16_t* far_spectrum,
                                          int32_t* echo_est) {
-  int i;
-
   assert((uintptr_t)echo_est % 32 == 0);
   assert((uintptr_t)(aecm->channelStored) % 16 == 0);
   assert((uintptr_t)(aecm->channelAdapt16) % 16 == 0);
 
+  // This is C code of following optimized code.
   // During startup we store the channel every block.
-  // Recalculate echo estimate.
-  for (i = 0; i < PART_LEN - 7; i += 8) {
-    // aecm->channelStored[i] = acem->channelAdapt16[i];
-    // echo_est[i] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i], far_spectrum[i]);
-    __asm __volatile("vld1.16 {d26, d27}, [%0]" : : "r"(&far_spectrum[i]) : "q13");
-    __asm __volatile("vld1.16 {d24, d25}, [%0, :128]" : : "r"(&aecm->channelAdapt16[i]) : "q12");
-    __asm __volatile("vst1.16 {d24, d25}, [%0, :128]" : : "r"(&aecm->channelStored[i]) : "q12");
-    __asm __volatile("vmull.u16 q10, d26, d24" : : : "q12", "q13", "q10");
-    __asm __volatile("vmull.u16 q11, d27, d25" : : : "q12", "q13", "q11");
-    __asm __volatile("vst1.16 {d20, d21, d22, d23}, [%0, :256]" : :
-            "r"(&echo_est[i]) : "q10", "q11");
+  //  memcpy(aecm->channelStored,
+  //         aecm->channelAdapt16,
+  //         sizeof(int16_t) * PART_LEN1);
+  // Recalculate echo estimate
+  //  for (i = 0; i < PART_LEN; i += 4) {
+  //    echo_est[i] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i],
+  //                                        far_spectrum[i]);
+  //    echo_est[i + 1] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i + 1],
+  //                                            far_spectrum[i + 1]);
+  //    echo_est[i + 2] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i + 2],
+  //                                            far_spectrum[i + 2]);
+  //    echo_est[i + 3] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i + 3],
+  //                                            far_spectrum[i + 3]);
+  //  }
+  //  echo_est[i] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i],
+  //                                     far_spectrum[i]);
+  const uint16_t* far_spectrum_p = far_spectrum;
+  int16_t* start_adapt_p = aecm->channelAdapt16;
+  int16_t* start_stored_p = aecm->channelStored;
+  const int16_t* end_stored_p = aecm->channelStored + PART_LEN;
+  int32_t* echo_est_p = echo_est;
+
+  int16x8_t far_spectrum_v, adapt_v;
+  int32x4_t echo_est_v_low, echo_est_v_high;
+
+  while (start_stored_p < end_stored_p) {
+    far_spectrum_v = vld1q_u16(far_spectrum_p);
+    adapt_v = vld1q_s16(start_adapt_p);
+
+    vst1q_s16(start_stored_p, adapt_v);
+
+    echo_est_v_low = vmull_u16(vget_low_u16(far_spectrum_v),
+                               vget_low_u16(adapt_v));
+    echo_est_v_high = vmull_u16(vget_high_u16(far_spectrum_v),
+                                vget_high_u16(adapt_v));
+
+    vst1q_s32(echo_est_p, echo_est_v_low);
+    vst1q_s32(echo_est_p + 4, echo_est_v_high);
+
+    far_spectrum_p += 8;
+    start_adapt_p += 8;
+    start_stored_p += 8;
+    echo_est_p += 8;
   }
-  aecm->channelStored[i] = aecm->channelAdapt16[i];
-  echo_est[i] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i], far_spectrum[i]);
+  aecm->channelStored[PART_LEN] = aecm->channelAdapt16[PART_LEN];
+  echo_est[PART_LEN] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[PART_LEN],
+                                             far_spectrum[PART_LEN]);
 }
 
 void WebRtcAecm_ResetAdaptiveChannelNeon(AecmCore_t* aecm) {
