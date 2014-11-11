@@ -74,6 +74,7 @@ static const CodecPref kCodecPrefs[] = {
   { "ISAC",   32000,  1, 104, true },
   { "CELT",   32000,  1, 109, true },
   { "CELT",   32000,  2, 110, true },
+  // G722 should be advertised as 8000 Hz because of the RFC "bug".
   { "G722",   8000,   1, 9,   false },
   { "ILBC",   8000,   1, 102, false },
   { "PCMU",   8000,   1, 0,   false },
@@ -503,7 +504,7 @@ void WebRtcVoiceEngine::ConstructCodecs() {
   int ncodecs = voe_wrapper_->codec()->NumOfCodecs();
   for (int i = 0; i < ncodecs; ++i) {
     webrtc::CodecInst voe_codec;
-    if (GetVoeCodec(i, voe_codec)) {
+    if (GetVoeCodec(i, &voe_codec)) {
       // Skip uncompressed formats.
       if (_stricmp(voe_codec.plname, kL16CodecName) == 0) {
         continue;
@@ -553,13 +554,13 @@ void WebRtcVoiceEngine::ConstructCodecs() {
   std::sort(codecs_.begin(), codecs_.end(), &AudioCodec::Preferable);
 }
 
-bool WebRtcVoiceEngine::GetVoeCodec(int index, webrtc::CodecInst& codec) {
-  if (voe_wrapper_->codec()->GetCodec(index, codec) != -1) {
-    // Change the sample rate of G722 to 8000 to match SDP.
-    MaybeFixupG722(&codec, 8000);
-    return true;
+bool WebRtcVoiceEngine::GetVoeCodec(int index, webrtc::CodecInst* codec) {
+  if (voe_wrapper_->codec()->GetCodec(index, *codec) == -1) {
+    return false;
   }
-  return false;
+  // Change the sample rate of G722 to 8000 to match SDP.
+  MaybeFixupG722(codec, 8000);
+  return true;
 }
 
 WebRtcVoiceEngine::~WebRtcVoiceEngine() {
@@ -1246,7 +1247,7 @@ bool WebRtcVoiceEngine::FindWebRtcCodec(const AudioCodec& in,
   int ncodecs = voe_wrapper_->codec()->NumOfCodecs();
   for (int i = 0; i < ncodecs; ++i) {
     webrtc::CodecInst voe_codec;
-    if (GetVoeCodec(i, voe_codec)) {
+    if (GetVoeCodec(i, &voe_codec)) {
       AudioCodec codec(voe_codec.pltype, voe_codec.plname, voe_codec.plfreq,
                        voe_codec.rate, voe_codec.channels, 0);
       bool multi_rate = IsCodecMultiRate(voe_codec);
