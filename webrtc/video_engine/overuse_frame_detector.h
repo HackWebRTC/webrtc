@@ -13,6 +13,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/exp_filter.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video_engine/include/vie_base.h"
@@ -107,30 +108,30 @@ class OveruseFrameDetector : public Module {
   class CaptureQueueDelay;
   class FrameQueue;
 
-  void AddProcessingTime(int elapsed_ms);
+  void AddProcessingTime(int elapsed_ms) EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  bool IsOverusing();
-  bool IsUnderusing(int64_t time_now);
+  bool IsOverusing() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  bool IsUnderusing(int64_t time_now) EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  bool FrameTimeoutDetected(int64_t now) const;
-  bool FrameSizeChanged(int num_pixels) const;
+  bool FrameTimeoutDetected(int64_t now) const EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  bool FrameSizeChanged(int num_pixels) const EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  void ResetAll(int num_pixels);
+  void ResetAll(int num_pixels) EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Protecting all members.
   scoped_ptr<CriticalSectionWrapper> crit_;
 
   // Observer getting overuse reports.
-  CpuOveruseObserver* observer_;
+  CpuOveruseObserver* observer_ GUARDED_BY(crit_);
 
-  CpuOveruseOptions options_;
+  CpuOveruseOptions options_ GUARDED_BY(crit_);
 
   Clock* clock_;
   int64_t next_process_time_;
-  int64_t num_process_times_;
+  int64_t num_process_times_ GUARDED_BY(crit_);
 
-  Statistics capture_deltas_;
-  int64_t last_capture_time_;
+  Statistics capture_deltas_ GUARDED_BY(crit_);
+  int64_t last_capture_time_ GUARDED_BY(crit_);
 
   int64_t last_overuse_time_;
   int checks_above_threshold_;
@@ -141,15 +142,15 @@ class OveruseFrameDetector : public Module {
   int current_rampup_delay_ms_;
 
   // Number of pixels of last captured frame.
-  int num_pixels_;
+  int num_pixels_ GUARDED_BY(crit_);
 
-  int64_t last_encode_sample_ms_;
-  scoped_ptr<EncodeTimeAvg> encode_time_;
-  scoped_ptr<SendProcessingUsage> usage_;
-  scoped_ptr<FrameQueue> frame_queue_;
-  int64_t last_sample_time_ms_;
+  int64_t last_encode_sample_ms_ GUARDED_BY(crit_);
+  scoped_ptr<EncodeTimeAvg> encode_time_ GUARDED_BY(crit_);
+  scoped_ptr<SendProcessingUsage> usage_ GUARDED_BY(crit_);
+  scoped_ptr<FrameQueue> frame_queue_ GUARDED_BY(crit_);
+  int64_t last_sample_time_ms_ GUARDED_BY(crit_);
 
-  scoped_ptr<CaptureQueueDelay> capture_queue_delay_;
+  scoped_ptr<CaptureQueueDelay> capture_queue_delay_ GUARDED_BY(crit_);
 
   DISALLOW_COPY_AND_ASSIGN(OveruseFrameDetector);
 };
