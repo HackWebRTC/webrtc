@@ -16,6 +16,11 @@
         '<(webrtc_root)/base/base.gyp:rtc_base',
       ],
       'sources': [
+        'cropped_desktop_frame.cc',
+        'cropped_desktop_frame.h',
+        'cropping_window_capturer.cc',
+        'cropping_window_capturer.h',
+        'cropping_window_capturer_win.cc',
         "desktop_and_cursor_composer.cc",
         "desktop_and_cursor_composer.h",
         "desktop_capture_types.h",

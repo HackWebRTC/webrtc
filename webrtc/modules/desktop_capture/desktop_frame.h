@@ -67,6 +67,9 @@ class DesktopFrame {
                       const DesktopVector& src_pos,
                       const DesktopRect& dest_rect);
 
+  // A helper to return the data pointer of a frame at the specified position.
+  uint8_t* GetFrameDataAtPos(const DesktopVector& pos) const;
+
  protected:
   DesktopFrame(DesktopSize size,
                int stride,
