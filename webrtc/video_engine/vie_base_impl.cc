@@ -329,7 +329,7 @@ int ViEBaseImpl::StopReceive(const int video_channel) {
 
 int ViEBaseImpl::GetVersion(char version[1024]) {
   assert(version != NULL);
-  strcpy(version, "VideoEngine 39");
+  strcpy(version, "VideoEngine 40");
   return 0;
 }
 
