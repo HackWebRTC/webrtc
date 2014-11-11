@@ -10,8 +10,6 @@
 
 #include "webrtc/common_video/libyuv/include/scaler.h"
 
-#include <algorithm>
-
 // NOTE(ajm): Path provided by gyp.
 #include "libyuv.h"  // NOLINT
 
@@ -61,34 +59,13 @@ int Scaler::Scale(const I420VideoFrame& src_frame,
                               dst_width_, (dst_width_ + 1) / 2,
                               (dst_width_ + 1) / 2);
 
-  // We want to preserve aspect ratio instead of stretching the frame.
-  // Therefore, we need to crop the source frame. Calculate the largest center
-  // aligned region of the source frame that can be used.
-  const int cropped_src_width =
-      std::min(src_width_, dst_width_ * src_height_ / dst_height_);
-  const int cropped_src_height =
-      std::min(src_height_, dst_height_ * src_width_ / dst_width_);
-  // Make sure the offsets are even to avoid rounding errors for the U/V planes.
-  const int src_offset_x = ((src_width_ - cropped_src_width) / 2) & ~1;
-  const int src_offset_y = ((src_height_ - cropped_src_height) / 2) & ~1;
-
-  const uint8_t* y_ptr = src_frame.buffer(kYPlane) +
-                         src_offset_y * src_frame.stride(kYPlane) +
-                         src_offset_x;
-  const uint8_t* u_ptr = src_frame.buffer(kUPlane) +
-                         src_offset_y / 2 * src_frame.stride(kUPlane) +
-                         src_offset_x / 2;
-  const uint8_t* v_ptr = src_frame.buffer(kVPlane) +
-                         src_offset_y / 2 * src_frame.stride(kVPlane) +
-                         src_offset_x / 2;
-
-  return libyuv::I420Scale(y_ptr,
+  return libyuv::I420Scale(src_frame.buffer(kYPlane),
                            src_frame.stride(kYPlane),
-                           u_ptr,
+                           src_frame.buffer(kUPlane),
                            src_frame.stride(kUPlane),
-                           v_ptr,
+                           src_frame.buffer(kVPlane),
                            src_frame.stride(kVPlane),
-                           cropped_src_width, cropped_src_height,
+                           src_width_, src_height_,
                            dst_frame->buffer(kYPlane),
                            dst_frame->stride(kYPlane),
                            dst_frame->buffer(kUPlane),
