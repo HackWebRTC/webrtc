@@ -296,9 +296,14 @@ TEST_F(VideoSendStreamTest, SwapsI420VideoFrames) {
   send_stream_->Start();
 
   I420VideoFrame frame;
-  frame.CreateEmptyFrame(
-      kWidth, kHeight, kWidth, (kWidth + 1) / 2, (kWidth + 1) / 2);
+  const int stride_uv = (kWidth + 1) / 2;
+  frame.CreateEmptyFrame(kWidth, kHeight, kWidth, stride_uv, stride_uv);
   uint8_t* old_y_buffer = frame.buffer(kYPlane);
+  // Initialize memory to avoid DrMemory errors.
+  const int half_height = (kHeight + 1) / 2;
+  memset(frame.buffer(kYPlane), 0, kWidth * kHeight);
+  memset(frame.buffer(kUPlane), 0, stride_uv * half_height);
+  memset(frame.buffer(kVPlane), 0, stride_uv * half_height);
 
   send_stream_->Input()->SwapFrame(&frame);
 
