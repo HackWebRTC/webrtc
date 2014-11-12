@@ -100,7 +100,7 @@ void CroppingWindowCapturer::OnCaptureCompleted(DesktopFrame* frame) {
   callback_->OnCaptureCompleted(window_frame.release());
 }
 
-#if !defined(OS_WIN)
+#if !defined(WEBRTC_WIN)
 // static
 WindowCapturer*
 CroppingWindowCapturer::Create(const DesktopCaptureOptions& options) {
