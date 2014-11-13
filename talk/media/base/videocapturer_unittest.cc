@@ -341,7 +341,7 @@ TEST_F(VideoCapturerTest, TestResolutionMatch) {
   EXPECT_EQ(cricket::VideoFormat::FpsToInterval(30), best.interval);
 
   desired.width = 480;
-  desired.height = 320;
+  desired.height = 270;
   // Ask for HVGA. Get VGA.
   EXPECT_TRUE(capturer_.GetBestCaptureFormat(desired, &best));
   EXPECT_EQ(640, best.width);

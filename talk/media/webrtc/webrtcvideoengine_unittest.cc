@@ -677,10 +677,10 @@ TEST_F(WebRtcVideoEngineTestFake, ResetVieSendCodecOnNewFrameSize) {
   SendI420Frame(kVP8Codec.width / 2, kVP8Codec.height / 2);
   VerifyVP8SendCodec(channel_num, kVP8Codec.width / 2, kVP8Codec.height / 2);
 
-  // Capture a bigger frame and verify vie send codec has been reset to
-  // the new size.
+  // Capture a frame bigger than send_codec_ and verify vie send codec has been
+  // reset (and clipped) to send_codec_.
   SendI420Frame(kVP8Codec.width * 2, kVP8Codec.height * 2);
-  VerifyVP8SendCodec(channel_num, kVP8Codec.width * 2, kVP8Codec.height * 2);
+  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height);
 }
 
 // Test that we set our inbound codecs properly.

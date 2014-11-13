@@ -3872,10 +3872,18 @@ bool WebRtcVideoMediaChannel::SetSendParams(
   CapturedFrameInfo frame;
   send_channel->last_captured_frame_info().Get(&frame);
 
-  const VideoFormat max = send_channel->adapt_format();
-  if (!send_channel->last_captured_frame_info().IsSet()) {
-    frame.width = static_cast<size_t>(max.width);
-    frame.height = static_cast<size_t>(max.height);
+  // TODO(pthatcher): This checking of the max height and width is
+  // only needed because some unit tests bypass the VideoAdapter, and
+  // others expect behavior from the adapter different than what it
+  // actually does.  We should fix the tests and remove this block.
+  VideoFormat max = send_channel->adapt_format();
+  size_t max_width = static_cast<size_t>(max.width);
+  size_t max_height = static_cast<size_t>(max.height);
+  if (!send_channel->last_captured_frame_info().IsSet() ||
+      (!frame.screencast &&
+       (frame.width > max_width || frame.height > max_height))) {
+    frame.width = max_width;
+    frame.height = max_height;
   }
 
   webrtc::VideoCodec codec;

@@ -215,13 +215,13 @@ TEST_F(ChannelManagerTest, DefaultCapturerAspectRatio) {
   VideoEncoderConfig config(codec, 1, 2);
   EXPECT_TRUE(cm_->Init());
   // A capturer created before the default encoder config is set will have no
-  // set aspect ratio, so it'll be 16:10 (based on the fake video capture impl).
+  // set aspect ratio, so it'll be 4:3 (based on the fake video capture impl).
   VideoCapturer* capturer = cm_->CreateVideoCapturer();
   ASSERT_TRUE(capturer != NULL);
   EXPECT_EQ(CS_RUNNING, capturer->Start(format));
   GetCapturerFrameSize size(capturer);
   EXPECT_EQ(640u, size.width);
-  EXPECT_EQ(400u, size.height);
+  EXPECT_EQ(480u, size.height);
   delete capturer;
   // Try again, but with the encoder config set to 16:9.
   EXPECT_TRUE(cm_->SetDefaultVideoEncoderConfig(config));
