@@ -205,8 +205,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   virtual int32_t SetREMBStatus(const bool enable) OVERRIDE;
 
   virtual int32_t SetREMBData(const uint32_t bitrate,
-                              const uint8_t number_of_ssrc,
-                              const uint32_t* ssrc) OVERRIDE;
+                              const std::vector<uint32_t>& ssrcs) OVERRIDE;
 
   // (IJ) Extended jitter report.
   virtual bool IJ() const OVERRIDE;

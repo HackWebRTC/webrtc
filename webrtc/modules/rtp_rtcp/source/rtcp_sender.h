@@ -133,8 +133,7 @@ public:
     int32_t SetREMBStatus(const bool enable);
 
     int32_t SetREMBData(const uint32_t bitrate,
-                        const uint8_t numberOfSSRC,
-                        const uint32_t* SSRC);
+                        const std::vector<uint32_t>& ssrcs);
 
     /*
     *   TMMBR
@@ -334,10 +333,8 @@ private:
     uint8_t         _sequenceNumberFIR GUARDED_BY(_criticalSectionRTCPSender);
 
     // REMB
-    uint8_t       _lengthRembSSRC GUARDED_BY(_criticalSectionRTCPSender);
-    uint8_t       _sizeRembSSRC GUARDED_BY(_criticalSectionRTCPSender);
-    uint32_t*     _rembSSRC GUARDED_BY(_criticalSectionRTCPSender);
     uint32_t      _rembBitrate GUARDED_BY(_criticalSectionRTCPSender);
+    std::vector<uint32_t>  remb_ssrcs_ GUARDED_BY(_criticalSectionRTCPSender);
 
     TMMBRHelp           _tmmbrHelp GUARDED_BY(_criticalSectionRTCPSender);
     uint32_t      _tmmbr_Send GUARDED_BY(_criticalSectionRTCPSender);

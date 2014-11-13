@@ -540,8 +540,7 @@ class RtpRtcp : public Module {
     virtual int32_t SetREMBStatus(const bool enable) = 0;
 
     virtual int32_t SetREMBData(const uint32_t bitrate,
-                                const uint8_t numberOfSSRC,
-                                const uint32_t* SSRC) = 0;
+                                const std::vector<uint32_t>& ssrcs) = 0;
 
     /*
     *   (IJ) Extended jitter report.

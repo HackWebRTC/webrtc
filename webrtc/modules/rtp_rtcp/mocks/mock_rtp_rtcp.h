@@ -196,8 +196,8 @@ class MockRtpRtcp : public RtpRtcp {
       bool());
   MOCK_METHOD1(SetREMBStatus,
       int32_t(const bool enable));
-  MOCK_METHOD3(SetREMBData,
-      int32_t(const uint32_t bitrate, const uint8_t numberOfSSRC, const uint32_t* SSRC));
+  MOCK_METHOD2(SetREMBData,
+      int32_t(const uint32_t bitrate, const std::vector<uint32_t>& ssrcs));
   MOCK_CONST_METHOD0(IJ,
       bool());
   MOCK_METHOD1(SetIJStatus,

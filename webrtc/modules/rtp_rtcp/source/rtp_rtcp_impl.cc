@@ -873,9 +873,8 @@ int32_t ModuleRtpRtcpImpl::SetREMBStatus(const bool enable) {
 }
 
 int32_t ModuleRtpRtcpImpl::SetREMBData(const uint32_t bitrate,
-                                       const uint8_t number_of_ssrc,
-                                       const uint32_t* ssrc) {
-  return rtcp_sender_.SetREMBData(bitrate, number_of_ssrc, ssrc);
+                                       const std::vector<uint32_t>& ssrcs) {
+  return rtcp_sender_.SetREMBData(bitrate, ssrcs);
 }
 
 // (IJ) Extended jitter report.

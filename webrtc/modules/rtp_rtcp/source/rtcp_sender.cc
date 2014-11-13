@@ -120,9 +120,6 @@ RTCPSender::RTCPSender(const int32_t id,
 
     _sequenceNumberFIR(0),
 
-    _lengthRembSSRC(0),
-    _sizeRembSSRC(0),
-    _rembSSRC(NULL),
     _rembBitrate(0),
 
     _tmmbrHelp(),
@@ -145,7 +142,6 @@ RTCPSender::RTCPSender(const int32_t id,
 }
 
 RTCPSender::~RTCPSender() {
-  delete [] _rembSSRC;
   delete [] _appData;
 
   while (!internal_report_blocks_.empty()) {
@@ -251,24 +247,12 @@ RTCPSender::SetREMBStatus(const bool enable)
 
 int32_t
 RTCPSender::SetREMBData(const uint32_t bitrate,
-                        const uint8_t numberOfSSRC,
-                        const uint32_t* SSRC)
+                        const std::vector<uint32_t>& ssrcs)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
     _rembBitrate = bitrate;
+    remb_ssrcs_ = ssrcs;
 
-    if(_sizeRembSSRC < numberOfSSRC)
-    {
-        delete [] _rembSSRC;
-        _rembSSRC = new uint32_t[numberOfSSRC];
-        _sizeRembSSRC = numberOfSSRC;
-    }
-
-    _lengthRembSSRC = numberOfSSRC;
-    for (int i = 0; i < numberOfSSRC; i++)
-    {
-        _rembSSRC[i] = SSRC[i];
-    }
     _sendREMB = true;
     // Send a REMB immediately if we have a new REMB. The frequency of REMBs is
     // throttled by the caller.
@@ -1048,7 +1032,7 @@ int32_t
 RTCPSender::BuildREMB(uint8_t* rtcpbuffer, int& pos)
 {
     // sanity
-    if(pos + 20 + 4 * _lengthRembSSRC >= IP_PACKET_SIZE)
+    if(pos + 20 + 4 * remb_ssrcs_.size() >= IP_PACKET_SIZE)
     {
         return -2;
     }
@@ -1058,7 +1042,7 @@ RTCPSender::BuildREMB(uint8_t* rtcpbuffer, int& pos)
     rtcpbuffer[pos++]=(uint8_t)206;
 
     rtcpbuffer[pos++]=(uint8_t)0;
-    rtcpbuffer[pos++]=_lengthRembSSRC + 4;
+    rtcpbuffer[pos++]=remb_ssrcs_.size() + 4;
 
     // Add our own SSRC
     RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
@@ -1073,7 +1057,7 @@ RTCPSender::BuildREMB(uint8_t* rtcpbuffer, int& pos)
     rtcpbuffer[pos++]='M';
     rtcpbuffer[pos++]='B';
 
-    rtcpbuffer[pos++] = _lengthRembSSRC;
+    rtcpbuffer[pos++] = remb_ssrcs_.size();
     // 6 bit Exp
     // 18 bit mantissa
     uint8_t brExp = 0;
@@ -1090,10 +1074,10 @@ RTCPSender::BuildREMB(uint8_t* rtcpbuffer, int& pos)
     rtcpbuffer[pos++]=(uint8_t)(brMantissa >> 8);
     rtcpbuffer[pos++]=(uint8_t)(brMantissa);
 
-    for (int i = 0; i < _lengthRembSSRC; i++)
+    for (size_t i = 0; i < remb_ssrcs_.size(); i++)
     {
-      RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _rembSSRC[i]);
-        pos += 4;
+      RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, remb_ssrcs_[i]);
+      pos += 4;
     }
     return 0;
 }

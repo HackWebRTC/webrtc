@@ -108,8 +108,7 @@ void StreamObserver::OnReceiveBitrateChanged(
       TriggerTestDone();
     }
   }
-  rtp_rtcp_->SetREMBData(
-      bitrate, static_cast<uint8_t>(ssrcs.size()), &ssrcs[0]);
+  rtp_rtcp_->SetREMBData(bitrate, ssrcs);
   rtp_rtcp_->Process();
 }
 
@@ -235,8 +234,7 @@ void LowRateStreamObserver::OnReceiveBitrateChanged(
     const std::vector<unsigned int>& ssrcs,
     unsigned int bitrate) {
   CriticalSectionScoped lock(crit_.get());
-  rtp_rtcp_->SetREMBData(
-      bitrate, static_cast<uint8_t>(ssrcs.size()), &ssrcs[0]);
+  rtp_rtcp_->SetREMBData(bitrate, ssrcs);
   rtp_rtcp_->Process();
   last_remb_bps_ = bitrate;
 }

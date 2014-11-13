@@ -829,7 +829,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
       rtcp_sender.SetRemoteSSRC(kSendSsrcs[0]);
       if (remb_value > 0) {
         rtcp_sender.SetREMBStatus(true);
-        rtcp_sender.SetREMBData(remb_value, 0, NULL);
+        rtcp_sender.SetREMBData(remb_value, std::vector<uint32_t>());
       }
       RTCPSender::FeedbackState feedback_state;
       EXPECT_EQ(0, rtcp_sender.SendRTCP(feedback_state, kRtcpRr));
@@ -1059,7 +1059,8 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
                           "bps",
                           false);
         if (total_bitrate_bps > kHighBitrateBps) {
-          rtp_rtcp_->SetREMBData(kRembBitrateBps, 1, &header.ssrc);
+          rtp_rtcp_->SetREMBData(kRembBitrateBps,
+                                 std::vector<uint32_t>(1, header.ssrc));
           rtp_rtcp_->Process();
           bitrate_capped_ = true;
         } else if (bitrate_capped_ &&
