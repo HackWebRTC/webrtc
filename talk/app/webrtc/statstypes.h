@@ -255,6 +255,7 @@ class StatsReport {
   static const char kStatsValueNameChannelId[];
   static const char kStatsValueNameTrackId[];
   static const char kStatsValueNameSsrc[];
+  static const char kStatsValueNameSendPacketsDiscarded[];
   static const char kStatsValueNameTypingNoiseState[];
   static const char kStatsValueNameDer[];
   static const char kStatsValueNameFingerprint[];
