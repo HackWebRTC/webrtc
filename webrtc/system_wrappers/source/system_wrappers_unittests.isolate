@@ -8,14 +8,6 @@
 
 {
   'conditions': [
-    ['OS=="android"', {
-      'variables': {
-        'files': [
-          '<(DEPTH)/data/',
-          '<(DEPTH)/resources/',
-        ],
-      },
-    }],
     ['OS=="linux" or OS=="mac" or OS=="win"', {
       'variables': {
         'command': [

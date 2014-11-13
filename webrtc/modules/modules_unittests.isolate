@@ -10,19 +10,13 @@
     ['OS=="android"', {
       'variables': {
         'files': [
-          '<(DEPTH)/data/',
-          '<(DEPTH)/resources/',
+          '<(DEPTH)/data/audio_processing/output_data_fixed.pb',
         ],
       },
     }],
-    ['OS=="linux" or OS=="mac" or OS=="win"', {
+    ['OS=="linux" or OS=="mac" or OS=="win" or OS=="android"', {
       'variables': {
-        'command': [
-          '<(DEPTH)/testing/test_env.py',
-          '<(PRODUCT_DIR)/modules_unittests<(EXECUTABLE_SUFFIX)',
-        ],
         'files': [
-          '<(DEPTH)/DEPS',
           '<(DEPTH)/data/audio_processing/output_data_float.pb',
           '<(DEPTH)/data/voice_engine/audio_tiny48.wav',
           '<(DEPTH)/resources/att-downlink.rx',
@@ -36,7 +30,10 @@
           '<(DEPTH)/resources/audio_coding/neteq_rtcp_stats.dat',
           '<(DEPTH)/resources/audio_coding/neteq_universal_new.rtp',
           '<(DEPTH)/resources/audio_coding/neteq_universal_ref.pcm',
+          '<(DEPTH)/resources/audio_coding/speech_mono_16kHz.pcm',
+          '<(DEPTH)/resources/audio_coding/speech_mono_32_48kHz.pcm',
           '<(DEPTH)/resources/audio_coding/testfile32kHz.pcm',
+          '<(DEPTH)/resources/audio_coding/teststereo32kHz.pcm',
           '<(DEPTH)/resources/deflicker_before_cif_short.yuv',
           '<(DEPTH)/resources/far16_stereo.pcm',
           '<(DEPTH)/resources/far32_stereo.pcm',
@@ -96,6 +93,17 @@
           '<(DEPTH)/resources/video_coding/pltype103.rtp',
           '<(DEPTH)/resources/video_coding/ssrcs-2.pcap',
           '<(DEPTH)/resources/video_coding/ssrcs-3.pcap',
+        ],
+      },
+    }],
+    ['OS=="linux" or OS=="mac" or OS=="win"', {
+      'variables': {
+        'command': [
+          '<(DEPTH)/testing/test_env.py',
+          '<(PRODUCT_DIR)/modules_unittests<(EXECUTABLE_SUFFIX)',
+        ],
+        'files': [
+          '<(DEPTH)/DEPS',
           '<(DEPTH)/testing/test_env.py',
           '<(PRODUCT_DIR)/modules_unittests<(EXECUTABLE_SUFFIX)',
         ],

@@ -7,11 +7,12 @@
 # be found in the AUTHORS file in the root of the source tree.
 {
   'conditions': [
-    ['OS=="android"', {
+    ['OS=="linux" or OS=="mac" or OS=="win" or OS=="android"', {
       'variables': {
         'files': [
-          '<(DEPTH)/data/',
-          '<(DEPTH)/resources/',
+          '<(DEPTH)/resources/foreman_cif.yuv',
+          '<(DEPTH)/resources/paris_qcif.yuv',
+          '<(DEPTH)/resources/voice_engine/audio_long16.pcm',
         ],
       },
     }],
@@ -22,9 +23,6 @@
         ],
         'files': [
           '<(DEPTH)/DEPS',
-          '<(DEPTH)/resources/foreman_cif.yuv',
-          '<(DEPTH)/resources/paris_qcif.yuv',
-          '<(DEPTH)/resources/voice_engine/audio_long16.pcm',
           '<(PRODUCT_DIR)/webrtc_perf_tests<(EXECUTABLE_SUFFIX)',
         ],
       },
