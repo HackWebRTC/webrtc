@@ -59,9 +59,15 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
         cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
     formats.push_back(cricket::VideoFormat(640, 480,
         cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
+    formats.push_back(cricket::VideoFormat(640, 400,
+        cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
     formats.push_back(cricket::VideoFormat(320, 240,
         cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
+    formats.push_back(cricket::VideoFormat(320, 200,
+        cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
     formats.push_back(cricket::VideoFormat(160, 120,
+        cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
+    formats.push_back(cricket::VideoFormat(160, 100,
         cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
     ResetSupportedFormats(formats);
   }
