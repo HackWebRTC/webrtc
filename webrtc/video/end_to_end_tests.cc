@@ -442,15 +442,11 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
   RunBaseTest(&test);
 }
 
-// TODO(pbos): Flaky, webrtc:3269
-TEST_F(EndToEndTest, DISABLED_CanReceiveFec) {
+TEST_F(EndToEndTest, CanReceiveFec) {
   class FecRenderObserver : public test::EndToEndTest, public VideoRenderer {
    public:
     FecRenderObserver()
-        : EndToEndTest(kDefaultTimeoutMs),
-          state_(kFirstPacket),
-          protected_sequence_number_(0),
-          protected_frame_timestamp_(0) {}
+        : EndToEndTest(kDefaultTimeoutMs), state_(kFirstPacket) {}
 
    private:
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE
@@ -463,6 +459,14 @@ TEST_F(EndToEndTest, DISABLED_CanReceiveFec) {
           static_cast<int>(packet[header.headerLength]);
       if (encapsulated_payload_type != kFakeSendPayloadType)
         EXPECT_EQ(kUlpfecPayloadType, encapsulated_payload_type);
+
+      if (protected_sequence_numbers_.count(header.sequenceNumber) != 0) {
+        // Retransmitted packet, should not count.
+        protected_sequence_numbers_.erase(header.sequenceNumber);
+        EXPECT_GT(protected_timestamps_.count(header.timestamp), 0u);
+        protected_timestamps_.erase(header.timestamp);
+        return SEND_PACKET;
+      }
 
       switch (state_) {
         case kFirstPacket:
@@ -478,15 +482,11 @@ TEST_F(EndToEndTest, DISABLED_CanReceiveFec) {
           break;
         case kDropNextMediaPacket:
           if (encapsulated_payload_type == kFakeSendPayloadType) {
-            protected_sequence_number_ = header.sequenceNumber;
-            protected_frame_timestamp_ = header.timestamp;
-            state_ = kProtectedPacketDropped;
+            protected_sequence_numbers_.insert(header.sequenceNumber);
+            protected_timestamps_.insert(header.timestamp);
+            state_ = kDropEveryOtherPacketUntilFec;
             return DROP_PACKET;
           }
-          break;
-        case kProtectedPacketDropped:
-          EXPECT_NE(header.sequenceNumber, protected_sequence_number_)
-              << "Protected packet retransmitted. Should not happen with FEC.";
           break;
       }
 
@@ -496,19 +496,16 @@ TEST_F(EndToEndTest, DISABLED_CanReceiveFec) {
     virtual void RenderFrame(const I420VideoFrame& video_frame,
                              int time_to_render_ms) OVERRIDE {
       CriticalSectionScoped lock(crit_.get());
-      // Rendering frame with timestamp associated with dropped packet -> FEC
+      // Rendering frame with timestamp of packet that was dropped -> FEC
       // protection worked.
-      if (state_ == kProtectedPacketDropped &&
-          video_frame.timestamp() == protected_frame_timestamp_) {
+      if (protected_timestamps_.count(video_frame.timestamp()) != 0)
         observation_complete_->Set();
-      }
     }
 
     enum {
       kFirstPacket,
       kDropEveryOtherPacketUntilFec,
       kDropNextMediaPacket,
-      kProtectedPacketDropped,
     } state_;
 
     virtual void ModifyConfigs(
@@ -529,12 +526,11 @@ TEST_F(EndToEndTest, DISABLED_CanReceiveFec) {
 
     virtual void PerformTest() OVERRIDE {
       EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out while waiting for retransmitted NACKed frames to be "
-             "rendered again.";
+          << "Timed out waiting for dropped frames frames to be rendered.";
     }
 
-    uint32_t protected_sequence_number_ GUARDED_BY(crit_);
-    uint32_t protected_frame_timestamp_ GUARDED_BY(crit_);
+    std::set<uint32_t> protected_sequence_numbers_ GUARDED_BY(crit_);
+    std::set<uint32_t> protected_timestamps_ GUARDED_BY(crit_);
   } test;
 
   RunBaseTest(&test);
