@@ -610,7 +610,7 @@ void void_main(int argc, char* argv[]) {
                               LayoutFromChannels(msg.num_reverse_channels())));
 
         samples_per_channel = msg.sample_rate() / 100;
-        far_frame.sample_rate_hz_ = msg.sample_rate();
+        far_frame.sample_rate_hz_ = reverse_sample_rate;
         far_frame.samples_per_channel_ = reverse_sample_rate / 100;
         far_frame.num_channels_ = msg.num_reverse_channels();
         near_frame.sample_rate_hz_ = msg.sample_rate();
