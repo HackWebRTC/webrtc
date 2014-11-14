@@ -482,8 +482,8 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
   // adapter to better match ratio_w_ x ratio_h_.
   // Note that abs() of frame height is passed in, because source may be
   // inverted, but output will be positive.
-  int desired_width = captured_frame->width;
-  int desired_height = captured_frame->height;
+  int cropped_width = captured_frame->width;
+  int cropped_height = captured_frame->height;
 
   // TODO(fbarchard): Improve logic to pad or crop.
   // MJPG can crop vertically, but not horizontally.  This logic disables crop.
@@ -503,7 +503,21 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     ComputeCrop(ratio_w_, ratio_h_, captured_frame->width,
                 abs(captured_frame->height), captured_frame->pixel_width,
                 captured_frame->pixel_height, captured_frame->rotation,
-                &desired_width, &desired_height);
+                &cropped_width, &cropped_height);
+  }
+
+  int adapted_width = cropped_width;
+  int adapted_height = cropped_height;
+  if (enable_video_adapter_ && !IsScreencast()) {
+    const VideoFormat adapted_format =
+        video_adapter_.AdaptFrameResolution(cropped_width, cropped_height);
+    if (adapted_format.IsSize0x0()) {
+      // VideoAdapter dropped the frame.
+      ++adapt_frame_drops_;
+      return;
+    }
+    adapted_width = adapted_format.width;
+    adapted_height = adapted_format.height;
   }
 
   if (!frame_factory_) {
@@ -511,39 +525,29 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     return;
   }
 
-  rtc::scoped_ptr<VideoFrame> i420_frame(
-      frame_factory_->CreateAliasedFrame(
-          captured_frame, desired_width, desired_height));
-  if (!i420_frame) {
+  rtc::scoped_ptr<VideoFrame> adapted_frame(
+      frame_factory_->CreateAliasedFrame(captured_frame,
+                                         cropped_width, cropped_height,
+                                         adapted_width, adapted_height));
+
+  if (!adapted_frame) {
     // TODO(fbarchard): LOG more information about captured frame attributes.
     LOG(LS_ERROR) << "Couldn't convert to I420! "
                   << "From " << ToString(captured_frame) << " To "
-                  << desired_width << " x " << desired_height;
+                  << cropped_width << " x " << cropped_height;
     return;
   }
 
-  VideoFrame* adapted_frame = i420_frame.get();
-  if (enable_video_adapter_ && !IsScreencast()) {
-    VideoFrame* out_frame = NULL;
-    video_adapter_.AdaptFrame(adapted_frame, &out_frame);
-    if (!out_frame) {
-      // VideoAdapter dropped the frame.
-      ++adapt_frame_drops_;
-      return;
-    }
-    adapted_frame = out_frame;
-  }
-
-  if (!muted_ && !ApplyProcessors(adapted_frame)) {
+  if (!muted_ && !ApplyProcessors(adapted_frame.get())) {
     // Processor dropped the frame.
     ++effect_frame_drops_;
     return;
   }
-  if (muted_) {
+  if (muted_ || (enable_video_adapter_ && video_adapter_.IsBlackOutput())) {
     // TODO(pthatcher): Use frame_factory_->CreateBlackFrame() instead.
     adapted_frame->SetToBlack();
   }
-  SignalVideoFrame(this, adapted_frame);
+  SignalVideoFrame(this, adapted_frame.get());
 
   UpdateStats(captured_frame);
 }
