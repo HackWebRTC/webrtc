@@ -56,11 +56,6 @@ class VideoAdapter {
   const VideoFormat& output_format();
   // If the parameter black is true, the adapted frames will be black.
   void SetBlackOutput(bool black);
-  bool IsBlackOutput();
-
-  // Return the adapted resolution given the input resolution. The returned
-  // resolution will be 0x0 if the frame should be dropped.
-  VideoFormat AdaptFrameResolution(int in_width, int in_height);
 
   // Adapt the input frame from the input format to the output format. Return
   // true and set the output frame to NULL if the input frame is dropped. Return
@@ -99,6 +94,8 @@ class VideoAdapter {
   int frames_out_;  // Number of output frames.
   int frames_scaled_;  // Number of frames scaled.
   int adaption_changes_;  // Number of changes in scale factor.
+  size_t previous_width_;  // Previous adapter output width.
+  size_t previous_height_;  // Previous adapter output height.
   bool black_output_;  // Flag to tell if we need to black output_frame_.
   bool is_black_;  // Flag to tell if output_frame_ is currently black.
   int64 interval_next_frame_;
