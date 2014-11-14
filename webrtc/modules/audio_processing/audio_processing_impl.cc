@@ -469,15 +469,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
   AudioBuffer* ca = capture_audio_.get();  // For brevity.
   bool data_processed = is_data_processed();
   if (analysis_needed(data_processed)) {
-    for (int i = 0; i < fwd_proc_format_.num_channels(); i++) {
-      // Split into a low and high band.
-      WebRtcSpl_AnalysisQMF(ca->data(i),
-                            ca->samples_per_channel(),
-                            ca->low_pass_split_data(i),
-                            ca->high_pass_split_data(i),
-                            ca->filter_states(i)->analysis_filter_state1,
-                            ca->filter_states(i)->analysis_filter_state2);
-    }
+    ca->SplitIntoFrequencyBands();
   }
 
   RETURN_ON_ERR(high_pass_filter_->ProcessCaptureAudio(ca));
@@ -494,15 +486,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
   RETURN_ON_ERR(gain_control_->ProcessCaptureAudio(ca));
 
   if (synthesis_needed(data_processed)) {
-    for (int i = 0; i < fwd_proc_format_.num_channels(); i++) {
-      // Recombine low and high bands.
-      WebRtcSpl_SynthesisQMF(ca->low_pass_split_data(i),
-                             ca->high_pass_split_data(i),
-                             ca->samples_per_split_channel(),
-                             ca->data(i),
-                             ca->filter_states(i)->synthesis_filter_state1,
-                             ca->filter_states(i)->synthesis_filter_state2);
-    }
+    ca->MergeFrequencyBands();
   }
 
   // The level estimator operates on the recombined data.
@@ -593,15 +577,7 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
 int AudioProcessingImpl::AnalyzeReverseStreamLocked() {
   AudioBuffer* ra = render_audio_.get();  // For brevity.
   if (rev_proc_format_.rate() == kSampleRate32kHz) {
-    for (int i = 0; i < rev_proc_format_.num_channels(); i++) {
-      // Split into low and high band.
-      WebRtcSpl_AnalysisQMF(ra->data(i),
-                            ra->samples_per_channel(),
-                            ra->low_pass_split_data(i),
-                            ra->high_pass_split_data(i),
-                            ra->filter_states(i)->analysis_filter_state1,
-                            ra->filter_states(i)->analysis_filter_state2);
-    }
+    ra->SplitIntoFrequencyBands();
   }
 
   RETURN_ON_ERR(echo_cancellation_->ProcessRenderAudio(ra));

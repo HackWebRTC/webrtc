@@ -15,6 +15,7 @@
 
 #include "webrtc/modules/audio_processing/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/audio_processing/splitting_filter.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/scoped_vector.h"
@@ -24,21 +25,6 @@ namespace webrtc {
 
 class PushSincResampler;
 class IFChannelBuffer;
-
-struct SplitFilterStates {
-  SplitFilterStates() {
-    memset(analysis_filter_state1, 0, sizeof(analysis_filter_state1));
-    memset(analysis_filter_state2, 0, sizeof(analysis_filter_state2));
-    memset(synthesis_filter_state1, 0, sizeof(synthesis_filter_state1));
-    memset(synthesis_filter_state2, 0, sizeof(synthesis_filter_state2));
-  }
-
-  static const int kStateSize = 6;
-  int analysis_filter_state1[kStateSize];
-  int analysis_filter_state2[kStateSize];
-  int synthesis_filter_state1[kStateSize];
-  int synthesis_filter_state2[kStateSize];
-};
 
 class AudioBuffer {
  public:
@@ -60,10 +46,16 @@ class AudioBuffer {
   // possible, since they incur less float<->int16 conversion overhead.
   int16_t* data(int channel);
   const int16_t* data(int channel) const;
+  int16_t* const* channels();
+  const int16_t* const* channels() const;
   int16_t* low_pass_split_data(int channel);
   const int16_t* low_pass_split_data(int channel) const;
   int16_t* high_pass_split_data(int channel);
-  const int16_t* high_pass_split_data(int channel) const;\
+  const int16_t* high_pass_split_data(int channel) const;
+  int16_t* const* low_pass_split_channels();
+  const int16_t* const* low_pass_split_channels() const;
+  int16_t* const* high_pass_split_channels();
+  const int16_t* const* high_pass_split_channels() const;
   // Returns a pointer to the low-pass data downmixed to mono. If this data
   // isn't already available it re-calculates it.
   const int16_t* mixed_low_pass_data();
@@ -89,8 +81,6 @@ class AudioBuffer {
 
   const float* keyboard_data() const;
 
-  SplitFilterStates* filter_states(int channel);
-
   void set_activity(AudioFrame::VADActivity activity);
   AudioFrame::VADActivity activity() const;
 
@@ -108,6 +98,11 @@ class AudioBuffer {
               AudioProcessing::ChannelLayout layout,
               float* const* data);
   void CopyLowPassToReference();
+
+  // Splits the signal into different bands.
+  void SplitIntoFrequencyBands();
+  // Recombine the different bands into one signal.
+  void MergeFrequencyBands();
 
  private:
   // Called from DeinterleaveFrom() and CopyFrom().
@@ -127,7 +122,7 @@ class AudioBuffer {
   scoped_ptr<IFChannelBuffer> channels_;
   scoped_ptr<IFChannelBuffer> split_channels_low_;
   scoped_ptr<IFChannelBuffer> split_channels_high_;
-  scoped_ptr<SplitFilterStates[]> filter_states_;
+  scoped_ptr<SplittingFilter> splitting_filter_;
   scoped_ptr<ChannelBuffer<int16_t> > mixed_low_pass_channels_;
   scoped_ptr<ChannelBuffer<int16_t> > low_pass_reference_channels_;
   scoped_ptr<ChannelBuffer<float> > input_buffer_;

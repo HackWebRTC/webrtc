@@ -72,6 +72,8 @@
         'noise_suppression_impl.h',
         'processing_component.cc',
         'processing_component.h',
+        'splitting_filter.cc',
+        'splitting_filter.h',
         'rms_level.cc',
         'rms_level.h',
         'typing_detection.cc',

@@ -177,7 +177,7 @@ AudioBuffer::AudioBuffer(int input_samples_per_channel,
                                                   num_proc_channels_));
     split_channels_high_.reset(new IFChannelBuffer(samples_per_split_channel_,
                                                    num_proc_channels_));
-    filter_states_.reset(new SplitFilterStates[num_proc_channels_]);
+    splitting_filter_.reset(new SplittingFilter(num_proc_channels_));
   }
 }
 
@@ -266,6 +266,15 @@ int16_t* AudioBuffer::data(int channel) {
   return channels_->ibuf()->channel(channel);
 }
 
+const int16_t* const* AudioBuffer::channels() const {
+  return channels_->ibuf_const()->channels();
+}
+
+int16_t* const* AudioBuffer::channels() {
+  mixed_low_pass_valid_ = false;
+  return channels_->ibuf()->channels();
+}
+
 const float* AudioBuffer::data_f(int channel) const {
   return channels_->fbuf_const()->channel(channel);
 }
@@ -295,6 +304,18 @@ int16_t* AudioBuffer::low_pass_split_data(int channel) {
   return split_channels_low_.get()
       ? split_channels_low_->ibuf()->channel(channel)
       : data(channel);
+}
+
+const int16_t* const* AudioBuffer::low_pass_split_channels() const {
+  return split_channels_low_.get()
+             ? split_channels_low_->ibuf_const()->channels()
+             : channels();
+}
+
+int16_t* const* AudioBuffer::low_pass_split_channels() {
+  mixed_low_pass_valid_ = false;
+  return split_channels_low_.get() ? split_channels_low_->ibuf()->channels()
+                                   : channels();
 }
 
 const float* AudioBuffer::low_pass_split_data_f(int channel) const {
@@ -333,6 +354,17 @@ int16_t* AudioBuffer::high_pass_split_data(int channel) {
   return split_channels_high_.get()
       ? split_channels_high_->ibuf()->channel(channel)
       : NULL;
+}
+
+const int16_t* const* AudioBuffer::high_pass_split_channels() const {
+  return split_channels_high_.get()
+             ? split_channels_high_->ibuf_const()->channels()
+             : NULL;
+}
+
+int16_t* const* AudioBuffer::high_pass_split_channels() {
+  return split_channels_high_.get() ? split_channels_high_->ibuf()->channels()
+                                    : NULL;
 }
 
 const float* AudioBuffer::high_pass_split_data_f(int channel) const {
@@ -391,11 +423,6 @@ const int16_t* AudioBuffer::low_pass_reference(int channel) const {
 
 const float* AudioBuffer::keyboard_data() const {
   return keyboard_data_;
-}
-
-SplitFilterStates* AudioBuffer::filter_states(int channel) {
-  assert(channel >= 0 && channel < num_proc_channels_);
-  return &filter_states_[channel];
 }
 
 void AudioBuffer::set_activity(AudioFrame::VADActivity activity) {
@@ -483,6 +510,18 @@ void AudioBuffer::CopyLowPassToReference() {
   for (int i = 0; i < num_proc_channels_; i++) {
     low_pass_reference_channels_->CopyFrom(low_pass_split_data(i), i);
   }
+}
+
+void AudioBuffer::SplitIntoFrequencyBands() {
+  splitting_filter_->TwoBandsAnalysis(
+      channels(), samples_per_channel(), num_proc_channels_,
+      low_pass_split_channels(), high_pass_split_channels());
+}
+
+void AudioBuffer::MergeFrequencyBands() {
+  splitting_filter_->TwoBandsSynthesis(
+      low_pass_split_channels(), high_pass_split_channels(),
+      samples_per_split_channel(), num_proc_channels_, channels());
 }
 
 }  // namespace webrtc

@@ -63,6 +63,8 @@ source_set("audio_processing") {
     "processing_component.h",
     "rms_level.cc",
     "rms_level.h",
+    "splitting_filter.cc",
+    "splitting_filter.h",
     "typing_detection.cc",
     "typing_detection.h",
     "utility/delay_estimator.c",
