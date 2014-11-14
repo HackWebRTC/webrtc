@@ -1428,7 +1428,9 @@ void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
   RunBaseTest(&test);
 }
 
-TEST_F(EndToEndTest, GetStats) {
+// TODO(pbos): Reenable test, it exposes an assert in the jitter buffer.
+// https://code.google.com/p/webrtc/issues/detail?id=4014
+TEST_F(EndToEndTest, DISABLED_GetStats) {
   class StatsObserver : public test::EndToEndTest, public I420FrameCallback {
    public:
     StatsObserver()
