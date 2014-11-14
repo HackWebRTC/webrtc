@@ -42,8 +42,6 @@ class RtpRtcp : public Module {
     *                         will do nothing.
     *  outgoing_transport   - Transport object that will be called when packets
     *                         are ready to be sent out on the network
-    *  rtcp_feedback        - Callback object that will receive the incoming
-    *                         RTCP messages.
     *  intra_frame_callback - Called when the receiver request a intra frame.
     *  bandwidth_callback   - Called when we receive a changed estimate from
     *                         the receiver of out stream.
@@ -60,7 +58,6 @@ class RtpRtcp : public Module {
     RtpRtcp* default_module;
     ReceiveStatistics* receive_statistics;
     Transport* outgoing_transport;
-    RtcpFeedback* rtcp_feedback;
     RtcpIntraFrameObserver* intra_frame_callback;
     RtcpBandwidthObserver* bandwidth_callback;
     RtcpRttStats* rtt_stats;

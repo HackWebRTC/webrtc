@@ -133,9 +133,6 @@ class ViERTP_RTCPImpl
   virtual int RegisterRTPObserver(const int video_channel,
                                   ViERTPObserver& observer);
   virtual int DeregisterRTPObserver(const int video_channel);
-  virtual int RegisterRTCPObserver(const int video_channel,
-                                   ViERTCPObserver& observer);
-  virtual int DeregisterRTCPObserver(const int video_channel);
 
   virtual int RegisterSendChannelRtcpStatisticsCallback(
       int channel, RtcpStatisticsCallback* callback);

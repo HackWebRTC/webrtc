@@ -61,19 +61,6 @@ protected:
     virtual ~VoERTPObserver() {}
 };
 
-// VoERTCPObserver
-class WEBRTC_DLLEXPORT VoERTCPObserver
-{
-public:
-    virtual void OnApplicationDataReceived(
-        int channel, unsigned char subType,
-        unsigned int name, const unsigned char* data,
-        unsigned short dataLengthInBytes) = 0;
-
-protected:
-    virtual ~VoERTCPObserver() {}
-};
-
 // CallStatistics
 struct CallStatistics
 {
@@ -268,9 +255,6 @@ public:
     virtual int RegisterRTPObserver(int channel,
             VoERTPObserver& observer) { return -1; };
     virtual int DeRegisterRTPObserver(int channel) { return -1; };
-    virtual int RegisterRTCPObserver(
-            int channel, VoERTCPObserver& observer) { return -1; };
-    virtual int DeRegisterRTCPObserver(int channel) { return -1; };
     virtual int GetRemoteCSRCs(int channel,
             unsigned int arrCSRC[15]) { return -1; };
     virtual int InsertExtraRTPPacket(

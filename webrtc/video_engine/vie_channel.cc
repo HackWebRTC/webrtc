@@ -130,7 +130,6 @@ ViEChannel::ViEChannel(int32_t channel_id,
       codec_observer_(NULL),
       do_key_frame_callbackRequest_(false),
       rtp_observer_(NULL),
-      rtcp_observer_(NULL),
       intra_frame_observer_(intra_frame_observer),
       rtt_stats_(rtt_stats),
       paced_sender_(paced_sender),
@@ -150,22 +149,9 @@ ViEChannel::ViEChannel(int32_t channel_id,
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
       pre_render_callback_(NULL),
       start_ms_(Clock::GetRealTimeClock()->TimeInMilliseconds()) {
-  RtpRtcp::Configuration configuration;
-  configuration.id = ViEModuleId(engine_id, channel_id);
-  configuration.audio = false;
-  configuration.default_module = default_rtp_rtcp;
-  configuration.outgoing_transport = &vie_sender_;
-  configuration.rtcp_feedback = this;
-  configuration.intra_frame_callback = intra_frame_observer;
-  configuration.bandwidth_callback = bandwidth_observer;
-  configuration.rtt_stats = rtt_stats;
+  RtpRtcp::Configuration configuration = CreateRtpRtcpConfiguration();
   configuration.remote_bitrate_estimator = remote_bitrate_estimator;
-  configuration.paced_sender = paced_sender;
   configuration.receive_statistics = vie_receiver_.GetReceiveStatistics();
-  configuration.send_bitrate_observer = &send_bitrate_observer_;
-  configuration.send_frame_count_observer = &send_frame_count_observer_;
-  configuration.send_side_delay_observer = &send_side_delay_observer_;
-
   rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
   vie_receiver_.SetRtpRtcpModule(rtp_rtcp_.get());
   vcm_->SetNackSettings(kMaxNackListSize, max_nack_reordering_threshold_, 0);
@@ -1013,20 +999,6 @@ int32_t ViEChannel::RegisterRtpObserver(ViERTPObserver* observer) {
   return 0;
 }
 
-int32_t ViEChannel::RegisterRtcpObserver(ViERTCPObserver* observer) {
-  CriticalSectionScoped cs(callback_cs_.get());
-  if (observer) {
-    if (rtcp_observer_) {
-      LOG_F(LS_ERROR) << "Observer already registered.";
-      return -1;
-    }
-    rtcp_observer_ = observer;
-  } else {
-    rtcp_observer_ = NULL;
-  }
-  return 0;
-}
-
 int32_t ViEChannel::SendApplicationDefinedRTCPPacket(
     const uint8_t sub_type,
     uint32_t name,
@@ -1640,19 +1612,25 @@ RtpRtcp* ViEChannel::GetRtpRtcpModule(size_t index) const {
   return *it;
 }
 
-RtpRtcp* ViEChannel::CreateRtpRtcpModule() {
+RtpRtcp::Configuration ViEChannel::CreateRtpRtcpConfiguration() {
   RtpRtcp::Configuration configuration;
   configuration.id = ViEModuleId(engine_id_, channel_id_);
-  configuration.audio = false;  // Video.
+  configuration.audio = false;
   configuration.default_module = default_rtp_rtcp_;
   configuration.outgoing_transport = &vie_sender_;
   configuration.intra_frame_callback = intra_frame_observer_;
   configuration.bandwidth_callback = bandwidth_observer_.get();
   configuration.rtt_stats = rtt_stats_;
   configuration.paced_sender = paced_sender_;
+  configuration.send_bitrate_observer = &send_bitrate_observer_;
+  configuration.send_frame_count_observer = &send_frame_count_observer_;
   configuration.send_side_delay_observer = &send_side_delay_observer_;
 
-  return RtpRtcp::CreateRtpRtcp(configuration);
+  return configuration;
+}
+
+RtpRtcp* ViEChannel::CreateRtpRtcpModule() {
+  return RtpRtcp::CreateRtpRtcp(CreateRtpRtcpConfiguration());
 }
 
 int32_t ViEChannel::StartDecodeThread() {
@@ -1730,24 +1708,6 @@ void ViEChannel::RegisterPreRenderCallback(
 void ViEChannel::RegisterPreDecodeImageCallback(
     EncodedImageCallback* pre_decode_callback) {
   vcm_->RegisterPreDecodeImageCallback(pre_decode_callback);
-}
-
-void ViEChannel::OnApplicationDataReceived(const int32_t id,
-                                           const uint8_t sub_type,
-                                           const uint32_t name,
-                                           const uint16_t length,
-                                           const uint8_t* data) {
-  if (channel_id_ != ChannelId(id)) {
-    return;
-  }
-  CriticalSectionScoped cs(callback_cs_.get());
-  {
-    if (rtcp_observer_) {
-      rtcp_observer_->OnApplicationDataReceived(
-          channel_id_, sub_type, name, reinterpret_cast<const char*>(data),
-          length);
-    }
-  }
 }
 
 int32_t ViEChannel::OnInitializeDecoder(

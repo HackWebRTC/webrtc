@@ -38,7 +38,6 @@ RTCPReceiver::RTCPReceiver(const int32_t id, Clock* clock,
     _rtpRtcp(*owner),
       _criticalSectionFeedbacks(
           CriticalSectionWrapper::CreateCriticalSection()),
-    _cbRtcpFeedback(NULL),
     _cbRtcpBandwidthObserver(NULL),
     _cbRtcpIntraFrameObserver(NULL),
     _criticalSectionRTCPReceiver(
@@ -145,12 +144,10 @@ uint32_t RTCPReceiver::RemoteSSRC() const {
 
 void RTCPReceiver::RegisterRtcpObservers(
     RtcpIntraFrameObserver* intra_frame_callback,
-    RtcpBandwidthObserver* bandwidth_callback,
-    RtcpFeedback* feedback_callback) {
+    RtcpBandwidthObserver* bandwidth_callback) {
   CriticalSectionScoped lock(_criticalSectionFeedbacks);
   _cbRtcpIntraFrameObserver = intra_frame_callback;
   _cbRtcpBandwidthObserver = bandwidth_callback;
-  _cbRtcpFeedback = feedback_callback;
 }
 
 void RTCPReceiver::SetSsrcs(uint32_t main_ssrc,
@@ -1440,23 +1437,6 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
             rtcpPacketInformation.report_blocks,
             rtcpPacketInformation.rtt,
             now);
-      }
-    }
-    if(_cbRtcpFeedback) {
-      if(!(rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSr)) {
-        _cbRtcpFeedback->OnReceiveReportReceived(_id,
-            rtcpPacketInformation.remoteSSRC);
-      }
-      if(rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpXrVoipMetric) {
-        _cbRtcpFeedback->OnXRVoIPMetricReceived(_id,
-            rtcpPacketInformation.VoIPMetric);
-      }
-      if(rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpApp) {
-        _cbRtcpFeedback->OnApplicationDataReceived(_id,
-            rtcpPacketInformation.applicationSubType,
-            rtcpPacketInformation.applicationName,
-            rtcpPacketInformation.applicationLength,
-            rtcpPacketInformation.applicationData);
       }
     }
   }

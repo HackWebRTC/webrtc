@@ -59,7 +59,6 @@ class RtpRtcp;
 class TelephoneEventHandler;
 class ViENetwork;
 class VoEMediaProcess;
-class VoERTCPObserver;
 class VoERTPObserver;
 class VoiceEngineObserver;
 
@@ -156,7 +155,6 @@ private:
 class Channel:
     public RtpData,
     public RtpFeedback,
-    public RtcpFeedback,
     public FileCallback, // receiving notification from file player & recorder
     public Transport,
     public RtpAudioFeedback,
@@ -314,8 +312,6 @@ public:
 #endif
 
     // VoERTP_RTCP
-    int RegisterRTCPObserver(VoERTCPObserver& observer);
-    int DeRegisterRTCPObserver();
     int SetLocalSSRC(unsigned int ssrc);
     int GetLocalSSRC(unsigned int& ssrc);
     int GetRemoteSSRC(unsigned int& ssrc);
@@ -385,13 +381,6 @@ public:
     virtual void OnIncomingCSRCChanged(int32_t id,
                                        uint32_t CSRC, bool added) OVERRIDE;
     virtual void ResetStatistics(uint32_t ssrc) OVERRIDE;
-
-    // From RtcpFeedback in the RTP/RTCP module
-    virtual void OnApplicationDataReceived(int32_t id,
-                                           uint8_t subType,
-                                           uint32_t name,
-                                           uint16_t length,
-                                           const uint8_t* data) OVERRIDE;
 
     // From RtpAudioFeedback in the RTP/RTCP module
     virtual void OnPlayTelephoneEvent(int32_t id,
@@ -565,11 +554,9 @@ private:
     VoERxVadCallback* _rxVadObserverPtr;
     int32_t _oldVadDecision;
     int32_t _sendFrameType; // Send data is voice, 1-voice, 0-otherwise
-    VoERTCPObserver* _rtcpObserverPtr;
     // VoEBase
     bool _externalMixing;
     bool _mixFileWithMicrophone;
-    bool _rtcpObserver;
     // VoEVolumeControl
     bool _mute;
     float _panLeft;

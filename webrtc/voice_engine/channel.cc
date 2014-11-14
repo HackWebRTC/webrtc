@@ -323,36 +323,6 @@ void Channel::ResetStatistics(uint32_t ssrc) {
   statistics_proxy_->ResetStatistics();
 }
 
-void
-Channel::OnApplicationDataReceived(int32_t id,
-                                   uint8_t subType,
-                                   uint32_t name,
-                                   uint16_t length,
-                                   const uint8_t* data)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::OnApplicationDataReceived(id=%d, subType=%u,"
-                 " name=%u, length=%u)",
-                 id, subType, name, length);
-
-    int32_t channel = VoEChannelId(id);
-    assert(channel == _channelId);
-
-    if (_rtcpObserver)
-    {
-        CriticalSectionScoped cs(&_callbackCritSect);
-
-        if (_rtcpObserverPtr)
-        {
-            _rtcpObserverPtr->OnApplicationDataReceived(channel,
-                                                        subType,
-                                                        name,
-                                                        data,
-                                                        length);
-        }
-    }
-}
-
 int32_t
 Channel::OnInitializeDecoder(
     int32_t id,
@@ -790,10 +760,8 @@ Channel::Channel(int32_t channelId,
     _rxVadObserverPtr(NULL),
     _oldVadDecision(-1),
     _sendFrameType(0),
-    _rtcpObserverPtr(NULL),
     _externalMixing(false),
     _mixFileWithMicrophone(false),
-    _rtcpObserver(false),
     _mute(false),
     _panLeft(1.0f),
     _panRight(1.0f),
@@ -832,7 +800,6 @@ Channel::Channel(int32_t channelId,
     configuration.id = VoEModuleId(instanceId, channelId);
     configuration.audio = true;
     configuration.outgoing_transport = this;
-    configuration.rtcp_feedback = this;
     configuration.audio_messages = this;
     configuration.receive_statistics = rtp_receive_statistics_.get();
     configuration.bandwidth_callback = rtcp_bandwidth_observer_.get();
@@ -2870,48 +2837,6 @@ Channel::GetRxNsStatus(bool& enabled, NsModes& mode)
 }
 
 #endif // #ifdef WEBRTC_VOICE_ENGINE_NR
-
-int
-Channel::RegisterRTCPObserver(VoERTCPObserver& observer)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::RegisterRTCPObserver()");
-    CriticalSectionScoped cs(&_callbackCritSect);
-
-    if (_rtcpObserverPtr)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_OPERATION, kTraceError,
-            "RegisterRTCPObserver() observer already enabled");
-        return -1;
-    }
-
-    _rtcpObserverPtr = &observer;
-    _rtcpObserver = true;
-
-    return 0;
-}
-
-int
-Channel::DeRegisterRTCPObserver()
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-                 "Channel::DeRegisterRTCPObserver()");
-    CriticalSectionScoped cs(&_callbackCritSect);
-
-    if (!_rtcpObserverPtr)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_OPERATION, kTraceWarning,
-            "DeRegisterRTCPObserver() observer already disabled");
-        return 0;
-    }
-
-    _rtcpObserver = false;
-    _rtcpObserverPtr = NULL;
-
-    return 0;
-}
 
 int
 Channel::SetLocalSSRC(unsigned int ssrc)

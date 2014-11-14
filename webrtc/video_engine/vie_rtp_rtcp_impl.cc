@@ -906,37 +906,6 @@ int ViERTP_RTCPImpl::DeregisterRTPObserver(const int video_channel) {
   return 0;
 }
 
-int ViERTP_RTCPImpl::RegisterRTCPObserver(const int video_channel,
-                                          ViERTCPObserver& observer) {
-  LOG_F(LS_INFO) << "channel " << video_channel;
-  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
-  ViEChannel* vie_channel = cs.Channel(video_channel);
-  if (!vie_channel) {
-    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
-    return -1;
-  }
-  if (vie_channel->RegisterRtcpObserver(&observer) != 0) {
-    shared_data_->SetLastError(kViERtpRtcpObserverAlreadyRegistered);
-    return -1;
-  }
-  return 0;
-}
-
-int ViERTP_RTCPImpl::DeregisterRTCPObserver(const int video_channel) {
-  LOG_F(LS_INFO) << "channel " << video_channel;
-  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
-  ViEChannel* vie_channel = cs.Channel(video_channel);
-  if (!vie_channel) {
-    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
-    return -1;
-  }
-  if (vie_channel->RegisterRtcpObserver(NULL) != 0) {
-    shared_data_->SetLastError(kViERtpRtcpObserverNotRegistered);
-    return -1;
-  }
-  return 0;
-}
-
 int ViERTP_RTCPImpl::RegisterSendChannelRtcpStatisticsCallback(
   int video_channel, RtcpStatisticsCallback* callback) {
   LOG_F(LS_INFO) << "channel " << video_channel;

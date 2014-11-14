@@ -1578,6 +1578,8 @@ TEST_F(EndToEndTest, GetStats) {
       expected_cname_ = send_config->rtp.c_name;
     }
 
+    virtual size_t GetNumStreams() const OVERRIDE { return kNumSsrcs; }
+
     virtual void OnStreamsCreated(
         VideoSendStream* send_stream,
         const std::vector<VideoReceiveStream*>& receive_streams) OVERRIDE {

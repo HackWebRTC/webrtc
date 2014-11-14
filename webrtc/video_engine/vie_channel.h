@@ -14,6 +14,7 @@
 #include <list>
 
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -39,11 +40,9 @@ class I420FrameCallback;
 class PacedSender;
 class ProcessThread;
 class RtcpRttStats;
-class RtpRtcp;
 class ThreadWrapper;
 class ViEDecoderObserver;
 class ViEEffectFilter;
-class ViERTCPObserver;
 class ViERTPObserver;
 class VideoCodingModule;
 class VideoDecoder;
@@ -56,7 +55,6 @@ class ViEChannel
       public VCMReceiveStatisticsCallback,
       public VCMDecoderTimingCallback,
       public VCMPacketRequestCallback,
-      public RtcpFeedback,
       public RtpFeedback,
       public ViEFrameProviderBase {
  public:
@@ -162,7 +160,6 @@ class ViEChannel
   // Gets the CName of the incoming stream.
   int32_t GetRemoteRTCPCName(char rtcp_cname[]);
   int32_t RegisterRtpObserver(ViERTPObserver* observer);
-  int32_t RegisterRtcpObserver(ViERTCPObserver* observer);
   int32_t SendApplicationDefinedRTCPPacket(
       const uint8_t sub_type,
       uint32_t name,
@@ -226,13 +223,6 @@ class ViEChannel
                        RTPDirections direction);
   int32_t StopRTPDump(RTPDirections direction);
 
-  // Implements RtcpFeedback.
-  // TODO(pwestin) Depricate this functionality.
-  virtual void OnApplicationDataReceived(const int32_t id,
-                                         const uint8_t sub_type,
-                                         const uint32_t name,
-                                         const uint16_t length,
-                                         const uint8_t* data);
   // Implements RtpFeedback.
   virtual int32_t OnInitializeDecoder(
       const int32_t id,
@@ -370,6 +360,7 @@ class ViEChannel
       EXCLUSIVE_LOCKS_REQUIRED(rtp_rtcp_cs_);
   RtpRtcp* GetRtpRtcpModule(size_t simulcast_idx) const
       EXCLUSIVE_LOCKS_REQUIRED(rtp_rtcp_cs_);
+  RtpRtcp::Configuration CreateRtpRtcpConfiguration();
   RtpRtcp* CreateRtpRtcpModule();
   // Assumed to be protected.
   int32_t StartDecodeThread();
@@ -475,7 +466,6 @@ class ViEChannel
   ViEDecoderObserver* codec_observer_;
   bool do_key_frame_callbackRequest_;
   ViERTPObserver* rtp_observer_;
-  ViERTCPObserver* rtcp_observer_;
   RtcpIntraFrameObserver* intra_frame_observer_;
   RtcpRttStats* rtt_stats_;
   PacedSender* paced_sender_;

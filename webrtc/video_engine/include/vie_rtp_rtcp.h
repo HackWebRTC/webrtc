@@ -69,25 +69,6 @@ class WEBRTC_DLLEXPORT ViERTPObserver {
   virtual ~ViERTPObserver() {}
 };
 
-// This class declares an abstract interface for a user defined observer. It is
-// up to the VideoEngine user to implement a derived class which implements the
-// observer class. The observer is registered using RegisterRTCPObserver() and
-// deregistered using DeregisterRTCPObserver().
-
-class WEBRTC_DLLEXPORT ViERTCPObserver {
- public:
-  // This method is called if a application-defined RTCP packet has been
-  // received.
-  virtual void OnApplicationDataReceived(
-      const int video_channel,
-      const unsigned char sub_type,
-      const unsigned int name,
-      const char* data,
-      const unsigned short data_length_in_bytes) = 0;
- protected:
-  virtual ~ViERTCPObserver() {}
-};
-
 class WEBRTC_DLLEXPORT ViERTP_RTCP {
  public:
   enum { KDefaultDeltaTransmitTimeSeconds = 15 };
@@ -467,13 +448,6 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
 
   // Removes a registered instance of ViERTPObserver.
   virtual int DeregisterRTPObserver(const int video_channel) = 0;
-
-  // Registers an instance of a user implementation of the ViERTCPObserver.
-  virtual int RegisterRTCPObserver(const int video_channel,
-                                   ViERTCPObserver& observer) = 0;
-
-  // Removes a registered instance of ViERTCPObserver.
-  virtual int DeregisterRTCPObserver(const int video_channel) = 0;
 
   // Registers and instance of a user implementation of ViEFrameCountObserver
   virtual int RegisterSendFrameCountObserver(

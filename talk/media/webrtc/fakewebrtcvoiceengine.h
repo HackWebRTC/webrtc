@@ -883,9 +883,6 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(RegisterRTPObserver, (int channel,
                                     webrtc::VoERTPObserver& observer));
   WEBRTC_STUB(DeRegisterRTPObserver, (int channel));
-  WEBRTC_STUB(RegisterRTCPObserver, (int channel,
-                                     webrtc::VoERTCPObserver& observer));
-  WEBRTC_STUB(DeRegisterRTCPObserver, (int channel));
   WEBRTC_FUNC(SetLocalSSRC, (int channel, unsigned int ssrc)) {
     WEBRTC_CHECK_CHANNEL(channel);
     channels_[channel]->send_ssrc = ssrc;

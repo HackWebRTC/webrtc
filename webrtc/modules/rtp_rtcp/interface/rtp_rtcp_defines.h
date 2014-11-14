@@ -227,26 +227,6 @@ public:
                                    int packet_length) = 0;
 };
 
-class RtcpFeedback
-{
-public:
-    virtual void OnApplicationDataReceived(const int32_t /*id*/,
-                                           const uint8_t /*subType*/,
-                                           const uint32_t /*name*/,
-                                           const uint16_t /*length*/,
-                                           const uint8_t* /*data*/)  {};
-
-    virtual void OnXRVoIPMetricReceived(
-        const int32_t /*id*/,
-        const RTCPVoIPMetric* /*metric*/)  {};
-
-    virtual void OnReceiveReportReceived(const int32_t id,
-                                         const uint32_t senderSSRC)  {};
-
-protected:
-    virtual ~RtcpFeedback() {}
-};
-
 class RtpFeedback
 {
 public:

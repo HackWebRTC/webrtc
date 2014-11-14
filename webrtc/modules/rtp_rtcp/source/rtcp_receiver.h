@@ -49,8 +49,7 @@ public:
     uint32_t RelaySSRC() const;
 
     void RegisterRtcpObservers(RtcpIntraFrameObserver* intra_frame_callback,
-                               RtcpBandwidthObserver* bandwidth_callback,
-                               RtcpFeedback* feedback_callback);
+                               RtcpBandwidthObserver* bandwidth_callback);
 
     int32_t IncomingRTCPPacket(
         RTCPHelp::RTCPPacketInformation& rtcpPacketInformation,
@@ -228,7 +227,6 @@ protected:
   ModuleRtpRtcpImpl&      _rtpRtcp;
 
   CriticalSectionWrapper* _criticalSectionFeedbacks;
-  RtcpFeedback*           _cbRtcpFeedback;
   RtcpBandwidthObserver*  _cbRtcpBandwidthObserver;
   RtcpIntraFrameObserver* _cbRtcpIntraFrameObserver;
 

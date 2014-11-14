@@ -136,10 +136,9 @@ class MockRtpRtcp : public RtpRtcp {
       int(int bytes));
   MOCK_CONST_METHOD2(GetSendSideDelay,
       bool(int* avg_send_delay_ms, int* max_send_delay_ms));
-  MOCK_METHOD3(RegisterRtcpObservers,
+  MOCK_METHOD2(RegisterRtcpObservers,
       void(RtcpIntraFrameObserver* intraFrameCallback,
-           RtcpBandwidthObserver* bandwidthCallback,
-           RtcpFeedback* callback));
+           RtcpBandwidthObserver* bandwidthCallback));
   MOCK_CONST_METHOD0(RTCP,
       RTCPMethod());
   MOCK_METHOD1(SetRTCPStatus,

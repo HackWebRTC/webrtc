@@ -1220,8 +1220,6 @@ class FakeWebRtcVideoEngine
   WEBRTC_STUB(StopRTPDump, (const int, webrtc::RTPDirections));
   WEBRTC_STUB(RegisterRTPObserver, (const int, webrtc::ViERTPObserver&));
   WEBRTC_STUB(DeregisterRTPObserver, (const int));
-  WEBRTC_STUB(RegisterRTCPObserver, (const int, webrtc::ViERTCPObserver&));
-  WEBRTC_STUB(DeregisterRTCPObserver, (const int));
 
   // webrtc::ViEImageProcess
   WEBRTC_STUB(RegisterCaptureEffectFilter, (const int,

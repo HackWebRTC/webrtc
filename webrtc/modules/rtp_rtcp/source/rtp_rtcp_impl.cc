@@ -31,7 +31,6 @@ RtpRtcp::Configuration::Configuration()
       default_module(NULL),
       receive_statistics(NullObjectReceiveStatistics()),
       outgoing_transport(NULL),
-      rtcp_feedback(NULL),
       intra_frame_callback(NULL),
       bandwidth_callback(NULL),
       rtt_stats(NULL),
@@ -102,8 +101,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
   }
   // TODO(pwestin) move to constructors of each rtp/rtcp sender/receiver object.
   rtcp_receiver_.RegisterRtcpObservers(configuration.intra_frame_callback,
-                                       configuration.bandwidth_callback,
-                                       configuration.rtcp_feedback);
+                                       configuration.bandwidth_callback);
   rtcp_sender_.RegisterSendTransport(configuration.outgoing_transport);
 
   // Make sure that RTCP objects are aware of our SSRC.

@@ -24,7 +24,7 @@ using namespace webrtc;
 
 const uint64_t kTestPictureId = 12345678;
 
-class RtcpCallback : public RtcpFeedback, public RtcpIntraFrameObserver {
+class RtcpCallback : public RtcpIntraFrameObserver {
  public:
   void SetModule(RtpRtcp* module) {
     _rtpRtcpModule = module;
@@ -33,27 +33,6 @@ class RtcpCallback : public RtcpFeedback, public RtcpIntraFrameObserver {
   }
   virtual void OnLipSyncUpdate(const int32_t id,
                                const int32_t audioVideoOffset) {
-  };
-  virtual void OnXRVoIPMetricReceived(
-      const int32_t id,
-      const RTCPVoIPMetric* metric) {
-  };
-  virtual void OnApplicationDataReceived(const int32_t id,
-                                         const uint8_t subType,
-                                         const uint32_t name,
-                                         const uint16_t length,
-                                         const uint8_t* data) {
-    char print_name[5];
-    print_name[0] = static_cast<char>(name >> 24);
-    print_name[1] = static_cast<char>(name >> 16);
-    print_name[2] = static_cast<char>(name >> 8);
-    print_name[3] = static_cast<char>(name);
-    print_name[4] = 0;
-
-    EXPECT_STRCASEEQ("test", print_name);
-  };
-  virtual void OnReceiveReportReceived(const int32_t id,
-                                       const uint32_t senderSSRC) {
   };
   virtual void OnReceivedIntraFrameRequest(uint32_t ssrc) {
   };
@@ -112,7 +91,6 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     configuration.clock = &fake_clock;
     configuration.receive_statistics = receive_statistics1_.get();
     configuration.outgoing_transport = transport1;
-    configuration.rtcp_feedback = myRTCPFeedback1;
     configuration.intra_frame_callback = myRTCPFeedback1;
 
     rtp_payload_registry1_.reset(new RTPPayloadRegistry(
@@ -131,7 +109,6 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     configuration.receive_statistics = receive_statistics2_.get();
     configuration.id = test_id + 1;
     configuration.outgoing_transport = transport2;
-    configuration.rtcp_feedback = myRTCPFeedback2;
     configuration.intra_frame_callback = myRTCPFeedback2;
 
     module2 = RtpRtcp::CreateRtpRtcp(configuration);
