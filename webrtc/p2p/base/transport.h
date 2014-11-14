@@ -132,8 +132,6 @@ struct ConnectionInfo {
         rtt(0),
         sent_total_bytes(0),
         sent_bytes_second(0),
-        sent_discarded_packets(0),
-        sent_total_packets(0),
         recv_total_bytes(0),
         recv_bytes_second(0),
         key(NULL) {}
@@ -146,11 +144,6 @@ struct ConnectionInfo {
   size_t rtt;                  // The STUN RTT for this connection.
   size_t sent_total_bytes;     // Total bytes sent on this connection.
   size_t sent_bytes_second;    // Bps over the last measurement interval.
-  size_t sent_discarded_packets;  // Number of outgoing packets discarded due to
-                                  // socket errors.
-  size_t sent_total_packets;  // Number of total outgoing packets attempted for
-                              // sending.
-
   size_t recv_total_bytes;     // Total bytes received on this connection.
   size_t recv_bytes_second;    // Bps over the last measurement interval.
   Candidate local_candidate;   // The local candidate for this connection.

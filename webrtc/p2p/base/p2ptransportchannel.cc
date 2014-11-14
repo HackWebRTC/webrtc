@@ -842,8 +842,6 @@ bool P2PTransportChannel::GetStats(ConnectionInfos *infos) {
     info.rtt = connection->rtt();
     info.sent_total_bytes = connection->sent_total_bytes();
     info.sent_bytes_second = connection->sent_bytes_second();
-    info.sent_discarded_packets = connection->sent_discarded_packets();
-    info.sent_total_packets = connection->sent_total_packets();
     info.recv_total_bytes = connection->recv_total_bytes();
     info.recv_bytes_second = connection->recv_bytes_second();
     info.local_candidate = connection->local_candidate();
