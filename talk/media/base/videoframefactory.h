@@ -27,9 +27,6 @@
 #ifndef TALK_MEDIA_BASE_VIDEOFRAMEFACTORY_H_
 #define TALK_MEDIA_BASE_VIDEOFRAMEFACTORY_H_
 
-#include "talk/media/base/videoframe.h"
-#include "webrtc/base/scoped_ptr.h"
-
 namespace cricket {
 
 struct CapturedFrame;
@@ -46,28 +43,8 @@ class VideoFrameFactory {
   // space allows for aliasing, otherwise a color conversion will
   // occur.  For safety, |input_frame| must outlive the returned
   // frame.  Returns NULL if conversion fails.
-
-  // The returned frame will be a center crop of |input_frame| with
-  // size |cropped_width| x |cropped_height|.
-  virtual VideoFrame* CreateAliasedFrame(const CapturedFrame* input_frame,
-                                         int cropped_width,
-                                         int cropped_height) const = 0;
-
-  // The returned frame will be a center crop of |input_frame| with size
-  // |cropped_width| x |cropped_height|, scaled to |output_width| x
-  // |output_height|. If scaling has taken place, i.e. cropped input
-  // resolution != output resolution, the returned frame will remain valid
-  // until this function is called again.
-  virtual VideoFrame* CreateAliasedFrame(const CapturedFrame* input_frame,
-                                         int cropped_input_width,
-                                         int cropped_input_height,
-                                         int output_width,
-                                         int output_height) const;
-
- private:
-  // An internal frame buffer to avoid reallocations. It is mutable because it
-  // does not affect behaviour, only performance.
-  mutable rtc::scoped_ptr<VideoFrame> output_frame_;
+  virtual VideoFrame* CreateAliasedFrame(
+      const CapturedFrame* input_frame, int width, int height) const = 0;
 };
 
 }  // namespace cricket

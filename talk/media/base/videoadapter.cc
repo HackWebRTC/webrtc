@@ -144,9 +144,7 @@ float VideoAdapter::FindLowerScale(int width, int height,
 
 // There are several frame sizes used by Adapter.  This explains them
 // input_format - set once by server to frame size expected from the camera.
-//   The input frame size is also updated in every call to AdaptFrame.
 // output_format - size that output would like to be.  Includes framerate.
-//   The output frame size is also updated in every call to AdaptFrame.
 // output_num_pixels - size that output should be constrained to.  Used to
 //   compute output_format from in_frame.
 // in_frame - actual camera captured frame size, which is typically the same
@@ -252,11 +250,6 @@ void VideoAdapter::SetBlackOutput(bool black) {
   black_output_ = black;
 }
 
-bool VideoAdapter::IsBlackOutput() {
-  rtc::CritScope cs(&critical_section_);
-  return black_output_;
-}
-
 // Constrain output resolution to this many pixels overall
 void VideoAdapter::SetOutputNumPixels(int num_pixels) {
   output_num_pixels_ = num_pixels;
@@ -266,12 +259,21 @@ int VideoAdapter::GetOutputNumPixels() const {
   return output_num_pixels_;
 }
 
-VideoFormat VideoAdapter::AdaptFrameResolution(int in_width, int in_height) {
+// TODO(fbarchard): Add AdaptFrameRate function that only drops frames but
+// not resolution.
+bool VideoAdapter::AdaptFrame(VideoFrame* in_frame,
+                              VideoFrame** out_frame) {
   rtc::CritScope cs(&critical_section_);
+  if (!in_frame || !out_frame) {
+    return false;
+  }
   ++frames_in_;
 
-  SetInputFormat(VideoFormat(
-      in_width, in_height, input_format_.interval, input_format_.fourcc));
+  // Update input to actual frame dimensions.
+  VideoFormat format(static_cast<int>(in_frame->GetWidth()),
+                     static_cast<int>(in_frame->GetHeight()),
+                     input_format_.interval, input_format_.fourcc);
+  SetInputFormat(format);
 
   // Drop the input frame if necessary.
   bool should_drop = false;
@@ -301,23 +303,48 @@ VideoFormat VideoAdapter::AdaptFrameResolution(int in_width, int in_height) {
                    << " / out " << frames_out_
                    << " / in " << frames_in_
                    << " Changes: " << adaption_changes_
-                   << " Input: " << in_width
-                   << "x" << in_height
+                   << " Input: " << in_frame->GetWidth()
+                   << "x" << in_frame->GetHeight()
                    << " i" << input_format_.interval
                    << " Output: i" << output_format_.interval;
     }
-
-    return VideoFormat();  // Drop frame.
+    *out_frame = NULL;
+    return true;
   }
 
-  const float scale = VideoAdapter::FindClosestViewScale(
-      in_width, in_height, output_num_pixels_);
-  const int output_width = static_cast<int>(in_width * scale + .5f);
-  const int output_height = static_cast<int>(in_height * scale + .5f);
+  float scale = 1.f;
+  if (output_num_pixels_ < input_format_.width * input_format_.height) {
+    scale = VideoAdapter::FindClosestViewScale(
+        static_cast<int>(in_frame->GetWidth()),
+        static_cast<int>(in_frame->GetHeight()),
+        output_num_pixels_);
+    output_format_.width = static_cast<int>(in_frame->GetWidth() * scale + .5f);
+    output_format_.height = static_cast<int>(in_frame->GetHeight() * scale +
+                                             .5f);
+  } else {
+    output_format_.width = static_cast<int>(in_frame->GetWidth());
+    output_format_.height = static_cast<int>(in_frame->GetHeight());
+  }
+
+  if (!black_output_ &&
+      in_frame->GetWidth() == static_cast<size_t>(output_format_.width) &&
+      in_frame->GetHeight() == static_cast<size_t>(output_format_.height)) {
+    // The dimensions are correct and we aren't muting, so use the input frame.
+    *out_frame = in_frame;
+  } else {
+    if (!StretchToOutputFrame(in_frame)) {
+      LOG(LS_VERBOSE) << "VAdapt Stretch Failed.";
+      return false;
+    }
+
+    *out_frame = output_frame_.get();
+  }
 
   ++frames_out_;
-  if (scale != 1)
+  if (in_frame->GetWidth() != (*out_frame)->GetWidth() ||
+      in_frame->GetHeight() != (*out_frame)->GetHeight()) {
     ++frames_scaled_;
+  }
   // Show VAdapt log every 90 frames output. (3 seconds)
   // TODO(fbarchard): Consider GetLogSeverity() to change interval to less
   // for LS_VERBOSE and more for LS_INFO.
@@ -327,8 +354,8 @@ VideoFormat VideoAdapter::AdaptFrameResolution(int in_width, int in_height) {
   // resolution changes as well.  Consider dropping the statistics into their
   // own class which could be queried publically.
   bool changed = false;
-  if (previous_width_ && (previous_width_ != output_width ||
-                          previous_height_ != output_height)) {
+  if (previous_width_ && (previous_width_ != (*out_frame)->GetWidth() ||
+      previous_height_ != (*out_frame)->GetHeight())) {
     show = true;
     ++adaption_changes_;
     changed = true;
@@ -340,53 +367,17 @@ VideoFormat VideoAdapter::AdaptFrameResolution(int in_width, int in_height) {
                  << " / out " << frames_out_
                  << " / in " << frames_in_
                  << " Changes: " << adaption_changes_
-                 << " Input: " << in_width
-                 << "x" << in_height
+                 << " Input: " << in_frame->GetWidth()
+                 << "x" << in_frame->GetHeight()
                  << " i" << input_format_.interval
                  << " Scale: " << scale
-                 << " Output: " << output_width
-                 << "x" << output_height
+                 << " Output: " << (*out_frame)->GetWidth()
+                 << "x" << (*out_frame)->GetHeight()
                  << " i" << output_format_.interval
                  << " Changed: " << (changed ? "true" : "false");
   }
-
-  output_format_.width = output_width;
-  output_format_.height = output_height;
-  previous_width_ = output_width;
-  previous_height_ = output_height;
-
-  return output_format_;
-}
-
-// TODO(fbarchard): Add AdaptFrameRate function that only drops frames but
-// not resolution.
-bool VideoAdapter::AdaptFrame(VideoFrame* in_frame, VideoFrame** out_frame) {
-  if (!in_frame || !out_frame)
-    return false;
-
-  const VideoFormat adapted_format =
-      AdaptFrameResolution(static_cast<int>(in_frame->GetWidth()),
-                           static_cast<int>(in_frame->GetHeight()));
-
-  rtc::CritScope cs(&critical_section_);
-  if (adapted_format.IsSize0x0()) {
-    *out_frame = NULL;
-    return true;
-  }
-
-  if (!black_output_ &&
-      in_frame->GetWidth() == static_cast<size_t>(adapted_format.width) &&
-      in_frame->GetHeight() == static_cast<size_t>(adapted_format.height)) {
-    // The dimensions are correct and we aren't muting, so use the input frame.
-    *out_frame = in_frame;
-  } else {
-    if (!StretchToOutputFrame(in_frame)) {
-      LOG(LS_VERBOSE) << "VAdapt Stretch Failed.";
-      return false;
-    }
-
-    *out_frame = output_frame_.get();
-  }
+  previous_width_ = (*out_frame)->GetWidth();
+  previous_height_ = (*out_frame)->GetHeight();
 
   return true;
 }

@@ -292,52 +292,6 @@ TEST_F(VideoAdapterTest, AdaptFramerateOntheFly) {
   EXPECT_GT(listener_->GetStats().dropped_frames, 0);
 }
 
-// Set a very high output pixel resolution. Expect no resolution change.
-TEST_F(VideoAdapterTest, AdaptFrameResolutionHighLimit) {
-  adapter_->SetOutputNumPixels(INT_MAX);
-  VideoFormat adapted_format = adapter_->AdaptFrameResolution(
-      capture_format_.width, capture_format_.height);
-  EXPECT_EQ(capture_format_.width, adapted_format.width);
-  EXPECT_EQ(capture_format_.height, adapted_format.height);
-
-  adapter_->SetOutputNumPixels(987654321);
-  adapted_format = capture_format_,
-  adapter_->AdaptFrameResolution(capture_format_.width, capture_format_.height);
-  EXPECT_EQ(capture_format_.width, adapted_format.width);
-  EXPECT_EQ(capture_format_.height, adapted_format.height);
-}
-
-// Adapt the frame resolution to be the same as capture resolution. Expect no
-// resolution change.
-TEST_F(VideoAdapterTest, AdaptFrameResolutionIdentical) {
-  adapter_->SetOutputFormat(capture_format_);
-  const VideoFormat adapted_format = adapter_->AdaptFrameResolution(
-      capture_format_.width, capture_format_.height);
-  EXPECT_EQ(capture_format_.width, adapted_format.width);
-  EXPECT_EQ(capture_format_.height, adapted_format.height);
-}
-
-// Adapt the frame resolution to be a quarter of the capture resolution. Expect
-// resolution change.
-TEST_F(VideoAdapterTest, AdaptFrameResolutionQuarter) {
-  VideoFormat request_format = capture_format_;
-  request_format.width /= 2;
-  request_format.height /= 2;
-  adapter_->SetOutputFormat(request_format);
-  const VideoFormat adapted_format = adapter_->AdaptFrameResolution(
-      request_format.width, request_format.height);
-  EXPECT_EQ(request_format.width, adapted_format.width);
-  EXPECT_EQ(request_format.height, adapted_format.height);
-}
-
-// Adapt the pixel resolution to 0. Expect frame drop.
-TEST_F(VideoAdapterTest, AdaptFrameResolutionDrop) {
-  adapter_->SetOutputNumPixels(0);
-  EXPECT_TRUE(
-      adapter_->AdaptFrameResolution(capture_format_.width,
-                                     capture_format_.height).IsSize0x0());
-}
-
 // Adapt the frame resolution to be a quarter of the capture resolution at the
 // beginning. Expect resolution change.
 TEST_F(VideoAdapterTest, AdaptResolution) {
