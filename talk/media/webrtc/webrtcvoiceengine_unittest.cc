@@ -3276,6 +3276,8 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
       EXPECT_EQ("10", it->params.find("minptime")->second);
       ASSERT_TRUE(it->params.find("maxptime") != it->params.end());
       EXPECT_EQ("60", it->params.find("maxptime")->second);
+      ASSERT_TRUE(it->params.find("useinbandfec") != it->params.end());
+      EXPECT_EQ("1", it->params.find("useinbandfec")->second);
     }
   }
 
