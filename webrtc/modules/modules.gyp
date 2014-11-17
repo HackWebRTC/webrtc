@@ -78,7 +78,6 @@
             'iSACFix',
             'media_file',
             'neteq',
-            'neteq_test_tools',
             'neteq_unittest_tools',
             'paced_sender',
             'PCM16B',  # Needed by NetEq tests.

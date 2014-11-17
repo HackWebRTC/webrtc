@@ -25,9 +25,10 @@
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/audio_coding/neteq/test/NETEQTEST_RTPpacket.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
+#include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/typedefs.h"
@@ -200,7 +201,7 @@ class NetEqDecodingTest : public ::testing::Test {
   void SelectDecoders(NetEqDecoder* used_codec);
   void LoadDecoders();
   void OpenInputFile(const std::string &rtp_file);
-  void Process(NETEQTEST_RTPpacket* rtp_ptr, int* out_len);
+  void Process(int* out_len);
   void DecodeAndCompare(const std::string& rtp_file,
                         const std::string& ref_file,
                         const std::string& stat_ref_file,
@@ -230,7 +231,8 @@ class NetEqDecodingTest : public ::testing::Test {
 
   NetEq* neteq_;
   NetEq::Config config_;
-  FILE* rtp_fp_;
+  scoped_ptr<test::RtpFileSource> rtp_source_;
+  scoped_ptr<test::Packet> packet_;
   unsigned int sim_clock_;
   int16_t out_data_[kMaxBlockSize];
   int output_sample_rate_;
@@ -248,7 +250,6 @@ const int NetEqDecodingTest::kInitSampleRateHz;
 NetEqDecodingTest::NetEqDecodingTest()
     : neteq_(NULL),
       config_(),
-      rtp_fp_(NULL),
       sim_clock_(0),
       output_sample_rate_(kInitSampleRateHz),
       algorithmic_delay_ms_(0) {
@@ -267,8 +268,6 @@ void NetEqDecodingTest::SetUp() {
 
 void NetEqDecodingTest::TearDown() {
   delete neteq_;
-  if (rtp_fp_)
-    fclose(rtp_fp_);
 }
 
 void NetEqDecodingTest::LoadDecoders() {
@@ -301,26 +300,22 @@ void NetEqDecodingTest::LoadDecoders() {
 }
 
 void NetEqDecodingTest::OpenInputFile(const std::string &rtp_file) {
-  rtp_fp_ = fopen(rtp_file.c_str(), "rb");
-  ASSERT_TRUE(rtp_fp_ != NULL);
-  ASSERT_EQ(0, NETEQTEST_RTPpacket::skipFileHeader(rtp_fp_));
+  rtp_source_.reset(test::RtpFileSource::Create(rtp_file));
 }
 
-void NetEqDecodingTest::Process(NETEQTEST_RTPpacket* rtp, int* out_len) {
+void NetEqDecodingTest::Process(int* out_len) {
   // Check if time to receive.
-  while ((sim_clock_ >= rtp->time()) &&
-         (rtp->dataLen() >= 0)) {
-    if (rtp->dataLen() > 0) {
-      WebRtcRTPHeader rtpInfo;
-      rtp->parseHeader(&rtpInfo);
+  while (packet_ && sim_clock_ >= packet_->time_ms()) {
+    if (packet_->payload_length_bytes() > 0) {
+      WebRtcRTPHeader rtp_header;
+      packet_->ConvertHeader(&rtp_header);
       ASSERT_EQ(0, neteq_->InsertPacket(
-          rtpInfo,
-          rtp->payload(),
-          rtp->payloadLen(),
-          rtp->time() * (output_sample_rate_ / 1000)));
+                       rtp_header, packet_->payload(),
+                       packet_->payload_length_bytes(),
+                       packet_->time_ms() * (output_sample_rate_ / 1000)));
     }
     // Get next packet.
-    ASSERT_NE(-1, rtp->readFromFile(rtp_fp_));
+    packet_.reset(rtp_source_->NextPacket());
   }
 
   // Get audio from NetEq.
@@ -361,15 +356,14 @@ void NetEqDecodingTest::DecodeAndCompare(const std::string& rtp_file,
   }
   RefFiles rtcp_stat_files(rtcp_ref_file, rtcp_out_file);
 
-  NETEQTEST_RTPpacket rtp;
-  ASSERT_GT(rtp.readFromFile(rtp_fp_), 0);
+  packet_.reset(rtp_source_->NextPacket());
   int i = 0;
-  while (rtp.dataLen() >= 0) {
+  while (packet_) {
     std::ostringstream ss;
     ss << "Lap number " << i++ << " in DecodeAndCompare while loop";
     SCOPED_TRACE(ss.str());  // Print out the parameter values on failure.
     int out_len = 0;
-    ASSERT_NO_FATAL_FAILURE(Process(&rtp, &out_len));
+    ASSERT_NO_FATAL_FAILURE(Process(&out_len));
     ASSERT_NO_FATAL_FAILURE(ref_files.ProcessReference(out_data_, out_len));
 
     // Query the network statistics API once per second
