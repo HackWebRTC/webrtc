@@ -78,6 +78,8 @@ class AudioBuffer {
   const float* const* low_pass_split_channels_f() const;
   float* const* high_pass_split_channels_f();
   const float* const* high_pass_split_channels_f() const;
+  float* const* super_high_pass_split_channels_f();
+  const float* const* super_high_pass_split_channels_f() const;
 
   const float* keyboard_data() const;
 
@@ -122,6 +124,7 @@ class AudioBuffer {
   scoped_ptr<IFChannelBuffer> channels_;
   scoped_ptr<IFChannelBuffer> split_channels_low_;
   scoped_ptr<IFChannelBuffer> split_channels_high_;
+  scoped_ptr<IFChannelBuffer> split_channels_super_high_;
   scoped_ptr<SplittingFilter> splitting_filter_;
   scoped_ptr<ChannelBuffer<int16_t> > mixed_low_pass_channels_;
   scoped_ptr<ChannelBuffer<int16_t> > low_pass_reference_channels_;

@@ -46,4 +46,20 @@ void SplittingFilter::TwoBandsSynthesis(const int16_t* const* low_band,
   }
 }
 
+void SplittingFilter::ThreeBandsAnalysis(const float* const* in_data,
+                                         int in_data_length,
+                                         int channels,
+                                         float* const* low_band,
+                                         float* const* high_band,
+                                         float* const* super_high_band) {
+}
+
+void SplittingFilter::ThreeBandsSynthesis(const float* const* low_band,
+                                          const float* const* high_band,
+                                          const float* const* super_high_band,
+                                          int band_length,
+                                          int channels,
+                                          float* const* out_data) {
+}
+
 }  // namespace webrtc

@@ -20,7 +20,8 @@ namespace {
 enum {
   kSamplesPer8kHzChannel = 80,
   kSamplesPer16kHzChannel = 160,
-  kSamplesPer32kHzChannel = 320
+  kSamplesPer32kHzChannel = 320,
+  kSamplesPer48kHzChannel = 480
 };
 
 bool HasKeyboardChannel(AudioProcessing::ChannelLayout layout) {
@@ -171,13 +172,18 @@ AudioBuffer::AudioBuffer(int input_samples_per_channel,
     }
   }
 
-  if (proc_samples_per_channel_ == kSamplesPer32kHzChannel) {
+  if (proc_samples_per_channel_ == kSamplesPer32kHzChannel ||
+      proc_samples_per_channel_ == kSamplesPer48kHzChannel) {
     samples_per_split_channel_ = kSamplesPer16kHzChannel;
     split_channels_low_.reset(new IFChannelBuffer(samples_per_split_channel_,
                                                   num_proc_channels_));
     split_channels_high_.reset(new IFChannelBuffer(samples_per_split_channel_,
                                                    num_proc_channels_));
     splitting_filter_.reset(new SplittingFilter(num_proc_channels_));
+    if (proc_samples_per_channel_ == kSamplesPer48kHzChannel) {
+      split_channels_super_high_.reset(
+          new IFChannelBuffer(samples_per_split_channel_, num_proc_channels_));
+    }
   }
 }
 
@@ -391,6 +397,18 @@ float* const* AudioBuffer::high_pass_split_channels_f() {
       : NULL;
 }
 
+const float* const* AudioBuffer::super_high_pass_split_channels_f() const {
+  return split_channels_super_high_.get()
+      ? split_channels_super_high_->fbuf_const()->channels()
+      : NULL;
+}
+
+float* const* AudioBuffer::super_high_pass_split_channels_f() {
+  return split_channels_super_high_.get()
+      ? split_channels_super_high_->fbuf()->channels()
+      : NULL;
+}
+
 const int16_t* AudioBuffer::mixed_low_pass_data() {
   // Currently only mixing stereo to mono is supported.
   assert(num_proc_channels_ == 1 || num_proc_channels_ == 2);
@@ -513,15 +531,29 @@ void AudioBuffer::CopyLowPassToReference() {
 }
 
 void AudioBuffer::SplitIntoFrequencyBands() {
-  splitting_filter_->TwoBandsAnalysis(
-      channels(), samples_per_channel(), num_proc_channels_,
-      low_pass_split_channels(), high_pass_split_channels());
+  if (samples_per_channel() == kSamplesPer32kHzChannel) {
+    splitting_filter_->TwoBandsAnalysis(
+        channels(), samples_per_channel(), num_proc_channels_,
+        low_pass_split_channels(), high_pass_split_channels());
+  } else if (samples_per_channel() == kSamplesPer48kHzChannel) {
+    splitting_filter_->ThreeBandsAnalysis(
+        channels_f(), samples_per_channel(), num_proc_channels_,
+        low_pass_split_channels_f(), high_pass_split_channels_f(),
+        super_high_pass_split_channels_f());
+  }
 }
 
 void AudioBuffer::MergeFrequencyBands() {
-  splitting_filter_->TwoBandsSynthesis(
-      low_pass_split_channels(), high_pass_split_channels(),
-      samples_per_split_channel(), num_proc_channels_, channels());
+  if (samples_per_channel() == kSamplesPer32kHzChannel) {
+    splitting_filter_->TwoBandsSynthesis(
+        low_pass_split_channels(), high_pass_split_channels(),
+        samples_per_split_channel(), num_proc_channels_, channels());
+  } else if (samples_per_channel() == kSamplesPer48kHzChannel) {
+    splitting_filter_->ThreeBandsSynthesis(
+        low_pass_split_channels_f(), high_pass_split_channels_f(),
+        super_high_pass_split_channels_f(), samples_per_split_channel(),
+        num_proc_channels_, channels_f());
+  }
 }
 
 }  // namespace webrtc

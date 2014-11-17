@@ -262,7 +262,8 @@ int AudioProcessingImpl::InitializeLocked(int input_sample_rate_hz,
   // demonstrated to work well for AEC in most practical scenarios.
   rev_proc_format_.set(rev_proc_rate, 1);
 
-  if (fwd_proc_format_.rate() == kSampleRate32kHz) {
+  if (fwd_proc_format_.rate() == kSampleRate32kHz ||
+      fwd_proc_format_.rate() == kSampleRate48kHz) {
     split_rate_ = kSampleRate16kHz;
   } else {
     split_rate_ = fwd_proc_format_.rate();
@@ -404,7 +405,8 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   // Must be a native rate.
   if (frame->sample_rate_hz_ != kSampleRate8kHz &&
       frame->sample_rate_hz_ != kSampleRate16kHz &&
-      frame->sample_rate_hz_ != kSampleRate32kHz) {
+      frame->sample_rate_hz_ != kSampleRate32kHz &&
+      frame->sample_rate_hz_ != kSampleRate48kHz) {
     return kBadSampleRateError;
   }
   if (echo_control_mobile_->is_enabled() &&
@@ -540,7 +542,8 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
   // Must be a native rate.
   if (frame->sample_rate_hz_ != kSampleRate8kHz &&
       frame->sample_rate_hz_ != kSampleRate16kHz &&
-      frame->sample_rate_hz_ != kSampleRate32kHz) {
+      frame->sample_rate_hz_ != kSampleRate32kHz &&
+      frame->sample_rate_hz_ != kSampleRate48kHz) {
     return kBadSampleRateError;
   }
   // This interface does not tolerate different forward and reverse rates.
@@ -775,14 +778,16 @@ bool AudioProcessingImpl::output_copy_needed(bool is_data_processed) const {
 }
 
 bool AudioProcessingImpl::synthesis_needed(bool is_data_processed) const {
-  return (is_data_processed && fwd_proc_format_.rate() == kSampleRate32kHz);
+  return (is_data_processed && (fwd_proc_format_.rate() == kSampleRate32kHz ||
+          fwd_proc_format_.rate() == kSampleRate48kHz));
 }
 
 bool AudioProcessingImpl::analysis_needed(bool is_data_processed) const {
   if (!is_data_processed && !voice_detection_->is_enabled()) {
     // Only level_estimator_ is enabled.
     return false;
-  } else if (fwd_proc_format_.rate() == kSampleRate32kHz) {
+  } else if (fwd_proc_format_.rate() == kSampleRate32kHz ||
+             fwd_proc_format_.rate() == kSampleRate48kHz) {
     // Something besides level_estimator_ is enabled, and we have super-wb.
     return true;
   }

@@ -380,7 +380,8 @@ class AudioProcessing {
   enum NativeRate {
     kSampleRate8kHz = 8000,
     kSampleRate16kHz = 16000,
-    kSampleRate32kHz = 32000
+    kSampleRate32kHz = 32000,
+    kSampleRate48kHz = 48000
   };
 
   static const int kChunkSizeMs = 10;
