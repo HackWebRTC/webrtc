@@ -58,7 +58,7 @@ class PacedSender : public Module {
     virtual ~Callback() {}
   };
 
-  static const int kDefaultMaxQueueLengthMs = 2000;
+  static const int64_t kDefaultMaxQueueLengthMs = 2000;
   // Pace in kbits/s until we receive first estimate.
   static const int kDefaultInitialPaceKbps = 2000;
   // Pacing-rate relative to our target send rate.
@@ -112,7 +112,7 @@ class PacedSender : public Module {
 
   // Returns the number of milliseconds it will take to send the current
   // packets in the queue, given the current size and bitrate, ignoring prio.
-  virtual int ExpectedQueueTimeMs() const;
+  virtual int64_t ExpectedQueueTimeMs() const;
 
   // Returns the number of milliseconds until the module want a worker thread
   // to call Process.

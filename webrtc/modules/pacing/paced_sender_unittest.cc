@@ -654,7 +654,7 @@ TEST_F(PacedSenderTest, ExpectedQueueTimeMs) {
   }
 
   // Queue in ms = 1000 * (bytes in queue) / (kbit per second * 1000 / 8)
-  int32_t queue_in_ms = kNumPackets * kPacketSize * 8 / kMaxBitrate;
+  int64_t queue_in_ms = kNumPackets * kPacketSize * 8 / kMaxBitrate;
   EXPECT_EQ(queue_in_ms, send_bucket_->ExpectedQueueTimeMs());
 
   int64_t time_start = clock_.TimeInMilliseconds();

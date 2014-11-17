@@ -122,7 +122,7 @@ class PacketQueue {
 
   size_t SizeInPackets() const { return prio_queue_.size(); }
 
-  uint32_t SizeInBytes() const { return bytes_; }
+  uint64_t SizeInBytes() const { return bytes_; }
 
   int64_t OldestEnqueueTime() const {
     std::list<Packet>::const_reverse_iterator it = packet_list_.rbegin();
@@ -281,11 +281,11 @@ bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
   return false;
 }
 
-int PacedSender::ExpectedQueueTimeMs() const {
+int64_t PacedSender::ExpectedQueueTimeMs() const {
   CriticalSectionScoped cs(critsect_.get());
   int target_rate = media_budget_->target_rate_kbps();
   assert(target_rate > 0);
-  return packets_->SizeInBytes() * 8 / target_rate;
+  return static_cast<int64_t>(packets_->SizeInBytes() * 8 / target_rate);
 }
 
 size_t PacedSender::QueueSizePackets() const {
