@@ -164,6 +164,8 @@ const char StatsReport::kStatsValueNameRetransmitBitrate[] =
     "googRetransmitBitrate";
 const char StatsReport::kStatsValueNameRtt[] = "googRtt";
 const char StatsReport::kStatsValueNameSsrc[] = "ssrc";
+const char StatsReport::kStatsValueNameSendPacketsDiscarded[] =
+    "packetsDiscardedOnSend";
 const char StatsReport::kStatsValueNameTargetEncBitrate[] =
     "googTargetEncBitrate";
 const char StatsReport::kStatsValueNameTransmitBitrate[] =
@@ -886,6 +888,10 @@ void StatsCollector::ExtractSessionInfo() {
               channel_iter->connection_infos[i];
           report->AddValue(StatsReport::kStatsValueNameBytesSent,
                            info.sent_total_bytes);
+          report->AddValue(StatsReport::kStatsValueNameSendPacketsDiscarded,
+                           info.sent_discarded_packets);
+          report->AddValue(StatsReport::kStatsValueNamePacketsSent,
+                           info.sent_total_packets);
           report->AddValue(StatsReport::kStatsValueNameBytesReceived,
                            info.recv_total_bytes);
           report->AddBoolean(StatsReport::kStatsValueNameWritable,

@@ -272,8 +272,10 @@ int TCPConnection::Send(const void* data, size_t size,
     error_ = EWOULDBLOCK;
     return SOCKET_ERROR;
   }
+  sent_packets_total_++;
   int sent = socket_->Send(data, size, options);
   if (sent < 0) {
+    sent_packets_discarded_++;
     error_ = socket_->GetError();
   } else {
     send_rate_tracker_.Update(sent);
