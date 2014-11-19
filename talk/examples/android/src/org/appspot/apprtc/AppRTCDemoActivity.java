@@ -49,7 +49,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.appspot.apprtc.AppRTCClient.AppRTCSignalingParameters;
+import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.webrtc.IceCandidate;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SessionDescription;
@@ -60,17 +60,18 @@ import org.webrtc.VideoRendererGui;
 import org.webrtc.VideoRendererGui.ScalingType;
 
 /**
- * Main Activity of the AppRTCDemo Android app demonstrating interoperability
+ * Activity of the AppRTCDemo Android app demonstrating interoperability
  * between the Android/Java implementation of PeerConnection and the
  * apprtc.appspot.com demo webapp.
  */
 public class AppRTCDemoActivity extends Activity
-    implements AppRTCClient.AppRTCSignalingEvents,
+    implements AppRTCClient.SignalingEvents,
       PeerConnectionClient.PeerConnectionEvents {
   private static final String TAG = "AppRTCClient";
+  private final boolean USE_WEBSOCKETS = false;
   private PeerConnectionClient pc;
-  private AppRTCClient appRtcClient = new GAERTCClient(this, this);
-  private AppRTCSignalingParameters appRtcParameters;
+  private AppRTCClient appRtcClient;
+  private SignalingParameters signalingParameters;
   private AppRTCAudioManager audioManager = null;
   private View rootView;
   private View menuBar;
@@ -199,6 +200,11 @@ public class AppRTCDemoActivity extends Activity
       if ((room != null && !room.equals("")) ||
           (loopback != null && loopback.equals("loopback"))) {
         logAndToast(getString(R.string.connecting_to, url));
+        if (USE_WEBSOCKETS) {
+          appRtcClient = new WebSocketRTCClient(this);
+        } else {
+          appRtcClient = new GAERTCClient(this, this);
+        }
         appRtcClient.connectToRoom(url.toString());
         if (room != null && !room.equals("")) {
           roomName.setText(room);
@@ -324,7 +330,7 @@ public class AppRTCDemoActivity extends Activity
     finish();
   }
 
-  private void disconnectWithMessage(String errorMessage) {
+  private void disconnectWithMessage(final String errorMessage) {
     new AlertDialog.Builder(this)
     .setTitle(getText(R.string.channel_error_title))
     .setMessage(errorMessage)
@@ -357,20 +363,20 @@ public class AppRTCDemoActivity extends Activity
   // -----Implementation of AppRTCClient.AppRTCSignalingEvents ---------------
   // All events are called from UI thread.
   @Override
-  public void onConnectedToRoom(final AppRTCSignalingParameters params) {
+  public void onConnectedToRoom(final SignalingParameters params) {
     if (audioManager != null) {
       // Store existing audio settings and change audio mode to
       // MODE_IN_COMMUNICATION for best possible VoIP performance.
       logAndToast("Initializing the audio manager...");
       audioManager.init();
     }
-    appRtcParameters = params;
+    signalingParameters = params;
     abortUnless(PeerConnectionFactory.initializeAndroidGlobals(
       this, true, true, VideoRendererGui.getEGLContext()),
         "Failed to initializeAndroidGlobals");
     logAndToast("Creating peer connection...");
     pc = new PeerConnectionClient(
-        this, localRender, remoteRender, appRtcParameters, this);
+        this, localRender, remoteRender, signalingParameters, this);
     if (pc.isHDVideo()) {
       setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
     } else {
@@ -417,7 +423,7 @@ public class AppRTCDemoActivity extends Activity
     if (pc == null) {
       return;
     }
-    if (appRtcParameters.initiator) {
+    if (signalingParameters.initiator) {
       logAndToast("Creating OFFER...");
       // Create offer. Offer SDP will be sent to answering client in
       // PeerConnectionEvents.onLocalDescription event.
@@ -432,7 +438,7 @@ public class AppRTCDemoActivity extends Activity
     }
     logAndToast("Received remote " + sdp.type + " ...");
     pc.setRemoteDescription(sdp);
-    if (!appRtcParameters.initiator) {
+    if (!signalingParameters.initiator) {
       logAndToast("Creating ANSWER...");
       // Create answer. Answer SDP will be sent to offering client in
       // PeerConnectionEvents.onLocalDescription event.
@@ -454,7 +460,7 @@ public class AppRTCDemoActivity extends Activity
   }
 
   @Override
-  public void onChannelError(int code, String description) {
+  public void onChannelError(final String description) {
     disconnectWithMessage(description);
   }
 
@@ -465,7 +471,11 @@ public class AppRTCDemoActivity extends Activity
   public void onLocalDescription(final SessionDescription sdp) {
     if (appRtcClient != null) {
       logAndToast("Sending " + sdp.type + " ...");
-      appRtcClient.sendLocalDescription(sdp);
+      if (signalingParameters.initiator) {
+        appRtcClient.sendOfferSdp(sdp);
+      } else {
+        appRtcClient.sendAnswerSdp(sdp);
+      }
     }
   }
 

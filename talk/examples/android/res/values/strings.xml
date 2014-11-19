@@ -27,11 +27,6 @@
     <string name="pref_room_key">room_preference</string>
     <string name="pref_room_list_key">room_list_preference</string>
 
-    <string name="pref_url_key">url_preference</string>
-    <string name="pref_url_title">Connection URL:</string>
-    <string name="pref_url_dlg">Enter AppRTC connection server URL.</string>
-    <string name="pref_url_default">https://apprtc.appspot.com</string>
-
     <string name="pref_resolution_key">resolution_preference</string>
     <string name="pref_resolution_title">Video resolution.</string>
     <string name="pref_resolution_dlg">Enter AppRTC local video resolution.</string>

@@ -30,20 +30,16 @@ import android.app.Activity;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import org.json.JSONArray;
+import org.appspot.apprtc.RoomParametersFetcher.RoomParametersFetcherEvents;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.IceCandidate;
-import org.webrtc.MediaConstraints;
-import org.webrtc.PeerConnection;
 import org.webrtc.SessionDescription;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.LinkedList;
-import java.util.Scanner;
 
 /**
  * Negotiates signaling for chatting with apprtc.appspot.com "rooms".
@@ -55,25 +51,23 @@ import java.util.Scanner;
  * Messages to other party (with local Ice candidates and SDP) can
  * be sent after GAE channel is opened and onChannelOpen() callback is invoked.
  */
-public class GAERTCClient implements AppRTCClient {
+public class GAERTCClient implements AppRTCClient, RoomParametersFetcherEvents {
   private static final String TAG = "GAERTCClient";
   private GAEChannelClient channelClient;
   private final Activity activity;
-  private AppRTCClient.AppRTCSignalingEvents events;
-  private final GAEChannelClient.GAEMessageHandler gaeHandler =
-      new GAEHandler();
-  private AppRTCClient.AppRTCSignalingParameters appRTCSignalingParameters;
-  private String gaeBaseHref;
-  private String channelToken;
-  private String postMessageUrl;
+  private SignalingEvents events;
+  private GAEChannelClient.GAEMessageHandler gaeHandler;
+  private SignalingParameters signalingParameters;
+  private RoomParametersFetcher fetcher;
   private LinkedList<String> sendQueue = new LinkedList<String>();
 
-  public GAERTCClient(Activity activity,
-      AppRTCClient.AppRTCSignalingEvents events) {
+  public GAERTCClient(Activity activity, SignalingEvents events) {
     this.activity = activity;
     this.events = events;
   }
 
+  // --------------------------------------------------------------------
+  // AppRTCClient interface implementation.
   /**
    * Asynchronously connect to an AppRTC room URL, e.g.
    * https://apprtc.appspot.com/?r=NNN and register message-handling callbacks
@@ -81,7 +75,8 @@ public class GAERTCClient implements AppRTCClient {
    */
   @Override
   public void connectToRoom(String url) {
-    (new RoomParameterGetter()).execute(url);
+    fetcher = new RoomParametersFetcher(this);
+    fetcher.execute(url);
   }
 
   /**
@@ -94,6 +89,7 @@ public class GAERTCClient implements AppRTCClient {
       sendMessage("{\"type\": \"bye\"}");
       channelClient.close();
       channelClient = null;
+      gaeHandler = null;
     }
   }
 
@@ -105,9 +101,17 @@ public class GAERTCClient implements AppRTCClient {
    * we might want to filter elsewhere.
    */
   @Override
-  public void sendLocalDescription(final SessionDescription sdp) {
+  public void sendOfferSdp(final SessionDescription sdp) {
     JSONObject json = new JSONObject();
-    jsonPut(json, "type", sdp.type.canonicalForm());
+    jsonPut(json, "type", "offer");
+    jsonPut(json, "sdp", sdp.description);
+    sendMessage(json.toString());
+  }
+
+  @Override
+  public void sendAnswerSdp(final SessionDescription sdp) {
+    JSONObject json = new JSONObject();
+    jsonPut(json, "type", "answer");
     jsonPut(json, "sdp", sdp.description);
     sendMessage(json.toString());
   }
@@ -124,7 +128,6 @@ public class GAERTCClient implements AppRTCClient {
     jsonPut(json, "candidate", candidate.sdp);
     sendMessage(json.toString());
   }
-
 
   // Queue a message for sending to the room's channel and send it if already
   // connected (other wise queued messages are drained when the channel is
@@ -145,223 +148,6 @@ public class GAERTCClient implements AppRTCClient {
     }
   }
 
-  // AsyncTask that converts an AppRTC room URL into the set of signaling
-  // parameters to use with that room.
-  private class RoomParameterGetter
-      extends AsyncTask<String, Void, AppRTCSignalingParameters> {
-    private Exception exception = null;
-
-    @Override
-    protected AppRTCSignalingParameters doInBackground(String... urls) {
-      if (urls.length != 1) {
-        exception = new RuntimeException("Must be called with a single URL");
-        return null;
-      }
-      try {
-        exception = null;
-        return getParametersForRoomUrl(urls[0]);
-      } catch (JSONException e) {
-        exception = e;
-      } catch (IOException e) {
-        exception = e;
-      }
-      return null;
-    }
-
-    @Override
-    protected void onPostExecute(AppRTCSignalingParameters params) {
-      if (exception != null) {
-        Log.e(TAG, "Room connection error: " + exception.toString());
-        events.onChannelError(0, exception.getMessage());
-        return;
-      }
-      channelClient =
-          new GAEChannelClient(activity, channelToken, gaeHandler);
-      synchronized (sendQueue) {
-        appRTCSignalingParameters = params;
-      }
-      requestQueueDrainInBackground();
-      events.onConnectedToRoom(appRTCSignalingParameters);
-    }
-
-    // Fetches |url| and fishes the signaling parameters out of the JSON.
-    private AppRTCSignalingParameters getParametersForRoomUrl(String url)
-        throws IOException, JSONException {
-      url = url + "&t=json";
-      String response = drainStream((new URL(url)).openConnection().getInputStream());
-      Log.d(TAG, "Room response: " + response);
-      JSONObject roomJson = new JSONObject(response);
-
-      if (roomJson.has("error")) {
-        JSONArray errors = roomJson.getJSONArray("error_messages");
-        throw new IOException(errors.toString());
-      }
-
-      gaeBaseHref = url.substring(0, url.indexOf('?'));
-      channelToken = roomJson.getString("token");
-      postMessageUrl = "/message?r=" +
-          roomJson.getString("room_key") + "&u=" +
-          roomJson.getString("me");
-      boolean initiator = roomJson.getInt("initiator") == 1;
-      LinkedList<PeerConnection.IceServer> iceServers =
-          iceServersFromPCConfigJSON(roomJson.getString("pc_config"));
-
-      boolean isTurnPresent = false;
-      for (PeerConnection.IceServer server : iceServers) {
-        Log.d(TAG, "IceServer: " + server);
-        if (server.uri.startsWith("turn:")) {
-          isTurnPresent = true;
-          break;
-        }
-      }
-      if (!isTurnPresent) {
-        PeerConnection.IceServer server =
-            requestTurnServer(roomJson.getString("turn_url"));
-        Log.d(TAG, "TurnServer: " + server);
-        iceServers.add(server);
-      }
-
-      MediaConstraints pcConstraints = constraintsFromJSON(
-          roomJson.getString("pc_constraints"));
-      addDTLSConstraintIfMissing(pcConstraints);
-      Log.d(TAG, "pcConstraints: " + pcConstraints);
-      MediaConstraints videoConstraints = constraintsFromJSON(
-          getAVConstraints("video",
-              roomJson.getString("media_constraints")));
-      Log.d(TAG, "videoConstraints: " + videoConstraints);
-      MediaConstraints audioConstraints = constraintsFromJSON(
-          getAVConstraints("audio",
-              roomJson.getString("media_constraints")));
-      Log.d(TAG, "audioConstraints: " + audioConstraints);
-
-      return new AppRTCSignalingParameters(
-          iceServers, initiator,
-          pcConstraints, videoConstraints, audioConstraints);
-    }
-
-    // Mimic Chrome and set DtlsSrtpKeyAgreement to true if not set to false by
-    // the web-app.
-    private void addDTLSConstraintIfMissing(
-        MediaConstraints pcConstraints) {
-      for (MediaConstraints.KeyValuePair pair : pcConstraints.mandatory) {
-        if (pair.getKey().equals("DtlsSrtpKeyAgreement")) {
-          return;
-        }
-      }
-      for (MediaConstraints.KeyValuePair pair : pcConstraints.optional) {
-        if (pair.getKey().equals("DtlsSrtpKeyAgreement")) {
-          return;
-        }
-      }
-      // DTLS isn't being suppressed (e.g. for debug=loopback calls), so enable
-      // it by default.
-      pcConstraints.optional.add(
-          new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
-    }
-
-    // Return the constraints specified for |type| of "audio" or "video" in
-    // |mediaConstraintsString|.
-    private String getAVConstraints(
-        String type, String mediaConstraintsString) {
-      try {
-        JSONObject json = new JSONObject(mediaConstraintsString);
-        // Tricksy handling of values that are allowed to be (boolean or
-        // MediaTrackConstraints) by the getUserMedia() spec.  There are three
-        // cases below.
-        if (!json.has(type) || !json.optBoolean(type, true)) {
-          // Case 1: "audio"/"video" is not present, or is an explicit "false"
-          // boolean.
-          return null;
-        }
-        if (json.optBoolean(type, false)) {
-          // Case 2: "audio"/"video" is an explicit "true" boolean.
-          return "{\"mandatory\": {}, \"optional\": []}";
-        }
-        // Case 3: "audio"/"video" is an object.
-        return json.getJSONObject(type).toString();
-      } catch (JSONException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    private MediaConstraints constraintsFromJSON(String jsonString) {
-      if (jsonString == null) {
-        return null;
-      }
-      try {
-        MediaConstraints constraints = new MediaConstraints();
-        JSONObject json = new JSONObject(jsonString);
-        JSONObject mandatoryJSON = json.optJSONObject("mandatory");
-        if (mandatoryJSON != null) {
-          JSONArray mandatoryKeys = mandatoryJSON.names();
-          if (mandatoryKeys != null) {
-            for (int i = 0; i < mandatoryKeys.length(); ++i) {
-              String key = mandatoryKeys.getString(i);
-              String value = mandatoryJSON.getString(key);
-              constraints.mandatory.add(
-                  new MediaConstraints.KeyValuePair(key, value));
-            }
-          }
-        }
-        JSONArray optionalJSON = json.optJSONArray("optional");
-        if (optionalJSON != null) {
-          for (int i = 0; i < optionalJSON.length(); ++i) {
-            JSONObject keyValueDict = optionalJSON.getJSONObject(i);
-            String key = keyValueDict.names().getString(0);
-            String value = keyValueDict.getString(key);
-            constraints.optional.add(
-                new MediaConstraints.KeyValuePair(key, value));
-          }
-        }
-        return constraints;
-      } catch (JSONException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    // Requests & returns a TURN ICE Server based on a request URL.  Must be run
-    // off the main thread!
-    private PeerConnection.IceServer requestTurnServer(String url) {
-      try {
-        URLConnection connection = (new URL(url)).openConnection();
-        connection.addRequestProperty("user-agent", "Mozilla/5.0");
-        connection.addRequestProperty("origin", "https://apprtc.appspot.com");
-        String response = drainStream(connection.getInputStream());
-        JSONObject responseJSON = new JSONObject(response);
-        String uri = responseJSON.getJSONArray("uris").getString(0);
-        String username = responseJSON.getString("username");
-        String password = responseJSON.getString("password");
-        return new PeerConnection.IceServer(uri, username, password);
-      } catch (JSONException e) {
-        throw new RuntimeException(e);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
-  }
-
-  // Return the list of ICE servers described by a WebRTCPeerConnection
-  // configuration string.
-  private LinkedList<PeerConnection.IceServer> iceServersFromPCConfigJSON(
-      String pcConfig) {
-    try {
-      JSONObject json = new JSONObject(pcConfig);
-      JSONArray servers = json.getJSONArray("iceServers");
-      LinkedList<PeerConnection.IceServer> ret =
-          new LinkedList<PeerConnection.IceServer>();
-      for (int i = 0; i < servers.length(); ++i) {
-        JSONObject server = servers.getJSONObject(i);
-        String url = server.getString("urls");
-        String credential =
-            server.has("credential") ? server.getString("credential") : "";
-        ret.add(new PeerConnection.IceServer(url, "", credential));
-      }
-      return ret;
-    } catch (JSONException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
   // Request an attempt to drain the send queue, on a background thread.
   private void requestQueueDrainInBackground() {
     (new AsyncTask<Void, Void, Void>() {
@@ -375,37 +161,68 @@ public class GAERTCClient implements AppRTCClient {
   // Send all queued messages if connected to the room.
   private void maybeDrainQueue() {
     synchronized (sendQueue) {
-      if (appRTCSignalingParameters == null) {
+      if (signalingParameters == null) {
         return;
       }
       try {
         for (String msg : sendQueue) {
           Log.d(TAG, "SEND: " + msg);
-          URLConnection connection =
-              new URL(gaeBaseHref + postMessageUrl).openConnection();
+          URLConnection connection = new URL(
+              signalingParameters.postMessageUrl).openConnection();
           connection.setDoOutput(true);
           connection.getOutputStream().write(msg.getBytes("UTF-8"));
           if (!connection.getHeaderField(null).startsWith("HTTP/1.1 200 ")) {
-            throw new IOException(
-                "Non-200 response to POST: " + connection.getHeaderField(null) +
-                " for msg: " + msg);
+            String errorMessage = "Non-200 response to POST: " +
+                connection.getHeaderField(null) + " for msg: " + msg;
+            reportChannelError(errorMessage);
           }
         }
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        reportChannelError("GAE Post error: " + e.getMessage());
       }
       sendQueue.clear();
     }
   }
 
-  // Return the contents of an InputStream as a String.
-  private static String drainStream(InputStream in) {
-    Scanner s = new Scanner(in).useDelimiter("\\A");
-    return s.hasNext() ? s.next() : "";
+  private void reportChannelError(final String errorMessage) {
+    Log.e(TAG, errorMessage);
+    activity.runOnUiThread(new Runnable() {
+      public void run() {
+        events.onChannelError(errorMessage);
+      }
+    });
   }
 
+  // --------------------------------------------------------------------
+  // RoomConnectionEvents interface implementation.
+  // All events are called on UI thread.
+  @Override
+  public void onSignalingParametersReady(final SignalingParameters params) {
+    Log.d(TAG, "Room signaling parameters ready.");
+    if (params.websocketSignaling) {
+      reportChannelError("Room does not support GAE channel signaling.");
+      return;
+    }
+    gaeHandler = new GAEHandler();
+    channelClient =
+        new GAEChannelClient(activity, params.channelToken, gaeHandler);
+    synchronized (sendQueue) {
+      signalingParameters = params;
+    }
+    requestQueueDrainInBackground();
+    events.onConnectedToRoom(signalingParameters);
+  }
+
+  @Override
+  public void onSignalingParametersError(final String description) {
+    reportChannelError("Room connection error: " + description);
+  }
+
+
+  // --------------------------------------------------------------------
+  // GAEMessageHandler interface implementation.
   // Implementation detail: handler for receiving GAE messages and dispatching
-  // them appropriately.
+  // them appropriately. All dispatched messages are called from UI thread.
   private class GAEHandler implements GAEChannelClient.GAEMessageHandler {
     private boolean channelOpen = false;
 
@@ -442,10 +259,10 @@ public class GAERTCClient implements AppRTCClient {
             } else if (type.equals("bye")) {
               events.onChannelClose();
             } else {
-              events.onChannelError(1, "Unexpected channel message: " + msg);
+              reportChannelError("Unexpected channel message: " + msg);
             }
           } catch (JSONException e) {
-            events.onChannelError(1, "Channel message JSON parsing error: " +
+            reportChannelError("Channel message JSON parsing error: " +
                 e.toString());
           }
         }
@@ -462,12 +279,9 @@ public class GAERTCClient implements AppRTCClient {
     }
 
     public void onError(final int code, final String description) {
-      activity.runOnUiThread(new Runnable() {
-        public void run() {
-          events.onChannelError(code, description);
-          channelOpen = false;
-        }
-      });
+      channelOpen = false;
+      reportChannelError("GAE Handler error. Code: " + code +
+          ". " + description);
     }
   }
 

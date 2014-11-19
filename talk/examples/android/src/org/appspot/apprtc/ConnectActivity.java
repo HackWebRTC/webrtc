@@ -63,6 +63,10 @@ import org.webrtc.MediaCodecVideoEncoder;
 public class ConnectActivity extends Activity {
 
   private static final String TAG = "ConnectActivity";
+  private final boolean USE_WEBSOCKETS = false;
+  private final String APPRTC_SERVER = "https://apprtc.appspot.com";
+  private final String APPRTC_WS_SERVER = "https://8-dot-apprtc.appspot.com";
+
   private ImageButton addRoomButton;
   private ImageButton removeRoomButton;
   private ImageButton connectButton;
@@ -70,7 +74,6 @@ public class ConnectActivity extends Activity {
   private EditText roomEditText;
   private ListView roomListView;
   private SharedPreferences sharedPref;
-  private String keyprefUrl;
   private String keyprefResolution;
   private String keyprefFps;
   private String keyprefCpuUsageDetection;
@@ -86,7 +89,6 @@ public class ConnectActivity extends Activity {
     // Get setting keys.
     PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
     sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-    keyprefUrl = getString(R.string.pref_url_key);
     keyprefResolution = getString(R.string.pref_resolution_key);
     keyprefFps = getString(R.string.pref_fps_key);
     keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
@@ -193,9 +195,11 @@ public class ConnectActivity extends Activity {
       if (view.getId() == R.id.connect_loopback_button) {
         loopback = true;
       }
-      String url = sharedPref.getString(keyprefUrl,
-          getString(R.string.pref_url_default));
-      if (loopback) {
+      String url = APPRTC_SERVER;
+      if (USE_WEBSOCKETS) {
+        url = APPRTC_WS_SERVER;
+      }
+      if (loopback && !USE_WEBSOCKETS) {
         url += "/?debug=loopback";
       } else {
         String roomName = getSelectedItem();

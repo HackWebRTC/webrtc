@@ -314,6 +314,7 @@
                 'examples/android/README',
                 'examples/android/ant.properties',
                 'examples/android/assets/channel.html',
+                'examples/android/third_party/autobanh/autobanh.jar',
                 'examples/android/build.xml',
                 'examples/android/jni/Android.mk',
                 'examples/android/project.properties',
@@ -351,9 +352,12 @@
                 'examples/android/src/org/appspot/apprtc/GAEChannelClient.java',
                 'examples/android/src/org/appspot/apprtc/GAERTCClient.java',
                 'examples/android/src/org/appspot/apprtc/PeerConnectionClient.java',
+                'examples/android/src/org/appspot/apprtc/RoomParametersFetcher.java',
                 'examples/android/src/org/appspot/apprtc/SettingsActivity.java',
                 'examples/android/src/org/appspot/apprtc/SettingsFragment.java',
                 'examples/android/src/org/appspot/apprtc/UnhandledExceptionHandler.java',
+                'examples/android/src/org/appspot/apprtc/WebSocketChannelClient.java',
+                'examples/android/src/org/appspot/apprtc/WebSocketRTCClient.java',
               ],
               'outputs': [
                 '<(PRODUCT_DIR)/AppRTCDemo-debug.apk',
@@ -367,6 +371,7 @@
                 'mkdir -p <(INTERMEDIATE_DIR) && ' # Must happen _before_ the cd below
                 'mkdir -p examples/android/libs/<(android_app_abi) && '
                 'cp <(PRODUCT_DIR)/libjingle_peerconnection.jar examples/android/libs/ &&'
+                'cp examples/android/third_party/autobanh/autobanh.jar examples/android/libs/ &&'
                 '<(android_strip) -o examples/android/libs/<(android_app_abi)/libjingle_peerconnection_so.so  <(PRODUCT_DIR)/libjingle_peerconnection_so.so &&'
                 'cd examples/android && '
                 '{ ANDROID_SDK_ROOT=<(android_sdk_root) '

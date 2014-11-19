@@ -36,7 +36,6 @@ import android.preference.Preference;
 public class SettingsActivity extends Activity
     implements OnSharedPreferenceChangeListener{
   private SettingsFragment settingsFragment;
-  private String keyprefUrl;
   private String keyprefResolution;
   private String keyprefFps;
   private String keyprefCpuUsageDetection;
@@ -44,7 +43,6 @@ public class SettingsActivity extends Activity
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    keyprefUrl = getString(R.string.pref_url_key);
     keyprefResolution = getString(R.string.pref_resolution_key);
     keyprefFps = getString(R.string.pref_fps_key);
     keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
@@ -63,7 +61,6 @@ public class SettingsActivity extends Activity
     SharedPreferences sharedPreferences =
         settingsFragment.getPreferenceScreen().getSharedPreferences();
     sharedPreferences.registerOnSharedPreferenceChangeListener(this);
-    updateSummary(sharedPreferences, keyprefUrl);
     updateSummary(sharedPreferences, keyprefResolution);
     updateSummary(sharedPreferences, keyprefFps);
     updateSummaryB(sharedPreferences, keyprefCpuUsageDetection);
@@ -80,8 +77,7 @@ public class SettingsActivity extends Activity
   @Override
   public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
       String key) {
-    if (key.equals(keyprefUrl) || key.equals(keyprefResolution) ||
-        key.equals(keyprefFps)) {
+    if (key.equals(keyprefResolution) || key.equals(keyprefFps)) {
       updateSummary(sharedPreferences, key);
     } else if (key.equals(keyprefCpuUsageDetection)) {
       updateSummaryB(sharedPreferences, key);

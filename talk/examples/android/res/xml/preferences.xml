@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <EditTextPreference
-        android:key="@string/pref_url_key"
-        android:title="@string/pref_url_title"
-        android:defaultValue="@string/pref_url_default"
-        android:inputType="textWebEmailAddress"
-        android:dialogTitle="@string/pref_url_dlg" />
     <ListPreference
         android:key="@string/pref_resolution_key"
         android:title="@string/pref_resolution_title"

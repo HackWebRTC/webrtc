@@ -30,7 +30,7 @@ package org.appspot.apprtc;
 import android.app.Activity;
 import android.util.Log;
 
-import org.appspot.apprtc.AppRTCClient.AppRTCSignalingParameters;
+import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
@@ -53,7 +53,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PeerConnectionClient {
-  private static final String TAG = "RTCClient";
+  private static final String TAG = "PCRTCClient";
   private final Activity activity;
   private PeerConnectionFactory factory;
   private PeerConnection pc;
@@ -63,8 +63,11 @@ public class PeerConnectionClient {
   private final SDPObserver sdpObserver = new SDPObserver();
   private final VideoRenderer.Callbacks localRender;
   private final VideoRenderer.Callbacks remoteRender;
-  private LinkedList<IceCandidate> queuedRemoteCandidates =
-      new LinkedList<IceCandidate>();
+  // Queued remote ICE candidates are consumed only after both local and
+  // remote descriptions are set. Similarly local ICE candidates are sent to
+  // remote peer after both local and remote description are set.
+  private LinkedList<IceCandidate> queuedRemoteCandidates = null;
+  private LinkedList<IceCandidate> queuedLocalCandidates = null;
   private MediaConstraints sdpMediaConstraints;
   private MediaConstraints videoConstraints;
   private PeerConnectionEvents events;
@@ -77,26 +80,28 @@ public class PeerConnectionClient {
       Activity activity,
       VideoRenderer.Callbacks localRender,
       VideoRenderer.Callbacks remoteRender,
-      AppRTCSignalingParameters appRtcParameters,
+      SignalingParameters signalingParameters,
       PeerConnectionEvents events) {
     this.activity = activity;
     this.localRender = localRender;
     this.remoteRender = remoteRender;
     this.events = events;
-    isInitiator = appRtcParameters.initiator;
+    isInitiator = signalingParameters.initiator;
+    queuedRemoteCandidates = new LinkedList<IceCandidate>();
+    queuedLocalCandidates = new LinkedList<IceCandidate>();
 
     sdpMediaConstraints = new MediaConstraints();
     sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
         "OfferToReceiveAudio", "true"));
     sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
         "OfferToReceiveVideo", "true"));
-    videoConstraints = appRtcParameters.videoConstraints;
+    videoConstraints = signalingParameters.videoConstraints;
 
     factory = new PeerConnectionFactory();
-    MediaConstraints pcConstraints = appRtcParameters.pcConstraints;
+    MediaConstraints pcConstraints = signalingParameters.pcConstraints;
     pcConstraints.optional.add(
         new MediaConstraints.KeyValuePair("RtpDataChannels", "true"));
-    pc = factory.createPeerConnection(appRtcParameters.iceServers,
+    pc = factory.createPeerConnection(signalingParameters.iceServers,
         pcConstraints, pcObserver);
     isInitiator = false;
 
@@ -113,11 +118,11 @@ public class PeerConnectionClient {
       pc.addStream(videoMediaStream);
     }
 
-    if (appRtcParameters.audioConstraints != null) {
+    if (signalingParameters.audioConstraints != null) {
       MediaStream lMS = factory.createLocalMediaStream("ARDAMSAudio");
       lMS.addTrack(factory.createAudioTrack(
           "ARDAMSa0",
-          factory.createAudioSource(appRtcParameters.audioConstraints)));
+          factory.createAudioSource(signalingParameters.audioConstraints)));
       pc.addStream(lMS);
     }
   }
@@ -175,7 +180,6 @@ public class PeerConnectionClient {
       }
     });
   }
-
 
   public void addRemoteIceCandidate(final IceCandidate candidate) {
     activity.runOnUiThread(new Runnable() {
@@ -379,11 +383,21 @@ public class PeerConnectionClient {
     return newSdpDescription.toString();
   }
 
-  private void drainRemoteCandidates() {
-    for (IceCandidate candidate : queuedRemoteCandidates) {
-      pc.addIceCandidate(candidate);
+  private void drainCandidates() {
+    if (queuedLocalCandidates != null) {
+      Log.d(TAG, "Send " + queuedLocalCandidates.size() + " local candidates");
+      for (IceCandidate candidate : queuedLocalCandidates) {
+        events.onIceCandidate(candidate);
+      }
+      queuedLocalCandidates = null;
     }
-    queuedRemoteCandidates = null;
+    if (queuedRemoteCandidates != null) {
+      Log.d(TAG, "Add " + queuedRemoteCandidates.size() + " remote candidates");
+      for (IceCandidate candidate : queuedRemoteCandidates) {
+        pc.addIceCandidate(candidate);
+      }
+      queuedRemoteCandidates = null;
+    }
   }
 
   public void switchCamera() {
@@ -435,7 +449,11 @@ public class PeerConnectionClient {
     public void onIceCandidate(final IceCandidate candidate){
       activity.runOnUiThread(new Runnable() {
         public void run() {
-          events.onIceCandidate(candidate);
+          if (queuedLocalCandidates != null) {
+            queuedLocalCandidates.add(candidate);
+          } else {
+            events.onIceCandidate(candidate);
+          }
         }
       });
     }
@@ -470,6 +488,7 @@ public class PeerConnectionClient {
     @Override
     public void onIceGatheringChange(
       PeerConnection.IceGatheringState newState) {
+      Log.d(TAG, "IceGatheringState: " + newState);
     }
 
     @Override
@@ -543,20 +562,20 @@ public class PeerConnectionClient {
               Log.d(TAG, "Local SDP set succesfully");
               events.onLocalDescription(localSdp);
             } else {
-              // We've just set remote description,
-              // so drain remote ICE candidates.
+              // We've just set remote description, so drain remote
+              // and send local ICE candidates.
               Log.d(TAG, "Remote SDP set succesfully");
-              drainRemoteCandidates();
+              drainCandidates();
             }
           } else {
             // For answering peer connection we set remote SDP and then
             // create answer and set local SDP.
             if (pc.getLocalDescription() != null) {
-              // We've just set our local SDP so time to send it and drain
-              // remote ICE candidates.
+              // We've just set our local SDP so time to send it, drain
+              // remote and send local ICE candidates.
               Log.d(TAG, "Local SDP set succesfully");
               events.onLocalDescription(localSdp);
-              drainRemoteCandidates();
+              drainCandidates();
             } else {
               // We've just set remote SDP - do nothing for now -
               // answer will be created soon.
