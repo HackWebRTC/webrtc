@@ -23,11 +23,46 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// This file is intentionally left empty. The purpose of this file is to add a
-// new file in libjingle without breaking Chromium in the process. The plan is
-// to do the following:
-// 1. Land a no-op videoframefactory.cc in webrtc (this file).
-// 2. Wait for it to roll into Chromium.
-// 3. Modify libjingle.gyp in Chromium to include this file.
-// 4. Make the real change in webrtc with the real implementation of this file.
-// 5. Wait for the change to roll into Chromium.
+
+#include "talk/media/base/videoframefactory.h"
+
+#include "talk/media/base/videocapturer.h"
+
+namespace cricket {
+
+VideoFrame* VideoFrameFactory::CreateAliasedFrame(
+    const CapturedFrame* input_frame,
+    int cropped_input_width,
+    int cropped_input_height,
+    int output_width,
+    int output_height) const {
+  rtc::scoped_ptr<VideoFrame> cropped_input_frame(CreateAliasedFrame(
+      input_frame, cropped_input_width, cropped_input_height));
+
+  if (cropped_input_width == output_width &&
+      cropped_input_height == output_height) {
+    // No scaling needed.
+    return cropped_input_frame.release();
+  }
+
+  // Create and stretch the output frame if it has not been created yet or its
+  // size is not same as the expected.
+  if (!output_frame_ ||
+      output_frame_->GetWidth() != static_cast<size_t>(output_width) ||
+      output_frame_->GetHeight() != static_cast<size_t>(output_height)) {
+    output_frame_.reset(
+        cropped_input_frame->Stretch(output_width, output_height, true, true));
+    if (!output_frame_) {
+      LOG(LS_WARNING) << "Failed to stretch frame to " << output_width << "x"
+                      << output_height;
+      return NULL;
+    }
+  } else {
+    cropped_input_frame->StretchToFrame(output_frame_.get(), true, true);
+    output_frame_->SetElapsedTime(cropped_input_frame->GetElapsedTime());
+    output_frame_->SetTimeStamp(cropped_input_frame->GetTimeStamp());
+  }
+  return output_frame_->Copy();
+}
+
+}  // namespace cricket
