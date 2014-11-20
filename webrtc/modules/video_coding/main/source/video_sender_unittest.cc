@@ -91,7 +91,7 @@ class PacketizationCallback : public VCMPacketizationCallback {
                            uint32_t timestamp,
                            int64_t capture_time_ms,
                            const uint8_t* payload_data,
-                           uint32_t payload_size,
+                           size_t payload_size,
                            const RTPFragmentationHeader& fragmentation_header,
                            const RTPVideoHeader* rtp_video_header) OVERRIDE {
     assert(rtp_video_header);
@@ -127,10 +127,10 @@ class PacketizationCallback : public VCMPacketizationCallback {
   struct FrameData {
     FrameData() {}
 
-    FrameData(uint32_t payload_size, const RTPVideoHeader& rtp_video_header)
+    FrameData(size_t payload_size, const RTPVideoHeader& rtp_video_header)
         : payload_size(payload_size), rtp_video_header(rtp_video_header) {}
 
-    uint32_t payload_size;
+    size_t payload_size;
     RTPVideoHeader rtp_video_header;
   };
 
@@ -152,8 +152,8 @@ class PacketizationCallback : public VCMPacketizationCallback {
     return frames;
   }
 
-  int SumPayloadBytesWithinTemporalLayer(int temporal_layer) {
-    int payload_size = 0;
+  size_t SumPayloadBytesWithinTemporalLayer(int temporal_layer) {
+    size_t payload_size = 0;
     for (size_t i = 0; i < frame_data_.size(); ++i) {
       EXPECT_EQ(kRtpVideoVp8, frame_data_[i].rtp_video_header.codec);
       const uint8_t temporal_idx =

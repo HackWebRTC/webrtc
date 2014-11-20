@@ -71,7 +71,9 @@ bool FakeExternalTransport::Process() {
   return true;
 }
 
-int FakeExternalTransport::SendPacket(int channel, const void *data, int len) {
+int FakeExternalTransport::SendPacket(int channel,
+                                      const void *data,
+                                      size_t len) {
   lock_->Enter();
   if (len < 1612) {
     memcpy(packet_buffer_, (const unsigned char*) data, len);
@@ -80,17 +82,17 @@ int FakeExternalTransport::SendPacket(int channel, const void *data, int len) {
   }
   lock_->Leave();
   event_->Set();  // Triggers ReceivedRTPPacket() from worker thread.
-  return len;
+  return static_cast<int>(len);
 }
 
 int FakeExternalTransport::SendRTCPPacket(int channel,
                                           const void *data,
-                                          int len) {
+                                          size_t len) {
   if (delay_is_enabled_) {
     webrtc::SleepMs(delay_time_in_ms_);
   }
   my_network_->ReceivedRTCPPacket(channel, data, len);
-  return len;
+  return static_cast<int>(len);
 }
 
 void FakeExternalTransport::SetDelayStatus(bool enable,

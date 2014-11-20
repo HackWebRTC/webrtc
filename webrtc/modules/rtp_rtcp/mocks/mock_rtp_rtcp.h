@@ -23,11 +23,11 @@ class MockRtpData : public RtpData {
  public:
   MOCK_METHOD3(OnReceivedPayloadData,
                int32_t(const uint8_t* payloadData,
-                       const uint16_t payloadSize,
+                       const size_t payloadSize,
                        const WebRtcRTPHeader* rtpHeader));
 
   MOCK_METHOD2(OnRecoveredPacket,
-               bool(const uint8_t* packet, int packet_length));
+               bool(const uint8_t* packet, size_t packet_length));
 };
 
 class MockRtpRtcp : public RtpRtcp {
@@ -47,7 +47,7 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD0(DeRegisterSyncModule,
       int32_t());
   MOCK_METHOD2(IncomingRtcpPacket,
-      int32_t(const uint8_t* incomingPacket, uint16_t packetLength));
+      int32_t(const uint8_t* incomingPacket, size_t packetLength));
   MOCK_METHOD1(SetRemoteSSRC, void(const uint32_t ssrc));
   MOCK_METHOD4(IncomingAudioNTP,
       int32_t(const uint32_t audioReceivedNTPsecs,
@@ -126,14 +126,14 @@ class MockRtpRtcp : public RtpRtcp {
               const uint32_t timeStamp,
               int64_t capture_time_ms,
               const uint8_t* payloadData,
-              const uint32_t payloadSize,
+              const size_t payloadSize,
               const RTPFragmentationHeader* fragmentation,
               const RTPVideoHeader* rtpVideoHdr));
   MOCK_METHOD4(TimeToSendPacket,
       bool(uint32_t ssrc, uint16_t sequence_number, int64_t capture_time_ms,
            bool retransmission));
   MOCK_METHOD1(TimeToSendPadding,
-      int(int bytes));
+      size_t(size_t bytes));
   MOCK_CONST_METHOD2(GetSendSideDelay,
       bool(int* avg_send_delay_ms, int* max_send_delay_ms));
   MOCK_METHOD2(RegisterRtcpObservers,
@@ -172,7 +172,7 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD0(ResetSendDataCountersRTP,
       int32_t());
   MOCK_CONST_METHOD2(DataCountersRTP,
-      int32_t(uint32_t *bytesSent, uint32_t *packetsSent));
+      int32_t(size_t *bytesSent, uint32_t *packetsSent));
   MOCK_METHOD1(RemoteRTCPStat,
       int32_t(RTCPSenderInfo* senderInfo));
   MOCK_CONST_METHOD1(RemoteRTCPStat,

@@ -40,7 +40,7 @@ class LocalRendererEffectFilter : public webrtc::ExternalRendererEffectFilter {
                             FrameDropDetector* frame_drop_detector)
       : ExternalRendererEffectFilter(renderer),
         frame_drop_detector_(frame_drop_detector) {}
-  int Transform(int size,
+  int Transform(size_t size,
                 unsigned char* frame_buffer,
                 int64_t ntp_time_ms,
                 unsigned int timestamp,
@@ -100,7 +100,7 @@ class DecodedTimestampEffectFilter : public webrtc::ViEEffectFilter {
   explicit DecodedTimestampEffectFilter(FrameDropDetector* frame_drop_detector)
       : frame_drop_detector_(frame_drop_detector) {}
   virtual ~DecodedTimestampEffectFilter() {}
-  virtual int Transform(int size,
+  virtual int Transform(size_t size,
                         unsigned char* frame_buffer,
                         int64_t ntp_time_ms,
                         unsigned int timestamp,
@@ -593,7 +593,7 @@ int FrameDropDetector::GetNumberOfFramesDroppedAt(State state) {
 }
 
 int FrameDropMonitoringRemoteFileRenderer::DeliverFrame(
-    unsigned char *buffer, int buffer_size, uint32_t time_stamp,
+    unsigned char *buffer, size_t buffer_size, uint32_t time_stamp,
     int64_t ntp_time_ms, int64_t render_time, void* /*handle*/) {
   // |render_time| provides the ideal render time for this frame. If that time
   // has already passed we will render it immediately.

@@ -27,11 +27,11 @@ class VerifyingAudioReceiver : public NullRtpData {
  public:
   virtual int32_t OnReceivedPayloadData(
       const uint8_t* payloadData,
-      const uint16_t payloadSize,
+      const size_t payloadSize,
       const webrtc::WebRtcRTPHeader* rtpHeader) OVERRIDE {
     if (rtpHeader->header.payloadType == 98 ||
         rtpHeader->header.payloadType == 99) {
-      EXPECT_EQ(4, payloadSize);
+      EXPECT_EQ(4u, payloadSize);
       char str[5];
       memcpy(str, payloadData, payloadSize);
       str[4] = 0;
@@ -265,10 +265,10 @@ TEST_F(RtpRtcpAudioTest, RED) {
 
   RTPFragmentationHeader fragmentation;
   fragmentation.fragmentationVectorSize = 2;
-  fragmentation.fragmentationLength = new uint32_t[2];
+  fragmentation.fragmentationLength = new size_t[2];
   fragmentation.fragmentationLength[0] = 4;
   fragmentation.fragmentationLength[1] = 4;
-  fragmentation.fragmentationOffset = new uint32_t[2];
+  fragmentation.fragmentationOffset = new size_t[2];
   fragmentation.fragmentationOffset[0] = 0;
   fragmentation.fragmentationOffset[1] = 4;
   fragmentation.fragmentationTimeDiff = new uint16_t[2];

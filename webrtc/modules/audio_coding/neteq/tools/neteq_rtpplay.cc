@@ -286,7 +286,7 @@ int main(int argc, char* argv[]) {
       int error =
           neteq->InsertPacket(rtp_header,
                               payload_ptr,
-                              static_cast<int>(payload_len),
+                              payload_len,
                               packet->time_ms() * sample_rate_hz / 1000);
       if (error != NetEq::kOK) {
         if (neteq->LastError() == NetEq::kUnknownRtpPayloadType) {

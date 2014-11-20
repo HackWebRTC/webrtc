@@ -44,8 +44,8 @@ class FileWrapperImpl : public FileWrapper {
   virtual int SetMaxFileSize(size_t bytes) OVERRIDE;
   virtual int Flush() OVERRIDE;
 
-  virtual int Read(void* buf, int length) OVERRIDE;
-  virtual bool Write(const void* buf, int length) OVERRIDE;
+  virtual int Read(void* buf, size_t length) OVERRIDE;
+  virtual bool Write(const void* buf, size_t length) OVERRIDE;
   virtual int WriteText(const char* format, ...) OVERRIDE;
   virtual int Rewind() OVERRIDE;
 

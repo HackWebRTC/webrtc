@@ -18,6 +18,8 @@
 #include "webrtc/modules/audio_coding/main/test/Channel.h"
 #include "webrtc/modules/audio_coding/main/test/PCMFile.h"
 
+#define PCMA_AND_PCMU
+
 namespace webrtc {
 
 enum StereoMonoMode {
@@ -38,7 +40,7 @@ class TestPackStereo : public AudioPacketizationCallback {
       const uint8_t payload_type,
       const uint32_t timestamp,
       const uint8_t* payload_data,
-      const uint16_t payload_size,
+      const size_t payload_size,
       const RTPFragmentationHeader* fragmentation) OVERRIDE;
 
   uint16_t payload_size();
@@ -78,11 +80,6 @@ class TestStereo : public ACMTest {
   void OpenOutFile(int16_t test_number);
   void DisplaySendReceiveCodec();
 
-  int32_t SendData(const FrameType frame_type, const uint8_t payload_type,
-                   const uint32_t timestamp, const uint8_t* payload_data,
-                   const uint16_t payload_size,
-                   const RTPFragmentationHeader* fragmentation);
-
   int test_mode_;
 
   scoped_ptr<AudioCodingModule> acm_a_;
@@ -100,17 +97,24 @@ class TestStereo : public ACMTest {
   char* send_codec_name_;
 
   // Payload types for stereo codecs and CNG
+#ifdef WEBRTC_CODEC_G722
   int g722_pltype_;
+#endif
+#ifdef WEBRTC_CODEC_PCM16
   int l16_8khz_pltype_;
   int l16_16khz_pltype_;
   int l16_32khz_pltype_;
+#endif
+#ifdef PCMA_AND_PCMU
   int pcma_pltype_;
   int pcmu_pltype_;
+#endif
+#ifdef WEBRTC_CODEC_CELT
   int celt_pltype_;
+#endif
+#ifdef WEBRTC_CODEC_OPUS
   int opus_pltype_;
-  int cn_8khz_pltype_;
-  int cn_16khz_pltype_;
-  int cn_32khz_pltype_;
+#endif
 };
 
 }  // namespace webrtc

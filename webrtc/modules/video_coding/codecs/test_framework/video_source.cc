@@ -116,7 +116,7 @@ VideoSource::GetSize(uint16_t width, uint16_t height)
     return kUndefined;
 }
 
-unsigned int
+size_t
 VideoSource::GetFrameLength() const
 {
     return webrtc::CalcBufferSize(_type, _width, _height);

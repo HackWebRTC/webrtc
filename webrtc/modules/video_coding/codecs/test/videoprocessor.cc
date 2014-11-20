@@ -30,7 +30,7 @@ TestConfig::TestConfig()
       output_dir("out"),
       networking_config(),
       exclude_frame_types(kExcludeOnlyFirstKeyFrame),
-      frame_length_in_bytes(-1),
+      frame_length_in_bytes(0),
       use_single_core(false),
       keyframe_interval(0),
       codec_settings(NULL),
@@ -157,7 +157,7 @@ void VideoProcessorImpl::SetRates(int bit_rate, int frame_rate) {
   num_spatial_resizes_ = 0;
 }
 
-int VideoProcessorImpl::EncodedFrameSize() {
+size_t VideoProcessorImpl::EncodedFrameSize() {
   return encoded_frame_size_;
 }
 
@@ -330,11 +330,12 @@ void VideoProcessorImpl::FrameDecoded(const I420VideoFrame& image) {
               frame_number, ret_val);
     }
     // TODO(mikhal): Extracting the buffer for now - need to update test.
-    int length = CalcBufferSize(kI420, up_image.width(), up_image.height());
+    size_t length = CalcBufferSize(kI420, up_image.width(), up_image.height());
     scoped_ptr<uint8_t[]> image_buffer(new uint8_t[length]);
-    length = ExtractBuffer(up_image, length, image_buffer.get());
+    int extracted_length = ExtractBuffer(up_image, length, image_buffer.get());
+    assert(extracted_length > 0);
     // Update our copy of the last successful frame:
-    memcpy(last_successful_frame_buffer_, image_buffer.get(), length);
+    memcpy(last_successful_frame_buffer_, image_buffer.get(), extracted_length);
     bool write_success = frame_writer_->WriteFrame(image_buffer.get());
     assert(write_success);
     if (!write_success) {
@@ -343,11 +344,11 @@ void VideoProcessorImpl::FrameDecoded(const I420VideoFrame& image) {
   } else {  // No resize.
     // Update our copy of the last successful frame:
     // TODO(mikhal): Add as a member function, so won't be allocated per frame.
-    int length = CalcBufferSize(kI420, image.width(), image.height());
+    size_t length = CalcBufferSize(kI420, image.width(), image.height());
     scoped_ptr<uint8_t[]> image_buffer(new uint8_t[length]);
-    length = ExtractBuffer(image, length, image_buffer.get());
-    assert(length > 0);
-    memcpy(last_successful_frame_buffer_, image_buffer.get(), length);
+    int extracted_length = ExtractBuffer(image, length, image_buffer.get());
+    assert(extracted_length > 0);
+    memcpy(last_successful_frame_buffer_, image_buffer.get(), extracted_length);
 
     bool write_success = frame_writer_->WriteFrame(image_buffer.get());
     assert(write_success);

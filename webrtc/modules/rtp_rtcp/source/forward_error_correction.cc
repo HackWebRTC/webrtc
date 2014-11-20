@@ -693,7 +693,7 @@ void ForwardErrorCorrection::XorPackets(const Packet* src_packet,
 
   // XOR with RTP payload.
   // TODO(marpan/ajm): Are we doing more XORs than required here?
-  for (int32_t i = kRtpHeaderSize; i < src_packet->length; ++i) {
+  for (size_t i = kRtpHeaderSize; i < src_packet->length; ++i) {
     dst_packet->pkt->data[i] ^= src_packet->data[i];
   }
 }
@@ -816,7 +816,7 @@ int32_t ForwardErrorCorrection::DecodeFEC(
   return 0;
 }
 
-uint16_t ForwardErrorCorrection::PacketOverhead() {
+size_t ForwardErrorCorrection::PacketOverhead() {
   return kFecHeaderSize + kUlpHeaderSizeLBitSet;
 }
 }  // namespace webrtc

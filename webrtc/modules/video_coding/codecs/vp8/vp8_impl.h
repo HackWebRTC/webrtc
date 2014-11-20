@@ -39,7 +39,7 @@ class VP8EncoderImpl : public VP8Encoder {
 
   virtual int InitEncode(const VideoCodec* codec_settings,
                          int number_of_cores,
-                         uint32_t max_payload_size);
+                         size_t max_payload_size);
 
   virtual int Encode(const I420VideoFrame& input_image,
                      const CodecSpecificInfo* codec_specific_info,

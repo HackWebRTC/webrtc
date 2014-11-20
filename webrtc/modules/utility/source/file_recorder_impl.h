@@ -86,7 +86,7 @@ public:
 protected:
     virtual int32_t WriteEncodedAudioData(
         const int8_t* audioBuffer,
-        uint16_t bufferLength,
+        size_t bufferLength,
         uint16_t millisecondsOfData,
         const TickTime* playoutTS);
 
@@ -111,7 +111,7 @@ class AudioFrameFileInfo
 {
     public:
        AudioFrameFileInfo(const int8_t* audioData,
-                     const uint16_t audioSize,
+                     const size_t audioSize,
                      const uint16_t audioMS,
                      const TickTime& playoutTS)
            : _audioData(), _audioSize(audioSize), _audioMS(audioMS),
@@ -127,7 +127,7 @@ class AudioFrameFileInfo
        };
     // TODO (hellner): either turn into a struct or provide get/set functions.
     int8_t   _audioData[MAX_AUDIO_BUFFER_IN_BYTES];
-    uint16_t _audioSize;
+    size_t   _audioSize;
     uint16_t _audioMS;
     TickTime _playoutTS;
 };
@@ -151,7 +151,7 @@ public:
 protected:
     virtual int32_t WriteEncodedAudioData(
         const int8_t*  audioBuffer,
-        uint16_t bufferLength,
+        size_t bufferLength,
         uint16_t millisecondsOfData,
         const TickTime* playoutTS);
 private:
@@ -165,7 +165,7 @@ private:
     int32_t EncodeAndWriteVideoToFile(I420VideoFrame& videoFrame);
     int32_t ProcessAudio();
 
-    int32_t CalcI420FrameSize() const;
+    size_t CalcI420FrameSize() const;
     int32_t SetUpVideoEncoder();
 
     VideoCodec _videoCodecInst;
@@ -178,7 +178,7 @@ private:
 
     FrameScaler* _frameScaler;
     VideoCoder* _videoEncoder;
-    int32_t _videoMaxPayloadSize;
+    size_t _videoMaxPayloadSize;
     EncodedVideoData _videoEncodedData;
 
     ThreadWrapper* _thread;

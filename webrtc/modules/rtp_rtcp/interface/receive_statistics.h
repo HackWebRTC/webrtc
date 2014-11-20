@@ -26,7 +26,7 @@ class StreamStatistician {
   virtual ~StreamStatistician();
 
   virtual bool GetStatistics(RtcpStatistics* statistics, bool reset) = 0;
-  virtual void GetDataCounters(uint32_t* bytes_received,
+  virtual void GetDataCounters(size_t* bytes_received,
                                uint32_t* packets_received) const = 0;
   virtual uint32_t BitrateReceived() const = 0;
 

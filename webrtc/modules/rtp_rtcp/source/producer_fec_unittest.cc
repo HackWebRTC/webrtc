@@ -23,7 +23,7 @@ void VerifyHeader(uint16_t seq_num,
                   int fec_pltype,
                   RedPacket* packet,
                   bool marker_bit) {
-  EXPECT_GT(packet->length(), static_cast<int>(kRtpHeaderSize));
+  EXPECT_GT(packet->length(), kRtpHeaderSize);
   EXPECT_TRUE(packet->data() != NULL);
   uint8_t* data = packet->data();
   // Marker bit not set.

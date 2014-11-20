@@ -92,8 +92,8 @@ PacketLossTest::Decoded(const I420VideoFrame& decodedImage)
     _frameQueue.pop_front();
 
     // save image for future freeze-frame
-    unsigned int length = CalcBufferSize(kI420, decodedImage.width(),
-                                         decodedImage.height());
+    size_t length =
+        CalcBufferSize(kI420, decodedImage.width(), decodedImage.height());
     if (_lastFrameLength < length)
     {
         if (_lastFrame) delete [] _lastFrame;
@@ -189,7 +189,7 @@ int PacketLossTest::DoPacketLoss()
     newEncBuf.VerifyAndAllocate(_lengthSourceFrame);
     _inBufIdx = 0;
     _outBufIdx = 0;
-    int size = 1;
+    size_t size = 1;
     int kept = 0;
     int thrown = 0;
     while ((size = NextPacket(1500, &packet)) > 0)
@@ -204,7 +204,7 @@ int PacketLossTest::DoPacketLoss()
             // Use the ByteLoss function if you want to lose only
             // parts of a packet, and not the whole packet.
 
-            //int size2 = ByteLoss(size, packet, 15);
+            //size_t size2 = ByteLoss(size, packet, 15);
             thrown++;
             //if (size2 != size)
             //{
@@ -227,28 +227,27 @@ int PacketLossTest::DoPacketLoss()
     //printf("Encoded left: %d bytes\n", _encodedVideoBuffer.Length());
 }
 
-int PacketLossTest::NextPacket(int mtu, unsigned char **pkg)
+size_t PacketLossTest::NextPacket(size_t mtu, unsigned char **pkg)
 {
     unsigned char *buf = _frameToDecode->_frame->Buffer();
     *pkg = buf + _inBufIdx;
-    if (static_cast<long>(_frameToDecode->_frame->Length()) - _inBufIdx <= mtu)
-    {
-        int size = _frameToDecode->_frame->Length() - _inBufIdx;
-        _inBufIdx = _frameToDecode->_frame->Length();
-        return size;
-    }
-    _inBufIdx += mtu;
-    return mtu;
+    size_t old_idx = _inBufIdx;
+    _inBufIdx = std::min(_inBufIdx + mtu, _frameToDecode->_frame->Length());
+    return _inBufIdx - old_idx;
 }
 
-int PacketLossTest::ByteLoss(int size, unsigned char *pkg, int bytesToLose)
+size_t PacketLossTest::ByteLoss(size_t size,
+                                unsigned char *pkg,
+                                size_t bytesToLose)
 {
     return size;
 }
 
-void PacketLossTest::InsertPacket(VideoFrame *buf, unsigned char *pkg, int size)
+void PacketLossTest::InsertPacket(VideoFrame *buf,
+                                  unsigned char *pkg,
+                                  size_t size)
 {
-    if (static_cast<long>(buf->Size()) - _outBufIdx < size)
+    if ((_outBufIdx + size) > buf->Size())
     {
         printf("InsertPacket error!\n");
         return;

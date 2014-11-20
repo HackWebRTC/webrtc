@@ -329,7 +329,7 @@ uint8_t * NETEQTEST_RTPpacket::payload() const
     }
 }
 
-int16_t NETEQTEST_RTPpacket::payloadLen()
+size_t NETEQTEST_RTPpacket::payloadLen()
 {
     parseHeader();
     return _payloadLen;
@@ -752,7 +752,7 @@ void NETEQTEST_RTPpacket::splitStereoSample(NETEQTEST_RTPpacket* slaveRtp,
                                             int stride)
 {
     if(!_payloadPtr || !slaveRtp || !slaveRtp->_payloadPtr
-        || _payloadLen <= 0 || slaveRtp->_memSize < _memSize)
+        || _payloadLen == 0 || slaveRtp->_memSize < _memSize)
     {
         return;
     }
@@ -761,7 +761,7 @@ void NETEQTEST_RTPpacket::splitStereoSample(NETEQTEST_RTPpacket* slaveRtp,
     uint8_t *writeDataPtr = _payloadPtr;
     uint8_t *slaveData = slaveRtp->_payloadPtr;
 
-    while (readDataPtr - _payloadPtr < _payloadLen)
+    while (readDataPtr - _payloadPtr < static_cast<ptrdiff_t>(_payloadLen))
     {
         // master data
         for (int ix = 0; ix < stride; ix++) {
@@ -786,7 +786,7 @@ void NETEQTEST_RTPpacket::splitStereoSample(NETEQTEST_RTPpacket* slaveRtp,
 void NETEQTEST_RTPpacket::splitStereoFrame(NETEQTEST_RTPpacket* slaveRtp)
 {
     if(!_payloadPtr || !slaveRtp || !slaveRtp->_payloadPtr
-        || _payloadLen <= 0 || slaveRtp->_memSize < _memSize)
+        || _payloadLen == 0 || slaveRtp->_memSize < _memSize)
     {
         return;
     }
@@ -799,7 +799,7 @@ void NETEQTEST_RTPpacket::splitStereoFrame(NETEQTEST_RTPpacket* slaveRtp)
 void NETEQTEST_RTPpacket::splitStereoDouble(NETEQTEST_RTPpacket* slaveRtp)
 {
     if(!_payloadPtr || !slaveRtp || !slaveRtp->_payloadPtr
-        || _payloadLen <= 0 || slaveRtp->_memSize < _memSize)
+        || _payloadLen == 0 || slaveRtp->_memSize < _memSize)
     {
         return;
     }
@@ -868,7 +868,7 @@ void NETEQTEST_RTPpacket::scramblePayload(void)
 {
     parseHeader();
 
-    for (int i = 0; i < _payloadLen; ++i)
+    for (size_t i = 0; i < _payloadLen; ++i)
     {
         _payloadPtr[i] = static_cast<uint8_t>(rand());
     }

@@ -33,12 +33,12 @@ class VCMNTEncodeCompleteCallback : public webrtc::VCMPacketizationCallback
   // process encoded data received from the encoder,
   // pass stream to the VCMReceiver module
   virtual int32_t SendData(
-      const webrtc::FrameType frameType,
-      const uint8_t payloadType,
-      const uint32_t timeStamp,
+      webrtc::FrameType frameType,
+      uint8_t payloadType,
+      uint32_t timeStamp,
       int64_t capture_time_ms,
       const uint8_t* payloadData,
-      const uint32_t payloadSize,
+      size_t payloadSize,
       const webrtc::RTPFragmentationHeader& fragmentationHeader,
       const webrtc::RTPVideoHeader* videoHdr) OVERRIDE;
 
@@ -46,15 +46,15 @@ class VCMNTEncodeCompleteCallback : public webrtc::VCMPacketizationCallback
   // Currently - encode and decode with the same vcm module.
   void RegisterReceiverVCM(webrtc::VideoCodingModule *vcm);
   // Return sum of encoded data (all frames in the sequence)
-  int32_t EncodedBytes();
+  size_t EncodedBytes();
   // return number of encoder-skipped frames
-  uint32_t SkipCnt();;
+  uint32_t SkipCnt();
   // conversion function for payload type (needed for the callback function)
 //    RTPVideoVideoCodecTypes ConvertPayloadType(uint8_t payloadType);
 
  private:
   FILE*                       _encodedFile;
-  uint32_t              _encodedBytes;
+  size_t                _encodedBytes;
   uint32_t              _skipCnt;
   webrtc::VideoCodingModule*  _VCMReceiver;
   webrtc::FrameType           _frameType;
@@ -62,29 +62,29 @@ class VCMNTEncodeCompleteCallback : public webrtc::VCMPacketizationCallback
   NormalTest&                 _test;
 }; // end of VCMEncodeCompleteCallback
 
-class VCMNTDecodeCompleCallback: public webrtc::VCMReceiveCallback
+class VCMNTDecodeCompleteCallback: public webrtc::VCMReceiveCallback
 {
 public:
-    VCMNTDecodeCompleCallback(std::string outname): // or should it get a name?
-        _decodedFile(NULL),
-        _outname(outname),
-        _decodedBytes(0),
-        _currentWidth(0),
-        _currentHeight(0) {}
-    virtual ~VCMNTDecodeCompleCallback();
+    VCMNTDecodeCompleteCallback(std::string outname) // or should it get a name?
+        : _decodedFile(NULL),
+          _outname(outname),
+          _decodedBytes(0),
+          _currentWidth(0),
+          _currentHeight(0) {}
+    virtual ~VCMNTDecodeCompleteCallback();
     void SetUserReceiveCallback(webrtc::VCMReceiveCallback* receiveCallback);
 
     // will write decoded frame into file
     virtual int32_t FrameToRender(webrtc::I420VideoFrame& videoFrame) OVERRIDE;
 
-    int32_t DecodedBytes();
+    size_t DecodedBytes();
 private:
     FILE*             _decodedFile;
     std::string       _outname;
-    int               _decodedBytes;
+    size_t            _decodedBytes;
     int               _currentWidth;
     int               _currentHeight;
-}; // end of VCMDecodeCompleCallback class
+}; // end of VCMNTDecodeCompleteCallback class
 
 class NormalTest
 {
@@ -119,7 +119,7 @@ protected:
     std::string                      _inname;
     std::string                      _outname;
     std::string                      _encodedName;
-    int32_t                    _sumEncBytes;
+    size_t                     _sumEncBytes;
     FILE*                            _sourceFile;
     FILE*                            _decodedFile;
     FILE*                            _encodedFile;

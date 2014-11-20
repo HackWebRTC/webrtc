@@ -1258,7 +1258,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   // |codec_thread_| for execution.
   virtual int32_t InitEncode(const webrtc::VideoCodec* codec_settings,
                              int32_t /* number_of_cores */,
-                             uint32_t /* max_payload_size */) OVERRIDE;
+                             size_t /* max_payload_size */) OVERRIDE;
   virtual int32_t Encode(
       const webrtc::I420VideoFrame& input_image,
       const webrtc::CodecSpecificInfo* /* codec_specific_info */,
@@ -1433,7 +1433,7 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni)
 int32_t MediaCodecVideoEncoder::InitEncode(
     const webrtc::VideoCodec* codec_settings,
     int32_t /* number_of_cores */,
-    uint32_t /* max_payload_size */) {
+    size_t /* max_payload_size */) {
   // Factory should guard against other codecs being used with us.
   CHECK(codec_settings->codecType == kVideoCodecVP8) << "Unsupported codec";
 

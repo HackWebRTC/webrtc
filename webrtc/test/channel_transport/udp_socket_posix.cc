@@ -154,7 +154,7 @@ bool UdpSocketPosix::Bind(const SocketAddress& name)
     return false;
 }
 
-int32_t UdpSocketPosix::SendTo(const int8_t* buf, int32_t len,
+int32_t UdpSocketPosix::SendTo(const int8_t* buf, size_t len,
                                const SocketAddress& to)
 {
     int size = sizeof(sockaddr);

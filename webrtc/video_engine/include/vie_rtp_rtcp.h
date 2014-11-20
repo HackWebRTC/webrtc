@@ -351,9 +351,9 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   // TODO(sprang): Temporary hacks to prevent libjingle build from failing,
   // remove when libjingle has been lifted to support webrtc issue 2589
   virtual int GetRTPStatistics(const int video_channel,
-                       unsigned int& bytes_sent,
+                       size_t& bytes_sent,
                        unsigned int& packets_sent,
-                       unsigned int& bytes_received,
+                       size_t& bytes_received,
                        unsigned int& packets_received) const {
     StreamDataCounters sent;
     StreamDataCounters received;

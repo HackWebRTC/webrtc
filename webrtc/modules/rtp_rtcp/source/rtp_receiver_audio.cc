@@ -184,7 +184,7 @@ int32_t RTPReceiverAudio::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                                          const PayloadUnion& specific_payload,
                                          bool is_red,
                                          const uint8_t* payload,
-                                         uint16_t payload_length,
+                                         size_t payload_length,
                                          int64_t timestamp_ms,
                                          bool is_first_packet) {
   TRACE_EVENT2("webrtc_rtp", "Audio::ParseRtp",
@@ -288,7 +288,7 @@ int32_t RTPReceiverAudio::InvokeOnInitializeDecoder(
 int32_t RTPReceiverAudio::ParseAudioCodecSpecific(
     WebRtcRTPHeader* rtp_header,
     const uint8_t* payload_data,
-    uint16_t payload_length,
+    size_t payload_length,
     const AudioPayload& audio_specific,
     bool is_red) {
 
@@ -311,13 +311,13 @@ int32_t RTPReceiverAudio::ParseAudioCodecSpecific(
     if (payload_length % 4 != 0) {
       return -1;
     }
-    uint8_t number_of_events = payload_length / 4;
+    size_t number_of_events = payload_length / 4;
 
     // sanity
     if (number_of_events >= MAX_NUMBER_OF_PARALLEL_TELEPHONE_EVENTS) {
       number_of_events = MAX_NUMBER_OF_PARALLEL_TELEPHONE_EVENTS;
     }
-    for (int n = 0; n < number_of_events; ++n) {
+    for (size_t n = 0; n < number_of_events; ++n) {
       bool end = (payload_data[(4 * n) + 1] & 0x80) ? true : false;
 
       std::set<uint8_t>::iterator event =

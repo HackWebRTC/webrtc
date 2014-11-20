@@ -331,8 +331,10 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   int GetLastEngineError() { return engine()->GetLastEngineError(); }
 
   // webrtc::Transport:
-  virtual int SendPacket(int channel, const void* data, int len) OVERRIDE;
-  virtual int SendRTCPPacket(int channel, const void* data, int len) OVERRIDE;
+  virtual int SendPacket(int channel, const void* data, size_t len) OVERRIDE;
+  virtual int SendRTCPPacket(int channel,
+                             const void* data,
+                             size_t len) OVERRIDE;
 
   bool ConferenceModeIsEnabled() const {
     return options_.conference_mode.GetWithDefaultIfUnset(false);

@@ -42,11 +42,11 @@ struct NetworkingConfig {
   }
 
   // Packet size in bytes. Default: 1500 bytes.
-  int packet_size_in_bytes;
+  size_t packet_size_in_bytes;
 
   // Encoder specific setting of maximum size in bytes of each payload.
   // Default: 1440 bytes.
-  int max_payload_size_in_bytes;
+  size_t max_payload_size_in_bytes;
 
   // Packet loss mode. Two different packet loss models are supported:
   // uniform or burst. This setting has no effect unless

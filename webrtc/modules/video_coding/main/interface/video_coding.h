@@ -467,8 +467,8 @@ public:
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
     virtual int32_t IncomingPacket(const uint8_t* incomingPayload,
-                                       uint32_t payloadLength,
-                                       const WebRtcRTPHeader& rtpInfo) = 0;
+                                   size_t payloadLength,
+                                   const WebRtcRTPHeader& rtpInfo) = 0;
 
     // Minimum playout delay (Used for lip-sync). This is the minimum delay required
     // to sync with audio. Not included in  VideoCodingModule::Delay()

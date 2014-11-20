@@ -165,21 +165,21 @@ bool ViEReceiver::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
 }
 
 int ViEReceiver::ReceivedRTPPacket(const void* rtp_packet,
-                                   int rtp_packet_length,
+                                   size_t rtp_packet_length,
                                    const PacketTime& packet_time) {
   return InsertRTPPacket(static_cast<const uint8_t*>(rtp_packet),
                          rtp_packet_length, packet_time);
 }
 
 int ViEReceiver::ReceivedRTCPPacket(const void* rtcp_packet,
-                                    int rtcp_packet_length) {
+                                    size_t rtcp_packet_length) {
   return InsertRTCPPacket(static_cast<const uint8_t*>(rtcp_packet),
                           rtcp_packet_length);
 }
 
-int32_t ViEReceiver::OnReceivedPayloadData(
-    const uint8_t* payload_data, const uint16_t payload_size,
-    const WebRtcRTPHeader* rtp_header) {
+int32_t ViEReceiver::OnReceivedPayloadData(const uint8_t* payload_data,
+                                           const size_t payload_size,
+                                           const WebRtcRTPHeader* rtp_header) {
   WebRtcRTPHeader rtp_header_with_ntp = *rtp_header;
   rtp_header_with_ntp.ntp_time_ms =
       ntp_estimator_->Estimate(rtp_header->header.timestamp);
@@ -193,7 +193,7 @@ int32_t ViEReceiver::OnReceivedPayloadData(
 }
 
 bool ViEReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
-                                    int rtp_packet_length) {
+                                    size_t rtp_packet_length) {
   RTPHeader header;
   if (!rtp_header_parser_->Parse(rtp_packet, rtp_packet_length, &header)) {
     return false;
@@ -204,7 +204,7 @@ bool ViEReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
 }
 
 void ViEReceiver::ReceivedBWEPacket(
-    int64_t arrival_time_ms, int payload_size, const RTPHeader& header) {
+    int64_t arrival_time_ms, size_t payload_size, const RTPHeader& header) {
   // Only forward if the incoming packet *and* the channel are both configured
   // to receive absolute sender time. RTP time stamps may have different rates
   // for audio and video and shouldn't be mixed.
@@ -215,7 +215,7 @@ void ViEReceiver::ReceivedBWEPacket(
 }
 
 int ViEReceiver::InsertRTPPacket(const uint8_t* rtp_packet,
-                                 int rtp_packet_length,
+                                 size_t rtp_packet_length,
                                  const PacketTime& packet_time) {
   {
     CriticalSectionScoped cs(receive_cs_.get());
@@ -223,8 +223,7 @@ int ViEReceiver::InsertRTPPacket(const uint8_t* rtp_packet,
       return -1;
     }
     if (rtp_dump_) {
-      rtp_dump_->DumpPacket(rtp_packet,
-                            static_cast<uint16_t>(rtp_packet_length));
+      rtp_dump_->DumpPacket(rtp_packet, rtp_packet_length);
     }
   }
 
@@ -233,7 +232,7 @@ int ViEReceiver::InsertRTPPacket(const uint8_t* rtp_packet,
                                  &header)) {
     return -1;
   }
-  int payload_length = rtp_packet_length - header.headerLength;
+  size_t payload_length = rtp_packet_length - header.headerLength;
   int64_t arrival_time_ms;
   int64_t now_ms = clock_->TimeInMilliseconds();
   if (packet_time.timestamp != -1)
@@ -277,15 +276,15 @@ int ViEReceiver::InsertRTPPacket(const uint8_t* rtp_packet,
 }
 
 bool ViEReceiver::ReceivePacket(const uint8_t* packet,
-                                int packet_length,
+                                size_t packet_length,
                                 const RTPHeader& header,
                                 bool in_order) {
   if (rtp_payload_registry_->IsEncapsulated(header)) {
     return ParseAndHandleEncapsulatingHeader(packet, packet_length, header);
   }
   const uint8_t* payload = packet + header.headerLength;
-  int payload_length = packet_length - header.headerLength;
-  assert(payload_length >= 0);
+  assert(packet_length >= header.headerLength);
+  size_t payload_length = packet_length - header.headerLength;
   PayloadUnion payload_specific;
   if (!rtp_payload_registry_->GetPayloadSpecifics(header.payloadType,
                                                   &payload_specific)) {
@@ -296,7 +295,7 @@ bool ViEReceiver::ReceivePacket(const uint8_t* packet,
 }
 
 bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
-                                                    int packet_length,
+                                                    size_t packet_length,
                                                     const RTPHeader& header) {
   if (rtp_payload_registry_->IsRed(header)) {
     int8_t ulpfec_pt = rtp_payload_registry_->ulpfec_payload_type();
@@ -316,7 +315,7 @@ bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
     // Remove the RTX header and parse the original RTP header.
     if (packet_length < header.headerLength)
       return false;
-    if (packet_length > static_cast<int>(sizeof(restored_packet_)))
+    if (packet_length > sizeof(restored_packet_))
       return false;
     CriticalSectionScoped cs(receive_cs_.get());
     if (restored_packet_in_use_) {
@@ -339,7 +338,7 @@ bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
 }
 
 int ViEReceiver::InsertRTCPPacket(const uint8_t* rtcp_packet,
-                                  int rtcp_packet_length) {
+                                  size_t rtcp_packet_length) {
   {
     CriticalSectionScoped cs(receive_cs_.get());
     if (!receiving_) {
@@ -347,8 +346,7 @@ int ViEReceiver::InsertRTCPPacket(const uint8_t* rtcp_packet,
     }
 
     if (rtp_dump_) {
-      rtp_dump_->DumpPacket(
-          rtcp_packet, static_cast<uint16_t>(rtcp_packet_length));
+      rtp_dump_->DumpPacket(rtcp_packet, rtcp_packet_length);
     }
 
     std::list<RtpRtcp*>::iterator it = rtp_rtcp_simulcast_.begin();

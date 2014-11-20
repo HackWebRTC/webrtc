@@ -9,6 +9,7 @@
  */
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/common.h"
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
@@ -115,11 +116,13 @@ void StreamObserver::OnReceiveBitrateChanged(
 bool StreamObserver::SendRtp(const uint8_t* packet, size_t length) {
   CriticalSectionScoped lock(crit_.get());
   RTPHeader header;
-  EXPECT_TRUE(rtp_parser_->Parse(packet, static_cast<int>(length), &header));
+  bool parse_succeeded = rtp_parser_->Parse(packet, length, &header);
+  RTC_UNUSED(parse_succeeded);
+  assert(parse_succeeded);
   receive_stats_->IncomingPacket(header, length, false);
   payload_registry_->SetIncomingPayloadType(header);
   remote_bitrate_estimator_->IncomingPacket(
-      clock_->TimeInMilliseconds(), static_cast<int>(length - 12), header);
+      clock_->TimeInMilliseconds(), length - 12, header);
   if (remote_bitrate_estimator_->TimeUntilNextProcess() <= 0) {
     remote_bitrate_estimator_->Process();
   }
@@ -134,7 +137,7 @@ bool StreamObserver::SendRtp(const uint8_t* packet, size_t length) {
       ++rtx_media_packets_sent_;
     uint8_t restored_packet[kMaxPacketSize];
     uint8_t* restored_packet_ptr = restored_packet;
-    int restored_length = static_cast<int>(length);
+    size_t restored_length = length;
     payload_registry_->RestoreOriginalPacket(&restored_packet_ptr,
                                              packet,
                                              &restored_length,
@@ -265,10 +268,12 @@ PacketReceiver::DeliveryStatus LowRateStreamObserver::DeliverPacket(
     const uint8_t* packet, size_t length) {
   CriticalSectionScoped lock(crit_.get());
   RTPHeader header;
-  EXPECT_TRUE(rtp_parser_->Parse(packet, static_cast<int>(length), &header));
+  bool parse_succeeded = rtp_parser_->Parse(packet, length, &header);
+  RTC_UNUSED(parse_succeeded);
+  assert(parse_succeeded);
   receive_stats_->IncomingPacket(header, length, false);
   remote_bitrate_estimator_->IncomingPacket(
-      clock_->TimeInMilliseconds(), static_cast<int>(length - 12), header);
+      clock_->TimeInMilliseconds(), length - 12, header);
   if (remote_bitrate_estimator_->TimeUntilNextProcess() <= 0) {
     remote_bitrate_estimator_->Process();
   }

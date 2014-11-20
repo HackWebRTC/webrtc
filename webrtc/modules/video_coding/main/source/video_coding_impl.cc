@@ -301,7 +301,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   }
 
   virtual int32_t IncomingPacket(const uint8_t* incomingPayload,
-                                 uint32_t payloadLength,
+                                 size_t payloadLength,
                                  const WebRtcRTPHeader& rtpInfo) OVERRIDE {
     return receiver_->IncomingPacket(incomingPayload, payloadLength, rtpInfo);
   }

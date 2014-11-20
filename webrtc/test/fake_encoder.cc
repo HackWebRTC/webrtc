@@ -39,7 +39,7 @@ void FakeEncoder::SetMaxBitrate(int max_kbps) {
 
 int32_t FakeEncoder::InitEncode(const VideoCodec* config,
                                 int32_t number_of_cores,
-                                uint32_t max_payload_size) {
+                                size_t max_payload_size) {
   config_ = *config;
   target_bitrate_kbps_ = config_.startBitrate;
   return 0;
@@ -50,7 +50,7 @@ int32_t FakeEncoder::Encode(
     const CodecSpecificInfo* codec_specific_info,
     const std::vector<VideoFrameType>* frame_types) {
   assert(config_.maxFramerate > 0);
-  int time_since_last_encode_ms = 1000 / config_.maxFramerate;
+  int64_t time_since_last_encode_ms = 1000 / config_.maxFramerate;
   int64_t time_now_ms = clock_->TimeInMilliseconds();
   const bool first_encode = last_encode_time_ms_ == 0;
   if (!first_encode) {
@@ -59,36 +59,38 @@ int32_t FakeEncoder::Encode(
     time_since_last_encode_ms = time_now_ms - last_encode_time_ms_;
   }
 
-  int bits_available = target_bitrate_kbps_ * time_since_last_encode_ms;
-  int min_bits =
-      config_.simulcastStream[0].minBitrate * time_since_last_encode_ms;
+  size_t bits_available =
+      static_cast<size_t>(target_bitrate_kbps_ * time_since_last_encode_ms);
+  size_t min_bits = static_cast<size_t>(
+      config_.simulcastStream[0].minBitrate * time_since_last_encode_ms);
   if (bits_available < min_bits)
     bits_available = min_bits;
-  int max_bits = max_target_bitrate_kbps_ * time_since_last_encode_ms;
+  size_t max_bits =
+      static_cast<size_t>(max_target_bitrate_kbps_ * time_since_last_encode_ms);
   if (max_bits > 0 && max_bits < bits_available)
     bits_available = max_bits;
   last_encode_time_ms_ = time_now_ms;
 
   assert(config_.numberOfSimulcastStreams > 0);
-  for (int i = 0; i < config_.numberOfSimulcastStreams; ++i) {
+  for (unsigned char i = 0; i < config_.numberOfSimulcastStreams; ++i) {
     CodecSpecificInfo specifics;
     memset(&specifics, 0, sizeof(specifics));
     specifics.codecType = kVideoCodecGeneric;
     specifics.codecSpecific.generic.simulcast_idx = i;
-    int min_stream_bits =
-        config_.simulcastStream[i].minBitrate * time_since_last_encode_ms;
-    int max_stream_bits =
-        config_.simulcastStream[i].maxBitrate * time_since_last_encode_ms;
-    int stream_bits = (bits_available > max_stream_bits) ? max_stream_bits :
+    size_t min_stream_bits = static_cast<size_t>(
+        config_.simulcastStream[i].minBitrate * time_since_last_encode_ms);
+    size_t max_stream_bits = static_cast<size_t>(
+        config_.simulcastStream[i].maxBitrate * time_since_last_encode_ms);
+    size_t stream_bits = (bits_available > max_stream_bits) ? max_stream_bits :
         bits_available;
-    int stream_bytes = (stream_bits + 7) / 8;
+    size_t stream_bytes = (stream_bits + 7) / 8;
     if (first_encode) {
       // The first frame is a key frame and should be larger.
       // TODO(holmer): The FakeEncoder should store the bits_available between
       // encodes so that it can compensate for oversized frames.
       stream_bytes *= 10;
     }
-    if (static_cast<size_t>(stream_bytes) > sizeof(encoded_buffer_))
+    if (stream_bytes > sizeof(encoded_buffer_))
       stream_bytes = sizeof(encoded_buffer_);
 
     EncodedImage encoded(
@@ -104,7 +106,7 @@ int32_t FakeEncoder::Encode(
     assert(callback_ != NULL);
     if (callback_->Encoded(encoded, &specifics, NULL) != 0)
       return -1;
-    bits_available -= encoded._length * 8;
+    bits_available -= std::min(encoded._length * 8, bits_available);
   }
   return 0;
 }
@@ -155,9 +157,9 @@ int32_t FakeH264Encoder::Encoded(EncodedImage& encoded_image,
     fragmentation.fragmentationOffset[2] = kSpsSize + kPpsSize;
     fragmentation.fragmentationLength[2] =
         encoded_image._length - (kSpsSize + kPpsSize);
-    const uint8_t kSpsNalHeader = 0x37;
-    const uint8_t kPpsNalHeader = 0x38;
-    const uint8_t kIdrNalHeader = 0x15;
+    const size_t kSpsNalHeader = 0x37;
+    const size_t kPpsNalHeader = 0x38;
+    const size_t kIdrNalHeader = 0x15;
     encoded_image._buffer[fragmentation.fragmentationOffset[0]] = kSpsNalHeader;
     encoded_image._buffer[fragmentation.fragmentationOffset[1]] = kPpsNalHeader;
     encoded_image._buffer[fragmentation.fragmentationOffset[2]] = kIdrNalHeader;
@@ -166,7 +168,7 @@ int32_t FakeH264Encoder::Encoded(EncodedImage& encoded_image,
     fragmentation.VerifyAndAllocateFragmentationHeader(kNumSlices);
     fragmentation.fragmentationOffset[0] = 0;
     fragmentation.fragmentationLength[0] = encoded_image._length;
-    const uint8_t kNalHeader = 0x11;
+    const size_t kNalHeader = 0x11;
     encoded_image._buffer[fragmentation.fragmentationOffset[0]] = kNalHeader;
   }
   uint8_t value = 0;

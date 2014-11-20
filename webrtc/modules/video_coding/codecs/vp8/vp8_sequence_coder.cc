@@ -30,11 +30,11 @@ class Vp8SequenceCoderEncodeCallback : public webrtc::EncodedImageCallback {
               const webrtc::RTPFragmentationHeader*);
   // Returns the encoded image.
   webrtc::EncodedImage encoded_image() { return encoded_image_; }
-  int encoded_bytes() { return encoded_bytes_; }
+  size_t encoded_bytes() { return encoded_bytes_; }
  private:
   webrtc::EncodedImage encoded_image_;
   FILE* encoded_file_;
-  int encoded_bytes_;
+  size_t encoded_bytes_;
 };
 
 Vp8SequenceCoderEncodeCallback::~Vp8SequenceCoderEncodeCallback() {
@@ -141,7 +141,7 @@ int SequenceCoder(webrtc::test::CommandLineParser& parser) {
   }
   EXPECT_EQ(0, decoder->InitDecode(&inst, 1));
   webrtc::I420VideoFrame input_frame;
-  unsigned int length = webrtc::CalcBufferSize(webrtc::kI420, width, height);
+  size_t length = webrtc::CalcBufferSize(webrtc::kI420, width, height);
   webrtc::scoped_ptr<uint8_t[]> frame_buffer(new uint8_t[length]);
 
   int half_width = (width + 1) / 2;
@@ -175,9 +175,8 @@ int SequenceCoder(webrtc::test::CommandLineParser& parser) {
   int64_t totalExecutionTime = endtime - starttime;
   printf("Total execution time: %.2lf ms\n",
          static_cast<double>(totalExecutionTime));
-  int sum_enc_bytes = encoder_callback.encoded_bytes();
-  double actual_bit_rate =  8.0 * sum_enc_bytes /
-      (frame_cnt / inst.maxFramerate);
+  double actual_bit_rate =
+      8.0 * encoder_callback.encoded_bytes() / (frame_cnt / inst.maxFramerate);
   printf("Actual bitrate: %f kbps\n", actual_bit_rate / 1000);
   webrtc::test::QualityMetricsResult psnr_result, ssim_result;
   EXPECT_EQ(0, webrtc::test::I420MetricsFromFiles(

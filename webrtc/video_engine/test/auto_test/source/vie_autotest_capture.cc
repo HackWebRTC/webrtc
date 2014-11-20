@@ -83,7 +83,7 @@ class CaptureEffectFilter : public webrtc::ViEEffectFilter {
   }
 
   // Implements video_engineEffectFilter.
-  virtual int Transform(int size,
+  virtual int Transform(size_t size,
                         unsigned char* frame_buffer,
                         int64_t ntp_time_ms,
                         unsigned int timestamp,
@@ -445,7 +445,7 @@ void ViEAutoTest::ViECaptureExternalCaptureTest() {
   /// **************************************************************
   //  Engine ready. Begin testing class
   /// **************************************************************
-  const unsigned int video_frame_length = (176 * 144 * 3) / 2;
+  const size_t video_frame_length = (176 * 144 * 3) / 2;
   unsigned char* video_frame = new unsigned char[video_frame_length];
   memset(video_frame, 128, 176 * 144);
 

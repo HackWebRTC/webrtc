@@ -52,7 +52,7 @@ class TransportCallback:public RTPSendCompleteCallback
     // Add packets to list
     // Incorporate network conditions - delay and packet loss
     // Actual transmission will occur on a separate thread
-    virtual int SendPacket(int channel, const void *data, int len) OVERRIDE;
+    virtual int SendPacket(int channel, const void *data, size_t len) OVERRIDE;
     // Send to the receiver packets which are ready to be submitted
     int TransportPackets();
 };

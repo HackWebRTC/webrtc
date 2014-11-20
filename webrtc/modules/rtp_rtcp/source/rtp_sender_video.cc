@@ -100,16 +100,16 @@ int32_t RTPSenderVideo::RegisterVideoPayload(
 }
 
 int32_t RTPSenderVideo::SendVideoPacket(uint8_t* data_buffer,
-                                        const uint16_t payload_length,
-                                        const uint16_t rtp_header_length,
+                                        const size_t payload_length,
+                                        const size_t rtp_header_length,
                                         const uint32_t capture_timestamp,
                                         int64_t capture_time_ms,
                                         StorageType storage,
                                         bool protect) {
   if (_fecEnabled) {
     int ret = 0;
-    int fec_overhead_sent = 0;
-    int video_sent = 0;
+    size_t fec_overhead_sent = 0;
+    size_t video_sent = 0;
 
     RedPacket* red_packet = producer_fec_.BuildRedPacket(
         data_buffer, payload_length, rtp_header_length, _payloadTypeRED);
@@ -202,7 +202,7 @@ int32_t RTPSenderVideo::SendRTPIntraRequest() {
   // RFC 2032
   // 5.2.1.  Full intra-frame Request (FIR) packet
 
-  uint16_t length = 8;
+  size_t length = 8;
   uint8_t data[8];
   data[0] = 0x80;
   data[1] = 192;
@@ -242,7 +242,7 @@ int32_t RTPSenderVideo::GenericFECStatus(bool& enable,
   return 0;
 }
 
-uint16_t RTPSenderVideo::FECPacketOverhead() const {
+size_t RTPSenderVideo::FECPacketOverhead() const {
   if (_fecEnabled) {
     // Overhead is FEC headers plus RED for FEC header plus anything in RTP
     // header beyond the 12 bytes base header (CSRC list, extensions...)
@@ -271,7 +271,7 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
                                   const uint32_t captureTimeStamp,
                                   int64_t capture_time_ms,
                                   const uint8_t* payloadData,
-                                  const uint32_t payloadSize,
+                                  const size_t payloadSize,
                                   const RTPFragmentationHeader* fragmentation,
                                   VideoCodecInformation* codecInfo,
                                   const RTPVideoTypeHeader* rtpTypeHdr) {
@@ -320,11 +320,11 @@ bool RTPSenderVideo::Send(const RtpVideoCodecTypes videoType,
                           const uint32_t captureTimeStamp,
                           int64_t capture_time_ms,
                           const uint8_t* payloadData,
-                          const uint32_t payloadSize,
+                          const size_t payloadSize,
                           const RTPFragmentationHeader* fragmentation,
                           const RTPVideoTypeHeader* rtpTypeHdr) {
   uint16_t rtp_header_length = _rtpSender.RTPHeaderLength();
-  int32_t payload_bytes_to_send = payloadSize;
+  size_t payload_bytes_to_send = payloadSize;
   const uint8_t* data = payloadData;
   size_t max_payload_length = _rtpSender.MaxDataPayloadLength();
 

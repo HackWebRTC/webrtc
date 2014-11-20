@@ -31,7 +31,7 @@ class VideoCaptureAndroid : public VideoCaptureImpl {
   virtual int32_t SetCaptureRotation(VideoCaptureRotation rotation);
 
   int32_t OnIncomingFrame(uint8_t* videoFrame,
-                          int32_t videoFrameLength,
+                          size_t videoFrameLength,
                           int32_t degrees,
                           int64_t captureTime = 0);
 

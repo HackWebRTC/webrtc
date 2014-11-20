@@ -37,7 +37,7 @@ public:
                       const int8_t payloadType,
                       const uint32_t captureTimeStamp,
                       const uint8_t* payloadData,
-                      const uint32_t payloadSize,
+                      const size_t payloadSize,
                       const RTPFragmentationHeader* fragmentation);
 
     // set audio packet size, used to determine when it's time to send a DTMF packet in silence (CNG)

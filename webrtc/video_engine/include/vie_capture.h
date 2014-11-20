@@ -106,7 +106,7 @@ class WEBRTC_DLLEXPORT ViEExternalCapture {
   // VideoEngine.
   // |capture_time| must be specified in the NTP time format in milliseconds.
   virtual int IncomingFrame(unsigned char* video_frame,
-                            unsigned int video_frame_length,
+                            size_t video_frame_length,
                             unsigned short width,
                             unsigned short height,
                             RawVideoType video_type,

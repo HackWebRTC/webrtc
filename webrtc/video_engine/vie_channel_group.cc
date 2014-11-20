@@ -53,7 +53,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
   virtual ~WrappingBitrateEstimator() {}
 
   virtual void IncomingPacket(int64_t arrival_time_ms,
-                              int payload_size,
+                              size_t payload_size,
                               const RTPHeader& header) OVERRIDE {
     CriticalSectionScoped cs(crit_sect_.get());
     PickEstimatorFromHeader(header);

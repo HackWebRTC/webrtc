@@ -62,14 +62,14 @@ void UpdateProtectionCallback(
 }  // namespace
 
 struct MediaOptimization::EncodedFrameSample {
-  EncodedFrameSample(int size_bytes,
+  EncodedFrameSample(size_t size_bytes,
                      uint32_t timestamp,
                      int64_t time_complete_ms)
       : size_bytes(size_bytes),
         timestamp(timestamp),
         time_complete_ms(time_complete_ms) {}
 
-  uint32_t size_bytes;
+  size_t size_bytes;
   uint32_t timestamp;
   int64_t time_complete_ms;
 };
@@ -369,7 +369,7 @@ VCMFrameCount MediaOptimization::SentFrameCount() {
   return count;
 }
 
-int32_t MediaOptimization::UpdateWithEncodedData(int encoded_length,
+int32_t MediaOptimization::UpdateWithEncodedData(size_t encoded_length,
                                                  uint32_t timestamp,
                                                  FrameType encoded_frame_type) {
   CriticalSectionScoped lock(crit_sect_.get());
@@ -532,7 +532,7 @@ void MediaOptimization::UpdateSentBitrate(int64_t now_ms) {
     avg_sent_bit_rate_bps_ = 0;
     return;
   }
-  int framesize_sum = 0;
+  size_t framesize_sum = 0;
   for (FrameSampleList::iterator it = encoded_frame_samples_.begin();
        it != encoded_frame_samples_.end();
        ++it) {

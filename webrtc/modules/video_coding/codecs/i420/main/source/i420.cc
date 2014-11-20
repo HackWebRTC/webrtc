@@ -15,6 +15,10 @@
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 
+namespace {
+const size_t kI420HeaderSize = 4;
+}
+
 namespace webrtc {
 
 I420Encoder::I420Encoder() : _inited(false), _encodedImage(),
@@ -39,7 +43,7 @@ int I420Encoder::Release() {
 
 int I420Encoder::InitEncode(const VideoCodec* codecSettings,
                             int /*numberOfCores*/,
-                            uint32_t /*maxPayloadSize */) {
+                            size_t /*maxPayloadSize */) {
   if (codecSettings == NULL) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
@@ -53,10 +57,9 @@ int I420Encoder::InitEncode(const VideoCodec* codecSettings,
     _encodedImage._buffer = NULL;
     _encodedImage._size = 0;
   }
-  const uint32_t newSize = CalcBufferSize(kI420,
-                                          codecSettings->width,
-                                          codecSettings->height)
-                           + kI420HeaderSize;
+  const size_t newSize =
+      CalcBufferSize(kI420, codecSettings->width, codecSettings->height) +
+      kI420HeaderSize;
   uint8_t* newBuffer = new uint8_t[newSize];
   if (newBuffer == NULL) {
     return WEBRTC_VIDEO_CODEC_MEMORY;
@@ -95,9 +98,10 @@ int I420Encoder::Encode(const I420VideoFrame& inputImage,
     return WEBRTC_VIDEO_CODEC_ERR_SIZE;
   }
 
-  int req_length = CalcBufferSize(kI420, inputImage.width(),
-                                  inputImage.height()) + kI420HeaderSize;
-  if (_encodedImage._size > static_cast<unsigned int>(req_length)) {
+  size_t req_length =
+      CalcBufferSize(kI420, inputImage.width(), inputImage.height()) +
+      kI420HeaderSize;
+  if (_encodedImage._size > req_length) {
     // Reallocate buffer.
     delete [] _encodedImage._buffer;
 
@@ -194,8 +198,7 @@ int I420Decoder::Decode(const EncodedImage& inputImage, bool /*missingFrames*/,
   _height = height;
 
   // Verify that the available length is sufficient:
-  uint32_t req_length = CalcBufferSize(kI420, _width, _height)
-                        + kI420HeaderSize;
+  size_t req_length = CalcBufferSize(kI420, _width, _height) + kI420HeaderSize;
 
   if (req_length > inputImage._length) {
     return WEBRTC_VIDEO_CODEC_ERROR;

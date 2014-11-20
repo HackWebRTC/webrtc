@@ -68,7 +68,7 @@ class VideoEncoder {
   //                                  WEBRTC_VIDEO_CODEC_ERROR
   virtual int32_t InitEncode(const VideoCodec* codec_settings,
                              int32_t number_of_cores,
-                             uint32_t max_payload_size) = 0;
+                             size_t max_payload_size) = 0;
 
   // Register an encode complete callback object.
   //

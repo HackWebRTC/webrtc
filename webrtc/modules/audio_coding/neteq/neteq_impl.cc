@@ -117,7 +117,7 @@ NetEqImpl::~NetEqImpl() {
 
 int NetEqImpl::InsertPacket(const WebRtcRTPHeader& rtp_header,
                             const uint8_t* payload,
-                            int length_bytes,
+                            size_t length_bytes,
                             uint32_t receive_timestamp) {
   CriticalSectionScoped lock(crit_sect_.get());
   LOG(LS_VERBOSE) << "InsertPacket: ts=" << rtp_header.header.timestamp <<
@@ -399,7 +399,7 @@ const SyncBuffer* NetEqImpl::sync_buffer_for_test() const {
 
 int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
                                     const uint8_t* payload,
-                                    int length_bytes,
+                                    size_t length_bytes,
                                     uint32_t receive_timestamp,
                                     bool is_sync_packet) {
   if (!payload) {
@@ -1241,7 +1241,7 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
     assert(*operation == kNormal || *operation == kAccelerate ||
            *operation == kMerge || *operation == kPreemptiveExpand);
     packet_list->pop_front();
-    int payload_length = packet->payload_length;
+    size_t payload_length = packet->payload_length;
     int16_t decode_length;
     if (packet->sync_packet) {
       // Decode to silence with the same frame size as the last decode.

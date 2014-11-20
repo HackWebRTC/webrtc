@@ -256,9 +256,9 @@ bool TestSenderReceiver::ProcLoop(void)
 
 int32_t TestSenderReceiver::ReceiveBitrateKbps ()
 {
-    uint32_t bytesSent;
+    size_t bytesSent;
     uint32_t packetsSent;
-    uint32_t bytesReceived;
+    size_t bytesReceived;
     uint32_t packetsReceived;
 
     if (_rtp->DataCountersRTP(&bytesSent, &packetsSent, &bytesReceived, &packetsReceived) == 0)
@@ -290,7 +290,7 @@ int32_t TestSenderReceiver::SetPacketTimeout(const uint32_t timeoutMS)
 
 
 int32_t TestSenderReceiver::OnReceivedPayloadData(const uint8_t* payloadData,
-                                                  const uint16_t payloadSize,
+                                                  const size_t payloadSize,
                                                   const webrtc::WebRtcRTPHeader* rtpHeader)
 {
     //printf("OnReceivedPayloadData\n");
@@ -299,21 +299,21 @@ int32_t TestSenderReceiver::OnReceivedPayloadData(const uint8_t* payloadData,
 
 
 void TestSenderReceiver::IncomingRTPPacket(const int8_t* incomingRtpPacket,
-                                      const int32_t rtpPacketLength,
-                                      const int8_t* fromIP,
-                                      const uint16_t fromPort)
+                                           const size_t rtpPacketLength,
+                                           const int8_t* fromIP,
+                                           const uint16_t fromPort)
 {
-    _rtp->IncomingPacket((uint8_t *) incomingRtpPacket, static_cast<uint16_t>(rtpPacketLength));
+    _rtp->IncomingPacket((uint8_t *) incomingRtpPacket, rtpPacketLength);
 }
 
 
 
 void TestSenderReceiver::IncomingRTCPPacket(const int8_t* incomingRtcpPacket,
-                                       const int32_t rtcpPacketLength,
-                                       const int8_t* fromIP,
-                                       const uint16_t fromPort)
+                                            const size_t rtcpPacketLength,
+                                            const int8_t* fromIP,
+                                            const uint16_t fromPort)
 {
-    _rtp->IncomingPacket((uint8_t *) incomingRtcpPacket, static_cast<uint16_t>(rtcpPacketLength));
+    _rtp->IncomingPacket((uint8_t *) incomingRtcpPacket, rtcpPacketLength);
 }
 
 
@@ -386,7 +386,7 @@ int32_t TestSenderReceiver::InitSender (const uint32_t startBitrateKbps,
 int32_t
 TestSenderReceiver::SendOutgoingData(const uint32_t timeStamp,
                                      const uint8_t* payloadData,
-                                     const uint32_t payloadSize,
+                                     const size_t payloadSize,
                                      const webrtc::FrameType frameType /*= webrtc::kVideoFrameDelta*/)
 {
     return (_rtp->SendOutgoingData(frameType, _payloadType, timeStamp, payloadData, payloadSize));

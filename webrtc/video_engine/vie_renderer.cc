@@ -195,9 +195,9 @@ int32_t ViEExternalRendererImpl::RenderFrame(
   // Convert to requested format.
   VideoType type =
       RawVideoTypeToCommonVideoVideoType(external_renderer_format_);
-  int buffer_size = CalcBufferSize(type, video_frame.width(),
-                                   video_frame.height());
-  if (buffer_size <= 0) {
+  size_t buffer_size = CalcBufferSize(type, video_frame.width(),
+                                      video_frame.height());
+  if (buffer_size == 0) {
     // Unsupported video format.
     assert(false);
     return -1;

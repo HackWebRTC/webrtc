@@ -3154,7 +3154,7 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
   engine()->voe()->network()->ReceivedRTPPacket(
       which_channel,
       packet->data(),
-      static_cast<unsigned int>(packet->length()),
+      packet->length(),
       webrtc::PacketTime(packet_time.timestamp, packet_time.not_before));
 }
 
@@ -3179,7 +3179,7 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
       engine()->voe()->network()->ReceivedRTCPPacket(
           which_channel,
           packet->data(),
-          static_cast<unsigned int>(packet->length()));
+          packet->length());
 
       if (IsDefaultChannel(which_channel))
         has_sent_to_default_channel = true;
@@ -3199,7 +3199,7 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
     engine()->voe()->network()->ReceivedRTCPPacket(
         iter->second->channel(),
         packet->data(),
-        static_cast<unsigned int>(packet->length()));
+        packet->length());
   }
 }
 
@@ -3730,7 +3730,7 @@ bool WebRtcVoiceMediaChannel::SetupSharedBweOnChannel(int voe_channel) {
   return true;
 }
 
-int WebRtcSoundclipStream::Read(void *buf, int len) {
+int WebRtcSoundclipStream::Read(void *buf, size_t len) {
   size_t res = 0;
   mem_.Read(buf, len, &res, NULL);
   return static_cast<int>(res);

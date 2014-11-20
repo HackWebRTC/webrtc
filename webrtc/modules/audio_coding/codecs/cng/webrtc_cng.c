@@ -411,7 +411,7 @@ int16_t WebRtcCng_Encode(CNG_enc_inst* cng_inst, int16_t* speech,
  *                      -1 - Error
  */
 int16_t WebRtcCng_UpdateSid(CNG_dec_inst* cng_inst, uint8_t* SID,
-                            int16_t length) {
+                            size_t length) {
 
   WebRtcCngDecInst_t* inst = (WebRtcCngDecInst_t*) cng_inst;
   int16_t refCs[WEBRTC_CNG_MAX_LPC_ORDER];
@@ -427,7 +427,7 @@ int16_t WebRtcCng_UpdateSid(CNG_dec_inst* cng_inst, uint8_t* SID,
   if (length > (WEBRTC_CNG_MAX_LPC_ORDER + 1))
     length = WEBRTC_CNG_MAX_LPC_ORDER + 1;
 
-  inst->dec_order = length - 1;
+  inst->dec_order = (int16_t)length - 1;
 
   if (SID[0] > 93)
     SID[0] = 93;

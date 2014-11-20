@@ -422,8 +422,7 @@ bool VideoSendStream::ReconfigureVideoEncoder(
 }
 
 bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
-  return network_->ReceivedRTCPPacket(
-             channel_, packet, static_cast<int>(length)) == 0;
+  return network_->ReceivedRTCPPacket(channel_, packet, length) == 0;
 }
 
 VideoSendStream::Stats VideoSendStream::GetStats() const {

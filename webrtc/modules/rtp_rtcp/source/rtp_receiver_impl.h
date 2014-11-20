@@ -46,7 +46,7 @@ class RtpReceiverImpl : public RtpReceiver {
   virtual bool IncomingRtpPacket(
       const RTPHeader& rtp_header,
       const uint8_t* payload,
-      int payload_length,
+      size_t payload_length,
       PayloadUnion payload_specific,
       bool in_order) OVERRIDE;
 
@@ -88,7 +88,7 @@ class RtpReceiverImpl : public RtpReceiver {
 
   scoped_ptr<CriticalSectionWrapper> critical_section_rtp_receiver_;
   int64_t last_receive_time_;
-  uint16_t last_received_payload_length_;
+  size_t last_received_payload_length_;
 
   // SSRCs.
   uint32_t ssrc_;

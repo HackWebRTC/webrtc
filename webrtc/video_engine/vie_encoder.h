@@ -127,7 +127,7 @@ class ViEEncoder
     uint32_t time_stamp,
     int64_t capture_time_ms,
     const uint8_t* payload_data,
-    uint32_t payload_size,
+    size_t payload_size,
     const RTPFragmentationHeader& fragmentation_header,
     const RTPVideoHeader* rtp_video_hdr) OVERRIDE;
 
@@ -189,7 +189,7 @@ class ViEEncoder
   // Called by PacedSender.
   bool TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
                         int64_t capture_time_ms, bool retransmission);
-  int TimeToSendPadding(int bytes);
+  size_t TimeToSendPadding(size_t bytes);
  private:
   bool EncoderPaused() const EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
   void TraceFrameDropStart() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);

@@ -39,7 +39,7 @@ public:
     // mono).
     virtual int32_t PlayoutAudioData(
         int8_t* audioBuffer,
-        uint32_t& dataLengthInBytes) = 0;
+        size_t& dataLengthInBytes) = 0;
 
     // Put one video frame into videoBuffer. dataLengthInBytes is both an input
     // and output parameter. As input parameter it indicates the size of
@@ -47,7 +47,7 @@ public:
     // to videoBuffer.
     virtual int32_t PlayoutAVIVideoData(
         int8_t* videoBuffer,
-        uint32_t& dataLengthInBytes) = 0;
+        size_t& dataLengthInBytes) = 0;
 
     // Put 10-60ms, depending on codec frame size, of audio data from file into
     // audioBufferLeft and audioBufferRight. The buffers contain the left and
@@ -61,7 +61,7 @@ public:
     virtual int32_t PlayoutStereoData(
         int8_t* audioBufferLeft,
         int8_t* audioBufferRight,
-        uint32_t& dataLengthInBytes) = 0;
+        size_t& dataLengthInBytes) = 0;
 
     // Open the file specified by fileName (relative path is allowed) for
     // reading. FileCallback::PlayNotification(..) will be called after
@@ -130,8 +130,8 @@ public:
     // parameter of the last sucessfull StartRecordingAudioFile(..) call.
     // Note: bufferLength must be exactly one frame.
     virtual int32_t IncomingAudioData(
-        const int8_t*  audioBuffer,
-        const uint32_t bufferLength) = 0;
+        const int8_t* audioBuffer,
+        const size_t bufferLength) = 0;
 
     // Write one video frame, i.e. the bufferLength first bytes of videoBuffer,
     // to file.
@@ -140,8 +140,8 @@ public:
     // StartRecordingVideoFile(..) call. The videoBuffer must contain exactly
     // one video frame.
     virtual int32_t IncomingAVIVideoData(
-        const int8_t*  videoBuffer,
-        const uint32_t bufferLength) = 0;
+        const int8_t* videoBuffer,
+        const size_t bufferLength) = 0;
 
     // Open/creates file specified by fileName for writing (relative path is
     // allowed). FileCallback::RecordNotification(..) will be called after

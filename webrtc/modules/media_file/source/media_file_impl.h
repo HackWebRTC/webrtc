@@ -32,12 +32,12 @@ public:
 
     // MediaFile functions
     virtual int32_t PlayoutAudioData(int8_t* audioBuffer,
-                                     uint32_t& dataLengthInBytes) OVERRIDE;
+                                     size_t& dataLengthInBytes) OVERRIDE;
     virtual int32_t PlayoutAVIVideoData(int8_t* videoBuffer,
-                                        uint32_t& dataLengthInBytes) OVERRIDE;
+                                        size_t& dataLengthInBytes) OVERRIDE;
     virtual int32_t PlayoutStereoData(int8_t* audioBufferLeft,
                                       int8_t* audioBufferRight,
-                                      uint32_t& dataLengthInBytes) OVERRIDE;
+                                      size_t& dataLengthInBytes) OVERRIDE;
     virtual int32_t StartPlayingAudioFile(
         const char*  fileName,
         const uint32_t notificationTimeMs = 0,
@@ -58,10 +58,10 @@ public:
     virtual int32_t StopPlaying() OVERRIDE;
     virtual bool IsPlaying() OVERRIDE;
     virtual int32_t PlayoutPositionMs(uint32_t& positionMs) const OVERRIDE;
-    virtual int32_t IncomingAudioData(const int8_t*  audioBuffer,
-                                      const uint32_t bufferLength) OVERRIDE;
-    virtual int32_t IncomingAVIVideoData(const int8_t*  audioBuffer,
-                                         const uint32_t bufferLength) OVERRIDE;
+    virtual int32_t IncomingAudioData(const int8_t* audioBuffer,
+                                      const size_t bufferLength) OVERRIDE;
+    virtual int32_t IncomingAVIVideoData(const int8_t* audioBuffer,
+                                         const size_t bufferLength) OVERRIDE;
     virtual int32_t StartRecordingAudioFile(
         const char*  fileName,
         const FileFormats    format,
@@ -157,14 +157,14 @@ private:
     // audioBuffer. As output parameter it indicates the number of bytes
     // written to audioBuffer. If video is true the data written is a video
     // frame otherwise it is an audio frame.
-    int32_t PlayoutData(int8_t* dataBuffer, uint32_t& dataLengthInBytes,
+    int32_t PlayoutData(int8_t* dataBuffer, size_t& dataLengthInBytes,
                         bool video);
 
     // Write one frame, i.e. the bufferLength first bytes of audioBuffer,
     // to file. The frame is an audio frame if video is true otherwise it is an
     // audio frame.
-    int32_t IncomingAudioVideoData(const int8_t*  buffer,
-                                   const uint32_t bufferLength,
+    int32_t IncomingAudioVideoData(const int8_t* buffer,
+                                   const size_t bufferLength,
                                    const bool video);
 
     // Open/creates file specified by fileName for writing (relative path is

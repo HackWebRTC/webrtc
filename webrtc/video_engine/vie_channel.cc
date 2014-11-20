@@ -1128,9 +1128,9 @@ void ViEChannel::RegisterReceiveChannelRtcpStatisticsCallback(
       callback);
 }
 
-int32_t ViEChannel::GetRtpStatistics(uint32_t* bytes_sent,
+int32_t ViEChannel::GetRtpStatistics(size_t* bytes_sent,
                                      uint32_t* packets_sent,
-                                     uint32_t* bytes_received,
+                                     size_t* bytes_received,
                                      uint32_t* packets_received) const {
   StreamStatistician* statistician = vie_receiver_.GetReceiveStatistics()->
       GetStatistician(vie_receiver_.GetRemoteSsrc());
@@ -1145,7 +1145,7 @@ int32_t ViEChannel::GetRtpStatistics(uint32_t* bytes_sent,
   for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end();
        it++) {
-    uint32_t bytes_sent_temp = 0;
+    size_t bytes_sent_temp = 0;
     uint32_t packets_sent_temp = 0;
     RtpRtcp* rtp_rtcp = *it;
     rtp_rtcp->DataCountersRTP(&bytes_sent_temp, &packets_sent_temp);
@@ -1154,7 +1154,7 @@ int32_t ViEChannel::GetRtpStatistics(uint32_t* bytes_sent,
   }
   for (std::list<RtpRtcp*>::const_iterator it = removed_rtp_rtcp_.begin();
        it != removed_rtp_rtcp_.end(); ++it) {
-    uint32_t bytes_sent_temp = 0;
+    size_t bytes_sent_temp = 0;
     uint32_t packets_sent_temp = 0;
     RtpRtcp* rtp_rtcp = *it;
     rtp_rtcp->DataCountersRTP(&bytes_sent_temp, &packets_sent_temp);
@@ -1395,7 +1395,7 @@ int32_t ViEChannel::DeregisterSendTransport() {
 }
 
 int32_t ViEChannel::ReceivedRTPPacket(
-    const void* rtp_packet, const int32_t rtp_packet_length,
+    const void* rtp_packet, const size_t rtp_packet_length,
     const PacketTime& packet_time) {
   {
     CriticalSectionScoped cs(callback_cs_.get());
@@ -1408,7 +1408,7 @@ int32_t ViEChannel::ReceivedRTPPacket(
 }
 
 int32_t ViEChannel::ReceivedRTCPPacket(
-  const void* rtcp_packet, const int32_t rtcp_packet_length) {
+  const void* rtcp_packet, const size_t rtcp_packet_length) {
   {
     CriticalSectionScoped cs(callback_cs_.get());
     if (!external_transport_) {
@@ -1475,9 +1475,8 @@ int32_t ViEChannel::FrameToRender(
     if (pre_render_callback_ != NULL)
       pre_render_callback_->FrameCallback(&video_frame);
     if (effect_filter_) {
-      unsigned int length = CalcBufferSize(kI420,
-                                           video_frame.width(),
-                                           video_frame.height());
+      size_t length =
+          CalcBufferSize(kI420, video_frame.width(), video_frame.height());
       scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
       ExtractBuffer(video_frame, length, video_buffer.get());
       effect_filter_->Transform(length,
@@ -1763,7 +1762,8 @@ void ViEChannel::RegisterSendFrameCountObserver(
 }
 
 void ViEChannel::ReceivedBWEPacket(int64_t arrival_time_ms,
-    int payload_size, const RTPHeader& header) {
+                                   size_t payload_size,
+                                   const RTPHeader& header) {
   vie_receiver_.ReceivedBWEPacket(arrival_time_ms, payload_size, header);
 }
 }  // namespace webrtc

@@ -233,11 +233,11 @@ int32_t RTPSenderAudio::SendAudio(
     const int8_t payloadType,
     const uint32_t captureTimeStamp,
     const uint8_t* payloadData,
-    const uint32_t dataSize,
+    const size_t dataSize,
     const RTPFragmentationHeader* fragmentation) {
   // TODO(pwestin) Breakup function in smaller functions.
-  uint16_t payloadSize = static_cast<uint16_t>(dataSize);
-  uint16_t maxPayloadLength = _rtpSender->MaxPayloadLength();
+  size_t payloadSize = dataSize;
+  size_t maxPayloadLength = _rtpSender->MaxPayloadLength();
   bool dtmfToneStarted = false;
   uint16_t dtmfLengthMS = 0;
   uint8_t key = 0;
@@ -383,7 +383,7 @@ int32_t RTPSenderAudio::SendAudio(
         // only 0x80 if we have multiple blocks
         dataBuffer[rtpHeaderLength++] = 0x80 +
             fragmentation->fragmentationPlType[1];
-        uint32_t blockLength = fragmentation->fragmentationLength[1];
+        size_t blockLength = fragmentation->fragmentationLength[1];
 
         // sanity blockLength
         if(blockLength > 0x3ff) {  // block length 10 bits 1023 bytes
@@ -406,9 +406,8 @@ int32_t RTPSenderAudio::SendAudio(
                payloadData + fragmentation->fragmentationOffset[0],
                fragmentation->fragmentationLength[0]);
 
-        payloadSize = static_cast<uint16_t>(
-            fragmentation->fragmentationLength[0] +
-            fragmentation->fragmentationLength[1]);
+        payloadSize = fragmentation->fragmentationLength[0] +
+            fragmentation->fragmentationLength[1];
       } else {
         // silence for too long send only new data
         dataBuffer[rtpHeaderLength++] = fragmentation->fragmentationPlType[0];
@@ -416,8 +415,7 @@ int32_t RTPSenderAudio::SendAudio(
                payloadData + fragmentation->fragmentationOffset[0],
                fragmentation->fragmentationLength[0]);
 
-        payloadSize = static_cast<uint16_t>(
-            fragmentation->fragmentationLength[0]);
+        payloadSize = fragmentation->fragmentationLength[0];
       }
     } else {
       if (fragmentation && fragmentation->fragmentationVectorSize > 0) {
@@ -427,8 +425,7 @@ int32_t RTPSenderAudio::SendAudio(
                 payloadData + fragmentation->fragmentationOffset[0],
                 fragmentation->fragmentationLength[0]);
 
-        payloadSize = static_cast<uint16_t>(
-            fragmentation->fragmentationLength[0]);
+        payloadSize = fragmentation->fragmentationLength[0];
       } else {
         memcpy(dataBuffer+rtpHeaderLength, payloadData, payloadSize);
       }
@@ -437,7 +434,7 @@ int32_t RTPSenderAudio::SendAudio(
 
     // Update audio level extension, if included.
     {
-      uint16_t packetSize = payloadSize + rtpHeaderLength;
+      size_t packetSize = payloadSize + rtpHeaderLength;
       RtpUtility::RtpHeaderParser rtp_parser(dataBuffer, packetSize);
       RTPHeader rtp_header;
       rtp_parser.Parse(rtp_header);
@@ -451,7 +448,7 @@ int32_t RTPSenderAudio::SendAudio(
                          "seqnum", _rtpSender->SequenceNumber());
   return _rtpSender->SendToNetwork(dataBuffer,
                                    payloadSize,
-                                   static_cast<uint16_t>(rtpHeaderLength),
+                                   rtpHeaderLength,
                                    -1,
                                    kAllowRetransmission,
                                    PacedSender::kHighPriority);

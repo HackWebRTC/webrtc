@@ -53,7 +53,7 @@ int32_t TbI420Encoder::SetChannelParameters(uint32_t packetLoss, int rtt) {
 
 int32_t TbI420Encoder::InitEncode(const webrtc::VideoCodec* inst,
                                   int32_t /*numberOfCores*/,
-                                  uint32_t /*maxPayloadSize */)
+                                  size_t /*maxPayloadSize */)
 {
     _functionCalls.InitEncode++;
     if (inst == NULL)
@@ -105,9 +105,9 @@ int32_t TbI420Encoder::Encode(
     _encodedImage._timeStamp = inputImage.timestamp();
     _encodedImage._encodedHeight = inputImage.height();
     _encodedImage._encodedWidth = inputImage.width();
-    unsigned int reqSize = webrtc::CalcBufferSize(webrtc::kI420,
-                                                  _encodedImage._encodedWidth,
-                                                  _encodedImage._encodedHeight);
+    size_t reqSize = webrtc::CalcBufferSize(webrtc::kI420,
+                                            _encodedImage._encodedWidth,
+                                            _encodedImage._encodedHeight);
     if (reqSize > _encodedImage._size)
     {
 
@@ -232,8 +232,8 @@ int32_t TbI420Decoder::Decode(
     }
 
     // Only send complete frames.
-    if (static_cast<int>(inputImage._length) !=
-        webrtc::CalcBufferSize(webrtc::kI420,_width,_height)) {
+    if (webrtc::CalcBufferSize(webrtc::kI420,_width,_height) !=
+        inputImage._length) {
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
 

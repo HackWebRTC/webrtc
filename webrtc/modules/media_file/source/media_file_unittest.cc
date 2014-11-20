@@ -49,9 +49,11 @@ TEST_F(MediaFileTest, DISABLED_ON_ANDROID(StartPlayingAudioFileWithoutError)) {
 
 TEST_F(MediaFileTest, WriteWavFile) {
   // Write file.
-  static const int kHeaderSize = 44;
-  static const int kPayloadSize = 320;
-  webrtc::CodecInst codec = {0, "L16", 16000, kPayloadSize, 1};
+  static const size_t kHeaderSize = 44;
+  static const size_t kPayloadSize = 320;
+  webrtc::CodecInst codec = {
+    0, "L16", 16000, static_cast<int>(kPayloadSize), 1
+  };
   std::string outfile = webrtc::test::OutputPath() + "wavtest.wav";
   ASSERT_EQ(0,
             media_file_->StartRecordingAudioFile(
@@ -78,8 +80,7 @@ TEST_F(MediaFileTest, WriteWavFile) {
   };
   COMPILE_ASSERT(sizeof(kExpectedHeader) == kHeaderSize, header_size);
 
-  EXPECT_EQ(size_t(kHeaderSize + kPayloadSize),
-            webrtc::test::GetFileSize(outfile));
+  EXPECT_EQ(kHeaderSize + kPayloadSize, webrtc::test::GetFileSize(outfile));
   FILE* f = fopen(outfile.c_str(), "rb");
   ASSERT_TRUE(f);
 

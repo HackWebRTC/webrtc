@@ -29,15 +29,15 @@ public:
 
     virtual int ReceivedRTPPacket(int channel,
                                   const void* data,
-                                  unsigned int length) OVERRIDE;
+                                  size_t length) OVERRIDE;
     virtual int ReceivedRTPPacket(int channel,
                                   const void* data,
-                                  unsigned int length,
+                                  size_t length,
                                   const PacketTime& packet_time) OVERRIDE;
 
     virtual int ReceivedRTCPPacket(int channel,
                                    const void* data,
-                                   unsigned int length) OVERRIDE;
+                                   size_t length) OVERRIDE;
 
 protected:
     VoENetworkImpl(voe::SharedData* shared);

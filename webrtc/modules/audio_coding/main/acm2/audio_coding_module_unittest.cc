@@ -42,7 +42,7 @@ const int kSampleRateHz = 16000;
 const int kNumSamples10ms = kSampleRateHz / 100;
 const int kFrameSizeMs = 10;  // Multiple of 10.
 const int kFrameSizeSamples = kFrameSizeMs / 10 * kNumSamples10ms;
-const int kPayloadSizeBytes = kFrameSizeSamples * sizeof(int16_t);
+const size_t kPayloadSizeBytes = kFrameSizeSamples * sizeof(int16_t);
 const uint8_t kPayloadType = 111;
 
 class RtpUtility {
@@ -87,7 +87,7 @@ class PacketizationCallbackStub : public AudioPacketizationCallback {
       uint8_t payload_type,
       uint32_t timestamp,
       const uint8_t* payload_data,
-      uint16_t payload_len_bytes,
+      size_t payload_len_bytes,
       const RTPFragmentationHeader* fragmentation) OVERRIDE {
     CriticalSectionScoped lock(crit_sect_.get());
     ++num_calls_;

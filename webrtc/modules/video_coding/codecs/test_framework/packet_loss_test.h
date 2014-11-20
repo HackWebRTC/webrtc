@@ -34,12 +34,15 @@ protected:
     virtual void Teardown();
     virtual void CodecSpecific_InitBitrate();
     virtual int DoPacketLoss();
-    virtual int NextPacket(int size, unsigned char **pkg);
-    virtual int ByteLoss(int size, unsigned char *pkg, int bytesToLose);
-    virtual void InsertPacket(webrtc::VideoFrame *buf, unsigned char *pkg,
-                              int size);
-    int _inBufIdx;
-    int _outBufIdx;
+    virtual size_t NextPacket(size_t mtu, unsigned char **pkg);
+    virtual size_t ByteLoss(size_t size,
+                            unsigned char *pkg,
+                            size_t bytesToLose);
+    virtual void InsertPacket(webrtc::VideoFrame *buf,
+                              unsigned char *pkg,
+                              size_t size);
+    size_t _inBufIdx;
+    size_t _outBufIdx;
 
     // When NACK is being simulated _lossProbabilty is zero,
     // otherwise it is set equal to _lossRate.
@@ -50,10 +53,10 @@ protected:
 
     int _totalKept;
     int _totalThrown;
-    int _sumChannelBytes;
+    size_t _sumChannelBytes;
     std::list<uint32_t> _frameQueue;
     uint8_t* _lastFrame;
-    uint32_t _lastFrameLength;
+    size_t _lastFrameLength;
 };
 
 

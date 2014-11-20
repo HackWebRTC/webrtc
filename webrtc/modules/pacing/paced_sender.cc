@@ -42,7 +42,7 @@ struct Packet {
          uint16_t seq_number,
          int64_t capture_time_ms,
          int64_t enqueue_time_ms,
-         int length_in_bytes,
+         size_t length_in_bytes,
          bool retransmission,
          uint64_t enqueue_order)
       : priority(priority),
@@ -59,7 +59,7 @@ struct Packet {
   uint16_t sequence_number;
   int64_t capture_time_ms;
   int64_t enqueue_time_ms;
-  int bytes;
+  size_t bytes;
   bool retransmission;
   uint64_t enqueue_order;
   std::list<Packet>::iterator this_it;
@@ -189,8 +189,8 @@ class IntervalBudget {
     }
   }
 
-  void UseBudget(int bytes) {
-    bytes_remaining_ = std::max(bytes_remaining_ - bytes,
+  void UseBudget(size_t bytes) {
+    bytes_remaining_ = std::max(bytes_remaining_ - static_cast<int>(bytes),
                                 -500 * target_rate_kbps_ / 8);
   }
 
@@ -258,7 +258,7 @@ void PacedSender::UpdateBitrate(int bitrate_kbps,
 }
 
 bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
-    uint16_t sequence_number, int64_t capture_time_ms, int bytes,
+    uint16_t sequence_number, int64_t capture_time_ms, size_t bytes,
     bool retransmission) {
   CriticalSectionScoped cs(critsect_.get());
 
@@ -353,7 +353,7 @@ int32_t PacedSender::Process() {
 
     int padding_needed = padding_budget_->bytes_remaining();
     if (padding_needed > 0) {
-      SendPadding(padding_needed);
+      SendPadding(static_cast<size_t>(padding_needed));
     }
   }
   return 0;
@@ -377,9 +377,9 @@ bool PacedSender::SendPacket(const paced_sender::Packet& packet) {
   return success;
 }
 
-void PacedSender::SendPadding(int padding_needed) {
+void PacedSender::SendPadding(size_t padding_needed) {
   critsect_->Leave();
-  int bytes_sent = callback_->TimeToSendPadding(padding_needed);
+  size_t bytes_sent = callback_->TimeToSendPadding(padding_needed);
   critsect_->Enter();
 
   // Update padding bytes sent.

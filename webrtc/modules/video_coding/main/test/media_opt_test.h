@@ -80,7 +80,7 @@ private:
     double                           _lossRate;
     uint32_t                   _renderDelayMs;
     int32_t                    _frameCnt;
-    float                            _sumEncBytes;
+    size_t                            _sumEncBytes;
     int32_t                    _numFramesDropped;
     std::string                      _codecName;
     webrtc::VideoCodecType           _sendCodecType;

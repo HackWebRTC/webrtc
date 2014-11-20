@@ -89,7 +89,7 @@ class TestLibYuv : public ::testing::Test {
   const int height_;
   const int size_y_;
   const int size_uv_;
-  const int frame_length_;
+  const size_t frame_length_;
 };
 
 TestLibYuv::TestLibYuv()
@@ -110,8 +110,8 @@ void TestLibYuv::SetUp() {
   ASSERT_TRUE(source_file_ != NULL) << "Cannot read file: "<<
                                        input_file_name << "\n";
 
-  EXPECT_EQ(fread(orig_buffer_.get(), 1, frame_length_, source_file_),
-            static_cast<unsigned int>(frame_length_));
+  EXPECT_EQ(frame_length_,
+            fread(orig_buffer_.get(), 1, frame_length_, source_file_));
   EXPECT_EQ(0, orig_frame_.CreateFrame(size_y_, orig_buffer_.get(),
                                        size_uv_, orig_buffer_.get() + size_y_,
                                        size_uv_, orig_buffer_.get() +
@@ -206,8 +206,8 @@ TEST_F(TestLibYuv, ConvertTest) {
                          width_, height_,
                          width_, (width_ + 1) / 2, (width_ + 1) / 2);
   EXPECT_EQ(0, ConvertFromYV12(yv12_frame, kI420, 0, res_i420_buffer.get()));
-  if (fwrite(res_i420_buffer.get(), 1, frame_length_,
-             output_file) != static_cast<unsigned int>(frame_length_)) {
+  if (fwrite(res_i420_buffer.get(), 1, frame_length_, output_file) !=
+      frame_length_) {
     return;
   }
 

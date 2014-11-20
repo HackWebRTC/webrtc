@@ -63,7 +63,7 @@ public:
     //  --------------------------------------------------------------------
     //  class methods
 
-    void ProcessCapturedFrame(unsigned char* pBuffer, int32_t length,
+    void ProcessCapturedFrame(unsigned char* pBuffer, size_t length,
                               const VideoCaptureCapability& frameInfo);
     //  explicit receiver lock aquisition and release
     void LockReceive()  { m_crtRecv.Lock();}

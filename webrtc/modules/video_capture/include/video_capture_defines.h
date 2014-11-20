@@ -92,7 +92,7 @@ class VideoCaptureExternal
 public:
     // |capture_time| must be specified in the NTP time format in milliseconds.
     virtual int32_t IncomingFrame(uint8_t* videoFrame,
-                                  int32_t videoFrameLength,
+                                  size_t videoFrameLength,
                                   const VideoCaptureCapability& frameInfo,
                                   int64_t captureTime = 0) = 0;
     virtual int32_t IncomingI420VideoFrame(I420VideoFrame* video_frame,

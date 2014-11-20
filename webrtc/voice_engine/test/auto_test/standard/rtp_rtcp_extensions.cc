@@ -29,11 +29,9 @@ class ExtensionVerifyTransport : public webrtc::Transport {
         audio_level_id_(-1),
         absolute_sender_time_id_(-1) {}
 
-  virtual int SendPacket(int channel, const void* data, int len) OVERRIDE {
+  virtual int SendPacket(int channel, const void* data, size_t len) OVERRIDE {
     webrtc::RTPHeader header;
-    if (parser_->Parse(reinterpret_cast<const uint8_t*>(data),
-                       static_cast<size_t>(len),
-                       &header)) {
+    if (parser_->Parse(reinterpret_cast<const uint8_t*>(data), len, &header)) {
       bool ok = true;
       if (audio_level_id_ >= 0 &&
           !header.extension.hasAudioLevel) {
@@ -51,11 +49,13 @@ class ExtensionVerifyTransport : public webrtc::Transport {
     }
     // received_packets_ count all packets we receive.
     ++received_packets_;
-    return len;
+    return static_cast<int>(len);
   }
 
-  virtual int SendRTCPPacket(int channel, const void* data, int len) OVERRIDE {
-    return len;
+  virtual int SendRTCPPacket(int channel,
+                             const void* data,
+                             size_t len) OVERRIDE {
+    return static_cast<int>(len);
   }
 
   void SetAudioLevelId(int id) {
@@ -166,11 +166,11 @@ class MockViENetwork : public webrtc::ViENetwork {
   MOCK_METHOD2(SetNetworkTransmissionState, void(const int, const bool));
   MOCK_METHOD2(RegisterSendTransport, int(const int, webrtc::Transport&));
   MOCK_METHOD1(DeregisterSendTransport, int(const int));
-  MOCK_METHOD4(ReceivedRTPPacket, int(const int, const void*, const int,
+  MOCK_METHOD4(ReceivedRTPPacket, int(const int, const void*, const size_t,
                                       const webrtc::PacketTime&));
-  MOCK_METHOD3(ReceivedRTCPPacket, int(const int, const void*, const int));
+  MOCK_METHOD3(ReceivedRTCPPacket, int(const int, const void*, const size_t));
   MOCK_METHOD2(SetMTU, int(int, unsigned int));
-  MOCK_METHOD4(ReceivedBWEPacket, int(const int, int64_t, int,
+  MOCK_METHOD4(ReceivedBWEPacket, int(const int, int64_t, size_t,
                                       const webrtc::RTPHeader&));
 };
 

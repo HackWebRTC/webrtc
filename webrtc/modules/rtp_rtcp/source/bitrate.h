@@ -35,7 +35,7 @@ class Bitrate {
   void Process();
 
   // Update with a packet.
-  void Update(const int32_t bytes);
+  void Update(const size_t bytes);
 
   // Packet rate last second, updated roughly every 100 ms.
   uint32_t PacketRate() const;
@@ -68,7 +68,7 @@ class Bitrate {
   int64_t bitrate_array_[10];
   int64_t bitrate_diff_ms_[10];
   int64_t time_last_rate_update_;
-  uint32_t bytes_count_;
+  size_t bytes_count_;
   uint32_t packet_count_;
   Observer* const observer_;
 };

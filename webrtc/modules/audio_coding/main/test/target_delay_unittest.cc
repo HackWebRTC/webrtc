@@ -46,7 +46,7 @@ class TargetDelayTest : public ::testing::Test {
 
     int16_t audio[kFrameSizeSamples];
     const int kRange = 0x7FF;  // 2047, easy for masking.
-    for (int n = 0; n < kFrameSizeSamples; ++n)
+    for (size_t n = 0; n < kFrameSizeSamples; ++n)
       audio[n] = (rand() & kRange) - kRange / 2;
     WebRtcPcm16b_Encode(audio, kFrameSizeSamples, payload_);
   }
@@ -133,7 +133,7 @@ class TargetDelayTest : public ::testing::Test {
  private:
   static const int kSampleRateHz = 16000;
   static const int kNum10msPerFrame = 2;
-  static const int kFrameSizeSamples = 320;  // 20 ms @ 16 kHz.
+  static const size_t kFrameSizeSamples = 320;  // 20 ms @ 16 kHz.
   // payload-len = frame-samples * 2 bytes/sample.
   static const int kPayloadLenBytes = 320 * 2;
   // Inter-arrival time in number of packets in a jittery channel. One is no

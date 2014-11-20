@@ -268,11 +268,11 @@ VCMFrameBuffer::PrepareForDecode(bool continuous) {
             _sessionInfo.BuildVP8FragmentationHeader(_buffer, _length,
                                                      &_fragmentation);
     } else {
-        int bytes_removed = _sessionInfo.MakeDecodable();
+        size_t bytes_removed = _sessionInfo.MakeDecodable();
         _length -= bytes_removed;
     }
 #else
-    int bytes_removed = _sessionInfo.MakeDecodable();
+    size_t bytes_removed = _sessionInfo.MakeDecodable();
     _length -= bytes_removed;
 #endif
     // Transfer frame information to EncodedFrame and create any codec

@@ -35,14 +35,16 @@ class LoopBackTransport : public webrtc::Transport {
 
   ~LoopBackTransport() { thread_->Stop(); }
 
-  virtual int SendPacket(int channel, const void* data, int len) OVERRIDE {
+  virtual int SendPacket(int channel, const void* data, size_t len) OVERRIDE {
     StorePacket(Packet::Rtp, channel, data, len);
-    return len;
+    return static_cast<int>(len);
   }
 
-  virtual int SendRTCPPacket(int channel, const void* data, int len) OVERRIDE {
+  virtual int SendRTCPPacket(int channel,
+                             const void* data,
+                             size_t len) OVERRIDE {
     StorePacket(Packet::Rtcp, channel, data, len);
-    return len;
+    return static_cast<int>(len);
   }
 
  private:
@@ -50,18 +52,20 @@ class LoopBackTransport : public webrtc::Transport {
     enum Type { Rtp, Rtcp, } type;
 
     Packet() : len(0) {}
-    Packet(Type type, int channel, const void* data, int len)
+    Packet(Type type, int channel, const void* data, size_t len)
         : type(type), channel(channel), len(len) {
       assert(len <= 1500);
-      memcpy(this->data, data, static_cast<size_t>(len));
+      memcpy(this->data, data, len);
     }
 
     int channel;
     uint8_t data[1500];
-    int len;
+    size_t len;
   };
 
-  void StorePacket(Packet::Type type, int channel, const void* data, int len) {
+  void StorePacket(Packet::Type type, int channel,
+                   const void* data,
+                   size_t len) {
     webrtc::CriticalSectionScoped lock(crit_.get());
     packet_queue_.push_back(Packet(type, channel, data, len));
     packet_event_->Set();

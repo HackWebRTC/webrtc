@@ -21,12 +21,12 @@ namespace test {
 
 class ConfigurableFrameSizeEncoder : public VideoEncoder {
  public:
-  explicit ConfigurableFrameSizeEncoder(uint32_t max_frame_size);
+  explicit ConfigurableFrameSizeEncoder(size_t max_frame_size);
   virtual ~ConfigurableFrameSizeEncoder();
 
   virtual int32_t InitEncode(const VideoCodec* codec_settings,
                              int32_t number_of_cores,
-                             uint32_t max_payload_size) OVERRIDE;
+                             size_t max_payload_size) OVERRIDE;
 
   virtual int32_t Encode(const I420VideoFrame& input_image,
                          const CodecSpecificInfo* codec_specific_info,
@@ -46,12 +46,12 @@ class ConfigurableFrameSizeEncoder : public VideoEncoder {
 
   virtual int32_t CodecConfigParameters(uint8_t* buffer, int32_t size) OVERRIDE;
 
-  int32_t SetFrameSize(uint32_t size);
+  int32_t SetFrameSize(size_t size);
 
  private:
   EncodedImageCallback* callback_;
-  const uint32_t max_frame_size_;
-  uint32_t current_frame_size_;
+  const size_t max_frame_size_;
+  size_t current_frame_size_;
   scoped_ptr<uint8_t[]> buffer_;
 };
 

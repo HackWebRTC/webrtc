@@ -81,7 +81,7 @@ class NetEqImpl : public webrtc::NetEq {
   // Returns 0 on success, -1 on failure.
   virtual int InsertPacket(const WebRtcRTPHeader& rtp_header,
                            const uint8_t* payload,
-                           int length_bytes,
+                           size_t length_bytes,
                            uint32_t receive_timestamp) OVERRIDE;
 
   // Inserts a sync-packet into packet queue. Sync-packets are decoded to
@@ -210,7 +210,7 @@ class NetEqImpl : public webrtc::NetEq {
   // TODO(hlundin): Merge this with InsertPacket above?
   int InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
                            const uint8_t* payload,
-                           int length_bytes,
+                           size_t length_bytes,
                            uint32_t receive_timestamp,
                            bool is_sync_packet)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);

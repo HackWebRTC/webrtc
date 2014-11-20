@@ -48,11 +48,11 @@ protected:
     virtual int DecodeWithoutAssert();
     virtual int SetCodecSpecificParameters() {return 0;};
 
-    virtual bool CheckIfBitExact(const void *ptrA, unsigned int aLengthBytes,
-                                 const void *ptrB, unsigned int bLengthBytes);
+    virtual bool CheckIfBitExact(const void *ptrA, size_t aLengthBytes,
+                                 const void *ptrB, size_t bLengthBytes);
 
-    uint32_t WaitForEncodedFrame() const;
-    uint32_t WaitForDecodedFrame() const;
+    size_t WaitForEncodedFrame() const;
+    size_t WaitForDecodedFrame() const;
 
     int _tests;
     int _errors;
@@ -61,7 +61,7 @@ protected:
     unsigned char* _refFrame;
     unsigned char* _refEncFrame;
     unsigned char* _refDecFrame;
-    unsigned int _refEncFrameLength;
+    size_t _refEncFrameLength;
     FILE* _sourceFile;
     bool is_key_frame_;
 

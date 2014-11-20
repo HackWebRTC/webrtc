@@ -45,7 +45,7 @@ public:
 
     virtual int32_t SetTOS(const int32_t serviceType) OVERRIDE;
 
-    virtual int32_t SendTo(const int8_t* buf, int32_t len,
+    virtual int32_t SendTo(const int8_t* buf, size_t len,
                            const SocketAddress& to) OVERRIDE;
 
     // Deletes socket in addition to closing it.

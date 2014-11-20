@@ -98,7 +98,7 @@ class WebRtcVideoCapturer : public VideoCapturer,
 struct WebRtcCapturedFrame : public CapturedFrame {
  public:
   WebRtcCapturedFrame(const webrtc::I420VideoFrame& frame,
-                      void* buffer, int length);
+                      void* buffer, size_t length);
 };
 
 }  // namespace cricket

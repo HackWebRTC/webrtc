@@ -48,7 +48,7 @@ int32_t TestPackStereo::SendData(const FrameType frame_type,
                                  const uint8_t payload_type,
                                  const uint32_t timestamp,
                                  const uint8_t* payload_data,
-                                 const uint16_t payload_size,
+                                 const size_t payload_size,
                                  const RTPFragmentationHeader* fragmentation) {
   WebRtcRTPHeader rtp_info;
   int32_t status = 0;
@@ -114,18 +114,26 @@ TestStereo::TestStereo(int test_mode)
       test_cntr_(0),
       pack_size_samp_(0),
       pack_size_bytes_(0),
-      counter_(0),
-      g722_pltype_(0),
-      l16_8khz_pltype_(-1),
-      l16_16khz_pltype_(-1),
-      l16_32khz_pltype_(-1),
-      pcma_pltype_(-1),
-      pcmu_pltype_(-1),
-      celt_pltype_(-1),
-      opus_pltype_(-1),
-      cn_8khz_pltype_(-1),
-      cn_16khz_pltype_(-1),
-      cn_32khz_pltype_(-1) {
+      counter_(0)
+#ifdef WEBRTC_CODEC_G722
+      , g722_pltype_(0)
+#endif
+#ifdef WEBRTC_CODEC_PCM16
+      , l16_8khz_pltype_(-1)
+      , l16_16khz_pltype_(-1)
+      , l16_32khz_pltype_(-1)
+#endif
+#ifdef PCMA_AND_PCMU
+      , pcma_pltype_(-1)
+      , pcmu_pltype_(-1)
+#endif
+#ifdef WEBRTC_CODEC_CELT
+      , celt_pltype_(-1)
+#endif
+#ifdef WEBRTC_CODEC_OPUS
+      , opus_pltype_(-1)
+#endif
+      {
   // test_mode = 0 for silent test (auto test)
   test_mode_ = test_mode;
 }
@@ -302,7 +310,6 @@ void TestStereo::Perform() {
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
 #endif
-#define PCMA_AND_PCMU
 #ifdef PCMA_AND_PCMU
   if (test_mode_ != 0) {
     printf("===========================================================\n");

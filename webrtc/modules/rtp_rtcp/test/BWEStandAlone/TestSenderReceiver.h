@@ -90,18 +90,18 @@ public:
     // Inherited from RtpData
     virtual int32_t OnReceivedPayloadData(
         const uint8_t* payloadData,
-        const uint16_t payloadSize,
+        const size_t payloadSize,
         const webrtc::WebRtcRTPHeader* rtpHeader) OVERRIDE;
 
 
     // Inherited from UdpTransportData
     virtual void IncomingRTPPacket(const int8_t* incomingRtpPacket,
-                                   const int32_t rtpPacketLength,
+                                   const size_t rtpPacketLength,
                                    const int8_t* fromIP,
                                    const uint16_t fromPort) OVERRIDE;
 
     virtual void IncomingRTCPPacket(const int8_t* incomingRtcpPacket,
-                                    const int32_t rtcpPacketLength,
+                                    const size_t rtcpPacketLength,
                                     const int8_t* fromIP,
                                     const uint16_t fromPort) OVERRIDE;
 
@@ -118,7 +118,7 @@ public:
 
     int32_t SendOutgoingData(const uint32_t timeStamp,
         const uint8_t* payloadData,
-        const uint32_t payloadSize,
+        const size_t payloadSize,
         const webrtc::FrameType frameType = webrtc::kVideoFrameDelta);
 
     int32_t SetLoadGenerator(TestLoadGenerator *generator);
@@ -150,7 +150,7 @@ private:
     bool _isSender;
     bool _isReceiver;
     SendRecCB * _sendRecCB;
-    uint32_t _lastBytesReceived;
+    size_t _lastBytesReceived;
     int64_t _lastTime;
 
 };

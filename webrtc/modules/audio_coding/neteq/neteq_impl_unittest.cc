@@ -253,7 +253,7 @@ TEST_F(NetEqImplTest, RemovePayloadType) {
 
 TEST_F(NetEqImplTest, InsertPacket) {
   CreateInstance();
-  const int kPayloadLength = 100;
+  const size_t kPayloadLength = 100;
   const uint8_t kPayloadType = 0;
   const uint16_t kFirstSequenceNumber = 0x1234;
   const uint32_t kFirstTimestamp = 0x12345678;

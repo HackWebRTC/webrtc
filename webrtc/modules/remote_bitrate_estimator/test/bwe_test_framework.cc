@@ -127,7 +127,7 @@ Packet::Packet()
   memset(&header_, 0, sizeof(header_));
 }
 
-Packet::Packet(int flow_id, int64_t send_time_us, uint32_t payload_size,
+Packet::Packet(int flow_id, int64_t send_time_us, size_t payload_size,
                const RTPHeader& header)
     : flow_id_(flow_id),
       creation_time_us_(send_time_us),
@@ -785,7 +785,7 @@ bool PacedVideoSender::TimeToSendPacket(uint32_t ssrc,
   return false;
 }
 
-int PacedVideoSender::TimeToSendPadding(int bytes) {
+size_t PacedVideoSender::TimeToSendPadding(size_t bytes) {
   return 0;
 }
 }  // namespace bwe

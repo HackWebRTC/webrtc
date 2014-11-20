@@ -27,11 +27,13 @@ class RtcpCollectorTransport : public webrtc::Transport {
 
   virtual int SendPacket(int /*channel*/,
                          const void* /*data*/,
-                         int /*len*/) OVERRIDE {
+                         size_t /*len*/) OVERRIDE {
     EXPECT_TRUE(false);
     return 0;
   }
-  virtual int SendRTCPPacket(int channel, const void* data, int len) OVERRIDE {
+  virtual int SendRTCPPacket(int channel,
+                             const void* data,
+                             size_t len) OVERRIDE {
     const uint8_t* buf = static_cast<const uint8_t*>(data);
     webrtc::RtpUtility::RtpHeaderParser parser(buf, len);
     if (parser.RTCP()) {
@@ -39,7 +41,7 @@ class RtcpCollectorTransport : public webrtc::Transport {
       p.channel = channel;
       p.length = len;
       if (parser.ParseRtcp(&p.header)) {
-        if (p.header.payloadType == 201) {
+        if (p.header.payloadType == 201 && len >= 20) {
           buf += 20;
           len -= 20;
         } else {
@@ -68,20 +70,20 @@ class RtcpCollectorTransport : public webrtc::Transport {
   struct Packet {
     Packet() : channel(-1), length(0), header(), remb_bitrate(0), remb_ssrc() {}
     int channel;
-    int length;
+    size_t length;
     webrtc::RTPHeader header;
     double remb_bitrate;
     std::vector<uint32_t> remb_ssrc;
   };
 
-  bool TryParseREMB(const uint8_t* buf, int length, Packet* p) {
+  bool TryParseREMB(const uint8_t* buf, size_t length, Packet* p) {
     if (length < 8) {
       return false;
     }
     if (buf[0] != 'R' || buf[1] != 'E' || buf[2] != 'M' || buf[3] != 'B') {
       return false;
     }
-    uint8_t ssrcs = buf[4];
+    size_t ssrcs = buf[4];
     uint8_t exp = buf[5] >> 2;
     uint32_t mantissa = ((buf[5] & 0x03) << 16) + (buf[6] << 8) + buf[7];
     double bitrate = mantissa * static_cast<double>(1 << exp);
@@ -91,7 +93,7 @@ class RtcpCollectorTransport : public webrtc::Transport {
       return false;
     }
     buf += 8;
-    for (uint8_t i = 0; i < ssrcs; ++i) {
+    for (size_t i = 0; i < ssrcs; ++i) {
       uint32_t ssrc = (buf[0] << 24) + (buf[1] << 16) + (buf[2] << 8) + buf[3];
       p->remb_ssrc.push_back(ssrc);
       buf += 4;

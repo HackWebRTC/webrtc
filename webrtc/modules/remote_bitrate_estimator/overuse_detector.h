@@ -25,7 +25,7 @@ class OveruseDetector {
  public:
   explicit OveruseDetector(const OverUseDetectorOptions& options);
   ~OveruseDetector();
-  void Update(uint16_t packet_size,
+  void Update(size_t packet_size,
               int64_t timestamp_ms,
               uint32_t rtp_timestamp,
               int64_t arrival_time_ms);
@@ -41,7 +41,7 @@ class OveruseDetector {
           timestamp(-1),
           timestamp_ms(-1) {}
 
-    uint32_t size;
+    size_t size;
     int64_t complete_time_ms;
     int64_t timestamp;
     int64_t timestamp_ms;
@@ -63,8 +63,8 @@ class OveruseDetector {
                   double* ts_delta);
   void UpdateKalman(int64_t t_delta,
                     double ts_elta,
-                    uint32_t frame_size,
-                    uint32_t prev_frame_size);
+                    size_t frame_size,
+                    size_t prev_frame_size);
   double UpdateMinFramePeriod(double ts_delta);
   void UpdateNoiseEstimate(double residual, double ts_delta, bool stable_state);
   BandwidthUsage Detect(double ts_delta);

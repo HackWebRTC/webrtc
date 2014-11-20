@@ -266,8 +266,7 @@ class VideoProcessorIntegrationTest: public testing::Test {
 
   // For every encoded frame, update the rate control metrics.
   void UpdateRateControlMetrics(int frame_num, VideoFrameType frame_type) {
-    int encoded_frame_size = processor_->EncodedFrameSize();
-    float encoded_size_kbits = encoded_frame_size * 8.0f / 1000.0f;
+    float encoded_size_kbits = processor_->EncodedFrameSize() * 8.0f / 1000.0f;
     // Update layer data.
     // Update rate mismatch relative to per-frame bandwidth for delta frames.
     if (frame_type == kDeltaFrame) {

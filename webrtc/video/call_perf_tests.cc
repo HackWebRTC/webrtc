@@ -199,12 +199,11 @@ void CallPerfTest::TestAudioVideoSync(bool fec) {
     virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
                                          size_t length) OVERRIDE {
       int ret;
-      if (parser_->IsRtcp(packet, static_cast<int>(length))) {
-        ret = voe_network_->ReceivedRTCPPacket(
-            channel_, packet, static_cast<unsigned int>(length));
+      if (parser_->IsRtcp(packet, length)) {
+        ret = voe_network_->ReceivedRTCPPacket(channel_, packet, length);
       } else {
-        ret = voe_network_->ReceivedRTPPacket(
-            channel_, packet, static_cast<unsigned int>(length), PacketTime());
+        ret = voe_network_->ReceivedRTPPacket(channel_, packet, length,
+                                              PacketTime());
       }
       return ret == 0 ? DELIVERY_OK : DELIVERY_PACKET_ERROR;
     }
@@ -612,7 +611,7 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
 
     virtual int32_t InitEncode(const VideoCodec* config,
                                int32_t number_of_cores,
-                               uint32_t max_payload_size) OVERRIDE {
+                               size_t max_payload_size) OVERRIDE {
       if (encoder_inits_ == 0) {
         EXPECT_EQ(kInitialBitrateKbps, config->startBitrate)
             << "Encoder not initialized at expected bitrate.";

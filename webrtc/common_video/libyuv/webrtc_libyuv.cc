@@ -66,8 +66,10 @@ void Calc16ByteAlignedStride(int width, int* stride_y, int* stride_uv) {
   *stride_uv = AlignInt((width + 1) / 2, k16ByteAlignment);
 }
 
-int CalcBufferSize(VideoType type, int width, int height) {
-  int buffer_size = 0;
+size_t CalcBufferSize(VideoType type, int width, int height) {
+  assert(width >= 0);
+  assert(height >= 0);
+  size_t buffer_size = 0;
   switch (type) {
     case kI420:
     case kNV12:
@@ -95,7 +97,7 @@ int CalcBufferSize(VideoType type, int width, int height) {
       break;
     default:
       assert(false);
-      return -1;
+      break;
   }
   return buffer_size;
 }
@@ -122,11 +124,12 @@ int PrintI420VideoFrame(const I420VideoFrame& frame, FILE* file) {
 }
 
 int ExtractBuffer(const I420VideoFrame& input_frame,
-                  int size, uint8_t* buffer) {
+                  size_t size, uint8_t* buffer) {
   assert(buffer);
   if (input_frame.IsZeroSize())
     return -1;
-  int length = CalcBufferSize(kI420, input_frame.width(), input_frame.height());
+  size_t length =
+      CalcBufferSize(kI420, input_frame.width(), input_frame.height());
   if (size < length) {
      return -1;
   }
@@ -147,7 +150,7 @@ int ExtractBuffer(const I420VideoFrame& input_frame,
       plane_ptr += input_frame.stride(static_cast<PlaneType>(plane));
     }
   }
-  return length;
+  return static_cast<int>(length);
 }
 
 
@@ -230,7 +233,7 @@ int ConvertToI420(VideoType src_video_type,
                   const uint8_t* src_frame,
                   int crop_x, int crop_y,
                   int src_width, int src_height,
-                  int sample_size,
+                  size_t sample_size,
                   VideoRotationMode rotation,
                   I420VideoFrame* dst_frame) {
   int dst_width = dst_frame->width();

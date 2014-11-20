@@ -36,13 +36,12 @@ class AudioPacketizationCallback {
  public:
   virtual ~AudioPacketizationCallback() {}
 
-  virtual int32_t SendData(
-      FrameType frame_type,
-      uint8_t payload_type,
-      uint32_t timestamp,
-      const uint8_t* payload_data,
-      uint16_t payload_len_bytes,
-      const RTPFragmentationHeader* fragmentation) = 0;
+  virtual int32_t SendData(FrameType frame_type,
+                           uint8_t payload_type,
+                           uint32_t timestamp,
+                           const uint8_t* payload_data,
+                           size_t payload_len_bytes,
+                           const RTPFragmentationHeader* fragmentation) = 0;
 };
 
 // Callback class used for inband Dtmf detection
@@ -668,8 +667,8 @@ class AudioCodingModule: public Module {
   //    0 if payload is successfully pushed in.
   //
   virtual int32_t IncomingPacket(const uint8_t* incoming_payload,
-                                       const int32_t payload_len_bytes,
-                                       const WebRtcRTPHeader& rtp_info) = 0;
+                                 const size_t payload_len_bytes,
+                                 const WebRtcRTPHeader& rtp_info) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t IncomingPayload()
@@ -696,9 +695,9 @@ class AudioCodingModule: public Module {
   //    0 if payload is successfully pushed in.
   //
   virtual int32_t IncomingPayload(const uint8_t* incoming_payload,
-                                        const int32_t payload_len_byte,
-                                        const uint8_t payload_type,
-                                        const uint32_t timestamp = 0) = 0;
+                                  const size_t payload_len_byte,
+                                  const uint8_t payload_type,
+                                  const uint32_t timestamp = 0) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int SetMinimumPlayoutDelay()
@@ -1090,12 +1089,12 @@ class AudioCoding {
   // |incoming_payload| contains the RTP payload after the RTP header. Return
   // true if successful, false if not.
   virtual bool InsertPacket(const uint8_t* incoming_payload,
-                            int32_t payload_len_bytes,
+                            size_t payload_len_bytes,
                             const WebRtcRTPHeader& rtp_info) = 0;
 
   // TODO(henrik.lundin): Remove this method?
   virtual bool InsertPayload(const uint8_t* incoming_payload,
-                             int32_t payload_len_byte,
+                             size_t payload_len_byte,
                              uint8_t payload_type,
                              uint32_t timestamp) = 0;
 

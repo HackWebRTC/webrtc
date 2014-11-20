@@ -110,8 +110,8 @@ void VCMSessionInfo::Reset() {
   last_packet_seq_num_ = -1;
 }
 
-int VCMSessionInfo::SessionLength() const {
-  int length = 0;
+size_t VCMSessionInfo::SessionLength() const {
+  size_t length = 0;
   for (PacketIteratorConst it = packets_.begin(); it != packets_.end(); ++it)
     length += (*it).sizeBytes;
   return length;
@@ -121,13 +121,13 @@ int VCMSessionInfo::NumPackets() const {
   return packets_.size();
 }
 
-int VCMSessionInfo::InsertBuffer(uint8_t* frame_buffer,
-                                 PacketIterator packet_it) {
+size_t VCMSessionInfo::InsertBuffer(uint8_t* frame_buffer,
+                                    PacketIterator packet_it) {
   VCMPacket& packet = *packet_it;
   PacketIterator it;
 
   // Calculate the offset into the frame buffer for this packet.
-  int offset = 0;
+  size_t offset = 0;
   for (it = packets_.begin(); it != packet_it; ++it)
     offset += (*it).sizeBytes;
 
@@ -145,7 +145,7 @@ int VCMSessionInfo::InsertBuffer(uint8_t* frame_buffer,
     size_t required_length = 0;
     const uint8_t* nalu_ptr = packet_buffer + kH264NALHeaderLengthInBytes;
     while (nalu_ptr < packet_buffer + packet.sizeBytes) {
-      uint32_t length = BufferToUWord16(nalu_ptr);
+      size_t length = BufferToUWord16(nalu_ptr);
       required_length +=
           length + (packet.insertStartCode ? kH264StartCodeLengthBytes : 0);
       nalu_ptr += kLengthFieldLength + length;
@@ -154,7 +154,7 @@ int VCMSessionInfo::InsertBuffer(uint8_t* frame_buffer,
     nalu_ptr = packet_buffer + kH264NALHeaderLengthInBytes;
     uint8_t* frame_buffer_ptr = frame_buffer + offset;
     while (nalu_ptr < packet_buffer + packet.sizeBytes) {
-      uint32_t length = BufferToUWord16(nalu_ptr);
+      size_t length = BufferToUWord16(nalu_ptr);
       nalu_ptr += kLengthFieldLength;
       frame_buffer_ptr += Insert(nalu_ptr,
                                  length,
@@ -276,9 +276,9 @@ VCMSessionInfo::PacketIterator VCMSessionInfo::FindNaluEnd(
   return --packet_it;
 }
 
-int VCMSessionInfo::DeletePacketData(PacketIterator start,
-                                     PacketIterator end) {
-  int bytes_to_delete = 0;  // The number of bytes to delete.
+size_t VCMSessionInfo::DeletePacketData(PacketIterator start,
+                                        PacketIterator end) {
+  size_t bytes_to_delete = 0;  // The number of bytes to delete.
   PacketIterator packet_after_end = end;
   ++packet_after_end;
 
@@ -290,20 +290,20 @@ int VCMSessionInfo::DeletePacketData(PacketIterator start,
     (*it).dataPtr = NULL;
   }
   if (bytes_to_delete > 0)
-    ShiftSubsequentPackets(end, -bytes_to_delete);
+    ShiftSubsequentPackets(end, -static_cast<int>(bytes_to_delete));
   return bytes_to_delete;
 }
 
-int VCMSessionInfo::BuildVP8FragmentationHeader(
+size_t VCMSessionInfo::BuildVP8FragmentationHeader(
     uint8_t* frame_buffer,
-    int frame_buffer_length,
+    size_t frame_buffer_length,
     RTPFragmentationHeader* fragmentation) {
-  int new_length = 0;
+  size_t new_length = 0;
   // Allocate space for max number of partitions
   fragmentation->VerifyAndAllocateFragmentationHeader(kMaxVP8Partitions);
   fragmentation->fragmentationVectorSize = 0;
   memset(fragmentation->fragmentationLength, 0,
-         kMaxVP8Partitions * sizeof(uint32_t));
+         kMaxVP8Partitions * sizeof(size_t));
   if (packets_.empty())
       return new_length;
   PacketIterator it = FindNextPartitionBeginning(packets_.begin());
@@ -314,11 +314,11 @@ int VCMSessionInfo::BuildVP8FragmentationHeader(
     fragmentation->fragmentationOffset[partition_id] =
         (*it).dataPtr - frame_buffer;
     assert(fragmentation->fragmentationOffset[partition_id] <
-           static_cast<uint32_t>(frame_buffer_length));
+           frame_buffer_length);
     fragmentation->fragmentationLength[partition_id] =
         (*partition_end).dataPtr + (*partition_end).sizeBytes - (*it).dataPtr;
     assert(fragmentation->fragmentationLength[partition_id] <=
-           static_cast<uint32_t>(frame_buffer_length));
+           frame_buffer_length);
     new_length += fragmentation->fragmentationLength[partition_id];
     ++partition_end;
     it = FindNextPartitionBeginning(partition_end);
@@ -385,8 +385,8 @@ bool VCMSessionInfo::InSequence(const PacketIterator& packet_it,
           (*packet_it).seqNum));
 }
 
-int VCMSessionInfo::MakeDecodable() {
-  int return_length = 0;
+size_t VCMSessionInfo::MakeDecodable() {
+  size_t return_length = 0;
   if (packets_.empty()) {
     return 0;
   }
@@ -511,13 +511,13 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
   // The insert operation invalidates the iterator |rit|.
   PacketIterator packet_list_it = packets_.insert(rit.base(), packet);
 
-  int returnLength = InsertBuffer(frame_buffer, packet_list_it);
+  size_t returnLength = InsertBuffer(frame_buffer, packet_list_it);
   UpdateCompleteSession();
   if (decode_error_mode == kWithErrors)
     decodable_ = true;
   else if (decode_error_mode == kSelectiveErrors)
     UpdateDecodableSession(frame_data);
-  return returnLength;
+  return static_cast<int>(returnLength);
 }
 
 void VCMSessionInfo::InformOfEmptyPacket(uint16_t seq_num) {

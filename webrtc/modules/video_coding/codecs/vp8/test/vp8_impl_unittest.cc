@@ -148,7 +148,7 @@ class TestVp8Impl : public ::testing::Test {
     EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->InitDecode(&codec_inst_, 1));
   }
 
-  int WaitForEncodedFrame() const {
+  size_t WaitForEncodedFrame() const {
     int64_t startTime = TickTime::MillisecondTimestamp();
     while (TickTime::MillisecondTimestamp() - startTime < kMaxWaitEncTimeMs) {
       if (encode_complete_callback_->EncodeComplete()) {
@@ -158,7 +158,7 @@ class TestVp8Impl : public ::testing::Test {
     return 0;
   }
 
-  int WaitForDecodedFrame() const {
+  size_t WaitForDecodedFrame() const {
     int64_t startTime = TickTime::MillisecondTimestamp();
     while (TickTime::MillisecondTimestamp() - startTime < kMaxWaitDecTimeMs) {
       if (decode_complete_callback_->DecodeComplete()) {
@@ -188,7 +188,7 @@ class TestVp8Impl : public ::testing::Test {
   scoped_ptr<VideoDecoder> decoder_;
   VideoFrame encoded_video_frame_;
   I420VideoFrame decoded_video_frame_;
-  unsigned int length_source_frame_;
+  size_t length_source_frame_;
   VideoCodec codec_inst_;
 };
 
@@ -239,14 +239,14 @@ TEST_F(TestVp8Impl, EncoderParameterTest) {
 TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(AlignedStrideEncodeDecode)) {
   SetUpEncodeDecode();
   encoder_->Encode(input_frame_, NULL, NULL);
-  EXPECT_GT(WaitForEncodedFrame(), 0);
+  EXPECT_GT(WaitForEncodedFrame(), 0u);
   EncodedImage encodedImage;
   VideoFrameToEncodedImage(encoded_video_frame_, encodedImage);
   // First frame should be a key frame.
   encodedImage._frameType = kKeyFrame;
   encodedImage.ntp_time_ms_ = kTestNtpTimeMs;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encodedImage, false, NULL));
-  EXPECT_GT(WaitForDecodedFrame(), 0);
+  EXPECT_GT(WaitForDecodedFrame(), 0u);
   // Compute PSNR on all planes (faster than SSIM).
   EXPECT_GT(I420PSNR(&input_frame_, &decoded_video_frame_), 36);
   EXPECT_EQ(kTestTimestamp, decoded_video_frame_.timestamp());
@@ -256,7 +256,7 @@ TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(AlignedStrideEncodeDecode)) {
 TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(DecodeWithACompleteKeyFrame)) {
   SetUpEncodeDecode();
   encoder_->Encode(input_frame_, NULL, NULL);
-  EXPECT_GT(WaitForEncodedFrame(), 0);
+  EXPECT_GT(WaitForEncodedFrame(), 0u);
   EncodedImage encodedImage;
   VideoFrameToEncodedImage(encoded_video_frame_, encodedImage);
   // Setting complete to false -> should return an error.

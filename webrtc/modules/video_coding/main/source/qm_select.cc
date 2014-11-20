@@ -239,11 +239,11 @@ void VCMQmResolution::UpdateCodecParameters(float frame_rate, uint16_t width,
 }
 
 // Update rate data after every encoded frame.
-void VCMQmResolution::UpdateEncodedSize(int encoded_size,
+void VCMQmResolution::UpdateEncodedSize(size_t encoded_size,
                                         FrameType encoded_frame_type) {
   frame_cnt_++;
   // Convert to Kbps.
-  float encoded_size_kbits = static_cast<float>((encoded_size * 8.0) / 1000.0);
+  float encoded_size_kbits = 8.0f * static_cast<float>(encoded_size) / 1000.0f;
 
   // Update the buffer level:
   // Note this is not the actual encoder buffer level.

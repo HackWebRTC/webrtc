@@ -360,7 +360,7 @@ int32_t AviFile::GetAudioStreamInfo(WAVEFORMATEX& waveHeader)
     return 0;
 }
 
-int32_t AviFile::WriteAudio(const uint8_t* data, int32_t length)
+int32_t AviFile::WriteAudio(const uint8_t* data, size_t length)
 {
     _crit->Enter();
     size_t newBytesWritten = _bytesWritten;
@@ -410,7 +410,7 @@ int32_t AviFile::WriteAudio(const uint8_t* data, int32_t length)
     return static_cast<int32_t>(newBytesWritten);
 }
 
-int32_t AviFile::WriteVideo(const uint8_t* data, int32_t length)
+int32_t AviFile::WriteVideo(const uint8_t* data, size_t length)
 {
     _crit->Enter();
     size_t newBytesWritten = _bytesWritten;
@@ -482,7 +482,7 @@ int32_t AviFile::PrepareDataChunkHeaders()
     return 0;
 }
 
-int32_t AviFile::ReadMoviSubChunk(uint8_t* data, int32_t& length, uint32_t tag1,
+int32_t AviFile::ReadMoviSubChunk(uint8_t* data, size_t& length, uint32_t tag1,
                                   uint32_t tag2)
 {
     if (!_reading)
@@ -563,7 +563,7 @@ int32_t AviFile::ReadMoviSubChunk(uint8_t* data, int32_t& length, uint32_t tag1,
         _bytesRead += size;
     }
 
-    if (static_cast<int32_t>(size) > length)
+    if (size > length)
     {
         WEBRTC_TRACE(kTraceDebug, kTraceVideo, -1,
                      "AviFile::ReadMoviSubChunk(): AVI read buffer too small!");
@@ -589,7 +589,7 @@ int32_t AviFile::ReadMoviSubChunk(uint8_t* data, int32_t& length, uint32_t tag1,
     return 0;
 }
 
-int32_t AviFile::ReadAudio(uint8_t* data, int32_t& length)
+int32_t AviFile::ReadAudio(uint8_t* data, size_t& length)
 {
     _crit->Enter();
     WEBRTC_TRACE(kTraceDebug, kTraceVideo, -1,  "AviFile::ReadAudio()");
@@ -616,7 +616,7 @@ int32_t AviFile::ReadAudio(uint8_t* data, int32_t& length)
     return ret;
 }
 
-int32_t AviFile::ReadVideo(uint8_t* data, int32_t& length)
+int32_t AviFile::ReadVideo(uint8_t* data, size_t& length)
 {
     WEBRTC_TRACE(kTraceDebug, kTraceVideo, -1, "AviFile::ReadVideo()");
 

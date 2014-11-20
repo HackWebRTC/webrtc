@@ -111,7 +111,7 @@ int ViENetworkImpl::DeregisterSendTransport(const int video_channel) {
 }
 
 int ViENetworkImpl::ReceivedRTPPacket(const int video_channel, const void* data,
-                                      const int length,
+                                      const size_t length,
                                       const PacketTime& packet_time) {
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
@@ -123,7 +123,7 @@ int ViENetworkImpl::ReceivedRTPPacket(const int video_channel, const void* data,
 }
 
 int ViENetworkImpl::ReceivedRTCPPacket(const int video_channel,
-                                       const void* data, const int length) {
+                                       const void* data, const size_t length) {
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
@@ -149,7 +149,9 @@ int ViENetworkImpl::SetMTU(int video_channel, unsigned int mtu) {
 }
 
 int ViENetworkImpl::ReceivedBWEPacket(const int video_channel,
-    int64_t arrival_time_ms, int payload_size, const RTPHeader& header) {
+                                      int64_t arrival_time_ms,
+                                      size_t payload_size,
+                                      const RTPHeader& header) {
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {

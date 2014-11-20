@@ -83,7 +83,7 @@ class RTPPayloadRegistry {
 
   bool RestoreOriginalPacket(uint8_t** restored_packet,
                              const uint8_t* packet,
-                             int* packet_length,
+                             size_t* packet_length,
                              uint32_t original_ssrc,
                              const RTPHeader& header) const;
 

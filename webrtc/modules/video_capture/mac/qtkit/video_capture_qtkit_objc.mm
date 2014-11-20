@@ -237,8 +237,8 @@ using namespace videocapturemodule;
   if (CVPixelBufferLockBaseAddress(videoFrame, kFlags) == kCVReturnSuccess) {
     void *baseAddress = CVPixelBufferGetBaseAddress(videoFrame);
     size_t bytesPerRow = CVPixelBufferGetBytesPerRow(videoFrame);
-    int frameHeight = CVPixelBufferGetHeight(videoFrame);
-    int frameSize = bytesPerRow * frameHeight;
+    size_t frameHeight = CVPixelBufferGetHeight(videoFrame);
+    size_t frameSize = bytesPerRow * frameHeight;
 
     VideoCaptureCapability tempCaptureCapability;
     tempCaptureCapability.width = _frameWidth;

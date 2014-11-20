@@ -48,8 +48,8 @@ protected:
 
     webrtc::VideoEncoder*   _encoder;
     webrtc::VideoDecoder*   _decoder;
-    uint32_t          _bitRate;
-    unsigned int            _lengthSourceFrame;
+    uint32_t                _bitRate;
+    size_t                  _lengthSourceFrame;
     unsigned char*          _sourceBuffer;
     webrtc::I420VideoFrame  _inputVideoBuffer;
     // TODO(mikhal): For now using VideoFrame for encodedBuffer, should use a
@@ -61,7 +61,7 @@ protected:
     std::string             _inname;
     std::string             _outname;
     std::string             _encodedName;
-    int                     _sumEncBytes;
+    size_t                  _sumEncBytes;
     int                     _width;
     int                     _halfWidth;
     int                     _height;

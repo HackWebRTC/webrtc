@@ -1723,11 +1723,9 @@ TEST_F(EndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
       if (!registered_rtx_ssrc_[header.ssrc])
         return SEND_PACKET;
 
-      EXPECT_LE(static_cast<size_t>(header.headerLength + header.paddingLength),
-                length);
+      EXPECT_LE(header.headerLength + header.paddingLength, length);
       const bool packet_is_redundant_payload =
-          static_cast<size_t>(header.headerLength + header.paddingLength) <
-          length;
+          header.headerLength + header.paddingLength < length;
 
       if (!packet_is_redundant_payload)
         return SEND_PACKET;
@@ -1809,8 +1807,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
       const uint16_t sequence_number = header.sequenceNumber;
       const uint32_t timestamp = header.timestamp;
       const bool only_padding =
-          static_cast<size_t>(header.headerLength + header.paddingLength) ==
-          length;
+          header.headerLength + header.paddingLength == length;
 
       EXPECT_TRUE(configured_ssrcs_[ssrc])
           << "Received SSRC that wasn't configured: " << ssrc;

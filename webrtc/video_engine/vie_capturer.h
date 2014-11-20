@@ -69,7 +69,7 @@ class ViECapturer
 
   // Implements ExternalCapture.
   virtual int IncomingFrame(unsigned char* video_frame,
-                            unsigned int video_frame_length,
+                            size_t video_frame_length,
                             uint16_t width,
                             uint16_t height,
                             RawVideoType video_type,

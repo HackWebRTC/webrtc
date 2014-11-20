@@ -71,8 +71,8 @@ WebRtcVideoFrame::FrameBuffer::~FrameBuffer() {
   // Make sure that |video_frame_| doesn't delete the buffer, as |owned_data_|
   // will release the buffer if this FrameBuffer owns it.
   uint8_t* new_memory = NULL;
-  uint32_t new_length = 0;
-  uint32_t new_size = 0;
+  size_t new_length = 0;
+  size_t new_size = 0;
   video_frame_.Swap(new_memory, new_length, new_size);
 }
 
@@ -84,8 +84,8 @@ void WebRtcVideoFrame::FrameBuffer::Attach(uint8* data, size_t length) {
 void WebRtcVideoFrame::FrameBuffer::Alias(uint8* data, size_t length) {
   owned_data_.reset();
   uint8_t* new_memory = reinterpret_cast<uint8_t*>(data);
-  uint32_t new_length = static_cast<uint32_t>(length);
-  uint32_t new_size = static_cast<uint32_t>(length);
+  size_t new_length = length;
+  size_t new_size = length;
   video_frame_.Swap(new_memory, new_length, new_size);
 }
 

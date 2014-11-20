@@ -36,8 +36,8 @@ class RTPPacketHistory {
 
   // Stores RTP packet.
   int32_t PutRTPPacket(const uint8_t* packet,
-                       uint16_t packet_length,
-                       uint16_t max_packet_length,
+                       size_t packet_length,
+                       size_t max_packet_length,
                        int64_t capture_time_ms,
                        StorageType type);
 
@@ -56,33 +56,33 @@ class RTPPacketHistory {
                                uint32_t min_elapsed_time_ms,
                                bool retransmit,
                                uint8_t* packet,
-                               uint16_t* packet_length,
+                               size_t* packet_length,
                                int64_t* stored_time_ms);
 
-  bool GetBestFittingPacket(uint8_t* packet, uint16_t* packet_length,
+  bool GetBestFittingPacket(uint8_t* packet, size_t* packet_length,
                             int64_t* stored_time_ms);
 
   bool HasRTPPacket(uint16_t sequence_number) const;
 
  private:
-  void GetPacket(int index, uint8_t* packet, uint16_t* packet_length,
+  void GetPacket(int index, uint8_t* packet, size_t* packet_length,
                  int64_t* stored_time_ms) const;
   void Allocate(uint16_t number_to_store) EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
   void Free() EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
-  void VerifyAndAllocatePacketLength(uint16_t packet_length);
+  void VerifyAndAllocatePacketLength(size_t packet_length);
   bool FindSeqNum(uint16_t sequence_number, int32_t* index) const;
-  int FindBestFittingPacket(uint16_t size) const;
+  int FindBestFittingPacket(size_t size) const;
 
  private:
   Clock* clock_;
   CriticalSectionWrapper* critsect_;
   bool store_;
   uint32_t prev_index_;
-  uint16_t max_packet_length_;
+  size_t max_packet_length_;
 
   std::vector<std::vector<uint8_t> > stored_packets_;
   std::vector<uint16_t> stored_seq_nums_;
-  std::vector<uint16_t> stored_lengths_;
+  std::vector<size_t> stored_lengths_;
   std::vector<int64_t> stored_times_;
   std::vector<int64_t> stored_send_times_;
   std::vector<StorageType> stored_types_;

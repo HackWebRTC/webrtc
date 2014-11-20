@@ -41,7 +41,7 @@ enum {
 
 class RawRtpPacket {
  public:
-  RawRtpPacket(const uint8_t* data, uint32_t length, uint32_t ssrc,
+  RawRtpPacket(const uint8_t* data, size_t length, uint32_t ssrc,
                uint16_t seq_num)
       : data_(new uint8_t[length]),
         length_(length),
@@ -53,7 +53,7 @@ class RawRtpPacket {
   }
 
   const uint8_t* data() const { return data_.get(); }
-  uint32_t length() const { return length_; }
+  size_t length() const { return length_; }
   int64_t resend_time_ms() const { return resend_time_ms_; }
   void set_resend_time_ms(int64_t timeMs) { resend_time_ms_ = timeMs; }
   uint32_t ssrc() const { return ssrc_; }
@@ -61,7 +61,7 @@ class RawRtpPacket {
 
  private:
   scoped_ptr<uint8_t[]> data_;
-  uint32_t length_;
+  size_t length_;
   int64_t resend_time_ms_;
   uint32_t ssrc_;
   uint16_t seq_num_;
@@ -251,7 +251,7 @@ class SsrcHandlers {
     return 0;
   }
 
-  void IncomingPacket(const uint8_t* data, uint32_t length) {
+  void IncomingPacket(const uint8_t* data, size_t length) {
     for (HandlerMapIt it = handlers_.begin(); it != handlers_.end(); ++it) {
       if (!it->second->rtp_header_parser_->IsRtcp(data, length)) {
         RTPHeader header;
@@ -375,14 +375,10 @@ class RtpPlayerImpl : public RtpPlayerInterface {
 
       if (reordering_ && reorder_buffer_.get() == NULL) {
         reorder_buffer_.reset(
-            new RawRtpPacket(next_packet_.data,
-                             static_cast<uint32_t>(next_packet_.length),
-                             0,
-                             0));
+            new RawRtpPacket(next_packet_.data, next_packet_.length, 0, 0));
         return 0;
       }
-      int ret = SendPacket(next_packet_.data,
-                           static_cast<uint32_t>(next_packet_.length));
+      int ret = SendPacket(next_packet_.data, next_packet_.length);
       if (reorder_buffer_.get()) {
         SendPacket(reorder_buffer_->data(), reorder_buffer_->length());
         reorder_buffer_.reset(NULL);
@@ -421,7 +417,7 @@ class RtpPlayerImpl : public RtpPlayerInterface {
   }
 
  private:
-  int SendPacket(const uint8_t* data, uint32_t length) {
+  int SendPacket(const uint8_t* data, size_t length) {
     assert(data);
     assert(length > 0);
 

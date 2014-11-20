@@ -51,18 +51,18 @@ private:
 
 }; // end of QualityModesTest class
 
-class VCMQMDecodeCompleCallback: public webrtc::VCMReceiveCallback
+class VCMQMDecodeCompleteCallback: public webrtc::VCMReceiveCallback
 {
 public:
-    VCMQMDecodeCompleCallback(
+    VCMQMDecodeCompleteCallback(
         FILE* decodedFile,
         int frame_rate,
         std::string feature_table_name);
-    virtual ~VCMQMDecodeCompleCallback();
+    virtual ~VCMQMDecodeCompleteCallback();
     void SetUserReceiveCallback(webrtc::VCMReceiveCallback* receiveCallback);
     // will write decoded frame into file
     int32_t FrameToRender(webrtc::I420VideoFrame& videoFrame);
-    int32_t DecodedBytes();
+    size_t DecodedBytes();
     void SetOriginalFrameDimensions(int32_t width, int32_t height);
     int32_t buildInterpolator();
     // Check if last frame is dropped, if so, repeat the last rendered frame.
@@ -70,7 +70,7 @@ public:
 
 private:
     FILE*                _decodedFile;
-    uint32_t       _decodedBytes;
+    size_t               _decodedBytes;
    // QualityModesTest&  _test;
     int                  _origWidth;
     int                  _origHeight;
@@ -86,7 +86,7 @@ private:
 
 
 
-}; // end of VCMQMDecodeCompleCallback class
+}; // end of VCMQMDecodeCompleteCallback class
 
 class QMTestVideoSettingsCallback : public webrtc::VCMQMSettingsCallback
 {

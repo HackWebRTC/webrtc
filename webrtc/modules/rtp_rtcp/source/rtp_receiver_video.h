@@ -30,7 +30,7 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
                                  const PayloadUnion& specific_payload,
                                  bool is_red,
                                  const uint8_t* packet,
-                                 uint16_t packet_length,
+                                 size_t packet_length,
                                  int64_t timestamp,
                                  bool is_first_packet) OVERRIDE;
 

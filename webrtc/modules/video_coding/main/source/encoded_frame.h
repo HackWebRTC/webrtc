@@ -56,7 +56,7 @@ public:
     /**
     *   Get frame length
     */
-    uint32_t Length() const {return _length;}
+    size_t Length() const {return _length;}
     /**
     *   Get frame timestamp (90kHz)
     */

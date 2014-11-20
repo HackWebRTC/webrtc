@@ -247,7 +247,7 @@ class FakeReceiveStatistics : public NullReceiveStatistics {
       *statistics = stats_;
       return true;
     }
-    virtual void GetDataCounters(uint32_t* bytes_received,
+    virtual void GetDataCounters(size_t* bytes_received,
                                  uint32_t* packets_received) const OVERRIDE {
       *bytes_received = 0;
       *packets_received = 0;
@@ -469,18 +469,18 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
   // Use a fake encoder to output a frame of every size in the range [90, 290],
   // for each size making sure that the exact number of payload bytes received
   // is correct and that packets are fragmented to respect max packet size.
-  static const uint32_t kMaxPacketSize = 128;
-  static const uint32_t start = 90;
-  static const uint32_t stop = 290;
+  static const size_t kMaxPacketSize = 128;
+  static const size_t start = 90;
+  static const size_t stop = 290;
 
   // Observer that verifies that the expected number of packets and bytes
   // arrive for each frame size, from start_size to stop_size.
   class FrameFragmentationTest : public test::SendTest,
                                  public EncodedFrameObserver {
    public:
-    FrameFragmentationTest(uint32_t max_packet_size,
-                           uint32_t start_size,
-                           uint32_t stop_size,
+    FrameFragmentationTest(size_t max_packet_size,
+                           size_t start_size,
+                           size_t stop_size,
                            bool test_generic_packetization,
                            bool use_fec)
         : SendTest(kLongTimeoutMs),
@@ -495,16 +495,16 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
           accumulated_payload_(0),
           fec_packet_received_(false),
           current_size_rtp_(start_size),
-          current_size_frame_(start_size) {
+          current_size_frame_(static_cast<int32_t>(start_size)) {
       // Fragmentation required, this test doesn't make sense without it.
-      encoder_.SetFrameSize(start);
+      encoder_.SetFrameSize(start_size);
       assert(stop_size > max_packet_size);
       transport_adapter_.Enable();
     }
 
    private:
     virtual Action OnSendRtp(const uint8_t* packet, size_t size) OVERRIDE {
-      uint32_t length = static_cast<int>(size);
+      size_t length = size;
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
@@ -526,7 +526,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
         TriggerLossReport(header);
 
       if (test_generic_packetization_) {
-        uint32_t overhead = header.headerLength + header.paddingLength +
+        size_t overhead = header.headerLength + header.paddingLength +
                           (1 /* Generic header */);
         if (use_fec_)
           overhead += 1;  // RED for FEC header.
@@ -599,7 +599,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
           current_size_frame_.Value() < static_cast<int32_t>(stop_size_)) {
         ++current_size_frame_;
       }
-      encoder_.SetFrameSize(current_size_frame_.Value());
+      encoder_.SetFrameSize(static_cast<size_t>(current_size_frame_.Value()));
     }
 
     virtual void ModifyConfigs(
@@ -633,17 +633,17 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
     internal::TransportAdapter transport_adapter_;
     test::ConfigurableFrameSizeEncoder encoder_;
 
-    const uint32_t max_packet_size_;
-    const uint32_t stop_size_;
+    const size_t max_packet_size_;
+    const size_t stop_size_;
     const bool test_generic_packetization_;
     const bool use_fec_;
 
     uint32_t packet_count_;
-    uint32_t accumulated_size_;
-    uint32_t accumulated_payload_;
+    size_t accumulated_size_;
+    size_t accumulated_payload_;
     bool fec_packet_received_;
 
-    uint32_t current_size_rtp_;
+    size_t current_size_rtp_;
     Atomic32 current_size_frame_;
   };
 
@@ -1260,7 +1260,7 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
    private:
     virtual int32_t InitEncode(const VideoCodec* codecSettings,
                                int32_t numberOfCores,
-                               uint32_t maxPayloadSize) OVERRIDE {
+                               size_t maxPayloadSize) OVERRIDE {
       CriticalSectionScoped lock(crit_.get());
       EXPECT_FALSE(initialized_);
       initialized_ = true;
@@ -1382,7 +1382,7 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
 
     virtual int32_t InitEncode(const VideoCodec* config,
                                int32_t number_of_cores,
-                               uint32_t max_payload_size) OVERRIDE {
+                               size_t max_payload_size) OVERRIDE {
       if (num_initializations_ == 0) {
         // Verify default values.
         EXPECT_EQ(kRealtimeVideo, config->mode);
@@ -1449,7 +1449,7 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesVp8Config) {
 
     virtual int32_t InitEncode(const VideoCodec* config,
                                int32_t number_of_cores,
-                               uint32_t max_payload_size) OVERRIDE {
+                               size_t max_payload_size) OVERRIDE {
       EXPECT_EQ(kVideoCodecVP8, config->codecType);
 
       // Check that the number of temporal layers has propagated properly to
@@ -1555,7 +1555,7 @@ TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
    private:
     virtual int32_t InitEncode(const VideoCodec* config,
                                int32_t number_of_cores,
-                               uint32_t max_payload_size) {
+                               size_t max_payload_size) OVERRIDE {
       EXPECT_EQ(static_cast<unsigned int>(kScreencastTargetBitrateKbps),
                 config->targetBitrate);
       observation_complete_->Set();

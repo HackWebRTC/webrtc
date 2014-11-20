@@ -153,7 +153,7 @@ class Random {
 class Packet {
  public:
   Packet();
-  Packet(int flow_id, int64_t send_time_us, uint32_t payload_size,
+  Packet(int flow_id, int64_t send_time_us, size_t payload_size,
          const RTPHeader& header);
   Packet(int64_t send_time_us, uint32_t sequence_number);
 
@@ -164,14 +164,14 @@ class Packet {
   void set_send_time_us(int64_t send_time_us);
   int64_t send_time_us() const { return send_time_us_; }
   void SetAbsSendTimeMs(int64_t abs_send_time_ms);
-  uint32_t payload_size() const { return payload_size_; }
+  size_t payload_size() const { return payload_size_; }
   const RTPHeader& header() const { return header_; }
 
  private:
   int flow_id_;
   int64_t creation_time_us_;  // Time when the packet was created.
   int64_t send_time_us_;   // Time the packet left last processor touching it.
-  uint32_t payload_size_;  // Size of the (non-existent, simulated) payload.
+  size_t payload_size_;    // Size of the (non-existent, simulated) payload.
   RTPHeader header_;       // Actual contents.
 };
 
@@ -474,7 +474,7 @@ class PacedVideoSender : public PacketSender, public PacedSender::Callback {
                                 uint16_t sequence_number,
                                 int64_t capture_time_ms,
                                 bool retransmission) OVERRIDE;
-  virtual int TimeToSendPadding(int bytes) OVERRIDE;
+  virtual size_t TimeToSendPadding(size_t bytes) OVERRIDE;
 
  private:
   class ProbingPacedSender : public PacedSender {

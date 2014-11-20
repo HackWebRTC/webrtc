@@ -72,8 +72,8 @@ class VideoChannelAGL : public VideoRenderCallback {
   int _oldStretchedHeight;
   int _oldStretchedWidth;
   unsigned char* _buffer;
-  int _bufferSize;
-  int _incommingBufferSize;
+  size_t _bufferSize;
+  size_t _incomingBufferSize;
   bool _bufferIsUpdated;
   bool _sizeInitialized;
   int _numberOfStreams;

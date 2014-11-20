@@ -56,7 +56,7 @@ class Config;
 class InStream
 {
 public:
-    virtual int Read(void *buf,int len) = 0;
+    virtual int Read(void *buf, size_t len) = 0;
     virtual int Rewind() {return -1;}
     virtual ~InStream() {}
 protected:
@@ -66,7 +66,7 @@ protected:
 class OutStream
 {
 public:
-    virtual bool Write(const void *buf,int len) = 0;
+    virtual bool Write(const void *buf, size_t len) = 0;
     virtual int Rewind() {return -1;}
     virtual ~OutStream() {}
 protected:
@@ -166,8 +166,8 @@ enum FrameType
 class Transport
 {
 public:
-    virtual int SendPacket(int channel, const void *data, int len) = 0;
-    virtual int SendRTCPPacket(int channel, const void *data, int len) = 0;
+    virtual int SendPacket(int channel, const void *data, size_t len) = 0;
+    virtual int SendRTCPPacket(int channel, const void *data, size_t len) = 0;
 
 protected:
     virtual ~Transport() {}
@@ -240,9 +240,9 @@ struct StreamDataCounters {
      fec_packets(0) {}
 
   // TODO(pbos): Rename bytes -> media_bytes.
-  uint32_t bytes;  // Payload bytes, excluding RTP headers and padding.
-  uint32_t header_bytes;  // Number of bytes used by RTP headers.
-  uint32_t padding_bytes;  // Number of padding bytes.
+  size_t bytes;  // Payload bytes, excluding RTP headers and padding.
+  size_t header_bytes;  // Number of bytes used by RTP headers.
+  size_t padding_bytes;  // Number of padding bytes.
   uint32_t packets;  // Number of packets.
   uint32_t retransmitted_packets;  // Number of retransmitted packets.
   uint32_t fec_packets;  // Number of redundancy packets.
@@ -828,8 +828,8 @@ struct RTPHeader {
   uint32_t ssrc;
   uint8_t numCSRCs;
   uint32_t arrOfCSRCs[kRtpCsrcSize];
-  uint8_t paddingLength;
-  uint16_t headerLength;
+  size_t paddingLength;
+  size_t headerLength;
   int payload_type_frequency;
   RTPHeaderExtension extension;
 };

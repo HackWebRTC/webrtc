@@ -26,7 +26,7 @@ public:
     virtual int32_t Stop() OVERRIDE;
     virtual bool IsActive() const OVERRIDE;
     virtual int32_t DumpPacket(const uint8_t* packet,
-                               uint16_t packetLength) OVERRIDE;
+                               size_t packetLength) OVERRIDE;
 private:
     // Return the system time in ms.
     inline uint32_t GetTimeInMS() const;

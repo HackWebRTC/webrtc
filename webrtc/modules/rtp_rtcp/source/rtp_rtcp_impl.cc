@@ -259,7 +259,7 @@ void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type) {
 
 int32_t ModuleRtpRtcpImpl::IncomingRtcpPacket(
     const uint8_t* rtcp_packet,
-    const uint16_t length) {
+    const size_t length) {
   // Allow receive of non-compound RTCP packets.
   RTCPUtility::RTCPParserV2 rtcp_parser(rtcp_packet, length, true);
 
@@ -504,7 +504,7 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
     uint32_t time_stamp,
     int64_t capture_time_ms,
     const uint8_t* payload_data,
-    uint32_t payload_size,
+    size_t payload_size,
     const RTPFragmentationHeader* fragmentation,
     const RTPVideoHeader* rtp_video_hdr) {
   rtcp_sender_.SetLastRtpTime(time_stamp, capture_time_ms);
@@ -603,7 +603,7 @@ bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
   return true;
 }
 
-int ModuleRtpRtcpImpl::TimeToSendPadding(int bytes) {
+size_t ModuleRtpRtcpImpl::TimeToSendPadding(size_t bytes) {
   if (!IsDefaultModule()) {
     // Don't send from default module.
     return rtp_sender_.TimeToSendPadding(bytes);
@@ -816,7 +816,7 @@ bool ModuleRtpRtcpImpl::RtcpXrRrtrStatus() const {
 }
 
 int32_t ModuleRtpRtcpImpl::DataCountersRTP(
-    uint32_t* bytes_sent,
+    size_t* bytes_sent,
     uint32_t* packets_sent) const {
   StreamDataCounters rtp_stats;
   StreamDataCounters rtx_stats;

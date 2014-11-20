@@ -36,7 +36,7 @@ class MockUdpSocketWrapper : public UdpSocketWrapper {
                                 const int8_t*,
                                 int32_t));
   MOCK_METHOD1(SetTOS, int32_t(int32_t));
-  MOCK_METHOD3(SendTo, int32_t(const int8_t*, int32_t, const SocketAddress&));
+  MOCK_METHOD3(SendTo, int32_t(const int8_t*, size_t, const SocketAddress&));
   MOCK_METHOD8(SetQos, bool(int32_t, int32_t,
                             int32_t, int32_t,
                             int32_t, int32_t,

@@ -68,7 +68,7 @@ class RtpHeaderExtensionMap {
 
   int32_t GetId(const RTPExtensionType type, uint8_t* id) const;
 
-  uint16_t GetTotalLengthInBytes() const;
+  size_t GetTotalLengthInBytes() const;
 
   int32_t GetLengthUntilBlockStartInBytes(const RTPExtensionType type) const;
 

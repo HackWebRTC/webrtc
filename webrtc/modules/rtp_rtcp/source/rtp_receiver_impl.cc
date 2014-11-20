@@ -163,12 +163,9 @@ int32_t RtpReceiverImpl::Energy(
 bool RtpReceiverImpl::IncomingRtpPacket(
   const RTPHeader& rtp_header,
   const uint8_t* payload,
-  int payload_length,
+  size_t payload_length,
   PayloadUnion payload_specific,
   bool in_order) {
-  // Sanity check.
-  assert(payload_length >= 0);
-
   // Trigger our callbacks.
   CheckSSRCChanged(rtp_header);
 
@@ -198,7 +195,7 @@ bool RtpReceiverImpl::IncomingRtpPacket(
   webrtc_rtp_header.header = rtp_header;
   CheckCSRC(webrtc_rtp_header);
 
-  uint16_t payload_data_length = payload_length - rtp_header.paddingLength;
+  size_t payload_data_length = payload_length - rtp_header.paddingLength;
 
   bool is_first_packet_in_frame = false;
   {

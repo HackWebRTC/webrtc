@@ -105,9 +105,9 @@ int32_t RtpHeaderExtensionMap::GetId(const RTPExtensionType type,
   return -1;
 }
 
-uint16_t RtpHeaderExtensionMap::GetTotalLengthInBytes() const {
+size_t RtpHeaderExtensionMap::GetTotalLengthInBytes() const {
   // Get length for each extension block.
-  uint16_t length = 0;
+  size_t length = 0;
   std::map<uint8_t, HeaderExtension*>::const_iterator it =
       extensionMap_.begin();
   while (it != extensionMap_.end()) {

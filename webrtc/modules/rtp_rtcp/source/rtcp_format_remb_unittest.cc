@@ -32,14 +32,14 @@ class TestTransport : public Transport {
 
   virtual int SendPacket(int /*channel*/,
                          const void* /*data*/,
-                         int /*len*/) OVERRIDE {
+                         size_t /*len*/) OVERRIDE {
     return -1;
   }
   virtual int SendRTCPPacket(int /*channel*/,
                              const void *packet,
-                             int packetLength) OVERRIDE {
+                             size_t packetLength) OVERRIDE {
     RTCPUtility::RTCPParserV2 rtcpParser((uint8_t*)packet,
-                                         (int32_t)packetLength,
+                                         packetLength,
                                          true); // Allow non-compound RTCP
 
     EXPECT_TRUE(rtcpParser.IsValid());
@@ -51,7 +51,7 @@ class TestTransport : public Transport {
               rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRemb);
     EXPECT_EQ((uint32_t)1234,
               rtcpPacketInformation.receiverEstimatedMaxBitrate);
-    return packetLength;
+    return static_cast<int>(packetLength);
   }
  private:
   RTCPReceiver* rtcp_receiver_;

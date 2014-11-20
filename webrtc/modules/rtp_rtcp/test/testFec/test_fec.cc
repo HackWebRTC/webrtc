@@ -232,7 +232,7 @@ TEST(FecTest, FecTest) {
             for (uint32_t i = 0; i < numMediaPackets; ++i) {
               mediaPacket = new ForwardErrorCorrection::Packet;
               mediaPacketList.push_back(mediaPacket);
-              mediaPacket->length = static_cast<uint16_t>(
+              mediaPacket->length = static_cast<size_t>(
                   (static_cast<float>(rand()) / RAND_MAX) *
                   (IP_PACKET_SIZE - 12 - 28 -
                    ForwardErrorCorrection::PacketOverhead()));
@@ -264,7 +264,7 @@ TEST(FecTest, FecTest) {
                                                 timeStamp);
               RtpUtility::AssignUWord32ToBuffer(&mediaPacket->data[8], ssrc);
               // Generate random values for payload
-              for (int32_t j = 12; j < mediaPacket->length; ++j) {
+              for (size_t j = 12; j < mediaPacket->length; ++j) {
                 mediaPacket->data[j] = static_cast<uint8_t>(rand() % 256);
               }
               seqNum++;

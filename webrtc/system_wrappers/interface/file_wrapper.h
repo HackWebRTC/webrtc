@@ -69,12 +69,12 @@ class FileWrapper : public InStream, public OutStream {
   // Inherited from Instream.
   // Reads |length| bytes from file to |buf|. Returns the number of bytes read
   // or -1 on error.
-  virtual int Read(void* buf, int length) = 0;
+  virtual int Read(void* buf, size_t length) = 0;
 
   // Inherited from OutStream.
   // Writes |length| bytes from |buf| to file. The actual writing may happen
   // some time later. Call Flush() to force a write.
-  virtual bool Write(const void* buf, int length) = 0;
+  virtual bool Write(const void* buf, size_t length) = 0;
 
   // Inherited from both Instream and OutStream.
   // Rewinds the file to the start. Only available when OpenFile() has been

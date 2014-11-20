@@ -27,8 +27,8 @@ using ::testing::ReturnNull;
 namespace webrtc {
 
 static const int kRedPayloadType = 100;
-static const int kPayloadLength = 10;
-static const int kRedHeaderLength = 4;  // 4 bytes RED header.
+static const size_t kPayloadLength = 10;
+static const size_t kRedHeaderLength = 4;  // 4 bytes RED header.
 static const uint16_t kSequenceNumber = 0;
 static const uint32_t kBaseTimestamp = 0x12345678;
 
@@ -50,7 +50,7 @@ static const uint32_t kBaseTimestamp = 0x12345678;
 // by the values in array |payload_types| (which must be of length
 // |num_payloads|). Each redundant payload is |timestamp_offset| samples
 // "behind" the the previous payload.
-Packet* CreateRedPayload(int num_payloads,
+Packet* CreateRedPayload(size_t num_payloads,
                          uint8_t* payload_types,
                          int timestamp_offset) {
   Packet* packet = new Packet;
@@ -61,7 +61,7 @@ Packet* CreateRedPayload(int num_payloads,
       (num_payloads - 1) * (kPayloadLength + kRedHeaderLength);
   uint8_t* payload = new uint8_t[packet->payload_length];
   uint8_t* payload_ptr = payload;
-  for (int i = 0; i < num_payloads; ++i) {
+  for (size_t i = 0; i < num_payloads; ++i) {
     // Write the RED headers.
     if (i == num_payloads - 1) {
       // Special case for last payload.
@@ -82,9 +82,9 @@ Packet* CreateRedPayload(int num_payloads,
     *payload_ptr = kPayloadLength & 0xFF;
     ++payload_ptr;
   }
-  for (int i = 0; i < num_payloads; ++i) {
+  for (size_t i = 0; i < num_payloads; ++i) {
     // Write |i| to all bytes in each payload.
-    memset(payload_ptr, i, kPayloadLength);
+    memset(payload_ptr, static_cast<int>(i), kPayloadLength);
     payload_ptr += kPayloadLength;
   }
   packet->payload = payload;
@@ -104,7 +104,7 @@ Packet* CreateRedPayload(int num_payloads,
 // :                                                               |
 // |                                                               |
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-Packet* CreateOpusFecPacket(uint8_t payload_type, int payload_length,
+Packet* CreateOpusFecPacket(uint8_t payload_type, size_t payload_length,
                             uint8_t payload_value) {
   Packet* packet = new Packet;
   packet->header.payloadType = payload_type;
@@ -120,7 +120,7 @@ Packet* CreateOpusFecPacket(uint8_t payload_type, int payload_length,
 }
 
 // Create a packet with all payload bytes set to |payload_value|.
-Packet* CreatePacket(uint8_t payload_type, int payload_length,
+Packet* CreatePacket(uint8_t payload_type, size_t payload_length,
                      uint8_t payload_value) {
   Packet* packet = new Packet;
   packet->header.payloadType = payload_type;
@@ -135,7 +135,7 @@ Packet* CreatePacket(uint8_t payload_type, int payload_length,
 
 // Checks that |packet| has the attributes given in the remaining parameters.
 void VerifyPacket(const Packet* packet,
-                  int payload_length,
+                  size_t payload_length,
                   uint8_t payload_type,
                   uint16_t sequence_number,
                   uint32_t timestamp,
@@ -147,7 +147,7 @@ void VerifyPacket(const Packet* packet,
   EXPECT_EQ(timestamp, packet->header.timestamp);
   EXPECT_EQ(primary, packet->primary);
   ASSERT_FALSE(packet->payload == NULL);
-  for (int i = 0; i < packet->payload_length; ++i) {
+  for (size_t i = 0; i < packet->payload_length; ++i) {
     EXPECT_EQ(payload_value, packet->payload[i]);
   }
 }
@@ -295,7 +295,7 @@ TEST(RedPayloadSplitter, TwoPacketsThreePayloads) {
 // found in the list (which is PCMu).
 TEST(RedPayloadSplitter, CheckRedPayloads) {
   PacketList packet_list;
-  for (int i = 0; i <= 3; ++i) {
+  for (uint8_t i = 0; i <= 3; ++i) {
     // Create packet with payload type |i|, payload length 10 bytes, all 0.
     Packet* packet = CreatePacket(i, 10, 0);
     packet_list.push_back(packet);
@@ -357,7 +357,7 @@ TEST(AudioPayloadSplitter, NonSplittable) {
   // Set up packets with different RTP payload types. The actual values do not
   // matter, since we are mocking the decoder database anyway.
   PacketList packet_list;
-  for (int i = 0; i < 6; ++i) {
+  for (uint8_t i = 0; i < 6; ++i) {
     // Let the payload type be |i|, and the payload value 10 * |i|.
     packet_list.push_back(CreatePacket(i, kPayloadLength, 10 * i));
   }
@@ -415,7 +415,7 @@ TEST(AudioPayloadSplitter, NonSplittable) {
 TEST(AudioPayloadSplitter, UnknownPayloadType) {
   PacketList packet_list;
   static const uint8_t kPayloadType = 17;  // Just a random number.
-  int kPayloadLengthBytes = 4711;  // Random number.
+  size_t kPayloadLengthBytes = 4711;  // Random number.
   packet_list.push_back(CreatePacket(kPayloadType, kPayloadLengthBytes, 0));
 
   MockDecoderDatabase decoder_database;
@@ -502,7 +502,7 @@ class SplitBySamplesTest : public ::testing::TestWithParam<NetEqDecoder> {
         break;
     }
   }
-  int bytes_per_ms_;
+  size_t bytes_per_ms_;
   int samples_per_ms_;
   NetEqDecoder decoder_type_;
 };
@@ -514,7 +514,7 @@ TEST_P(SplitBySamplesTest, PayloadSizes) {
   for (int payload_size_ms = 10; payload_size_ms <= 60; payload_size_ms += 10) {
     // The payload values are set to be the same as the payload_size, so that
     // one can distinguish from which packet the split payloads come from.
-    int payload_size_bytes = payload_size_ms * bytes_per_ms_;
+    size_t payload_size_bytes = payload_size_ms * bytes_per_ms_;
     packet_list.push_back(CreatePacket(kPayloadType, payload_size_bytes,
                                        payload_size_ms));
   }
@@ -548,7 +548,7 @@ TEST_P(SplitBySamplesTest, PayloadSizes) {
   PacketList::iterator it = packet_list.begin();
   int i = 0;
   while (it != packet_list.end()) {
-    int length_bytes = expected_size_ms[i] * bytes_per_ms_;
+    size_t length_bytes = expected_size_ms[i] * bytes_per_ms_;
     uint32_t expected_timestamp = kBaseTimestamp +
         expected_timestamp_offset_ms[i] * samples_per_ms_;
     VerifyPacket((*it), length_bytes, kPayloadType, kSequenceNumber,
@@ -583,7 +583,7 @@ class SplitIlbcTest : public ::testing::TestWithParam<std::pair<int, int> > {
   }
   size_t num_frames_;
   int frame_length_ms_;
-  int frame_length_bytes_;
+  size_t frame_length_bytes_;
 };
 
 // Test splitting sample-based payloads.
@@ -591,10 +591,10 @@ TEST_P(SplitIlbcTest, NumFrames) {
   PacketList packet_list;
   static const uint8_t kPayloadType = 17;  // Just a random number.
   const int frame_length_samples = frame_length_ms_ * 8;
-  int payload_length_bytes = frame_length_bytes_ * num_frames_;
+  size_t payload_length_bytes = frame_length_bytes_ * num_frames_;
   Packet* packet = CreatePacket(kPayloadType, payload_length_bytes, 0);
   // Fill payload with increasing integers {0, 1, 2, ...}.
-  for (int i = 0; i < packet->payload_length; ++i) {
+  for (size_t i = 0; i < packet->payload_length; ++i) {
     packet->payload[i] = static_cast<uint8_t>(i);
   }
   packet_list.push_back(packet);
@@ -624,7 +624,7 @@ TEST_P(SplitIlbcTest, NumFrames) {
     EXPECT_EQ(kSequenceNumber, packet->header.sequenceNumber);
     EXPECT_EQ(true, packet->primary);
     ASSERT_FALSE(packet->payload == NULL);
-    for (int i = 0; i < packet->payload_length; ++i) {
+    for (size_t i = 0; i < packet->payload_length; ++i) {
       EXPECT_EQ(payload_value, packet->payload[i]);
       ++payload_value;
     }
@@ -661,7 +661,7 @@ INSTANTIATE_TEST_CASE_P(
 TEST(IlbcPayloadSplitter, TooLargePayload) {
   PacketList packet_list;
   static const uint8_t kPayloadType = 17;  // Just a random number.
-  int kPayloadLengthBytes = 950;
+  size_t kPayloadLengthBytes = 950;
   Packet* packet = CreatePacket(kPayloadType, kPayloadLengthBytes, 0);
   packet_list.push_back(packet);
 
@@ -692,7 +692,7 @@ TEST(IlbcPayloadSplitter, TooLargePayload) {
 TEST(IlbcPayloadSplitter, UnevenPayload) {
   PacketList packet_list;
   static const uint8_t kPayloadType = 17;  // Just a random number.
-  int kPayloadLengthBytes = 39;  // Not an even number of frames.
+  size_t kPayloadLengthBytes = 39;  // Not an even number of frames.
   Packet* packet = CreatePacket(kPayloadType, kPayloadLengthBytes, 0);
   packet_list.push_back(packet);
 
@@ -744,7 +744,7 @@ TEST(FecPayloadSplitter, MixedPayload) {
   packet = packet_list.front();
   EXPECT_EQ(0, packet->header.payloadType);
   EXPECT_EQ(kBaseTimestamp - 20 * 48, packet->header.timestamp);
-  EXPECT_EQ(10, packet->payload_length);
+  EXPECT_EQ(10U, packet->payload_length);
   EXPECT_FALSE(packet->primary);
   delete [] packet->payload;
   delete packet;
@@ -754,7 +754,7 @@ TEST(FecPayloadSplitter, MixedPayload) {
   packet = packet_list.front();
   EXPECT_EQ(0, packet->header.payloadType);
   EXPECT_EQ(kBaseTimestamp, packet->header.timestamp);
-  EXPECT_EQ(10, packet->payload_length);
+  EXPECT_EQ(10U, packet->payload_length);
   EXPECT_TRUE(packet->primary);
   delete [] packet->payload;
   delete packet;

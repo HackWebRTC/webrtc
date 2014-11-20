@@ -104,8 +104,8 @@ public:
                               const WAVEFORMATEX& waveFormatHeader);
     int32_t Create(const char* fileName);
 
-    int32_t WriteAudio(const uint8_t* data, int32_t length);
-    int32_t WriteVideo(const uint8_t* data, int32_t length);
+    int32_t WriteAudio(const uint8_t* data, size_t length);
+    int32_t WriteVideo(const uint8_t* data, size_t length);
 
     int32_t GetVideoStreamInfo(AVISTREAMHEADER& videoStreamHeader,
                                BITMAPINFOHEADER& bitmapInfo,
@@ -116,8 +116,8 @@ public:
 
     int32_t GetAudioStreamInfo(WAVEFORMATEX& waveHeader);
 
-    int32_t ReadAudio(uint8_t* data, int32_t& length);
-    int32_t ReadVideo(uint8_t* data, int32_t& length);
+    int32_t ReadAudio(uint8_t* data, size_t& length);
+    int32_t ReadVideo(uint8_t* data, size_t& length);
 
     int32_t Close();
 
@@ -145,7 +145,7 @@ private:
 
     int32_t PrepareDataChunkHeaders();
 
-    int32_t ReadMoviSubChunk(uint8_t* data, int32_t& length, uint32_t tag1,
+    int32_t ReadMoviSubChunk(uint8_t* data, size_t& length, uint32_t tag1,
                              uint32_t tag2 = 0);
 
     int32_t WriteRIFF();

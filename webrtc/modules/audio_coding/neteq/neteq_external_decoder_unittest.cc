@@ -203,7 +203,7 @@ class NetEqExternalDecoderTest : public ::testing::Test {
   int sample_rate_hz_;
   int samples_per_ms_;
   const int frame_size_ms_;
-  int frame_size_samples_;
+  size_t frame_size_samples_;
   int output_size_samples_;
   NetEq* neteq_external_;
   NetEq* neteq_;
@@ -214,7 +214,7 @@ class NetEqExternalDecoderTest : public ::testing::Test {
   int16_t output_[kMaxBlockSize];
   int16_t output_external_[kMaxBlockSize];
   WebRtcRTPHeader rtp_header_;
-  int payload_size_bytes_;
+  size_t payload_size_bytes_;
   int last_send_time_;
   int last_arrival_time_;
   scoped_ptr<test::InputAudioFile> input_file_;

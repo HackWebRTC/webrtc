@@ -51,7 +51,7 @@ class FrameGenerator {
   RtpPacket* BuildFecRedPacket(const Packet* packet);
 
   void SetRedHeader(Packet* red_packet, uint8_t payload_type,
-                    int header_length) const;
+                    size_t header_length) const;
 
  private:
   static void BuildRtpHeader(uint8_t* data, const RTPHeader* header);

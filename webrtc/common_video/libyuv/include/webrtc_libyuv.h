@@ -81,8 +81,8 @@ void Calc16ByteAlignedStride(int width, int* stride_y, int* stride_uv);
 //   - width        :frame width in pixels.
 //   - height       :frame height in pixels.
 // Return value:    :The required size in bytes to accommodate the specified
-//                   video frame or -1 in case of an error .
-int CalcBufferSize(VideoType type, int width, int height);
+//                   video frame.
+size_t CalcBufferSize(VideoType type, int width, int height);
 
 // TODO(mikhal): Add unit test for these two functions and determine location.
 // Print I420VideoFrame to file
@@ -101,7 +101,7 @@ int PrintI420VideoFrame(const I420VideoFrame& frame, FILE* file);
 //   - buffer      : Pointer to buffer
 // Return value: length of buffer if OK, < 0 otherwise.
 int ExtractBuffer(const I420VideoFrame& input_frame,
-                  int size, uint8_t* buffer);
+                  size_t size, uint8_t* buffer);
 // Convert To I420
 // Input:
 //   - src_video_type   : Type of input video.
@@ -119,7 +119,7 @@ int ConvertToI420(VideoType src_video_type,
                   const uint8_t* src_frame,
                   int crop_x, int crop_y,
                   int src_width, int src_height,
-                  int sample_size,
+                  size_t sample_size,
                   VideoRotationMode rotation,
                   I420VideoFrame* dst_frame);
 

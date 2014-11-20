@@ -32,7 +32,7 @@ class MockPacedSenderCallback : public PacedSender::Callback {
                     int64_t capture_time_ms,
                     bool retransmission));
   MOCK_METHOD1(TimeToSendPadding,
-      int(int bytes));
+      size_t(size_t bytes));
 };
 
 class PacedSenderPadding : public PacedSender::Callback {
@@ -46,17 +46,17 @@ class PacedSenderPadding : public PacedSender::Callback {
     return true;
   }
 
-  int TimeToSendPadding(int bytes) {
-    const int kPaddingPacketSize = 224;
-    int num_packets = (bytes + kPaddingPacketSize - 1) / kPaddingPacketSize;
+  size_t TimeToSendPadding(size_t bytes) {
+    const size_t kPaddingPacketSize = 224;
+    size_t num_packets = (bytes + kPaddingPacketSize - 1) / kPaddingPacketSize;
     padding_sent_ += kPaddingPacketSize * num_packets;
     return kPaddingPacketSize * num_packets;
   }
 
-  int padding_sent() { return padding_sent_; }
+  size_t padding_sent() { return padding_sent_; }
 
  private:
-  int padding_sent_;
+  size_t padding_sent_;
 };
 
 class PacedSenderProbing : public PacedSender::Callback {
@@ -84,7 +84,7 @@ class PacedSenderProbing : public PacedSender::Callback {
     return true;
   }
 
-  int TimeToSendPadding(int bytes) {
+  size_t TimeToSendPadding(size_t bytes) {
     EXPECT_TRUE(false);
     return bytes;
   }
@@ -114,7 +114,7 @@ class PacedSenderTest : public ::testing::Test {
                            uint32_t ssrc,
                            uint16_t sequence_number,
                            int64_t capture_time_ms,
-                           int size,
+                           size_t size,
                            bool retransmission) {
     EXPECT_FALSE(send_bucket_->SendPacket(priority, ssrc,
         sequence_number, capture_time_ms, size, retransmission));
@@ -421,9 +421,9 @@ TEST_F(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
   send_bucket_->UpdateBitrate(
       kTargetBitrate, kPaceMultiplier * kTargetBitrate, kTargetBitrate);
   int64_t start_time = clock_.TimeInMilliseconds();
-  int media_bytes = 0;
+  size_t media_bytes = 0;
   while (clock_.TimeInMilliseconds() - start_time < kBitrateWindow) {
-    int media_payload = rand() % 100 + 200;  // [200, 300] bytes.
+    size_t media_payload = rand() % 100 + 200;  // [200, 300] bytes.
     EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority, ssrc,
                                           sequence_number++, capture_time_ms,
                                           media_payload, false));
@@ -431,8 +431,9 @@ TEST_F(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
     clock_.AdvanceTimeMilliseconds(kTimeStep);
     send_bucket_->Process();
   }
-  EXPECT_NEAR(kTargetBitrate, 8 * (media_bytes + callback.padding_sent()) /
-              kBitrateWindow, 1);
+  EXPECT_NEAR(kTargetBitrate,
+              static_cast<int>(8 * (media_bytes + callback.padding_sent()) /
+                  kBitrateWindow), 1);
 }
 
 TEST_F(PacedSenderTest, Priority) {
@@ -642,19 +643,20 @@ TEST_F(PacedSenderTest, ResendPacket) {
 TEST_F(PacedSenderTest, ExpectedQueueTimeMs) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
-  const int32_t kNumPackets = 60;
-  const int32_t kPacketSize = 1200;
+  const size_t kNumPackets = 60;
+  const size_t kPacketSize = 1200;
   const int32_t kMaxBitrate = kPaceMultiplier * 30;
   EXPECT_EQ(0, send_bucket_->ExpectedQueueTimeMs());
 
   send_bucket_->UpdateBitrate(30, kMaxBitrate, 0);
-  for (int i = 0; i < kNumPackets; ++i) {
+  for (size_t i = 0; i < kNumPackets; ++i) {
     SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
                         clock_.TimeInMilliseconds(), kPacketSize, false);
   }
 
   // Queue in ms = 1000 * (bytes in queue) / (kbit per second * 1000 / 8)
-  int64_t queue_in_ms = kNumPackets * kPacketSize * 8 / kMaxBitrate;
+  int64_t queue_in_ms =
+      static_cast<int64_t>(kNumPackets * kPacketSize * 8 / kMaxBitrate);
   EXPECT_EQ(queue_in_ms, send_bucket_->ExpectedQueueTimeMs());
 
   int64_t time_start = clock_.TimeInMilliseconds();
@@ -672,7 +674,8 @@ TEST_F(PacedSenderTest, ExpectedQueueTimeMs) {
 
   // Allow for aliasing, duration should be in [expected(n - 1), expected(n)].
   EXPECT_LE(duration, queue_in_ms);
-  EXPECT_GE(duration, queue_in_ms - (kPacketSize * 8 / kMaxBitrate));
+  EXPECT_GE(duration,
+            queue_in_ms - static_cast<int64_t>(kPacketSize * 8 / kMaxBitrate));
 }
 
 TEST_F(PacedSenderTest, QueueTimeGrowsOverTime) {
@@ -713,7 +716,7 @@ class ProbingPacedSender : public PacedSender {
 TEST_F(PacedSenderTest, ProbingWithInitialFrame) {
   const int kNumPackets = 11;
   const int kNumDeltas = kNumPackets - 1;
-  const int kPacketSize = 1200;
+  const size_t kPacketSize = 1200;
   const int kInitialBitrateKbps = 300;
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
@@ -749,7 +752,7 @@ TEST_F(PacedSenderTest, ProbingWithInitialFrame) {
 TEST_F(PacedSenderTest, PriorityInversion) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
-  const int32_t kPacketSize = 1200;
+  const size_t kPacketSize = 1200;
 
   EXPECT_FALSE(send_bucket_->SendPacket(
       PacedSender::kHighPriority, ssrc, sequence_number + 3,
@@ -797,7 +800,7 @@ TEST_F(PacedSenderTest, PriorityInversion) {
 TEST_F(PacedSenderTest, PaddingOveruse) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
-  const int32_t kPacketSize = 1200;
+  const size_t kPacketSize = 1200;
 
   // Min bitrate 0 => no padding, padding budget will stay at 0.
   send_bucket_->UpdateBitrate(60, 90, 0);

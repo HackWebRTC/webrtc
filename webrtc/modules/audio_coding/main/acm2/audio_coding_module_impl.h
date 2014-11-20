@@ -156,13 +156,13 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   // Incoming packet from network parsed and ready for decode.
   virtual int IncomingPacket(const uint8_t* incoming_payload,
-                             int payload_length,
+                             const size_t payload_length,
                              const WebRtcRTPHeader& rtp_info) OVERRIDE;
 
   // Incoming payloads, without rtp-info, the rtp-info will be created in ACM.
   // One usage for this API is when pre-encoded files are pushed in ACM.
   virtual int IncomingPayload(const uint8_t* incoming_payload,
-                              int payload_length,
+                              const size_t payload_length,
                               uint8_t payload_type,
                               uint32_t timestamp) OVERRIDE;
 
@@ -423,11 +423,11 @@ class AudioCodingImpl : public AudioCoding {
                                     uint8_t payload_type) OVERRIDE;
 
   virtual bool InsertPacket(const uint8_t* incoming_payload,
-                            int32_t payload_len_bytes,
+                            size_t payload_len_bytes,
                             const WebRtcRTPHeader& rtp_info) OVERRIDE;
 
   virtual bool InsertPayload(const uint8_t* incoming_payload,
-                             int32_t payload_len_byte,
+                             size_t payload_len_byte,
                              uint8_t payload_type,
                              uint32_t timestamp) OVERRIDE;
 

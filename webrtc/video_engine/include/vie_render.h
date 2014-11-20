@@ -36,7 +36,7 @@ class ExternalRenderer {
 
   // This method is called when a new frame should be rendered.
   virtual int DeliverFrame(unsigned char* buffer,
-                           int buffer_size,
+                           size_t buffer_size,
                            // RTP timestamp in 90kHz.
                            uint32_t timestamp,
                            // NTP time of the capture time in local timebase

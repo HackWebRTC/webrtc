@@ -71,12 +71,12 @@ void VCMNTEncodeCompleteCallback::RegisterTransportCallback(
 
 int32_t
 VCMNTEncodeCompleteCallback::SendData(
-        const FrameType frameType,
-        const uint8_t  payloadType,
-        const uint32_t timeStamp,
+        FrameType frameType,
+        uint8_t  payloadType,
+        uint32_t timeStamp,
         int64_t capture_time_ms,
         const uint8_t* payloadData,
-        const uint32_t payloadSize,
+        size_t payloadSize,
         const RTPFragmentationHeader& /*fragmentationHeader*/,
         const webrtc::RTPVideoHeader* videoHdr)
 
@@ -131,7 +131,7 @@ VCMNTEncodeCompleteCallback::RegisterReceiverVCM(VideoCodingModule *vcm)
   _VCMReceiver = vcm;
   return;
 }
- int32_t
+ size_t
 VCMNTEncodeCompleteCallback::EncodedBytes()
 {
   return _encodedBytes;
@@ -144,13 +144,13 @@ VCMNTEncodeCompleteCallback::SkipCnt()
 }
 
 // Decoded Frame Callback Implementation
-VCMNTDecodeCompleCallback::~VCMNTDecodeCompleCallback()
+VCMNTDecodeCompleteCallback::~VCMNTDecodeCompleteCallback()
 {
   if (_decodedFile)
   fclose(_decodedFile);
 }
  int32_t
-VCMNTDecodeCompleCallback::FrameToRender(webrtc::I420VideoFrame& videoFrame)
+VCMNTDecodeCompleteCallback::FrameToRender(webrtc::I420VideoFrame& videoFrame)
 {
     if (videoFrame.width() != _currentWidth ||
         videoFrame.height() != _currentHeight)
@@ -167,13 +167,13 @@ VCMNTDecodeCompleCallback::FrameToRender(webrtc::I420VideoFrame& videoFrame)
     if (PrintI420VideoFrame(videoFrame, _decodedFile) < 0) {
       return -1;
     }
-    _decodedBytes+= webrtc::CalcBufferSize(webrtc::kI420,
-                                   videoFrame.width(), videoFrame.height());
+    _decodedBytes += webrtc::CalcBufferSize(webrtc::kI420, videoFrame.width(),
+                                            videoFrame.height());
     return VCM_OK;
 }
 
- int32_t
-VCMNTDecodeCompleCallback::DecodedBytes()
+ size_t
+VCMNTDecodeCompleteCallback::DecodedBytes()
 {
   return _decodedBytes;
 }
@@ -260,7 +260,7 @@ NormalTest::Perform(const CmdArgs& args)
   // register a decoder (same codec for decoder and encoder )
   TEST(_vcm->RegisterReceiveCodec(&_sendCodec, 1) == VCM_OK);
   /* Callback Settings */
-  VCMNTDecodeCompleCallback _decodeCallback(_outname);
+  VCMNTDecodeCompleteCallback _decodeCallback(_outname);
   _vcm->RegisterReceiveCallback(&_decodeCallback);
   VCMNTEncodeCompleteCallback _encodeCompleteCallback(_encodedFile, *this);
   _vcm->RegisterTransportCallback(&_encodeCompleteCallback);

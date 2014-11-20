@@ -36,7 +36,7 @@ struct RtpPacket {
   ForwardErrorCorrection::Packet* pkt;
 };
 
-RedPacket::RedPacket(int length)
+RedPacket::RedPacket(size_t length)
     : data_(new uint8_t[length]),
       length_(length),
       header_length_(0) {
@@ -46,7 +46,7 @@ RedPacket::~RedPacket() {
   delete [] data_;
 }
 
-void RedPacket::CreateHeader(const uint8_t* rtp_header, int header_length,
+void RedPacket::CreateHeader(const uint8_t* rtp_header, size_t header_length,
                              int red_pl_type, int pl_type) {
   assert(header_length + kREDForFECHeaderLength <= length_);
   memcpy(data_, rtp_header, header_length);
@@ -64,7 +64,7 @@ void RedPacket::SetSeqNum(int seq_num) {
   RtpUtility::AssignUWord16ToBuffer(&data_[2], seq_num);
 }
 
-void RedPacket::AssignPayload(const uint8_t* payload, int length) {
+void RedPacket::AssignPayload(const uint8_t* payload, size_t length) {
   assert(header_length_ + length <= length_);
   memcpy(data_ + header_length_, payload, length);
 }
@@ -77,7 +77,7 @@ uint8_t* RedPacket::data() const {
   return data_;
 }
 
-int RedPacket::length() const {
+size_t RedPacket::length() const {
   return length_;
 }
 
@@ -120,8 +120,8 @@ void ProducerFec::SetFecParameters(const FecProtectionParams* params,
 }
 
 RedPacket* ProducerFec::BuildRedPacket(const uint8_t* data_buffer,
-                                       int payload_length,
-                                       int rtp_header_length,
+                                       size_t payload_length,
+                                       size_t rtp_header_length,
                                        int red_pl_type) {
   RedPacket* red_packet = new RedPacket(payload_length +
                                         kREDForFECHeaderLength +
@@ -134,8 +134,8 @@ RedPacket* ProducerFec::BuildRedPacket(const uint8_t* data_buffer,
 }
 
 int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
-                                            int payload_length,
-                                            int rtp_header_length) {
+                                            size_t payload_length,
+                                            size_t rtp_header_length) {
   assert(fec_packets_.empty());
   if (media_packets_fec_.empty()) {
     params_ = new_params_;
@@ -210,7 +210,7 @@ bool ProducerFec::FecAvailable() const {
 RedPacket* ProducerFec::GetFecPacket(int red_pl_type,
                                      int fec_pl_type,
                                      uint16_t seq_num,
-                                     int rtp_header_length) {
+                                     size_t rtp_header_length) {
   if (fec_packets_.empty())
     return NULL;
   // Build FEC packet. The FEC packets in |fec_packets_| doesn't

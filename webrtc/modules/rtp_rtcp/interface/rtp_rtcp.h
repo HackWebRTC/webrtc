@@ -83,7 +83,7 @@ class RtpRtcp : public Module {
    ***************************************************************************/
 
     virtual int32_t IncomingRtcpPacket(const uint8_t* incoming_packet,
-                                       uint16_t incoming_packet_length) = 0;
+                                       size_t incoming_packet_length) = 0;
 
     virtual void SetRemoteSSRC(const uint32_t ssrc) = 0;
 
@@ -328,7 +328,7 @@ class RtpRtcp : public Module {
         const uint32_t timeStamp,
         int64_t capture_time_ms,
         const uint8_t* payloadData,
-        const uint32_t payloadSize,
+        const size_t payloadSize,
         const RTPFragmentationHeader* fragmentation = NULL,
         const RTPVideoHeader* rtpVideoHdr = NULL) = 0;
 
@@ -337,7 +337,7 @@ class RtpRtcp : public Module {
                                   int64_t capture_time_ms,
                                   bool retransmission) = 0;
 
-    virtual int TimeToSendPadding(int bytes) = 0;
+    virtual size_t TimeToSendPadding(size_t bytes) = 0;
 
     virtual bool GetSendSideDelay(int* avg_send_delay_ms,
                                   int* max_send_delay_ms) const = 0;
@@ -465,7 +465,7 @@ class RtpRtcp : public Module {
     *   return -1 on failure else 0
     */
     virtual int32_t DataCountersRTP(
-        uint32_t* bytesSent,
+        size_t* bytesSent,
         uint32_t* packetsSent) const = 0;
     /*
     *   Get received RTCP sender info

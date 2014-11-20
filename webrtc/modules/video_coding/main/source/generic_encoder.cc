@@ -82,7 +82,7 @@ int32_t VCMGenericEncoder::Release()
 int32_t
 VCMGenericEncoder::InitEncode(const VideoCodec* settings,
                               int32_t numberOfCores,
-                              uint32_t maxPayloadSize)
+                              size_t maxPayloadSize)
 {
     _bitRate = settings->startBitrate * 1000;
     _frameRate = settings->maxFramerate;
@@ -218,7 +218,7 @@ VCMEncodedFrameCallback::Encoded(
 
     FrameType frameType = VCMEncodedFrame::ConvertFrameType(encodedImage._frameType);
 
-    uint32_t encodedBytes = 0;
+    size_t encodedBytes = 0;
     if (_sendCallback != NULL)
     {
         encodedBytes = encodedImage._length;

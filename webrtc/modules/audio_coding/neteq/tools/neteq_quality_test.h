@@ -118,7 +118,7 @@ class NetEqQualityTest : public ::testing::Test {
   // Expected output number of samples per channel in a frame.
   const int out_size_samples_;
 
-  int payload_size_bytes_;
+  size_t payload_size_bytes_;
   int max_payload_bytes_;
 
   scoped_ptr<InputAudioFile> in_file_;
@@ -134,7 +134,7 @@ class NetEqQualityTest : public ::testing::Test {
   scoped_ptr<int16_t[]> out_data_;
   WebRtcRTPHeader rtp_header_;
 
-  long total_payload_size_bytes_;
+  size_t total_payload_size_bytes_;
 };
 
 }  // namespace test

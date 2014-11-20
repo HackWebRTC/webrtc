@@ -27,7 +27,7 @@ class CriticalSectionWrapper;
 // TODO(turajs): Write constructor for this structure.
 struct ACMTestFrameSizeStats {
   uint16_t frameSizeSample;
-  int16_t maxPayloadLen;
+  size_t maxPayloadLen;
   uint32_t numPackets;
   uint64_t totalPayloadLenByte;
   uint64_t totalEncodedSamples;
@@ -39,7 +39,7 @@ struct ACMTestFrameSizeStats {
 struct ACMTestPayloadStats {
   bool newPacket;
   int16_t payloadType;
-  int16_t lastPayloadLenByte;
+  size_t lastPayloadLenByte;
   uint32_t lastTimestamp;
   ACMTestFrameSizeStats frameSizeStats[MAX_NUM_FRAMESIZES];
 };
@@ -51,9 +51,11 @@ class Channel : public AudioPacketizationCallback {
   ~Channel();
 
   virtual int32_t SendData(
-      const FrameType frameType, const uint8_t payloadType,
-      const uint32_t timeStamp, const uint8_t* payloadData,
-      const uint16_t payloadSize,
+      FrameType frameType,
+      uint8_t payloadType,
+      uint32_t timeStamp,
+      const uint8_t* payloadData,
+      size_t payloadSize,
       const RTPFragmentationHeader* fragmentation) OVERRIDE;
 
   void RegisterReceiverACM(AudioCodingModule *acm);
@@ -93,7 +95,7 @@ class Channel : public AudioPacketizationCallback {
   }
 
  private:
-  void CalcStatistics(WebRtcRTPHeader& rtpInfo, uint16_t payloadSize);
+  void CalcStatistics(WebRtcRTPHeader& rtpInfo, size_t payloadSize);
 
   AudioCodingModule* _receiverACM;
   uint16_t _seqNo;

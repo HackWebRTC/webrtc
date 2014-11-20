@@ -31,7 +31,7 @@ class StreamStatisticianImpl : public StreamStatistician {
   virtual ~StreamStatisticianImpl() {}
 
   virtual bool GetStatistics(RtcpStatistics* statistics, bool reset) OVERRIDE;
-  virtual void GetDataCounters(uint32_t* bytes_received,
+  virtual void GetDataCounters(size_t* bytes_received,
                                uint32_t* packets_received) const OVERRIDE;
   virtual uint32_t BitrateReceived() const OVERRIDE;
   virtual void ResetStatistics() OVERRIDE;
@@ -80,7 +80,7 @@ class StreamStatisticianImpl : public StreamStatistician {
   uint16_t received_seq_wraps_;
 
   // Current counter values.
-  uint16_t received_packet_overhead_;
+  size_t received_packet_overhead_;
   StreamDataCounters receive_counters_;
 
   // Counter values when we sent the last report.

@@ -56,7 +56,7 @@ public:
     virtual inline bool StartReceiving() OVERRIDE {return StartReceiving(8);}
     virtual bool StopReceiving() OVERRIDE;
 
-    virtual int32_t SendTo(const int8_t* buf, int32_t len,
+    virtual int32_t SendTo(const int8_t* buf, size_t len,
                            const SocketAddress& to) OVERRIDE;
 
     virtual void CloseBlocking() OVERRIDE;

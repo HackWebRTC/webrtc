@@ -41,7 +41,7 @@ public:
     ~GenericCodecTest();
     static int RunTest(CmdArgs& args);
     int32_t Perform(CmdArgs& args);
-    float WaitForEncodedFrame() const;
+    size_t WaitForEncodedFrame() const;
 
 private:
     void Setup(CmdArgs& args);
@@ -75,14 +75,18 @@ class RTPSendCallback_SizeTest : public webrtc::Transport
 public:
     // constructor input: (receive side) rtp module to send encoded data to
     RTPSendCallback_SizeTest() : _maxPayloadSize(0), _payloadSizeSum(0), _nPackets(0) {}
-    virtual int SendPacket(int channel, const void *data, int len) OVERRIDE;
-    virtual int SendRTCPPacket(int channel, const void *data, int len) OVERRIDE {return 0;}
-    void SetMaxPayloadSize(uint32_t maxPayloadSize);
+    virtual int SendPacket(int channel, const void *data, size_t len) OVERRIDE;
+    virtual int SendRTCPPacket(int channel,
+                               const void *data,
+                               size_t len) OVERRIDE {
+      return 0;
+    }
+    void SetMaxPayloadSize(size_t maxPayloadSize);
     void Reset();
     float AveragePayloadSize() const;
 private:
-    uint32_t         _maxPayloadSize;
-    uint32_t         _payloadSizeSum;
+    size_t           _maxPayloadSize;
+    size_t           _payloadSizeSum;
     uint32_t         _nPackets;
 };
 
@@ -91,12 +95,12 @@ class VCMEncComplete_KeyReqTest : public webrtc::VCMPacketizationCallback
 public:
     VCMEncComplete_KeyReqTest(webrtc::VideoCodingModule &vcm) : _vcm(vcm), _seqNo(0), _timeStamp(0) {}
     virtual int32_t SendData(
-        const webrtc::FrameType frameType,
-        const uint8_t payloadType,
+        webrtc::FrameType frameType,
+        uint8_t payloadType,
         uint32_t timeStamp,
         int64_t capture_time_ms,
         const uint8_t* payloadData,
-        const uint32_t payloadSize,
+        size_t payloadSize,
         const webrtc::RTPFragmentationHeader& fragmentationHeader,
         const webrtc::RTPVideoHeader* videoHdr) OVERRIDE;
 private:

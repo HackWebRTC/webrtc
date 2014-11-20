@@ -44,7 +44,7 @@ RtpPacket* FrameGenerator::NextPacket(int offset, size_t length) {
 
 // Creates a new RtpPacket with the RED header added to the packet.
 RtpPacket* FrameGenerator::BuildMediaRedPacket(const RtpPacket* packet) {
-  const int kHeaderLength = packet->header.header.headerLength;
+  const size_t kHeaderLength = packet->header.header.headerLength;
   RtpPacket* red_packet = new RtpPacket;
   red_packet->header = packet->header;
   red_packet->length = packet->length + 1;  // 1 byte RED header.
@@ -65,7 +65,7 @@ RtpPacket* FrameGenerator::BuildFecRedPacket(const Packet* packet) {
   ++num_packets_;
   RtpPacket* red_packet = NextPacket(0, packet->length + 1);
   red_packet->data[1] &= ~0x80;  // Clear marker bit.
-  const int kHeaderLength = red_packet->header.header.headerLength;
+  const size_t kHeaderLength = red_packet->header.header.headerLength;
   SetRedHeader(red_packet, kFecPayloadType, kHeaderLength);
   memcpy(red_packet->data + kHeaderLength + 1, packet->data, packet->length);
   red_packet->length = kHeaderLength + 1 + packet->length;
@@ -73,7 +73,7 @@ RtpPacket* FrameGenerator::BuildFecRedPacket(const Packet* packet) {
 }
 
 void FrameGenerator::SetRedHeader(Packet* red_packet, uint8_t payload_type,
-                                  int header_length) const {
+                                  size_t header_length) const {
   // Replace pltype.
   red_packet->data[1] &= 0x80;             // Reset.
   red_packet->data[1] += kRedPayloadType;  // Replace.

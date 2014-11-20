@@ -132,7 +132,7 @@ class NetEq {
   // Returns 0 on success, -1 on failure.
   virtual int InsertPacket(const WebRtcRTPHeader& rtp_header,
                            const uint8_t* payload,
-                           int length_bytes,
+                           size_t length_bytes,
                            uint32_t receive_timestamp) = 0;
 
   // Inserts a sync-packet into packet queue. Sync-packets are decoded to

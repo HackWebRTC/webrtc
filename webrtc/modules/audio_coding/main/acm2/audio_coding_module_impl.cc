@@ -314,7 +314,7 @@ int AudioCodingModuleImpl::EncodeFragmentation(int fragmentation_index,
 int AudioCodingModuleImpl::ProcessDualStream() {
   uint8_t stream[kMaxNumFragmentationVectors * MAX_PAYLOAD_SIZE_BYTE];
   uint32_t current_timestamp;
-  int16_t length_bytes = 0;
+  size_t length_bytes = 0;
   RTPFragmentationHeader my_fragmentation;
 
   uint8_t my_red_payload_type;
@@ -336,8 +336,7 @@ int AudioCodingModuleImpl::ProcessDualStream() {
       // Nothing to send.
       return 0;
     }
-    int len_bytes_previous_secondary = static_cast<int>(
-        fragmentation_.fragmentationLength[2]);
+    size_t len_bytes_previous_secondary = fragmentation_.fragmentationLength[2];
     assert(len_bytes_previous_secondary <= MAX_PAYLOAD_SIZE_BYTE);
     bool has_previous_payload = len_bytes_previous_secondary > 0;
 
@@ -1689,13 +1688,8 @@ int AudioCodingModuleImpl::ReceiveCodec(CodecInst* current_codec) const {
 
 // Incoming packet from network parsed and ready for decode.
 int AudioCodingModuleImpl::IncomingPacket(const uint8_t* incoming_payload,
-                                          const int payload_length,
+                                          const size_t payload_length,
                                           const WebRtcRTPHeader& rtp_header) {
-  if (payload_length < 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
-                 "IncomingPacket() Error, payload-length cannot be negative");
-    return -1;
-  }
   int last_audio_pltype = receiver_.last_audio_payload_type();
   if (receiver_.InsertPacket(rtp_header, incoming_payload, payload_length) <
       0) {
@@ -1797,16 +1791,9 @@ int AudioCodingModuleImpl::RegisterVADCallback(ACMVADCallback* vad_callback) {
 
 // TODO(tlegrand): Modify this function to work for stereo, and add tests.
 int AudioCodingModuleImpl::IncomingPayload(const uint8_t* incoming_payload,
-                                           int payload_length,
+                                           size_t payload_length,
                                            uint8_t payload_type,
                                            uint32_t timestamp) {
-  if (payload_length < 0) {
-    // Log error in trace file.
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
-                 "IncomingPacket() Error, payload-length cannot be negative");
-    return -1;
-  }
-
   // We are not acquiring any lock when interacting with |aux_rtp_header_| no
   // other method uses this member variable.
   if (aux_rtp_header_ == NULL) {
@@ -1960,7 +1947,7 @@ int AudioCodingModuleImpl::REDPayloadISAC(int isac_rate,
 }
 
 void AudioCodingModuleImpl::ResetFragmentation(int vector_size) {
-  for (int n = 0; n < kMaxNumFragmentationVectors; n++) {
+  for (size_t n = 0; n < kMaxNumFragmentationVectors; n++) {
     fragmentation_.fragmentationOffset[n] = n * MAX_PAYLOAD_SIZE_BYTE;
   }
   memset(fragmentation_.fragmentationLength, 0, kMaxNumFragmentationVectors *
@@ -2116,14 +2103,14 @@ bool AudioCodingImpl::RegisterReceiveCodec(int decoder_type,
 }
 
 bool AudioCodingImpl::InsertPacket(const uint8_t* incoming_payload,
-                                   int32_t payload_len_bytes,
+                                   size_t payload_len_bytes,
                                    const WebRtcRTPHeader& rtp_info) {
   return acm_old_->IncomingPacket(
              incoming_payload, payload_len_bytes, rtp_info) == 0;
 }
 
 bool AudioCodingImpl::InsertPayload(const uint8_t* incoming_payload,
-                                    int32_t payload_len_byte,
+                                    size_t payload_len_byte,
                                     uint8_t payload_type,
                                     uint32_t timestamp) {
   FATAL() << "Not implemented yet.";

@@ -256,7 +256,7 @@ int32_t VideoCaptureImpl::DeliverCapturedFrame(I420VideoFrame& captureFrame,
 
 int32_t VideoCaptureImpl::IncomingFrame(
     uint8_t* videoFrame,
-    int32_t videoFrameLength,
+    size_t videoFrameLength,
     const VideoCaptureCapability& frameInfo,
     int64_t captureTime/*=0*/)
 {

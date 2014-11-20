@@ -30,9 +30,11 @@ class TestPacketization : public AudioPacketizationCallback {
   TestPacketization(RTPStream *rtpStream, uint16_t frequency);
   ~TestPacketization();
   virtual int32_t SendData(
-      const FrameType frameType, const uint8_t payloadType,
-      const uint32_t timeStamp, const uint8_t* payloadData,
-      const uint16_t payloadSize,
+      const FrameType frameType,
+      const uint8_t payloadType,
+      const uint32_t timeStamp,
+      const uint8_t* payloadData,
+      const size_t payloadSize,
       const RTPFragmentationHeader* fragmentation) OVERRIDE;
 
  private:
@@ -92,8 +94,8 @@ class Receiver {
   uint8_t _incomingPayload[MAX_INCOMING_PAYLOAD];
   RTPStream* _rtpStream;
   WebRtcRTPHeader _rtpInfo;
-  uint16_t _realPayloadSizeBytes;
-  uint16_t _payloadSizeBytes;
+  size_t _realPayloadSizeBytes;
+  size_t _payloadSizeBytes;
   uint32_t _nextTime;
 };
 

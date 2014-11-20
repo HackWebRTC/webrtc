@@ -257,13 +257,12 @@ VideoReceiveStream::Stats VideoReceiveStream::GetStats() const {
 }
 
 bool VideoReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
-  return network_->ReceivedRTCPPacket(
-             channel_, packet, static_cast<int>(length)) == 0;
+  return network_->ReceivedRTCPPacket(channel_, packet, length) == 0;
 }
 
 bool VideoReceiveStream::DeliverRtp(const uint8_t* packet, size_t length) {
-  return network_->ReceivedRTPPacket(
-             channel_, packet, static_cast<int>(length), PacketTime()) == 0;
+  return network_->ReceivedRTPPacket(channel_, packet, length, PacketTime()) ==
+      0;
 }
 
 void VideoReceiveStream::FrameCallback(I420VideoFrame* video_frame) {

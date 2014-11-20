@@ -71,10 +71,10 @@ FecReceiverImpl::~FecReceiverImpl() {
 
 int32_t FecReceiverImpl::AddReceivedRedPacket(
     const RTPHeader& header, const uint8_t* incoming_rtp_packet,
-    int packet_length, uint8_t ulpfec_payload_type) {
+    size_t packet_length, uint8_t ulpfec_payload_type) {
   CriticalSectionScoped cs(crit_sect_.get());
   uint8_t REDHeaderLength = 1;
-  uint16_t payload_data_length = packet_length - header.headerLength;
+  size_t payload_data_length = packet_length - header.headerLength;
 
   // Add to list without RED header, aka a virtual RTP packet
   // we remove the RED header

@@ -858,7 +858,7 @@ class FakeWebRtcVoiceEngine
     return 0;
   }
   WEBRTC_FUNC(ReceivedRTPPacket, (int channel, const void* data,
-                                  unsigned int length)) {
+                                  size_t length)) {
     WEBRTC_CHECK_CHANNEL(channel);
     if (!channels_[channel]->external_transport) return -1;
     channels_[channel]->packets.push_back(
@@ -866,7 +866,7 @@ class FakeWebRtcVoiceEngine
     return 0;
   }
   WEBRTC_FUNC(ReceivedRTPPacket, (int channel, const void* data,
-                                  unsigned int length,
+                                  size_t length,
                                   const webrtc::PacketTime& packet_time)) {
     WEBRTC_CHECK_CHANNEL(channel);
     if (ReceivedRTPPacket(channel, data, length) == -1) {
@@ -877,7 +877,7 @@ class FakeWebRtcVoiceEngine
   }
 
   WEBRTC_STUB(ReceivedRTCPPacket, (int channel, const void* data,
-                                   unsigned int length));
+                                   size_t length));
 
   // webrtc::VoERTP_RTCP
   WEBRTC_STUB(RegisterRTPObserver, (int channel,

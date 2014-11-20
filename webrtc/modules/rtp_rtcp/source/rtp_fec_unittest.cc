@@ -896,7 +896,7 @@ int RtpFecTest::ConstructMediaPacketsSeqNum(int num_media_packets,
   for (int i = 0; i < num_media_packets; ++i) {
     media_packet = new ForwardErrorCorrection::Packet;
     media_packet_list_.push_back(media_packet);
-    media_packet->length = static_cast<uint16_t>(
+    media_packet->length = static_cast<size_t>(
         (static_cast<float>(rand()) / RAND_MAX) *
         (IP_PACKET_SIZE - kRtpHeaderSize - kTransportOverhead -
          ForwardErrorCorrection::PacketOverhead()));
@@ -928,7 +928,7 @@ int RtpFecTest::ConstructMediaPacketsSeqNum(int num_media_packets,
     webrtc::RtpUtility::AssignUWord32ToBuffer(&media_packet->data[8], ssrc_);
 
     // Generate random values for payload.
-    for (int j = 12; j < media_packet->length; ++j) {
+    for (size_t j = 12; j < media_packet->length; ++j) {
       media_packet->data[j] = static_cast<uint8_t>(rand() % 256);
     }
     sequence_number++;

@@ -53,13 +53,13 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
                       uint32_t* frequency,
                       bool* cng_payload_type_has_changed);
 
-  int32_t ParseRtpPacket(WebRtcRTPHeader* rtp_header,
-                         const PayloadUnion& specific_payload,
-                         bool is_red,
-                         const uint8_t* packet,
-                         uint16_t packet_length,
-                         int64_t timestamp_ms,
-                         bool is_first_packet);
+  virtual int32_t ParseRtpPacket(WebRtcRTPHeader* rtp_header,
+                                 const PayloadUnion& specific_payload,
+                                 bool is_red,
+                                 const uint8_t* packet,
+                                 size_t payload_length,
+                                 int64_t timestamp_ms,
+                                 bool is_first_packet) OVERRIDE;
 
   int GetPayloadTypeFrequency() const OVERRIDE;
 
@@ -104,7 +104,7 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
   int32_t ParseAudioCodecSpecific(
       WebRtcRTPHeader* rtp_header,
       const uint8_t* payload_data,
-      uint16_t payload_length,
+      size_t payload_length,
       const AudioPayload& audio_specific,
       bool is_red);
 

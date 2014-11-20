@@ -46,7 +46,7 @@ OveruseDetector::~OveruseDetector() {
   ts_delta_hist_.clear();
 }
 
-void OveruseDetector::Update(uint16_t packet_size,
+void OveruseDetector::Update(size_t packet_size,
                              int64_t timestamp_ms,
                              uint32_t timestamp,
                              const int64_t arrival_time_ms) {
@@ -157,8 +157,8 @@ double OveruseDetector::CurrentDrift() {
 
 void OveruseDetector::UpdateKalman(int64_t t_delta,
                                    double ts_delta,
-                                   uint32_t frame_size,
-                                   uint32_t prev_frame_size) {
+                                   size_t frame_size,
+                                   size_t prev_frame_size) {
   const double min_frame_period = UpdateMinFramePeriod(ts_delta);
   const double drift = CurrentDrift();
   // Compensate for drift

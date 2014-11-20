@@ -69,38 +69,38 @@ class ViEReceiver : public RtpData {
   int StopRTPDump();
 
   // Receives packets from external transport.
-  int ReceivedRTPPacket(const void* rtp_packet, int rtp_packet_length,
+  int ReceivedRTPPacket(const void* rtp_packet, size_t rtp_packet_length,
                         const PacketTime& packet_time);
-  int ReceivedRTCPPacket(const void* rtcp_packet, int rtcp_packet_length);
+  int ReceivedRTCPPacket(const void* rtcp_packet, size_t rtcp_packet_length);
 
   // Implements RtpData.
   virtual int32_t OnReceivedPayloadData(
       const uint8_t* payload_data,
-      const uint16_t payload_size,
+      const size_t payload_size,
       const WebRtcRTPHeader* rtp_header) OVERRIDE;
   virtual bool OnRecoveredPacket(const uint8_t* packet,
-                                 int packet_length) OVERRIDE;
+                                 size_t packet_length) OVERRIDE;
 
   void GetReceiveBandwidthEstimatorStats(
       ReceiveBandwidthEstimatorStats* output) const;
 
   ReceiveStatistics* GetReceiveStatistics() const;
 
-  void ReceivedBWEPacket(int64_t arrival_time_ms, int payload_size,
+  void ReceivedBWEPacket(int64_t arrival_time_ms, size_t payload_size,
                          const RTPHeader& header);
  private:
-  int InsertRTPPacket(const uint8_t* rtp_packet, int rtp_packet_length,
+  int InsertRTPPacket(const uint8_t* rtp_packet, size_t rtp_packet_length,
                       const PacketTime& packet_time);
   bool ReceivePacket(const uint8_t* packet,
-                     int packet_length,
+                     size_t packet_length,
                      const RTPHeader& header,
                      bool in_order);
   // Parses and handles for instance RTX and RED headers.
   // This function assumes that it's being called from only one thread.
   bool ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
-                                         int packet_length,
+                                         size_t packet_length,
                                          const RTPHeader& header);
-  int InsertRTCPPacket(const uint8_t* rtcp_packet, int rtcp_packet_length);
+  int InsertRTCPPacket(const uint8_t* rtcp_packet, size_t rtcp_packet_length);
   bool IsPacketInOrder(const RTPHeader& header) const;
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
 

@@ -1633,7 +1633,7 @@ int32_t RTCPSender::SendRTCP(const FeedbackState& feedback_state,
   {
       return -1;
   }
-  return SendToNetwork(rtcp_buffer, static_cast<uint16_t>(rtcp_length));
+  return SendToNetwork(rtcp_buffer, static_cast<size_t>(rtcp_length));
 }
 
 int RTCPSender::PrepareRTCP(const FeedbackState& feedback_state,
@@ -2000,7 +2000,7 @@ bool RTCPSender::PrepareReport(const FeedbackState& feedback_state,
 
 int32_t
 RTCPSender::SendToNetwork(const uint8_t* dataBuffer,
-                          const uint16_t length)
+                          const size_t length)
 {
     CriticalSectionScoped lock(_criticalSectionTransport);
     if(_cbTransport)

@@ -189,7 +189,7 @@ class EncodedImage {
         _size(0),
         _completeFrame(false) {}
 
-  EncodedImage(uint8_t* buffer, uint32_t length, uint32_t size)
+  EncodedImage(uint8_t* buffer, size_t length, size_t size)
       : _encodedWidth(0),
         _encodedHeight(0),
         _timeStamp(0),
@@ -209,8 +209,8 @@ class EncodedImage {
   int64_t capture_time_ms_;
   VideoFrameType _frameType;
   uint8_t* _buffer;
-  uint32_t _length;
-  uint32_t _size;
+  size_t _length;
+  size_t _size;
   bool _completeFrame;
 };
 

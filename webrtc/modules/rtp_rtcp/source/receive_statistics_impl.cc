@@ -123,7 +123,7 @@ void StreamStatisticianImpl::UpdateCounters(const RTPHeader& header,
     last_receive_time_ms_ = clock_->TimeInMilliseconds();
   }
 
-  uint16_t packet_oh = header.headerLength + header.paddingLength;
+  size_t packet_oh = header.headerLength + header.paddingLength;
 
   // Our measured overhead. Filter from RFC 5104 4.2.1.2:
   // avg_OH (new) = 15/16*avg_OH (old) + 1/16*pckt_OH,
@@ -303,7 +303,7 @@ RtcpStatistics StreamStatisticianImpl::CalculateRtcpStatistics() {
 }
 
 void StreamStatisticianImpl::GetDataCounters(
-    uint32_t* bytes_received, uint32_t* packets_received) const {
+    size_t* bytes_received, uint32_t* packets_received) const {
   CriticalSectionScoped cs(stream_lock_.get());
   if (bytes_received) {
     *bytes_received = receive_counters_.bytes + receive_counters_.header_bytes +

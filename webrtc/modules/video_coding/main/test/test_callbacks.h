@@ -44,12 +44,12 @@ public:
     void RegisterTransportCallback(VCMPacketizationCallback* transport);
     // Process encoded data received from the encoder, pass stream to the
     // VCMReceiver module
-    virtual int32_t SendData(const FrameType frameType,
-                             const uint8_t payloadType,
-                             const uint32_t timeStamp,
+    virtual int32_t SendData(FrameType frameType,
+                             uint8_t payloadType,
+                             uint32_t timeStamp,
                              int64_t capture_time_ms,
                              const uint8_t* payloadData,
-                             const uint32_t payloadSize,
+                             size_t payloadSize,
                              const RTPFragmentationHeader& fragmentationHeader,
                              const RTPVideoHeader* videoHdr) OVERRIDE;
     // Register exisitng VCM. Currently - encode and decode under same module.
@@ -57,7 +57,7 @@ public:
     // Return size of last encoded frame data (all frames in the sequence)
     // Good for only one call - after which will reset value
     // (to allow detection of frame drop)
-    float EncodedBytes();
+    size_t EncodedBytes();
     // Return encode complete (true/false)
     bool EncodeComplete();
     // Inform callback of codec used
@@ -77,7 +77,7 @@ public:
 
 private:
     FILE*              _encodedFile;
-    float              _encodedBytes;
+    size_t             _encodedBytes;
     VideoCodingModule* _VCMReceiver;
     FrameType          _frameType;
     uint16_t     _seqNo;
@@ -101,17 +101,17 @@ public:
     virtual ~VCMRTPEncodeCompleteCallback() {}
     // Process encoded data received from the encoder, pass stream to the
     // RTP module
-    virtual int32_t SendData(const FrameType frameType,
-                             const uint8_t payloadType,
-                             const uint32_t timeStamp,
+    virtual int32_t SendData(FrameType frameType,
+                             uint8_t payloadType,
+                             uint32_t timeStamp,
                              int64_t capture_time_ms,
                              const uint8_t* payloadData,
-                             const uint32_t payloadSize,
+                             size_t payloadSize,
                              const RTPFragmentationHeader& fragmentationHeader,
                              const RTPVideoHeader* videoHdr) OVERRIDE;
     // Return size of last encoded frame. Value good for one call
     // (resets to zero after call to inform test of frame drop)
-    float EncodedBytes();
+    size_t EncodedBytes();
     // Return encode complete (true/false)
     bool EncodeComplete();
     // Inform callback of codec used
@@ -126,7 +126,7 @@ public:
     }
 
 private:
-    float              _encodedBytes;
+    size_t             _encodedBytes;
     FrameType          _frameType;
     bool               _encodeComplete;
     RtpRtcp*           _RTPModule;
@@ -145,10 +145,10 @@ public:
     virtual ~VCMDecodeCompleteCallback() {}
     // Write decoded frame into file
     virtual int32_t FrameToRender(webrtc::I420VideoFrame& videoFrame) OVERRIDE;
-    int32_t DecodedBytes();
+    size_t DecodedBytes();
 private:
-    FILE*               _decodedFile;
-    uint32_t      _decodedBytes;
+    FILE*       _decodedFile;
+    size_t      _decodedBytes;
 }; // end of VCMDecodeCompleCallback class
 
 // Transport callback
@@ -165,9 +165,11 @@ public:
 
     void SetRtpModule(RtpRtcp* rtp_module) { _rtp = rtp_module; }
     // Send Packet to receive side RTP module
-    virtual int SendPacket(int channel, const void *data, int len) OVERRIDE;
+    virtual int SendPacket(int channel, const void *data, size_t len) OVERRIDE;
     // Send RTCP Packet to receive side RTP module
-    virtual int SendRTCPPacket(int channel, const void *data, int len) OVERRIDE;
+    virtual int SendRTCPPacket(int channel,
+                               const void *data,
+                               size_t len) OVERRIDE;
     // Set percentage of channel loss in the network
     void SetLossPct(double lossPct);
     // Set average size of burst loss
@@ -181,7 +183,7 @@ public:
     // Return send count
     int SendCount() {return _sendCount; }
     // Return accumulated length in bytes of transmitted packets
-    uint32_t TotalSentLength() {return _totalSentLength;}
+    size_t TotalSentLength() {return _totalSentLength;}
 protected:
     // Randomly decide whether to drop packets, based on the channel model
     bool PacketLoss();
@@ -198,7 +200,7 @@ protected:
     uint32_t          _networkDelayMs;
     double                  _jitterVar;
     bool                    _prevLossState;
-    uint32_t          _totalSentLength;
+    size_t          _totalSentLength;
     std::list<RtpPacket*>   _rtpPackets;
     RtpDump*                _rtpDump;
 };

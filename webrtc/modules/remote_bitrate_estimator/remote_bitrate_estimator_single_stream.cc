@@ -35,7 +35,7 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
   // remote bitrate estimate will be updated. Note that |payload_size| is the
   // packet size excluding headers.
   virtual void IncomingPacket(int64_t arrival_time_ms,
-                              int payload_size,
+                              size_t payload_size,
                               const RTPHeader& header) OVERRIDE;
 
   // Triggers a new estimate calculation.
@@ -107,7 +107,7 @@ RemoteBitrateEstimatorSingleStream::RemoteBitrateEstimatorSingleStream(
 
 void RemoteBitrateEstimatorSingleStream::IncomingPacket(
     int64_t arrival_time_ms,
-    int payload_size,
+    size_t payload_size,
     const RTPHeader& header) {
   uint32_t ssrc = header.ssrc;
   uint32_t rtp_timestamp = header.timestamp +
@@ -133,7 +133,7 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
   const BandwidthUsage prior_state = overuse_detector->State();
   overuse_detector->Update(payload_size, -1, rtp_timestamp, arrival_time_ms);
   if (overuse_detector->State() == kBwOverusing) {
-    unsigned int incoming_bitrate = incoming_bitrate_.Rate(now_ms);
+    uint32_t incoming_bitrate = incoming_bitrate_.Rate(now_ms);
     if (prior_state != kBwOverusing ||
         remote_rate_.TimeToReduceFurther(now_ms, incoming_bitrate)) {
       // The first overuse should immediately trigger a new estimate.

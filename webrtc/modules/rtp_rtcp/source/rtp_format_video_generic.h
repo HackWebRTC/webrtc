@@ -57,7 +57,7 @@ class RtpPacketizerGeneric : public RtpPacketizer {
   size_t payload_size_;
   const size_t max_payload_len_;
   FrameType frame_type_;
-  uint32_t payload_length_;
+  size_t payload_length_;
   uint8_t generic_header_;
 
   DISALLOW_COPY_AND_ASSIGN(RtpPacketizerGeneric);

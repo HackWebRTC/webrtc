@@ -30,7 +30,7 @@ class FakeEncoder : public VideoEncoder {
 
   virtual int32_t InitEncode(const VideoCodec* config,
                              int32_t number_of_cores,
-                             uint32_t max_payload_size) OVERRIDE;
+                             size_t max_payload_size) OVERRIDE;
   virtual int32_t Encode(
      const I420VideoFrame& input_image,
      const CodecSpecificInfo* codec_specific_info,

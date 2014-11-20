@@ -116,7 +116,7 @@ int VP8EncoderImpl::SetRates(uint32_t new_bitrate_kbit,
 
 int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
                                int number_of_cores,
-                               uint32_t /*max_payload_size*/) {
+                               size_t /*max_payload_size*/) {
   if (inst == NULL) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
@@ -791,7 +791,7 @@ int VP8DecoderImpl::DecodePartitions(
   for (int i = 0; i < fragmentation->fragmentationVectorSize; ++i) {
     const uint8_t* partition = input_image._buffer +
         fragmentation->fragmentationOffset[i];
-    const uint32_t partition_length =
+    const size_t partition_length =
         fragmentation->fragmentationLength[i];
     if (vpx_codec_decode(decoder_,
                          partition,

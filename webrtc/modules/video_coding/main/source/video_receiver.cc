@@ -631,7 +631,7 @@ VideoCodecType VideoReceiver::ReceiveCodec() const {
 
 // Incoming packet from network parsed and ready for decode, non blocking.
 int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
-                                      uint32_t payloadLength,
+                                      size_t payloadLength,
                                       const WebRtcRTPHeader& rtpInfo) {
   if (rtpInfo.frameType == kVideoFrameKey) {
     TRACE_EVENT1("webrtc",

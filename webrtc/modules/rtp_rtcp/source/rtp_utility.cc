@@ -286,7 +286,7 @@ bool RtpHeaderParser::ParseRtcp(RTPHeader* header) const {
   }
 
   const uint8_t PT = _ptrRTPDataBegin[1];
-  const uint16_t len = (_ptrRTPDataBegin[2] << 8) + _ptrRTPDataBegin[3];
+  const size_t len = (_ptrRTPDataBegin[2] << 8) + _ptrRTPDataBegin[3];
   const uint8_t* ptr = &_ptrRTPDataBegin[4];
 
   uint32_t SSRC = *ptr++ << 24;
@@ -338,7 +338,7 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
     return false;
   }
 
-  const uint8_t CSRCocts = CC * 4;
+  const size_t CSRCocts = CC * 4;
 
   if ((ptr + CSRCocts) > _ptrRTPDataEnd) {
     return false;
@@ -352,7 +352,7 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
   header.numCSRCs       = CC;
   header.paddingLength  = P ? *(_ptrRTPDataEnd - 1) : 0;
 
-  for (unsigned int i = 0; i < CC; ++i) {
+  for (uint8_t i = 0; i < CC; ++i) {
     uint32_t CSRC = *ptr++ << 24;
     CSRC += *ptr++ << 16;
     CSRC += *ptr++ << 8;
@@ -395,11 +395,11 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
     uint16_t definedByProfile = *ptr++ << 8;
     definedByProfile += *ptr++;
 
-    uint16_t XLen = *ptr++ << 8;
+    size_t XLen = *ptr++ << 8;
     XLen += *ptr++; // in 32 bit words
     XLen *= 4; // in octs
 
-    if (remain < (4 + XLen)) {
+    if (static_cast<size_t>(remain) < (4 + XLen)) {
       return false;
     }
     if (definedByProfile == kRtpOneByteHeaderExtensionId) {

@@ -143,7 +143,7 @@ enum RtxMode {
                                   // instead of padding.
 };
 
-const int kRtxHeaderSize = 2;
+const size_t kRtxHeaderSize = 2;
 
 struct RTCPSenderInfo
 {
@@ -220,11 +220,11 @@ public:
 
     virtual int32_t OnReceivedPayloadData(
         const uint8_t* payloadData,
-        const uint16_t payloadSize,
+        const size_t payloadSize,
         const WebRtcRTPHeader* rtpHeader) = 0;
 
     virtual bool OnRecoveredPacket(const uint8_t* packet,
-                                   int packet_length) = 0;
+                                   size_t packet_length) = 0;
 };
 
 class RtpFeedback
@@ -334,13 +334,13 @@ class NullRtpData : public RtpData {
 
   virtual int32_t OnReceivedPayloadData(
       const uint8_t* payloadData,
-      const uint16_t payloadSize,
+      const size_t payloadSize,
       const WebRtcRTPHeader* rtpHeader) OVERRIDE {
     return 0;
   }
 
   virtual bool OnRecoveredPacket(const uint8_t* packet,
-                                 int packet_length) OVERRIDE {
+                                 size_t packet_length) OVERRIDE {
     return true;
   }
 };

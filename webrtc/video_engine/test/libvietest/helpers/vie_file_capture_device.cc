@@ -80,7 +80,7 @@ void ViEFileCaptureDevice::ReadFileFor(uint64_t time_slice_ms,
 
   while (elapsed_ms < time_slice_ms) {
     FramePacemaker pacemaker(max_fps);
-    int read = fread(frame_buffer, 1, frame_length_, input_file_);
+    size_t read = fread(frame_buffer, 1, frame_length_, input_file_);
 
     if (feof(input_file_)) {
       rewind(input_file_);

@@ -106,7 +106,7 @@ VideoCaptureModule* VideoCaptureImpl::Create(
 }
 
 int32_t VideoCaptureAndroid::OnIncomingFrame(uint8_t* videoFrame,
-                                             int32_t videoFrameLength,
+                                             size_t videoFrameLength,
                                              int32_t degrees,
                                              int64_t captureTime) {
   if (!_captureStarted)

@@ -160,7 +160,7 @@ class VideoReceiver {
   VideoCodecType ReceiveCodec() const;
 
   int32_t IncomingPacket(const uint8_t* incomingPayload,
-                         uint32_t payloadLength,
+                         size_t payloadLength,
                          const WebRtcRTPHeader& rtpInfo);
   int32_t SetMinimumPlayoutDelay(uint32_t minPlayoutDelayMs);
   int32_t SetRenderDelay(uint32_t timeMS);

@@ -197,13 +197,14 @@ TEST_F(SendStatisticsProxyTest, DataCounters) {
     const uint32_t ssrc = *it;
     StreamDataCounters& counters = expected_.substreams[ssrc].rtp_stats;
     // Add statistics with some arbitrary, but unique, numbers.
-    uint32_t offset = ssrc * sizeof(StreamDataCounters);
+    size_t offset = ssrc * sizeof(StreamDataCounters);
+    uint32_t offset_uint32 = static_cast<uint32_t>(offset);
     counters.bytes = offset;
     counters.header_bytes = offset + 1;
-    counters.fec_packets = offset + 2;
+    counters.fec_packets = offset_uint32 + 2;
     counters.padding_bytes = offset + 3;
-    counters.retransmitted_packets = offset + 4;
-    counters.packets = offset + 5;
+    counters.retransmitted_packets = offset_uint32 + 4;
+    counters.packets = offset_uint32 + 5;
     callback->DataCountersUpdated(counters, ssrc);
   }
   for (std::vector<uint32_t>::const_iterator it = config_.rtp.rtx.ssrcs.begin();
@@ -212,13 +213,14 @@ TEST_F(SendStatisticsProxyTest, DataCounters) {
     const uint32_t ssrc = *it;
     StreamDataCounters& counters = expected_.substreams[ssrc].rtp_stats;
     // Add statistics with some arbitrary, but unique, numbers.
-    uint32_t offset = ssrc * sizeof(StreamDataCounters);
+    size_t offset = ssrc * sizeof(StreamDataCounters);
+    uint32_t offset_uint32 = static_cast<uint32_t>(offset);
     counters.bytes = offset;
     counters.header_bytes = offset + 1;
-    counters.fec_packets = offset + 2;
+    counters.fec_packets = offset_uint32 + 2;
     counters.padding_bytes = offset + 3;
-    counters.retransmitted_packets = offset + 4;
-    counters.packets = offset + 5;
+    counters.retransmitted_packets = offset_uint32 + 4;
+    counters.packets = offset_uint32 + 5;
     callback->DataCountersUpdated(counters, ssrc);
   }
 

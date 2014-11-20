@@ -56,7 +56,7 @@ public:
    uint8_t send_payload_type;
    uint32_t frequency_hz;
    uint32_t packets_sent;
-   uint32_t media_bytes_sent;
+   size_t media_bytes_sent;
    uint32_t send_bitrate;
 
    uint32_t last_rr_ntp_secs;
@@ -177,7 +177,7 @@ public:
     void GetPacketTypeCounter(RtcpPacketTypeCounter* packet_counter) const;
 
 private:
-    int32_t SendToNetwork(const uint8_t* dataBuffer, const uint16_t length);
+    int32_t SendToNetwork(const uint8_t* dataBuffer, const size_t length);
 
     int32_t WriteAllReportBlocksToBuffer(uint8_t* rtcpbuffer,
                             int pos,

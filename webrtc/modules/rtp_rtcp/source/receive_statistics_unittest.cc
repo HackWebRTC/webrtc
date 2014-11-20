@@ -16,8 +16,8 @@
 
 namespace webrtc {
 
-const int kPacketSize1 = 100;
-const int kPacketSize2 = 300;
+const size_t kPacketSize1 = 100;
+const size_t kPacketSize2 = 300;
 const uint32_t kSsrc1 = 1;
 const uint32_t kSsrc2 = 2;
 
@@ -56,7 +56,7 @@ TEST_F(ReceiveStatisticsTest, TwoIncomingSsrcs) {
       receive_statistics_->GetStatistician(kSsrc1);
   ASSERT_TRUE(statistician != NULL);
   EXPECT_GT(statistician->BitrateReceived(), 0u);
-  uint32_t bytes_received = 0;
+  size_t bytes_received = 0;
   uint32_t packets_received = 0;
   statistician->GetDataCounters(&bytes_received, &packets_received);
   EXPECT_EQ(200u, bytes_received);
@@ -125,7 +125,7 @@ TEST_F(ReceiveStatisticsTest, ActiveStatisticians) {
   StreamStatistician* statistician =
       receive_statistics_->GetStatistician(kSsrc1);
   ASSERT_TRUE(statistician != NULL);
-  uint32_t bytes_received = 0;
+  size_t bytes_received = 0;
   uint32_t packets_received = 0;
   statistician->GetDataCounters(&bytes_received, &packets_received);
   EXPECT_EQ(200u, bytes_received);
@@ -234,8 +234,8 @@ class RtpTestCallback : public StreamDataCountersCallback {
 
   void ExpectMatches(uint32_t num_calls,
                      uint32_t ssrc,
-                     uint32_t bytes,
-                     uint32_t padding,
+                     size_t bytes,
+                     size_t padding,
                      uint32_t packets,
                      uint32_t retransmits,
                      uint32_t fec) {
@@ -257,8 +257,8 @@ TEST_F(ReceiveStatisticsTest, RtpCallbacks) {
   RtpTestCallback callback;
   receive_statistics_->RegisterRtpStatisticsCallback(&callback);
 
-  const uint32_t kHeaderLength = 20;
-  const uint32_t kPaddingLength = 9;
+  const size_t kHeaderLength = 20;
+  const size_t kPaddingLength = 9;
 
   // One packet of size kPacketSize1.
   header1_.headerLength = kHeaderLength;

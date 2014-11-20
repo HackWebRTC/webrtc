@@ -117,7 +117,7 @@ class ViEPacedSenderCallback : public PacedSender::Callback {
     return owner_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms,
                                     retransmission);
   }
-  virtual int TimeToSendPadding(int bytes) {
+  virtual size_t TimeToSendPadding(size_t bytes) {
     return owner_->TimeToSendPadding(bytes);
   }
  private:
@@ -443,7 +443,7 @@ bool ViEEncoder::TimeToSendPacket(uint32_t ssrc,
                                              capture_time_ms, retransmission);
 }
 
-int ViEEncoder::TimeToSendPadding(int bytes) {
+size_t ViEEncoder::TimeToSendPadding(size_t bytes) {
   bool send_padding;
   {
     CriticalSectionScoped cs(data_cs_.get());
@@ -546,7 +546,7 @@ void ViEEncoder::DeliverFrame(int id,
     {
       CriticalSectionScoped cs(callback_cs_.get());
       if (effect_filter_) {
-        unsigned int length =
+        size_t length =
             CalcBufferSize(kI420, video_frame->width(), video_frame->height());
         scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
         ExtractBuffer(*video_frame, length, video_buffer.get());
@@ -731,7 +731,7 @@ int32_t ViEEncoder::SendData(
     const uint32_t time_stamp,
     int64_t capture_time_ms,
     const uint8_t* payload_data,
-    const uint32_t payload_size,
+    const size_t payload_size,
     const webrtc::RTPFragmentationHeader& fragmentation_header,
     const RTPVideoHeader* rtp_video_hdr) {
   // New encoded data, hand over to the rtp module.

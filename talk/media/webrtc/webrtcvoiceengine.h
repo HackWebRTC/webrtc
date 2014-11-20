@@ -69,7 +69,7 @@ class WebRtcSoundclipStream : public webrtc::InStream {
   }
   void set_loop(bool loop) { loop_ = loop; }
 
-  virtual int Read(void* buf, int len) OVERRIDE;
+  virtual int Read(void* buf, size_t len) OVERRIDE;
   virtual int Rewind() OVERRIDE;
 
  private:
@@ -80,7 +80,7 @@ class WebRtcSoundclipStream : public webrtc::InStream {
 // WebRtcMonitorStream is used to monitor a stream coming from WebRtc.
 // For now we just dump the data.
 class WebRtcMonitorStream : public webrtc::OutStream {
-  virtual bool Write(const void *buf, int len) OVERRIDE {
+  virtual bool Write(const void *buf, size_t len) OVERRIDE {
     return true;
   }
 };
@@ -315,17 +315,16 @@ class WebRtcMediaChannel : public T, public webrtc::Transport {
 
  protected:
   // implements Transport interface
-  virtual int SendPacket(int channel, const void *data, int len) OVERRIDE {
+  virtual int SendPacket(int channel, const void *data, size_t len) OVERRIDE {
     rtc::Buffer packet(data, len, kMaxRtpPacketLen);
-    if (!T::SendPacket(&packet)) {
-      return -1;
-    }
-    return len;
+    return T::SendPacket(&packet) ? static_cast<int>(len) : -1;
   }
 
-  virtual int SendRTCPPacket(int channel, const void *data, int len) OVERRIDE {
+  virtual int SendRTCPPacket(int channel,
+                             const void* data,
+                             size_t len) OVERRIDE {
     rtc::Buffer packet(data, len, kMaxRtpPacketLen);
-    return T::SendRtcp(&packet) ? len : -1;
+    return T::SendRtcp(&packet) ? static_cast<int>(len) : -1;
   }
 
  private:

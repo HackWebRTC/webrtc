@@ -305,7 +305,7 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
   }
 
   virtual int DeliverFrame(unsigned char* buffer,
-                           int buffer_size,
+                           size_t buffer_size,
                            uint32_t rtp_time_stamp,
                            int64_t ntp_time_ms,
                            int64_t render_time,
@@ -347,14 +347,14 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
 
   virtual bool IsTextureSupported() { return true; }
 
-  int DeliverBufferFrame(unsigned char* buffer, int buffer_size,
+  int DeliverBufferFrame(unsigned char* buffer, size_t buffer_size,
                          int64 time_stamp, int64 elapsed_time) {
     WebRtcVideoFrame video_frame;
     video_frame.Alias(buffer, buffer_size, width_, height_,
                       1, 1, elapsed_time, time_stamp, 0);
 
     // Sanity check on decoded frame size.
-    if (buffer_size != static_cast<int>(VideoFrame::SizeOf(width_, height_))) {
+    if (buffer_size != VideoFrame::SizeOf(width_, height_)) {
       LOG(LS_WARNING) << "WebRtcRenderAdapter (channel " << channel_id_
                       << ") received a strange frame size: "
                       << buffer_size;
@@ -2499,7 +2499,8 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
         ASSERT(channel_id == default_channel_id_);
         continue;
       }
-      unsigned int bytes_sent, packets_sent, bytes_recv, packets_recv;
+      size_t bytes_sent, bytes_recv;
+      unsigned int packets_sent, packets_recv;
       if (engine_->vie()->rtp()->GetRTPStatistics(channel_id, bytes_sent,
                                                   packets_sent, bytes_recv,
                                                   packets_recv) != 0) {
@@ -2829,7 +2830,7 @@ void WebRtcVideoMediaChannel::OnPacketReceived(
   engine()->vie()->network()->ReceivedRTPPacket(
       processing_channel_id,
       packet->data(),
-      static_cast<int>(packet->length()),
+      packet->length(),
       webrtc::PacketTime(packet_time.timestamp, packet_time.not_before));
 }
 
@@ -2858,7 +2859,7 @@ void WebRtcVideoMediaChannel::OnRtcpReceived(
       engine_->vie()->network()->ReceivedRTCPPacket(
           recv_channel_id,
           packet->data(),
-          static_cast<int>(packet->length()));
+          packet->length());
     }
   }
   // SR may continue RR and any RR entry may correspond to any one of the send
@@ -2871,7 +2872,7 @@ void WebRtcVideoMediaChannel::OnRtcpReceived(
     engine_->vie()->network()->ReceivedRTCPPacket(
         channel_id,
         packet->data(),
-        static_cast<int>(packet->length()));
+        packet->length());
   }
 }
 
@@ -4022,16 +4023,16 @@ void WebRtcVideoMediaChannel::OnMessage(rtc::Message* msg) {
 }
 
 int WebRtcVideoMediaChannel::SendPacket(int channel, const void* data,
-                                        int len) {
+                                        size_t len) {
   rtc::Buffer packet(data, len, kMaxRtpPacketLen);
-  return MediaChannel::SendPacket(&packet) ? len : -1;
+  return MediaChannel::SendPacket(&packet) ? static_cast<int>(len) : -1;
 }
 
 int WebRtcVideoMediaChannel::SendRTCPPacket(int channel,
                                             const void* data,
-                                            int len) {
+                                            size_t len) {
   rtc::Buffer packet(data, len, kMaxRtpPacketLen);
-  return MediaChannel::SendRtcp(&packet) ? len : -1;
+  return MediaChannel::SendRtcp(&packet) ? static_cast<int>(len) : -1;
 }
 
 void WebRtcVideoMediaChannel::QueueBlackFrame(uint32 ssrc, int64 timestamp,

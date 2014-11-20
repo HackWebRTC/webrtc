@@ -124,7 +124,7 @@ int32_t FilePlayerImpl::Get10msAudioFromFile(
         unresampledAudioFrame.sample_rate_hz_ = _codec.plfreq;
 
         // L16 is un-encoded data. Just pull 10 ms.
-        uint32_t lengthInBytes =
+        size_t lengthInBytes =
             sizeof(unresampledAudioFrame.data_);
         if (_fileModule.PlayoutAudioData(
                 (int8_t*)unresampledAudioFrame.data_,
@@ -147,11 +147,11 @@ int32_t FilePlayerImpl::Get10msAudioFromFile(
         // expects a full frame. If the frame size is larger than 10 ms,
         // PlayoutAudioData(..) data should be called proportionally less often.
         int16_t encodedBuffer[MAX_AUDIO_BUFFER_IN_SAMPLES];
-        uint32_t encodedLengthInBytes = 0;
+        size_t encodedLengthInBytes = 0;
         if(++_numberOf10MsInDecoder >= _numberOf10MsPerFrame)
         {
             _numberOf10MsInDecoder = 0;
-            uint32_t bytesFromFile = sizeof(encodedBuffer);
+            size_t bytesFromFile = sizeof(encodedBuffer);
             if (_fileModule.PlayoutAudioData((int8_t*)encodedBuffer,
                                              bytesFromFile) == -1)
             {
@@ -581,7 +581,7 @@ int32_t VideoFilePlayerImpl::TimeUntilNextVideoFrame()
         if(_fileFormat == kFileFormatAviFile)
         {
             // Get next video frame
-            uint32_t encodedBufferLengthInBytes = _encodedData.bufferSize;
+            size_t encodedBufferLengthInBytes = _encodedData.bufferSize;
             if(_fileModule.PlayoutAVIVideoData(
                    reinterpret_cast< int8_t*>(_encodedData.payloadData),
                    encodedBufferLengthInBytes) != 0)
@@ -656,7 +656,7 @@ int32_t VideoFilePlayerImpl::SetUpVideoDecoder()
 
     // Size of unencoded data (I420) should be the largest possible frame size
     // in a file.
-    const uint32_t KReadBufferSize = 3 * video_codec_info_.width *
+    const size_t KReadBufferSize = 3 * video_codec_info_.width *
         video_codec_info_.height / 2;
     _encodedData.VerifyAndAllocate(KReadBufferSize);
     _encodedData.encodedHeight = video_codec_info_.height;

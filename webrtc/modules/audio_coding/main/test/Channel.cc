@@ -13,18 +13,21 @@
 #include <assert.h>
 #include <iostream>
 
+#include "webrtc/base/format_macros.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc {
 
-int32_t Channel::SendData(const FrameType frameType, const uint8_t payloadType,
-                          const uint32_t timeStamp, const uint8_t* payloadData,
-                          const uint16_t payloadSize,
+int32_t Channel::SendData(FrameType frameType,
+                          uint8_t payloadType,
+                          uint32_t timeStamp,
+                          const uint8_t* payloadData,
+                          size_t payloadSize,
                           const RTPFragmentationHeader* fragmentation) {
   WebRtcRTPHeader rtpInfo;
   int32_t status;
-  uint16_t payloadDataSize = payloadSize;
+  size_t payloadDataSize = payloadSize;
 
   rtpInfo.header.markerBit = false;
   rtpInfo.header.ssrc = 0;
@@ -52,8 +55,8 @@ int32_t Channel::SendData(const FrameType frameType, const uint8_t payloadType,
         (fragmentation->fragmentationVectorSize == 2)) {
       // only 0x80 if we have multiple blocks
       _payloadData[0] = 0x80 + fragmentation->fragmentationPlType[1];
-      uint32_t REDheader = (((uint32_t) fragmentation->fragmentationTimeDiff[1])
-          << 10) + fragmentation->fragmentationLength[1];
+      size_t REDheader = (fragmentation->fragmentationTimeDiff[1] << 10) +
+          fragmentation->fragmentationLength[1];
       _payloadData[1] = uint8_t((REDheader >> 16) & 0x000000FF);
       _payloadData[2] = uint8_t((REDheader >> 8) & 0x000000FF);
       _payloadData[3] = uint8_t(REDheader & 0x000000FF);
@@ -72,7 +75,7 @@ int32_t Channel::SendData(const FrameType frameType, const uint8_t payloadType,
       // single block (newest one)
       memcpy(_payloadData, payloadData + fragmentation->fragmentationOffset[0],
              fragmentation->fragmentationLength[0]);
-      payloadDataSize = uint16_t(fragmentation->fragmentationLength[0]);
+      payloadDataSize = fragmentation->fragmentationLength[0];
       rtpInfo.header.payloadType = fragmentation->fragmentationPlType[0];
     }
   } else {
@@ -121,7 +124,7 @@ int32_t Channel::SendData(const FrameType frameType, const uint8_t payloadType,
 }
 
 // TODO(turajs): rewite this method.
-void Channel::CalcStatistics(WebRtcRTPHeader& rtpInfo, uint16_t payloadSize) {
+void Channel::CalcStatistics(WebRtcRTPHeader& rtpInfo, size_t payloadSize) {
   int n;
   if ((rtpInfo.header.payloadType != _lastPayloadType)
       && (_lastPayloadType != -1)) {
@@ -371,7 +374,7 @@ void Channel::PrintStats(CodecInst& codecInst) {
            payloadStats.frameSizeStats[k].frameSizeSample);
     printf("Average Rate.................. %.0f bits/sec\n",
            payloadStats.frameSizeStats[k].rateBitPerSec);
-    printf("Maximum Payload-Size.......... %d Bytes\n",
+    printf("Maximum Payload-Size.......... %" PRIuS " Bytes\n",
            payloadStats.frameSizeStats[k].maxPayloadLen);
     printf(
         "Maximum Instantaneous Rate.... %.0f bits/sec\n",

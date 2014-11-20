@@ -146,7 +146,7 @@ UnitTestDecodeCompleteCallback::DecodeComplete()
     return false;
 }
 
-uint32_t
+size_t
 UnitTest::WaitForEncodedFrame() const
 {
     int64_t startTime = TickTime::MillisecondTimestamp();
@@ -160,7 +160,7 @@ UnitTest::WaitForEncodedFrame() const
     return 0;
 }
 
-uint32_t
+size_t
 UnitTest::WaitForDecodedFrame() const
 {
     int64_t startTime = TickTime::MillisecondTimestamp();
@@ -225,8 +225,8 @@ UnitTest::Setup()
     _inst.codecSpecific.VP8.denoisingOn = true;
 
     // Get input frame.
-    ASSERT_TRUE(fread(_refFrame, 1, _lengthSourceFrame, _sourceFile)
-                           == _lengthSourceFrame);
+    ASSERT_EQ(_lengthSourceFrame,
+              fread(_refFrame, 1, _lengthSourceFrame, _sourceFile));
     int size_y = _inst.width * _inst.height;
     int size_uv = ((_inst.width + 1) / 2)  * ((_inst.height + 1) / 2);
     _inputVideoBuffer.CreateFrame(size_y, _refFrame,
@@ -244,7 +244,7 @@ UnitTest::Setup()
     EXPECT_TRUE(_encoder->InitEncode(&_inst, 1, 1440) == WEBRTC_VIDEO_CODEC_OK);
     _encoder->Encode(_inputVideoBuffer, NULL, NULL);
     _refEncFrameLength = WaitForEncodedFrame();
-    ASSERT_TRUE(_refEncFrameLength > 0);
+    ASSERT_GT(_refEncFrameLength, 0u);
     _refEncFrame = new unsigned char[_refEncFrameLength];
     memcpy(_refEncFrame, _encodedVideoBuffer.Buffer(), _refEncFrameLength);
 
@@ -255,7 +255,7 @@ UnitTest::Setup()
     EXPECT_TRUE(_decoder->InitDecode(&_inst, 1) == WEBRTC_VIDEO_CODEC_OK);
     ASSERT_FALSE(SetCodecSpecificParameters() != WEBRTC_VIDEO_CODEC_OK);
 
-    unsigned int frameLength = 0;
+    size_t frameLength = 0;
     int i = 0;
     _inputVideoBuffer.CreateEmptyFrame(_inst.width, _inst.height, _inst.width,
                                        (_inst.width + 1) / 2,
@@ -266,12 +266,12 @@ UnitTest::Setup()
         if (i > 0)
         {
             // Insert yet another frame.
-            ASSERT_TRUE(fread(_refFrame, 1, _lengthSourceFrame,
-                _sourceFile) == _lengthSourceFrame);
+            ASSERT_EQ(_lengthSourceFrame,
+                      fread(_refFrame, 1, _lengthSourceFrame, _sourceFile));
             EXPECT_EQ(0, ConvertToI420(kI420, _refFrame, 0, 0, _width, _height,
                           0, kRotateNone, &_inputVideoBuffer));
             _encoder->Encode(_inputVideoBuffer, NULL, NULL);
-            ASSERT_TRUE(WaitForEncodedFrame() > 0);
+            ASSERT_GT(WaitForEncodedFrame(), 0u);
         } else {
             // The first frame is always a key frame.
             encodedImage._frameType = kKeyFrame;
@@ -285,7 +285,7 @@ UnitTest::Setup()
         i++;
     }
     rewind(_sourceFile);
-    EXPECT_TRUE(frameLength == _lengthSourceFrame);
+    EXPECT_EQ(_lengthSourceFrame, frameLength);
     ExtractBuffer(_decodedVideoBuffer, _lengthSourceFrame, _refDecFrame);
 }
 
@@ -324,9 +324,9 @@ UnitTest::DecodeWithoutAssert()
     EncodedImage encodedImage;
     VideoEncodedBufferToEncodedImage(_encodedVideoBuffer, encodedImage);
     int ret = _decoder->Decode(encodedImage, 0, NULL);
-    int frameLength = WaitForDecodedFrame();
+    size_t frameLength = WaitForDecodedFrame();
     _encodedVideoBuffer.SetLength(0);
-    return ret == WEBRTC_VIDEO_CODEC_OK ? frameLength : ret;
+    return ret == WEBRTC_VIDEO_CODEC_OK ? static_cast<int>(frameLength) : ret;
 }
 
 int
@@ -343,13 +343,11 @@ UnitTest::Decode()
     }
 
     int ret = _decoder->Decode(encodedImage, 0, NULL);
-    unsigned int frameLength = WaitForDecodedFrame();
-    assert(ret == WEBRTC_VIDEO_CODEC_OK && (frameLength == 0 || frameLength
-        == _lengthSourceFrame));
-    EXPECT_TRUE(ret == WEBRTC_VIDEO_CODEC_OK && (frameLength == 0 || frameLength
-        == _lengthSourceFrame));
+    size_t frameLength = WaitForDecodedFrame();
+    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, ret);
+    EXPECT_TRUE(frameLength == 0 || frameLength == _lengthSourceFrame);
     _encodedVideoBuffer.SetLength(0);
-    return ret == WEBRTC_VIDEO_CODEC_OK ? frameLength : ret;
+    return ret == WEBRTC_VIDEO_CODEC_OK ? static_cast<int>(frameLength) : ret;
 }
 
 // Test pure virtual VideoEncoder and VideoDecoder APIs.
@@ -357,7 +355,7 @@ void
 UnitTest::Perform()
 {
     UnitTest::Setup();
-    int frameLength;
+    size_t frameLength;
     I420VideoFrame inputImage;
     EncodedImage encodedImage;
 
@@ -448,21 +446,21 @@ UnitTest::Perform()
         std::vector<VideoFrameType> frame_types(1, frame_type);
         EXPECT_TRUE(_encoder->Encode(_inputVideoBuffer, NULL, &frame_types) ==
             WEBRTC_VIDEO_CODEC_OK);
-        EXPECT_TRUE(WaitForEncodedFrame() > 0);
+        EXPECT_GT(WaitForEncodedFrame(), 0u);
     }
 
     // Init then encode.
     _encodedVideoBuffer.SetLength(0);
     EXPECT_TRUE(_encoder->Encode(_inputVideoBuffer, NULL, NULL) ==
         WEBRTC_VIDEO_CODEC_OK);
-    EXPECT_TRUE(WaitForEncodedFrame() > 0);
+    EXPECT_GT(WaitForEncodedFrame(), 0u);
 
     EXPECT_TRUE(_encoder->InitEncode(&_inst, 1, 1440) == WEBRTC_VIDEO_CODEC_OK);
     _encoder->Encode(_inputVideoBuffer, NULL, NULL);
     frameLength = WaitForEncodedFrame();
-    EXPECT_TRUE(frameLength > 0);
+    EXPECT_GT(frameLength, 0u);
     EXPECT_TRUE(CheckIfBitExact(_refEncFrame, _refEncFrameLength,
-            _encodedVideoBuffer.Buffer(), frameLength) == true);
+                                _encodedVideoBuffer.Buffer(), frameLength));
 
     // Reset then encode.
     _encodedVideoBuffer.SetLength(0);
@@ -472,9 +470,9 @@ UnitTest::Perform()
     EXPECT_TRUE(_encoder->InitEncode(&_inst, 1, 1440) == WEBRTC_VIDEO_CODEC_OK);
     _encoder->Encode(_inputVideoBuffer, NULL, NULL);
     frameLength = WaitForEncodedFrame();
-    EXPECT_TRUE(frameLength > 0);
+    EXPECT_GT(frameLength, 0u);
     EXPECT_TRUE(CheckIfBitExact(_refEncFrame, _refEncFrameLength,
-        _encodedVideoBuffer.Buffer(), frameLength) == true);
+                                _encodedVideoBuffer.Buffer(), frameLength));
 
     // Release then encode.
     _encodedVideoBuffer.SetLength(0);
@@ -485,9 +483,9 @@ UnitTest::Perform()
     EXPECT_TRUE(_encoder->InitEncode(&_inst, 1, 1440) == WEBRTC_VIDEO_CODEC_OK);
     _encoder->Encode(_inputVideoBuffer, NULL, NULL);
     frameLength = WaitForEncodedFrame();
-    EXPECT_TRUE(frameLength > 0);
+    EXPECT_GT(frameLength, 0u);
     EXPECT_TRUE(CheckIfBitExact(_refEncFrame, _refEncFrameLength,
-        _encodedVideoBuffer.Buffer(), frameLength) == true);
+                                _encodedVideoBuffer.Buffer(), frameLength));
 
     //----- Decoder parameter tests -----
 
@@ -522,8 +520,8 @@ UnitTest::Perform()
     ASSERT_FALSE(SetCodecSpecificParameters() != WEBRTC_VIDEO_CODEC_OK);
     for (int i = 0; i < 100; i++)
     {
-        ASSERT_TRUE(fread(tmpBuf, 1, _refEncFrameLength, _sourceFile)
-            == _refEncFrameLength);
+        ASSERT_EQ(_refEncFrameLength,
+                  fread(tmpBuf, 1, _refEncFrameLength, _sourceFile));
         _encodedVideoBuffer.CopyFrame(_refEncFrameLength, tmpBuf);
         VideoEncodedBufferToEncodedImage(_encodedVideoBuffer, encodedImage);
         int ret = _decoder->Decode(encodedImage, false, NULL);
@@ -564,12 +562,12 @@ UnitTest::Perform()
         _decoder->Decode(encodedImage, false, NULL);
         frameLength = WaitForDecodedFrame();
     }
-    unsigned int length = CalcBufferSize(kI420, width, height);
+    size_t length = CalcBufferSize(kI420, width, height);
     scoped_ptr<uint8_t[]> decoded_buffer(new uint8_t[length]);
     ExtractBuffer(_decodedVideoBuffer, _lengthSourceFrame,
                   decoded_buffer.get());
     EXPECT_TRUE(CheckIfBitExact(decoded_buffer.get(), frameLength, _refDecFrame,
-                                _lengthSourceFrame) == true);
+                                _lengthSourceFrame));
 
     // Reset then decode.
     EXPECT_TRUE(_decoder->Reset() == WEBRTC_VIDEO_CODEC_OK);
@@ -583,7 +581,7 @@ UnitTest::Perform()
     ExtractBuffer(_decodedVideoBuffer, _lengthSourceFrame,
                   decoded_buffer.get());
     EXPECT_TRUE(CheckIfBitExact(decoded_buffer.get(), frameLength,
-                                _refDecFrame, _lengthSourceFrame) == true);
+                                _refDecFrame, _lengthSourceFrame));
 
     // Decode with other size, reset, then decode with original size again
     // to verify that decoder is reset to a "fresh" state upon Reset().
@@ -614,7 +612,7 @@ UnitTest::Perform()
                               tempInst.width, tmpHalfWidth, tmpHalfWidth);
         _encoder->Encode(tempInput, NULL, NULL);
         frameLength = WaitForEncodedFrame();
-        EXPECT_TRUE(frameLength > 0);
+        EXPECT_GT(frameLength, 0u);
         // Reset then decode.
         EXPECT_TRUE(_decoder->Reset() == WEBRTC_VIDEO_CODEC_OK);
         frameLength = 0;
@@ -631,7 +629,7 @@ UnitTest::Perform()
             WEBRTC_VIDEO_CODEC_OK);
         _encoder->Encode(_inputVideoBuffer, NULL, NULL);
         frameLength = WaitForEncodedFrame();
-        EXPECT_TRUE(frameLength > 0);
+        EXPECT_GT(frameLength, 0u);
 
         // Reset then decode original frame again.
         EXPECT_TRUE(_decoder->Reset() == WEBRTC_VIDEO_CODEC_OK);
@@ -644,11 +642,11 @@ UnitTest::Perform()
         }
 
         // check that decoded frame matches with reference
-        unsigned int length = CalcBufferSize(kI420, width, height);
+        size_t length = CalcBufferSize(kI420, width, height);
         scoped_ptr<uint8_t[]> decoded_buffer(new uint8_t[length]);
         ExtractBuffer(_decodedVideoBuffer, length, decoded_buffer.get());
         EXPECT_TRUE(CheckIfBitExact(decoded_buffer.get(), length,
-                                    _refDecFrame, _lengthSourceFrame) == true);
+                                    _refDecFrame, _lengthSourceFrame));
     }
 
     // Release then decode.
@@ -664,7 +662,7 @@ UnitTest::Perform()
     }
     ExtractBuffer(_decodedVideoBuffer, length, decoded_buffer.get());
     EXPECT_TRUE(CheckIfBitExact(decoded_buffer.get(), frameLength,
-                                _refDecFrame, _lengthSourceFrame) == true);
+                                _refDecFrame, _lengthSourceFrame));
     _encodedVideoBuffer.SetLength(0);
 
     delete [] tmpBuf;
@@ -697,8 +695,7 @@ UnitTest::Perform()
         ASSERT_TRUE(_encoder->Encode(_inputVideoBuffer, NULL, NULL) ==
             WEBRTC_VIDEO_CODEC_OK);
         frameLength = WaitForEncodedFrame();
-        //ASSERT_TRUE(frameLength);
-        EXPECT_TRUE(frameLength > 0);
+        EXPECT_GT(frameLength, 0u);
         encTimeStamp = _encodedVideoBuffer.TimeStamp();
         EXPECT_TRUE(_inputVideoBuffer.timestamp() ==
                 static_cast<unsigned>(encTimeStamp));
@@ -707,8 +704,7 @@ UnitTest::Perform()
             is_key_frame_ = true;
         }
 
-        frameLength = Decode();
-        if (frameLength == 0)
+        if (Decode() == 0)
         {
             frameDelay++;
         }
@@ -735,7 +731,7 @@ UnitTest::RateControlTests()
 {
     int frames = 0;
     VideoFrame inputImage;
-    uint32_t frameLength;
+    size_t frameLength;
 
     // Do not specify maxBitRate (as in ViE).
     _inst.maxBitrate = 0;
@@ -754,7 +750,7 @@ UnitTest::RateControlTests()
     for (int i = 0; i < nBitrates; i++)
     {
         _bitRate = bitRate[i];
-        int totalBytes = 0;
+        size_t totalBytes = 0;
         _inst.startBitrate = _bitRate;
         _encoder->InitEncode(&_inst, 4, 1440);
         _decoder->Reset();
@@ -789,27 +785,26 @@ UnitTest::RateControlTests()
             ASSERT_EQ(_encoder->Encode(_inputVideoBuffer, NULL, NULL),
                       WEBRTC_VIDEO_CODEC_OK);
             frameLength = WaitForEncodedFrame();
-            ASSERT_GE(frameLength, 0u);
             totalBytes += frameLength;
             frames++;
 
             _encodedVideoBuffer.SetLength(0);
         }
-        uint32_t actualBitrate =
-            (totalBytes  / frames * _inst.maxFramerate * 8)/1000;
-        printf("Target bitrate: %d kbps, actual bitrate: %d kbps\n", _bitRate,
-            actualBitrate);
+        uint32_t actualBitrate = static_cast<uint32_t>(
+            (totalBytes / frames * _inst.maxFramerate * 8) / 1000);
+        printf("Target bitrate: %u kbps, actual bitrate: %u kbps\n", _bitRate,
+               actualBitrate);
         // Test for close match over reasonable range.
-          EXPECT_TRUE(abs(int32_t(actualBitrate - _bitRate)) <
-                      0.12 * _bitRate);
+        EXPECT_LT(abs(static_cast<int32_t>(actualBitrate - _bitRate)),
+                  0.12 * _bitRate);
         ASSERT_TRUE(feof(_sourceFile) != 0);
         rewind(_sourceFile);
     }
 }
 
 bool
-UnitTest::CheckIfBitExact(const void* ptrA, unsigned int aLengthBytes,
-                          const void* ptrB, unsigned int bLengthBytes)
+UnitTest::CheckIfBitExact(const void* ptrA, size_t aLengthBytes,
+                          const void* ptrB, size_t bLengthBytes)
 {
     if (aLengthBytes != bLengthBytes)
     {

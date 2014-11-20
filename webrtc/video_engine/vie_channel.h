@@ -189,9 +189,9 @@ class ViEChannel
       RtcpStatisticsCallback* callback);
 
   // Gets sent/received packets statistics.
-  int32_t GetRtpStatistics(uint32_t* bytes_sent,
+  int32_t GetRtpStatistics(size_t* bytes_sent,
                            uint32_t* packets_sent,
-                           uint32_t* bytes_received,
+                           size_t* bytes_received,
                            uint32_t* packets_received) const;
 
   // Called on update of RTP statistics.
@@ -272,12 +272,12 @@ class ViEChannel
 
   // Incoming packet from external transport.
   int32_t ReceivedRTPPacket(const void* rtp_packet,
-                            const int32_t rtp_packet_length,
+                            const size_t rtp_packet_length,
                             const PacketTime& packet_time);
 
   // Incoming packet from external transport.
   int32_t ReceivedRTCPPacket(const void* rtcp_packet,
-                             const int32_t rtcp_packet_length);
+                             const size_t rtcp_packet_length);
 
   // Sets the maximum transfer unit size for the network link, i.e. including
   // IP, UDP and RTP headers.
@@ -346,7 +346,7 @@ class ViEChannel
 
   void RegisterSendFrameCountObserver(FrameCountObserver* observer);
 
-  void ReceivedBWEPacket(int64_t arrival_time_ms, int payload_size,
+  void ReceivedBWEPacket(int64_t arrival_time_ms, size_t payload_size,
                          const RTPHeader& header);
 
  protected:

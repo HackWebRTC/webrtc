@@ -14,7 +14,8 @@
 
 namespace webrtc {
 
-enum { kMtu = 1200, kAcceptedBitrateErrorBps = 50000u };
+const size_t kMtu = 1200;
+const unsigned int kAcceptedBitrateErrorBps = 50000;
 
 namespace testing {
 
@@ -54,11 +55,11 @@ int64_t RtpStream::GenerateFrame(int64_t time_now_us, PacketList* packets) {
     return next_rtp_time_;
   }
   assert(packets != NULL);
-  int bits_per_frame = (bitrate_bps_ + fps_ / 2) / fps_;
-  int n_packets = std::max((bits_per_frame + 4 * kMtu) / (8 * kMtu), 1);
-  int packet_size = (bits_per_frame + 4 * n_packets) / (8 * n_packets);
-  assert(n_packets >= 0);
-  for (int i = 0; i < n_packets; ++i) {
+  size_t bits_per_frame = (bitrate_bps_ + fps_ / 2) / fps_;
+  size_t n_packets =
+      std::max<size_t>((bits_per_frame + 4 * kMtu) / (8 * kMtu), 1u);
+  size_t packet_size = (bits_per_frame + 4 * n_packets) / (8 * n_packets);
+  for (size_t i = 0; i < n_packets; ++i) {
     RtpPacket* packet = new RtpPacket;
     packet->send_time = time_now_us + kSendSideOffsetUs;
     packet->size = packet_size;
@@ -217,7 +218,7 @@ uint32_t RemoteBitrateEstimatorTest::AddAbsSendTime(uint32_t t1, uint32_t t2) {
 const unsigned int RemoteBitrateEstimatorTest::kDefaultSsrc = 1;
 
 void RemoteBitrateEstimatorTest::IncomingPacket(uint32_t ssrc,
-                                                uint32_t payload_size,
+                                                size_t payload_size,
                                                 int64_t arrival_time,
                                                 uint32_t rtp_timestamp,
                                                 uint32_t absolute_send_time) {

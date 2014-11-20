@@ -36,7 +36,7 @@ int EditFrames(const string& in_path, int width, int height,
   }
 
   // Frame size of I420.
-  int frame_length = CalcBufferSize(kI420, width, height);
+  size_t frame_length = CalcBufferSize(kI420, width, height);
 
   webrtc::scoped_ptr<uint8_t[]> temp_buffer(new uint8_t[frame_length]);
 
@@ -50,7 +50,7 @@ int EditFrames(const string& in_path, int width, int height,
 
   int num_frames_read = 0;
   int num_frames_read_between = 0;
-  int num_bytes_read;
+  size_t num_bytes_read;
 
   while ((num_bytes_read = fread(temp_buffer.get(), 1, frame_length, in_fid))
       == frame_length) {

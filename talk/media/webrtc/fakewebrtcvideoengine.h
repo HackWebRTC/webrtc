@@ -152,7 +152,7 @@ class FakeWebRtcVideoEncoder : public webrtc::VideoEncoder {
 
   virtual int32 InitEncode(const webrtc::VideoCodec* codecSettings,
                            int32 numberOfCores,
-                           uint32 maxPayloadSize) {
+                           size_t maxPayloadSize) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
@@ -351,7 +351,7 @@ class FakeWebRtcVideoEngine
 
     // From ViEExternalCapture
     virtual int IncomingFrame(unsigned char* videoFrame,
-                              unsigned int videoFrameLength,
+                              size_t videoFrameLength,
                               unsigned short width,
                               unsigned short height,
                               webrtc::RawVideoType videoType,
@@ -890,7 +890,7 @@ class FakeWebRtcVideoEngine
 
   WEBRTC_FUNC(ReceivedRTPPacket, (const int channel,
                                   const void* packet,
-                                  const int length,
+                                  const size_t length,
                                   const webrtc::PacketTime& packet_time)) {
     WEBRTC_ASSERT_CHANNEL(channel);
     ASSERT(length > 1);
@@ -899,11 +899,11 @@ class FakeWebRtcVideoEngine
     return 0;
   }
 
-  WEBRTC_STUB(ReceivedRTCPPacket, (const int, const void*, const int));
+  WEBRTC_STUB(ReceivedRTCPPacket, (const int, const void*, const size_t));
   // Not using WEBRTC_STUB due to bool return value
   virtual bool IsIPv6Enabled(int channel) { return true; }
   WEBRTC_STUB(SetMTU, (int, unsigned int));
-  WEBRTC_STUB(ReceivedBWEPacket, (const int, int64_t, int,
+  WEBRTC_STUB(ReceivedBWEPacket, (const int, int64_t, size_t,
       const webrtc::RTPHeader&));
   virtual bool SetBandwidthEstimationConfig(int, const webrtc::Config&) {
     return true;
@@ -1140,8 +1140,8 @@ class FakeWebRtcVideoEngine
       unsigned int&, unsigned int&, unsigned int&, int&));
   WEBRTC_STUB_CONST(GetSentRTCPStatistics, (const int, unsigned short&,
       unsigned int&, unsigned int&, unsigned int&, int&));
-  WEBRTC_STUB_CONST(GetRTPStatistics, (const int, unsigned int&, unsigned int&,
-      unsigned int&, unsigned int&));
+  WEBRTC_STUB_CONST(GetRTPStatistics, (const int, size_t&, unsigned int&,
+      size_t&, unsigned int&));
   WEBRTC_STUB_CONST(GetReceiveChannelRtcpStatistics, (const int,
       webrtc::RtcpStatistics&, int&));
   WEBRTC_STUB_CONST(GetSendChannelRtcpStatistics, (const int,

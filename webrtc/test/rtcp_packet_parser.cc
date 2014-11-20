@@ -17,7 +17,7 @@ RtcpPacketParser::RtcpPacketParser() {}
 
 RtcpPacketParser::~RtcpPacketParser() {}
 
-void RtcpPacketParser::Parse(const void *data, int len) {
+void RtcpPacketParser::Parse(const void *data, size_t len) {
   const uint8_t* packet = static_cast<const uint8_t*>(data);
   RTCPUtility::RTCPParserV2 parser(packet, len, true);
   for (RTCPUtility::RTCPPacketTypes type = parser.Begin();

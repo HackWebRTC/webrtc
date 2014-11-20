@@ -46,7 +46,8 @@ public:
     // A new frame is delivered
     virtual int DeliverFrame(const I420VideoFrame& videoFrame);
 
-    // Called when the incomming frame size and/or number of streams in mix changes
+    // Called when the incoming frame size and/or number of streams in mix
+    // changes.
     virtual int FrameSizeChange(int width, int height, int numberOfStreams);
 
     virtual int UpdateSize(int width, int height);
@@ -89,8 +90,8 @@ private:
     int _oldStretchedHeight;
     int _oldStretchedWidth;
     unsigned char* _buffer;
-    int _bufferSize;
-    int _incommingBufferSize;
+    size_t _bufferSize;
+    size_t _incomingBufferSize;
     bool _bufferIsUpdated;
     int _numberOfStreams;
     GLenum _pixelFormat;

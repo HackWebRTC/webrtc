@@ -113,10 +113,9 @@ void AcmReceiveTest::Run() {
     header.header = packet->header();
     header.frameType = kAudioFrameSpeech;
     memset(&header.type.Audio, 0, sizeof(RTPAudioHeader));
-    EXPECT_TRUE(
-        acm_->InsertPacket(packet->payload(),
-                           static_cast<int32_t>(packet->payload_length_bytes()),
-                           header))
+    EXPECT_TRUE(acm_->InsertPacket(packet->payload(),
+                                   packet->payload_length_bytes(),
+                                   header))
         << "Failure when inserting packet:" << std::endl
         << "  PT = " << static_cast<int>(header.header.payloadType) << std::endl
         << "  TS = " << header.header.timestamp << std::endl

@@ -59,7 +59,7 @@ TEST_F(RtpHeaderExtensionTest, NonUniqueId) {
 }
 
 TEST_F(RtpHeaderExtensionTest, GetTotalLength) {
-  EXPECT_EQ(0, map_.GetTotalLengthInBytes());
+  EXPECT_EQ(0u, map_.GetTotalLengthInBytes());
   EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
   EXPECT_EQ(kRtpOneByteHeaderLength + kTransmissionTimeOffsetLength,
             map_.GetTotalLengthInBytes());

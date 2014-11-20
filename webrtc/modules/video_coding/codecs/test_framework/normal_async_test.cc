@@ -218,7 +218,7 @@ bool FrameQueue::Empty()
     return _frameBufferQueue.empty();
 }
 
-uint32_t VideoEncodeCompleteCallback::EncodedBytes()
+size_t VideoEncodeCompleteCallback::EncodedBytes()
 {
     return _encodedBytes;
 }
@@ -251,7 +251,7 @@ VideoEncodeCompleteCallback::Encoded(EncodedImage& encodedImage,
     return 0;
 }
 
-uint32_t VideoDecodeCompleteCallback::DecodedBytes()
+size_t VideoDecodeCompleteCallback::DecodedBytes()
 {
     return _decodedBytes;
 }

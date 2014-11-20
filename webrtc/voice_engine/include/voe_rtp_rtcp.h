@@ -69,9 +69,9 @@ struct CallStatistics
     unsigned int extendedMax;
     unsigned int jitterSamples;
     int rttMs;
-    int bytesSent;
+    size_t bytesSent;
     int packetsSent;
-    int bytesReceived;
+    size_t bytesReceived;
     int packetsReceived;
     // The capture ntp time (in local timebase) of the first played out audio
     // frame.

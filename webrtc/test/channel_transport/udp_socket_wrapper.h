@@ -38,7 +38,7 @@ typedef int SOCKET;
 
 typedef void* CallbackObj;
 typedef void(*IncomingSocketCallback)(CallbackObj obj, const int8_t* buf,
-                                      int32_t len, const SocketAddress* from);
+                                      size_t len, const SocketAddress* from);
 
 class UdpSocketWrapper
 {
@@ -79,7 +79,7 @@ public:
     virtual int32_t SetPCP(const int32_t /*pcp*/);
 
     // Send buf of length len to the address specified by to.
-    virtual int32_t SendTo(const int8_t* buf, int32_t len,
+    virtual int32_t SendTo(const int8_t* buf, size_t len,
                            const SocketAddress& to) = 0;
 
     virtual void SetEventToNull();

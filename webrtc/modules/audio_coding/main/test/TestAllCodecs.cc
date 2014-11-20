@@ -10,7 +10,8 @@
 
 #include "webrtc/modules/audio_coding/main/test/TestAllCodecs.h"
 
-#include <stdio.h>
+#include <cstdio>
+#include <limits>
 #include <string>
 
 #include "testing/gtest/include/gtest/gtest.h"
@@ -31,6 +32,10 @@
 //
 // The test loops through all available mono codecs, encode at "a" sends over
 // the channel, and decodes at "b".
+
+namespace {
+const size_t kVariableSize = std::numeric_limits<size_t>::max();
+}
 
 namespace webrtc {
 
@@ -54,7 +59,7 @@ void TestPack::RegisterReceiverACM(AudioCodingModule* acm) {
 
 int32_t TestPack::SendData(FrameType frame_type, uint8_t payload_type,
                            uint32_t timestamp, const uint8_t* payload_data,
-                           uint16_t payload_size,
+                           size_t payload_size,
                            const RTPFragmentationHeader* fragmentation) {
   WebRtcRTPHeader rtp_info;
   int32_t status;
@@ -87,7 +92,7 @@ int32_t TestPack::SendData(FrameType frame_type, uint8_t payload_type,
   return status;
 }
 
-uint16_t TestPack::payload_size() {
+size_t TestPack::payload_size() {
   return payload_size_;
 }
 
@@ -459,13 +464,13 @@ void TestAllCodecs::Perform() {
   test_count_++;
   OpenOutFile(test_count_);
   char codec_isac[] = "ISAC";
-  RegisterSendCodec('A', codec_isac, 16000, -1, 480, -1);
+  RegisterSendCodec('A', codec_isac, 16000, -1, 480, kVariableSize);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_isac, 16000, -1, 960, -1);
+  RegisterSendCodec('A', codec_isac, 16000, -1, 960, kVariableSize);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_isac, 16000, 15000, 480, -1);
+  RegisterSendCodec('A', codec_isac, 16000, 15000, 480, kVariableSize);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_isac, 16000, 32000, 960, -1);
+  RegisterSendCodec('A', codec_isac, 16000, 32000, 960, kVariableSize);
   Run(channel_a_to_b_);
   outfile_b_.Close();
 #endif
@@ -475,13 +480,13 @@ void TestAllCodecs::Perform() {
   }
   test_count_++;
   OpenOutFile(test_count_);
-  RegisterSendCodec('A', codec_isac, 32000, -1, 960, -1);
+  RegisterSendCodec('A', codec_isac, 32000, -1, 960, kVariableSize);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_isac, 32000, 56000, 960, -1);
+  RegisterSendCodec('A', codec_isac, 32000, 56000, 960, kVariableSize);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_isac, 32000, 37000, 960, -1);
+  RegisterSendCodec('A', codec_isac, 32000, 37000, 960, kVariableSize);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_isac, 32000, 32000, 960, -1);
+  RegisterSendCodec('A', codec_isac, 32000, 32000, 960, kVariableSize);
   Run(channel_a_to_b_);
   outfile_b_.Close();
 #endif
@@ -611,19 +616,19 @@ void TestAllCodecs::Perform() {
   test_count_++;
   OpenOutFile(test_count_);
   char codec_opus[] = "OPUS";
-  RegisterSendCodec('A', codec_opus, 48000, 6000, 480, -1);
+  RegisterSendCodec('A', codec_opus, 48000, 6000, 480, kVariableSize);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_opus, 48000, 20000, 480*2, -1);
+  RegisterSendCodec('A', codec_opus, 48000, 20000, 480*2, kVariableSize);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_opus, 48000, 32000, 480*4, -1);
+  RegisterSendCodec('A', codec_opus, 48000, 32000, 480*4, kVariableSize);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_opus, 48000, 48000, 480, -1);
+  RegisterSendCodec('A', codec_opus, 48000, 48000, 480, kVariableSize);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_opus, 48000, 64000, 480*4, -1);
+  RegisterSendCodec('A', codec_opus, 48000, 64000, 480*4, kVariableSize);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_opus, 48000, 96000, 480*6, -1);
+  RegisterSendCodec('A', codec_opus, 48000, 96000, 480*6, kVariableSize);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_opus, 48000, 500000, 480*2, -1);
+  RegisterSendCodec('A', codec_opus, 48000, 500000, 480*2, kVariableSize);
   Run(channel_a_to_b_);
   outfile_b_.Close();
 #endif
@@ -686,10 +691,11 @@ void TestAllCodecs::Perform() {
 //         packet_size      - packet size in samples
 //         extra_byte       - if extra bytes needed compared to the bitrate
 //                            used when registering, can be an internal header
-//                            set to -1 if the codec is a variable rate codec
+//                            set to kVariableSize if the codec is a variable
+//                            rate codec
 void TestAllCodecs::RegisterSendCodec(char side, char* codec_name,
                                       int32_t sampling_freq_hz, int rate,
-                                      int packet_size, int extra_byte) {
+                                      int packet_size, size_t extra_byte) {
   if (test_mode_ != 0) {
     // Print out codec and settings.
     printf("codec: %s Freq: %d Rate: %d PackSize: %d\n", codec_name,
@@ -711,14 +717,14 @@ void TestAllCodecs::RegisterSendCodec(char side, char* codec_name,
 
   // Store the expected packet size in bytes, used to validate the received
   // packet. If variable rate codec (extra_byte == -1), set to -1.
-  if (extra_byte != -1) {
+  if (extra_byte != kVariableSize) {
     // Add 0.875 to always round up to a whole byte
-    packet_size_bytes_ = static_cast<int>(static_cast<float>(packet_size
-        * rate) / static_cast<float>(sampling_freq_hz * 8) + 0.875)
-        + extra_byte;
+    packet_size_bytes_ = static_cast<size_t>(
+        static_cast<float>(packet_size * rate) /
+        static_cast<float>(sampling_freq_hz * 8) + 0.875) + extra_byte;
   } else {
     // Packets will have a variable size.
-    packet_size_bytes_ = -1;
+    packet_size_bytes_ = kVariableSize;
   }
 
   // Set pointer to the ACM where to register the codec.
@@ -751,7 +757,7 @@ void TestAllCodecs::Run(TestPack* channel) {
   AudioFrame audio_frame;
 
   int32_t out_freq_hz = outfile_b_.SamplingFrequency();
-  uint16_t receive_size;
+  size_t receive_size;
   uint32_t timestamp_diff;
   channel->reset_payload_size();
   int error_count = 0;
@@ -768,8 +774,8 @@ void TestAllCodecs::Run(TestPack* channel) {
     // Verify that the received packet size matches the settings.
     receive_size = channel->payload_size();
     if (receive_size) {
-      if ((static_cast<int>(receive_size) != packet_size_bytes_) &&
-          (packet_size_bytes_ > -1)) {
+      if ((receive_size != packet_size_bytes_) &&
+          (packet_size_bytes_ != kVariableSize)) {
         error_count++;
       }
 

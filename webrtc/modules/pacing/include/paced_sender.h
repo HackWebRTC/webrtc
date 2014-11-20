@@ -52,7 +52,7 @@ class PacedSender : public Module {
                                   bool retransmission) = 0;
     // Called when it's a good time to send a padding data.
     // Returns the number of bytes sent.
-    virtual int TimeToSendPadding(int bytes) = 0;
+    virtual size_t TimeToSendPadding(size_t bytes) = 0;
 
    protected:
     virtual ~Callback() {}
@@ -102,7 +102,7 @@ class PacedSender : public Module {
                           uint32_t ssrc,
                           uint16_t sequence_number,
                           int64_t capture_time_ms,
-                          int bytes,
+                          size_t bytes,
                           bool retransmission);
 
   // Returns the time since the oldest queued packet was enqueued.
@@ -131,7 +131,7 @@ class PacedSender : public Module {
 
   bool SendPacket(const paced_sender::Packet& packet)
       EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  void SendPadding(int padding_needed) EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  void SendPadding(size_t padding_needed) EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   Clock* const clock_;
   Callback* const callback_;

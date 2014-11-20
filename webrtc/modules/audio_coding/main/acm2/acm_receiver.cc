@@ -261,7 +261,7 @@ AudioPlayoutMode AcmReceiver::PlayoutMode() const {
 
 int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
                               const uint8_t* incoming_payload,
-                              int length_payload) {
+                              size_t length_payload) {
   uint32_t receive_timestamp = 0;
   InitialDelayManager::PacketType packet_type =
       InitialDelayManager::kUndefinedPacket;

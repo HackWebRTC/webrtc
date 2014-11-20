@@ -30,7 +30,7 @@ class FecReceiverImpl : public FecReceiver {
 
   virtual int32_t AddReceivedRedPacket(const RTPHeader& rtp_header,
                                        const uint8_t* incoming_rtp_packet,
-                                       int packet_length,
+                                       size_t packet_length,
                                        uint8_t ulpfec_payload_type) OVERRIDE;
 
   virtual int32_t ProcessReceivedFec() OVERRIDE;
