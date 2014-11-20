@@ -458,8 +458,10 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   bool update_sample_rate_and_channels = false;
   // Reinitialize NetEq if it's needed (changed SSRC or first call).
   if ((main_header.ssrc != ssrc_) || first_packet_) {
+    // Note: |first_packet_| will be cleared further down in this method, once
+    // the packet has been successfully inserted into the packet buffer.
+
     rtcp_.Init(main_header.sequenceNumber);
-    first_packet_ = false;
 
     // Flush the packet buffer and DTMF buffer.
     packet_buffer_->Flush();
@@ -475,13 +477,10 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     timestamp_ = main_header.timestamp;
     current_rtp_payload_type_ = main_header.payloadType;
 
-    // Set MCU to update codec on next SignalMCU call.
-    new_codec_ = true;
-
     // Reset timestamp scaling.
     timestamp_scaler_->Reset();
 
-    // Triger an update of sampling rate and the number of channels.
+    // Trigger an update of sampling rate and the number of channels.
     update_sample_rate_and_channels = true;
   }
 
@@ -612,6 +611,13 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     PacketBuffer::DeleteAllPackets(&packet_list);
     return kOtherError;
   }
+
+  if (first_packet_) {
+    first_packet_ = false;
+    // Update the codec on the next GetAudio call.
+    new_codec_ = true;
+  }
+
   if (current_rtp_payload_type_ != 0xFF) {
     const DecoderDatabase::DecoderInfo* dec_info =
         decoder_database_->GetDecoderInfo(current_rtp_payload_type_);

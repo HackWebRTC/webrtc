@@ -589,8 +589,7 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
 
 // This test verifies that NetEq can handle the situation where the first
 // incoming packet is rejected.
-// Disabled due to https://code.google.com/p/webrtc/issues/detail?id=4021.
-TEST_F(NetEqImplTest, DISABLED_FirstPacketUnknown) {
+TEST_F(NetEqImplTest, FirstPacketUnknown) {
   UseNoMocks();
   CreateInstance();
 
