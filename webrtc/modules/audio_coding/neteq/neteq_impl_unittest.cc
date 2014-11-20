@@ -587,4 +587,70 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
   EXPECT_CALL(mock_decoder, Die());
 }
 
+// This test verifies that NetEq can handle the situation where the first
+// incoming packet is rejected.
+// Disabled due to https://code.google.com/p/webrtc/issues/detail?id=4021.
+TEST_F(NetEqImplTest, DISABLED_FirstPacketUnknown) {
+  UseNoMocks();
+  CreateInstance();
+
+  const uint8_t kPayloadType = 17;   // Just an arbitrary number.
+  const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
+  const int kSampleRateHz = 8000;
+  const int kPayloadLengthSamples = 10 * kSampleRateHz / 1000;  // 10 ms.
+  const size_t kPayloadLengthBytes = kPayloadLengthSamples;
+  uint8_t payload[kPayloadLengthBytes] = {0};
+  WebRtcRTPHeader rtp_header;
+  rtp_header.header.payloadType = kPayloadType;
+  rtp_header.header.sequenceNumber = 0x1234;
+  rtp_header.header.timestamp = 0x12345678;
+  rtp_header.header.ssrc = 0x87654321;
+
+  // Insert one packet. Note that we have not registered any payload type, so
+  // this packet will be rejected.
+  EXPECT_EQ(NetEq::kFail,
+            neteq_->InsertPacket(rtp_header, payload, kPayloadLengthBytes,
+                                 kReceiveTime));
+  EXPECT_EQ(NetEq::kUnknownRtpPayloadType, neteq_->LastError());
+
+  // Pull audio once.
+  const int kMaxOutputSize = 10 * kSampleRateHz / 1000;
+  int16_t output[kMaxOutputSize];
+  int samples_per_channel;
+  int num_channels;
+  NetEqOutputType type;
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
+                             &num_channels, &type));
+  ASSERT_LE(samples_per_channel, kMaxOutputSize);
+  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
+  EXPECT_EQ(1, num_channels);
+  EXPECT_EQ(kOutputPLC, type);
+
+  // Register the payload type.
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->RegisterPayloadType(kDecoderPCM16B, kPayloadType));
+
+  // Insert 10 packets.
+  for (int i = 0; i < 10; ++i) {
+    rtp_header.header.sequenceNumber++;
+    rtp_header.header.timestamp += kPayloadLengthSamples;
+    EXPECT_EQ(NetEq::kOK,
+              neteq_->InsertPacket(rtp_header, payload, kPayloadLengthBytes,
+                                   kReceiveTime));
+    EXPECT_EQ(i + 1, packet_buffer_->NumPacketsInBuffer());
+  }
+
+  // Pull audio repeatedly and make sure we get normal output, that is not PLC.
+  for (int i = 0; i < 3; ++i) {
+    EXPECT_EQ(NetEq::kOK,
+              neteq_->GetAudio(kMaxOutputSize, output, &samples_per_channel,
+                               &num_channels, &type));
+    ASSERT_LE(samples_per_channel, kMaxOutputSize);
+    EXPECT_EQ(kMaxOutputSize, samples_per_channel);
+    EXPECT_EQ(1, num_channels);
+    EXPECT_EQ(kOutputNormal, type)
+        << "NetEq did not decode the packets as expected.";
+  }
+}
 }  // namespace webrtc
