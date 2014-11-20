@@ -39,7 +39,7 @@ public interface AppRTCClient {
    * https://apprtc.appspot.com/?r=NNN. Once connection is established
    * onConnectedToRoom() callback with room parameters is invoked.
    */
-  public void connectToRoom(String url);
+  public void connectToRoom(String url, boolean loopback);
 
   /**
    * Send offer SDP to the other participant.
@@ -71,7 +71,7 @@ public interface AppRTCClient {
     public final MediaConstraints pcConstraints;
     public final MediaConstraints videoConstraints;
     public final MediaConstraints audioConstraints;
-    public final String postMessageUrl;
+    public final String roomUrl;
     public final String roomId;
     public final String clientId;
     public final String channelToken;
@@ -81,14 +81,14 @@ public interface AppRTCClient {
         List<PeerConnection.IceServer> iceServers,
         boolean initiator, MediaConstraints pcConstraints,
         MediaConstraints videoConstraints, MediaConstraints audioConstraints,
-        String postMessageUrl, String roomId, String clientId,
+        String roomUrl, String roomId, String clientId,
         String channelToken, String offerSdp ) {
       this.iceServers = iceServers;
       this.initiator = initiator;
       this.pcConstraints = pcConstraints;
       this.videoConstraints = videoConstraints;
       this.audioConstraints = audioConstraints;
-      this.postMessageUrl = postMessageUrl;
+      this.roomUrl = roomUrl;
       this.roomId = roomId;
       this.clientId = clientId;
       this.channelToken = channelToken;

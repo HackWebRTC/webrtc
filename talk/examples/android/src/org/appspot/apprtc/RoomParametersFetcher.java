@@ -51,6 +51,7 @@ public class RoomParametersFetcher
   private static final String TAG = "RoomRTCClient";
   private Exception exception = null;
   private RoomParametersFetcherEvents events = null;
+  private boolean loopback;
 
   /**
    * Room parameters fetcher callbacks.
@@ -68,9 +69,11 @@ public class RoomParametersFetcher
     public void onSignalingParametersError(final String description);
   }
 
-  public RoomParametersFetcher(RoomParametersFetcherEvents events) {
+  public RoomParametersFetcher(
+      RoomParametersFetcherEvents events, boolean loopback) {
     super();
     this.events = events;
+    this.loopback = loopback;
   }
 
   @Override
@@ -138,11 +141,18 @@ public class RoomParametersFetcher
       offerSdp = null;
     }
 
-    String postMessageUrl = url.substring(0, url.indexOf('?'));
-    postMessageUrl += "/message?r=" + roomId + "&u=" + clientId;
-    Log.d(TAG, "Post url: " + postMessageUrl);
+    String roomUrl = url.substring(0, url.indexOf('?'));
+    Log.d(TAG, "Room url: " + roomUrl);
 
-    boolean initiator = roomJson.getInt("initiator") == 1;
+    boolean initiator;
+    if (loopback) {
+      // In loopback mode caller should always be call initiator.
+      // TODO(glaznev): remove this once 8-dot-apprtc server will set initiator
+      // flag to true for loopback calls.
+      initiator = true;
+    } else {
+      initiator = roomJson.getInt("initiator") == 1;
+    }
     Log.d(TAG, "Initiator: " + initiator);
 
     LinkedList<PeerConnection.IceServer> iceServers =
@@ -156,15 +166,17 @@ public class RoomParametersFetcher
       }
     }
     if (!isTurnPresent) {
-      PeerConnection.IceServer server =
-          requestTurnServer(roomJson.getString("turn_url"));
-      Log.d(TAG, "TurnServer: " + server);
-      iceServers.add(server);
+      LinkedList<PeerConnection.IceServer> turnServers =
+          requestTurnServers(roomJson.getString("turn_url"));
+      for (PeerConnection.IceServer turnServer : turnServers) {
+        Log.d(TAG, "TurnServer: " + turnServer);
+        iceServers.add(turnServer);
+      }
     }
 
     MediaConstraints pcConstraints = constraintsFromJSON(
         roomJson.getString("pc_constraints"));
-    addDTLSConstraintIfMissing(pcConstraints);
+    addDTLSConstraintIfMissing(pcConstraints, loopback);
     Log.d(TAG, "pcConstraints: " + pcConstraints);
     MediaConstraints videoConstraints = constraintsFromJSON(
         getAVConstraints("video",
@@ -178,13 +190,14 @@ public class RoomParametersFetcher
     return new SignalingParameters(
         iceServers, initiator,
         pcConstraints, videoConstraints, audioConstraints,
-        postMessageUrl, roomId, clientId,
+        roomUrl, roomId, clientId,
         channelToken, offerSdp);
   }
 
   // Mimic Chrome and set DtlsSrtpKeyAgreement to true if not set to false by
   // the web-app.
-  private void addDTLSConstraintIfMissing(MediaConstraints pcConstraints) {
+  private void addDTLSConstraintIfMissing(
+      MediaConstraints pcConstraints, boolean loopback) {
     for (MediaConstraints.KeyValuePair pair : pcConstraints.mandatory) {
       if (pair.getKey().equals("DtlsSrtpKeyAgreement")) {
         return;
@@ -195,10 +208,15 @@ public class RoomParametersFetcher
         return;
       }
     }
-    // DTLS isn't being suppressed (e.g. for debug=loopback calls), so enable
-    // it by default.
-    pcConstraints.optional.add(
-        new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
+    // DTLS isn't being specified (e.g. for debug=loopback calls), so enable
+    // it for normal calls and disable for loopback calls.
+    if (loopback) {
+      pcConstraints.optional.add(
+          new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "false"));
+    } else {
+      pcConstraints.optional.add(
+          new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
+    }
   }
 
   // Return the constraints specified for |type| of "audio" or "video" in
@@ -256,17 +274,25 @@ public class RoomParametersFetcher
 
   // Requests & returns a TURN ICE Server based on a request URL.  Must be run
   // off the main thread!
-  private PeerConnection.IceServer requestTurnServer(String url)
+  private LinkedList<PeerConnection.IceServer> requestTurnServers(String url)
       throws IOException, JSONException {
+    LinkedList<PeerConnection.IceServer> turnServers =
+        new LinkedList<PeerConnection.IceServer>();
+    Log.d(TAG, "Request TURN from: " + url);
     URLConnection connection = (new URL(url)).openConnection();
     connection.addRequestProperty("user-agent", "Mozilla/5.0");
     connection.addRequestProperty("origin", "https://apprtc.appspot.com");
     String response = drainStream(connection.getInputStream());
+    Log.d(TAG, "TURN response: " + response);
     JSONObject responseJSON = new JSONObject(response);
-    String uri = responseJSON.getJSONArray("uris").getString(0);
     String username = responseJSON.getString("username");
     String password = responseJSON.getString("password");
-    return new PeerConnection.IceServer(uri, username, password);
+    JSONArray turnUris = responseJSON.getJSONArray("uris");
+    for (int i = 0; i < turnUris.length(); i++) {
+      String uri = turnUris.getString(i);
+      turnServers.add(new PeerConnection.IceServer(uri, username, password));
+    }
+    return turnServers;
   }
 
   // Return the list of ICE servers described by a WebRTCPeerConnection

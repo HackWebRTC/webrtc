@@ -60,6 +60,7 @@ public class GAERTCClient implements AppRTCClient, RoomParametersFetcherEvents {
   private SignalingParameters signalingParameters;
   private RoomParametersFetcher fetcher;
   private LinkedList<String> sendQueue = new LinkedList<String>();
+  private String postMessageUrl;
 
   public GAERTCClient(Activity activity, SignalingEvents events) {
     this.activity = activity;
@@ -74,8 +75,8 @@ public class GAERTCClient implements AppRTCClient, RoomParametersFetcherEvents {
    * on its GAE Channel.
    */
   @Override
-  public void connectToRoom(String url) {
-    fetcher = new RoomParametersFetcher(this);
+  public void connectToRoom(String url, boolean loopback) {
+    fetcher = new RoomParametersFetcher(this, loopback);
     fetcher.execute(url);
   }
 
@@ -167,8 +168,7 @@ public class GAERTCClient implements AppRTCClient, RoomParametersFetcherEvents {
       try {
         for (String msg : sendQueue) {
           Log.d(TAG, "SEND: " + msg);
-          URLConnection connection = new URL(
-              signalingParameters.postMessageUrl).openConnection();
+          URLConnection connection = new URL(postMessageUrl).openConnection();
           connection.setDoOutput(true);
           connection.getOutputStream().write(msg.getBytes("UTF-8"));
           if (!connection.getHeaderField(null).startsWith("HTTP/1.1 200 ")) {
@@ -203,6 +203,8 @@ public class GAERTCClient implements AppRTCClient, RoomParametersFetcherEvents {
       reportChannelError("Room does not support GAE channel signaling.");
       return;
     }
+    postMessageUrl = params.roomUrl + "/message?r=" +
+        params.roomId + "&u=" + params.clientId;
     gaeHandler = new GAEHandler();
     channelClient =
         new GAEChannelClient(activity, params.channelToken, gaeHandler);

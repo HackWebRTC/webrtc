@@ -85,7 +85,10 @@ public class AppRTCDemoActivity extends Activity
   private TextView hudView;
   private TextView roomName;
   private ImageButton videoScalingButton;
+  private boolean commandLineRun;
+  private int runTimeMs;
   private boolean iceConnected;
+  private boolean isError;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -194,30 +197,44 @@ public class AppRTCDemoActivity extends Activity
 
     final Intent intent = getIntent();
     Uri url = intent.getData();
+    boolean loopback = intent.getBooleanExtra(
+        ConnectActivity.EXTRA_LOOPBACK, false);
+    commandLineRun = intent.getBooleanExtra(
+        ConnectActivity.EXTRA_CMDLINE, false);
+    runTimeMs = intent.getIntExtra(
+        ConnectActivity.EXTRA_RUNTIME, 0);
     if (url != null) {
       String room = url.getQueryParameter("r");
-      String loopback = url.getQueryParameter("debug");
-      if ((room != null && !room.equals("")) ||
-          (loopback != null && loopback.equals("loopback"))) {
+      if (loopback || (room != null && !room.equals(""))) {
         logAndToast(getString(R.string.connecting_to, url));
         if (USE_WEBSOCKETS) {
           appRtcClient = new WebSocketRTCClient(this);
         } else {
           appRtcClient = new GAERTCClient(this, this);
         }
-        appRtcClient.connectToRoom(url.toString());
-        if (room != null && !room.equals("")) {
-          roomName.setText(room);
-        } else {
+        appRtcClient.connectToRoom(url.toString(), loopback);
+        if (loopback) {
           roomName.setText("loopback");
+        } else {
+          roomName.setText(room);
+        }
+        if (commandLineRun && runTimeMs > 0) {
+          // For command line execution run connection for <runTimeMs> and exit.
+          videoView.postDelayed(new Runnable() {
+            public void run() {
+              disconnect();
+            }
+          }, runTimeMs);
         }
       } else {
         logAndToast("Empty or missing room name!");
+        setResult(RESULT_CANCELED);
         finish();
       }
     } else {
       logAndToast(getString(R.string.missing_url));
-      Log.wtf(TAG, "Didn't get any URL in intent!");
+      Log.e(TAG, "Didn't get any URL in intent!");
+      setResult(RESULT_CANCELED);
       finish();
     }
   }
@@ -253,10 +270,6 @@ public class AppRTCDemoActivity extends Activity
   @Override
   protected void onDestroy() {
     disconnect();
-    if (audioManager != null) {
-      audioManager.close();
-      audioManager = null;
-    }
     super.onDestroy();
   }
 
@@ -327,20 +340,34 @@ public class AppRTCDemoActivity extends Activity
       pc.close();
       pc = null;
     }
+    if (audioManager != null) {
+      audioManager.close();
+      audioManager = null;
+    }
+    if (iceConnected && !isError) {
+      setResult(RESULT_OK);
+    } else {
+      setResult(RESULT_CANCELED);
+    }
     finish();
   }
 
-  private void disconnectWithMessage(final String errorMessage) {
-    new AlertDialog.Builder(this)
-    .setTitle(getText(R.string.channel_error_title))
-    .setMessage(errorMessage)
-    .setCancelable(false)
-    .setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
-        public void onClick(DialogInterface dialog, int id) {
-          dialog.cancel();
-          disconnect();
-        }
-      }).create().show();
+  private void disconnectWithErrorMessage(final String errorMessage) {
+    if (commandLineRun) {
+      Log.e(TAG, "Critical error: " + errorMessage);
+      disconnect();
+    } else {
+      new AlertDialog.Builder(this)
+      .setTitle(getText(R.string.channel_error_title))
+      .setMessage(errorMessage)
+      .setCancelable(false)
+      .setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+          public void onClick(DialogInterface dialog, int id) {
+            dialog.cancel();
+            disconnect();
+          }
+        }).create().show();
+    }
   }
 
   // Poor-man's assert(): die with |msg| unless |condition| is true.
@@ -461,7 +488,10 @@ public class AppRTCDemoActivity extends Activity
 
   @Override
   public void onChannelError(final String description) {
-    disconnectWithMessage(description);
+    if (!isError) {
+      isError = true;
+      disconnectWithErrorMessage(description);
+    }
   }
 
   // -----Implementation of PeerConnectionClient.PeerConnectionEvents.---------
@@ -501,7 +531,10 @@ public class AppRTCDemoActivity extends Activity
 
   @Override
   public void onPeerConnectionError(String description) {
-    disconnectWithMessage(description);
+    if (!isError) {
+      isError = true;
+      disconnectWithErrorMessage(description);
+    }
   }
 
 }

@@ -32,8 +32,8 @@ import android.os.Looper;
 import android.util.Log;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.LinkedList;
 
 import org.appspot.apprtc.RoomParametersFetcher.RoomParametersFetcherEvents;
@@ -57,23 +57,31 @@ import org.webrtc.SessionDescription;
 public class WebSocketRTCClient implements AppRTCClient,
     RoomParametersFetcherEvents, WebSocketChannelEvents {
   private static final String TAG = "WSRTCClient";
-  private static final String WSS_SERVER = "wss://apprtc-ws.webrtc.org:8089/ws";
+  private static final String WSS_SERVER =
+      "wss://apprtc-ws.webrtc.org:8089/ws";
+  // TODO(glaznev): remove this hard-coded URL and instead get WebSocket http
+  // server URL from room response once it will be supported by 8-dot-apprtc.
+  private static final String WSS_POST_URL =
+      "https://apprtc-ws.webrtc.org:8089/";
 
   private enum ConnectionState {
     NEW, CONNECTED, CLOSED, ERROR
   };
   private final Handler uiHandler;
+  private boolean loopback;
   private SignalingEvents events;
   private SignalingParameters signalingParameters;
   private WebSocketChannelClient wsClient;
   private RoomParametersFetcher fetcher;
   private ConnectionState roomState;
-  private LinkedList<String> gaePostQueue;
+  private LinkedList<GAEMessage> gaePostQueue;
+  private String postMessageUrl;
+  private String byeMessageUrl;
 
   public WebSocketRTCClient(SignalingEvents events) {
     this.events = events;
     uiHandler = new Handler(Looper.getMainLooper());
-    gaePostQueue = new LinkedList<String>();
+    gaePostQueue = new LinkedList<GAEMessage>();
   }
 
   // --------------------------------------------------------------------
@@ -82,14 +90,24 @@ public class WebSocketRTCClient implements AppRTCClient,
   @Override
   public void onSignalingParametersReady(final SignalingParameters params) {
     Log.d(TAG, "Room connection completed.");
-    if (!params.initiator && params.offerSdp == null) {
-      reportError("Offer SDP is not available");
+    if (!loopback && !params.initiator && params.offerSdp == null) {
+      reportError("Offer SDP is not available.");
+      return;
+    }
+    if (loopback && params.offerSdp != null) {
+      reportError("Loopback room is busy.");
       return;
     }
     signalingParameters = params;
+    postMessageUrl = params.roomUrl + "message?r=" +
+        params.roomId + "&u=" + params.clientId;
+    byeMessageUrl = params.roomUrl + "bye/" +
+        params.roomId + "/" + params.clientId;
     roomState = ConnectionState.CONNECTED;
+    wsClient.setClientParameters(
+        signalingParameters.roomId, signalingParameters.clientId);
+    wsClient.register();
     events.onConnectedToRoom(signalingParameters);
-    wsClient.register(signalingParameters.roomId, signalingParameters.clientId);
     events.onChannelOpen();
     if (!signalingParameters.initiator) {
       // For call receiver get sdp offer from room parameters.
@@ -112,8 +130,7 @@ public class WebSocketRTCClient implements AppRTCClient,
   public void onWebSocketOpen() {
     Log.d(TAG, "Websocket connection completed.");
     if (roomState == ConnectionState.CONNECTED) {
-      wsClient.register(
-          signalingParameters.roomId, signalingParameters.clientId);
+      wsClient.register();
     }
   }
 
@@ -175,24 +192,30 @@ public class WebSocketRTCClient implements AppRTCClient,
   // https://apprtc.appspot.com/?r=NNN, retrieve room parameters
   // and connect to WebSocket server.
   @Override
-  public void connectToRoom(String url) {
+  public void connectToRoom(String url, boolean loopback) {
+    this.loopback = loopback;
     // Get room parameters.
     roomState = ConnectionState.NEW;
-    fetcher = new RoomParametersFetcher(this);
+    fetcher = new RoomParametersFetcher(this, loopback);
     fetcher.execute(url);
     // Connect to WebSocket server.
     wsClient = new WebSocketChannelClient(this);
-    wsClient.connect(WSS_SERVER);
+    if (!loopback) {
+      wsClient.connect(WSS_SERVER, WSS_POST_URL);
+    }
   }
 
   @Override
   public void disconnect() {
     Log.d(TAG, "Disconnect. Room state: " + roomState);
+    wsClient.disconnect();
     if (roomState == ConnectionState.CONNECTED) {
       Log.d(TAG, "Closing room.");
-      sendGAEMessage("{\"type\": \"bye\"}");
+      // TODO(glaznev): Remove json bye message sending once new bye will
+      // be supported on 8-dot.
+      //sendGAEMessage(byeMessageUrl, "");
+      sendGAEMessage(postMessageUrl, "{\"type\": \"bye\"}");
     }
-    wsClient.disconnect();
   }
 
   // Send local SDP (offer or answer, depending on role) to the
@@ -202,14 +225,26 @@ public class WebSocketRTCClient implements AppRTCClient,
   // we might want to filter elsewhere.
   @Override
   public void sendOfferSdp(final SessionDescription sdp) {
-    JSONObject json = new JSONObject();
-    jsonPut(json, "sdp", sdp.description);
-    jsonPut(json, "type", "offer");
-    sendGAEMessage(json.toString());
+    if (loopback) {
+      // In loopback mode rename this offer to answer and send it back.
+      SessionDescription sdpAnswer = new SessionDescription(
+          SessionDescription.Type.fromCanonicalForm("answer"),
+          sdp.description);
+      events.onRemoteDescription(sdpAnswer);
+    } else {
+      JSONObject json = new JSONObject();
+      jsonPut(json, "sdp", sdp.description);
+      jsonPut(json, "type", "offer");
+      sendGAEMessage(postMessageUrl, json.toString());
+    }
   }
 
   @Override
   public void sendAnswerSdp(final SessionDescription sdp) {
+    if (loopback) {
+      Log.e(TAG, "Sending answer in loopback mode.");
+      return;
+    }
     if (wsClient.getState() != WebSocketConnectionState.REGISTERED) {
       reportError("Sending answer SDP in non registered state.");
       return;
@@ -223,16 +258,20 @@ public class WebSocketRTCClient implements AppRTCClient,
   // Send Ice candidate to the other participant.
   @Override
   public void sendLocalIceCandidate(final IceCandidate candidate) {
-    if (wsClient.getState() != WebSocketConnectionState.REGISTERED) {
-      reportError("Sending ICE candidate in non registered state.");
-      return;
+    if (loopback) {
+      events.onRemoteIceCandidate(candidate);
+    } else {
+      if (wsClient.getState() != WebSocketConnectionState.REGISTERED) {
+        reportError("Sending ICE candidate in non registered state.");
+        return;
+      }
+      JSONObject json = new JSONObject();
+      jsonPut(json, "type", "candidate");
+      jsonPut(json, "label", candidate.sdpMLineIndex);
+      jsonPut(json, "id", candidate.sdpMid);
+      jsonPut(json, "candidate", candidate.sdp);
+      wsClient.send(json.toString());
     }
-    JSONObject json = new JSONObject();
-    jsonPut(json, "type", "candidate");
-    jsonPut(json, "label", candidate.sdpMLineIndex);
-    jsonPut(json, "id", candidate.sdpMid);
-    jsonPut(json, "candidate", candidate.sdp);
-    wsClient.send(json.toString());
   }
 
   // --------------------------------------------------------------------
@@ -258,10 +297,19 @@ public class WebSocketRTCClient implements AppRTCClient,
     }
   }
 
+  private class GAEMessage {
+    GAEMessage(String postUrl, String message) {
+      this.postUrl = postUrl;
+      this.message = message;
+    }
+    public final String postUrl;
+    public final String message;
+  }
+
   // Queue a message for sending to the room  and send it if already connected.
-  private synchronized void sendGAEMessage(String msg) {
+  private synchronized void sendGAEMessage(String url, String message) {
     synchronized (gaePostQueue) {
-      gaePostQueue.add(msg);
+      gaePostQueue.add(new GAEMessage(url, message));
     }
     (new AsyncTask<Void, Void, Void>() {
       public Void doInBackground(Void... unused) {
@@ -278,27 +326,32 @@ public class WebSocketRTCClient implements AppRTCClient,
         return;
       }
       try {
-        for (String msg : gaePostQueue) {
-          Log.d(TAG, "ROOM SEND: " + msg);
+        for (GAEMessage gaeMessage : gaePostQueue) {
+          Log.d(TAG, "ROOM SEND to " + gaeMessage.postUrl +
+              ". Message: " + gaeMessage.message);
           // Check if this is 'bye' message and update room connection state.
-          // TODO(glaznev): change this to new bye message format:
-          // https://apprtc.appspot.com/bye/{roomid}/{clientid}
-          JSONObject json = new JSONObject(msg);
+          // TODO(glaznev): Uncomment this check and remove check below
+          // once new bye message will be supported by 8-dot.
+          //if (gaeMessage.postUrl.contains("bye")) {
+          //  roomState = ConnectionState.CLOSED;
+          //}
+          JSONObject json = new JSONObject(gaeMessage.message);
           String type = json.optString("type");
           if (type != null && type.equals("bye")) {
             roomState = ConnectionState.CLOSED;
           }
           // Send POST request.
-          URLConnection connection = new URL(
-              signalingParameters.postMessageUrl).openConnection();
+          HttpURLConnection connection =
+              (HttpURLConnection) new URL(gaeMessage.postUrl).openConnection();
           connection.setDoOutput(true);
           connection.setRequestProperty(
               "content-type", "text/plain; charset=utf-8");
-          connection.getOutputStream().write(msg.getBytes("UTF-8"));
+          connection.getOutputStream().write(
+              gaeMessage.message.getBytes("UTF-8"));
           String replyHeader = connection.getHeaderField(null);
           if (!replyHeader.startsWith("HTTP/1.1 200 ")) {
             reportError("Non-200 response to POST: " +
-                connection.getHeaderField(null) + " for msg: " + msg);
+                connection.getHeaderField(null));
           }
         }
       } catch (IOException e) {
@@ -306,6 +359,7 @@ public class WebSocketRTCClient implements AppRTCClient,
       } catch (JSONException e) {
         reportError("GAE POST JSON error: " + e.getMessage());
       }
+
       gaePostQueue.clear();
     }
   }

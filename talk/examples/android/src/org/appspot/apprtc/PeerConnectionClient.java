@@ -67,7 +67,6 @@ public class PeerConnectionClient {
   // remote descriptions are set. Similarly local ICE candidates are sent to
   // remote peer after both local and remote description are set.
   private LinkedList<IceCandidate> queuedRemoteCandidates = null;
-  private LinkedList<IceCandidate> queuedLocalCandidates = null;
   private MediaConstraints sdpMediaConstraints;
   private MediaConstraints videoConstraints;
   private PeerConnectionEvents events;
@@ -88,7 +87,6 @@ public class PeerConnectionClient {
     this.events = events;
     isInitiator = signalingParameters.initiator;
     queuedRemoteCandidates = new LinkedList<IceCandidate>();
-    queuedLocalCandidates = new LinkedList<IceCandidate>();
 
     sdpMediaConstraints = new MediaConstraints();
     sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
@@ -384,13 +382,6 @@ public class PeerConnectionClient {
   }
 
   private void drainCandidates() {
-    if (queuedLocalCandidates != null) {
-      Log.d(TAG, "Send " + queuedLocalCandidates.size() + " local candidates");
-      for (IceCandidate candidate : queuedLocalCandidates) {
-        events.onIceCandidate(candidate);
-      }
-      queuedLocalCandidates = null;
-    }
     if (queuedRemoteCandidates != null) {
       Log.d(TAG, "Add " + queuedRemoteCandidates.size() + " remote candidates");
       for (IceCandidate candidate : queuedRemoteCandidates) {
@@ -449,11 +440,7 @@ public class PeerConnectionClient {
     public void onIceCandidate(final IceCandidate candidate){
       activity.runOnUiThread(new Runnable() {
         public void run() {
-          if (queuedLocalCandidates != null) {
-            queuedLocalCandidates.add(candidate);
-          } else {
-            events.onIceCandidate(candidate);
-          }
+          events.onIceCandidate(candidate);
         }
       });
     }
