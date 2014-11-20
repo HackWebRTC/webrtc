@@ -69,6 +69,20 @@ class FakeH264Encoder : public FakeEncoder, public EncodedImageCallback {
   EncodedImageCallback* callback_;
   int idr_counter_;
 };
+
+class DelayedEncoder : public test::FakeEncoder {
+ public:
+  DelayedEncoder(Clock* clock, int delay_ms);
+  virtual ~DelayedEncoder() {}
+
+  virtual int32_t Encode(
+      const I420VideoFrame& input_image,
+      const CodecSpecificInfo* codec_specific_info,
+      const std::vector<VideoFrameType>* frame_types) OVERRIDE;
+
+ private:
+  const int delay_ms_;
+};
 }  // namespace test
 }  // namespace webrtc
 

@@ -13,6 +13,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/system_wrappers/interface/sleep.h"
 
 namespace webrtc {
 namespace test {
@@ -179,6 +180,17 @@ int32_t FakeH264Encoder::Encoded(EncodedImage& encoded_image,
     }
   }
   return callback_->Encoded(encoded_image, NULL, &fragmentation);
+}
+
+DelayedEncoder::DelayedEncoder(Clock* clock, int delay_ms)
+    : test::FakeEncoder(clock),
+      delay_ms_(delay_ms) {}
+
+int32_t DelayedEncoder::Encode(const I420VideoFrame& input_image,
+                               const CodecSpecificInfo* codec_specific_info,
+                               const std::vector<VideoFrameType>* frame_types) {
+  SleepMs(delay_ms_);
+  return FakeEncoder::Encode(input_image, codec_specific_info, frame_types);
 }
 }  // namespace test
 }  // namespace webrtc

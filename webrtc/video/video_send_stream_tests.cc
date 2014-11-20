@@ -168,10 +168,12 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
 
 TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
   static const uint8_t kTOffsetExtensionId = 13;
+  static const int kEncodeDelayMs = 5;
   class TransmissionTimeOffsetObserver : public test::SendTest {
    public:
     TransmissionTimeOffsetObserver()
-        : SendTest(kDefaultTimeoutMs), encoder_(Clock::GetRealTimeClock()) {
+        : SendTest(kDefaultTimeoutMs),
+          encoder_(Clock::GetRealTimeClock(), kEncodeDelayMs) {
       EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
           kRtpExtensionTransmissionTimeOffset, kTOffsetExtensionId));
     }
@@ -204,22 +206,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
           << "Timed out while waiting for a single RTP packet.";
     }
 
-    class DelayedEncoder : public test::FakeEncoder {
-     public:
-      explicit DelayedEncoder(Clock* clock) : test::FakeEncoder(clock) {}
-      virtual int32_t Encode(
-          const I420VideoFrame& input_image,
-          const CodecSpecificInfo* codec_specific_info,
-          const std::vector<VideoFrameType>* frame_types) OVERRIDE {
-        // A delay needs to be introduced to assure that we get a timestamp
-        // offset.
-        SleepMs(5);
-        return FakeEncoder::Encode(
-            input_image, codec_specific_info, frame_types);
-      }
-    };
-
-    DelayedEncoder encoder_;
+    test::DelayedEncoder encoder_;
   } test;
 
   RunBaseTest(&test);
