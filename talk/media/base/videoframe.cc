@@ -115,6 +115,26 @@ void VideoFrame::CopyToFrame(VideoFrame* dst) const {
                dst->GetYPitch(), dst->GetUPitch(), dst->GetVPitch());
 }
 
+size_t VideoFrame::ConvertToRgbBuffer(uint32 to_fourcc,
+                                      uint8* buffer,
+                                      size_t size,
+                                      int stride_rgb) const {
+  const size_t needed = std::abs(stride_rgb) * GetHeight();
+  if (size < needed) {
+    LOG(LS_WARNING) << "RGB buffer is not large enough";
+    return needed;
+  }
+
+  if (libyuv::ConvertFromI420(GetYPlane(), GetYPitch(), GetUPlane(),
+                              GetUPitch(), GetVPlane(), GetVPitch(), buffer,
+                              stride_rgb, static_cast<int>(GetWidth()),
+                              static_cast<int>(GetHeight()), to_fourcc)) {
+    LOG(LS_ERROR) << "RGB type not supported: " << to_fourcc;
+    return 0;  // 0 indicates error
+  }
+  return needed;
+}
+
 // TODO(fbarchard): Handle odd width/height with rounding.
 void VideoFrame::StretchToPlanes(
     uint8* dst_y, uint8* dst_u, uint8* dst_v,

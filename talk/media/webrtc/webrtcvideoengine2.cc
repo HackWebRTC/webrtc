@@ -665,36 +665,6 @@ class WebRtcVideoRenderFrame : public VideoFrame {
     return 0;
   }
 
-  // TODO(fbarchard): Refactor into base class and share with LMI
-  virtual size_t ConvertToRgbBuffer(uint32 to_fourcc,
-                                    uint8* buffer,
-                                    size_t size,
-                                    int stride_rgb) const OVERRIDE {
-    size_t width = GetWidth();
-    size_t height = GetHeight();
-    size_t needed = (stride_rgb >= 0 ? stride_rgb : -stride_rgb) * height;
-    if (size < needed) {
-      LOG(LS_WARNING) << "RGB buffer is not large enough";
-      return needed;
-    }
-
-    if (libyuv::ConvertFromI420(GetYPlane(),
-                                GetYPitch(),
-                                GetUPlane(),
-                                GetUPitch(),
-                                GetVPlane(),
-                                GetVPitch(),
-                                buffer,
-                                stride_rgb,
-                                static_cast<int>(width),
-                                static_cast<int>(height),
-                                to_fourcc)) {
-      LOG(LS_ERROR) << "RGB type not supported: " << to_fourcc;
-      return 0;  // 0 indicates error
-    }
-    return needed;
-  }
-
  protected:
   virtual VideoFrame* CreateEmptyFrame(int w,
                                        int h,

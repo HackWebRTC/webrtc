@@ -246,30 +246,12 @@ size_t WebRtcVideoFrame::CopyToBuffer(uint8* buffer, size_t size) const {
   return needed;
 }
 
-// TODO(fbarchard): Refactor into base class and share with lmi
 size_t WebRtcVideoFrame::ConvertToRgbBuffer(uint32 to_fourcc, uint8* buffer,
                                             size_t size, int stride_rgb) const {
   if (!frame()->Buffer()) {
     return 0;
   }
-  size_t width = frame()->Width();
-  size_t height = frame()->Height();
-  size_t needed = (stride_rgb >= 0 ? stride_rgb : -stride_rgb) * height;
-  if (size < needed) {
-    LOG(LS_WARNING) << "RGB buffer is not large enough";
-    return needed;
-  }
-
-  if (libyuv::ConvertFromI420(GetYPlane(), GetYPitch(), GetUPlane(),
-                              GetUPitch(), GetVPlane(), GetVPitch(), buffer,
-                              stride_rgb,
-                              static_cast<int>(width),
-                              static_cast<int>(height),
-                              to_fourcc)) {
-    LOG(LS_WARNING) << "RGB type not supported: " << to_fourcc;
-    return 0;  // 0 indicates error
-  }
-  return needed;
+  return VideoFrame::ConvertToRgbBuffer(to_fourcc, buffer, size, stride_rgb);
 }
 
 void WebRtcVideoFrame::Attach(

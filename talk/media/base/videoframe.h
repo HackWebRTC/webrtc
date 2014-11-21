@@ -137,7 +137,7 @@ class VideoFrame {
   // not (like snprintf). Parameters size and stride_rgb are in units of bytes.
   // If there is insufficient space, nothing is written.
   virtual size_t ConvertToRgbBuffer(uint32 to_fourcc, uint8 *buffer,
-                                    size_t size, int stride_rgb) const = 0;
+                                    size_t size, int stride_rgb) const;
 
   // Writes the frame into the given planes, stretched to the given width and
   // height. The parameter "interpolate" controls whether to interpolate or just
