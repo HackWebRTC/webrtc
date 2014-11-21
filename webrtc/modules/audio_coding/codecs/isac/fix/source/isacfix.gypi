@@ -87,7 +87,7 @@
             'pitch_filter_c.c',
           ],
         }],
-        ['target_arch=="mipsel" and mips_arch_variant!="r6"', {
+        ['target_arch=="mipsel" and mips_arch_variant!="r6" and android_webview_build==0', {
           'sources': [
             'entropy_coding_mips.c',
             'filters_mips.c',
