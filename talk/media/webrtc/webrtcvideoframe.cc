@@ -106,7 +106,7 @@ const webrtc::VideoFrame* WebRtcVideoFrame::FrameBuffer::frame() const {
 }
 
 WebRtcVideoFrame::WebRtcVideoFrame()
-    : video_buffer_(new RefCountedBuffer()), is_black_(false) {}
+    : video_buffer_(new RefCountedBuffer()) {}
 
 WebRtcVideoFrame::~WebRtcVideoFrame() {}
 
@@ -148,10 +148,7 @@ bool WebRtcVideoFrame::InitToBlack(int w, int h, size_t pixel_width,
                                    size_t pixel_height, int64 elapsed_time,
                                    int64 time_stamp) {
   InitToEmptyBuffer(w, h, pixel_width, pixel_height, elapsed_time, time_stamp);
-  if (!is_black_) {
-    return SetToBlack();
-  }
-  return true;
+  return SetToBlack();
 }
 
 void WebRtcVideoFrame::Alias(
@@ -261,7 +258,6 @@ void WebRtcVideoFrame::Attach(
   if (video_buffer_.get() == video_buffer) {
     return;
   }
-  is_black_ = false;
   video_buffer_ = video_buffer;
   frame()->SetWidth(w);
   frame()->SetHeight(h);

@@ -121,7 +121,6 @@ class WebRtcVideoFrame : public VideoFrame {
                          int64 elapsed_time, int64 time_stamp);
 
   rtc::scoped_refptr<RefCountedBuffer> video_buffer_;
-  bool is_black_;
   size_t pixel_width_;
   size_t pixel_height_;
   int64 elapsed_time_;

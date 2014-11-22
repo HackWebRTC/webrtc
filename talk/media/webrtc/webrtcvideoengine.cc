@@ -927,15 +927,20 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   void ProcessFrame(const VideoFrame& original_frame, bool mute,
                     VideoFrame** processed_frame) {
     if (!mute) {
-      *processed_frame = original_frame.Copy();
+      *processed_frame = original_frame.Copy();  // Shallow copy.
     } else {
-      WebRtcVideoFrame* black_frame = new WebRtcVideoFrame();
-      black_frame->InitToBlack(static_cast<int>(original_frame.GetWidth()),
-                               static_cast<int>(original_frame.GetHeight()),
-                               1, 1,
-                               original_frame.GetElapsedTime(),
-                               original_frame.GetTimeStamp());
-      *processed_frame = black_frame;
+      // Cache a black frame of the same dimensions as original_frame.
+      if (black_frame_.GetWidth() != original_frame.GetWidth() ||
+          black_frame_.GetHeight() != original_frame.GetHeight()) {
+        black_frame_.InitToBlack(static_cast<int>(original_frame.GetWidth()),
+                                 static_cast<int>(original_frame.GetHeight()),
+                                 1, 1,
+                                 original_frame.GetElapsedTime(),
+                                 original_frame.GetTimeStamp());
+      }
+      *processed_frame = black_frame_.Copy();  // Shallow copy.
+      (*processed_frame)->SetElapsedTime(original_frame.GetElapsedTime());
+      (*processed_frame)->SetTimeStamp(original_frame.GetTimeStamp());
     }
     local_stream_info_.UpdateFrame(*processed_frame);
   }
@@ -979,6 +984,7 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
 
   VideoFormat adapt_format_;
   AdaptFormatType adapt_format_type_;
+  WebRtcVideoFrame black_frame_;  // Cached frame for mute.
 };
 
 static bool GetCpuOveruseOptions(const VideoOptions& options,
