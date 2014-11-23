@@ -27,9 +27,6 @@
 
 package org.webrtc;
 
-import junit.framework.TestCase;
-
-import org.junit.Test;
 import org.webrtc.PeerConnection.IceConnectionState;
 import org.webrtc.PeerConnection.IceGatheringState;
 import org.webrtc.PeerConnection.SignalingState;
@@ -39,7 +36,6 @@ import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -47,15 +43,18 @@ import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static junit.framework.Assert.*;
+
 /** End-to-end tests for PeerConnection.java. */
-public class PeerConnectionTest extends TestCase {
+public class PeerConnectionTest {
   // Set to true to render video.
   private static final boolean RENDER_TO_GUI = false;
+  private TreeSet<String> threadsBeforeTest = null;
 
   private static class ObserverExpectations implements PeerConnection.Observer,
-                                            VideoRenderer.Callbacks,
-                                            DataChannel.Observer,
-                                            StatsObserver {
+                                                       VideoRenderer.Callbacks,
+                                                       DataChannel.Observer,
+                                                       StatsObserver {
     private final String name;
     private int expectedIceCandidates = 0;
     private int expectedErrors = 0;
@@ -111,10 +110,6 @@ public class PeerConnectionTest extends TestCase {
       // how many to expect, in general.  We only use expectIceCandidates to
       // assert a minimal count.
       gotIceCandidates.add(candidate);
-    }
-
-    public synchronized void expectError() {
-      ++expectedErrors;
     }
 
     public synchronized void expectSetSize() {
@@ -440,6 +435,7 @@ public class PeerConnectionTest extends TestCase {
     public int height = -1;
     public int numFramesDelivered = 0;
 
+    @Override
     public void setSize(int width, int height) {
       assertEquals(this.width, -1);
       assertEquals(this.height, -1);
@@ -447,6 +443,7 @@ public class PeerConnectionTest extends TestCase {
       this.height = height;
     }
 
+    @Override
     public void renderFrame(VideoRenderer.I420Frame frame) {
       ++numFramesDelivered;
     }
@@ -488,40 +485,21 @@ public class PeerConnectionTest extends TestCase {
     return new WeakReference<MediaStream>(lMS);
   }
 
-  private static void assertEquals(
-      SessionDescription lhs, SessionDescription rhs) {
-    assertEquals(lhs.type, rhs.type);
-    assertEquals(lhs.description, rhs.description);
-  }
-
-  @Test
-  public void testCompleteSession() throws Exception {
-    doTest();
-  }
-
-  @Test
-  public void testCompleteSessionOnNonMainThread() throws Exception {
-    final Exception[] exceptionHolder = new Exception[1];
-    Thread nonMainThread = new Thread("PeerConnectionTest-nonMainThread") {
-        @Override public void run() {
-          try {
-            doTest();
-          } catch (Exception e) {
-            exceptionHolder[0] = e;
-          }
-        }
-      };
-    nonMainThread.start();
-    nonMainThread.join();
-    if (exceptionHolder[0] != null)
-      throw exceptionHolder[0];
-  }
-
-  private void doTest() throws Exception {
-    CountDownLatch testDone = new CountDownLatch(1);
+  // Used for making sure thread handles are not leaked.
+  // Call initializeThreadCheck before a test and finalizeThreadCheck after
+  // a test.
+  void initializeThreadCheck() {
     System.gc();  // Encourage any GC-related threads to start up.
-    TreeSet<String> threadsBeforeTest = allThreads();
+    threadsBeforeTest = allThreads();
+  }
 
+  void finalizeThreadCheck() throws Exception {
+    TreeSet<String> threadsAfterTest = allThreads();
+    assertEquals(threadsBeforeTest, threadsAfterTest);
+    Thread.sleep(100);
+  }
+
+  void doTest() throws Exception {
     PeerConnectionFactory factory = new PeerConnectionFactory();
     // Uncomment to get ALL WebRTC tracing and SENSITIVE libjingle logging.
     // NOTE: this _must_ happen while |factory| is alive!
@@ -736,10 +714,6 @@ public class PeerConnectionTest extends TestCase {
     videoSource.dispose();
     factory.dispose();
     System.gc();
-
-    TreeSet<String> threadsAfterTest = allThreads();
-    assertEquals(threadsBeforeTest, threadsAfterTest);
-    Thread.sleep(100);
   }
 
   private static void shutdownPC(
@@ -781,17 +755,5 @@ public class PeerConnectionTest extends TestCase {
       threads.add(threadId);
     }
     return threads;
-  }
-
-  // Return a String form of |strings| joined by |separator|.
-  private static String joinStrings(String separator, TreeSet<String> strings) {
-    StringBuilder builder = new StringBuilder();
-    for (String s : strings) {
-      if (builder.length() > 0) {
-        builder.append(separator);
-      }
-      builder.append(s);
-    }
-    return builder.toString();
   }
 }
