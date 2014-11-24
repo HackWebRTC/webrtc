@@ -171,6 +171,7 @@
           'type': 'static_library',
           'dependencies': [
             'rtp_rtcp',
+            '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
             '<(webrtc_root)/test/test.gyp:rtp_test_utils',
           ],
           'direct_dependent_settings': {
@@ -191,6 +192,7 @@
             'tools/input_audio_file.cc',
             'tools/input_audio_file.h',
             'tools/output_audio_file.h',
+            'tools/output_wav_file.h',
             'tools/packet.cc',
             'tools/packet.h',
             'tools/packet_source.h',
