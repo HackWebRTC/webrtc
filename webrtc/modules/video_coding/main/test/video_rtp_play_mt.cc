@@ -24,7 +24,7 @@ namespace {
 
 const bool kConfigProtectionEnabled = true;
 const webrtc::VCMVideoProtection kConfigProtectionMethod =
-    webrtc::kProtectionDualDecoder;
+    webrtc::kProtectionNack;
 const float kConfigLossRate = 0.05f;
 const uint32_t kConfigRttMs = 50;
 const bool kConfigReordering = false;

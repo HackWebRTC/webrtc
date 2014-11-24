@@ -21,7 +21,6 @@ namespace webrtc {
 VCMFrameBuffer::VCMFrameBuffer()
   :
     _state(kStateEmpty),
-    _frameCounted(false),
     _nackCount(0),
     _latestPacketTimeMs(-1) {
 }
@@ -33,7 +32,6 @@ VCMFrameBuffer::VCMFrameBuffer(const VCMFrameBuffer& rhs)
 :
 VCMEncodedFrame(rhs),
 _state(rhs._state),
-_frameCounted(rhs._frameCounted),
 _sessionInfo(),
 _nackCount(rhs._nackCount),
 _latestPacketTimeMs(rhs._latestPacketTimeMs) {
@@ -191,7 +189,6 @@ VCMFrameBuffer::Reset() {
     _length = 0;
     _timeStamp = 0;
     _sessionInfo.Reset();
-    _frameCounted = false;
     _payloadType = 0;
     _nackCount = 0;
     _latestPacketTimeMs = -1;
@@ -231,15 +228,6 @@ VCMFrameBuffer::SetState(VCMFrameBufferStateEnum state) {
         break;
     }
     _state = state;
-}
-
-// Set counted status (as counted by JB or not)
-void VCMFrameBuffer::SetCountedFrame(bool frameCounted) {
-    _frameCounted = frameCounted;
-}
-
-bool VCMFrameBuffer::GetCountedFrame() const {
-    return _frameCounted;
 }
 
 // Get current state of frame

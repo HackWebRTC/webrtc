@@ -286,10 +286,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_->Decode(maxWaitTimeMs);
   }
 
-  virtual int32_t DecodeDualFrame(uint16_t maxWaitTimeMs) OVERRIDE {
-    return receiver_->DecodeDualFrame(maxWaitTimeMs);
-  }
-
   virtual int32_t ResetDecoder() OVERRIDE { return receiver_->ResetDecoder(); }
 
   virtual int32_t ReceiveCodec(VideoCodec* currentReceiveCodec) const OVERRIDE {

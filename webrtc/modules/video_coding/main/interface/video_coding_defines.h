@@ -49,7 +49,6 @@ enum VCMVideoProtection {
   kProtectionNack,                // Both send-side and receive-side
   kProtectionNackSender,          // Send-side only
   kProtectionNackReceiver,        // Receive-side only
-  kProtectionDualDecoder,
   kProtectionFEC,
   kProtectionNackFEC,
   kProtectionKeyOnLoss,

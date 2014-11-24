@@ -30,18 +30,14 @@ VideoReceiver::VideoReceiver(Clock* clock, EventFactory* event_factory)
       _receiveCritSect(CriticalSectionWrapper::CreateCriticalSection()),
       _receiverInited(false),
       _timing(clock_),
-      _dualTiming(clock_, &_timing),
       _receiver(&_timing, clock_, event_factory, true),
-      _dualReceiver(&_dualTiming, clock_, event_factory, false),
       _decodedFrameCallback(_timing, clock_),
-      _dualDecodedFrameCallback(_dualTiming, clock_),
       _frameTypeCallback(NULL),
       _receiveStatsCallback(NULL),
       _decoderTimingCallback(NULL),
       _packetRequestCallback(NULL),
       render_buffer_callback_(NULL),
       _decoder(NULL),
-      _dualDecoder(NULL),
 #ifdef DEBUG_DECODER_BIT_STREAM
       _bitStreamBeforeDecoder(NULL),
 #endif
@@ -61,9 +57,6 @@ VideoReceiver::VideoReceiver(Clock* clock, EventFactory* event_factory)
 }
 
 VideoReceiver::~VideoReceiver() {
-  if (_dualDecoder != NULL) {
-    _codecDataBase.ReleaseDecoder(_dualDecoder);
-  }
   delete _receiveCritSect;
 #ifdef DEBUG_DECODER_BIT_STREAM
   fclose(_bitStreamBeforeDecoder);
@@ -163,8 +156,7 @@ int32_t VideoReceiver::Process() {
 
 int32_t VideoReceiver::TimeUntilNextProcess() {
   uint32_t timeUntilNextProcess = _receiveStatsTimer.TimeUntilProcess();
-  if ((_receiver.NackMode() != kNoNack) ||
-      (_dualReceiver.State() != kPassive)) {
+  if (_receiver.NackMode() != kNoNack) {
     // We need a Process call more often if we are relying on
     // retransmissions
     timeUntilNextProcess =
@@ -190,8 +182,6 @@ int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
                                           bool enable) {
   // By default, do not decode with errors.
   _receiver.SetDecodeErrorMode(kNoErrors);
-  // The dual decoder should always be error free.
-  _dualReceiver.SetDecodeErrorMode(kNoErrors);
   switch (videoProtection) {
     case kProtectionNack:
     case kProtectionNackReceiver: {
@@ -201,22 +191,6 @@ int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
         _receiver.SetNackMode(kNack, -1, -1);
       } else {
         _receiver.SetNackMode(kNoNack, -1, -1);
-      }
-      break;
-    }
-
-    case kProtectionDualDecoder: {
-      CriticalSectionScoped cs(_receiveCritSect);
-      if (enable) {
-        // Enable NACK but don't wait for retransmissions and don't
-        // add any extra delay.
-        _receiver.SetNackMode(kNack, 0, 0);
-        // Enable NACK and always wait for retransmissions and
-        // compensate with extra delay.
-        _dualReceiver.SetNackMode(kNack, -1, -1);
-        _receiver.SetDecodeErrorMode(kWithErrors);
-      } else {
-        _dualReceiver.SetNackMode(kNoNack, -1, -1);
       }
       break;
     }
@@ -272,11 +246,6 @@ int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
 // Initialize receiver, resets codec database etc
 int32_t VideoReceiver::InitializeReceiver() {
   int32_t ret = _receiver.Initialize();
-  if (ret < 0) {
-    return ret;
-  }
-
-  ret = _dualReceiver.Initialize();
   if (ret < 0) {
     return ret;
   }
@@ -381,32 +350,8 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
     supports_render_scheduling = _codecDataBase.SupportsRenderScheduling();
   }
 
-  const bool dualReceiverEnabledNotReceiving = (
-      _dualReceiver.State() != kReceiving && _dualReceiver.NackMode() == kNack);
-
-  VCMEncodedFrame* frame =
-      _receiver.FrameForDecoding(maxWaitTimeMs,
-                                 nextRenderTimeMs,
-                                 supports_render_scheduling,
-                                 &_dualReceiver);
-
-  if (dualReceiverEnabledNotReceiving && _dualReceiver.State() == kReceiving) {
-    // Dual receiver is enabled (kNACK enabled), but was not receiving
-    // before the call to FrameForDecoding(). After the call the state
-    // changed to receiving, and therefore we must copy the primary decoder
-    // state to the dual decoder to make it possible for the dual decoder to
-    // start decoding retransmitted frames and recover.
-    CriticalSectionScoped cs(_receiveCritSect);
-    if (_dualDecoder != NULL) {
-      _codecDataBase.ReleaseDecoder(_dualDecoder);
-    }
-    _dualDecoder = _codecDataBase.CreateDecoderCopy();
-    if (_dualDecoder != NULL) {
-      _dualDecoder->RegisterDecodeCompleteCallback(&_dualDecodedFrameCallback);
-    } else {
-      _dualReceiver.Reset();
-    }
-  }
+  VCMEncodedFrame* frame = _receiver.FrameForDecoding(
+      maxWaitTimeMs, nextRenderTimeMs, supports_render_scheduling);
 
   if (frame == NULL) {
     return VCM_FRAME_NOT_READY;
@@ -471,45 +416,6 @@ int32_t VideoReceiver::RequestKeyFrame() {
     return VCM_MISSING_CALLBACK;
   }
   return VCM_OK;
-}
-
-int32_t VideoReceiver::DecodeDualFrame(uint16_t maxWaitTimeMs) {
-  CriticalSectionScoped cs(_receiveCritSect);
-  if (_dualReceiver.State() != kReceiving ||
-      _dualReceiver.NackMode() != kNack) {
-    // The dual receiver is currently not receiving or
-    // dual decoder mode is disabled.
-    return VCM_OK;
-  }
-  int64_t dummyRenderTime;
-  int32_t decodeCount = 0;
-  // The dual decoder's state is copied from the main decoder, which may
-  // decode with errors. Make sure that the dual decoder does not introduce
-  // error.
-  _dualReceiver.SetDecodeErrorMode(kNoErrors);
-  VCMEncodedFrame* dualFrame =
-      _dualReceiver.FrameForDecoding(maxWaitTimeMs, dummyRenderTime);
-  if (dualFrame != NULL && _dualDecoder != NULL) {
-    // Decode dualFrame and try to catch up
-    int32_t ret =
-        _dualDecoder->Decode(*dualFrame, clock_->TimeInMilliseconds());
-    if (ret != WEBRTC_VIDEO_CODEC_OK) {
-      LOG(LS_ERROR) << "Failed to decode frame with dual decoder. Error code: "
-                    << ret;
-      _dualReceiver.ReleaseFrame(dualFrame);
-      return VCM_CODEC_ERROR;
-    }
-    if (_receiver.DualDecoderCaughtUp(dualFrame, _dualReceiver)) {
-      // Copy the complete decoder state of the dual decoder
-      // to the primary decoder.
-      _codecDataBase.CopyDecoder(*_dualDecoder);
-      _codecDataBase.ReleaseDecoder(_dualDecoder);
-      _dualDecoder = NULL;
-    }
-    decodeCount++;
-  }
-  _dualReceiver.ReleaseFrame(dualFrame);
-  return decodeCount;
 }
 
 // Must be called from inside the receive side critical section.
@@ -584,13 +490,6 @@ int32_t VideoReceiver::ResetDecoder() {
       reset_key_request = true;
       _decoder->Reset();
     }
-    if (_dualReceiver.State() != kPassive) {
-      _dualReceiver.Initialize();
-    }
-    if (_dualDecoder != NULL) {
-      _codecDataBase.ReleaseDecoder(_dualDecoder);
-      _dualDecoder = NULL;
-    }
   }
   if (reset_key_request) {
     CriticalSectionScoped cs(process_crit_sect_.get());
@@ -646,19 +545,8 @@ int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
     payloadLength = 0;
   }
   const VCMPacket packet(incomingPayload, payloadLength, rtpInfo);
-  int32_t ret;
-  if (_dualReceiver.State() != kPassive) {
-    ret = _dualReceiver.InsertPacket(
-        packet, rtpInfo.type.Video.width, rtpInfo.type.Video.height);
-    if (ret == VCM_FLUSH_INDICATOR) {
-      RequestKeyFrame();
-      ResetDecoder();
-    } else if (ret < 0) {
-      return ret;
-    }
-  }
-  ret = _receiver.InsertPacket(
-      packet, rtpInfo.type.Video.width, rtpInfo.type.Video.height);
+  int32_t ret = _receiver.InsertPacket(packet, rtpInfo.type.Video.width,
+                                       rtpInfo.type.Video.height);
   // TODO(holmer): Investigate if this somehow should use the key frame
   // request scheduling to throttle the requests.
   if (ret == VCM_FLUSH_INDICATOR) {
@@ -693,13 +581,9 @@ int32_t VideoReceiver::NackList(uint16_t* nackList, uint16_t* size) {
   VCMNackStatus nackStatus = kNackOk;
   uint16_t nack_list_length = 0;
   // Collect sequence numbers from the default receiver
-  // if in normal nack mode. Otherwise collect them from
-  // the dual receiver if the dual receiver is receiving.
+  // if in normal nack mode.
   if (_receiver.NackMode() != kNoNack) {
     nackStatus = _receiver.NackList(nackList, *size, &nack_list_length);
-  }
-  if (nack_list_length == 0 && _dualReceiver.State() != kPassive) {
-    nackStatus = _dualReceiver.NackList(nackList, *size, &nack_list_length);
   }
   *size = nack_list_length;
   if (nackStatus == kNackKeyFrameRequest) {
@@ -724,7 +608,6 @@ int VideoReceiver::SetReceiverRobustnessMode(
   switch (robustnessMode) {
     case VideoCodingModule::kNone:
       _receiver.SetNackMode(kNoNack, -1, -1);
-      _dualReceiver.SetNackMode(kNoNack, -1, -1);
       if (decode_error_mode == kNoErrors) {
         _keyRequestMode = kKeyOnLoss;
       } else {
@@ -734,7 +617,6 @@ int VideoReceiver::SetReceiverRobustnessMode(
     case VideoCodingModule::kHardNack:
       // Always wait for retransmissions (except when decoding with errors).
       _receiver.SetNackMode(kNack, -1, -1);
-      _dualReceiver.SetNackMode(kNoNack, -1, -1);
       _keyRequestMode = kKeyOnError;  // TODO(hlundin): On long NACK list?
       break;
     case VideoCodingModule::kSoftNack:
@@ -745,21 +627,9 @@ int VideoReceiver::SetReceiverRobustnessMode(
       // Enable hybrid NACK/FEC. Always wait for retransmissions and don't add
       // extra delay when RTT is above kLowRttNackMs.
       _receiver.SetNackMode(kNack, media_optimization::kLowRttNackMs, -1);
-      _dualReceiver.SetNackMode(kNoNack, -1, -1);
       _keyRequestMode = kKeyOnError;
       break;
 #endif
-    case VideoCodingModule::kDualDecoder:
-      if (decode_error_mode == kNoErrors) {
-        return VCM_PARAMETER_ERROR;
-      }
-      // Enable NACK but don't wait for retransmissions and don't add any extra
-      // delay.
-      _receiver.SetNackMode(kNack, 0, 0);
-      // Enable NACK, compensate with extra delay and wait for retransmissions.
-      _dualReceiver.SetNackMode(kNack, -1, -1);
-      _keyRequestMode = kKeyOnError;
-      break;
     case VideoCodingModule::kReferenceSelection:
 #if 1
       assert(false);  // TODO(hlundin): Not completed.
@@ -769,13 +639,10 @@ int VideoReceiver::SetReceiverRobustnessMode(
         return VCM_PARAMETER_ERROR;
       }
       _receiver.SetNackMode(kNoNack, -1, -1);
-      _dualReceiver.SetNackMode(kNoNack, -1, -1);
       break;
 #endif
   }
   _receiver.SetDecodeErrorMode(decode_error_mode);
-  // The dual decoder should never decode with errors.
-  _dualReceiver.SetDecodeErrorMode(kNoErrors);
   return VCM_OK;
 }
 
@@ -792,8 +659,6 @@ void VideoReceiver::SetNackSettings(size_t max_nack_list_size,
     max_nack_list_size_ = max_nack_list_size;
   }
   _receiver.SetNackSettings(
-      max_nack_list_size, max_packet_age_to_nack, max_incomplete_time_ms);
-  _dualReceiver.SetNackSettings(
       max_nack_list_size, max_packet_age_to_nack, max_incomplete_time_ms);
 }
 

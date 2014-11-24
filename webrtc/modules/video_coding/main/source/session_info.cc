@@ -487,7 +487,7 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
       // Store the sequence number for the first packet.
       first_packet_seq_num_ = static_cast<int>(packet.seqNum);
     } else if (first_packet_seq_num_ != -1 &&
-               !IsNewerSequenceNumber(packet.seqNum, first_packet_seq_num_)) {
+               IsNewerSequenceNumber(first_packet_seq_num_, packet.seqNum)) {
       LOG(LS_WARNING) << "Received packet with a sequence number which is out "
                          "of frame boundaries";
       return -3;

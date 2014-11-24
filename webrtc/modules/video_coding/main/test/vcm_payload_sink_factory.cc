@@ -77,8 +77,6 @@ class VcmPayloadSinkFactory::VcmPayloadSink
         return -1;
       }
     }
-    while (decode_dual_frame && vcm_->DecodeDualFrame(0) == 1) {
-    }
     return Process() ? 0 : -1;
   }
 
@@ -93,8 +91,6 @@ class VcmPayloadSinkFactory::VcmPayloadSink
 
   bool Decode() {
     vcm_->Decode(10000);
-    while (vcm_->DecodeDualFrame(0) == 1) {
-    }
     return true;
   }
 

@@ -68,7 +68,6 @@ public:
         kNone,
         kHardNack,
         kSoftNack,
-        kDualDecoder,
         kReferenceSelection
     };
 
@@ -422,17 +421,6 @@ public:
     // Registers a callback which conveys the size of the render buffer.
     virtual int RegisterRenderBufferSizeCallback(
         VCMRenderBufferSizeCallback* callback) = 0;
-
-    // Waits for the next frame in the dual jitter buffer to become complete
-    // (waits no longer than maxWaitTimeMs), then passes it to the dual decoder
-    // for decoding. This will never trigger a render callback. Should be
-    // called frequently, and as long as it returns 1 it should be called again
-    // as soon as possible.
-    //
-    // Return value      : 1,           if a frame was decoded
-    //                     0,           if no frame was decoded
-    //                     < 0,         on error.
-    virtual int32_t DecodeDualFrame(uint16_t maxWaitTimeMs = 200) = 0;
 
     // Reset the decoder state to the initial state.
     //

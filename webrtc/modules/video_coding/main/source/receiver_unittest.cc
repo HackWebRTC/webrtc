@@ -81,8 +81,8 @@ class TestVCMReceiver : public ::testing::Test {
 
   bool DecodeNextFrame() {
     int64_t render_time_ms = 0;
-    VCMEncodedFrame* frame = receiver_.FrameForDecoding(0, render_time_ms,
-                                                        false, NULL);
+    VCMEncodedFrame* frame =
+        receiver_.FrameForDecoding(0, render_time_ms, false);
     if (!frame)
       return false;
     receiver_.ReleaseFrame(frame);
