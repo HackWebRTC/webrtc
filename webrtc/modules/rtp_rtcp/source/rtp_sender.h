@@ -126,12 +126,7 @@ class RTPSender : public RTPSenderInterface {
   virtual uint16_t SequenceNumber() const OVERRIDE;
   void SetSequenceNumber(uint16_t seq);
 
-  int32_t CSRCs(uint32_t arr_of_csrc[kRtpCsrcSize]) const;
-
-  void SetCSRCStatus(const bool include);
-
-  void SetCSRCs(const uint32_t arr_of_csrc[kRtpCsrcSize],
-                const uint8_t arr_length);
+  void SetCsrcs(const std::vector<uint32_t>& csrcs);
 
   int32_t SetMaxPayloadLength(const size_t length,
                               const uint16_t packet_over_head);
@@ -292,10 +287,13 @@ class RTPSender : public RTPSenderInterface {
   // time.
   typedef std::map<int64_t, int> SendDelayMap;
 
-  int CreateRTPHeader(uint8_t* header, int8_t payload_type,
-                      uint32_t ssrc, bool marker_bit,
-                      uint32_t timestamp, uint16_t sequence_number,
-                      const uint32_t* csrcs, uint8_t csrcs_length) const;
+  size_t CreateRtpHeader(uint8_t* header,
+                         int8_t payload_type,
+                         uint32_t ssrc,
+                         bool marker_bit,
+                         uint32_t timestamp,
+                         uint16_t sequence_number,
+                         const std::vector<uint32_t>& csrcs) const;
 
   void UpdateNACKBitRate(const size_t bytes, const uint32_t now);
 
@@ -395,9 +393,7 @@ class RTPSender : public RTPSenderInterface {
   int64_t last_timestamp_time_ms_ GUARDED_BY(send_critsect_);
   bool media_has_been_sent_ GUARDED_BY(send_critsect_);
   bool last_packet_marker_bit_ GUARDED_BY(send_critsect_);
-  uint8_t num_csrcs_ GUARDED_BY(send_critsect_);
-  uint32_t csrcs_[kRtpCsrcSize] GUARDED_BY(send_critsect_);
-  bool include_csrcs_ GUARDED_BY(send_critsect_);
+  std::vector<uint32_t> csrcs_ GUARDED_BY(send_critsect_);
   int rtx_ GUARDED_BY(send_critsect_);
   uint32_t ssrc_rtx_ GUARDED_BY(send_critsect_);
   int payload_type_rtx_ GUARDED_BY(send_critsect_);

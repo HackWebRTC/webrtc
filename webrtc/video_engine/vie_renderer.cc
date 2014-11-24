@@ -137,8 +137,7 @@ int32_t ViERenderer::Init(const uint32_t z_order,
 
 void ViERenderer::DeliverFrame(int id,
                                I420VideoFrame* video_frame,
-                               int num_csrcs,
-                               const uint32_t CSRC[kRtpCsrcSize]) {
+                               const std::vector<uint32_t>& csrcs) {
   render_callback_->RenderFrame(render_id_, *video_frame);
 }
 

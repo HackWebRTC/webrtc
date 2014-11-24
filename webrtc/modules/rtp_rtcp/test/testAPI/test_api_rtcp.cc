@@ -66,8 +66,8 @@ class TestRtpFeedback : public NullRtpFeedback {
 class RtpRtcpRtcpTest : public ::testing::Test {
  protected:
   RtpRtcpRtcpTest() : fake_clock(123456) {
-    test_CSRC[0] = 1234;
-    test_CSRC[1] = 2345;
+    test_csrcs.push_back(1234);
+    test_csrcs.push_back(2345);
     test_id = 123;
     test_ssrc = 3456;
     test_timestamp = 4567;
@@ -133,7 +133,8 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     module1->SetSSRC(test_ssrc);
     EXPECT_EQ(0, module1->SetSequenceNumber(test_sequence_number));
     EXPECT_EQ(0, module1->SetStartTimestamp(test_timestamp));
-    EXPECT_EQ(0, module1->SetCSRCs(test_CSRC, 2));
+
+    module1->SetCsrcs(test_csrcs);
     EXPECT_EQ(0, module1->SetCNAME("john.doe@test.test"));
 
     EXPECT_EQ(0, module1->SetSendingStatus(true));
@@ -197,7 +198,7 @@ class RtpRtcpRtcpTest : public ::testing::Test {
   uint32_t test_ssrc;
   uint32_t test_timestamp;
   uint16_t test_sequence_number;
-  uint32_t test_CSRC[webrtc::kRtpCsrcSize];
+  std::vector<uint32_t> test_csrcs;
   SimulatedClock fake_clock;
 };
 
@@ -209,16 +210,16 @@ TEST_F(RtpRtcpRtcpTest, RTCP_PLI_RPSI) {
 TEST_F(RtpRtcpRtcpTest, RTCP_CNAME) {
   uint32_t testOfCSRC[webrtc::kRtpCsrcSize];
   EXPECT_EQ(2, rtp_receiver2_->CSRCs(testOfCSRC));
-  EXPECT_EQ(test_CSRC[0], testOfCSRC[0]);
-  EXPECT_EQ(test_CSRC[1], testOfCSRC[1]);
+  EXPECT_EQ(test_csrcs[0], testOfCSRC[0]);
+  EXPECT_EQ(test_csrcs[1], testOfCSRC[1]);
 
   // Set cname of mixed.
-  EXPECT_EQ(0, module1->AddMixedCNAME(test_CSRC[0], "john@192.168.0.1"));
-  EXPECT_EQ(0, module1->AddMixedCNAME(test_CSRC[1], "jane@192.168.0.2"));
+  EXPECT_EQ(0, module1->AddMixedCNAME(test_csrcs[0], "john@192.168.0.1"));
+  EXPECT_EQ(0, module1->AddMixedCNAME(test_csrcs[1], "jane@192.168.0.2"));
 
-  EXPECT_EQ(-1, module1->RemoveMixedCNAME(test_CSRC[0] + 1));
-  EXPECT_EQ(0, module1->RemoveMixedCNAME(test_CSRC[1]));
-  EXPECT_EQ(0, module1->AddMixedCNAME(test_CSRC[1], "jane@192.168.0.2"));
+  EXPECT_EQ(-1, module1->RemoveMixedCNAME(test_csrcs[0] + 1));
+  EXPECT_EQ(0, module1->RemoveMixedCNAME(test_csrcs[1]));
+  EXPECT_EQ(0, module1->AddMixedCNAME(test_csrcs[1], "jane@192.168.0.2"));
 
   // send RTCP packet, triggered by timer
   fake_clock.AdvanceTimeMilliseconds(7500);
@@ -233,10 +234,10 @@ TEST_F(RtpRtcpRtcpTest, RTCP_CNAME) {
   EXPECT_EQ(0, module2->RemoteCNAME(rtp_receiver2_->SSRC(), cName));
   EXPECT_EQ(0, strncmp(cName, "john.doe@test.test", RTCP_CNAME_SIZE));
 
-  EXPECT_EQ(0, module2->RemoteCNAME(test_CSRC[0], cName));
+  EXPECT_EQ(0, module2->RemoteCNAME(test_csrcs[0], cName));
   EXPECT_EQ(0, strncmp(cName, "john@192.168.0.1", RTCP_CNAME_SIZE));
 
-  EXPECT_EQ(0, module2->RemoteCNAME(test_CSRC[1], cName));
+  EXPECT_EQ(0, module2->RemoteCNAME(test_csrcs[1], cName));
   EXPECT_EQ(0, strncmp(cName, "jane@192.168.0.2", RTCP_CNAME_SIZE));
 
   EXPECT_EQ(0, module1->SetSendingStatus(false));
@@ -257,10 +258,10 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
   reportBlock.lastSR = 6;
 
   // Set report blocks.
-  EXPECT_EQ(0, module1->AddRTCPReportBlock(test_CSRC[0], &reportBlock));
+  EXPECT_EQ(0, module1->AddRTCPReportBlock(test_csrcs[0], &reportBlock));
 
   reportBlock.lastSR= 7;
-  EXPECT_EQ(0, module1->AddRTCPReportBlock(test_CSRC[1], &reportBlock));
+  EXPECT_EQ(0, module1->AddRTCPReportBlock(test_csrcs[1], &reportBlock));
 
   uint32_t name = 't' << 24;
   name += 'e' << 16;
@@ -331,7 +332,7 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
   EXPECT_GE(10, maxRTT);
 
   // Set report blocks.
-  EXPECT_EQ(0, module1->AddRTCPReportBlock(test_CSRC[0], &reportBlock));
+  EXPECT_EQ(0, module1->AddRTCPReportBlock(test_csrcs[0], &reportBlock));
 
   // Test receive report.
   EXPECT_EQ(0, module1->SetSendingStatus(false));

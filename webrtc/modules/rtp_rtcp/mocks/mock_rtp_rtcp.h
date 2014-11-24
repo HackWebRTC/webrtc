@@ -94,8 +94,7 @@ class MockRtpRtcp : public RtpRtcp {
       void(const uint32_t ssrc));
   MOCK_CONST_METHOD1(CSRCs,
       int32_t(uint32_t arrOfCSRC[kRtpCsrcSize]));
-  MOCK_METHOD2(SetCSRCs,
-      int32_t(const uint32_t arrOfCSRC[kRtpCsrcSize], const uint8_t arrLength));
+  MOCK_METHOD1(SetCsrcs, void(const std::vector<uint32_t>& csrcs));
   MOCK_METHOD1(SetCSRCStatus,
       int32_t(const bool include));
   MOCK_METHOD1(SetRTXSendStatus,

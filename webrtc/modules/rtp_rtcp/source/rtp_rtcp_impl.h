@@ -82,12 +82,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Configure SSRC, default is a random number.
   virtual void SetSSRC(const uint32_t ssrc) OVERRIDE;
 
-  virtual int32_t CSRCs(uint32_t arr_of_csrc[kRtpCsrcSize]) const OVERRIDE;
-
-  virtual int32_t SetCSRCs(const uint32_t arr_of_csrc[kRtpCsrcSize],
-                           const uint8_t arr_length) OVERRIDE;
-
-  virtual int32_t SetCSRCStatus(const bool include) OVERRIDE;
+  virtual void SetCsrcs(const std::vector<uint32_t>& csrcs) OVERRIDE;
 
   RTCPSender::FeedbackState GetFeedbackState();
 

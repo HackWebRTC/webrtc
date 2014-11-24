@@ -145,16 +145,13 @@ RTPSender::RTPSender(const int32_t id,
       last_timestamp_time_ms_(0),
       media_has_been_sent_(false),
       last_packet_marker_bit_(false),
-      num_csrcs_(0),
       csrcs_(),
-      include_csrcs_(true),
       rtx_(kRtxOff),
       payload_type_rtx_(-1),
       target_bitrate_critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       target_bitrate_(0) {
   memset(nack_byte_count_times_, 0, sizeof(nack_byte_count_times_));
   memset(nack_byte_count_, 0, sizeof(nack_byte_count_));
-  memset(csrcs_, 0, sizeof(csrcs_));
   // We need to seed the random generator.
   srand(static_cast<uint32_t>(clock_->TimeInMilliseconds()));
   ssrc_ = ssrc_db_.CreateSSRC();  // Can't be 0.
@@ -615,14 +612,9 @@ size_t RTPSender::SendPadData(uint32_t timestamp,
     }
 
     uint8_t padding_packet[IP_PACKET_SIZE];
-    size_t header_length = CreateRTPHeader(padding_packet,
-                                           payload_type,
-                                           ssrc,
-                                           false,
-                                           timestamp,
-                                           sequence_number,
-                                           NULL,
-                                           0);
+    size_t header_length =
+        CreateRtpHeader(padding_packet, payload_type, ssrc, false, timestamp,
+                        sequence_number, std::vector<uint32_t>());
     assert(header_length != static_cast<size_t>(-1));
     padding_bytes_in_packet = BuildPaddingPacket(padding_packet, header_length);
     assert(padding_bytes_in_packet <= bytes);
@@ -1057,9 +1049,7 @@ void RTPSender::ProcessBitrate() {
 size_t RTPSender::RTPHeaderLength() const {
   CriticalSectionScoped lock(send_critsect_);
   size_t rtp_header_length = 12;
-  if (include_csrcs_) {
-    rtp_header_length += sizeof(uint32_t) * num_csrcs_;
-  }
+  rtp_header_length += sizeof(uint32_t) * csrcs_.size();
   rtp_header_length += RtpHeaderExtensionTotalLength();
   return rtp_header_length;
 }
@@ -1093,10 +1083,13 @@ void RTPSender::GetDataCounters(StreamDataCounters* rtp_stats,
   *rtx_stats = rtx_rtp_stats_;
 }
 
-int RTPSender::CreateRTPHeader(
-    uint8_t* header, int8_t payload_type, uint32_t ssrc, bool marker_bit,
-    uint32_t timestamp, uint16_t sequence_number, const uint32_t* csrcs,
-    uint8_t num_csrcs) const {
+size_t RTPSender::CreateRtpHeader(uint8_t* header,
+                                  int8_t payload_type,
+                                  uint32_t ssrc,
+                                  bool marker_bit,
+                                  uint32_t timestamp,
+                                  uint16_t sequence_number,
+                                  const std::vector<uint32_t>& csrcs) const {
   header[0] = 0x80;  // version 2.
   header[1] = static_cast<uint8_t>(payload_type);
   if (marker_bit) {
@@ -1107,22 +1100,16 @@ int RTPSender::CreateRTPHeader(
   RtpUtility::AssignUWord32ToBuffer(header + 8, ssrc);
   int32_t rtp_header_length = 12;
 
-  // Add the CSRCs if any.
-  if (num_csrcs > 0) {
-    if (num_csrcs > kRtpCsrcSize) {
-      // error
-      assert(false);
-      return -1;
-    }
+  if (csrcs.size() > 0) {
     uint8_t *ptr = &header[rtp_header_length];
-    for (int i = 0; i < num_csrcs; ++i) {
+    for (size_t i = 0; i < csrcs.size(); ++i) {
       RtpUtility::AssignUWord32ToBuffer(ptr, csrcs[i]);
       ptr += 4;
     }
-    header[0] = (header[0] & 0xf0) | num_csrcs;
+    header[0] = (header[0] & 0xf0) | csrcs.size();
 
     // Update length of header.
-    rtp_header_length += sizeof(uint32_t) * num_csrcs;
+    rtp_header_length += sizeof(uint32_t) * csrcs.size();
   }
 
   uint16_t len = BuildRTPHeaderExtension(header + rtp_header_length);
@@ -1155,11 +1142,8 @@ int32_t RTPSender::BuildRTPheader(uint8_t* data_buffer,
   uint32_t sequence_number = sequence_number_++;
   capture_time_ms_ = capture_time_ms;
   last_packet_marker_bit_ = marker_bit;
-  int csrcs_length = 0;
-  if (include_csrcs_)
-    csrcs_length = num_csrcs_;
-  return CreateRTPHeader(data_buffer, payload_type, ssrc_, marker_bit,
-                         timestamp_, sequence_number, csrcs_, csrcs_length);
+  return CreateRtpHeader(data_buffer, payload_type, ssrc_, marker_bit,
+                         timestamp_, sequence_number, csrcs_);
 }
 
 uint16_t RTPSender::BuildRTPHeaderExtension(uint8_t* data_buffer) const {
@@ -1547,29 +1531,10 @@ uint32_t RTPSender::SSRC() const {
   return ssrc_;
 }
 
-void RTPSender::SetCSRCStatus(const bool include) {
-  CriticalSectionScoped lock(send_critsect_);
-  include_csrcs_ = include;
-}
-
-void RTPSender::SetCSRCs(const uint32_t arr_of_csrc[kRtpCsrcSize],
-                         const uint8_t arr_length) {
-  assert(arr_length <= kRtpCsrcSize);
+void RTPSender::SetCsrcs(const std::vector<uint32_t>& csrcs) {
+  assert(csrcs.size() <= kRtpCsrcSize);
   CriticalSectionScoped cs(send_critsect_);
-
-  for (int i = 0; i < arr_length; i++) {
-    csrcs_[i] = arr_of_csrc[i];
-  }
-  num_csrcs_ = arr_length;
-}
-
-int32_t RTPSender::CSRCs(uint32_t arr_of_csrc[kRtpCsrcSize]) const {
-  assert(arr_of_csrc);
-  CriticalSectionScoped cs(send_critsect_);
-  for (int i = 0; i < num_csrcs_ && i < kRtpCsrcSize; i++) {
-    arr_of_csrc[i] = csrcs_[i];
-  }
-  return num_csrcs_;
+  csrcs_ = csrcs;
 }
 
 void RTPSender::SetSequenceNumber(uint16_t seq) {

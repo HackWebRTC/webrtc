@@ -114,10 +114,6 @@ RTCPSender::RTCPSender(const int32_t id,
 
     last_xr_rr_(),
 
-    _CSRCs(0),
-    _CSRC(),
-    _includeCSRCs(true),
-
     _sequenceNumberFIR(0),
 
     _rembBitrate(0),
@@ -1383,49 +1379,32 @@ RTCPSender::BuildNACK(uint8_t* rtcpbuffer,
     return 0;
 }
 
-int32_t
-RTCPSender::BuildBYE(uint8_t* rtcpbuffer, int& pos)
-{
-    // sanity
-    if(pos + 8 >= IP_PACKET_SIZE)
-    {
-        return -2;
-    }
-    if(_includeCSRCs)
-    {
-        // Add a bye packet
-        rtcpbuffer[pos++]=(uint8_t)0x80 + 1 + _CSRCs;  // number of SSRC+CSRCs
-        rtcpbuffer[pos++]=(uint8_t)203;
+int32_t RTCPSender::BuildBYE(uint8_t* rtcpbuffer, int& pos) {
+  // sanity
+  if (pos + 8 >= IP_PACKET_SIZE) {
+    return -2;
+  }
 
-        // length
-        rtcpbuffer[pos++]=(uint8_t)0;
-        rtcpbuffer[pos++]=(uint8_t)(1 + _CSRCs);
+  // Add a bye packet
+  // Number of SSRC + CSRCs.
+  rtcpbuffer[pos++] = (uint8_t)0x80 + 1 + csrcs_.size();
+  rtcpbuffer[pos++] = (uint8_t)203;
 
-        // Add our own SSRC
-        RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
-        pos += 4;
+  // length
+  rtcpbuffer[pos++] = (uint8_t)0;
+  rtcpbuffer[pos++] = (uint8_t)(1 + csrcs_.size());
 
-        // add CSRCs
-        for(int i = 0; i < _CSRCs; i++)
-        {
-          RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _CSRC[i]);
-            pos += 4;
-        }
-    } else
-    {
-        // Add a bye packet
-        rtcpbuffer[pos++]=(uint8_t)0x80 + 1;  // number of SSRC+CSRCs
-        rtcpbuffer[pos++]=(uint8_t)203;
+  // Add our own SSRC
+  RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
+  pos += 4;
 
-        // length
-        rtcpbuffer[pos++]=(uint8_t)0;
-        rtcpbuffer[pos++]=(uint8_t)1;
+  // add CSRCs
+  for (size_t i = 0; i < csrcs_.size(); i++) {
+    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, csrcs_[i]);
+    pos += 4;
+  }
 
-        // Add our own SSRC
-        RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
-        pos += 4;
-    }
-    return 0;
+  return 0;
 }
 
 int32_t RTCPSender::BuildReceiverReferenceTime(uint8_t* buffer,
@@ -2013,27 +1992,10 @@ RTCPSender::SendToNetwork(const uint8_t* dataBuffer,
     return -1;
 }
 
-int32_t
-RTCPSender::SetCSRCStatus(const bool include)
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPSender);
-    _includeCSRCs = include;
-    return 0;
-}
-
-int32_t
-RTCPSender::SetCSRCs(const uint32_t arrOfCSRC[kRtpCsrcSize],
-                    const uint8_t arrLength)
-{
-    assert(arrLength <= kRtpCsrcSize);
-    CriticalSectionScoped lock(_criticalSectionRTCPSender);
-
-    for(int i = 0; i < arrLength;i++)
-    {
-        _CSRC[i] = arrOfCSRC[i];
-    }
-    _CSRCs = arrLength;
-    return 0;
+void RTCPSender::SetCsrcs(const std::vector<uint32_t>& csrcs) {
+  assert(csrcs.size() <= kRtpCsrcSize);
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
+  csrcs_ = csrcs;
 }
 
 int32_t

@@ -167,10 +167,7 @@ public:
 
     bool RtcpXrReceiverReferenceTime() const;
 
-    int32_t SetCSRCs(const uint32_t arrOfCSRC[kRtpCsrcSize],
-                     const uint8_t arrLength);
-
-    int32_t SetCSRCStatus(const bool include);
+    void SetCsrcs(const std::vector<uint32_t>& csrcs);
 
     void SetTargetBitrate(unsigned int target_bitrate);
 
@@ -325,9 +322,7 @@ private:
         GUARDED_BY(_criticalSectionRTCPSender);
 
     // send CSRCs
-    uint8_t         _CSRCs GUARDED_BY(_criticalSectionRTCPSender);
-    uint32_t        _CSRC[kRtpCsrcSize] GUARDED_BY(_criticalSectionRTCPSender);
-    bool                _includeCSRCs GUARDED_BY(_criticalSectionRTCPSender);
+    std::vector<uint32_t> csrcs_ GUARDED_BY(_criticalSectionRTCPSender);
 
     // Full intra request
     uint8_t         _sequenceNumberFIR GUARDED_BY(_criticalSectionRTCPSender);

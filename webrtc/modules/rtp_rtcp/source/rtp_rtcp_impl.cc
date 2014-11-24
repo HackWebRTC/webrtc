@@ -382,20 +382,7 @@ void ModuleRtpRtcpImpl::SetSSRC(const uint32_t ssrc) {
   SetRtcpReceiverSsrcs(ssrc);
 }
 
-int32_t ModuleRtpRtcpImpl::SetCSRCStatus(const bool include) {
-  rtcp_sender_.SetCSRCStatus(include);
-  rtp_sender_.SetCSRCStatus(include);
-  return 0;  // TODO(pwestin): change to void.
-}
-
-int32_t ModuleRtpRtcpImpl::CSRCs(
-  uint32_t arr_of_csrc[kRtpCsrcSize]) const {
-  return rtp_sender_.CSRCs(arr_of_csrc);
-}
-
-int32_t ModuleRtpRtcpImpl::SetCSRCs(
-    const uint32_t arr_of_csrc[kRtpCsrcSize],
-    const uint8_t arr_length) {
+void ModuleRtpRtcpImpl::SetCsrcs(const std::vector<uint32_t>& csrcs) {
   if (IsDefaultModule()) {
     // For default we need to update all child modules too.
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
@@ -404,15 +391,15 @@ int32_t ModuleRtpRtcpImpl::SetCSRCs(
     while (it != child_modules_.end()) {
       RtpRtcp* module = *it;
       if (module) {
-        module->SetCSRCs(arr_of_csrc, arr_length);
+        module->SetCsrcs(csrcs);
       }
       it++;
     }
-  } else {
-    rtcp_sender_.SetCSRCs(arr_of_csrc, arr_length);
-    rtp_sender_.SetCSRCs(arr_of_csrc, arr_length);
+    return;
   }
-  return 0;  // TODO(pwestin): change to void.
+
+  rtcp_sender_.SetCsrcs(csrcs);
+  rtp_sender_.SetCsrcs(csrcs);
 }
 
 // TODO(pbos): Handle media and RTX streams separately (separate RTCP

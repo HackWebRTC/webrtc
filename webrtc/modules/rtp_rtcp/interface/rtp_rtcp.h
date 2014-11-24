@@ -220,37 +220,11 @@ class RtpRtcp : public Module {
     virtual void SetSSRC(const uint32_t ssrc) = 0;
 
     /*
-    *   Get CSRC
-    *
-    *   arrOfCSRC   - array of CSRCs
-    *
-    *   return -1 on failure else number of valid entries in the array
-    */
-    virtual int32_t CSRCs(
-        uint32_t arrOfCSRC[kRtpCsrcSize]) const = 0;
-
-    /*
     *   Set CSRC
     *
-    *   arrOfCSRC   - array of CSRCs
-    *   arrLength   - number of valid entries in the array
-    *
-    *   return -1 on failure else 0
+    *   csrcs   - vector of CSRCs
     */
-    virtual int32_t SetCSRCs(
-        const uint32_t arrOfCSRC[kRtpCsrcSize],
-        const uint8_t arrLength) = 0;
-
-    /*
-    *   includes CSRCs in RTP header if enabled
-    *
-    *   include CSRC - on/off
-    *
-    *    default:on
-    *
-    *   return -1 on failure else 0
-    */
-    virtual int32_t SetCSRCStatus(const bool include) = 0;
+    virtual void SetCsrcs(const std::vector<uint32_t>& csrcs) = 0;
 
     /*
     * Turn on/off sending RTX (RFC 4588). The modes can be set as a combination

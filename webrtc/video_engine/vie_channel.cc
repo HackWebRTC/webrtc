@@ -1497,7 +1497,9 @@ int32_t ViEChannel::FrameToRender(
     arr_ofCSRC[0] = vie_receiver_.GetRemoteSsrc();
     no_of_csrcs = 1;
   }
-  DeliverFrame(&video_frame, no_of_csrcs, arr_ofCSRC);
+  std::vector<uint32_t> csrcs(arr_ofCSRC, arr_ofCSRC + no_of_csrcs);
+  DeliverFrame(&video_frame, csrcs);
+
   return 0;
 }
 

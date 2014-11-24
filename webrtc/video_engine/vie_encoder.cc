@@ -501,8 +501,7 @@ RtpRtcp* ViEEncoder::SendRtpRtcpModule() {
 
 void ViEEncoder::DeliverFrame(int id,
                               I420VideoFrame* video_frame,
-                              int num_csrcs,
-                              const uint32_t CSRC[kRtpCsrcSize]) {
+                              const std::vector<uint32_t>& csrcs) {
   if (default_rtp_rtcp_->SendingMedia() == false) {
     // We've paused or we have no channels attached, don't encode.
     return;
@@ -528,16 +527,16 @@ void ViEEncoder::DeliverFrame(int id,
   video_frame->set_timestamp(time_stamp);
 
   // Make sure the CSRC list is correct.
-  if (num_csrcs > 0) {
-    uint32_t tempCSRC[kRtpCsrcSize];
-    for (int i = 0; i < num_csrcs; i++) {
-      if (CSRC[i] == 1) {
-        tempCSRC[i] = default_rtp_rtcp_->SSRC();
+  if (csrcs.size() > 0) {
+    std::vector<uint32_t> temp_csrcs(csrcs.size());
+    for (size_t i = 0; i < csrcs.size(); i++) {
+      if (csrcs[i] == 1) {
+        temp_csrcs[i] = default_rtp_rtcp_->SSRC();
       } else {
-        tempCSRC[i] = CSRC[i];
+        temp_csrcs[i] = csrcs[i];
       }
     }
-    default_rtp_rtcp_->SetCSRCs(tempCSRC, (uint8_t) num_csrcs);
+    default_rtp_rtcp_->SetCsrcs(temp_csrcs);
   }
 
   I420VideoFrame* decimated_frame = NULL;

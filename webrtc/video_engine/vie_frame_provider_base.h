@@ -29,8 +29,7 @@ class ViEFrameCallback {
  public:
   virtual void DeliverFrame(int id,
                             I420VideoFrame* video_frame,
-                            int num_csrcs = 0,
-                            const uint32_t CSRC[kRtpCsrcSize] = NULL) = 0;
+                            const std::vector<uint32_t>& csrcs) = 0;
 
   // The capture delay has changed from the provider. |frame_delay| is given in
   // ms.
@@ -76,8 +75,7 @@ class ViEFrameProviderBase {
 
  protected:
   void DeliverFrame(I420VideoFrame* video_frame,
-                    int num_csrcs = 0,
-                    const uint32_t CSRC[kRtpCsrcSize] = NULL);
+                    const std::vector<uint32_t>& csrcs);
   void SetFrameDelay(int frame_delay);
   int FrameDelay();
   int GetBestFormat(int* best_width,

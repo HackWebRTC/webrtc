@@ -69,7 +69,7 @@ class ViECapturerTest : public ::testing::Test {
   virtual void SetUp() {
     EXPECT_CALL(*mock_capture_module_, RegisterCaptureDataCallback(_))
         .WillRepeatedly(Invoke(this, &ViECapturerTest::SetCaptureDataCallback));
-    EXPECT_CALL(*mock_frame_callback_, DeliverFrame(_, _, _, _))
+    EXPECT_CALL(*mock_frame_callback_, DeliverFrame(_, _, _))
         .WillRepeatedly(
             WithArg<1>(Invoke(this, &ViECapturerTest::AddOutputFrame)));
 

@@ -44,10 +44,8 @@ int ViEFrameProviderBase::Id() {
   return id_;
 }
 
-void ViEFrameProviderBase::DeliverFrame(
-    I420VideoFrame* video_frame,
-    int num_csrcs,
-    const uint32_t CSRC[kRtpCsrcSize]) {
+void ViEFrameProviderBase::DeliverFrame(I420VideoFrame* video_frame,
+                                        const std::vector<uint32_t>& csrcs) {
 #ifdef DEBUG_
   const TickTime start_process_time = TickTime::Now();
 #endif
@@ -57,19 +55,19 @@ void ViEFrameProviderBase::DeliverFrame(
   if (frame_callbacks_.size() > 0) {
     if (frame_callbacks_.size() == 1) {
       // We don't have to copy the frame.
-      frame_callbacks_.front()->DeliverFrame(id_, video_frame, num_csrcs, CSRC);
+      frame_callbacks_.front()->DeliverFrame(id_, video_frame, csrcs);
     } else {
       for (FrameCallbacks::iterator it = frame_callbacks_.begin();
            it != frame_callbacks_.end(); ++it) {
         if (video_frame->native_handle() != NULL) {
-          (*it)->DeliverFrame(id_, video_frame, num_csrcs, CSRC);
+          (*it)->DeliverFrame(id_, video_frame, csrcs);
         } else {
           // Make a copy of the frame for all callbacks.
           if (!extra_frame_.get()) {
             extra_frame_.reset(new I420VideoFrame());
           }
           extra_frame_->CopyFrame(*video_frame);
-          (*it)->DeliverFrame(id_, extra_frame_.get(), num_csrcs, CSRC);
+          (*it)->DeliverFrame(id_, extra_frame_.get(), csrcs);
         }
       }
     }

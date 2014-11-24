@@ -103,8 +103,7 @@ class ViERenderer: public ViEFrameCallback {
   // Implement ViEFrameCallback
   virtual void DeliverFrame(int id,
                             I420VideoFrame* video_frame,
-                            int num_csrcs = 0,
-                            const uint32_t CSRC[kRtpCsrcSize] = NULL);
+                            const std::vector<uint32_t>& csrcs);
   virtual void DelayChanged(int id, int frame_delay);
   virtual int GetPreferedFrameSettings(int* width,
                                        int* height,
