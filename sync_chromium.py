@@ -75,7 +75,8 @@ def main():
     opts.target_revision,
     repr(target_os_list),
   ])
-  if os.path.exists(flag_file):
+  if (os.path.exists(os.path.join(opts.chromium_dir, 'src')) and
+      os.path.exists(flag_file)):
     with open(flag_file, 'r') as f:
       if f.read() == flag_file_content:
         print 'Chromium already up to date: ', opts.target_revision
