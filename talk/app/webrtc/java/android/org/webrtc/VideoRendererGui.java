@@ -227,6 +227,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     private static enum RendererType { RENDERER_YUV, RENDERER_TEXTURE };
     private RendererType rendererType;
     private ScalingType scalingType;
+    private boolean mirror;
     // Flag if renderFrame() was ever called.
     boolean seenFrame;
     // Total number of video frames received in renderFrame() call.
@@ -265,11 +266,12 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     private YuvImageRenderer(
         GLSurfaceView surface, int id,
         int x, int y, int width, int height,
-        ScalingType scalingType) {
+        ScalingType scalingType, boolean mirror) {
       Log.d(TAG, "YuvImageRenderer.Create id: " + id);
       this.surface = surface;
       this.id = id;
       this.scalingType = scalingType;
+      this.mirror = mirror;
       frameToRenderQueue = new LinkedBlockingQueue<I420Frame>(1);
       // Create texture vertices.
       texLeft = (x - 50) / 50.0f;
@@ -373,11 +375,18 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
           textureVertices = directNativeFloatBuffer(textureVeticesFloat);
 
           Log.d(TAG, "  Texture UV offsets: " + texOffsetU + ", " + texOffsetV);
+          float uLeft = texOffsetU;
+          float uRight = 1.0f - texOffsetU;
+          if (mirror) {
+            // Swap U coordinates for mirror image.
+            uLeft = 1.0f - texOffsetU;
+            uRight = texOffsetU;
+          }
           float textureCoordinatesFloat[] = new float[] {
-              texOffsetU, texOffsetV,               // left top
-              texOffsetU, 1.0f - texOffsetV,        // left bottom
-              1.0f - texOffsetU, texOffsetV,        // right top
-              1.0f - texOffsetU, 1.0f - texOffsetV  // right bottom
+            uLeft, texOffsetV,         // left top
+            uLeft, 1.0f - texOffsetV,  // left bottom
+            uRight, texOffsetV,        // right top
+            uRight, 1.0f - texOffsetV  // right bottom
           };
           textureCoords = directNativeFloatBuffer(textureCoordinatesFloat);
         }
@@ -599,16 +608,17 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
    * Creates VideoRenderer with top left corner at (x, y) and resolution
    * (width, height). All parameters are in percentage of screen resolution.
    */
-  public static VideoRenderer createGui(
-      int x, int y, int width, int height, ScalingType scalingType)
-          throws Exception {
-    YuvImageRenderer javaGuiRenderer = create(x, y, width, height, scalingType);
+  public static VideoRenderer createGui(int x, int y, int width, int height,
+      ScalingType scalingType, boolean mirror) throws Exception {
+    YuvImageRenderer javaGuiRenderer = create(
+        x, y, width, height, scalingType, mirror);
     return new VideoRenderer(javaGuiRenderer);
   }
 
   public static VideoRenderer.Callbacks createGuiRenderer(
-      int x, int y, int width, int height, ScalingType scalingType) {
-    return create(x, y, width, height, scalingType);
+      int x, int y, int width, int height,
+      ScalingType scalingType, boolean mirror) {
+    return create(x, y, width, height, scalingType, mirror);
   }
 
   /**
@@ -616,8 +626,8 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
    * resolution (width, height). All parameters are in percentage of
    * screen resolution.
    */
-  public static YuvImageRenderer create(
-      int x, int y, int width, int height, ScalingType scalingType) {
+  public static YuvImageRenderer create(int x, int y, int width, int height,
+      ScalingType scalingType, boolean mirror) {
     // Check display region parameters.
     if (x < 0 || x > 100 || y < 0 || y > 100 ||
         width < 0 || width > 100 || height < 0 || height > 100 ||
@@ -631,7 +641,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     }
     final YuvImageRenderer yuvImageRenderer = new YuvImageRenderer(
         instance.surface, instance.yuvImageRenderers.size(),
-        x, y, width, height, scalingType);
+        x, y, width, height, scalingType, mirror);
     synchronized (instance.yuvImageRenderers) {
       if (instance.onSurfaceCreatedCalled) {
         // onSurfaceCreated has already been called for VideoRendererGui -

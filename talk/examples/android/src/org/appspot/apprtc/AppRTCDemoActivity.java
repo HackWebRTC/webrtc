@@ -117,8 +117,8 @@ public class AppRTCDemoActivity extends Activity
 
     VideoRendererGui.setView(videoView);
     scalingType = ScalingType.SCALE_ASPECT_FILL;
-    remoteRender = VideoRendererGui.create(0, 0, 100, 100, scalingType);
-    localRender = VideoRendererGui.create(0, 0, 100, 100, scalingType);
+    remoteRender = VideoRendererGui.create(0, 0, 100, 100, scalingType, false);
+    localRender = VideoRendererGui.create(0, 0, 100, 100, scalingType, true);
 
     videoView.setOnClickListener(
         new View.OnClickListener() {
