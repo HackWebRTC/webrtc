@@ -128,7 +128,8 @@ def _CheckGypChanges(input_api, output_api):
 
   gyp_files = []
   for f in input_api.AffectedSourceFiles(source_file_filter):
-    gyp_files.append(f)
+    if f.LocalPath().startswith('webrtc'):
+      gyp_files.append(f)
 
   result = []
   if gyp_files:
