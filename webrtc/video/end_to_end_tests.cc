@@ -1428,9 +1428,8 @@ void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
   RunBaseTest(&test);
 }
 
-// TODO(pbos): Reenable test, it exposes an assert in the jitter buffer.
-// https://code.google.com/p/webrtc/issues/detail?id=4014
-TEST_F(EndToEndTest, DISABLED_GetStats) {
+TEST_F(EndToEndTest, GetStats) {
+  static const int kStartBitrateBps = 3000000;
   class StatsObserver : public test::EndToEndTest, public I420FrameCallback {
    public:
     StatsObserver()
@@ -1563,6 +1562,12 @@ TEST_F(EndToEndTest, DISABLED_GetStats) {
           return false;
       }
       return true;
+    }
+
+    Call::Config GetSenderCallConfig() OVERRIDE {
+      Call::Config config = EndToEndTest::GetSenderCallConfig();
+      config.stream_start_bitrate_bps = kStartBitrateBps;
+      return config;
     }
 
     virtual void ModifyConfigs(
