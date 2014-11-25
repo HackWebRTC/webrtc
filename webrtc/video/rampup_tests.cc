@@ -116,9 +116,7 @@ void StreamObserver::OnReceiveBitrateChanged(
 bool StreamObserver::SendRtp(const uint8_t* packet, size_t length) {
   CriticalSectionScoped lock(crit_.get());
   RTPHeader header;
-  bool parse_succeeded = rtp_parser_->Parse(packet, length, &header);
-  RTC_UNUSED(parse_succeeded);
-  assert(parse_succeeded);
+  EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));
   receive_stats_->IncomingPacket(header, length, false);
   payload_registry_->SetIncomingPayloadType(header);
   remote_bitrate_estimator_->IncomingPacket(
@@ -268,9 +266,7 @@ PacketReceiver::DeliveryStatus LowRateStreamObserver::DeliverPacket(
     const uint8_t* packet, size_t length) {
   CriticalSectionScoped lock(crit_.get());
   RTPHeader header;
-  bool parse_succeeded = rtp_parser_->Parse(packet, length, &header);
-  RTC_UNUSED(parse_succeeded);
-  assert(parse_succeeded);
+  EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));
   receive_stats_->IncomingPacket(header, length, false);
   remote_bitrate_estimator_->IncomingPacket(
       clock_->TimeInMilliseconds(), length - 12, header);
