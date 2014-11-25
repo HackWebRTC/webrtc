@@ -123,8 +123,12 @@ void Loopback() {
   pipe_config.delay_standard_deviation_ms = flags::StdPropagationDelayMs();
   test::DirectTransport transport(pipe_config);
   Call::Config call_config(&transport);
-  call_config.stream_start_bitrate_bps =
+  call_config.stream_bitrates.min_bitrate_bps =
+      static_cast<int>(flags::MinBitrate()) * 1000;
+  call_config.stream_bitrates.start_bitrate_bps =
       static_cast<int>(flags::StartBitrate()) * 1000;
+  call_config.stream_bitrates.max_bitrate_bps =
+      static_cast<int>(flags::MaxBitrate()) * 1000;
   scoped_ptr<Call> call(Call::Create(call_config));
 
   // Loopback, call sends to itself.
@@ -157,9 +161,9 @@ void Loopback() {
   VideoStream* stream = &encoder_config.streams[0];
   stream->width = flags::Width();
   stream->height = flags::Height();
-  stream->min_bitrate_bps = static_cast<int>(flags::MinBitrate()) * 1000;
-  stream->target_bitrate_bps = static_cast<int>(flags::MaxBitrate()) * 1000;
-  stream->max_bitrate_bps = static_cast<int>(flags::MaxBitrate()) * 1000;
+  stream->min_bitrate_bps = call_config.stream_bitrates.min_bitrate_bps;
+  stream->target_bitrate_bps = call_config.stream_bitrates.max_bitrate_bps;
+  stream->max_bitrate_bps = call_config.stream_bitrates.max_bitrate_bps;
   stream->max_framerate = 30;
   stream->max_qp = 56;
 

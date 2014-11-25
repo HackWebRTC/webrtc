@@ -640,7 +640,7 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
 
     Call::Config GetSenderCallConfig() OVERRIDE {
       Call::Config config = EndToEndTest::GetSenderCallConfig();
-      config.stream_start_bitrate_bps = kInitialBitrateKbps * 1000;
+      config.stream_bitrates.start_bitrate_bps = kInitialBitrateKbps * 1000;
       return config;
     }
 

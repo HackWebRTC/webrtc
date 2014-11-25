@@ -200,18 +200,8 @@ std::vector<webrtc::VideoStream> WebRtcVideoEncoderFactory2::CreateVideoStreams(
   stream.max_framerate =
       codec.framerate != 0 ? codec.framerate : kDefaultVideoMaxFramerate;
 
-  int min_bitrate = kMinVideoBitrate;
-  codec.GetParam(kCodecParamMinBitrate, &min_bitrate);
-  // Clamp the min video bitrate, this is set from JavaScript directly and needs
-  // to be sanitized.
-  if (min_bitrate < kMinVideoBitrate) {
-    min_bitrate = kMinVideoBitrate;
-  }
-
-  int max_bitrate = kMaxVideoBitrate;
-  codec.GetParam(kCodecParamMaxBitrate, &max_bitrate);
-  stream.min_bitrate_bps = min_bitrate * 1000;
-  stream.target_bitrate_bps = stream.max_bitrate_bps = max_bitrate * 1000;
+  stream.min_bitrate_bps = kMinVideoBitrate * 1000;
+  stream.target_bitrate_bps = stream.max_bitrate_bps = kMaxVideoBitrate * 1000;
 
   int max_qp = kDefaultQpMax;
   codec.GetParam(kCodecParamMaxQuantization, &max_qp);
@@ -703,11 +693,6 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
     config.voice_engine = voice_engine->voe()->engine();
   }
 
-  // Set start bitrate for the call. A default is provided by SetDefaultOptions.
-  int start_bitrate_kbps;
-  options_.video_start_bitrate.Get(&start_bitrate_kbps);
-  config.stream_start_bitrate_bps = start_bitrate_kbps * 1000;
-
   call_.reset(call_factory->CreateCall(config));
 
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
@@ -721,8 +706,6 @@ void WebRtcVideoChannel2::SetDefaultOptions() {
   options_.suspend_below_min_bitrate.Set(false);
   options_.use_payload_padding.Set(false);
   options_.video_noise_reduction.Set(true);
-  options_.video_start_bitrate.Set(
-      webrtc::Call::Config::kDefaultStartBitrateBps / 1000);
   options_.screencast_min_bitrate.Set(0);
 }
 
@@ -840,6 +823,29 @@ bool WebRtcVideoChannel2::SetSendCodecs(const std::vector<VideoCodec>& codecs) {
     assert(it->second != NULL);
     it->second->SetCodec(supported_codecs.front());
   }
+
+  VideoCodec codec = supported_codecs.front().codec;
+  int bitrate_kbps;
+  if (codec.GetParam(kCodecParamMinBitrate, &bitrate_kbps) &&
+      bitrate_kbps > 0) {
+    bitrate_config_.min_bitrate_bps = bitrate_kbps * 1000;
+  } else {
+    bitrate_config_.min_bitrate_bps = 0;
+  }
+  if (codec.GetParam(kCodecParamStartBitrate, &bitrate_kbps) &&
+      bitrate_kbps > 0) {
+    bitrate_config_.start_bitrate_bps = bitrate_kbps * 1000;
+  } else {
+    // Do not reconfigure start bitrate unless it's specified and positive.
+    bitrate_config_.start_bitrate_bps = -1;
+  }
+  if (codec.GetParam(kCodecParamMaxBitrate, &bitrate_kbps) &&
+      bitrate_kbps > 0) {
+    bitrate_config_.max_bitrate_bps = bitrate_kbps * 1000;
+  } else {
+    bitrate_config_.max_bitrate_bps = -1;
+  }
+  call_->SetBitrateConfig(bitrate_config_);
 
   return true;
 }
@@ -1276,9 +1282,19 @@ bool WebRtcVideoChannel2::SetSendRtpHeaderExtensions(
   return true;
 }
 
-bool WebRtcVideoChannel2::SetMaxSendBandwidth(int bps) {
-  // TODO(pbos): Implement.
-  LOG(LS_VERBOSE) << "SetMaxSendBandwidth: " << bps;
+bool WebRtcVideoChannel2::SetMaxSendBandwidth(int max_bitrate_bps) {
+  LOG(LS_INFO) << "SetMaxSendBandwidth: " << max_bitrate_bps << "bps.";
+  if (max_bitrate_bps <= 0) {
+    // Unsetting max bitrate.
+    max_bitrate_bps = -1;
+  }
+  bitrate_config_.start_bitrate_bps = -1;
+  bitrate_config_.max_bitrate_bps = max_bitrate_bps;
+  if (max_bitrate_bps > 0 &&
+      bitrate_config_.min_bitrate_bps > max_bitrate_bps) {
+    bitrate_config_.min_bitrate_bps = max_bitrate_bps;
+  }
+  call_->SetBitrateConfig(bitrate_config_);
   return true;
 }
 

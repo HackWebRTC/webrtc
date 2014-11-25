@@ -65,8 +65,7 @@ class Call {
         : webrtc_config(NULL),
           send_transport(send_transport),
           voice_engine(NULL),
-          overuse_callback(NULL),
-          stream_start_bitrate_bps(kDefaultStartBitrateBps) {}
+          overuse_callback(NULL) {}
 
     static const int kDefaultStartBitrateBps;
 
@@ -81,11 +80,20 @@ class Call {
     // captured frames. 'NULL' disables the callback.
     LoadObserver* overuse_callback;
 
-    // Start bitrate used before a valid bitrate estimate is calculated.
+    // Bitrate config used until valid bitrate estimates are calculated. Also
+    // used to cap total bitrate used.
     // Note: This is currently set only for video and is per-stream rather of
     // for the entire link.
     // TODO(pbos): Set start bitrate for entire Call.
-    int stream_start_bitrate_bps;
+    struct BitrateConfig {
+      BitrateConfig()
+          : min_bitrate_bps(0),
+            start_bitrate_bps(kDefaultStartBitrateBps),
+            max_bitrate_bps(-1) {}
+      int min_bitrate_bps;
+      int start_bitrate_bps;
+      int max_bitrate_bps;
+    } stream_bitrates;
   };
 
   struct Stats {
@@ -121,6 +129,13 @@ class Call {
   // pacing delay, etc.
   virtual Stats GetStats() const = 0;
 
+  // TODO(pbos): Like BitrateConfig above this is currently per-stream instead
+  // of maximum for entire Call. This should be fixed along with the above.
+  // Specifying a start bitrate (>0) will currently reset the current bitrate
+  // estimate. This is due to how the 'x-google-start-bitrate' flag is currently
+  // implemented.
+  virtual void SetBitrateConfig(
+      const Config::BitrateConfig& bitrate_config) = 0;
   virtual void SignalNetworkState(NetworkState state) = 0;
 
   virtual ~Call() {}

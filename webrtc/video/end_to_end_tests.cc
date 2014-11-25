@@ -1566,7 +1566,7 @@ TEST_F(EndToEndTest, GetStats) {
 
     Call::Config GetSenderCallConfig() OVERRIDE {
       Call::Config config = EndToEndTest::GetSenderCallConfig();
-      config.stream_start_bitrate_bps = kStartBitrateBps;
+      config.stream_bitrates.start_bitrate_bps = kStartBitrateBps;
       return config;
     }
 

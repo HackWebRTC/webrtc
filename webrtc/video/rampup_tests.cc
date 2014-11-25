@@ -403,7 +403,7 @@ void RampUpTest::RunRampUpTest(bool rtx,
 
   Call::Config call_config(&stream_observer);
   if (start_bitrate_bps != 0) {
-    call_config.stream_start_bitrate_bps = start_bitrate_bps;
+    call_config.stream_bitrates.start_bitrate_bps = start_bitrate_bps;
     stream_observer.set_start_bitrate_bps(start_bitrate_bps);
   }
 

@@ -491,6 +491,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   WebRtcVideoEncoderFactory2* const encoder_factory_;
   std::vector<VideoCodecSettings> recv_codecs_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
+  webrtc::Call::Config::BitrateConfig bitrate_config_;
   VideoOptions options_;
 };
 

@@ -129,9 +129,11 @@ class FakeCall : public webrtc::Call {
 
   virtual webrtc::Call::Stats GetStats() const OVERRIDE;
 
+  virtual void SetBitrateConfig(
+      const webrtc::Call::Config::BitrateConfig& bitrate_config) OVERRIDE;
   virtual void SignalNetworkState(webrtc::Call::NetworkState state) OVERRIDE;
 
-  const webrtc::Call::Config config_;
+  webrtc::Call::Config config_;
   webrtc::Call::NetworkState network_state_;
   std::vector<webrtc::VideoCodec> codecs_;
   std::vector<FakeVideoSendStream*> video_send_streams_;

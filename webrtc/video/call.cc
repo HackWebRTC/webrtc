@@ -119,6 +119,8 @@ class Call : public webrtc::Call, public PacketReceiver {
   virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
                                        size_t length) OVERRIDE;
 
+  virtual void SetBitrateConfig(
+      const webrtc::Call::Config::BitrateConfig& bitrate_config) OVERRIDE;
   virtual void SignalNetworkState(NetworkState state) OVERRIDE;
 
  private:
@@ -176,6 +178,14 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
   assert(video_engine != NULL);
   assert(config.send_transport != NULL);
 
+  assert(config.stream_bitrates.min_bitrate_bps >= 0);
+  assert(config.stream_bitrates.start_bitrate_bps >=
+         config.stream_bitrates.min_bitrate_bps);
+  if (config.stream_bitrates.max_bitrate_bps != -1) {
+    assert(config.stream_bitrates.max_bitrate_bps >=
+           config.stream_bitrates.start_bitrate_bps);
+  }
+
   if (config.overuse_callback) {
     overuse_observer_proxy_.reset(
         new CpuOveruseObserverProxy(config.overuse_callback));
@@ -213,15 +223,10 @@ VideoSendStream* Call::CreateVideoSendStream(
 
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
   // the call has already started.
-  VideoSendStream* send_stream =
-      new VideoSendStream(config_.send_transport,
-                          overuse_observer_proxy_.get(),
-                          video_engine_,
-                          config,
-                          encoder_config,
-                          suspended_send_ssrcs_,
-                          base_channel_id_,
-                          config_.stream_start_bitrate_bps);
+  VideoSendStream* send_stream = new VideoSendStream(
+      config_.send_transport, overuse_observer_proxy_.get(), video_engine_,
+      config, encoder_config, suspended_send_ssrcs_, base_channel_id_,
+      config_.stream_bitrates);
 
   // This needs to be taken before send_crit_ as both locks need to be held
   // while changing network state.
@@ -340,6 +345,30 @@ Call::Stats Call::GetStats() const {
     }
   }
   return stats;
+}
+
+void Call::SetBitrateConfig(
+    const webrtc::Call::Config::BitrateConfig& bitrate_config) {
+  assert(bitrate_config.min_bitrate_bps >= 0);
+  assert(bitrate_config.max_bitrate_bps == -1 ||
+         bitrate_config.max_bitrate_bps > 0);
+  if (config_.stream_bitrates.min_bitrate_bps ==
+          bitrate_config.min_bitrate_bps &&
+      (bitrate_config.start_bitrate_bps <= 0 ||
+       config_.stream_bitrates.start_bitrate_bps ==
+           bitrate_config.start_bitrate_bps) &&
+      config_.stream_bitrates.max_bitrate_bps ==
+          bitrate_config.max_bitrate_bps) {
+    // Nothing new to set, early abort to avoid encoder reconfigurations.
+    return;
+  }
+  config_.stream_bitrates = bitrate_config;
+  ReadLockScoped read_lock(*send_crit_);
+  for (std::map<uint32_t, VideoSendStream*>::const_iterator it =
+           send_ssrcs_.begin();
+       it != send_ssrcs_.end(); ++it) {
+    it->second->SetBitrateConfig(bitrate_config);
+  }
 }
 
 void Call::SignalNetworkState(NetworkState state) {
