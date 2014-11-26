@@ -88,7 +88,13 @@ class ConnectionCompare {
     cricket::Connection* a = const_cast<cricket::Connection*>(ca);
     cricket::Connection* b = const_cast<cricket::Connection*>(cb);
 
-    ASSERT(a->port()->IceProtocol() == b->port()->IceProtocol());
+    // The IceProtocol is initialized to ICEPROTO_HYBRID and can be updated to
+    // GICE or RFC5245 when an answer SDP is set, or when a STUN message is
+    // received. So the port receiving the STUN message may have a different
+    // IceProtocol if the answer SDP is not set yet.
+    ASSERT(a->port()->IceProtocol() == b->port()->IceProtocol() ||
+           a->port()->IceProtocol() == cricket::ICEPROTO_HYBRID ||
+           b->port()->IceProtocol() == cricket::ICEPROTO_HYBRID);
 
     // Compare first on writability and static preferences.
     int cmp = CompareConnections(a, b);
