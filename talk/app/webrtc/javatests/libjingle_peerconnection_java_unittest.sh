@@ -44,4 +44,4 @@ export LD_LIBRARY_PATH=`pwd`
 export JAVA_HOME=GYP_JAVA_HOME
 
 ${JAVA_HOME}/bin/java -Xcheck:jni -classpath $CLASSPATH \
-    junit.textui.TestRunner org.webrtc.PeerConnectionTest
+    junit.textui.TestRunner org.webrtc.PeerConnectionTestJava
