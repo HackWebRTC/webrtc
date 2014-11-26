@@ -10,19 +10,12 @@
 
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 
-#include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_processing/channel_buffer.h"
 
 namespace webrtc {
 namespace {
-
-enum {
-  kSamplesPer8kHzChannel = 80,
-  kSamplesPer16kHzChannel = 160,
-  kSamplesPer32kHzChannel = 320,
-  kSamplesPer48kHzChannel = 480
-};
 
 bool HasKeyboardChannel(AudioProcessing::ChannelLayout layout) {
   switch (layout) {
@@ -60,64 +53,6 @@ void StereoToMono(const T* left, const T* right, T* out,
 }
 
 }  // namespace
-
-// One int16_t and one float ChannelBuffer that are kept in sync. The sync is
-// broken when someone requests write access to either ChannelBuffer, and
-// reestablished when someone requests the outdated ChannelBuffer. It is
-// therefore safe to use the return value of ibuf_const() and fbuf_const()
-// until the next call to ibuf() or fbuf(), and the return value of ibuf() and
-// fbuf() until the next call to any of the other functions.
-class IFChannelBuffer {
- public:
-  IFChannelBuffer(int samples_per_channel, int num_channels)
-      : ivalid_(true),
-        ibuf_(samples_per_channel, num_channels),
-        fvalid_(true),
-        fbuf_(samples_per_channel, num_channels) {}
-
-  ChannelBuffer<int16_t>* ibuf() { return ibuf(false); }
-  ChannelBuffer<float>* fbuf() { return fbuf(false); }
-  const ChannelBuffer<int16_t>* ibuf_const() { return ibuf(true); }
-  const ChannelBuffer<float>* fbuf_const() { return fbuf(true); }
-
- private:
-  ChannelBuffer<int16_t>* ibuf(bool readonly) {
-    RefreshI();
-    fvalid_ = readonly;
-    return &ibuf_;
-  }
-
-  ChannelBuffer<float>* fbuf(bool readonly) {
-    RefreshF();
-    ivalid_ = readonly;
-    return &fbuf_;
-  }
-
-  void RefreshF() {
-    if (!fvalid_) {
-      assert(ivalid_);
-      const int16_t* const int_data = ibuf_.data();
-      float* const float_data = fbuf_.data();
-      const int length = fbuf_.length();
-      for (int i = 0; i < length; ++i)
-        float_data[i] = int_data[i];
-      fvalid_ = true;
-    }
-  }
-
-  void RefreshI() {
-    if (!ivalid_) {
-      assert(fvalid_);
-      FloatS16ToS16(fbuf_.data(), ibuf_.length(), ibuf_.data());
-      ivalid_ = true;
-    }
-  }
-
-  bool ivalid_;
-  ChannelBuffer<int16_t> ibuf_;
-  bool fvalid_;
-  ChannelBuffer<float> fbuf_;
-};
 
 AudioBuffer::AudioBuffer(int input_samples_per_channel,
                          int num_input_channels,
@@ -175,14 +110,14 @@ AudioBuffer::AudioBuffer(int input_samples_per_channel,
   if (proc_samples_per_channel_ == kSamplesPer32kHzChannel ||
       proc_samples_per_channel_ == kSamplesPer48kHzChannel) {
     samples_per_split_channel_ = kSamplesPer16kHzChannel;
-    split_channels_low_.reset(new IFChannelBuffer(samples_per_split_channel_,
+    split_channels_.push_back(new IFChannelBuffer(samples_per_split_channel_,
                                                   num_proc_channels_));
-    split_channels_high_.reset(new IFChannelBuffer(samples_per_split_channel_,
-                                                   num_proc_channels_));
+    split_channels_.push_back(new IFChannelBuffer(samples_per_split_channel_,
+                                                  num_proc_channels_));
     splitting_filter_.reset(new SplittingFilter(num_proc_channels_));
     if (proc_samples_per_channel_ == kSamplesPer48kHzChannel) {
-      split_channels_super_high_.reset(
-          new IFChannelBuffer(samples_per_split_channel_, num_proc_channels_));
+      split_channels_.push_back(new IFChannelBuffer(samples_per_split_channel_,
+                                                    num_proc_channels_));
     }
   }
 }
@@ -300,112 +235,112 @@ float* const* AudioBuffer::channels_f() {
 }
 
 const int16_t* AudioBuffer::low_pass_split_data(int channel) const {
-  return split_channels_low_.get()
-      ? split_channels_low_->ibuf_const()->channel(channel)
+  return split_channels_.size() > 0
+      ? split_channels_[0]->ibuf_const()->channel(channel)
       : data(channel);
 }
 
 int16_t* AudioBuffer::low_pass_split_data(int channel) {
   mixed_low_pass_valid_ = false;
-  return split_channels_low_.get()
-      ? split_channels_low_->ibuf()->channel(channel)
+  return split_channels_.size() > 0
+      ? split_channels_[0]->ibuf()->channel(channel)
       : data(channel);
 }
 
 const int16_t* const* AudioBuffer::low_pass_split_channels() const {
-  return split_channels_low_.get()
-             ? split_channels_low_->ibuf_const()->channels()
+  return split_channels_.size() > 0
+             ? split_channels_[0]->ibuf_const()->channels()
              : channels();
 }
 
 int16_t* const* AudioBuffer::low_pass_split_channels() {
   mixed_low_pass_valid_ = false;
-  return split_channels_low_.get() ? split_channels_low_->ibuf()->channels()
+  return split_channels_.size() > 0 ? split_channels_[0]->ibuf()->channels()
                                    : channels();
 }
 
 const float* AudioBuffer::low_pass_split_data_f(int channel) const {
-  return split_channels_low_.get()
-      ? split_channels_low_->fbuf_const()->channel(channel)
+  return split_channels_.size() > 0
+      ? split_channels_[0]->fbuf_const()->channel(channel)
       : data_f(channel);
 }
 
 float* AudioBuffer::low_pass_split_data_f(int channel) {
   mixed_low_pass_valid_ = false;
-  return split_channels_low_.get()
-      ? split_channels_low_->fbuf()->channel(channel)
+  return split_channels_.size() > 0
+      ? split_channels_[0]->fbuf()->channel(channel)
       : data_f(channel);
 }
 
 const float* const* AudioBuffer::low_pass_split_channels_f() const {
-  return split_channels_low_.get()
-      ? split_channels_low_->fbuf_const()->channels()
+  return split_channels_.size() > 0
+      ? split_channels_[0]->fbuf_const()->channels()
       : channels_f();
 }
 
 float* const* AudioBuffer::low_pass_split_channels_f() {
   mixed_low_pass_valid_ = false;
-  return split_channels_low_.get()
-      ? split_channels_low_->fbuf()->channels()
+  return split_channels_.size() > 0
+      ? split_channels_[0]->fbuf()->channels()
       : channels_f();
 }
 
 const int16_t* AudioBuffer::high_pass_split_data(int channel) const {
-  return split_channels_high_.get()
-      ? split_channels_high_->ibuf_const()->channel(channel)
+  return split_channels_.size() > 1
+      ? split_channels_[1]->ibuf_const()->channel(channel)
       : NULL;
 }
 
 int16_t* AudioBuffer::high_pass_split_data(int channel) {
-  return split_channels_high_.get()
-      ? split_channels_high_->ibuf()->channel(channel)
+  return split_channels_.size() > 1
+      ? split_channels_[1]->ibuf()->channel(channel)
       : NULL;
 }
 
 const int16_t* const* AudioBuffer::high_pass_split_channels() const {
-  return split_channels_high_.get()
-             ? split_channels_high_->ibuf_const()->channels()
+  return split_channels_.size() > 1
+             ? split_channels_[1]->ibuf_const()->channels()
              : NULL;
 }
 
 int16_t* const* AudioBuffer::high_pass_split_channels() {
-  return split_channels_high_.get() ? split_channels_high_->ibuf()->channels()
+  return split_channels_.size() > 1 ? split_channels_[1]->ibuf()->channels()
                                     : NULL;
 }
 
 const float* AudioBuffer::high_pass_split_data_f(int channel) const {
-  return split_channels_high_.get()
-      ? split_channels_high_->fbuf_const()->channel(channel)
+  return split_channels_.size() > 1
+      ? split_channels_[1]->fbuf_const()->channel(channel)
       : NULL;
 }
 
 float* AudioBuffer::high_pass_split_data_f(int channel) {
-  return split_channels_high_.get()
-      ? split_channels_high_->fbuf()->channel(channel)
+  return split_channels_.size() > 1
+      ? split_channels_[1]->fbuf()->channel(channel)
       : NULL;
 }
 
 const float* const* AudioBuffer::high_pass_split_channels_f() const {
-  return split_channels_high_.get()
-      ? split_channels_high_->fbuf_const()->channels()
+  return split_channels_.size() > 1
+      ? split_channels_[1]->fbuf_const()->channels()
       : NULL;
 }
 
 float* const* AudioBuffer::high_pass_split_channels_f() {
-  return split_channels_high_.get()
-      ? split_channels_high_->fbuf()->channels()
+  return split_channels_.size() > 1
+      ? split_channels_[1]->fbuf()->channels()
       : NULL;
 }
 
 const float* const* AudioBuffer::super_high_pass_split_channels_f() const {
-  return split_channels_super_high_.get()
-      ? split_channels_super_high_->fbuf_const()->channels()
+  return split_channels_.size() > 2
+      ? split_channels_[2]->fbuf_const()->channels()
       : NULL;
 }
 
 float* const* AudioBuffer::super_high_pass_split_channels_f() {
-  return split_channels_super_high_.get()
-      ? split_channels_super_high_->fbuf()->channels()
+  return split_channels_.size() > 2
+      ? split_channels_[2]->fbuf()->channels()
       : NULL;
 }
 
@@ -531,29 +466,13 @@ void AudioBuffer::CopyLowPassToReference() {
 }
 
 void AudioBuffer::SplitIntoFrequencyBands() {
-  if (samples_per_channel() == kSamplesPer32kHzChannel) {
-    splitting_filter_->TwoBandsAnalysis(
-        channels(), samples_per_channel(), num_proc_channels_,
-        low_pass_split_channels(), high_pass_split_channels());
-  } else if (samples_per_channel() == kSamplesPer48kHzChannel) {
-    splitting_filter_->ThreeBandsAnalysis(
-        channels_f(), samples_per_channel(), num_proc_channels_,
-        low_pass_split_channels_f(), high_pass_split_channels_f(),
-        super_high_pass_split_channels_f());
-  }
+  splitting_filter_->Analysis(channels_.get(),
+                              split_channels_.get());
 }
 
 void AudioBuffer::MergeFrequencyBands() {
-  if (samples_per_channel() == kSamplesPer32kHzChannel) {
-    splitting_filter_->TwoBandsSynthesis(
-        low_pass_split_channels(), high_pass_split_channels(),
-        samples_per_split_channel(), num_proc_channels_, channels());
-  } else if (samples_per_channel() == kSamplesPer48kHzChannel) {
-    splitting_filter_->ThreeBandsSynthesis(
-        low_pass_split_channels_f(), high_pass_split_channels_f(),
-        super_high_pass_split_channels_f(), samples_per_split_channel(),
-        num_proc_channels_, channels_f());
-  }
+  splitting_filter_->Synthesis(split_channels_.get(),
+                               channels_.get());
 }
 
 }  // namespace webrtc

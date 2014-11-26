@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/modules/audio_processing/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/splitting_filter.h"
@@ -122,9 +123,7 @@ class AudioBuffer {
 
   const float* keyboard_data_;
   scoped_ptr<IFChannelBuffer> channels_;
-  scoped_ptr<IFChannelBuffer> split_channels_low_;
-  scoped_ptr<IFChannelBuffer> split_channels_high_;
-  scoped_ptr<IFChannelBuffer> split_channels_super_high_;
+  ScopedVector<IFChannelBuffer> split_channels_;
   scoped_ptr<SplittingFilter> splitting_filter_;
   scoped_ptr<ChannelBuffer<int16_t> > mixed_low_pass_channels_;
   scoped_ptr<ChannelBuffer<int16_t> > low_pass_reference_channels_;

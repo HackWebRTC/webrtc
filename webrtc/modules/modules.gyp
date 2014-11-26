@@ -162,6 +162,7 @@
             'audio_processing/aec/system_delay_unittest.cc',
             'audio_processing/aec/echo_cancellation_unittest.cc',
             'audio_processing/echo_cancellation_impl_unittest.cc',
+            'audio_processing/splitting_filter_unittest.cc',
             'audio_processing/utility/delay_estimator_unittest.cc',
             'audio_processing/utility/ring_buffer_unittest.cc',
             'bitrate_controller/bitrate_controller_unittest.cc',
