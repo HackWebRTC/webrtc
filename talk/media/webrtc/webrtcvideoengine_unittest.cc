@@ -41,6 +41,7 @@
 #include "talk/media/webrtc/webrtcvoiceengine.h"
 #include "talk/session/media/mediasession.h"
 #include "webrtc/system_wrappers/interface/trace.h"
+
 // Tests for the WebRtcVideoEngine/VideoChannel code.
 
 using cricket::kRtpTimestampOffsetHeaderExtension;
@@ -2551,34 +2552,4 @@ TEST_F(WebRtcVideoMediaChannelTest,
   Base::TwoStreamsAddAndRemoveUnsignalledRecv(cricket::VideoCodec(100, "VP8",
                                                                   640, 400, 30,
                                                                   0));
-}
-
-// Test that sequence number are not reset if stopping and then
-// resuming a stream.
-TEST_F(WebRtcVideoMediaChannelTest, DontResetSequenceNumbers) {
-  cricket::VideoCodec codec = DefaultCodec();
-  EXPECT_TRUE(SetOneCodec(codec));
-
-  uint16_t seq_before =
-      engine_.vie()
-          ->rtp()
-          ->GetRtpStateForSsrc(channel_->GetDefaultChannelId(), kSsrc)
-          .sequence_number;
-
-  // Deactive.
-  EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
-  EXPECT_TRUE(SetOneCodec(codec));
-
-  // Reactivate.
-  EXPECT_TRUE(channel_->AddSendStream(DefaultSendStreamParams()));
-  EXPECT_TRUE(SetOneCodec(codec));
-
-  // Sequence number should now have changed.
-  uint16_t seq_after =
-      engine_.vie()
-          ->rtp()
-          ->GetRtpStateForSsrc(channel_->GetDefaultChannelId(), kSsrc)
-          .sequence_number;
-
-  EXPECT_EQ(seq_before, seq_after);
 }
