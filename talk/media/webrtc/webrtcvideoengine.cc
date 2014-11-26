@@ -3927,7 +3927,8 @@ bool WebRtcVideoMediaChannel::SetSendParams(
   }
   engine()->vie()->rtp()->SetTransmissionSmoothingStatus(channel_id, true);
 
-  if (!SetSendSsrcs(channel_id, send_params.stream, codec)) {
+  if (send_channel->IsActive() &&
+      !SetSendSsrcs(channel_id, send_params.stream, codec)) {
     return false;
   }
 
