@@ -153,7 +153,7 @@
         'build_libjpeg%': 0,
         'enable_protobuf%': 0,
       }],
-      ['target_arch=="arm" or target_arch=="armv7"', {
+      ['target_arch=="arm" or target_arch=="armv7" or target_arch=="arm64"', {
         'prefer_fixed_point%': 1,
       }],
       ['OS!="ios" and (target_arch!="arm" or arm_version>=7)', {
@@ -210,7 +210,7 @@
       }, {
         'conditions': [
           ['os_posix==1', {
-	    'configurations': {
+            'configurations': {
               'Debug_Base': {
                 'defines': [
                   # Chromium's build/common.gypi defines this for all posix
@@ -254,6 +254,12 @@
       ['target_arch=="arm64"', {
         'defines': [
           'WEBRTC_ARCH_ARM',
+          # TODO(zhongwei) Defining an unique WEBRTC_NEON and
+          # distinguishing ARMv7 NEON and ARM64 NEON by
+          # WEBRTC_ARCH_ARM_V7 and WEBRTC_ARCH_ARM64 should be better.
+
+          # This macro is used to distinguish ARMv7 NEON and ARM64 NEON
+          'WEBRTC_ARCH_ARM64_NEON',
         ],
       }],
       ['target_arch=="arm" or target_arch=="armv7"', {
@@ -261,12 +267,13 @@
           'WEBRTC_ARCH_ARM',
         ],
         'conditions': [
-          ['arm_version==7', {
+          ['arm_version>=7', {
             'defines': ['WEBRTC_ARCH_ARM_V7',],
             'conditions': [
               ['arm_neon==1', {
                 'defines': ['WEBRTC_ARCH_ARM_NEON',],
-              }, {
+              }],
+              ['arm_neon==0 and OS=="android"', {
                 'defines': ['WEBRTC_DETECT_ARM_NEON',],
               }],
             ],

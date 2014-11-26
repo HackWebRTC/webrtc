@@ -129,7 +129,7 @@ source_set("audio_processing") {
     deps += [ ":audio_processing_sse2" ]
   }
 
-  if (rtc_build_armv7_neon) {
+  if (rtc_build_armv7_neon || cpu_arch == "arm64") {
     deps += [ ":audio_processing_neon" ]
   }
 
@@ -187,32 +187,19 @@ if (cpu_arch == "x86" || cpu_arch == "x64") {
   }
 }
 
-if (rtc_build_armv7_neon) {
+if (rtc_build_armv7_neon || cpu_arch == "arm64") {
   source_set("audio_processing_neon") {
     sources = [
       "aec/aec_core_neon.c",
       "aec/aec_rdft_neon.c",
+      "aecm/aecm_core_neon.c",
+      "ns/nsx_core_neon.c",
     ]
 
     configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     deps = [ "../../common_audio" ]
-
-    if (is_android || is_ios) {
-      sources += [
-        # TODO(andrew): Re-enable these once webrtc:3580 is resolved.
-        #"aecm/aecm_core_neon.S",
-        #"ns/nsx_core_neon.S",
-      ]
-
-      include_dirs = [ target_out_dir ]
-    } else {
-      sources += [
-        "aecm/aecm_core_neon.c",
-        "ns/nsx_core_neon.c",
-      ]
-    }
 
     # Enable compilation for the ARM v7 Neon instruction set. This is needed
     # since //build/config/arm.gni only enables Neon for iOS, not Android.
@@ -223,8 +210,12 @@ if (rtc_build_armv7_neon) {
     configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
     cflags = [
       "-flax-vector-conversions",
-      "-mfpu=neon",
     ]
+
+    # "-mfpu=neon" is not requried for arm64 in GCC.
+    if (cpu_arch != "arm64") {
+       cflags += [ "-mfpu=neon" ]
+    }
 
     # Disable LTO in audio_processing_neon target due to compiler bug.
     if (rtc_use_lto) {

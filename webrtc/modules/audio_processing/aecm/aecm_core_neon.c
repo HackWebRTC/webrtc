@@ -43,6 +43,7 @@ static const ALIGN8_BEG int16_t kSqrtHanningReversed[] ALIGN8_END = {
   3172,  2780,  2386,  1990, 1594,  1196,  798,   399
 };
 
+#ifndef WEBRTC_ARCH_ARM64_NEON
 void WebRtcAecm_WindowAndFFTNeon(AecmCore_t* aecm,
                                  int16_t* fft,
                                  const int16_t* time_signal,
@@ -226,6 +227,7 @@ void WebRtcAecm_InverseFFTAndWindowNeon(AecmCore_t* aecm,
     }
   }
 }
+#endif //WEBRTC_ARCH_ARM64_NEON
 
 static inline void AddLanes(uint32_t* ptr, uint32x4_t v) {
 #if defined(__aarch64__)

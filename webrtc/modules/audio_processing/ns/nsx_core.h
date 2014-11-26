@@ -218,10 +218,11 @@ void WebRtcNsx_SpeechNoiseProb(NsxInst_t* inst,
                                uint32_t* priorLocSnr,
                                uint32_t* postLocSnr);
 
-#if (defined WEBRTC_DETECT_ARM_NEON) || defined (WEBRTC_ARCH_ARM_NEON)
+#if (defined WEBRTC_DETECT_ARM_NEON || defined WEBRTC_ARCH_ARM_NEON || \
+     defined WEBRTC_ARCH_ARM64_NEON)
 // For the above function pointers, functions for generic platforms are declared
 // and defined as static in file nsx_core.c, while those for ARM Neon platforms
-// are declared below and defined in file nsx_core_neon.S.
+// are declared below and defined in file nsx_core_neon.c.
 void WebRtcNsx_NoiseEstimationNeon(NsxInst_t* inst,
                                    uint16_t* magn,
                                    uint32_t* noise,
