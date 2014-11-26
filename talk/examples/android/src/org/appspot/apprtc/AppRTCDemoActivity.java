@@ -27,6 +27,9 @@
 
 package org.appspot.apprtc;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
@@ -83,6 +86,7 @@ public class AppRTCDemoActivity extends Activity
   private final LayoutParams hudLayout =
       new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
   private TextView hudView;
+  private TextView encoderStatView;
   private TextView roomName;
   private ImageButton videoScalingButton;
   private boolean commandLineRun;
@@ -111,6 +115,7 @@ public class AppRTCDemoActivity extends Activity
     iceConnected = false;
 
     rootView = findViewById(android.R.id.content);
+    encoderStatView = (TextView)findViewById(R.id.encoder_stat);
     menuBar = findViewById(R.id.menubar_fragment);
     roomName = (TextView) findViewById(R.id.room_name);
     videoView = (GLSurfaceView) findViewById(R.id.glview);
@@ -126,9 +131,11 @@ public class AppRTCDemoActivity extends Activity
           public void onClick(View view) {
             int visibility = menuBar.getVisibility() == View.VISIBLE
                     ? View.INVISIBLE : View.VISIBLE;
+            encoderStatView.setVisibility(visibility);
             menuBar.setVisibility(visibility);
             roomName.setVisibility(visibility);
             if (visibility == View.VISIBLE) {
+              encoderStatView.bringToFront();
               menuBar.bringToFront();
               roomName.bringToFront();
               rootView.invalidate();
@@ -283,53 +290,6 @@ public class AppRTCDemoActivity extends Activity
     }
   }
 
-  // Update the heads-up display with information from |reports|.
-  private void updateHUD(StatsReport[] reports) {
-    StringBuilder builder = new StringBuilder();
-    for (StatsReport report : reports) {
-      // bweforvideo to show statistics for video Bandwidth Estimation,
-      // which is global per-session.
-      if (report.id.equals("bweforvideo")) {
-        for (StatsReport.Value value : report.values) {
-          String name = value.name.replace("goog", "")
-              .replace("Available", "").replace("Bandwidth", "")
-              .replace("Bitrate", "").replace("Enc", "");
-
-          builder.append(name).append("=").append(value.value)
-              .append(" ");
-        }
-        builder.append("\n");
-      } else if (report.type.equals("googCandidatePair")) {
-        String activeConnectionStats = getActiveConnectionStats(report);
-        if (activeConnectionStats == null) {
-          continue;
-        }
-        builder.append(activeConnectionStats);
-      } else {
-        continue;
-      }
-      builder.append("\n");
-    }
-    hudView.setText(builder.toString() + hudView.getText());
-  }
-
-  // Return the active connection stats else return null
-  private String getActiveConnectionStats(StatsReport report) {
-    StringBuilder activeConnectionbuilder = new StringBuilder();
-    // googCandidatePair to show information about the active
-    // connection.
-    for (StatsReport.Value value : report.values) {
-      if (value.name.equals("googActiveConnection")
-          && value.value.equals("false")) {
-        return null;
-      }
-      String name = value.name.replace("goog", "");
-      activeConnectionbuilder.append(name).append("=")
-          .append(value.value).append("\n");
-    }
-    return activeConnectionbuilder.toString();
-  }
-
   // Disconnect from remote resources, dispose of local resources, and exit.
   private void disconnect() {
     if (appRtcClient != null) {
@@ -387,6 +347,99 @@ public class AppRTCDemoActivity extends Activity
     logToast.show();
   }
 
+  // Return the active connection stats,
+  // or null if active connection is not found.
+  private String getActiveConnectionStats(StatsReport report) {
+    StringBuilder activeConnectionbuilder = new StringBuilder();
+    // googCandidatePair to show information about the active
+    // connection.
+    for (StatsReport.Value value : report.values) {
+      if (value.name.equals("googActiveConnection")
+          && value.value.equals("false")) {
+        return null;
+      }
+      String name = value.name.replace("goog", "");
+      activeConnectionbuilder.append(name).append("=")
+          .append(value.value).append("\n");
+    }
+    return activeConnectionbuilder.toString();
+  }
+
+  // Update the heads-up display with information from |reports|.
+  private void updateHUD(StatsReport[] reports) {
+    StringBuilder builder = new StringBuilder();
+    for (StatsReport report : reports) {
+      Log.d(TAG, "Stats: " + report.toString());
+      // bweforvideo to show statistics for video Bandwidth Estimation,
+      // which is global per-session.
+      if (report.id.equals("bweforvideo")) {
+        for (StatsReport.Value value : report.values) {
+          String name = value.name.replace("goog", "")
+              .replace("Available", "").replace("Bandwidth", "")
+              .replace("Bitrate", "").replace("Enc", "");
+
+          builder.append(name).append("=").append(value.value)
+              .append(" ");
+        }
+        builder.append("\n");
+      } else if (report.type.equals("googCandidatePair")) {
+        String activeConnectionStats = getActiveConnectionStats(report);
+        if (activeConnectionStats == null) {
+          continue;
+        }
+        builder.append(activeConnectionStats);
+      } else {
+        continue;
+      }
+      builder.append("\n");
+    }
+    hudView.setText(builder.toString() + hudView.getText());
+  }
+
+  private Map<String, String> getReportMap(StatsReport report) {
+    Map<String, String> reportMap = new HashMap<String, String>();
+    for (StatsReport.Value value : report.values) {
+      reportMap.put(value.name, value.value);
+    }
+    return reportMap;
+  }
+
+  // Update encoder statistics view with information from |reports|.
+  private void updateEncoderStatistics(StatsReport[] reports) {
+    if (!iceConnected) {
+      return;
+    }
+    String fps = null;
+    String targetBitrate = null;
+    String actualBitrate = null;
+    for (StatsReport report : reports) {
+      if (report.type.equals("ssrc") && report.id.contains("ssrc") &&
+          report.id.contains("send")) {
+        Map<String, String> reportMap = getReportMap(report);
+        String trackId = reportMap.get("googTrackId");
+        if (trackId != null &&
+            trackId.contains(PeerConnectionClient.VIDEO_TRACK_ID)) {
+          fps = reportMap.get("googFrameRateSent");
+        }
+      } else if (report.id.equals("bweforvideo")) {
+        Map<String, String> reportMap = getReportMap(report);
+        targetBitrate = reportMap.get("googTargetEncBitrate");
+        actualBitrate = reportMap.get("googActualEncBitrate");
+      }
+    }
+    String stat = "";
+    if (fps != null) {
+      stat += "Fps:  " + fps + "\n";
+    }
+    if (targetBitrate != null) {
+      stat += "Target BR: " + targetBitrate + "\n";
+    }
+    if (actualBitrate != null) {
+      stat += "Actual BR: " + actualBitrate;
+    }
+    encoderStatView.setText(stat);
+  }
+
   // -----Implementation of AppRTCClient.AppRTCSignalingEvents ---------------
   // All events are called from UI thread.
   @Override
@@ -410,37 +463,39 @@ public class AppRTCDemoActivity extends Activity
       setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
     }
 
-    {
-      final Runnable repeatedStatsLogger = new Runnable() {
-        public void run() {
-            if (pc == null) {
-              return;
-            }
-            final Runnable runnableThis = this;
-            if (hudView.getVisibility() == View.INVISIBLE) {
-              videoView.postDelayed(runnableThis, 1000);
-              return;
-            }
-            boolean success = pc.getStats(new StatsObserver() {
-                public void onComplete(final StatsReport[] reports) {
-                  runOnUiThread(new Runnable() {
-                      public void run() {
-                        updateHUD(reports);
-                      }
-                    });
-                  for (StatsReport report : reports) {
-                    Log.d(TAG, "Stats: " + report.toString());
+    // Schedule statistics display.
+    final Runnable repeatedStatsLogger = new Runnable() {
+      public void run() {
+        if (pc == null) {
+          return;
+        }
+        final Runnable runnableThis = this;
+        if (hudView.getVisibility() == View.INVISIBLE &&
+            encoderStatView.getVisibility() == View.INVISIBLE) {
+          videoView.postDelayed(runnableThis, 1000);
+          return;
+        }
+        boolean success = pc.getStats(new StatsObserver() {
+            public void onComplete(final StatsReport[] reports) {
+              runOnUiThread(new Runnable() {
+                  public void run() {
+                    if (hudView.getVisibility() == View.VISIBLE) {
+                      updateHUD(reports);
+                    }
+                    if (encoderStatView.getVisibility() == View.VISIBLE) {
+                      updateEncoderStatistics(reports);
+                    }
                   }
-                  videoView.postDelayed(runnableThis, 1000);
-                }
-              }, null);
-            if (!success) {
-              throw new RuntimeException("getStats() return false!");
+                });
+              videoView.postDelayed(runnableThis, 1000);
             }
-          }
-      };
-      videoView.postDelayed(repeatedStatsLogger, 1000);
-    }
+          }, null);
+        if (!success) {
+          throw new RuntimeException("getStats() return false!");
+        }
+      }
+    };
+    videoView.postDelayed(repeatedStatsLogger, 1000);
 
     logAndToast("Waiting for remote connection...");
   }

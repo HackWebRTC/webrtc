@@ -13,6 +13,15 @@
             android:layout_height="match_parent" />
 
     <TextView
+        android:id="@+id/encoder_stat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:textStyle="bold"
+        android:textColor="#800000FF"
+        android:textSize="12dp"
+        android:layout_margin="8dp"/>
+    <TextView
         android:id="@+id/room_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

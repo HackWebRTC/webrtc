@@ -54,6 +54,9 @@ import java.util.regex.Pattern;
 
 public class PeerConnectionClient {
   private static final String TAG = "PCRTCClient";
+  public static final String VIDEO_TRACK_ID = "ARDAMSv0";
+  public static final String AUDIO_TRACK_ID = "ARDAMSa0";
+
   private final Activity activity;
   private PeerConnectionFactory factory;
   private PeerConnection pc;
@@ -119,7 +122,7 @@ public class PeerConnectionClient {
     if (signalingParameters.audioConstraints != null) {
       MediaStream lMS = factory.createLocalMediaStream("ARDAMSAudio");
       lMS.addTrack(factory.createAudioTrack(
-          "ARDAMSa0",
+          AUDIO_TRACK_ID,
           factory.createAudioSource(signalingParameters.audioConstraints)));
       pc.addStream(lMS);
     }
@@ -320,7 +323,7 @@ public class PeerConnectionClient {
         capturer, videoConstraints);
     String trackExtension = frontFacing ? "frontFacing" : "backFacing";
     VideoTrack videoTrack =
-        factory.createVideoTrack("ARDAMSv0" + trackExtension, videoSource);
+        factory.createVideoTrack(VIDEO_TRACK_ID + trackExtension, videoSource);
     videoTrack.addRenderer(new VideoRenderer(localRender));
     return videoTrack;
   }
