@@ -238,7 +238,7 @@ void RtpReplay() {
   int num_packets = 0;
   std::map<uint32_t, int> unknown_packets;
   while (true) {
-    test::RtpFileReader::Packet packet;
+    test::RtpPacket packet;
     if (!rtp_reader->NextPacket(&packet))
       break;
     ++num_packets;

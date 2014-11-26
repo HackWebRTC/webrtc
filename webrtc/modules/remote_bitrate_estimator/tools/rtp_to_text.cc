@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
   int packet_counter = 0;
   int non_zero_abs_send_time = 0;
   int non_zero_ts_offsets = 0;
-  webrtc::test::RtpFileReader::Packet packet;
+  webrtc::test::RtpPacket packet;
   while (rtp_reader->NextPacket(&packet)) {
     webrtc::RTPHeader header;
     parser->Parse(packet.data, packet.length, &header);

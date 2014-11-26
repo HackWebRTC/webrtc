@@ -43,7 +43,7 @@ bool RtpFileSource::RegisterRtpHeaderExtension(RTPExtensionType type,
 
 Packet* RtpFileSource::NextPacket() {
   while (true) {
-    RtpFileReader::Packet temp_packet;
+    RtpPacket temp_packet;
     if (!rtp_reader_->NextPacket(&temp_packet)) {
       return NULL;
     }

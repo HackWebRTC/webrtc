@@ -30,7 +30,7 @@ class TestRtpFileReader : public ::testing::Test {
   }
 
   int CountRtpPackets() {
-    test::RtpFileReader::Packet packet;
+    test::RtpPacket packet;
     int c = 0;
     while (rtp_packet_source_->NextPacket(&packet)) {
       if (headers_only_file_)
@@ -71,7 +71,7 @@ class TestPcapFileReader : public ::testing::Test {
 
   int CountRtpPackets() {
     int c = 0;
-    test::RtpFileReader::Packet packet;
+    test::RtpPacket packet;
     while (rtp_packet_source_->NextPacket(&packet)) {
       EXPECT_EQ(packet.length, packet.original_length);
       c++;
@@ -81,7 +81,7 @@ class TestPcapFileReader : public ::testing::Test {
 
   PacketsPerSsrc CountRtpPacketsPerSsrc() {
     PacketsPerSsrc pps;
-    test::RtpFileReader::Packet packet;
+    test::RtpPacket packet;
     while (rtp_packet_source_->NextPacket(&packet)) {
       RtpUtility::RtpHeaderParser rtp_header_parser(packet.data, packet.length);
       webrtc::RTPHeader header;

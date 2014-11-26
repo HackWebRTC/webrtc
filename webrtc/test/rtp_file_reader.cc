@@ -100,9 +100,9 @@ class RtpDumpReader : public RtpFileReaderImpl {
     return true;
   }
 
-  virtual bool NextPacket(Packet* packet) OVERRIDE {
+  virtual bool NextPacket(RtpPacket* packet) OVERRIDE {
     uint8_t* rtp_data = packet->data;
-    packet->length = Packet::kMaxPacketBufferSize;
+    packet->length = RtpPacket::kMaxPacketBufferSize;
 
     uint16_t len;
     uint16_t plen;
@@ -290,8 +290,8 @@ class PcapReader : public RtpFileReaderImpl {
     return kResultSuccess;
   }
 
-  virtual bool NextPacket(Packet* packet) OVERRIDE {
-    uint32_t length = Packet::kMaxPacketBufferSize;
+  virtual bool NextPacket(RtpPacket* packet) OVERRIDE {
+    uint32_t length = RtpPacket::kMaxPacketBufferSize;
     if (NextPcap(packet->data, &length, &packet->time_ms) != kResultSuccess)
       return false;
     packet->length = static_cast<size_t>(length);

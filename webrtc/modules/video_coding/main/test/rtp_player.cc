@@ -450,7 +450,7 @@ class RtpPlayerImpl : public RtpPlayerInterface {
   SsrcHandlers ssrc_handlers_;
   Clock* clock_;
   scoped_ptr<test::RtpFileReader> packet_source_;
-  test::RtpFileReader::Packet next_packet_;
+  test::RtpPacket next_packet_;
   uint32_t next_rtp_time_;
   bool first_packet_;
   int64_t first_packet_rtp_time_;

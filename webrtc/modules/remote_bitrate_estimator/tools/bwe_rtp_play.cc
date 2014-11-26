@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
   int non_zero_ts_offsets = 0;
   while (true) {
     if (next_rtp_time_ms <= clock.TimeInMilliseconds()) {
-      webrtc::test::RtpFileReader::Packet packet;
+      webrtc::test::RtpPacket packet;
       if (!rtp_reader->NextPacket(&packet)) {
         break;
       }
