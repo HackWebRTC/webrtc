@@ -21,18 +21,6 @@
 
 namespace webrtc {
 
-struct RtpStatistics {
-  RtpStatistics()
-      : ssrc(0),
-        fraction_loss(0),
-        cumulative_loss(0),
-        extended_max_sequence_number(0) {}
-  uint32_t ssrc;
-  int fraction_loss;
-  int cumulative_loss;
-  int extended_max_sequence_number;
-};
-
 struct SsrcStats {
   SsrcStats()
       : key_frames(0),
