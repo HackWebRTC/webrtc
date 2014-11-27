@@ -77,6 +77,8 @@ class RTPPayloadRegistry {
 
   void SetRtxSsrc(uint32_t ssrc);
 
+  bool GetRtxSsrc(uint32_t* ssrc) const;
+
   void SetRtxPayloadType(int payload_type);
 
   bool IsRtx(const RTPHeader& header) const;

@@ -63,6 +63,7 @@ void StreamStatisticianImpl::ResetStatistics() {
   received_seq_wraps_ = 0;
   received_seq_max_ = 0;
   received_seq_first_ = 0;
+  stored_sum_receive_counters_.Add(receive_counters_);
   receive_counters_ = StreamDataCounters();
 }
 
@@ -312,6 +313,13 @@ void StreamStatisticianImpl::GetDataCounters(
   if (packets_received) {
     *packets_received = receive_counters_.packets;
   }
+}
+
+void StreamStatisticianImpl::GetReceiveStreamDataCounters(
+    StreamDataCounters* data_counters) const {
+  CriticalSectionScoped cs(stream_lock_.get());
+  *data_counters = receive_counters_;
+  data_counters->Add(stored_sum_receive_counters_);
 }
 
 uint32_t StreamStatisticianImpl::BitrateReceived() const {

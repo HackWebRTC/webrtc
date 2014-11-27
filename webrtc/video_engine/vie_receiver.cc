@@ -110,6 +110,10 @@ void ViEReceiver::SetRtxSsrc(uint32_t ssrc) {
   rtp_payload_registry_->SetRtxSsrc(ssrc);
 }
 
+bool ViEReceiver::GetRtxSsrc(uint32_t* ssrc) const {
+  return rtp_payload_registry_->GetRtxSsrc(ssrc);
+}
+
 uint32_t ViEReceiver::GetRemoteSsrc() const {
   return rtp_receiver_->SSRC();
 }

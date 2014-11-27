@@ -194,6 +194,10 @@ class ViEChannel
                            size_t* bytes_received,
                            uint32_t* packets_received) const;
 
+  // Gets received stream data counters.
+  void GetReceiveStreamDataCounters(StreamDataCounters* data,
+                                    StreamDataCounters* rtx_data) const;
+
   // Called on update of RTP statistics.
   void RegisterSendChannelRtpStatisticsCallback(
       StreamDataCountersCallback* callback);

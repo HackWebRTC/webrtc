@@ -258,7 +258,7 @@ void ViEChannel::UpdateHistograms() {
         rtcp_received.fir_packets / elapsed_minutes);
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PliPacketsReceivedPerMinute",
         rtcp_received.pli_packets / elapsed_minutes);
-  } else if (vie_receiver_.GetRemoteSsrc() > 0)  {
+  } else if (vie_receiver_.GetRemoteSsrc() > 0) {
     // Get receive stats if we are receiving packets, i.e. there is a remote
     // ssrc.
     if (rtcp_sent.nack_requests > 0) {
@@ -280,6 +280,26 @@ void ViEChannel::UpdateHistograms() {
             static_cast<int>((frames.numKeyFrames * 1000.0f / total_frames) +
                 0.5f));
       }
+    }
+    StreamDataCounters data;
+    StreamDataCounters rtx_data;
+    GetReceiveStreamDataCounters(&data, &rtx_data);
+    uint32_t media_bytes = data.bytes;
+    uint32_t rtx_bytes =
+        rtx_data.bytes + rtx_data.header_bytes + rtx_data.padding_bytes;
+    uint32_t total_bytes = data.bytes + data.header_bytes + data.padding_bytes;
+    total_bytes += rtx_bytes;
+    uint32_t padding_bytes = data.padding_bytes + rtx_data.padding_bytes;
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.BitrateReceivedInKbps",
+        total_bytes * 8 / (elapsed_minutes * 60) / 1000);
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.MediaBitrateReceivedInKbps",
+        media_bytes * 8 / (elapsed_minutes * 60) / 1000);
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PaddingBitrateReceivedInKbps",
+        padding_bytes * 8 / (elapsed_minutes * 60) / 1000);
+    uint32_t ssrc = 0;
+    if (vie_receiver_.GetRtxSsrc(&ssrc)) {
+      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RtxBitrateReceivedInKbps",
+          rtx_bytes * 8 / (elapsed_minutes * 60) / 1000);
     }
   }
 }
@@ -1162,6 +1182,24 @@ int32_t ViEChannel::GetRtpStatistics(size_t* bytes_sent,
     *packets_sent += packets_sent_temp;
   }
   return 0;
+}
+
+void ViEChannel::GetReceiveStreamDataCounters(
+    StreamDataCounters* data,
+    StreamDataCounters* rtx_data) const {
+  StreamStatistician* statistician = vie_receiver_.GetReceiveStatistics()->
+      GetStatistician(vie_receiver_.GetRemoteSsrc());
+  if (statistician) {
+    statistician->GetReceiveStreamDataCounters(data);
+  }
+  uint32_t rtx_ssrc = 0;
+  if (vie_receiver_.GetRtxSsrc(&rtx_ssrc)) {
+    StreamStatistician* statistician =
+        vie_receiver_.GetReceiveStatistics()->GetStatistician(rtx_ssrc);
+    if (statistician) {
+      statistician->GetReceiveStreamDataCounters(rtx_data);
+    }
+  }
 }
 
 void ViEChannel::RegisterSendChannelRtpStatisticsCallback(

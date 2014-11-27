@@ -286,6 +286,12 @@ void RTPPayloadRegistry::SetRtxSsrc(uint32_t ssrc) {
   rtx_ = true;
 }
 
+bool RTPPayloadRegistry::GetRtxSsrc(uint32_t* ssrc) const {
+  CriticalSectionScoped cs(crit_sect_.get());
+  *ssrc = ssrc_rtx_;
+  return rtx_;
+}
+
 void RTPPayloadRegistry::SetRtxPayloadType(int payload_type) {
   CriticalSectionScoped cs(crit_sect_.get());
   assert(payload_type >= 0);

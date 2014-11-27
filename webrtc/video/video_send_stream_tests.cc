@@ -252,6 +252,8 @@ class FakeReceiveStatistics : public NullReceiveStatistics {
       *bytes_received = 0;
       *packets_received = 0;
     }
+    virtual void GetReceiveStreamDataCounters(
+        StreamDataCounters* data_counters) const OVERRIDE {}
     virtual uint32_t BitrateReceived() const OVERRIDE { return 0; }
     virtual void ResetStatistics() OVERRIDE {}
     virtual bool IsRetransmitOfOldPacket(const RTPHeader& header,

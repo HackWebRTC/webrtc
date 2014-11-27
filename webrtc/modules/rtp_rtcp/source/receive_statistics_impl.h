@@ -33,6 +33,8 @@ class StreamStatisticianImpl : public StreamStatistician {
   virtual bool GetStatistics(RtcpStatistics* statistics, bool reset) OVERRIDE;
   virtual void GetDataCounters(size_t* bytes_received,
                                uint32_t* packets_received) const OVERRIDE;
+  virtual void GetReceiveStreamDataCounters(
+      StreamDataCounters* data_counters) const OVERRIDE;
   virtual uint32_t BitrateReceived() const OVERRIDE;
   virtual void ResetStatistics() OVERRIDE;
   virtual bool IsRetransmitOfOldPacket(const RTPHeader& header,
@@ -82,6 +84,9 @@ class StreamStatisticianImpl : public StreamStatistician {
   // Current counter values.
   size_t received_packet_overhead_;
   StreamDataCounters receive_counters_;
+
+  // Stored counter values. Includes sum of reset counter values for the stream.
+  StreamDataCounters stored_sum_receive_counters_;
 
   // Counter values when we sent the last report.
   uint32_t last_report_inorder_packets_;

@@ -239,6 +239,15 @@ struct StreamDataCounters {
      retransmitted_packets(0),
      fec_packets(0) {}
 
+  void Add(const StreamDataCounters& other) {
+    bytes += other.bytes;
+    header_bytes += other.header_bytes;
+    padding_bytes += other.padding_bytes;
+    packets += other.packets;
+    retransmitted_packets += other.retransmitted_packets;
+    fec_packets += other.fec_packets;
+  }
+
   // TODO(pbos): Rename bytes -> media_bytes.
   size_t bytes;  // Payload bytes, excluding RTP headers and padding.
   size_t header_bytes;  // Number of bytes used by RTP headers.
