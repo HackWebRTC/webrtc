@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,42 +27,20 @@
 
 #import <Foundation/Foundation.h>
 
-#import "ARDSignalingParams.h"
-#import "GAEChannelClient.h"
+@interface NSDictionary (ARDUtilites)
 
-@class APPRTCAppClient;
-@protocol APPRTCAppClientDelegate
-
-- (void)appClient:(APPRTCAppClient*)appClient
-    didErrorWithMessage:(NSString*)message;
-- (void)appClient:(APPRTCAppClient*)appClient
-    didReceiveICEServers:(NSArray*)servers;
+// Creates a dictionary with the keys and values in the JSON object.
++ (NSDictionary *)dictionaryWithJSONString:(NSString *)jsonString;
++ (NSDictionary *)dictionaryWithJSONData:(NSData *)jsonData;
 
 @end
 
-@class RTCMediaConstraints;
+@interface NSURLConnection (ARDUtilities)
 
-// Negotiates signaling for chatting with apprtc.appspot.com "rooms".
-// Uses the client<->server specifics of the apprtc AppEngine webapp.
-//
-// To use: create an instance of this object (registering a message handler) and
-// call connectToRoom().  apprtc.appspot.com will signal that is successful via
-// onOpen through the browser channel.  Then you should call sendData() and wait
-// for the registered handler to be called with received messages.
-@interface APPRTCAppClient : NSObject
-
-@property(nonatomic, readonly) ARDSignalingParams *params;
-@property(nonatomic, weak) id<APPRTCAppClientDelegate> delegate;
-
-- (instancetype)initWithDelegate:(id<APPRTCAppClientDelegate>)delegate
-                  messageHandler:(id<GAEMessageHandler>)handler;
-- (void)connectToRoom:(NSURL *)room;
-- (void)sendData:(NSData *)data;
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Disallow init and don't add to documentation
-- (instancetype)init __attribute__((
-    unavailable("init is not a supported initializer for this class.")));
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
+// Issues an asynchronous request that calls back on main queue.
++ (void)sendAsynchronousRequest:(NSURLRequest *)request
+              completionHandler:(void (^)(NSURLResponse *response,
+                                          NSData *data,
+                                          NSError *error))completionHandler;
 
 @end

@@ -33,8 +33,11 @@
 
 #import <dispatch/dispatch.h>
 
+#import "ARDSignalingParams.h"
+#import "ARDUtilities.h"
 #import "GAEChannelClient.h"
 #import "RTCICEServer.h"
+#import "RTCICEServer+JSON.h"
 #import "RTCMediaConstraints.h"
 #import "RTCPair.h"
 
@@ -60,14 +63,15 @@
 }
 
 - (void)connectToRoom:(NSURL*)url {
-  NSString* urlString =
+  NSString *urlString =
       [[url absoluteString] stringByAppendingString:@"&t=json"];
-  NSURL* requestURL = [NSURL URLWithString:urlString];
-  NSURLRequest* request = [NSURLRequest requestWithURL:requestURL];
-  [self sendURLRequest:request
-      completionHandler:^(NSError* error,
-                          NSHTTPURLResponse* httpResponse,
-                          NSData* responseData) {
+  NSURL *requestURL = [NSURL URLWithString:urlString];
+  NSURLRequest *request = [NSURLRequest requestWithURL:requestURL];
+  [NSURLConnection sendAsynchronousRequest:request
+                         completionHandler:^(NSURLResponse *response,
+                                             NSData *data,
+                                             NSError *error) {
+    NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
     int statusCode = [httpResponse statusCode];
     [self logVerbose:[NSString stringWithFormat:
         @"Response received\nURL\n%@\nStatus [%d]\nHeaders\n%@",
@@ -81,116 +85,74 @@
     if (statusCode != 200) {
       return;
     }
-    [self handleResponseData:responseData
-              forRoomRequest:request];
+    [self handleResponseData:data forRoomRequest:request];
   }];
 }
 
 - (void)sendData:(NSData*)data {
   NSParameterAssert([data length] > 0);
-  NSString* message = [NSString stringWithUTF8String:[data bytes]];
+  NSString *message = [NSString stringWithUTF8String:[data bytes]];
   [self logVerbose:[NSString stringWithFormat:@"Send message:\n%@", message]];
   if (!_postMessageURL) {
     return;
   }
-  NSMutableURLRequest* request =
+  NSMutableURLRequest *request =
       [NSMutableURLRequest requestWithURL:_postMessageURL];
   request.HTTPMethod = @"POST";
   [request setHTTPBody:data];
-  [self sendURLRequest:request
-     completionHandler:^(NSError* error,
-                         NSHTTPURLResponse* httpResponse,
-                         NSData* responseData) {
+  [NSURLConnection sendAsynchronousRequest:request
+                         completionHandler:^(NSURLResponse *response,
+                                             NSData *data,
+                                             NSError *error) {
+    NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
     int status = [httpResponse statusCode];
-    NSString* response = [responseData length] > 0 ?
-        [NSString stringWithUTF8String:[responseData bytes]] :
+    NSString *responseString = [data length] > 0 ?
+        [NSString stringWithUTF8String:[data bytes]] :
         nil;
     NSAssert(status == 200,
              @"Bad response [%d] to message: %@\n\n%@",
              status,
              message,
-             response);
+             responseString);
   }];
 }
 
 #pragma mark - Private
 
-- (void)logVerbose:(NSString*)message {
+- (void)logVerbose:(NSString *)message {
   if (_verboseLogging) {
     NSLog(@"%@", message);
   }
 }
 
-- (void)handleResponseData:(NSData*)responseData
-            forRoomRequest:(NSURLRequest*)request {
-  NSDictionary* roomJSON = [self parseJSONData:responseData];
-  [self logVerbose:[NSString stringWithFormat:@"Room JSON:\n%@", roomJSON]];
-  NSParameterAssert(roomJSON);
-  if (roomJSON[@"error"]) {
-    NSArray* errorMessages = roomJSON[@"error_messages"];
-    NSMutableString* message = [NSMutableString string];
-    for (NSString* errorMessage in errorMessages) {
+- (void)handleResponseData:(NSData *)responseData
+            forRoomRequest:(NSURLRequest *)request {
+  ARDSignalingParams *params =
+      [ARDSignalingParams paramsFromJSONData:responseData];
+  if (params.errorMessages.count > 0) {
+    NSMutableString *message = [NSMutableString string];
+    for (NSString *errorMessage in params.errorMessages) {
       [message appendFormat:@"%@\n", errorMessage];
     }
     [self.delegate appClient:self didErrorWithMessage:message];
     return;
   }
-  NSString* pcConfig = roomJSON[@"pc_config"];
-  NSData* pcConfigData = [pcConfig dataUsingEncoding:NSUTF8StringEncoding];
-  NSDictionary* pcConfigJSON = [self parseJSONData:pcConfigData];
-  [self logVerbose:[NSString stringWithFormat:@"PCConfig JSON:\n%@",
-                                              pcConfigJSON]];
-  NSParameterAssert(pcConfigJSON);
-
-  NSArray* iceServers = [self parseICEServersForPCConfigJSON:pcConfigJSON];
-  [self requestTURNServerForICEServers:iceServers
-                         turnServerUrl:roomJSON[@"turn_url"]];
-
-  _initiator = [roomJSON[@"initiator"] boolValue];
-  [self logVerbose:[NSString stringWithFormat:@"Initiator: %d", _initiator]];
-  _postMessageURL = [self parsePostMessageURLForRoomJSON:roomJSON
-                                                 request:request];
-  [self logVerbose:[NSString stringWithFormat:@"POST message URL:\n%@",
-                                              _postMessageURL]];
-  _videoConstraints = [self parseVideoConstraintsForRoomJSON:roomJSON];
-  [self logVerbose:[NSString stringWithFormat:@"Media constraints:\n%@",
-                                              _videoConstraints]];
-  NSString* token = roomJSON[@"token"];
+  [self requestTURNServerForICEServers:params.iceServers
+                         turnServerUrl:[params.turnRequestURL absoluteString]];
+  NSString *token = params.channelToken;
   [self logVerbose:
       [NSString stringWithFormat:@"About to open GAE with token:  %@",
                                  token]];
   _gaeChannel =
       [[GAEChannelClient alloc] initWithToken:token
                                      delegate:_messageHandler];
-}
-
-- (NSDictionary*)parseJSONData:(NSData*)data {
-  NSError* error = nil;
-  NSDictionary* json =
-      [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-  NSAssert(!error, @"Unable to parse.  %@", error.localizedDescription);
-  return json;
-}
-
-- (NSArray*)parseICEServersForPCConfigJSON:(NSDictionary*)pcConfigJSON {
-  NSMutableArray* result = [NSMutableArray array];
-  NSArray* iceServers = pcConfigJSON[@"iceServers"];
-  for (NSDictionary* iceServer in iceServers) {
-    NSString* url = iceServer[@"urls"];
-    NSString* username = pcConfigJSON[@"username"];
-    NSString* credential = iceServer[@"credential"];
-    username = username ? username : @"";
-    credential = credential ? credential : @"";
-    [self logVerbose:[NSString stringWithFormat:@"url [%@] - credential [%@]",
-                                                url,
-                                                credential]];
-    RTCICEServer* server =
-        [[RTCICEServer alloc] initWithURI:[NSURL URLWithString:url]
-                                 username:username
-                                 password:credential];
-    [result addObject:server];
-  }
-  return result;
+  _params = params;
+  // Generate URL for posting data.
+  NSDictionary *roomJSON = [NSDictionary dictionaryWithJSONData:responseData];
+  _postMessageURL = [self parsePostMessageURLForRoomJSON:roomJSON
+                                                 request:request];
+  [self logVerbose:[NSString stringWithFormat:@"POST message URL:\n%@",
+                                              _postMessageURL]];
 }
 
 - (NSURL*)parsePostMessageURLForRoomJSON:(NSDictionary*)roomJSON
@@ -207,63 +169,26 @@
   return [NSURL URLWithString:postMessageUrl];
 }
 
-- (RTCMediaConstraints*)parseVideoConstraintsForRoomJSON:
-    (NSDictionary*)roomJSON {
-  NSString* mediaConstraints = roomJSON[@"media_constraints"];
-  RTCMediaConstraints* constraints = nil;
-  if ([mediaConstraints length] > 0) {
-    NSData* constraintsData =
-        [mediaConstraints dataUsingEncoding:NSUTF8StringEncoding];
-    NSDictionary* constraintsJSON = [self parseJSONData:constraintsData];
-    id video = constraintsJSON[@"video"];
-    if ([video isKindOfClass:[NSDictionary class]]) {
-      NSDictionary* mandatory = video[@"mandatory"];
-      NSMutableArray* mandatoryContraints =
-          [NSMutableArray arrayWithCapacity:[mandatory count]];
-      [mandatory enumerateKeysAndObjectsUsingBlock:^(
-          id key, id obj, BOOL* stop) {
-        [mandatoryContraints addObject:[[RTCPair alloc] initWithKey:key
-                                                              value:obj]];
-      }];
-      // TODO(tkchin): figure out json formats for optional constraints.
-      constraints =
-          [[RTCMediaConstraints alloc]
-              initWithMandatoryConstraints:mandatoryContraints
-                       optionalConstraints:nil];
-    } else if ([video isKindOfClass:[NSNumber class]] && [video boolValue]) {
-      constraints = [[RTCMediaConstraints alloc] init];
-    }
-  }
-  return constraints;
-}
-
-- (void)requestTURNServerWithUrl:(NSString*)turnServerUrl
+- (void)requestTURNServerWithUrl:(NSString *)turnServerUrl
                completionHandler:
-    (void (^)(RTCICEServer* turnServer))completionHandler {
-  NSURL* turnServerURL = [NSURL URLWithString:turnServerUrl];
-  NSMutableURLRequest* request =
+    (void (^)(RTCICEServer *turnServer))completionHandler {
+  NSURL *turnServerURL = [NSURL URLWithString:turnServerUrl];
+  NSMutableURLRequest *request =
       [NSMutableURLRequest requestWithURL:turnServerURL];
   [request addValue:@"Mozilla/5.0" forHTTPHeaderField:@"user-agent"];
   [request addValue:@"https://apprtc.appspot.com"
       forHTTPHeaderField:@"origin"];
-  [self sendURLRequest:request
-     completionHandler:^(NSError* error,
-                         NSHTTPURLResponse* response,
-                         NSData* responseData) {
+  [NSURLConnection sendAsynchronousRequest:request
+                         completionHandler:^(NSURLResponse *response,
+                                             NSData *data,
+                                             NSError *error) {
     if (error) {
       NSLog(@"Unable to get TURN server.");
       completionHandler(nil);
       return;
     }
-    NSDictionary* json = [self parseJSONData:responseData];
-    NSString* username = json[@"username"];
-    NSString* password = json[@"password"];
-    NSArray* uris = json[@"uris"];
-    NSParameterAssert([uris count] > 0);
-    RTCICEServer* turnServer =
-        [[RTCICEServer alloc] initWithURI:[NSURL URLWithString:uris[0]]
-                                 username:username
-                                 password:password];
+    NSDictionary *json = [NSDictionary dictionaryWithJSONData:data];
+    RTCICEServer *turnServer = [RTCICEServer serverFromCEODJSONDictionary:json];
     completionHandler(turnServer);
   }];
 }
@@ -293,28 +218,6 @@
       [self.delegate appClient:self didReceiveICEServers:iceServers];
     });
   }
-}
-
-- (void)sendURLRequest:(NSURLRequest*)request
-     completionHandler:(void (^)(NSError* error,
-                                 NSHTTPURLResponse* httpResponse,
-                                 NSData* responseData))completionHandler {
-  dispatch_async(_backgroundQueue, ^{
-    NSError* error = nil;
-    NSURLResponse* response = nil;
-    NSData* responseData = [NSURLConnection sendSynchronousRequest:request
-                                                 returningResponse:&response
-                                                             error:&error];
-    NSParameterAssert(!response ||
-                      [response isKindOfClass:[NSHTTPURLResponse class]]);
-    if (error) {
-      NSLog(@"Failed URL request for:%@\nError:%@", request, error);
-    }
-    dispatch_async(dispatch_get_main_queue(), ^{
-      NSHTTPURLResponse* httpResponse = (NSHTTPURLResponse*)response;
-      completionHandler(error, httpResponse, responseData);
-    });
-  });
 }
 
 @end

@@ -31,6 +31,7 @@
 #import "APPRTCAppClient.h"
 #import "GAEChannelClient.h"
 #import "RTCICECandidate.h"
+#import "RTCICECandidate+JSON.h"
 #import "RTCMediaConstraints.h"
 #import "RTCMediaStream.h"
 #import "RTCPair.h"
@@ -38,6 +39,7 @@
 #import "RTCPeerConnectionDelegate.h"
 #import "RTCPeerConnectionFactory.h"
 #import "RTCSessionDescription.h"
+#import "RTCSessionDescription+JSON.h"
 #import "RTCSessionDescriptionDelegate.h"
 #import "RTCStatsDelegate.h"
 #import "RTCVideoCapturer.h"
@@ -158,7 +160,7 @@
       [RTCVideoCapturer capturerWithDeviceName:cameraID];
   self.videoSource = [self.peerConnectionFactory
       videoSourceWithCapturer:capturer
-                  constraints:self.client.videoConstraints];
+                  constraints:self.client.params.mediaConstraints];
   localVideoTrack =
       [self.peerConnectionFactory videoTrackWithID:@"ARDAMSv0"
                                             source:self.videoSource];
@@ -177,7 +179,7 @@
 #pragma mark - GAEMessageHandler methods
 
 - (void)onOpen {
-  if (!self.client.initiator) {
+  if (!self.client.params.isInitiator) {
     [self.logger logMessage:@"Callee; waiting for remote offer"];
     return;
   }
@@ -200,13 +202,8 @@
   [self.logger logMessage:[NSString stringWithFormat:@"GAE onMessage type - %@",
                                                       type]];
   if ([type isEqualToString:@"candidate"]) {
-    NSString* mid = messageData[@"id"];
-    NSNumber* sdpLineIndex = messageData[@"label"];
-    NSString* sdp = messageData[@"candidate"];
     RTCICECandidate* candidate =
-        [[RTCICECandidate alloc] initWithMid:mid
-                                       index:sdpLineIndex.intValue
-                                         sdp:sdp];
+        [RTCICECandidate candidateFromJSONDictionary:messageData];
     if (self.queuedRemoteCandidates) {
       [self.queuedRemoteCandidates addObject:candidate];
     } else {
@@ -214,10 +211,8 @@
     }
   } else if ([type isEqualToString:@"offer"] ||
              [type isEqualToString:@"answer"]) {
-    NSString* sdpString = messageData[@"sdp"];
-    RTCSessionDescription* sdp = [[RTCSessionDescription alloc]
-        initWithType:type
-                 sdp:[[self class] preferISAC:sdpString]];
+    RTCSessionDescription* sdp =
+        [RTCSessionDescription descriptionFromJSONDictionary:messageData];
     [self.peerConnection setRemoteDescriptionWithDelegate:self
                                        sessionDescription:sdp];
     [self.logger logMessage:@"PC - setRemoteDescription."];
@@ -283,26 +278,8 @@
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
        gotICECandidate:(RTCICECandidate*)candidate {
   dispatch_async(dispatch_get_main_queue(), ^{
-    NSLog(@"PCO onICECandidate.\n  Mid[%@] Index[%li] Sdp[%@]",
-          candidate.sdpMid,
-          (long)candidate.sdpMLineIndex,
-          candidate.sdp);
-    NSDictionary* json = @{
-      @"type" : @"candidate",
-      @"label" : @(candidate.sdpMLineIndex),
-      @"id" : candidate.sdpMid,
-      @"candidate" : candidate.sdp
-    };
-    NSError* error;
-    NSData* data =
-        [NSJSONSerialization dataWithJSONObject:json options:0 error:&error];
-    if (!error) {
-      [self.client sendData:data];
-    } else {
-      NSAssert(NO,
-               @"Unable to serialize JSON object with error: %@",
-               error.localizedDescription);
-    }
+    NSLog(@"PCO onICECandidate.\n%@", candidate);
+    [self.client sendData:[candidate JSONData]];
   });
 }
 
@@ -330,7 +307,7 @@
 #pragma mark - RTCSessionDescriptionDelegate
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
-    didCreateSessionDescription:(RTCSessionDescription*)origSdp
+    didCreateSessionDescription:(RTCSessionDescription*)sdp
                           error:(NSError*)error {
   dispatch_async(dispatch_get_main_queue(), ^{
     if (error) {
@@ -339,19 +316,10 @@
       return;
     }
     [self.logger logMessage:@"SDP onSuccess(SDP) - set local description."];
-    RTCSessionDescription* sdp = [[RTCSessionDescription alloc]
-        initWithType:origSdp.type
-                 sdp:[[self class] preferISAC:origSdp.description]];
     [self.peerConnection setLocalDescriptionWithDelegate:self
                                       sessionDescription:sdp];
     [self.logger logMessage:@"PC setLocalDescription."];
-    NSDictionary* json = @{@"type" : sdp.type, @"sdp" : sdp.description};
-    NSError* jsonError;
-    NSData* data = [NSJSONSerialization dataWithJSONObject:json
-                                                   options:0
-                                                     error:&jsonError];
-    NSAssert(!jsonError, @"Error: %@", jsonError.description);
-    [self.client sendData:data];
+    [self.client sendData:[sdp JSONData]];
   });
 }
 
@@ -364,7 +332,7 @@
       return;
     }
     [self.logger logMessage:@"SDP onSuccess() - possibly drain candidates"];
-    if (!self.client.initiator) {
+    if (!self.client.params.isInitiator) {
       if (self.peerConnection.remoteDescription &&
           !self.peerConnection.localDescription) {
         [self.logger logMessage:@"Callee, setRemoteDescription succeeded"];
@@ -403,69 +371,6 @@
 }
 
 #pragma mark - Private
-
-// Match |pattern| to |string| and return the first group of the first
-// match, or nil if no match was found.
-+ (NSString*)firstMatch:(NSRegularExpression*)pattern
-             withString:(NSString*)string {
-  NSTextCheckingResult* result =
-      [pattern firstMatchInString:string
-                          options:0
-                            range:NSMakeRange(0, [string length])];
-  if (!result)
-    return nil;
-  return [string substringWithRange:[result rangeAtIndex:1]];
-}
-
-// Mangle |origSDP| to prefer the ISAC/16k audio codec.
-+ (NSString*)preferISAC:(NSString*)origSDP {
-  int mLineIndex = -1;
-  NSString* isac16kRtpMap = nil;
-  NSArray* lines = [origSDP componentsSeparatedByString:@"\n"];
-  NSRegularExpression* isac16kRegex = [NSRegularExpression
-      regularExpressionWithPattern:@"^a=rtpmap:(\\d+) ISAC/16000[\r]?$"
-                           options:0
-                             error:nil];
-  for (int i = 0;
-       (i < [lines count]) && (mLineIndex == -1 || isac16kRtpMap == nil);
-       ++i) {
-    NSString* line = [lines objectAtIndex:i];
-    if ([line hasPrefix:@"m=audio "]) {
-      mLineIndex = i;
-      continue;
-    }
-    isac16kRtpMap = [self firstMatch:isac16kRegex withString:line];
-  }
-  if (mLineIndex == -1) {
-    NSLog(@"No m=audio line, so can't prefer iSAC");
-    return origSDP;
-  }
-  if (isac16kRtpMap == nil) {
-    NSLog(@"No ISAC/16000 line, so can't prefer iSAC");
-    return origSDP;
-  }
-  NSArray* origMLineParts =
-      [[lines objectAtIndex:mLineIndex] componentsSeparatedByString:@" "];
-  NSMutableArray* newMLine =
-      [NSMutableArray arrayWithCapacity:[origMLineParts count]];
-  int origPartIndex = 0;
-  // Format is: m=<media> <port> <proto> <fmt> ...
-  [newMLine addObject:[origMLineParts objectAtIndex:origPartIndex++]];
-  [newMLine addObject:[origMLineParts objectAtIndex:origPartIndex++]];
-  [newMLine addObject:[origMLineParts objectAtIndex:origPartIndex++]];
-  [newMLine addObject:isac16kRtpMap];
-  for (; origPartIndex < [origMLineParts count]; ++origPartIndex) {
-    if (![isac16kRtpMap
-            isEqualToString:[origMLineParts objectAtIndex:origPartIndex]]) {
-      [newMLine addObject:[origMLineParts objectAtIndex:origPartIndex]];
-    }
-  }
-  NSMutableArray* newLines = [NSMutableArray arrayWithCapacity:[lines count]];
-  [newLines addObjectsFromArray:lines];
-  [newLines replaceObjectAtIndex:mLineIndex
-                      withObject:[newMLine componentsJoinedByString:@" "]];
-  return [newLines componentsJoinedByString:@"\n"];
-}
 
 - (void)drainRemoteCandidates {
   for (RTCICECandidate* candidate in self.queuedRemoteCandidates) {

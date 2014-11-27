@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,42 +27,20 @@
 
 #import <Foundation/Foundation.h>
 
-#import "ARDSignalingParams.h"
-#import "GAEChannelClient.h"
+#import "RTCMediaConstraints.h"
 
-@class APPRTCAppClient;
-@protocol APPRTCAppClientDelegate
+// Struct for holding the signaling parameters of an AppRTC room.
+@interface ARDSignalingParams : NSObject
 
-- (void)appClient:(APPRTCAppClient*)appClient
-    didErrorWithMessage:(NSString*)message;
-- (void)appClient:(APPRTCAppClient*)appClient
-    didReceiveICEServers:(NSArray*)servers;
+@property(nonatomic, assign) BOOL isInitiator;
+@property(nonatomic, readonly) NSArray *errorMessages;
+@property(nonatomic, readonly) RTCMediaConstraints *offerConstraints;
+@property(nonatomic, readonly) RTCMediaConstraints *mediaConstraints;
+@property(nonatomic, readonly) NSMutableArray *iceServers;
+@property(nonatomic, readonly) NSURL *signalingServerURL;
+@property(nonatomic, readonly) NSURL *turnRequestURL;
+@property(nonatomic, readonly) NSString *channelToken;
 
-@end
-
-@class RTCMediaConstraints;
-
-// Negotiates signaling for chatting with apprtc.appspot.com "rooms".
-// Uses the client<->server specifics of the apprtc AppEngine webapp.
-//
-// To use: create an instance of this object (registering a message handler) and
-// call connectToRoom().  apprtc.appspot.com will signal that is successful via
-// onOpen through the browser channel.  Then you should call sendData() and wait
-// for the registered handler to be called with received messages.
-@interface APPRTCAppClient : NSObject
-
-@property(nonatomic, readonly) ARDSignalingParams *params;
-@property(nonatomic, weak) id<APPRTCAppClientDelegate> delegate;
-
-- (instancetype)initWithDelegate:(id<APPRTCAppClientDelegate>)delegate
-                  messageHandler:(id<GAEMessageHandler>)handler;
-- (void)connectToRoom:(NSURL *)room;
-- (void)sendData:(NSData *)data;
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Disallow init and don't add to documentation
-- (instancetype)init __attribute__((
-    unavailable("init is not a supported initializer for this class.")));
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
++ (ARDSignalingParams *)paramsFromJSONData:(NSData *)data;
 
 @end
