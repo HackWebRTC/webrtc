@@ -15,7 +15,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_audio/audio_converter.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
-#include "webrtc/modules/audio_processing/common.h"
+#include "webrtc/modules/audio_processing/channel_buffer.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {

@@ -11,7 +11,7 @@
 #ifndef WEBRTC_INTERNAL_BEAMFORMER_BLOCKER_H_
 #define WEBRTC_INTERNAL_BEAMFORMER_BLOCKER_H_
 
-#include "webrtc/modules/audio_processing/common.h"
+#include "webrtc/modules/audio_processing/channel_buffer.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {

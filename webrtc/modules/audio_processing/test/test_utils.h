@@ -14,7 +14,7 @@
 #include "webrtc/audio_processing/debug.pb.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/wav_file.h"
-#include "webrtc/modules/audio_processing/common.h"
+#include "webrtc/modules/audio_processing/channel_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"

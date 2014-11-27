@@ -13,7 +13,7 @@
 
 // TODO(ajm): Move channel buffer to common_audio.
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_processing/common.h"
+#include "webrtc/modules/audio_processing/channel_buffer.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/scoped_vector.h"
 
