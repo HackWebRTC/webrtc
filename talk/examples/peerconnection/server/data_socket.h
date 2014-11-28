@@ -32,37 +32,39 @@
 #ifdef WIN32
 #include <winsock2.h>
 typedef int socklen_t;
+typedef SOCKET NativeSocket;
 #else
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #define closesocket close
-#endif
-
-#include <string>
+typedef int NativeSocket;
 
 #ifndef SOCKET_ERROR
 #define SOCKET_ERROR (-1)
 #endif
 
 #ifndef INVALID_SOCKET
-#define INVALID_SOCKET  static_cast<int>(~0)
+#define INVALID_SOCKET  static_cast<NativeSocket>(-1)
 #endif
+#endif
+
+#include <string>
 
 class SocketBase {
  public:
   SocketBase() : socket_(INVALID_SOCKET) { }
-  explicit SocketBase(int socket) : socket_(socket) { }
+  explicit SocketBase(NativeSocket socket) : socket_(socket) { }
   ~SocketBase() { Close(); }
 
-  int socket() const { return socket_; }
+  NativeSocket socket() const { return socket_; }
   bool valid() const { return socket_ != INVALID_SOCKET; }
 
   bool Create();
   void Close();
 
  protected:
-  int socket_;
+  NativeSocket socket_;
 };
 
 // Represents an HTTP server socket.
@@ -75,7 +77,7 @@ class DataSocket : public SocketBase {
     OPTIONS,
   };
 
-  explicit DataSocket(int socket)
+  explicit DataSocket(NativeSocket socket)
       : SocketBase(socket),
         method_(INVALID),
         content_length_(0) {

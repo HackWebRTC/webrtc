@@ -301,7 +301,8 @@ DataSocket* ListeningSocket::Accept() const {
   assert(valid());
   struct sockaddr_in addr = {0};
   socklen_t size = sizeof(addr);
-  int client = accept(socket_, reinterpret_cast<sockaddr*>(&addr), &size);
+  NativeSocket client =
+      accept(socket_, reinterpret_cast<sockaddr*>(&addr), &size);
   if (client == INVALID_SOCKET)
     return NULL;
 
