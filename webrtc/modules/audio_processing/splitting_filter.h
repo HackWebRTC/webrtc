@@ -57,7 +57,7 @@ class SplittingFilter {
   SplittingFilter(int channels);
 
   void Analysis(const IFChannelBuffer* in_data,
-                std::vector<IFChannelBuffer*>& bands);
+                const std::vector<IFChannelBuffer*>& bands);
   void Synthesis(const std::vector<IFChannelBuffer*>& bands,
                  IFChannelBuffer* out_data);
 

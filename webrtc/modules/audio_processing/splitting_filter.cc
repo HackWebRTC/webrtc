@@ -31,7 +31,7 @@ SplittingFilter::SplittingFilter(int channels)
 }
 
 void SplittingFilter::Analysis(const IFChannelBuffer* in_data,
-                               std::vector<IFChannelBuffer*>& bands) {
+                               const std::vector<IFChannelBuffer*>& bands) {
   DCHECK(bands.size() == 2 || bands.size() == 3);
   DCHECK_EQ(channels_, in_data->num_channels());
   for (size_t i = 0; i < bands.size(); ++i) {
