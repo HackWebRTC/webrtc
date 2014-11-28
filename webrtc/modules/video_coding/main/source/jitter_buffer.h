@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
@@ -201,6 +202,7 @@ class VCMJitterBuffer {
                               VCMFrameBuffer** frame,
                               FrameList** frame_list)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+
   // Returns true if |frame| is continuous in |decoding_state|, not taking
   // decodable frames into account.
   bool IsContinuousInState(const VCMFrameBuffer& frame,
@@ -281,7 +283,7 @@ class VCMJitterBuffer {
 
   uint16_t EstimatedLowSequenceNumber(const VCMFrameBuffer& frame) const;
 
-  void UpdateHistograms();
+  void UpdateHistograms() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   Clock* clock_;
   // If we are running (have started) or not.
@@ -311,11 +313,13 @@ class VCMJitterBuffer {
   // Number of packets in a row that have been too old.
   int num_consecutive_old_packets_;
   // Number of packets received.
-  int num_packets_;
+  int num_packets_ GUARDED_BY(crit_sect_);
   // Number of duplicated packets received.
-  int num_duplicated_packets_;
+  int num_duplicated_packets_ GUARDED_BY(crit_sect_);
   // Number of packets discarded by the jitter buffer.
-  int num_discarded_packets_;
+  int num_discarded_packets_ GUARDED_BY(crit_sect_);
+  // Time when first packet is received.
+  int64_t time_first_packet_ms_ GUARDED_BY(crit_sect_);
 
   // Jitter estimation.
   // Filter for estimating jitter.

@@ -236,10 +236,9 @@ ViEChannel::~ViEChannel() {
 }
 
 void ViEChannel::UpdateHistograms() {
-  const float kMinCallLengthInMinutes = 0.5f;
   float elapsed_minutes =
       (Clock::GetRealTimeClock()->TimeInMilliseconds() - start_ms_) / 60000.0f;
-  if (elapsed_minutes < kMinCallLengthInMinutes) {
+  if (elapsed_minutes < metrics::kMinRunTimeInSeconds / 60.0f) {
     return;
   }
   RtcpPacketTypeCounter rtcp_sent;
@@ -272,15 +271,6 @@ void ViEChannel::UpdateHistograms() {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PliPacketsSentPerMinute",
         rtcp_sent.pli_packets / elapsed_minutes);
 
-    webrtc::VCMFrameCount frames;
-    if (vcm_->ReceivedFrameCount(frames) == VCM_OK) {
-      uint32_t total_frames = frames.numKeyFrames + frames.numDeltaFrames;
-      if (total_frames > 0) {
-        RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.KeyFramesReceivedInPermille",
-            static_cast<int>((frames.numKeyFrames * 1000.0f / total_frames) +
-                0.5f));
-      }
-    }
     StreamDataCounters data;
     StreamDataCounters rtx_data;
     GetReceiveStreamDataCounters(&data, &rtx_data);

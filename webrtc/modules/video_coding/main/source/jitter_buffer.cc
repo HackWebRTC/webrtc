@@ -133,6 +133,7 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock, EventFactory* event_factory)
       num_packets_(0),
       num_duplicated_packets_(0),
       num_discarded_packets_(0),
+      time_first_packet_ms_(0),
       jitter_estimate_(clock),
       inter_frame_delay_(clock_->TimeInMilliseconds()),
       rtt_ms_(kDefaultRtt),
@@ -169,11 +170,28 @@ VCMJitterBuffer::~VCMJitterBuffer() {
 }
 
 void VCMJitterBuffer::UpdateHistograms() {
-  if (num_packets_ > 0) {
-    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.DiscardedPacketsInPercent",
-        num_discarded_packets_ * 100 / num_packets_);
-    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.DuplicatedPacketsInPercent",
-        num_duplicated_packets_ * 100 / num_packets_);
+  if (num_packets_ <= 0) {
+    return;
+  }
+  int64_t elapsed_sec =
+      (clock_->TimeInMilliseconds() - time_first_packet_ms_) / 1000;
+  if (elapsed_sec < metrics::kMinRunTimeInSeconds) {
+    return;
+  }
+
+  RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.DiscardedPacketsInPercent",
+      num_discarded_packets_ * 100 / num_packets_);
+  RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.DuplicatedPacketsInPercent",
+      num_duplicated_packets_ * 100 / num_packets_);
+
+  uint32_t total_frames = receive_statistics_[kVideoFrameKey] +
+                          receive_statistics_[kVideoFrameDelta];
+  if (total_frames > 0) {
+    RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.CompleteFramesReceivedPerSecond",
+        static_cast<int>((total_frames / elapsed_sec) + 0.5f));
+    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.KeyFramesReceivedInPermille",
+        static_cast<int>((receive_statistics_[kVideoFrameKey] * 1000.0f /
+            total_frames) + 0.5f));
   }
 }
 
@@ -191,6 +209,7 @@ void VCMJitterBuffer::Start() {
   num_packets_ = 0;
   num_duplicated_packets_ = 0;
   num_discarded_packets_ = 0;
+  time_first_packet_ms_ = 0;
 
   // Start in a non-signaled state.
   frame_event_->Reset();
@@ -540,6 +559,9 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
   CriticalSectionScoped cs(crit_sect_);
 
   ++num_packets_;
+  if (num_packets_ == 1) {
+    time_first_packet_ms_ = clock_->TimeInMilliseconds();
+  }
   // Does this packet belong to an old frame?
   if (last_decoded_state_.IsOldPacket(&packet)) {
     // Account only for media packets.

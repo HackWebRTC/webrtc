@@ -241,10 +241,9 @@ ViEEncoder::~ViEEncoder() {
 }
 
 void ViEEncoder::UpdateHistograms() {
-  const float kMinCallLengthInMinutes = 0.5f;
-  float elapsed_minutes =
-      (Clock::GetRealTimeClock()->TimeInMilliseconds() - start_ms_) / 60000.0f;
-  if (elapsed_minutes < kMinCallLengthInMinutes) {
+  int64_t elapsed_sec =
+      (Clock::GetRealTimeClock()->TimeInMilliseconds() - start_ms_) / 1000;
+  if (elapsed_sec < metrics::kMinRunTimeInSeconds) {
     return;
   }
   webrtc::VCMFrameCount frames;

@@ -111,10 +111,10 @@ class TestBasicJitterBuffer : public ::testing::Test {
   uint32_t timestamp_;
   int size_;
   uint8_t data_[1500];
-  scoped_ptr<VCMJitterBuffer> jitter_buffer_;
   scoped_ptr<VCMPacket> packet_;
   scoped_ptr<SimulatedClock> clock_;
   NullEventFactory event_factory_;
+  scoped_ptr<VCMJitterBuffer> jitter_buffer_;
 };
 
 
