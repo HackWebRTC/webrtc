@@ -60,6 +60,8 @@
         'rtcp_packet_parser.h',
         'rtp_file_reader.cc',
         'rtp_file_reader.h',
+        'rtp_file_writer.cc',
+        'rtp_file_writer.h',
       ],
       'dependencies': [
         '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',

@@ -91,11 +91,11 @@ class RtpDumpReader : public RtpFileReaderImpl {
     uint32_t source;
     uint16_t port;
     uint16_t padding;
-    TRY(Read(&start_sec));
-    TRY(Read(&start_usec));
-    TRY(Read(&source));
-    TRY(Read(&port));
-    TRY(Read(&padding));
+    TRY(ReadUint32(&start_sec));
+    TRY(ReadUint32(&start_usec));
+    TRY(ReadUint32(&source));
+    TRY(ReadUint16(&port));
+    TRY(ReadUint16(&padding));
 
     return true;
   }
@@ -107,9 +107,9 @@ class RtpDumpReader : public RtpFileReaderImpl {
     uint16_t len;
     uint16_t plen;
     uint32_t offset;
-    TRY(Read(&len));
-    TRY(Read(&plen));
-    TRY(Read(&offset));
+    TRY(ReadUint16(&len));
+    TRY(ReadUint16(&plen));
+    TRY(ReadUint32(&offset));
 
     // Use 'len' here because a 'plen' of 0 specifies rtcp.
     len -= kPacketHeaderSize;
@@ -130,7 +130,7 @@ class RtpDumpReader : public RtpFileReaderImpl {
   }
 
  private:
-  bool Read(uint32_t* out) {
+  bool ReadUint32(uint32_t* out) {
     *out = 0;
     for (size_t i = 0; i < 4; ++i) {
       *out <<= 8;
@@ -142,7 +142,7 @@ class RtpDumpReader : public RtpFileReaderImpl {
     return true;
   }
 
-  bool Read(uint16_t* out) {
+  bool ReadUint16(uint16_t* out) {
     *out = 0;
     for (size_t i = 0; i < 2; ++i) {
       *out <<= 8;

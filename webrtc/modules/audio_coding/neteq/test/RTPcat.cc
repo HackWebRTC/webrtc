@@ -10,13 +10,14 @@
 
 #include <stdio.h>
 
-#include <algorithm>
-#include <vector>
+#include "webrtc/base/checks.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/test/rtp_file_reader.h"
+#include "webrtc/test/rtp_file_writer.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/audio_coding/neteq/test/NETEQTEST_RTPpacket.h"
-
-#define FIRSTLINELEN 40
+using webrtc::scoped_ptr;
+using webrtc::test::RtpFileReader;
+using webrtc::test::RtpFileWriter;
 
 int main(int argc, char* argv[]) {
   if (argc < 3) {
@@ -24,52 +25,20 @@ int main(int argc, char* argv[]) {
     exit(1);
   }
 
-  FILE* in_file = fopen(argv[1], "rb");
-  if (!in_file) {
-    printf("Cannot open input file %s\n", argv[1]);
-    return -1;
-  }
-
-  FILE* out_file = fopen(argv[argc - 1], "wb");  // Last parameter is out file.
-  if (!out_file) {
-    printf("Cannot open output file %s\n", argv[argc - 1]);
-    return -1;
-  }
-  printf("Output RTP file: %s\n\n", argv[argc - 1]);
-
-  // Read file header and write directly to output file.
-  char firstline[FIRSTLINELEN];
-  const unsigned int kRtpDumpHeaderSize = 4 + 4 + 4 + 2 + 2;
-  EXPECT_TRUE(fgets(firstline, FIRSTLINELEN, in_file) != NULL);
-  EXPECT_GT(fputs(firstline, out_file), 0);
-  EXPECT_EQ(kRtpDumpHeaderSize, fread(firstline, 1, kRtpDumpHeaderSize,
-                                      in_file));
-  EXPECT_EQ(kRtpDumpHeaderSize, fwrite(firstline, 1, kRtpDumpHeaderSize,
-                                       out_file));
-
-  // Close input file and re-open it later (easier to write the loop below).
-  fclose(in_file);
+  scoped_ptr<RtpFileWriter> output(
+      RtpFileWriter::Create(RtpFileWriter::kRtpDump, argv[argc - 1]));
+  CHECK(output.get() != NULL) << "Cannot open output file.";
+  printf("Output RTP file: %s\n", argv[argc - 1]);
 
   for (int i = 1; i < argc - 1; i++) {
-    in_file = fopen(argv[i], "rb");
-    if (!in_file) {
-      printf("Cannot open input file %s\n", argv[i]);
-      return -1;
-    }
+    scoped_ptr<RtpFileReader> input(
+        RtpFileReader::Create(RtpFileReader::kRtpDump, argv[i]));
+    CHECK(input.get() != NULL) << "Cannot open input file " << argv[i];
     printf("Input RTP file: %s\n", argv[i]);
 
-    NETEQTEST_RTPpacket::skipFileHeader(in_file);
-    NETEQTEST_RTPpacket packet;
-    int pack_len = packet.readFromFile(in_file);
-    if (pack_len < 0) {
-      exit(1);
-    }
-    while (pack_len >= 0) {
-      packet.writeToFile(out_file);
-      pack_len = packet.readFromFile(in_file);
-    }
-    fclose(in_file);
+    webrtc::test::RtpPacket packet;
+    while (input->NextPacket(&packet))
+      CHECK(output->WritePacket(&packet));
   }
-  fclose(out_file);
   return 0;
 }

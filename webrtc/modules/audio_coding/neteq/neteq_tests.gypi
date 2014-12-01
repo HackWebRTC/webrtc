@@ -122,8 +122,8 @@
       'target_name': 'RTPcat',
       'type': 'executable',
       'dependencies': [
-        'neteq_test_tools',
         '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(webrtc_root)/test/test.gyp:rtp_test_utils',
       ],
       'sources': [
         'test/RTPcat.cc',

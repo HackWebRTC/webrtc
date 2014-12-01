@@ -157,6 +157,7 @@
           'sources': [
             'fake_network_pipe_unittest.cc',
             'rtp_file_reader_unittest.cc',
+            'rtp_file_writer_unittest.cc',
           ],
         },
       ],  #targets
