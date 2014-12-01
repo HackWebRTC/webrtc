@@ -17,6 +17,7 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_receiver.h"
 #include "webrtc/modules/utility/interface/rtp_dump.h"
+#include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 #include "webrtc/modules/video_coding/main/test/test_macros.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 
@@ -44,27 +45,22 @@ VCMEncodeCompleteCallback::~VCMEncodeCompleteCallback()
 {
 }
 
-void
-VCMEncodeCompleteCallback::RegisterTransportCallback(
-                                            VCMPacketizationCallback* transport)
-{
+void VCMEncodeCompleteCallback::RegisterTransportCallback(
+    VCMPacketizationCallback* transport) {
 }
 
 int32_t
 VCMEncodeCompleteCallback::SendData(
-        const FrameType frameType,
-        const uint8_t  payloadType,
-        const uint32_t timeStamp,
-        int64_t capture_time_ms,
-        const uint8_t* payloadData,
-        const size_t payloadSize,
+        const uint8_t payloadType,
+        const EncodedImage& encoded_image,
         const RTPFragmentationHeader& fragmentationHeader,
         const RTPVideoHeader* videoHdr)
 {
     // will call the VCMReceiver input packet
-    _frameType = frameType;
+    _frameType = VCMEncodedFrame::ConvertFrameType(encoded_image._frameType);
     // writing encodedData into file
-    if (fwrite(payloadData, 1, payloadSize, _encodedFile) !=  payloadSize) {
+    if (fwrite(encoded_image._buffer, 1, encoded_image._length, _encodedFile) !=
+        encoded_image._length) {
       return -1;
     }
     WebRtcRTPHeader rtpInfo;
@@ -93,14 +89,15 @@ VCMEncodeCompleteCallback::SendData(
     rtpInfo.header.payloadType = payloadType;
     rtpInfo.header.sequenceNumber = _seqNo++;
     rtpInfo.header.ssrc = 0;
-    rtpInfo.header.timestamp = timeStamp;
-    rtpInfo.frameType = frameType;
+    rtpInfo.header.timestamp = encoded_image._timeStamp;
+    rtpInfo.frameType = _frameType;
     // Size should also be received from that table, since the payload type
     // defines the size.
 
-    _encodedBytes += payloadSize;
+    _encodedBytes += encoded_image._length;
     // directly to receiver
-    int ret = _VCMReceiver->IncomingPacket(payloadData, payloadSize, rtpInfo);
+    int ret = _VCMReceiver->IncomingPacket(encoded_image._buffer,
+                                           encoded_image._length, rtpInfo);
     _encodeComplete = true;
 
     return ret;
@@ -147,24 +144,20 @@ VCMEncodeCompleteCallback::ResetByteCount()
 
 int32_t
 VCMRTPEncodeCompleteCallback::SendData(
-        FrameType frameType,
-        uint8_t  payloadType,
-        uint32_t timeStamp,
-        int64_t capture_time_ms,
-        const uint8_t* payloadData,
-        size_t payloadSize,
+        uint8_t payloadType,
+        const EncodedImage& encoded_image,
         const RTPFragmentationHeader& fragmentationHeader,
         const RTPVideoHeader* videoHdr)
 {
-    _frameType = frameType;
-    _encodedBytes+= payloadSize;
+    _frameType = VCMEncodedFrame::ConvertFrameType(encoded_image._frameType);
+    _encodedBytes+= encoded_image._length;
     _encodeComplete = true;
-    return _RTPModule->SendOutgoingData(frameType,
+    return _RTPModule->SendOutgoingData(_frameType,
                                         payloadType,
-                                        timeStamp,
-                                        capture_time_ms,
-                                        payloadData,
-                                        payloadSize,
+                                        encoded_image._timeStamp,
+                                        encoded_image.capture_time_ms_,
+                                        encoded_image._buffer,
+                                        encoded_image._length,
                                         &fragmentationHeader,
                                         videoHdr);
 }

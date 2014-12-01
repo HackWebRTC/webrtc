@@ -48,12 +48,8 @@ private:
     // VCMPacketizationCallback function.
     // Note: called by VideoCodingModule when encoding finished.
     virtual int32_t SendData(
-        FrameType /*frameType*/,
         uint8_t /*payloadType*/,
-        uint32_t /*timeStamp*/,
-        int64_t capture_time_ms,
-        const uint8_t* payloadData,
-        size_t payloadSize,
+        const EncodedImage& encoded_image,
         const RTPFragmentationHeader& /* fragmentationHeader*/,
         const RTPVideoHeader* rtpTypeHdr) OVERRIDE;
 

@@ -85,7 +85,7 @@ public:
     CopyCodecSpecificInfo(
         const webrtc::CodecSpecificInfo* codecSpecificInfo) const;
     virtual void CopyEncodedImage(webrtc::VideoFrame& dest,
-                                  webrtc::EncodedImage& src,
+                                  const webrtc::EncodedImage& src,
                                   void* /*codecSpecificInfo*/) const;
     virtual webrtc::CodecSpecificInfo* CreateEncoderSpecificInfo() const
     {
@@ -149,10 +149,9 @@ public:
       _encodedBytes(0)
     {}
 
-    int32_t
-    Encoded(webrtc::EncodedImage& encodedImage,
-            const webrtc::CodecSpecificInfo* codecSpecificInfo = NULL,
-            const webrtc::RTPFragmentationHeader* fragmentation = NULL);
+    int32_t Encoded(const webrtc::EncodedImage& encodedImage,
+                    const webrtc::CodecSpecificInfo* codecSpecificInfo,
+                    const webrtc::RTPFragmentationHeader* fragmentation);
     size_t EncodedBytes();
 private:
     FILE*             _encodedFile;

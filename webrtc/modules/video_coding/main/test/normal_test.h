@@ -33,12 +33,8 @@ class VCMNTEncodeCompleteCallback : public webrtc::VCMPacketizationCallback
   // process encoded data received from the encoder,
   // pass stream to the VCMReceiver module
   virtual int32_t SendData(
-      webrtc::FrameType frameType,
       uint8_t payloadType,
-      uint32_t timeStamp,
-      int64_t capture_time_ms,
-      const uint8_t* payloadData,
-      size_t payloadSize,
+      const webrtc::EncodedImage& encoded_image,
       const webrtc::RTPFragmentationHeader& fragmentationHeader,
       const webrtc::RTPVideoHeader* videoHdr) OVERRIDE;
 

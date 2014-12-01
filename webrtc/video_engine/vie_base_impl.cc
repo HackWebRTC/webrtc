@@ -358,4 +358,19 @@ int ViEBaseImpl::CreateChannel(int& video_channel,  // NOLINT
   return 0;
 }
 
+void ViEBaseImpl::RegisterSendStatisticsProxy(
+    int channel,
+    SendStatisticsProxy* send_statistics_proxy) {
+  LOG_F(LS_VERBOSE) << "RegisterSendStatisticsProxy on channel " << channel;
+  ViEChannelManagerScoped cs(*(shared_data_.channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(channel);
+  if (!vie_channel) {
+    shared_data_.SetLastError(kViEBaseInvalidChannelId);
+    return;
+  }
+  ViEEncoder* vie_encoder = cs.Encoder(channel);
+  assert(vie_encoder);
+
+  vie_encoder->RegisterSendStatisticsProxy(send_statistics_proxy);
+}
 }  // namespace webrtc

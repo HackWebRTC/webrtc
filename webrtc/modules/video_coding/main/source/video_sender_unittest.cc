@@ -86,16 +86,12 @@ class PacketizationCallback : public VCMPacketizationCallback {
 
   virtual ~PacketizationCallback() {}
 
-  virtual int32_t SendData(FrameType frame_type,
-                           uint8_t payload_type,
-                           uint32_t timestamp,
-                           int64_t capture_time_ms,
-                           const uint8_t* payload_data,
-                           size_t payload_size,
+  virtual int32_t SendData(uint8_t payload_type,
+                           const EncodedImage& encoded_image,
                            const RTPFragmentationHeader& fragmentation_header,
                            const RTPVideoHeader* rtp_video_header) OVERRIDE {
     assert(rtp_video_header);
-    frame_data_.push_back(FrameData(payload_size, *rtp_video_header));
+    frame_data_.push_back(FrameData(encoded_image._length, *rtp_video_header));
     return 0;
   }
 

@@ -18,6 +18,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 #include "webrtc/modules/video_coding/main/test/test_callbacks.h"
 #include "webrtc/modules/video_coding/main/test/test_macros.h"
 #include "webrtc/modules/video_coding/main/test/test_util.h"
@@ -69,22 +70,17 @@ void VCMNTEncodeCompleteCallback::RegisterTransportCallback(
 {
 }
 
-int32_t
-VCMNTEncodeCompleteCallback::SendData(
-        FrameType frameType,
-        uint8_t  payloadType,
-        uint32_t timeStamp,
-        int64_t capture_time_ms,
-        const uint8_t* payloadData,
-        size_t payloadSize,
-        const RTPFragmentationHeader& /*fragmentationHeader*/,
-        const webrtc::RTPVideoHeader* videoHdr)
-
+int32_t VCMNTEncodeCompleteCallback::SendData(
+    uint8_t payloadType,
+    const webrtc::EncodedImage& encoded_image,
+    const RTPFragmentationHeader& /*fragmentationHeader*/,
+    const webrtc::RTPVideoHeader* videoHdr)
 {
   // will call the VCMReceiver input packet
-  _frameType = frameType;
+  _frameType = VCMEncodedFrame::ConvertFrameType(encoded_image._frameType);
   // writing encodedData into file
-  if (fwrite(payloadData, 1, payloadSize, _encodedFile) !=  payloadSize) {
+  if (fwrite(encoded_image._buffer, 1, encoded_image._length, _encodedFile) !=
+      encoded_image._length) {
     return -1;
   }
   WebRtcRTPHeader rtpInfo;
@@ -111,18 +107,19 @@ VCMNTEncodeCompleteCallback::SendData(
   rtpInfo.header.payloadType = payloadType;
   rtpInfo.header.sequenceNumber = _seqNo++;
   rtpInfo.header.ssrc = 0;
-  rtpInfo.header.timestamp = timeStamp;
-  rtpInfo.frameType = frameType;
+  rtpInfo.header.timestamp = encoded_image._timeStamp;
+  rtpInfo.frameType = _frameType;
   rtpInfo.type.Video.isFirstPacket = true;
   // Size should also be received from that table, since the payload type
   // defines the size.
 
-  _encodedBytes += payloadSize;
-  if (payloadSize < 20)
+  _encodedBytes += encoded_image._length;
+  if (encoded_image._length < 20)
   {
       _skipCnt++;
   }
-  _VCMReceiver->IncomingPacket(payloadData, payloadSize, rtpInfo);
+  _VCMReceiver->IncomingPacket(
+      encoded_image._buffer, encoded_image._length, rtpInfo);
   return 0;
 }
 void

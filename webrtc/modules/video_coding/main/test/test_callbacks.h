@@ -44,12 +44,8 @@ public:
     void RegisterTransportCallback(VCMPacketizationCallback* transport);
     // Process encoded data received from the encoder, pass stream to the
     // VCMReceiver module
-    virtual int32_t SendData(FrameType frameType,
-                             uint8_t payloadType,
-                             uint32_t timeStamp,
-                             int64_t capture_time_ms,
-                             const uint8_t* payloadData,
-                             size_t payloadSize,
+    virtual int32_t SendData(uint8_t payloadType,
+                             const EncodedImage& encoded_image,
                              const RTPFragmentationHeader& fragmentationHeader,
                              const RTPVideoHeader* videoHdr) OVERRIDE;
     // Register exisitng VCM. Currently - encode and decode under same module.
@@ -101,12 +97,8 @@ public:
     virtual ~VCMRTPEncodeCompleteCallback() {}
     // Process encoded data received from the encoder, pass stream to the
     // RTP module
-    virtual int32_t SendData(FrameType frameType,
-                             uint8_t payloadType,
-                             uint32_t timeStamp,
-                             int64_t capture_time_ms,
-                             const uint8_t* payloadData,
-                             size_t payloadSize,
+    virtual int32_t SendData(uint8_t payloadType,
+                             const EncodedImage& encoded_image,
                              const RTPFragmentationHeader& fragmentationHeader,
                              const RTPVideoHeader* videoHdr) OVERRIDE;
     // Return size of last encoded frame. Value good for one call

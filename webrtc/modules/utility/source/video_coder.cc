@@ -11,6 +11,7 @@
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
 
 #include "webrtc/modules/utility/source/video_coder.h"
+#include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 
 namespace webrtc {
 VideoCoder::VideoCoder() : _vcm(VideoCodingModule::Create()), _decodedVideo(0) {
@@ -108,25 +109,22 @@ int32_t VideoCoder::FrameToRender(I420VideoFrame& videoFrame)
 }
 
 int32_t VideoCoder::SendData(
-    const FrameType frameType,
-    const uint8_t  payloadType,
-    const uint32_t timeStamp,
-    int64_t capture_time_ms,
-    const uint8_t* payloadData,
-    size_t payloadSize,
+    const uint8_t payloadType,
+    const EncodedImage& encoded_image,
     const RTPFragmentationHeader& fragmentationHeader,
     const RTPVideoHeader* /*rtpVideoHdr*/)
 {
     // Store the data in _videoEncodedData which is a pointer to videoFrame in
     // Encode(..)
-    _videoEncodedData->VerifyAndAllocate(payloadSize);
-    _videoEncodedData->frameType = frameType;
+    _videoEncodedData->VerifyAndAllocate(encoded_image._length);
+    _videoEncodedData->frameType =
+        VCMEncodedFrame::ConvertFrameType(encoded_image._frameType);
     _videoEncodedData->payloadType = payloadType;
-    _videoEncodedData->timeStamp = timeStamp;
+    _videoEncodedData->timeStamp = encoded_image._timeStamp;
     _videoEncodedData->fragmentationHeader.CopyFrom(fragmentationHeader);
-    memcpy(_videoEncodedData->payloadData, payloadData,
-           sizeof(uint8_t) * payloadSize);
-    _videoEncodedData->payloadSize = payloadSize;
+    memcpy(_videoEncodedData->payloadData, encoded_image._buffer,
+           sizeof(uint8_t) * encoded_image._length);
+    _videoEncodedData->payloadSize = encoded_image._length;
     return 0;
 }
 }  // namespace webrtc

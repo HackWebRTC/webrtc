@@ -223,12 +223,10 @@ size_t VideoEncodeCompleteCallback::EncodedBytes()
     return _encodedBytes;
 }
 
-int32_t
-VideoEncodeCompleteCallback::Encoded(EncodedImage& encodedImage,
-                                     const webrtc::CodecSpecificInfo* codecSpecificInfo,
-                                     const webrtc::RTPFragmentationHeader*
-                                     fragmentation)
-{
+int32_t VideoEncodeCompleteCallback::Encoded(
+    const EncodedImage& encodedImage,
+    const webrtc::CodecSpecificInfo* codecSpecificInfo,
+    const webrtc::RTPFragmentationHeader* fragmentation) {
     _test.Encoded(encodedImage);
     VideoFrame *newBuffer = new VideoFrame();
     newBuffer->VerifyAndAllocate(encodedImage._size);
@@ -564,7 +562,7 @@ void NormalAsyncTest::CodecSpecific_InitBitrate()
 }
 
 void NormalAsyncTest::CopyEncodedImage(VideoFrame& dest,
-                                       EncodedImage& src,
+                                       const EncodedImage& src,
                                        void* /*codecSpecificInfo*/) const
 {
     dest.CopyFrame(src._length, src._buffer);

@@ -122,8 +122,14 @@ void FakeVideoSendStream::SwapFrame(webrtc::I420VideoFrame* frame) {
   ++num_swapped_frames_;
   last_frame_.SwapFrame(frame);
 }
-webrtc::VideoSendStream::Stats FakeVideoSendStream::GetStats() const {
-  return webrtc::VideoSendStream::Stats();
+
+void FakeVideoSendStream::SetStats(
+    const webrtc::VideoSendStream::Stats& stats) {
+  stats_ = stats;
+}
+
+webrtc::VideoSendStream::Stats FakeVideoSendStream::GetStats() {
+  return stats_;
 }
 
 bool FakeVideoSendStream::ReconfigureVideoEncoder(
@@ -1871,6 +1877,24 @@ TEST_F(WebRtcVideoChannel2Test, OnReadyToSendSignalsNetworkState) {
 
   channel_->OnReadyToSend(true);
   EXPECT_EQ(webrtc::Call::kNetworkUp, fake_call_->GetNetworkState());
+}
+
+TEST_F(WebRtcVideoChannel2Test, GetStatsReportsUpperResolution) {
+  FakeVideoSendStream* stream = AddSendStream();
+  webrtc::VideoSendStream::Stats stats;
+  stats.substreams[17].sent_width = 123;
+  stats.substreams[17].sent_height = 40;
+  stats.substreams[42].sent_width = 80;
+  stats.substreams[42].sent_height = 31;
+  stats.substreams[11].sent_width = 20;
+  stats.substreams[11].sent_height = 90;
+  stream->SetStats(stats);
+
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_EQ(1u, info.senders.size());
+  EXPECT_EQ(123, info.senders[0].send_frame_width);
+  EXPECT_EQ(90, info.senders[0].send_frame_height);
 }
 
 }  // namespace cricket

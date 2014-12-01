@@ -32,6 +32,7 @@
 #include "webrtc/test/configurable_frame_size_encoder.h"
 #include "webrtc/test/null_transport.h"
 #include "webrtc/test/testsupport/perf_test.h"
+#include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/transport_adapter.h"
 #include "webrtc/video_send_stream.h"
 
@@ -1679,6 +1680,86 @@ TEST_F(VideoSendStreamTest, UsesCallStreamBitratesAndCanReconfigureBitrates) {
 
     int num_initializations_;
     webrtc::Call* call_;
+  } test;
+
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, ReportsSentResolution) {
+  static const size_t kNumStreams = 3;
+  // Unusual resolutions to make sure that they are the ones being reported.
+  static const struct {
+    int width;
+    int height;
+  } kEncodedResolution[kNumStreams] = {
+      {241, 181}, {300, 121}, {121, 221}};
+  class ScreencastTargetBitrateTest : public test::SendTest,
+                                      public test::FakeEncoder {
+   public:
+    ScreencastTargetBitrateTest()
+        : SendTest(kDefaultTimeoutMs),
+          test::FakeEncoder(Clock::GetRealTimeClock()) {}
+
+   private:
+    virtual int32_t Encode(
+        const I420VideoFrame& input_image,
+        const CodecSpecificInfo* codecSpecificInfo,
+        const std::vector<VideoFrameType>* frame_types) OVERRIDE {
+      CodecSpecificInfo specifics;
+      memset(&specifics, 0, sizeof(specifics));
+      specifics.codecType = kVideoCodecGeneric;
+
+      uint8_t buffer[16] = {0};
+      EncodedImage encoded(buffer, sizeof(buffer), sizeof(buffer));
+      encoded._timeStamp = input_image.timestamp();
+      encoded.capture_time_ms_ = input_image.render_time_ms();
+
+      for (size_t i = 0; i < kNumStreams; ++i) {
+        specifics.codecSpecific.generic.simulcast_idx = static_cast<uint8_t>(i);
+        encoded._frameType = (*frame_types)[i];
+        encoded._encodedWidth = kEncodedResolution[i].width;
+        encoded._encodedHeight = kEncodedResolution[i].height;
+        assert(callback_ != NULL);
+        if (callback_->Encoded(encoded, &specifics, NULL) != 0)
+          return -1;
+      }
+
+      observation_complete_->Set();
+      return 0;
+    }
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) OVERRIDE {
+      send_config->encoder_settings.encoder = this;
+      EXPECT_EQ(kNumStreams, encoder_config->streams.size());
+    }
+
+    virtual size_t GetNumStreams() const OVERRIDE { return kNumStreams; }
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting for the encoder to send one frame.";
+      VideoSendStream::Stats stats = send_stream_->GetStats();
+
+      for (size_t i = 0; i < kNumStreams; ++i) {
+        ASSERT_TRUE(stats.substreams.find(kSendSsrcs[i]) !=
+                    stats.substreams.end())
+            << "No stats for SSRC: " << kSendSsrcs[i]
+            << ", stats should exist as soon as frames have been encoded.";
+        SsrcStats ssrc_stats = stats.substreams[kSendSsrcs[i]];
+        EXPECT_EQ(kEncodedResolution[i].width, ssrc_stats.sent_width);
+        EXPECT_EQ(kEncodedResolution[i].height, ssrc_stats.sent_height);
+      }
+    }
+
+    virtual void OnStreamsCreated(
+        VideoSendStream* send_stream,
+        const std::vector<VideoReceiveStream*>& receive_streams) OVERRIDE {
+      send_stream_ = send_stream;
+    }
+
+    VideoSendStream* send_stream_;
   } test;
 
   RunBaseTest(&test);

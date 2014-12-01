@@ -96,7 +96,7 @@ class LowRateStreamObserver : public test::DirectTransport,
                         size_t number_of_streams,
                         bool rtx_used);
 
-  virtual void SetSendStream(const VideoSendStream* send_stream);
+  virtual void SetSendStream(VideoSendStream* send_stream);
 
   virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
                                        unsigned int bitrate);
@@ -135,7 +135,7 @@ class LowRateStreamObserver : public test::DirectTransport,
   scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
 
   scoped_ptr<CriticalSectionWrapper> crit_;
-  const VideoSendStream* send_stream_ GUARDED_BY(crit_);
+  VideoSendStream* send_stream_ GUARDED_BY(crit_);
   FakeNetworkPipe::Config forward_transport_config_ GUARDED_BY(crit_);
   TestStates test_state_ GUARDED_BY(crit_);
   int64_t state_start_ms_ GUARDED_BY(crit_);

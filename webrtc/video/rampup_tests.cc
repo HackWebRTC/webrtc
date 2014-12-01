@@ -226,7 +226,7 @@ LowRateStreamObserver::LowRateStreamObserver(
   test::DirectTransport::SetReceiver(this);
 }
 
-void LowRateStreamObserver::SetSendStream(const VideoSendStream* send_stream) {
+void LowRateStreamObserver::SetSendStream(VideoSendStream* send_stream) {
   CriticalSectionScoped lock(crit_.get());
   send_stream_ = send_stream;
 }

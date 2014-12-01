@@ -25,7 +25,7 @@ class Vp8SequenceCoderEncodeCallback : public webrtc::EncodedImageCallback {
       : encoded_file_(encoded_file),
         encoded_bytes_(0) {}
   ~Vp8SequenceCoderEncodeCallback();
-  int Encoded(webrtc::EncodedImage& encoded_image,
+  int Encoded(const webrtc::EncodedImage& encoded_image,
               const webrtc::CodecSpecificInfo* codecSpecificInfo,
               const webrtc::RTPFragmentationHeader*);
   // Returns the encoded image.
@@ -42,7 +42,7 @@ Vp8SequenceCoderEncodeCallback::~Vp8SequenceCoderEncodeCallback() {
   encoded_image_._buffer = NULL;
 }
 int Vp8SequenceCoderEncodeCallback::Encoded(
-    webrtc::EncodedImage& encoded_image,
+    const webrtc::EncodedImage& encoded_image,
     const webrtc::CodecSpecificInfo* codecSpecificInfo,
     const webrtc::RTPFragmentationHeader* fragmentation) {
   if (encoded_image_._size < encoded_image._size) {

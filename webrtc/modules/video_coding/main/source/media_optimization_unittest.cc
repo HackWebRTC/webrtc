@@ -35,8 +35,11 @@ class TestMediaOptimization : public ::testing::Test {
     EXPECT_EQ(expect_frame_drop, frame_dropped);
     if (!frame_dropped) {
       size_t bytes_per_frame = bitrate_bps * frame_time_ms_ / (8 * 1000);
-      ASSERT_EQ(VCM_OK, media_opt_.UpdateWithEncodedData(
-          bytes_per_frame, next_timestamp_, kVideoFrameDelta));
+      EncodedImage encoded_image;
+      encoded_image._length = bytes_per_frame;
+      encoded_image._timeStamp = next_timestamp_;
+      encoded_image._frameType = kKeyFrame;
+      ASSERT_EQ(VCM_OK, media_opt_.UpdateWithEncodedData(encoded_image));
     }
     next_timestamp_ += frame_time_ms_ * kSampleRate / 1000;
     clock_.AdvanceTimeMilliseconds(frame_time_ms_);

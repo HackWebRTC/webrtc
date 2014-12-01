@@ -724,6 +724,8 @@ class FakeWebRtcVideoEngine
   }
   WEBRTC_STUB(GetVersion, (char version[1024]));
   WEBRTC_STUB(LastError, ());
+  WEBRTC_VOID_STUB(RegisterSendStatisticsProxy,
+                   (int, webrtc::SendStatisticsProxy*));
 
   // webrtc::ViECodec
   WEBRTC_FUNC_CONST(NumberOfCodecs, ()) {

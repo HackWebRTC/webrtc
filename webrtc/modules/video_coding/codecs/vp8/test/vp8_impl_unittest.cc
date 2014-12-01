@@ -33,7 +33,7 @@ class Vp8UnitTestEncodeCompleteCallback : public webrtc::EncodedImageCallback {
                                     void* decoderSpecificInfo)
      : encoded_video_frame_(frame),
        encode_complete_(false) {}
-  int Encoded(EncodedImage& encodedImage,
+  int Encoded(const EncodedImage& encodedImage,
               const CodecSpecificInfo* codecSpecificInfo,
               const RTPFragmentationHeader*);
   bool EncodeComplete();
@@ -46,7 +46,7 @@ class Vp8UnitTestEncodeCompleteCallback : public webrtc::EncodedImageCallback {
   VideoFrameType encoded_frame_type_;
 };
 
-int Vp8UnitTestEncodeCompleteCallback::Encoded(EncodedImage& encodedImage,
+int Vp8UnitTestEncodeCompleteCallback::Encoded(const EncodedImage& encodedImage,
     const CodecSpecificInfo* codecSpecificInfo,
     const RTPFragmentationHeader* fragmentation) {
   encoded_video_frame_->VerifyAndAllocate(encodedImage._size);

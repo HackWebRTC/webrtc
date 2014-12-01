@@ -22,7 +22,7 @@ EncodedFrameCallbackAdapter::EncodedFrameCallbackAdapter(
 EncodedFrameCallbackAdapter::~EncodedFrameCallbackAdapter() {}
 
 int32_t EncodedFrameCallbackAdapter::Encoded(
-    EncodedImage& encodedImage,
+    const EncodedImage& encodedImage,
     const CodecSpecificInfo* codecSpecificInfo,
     const RTPFragmentationHeader* fragmentation) {
   assert(observer_ != NULL);

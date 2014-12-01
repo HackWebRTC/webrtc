@@ -37,7 +37,7 @@ public:
     * Callback implementation - codec encode complete
     */
     int32_t Encoded(
-        EncodedImage& encodedImage,
+        const EncodedImage& encodedImage,
         const CodecSpecificInfo* codecSpecificInfo = NULL,
         const RTPFragmentationHeader* fragmentationHeader = NULL);
     /*

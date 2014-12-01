@@ -79,9 +79,9 @@ public:
                                    void* decoderSpecificInfo = NULL) :
       _encodedVideoBuffer(buffer),
       _encodeComplete(false) {}
-    int32_t Encoded(webrtc::EncodedImage& encodedImage,
+    int32_t Encoded(const webrtc::EncodedImage& encodedImage,
                     const webrtc::CodecSpecificInfo* codecSpecificInfo,
-                    const webrtc::RTPFragmentationHeader* fragmentation = NULL);
+                    const webrtc::RTPFragmentationHeader* fragmentation);
     bool EncodeComplete();
     // Note that this only makes sense if an encode has been completed
     webrtc::VideoFrameType EncodedFrameType() const;

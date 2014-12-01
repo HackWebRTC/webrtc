@@ -36,7 +36,6 @@ PacketManipulatorImpl::~PacketManipulatorImpl() {
 
 int PacketManipulatorImpl::ManipulatePackets(
     webrtc::EncodedImage* encoded_image) {
-  assert(encoded_image);
   int nbr_packets_dropped = 0;
   // There's no need to build a copy of the image data since viewing an
   // EncodedImage object, setting the length to a new lower value represents

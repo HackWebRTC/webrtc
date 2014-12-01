@@ -59,7 +59,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   virtual bool ReconfigureVideoEncoder(
       const VideoEncoderConfig& config) OVERRIDE;
 
-  virtual Stats GetStats() const OVERRIDE;
+  virtual Stats GetStats() OVERRIDE;
 
   bool DeliverRtcp(const uint8_t* packet, size_t length);
 

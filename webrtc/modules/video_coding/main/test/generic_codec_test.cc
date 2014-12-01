@@ -532,17 +532,11 @@ RTPSendCallback_SizeTest::AveragePayloadSize() const
     return 0;
 }
 
-int32_t
-VCMEncComplete_KeyReqTest::SendData(
-        FrameType frameType,
-        uint8_t payloadType,
-        uint32_t timeStamp,
-        int64_t capture_time_ms,
-        const uint8_t* payloadData,
-        size_t payloadSize,
-        const RTPFragmentationHeader& /*fragmentationHeader*/,
-        const webrtc::RTPVideoHeader* /*videoHdr*/)
-{
+int32_t VCMEncComplete_KeyReqTest::SendData(
+    uint8_t payloadType,
+    const webrtc::EncodedImage& encoded_image,
+    const RTPFragmentationHeader& /*fragmentationHeader*/,
+    const webrtc::RTPVideoHeader* /*videoHdr*/) {
     WebRtcRTPHeader rtpInfo;
     rtpInfo.header.markerBit = true; // end of frame
     rtpInfo.type.Video.codecHeader.VP8.InitRTPVideoHeaderVP8();
@@ -555,5 +549,6 @@ VCMEncComplete_KeyReqTest::SendData(
     _timeStamp += 3000;
     rtpInfo.type.Video.isFirstPacket = false;
     rtpInfo.frameType = kVideoFrameKey;
-    return _vcm.IncomingPacket(payloadData, payloadSize, rtpInfo);
+    return _vcm.IncomingPacket(encoded_image._buffer, encoded_image._length,
+                               rtpInfo);
 }

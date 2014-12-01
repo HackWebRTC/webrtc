@@ -124,7 +124,7 @@ VideoSendStream::VideoSendStream(
       external_codec_(NULL),
       channel_(-1),
       use_config_bitrate_(true),
-      stats_proxy_(config) {
+      stats_proxy_(Clock::GetRealTimeClock(), config) {
   // Duplicate assert checking of bitrate config. These should be checked in
   // Call but are added here for verbosity.
   assert(bitrate_config.min_bitrate_bps >= 0);
@@ -218,6 +218,7 @@ VideoSendStream::VideoSendStream(
     video_engine_base_->RegisterCpuOveruseObserver(channel_, overuse_observer);
 
   video_engine_base_->RegisterSendSideDelayObserver(channel_, &stats_proxy_);
+  video_engine_base_->RegisterSendStatisticsProxy(channel_, &stats_proxy_);
 
   image_process_ = ViEImageProcess::GetInterface(video_engine);
   image_process_->RegisterPreEncodeCallback(channel_,
@@ -442,7 +443,7 @@ bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return network_->ReceivedRTCPPacket(channel_, packet, length) == 0;
 }
 
-VideoSendStream::Stats VideoSendStream::GetStats() const {
+VideoSendStream::Stats VideoSendStream::GetStats() {
   return stats_proxy_.GetStats();
 }
 

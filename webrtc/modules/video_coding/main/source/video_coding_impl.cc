@@ -59,7 +59,7 @@ class EncodedImageCallbackWrapper : public EncodedImageCallback {
   }
 
   // TODO(andresp): Change to void as return value is ignored.
-  virtual int32_t Encoded(EncodedImage& encoded_image,
+  virtual int32_t Encoded(const EncodedImage& encoded_image,
                           const CodecSpecificInfo* codec_specific_info,
                           const RTPFragmentationHeader* fragmentation) {
     CriticalSectionScoped cs(cs_.get());

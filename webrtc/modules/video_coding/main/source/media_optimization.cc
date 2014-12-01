@@ -369,9 +369,10 @@ VCMFrameCount MediaOptimization::SentFrameCount() {
   return count;
 }
 
-int32_t MediaOptimization::UpdateWithEncodedData(size_t encoded_length,
-                                                 uint32_t timestamp,
-                                                 FrameType encoded_frame_type) {
+int32_t MediaOptimization::UpdateWithEncodedData(
+    const EncodedImage& encoded_image) {
+  size_t encoded_length = encoded_image._length;
+  uint32_t timestamp = encoded_image._timeStamp;
   CriticalSectionScoped lock(crit_sect_.get());
   const int64_t now_ms = clock_->TimeInMilliseconds();
   PurgeOldFrameSamples(now_ms);
@@ -389,7 +390,7 @@ int32_t MediaOptimization::UpdateWithEncodedData(size_t encoded_length,
   UpdateSentBitrate(now_ms);
   UpdateSentFramerate();
   if (encoded_length > 0) {
-    const bool delta_frame = (encoded_frame_type != kVideoFrameKey);
+    const bool delta_frame = encoded_image._frameType != kKeyFrame;
 
     frame_dropper_->Fill(encoded_length, delta_frame);
     if (max_payload_size_ > 0 && encoded_length > 0) {
@@ -405,7 +406,7 @@ int32_t MediaOptimization::UpdateWithEncodedData(size_t encoded_length,
 
       if (enable_qm_) {
         // Update quality select with encoded length.
-        qm_resolution_->UpdateEncodedSize(encoded_length, encoded_frame_type);
+        qm_resolution_->UpdateEncodedSize(encoded_length);
       }
     }
     if (!delta_frame && encoded_length > 0) {

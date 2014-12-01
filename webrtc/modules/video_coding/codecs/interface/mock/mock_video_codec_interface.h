@@ -21,7 +21,7 @@ namespace webrtc {
 
 class MockEncodedImageCallback : public EncodedImageCallback {
  public:
-  MOCK_METHOD3(Encoded, int32_t(EncodedImage& encodedImage,
+  MOCK_METHOD3(Encoded, int32_t(const EncodedImage& encodedImage,
                                 const CodecSpecificInfo* codecSpecificInfo,
                                 const RTPFragmentationHeader* fragmentation));
 };

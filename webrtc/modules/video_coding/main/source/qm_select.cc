@@ -239,8 +239,7 @@ void VCMQmResolution::UpdateCodecParameters(float frame_rate, uint16_t width,
 }
 
 // Update rate data after every encoded frame.
-void VCMQmResolution::UpdateEncodedSize(size_t encoded_size,
-                                        FrameType encoded_frame_type) {
+void VCMQmResolution::UpdateEncodedSize(size_t encoded_size) {
   frame_cnt_++;
   // Convert to Kbps.
   float encoded_size_kbits = 8.0f * static_cast<float>(encoded_size) / 1000.0f;

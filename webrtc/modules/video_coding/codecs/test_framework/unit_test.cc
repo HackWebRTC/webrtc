@@ -91,7 +91,7 @@ UnitTest::~UnitTest()
 }
 
 int32_t
-UnitTestEncodeCompleteCallback::Encoded(EncodedImage& encodedImage,
+UnitTestEncodeCompleteCallback::Encoded(const EncodedImage& encodedImage,
                                         const webrtc::CodecSpecificInfo* codecSpecificInfo,
                                         const webrtc::RTPFragmentationHeader*
                                         fragmentation)

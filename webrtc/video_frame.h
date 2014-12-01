@@ -207,6 +207,7 @@ class EncodedImage {
   // NTP time of the capture time in local timebase in milliseconds.
   int64_t ntp_time_ms_;
   int64_t capture_time_ms_;
+  // TODO(pbos): Use webrtc::FrameType directly (and remove VideoFrameType).
   VideoFrameType _frameType;
   uint8_t* _buffer;
   size_t _length;

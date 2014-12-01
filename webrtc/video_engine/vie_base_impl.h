@@ -67,6 +67,9 @@ class ViEBaseImpl
   int CreateChannel(int& video_channel, int original_channel,  // NOLINT
                     bool sender);
 
+  virtual void RegisterSendStatisticsProxy(
+      int channel,
+      SendStatisticsProxy* send_statistics_proxy) OVERRIDE;
   // ViEBaseImpl owns ViESharedData used by all interface implementations.
   ViESharedData shared_data_;
 };

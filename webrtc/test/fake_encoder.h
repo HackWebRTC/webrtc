@@ -42,7 +42,7 @@ class FakeEncoder : public VideoEncoder {
   virtual int32_t SetRates(uint32_t new_target_bitrate,
                            uint32_t framerate) OVERRIDE;
 
- private:
+ protected:
   Clock* const clock_;
   VideoCodec config_;
   EncodedImageCallback* callback_;
@@ -61,9 +61,9 @@ class FakeH264Encoder : public FakeEncoder, public EncodedImageCallback {
       EncodedImageCallback* callback) OVERRIDE;
 
   virtual int32_t Encoded(
-      EncodedImage& encodedImage,
-      const CodecSpecificInfo* codecSpecificInfo = NULL,
-      const RTPFragmentationHeader* fragments = NULL) OVERRIDE;
+      const EncodedImage& encodedImage,
+      const CodecSpecificInfo* codecSpecificInfo,
+      const RTPFragmentationHeader* fragments) OVERRIDE;
 
  private:
   EncodedImageCallback* callback_;

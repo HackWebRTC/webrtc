@@ -35,6 +35,7 @@ class PacedSender;
 class ProcessThread;
 class QMVideoSettingsCallback;
 class RtpRtcp;
+class SendStatisticsProxy;
 class ViEBitrateObserver;
 class ViEEffectFilter;
 class ViEEncoderObserver;
@@ -120,15 +121,10 @@ class ViEEncoder
   void SetSenderBufferingMode(int target_delay_ms);
 
   // Implements VCMPacketizationCallback.
-  virtual int32_t SendData(
-    FrameType frame_type,
-    uint8_t payload_type,
-    uint32_t time_stamp,
-    int64_t capture_time_ms,
-    const uint8_t* payload_data,
-    size_t payload_size,
-    const RTPFragmentationHeader& fragmentation_header,
-    const RTPVideoHeader* rtp_video_hdr) OVERRIDE;
+  virtual int32_t SendData(uint8_t payload_type,
+                           const EncodedImage& encoded_image,
+                           const RTPFragmentationHeader& fragmentation_header,
+                           const RTPVideoHeader* rtp_video_hdr) OVERRIDE;
 
   // Implements VideoProtectionCallback.
   virtual int ProtectionRequest(
@@ -176,6 +172,8 @@ class ViEEncoder
   void RegisterPostEncodeImageCallback(
         EncodedImageCallback* post_encode_callback);
   void DeRegisterPostEncodeImageCallback();
+
+  void RegisterSendStatisticsProxy(SendStatisticsProxy* send_statistics_proxy);
 
   int channel_id() const { return channel_id_; }
 
@@ -239,6 +237,8 @@ class ViEEncoder
   bool video_suspended_ GUARDED_BY(data_cs_);
   I420FrameCallback* pre_encode_callback_ GUARDED_BY(callback_cs_);
   const int64_t start_ms_;
+
+  SendStatisticsProxy* send_statistics_proxy_;
 };
 
 }  // namespace webrtc

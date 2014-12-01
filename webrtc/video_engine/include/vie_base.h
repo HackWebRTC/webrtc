@@ -25,6 +25,7 @@ namespace webrtc {
 
 class Config;
 class VoiceEngine;
+class SendStatisticsProxy;
 
 // CpuOveruseObserver is called when a system overuse is detected and
 // VideoEngine cannot keep up the encoding frequency.
@@ -237,6 +238,10 @@ class WEBRTC_DLLEXPORT ViEBase {
 
   // Returns the last VideoEngine error code.
   virtual int LastError() = 0;
+
+  virtual void RegisterSendStatisticsProxy(
+      int channel,
+      SendStatisticsProxy* send_statistics_proxy) = 0;
 
  protected:
   ViEBase() {}

@@ -1836,6 +1836,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
   info.framerate_input = stats.input_frame_rate;
   info.framerate_sent = stats.encode_frame_rate;
 
+  info.send_frame_width = 0;
+  info.send_frame_height = 0;
   for (std::map<uint32_t, webrtc::SsrcStats>::iterator it =
            stats.substreams.begin();
        it != stats.substreams.end();
@@ -1847,6 +1849,10 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
                        stream_stats.rtp_stats.padding_bytes;
     info.packets_sent += stream_stats.rtp_stats.packets;
     info.packets_lost += stream_stats.rtcp_stats.cumulative_lost;
+    if (stream_stats.sent_width > info.send_frame_width)
+      info.send_frame_width = stream_stats.sent_width;
+    if (stream_stats.sent_height > info.send_frame_height)
+      info.send_frame_height = stream_stats.sent_height;
   }
 
   if (!stats.substreams.empty()) {
@@ -1865,10 +1871,6 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
                         &last_captured_frame_format);
     info.input_frame_width = last_captured_frame_format.width;
     info.input_frame_height = last_captured_frame_format.height;
-    info.send_frame_width =
-        static_cast<int>(parameters_.encoder_config.streams.front().width);
-    info.send_frame_height =
-        static_cast<int>(parameters_.encoder_config.streams.front().height);
   }
 
   // TODO(pbos): Support or remove the following stats.

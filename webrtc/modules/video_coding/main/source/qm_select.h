@@ -216,8 +216,7 @@ class VCMQmResolution : public VCMQmMethod {
 
   // Update with actual bit rate (size of the latest encoded frame)
   // and frame type, after every encoded frame.
-  void UpdateEncodedSize(size_t encoded_size,
-                         FrameType encoded_frame_type);
+  void UpdateEncodedSize(size_t encoded_size);
 
   // Update with new target bitrate, actual encoder sent rate, frame_rate,
   // loss rate: every ~1 sec from SetTargetRates in media_opt.

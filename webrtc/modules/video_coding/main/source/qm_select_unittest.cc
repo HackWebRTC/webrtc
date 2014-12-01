@@ -1264,11 +1264,10 @@ void QmSelectTest::UpdateQmContentData(float motion_metric,
 
 void QmSelectTest::UpdateQmEncodedFrame(size_t* encoded_size,
                                         size_t num_updates) {
-  FrameType frame_type = kVideoFrameDelta;
   for (size_t i = 0; i < num_updates; ++i) {
     // Convert to bytes.
     size_t encoded_size_update = 1000 * encoded_size[i] / 8;
-    qm_resolution_->UpdateEncodedSize(encoded_size_update, frame_type);
+    qm_resolution_->UpdateEncodedSize(encoded_size_update);
   }
 }
 

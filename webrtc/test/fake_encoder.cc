@@ -139,7 +139,7 @@ int32_t FakeH264Encoder::RegisterEncodeCompleteCallback(
   return 0;
 }
 
-int32_t FakeH264Encoder::Encoded(EncodedImage& encoded_image,
+int32_t FakeH264Encoder::Encoded(const EncodedImage& encoded_image,
                                  const CodecSpecificInfo* codec_specific_info,
                                  const RTPFragmentationHeader* fragments) {
   const size_t kSpsSize = 8;

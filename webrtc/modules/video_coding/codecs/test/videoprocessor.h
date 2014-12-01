@@ -168,7 +168,7 @@ class VideoProcessorImpl : public VideoProcessor {
 
  private:
   // Invoked by the callback when a frame has completed encoding.
-  void FrameEncoded(webrtc::EncodedImage* encodedImage);
+  void FrameEncoded(const webrtc::EncodedImage& encodedImage);
   // Invoked by the callback when a frame has completed decoding.
   void FrameDecoded(const webrtc::I420VideoFrame& image);
   // Used for getting a 32-bit integer representing time
@@ -226,9 +226,9 @@ class VideoProcessorImpl : public VideoProcessor {
     explicit VideoProcessorEncodeCompleteCallback(VideoProcessorImpl* vp)
         : video_processor_(vp) {}
     virtual int32_t Encoded(
-        webrtc::EncodedImage& encoded_image,
-        const webrtc::CodecSpecificInfo* codec_specific_info = NULL,
-        const webrtc::RTPFragmentationHeader* fragmentation = NULL) OVERRIDE;
+        const webrtc::EncodedImage& encoded_image,
+        const webrtc::CodecSpecificInfo* codec_specific_info,
+        const webrtc::RTPFragmentationHeader* fragmentation) OVERRIDE;
 
    private:
     VideoProcessorImpl* video_processor_;

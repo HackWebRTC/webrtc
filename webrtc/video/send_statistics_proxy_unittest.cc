@@ -21,13 +21,14 @@ namespace webrtc {
 
 class SendStatisticsProxyTest : public ::testing::Test {
  public:
-  SendStatisticsProxyTest() : avg_delay_ms_(0), max_delay_ms_(0) {}
+  SendStatisticsProxyTest()
+      : fake_clock_(1234), avg_delay_ms_(0), max_delay_ms_(0) {}
   virtual ~SendStatisticsProxyTest() {}
 
  protected:
   virtual void SetUp() {
     statistics_proxy_.reset(
-        new SendStatisticsProxy(GetTestConfig()));
+        new SendStatisticsProxy(&fake_clock_, GetTestConfig()));
     config_ = GetTestConfig();
     expected_ = VideoSendStream::Stats();
   }
@@ -81,6 +82,7 @@ class SendStatisticsProxyTest : public ::testing::Test {
   }
 
   scoped_ptr<SendStatisticsProxy> statistics_proxy_;
+  SimulatedClock fake_clock_;
   VideoSendStream::Config config_;
   int avg_delay_ms_;
   int max_delay_ms_;
@@ -320,6 +322,53 @@ TEST_F(SendStatisticsProxyTest, NoSubstreams) {
 
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
   EXPECT_TRUE(stats.substreams.empty());
+}
+
+TEST_F(SendStatisticsProxyTest, EncodedResolutionTimesOut) {
+  static const int kEncodedWidth = 123;
+  static const int kEncodedHeight = 81;
+  EncodedImage encoded_image;
+  encoded_image._encodedWidth = kEncodedWidth;
+  encoded_image._encodedHeight = kEncodedHeight;
+
+  RTPVideoHeader rtp_video_header;
+
+  rtp_video_header.simulcastIdx = 0;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
+  rtp_video_header.simulcastIdx = 1;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
+
+  VideoSendStream::Stats stats = statistics_proxy_->GetStats();
+  EXPECT_EQ(kEncodedWidth, stats.substreams[config_.rtp.ssrcs[0]].sent_width);
+  EXPECT_EQ(kEncodedHeight, stats.substreams[config_.rtp.ssrcs[0]].sent_height);
+  EXPECT_EQ(kEncodedWidth, stats.substreams[config_.rtp.ssrcs[1]].sent_width);
+  EXPECT_EQ(kEncodedHeight, stats.substreams[config_.rtp.ssrcs[1]].sent_height);
+
+  // Forward almost to timeout, this should not have removed stats.
+  fake_clock_.AdvanceTimeMilliseconds(SendStatisticsProxy::kStatsTimeoutMs - 1);
+  stats = statistics_proxy_->GetStats();
+  EXPECT_EQ(kEncodedWidth, stats.substreams[config_.rtp.ssrcs[0]].sent_width);
+  EXPECT_EQ(kEncodedHeight, stats.substreams[config_.rtp.ssrcs[0]].sent_height);
+
+  // Update the first SSRC with bogus RTCP stats to make sure that encoded
+  // resolution still times out (no global timeout for all stats).
+  RtcpStatistics rtcp_statistics;
+  RtcpStatisticsCallback* rtcp_stats = statistics_proxy_.get();
+  rtcp_stats->StatisticsUpdated(rtcp_statistics, config_.rtp.ssrcs[0]);
+
+  // Report stats for second SSRC to make sure it's not outdated along with the
+  // first SSRC.
+  rtp_video_header.simulcastIdx = 1;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, &rtp_video_header);
+
+  // Forward 1 ms, reach timeout, substream 0 should have no resolution
+  // reported, but substream 1 should.
+  fake_clock_.AdvanceTimeMilliseconds(1);
+  stats = statistics_proxy_->GetStats();
+  EXPECT_EQ(0, stats.substreams[config_.rtp.ssrcs[0]].sent_width);
+  EXPECT_EQ(0, stats.substreams[config_.rtp.ssrcs[0]].sent_height);
+  EXPECT_EQ(kEncodedWidth, stats.substreams[config_.rtp.ssrcs[1]].sent_width);
+  EXPECT_EQ(kEncodedHeight, stats.substreams[config_.rtp.ssrcs[1]].sent_height);
 }
 
 }  // namespace webrtc

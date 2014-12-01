@@ -51,10 +51,11 @@ class FakeVideoSendStream : public webrtc::VideoSendStream,
   int GetNumberOfSwappedFrames() const;
   int GetLastWidth() const;
   int GetLastHeight() const;
+  void SetStats(const webrtc::VideoSendStream::Stats& stats);
 
  private:
   virtual void SwapFrame(webrtc::I420VideoFrame* frame) OVERRIDE;
-  virtual webrtc::VideoSendStream::Stats GetStats() const OVERRIDE;
+  virtual webrtc::VideoSendStream::Stats GetStats() OVERRIDE;
 
   virtual bool ReconfigureVideoEncoder(
       const webrtc::VideoEncoderConfig& config) OVERRIDE;
@@ -71,6 +72,7 @@ class FakeVideoSendStream : public webrtc::VideoSendStream,
   webrtc::VideoCodecVP8 vp8_settings_;
   int num_swapped_frames_;
   webrtc::I420VideoFrame last_frame_;
+  webrtc::VideoSendStream::Stats stats_;
 };
 
 class FakeVideoReceiveStream : public webrtc::VideoReceiveStream {

@@ -68,15 +68,11 @@ struct VCMFrameCount {
 // Callback class used for sending data ready to be packetized
 class VCMPacketizationCallback {
  public:
-  virtual int32_t SendData(
-      FrameType frameType,
-      uint8_t payloadType,
-      uint32_t timeStamp,
-      int64_t capture_time_ms,
-      const uint8_t* payloadData,
-      size_t payloadSize,
-      const RTPFragmentationHeader& fragmentationHeader,
-      const RTPVideoHeader* rtpVideoHdr) = 0;
+  virtual int32_t SendData(uint8_t payloadType,
+                           const EncodedImage& encoded_image,
+                           const RTPFragmentationHeader& fragmentationHeader,
+                           const RTPVideoHeader* rtpVideoHdr) = 0;
+
  protected:
   virtual ~VCMPacketizationCallback() {
   }

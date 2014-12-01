@@ -16,6 +16,7 @@
 
 #include "webrtc/common_video/interface/video_image.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/frame_callback.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
@@ -29,9 +30,9 @@
 #include "webrtc/system_wrappers/interface/metrics.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
+#include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_engine/include/vie_image_process.h"
-#include "webrtc/frame_callback.h"
 #include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
@@ -158,7 +159,8 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
     qm_callback_(NULL),
     video_suspended_(false),
     pre_encode_callback_(NULL),
-    start_ms_(Clock::GetRealTimeClock()->TimeInMilliseconds()) {
+    start_ms_(Clock::GetRealTimeClock()->TimeInMilliseconds()),
+    send_statistics_proxy_(NULL) {
   RtpRtcp::Configuration configuration;
   configuration.id = ViEModuleId(engine_id_, channel_id_);
   configuration.audio = false;  // Video.
@@ -724,23 +726,19 @@ void ViEEncoder::SetSenderBufferingMode(int target_delay_ms) {
 }
 
 int32_t ViEEncoder::SendData(
-    const FrameType frame_type,
     const uint8_t payload_type,
-    const uint32_t time_stamp,
-    int64_t capture_time_ms,
-    const uint8_t* payload_data,
-    const size_t payload_size,
+    const EncodedImage& encoded_image,
     const webrtc::RTPFragmentationHeader& fragmentation_header,
     const RTPVideoHeader* rtp_video_hdr) {
+  if (send_statistics_proxy_ != NULL) {
+    send_statistics_proxy_->OnSendEncodedImage(encoded_image, rtp_video_hdr);
+  }
   // New encoded data, hand over to the rtp module.
-  return default_rtp_rtcp_->SendOutgoingData(frame_type,
-                                             payload_type,
-                                             time_stamp,
-                                             capture_time_ms,
-                                             payload_data,
-                                             payload_size,
-                                             &fragmentation_header,
-                                             rtp_video_hdr);
+  return default_rtp_rtcp_->SendOutgoingData(
+      VCMEncodedFrame::ConvertFrameType(encoded_image._frameType), payload_type,
+      encoded_image._timeStamp, encoded_image.capture_time_ms_,
+      encoded_image._buffer, encoded_image._length, &fragmentation_header,
+      rtp_video_hdr);
 }
 
 int32_t ViEEncoder::ProtectionRequest(
@@ -985,6 +983,11 @@ void ViEEncoder::RegisterPostEncodeImageCallback(
 
 void ViEEncoder::DeRegisterPostEncodeImageCallback() {
   vcm_.RegisterPostEncodeImageCallback(NULL);
+}
+
+void ViEEncoder::RegisterSendStatisticsProxy(
+    SendStatisticsProxy* send_statistics_proxy) {
+  send_statistics_proxy_ = send_statistics_proxy;
 }
 
 QMVideoSettingsCallback::QMVideoSettingsCallback(VideoProcessingModule* vpm)
