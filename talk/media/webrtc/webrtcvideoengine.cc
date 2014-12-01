@@ -3901,10 +3901,12 @@ bool WebRtcVideoMediaChannel::SetSendParams(
   // others expect behavior from the adapter different than what it
   // actually does.  We should fix the tests and remove this block.
   VideoFormat max = send_channel->adapt_format();
+  size_t max_width = static_cast<size_t>(max.width);
+  size_t max_height = static_cast<size_t>(max.height);
   if ((!frame.screencast &&
-       (frame.width > max.width || frame.height > max.height))) {
-    frame.width = max.width;
-    frame.height = max.height;
+       (frame.width > max_width || frame.height > max_height))) {
+    frame.width = max_width;
+    frame.height = max_height;
   }
 
   webrtc::VideoCodec codec;
