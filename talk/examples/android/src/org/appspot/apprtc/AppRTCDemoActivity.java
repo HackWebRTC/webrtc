@@ -91,6 +91,8 @@ public class AppRTCDemoActivity extends Activity
   private ImageButton videoScalingButton;
   private boolean commandLineRun;
   private int runTimeMs;
+  private int startBitrate;
+  private boolean hwCodec;
   private boolean iceConnected;
   private boolean isError;
 
@@ -208,8 +210,10 @@ public class AppRTCDemoActivity extends Activity
         ConnectActivity.EXTRA_LOOPBACK, false);
     commandLineRun = intent.getBooleanExtra(
         ConnectActivity.EXTRA_CMDLINE, false);
-    runTimeMs = intent.getIntExtra(
-        ConnectActivity.EXTRA_RUNTIME, 0);
+    runTimeMs = intent.getIntExtra(ConnectActivity.EXTRA_RUNTIME, 0);
+    startBitrate = intent.getIntExtra(ConnectActivity.EXTRA_BITRATE, 0);
+    hwCodec = intent.getBooleanExtra(ConnectActivity.EXTRA_HWCODEC, true);
+
     if (url != null) {
       String room = url.getQueryParameter("r");
       if (loopback || (room != null && !room.equals(""))) {
@@ -452,11 +456,11 @@ public class AppRTCDemoActivity extends Activity
     }
     signalingParameters = params;
     abortUnless(PeerConnectionFactory.initializeAndroidGlobals(
-      this, true, true, VideoRendererGui.getEGLContext()),
+      this, true, true, hwCodec, VideoRendererGui.getEGLContext()),
         "Failed to initializeAndroidGlobals");
     logAndToast("Creating peer connection...");
-    pc = new PeerConnectionClient(
-        this, localRender, remoteRender, signalingParameters, this);
+    pc = new PeerConnectionClient( this, localRender, remoteRender,
+        signalingParameters, this, startBitrate);
     if (pc.isHDVideo()) {
       setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
     } else {

@@ -18,7 +18,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:textStyle="bold"
-        android:textColor="#800000FF"
+        android:textColor="#C000FF00"
         android:textSize="12dp"
         android:layout_margin="8dp"/>
     <TextView

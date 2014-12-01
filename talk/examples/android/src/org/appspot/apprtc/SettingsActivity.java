@@ -38,6 +38,9 @@ public class SettingsActivity extends Activity
   private SettingsFragment settingsFragment;
   private String keyprefResolution;
   private String keyprefFps;
+  private String keyprefStartBitrateType;
+  private String keyprefStartBitrateValue;
+  private String keyprefHwCodec;
   private String keyprefCpuUsageDetection;
 
   @Override
@@ -45,6 +48,9 @@ public class SettingsActivity extends Activity
     super.onCreate(savedInstanceState);
     keyprefResolution = getString(R.string.pref_resolution_key);
     keyprefFps = getString(R.string.pref_fps_key);
+    keyprefStartBitrateType = getString(R.string.pref_startbitrate_key);
+    keyprefStartBitrateValue = getString(R.string.pref_startbitratevalue_key);
+    keyprefHwCodec = getString(R.string.pref_hwcodec_key);
     keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
 
     // Display the fragment as the main content.
@@ -63,6 +69,10 @@ public class SettingsActivity extends Activity
     sharedPreferences.registerOnSharedPreferenceChangeListener(this);
     updateSummary(sharedPreferences, keyprefResolution);
     updateSummary(sharedPreferences, keyprefFps);
+    updateSummary(sharedPreferences, keyprefStartBitrateType);
+    updateSummaryBitrate(sharedPreferences, keyprefStartBitrateValue);
+    setBitrateEnable(sharedPreferences);
+    updateSummaryB(sharedPreferences, keyprefHwCodec);
     updateSummaryB(sharedPreferences, keyprefCpuUsageDetection);
   }
 
@@ -77,10 +87,17 @@ public class SettingsActivity extends Activity
   @Override
   public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
       String key) {
-    if (key.equals(keyprefResolution) || key.equals(keyprefFps)) {
+    if (key.equals(keyprefResolution) || key.equals(keyprefFps) ||
+        key.equals(keyprefStartBitrateType)) {
       updateSummary(sharedPreferences, key);
-    } else if (key.equals(keyprefCpuUsageDetection)) {
+    } else if (key.equals(keyprefStartBitrateValue)) {
+      updateSummaryBitrate(sharedPreferences, key);
+    } else if (key.equals(keyprefCpuUsageDetection) ||
+        key.equals(keyprefHwCodec)) {
       updateSummaryB(sharedPreferences, key);
+    }
+    if (key.equals(keyprefStartBitrateType)) {
+      setBitrateEnable(sharedPreferences);
     }
   }
 
@@ -90,11 +107,30 @@ public class SettingsActivity extends Activity
     updatedPref.setSummary(sharedPreferences.getString(key, ""));
   }
 
+  private void updateSummaryBitrate(
+      SharedPreferences sharedPreferences, String key) {
+    Preference updatedPref = settingsFragment.findPreference(key);
+    updatedPref.setSummary(sharedPreferences.getString(key, "") + " kbps");
+  }
+
   private void updateSummaryB(SharedPreferences sharedPreferences, String key) {
     Preference updatedPref = settingsFragment.findPreference(key);
     updatedPref.setSummary(sharedPreferences.getBoolean(key, true)
-        ? getString(R.string.pref_cpu_usage_detection_on)
-        : getString(R.string.pref_cpu_usage_detection_off));
+        ? getString(R.string.pref_value_enabled)
+        : getString(R.string.pref_value_disabled));
+  }
+
+  private void setBitrateEnable(SharedPreferences sharedPreferences) {
+    Preference bitratePreferenceValue =
+        settingsFragment.findPreference(keyprefStartBitrateValue);
+    String bitrateTypeDefault = getString(R.string.pref_startbitrate_default);
+    String bitrateType = sharedPreferences.getString(
+        keyprefStartBitrateType, bitrateTypeDefault);
+    if (bitrateType.equals(bitrateTypeDefault)) {
+      bitratePreferenceValue.setEnabled(false);
+    } else {
+      bitratePreferenceValue.setEnabled(true);
+    }
   }
 
 }

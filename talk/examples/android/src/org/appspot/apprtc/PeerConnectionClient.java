@@ -73,6 +73,7 @@ public class PeerConnectionClient {
   private MediaConstraints sdpMediaConstraints;
   private MediaConstraints videoConstraints;
   private PeerConnectionEvents events;
+  private int startBitrate;
   private boolean isInitiator;
   private boolean useFrontFacingCamera = true;
   private SessionDescription localSdp = null; // either offer or answer SDP
@@ -83,11 +84,13 @@ public class PeerConnectionClient {
       VideoRenderer.Callbacks localRender,
       VideoRenderer.Callbacks remoteRender,
       SignalingParameters signalingParameters,
-      PeerConnectionEvents events) {
+      PeerConnectionEvents events,
+      int startBitrate) {
     this.activity = activity;
     this.localRender = localRender;
     this.remoteRender = remoteRender;
     this.events = events;
+    this.startBitrate = startBitrate;
     isInitiator = signalingParameters.initiator;
     queuedRemoteCandidates = new LinkedList<IceCandidate>();
 
@@ -200,10 +203,14 @@ public class PeerConnectionClient {
     activity.runOnUiThread(new Runnable() {
       public void run() {
         if (pc != null) {
-          SessionDescription sdpISAC = new SessionDescription(
-              sdp.type, preferISAC(sdp.description));
-          Log.d(TAG, "Set remote SDP");
-          pc.setRemoteDescription(sdpObserver, sdpISAC);
+          String sdpDescription = preferISAC(sdp.description);
+          if (startBitrate > 0) {
+            sdpDescription = setStartBitrate(sdpDescription, startBitrate);
+          }
+          Log.d(TAG, "Set remote SDP.");
+          SessionDescription sdpRemote = new SessionDescription(
+              sdp.type, sdpDescription);
+          pc.setRemoteDescription(sdpObserver, sdpRemote);
         }
       }
     });
@@ -333,6 +340,39 @@ public class PeerConnectionClient {
     if (!condition) {
       reportError(msg);
     }
+  }
+
+  private static String setStartBitrate(
+      String sdpDescription, int bitrateKbps) {
+    String[] lines = sdpDescription.split("\r\n");
+    int lineIndex = -1;
+    String vp8RtpMap = null;
+    Pattern vp8Pattern =
+        Pattern.compile("^a=rtpmap:(\\d+) VP8/90000[\r]?$");
+    for (int i = 0; i < lines.length; i++) {
+      Matcher vp8Matcher = vp8Pattern.matcher(lines[i]);
+      if (vp8Matcher.matches()) {
+        vp8RtpMap = vp8Matcher.group(1);
+        lineIndex = i;
+        break;
+      }
+    }
+    if (vp8RtpMap == null) {
+      Log.e(TAG, "No rtpmap for VP8 codec");
+      return sdpDescription;
+    }
+    Log.d(TAG, "Found rtpmap " + vp8RtpMap + " at " + lines[lineIndex]);
+    StringBuilder newSdpDescription = new StringBuilder();
+    for (int i = 0; i < lines.length; i++) {
+      newSdpDescription.append(lines[i]).append("\r\n");
+      if (i == lineIndex) {
+        String bitrateSet = "a=fmtp:" + vp8RtpMap +
+            " x-google-start-bitrate=" + bitrateKbps;
+        Log.d(TAG, "Add remote SDP line: " + bitrateSet);
+        newSdpDescription.append(bitrateSet).append("\r\n");
+      }
+    }
+    return newSdpDescription.toString();
   }
 
   // Mangle SDP to prefer ISAC/16000 over any other audio codec.

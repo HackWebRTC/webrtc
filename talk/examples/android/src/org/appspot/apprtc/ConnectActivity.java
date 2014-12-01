@@ -65,6 +65,8 @@ public class ConnectActivity extends Activity {
   public static final String EXTRA_LOOPBACK = "org.appspot.apprtc.LOOPBACK";
   public static final String EXTRA_CMDLINE = "org.appspot.apprtc.CMDLINE";
   public static final String EXTRA_RUNTIME = "org.appspot.apprtc.RUNTIME";
+  public static final String EXTRA_BITRATE = "org.appspot.apprtc.BITRATE";
+  public static final String EXTRA_HWCODEC = "org.appspot.apprtc.HWCODEC";
   private static final String TAG = "ConnectActivity";
   private final boolean USE_WEBSOCKETS = false;
   private final String APPRTC_SERVER = "https://apprtc.appspot.com";
@@ -80,6 +82,9 @@ public class ConnectActivity extends Activity {
   private SharedPreferences sharedPref;
   private String keyprefResolution;
   private String keyprefFps;
+  private String keyprefBitrateType;
+  private String keyprefBitrateValue;
+  private String keyprefHwCodec;
   private String keyprefCpuUsageDetection;
   private String keyprefRoom;
   private String keyprefRoomList;
@@ -97,6 +102,9 @@ public class ConnectActivity extends Activity {
     sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
     keyprefResolution = getString(R.string.pref_resolution_key);
     keyprefFps = getString(R.string.pref_fps_key);
+    keyprefBitrateType = getString(R.string.pref_startbitrate_key);
+    keyprefBitrateValue = getString(R.string.pref_startbitratevalue_key);
+    keyprefHwCodec = getString(R.string.pref_hwcodec_key);
     keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
     keyprefRoom = getString(R.string.pref_room_key);
     keyprefRoomList = getString(R.string.pref_room_list_key);
@@ -142,7 +150,7 @@ public class ConnectActivity extends Activity {
       if (loopback && !url.contains("debug=loopback")) {
         url += "/?debug=loopback";
       }
-      connectToRoom(url, loopback);
+      connectToRoom(url, loopback, 0, true);
       return;
     }
   }
@@ -234,9 +242,12 @@ public class ConnectActivity extends Activity {
         }
         url += "/?r=" + roomName;
       }
+      // Check HW codec flag.
+      boolean hwCodec = sharedPref.getBoolean(keyprefHwCodec,
+          Boolean.valueOf(getString(R.string.pref_hwcodec_default)));
+      // Add video resolution constraints.
       String parametersResolution = null;
       String parametersFps = null;
-      // Add video resolution constraints.
       String resolution = sharedPref.getString(keyprefResolution,
           getString(R.string.pref_resolution_default));
       String[] dimensions = resolution.split("[ x]+");
@@ -280,9 +291,19 @@ public class ConnectActivity extends Activity {
           url += parametersFps;
         }
       } else {
-        if (MediaCodecVideoEncoder.isPlatformSupported()) {
+        if (hwCodec && MediaCodecVideoEncoder.isPlatformSupported()) {
           url += "&hd=true";
         }
+      }
+      // Get start bitrate.
+      int startBitrate = 0;
+      String bitrateTypeDefault = getString(R.string.pref_startbitrate_default);
+      String bitrateType = sharedPref.getString(
+          keyprefBitrateType, bitrateTypeDefault);
+      if (!bitrateType.equals(bitrateTypeDefault)) {
+        String bitrateValue = sharedPref.getString(keyprefBitrateValue,
+            getString(R.string.pref_startbitratevalue_default));
+        startBitrate = Integer.parseInt(bitrateValue);
       }
       // Test if CpuOveruseDetection should be disabled. By default is on.
       boolean cpuOveruseDetection = sharedPref.getBoolean(
@@ -293,11 +314,12 @@ public class ConnectActivity extends Activity {
         url += "&googCpuOveruseDetection=false";
       }
       // TODO(kjellander): Add support for custom parameters to the URL.
-      connectToRoom(url, loopback);
+      connectToRoom(url, loopback, startBitrate, hwCodec);
     }
   };
 
-  private void connectToRoom(String roomUrl, boolean loopback) {
+  private void connectToRoom(
+      String roomUrl, boolean loopback, int startBitrate, boolean hwCodec) {
     if (validateUrl(roomUrl)) {
       Uri url = Uri.parse(roomUrl);
       Intent intent = new Intent(this, AppRTCDemoActivity.class);
@@ -305,6 +327,8 @@ public class ConnectActivity extends Activity {
       intent.putExtra(EXTRA_LOOPBACK, loopback);
       intent.putExtra(EXTRA_CMDLINE, commandLineRun);
       intent.putExtra(EXTRA_RUNTIME, runTimeMs);
+      intent.putExtra(EXTRA_BITRATE, startBitrate);
+      intent.putExtra(EXTRA_HWCODEC, hwCodec);
       startActivityForResult(intent, CONNECTION_REQUEST);
     }
   }

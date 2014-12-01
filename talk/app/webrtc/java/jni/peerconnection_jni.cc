@@ -163,6 +163,7 @@ static pthread_key_t g_jni_ptr;
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
 // Set in PeerConnectionFactory_initializeAndroidGlobals().
 static bool factory_static_initialized = false;
+static bool vp8_hw_acceleration_enabled = true;
 #endif
 
 
@@ -2814,9 +2815,10 @@ JOW(jlong, PeerConnectionFactory_nativeCreateObserver)(
 JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
     JNIEnv* jni, jclass, jobject context,
     jboolean initialize_audio, jboolean initialize_video,
-    jobject render_egl_context) {
+    jboolean vp8_hw_acceleration, jobject render_egl_context) {
   CHECK(g_jvm) << "JNI_OnLoad failed to run?";
   bool failure = false;
+  vp8_hw_acceleration_enabled = vp8_hw_acceleration;
   if (!factory_static_initialized) {
     if (initialize_video) {
       failure |= webrtc::SetCaptureAndroidVM(g_jvm, context);
@@ -2876,8 +2878,10 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
   scoped_ptr<cricket::WebRtcVideoEncoderFactory> encoder_factory;
   scoped_ptr<cricket::WebRtcVideoDecoderFactory> decoder_factory;
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
-  encoder_factory.reset(new MediaCodecVideoEncoderFactory());
-  decoder_factory.reset(new MediaCodecVideoDecoderFactory());
+  if (vp8_hw_acceleration_enabled) {
+    encoder_factory.reset(new MediaCodecVideoEncoderFactory());
+    decoder_factory.reset(new MediaCodecVideoDecoderFactory());
+  }
 #endif
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       webrtc::CreatePeerConnectionFactory(worker_thread,

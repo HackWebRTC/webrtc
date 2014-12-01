@@ -41,6 +41,24 @@
     <string name="pref_cpu_usage_detection_title">CPU overuse detection.</string>
     <string name="pref_cpu_usage_detection_dlg">Adapt transmission to CPU status.</string>
     <string name="pref_cpu_usage_detection_default">true</string>
-    <string name="pref_cpu_usage_detection_on">Enabled</string>
-    <string name="pref_cpu_usage_detection_off">Disabled</string>
+
+    <string name="pref_startbitrate_key">startbitrate_preference</string>
+    <string name="pref_startbitrate_title">Start bitrate setting.</string>
+    <string name="pref_startbitrate_dlg">Start bitrate setting.</string>
+    <string name="pref_startbitrate_default">Default</string>
+
+    <string name="pref_startbitratevalue_key">startbitratevalue_preference</string>
+    <string name="pref_startbitratevalue_title">Video encoder start bitrate.</string>
+    <string name="pref_startbitratevalue_dlg">Enter video encoder start bitrate in kbps.</string>
+    <string name="pref_startbitratevalue_default">1000</string>
+
+    <string name="pref_hwcodec_key">hwcodec_preference</string>
+    <string name="pref_hwcodec_title">VP8 hardware acceleration.</string>
+    <string name="pref_hwcodec_dlg">Use VP8 VP8 hardware accelerated codec (if available).</string>
+    <string name="pref_hwcodec_default">true</string>
+
+    <string name="pref_value_enabled">Enabled</string>
+    <string name="pref_value_disabled">Disabled</string>
+
+
 </resources>

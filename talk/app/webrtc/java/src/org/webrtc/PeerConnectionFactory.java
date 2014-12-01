@@ -51,7 +51,7 @@ public class PeerConnectionFactory {
   // decoding thread.
   public static native boolean initializeAndroidGlobals(
       Object context, boolean initializeAudio, boolean initializeVideo,
-      Object renderEGLContext);
+      boolean vp8HwAcceleration, Object renderEGLContext);
 
   public PeerConnectionFactory() {
     nativeFactory = nativeCreatePeerConnectionFactory();

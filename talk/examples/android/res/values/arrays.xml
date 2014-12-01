@@ -19,4 +19,10 @@
         <item>30 fps</item>
         <item>15 fps</item>
     </string-array>
+
+    <string-array name="startBitrate">
+        <item>Default</item>
+        <item>Manual</item>
+    </string-array>
+
 </resources>

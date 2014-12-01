@@ -7,6 +7,7 @@
         android:dialogTitle="@string/pref_resolution_dlg"
         android:entries="@array/videoResolutions"
         android:entryValues="@array/videoResolutionsValues" />
+
     <ListPreference
         android:key="@string/pref_fps_key"
         android:title="@string/pref_fps_title"
@@ -14,10 +15,33 @@
         android:dialogTitle="@string/pref_fps_dlg"
         android:entries="@array/cameraFps"
         android:entryValues="@array/cameraFps" />
+
+    <ListPreference
+        android:key="@string/pref_startbitrate_key"
+        android:title="@string/pref_startbitrate_title"
+        android:defaultValue="@string/pref_startbitrate_default"
+        android:dialogTitle="@string/pref_startbitrate_dlg"
+        android:entries="@array/startBitrate"
+        android:entryValues="@array/startBitrate" />
+
+    <EditTextPreference
+        android:key="@string/pref_startbitratevalue_key"
+        android:title="@string/pref_startbitratevalue_title"
+        android:inputType="number"
+        android:defaultValue="@string/pref_startbitratevalue_default"
+        android:dialogTitle="@string/pref_startbitratevalue_dlg" />
+
+    <CheckBoxPreference
+        android:key="@string/pref_hwcodec_key"
+        android:title="@string/pref_hwcodec_title"
+        android:dialogTitle="@string/pref_hwcodec_dlg"
+        android:defaultValue="@string/pref_hwcodec_default" />
+
     <CheckBoxPreference
         android:key="@string/pref_cpu_usage_detection_key"
         android:title="@string/pref_cpu_usage_detection_title"
         android:dialogTitle="@string/pref_cpu_usage_detection_dlg"
         android:defaultValue="@string/pref_cpu_usage_detection_default" />
+
 
 </PreferenceScreen>
