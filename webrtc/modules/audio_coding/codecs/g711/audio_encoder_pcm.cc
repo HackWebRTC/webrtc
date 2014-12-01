@@ -57,7 +57,7 @@ bool AudioEncoderPcm::Encode(uint32_t timestamp,
                              size_t max_encoded_bytes,
                              uint8_t* encoded,
                              size_t* encoded_bytes,
-                             uint32_t* encoded_timestamp) {
+                             EncodedInfo* info) {
   const int num_samples = sample_rate_hz() / 100 * num_channels();
   if (speech_buffer_.empty()) {
     first_timestamp_in_buffer_ = timestamp;
@@ -72,7 +72,7 @@ bool AudioEncoderPcm::Encode(uint32_t timestamp,
   CHECK_EQ(speech_buffer_.size(), static_cast<size_t>(full_frame_samples_));
   int16_t ret = EncodeCall(&speech_buffer_[0], full_frame_samples_, encoded);
   speech_buffer_.clear();
-  *encoded_timestamp = first_timestamp_in_buffer_;
+  info->encoded_timestamp = first_timestamp_in_buffer_;
   if (ret < 0)
     return false;
   *encoded_bytes = static_cast<size_t>(ret);

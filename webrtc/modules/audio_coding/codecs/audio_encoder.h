@@ -22,6 +22,10 @@ namespace webrtc {
 // codec type must have an implementation of this class.
 class AudioEncoder {
  public:
+  struct EncodedInfo {
+    uint32_t encoded_timestamp;
+  };
+
   virtual ~AudioEncoder() {}
 
   // Accepts one 10 ms block of input audio (i.e., sample_rate_hz() / 100 *
@@ -37,7 +41,7 @@ class AudioEncoder {
               size_t max_encoded_bytes,
               uint8_t* encoded,
               size_t* encoded_bytes,
-              uint32_t* encoded_timestamp) {
+              EncodedInfo* info) {
     CHECK_EQ(num_samples_per_channel,
              static_cast<size_t>(sample_rate_hz() / 100));
     bool ret = Encode(timestamp,
@@ -45,7 +49,7 @@ class AudioEncoder {
                       max_encoded_bytes,
                       encoded,
                       encoded_bytes,
-                      encoded_timestamp);
+                      info);
     CHECK_LE(*encoded_bytes, max_encoded_bytes);
     return ret;
   }
@@ -68,7 +72,7 @@ class AudioEncoder {
                       size_t max_encoded_bytes,
                       uint8_t* encoded,
                       size_t* encoded_bytes,
-                      uint32_t* encoded_timestamp) = 0;
+                      EncodedInfo* info) = 0;
 };
 
 }  // namespace webrtc

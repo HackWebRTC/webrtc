@@ -40,7 +40,7 @@ class AudioEncoderOpus : public AudioEncoder {
                       size_t max_encoded_bytes,
                       uint8_t* encoded,
                       size_t* encoded_bytes,
-                      uint32_t* encoded_timestamp) OVERRIDE;
+                      EncodedInfo* info) OVERRIDE;
 
  private:
   const int num_10ms_frames_per_packet_;

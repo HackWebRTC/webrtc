@@ -40,7 +40,7 @@ class AudioEncoderPcm : public AudioEncoder {
                       size_t max_encoded_bytes,
                       uint8_t* encoded,
                       size_t* encoded_bytes,
-                      uint32_t* encoded_timestamp) OVERRIDE;
+                      EncodedInfo* info) OVERRIDE;
 
   virtual int16_t EncodeCall(const int16_t* audio,
                              size_t input_len,

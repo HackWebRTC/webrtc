@@ -102,7 +102,6 @@ class AudioDecoderTest : public ::testing::Test {
         data_length_(0),
         encoded_bytes_(0),
         channels_(1),
-        output_timestamp_(0),
         decoder_(NULL) {}
 
   virtual ~AudioDecoderTest() {}
@@ -152,7 +151,7 @@ class AudioDecoderTest : public ::testing::Test {
 
       EXPECT_TRUE(audio_encoder_->Encode(
           0, interleaved_input.get(), audio_encoder_->sample_rate_hz() / 100,
-          data_length_ * 2, output, &enc_len_bytes, &output_timestamp_));
+          data_length_ * 2, output, &enc_len_bytes, &encoded_info_));
     }
     return static_cast<int>(enc_len_bytes);
   }
@@ -263,7 +262,7 @@ class AudioDecoderTest : public ::testing::Test {
   size_t data_length_;
   size_t encoded_bytes_;
   size_t channels_;
-  uint32_t output_timestamp_;
+  AudioEncoder::EncodedInfo encoded_info_;
   AudioDecoder* decoder_;
   scoped_ptr<AudioEncoder> audio_encoder_;
 };

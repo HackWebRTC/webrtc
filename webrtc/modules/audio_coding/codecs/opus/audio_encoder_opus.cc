@@ -76,7 +76,7 @@ bool AudioEncoderOpus::Encode(uint32_t timestamp,
                               size_t max_encoded_bytes,
                               uint8_t* encoded,
                               size_t* encoded_bytes,
-                              uint32_t* encoded_timestamp) {
+                              EncodedInfo* info) {
   if (input_buffer_.empty())
     first_timestamp_in_buffer_ = timestamp;
   input_buffer_.insert(input_buffer_.end(), audio,
@@ -97,7 +97,7 @@ bool AudioEncoderOpus::Encode(uint32_t timestamp,
   if (r < 0)
     return false;
   *encoded_bytes = r;
-  *encoded_timestamp = first_timestamp_in_buffer_;
+  info->encoded_timestamp = first_timestamp_in_buffer_;
   return true;
 }
 
