@@ -3216,6 +3216,10 @@ bool WebRtcVideoMediaChannel::SendFrame(
   if (!send_channel) {
     return false;
   }
+
+  bool changed;
+  send_channel->SetLastCapturedFrameInfo(frame, is_screencast, &changed);
+
   if (!send_codec_) {
     // Send codec has not been set. No reason to process the frame any further.
     return false;
@@ -3229,8 +3233,6 @@ bool WebRtcVideoMediaChannel::SendFrame(
     return true;
   }
 
-  bool changed;
-  send_channel->SetLastCapturedFrameInfo(frame, is_screencast, &changed);
   if (changed) {
     // If the last captured frame info changed, then calling
     // SetSendParams will update to the latest resolution.
@@ -3877,20 +3879,32 @@ bool WebRtcVideoMediaChannel::SetSendParams(
   MaybeRegisterExternalEncoder(send_channel, send_params.codec);
 
   CapturedFrameInfo frame;
-  send_channel->last_captured_frame_info().Get(&frame);
+  if (!send_channel->last_captured_frame_info().Get(&frame)) {
+    // When we don't have a frame yet, configure the encoder with a
+    // 2x2 frame (the smallest possible I420 frame).  This gives us
+    // low memory usage but also makes it so configuration errors are
+    // discovered at the time we apply the settings rather than when
+    // we get the first frame (waiting for the first frame to know
+    // that you gave a bad codec parameter could make debugging hard).
+    frame.width = 2;
+    frame.height = 2;
+
+    // TODO(pthatcher): Evaluate the risk of not setting up an encoder
+    // at all until we have a frame.  Once we feel it's worth the
+    // risk, we can do something like this:
+    // send_channel->set_send_params(send_params);
+    // return true;
+  }
 
   // TODO(pthatcher): This checking of the max height and width is
   // only needed because some unit tests bypass the VideoAdapter, and
   // others expect behavior from the adapter different than what it
   // actually does.  We should fix the tests and remove this block.
   VideoFormat max = send_channel->adapt_format();
-  size_t max_width = static_cast<size_t>(max.width);
-  size_t max_height = static_cast<size_t>(max.height);
-  if (!send_channel->last_captured_frame_info().IsSet() ||
-      (!frame.screencast &&
-       (frame.width > max_width || frame.height > max_height))) {
-    frame.width = max_width;
-    frame.height = max_height;
+  if ((!frame.screencast &&
+       (frame.width > max.width || frame.height > max.height))) {
+    frame.width = max.width;
+    frame.height = max.height;
   }
 
   webrtc::VideoCodec codec;
