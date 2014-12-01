@@ -6,3 +6,4 @@ TRY_ON_UPLOAD: False
 TRYSERVER_SVN_URL: svn://svn.chromium.org/chrome-try/try-webrtc
 TRYSERVER_ROOT: src
 PROJECT: webrtc
+FORCE_HTTPS_COMMIT_URL: True
