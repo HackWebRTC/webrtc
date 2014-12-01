@@ -140,9 +140,8 @@ NetworkManagerBase::NetworkManagerBase() : ipv6_enabled_(true) {
 }
 
 NetworkManagerBase::~NetworkManagerBase() {
-  for (NetworkMap::iterator i = networks_map_.begin();
-       i != networks_map_.end(); ++i) {
-    delete i->second;
+  for (const auto& kv : networks_map_) {
+    delete kv.second;
   }
 }
 
@@ -167,49 +166,44 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
     *changed = true;
 
   // First, build a set of network-keys to the ipaddresses.
-  for (uint32 i = 0; i < list.size(); ++i) {
+  for (Network* network : list) {
     bool might_add_to_merged_list = false;
-    std::string key = MakeNetworkKey(list[i]->name(),
-                                     list[i]->prefix(),
-                                     list[i]->prefix_length());
+    std::string key = MakeNetworkKey(network->name(),
+                                     network->prefix(),
+                                     network->prefix_length());
     if (consolidated_address_list.find(key) ==
         consolidated_address_list.end()) {
       AddressList addrlist;
-      addrlist.net = list[i];
+      addrlist.net = network;
       consolidated_address_list[key] = addrlist;
       might_add_to_merged_list = true;
     }
-    const std::vector<InterfaceAddress>& addresses = list[i]->GetIPs();
+    const std::vector<InterfaceAddress>& addresses = network->GetIPs();
     AddressList& current_list = consolidated_address_list[key];
-    for (std::vector<InterfaceAddress>::const_iterator it = addresses.begin();
-         it != addresses.end();
-         ++it) {
-      current_list.ips.push_back(*it);
+    for (const InterfaceAddress& address : addresses) {
+      current_list.ips.push_back(address);
     }
     if (!might_add_to_merged_list) {
-      delete list[i];
+      delete network;
     }
   }
 
   // Next, look for existing network objects to re-use.
-  for (std::map<std::string, AddressList>::iterator it =
-         consolidated_address_list.begin();
-       it != consolidated_address_list.end();
-       ++it) {
-    const std::string& key = it->first;
-    Network* net = it->second.net;
-    NetworkMap::iterator existing = networks_map_.find(key);
+  for (const auto& kv : consolidated_address_list) {
+    const std::string& key = kv.first;
+    Network* net = kv.second.net;
+    auto existing = networks_map_.find(key);
     if (existing == networks_map_.end()) {
       // This network is new. Place it in the network map.
       merged_list.push_back(net);
       networks_map_[key] = net;
       // Also, we might have accumulated IPAddresses from the first
       // step, set it here.
-      net->SetIPs(it->second.ips, true);
+      net->SetIPs(kv.second.ips, true);
       *changed = true;
     } else {
       // This network exists in the map already. Reset its IP addresses.
-      *changed = existing->second->SetIPs(it->second.ips, *changed);
+      *changed = existing->second->SetIPs(kv.second.ips, *changed);
       merged_list.push_back(existing->second);
       if (existing->second != net) {
         delete net;
@@ -229,9 +223,8 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
     // requirements, we will just assign a preference value starting with 127,
     // in decreasing order.
     int pref = kHighestNetworkPreference;
-    for (NetworkList::const_iterator iter = networks_.begin();
-         iter != networks_.end(); ++iter) {
-      (*iter)->set_preference(pref);
+    for (Network* network : networks_) {
+      network->set_preference(pref);
       if (pref > 0) {
         --pref;
       } else {
@@ -305,7 +298,7 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
     prefix = TruncateIP(ip, prefix_length);
     std::string key = MakeNetworkKey(std::string(cursor->ifa_name),
                                      prefix, prefix_length);
-    NetworkMap::iterator existing_network = current_networks.find(key);
+    auto existing_network = current_networks.find(key);
     if (existing_network == current_networks.end()) {
       scoped_ptr<Network> network(new Network(cursor->ifa_name,
                                               cursor->ifa_name,
@@ -451,7 +444,7 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
         IPAddress prefix;
         int prefix_length = GetPrefix(prefixlist, ip, &prefix);
         std::string key = MakeNetworkKey(name, prefix, prefix_length);
-        NetworkMap::iterator existing_network = current_networks.find(key);
+        auto existing_network = current_networks.find(key);
         if (existing_network == current_networks.end()) {
           scoped_ptr<Network> network(new Network(name,
                                                   description,
@@ -508,8 +501,8 @@ bool IsDefaultRoute(const std::string& network_name) {
 
 bool BasicNetworkManager::IsIgnoredNetwork(const Network& network) const {
   // Ignore networks on the explicit ignore list.
-  for (size_t i = 0; i < network_ignore_list_.size(); ++i) {
-    if (network.name() == network_ignore_list_[i]) {
+  for (const std::string& ignored_name : network_ignore_list_) {
+    if (network.name() == ignored_name) {
       return true;
     }
   }
@@ -608,8 +601,7 @@ void BasicNetworkManager::DumpNetworks(bool include_ignored) {
   NetworkList list;
   CreateNetworks(include_ignored, &list);
   LOG(LS_INFO) << "NetworkManager detected " << list.size() << " networks:";
-  for (size_t i = 0; i < list.size(); ++i) {
-    const Network* network = list[i];
+  for (const Network* network : list) {
     if (!network->ignored() || include_ignored) {
       LOG(LS_INFO) << network->ToString() << ": "
                    << network->description()
@@ -618,8 +610,8 @@ void BasicNetworkManager::DumpNetworks(bool include_ignored) {
   }
   // Release the network list created previously.
   // Do this in a seperated for loop for better readability.
-  for (size_t i = 0; i < list.size(); ++i) {
-    delete list[i];
+  for (Network* network : list) {
+    delete network;
   }
 }
 
@@ -642,22 +634,18 @@ Network::Network(const std::string& name, const std::string& desc,
 // Sets the addresses of this network. Returns true if the address set changed.
 // Change detection is short circuited if the changed argument is true.
 bool Network::SetIPs(const std::vector<InterfaceAddress>& ips, bool changed) {
-  changed = changed || ips.size() != ips_.size();
   // Detect changes with a nested loop; n-squared but we expect on the order
   // of 2-3 addresses per network.
-  for (std::vector<InterfaceAddress>::const_iterator it = ips.begin();
-      !changed && it != ips.end();
-      ++it) {
-    bool found = false;
-    for (std::vector<InterfaceAddress>::iterator inner_it = ips_.begin();
-         !found && inner_it != ips_.end();
-         ++inner_it) {
-      if (*it == *inner_it) {
-        found = true;
+  changed = changed || ips.size() != ips_.size();
+  if (!changed) {
+    for (const InterfaceAddress& ip : ips) {
+      if (std::find(ips_.begin(), ips_.end(), ip) == ips_.end()) {
+        changed = true;
+        break;
       }
     }
-    changed = !found;
   }
+
   ips_ = ips;
   return changed;
 }
@@ -674,21 +662,21 @@ IPAddress Network::GetBestIP() const {
 
   InterfaceAddress selected_ip, ula_ip;
 
-  for (size_t i = 0; i < ips_.size(); i++) {
+  for (const InterfaceAddress& ip : ips_) {
     // Ignore any address which has been deprecated already.
-    if (ips_[i].ipv6_flags() & IPV6_ADDRESS_FLAG_DEPRECATED)
+    if (ip.ipv6_flags() & IPV6_ADDRESS_FLAG_DEPRECATED)
       continue;
 
     // ULA address should only be returned when we have no other
     // global IP.
-    if (IPIsULA(static_cast<const IPAddress&>(ips_[i]))) {
-      ula_ip = ips_[i];
+    if (IPIsULA(static_cast<const IPAddress&>(ip))) {
+      ula_ip = ip;
       continue;
     }
-    selected_ip = ips_[i];
+    selected_ip = ip;
 
     // Search could stop once a temporary non-deprecated one is found.
-    if (ips_[i].ipv6_flags() & IPV6_ADDRESS_FLAG_TEMPORARY)
+    if (ip.ipv6_flags() & IPV6_ADDRESS_FLAG_TEMPORARY)
       break;
   }
 
