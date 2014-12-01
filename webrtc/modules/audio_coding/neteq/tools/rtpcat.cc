@@ -21,7 +21,8 @@ using webrtc::test::RtpFileWriter;
 
 int main(int argc, char* argv[]) {
   if (argc < 3) {
-    printf("Usage: RTPcat in1.rtp int2.rtp [...] out.rtp\n");
+    printf("Concatenates multiple rtpdump files into one.\n");
+    printf("Usage: rtpcat in1.rtp int2.rtp [...] out.rtp\n");
     exit(1);
   }
 
