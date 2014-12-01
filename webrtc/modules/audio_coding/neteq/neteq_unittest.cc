@@ -1385,7 +1385,7 @@ void NetEqDecodingTest::DuplicateCng() {
 
   const int algorithmic_delay_samples = std::max(
       algorithmic_delay_ms_ * kSampleRateKhz, 5 * kSampleRateKhz / 8);
-  // Insert three speech packet. Three are needed to get the frame length
+  // Insert three speech packets. Three are needed to get the frame length
   // correct.
   int out_len;
   int num_channels;
@@ -1462,4 +1462,50 @@ uint32_t NetEqDecodingTest::PlayoutTimestamp() {
 }
 
 TEST_F(NetEqDecodingTest, DiscardDuplicateCng) { DuplicateCng(); }
+
+TEST_F(NetEqDecodingTest, CngFirst) {
+  uint16_t seq_no = 0;
+  uint32_t timestamp = 0;
+  const int kFrameSizeMs = 10;
+  const int kSampleRateKhz = 16;
+  const int kSamples = kFrameSizeMs * kSampleRateKhz;
+  const int kPayloadBytes = kSamples * 2;
+  const int kCngPeriodMs = 100;
+  const int kCngPeriodSamples = kCngPeriodMs * kSampleRateKhz;
+  size_t payload_len;
+
+  uint8_t payload[kPayloadBytes] = {0};
+  WebRtcRTPHeader rtp_info;
+
+  PopulateCng(seq_no, timestamp, &rtp_info, payload, &payload_len);
+  ASSERT_EQ(NetEq::kOK,
+            neteq_->InsertPacket(rtp_info, payload, payload_len, 0));
+  ++seq_no;
+  timestamp += kCngPeriodSamples;
+
+  // Pull audio once and make sure CNG is played.
+  int out_len;
+  int num_channels;
+  NetEqOutputType type;
+  ASSERT_EQ(0, neteq_->GetAudio(kMaxBlockSize, out_data_, &out_len,
+                                &num_channels, &type));
+  ASSERT_EQ(kBlockSize16kHz, out_len);
+  EXPECT_EQ(kOutputCNG, type);
+
+  // Insert some speech packets.
+  for (int i = 0; i < 3; ++i) {
+    PopulateRtpInfo(seq_no, timestamp, &rtp_info);
+    ASSERT_EQ(0, neteq_->InsertPacket(rtp_info, payload, kPayloadBytes, 0));
+    ++seq_no;
+    timestamp += kSamples;
+
+    // Pull audio once.
+    ASSERT_EQ(0, neteq_->GetAudio(kMaxBlockSize, out_data_, &out_len,
+                                  &num_channels, &type));
+    ASSERT_EQ(kBlockSize16kHz, out_len);
+  }
+  // Verify speech output.
+  EXPECT_EQ(kOutputNormal, type);
+}
+
 }  // namespace webrtc
