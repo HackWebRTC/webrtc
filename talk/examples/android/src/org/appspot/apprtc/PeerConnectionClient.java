@@ -77,7 +77,7 @@ public class PeerConnectionClient {
   private boolean isInitiator;
   private boolean useFrontFacingCamera = true;
   private SessionDescription localSdp = null; // either offer or answer SDP
-  private MediaStream videoMediaStream = null;
+  private MediaStream mediaStream = null;
 
   public PeerConnectionClient(
       Activity activity,
@@ -116,19 +116,17 @@ public class PeerConnectionClient {
     //     EnumSet.of(Logging.TraceLevel.TRACE_ALL),
     //     Logging.Severity.LS_SENSITIVE);
 
+    mediaStream = factory.createLocalMediaStream("ARDAMS");
     if (videoConstraints != null) {
-      videoMediaStream = factory.createLocalMediaStream("ARDAMSVideo");
-      videoMediaStream.addTrack(createVideoTrack(useFrontFacingCamera));
-      pc.addStream(videoMediaStream);
+      mediaStream.addTrack(createVideoTrack(useFrontFacingCamera));
     }
 
     if (signalingParameters.audioConstraints != null) {
-      MediaStream lMS = factory.createLocalMediaStream("ARDAMSAudio");
-      lMS.addTrack(factory.createAudioTrack(
+      mediaStream.addTrack(factory.createAudioTrack(
           AUDIO_TRACK_ID,
           factory.createAudioSource(signalingParameters.audioConstraints)));
-      pc.addStream(lMS);
     }
+    pc.addStream(mediaStream);
   }
 
   public boolean isHDVideo() {
@@ -443,9 +441,9 @@ public class PeerConnectionClient {
       return;
     }
 
-    pc.removeStream(videoMediaStream);
-    VideoTrack currentTrack = videoMediaStream.videoTracks.get(0);
-    videoMediaStream.removeTrack(currentTrack);
+    pc.removeStream(mediaStream);
+    VideoTrack currentTrack = mediaStream.videoTracks.get(0);
+    mediaStream.removeTrack(currentTrack);
 
     String trackId = currentTrack.id();
     // On Android, there can only be one camera open at the time and we
@@ -456,8 +454,8 @@ public class PeerConnectionClient {
 
     useFrontFacingCamera = !useFrontFacingCamera;
     VideoTrack newTrack = createVideoTrack(useFrontFacingCamera);
-    videoMediaStream.addTrack(newTrack);
-    pc.addStream(videoMediaStream);
+    mediaStream.addTrack(newTrack);
+    pc.addStream(mediaStream);
 
     SessionDescription remoteDesc = pc.getRemoteDescription();
     if (localSdp == null || remoteDesc == null) {
