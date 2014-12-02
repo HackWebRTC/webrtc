@@ -25,6 +25,7 @@ class AudioEncoderOpus : public AudioEncoder {
     bool IsOk() const;
     int frame_size_ms;
     int num_channels;
+    int payload_type;
   };
 
   explicit AudioEncoderOpus(const Config& config);
@@ -45,6 +46,7 @@ class AudioEncoderOpus : public AudioEncoder {
  private:
   const int num_10ms_frames_per_packet_;
   const int num_channels_;
+  const int payload_type_;
   const int samples_per_10ms_frame_;
   std::vector<int16_t> input_buffer_;
   OpusEncInst* inst_;

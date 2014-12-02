@@ -53,6 +53,7 @@ class AudioEncoderG722 : public AudioEncoder {
   };
 
   const int num_channels_;
+  const int payload_type_;
   const int num_10ms_frames_per_packet_;
   int num_10ms_frames_buffered_;
   uint32_t first_timestamp_in_buffer_;

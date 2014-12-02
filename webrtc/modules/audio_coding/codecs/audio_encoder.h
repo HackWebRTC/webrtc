@@ -24,6 +24,7 @@ class AudioEncoder {
  public:
   struct EncodedInfo {
     uint32_t encoded_timestamp;
+    int payload_type;
   };
 
   virtual ~AudioEncoder() {}

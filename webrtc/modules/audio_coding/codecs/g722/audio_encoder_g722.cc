@@ -33,6 +33,7 @@ AudioEncoderG722::EncoderState::~EncoderState() {
 
 AudioEncoderG722::AudioEncoderG722(const Config& config)
     : num_channels_(config.num_channels),
+      payload_type_(config.payload_type),
       num_10ms_frames_per_packet_(config.frame_size_ms / 10),
       num_10ms_frames_buffered_(0),
       first_timestamp_in_buffer_(0),
@@ -113,6 +114,7 @@ bool AudioEncoderG722::Encode(uint32_t timestamp,
   }
   *encoded_bytes = samples_per_channel / 2 * num_channels_;
   info->encoded_timestamp = first_timestamp_in_buffer_;
+  info->payload_type = payload_type_;
   return true;
 }
 

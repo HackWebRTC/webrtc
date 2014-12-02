@@ -29,6 +29,7 @@ int16_t NumSamplesPerFrame(int num_channels,
 
 AudioEncoderPcm::AudioEncoderPcm(const Config& config)
     : num_channels_(config.num_channels),
+      payload_type_(config.payload_type),
       num_10ms_frames_per_packet_(config.frame_size_ms / 10),
       full_frame_samples_(NumSamplesPerFrame(num_channels_,
                                              config.frame_size_ms,
@@ -73,6 +74,7 @@ bool AudioEncoderPcm::Encode(uint32_t timestamp,
   int16_t ret = EncodeCall(&speech_buffer_[0], full_frame_samples_, encoded);
   speech_buffer_.clear();
   info->encoded_timestamp = first_timestamp_in_buffer_;
+  info->payload_type = payload_type_;
   if (ret < 0)
     return false;
   *encoded_bytes = static_cast<size_t>(ret);

@@ -102,6 +102,7 @@ class AudioDecoderTest : public ::testing::Test {
         data_length_(0),
         encoded_bytes_(0),
         channels_(1),
+        payload_type_(17),
         decoder_(NULL) {}
 
   virtual ~AudioDecoderTest() {}
@@ -153,6 +154,7 @@ class AudioDecoderTest : public ::testing::Test {
           0, interleaved_input.get(), audio_encoder_->sample_rate_hz() / 100,
           data_length_ * 2, output, &enc_len_bytes, &encoded_info_));
     }
+    EXPECT_EQ(payload_type_, encoded_info_.payload_type);
     return static_cast<int>(enc_len_bytes);
   }
 
@@ -262,6 +264,7 @@ class AudioDecoderTest : public ::testing::Test {
   size_t data_length_;
   size_t encoded_bytes_;
   size_t channels_;
+  const int payload_type_;
   AudioEncoder::EncodedInfo encoded_info_;
   AudioDecoder* decoder_;
   scoped_ptr<AudioEncoder> audio_encoder_;
@@ -275,6 +278,7 @@ class AudioDecoderPcmUTest : public AudioDecoderTest {
     decoder_ = new AudioDecoderPcmU;
     AudioEncoderPcmU::Config config;
     config.frame_size_ms = static_cast<int>(frame_size_ / 8);
+    config.payload_type = payload_type_;
     audio_encoder_.reset(new AudioEncoderPcmU(config));
   }
 };
@@ -287,6 +291,7 @@ class AudioDecoderPcmATest : public AudioDecoderTest {
     decoder_ = new AudioDecoderPcmA;
     AudioEncoderPcmA::Config config;
     config.frame_size_ms = static_cast<int>(frame_size_ / 8);
+    config.payload_type = payload_type_;
     audio_encoder_.reset(new AudioEncoderPcmA(config));
   }
 };
@@ -485,6 +490,7 @@ class AudioDecoderG722Test : public AudioDecoderTest {
     assert(decoder_);
     AudioEncoderG722::Config config;
     config.frame_size_ms = 10;
+    config.payload_type = payload_type_;
     config.num_channels = 1;
     audio_encoder_.reset(new AudioEncoderG722(config));
   }
@@ -501,6 +507,7 @@ class AudioDecoderG722StereoTest : public AudioDecoderTest {
     assert(decoder_);
     AudioEncoderG722::Config config;
     config.frame_size_ms = 10;
+    config.payload_type = payload_type_;
     config.num_channels = 2;
     audio_encoder_.reset(new AudioEncoderG722(config));
   }
@@ -586,6 +593,7 @@ class AudioDecoderOpusTest : public AudioDecoderTest {
     decoder_ = new AudioDecoderOpus(1);
     AudioEncoderOpus::Config config;
     config.frame_size_ms = static_cast<int>(frame_size_) / 48;
+    config.payload_type = payload_type_;
     audio_encoder_.reset(new AudioEncoderOpus(config));
   }
 };
@@ -599,6 +607,7 @@ class AudioDecoderOpusStereoTest : public AudioDecoderOpusTest {
     AudioEncoderOpus::Config config;
     config.frame_size_ms = static_cast<int>(frame_size_) / 48;
     config.num_channels = 2;
+    config.payload_type = payload_type_;
     audio_encoder_.reset(new AudioEncoderOpus(config));
   }
 };

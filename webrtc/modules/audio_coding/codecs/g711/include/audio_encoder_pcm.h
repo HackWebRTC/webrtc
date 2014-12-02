@@ -20,10 +20,14 @@ namespace webrtc {
 class AudioEncoderPcm : public AudioEncoder {
  public:
   struct Config {
-    Config() : frame_size_ms(20), num_channels(1) {}
-
+   public:
     int frame_size_ms;
     int num_channels;
+    int payload_type;
+
+   protected:
+    explicit Config(int pt)
+        : frame_size_ms(20), num_channels(1), payload_type(pt) {}
   };
 
   explicit AudioEncoderPcm(const Config& config);
@@ -49,6 +53,7 @@ class AudioEncoderPcm : public AudioEncoder {
  private:
   static const int kSampleRateHz = 8000;
   const int num_channels_;
+  const int payload_type_;
   const int num_10ms_frames_per_packet_;
   const int16_t full_frame_samples_;
   std::vector<int16_t> speech_buffer_;
@@ -57,6 +62,10 @@ class AudioEncoderPcm : public AudioEncoder {
 
 class AudioEncoderPcmA : public AudioEncoderPcm {
  public:
+  struct Config : public AudioEncoderPcm::Config {
+    Config() : AudioEncoderPcm::Config(8) {}
+  };
+
   explicit AudioEncoderPcmA(const Config& config) : AudioEncoderPcm(config) {}
 
  protected:
@@ -67,6 +76,10 @@ class AudioEncoderPcmA : public AudioEncoderPcm {
 
 class AudioEncoderPcmU : public AudioEncoderPcm {
  public:
+  struct Config : public AudioEncoderPcm::Config {
+    Config() : AudioEncoderPcm::Config(0) {}
+  };
+
   explicit AudioEncoderPcmU(const Config& config) : AudioEncoderPcm(config) {}
 
  protected:
