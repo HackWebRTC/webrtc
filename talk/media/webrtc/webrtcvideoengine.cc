@@ -3881,13 +3881,13 @@ bool WebRtcVideoMediaChannel::SetSendParams(
   CapturedFrameInfo frame;
   if (!send_channel->last_captured_frame_info().Get(&frame)) {
     // When we don't have a frame yet, configure the encoder with a
-    // 2x2 frame (the smallest possible I420 frame).  This gives us
-    // low memory usage but also makes it so configuration errors are
-    // discovered at the time we apply the settings rather than when
-    // we get the first frame (waiting for the first frame to know
+    // QCIF (176x144) frame (to ensure HW encoder can be initialized).
+    // This gives us low memory usage but also makes it so configuration
+    // errors are discovered at the time we apply the settings rather than
+    // when we get the first frame (waiting for the first frame to know
     // that you gave a bad codec parameter could make debugging hard).
-    frame.width = 2;
-    frame.height = 2;
+    frame.width = 176;
+    frame.height = 144;
 
     // TODO(pthatcher): Evaluate the risk of not setting up an encoder
     // at all until we have a frame.  Once we feel it's worth the

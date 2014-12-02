@@ -385,7 +385,7 @@ TEST_F(WebRtcVideoEngineTestFake, SetSendCodecsBeforeFrameRegistersTinyFormat) {
   int channel_num = vie_.GetLastChannel();
   std::vector<cricket::VideoCodec> codecs(engine_.codecs());
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
-  VerifyVP8SendCodec(channel_num, 2, 2);
+  VerifyVP8SendCodec(channel_num, 176, 144);
 }
 
 // Test that ViE Channel doesn't call SetSendCodec again if same codec is tried
