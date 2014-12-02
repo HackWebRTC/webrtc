@@ -642,7 +642,8 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLossVP9) {
 // low to high to medium. Check that quality and encoder response to the new
 // target rate/per-frame bandwidth (for each rate update) is within limits.
 // One key frame (first frame only) in sequence.
-TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
+// Disabled: See https://code.google.com/p/webrtc/issues/detail?id=4059.
+TEST_F(VideoProcessorIntegrationTest, DISABLED_ProcessNoLossChangeBitRateVP9) {
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 200, 30, 0);
@@ -675,8 +676,9 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
 // for the rate control metrics can be lower. One key frame (first frame only).
 // Note: quality after update should be higher but we currently compute quality
 // metrics averaged over whole sequence run.
+// Disabled: See https://code.google.com/p/webrtc/issues/detail?id=4059.
 TEST_F(VideoProcessorIntegrationTest,
-       ProcessNoLossChangeFrameRateFrameDropVP9) {
+       DISABLED_ProcessNoLossChangeFrameRateFrameDropVP9) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
