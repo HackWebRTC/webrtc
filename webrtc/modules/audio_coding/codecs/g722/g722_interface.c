@@ -46,9 +46,9 @@ int16_t WebRtcG722_FreeEncoder(G722EncInst *G722enc_inst)
 }
 
 int16_t WebRtcG722_Encode(G722EncInst *G722enc_inst,
-                          int16_t *speechIn,
+                          const int16_t* speechIn,
                           int16_t len,
-                          int16_t *encoded)
+                          uint8_t* encoded)
 {
     unsigned char *codechar = (unsigned char*) encoded;
     // Encode the input speech vector

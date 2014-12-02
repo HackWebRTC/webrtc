@@ -22,7 +22,7 @@
 #endif
 #include "webrtc/modules/audio_coding/codecs/g711/include/g711_interface.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
-#include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
+#include "webrtc/modules/audio_coding/codecs/g722/include/audio_encoder_g722.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
@@ -483,67 +483,26 @@ class AudioDecoderG722Test : public AudioDecoderTest {
     data_length_ = 10 * frame_size_;
     decoder_ = new AudioDecoderG722;
     assert(decoder_);
-    WebRtcG722_CreateEncoder(&encoder_);
+    AudioEncoderG722::Config config;
+    config.frame_size_ms = 10;
+    config.num_channels = 1;
+    audio_encoder_.reset(new AudioEncoderG722(config));
   }
-
-  ~AudioDecoderG722Test() {
-    WebRtcG722_FreeEncoder(encoder_);
-  }
-
-  virtual void InitEncoder() {
-    ASSERT_EQ(0, WebRtcG722_EncoderInit(encoder_));
-  }
-
-  virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
-                          uint8_t* output) {
-    int enc_len_bytes =
-        WebRtcG722_Encode(encoder_, const_cast<int16_t*>(input),
-                          static_cast<int>(input_len_samples),
-                          reinterpret_cast<int16_t*>(output));
-    EXPECT_EQ(80, enc_len_bytes);
-    return enc_len_bytes;
-  }
-
-  G722EncInst* encoder_;
 };
 
-class AudioDecoderG722StereoTest : public AudioDecoderG722Test {
+class AudioDecoderG722StereoTest : public AudioDecoderTest {
  protected:
-  AudioDecoderG722StereoTest() : AudioDecoderG722Test() {
+  AudioDecoderG722StereoTest() : AudioDecoderTest() {
     channels_ = 2;
-    // Delete the |decoder_| that was created by AudioDecoderG722Test and
-    // create an AudioDecoderG722Stereo object instead.
-    delete decoder_;
+    codec_input_rate_hz_ = 16000;
+    frame_size_ = 160;
+    data_length_ = 10 * frame_size_;
     decoder_ = new AudioDecoderG722Stereo;
     assert(decoder_);
-  }
-
-  virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
-                          uint8_t* output) {
-    uint8_t* temp_output = new uint8_t[data_length_ * 2];
-    // Encode a mono payload using the base test class.
-    int mono_enc_len_bytes =
-        AudioDecoderG722Test::EncodeFrame(input, input_len_samples,
-                                          temp_output);
-    // The bit-stream consists of 4-bit samples:
-    // +--------+--------+--------+
-    // | s0  s1 | s2  s3 | s4  s5 |
-    // +--------+--------+--------+
-    //
-    // Duplicate them to the |output| such that the stereo stream becomes:
-    // +--------+--------+--------+
-    // | s0  s0 | s1  s1 | s2  s2 |
-    // +--------+--------+--------+
-    EXPECT_LE(mono_enc_len_bytes * 2, static_cast<int>(data_length_ * 2));
-    uint8_t* output_ptr = output;
-    for (int i = 0; i < mono_enc_len_bytes; ++i) {
-      *output_ptr = (temp_output[i] & 0xF0) + (temp_output[i] >> 4);
-      ++output_ptr;
-      *output_ptr = (temp_output[i] << 4) + (temp_output[i] & 0x0F);
-      ++output_ptr;
-    }
-    delete [] temp_output;
-    return mono_enc_len_bytes * 2;
+    AudioEncoderG722::Config config;
+    config.frame_size_ms = 10;
+    config.num_channels = 2;
+    audio_encoder_.reset(new AudioEncoderG722(config));
   }
 };
 

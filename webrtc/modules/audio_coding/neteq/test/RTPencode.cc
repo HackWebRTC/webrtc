@@ -1615,7 +1615,7 @@ int NetEQTest_encode(int coder, int16_t *indata, int frameLen, unsigned char * e
 #endif
 #ifdef CODEC_G722
         else if (coder==webrtc::kDecoderG722) { /*g722 */
-            cdlen=WebRtcG722_Encode(g722EncState[k], indata, frameLen, (int16_t*)encoded);
+            cdlen=WebRtcG722_Encode(g722EncState[k], indata, frameLen, encoded);
             assert(cdlen == frameLen>>1);
         }
 #endif

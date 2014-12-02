@@ -21,6 +21,8 @@
         ],
       },
       'sources': [
+        'audio_encoder_g722.cc',
+        'include/audio_encoder_g722.h',
         'include/g722_interface.h',
         'g722_interface.c',
         'g722_encode.c',
