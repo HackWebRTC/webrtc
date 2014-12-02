@@ -501,7 +501,6 @@ source_set("isacfix") {
     # Remove the -mfpu=vfpv3-d16 cflag.
     configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
     cflags = [
-      "-flax-vector-conversions",
       "-mfpu=neon",
     ]
 
@@ -572,7 +571,6 @@ if (rtc_build_armv7_neon) {
     # Remove the -mfpu=vfpv3-d16 cflag.
     configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
     cflags = [
-      "-flax-vector-conversions",
       "-mfpu=neon",
     ]
 

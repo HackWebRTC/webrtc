@@ -53,13 +53,14 @@ void WebRtcAecm_CalcLinearEnergiesNeon(AecmCore_t* aecm,
   int32_t* echo_est_p = echo_est;
   const int16_t* end_stored_p = aecm->channelStored + PART_LEN;
   const uint16_t* far_spectrum_p = far_spectrum;
-  int16x8_t store_v, adapt_v, spectrum_v;
+  int16x8_t store_v, adapt_v;
+  uint16x8_t spectrum_v;
   uint32x4_t echo_est_v_low, echo_est_v_high;
-  uint32x4_t far_energy_v, echo_energy_stored_v, echo_energy_adapt_v;
+  uint32x4_t far_energy_v, echo_stored_v, echo_adapt_v;
 
   far_energy_v = vdupq_n_u32(0);
-  echo_energy_adapt_v = vdupq_n_u32(0);
-  echo_energy_stored_v = vdupq_n_u32(0);
+  echo_adapt_v = vdupq_n_u32(0);
+  echo_stored_v = vdupq_n_u32(0);
 
   // Get energy for the delayed far end signal and estimated
   // echo using both stored and adapted channels.
@@ -76,24 +77,25 @@ void WebRtcAecm_CalcLinearEnergiesNeon(AecmCore_t* aecm,
     adapt_v = vld1q_s16(start_adapt_p);
     store_v = vld1q_s16(start_stored_p);
 
-    far_energy_v = vaddw_u16(far_energy_v, vget_low_s16(spectrum_v));
-    far_energy_v = vaddw_u16(far_energy_v, vget_high_s16(spectrum_v));
+    far_energy_v = vaddw_u16(far_energy_v, vget_low_u16(spectrum_v));
+    far_energy_v = vaddw_u16(far_energy_v, vget_high_u16(spectrum_v));
 
-    echo_est_v_low = vmull_u16(vget_low_s16(store_v), vget_low_s16(spectrum_v));
-    echo_est_v_high = vmull_u16(vget_high_s16(store_v),
-                                vget_high_s16(spectrum_v));
-    vst1q_s32(echo_est_p, echo_est_v_low);
-    vst1q_s32(echo_est_p + 4, echo_est_v_high);
+    echo_est_v_low = vmull_u16(vreinterpret_u16_s16(vget_low_s16(store_v)),
+                               vget_low_u16(spectrum_v));
+    echo_est_v_high = vmull_u16(vreinterpret_u16_s16(vget_high_s16(store_v)),
+                                vget_high_u16(spectrum_v));
+    vst1q_s32(echo_est_p, vreinterpretq_s32_u32(echo_est_v_low));
+    vst1q_s32(echo_est_p + 4, vreinterpretq_s32_u32(echo_est_v_high));
 
-    echo_energy_stored_v = vaddq_s32(echo_est_v_low, echo_energy_stored_v);
-    echo_energy_stored_v = vaddq_s32(echo_est_v_high, echo_energy_stored_v);
+    echo_stored_v = vaddq_u32(echo_est_v_low, echo_stored_v);
+    echo_stored_v = vaddq_u32(echo_est_v_high, echo_stored_v);
 
-    echo_energy_adapt_v = vmlal_u16(echo_energy_adapt_v,
-                                    vget_low_s16(adapt_v),
-                                    vget_low_s16(spectrum_v));
-    echo_energy_adapt_v = vmlal_u16(echo_energy_adapt_v,
-                                    vget_high_s16(adapt_v),
-                                    vget_high_s16(spectrum_v));
+    echo_adapt_v = vmlal_u16(echo_adapt_v,
+                             vreinterpret_u16_s16(vget_low_s16(adapt_v)),
+                             vget_low_u16(spectrum_v));
+    echo_adapt_v = vmlal_u16(echo_adapt_v,
+                             vreinterpret_u16_s16(vget_high_s16(adapt_v)),
+                             vget_high_u16(spectrum_v));
 
     start_stored_p += 8;
     start_adapt_p += 8;
@@ -102,8 +104,8 @@ void WebRtcAecm_CalcLinearEnergiesNeon(AecmCore_t* aecm,
   }
 
   AddLanes(far_energy, far_energy_v);
-  AddLanes(echo_energy_stored, echo_energy_stored_v);
-  AddLanes(echo_energy_adapt, echo_energy_adapt_v);
+  AddLanes(echo_energy_stored, echo_stored_v);
+  AddLanes(echo_energy_adapt, echo_adapt_v);
 
   echo_est[PART_LEN] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[PART_LEN],
                                              far_spectrum[PART_LEN]);
@@ -143,8 +145,9 @@ void WebRtcAecm_StoreAdaptiveChannelNeon(AecmCore_t* aecm,
   const int16_t* end_stored_p = aecm->channelStored + PART_LEN;
   int32_t* echo_est_p = echo_est;
 
-  int16x8_t far_spectrum_v, adapt_v;
-  int32x4_t echo_est_v_low, echo_est_v_high;
+  uint16x8_t far_spectrum_v;
+  int16x8_t adapt_v;
+  uint32x4_t echo_est_v_low, echo_est_v_high;
 
   while (start_stored_p < end_stored_p) {
     far_spectrum_v = vld1q_u16(far_spectrum_p);
@@ -153,12 +156,12 @@ void WebRtcAecm_StoreAdaptiveChannelNeon(AecmCore_t* aecm,
     vst1q_s16(start_stored_p, adapt_v);
 
     echo_est_v_low = vmull_u16(vget_low_u16(far_spectrum_v),
-                               vget_low_u16(adapt_v));
+                               vget_low_u16(vreinterpretq_u16_s16(adapt_v)));
     echo_est_v_high = vmull_u16(vget_high_u16(far_spectrum_v),
-                                vget_high_u16(adapt_v));
+                                vget_high_u16(vreinterpretq_u16_s16(adapt_v)));
 
-    vst1q_s32(echo_est_p, echo_est_v_low);
-    vst1q_s32(echo_est_p + 4, echo_est_v_high);
+    vst1q_s32(echo_est_p, vreinterpretq_s32_u32(echo_est_v_low));
+    vst1q_s32(echo_est_p + 4, vreinterpretq_s32_u32(echo_est_v_high));
 
     far_spectrum_p += 8;
     start_adapt_p += 8;

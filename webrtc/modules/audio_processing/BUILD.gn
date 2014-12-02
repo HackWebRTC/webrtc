@@ -210,13 +210,10 @@ if (rtc_build_armv7_neon || cpu_arch == "arm64") {
     # //build/config/arm.gni instead, to reduce code duplication.
     # Remove the -mfpu=vfpv3-d16 cflag.
     configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
-    cflags = [
-      "-flax-vector-conversions",
-    ]
 
     # "-mfpu=neon" is not requried for arm64 in GCC.
     if (cpu_arch != "arm64") {
-       cflags += [ "-mfpu=neon" ]
+       cflags = [ "-mfpu=neon" ]
     }
 
     # Disable LTO in audio_processing_neon target due to compiler bug.
