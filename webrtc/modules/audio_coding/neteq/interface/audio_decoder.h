@@ -19,6 +19,39 @@
 
 namespace webrtc {
 
+enum NetEqDecoder {
+  kDecoderPCMu,
+  kDecoderPCMa,
+  kDecoderPCMu_2ch,
+  kDecoderPCMa_2ch,
+  kDecoderILBC,
+  kDecoderISAC,
+  kDecoderISACswb,
+  kDecoderISACfb,
+  kDecoderPCM16B,
+  kDecoderPCM16Bwb,
+  kDecoderPCM16Bswb32kHz,
+  kDecoderPCM16Bswb48kHz,
+  kDecoderPCM16B_2ch,
+  kDecoderPCM16Bwb_2ch,
+  kDecoderPCM16Bswb32kHz_2ch,
+  kDecoderPCM16Bswb48kHz_2ch,
+  kDecoderPCM16B_5ch,
+  kDecoderG722,
+  kDecoderG722_2ch,
+  kDecoderRED,
+  kDecoderAVT,
+  kDecoderCNGnb,
+  kDecoderCNGwb,
+  kDecoderCNGswb32kHz,
+  kDecoderCNGswb48kHz,
+  kDecoderArbitrary,
+  kDecoderOpus,
+  kDecoderOpus_2ch,
+  kDecoderCELT_32,
+  kDecoderCELT_32_2ch,
+};
+
 // This is the interface class for decoders in NetEQ. Each codec type will have
 // and implementation of this class.
 class AudioDecoder {
@@ -85,6 +118,17 @@ class AudioDecoder {
   // If this is a CNG decoder, return the underlying CNG_dec_inst*. If this
   // isn't a CNG decoder, don't call this method.
   virtual CNG_dec_inst* CngDecoderInstance();
+
+  // Returns true if |codec_type| is supported.
+  static bool CodecSupported(NetEqDecoder codec_type);
+
+  // Returns the sample rate for |codec_type|.
+  static int CodecSampleRateHz(NetEqDecoder codec_type);
+
+  // Creates an AudioDecoder object of type |codec_type|. Returns NULL for
+  // for unsupported codecs, and when creating an AudioDecoder is not
+  // applicable (e.g., for RED and DTMF/AVT types).
+  static AudioDecoder* CreateAudioDecoder(NetEqDecoder codec_type);
 
   size_t channels() const { return channels_; }
 

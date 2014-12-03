@@ -9,7 +9,6 @@
 {
   'includes': [
     '../build/common.gypi',
-    'audio_coding/codecs/interfaces.gypi',
     'audio_coding/codecs/cng/cng.gypi',
     'audio_coding/codecs/g711/g711.gypi',
     'audio_coding/codecs/g722/g722.gypi',

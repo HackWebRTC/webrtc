@@ -16,7 +16,6 @@
 #include <algorithm>
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/neteq/accelerate.h"
 #include "webrtc/modules/audio_coding/neteq/background_noise.h"
 #include "webrtc/modules/audio_coding/neteq/buffer_level_filter.h"
@@ -29,6 +28,7 @@
 #include "webrtc/modules/audio_coding/neteq/dtmf_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/dtmf_tone_generator.h"
 #include "webrtc/modules/audio_coding/neteq/expand.h"
+#include "webrtc/modules/audio_coding/neteq/interface/audio_decoder.h"
 #include "webrtc/modules/audio_coding/neteq/merge.h"
 #include "webrtc/modules/audio_coding/neteq/normal.h"
 #include "webrtc/modules/audio_coding/neteq/packet_buffer.h"
@@ -211,7 +211,7 @@ int NetEqImpl::RegisterExternalDecoder(AudioDecoder* decoder,
     assert(false);
     return kFail;
   }
-  const int sample_rate_hz = CodecSampleRateHz(codec);
+  const int sample_rate_hz = AudioDecoder::CodecSampleRateHz(codec);
   int ret = decoder_database_->InsertExternal(rtp_payload_type, codec,
                                               sample_rate_hz, decoder);
   if (ret != DecoderDatabase::kOK) {

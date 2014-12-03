@@ -19,7 +19,6 @@
 #include "webrtc/engine_configurations.h"
 #endif
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/codecs/cng/include/webrtc_cng.h"
 #ifdef WEBRTC_CODEC_G722
 #include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
@@ -36,6 +35,7 @@
 #ifdef WEBRTC_CODEC_OPUS
 #include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
 #endif
+#include "webrtc/modules/audio_coding/neteq/interface/audio_decoder.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -279,50 +279,6 @@ class AudioDecoderCng : public AudioDecoder {
   CNG_dec_inst* dec_state_;
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderCng);
 };
-
-enum NetEqDecoder {
-  kDecoderPCMu,
-  kDecoderPCMa,
-  kDecoderPCMu_2ch,
-  kDecoderPCMa_2ch,
-  kDecoderILBC,
-  kDecoderISAC,
-  kDecoderISACswb,
-  kDecoderISACfb,
-  kDecoderPCM16B,
-  kDecoderPCM16Bwb,
-  kDecoderPCM16Bswb32kHz,
-  kDecoderPCM16Bswb48kHz,
-  kDecoderPCM16B_2ch,
-  kDecoderPCM16Bwb_2ch,
-  kDecoderPCM16Bswb32kHz_2ch,
-  kDecoderPCM16Bswb48kHz_2ch,
-  kDecoderPCM16B_5ch,
-  kDecoderG722,
-  kDecoderG722_2ch,
-  kDecoderRED,
-  kDecoderAVT,
-  kDecoderCNGnb,
-  kDecoderCNGwb,
-  kDecoderCNGswb32kHz,
-  kDecoderCNGswb48kHz,
-  kDecoderArbitrary,
-  kDecoderOpus,
-  kDecoderOpus_2ch,
-  kDecoderCELT_32,
-  kDecoderCELT_32_2ch,
-};
-
-// Returns true if |codec_type| is supported.
-bool CodecSupported(NetEqDecoder codec_type);
-
-// Returns the sample rate for |codec_type|.
-int CodecSampleRateHz(NetEqDecoder codec_type);
-
-// Creates an AudioDecoder object of type |codec_type|. Returns NULL for for
-// unsupported codecs, and when creating an AudioDecoder is not applicable
-// (e.g., for RED and DTMF/AVT types).
-AudioDecoder* CreateAudioDecoder(NetEqDecoder codec_type);
 
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_AUDIO_DECODER_IMPL_H_
