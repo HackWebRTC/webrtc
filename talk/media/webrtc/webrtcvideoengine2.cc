@@ -339,7 +339,8 @@ bool WebRtcVideoEngine2::Init(rtc::Thread* worker_thread) {
 void WebRtcVideoEngine2::Terminate() {
   LOG(LS_INFO) << "WebRtcVideoEngine2::Terminate";
 
-  cpu_monitor_->Stop();
+  if (cpu_monitor_.get() != NULL)
+    cpu_monitor_->Stop();
 
   initialized_ = false;
 }
