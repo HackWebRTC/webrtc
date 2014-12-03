@@ -275,6 +275,7 @@ int main(int argc, char* argv[]) {
 
   // This is the main simulation loop.
   // Set the simulation clock to start immediately with the first packet.
+  int start_time_ms = packet->time_ms();
   int time_now_ms = packet->time_ms();
   int next_input_time_ms = time_now_ms;
   int next_output_time_ms = time_now_ms;
@@ -380,7 +381,8 @@ int main(int argc, char* argv[]) {
     time_now_ms = std::min(next_input_time_ms, next_output_time_ms);
   }
 
-  std::cout << "Simulation done" << std::endl;
+  printf("Simulation done\n");
+  printf("Produced %i ms of audio\n", time_now_ms - start_time_ms);
 
   delete neteq;
   webrtc::Trace::ReturnTrace();
