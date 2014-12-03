@@ -459,6 +459,14 @@ void TurnPort::OnReadPacket(
   } else if (msg_type == TURN_DATA_INDICATION) {
     HandleDataIndication(data, size, packet_time);
   } else {
+    if (SharedSocket() &&
+        (msg_type == STUN_BINDING_RESPONSE ||
+         msg_type == STUN_BINDING_ERROR_RESPONSE)) {
+      LOG_J(LS_VERBOSE, this) <<
+          "Ignoring STUN binding response message on shared socket.";
+      return;
+    }
+
     // This must be a response for one of our requests.
     // Check success responses, but not errors, for MESSAGE-INTEGRITY.
     if (IsStunSuccessResponseType(msg_type) &&
