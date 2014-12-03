@@ -1178,7 +1178,9 @@ void WebRtcVideoEngine::Terminate() {
     LOG_RTCERR0(SetVoiceEngine);
   }
 
-  cpu_monitor_->Stop();
+  if (cpu_monitor_.get()) {
+    cpu_monitor_->Stop();
+  }
 }
 
 int WebRtcVideoEngine::GetCapabilities() {
