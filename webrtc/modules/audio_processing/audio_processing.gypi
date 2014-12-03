@@ -214,23 +214,6 @@
           'ns/nsx_core_neon.c',
         ],
         'conditions': [
-          ['(OS=="android" or OS=="ios") and target_arch!="arm64"', {
-            'dependencies': [
-              '<(gen_core_neon_offsets_gyp):*',
-            ],
-            'sources': [
-              'aecm/aecm_core_neon.S',
-              'ns/nsx_core_neon.S',
-            ],
-            'include_dirs': [
-              '<(shared_generated_dir)',
-            ],
-            'sources!': [
-              'aecm/aecm_core_neon.c',
-              'ns/nsx_core_neon.c',
-            ],
-            'includes!': ['../../build/arm_neon.gypi',],
-          }],
           # Disable LTO in audio_processing_neon target due to compiler bug
           ['use_lto==1', {
             'cflags!': [
