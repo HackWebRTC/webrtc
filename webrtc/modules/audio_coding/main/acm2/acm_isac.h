@@ -12,8 +12,8 @@
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_ISAC_H_
 
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_generic_codec.h"
-#include "webrtc/modules/audio_coding/neteq/interface/audio_decoder.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {

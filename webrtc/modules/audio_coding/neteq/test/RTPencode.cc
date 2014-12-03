@@ -25,7 +25,7 @@
 
 #include "webrtc/typedefs.h"
 // needed for NetEqDecoder
-#include "webrtc/modules/audio_coding/neteq/interface/audio_decoder.h"
+#include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
 
 /************************/
