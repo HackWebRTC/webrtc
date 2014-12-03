@@ -27,6 +27,12 @@ namespace webrtc {
 class PushSincResampler;
 class IFChannelBuffer;
 
+enum Band {
+  kBand0To8kHz = 0,
+  kBand8To16kHz = 1,
+  kBand16To24kHz = 2
+};
+
 class AudioBuffer {
  public:
   // TODO(ajm): Switch to take ChannelLayouts.
@@ -46,17 +52,14 @@ class AudioBuffer {
   // in memory. Prefer to use the const variants of each accessor when
   // possible, since they incur less float<->int16 conversion overhead.
   int16_t* data(int channel);
-  const int16_t* data(int channel) const;
+  const int16_t* data_const(int channel) const;
   int16_t* const* channels();
-  const int16_t* const* channels() const;
-  int16_t* low_pass_split_data(int channel);
-  const int16_t* low_pass_split_data(int channel) const;
-  int16_t* high_pass_split_data(int channel);
-  const int16_t* high_pass_split_data(int channel) const;
-  int16_t* const* low_pass_split_channels();
-  const int16_t* const* low_pass_split_channels() const;
-  int16_t* const* high_pass_split_channels();
-  const int16_t* const* high_pass_split_channels() const;
+  const int16_t* const* channels_const() const;
+  int16_t* split_data(int channel, Band band);
+  const int16_t* split_data_const(int channel, Band band) const;
+  int16_t* const* split_channels(Band band);
+  const int16_t* const* split_channels_const(Band band) const;
+
   // Returns a pointer to the low-pass data downmixed to mono. If this data
   // isn't already available it re-calculates it.
   const int16_t* mixed_low_pass_data();
@@ -65,22 +68,13 @@ class AudioBuffer {
   // Float versions of the accessors, with automatic conversion back and forth
   // as necessary. The range of the numbers are the same as for int16_t.
   float* data_f(int channel);
-  const float* data_f(int channel) const;
-
+  const float* data_const_f(int channel) const;
   float* const* channels_f();
-  const float* const* channels_f() const;
-
-  float* low_pass_split_data_f(int channel);
-  const float* low_pass_split_data_f(int channel) const;
-  float* high_pass_split_data_f(int channel);
-  const float* high_pass_split_data_f(int channel) const;
-
-  float* const* low_pass_split_channels_f();
-  const float* const* low_pass_split_channels_f() const;
-  float* const* high_pass_split_channels_f();
-  const float* const* high_pass_split_channels_f() const;
-  float* const* super_high_pass_split_channels_f();
-  const float* const* super_high_pass_split_channels_f() const;
+  const float* const* channels_const_f() const;
+  float* split_data_f(int channel, Band band);
+  const float* split_data_const_f(int channel, Band band) const;
+  float* const* split_channels_f(Band band);
+  const float* const* split_channels_const_f(Band band) const;
 
   const float* keyboard_data() const;
 

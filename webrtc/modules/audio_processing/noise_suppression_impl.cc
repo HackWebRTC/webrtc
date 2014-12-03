@@ -67,7 +67,7 @@ int NoiseSuppressionImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
     Handle* my_handle = static_cast<Handle*>(handle(i));
 
     int err = WebRtcNs_Analyze(my_handle,
-                               audio->low_pass_split_data_f(i));
+                               audio->split_data_f(i, kBand0To8kHz));
     if (err != apm_->kNoError) {
       return GetHandleError(my_handle);
     }
@@ -89,16 +89,16 @@ int NoiseSuppressionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
     Handle* my_handle = static_cast<Handle*>(handle(i));
 #if defined(WEBRTC_NS_FLOAT)
     err = WebRtcNs_Process(my_handle,
-                           audio->low_pass_split_data_f(i),
-                           audio->high_pass_split_data_f(i),
-                           audio->low_pass_split_data_f(i),
-                           audio->high_pass_split_data_f(i));
+                           audio->split_data_f(i, kBand0To8kHz),
+                           audio->split_data_f(i, kBand8To16kHz),
+                           audio->split_data_f(i, kBand0To8kHz),
+                           audio->split_data_f(i, kBand8To16kHz));
 #elif defined(WEBRTC_NS_FIXED)
     err = WebRtcNsx_Process(my_handle,
-                            audio->low_pass_split_data(i),
-                            audio->high_pass_split_data(i),
-                            audio->low_pass_split_data(i),
-                            audio->high_pass_split_data(i));
+                            audio->split_data(i, kBand0To8kHz),
+                            audio->split_data(i, kBand8To16kHz),
+                            audio->split_data(i, kBand0To8kHz),
+                            audio->split_data(i, kBand8To16kHz));
 #endif
 
     if (err != apm_->kNoError) {

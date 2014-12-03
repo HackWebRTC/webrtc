@@ -199,16 +199,15 @@ void AudioBuffer::InitForNewData() {
   activity_ = AudioFrame::kVadUnknown;
 }
 
-const int16_t* AudioBuffer::data(int channel) const {
-  return channels_->ibuf_const()->channel(channel);
+const int16_t* AudioBuffer::data_const(int channel) const {
+  return channels_const()[channel];
 }
 
 int16_t* AudioBuffer::data(int channel) {
-  mixed_low_pass_valid_ = false;
-  return channels_->ibuf()->channel(channel);
+  return channels()[channel];
 }
 
-const int16_t* const* AudioBuffer::channels() const {
+const int16_t* const* AudioBuffer::channels_const() const {
   return channels_->ibuf_const()->channels();
 }
 
@@ -217,16 +216,42 @@ int16_t* const* AudioBuffer::channels() {
   return channels_->ibuf()->channels();
 }
 
-const float* AudioBuffer::data_f(int channel) const {
-  return channels_->fbuf_const()->channel(channel);
+const int16_t* AudioBuffer::split_data_const(int channel, Band band) const {
+  const int16_t* const* chs = split_channels_const(band);
+  return chs ? chs[channel] : NULL;
+}
+
+int16_t* AudioBuffer::split_data(int channel, Band band) {
+  int16_t* const* chs = split_channels(band);
+  return chs ? chs[channel] : NULL;
+}
+
+const int16_t* const* AudioBuffer::split_channels_const(Band band) const {
+  if (split_channels_.size() > static_cast<size_t>(band)) {
+    return split_channels_[band]->ibuf_const()->channels();
+  } else {
+    return band == kBand0To8kHz ? channels_->ibuf_const()->channels() : NULL;
+  }
+}
+
+int16_t* const* AudioBuffer::split_channels(Band band) {
+  mixed_low_pass_valid_ = false;
+  if (split_channels_.size() > static_cast<size_t>(band)) {
+    return split_channels_[band]->ibuf()->channels();
+  } else {
+    return band == kBand0To8kHz ? channels_->ibuf()->channels() : NULL;
+  }
+}
+
+const float* AudioBuffer::data_const_f(int channel) const {
+  return channels_const_f()[channel];
 }
 
 float* AudioBuffer::data_f(int channel) {
-  mixed_low_pass_valid_ = false;
-  return channels_->fbuf()->channel(channel);
+  return channels_f()[channel];
 }
 
-const float* const* AudioBuffer::channels_f() const {
+const float* const* AudioBuffer::channels_const_f() const {
   return channels_->fbuf_const()->channels();
 }
 
@@ -235,114 +260,31 @@ float* const* AudioBuffer::channels_f() {
   return channels_->fbuf()->channels();
 }
 
-const int16_t* AudioBuffer::low_pass_split_data(int channel) const {
-  return split_channels_.size() > 0
-      ? split_channels_[0]->ibuf_const()->channel(channel)
-      : data(channel);
+const float* AudioBuffer::split_data_const_f(int channel, Band band) const {
+  const float* const* chs = split_channels_const_f(band);
+  return chs ? chs[channel] : NULL;
 }
 
-int16_t* AudioBuffer::low_pass_split_data(int channel) {
+float* AudioBuffer::split_data_f(int channel, Band band) {
+  float* const* chs = split_channels_f(band);
+  return chs ? chs[channel] : NULL;
+}
+
+const float* const* AudioBuffer::split_channels_const_f(Band band) const {
+  if (split_channels_.size() > static_cast<size_t>(band)) {
+    return split_channels_[band]->fbuf_const()->channels();
+  } else {
+    return band == kBand0To8kHz ? channels_->fbuf_const()->channels() : NULL;
+  }
+}
+
+float* const* AudioBuffer::split_channels_f(Band band) {
   mixed_low_pass_valid_ = false;
-  return split_channels_.size() > 0
-      ? split_channels_[0]->ibuf()->channel(channel)
-      : data(channel);
-}
-
-const int16_t* const* AudioBuffer::low_pass_split_channels() const {
-  return split_channels_.size() > 0
-             ? split_channels_[0]->ibuf_const()->channels()
-             : channels();
-}
-
-int16_t* const* AudioBuffer::low_pass_split_channels() {
-  mixed_low_pass_valid_ = false;
-  return split_channels_.size() > 0 ? split_channels_[0]->ibuf()->channels()
-                                   : channels();
-}
-
-const float* AudioBuffer::low_pass_split_data_f(int channel) const {
-  return split_channels_.size() > 0
-      ? split_channels_[0]->fbuf_const()->channel(channel)
-      : data_f(channel);
-}
-
-float* AudioBuffer::low_pass_split_data_f(int channel) {
-  mixed_low_pass_valid_ = false;
-  return split_channels_.size() > 0
-      ? split_channels_[0]->fbuf()->channel(channel)
-      : data_f(channel);
-}
-
-const float* const* AudioBuffer::low_pass_split_channels_f() const {
-  return split_channels_.size() > 0
-      ? split_channels_[0]->fbuf_const()->channels()
-      : channels_f();
-}
-
-float* const* AudioBuffer::low_pass_split_channels_f() {
-  mixed_low_pass_valid_ = false;
-  return split_channels_.size() > 0
-      ? split_channels_[0]->fbuf()->channels()
-      : channels_f();
-}
-
-const int16_t* AudioBuffer::high_pass_split_data(int channel) const {
-  return split_channels_.size() > 1
-      ? split_channels_[1]->ibuf_const()->channel(channel)
-      : NULL;
-}
-
-int16_t* AudioBuffer::high_pass_split_data(int channel) {
-  return split_channels_.size() > 1
-      ? split_channels_[1]->ibuf()->channel(channel)
-      : NULL;
-}
-
-const int16_t* const* AudioBuffer::high_pass_split_channels() const {
-  return split_channels_.size() > 1
-             ? split_channels_[1]->ibuf_const()->channels()
-             : NULL;
-}
-
-int16_t* const* AudioBuffer::high_pass_split_channels() {
-  return split_channels_.size() > 1 ? split_channels_[1]->ibuf()->channels()
-                                    : NULL;
-}
-
-const float* AudioBuffer::high_pass_split_data_f(int channel) const {
-  return split_channels_.size() > 1
-      ? split_channels_[1]->fbuf_const()->channel(channel)
-      : NULL;
-}
-
-float* AudioBuffer::high_pass_split_data_f(int channel) {
-  return split_channels_.size() > 1
-      ? split_channels_[1]->fbuf()->channel(channel)
-      : NULL;
-}
-
-const float* const* AudioBuffer::high_pass_split_channels_f() const {
-  return split_channels_.size() > 1
-      ? split_channels_[1]->fbuf_const()->channels()
-      : NULL;
-}
-
-float* const* AudioBuffer::high_pass_split_channels_f() {
-  return split_channels_.size() > 1
-      ? split_channels_[1]->fbuf()->channels()
-      : NULL;
-}
-
-const float* const* AudioBuffer::super_high_pass_split_channels_f() const {
-  return split_channels_.size() > 2
-      ? split_channels_[2]->fbuf_const()->channels()
-      : NULL;
-}
-
-float* const* AudioBuffer::super_high_pass_split_channels_f() {
-  return split_channels_.size() > 2
-      ? split_channels_[2]->fbuf()->channels()
-      : NULL;
+  if (split_channels_.size() > static_cast<size_t>(band)) {
+    return split_channels_[band]->fbuf()->channels();
+  } else {
+    return band == kBand0To8kHz ? channels_->fbuf()->channels() : NULL;
+  }
 }
 
 const int16_t* AudioBuffer::mixed_low_pass_data() {
@@ -350,7 +292,7 @@ const int16_t* AudioBuffer::mixed_low_pass_data() {
   assert(num_proc_channels_ == 1 || num_proc_channels_ == 2);
 
   if (num_proc_channels_ == 1) {
-    return low_pass_split_data(0);
+    return split_data_const(0, kBand0To8kHz);
   }
 
   if (!mixed_low_pass_valid_) {
@@ -358,8 +300,8 @@ const int16_t* AudioBuffer::mixed_low_pass_data() {
       mixed_low_pass_channels_.reset(
           new ChannelBuffer<int16_t>(samples_per_split_channel_, 1));
     }
-    StereoToMono(low_pass_split_data(0),
-                 low_pass_split_data(1),
+    StereoToMono(split_data_const(0, kBand0To8kHz),
+                 split_data_const(1, kBand0To8kHz),
                  mixed_low_pass_channels_->data(),
                  samples_per_split_channel_);
     mixed_low_pass_valid_ = true;
@@ -462,7 +404,8 @@ void AudioBuffer::CopyLowPassToReference() {
                                    num_proc_channels_));
   }
   for (int i = 0; i < num_proc_channels_; i++) {
-    low_pass_reference_channels_->CopyFrom(low_pass_split_data(i), i);
+    low_pass_reference_channels_->CopyFrom(split_data_const(i, kBand0To8kHz),
+                                           i);
   }
 }
 
