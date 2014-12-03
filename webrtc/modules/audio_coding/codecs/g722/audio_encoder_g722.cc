@@ -61,12 +61,12 @@ int AudioEncoderG722::Num10MsFramesInNextPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
-bool AudioEncoderG722::Encode(uint32_t timestamp,
-                              const int16_t* audio,
-                              size_t max_encoded_bytes,
-                              uint8_t* encoded,
-                              size_t* encoded_bytes,
-                              EncodedInfo* info) {
+bool AudioEncoderG722::EncodeInternal(uint32_t timestamp,
+                                      const int16_t* audio,
+                                      size_t max_encoded_bytes,
+                                      uint8_t* encoded,
+                                      size_t* encoded_bytes,
+                                      EncodedInfo* info) {
   const int samples_per_channel =
       kSampleRateHz / 100 * num_10ms_frames_per_packet_;
   CHECK_GE(max_encoded_bytes,

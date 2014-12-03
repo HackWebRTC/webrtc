@@ -74,12 +74,12 @@ int AudioEncoderOpus::Num10MsFramesInNextPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
-bool AudioEncoderOpus::Encode(uint32_t timestamp,
-                              const int16_t* audio,
-                              size_t max_encoded_bytes,
-                              uint8_t* encoded,
-                              size_t* encoded_bytes,
-                              EncodedInfo* info) {
+bool AudioEncoderOpus::EncodeInternal(uint32_t timestamp,
+                                      const int16_t* audio,
+                                      size_t max_encoded_bytes,
+                                      uint8_t* encoded,
+                                      size_t* encoded_bytes,
+                                      EncodedInfo* info) {
   if (input_buffer_.empty())
     first_timestamp_in_buffer_ = timestamp;
   input_buffer_.insert(input_buffer_.end(), audio,

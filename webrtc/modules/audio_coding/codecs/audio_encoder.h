@@ -45,12 +45,12 @@ class AudioEncoder {
               EncodedInfo* info) {
     CHECK_EQ(num_samples_per_channel,
              static_cast<size_t>(sample_rate_hz() / 100));
-    bool ret = Encode(timestamp,
-                      audio,
-                      max_encoded_bytes,
-                      encoded,
-                      encoded_bytes,
-                      info);
+    bool ret = EncodeInternal(timestamp,
+                              audio,
+                              max_encoded_bytes,
+                              encoded,
+                              encoded_bytes,
+                              info);
     CHECK_LE(*encoded_bytes, max_encoded_bytes);
     return ret;
   }
@@ -68,12 +68,12 @@ class AudioEncoder {
   virtual int Num10MsFramesInNextPacket() const = 0;
 
  protected:
-  virtual bool Encode(uint32_t timestamp,
-                      const int16_t* audio,
-                      size_t max_encoded_bytes,
-                      uint8_t* encoded,
-                      size_t* encoded_bytes,
-                      EncodedInfo* info) = 0;
+  virtual bool EncodeInternal(uint32_t timestamp,
+                              const int16_t* audio,
+                              size_t max_encoded_bytes,
+                              uint8_t* encoded,
+                              size_t* encoded_bytes,
+                              EncodedInfo* info) = 0;
 };
 
 }  // namespace webrtc

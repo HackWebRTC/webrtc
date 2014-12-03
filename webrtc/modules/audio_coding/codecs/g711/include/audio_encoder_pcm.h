@@ -39,12 +39,12 @@ class AudioEncoderPcm : public AudioEncoder {
   virtual int Num10MsFramesInNextPacket() const OVERRIDE;
 
  protected:
-  virtual bool Encode(uint32_t timestamp,
-                      const int16_t* audio,
-                      size_t max_encoded_bytes,
-                      uint8_t* encoded,
-                      size_t* encoded_bytes,
-                      EncodedInfo* info) OVERRIDE;
+  virtual bool EncodeInternal(uint32_t timestamp,
+                              const int16_t* audio,
+                              size_t max_encoded_bytes,
+                              uint8_t* encoded,
+                              size_t* encoded_bytes,
+                              EncodedInfo* info) OVERRIDE;
 
   virtual int16_t EncodeCall(const int16_t* audio,
                              size_t input_len,
