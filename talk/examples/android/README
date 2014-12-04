@@ -1,4 +1,4 @@
-This directory contains an example Android client for http://apprtc.appspot.com 
+This directory contains an example Android client for https://3-dot-apprtc.appspot.com
 
 Prerequisites:
 - "Android Specific Steps" on http://www.webrtc.org/reference/getting-started
@@ -18,16 +18,14 @@ cd <path/to/libjingle>/trunk
 ninja -C out/Debug AppRTCDemo
 adb install -r out/Debug/AppRTCDemo-debug.apk
 
-In desktop chrome, navigate to http://apprtc.appspot.com and note the r=<NNN> room 
-this redirects to.  Launch AppRTC on the device and enter the same <NNN> into
-the dialog box.
+In desktop chrome, navigate to https://3-dot-apprtc.appspot.com and note the r=<NNN> room
+this redirects to or navigate directly to https://3-dot-apprtc.appspot.com/room/<NNN> with
+your own room number. Launch AppRTC on the device and add same <NNN> into the room name list.
 
-Alternatively, replace the <NNN> from the desktop chrome into the following
-command:
-adb shell am start -n org.appspot.apprtc/.AppRTCDemoActivity -a android.intent.action.VIEW -d '"https://apprtc.appspot.com/?r=<NNN>"'
-This should result in the app launching on Android and connecting to the apprtc
+You can also run application from a command line to connect to the first room in a list:
+adb shell am start -n org.appspot.apprtc/.ConnectActivity -a android.intent.action.VIEW
+This should result in the app launching on Android and connecting to the 3-dot-apprtc
 page displayed in the desktop browser.
+To run loopback test execute following command:
+adb shell am start -n org.appspot.apprtc/.ConnectActivity -a android.intent.action.VIEW --ez "org.appspot.apprtc.LOOPBACK" true
 
-Yet another way to is to send the apprtc room URL to the Android device (e.g. using
-https://chrome.google.com/webstore/detail/google-chrome-to-phone-ex/oadboiipflhobonjjffjbfekfjcgkhco)
-and choose to open the URL with the AppRTCDemo app.
