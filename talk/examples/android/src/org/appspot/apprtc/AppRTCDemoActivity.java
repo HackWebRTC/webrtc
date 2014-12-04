@@ -71,7 +71,6 @@ public class AppRTCDemoActivity extends Activity
     implements AppRTCClient.SignalingEvents,
       PeerConnectionClient.PeerConnectionEvents {
   private static final String TAG = "AppRTCClient";
-  private final boolean USE_WEBSOCKETS = false;
   private PeerConnectionClient pc;
   private AppRTCClient appRtcClient;
   private SignalingParameters signalingParameters;
@@ -87,8 +86,9 @@ public class AppRTCDemoActivity extends Activity
       new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
   private TextView hudView;
   private TextView encoderStatView;
-  private TextView roomName;
+  private TextView roomNameView;
   private ImageButton videoScalingButton;
+  private String roomName;
   private boolean commandLineRun;
   private int runTimeMs;
   private int startBitrate;
@@ -119,7 +119,7 @@ public class AppRTCDemoActivity extends Activity
     rootView = findViewById(android.R.id.content);
     encoderStatView = (TextView)findViewById(R.id.encoder_stat);
     menuBar = findViewById(R.id.menubar_fragment);
-    roomName = (TextView) findViewById(R.id.room_name);
+    roomNameView = (TextView) findViewById(R.id.room_name);
     videoView = (GLSurfaceView) findViewById(R.id.glview);
 
     VideoRendererGui.setView(videoView);
@@ -135,11 +135,11 @@ public class AppRTCDemoActivity extends Activity
                     ? View.INVISIBLE : View.VISIBLE;
             encoderStatView.setVisibility(visibility);
             menuBar.setVisibility(visibility);
-            roomName.setVisibility(visibility);
+            roomNameView.setVisibility(visibility);
             if (visibility == View.VISIBLE) {
               encoderStatView.bringToFront();
               menuBar.bringToFront();
-              roomName.bringToFront();
+              roomNameView.bringToFront();
               rootView.invalidate();
             }
           }
@@ -206,6 +206,7 @@ public class AppRTCDemoActivity extends Activity
 
     final Intent intent = getIntent();
     Uri url = intent.getData();
+    roomName = intent.getStringExtra(ConnectActivity.EXTRA_ROOMNAME);
     boolean loopback = intent.getBooleanExtra(
         ConnectActivity.EXTRA_LOOPBACK, false);
     commandLineRun = intent.getBooleanExtra(
@@ -213,21 +214,22 @@ public class AppRTCDemoActivity extends Activity
     runTimeMs = intent.getIntExtra(ConnectActivity.EXTRA_RUNTIME, 0);
     startBitrate = intent.getIntExtra(ConnectActivity.EXTRA_BITRATE, 0);
     hwCodec = intent.getBooleanExtra(ConnectActivity.EXTRA_HWCODEC, true);
+    boolean useWebsocket = intent.getBooleanExtra(
+        ConnectActivity.EXTRA_WEBSOCKET, false);
 
     if (url != null) {
-      String room = url.getQueryParameter("r");
-      if (loopback || (room != null && !room.equals(""))) {
+      if (loopback || (roomName != null && !roomName.equals(""))) {
         logAndToast(getString(R.string.connecting_to, url));
-        if (USE_WEBSOCKETS) {
+        if (useWebsocket) {
           appRtcClient = new WebSocketRTCClient(this);
         } else {
           appRtcClient = new GAERTCClient(this, this);
         }
         appRtcClient.connectToRoom(url.toString(), loopback);
         if (loopback) {
-          roomName.setText("loopback");
+          roomNameView.setText("loopback");
         } else {
-          roomName.setText(room);
+          roomNameView.setText(roomName);
         }
         if (commandLineRun && runTimeMs > 0) {
           // For command line execution run connection for <runTimeMs> and exit.

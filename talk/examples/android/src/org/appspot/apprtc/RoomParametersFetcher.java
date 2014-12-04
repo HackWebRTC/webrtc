@@ -33,12 +33,14 @@ import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
+import org.webrtc.SessionDescription;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.LinkedList;
@@ -51,6 +53,7 @@ public class RoomParametersFetcher
   private static final String TAG = "RoomRTCClient";
   private Exception exception = null;
   private RoomParametersFetcherEvents events = null;
+  private boolean useNewSignaling;
   private boolean loopback;
 
   /**
@@ -69,10 +72,11 @@ public class RoomParametersFetcher
     public void onSignalingParametersError(final String description);
   }
 
-  public RoomParametersFetcher(
-      RoomParametersFetcherEvents events, boolean loopback) {
+  public RoomParametersFetcher(RoomParametersFetcherEvents events,
+      boolean useNewSignaling, boolean loopback) {
     super();
     this.events = events;
+    this.useNewSignaling = useNewSignaling;
     this.loopback = loopback;
   }
 
@@ -115,45 +119,92 @@ public class RoomParametersFetcher
   // Fetches |url| and fishes the signaling parameters out of the JSON.
   private SignalingParameters getParametersForRoomUrl(String url)
       throws IOException, JSONException {
-    url = url + "&t=json";
+    if (!useNewSignaling) {
+      if (url.contains("?")) {
+        url += "&t=json";
+      } else {
+        url += "?t=json";
+      }
+    }
     Log.d(TAG, "Connecting to room: " + url);
-    InputStream responseStream = new BufferedInputStream(
-        (new URL(url)).openConnection().getInputStream());
+    HttpURLConnection connection =
+        (HttpURLConnection) new URL(url).openConnection();
+    if (useNewSignaling) {
+      connection.setDoOutput(true);
+      connection.setRequestMethod("POST");
+    } else {
+      connection.setRequestMethod("GET");
+    }
+    connection.setDoInput(true);
+
+    InputStream responseStream = connection.getInputStream();
     String response = drainStream(responseStream);
+    responseStream.close();
     Log.d(TAG, "Room response: " + response);
     JSONObject roomJson = new JSONObject(response);
 
-    if (roomJson.has("error")) {
-      JSONArray errors = roomJson.getJSONArray("error_messages");
-      throw new IOException(errors.toString());
-    }
-
-    String roomId = roomJson.getString("room_key");
-    String clientId = roomJson.getString("me");
-    Log.d(TAG, "RoomId: " + roomId + ". ClientId: " + clientId);
-    String channelToken = roomJson.optString("token");
-    String offerSdp = roomJson.optString("offer");
-    if (offerSdp != null && offerSdp.length() > 0) {
-      JSONObject offerJson = new JSONObject(offerSdp);
-      offerSdp = offerJson.getString("sdp");
-      Log.d(TAG, "SDP type: " + offerJson.getString("type"));
-    } else {
-      offerSdp = null;
-    }
-
-    String roomUrl = url.substring(0, url.indexOf('?'));
-    Log.d(TAG, "Room url: " + roomUrl);
-
+    String roomId;
+    String clientId;
+    String roomUrl;
+    String channelToken = "";
+    String wssUrl = "";
+    String wssPostUrl = "";
     boolean initiator;
-    if (loopback) {
-      // In loopback mode caller should always be call initiator.
-      // TODO(glaznev): remove this once 8-dot-apprtc server will set initiator
-      // flag to true for loopback calls.
-      initiator = true;
+    LinkedList<IceCandidate> iceCandidates = null;
+    SessionDescription offerSdp = null;
+
+    if (useNewSignaling) {
+      String result = roomJson.getString("result");
+      if (!result.equals("SUCCESS")) {
+        throw new JSONException(result);
+      }
+      response = roomJson.getString("params");
+      roomJson = new JSONObject(response);
+      roomId = roomJson.getString("room_id");
+      clientId = roomJson.getString("client_id");
+      wssUrl = roomJson.getString("wss_url");
+      wssPostUrl = roomJson.getString("wss_post_url");
+      initiator = (roomJson.getBoolean("is_initiator"));
+      roomUrl = url.substring(0, url.indexOf("/register"));
+      if (!initiator) {
+        iceCandidates = new LinkedList<IceCandidate>();
+        String messagesString = roomJson.getString("messages");
+        JSONArray messages = new JSONArray(messagesString);
+        for (int i = 0; i < messages.length(); ++i) {
+          String messageString = messages.getString(i);
+          JSONObject message = new JSONObject(messageString);
+          String messageType = message.getString("type");
+          Log.d(TAG, "GAE->C #" + i + " : " + messageString);
+          if (messageType.equals("offer")) {
+            offerSdp = new SessionDescription(
+                SessionDescription.Type.fromCanonicalForm(messageType),
+                message.getString("sdp"));
+          } else if (messageType.equals("candidate")) {
+            IceCandidate candidate = new IceCandidate(
+                message.getString("id"),
+                message.getInt("label"),
+                message.getString("candidate"));
+            iceCandidates.add(candidate);
+          } else {
+            Log.e(TAG, "Unknown message: " + messageString);
+          }
+        }
+      }
     } else {
-      initiator = roomJson.getInt("initiator") == 1;
+      if (roomJson.has("error")) {
+        JSONArray errors = roomJson.getJSONArray("error_messages");
+        throw new IOException(errors.toString());
+      }
+      roomId = roomJson.getString("room_key");
+      clientId = roomJson.getString("me");
+      channelToken = roomJson.optString("token");
+      initiator = (roomJson.getInt("initiator") == 1);
+      roomUrl = url.substring(0, url.indexOf('?'));
     }
+
+    Log.d(TAG, "RoomId: " + roomId + ". ClientId: " + clientId);
     Log.d(TAG, "Initiator: " + initiator);
+    Log.d(TAG, "Room url: " + roomUrl);
 
     LinkedList<PeerConnection.IceServer> iceServers =
         iceServersFromPCConfigJSON(roomJson.getString("pc_config"));
@@ -191,7 +242,8 @@ public class RoomParametersFetcher
         iceServers, initiator,
         pcConstraints, videoConstraints, audioConstraints,
         roomUrl, roomId, clientId,
-        channelToken, offerSdp);
+        wssUrl, wssPostUrl, channelToken,
+        offerSdp, iceCandidates);
   }
 
   // Mimic Chrome and set DtlsSrtpKeyAgreement to true if not set to false by

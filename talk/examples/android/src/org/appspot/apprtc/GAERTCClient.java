@@ -76,7 +76,7 @@ public class GAERTCClient implements AppRTCClient, RoomParametersFetcherEvents {
    */
   @Override
   public void connectToRoom(String url, boolean loopback) {
-    fetcher = new RoomParametersFetcher(this, loopback);
+    fetcher = new RoomParametersFetcher(this, false, loopback);
     fetcher.execute(url);
   }
 
@@ -246,12 +246,12 @@ public class GAERTCClient implements AppRTCClient, RoomParametersFetcherEvents {
           }
           try {
             JSONObject json = new JSONObject(msg);
-            String type = (String) json.get("type");
+            String type = json.getString("type");
             if (type.equals("candidate")) {
               IceCandidate candidate = new IceCandidate(
-                  (String) json.get("id"),
+                  json.getString("id"),
                   json.getInt("label"),
-                  (String) json.get("candidate"));
+                  json.getString("candidate"));
               events.onRemoteIceCandidate(candidate);
             } else if (type.equals("answer") || type.equals("offer")) {
               SessionDescription sdp = new SessionDescription(

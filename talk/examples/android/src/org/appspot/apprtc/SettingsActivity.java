@@ -42,6 +42,7 @@ public class SettingsActivity extends Activity
   private String keyprefStartBitrateValue;
   private String keyprefHwCodec;
   private String keyprefCpuUsageDetection;
+  private String keyprefSignaling;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +53,7 @@ public class SettingsActivity extends Activity
     keyprefStartBitrateValue = getString(R.string.pref_startbitratevalue_key);
     keyprefHwCodec = getString(R.string.pref_hwcodec_key);
     keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
+    keyprefSignaling = getString(R.string.pref_signaling_key);
 
     // Display the fragment as the main content.
     settingsFragment = new SettingsFragment();
@@ -74,6 +76,7 @@ public class SettingsActivity extends Activity
     setBitrateEnable(sharedPreferences);
     updateSummaryB(sharedPreferences, keyprefHwCodec);
     updateSummaryB(sharedPreferences, keyprefCpuUsageDetection);
+    updateSummaryB(sharedPreferences, keyprefSignaling);
   }
 
   @Override
@@ -93,7 +96,7 @@ public class SettingsActivity extends Activity
     } else if (key.equals(keyprefStartBitrateValue)) {
       updateSummaryBitrate(sharedPreferences, key);
     } else if (key.equals(keyprefCpuUsageDetection) ||
-        key.equals(keyprefHwCodec)) {
+        key.equals(keyprefHwCodec) || key.equals(keyprefSignaling)) {
       updateSummaryB(sharedPreferences, key);
     }
     if (key.equals(keyprefStartBitrateType)) {

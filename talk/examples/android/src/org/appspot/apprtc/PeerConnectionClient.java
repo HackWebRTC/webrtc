@@ -283,6 +283,7 @@ public class PeerConnectionClient {
   }
 
   private void reportError(final String errorMessage) {
+    Log.e(TAG, "Peerconnection error: " + errorMessage);
     activity.runOnUiThread(new Runnable() {
       public void run() {
         events.onPeerConnectionError(errorMessage);

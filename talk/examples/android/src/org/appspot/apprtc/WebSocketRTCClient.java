@@ -32,9 +32,12 @@ import android.os.Looper;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.LinkedList;
+import java.util.Scanner;
 
 import org.appspot.apprtc.RoomParametersFetcher.RoomParametersFetcherEvents;
 import org.appspot.apprtc.WebSocketChannelClient.WebSocketChannelEvents;
@@ -57,31 +60,25 @@ import org.webrtc.SessionDescription;
 public class WebSocketRTCClient implements AppRTCClient,
     RoomParametersFetcherEvents, WebSocketChannelEvents {
   private static final String TAG = "WSRTCClient";
-  private static final String WSS_SERVER =
-      "wss://apprtc-ws.webrtc.org:8089/ws";
-  // TODO(glaznev): remove this hard-coded URL and instead get WebSocket http
-  // server URL from room response once it will be supported by 8-dot-apprtc.
-  private static final String WSS_POST_URL =
-      "https://apprtc-ws.webrtc.org:8089/";
 
   private enum ConnectionState {
     NEW, CONNECTED, CLOSED, ERROR
   };
   private final Handler uiHandler;
   private boolean loopback;
+  private boolean initiator;
   private SignalingEvents events;
-  private SignalingParameters signalingParameters;
   private WebSocketChannelClient wsClient;
   private RoomParametersFetcher fetcher;
   private ConnectionState roomState;
-  private LinkedList<GAEMessage> gaePostQueue;
+  private LinkedList<PostMessage> postQueue;
   private String postMessageUrl;
   private String byeMessageUrl;
 
   public WebSocketRTCClient(SignalingEvents events) {
     this.events = events;
     uiHandler = new Handler(Looper.getMainLooper());
-    gaePostQueue = new LinkedList<GAEMessage>();
+    postQueue = new LinkedList<PostMessage>();
   }
 
   // --------------------------------------------------------------------
@@ -90,31 +87,38 @@ public class WebSocketRTCClient implements AppRTCClient,
   @Override
   public void onSignalingParametersReady(final SignalingParameters params) {
     Log.d(TAG, "Room connection completed.");
-    if (!loopback && !params.initiator && params.offerSdp == null) {
-      reportError("Offer SDP is not available.");
-      return;
-    }
-    if (loopback && params.offerSdp != null) {
+    if (loopback && (!params.initiator || params.offerSdp != null)) {
       reportError("Loopback room is busy.");
       return;
     }
-    signalingParameters = params;
-    postMessageUrl = params.roomUrl + "message?r=" +
-        params.roomId + "&u=" + params.clientId;
-    byeMessageUrl = params.roomUrl + "bye/" +
+    if (!loopback && !params.initiator && params.offerSdp == null) {
+      Log.w(TAG, "No offer SDP in room response.");
+    }
+    initiator = params.initiator;
+    postMessageUrl = params.roomUrl + "/message/" +
+        params.roomId + "/" + params.clientId;
+    byeMessageUrl = params.roomUrl + "/bye/" +
         params.roomId + "/" + params.clientId;
     roomState = ConnectionState.CONNECTED;
-    wsClient.setClientParameters(
-        signalingParameters.roomId, signalingParameters.clientId);
-    wsClient.register();
-    events.onConnectedToRoom(signalingParameters);
+
+    // Connect to WebSocket server.
+    wsClient.connect(params.wssUrl, params.wssPostUrl);
+    wsClient.setClientParameters(params.roomId, params.clientId);
+
+    // Fire connection and signaling parameters events.
+    events.onConnectedToRoom(params);
     events.onChannelOpen();
-    if (!signalingParameters.initiator) {
-      // For call receiver get sdp offer from room parameters.
-      SessionDescription sdp = new SessionDescription(
-          SessionDescription.Type.fromCanonicalForm("offer"),
-          signalingParameters.offerSdp);
-      events.onRemoteDescription(sdp);
+    if (!params.initiator) {
+      // For call receiver get sdp offer and ice candidates
+      // from room parameters.
+      if (params.offerSdp != null) {
+        events.onRemoteDescription(params.offerSdp);
+      }
+      if (params.iceCandidates != null) {
+        for (IceCandidate iceCandidate : params.iceCandidates) {
+          events.onRemoteIceCandidate(iceCandidate);
+        }
+      }
     }
   }
 
@@ -128,10 +132,8 @@ public class WebSocketRTCClient implements AppRTCClient,
   // All events are called on UI thread.
   @Override
   public void onWebSocketOpen() {
-    Log.d(TAG, "Websocket connection completed.");
-    if (roomState == ConnectionState.CONNECTED) {
-      wsClient.register();
-    }
+    Log.d(TAG, "Websocket connection completed. Registering...");
+    wsClient.register();
   }
 
   @Override
@@ -149,15 +151,28 @@ public class WebSocketRTCClient implements AppRTCClient,
         String type = json.optString("type");
         if (type.equals("candidate")) {
           IceCandidate candidate = new IceCandidate(
-              (String) json.get("id"),
+              json.getString("id"),
               json.getInt("label"),
-              (String) json.get("candidate"));
+              json.getString("candidate"));
           events.onRemoteIceCandidate(candidate);
         } else if (type.equals("answer")) {
-          SessionDescription sdp = new SessionDescription(
-              SessionDescription.Type.fromCanonicalForm(type),
-              (String)json.get("sdp"));
-          events.onRemoteDescription(sdp);
+          if (initiator) {
+            SessionDescription sdp = new SessionDescription(
+                SessionDescription.Type.fromCanonicalForm(type),
+                json.getString("sdp"));
+            events.onRemoteDescription(sdp);
+          } else {
+            reportError("Received answer for call initiator: " + msg);
+          }
+        } else if (type.equals("offer")) {
+          if (!initiator) {
+            SessionDescription sdp = new SessionDescription(
+                SessionDescription.Type.fromCanonicalForm(type),
+                json.getString("sdp"));
+            events.onRemoteDescription(sdp);
+          } else {
+            reportError("Received offer for call receiver: " + msg);
+          }
         } else if (type.equals("bye")) {
           events.onChannelClose();
         } else {
@@ -189,32 +204,28 @@ public class WebSocketRTCClient implements AppRTCClient,
   // --------------------------------------------------------------------
   // AppRTCClient interface implementation.
   // Asynchronously connect to an AppRTC room URL, e.g.
-  // https://apprtc.appspot.com/?r=NNN, retrieve room parameters
+  // https://apprtc.appspot.com/register/<room>, retrieve room parameters
   // and connect to WebSocket server.
   @Override
   public void connectToRoom(String url, boolean loopback) {
     this.loopback = loopback;
+    // Create WebSocket client.
+    wsClient = new WebSocketChannelClient(this);
     // Get room parameters.
     roomState = ConnectionState.NEW;
-    fetcher = new RoomParametersFetcher(this, loopback);
+    fetcher = new RoomParametersFetcher(this, true, loopback);
     fetcher.execute(url);
-    // Connect to WebSocket server.
-    wsClient = new WebSocketChannelClient(this);
-    if (!loopback) {
-      wsClient.connect(WSS_SERVER, WSS_POST_URL);
-    }
   }
 
   @Override
   public void disconnect() {
     Log.d(TAG, "Disconnect. Room state: " + roomState);
-    wsClient.disconnect();
     if (roomState == ConnectionState.CONNECTED) {
       Log.d(TAG, "Closing room.");
-      // TODO(glaznev): Remove json bye message sending once new bye will
-      // be supported on 8-dot.
-      //sendGAEMessage(byeMessageUrl, "");
-      sendGAEMessage(postMessageUrl, "{\"type\": \"bye\"}");
+      sendGAEMessage(byeMessageUrl, "");
+    }
+    if (wsClient != null) {
+      wsClient.disconnect();
     }
   }
 
@@ -225,17 +236,16 @@ public class WebSocketRTCClient implements AppRTCClient,
   // we might want to filter elsewhere.
   @Override
   public void sendOfferSdp(final SessionDescription sdp) {
+    JSONObject json = new JSONObject();
+    jsonPut(json, "sdp", sdp.description);
+    jsonPut(json, "type", "offer");
+    sendGAEMessage(postMessageUrl, json.toString());
     if (loopback) {
-      // In loopback mode rename this offer to answer and send it back.
+      // In loopback mode rename this offer to answer and route it back.
       SessionDescription sdpAnswer = new SessionDescription(
           SessionDescription.Type.fromCanonicalForm("answer"),
           sdp.description);
       events.onRemoteDescription(sdpAnswer);
-    } else {
-      JSONObject json = new JSONObject();
-      jsonPut(json, "sdp", sdp.description);
-      jsonPut(json, "type", "offer");
-      sendGAEMessage(postMessageUrl, json.toString());
     }
   }
 
@@ -258,18 +268,27 @@ public class WebSocketRTCClient implements AppRTCClient,
   // Send Ice candidate to the other participant.
   @Override
   public void sendLocalIceCandidate(final IceCandidate candidate) {
-    if (loopback) {
-      events.onRemoteIceCandidate(candidate);
+    JSONObject json = new JSONObject();
+    jsonPut(json, "type", "candidate");
+    jsonPut(json, "label", candidate.sdpMLineIndex);
+    jsonPut(json, "id", candidate.sdpMid);
+    jsonPut(json, "candidate", candidate.sdp);
+    if (initiator) {
+      // Call initiator sends ice candidates to GAE server.
+      if (roomState != ConnectionState.CONNECTED) {
+        reportError("Sending ICE candidate in non connected state.");
+        return;
+      }
+      sendGAEMessage(postMessageUrl, json.toString());
+      if (loopback) {
+        events.onRemoteIceCandidate(candidate);
+      }
     } else {
+      // Call receiver sends ice candidates to websocket server.
       if (wsClient.getState() != WebSocketConnectionState.REGISTERED) {
         reportError("Sending ICE candidate in non registered state.");
         return;
       }
-      JSONObject json = new JSONObject();
-      jsonPut(json, "type", "candidate");
-      jsonPut(json, "label", candidate.sdpMLineIndex);
-      jsonPut(json, "id", candidate.sdpMid);
-      jsonPut(json, "candidate", candidate.sdp);
       wsClient.send(json.toString());
     }
   }
@@ -297,8 +316,8 @@ public class WebSocketRTCClient implements AppRTCClient,
     }
   }
 
-  private class GAEMessage {
-    GAEMessage(String postUrl, String message) {
+  private class PostMessage {
+    PostMessage(String postUrl, String message) {
       this.postUrl = postUrl;
       this.message = message;
     }
@@ -308,8 +327,8 @@ public class WebSocketRTCClient implements AppRTCClient,
 
   // Queue a message for sending to the room  and send it if already connected.
   private synchronized void sendGAEMessage(String url, String message) {
-    synchronized (gaePostQueue) {
-      gaePostQueue.add(new GAEMessage(url, message));
+    synchronized (postQueue) {
+      postQueue.add(new PostMessage(url, message));
     }
     (new AsyncTask<Void, Void, Void>() {
       public Void doInBackground(Void... unused) {
@@ -321,37 +340,58 @@ public class WebSocketRTCClient implements AppRTCClient,
 
   // Send all queued messages if connected to the room.
   private void maybeDrainGAEPostQueue() {
-    synchronized (gaePostQueue) {
-      if (roomState != ConnectionState.CONNECTED) {
-        return;
+    if (roomState != ConnectionState.CONNECTED) {
+      return;
+    }
+    PostMessage postMessage = null;
+    while (true) {
+      synchronized (postQueue) {
+        postMessage = postQueue.poll();
+      }
+      if (postMessage == null) {
+        break;
       }
       try {
-        for (GAEMessage gaeMessage : gaePostQueue) {
-          Log.d(TAG, "ROOM SEND to " + gaeMessage.postUrl +
-              ". Message: " + gaeMessage.message);
-          // Check if this is 'bye' message and update room connection state.
-          // TODO(glaznev): Uncomment this check and remove check below
-          // once new bye message will be supported by 8-dot.
-          //if (gaeMessage.postUrl.contains("bye")) {
-          //  roomState = ConnectionState.CLOSED;
-          //}
-          JSONObject json = new JSONObject(gaeMessage.message);
-          String type = json.optString("type");
-          if (type != null && type.equals("bye")) {
-            roomState = ConnectionState.CLOSED;
-          }
-          // Send POST request.
-          HttpURLConnection connection =
-              (HttpURLConnection) new URL(gaeMessage.postUrl).openConnection();
-          connection.setDoOutput(true);
-          connection.setRequestProperty(
-              "content-type", "text/plain; charset=utf-8");
-          connection.getOutputStream().write(
-              gaeMessage.message.getBytes("UTF-8"));
-          String replyHeader = connection.getHeaderField(null);
-          if (!replyHeader.startsWith("HTTP/1.1 200 ")) {
-            reportError("Non-200 response to POST: " +
-                connection.getHeaderField(null));
+
+        // Check if this is 'bye' message and update room connection state.
+        if (postMessage.postUrl.contains("bye")) {
+          roomState = ConnectionState.CLOSED;
+          Log.d(TAG, "C->GAE: " + postMessage.postUrl);
+        } else {
+          Log.d(TAG, "C->GAE: " + postMessage.message);
+        }
+
+        // Get connection.
+        HttpURLConnection connection =
+          (HttpURLConnection) new URL(postMessage.postUrl).openConnection();
+        byte[] postData = postMessage.message.getBytes("UTF-8");
+        connection.setUseCaches(false);
+        connection.setDoOutput(true);
+        connection.setDoInput(true);
+        connection.setRequestMethod("POST");
+        connection.setFixedLengthStreamingMode(postData.length);
+        connection.setRequestProperty(
+            "content-type", "text/plain; charset=utf-8");
+
+        // Send POST request.
+        OutputStream outStream = connection.getOutputStream();
+        outStream.write(postData);
+        outStream.close();
+
+        // Get response.
+        int responseCode = connection.getResponseCode();
+        if (responseCode != 200) {
+          reportError("Non-200 response to POST: " +
+              connection.getHeaderField(null));
+        }
+        InputStream responseStream = connection.getInputStream();
+        String response = drainStream(responseStream);
+        responseStream.close();
+        if (roomState != ConnectionState.CLOSED) {
+          JSONObject roomJson = new JSONObject(response);
+          String result = roomJson.getString("result");
+          if (!result.equals("SUCCESS")) {
+            reportError("Room POST error: " + result);
           }
         }
       } catch (IOException e) {
@@ -359,9 +399,13 @@ public class WebSocketRTCClient implements AppRTCClient,
       } catch (JSONException e) {
         reportError("GAE POST JSON error: " + e.getMessage());
       }
-
-      gaePostQueue.clear();
     }
+  }
+
+  // Return the contents of an InputStream as a String.
+  private String drainStream(InputStream in) {
+    Scanner s = new Scanner(in).useDelimiter("\\A");
+    return s.hasNext() ? s.next() : "";
   }
 
 }

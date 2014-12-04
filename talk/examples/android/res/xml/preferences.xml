@@ -43,5 +43,10 @@
         android:dialogTitle="@string/pref_cpu_usage_detection_dlg"
         android:defaultValue="@string/pref_cpu_usage_detection_default" />
 
+    <CheckBoxPreference
+        android:key="@string/pref_signaling_key"
+        android:title="@string/pref_signaling_title"
+        android:dialogTitle="@string/pref_signaling_dlg"
+        android:defaultValue="@string/pref_signaling_default" />
 
 </PreferenceScreen>

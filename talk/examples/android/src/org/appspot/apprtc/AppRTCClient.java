@@ -75,14 +75,18 @@ public interface AppRTCClient {
     public final String roomId;
     public final String clientId;
     public final String channelToken;
-    public final String offerSdp;
+    public final String wssUrl;
+    public final String wssPostUrl;
+    public final SessionDescription offerSdp;
+    public final List<IceCandidate> iceCandidates;
 
     public SignalingParameters(
         List<PeerConnection.IceServer> iceServers,
         boolean initiator, MediaConstraints pcConstraints,
         MediaConstraints videoConstraints, MediaConstraints audioConstraints,
         String roomUrl, String roomId, String clientId,
-        String channelToken, String offerSdp ) {
+        String wssUrl, String wssPostUrl, String channelToken,
+        SessionDescription offerSdp, List<IceCandidate> iceCandidates) {
       this.iceServers = iceServers;
       this.initiator = initiator;
       this.pcConstraints = pcConstraints;
@@ -91,8 +95,11 @@ public interface AppRTCClient {
       this.roomUrl = roomUrl;
       this.roomId = roomId;
       this.clientId = clientId;
+      this.wssUrl = wssUrl;
+      this.wssPostUrl = wssPostUrl;
       this.channelToken = channelToken;
       this.offerSdp = offerSdp;
+      this.iceCandidates = iceCandidates;
       if (channelToken == null || channelToken.length() == 0) {
         this.websocketSignaling = true;
       } else {

@@ -140,7 +140,7 @@ public class WebSocketChannelClient {
       json.put("cmd", "register");
       json.put("roomid", roomID);
       json.put("clientid", clientID);
-      Log.d(TAG, "WS SEND: " + json.toString());
+      Log.d(TAG, "C->WSS: " + json.toString());
       ws.sendTextMessage(json.toString());
       state = WebSocketConnectionState.REGISTERED;
       // Send any previously accumulated messages.
@@ -176,7 +176,7 @@ public class WebSocketChannelClient {
           json.put("cmd", "send");
           json.put("msg", message);
           message = json.toString();
-          Log.d(TAG, "WS SEND: " + message);
+          Log.d(TAG, "C->WSS: " + message);
           ws.sendTextMessage(message);
         } catch (JSONException e) {
           reportError("WebSocket send JSON error: " + e.getMessage());
@@ -279,9 +279,9 @@ public class WebSocketChannelClient {
       try {
         for (WsHttpMessage wsHttpMessage : wsHttpQueue) {
           // Send POST request.
-          Log.d(TAG, "WS " + wsHttpMessage.method + " : " +
+          String postUrl = postServerUrl + "/" + roomID + "/" + clientID;
+          Log.d(TAG, "WS " + wsHttpMessage.method + " : " + postUrl + " : " +
               wsHttpMessage.message);
-          String postUrl = postServerUrl + roomID + "/" + clientID;
           HttpURLConnection connection =
               (HttpURLConnection) new URL(postUrl).openConnection();
           connection.setDoOutput(true);
@@ -333,7 +333,7 @@ public class WebSocketChannelClient {
 
     @Override
     public void onTextMessage(String payload) {
-      Log.d(TAG, "WS GET: " + payload);
+      Log.d(TAG, "WSS->C: " + payload);
       final String message = payload;
       uiHandler.post(new Runnable() {
         public void run() {
