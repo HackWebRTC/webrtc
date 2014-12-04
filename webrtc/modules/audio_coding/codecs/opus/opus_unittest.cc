@@ -35,9 +35,7 @@ class OpusTest : public ::testing::Test {
   WebRtcOpusEncInst* opus_mono_encoder_;
   WebRtcOpusEncInst* opus_stereo_encoder_;
   WebRtcOpusDecInst* opus_mono_decoder_;
-  WebRtcOpusDecInst* opus_mono_decoder_new_;
   WebRtcOpusDecInst* opus_stereo_decoder_;
-  WebRtcOpusDecInst* opus_stereo_decoder_new_;
 
   int16_t speech_data_[kOpusMaxFrameSamples];
   int16_t output_data_[kOpusMaxFrameSamples];
@@ -48,9 +46,7 @@ OpusTest::OpusTest()
     : opus_mono_encoder_(NULL),
       opus_stereo_encoder_(NULL),
       opus_mono_decoder_(NULL),
-      opus_mono_decoder_new_(NULL),
-      opus_stereo_decoder_(NULL),
-      opus_stereo_decoder_new_(NULL) {
+      opus_stereo_decoder_(NULL) {
 }
 
 void OpusTest::SetUp() {
@@ -117,91 +113,56 @@ TEST_F(OpusTest, OpusEncodeDecodeMono) {
   // Create encoder memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_mono_encoder_, 1));
   EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_mono_decoder_, 1));
-  EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_mono_decoder_new_, 1));
 
   // Set bitrate.
   EXPECT_EQ(0, WebRtcOpus_SetBitRate(opus_mono_encoder_, 32000));
 
   // Check number of channels for decoder.
   EXPECT_EQ(1, WebRtcOpus_DecoderChannels(opus_mono_decoder_));
-  EXPECT_EQ(1, WebRtcOpus_DecoderChannels(opus_mono_decoder_new_));
 
   // Encode & decode.
   int16_t encoded_bytes;
   int16_t audio_type;
-  int16_t output_data_decode_new[kOpusMaxFrameSamples];
   int16_t output_data_decode[kOpusMaxFrameSamples];
   encoded_bytes = WebRtcOpus_Encode(opus_mono_encoder_, speech_data_,
                                     kOpus20msFrameSamples, kMaxBytes,
                                     bitstream_);
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodeNew(opus_mono_decoder_new_, bitstream_,
-                                 encoded_bytes, output_data_decode_new,
-                                 &audio_type));
-  EXPECT_EQ(kOpus20msFrameSamples,
             WebRtcOpus_Decode(opus_mono_decoder_, bitstream_,
                               encoded_bytes, output_data_decode,
                               &audio_type));
 
-  // Data in |output_data_decode_new| should be the same as in
-  // |output_data_decode|.
-  for (int i = 0; i < kOpus20msFrameSamples; i++) {
-    EXPECT_EQ(output_data_decode_new[i], output_data_decode[i]);
-  }
-
   // Free memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_mono_encoder_));
   EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_mono_decoder_));
-  EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_mono_decoder_new_));
 }
 
 TEST_F(OpusTest, OpusEncodeDecodeStereo) {
   // Create encoder memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_stereo_encoder_, 2));
   EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_stereo_decoder_, 2));
-  EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_stereo_decoder_new_, 2));
 
   // Set bitrate.
   EXPECT_EQ(0, WebRtcOpus_SetBitRate(opus_stereo_encoder_, 64000));
 
   // Check number of channels for decoder.
   EXPECT_EQ(2, WebRtcOpus_DecoderChannels(opus_stereo_decoder_));
-  EXPECT_EQ(2, WebRtcOpus_DecoderChannels(opus_stereo_decoder_new_));
 
   // Encode & decode.
   int16_t encoded_bytes;
   int16_t audio_type;
-  int16_t output_data_decode_new[kOpusMaxFrameSamples];
   int16_t output_data_decode[kOpusMaxFrameSamples];
-  int16_t output_data_decode_slave[kOpusMaxFrameSamples];
   encoded_bytes = WebRtcOpus_Encode(opus_stereo_encoder_, speech_data_,
                                     kOpus20msFrameSamples, kMaxBytes,
                                     bitstream_);
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodeNew(opus_stereo_decoder_new_, bitstream_,
-                                 encoded_bytes, output_data_decode_new,
-                                 &audio_type));
-  EXPECT_EQ(kOpus20msFrameSamples,
             WebRtcOpus_Decode(opus_stereo_decoder_, bitstream_,
                               encoded_bytes, output_data_decode,
                               &audio_type));
-  EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodeSlave(opus_stereo_decoder_, bitstream_,
-                                   encoded_bytes, output_data_decode_slave,
-                                   &audio_type));
-
-  // Data in |output_data_decode_new| should be the same as in
-  // |output_data_decode| and |output_data_decode_slave| interleaved to a
-  // stereo signal.
-  for (int i = 0; i < kOpus20msFrameSamples; i++) {
-    EXPECT_EQ(output_data_decode_new[i * 2], output_data_decode[i]);
-    EXPECT_EQ(output_data_decode_new[i * 2 + 1], output_data_decode_slave[i]);
-  }
 
   // Free memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_stereo_encoder_));
   EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_stereo_decoder_));
-  EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_stereo_decoder_new_));
 }
 
 TEST_F(OpusTest, OpusSetBitRate) {
@@ -249,67 +210,30 @@ TEST_F(OpusTest, OpusDecodeInit) {
   // Create encoder memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_stereo_encoder_, 2));
   EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_stereo_decoder_, 2));
-  EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_stereo_decoder_new_, 2));
 
   // Encode & decode.
   int16_t encoded_bytes;
   int16_t audio_type;
-  int16_t output_data_decode_new[kOpusMaxFrameSamples];
   int16_t output_data_decode[kOpusMaxFrameSamples];
-  int16_t output_data_decode_slave[kOpusMaxFrameSamples];
+
   encoded_bytes = WebRtcOpus_Encode(opus_stereo_encoder_, speech_data_,
                                     kOpus20msFrameSamples, kMaxBytes,
                                     bitstream_);
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodeNew(opus_stereo_decoder_new_, bitstream_,
-                                 encoded_bytes, output_data_decode_new,
-                                 &audio_type));
-  EXPECT_EQ(kOpus20msFrameSamples,
             WebRtcOpus_Decode(opus_stereo_decoder_, bitstream_,
                               encoded_bytes, output_data_decode,
                               &audio_type));
-  EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodeSlave(opus_stereo_decoder_, bitstream_,
-                                   encoded_bytes, output_data_decode_slave,
-                                   &audio_type));
 
-  // Data in |output_data_decode_new| should be the same as in
-  // |output_data_decode| and |output_data_decode_slave| interleaved to a
-  // stereo signal.
-  for (int i = 0; i < kOpus20msFrameSamples; i++) {
-    EXPECT_EQ(output_data_decode_new[i * 2], output_data_decode[i]);
-    EXPECT_EQ(output_data_decode_new[i * 2 + 1], output_data_decode_slave[i]);
-  }
-
-  EXPECT_EQ(0, WebRtcOpus_DecoderInitNew(opus_stereo_decoder_new_));
   EXPECT_EQ(0, WebRtcOpus_DecoderInit(opus_stereo_decoder_));
-  EXPECT_EQ(0, WebRtcOpus_DecoderInitSlave(opus_stereo_decoder_));
 
-  EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodeNew(opus_stereo_decoder_new_, bitstream_,
-                                 encoded_bytes, output_data_decode_new,
-                                 &audio_type));
   EXPECT_EQ(kOpus20msFrameSamples,
             WebRtcOpus_Decode(opus_stereo_decoder_, bitstream_,
                               encoded_bytes, output_data_decode,
                               &audio_type));
-  EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodeSlave(opus_stereo_decoder_, bitstream_,
-                                   encoded_bytes, output_data_decode_slave,
-                                   &audio_type));
-
-  // Data in |output_data_decode_new| should be the same as in
-  // |output_data_decode| and |output_data_decode_slave| interleaved to a
-  // stereo signal.
-  for (int i = 0; i < kOpus20msFrameSamples; i++) {
-    EXPECT_EQ(output_data_decode_new[i * 2], output_data_decode[i]);
-    EXPECT_EQ(output_data_decode_new[i * 2 + 1], output_data_decode_slave[i]);
-  }
 
   // Free memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_stereo_encoder_));
   EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_stereo_decoder_));
-  EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_stereo_decoder_new_));
 }
 
 TEST_F(OpusTest, OpusEnableDisableFec) {
@@ -382,49 +306,33 @@ TEST_F(OpusTest, OpusDecodePlcMono) {
   // Create encoder memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_mono_encoder_, 1));
   EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_mono_decoder_, 1));
-  EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_mono_decoder_new_, 1));
 
   // Set bitrate.
   EXPECT_EQ(0, WebRtcOpus_SetBitRate(opus_mono_encoder_, 32000));
 
   // Check number of channels for decoder.
   EXPECT_EQ(1, WebRtcOpus_DecoderChannels(opus_mono_decoder_));
-  EXPECT_EQ(1, WebRtcOpus_DecoderChannels(opus_mono_decoder_new_));
 
   // Encode & decode.
   int16_t encoded_bytes;
   int16_t audio_type;
-  int16_t output_data_decode_new[kOpusMaxFrameSamples];
   int16_t output_data_decode[kOpusMaxFrameSamples];
   encoded_bytes = WebRtcOpus_Encode(opus_mono_encoder_, speech_data_,
                                     kOpus20msFrameSamples, kMaxBytes,
                                     bitstream_);
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodeNew(opus_mono_decoder_new_, bitstream_,
-                                 encoded_bytes, output_data_decode_new,
-                                 &audio_type));
-  EXPECT_EQ(kOpus20msFrameSamples,
             WebRtcOpus_Decode(opus_mono_decoder_, bitstream_,
                               encoded_bytes, output_data_decode,
                               &audio_type));
 
-  // Call decoder PLC for both versions of the decoder.
+  // Call decoder PLC.
   int16_t plc_buffer[kOpusMaxFrameSamples];
-  int16_t plc_buffer_new[kOpusMaxFrameSamples];
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodePlcMaster(opus_mono_decoder_, plc_buffer, 1));
-  EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodePlc(opus_mono_decoder_new_, plc_buffer_new, 1));
-
-  // Data in |plc_buffer| should be the same as in |plc_buffer_new|.
-  for (int i = 0; i < kOpus20msFrameSamples; i++) {
-    EXPECT_EQ(plc_buffer[i], plc_buffer_new[i]);
-  }
+            WebRtcOpus_DecodePlc(opus_mono_decoder_, plc_buffer, 1));
 
   // Free memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_mono_encoder_));
   EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_mono_decoder_));
-  EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_mono_decoder_new_));
 }
 
 // PLC in stereo mode.
@@ -432,61 +340,33 @@ TEST_F(OpusTest, OpusDecodePlcStereo) {
   // Create encoder memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_stereo_encoder_, 2));
   EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_stereo_decoder_, 2));
-  EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_stereo_decoder_new_, 2));
 
   // Set bitrate.
   EXPECT_EQ(0, WebRtcOpus_SetBitRate(opus_stereo_encoder_, 64000));
 
   // Check number of channels for decoder.
   EXPECT_EQ(2, WebRtcOpus_DecoderChannels(opus_stereo_decoder_));
-  EXPECT_EQ(2, WebRtcOpus_DecoderChannels(opus_stereo_decoder_new_));
 
   // Encode & decode.
   int16_t encoded_bytes;
   int16_t audio_type;
-  int16_t output_data_decode_new[kOpusMaxFrameSamples];
   int16_t output_data_decode[kOpusMaxFrameSamples];
-  int16_t output_data_decode_slave[kOpusMaxFrameSamples];
   encoded_bytes = WebRtcOpus_Encode(opus_stereo_encoder_, speech_data_,
                                     kOpus20msFrameSamples, kMaxBytes,
                                     bitstream_);
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodeNew(opus_stereo_decoder_new_, bitstream_,
-                                 encoded_bytes, output_data_decode_new,
-                                 &audio_type));
-  EXPECT_EQ(kOpus20msFrameSamples,
             WebRtcOpus_Decode(opus_stereo_decoder_, bitstream_,
                               encoded_bytes, output_data_decode,
                               &audio_type));
-  EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodeSlave(opus_stereo_decoder_, bitstream_,
-                                   encoded_bytes,
-                                   output_data_decode_slave,
-                                   &audio_type));
 
-  // Call decoder PLC for both versions of the decoder.
-  int16_t plc_buffer_left[kOpusMaxFrameSamples];
-  int16_t plc_buffer_right[kOpusMaxFrameSamples];
-  int16_t plc_buffer_new[kOpusMaxFrameSamples];
+  // Call decoder PLC.
+  int16_t plc_buffer[kOpusMaxFrameSamples];
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodePlcMaster(opus_stereo_decoder_,
-                                       plc_buffer_left, 1));
-  EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodePlcSlave(opus_stereo_decoder_,
-                                      plc_buffer_right, 1));
-  EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodePlc(opus_stereo_decoder_new_, plc_buffer_new, 1));
-  // Data in |plc_buffer_left| and |plc_buffer_right|should be the same as the
-  // interleaved samples in |plc_buffer_new|.
-  for (int i = 0, j = 0; i < kOpus20msFrameSamples; i++) {
-    EXPECT_EQ(plc_buffer_left[i], plc_buffer_new[j++]);
-    EXPECT_EQ(plc_buffer_right[i], plc_buffer_new[j++]);
-  }
+            WebRtcOpus_DecodePlc(opus_stereo_decoder_, plc_buffer, 1));
 
   // Free memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_stereo_encoder_));
   EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_stereo_decoder_));
-  EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_stereo_decoder_new_));
 }
 
 // Duration estimation.

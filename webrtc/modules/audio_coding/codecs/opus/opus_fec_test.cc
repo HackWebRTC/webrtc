@@ -156,10 +156,8 @@ void OpusFecTest::DecodeABlock(bool lost_previous, bool lost_current) {
 
   if (!lost_current) {
     // Decode current frame.
-    value_2 = WebRtcOpus_DecodeNew(opus_decoder_, &bit_stream_[0],
-                                   encoded_bytes_,
-                                   &out_data_[value_1 * channels_],
-                                   &audio_type);
+    value_2 = WebRtcOpus_Decode(opus_decoder_, &bit_stream_[0], encoded_bytes_,
+                                &out_data_[value_1 * channels_], &audio_type);
     EXPECT_EQ(block_length_sample_, value_2);
   }
 }

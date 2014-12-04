@@ -72,8 +72,8 @@ float OpusSpeedTest::DecodeABlock(const uint8_t* bit_stream,
   int value;
   int16_t audio_type;
   clock_t clocks = clock();
-  value = WebRtcOpus_DecodeNew(opus_decoder_, bit_stream, encoded_bytes,
-                               out_data, &audio_type);
+  value = WebRtcOpus_Decode(opus_decoder_, bit_stream, encoded_bytes, out_data,
+                            &audio_type);
   clocks = clock() - clocks;
   EXPECT_EQ(output_length_sample_, value);
   return 1000.0 * clocks / CLOCKS_PER_SEC;
