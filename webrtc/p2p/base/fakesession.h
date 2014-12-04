@@ -82,9 +82,20 @@ class FakeTransportChannel : public TransportChannelImpl,
     return transport_;
   }
 
+  virtual TransportChannelState GetState() const {
+    if (connection_count_ == 0) {
+      return TransportChannelState::STATE_FAILED;
+    }
+
+    if (connection_count_ == 1) {
+      return TransportChannelState::STATE_COMPLETED;
+    }
+
+    return TransportChannelState::STATE_FAILED;
+  }
+
   virtual void SetIceRole(IceRole role) { role_ = role; }
   virtual IceRole GetIceRole() const { return role_; }
-  virtual size_t GetConnectionCount() const { return connection_count_; }
   virtual void SetIceTiebreaker(uint64 tiebreaker) { tiebreaker_ = tiebreaker; }
   virtual bool GetIceProtocolType(IceProtocolType* type) const {
     *type = ice_proto_;

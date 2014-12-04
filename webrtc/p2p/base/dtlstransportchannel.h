@@ -109,9 +109,6 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   virtual IceRole GetIceRole() const {
     return channel_->GetIceRole();
   }
-  virtual size_t GetConnectionCount() const {
-    return channel_->GetConnectionCount();
-  }
   virtual bool SetLocalIdentity(rtc::SSLIdentity *identity);
   virtual bool GetLocalIdentity(rtc::SSLIdentity** identity) const;
 
@@ -174,6 +171,10 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   // TransportChannelImpl calls.
   virtual Transport* GetTransport() {
     return transport_;
+  }
+
+  virtual TransportChannelState GetState() const {
+    return channel_->GetState();
   }
   virtual void SetIceTiebreaker(uint64 tiebreaker) {
     channel_->SetIceTiebreaker(tiebreaker);

@@ -36,7 +36,6 @@ class TransportChannelImpl : public TransportChannel {
   virtual IceRole GetIceRole() const = 0;
   virtual void SetIceRole(IceRole role) = 0;
   virtual void SetIceTiebreaker(uint64 tiebreaker) = 0;
-  virtual size_t GetConnectionCount() const = 0;
   // To toggle G-ICE/ICE.
   virtual bool GetIceProtocolType(IceProtocolType* type) const = 0;
   virtual void SetIceProtocolType(IceProtocolType type) = 0;
