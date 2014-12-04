@@ -423,3 +423,10 @@ TEST_F(SctpDataChannelTest, SendEmptyData) {
   EXPECT_EQ(webrtc::DataChannelInterface::kOpen,
             webrtc_data_channel_->state());
 }
+
+// Tests that a channel can be closed without being opened or assigned an sid.
+TEST_F(SctpDataChannelTest, NeverOpened) {
+  provider_.set_transport_available(true);
+  webrtc_data_channel_->OnTransportChannelCreated();
+  webrtc_data_channel_->Close();
+}

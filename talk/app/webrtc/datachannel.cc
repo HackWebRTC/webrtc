@@ -441,7 +441,7 @@ void DataChannel::DisconnectFromTransport() {
   provider_->DisconnectDataChannel(this);
   connected_to_provider_ = false;
 
-  if (data_channel_type_ == cricket::DCT_SCTP) {
+  if (data_channel_type_ == cricket::DCT_SCTP && config_.id >= 0) {
     provider_->RemoveSctpDataStream(config_.id);
   }
 }

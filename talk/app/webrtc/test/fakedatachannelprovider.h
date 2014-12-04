@@ -71,7 +71,8 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
     connected_channels_.erase(data_channel);
   }
 
-  virtual void AddSctpDataStream(uint32 sid) OVERRIDE {
+  virtual void AddSctpDataStream(int sid) OVERRIDE {
+    ASSERT(sid >= 0);
     if (!transport_available_) {
       return;
     }
@@ -79,7 +80,8 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
     recv_ssrcs_.insert(sid);
   }
 
-  virtual void RemoveSctpDataStream(uint32 sid) OVERRIDE {
+  virtual void RemoveSctpDataStream(int sid) OVERRIDE {
+    ASSERT(sid >= 0);
     send_ssrcs_.erase(sid);
     recv_ssrcs_.erase(sid);
   }
