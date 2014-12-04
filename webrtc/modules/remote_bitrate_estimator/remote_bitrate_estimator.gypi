@@ -15,8 +15,8 @@
       'target_name': 'remote_bitrate_estimator',
       'type': 'static_library',
       'dependencies': [
+        '<(webrtc_root)/modules/remote_bitrate_estimator/remote_bitrate_estimator_components.gyp:rbe_components',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        '<(rbe_components_path)/remote_bitrate_estimator_components.gyp:rbe_components',
       ],
       'sources': [
         'include/bwe_defines.h',

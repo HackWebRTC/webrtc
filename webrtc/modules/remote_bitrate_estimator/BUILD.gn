@@ -24,8 +24,17 @@ source_set("remote_bitrate_estimator") {
 
 source_set("rbe_components") {
   sources = [
+    "aimd_rate_control.cc",
+    "aimd_rate_control.h",
+    "inter_arrival.cc",
+    "inter_arrival.h",
+    "mimd_rate_control.cc",
+    "mimd_rate_control.h",
     "overuse_detector.cc",
     "overuse_detector.h",
+    "overuse_estimator.cc",
+    "overuse_estimator.h",
+    "remote_bitrate_estimator_abs_send_time.cc",
     "remote_bitrate_estimator_single_stream.cc",
     "remote_rate_control.cc",
     "remote_rate_control.h",

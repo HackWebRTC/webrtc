@@ -40,7 +40,6 @@
       'modules_java_gyp_path%': '<(modules_java_gyp_path)',
       'webrtc_vp8_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp8',
       'webrtc_vp9_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp9',
-      'rbe_components_path%': '<(webrtc_root)/modules/remote_bitrate_estimator',
       'include_opus%': 1,
     },
     'build_with_chromium%': '<(build_with_chromium)',
@@ -52,7 +51,6 @@
     'webrtc_vp9_dir%': '<(webrtc_vp9_dir)',
     'include_opus%': '<(include_opus)',
     'rtc_relative_path%': 1,
-    'rbe_components_path%': '<(rbe_components_path)',
     'external_libraries%': '0',
     'json_root%': '<(DEPTH)/third_party/jsoncpp/source/include/',
     # openssl needs to be defined or gyp will complain. Is is only used when
