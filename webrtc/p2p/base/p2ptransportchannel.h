@@ -59,10 +59,10 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   // From TransportChannelImpl:
   virtual Transport* GetTransport() { return transport_; }
+  virtual TransportChannelState GetState() const;
   virtual void SetIceRole(IceRole role);
   virtual IceRole GetIceRole() const { return ice_role_; }
   virtual void SetIceTiebreaker(uint64 tiebreaker);
-  virtual size_t GetConnectionCount() const { return connections_.size(); }
   virtual bool GetIceProtocolType(IceProtocolType* type) const;
   virtual void SetIceProtocolType(IceProtocolType type);
   virtual void SetIceCredentials(const std::string& ice_ufrag,
@@ -164,7 +164,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   void HandleNotWritable();
   void HandleAllTimedOut();
 
-  Connection* GetBestConnectionOnNetwork(rtc::Network* network);
+  Connection* GetBestConnectionOnNetwork(rtc::Network* network) const;
   bool CreateConnections(const Candidate &remote_candidate,
                          PortInterface* origin_port, bool readable);
   bool CreateConnection(PortInterface* port, const Candidate& remote_candidate,

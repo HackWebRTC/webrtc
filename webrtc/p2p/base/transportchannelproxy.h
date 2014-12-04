@@ -41,6 +41,8 @@ class TransportChannelProxy : public TransportChannel,
   const std::string& name() const { return name_; }
   TransportChannelImpl* impl() { return impl_; }
 
+  virtual TransportChannelState GetState() const;
+
   // Sets the implementation to which we will proxy.
   void SetImplementation(TransportChannelImpl* impl);
 

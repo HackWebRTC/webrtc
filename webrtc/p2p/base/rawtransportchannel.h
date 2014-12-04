@@ -54,6 +54,9 @@ class RawTransportChannel : public TransportChannelImpl,
 
   // Implements TransportChannelImpl.
   virtual Transport* GetTransport() { return raw_transport_; }
+  virtual TransportChannelState GetState() const {
+    return TransportChannelState::STATE_COMPLETED;
+  }
   virtual void SetIceCredentials(const std::string& ice_ufrag,
                                  const std::string& ice_pwd) {}
   virtual void SetRemoteIceCredentials(const std::string& ice_ufrag,

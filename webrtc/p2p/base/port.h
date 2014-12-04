@@ -517,6 +517,7 @@ class Connection : public rtc::MessageHandler,
   void ReceivedPing();
 
   // Debugging description of this connection
+  std::string ToDebugId() const;
   std::string ToString() const;
   std::string ToSensitiveString() const;
 

@@ -669,8 +669,7 @@ void Transport::OnChannelConnectionRemoved(TransportChannelImpl* channel) {
     return;
   }
 
-  size_t connections = channel->GetConnectionCount();
-  if (connections == 0) {
+  if (channel->GetState() == TransportChannelState::STATE_FAILED) {
     // A Transport has failed if any of its channels have no remaining
     // connections.
     signaling_thread_->Post(this, MSG_FAILED);
@@ -680,6 +679,12 @@ void Transport::OnChannelConnectionRemoved(TransportChannelImpl* channel) {
 void Transport::MaybeCompleted_w() {
   ASSERT(worker_thread()->IsCurrent());
 
+  // When there is no channel created yet, calling this function could fire an
+  // IceConnectionCompleted event prematurely.
+  if (channels_.size() == 0) {
+    return;
+  }
+
   // A Transport's ICE process is completed if all of its channels are writable,
   // have finished allocating candidates, and have pruned all but one of their
   // connections.
@@ -687,7 +692,7 @@ void Transport::MaybeCompleted_w() {
   for (iter = channels_.begin(); iter != channels_.end(); ++iter) {
     const TransportChannelImpl* channel = iter->second.get();
     if (!(channel->writable() &&
-          channel->GetConnectionCount() == 1 &&
+          channel->GetState() == TransportChannelState::STATE_COMPLETED &&
           channel->GetIceRole() == ICEROLE_CONTROLLING &&
           iter->second.candidates_allocated())) {
       return;

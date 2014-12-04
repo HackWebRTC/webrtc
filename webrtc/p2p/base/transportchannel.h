@@ -36,6 +36,9 @@ enum PacketFlags {
                            // crypto provided by the transport (e.g. DTLS)
 };
 
+// Used to indicate channel's connection state.
+enum TransportChannelState { STATE_CONNECTING, STATE_COMPLETED, STATE_FAILED };
+
 // A TransportChannel represents one logical stream of packets that are sent
 // between the two sides of a session.
 class TransportChannel : public sigslot::has_slots<> {
@@ -45,6 +48,12 @@ class TransportChannel : public sigslot::has_slots<> {
         component_(component),
         readable_(false), writable_(false) {}
   virtual ~TransportChannel() {}
+
+  // TODO(guoweis) - Make this pure virtual once all subclasses of
+  // TransportChannel have this defined.
+  virtual TransportChannelState GetState() const {
+    return TransportChannelState::STATE_CONNECTING;
+  }
 
   // TODO(mallinath) - Remove this API, as it's no longer useful.
   // Returns the session id of this channel.
