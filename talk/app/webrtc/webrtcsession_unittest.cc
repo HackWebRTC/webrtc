@@ -104,6 +104,8 @@ typedef PeerConnectionInterface::RTCOfferAnswerOptions RTCOfferAnswerOptions;
 
 static const int kClientAddrPort = 0;
 static const char kClientAddrHost1[] = "11.11.11.11";
+static const char kClientIPv6AddrHost1[] =
+    "2620:0:aaaa:bbbb:cccc:dddd:eeee:ffff";
 static const char kClientAddrHost2[] = "22.22.22.22";
 static const char kStunAddrHost[] = "99.99.99.1";
 static const SocketAddress kTurnUdpIntAddr("99.99.99.4", 3478);
@@ -141,6 +143,34 @@ static void InjectAfter(const std::string& line,
   rtc::replace_substrs(line.c_str(), line.length(),
                              tmp.c_str(), tmp.length(), message);
 }
+
+class FakeMetricsObserver : public webrtc::MetricsObserverInterface {
+ public:
+  FakeMetricsObserver() { Reset(); }
+  void Reset() {
+    memset(peer_connection_metrics_counters_, 0,
+           sizeof(peer_connection_metrics_counters_));
+    memset(peer_connection_metrics_name_, 0,
+           sizeof(peer_connection_metrics_name_));
+  }
+
+  virtual void IncrementCounter(
+      webrtc::PeerConnectionMetricsCounter type) OVERRIDE {
+    peer_connection_metrics_counters_[type]++;
+  }
+  virtual void AddHistogramSample(webrtc::PeerConnectionMetricsName type,
+                                  int value) OVERRIDE {
+    ASSERT(peer_connection_metrics_name_[type] == 0);
+    peer_connection_metrics_name_[type] = value;
+  }
+
+  int peer_connection_metrics_counters_
+      [webrtc::kPeerConnectionMetricsCounter_Max];
+  int peer_connection_metrics_name_[webrtc::kPeerConnectionMetricsCounter_Max];
+
+  virtual int AddRef() OVERRIDE { return 1; }
+  virtual int Release() OVERRIDE { return 1; }
+};
 
 class MockIceObserver : public webrtc::IceObserver {
  public:
@@ -353,6 +383,7 @@ class WebRtcSessionTest : public testing::Test {
 
     EXPECT_TRUE(session_->Initialize(options_, constraints_.get(),
                                      identity_service, ice_type_));
+    session_->set_metrics_observer(&metrics_observer_);
   }
 
   void InitWithDtmfCodec() {
@@ -919,6 +950,90 @@ class WebRtcSessionTest : public testing::Test {
     EXPECT_EQ(can, session_->CanInsertDtmf(kAudioTrack1));
   }
 
+  // Helper class to configure loopback network and verify Best
+  // Connection using right IP protocol for TestLoopbackCall
+  // method. LoopbackNetworkManager applies firewall rules to block
+  // all ping traffic once ICE completed, and remove them to observe
+  // ICE reconnected again. This LoopbackNetworkConfiguration struct
+  // verifies the best connection is using the right IP protocol after
+  // initial ICE convergences.
+
+  class LoopbackNetworkConfiguration {
+  public:
+    LoopbackNetworkConfiguration()
+        : test_ipv6_network_(false),
+          test_extra_ipv4_network_(false),
+          best_connection_after_initial_ice_converged_(1, 0) {}
+
+    // Used to track the expected best connection count in each IP protocol.
+    struct ExpectedBestConnection {
+      ExpectedBestConnection(int ipv4_count, int ipv6_count)
+          : ipv4_count_(ipv4_count),
+            ipv6_count_(ipv6_count) {}
+
+      int ipv4_count_;
+      int ipv6_count_;
+    };
+
+    bool test_ipv6_network_;
+    bool test_extra_ipv4_network_;
+    ExpectedBestConnection best_connection_after_initial_ice_converged_;
+
+    void VerifyBestConnectionAfterIceConverge(
+        const FakeMetricsObserver& metrics_observer) const {
+      Verify(metrics_observer, best_connection_after_initial_ice_converged_);
+    }
+
+   private:
+    void Verify(const FakeMetricsObserver& metrics_observer,
+                const ExpectedBestConnection& expected) const {
+      EXPECT_EQ(
+          metrics_observer
+              .peer_connection_metrics_counters_[webrtc::kBestConnections_IPv4],
+          expected.ipv4_count_);
+      EXPECT_EQ(
+          metrics_observer
+              .peer_connection_metrics_counters_[webrtc::kBestConnections_IPv6],
+          expected.ipv6_count_);
+    }
+  };
+
+  class LoopbackNetworkManager {
+   public:
+    LoopbackNetworkManager(WebRtcSessionTest* session,
+                           const LoopbackNetworkConfiguration& config)
+        : config_(config) {
+      session->AddInterface(
+          rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
+      if (config_.test_extra_ipv4_network_) {
+        session->AddInterface(
+            rtc::SocketAddress(kClientAddrHost2, kClientAddrPort));
+      }
+      if (config_.test_ipv6_network_) {
+        session->AddInterface(
+            rtc::SocketAddress(kClientIPv6AddrHost1, kClientAddrPort));
+      }
+    }
+
+    void ApplyFirewallRules(rtc::FirewallSocketServer* fss) {
+      fss->AddRule(false, rtc::FP_ANY, rtc::FD_ANY,
+                   rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
+      if (config_.test_extra_ipv4_network_) {
+        fss->AddRule(false, rtc::FP_ANY, rtc::FD_ANY,
+                     rtc::SocketAddress(kClientAddrHost2, kClientAddrPort));
+      }
+      if (config_.test_ipv6_network_) {
+        fss->AddRule(false, rtc::FP_ANY, rtc::FD_ANY,
+                     rtc::SocketAddress(kClientIPv6AddrHost1, kClientAddrPort));
+      }
+    }
+
+    void ClearRules(rtc::FirewallSocketServer* fss) { fss->ClearRules(); }
+
+   private:
+    LoopbackNetworkConfiguration config_;
+  };
+
   // The method sets up a call from the session to itself, in a loopback
   // arrangement.  It also uses a firewall rule to create a temporary
   // disconnection, and then a permanent disconnection.
@@ -931,8 +1046,9 @@ class WebRtcSessionTest : public testing::Test {
   // New -> Checking -> (Connected) -> Completed -> Disconnected -> Completed
   //     -> Failed.
   // The Gathering state should go: New -> Gathering -> Completed.
-  void TestLoopbackCall() {
-    AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
+
+  void TestLoopbackCall(const LoopbackNetworkConfiguration& config) {
+    LoopbackNetworkManager loopback_network_manager(this, config);
     Init(NULL);
     mediastream_signaling_.SendAudioVideoStream1();
     SessionDescriptionInterface* offer = CreateOffer();
@@ -966,20 +1082,25 @@ class WebRtcSessionTest : public testing::Test {
                    observer_.ice_connection_state_,
                    kIceCandidatesTimeout);
 
+    config.VerifyBestConnectionAfterIceConverge(metrics_observer_);
     // Adding firewall rule to block ping requests, which should cause
     // transport channel failure.
-    fss_->AddRule(false,
-                  rtc::FP_ANY,
-                  rtc::FD_ANY,
-                  rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
+
+    loopback_network_manager.ApplyFirewallRules(fss_.get());
+
+    LOG(LS_INFO) << "Firewall Rules applied";
     EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
                    observer_.ice_connection_state_,
                    kIceCandidatesTimeout);
 
+    metrics_observer_.Reset();
+
     // Clearing the rules, session should move back to completed state.
-    fss_->ClearRules();
+    loopback_network_manager.ClearRules(fss_.get());
     // Session is automatically calling OnSignalingReady after creation of
     // new portallocator session which will allocate new set of candidates.
+
+    LOG(LS_INFO) << "Firewall Rules cleared";
 
     EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
                    observer_.ice_connection_state_,
@@ -989,13 +1110,17 @@ class WebRtcSessionTest : public testing::Test {
     // to the Failed state.  This will take at least 30 seconds because it must
     // wait for the Port to timeout.
     int port_timeout = 30000;
-    fss_->AddRule(false,
-                  rtc::FP_ANY,
-                  rtc::FD_ANY,
-                  rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
+
+    loopback_network_manager.ApplyFirewallRules(fss_.get());
+    LOG(LS_INFO) << "Firewall Rules applied again";
     EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionFailed,
                    observer_.ice_connection_state_,
                    kIceCandidatesTimeout + port_timeout);
+  }
+
+  void TestLoopbackCall() {
+    LoopbackNetworkConfiguration config;
+    TestLoopbackCall(config);
   }
 
   void VerifyTransportType(const std::string& content_name,
@@ -1114,6 +1239,7 @@ class WebRtcSessionTest : public testing::Test {
   cricket::FakeVideoMediaChannel* video_channel_;
   cricket::FakeVoiceMediaChannel* voice_channel_;
   PeerConnectionInterface::IceTransportsType ice_type_;
+  FakeMetricsObserver metrics_observer_;
 };
 
 TEST_F(WebRtcSessionTest, TestInitializeWithDtls) {
@@ -3024,10 +3150,26 @@ TEST_F(WebRtcSessionTest, TestSessionContentError) {
 TEST_F(WebRtcSessionTest, TestIceStatesBasic) {
   // Lets try with only UDP ports.
   allocator_->set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
-                       cricket::PORTALLOCATOR_DISABLE_TCP |
-                       cricket::PORTALLOCATOR_DISABLE_STUN |
-                       cricket::PORTALLOCATOR_DISABLE_RELAY);
+                        cricket::PORTALLOCATOR_DISABLE_TCP |
+                        cricket::PORTALLOCATOR_DISABLE_STUN |
+                        cricket::PORTALLOCATOR_DISABLE_RELAY);
   TestLoopbackCall();
+}
+
+TEST_F(WebRtcSessionTest, TestIceStatesBasicIPv6) {
+  allocator_->set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+                        cricket::PORTALLOCATOR_DISABLE_TCP |
+                        cricket::PORTALLOCATOR_DISABLE_STUN |
+                        cricket::PORTALLOCATOR_ENABLE_IPV6 |
+                        cricket::PORTALLOCATOR_DISABLE_RELAY);
+
+  // best connection is IPv6 since it has higher network preference.
+  LoopbackNetworkConfiguration config;
+  config.test_ipv6_network_ = true;
+  config.best_connection_after_initial_ice_converged_ =
+      LoopbackNetworkConfiguration::ExpectedBestConnection(0, 1);
+
+  TestLoopbackCall(config);
 }
 
 // Runs the loopback call test with BUNDLE and STUN enabled.

@@ -461,16 +461,17 @@ class IceRestartAnswerLatch {
   bool ice_restart_;
 };
 
-WebRtcSession::WebRtcSession(
-    cricket::ChannelManager* channel_manager,
-    rtc::Thread* signaling_thread,
-    rtc::Thread* worker_thread,
-    cricket::PortAllocator* port_allocator,
-    MediaStreamSignaling* mediastream_signaling)
-    : cricket::BaseSession(signaling_thread, worker_thread, port_allocator,
-                           rtc::ToString(rtc::CreateRandomId64() &
-                                               LLONG_MAX),
-                           cricket::NS_JINGLE_RTP, false),
+WebRtcSession::WebRtcSession(cricket::ChannelManager* channel_manager,
+                             rtc::Thread* signaling_thread,
+                             rtc::Thread* worker_thread,
+                             cricket::PortAllocator* port_allocator,
+                             MediaStreamSignaling* mediastream_signaling)
+    : cricket::BaseSession(signaling_thread,
+                           worker_thread,
+                           port_allocator,
+                           rtc::ToString(rtc::CreateRandomId64() & LLONG_MAX),
+                           cricket::NS_JINGLE_RTP,
+                           false),
       // RFC 3264: The numeric value of the session id and version in the
       // o line MUST be representable with a "64 bit signed integer".
       // Due to this constraint session id |sid_| is max limited to LLONG_MAX.
@@ -481,7 +482,8 @@ WebRtcSession::WebRtcSession(
       older_version_remote_peer_(false),
       dtls_enabled_(false),
       data_channel_type_(cricket::DCT_NONE),
-      ice_restart_latch_(new IceRestartAnswerLatch) {
+      ice_restart_latch_(new IceRestartAnswerLatch),
+      metrics_observer_(NULL) {
 }
 
 WebRtcSession::~WebRtcSession() {
@@ -1299,7 +1301,12 @@ void WebRtcSession::OnTransportWritable(cricket::Transport* transport) {
 
 void WebRtcSession::OnTransportCompleted(cricket::Transport* transport) {
   ASSERT(signaling_thread()->IsCurrent());
+  PeerConnectionInterface::IceConnectionState old_state = ice_connection_state_;
   SetIceConnectionState(PeerConnectionInterface::kIceConnectionCompleted);
+  // Only report once when Ice connection is completed.
+  if (old_state != PeerConnectionInterface::kIceConnectionCompleted) {
+    ReportBestConnectionState(transport);
+  }
 }
 
 void WebRtcSession::OnTransportFailed(cricket::Transport* transport) {
@@ -1738,6 +1745,40 @@ bool WebRtcSession::ReadyToUseRemoteCandidate(
 
   return transport_proxy && transport_proxy->local_description_set() &&
       transport_proxy->remote_description_set();
+}
+
+// Walk through the ConnectionInfos to gather best connection usage
+// for IPv4 and IPv6.
+void WebRtcSession::ReportBestConnectionState(cricket::Transport* transport) {
+  if (!metrics_observer_) {
+    return;
+  }
+
+  cricket::TransportStats stats;
+  if (!transport->GetStats(&stats)) {
+    return;
+  }
+
+  for (cricket::TransportChannelStatsList::const_iterator it =
+         stats.channel_stats.begin();
+       it != stats.channel_stats.end(); ++it) {
+    for (cricket::ConnectionInfos::const_iterator it_info =
+           it->connection_infos.begin();
+         it_info != it->connection_infos.end(); ++it_info) {
+      if (!it_info->best_connection) {
+        continue;
+      }
+      if (it_info->local_candidate.address().family() == AF_INET) {
+        metrics_observer_->IncrementCounter(kBestConnections_IPv4);
+      } else if (it_info->local_candidate.address().family() ==
+                 AF_INET6) {
+        metrics_observer_->IncrementCounter(kBestConnections_IPv6);
+      } else {
+        ASSERT(false);
+      }
+      return;
+    }
+  }
 }
 
 }  // namespace webrtc

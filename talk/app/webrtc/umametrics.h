@@ -35,24 +35,41 @@ namespace webrtc {
 // Currently this contains information related to WebRTC network/transport
 // information.
 
+// The difference between PeerConnectionMetricsCounter and
+// PeerConnectionMetricsName is that the "Counter" is only counting the
+// occurrences of events, while "Name" has a value associated with it which is
+// used to form a histogram.
+
 // This enum is backed by Chromium's histograms.xml,
 // chromium/src/tools/metrics/histograms/histograms.xml
 // Existing values cannot be re-ordered and new enums must be added
 // before kBoundary.
-enum PeerConnectionUMAMetricsCounter {
+enum PeerConnectionMetricsCounter {
   kPeerConnection_IPv4,
   kPeerConnection_IPv6,
   kBestConnections_IPv4,
   kBestConnections_IPv6,
-  kBoundary,
+  kPeerConnectionMetricsCounter_Max,
 };
 
+// TODO(guoweis): Keep previous name here until all references are renamed.
+#define kBoundary kPeerConnectionMetricsCounter_Max
+
+// TODO(guoweis): Keep previous name here until all references are renamed.
+typedef PeerConnectionMetricsCounter PeerConnectionUMAMetricsCounter;
+
 // This enum defines types for UMA samples, which will have a range.
-enum PeerConnectionUMAMetricsName {
-  kNetworkInterfaces_IPv4,   // Number of IPv4 interfaces.
-  kNetworkInterfaces_IPv6,   // Number of IPv6 interfaces.
-  kTimeToConnect,  // In milliseconds.
+enum PeerConnectionMetricsName {
+  kNetworkInterfaces_IPv4,  // Number of IPv4 interfaces.
+  kNetworkInterfaces_IPv6,  // Number of IPv6 interfaces.
+  kTimeToConnect,           // In milliseconds.
+  kLocalCandidates_IPv4,    // Number of IPv4 local candidates.
+  kLocalCandidates_IPv6,    // Number of IPv6 local candidates.
+  kPeerConnectionMetricsName_Max
 };
+
+// TODO(guoweis): Keep previous name here until all references are renamed.
+typedef PeerConnectionMetricsName PeerConnectionUMAMetricsName;
 
 }  // namespace webrtc
 

@@ -130,15 +130,17 @@ class StatsObserver : public rtc::RefCountInterface {
   virtual ~StatsObserver() {}
 };
 
-class UMAObserver : public rtc::RefCountInterface {
+class MetricsObserverInterface : public rtc::RefCountInterface {
  public:
-  virtual void IncrementCounter(PeerConnectionUMAMetricsCounter type) = 0;
-  virtual void AddHistogramSample(PeerConnectionUMAMetricsName type,
+  virtual void IncrementCounter(PeerConnectionMetricsCounter type) = 0;
+  virtual void AddHistogramSample(PeerConnectionMetricsName type,
                                   int value) = 0;
 
  protected:
-  virtual ~UMAObserver() {}
+  virtual ~MetricsObserverInterface() {}
 };
+
+typedef MetricsObserverInterface UMAObserver;
 
 class PeerConnectionInterface : public rtc::RefCountInterface {
  public:
