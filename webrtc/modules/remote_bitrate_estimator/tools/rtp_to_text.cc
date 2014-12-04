@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <sstream>
 
+#include "webrtc/base/format_macros.h"
 #include "webrtc/modules/remote_bitrate_estimator/tools/bwe_rtp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
@@ -39,7 +40,7 @@ int main(int argc, char** argv) {
   webrtc::scoped_ptr<webrtc::test::RtpFileReader> rtp_reader(reader);
   webrtc::scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(parser);
   fprintf(stdout, "seqnum timestamp ts_offset abs_sendtime recvtime "
-          "markerbit ssrc size\n");
+          "markerbit ssrc size original_size\n");
   int packet_counter = 0;
   int non_zero_abs_send_time = 0;
   int non_zero_ts_offsets = 0;
@@ -57,7 +58,7 @@ int main(int argc, char** argv) {
       fprintf(stdout, "%s\n", ss.str().c_str());
     } else {
       fprintf(stdout,
-              "%u %u %d %u %u %d %u %d\n",
+              "%u %u %d %u %u %d %u %" PRIuS " %" PRIuS "\n",
               header.sequenceNumber,
               header.timestamp,
               header.extension.transmissionTimeOffset,
@@ -65,7 +66,8 @@ int main(int argc, char** argv) {
               packet.time_ms,
               header.markerBit,
               header.ssrc,
-              static_cast<int>(packet.length));
+              packet.length,
+              packet.original_length);
     }
     ++packet_counter;
   }
