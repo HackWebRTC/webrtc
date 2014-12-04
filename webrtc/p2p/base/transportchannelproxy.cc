@@ -111,14 +111,6 @@ int TransportChannelProxy::GetError() {
   return impl_->GetError();
 }
 
-TransportChannelState TransportChannelProxy::GetState() const {
-  ASSERT(rtc::Thread::Current() == worker_thread_);
-  if (!impl_) {
-    return TransportChannelState::STATE_CONNECTING;
-  }
-  return impl_->GetState();
-}
-
 bool TransportChannelProxy::GetStats(ConnectionInfos* infos) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   if (!impl_) {

@@ -927,8 +927,7 @@ void Connection::set_write_state(WriteState value) {
   WriteState old_value = write_state_;
   write_state_ = value;
   if (value != old_value) {
-    LOG_J(LS_VERBOSE, this) << "set_write_state from: " << old_value << " to "
-                            << value;
+    LOG_J(LS_VERBOSE, this) << "set_write_state";
     SignalStateChange(this);
     CheckTimeout();
   }
@@ -1103,10 +1102,8 @@ void Connection::UpdateState(uint32 now) {
         pings_since_last_response_[i]);
     pings.append(buf).append(" ");
   }
-  LOG_J(LS_VERBOSE, this) << "UpdateState(): pings_since_last_response_="
-                          << pings << ", rtt=" << rtt << ", now=" << now
-                          << ", last ping received: " << last_ping_received_
-                          << ", last data_received: " << last_data_received_;
+  LOG_J(LS_VERBOSE, this) << "UpdateState(): pings_since_last_response_=" <<
+      pings << ", rtt=" << rtt << ", now=" << now;
 
   // Check the readable state.
   //
@@ -1190,12 +1187,6 @@ void Connection::ReceivedPing() {
   set_read_state(STATE_READABLE);
 }
 
-std::string Connection::ToDebugId() const {
-  std::stringstream ss;
-  ss << std::hex << this;
-  return ss.str();
-}
-
 std::string Connection::ToString() const {
   const char CONNECT_STATE_ABBREV[2] = {
     '-',  // not connected (false)
@@ -1221,8 +1212,7 @@ std::string Connection::ToString() const {
   const Candidate& local = local_candidate();
   const Candidate& remote = remote_candidate();
   std::stringstream ss;
-  ss << "Conn[" << ToDebugId()
-     << ":" << port_->content_name()
+  ss << "Conn[" << port_->content_name()
      << ":" << local.id() << ":" << local.component()
      << ":" << local.generation()
      << ":" << local.type() << ":" << local.protocol()
