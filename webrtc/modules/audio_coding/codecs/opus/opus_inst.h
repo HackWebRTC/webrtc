@@ -18,7 +18,8 @@ struct WebRtcOpusEncInst {
 };
 
 struct WebRtcOpusDecInst {
-  OpusDecoder* decoder;
+  OpusDecoder* decoder_left;
+  OpusDecoder* decoder_right;
   int prev_decoded_samples;
   int channels;
 };

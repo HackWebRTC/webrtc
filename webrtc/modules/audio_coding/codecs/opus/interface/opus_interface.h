@@ -166,7 +166,9 @@ int WebRtcOpus_DecoderChannels(OpusDecInst* inst);
  * Return value              :  0 - Success
  *                             -1 - Error
  */
+int16_t WebRtcOpus_DecoderInitNew(OpusDecInst* inst);
 int16_t WebRtcOpus_DecoderInit(OpusDecInst* inst);
+int16_t WebRtcOpus_DecoderInitSlave(OpusDecInst* inst);
 
 /****************************************************************************
  * WebRtcOpus_Decode(...)
@@ -188,12 +190,21 @@ int16_t WebRtcOpus_DecoderInit(OpusDecInst* inst);
  * Return value              : >0 - Samples per channel in decoded vector
  *                             -1 - Error
  */
+int16_t WebRtcOpus_DecodeNew(OpusDecInst* inst, const uint8_t* encoded,
+                             int16_t encoded_bytes, int16_t* decoded,
+                             int16_t* audio_type);
 int16_t WebRtcOpus_Decode(OpusDecInst* inst, const uint8_t* encoded,
                           int16_t encoded_bytes, int16_t* decoded,
                           int16_t* audio_type);
+int16_t WebRtcOpus_DecodeSlave(OpusDecInst* inst, const uint8_t* encoded,
+                               int16_t encoded_bytes, int16_t* decoded,
+                               int16_t* audio_type);
 
 /****************************************************************************
  * WebRtcOpus_DecodePlc(...)
+ * TODO(tlegrand): Remove master and slave functions when NetEq4 is in place.
+ * WebRtcOpus_DecodePlcMaster(...)
+ * WebRtcOpus_DecodePlcSlave(...)
  *
  * This function processes PLC for opus frame(s).
  * Input:
@@ -208,6 +219,10 @@ int16_t WebRtcOpus_Decode(OpusDecInst* inst, const uint8_t* encoded,
  */
 int16_t WebRtcOpus_DecodePlc(OpusDecInst* inst, int16_t* decoded,
                              int16_t number_of_lost_frames);
+int16_t WebRtcOpus_DecodePlcMaster(OpusDecInst* inst, int16_t* decoded,
+                                   int16_t number_of_lost_frames);
+int16_t WebRtcOpus_DecodePlcSlave(OpusDecInst* inst, int16_t* decoded,
+                                  int16_t number_of_lost_frames);
 
 /****************************************************************************
  * WebRtcOpus_DecodeFec(...)
