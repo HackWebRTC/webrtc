@@ -76,7 +76,7 @@ class FakeWebRtcVideoDecoder : public webrtc::VideoDecoder {
 
   virtual int32 Decode(
       const webrtc::EncodedImage&, bool, const webrtc::RTPFragmentationHeader*,
-      const webrtc::CodecSpecificInfo*, int64) {
+      const webrtc::CodecSpecificInfo*, int64_t) {
     num_frames_received_++;
     return WEBRTC_VIDEO_CODEC_OK;
   }

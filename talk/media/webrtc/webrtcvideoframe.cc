@@ -113,7 +113,7 @@ WebRtcVideoFrame::~WebRtcVideoFrame() {}
 bool WebRtcVideoFrame::Init(
     uint32 format, int w, int h, int dw, int dh, uint8* sample,
     size_t sample_size, size_t pixel_width, size_t pixel_height,
-    int64 elapsed_time, int64 time_stamp, int rotation) {
+    int64_t elapsed_time, int64_t time_stamp, int rotation) {
   return Reset(format, w, h, dw, dh, sample, sample_size, pixel_width,
                pixel_height, elapsed_time, time_stamp, rotation);
 }
@@ -145,15 +145,16 @@ bool WebRtcVideoFrame::Alias(const CapturedFrame* frame, int dw, int dh) {
 }
 
 bool WebRtcVideoFrame::InitToBlack(int w, int h, size_t pixel_width,
-                                   size_t pixel_height, int64 elapsed_time,
-                                   int64 time_stamp) {
+                                   size_t pixel_height, int64_t elapsed_time,
+                                   int64_t time_stamp) {
   InitToEmptyBuffer(w, h, pixel_width, pixel_height, elapsed_time, time_stamp);
   return SetToBlack();
 }
 
 void WebRtcVideoFrame::Alias(
     uint8* buffer, size_t buffer_size, int w, int h, size_t pixel_width,
-    size_t pixel_height, int64 elapsed_time, int64 time_stamp, int rotation) {
+    size_t pixel_height, int64_t elapsed_time, int64_t time_stamp,
+    int rotation) {
   rtc::scoped_refptr<RefCountedBuffer> video_buffer(
       new RefCountedBuffer());
   video_buffer->Alias(buffer, buffer_size);
@@ -253,8 +254,8 @@ size_t WebRtcVideoFrame::ConvertToRgbBuffer(uint32 to_fourcc, uint8* buffer,
 
 void WebRtcVideoFrame::Attach(
     RefCountedBuffer* video_buffer, size_t buffer_size, int w, int h,
-    size_t pixel_width, size_t pixel_height, int64 elapsed_time,
-    int64 time_stamp, int rotation) {
+    size_t pixel_width, size_t pixel_height, int64_t elapsed_time,
+    int64_t time_stamp, int rotation) {
   if (video_buffer_.get() == video_buffer) {
     return;
   }
@@ -279,7 +280,7 @@ const webrtc::VideoFrame* WebRtcVideoFrame::frame() const {
 bool WebRtcVideoFrame::Reset(
     uint32 format, int w, int h, int dw, int dh, uint8* sample,
     size_t sample_size, size_t pixel_width, size_t pixel_height,
-    int64 elapsed_time, int64 time_stamp, int rotation) {
+    int64_t elapsed_time, int64_t time_stamp, int rotation) {
   if (!Validate(format, w, h, sample, sample_size)) {
     return false;
   }
@@ -334,8 +335,8 @@ bool WebRtcVideoFrame::Reset(
 }
 
 VideoFrame* WebRtcVideoFrame::CreateEmptyFrame(
-    int w, int h, size_t pixel_width, size_t pixel_height, int64 elapsed_time,
-    int64 time_stamp) const {
+    int w, int h, size_t pixel_width, size_t pixel_height, int64_t elapsed_time,
+    int64_t time_stamp) const {
   WebRtcVideoFrame* frame = new WebRtcVideoFrame();
   frame->InitToEmptyBuffer(w, h, pixel_width, pixel_height, elapsed_time,
                            time_stamp);
@@ -344,7 +345,8 @@ VideoFrame* WebRtcVideoFrame::CreateEmptyFrame(
 
 void WebRtcVideoFrame::InitToEmptyBuffer(int w, int h, size_t pixel_width,
                                          size_t pixel_height,
-                                         int64 elapsed_time, int64 time_stamp) {
+                                         int64_t elapsed_time,
+                                         int64_t time_stamp) {
   size_t buffer_size = VideoFrame::SizeOf(w, h);
   rtc::scoped_refptr<RefCountedBuffer> video_buffer(
       new RefCountedBuffer(buffer_size));

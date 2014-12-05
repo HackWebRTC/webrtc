@@ -48,8 +48,8 @@ class VideoFrame {
   virtual ~VideoFrame() {}
 
   virtual bool InitToBlack(int w, int h, size_t pixel_width,
-                           size_t pixel_height, int64 elapsed_time,
-                           int64 time_stamp) = 0;
+                           size_t pixel_height, int64_t elapsed_time,
+                           int64_t time_stamp) = 0;
   // Creates a frame from a raw sample with FourCC |format| and size |w| x |h|.
   // |h| can be negative indicating a vertically flipped image.
   // |dw| is destination width; can be less than |w| if cropping is desired.
@@ -57,8 +57,8 @@ class VideoFrame {
   // Returns whether the function succeeded or failed.
   virtual bool Reset(uint32 fourcc, int w, int h, int dw, int dh, uint8 *sample,
                      size_t sample_size, size_t pixel_width,
-                     size_t pixel_height, int64 elapsed_time, int64 time_stamp,
-                     int rotation) = 0;
+                     size_t pixel_height, int64_t elapsed_time,
+                     int64_t time_stamp, int rotation) = 0;
 
   // Basic accessors.
   virtual size_t GetWidth() const = 0;
@@ -88,10 +88,10 @@ class VideoFrame {
   virtual size_t GetPixelWidth() const = 0;
   virtual size_t GetPixelHeight() const = 0;
 
-  virtual int64 GetElapsedTime() const = 0;
-  virtual int64 GetTimeStamp() const = 0;
-  virtual void SetElapsedTime(int64 elapsed_time) = 0;
-  virtual void SetTimeStamp(int64 time_stamp) = 0;
+  virtual int64_t GetElapsedTime() const = 0;
+  virtual int64_t GetTimeStamp() const = 0;
+  virtual void SetElapsedTime(int64_t elapsed_time) = 0;
+  virtual void SetTimeStamp(int64_t time_stamp) = 0;
 
   // Indicates the rotation angle in degrees.
   virtual int GetRotation() const = 0;
@@ -186,8 +186,9 @@ class VideoFrame {
  protected:
   // Creates an empty frame.
   virtual VideoFrame *CreateEmptyFrame(int w, int h, size_t pixel_width,
-                                       size_t pixel_height, int64 elapsed_time,
-                                       int64 time_stamp) const = 0;
+                                       size_t pixel_height,
+                                       int64_t elapsed_time,
+                                       int64_t time_stamp) const = 0;
 };
 
 }  // namespace cricket

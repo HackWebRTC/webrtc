@@ -558,8 +558,8 @@ class WebRtcVideoRenderFrame : public VideoFrame {
                            int h,
                            size_t pixel_width,
                            size_t pixel_height,
-                           int64 elapsed_time,
-                           int64 time_stamp) OVERRIDE {
+                           int64_t elapsed_time,
+                           int64_t time_stamp) OVERRIDE {
     UNIMPLEMENTED;
     return false;
   }
@@ -573,8 +573,8 @@ class WebRtcVideoRenderFrame : public VideoFrame {
                      size_t sample_size,
                      size_t pixel_width,
                      size_t pixel_height,
-                     int64 elapsed_time,
-                     int64 time_stamp,
+                     int64_t elapsed_time,
+                     int64_t time_stamp,
                      int rotation) OVERRIDE {
     UNIMPLEMENTED;
     return false;
@@ -625,16 +625,16 @@ class WebRtcVideoRenderFrame : public VideoFrame {
   virtual size_t GetPixelWidth() const OVERRIDE { return 1; }
   virtual size_t GetPixelHeight() const OVERRIDE { return 1; }
 
-  virtual int64 GetElapsedTime() const OVERRIDE {
+  virtual int64_t GetElapsedTime() const OVERRIDE {
     // Convert millisecond render time to ns timestamp.
     return frame_->render_time_ms() * rtc::kNumNanosecsPerMillisec;
   }
-  virtual int64 GetTimeStamp() const OVERRIDE {
+  virtual int64_t GetTimeStamp() const OVERRIDE {
     // Convert 90K rtp timestamp to ns timestamp.
     return (frame_->timestamp() / 90) * rtc::kNumNanosecsPerMillisec;
   }
-  virtual void SetElapsedTime(int64 elapsed_time) OVERRIDE { UNIMPLEMENTED; }
-  virtual void SetTimeStamp(int64 time_stamp) OVERRIDE { UNIMPLEMENTED; }
+  virtual void SetElapsedTime(int64_t elapsed_time) OVERRIDE { UNIMPLEMENTED; }
+  virtual void SetTimeStamp(int64_t time_stamp) OVERRIDE { UNIMPLEMENTED; }
 
   virtual int GetRotation() const OVERRIDE {
     UNIMPLEMENTED;
@@ -661,8 +661,8 @@ class WebRtcVideoRenderFrame : public VideoFrame {
                                        int h,
                                        size_t pixel_width,
                                        size_t pixel_height,
-                                       int64 elapsed_time,
-                                       int64 time_stamp) const OVERRIDE {
+                                       int64_t elapsed_time,
+                                       int64_t time_stamp) const OVERRIDE {
     WebRtcVideoFrame* frame = new WebRtcVideoFrame();
     frame->InitToBlack(
         w, h, pixel_width, pixel_height, elapsed_time, time_stamp);
