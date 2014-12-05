@@ -26,7 +26,6 @@
  */
 package org.appspot.apprtc;
 
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -36,7 +35,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.LinkedList;
 import java.util.Scanner;
 
 import org.appspot.apprtc.RoomParametersFetcher.RoomParametersFetcherEvents;
@@ -64,6 +62,9 @@ public class WebSocketRTCClient implements AppRTCClient,
   private enum ConnectionState {
     NEW, CONNECTED, CLOSED, ERROR
   };
+  private enum MessageType {
+    MESSAGE, BYE
+  };
   private final Handler uiHandler;
   private boolean loopback;
   private boolean initiator;
@@ -71,14 +72,12 @@ public class WebSocketRTCClient implements AppRTCClient,
   private WebSocketChannelClient wsClient;
   private RoomParametersFetcher fetcher;
   private ConnectionState roomState;
-  private LinkedList<PostMessage> postQueue;
   private String postMessageUrl;
   private String byeMessageUrl;
 
   public WebSocketRTCClient(SignalingEvents events) {
     this.events = events;
     uiHandler = new Handler(Looper.getMainLooper());
-    postQueue = new LinkedList<PostMessage>();
   }
 
   // --------------------------------------------------------------------
@@ -222,8 +221,9 @@ public class WebSocketRTCClient implements AppRTCClient,
     Log.d(TAG, "Disconnect. Room state: " + roomState);
     if (roomState == ConnectionState.CONNECTED) {
       Log.d(TAG, "Closing room.");
-      sendGAEMessage(byeMessageUrl, "");
+      sendPostMessage(MessageType.BYE, byeMessageUrl, "");
     }
+    roomState = ConnectionState.CLOSED;
     if (wsClient != null) {
       wsClient.disconnect();
     }
@@ -236,10 +236,14 @@ public class WebSocketRTCClient implements AppRTCClient,
   // we might want to filter elsewhere.
   @Override
   public void sendOfferSdp(final SessionDescription sdp) {
+    if (roomState != ConnectionState.CONNECTED) {
+      reportError("Sending offer SDP in non connected state.");
+      return;
+    }
     JSONObject json = new JSONObject();
     jsonPut(json, "sdp", sdp.description);
     jsonPut(json, "type", "offer");
-    sendGAEMessage(postMessageUrl, json.toString());
+    sendPostMessage(MessageType.MESSAGE, postMessageUrl, json.toString());
     if (loopback) {
       // In loopback mode rename this offer to answer and route it back.
       SessionDescription sdpAnswer = new SessionDescription(
@@ -279,7 +283,7 @@ public class WebSocketRTCClient implements AppRTCClient,
         reportError("Sending ICE candidate in non connected state.");
         return;
       }
-      sendGAEMessage(postMessageUrl, json.toString());
+      sendPostMessage(MessageType.MESSAGE, postMessageUrl, json.toString());
       if (loopback) {
         events.onRemoteIceCandidate(candidate);
       }
@@ -317,88 +321,73 @@ public class WebSocketRTCClient implements AppRTCClient,
   }
 
   private class PostMessage {
-    PostMessage(String postUrl, String message) {
+    PostMessage(MessageType type, String postUrl, String message) {
+      this.messageType = type;
       this.postUrl = postUrl;
       this.message = message;
     }
+    public final MessageType messageType;
     public final String postUrl;
     public final String message;
   }
 
   // Queue a message for sending to the room  and send it if already connected.
-  private synchronized void sendGAEMessage(String url, String message) {
-    synchronized (postQueue) {
-      postQueue.add(new PostMessage(url, message));
-    }
-    (new AsyncTask<Void, Void, Void>() {
-      public Void doInBackground(Void... unused) {
-        maybeDrainGAEPostQueue();
-        return null;
+  private synchronized void sendPostMessage(
+      MessageType messageType, String url, String message) {
+    final PostMessage postMessage = new PostMessage(messageType, url, message);
+    Runnable runDrain = new Runnable() {
+      public void run() {
+        sendPostMessageAsync(postMessage);
       }
-    }).execute();
+    };
+    new Thread(runDrain).start();
   }
 
-  // Send all queued messages if connected to the room.
-  private void maybeDrainGAEPostQueue() {
-    if (roomState != ConnectionState.CONNECTED) {
-      return;
+  // Send all queued POST messages to app engine server.
+  private void sendPostMessageAsync(PostMessage postMessage) {
+    if (postMessage.messageType == MessageType.BYE) {
+      Log.d(TAG, "C->GAE: " + postMessage.postUrl);
+    } else {
+      Log.d(TAG, "C->GAE: " + postMessage.message);
     }
-    PostMessage postMessage = null;
-    while (true) {
-      synchronized (postQueue) {
-        postMessage = postQueue.poll();
+    try {
+      // Get connection.
+      HttpURLConnection connection =
+        (HttpURLConnection) new URL(postMessage.postUrl).openConnection();
+      byte[] postData = postMessage.message.getBytes("UTF-8");
+      connection.setUseCaches(false);
+      connection.setDoOutput(true);
+      connection.setDoInput(true);
+      connection.setRequestMethod("POST");
+      connection.setFixedLengthStreamingMode(postData.length);
+      connection.setRequestProperty(
+          "content-type", "text/plain; charset=utf-8");
+
+      // Send POST request.
+      OutputStream outStream = connection.getOutputStream();
+      outStream.write(postData);
+      outStream.close();
+
+      // Get response.
+      int responseCode = connection.getResponseCode();
+      if (responseCode != 200) {
+        reportError("Non-200 response to POST: " +
+            connection.getHeaderField(null));
       }
-      if (postMessage == null) {
-        break;
+      InputStream responseStream = connection.getInputStream();
+      String response = drainStream(responseStream);
+      responseStream.close();
+      if (postMessage.messageType == MessageType.MESSAGE) {
+        JSONObject roomJson = new JSONObject(response);
+        String result = roomJson.getString("result");
+        if (!result.equals("SUCCESS")) {
+          reportError("Room POST error: " + result);
+        }
       }
-      try {
-
-        // Check if this is 'bye' message and update room connection state.
-        if (postMessage.postUrl.contains("bye")) {
-          roomState = ConnectionState.CLOSED;
-          Log.d(TAG, "C->GAE: " + postMessage.postUrl);
-        } else {
-          Log.d(TAG, "C->GAE: " + postMessage.message);
-        }
-
-        // Get connection.
-        HttpURLConnection connection =
-          (HttpURLConnection) new URL(postMessage.postUrl).openConnection();
-        byte[] postData = postMessage.message.getBytes("UTF-8");
-        connection.setUseCaches(false);
-        connection.setDoOutput(true);
-        connection.setDoInput(true);
-        connection.setRequestMethod("POST");
-        connection.setFixedLengthStreamingMode(postData.length);
-        connection.setRequestProperty(
-            "content-type", "text/plain; charset=utf-8");
-
-        // Send POST request.
-        OutputStream outStream = connection.getOutputStream();
-        outStream.write(postData);
-        outStream.close();
-
-        // Get response.
-        int responseCode = connection.getResponseCode();
-        if (responseCode != 200) {
-          reportError("Non-200 response to POST: " +
-              connection.getHeaderField(null));
-        }
-        InputStream responseStream = connection.getInputStream();
-        String response = drainStream(responseStream);
-        responseStream.close();
-        if (roomState != ConnectionState.CLOSED) {
-          JSONObject roomJson = new JSONObject(response);
-          String result = roomJson.getString("result");
-          if (!result.equals("SUCCESS")) {
-            reportError("Room POST error: " + result);
-          }
-        }
-      } catch (IOException e) {
-        reportError("GAE POST error: " + e.getMessage());
-      } catch (JSONException e) {
-        reportError("GAE POST JSON error: " + e.getMessage());
-      }
+    } catch (IOException e) {
+      reportError("GAE POST error: " + e.getMessage());
+    } catch (JSONException e) {
+      reportError("GAE POST JSON error: " + e.getMessage());
     }
   }
 
