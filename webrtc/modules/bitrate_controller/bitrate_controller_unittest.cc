@@ -43,9 +43,9 @@ class TestBitrateObserver: public BitrateObserver {
         last_rtt_(0) {
   }
 
-  virtual void OnNetworkChanged(const uint32_t bitrate,
-                                const uint8_t fraction_loss,
-                                const uint32_t rtt) {
+  virtual void OnNetworkChanged(uint32_t bitrate,
+                                uint8_t fraction_loss,
+                                uint32_t rtt) {
     last_bitrate_ = bitrate;
     last_fraction_loss_ = fraction_loss;
     last_rtt_ = rtt;

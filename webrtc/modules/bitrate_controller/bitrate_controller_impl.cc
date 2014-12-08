@@ -27,7 +27,7 @@ class BitrateControllerImpl::RtcpBandwidthObserverImpl
   virtual ~RtcpBandwidthObserverImpl() {
   }
   // Received RTCP REMB or TMMBR.
-  virtual void OnReceivedEstimatedBitrate(const uint32_t bitrate) OVERRIDE {
+  virtual void OnReceivedEstimatedBitrate(uint32_t bitrate) OVERRIDE {
     owner_->OnReceivedEstimatedBitrate(bitrate);
   }
   // Received RTCP receiver block.
@@ -126,9 +126,9 @@ BitrateControllerImpl::FindObserverConfigurationPair(const BitrateObserver*
 
 void BitrateControllerImpl::SetBitrateObserver(
     BitrateObserver* observer,
-    const uint32_t start_bitrate,
-    const uint32_t min_bitrate,
-    const uint32_t max_bitrate) {
+    uint32_t start_bitrate,
+    uint32_t min_bitrate,
+    uint32_t max_bitrate) {
   CriticalSectionScoped cs(critsect_);
 
   BitrateObserverConfList::iterator it = FindObserverConfigurationPair(
@@ -217,7 +217,7 @@ void BitrateControllerImpl::SetReservedBitrate(uint32_t reserved_bitrate_bps) {
   MaybeTriggerOnNetworkChanged();
 }
 
-void BitrateControllerImpl::OnReceivedEstimatedBitrate(const uint32_t bitrate) {
+void BitrateControllerImpl::OnReceivedEstimatedBitrate(uint32_t bitrate) {
   CriticalSectionScoped cs(critsect_);
   bandwidth_estimation_.UpdateReceiverEstimate(bitrate);
   MaybeTriggerOnNetworkChanged();
@@ -244,10 +244,10 @@ int32_t BitrateControllerImpl::Process() {
 }
 
 void BitrateControllerImpl::OnReceivedRtcpReceiverReport(
-    const uint8_t fraction_loss,
-    const uint32_t rtt,
-    const int number_of_packets,
-    const uint32_t now_ms) {
+    uint8_t fraction_loss,
+    uint32_t rtt,
+    int number_of_packets,
+    int64_t now_ms) {
   CriticalSectionScoped cs(critsect_);
   bandwidth_estimation_.UpdateReceiverBlock(
       fraction_loss, rtt, number_of_packets, now_ms);
@@ -277,9 +277,9 @@ void BitrateControllerImpl::MaybeTriggerOnNetworkChanged() {
   }
 }
 
-void BitrateControllerImpl::OnNetworkChanged(const uint32_t bitrate,
-                                             const uint8_t fraction_loss,
-                                             const uint32_t rtt) {
+void BitrateControllerImpl::OnNetworkChanged(uint32_t bitrate,
+                                             uint8_t fraction_loss,
+                                             uint32_t rtt) {
   // Sanity check.
   if (bitrate_observers_.empty())
     return;

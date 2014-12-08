@@ -37,9 +37,9 @@ class BitrateControllerImpl : public BitrateController {
   virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver() OVERRIDE;
 
   virtual void SetBitrateObserver(BitrateObserver* observer,
-                                  const uint32_t start_bitrate,
-                                  const uint32_t min_bitrate,
-                                  const uint32_t max_bitrate) OVERRIDE;
+                                  uint32_t start_bitrate,
+                                  uint32_t min_bitrate,
+                                  uint32_t max_bitrate) OVERRIDE;
 
   virtual void RemoveBitrateObserver(BitrateObserver* observer) OVERRIDE;
 
@@ -80,18 +80,18 @@ class BitrateControllerImpl : public BitrateController {
   void UpdateMinMaxBitrate() EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
 
   // Called by BitrateObserver's direct from the RTCP module.
-  void OnReceivedEstimatedBitrate(const uint32_t bitrate);
+  void OnReceivedEstimatedBitrate(uint32_t bitrate);
 
-  void OnReceivedRtcpReceiverReport(const uint8_t fraction_loss,
-                                    const uint32_t rtt,
-                                    const int number_of_packets,
-                                    const uint32_t now_ms);
+  void OnReceivedRtcpReceiverReport(uint8_t fraction_loss,
+                                    uint32_t rtt,
+                                    int number_of_packets,
+                                    int64_t now_ms);
 
   void MaybeTriggerOnNetworkChanged() EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
 
-  void OnNetworkChanged(const uint32_t bitrate,
-                        const uint8_t fraction_loss,  // 0 - 255.
-                        const uint32_t rtt)
+  void OnNetworkChanged(uint32_t bitrate,
+                        uint8_t fraction_loss,  // 0 - 255.
+                        uint32_t rtt)
       EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
 
   void NormalRateAllocation(uint32_t bitrate,
@@ -113,7 +113,7 @@ class BitrateControllerImpl : public BitrateController {
 
   // Used by process thread.
   Clock* clock_;
-  uint32_t last_bitrate_update_ms_;
+  int64_t last_bitrate_update_ms_;
 
   CriticalSectionWrapper* critsect_;
   SendSideBandwidthEstimation bandwidth_estimation_ GUARDED_BY(*critsect_);

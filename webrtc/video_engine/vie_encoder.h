@@ -179,9 +179,9 @@ class ViEEncoder
 
  protected:
   // Called by BitrateObserver.
-  void OnNetworkChanged(const uint32_t bitrate_bps,
-                        const uint8_t fraction_lost,
-                        const uint32_t round_trip_time_ms);
+  void OnNetworkChanged(uint32_t bitrate_bps,
+                        uint8_t fraction_lost,
+                        uint32_t round_trip_time_ms);
 
   // Called by PacedSender.
   bool TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,

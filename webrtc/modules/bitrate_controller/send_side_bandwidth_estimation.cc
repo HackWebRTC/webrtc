@@ -103,7 +103,7 @@ void SendSideBandwidthEstimation::UpdateReceiverEstimate(uint32_t bandwidth) {
 void SendSideBandwidthEstimation::UpdateReceiverBlock(uint8_t fraction_loss,
                                                       uint32_t rtt,
                                                       int number_of_packets,
-                                                      uint32_t now_ms) {
+                                                      int64_t now_ms) {
   if (first_report_time_ms_ == -1)
     first_report_time_ms_ = now_ms;
 
@@ -163,7 +163,7 @@ void SendSideBandwidthEstimation::UpdateUmaStats(int64_t now_ms,
   }
 }
 
-void SendSideBandwidthEstimation::UpdateEstimate(uint32_t now_ms) {
+void SendSideBandwidthEstimation::UpdateEstimate(int64_t now_ms) {
   // We trust the REMB during the first 2 seconds if we haven't had any
   // packet loss reported, to allow startup bitrate probing.
   if (ProbingExperimentIsEnabled()) {
@@ -230,7 +230,7 @@ bool SendSideBandwidthEstimation::IsInStartPhase(int64_t now_ms) const {
          now_ms - first_report_time_ms_ < kStartPhaseMs;
 }
 
-void SendSideBandwidthEstimation::UpdateMinHistory(uint32_t now_ms) {
+void SendSideBandwidthEstimation::UpdateMinHistory(int64_t now_ms) {
   // Remove old data points from history.
   // Since history precision is in ms, add one so it is able to increase
   // bitrate if it is off by as little as 0.5ms.

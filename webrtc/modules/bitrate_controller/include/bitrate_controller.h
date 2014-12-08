@@ -29,9 +29,9 @@ class BitrateObserver {
   * per second.
   */
  public:
-  virtual void OnNetworkChanged(const uint32_t target_bitrate,
-                                const uint8_t fraction_loss,  // 0 - 255.
-                                const uint32_t rtt) = 0;
+  virtual void OnNetworkChanged(uint32_t target_bitrate,
+                                uint8_t fraction_loss,  // 0 - 255.
+                                uint32_t rtt) = 0;
 
   virtual ~BitrateObserver() {}
 };
@@ -67,9 +67,9 @@ class BitrateController : public Module {
   *  max_bitrate_kit = 0 equals no max bitrate.
   */
   virtual void SetBitrateObserver(BitrateObserver* observer,
-                                  const uint32_t start_bitrate,
-                                  const uint32_t min_bitrate,
-                                  const uint32_t max_bitrate) = 0;
+                                  uint32_t start_bitrate,
+                                  uint32_t min_bitrate,
+                                  uint32_t max_bitrate) = 0;
 
   virtual void RemoveBitrateObserver(BitrateObserver* observer) = 0;
 
