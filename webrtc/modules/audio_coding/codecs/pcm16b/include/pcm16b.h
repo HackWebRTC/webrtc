@@ -54,9 +54,9 @@ int16_t WebRtcPcm16b_EncodeW16(const int16_t* speechIn16b,
  * Returned value		: Size in bytes of speech8b
  */
 
-int16_t WebRtcPcm16b_Encode(int16_t *speech16b,
+int16_t WebRtcPcm16b_Encode(const int16_t* speech16b,
                             int16_t len,
-                            unsigned char *speech8b);
+                            unsigned char* speech8b);
 
 /****************************************************************************
  * WebRtcPcm16b_DecodeW16(...)

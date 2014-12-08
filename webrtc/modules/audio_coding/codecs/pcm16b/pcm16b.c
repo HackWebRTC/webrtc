@@ -41,7 +41,7 @@ int16_t WebRtcPcm16b_EncodeW16(const int16_t* speechIn16b,
 
 
 /* Encoder with char Output (old version) */
-int16_t WebRtcPcm16b_Encode(int16_t *speech16b,
+int16_t WebRtcPcm16b_Encode(const int16_t *speech16b,
                             int16_t len,
                             unsigned char *speech8b)
 {
