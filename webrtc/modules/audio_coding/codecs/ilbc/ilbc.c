@@ -86,8 +86,10 @@ int16_t WebRtcIlbcfix_EncoderInit(iLBC_encinst_t *iLBCenc_inst, int16_t mode)
   }
 }
 
-int16_t WebRtcIlbcfix_Encode(iLBC_encinst_t *iLBCenc_inst, const int16_t *speechIn, int16_t len, int16_t *encoded) {
-
+int16_t WebRtcIlbcfix_Encode(iLBC_encinst_t* iLBCenc_inst,
+                             const int16_t* speechIn,
+                             int16_t len,
+                             uint8_t* encoded) {
   int16_t pos = 0;
   int16_t encpos = 0;
 
@@ -104,7 +106,8 @@ int16_t WebRtcIlbcfix_Encode(iLBC_encinst_t *iLBCenc_inst, const int16_t *speech
 
     /* call encoder */
     while (pos<len) {
-      WebRtcIlbcfix_EncodeImpl((uint16_t*) &encoded[encpos], &speechIn[pos], (iLBC_Enc_Inst_t*) iLBCenc_inst);
+      WebRtcIlbcfix_EncodeImpl((uint16_t*)&encoded[2 * encpos], &speechIn[pos],
+                               (iLBC_Enc_Inst_t*)iLBCenc_inst);
 #ifdef SPLIT_10MS
       pos += 80;
       if(((iLBC_Enc_Inst_t*)iLBCenc_inst)->section == 0)

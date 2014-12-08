@@ -198,6 +198,8 @@ config("ilbc_config") {
 
 source_set("ilbc") {
   sources = [
+    "codecs/ilbc/audio_encoder_ilbc.cc",
+    "codecs/ilbc/include/audio_encoder_ilbc.h",
     "codecs/ilbc/abs_quant.c",
     "codecs/ilbc/abs_quant.h",
     "codecs/ilbc/abs_quant_loop.c",

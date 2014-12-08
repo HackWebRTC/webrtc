@@ -163,7 +163,8 @@ int main(int argc, char* argv[])
     /* encoding */
 
     fprintf(stderr, "--- Encoding block %i --- ",blockcount);
-    len=WebRtcIlbcfix_Encode(Enc_Inst, data, (int16_t)frameLen, encoded_data);
+    len=WebRtcIlbcfix_Encode(Enc_Inst, data, (int16_t)frameLen,
+                             (uint8_t*)encoded_data);
     fprintf(stderr, "\r");
 
     /* write byte file */

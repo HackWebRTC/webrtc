@@ -1621,7 +1621,8 @@ int NetEQTest_encode(int coder, int16_t *indata, int frameLen, unsigned char * e
 #endif
 #ifdef CODEC_ILBC
         else if (coder==webrtc::kDecoderILBC) { /*iLBC */
-            cdlen=WebRtcIlbcfix_Encode(iLBCenc_inst[k], indata,frameLen,(int16_t*)encoded);
+            cdlen = WebRtcIlbcfix_Encode(iLBCenc_inst[k], indata,
+                                         frameLen, encoded);
         }
 #endif
 #if (defined(CODEC_ISAC) || defined(NETEQ_ISACFIX_CODEC)) // TODO(hlundin): remove all NETEQ_ISACFIX_CODEC

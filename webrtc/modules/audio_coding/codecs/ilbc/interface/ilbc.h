@@ -138,7 +138,7 @@ extern "C" {
   int16_t WebRtcIlbcfix_Encode(iLBC_encinst_t *iLBCenc_inst,
                                const int16_t *speechIn,
                                int16_t len,
-                               int16_t *encoded);
+                               uint8_t* encoded);
 
   /****************************************************************************
    * WebRtcIlbcfix_DecoderInit(...)

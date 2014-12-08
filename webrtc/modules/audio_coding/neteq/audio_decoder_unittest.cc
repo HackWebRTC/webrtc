@@ -23,7 +23,7 @@
 #include "webrtc/modules/audio_coding/codecs/g711/include/g711_interface.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/g722/include/audio_encoder_g722.h"
-#include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
+#include "webrtc/modules/audio_coding/codecs/ilbc/interface/audio_encoder_ilbc.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
 #include "webrtc/modules/audio_coding/codecs/opus/interface/audio_encoder_opus.h"
@@ -324,25 +324,10 @@ class AudioDecoderIlbcTest : public AudioDecoderTest {
     data_length_ = 10 * frame_size_;
     decoder_ = new AudioDecoderIlbc;
     assert(decoder_);
-    WebRtcIlbcfix_EncoderCreate(&encoder_);
-  }
-
-  ~AudioDecoderIlbcTest() {
-    WebRtcIlbcfix_EncoderFree(encoder_);
-  }
-
-  virtual void InitEncoder() {
-    ASSERT_EQ(0, WebRtcIlbcfix_EncoderInit(encoder_, 30));  // 30 ms.
-  }
-
-  virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
-                          uint8_t* output) {
-    int enc_len_bytes =
-        WebRtcIlbcfix_Encode(encoder_, input,
-                             static_cast<int>(input_len_samples),
-                             reinterpret_cast<int16_t*>(output));
-    EXPECT_EQ(50, enc_len_bytes);
-    return enc_len_bytes;
+    AudioEncoderIlbc::Config config;
+    config.frame_size_ms = 30;
+    config.payload_type = payload_type_;
+    audio_encoder_.reset(new AudioEncoderIlbc(config));
   }
 
   // Overload the default test since iLBC's function WebRtcIlbcfix_NetEqPlc does
@@ -362,8 +347,6 @@ class AudioDecoderIlbcTest : public AudioDecoderTest {
     // Simply call DecodePlc and verify that we get 0 as return value.
     EXPECT_EQ(0, decoder_->DecodePlc(1, output.get()));
   }
-
-  iLBC_encinst_t* encoder_;
 };
 
 class AudioDecoderIsacFloatTest : public AudioDecoderTest {

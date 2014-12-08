@@ -61,7 +61,7 @@ int16_t ACMILBC::InternalEncode(uint8_t* bitstream,
                                 int16_t* bitstream_len_byte) {
   *bitstream_len_byte = WebRtcIlbcfix_Encode(
       encoder_inst_ptr_, &in_audio_[in_audio_ix_read_], frame_len_smpl_,
-      reinterpret_cast<int16_t*>(bitstream));
+      bitstream);
   if (*bitstream_len_byte < 0) {
     WEBRTC_TRACE(webrtc::kTraceError,
                  webrtc::kTraceAudioCoding,
