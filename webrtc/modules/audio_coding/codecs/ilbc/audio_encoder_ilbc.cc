@@ -55,9 +55,9 @@ bool AudioEncoderIlbc::EncodeInternal(uint32_t timestamp,
                                       uint8_t* encoded,
                                       size_t* encoded_bytes,
                                       EncodedInfo* info) {
-  const size_t expected_output_len ATTRIBUTE_UNUSED =
+  const size_t expected_output_len =
       num_10ms_frames_per_packet_ == 2 ? 38 : 50;
-  DCHECK_GE(max_encoded_bytes, expected_output_len);
+  CHECK_GE(max_encoded_bytes, expected_output_len);
 
   // Save timestamp if starting a new packet.
   if (num_10ms_frames_buffered_ == 0)
