@@ -67,6 +67,10 @@ class AudioEncoder {
   // the preceding packet.
   virtual int Num10MsFramesInNextPacket() const = 0;
 
+  // Returns the maximum value that can be returned by
+  // Num10MsFramesInNextPacket().
+  virtual int Max10MsFramesInAPacket() const = 0;
+
  protected:
   virtual bool EncodeInternal(uint32_t timestamp,
                               const int16_t* audio,

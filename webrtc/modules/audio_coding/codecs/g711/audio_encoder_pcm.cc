@@ -53,6 +53,10 @@ int AudioEncoderPcm::Num10MsFramesInNextPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
+int AudioEncoderPcm::Max10MsFramesInAPacket() const {
+  return num_10ms_frames_per_packet_;
+}
+
 bool AudioEncoderPcm::EncodeInternal(uint32_t timestamp,
                                      const int16_t* audio,
                                      size_t max_encoded_bytes,

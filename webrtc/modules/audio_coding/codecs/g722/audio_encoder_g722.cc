@@ -60,6 +60,9 @@ int AudioEncoderG722::num_channels() const {
 int AudioEncoderG722::Num10MsFramesInNextPacket() const {
   return num_10ms_frames_per_packet_;
 }
+int AudioEncoderG722::Max10MsFramesInAPacket() const {
+  return num_10ms_frames_per_packet_;
+}
 
 bool AudioEncoderG722::EncodeInternal(uint32_t timestamp,
                                       const int16_t* audio,

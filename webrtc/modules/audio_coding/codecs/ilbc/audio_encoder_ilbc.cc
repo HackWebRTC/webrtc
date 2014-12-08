@@ -48,6 +48,9 @@ int AudioEncoderIlbc::num_channels() const {
 int AudioEncoderIlbc::Num10MsFramesInNextPacket() const {
   return num_10ms_frames_per_packet_;
 }
+int AudioEncoderIlbc::Max10MsFramesInAPacket() const {
+  return num_10ms_frames_per_packet_;
+}
 
 bool AudioEncoderIlbc::EncodeInternal(uint32_t timestamp,
                                       const int16_t* audio,
