@@ -14,7 +14,6 @@
  * Some code came from common/rtcd.c in the WebM project.
  */
 
-#include "webrtc/common_audio/signal_processing/include/real_fft.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
 
@@ -28,10 +27,6 @@ MinValueW32 WebRtcSpl_MinValueW32;
 CrossCorrelation WebRtcSpl_CrossCorrelation;
 DownsampleFast WebRtcSpl_DownsampleFast;
 ScaleAndAddVectorsWithRound WebRtcSpl_ScaleAndAddVectorsWithRound;
-CreateRealFFT WebRtcSpl_CreateRealFFT;
-FreeRealFFT WebRtcSpl_FreeRealFFT;
-RealForwardFFT WebRtcSpl_RealForwardFFT;
-RealInverseFFT WebRtcSpl_RealInverseFFT;
 
 #if (defined(WEBRTC_DETECT_ARM_NEON) || !defined(WEBRTC_ARCH_ARM_NEON)) && \
      !defined(MIPS32_LE)
@@ -47,10 +42,6 @@ static void InitPointersToC() {
   WebRtcSpl_DownsampleFast = WebRtcSpl_DownsampleFastC;
   WebRtcSpl_ScaleAndAddVectorsWithRound =
       WebRtcSpl_ScaleAndAddVectorsWithRoundC;
-  WebRtcSpl_CreateRealFFT = WebRtcSpl_CreateRealFFTC;
-  WebRtcSpl_FreeRealFFT = WebRtcSpl_FreeRealFFTC;
-  WebRtcSpl_RealForwardFFT = WebRtcSpl_RealForwardFFTC;
-  WebRtcSpl_RealInverseFFT = WebRtcSpl_RealInverseFFTC;
 }
 #endif
 
@@ -69,10 +60,6 @@ static void InitPointersToNeon() {
      understood. */
   WebRtcSpl_ScaleAndAddVectorsWithRound =
       WebRtcSpl_ScaleAndAddVectorsWithRoundC;
-  WebRtcSpl_CreateRealFFT = WebRtcSpl_CreateRealFFTNeon;
-  WebRtcSpl_FreeRealFFT = WebRtcSpl_FreeRealFFTNeon;
-  WebRtcSpl_RealForwardFFT = WebRtcSpl_RealForwardFFTNeon;
-  WebRtcSpl_RealInverseFFT = WebRtcSpl_RealInverseFFTNeon;
 }
 #endif
 
@@ -86,10 +73,6 @@ static void InitPointersToMIPS() {
   WebRtcSpl_MinValueW32 = WebRtcSpl_MinValueW32_mips;
   WebRtcSpl_CrossCorrelation = WebRtcSpl_CrossCorrelation_mips;
   WebRtcSpl_DownsampleFast = WebRtcSpl_DownsampleFast_mips;
-  WebRtcSpl_CreateRealFFT = WebRtcSpl_CreateRealFFTC;
-  WebRtcSpl_FreeRealFFT = WebRtcSpl_FreeRealFFTC;
-  WebRtcSpl_RealForwardFFT = WebRtcSpl_RealForwardFFTC;
-  WebRtcSpl_RealInverseFFT = WebRtcSpl_RealInverseFFTC;
 #if defined(MIPS_DSP_R1_LE)
   WebRtcSpl_MaxAbsValueW32 = WebRtcSpl_MaxAbsValueW32_mips;
   WebRtcSpl_ScaleAndAddVectorsWithRound =
