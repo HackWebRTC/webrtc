@@ -140,15 +140,19 @@ class AudioDecoderTest : public ::testing::Test {
                           size_t input_len_samples,
                           uint8_t* output) {
     size_t enc_len_bytes = 0;
+    const size_t samples_per_10ms = audio_encoder_->sample_rate_hz() / 100;
+    CHECK_EQ(samples_per_10ms * audio_encoder_->Num10MsFramesInNextPacket(),
+             input_len_samples);
     scoped_ptr<int16_t[]> interleaved_input(
-        new int16_t[channels_ * input_len_samples]);
+        new int16_t[channels_ * samples_per_10ms]);
     for (int i = 0; i < audio_encoder_->Num10MsFramesInNextPacket(); ++i) {
       EXPECT_EQ(0u, enc_len_bytes);
 
       // Duplicate the mono input signal to however many channels the test
       // wants.
-      test::InputAudioFile::DuplicateInterleaved(
-          input, input_len_samples, channels_, interleaved_input.get());
+      test::InputAudioFile::DuplicateInterleaved(input + i * samples_per_10ms,
+                                                 samples_per_10ms, channels_,
+                                                 interleaved_input.get());
 
       EXPECT_TRUE(audio_encoder_->Encode(
           0, interleaved_input.get(), audio_encoder_->sample_rate_hz() / 100,
