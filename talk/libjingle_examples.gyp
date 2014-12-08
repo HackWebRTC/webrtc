@@ -321,7 +321,7 @@
               'action_name': 'build_apprtcdemo_apk',
               'inputs' : [
                 '<(PRODUCT_DIR)/libjingle_peerconnection.jar',
-                '<(PRODUCT_DIR)/libjingle_peerconnection_so.so',
+                '<(PRODUCT_DIR)/lib/libjingle_peerconnection_so.so',
                 'examples/android/AndroidManifest.xml',
                 'examples/android/README',
                 'examples/android/ant.properties',
@@ -384,7 +384,7 @@
                 'mkdir -p examples/android/libs/<(android_app_abi) && '
                 'cp <(PRODUCT_DIR)/libjingle_peerconnection.jar examples/android/libs/ &&'
                 'cp examples/android/third_party/autobanh/autobanh.jar examples/android/libs/ &&'
-                '<(android_strip) -o examples/android/libs/<(android_app_abi)/libjingle_peerconnection_so.so  <(PRODUCT_DIR)/libjingle_peerconnection_so.so &&'
+                '<(android_strip) -o examples/android/libs/<(android_app_abi)/libjingle_peerconnection_so.so  <(PRODUCT_DIR)/lib/libjingle_peerconnection_so.so &&'
                 'cd examples/android && '
                 '{ ANDROID_SDK_ROOT=<(android_sdk_root) '
                 'ant debug > <(ant_log) 2>&1 || '
