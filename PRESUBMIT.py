@@ -6,6 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import os
 import re
 import sys
 
@@ -152,8 +153,13 @@ def _CheckUnwantedDependencies(input_api, output_api):
   # eval-ed and thus doesn't have __file__.
   original_sys_path = sys.path
   try:
-    sys.path = sys.path + [input_api.os_path.join(
-        input_api.PresubmitLocalPath(), 'buildtools', 'checkdeps')]
+    checkdeps_path = input_api.os_path.join(input_api.PresubmitLocalPath(),
+                                            'buildtools', 'checkdeps')
+    if not os.path.exists(checkdeps_path):
+      return [output_api.PresubmitError(
+          'Cannot find checkdeps at %s\nHave you run "gclient sync" to '
+          'download Chromium and setup the symlinks?' % checkdeps_path)]
+    sys.path.append(checkdeps_path)
     import checkdeps
     from cpp_checker import CppChecker
     from rules import Rule
