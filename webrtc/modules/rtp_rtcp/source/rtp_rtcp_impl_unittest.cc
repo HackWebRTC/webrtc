@@ -145,7 +145,7 @@ class RtpRtcpModule {
 class RtpRtcpImplTest : public ::testing::Test {
  protected:
   RtpRtcpImplTest()
-      : clock_(1335900000),
+      : clock_(133590000000000),
         sender_(&clock_),
         receiver_(&clock_) {
     // Send module.
@@ -195,12 +195,13 @@ class RtpRtcpImplTest : public ::testing::Test {
   }
 
   void IncomingRtcpNack(const RtpRtcpModule* module, uint16_t sequence_number) {
+    bool sender = module->impl_->SSRC() == kSenderSsrc;
     rtcp::Nack nack;
     uint16_t list[1];
     list[0] = sequence_number;
     const uint16_t kListLength = sizeof(list) / sizeof(list[0]);
-    nack.From(kReceiverSsrc);
-    nack.To(kSenderSsrc);
+    nack.From(sender ? kReceiverSsrc : kSenderSsrc);
+    nack.To(sender ? kSenderSsrc : kReceiverSsrc);
     nack.WithList(list, kListLength);
     rtcp::RawPacket packet = nack.Build();
     EXPECT_EQ(0, module->impl_->IncomingRtcpPacket(packet.buffer(),
@@ -352,6 +353,61 @@ TEST_F(RtpRtcpImplTest, RtcpPacketTypeCounter_FirAndPli) {
   // Send module receives the FIR and PLI.
   EXPECT_EQ(2U, sender_.RtcpReceived().fir_packets);
   EXPECT_EQ(1U, sender_.RtcpReceived().pli_packets);
+}
+
+TEST_F(RtpRtcpImplTest, SendsInitialNackList) {
+  // Send module sends a NACK.
+  const uint16_t kNackLength = 1;
+  uint16_t nack_list[kNackLength] = {123};
+  EXPECT_EQ(0U, sender_.RtcpSent().nack_packets);
+  EXPECT_EQ(0, sender_.impl_->SendNACK(nack_list, kNackLength));
+  EXPECT_EQ(1U, sender_.RtcpSent().nack_packets);
+  EXPECT_THAT(sender_.LastNackListSent(), ElementsAre(123));
+}
+
+TEST_F(RtpRtcpImplTest, SendsExtendedNackList) {
+  // Send module sends a NACK.
+  const uint16_t kNackLength = 1;
+  uint16_t nack_list[kNackLength] = {123};
+  EXPECT_EQ(0U, sender_.RtcpSent().nack_packets);
+  EXPECT_EQ(0, sender_.impl_->SendNACK(nack_list, kNackLength));
+  EXPECT_EQ(1U, sender_.RtcpSent().nack_packets);
+  EXPECT_THAT(sender_.LastNackListSent(), ElementsAre(123));
+
+  // Same list not re-send.
+  EXPECT_EQ(0, sender_.impl_->SendNACK(nack_list, kNackLength));
+  EXPECT_EQ(1U, sender_.RtcpSent().nack_packets);
+  EXPECT_THAT(sender_.LastNackListSent(), ElementsAre(123));
+
+  // Only extended list sent.
+  const uint16_t kNackExtLength = 2;
+  uint16_t nack_list_ext[kNackExtLength] = {123, 124};
+  EXPECT_EQ(0, sender_.impl_->SendNACK(nack_list_ext, kNackExtLength));
+  EXPECT_EQ(2U, sender_.RtcpSent().nack_packets);
+  EXPECT_THAT(sender_.LastNackListSent(), ElementsAre(124));
+}
+
+TEST_F(RtpRtcpImplTest, ReSendsNackListAfterRttMs) {
+  sender_.transport_.SimulateNetworkDelay(0, &clock_);
+  // Send module sends a NACK.
+  const uint16_t kNackLength = 2;
+  uint16_t nack_list[kNackLength] = {123, 125};
+  EXPECT_EQ(0U, sender_.RtcpSent().nack_packets);
+  EXPECT_EQ(0, sender_.impl_->SendNACK(nack_list, kNackLength));
+  EXPECT_EQ(1U, sender_.RtcpSent().nack_packets);
+  EXPECT_THAT(sender_.LastNackListSent(), ElementsAre(123, 125));
+
+  // Same list not re-send, rtt interval has not passed.
+  const int kStartupRttMs = 100;
+  clock_.AdvanceTimeMilliseconds(kStartupRttMs);
+  EXPECT_EQ(0, sender_.impl_->SendNACK(nack_list, kNackLength));
+  EXPECT_EQ(1U, sender_.RtcpSent().nack_packets);
+
+  // Rtt interval passed, full list sent.
+  clock_.AdvanceTimeMilliseconds(1);
+  EXPECT_EQ(0, sender_.impl_->SendNACK(nack_list, kNackLength));
+  EXPECT_EQ(2U, sender_.RtcpSent().nack_packets);
+  EXPECT_THAT(sender_.LastNackListSent(), ElementsAre(123, 125));
 }
 
 TEST_F(RtpRtcpImplTest, UniqueNackRequests) {

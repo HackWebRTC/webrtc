@@ -391,6 +391,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   void set_rtt_ms(uint32_t rtt_ms);
   uint32_t rtt_ms() const;
 
+  bool TimeToSendFullNackList(int64_t now) const;
+
   bool IsDefaultModule() const;
 
   int32_t             id_;
@@ -409,8 +411,9 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   // Send side
   NACKMethod            nack_method_;
-  uint32_t        nack_last_time_sent_full_;
-  uint16_t        nack_last_seq_number_sent_;
+  int64_t nack_last_time_sent_full_;
+  uint32_t nack_last_time_sent_full_prev_;
+  uint16_t nack_last_seq_number_sent_;
 
   bool                  simulcast_;
   VideoCodec            send_video_codec_;

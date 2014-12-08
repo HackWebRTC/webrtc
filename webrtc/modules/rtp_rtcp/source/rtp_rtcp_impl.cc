@@ -87,6 +87,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       padding_index_(static_cast<size_t>(-1)),  // Start padding at first child.
       nack_method_(kNackOff),
       nack_last_time_sent_full_(0),
+      nack_last_time_sent_full_prev_(0),
       nack_last_seq_number_sent_(0),
       simulcast_(false),
       key_frame_req_method_(kKeyFrameReqFirRtp),
@@ -911,51 +912,57 @@ int ModuleRtpRtcpImpl::SetSelectiveRetransmissions(uint8_t settings) {
 // Send a Negative acknowledgment packet.
 int32_t ModuleRtpRtcpImpl::SendNACK(const uint16_t* nack_list,
                                     const uint16_t size) {
+  uint16_t nack_length = size;
+  uint16_t start_id = 0;
+  int64_t now = clock_->TimeInMilliseconds();
+  if (TimeToSendFullNackList(now)) {
+    nack_last_time_sent_full_ = now;
+    nack_last_time_sent_full_prev_ = now;
+  } else {
+    // Only send extended list.
+    if (nack_last_seq_number_sent_ == nack_list[size - 1]) {
+      // Last sequence number is the same, do not send list.
+      return 0;
+    }
+    // Send new sequence numbers.
+    for (int i = 0; i < size; ++i) {
+      if (nack_last_seq_number_sent_ == nack_list[i]) {
+        start_id = i + 1;
+        break;
+      }
+    }
+    nack_length = size - start_id;
+  }
+
+  // Our RTCP NACK implementation is limited to kRtcpMaxNackFields sequence
+  // numbers per RTCP packet.
+  if (nack_length > kRtcpMaxNackFields) {
+    nack_length = kRtcpMaxNackFields;
+  }
+  nack_last_seq_number_sent_ = nack_list[start_id + nack_length - 1];
+
+  return rtcp_sender_.SendRTCP(
+      GetFeedbackState(), kRtcpNack, nack_length, &nack_list[start_id]);
+}
+
+bool ModuleRtpRtcpImpl::TimeToSendFullNackList(int64_t now) const {
   // Use RTT from RtcpRttStats class if provided.
   uint16_t rtt = rtt_ms();
   if (rtt == 0) {
     rtcp_receiver_.RTT(rtcp_receiver_.RemoteSSRC(), NULL, &rtt, NULL, NULL);
   }
 
+  const int64_t kStartUpRttMs = 100;
   int64_t wait_time = 5 + ((rtt * 3) >> 1);  // 5 + RTT * 1.5.
-  if (wait_time == 5) {
-    wait_time = 100;  // During startup we don't have an RTT.
+  if (rtt == 0) {
+    wait_time = kStartUpRttMs;
   }
-  const int64_t now = clock_->TimeInMilliseconds();
-  const int64_t time_limit = now - wait_time;
-  uint16_t nackLength = size;
-  uint16_t start_id = 0;
 
-  if (nack_last_time_sent_full_ < time_limit) {
-    // Send list. Set the timer to make sure we only send a full NACK list once
-    // within every time_limit.
-    nack_last_time_sent_full_ = now;
-  } else {
-    // Only send if extended list.
-    if (nack_last_seq_number_sent_ == nack_list[size - 1]) {
-      // Last seq num is the same don't send list.
-      return 0;
-    } else {
-      // Send NACKs only for new sequence numbers to avoid re-sending
-      // NACKs for sequences we have already sent.
-      for (int i = 0; i < size; ++i)  {
-        if (nack_last_seq_number_sent_ == nack_list[i]) {
-          start_id = i + 1;
-          break;
-        }
-      }
-      nackLength = size - start_id;
-    }
+  // Send a full NACK list once within every |wait_time|.
+  if (rtt_stats_) {
+    return now - nack_last_time_sent_full_ > wait_time;
   }
-  // Our RTCP NACK implementation is limited to kRtcpMaxNackFields sequence
-  // numbers per RTCP packet.
-  if (nackLength > kRtcpMaxNackFields) {
-    nackLength = kRtcpMaxNackFields;
-  }
-  nack_last_seq_number_sent_ = nack_list[start_id + nackLength - 1];
-
-  return rtcp_sender_.SendRTCP(
-      GetFeedbackState(), kRtcpNack, nackLength, &nack_list[start_id]);
+  return now - nack_last_time_sent_full_prev_ > wait_time;
 }
 
 // Store the sent packets, needed to answer to a Negative acknowledgment
