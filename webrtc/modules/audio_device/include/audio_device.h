@@ -183,7 +183,8 @@ class AudioDeviceModule : public RefCountedModule {
   virtual int32_t GetLoudspeakerStatus(bool* enabled) const = 0;
 
   // Only supported on Android.
-  virtual bool BuiltInAECIsAvailable() const = 0;
+  // TODO(henrika): Make pure virtual after updating Chromium.
+  virtual bool BuiltInAECIsAvailable() const { return false; }
 
   // Enables the built-in AEC. Only supported on Windows and Android.
   //
@@ -193,7 +194,8 @@ class AudioDeviceModule : public RefCountedModule {
   // 2. StopRecording() should be called before StopPlayout().
   //    The reverse order may cause garbage audio to be rendered or the
   //    capture side to halt until StopRecording() is called.
-  virtual int32_t EnableBuiltInAEC(bool enable) = 0;
+  // TODO(henrika): Make pure virtual after updating Chromium.
+  virtual int32_t EnableBuiltInAEC(bool enable) { return -1; }
 
   // Don't use.
   virtual bool BuiltInAECIsEnabled() const { return false; }
