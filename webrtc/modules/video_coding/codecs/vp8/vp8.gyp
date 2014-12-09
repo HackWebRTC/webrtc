@@ -27,20 +27,29 @@
         }],
       ],
       'sources': [
-        'reference_picture_selection.h',
-        'reference_picture_selection.cc',
-        'include/vp8.h',
-        'include/vp8_common_types.h',
-        'vp8_factory.cc',
-        'vp8_impl.cc',
         'default_temporal_layers.cc',
         'default_temporal_layers.h',
+        'include/vp8.h',
+        'include/vp8_common_types.h',
         'realtime_temporal_layers.cc',
+        'reference_picture_selection.cc',
+        'reference_picture_selection.h',
+        'screenshare_layers.cc',
+        'screenshare_layers.h',
+        'simulcast_encoder_adapter.cc',
+        'simulcast_encoder_adapter.h',
         'temporal_layers.h',
+        'vp8_factory.cc',
+        'vp8_factory.h',
+        'vp8_impl.cc',
+        'vp8_impl.h',
       ],
       # Disable warnings to enable Win64 build, issue 1323.
       'msvs_disabled_warnings': [
         4267,  # size_t to int truncation.
+      ],
+      'include_dirs': [
+        '<(libyuv_dir)/include',
       ],
     },
   ], # targets

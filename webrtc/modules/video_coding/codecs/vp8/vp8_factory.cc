@@ -6,15 +6,37 @@
  *  tree. An additional intellectual property rights grant can be found
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
- *
  */
 
+#include "webrtc/modules/video_coding/codecs/vp8/vp8_factory.h"
+
+#include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
 #include "webrtc/modules/video_coding/codecs/vp8/vp8_impl.h"
 
 namespace webrtc {
 
+bool VP8EncoderFactoryConfig::use_simulcast_adapter_ = false;
+
+class VP8EncoderImplFactory : public VideoEncoderFactory {
+ public:
+  virtual VideoEncoder* Create() OVERRIDE {
+    return new VP8EncoderImpl();
+  }
+
+  virtual void Destroy(VideoEncoder* encoder) OVERRIDE {
+    delete encoder;
+  }
+
+  virtual ~VP8EncoderImplFactory() {}
+};
+
 VP8Encoder* VP8Encoder::Create() {
-  return new VP8EncoderImpl();
+  if (VP8EncoderFactoryConfig::use_simulcast_adapter()) {
+    scoped_ptr<VideoEncoderFactory> factory(new VP8EncoderImplFactory());
+    return new SimulcastEncoderAdapter(factory.Pass());
+  } else {
+    return new VP8EncoderImpl();
+  }
 }
 
 VP8Decoder* VP8Decoder::Create() {
