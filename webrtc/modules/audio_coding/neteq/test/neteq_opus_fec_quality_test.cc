@@ -111,8 +111,6 @@ static const bool runtime_dummy =
 
 DEFINE_bool(fec, true, "Whether to enable FEC for encoding.");
 
-DEFINE_bool(dtx, true, "Whether to enable DTX for encoding.");
-
 class NetEqOpusFecQualityTest : public NetEqQualityTest {
  protected:
   NetEqOpusFecQualityTest();
@@ -125,7 +123,6 @@ class NetEqOpusFecQualityTest : public NetEqQualityTest {
   int channels_;
   int bit_rate_kbps_;
   bool fec_;
-  bool dtx_;
   int target_loss_rate_;
 };
 
@@ -140,7 +137,6 @@ NetEqOpusFecQualityTest::NetEqOpusFecQualityTest()
       channels_(FLAGS_channels),
       bit_rate_kbps_(FLAGS_bit_rate_kbps),
       fec_(FLAGS_fec),
-      dtx_(FLAGS_dtx),
       target_loss_rate_(FLAGS_reported_loss_rate) {
 }
 
@@ -152,9 +148,6 @@ void NetEqOpusFecQualityTest::SetUp() {
   EXPECT_EQ(0, WebRtcOpus_SetBitRate(opus_encoder_, bit_rate_kbps_ * 1000));
   if (fec_) {
     EXPECT_EQ(0, WebRtcOpus_EnableFec(opus_encoder_));
-  }
-  if (dtx_) {
-    EXPECT_EQ(0, WebRtcOpus_EnableDtx(opus_encoder_));
   }
   EXPECT_EQ(0, WebRtcOpus_SetPacketLossRate(opus_encoder_,
                                             target_loss_rate_));
@@ -173,6 +166,7 @@ int NetEqOpusFecQualityTest::EncodeBlock(int16_t* in_data,
   int value = WebRtcOpus_Encode(opus_encoder_, in_data,
                                 block_size_samples, max_bytes,
                                 payload);
+  EXPECT_GT(value, 0);
   return value;
 }
 

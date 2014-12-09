@@ -12,50 +12,34 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_inst.h"
-#include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
 
-using test::AudioLoop;
-
+// Number of samples in a 60 ms stereo frame, sampled at 48 kHz.
+const int kOpusMaxFrameSamples = 48 * 60 * 2;
 // Maximum number of bytes in output bitstream.
 const size_t kMaxBytes = 1000;
-// Sample rate of Opus.
-const int kOpusRateKhz = 48;
 // Number of samples-per-channel in a 20 ms frame, sampled at 48 kHz.
-const int kOpus20msFrameSamples = kOpusRateKhz * 20;
+const int kOpus20msFrameSamples = 48 * 20;
 // Number of samples-per-channel in a 10 ms frame, sampled at 48 kHz.
-const int kOpus10msFrameSamples = kOpusRateKhz * 10;
+const int kOpus10msFrameSamples = 48 * 10;
 
 class OpusTest : public ::testing::Test {
  protected:
   OpusTest();
+  virtual void SetUp();
 
   void TestSetMaxPlaybackRate(opus_int32 expect, int32_t set);
-  void TestDtxEffect(bool dtx);
-
-  // Prepare |speech_data_| for encoding, read from a hard-coded file.
-  // After preparation, |speech_data_.GetNextBlock()| returns a pointer to a
-  // block of |block_length_ms| milliseconds. The data is looped every
-  // |loop_length_ms| milliseconds.
-  void PrepareSpeechData(int channel, int block_length_ms, int loop_length_ms);
-
-  int EncodeDecode(WebRtcOpusEncInst* encoder,
-                   const int16_t* input_audio,
-                   const int input_samples,
-                   WebRtcOpusDecInst* decoder,
-                   int16_t* output_audio,
-                   int16_t* audio_type);
 
   WebRtcOpusEncInst* opus_mono_encoder_;
   WebRtcOpusEncInst* opus_stereo_encoder_;
   WebRtcOpusDecInst* opus_mono_decoder_;
   WebRtcOpusDecInst* opus_stereo_decoder_;
 
-  AudioLoop speech_data_;
+  int16_t speech_data_[kOpusMaxFrameSamples];
+  int16_t output_data_[kOpusMaxFrameSamples];
   uint8_t bitstream_[kMaxBytes];
-  int encoded_bytes_;
 };
 
 OpusTest::OpusTest()
@@ -65,16 +49,17 @@ OpusTest::OpusTest()
       opus_stereo_decoder_(NULL) {
 }
 
-void OpusTest::PrepareSpeechData(int channel, int block_length_ms,
-                                 int loop_length_ms) {
+void OpusTest::SetUp() {
+  FILE* input_file;
   const std::string file_name =
         webrtc::test::ResourcePath("audio_coding/speech_mono_32_48kHz", "pcm");
-  if (loop_length_ms < block_length_ms) {
-    loop_length_ms = block_length_ms;
-  }
-  EXPECT_TRUE(speech_data_.Init(file_name,
-                                loop_length_ms * kOpusRateKhz * channel,
-                                block_length_ms * kOpusRateKhz * channel));
+  input_file = fopen(file_name.c_str(), "rb");
+  ASSERT_TRUE(input_file != NULL);
+  ASSERT_EQ(kOpusMaxFrameSamples,
+            static_cast<int32_t>(fread(speech_data_, sizeof(int16_t),
+                                       kOpusMaxFrameSamples, input_file)));
+  fclose(input_file);
+  input_file = NULL;
 }
 
 void OpusTest::TestSetMaxPlaybackRate(opus_int32 expect, int32_t set) {
@@ -89,155 +74,6 @@ void OpusTest::TestSetMaxPlaybackRate(opus_int32 expect, int32_t set) {
   opus_encoder_ctl(opus_stereo_encoder_->encoder,
                    OPUS_GET_MAX_BANDWIDTH(&bandwidth));
   EXPECT_EQ(expect, bandwidth);
-}
-
-int OpusTest::EncodeDecode(WebRtcOpusEncInst* encoder,
-                           const int16_t* input_audio,
-                           const int input_samples,
-                           WebRtcOpusDecInst* decoder,
-                           int16_t* output_audio,
-                           int16_t* audio_type) {
-  encoded_bytes_ = WebRtcOpus_Encode(encoder,
-                                    input_audio,
-                                    input_samples, kMaxBytes,
-                                    bitstream_);
-  return WebRtcOpus_Decode(decoder, bitstream_,
-                           encoded_bytes_, output_audio,
-                           audio_type);
-}
-
-// Test if encoder/decoder can enter DTX mode properly and do not enter DTX when
-// they should not. This test is signal dependent.
-void OpusTest::TestDtxEffect(bool dtx) {
-  PrepareSpeechData(1, 20, 2000);
-
-  // Create encoder memory.
-  EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_mono_encoder_, 1));
-  EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_mono_decoder_, 1));
-
-  // Set bitrate.
-  EXPECT_EQ(0, WebRtcOpus_SetBitRate(opus_mono_encoder_, 32000));
-
-  // Set input audio as silence.
-  int16_t silence[kOpus20msFrameSamples] = {0};
-
-  // Setting DTX.
-  EXPECT_EQ(0, dtx ? WebRtcOpus_EnableDtx(opus_mono_encoder_) :
-      WebRtcOpus_DisableDtx(opus_mono_encoder_));
-
-  int16_t audio_type;
-  int16_t output_data_decode[kOpus20msFrameSamples];
-
-  for (int i = 0; i < 100; ++i) {
-    EXPECT_EQ(kOpus20msFrameSamples,
-              EncodeDecode(opus_mono_encoder_, speech_data_.GetNextBlock(),
-                           kOpus20msFrameSamples, opus_mono_decoder_,
-                           output_data_decode, &audio_type));
-    // If not DTX, it should never enter DTX mode. If DTX, we do not care since
-    // whether it enters DTX depends on the signal type.
-    if (!dtx) {
-      EXPECT_GT(encoded_bytes_, 1);
-      EXPECT_EQ(0, opus_mono_encoder_->in_dtx_mode);
-      EXPECT_EQ(0, opus_mono_decoder_->in_dtx_mode);
-      EXPECT_EQ(0, audio_type);  // Speech.
-    }
-  }
-
-  // We input some silent segments. In DTX mode, the encoder will stop sending.
-  // However, DTX may happen after a while.
-  for (int i = 0; i < 21; ++i) {
-    EXPECT_EQ(kOpus20msFrameSamples,
-              EncodeDecode(opus_mono_encoder_, silence,
-                           kOpus20msFrameSamples, opus_mono_decoder_,
-                           output_data_decode, &audio_type));
-    if (!dtx) {
-      EXPECT_GT(encoded_bytes_, 1);
-      EXPECT_EQ(0, opus_mono_encoder_->in_dtx_mode);
-      EXPECT_EQ(0, opus_mono_decoder_->in_dtx_mode);
-      EXPECT_EQ(0, audio_type);  // Speech.
-    }
-  }
-
-  // For this input signal, DTX happens now.
-  EXPECT_EQ(kOpus20msFrameSamples,
-            EncodeDecode(opus_mono_encoder_, silence,
-                         kOpus20msFrameSamples, opus_mono_decoder_,
-                         output_data_decode, &audio_type));
-  if (dtx) {
-    EXPECT_EQ(1, encoded_bytes_);  // Send 1 byte.
-    EXPECT_EQ(1, opus_mono_encoder_->in_dtx_mode);
-    EXPECT_EQ(1, opus_mono_decoder_->in_dtx_mode);
-    EXPECT_EQ(2, audio_type);  // Comfort noise.
-  } else {
-    EXPECT_GT(encoded_bytes_, 1);
-    EXPECT_EQ(0, opus_mono_encoder_->in_dtx_mode);
-    EXPECT_EQ(0, opus_mono_decoder_->in_dtx_mode);
-    EXPECT_EQ(0, audio_type);  // Speech.
-  }
-
-  // DTX mode is maintained 400 ms.
-  for (int i = 0; i < 20; ++i) {
-    EXPECT_EQ(kOpus20msFrameSamples,
-              EncodeDecode(opus_mono_encoder_, silence,
-                           kOpus20msFrameSamples, opus_mono_decoder_,
-                           output_data_decode, &audio_type));
-    if (dtx) {
-      EXPECT_EQ(0, encoded_bytes_);  // Send 0 byte.
-      EXPECT_EQ(1, opus_mono_encoder_->in_dtx_mode);
-      EXPECT_EQ(1, opus_mono_decoder_->in_dtx_mode);
-      EXPECT_EQ(2, audio_type);  // Comfort noise.
-    } else {
-      EXPECT_GT(encoded_bytes_, 1);
-      EXPECT_EQ(0, opus_mono_encoder_->in_dtx_mode);
-      EXPECT_EQ(0, opus_mono_decoder_->in_dtx_mode);
-      EXPECT_EQ(0, audio_type);  // Speech.
-    }
-  }
-
-  // Quit DTX after 400 ms
-  EXPECT_EQ(kOpus20msFrameSamples,
-            EncodeDecode(opus_mono_encoder_, silence,
-                         kOpus20msFrameSamples, opus_mono_decoder_,
-                         output_data_decode, &audio_type));
-
-  EXPECT_GT(encoded_bytes_, 1);
-  EXPECT_EQ(0, opus_mono_encoder_->in_dtx_mode);
-  EXPECT_EQ(0, opus_mono_decoder_->in_dtx_mode);
-  EXPECT_EQ(0, audio_type);  // Speech.
-
-  // Enters DTX again immediately.
-  EXPECT_EQ(kOpus20msFrameSamples,
-            EncodeDecode(opus_mono_encoder_, silence,
-                         kOpus20msFrameSamples, opus_mono_decoder_,
-                         output_data_decode, &audio_type));
-  if (dtx) {
-    EXPECT_EQ(1, encoded_bytes_);  // Send 1 byte.
-    EXPECT_EQ(1, opus_mono_encoder_->in_dtx_mode);
-    EXPECT_EQ(1, opus_mono_decoder_->in_dtx_mode);
-    EXPECT_EQ(2, audio_type);  // Comfort noise.
-  } else {
-    EXPECT_GT(encoded_bytes_, 1);
-    EXPECT_EQ(0, opus_mono_encoder_->in_dtx_mode);
-    EXPECT_EQ(0, opus_mono_decoder_->in_dtx_mode);
-    EXPECT_EQ(0, audio_type);  // Speech.
-  }
-
-  silence[0] = 10000;
-  if (dtx) {
-    // Verify that encoder/decoder can jump out from DTX mode.
-    EXPECT_EQ(kOpus20msFrameSamples,
-              EncodeDecode(opus_mono_encoder_, silence,
-                           kOpus20msFrameSamples, opus_mono_decoder_,
-                           output_data_decode, &audio_type));
-    EXPECT_GT(encoded_bytes_, 1);
-    EXPECT_EQ(0, opus_mono_encoder_->in_dtx_mode);
-    EXPECT_EQ(0, opus_mono_decoder_->in_dtx_mode);
-    EXPECT_EQ(0, audio_type);  // Speech.
-  }
-
-  // Free memory.
-  EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_mono_encoder_));
-  EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_mono_decoder_));
 }
 
 // Test failing Create.
@@ -274,8 +110,6 @@ TEST_F(OpusTest, OpusCreateFree) {
 }
 
 TEST_F(OpusTest, OpusEncodeDecodeMono) {
-  PrepareSpeechData(1, 20, 20);
-
   // Create encoder memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_mono_encoder_, 1));
   EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_mono_decoder_, 1));
@@ -287,12 +121,16 @@ TEST_F(OpusTest, OpusEncodeDecodeMono) {
   EXPECT_EQ(1, WebRtcOpus_DecoderChannels(opus_mono_decoder_));
 
   // Encode & decode.
+  int16_t encoded_bytes;
   int16_t audio_type;
-  int16_t output_data_decode[kOpus20msFrameSamples];
+  int16_t output_data_decode[kOpusMaxFrameSamples];
+  encoded_bytes = WebRtcOpus_Encode(opus_mono_encoder_, speech_data_,
+                                    kOpus20msFrameSamples, kMaxBytes,
+                                    bitstream_);
   EXPECT_EQ(kOpus20msFrameSamples,
-            EncodeDecode(opus_mono_encoder_, speech_data_.GetNextBlock(),
-                         kOpus20msFrameSamples, opus_mono_decoder_,
-                         output_data_decode, &audio_type));
+            WebRtcOpus_Decode(opus_mono_decoder_, bitstream_,
+                              encoded_bytes, output_data_decode,
+                              &audio_type));
 
   // Free memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_mono_encoder_));
@@ -300,8 +138,6 @@ TEST_F(OpusTest, OpusEncodeDecodeMono) {
 }
 
 TEST_F(OpusTest, OpusEncodeDecodeStereo) {
-  PrepareSpeechData(2, 20, 20);
-
   // Create encoder memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_stereo_encoder_, 2));
   EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_stereo_decoder_, 2));
@@ -313,12 +149,16 @@ TEST_F(OpusTest, OpusEncodeDecodeStereo) {
   EXPECT_EQ(2, WebRtcOpus_DecoderChannels(opus_stereo_decoder_));
 
   // Encode & decode.
+  int16_t encoded_bytes;
   int16_t audio_type;
-  int16_t output_data_decode[kOpus20msFrameSamples * 2];
+  int16_t output_data_decode[kOpusMaxFrameSamples];
+  encoded_bytes = WebRtcOpus_Encode(opus_stereo_encoder_, speech_data_,
+                                    kOpus20msFrameSamples, kMaxBytes,
+                                    bitstream_);
   EXPECT_EQ(kOpus20msFrameSamples,
-            EncodeDecode(opus_stereo_encoder_, speech_data_.GetNextBlock(),
-                         kOpus20msFrameSamples, opus_stereo_decoder_,
-                         output_data_decode, &audio_type));
+            WebRtcOpus_Decode(opus_stereo_decoder_, bitstream_,
+                              encoded_bytes, output_data_decode,
+                              &audio_type));
 
   // Free memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_stereo_encoder_));
@@ -367,25 +207,28 @@ TEST_F(OpusTest, OpusSetComplexity) {
 // Encode and decode one frame (stereo), initialize the decoder and
 // decode once more.
 TEST_F(OpusTest, OpusDecodeInit) {
-  PrepareSpeechData(2, 20, 20);
-
   // Create encoder memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_stereo_encoder_, 2));
   EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_stereo_decoder_, 2));
 
   // Encode & decode.
+  int16_t encoded_bytes;
   int16_t audio_type;
-  int16_t output_data_decode[kOpus20msFrameSamples * 2];
+  int16_t output_data_decode[kOpusMaxFrameSamples];
+
+  encoded_bytes = WebRtcOpus_Encode(opus_stereo_encoder_, speech_data_,
+                                    kOpus20msFrameSamples, kMaxBytes,
+                                    bitstream_);
   EXPECT_EQ(kOpus20msFrameSamples,
-            EncodeDecode(opus_stereo_encoder_, speech_data_.GetNextBlock(),
-                         kOpus20msFrameSamples, opus_stereo_decoder_,
-                         output_data_decode, &audio_type));
+            WebRtcOpus_Decode(opus_stereo_decoder_, bitstream_,
+                              encoded_bytes, output_data_decode,
+                              &audio_type));
 
   EXPECT_EQ(0, WebRtcOpus_DecoderInit(opus_stereo_decoder_));
 
   EXPECT_EQ(kOpus20msFrameSamples,
             WebRtcOpus_Decode(opus_stereo_decoder_, bitstream_,
-                              encoded_bytes_, output_data_decode,
+                              encoded_bytes, output_data_decode,
                               &audio_type));
 
   // Free memory.
@@ -410,61 +253,6 @@ TEST_F(OpusTest, OpusEnableDisableFec) {
   // Free memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_mono_encoder_));
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_stereo_encoder_));
-}
-
-TEST_F(OpusTest, OpusEnableDisableDtx) {
-  // Test without creating encoder memory.
-  EXPECT_EQ(-1, WebRtcOpus_EnableDtx(opus_mono_encoder_));
-  EXPECT_EQ(-1, WebRtcOpus_DisableDtx(opus_stereo_encoder_));
-
-  // Create encoder memory, try with different bitrates.
-  EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_mono_encoder_, 1));
-  EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_stereo_encoder_, 2));
-
-  opus_int32 dtx;
-
-  // DTX is off by default.
-  opus_encoder_ctl(opus_mono_encoder_->encoder,
-                   OPUS_GET_DTX(&dtx));
-  EXPECT_EQ(0, dtx);
-
-  opus_encoder_ctl(opus_stereo_encoder_->encoder,
-                   OPUS_GET_DTX(&dtx));
-  EXPECT_EQ(0, dtx);
-
-  // Test to enable DTX.
-  EXPECT_EQ(0, WebRtcOpus_EnableDtx(opus_mono_encoder_));
-  opus_encoder_ctl(opus_mono_encoder_->encoder,
-                   OPUS_GET_DTX(&dtx));
-  EXPECT_EQ(1, dtx);
-
-  EXPECT_EQ(0, WebRtcOpus_EnableDtx(opus_stereo_encoder_));
-  opus_encoder_ctl(opus_stereo_encoder_->encoder,
-                   OPUS_GET_DTX(&dtx));
-  EXPECT_EQ(1, dtx);
-
-  // Test to disable DTX.
-  EXPECT_EQ(0, WebRtcOpus_DisableDtx(opus_mono_encoder_));
-  opus_encoder_ctl(opus_mono_encoder_->encoder,
-                   OPUS_GET_DTX(&dtx));
-  EXPECT_EQ(0, dtx);
-
-  EXPECT_EQ(0, WebRtcOpus_DisableDtx(opus_stereo_encoder_));
-  opus_encoder_ctl(opus_stereo_encoder_->encoder,
-                   OPUS_GET_DTX(&dtx));
-  EXPECT_EQ(0, dtx);
-
-  // Free memory.
-  EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_mono_encoder_));
-  EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_stereo_encoder_));
-}
-
-TEST_F(OpusTest, OpusDtxOff) {
-  TestDtxEffect(false);
-}
-
-TEST_F(OpusTest, OpusDtxOn) {
-  TestDtxEffect(true);
 }
 
 TEST_F(OpusTest, OpusSetPacketLossRate) {
@@ -515,8 +303,6 @@ TEST_F(OpusTest, OpusSetMaxPlaybackRate) {
 
 // PLC in mono mode.
 TEST_F(OpusTest, OpusDecodePlcMono) {
-  PrepareSpeechData(1, 20, 20);
-
   // Create encoder memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_mono_encoder_, 1));
   EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_mono_decoder_, 1));
@@ -528,15 +314,19 @@ TEST_F(OpusTest, OpusDecodePlcMono) {
   EXPECT_EQ(1, WebRtcOpus_DecoderChannels(opus_mono_decoder_));
 
   // Encode & decode.
+  int16_t encoded_bytes;
   int16_t audio_type;
-  int16_t output_data_decode[kOpus20msFrameSamples];
+  int16_t output_data_decode[kOpusMaxFrameSamples];
+  encoded_bytes = WebRtcOpus_Encode(opus_mono_encoder_, speech_data_,
+                                    kOpus20msFrameSamples, kMaxBytes,
+                                    bitstream_);
   EXPECT_EQ(kOpus20msFrameSamples,
-            EncodeDecode(opus_mono_encoder_, speech_data_.GetNextBlock(),
-                         kOpus20msFrameSamples, opus_mono_decoder_,
-                         output_data_decode, &audio_type));
+            WebRtcOpus_Decode(opus_mono_decoder_, bitstream_,
+                              encoded_bytes, output_data_decode,
+                              &audio_type));
 
   // Call decoder PLC.
-  int16_t plc_buffer[kOpus20msFrameSamples];
+  int16_t plc_buffer[kOpusMaxFrameSamples];
   EXPECT_EQ(kOpus20msFrameSamples,
             WebRtcOpus_DecodePlc(opus_mono_decoder_, plc_buffer, 1));
 
@@ -547,8 +337,6 @@ TEST_F(OpusTest, OpusDecodePlcMono) {
 
 // PLC in stereo mode.
 TEST_F(OpusTest, OpusDecodePlcStereo) {
-  PrepareSpeechData(2, 20, 20);
-
   // Create encoder memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_stereo_encoder_, 2));
   EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_stereo_decoder_, 2));
@@ -560,15 +348,19 @@ TEST_F(OpusTest, OpusDecodePlcStereo) {
   EXPECT_EQ(2, WebRtcOpus_DecoderChannels(opus_stereo_decoder_));
 
   // Encode & decode.
+  int16_t encoded_bytes;
   int16_t audio_type;
-  int16_t output_data_decode[kOpus20msFrameSamples * 2];
+  int16_t output_data_decode[kOpusMaxFrameSamples];
+  encoded_bytes = WebRtcOpus_Encode(opus_stereo_encoder_, speech_data_,
+                                    kOpus20msFrameSamples, kMaxBytes,
+                                    bitstream_);
   EXPECT_EQ(kOpus20msFrameSamples,
-            EncodeDecode(opus_stereo_encoder_, speech_data_.GetNextBlock(),
-                         kOpus20msFrameSamples, opus_stereo_decoder_,
-                         output_data_decode, &audio_type));
+            WebRtcOpus_Decode(opus_stereo_decoder_, bitstream_,
+                              encoded_bytes, output_data_decode,
+                              &audio_type));
 
   // Call decoder PLC.
-  int16_t plc_buffer[kOpus20msFrameSamples * 2];
+  int16_t plc_buffer[kOpusMaxFrameSamples];
   EXPECT_EQ(kOpus20msFrameSamples,
             WebRtcOpus_DecodePlc(opus_stereo_decoder_, plc_buffer, 1));
 
@@ -579,29 +371,27 @@ TEST_F(OpusTest, OpusDecodePlcStereo) {
 
 // Duration estimation.
 TEST_F(OpusTest, OpusDurationEstimation) {
-  PrepareSpeechData(2, 20, 20);
-
   // Create.
   EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_stereo_encoder_, 2));
   EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_stereo_decoder_, 2));
 
-  // 10 ms. We use only first 10 ms of a 20 ms block.
-  encoded_bytes_ = WebRtcOpus_Encode(opus_stereo_encoder_,
-                                     speech_data_.GetNextBlock(),
-                                     kOpus10msFrameSamples, kMaxBytes,
-                                     bitstream_);
+  int16_t encoded_bytes;
+
+  // 10 ms.
+  encoded_bytes = WebRtcOpus_Encode(opus_stereo_encoder_, speech_data_,
+                                    kOpus10msFrameSamples, kMaxBytes,
+                                    bitstream_);
   EXPECT_EQ(kOpus10msFrameSamples,
             WebRtcOpus_DurationEst(opus_stereo_decoder_, bitstream_,
-                                   encoded_bytes_));
+                                   encoded_bytes));
 
   // 20 ms
-  encoded_bytes_ = WebRtcOpus_Encode(opus_stereo_encoder_,
-                                     speech_data_.GetNextBlock(),
-                                     kOpus20msFrameSamples, kMaxBytes,
-                                     bitstream_);
+  encoded_bytes = WebRtcOpus_Encode(opus_stereo_encoder_, speech_data_,
+                                    kOpus20msFrameSamples, kMaxBytes,
+                                    bitstream_);
   EXPECT_EQ(kOpus20msFrameSamples,
             WebRtcOpus_DurationEst(opus_stereo_decoder_, bitstream_,
-                                   encoded_bytes_));
+                                   encoded_bytes));
 
   // Free memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_stereo_encoder_));
