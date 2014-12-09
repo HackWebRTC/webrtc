@@ -17,7 +17,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/neteq/interface/audio_decoder.h"
+#include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

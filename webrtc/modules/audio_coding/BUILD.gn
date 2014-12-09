@@ -113,6 +113,15 @@ source_set("audio_coding") {
   }
 }
 
+source_set("audio_decoder_interface") {
+  sources = [
+    "codecs/audio_decoder.cc",
+    "codecs/audio_decoder.h",
+  ]
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
+}
+
 config("cng_config") {
   include_dirs = [
     "../../..",
@@ -636,7 +645,6 @@ config("neteq_config") {
 
 source_set("neteq") {
   sources = [
-    "neteq/interface/audio_decoder.h",
     "neteq/interface/neteq.h",
     "neteq/accelerate.cc",
     "neteq/accelerate.h",
@@ -644,7 +652,6 @@ source_set("neteq") {
     "neteq/audio_classifier.h",
     "neteq/audio_decoder_impl.cc",
     "neteq/audio_decoder_impl.h",
-    "neteq/audio_decoder.cc",
     "neteq/audio_multi_vector.cc",
     "neteq/audio_multi_vector.h",
     "neteq/audio_vector.cc",
@@ -721,6 +728,7 @@ source_set("neteq") {
   }
 
   deps = [
+    ":audio_decoder_interface",
     ":cng",
     ":g711",
     ":g722",
