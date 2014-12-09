@@ -36,12 +36,10 @@ import de.tavendo.autobahn.WebSocketException;
 import de.tavendo.autobahn.WebSocket.WebSocketConnectionObserver;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.LinkedList;
 
 import org.json.JSONException;
@@ -64,10 +62,6 @@ public class WebSocketChannelClient {
   private String roomID;
   private String clientID;
   private WebSocketConnectionState state;
-  // Http post/delete message queue. Messages are added from UI thread in
-  // post() and disconnect() calls. Messages are consumed by AsyncTask's
-  // background thread.
-  private LinkedList<WsHttpMessage> wsHttpQueue;
   // WebSocket send queue. Messages are added to the queue when WebSocket
   // client is not registered and are consumed in register() call.
   private LinkedList<String> wsSendQueue;
@@ -92,7 +86,6 @@ public class WebSocketChannelClient {
     uiHandler = new Handler(Looper.getMainLooper());
     roomID = null;
     clientID = null;
-    wsHttpQueue = new LinkedList<WsHttpMessage>();
     wsSendQueue = new LinkedList<String>();
     state = WebSocketConnectionState.NEW;
   }
@@ -192,10 +185,7 @@ public class WebSocketChannelClient {
   // send through websocket before SDP answer sent through http post will be
   // resolved.
   public void post(String message) {
-    synchronized (wsHttpQueue) {
-      wsHttpQueue.add(new WsHttpMessage("POST", message));
-    }
-    requestHttpQueueDrainInBackground();
+    sendWSSMessage("POST", message);
   }
 
   public void disconnect() {
@@ -210,11 +200,7 @@ public class WebSocketChannelClient {
       ws.disconnect();
 
       // Send DELETE to http WebSocket server.
-      synchronized (wsHttpQueue) {
-        wsHttpQueue.clear();
-        wsHttpQueue.add(new WsHttpMessage("DELETE", ""));
-      }
-      requestHttpQueueDrainInBackground();
+      sendWSSMessage("DELETE", "");
 
       state = WebSocketConnectionState.CLOSED;
     }
@@ -241,67 +227,43 @@ public class WebSocketChannelClient {
     public final String message;
   }
 
-  // TODO(glaznev): This is not good implementation due to discrepancy
-  // between JS encodeURIComponent() and Java URLEncoder.encode().
-  // Remove this once WebSocket server will switch to a different encoding.
-  private String encodeURIComponent(String s) {
-    String result = null;
-    try {
-      result = URLEncoder.encode(s, "UTF-8")
-         .replaceAll("\\+", "%20")
-         .replaceAll("\\%21", "!")
-         .replaceAll("\\%27", "'")
-         .replaceAll("\\%28", "(")
-         .replaceAll("\\%29", ")")
-         .replaceAll("\\%7E", "~");
-    } catch (UnsupportedEncodingException e) {
-      result = s;
+  // Asynchronously send POST/DELETE to WebSocket server.
+  private void sendWSSMessage(String method, String message) {
+    final WsHttpMessage wsHttpMessage = new WsHttpMessage(method, message);
+    Runnable runAsync = new Runnable() {
+      public void run() {
+        sendWSSMessageAsync(wsHttpMessage);
+      }
+    };
+    new Thread(runAsync).start();
+  }
+
+  private void sendWSSMessageAsync(WsHttpMessage wsHttpMessage) {
+    if (roomID == null || clientID == null) {
+      return;
     }
-    return result;
-  }
-
-  // Request an attempt to drain the send queue, on a background thread.
-  private void requestHttpQueueDrainInBackground() {
-    (new AsyncTask<Void, Void, Void>() {
-      public Void doInBackground(Void... unused) {
-        maybeDrainWsHttpQueue();
-        return null;
+    try {
+      // Send POST or DELETE request.
+      String postUrl = postServerUrl + "/" + roomID + "/" + clientID;
+      Log.d(TAG, "WS " + wsHttpMessage.method + " : " + postUrl + " : " +
+          wsHttpMessage.message);
+      HttpURLConnection connection =
+          (HttpURLConnection) new URL(postUrl).openConnection();
+      connection.setRequestProperty(
+          "content-type", "text/plain; charset=utf-8");
+      connection.setRequestMethod(wsHttpMessage.method);
+      if (wsHttpMessage.method.equals("POST")) {
+        connection.setDoOutput(true);
+        String message = wsHttpMessage.message;
+        connection.getOutputStream().write(message.getBytes("UTF-8"));
       }
-    }).execute();
-  }
-
-  // Send all queued websocket messages.
-  private void maybeDrainWsHttpQueue() {
-    synchronized (wsHttpQueue) {
-      if (roomID == null || clientID == null) {
-        return;
+      int responseCode = connection.getResponseCode();
+      if (responseCode != 200) {
+        reportError("Non-200 response to " + wsHttpMessage.method + " : " +
+            connection.getHeaderField(null));
       }
-      try {
-        for (WsHttpMessage wsHttpMessage : wsHttpQueue) {
-          // Send POST request.
-          String postUrl = postServerUrl + "/" + roomID + "/" + clientID;
-          Log.d(TAG, "WS " + wsHttpMessage.method + " : " + postUrl + " : " +
-              wsHttpMessage.message);
-          HttpURLConnection connection =
-              (HttpURLConnection) new URL(postUrl).openConnection();
-          connection.setDoOutput(true);
-          connection.setRequestProperty(
-              "Content-type", "application/x-www-form-urlencoded");
-          connection.setRequestMethod(wsHttpMessage.method);
-          if (wsHttpMessage.message.length() > 0) {
-            String message = "msg=" + encodeURIComponent(wsHttpMessage.message);
-            connection.getOutputStream().write(message.getBytes("UTF-8"));
-          }
-          String replyHeader = connection.getHeaderField(null);
-          if (!replyHeader.startsWith("HTTP/1.1 200 ")) {
-            reportError("Non-200 response to " + wsHttpMessage.method + " : " +
-                connection.getHeaderField(null));
-          }
-        }
-      } catch (IOException e) {
-        reportError("WS POST error: " + e.getMessage());
-      }
-      wsHttpQueue.clear();
+    } catch (IOException e) {
+      reportError("WS POST error: " + e.getMessage());
     }
   }
 

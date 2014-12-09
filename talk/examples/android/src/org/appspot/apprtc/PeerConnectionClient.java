@@ -27,7 +27,8 @@
 
 package org.appspot.apprtc;
 
-import android.app.Activity;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
@@ -57,7 +58,7 @@ public class PeerConnectionClient {
   public static final String VIDEO_TRACK_ID = "ARDAMSv0";
   public static final String AUDIO_TRACK_ID = "ARDAMSa0";
 
-  private final Activity activity;
+  private final Handler uiHandler;
   private PeerConnectionFactory factory;
   private PeerConnection pc;
   private VideoSource videoSource;
@@ -80,17 +81,16 @@ public class PeerConnectionClient {
   private MediaStream mediaStream = null;
 
   public PeerConnectionClient(
-      Activity activity,
       VideoRenderer.Callbacks localRender,
       VideoRenderer.Callbacks remoteRender,
       SignalingParameters signalingParameters,
       PeerConnectionEvents events,
       int startBitrate) {
-    this.activity = activity;
     this.localRender = localRender;
     this.remoteRender = remoteRender;
     this.events = events;
     this.startBitrate = startBitrate;
+    uiHandler = new Handler(Looper.getMainLooper());
     isInitiator = signalingParameters.initiator;
     queuedRemoteCandidates = new LinkedList<IceCandidate>();
 
@@ -162,7 +162,7 @@ public class PeerConnectionClient {
   }
 
   public void createOffer() {
-    activity.runOnUiThread(new Runnable() {
+    uiHandler.post(new Runnable() {
       public void run() {
         if (pc != null) {
           isInitiator = true;
@@ -173,7 +173,7 @@ public class PeerConnectionClient {
   }
 
   public void createAnswer() {
-    activity.runOnUiThread(new Runnable() {
+    uiHandler.post(new Runnable() {
       public void run() {
         if (pc != null) {
           isInitiator = false;
@@ -184,7 +184,7 @@ public class PeerConnectionClient {
   }
 
   public void addRemoteIceCandidate(final IceCandidate candidate) {
-    activity.runOnUiThread(new Runnable() {
+    uiHandler.post(new Runnable() {
       public void run() {
         if (pc != null) {
           if (queuedRemoteCandidates != null) {
@@ -198,7 +198,7 @@ public class PeerConnectionClient {
   }
 
   public void setRemoteDescription(final SessionDescription sdp) {
-    activity.runOnUiThread(new Runnable() {
+    uiHandler.post(new Runnable() {
       public void run() {
         if (pc != null) {
           String sdpDescription = preferISAC(sdp.description);
@@ -231,7 +231,7 @@ public class PeerConnectionClient {
   }
 
   public void close() {
-    activity.runOnUiThread(new Runnable() {
+    uiHandler.post(new Runnable() {
       public void run() {
         Log.d(TAG, "Closing peer connection.");
         if (pc != null) {
@@ -284,7 +284,7 @@ public class PeerConnectionClient {
 
   private void reportError(final String errorMessage) {
     Log.e(TAG, "Peerconnection error: " + errorMessage);
-    activity.runOnUiThread(new Runnable() {
+    uiHandler.post(new Runnable() {
       public void run() {
         events.onPeerConnectionError(errorMessage);
       }
@@ -325,8 +325,7 @@ public class PeerConnectionClient {
       videoSource.dispose();
     }
 
-    videoSource = factory.createVideoSource(
-        capturer, videoConstraints);
+    videoSource = factory.createVideoSource(capturer, videoConstraints);
     String trackExtension = frontFacing ? "frontFacing" : "backFacing";
     VideoTrack videoTrack =
         factory.createVideoTrack(VIDEO_TRACK_ID + trackExtension, videoSource);
@@ -480,7 +479,7 @@ public class PeerConnectionClient {
   private class PCObserver implements PeerConnection.Observer {
     @Override
     public void onIceCandidate(final IceCandidate candidate){
-      activity.runOnUiThread(new Runnable() {
+      uiHandler.post(new Runnable() {
         public void run() {
           events.onIceCandidate(candidate);
         }
@@ -498,13 +497,13 @@ public class PeerConnectionClient {
         PeerConnection.IceConnectionState newState) {
       Log.d(TAG, "IceConnectionState: " + newState);
       if (newState == IceConnectionState.CONNECTED) {
-        activity.runOnUiThread(new Runnable() {
+        uiHandler.post(new Runnable() {
           public void run() {
             events.onIceConnected();
           }
         });
       } else if (newState == IceConnectionState.DISCONNECTED) {
-        activity.runOnUiThread(new Runnable() {
+        uiHandler.post(new Runnable() {
           public void run() {
             events.onIceDisconnected();
           }
@@ -522,7 +521,7 @@ public class PeerConnectionClient {
 
     @Override
     public void onAddStream(final MediaStream stream){
-      activity.runOnUiThread(new Runnable() {
+      uiHandler.post(new Runnable() {
         public void run() {
           abortUnless(stream.audioTracks.size() <= 1 &&
               stream.videoTracks.size() <= 1,
@@ -537,7 +536,7 @@ public class PeerConnectionClient {
 
     @Override
     public void onRemoveStream(final MediaStream stream){
-      activity.runOnUiThread(new Runnable() {
+      uiHandler.post(new Runnable() {
         public void run() {
           stream.videoTracks.get(0).dispose();
         }
@@ -566,7 +565,7 @@ public class PeerConnectionClient {
       final SessionDescription sdp = new SessionDescription(
           origSdp.type, preferISAC(origSdp.description));
       localSdp = sdp;
-      activity.runOnUiThread(new Runnable() {
+      uiHandler.post(new Runnable() {
         public void run() {
           if (pc != null) {
             Log.d(TAG, "Set local SDP from " + sdp.type);
@@ -578,7 +577,7 @@ public class PeerConnectionClient {
 
     @Override
     public void onSetSuccess() {
-      activity.runOnUiThread(new Runnable() {
+      uiHandler.post(new Runnable() {
         public void run() {
           if (pc == null) {
             return;

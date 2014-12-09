@@ -90,6 +90,7 @@ public class AppRTCDemoActivity extends Activity
   private ImageButton videoScalingButton;
   private String roomName;
   private boolean commandLineRun;
+  private boolean activityRunning;
   private int runTimeMs;
   private int startBitrate;
   private boolean hwCodec;
@@ -231,8 +232,8 @@ public class AppRTCDemoActivity extends Activity
         } else {
           roomNameView.setText(roomName);
         }
+        // For command line execution run connection for <runTimeMs> and exit.
         if (commandLineRun && runTimeMs > 0) {
-          // For command line execution run connection for <runTimeMs> and exit.
           videoView.postDelayed(new Runnable() {
             public void run() {
               disconnect();
@@ -266,6 +267,7 @@ public class AppRTCDemoActivity extends Activity
   public void onPause() {
     super.onPause();
     videoView.onPause();
+    activityRunning = false;
     if (pc != null) {
       pc.stopVideoSource();
     }
@@ -275,6 +277,7 @@ public class AppRTCDemoActivity extends Activity
   public void onResume() {
     super.onResume();
     videoView.onResume();
+    activityRunning = true;
     if (pc != null) {
       pc.startVideoSource();
     }
@@ -284,6 +287,7 @@ public class AppRTCDemoActivity extends Activity
   protected void onDestroy() {
     disconnect();
     super.onDestroy();
+    activityRunning = false;
   }
 
   private void updateVideoView() {
@@ -319,7 +323,7 @@ public class AppRTCDemoActivity extends Activity
   }
 
   private void disconnectWithErrorMessage(final String errorMessage) {
-    if (commandLineRun) {
+    if (commandLineRun || !activityRunning) {
       Log.e(TAG, "Critical error: " + errorMessage);
       disconnect();
     } else {
@@ -453,7 +457,7 @@ public class AppRTCDemoActivity extends Activity
     if (audioManager != null) {
       // Store existing audio settings and change audio mode to
       // MODE_IN_COMMUNICATION for best possible VoIP performance.
-      logAndToast("Initializing the audio manager...");
+      Log.d(TAG, "Initializing the audio manager...");
       audioManager.init();
     }
     signalingParameters = params;
@@ -461,7 +465,7 @@ public class AppRTCDemoActivity extends Activity
       this, true, true, hwCodec, VideoRendererGui.getEGLContext()),
         "Failed to initializeAndroidGlobals");
     logAndToast("Creating peer connection...");
-    pc = new PeerConnectionClient( this, localRender, remoteRender,
+    pc = new PeerConnectionClient(localRender, remoteRender,
         signalingParameters, this, startBitrate);
     if (pc.isHDVideo()) {
       setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
