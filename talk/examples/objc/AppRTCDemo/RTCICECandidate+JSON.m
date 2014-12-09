@@ -50,7 +50,16 @@ static NSString const *kRTCICECandidateSdpKey = @"candidate";
     kRTCICECandidateMidKey : self.sdpMid,
     kRTCICECandidateSdpKey : self.sdp
   };
-  return [NSJSONSerialization dataWithJSONObject:json options:0 error:nil];
+  NSError *error = nil;
+  NSData *data =
+      [NSJSONSerialization dataWithJSONObject:json
+                                      options:NSJSONWritingPrettyPrinted
+                                        error:&error];
+  if (error) {
+    NSLog(@"Error serializing JSON: %@", error);
+    return nil;
+  }
+  return data;
 }
 
 @end

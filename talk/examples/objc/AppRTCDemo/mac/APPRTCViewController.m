@@ -28,7 +28,7 @@
 #import "APPRTCViewController.h"
 
 #import <AVFoundation/AVFoundation.h>
-#import "APPRTCConnectionManager.h"
+#import "ARDAppClient.h"
 #import "RTCNSGLVideoView.h"
 #import "RTCVideoTrack.h"
 
@@ -222,24 +222,14 @@ static NSUInteger const kLogViewHeight = 280;
 @end
 
 @interface APPRTCViewController ()
-    <APPRTCConnectionManagerDelegate, APPRTCMainViewDelegate, APPRTCLogger>
+    <ARDAppClientDelegate, APPRTCMainViewDelegate>
 @property(nonatomic, readonly) APPRTCMainView* mainView;
 @end
 
 @implementation APPRTCViewController {
-  APPRTCConnectionManager* _connectionManager;
+  ARDAppClient* _client;
   RTCVideoTrack* _localVideoTrack;
   RTCVideoTrack* _remoteVideoTrack;
-}
-
-- (instancetype)initWithNibName:(NSString*)nibName
-                         bundle:(NSBundle*)bundle {
-  if (self = [super initWithNibName:nibName bundle:bundle]) {
-    _connectionManager =
-        [[APPRTCConnectionManager alloc] initWithDelegate:self
-                                                   logger:self];
-  }
-  return self;
 }
 
 - (void)dealloc {
@@ -257,43 +247,50 @@ static NSUInteger const kLogViewHeight = 280;
   [self disconnect];
 }
 
-#pragma mark - APPRTCConnectionManagerDelegate
+#pragma mark - ARDAppClientDelegate
 
-- (void)connectionManager:(APPRTCConnectionManager*)manager
-    didReceiveLocalVideoTrack:(RTCVideoTrack*)localVideoTrack {
+- (void)appClient:(ARDAppClient *)client
+    didChangeState:(ARDAppClientState)state {
+  switch (state) {
+    case kARDAppClientStateConnected:
+      NSLog(@"Client connected.");
+      break;
+    case kARDAppClientStateConnecting:
+      NSLog(@"Client connecting.");
+      break;
+    case kARDAppClientStateDisconnected:
+      NSLog(@"Client disconnected.");
+      [self resetUI];
+      _client = nil;
+      break;
+  }
+}
+
+- (void)appClient:(ARDAppClient *)client
+    didReceiveLocalVideoTrack:(RTCVideoTrack *)localVideoTrack {
   _localVideoTrack = localVideoTrack;
 }
 
-- (void)connectionManager:(APPRTCConnectionManager*)manager
-    didReceiveRemoteVideoTrack:(RTCVideoTrack*)remoteVideoTrack {
+- (void)appClient:(ARDAppClient *)client
+    didReceiveRemoteVideoTrack:(RTCVideoTrack *)remoteVideoTrack {
   _remoteVideoTrack = remoteVideoTrack;
   [_remoteVideoTrack addRenderer:self.mainView.remoteVideoView];
 }
 
-- (void)connectionManagerDidReceiveHangup:(APPRTCConnectionManager*)manager {
-  [self showAlertWithMessage:@"Remote closed connection"];
+- (void)appClient:(ARDAppClient *)client
+         didError:(NSError *)error {
+  [self showAlertWithMessage:[NSString stringWithFormat:@"%@", error]];
   [self disconnect];
-}
-
-- (void)connectionManager:(APPRTCConnectionManager*)manager
-      didErrorWithMessage:(NSString*)message {
-  [self showAlertWithMessage:message];
-  [self disconnect];
-}
-
-#pragma mark - APPRTCLogger
-
-- (void)logMessage:(NSString*)message {
-  [self.mainView displayLogMessage:message];
 }
 
 #pragma mark - APPRTCMainViewDelegate
 
 - (void)appRTCMainView:(APPRTCMainView*)mainView
         didEnterRoomId:(NSString*)roomId {
-  NSString* urlString =
-      [NSString stringWithFormat:@"https://apprtc.appspot.com/?r=%@", roomId];
-  [_connectionManager connectToRoomWithURL:[NSURL URLWithString:urlString]];
+  [_client disconnect];
+  ARDAppClient *client = [[ARDAppClient alloc] initWithDelegate:self];
+  [client connectToRoomWithId:roomId options:nil];
+  _client = client;
 }
 
 #pragma mark - Private
@@ -308,11 +305,15 @@ static NSUInteger const kLogViewHeight = 280;
   [alert runModal];
 }
 
-- (void)disconnect {
+- (void)resetUI {
   [_remoteVideoTrack removeRenderer:self.mainView.remoteVideoView];
   _remoteVideoTrack = nil;
   [self.mainView.remoteVideoView renderFrame:nil];
-  [_connectionManager disconnect];
+}
+
+- (void)disconnect {
+  [self resetUI];
+  [_client disconnect];
 }
 
 @end

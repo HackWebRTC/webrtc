@@ -25,22 +25,45 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import <Foundation/Foundation.h>
+#import "ARDMessageResponse.h"
 
-#import "RTCMediaConstraints.h"
+#import "ARDUtilities.h"
 
-// Struct for holding the signaling parameters of an AppRTC room.
-@interface ARDSignalingParams : NSObject
+static NSString const *kARDMessageResultKey = @"result";
 
-@property(nonatomic, assign) BOOL isInitiator;
-@property(nonatomic, readonly) NSArray *errorMessages;
-@property(nonatomic, readonly) RTCMediaConstraints *offerConstraints;
-@property(nonatomic, readonly) RTCMediaConstraints *mediaConstraints;
-@property(nonatomic, readonly) NSMutableArray *iceServers;
-@property(nonatomic, readonly) NSURL *signalingServerURL;
-@property(nonatomic, readonly) NSURL *turnRequestURL;
-@property(nonatomic, readonly) NSString *channelToken;
+@interface ARDMessageResponse ()
 
-+ (ARDSignalingParams *)paramsFromJSONData:(NSData *)data;
+@property(nonatomic, assign) ARDMessageResultType result;
+
+@end
+
+@implementation ARDMessageResponse
+
+@synthesize result = _result;
+
++ (ARDMessageResponse *)responseFromJSONData:(NSData *)data {
+  NSDictionary *responseJSON = [NSDictionary dictionaryWithJSONData:data];
+  if (!responseJSON) {
+    return nil;
+  }
+  ARDMessageResponse *response = [[ARDMessageResponse alloc] init];
+  response.result =
+      [[self class] resultTypeFromString:responseJSON[kARDMessageResultKey]];
+  return response;
+}
+
+#pragma mark - Private
+
++ (ARDMessageResultType)resultTypeFromString:(NSString *)resultString {
+  ARDMessageResultType result = kARDMessageResultTypeUnknown;
+  if ([resultString isEqualToString:@"SUCCESS"]) {
+    result = kARDMessageResultTypeSuccess;
+  } else if ([resultString isEqualToString:@"INVALID_CLIENT"]) {
+    result = kARDMessageResultTypeInvalidClient;
+  } else if ([resultString isEqualToString:@"INVALID_ROOM"]) {
+    result = kARDMessageResultTypeInvalidRoom;
+  }
+  return result;
+}
 
 @end

@@ -226,11 +226,9 @@
           'type': 'executable',
           'product_name': 'AppRTCDemo',
           'mac_bundle': 1,
-          'mac_bundle_resources': [
-            'examples/objc/AppRTCDemo/channel.html',
-          ],
           'dependencies': [
             'libjingle.gyp:libjingle_peerconnection_objc',
+            'socketrocket',
           ],
           'conditions': [
             ['OS=="ios"', {
@@ -265,7 +263,6 @@
                 'MACOSX_DEPLOYMENT_TARGET' : '10.8',
                 'OTHER_LDFLAGS': [
                   '-framework AVFoundation',
-                  '-framework WebKit',
                 ],
               },
             }],
@@ -279,16 +276,18 @@
             'examples/objc/APPRTCDemo',
           ],
           'sources': [
-            'examples/objc/AppRTCDemo/APPRTCAppClient.h',
-            'examples/objc/AppRTCDemo/APPRTCAppClient.m',
-            'examples/objc/AppRTCDemo/APPRTCConnectionManager.h',
-            'examples/objc/AppRTCDemo/APPRTCConnectionManager.m',
-            'examples/objc/AppRTCDemo/ARDSignalingParams.h',
-            'examples/objc/AppRTCDemo/ARDSignalingParams.m',
+            'examples/objc/AppRTCDemo/ARDAppClient.h',
+            'examples/objc/AppRTCDemo/ARDAppClient.m',
+            'examples/objc/AppRTCDemo/ARDMessageResponse.h',
+            'examples/objc/AppRTCDemo/ARDMessageResponse.m',
+            'examples/objc/AppRTCDemo/ARDRegisterResponse.h',
+            'examples/objc/AppRTCDemo/ARDRegisterResponse.m',
+            'examples/objc/AppRTCDemo/ARDSignalingMessage.h',
+            'examples/objc/AppRTCDemo/ARDSignalingMessage.m',
             'examples/objc/AppRTCDemo/ARDUtilities.h',
             'examples/objc/AppRTCDemo/ARDUtilities.m',
-            'examples/objc/AppRTCDemo/GAEChannelClient.h',
-            'examples/objc/AppRTCDemo/GAEChannelClient.m',
+            'examples/objc/AppRTCDemo/ARDWebSocketChannel.h',
+            'examples/objc/AppRTCDemo/ARDWebSocketChannel.m',
             'examples/objc/AppRTCDemo/RTCICECandidate+JSON.h',
             'examples/objc/AppRTCDemo/RTCICECandidate+JSON.m',
             'examples/objc/AppRTCDemo/RTCICEServer+JSON.h',
@@ -302,6 +301,47 @@
             'CLANG_ENABLE_OBJC_ARC': 'YES',
           },
         },  # target AppRTCDemo
+        {
+          # TODO(tkchin): move this into the real third party location and
+          # have it mirrored on chrome infra.
+          'target_name': 'socketrocket',
+          'type': 'static_library',
+          'sources': [
+            'examples/objc/AppRTCDemo/third_party/SocketRocket/SRWebSocket.h',
+            'examples/objc/AppRTCDemo/third_party/SocketRocket/SRWebSocket.m',
+          ],
+          'conditions': [
+            ['OS=="mac"', {
+              'xcode_settings': {
+                # SocketRocket autosynthesizes some properties. Disable the
+                # warning so we can compile successfully.
+                'CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS': 'NO',
+                'MACOSX_DEPLOYMENT_TARGET' : '10.8',
+              },
+            }],
+          ],
+          'direct_dependent_settings': {
+            'include_dirs': [
+              'examples/objc/AppRTCDemo/third_party/SocketRocket',
+            ],
+          },
+          'xcode_settings': {
+            'CLANG_ENABLE_OBJC_ARC': 'YES',
+            'WARNING_CFLAGS': [
+              '-Wno-deprecated-declarations',
+            ],
+          },
+          'link_settings': {
+            'xcode_settings': {
+              'OTHER_LDFLAGS': [
+                '-framework CFNetwork',
+              ],
+            },
+            'libraries': [
+              '$(SDKROOT)/usr/lib/libicucore.dylib',
+            ],
+          }
+        },  # target socketrocket
       ],  # targets
     }],  # OS=="ios" or (OS=="mac" and target_arch!="ia32" and mac_sdk>="10.8")
 

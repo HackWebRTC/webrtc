@@ -25,12 +25,52 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "RTCICEServer.h"
+#import <Foundation/Foundation.h>
 
-@interface RTCICEServer (JSON)
+#import "RTCVideoTrack.h"
 
-+ (RTCICEServer *)serverFromJSONDictionary:(NSDictionary *)dictionary;
-// CEOD provides different JSON, and this parses that.
-+ (NSArray *)serversFromCEODJSONDictionary:(NSDictionary *)dictionary;
+typedef NS_ENUM(NSInteger, ARDAppClientState) {
+  // Disconnected from servers.
+  kARDAppClientStateDisconnected,
+  // Connecting to servers.
+  kARDAppClientStateConnecting,
+  // Connected to servers.
+  kARDAppClientStateConnected,
+};
+
+@class ARDAppClient;
+@protocol ARDAppClientDelegate <NSObject>
+
+- (void)appClient:(ARDAppClient *)client
+    didChangeState:(ARDAppClientState)state;
+
+- (void)appClient:(ARDAppClient *)client
+    didReceiveLocalVideoTrack:(RTCVideoTrack *)localVideoTrack;
+
+- (void)appClient:(ARDAppClient *)client
+    didReceiveRemoteVideoTrack:(RTCVideoTrack *)remoteVideoTrack;
+
+- (void)appClient:(ARDAppClient *)client
+         didError:(NSError *)error;
+
+@end
+
+// Handles connections to the AppRTC server for a given room.
+@interface ARDAppClient : NSObject
+
+@property(nonatomic, readonly) ARDAppClientState state;
+@property(nonatomic, weak) id<ARDAppClientDelegate> delegate;
+
+- (instancetype)initWithDelegate:(id<ARDAppClientDelegate>)delegate;
+
+// Establishes a connection with the AppRTC servers for the given room id.
+// TODO(tkchin): provide available keys/values for options. This will be used
+// for call configurations such as overriding server choice, specifying codecs
+// and so on.
+- (void)connectToRoomWithId:(NSString *)roomId
+                    options:(NSDictionary *)options;
+
+// Disconnects from the AppRTC servers and any connected clients.
+- (void)disconnect;
 
 @end

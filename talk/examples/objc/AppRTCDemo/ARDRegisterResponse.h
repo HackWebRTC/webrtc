@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,26 +27,23 @@
 
 #import <Foundation/Foundation.h>
 
-// These methods will be called by the AppEngine chanel.  The documentation
-// for these methods is found here.  (Yes, it is a JS API.)
-// https://developers.google.com/appengine/docs/java/channel/javascript
-@protocol GAEMessageHandler<NSObject>
+typedef NS_ENUM(NSInteger, ARDRegisterResultType) {
+  kARDRegisterResultTypeUnknown,
+  kARDRegisterResultTypeSuccess,
+  kARDRegisterResultTypeFull
+};
 
-- (void)onOpen;
-- (void)onMessage:(NSDictionary*)data;
-- (void)onClose;
-- (void)onError:(int)code withDescription:(NSString*)description;
+// Result of registering with the GAE server.
+@interface ARDRegisterResponse : NSObject
 
-@end
+@property(nonatomic, readonly) ARDRegisterResultType result;
+@property(nonatomic, readonly) BOOL isInitiator;
+@property(nonatomic, readonly) NSString *roomId;
+@property(nonatomic, readonly) NSString *clientId;
+@property(nonatomic, readonly) NSArray *messages;
+@property(nonatomic, readonly) NSURL *webSocketURL;
+@property(nonatomic, readonly) NSURL *webSocketRestURL;
 
-// Initialize with a token for an AppRTC data channel.  This will load
-// ios_channel.html and use the token to establish a data channel between the
-// application and AppEngine.
-@interface GAEChannelClient : NSObject
-
-@property(nonatomic, weak) id<GAEMessageHandler> delegate;
-
-- (instancetype)initWithToken:(NSString*)token
-                     delegate:(id<GAEMessageHandler>)delegate;
++ (ARDRegisterResponse *)responseFromJSONData:(NSData *)data;
 
 @end

@@ -46,14 +46,19 @@ static NSString const *kRTCICEServerCredentialKey = @"credential";
                                   password:credential];
 }
 
-+ (RTCICEServer *)serverFromCEODJSONDictionary:(NSDictionary *)dictionary {
++ (NSArray *)serversFromCEODJSONDictionary:(NSDictionary *)dictionary {
   NSString *username = dictionary[kRTCICEServerUsernameKey];
   NSString *password = dictionary[kRTCICEServerPasswordKey];
   NSArray *uris = dictionary[kRTCICEServerUrisKey];
-  NSParameterAssert(uris.count > 0);
-  return [[RTCICEServer alloc] initWithURI:[NSURL URLWithString:uris[0]]
-                                  username:username
-                                  password:password];
+  NSMutableArray *servers = [NSMutableArray arrayWithCapacity:uris.count];
+  for (NSString *uri in uris) {
+    RTCICEServer *server =
+        [[RTCICEServer alloc] initWithURI:[NSURL URLWithString:uri]
+                                 username:username
+                                 password:password];
+    [servers addObject:server];
+  }
+  return servers;
 }
 
 @end

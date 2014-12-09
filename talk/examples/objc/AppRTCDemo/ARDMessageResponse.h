@@ -27,40 +27,17 @@
 
 #import <Foundation/Foundation.h>
 
-// Used to log messages to destination like UI.
-@protocol APPRTCLogger<NSObject>
-- (void)logMessage:(NSString*)message;
-@end
+typedef NS_ENUM(NSInteger, ARDMessageResultType) {
+  kARDMessageResultTypeUnknown,
+  kARDMessageResultTypeSuccess,
+  kARDMessageResultTypeInvalidRoom,
+  kARDMessageResultTypeInvalidClient
+};
 
-@class RTCVideoTrack;
-@class APPRTCConnectionManager;
+@interface ARDMessageResponse : NSObject
 
-// Used to provide AppRTC connection information.
-@protocol APPRTCConnectionManagerDelegate<NSObject>
+@property(nonatomic, readonly) ARDMessageResultType result;
 
-- (void)connectionManager:(APPRTCConnectionManager*)manager
-    didReceiveLocalVideoTrack:(RTCVideoTrack*)localVideoTrack;
-
-- (void)connectionManager:(APPRTCConnectionManager*)manager
-    didReceiveRemoteVideoTrack:(RTCVideoTrack*)remoteVideoTrack;
-
-- (void)connectionManagerDidReceiveHangup:(APPRTCConnectionManager*)manager;
-
-- (void)connectionManager:(APPRTCConnectionManager*)manager
-      didErrorWithMessage:(NSString*)errorMessage;
-
-@end
-
-// Abstracts the network connection aspect of AppRTC. The delegate will receive
-// information about connection status as changes occur.
-@interface APPRTCConnectionManager : NSObject
-
-@property(nonatomic, weak) id<APPRTCConnectionManagerDelegate> delegate;
-@property(nonatomic, weak) id<APPRTCLogger> logger;
-
-- (instancetype)initWithDelegate:(id<APPRTCConnectionManagerDelegate>)delegate
-                          logger:(id<APPRTCLogger>)logger;
-- (BOOL)connectToRoomWithURL:(NSURL*)url;
-- (void)disconnect;
++ (ARDMessageResponse *)responseFromJSONData:(NSData *)data;
 
 @end

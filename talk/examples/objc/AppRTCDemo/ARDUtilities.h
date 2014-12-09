@@ -38,9 +38,15 @@
 @interface NSURLConnection (ARDUtilities)
 
 // Issues an asynchronous request that calls back on main queue.
-+ (void)sendAsynchronousRequest:(NSURLRequest *)request
-              completionHandler:(void (^)(NSURLResponse *response,
-                                          NSData *data,
-                                          NSError *error))completionHandler;
++ (void)sendAsyncRequest:(NSURLRequest *)request
+       completionHandler:(void (^)(NSURLResponse *response,
+                                   NSData *data,
+                                   NSError *error))completionHandler;
+
+// Posts data to the specified URL.
++ (void)sendAsyncPostToURL:(NSURL *)url
+                  withData:(NSData *)data
+         completionHandler:(void (^)(BOOL succeeded,
+                                     NSData *data))completionHandler;
 
 @end

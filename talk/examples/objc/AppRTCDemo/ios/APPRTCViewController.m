@@ -32,36 +32,26 @@
 #import "APPRTCViewController.h"
 
 #import <AVFoundation/AVFoundation.h>
-#import "APPRTCConnectionManager.h"
+#import "ARDAppClient.h"
 #import "RTCEAGLVideoView.h"
 #import "RTCVideoTrack.h"
 
 // Padding space for local video view with its parent.
 static CGFloat const kLocalViewPadding = 20;
 
-@interface APPRTCViewController ()
-<APPRTCConnectionManagerDelegate, APPRTCLogger, RTCEAGLVideoViewDelegate>
+@interface APPRTCViewController () <ARDAppClientDelegate,
+    RTCEAGLVideoViewDelegate>
 @property(nonatomic, assign) UIInterfaceOrientation statusBarOrientation;
 @property(nonatomic, strong) RTCEAGLVideoView* localVideoView;
 @property(nonatomic, strong) RTCEAGLVideoView* remoteVideoView;
 @end
 
 @implementation APPRTCViewController {
-  APPRTCConnectionManager* _connectionManager;
+  ARDAppClient *_client;
   RTCVideoTrack* _localVideoTrack;
   RTCVideoTrack* _remoteVideoTrack;
   CGSize _localVideoSize;
   CGSize _remoteVideoSize;
-}
-
-- (instancetype)initWithNibName:(NSString*)nibName
-                         bundle:(NSBundle*)bundle {
-  if (self = [super initWithNibName:nibName bundle:bundle]) {
-    _connectionManager =
-        [[APPRTCConnectionManager alloc] initWithDelegate:self
-                                                   logger:self];
-  }
-  return self;
 }
 
 - (void)viewDidLoad {
@@ -96,46 +86,44 @@ static CGFloat const kLocalViewPadding = 20;
 }
 
 - (void)applicationWillResignActive:(UIApplication*)application {
-  [self logMessage:@"Application lost focus, connection broken."];
   [self disconnect];
 }
 
-#pragma mark - APPRTCConnectionManagerDelegate
+#pragma mark - ARDAppClientDelegate
 
-- (void)connectionManager:(APPRTCConnectionManager*)manager
-    didReceiveLocalVideoTrack:(RTCVideoTrack*)localVideoTrack {
+- (void)appClient:(ARDAppClient *)client
+    didChangeState:(ARDAppClientState)state {
+  switch (state) {
+    case kARDAppClientStateConnected:
+      NSLog(@"Client connected.");
+      break;
+    case kARDAppClientStateConnecting:
+      NSLog(@"Client connecting.");
+      break;
+    case kARDAppClientStateDisconnected:
+      NSLog(@"Client disconnected.");
+      [self resetUI];
+      break;
+  }
+}
+
+- (void)appClient:(ARDAppClient *)client
+    didReceiveLocalVideoTrack:(RTCVideoTrack *)localVideoTrack {
   _localVideoTrack = localVideoTrack;
   [_localVideoTrack addRenderer:self.localVideoView];
   self.localVideoView.hidden = NO;
 }
 
-- (void)connectionManager:(APPRTCConnectionManager*)manager
-    didReceiveRemoteVideoTrack:(RTCVideoTrack*)remoteVideoTrack {
+- (void)appClient:(ARDAppClient *)client
+    didReceiveRemoteVideoTrack:(RTCVideoTrack *)remoteVideoTrack {
   _remoteVideoTrack = remoteVideoTrack;
   [_remoteVideoTrack addRenderer:self.remoteVideoView];
 }
 
-- (void)connectionManagerDidReceiveHangup:(APPRTCConnectionManager*)manager {
-  [self showAlertWithMessage:@"Remote hung up."];
+- (void)appClient:(ARDAppClient *)client
+         didError:(NSError *)error {
+  [self showAlertWithMessage:[NSString stringWithFormat:@"%@", error]];
   [self disconnect];
-}
-
-- (void)connectionManager:(APPRTCConnectionManager*)manager
-      didErrorWithMessage:(NSString*)message {
-  [self showAlertWithMessage:message];
-  [self disconnect];
-}
-
-#pragma mark - APPRTCLogger
-
-- (void)logMessage:(NSString*)message {
-  dispatch_async(dispatch_get_main_queue(), ^{
-    NSString* output =
-        [NSString stringWithFormat:@"%@\n%@", self.logView.text, message];
-    self.logView.text = output;
-    [self.logView
-        scrollRangeToVisible:NSMakeRange([self.logView.text length], 0)];
-  });
 }
 
 #pragma mark - RTCEAGLVideoViewDelegate
@@ -162,9 +150,10 @@ static CGFloat const kLocalViewPadding = 20;
   textField.hidden = YES;
   self.instructionsView.hidden = YES;
   self.logView.hidden = NO;
-  NSString* url =
-      [NSString stringWithFormat:@"https://apprtc.appspot.com/?r=%@", room];
-  [_connectionManager connectToRoomWithURL:[NSURL URLWithString:url]];
+  [_client disconnect];
+  // TODO(tkchin): support reusing the same client object.
+  _client = [[ARDAppClient alloc] initWithDelegate:self];
+  [_client connectToRoomWithId:room options:nil];
   [self setupCaptureSession];
 }
 
@@ -179,7 +168,7 @@ static CGFloat const kLocalViewPadding = 20;
 
 - (void)disconnect {
   [self resetUI];
-  [_connectionManager disconnect];
+  [_client disconnect];
 }
 
 - (void)showAlertWithMessage:(NSString*)message {
