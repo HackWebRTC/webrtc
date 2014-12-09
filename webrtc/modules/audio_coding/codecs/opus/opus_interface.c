@@ -43,6 +43,7 @@ int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst, int32_t channels) {
 
       state->encoder = opus_encoder_create(48000, channels, application,
                                            &error);
+      state->in_dtx_mode = 0;
       if (error == OPUS_OK && state->encoder != NULL) {
         *inst = state;
         return 0;
@@ -80,9 +81,21 @@ int16_t WebRtcOpus_Encode(OpusEncInst* inst,
                     encoded,
                     length_encoded_buffer);
 
-  if (res > 0) {
+  if (res == 1) {
+    // Indicates DTX since the packet has nothing but a header. In principle,
+    // there is no need to send this packet. However, we do transmit the first
+    // occurrence to let the decoder know that the encoder enters DTX mode.
+    if (inst->in_dtx_mode) {
+      return 0;
+    } else {
+      inst->in_dtx_mode = 1;
+      return 1;
+    }
+  } else if (res > 1) {
+    inst->in_dtx_mode = 0;
     return res;
   }
+
   return -1;
 }
 
@@ -140,6 +153,22 @@ int16_t WebRtcOpus_DisableFec(OpusEncInst* inst) {
   }
 }
 
+int16_t WebRtcOpus_EnableDtx(OpusEncInst* inst) {
+  if (inst) {
+    return opus_encoder_ctl(inst->encoder, OPUS_SET_DTX(1));
+  } else {
+    return -1;
+  }
+}
+
+int16_t WebRtcOpus_DisableDtx(OpusEncInst* inst) {
+  if (inst) {
+    return opus_encoder_ctl(inst->encoder, OPUS_SET_DTX(0));
+  } else {
+    return -1;
+  }
+}
+
 int16_t WebRtcOpus_SetComplexity(OpusEncInst* inst, int32_t complexity) {
   if (inst) {
     return opus_encoder_ctl(inst->encoder, OPUS_SET_COMPLEXITY(complexity));
@@ -165,6 +194,7 @@ int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, int channels) {
       /* Creation of memory all ok. */
       state->channels = channels;
       state->prev_decoded_samples = kWebRtcOpusDefaultFrameSize;
+      state->in_dtx_mode = 0;
       *inst = state;
       return 0;
     }
@@ -195,53 +225,61 @@ int WebRtcOpus_DecoderChannels(OpusDecInst* inst) {
 int16_t WebRtcOpus_DecoderInit(OpusDecInst* inst) {
   int error = opus_decoder_ctl(inst->decoder, OPUS_RESET_STATE);
   if (error == OPUS_OK) {
+    inst->in_dtx_mode = 0;
     return 0;
   }
   return -1;
 }
 
+/* For decoder to determine if it is to output speech or comfort noise. */
+static int16_t DetermineAudioType(OpusDecInst* inst, int16_t encoded_bytes) {
+  // Audio type becomes comfort noise if |encoded_byte| is 1 and keeps
+  // to be so if the following |encoded_byte| are 0 or 1.
+  if (encoded_bytes == 0 && inst->in_dtx_mode) {
+    return 2;  // Comfort noise.
+  } else if (encoded_bytes == 1) {
+    inst->in_dtx_mode = 1;
+    return 2;  // Comfort noise.
+  } else {
+    inst->in_dtx_mode = 0;
+    return 0;  // Speech.
+  }
+}
+
 /* |frame_size| is set to maximum Opus frame size in the normal case, and
  * is set to the number of samples needed for PLC in case of losses.
  * It is up to the caller to make sure the value is correct. */
-static int DecodeNative(OpusDecoder* inst, const uint8_t* encoded,
+static int DecodeNative(OpusDecInst* inst, const uint8_t* encoded,
                         int16_t encoded_bytes, int frame_size,
-                        int16_t* decoded, int16_t* audio_type) {
-  int res = opus_decode(
-      inst, encoded, encoded_bytes, (opus_int16*)decoded, frame_size, 0);
+                        int16_t* decoded, int16_t* audio_type, int decode_fec) {
+  int res = opus_decode(inst->decoder, encoded, encoded_bytes,
+                        (opus_int16*)decoded, frame_size, decode_fec);
 
-  /* TODO(tlegrand): set to DTX for zero-length packets? */
-  *audio_type = 0;
+  if (res <= 0)
+    return -1;
 
-  if (res > 0) {
-    return res;
-  }
-  return -1;
-}
+  *audio_type = DetermineAudioType(inst, encoded_bytes);
 
-static int DecodeFec(OpusDecoder* inst, const uint8_t* encoded,
-                     int16_t encoded_bytes, int frame_size,
-                     int16_t* decoded, int16_t* audio_type) {
-  int res = opus_decode(
-      inst, encoded, encoded_bytes, (opus_int16*)decoded, frame_size, 1);
-
-  /* TODO(tlegrand): set to DTX for zero-length packets? */
-  *audio_type = 0;
-
-  if (res > 0) {
-    return res;
-  }
-  return -1;
+  return res;
 }
 
 int16_t WebRtcOpus_Decode(OpusDecInst* inst, const uint8_t* encoded,
                           int16_t encoded_bytes, int16_t* decoded,
                           int16_t* audio_type) {
-  int decoded_samples = DecodeNative(inst->decoder,
-                                     encoded,
-                                     encoded_bytes,
-                                     kWebRtcOpusMaxFrameSizePerChannel,
-                                     decoded,
-                                     audio_type);
+  int decoded_samples;
+
+  if (encoded_bytes == 0) {
+    *audio_type = DetermineAudioType(inst, encoded_bytes);
+    decoded_samples = WebRtcOpus_DecodePlc(inst, decoded, 1);
+  } else {
+    decoded_samples = DecodeNative(inst,
+                                   encoded,
+                                   encoded_bytes,
+                                   kWebRtcOpusMaxFrameSizePerChannel,
+                                   decoded,
+                                   audio_type,
+                                   0);
+  }
   if (decoded_samples < 0) {
     return -1;
   }
@@ -264,8 +302,8 @@ int16_t WebRtcOpus_DecodePlc(OpusDecInst* inst, int16_t* decoded,
   plc_samples = number_of_lost_frames * inst->prev_decoded_samples;
   plc_samples = (plc_samples <= kWebRtcOpusMaxFrameSizePerChannel) ?
       plc_samples : kWebRtcOpusMaxFrameSizePerChannel;
-  decoded_samples = DecodeNative(inst->decoder, NULL, 0, plc_samples,
-                                 decoded, &audio_type);
+  decoded_samples = DecodeNative(inst, NULL, 0, plc_samples,
+                                 decoded, &audio_type, 0);
   if (decoded_samples < 0) {
     return -1;
   }
@@ -285,8 +323,8 @@ int16_t WebRtcOpus_DecodeFec(OpusDecInst* inst, const uint8_t* encoded,
 
   fec_samples = opus_packet_get_samples_per_frame(encoded, 48000);
 
-  decoded_samples = DecodeFec(inst->decoder, encoded, encoded_bytes,
-                              fec_samples, decoded, audio_type);
+  decoded_samples = DecodeNative(inst, encoded, encoded_bytes,
+                                 fec_samples, decoded, audio_type, 1);
   if (decoded_samples < 0) {
     return -1;
   }
