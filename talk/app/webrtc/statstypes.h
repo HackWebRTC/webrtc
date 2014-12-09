@@ -44,6 +44,10 @@ namespace webrtc {
 
 class StatsReport {
  public:
+  // TODO(tommi): Remove this ctor after removing reliance upon it in Chromium
+  // (mock_peer_connection_impl.cc).
+  StatsReport() : timestamp(0) {}
+
   // TODO(tommi): Make protected and disallow copy completely once not needed.
   StatsReport(const StatsReport& src);
 
