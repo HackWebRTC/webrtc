@@ -68,7 +68,8 @@ int32_t VCMDecodedFrameCallback::Decoded(I420VideoFrame& decodedImage)
     _timing.StopDecodeTimer(
         decodedImage.timestamp(),
         frameInfo->decodeStartTimeMs,
-        _clock->TimeInMilliseconds());
+        _clock->TimeInMilliseconds(),
+        frameInfo->renderTimeMs);
 
     if (callback != NULL)
     {
