@@ -229,13 +229,16 @@ struct RtcpPacketTypeCounter {
   uint32_t unique_nack_requests;  // Number of unique NACKed RTP packets.
 };
 
-// Data usage statistics for a (rtp) stream
+// Data usage statistics for a (rtp) stream.
 struct StreamDataCounters {
   StreamDataCounters()
    : bytes(0),
      header_bytes(0),
      padding_bytes(0),
      packets(0),
+     retransmitted_bytes(0),
+     retransmitted_header_bytes(0),
+     retransmitted_padding_bytes(0),
      retransmitted_packets(0),
      fec_packets(0) {}
 
@@ -244,8 +247,24 @@ struct StreamDataCounters {
     header_bytes += other.header_bytes;
     padding_bytes += other.padding_bytes;
     packets += other.packets;
+    retransmitted_bytes += other.retransmitted_bytes;
+    retransmitted_header_bytes += other.retransmitted_header_bytes;
+    retransmitted_padding_bytes += other.retransmitted_padding_bytes;
     retransmitted_packets += other.retransmitted_packets;
     fec_packets += other.fec_packets;
+  }
+
+  size_t TotalBytes() const {
+    return bytes + header_bytes + padding_bytes;
+  }
+
+  size_t RetransmittedBytes() const {
+    return retransmitted_bytes + retransmitted_header_bytes +
+           retransmitted_padding_bytes;
+  }
+
+  size_t MediaPayloadBytes() const {
+    return bytes - retransmitted_bytes;
   }
 
   // TODO(pbos): Rename bytes -> media_bytes.
@@ -253,6 +272,9 @@ struct StreamDataCounters {
   size_t header_bytes;  // Number of bytes used by RTP headers.
   size_t padding_bytes;  // Number of padding bytes.
   uint32_t packets;  // Number of packets.
+  size_t retransmitted_bytes;  // Number of retransmitted payload bytes.
+  size_t retransmitted_header_bytes;  // Retransmitted bytes used by RTP header.
+  size_t retransmitted_padding_bytes;  // Retransmitted padding bytes.
   uint32_t retransmitted_packets;  // Number of retransmitted packets.
   uint32_t fec_packets;  // Number of redundancy packets.
 };

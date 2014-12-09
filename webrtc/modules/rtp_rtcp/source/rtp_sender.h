@@ -327,7 +327,7 @@ class RTPSender : public RTPSenderInterface {
                               const int64_t now_ms) const;
 
   void UpdateRtpStats(const uint8_t* buffer,
-                      size_t size,
+                      size_t packet_length,
                       const RTPHeader& header,
                       bool is_rtx,
                       bool is_retransmit);

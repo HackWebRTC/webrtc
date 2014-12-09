@@ -42,7 +42,7 @@ class StreamStatisticianImpl : public StreamStatistician {
   virtual bool IsPacketInOrder(uint16_t sequence_number) const OVERRIDE;
 
   void IncomingPacket(const RTPHeader& rtp_header,
-                      size_t bytes,
+                      size_t packet_length,
                       bool retransmitted);
   void FecPacketReceived();
   void SetMaxReorderingThreshold(int max_reordering_threshold);
@@ -56,7 +56,7 @@ class StreamStatisticianImpl : public StreamStatistician {
                     uint32_t receive_time_secs,
                     uint32_t receive_time_frac);
   void UpdateCounters(const RTPHeader& rtp_header,
-                      size_t bytes,
+                      size_t packet_length,
                       bool retransmitted);
   void NotifyRtpCallback() LOCKS_EXCLUDED(stream_lock_.get());
   void NotifyRtcpCallback() LOCKS_EXCLUDED(stream_lock_.get());
@@ -108,7 +108,7 @@ class ReceiveStatisticsImpl : public ReceiveStatistics,
 
   // Implement ReceiveStatistics.
   virtual void IncomingPacket(const RTPHeader& header,
-                              size_t bytes,
+                              size_t packet_length,
                               bool retransmitted) OVERRIDE;
   virtual void FecPacketReceived(uint32_t ssrc) OVERRIDE;
   virtual StatisticianMap GetActiveStatisticians() const OVERRIDE;

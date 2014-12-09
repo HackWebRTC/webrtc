@@ -890,7 +890,7 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
 }
 
 void RTPSender::UpdateRtpStats(const uint8_t* buffer,
-                               size_t size,
+                               size_t packet_length,
                                const RTPHeader& header,
                                bool is_rtx,
                                bool is_retransmit) {
@@ -905,7 +905,7 @@ void RTPSender::UpdateRtpStats(const uint8_t* buffer,
     counters = &rtp_stats_;
   }
 
-  total_bitrate_sent_.Update(size);
+  total_bitrate_sent_.Update(packet_length);
   ++counters->packets;
   if (IsFecPacket(buffer, header)) {
     ++counters->fec_packets;
@@ -913,11 +913,15 @@ void RTPSender::UpdateRtpStats(const uint8_t* buffer,
 
   if (is_retransmit) {
     ++counters->retransmitted_packets;
-  } else {
-    counters->bytes += size - (header.headerLength + header.paddingLength);
-    counters->header_bytes += header.headerLength;
-    counters->padding_bytes += header.paddingLength;
+    counters->retransmitted_bytes +=
+        packet_length - (header.headerLength + header.paddingLength);
+    counters->retransmitted_header_bytes += header.headerLength;
+    counters->retransmitted_padding_bytes += header.paddingLength;
   }
+  counters->bytes +=
+      packet_length - (header.headerLength + header.paddingLength);
+  counters->header_bytes += header.headerLength;
+  counters->padding_bytes += header.paddingLength;
 
   if (rtp_stats_callback_) {
     rtp_stats_callback_->DataCountersUpdated(*counters, ssrc);

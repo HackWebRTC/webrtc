@@ -172,6 +172,8 @@ class MockRtpRtcp : public RtpRtcp {
       int32_t());
   MOCK_CONST_METHOD2(DataCountersRTP,
       int32_t(size_t *bytesSent, uint32_t *packetsSent));
+  MOCK_CONST_METHOD2(GetSendStreamDataCounters,
+      void(StreamDataCounters*, StreamDataCounters*));
   MOCK_METHOD1(RemoteRTCPStat,
       int32_t(RTCPSenderInfo* senderInfo));
   MOCK_CONST_METHOD1(RemoteRTCPStat,

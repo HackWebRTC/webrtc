@@ -803,6 +803,7 @@ bool ModuleRtpRtcpImpl::RtcpXrRrtrStatus() const {
   return rtcp_sender_.RtcpXrReceiverReferenceTime();
 }
 
+// TODO(asapersson): Replace this method with the one below.
 int32_t ModuleRtpRtcpImpl::DataCountersRTP(
     size_t* bytes_sent,
     uint32_t* packets_sent) const {
@@ -819,6 +820,12 @@ int32_t ModuleRtpRtcpImpl::DataCountersRTP(
     *packets_sent = rtp_stats.packets + rtx_stats.packets;
   }
   return 0;
+}
+
+void ModuleRtpRtcpImpl::GetSendStreamDataCounters(
+    StreamDataCounters* rtp_counters,
+    StreamDataCounters* rtx_counters) const {
+  rtp_sender_.GetDataCounters(rtp_counters, rtx_counters);
 }
 
 int32_t ModuleRtpRtcpImpl::RemoteRTCPStat(RTCPSenderInfo* sender_info) {

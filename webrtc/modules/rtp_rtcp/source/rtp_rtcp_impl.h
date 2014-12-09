@@ -177,6 +177,10 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   virtual int32_t DataCountersRTP(size_t* bytes_sent,
                                   uint32_t* packets_sent) const OVERRIDE;
 
+  virtual void GetSendStreamDataCounters(
+      StreamDataCounters* rtp_counters,
+      StreamDataCounters* rtx_counters) const OVERRIDE;
+
   // Get received RTCP report, sender info.
   virtual int32_t RemoteRTCPStat(RTCPSenderInfo* sender_info) OVERRIDE;
 

@@ -148,7 +148,8 @@ ViEChannel::ViEChannel(int32_t channel_id,
       nack_history_size_sender_(kSendSidePacketHistorySize),
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
       pre_render_callback_(NULL),
-      start_ms_(Clock::GetRealTimeClock()->TimeInMilliseconds()) {
+      start_ms_(Clock::GetRealTimeClock()->TimeInMilliseconds()),
+      start_send_ms_(0) {
   RtpRtcp::Configuration configuration = CreateRtpRtcpConfiguration();
   configuration.remote_bitrate_estimator = remote_bitrate_estimator;
   configuration.receive_statistics = vie_receiver_.GetReceiveStatistics();
@@ -236,6 +237,7 @@ ViEChannel::~ViEChannel() {
 }
 
 void ViEChannel::UpdateHistograms() {
+  // TODO(asapersson): Use time from first sent/received packet.
   float elapsed_minutes =
       (Clock::GetRealTimeClock()->TimeInMilliseconds() - start_ms_) / 60000.0f;
   if (elapsed_minutes < metrics::kMinRunTimeInSeconds / 60.0f) {
@@ -271,26 +273,52 @@ void ViEChannel::UpdateHistograms() {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PliPacketsSentPerMinute",
         rtcp_sent.pli_packets / elapsed_minutes);
 
-    StreamDataCounters data;
-    StreamDataCounters rtx_data;
-    GetReceiveStreamDataCounters(&data, &rtx_data);
-    uint32_t media_bytes = data.bytes;
-    uint32_t rtx_bytes =
-        rtx_data.bytes + rtx_data.header_bytes + rtx_data.padding_bytes;
-    uint32_t total_bytes = data.bytes + data.header_bytes + data.padding_bytes;
-    total_bytes += rtx_bytes;
-    uint32_t padding_bytes = data.padding_bytes + rtx_data.padding_bytes;
+    StreamDataCounters rtp;
+    StreamDataCounters rtx;
+    GetReceiveStreamDataCounters(&rtp, &rtx);
+    StreamDataCounters rtp_rtx = rtp;
+    rtp_rtx.Add(rtx);
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.BitrateReceivedInKbps",
-        total_bytes * 8 / (elapsed_minutes * 60) / 1000);
+        rtp_rtx.TotalBytes() * 8 / (elapsed_minutes * 60) / 1000);
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.MediaBitrateReceivedInKbps",
-        media_bytes * 8 / (elapsed_minutes * 60) / 1000);
+        rtp.MediaPayloadBytes() * 8 / (elapsed_minutes * 60) / 1000);
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PaddingBitrateReceivedInKbps",
-        padding_bytes * 8 / (elapsed_minutes * 60) / 1000);
+        rtp_rtx.padding_bytes * 8 / (elapsed_minutes * 60) / 1000);
+    RTC_HISTOGRAM_COUNTS_10000(
+        "WebRTC.Video.RetransmittedBitrateReceivedInKbps",
+            rtp_rtx.RetransmittedBytes() * 8 / (elapsed_minutes * 60) / 1000);
     uint32_t ssrc = 0;
     if (vie_receiver_.GetRtxSsrc(&ssrc)) {
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RtxBitrateReceivedInKbps",
-          rtx_bytes * 8 / (elapsed_minutes * 60) / 1000);
+          rtx.TotalBytes() * 8 / (elapsed_minutes * 60) / 1000);
     }
+  }
+}
+
+void ViEChannel::UpdateHistogramsAtStopSend() {
+  // TODO(asapersson): Use time from first sent packet.
+  int64_t elapsed_sec =
+      (Clock::GetRealTimeClock()->TimeInMilliseconds() - start_send_ms_) / 1000;
+  if (elapsed_sec < metrics::kMinRunTimeInSeconds) {
+    return;
+  }
+  StreamDataCounters rtp;
+  StreamDataCounters rtx;
+  GetSendStreamDataCounters(&rtp, &rtx);
+  StreamDataCounters rtp_rtx = rtp;
+  rtp_rtx.Add(rtx);
+  RTC_HISTOGRAM_COUNTS_100000("WebRTC.Video.BitrateSentInKbps",
+      rtp_rtx.TotalBytes() * 8 / elapsed_sec / 1000);
+  RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.MediaBitrateSentInKbps",
+      rtp.MediaPayloadBytes() * 8 / elapsed_sec / 1000);
+  RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PaddingBitrateSentInKbps",
+      rtp_rtx.padding_bytes * 8 / elapsed_sec / 1000);
+  RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RetransmittedBitrateSentInKbps",
+      rtp_rtx.RetransmittedBytes() * 8 / elapsed_sec / 1000);
+  uint32_t ssrc = 0;
+  if (vie_receiver_.GetRtxSsrc(&ssrc)) {
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RtxBitrateSentInKbps",
+        rtx.TotalBytes() * 8 / elapsed_sec / 1000);
   }
 }
 
@@ -1174,20 +1202,44 @@ int32_t ViEChannel::GetRtpStatistics(size_t* bytes_sent,
   return 0;
 }
 
+void ViEChannel::GetSendStreamDataCounters(
+    StreamDataCounters* rtp_counters,
+    StreamDataCounters* rtx_counters) const {
+  rtp_rtcp_->GetSendStreamDataCounters(rtp_counters, rtx_counters);
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+  for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
+       it != simulcast_rtp_rtcp_.end();
+       it++) {
+    StreamDataCounters rtp_data;
+    StreamDataCounters rtx_data;
+    (*it)->GetSendStreamDataCounters(&rtp_data, &rtx_data);
+    rtp_counters->Add(rtp_data);
+    rtx_counters->Add(rtx_data);
+  }
+  for (std::list<RtpRtcp*>::const_iterator it = removed_rtp_rtcp_.begin();
+       it != removed_rtp_rtcp_.end(); ++it) {
+    StreamDataCounters rtp_data;
+    StreamDataCounters rtx_data;
+    (*it)->GetSendStreamDataCounters(&rtp_data, &rtx_data);
+    rtp_counters->Add(rtp_data);
+    rtx_counters->Add(rtx_data);
+  }
+}
+
 void ViEChannel::GetReceiveStreamDataCounters(
-    StreamDataCounters* data,
-    StreamDataCounters* rtx_data) const {
+    StreamDataCounters* rtp_counters,
+    StreamDataCounters* rtx_counters) const {
   StreamStatistician* statistician = vie_receiver_.GetReceiveStatistics()->
       GetStatistician(vie_receiver_.GetRemoteSsrc());
   if (statistician) {
-    statistician->GetReceiveStreamDataCounters(data);
+    statistician->GetReceiveStreamDataCounters(rtp_counters);
   }
   uint32_t rtx_ssrc = 0;
   if (vie_receiver_.GetRtxSsrc(&rtx_ssrc)) {
     StreamStatistician* statistician =
         vie_receiver_.GetReceiveStatistics()->GetStatistician(rtx_ssrc);
     if (statistician) {
-      statistician->GetReceiveStreamDataCounters(rtx_data);
+      statistician->GetReceiveStreamDataCounters(rtx_counters);
     }
   }
 }
@@ -1341,10 +1393,12 @@ int32_t ViEChannel::StartSend() {
     rtp_rtcp->SetSendingMediaStatus(true);
     rtp_rtcp->SetSendingStatus(true);
   }
+  start_send_ms_ = Clock::GetRealTimeClock()->TimeInMilliseconds();
   return 0;
 }
 
 int32_t ViEChannel::StopSend() {
+  UpdateHistogramsAtStopSend();
   CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   rtp_rtcp_->SetSendingMediaStatus(false);
   for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();

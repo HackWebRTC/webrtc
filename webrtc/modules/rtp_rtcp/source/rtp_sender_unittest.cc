@@ -927,16 +927,20 @@ TEST_F(RtpSenderTest, StreamDataCountersCallbacks) {
 
     uint32_t ssrc_;
     StreamDataCounters counters_;
-    bool Matches(uint32_t ssrc, size_t bytes, size_t header_bytes,
-                 size_t padding, uint32_t packets, uint32_t retransmits,
-                 uint32_t fec) {
-      return ssrc_ == ssrc &&
-          counters_.bytes == bytes &&
-          counters_.header_bytes == header_bytes &&
-          counters_.padding_bytes == padding &&
-          counters_.packets == packets &&
-          counters_.retransmitted_packets == retransmits &&
-          counters_.fec_packets == fec;
+    void Matches(uint32_t ssrc, const StreamDataCounters& counters) {
+      EXPECT_EQ(ssrc, ssrc_);
+      EXPECT_EQ(counters.bytes, counters_.bytes);
+      EXPECT_EQ(counters.header_bytes, counters_.header_bytes);
+      EXPECT_EQ(counters.padding_bytes, counters_.padding_bytes);
+      EXPECT_EQ(counters.packets, counters_.packets);
+      EXPECT_EQ(counters.retransmitted_bytes, counters_.retransmitted_bytes);
+      EXPECT_EQ(counters.retransmitted_header_bytes,
+                counters_.retransmitted_header_bytes);
+      EXPECT_EQ(counters.retransmitted_padding_bytes,
+                counters_.retransmitted_padding_bytes);
+      EXPECT_EQ(counters.retransmitted_packets,
+                counters_.retransmitted_packets);
+      EXPECT_EQ(counters.fec_packets, counters_.fec_packets);
     }
 
   } callback;
@@ -957,21 +961,37 @@ TEST_F(RtpSenderTest, StreamDataCountersCallbacks) {
   ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kVideoFrameKey, payload_type, 1234,
                                              4321, payload, sizeof(payload),
                                              NULL));
-
-  // {bytes = 6, header = 12, padding = 0, packets = 1, retrans = 0, fec = 0}
-  EXPECT_TRUE(callback.Matches(ssrc, 6, 12, 0, 1, 0, 0));
+  StreamDataCounters expected;
+  expected.bytes = 6;
+  expected.header_bytes = 12;
+  expected.padding_bytes = 0;
+  expected.packets = 1;
+  expected.retransmitted_bytes = 0;
+  expected.retransmitted_header_bytes = 0;
+  expected.retransmitted_padding_bytes = 0;
+  expected.retransmitted_packets = 0;
+  expected.fec_packets = 0;
+  callback.Matches(ssrc, expected);
 
   // Retransmit a frame.
   uint16_t seqno = rtp_sender_->SequenceNumber() - 1;
   rtp_sender_->ReSendPacket(seqno, 0);
-
-  // bytes = 6, header = 12, padding = 0, packets = 2, retrans = 1, fec = 0}
-  EXPECT_TRUE(callback.Matches(ssrc, 6, 12, 0, 2, 1, 0));
+  expected.bytes = 12;
+  expected.header_bytes = 24;
+  expected.packets = 2;
+  expected.retransmitted_bytes = 6;
+  expected.retransmitted_header_bytes = 12;
+  expected.retransmitted_padding_bytes = 0;
+  expected.retransmitted_packets = 1;
+  callback.Matches(ssrc, expected);
 
   // Send padding.
   rtp_sender_->TimeToSendPadding(kMaxPaddingSize);
-  // {bytes = 6, header = 24, padding = 224, packets = 3, retrans = 1, fec = 0}
-  EXPECT_TRUE(callback.Matches(ssrc, 6, 24, kMaxPaddingSize, 3, 1, 0));
+  expected.bytes = 12;
+  expected.header_bytes = 36;
+  expected.padding_bytes = kMaxPaddingSize;
+  expected.packets = 3;
+  callback.Matches(ssrc, expected);
 
   // Send FEC.
   rtp_sender_->SetGenericFECStatus(true, kRedPayloadType, kUlpfecPayloadType);
@@ -984,9 +1004,11 @@ TEST_F(RtpSenderTest, StreamDataCountersCallbacks) {
   ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kVideoFrameDelta, payload_type,
                                              1234, 4321, payload,
                                              sizeof(payload), NULL));
-
-  // {bytes = 34, header = 48, padding = 224, packets = 5, retrans = 1, fec = 1}
-  EXPECT_TRUE(callback.Matches(ssrc, 34, 48, kMaxPaddingSize, 5, 1, 1));
+  expected.bytes = 40;
+  expected.header_bytes = 60;
+  expected.packets = 5;
+  expected.fec_packets = 1;
+  callback.Matches(ssrc, expected);
 
   rtp_sender_->RegisterRtpStatisticsCallback(NULL);
 }
@@ -1147,9 +1169,12 @@ TEST_F(RtpSenderTest, BytesReportedCorrectly) {
   EXPECT_EQ(rtx_stats.header_bytes, 24u);
   EXPECT_EQ(rtx_stats.padding_bytes, 2 * kMaxPaddingSize);
 
+  EXPECT_EQ(rtp_stats.TotalBytes(),
+      rtp_stats.bytes + rtp_stats.header_bytes + rtp_stats.padding_bytes);
+  EXPECT_EQ(rtx_stats.TotalBytes(),
+      rtx_stats.bytes + rtx_stats.header_bytes + rtx_stats.padding_bytes);
+
   EXPECT_EQ(transport_.total_bytes_sent_,
-            rtp_stats.bytes + rtp_stats.header_bytes + rtp_stats.padding_bytes +
-                rtx_stats.bytes + rtx_stats.header_bytes +
-                rtx_stats.padding_bytes);
+            rtp_stats.TotalBytes() + rtx_stats.TotalBytes());
 }
 }  // namespace webrtc

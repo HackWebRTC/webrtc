@@ -434,13 +434,21 @@ class RtpRtcp : public Module {
     virtual int32_t ResetSendDataCountersRTP() = 0;
 
     /*
-    *   statistics of the amount of data sent and received
+    *   Statistics of the amount of data sent
     *
     *   return -1 on failure else 0
     */
     virtual int32_t DataCountersRTP(
         size_t* bytesSent,
         uint32_t* packetsSent) const = 0;
+
+    /*
+    *   Get send statistics for the RTP and RTX stream.
+    */
+    virtual void GetSendStreamDataCounters(
+        StreamDataCounters* rtp_counters,
+        StreamDataCounters* rtx_counters) const = 0;
+
     /*
     *   Get received RTCP sender info
     *
@@ -455,6 +463,7 @@ class RtpRtcp : public Module {
     */
     virtual int32_t RemoteRTCPStat(
         std::vector<RTCPReportBlock>* receiveBlocks) const = 0;
+
     /*
     *   Set received RTCP report block
     *

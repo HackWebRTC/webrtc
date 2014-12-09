@@ -194,9 +194,13 @@ class ViEChannel
                            size_t* bytes_received,
                            uint32_t* packets_received) const;
 
+  // Gets send statistics for the rtp and rtx stream.
+  void GetSendStreamDataCounters(StreamDataCounters* rtp_counters,
+                                 StreamDataCounters* rtx_counters) const;
+
   // Gets received stream data counters.
-  void GetReceiveStreamDataCounters(StreamDataCounters* data,
-                                    StreamDataCounters* rtx_data) const;
+  void GetReceiveStreamDataCounters(StreamDataCounters* rtp_counters,
+                                    StreamDataCounters* rtx_counters) const;
 
   // Called on update of RTP statistics.
   void RegisterSendChannelRtpStatisticsCallback(
@@ -379,6 +383,7 @@ class ViEChannel
   void SetRtxSendStatus(bool enable);
 
   void UpdateHistograms();
+  void UpdateHistogramsAtStopSend();
 
   // ViEChannel exposes methods that allow to modify observers and callbacks
   // to be modified. Such an API-style is cumbersome to implement and maintain
@@ -498,6 +503,7 @@ class ViEChannel
   int max_nack_reordering_threshold_;
   I420FrameCallback* pre_render_callback_;
   const int64_t start_ms_;
+  int64_t start_send_ms_;
 
   std::map<uint32_t, RTCPReportBlock> prev_report_blocks_;
 };
