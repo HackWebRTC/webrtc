@@ -47,7 +47,6 @@
         'rtp_rtcp/test/testFec/test_fec.gypi',
         'video_coding/main/source/video_coding_test.gypi',
         'video_coding/codecs/test/video_codecs_test_framework.gypi',
-        'video_coding/codecs/test_framework/test_framework.gypi',
         'video_coding/codecs/tools/video_codecs_tools.gypi',
       ], # includes
       'variables': {
@@ -83,7 +82,6 @@
             'PCM16B',  # Needed by NetEq tests.
             'remote_bitrate_estimator',
             'rtp_rtcp',
-            'test_framework',
             'video_codecs_test_framework',
             'video_processing',
             'webrtc_utility',
@@ -324,7 +322,6 @@
           'dependencies': [
             'audio_coding_module',
             'rtp_rtcp',
-            'test_framework',
             'video_codecs_test_framework',
             'webrtc_utility',
             'webrtc_video_coding',
