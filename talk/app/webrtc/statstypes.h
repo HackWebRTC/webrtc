@@ -42,40 +42,24 @@
 
 namespace webrtc {
 
-// TODO(tommi): Move all the implementation that's in this file and
-// statscollector.cc related to these types, into a new, statstypes.cc file.
-
 class StatsReport {
  public:
-  // TODO(tommi): Remove this ctor.
-  StatsReport() : timestamp(0) {}
-
   // TODO(tommi): Make protected and disallow copy completely once not needed.
-  StatsReport(const StatsReport& src)
-    : id(src.id),
-      type(src.type),
-      timestamp(src.timestamp),
-      values(src.values) {}
-
-  // TODO(tommi): Make this copy constructor protected.
-  StatsReport& operator=(const StatsReport& src) {
-    ASSERT(id == src.id);
-    type = src.type;
-    timestamp = src.timestamp;
-    values = src.values;
-    return *this;
-  }
+  StatsReport(const StatsReport& src);
 
   // Constructor is protected to force use of StatsSet.
   // TODO(tommi): Make this ctor protected.
-  explicit StatsReport(const std::string& id) : id(id), timestamp(0) {}
+  explicit StatsReport(const std::string& id);
+
+  // TODO(tommi): Make this protected.
+  StatsReport& operator=(const StatsReport& src);
 
   // Operators provided for STL container/algorithm support.
-  bool operator<(const StatsReport& other) const { return id < other.id; }
-  bool operator==(const StatsReport& other) const { return id == other.id; }
+  bool operator<(const StatsReport& other) const;
+  bool operator==(const StatsReport& other) const;
   // Special support for being able to use std::find on a container
   // without requiring a new StatsReport instance.
-  bool operator==(const std::string& other_id) const { return id == other_id; }
+  bool operator==(const std::string& other_id) const;
 
   // TODO(tommi): Change this to be an enum type that holds all the
   // kStatsValueName constants.
@@ -89,27 +73,21 @@ class StatsReport {
   std::string type;  // See below for contents.
 
   struct Value {
-    Value() : name(NULL) {}
+    Value();
     // The copy ctor can't be declared as explicit due to problems with STL.
-    Value(const Value& other) : name(other.name), value(other.value) {}
-    explicit Value(StatsValueName name) : name(name) {}
-    Value(StatsValueName name, const std::string& value)
-        : name(name), value(value) {
-    }
+    Value(const Value& other);
+    explicit Value(StatsValueName name);
+    Value(StatsValueName name, const std::string& value);
 
     // TODO(tommi): Remove this operator once we don't need it.
     // The operator is provided for compatibility with STL containers.
     // The public |name| member variable is otherwise meant to be read-only.
-    Value& operator=(const Value& other) {
-      const_cast<StatsValueName&>(name) = other.name;
-      value = other.value;
-      return *this;
-    }
+    Value& operator=(const Value& other);
 
     // TODO(tommi): Change implementation to do a simple enum value-to-static-
     // string conversion when client code has been updated to use this method
     // instead of the |name| member variable.
-    const char* display_name() const { return name; }
+    const char* display_name() const;
 
     const StatsValueName name;
 
@@ -302,41 +280,25 @@ typedef std::vector<const StatsReport*> StatsReports;
 // TODO(tommi): Use a thread checker here (currently not in libjingle).
 class StatsSet {
  public:
-  StatsSet() {}
-  ~StatsSet() {}
+  StatsSet();
+  ~StatsSet();
 
   typedef std::set<StatsReportCopyable> Container;
   typedef Container::iterator iterator;
   typedef Container::const_iterator const_iterator;
 
-  const_iterator begin() const { return list_.begin(); }
-  const_iterator end() const { return list_.end(); }
+  const_iterator begin() const;
+  const_iterator end() const;
 
   // Creates a new report object with |id| that does not already
   // exist in the list of reports.
-  StatsReport* InsertNew(const std::string& id) {
-    ASSERT(Find(id) == NULL);
-    const StatsReport* ret = &(*list_.insert(StatsReportCopyable(id)).first);
-    return const_cast<StatsReport*>(ret);
-  }
-
-  StatsReport* FindOrAddNew(const std::string& id) {
-    StatsReport* ret = Find(id);
-    return ret ? ret : InsertNew(id);
-  }
-
-  StatsReport* ReplaceOrAddNew(const std::string& id) {
-    list_.erase(id);
-    return InsertNew(id);
-  }
+  StatsReport* InsertNew(const std::string& id);
+  StatsReport* FindOrAddNew(const std::string& id);
+  StatsReport* ReplaceOrAddNew(const std::string& id);
 
   // Looks for a report with the given |id|.  If one is not found, NULL
   // will be returned.
-  StatsReport* Find(const std::string& id) {
-    const_iterator it = std::find(begin(), end(), id);
-    return it == end() ? NULL :
-        const_cast<StatsReport*>(static_cast<const StatsReport*>(&(*it)));
-  }
+  StatsReport* Find(const std::string& id);
 
  private:
   Container list_;
