@@ -199,6 +199,8 @@ public:
     virtual int32_t SetLoudspeakerStatus(bool enable) OVERRIDE;
     virtual int32_t GetLoudspeakerStatus(bool* enabled) const OVERRIDE;
 
+    virtual bool BuiltInAECIsAvailable() const OVERRIDE;
+
     virtual int32_t EnableBuiltInAEC(bool enable) OVERRIDE;
     virtual bool BuiltInAECIsEnabled() const OVERRIDE;
 

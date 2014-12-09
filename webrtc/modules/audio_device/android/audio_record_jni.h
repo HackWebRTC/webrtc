@@ -109,6 +109,9 @@ class AudioRecordJni {
 
   int32_t SetRecordingSampleRate(const uint32_t samplesPerSec);
 
+  bool BuiltInAECIsAvailable() const;
+  int32_t EnableBuiltInAEC(bool enable);
+
  private:
   void Lock() EXCLUSIVE_LOCK_FUNCTION(_critSect) {
     _critSect.Enter();

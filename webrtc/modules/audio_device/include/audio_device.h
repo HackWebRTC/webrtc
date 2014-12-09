@@ -182,15 +182,20 @@ class AudioDeviceModule : public RefCountedModule {
   virtual int32_t SetLoudspeakerStatus(bool enable) = 0;
   virtual int32_t GetLoudspeakerStatus(bool* enabled) const = 0;
 
-  // *Experimental - not recommended for use.*
-  // Enables the Windows Core Audio built-in AEC. Fails on other platforms.
+  // Only supported on Android.
+  virtual bool BuiltInAECIsAvailable() const = 0;
+
+  // Enables the built-in AEC. Only supported on Windows and Android.
   //
+  // For usage on Windows (requires Core Audio):
   // Must be called before InitRecording(). When enabled:
   // 1. StartPlayout() must be called before StartRecording().
   // 2. StopRecording() should be called before StopPlayout().
   //    The reverse order may cause garbage audio to be rendered or the
   //    capture side to halt until StopRecording() is called.
-  virtual int32_t EnableBuiltInAEC(bool enable) { return -1; }
+  virtual int32_t EnableBuiltInAEC(bool enable) = 0;
+
+  // Don't use.
   virtual bool BuiltInAECIsEnabled() const { return false; }
 
  protected:

@@ -1978,9 +1978,8 @@ int32_t AudioDeviceModuleImpl::GetLoudspeakerStatus(bool* enabled) const
 
 int32_t AudioDeviceModuleImpl::EnableBuiltInAEC(bool enable)
 {
-    CHECK_INITIALIZED();
-
-    return _ptrAudioDevice->EnableBuiltInAEC(enable);
+  CHECK_INITIALIZED();
+  return _ptrAudioDevice->EnableBuiltInAEC(enable);
 }
 
 bool AudioDeviceModuleImpl::BuiltInAECIsEnabled() const
@@ -1988,6 +1987,11 @@ bool AudioDeviceModuleImpl::BuiltInAECIsEnabled() const
     CHECK_INITIALIZED_BOOL();
 
     return _ptrAudioDevice->BuiltInAECIsEnabled();
+}
+
+bool AudioDeviceModuleImpl::BuiltInAECIsAvailable() const {
+  CHECK_INITIALIZED_BOOL();
+  return _ptrAudioDevice->BuiltInAECIsAvailable();
 }
 
 // ============================================================================

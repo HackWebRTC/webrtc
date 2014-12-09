@@ -89,8 +89,10 @@ public:
     virtual int SetPlayoutSampleRate(unsigned int samples_per_sec) = 0;
     virtual int PlayoutSampleRate(unsigned int* samples_per_sec) const = 0;
 
+    virtual bool BuiltInAECIsAvailable() const = 0;
+    virtual int EnableBuiltInAEC(bool enable) = 0;
+
     // To be removed. Don't use.
-    virtual int EnableBuiltInAEC(bool enable) { return -1; }
     virtual bool BuiltInAECIsEnabled() const { return false; }
     virtual int GetRecordingDeviceStatus(bool& isAvailable) { return -1; }
     virtual int GetPlayoutDeviceStatus(bool& isAvailable) { return -1; }

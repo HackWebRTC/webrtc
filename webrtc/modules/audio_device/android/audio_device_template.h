@@ -405,6 +405,14 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     return output_.GetLoudspeakerStatus(enable);
   }
 
+  bool BuiltInAECIsAvailable() const {
+    return input_.BuiltInAECIsAvailable();
+  }
+
+  int32_t EnableBuiltInAEC(bool enable) {
+    return input_.EnableBuiltInAEC(enable);
+  }
+
  private:
   OutputType output_;
   InputType input_;

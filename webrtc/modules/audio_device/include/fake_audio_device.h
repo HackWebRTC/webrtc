@@ -144,6 +144,7 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
   virtual int32_t ResetAudioDevice() { return 0; }
   virtual int32_t SetLoudspeakerStatus(bool enable) { return 0; }
   virtual int32_t GetLoudspeakerStatus(bool* enabled) const { return 0; }
+  virtual bool BuiltInAECIsAvailable() const { return false; }
   virtual int32_t EnableBuiltInAEC(bool enable) { return -1; }
   virtual bool BuiltInAECIsEnabled() const { return false; }
 };

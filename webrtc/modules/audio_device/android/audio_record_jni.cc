@@ -23,7 +23,6 @@
 #include "webrtc/modules/audio_device/android/audio_common.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_utility.h"
-
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -360,7 +359,6 @@ int32_t AudioRecordJni::RecordingIsAvailable(bool& available) {  // NOLINT
 
 int32_t AudioRecordJni::InitRecording() {
   CriticalSectionScoped lock(&_critSect);
-
   if (!_initialized)
   {
     WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
@@ -797,6 +795,84 @@ int32_t AudioRecordJni::SetRecordingSampleRate(const uint32_t samplesPerSec) {
   _ptrAudioBuffer->SetRecordingSampleRate(samplesPerSec);
 
   return 0;
+}
+
+bool AudioRecordJni::BuiltInAECIsAvailable() const {
+  assert(_javaVM);
+
+  JNIEnv* env = NULL;
+  bool isAttached = false;
+
+  // Get the JNI env for this thread
+  if (_javaVM->GetEnv((void**) &env, JNI_VERSION_1_4) != JNI_OK) {
+    jint res = _javaVM->AttachCurrentThread(&env, NULL);
+    if ((res < 0) || !env) {
+      return false;
+    }
+    isAttached = true;
+  }
+
+  // Get method ID for BuiltInAECIsAvailable
+  jmethodID builtInAECIsAvailable = env->GetStaticMethodID(
+      _javaScClass, "BuiltInAECIsAvailable", "()Z");
+  if (builtInAECIsAvailable == NULL) {
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                 "%s: Unable to get BuiltInAECIsAvailable ID", __FUNCTION__);
+    return false;
+  }
+
+  // Call the static BuiltInAECIsAvailable method
+  jboolean hw_aec = env->CallStaticBooleanMethod(_javaScClass,
+                                                 builtInAECIsAvailable);
+
+  // Detach this thread if it was attached
+  if (isAttached) {
+    if (_javaVM->DetachCurrentThread() < 0) {
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                 "%s: Could not detach thread from JVM", __FUNCTION__);
+    }
+  }
+
+  return hw_aec;
+}
+
+int32_t AudioRecordJni::EnableBuiltInAEC(bool enable) {
+  assert(_javaVM);
+
+  jint res = 0;
+  JNIEnv* env = NULL;
+  bool isAttached = false;
+
+  // Get the JNI env for this thread
+  if (_javaVM->GetEnv((void**) &env, JNI_VERSION_1_4) != JNI_OK) {
+    res = _javaVM->AttachCurrentThread(&env, NULL);
+    if ((res < 0) || !env) {
+      return false;
+    }
+    isAttached = true;
+  }
+
+  // Get method ID for EnableBuiltInAEC "(argument-types)return-type"
+  jmethodID enableBuiltInAEC = env->GetMethodID(_javaScClass,
+                                                "EnableBuiltInAEC",
+                                                "(Z)I");
+
+  // Call the EnableBuiltInAEC method
+  res = env->CallIntMethod(_javaScObj, enableBuiltInAEC, enable);
+  if (res < 0) {
+    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
+                 "EnableBuiltInAEC failed (%d)", res);
+  }
+
+  // Detach this thread if it was attached
+  if (isAttached) {
+    if (_javaVM->DetachCurrentThread() < 0) {
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                   "%s: Could not detach thread from JVM", __FUNCTION__);
+    }
+  }
+
+  return res;
 }
 
 int32_t AudioRecordJni::InitJavaResources() {

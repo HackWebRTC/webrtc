@@ -811,8 +811,23 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   webrtc::VoEAudioProcessing* voep = voe_wrapper_->processing();
 
-  bool echo_cancellation;
+  bool echo_cancellation = false;
   if (options.echo_cancellation.Get(&echo_cancellation)) {
+    // Check if platform supports built-in EC. Currently only supported on
+    // Android and in combination with Java based audio layer.
+    // TODO(henrika): investigate possibility to support built-in EC also
+    // in combination with Open SL ES audio.
+    const bool built_in_aec = voe_wrapper_->hw()->BuiltInAECIsAvailable();
+    if (built_in_aec) {
+      // Set mode of built-in EC according to the audio options.
+      voe_wrapper_->hw()->EnableBuiltInAEC(echo_cancellation);
+      if (echo_cancellation) {
+        // Disable internal software EC if device has its own built-in EC,
+        // i.e., replace the software EC with the built-in EC.
+        options.echo_cancellation.Set(false);
+        LOG(LS_INFO) << "Disabling EC since built-in EC will be used instead";
+      }
+    }
     if (voep->SetEcStatus(echo_cancellation, ec_mode) == -1) {
       LOG_RTCERR2(SetEcStatus, echo_cancellation, ec_mode);
       return false;

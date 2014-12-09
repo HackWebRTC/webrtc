@@ -118,6 +118,10 @@ class OpenSlesInput {
   // Attach audio buffer
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
 
+  // Built-in AEC is only supported in combination with Java/AudioRecord.
+  bool BuiltInAECIsAvailable() const { return false; }
+  int32_t EnableBuiltInAEC(bool enable) { return -1; }
+
  private:
   enum {
     kNumInterfaces = 2,

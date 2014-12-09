@@ -836,6 +836,7 @@ class FakeWebRtcVoiceEngine
   }
   WEBRTC_STUB(EnableBuiltInAEC, (bool enable));
   virtual bool BuiltInAECIsEnabled() const { return true; }
+  virtual bool BuiltInAECIsAvailable() const { return false; }
 
   // webrtc::VoENetEqStats
   WEBRTC_STUB(GetNetworkStatistics, (int, webrtc::NetworkStatistics&));
