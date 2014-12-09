@@ -31,6 +31,7 @@
 #ifndef TALK_APP_WEBRTC_STATSTYPES_H_
 #define TALK_APP_WEBRTC_STATSTYPES_H_
 
+#include <algorithm>
 #include <set>
 #include <string>
 #include <vector>

@@ -653,6 +653,7 @@
         'app/webrtc/sctputils.h',
         'app/webrtc/statscollector.cc',
         'app/webrtc/statscollector.h',
+        'app/webrtc/statstypes.cc',
         'app/webrtc/statstypes.h',
         'app/webrtc/streamcollection.h',
         'app/webrtc/videosource.cc',
