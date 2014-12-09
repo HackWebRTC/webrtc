@@ -11,15 +11,17 @@
 Runs tests on Android devices.
 
 This script exists to avoid WebRTC being broken by changes in the Chrome Android
-test execution toolchain.
+test execution toolchain. It also conveniently sets the CHECKOUT_SOURCE_ROOT
+environment variable.
 """
 
 import os
 import sys
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.join(SCRIPT_DIR, os.pardir, os.pardir, os.pardir)
-CHROMIUM_BUILD_ANDROID_DIR = os.path.join(ROOT_DIR, 'build', 'android')
+SCRIPT_DIR = os.path.dirname(__file__)
+SRC_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir,
+                                        os.pardir))
+CHROMIUM_BUILD_ANDROID_DIR = os.path.join(SRC_DIR, 'build', 'android')
 sys.path.insert(0, CHROMIUM_BUILD_ANDROID_DIR)
 
 
@@ -44,6 +46,7 @@ def main():
     'voice_engine_unittests',
     'webrtc_perf_tests',
   ]
+  os.environ['CHECKOUT_SOURCE_ROOT'] = SRC_DIR
   return test_runner.main()
 
 if __name__ == '__main__':
