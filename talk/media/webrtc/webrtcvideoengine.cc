@@ -3948,7 +3948,8 @@ bool WebRtcVideoMediaChannel::SetSendParams(
   // If the set of SSRCs isn't populated, then don't apply them. If we
   // do, we'll cause a bug where adding a stream, then removing a
   // stream, then re-adding a stream with the same primary SSRC will
-  // cause the sequence numbers to change and confuse the sender.
+  // cause the sequence numbers to change and confuse the receiver due
+  // to jumping SRTP sequence numbers.
   if (send_params.stream.first_ssrc() != 0) {
     if (!SetSendSsrcs(channel_id, send_params.stream, codec)) {
       return false;
