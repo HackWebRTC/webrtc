@@ -14,9 +14,6 @@
 #include <string.h>  // memmove
 
 #include "webrtc/base/checks.h"
-#ifdef WEBRTC_CODEC_CELT
-#include "webrtc/modules/audio_coding/codecs/celt/include/celt_interface.h"
-#endif
 #include "webrtc/modules/audio_coding/codecs/cng/include/webrtc_cng.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/g711_interface.h"
 #ifdef WEBRTC_CODEC_G722
@@ -345,50 +342,6 @@ void AudioDecoderG722Stereo::SplitStereoPacket(const uint8_t* encoded,
 }
 #endif
 
-// CELT
-#ifdef WEBRTC_CODEC_CELT
-AudioDecoderCelt::AudioDecoderCelt(int num_channels) {
-  DCHECK(num_channels == 1 || num_channels == 2);
-  channels_ = num_channels;
-  WebRtcCelt_CreateDec(reinterpret_cast<CELT_decinst_t**>(&state_),
-                       static_cast<int>(channels_));
-}
-
-AudioDecoderCelt::~AudioDecoderCelt() {
-  WebRtcCelt_FreeDec(static_cast<CELT_decinst_t*>(state_));
-}
-
-int AudioDecoderCelt::Decode(const uint8_t* encoded, size_t encoded_len,
-                             int16_t* decoded, SpeechType* speech_type) {
-  int16_t temp_type = 1;  // Default to speech.
-  int ret = WebRtcCelt_DecodeUniversal(static_cast<CELT_decinst_t*>(state_),
-                                       encoded, static_cast<int>(encoded_len),
-                                       decoded, &temp_type);
-  *speech_type = ConvertSpeechType(temp_type);
-  if (ret < 0) {
-    return -1;
-  }
-  // Return the total number of samples.
-  return ret * static_cast<int>(channels_);
-}
-
-int AudioDecoderCelt::Init() {
-  return WebRtcCelt_DecoderInit(static_cast<CELT_decinst_t*>(state_));
-}
-
-bool AudioDecoderCelt::HasDecodePlc() const { return true; }
-
-int AudioDecoderCelt::DecodePlc(int num_frames, int16_t* decoded) {
-  int ret = WebRtcCelt_DecodePlc(static_cast<CELT_decinst_t*>(state_),
-                                 decoded, num_frames);
-  if (ret < 0) {
-    return -1;
-  }
-  // Return the total number of samples.
-  return ret * static_cast<int>(channels_);
-}
-#endif
-
 // Opus
 #ifdef WEBRTC_CODEC_OPUS
 AudioDecoderOpus::AudioDecoderOpus(int num_channels) {
@@ -492,10 +445,6 @@ bool CodecSupported(NetEqDecoder codec_type) {
     case kDecoderG722:
     case kDecoderG722_2ch:
 #endif
-#ifdef WEBRTC_CODEC_CELT
-    case kDecoderCELT_32:
-    case kDecoderCELT_32_2ch:
-#endif
 #ifdef WEBRTC_CODEC_OPUS
     case kDecoderOpus:
     case kDecoderOpus_2ch:
@@ -553,10 +502,6 @@ int CodecSampleRateHz(NetEqDecoder codec_type) {
 #ifdef WEBRTC_CODEC_PCM16
     case kDecoderPCM16Bswb32kHz:
     case kDecoderPCM16Bswb32kHz_2ch:
-#endif
-#ifdef WEBRTC_CODEC_CELT
-    case kDecoderCELT_32:
-    case kDecoderCELT_32_2ch:
 #endif
     case kDecoderCNGswb32kHz: {
       return 32000;
@@ -629,12 +574,6 @@ AudioDecoder* CreateAudioDecoder(NetEqDecoder codec_type) {
       return new AudioDecoderG722;
     case kDecoderG722_2ch:
       return new AudioDecoderG722Stereo;
-#endif
-#ifdef WEBRTC_CODEC_CELT
-    case kDecoderCELT_32:
-      return new AudioDecoderCelt(1);
-    case kDecoderCELT_32_2ch:
-      return new AudioDecoderCelt(2);
 #endif
 #ifdef WEBRTC_CODEC_OPUS
     case kDecoderOpus:

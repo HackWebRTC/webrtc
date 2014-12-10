@@ -57,8 +57,6 @@
         'acm_amr.h',
         'acm_amrwb.cc',
         'acm_amrwb.h',
-        'acm_celt.cc',
-        'acm_celt.h',
         'acm_cng.cc',
         'acm_cng.h',
         'acm_codec_database.cc',

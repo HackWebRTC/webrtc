@@ -127,9 +127,6 @@ TestStereo::TestStereo(int test_mode)
       , pcma_pltype_(-1)
       , pcmu_pltype_(-1)
 #endif
-#ifdef WEBRTC_CODEC_CELT
-      , celt_pltype_(-1)
-#endif
 #ifdef WEBRTC_CODEC_OPUS
       , opus_pltype_(-1)
 #endif
@@ -388,29 +385,6 @@ void TestStereo::Perform() {
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
 #endif
-#ifdef WEBRTC_CODEC_CELT
-  if (test_mode_ != 0) {
-    printf("===========================================================\n");
-    printf("Test number: %d\n", test_cntr_ + 1);
-    printf("Test type: Stereo-to-stereo\n");
-  }
-  channel_a2b_->set_codec_mode(kStereo);
-  audio_channels = 2;
-  codec_channels = 2;
-  test_cntr_++;
-  OpenOutFile(test_cntr_);
-  char codec_celt[] = "CELT";
-  RegisterSendCodec('A', codec_celt, 32000, 48000, 640, codec_channels,
-      celt_pltype_);
-  Run(channel_a2b_, audio_channels, codec_channels);
-  RegisterSendCodec('A', codec_celt, 32000, 64000, 640, codec_channels,
-      celt_pltype_);
-  Run(channel_a2b_, audio_channels, codec_channels);
-  RegisterSendCodec('A', codec_celt, 32000, 128000, 640, codec_channels,
-      celt_pltype_);
-  Run(channel_a2b_, audio_channels, codec_channels);
-  out_file_.Close();
-#endif
 #ifdef WEBRTC_CODEC_OPUS
   if (test_mode_ != 0) {
     printf("===========================================================\n");
@@ -522,20 +496,6 @@ void TestStereo::Perform() {
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
 #endif
-#ifdef WEBRTC_CODEC_CELT
-  if (test_mode_ != 0) {
-    printf("===============================================================\n");
-    printf("Test number: %d\n", test_cntr_ + 1);
-    printf("Test type: Mono-to-stereo\n");
-  }
-  test_cntr_++;
-  channel_a2b_->set_codec_mode(kStereo);
-  OpenOutFile(test_cntr_);
-  RegisterSendCodec('A', codec_celt, 32000, 64000, 640, codec_channels,
-      celt_pltype_);
-  Run(channel_a2b_, audio_channels, codec_channels);
-  out_file_.Close();
-#endif
 #ifdef WEBRTC_CODEC_OPUS
   if (test_mode_ != 0) {
     printf("===============================================================\n");
@@ -637,19 +597,6 @@ void TestStereo::Perform() {
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
 #endif
-#ifdef WEBRTC_CODEC_CELT
-  if (test_mode_ != 0) {
-    printf("===============================================================\n");
-    printf("Test number: %d\n", test_cntr_ + 1);
-    printf("Test type: Stereo-to-mono\n");
-  }
-  test_cntr_++;
-  OpenOutFile(test_cntr_);
-  RegisterSendCodec('A', codec_celt, 32000, 64000, 640, codec_channels,
-      celt_pltype_);
-  Run(channel_a2b_, audio_channels, codec_channels);
-  out_file_.Close();
-#endif
 #ifdef WEBRTC_CODEC_OPUS
   if (test_mode_ != 0) {
     printf("===============================================================\n");
@@ -727,9 +674,6 @@ void TestStereo::Perform() {
     printf("   PCM16\n");
 #endif
     printf("   G.711\n");
-#ifdef WEBRTC_CODEC_CELT
-    printf("   CELT\n");
-#endif
 #ifdef WEBRTC_CODEC_OPUS
     printf("   Opus\n");
 #endif
@@ -767,16 +711,9 @@ void TestStereo::RegisterSendCodec(char side, char* codec_name,
 
   // Store the expected packet size in bytes, used to validate the received
   // packet. Add 0.875 to always round up to a whole byte.
-  // For Celt the packet size in bytes is already counting the stereo part.
-  if (!strcmp(codec_name, "CELT")) {
-    pack_size_bytes_ = (uint16_t)(
-        static_cast<float>(pack_size * rate) /
-            static_cast<float>(sampling_freq_hz * 8) + 0.875) / channels;
-  } else {
-    pack_size_bytes_ = (uint16_t)(
-        static_cast<float>(pack_size * rate) /
-            static_cast<float>(sampling_freq_hz * 8) + 0.875);
-  }
+  pack_size_bytes_ = (uint16_t)(static_cast<float>(pack_size * rate) /
+                                    static_cast<float>(sampling_freq_hz * 8) +
+                                0.875);
 
   // Set pointer to the ACM where to register the codec
   AudioCodingModule* my_acm = NULL;

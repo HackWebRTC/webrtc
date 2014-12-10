@@ -594,21 +594,6 @@ void TestAllCodecs::Perform() {
   Run(channel_a_to_b_);
   outfile_b_.Close();
 #endif
-#ifdef WEBRTC_CODEC_CELT
-  if (test_mode_ != 0) {
-    printf("===============================================================\n");
-  }
-  test_count_++;
-  OpenOutFile(test_count_);
-  char codec_celt[] = "CELT";
-  RegisterSendCodec('A', codec_celt, 32000, 48000, 640, 0);
-  Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_celt, 32000, 64000, 640, 0);
-  Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_celt, 32000, 128000, 640, 0);
-  Run(channel_a_to_b_);
-  outfile_b_.Close();
-#endif
 #ifdef WEBRTC_CODEC_OPUS
   if (test_mode_ != 0) {
     printf("===============================================================\n");

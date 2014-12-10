@@ -109,9 +109,6 @@ class TestStereo : public ACMTest {
   int pcma_pltype_;
   int pcmu_pltype_;
 #endif
-#ifdef WEBRTC_CODEC_CELT
-  int celt_pltype_;
-#endif
 #ifdef WEBRTC_CODEC_OPUS
   int opus_pltype_;
 #endif

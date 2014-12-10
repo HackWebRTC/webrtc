@@ -56,10 +56,6 @@
 #include "webrtc/modules/audio_coding/codecs/amrwb/include/amrwb_interface.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_amrwb.h"
 #endif
-#ifdef WEBRTC_CODEC_CELT
-#include "webrtc/modules/audio_coding/codecs/celt/include/celt_interface.h"
-#include "webrtc/modules/audio_coding/main/acm2/acm_celt.h"
-#endif
 #ifdef WEBRTC_CODEC_G722
 #include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_g722.h"
@@ -140,12 +136,6 @@ const CodecInst ACMCodecDB::database_[] = {
 #endif
 #ifdef WEBRTC_CODEC_AMRWB
   {115, "AMR-WB", 16000, 320, 1, 20000},
-#endif
-#ifdef WEBRTC_CODEC_CELT
-  // Mono
-  {116, "CELT", 32000, 640, 1, 64000},
-  // Stereo
-  {117, "CELT", 32000, 640, 2, 64000},
 #endif
 #ifdef WEBRTC_CODEC_G722
   // Mono
@@ -236,12 +226,6 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
 #ifdef WEBRTC_CODEC_AMRWB
     {3, {320, 640, 960}, 0, 1, true},
 #endif
-#ifdef WEBRTC_CODEC_CELT
-    // Mono
-    {1, {640}, 0, 2, false},
-    // Stereo
-    {1, {640}, 0, 2, false},
-#endif
 #ifdef WEBRTC_CODEC_G722
     // Mono
     {6, {160, 320, 480, 640, 800, 960}, 0, 2, false},
@@ -328,12 +312,6 @@ const NetEqDecoder ACMCodecDB::neteq_decoders_[] = {
 #endif
 #ifdef WEBRTC_CODEC_AMRWB
     kDecoderAMRWB,
-#endif
-#ifdef WEBRTC_CODEC_CELT
-    // Mono
-    kDecoderCELT_32,
-    // Stereo
-    kDecoderCELT_32_2ch,
 #endif
 #ifdef WEBRTC_CODEC_G722
     // Mono
@@ -618,14 +596,6 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
   } else if (!STR_CASE_CMP(codec_inst.plname, "AMR-WB")) {
 #ifdef WEBRTC_CODEC_AMRWB
     return new ACMAMRwb(kGSMAMRWB);
-#endif
-  } else if (!STR_CASE_CMP(codec_inst.plname, "CELT")) {
-#ifdef WEBRTC_CODEC_CELT
-    if (codec_inst.channels == 1) {
-      return new ACMCELT(kCELT32);
-    } else {
-      return new ACMCELT(kCELT32_2ch);
-    }
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "G722")) {
 #ifdef WEBRTC_CODEC_G722

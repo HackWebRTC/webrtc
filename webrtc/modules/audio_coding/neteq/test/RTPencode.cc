@@ -157,10 +157,6 @@ void stereoInterleave(unsigned char* data, int dataLen, int stride);
 #if ((defined CODEC_SPEEX_8)||(defined CODEC_SPEEX_16))
 	#include "SpeexInterface.h"
 #endif
-#ifdef CODEC_CELT_32
-#include "celt_interface.h"
-#endif
-
 
 /***********************************/
 /* Global codec instance variables */
@@ -232,10 +228,6 @@ WebRtcVadInst *VAD_inst[2];
 #ifdef CODEC_SPEEX_16
 	SPEEX_encinst_t *SPEEX16enc_inst[2];
 #endif
-#ifdef CODEC_CELT_32
-  CELT_encinst_t *CELT32enc_inst[2];
-#endif
-
 
 int main(int argc, char* argv[])
 {
@@ -372,9 +364,6 @@ int main(int argc, char* argv[])
 #endif
 #ifdef CODEC_SPEEX_16
 		printf("             : speex16      speex coder (16 kHz)\n");
-#endif
-#ifdef CODEC_CELT_32
-    printf("             : celt32       celt coder (32 kHz)\n");
 #endif
 #ifdef CODEC_RED
 #ifdef CODEC_G711
@@ -855,11 +844,6 @@ void NetEQTest_GetCodec_and_PT(char * name, webrtc::NetEqDecoder *codec, int *PT
 		*codec=webrtc::kDecoderISACswb;
 		*PT=NETEQ_CODEC_ISACSWB_PT;
 	}
-  else if(!strcmp(name,"celt32")){
-    *fs=32000;
-    *codec=webrtc::kDecoderCELT_32;
-    *PT=NETEQ_CODEC_CELT32_PT;
-  }
     else if(!strcmp(name,"red_pcm")){
 		*codec=webrtc::kDecoderPCMa;
 		*PT=NETEQ_CODEC_PCMA_PT; /* this will be the PT for the sub-headers */
@@ -1028,26 +1012,6 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder, int enc_frameSize, int bit
             if (ok!=0) exit(0);
         } else {
             printf("\nError - Speex16 called with sample frequency other than 16 kHz.\n\n");
-        }
-        break;
-#endif
-#ifdef CODEC_CELT_32
-    case webrtc::kDecoderCELT_32 :
-        if (sampfreq==32000) {
-            if (enc_frameSize==320) {
-                ok=WebRtcCelt_CreateEnc(&CELT32enc_inst[k], 1 /*mono*/);
-                if (ok!=0) {
-                    printf("Error: Couldn't allocate memory for Celt encoding instance\n");
-                    exit(0);
-                }
-            } else {
-                printf("\nError: Celt only supports 10 ms!!\n\n");
-                exit(0);
-            }
-            ok=WebRtcCelt_EncoderInit(CELT32enc_inst[k],  1 /*mono*/, 48000 /*bitrate*/);
-            if (ok!=0) exit(0);
-        } else {
-          printf("\nError - Celt32 called with sample frequency other than 32 kHz.\n\n");
         }
         break;
 #endif
@@ -1439,11 +1403,6 @@ int NetEQTest_free_coders(webrtc::NetEqDecoder coder, int numChannels) {
             WebRtcSpeex_FreeEnc(SPEEX16enc_inst[k]);
             break;
 #endif
-#ifdef CODEC_CELT_32
-        case webrtc::kDecoderCELT_32 :
-            WebRtcCelt_FreeEnc(CELT32enc_inst[k]);
-            break;
-#endif
 
 #ifdef CODEC_G722_1_16
         case webrtc::kDecoderG722_1_16 :
@@ -1655,21 +1614,6 @@ int NetEQTest_encode(int coder, int16_t *indata, int frameLen, unsigned char * e
             }
         }
 #endif
-#ifdef CODEC_CELT_32
-        else if (coder==webrtc::kDecoderCELT_32) { /* Celt */
-            int encodedLen = 0;
-            cdlen = 0;
-            while (cdlen <= 0) {
-                cdlen = WebRtcCelt_Encode(CELT32enc_inst[k], &indata[encodedLen], encoded);
-                encodedLen += 10*32; /* 10 ms */
-            }
-            if( (encodedLen != frameLen) || cdlen < 0) {
-                printf("Error encoding Celt frame!\n");
-                exit(0);
-            }
-        }
-#endif
-
         indata += frameLen;
         encoded += cdlen;
         totalLen += cdlen;

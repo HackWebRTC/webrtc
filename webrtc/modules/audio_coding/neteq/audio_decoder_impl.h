@@ -216,23 +216,6 @@ class AudioDecoderG722Stereo : public AudioDecoder {
 };
 #endif
 
-#ifdef WEBRTC_CODEC_CELT
-class AudioDecoderCelt : public AudioDecoder {
- public:
-  explicit AudioDecoderCelt(int num_channels);
-  virtual ~AudioDecoderCelt();
-
-  virtual int Decode(const uint8_t* encoded, size_t encoded_len,
-                     int16_t* decoded, SpeechType* speech_type);
-  virtual int Init();
-  virtual bool HasDecodePlc() const;
-  virtual int DecodePlc(int num_frames, int16_t* decoded);
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderCelt);
-};
-#endif
-
 #ifdef WEBRTC_CODEC_OPUS
 class AudioDecoderOpus : public AudioDecoder {
  public:
@@ -309,8 +292,6 @@ enum NetEqDecoder {
   kDecoderArbitrary,
   kDecoderOpus,
   kDecoderOpus_2ch,
-  kDecoderCELT_32,
-  kDecoderCELT_32_2ch,
 };
 
 // Returns true if |codec_type| is supported.

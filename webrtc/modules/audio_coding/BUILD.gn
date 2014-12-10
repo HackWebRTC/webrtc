@@ -22,8 +22,6 @@ source_set("audio_coding") {
     "main/acm2/acm_amr.h",
     "main/acm2/acm_amrwb.cc",
     "main/acm2/acm_amrwb.h",
-    "main/acm2/acm_celt.cc",
-    "main/acm2/acm_celt.h",
     "main/acm2/acm_cng.cc",
     "main/acm2/acm_cng.h",
     "main/acm2/acm_codec_database.cc",

@@ -63,12 +63,6 @@ class ACMCodecDB {
 #ifdef WEBRTC_CODEC_AMRWB
     , kGSMAMRWB
 #endif
-#ifdef WEBRTC_CODEC_CELT
-    // Mono
-    , kCELT32
-    // Stereo
-    , kCELT32_2ch
-#endif
 #ifdef WEBRTC_CODEC_G722
     // Mono
     , kG722
@@ -145,12 +139,6 @@ class ACMCodecDB {
 #endif
 #ifndef WEBRTC_CODEC_AMRWB
   enum {kGSMAMRWB = -1};
-#endif
-#ifndef WEBRTC_CODEC_CELT
-  // Mono
-  enum {kCELT32 = -1};
-  // Stereo
-  enum {kCELT32_2ch = -1};
 #endif
 #ifndef WEBRTC_CODEC_G722
   // Mono
