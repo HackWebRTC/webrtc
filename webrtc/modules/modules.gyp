@@ -102,6 +102,7 @@
             '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
+            'audio_coding/codecs/cng/audio_encoder_cng_unittest.cc',
             'audio_coding/main/acm2/acm_opus_unittest.cc',
             'audio_coding/main/acm2/acm_receiver_unittest.cc',
             'audio_coding/main/acm2/acm_receiver_unittest_oldapi.cc',
