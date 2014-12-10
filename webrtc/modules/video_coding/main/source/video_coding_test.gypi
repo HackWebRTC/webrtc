@@ -27,7 +27,6 @@
         # headers
         '../test/codec_database_test.h',
         '../test/generic_codec_test.h',
-        '../test/jitter_estimate_test.h',
         '../test/media_opt_test.h',
         '../test/mt_test_common.h',
         '../test/normal_test.h',
