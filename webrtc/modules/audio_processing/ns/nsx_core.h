@@ -93,7 +93,7 @@ typedef struct NsxInst_t_ {
   int16_t                 histSpecDiff[HIST_PAR_EST];
 
   // Quantities for high band estimate.
-  int16_t                 dataBufHBFX[ANAL_BLOCKL_MAX];  // Q0
+  int16_t                 dataBufHBFX[NUM_HIGH_BANDS_MAX][ANAL_BLOCKL_MAX];
 
   int                     qNoise;
   int                     prevQNoise;
@@ -155,25 +155,20 @@ int WebRtcNsx_set_policy_core(NsxInst_t* inst, int mode);
  *
  * Input:
  *      - inst          : Instance that should be initialized
- *      - inFrameLow    : Input speech frame for lower band
- *      - inFrameHigh   : Input speech frame for higher band
+ *      - inFrame       : Input speech frame for each band
+ *      - num_bands     : Number of bands
  *
  * Output:
  *      - inst          : Updated instance
- *      - outFrameLow   : Output speech frame for lower band
- *      - outFrameHigh  : Output speech frame for higher band
- *
- * Return value         :  0 - OK
- *                        -1 - Error
+ *      - outFrame      : Output speech frame for each band
  */
-int WebRtcNsx_ProcessCore(NsxInst_t* inst,
-                          short* inFrameLow,
-                          short* inFrameHigh,
-                          short* outFrameLow,
-                          short* outFrameHigh);
+void WebRtcNsx_ProcessCore(NsxInst_t* inst,
+                           const short* const* inFrame,
+                           int num_bands,
+                           short* const* outFrame);
 
 /****************************************************************************
- * Some function pointers, for internal functions shared by ARM NEON and 
+ * Some function pointers, for internal functions shared by ARM NEON and
  * generic C code.
  */
 // Noise Estimation.

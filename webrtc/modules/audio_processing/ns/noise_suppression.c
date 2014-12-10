@@ -42,14 +42,15 @@ int WebRtcNs_set_policy(NsHandle* NS_inst, int mode) {
   return WebRtcNs_set_policy_core((NSinst_t*) NS_inst, mode);
 }
 
-int WebRtcNs_Analyze(NsHandle* NS_inst, float* spframe) {
-  return WebRtcNs_AnalyzeCore((NSinst_t*) NS_inst, spframe);
+void WebRtcNs_Analyze(NsHandle* NS_inst, const float* spframe) {
+  WebRtcNs_AnalyzeCore((NSinst_t*) NS_inst, spframe);
 }
 
-int WebRtcNs_Process(NsHandle* NS_inst, float* spframe, float* spframe_H,
-                     float* outframe, float* outframe_H) {
-  return WebRtcNs_ProcessCore(
-      (NSinst_t*) NS_inst, spframe, spframe_H, outframe, outframe_H);
+void WebRtcNs_Process(NsHandle* NS_inst,
+                      const float* const* spframe,
+                      int num_bands,
+                      float* const* outframe) {
+  WebRtcNs_ProcessCore((NSinst_t*)NS_inst, spframe, num_bands, outframe);
 }
 
 float WebRtcNs_prior_speech_probability(NsHandle* handle) {

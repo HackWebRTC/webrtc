@@ -95,7 +95,7 @@ int EchoControlMobileImpl::ProcessRenderAudio(const AudioBuffer* audio) {
       Handle* my_handle = static_cast<Handle*>(handle(handle_index));
       err = WebRtcAecm_BufferFarend(
           my_handle,
-          audio->split_data_const(j, kBand0To8kHz),
+          audio->split_bands_const(j)[kBand0To8kHz],
           static_cast<int16_t>(audio->samples_per_split_channel()));
 
       if (err != apm_->kNoError) {
@@ -129,7 +129,7 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
     // TODO(ajm): improve how this works, possibly inside AECM.
     //            This is kind of hacked up.
     const int16_t* noisy = audio->low_pass_reference(i);
-    const int16_t* clean = audio->split_data_const(i, kBand0To8kHz);
+    const int16_t* clean = audio->split_bands_const(i)[kBand0To8kHz];
     if (noisy == NULL) {
       noisy = clean;
       clean = NULL;
@@ -140,7 +140,7 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
           my_handle,
           noisy,
           clean,
-          audio->split_data(i, kBand0To8kHz),
+          audio->split_bands(i)[kBand0To8kHz],
           static_cast<int16_t>(audio->samples_per_split_channel()),
           apm_->stream_delay_ms());
 

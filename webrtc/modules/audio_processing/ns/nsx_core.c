@@ -637,7 +637,7 @@ int32_t WebRtcNsx_InitCore(NsxInst_t* inst, uint32_t fs) {
   //
 
   // Initialization of struct
-  if (fs == 8000 || fs == 16000 || fs == 32000) {
+  if (fs == 8000 || fs == 16000 || fs == 32000 || fs == 48000) {
     inst->fs = fs;
   } else {
     return -1;
@@ -651,15 +651,7 @@ int32_t WebRtcNsx_InitCore(NsxInst_t* inst, uint32_t fs) {
     inst->thresholdLogLrt = 131072; //default threshold for LRT feature
     inst->maxLrt = 0x0040000;
     inst->minLrt = 52429;
-  } else if (fs == 16000) {
-    inst->blockLen10ms = 160;
-    inst->anaLen = 256;
-    inst->stages = 8;
-    inst->window = kBlocks160w256x;
-    inst->thresholdLogLrt = 212644; //default threshold for LRT feature
-    inst->maxLrt = 0x0080000;
-    inst->minLrt = 104858;
-  } else if (fs == 32000) {
+  } else {
     inst->blockLen10ms = 160;
     inst->anaLen = 256;
     inst->stages = 8;
@@ -683,7 +675,8 @@ int32_t WebRtcNsx_InitCore(NsxInst_t* inst, uint32_t fs) {
   WebRtcSpl_ZerosArrayW16(inst->synthesisBuffer, ANAL_BLOCKL_MAX);
 
   // for HB processing
-  WebRtcSpl_ZerosArrayW16(inst->dataBufHBFX, ANAL_BLOCKL_MAX);
+  WebRtcSpl_ZerosArrayW16(inst->dataBufHBFX[0],
+                          NUM_HIGH_BANDS_MAX * ANAL_BLOCKL_MAX);
   // for quantile noise estimation
   WebRtcSpl_ZerosArrayW16(inst->noiseEstQuantile, HALF_ANAL_BLOCKL);
   for (i = 0; i < SIMULT * HALF_ANAL_BLOCKL; i++) {
@@ -1502,8 +1495,10 @@ void WebRtcNsx_DataSynthesis(NsxInst_t* inst, short* outFrame) {
   WebRtcNsx_SynthesisUpdate(inst, outFrame, gainFactor);
 }
 
-int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFrameHB,
-                          short* outFrame, short* outFrameHB) {
+void WebRtcNsx_ProcessCore(NsxInst_t* inst,
+                           const short* const* speechFrame,
+                           int num_bands,
+                           short* const* outFrame) {
   // main routine for noise suppression
 
   uint32_t tmpU32no1, tmpU32no2, tmpU32no3;
@@ -1535,7 +1530,7 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
   int16_t avgProbSpeechHB, gainModHB, avgFilterGainHB, gainTimeDomainHB;
   int16_t pink_noise_exp_avg = 0;
 
-  int i;
+  int i, j;
   int nShifts, postShifts;
   int norm32no1, norm32no2;
   int flag, sign;
@@ -1553,37 +1548,46 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
 #ifdef NS_FILEDEBUG
   if (fwrite(spframe, sizeof(short),
              inst->blockLen10ms, inst->infile) != inst->blockLen10ms) {
-    return -1;
+    assert(false);
   }
 #endif
 
   // Check that initialization has been done
-  if (inst->initFlag != 1) {
-    return -1;
-  }
-  // Check for valid pointers based on sampling rate
-  if ((inst->fs == 32000) && (speechFrameHB == NULL)) {
-    return -1;
+  assert(inst->initFlag == 1);
+  assert((num_bands - 1) <= NUM_HIGH_BANDS_MAX);
+
+  const short* const* speechFrameHB = NULL;
+  short* const* outFrameHB = NULL;
+  int num_high_bands = 0;
+  if (num_bands > 1) {
+    speechFrameHB = &speechFrame[1];
+    outFrameHB = &outFrame[1];
+    num_high_bands = num_bands - 1;
   }
 
   // Store speechFrame and transform to frequency domain
-  WebRtcNsx_DataAnalysis(inst, speechFrame, magnU16);
+  WebRtcNsx_DataAnalysis(inst, (short*)speechFrame[0], magnU16);
 
   if (inst->zeroInputSignal) {
-    WebRtcNsx_DataSynthesis(inst, outFrame);
+    WebRtcNsx_DataSynthesis(inst, outFrame[0]);
 
-    if (inst->fs == 32000) {
+    if (num_bands > 1) {
       // update analysis buffer for H band
       // append new data to buffer FX
-      WEBRTC_SPL_MEMCPY_W16(inst->dataBufHBFX, inst->dataBufHBFX + inst->blockLen10ms,
-                            inst->anaLen - inst->blockLen10ms);
-      WEBRTC_SPL_MEMCPY_W16(inst->dataBufHBFX + inst->anaLen - inst->blockLen10ms,
-                            speechFrameHB, inst->blockLen10ms);
-      for (i = 0; i < inst->blockLen10ms; i++) {
-        outFrameHB[i] = inst->dataBufHBFX[i]; // Q0
+      for (i = 0; i < num_high_bands; ++i) {
+        WEBRTC_SPL_MEMCPY_W16(inst->dataBufHBFX[i],
+                              inst->dataBufHBFX[i] + inst->blockLen10ms,
+                              inst->anaLen - inst->blockLen10ms);
+        WEBRTC_SPL_MEMCPY_W16(
+            inst->dataBufHBFX[i] + inst->anaLen - inst->blockLen10ms,
+            speechFrameHB[i],
+            inst->blockLen10ms);
+        for (j = 0; j < inst->blockLen10ms; j++) {
+          outFrameHB[i][j] = inst->dataBufHBFX[i][j]; // Q0
+        }
       }
     }  // end of H band gain computation
-    return 0;
+    return;
   }
 
   // Update block index when we have something to process
@@ -2022,21 +2026,28 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
     }
   }
 
-  WebRtcNsx_DataSynthesis(inst, outFrame);
+  WebRtcNsx_DataSynthesis(inst, outFrame[0]);
 #ifdef NS_FILEDEBUG
   if (fwrite(outframe, sizeof(short),
              inst->blockLen10ms, inst->outfile) != inst->blockLen10ms) {
-    return -1;
+    assert(false);
   }
 #endif
 
   //for H band:
   // only update data buffer, then apply time-domain gain is applied derived from L band
-  if (inst->fs == 32000) {
+  if (num_bands > 1) {
     // update analysis buffer for H band
     // append new data to buffer FX
-    WEBRTC_SPL_MEMCPY_W16(inst->dataBufHBFX, inst->dataBufHBFX + inst->blockLen10ms, inst->anaLen - inst->blockLen10ms);
-    WEBRTC_SPL_MEMCPY_W16(inst->dataBufHBFX + inst->anaLen - inst->blockLen10ms, speechFrameHB, inst->blockLen10ms);
+    for (i = 0; i < num_high_bands; ++i) {
+      WEBRTC_SPL_MEMCPY_W16(inst->dataBufHBFX[i],
+                            inst->dataBufHBFX[i] + inst->blockLen10ms,
+                            inst->anaLen - inst->blockLen10ms);
+      WEBRTC_SPL_MEMCPY_W16(
+          inst->dataBufHBFX[i] + inst->anaLen - inst->blockLen10ms,
+          speechFrameHB[i],
+          inst->blockLen10ms);
+    }
     // range for averaging low band quantities for H band gain
 
     gainTimeDomainHB = 16384; // 16384 = Q14(1.0)
@@ -2094,11 +2105,13 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
 
 
     //apply gain
-    for (i = 0; i < inst->blockLen10ms; i++) {
-      outFrameHB[i]
-        = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(gainTimeDomainHB, inst->dataBufHBFX[i], 14); // Q0
+    for (i = 0; i < num_high_bands; ++i) {
+      for (j = 0; j < inst->blockLen10ms; j++) {
+        outFrameHB[i][j] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(
+            gainTimeDomainHB,
+            inst->dataBufHBFX[i][j],
+            14); // Q0
+      }
     }
   }  // end of H band gain computation
-
-  return 0;
 }

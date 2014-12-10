@@ -65,6 +65,7 @@ AudioBuffer::AudioBuffer(int input_samples_per_channel,
     proc_samples_per_channel_(process_samples_per_channel),
     num_proc_channels_(num_process_channels),
     output_samples_per_channel_(output_samples_per_channel),
+    num_bands_(1),
     samples_per_split_channel_(proc_samples_per_channel_),
     mixed_low_pass_valid_(false),
     reference_copied_(false),
@@ -111,6 +112,7 @@ AudioBuffer::AudioBuffer(int input_samples_per_channel,
   if (proc_samples_per_channel_ == kSamplesPer32kHzChannel ||
       proc_samples_per_channel_ == kSamplesPer48kHzChannel) {
     samples_per_split_channel_ = kSamplesPer16kHzChannel;
+    num_bands_ = proc_samples_per_channel_ / samples_per_split_channel_;
     split_channels_.push_back(new IFChannelBuffer(samples_per_split_channel_,
                                                   num_proc_channels_));
     split_channels_.push_back(new IFChannelBuffer(samples_per_split_channel_,
@@ -121,6 +123,8 @@ AudioBuffer::AudioBuffer(int input_samples_per_channel,
                                                     num_proc_channels_));
     }
   }
+  bands_.reset(new int16_t*[num_proc_channels_ * kMaxNumBands]);
+  bands_f_.reset(new float*[num_proc_channels_ * kMaxNumBands]);
 }
 
 AudioBuffer::~AudioBuffer() {}
@@ -216,14 +220,28 @@ int16_t* const* AudioBuffer::channels() {
   return channels_->ibuf()->channels();
 }
 
-const int16_t* AudioBuffer::split_data_const(int channel, Band band) const {
-  const int16_t* const* chs = split_channels_const(band);
-  return chs ? chs[channel] : NULL;
+const int16_t* const* AudioBuffer::split_bands_const(int channel) const {
+  // This is necessary to make sure that the int16_t data is up to date in the
+  // IFChannelBuffer.
+  // TODO(aluebs): Having to depend on this to get the updated data is bug
+  // prone. One solution is to have ChannelBuffer track the bands as well.
+  for (int i = 0; i < kMaxNumBands; ++i) {
+    int16_t* const* channels =
+        const_cast<int16_t* const*>(split_channels_const(static_cast<Band>(i)));
+    bands_[kMaxNumBands * channel + i] = channels ? channels[channel] : NULL;
+  }
+  return &bands_[kMaxNumBands * channel];
 }
 
-int16_t* AudioBuffer::split_data(int channel, Band band) {
-  int16_t* const* chs = split_channels(band);
-  return chs ? chs[channel] : NULL;
+int16_t* const* AudioBuffer::split_bands(int channel) {
+  mixed_low_pass_valid_ = false;
+  // This is necessary to make sure that the int16_t data is up to date and the
+  // float data is marked as invalid in the IFChannelBuffer.
+  for (int i = 0; i < kMaxNumBands; ++i) {
+    int16_t* const* channels = split_channels(static_cast<Band>(i));
+    bands_[kMaxNumBands * channel + i] = channels ? channels[channel] : NULL;
+  }
+  return &bands_[kMaxNumBands * channel];
 }
 
 const int16_t* const* AudioBuffer::split_channels_const(Band band) const {
@@ -260,14 +278,28 @@ float* const* AudioBuffer::channels_f() {
   return channels_->fbuf()->channels();
 }
 
-const float* AudioBuffer::split_data_const_f(int channel, Band band) const {
-  const float* const* chs = split_channels_const_f(band);
-  return chs ? chs[channel] : NULL;
+const float* const* AudioBuffer::split_bands_const_f(int channel) const {
+  // This is necessary to make sure that the float data is up to date in the
+  // IFChannelBuffer.
+  for (int i = 0; i < kMaxNumBands; ++i) {
+    float* const* channels =
+        const_cast<float* const*>(split_channels_const_f(static_cast<Band>(i)));
+    bands_f_[kMaxNumBands * channel + i] = channels ? channels[channel] : NULL;
+
+  }
+  return &bands_f_[kMaxNumBands * channel];
 }
 
-float* AudioBuffer::split_data_f(int channel, Band band) {
-  float* const* chs = split_channels_f(band);
-  return chs ? chs[channel] : NULL;
+float* const* AudioBuffer::split_bands_f(int channel) {
+  mixed_low_pass_valid_ = false;
+  // This is necessary to make sure that the float data is up to date and the
+  // int16_t data is marked as invalid in the IFChannelBuffer.
+  for (int i = 0; i < kMaxNumBands; ++i) {
+    float* const* channels = split_channels_f(static_cast<Band>(i));
+    bands_f_[kMaxNumBands * channel + i] = channels ? channels[channel] : NULL;
+
+  }
+  return &bands_f_[kMaxNumBands * channel];
 }
 
 const float* const* AudioBuffer::split_channels_const_f(Band band) const {
@@ -292,7 +324,7 @@ const int16_t* AudioBuffer::mixed_low_pass_data() {
   assert(num_proc_channels_ == 1 || num_proc_channels_ == 2);
 
   if (num_proc_channels_ == 1) {
-    return split_data_const(0, kBand0To8kHz);
+    return split_bands_const(0)[kBand0To8kHz];
   }
 
   if (!mixed_low_pass_valid_) {
@@ -300,8 +332,8 @@ const int16_t* AudioBuffer::mixed_low_pass_data() {
       mixed_low_pass_channels_.reset(
           new ChannelBuffer<int16_t>(samples_per_split_channel_, 1));
     }
-    StereoToMono(split_data_const(0, kBand0To8kHz),
-                 split_data_const(1, kBand0To8kHz),
+    StereoToMono(split_bands_const(0)[kBand0To8kHz],
+                 split_bands_const(1)[kBand0To8kHz],
                  mixed_low_pass_channels_->data(),
                  samples_per_split_channel_);
     mixed_low_pass_valid_ = true;
@@ -344,6 +376,10 @@ int AudioBuffer::samples_per_split_channel() const {
 int AudioBuffer::samples_per_keyboard_channel() const {
   // We don't resample the keyboard channel.
   return input_samples_per_channel_;
+}
+
+int AudioBuffer::num_bands() const {
+  return num_bands_;
 }
 
 // TODO(andrew): Do deinterleaving and mixing in one step?
@@ -404,7 +440,7 @@ void AudioBuffer::CopyLowPassToReference() {
                                    num_proc_channels_));
   }
   for (int i = 0; i < num_proc_channels_; i++) {
-    low_pass_reference_channels_->CopyFrom(split_data_const(i, kBand0To8kHz),
+    low_pass_reference_channels_->CopyFrom(split_bands_const(i)[kBand0To8kHz],
                                            i);
   }
 }

@@ -27,6 +27,7 @@ namespace webrtc {
 class PushSincResampler;
 class IFChannelBuffer;
 
+static const int kMaxNumBands = 3;
 enum Band {
   kBand0To8kHz = 0,
   kBand8To16kHz = 1,
@@ -47,6 +48,7 @@ class AudioBuffer {
   int samples_per_channel() const;
   int samples_per_split_channel() const;
   int samples_per_keyboard_channel() const;
+  int num_bands() const;
 
   // Sample array accessors. Channels are guaranteed to be stored contiguously
   // in memory. Prefer to use the const variants of each accessor when
@@ -55,8 +57,8 @@ class AudioBuffer {
   const int16_t* data_const(int channel) const;
   int16_t* const* channels();
   const int16_t* const* channels_const() const;
-  int16_t* split_data(int channel, Band band);
-  const int16_t* split_data_const(int channel, Band band) const;
+  int16_t* const* split_bands(int channel);
+  const int16_t* const* split_bands_const(int channel) const;
   int16_t* const* split_channels(Band band);
   const int16_t* const* split_channels_const(Band band) const;
 
@@ -71,8 +73,8 @@ class AudioBuffer {
   const float* data_const_f(int channel) const;
   float* const* channels_f();
   const float* const* channels_const_f() const;
-  float* split_data_f(int channel, Band band);
-  const float* split_data_const_f(int channel, Band band) const;
+  float* const* split_bands_f(int channel);
+  const float* const* split_bands_const_f(int channel) const;
   float* const* split_channels_f(Band band);
   const float* const* split_channels_const_f(Band band) const;
 
@@ -110,6 +112,7 @@ class AudioBuffer {
   const int proc_samples_per_channel_;
   const int num_proc_channels_;
   const int output_samples_per_channel_;
+  int num_bands_;
   int samples_per_split_channel_;
   bool mixed_low_pass_valid_;
   bool reference_copied_;
@@ -118,6 +121,8 @@ class AudioBuffer {
   const float* keyboard_data_;
   scoped_ptr<IFChannelBuffer> channels_;
   ScopedVector<IFChannelBuffer> split_channels_;
+  scoped_ptr<int16_t*[]> bands_;
+  scoped_ptr<float*[]> bands_f_;
   scoped_ptr<SplittingFilter> splitting_filter_;
   scoped_ptr<ChannelBuffer<int16_t> > mixed_low_pass_channels_;
   scoped_ptr<ChannelBuffer<int16_t> > low_pass_reference_channels_;

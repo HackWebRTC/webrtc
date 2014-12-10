@@ -108,7 +108,8 @@ typedef struct NSinst_t_ {
   int histSpecDiff[HIST_PAR_EST];
   // Quantities for high band estimate.
   float speechProb[HALF_ANAL_BLOCKL];  // Final speech/noise prob: prior + LRT.
-  float dataBufHB[ANAL_BLOCKL_MAX];  // Buffering data for HB.
+  // Buffering data for HB.
+  float dataBufHB[NUM_HIGH_BANDS_MAX][ANAL_BLOCKL_MAX];
 
 } NSinst_t;
 
@@ -161,11 +162,8 @@ int WebRtcNs_set_policy_core(NSinst_t* self, int mode);
  *
  * Output:
  *      - self          : Updated instance
- *
- * Return value         :  0 - OK
- *                        -1 - Error
  */
-int WebRtcNs_AnalyzeCore(NSinst_t* self, float* speechFrame);
+void WebRtcNs_AnalyzeCore(NSinst_t* self, const float* speechFrame);
 
 /****************************************************************************
  * WebRtcNs_ProcessCore
@@ -174,22 +172,17 @@ int WebRtcNs_AnalyzeCore(NSinst_t* self, float* speechFrame);
  *
  * Input:
  *      - self          : Instance that should be initialized
- *      - inFrameLow    : Input speech frame for lower band
- *      - inFrameHigh   : Input speech frame for higher band
+ *      - inFrame       : Input speech frame for each band
+ *      - num_bands     : Number of bands
  *
  * Output:
  *      - self          : Updated instance
- *      - outFrameLow   : Output speech frame for lower band
- *      - outFrameHigh  : Output speech frame for higher band
- *
- * Return value         :  0 - OK
- *                        -1 - Error
+ *      - outFrame      : Output speech frame for each band
  */
-int WebRtcNs_ProcessCore(NSinst_t* self,
-                         float* inFrameLow,
-                         float* inFrameHigh,
-                         float* outFrameLow,
-                         float* outFrameHigh);
+void WebRtcNs_ProcessCore(NSinst_t* self,
+                         const float* const* inFrame,
+                         int num_bands,
+                         float* const* outFrame);
 
 #ifdef __cplusplus
 }

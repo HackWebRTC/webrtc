@@ -45,9 +45,9 @@ int WebRtcNsx_set_policy(NsxHandle* nsxInst, int mode) {
   return WebRtcNsx_set_policy_core((NsxInst_t*)nsxInst, mode);
 }
 
-int WebRtcNsx_Process(NsxHandle* nsxInst, short* speechFrame,
-                      short* speechFrameHB, short* outFrame,
-                      short* outFrameHB) {
-  return WebRtcNsx_ProcessCore(
-      (NsxInst_t*)nsxInst, speechFrame, speechFrameHB, outFrame, outFrameHB);
+void WebRtcNsx_Process(NsxHandle* nsxInst,
+                      const short* const* speechFrame,
+                      int num_bands,
+                      short* const* outFrame) {
+  WebRtcNsx_ProcessCore((NsxInst_t*)nsxInst, speechFrame, num_bands, outFrame);
 }

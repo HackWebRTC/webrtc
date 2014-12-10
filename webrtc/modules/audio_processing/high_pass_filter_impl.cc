@@ -123,7 +123,7 @@ int HighPassFilterImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   for (int i = 0; i < num_handles(); i++) {
     Handle* my_handle = static_cast<Handle*>(handle(i));
     err = Filter(my_handle,
-                 audio->split_data(i, kBand0To8kHz),
+                 audio->split_bands(i)[kBand0To8kHz],
                  audio->samples_per_split_channel());
 
     if (err != apm_->kNoError) {
