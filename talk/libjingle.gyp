@@ -396,6 +396,8 @@
         'media/other/linphonemediaengine.h',
         'media/sctp/sctpdataengine.cc',
         'media/sctp/sctpdataengine.h',
+        'media/webrtc/simulcast.cc',
+        'media/webrtc/simulcast.h',
         'media/webrtc/webrtccommon.h',
         'media/webrtc/webrtcexport.h',
         'media/webrtc/webrtcmediaengine.cc',

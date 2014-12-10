@@ -219,6 +219,7 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   rtc::scoped_ptr<ViETraceWrapper> tracing_;
   WebRtcVoiceEngine* voice_engine_;
   rtc::scoped_ptr<webrtc::VideoRender> render_module_;
+  rtc::scoped_ptr<WebRtcVideoEncoderFactory> simulcast_encoder_factory_;
   WebRtcVideoEncoderFactory* encoder_factory_;
   WebRtcVideoDecoderFactory* decoder_factory_;
   std::vector<VideoCodec> video_codecs_;

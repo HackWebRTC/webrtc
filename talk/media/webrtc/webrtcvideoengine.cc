@@ -43,6 +43,7 @@
 #include "talk/media/base/videorenderer.h"
 #include "talk/media/devices/filevideocapturer.h"
 #include "talk/media/webrtc/constants.h"
+#include "talk/media/webrtc/simulcast.h"
 #include "talk/media/webrtc/webrtcpassthroughrender.h"
 #include "talk/media/webrtc/webrtctexturevideoframe.h"
 #include "talk/media/webrtc/webrtcvideocapturer.h"
@@ -64,6 +65,8 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/experiments.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
+#include "webrtc/modules/video_coding/codecs/vp8/vp8_factory.h"
 #include "webrtc/system_wrappers/interface/field_trial.h"
 
 namespace {
@@ -96,6 +99,58 @@ bool Changed(cricket::Settable<T> proposed,
              T* value) {
   return proposed.Get(value) && proposed != original;
 }
+
+// Wrap cricket::WebRtcVideoEncoderFactory as a webrtc::VideoEncoderFactory.
+class EncoderFactoryAdapter : public webrtc::VideoEncoderFactory {
+ public:
+  // EncoderFactoryAdapter doesn't take ownership of |factory|, which is owned
+  // by e.g. PeerConnectionFactory.
+  explicit EncoderFactoryAdapter(cricket::WebRtcVideoEncoderFactory* factory)
+      : factory_(factory) {}
+  virtual ~EncoderFactoryAdapter() {}
+
+  // Implement webrtc::VideoEncoderFactory.
+  virtual webrtc::VideoEncoder* Create() OVERRIDE {
+    return factory_->CreateVideoEncoder(webrtc::kVideoCodecVP8);
+  }
+
+  virtual void Destroy(webrtc::VideoEncoder* encoder) OVERRIDE {
+    return factory_->DestroyVideoEncoder(encoder);
+  }
+
+ private:
+  cricket::WebRtcVideoEncoderFactory* factory_;
+};
+
+// Wrap encoder factory to a simulcast encoder factory.
+class SimulcastEncoderFactory : public cricket::WebRtcVideoEncoderFactory {
+ public:
+  // SimulcastEncoderFactory doesn't take ownership of |factory|, which is owned
+  // by e.g. PeerConnectionFactory.
+  explicit SimulcastEncoderFactory(cricket::WebRtcVideoEncoderFactory* factory)
+     : factory_(factory) {}
+  virtual ~SimulcastEncoderFactory() {}
+
+  virtual webrtc::VideoEncoder* CreateVideoEncoder(
+      webrtc::VideoCodecType type) OVERRIDE {
+    ASSERT(type == webrtc::kVideoCodecVP8);
+    ASSERT(factory_ != NULL);
+    return new webrtc::SimulcastEncoderAdapter(
+        webrtc::scoped_ptr<webrtc::VideoEncoderFactory>(
+            new EncoderFactoryAdapter(factory_)).Pass());
+  }
+
+  virtual const std::vector<VideoCodec>& codecs() const OVERRIDE {
+    return factory_->codecs();
+  }
+
+  virtual void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) OVERRIDE {
+    delete encoder;
+  }
+
+ private:
+  cricket::WebRtcVideoEncoderFactory* factory_;
+};
 
 }  // namespace
 
@@ -1097,6 +1152,11 @@ WebRtcVideoEngine::~WebRtcVideoEngine() {
   if (initialized_) {
     Terminate();
   }
+
+  if (simulcast_encoder_factory_) {
+    SetExternalEncoderFactory(NULL);
+  }
+
   tracing_->SetTraceCallback(NULL);
   // Test to see if the media processor was deregistered properly.
   ASSERT(SignalMediaFrame.is_empty());
@@ -1615,6 +1675,20 @@ void WebRtcVideoEngine::SetExternalDecoderFactory(
 
 void WebRtcVideoEngine::SetExternalEncoderFactory(
     WebRtcVideoEncoderFactory* encoder_factory) {
+  // Deleted after WebRtcVideoEngine::SetExternalEncoderFactory is
+  // completed, which will remove the references to it.
+  rtc::scoped_ptr<WebRtcVideoEncoderFactory> old_factory(
+      simulcast_encoder_factory_.release());
+  if (encoder_factory) {
+    const std::vector<WebRtcVideoEncoderFactory::VideoCodec>& codecs =
+        encoder_factory->codecs();
+    if (codecs.size() == 1 && codecs[0].type == webrtc::kVideoCodecVP8) {
+      simulcast_encoder_factory_.reset(
+          new SimulcastEncoderFactory(encoder_factory));
+      encoder_factory = simulcast_encoder_factory_.get();
+    }
+  }
+
   if (encoder_factory_ == encoder_factory)
     return;
 
@@ -3010,6 +3084,13 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   VideoOptions original = options_;
   options_.SetAll(options);
 
+  bool use_simulcast_adapter;
+  if (options.use_simulcast_adapter.Get(&use_simulcast_adapter) &&
+      options.use_simulcast_adapter != original.use_simulcast_adapter) {
+    webrtc::VP8EncoderFactoryConfig::set_use_simulcast_adapter(
+        use_simulcast_adapter);
+  }
+
   // Set CPU options and codec options for all send channels.
   for (SendChannelMap::iterator iter = send_channels_.begin();
        iter != send_channels_.end(); ++iter) {
@@ -3775,6 +3856,8 @@ void WebRtcVideoMediaChannel::LogSendCodecChange(const std::string& reason) {
   if (send_rtx_type_ != -1) {
     LOG(LS_INFO) << "RTX payload type: " << send_rtx_type_;
   }
+
+  LogSimulcastSubstreams(vie_codec);
 }
 
 bool WebRtcVideoMediaChannel::SetReceiveCodecs(
@@ -4004,6 +4087,29 @@ bool WebRtcVideoMediaChannel::ConfigureVieCodecFromSendParams(
     }
   }
 
+  if (webrtc::kVideoCodecVP8 == codec.codecType) {
+    ConfigureSimulcastTemporalLayers(
+        kDefaultNumberOfTemporalLayers, &codec);
+    if (IsSimulcastStream(send_params.stream)) {
+      codec.codecSpecific.VP8.automaticResizeOn = false;
+      // TODO(pthatcher): Pass in options in VideoSendParams.
+      VideoOptions options;
+      GetOptions(&options);
+      if (ConferenceModeIsEnabled()) {
+        ConfigureSimulcastCodec(send_params.stream, options, &codec);
+      }
+    }
+
+    if (last_captured_frame_info.screencast) {
+      // Use existing bitrate if not in conference mode.
+      if (ConferenceModeIsEnabled()) {
+        ConfigureConferenceModeScreencastCodec(&codec);
+      }
+
+      DisableSimulcastCodec(&codec);
+    }
+  }
+
   *codec_out = codec;
   return true;
 }
@@ -4044,6 +4150,12 @@ void WebRtcVideoMediaChannel::SanitizeBitrates(
     if (current_target_bitrate > codec->startBitrate) {
       codec->startBitrate = current_target_bitrate;
     }
+  }
+
+  // Make sure the start bitrate is larger than lowest layer's min bitrate.
+  if (codec->numberOfSimulcastStreams > 1 &&
+      codec->startBitrate < codec->simulcastStream[0].minBitrate) {
+    codec->startBitrate = codec->simulcastStream[0].minBitrate;
   }
 }
 
@@ -4193,11 +4305,11 @@ bool WebRtcVideoMediaChannel::SetLimitedNumberOfSendSsrcs(
   return true;
 }
 
-bool WebRtcVideoMediaChannel::SetSendSsrcs(
-    int channel_id, const StreamParams& sp,
-    const webrtc::VideoCodec& codec) {
-  // TODO(pthatcher): Support more than one primary SSRC per stream.
-  return SetLimitedNumberOfSendSsrcs(channel_id, sp, 1);
+bool WebRtcVideoMediaChannel::SetSendSsrcs(int channel_id,
+                                           const StreamParams& sp,
+                                           const webrtc::VideoCodec& codec) {
+  size_t limit = codec.numberOfSimulcastStreams;
+  return SetLimitedNumberOfSendSsrcs(channel_id, sp, limit);
 }
 
 void WebRtcVideoMediaChannel::MaybeConnectCapturer(VideoCapturer* capturer) {

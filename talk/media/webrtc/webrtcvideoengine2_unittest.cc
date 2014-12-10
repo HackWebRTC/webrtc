@@ -31,6 +31,7 @@
 #include "talk/media/base/testutils.h"
 #include "talk/media/base/videoengine_unittest.h"
 #include "talk/media/webrtc/fakewebrtcvideoengine.h"
+#include "talk/media/webrtc/simulcast.h"
 #include "talk/media/webrtc/webrtcvideochannelfactory.h"
 #include "talk/media/webrtc/webrtcvideoengine2.h"
 #include "talk/media/webrtc/webrtcvideoengine2_unittest.h"
@@ -40,8 +41,13 @@
 #include "webrtc/video_encoder.h"
 
 namespace {
+static const int kDefaultQpMax = 56;
+static const int kDefaultFramerate = 30;
+static const int kMinBitrateBps = 30000;
+
 static const cricket::VideoCodec kVp8Codec720p(100, "VP8", 1280, 720, 30, 0);
 static const cricket::VideoCodec kVp8Codec360p(100, "VP8", 640, 360, 30, 0);
+static const cricket::VideoCodec kVp8Codec270p(100, "VP8", 480, 270, 30, 0);
 
 static const cricket::VideoCodec kVp8Codec(100, "VP8", 640, 400, 30, 0);
 static const cricket::VideoCodec kVp9Codec(101, "VP9", 640, 400, 30, 0);
@@ -51,6 +57,7 @@ static const cricket::VideoCodec kRedCodec(116, "red", 0, 0, 0, 0);
 static const cricket::VideoCodec kUlpfecCodec(117, "ulpfec", 0, 0, 0, 0);
 
 static const uint32 kSsrcs1[] = {1};
+static const uint32 kSsrcs3[] = {1, 2, 3};
 static const uint32 kRtxSsrcs1[] = {4};
 static const char kUnsupportedExtensionName[] =
     "urn:ietf:params:rtp-hdrext:unsupported";
@@ -1897,4 +1904,451 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsReportsUpperResolution) {
   EXPECT_EQ(90, info.senders[0].send_frame_height);
 }
 
+class WebRtcVideoEngine2SimulcastTest : public testing::Test {
+ public:
+  WebRtcVideoEngine2SimulcastTest()
+      : engine_codecs_(engine_.codecs()) {
+    assert(!engine_codecs_.empty());
+
+    bool codec_set = false;
+    for (size_t i = 0; i < engine_codecs_.size(); ++i) {
+      if (engine_codecs_[i].name == "red") {
+        default_red_codec_ = engine_codecs_[i];
+      } else if (engine_codecs_[i].name == "ulpfec") {
+        default_ulpfec_codec_ = engine_codecs_[i];
+      } else if (engine_codecs_[i].name == "rtx") {
+        default_rtx_codec_ = engine_codecs_[i];
+      } else if (!codec_set) {
+        default_codec_ = engine_codecs_[i];
+        codec_set = true;
+      }
+    }
+
+    assert(codec_set);
+  }
+
+ protected:
+  WebRtcVideoEngine2 engine_;
+  VideoCodec default_codec_;
+  VideoCodec default_red_codec_;
+  VideoCodec default_ulpfec_codec_;
+  VideoCodec default_rtx_codec_;
+  // TODO(pbos): Remove engine_codecs_ unless used a lot.
+  std::vector<VideoCodec> engine_codecs_;
+};
+
+class WebRtcVideoChannel2SimulcastTest : public WebRtcVideoEngine2SimulcastTest,
+                                        public WebRtcCallFactory {
+ public:
+  WebRtcVideoChannel2SimulcastTest() : fake_call_(NULL) {}
+
+  virtual void SetUp() OVERRIDE {
+    engine_.SetCallFactory(this);
+    engine_.Init(rtc::Thread::Current());
+    channel_.reset(engine_.CreateChannel(VideoOptions(), NULL));
+    ASSERT_TRUE(fake_call_ != NULL) << "Call not created through factory.";
+    last_ssrc_ = 123;
+  }
+
+ protected:
+  virtual webrtc::Call* CreateCall(
+      const webrtc::Call::Config& config) OVERRIDE {
+    assert(fake_call_ == NULL);
+    fake_call_ = new FakeCall(config);
+    return fake_call_;
+  }
+
+  void VerifySimulcastSettings(const VideoCodec& codec,
+                               VideoOptions::HighestBitrate bitrate_mode,
+                               size_t num_configured_streams,
+                               size_t expected_num_streams,
+                               SimulcastBitrateMode simulcast_bitrate_mode) {
+    cricket::VideoOptions options;
+    options.video_highest_bitrate.Set(bitrate_mode);
+    EXPECT_TRUE(channel_->SetOptions(options));
+
+    std::vector<VideoCodec> codecs;
+    codecs.push_back(codec);
+    ASSERT_TRUE(channel_->SetSendCodecs(codecs));
+
+    std::vector<uint32> ssrcs = MAKE_VECTOR(kSsrcs3);
+    assert(num_configured_streams <= ssrcs.size());
+    ssrcs.resize(num_configured_streams);
+
+    FakeVideoSendStream* stream =
+        AddSendStream(CreateSimStreamParams("cname", ssrcs));
+
+    std::vector<webrtc::VideoStream> video_streams = stream->GetVideoStreams();
+    ASSERT_EQ(expected_num_streams, video_streams.size());
+
+    std::vector<webrtc::VideoStream> expected_streams = GetSimulcastConfig(
+        num_configured_streams,
+        simulcast_bitrate_mode,
+        codec.width,
+        codec.height,
+        kMinBitrateBps,
+        0,
+        kDefaultQpMax,
+        codec.framerate != 0 ? codec.framerate : kDefaultFramerate);
+
+    ASSERT_EQ(expected_streams.size(), video_streams.size());
+
+    size_t num_streams = video_streams.size();
+    for (size_t i = 0; i < num_streams; ++i) {
+      EXPECT_EQ(expected_streams[i].width, video_streams[i].width);
+      EXPECT_EQ(expected_streams[i].height, video_streams[i].height);
+
+      EXPECT_GT(video_streams[i].max_framerate, 0);
+      EXPECT_EQ(expected_streams[i].max_framerate,
+                video_streams[i].max_framerate);
+
+      EXPECT_GT(video_streams[i].min_bitrate_bps, 0);
+      EXPECT_EQ(expected_streams[i].min_bitrate_bps,
+                video_streams[i].min_bitrate_bps);
+
+      EXPECT_GT(video_streams[i].target_bitrate_bps, 0);
+      EXPECT_EQ(expected_streams[i].target_bitrate_bps,
+                video_streams[i].target_bitrate_bps);
+
+      EXPECT_GT(video_streams[i].max_bitrate_bps, 0);
+      EXPECT_EQ(expected_streams[i].max_bitrate_bps,
+                video_streams[i].max_bitrate_bps);
+
+      EXPECT_GT(video_streams[i].max_qp, 0);
+      EXPECT_EQ(expected_streams[i].max_qp, video_streams[i].max_qp);
+
+      EXPECT_FALSE(expected_streams[i].temporal_layer_thresholds_bps.empty());
+      EXPECT_EQ(expected_streams[i].temporal_layer_thresholds_bps,
+                video_streams[i].temporal_layer_thresholds_bps);
+    }
+
+    EXPECT_EQ(kMinBitrateBps, video_streams[0].min_bitrate_bps);
+  }
+
+  FakeVideoSendStream* AddSendStream() {
+    return AddSendStream(StreamParams::CreateLegacy(last_ssrc_++));
+  }
+
+  FakeVideoSendStream* AddSendStream(const StreamParams& sp) {
+    size_t num_streams =
+        fake_call_->GetVideoSendStreams().size();
+    EXPECT_TRUE(channel_->AddSendStream(sp));
+    std::vector<FakeVideoSendStream*> streams =
+        fake_call_->GetVideoSendStreams();
+    EXPECT_EQ(num_streams + 1, streams.size());
+    return streams[streams.size() - 1];
+  }
+
+  std::vector<FakeVideoSendStream*> GetFakeSendStreams() {
+    return fake_call_->GetVideoSendStreams();
+  }
+
+  FakeVideoReceiveStream* AddRecvStream() {
+    return AddRecvStream(StreamParams::CreateLegacy(last_ssrc_++));
+  }
+
+  FakeVideoReceiveStream* AddRecvStream(const StreamParams& sp) {
+    size_t num_streams =
+        fake_call_->GetVideoReceiveStreams().size();
+    EXPECT_TRUE(channel_->AddRecvStream(sp));
+    std::vector<FakeVideoReceiveStream*> streams =
+        fake_call_->GetVideoReceiveStreams();
+    EXPECT_EQ(num_streams + 1, streams.size());
+    return streams[streams.size() - 1];
+  }
+
+  FakeCall* fake_call_;
+  rtc::scoped_ptr<VideoMediaChannel> channel_;
+  uint32 last_ssrc_;
+};
+
+TEST_F(WebRtcVideoChannel2SimulcastTest, SetSendCodecsWith2SimulcastStreams) {
+  VerifySimulcastSettings(kVp8Codec, VideoOptions::NORMAL, 2, 2, SBM_NORMAL);
+}
+
+TEST_F(WebRtcVideoChannel2SimulcastTest, SetSendCodecsWith3SimulcastStreams) {
+  VerifySimulcastSettings(
+      kVp8Codec720p, VideoOptions::NORMAL, 3, 3, SBM_NORMAL);
+}
+
+TEST_F(WebRtcVideoChannel2SimulcastTest,
+       SetSendCodecsWith2SimulcastStreamsHighBitrateMode) {
+  VerifySimulcastSettings(kVp8Codec, VideoOptions::HIGH, 2, 2, SBM_HIGH);
+}
+
+TEST_F(WebRtcVideoChannel2SimulcastTest,
+       SetSendCodecsWith3SimulcastStreamsHighBitrateMode) {
+  VerifySimulcastSettings(kVp8Codec720p, VideoOptions::HIGH, 3, 3, SBM_HIGH);
+}
+
+TEST_F(WebRtcVideoChannel2SimulcastTest,
+       SetSendCodecsWith2SimulcastStreamsVeryHighBitrateMode) {
+  VerifySimulcastSettings(
+      kVp8Codec, VideoOptions::VERY_HIGH, 2, 2, SBM_VERY_HIGH);
+}
+
+TEST_F(WebRtcVideoChannel2SimulcastTest,
+       SetSendCodecsWith3SimulcastStreamsVeryHighBitrateMode) {
+  VerifySimulcastSettings(
+      kVp8Codec720p, VideoOptions::VERY_HIGH, 3, 3, SBM_VERY_HIGH);
+}
+
+// Test that we normalize send codec format size in simulcast.
+TEST_F(WebRtcVideoChannel2SimulcastTest, SetSendCodecsWithOddSizeInSimulcast) {
+  cricket::VideoCodec codec(kVp8Codec270p);
+  codec.width += 1;
+  codec.height += 1;
+  VerifySimulcastSettings(codec, VideoOptions::NORMAL, 2, 2, SBM_NORMAL);
+}
+
+// Test that if we add a stream with RTX SSRC's, SSRC's get set correctly.
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_TestStreamWithRtx) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test that if we get too few ssrcs are given in AddSendStream(),
+// only supported sub-streams will be added.
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_TooFewSimulcastSsrcs) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test that even more than enough ssrcs are given in AddSendStream(),
+// only supported sub-streams will be added.
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_MoreThanEnoughSimulcastSscrs) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test that SetSendStreamFormat works well with simulcast.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_SetSendStreamFormatWithSimulcast) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test that simulcast send codec is reset on new video frame size.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_ResetSimulcastSendCodecOnNewFrameSize) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test that simulcast send codec is reset on new portait mode video frame.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_ResetSimulcastSendCodecOnNewPortaitFrame) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_SetBandwidthInConferenceWithSimulcast) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test that sending screencast frames in conference mode changes
+// bitrate.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_SetBandwidthScreencastInConference) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test AddSendStream with simulcast rejects bad StreamParams.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_AddSendStreamWithBadStreamParams) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test AddSendStream with simulcast sets ssrc and cname correctly.
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_AddSendStreamWithSimulcast) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test RemoveSendStream with simulcast.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_RemoveSendStreamWithSimulcast) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test AddSendStream after send codec has already been set will reset
+// send codec with simulcast settings.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_AddSimulcastStreamAfterSetSendCodec) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_GetStatsWithMultipleSsrcs) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test receiving channel(s) local ssrc is set to the same as the first
+// simulcast sending ssrc.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_AddSimulcastStreamAfterCreatingRecvChannels) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test 1:1 call never turn on simulcast.
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_NoSimulcastWith1on1) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test SetOptions with OPT_CONFERENCE flag.
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_SetOptionsWithConferenceMode) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test that two different streams can have different formats.
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_MultipleSendStreamsDifferentFormats) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_TestAdaptToOutputFormat) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_TestAdaptToCpuLoad) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_TestAdaptToCpuLoadDisabled) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_TestAdaptWithCpuOveruseObserver) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test that codec is not reset for every frame sent in non-conference and
+// non-screencast mode.
+TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_DontResetCodecOnSendFrame) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_UseSimulcastAdapterOnVp8OnlyFactory) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_DontUseSimulcastAdapterOnNoneVp8Factory) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoEngine2SimulcastTest,
+       DISABLED_DontUseSimulcastAdapterOnMultipleCodecsFactory) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_SimulcastSend_1280x800) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_SimulcastSend_1280x720) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_SimulcastSend_960x540) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_SimulcastSend_960x600) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_SimulcastSend_640x400) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_SimulcastSend_640x360) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_SimulcastSend_480x300) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoChannel2SimulcastTest,
+       DISABLED_DISABLED_SimulcastSend_480x270) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_SimulcastSend_320x200) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_SimulcastSend_320x180) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test reset send codec with simulcast.
+// Disabled per b/6773425
+TEST_F(WebRtcVideoChannel2SimulcastTest,
+       DISABLED_DISABLED_SimulcastResetSendCodec) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Test simulcast streams are decodeable with expected sizes.
+TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_SimulcastStreams) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Simulcast and resolution resizing should be turned off when screencasting
+// but not otherwise.
+TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_ScreencastRendering) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Ensures that the correct settings are applied to the codec when single
+// temporal layer screencasting is enabled, and that the correct simulcast
+// settings are reapplied when disabling screencasting.
+TEST_F(WebRtcVideoChannel2SimulcastTest,
+       DISABLED_OneTemporalLayerScreencastSettings) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
+
+// Ensures that the correct settings are applied to the codec when two temporal
+// layer screencasting is enabled, and that the correct simulcast settings are
+// reapplied when disabling screencasting.
+TEST_F(WebRtcVideoChannel2SimulcastTest,
+       DISABLED_TwoTemporalLayerScreencastSettings) {
+  // TODO(pbos): Implement.
+  FAIL() << "Not implemented.";
+}
 }  // namespace cricket

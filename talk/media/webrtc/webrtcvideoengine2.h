@@ -106,10 +106,16 @@ class DefaultUnsignalledSsrcHandler : public UnsignalledSsrcHandler {
   VideoRenderer* default_renderer_;
 };
 
+// TODO(pbos): Remove this class and just inline configuring code.
 class WebRtcVideoEncoderFactory2 {
  public:
   virtual ~WebRtcVideoEncoderFactory2();
   virtual std::vector<webrtc::VideoStream> CreateVideoStreams(
+      const VideoCodec& codec,
+      const VideoOptions& options,
+      size_t num_streams);
+
+  std::vector<webrtc::VideoStream> CreateSimulcastVideoStreams(
       const VideoCodec& codec,
       const VideoOptions& options,
       size_t num_streams);

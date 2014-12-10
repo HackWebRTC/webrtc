@@ -27,26 +27,32 @@
 
 #include "talk/media/base/constants.h"
 #include "talk/media/base/fakenetworkinterface.h"
+#include "talk/media/base/fakevideorenderer.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/testutils.h"
+#include "talk/media/base/videoadapter.h"
 #include "talk/media/base/videoengine_unittest.h"
 #include "talk/media/webrtc/fakewebrtcvideoengine.h"
+#include "talk/media/webrtc/simulcast.h"
+#include "talk/media/webrtc/webrtcvideoengine.h"
+#include "talk/media/webrtc/webrtcvideoframe.h"
+#include "talk/media/webrtc/webrtcvoiceengine.h"
+#include "talk/session/media/mediasession.h"
 #include "webrtc/base/fakecpumonitor.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stream.h"
-#include "talk/media/webrtc/webrtcvideoengine.h"
-#include "talk/media/webrtc/webrtcvideoframe.h"
-#include "talk/media/webrtc/webrtcvoiceengine.h"
-#include "talk/session/media/mediasession.h"
 #include "webrtc/system_wrappers/interface/trace.h"
+
 // Tests for the WebRtcVideoEngine/VideoChannel code.
 
 using cricket::kRtpTimestampOffsetHeaderExtension;
 using cricket::kRtpAbsoluteSenderTimeHeaderExtension;
 
 static const cricket::VideoCodec kVP8Codec720p(100, "VP8", 1280, 720, 30, 0);
+static const cricket::VideoCodec kVP8Codec360p(100, "VP8", 640, 360, 30, 0);
+static const cricket::VideoCodec kVP8Codec270p(100, "VP8", 480, 270, 30, 0);
 
 static const cricket::VideoCodec kVP8Codec(100, "VP8", 640, 400, 30, 0);
 static const cricket::VideoCodec kH264Codec(127, "H264", 640, 400, 30, 0);
@@ -2612,3 +2618,1893 @@ TEST_F(WebRtcVideoMediaChannelTest, DontResetSequenceNumbers) {
 
   EXPECT_EQ(seq_before, seq_after);
 }
+
+static const unsigned int kNumberOfTemporalLayers = 1;
+static const unsigned int kSimulcastNumberOfTemporalLayers = 3;
+static const unsigned int kSimStream0Bitrate = 100;
+static const unsigned int kSimStream0MaxBitrateBoosted = 200;
+static const unsigned int kSimStream0MaxBitrateXd = 200;
+static const unsigned int kSimStream0TargetBitrateBoosted = 150;
+static const unsigned int kSimStream0TargetBitrateXd = 150;
+static const unsigned int kSimStream1Bitrate = 350;
+static const unsigned int kSimStream1MaxBitrateBoosted = 450;
+static const unsigned int kSimStream1MaxBitrateXd = 450;
+static const unsigned int kSimStream1TargetBitrateBoosted = 350;
+static const unsigned int kSimStream1TargetBitrateXd = 350;
+static const unsigned int kSimStream2Bitrate = 500;
+static const unsigned int kSimStream2MaxBitrateBoosted = 700;
+static const unsigned int kSimStream2MaxBitrateXd = 700;
+static const unsigned int kSimStream2TargetBitrateBoosted = 500;
+static const unsigned int kSimStream2TargetBitrateXd = 500;
+static const unsigned int kSimStream3Bitrate = 900;
+static const unsigned int kSimStream3MaxBitrateBoosted = 900;
+static const unsigned int kSimStream3MaxBitrateXd = 900;
+static const unsigned int kSimStream3TargetBitrateBoosted = 900;
+static const unsigned int kSimStream3TargetBitrateXd = 900;
+static const unsigned int kSimStream4Bitrate = 1200;
+static const unsigned int kSimStream4MaxBitrateBoosted = 1200;
+static const unsigned int kSimStream4MaxBitrateXd = 2500;
+static const unsigned int kSimStream4TargetBitrateBoosted = 1200;
+static const unsigned int kSimStream4TargetBitrateXd = 2500;
+
+struct SimulcastFormat {
+  unsigned int width;
+  unsigned int height;
+  unsigned int max_layers;
+  unsigned int max_bitrate[cricket::SBM_COUNT];
+  unsigned int target_bitrate[cricket::SBM_COUNT];
+};
+
+static const SimulcastFormat kSimulcastFormats[] = {
+  {1280, 720, 3,
+      {kSimStream4Bitrate, kSimStream4MaxBitrateBoosted,
+       kSimStream4MaxBitrateXd},
+      {kSimStream4Bitrate, kSimStream4TargetBitrateBoosted,
+       kSimStream4TargetBitrateXd}},
+  {960, 540, 3,
+      {kSimStream3Bitrate, kSimStream3MaxBitrateBoosted,
+       kSimStream3MaxBitrateXd},
+      {kSimStream3Bitrate, kSimStream3TargetBitrateBoosted,
+       kSimStream3TargetBitrateXd}},
+  {640, 360, 2,
+      {kSimStream2Bitrate, kSimStream2MaxBitrateBoosted,
+       kSimStream2MaxBitrateXd},
+      {kSimStream2Bitrate, kSimStream2TargetBitrateBoosted,
+       kSimStream2TargetBitrateXd}},
+  {480, 270, 2,
+      {kSimStream1Bitrate, kSimStream1MaxBitrateBoosted,
+       kSimStream1MaxBitrateXd},
+      {kSimStream1Bitrate, kSimStream1TargetBitrateBoosted,
+       kSimStream1TargetBitrateXd}},
+  {320, 180, 1,
+      {kSimStream0Bitrate, kSimStream0MaxBitrateBoosted,
+       kSimStream0MaxBitrateXd},
+      {kSimStream0Bitrate, kSimStream0TargetBitrateBoosted,
+       kSimStream0TargetBitrateXd}},
+  {0, 0, 1,
+      {kSimStream0Bitrate, kSimStream0MaxBitrateBoosted,
+       kSimStream0MaxBitrateXd},
+      {kSimStream0Bitrate, kSimStream0TargetBitrateBoosted,
+       kSimStream0TargetBitrateXd}}
+};
+
+// Test fixture to test WebRtcVideoEngine with a fake webrtc::VideoEngine.
+// Useful for testing failure paths.
+class WebRtcVideoEngineSimulcastTestFake : public testing::Test,
+  public sigslot::has_slots<> {
+ public:
+  WebRtcVideoEngineSimulcastTestFake()
+      : vie_(kVideoCodecs, ARRAY_SIZE(kVideoCodecs)),
+        cpu_monitor_(new rtc::FakeCpuMonitor(
+            rtc::Thread::Current())),
+        engine_(NULL,  // cricket::WebRtcVoiceEngineExtended
+                new FakeViEWrapper(&vie_), cpu_monitor_),
+        channel_(NULL),
+        voice_channel_(NULL),
+        last_error_(cricket::VideoMediaChannel::ERROR_NONE) {
+  }
+  bool SetupEngine() {
+    bool result = engine_.Init(rtc::Thread::Current());
+    if (result) {
+      channel_ = engine_.CreateChannel(cricket::VideoOptions(), voice_channel_);
+      channel_->SignalMediaError.connect(this,
+          &WebRtcVideoEngineSimulcastTestFake::OnMediaError);
+      result = (channel_ != NULL);
+    }
+    return result;
+  }
+  void OnMediaError(uint32 ssrc, cricket::VideoMediaChannel::Error error) {
+    last_error_ = error;
+  }
+  bool SendI420Frame(int width, int height) {
+    cricket::FakeVideoCapturer capturer;
+    return SendI420Frame(&capturer, width, height);
+  }
+
+  bool SendI420Frame(
+      cricket::FakeVideoCapturer* capturer, int width, int height) {
+    if (NULL == channel_) {
+      return false;
+    }
+    cricket::WebRtcVideoFrame frame;
+    if (!frame.InitToBlack(width, height, 1, 1, 0, 0)) {
+      return false;
+    }
+    channel_->SendFrame(capturer, &frame);
+    return true;
+  }
+  bool SendI420ScreencastFrame(int width, int height) {
+    return SendI420ScreencastFrameWithTimestamp(width, height, 0);
+  }
+  bool SendI420ScreencastFrameWithTimestamp(
+      int width, int height, int64 timestamp) {
+    if (NULL == channel_) {
+      return false;
+    }
+    cricket::WebRtcVideoFrame frame;
+    if (!frame.InitToBlack(width, height, 1, 1, 0, 0)) {
+      return false;
+    }
+    cricket::FakeVideoCapturer capturer;
+    capturer.SetScreencast(true);
+    channel_->SendFrame(&capturer, &frame);
+    return true;
+  }
+  void VerifyVP8SendCodec(
+      int channel_num,
+      unsigned int width,
+      unsigned int height,
+      unsigned int layers = 0,
+      unsigned int max_bitrate = kMaxBandwidthKbps,
+      unsigned int min_bitrate = kMinBandwidthKbps,
+      unsigned int start_bitrate = kStartBandwidthKbps,
+      unsigned int fps = 30,
+      unsigned int max_quantization = 0,
+      cricket::SimulcastBitrateMode bitrate_mode = cricket::SBM_NORMAL) {
+    webrtc::VideoCodec gcodec;
+    EXPECT_EQ(0, vie_.GetSendCodec(channel_num, gcodec));
+
+    // Video codec properties.
+    EXPECT_EQ(webrtc::kVideoCodecVP8, gcodec.codecType);
+    EXPECT_STREQ("VP8", gcodec.plName);
+    EXPECT_EQ(100, gcodec.plType);
+    EXPECT_EQ(width, gcodec.width);
+    EXPECT_EQ(height, gcodec.height);
+    EXPECT_EQ(rtc::_min(start_bitrate, max_bitrate), gcodec.startBitrate);
+    EXPECT_EQ(max_bitrate, gcodec.maxBitrate);
+    EXPECT_EQ(min_bitrate, gcodec.minBitrate);
+    EXPECT_EQ(fps, gcodec.maxFramerate);
+    // VP8 specific.
+    EXPECT_FALSE(gcodec.codecSpecific.VP8.pictureLossIndicationOn);
+    EXPECT_FALSE(gcodec.codecSpecific.VP8.feedbackModeOn);
+    EXPECT_EQ(webrtc::kComplexityNormal, gcodec.codecSpecific.VP8.complexity);
+    EXPECT_EQ(webrtc::kResilienceOff, gcodec.codecSpecific.VP8.resilience);
+    EXPECT_EQ(max_quantization, gcodec.qpMax);
+    // Simulcast.
+    EXPECT_EQ(layers, gcodec.numberOfSimulcastStreams);
+    if (layers > 0) {
+      EXPECT_EQ(kSimulcastNumberOfTemporalLayers,
+                gcodec.codecSpecific.VP8.numberOfTemporalLayers);
+    } else {
+      EXPECT_EQ(kNumberOfTemporalLayers,
+                gcodec.codecSpecific.VP8.numberOfTemporalLayers);
+    }
+    for (int i = 0; i < static_cast<int>(layers) - 1; ++i) {
+      EXPECT_EQ(gcodec.width / (0x01 << (layers - 1 - i)),
+                gcodec.simulcastStream[i].width);
+      EXPECT_EQ(gcodec.height / (0x01 << (layers - 1 - i)),
+                gcodec.simulcastStream[i].height);
+      EXPECT_EQ(kSimulcastNumberOfTemporalLayers,
+                gcodec.simulcastStream[i].numberOfTemporalLayers);
+      EXPECT_EQ(FindSimulcastMaxBitrate(gcodec.simulcastStream[i].width,
+                                        gcodec.simulcastStream[i].height,
+                                        bitrate_mode),
+                gcodec.simulcastStream[i].maxBitrate);
+      EXPECT_EQ(gcodec.qpMax,
+                gcodec.simulcastStream[i].qpMax);
+    }
+    if (layers > 0)
+      EXPECT_EQ(kMinBandwidthKbps, gcodec.simulcastStream[0].minBitrate);
+  }
+  unsigned int FindSimulcastMaxBitrate(
+      unsigned int width,
+      unsigned int height,
+      cricket::SimulcastBitrateMode bitrate_mode) {
+    for (size_t i = 0; i < ARRAY_SIZE(kSimulcastFormats); ++i) {
+      if (width >= kSimulcastFormats[i].width &&
+          height >= kSimulcastFormats[i].height) {
+        return kSimulcastFormats[i].max_bitrate[bitrate_mode];
+      }
+    }
+    return 0;
+  }
+  void SetUp2SimulcastStreams(
+      cricket::VideoOptions::HighestBitrate high_bitrate_mode,
+      const cricket::VideoCodec& codec) {
+    EXPECT_TRUE(SetupEngine());
+    cricket::VideoOptions options;
+    options.conference_mode.Set(true);
+    options.video_highest_bitrate.Set(high_bitrate_mode);
+    EXPECT_TRUE(channel_->SetOptions(options));
+    EXPECT_TRUE(channel_->AddSendStream(
+        cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2))));
+    std::vector<cricket::VideoCodec> codec_list;
+    codec_list.push_back(codec);
+    SendI420Frame(kVP8Codec.width, kVP8Codec.height);
+    EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+  }
+  void SetUp3SimulcastStreams(
+      cricket::VideoOptions::HighestBitrate high_bitrate_mode,
+      const cricket::VideoCodec& codec) {
+    EXPECT_TRUE(SetupEngine());
+    cricket::VideoOptions options;
+    options.conference_mode.Set(true);
+    options.video_highest_bitrate.Set(high_bitrate_mode);
+    EXPECT_TRUE(channel_->SetOptions(options));
+
+    // Set max settings of 1280x720x30 to make sure we can have maximumly 3
+    // simulcast streams.
+    EXPECT_TRUE(engine_.SetDefaultEncoderConfig(
+        cricket::VideoEncoderConfig(kVP8Codec720p)));
+
+    EXPECT_TRUE(channel_->AddSendStream(
+        cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs3))));
+    std::vector<cricket::VideoCodec> codec_list;
+    codec_list.push_back(codec);
+    SendI420Frame(kVP8Codec720p.width, kVP8Codec720p.height);
+    EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+  }
+  void TestSimulcastAdapter(const cricket::VideoCodec& send_codec,
+                            bool expect_use_adapter) {
+    // Setup
+    engine_.SetExternalEncoderFactory(&encoder_factory_);
+    EXPECT_TRUE(SetupEngine());
+    std::vector<cricket::VideoCodec> codecs;
+    codecs.push_back(send_codec);
+    EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+    EXPECT_TRUE(channel_->AddSendStream(
+        cricket::StreamParams::CreateLegacy(kSsrc)));
+
+    // Verify
+    int channel_num = vie_.GetLastChannel();
+    EXPECT_EQ(1, vie_.GetNumExternalEncoderRegistered(channel_num));
+    // If simulcast adapter is used, no external encoder instance will be
+    // created at this point. Otherwise 1 instance should have been created.
+    int num_enc_instance = expect_use_adapter ? 0 : 1;
+    EXPECT_EQ(num_enc_instance, encoder_factory_.GetNumCreatedEncoders());
+
+    // Clean up
+    EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
+  }
+  virtual void TearDown() {
+    delete channel_;
+    engine_.Terminate();
+  }
+
+ protected:
+  cricket::FakeWebRtcVideoEngine vie_;
+  cricket::FakeWebRtcVideoDecoderFactory decoder_factory_;
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory_;
+  rtc::FakeCpuMonitor* cpu_monitor_;
+  cricket::WebRtcVideoEngine engine_;
+  cricket::WebRtcVideoMediaChannel* channel_;
+  cricket::WebRtcVoiceMediaChannel* voice_channel_;
+  cricket::VideoMediaChannel::Error last_error_;
+};
+
+// Test fixtures to test WebRtcVideoEngine with a real
+// webrtc::VideoEngine.
+class WebRtcVideoEngineSimulcastTest
+    : public VideoEngineTest<cricket::WebRtcVideoEngine> {
+ protected:
+  typedef VideoEngineTest<cricket::WebRtcVideoEngine> Base;
+};
+class WebRtcVideoMediaChannelSimulcastTest
+    : public VideoMediaChannelTest<
+        cricket::WebRtcVideoEngine, cricket::WebRtcVideoMediaChannel> {
+ protected:
+  typedef VideoMediaChannelTest<cricket::WebRtcVideoEngine,
+       cricket::WebRtcVideoMediaChannel> Base;
+  virtual cricket::VideoCodec DefaultCodec() { return kVP8Codec; }
+  virtual void SetUp() {
+    Base::SetUp();
+  }
+  virtual void TearDown() {
+    Base::TearDown();
+  }
+  // Tests that simulcast sends rtp packets containing expected number of
+  // layers and payload type.
+  void SimulcastSend(const cricket::VideoCodec& codec,
+                     const std::vector<uint32>& ssrcs) {
+    // Remove stream added in Setup.
+    EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
+
+    // Setup channel for sending and receiving simulcast packets.
+    cricket::VideoOptions vmo;
+    vmo.conference_mode.Set(true);
+    EXPECT_TRUE(channel_->SetOptions(vmo));
+    EXPECT_TRUE(SetOneCodec(codec));
+    if (ssrcs.size() > 1) {
+      cricket::StreamParams sp;
+      cricket::SsrcGroup sg(cricket::kSimSsrcGroupSemantics, ssrcs);
+      sp.ssrcs = ssrcs;
+      sp.ssrc_groups.push_back(sg);
+      sp.cname = "cname";
+      EXPECT_TRUE(channel_->AddSendStream(sp));
+    } else {
+      EXPECT_TRUE(channel_->AddSendStream(
+          cricket::StreamParams::CreateLegacy(ssrcs[0])));
+    }
+
+    // Re-configure capturer.
+    channel_->SetCapturer(kSsrc, NULL);
+    cricket::VideoFormat capture_format(codec.width, codec.height,
+        cricket::VideoFormat::FpsToInterval(codec.framerate),
+        cricket::FOURCC_I420);
+    EXPECT_TRUE(channel_->SetCapturer(ssrcs[0], video_capturer_.get()));
+    EXPECT_EQ(cricket::CS_RUNNING, video_capturer_->Start(capture_format));
+
+    EXPECT_TRUE(SetSend(true));
+
+    // Send one frame.
+    EXPECT_EQ(0, NumRtpPackets());
+    EXPECT_EQ(0, NumRtpBytes());
+    EXPECT_EQ(0, NumSentSsrcs());
+    EXPECT_TRUE(SendFrame());
+
+    // Verify received expected simulcast layers.
+    EXPECT_TRUE_WAIT(NumSentSsrcs() == static_cast<int>(ssrcs.size()),
+        10 * kTimeout);
+
+    // Stop sending before counting the packets, as padding will keep being sent
+    // which can cause a difference between total number of packets and the
+    // sum of packets on each ssrc if padding is sent in the summation loop.
+    EXPECT_TRUE(SetSend(false));
+
+    int total_num_packets = 0;
+    int total_num_bytes = 0;
+    for (size_t i = 0; i < ssrcs.size(); ++i) {
+      EXPECT_GE(NumRtpPackets(ssrcs[i]), 1);
+      EXPECT_GT(NumRtpBytes(ssrcs[i]), NumRtpPackets(ssrcs[i]));
+      total_num_packets += NumRtpPackets(ssrcs[i]);
+      total_num_bytes += NumRtpBytes(ssrcs[i]);
+    }
+    EXPECT_EQ(total_num_packets, NumRtpPackets());
+    EXPECT_EQ(total_num_bytes, NumRtpBytes());
+
+    // All packets have the given payload type.
+    for (int i = 0; i < total_num_packets; ++i) {
+      rtc::scoped_ptr<const rtc::Buffer> p(GetRtpPacket(i));
+      EXPECT_EQ(codec.id, GetPayloadType(p.get()));
+    }
+  }
+  void TestScreencastSettings() {
+    // Remove stream added in SetUp.
+    EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
+
+    cricket::VideoOptions options;
+    options.conference_mode.Set(true);
+    // Enable noise reduction to ensure that it's being disabled for
+    // screencasting.
+    options.video_noise_reduction.Set(true);
+    EXPECT_TRUE(channel_->SetOptions(options));
+
+    // Setup a simulcast stream and verify that we have the correct
+    // settings.
+    EXPECT_TRUE(channel_->AddSendStream(
+        cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2))));
+    cricket::VideoCodec codec(DefaultCodec());
+    EXPECT_TRUE(SetOneCodec(codec));
+
+    channel_->SetCapturer(kSsrc, NULL);
+    cricket::VideoFormat capture_format(codec.width, codec.height,
+        cricket::VideoFormat::FpsToInterval(codec.framerate),
+        cricket::FOURCC_I420);
+    EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[0], video_capturer_.get()));
+    EXPECT_EQ(cricket::CS_RUNNING, video_capturer_->Start(capture_format));
+
+    EXPECT_TRUE(SetSend(true));
+    EXPECT_TRUE(SendFrame());
+    webrtc::VideoCodec video_codec;
+    int default_channel_id = channel_->GetDefaultChannelId();
+    EXPECT_EQ(0, channel_->engine()->vie()->codec()->GetSendCodec(
+        default_channel_id, video_codec));
+    EXPECT_FALSE(video_codec.codecSpecific.VP8.automaticResizeOn);
+    EXPECT_TRUE(video_codec.codecSpecific.VP8.denoisingOn);
+    EXPECT_EQ(webrtc::kRealtimeVideo, video_codec.mode);
+    EXPECT_EQ(3, video_codec.codecSpecific.VP8.numberOfTemporalLayers);
+    EXPECT_EQ(2, video_codec.numberOfSimulcastStreams);
+    EXPECT_NE(0u, video_codec.simulcastStream[0].minBitrate);
+    EXPECT_NE(0u, video_codec.simulcastStream[0].targetBitrate);
+    EXPECT_NE(0u, video_codec.simulcastStream[0].maxBitrate);
+    EXPECT_NE(0u, video_codec.simulcastStream[1].minBitrate);
+    EXPECT_NE(0u, video_codec.simulcastStream[1].targetBitrate);
+    EXPECT_NE(0u, video_codec.simulcastStream[1].maxBitrate);
+
+    // Register a fake screencast capturer and verify that the video settings
+    // change as expected.
+    rtc::scoped_ptr<cricket::FakeVideoCapturer> capturer(
+        new cricket::FakeVideoCapturer);
+    capturer->SetScreencast(true);
+    const std::vector<cricket::VideoFormat>* formats =
+        capturer->GetSupportedFormats();
+    capture_format = (*formats)[0];
+    EXPECT_EQ(cricket::CS_RUNNING, capturer->Start(capture_format));
+    EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[0], capturer.get()));
+    EXPECT_TRUE(rtc::Thread::Current()->ProcessMessages(30));
+    EXPECT_TRUE(capturer->CaptureFrame());
+    default_channel_id = channel_->GetDefaultChannelId();
+    EXPECT_EQ(0, channel_->engine()->vie()->codec()->GetSendCodec(
+        default_channel_id, video_codec));
+    EXPECT_FALSE(video_codec.codecSpecific.VP8.automaticResizeOn);
+    EXPECT_FALSE(video_codec.codecSpecific.VP8.denoisingOn);
+    EXPECT_EQ(webrtc::kScreensharing, video_codec.mode);
+    const int expected_num_layers = 2;
+    EXPECT_EQ(expected_num_layers,
+              video_codec.codecSpecific.VP8.numberOfTemporalLayers);
+    EXPECT_EQ(2, video_codec.numberOfSimulcastStreams);
+    EXPECT_EQ(0u, video_codec.simulcastStream[0].minBitrate);
+    EXPECT_EQ(0u, video_codec.simulcastStream[0].targetBitrate);
+    EXPECT_EQ(0u, video_codec.simulcastStream[0].maxBitrate);
+
+    // Make sure that removing screencast restores the simulcast settings.
+    EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[0], video_capturer_.get()));
+    EXPECT_TRUE(WaitAndSendFrame(30));
+    EXPECT_EQ(0, channel_->engine()->vie()->codec()->GetSendCodec(
+        default_channel_id, video_codec));
+    EXPECT_FALSE(video_codec.codecSpecific.VP8.automaticResizeOn);
+    EXPECT_TRUE(video_codec.codecSpecific.VP8.denoisingOn);
+    EXPECT_EQ(webrtc::kRealtimeVideo, video_codec.mode);
+    EXPECT_EQ(3, video_codec.codecSpecific.VP8.numberOfTemporalLayers);
+    EXPECT_EQ(2, video_codec.numberOfSimulcastStreams);
+    EXPECT_NE(0u, video_codec.simulcastStream[0].minBitrate);
+    EXPECT_NE(0u, video_codec.simulcastStream[0].targetBitrate);
+    EXPECT_NE(0u, video_codec.simulcastStream[0].maxBitrate);
+    EXPECT_NE(0u, video_codec.simulcastStream[1].minBitrate);
+    EXPECT_NE(0u, video_codec.simulcastStream[1].targetBitrate);
+    EXPECT_NE(0u, video_codec.simulcastStream[1].maxBitrate);
+  }
+};
+
+// Test that we apply send codec with simulcast properly.
+TEST_F(WebRtcVideoEngineSimulcastTestFake, SetSendCodecsWith1SimulcastStreams) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+
+  // One ssrc simulcast StreamParams should be rejected.
+  EXPECT_FALSE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs1))));
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake, SetSendCodecsWith2SimulcastStreams) {
+  cricket::VideoCodec codec(kVP8Codec);
+  SetUp2SimulcastStreams(cricket::VideoOptions::NORMAL, codec);
+  int channel_num = vie_.GetLastChannel();
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height, 2,
+                     kSimStream0Bitrate + kSimStream2MaxBitrateBoosted);
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake, SetSendCodecsWith3SimulcastStreams) {
+  cricket::VideoCodec codec(kVP8Codec720p);
+  SetUp3SimulcastStreams(cricket::VideoOptions::NORMAL, codec);
+  int channel_num = vie_.GetLastChannel();
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height, 3,
+                     kSimStream0Bitrate + kSimStream2Bitrate +
+                     kSimStream4Bitrate);
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake,
+       SetSendCodecsWith2SimulcastStreamsHighBitrateMode) {
+  cricket::VideoCodec codec(kVP8Codec);
+  SetUp2SimulcastStreams(cricket::VideoOptions::HIGH, codec);
+  int channel_num = vie_.GetLastChannel();
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height, 2,
+                     kSimStream0TargetBitrateBoosted +
+                     kSimStream2MaxBitrateBoosted, kMinBandwidthKbps,
+                     kStartBandwidthKbps, 30, 0, cricket::SBM_HIGH);
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake,
+       SetSendCodecsWith3SimulcastStreamsHighBitrateMode) {
+  cricket::VideoCodec codec(kVP8Codec720p);
+  SetUp3SimulcastStreams(cricket::VideoOptions::HIGH, codec);
+  int channel_num = vie_.GetLastChannel();
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height, 3,
+                     kSimStream0TargetBitrateBoosted +
+                     kSimStream2TargetBitrateBoosted +
+                     kSimStream4MaxBitrateBoosted, kMinBandwidthKbps,
+                     kStartBandwidthKbps, 30, 0, cricket::SBM_HIGH);
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake,
+       SetSendCodecsWith2SimulcastStreamsVeryHighBitrateMode) {
+  cricket::VideoCodec codec(kVP8Codec);
+  SetUp2SimulcastStreams(cricket::VideoOptions::VERY_HIGH,
+                         codec);
+  int channel_num = vie_.GetLastChannel();
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height, 2,
+                     kSimStream0TargetBitrateXd +
+                     kSimStream2MaxBitrateXd, kMinBandwidthKbps,
+                     kStartBandwidthKbps, 30, 0, cricket::SBM_VERY_HIGH);
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake,
+       SetSendCodecsWith3SimulcastStreamsVeryHighBitrateMode) {
+  cricket::VideoCodec codec(kVP8Codec720p);
+  SetUp3SimulcastStreams(cricket::VideoOptions::VERY_HIGH,
+                         codec);
+  int channel_num = vie_.GetLastChannel();
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height, 3,
+                     kSimStream0TargetBitrateXd +
+                     kSimStream2TargetBitrateXd +
+                     kSimStream4MaxBitrateXd, kMinBandwidthKbps,
+                     kStartBandwidthKbps, 30, 0, cricket::SBM_VERY_HIGH);
+}
+
+// Test that we normalize send codec format size in simulcast.
+TEST_F(WebRtcVideoEngineSimulcastTestFake,
+       SetSendCodecsWithOddSizeInSimulcast) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  int channel_num = vie_.GetLastChannel();
+
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2))));
+
+  // Set send codec and verify we get two simulcast sub-streams with
+  // normalized size.
+  cricket::VideoCodec codec(kVP8Codec270p);
+  codec.width += 0x01;
+  codec.height += 0x01;
+  std::vector<cricket::VideoCodec> codec_list;
+  codec_list.push_back(codec);
+  SendI420Frame(kVP8Codec.width, kVP8Codec.height);
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+
+  codec.width &= ~0x01;
+  codec.height &= ~0x01;
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height, 2,
+                     kSimStream0Bitrate + kSimStream1MaxBitrateBoosted);
+}
+
+// Test that if we add a stream with RTX SSRC's, SSRC's get set correctly.
+TEST_F(WebRtcVideoEngineSimulcastTestFake, TestStreamWithRtx) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  int channel_num = vie_.GetLastChannel();
+
+  // Set max settings of 1280x720x30 to make sure we can have maximumly 3
+  // simulcast streams.
+  EXPECT_TRUE(engine_.SetDefaultEncoderConfig(
+    cricket::VideoEncoderConfig(kVP8Codec720p)));
+
+  // Verify only the first SSRC is set here.
+  // The rest are set during SetSendCodecs.
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimWithRtxStreamParams("cname",
+                                            MAKE_VECTOR(kSsrcs3),
+                                            MAKE_VECTOR(kRtxSsrcs3))));
+  EXPECT_EQ(1, vie_.GetNumSsrcs(channel_num));
+  EXPECT_EQ(1, vie_.GetNumRtxSsrcs(channel_num));
+
+  std::vector<cricket::VideoCodec> codec_list;
+  codec_list.push_back(kVP8Codec720p);
+  cricket::VideoCodec rtx_codec(96, "rtx", 0, 0, 0, 0);
+  rtx_codec.SetParam("apt", kVP8Codec.id);
+  codec_list.push_back(rtx_codec);
+  SendI420Frame(kVP8Codec720p.width, kVP8Codec720p.height);
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+
+  // RTX payload type should now be set.
+  EXPECT_EQ(96, vie_.GetRtxSendPayloadType(channel_num));
+
+  // Verify all SSRCs are set after SetSendCodecs.
+  EXPECT_EQ(3, vie_.GetNumSsrcs(channel_num));
+  EXPECT_EQ(3, vie_.GetNumRtxSsrcs(channel_num));
+  EXPECT_EQ(1, vie_.GetSsrc(channel_num, 0));
+  EXPECT_EQ(2, vie_.GetSsrc(channel_num, 1));
+  EXPECT_EQ(3, vie_.GetSsrc(channel_num, 2));
+  EXPECT_EQ(4, vie_.GetRtxSsrc(channel_num, 0));
+  EXPECT_EQ(5, vie_.GetRtxSsrc(channel_num, 1));
+  EXPECT_EQ(6, vie_.GetRtxSsrc(channel_num, 2));
+  uint32 ssrc;
+  EXPECT_EQ(0, vie_.GetLocalSSRC(channel_num, ssrc));
+  EXPECT_EQ(1U, ssrc);
+}
+
+// Test that if we get too few ssrcs are given in AddSendStream(),
+// only supported sub-streams will be added.
+TEST_F(WebRtcVideoEngineSimulcastTestFake, TooFewSimulcastSsrcs) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  int channel_num = vie_.GetLastChannel();
+
+  // Set max settings of 1280x720x30 to make sure we can have maximumly 3
+  // simulcast streams.
+  EXPECT_TRUE(engine_.SetDefaultEncoderConfig(
+    cricket::VideoEncoderConfig(kVP8Codec720p)));
+
+  // Verify only the first SSRC is set here.
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2))));
+  EXPECT_EQ(1, vie_.GetNumSsrcs(channel_num));
+
+  cricket::VideoCodec codec(kVP8Codec720p);
+  std::vector<cricket::VideoCodec> codec_list;
+  codec_list.push_back(codec);
+  SendI420Frame(kVP8Codec720p.width, kVP8Codec720p.height);
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+
+  // Verify all SSRCs are set after SetSendCodecs.
+  EXPECT_EQ(2, vie_.GetNumSsrcs(channel_num));
+  EXPECT_EQ(1, vie_.GetSsrc(channel_num, 0));
+  EXPECT_EQ(2, vie_.GetSsrc(channel_num, 1));
+  uint32 ssrc;
+  EXPECT_EQ(0, vie_.GetLocalSSRC(channel_num, ssrc));
+  EXPECT_EQ(1U, ssrc);
+  VerifyVP8SendCodec(channel_num, 640, 360, 2,
+      kSimStream0Bitrate + kSimStream2MaxBitrateBoosted);
+}
+
+// Test that even more than enough ssrcs are given in AddSendStream(),
+// only supported sub-streams will be added.
+TEST_F(WebRtcVideoEngineSimulcastTestFake, MoreThanEnoughSimulcastSscrs) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  int channel_num = vie_.GetLastChannel();
+
+  // Set max settings of 1280x720x30 to make sure we can have maximumly 3
+  // simulcast streams.
+  EXPECT_TRUE(engine_.SetDefaultEncoderConfig(
+    cricket::VideoEncoderConfig(kVP8Codec720p)));
+
+  // Verify only the first SSRC is set here.
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs4))));
+  EXPECT_EQ(1, vie_.GetNumSsrcs(channel_num));
+
+  cricket::VideoCodec codec(kVP8Codec720p);
+  std::vector<cricket::VideoCodec> codec_list;
+  codec_list.push_back(codec);
+  SendI420Frame(kVP8Codec720p.width, kVP8Codec720p.height);
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+
+  // Verify all SSRCs are set after SetSendCodecs.
+  EXPECT_EQ(3, vie_.GetNumSsrcs(channel_num));
+  EXPECT_EQ(1, vie_.GetSsrc(channel_num, 0));
+  EXPECT_EQ(2, vie_.GetSsrc(channel_num, 1));
+  EXPECT_EQ(3, vie_.GetSsrc(channel_num, 2));
+  uint32 ssrc;
+  EXPECT_EQ(0, vie_.GetLocalSSRC(channel_num, ssrc));
+  EXPECT_EQ(1U, ssrc);
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height, 3,
+      kSimStream0Bitrate + kSimStream2Bitrate + kSimStream4Bitrate);
+}
+
+// Test that SetSendStreamFormat works well with simulcast.
+TEST_F(WebRtcVideoEngineSimulcastTestFake, SetSendStreamFormatWithSimulcast) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  int channel_num = vie_.GetLastChannel();
+
+  // Verify SetSendStreamFormat fail before there is a send stream.
+  cricket::VideoFormat format = engine_.default_codec_format();
+  EXPECT_FALSE(channel_->SetSendStreamFormat(1, format));
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2))));
+
+  // Capture format HD
+  cricket::FakeVideoCapturer video_capturer;
+  const std::vector<cricket::VideoFormat>* formats =
+      video_capturer.GetSupportedFormats();
+  cricket::VideoFormat capture_format_hd = (*formats)[0];
+  EXPECT_EQ(cricket::CS_RUNNING, video_capturer.Start(capture_format_hd));
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[0], &video_capturer));
+
+  cricket::VideoCodec codec(kVP8Codec360p);
+  std::vector<cricket::VideoCodec> codec_list;
+  codec_list.push_back(codec);
+  SendI420Frame(&video_capturer, kVP8Codec.width, kVP8Codec.height);
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+
+  EXPECT_EQ(2, vie_.GetNumSsrcs(channel_num));
+  EXPECT_EQ(1, vie_.GetSsrc(channel_num, 0));
+  EXPECT_EQ(2, vie_.GetSsrc(channel_num, 1));
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height, 2,
+                     kSimStream0Bitrate + kSimStream2MaxBitrateBoosted);
+
+  // Verify SetSendStreamFormat with the same resolution doesn't
+  // change the number of simulcast sub-streams.
+  format.width = codec.width;
+  format.height = codec.height;
+  EXPECT_TRUE(channel_->SetSendStreamFormat(1, format));
+  EXPECT_EQ(2, vie_.GetNumSsrcs(channel_num));
+  EXPECT_EQ(1, vie_.GetSsrc(channel_num, 0));
+  EXPECT_EQ(2, vie_.GetSsrc(channel_num, 1));
+
+  // Capture format HD -> adapt (OnOutputFormatRequest VGA) -> VGA.
+  EXPECT_TRUE(video_capturer.CaptureFrame());
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height, 2,
+                     kSimStream0Bitrate + kSimStream2MaxBitrateBoosted);
+
+  // Now, ask for a small resolution and verify that we only get one stream.
+  format.width = codec.width / 2;
+  format.height = codec.height / 2;
+  EXPECT_TRUE(channel_->SetSendStreamFormat(1, format));
+  // Capture format HD -> adapt (OnOutputFormatRequest QVGA) -> QVGA.
+  EXPECT_TRUE(video_capturer.CaptureFrame());
+  VerifyVP8SendCodec(channel_num, format.width, format.height, 1,
+                     kSimStream0MaxBitrateBoosted);
+
+  // Bump resolution back and verify there are 2 sub-streams again.
+  format.width = codec.width;
+  format.height = codec.height;
+  EXPECT_TRUE(channel_->SetSendStreamFormat(1, format));
+  EXPECT_EQ(2, vie_.GetNumSsrcs(channel_num));
+  EXPECT_EQ(1, vie_.GetSsrc(channel_num, 0));
+  EXPECT_EQ(2, vie_.GetSsrc(channel_num, 1));
+  // Capture format HD -> adapt (OnOutputFormatRequest VGA) -> VGA.
+  EXPECT_TRUE(video_capturer.CaptureFrame());
+  VerifyVP8SendCodec(channel_num, format.width, format.height, 2,
+                     kSimStream0Bitrate + kSimStream2MaxBitrateBoosted);
+
+  // Verify SetSendStreamFormat can use either ssrc in the simulcast
+  // ssrc group.
+  format.width = codec.width / 2;
+  format.height = codec.height / 2;
+  EXPECT_TRUE(channel_->SetSendStreamFormat(2, format));
+  EXPECT_EQ(2, vie_.GetNumSsrcs(channel_num));
+  EXPECT_EQ(1, vie_.GetSsrc(channel_num, 0));
+  EXPECT_EQ(2, vie_.GetSsrc(channel_num, 1));
+  // Capture format HD -> adapt (OnOutputFormatRequest QVGA) -> QVGA.
+  EXPECT_TRUE(video_capturer.CaptureFrame());
+  VerifyVP8SendCodec(channel_num, format.width, format.height, 1,
+                     kSimStream0MaxBitrateBoosted);
+
+  // Verify SetSendStreamFormat with bad ssrc fail.
+  format.width = codec.width;
+  format.height = codec.height;
+  EXPECT_FALSE(channel_->SetSendStreamFormat(3, format));
+  EXPECT_EQ(2, vie_.GetNumSsrcs(channel_num));
+  EXPECT_EQ(1, vie_.GetSsrc(channel_num, 0));
+  EXPECT_EQ(2, vie_.GetSsrc(channel_num, 1));
+  VerifyVP8SendCodec(channel_num, format.width / 2, format.height / 2, 1,
+                     kSimStream0MaxBitrateBoosted);
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[0], NULL));
+}
+
+// Test that simulcast send codec is reset on new video frame size.
+TEST_F(WebRtcVideoEngineSimulcastTestFake,
+       ResetSimulcastSendCodecOnNewFrameSize) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  int channel_num = vie_.GetLastChannel();
+
+  // Set send codec.
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2))));
+  cricket::VideoCodec codec(kVP8Codec);
+  std::vector<cricket::VideoCodec> codec_list;
+  codec_list.push_back(codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+  EXPECT_TRUE(channel_->SetSend(true));
+  EXPECT_EQ(1, vie_.GetNumSetSendCodecs());
+
+  // Feed in frames with different sizes and verify simulcast send codec
+  // changes accordingly.
+
+  // Send an odd frame. Verify format size get normalized.
+  SendI420Frame(kVP8Codec.width | 0x01, kVP8Codec.height | 0x01);
+  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 2,
+                     kSimStream0Bitrate + kSimStream2MaxBitrateBoosted);
+  EXPECT_EQ(2, vie_.GetNumSetSendCodecs());
+
+  // Send a big frame. Verify format size never exceed original send codec
+  // format size.
+  SendI420Frame(kVP8Codec.width * 2, kVP8Codec.height * 2);
+  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 2,
+                     kSimStream0Bitrate + kSimStream2MaxBitrateBoosted);
+  EXPECT_EQ(2, vie_.GetNumSetSendCodecs());
+
+  // Send a small frame. Verify format size is bumped in order to meet
+  // the minimum simulcast reqirement while keeping the aspect ratio.
+  SendI420Frame(kVP8Codec.width / 2, kVP8Codec.height / 2);
+  // Need at least 480x270 to have simulcast.
+  VerifyVP8SendCodec(channel_num, kVP8Codec.width / 2, kVP8Codec.height / 2, 1,
+                     kSimStream0MaxBitrateBoosted);
+  EXPECT_EQ(3, vie_.GetNumSetSendCodecs());
+
+  // Send a normal frame. Verify format size is back to normal.
+  SendI420Frame(kVP8Codec.width, kVP8Codec.height);
+  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 2,
+                     kSimStream0Bitrate + kSimStream2MaxBitrateBoosted);
+  EXPECT_EQ(4, vie_.GetNumSetSendCodecs());
+
+  // Send an odd frame again.
+  SendI420Frame(kVP8Codec.width | 0x01, kVP8Codec.height | 0x01);
+  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 2,
+                     kSimStream0Bitrate + kSimStream2MaxBitrateBoosted);
+  EXPECT_EQ(4, vie_.GetNumSetSendCodecs());
+}
+
+// Test that simulcast send codec is reset on new portait mode video frame.
+TEST_F(WebRtcVideoEngineSimulcastTestFake,
+       ResetSimulcastSendCodecOnNewPortaitFrame) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  int channel_num = vie_.GetLastChannel();
+
+  // Set send codec.
+  EXPECT_TRUE(engine_.SetDefaultEncoderConfig(
+      cricket::VideoEncoderConfig(kVP8Codec720p)));
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2))));
+  cricket::VideoCodec codec(kVP8Codec720p);
+  std::vector<cricket::VideoCodec> codec_list;
+  codec_list.push_back(codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+  EXPECT_TRUE(channel_->SetSend(true));
+  EXPECT_EQ(1, vie_.GetNumSetSendCodecs());
+
+  // Feed in frames with different sizes and verify simulcast send codec
+  // changes accordingly.
+
+  // Send a portait mode frame.
+  SendI420Frame(kVP8Codec.height, kVP8Codec.width);
+  VerifyVP8SendCodec(channel_num, kVP8Codec.height, kVP8Codec.width, 2,
+                     kSimStream0Bitrate + kSimStream2MaxBitrateBoosted);
+  EXPECT_EQ(2, vie_.GetNumSetSendCodecs());
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake,
+       SetBandwidthInConferenceWithSimulcast) {
+  cricket::VideoCodec ccodec(kVP8Codec720p);
+  SetUp3SimulcastStreams(cricket::VideoOptions::NORMAL, ccodec);
+
+  // A higher value than the sum of max of all layers should add the extra
+  // bandwidth to the higher layer.
+  uint32 max_bandwidth = 5000;
+  EXPECT_TRUE(channel_->SetMaxSendBandwidth(max_bandwidth * 1000));
+
+  int channel_num = vie_.GetLastChannel();
+  webrtc::VideoCodec codec;
+  codec.width = 0; codec.height = 0;
+  EXPECT_EQ(0, vie_.GetSendCodec(channel_num, codec));
+  EXPECT_EQ(max_bandwidth, codec.maxBitrate);
+
+  int nr_layers = 3;
+  uint32 sum_bandwidth = 0;
+  for (int i = 0; i < nr_layers; ++i) {
+    if (i == nr_layers - 1) {
+      EXPECT_EQ(max_bandwidth - sum_bandwidth,
+                codec.simulcastStream[i].maxBitrate);
+    } else {
+      EXPECT_EQ(FindSimulcastMaxBitrate(codec.simulcastStream[i].width,
+                                        codec.simulcastStream[i].height,
+                                        cricket::SBM_NORMAL),
+                codec.simulcastStream[i].maxBitrate);
+      sum_bandwidth += codec.simulcastStream[i].maxBitrate;
+    }
+  }
+
+  // Test setting max bandwidth below the sum of layer specific max bandwidth.
+  // Basically, the simulcast max overrides the SetMaxSendBandwidth value.
+  EXPECT_TRUE(channel_->SetMaxSendBandwidth(1));
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height, 3,
+                     kSimStream0Bitrate + kSimStream2Bitrate +
+                     kSimStream4Bitrate);
+}
+
+// Test that sending screencast frames in conference mode changes
+// bitrate.
+TEST_F(WebRtcVideoEngineSimulcastTestFake, SetBandwidthScreencastInConference) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = vie_.GetLastChannel();
+
+  // Set send codec.
+  cricket::VideoCodec codec(kVP8Codec);
+  std::vector<cricket::VideoCodec> codec_list;
+  codec_list.push_back(codec);
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::StreamParams::CreateLegacy(123)));
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+  EXPECT_TRUE(channel_->SetMaxSendBandwidth(1200000));
+  EXPECT_EQ(2, vie_.GetNumSetSendCodecs());
+
+  // Set conference mode and verify that this caps maxBitrate.
+  webrtc::VideoCodec gcodec;
+  EXPECT_EQ(0, vie_.GetSendCodec(channel_num, gcodec));
+  EXPECT_GT(gcodec.maxBitrate, 1000u);
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  EXPECT_TRUE(channel_->SetSend(true));
+  SendI420ScreencastFrame(kVP8Codec.width, kVP8Codec.height);
+  EXPECT_EQ(3, vie_.GetNumSetSendCodecs());
+  EXPECT_EQ(0, vie_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(1000u, gcodec.maxBitrate);
+}
+
+// Test AddSendStream with simulcast rejects bad StreamParams.
+TEST_F(WebRtcVideoEngineSimulcastTestFake, AddSendStreamWithBadStreamParams) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+
+  // Verify non-sim StreamParams is rejected.
+  cricket::StreamParams sp_bad;
+  std::vector<uint32> ssrcs;
+  ssrcs.push_back(1234);
+  ssrcs.push_back(5678);
+  cricket::SsrcGroup sg("bad", ssrcs);
+  sp_bad.ssrcs = ssrcs;
+  sp_bad.ssrc_groups.push_back(sg);
+  sp_bad.cname = "cname";
+  EXPECT_FALSE(channel_->AddSendStream(sp_bad));
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2))));
+}
+
+// Test AddSendStream with simulcast sets ssrc and cname correctly.
+TEST_F(WebRtcVideoEngineSimulcastTestFake, AddSendStreamWithSimulcast) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  int channel_num = vie_.GetLastChannel();
+
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2))));
+
+  unsigned int ssrc = 0;
+  EXPECT_EQ(1, vie_.GetNumSsrcs(channel_num));
+  EXPECT_EQ(0, vie_.GetLocalSSRC(channel_num, ssrc));
+  EXPECT_EQ(1U, ssrc);
+
+  char rtcp_cname[256];
+  EXPECT_EQ(0, vie_.GetRTCPCName(channel_num, rtcp_cname));
+  EXPECT_STREQ("cname", rtcp_cname);
+
+  EXPECT_TRUE(channel_->RemoveSendStream(1));
+}
+
+// Test RemoveSendStream with simulcast.
+TEST_F(WebRtcVideoEngineSimulcastTestFake, RemoveSendStreamWithSimulcast) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+
+  // RemoveSendStream should fail when there is no send stream.
+  EXPECT_FALSE(channel_->RemoveSendStream(1));
+
+  cricket::StreamParams stream =
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2));
+  EXPECT_TRUE(channel_->AddSendStream(stream));
+
+  // RemoveSendStream should fail with bad ssrc.
+  EXPECT_FALSE(channel_->RemoveSendStream(3));
+  EXPECT_TRUE(channel_->RemoveSendStream(1));
+
+  // RemoveSendStream should work with either ssrc.
+  EXPECT_TRUE(channel_->AddSendStream(stream));
+  EXPECT_TRUE(channel_->RemoveSendStream(1));
+  EXPECT_TRUE(channel_->AddSendStream(stream));
+  EXPECT_TRUE(channel_->RemoveSendStream(2));
+
+  // RemoveSendStream should fail when there is no send stream.
+  EXPECT_FALSE(channel_->RemoveSendStream(1));
+}
+
+// Test AddSendStream after send codec has already been set will reset
+// send codec with simulcast settings.
+TEST_F(WebRtcVideoEngineSimulcastTestFake,
+       AddSimulcastStreamAfterSetSendCodec) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  int channel_num = vie_.GetLastChannel();
+
+  // Set send codec.
+  cricket::VideoCodec codec(kVP8Codec);
+  std::vector<cricket::VideoCodec> codec_list;
+  codec_list.push_back(codec);
+  SendI420Frame(kVP8Codec.width, kVP8Codec.height);
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height);
+
+  // Add simulcast send stream and verify send codec has been reset.
+  // Provide 3 ssrcs here and only 2 layers should be added.
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs3))));
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height, 2,
+                     kSimStream0Bitrate + kSimStream2MaxBitrateBoosted);
+
+  // Verify local SSRCs are now populated correctly.
+  EXPECT_EQ(2, vie_.GetNumSsrcs(channel_num));
+  EXPECT_EQ(1, vie_.GetSsrc(channel_num, 0));
+  EXPECT_EQ(2, vie_.GetSsrc(channel_num, 1));
+  uint32 ssrc;
+  EXPECT_EQ(0, vie_.GetLocalSSRC(channel_num, ssrc));
+  EXPECT_EQ(1U, ssrc);
+
+  // Remove the stream and reset send codec with a smaller size.
+  EXPECT_TRUE(channel_->RemoveSendStream(1));
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height, 2,
+                     kSimStream0Bitrate + kSimStream2MaxBitrateBoosted);
+  codec_list.clear();
+  codec.width /= 2;
+  codec.height /= 2;
+  codec_list.push_back(codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height);
+
+  // Add simulcast send stream again and verify simulcast have one stream.
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2))));
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height, 1,
+                     kSimStream0MaxBitrateBoosted);
+
+  // Verify we still have 2 SSRCs.
+  EXPECT_EQ(2, vie_.GetNumSsrcs(channel_num));
+  EXPECT_EQ(1, vie_.GetSsrc(channel_num, 0));
+  EXPECT_EQ(2, vie_.GetSsrc(channel_num, 1));
+  EXPECT_EQ(0, vie_.GetLocalSSRC(channel_num, ssrc));
+  EXPECT_EQ(1U, ssrc);
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake, GetStatsWithMultipleSsrcs) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+
+  // Add simulcast stream.
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2))));
+
+  // Set send codec and verify we get two simulcast sub-streams.
+  cricket::VideoCodec codec(kVP8Codec);
+  std::vector<cricket::VideoCodec> codec_list;
+  codec_list.push_back(codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+  EXPECT_TRUE(channel_->SetSend(true));
+
+  cricket::FakeVideoCapturer video_capturer;
+  const std::vector<cricket::VideoFormat>* formats =
+      video_capturer.GetSupportedFormats();
+  cricket::VideoFormat capture_format_vga = (*formats)[1];
+  EXPECT_EQ(cricket::CS_RUNNING, video_capturer.Start(capture_format_vga));
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[0], &video_capturer));
+
+  // Only require one cpu sample for testing whether the adapter is hooked up.
+  cricket::CoordinatedVideoAdapter* video_adapter = NULL;
+  ASSERT_TRUE(channel_->GetVideoAdapter(0u, &video_adapter));
+  video_adapter->set_cpu_load_min_samples(1);
+  cpu_monitor_->SignalUpdate(1, 1, 0.1f, 0.85f);
+
+  // Capture format VGA -> adapt (OnCpuLoadUpdate downgrade) -> VGA/2.
+  EXPECT_TRUE(video_capturer.CaptureFrame());
+
+  // Get stats and verify there are 2 ssrcs.
+  cricket::VideoMediaInfo info;
+  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_EQ(1U, info.senders.size());
+  ASSERT_EQ(2U, info.senders[0].ssrcs().size());
+  EXPECT_EQ(1U, info.senders[0].ssrcs()[0]);
+  EXPECT_EQ(2U, info.senders[0].ssrcs()[1]);
+  // Verify the input/send width/height.
+  EXPECT_EQ(capture_format_vga.width, info.senders[0].input_frame_width);
+  EXPECT_EQ(capture_format_vga.height, info.senders[0].input_frame_height);
+  EXPECT_EQ(capture_format_vga.width * 3 / 4,
+            info.senders[0].send_frame_width);
+  EXPECT_EQ(capture_format_vga.height * 3 / 4,
+            info.senders[0].send_frame_height);
+
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[0], NULL));
+}
+
+// Test receiving channel(s) local ssrc is set to the same as the first
+// simulcast sending ssrc.
+TEST_F(WebRtcVideoEngineSimulcastTestFake,
+       AddSimulcastStreamAfterCreatingRecvChannels) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  int channel_num = vie_.GetLastChannel();
+
+  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(10)));
+  int receive_channel_1 = vie_.GetLastChannel();
+  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(11)));
+  int receive_channel_2 = vie_.GetLastChannel();
+
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2))));
+
+  unsigned int ssrc = 0;
+  EXPECT_EQ(1, vie_.GetNumSsrcs(channel_num));
+  EXPECT_EQ(0, vie_.GetLocalSSRC(channel_num, ssrc));
+  EXPECT_EQ(1U, ssrc);
+
+  EXPECT_EQ(0, vie_.GetLocalSSRC(receive_channel_1, ssrc));
+  EXPECT_EQ(1U, ssrc);
+  EXPECT_EQ(1, vie_.GetNumSsrcs(receive_channel_1));
+
+  EXPECT_EQ(0, vie_.GetLocalSSRC(receive_channel_2, ssrc));
+  EXPECT_EQ(1U, ssrc);
+  EXPECT_EQ(1, vie_.GetNumSsrcs(receive_channel_2));
+}
+
+// Test 1:1 call never turn on simulcast.
+TEST_F(WebRtcVideoEngineSimulcastTestFake, NoSimulcastWith1on1) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = vie_.GetLastChannel();
+
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2))));
+
+  // Set send codec and verify there is no simulcast sub-streams.
+  cricket::VideoCodec codec(kVP8Codec);
+  std::vector<cricket::VideoCodec> codec_list;
+  codec_list.push_back(codec);
+  SendI420Frame(kVP8Codec.width, kVP8Codec.height);
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height);
+  EXPECT_EQ(1, vie_.GetNumSsrcs(channel_num));
+
+  // Set options with OPT_CONFERENCE flag and set send codec again.
+  // Verify simulcast is used now.
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height, 2,
+                     kSimStream0Bitrate + kSimStream2MaxBitrateBoosted);
+  EXPECT_EQ(2, vie_.GetNumSsrcs(channel_num));
+  EXPECT_EQ(1, vie_.GetSsrc(channel_num, 0));
+  EXPECT_EQ(2, vie_.GetSsrc(channel_num, 1));
+
+  // Remove OPT_CONFERENCE flag and set send codec again.
+  // Verify simulcast is off again.
+  options.conference_mode.Set(false);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+  VerifyVP8SendCodec(channel_num, codec.width, codec.height);
+
+  // Verify we still have 2 SSRCs.
+  EXPECT_EQ(2, vie_.GetNumSsrcs(channel_num));
+  EXPECT_EQ(1, vie_.GetSsrc(channel_num, 0));
+  EXPECT_EQ(2, vie_.GetSsrc(channel_num, 1));
+}
+
+// Test SetOptions with OPT_CONFERENCE flag.
+TEST_F(WebRtcVideoEngineSimulcastTestFake, SetOptionsWithConferenceMode) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = vie_.GetLastChannel();
+
+  // Set send codec.
+  cricket::VideoCodec codec(kVP8Codec);
+  std::vector<cricket::VideoCodec> codec_list;
+  codec_list.push_back(codec);
+  SendI420Frame(kVP8Codec.width, kVP8Codec.height);
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+
+  // Verify default send codec and bitrate.
+  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height);
+
+  // Set options with OPT_CONFERENCE flag.
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+
+  // Change the max bitrate and verify it has changed.
+  channel_->SetMaxSendBandwidth(kSimStream2MaxBitrateBoosted * 1000);
+  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 0,
+                     kSimStream2MaxBitrateBoosted);
+
+  // Turn off conference mode and verify the max bandwidth changed
+  // back.
+  options.conference_mode.Set(false);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height);
+
+  // Set send codec again with a smaller size.
+  codec_list.clear();
+  codec.width /= 2;
+  codec.height /= 2;
+  codec_list.push_back(codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+
+  // Set options with OPT_CONFERENCE flag and set the max bitrate again.
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  channel_->SetMaxSendBandwidth(kSimStream0MaxBitrateBoosted * 1000);
+
+  // Verify channel now has a new max bitrate.
+  VerifyVP8SendCodec(channel_num, kVP8Codec.width / 2, kVP8Codec.height / 2, 0,
+                     kSimStream0MaxBitrateBoosted);
+}
+
+// Test that two different streams can have different formats.
+TEST_F(WebRtcVideoEngineSimulcastTestFake,
+       MultipleSendStreamsDifferentFormats) {
+  EXPECT_TRUE(SetupEngine());
+  for (unsigned int i = 0; i < sizeof(kSsrcs2)/sizeof(kSsrcs2[0]); ++i) {
+    EXPECT_TRUE(channel_->AddSendStream(
+        cricket::StreamParams::CreateLegacy(kSsrcs2[i])));
+  }
+  const int channel0 = vie_.GetChannelFromLocalSsrc(kSsrcs2[0]);
+  ASSERT_NE(-1, channel0);
+  const int channel1 = vie_.GetChannelFromLocalSsrc(kSsrcs2[1]);
+  ASSERT_NE(-1, channel1);
+  ASSERT_NE(channel0, channel1);
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kVP8Codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  cricket::VideoFormat format(kVP8Codec.width / 2, kVP8Codec.height / 2,
+        cricket::VideoFormat::FpsToInterval(kVP8Codec.framerate / 2),
+        cricket::FOURCC_I420);
+  EXPECT_TRUE(channel_->SetSendStreamFormat(kSsrcs2[1], format));
+
+  SendI420Frame(kVP8Codec.width, kVP8Codec.height);
+  VerifyVP8SendCodec(channel0, kVP8Codec.width, kVP8Codec.height, 0,
+                     kMaxBandwidthKbps, kMinBandwidthKbps, kStartBandwidthKbps,
+                     kVP8Codec.framerate);
+  VerifyVP8SendCodec(channel1, kVP8Codec.width / 2, kVP8Codec.height / 2, 0,
+                     kMaxBandwidthKbps, kMinBandwidthKbps, kStartBandwidthKbps,
+                     kVP8Codec.framerate / 2);
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake, TestAdaptToOutputFormat) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs3))));
+
+  // Capture format HD
+  cricket::FakeVideoCapturer video_capturer;
+  const std::vector<cricket::VideoFormat>* formats =
+      video_capturer.GetSupportedFormats();
+  cricket::VideoFormat capture_format_hd = (*formats)[0];
+  EXPECT_EQ(cricket::CS_RUNNING, video_capturer.Start(capture_format_hd));
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], &video_capturer));
+
+  cricket::VideoCodec send_codec(100, "VP8", 800, 600, 30, 0);
+  cricket::VideoFormat vga_format(640, 360,
+      cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420);
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(send_codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_TRUE(channel_->SetSendStreamFormat(kSsrcs3[0], vga_format));
+  EXPECT_TRUE(channel_->SetSend(true));
+
+  // Capture format HD -> adapt (OnOutputFormatRequest VGA) -> VGA.
+  EXPECT_TRUE(video_capturer.CaptureFrame());
+  const int channel0 = vie_.GetChannelFromLocalSsrc(kSsrcs3[0]);
+  ASSERT_NE(-1, channel0);
+  VerifyVP8SendCodec(channel0, vga_format.width, vga_format.height, 0,
+                     kMaxBandwidthKbps, kMinBandwidthKbps, kStartBandwidthKbps,
+                     30);
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], NULL));
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake, TestAdaptToCpuLoad) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs3))));
+
+  // Capture format VGA
+  cricket::FakeVideoCapturer video_capturer;
+  const std::vector<cricket::VideoFormat>* formats =
+      video_capturer.GetSupportedFormats();
+  cricket::VideoFormat capture_format_vga = (*formats)[1];
+
+  // Make OnCpuLoadUpdate trigger downgrade.
+  cricket::VideoOptions options;
+  options.adapt_input_to_cpu_usage.Set(true);
+  options.process_adaptation_threshhold.Set(0.1f);
+  options.system_low_adaptation_threshhold.Set(0.65f);
+  options.system_high_adaptation_threshhold.Set(0.85f);
+  options.cpu_overuse_detection.Set(false);
+  EXPECT_TRUE(channel_->SetOptions(options));
+
+  // Verify toggling cpu overuse detection works.
+  options.cpu_overuse_detection.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  options.cpu_overuse_detection.Set(false);
+  EXPECT_TRUE(channel_->SetOptions(options));
+
+  EXPECT_EQ(cricket::CS_RUNNING, video_capturer.Start(capture_format_vga));
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], &video_capturer));
+
+  // Only require one cpu sample for testing whether the adapter is hooked up.
+  cricket::CoordinatedVideoAdapter* video_adapter = NULL;
+  ASSERT_TRUE(channel_->GetVideoAdapter(0u, &video_adapter));
+  video_adapter->set_cpu_load_min_samples(1);
+
+  cpu_monitor_->SignalUpdate(1, 1, 0.1f, 0.85f);
+
+  cricket::VideoCodec send_codec(100, "VP8", 640, 480, 30, 0);
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(send_codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_TRUE(channel_->SetSend(true));
+
+  // Capture format VGA -> adapt (OnCpuLoadUpdate downgrade) -> VGA/2.
+  EXPECT_TRUE(video_capturer.CaptureFrame());
+  const int channel0 = vie_.GetChannelFromLocalSsrc(kSsrcs3[0]);
+  ASSERT_NE(-1, channel0);
+  VerifyVP8SendCodec(
+      channel0, 3 * send_codec.width / 4, 3 * send_codec.height / 4, 0,
+      kMaxBandwidthKbps, kMinBandwidthKbps, kStartBandwidthKbps,
+      send_codec.framerate);
+
+  // Trigger more downgrades and check for multiple unable to adapt signal.
+  EXPECT_EQ(cricket::VideoMediaChannel::ERROR_NONE, last_error_);
+  cpu_monitor_->SignalUpdate(1, 1, 0.1f, 0.85f);
+  cpu_monitor_->SignalUpdate(1, 1, 0.1f, 0.85f);
+  EXPECT_EQ(cricket::VideoMediaChannel::ERROR_REC_CPU_MAX_CANT_DOWNGRADE,
+            last_error_);
+
+  last_error_ = cricket::VideoMediaChannel::ERROR_NONE;
+  cpu_monitor_->SignalUpdate(1, 1, 0.1f, 0.85f);
+  EXPECT_EQ(cricket::VideoMediaChannel::ERROR_REC_CPU_MAX_CANT_DOWNGRADE,
+            last_error_);
+
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], NULL));
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake, TestAdaptToCpuLoadDisabled) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs3))));
+
+  // Capture format VGA
+  cricket::FakeVideoCapturer video_capturer;
+  const std::vector<cricket::VideoFormat>* formats =
+      video_capturer.GetSupportedFormats();
+  cricket::VideoFormat capture_format_vga = (*formats)[1];
+  EXPECT_EQ(cricket::CS_RUNNING, video_capturer.Start(capture_format_vga));
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], &video_capturer));
+
+  // Make OnCpuLoadUpdate trigger downgrade.
+  cricket::VideoOptions options;
+  options.adapt_input_to_cpu_usage.Set(false);
+  options.process_adaptation_threshhold.Set(0.1f);
+  options.system_low_adaptation_threshhold.Set(0.65f);
+  options.system_high_adaptation_threshhold.Set(0.85f);
+  EXPECT_TRUE(channel_->SetOptions(options));
+
+  // Only require one cpu sample for testing whether the adapter is hooked up.
+  cricket::CoordinatedVideoAdapter* video_adapter = NULL;
+  ASSERT_TRUE(channel_->GetVideoAdapter(0u, &video_adapter));
+  video_adapter->set_cpu_load_min_samples(1);
+  cpu_monitor_->SignalUpdate(1, 1, 0.1f, 0.85f);
+
+  cricket::VideoCodec send_codec(100, "VP8", 640, 480, 30, 0);
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(send_codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_TRUE(channel_->SetSend(true));
+
+  // Capture format VGA -> no adapt -> VGA.
+  EXPECT_TRUE(video_capturer.CaptureFrame());
+  const int channel0 = vie_.GetChannelFromLocalSsrc(kSsrcs3[0]);
+  ASSERT_NE(-1, channel0);
+  VerifyVP8SendCodec(channel0, capture_format_vga.width,
+                     capture_format_vga.height, 0,
+                     kMaxBandwidthKbps, kMinBandwidthKbps, kStartBandwidthKbps,
+                     send_codec.framerate);
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], NULL));
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake, TestAdaptWithCpuOveruseObserver) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs3))));
+
+  // Verify that the CpuOveruseObserver is not set by default.
+  const int channel0 = vie_.GetChannelFromLocalSsrc(kSsrcs3[0]);
+  ASSERT_NE(-1, channel0);
+  webrtc::CpuOveruseObserver* observer = vie_.GetCpuOveruseObserver(channel0);
+  EXPECT_TRUE(observer == NULL);
+
+  // Capture format VGA.
+  cricket::FakeVideoCapturer video_capturer;
+  const std::vector<cricket::VideoFormat>* formats =
+      video_capturer.GetSupportedFormats();
+  cricket::VideoFormat capture_format_vga = (*formats)[1];
+  EXPECT_EQ(cricket::CS_RUNNING, video_capturer.Start(capture_format_vga));
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], &video_capturer));
+
+  // Verify that the CpuOveruseObserver is registered and trigger downgrade.
+  cricket::VideoOptions options;
+  options.cpu_overuse_detection.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  observer = vie_.GetCpuOveruseObserver(channel0);
+  ASSERT_TRUE(observer != NULL);
+  observer->OveruseDetected();
+
+  cricket::VideoCodec send_codec(100, "VP8", 640, 480, 30, 0);
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(send_codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_TRUE(channel_->SetSend(true));
+
+  // Capture format VGA -> adapt (OnCpuResolutionRequest downgrade) -> VGA/2.
+  EXPECT_TRUE(video_capturer.CaptureFrame());
+  VerifyVP8SendCodec(
+      channel0, 3 * send_codec.width / 4, 3 * send_codec.height / 4, 0,
+      kMaxBandwidthKbps, kMinBandwidthKbps, kStartBandwidthKbps,
+      send_codec.framerate);
+
+  // Trigger upgrade and verify that we adapt back up to VGA.
+  observer->NormalUsage();
+  EXPECT_TRUE(video_capturer.CaptureFrame());
+  VerifyVP8SendCodec(
+      channel0, send_codec.width, send_codec.height, 0,
+      kMaxBandwidthKbps, kMinBandwidthKbps, kStartBandwidthKbps,
+      send_codec.framerate);
+
+  // Verify that the CpuOveruseObserver is deregistered.
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], NULL));
+  EXPECT_TRUE(vie_.GetCpuOveruseObserver(channel0) == NULL);
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake,
+       TestAdaptWithCpuOveruseObserverDisabled) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs3))));
+
+  // Verify that the CpuOveruseObserver is not set by default.
+  const int channel0 = vie_.GetChannelFromLocalSsrc(kSsrcs3[0]);
+  ASSERT_NE(-1, channel0);
+  webrtc::CpuOveruseObserver* observer = vie_.GetCpuOveruseObserver(channel0);
+  EXPECT_TRUE(observer == NULL);
+
+  // Capture format VGA.
+  cricket::FakeVideoCapturer video_capturer;
+  const std::vector<cricket::VideoFormat>* formats =
+      video_capturer.GetSupportedFormats();
+  cricket::VideoFormat capture_format_vga = (*formats)[1];
+  EXPECT_EQ(cricket::CS_RUNNING, video_capturer.Start(capture_format_vga));
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], &video_capturer));
+
+  // Disable cpu overuse detection.
+  cricket::VideoOptions options;
+  options.cpu_overuse_detection.Set(false);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  cricket::CoordinatedVideoAdapter* video_adapter = NULL;
+  ASSERT_TRUE(channel_->GetVideoAdapter(0u, &video_adapter));
+  EXPECT_FALSE(video_adapter->cpu_adaptation());
+
+  // Verify that the CpuOveruseObserver is registered and trigger downgrade.
+  observer = vie_.GetCpuOveruseObserver(channel0);
+  ASSERT_TRUE(observer != NULL);
+  observer->OveruseDetected();
+
+  cricket::VideoCodec send_codec(100, "VP8", 640, 480, 30, 0);
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(send_codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_TRUE(channel_->SetSend(true));
+
+  // Capture format VGA -> no adapt -> VGA.
+  EXPECT_TRUE(video_capturer.CaptureFrame());
+  VerifyVP8SendCodec(
+      channel0, capture_format_vga.width, capture_format_vga.height, 0,
+      kMaxBandwidthKbps, kMinBandwidthKbps, kStartBandwidthKbps,
+      send_codec.framerate);
+
+  // Verify that the CpuOveruseObserver is deregistered.
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], NULL));
+  EXPECT_TRUE(vie_.GetCpuOveruseObserver(channel0) == NULL);
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake, GetAdaptStats) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs3))));
+
+  // Capture format VGA.
+  cricket::FakeVideoCapturer video_capturer_vga;
+  const std::vector<cricket::VideoFormat>* formats =
+      video_capturer_vga.GetSupportedFormats();
+  cricket::VideoFormat capture_format_vga = (*formats)[1];
+  EXPECT_EQ(cricket::CS_RUNNING, video_capturer_vga.Start(capture_format_vga));
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], &video_capturer_vga));
+  EXPECT_TRUE(video_capturer_vga.CaptureFrame());
+
+  cricket::VideoCodec send_codec(100, "VP8", 640, 480, 30, 0);
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(send_codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_TRUE(channel_->SetSend(true));
+
+  // Verify that the CpuOveruseObserver is registered and trigger downgrade.
+  cricket::VideoOptions options;
+  options.cpu_overuse_detection.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  const int channel0 = vie_.GetChannelFromLocalSsrc(kSsrcs3[0]);
+  ASSERT_NE(-1, channel0);
+  webrtc::CpuOveruseObserver* observer = vie_.GetCpuOveruseObserver(channel0);
+  ASSERT_TRUE(observer != NULL);
+  observer->OveruseDetected();
+
+  // Capture format VGA -> adapt (OnCpuResolutionRequest downgrade) -> VGA/2.
+  EXPECT_TRUE(video_capturer_vga.CaptureFrame());
+  cricket::VideoMediaInfo info;
+  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_EQ(1U, info.senders.size());
+  EXPECT_EQ(1, info.senders[0].adapt_changes);
+  EXPECT_EQ(cricket::CoordinatedVideoAdapter::ADAPTREASON_CPU,
+            info.senders[0].adapt_reason);
+
+  // Trigger upgrade and verify that we adapt back up to VGA.
+  observer->NormalUsage();
+  EXPECT_TRUE(video_capturer_vga.CaptureFrame());
+  info.Clear();
+  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_EQ(1U, info.senders.size());
+  EXPECT_EQ(2, info.senders[0].adapt_changes);
+  EXPECT_EQ(cricket::CoordinatedVideoAdapter::ADAPTREASON_NONE,
+            info.senders[0].adapt_reason);
+
+  // No capturer (no adapter). Adapt changes from old adapter should be kept.
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], NULL));
+  EXPECT_TRUE(vie_.GetCpuOveruseObserver(channel0) == NULL);
+  info.Clear();
+  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_EQ(1U, info.senders.size());
+  EXPECT_EQ(2, info.senders[0].adapt_changes);
+  EXPECT_EQ(cricket::CoordinatedVideoAdapter::ADAPTREASON_NONE,
+      info.senders[0].adapt_reason);
+
+  // Set new capturer, capture format HD.
+  cricket::FakeVideoCapturer video_capturer_hd;
+  cricket::VideoFormat capture_format_hd = (*formats)[0];
+  EXPECT_EQ(cricket::CS_RUNNING, video_capturer_hd.Start(capture_format_hd));
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], &video_capturer_hd));
+  EXPECT_TRUE(video_capturer_hd.CaptureFrame());
+  observer = vie_.GetCpuOveruseObserver(channel0);
+  ASSERT_TRUE(observer != NULL);
+
+  // Trigger overuse, HD -> adapt (OnCpuResolutionRequest downgrade) -> HD/2.
+  observer->OveruseDetected();
+  EXPECT_TRUE(video_capturer_hd.CaptureFrame());
+  info.Clear();
+  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_EQ(1U, info.senders.size());
+  EXPECT_EQ(3, info.senders[0].adapt_changes);
+  EXPECT_EQ(cricket::CoordinatedVideoAdapter::ADAPTREASON_CPU,
+      info.senders[0].adapt_reason);
+
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], NULL));
+}
+
+// Test that the codec is not reset for every frame sent in
+// non-conference and non-screencast mode.
+TEST_F(WebRtcVideoEngineSimulcastTestFake, DontResetCodecOnSendFrame) {
+  EXPECT_TRUE(SetupEngine());
+
+  // Set send codec.
+  cricket::VideoCodec codec(kVP8Codec);
+  std::vector<cricket::VideoCodec> codec_list;
+  codec_list.push_back(codec);
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::StreamParams::CreateLegacy(123)));
+  SendI420Frame(kVP8Codec.width, kVP8Codec.height);
+  EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
+  EXPECT_TRUE(channel_->SetSend(true));
+  EXPECT_EQ(1, vie_.GetNumSetSendCodecs());
+
+  SendI420Frame(kVP8Codec.width, kVP8Codec.height);
+  EXPECT_EQ(1, vie_.GetNumSetSendCodecs());
+  SendI420Frame(kVP8Codec.width, kVP8Codec.height);
+  EXPECT_EQ(1, vie_.GetNumSetSendCodecs());
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake,
+       UseSimulcastAdapterOnVp8OnlyFactory) {
+  encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  TestSimulcastAdapter(kVP8Codec, true);
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake,
+       DontUseSimulcastAdapterOnNoneVp8Factory) {
+  encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecGeneric,
+                                              "H264");
+  static const cricket::VideoCodec kH264Codec(100, "H264", 640, 400, 30, 0);
+  TestSimulcastAdapter(kH264Codec, false);
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake,
+    DontUseSimulcastAdapterOnMultipleCodecsFactory) {
+  encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecGeneric,
+                                              "H264");
+  TestSimulcastAdapter(kVP8Codec, false);
+}
+
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, SimulcastSend_1280x800) {
+  cricket::VideoCodec codec = kVP8Codec;
+  codec.width = 1280;
+  codec.height = 800;
+  // TODO(zhurunz): Support 3 layers of simulcast.
+  SimulcastSend(codec, MAKE_VECTOR(kSsrcs2));
+}
+
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, SimulcastSend_1280x720) {
+  cricket::VideoCodec codec = kVP8Codec;
+  codec.width = 1280;
+  codec.height = 720;
+  // TODO(zhurunz): Support 3 layers of simulcast.
+  SimulcastSend(codec, MAKE_VECTOR(kSsrcs2));
+}
+
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, SimulcastSend_960x540) {
+  cricket::VideoCodec codec = kVP8Codec;
+  codec.width = 960;
+  codec.height = 540;
+  // TODO(zhurunz): Support 3 layers of simulcast.
+  SimulcastSend(codec, MAKE_VECTOR(kSsrcs2));
+}
+
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, SimulcastSend_960x600) {
+  cricket::VideoCodec codec = kVP8Codec;
+  codec.width = 960;
+  codec.height = 600;
+  // TODO(zhurunz): Support 3 layers of simulcast.
+  SimulcastSend(codec, MAKE_VECTOR(kSsrcs2));
+}
+
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, SimulcastSend_640x400) {
+  cricket::VideoCodec codec = kVP8Codec;
+  codec.width = 640;
+  codec.height = 400;
+  SimulcastSend(codec, MAKE_VECTOR(kSsrcs2));
+}
+
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, SimulcastSend_640x360) {
+  cricket::VideoCodec codec = kVP8Codec;
+  codec.width = 640;
+  codec.height = 360;
+  SimulcastSend(codec, MAKE_VECTOR(kSsrcs2));
+}
+
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, SimulcastSend_480x300) {
+  cricket::VideoCodec codec = kVP8Codec;
+  codec.width = 480;
+  codec.height = 300;
+  SimulcastSend(codec, MAKE_VECTOR(kSsrcs2));
+}
+
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, DISABLED_SimulcastSend_480x270) {
+  cricket::VideoCodec codec = kVP8Codec;
+  codec.width = 480;
+  codec.height = 270;
+  SimulcastSend(codec, MAKE_VECTOR(kSsrcs2));
+}
+
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, SimulcastSend_320x200) {
+  cricket::VideoCodec codec = kVP8Codec;
+  codec.width = 320;
+  codec.height = 200;
+  SimulcastSend(codec, MAKE_VECTOR(kSsrcs1));
+}
+
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, SimulcastSend_320x180) {
+  cricket::VideoCodec codec = kVP8Codec;
+  codec.width = 320;
+  codec.height = 180;
+  SimulcastSend(codec, MAKE_VECTOR(kSsrcs1));
+}
+
+// Test reset send codec with simulcast.
+// Disabled per b/6773425
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, DISABLED_SimulcastResetSendCodec) {
+  // Remove stream added in Setup.
+  EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
+
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2))));
+  cricket::VideoCodec codec(DefaultCodec());
+  EXPECT_TRUE(SetOneCodec(codec));
+  EXPECT_TRUE(SetSend(true));
+  int packets = 0;
+
+  // Send the first frame with default format size.
+  EXPECT_TRUE(SendFrame());
+  EXPECT_TRUE_WAIT(NumRtpPackets() > packets, kTimeout);
+  DrainOutgoingPackets();
+  packets = NumRtpPackets();
+
+  // Simulate capture frame size changes.
+  // Verify there is new rtp packet coming out of the encoder.
+
+  // Send an odd frame.
+  EXPECT_TRUE(SendCustomVideoFrame(DefaultCodec().width | 0x01,
+                                   DefaultCodec().height | 0x01));
+  EXPECT_TRUE_WAIT(NumRtpPackets() > packets, kTimeout);
+  packets = DrainOutgoingPackets();
+
+  // Send a small frame in width.
+  EXPECT_TRUE(SendCustomVideoFrame(DefaultCodec().width / 2,
+                                   DefaultCodec().height));
+  EXPECT_TRUE_WAIT(NumRtpPackets() > packets, kTimeout);
+  packets = DrainOutgoingPackets();
+
+  // Send a small frame in height.
+  EXPECT_TRUE(SendCustomVideoFrame(DefaultCodec().width,
+                                   DefaultCodec().height / 2));
+  EXPECT_TRUE_WAIT(NumRtpPackets() > packets, kTimeout);
+  packets = DrainOutgoingPackets();
+
+  // Send a big frame in width.
+  EXPECT_TRUE(SendCustomVideoFrame(DefaultCodec().width * 2,
+                                   DefaultCodec().height));
+  EXPECT_TRUE_WAIT(NumRtpPackets() > packets, kTimeout);
+  packets = DrainOutgoingPackets();
+
+  // Send a big frame in height.
+  EXPECT_TRUE(SendCustomVideoFrame(DefaultCodec().width,
+                                   DefaultCodec().height * 2));
+  EXPECT_TRUE_WAIT(NumRtpPackets() > packets, kTimeout);
+  packets = DrainOutgoingPackets();
+
+  // Send a normal frame.
+  EXPECT_TRUE(SendCustomVideoFrame(DefaultCodec().width,
+                                   DefaultCodec().height));
+  EXPECT_TRUE_WAIT(NumRtpPackets() > packets, kTimeout);
+  packets = DrainOutgoingPackets();
+}
+
+// Test simulcast streams are decodeable with expected sizes.
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, SimulcastStreams) {
+  // Remove stream added in Setup.
+  EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
+
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2))));
+  cricket::VideoCodec codec(DefaultCodec());
+  EXPECT_TRUE(SetOneCodec(codec));
+
+  // Re-configure capturer.
+  channel_->SetCapturer(kSsrc, NULL);
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[0], video_capturer_.get()));
+  cricket::VideoFormat capture_format(codec.width, codec.height,
+      cricket::VideoFormat::FpsToInterval(codec.framerate),
+      cricket::FOURCC_I420);
+  EXPECT_EQ(cricket::CS_RUNNING, video_capturer_->Start(capture_format));
+
+  EXPECT_TRUE(SetSend(true));
+
+  cricket::FakeVideoRenderer renderer1, renderer2;
+  EXPECT_TRUE(channel_->AddRecvStream(
+      cricket::StreamParams::CreateLegacy(kSsrcs2[0])));
+  EXPECT_TRUE(channel_->AddRecvStream(
+      cricket::StreamParams::CreateLegacy(kSsrcs2[1])));
+  EXPECT_TRUE(channel_->SetRenderer(kSsrcs2[0], &renderer1));
+  EXPECT_TRUE(channel_->SetRenderer(kSsrcs2[1], &renderer2));
+  EXPECT_TRUE(channel_->SetRender(true));
+  EXPECT_EQ(0, renderer1.num_rendered_frames());
+  EXPECT_EQ(0, renderer2.num_rendered_frames());
+
+  EXPECT_TRUE(SendFrame());
+  EXPECT_FRAME_ON_RENDERER_WAIT(renderer1, 1,
+      DefaultCodec().width / 2, DefaultCodec().height / 2, kTimeout);
+  EXPECT_FRAME_ON_RENDERER_WAIT(renderer2, 1,
+      DefaultCodec().width, DefaultCodec().height, kTimeout);
+  EXPECT_EQ(1, renderer1.num_set_sizes());
+  EXPECT_EQ(1, renderer2.num_set_sizes());
+}
+
+// Simulcast and resolution resizing should be turned off when screencasting
+// but not otherwise.
+// TODO(dmunene): Fix flaky test with bug 15773660.
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, DISABLED_ScreencastRendering) {
+  // Remove stream added in SetUp.
+  EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
+
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+
+  // Setup a simulcast stream and verify that frames are rendered on
+  // both renderers.
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs2))));
+  cricket::VideoCodec codec(DefaultCodec());
+  EXPECT_TRUE(SetOneCodec(codec));
+  EXPECT_TRUE(SetSend(true));
+
+  cricket::FakeVideoRenderer renderer1, renderer2;
+  EXPECT_TRUE(channel_->AddRecvStream(
+      cricket::StreamParams::CreateLegacy(kSsrcs2[0])));
+  EXPECT_TRUE(channel_->AddRecvStream(
+      cricket::StreamParams::CreateLegacy(kSsrcs2[1])));
+  EXPECT_TRUE(channel_->SetRenderer(kSsrcs2[0], &renderer1));
+  EXPECT_TRUE(channel_->SetRenderer(kSsrcs2[1], &renderer2));
+  EXPECT_TRUE(channel_->SetRender(true));
+  EXPECT_EQ(0, renderer1.num_rendered_frames());
+  EXPECT_EQ(0, renderer2.num_rendered_frames());
+
+  // Re-configure capturer.
+  channel_->SetCapturer(kSsrc, NULL);
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[0], video_capturer_.get()));
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[1], video_capturer_.get()));
+  cricket::VideoFormat capture_format(codec.width, codec.height,
+      cricket::VideoFormat::FpsToInterval(codec.framerate),
+      cricket::FOURCC_I420);
+  EXPECT_EQ(cricket::CS_RUNNING, video_capturer_->Start(capture_format));
+
+  EXPECT_TRUE(SendFrame());
+  EXPECT_FRAME_ON_RENDERER_WAIT(renderer1, 1, codec.width / 2, codec.height / 2,
+                                kTimeout);
+  EXPECT_FRAME_ON_RENDERER_WAIT(renderer2, 1, codec.width, codec.height,
+                                kTimeout);
+
+  // Register a fake screencast capturer and verify that frames are only
+  // rendered to a single renderer.
+  rtc::scoped_ptr<cricket::FakeVideoCapturer> capturer(
+      new cricket::FakeVideoCapturer);
+  capturer->SetScreencast(true);
+  const std::vector<cricket::VideoFormat>* formats =
+      capturer->GetSupportedFormats();
+  capture_format = (*formats)[0];
+  EXPECT_EQ(cricket::CS_RUNNING, capturer->Start(capture_format));
+  // Capture a frame to increment the frame timestamp since the default video
+  // capturer starts at the same timestamp.
+  EXPECT_TRUE(capturer->CaptureFrame());
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[0], capturer.get()));
+  EXPECT_TRUE(rtc::Thread::Current()->ProcessMessages(30));
+  EXPECT_TRUE(capturer->CaptureFrame());
+  EXPECT_FRAME_ON_RENDERER_WAIT(renderer1, 2, capture_format.width,
+                                capture_format.height, kTimeout);
+  // When screencasting we only encode a single stream (no simulcast), which is
+  // why we only expect frames to be rendered in one of the renderers.
+  EXPECT_EQ(1, renderer2.num_rendered_frames());
+
+  // Disable screencast and make sure frames are now rendered in both renderers.
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[0], NULL));
+  EXPECT_FRAME_ON_RENDERER_WAIT(renderer1, 3, codec.width / 2, codec.height / 2,
+                                kTimeout);
+  EXPECT_FRAME_ON_RENDERER_WAIT(renderer2, 2, codec.width, codec.height,
+                                kTimeout);
+}
+
+// Disable for TSan v2, see
+// https://code.google.com/p/webrtc/issues/detail?id=3525 for details.
+#if !defined(THREAD_SANITIZER)
+// Ensures that the correct settings are applied to the codec when two temporal
+// layer screencasting is enabled, and that the correct simulcast settings are
+// reapplied when disabling screencasting.
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, ConferenceModeScreencastSettings) {
+  TestScreencastSettings();
+}
+#endif  // if !defined(THREAD_SANITIZER)

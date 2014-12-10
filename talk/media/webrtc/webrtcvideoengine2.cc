@@ -35,6 +35,7 @@
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videorenderer.h"
 #include "talk/media/webrtc/constants.h"
+#include "talk/media/webrtc/simulcast.h"
 #include "talk/media/webrtc/webrtcvideocapturer.h"
 #include "talk/media/webrtc/webrtcvideoengine.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
@@ -184,15 +185,43 @@ static std::vector<webrtc::RtpExtension> FilterRtpExtensions(
 WebRtcVideoEncoderFactory2::~WebRtcVideoEncoderFactory2() {
 }
 
+std::vector<webrtc::VideoStream>
+WebRtcVideoEncoderFactory2::CreateSimulcastVideoStreams(
+    const VideoCodec& codec,
+    const VideoOptions& options,
+    size_t num_streams) {
+  // Use default factory for non-simulcast.
+  int max_qp = kDefaultQpMax;
+  codec.GetParam(kCodecParamMaxQuantization, &max_qp);
+
+  int min_bitrate_kbps;
+  if (!codec.GetParam(kCodecParamMinBitrate, &min_bitrate_kbps) ||
+      min_bitrate_kbps < kMinVideoBitrate) {
+    min_bitrate_kbps = kMinVideoBitrate;
+  }
+
+  int max_bitrate_kbps;
+  if (!codec.GetParam(kCodecParamMaxBitrate, &max_bitrate_kbps)) {
+    max_bitrate_kbps = 0;
+  }
+
+  return GetSimulcastConfig(
+      num_streams,
+      GetSimulcastBitrateMode(options),
+      codec.width,
+      codec.height,
+      min_bitrate_kbps * 1000,
+      max_bitrate_kbps * 1000,
+      max_qp,
+      codec.framerate != 0 ? codec.framerate : kDefaultVideoMaxFramerate);
+}
+
 std::vector<webrtc::VideoStream> WebRtcVideoEncoderFactory2::CreateVideoStreams(
     const VideoCodec& codec,
     const VideoOptions& options,
     size_t num_streams) {
-  if (num_streams != 1) {
-    LOG(LS_WARNING) << "Unsupported number of streams (" << num_streams
-                    << "), falling back to one.";
-    num_streams = 1;
-  }
+  if (num_streams != 1)
+    return CreateSimulcastVideoStreams(codec, options, num_streams);
 
   webrtc::VideoStream stream;
   stream.width = codec.width;
