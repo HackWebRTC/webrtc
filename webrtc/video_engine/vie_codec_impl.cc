@@ -277,7 +277,7 @@ int ViECodecImpl::SetReceiveCodec(const int video_channel,
                                   const VideoCodec& video_codec) {
   LOG(LS_INFO) << "SetReceiveCodec for channel " << video_channel;
   LOG(LS_INFO) << "Codec type " << video_codec.codecType
-               << ", payload type " << video_codec.plType;
+               << ", payload type " << static_cast<int>(video_codec.plType);
 
   if (CodecValid(video_codec) == false) {
     shared_data_->SetLastError(kViECodecInvalidCodec);

@@ -225,7 +225,7 @@ int ViERTP_RTCPImpl::SetPadWithRedundantPayloads(int video_channel,
 int ViERTP_RTCPImpl::SetRtxReceivePayloadType(const int video_channel,
                                               const uint8_t payload_type) {
   LOG_F(LS_INFO) << "channel: " << video_channel
-               << " payload_type: " << static_cast<int>(payload_type);
+                 << " payload_type: " << static_cast<int>(payload_type);
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
@@ -588,7 +588,7 @@ int ViERTP_RTCPImpl::SetReceiveTimestampOffsetStatus(int video_channel,
                                                      bool enable,
                                                      int id) {
   LOG_F(LS_INFO) << "channel: " << video_channel
-                 << "enable: " << (enable ? "on" : "off") << " id: " << id;
+                 << " enable: " << (enable ? "on" : "off") << " id: " << id;
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
@@ -606,7 +606,7 @@ int ViERTP_RTCPImpl::SetSendAbsoluteSendTimeStatus(int video_channel,
                                                    bool enable,
                                                    int id) {
   LOG_F(LS_INFO) << "channel: " << video_channel
-                 << "enable: " << (enable ? "on" : "off") << " id: " << id;
+                 << " enable: " << (enable ? "on" : "off") << " id: " << id;
 
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
@@ -625,7 +625,7 @@ int ViERTP_RTCPImpl::SetReceiveAbsoluteSendTimeStatus(int video_channel,
                                                       bool enable,
                                                       int id) {
   LOG_F(LS_INFO) << "channel: " << video_channel
-                 << "enable: " << (enable ? "on" : "off") << " id: " << id;
+                 << " enable: " << (enable ? "on" : "off") << " id: " << id;
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {

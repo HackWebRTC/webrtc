@@ -1800,8 +1800,8 @@ int32_t ViEChannel::OnInitializeDecoder(
     const int frequency,
     const uint8_t channels,
     const uint32_t rate) {
-  LOG(LS_INFO) << "OnInitializeDecoder " << payload_type << " "
-               << payload_name;
+  LOG(LS_INFO) << "OnInitializeDecoder " << static_cast<int>(payload_type)
+               << " " << payload_name;
   vcm_->ResetDecoder();
 
   CriticalSectionScoped cs(callback_cs_.get());
