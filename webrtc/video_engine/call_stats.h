@@ -43,12 +43,6 @@ class CallStats : public Module {
   void RegisterStatsObserver(CallStatsObserver* observer);
   void DeregisterStatsObserver(CallStatsObserver* observer);
 
- protected:
-  void OnRttUpdate(uint32_t rtt);
-
-  uint32_t last_processed_rtt_ms() const;
-
- private:
   // Helper struct keeping track of the time a rtt value is reported.
   struct RttTime {
     RttTime(uint32_t new_rtt, int64_t rtt_time)
@@ -57,6 +51,12 @@ class CallStats : public Module {
     const int64_t time;
   };
 
+ protected:
+  void OnRttUpdate(uint32_t rtt);
+
+  uint32_t avg_rtt_ms() const;
+
+ private:
   // Protecting all members.
   scoped_ptr<CriticalSectionWrapper> crit_;
   // Observer receiving statistics updates.
@@ -64,7 +64,8 @@ class CallStats : public Module {
   // The last time 'Process' resulted in statistic update.
   int64_t last_process_time_;
   // The last RTT in the statistics update (zero if there is no valid estimate).
-  uint32_t last_processed_rtt_ms_;
+  uint32_t max_rtt_ms_;
+  uint32_t avg_rtt_ms_;
 
   // All Rtt reports within valid time interval, oldest first.
   std::list<RttTime> reports_;

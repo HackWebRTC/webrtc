@@ -101,42 +101,42 @@ TEST_F(CallStatsTest, ProcessTime) {
 TEST_F(CallStatsTest, MultipleObservers) {
   MockStatsObserver stats_observer_1;
   call_stats_->RegisterStatsObserver(&stats_observer_1);
-  // Add the secondobserver twice, there should still be only one report to the
+  // Add the second observer twice, there should still be only one report to the
   // observer.
   MockStatsObserver stats_observer_2;
   call_stats_->RegisterStatsObserver(&stats_observer_2);
   call_stats_->RegisterStatsObserver(&stats_observer_2);
 
   RtcpRttStats* rtcp_rtt_stats = call_stats_->rtcp_rtt_stats();
-  uint32_t rtt = 100;
-  rtcp_rtt_stats->OnRttUpdate(rtt);
+  const uint32_t kRtt = 100;
+  rtcp_rtt_stats->OnRttUpdate(kRtt);
 
   // Verify both observers are updated.
   TickTime::AdvanceFakeClock(1000);
-  EXPECT_CALL(stats_observer_1, OnRttUpdate(rtt))
+  EXPECT_CALL(stats_observer_1, OnRttUpdate(kRtt))
       .Times(1);
-  EXPECT_CALL(stats_observer_2, OnRttUpdate(rtt))
+  EXPECT_CALL(stats_observer_2, OnRttUpdate(kRtt))
       .Times(1);
   call_stats_->Process();
 
   // Deregister the second observer and verify update is only sent to the first
   // observer.
   call_stats_->DeregisterStatsObserver(&stats_observer_2);
-  rtcp_rtt_stats->OnRttUpdate(rtt);
+  rtcp_rtt_stats->OnRttUpdate(kRtt);
   TickTime::AdvanceFakeClock(1000);
-  EXPECT_CALL(stats_observer_1, OnRttUpdate(rtt))
+  EXPECT_CALL(stats_observer_1, OnRttUpdate(kRtt))
       .Times(1);
-  EXPECT_CALL(stats_observer_2, OnRttUpdate(rtt))
+  EXPECT_CALL(stats_observer_2, OnRttUpdate(kRtt))
       .Times(0);
   call_stats_->Process();
 
   // Deregister the first observer.
   call_stats_->DeregisterStatsObserver(&stats_observer_1);
-  rtcp_rtt_stats->OnRttUpdate(rtt);
+  rtcp_rtt_stats->OnRttUpdate(kRtt);
   TickTime::AdvanceFakeClock(1000);
-  EXPECT_CALL(stats_observer_1, OnRttUpdate(rtt))
+  EXPECT_CALL(stats_observer_1, OnRttUpdate(kRtt))
       .Times(0);
-  EXPECT_CALL(stats_observer_2, OnRttUpdate(rtt))
+  EXPECT_CALL(stats_observer_2, OnRttUpdate(kRtt))
       .Times(0);
   call_stats_->Process();
 }
@@ -151,17 +151,17 @@ TEST_F(CallStatsTest, ChangeRtt) {
   TickTime::AdvanceFakeClock(1000);
 
   // Set a first value and verify the callback is triggered.
-  const uint32_t first_rtt = 100;
-  rtcp_rtt_stats->OnRttUpdate(first_rtt);
-  EXPECT_CALL(stats_observer, OnRttUpdate(first_rtt))
+  const uint32_t kFirstRtt = 100;
+  rtcp_rtt_stats->OnRttUpdate(kFirstRtt);
+  EXPECT_CALL(stats_observer, OnRttUpdate(kFirstRtt))
       .Times(1);
   call_stats_->Process();
 
   // Increase rtt and verify the new value is reported.
   TickTime::AdvanceFakeClock(1000);
-  const uint32_t high_rtt = first_rtt + 20;
-  rtcp_rtt_stats->OnRttUpdate(high_rtt);
-  EXPECT_CALL(stats_observer, OnRttUpdate(high_rtt))
+  const uint32_t kHighRtt = kFirstRtt + 20;
+  rtcp_rtt_stats->OnRttUpdate(kHighRtt);
+  EXPECT_CALL(stats_observer, OnRttUpdate(kHighRtt))
       .Times(1);
   call_stats_->Process();
 
@@ -169,18 +169,48 @@ TEST_F(CallStatsTest, ChangeRtt) {
   // rtt invalid. Report a lower rtt and verify the old/high value still is sent
   // in the callback.
   TickTime::AdvanceFakeClock(1000);
-  const uint32_t low_rtt = first_rtt - 20;
-  rtcp_rtt_stats->OnRttUpdate(low_rtt);
-  EXPECT_CALL(stats_observer, OnRttUpdate(high_rtt))
+  const uint32_t kLowRtt = kFirstRtt - 20;
+  rtcp_rtt_stats->OnRttUpdate(kLowRtt);
+  EXPECT_CALL(stats_observer, OnRttUpdate(kHighRtt))
       .Times(1);
   call_stats_->Process();
 
   // Advance time to make the high report invalid, the lower rtt should now be
   // in the callback.
   TickTime::AdvanceFakeClock(1000);
-  EXPECT_CALL(stats_observer, OnRttUpdate(low_rtt))
+  EXPECT_CALL(stats_observer, OnRttUpdate(kLowRtt))
       .Times(1);
   call_stats_->Process();
+
+  call_stats_->DeregisterStatsObserver(&stats_observer);
+}
+
+TEST_F(CallStatsTest, LastProcessedRtt) {
+  MockStatsObserver stats_observer;
+  call_stats_->RegisterStatsObserver(&stats_observer);
+  RtcpRttStats* rtcp_rtt_stats = call_stats_->rtcp_rtt_stats();
+  TickTime::AdvanceFakeClock(1000);
+
+  // Set a first values and verify that LastProcessedRtt initially returns the
+  // average rtt.
+  const uint32_t kRttLow = 10;
+  const uint32_t kRttHigh = 30;
+  const uint32_t kAvgRtt = 20;
+  rtcp_rtt_stats->OnRttUpdate(kRttLow);
+  rtcp_rtt_stats->OnRttUpdate(kRttHigh);
+  EXPECT_CALL(stats_observer, OnRttUpdate(kRttHigh))
+      .Times(1);
+  call_stats_->Process();
+  EXPECT_EQ(kAvgRtt, rtcp_rtt_stats->LastProcessedRtt());
+
+  // Update values and verify LastProcessedRtt.
+  TickTime::AdvanceFakeClock(1000);
+  rtcp_rtt_stats->OnRttUpdate(kRttLow);
+  rtcp_rtt_stats->OnRttUpdate(kRttHigh);
+  EXPECT_CALL(stats_observer, OnRttUpdate(kRttHigh))
+      .Times(1);
+  call_stats_->Process();
+  EXPECT_EQ(kAvgRtt, rtcp_rtt_stats->LastProcessedRtt());
 
   call_stats_->DeregisterStatsObserver(&stats_observer);
 }
