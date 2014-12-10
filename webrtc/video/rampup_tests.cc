@@ -507,4 +507,20 @@ TEST_F(RampUpTest, UpDownUpOneStreamRtx) { RunRampUpDownUpTest(1, true); }
 
 TEST_F(RampUpTest, UpDownUpThreeStreamsRtx) { RunRampUpDownUpTest(3, true); }
 
+TEST_F(RampUpTest, AbsSendTimeSingleStream) {
+  RunRampUpTest(false, 1, 0, RtpExtension::kAbsSendTime);
+}
+
+TEST_F(RampUpTest, AbsSendTimeSimulcast) {
+  RunRampUpTest(false, 3, 0, RtpExtension::kAbsSendTime);
+}
+
+TEST_F(RampUpTest, AbsSendTimeSimulcastWithRtx) {
+  RunRampUpTest(true, 3, 0, RtpExtension::kAbsSendTime);
+}
+
+TEST_F(RampUpTest, AbsSendTimeSingleStreamWithHighStartBitrate) {
+  RunRampUpTest(false, 1, 0.9 * kSingleStreamTargetBps,
+                RtpExtension::kAbsSendTime);
+}
 }  // namespace webrtc
