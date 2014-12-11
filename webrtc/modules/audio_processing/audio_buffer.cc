@@ -65,6 +65,7 @@ AudioBuffer::AudioBuffer(int input_samples_per_channel,
     proc_samples_per_channel_(process_samples_per_channel),
     num_proc_channels_(num_process_channels),
     output_samples_per_channel_(output_samples_per_channel),
+    num_channels_(num_process_channels),
     num_bands_(1),
     samples_per_split_channel_(proc_samples_per_channel_),
     mixed_low_pass_valid_(false),
@@ -77,7 +78,7 @@ AudioBuffer::AudioBuffer(int input_samples_per_channel,
   assert(proc_samples_per_channel_ > 0);
   assert(output_samples_per_channel_ > 0);
   assert(num_input_channels_ > 0 && num_input_channels_ <= 2);
-  assert(num_proc_channels_ <= num_input_channels);
+  assert(num_proc_channels_ <= num_input_channels_);
 
   if (num_input_channels_ == 2 && num_proc_channels_ == 1) {
     input_buffer_.reset(new ChannelBuffer<float>(input_samples_per_channel_,
@@ -172,7 +173,7 @@ void AudioBuffer::CopyTo(int samples_per_channel,
                          AudioProcessing::ChannelLayout layout,
                          float* const* data) {
   assert(samples_per_channel == output_samples_per_channel_);
-  assert(ChannelsFromLayout(layout) == num_proc_channels_);
+  assert(ChannelsFromLayout(layout) == num_channels_);
 
   // Convert to the float range.
   float* const* data_ptr = data;
@@ -180,14 +181,14 @@ void AudioBuffer::CopyTo(int samples_per_channel,
     // Convert to an intermediate buffer for subsequent resampling.
     data_ptr = process_buffer_->channels();
   }
-  for (int i = 0; i < num_proc_channels_; ++i) {
+  for (int i = 0; i < num_channels_; ++i) {
     FloatS16ToFloat(channels_->fbuf()->channel(i), proc_samples_per_channel_,
                     data_ptr[i]);
   }
 
   // Resample.
   if (output_samples_per_channel_ != proc_samples_per_channel_) {
-    for (int i = 0; i < num_proc_channels_; ++i) {
+    for (int i = 0; i < num_channels_; ++i) {
       output_resamplers_[i]->Resample(data_ptr[i],
                                       proc_samples_per_channel_,
                                       data[i],
@@ -201,6 +202,7 @@ void AudioBuffer::InitForNewData() {
   mixed_low_pass_valid_ = false;
   reference_copied_ = false;
   activity_ = AudioFrame::kVadUnknown;
+  num_channels_ = num_proc_channels_;
 }
 
 const int16_t* AudioBuffer::data_const(int channel) const {
@@ -362,7 +364,11 @@ AudioFrame::VADActivity AudioBuffer::activity() const {
 }
 
 int AudioBuffer::num_channels() const {
-  return num_proc_channels_;
+  return num_channels_;
+}
+
+void AudioBuffer::set_num_channels(int num_channels) {
+  num_channels_ = num_channels;
 }
 
 int AudioBuffer::samples_per_channel() const {
@@ -412,8 +418,8 @@ void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
 
 void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) const {
   assert(proc_samples_per_channel_ == output_samples_per_channel_);
-  assert(num_proc_channels_ == num_input_channels_);
-  assert(frame->num_channels_ == num_proc_channels_);
+  assert(num_channels_ == num_input_channels_);
+  assert(frame->num_channels_ == num_channels_);
   assert(frame->samples_per_channel_ == proc_samples_per_channel_);
   frame->vad_activity_ = activity_;
 
@@ -422,19 +428,20 @@ void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) const {
   }
 
   int16_t* interleaved = frame->data_;
-  for (int i = 0; i < num_proc_channels_; i++) {
+  for (int i = 0; i < num_channels_; i++) {
     int16_t* deinterleaved = channels_->ibuf()->channel(i);
     int interleaved_idx = i;
     for (int j = 0; j < proc_samples_per_channel_; j++) {
       interleaved[interleaved_idx] = deinterleaved[j];
-      interleaved_idx += num_proc_channels_;
+      interleaved_idx += num_channels_;
     }
   }
 }
 
 void AudioBuffer::CopyLowPassToReference() {
   reference_copied_ = true;
-  if (!low_pass_reference_channels_.get()) {
+  if (!low_pass_reference_channels_.get() ||
+      low_pass_reference_channels_->num_channels() != num_channels_) {
     low_pass_reference_channels_.reset(
         new ChannelBuffer<int16_t>(samples_per_split_channel_,
                                    num_proc_channels_));

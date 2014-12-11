@@ -184,8 +184,10 @@ class AudioProcessingImpl : public AudioProcessing {
 #endif
 
   AudioFormat fwd_in_format_;
-  AudioFormat fwd_proc_format_;
-  AudioRate fwd_out_format_;
+  // This one is an AudioRate, because the forward processing number of channels
+  // is mutable and is tracked by the capture_audio_.
+  AudioRate fwd_proc_format_;
+  AudioFormat fwd_out_format_;
   AudioFormat rev_in_format_;
   AudioFormat rev_proc_format_;
   int split_rate_;

@@ -87,8 +87,8 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config)
       event_msg_(new audioproc::Event()),
 #endif
       fwd_in_format_(kSampleRate16kHz, 1),
-      fwd_proc_format_(kSampleRate16kHz, 1),
-      fwd_out_format_(kSampleRate16kHz),
+      fwd_proc_format_(kSampleRate16kHz),
+      fwd_out_format_(kSampleRate16kHz, 1),
       rev_in_format_(kSampleRate16kHz, 1),
       rev_proc_format_(kSampleRate16kHz, 1),
       split_rate_(kSampleRate16kHz),
@@ -152,7 +152,7 @@ int AudioProcessingImpl::set_sample_rate_hz(int rate) {
                           rate,
                           rev_in_format_.rate(),
                           fwd_in_format_.num_channels(),
-                          fwd_proc_format_.num_channels(),
+                          fwd_out_format_.num_channels(),
                           rev_in_format_.num_channels());
 }
 
@@ -180,7 +180,7 @@ int AudioProcessingImpl::InitializeLocked() {
   capture_audio_.reset(new AudioBuffer(fwd_in_format_.samples_per_channel(),
                                        fwd_in_format_.num_channels(),
                                        fwd_proc_format_.samples_per_channel(),
-                                       fwd_proc_format_.num_channels(),
+                                       fwd_out_format_.num_channels(),
                                        fwd_out_format_.samples_per_channel()));
 
   // Initialize all components.
@@ -226,7 +226,7 @@ int AudioProcessingImpl::InitializeLocked(int input_sample_rate_hz,
   }
 
   fwd_in_format_.set(input_sample_rate_hz, num_input_channels);
-  fwd_out_format_.set(output_sample_rate_hz);
+  fwd_out_format_.set(output_sample_rate_hz, num_output_channels);
   rev_in_format_.set(reverse_sample_rate_hz, num_reverse_channels);
 
   // We process at the closest native rate >= min(input rate, output rate)...
@@ -244,7 +244,7 @@ int AudioProcessingImpl::InitializeLocked(int input_sample_rate_hz,
     fwd_proc_rate = kSampleRate16kHz;
   }
 
-  fwd_proc_format_.set(fwd_proc_rate, num_output_channels);
+  fwd_proc_format_.set(fwd_proc_rate);
 
   // We normally process the reverse stream at 16 kHz. Unless...
   int rev_proc_rate = kSampleRate16kHz;
@@ -285,7 +285,7 @@ int AudioProcessingImpl::MaybeInitializeLocked(int input_sample_rate_hz,
       output_sample_rate_hz == fwd_out_format_.rate() &&
       reverse_sample_rate_hz == rev_in_format_.rate() &&
       num_input_channels == fwd_in_format_.num_channels() &&
-      num_output_channels == fwd_proc_format_.num_channels() &&
+      num_output_channels == fwd_out_format_.num_channels() &&
       num_reverse_channels == rev_in_format_.num_channels()) {
     return kNoError;
   }
@@ -332,7 +332,7 @@ int AudioProcessingImpl::num_input_channels() const {
 }
 
 int AudioProcessingImpl::num_output_channels() const {
-  return fwd_proc_format_.num_channels();
+  return fwd_out_format_.num_channels();
 }
 
 void AudioProcessingImpl::set_output_will_be_muted(bool muted) {
@@ -389,7 +389,7 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
     audioproc::Stream* msg = event_msg_->mutable_stream();
     const size_t channel_size =
         sizeof(float) * fwd_out_format_.samples_per_channel();
-    for (int i = 0; i < fwd_proc_format_.num_channels(); ++i)
+    for (int i = 0; i < fwd_out_format_.num_channels(); ++i)
       msg->add_output_channel(dest[i], channel_size);
     RETURN_ON_ERR(WriteMessageToDebugFile());
   }
@@ -513,7 +513,7 @@ int AudioProcessingImpl::AnalyzeReverseStream(const float* const* data,
                                       fwd_out_format_.rate(),
                                       sample_rate_hz,
                                       fwd_in_format_.num_channels(),
-                                      fwd_proc_format_.num_channels(),
+                                      fwd_out_format_.num_channels(),
                                       num_channels));
   if (samples_per_channel != rev_in_format_.samples_per_channel()) {
     return kBadDataLengthError;
@@ -774,7 +774,7 @@ bool AudioProcessingImpl::is_data_processed() const {
 
 bool AudioProcessingImpl::output_copy_needed(bool is_data_processed) const {
   // Check if we've upmixed or downmixed the audio.
-  return ((fwd_proc_format_.num_channels() != fwd_in_format_.num_channels()) ||
+  return ((fwd_out_format_.num_channels() != fwd_in_format_.num_channels()) ||
           is_data_processed);
 }
 
@@ -828,7 +828,7 @@ int AudioProcessingImpl::WriteInitMessage() {
   audioproc::Init* msg = event_msg_->mutable_init();
   msg->set_sample_rate(fwd_in_format_.rate());
   msg->set_num_input_channels(fwd_in_format_.num_channels());
-  msg->set_num_output_channels(fwd_proc_format_.num_channels());
+  msg->set_num_output_channels(fwd_out_format_.num_channels());
   msg->set_num_reverse_channels(rev_in_format_.num_channels());
   msg->set_reverse_sample_rate(rev_in_format_.rate());
   msg->set_output_sample_rate(fwd_out_format_.rate());

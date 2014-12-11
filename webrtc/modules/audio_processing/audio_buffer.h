@@ -45,6 +45,7 @@ class AudioBuffer {
   virtual ~AudioBuffer();
 
   int num_channels() const;
+  void set_num_channels(int num_channels);
   int samples_per_channel() const;
   int samples_per_split_channel() const;
   int samples_per_keyboard_channel() const;
@@ -107,11 +108,20 @@ class AudioBuffer {
   // Called from DeinterleaveFrom() and CopyFrom().
   void InitForNewData();
 
+  // The audio is passed into DeinterleaveFrom() or CopyFrom() with input
+  // format (samples per channel and number of channels).
   const int input_samples_per_channel_;
   const int num_input_channels_;
+  // The audio is stored by DeinterleaveFrom() or CopyFrom() with processing
+  // format.
   const int proc_samples_per_channel_;
   const int num_proc_channels_;
+  // The audio is returned by InterleaveTo() and CopyTo() with output samples
+  // per channels and the current number of channels. This last one can be
+  // changed at any time using set_num_channels().
   const int output_samples_per_channel_;
+  int num_channels_;
+
   int num_bands_;
   int samples_per_split_channel_;
   bool mixed_low_pass_valid_;
