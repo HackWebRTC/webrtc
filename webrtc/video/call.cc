@@ -342,6 +342,9 @@ Call::Stats Call::GetStats() const {
          ++it) {
       stats.pacer_delay_ms =
           std::max(it->second->GetPacerQueuingDelayMs(), stats.pacer_delay_ms);
+      int rtt_ms = it->second->GetRtt();
+      if (rtt_ms > 0)
+        stats.rtt_ms = rtt_ms;
     }
   }
   return stats;

@@ -1141,7 +1141,13 @@ bool WebRtcVideoChannel2::GetStats(const StatsOptions& options,
   info->Clear();
   FillSenderStats(info);
   FillReceiverStats(info);
-  FillBandwidthEstimationStats(info);
+  webrtc::Call::Stats stats = call_->GetStats();
+  FillBandwidthEstimationStats(stats, info);
+  if (stats.rtt_ms != -1) {
+    for (size_t i = 0; i < info->senders.size(); ++i) {
+      info->senders[i].rtt_ms = stats.rtt_ms;
+    }
+  }
   return true;
 }
 
@@ -1166,9 +1172,9 @@ void WebRtcVideoChannel2::FillReceiverStats(VideoMediaInfo* video_media_info) {
 }
 
 void WebRtcVideoChannel2::FillBandwidthEstimationStats(
+    const webrtc::Call::Stats& stats,
     VideoMediaInfo* video_media_info) {
   BandwidthEstimationInfo bwe_info;
-  webrtc::Call::Stats stats = call_->GetStats();
   bwe_info.available_send_bandwidth = stats.send_bandwidth_bps;
   bwe_info.available_recv_bandwidth = stats.recv_bandwidth_bps;
   bwe_info.bucket_delay = stats.pacer_delay_ms;
@@ -1905,7 +1911,6 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
 
   // TODO(pbos): Support or remove the following stats.
   info.packets_cached = -1;
-  info.rtt_ms = -1;
 
   return info;
 }

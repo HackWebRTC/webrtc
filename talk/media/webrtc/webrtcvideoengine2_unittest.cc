@@ -307,9 +307,12 @@ webrtc::PacketReceiver* FakeCall::Receiver() {
   return NULL;
 }
 
+void FakeCall::SetStats(const webrtc::Call::Stats& stats) {
+  stats_ = stats;
+}
+
 webrtc::Call::Stats FakeCall::GetStats() const {
-  webrtc::Call::Stats stats;
-  return stats;
+  return stats_;
 }
 
 void FakeCall::SetBitrateConfig(
@@ -1904,6 +1907,20 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsReportsUpperResolution) {
   EXPECT_EQ(90, info.senders[0].send_frame_height);
 }
 
+TEST_F(WebRtcVideoChannel2Test, TranslatesCallStatsCorrectly) {
+  AddSendStream();
+  AddSendStream();
+  webrtc::Call::Stats stats;
+  stats.rtt_ms = 123;
+  fake_call_->SetStats(stats);
+
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_EQ(2u, info.senders.size());
+  EXPECT_EQ(stats.rtt_ms, info.senders[0].rtt_ms);
+  EXPECT_EQ(stats.rtt_ms, info.senders[1].rtt_ms);
+}
+
 class WebRtcVideoEngine2SimulcastTest : public testing::Test {
  public:
   WebRtcVideoEngine2SimulcastTest()
@@ -2351,4 +2368,5 @@ TEST_F(WebRtcVideoChannel2SimulcastTest,
   // TODO(pbos): Implement.
   FAIL() << "Not implemented.";
 }
+
 }  // namespace cricket

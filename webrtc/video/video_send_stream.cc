@@ -529,5 +529,15 @@ int VideoSendStream::GetPacerQueuingDelayMs() const {
   }
   return pacer_delay_ms;
 }
+
+int VideoSendStream::GetRtt() const {
+  webrtc::RtcpStatistics rtcp_stats;
+  int rtt_ms;
+  if (rtp_rtcp_->GetSendChannelRtcpStatistics(channel_, rtcp_stats, rtt_ms) ==
+      0) {
+    return rtt_ms;
+  }
+  return -1;
+}
 }  // namespace internal
 }  // namespace webrtc

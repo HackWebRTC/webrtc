@@ -77,6 +77,8 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   int GetPacerQueuingDelayMs() const;
 
+  int GetRtt() const;
+
  private:
   void ConfigureSsrcs();
   TransportAdapter transport_adapter_;

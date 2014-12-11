@@ -113,6 +113,7 @@ class FakeCall : public webrtc::Call {
   std::vector<webrtc::VideoCodec> GetDefaultVideoCodecs();
 
   webrtc::Call::NetworkState GetNetworkState() const;
+  void SetStats(const webrtc::Call::Stats& stats);
 
  private:
   virtual webrtc::VideoSendStream* CreateVideoSendStream(
@@ -137,6 +138,7 @@ class FakeCall : public webrtc::Call {
 
   webrtc::Call::Config config_;
   webrtc::Call::NetworkState network_state_;
+  webrtc::Call::Stats stats_;
   std::vector<webrtc::VideoCodec> codecs_;
   std::vector<FakeVideoSendStream*> video_send_streams_;
   std::vector<FakeVideoReceiveStream*> video_receive_streams_;

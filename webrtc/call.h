@@ -97,11 +97,16 @@ class Call {
   };
 
   struct Stats {
-    Stats() : send_bandwidth_bps(0), recv_bandwidth_bps(0), pacer_delay_ms(0) {}
+    Stats()
+        : send_bandwidth_bps(0),
+          recv_bandwidth_bps(0),
+          pacer_delay_ms(0),
+          rtt_ms(-1) {}
 
     int send_bandwidth_bps;
     int recv_bandwidth_bps;
     int pacer_delay_ms;
+    int rtt_ms;
   };
 
   static Call* Create(const Call::Config& config);

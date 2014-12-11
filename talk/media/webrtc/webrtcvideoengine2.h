@@ -469,7 +469,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
   void FillSenderStats(VideoMediaInfo* info);
   void FillReceiverStats(VideoMediaInfo* info);
-  void FillBandwidthEstimationStats(VideoMediaInfo* info);
+  void FillBandwidthEstimationStats(const webrtc::Call::Stats& stats,
+                                    VideoMediaInfo* info);
 
   uint32_t rtcp_receiver_report_ssrc_;
   bool sending_;

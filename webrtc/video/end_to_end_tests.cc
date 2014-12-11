@@ -1213,8 +1213,9 @@ TEST_F(EndToEndTest, VerifyBandwidthStats) {
       if (!has_seen_pacer_delay_)
         has_seen_pacer_delay_ = sender_stats.pacer_delay_ms > 0;
       if (sender_stats.send_bandwidth_bps > 0 &&
-          receiver_stats.recv_bandwidth_bps > 0 && has_seen_pacer_delay_)
+          receiver_stats.recv_bandwidth_bps > 0 && has_seen_pacer_delay_) {
         observation_complete_->Set();
+      }
       return receiver_call_->Receiver()->DeliverPacket(packet, length);
     }
 
@@ -2133,6 +2134,46 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
   } test;
 
   RunBaseTest(&test);
+}
+
+TEST_F(EndToEndTest, CallReportsRttForSender) {
+  static const int kSendDelayMs = 30;
+  static const int kReceiveDelayMs = 70;
+
+  FakeNetworkPipe::Config config;
+  config.queue_delay_ms = kSendDelayMs;
+  test::DirectTransport sender_transport(config);
+  config.queue_delay_ms = kReceiveDelayMs;
+  test::DirectTransport receiver_transport(config);
+
+  CreateCalls(Call::Config(&sender_transport),
+              Call::Config(&receiver_transport));
+
+  sender_transport.SetReceiver(receiver_call_->Receiver());
+  receiver_transport.SetReceiver(sender_call_->Receiver());
+
+  CreateSendConfig(1);
+  CreateMatchingReceiveConfigs();
+
+  CreateStreams();
+  CreateFrameGeneratorCapturer();
+  Start();
+
+  int64_t start_time_ms = clock_->TimeInMilliseconds();
+  while (true) {
+    Call::Stats stats = sender_call_->GetStats();
+    ASSERT_GE(start_time_ms + kDefaultTimeoutMs,
+              clock_->TimeInMilliseconds())
+        << "No RTT stats before timeout!";
+    if (stats.rtt_ms != -1) {
+      EXPECT_GE(stats.rtt_ms, kSendDelayMs + kReceiveDelayMs);
+      break;
+    }
+    SleepMs(10);
+  }
+
+  Stop();
+  DestroyStreams();
 }
 
 TEST_F(EndToEndTest, NewSendStreamsRespectNetworkDown) {
