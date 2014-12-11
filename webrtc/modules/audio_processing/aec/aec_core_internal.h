@@ -32,7 +32,12 @@ enum {
   kLookaheadBlocks = 15
 };
 enum {
+#ifdef WEBRTC_ANDROID
+  // 500 ms for 16 kHz which is equivalent with the limit of reported delays.
+  kHistorySizeBlocks = 125
+#else
   kHistorySizeBlocks = kMaxDelayBlocks + kLookaheadBlocks
+#endif
 };
 
 // Extended filter adaptation parameters.
@@ -130,8 +135,17 @@ struct AecCore {
   int delay_logging_enabled;
   void* delay_estimator_farend;
   void* delay_estimator;
+  // Variables associated with delay correction through signal based delay
+  // estimation feedback.
+  int signal_delay_correction;
+  int previous_delay;
+  int delay_correction_count;
+  int shift_offset;
+  float delay_quality_threshold;
 
-  int reported_delay_enabled;  // 0 = disabled, otherwise enabled.
+  // 0 = reported delay mode disabled (signal based delay correction enabled).
+  // otherwise enabled
+  int reported_delay_enabled;
   // 1 = extended filter mode enabled, 0 = disabled.
   int extended_filter_enabled;
   // Runtime selection of number of filter partitions.

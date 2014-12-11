@@ -120,7 +120,6 @@ static float32x4_t vsqrtq_f32(float32x4_t s) {
   // sqrt(s) = s * 1/sqrt(s)
   return vmulq_f32(s, x);;
 }
-
 #endif  // WEBRTC_ARCH_ARM64_NEON
 
 static void ScaleErrorSignalNEON(AecCore* aec, float ef[2][PART_LEN1]) {
