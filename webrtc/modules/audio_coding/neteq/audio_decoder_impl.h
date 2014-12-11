@@ -130,31 +130,6 @@ class AudioDecoderIlbc : public AudioDecoder {
 };
 #endif
 
-#ifdef WEBRTC_CODEC_ISAC
-class AudioDecoderIsac : public AudioDecoder {
- public:
-  explicit AudioDecoderIsac(int decode_sample_rate_hz);
-  virtual ~AudioDecoderIsac();
-  virtual int Decode(const uint8_t* encoded, size_t encoded_len,
-                     int16_t* decoded, SpeechType* speech_type);
-  virtual int DecodeRedundant(const uint8_t* encoded, size_t encoded_len,
-                              int16_t* decoded, SpeechType* speech_type);
-  virtual bool HasDecodePlc() const { return true; }
-  virtual int DecodePlc(int num_frames, int16_t* decoded);
-  virtual int Init();
-  virtual int IncomingPacket(const uint8_t* payload,
-                             size_t payload_len,
-                             uint16_t rtp_sequence_number,
-                             uint32_t rtp_timestamp,
-                             uint32_t arrival_timestamp);
-  virtual int ErrorCode();
-
- private:
-  ISACStruct* isac_state_;
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderIsac);
-};
-#endif
-
 #ifdef WEBRTC_CODEC_ISACFX
 class AudioDecoderIsacFix : public AudioDecoder {
  public:

@@ -26,7 +26,7 @@
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
 #endif
 #ifdef WEBRTC_CODEC_ISAC
-#include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
 #endif
 #ifdef WEBRTC_CODEC_OPUS
 #include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
@@ -124,67 +124,6 @@ int AudioDecoderIlbc::DecodePlc(int num_frames, int16_t* decoded) {
 
 int AudioDecoderIlbc::Init() {
   return WebRtcIlbcfix_Decoderinit30Ms(dec_state_);
-}
-#endif
-
-// iSAC float
-#ifdef WEBRTC_CODEC_ISAC
-AudioDecoderIsac::AudioDecoderIsac(int decode_sample_rate_hz) {
-  DCHECK(decode_sample_rate_hz == 16000 || decode_sample_rate_hz == 32000);
-  WebRtcIsac_Create(&isac_state_);
-  WebRtcIsac_SetDecSampRate(isac_state_, decode_sample_rate_hz);
-}
-
-AudioDecoderIsac::~AudioDecoderIsac() {
-  WebRtcIsac_Free(isac_state_);
-}
-
-int AudioDecoderIsac::Decode(const uint8_t* encoded, size_t encoded_len,
-                             int16_t* decoded, SpeechType* speech_type) {
-  int16_t temp_type = 1;  // Default is speech.
-  int16_t ret = WebRtcIsac_Decode(isac_state_,
-                                  encoded,
-                                  static_cast<int16_t>(encoded_len), decoded,
-                                  &temp_type);
-  *speech_type = ConvertSpeechType(temp_type);
-  return ret;
-}
-
-int AudioDecoderIsac::DecodeRedundant(const uint8_t* encoded,
-                                      size_t encoded_len, int16_t* decoded,
-                                      SpeechType* speech_type) {
-  int16_t temp_type = 1;  // Default is speech.
-  int16_t ret = WebRtcIsac_DecodeRcu(isac_state_,
-                                     encoded,
-                                     static_cast<int16_t>(encoded_len), decoded,
-                                     &temp_type);
-  *speech_type = ConvertSpeechType(temp_type);
-  return ret;
-}
-
-int AudioDecoderIsac::DecodePlc(int num_frames, int16_t* decoded) {
-  return WebRtcIsac_DecodePlc(isac_state_, decoded, num_frames);
-}
-
-int AudioDecoderIsac::Init() {
-  return WebRtcIsac_DecoderInit(isac_state_);
-}
-
-int AudioDecoderIsac::IncomingPacket(const uint8_t* payload,
-                                     size_t payload_len,
-                                     uint16_t rtp_sequence_number,
-                                     uint32_t rtp_timestamp,
-                                     uint32_t arrival_timestamp) {
-  return WebRtcIsac_UpdateBwEstimate(isac_state_,
-                                     payload,
-                                     static_cast<int32_t>(payload_len),
-                                     rtp_sequence_number,
-                                     rtp_timestamp,
-                                     arrival_timestamp);
-}
-
-int AudioDecoderIsac::ErrorCode() {
-  return WebRtcIsac_GetErrorCode(isac_state_);
 }
 #endif
 
@@ -549,11 +488,17 @@ AudioDecoder* CreateAudioDecoder(NetEqDecoder codec_type) {
     case kDecoderISAC:
       return new AudioDecoderIsacFix;
 #elif defined(WEBRTC_CODEC_ISAC)
-    case kDecoderISAC:
-      return new AudioDecoderIsac(16000);
+    case kDecoderISAC: {
+      AudioEncoderDecoderIsac::Config config;
+      config.sample_rate_hz = 16000;
+      return new AudioEncoderDecoderIsac(config);
+    }
     case kDecoderISACswb:
-    case kDecoderISACfb:
-      return new AudioDecoderIsac(32000);
+    case kDecoderISACfb: {
+      AudioEncoderDecoderIsac::Config config;
+      config.sample_rate_hz = 32000;
+      return new AudioEncoderDecoderIsac(config);
+    }
 #endif
 #ifdef WEBRTC_CODEC_PCM16
     case kDecoderPCM16B:
