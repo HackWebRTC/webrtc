@@ -39,7 +39,7 @@ int16_t WebRtcOpus_EncoderFree(OpusEncInst* inst);
  * Output:
  *      - encoded               : Output compressed data buffer
  *
- * Return value                 : >0 - Length (in bytes) of coded data
+ * Return value                 : >=0 - Length (in bytes) of coded data
  *                                -1 - Error
  */
 int16_t WebRtcOpus_Encode(OpusEncInst* inst,
@@ -129,6 +129,32 @@ int16_t WebRtcOpus_EnableFec(OpusEncInst* inst);
  *                             -1 - Error
  */
 int16_t WebRtcOpus_DisableFec(OpusEncInst* inst);
+
+/****************************************************************************
+ * WebRtcOpus_EnableDtx()
+ *
+ * This function enables Opus internal DTX for encoding.
+ *
+ * Input:
+ *      - inst               : Encoder context
+ *
+ * Return value              :  0 - Success
+ *                             -1 - Error
+ */
+int16_t WebRtcOpus_EnableDtx(OpusEncInst* inst);
+
+/****************************************************************************
+ * WebRtcOpus_DisableDtx()
+ *
+ * This function disables Opus internal DTX for encoding.
+ *
+ * Input:
+ *      - inst               : Encoder context
+ *
+ * Return value              :  0 - Success
+ *                             -1 - Error
+ */
+int16_t WebRtcOpus_DisableDtx(OpusEncInst* inst);
 
 /*
  * WebRtcOpus_SetComplexity(...)
