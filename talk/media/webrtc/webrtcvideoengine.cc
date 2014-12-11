@@ -1153,10 +1153,6 @@ WebRtcVideoEngine::~WebRtcVideoEngine() {
     Terminate();
   }
 
-  if (simulcast_encoder_factory_) {
-    SetExternalEncoderFactory(NULL);
-  }
-
   tracing_->SetTraceCallback(NULL);
   // Test to see if the media processor was deregistered properly.
   ASSERT(SignalMediaFrame.is_empty());
@@ -1675,10 +1671,13 @@ void WebRtcVideoEngine::SetExternalDecoderFactory(
 
 void WebRtcVideoEngine::SetExternalEncoderFactory(
     WebRtcVideoEncoderFactory* encoder_factory) {
-  // Deleted after WebRtcVideoEngine::SetExternalEncoderFactory is
-  // completed, which will remove the references to it.
-  rtc::scoped_ptr<WebRtcVideoEncoderFactory> old_factory(
-      simulcast_encoder_factory_.release());
+  if (encoder_factory_ == encoder_factory)
+    return;
+
+  // No matter what happens we shouldn't hold on to a stale
+  // SimulcastEncoderFactory.
+  simulcast_encoder_factory_.reset();
+
   if (encoder_factory) {
     const std::vector<WebRtcVideoEncoderFactory::VideoCodec>& codecs =
         encoder_factory->codecs();
@@ -1688,9 +1687,6 @@ void WebRtcVideoEngine::SetExternalEncoderFactory(
       encoder_factory = simulcast_encoder_factory_.get();
     }
   }
-
-  if (encoder_factory_ == encoder_factory)
-    return;
 
   encoder_factory_ = encoder_factory;
 
