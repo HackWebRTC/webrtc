@@ -612,8 +612,14 @@ config("pcm16b_config") {
 
 source_set("pcm16b") {
   sources = [
+    "codecs/pcm16b/include/audio_encoder_pcm16b.h",
     "codecs/pcm16b/include/pcm16b.h",
+    "codecs/pcm16b/audio_encoder_pcm16b.cc",
     "codecs/pcm16b/pcm16b.c",
+  ]
+
+  deps = [
+    ":g711",
   ]
 
   configs += [ "../..:common_config" ]

@@ -17,14 +17,13 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/audio_coding/codecs/g711/include/g711_interface.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/g722/include/audio_encoder_g722.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/audio_encoder_ilbc.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
 #include "webrtc/modules/audio_coding/codecs/opus/interface/audio_encoder_opus.h"
-#include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
+#include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_encoder_pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/tools/resample_input_audio_file.h"
 #include "webrtc/system_wrappers/interface/data_log.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -300,20 +299,17 @@ class AudioDecoderPcmATest : public AudioDecoderTest {
 class AudioDecoderPcm16BTest : public AudioDecoderTest {
  protected:
   AudioDecoderPcm16BTest() : AudioDecoderTest() {
-    codec_input_rate_hz_ = 8000;
-    frame_size_ = 160;
+    codec_input_rate_hz_ = 16000;
+    frame_size_ = 20 * codec_input_rate_hz_ / 1000;
     data_length_ = 10 * frame_size_;
     decoder_ = new AudioDecoderPcm16B;
     assert(decoder_);
-  }
-
-  virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
-                          uint8_t* output) {
-    int enc_len_bytes = WebRtcPcm16b_EncodeW16(
-        const_cast<int16_t*>(input), static_cast<int>(input_len_samples),
-        reinterpret_cast<int16_t*>(output));
-    EXPECT_EQ(2 * input_len_samples, static_cast<size_t>(enc_len_bytes));
-    return enc_len_bytes;
+    AudioEncoderPcm16B::Config config;
+    config.sample_rate_hz = codec_input_rate_hz_;
+    config.frame_size_ms =
+        static_cast<int>(frame_size_ / (config.sample_rate_hz / 1000));
+    config.payload_type = payload_type_;
+    audio_encoder_.reset(new AudioEncoderPcm16B(config));
   }
 };
 

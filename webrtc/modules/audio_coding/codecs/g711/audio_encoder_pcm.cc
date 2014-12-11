@@ -27,14 +27,16 @@ int16_t NumSamplesPerFrame(int num_channels,
 }
 }  // namespace
 
-AudioEncoderPcm::AudioEncoderPcm(const Config& config)
-    : num_channels_(config.num_channels),
+AudioEncoderPcm::AudioEncoderPcm(const Config& config, int sample_rate_hz)
+    : sample_rate_hz_(sample_rate_hz),
+      num_channels_(config.num_channels),
       payload_type_(config.payload_type),
       num_10ms_frames_per_packet_(config.frame_size_ms / 10),
-      full_frame_samples_(NumSamplesPerFrame(num_channels_,
+      full_frame_samples_(NumSamplesPerFrame(config.num_channels,
                                              config.frame_size_ms,
-                                             kSampleRateHz)),
+                                             sample_rate_hz_)),
       first_timestamp_in_buffer_(0) {
+  CHECK_GT(sample_rate_hz, 0) << "Sample rate must be larger than 0 Hz";
   CHECK_EQ(config.frame_size_ms % 10, 0)
       << "Frame size must be an integer multiple of 10 ms.";
   speech_buffer_.reserve(full_frame_samples_);
@@ -44,7 +46,7 @@ AudioEncoderPcm::~AudioEncoderPcm() {
 }
 
 int AudioEncoderPcm::sample_rate_hz() const {
-  return kSampleRateHz;
+  return sample_rate_hz_;
 }
 int AudioEncoderPcm::num_channels() const {
   return num_channels_;

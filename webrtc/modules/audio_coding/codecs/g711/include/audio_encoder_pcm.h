@@ -30,8 +30,6 @@ class AudioEncoderPcm : public AudioEncoder {
         : frame_size_ms(20), num_channels(1), payload_type(pt) {}
   };
 
-  explicit AudioEncoderPcm(const Config& config);
-
   virtual ~AudioEncoderPcm();
 
   virtual int sample_rate_hz() const OVERRIDE;
@@ -40,6 +38,8 @@ class AudioEncoderPcm : public AudioEncoder {
   virtual int Max10MsFramesInAPacket() const OVERRIDE;
 
  protected:
+  AudioEncoderPcm(const Config& config, int sample_rate_hz);
+
   virtual bool EncodeInternal(uint32_t timestamp,
                               const int16_t* audio,
                               size_t max_encoded_bytes,
@@ -52,7 +52,7 @@ class AudioEncoderPcm : public AudioEncoder {
                              uint8_t* encoded) = 0;
 
  private:
-  static const int kSampleRateHz = 8000;
+  const int sample_rate_hz_;
   const int num_channels_;
   const int payload_type_;
   const int num_10ms_frames_per_packet_;
@@ -67,12 +67,16 @@ class AudioEncoderPcmA : public AudioEncoderPcm {
     Config() : AudioEncoderPcm::Config(8) {}
   };
 
-  explicit AudioEncoderPcmA(const Config& config) : AudioEncoderPcm(config) {}
+  explicit AudioEncoderPcmA(const Config& config)
+      : AudioEncoderPcm(config, kSampleRateHz) {}
 
  protected:
   virtual int16_t EncodeCall(const int16_t* audio,
                              size_t input_len,
                              uint8_t* encoded) OVERRIDE;
+
+ private:
+  static const int kSampleRateHz = 8000;
 };
 
 class AudioEncoderPcmU : public AudioEncoderPcm {
@@ -81,12 +85,16 @@ class AudioEncoderPcmU : public AudioEncoderPcm {
     Config() : AudioEncoderPcm::Config(0) {}
   };
 
-  explicit AudioEncoderPcmU(const Config& config) : AudioEncoderPcm(config) {}
+  explicit AudioEncoderPcmU(const Config& config)
+      : AudioEncoderPcm(config, kSampleRateHz) {}
 
  protected:
   virtual int16_t EncodeCall(const int16_t* audio,
                              size_t input_len,
                              uint8_t* encoded) OVERRIDE;
+
+ private:
+  static const int kSampleRateHz = 8000;
 };
 
 }  // namespace webrtc
