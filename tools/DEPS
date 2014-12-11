@@ -3,14 +3,6 @@
 # proxies.
 
 deps = {
-  # Used by quality_tracking.
-  "tools/third_party/gaeunit":
-    "http://code.google.com/p/gaeunit.git@e16d5bd4",
-
-  # Used by quality_tracking.
-  "tools/third_party/oauth2":
-    "http://github.com/simplegeo/python-oauth2.git@a83f4a29",
-
   # Used by tools/quality_tracking/dashboard and tools/python_charts.
   "tools/third_party/google-visualization-python":
     "http://google-visualization-python.googlecode.com/svn/trunk/@15",
