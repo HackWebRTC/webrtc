@@ -815,7 +815,7 @@ int32_t ACMGenericCodec::IsInternalDTXReplaced(bool* internal_dtx_replaced) {
 
 int32_t ACMGenericCodec::IsInternalDTXReplacedSafe(
     bool* internal_dtx_replaced) {
-  *internal_dtx_replaced = false;
+  *internal_dtx_replaced = true;
   return 0;
 }
 

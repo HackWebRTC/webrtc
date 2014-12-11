@@ -507,8 +507,7 @@ class AudioCodingModule: public Module {
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t ReplaceInternalDTXWithWebRtc()
-  // Used to replace codec internal DTX scheme with WebRtc. This is only
-  // supported for G729, where this call replaces AnnexB with WebRtc DTX.
+  // Used to replace codec internal DTX scheme with WebRtc.
   //
   // Input:
   //   -use_webrtc_dtx     : if false (default) the codec built-in DTX/VAD
@@ -524,8 +523,8 @@ class AudioCodingModule: public Module {
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t IsInternalDTXReplacedWithWebRtc()
-  // Get status if the codec internal DTX (when such exists) is replaced with
-  // WebRtc DTX. This is only supported for G729.
+  // Get status if the codec internal DTX is replaced with WebRtc DTX.
+  // This should always be true if codec does not have an internal DTX.
   //
   // Output:
   //   -uses_webrtc_dtx    : is set to true if the codec internal DTX is

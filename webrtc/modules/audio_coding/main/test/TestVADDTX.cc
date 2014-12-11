@@ -272,50 +272,36 @@ int16_t TestVADDTX::VerifyTest() {
   uint8_t emptyFramePattern[6];
   CodecInst myCodecParam;
   _acmA->SendCodec(&myCodecParam);
-  bool dtxInUse = true;
-  bool isReplaced = false;
-  if ((STR_CASE_CMP(myCodecParam.plname, "G729") == 0)
-      || (STR_CASE_CMP(myCodecParam.plname, "G723") == 0)
-      || (STR_CASE_CMP(myCodecParam.plname, "AMR") == 0)
-      || (STR_CASE_CMP(myCodecParam.plname, "AMR-wb") == 0)
-      || (STR_CASE_CMP(myCodecParam.plname, "speex") == 0)) {
-    _acmA->IsInternalDTXReplacedWithWebRtc(&isReplaced);
-    if (!isReplaced) {
-      dtxInUse = false;
-    }
-  } else if (STR_CASE_CMP(myCodecParam.plname, "opus") == 0) {
-    if (_getStruct.statusDTX != false) {
-      // DTX status doesn't match expected.
-      vadPattern |= 4;
-    } else if (_getStruct.statusVAD != false) {
-      // Mismatch in VAD setting.
-      vadPattern |= 2;
-    } else {
+
+  // TODO(minyue): Remove these treatment on Opus when DTX is properly handled
+  // by ACMOpus.
+  if (STR_CASE_CMP(myCodecParam.plname, "opus") == 0) {
       _setStruct.statusDTX = false;
       _setStruct.statusVAD = false;
-    }
   }
+
+  bool isReplaced = false;
+  _acmA->IsInternalDTXReplacedWithWebRtc(&isReplaced);
+  bool webRtcDtxInUse = _getStruct.statusDTX && isReplaced;
+  bool codecDtxInUse = _getStruct.statusDTX && !isReplaced;
 
   // Check for error in VAD/DTX settings
   if (_getStruct.statusDTX != _setStruct.statusDTX) {
-    // DTX status doesn't match expected
+    // DTX status doesn't match expected.
+    vadPattern |= 1;
+  }
+  if (!_getStruct.statusVAD && webRtcDtxInUse) {
+    // WebRTC DTX cannot run without WebRTC VAD.
+    vadPattern |= 2;
+  }
+  if ((!_getStruct.statusDTX || codecDtxInUse) &&
+      (_getStruct.statusVAD != _setStruct.statusVAD)) {
+    // Using no DTX or codec Internal DTX should not affect setting of VAD.
     vadPattern |= 4;
   }
-  if (_getStruct.statusDTX) {
-    if ((!_getStruct.statusVAD && dtxInUse)
-        || (!dtxInUse && (_getStruct.statusVAD != _setStruct.statusVAD))) {
-      // Missmatch in VAD setting
-      vadPattern |= 2;
-    }
-  } else {
-    if (_getStruct.statusVAD != _setStruct.statusVAD) {
-      // VAD status doesn't match expected
-      vadPattern |= 2;
-    }
-  }
   if (_getStruct.vadMode != _setStruct.vadMode) {
-    // VAD Mode doesn't match expected
-    vadPattern |= 1;
+    // VAD Mode doesn't match expected.
+    vadPattern |= 8;
   }
 
   // Set expected empty frame pattern
@@ -332,14 +318,10 @@ int16_t TestVADDTX::VerifyTest() {
   // 5 - "kPassiveDTXSWB".
   emptyFramePattern[0] = 1;
   emptyFramePattern[1] = 1;
-  emptyFramePattern[2] = (((!_getStruct.statusDTX && _getStruct.statusVAD)
-      || (!dtxInUse && _getStruct.statusDTX)));
-  emptyFramePattern[3] = ((_getStruct.statusDTX && dtxInUse
-      && (_acmA->SendFrequency() == 8000)));
-  emptyFramePattern[4] = ((_getStruct.statusDTX && dtxInUse
-      && (_acmA->SendFrequency() == 16000)));
-  emptyFramePattern[5] = ((_getStruct.statusDTX && dtxInUse
-      && (_acmA->SendFrequency() == 32000)));
+  emptyFramePattern[2] = _getStruct.statusVAD && !webRtcDtxInUse;
+  emptyFramePattern[3] = webRtcDtxInUse && (_acmA->SendFrequency() == 8000);
+  emptyFramePattern[4] = webRtcDtxInUse && (_acmA->SendFrequency() == 16000);
+  emptyFramePattern[5] = webRtcDtxInUse && (_acmA->SendFrequency() == 32000);
 
   // Check pattern 1-5 (skip 0)
   for (int ii = 1; ii < 6; ii++) {
