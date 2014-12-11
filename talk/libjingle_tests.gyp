@@ -320,53 +320,18 @@
           'target_name': 'libjingle_peerconnection_android_unittest',
           'type': 'none',
           'dependencies': [
-            'libjingle.gyp:libjingle_peerconnection_jar',
+            'libjingle.gyp:libjingle_peerconnection_java',
           ],
-          'actions': [
-            {
-              # TODO(perkj): convert from a custom script to a standard gyp
-              # apk build once chromium's apk-building gyp machinery can be used
-              # (http://crbug.com/225101)
-              'action_name': 'build_peerconnection_unittests_apk',
-              'inputs' : [
-                '<(PRODUCT_DIR)/libjingle_peerconnection.jar',
-                '<(PRODUCT_DIR)/libjingle_peerconnection_so.so',
-                'app/webrtc/androidtests/AndroidManifest.xml',
-                'app/webrtc/androidtests/ant.properties',
-                'app/webrtc/androidtests/build.xml',
-                'app/webrtc/androidtests/jni/Android.mk',
-                'app/webrtc/androidtests/project.properties',
-                'app/webrtc/androidtests/res/drawable-hdpi/ic_launcher.png',
-                'app/webrtc/androidtests/res/drawable-ldpi/ic_launcher.png',
-                'app/webrtc/androidtests/res/drawable-mdpi/ic_launcher.png',
-                'app/webrtc/androidtests/res/drawable-xhdpi/ic_launcher.png',
-                'app/webrtc/androidtests/res/values/strings.xml',
-                'app/webrtc/androidtests/src/org/webrtc/PeerConnectionAndroidTest.java',
-                'app/webrtc/java/testcommon/src/org/webrtc/PeerConnectionTest.java',
-              ],
-              'outputs': [
-                '<(PRODUCT_DIR)/libjingle_peerconnection_android_unittest.apk',
-              ],
-              'variables': {
-                'ant_log': '../../../<(INTERMEDIATE_DIR)/ant.log', # ../.. to compensate for the cd app/webrtc/androidtests below.
-              },
-              'action': [
-                'bash', '-ec',
-                'rm -fr <(_outputs) app/webrtc/androidtests/{bin,libs} && '
-                'mkdir -p <(INTERMEDIATE_DIR) && ' # Must happen _before_ the cd below
-                'mkdir -p app/webrtc/androidtests/libs/<(android_app_abi) && '
-                'cp <(PRODUCT_DIR)/libjingle_peerconnection.jar app/webrtc/androidtests/libs/ &&'
-                '<(android_strip) -o app/webrtc/androidtests/libs/<(android_app_abi)/libjingle_peerconnection_so.so  <(PRODUCT_DIR)/libjingle_peerconnection_so.so &&'
-                'cd app/webrtc/androidtests && '
-                '{ ANDROID_SDK_ROOT=<(android_sdk_root) '
-                'ant debug > <(ant_log) 2>&1 || '
-                '  { cat <(ant_log) ; exit 1; } } && '
-                'cd - > /dev/null && '
-                'cp app/webrtc/androidtests/bin/libjingle_peerconnection_android_unittest-debug.apk <(_outputs)'
-              ],
-            },
-          ],
-        },  # target AppRTCDemo
+          'variables': {
+            'apk_name': 'libjingle_peerconnection_android_unittest',
+            'java_in_dir': 'app/webrtc/androidtests',
+            'resource_dir': 'app/webrtc/androidtests/res',
+            'additional_src_dirs': ['app/webrtc/java/testcommon'],
+            'native_lib_target': 'libjingle_peerconnection_so',
+            'is_test_apk': 1,
+          },
+          'includes': [ '../build/java_apk.gypi' ],
+        },
       ],  # targets
     }],  # OS=="android"
     ['OS=="ios" or (OS=="mac" and target_arch!="ia32" and mac_sdk>="10.7")', {

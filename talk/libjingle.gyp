@@ -45,7 +45,7 @@
       'targets': [
         {
           'target_name': 'libjingle_peerconnection_so',
-          'type': 'loadable_module',
+          'type': 'shared_library',
           'dependencies': [
             'libjingle_peerconnection',
             '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
@@ -158,6 +158,34 @@
           ],
         },
       ],
+    }],
+    ['OS=="android"', {
+      'targets': [
+        {
+          # |libjingle_peerconnection_java| builds a jar file with name
+          # libjingle_peerconnection_java.jar using Chromes build system.
+          # It includes all Java files needed to setup a PeeerConnection call
+          # from Android.
+          # TODO(perkj): Consider replacing the use of
+          # libjingle_peerconnection_jar with this target everywhere.
+          'target_name': 'libjingle_peerconnection_java',
+          'type': 'none',
+          'dependencies': [
+            'libjingle_peerconnection_so',
+          ],
+          'variables': {
+            'java_in_dir': 'app/webrtc/java',
+            'webrtc_modules_dir': '<(webrtc_root)/modules',
+            'additional_src_dirs' : [
+              'app/webrtc/java/android',
+              '<(webrtc_modules_dir)/audio_device/android/java/src',
+              '<(webrtc_modules_dir)/video_capture/android/java/src',
+              '<(webrtc_modules_dir)/video_render/android/java/src',
+            ],
+          },
+          'includes': ['../build/java.gypi'],
+        }, # libjingle_peerconnection_java
+      ]
     }],
     ['OS=="ios" or (OS=="mac" and target_arch!="ia32" and mac_sdk>="10.7")', {
       # The >= 10.7 above is required for ARC.
