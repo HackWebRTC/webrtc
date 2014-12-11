@@ -67,3 +67,43 @@ int16_t WebRtcSpl_MaxAbsValueW16Neon(const int16_t* vector, int length) {
   return (int16_t)maximum;
 }
 
+// Minimum value of word16 vector. NEON intrinsics version for
+// ARM 32-bit/64-bit platforms.
+int16_t WebRtcSpl_MinValueW16Neon(const int16_t* vector, int length) {
+  int16_t minimum = WEBRTC_SPL_WORD16_MAX;
+  int i = 0;
+  int residual = length & 0x7;
+
+  if (vector == NULL || length <= 0) {
+    return minimum;
+  }
+
+  const int16_t* p_start = vector;
+  int16x8_t min16x8 = vdupq_n_s16(WEBRTC_SPL_WORD16_MAX);
+
+  // First part, unroll the loop 8 times.
+  for (i = length - residual; i >0; i -= 8) {
+    int16x8_t in16x8 = vld1q_s16(p_start);
+    min16x8 = vminq_s16(min16x8, in16x8);
+    p_start += 8;
+  }
+
+#if defined(WEBRTC_ARCH_ARM64)
+  minimum = vminvq_s16(min16x8);
+#else
+  int16x4_t min16x4 = vmin_s16(vget_low_s16(min16x8), vget_high_s16(min16x8));
+  min16x4 = vpmin_s16(min16x4, min16x4);
+  min16x4 = vpmin_s16(min16x4, min16x4);
+
+  minimum = vget_lane_s16(min16x4, 0);
+#endif
+
+  // Second part, do the remaining iterations (if any).
+  for (i = residual; i > 0; i--) {
+    if (*p_start < minimum)
+      minimum = *p_start;
+    p_start++;
+  }
+  return minimum;
+}
+
