@@ -48,6 +48,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/p2p/base/portallocator.h"
 
 using cricket::ContentInfo;
 using cricket::ContentInfos;

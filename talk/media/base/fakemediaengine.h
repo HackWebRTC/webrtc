@@ -167,7 +167,7 @@ template <class Base> class RtpHelper : public Base {
   }
   // TODO(perkj): This is to support legacy unit test that only check one
   // sending stream.
-  const uint32 send_ssrc() {
+  uint32 send_ssrc() const {
     if (send_streams_.empty())
       return 0;
     return send_streams_[0].first_ssrc();

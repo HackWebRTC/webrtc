@@ -482,7 +482,8 @@ cricket::VideoFormat ScreencastFormatFromFps(int fps) {
   // case, it can't be 0x0, or the CaptureManager will fail to use it.
   return cricket::VideoFormat(
       1, 1,
-      cricket::VideoFormat::FpsToInterval(fps), cricket::FOURCC_ANY);
+      cricket::VideoFormat::FpsToInterval(fps),
+      cricket::FOURCC_ANY);
 }
 
 bool Call::StartScreencast(Session* session,

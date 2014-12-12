@@ -76,7 +76,6 @@ class AudioSourceProxy: public AudioSourceContext, public sigslot::has_slots<> {
   void OnMediaStreamsUpdate(Call* call, cricket::Session*,
       const cricket::MediaStreams&, const cricket::MediaStreams&);
 
-  AudioSourceContext* audio_source_context_;
   Call* call_;
 };
 

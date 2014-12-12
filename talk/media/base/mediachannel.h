@@ -84,7 +84,7 @@ class Settable {
     return set_ ? val_ : default_value;
   }
 
-  virtual void Set(T val) {
+  void Set(T val) {
     set_ = true;
     val_ = val;
   }
@@ -124,19 +124,6 @@ class Settable {
  private:
   bool set_;
   T val_;
-};
-
-class SettablePercent : public Settable<float> {
- public:
-  virtual void Set(float val) {
-    if (val < 0) {
-      val = 0;
-    }
-    if (val >  1.0) {
-      val = 1.0;
-    }
-    Settable<float>::Set(val);
-  }
 };
 
 template <class T>
@@ -431,11 +418,11 @@ struct VideoOptions {
   // Use conference mode?
   Settable<bool> conference_mode;
   // Threshhold for process cpu adaptation.  (Process limit)
-  SettablePercent process_adaptation_threshhold;
+  Settable<float> process_adaptation_threshhold;
   // Low threshhold for cpu adaptation.  (Adapt up)
-  SettablePercent system_low_adaptation_threshhold;
+  Settable<float> system_low_adaptation_threshhold;
   // High threshhold for cpu adaptation.  (Adapt down)
-  SettablePercent system_high_adaptation_threshhold;
+  Settable<float> system_high_adaptation_threshhold;
   // Specify buffered mode latency in milliseconds.
   Settable<int> buffered_mode_latency;
   // Set DSCP value for packet sent from video channel.

@@ -129,10 +129,14 @@ enum FourCC {
 
   // 1 Auxiliary compressed YUV format set aside for capturer.
   FOURCC_H264 = FOURCC('H', '2', '6', '4'),
-
-  // Match any fourcc.
-  FOURCC_ANY  = 0xFFFFFFFF,
 };
+
+// Match any fourcc.
+
+// We move this out of the enum because using it in many places caused
+// the compiler to get grumpy, presumably since the above enum is
+// backed by an int.
+static const uint32 FOURCC_ANY  = 0xFFFFFFFF;
 
 // Converts fourcc aliases into canonical ones.
 uint32 CanonicalFourCC(uint32 fourcc);

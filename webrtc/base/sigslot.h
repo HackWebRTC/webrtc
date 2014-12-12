@@ -430,6 +430,7 @@ namespace sigslot {
 	class _signal_base_interface
 	{
 	public:
+		virtual ~_signal_base_interface() {}
 		virtual void slot_disconnect(has_slots_interface* pslot) = 0;
 		virtual void slot_duplicate(const has_slots_interface* poldslot, has_slots_interface* pnewslot) = 0;
 	};

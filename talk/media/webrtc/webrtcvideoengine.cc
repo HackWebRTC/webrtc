@@ -88,6 +88,22 @@ cricket::VideoFormat VideoFormatFromVieCodec(const webrtc::VideoCodec& codec) {
 }
 
 template <class T>
+void Clamp(cricket::Settable<T>* box, T min, T max) {
+  T val;
+  if (!box->Get(&val)) {
+    return;
+  }
+  if (val < min) {
+    box->Set(min);
+    return;
+  }
+  if (val > max) {
+    box->Set(max);
+    return;
+  }
+}
+
+template <class T>
 bool Changed(cricket::Settable<T> proposed,
              cricket::Settable<T> original) {
   return proposed.IsSet() && proposed != original;
@@ -3079,6 +3095,9 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   // will not overwrite the previous option value.
   VideoOptions original = options_;
   options_.SetAll(options);
+
+  Clamp(&options_.system_low_adaptation_threshhold, 0.0f, 1.0f);
+  Clamp(&options_.system_high_adaptation_threshhold, 0.0f, 1.0f);
 
   bool use_simulcast_adapter;
   if (options.use_simulcast_adapter.Get(&use_simulcast_adapter) &&
