@@ -444,8 +444,10 @@ static_library("webrtc_base") {
   # compiler settings.
   configs -= [ "//build/config/compiler:chromium_code" ]
   configs += [ "//build/config/compiler:no_chromium_code" ]
-  cflags += [ "-Wno-uninitialized" ]
-  cflags_cc += [ "-Wno-non-virtual-dtor" ]
+  if (!is_win) {
+    cflags += [ "-Wno-uninitialized" ]
+    cflags_cc += [ "-Wno-non-virtual-dtor" ]
+  }
 
   if (use_openssl) {
     public_configs += [ ":openssl_config" ]
