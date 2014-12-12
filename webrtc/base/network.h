@@ -39,6 +39,11 @@ enum AdapterType {
   ADAPTER_TYPE_VPN = 4
 };
 
+// Conversion function to convert adapter type to report string which are more
+// fitting to the general style of http://w3c.github.io/webrtc-stats. This is
+// only used by stats collector.
+const char* AdapterTypeToStatsType(rtc::AdapterType type);
+
 // Makes a string key for this network. Used in the network manager's maps.
 // Network objects are keyed on interface name, network prefix and the
 // length of that prefix.

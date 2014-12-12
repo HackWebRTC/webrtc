@@ -612,6 +612,37 @@ std::string StatsCollector::AddCertificateReports(
   return AddOneCertificateReport(cert, issuer_id);
 }
 
+std::string StatsCollector::AddCandidateReport(
+    const cricket::Candidate& candidate,
+    const std::string& report_type) {
+  std::ostringstream ost;
+  ost << "Cand-" << candidate.id();
+  StatsReport* report = reports_.Find(ost.str());
+  if (!report) {
+    report = reports_.InsertNew(ost.str());
+    DCHECK(StatsReport::kStatsReportTypeIceLocalCandidate == report_type ||
+           StatsReport::kStatsReportTypeIceRemoteCandidate == report_type);
+    report->type = report_type;
+    if (report_type == StatsReport::kStatsReportTypeIceLocalCandidate) {
+      report->AddValue(StatsReport::kStatsValueNameCandidateNetworkType,
+                       rtc::AdapterTypeToStatsType(candidate.network_type()));
+    }
+    report->timestamp = stats_gathering_started_;
+    report->AddValue(StatsReport::kStatsValueNameCandidateIPAddress,
+                     candidate.address().ipaddr().ToString());
+    report->AddValue(StatsReport::kStatsValueNameCandidatePortNumber,
+                     candidate.address().PortAsString());
+    report->AddValue(StatsReport::kStatsValueNameCandidatePriority,
+                     candidate.priority());
+    report->AddValue(StatsReport::kStatsValueNameCandidateType,
+                     cricket::IceCandidateTypeToStatsType(candidate.type()));
+    report->AddValue(StatsReport::kStatsValueNameCandidateTransportType,
+                     candidate.protocol());
+  }
+
+  return ost.str();
+}
+
 void StatsCollector::ExtractSessionInfo() {
   // Extract information from the base session.
   StatsReport* report = reports_.ReplaceOrAddNew(
@@ -703,6 +734,15 @@ void StatsCollector::ExtractSessionInfo() {
                              info.readable);
           report->AddBoolean(StatsReport::kStatsValueNameActiveConnection,
                              info.best_connection);
+          report->AddValue(StatsReport::kStatsValueNameLocalCandidateId,
+                           AddCandidateReport(
+                               info.local_candidate,
+                               StatsReport::kStatsReportTypeIceLocalCandidate));
+          report->AddValue(
+              StatsReport::kStatsValueNameRemoteCandidateId,
+              AddCandidateReport(
+                  info.remote_candidate,
+                  StatsReport::kStatsReportTypeIceRemoteCandidate));
           report->AddValue(StatsReport::kStatsValueNameLocalAddress,
                            info.local_candidate.address().ToString());
           report->AddValue(StatsReport::kStatsValueNameRemoteAddress,

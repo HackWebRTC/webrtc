@@ -42,6 +42,7 @@
 #include "webrtc/base/base64.h"
 #include "webrtc/base/fakesslidentity.h"
 #include "webrtc/base/gunit.h"
+#include "webrtc/base/network.h"
 
 using cricket::StatsOptions;
 using testing::_;
@@ -61,7 +62,7 @@ class FakeDeviceManager;
 
 }  // namespace cricket
 
-namespace {
+namespace webrtc {
 
 // Error return values
 const char kNotFound[] = "NOT FOUND";
@@ -499,6 +500,12 @@ class StatsCollectorTest : public testing::Test {
     stream_->AddTrack(audio_track_);
     EXPECT_CALL(session_, GetRemoteTrackIdBySsrc(kSsrcOfTrack, _))
         .WillOnce(DoAll(SetArgPointee<1>(kRemoteTrackId), Return(true)));
+  }
+
+  std::string AddCandidateReport(StatsCollector* collector,
+                                 const cricket::Candidate& candidate,
+                                 const std::string& report_type) {
+    return collector->AddCandidateReport(candidate, report_type);
   }
 
   void SetupAndVerifyAudioTrackStats(
@@ -1016,6 +1023,97 @@ TEST_F(StatsCollectorTest, ReportsFromRemoteTrack) {
   EXPECT_EQ(kRemoteTrackId, track_id);
 }
 
+// This test verifies the Ice Candidate report should contain the correct
+// information from local/remote candidates.
+TEST_F(StatsCollectorTest, IceCandidateReport) {
+  webrtc::StatsCollector stats(&session_);  // Implementation under test.
+  StatsReports reports;                     // returned values.
+
+  const int local_port = 2000;
+  const char local_ip[] = "192.168.0.1";
+  const int remote_port = 2001;
+  const char remote_ip[] = "192.168.0.2";
+
+  rtc::SocketAddress local_address(local_ip, local_port);
+  rtc::SocketAddress remote_address(remote_ip, remote_port);
+  rtc::AdapterType network_type = rtc::ADAPTER_TYPE_ETHERNET;
+  uint32 priority = 1000;
+
+  cricket::Candidate c;
+  const std::string& local_id = rtc::CreateRandomString(8);
+  c.set_id(local_id);
+  c.set_type(cricket::LOCAL_PORT_TYPE);
+  c.set_protocol(cricket::UDP_PROTOCOL_NAME);
+  c.set_address(local_address);
+  c.set_priority(priority);
+  c.set_network_type(network_type);
+  std::string report_id = AddCandidateReport(
+      &stats, c, StatsReport::kStatsReportTypeIceLocalCandidate);
+  EXPECT_EQ("Cand-" + local_id, report_id);
+
+  const std::string& remote_id = rtc::CreateRandomString(8);
+  c.set_id(remote_id);
+  c.set_type(cricket::PRFLX_PORT_TYPE);
+  c.set_address(remote_address);
+  report_id = AddCandidateReport(
+      &stats, c, StatsReport::kStatsReportTypeIceRemoteCandidate);
+  EXPECT_EQ("Cand-" + remote_id, report_id);
+
+  stats.GetStats(NULL, &reports);
+
+  // Verify the local candidate report is populated correctly.
+  EXPECT_EQ(
+      local_ip,
+      ExtractStatsValue(StatsReport::kStatsReportTypeIceLocalCandidate, reports,
+                        StatsReport::kStatsValueNameCandidateIPAddress));
+  EXPECT_EQ(
+      rtc::ToString<int>(local_port),
+      ExtractStatsValue(StatsReport::kStatsReportTypeIceLocalCandidate, reports,
+                        StatsReport::kStatsValueNameCandidatePortNumber));
+  EXPECT_EQ(
+      cricket::UDP_PROTOCOL_NAME,
+      ExtractStatsValue(StatsReport::kStatsReportTypeIceLocalCandidate, reports,
+                        StatsReport::kStatsValueNameCandidateTransportType));
+  EXPECT_EQ(
+      rtc::ToString<int>(priority),
+      ExtractStatsValue(StatsReport::kStatsReportTypeIceLocalCandidate, reports,
+                        StatsReport::kStatsValueNameCandidatePriority));
+  EXPECT_EQ(
+      cricket::IceCandidateTypeToStatsType(cricket::LOCAL_PORT_TYPE),
+      ExtractStatsValue(StatsReport::kStatsReportTypeIceLocalCandidate, reports,
+                        StatsReport::kStatsValueNameCandidateType));
+  EXPECT_EQ(
+      rtc::AdapterTypeToStatsType(network_type),
+      ExtractStatsValue(StatsReport::kStatsReportTypeIceLocalCandidate, reports,
+                        StatsReport::kStatsValueNameCandidateNetworkType));
+
+  // Verify the remote candidate report is populated correctly.
+  EXPECT_EQ(remote_ip,
+            ExtractStatsValue(StatsReport::kStatsReportTypeIceRemoteCandidate,
+                              reports,
+                              StatsReport::kStatsValueNameCandidateIPAddress));
+  EXPECT_EQ(rtc::ToString<int>(remote_port),
+            ExtractStatsValue(StatsReport::kStatsReportTypeIceRemoteCandidate,
+                              reports,
+                              StatsReport::kStatsValueNameCandidatePortNumber));
+  EXPECT_EQ(cricket::UDP_PROTOCOL_NAME,
+            ExtractStatsValue(
+                StatsReport::kStatsReportTypeIceRemoteCandidate, reports,
+                StatsReport::kStatsValueNameCandidateTransportType));
+  EXPECT_EQ(rtc::ToString<int>(priority),
+            ExtractStatsValue(StatsReport::kStatsReportTypeIceRemoteCandidate,
+                              reports,
+                              StatsReport::kStatsValueNameCandidatePriority));
+  EXPECT_EQ(
+      cricket::IceCandidateTypeToStatsType(cricket::PRFLX_PORT_TYPE),
+      ExtractStatsValue(StatsReport::kStatsReportTypeIceRemoteCandidate,
+                        reports, StatsReport::kStatsValueNameCandidateType));
+  EXPECT_EQ(kNotFound,
+            ExtractStatsValue(
+                StatsReport::kStatsReportTypeIceRemoteCandidate, reports,
+                StatsReport::kStatsValueNameCandidateNetworkType));
+}
+
 // This test verifies that all chained certificates are correctly
 // reported
 TEST_F(StatsCollectorTest, ChainedCertificateReportsCreated) {
@@ -1461,4 +1559,4 @@ TEST_F(StatsCollectorTest, TwoLocalTracksWithSameSsrc) {
       media_channel, &new_voice_sender_info, NULL, &new_stats_read, &reports);
 }
 
-}  // namespace
+}  // namespace webrtc
