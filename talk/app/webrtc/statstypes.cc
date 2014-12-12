@@ -29,148 +29,6 @@
 
 namespace webrtc {
 
-// The items below are in alphabetical order.
-const char StatsReport::kStatsValueNameActiveConnection[] =
-    "googActiveConnection";
-const char StatsReport::kStatsValueNameActualEncBitrate[] =
-    "googActualEncBitrate";
-const char StatsReport::kStatsValueNameAudioOutputLevel[] = "audioOutputLevel";
-const char StatsReport::kStatsValueNameAudioInputLevel[] = "audioInputLevel";
-const char StatsReport::kStatsValueNameAvailableReceiveBandwidth[] =
-    "googAvailableReceiveBandwidth";
-const char StatsReport::kStatsValueNameAvailableSendBandwidth[] =
-    "googAvailableSendBandwidth";
-const char StatsReport::kStatsValueNameAvgEncodeMs[] = "googAvgEncodeMs";
-const char StatsReport::kStatsValueNameBucketDelay[] = "googBucketDelay";
-const char StatsReport::kStatsValueNameBytesReceived[] = "bytesReceived";
-const char StatsReport::kStatsValueNameBytesSent[] = "bytesSent";
-const char StatsReport::kStatsValueNameBandwidthLimitedResolution[] =
-    "googBandwidthLimitedResolution";
-const char StatsReport::kStatsValueNameCaptureJitterMs[] =
-    "googCaptureJitterMs";
-const char StatsReport::kStatsValueNameCaptureQueueDelayMsPerS[] =
-    "googCaptureQueueDelayMsPerS";
-const char StatsReport::kStatsValueNameChannelId[] = "googChannelId";
-const char StatsReport::kStatsValueNameCodecName[] = "googCodecName";
-const char StatsReport::kStatsValueNameComponent[] = "googComponent";
-const char StatsReport::kStatsValueNameContentName[] = "googContentName";
-const char StatsReport::kStatsValueNameCpuLimitedResolution[] =
-    "googCpuLimitedResolution";
-const char StatsReport::kStatsValueNameDecodingCTSG[] =
-    "googDecodingCTSG";
-const char StatsReport::kStatsValueNameDecodingCTN[] =
-    "googDecodingCTN";
-const char StatsReport::kStatsValueNameDecodingNormal[] =
-    "googDecodingNormal";
-const char StatsReport::kStatsValueNameDecodingPLC[] =
-    "googDecodingPLC";
-const char StatsReport::kStatsValueNameDecodingCNG[] =
-    "googDecodingCNG";
-const char StatsReport::kStatsValueNameDecodingPLCCNG[] =
-    "googDecodingPLCCNG";
-const char StatsReport::kStatsValueNameDer[] = "googDerBase64";
-// Echo metrics from the audio processing module.
-const char StatsReport::kStatsValueNameEchoCancellationQualityMin[] =
-    "googEchoCancellationQualityMin";
-const char StatsReport::kStatsValueNameEchoDelayMedian[] =
-    "googEchoCancellationEchoDelayMedian";
-const char StatsReport::kStatsValueNameEchoDelayStdDev[] =
-    "googEchoCancellationEchoDelayStdDev";
-const char StatsReport::kStatsValueNameEchoReturnLoss[] =
-    "googEchoCancellationReturnLoss";
-const char StatsReport::kStatsValueNameEchoReturnLossEnhancement[] =
-    "googEchoCancellationReturnLossEnhancement";
-
-const char StatsReport::kStatsValueNameEncodeUsagePercent[] =
-    "googEncodeUsagePercent";
-const char StatsReport::kStatsValueNameExpandRate[] = "googExpandRate";
-const char StatsReport::kStatsValueNameFingerprint[] = "googFingerprint";
-const char StatsReport::kStatsValueNameFingerprintAlgorithm[] =
-    "googFingerprintAlgorithm";
-const char StatsReport::kStatsValueNameFirsReceived[] = "googFirsReceived";
-const char StatsReport::kStatsValueNameFirsSent[] = "googFirsSent";
-const char StatsReport::kStatsValueNameFrameHeightInput[] =
-    "googFrameHeightInput";
-const char StatsReport::kStatsValueNameFrameHeightReceived[] =
-    "googFrameHeightReceived";
-const char StatsReport::kStatsValueNameFrameHeightSent[] =
-    "googFrameHeightSent";
-const char StatsReport::kStatsValueNameFrameRateReceived[] =
-    "googFrameRateReceived";
-const char StatsReport::kStatsValueNameFrameRateDecoded[] =
-    "googFrameRateDecoded";
-const char StatsReport::kStatsValueNameFrameRateOutput[] =
-    "googFrameRateOutput";
-const char StatsReport::kStatsValueNameDecodeMs[] = "googDecodeMs";
-const char StatsReport::kStatsValueNameMaxDecodeMs[] = "googMaxDecodeMs";
-const char StatsReport::kStatsValueNameCurrentDelayMs[] = "googCurrentDelayMs";
-const char StatsReport::kStatsValueNameTargetDelayMs[] = "googTargetDelayMs";
-const char StatsReport::kStatsValueNameJitterBufferMs[] = "googJitterBufferMs";
-const char StatsReport::kStatsValueNameMinPlayoutDelayMs[] =
-    "googMinPlayoutDelayMs";
-const char StatsReport::kStatsValueNameRenderDelayMs[] = "googRenderDelayMs";
-
-const char StatsReport::kStatsValueNameCaptureStartNtpTimeMs[] =
-    "googCaptureStartNtpTimeMs";
-
-const char StatsReport::kStatsValueNameFrameRateInput[] = "googFrameRateInput";
-const char StatsReport::kStatsValueNameFrameRateSent[] = "googFrameRateSent";
-const char StatsReport::kStatsValueNameFrameWidthInput[] =
-    "googFrameWidthInput";
-const char StatsReport::kStatsValueNameFrameWidthReceived[] =
-    "googFrameWidthReceived";
-const char StatsReport::kStatsValueNameFrameWidthSent[] = "googFrameWidthSent";
-const char StatsReport::kStatsValueNameInitiator[] = "googInitiator";
-const char StatsReport::kStatsValueNameIssuerId[] = "googIssuerId";
-const char StatsReport::kStatsValueNameJitterReceived[] = "googJitterReceived";
-const char StatsReport::kStatsValueNameLocalAddress[] = "googLocalAddress";
-const char StatsReport::kStatsValueNameLocalCandidateType[] =
-    "googLocalCandidateType";
-const char StatsReport::kStatsValueNameLocalCertificateId[] =
-    "googLocalCertificateId";
-const char StatsReport::kStatsValueNameAdaptationChanges[] =
-    "googAdaptationChanges";
-const char StatsReport::kStatsValueNameNacksReceived[] = "googNacksReceived";
-const char StatsReport::kStatsValueNameNacksSent[] = "googNacksSent";
-const char StatsReport::kStatsValueNamePlisReceived[] = "googPlisReceived";
-const char StatsReport::kStatsValueNamePlisSent[] = "googPlisSent";
-const char StatsReport::kStatsValueNamePacketsReceived[] = "packetsReceived";
-const char StatsReport::kStatsValueNamePacketsSent[] = "packetsSent";
-const char StatsReport::kStatsValueNamePacketsLost[] = "packetsLost";
-const char StatsReport::kStatsValueNamePreferredJitterBufferMs[] =
-    "googPreferredJitterBufferMs";
-const char StatsReport::kStatsValueNameReadable[] = "googReadable";
-const char StatsReport::kStatsValueNameRecvPacketGroupArrivalTimeDebug[] =
-    "googReceivedPacketGroupArrivalTimeDebug";
-const char StatsReport::kStatsValueNameRecvPacketGroupPropagationDeltaDebug[] =
-    "googReceivedPacketGroupPropagationDeltaDebug";
-const char
-StatsReport::kStatsValueNameRecvPacketGroupPropagationDeltaSumDebug[] =
-    "googReceivedPacketGroupPropagationDeltaSumDebug";
-const char StatsReport::kStatsValueNameRemoteAddress[] = "googRemoteAddress";
-const char StatsReport::kStatsValueNameRemoteCandidateType[] =
-    "googRemoteCandidateType";
-const char StatsReport::kStatsValueNameRemoteCertificateId[] =
-    "googRemoteCertificateId";
-const char StatsReport::kStatsValueNameRetransmitBitrate[] =
-    "googRetransmitBitrate";
-const char StatsReport::kStatsValueNameRtt[] = "googRtt";
-const char StatsReport::kStatsValueNameSsrc[] = "ssrc";
-const char StatsReport::kStatsValueNameSendPacketsDiscarded[] =
-    "packetsDiscardedOnSend";
-const char StatsReport::kStatsValueNameTargetEncBitrate[] =
-    "googTargetEncBitrate";
-const char StatsReport::kStatsValueNameTransmitBitrate[] =
-    "googTransmitBitrate";
-const char StatsReport::kStatsValueNameTransportId[] = "transportId";
-const char StatsReport::kStatsValueNameTransportType[] = "googTransportType";
-const char StatsReport::kStatsValueNameTrackId[] = "googTrackId";
-const char StatsReport::kStatsValueNameTypingNoiseState[] =
-    "googTypingNoiseState";
-const char StatsReport::kStatsValueNameViewLimitedResolution[] =
-    "googViewLimitedResolution";
-const char StatsReport::kStatsValueNameWritable[] = "googWritable";
-
 const char StatsReport::kStatsReportTypeSession[] = "googLibjingleSession";
 const char StatsReport::kStatsReportTypeBwe[] = "VideoBwe";
 const char StatsReport::kStatsReportTypeRemoteSsrc[] = "remoteSsrc";
@@ -218,10 +76,6 @@ bool StatsReport::operator==(const std::string& other_id) const {
   return id == other_id;
 }
 
-StatsReport::Value::Value()
-    : name(NULL) {
-}
-
 // The copy ctor can't be declared as explicit due to problems with STL.
 StatsReport::Value::Value(const Value& other)
     : name(other.name), value(other.value) {
@@ -241,11 +95,194 @@ StatsReport::Value& StatsReport::Value::operator=(const Value& other) {
   return *this;
 }
 
-// TODO(tommi): Change implementation to do a simple enum value-to-static-
-// string conversion when client code has been updated to use this method
-// instead of the |name| member variable.
 const char* StatsReport::Value::display_name() const {
-  return name;
+  switch (name) {
+    case kStatsValueNameAudioOutputLevel:
+      return "audioOutputLevel";
+    case kStatsValueNameAudioInputLevel:
+      return "audioInputLevel";
+    case kStatsValueNameBytesSent:
+      return "bytesSent";
+    case kStatsValueNamePacketsSent:
+      return "packetsSent";
+    case kStatsValueNameBytesReceived:
+      return "bytesReceived";
+    case kStatsValueNamePacketsReceived:
+      return "packetsReceived";
+    case kStatsValueNamePacketsLost:
+      return "packetsLost";
+    case kStatsValueNameTransportId:
+      return "transportId";
+    case kStatsValueNameSsrc:
+      return "ssrc";
+
+    // 'goog' prefixed constants.
+    case kStatsValueNameActiveConnection:
+      return "googActiveConnection";
+    case kStatsValueNameActualEncBitrate:
+      return "googActualEncBitrate";
+    case kStatsValueNameAvailableReceiveBandwidth:
+      return "googAvailableReceiveBandwidth";
+    case kStatsValueNameAvailableSendBandwidth:
+      return "googAvailableSendBandwidth";
+    case kStatsValueNameAvgEncodeMs:
+      return "googAvgEncodeMs";
+    case kStatsValueNameBucketDelay:
+      return "googBucketDelay";
+    case kStatsValueNameBandwidthLimitedResolution:
+      return "googBandwidthLimitedResolution";
+    case kStatsValueNameCaptureJitterMs:
+      return "googCaptureJitterMs";
+    case kStatsValueNameCaptureQueueDelayMsPerS:
+      return "googCaptureQueueDelayMsPerS";
+    case kStatsValueNameChannelId:
+      return "googChannelId";
+    case kStatsValueNameCodecName:
+      return "googCodecName";
+    case kStatsValueNameComponent:
+      return "googComponent";
+    case kStatsValueNameContentName:
+      return "googContentName";
+    case kStatsValueNameCpuLimitedResolution:
+      return "googCpuLimitedResolution";
+    case kStatsValueNameDecodingCTSG:
+      return "googDecodingCTSG";
+    case kStatsValueNameDecodingCTN:
+      return "googDecodingCTN";
+    case kStatsValueNameDecodingNormal:
+      return "googDecodingNormal";
+    case kStatsValueNameDecodingPLC:
+      return "googDecodingPLC";
+    case kStatsValueNameDecodingCNG:
+      return "googDecodingCNG";
+    case kStatsValueNameDecodingPLCCNG:
+      return "googDecodingPLCCNG";
+    case kStatsValueNameDer:
+      return "googDerBase64";
+    case kStatsValueNameEchoCancellationQualityMin:
+      return "googEchoCancellationQualityMin";
+    case kStatsValueNameEchoDelayMedian:
+      return "googEchoCancellationEchoDelayMedian";
+    case kStatsValueNameEchoDelayStdDev:
+      return "googEchoCancellationEchoDelayStdDev";
+    case kStatsValueNameEchoReturnLoss:
+      return "googEchoCancellationReturnLoss";
+    case kStatsValueNameEchoReturnLossEnhancement:
+      return "googEchoCancellationReturnLossEnhancement";
+    case kStatsValueNameEncodeUsagePercent:
+      return "googEncodeUsagePercent";
+    case kStatsValueNameExpandRate:
+      return "googExpandRate";
+    case kStatsValueNameFingerprint:
+      return "googFingerprint";
+    case kStatsValueNameFingerprintAlgorithm:
+      return "googFingerprintAlgorithm";
+    case kStatsValueNameFirsReceived:
+      return "googFirsReceived";
+    case kStatsValueNameFirsSent:
+      return "googFirsSent";
+    case kStatsValueNameFrameHeightInput:
+      return "googFrameHeightInput";
+    case kStatsValueNameFrameHeightReceived:
+      return "googFrameHeightReceived";
+    case kStatsValueNameFrameHeightSent:
+      return "googFrameHeightSent";
+    case kStatsValueNameFrameRateReceived:
+      return "googFrameRateReceived";
+    case kStatsValueNameFrameRateDecoded:
+      return "googFrameRateDecoded";
+    case kStatsValueNameFrameRateOutput:
+      return "googFrameRateOutput";
+    case kStatsValueNameDecodeMs:
+      return "googDecodeMs";
+    case kStatsValueNameMaxDecodeMs:
+      return "googMaxDecodeMs";
+    case kStatsValueNameCurrentDelayMs:
+      return "googCurrentDelayMs";
+    case kStatsValueNameTargetDelayMs:
+      return "googTargetDelayMs";
+    case kStatsValueNameJitterBufferMs:
+      return "googJitterBufferMs";
+    case kStatsValueNameMinPlayoutDelayMs:
+      return "googMinPlayoutDelayMs";
+    case kStatsValueNameRenderDelayMs:
+      return "googRenderDelayMs";
+    case kStatsValueNameCaptureStartNtpTimeMs:
+      return "googCaptureStartNtpTimeMs";
+    case kStatsValueNameFrameRateInput:
+      return "googFrameRateInput";
+    case kStatsValueNameFrameRateSent:
+      return "googFrameRateSent";
+    case kStatsValueNameFrameWidthInput:
+      return "googFrameWidthInput";
+    case kStatsValueNameFrameWidthReceived:
+      return "googFrameWidthReceived";
+    case kStatsValueNameFrameWidthSent:
+      return "googFrameWidthSent";
+    case kStatsValueNameInitiator:
+      return "googInitiator";
+    case kStatsValueNameIssuerId:
+      return "googIssuerId";
+    case kStatsValueNameJitterReceived:
+      return "googJitterReceived";
+    case kStatsValueNameLocalAddress:
+      return "googLocalAddress";
+    case kStatsValueNameLocalCandidateType:
+      return "googLocalCandidateType";
+    case kStatsValueNameLocalCertificateId:
+      return "googLocalCertificateId";
+    case kStatsValueNameAdaptationChanges:
+      return "googAdaptationChanges";
+    case kStatsValueNameNacksReceived:
+      return "googNacksReceived";
+    case kStatsValueNameNacksSent:
+      return "googNacksSent";
+    case kStatsValueNamePlisReceived:
+      return "googPlisReceived";
+    case kStatsValueNamePlisSent:
+      return "googPlisSent";
+    case kStatsValueNamePreferredJitterBufferMs:
+      return "googPreferredJitterBufferMs";
+    case kStatsValueNameReadable:
+      return "googReadable";
+    case kStatsValueNameRecvPacketGroupArrivalTimeDebug:
+      return "googReceivedPacketGroupArrivalTimeDebug";
+    case kStatsValueNameRecvPacketGroupPropagationDeltaDebug:
+      return "googReceivedPacketGroupPropagationDeltaDebug";
+    case kStatsValueNameRecvPacketGroupPropagationDeltaSumDebug:
+      return "googReceivedPacketGroupPropagationDeltaSumDebug";
+    case kStatsValueNameRemoteAddress:
+      return "googRemoteAddress";
+    case kStatsValueNameRemoteCandidateType:
+      return "googRemoteCandidateType";
+    case kStatsValueNameRemoteCertificateId:
+      return "googRemoteCertificateId";
+    case kStatsValueNameRetransmitBitrate:
+      return "googRetransmitBitrate";
+    case kStatsValueNameRtt:
+      return "googRtt";
+    case kStatsValueNameSendPacketsDiscarded:
+      return "packetsDiscardedOnSend";
+    case kStatsValueNameTargetEncBitrate:
+      return "googTargetEncBitrate";
+    case kStatsValueNameTransmitBitrate:
+      return "googTransmitBitrate";
+    case kStatsValueNameTransportType:
+      return "googTransportType";
+    case kStatsValueNameTrackId:
+      return "googTrackId";
+    case kStatsValueNameTypingNoiseState:
+      return "googTypingNoiseState";
+    case kStatsValueNameViewLimitedResolution:
+      return "googViewLimitedResolution";
+    case kStatsValueNameWritable:
+      return "googWritable";
+    default:
+      ASSERT(false);
+      break;
+  }
+
+  return nullptr;
 }
 
 void StatsReport::AddValue(StatsReport::StatsValueName name,

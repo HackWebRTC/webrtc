@@ -1022,7 +1022,9 @@ class StatsObserverWrapper : public StatsObserver {
     for (int i = 0; i < values.size(); ++i) {
       ScopedLocalRefFrame local_ref_frame(jni);
       const StatsReport::Value& value = values[i];
-      jstring j_name = JavaStringFromStdString(jni, value.name);
+      // Should we use the '.name' enum value here instead of converting the
+      // name to a string?
+      jstring j_name = JavaStringFromStdString(jni, value.display_name());
       jstring j_value = JavaStringFromStdString(jni, value.value);
       jobject j_element_value =
           jni->NewObject(*j_value_class_, j_value_ctor_, j_name, j_value);

@@ -65,10 +65,6 @@ class StatsReport {
   // without requiring a new StatsReport instance.
   bool operator==(const std::string& other_id) const;
 
-  // TODO(tommi): Change this to be an enum type that holds all the
-  // kStatsValueName constants.
-  typedef const char* StatsValueName;
-
   // The unique identifier for this object.
   // This is used as a key for this report in ordered containers,
   // so it must never be changed.
@@ -76,8 +72,102 @@ class StatsReport {
   std::string id;  // See below for contents.
   std::string type;  // See below for contents.
 
+  // StatsValue names.
+  enum StatsValueName {
+    kStatsValueNameActiveConnection,
+    kStatsValueNameAudioInputLevel,
+    kStatsValueNameAudioOutputLevel,
+    kStatsValueNameBytesReceived,
+    kStatsValueNameBytesSent,
+    kStatsValueNamePacketsLost,
+    kStatsValueNamePacketsReceived,
+    kStatsValueNamePacketsSent,
+    kStatsValueNameReadable,
+    kStatsValueNameSsrc,
+    kStatsValueNameTransportId,
+
+    // Internal StatsValue names.
+    kStatsValueNameActualEncBitrate,
+    kStatsValueNameAdaptationChanges,
+    kStatsValueNameAvailableReceiveBandwidth,
+    kStatsValueNameAvailableSendBandwidth,
+    kStatsValueNameAvgEncodeMs,
+    kStatsValueNameBandwidthLimitedResolution,
+    kStatsValueNameBucketDelay,
+    kStatsValueNameCaptureJitterMs,
+    kStatsValueNameCaptureQueueDelayMsPerS,
+    kStatsValueNameCaptureStartNtpTimeMs,
+    kStatsValueNameChannelId,
+    kStatsValueNameCodecName,
+    kStatsValueNameComponent,
+    kStatsValueNameContentName,
+    kStatsValueNameCpuLimitedResolution,
+    kStatsValueNameCurrentDelayMs,
+    kStatsValueNameDecodeMs,
+    kStatsValueNameDecodingCNG,
+    kStatsValueNameDecodingCTN,
+    kStatsValueNameDecodingCTSG,
+    kStatsValueNameDecodingNormal,
+    kStatsValueNameDecodingPLC,
+    kStatsValueNameDecodingPLCCNG,
+    kStatsValueNameDer,
+    kStatsValueNameEchoCancellationQualityMin,
+    kStatsValueNameEchoDelayMedian,
+    kStatsValueNameEchoDelayStdDev,
+    kStatsValueNameEchoReturnLoss,
+    kStatsValueNameEchoReturnLossEnhancement,
+    kStatsValueNameEncodeUsagePercent,
+    kStatsValueNameExpandRate,
+    kStatsValueNameFingerprint,
+    kStatsValueNameFingerprintAlgorithm,
+    kStatsValueNameFirsReceived,
+    kStatsValueNameFirsSent,
+    kStatsValueNameFrameHeightInput,
+    kStatsValueNameFrameHeightReceived,
+    kStatsValueNameFrameHeightSent,
+    kStatsValueNameFrameRateDecoded,
+    kStatsValueNameFrameRateInput,
+    kStatsValueNameFrameRateOutput,
+    kStatsValueNameFrameRateReceived,
+    kStatsValueNameFrameRateSent,
+    kStatsValueNameFrameWidthInput,
+    kStatsValueNameFrameWidthReceived,
+    kStatsValueNameFrameWidthSent,
+    kStatsValueNameInitiator,
+    kStatsValueNameIssuerId,
+    kStatsValueNameJitterBufferMs,
+    kStatsValueNameJitterReceived,
+    kStatsValueNameLocalAddress,
+    kStatsValueNameLocalCandidateType,
+    kStatsValueNameLocalCertificateId,
+    kStatsValueNameMaxDecodeMs,
+    kStatsValueNameMinPlayoutDelayMs,
+    kStatsValueNameNacksReceived,
+    kStatsValueNameNacksSent,
+    kStatsValueNamePlisReceived,
+    kStatsValueNamePlisSent,
+    kStatsValueNamePreferredJitterBufferMs,
+    kStatsValueNameRecvPacketGroupArrivalTimeDebug,
+    kStatsValueNameRecvPacketGroupPropagationDeltaDebug,
+    kStatsValueNameRecvPacketGroupPropagationDeltaSumDebug,
+    kStatsValueNameRemoteAddress,
+    kStatsValueNameRemoteCandidateType,
+    kStatsValueNameRemoteCertificateId,
+    kStatsValueNameRenderDelayMs,
+    kStatsValueNameRetransmitBitrate,
+    kStatsValueNameRtt,
+    kStatsValueNameSendPacketsDiscarded,
+    kStatsValueNameTargetDelayMs,
+    kStatsValueNameTargetEncBitrate,
+    kStatsValueNameTrackId,
+    kStatsValueNameTransmitBitrate,
+    kStatsValueNameTransportType,
+    kStatsValueNameTypingNoiseState,
+    kStatsValueNameViewLimitedResolution,
+    kStatsValueNameWritable,
+  };
+
   struct Value {
-    Value();
     // The copy ctor can't be declared as explicit due to problems with STL.
     Value(const Value& other);
     explicit Value(StatsValueName name);
@@ -88,9 +178,7 @@ class StatsReport {
     // The public |name| member variable is otherwise meant to be read-only.
     Value& operator=(const Value& other);
 
-    // TODO(tommi): Change implementation to do a simple enum value-to-static-
-    // string conversion when client code has been updated to use this method
-    // instead of the |name| member variable.
+    // Returns the string representation of |name|.
     const char* display_name() const;
 
     const StatsValueName name;
@@ -153,9 +241,6 @@ class StatsReport {
   // ICE Candidate. It links to its transport.
   static const char kStatsReportTypeIceCandidate[];
 
-  // The id of StatsReport of type VideoBWE.
-  static const char kStatsReportVideoBweId[];
-
   // A StatsReport of |type| = "googCertificate" contains an SSL certificate
   // transmitted by one of the endpoints of this connection.  The |id| is
   // controlled by the fingerprint, and is used to identify the certificate in
@@ -164,99 +249,8 @@ class StatsReport {
   // "googIssuerId").
   static const char kStatsReportTypeCertificate[];
 
-  // StatsValue names
-  static const char kStatsValueNameAudioOutputLevel[];
-  static const char kStatsValueNameAudioInputLevel[];
-  static const char kStatsValueNameBytesSent[];
-  static const char kStatsValueNamePacketsSent[];
-  static const char kStatsValueNameBytesReceived[];
-  static const char kStatsValueNamePacketsReceived[];
-  static const char kStatsValueNamePacketsLost[];
-  static const char kStatsValueNameTransportId[];
-  static const char kStatsValueNameLocalAddress[];
-  static const char kStatsValueNameRemoteAddress[];
-  static const char kStatsValueNameWritable[];
-  static const char kStatsValueNameReadable[];
-  static const char kStatsValueNameActiveConnection[];
-
-
-  // Internal StatsValue names
-  static const char kStatsValueNameAvgEncodeMs[];
-  static const char kStatsValueNameEncodeUsagePercent[];
-  static const char kStatsValueNameCaptureJitterMs[];
-  static const char kStatsValueNameCaptureQueueDelayMsPerS[];
-  static const char kStatsValueNameCodecName[];
-  static const char kStatsValueNameBandwidthLimitedResolution[];
-  static const char kStatsValueNameCpuLimitedResolution[];
-  static const char kStatsValueNameViewLimitedResolution[];
-  static const char kStatsValueNameAdaptationChanges[];
-  static const char kStatsValueNameEchoCancellationQualityMin[];
-  static const char kStatsValueNameEchoDelayMedian[];
-  static const char kStatsValueNameEchoDelayStdDev[];
-  static const char kStatsValueNameEchoReturnLoss[];
-  static const char kStatsValueNameEchoReturnLossEnhancement[];
-  static const char kStatsValueNameExpandRate[];
-  static const char kStatsValueNameFirsReceived[];
-  static const char kStatsValueNameFirsSent[];
-  static const char kStatsValueNameFrameHeightInput[];
-  static const char kStatsValueNameFrameHeightReceived[];
-  static const char kStatsValueNameFrameHeightSent[];
-  static const char kStatsValueNameFrameRateReceived[];
-  static const char kStatsValueNameFrameRateDecoded[];
-  static const char kStatsValueNameFrameRateOutput[];
-  static const char kStatsValueNameDecodeMs[];
-  static const char kStatsValueNameMaxDecodeMs[];
-  static const char kStatsValueNameCurrentDelayMs[];
-  static const char kStatsValueNameTargetDelayMs[];
-  static const char kStatsValueNameJitterBufferMs[];
-  static const char kStatsValueNameMinPlayoutDelayMs[];
-  static const char kStatsValueNameRenderDelayMs[];
-  static const char kStatsValueNameCaptureStartNtpTimeMs[];
-  static const char kStatsValueNameFrameRateInput[];
-  static const char kStatsValueNameFrameRateSent[];
-  static const char kStatsValueNameFrameWidthInput[];
-  static const char kStatsValueNameFrameWidthReceived[];
-  static const char kStatsValueNameFrameWidthSent[];
-  static const char kStatsValueNameJitterReceived[];
-  static const char kStatsValueNameNacksReceived[];
-  static const char kStatsValueNameNacksSent[];
-  static const char kStatsValueNamePlisReceived[];
-  static const char kStatsValueNamePlisSent[];
-  static const char kStatsValueNamePreferredJitterBufferMs[];
-  static const char kStatsValueNameRtt[];
-  static const char kStatsValueNameAvailableSendBandwidth[];
-  static const char kStatsValueNameAvailableReceiveBandwidth[];
-  static const char kStatsValueNameTargetEncBitrate[];
-  static const char kStatsValueNameActualEncBitrate[];
-  static const char kStatsValueNameRetransmitBitrate[];
-  static const char kStatsValueNameTransmitBitrate[];
-  static const char kStatsValueNameBucketDelay[];
-  static const char kStatsValueNameInitiator[];
-  static const char kStatsValueNameTransportType[];
-  static const char kStatsValueNameContentName[];
-  static const char kStatsValueNameComponent[];
-  static const char kStatsValueNameChannelId[];
-  static const char kStatsValueNameTrackId[];
-  static const char kStatsValueNameSsrc[];
-  static const char kStatsValueNameSendPacketsDiscarded[];
-  static const char kStatsValueNameTypingNoiseState[];
-  static const char kStatsValueNameDer[];
-  static const char kStatsValueNameFingerprint[];
-  static const char kStatsValueNameFingerprintAlgorithm[];
-  static const char kStatsValueNameIssuerId[];
-  static const char kStatsValueNameLocalCertificateId[];
-  static const char kStatsValueNameRemoteCertificateId[];
-  static const char kStatsValueNameLocalCandidateType[];
-  static const char kStatsValueNameRemoteCandidateType[];
-  static const char kStatsValueNameRecvPacketGroupArrivalTimeDebug[];
-  static const char kStatsValueNameRecvPacketGroupPropagationDeltaDebug[];
-  static const char kStatsValueNameRecvPacketGroupPropagationDeltaSumDebug[];
-  static const char kStatsValueNameDecodingCTSG[];
-  static const char kStatsValueNameDecodingCTN[];
-  static const char kStatsValueNameDecodingNormal[];
-  static const char kStatsValueNameDecodingPLC[];
-  static const char kStatsValueNameDecodingCNG[];
-  static const char kStatsValueNameDecodingPLCCNG[];
+  // The id of StatsReport of type VideoBWE.
+  static const char kStatsReportVideoBweId[];
 };
 
 // This class is provided for the cases where we need to keep
