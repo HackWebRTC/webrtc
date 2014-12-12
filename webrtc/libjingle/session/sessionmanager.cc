@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/base/sessionmanager.h"
+#include "webrtc/libjingle/session/sessionmanager.h"
 
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/session.h"
-#include "webrtc/p2p/base/sessionmessages.h"
+#include "webrtc/libjingle/session/sessionmessages.h"
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/libjingle/xmpp/jid.h"
 #include "webrtc/base/common.h"

@@ -12,7 +12,7 @@
 
 #include "webrtc/p2p/base/dtlstransport.h"
 #include "webrtc/p2p/base/p2ptransport.h"
-#include "webrtc/p2p/base/sessionclient.h"
+#include "webrtc/libjingle/session/sessionclient.h"
 #include "webrtc/p2p/base/transport.h"
 #include "webrtc/p2p/base/transportchannelproxy.h"
 #include "webrtc/p2p/base/transportinfo.h"

@@ -36,7 +36,7 @@
 
 #include <string>
 
-#include "talk/session/tunnel/tunnelsessionclient.h"
+#include "webrtc/libjingle/tunnel/tunnelsessionclient.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/sslstreamadapter.h"
 

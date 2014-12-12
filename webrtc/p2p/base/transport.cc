@@ -12,9 +12,9 @@
 
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/parsing.h"
+#include "webrtc/libjingle/session/parsing.h"
 #include "webrtc/p2p/base/port.h"
-#include "webrtc/p2p/base/sessionmanager.h"
+#include "webrtc/libjingle/session/sessionmanager.h"
 #include "webrtc/p2p/base/transportchannelimpl.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/libjingle/xmpp/constants.h"

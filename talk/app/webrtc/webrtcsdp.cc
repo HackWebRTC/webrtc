@@ -43,7 +43,7 @@
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/port.h"
 #include "talk/session/media/mediasession.h"
-#include "talk/session/media/mediasessionclient.h"
+#include "webrtc/libjingle/media/mediasessionclient.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"

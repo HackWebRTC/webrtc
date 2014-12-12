@@ -29,11 +29,11 @@
  * Documentation is in mediamessages.h.
  */
 
-#include "talk/session/media/mediamessages.h"
+#include "webrtc/libjingle/media/mediamessages.h"
 
 #include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/parsing.h"
-#include "talk/session/media/mediasessionclient.h"
+#include "webrtc/libjingle/session/parsing.h"
+#include "webrtc/libjingle/media/mediasessionclient.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"

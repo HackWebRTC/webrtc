@@ -21,6 +21,7 @@
         'webrtc/webrtc.gyp:*',
         '<(libjingle_root)/talk/libjingle.gyp:*',
         '<(libjingle_root)/talk/libjingle_examples.gyp:*',
+	'webrtc/libjingle/libjingle.gyp:*',
         '<@(webrtc_root_additional_dependencies)',
       ],
       'conditions': [

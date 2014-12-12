@@ -33,7 +33,7 @@
 #include "talk/media/devices/fakedevicemanager.h"
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/client/basicportallocator.h"
-#include "talk/session/media/mediasessionclient.h"
+#include "webrtc/libjingle/media/mediasessionclient.h"
 #include "webrtc/libjingle/xmllite/xmlbuilder.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/libjingle/xmllite/xmlprinter.h"

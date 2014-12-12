@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/parsing.h"
+#include "webrtc/libjingle/session/parsing.h"
 #include "webrtc/p2p/base/sessiondescription.h"  // Needed to delete contents.
 #include "webrtc/p2p/base/transportinfo.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"

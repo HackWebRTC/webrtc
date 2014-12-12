@@ -27,14 +27,14 @@
 
 #include <string>
 
-#include "talk/session/media/mediasessionclient.h"
+#include "webrtc/libjingle/media/mediasessionclient.h"
 
 #include "talk/media/base/capturemanager.h"
 #include "talk/media/base/cryptoparams.h"
 #include "talk/media/sctp/sctpdataengine.h"
 #include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/parsing.h"
-#include "talk/session/media/mediamessages.h"
+#include "webrtc/libjingle/session/parsing.h"
+#include "webrtc/libjingle/media/mediamessages.h"
 #include "talk/session/media/srtpfilter.h"
 #include "webrtc/libjingle/xmllite/qname.h"
 #include "webrtc/libjingle/xmllite/xmlconstants.h"

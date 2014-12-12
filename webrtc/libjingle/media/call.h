@@ -41,7 +41,7 @@
 #include "webrtc/p2p/client/socketmonitor.h"
 #include "talk/session/media/audiomonitor.h"
 #include "talk/session/media/currentspeakermonitor.h"
-#include "talk/session/media/mediamessages.h"
+#include "webrtc/libjingle/media/mediamessages.h"
 #include "talk/session/media/mediasession.h"
 #include "webrtc/libjingle/xmpp/jid.h"
 #include "webrtc/base/messagequeue.h"
