@@ -56,7 +56,6 @@ bool AudioEncoderIlbc::EncodeInternal(uint32_t timestamp,
                                       const int16_t* audio,
                                       size_t max_encoded_bytes,
                                       uint8_t* encoded,
-                                      size_t* encoded_bytes,
                                       EncodedInfo* info) {
   const size_t expected_output_len =
       num_10ms_frames_per_packet_ == 2 ? 38 : 50;
@@ -74,7 +73,7 @@ bool AudioEncoderIlbc::EncodeInternal(uint32_t timestamp,
   // If we don't yet have enough buffered input for a whole packet, we're done
   // for now.
   if (++num_10ms_frames_buffered_ < num_10ms_frames_per_packet_) {
-    *encoded_bytes = 0;
+    info->encoded_bytes = 0;
     return true;
   }
 
@@ -89,7 +88,7 @@ bool AudioEncoderIlbc::EncodeInternal(uint32_t timestamp,
   if (output_len == -1)
     return false;  // Encoding error.
   DCHECK_EQ(output_len, static_cast<int>(expected_output_len));
-  *encoded_bytes = output_len;
+  info->encoded_bytes = output_len;
   info->encoded_timestamp = first_timestamp_in_buffer_;
   info->payload_type = payload_type_;
   return true;

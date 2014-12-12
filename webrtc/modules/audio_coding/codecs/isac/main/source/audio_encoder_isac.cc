@@ -111,7 +111,6 @@ bool AudioEncoderDecoderIsac::EncodeInternal(uint32_t timestamp,
                                              const int16_t* audio,
                                              size_t max_encoded_bytes,
                                              uint8_t* encoded,
-                                             size_t* encoded_bytes,
                                              EncodedInfo* info) {
   if (!packet_in_progress_) {
     // Starting a new packet; remember the timestamp for later.
@@ -133,7 +132,7 @@ bool AudioEncoderDecoderIsac::EncodeInternal(uint32_t timestamp,
   // buffer. All we can do is check for an overrun after the fact.
   CHECK(static_cast<size_t>(r) <= max_encoded_bytes);
 
-  *encoded_bytes = r;
+  info->encoded_bytes = r;
   if (r > 0) {
     // Got enough input to produce a packet. Return the saved timestamp from
     // the first chunk of input that went into the packet.

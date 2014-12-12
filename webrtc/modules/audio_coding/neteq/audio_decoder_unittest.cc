@@ -135,14 +135,14 @@ class AudioDecoderTest : public ::testing::Test {
   virtual int EncodeFrame(const int16_t* input,
                           size_t input_len_samples,
                           uint8_t* output) {
-    size_t enc_len_bytes = 0;
+    encoded_info_.encoded_bytes = 0;
     const size_t samples_per_10ms = audio_encoder_->sample_rate_hz() / 100;
     CHECK_EQ(samples_per_10ms * audio_encoder_->Num10MsFramesInNextPacket(),
              input_len_samples);
     scoped_ptr<int16_t[]> interleaved_input(
         new int16_t[channels_ * samples_per_10ms]);
     for (int i = 0; i < audio_encoder_->Num10MsFramesInNextPacket(); ++i) {
-      EXPECT_EQ(0u, enc_len_bytes);
+      EXPECT_EQ(0u, encoded_info_.encoded_bytes);
 
       // Duplicate the mono input signal to however many channels the test
       // wants.
@@ -152,10 +152,10 @@ class AudioDecoderTest : public ::testing::Test {
 
       EXPECT_TRUE(audio_encoder_->Encode(
           0, interleaved_input.get(), audio_encoder_->sample_rate_hz() / 100,
-          data_length_ * 2, output, &enc_len_bytes, &encoded_info_));
+          data_length_ * 2, output, &encoded_info_));
     }
     EXPECT_EQ(payload_type_, encoded_info_.payload_type);
-    return static_cast<int>(enc_len_bytes);
+    return static_cast<int>(encoded_info_.encoded_bytes);
   }
 
   // Encodes and decodes audio. The absolute difference between the input and

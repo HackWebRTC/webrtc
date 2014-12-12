@@ -23,6 +23,9 @@ namespace webrtc {
 class AudioEncoder {
  public:
   struct EncodedInfo {
+    EncodedInfo() : encoded_bytes(0), encoded_timestamp(0), payload_type(0) {}
+
+    size_t encoded_bytes;
     uint32_t encoded_timestamp;
     int payload_type;
   };
@@ -41,7 +44,6 @@ class AudioEncoder {
               size_t num_samples_per_channel,
               size_t max_encoded_bytes,
               uint8_t* encoded,
-              size_t* encoded_bytes,
               EncodedInfo* info) {
     CHECK_EQ(num_samples_per_channel,
              static_cast<size_t>(sample_rate_hz() / 100));
@@ -49,9 +51,8 @@ class AudioEncoder {
                               audio,
                               max_encoded_bytes,
                               encoded,
-                              encoded_bytes,
                               info);
-    CHECK_LE(*encoded_bytes, max_encoded_bytes);
+    CHECK_LE(info->encoded_bytes, max_encoded_bytes);
     return ret;
   }
 
@@ -76,7 +77,6 @@ class AudioEncoder {
                               const int16_t* audio,
                               size_t max_encoded_bytes,
                               uint8_t* encoded,
-                              size_t* encoded_bytes,
                               EncodedInfo* info) = 0;
 };
 

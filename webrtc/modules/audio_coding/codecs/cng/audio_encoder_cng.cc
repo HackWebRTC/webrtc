@@ -90,13 +90,12 @@ bool AudioEncoderCng::EncodeInternal(uint32_t timestamp,
                                      const int16_t* audio,
                                      size_t max_encoded_bytes,
                                      uint8_t* encoded,
-                                     size_t* encoded_bytes,
                                      EncodedInfo* info) {
   DCHECK_GE(max_encoded_bytes, static_cast<size_t>(num_cng_coefficients_ + 1));
   if (max_encoded_bytes < static_cast<size_t>(num_cng_coefficients_ + 1)) {
     return false;
   }
-  *encoded_bytes = 0;
+  info->encoded_bytes = 0;
   const int num_samples = sample_rate_hz() / 100 * num_channels();
   if (speech_buffer_.empty()) {
     CHECK_EQ(frames_in_buffer_, 0);
@@ -143,15 +142,14 @@ bool AudioEncoderCng::EncodeInternal(uint32_t timestamp,
   bool return_val = true;
   switch (activity) {
     case Vad::kPassive: {
-      return_val = EncodePassive(encoded, encoded_bytes);
+      return_val = EncodePassive(encoded, &info->encoded_bytes);
       info->encoded_timestamp = first_timestamp_in_buffer_;
       info->payload_type = cng_payload_type_;
       last_frame_active_ = false;
       break;
     }
     case Vad::kActive: {
-      return_val =
-          EncodeActive(max_encoded_bytes, encoded, encoded_bytes, info);
+      return_val = EncodeActive(max_encoded_bytes, encoded, info);
       last_frame_active_ = true;
       break;
     }
@@ -190,17 +188,16 @@ bool AudioEncoderCng::EncodePassive(uint8_t* encoded, size_t* encoded_bytes) {
 
 bool AudioEncoderCng::EncodeActive(size_t max_encoded_bytes,
                                    uint8_t* encoded,
-                                   size_t* encoded_bytes,
                                    EncodedInfo* info) {
   const size_t samples_per_10ms_frame = 10 * sample_rate_hz_ / 1000;
   for (int i = 0; i < frames_in_buffer_; ++i) {
     if (!speech_encoder_->Encode(first_timestamp_in_buffer_,
                                  &speech_buffer_[i * samples_per_10ms_frame],
                                  samples_per_10ms_frame, max_encoded_bytes,
-                                 encoded, encoded_bytes, info))
+                                 encoded, info))
       return false;
     if (i < frames_in_buffer_ - 1) {
-      CHECK_EQ(*encoded_bytes, 0u) << "Encoder delivered data too early.";
+      CHECK_EQ(info->encoded_bytes, 0u) << "Encoder delivered data too early.";
     }
   }
   return true;

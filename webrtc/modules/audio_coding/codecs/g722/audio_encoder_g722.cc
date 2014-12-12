@@ -68,7 +68,6 @@ bool AudioEncoderG722::EncodeInternal(uint32_t timestamp,
                                       const int16_t* audio,
                                       size_t max_encoded_bytes,
                                       uint8_t* encoded,
-                                      size_t* encoded_bytes,
                                       EncodedInfo* info) {
   const int samples_per_channel =
       kSampleRateHz / 100 * num_10ms_frames_per_packet_;
@@ -86,7 +85,7 @@ bool AudioEncoderG722::EncodeInternal(uint32_t timestamp,
 
   // If we don't yet have enough samples for a packet, we're done for now.
   if (++num_10ms_frames_buffered_ < num_10ms_frames_per_packet_) {
-    *encoded_bytes = 0;
+    info->encoded_bytes = 0;
     return true;
   }
 
@@ -115,7 +114,7 @@ bool AudioEncoderG722::EncodeInternal(uint32_t timestamp,
       encoded[i * num_channels_ + j] =
           interleave_buffer_[2 * j] << 4 | interleave_buffer_[2 * j + 1];
   }
-  *encoded_bytes = samples_per_channel / 2 * num_channels_;
+  info->encoded_bytes = samples_per_channel / 2 * num_channels_;
   info->encoded_timestamp = first_timestamp_in_buffer_;
   info->payload_type = payload_type_;
   return true;

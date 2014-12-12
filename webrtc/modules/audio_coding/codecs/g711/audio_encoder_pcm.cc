@@ -63,7 +63,6 @@ bool AudioEncoderPcm::EncodeInternal(uint32_t timestamp,
                                      const int16_t* audio,
                                      size_t max_encoded_bytes,
                                      uint8_t* encoded,
-                                     size_t* encoded_bytes,
                                      EncodedInfo* info) {
   const int num_samples = sample_rate_hz() / 100 * num_channels();
   if (speech_buffer_.empty()) {
@@ -73,7 +72,7 @@ bool AudioEncoderPcm::EncodeInternal(uint32_t timestamp,
     speech_buffer_.push_back(audio[i]);
   }
   if (speech_buffer_.size() < static_cast<size_t>(full_frame_samples_)) {
-    *encoded_bytes = 0;
+    info->encoded_bytes = 0;
     return true;
   }
   CHECK_EQ(speech_buffer_.size(), static_cast<size_t>(full_frame_samples_));
@@ -83,7 +82,7 @@ bool AudioEncoderPcm::EncodeInternal(uint32_t timestamp,
   info->payload_type = payload_type_;
   if (ret < 0)
     return false;
-  *encoded_bytes = static_cast<size_t>(ret);
+  info->encoded_bytes = static_cast<size_t>(ret);
   return true;
 }
 

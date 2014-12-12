@@ -39,7 +39,6 @@ class AudioEncoderIlbc : public AudioEncoder {
                               const int16_t* audio,
                               size_t max_encoded_bytes,
                               uint8_t* encoded,
-                              size_t* encoded_bytes,
                               EncodedInfo* info) OVERRIDE;
 
  private:
