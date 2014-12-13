@@ -31,7 +31,7 @@
 #include <vector>
 
 #include "webrtc/p2p/base/constants.h"
-#include "webrtc/libjingle/tunnel/pseudotcp.h"
+#include "webrtc/p2p/base/pseudotcp.h"
 #include "webrtc/p2p/base/session.h"
 #include "webrtc/libjingle/session/sessionclient.h"
 #include "webrtc/p2p/base/sessiondescription.h"

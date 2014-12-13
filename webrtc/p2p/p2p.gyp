@@ -48,6 +48,8 @@
         'base/portinterface.h',
         'base/portproxy.cc',
         'base/portproxy.h',
+        'base/pseudotcp.cc',
+        'base/pseudotcp.h',
         'base/rawtransport.cc',
         'base/rawtransport.h',
         'base/rawtransportchannel.cc',

@@ -37,8 +37,6 @@
         'session/sessionclient.h',
         'session/sessionmanagertask.h',
         'session/sessionsendtask.h',
-        'tunnel/pseudotcp.cc',
-        'tunnel/pseudotcp.h',
         'tunnel/pseudotcpchannel.cc',
         'tunnel/pseudotcpchannel.h',
         'tunnel/tunnelsessionclient.cc',
@@ -80,7 +78,6 @@
       'sources': [
         'media/mediamessages_unittest.cc',
         'media/mediasessionclient_unittest.cc',
-        'tunnel/pseudotcp_unittest.cc',
       ],
       'conditions': [
         ['OS=="win"', {
@@ -93,7 +90,7 @@
           },
         }],
       ],
-    },  # target jingle_unittest
+    },  # target jingle_p2p_unittest
     {
       'target_name': 'libjingle_xmpphelp',
       'type': 'static_library',

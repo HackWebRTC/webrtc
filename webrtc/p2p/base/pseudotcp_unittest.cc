@@ -10,7 +10,7 @@
 
 #include <vector>
 
-#include "webrtc/libjingle/tunnel/pseudotcp.h"
+#include "webrtc/p2p/base/pseudotcp.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/messagehandler.h"
