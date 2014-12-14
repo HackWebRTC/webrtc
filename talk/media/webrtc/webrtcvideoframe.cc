@@ -33,6 +33,11 @@
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videocommon.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/video_frame.h"
+
+#define UNIMPLEMENTED                                                 \
+  LOG(LS_ERROR) << "Call to unimplemented function " << __FUNCTION__; \
+  ASSERT(false)
 
 namespace cricket {
 
@@ -352,6 +357,134 @@ void WebRtcVideoFrame::InitToEmptyBuffer(int w, int h, size_t pixel_width,
       new RefCountedBuffer(buffer_size));
   Attach(video_buffer.get(), buffer_size, w, h, pixel_width, pixel_height,
          elapsed_time, time_stamp, 0);
+}
+
+WebRtcVideoRenderFrame::WebRtcVideoRenderFrame(
+    const webrtc::I420VideoFrame* frame)
+    : frame_(frame) {
+}
+
+bool WebRtcVideoRenderFrame::InitToBlack(int w,
+                                         int h,
+                                         size_t pixel_width,
+                                         size_t pixel_height,
+                                         int64_t elapsed_time,
+                                         int64_t time_stamp) {
+  UNIMPLEMENTED;
+  return false;
+}
+
+bool WebRtcVideoRenderFrame::Reset(uint32 fourcc,
+                                   int w,
+                                   int h,
+                                   int dw,
+                                   int dh,
+                                   uint8* sample,
+                                   size_t sample_size,
+                                   size_t pixel_width,
+                                   size_t pixel_height,
+                                   int64_t elapsed_time,
+                                   int64_t time_stamp,
+                                   int rotation) {
+  UNIMPLEMENTED;
+  return false;
+}
+
+size_t WebRtcVideoRenderFrame::GetWidth() const {
+  return static_cast<size_t>(frame_->width());
+}
+size_t WebRtcVideoRenderFrame::GetHeight() const {
+  return static_cast<size_t>(frame_->height());
+}
+
+const uint8* WebRtcVideoRenderFrame::GetYPlane() const {
+  return frame_->buffer(webrtc::kYPlane);
+}
+const uint8* WebRtcVideoRenderFrame::GetUPlane() const {
+  return frame_->buffer(webrtc::kUPlane);
+}
+const uint8* WebRtcVideoRenderFrame::GetVPlane() const {
+  return frame_->buffer(webrtc::kVPlane);
+}
+
+uint8* WebRtcVideoRenderFrame::GetYPlane() {
+  UNIMPLEMENTED;
+  return NULL;
+}
+uint8* WebRtcVideoRenderFrame::GetUPlane() {
+  UNIMPLEMENTED;
+  return NULL;
+}
+uint8* WebRtcVideoRenderFrame::GetVPlane() {
+  UNIMPLEMENTED;
+  return NULL;
+}
+
+int32 WebRtcVideoRenderFrame::GetYPitch() const {
+  return frame_->stride(webrtc::kYPlane);
+}
+int32 WebRtcVideoRenderFrame::GetUPitch() const {
+  return frame_->stride(webrtc::kUPlane);
+}
+int32 WebRtcVideoRenderFrame::GetVPitch() const {
+  return frame_->stride(webrtc::kVPlane);
+}
+
+void* WebRtcVideoRenderFrame::GetNativeHandle() const {
+  return NULL;
+}
+
+size_t WebRtcVideoRenderFrame::GetPixelWidth() const {
+  return 1;
+}
+size_t WebRtcVideoRenderFrame::GetPixelHeight() const {
+  return 1;
+}
+
+int64_t WebRtcVideoRenderFrame::GetElapsedTime() const {
+  // Convert millisecond render time to ns timestamp.
+  return frame_->render_time_ms() * rtc::kNumNanosecsPerMillisec;
+}
+int64_t WebRtcVideoRenderFrame::GetTimeStamp() const {
+  // Convert 90K rtp timestamp to ns timestamp.
+  return (frame_->timestamp() / 90) * rtc::kNumNanosecsPerMillisec;
+}
+void WebRtcVideoRenderFrame::SetElapsedTime(int64_t elapsed_time) {
+  UNIMPLEMENTED;
+}
+void WebRtcVideoRenderFrame::SetTimeStamp(int64_t time_stamp) {
+  UNIMPLEMENTED;
+}
+
+int WebRtcVideoRenderFrame::GetRotation() const {
+  UNIMPLEMENTED;
+  return ROTATION_0;
+}
+
+VideoFrame* WebRtcVideoRenderFrame::Copy() const {
+  UNIMPLEMENTED;
+  return NULL;
+}
+
+bool WebRtcVideoRenderFrame::MakeExclusive() {
+  UNIMPLEMENTED;
+  return false;
+}
+
+size_t WebRtcVideoRenderFrame::CopyToBuffer(uint8* buffer, size_t size) const {
+  UNIMPLEMENTED;
+  return 0;
+}
+
+VideoFrame* WebRtcVideoRenderFrame::CreateEmptyFrame(int w,
+                                                     int h,
+                                                     size_t pixel_width,
+                                                     size_t pixel_height,
+                                                     int64_t elapsed_time,
+                                                     int64_t time_stamp) const {
+  WebRtcVideoFrame* frame = new WebRtcVideoFrame();
+  frame->InitToBlack(w, h, pixel_width, pixel_height, elapsed_time, time_stamp);
+  return frame;
 }
 
 }  // namespace cricket
