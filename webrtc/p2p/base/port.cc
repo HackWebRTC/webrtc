@@ -26,6 +26,14 @@
 
 namespace {
 
+// The following is the enum RTCStatsIceCandidateType from
+// http://w3c.github.io/webrtc-stats/#rtcstatsicecandidatetype-enum such that
+// our stats report for ice candidate type could conform to that.
+const char STATSREPORT_LOCAL_PORT_TYPE[] = "host";
+const char STATSREPORT_STUN_PORT_TYPE[] = "serverreflexive";
+const char STATSREPORT_PRFLX_PORT_TYPE[] = "peerreflexive";
+const char STATSREPORT_RELAY_PORT_TYPE[] = "relayed";
+
 // Determines whether we have seen at least the given maximum number of
 // pings fail to have a response.
 inline bool TooManyFailures(
@@ -129,6 +137,23 @@ bool StringToProto(const char* value, ProtocolType* proto) {
     }
   }
   return false;
+}
+
+const char* IceCandidateTypeToStatsType(const std::string& candidate_type) {
+  if (candidate_type == LOCAL_PORT_TYPE) {
+    return STATSREPORT_LOCAL_PORT_TYPE;
+  }
+  if (candidate_type == STUN_PORT_TYPE) {
+    return STATSREPORT_STUN_PORT_TYPE;
+  }
+  if (candidate_type == PRFLX_PORT_TYPE) {
+    return STATSREPORT_PRFLX_PORT_TYPE;
+  }
+  if (candidate_type == RELAY_PORT_TYPE) {
+    return STATSREPORT_RELAY_PORT_TYPE;
+  }
+  ASSERT(false);
+  return "unknown";
 }
 
 // RFC 6544, TCP candidate encoding rules.
@@ -270,6 +295,7 @@ void Port::AddAddress(const rtc::SocketAddress& address,
   c.set_username(username_fragment());
   c.set_password(password_);
   c.set_network_name(network_->name());
+  c.set_network_type(network_->type());
   c.set_generation(generation_);
   c.set_related_address(related_address);
   c.set_foundation(ComputeFoundation(type, protocol, base_address));
@@ -1430,6 +1456,7 @@ void Connection::MaybeAddPrflxCandidate(ConnectionRequest* request,
   new_local_candidate.set_username(local_candidate().username());
   new_local_candidate.set_password(local_candidate().password());
   new_local_candidate.set_network_name(local_candidate().network_name());
+  new_local_candidate.set_network_type(local_candidate().network_type());
   new_local_candidate.set_related_address(local_candidate().address());
   new_local_candidate.set_foundation(
       ComputeFoundation(PRFLX_PORT_TYPE, local_candidate().protocol(),

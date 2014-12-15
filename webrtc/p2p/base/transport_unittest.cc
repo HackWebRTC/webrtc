@@ -18,6 +18,7 @@
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/base/fakesslidentity.h"
 #include "webrtc/base/gunit.h"
+#include "webrtc/base/network.h"
 #include "webrtc/base/thread.h"
 
 using cricket::Candidate;
@@ -346,19 +347,19 @@ TEST_F(TransportTest, TestSetRemoteIceLiteInAnswer) {
 
 // Tests that we can properly serialize/deserialize candidates.
 TEST_F(TransportTest, TestP2PTransportWriteAndParseCandidate) {
-  Candidate test_candidate(
-      "", 1, "udp",
-      rtc::SocketAddress("2001:db8:fefe::1", 9999),
-      738197504, "abcdef", "ghijkl", "foo", "testnet", 50, "");
-  Candidate test_candidate2(
-      "", 2, "tcp",
-      rtc::SocketAddress("192.168.7.1", 9999),
-      1107296256, "mnopqr", "stuvwx", "bar", "testnet2", 100, "");
+  Candidate test_candidate("", 1, "udp",
+                           rtc::SocketAddress("2001:db8:fefe::1", 9999),
+                           738197504, "abcdef", "ghijkl", "foo", 50, "");
+  test_candidate.set_network_name("testnet");
+  Candidate test_candidate2("", 2, "tcp",
+                            rtc::SocketAddress("192.168.7.1", 9999), 1107296256,
+                            "mnopqr", "stuvwx", "bar", 100, "");
+  test_candidate2.set_network_name("testnet2");
   rtc::SocketAddress host_address("www.google.com", 24601);
   host_address.SetResolvedIP(rtc::IPAddress(0x0A000001));
-  Candidate test_candidate3(
-      "", 3, "spdy", host_address, 1476395008, "yzabcd",
-      "efghij", "baz", "testnet3", 150, "");
+  Candidate test_candidate3("", 3, "spdy", host_address, 1476395008, "yzabcd",
+                            "efghij", "baz", 150, "");
+  test_candidate3.set_network_name("testnet3");
   WriteError write_error;
   ParseError parse_error;
   rtc::scoped_ptr<buzz::XmlElement> elem;

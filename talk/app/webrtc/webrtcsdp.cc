@@ -1089,12 +1089,10 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
     }
   }
 
-  // Empty string as the candidate id and network name.
   const std::string id;
-  const std::string network_name;
   *candidate = Candidate(id, component_id, cricket::ProtoToString(protocol),
-      address, priority, username, password, candidate_type, network_name,
-      generation, foundation);
+                         address, priority, username, password, candidate_type,
+                         generation, foundation);
   candidate->set_related_address(related_address);
   candidate->set_tcptype(tcptype);
   return true;

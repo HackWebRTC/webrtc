@@ -65,6 +65,14 @@ const int kNetworksUpdateIntervalMs = 2000;
 
 const int kHighestNetworkPreference = 127;
 
+// Strings used by the stats collector to report adapter types. This fits the
+// general stype of http://w3c.github.io/webrtc-stats than what
+// AdapterTypeToString does.
+const char* STATSREPORT_ADAPTER_TYPE_ETHERNET = "lan";
+const char* STATSREPORT_ADAPTER_TYPE_WIFI = "wlan";
+const char* STATSREPORT_ADAPTER_TYPE_WWAN = "wwan";
+const char* STATSREPORT_ADAPTER_TYPE_VPN = "vpn";
+
 typedef struct {
   Network* net;
   std::vector<InterfaceAddress> ips;
@@ -122,6 +130,24 @@ std::string AdapterTypeToString(AdapterType type) {
 }
 
 }  // namespace
+
+const char* AdapterTypeToStatsType(rtc::AdapterType type) {
+  switch (type) {
+    case ADAPTER_TYPE_UNKNOWN:
+      return "unknown";
+    case ADAPTER_TYPE_ETHERNET:
+      return STATSREPORT_ADAPTER_TYPE_ETHERNET;
+    case ADAPTER_TYPE_WIFI:
+      return STATSREPORT_ADAPTER_TYPE_WIFI;
+    case ADAPTER_TYPE_CELLULAR:
+      return STATSREPORT_ADAPTER_TYPE_WWAN;
+    case ADAPTER_TYPE_VPN:
+      return STATSREPORT_ADAPTER_TYPE_VPN;
+    default:
+      ASSERT(false);
+      return "";
+  }
+}
 
 std::string MakeNetworkKey(const std::string& name, const IPAddress& prefix,
                            int prefix_length) {
