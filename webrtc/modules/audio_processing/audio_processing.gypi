@@ -9,9 +9,9 @@
 {
   'variables': {
     'audio_processing_dependencies': [
-      '<(DEPTH)/webrtc/modules/modules.gyp:iSAC',
       '<(webrtc_root)/base/base.gyp:rtc_base_approved',
       '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
+      '<(webrtc_root)/modules/modules.gyp:iSAC',
       '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
     ],
     'shared_generated_dir': '<(SHARED_INTERMEDIATE_DIR)/audio_processing/asm_offsets',
