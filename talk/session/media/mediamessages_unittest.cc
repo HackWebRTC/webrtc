@@ -25,13 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/libjingle/media/mediamessages.h"
+#include "talk/session/media/mediamessages.h"
 
 #include <string>
 #include <vector>
 
 #include "webrtc/p2p/base/constants.h"
-#include "webrtc/libjingle/media/mediasessionclient.h"
+#include "talk/session/media/mediasessionclient.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/scoped_ptr.h"

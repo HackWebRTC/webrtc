@@ -42,7 +42,7 @@
 #include "talk/examples/call/console.h"
 #include "talk/examples/call/mediaenginefactory.h"
 #include "webrtc/p2p/base/constants.h"
-#include "webrtc/libjingle/media/mediasessionclient.h"
+#include "talk/session/media/mediasessionclient.h"
 #include "talk/session/media/srtpfilter.h"
 #include "webrtc/libjingle/xmpp/xmppauth.h"
 #include "webrtc/libjingle/xmpp/xmppclientsettings.h"

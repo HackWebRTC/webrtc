@@ -11,10 +11,10 @@
 #include <string>
 #include <vector>
 #include "webrtc/p2p/base/constants.h"
-#include "webrtc/libjingle/session/parsing.h"
+#include "webrtc/p2p/base/parsing.h"
 #include "webrtc/p2p/base/rawtransport.h"
 #include "webrtc/p2p/base/rawtransportchannel.h"
-#include "webrtc/libjingle/session/sessionmanager.h"
+#include "webrtc/p2p/base/sessionmanager.h"
 #include "webrtc/libjingle/xmllite/qname.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/libjingle/xmpp/constants.h"

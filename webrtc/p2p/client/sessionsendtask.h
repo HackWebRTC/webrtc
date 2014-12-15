@@ -11,7 +11,7 @@
 #ifndef WEBRTC_P2P_CLIENT_SESSIONSENDTASK_H_
 #define WEBRTC_P2P_CLIENT_SESSIONSENDTASK_H_
 
-#include "webrtc/libjingle/session/sessionmanager.h"
+#include "webrtc/p2p/base/sessionmanager.h"
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/libjingle/xmpp/xmppclient.h"
 #include "webrtc/libjingle/xmpp/xmppengine.h"

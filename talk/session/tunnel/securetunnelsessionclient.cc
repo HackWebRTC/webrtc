@@ -28,8 +28,8 @@
 // SecureTunnelSessionClient and SecureTunnelSession implementation.
 
 #include "webrtc/p2p/base/transportchannel.h"
-#include "webrtc/libjingle/tunnel/pseudotcpchannel.h"
-#include "webrtc/libjingle/tunnel/securetunnelsessionclient.h"
+#include "talk/session/tunnel/pseudotcpchannel.h"
+#include "talk/session/tunnel/securetunnelsessionclient.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/base/basicdefs.h"
 #include "webrtc/base/basictypes.h"

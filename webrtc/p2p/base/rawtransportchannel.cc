@@ -17,7 +17,7 @@
 #include "webrtc/p2p/base/portinterface.h"
 #include "webrtc/p2p/base/rawtransport.h"
 #include "webrtc/p2p/base/relayport.h"
-#include "webrtc/libjingle/session/sessionmanager.h"
+#include "webrtc/p2p/base/sessionmanager.h"
 #include "webrtc/p2p/base/stunport.h"
 #include "webrtc/libjingle/xmllite/qname.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"

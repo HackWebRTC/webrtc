@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/session/media/audiomonitor.h"
+#include "talk/session/media/call.h"
 #include "talk/session/media/currentspeakermonitor.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/thread.h"
@@ -42,11 +42,21 @@ static const uint32 kMinTimeBetweenSwitches = 10;
 // I am assuming system clocks do not have a coarser resolution than 90 ms.
 static const uint32 kSleepTimeBetweenSwitches = 100;
 
+class MockCall : public Call {
+ public:
+  MockCall() : Call(NULL) {}
+
+  void EmitAudioMonitor(const AudioInfo& info) {
+    GetAudioSourceProxy()->SignalAudioMonitor(GetAudioSourceProxy(), info);
+  }
+};
+
 class CurrentSpeakerMonitorTest : public testing::Test,
     public sigslot::has_slots<> {
  public:
   CurrentSpeakerMonitorTest() {
-    monitor_ = new CurrentSpeakerMonitor(&source_, NULL);
+    call_ = new MockCall();
+    monitor_ = new CurrentSpeakerMonitor(call_->GetAudioSourceProxy(), NULL);
     // Shrink the minimum time betweeen switches to 10 ms so we don't have to
     // slow down our tests.
     monitor_->set_min_time_between_switches(kMinTimeBetweenSwitches);
@@ -58,14 +68,11 @@ class CurrentSpeakerMonitorTest : public testing::Test,
 
   ~CurrentSpeakerMonitorTest() {
     delete monitor_;
-  }
-
-  void SignalAudioMonitor(const AudioInfo& info) {
-    source_.SignalAudioMonitor(&source_, info);
+    delete call_;
   }
 
  protected:
-  AudioSourceContext source_;
+  MockCall* call_;
   CurrentSpeakerMonitor* monitor_;
   int num_changes_;
   uint32 current_speaker_;
@@ -84,7 +91,7 @@ static void InitAudioInfo(AudioInfo* info, int input_level, int output_level) {
 TEST_F(CurrentSpeakerMonitorTest, NoActiveStreams) {
   AudioInfo info;
   InitAudioInfo(&info, 0, 0);
-  SignalAudioMonitor(info);
+  call_->EmitAudioMonitor(info);
 
   EXPECT_EQ(current_speaker_, 0U);
   EXPECT_EQ(num_changes_, 0);
@@ -96,7 +103,7 @@ TEST_F(CurrentSpeakerMonitorTest, MultipleActiveStreams) {
 
   info.active_streams.push_back(std::make_pair(kSsrc1, 3));
   info.active_streams.push_back(std::make_pair(kSsrc2, 7));
-  SignalAudioMonitor(info);
+  call_->EmitAudioMonitor(info);
 
   // No speaker recognized because the initial sample is treated as possibly
   // just noise and disregarded.
@@ -105,7 +112,7 @@ TEST_F(CurrentSpeakerMonitorTest, MultipleActiveStreams) {
 
   info.active_streams.push_back(std::make_pair(kSsrc1, 3));
   info.active_streams.push_back(std::make_pair(kSsrc2, 7));
-  SignalAudioMonitor(info);
+  call_->EmitAudioMonitor(info);
 
   EXPECT_EQ(current_speaker_, kSsrc2);
   EXPECT_EQ(num_changes_, 1);
@@ -118,21 +125,21 @@ TEST_F(CurrentSpeakerMonitorTest, DISABLED_RapidSpeakerChange) {
 
   info.active_streams.push_back(std::make_pair(kSsrc1, 3));
   info.active_streams.push_back(std::make_pair(kSsrc2, 7));
-  SignalAudioMonitor(info);
+  call_->EmitAudioMonitor(info);
 
   EXPECT_EQ(current_speaker_, 0U);
   EXPECT_EQ(num_changes_, 0);
 
   info.active_streams.push_back(std::make_pair(kSsrc1, 3));
   info.active_streams.push_back(std::make_pair(kSsrc2, 7));
-  SignalAudioMonitor(info);
+  call_->EmitAudioMonitor(info);
 
   EXPECT_EQ(current_speaker_, kSsrc2);
   EXPECT_EQ(num_changes_, 1);
 
   info.active_streams.push_back(std::make_pair(kSsrc1, 9));
   info.active_streams.push_back(std::make_pair(kSsrc2, 1));
-  SignalAudioMonitor(info);
+  call_->EmitAudioMonitor(info);
 
   // We expect no speaker change because of the rapid change.
   EXPECT_EQ(current_speaker_, kSsrc2);
@@ -145,14 +152,14 @@ TEST_F(CurrentSpeakerMonitorTest, SpeakerChange) {
 
   info.active_streams.push_back(std::make_pair(kSsrc1, 3));
   info.active_streams.push_back(std::make_pair(kSsrc2, 7));
-  SignalAudioMonitor(info);
+  call_->EmitAudioMonitor(info);
 
   EXPECT_EQ(current_speaker_, 0U);
   EXPECT_EQ(num_changes_, 0);
 
   info.active_streams.push_back(std::make_pair(kSsrc1, 3));
   info.active_streams.push_back(std::make_pair(kSsrc2, 7));
-  SignalAudioMonitor(info);
+  call_->EmitAudioMonitor(info);
 
   EXPECT_EQ(current_speaker_, kSsrc2);
   EXPECT_EQ(num_changes_, 1);
@@ -162,7 +169,7 @@ TEST_F(CurrentSpeakerMonitorTest, SpeakerChange) {
 
   info.active_streams.push_back(std::make_pair(kSsrc1, 9));
   info.active_streams.push_back(std::make_pair(kSsrc2, 1));
-  SignalAudioMonitor(info);
+  call_->EmitAudioMonitor(info);
 
   EXPECT_EQ(current_speaker_, kSsrc1);
   EXPECT_EQ(num_changes_, 2);
@@ -174,21 +181,21 @@ TEST_F(CurrentSpeakerMonitorTest, InterwordSilence) {
 
   info.active_streams.push_back(std::make_pair(kSsrc1, 3));
   info.active_streams.push_back(std::make_pair(kSsrc2, 7));
-  SignalAudioMonitor(info);
+  call_->EmitAudioMonitor(info);
 
   EXPECT_EQ(current_speaker_, 0U);
   EXPECT_EQ(num_changes_, 0);
 
   info.active_streams.push_back(std::make_pair(kSsrc1, 3));
   info.active_streams.push_back(std::make_pair(kSsrc2, 7));
-  SignalAudioMonitor(info);
+  call_->EmitAudioMonitor(info);
 
   EXPECT_EQ(current_speaker_, kSsrc2);
   EXPECT_EQ(num_changes_, 1);
 
   info.active_streams.push_back(std::make_pair(kSsrc1, 3));
   info.active_streams.push_back(std::make_pair(kSsrc2, 7));
-  SignalAudioMonitor(info);
+  call_->EmitAudioMonitor(info);
 
   EXPECT_EQ(current_speaker_, kSsrc2);
   EXPECT_EQ(num_changes_, 1);
@@ -198,7 +205,7 @@ TEST_F(CurrentSpeakerMonitorTest, InterwordSilence) {
 
   info.active_streams.push_back(std::make_pair(kSsrc1, 3));
   info.active_streams.push_back(std::make_pair(kSsrc2, 0));
-  SignalAudioMonitor(info);
+  call_->EmitAudioMonitor(info);
 
   // Current speaker shouldn't have changed because we treat this as an inter-
   // word silence.
@@ -207,7 +214,7 @@ TEST_F(CurrentSpeakerMonitorTest, InterwordSilence) {
 
   info.active_streams.push_back(std::make_pair(kSsrc1, 3));
   info.active_streams.push_back(std::make_pair(kSsrc2, 0));
-  SignalAudioMonitor(info);
+  call_->EmitAudioMonitor(info);
 
   // Current speaker shouldn't have changed because we treat this as an inter-
   // word silence.
@@ -216,7 +223,7 @@ TEST_F(CurrentSpeakerMonitorTest, InterwordSilence) {
 
   info.active_streams.push_back(std::make_pair(kSsrc1, 3));
   info.active_streams.push_back(std::make_pair(kSsrc2, 0));
-  SignalAudioMonitor(info);
+  call_->EmitAudioMonitor(info);
 
   // At this point, we should have concluded that SSRC2 stopped speaking.
   EXPECT_EQ(current_speaker_, kSsrc1);
