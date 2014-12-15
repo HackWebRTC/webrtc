@@ -3228,10 +3228,13 @@ Channel::GetRTPStatistics(CallStatistics& stats)
 
     // --- RTT
     stats.rttMs = GetRTT();
-
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-                 VoEId(_instanceId, _channelId),
-                 "GetRTPStatistics() => rttMs=%d", stats.rttMs);
+    if (stats.rttMs == 0) {
+      WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
+                   "GetRTPStatistics() failed to get RTT");
+    } else {
+      WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId, _channelId),
+                   "GetRTPStatistics() => rttMs=%d", stats.rttMs);
+    }
 
     // --- Data counters
 
@@ -4279,19 +4282,11 @@ int32_t Channel::GetPlayoutFrequency() {
 int Channel::GetRTT() const {
   RTCPMethod method = _rtpRtcpModule->RTCP();
   if (method == kRtcpOff) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                 VoEId(_instanceId, _channelId),
-                 "GetRTPStatistics() RTCP is disabled => valid RTT "
-                 "measurements cannot be retrieved");
     return 0;
   }
   std::vector<RTCPReportBlock> report_blocks;
   _rtpRtcpModule->RemoteRTCPStat(&report_blocks);
   if (report_blocks.empty()) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                 VoEId(_instanceId, _channelId),
-                 "GetRTPStatistics() failed to measure RTT since no "
-                 "RTCP packets have been received yet");
     return 0;
   }
 
@@ -4314,10 +4309,6 @@ int Channel::GetRTT() const {
   uint16_t min_rtt = 0;
   if (_rtpRtcpModule->RTT(remoteSSRC, &rtt, &avg_rtt, &min_rtt, &max_rtt)
       != 0) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                 VoEId(_instanceId, _channelId),
-                 "GetRTPStatistics() failed to retrieve RTT from "
-                 "the RTP/RTCP module");
     return 0;
   }
   return static_cast<int>(rtt);
