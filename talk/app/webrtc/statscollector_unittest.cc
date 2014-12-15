@@ -535,7 +535,7 @@ class StatsCollectorTest : public testing::Test {
         .WillOnce(DoAll(SetArgPointee<0>(*stats_read), Return(true)));
 
     stats->UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
-    stats->ClearUpdateStatsCache();
+    stats->ClearUpdateStatsCacheForTest();
     stats->GetStats(NULL, reports);
 
     // Verify the existence of the track report.
@@ -1451,7 +1451,7 @@ TEST_F(StatsCollectorTest, TwoLocalTracksWithSameSsrc) {
   stream_->AddTrack(new_audio_track);
 
   stats.AddLocalAudioTrack(new_audio_track, kSsrcOfTrack);
-  stats.ClearUpdateStatsCache();
+  stats.ClearUpdateStatsCacheForTest();
   cricket::VoiceSenderInfo new_voice_sender_info;
   InitVoiceSenderInfo(&new_voice_sender_info);
   cricket::VoiceMediaInfo new_stats_read;

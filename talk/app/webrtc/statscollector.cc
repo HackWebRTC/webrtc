@@ -357,11 +357,13 @@ StatsCollector::StatsCollector(WebRtcSession* session)
 }
 
 StatsCollector::~StatsCollector() {
+  ASSERT(session_->signaling_thread()->IsCurrent());
 }
 
 // Adds a MediaStream with tracks that can be used as a |selector| in a call
 // to GetStats.
 void StatsCollector::AddStream(MediaStreamInterface* stream) {
+  ASSERT(session_->signaling_thread()->IsCurrent());
   ASSERT(stream != NULL);
 
   CreateTrackReports<AudioTrackVector>(stream->GetAudioTracks(),
@@ -372,6 +374,7 @@ void StatsCollector::AddStream(MediaStreamInterface* stream) {
 
 void StatsCollector::AddLocalAudioTrack(AudioTrackInterface* audio_track,
                                         uint32 ssrc) {
+  ASSERT(session_->signaling_thread()->IsCurrent());
   ASSERT(audio_track != NULL);
   for (LocalAudioTrackVector::iterator it = local_audio_tracks_.begin();
        it != local_audio_tracks_.end(); ++it) {
@@ -404,6 +407,7 @@ void StatsCollector::RemoveLocalAudioTrack(AudioTrackInterface* audio_track,
 
 void StatsCollector::GetStats(MediaStreamTrackInterface* track,
                               StatsReports* reports) {
+  ASSERT(session_->signaling_thread()->IsCurrent());
   ASSERT(reports != NULL);
   ASSERT(reports->empty());
 
@@ -446,6 +450,7 @@ void StatsCollector::GetStats(MediaStreamTrackInterface* track,
 
 void
 StatsCollector::UpdateStats(PeerConnectionInterface::StatsOutputLevel level) {
+  ASSERT(session_->signaling_thread()->IsCurrent());
   double time_now = GetTimeNow();
   // Calls to UpdateStats() that occur less than kMinGatherStatsPeriod number of
   // ms apart will be ignored.
@@ -467,6 +472,7 @@ StatsReport* StatsCollector::PrepareLocalReport(
     uint32 ssrc,
     const std::string& transport_id,
     TrackDirection direction) {
+  ASSERT(session_->signaling_thread()->IsCurrent());
   const std::string ssrc_id = rtc::ToString<uint32>(ssrc);
   StatsReport* report = reports_.Find(
       StatsId(StatsReport::kStatsReportTypeSsrc, ssrc_id, direction));
@@ -510,6 +516,7 @@ StatsReport* StatsCollector::PrepareRemoteReport(
     uint32 ssrc,
     const std::string& transport_id,
     TrackDirection direction) {
+  ASSERT(session_->signaling_thread()->IsCurrent());
   const std::string ssrc_id = rtc::ToString<uint32>(ssrc);
   StatsReport* report = reports_.Find(
       StatsId(StatsReport::kStatsReportTypeRemoteSsrc, ssrc_id, direction));
@@ -613,6 +620,7 @@ std::string StatsCollector::AddCertificateReports(
 }
 
 void StatsCollector::ExtractSessionInfo() {
+  ASSERT(session_->signaling_thread()->IsCurrent());
   // Extract information from the base session.
   StatsReport* report = reports_.ReplaceOrAddNew(
       StatsId(StatsReport::kStatsReportTypeSession, session_->id()));
@@ -721,6 +729,8 @@ void StatsCollector::ExtractSessionInfo() {
 }
 
 void StatsCollector::ExtractVoiceInfo() {
+  ASSERT(session_->signaling_thread()->IsCurrent());
+
   if (!session_->voice_channel()) {
     return;
   }
@@ -745,9 +755,11 @@ void StatsCollector::ExtractVoiceInfo() {
 
 void StatsCollector::ExtractVideoInfo(
     PeerConnectionInterface::StatsOutputLevel level) {
-  if (!session_->video_channel()) {
+  ASSERT(session_->signaling_thread()->IsCurrent());
+
+  if (!session_->video_channel())
     return;
-  }
+
   cricket::StatsOptions options;
   options.include_received_propagation_stats =
       (level >= PeerConnectionInterface::kStatsOutputLevelDebug) ?
@@ -780,6 +792,7 @@ void StatsCollector::ExtractVideoInfo(
 StatsReport* StatsCollector::GetReport(const std::string& type,
                                        const std::string& id,
                                        TrackDirection direction) {
+  ASSERT(session_->signaling_thread()->IsCurrent());
   ASSERT(type == StatsReport::kStatsReportTypeSsrc ||
          type == StatsReport::kStatsReportTypeRemoteSsrc);
   return reports_.Find(StatsId(type, id, direction));
@@ -788,6 +801,7 @@ StatsReport* StatsCollector::GetReport(const std::string& type,
 StatsReport* StatsCollector::GetOrCreateReport(const std::string& type,
                                                const std::string& id,
                                                TrackDirection direction) {
+  ASSERT(session_->signaling_thread()->IsCurrent());
   ASSERT(type == StatsReport::kStatsReportTypeSsrc ||
          type == StatsReport::kStatsReportTypeRemoteSsrc);
   StatsReport* report = GetReport(type, id, direction);
@@ -802,6 +816,7 @@ StatsReport* StatsCollector::GetOrCreateReport(const std::string& type,
 }
 
 void StatsCollector::UpdateStatsFromExistingLocalAudioTracks() {
+  ASSERT(session_->signaling_thread()->IsCurrent());
   // Loop through the existing local audio tracks.
   for (LocalAudioTrackVector::const_iterator it = local_audio_tracks_.begin();
        it != local_audio_tracks_.end(); ++it) {
@@ -833,6 +848,7 @@ void StatsCollector::UpdateStatsFromExistingLocalAudioTracks() {
 
 void StatsCollector::UpdateReportFromAudioTrack(AudioTrackInterface* track,
                                                 StatsReport* report) {
+  ASSERT(session_->signaling_thread()->IsCurrent());
   ASSERT(track != NULL);
   if (report == NULL)
     return;
@@ -867,6 +883,7 @@ void StatsCollector::UpdateReportFromAudioTrack(AudioTrackInterface* track,
 
 bool StatsCollector::GetTrackIdBySsrc(uint32 ssrc, std::string* track_id,
                                       TrackDirection direction) {
+  ASSERT(session_->signaling_thread()->IsCurrent());
   if (direction == kSending) {
     if (!session_->GetLocalTrackIdBySsrc(ssrc, track_id)) {
       LOG(LS_WARNING) << "The SSRC " << ssrc
@@ -885,7 +902,7 @@ bool StatsCollector::GetTrackIdBySsrc(uint32 ssrc, std::string* track_id,
   return true;
 }
 
-void StatsCollector::ClearUpdateStatsCache() {
+void StatsCollector::ClearUpdateStatsCacheForTest() {
   stats_gathering_started_ = 0;
 }
 

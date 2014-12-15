@@ -90,7 +90,7 @@ class StatsCollector {
   // Method used by the unittest to force a update of stats since UpdateStats()
   // that occur less than kMinGatherStatsPeriod number of ms apart will be
   // ignored.
-  void ClearUpdateStatsCache();
+  void ClearUpdateStatsCacheForTest();
 
  private:
   bool CopySelectedReports(const std::string& selector, StatsReports* reports);
