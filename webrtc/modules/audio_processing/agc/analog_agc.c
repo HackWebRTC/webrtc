@@ -40,6 +40,7 @@ static const int16_t kOffset2[8] = {18432, 18379, 18290, 18177, 18052, 17920, 17
 
 static const int16_t kMuteGuardTimeMs = 8000;
 static const int16_t kInitCheck = 42;
+static const int16_t kNumSubframes = 10;
 
 /* Default settings if config is not used */
 #define AGC_DEFAULT_TARGET_LEVEL 3
@@ -116,72 +117,18 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
     int32_t nrg, max_nrg, sample, tmp32;
     int32_t *ptr;
     uint16_t targetGainIdx, gain;
-    int16_t i, n, L, M, subFrames, tmp16, tmp_speech[16];
+    int16_t i, n, L, tmp16, tmp_speech[16];
     Agc_t *stt;
     stt = (Agc_t *)state;
 
-    //default/initial values corresponding to 10ms for wb and swb
-    M = 10;
-    L = 16;
-    subFrames = 160;
-
-    if (stt->fs == 8000)
-    {
-        if (samples == 80)
-        {
-            subFrames = 80;
-            M = 10;
-            L = 8;
-        } else if (samples == 160)
-        {
-            subFrames = 80;
-            M = 20;
-            L = 8;
-        } else
-        {
-#ifdef WEBRTC_AGC_DEBUG_DUMP
-            fprintf(stt->fpt,
-                    "AGC->add_mic, frame %d: Invalid number of samples\n\n",
-                    stt->fcount + 1);
-#endif
+    if (stt->fs == 8000) {
+        L = 8;
+        if (samples != 80) {
             return -1;
         }
-    } else if (stt->fs == 16000)
-    {
-        if (samples == 160)
-        {
-            subFrames = 160;
-            M = 10;
-            L = 16;
-        } else if (samples == 320)
-        {
-            subFrames = 160;
-            M = 20;
-            L = 16;
-        } else
-        {
-#ifdef WEBRTC_AGC_DEBUG_DUMP
-            fprintf(stt->fpt,
-                    "AGC->add_mic, frame %d: Invalid number of samples\n\n",
-                    stt->fcount + 1);
-#endif
-            return -1;
-        }
-    } else if (stt->fs == 32000)
-    {
-        /* SWB is processed as 160 sample for L and H bands */
-        if (samples == 160)
-        {
-            subFrames = 160;
-            M = 10;
-            L = 16;
-        } else
-        {
-#ifdef WEBRTC_AGC_DEBUG_DUMP
-            fprintf(stt->fpt,
-                    "AGC->add_mic, frame %d: Invalid sample rate\n\n",
-                    stt->fcount + 1);
-#endif
+    } else {
+        L = 16;
+        if (samples != 160) {
             return -1;
         }
     }
@@ -262,7 +209,7 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
     }
 
     /* compute envelope */
-    if ((M == 10) && (stt->inQueue > 0))
+    if (stt->inQueue > 0)
     {
         ptr = stt->env[1];
     } else
@@ -270,7 +217,7 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
         ptr = stt->env[0];
     }
 
-    for (i = 0; i < M; i++)
+    for (i = 0; i < kNumSubframes; i++)
     {
         /* iterate over samples */
         max_nrg = 0;
@@ -286,7 +233,7 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
     }
 
     /* compute energy */
-    if ((M == 10) && (stt->inQueue > 0))
+    if (stt->inQueue > 0)
     {
         ptr = stt->Rxx16w32_array[1];
     } else
@@ -294,7 +241,7 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
         ptr = stt->Rxx16w32_array[0];
     }
 
-    for (i = 0; i < M / 2; i++)
+    for (i = 0; i < kNumSubframes / 2; i++)
     {
         if (stt->fs == 16000)
         {
@@ -308,7 +255,7 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
     }
 
     /* update queue information */
-    if ((stt->inQueue == 0) && (M == 10))
+    if (stt->inQueue == 0)
     {
         stt->inQueue = 1;
     } else
@@ -317,18 +264,13 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
     }
 
     /* call VAD (use low band only) */
-    for (i = 0; i < samples; i += subFrames)
-    {
-        WebRtcAgc_ProcessVad(&stt->vadMic, &in_mic[i], subFrames);
-    }
+    WebRtcAgc_ProcessVad(&stt->vadMic, in_mic, samples);
 
     return 0;
 }
 
 int WebRtcAgc_AddFarend(void *state, const int16_t *in_far, int16_t samples)
 {
-    int32_t errHandle = 0;
-    int16_t i, subFrames;
     Agc_t *stt;
     stt = (Agc_t *)state;
 
@@ -339,56 +281,22 @@ int WebRtcAgc_AddFarend(void *state, const int16_t *in_far, int16_t samples)
 
     if (stt->fs == 8000)
     {
-        if ((samples != 80) && (samples != 160))
+        if (samples != 80)
         {
-#ifdef WEBRTC_AGC_DEBUG_DUMP
-            fprintf(stt->fpt,
-                    "AGC->add_far_end, frame %d: Invalid number of samples\n\n",
-                    stt->fcount);
-#endif
             return -1;
         }
-        subFrames = 80;
-    } else if (stt->fs == 16000)
+    } else if (stt->fs == 16000 || stt->fs == 32000)
     {
-        if ((samples != 160) && (samples != 320))
+        if (samples != 160)
         {
-#ifdef WEBRTC_AGC_DEBUG_DUMP
-            fprintf(stt->fpt,
-                    "AGC->add_far_end, frame %d: Invalid number of samples\n\n",
-                    stt->fcount);
-#endif
             return -1;
         }
-        subFrames = 160;
-    } else if (stt->fs == 32000)
-    {
-        if ((samples != 160) && (samples != 320))
-        {
-#ifdef WEBRTC_AGC_DEBUG_DUMP
-            fprintf(stt->fpt,
-                    "AGC->add_far_end, frame %d: Invalid number of samples\n\n",
-                    stt->fcount);
-#endif
-            return -1;
-        }
-        subFrames = 160;
     } else
     {
-#ifdef WEBRTC_AGC_DEBUG_DUMP
-        fprintf(stt->fpt,
-                "AGC->add_far_end, frame %d: Invalid sample rate\n\n",
-                stt->fcount + 1);
-#endif
         return -1;
     }
 
-    for (i = 0; i < samples; i += subFrames)
-    {
-        errHandle += WebRtcAgc_AddFarendToDigital(&stt->digitalAgc, &in_far[i], subFrames);
-    }
-
-    return errHandle;
+    return WebRtcAgc_AddFarendToDigital(&stt->digitalAgc, in_far, samples);
 }
 
 int WebRtcAgc_VirtualMic(void *agcInst, int16_t *in_near, int16_t *in_near_H,
@@ -1256,9 +1164,6 @@ int WebRtcAgc_Process(void *agcInst, const int16_t *in_near,
                       uint8_t *saturationWarning)
 {
     Agc_t *stt;
-    int32_t inMicLevelTmp;
-    int16_t subFrames, i;
-    uint8_t satWarningTmp = 0;
 
     stt = (Agc_t *)agcInst;
 
@@ -1272,47 +1177,18 @@ int WebRtcAgc_Process(void *agcInst, const int16_t *in_near,
 
     if (stt->fs == 8000)
     {
-        if ((samples != 80) && (samples != 160))
+        if (samples != 80)
         {
-#ifdef WEBRTC_AGC_DEBUG_DUMP
-            fprintf(stt->fpt,
-                    "AGC->Process, frame %d: Invalid number of samples\n\n",
-                    stt->fcount);
-#endif
             return -1;
         }
-        subFrames = 80;
-    } else if (stt->fs == 16000)
+    } else if (stt->fs == 16000 || stt->fs == 32000)
     {
-        if ((samples != 160) && (samples != 320))
+        if (samples != 160)
         {
-#ifdef WEBRTC_AGC_DEBUG_DUMP
-            fprintf(stt->fpt,
-                    "AGC->Process, frame %d: Invalid number of samples\n\n",
-                    stt->fcount);
-#endif
             return -1;
         }
-        subFrames = 160;
-    } else if (stt->fs == 32000)
-    {
-        if ((samples != 160) && (samples != 320))
-        {
-#ifdef WEBRTC_AGC_DEBUG_DUMP
-            fprintf(stt->fpt,
-                    "AGC->Process, frame %d: Invalid number of samples\n\n",
-                    stt->fcount);
-#endif
-            return -1;
-        }
-        subFrames = 160;
     } else
     {
-#ifdef WEBRTC_AGC_DEBUG_DUMP
-        fprintf(stt->fpt,
-                "AGC->Process, frame %d: Invalid sample rate\n\n",
-                stt->fcount);
-#endif
         return -1;
     }
 
@@ -1330,84 +1206,62 @@ int WebRtcAgc_Process(void *agcInst, const int16_t *in_near,
     *saturationWarning = 0;
     //TODO: PUT IN RANGE CHECKING FOR INPUT LEVELS
     *outMicLevel = inMicLevel;
-    inMicLevelTmp = inMicLevel;
-
-    // TODO(andrew): clearly we don't need input and output pointers...
-    //   Change the interface to take a shared input/output.
-    if (in_near != out)
-    {
-        // Only needed if they don't already point to the same place.
-        memcpy(out, in_near, samples * sizeof(int16_t));
-    }
-    if (stt->fs == 32000)
-    {
-        if (in_near_H != out_H)
-        {
-            memcpy(out_H, in_near_H, samples * sizeof(int16_t));
-        }
-    }
 
 #ifdef WEBRTC_AGC_DEBUG_DUMP
     stt->fcount++;
 #endif
 
-    for (i = 0; i < samples; i += subFrames)
+    if (WebRtcAgc_ProcessDigital(&stt->digitalAgc,
+                                 in_near,
+                                 in_near_H,
+                                 out,
+                                 out_H,
+                                 stt->fs,
+                                 stt->lowLevelSignal) == -1)
     {
-        if (WebRtcAgc_ProcessDigital(&stt->digitalAgc, &in_near[i], &in_near_H[i], &out[i], &out_H[i],
-                           stt->fs, stt->lowLevelSignal) == -1)
-        {
 #ifdef WEBRTC_AGC_DEBUG_DUMP
-            fprintf(stt->fpt,
-                    "AGC->Process, frame %d: Error from DigAGC\n\n",
-                    stt->fcount);
+        fprintf(stt->fpt,
+                "AGC->Process, frame %d: Error from DigAGC\n\n",
+                stt->fcount);
 #endif
+        return -1;
+    }
+    if (stt->agcMode < kAgcModeFixedDigital &&
+        (stt->lowLevelSignal == 0 || stt->agcMode != kAgcModeAdaptiveDigital))
+    {
+        if (WebRtcAgc_ProcessAnalog(agcInst,
+                                    inMicLevel,
+                                    outMicLevel,
+                                    stt->vadMic.logRatio,
+                                    echo,
+                                    saturationWarning) == -1)
+        {
             return -1;
         }
-        if ((stt->agcMode < kAgcModeFixedDigital) && ((stt->lowLevelSignal == 0)
-                || (stt->agcMode != kAgcModeAdaptiveDigital)))
-        {
-            if (WebRtcAgc_ProcessAnalog(agcInst, inMicLevelTmp, outMicLevel,
-                                          stt->vadMic.logRatio, echo, saturationWarning) == -1)
-            {
-                return -1;
-            }
-        }
+    }
 #ifdef WEBRTC_AGC_DEBUG_DUMP
-        fprintf(stt->agcLog,
-                "%5d\t%d\t%d\t%d\t%d\n",
-                stt->fcount,
-                inMicLevelTmp,
-                *outMicLevel,
-                stt->maxLevel,
-                stt->micVol);
+    fprintf(stt->agcLog,
+            "%5d\t%d\t%d\t%d\t%d\n",
+            stt->fcount,
+            inMicLevel,
+            *outMicLevel,
+            stt->maxLevel,
+            stt->micVol);
 #endif
 
-        /* update queue */
-        if (stt->inQueue > 1)
-        {
-            memcpy(stt->env[0], stt->env[1], 10 * sizeof(int32_t));
-            memcpy(stt->Rxx16w32_array[0], stt->Rxx16w32_array[1], 5 * sizeof(int32_t));
-        }
-
-        if (stt->inQueue > 0)
-        {
-            stt->inQueue--;
-        }
-
-        /* If 20ms frames are used the input mic level must be updated so that
-         * the analog AGC does not think that there has been a manual volume
-         * change. */
-        inMicLevelTmp = *outMicLevel;
-
-        /* Store a positive saturation warning. */
-        if (*saturationWarning == 1)
-        {
-            satWarningTmp = 1;
-        }
+    /* update queue */
+    if (stt->inQueue > 1)
+    {
+        memcpy(stt->env[0], stt->env[1], 10 * sizeof(int32_t));
+        memcpy(stt->Rxx16w32_array[0],
+               stt->Rxx16w32_array[1],
+               5 * sizeof(int32_t));
     }
 
-    /* Trigger the saturation warning if displayed by any of the frames. */
-    *saturationWarning = satWarningTmp;
+    if (stt->inQueue > 0)
+    {
+        stt->inQueue--;
+    }
 
     return 0;
 }

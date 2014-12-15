@@ -319,11 +319,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
     {
         L = 8;
         L2 = 3;
-    } else if (FS == 16000)
-    {
-        L = 16;
-        L2 = 4;
-    } else if (FS == 32000)
+    } else if (FS == 16000 || FS == 32000)
     {
         L = 16;
         L2 = 4;
@@ -332,7 +328,6 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
         return -1;
     }
 
-    // TODO(andrew): again, we don't need input and output pointers...
     if (in_near != out)
     {
         // Only needed if they don't already point to the same place.
