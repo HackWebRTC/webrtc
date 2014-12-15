@@ -8,28 +8,32 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_SOURCE_AUDIO_PROCESSING_IMPL_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_SOURCE_AUDIO_PROCESSING_IMPL_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_PROCESSING_IMPL_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_PROCESSING_IMPL_H_
 
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 #include <list>
 #include <string>
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
+class AgcManagerDirect;
 class AudioBuffer;
 class CriticalSectionWrapper;
 class EchoCancellationImpl;
 class EchoControlMobileImpl;
 class FileWrapper;
 class GainControlImpl;
+class GainControlForNewAgc;
 class HighPassFilterImpl;
 class LevelEstimatorImpl;
 class NoiseSuppressionImpl;
 class ProcessingComponent;
+class TransientSuppressor;
 class VoiceDetectionImpl;
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
@@ -138,7 +142,7 @@ class AudioProcessingImpl : public AudioProcessing {
 
  protected:
   // Overridden in a mock.
-  virtual int InitializeLocked();
+  virtual int InitializeLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
  private:
   int InitializeLocked(int input_sample_rate_hz,
@@ -146,20 +150,24 @@ class AudioProcessingImpl : public AudioProcessing {
                        int reverse_sample_rate_hz,
                        int num_input_channels,
                        int num_output_channels,
-                       int num_reverse_channels);
+                       int num_reverse_channels)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
   int MaybeInitializeLocked(int input_sample_rate_hz,
                             int output_sample_rate_hz,
                             int reverse_sample_rate_hz,
                             int num_input_channels,
                             int num_output_channels,
-                            int num_reverse_channels);
-  int ProcessStreamLocked();
-  int AnalyzeReverseStreamLocked();
+                            int num_reverse_channels)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  int ProcessStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  int AnalyzeReverseStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   bool is_data_processed() const;
   bool output_copy_needed(bool is_data_processed) const;
   bool synthesis_needed(bool is_data_processed) const;
   bool analysis_needed(bool is_data_processed) const;
+  int InitializeExperimentalAgc() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  int InitializeTransient() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   EchoCancellationImpl* echo_cancellation_;
   EchoControlMobileImpl* echo_control_mobile_;
@@ -168,6 +176,7 @@ class AudioProcessingImpl : public AudioProcessing {
   LevelEstimatorImpl* level_estimator_;
   NoiseSuppressionImpl* noise_suppression_;
   VoiceDetectionImpl* voice_detection_;
+  scoped_ptr<GainControlForNewAgc> gain_control_for_new_agc_;
 
   std::list<ProcessingComponent*> component_list_;
   CriticalSectionWrapper* crit_;
@@ -199,8 +208,15 @@ class AudioProcessingImpl : public AudioProcessing {
   bool output_will_be_muted_;
 
   bool key_pressed_;
+
+  // Only set through the constructor's Config parameter.
+  const bool use_new_agc_;
+  scoped_ptr<AgcManagerDirect> agc_manager_ GUARDED_BY(crit_);
+
+  bool transient_suppressor_enabled_;
+  scoped_ptr<TransientSuppressor> transient_suppressor_;
 };
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_SOURCE_AUDIO_PROCESSING_IMPL_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_PROCESSING_IMPL_H_

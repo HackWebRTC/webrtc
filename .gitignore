@@ -48,8 +48,7 @@
 /links.db
 /net
 /out
-/resources/*.*
-/resources/*/*.*
+/resources
 /talk/examples/android/bin
 /talk/examples/android/gen
 /talk/examples/android/libs
