@@ -45,7 +45,7 @@ class ViESyncModule : public Module {
   int SetTargetBufferingDelay(int target_delay_ms);
 
   // Implements Module.
-  virtual int32_t TimeUntilNextProcess() OVERRIDE;
+  virtual int64_t TimeUntilNextProcess() OVERRIDE;
   virtual int32_t Process() OVERRIDE;
 
  private:

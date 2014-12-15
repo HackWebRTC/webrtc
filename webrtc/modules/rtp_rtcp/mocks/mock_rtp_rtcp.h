@@ -261,7 +261,7 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_CONST_METHOD3(Version,
       int32_t(char* version, uint32_t& remaining_buffer_in_bytes, uint32_t& position));
   MOCK_METHOD0(TimeUntilNextProcess,
-        int32_t());
+        int64_t());
   MOCK_METHOD0(Process,
         int32_t());
   MOCK_METHOD1(RegisterSendFrameCountObserver,

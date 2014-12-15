@@ -28,7 +28,7 @@ class RemoteRateControl {
   virtual bool ValidEstimate() const = 0;
   virtual RateControlType GetControlType() const = 0;
   virtual uint32_t GetMinBitrate() const = 0;
-  virtual int GetFeedbackInterval() const = 0;
+  virtual int64_t GetFeedbackInterval() const = 0;
 
   // Returns true if the bitrate estimate hasn't been changed for more than
   // an RTT, or if the incoming_bitrate is more than 5% above the current
@@ -44,7 +44,7 @@ class RemoteRateControl {
   virtual void SetEstimate(int bitrate_bps, int64_t time_now_ms) = 0;
 
  protected:
-  static const int kMaxFeedbackIntervalMs = 1000;
+  static const int64_t kMaxFeedbackIntervalMs;
 };
 }  // namespace webrtc
 

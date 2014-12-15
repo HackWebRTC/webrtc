@@ -89,7 +89,7 @@ class VideoProcessingModule : public Module {
   /**
      Not supported.
   */
-  virtual int32_t TimeUntilNextProcess() OVERRIDE { return -1; }
+  virtual int64_t TimeUntilNextProcess() OVERRIDE { return -1; }
 
   /**
      Not supported.

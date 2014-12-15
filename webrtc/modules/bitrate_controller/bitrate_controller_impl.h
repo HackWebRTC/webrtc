@@ -46,7 +46,7 @@ class BitrateControllerImpl : public BitrateController {
   virtual void EnforceMinBitrate(bool enforce_min_bitrate) OVERRIDE;
   virtual void SetReservedBitrate(uint32_t reserved_bitrate_bps) OVERRIDE;
 
-  virtual int32_t TimeUntilNextProcess() OVERRIDE;
+  virtual int64_t TimeUntilNextProcess() OVERRIDE;
   virtual int32_t Process() OVERRIDE;
 
  private:

@@ -83,7 +83,7 @@ class RemoteBitrateEstimatorAbsSendTimeImpl : public RemoteBitrateEstimator {
   // shouldn't be detached from the ProcessThread except if it's about to be
   // deleted.
   virtual int32_t Process() OVERRIDE;
-  virtual int32_t TimeUntilNextProcess() OVERRIDE;
+  virtual int64_t TimeUntilNextProcess() OVERRIDE;
   virtual void OnRttUpdate(uint32_t rtt) OVERRIDE;
   virtual void RemoveStream(unsigned int ssrc) OVERRIDE;
   virtual bool LatestEstimate(std::vector<unsigned int>* ssrcs,
@@ -168,7 +168,7 @@ class RemoteBitrateEstimatorAbsSendTimeImpl : public RemoteBitrateEstimator {
   int64_t last_process_time_;
   std::vector<int> recent_propagation_delta_ms_ GUARDED_BY(crit_sect_.get());
   std::vector<int64_t> recent_update_time_ms_ GUARDED_BY(crit_sect_.get());
-  int process_interval_ms_ GUARDED_BY(crit_sect_.get());
+  int64_t process_interval_ms_ GUARDED_BY(crit_sect_.get());
   int total_propagation_delta_ms_ GUARDED_BY(crit_sect_.get());
 
   std::list<Probe> probes_;
@@ -376,7 +376,7 @@ int32_t RemoteBitrateEstimatorAbsSendTimeImpl::Process() {
   return 0;
 }
 
-int32_t RemoteBitrateEstimatorAbsSendTimeImpl::TimeUntilNextProcess() {
+int64_t RemoteBitrateEstimatorAbsSendTimeImpl::TimeUntilNextProcess() {
   if (last_process_time_ < 0) {
     return 0;
   }

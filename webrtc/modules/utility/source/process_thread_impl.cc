@@ -130,12 +130,12 @@ bool ProcessThreadImpl::Process()
 {
     // Wait for the module that should be called next, but don't block thread
     // longer than 100 ms.
-    int32_t minTimeToNext = 100;
+    int64_t minTimeToNext = 100;
     {
         CriticalSectionScoped lock(_critSectModules);
         for (ModuleList::iterator iter = _modules.begin();
              iter != _modules.end(); ++iter) {
-          int32_t timeToNext = (*iter)->TimeUntilNextProcess();
+          int64_t timeToNext = (*iter)->TimeUntilNextProcess();
             if(minTimeToNext > timeToNext)
             {
                 minTimeToNext = timeToNext;
@@ -145,7 +145,8 @@ bool ProcessThreadImpl::Process()
 
     if(minTimeToNext > 0)
     {
-        if(kEventError == _timeEvent.Wait(minTimeToNext))
+        if(kEventError ==
+           _timeEvent.Wait(static_cast<unsigned long>(minTimeToNext)))
         {
             return true;
         }
@@ -159,7 +160,7 @@ bool ProcessThreadImpl::Process()
         CriticalSectionScoped lock(_critSectModules);
         for (ModuleList::iterator iter = _modules.begin();
              iter != _modules.end(); ++iter) {
-          int32_t timeToNext = (*iter)->TimeUntilNextProcess();
+          int64_t timeToNext = (*iter)->TimeUntilNextProcess();
             if(timeToNext < 1)
             {
                 (*iter)->Process();

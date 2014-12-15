@@ -39,7 +39,7 @@ public:
      */
     virtual int32_t ChangeUniqueId(const int32_t id);
 
-    virtual int32_t TimeUntilNextProcess();
+    virtual int64_t TimeUntilNextProcess();
     virtual int32_t Process();
 
     /*

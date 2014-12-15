@@ -21,20 +21,16 @@
 namespace webrtc {
 namespace vcm {
 
-uint32_t
+int64_t
 VCMProcessTimer::Period() const {
     return _periodMs;
 }
 
-uint32_t
+int64_t
 VCMProcessTimer::TimeUntilProcess() const {
-    const int64_t time_since_process = _clock->TimeInMilliseconds() -
-        static_cast<int64_t>(_latestMs);
-    const int64_t time_until_process = static_cast<int64_t>(_periodMs) -
-        time_since_process;
-    if (time_until_process < 0)
-      return 0;
-    return time_until_process;
+    const int64_t time_since_process = _clock->TimeInMilliseconds() - _latestMs;
+    const int64_t time_until_process = _periodMs - time_since_process;
+    return std::max<int64_t>(time_until_process, 0);
 }
 
 void
@@ -90,9 +86,9 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     own_event_factory_.reset();
   }
 
-  virtual int32_t TimeUntilNextProcess() OVERRIDE {
-    int32_t sender_time = sender_->TimeUntilNextProcess();
-    int32_t receiver_time = receiver_->TimeUntilNextProcess();
+  virtual int64_t TimeUntilNextProcess() OVERRIDE {
+    int64_t sender_time = sender_->TimeUntilNextProcess();
+    int64_t receiver_time = receiver_->TimeUntilNextProcess();
     assert(sender_time >= 0);
     assert(receiver_time >= 0);
     return VCM_MIN(sender_time, receiver_time);

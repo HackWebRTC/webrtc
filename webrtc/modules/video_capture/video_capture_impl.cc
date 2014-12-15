@@ -89,14 +89,12 @@ int32_t VideoCaptureImpl::ChangeUniqueId(const int32_t id)
 }
 
 // returns the number of milliseconds until the module want a worker thread to call Process
-int32_t VideoCaptureImpl::TimeUntilNextProcess()
+int64_t VideoCaptureImpl::TimeUntilNextProcess()
 {
     CriticalSectionScoped cs(&_callBackCs);
-
-    int32_t timeToNormalProcess = kProcessInterval
-        - (int32_t)((TickTime::Now() - _lastProcessTime).Milliseconds());
-
-    return timeToNormalProcess;
+    const int64_t kProcessIntervalMs = 300;
+    return kProcessIntervalMs -
+        (TickTime::Now() - _lastProcessTime).Milliseconds();
 }
 
 // Process any pending tasks such as timeouts

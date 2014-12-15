@@ -154,9 +154,10 @@ void ModuleRtpRtcpImpl::DeRegisterChildModule(RtpRtcp* remove_module) {
 
 // Returns the number of milliseconds until the module want a worker thread
 // to call Process.
-int32_t ModuleRtpRtcpImpl::TimeUntilNextProcess() {
-    const int64_t now = clock_->TimeInMilliseconds();
-  return kRtpRtcpMaxIdleTimeProcess - (now - last_process_time_);
+int64_t ModuleRtpRtcpImpl::TimeUntilNextProcess() {
+  const int64_t now = clock_->TimeInMilliseconds();
+  const int64_t kRtpRtcpMaxIdleTimeProcessMs = 5;
+  return kRtpRtcpMaxIdleTimeProcessMs - (now - last_process_time_);
 }
 
 // Process any pending tasks such as timeouts (non time critical events).
@@ -164,12 +165,14 @@ int32_t ModuleRtpRtcpImpl::Process() {
   const int64_t now = clock_->TimeInMilliseconds();
   last_process_time_ = now;
 
+  const int64_t kRtpRtcpBitrateProcessTimeMs = 10;
   if (now >= last_bitrate_process_time_ + kRtpRtcpBitrateProcessTimeMs) {
     rtp_sender_.ProcessBitrate();
     last_bitrate_process_time_ = now;
   }
 
   if (!IsDefaultModule()) {
+    const int64_t kRtpRtcpRttProcessTimeMs = 1000;
     bool process_rtt = now >= last_rtt_process_time_ + kRtpRtcpRttProcessTimeMs;
     if (rtcp_sender_.Sending()) {
       // Process RTT if we have received a receiver report and we haven't

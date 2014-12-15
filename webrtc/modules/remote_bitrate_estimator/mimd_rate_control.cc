@@ -55,7 +55,7 @@ bool MimdRateControl::ValidEstimate() const {
   return initialized_bit_rate_;
 }
 
-int MimdRateControl::GetFeedbackInterval() const {
+int64_t MimdRateControl::GetFeedbackInterval() const {
   return kMaxFeedbackIntervalMs;
 }
 

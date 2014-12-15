@@ -700,7 +700,7 @@ void PacedVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
   int64_t end_time_ms = clock_.TimeInMilliseconds() + time_ms;
   Packets::iterator it = generated_packets.begin();
   while (clock_.TimeInMilliseconds() <= end_time_ms) {
-    int time_until_process_ms = pacer_.TimeUntilNextProcess();
+    int64_t time_until_process_ms = pacer_.TimeUntilNextProcess();
     if (time_until_process_ms < 0)
       time_until_process_ms = 0;
     int time_until_packet_ms = time_ms;

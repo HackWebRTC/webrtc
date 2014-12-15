@@ -20,7 +20,6 @@ namespace webrtc {
 
 static const uint32_t kDefaultRttMs = 200;
 static const int64_t kLogIntervalMs = 1000;
-static const int kMinFeedbackIntervalMs = 200;
 static const double kWithinIncomingBitrateHysteresis = 1.05;
 
 AimdRateControl::AimdRateControl(uint32_t min_bitrate_bps)
@@ -54,17 +53,15 @@ bool AimdRateControl::ValidEstimate() const {
   return bitrate_is_initialized_;
 }
 
-int AimdRateControl::GetFeedbackInterval() const {
+int64_t AimdRateControl::GetFeedbackInterval() const {
   // Estimate how often we can send RTCP if we allocate up to 5% of bandwidth
   // to feedback.
-  static const int kRtcpSize = 80.0;
-  int interval = kRtcpSize * 8.0 * 1000.0 / (0.05 * current_bitrate_bps_) + 0.5;
-  if (interval > kMaxFeedbackIntervalMs)
-    interval = kMaxFeedbackIntervalMs;
-  else if (interval < kMinFeedbackIntervalMs) {
-    interval = kMinFeedbackIntervalMs;
-  }
-  return interval;
+  static const int kRtcpSize = 80;
+  int64_t interval = static_cast<int64_t>(
+      kRtcpSize * 8.0 * 1000.0 / (0.05 * current_bitrate_bps_) + 0.5);
+  const int64_t kMinFeedbackIntervalMs = 200;
+  return std::min(std::max(interval, kMinFeedbackIntervalMs),
+                  kMaxFeedbackIntervalMs);
 }
 
 bool AimdRateControl::TimeToReduceFurther(int64_t time_now,

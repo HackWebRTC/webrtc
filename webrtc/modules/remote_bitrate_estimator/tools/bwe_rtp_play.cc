@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 
+#include "webrtc/base/format_macros.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/tools/bwe_rtp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
@@ -98,18 +99,17 @@ int main(int argc, char** argv) {
       packet.time_ms = packet.time_ms - first_rtp_time_ms;
       next_rtp_time_ms = packet.time_ms;
     }
-    int time_until_process_ms = rbe->TimeUntilNextProcess();
+    int64_t time_until_process_ms = rbe->TimeUntilNextProcess();
     if (time_until_process_ms <= 0) {
       rbe->Process();
     }
-    int time_until_next_event =
+    int64_t time_until_next_event =
         std::min(rbe->TimeUntilNextProcess(),
-                 static_cast<int>(next_rtp_time_ms -
-                                  clock.TimeInMilliseconds()));
-    clock.AdvanceTimeMilliseconds(std::max(time_until_next_event, 0));
+                 next_rtp_time_ms - clock.TimeInMilliseconds());
+    clock.AdvanceTimeMilliseconds(std::max<int64_t>(time_until_next_event, 0));
   }
-  printf("Parsed %d packets\nTime passed: %u ms\n", packet_counter,
-         static_cast<uint32_t>(clock.TimeInMilliseconds()));
+  printf("Parsed %d packets\nTime passed: %" PRId64 " ms\n", packet_counter,
+         clock.TimeInMilliseconds());
   printf("Estimator used: %s\n", estimator_used.c_str());
   printf("Packets with absolute send time: %d\n",
          abs_send_time_count);

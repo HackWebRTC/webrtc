@@ -309,7 +309,7 @@ int32_t ModuleVideoRenderImpl::ChangeUniqueId(const int32_t id)
     return 0;
 }
 
-int32_t ModuleVideoRenderImpl::TimeUntilNextProcess()
+int64_t ModuleVideoRenderImpl::TimeUntilNextProcess()
 {
     // Not used
     return 50;

@@ -106,7 +106,7 @@ class PacedSender : public Module {
                           bool retransmission);
 
   // Returns the time since the oldest queued packet was enqueued.
-  virtual int QueueInMs() const;
+  virtual int64_t QueueInMs() const;
 
   virtual size_t QueueSizePackets() const;
 
@@ -116,7 +116,7 @@ class PacedSender : public Module {
 
   // Returns the number of milliseconds until the module want a worker thread
   // to call Process.
-  virtual int32_t TimeUntilNextProcess() OVERRIDE;
+  virtual int64_t TimeUntilNextProcess() OVERRIDE;
 
   // Process any pending packets in the queue(s).
   virtual int32_t Process() OVERRIDE;
@@ -126,7 +126,7 @@ class PacedSender : public Module {
 
  private:
   // Updates the number of bytes that can be sent for the next time interval.
-  void UpdateBytesPerInterval(uint32_t delta_time_in_ms)
+  void UpdateBytesPerInterval(int64_t delta_time_in_ms)
       EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   bool SendPacket(const paced_sender::Packet& packet)

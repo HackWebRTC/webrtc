@@ -40,7 +40,7 @@ class RemoteBitrateEstimatorImpl : public RemoteBitrateEstimator {
                               size_t payload_size,
                               const RTPHeader& header) OVERRIDE;
   virtual int32_t Process() OVERRIDE;
-  virtual int32_t TimeUntilNextProcess() OVERRIDE;
+  virtual int64_t TimeUntilNextProcess() OVERRIDE;
   virtual void OnRttUpdate(uint32_t rtt) OVERRIDE;
   virtual void RemoveStream(unsigned int ssrc) OVERRIDE;
   virtual bool LatestEstimate(std::vector<unsigned int>* ssrcs,
@@ -79,7 +79,7 @@ class RemoteBitrateEstimatorImpl : public RemoteBitrateEstimator {
   RemoteBitrateObserver* observer_ GUARDED_BY(crit_sect_.get());
   scoped_ptr<CriticalSectionWrapper> crit_sect_;
   int64_t last_process_time_;
-  int process_interval_ms_ GUARDED_BY(crit_sect_.get());
+  int64_t process_interval_ms_ GUARDED_BY(crit_sect_.get());
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(RemoteBitrateEstimatorImpl);
 };
@@ -172,7 +172,7 @@ int32_t RemoteBitrateEstimatorImpl::Process() {
   return 0;
 }
 
-int32_t RemoteBitrateEstimatorImpl::TimeUntilNextProcess() {
+int64_t RemoteBitrateEstimatorImpl::TimeUntilNextProcess() {
   if (last_process_time_ < 0) {
     return 0;
   }

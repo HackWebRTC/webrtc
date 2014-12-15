@@ -97,8 +97,8 @@ TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, TestLongTimeoutAndWrap) {
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, TestProcessAfterTimeout) {
   // This time constant must be equal to the ones defined for the
   // RemoteBitrateEstimator.
-  const int kStreamTimeOutMs = 2000;
-  const int kProcessIntervalMs = 1000;
+  const int64_t kStreamTimeOutMs = 2000;
+  const int64_t kProcessIntervalMs = 1000;
   IncomingPacket(0, 1000, clock_.TimeInMilliseconds(), 0, 0);
   clock_.AdvanceTimeMilliseconds(kStreamTimeOutMs + 1);
   // Trigger timeout.

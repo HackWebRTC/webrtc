@@ -384,7 +384,7 @@ void OveruseFrameDetector::GetCpuOveruseMetrics(
   metrics->capture_queue_delay_ms_per_s = capture_queue_delay_->Value();
 }
 
-int32_t OveruseFrameDetector::TimeUntilNextProcess() {
+int64_t OveruseFrameDetector::TimeUntilNextProcess() {
   CriticalSectionScoped cs(crit_.get());
   return next_process_time_ - clock_->TimeInMilliseconds();
 }

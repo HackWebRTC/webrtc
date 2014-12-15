@@ -31,7 +31,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   // Returns the number of milliseconds until the module want a worker thread to
   // call Process.
-  virtual int32_t TimeUntilNextProcess() OVERRIDE;
+  virtual int64_t TimeUntilNextProcess() OVERRIDE;
 
   // Process any pending tasks such as timeouts.
   virtual int32_t Process() OVERRIDE;

@@ -99,7 +99,7 @@ class OveruseFrameDetector : public Module {
   int FramesInQueue() const;
 
   // Implements Module.
-  virtual int32_t TimeUntilNextProcess() OVERRIDE;
+  virtual int64_t TimeUntilNextProcess() OVERRIDE;
   virtual int32_t Process() OVERRIDE;
 
  private:

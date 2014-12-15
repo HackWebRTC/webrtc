@@ -26,11 +26,11 @@
 
 namespace {
 // Time limit in milliseconds between packet bursts.
-const int kMinPacketLimitMs = 5;
+const int64_t kMinPacketLimitMs = 5;
 
 // Upper cap on process interval, in case process has not been called in a long
 // time.
-const int kMaxIntervalTimeMs = 30;
+const int64_t kMaxIntervalTimeMs = 30;
 
 }  // namespace
 
@@ -178,8 +178,8 @@ class IntervalBudget {
     target_rate_kbps_ = target_rate_kbps;
   }
 
-  void IncreaseBudget(int delta_time_ms) {
-    int bytes = target_rate_kbps_ * delta_time_ms / 8;
+  void IncreaseBudget(int64_t delta_time_ms) {
+    int64_t bytes = target_rate_kbps_ * delta_time_ms / 8;
     if (bytes_remaining_ < 0) {
       // We overused last interval, compensate this interval.
       bytes_remaining_ = bytes_remaining_ + bytes;
@@ -293,7 +293,7 @@ size_t PacedSender::QueueSizePackets() const {
   return packets_->SizeInPackets();
 }
 
-int PacedSender::QueueInMs() const {
+int64_t PacedSender::QueueInMs() const {
   CriticalSectionScoped cs(critsect_.get());
 
   int64_t oldest_packet = packets_->OldestEnqueueTime();
@@ -303,31 +303,27 @@ int PacedSender::QueueInMs() const {
   return clock_->TimeInMilliseconds() - oldest_packet;
 }
 
-int32_t PacedSender::TimeUntilNextProcess() {
+int64_t PacedSender::TimeUntilNextProcess() {
   CriticalSectionScoped cs(critsect_.get());
-  int64_t elapsed_time_us = clock_->TimeInMicroseconds() - time_last_update_us_;
-  int elapsed_time_ms = static_cast<int>((elapsed_time_us + 500) / 1000);
   if (prober_->IsProbing()) {
-    int next_probe = prober_->TimeUntilNextProbe(clock_->TimeInMilliseconds());
-    return next_probe;
+    return prober_->TimeUntilNextProbe(clock_->TimeInMilliseconds());
   }
-  if (elapsed_time_ms >= kMinPacketLimitMs) {
-    return 0;
-  }
-  return kMinPacketLimitMs - elapsed_time_ms;
+  int64_t elapsed_time_us = clock_->TimeInMicroseconds() - time_last_update_us_;
+  int64_t elapsed_time_ms = (elapsed_time_us + 500) / 1000;
+  return std::max<int64_t>(kMinPacketLimitMs - elapsed_time_ms, 0);
 }
 
 int32_t PacedSender::Process() {
   int64_t now_us = clock_->TimeInMicroseconds();
   CriticalSectionScoped cs(critsect_.get());
-  int elapsed_time_ms = (now_us - time_last_update_us_ + 500) / 1000;
+  int64_t elapsed_time_ms = (now_us - time_last_update_us_ + 500) / 1000;
   time_last_update_us_ = now_us;
   if (!enabled_) {
     return 0;
   }
   if (!paused_) {
     if (elapsed_time_ms > 0) {
-      uint32_t delta_time_ms = std::min(kMaxIntervalTimeMs, elapsed_time_ms);
+      int64_t delta_time_ms = std::min(kMaxIntervalTimeMs, elapsed_time_ms);
       UpdateBytesPerInterval(delta_time_ms);
     }
 
@@ -387,7 +383,7 @@ void PacedSender::SendPadding(size_t padding_needed) {
   padding_budget_->UseBudget(bytes_sent);
 }
 
-void PacedSender::UpdateBytesPerInterval(uint32_t delta_time_ms) {
+void PacedSender::UpdateBytesPerInterval(int64_t delta_time_ms) {
   media_budget_->IncreaseBudget(delta_time_ms);
   padding_budget_->IncreaseBudget(delta_time_ms);
 }

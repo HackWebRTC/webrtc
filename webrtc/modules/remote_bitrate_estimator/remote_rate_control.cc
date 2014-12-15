@@ -14,6 +14,10 @@
 #include "webrtc/modules/remote_bitrate_estimator/mimd_rate_control.h"
 
 namespace webrtc {
+
+// static
+const int64_t RemoteRateControl::kMaxFeedbackIntervalMs = 1000;
+
 RemoteRateControl* RemoteRateControl::Create(RateControlType control_type,
                                              uint32_t min_bitrate_bps) {
   if (control_type == kAimdControl) {
@@ -22,4 +26,5 @@ RemoteRateControl* RemoteRateControl::Create(RateControlType control_type,
     return new MimdRateControl(min_bitrate_bps);
   }
 }
+
 }  // namespace webrtc

@@ -117,7 +117,7 @@ class ReceiveStatisticsImpl : public ReceiveStatistics,
 
   // Implement Module.
   virtual int32_t Process() OVERRIDE;
-  virtual int32_t TimeUntilNextProcess() OVERRIDE;
+  virtual int64_t TimeUntilNextProcess() OVERRIDE;
 
   virtual void RegisterRtcpStatisticsCallback(RtcpStatisticsCallback* callback)
       OVERRIDE;

@@ -45,7 +45,7 @@ class WebRtcPassthroughRender : public webrtc::VideoRender {
     return 0;
   }
 
-  virtual int32_t TimeUntilNextProcess() OVERRIDE { return 0; }
+  virtual int64_t TimeUntilNextProcess() OVERRIDE { return 0; }
 
   virtual int32_t Process() OVERRIDE { return 0; }
 

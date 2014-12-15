@@ -89,8 +89,8 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
   virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const = 0;
 
  protected:
-  static const int kProcessIntervalMs = 1000;
-  static const int kStreamTimeOutMs = 2000;
+  static const int64_t kProcessIntervalMs = 1000;
+  static const int64_t kStreamTimeOutMs = 2000;
 };
 
 struct RemoteBitrateEstimatorFactory {

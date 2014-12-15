@@ -18,7 +18,7 @@ namespace webrtc {
 class MockVideoCaptureModule : public VideoCaptureModule {
  public:
   // from Module
-  MOCK_METHOD0(TimeUntilNextProcess, int32_t());
+  MOCK_METHOD0(TimeUntilNextProcess, int64_t());
   MOCK_METHOD0(Process, int32_t());
 
   // from RefCountedModule

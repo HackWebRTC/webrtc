@@ -78,7 +78,7 @@ public:
     virtual const char* CurrentDeviceName() const;
 
     // Module handling
-    virtual int32_t TimeUntilNextProcess();
+    virtual int64_t TimeUntilNextProcess();
     virtual int32_t Process();
 
     // Implement VideoCaptureExternal

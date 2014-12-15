@@ -42,14 +42,13 @@ public:
 public:	// module
     virtual int32_t ChangeUniqueId(int32_t id) OVERRIDE;
 
-    virtual int32_t TimeUntilNextProcess() OVERRIDE;
+    virtual int64_t TimeUntilNextProcess() OVERRIDE;
 
     virtual int32_t Process() OVERRIDE;
 private:
-    enum { kAverageProcessUpdateTimeMs = 1000 };
     MonitorObserver* _observerPtr;
     CriticalSectionWrapper&	_callbackCritSect;
-    int32_t _lastProcessTime;
+    int64_t _lastProcessTime;
 };
 
 }  // namespace voe

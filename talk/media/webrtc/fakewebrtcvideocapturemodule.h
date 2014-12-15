@@ -44,7 +44,7 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
         running_(false),
         delay_(0) {
   }
-  virtual int32_t TimeUntilNextProcess() OVERRIDE {
+  virtual int64_t TimeUntilNextProcess() OVERRIDE {
     return 0;
   }
   virtual int32_t Process() OVERRIDE {

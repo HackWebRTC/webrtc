@@ -154,8 +154,8 @@ int32_t VideoReceiver::Process() {
   return returnValue;
 }
 
-int32_t VideoReceiver::TimeUntilNextProcess() {
-  uint32_t timeUntilNextProcess = _receiveStatsTimer.TimeUntilProcess();
+int64_t VideoReceiver::TimeUntilNextProcess() {
+  int64_t timeUntilNextProcess = _receiveStatsTimer.TimeUntilProcess();
   if (_receiver.NackMode() != kNoNack) {
     // We need a Process call more often if we are relying on
     // retransmissions

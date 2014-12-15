@@ -94,7 +94,7 @@ int FakeAudioCaptureModule::frames_received() const {
   return frames_received_;
 }
 
-int32_t FakeAudioCaptureModule::TimeUntilNextProcess() {
+int64_t FakeAudioCaptureModule::TimeUntilNextProcess() {
   const uint32 current_time = rtc::Time();
   if (current_time < last_process_time_ms_) {
     // TODO: wraparound could be handled more gracefully.

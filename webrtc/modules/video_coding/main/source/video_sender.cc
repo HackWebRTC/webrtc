@@ -110,7 +110,7 @@ int32_t VideoSender::InitializeSender() {
   return VCM_OK;
 }
 
-int32_t VideoSender::TimeUntilNextProcess() {
+int64_t VideoSender::TimeUntilNextProcess() {
   return _sendStatsTimer.TimeUntilProcess();
 }
 

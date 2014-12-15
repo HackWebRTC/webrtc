@@ -28,7 +28,7 @@ class MimdRateControl : public RemoteRateControl {
   virtual RateControlType GetControlType() const OVERRIDE;
   virtual uint32_t GetMinBitrate() const OVERRIDE;
   virtual bool ValidEstimate() const OVERRIDE;
-  virtual int GetFeedbackInterval() const OVERRIDE;
+  virtual int64_t GetFeedbackInterval() const OVERRIDE;
   virtual bool TimeToReduceFurther(
       int64_t time_now, uint32_t incoming_bitrate_bps) const OVERRIDE;
   virtual uint32_t LatestEstimate() const OVERRIDE;

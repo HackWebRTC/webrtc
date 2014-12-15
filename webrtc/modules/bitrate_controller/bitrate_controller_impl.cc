@@ -223,12 +223,13 @@ void BitrateControllerImpl::OnReceivedEstimatedBitrate(uint32_t bitrate) {
   MaybeTriggerOnNetworkChanged();
 }
 
-int32_t BitrateControllerImpl::TimeUntilNextProcess() {
-  enum { kBitrateControllerUpdateIntervalMs = 25 };
+int64_t BitrateControllerImpl::TimeUntilNextProcess() {
+  const int64_t kBitrateControllerUpdateIntervalMs = 25;
   CriticalSectionScoped cs(critsect_);
-  int time_since_update_ms =
+  int64_t time_since_update_ms =
       clock_->TimeInMilliseconds() - last_bitrate_update_ms_;
-  return std::max(0, kBitrateControllerUpdateIntervalMs - time_since_update_ms);
+  return std::max<int64_t>(
+      kBitrateControllerUpdateIntervalMs - time_since_update_ms, 0);
 }
 
 int32_t BitrateControllerImpl::Process() {

@@ -30,7 +30,7 @@ class AimdRateControl : public RemoteRateControl {
   virtual bool ValidEstimate() const OVERRIDE;
   virtual RateControlType GetControlType() const OVERRIDE;
   virtual uint32_t GetMinBitrate() const OVERRIDE;
-  virtual int GetFeedbackInterval() const OVERRIDE;
+  virtual int64_t GetFeedbackInterval() const OVERRIDE;
   // Returns true if the bitrate estimate hasn't been changed for more than
   // an RTT, or if the incoming_bitrate is more than 5% above the current
   // estimate. Should be used to decide if we should reduce the rate further

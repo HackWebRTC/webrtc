@@ -37,17 +37,17 @@ class DebugRecorder;
 
 class VCMProcessTimer {
  public:
-  VCMProcessTimer(uint32_t periodMs, Clock* clock)
+  VCMProcessTimer(int64_t periodMs, Clock* clock)
       : _clock(clock),
         _periodMs(periodMs),
         _latestMs(_clock->TimeInMilliseconds()) {}
-  uint32_t Period() const;
-  uint32_t TimeUntilProcess() const;
+  int64_t Period() const;
+  int64_t TimeUntilProcess() const;
   void Processed();
 
  private:
   Clock* _clock;
-  uint32_t _periodMs;
+  int64_t _periodMs;
   int64_t _latestMs;
 };
 
@@ -105,7 +105,7 @@ class VideoSender {
   void SuspendBelowMinBitrate();
   bool VideoSuspended() const;
 
-  int32_t TimeUntilNextProcess();
+  int64_t TimeUntilNextProcess();
   int32_t Process();
 
  private:
@@ -179,7 +179,7 @@ class VideoReceiver {
   int32_t SetReceiveChannelParameters(uint32_t rtt);
   int32_t SetVideoProtection(VCMVideoProtection videoProtection, bool enable);
 
-  int32_t TimeUntilNextProcess();
+  int64_t TimeUntilNextProcess();
   int32_t Process();
 
   void RegisterPreDecodeImageCallback(EncodedImageCallback* observer);

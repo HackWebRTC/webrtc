@@ -91,7 +91,7 @@ int32_t MediaFileImpl::ChangeUniqueId(const int32_t id)
     return 0;
 }
 
-int32_t MediaFileImpl::TimeUntilNextProcess()
+int64_t MediaFileImpl::TimeUntilNextProcess()
 {
     WEBRTC_TRACE(
         kTraceWarning,

@@ -18,14 +18,14 @@
 
 namespace webrtc {
 namespace {
-// A rtt report is considered valid for this long.
-const int kRttTimeoutMs = 1500;
 // Time interval for updating the observers.
-const int kUpdateIntervalMs = 1000;
+const int64_t kUpdateIntervalMs = 1000;
 // Weight factor to apply to the average rtt.
 const float kWeightFactor = 0.3f;
 
 void RemoveOldReports(int64_t now, std::list<CallStats::RttTime>* reports) {
+  // A rtt report is considered valid for this long.
+  const int64_t kRttTimeoutMs = 1500;
   while (!reports->empty() &&
          (now - reports->front().time) > kRttTimeoutMs) {
     reports->pop_front();
@@ -101,7 +101,7 @@ CallStats::~CallStats() {
   assert(observers_.empty());
 }
 
-int32_t CallStats::TimeUntilNextProcess() {
+int64_t CallStats::TimeUntilNextProcess() {
   return last_process_time_ + kUpdateIntervalMs -
       TickTime::MillisecondTimestamp();
 }

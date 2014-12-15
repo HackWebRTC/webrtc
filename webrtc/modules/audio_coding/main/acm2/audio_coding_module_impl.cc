@@ -262,7 +262,7 @@ int32_t AudioCodingModuleImpl::ChangeUniqueId(const int32_t id) {
 
 // Returns the number of milliseconds until the module want a
 // worker thread to call Process.
-int32_t AudioCodingModuleImpl::TimeUntilNextProcess() {
+int64_t AudioCodingModuleImpl::TimeUntilNextProcess() {
   CriticalSectionScoped lock(acm_crit_sect_);
 
   if (!HaveValidEncoder("TimeUntilNextProcess")) {

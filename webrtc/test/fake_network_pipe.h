@@ -66,7 +66,7 @@ class FakeNetworkPipe {
   // Processes the network queues and trigger PacketReceiver::IncomingPacket for
   // packets ready to be delivered.
   void Process();
-  int TimeUntilNextProcess() const;
+  int64_t TimeUntilNextProcess() const;
 
   // Get statistics.
   float PercentageLoss();

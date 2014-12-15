@@ -58,13 +58,12 @@ MonitorModule::ChangeUniqueId(int32_t id)
     return 0;
 }
 
-int32_t 
+int64_t
 MonitorModule::TimeUntilNextProcess()
 {
-    uint32_t now = TickTime::MillisecondTimestamp();
-    int32_t timeToNext =
-        kAverageProcessUpdateTimeMs - (now - _lastProcessTime);
-    return (timeToNext); 
+    int64_t now = TickTime::MillisecondTimestamp();
+    const int64_t kAverageProcessUpdateTimeMs = 1000;
+    return kAverageProcessUpdateTimeMs - (now - _lastProcessTime);
 }
 
 int32_t 

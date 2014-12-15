@@ -76,11 +76,11 @@ class TestedEstimator : public RemoteBitrateObserver {
       }
     }
 
-    int64_t step_ms = std::max(estimator_->TimeUntilNextProcess(), 0);
+    int64_t step_ms = std::max<int64_t>(estimator_->TimeUntilNextProcess(), 0);
     while ((clock_.TimeInMilliseconds() + step_ms) < packet_time_ms) {
       clock_.AdvanceTimeMilliseconds(step_ms);
       estimator_->Process();
-      step_ms = std::max(estimator_->TimeUntilNextProcess(), 0);
+      step_ms = std::max<int64_t>(estimator_->TimeUntilNextProcess(), 0);
     }
     estimator_->IncomingPacket(packet_time_ms, packet.payload_size(),
                                packet.header());
