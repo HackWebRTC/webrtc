@@ -88,10 +88,6 @@ enum IcePriorityValue {
 const char* ProtoToString(ProtocolType proto);
 bool StringToProto(const char* value, ProtocolType* proto);
 
-// Conversion function to convert candidate type string to the corresponding one
-// from  enum RTCStatsIceCandidateType.
-const char* IceCandidateTypeToStatsType(const std::string& candidate_type);
-
 struct ProtocolAddress {
   rtc::SocketAddress address;
   ProtocolType proto;

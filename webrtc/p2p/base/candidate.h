@@ -20,7 +20,6 @@
 
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/network.h"
 #include "webrtc/base/socketaddress.h"
 
 namespace cricket {
@@ -31,33 +30,17 @@ class Candidate {
  public:
   // TODO: Match the ordering and param list as per RFC 5245
   // candidate-attribute syntax. http://tools.ietf.org/html/rfc5245#section-15.1
-  Candidate()
-      : component_(0),
-        priority_(0),
-        network_type_(rtc::ADAPTER_TYPE_UNKNOWN),
-        generation_(0) {}
-
-  Candidate(const std::string& id,
-            int component,
-            const std::string& protocol,
-            const rtc::SocketAddress& address,
-            uint32 priority,
-            const std::string& username,
-            const std::string& password,
-            const std::string& type,
-            uint32 generation,
-            const std::string& foundation)
-      : id_(id),
-        component_(component),
-        protocol_(protocol),
-        address_(address),
-        priority_(priority),
-        username_(username),
-        password_(password),
-        type_(type),
-        network_type_(rtc::ADAPTER_TYPE_UNKNOWN),
-        generation_(generation),
-        foundation_(foundation) {}
+  Candidate() : component_(0), priority_(0), generation_(0) {}
+  Candidate(const std::string& id, int component, const std::string& protocol,
+            const rtc::SocketAddress& address, uint32 priority,
+            const std::string& username, const std::string& password,
+            const std::string& type, const std::string& network_name,
+            uint32 generation, const std::string& foundation)
+      : id_(id), component_(component), protocol_(protocol), address_(address),
+        priority_(priority), username_(username), password_(password),
+        type_(type), network_name_(network_name), generation_(generation),
+        foundation_(foundation) {
+  }
 
   const std::string & id() const { return id_; }
   void set_id(const std::string & id) { id_ = id; }
@@ -109,11 +92,6 @@ class Candidate {
   const std::string & network_name() const { return network_name_; }
   void set_network_name(const std::string & network_name) {
     network_name_ = network_name;
-  }
-
-  rtc::AdapterType network_type() const { return network_type_; }
-  void set_network_type(rtc::AdapterType network_type) {
-    network_type_ = network_type;
   }
 
   // Candidates in a new generation replace those in the old generation.
@@ -223,7 +201,6 @@ class Candidate {
   std::string password_;
   std::string type_;
   std::string network_name_;
-  rtc::AdapterType network_type_;
   uint32 generation_;
   std::string foundation_;
   rtc::SocketAddress related_address_;
