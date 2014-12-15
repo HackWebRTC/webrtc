@@ -85,13 +85,13 @@
       ],
       'conditions': [
         # TODO(andresp): Chromium libpeerconnection should link directly with
-	# this and no if conditions should be needed on webrtc build files.
+        # this and no if conditions should be needed on webrtc build files.
         ['build_with_chromium==1', {
-	  'dependencies': [
-	    '<(webrtc_root)/modules/modules.gyp:video_capture_module_impl',
-	    '<(webrtc_root)/modules/modules.gyp:video_render_module_impl',
-	  ],
-	}],
+          'dependencies': [
+            '<(webrtc_root)/modules/modules.gyp:video_capture_module_impl',
+            '<(webrtc_root)/modules/modules.gyp:video_render_module_impl',
+          ],
+        }],
       ],
     },
   ],
