@@ -53,11 +53,6 @@ StatsReport::StatsReport(const std::string& id)
     : id(id), timestamp(0) {
 }
 
-StatsReport::StatsReport(const std::string& id,
-                         const StatsReport::StatsType& type)
-    : id(id), type(type), timestamp(0) {
-}
-
 StatsReport& StatsReport::operator=(const StatsReport& src) {
   ASSERT(id == src.id);
   type = src.type;

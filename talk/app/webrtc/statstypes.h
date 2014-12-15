@@ -44,8 +44,9 @@ namespace webrtc {
 
 class StatsReport {
  public:
-  // TODO(tommi): Change this to be an enum.
-  typedef std::string StatsType;
+  // TODO(tommi): Remove this ctor after removing reliance upon it in Chromium
+  // (mock_peer_connection_impl.cc).
+  StatsReport() : timestamp(0) {}
 
   // TODO(tommi): Make protected and disallow copy completely once not needed.
   StatsReport(const StatsReport& src);
@@ -53,7 +54,6 @@ class StatsReport {
   // Constructor is protected to force use of StatsSet.
   // TODO(tommi): Make this ctor protected.
   explicit StatsReport(const std::string& id);
-  StatsReport(const std::string& id, const StatsType& type);
 
   // TODO(tommi): Make this protected.
   StatsReport& operator=(const StatsReport& src);
@@ -70,7 +70,7 @@ class StatsReport {
   // so it must never be changed.
   // TODO(tommi): Make this member variable const.
   std::string id;  // See below for contents.
-  StatsType type;  // See below for contents.
+  std::string type;  // See below for contents.
 
   // StatsValue names.
   enum StatsValueName {
