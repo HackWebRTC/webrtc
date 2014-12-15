@@ -131,6 +131,7 @@ using webrtc::SessionDescriptionInterface;
 using webrtc::SetSessionDescriptionObserver;
 using webrtc::StatsObserver;
 using webrtc::StatsReport;
+using webrtc::StatsReports;
 using webrtc::VideoRendererInterface;
 using webrtc::VideoSourceInterface;
 using webrtc::VideoTrackInterface;
@@ -985,7 +986,7 @@ class StatsObserverWrapper : public StatsObserver {
 
   virtual ~StatsObserverWrapper() {}
 
-  virtual void OnComplete(const std::vector<StatsReport>& reports) OVERRIDE {
+  virtual void OnComplete(const StatsReports& reports) OVERRIDE {
     ScopedLocalRefFrame local_ref_frame(jni());
     jobjectArray j_reports = ReportsToJava(jni(), reports);
     jmethodID m = GetMethodID(jni(), *j_observer_class_, "onComplete",
@@ -996,22 +997,22 @@ class StatsObserverWrapper : public StatsObserver {
 
  private:
   jobjectArray ReportsToJava(
-      JNIEnv* jni, const std::vector<StatsReport>& reports) {
+      JNIEnv* jni, const StatsReports& reports) {
     jobjectArray reports_array = jni->NewObjectArray(
         reports.size(), *j_stats_report_class_, NULL);
-    for (int i = 0; i < reports.size(); ++i) {
+    int i = 0;
+    for (const auto* report : reports) {
       ScopedLocalRefFrame local_ref_frame(jni);
-      const StatsReport& report = reports[i];
-      jstring j_id = JavaStringFromStdString(jni, report.id);
-      jstring j_type = JavaStringFromStdString(jni, report.type);
-      jobjectArray j_values = ValuesToJava(jni, report.values);
+      jstring j_id = JavaStringFromStdString(jni, report->id);
+      jstring j_type = JavaStringFromStdString(jni, report->type);
+      jobjectArray j_values = ValuesToJava(jni, report->values);
       jobject j_report = jni->NewObject(*j_stats_report_class_,
                                         j_stats_report_ctor_,
                                         j_id,
                                         j_type,
-                                        report.timestamp,
+                                        report->timestamp,
                                         j_values);
-      jni->SetObjectArrayElement(reports_array, i, j_report);
+      jni->SetObjectArrayElement(reports_array, i++, j_report);
     }
     return reports_array;
   }
