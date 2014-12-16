@@ -283,7 +283,7 @@ class RtcpIntraFrameObserver {
 class RtcpBandwidthObserver {
  public:
   // REMB or TMMBR
-  virtual void OnReceivedEstimatedBitrate(const uint32_t bitrate) = 0;
+  virtual void OnReceivedEstimatedBitrate(uint32_t bitrate) = 0;
 
   virtual void OnReceivedRtcpReceiverReport(
       const ReportBlockList& report_blocks,
