@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_ENCODER_H_
 
 #include <algorithm>
+#include <vector>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/typedefs.h"
@@ -19,15 +20,33 @@
 namespace webrtc {
 
 // This is the interface class for encoders in AudioCoding module. Each codec
-// codec type must have an implementation of this class.
+// type must have an implementation of this class.
 class AudioEncoder {
  public:
-  struct EncodedInfo {
-    EncodedInfo() : encoded_bytes(0), encoded_timestamp(0), payload_type(0) {}
+  struct EncodedInfoLeaf {
+    EncodedInfoLeaf()
+        : encoded_bytes(0), encoded_timestamp(0), payload_type(0) {}
 
     size_t encoded_bytes;
     uint32_t encoded_timestamp;
     int payload_type;
+  };
+
+  // This is the main struct for auxiliary encoding information. Each encoded
+  // packet should be accompanied by one EncodedInfo struct, containing the
+  // total number of |encoded_bytes|, the |encoded_timestamp| and the
+  // |payload_type|. If the packet contains redundant encodings, the |redundant|
+  // vector will be populated with EncodedInfoLeaf structs. Each struct in the
+  // vector represents one encoding; the order of structs in the vector is the
+  // same as the order in which the actual payloads are written to the byte
+  // stream. When EncoderInfoLeaf structs are present in the vector, the main
+  // struct's |encoded_bytes| will be the sum of all the |encoded_bytes| in the
+  // vector.
+  struct EncodedInfo : public EncodedInfoLeaf {
+    EncodedInfo();
+    ~EncodedInfo();
+
+    std::vector<EncodedInfoLeaf> redundant;
   };
 
   virtual ~AudioEncoder() {}

@@ -16,6 +16,7 @@
       'iSAC',
       'iSACFix',
       'PCM16B',
+      'red',
       '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
       '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
     ],

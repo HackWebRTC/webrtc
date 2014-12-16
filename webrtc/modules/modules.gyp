@@ -17,6 +17,7 @@
     'audio_coding/codecs/isac/main/source/isac.gypi',
     'audio_coding/codecs/isac/fix/source/isacfix.gypi',
     'audio_coding/codecs/pcm16b/pcm16b.gypi',
+    'audio_coding/codecs/red/red.gypi',
     'audio_coding/main/acm2/audio_coding_module.gypi',
     'audio_coding/neteq/neteq.gypi',
     'audio_conference_mixer/source/audio_conference_mixer.gypi',
@@ -81,6 +82,7 @@
             'neteq_unittest_tools',
             'paced_sender',
             'PCM16B',  # Needed by NetEq tests.
+            'red',
             'remote_bitrate_estimator',
             'rtp_rtcp',
             'video_codecs_test_framework',
@@ -118,6 +120,7 @@
             'audio_coding/codecs/isac/fix/source/transform_unittest.cc',
             'audio_coding/codecs/isac/main/source/isac_unittest.cc',
             'audio_coding/codecs/opus/opus_unittest.cc',
+            'audio_coding/codecs/red/audio_encoder_copy_red_unittest.cc',
             'audio_coding/neteq/audio_classifier_unittest.cc',
             'audio_coding/neteq/audio_multi_vector_unittest.cc',
             'audio_coding/neteq/audio_vector_unittest.cc',

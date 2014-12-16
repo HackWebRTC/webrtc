@@ -1,14 +1,15 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
 # tree. An additional intellectual property rights grant can be found
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
+
 {
   'targets': [
     {
-      'target_name': 'G722',
+      'target_name': 'red',
       'type': 'static_library',
       'dependencies': [
         'audio_encoder_interface',
@@ -24,30 +25,9 @@
         ],
       },
       'sources': [
-        'audio_encoder_g722.cc',
-        'include/audio_encoder_g722.h',
-        'include/g722_interface.h',
-        'g722_interface.c',
-        'g722_encode.c',
-        'g722_decode.c',
-        'g722_enc_dec.h',
+        'audio_encoder_copy_red.h',
+        'audio_encoder_copy_red.cc',
       ],
     },
   ], # targets
-  'conditions': [
-    ['include_tests==1', {
-      'targets': [
-        {
-          'target_name': 'G722Test',
-          'type': 'executable',
-          'dependencies': [
-            'G722',
-          ],
-          'sources': [
-            'test/testG722.cc',
-          ],
-        },
-      ], # targets
-    }], # include_tests
-  ], # conditions
 }

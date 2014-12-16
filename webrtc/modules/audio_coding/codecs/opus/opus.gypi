@@ -23,6 +23,9 @@
           ],
         }],
       ],
+      'dependencies': [
+        'audio_encoder_interface',
+      ],
       'include_dirs': [
         '<(webrtc_root)',
       ],

@@ -13,6 +13,7 @@
       'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
+        'audio_encoder_interface',
       ],
       'include_dirs': [
         'include',

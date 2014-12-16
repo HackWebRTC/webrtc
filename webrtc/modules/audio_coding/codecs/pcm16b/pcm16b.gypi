@@ -12,6 +12,7 @@
       'target_name': 'PCM16B',
       'type': 'static_library',
       'dependencies': [
+        'audio_encoder_interface',
         'G711',
       ],
       'include_dirs': [

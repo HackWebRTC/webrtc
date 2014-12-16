@@ -14,6 +14,7 @@
       'dependencies': [
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
         'audio_decoder_interface',
+        'audio_encoder_interface',
       ],
       'include_dirs': [
         '../interface',

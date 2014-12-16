@@ -16,5 +16,14 @@
         'audio_decoder.h',
       ],
     },
+
+    {
+      'target_name': 'audio_encoder_interface',
+      'type': 'static_library',
+      'sources': [
+        'audio_encoder.cc',
+        'audio_encoder.h',
+      ],
+    },
   ],
 }

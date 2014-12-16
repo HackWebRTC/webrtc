@@ -101,6 +101,7 @@ source_set("audio_coding") {
     ":isacfix",
     ":neteq",
     ":pcm16b",
+    ":red",
     "../../common_audio",
     "../../system_wrappers",
   ]
@@ -115,6 +116,15 @@ source_set("audio_decoder_interface") {
   sources = [
     "codecs/audio_decoder.cc",
     "codecs/audio_decoder.h",
+  ]
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
+}
+
+source_set("audio_encoder_interface") {
+  sources = [
+    "codecs/audio_encoder.cc",
+    "codecs/audio_encoder.h",
   ]
   configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
@@ -144,7 +154,35 @@ source_set("cng") {
     ":cng_config",
   ]
 
-  deps = [ "../../common_audio" ]
+  deps = [
+    "../../common_audio",
+    ":audio_encoder_interface",
+  ]
+}
+
+config("red_config") {
+  include_dirs = [
+    "codecs/red",
+  ]
+}
+
+source_set("red") {
+  sources = [
+    "codecs/red/audio_encoder_copy_red.cc",
+    "codecs/red/audio_encoder_copy_red.h",
+  ]
+
+  configs += [ "../..:common_config" ]
+
+  public_configs = [
+    "../..:common_inherited_config",
+    ":red_config",
+  ]
+
+  deps = [
+    "../../common_audio",
+    ":audio_encoder_interface",
+  ]
 }
 
 config("g711_config") {
@@ -170,6 +208,8 @@ source_set("g711") {
     "../..:common_inherited_config",
     ":g711_config",
   ]
+
+  deps = [ ":audio_encoder_interface" ]
 }
 
 config("g722_config") {
@@ -196,6 +236,8 @@ source_set("g722") {
     "../..:common_inherited_config",
     ":g722_config",
   ]
+
+  deps = [ ":audio_encoder_interface" ]
 }
 
 config("ilbc_config") {
@@ -357,7 +399,10 @@ source_set("ilbc") {
     ":ilbc_config",
   ]
 
-  deps = [ "../../common_audio" ]
+  deps = [
+    "../../common_audio",
+    ":audio_encoder_interface",
+  ]
 }
 
 config("isac_config") {
@@ -443,6 +488,7 @@ source_set("isac") {
 
   deps = [
     ":audio_decoder_interface",
+    ":audio_encoder_interface",
     "../../common_audio",
   ]
 }
@@ -520,6 +566,7 @@ source_set("isacfix") {
   ]
 
   deps = [
+    ":audio_encoder_interface",
     "../../common_audio",
     "../../system_wrappers",
   ]
@@ -631,6 +678,7 @@ source_set("pcm16b") {
   ]
 
   deps = [
+    ":audio_encoder_interface",
     ":g711",
   ]
 
@@ -654,13 +702,16 @@ source_set("webrtc_opus") {
     "codecs/opus/opus_inst.h",
     "codecs/opus/opus_interface.c",
   ]
+
+  deps = [ ":audio_encoder_interface" ]
+
   if (build_with_mozilla) {
     include_dirs = [ getenv("DIST") + "/include/opus" ]
   } else {
     configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
-    deps = [ "//third_party/opus" ]
+    deps += [ "//third_party/opus" ]
   }
 }
 
