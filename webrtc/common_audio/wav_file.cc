@@ -24,18 +24,28 @@ namespace webrtc {
 static const WavFormat kWavFormat = kWavFormatPcm;
 static const int kBytesPerSample = 2;
 
+// Doesn't take ownership of the file handle and won't close it.
+class ReadableWavFile : public ReadableWav {
+ public:
+  explicit ReadableWavFile(FILE* file) : file_(file) {}
+  virtual size_t Read(void* buf, size_t num_bytes) {
+    return fread(buf, 1, num_bytes, file_);
+  }
+
+ private:
+  FILE* file_;
+};
+
 WavReader::WavReader(const std::string& filename)
     : file_handle_(fopen(filename.c_str(), "rb")) {
   CHECK(file_handle_);
-  uint8_t header[kWavHeaderSize];
-  const size_t read =
-      fread(header, sizeof(*header), kWavHeaderSize, file_handle_);
-  CHECK_EQ(kWavHeaderSize, read);
 
+  ReadableWavFile readable(file_handle_);
   WavFormat format;
   int bytes_per_sample;
-  CHECK(ReadWavHeader(header, &num_channels_, &sample_rate_, &format,
+  CHECK(ReadWavHeader(&readable, &num_channels_, &sample_rate_, &format,
                       &bytes_per_sample, &num_samples_));
+  num_samples_remaining_ = num_samples_;
   CHECK_EQ(kWavFormat, format);
   CHECK_EQ(kBytesPerSample, bytes_per_sample);
 }
@@ -48,10 +58,17 @@ size_t WavReader::ReadSamples(size_t num_samples, int16_t* samples) {
 #ifndef WEBRTC_ARCH_LITTLE_ENDIAN
 #error "Need to convert samples to big-endian when reading from WAV file"
 #endif
+  // TODO(ajm): Import Chromium's safe_conversions.h for this.
+  CHECK_LE(num_samples, std::numeric_limits<uint32_t>::max());
+  // There could be metadata after the audio; ensure we don't read it.
+  num_samples = std::min(static_cast<uint32_t>(num_samples),
+                         num_samples_remaining_);
   const size_t read =
       fread(samples, sizeof(*samples), num_samples, file_handle_);
   // If we didn't read what was requested, ensure we've reached the EOF.
   CHECK(read == num_samples || feof(file_handle_));
+  CHECK_LE(read, num_samples_remaining_);
+  num_samples_remaining_ -= read;
   return read;
 }
 
