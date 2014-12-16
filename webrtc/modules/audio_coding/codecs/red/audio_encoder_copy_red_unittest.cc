@@ -308,7 +308,9 @@ TEST_F(AudioEncoderCopyRedDeathTest, WrongFrameSize) {
   EXPECT_DEATH(Encode(), "");
 }
 
-TEST_F(AudioEncoderCopyRedDeathTest, NullSpeechEncoder) {
+// Test fails memcheck.
+// https://code.google.com/p/webrtc/issues/detail?id=4108
+TEST_F(AudioEncoderCopyRedDeathTest, DISABLED_NullSpeechEncoder) {
   AudioEncoderCopyRed* red;
   AudioEncoderCopyRed::Config config;
   config.speech_encoder = NULL;
