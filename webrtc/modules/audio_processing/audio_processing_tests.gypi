@@ -36,6 +36,16 @@
           'sources': [ 'test/process_test.cc', ],
         },
         {
+          'target_name': 'audioproc_f',
+          'type': 'executable',
+          'dependencies': [
+            'audio_processing',
+            'audioproc_debug_proto',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+          ],
+          'sources': [ 'test/audioproc_float.cc', ],
+        },
+        {
           'target_name': 'unpack_aecdump',
           'type': 'executable',
           'dependencies': [
