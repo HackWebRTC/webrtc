@@ -170,7 +170,7 @@
             'audio_processing/agc/circular_buffer_unittest.cc',
             'audio_processing/agc/gmm_unittest.cc',
             'audio_processing/agc/histogram_unittest.cc',
-            'audio_processing/agc/include/mock_agc.h',
+            'audio_processing/agc/mock_agc.h',
             'audio_processing/agc/pitch_based_vad_unittest.cc',
             'audio_processing/agc/pitch_internal_unittest.cc',
             'audio_processing/agc/pole_zero_filter_unittest.cc',
