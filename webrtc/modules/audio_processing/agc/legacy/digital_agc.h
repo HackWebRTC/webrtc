@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_MAIN_SOURCE_DIGITAL_AGC_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_MAIN_SOURCE_DIGITAL_AGC_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_LEGACY_DIGITAL_AGC_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_LEGACY_DIGITAL_AGC_H_
 
 #ifdef WEBRTC_AGC_DEBUG_DUMP
 #include <stdio.h>
@@ -75,4 +75,4 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
                                      uint8_t limiterEnable,
                                      int16_t analogTarget);
 
-#endif // WEBRTC_MODULES_AUDIO_PROCESSING_AGC_MAIN_SOURCE_ANALOG_AGC_H_
+#endif // WEBRTC_MODULES_AUDIO_PROCESSING_AGC_LEGACY_DIGITAL_AGC_H_

@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_MAIN_SOURCE_ANALOG_AGC_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_MAIN_SOURCE_ANALOG_AGC_H_
-
-#include "webrtc/modules/audio_processing/agc/digital_agc.h"
-#include "webrtc/modules/audio_processing/agc/include/gain_control.h"
-#include "webrtc/typedefs.h"
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_LEGACY_ANALOG_AGC_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_LEGACY_ANALOG_AGC_H_
 
 //#define MIC_LEVEL_FEEDBACK
 #ifdef WEBRTC_AGC_DEBUG_DUMP
 #include <stdio.h>
 #endif
+
+#include "webrtc/modules/audio_processing/agc/legacy/digital_agc.h"
+#include "webrtc/modules/audio_processing/agc/legacy/gain_control.h"
+#include "webrtc/typedefs.h"
 
 /* Analog Automatic Gain Control variables:
  * Constant declarations (inner limits inside which no changes are done)
@@ -130,4 +130,4 @@ typedef struct
     int16_t             lowLevelSignal;
 } Agc_t;
 
-#endif // WEBRTC_MODULES_AUDIO_PROCESSING_AGC_MAIN_SOURCE_ANALOG_AGC_H_
+#endif // WEBRTC_MODULES_AUDIO_PROCESSING_AGC_LEGACY_ANALOG_AGC_H_
