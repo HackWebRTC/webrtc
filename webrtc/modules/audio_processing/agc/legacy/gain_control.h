@@ -52,7 +52,8 @@ extern "C"
 /*
  * This function processes a 10 ms frame of far-end speech to determine
  * if there is active speech. The length of the input speech vector must be
- * given in samples (80 when FS=8000, and 160 when FS=16000 or FS=32000).
+ * given in samples (80 when FS=8000, and 160 when FS=16000, FS=32000 or
+ * FS=48000).
  *
  * Input:
  *      - agcInst           : AGC instance.
@@ -70,17 +71,17 @@ int WebRtcAgc_AddFarend(void* agcInst,
 /*
  * This function processes a 10 ms frame of microphone speech to determine
  * if there is active speech. The length of the input speech vector must be
- * given in samples (80 when FS=8000, and 160 when FS=16000 or FS=32000). For
- * very low input levels, the input signal is increased in level by multiplying
- * and overwriting the samples in inMic[].
+ * given in samples (80 when FS=8000, and 160 when FS=16000, FS=32000 or
+ * FS=48000). For very low input levels, the input signal is increased in level
+ * by multiplying and overwriting the samples in inMic[].
  *
  * This function should be called before any further processing of the
  * near-end microphone signal.
  *
  * Input:
  *      - agcInst           : AGC instance.
- *      - inMic             : Microphone input speech vector for L band
- *      - inMic_H           : Microphone input speech vector for H band
+ *      - inMic             : Microphone input speech vector for each band
+ *      - num_bands         : Number of bands in input vector
  *      - samples           : Number of samples in input vector
  *
  * Return value:
@@ -88,8 +89,8 @@ int WebRtcAgc_AddFarend(void* agcInst,
  *                          : -1 - Error
  */
 int WebRtcAgc_AddMic(void* agcInst,
-                     int16_t* inMic,
-                     int16_t* inMic_H,
+                     int16_t* const* inMic,
+                     int16_t num_bands,
                      int16_t samples);
 
 /*
@@ -97,12 +98,12 @@ int WebRtcAgc_AddMic(void* agcInst,
  * It is a digital gain applied to the input signal and is used in the
  * agcAdaptiveDigital mode where no microphone level is adjustable. The length
  * of the input speech vector must be given in samples (80 when FS=8000, and 160
- * when FS=16000 or FS=32000).
+ * when FS=16000, FS=32000 or FS=48000).
  *
  * Input:
  *      - agcInst           : AGC instance.
- *      - inMic             : Microphone input speech vector for L band
- *      - inMic_H           : Microphone input speech vector for H band
+ *      - inMic             : Microphone input speech vector for each band
+ *      - num_bands         : Number of bands in input vector
  *      - samples           : Number of samples in input vector
  *      - micLevelIn        : Input level of microphone (static)
  *
@@ -116,8 +117,8 @@ int WebRtcAgc_AddMic(void* agcInst,
  *                          : -1 - Error
  */
 int WebRtcAgc_VirtualMic(void* agcInst,
-                         int16_t* inMic,
-                         int16_t* inMic_H,
+                         int16_t* const* inMic,
+                         int16_t num_bands,
                          int16_t samples,
                          int32_t micLevelIn,
                          int32_t* micLevelOut);
@@ -126,16 +127,17 @@ int WebRtcAgc_VirtualMic(void* agcInst,
  * This function processes a 10 ms frame and adjusts (normalizes) the gain both
  * analog and digitally. The gain adjustments are done only during active
  * periods of speech. The length of the speech vectors must be given in samples
- * (80 when FS=8000, and 160 when FS=16000 or FS=32000). The echo parameter can
- * be used to ensure the AGC will not adjust upward in the presence of echo.
+ * (80 when FS=8000, and 160 when FS=16000, FS=32000 or FS=48000). The echo
+ * parameter can be used to ensure the AGC will not adjust upward in the
+ * presence of echo.
  *
  * This function should be called after processing the near-end microphone
  * signal, in any case after any echo cancellation.
  *
  * Input:
  *      - agcInst           : AGC instance
- *      - inNear            : Near-end input speech vector for L band
- *      - inNear_H          : Near-end input speech vector for H band
+ *      - inNear            : Near-end input speech vector for each band
+ *      - num_bands         : Number of bands in input/output vector
  *      - samples           : Number of samples in input/output vector
  *      - inMicLevel        : Current microphone volume level
  *      - echo              : Set to 0 if the signal passed to add_mic is
@@ -145,9 +147,8 @@ int WebRtcAgc_VirtualMic(void* agcInst,
  *
  * Output:
  *      - outMicLevel       : Adjusted microphone volume level
- *      - out               : Gain-adjusted near-end speech vector (L band)
+ *      - out               : Gain-adjusted near-end speech vector
  *                          : May be the same vector as the input.
- *      - out_H             : Gain-adjusted near-end speech vector (H band)
  *      - saturationWarning : A returned value of 1 indicates a saturation event
  *                            has occurred and the volume cannot be further
  *                            reduced. Otherwise will be set to 0.
@@ -157,11 +158,10 @@ int WebRtcAgc_VirtualMic(void* agcInst,
  *                          : -1 - Error
  */
 int WebRtcAgc_Process(void* agcInst,
-                      const int16_t* inNear,
-                      const int16_t* inNear_H,
+                      const int16_t* const* inNear,
+                      int16_t num_bands,
                       int16_t samples,
-                      int16_t* out,
-                      int16_t* out_H,
+                      int16_t* const* out,
                       int32_t inMicLevel,
                       int32_t* outMicLevel,
                       int16_t echo,

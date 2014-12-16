@@ -90,8 +90,8 @@ int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
       Handle* my_handle = static_cast<Handle*>(handle(i));
       err = WebRtcAgc_AddMic(
           my_handle,
-          audio->split_bands(i)[kBand0To8kHz],
-          audio->split_bands(i)[kBand8To16kHz],
+          audio->split_bands(i),
+          audio->num_bands(),
           static_cast<int16_t>(audio->samples_per_split_channel()));
 
       if (err != apm_->kNoError) {
@@ -106,8 +106,8 @@ int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
 
       err = WebRtcAgc_VirtualMic(
           my_handle,
-          audio->split_bands(i)[kBand0To8kHz],
-          audio->split_bands(i)[kBand8To16kHz],
+          audio->split_bands(i),
+          audio->num_bands(),
           static_cast<int16_t>(audio->samples_per_split_channel()),
           analog_capture_level_,
           &capture_level_out);
@@ -144,11 +144,10 @@ int GainControlImpl::ProcessCaptureAudio(AudioBuffer* audio) {
 
     int err = WebRtcAgc_Process(
         my_handle,
-        audio->split_bands_const(i)[kBand0To8kHz],
-        audio->split_bands_const(i)[kBand8To16kHz],
+        audio->split_bands_const(i),
+        audio->num_bands(),
         static_cast<int16_t>(audio->samples_per_split_channel()),
-        audio->split_bands(i)[kBand0To8kHz],
-        audio->split_bands(i)[kBand8To16kHz],
+        audio->split_bands(i),
         capture_levels_[i],
         &capture_level_out,
         apm_->echo_cancellation()->stream_has_echo(),

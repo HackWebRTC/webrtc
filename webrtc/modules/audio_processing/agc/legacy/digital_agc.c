@@ -293,9 +293,11 @@ int32_t WebRtcAgc_AddFarendToDigital(DigitalAgc_t *stt, const int16_t *in_far,
     return 0;
 }
 
-int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
-                                 const int16_t *in_near_H, int16_t *out,
-                                 int16_t *out_H, uint32_t FS,
+int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt,
+                                 const int16_t* const* in_near,
+                                 int16_t num_bands,
+                                 int16_t* const* out,
+                                 uint32_t FS,
                                  int16_t lowlevelSignal)
 {
     // array for gains (one value per ms, incl start & end)
@@ -303,7 +305,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
 
     int32_t out_tmp, tmp32;
     int32_t env[10];
-    int32_t nrg, max_nrg;
+    int32_t max_nrg;
     int32_t cur_level;
     int32_t gain32, delta;
     int16_t logratio;
@@ -311,7 +313,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
     int16_t zeros = 0, zeros_fast, frac = 0;
     int16_t decay;
     int16_t gate, gain_adj;
-    int16_t k, n;
+    int16_t k, n, i;
     int16_t L, L2; // samples/subframe
 
     // determine number of samples per ms
@@ -319,7 +321,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
     {
         L = 8;
         L2 = 3;
-    } else if (FS == 16000 || FS == 32000)
+    } else if (FS == 16000 || FS == 32000 || FS == 48000)
     {
         L = 16;
         L2 = 4;
@@ -328,20 +330,16 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
         return -1;
     }
 
-    if (in_near != out)
+    for (i = 0; i < num_bands; ++i)
     {
-        // Only needed if they don't already point to the same place.
-        memcpy(out, in_near, 10 * L * sizeof(int16_t));
-    }
-    if (FS == 32000)
-    {
-        if (in_near_H != out_H)
+        if (in_near[i] != out[i])
         {
-            memcpy(out_H, in_near_H, 10 * L * sizeof(int16_t));
+            // Only needed if they don't already point to the same place.
+            memcpy(out[i], in_near[i], 10 * L * sizeof(in_near[i][0]));
         }
     }
     // VAD for near end
-    logratio = WebRtcAgc_ProcessVad(&stt->vadNearend, out, L * 10);
+    logratio = WebRtcAgc_ProcessVad(&stt->vadNearend, out[0], L * 10);
 
     // Account for far end VAD
     if (stt->vadFarend.counter > 10)
@@ -407,7 +405,8 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
         max_nrg = 0;
         for (n = 0; n < L; n++)
         {
-            nrg = WEBRTC_SPL_MUL_16_16(out[k * L + n], out[k * L + n]);
+            int32_t nrg = WEBRTC_SPL_MUL_16_16(out[0][k * L + n],
+                                               out[0][k * L + n]);
             if (nrg > max_nrg)
             {
                 max_nrg = nrg;
@@ -568,35 +567,20 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
     // iterate over samples
     for (n = 0; n < L; n++)
     {
-        // For lower band
-        tmp32 = out[n] * ((gain32 + 127) >> 7);
-        out_tmp = tmp32 >> 16;
-        if (out_tmp > 4095)
+        for (i = 0; i < num_bands; ++i)
         {
-            out[n] = (int16_t)32767;
-        } else if (out_tmp < -4096)
-        {
-            out[n] = (int16_t)-32768;
-        } else
-        {
-            tmp32 = out[n] * (gain32 >> 4);
-            out[n] = (int16_t)(tmp32 >> 16);
-        }
-        // For higher band
-        if (FS == 32000)
-        {
-            tmp32 = out_H[n] * ((gain32 + 127) >> 7);
+            tmp32 = out[i][n] * ((gain32 + 127) >> 7);
             out_tmp = tmp32 >> 16;
             if (out_tmp > 4095)
             {
-                out_H[n] = (int16_t)32767;
+                out[i][n] = (int16_t)32767;
             } else if (out_tmp < -4096)
             {
-                out_H[n] = (int16_t)-32768;
+                out[i][n] = (int16_t)-32768;
             } else
             {
-                tmp32 = out_H[n] * (gain32 >> 4);
-                out_H[n] = (int16_t)(tmp32 >> 16);
+                tmp32 = out[i][n] * (gain32 >> 4);
+                out[i][n] = (int16_t)(tmp32 >> 16);
             }
         }
         //
@@ -611,14 +595,10 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
         // iterate over samples
         for (n = 0; n < L; n++)
         {
-            // For lower band
-            tmp32 = out[k * L + n] * (gain32 >> 4);
-            out[k * L + n] = (int16_t)(tmp32 >> 16);
-            // For higher band
-            if (FS == 32000)
+            for (i = 0; i < num_bands; ++i)
             {
-                tmp32 = out_H[k * L + n] * (gain32 >> 4);
-                out_H[k * L + n] = (int16_t)(tmp32 >> 16);
+                tmp32 = out[i][k * L + n] * (gain32 >> 4);
+                out[i][k * L + n] = (int16_t)(tmp32 >> 16);
             }
             gain32 += delta;
         }

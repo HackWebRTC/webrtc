@@ -112,7 +112,7 @@ static const int32_t kTargetLevelTable[64] = {134209536, 106606424, 84680493, 67
         6726, 5343, 4244, 3371, 2678, 2127, 1690, 1342, 1066, 847, 673, 534, 424, 337, 268,
         213, 169, 134, 107, 85, 67};
 
-int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
+int WebRtcAgc_AddMic(void *state, int16_t* const* in_mic, int16_t num_bands,
                      int16_t samples)
 {
     int32_t nrg, max_nrg, sample, tmp32;
@@ -132,17 +132,6 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
         if (samples != 160) {
             return -1;
         }
-    }
-
-    /* Check for valid pointers based on sampling rate */
-    if ((stt->fs == 32000) && (in_mic_H == NULL))
-    {
-        return -1;
-    }
-    /* Check for valid pointer for low band */
-    if (in_mic == NULL)
-    {
-        return -1;
     }
 
     /* apply slowly varying digital gain */
@@ -175,32 +164,19 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
 
         for (i = 0; i < samples; i++)
         {
-            // For lower band
-            sample = (in_mic[i] * gain) >> 12;
-            if (sample > 32767)
+            int j;
+            for (j = 0; j < num_bands; ++j)
             {
-                in_mic[i] = 32767;
-            } else if (sample < -32768)
-            {
-                in_mic[i] = -32768;
-            } else
-            {
-                in_mic[i] = (int16_t)sample;
-            }
-
-            // For higher band
-            if (stt->fs == 32000)
-            {
-                sample = (in_mic_H[i] * gain) >> 12;
+                sample = (in_mic[j][i] * gain) >> 12;
                 if (sample > 32767)
                 {
-                    in_mic_H[i] = 32767;
+                    in_mic[j][i] = 32767;
                 } else if (sample < -32768)
                 {
-                    in_mic_H[i] = -32768;
+                    in_mic[j][i] = -32768;
                 } else
                 {
-                    in_mic_H[i] = (int16_t)sample;
+                    in_mic[j][i] = (int16_t)sample;
                 }
             }
         }
@@ -224,7 +200,8 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
         max_nrg = 0;
         for (n = 0; n < L; n++)
         {
-            nrg = WEBRTC_SPL_MUL_16_16(in_mic[i * L + n], in_mic[i * L + n]);
+            nrg = WEBRTC_SPL_MUL_16_16(in_mic[0][i * L + n],
+                                       in_mic[0][i * L + n]);
             if (nrg > max_nrg)
             {
                 max_nrg = nrg;
@@ -246,10 +223,13 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
     {
         if (stt->fs == 16000)
         {
-            WebRtcSpl_DownsampleBy2(&in_mic[i * 32], 32, tmp_speech, stt->filterState);
+            WebRtcSpl_DownsampleBy2(&in_mic[0][i * 32],
+                                    32,
+                                    tmp_speech,
+                                    stt->filterState);
         } else
         {
-            memcpy(tmp_speech, &in_mic[i * 16], 16 * sizeof(short));
+            memcpy(tmp_speech, &in_mic[0][i * 16], 16 * sizeof(short));
         }
         /* Compute energy in blocks of 16 samples */
         ptr[i] = WebRtcSpl_DotProductWithScale(tmp_speech, tmp_speech, 16, 4);
@@ -265,7 +245,7 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
     }
 
     /* call VAD (use low band only) */
-    WebRtcAgc_ProcessVad(&stt->vadMic, in_mic, samples);
+    WebRtcAgc_ProcessVad(&stt->vadMic, in_mic[0], samples);
 
     return 0;
 }
@@ -286,7 +266,7 @@ int WebRtcAgc_AddFarend(void *state, const int16_t *in_far, int16_t samples)
         {
             return -1;
         }
-    } else if (stt->fs == 16000 || stt->fs == 32000)
+    } else if (stt->fs == 16000 || stt->fs == 32000 || stt->fs == 48000)
     {
         if (samples != 160)
         {
@@ -300,13 +280,13 @@ int WebRtcAgc_AddFarend(void *state, const int16_t *in_far, int16_t samples)
     return WebRtcAgc_AddFarendToDigital(&stt->digitalAgc, in_far, samples);
 }
 
-int WebRtcAgc_VirtualMic(void *agcInst, int16_t *in_near, int16_t *in_near_H,
-                         int16_t samples, int32_t micLevelIn,
+int WebRtcAgc_VirtualMic(void *agcInst, int16_t* const* in_near,
+                         int16_t num_bands, int16_t samples, int32_t micLevelIn,
                          int32_t *micLevelOut)
 {
     int32_t tmpFlt, micLevelTmp, gainIdx;
     uint16_t gain;
-    int16_t ii;
+    int16_t ii, j;
     Agc_t *stt;
 
     uint32_t nrg;
@@ -329,7 +309,7 @@ int WebRtcAgc_VirtualMic(void *agcInst, int16_t *in_near, int16_t *in_near_H,
         frameNrgLimit = frameNrgLimit << 1;
     }
 
-    frameNrg = WEBRTC_SPL_MUL_16_16(in_near[0], in_near[0]);
+    frameNrg = WEBRTC_SPL_MUL_16_16(in_near[0][0], in_near[0][0]);
     for (sampleCntr = 1; sampleCntr < samples; sampleCntr++)
     {
 
@@ -337,12 +317,14 @@ int WebRtcAgc_VirtualMic(void *agcInst, int16_t *in_near, int16_t *in_near_H,
         // the correct value of the energy is not important
         if (frameNrg < frameNrgLimit)
         {
-            nrg = WEBRTC_SPL_MUL_16_16(in_near[sampleCntr], in_near[sampleCntr]);
+            nrg = WEBRTC_SPL_MUL_16_16(in_near[0][sampleCntr],
+                                       in_near[0][sampleCntr]);
             frameNrg += nrg;
         }
 
         // Count the zero crossings
-        numZeroCrossing += ((in_near[sampleCntr] ^ in_near[sampleCntr - 1]) < 0);
+        numZeroCrossing +=
+                ((in_near[0][sampleCntr] ^ in_near[0][sampleCntr - 1]) < 0);
     }
 
     if ((frameNrg < 500) || (numZeroCrossing <= 5))
@@ -389,7 +371,7 @@ int WebRtcAgc_VirtualMic(void *agcInst, int16_t *in_near, int16_t *in_near_H,
     }
     for (ii = 0; ii < samples; ii++)
     {
-        tmpFlt = (in_near[ii] * gain) >> 10;
+        tmpFlt = (in_near[0][ii] * gain) >> 10;
         if (tmpFlt > 32767)
         {
             tmpFlt = 32767;
@@ -414,10 +396,10 @@ int WebRtcAgc_VirtualMic(void *agcInst, int16_t *in_near, int16_t *in_near_H,
                 gain = kSuppressionTableVirtualMic[127 - gainIdx];
             }
         }
-        in_near[ii] = (int16_t)tmpFlt;
-        if (stt->fs == 32000)
+        in_near[0][ii] = (int16_t)tmpFlt;
+        for (j = 1; j < num_bands; ++j)
         {
-            tmpFlt = (in_near_H[ii] * gain) >> 10;
+            tmpFlt = (in_near[j][ii] * gain) >> 10;
             if (tmpFlt > 32767)
             {
                 tmpFlt = 32767;
@@ -426,7 +408,7 @@ int WebRtcAgc_VirtualMic(void *agcInst, int16_t *in_near, int16_t *in_near_H,
             {
                 tmpFlt = -32768;
             }
-            in_near_H[ii] = (int16_t)tmpFlt;
+            in_near[j][ii] = (int16_t)tmpFlt;
         }
     }
     /* Set the level we (finally) used */
@@ -434,7 +416,7 @@ int WebRtcAgc_VirtualMic(void *agcInst, int16_t *in_near, int16_t *in_near_H,
 //    *micLevelOut = stt->micGainIdx;
     *micLevelOut = stt->micGainIdx >> stt->scale;
     /* Add to Mic as if it was the output from a true microphone */
-    if (WebRtcAgc_AddMic(agcInst, in_near, in_near_H, samples) != 0)
+    if (WebRtcAgc_AddMic(agcInst, in_near, num_bands, samples) != 0)
     {
         return -1;
     }
@@ -1158,9 +1140,9 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
     return 0;
 }
 
-int WebRtcAgc_Process(void *agcInst, const int16_t *in_near,
-                      const int16_t *in_near_H, int16_t samples,
-                      int16_t *out, int16_t *out_H, int32_t inMicLevel,
+int WebRtcAgc_Process(void *agcInst, const int16_t* const* in_near,
+                      int16_t num_bands, int16_t samples,
+                      int16_t* const* out, int32_t inMicLevel,
                       int32_t *outMicLevel, int16_t echo,
                       uint8_t *saturationWarning)
 {
@@ -1182,24 +1164,13 @@ int WebRtcAgc_Process(void *agcInst, const int16_t *in_near,
         {
             return -1;
         }
-    } else if (stt->fs == 16000 || stt->fs == 32000)
+    } else if (stt->fs == 16000 || stt->fs == 32000 || stt->fs == 48000)
     {
         if (samples != 160)
         {
             return -1;
         }
     } else
-    {
-        return -1;
-    }
-
-    /* Check for valid pointers based on sampling rate */
-    if (stt->fs == 32000 && in_near_H == NULL)
-    {
-        return -1;
-    }
-    /* Check for valid pointers for low band */
-    if (in_near == NULL)
     {
         return -1;
     }
@@ -1214,9 +1185,8 @@ int WebRtcAgc_Process(void *agcInst, const int16_t *in_near,
 
     if (WebRtcAgc_ProcessDigital(&stt->digitalAgc,
                                  in_near,
-                                 in_near_H,
+                                 num_bands,
                                  out,
-                                 out_H,
                                  stt->fs,
                                  stt->lowLevelSignal) == -1)
     {

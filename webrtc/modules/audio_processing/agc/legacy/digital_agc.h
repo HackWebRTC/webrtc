@@ -55,8 +55,10 @@ typedef struct
 int32_t WebRtcAgc_InitDigital(DigitalAgc_t *digitalAgcInst, int16_t agcMode);
 
 int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *digitalAgcInst,
-                                 const int16_t *inNear, const int16_t *inNear_H,
-                                 int16_t *out, int16_t *out_H, uint32_t FS,
+                                 const int16_t* const* inNear,
+                                 int16_t num_bands,
+                                 int16_t* const* out,
+                                 uint32_t FS,
                                  int16_t lowLevelSignal);
 
 int32_t WebRtcAgc_AddFarendToDigital(DigitalAgc_t *digitalAgcInst,
