@@ -427,13 +427,17 @@ int VideoEngineSampleCode(void* window1, void* window2)
 
     // Set number of temporal layers.
     std::cout << std::endl;
-    std::cout << "Choose number of temporal layers (1 to 4).";
-    std::cout << "Press enter for default: \n";
+    std::cout << "Choose number of temporal layers for VP8 (1 to 4). ";
+    std::cout << "Press enter for default (=1) for other codecs: \n";
     std::getline(std::cin, str);
     int numTemporalLayers = atoi(str.c_str());
-    if(numTemporalLayers != 0)
-    {
-        videoCodec.codecSpecific.VP8.numberOfTemporalLayers = numTemporalLayers;
+    if (numTemporalLayers != 0 &&
+        videoCodec.codecType == webrtc::kVideoCodecVP8) {
+      videoCodec.codecSpecific.VP8.numberOfTemporalLayers = numTemporalLayers;
+    } else if (videoCodec.codecType == webrtc::kVideoCodecVP9) {
+      // Temporal layers for vp9 not yet supported in webrtc.
+      numTemporalLayers = 1;
+      videoCodec.codecSpecific.VP9.numberOfTemporalLayers = 1;
     }
 
     // Set start bit rate
