@@ -1632,6 +1632,10 @@ int RTCPSender::PrepareRTCP(const FeedbackState& feedback_state,
 
   CriticalSectionScoped lock(_criticalSectionRTCPSender);
 
+  if (packet_type_counter_.first_packet_time_ms == -1) {
+    packet_type_counter_.first_packet_time_ms = _clock->TimeInMilliseconds();
+  }
+
   if(_TMMBR )  // Attach TMMBR to send and receive reports.
   {
       rtcpPacketTypeFlags |= kRtcpTmmbr;

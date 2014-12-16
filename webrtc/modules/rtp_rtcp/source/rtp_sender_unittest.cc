@@ -1162,6 +1162,7 @@ TEST_F(RtpSenderTest, BytesReportedCorrectly) {
   rtp_sender_->GetDataCounters(&rtp_stats, &rtx_stats);
 
   // Payload + 1-byte generic header.
+  EXPECT_GT(rtp_stats.first_packet_time_ms, -1);
   EXPECT_EQ(rtp_stats.bytes, sizeof(payload) + 1);
   EXPECT_EQ(rtp_stats.header_bytes, 12u);
   EXPECT_EQ(rtp_stats.padding_bytes, 0u);

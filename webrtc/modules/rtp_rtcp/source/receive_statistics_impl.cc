@@ -96,6 +96,7 @@ void StreamStatisticianImpl::UpdateCounters(const RTPHeader& header,
 
   if (receive_counters_.packets == 1) {
     received_seq_first_ = header.sequenceNumber;
+    receive_counters_.first_packet_time_ms = clock_->TimeInMilliseconds();
   }
 
   // Count only the new packets received. That is, if packets 1, 2, 3, 5, 4, 6

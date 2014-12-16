@@ -907,6 +907,9 @@ void RTPSender::UpdateRtpStats(const uint8_t* buffer,
 
   total_bitrate_sent_.Update(packet_length);
   ++counters->packets;
+  if (counters->packets == 1) {
+    counters->first_packet_time_ms = clock_->TimeInMilliseconds();
+  }
   if (IsFecPacket(buffer, header)) {
     ++counters->fec_packets;
   }

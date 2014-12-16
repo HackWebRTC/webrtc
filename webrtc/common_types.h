@@ -200,7 +200,8 @@ class RtcpStatisticsCallback {
 // Statistics for RTCP packet types.
 struct RtcpPacketTypeCounter {
   RtcpPacketTypeCounter()
-    : nack_packets(0),
+    : first_packet_time_ms(-1),
+      nack_packets(0),
       fir_packets(0),
       pli_packets(0),
       nack_requests(0),
@@ -212,6 +213,16 @@ struct RtcpPacketTypeCounter {
     pli_packets += other.pli_packets;
     nack_requests += other.nack_requests;
     unique_nack_requests += other.unique_nack_requests;
+    if (other.first_packet_time_ms != -1 &&
+       (other.first_packet_time_ms < first_packet_time_ms ||
+        first_packet_time_ms == -1)) {
+      // Use oldest time.
+      first_packet_time_ms = other.first_packet_time_ms;
+    }
+  }
+
+  int64_t TimeSinceFirstPacketInMs(int64_t now_ms) const {
+    return (first_packet_time_ms == -1) ? -1 : (now_ms - first_packet_time_ms);
   }
 
   int UniqueNackRequestsInPercent() const {
@@ -222,25 +233,27 @@ struct RtcpPacketTypeCounter {
         (unique_nack_requests * 100.0f / nack_requests) + 0.5f);
   }
 
-  uint32_t nack_packets;          // Number of RTCP NACK packets.
-  uint32_t fir_packets;           // Number of RTCP FIR packets.
-  uint32_t pli_packets;           // Number of RTCP PLI packets.
-  uint32_t nack_requests;         // Number of NACKed RTP packets.
+  int64_t first_packet_time_ms;  // Time when first packet is sent/received.
+  uint32_t nack_packets;   // Number of RTCP NACK packets.
+  uint32_t fir_packets;    // Number of RTCP FIR packets.
+  uint32_t pli_packets;    // Number of RTCP PLI packets.
+  uint32_t nack_requests;  // Number of NACKed RTP packets.
   uint32_t unique_nack_requests;  // Number of unique NACKed RTP packets.
 };
 
 // Data usage statistics for a (rtp) stream.
 struct StreamDataCounters {
   StreamDataCounters()
-   : bytes(0),
-     header_bytes(0),
-     padding_bytes(0),
-     packets(0),
-     retransmitted_bytes(0),
-     retransmitted_header_bytes(0),
-     retransmitted_padding_bytes(0),
-     retransmitted_packets(0),
-     fec_packets(0) {}
+    : first_packet_time_ms(-1),
+      bytes(0),
+      header_bytes(0),
+      padding_bytes(0),
+      packets(0),
+      retransmitted_bytes(0),
+      retransmitted_header_bytes(0),
+      retransmitted_padding_bytes(0),
+      retransmitted_packets(0),
+      fec_packets(0) {}
 
   void Add(const StreamDataCounters& other) {
     bytes += other.bytes;
@@ -252,6 +265,16 @@ struct StreamDataCounters {
     retransmitted_padding_bytes += other.retransmitted_padding_bytes;
     retransmitted_packets += other.retransmitted_packets;
     fec_packets += other.fec_packets;
+    if (other.first_packet_time_ms != -1 &&
+       (other.first_packet_time_ms < first_packet_time_ms ||
+        first_packet_time_ms == -1)) {
+      // Use oldest time.
+      first_packet_time_ms = other.first_packet_time_ms;
+    }
+  }
+
+  int64_t TimeSinceFirstPacketInMs(int64_t now_ms) const {
+    return (first_packet_time_ms == -1) ? -1 : (now_ms - first_packet_time_ms);
   }
 
   size_t TotalBytes() const {
@@ -268,6 +291,7 @@ struct StreamDataCounters {
   }
 
   // TODO(pbos): Rename bytes -> media_bytes.
+  int64_t first_packet_time_ms;  // Time when first packet is sent/received.
   size_t bytes;  // Payload bytes, excluding RTP headers and padding.
   size_t header_bytes;  // Number of bytes used by RTP headers.
   size_t padding_bytes;  // Number of padding bytes.
@@ -288,7 +312,7 @@ class StreamDataCountersCallback {
                                    uint32_t ssrc) = 0;
 };
 
-// Rate statistics for a stream
+// Rate statistics for a stream.
 struct BitrateStatistics {
   BitrateStatistics() : bitrate_bps(0), packet_rate(0), timestamp_ms(0) {}
 
@@ -307,7 +331,7 @@ class BitrateStatisticsObserver {
                       uint32_t ssrc) = 0;
 };
 
-// Callback, used to notify an observer whenever frame counts have been updated
+// Callback, used to notify an observer whenever frame counts have been updated.
 class FrameCountObserver {
  public:
   virtual ~FrameCountObserver() {}

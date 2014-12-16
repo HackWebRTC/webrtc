@@ -502,8 +502,6 @@ class ViEChannel
   int nack_history_size_sender_;
   int max_nack_reordering_threshold_;
   I420FrameCallback* pre_render_callback_;
-  const int64_t start_ms_;
-  int64_t start_send_ms_;
 
   std::map<uint32_t, RTCPReportBlock> prev_report_blocks_;
 };

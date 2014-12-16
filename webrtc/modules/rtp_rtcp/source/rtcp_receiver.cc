@@ -316,6 +316,10 @@ RTCPReceiver::IncomingRTCPPacket(RTCPPacketInformation& rtcpPacketInformation,
 
     _lastReceived = _clock->TimeInMilliseconds();
 
+    if (packet_type_counter_.first_packet_time_ms == -1) {
+      packet_type_counter_.first_packet_time_ms = _lastReceived;
+    }
+
     RTCPUtility::RTCPPacketTypes pktType = rtcpParser->Begin();
     while (pktType != RTCPUtility::kRtcpNotValidCode)
     {

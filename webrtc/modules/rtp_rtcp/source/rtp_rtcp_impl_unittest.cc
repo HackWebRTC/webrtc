@@ -325,16 +325,21 @@ TEST_F(RtpRtcpImplTest, RttForReceiverOnly) {
 }
 
 TEST_F(RtpRtcpImplTest, RtcpPacketTypeCounter_Nack) {
+  EXPECT_EQ(-1, receiver_.RtcpSent().first_packet_time_ms);
+  EXPECT_EQ(-1, sender_.RtcpReceived().first_packet_time_ms);
   EXPECT_EQ(0U, sender_.RtcpReceived().nack_packets);
   EXPECT_EQ(0U, receiver_.RtcpSent().nack_packets);
+
   // Receive module sends a NACK.
   const uint16_t kNackLength = 1;
   uint16_t nack_list[kNackLength] = {123};
   EXPECT_EQ(0, receiver_.impl_->SendNACK(nack_list, kNackLength));
   EXPECT_EQ(1U, receiver_.RtcpSent().nack_packets);
+  EXPECT_GT(receiver_.RtcpSent().first_packet_time_ms, -1);
 
   // Send module receives the NACK.
   EXPECT_EQ(1U, sender_.RtcpReceived().nack_packets);
+  EXPECT_GT(sender_.RtcpReceived().first_packet_time_ms, -1);
 }
 
 TEST_F(RtpRtcpImplTest, RtcpPacketTypeCounter_FirAndPli) {
@@ -353,6 +358,46 @@ TEST_F(RtpRtcpImplTest, RtcpPacketTypeCounter_FirAndPli) {
   // Send module receives the FIR and PLI.
   EXPECT_EQ(2U, sender_.RtcpReceived().fir_packets);
   EXPECT_EQ(1U, sender_.RtcpReceived().pli_packets);
+}
+
+TEST_F(RtpRtcpImplTest, AddStreamDataCounters) {
+  StreamDataCounters rtp;
+  const int64_t kStartTimeMs = 1;
+  rtp.first_packet_time_ms = kStartTimeMs;
+  rtp.packets = 1;
+  rtp.bytes = 1;
+  rtp.header_bytes = 2;
+  rtp.padding_bytes = 3;
+  EXPECT_EQ(rtp.TotalBytes(), rtp.bytes + rtp.header_bytes + rtp.padding_bytes);
+
+  StreamDataCounters rtp2;
+  rtp2.first_packet_time_ms = -1;
+  rtp2.packets = 10;
+  rtp2.bytes = 10;
+  rtp2.retransmitted_header_bytes = 4;
+  rtp2.retransmitted_bytes = 5;
+  rtp2.retransmitted_padding_bytes = 6;
+  rtp2.retransmitted_packets = 7;
+  rtp2.fec_packets = 8;
+
+  StreamDataCounters sum = rtp;
+  sum.Add(rtp2);
+  EXPECT_EQ(kStartTimeMs, sum.first_packet_time_ms);
+  EXPECT_EQ(11U, sum.packets);
+  EXPECT_EQ(11U, sum.bytes);
+  EXPECT_EQ(2U, sum.header_bytes);
+  EXPECT_EQ(3U, sum.padding_bytes);
+  EXPECT_EQ(4U, sum.retransmitted_header_bytes);
+  EXPECT_EQ(5U, sum.retransmitted_bytes);
+  EXPECT_EQ(6U, sum.retransmitted_padding_bytes);
+  EXPECT_EQ(7U, sum.retransmitted_packets);
+  EXPECT_EQ(8U, sum.fec_packets);
+  EXPECT_EQ(sum.TotalBytes(), rtp.TotalBytes() + rtp2.TotalBytes());
+
+  StreamDataCounters rtp3;
+  rtp3.first_packet_time_ms = kStartTimeMs + 10;
+  sum.Add(rtp3);
+  EXPECT_EQ(kStartTimeMs, sum.first_packet_time_ms);  // Holds oldest time.
 }
 
 TEST_F(RtpRtcpImplTest, SendsInitialNackList) {

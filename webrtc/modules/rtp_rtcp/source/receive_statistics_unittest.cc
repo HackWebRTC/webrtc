@@ -140,12 +140,18 @@ TEST_F(ReceiveStatisticsTest, GetReceiveStreamDataCounters) {
 
   StreamDataCounters counters;
   statistician->GetReceiveStreamDataCounters(&counters);
+  EXPECT_GT(counters.first_packet_time_ms, -1);
   EXPECT_EQ(1u, counters.packets);
 
-  // GetReceiveStreamDataCounters includes reset counter values.
   statistician->ResetStatistics();
+  // GetReceiveStreamDataCounters includes reset counter values.
+  statistician->GetReceiveStreamDataCounters(&counters);
+  EXPECT_GT(counters.first_packet_time_ms, -1);
+  EXPECT_EQ(1u, counters.packets);
+
   receive_statistics_->IncomingPacket(header1_, kPacketSize1, false);
   statistician->GetReceiveStreamDataCounters(&counters);
+  EXPECT_GT(counters.first_packet_time_ms, -1);
   EXPECT_EQ(2u, counters.packets);
 }
 
