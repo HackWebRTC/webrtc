@@ -506,10 +506,11 @@ void P2PTransportChannel::OnUnknownAddress(
     }
 
     std::string id = rtc::CreateRandomString(8);
-    new_remote_candidate =
-        Candidate(id, component(), ProtoToString(proto), address, 0,
-                  remote_username, remote_password, type, 0U,
-                  rtc::ToString<uint32>(rtc::ComputeCrc32(id)));
+    new_remote_candidate = Candidate(
+        id, component(), ProtoToString(proto), address,
+        0, remote_username, remote_password, type,
+        port->Network()->name(), 0U,
+        rtc::ToString<uint32>(rtc::ComputeCrc32(id)));
     new_remote_candidate.set_priority(
         new_remote_candidate.GetPriority(ICE_TYPE_PREFERENCE_SRFLX,
                                          port->Network()->preference(), 0));

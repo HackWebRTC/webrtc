@@ -93,18 +93,11 @@ class StatsCollector {
   void ClearUpdateStatsCacheForTest();
 
  private:
-  friend class StatsCollectorTest;
-
   bool CopySelectedReports(const std::string& selector, StatsReports* reports);
 
   // Helper method for AddCertificateReports.
   std::string AddOneCertificateReport(
       const rtc::SSLCertificate* cert, const std::string& issuer_id);
-
-  // Helper method for creating IceCandidate report. |is_local| indicates
-  // whether this candidate is local or remote.
-  std::string AddCandidateReport(const cricket::Candidate& candidate,
-                                 const std::string& report_type);
 
   // Adds a report for this certificate and every certificate in its chain, and
   // returns the leaf certificate's report's ID.

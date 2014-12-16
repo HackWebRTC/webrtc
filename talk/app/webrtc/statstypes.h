@@ -97,12 +97,6 @@ class StatsReport {
     kStatsValueNameCaptureJitterMs,
     kStatsValueNameCaptureQueueDelayMsPerS,
     kStatsValueNameCaptureStartNtpTimeMs,
-    kStatsValueNameCandidateIPAddress,
-    kStatsValueNameCandidateNetworkType,
-    kStatsValueNameCandidatePortNumber,
-    kStatsValueNameCandidatePriority,
-    kStatsValueNameCandidateTransportType,
-    kStatsValueNameCandidateType,
     kStatsValueNameChannelId,
     kStatsValueNameCodecName,
     kStatsValueNameComponent,
@@ -144,7 +138,6 @@ class StatsReport {
     kStatsValueNameJitterBufferMs,
     kStatsValueNameJitterReceived,
     kStatsValueNameLocalAddress,
-    kStatsValueNameLocalCandidateId,
     kStatsValueNameLocalCandidateType,
     kStatsValueNameLocalCertificateId,
     kStatsValueNameMaxDecodeMs,
@@ -158,7 +151,6 @@ class StatsReport {
     kStatsValueNameRecvPacketGroupPropagationDeltaDebug,
     kStatsValueNameRecvPacketGroupPropagationDeltaSumDebug,
     kStatsValueNameRemoteAddress,
-    kStatsValueNameRemoteCandidateId,
     kStatsValueNameRemoteCandidateType,
     kStatsValueNameRemoteCertificateId,
     kStatsValueNameRenderDelayMs,
@@ -245,12 +237,9 @@ class StatsReport {
   // track. The |id| field is the track id.
   static const char kStatsReportTypeTrack[];
 
-  // StatsReport of |type| = "localcandidate" or "remotecandidate" is attributes
-  // on a specific ICE Candidate. It links to its connection pair by candidate
-  // id. The string value is taken from
-  // http://w3c.github.io/webrtc-stats/#rtcstatstype-enum*.
-  static const char kStatsReportTypeIceLocalCandidate[];
-  static const char kStatsReportTypeIceRemoteCandidate[];
+  // StatsReport of |type| = "iceCandidate" is statistics on a specific
+  // ICE Candidate. It links to its transport.
+  static const char kStatsReportTypeIceCandidate[];
 
   // A StatsReport of |type| = "googCertificate" contains an SSL certificate
   // transmitted by one of the endpoints of this connection.  The |id| is

@@ -34,9 +34,7 @@ const char StatsReport::kStatsReportTypeBwe[] = "VideoBwe";
 const char StatsReport::kStatsReportTypeRemoteSsrc[] = "remoteSsrc";
 const char StatsReport::kStatsReportTypeSsrc[] = "ssrc";
 const char StatsReport::kStatsReportTypeTrack[] = "googTrack";
-const char StatsReport::kStatsReportTypeIceLocalCandidate[] = "localcandidate";
-const char StatsReport::kStatsReportTypeIceRemoteCandidate[] =
-    "remotecandidate";
+const char StatsReport::kStatsReportTypeIceCandidate[] = "iceCandidate";
 const char StatsReport::kStatsReportTypeTransport[] = "googTransport";
 const char StatsReport::kStatsReportTypeComponent[] = "googComponent";
 const char StatsReport::kStatsReportTypeCandidatePair[] = "googCandidatePair";
@@ -137,22 +135,6 @@ const char* StatsReport::Value::display_name() const {
       return "googCaptureJitterMs";
     case kStatsValueNameCaptureQueueDelayMsPerS:
       return "googCaptureQueueDelayMsPerS";
-
-    // Candidate related attributes. Values are taken from
-    // http://w3c.github.io/webrtc-stats/#rtcstatstype-enum*.
-    case kStatsValueNameCandidateIPAddress:
-      return "ipAddress";
-    case kStatsValueNameCandidateNetworkType:
-      return "networkType";
-    case kStatsValueNameCandidatePortNumber:
-      return "portNumber";
-    case kStatsValueNameCandidatePriority:
-      return "priority";
-    case kStatsValueNameCandidateTransportType:
-      return "transport";
-    case kStatsValueNameCandidateType:
-      return "candidateType";
-
     case kStatsValueNameChannelId:
       return "googChannelId";
     case kStatsValueNameCodecName:
@@ -245,8 +227,6 @@ const char* StatsReport::Value::display_name() const {
       return "googJitterReceived";
     case kStatsValueNameLocalAddress:
       return "googLocalAddress";
-    case kStatsValueNameLocalCandidateId:
-      return "localCandidateId";
     case kStatsValueNameLocalCandidateType:
       return "googLocalCandidateType";
     case kStatsValueNameLocalCertificateId:
@@ -273,8 +253,6 @@ const char* StatsReport::Value::display_name() const {
       return "googReceivedPacketGroupPropagationDeltaSumDebug";
     case kStatsValueNameRemoteAddress:
       return "googRemoteAddress";
-    case kStatsValueNameRemoteCandidateId:
-      return "remoteCandidateId";
     case kStatsValueNameRemoteCandidateType:
       return "googRemoteCandidateType";
     case kStatsValueNameRemoteCertificateId:
