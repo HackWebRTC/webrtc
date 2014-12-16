@@ -42,6 +42,15 @@
 
 namespace webrtc {
 
+// Conversion function to convert candidate type string to the corresponding one
+// from  enum RTCStatsIceCandidateType.
+const char* IceCandidateTypeToStatsType(const std::string& candidate_type);
+
+// Conversion function to convert adapter type to report string which are more
+// fitting to the general style of http://w3c.github.io/webrtc-stats. This is
+// only used by stats collector.
+const char* AdapterTypeToStatsType(rtc::AdapterType type);
+
 class StatsCollector {
  public:
   enum TrackDirection {
@@ -93,11 +102,18 @@ class StatsCollector {
   void ClearUpdateStatsCacheForTest();
 
  private:
+  friend class StatsCollectorTest;
+
   bool CopySelectedReports(const std::string& selector, StatsReports* reports);
 
   // Helper method for AddCertificateReports.
   std::string AddOneCertificateReport(
       const rtc::SSLCertificate* cert, const std::string& issuer_id);
+
+  // Helper method for creating IceCandidate report. |is_local| indicates
+  // whether this candidate is local or remote.
+  std::string AddCandidateReport(const cricket::Candidate& candidate,
+                                 const std::string& report_type);
 
   // Adds a report for this certificate and every certificate in its chain, and
   // returns the leaf certificate's report's ID.

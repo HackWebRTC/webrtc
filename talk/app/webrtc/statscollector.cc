@@ -38,6 +38,22 @@
 namespace webrtc {
 namespace {
 
+// The following is the enum RTCStatsIceCandidateType from
+// http://w3c.github.io/webrtc-stats/#rtcstatsicecandidatetype-enum such that
+// our stats report for ice candidate type could conform to that.
+const char STATSREPORT_LOCAL_PORT_TYPE[] = "host";
+const char STATSREPORT_STUN_PORT_TYPE[] = "serverreflexive";
+const char STATSREPORT_PRFLX_PORT_TYPE[] = "peerreflexive";
+const char STATSREPORT_RELAY_PORT_TYPE[] = "relayed";
+
+// Strings used by the stats collector to report adapter types. This fits the
+// general stype of http://w3c.github.io/webrtc-stats than what
+// AdapterTypeToString does.
+const char* STATSREPORT_ADAPTER_TYPE_ETHERNET = "lan";
+const char* STATSREPORT_ADAPTER_TYPE_WIFI = "wlan";
+const char* STATSREPORT_ADAPTER_TYPE_WWAN = "wwan";
+const char* STATSREPORT_ADAPTER_TYPE_VPN = "vpn";
+
 double GetTimeNow() {
   return rtc::Timing::WallTimeNow() * rtc::kNumMillisecsPerSec;
 }
@@ -351,6 +367,41 @@ void ExtractStatsFromList(const std::vector<T>& data,
 
 }  // namespace
 
+const char* IceCandidateTypeToStatsType(const std::string& candidate_type) {
+  if (candidate_type == cricket::LOCAL_PORT_TYPE) {
+    return STATSREPORT_LOCAL_PORT_TYPE;
+  }
+  if (candidate_type == cricket::STUN_PORT_TYPE) {
+    return STATSREPORT_STUN_PORT_TYPE;
+  }
+  if (candidate_type == cricket::PRFLX_PORT_TYPE) {
+    return STATSREPORT_PRFLX_PORT_TYPE;
+  }
+  if (candidate_type == cricket::RELAY_PORT_TYPE) {
+    return STATSREPORT_RELAY_PORT_TYPE;
+  }
+  ASSERT(false);
+  return "unknown";
+}
+
+const char* AdapterTypeToStatsType(rtc::AdapterType type) {
+  switch (type) {
+    case rtc::ADAPTER_TYPE_UNKNOWN:
+      return "unknown";
+    case rtc::ADAPTER_TYPE_ETHERNET:
+      return STATSREPORT_ADAPTER_TYPE_ETHERNET;
+    case rtc::ADAPTER_TYPE_WIFI:
+      return STATSREPORT_ADAPTER_TYPE_WIFI;
+    case rtc::ADAPTER_TYPE_CELLULAR:
+      return STATSREPORT_ADAPTER_TYPE_WWAN;
+    case rtc::ADAPTER_TYPE_VPN:
+      return STATSREPORT_ADAPTER_TYPE_VPN;
+    default:
+      ASSERT(false);
+      return "";
+  }
+}
+
 StatsCollector::StatsCollector(WebRtcSession* session)
     : session_(session), stats_gathering_started_(0) {
   ASSERT(session_);
@@ -619,6 +670,37 @@ std::string StatsCollector::AddCertificateReports(
   return AddOneCertificateReport(cert, issuer_id);
 }
 
+std::string StatsCollector::AddCandidateReport(
+    const cricket::Candidate& candidate,
+    const std::string& report_type) {
+  std::ostringstream ost;
+  ost << "Cand-" << candidate.id();
+  StatsReport* report = reports_.Find(ost.str());
+  if (!report) {
+    report = reports_.InsertNew(ost.str());
+    DCHECK(StatsReport::kStatsReportTypeIceLocalCandidate == report_type ||
+           StatsReport::kStatsReportTypeIceRemoteCandidate == report_type);
+    report->type = report_type;
+    if (report_type == StatsReport::kStatsReportTypeIceLocalCandidate) {
+      report->AddValue(StatsReport::kStatsValueNameCandidateNetworkType,
+                       AdapterTypeToStatsType(candidate.network_type()));
+    }
+    report->timestamp = stats_gathering_started_;
+    report->AddValue(StatsReport::kStatsValueNameCandidateIPAddress,
+                     candidate.address().ipaddr().ToString());
+    report->AddValue(StatsReport::kStatsValueNameCandidatePortNumber,
+                     candidate.address().PortAsString());
+    report->AddValue(StatsReport::kStatsValueNameCandidatePriority,
+                     candidate.priority());
+    report->AddValue(StatsReport::kStatsValueNameCandidateType,
+                     IceCandidateTypeToStatsType(candidate.type()));
+    report->AddValue(StatsReport::kStatsValueNameCandidateTransportType,
+                     candidate.protocol());
+  }
+
+  return ost.str();
+}
+
 void StatsCollector::ExtractSessionInfo() {
   ASSERT(session_->signaling_thread()->IsCurrent());
   // Extract information from the base session.
@@ -711,6 +793,15 @@ void StatsCollector::ExtractSessionInfo() {
                              info.readable);
           report->AddBoolean(StatsReport::kStatsValueNameActiveConnection,
                              info.best_connection);
+          report->AddValue(StatsReport::kStatsValueNameLocalCandidateId,
+                           AddCandidateReport(
+                               info.local_candidate,
+                               StatsReport::kStatsReportTypeIceLocalCandidate));
+          report->AddValue(
+              StatsReport::kStatsValueNameRemoteCandidateId,
+              AddCandidateReport(
+                  info.remote_candidate,
+                  StatsReport::kStatsReportTypeIceRemoteCandidate));
           report->AddValue(StatsReport::kStatsValueNameLocalAddress,
                            info.local_candidate.address().ToString());
           report->AddValue(StatsReport::kStatsValueNameRemoteAddress,

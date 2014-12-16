@@ -270,6 +270,7 @@ void Port::AddAddress(const rtc::SocketAddress& address,
   c.set_username(username_fragment());
   c.set_password(password_);
   c.set_network_name(network_->name());
+  c.set_network_type(network_->type());
   c.set_generation(generation_);
   c.set_related_address(related_address);
   c.set_foundation(ComputeFoundation(type, protocol, base_address));
@@ -1430,6 +1431,7 @@ void Connection::MaybeAddPrflxCandidate(ConnectionRequest* request,
   new_local_candidate.set_username(local_candidate().username());
   new_local_candidate.set_password(local_candidate().password());
   new_local_candidate.set_network_name(local_candidate().network_name());
+  new_local_candidate.set_network_type(local_candidate().network_type());
   new_local_candidate.set_related_address(local_candidate().address());
   new_local_candidate.set_foundation(
       ComputeFoundation(PRFLX_PORT_TYPE, local_candidate().protocol(),
