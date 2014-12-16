@@ -68,7 +68,7 @@ size_t WavReader::ReadSamples(size_t num_samples, int16_t* samples) {
   // If we didn't read what was requested, ensure we've reached the EOF.
   CHECK(read == num_samples || feof(file_handle_));
   CHECK_LE(read, num_samples_remaining_);
-  num_samples_remaining_ -= read;
+  num_samples_remaining_ -= static_cast<uint32_t>(read);
   return read;
 }
 
