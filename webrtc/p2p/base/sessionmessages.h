@@ -15,9 +15,11 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/parsing.h"
 #include "webrtc/p2p/base/sessiondescription.h"  // Needed to delete contents.
+#include "webrtc/p2p/base/transport.h"
 #include "webrtc/p2p/base/transportinfo.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/base/basictypes.h"
@@ -123,17 +125,6 @@ struct SessionTerminate {
 
 struct SessionRedirect {
   std::string target;
-};
-
-// Used during parsing and writing to map component to channel name
-// and back.  This is primarily for converting old G-ICE candidate
-// signalling to new ICE candidate classes.
-class CandidateTranslator {
- public:
-  virtual bool GetChannelNameFromComponent(
-      int component, std::string* channel_name) const = 0;
-  virtual bool GetComponentFromChannelName(
-      const std::string& channel_name, int* component) const = 0;
 };
 
 // Content name => translator

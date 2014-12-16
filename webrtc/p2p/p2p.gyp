@@ -108,6 +108,8 @@
         'client/sessionsendtask.h',
         'client/socketmonitor.cc',
         'client/socketmonitor.h',
+        '<(webrtc_root)/libjingle/session/session.cc',
+        '<(webrtc_root)/libjingle/session/session.h',
       ],
       'direct_dependent_settings': {
         'cflags_cc!': [
