@@ -29,10 +29,10 @@
 #define TALK_SESSION_TUNNEL_PSEUDOTCPCHANNEL_H_
 
 #include "webrtc/p2p/base/pseudotcp.h"
+#include "webrtc/p2p/base/session.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/stream.h"
-#include "webrtc/libjingle/session/session.h"
 
 namespace rtc {
 class Thread;
