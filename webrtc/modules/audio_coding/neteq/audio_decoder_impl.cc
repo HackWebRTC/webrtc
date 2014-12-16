@@ -23,7 +23,7 @@
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
 #endif
 #ifdef WEBRTC_CODEC_ISACFX
-#include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/interface/audio_encoder_isacfix.h"
 #endif
 #ifdef WEBRTC_CODEC_ISAC
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
@@ -124,48 +124,6 @@ int AudioDecoderIlbc::DecodePlc(int num_frames, int16_t* decoded) {
 
 int AudioDecoderIlbc::Init() {
   return WebRtcIlbcfix_Decoderinit30Ms(dec_state_);
-}
-#endif
-
-// iSAC fix
-#ifdef WEBRTC_CODEC_ISACFX
-AudioDecoderIsacFix::AudioDecoderIsacFix() {
-  WebRtcIsacfix_Create(&isac_state_);
-}
-
-AudioDecoderIsacFix::~AudioDecoderIsacFix() {
-  WebRtcIsacfix_Free(isac_state_);
-}
-
-int AudioDecoderIsacFix::Decode(const uint8_t* encoded, size_t encoded_len,
-                                int16_t* decoded, SpeechType* speech_type) {
-  int16_t temp_type = 1;  // Default is speech.
-  int16_t ret = WebRtcIsacfix_Decode(isac_state_,
-                                     encoded,
-                                     static_cast<int16_t>(encoded_len), decoded,
-                                     &temp_type);
-  *speech_type = ConvertSpeechType(temp_type);
-  return ret;
-}
-
-int AudioDecoderIsacFix::Init() {
-  return WebRtcIsacfix_DecoderInit(isac_state_);
-}
-
-int AudioDecoderIsacFix::IncomingPacket(const uint8_t* payload,
-                                        size_t payload_len,
-                                        uint16_t rtp_sequence_number,
-                                        uint32_t rtp_timestamp,
-                                        uint32_t arrival_timestamp) {
-  return WebRtcIsacfix_UpdateBwEstimate(
-      isac_state_,
-      payload,
-      static_cast<int32_t>(payload_len),
-      rtp_sequence_number, rtp_timestamp, arrival_timestamp);
-}
-
-int AudioDecoderIsacFix::ErrorCode() {
-  return WebRtcIsacfix_GetErrorCode(isac_state_);
 }
 #endif
 
@@ -485,8 +443,10 @@ AudioDecoder* CreateAudioDecoder(NetEqDecoder codec_type) {
       return new AudioDecoderIlbc;
 #endif
 #if defined(WEBRTC_CODEC_ISACFX)
-    case kDecoderISAC:
-      return new AudioDecoderIsacFix;
+    case kDecoderISAC: {
+      AudioEncoderDecoderIsacFix::Config config;
+      return new AudioEncoderDecoderIsacFix(config);
+    }
 #elif defined(WEBRTC_CODEC_ISAC)
     case kDecoderISAC: {
       AudioEncoderDecoderIsac::Config config;

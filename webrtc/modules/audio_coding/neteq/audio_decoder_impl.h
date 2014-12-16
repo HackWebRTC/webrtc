@@ -27,12 +27,6 @@
 #ifdef WEBRTC_CODEC_ILBC
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
 #endif
-#ifdef WEBRTC_CODEC_ISACFX
-#include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
-#endif
-#ifdef WEBRTC_CODEC_ISAC
-#include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
-#endif
 #ifdef WEBRTC_CODEC_OPUS
 #include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
 #endif
@@ -127,27 +121,6 @@ class AudioDecoderIlbc : public AudioDecoder {
  private:
   iLBC_decinst_t* dec_state_;
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderIlbc);
-};
-#endif
-
-#ifdef WEBRTC_CODEC_ISACFX
-class AudioDecoderIsacFix : public AudioDecoder {
- public:
-  AudioDecoderIsacFix();
-  virtual ~AudioDecoderIsacFix();
-  virtual int Decode(const uint8_t* encoded, size_t encoded_len,
-                     int16_t* decoded, SpeechType* speech_type);
-  virtual int Init();
-  virtual int IncomingPacket(const uint8_t* payload,
-                             size_t payload_len,
-                             uint16_t rtp_sequence_number,
-                             uint32_t rtp_timestamp,
-                             uint32_t arrival_timestamp);
-  virtual int ErrorCode();
-
- private:
-  ISACFIX_MainStruct* isac_state_;
-  DISALLOW_COPY_AND_ASSIGN(AudioDecoderIsacFix);
 };
 #endif
 

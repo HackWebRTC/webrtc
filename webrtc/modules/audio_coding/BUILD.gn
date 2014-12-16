@@ -369,6 +369,8 @@ config("isac_config") {
 
 source_set("isac") {
   sources = [
+    "codecs/isac/audio_encoder_isac_t.h",
+    "codecs/isac/audio_encoder_isac_t_impl.h",
     "codecs/isac/main/interface/audio_encoder_isac.h",
     "codecs/isac/main/interface/isac.h",
     "codecs/isac/main/source/arith_routines.c",
@@ -454,11 +456,15 @@ config("isac_fix_config") {
 
 source_set("isacfix") {
   sources = [
+    "codecs/isac/audio_encoder_isac_t.h",
+    "codecs/isac/audio_encoder_isac_t_impl.h",
+    "codecs/isac/fix/interface/audio_encoder_isacfix.h",
     "codecs/isac/fix/interface/isacfix.h",
     "codecs/isac/fix/source/arith_routines.c",
     "codecs/isac/fix/source/arith_routines_hist.c",
     "codecs/isac/fix/source/arith_routines_logist.c",
     "codecs/isac/fix/source/arith_routins.h",
+    "codecs/isac/fix/source/audio_encoder_isacfix.cc",
     "codecs/isac/fix/source/bandwidth_estimator.c",
     "codecs/isac/fix/source/bandwidth_estimator.h",
     "codecs/isac/fix/source/codec.h",
@@ -495,6 +501,12 @@ source_set("isacfix") {
     "codecs/isac/fix/source/transform.c",
     "codecs/isac/fix/source/transform_tables.c",
   ]
+
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
 
   if (!is_win) {
     defines = [ "WEBRTC_LINUX" ]

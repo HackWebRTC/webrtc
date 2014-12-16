@@ -20,7 +20,7 @@
 #include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/g722/include/audio_encoder_g722.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/audio_encoder_ilbc.h"
-#include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/interface/audio_encoder_isacfix.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
 #include "webrtc/modules/audio_coding/codecs/opus/interface/audio_encoder_opus.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_encoder_pcm16b.h"
@@ -388,38 +388,20 @@ class AudioDecoderIsacFixTest : public AudioDecoderTest {
  protected:
   AudioDecoderIsacFixTest() : AudioDecoderTest() {
     codec_input_rate_hz_ = 16000;
-    input_size_ = 160;
     frame_size_ = 480;
     data_length_ = 10 * frame_size_;
-    decoder_ = new AudioDecoderIsacFix;
-    assert(decoder_);
-    WebRtcIsacfix_Create(&encoder_);
-  }
+    AudioEncoderDecoderIsacFix::Config config;
+    config.payload_type = payload_type_;
+    config.sample_rate_hz = codec_input_rate_hz_;
+    config.frame_size_ms =
+        1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
 
-  ~AudioDecoderIsacFixTest() {
-    WebRtcIsacfix_Free(encoder_);
+    // We need to create separate AudioEncoderDecoderIsacFix objects for
+    // encoding and decoding, because the test class destructor destroys them
+    // both.
+    audio_encoder_.reset(new AudioEncoderDecoderIsacFix(config));
+    decoder_ = new AudioEncoderDecoderIsacFix(config);
   }
-
-  virtual void InitEncoder() {
-    ASSERT_EQ(0, WebRtcIsacfix_EncoderInit(encoder_, 1));  // Fixed mode.
-    ASSERT_EQ(0,
-              WebRtcIsacfix_Control(encoder_, 32000, 30));  // 32 kbps, 30 ms.
-  }
-
-  virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
-                          uint8_t* output) {
-    // Insert 3 * 10 ms. Expect non-zero output on third call.
-    EXPECT_EQ(0, WebRtcIsacfix_Encode(encoder_, input, output));
-    input += input_size_;
-    EXPECT_EQ(0, WebRtcIsacfix_Encode(encoder_, input, output));
-    input += input_size_;
-    int enc_len_bytes = WebRtcIsacfix_Encode(encoder_, input, output);
-    EXPECT_GT(enc_len_bytes, 0);
-    return enc_len_bytes;
-  }
-
-  ISACFIX_MainStruct* encoder_;
-  int input_size_;
 };
 
 class AudioDecoderG722Test : public AudioDecoderTest {

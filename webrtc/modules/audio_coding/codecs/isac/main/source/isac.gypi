@@ -26,6 +26,8 @@
         ],
       },
       'sources': [
+        '../../audio_encoder_isac_t.h',
+        '../../audio_encoder_isac_t_impl.h',
         '../interface/audio_encoder_isac.h',
         '../interface/isac.h',
         'arith_routines.c',
