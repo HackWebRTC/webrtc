@@ -31,7 +31,6 @@
 #include "talk/media/base/rtputils.h"
 #include "webrtc/p2p/base/transportchannel.h"
 #include "talk/session/media/channelmanager.h"
-#include "talk/session/media/mediamessages.h"
 #include "talk/session/media/typingmonitor.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/buffer.h"

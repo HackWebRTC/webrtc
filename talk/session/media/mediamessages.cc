@@ -42,12 +42,6 @@ namespace cricket {
 
 namespace {
 
-// NOTE: There is no check here for duplicate streams, so check before
-// adding.
-void AddStream(std::vector<StreamParams>* streams, const StreamParams& stream) {
-  streams->push_back(stream);
-}
-
 bool ParseSsrc(const std::string& string, uint32* ssrc) {
   return rtc::FromString(string, ssrc);
 }
@@ -89,54 +83,6 @@ buzz::XmlElement* CreateStaticVideoViewElem(const std::string& content_name,
 }
 
 }  //  namespace
-
-bool MediaStreams::GetAudioStream(
-    const StreamSelector& selector, StreamParams* stream) {
-  return GetStream(audio_, selector, stream);
-}
-
-bool MediaStreams::GetVideoStream(
-    const StreamSelector& selector, StreamParams* stream) {
-  return GetStream(video_, selector, stream);
-}
-
-bool MediaStreams::GetDataStream(
-    const StreamSelector& selector, StreamParams* stream) {
-  return GetStream(data_, selector, stream);
-}
-
-void MediaStreams::CopyFrom(const MediaStreams& streams) {
-  audio_ = streams.audio_;
-  video_ = streams.video_;
-  data_ = streams.data_;
-}
-
-void MediaStreams::AddAudioStream(const StreamParams& stream) {
-  AddStream(&audio_, stream);
-}
-
-void MediaStreams::AddVideoStream(const StreamParams& stream) {
-  AddStream(&video_, stream);
-}
-
-void MediaStreams::AddDataStream(const StreamParams& stream) {
-  AddStream(&data_, stream);
-}
-
-bool MediaStreams::RemoveAudioStream(
-    const StreamSelector& selector) {
-  return RemoveStream(&audio_, selector);
-}
-
-bool MediaStreams::RemoveVideoStream(
-    const StreamSelector& selector) {
-  return RemoveStream(&video_, selector);
-}
-
-bool MediaStreams::RemoveDataStream(
-    const StreamSelector& selector) {
-  return RemoveStream(&data_, selector);
-}
 
 bool IsJingleViewRequest(const buzz::XmlElement* action_elem) {
   return action_elem->FirstNamed(QN_JINGLE_DRAFT_VIEW) != NULL;

@@ -30,11 +30,70 @@
 #include <list>
 #include <sstream>
 
+namespace {
+
+// NOTE: There is no check here for duplicate streams, so check before
+// adding.
+void AddStream(std::vector<cricket::StreamParams>* streams,
+               const cricket::StreamParams& stream) {
+  streams->push_back(stream);
+}
+
+}
+
 namespace cricket {
 
 const char kFecSsrcGroupSemantics[] = "FEC";
 const char kFidSsrcGroupSemantics[] = "FID";
 const char kSimSsrcGroupSemantics[] = "SIM";
+
+bool MediaStreams::GetAudioStream(
+    const StreamSelector& selector, StreamParams* stream) {
+  return GetStream(audio_, selector, stream);
+}
+
+bool MediaStreams::GetVideoStream(
+    const StreamSelector& selector, StreamParams* stream) {
+  return GetStream(video_, selector, stream);
+}
+
+bool MediaStreams::GetDataStream(
+    const StreamSelector& selector, StreamParams* stream) {
+  return GetStream(data_, selector, stream);
+}
+
+void MediaStreams::CopyFrom(const MediaStreams& streams) {
+  audio_ = streams.audio_;
+  video_ = streams.video_;
+  data_ = streams.data_;
+}
+
+void MediaStreams::AddAudioStream(const StreamParams& stream) {
+  AddStream(&audio_, stream);
+}
+
+void MediaStreams::AddVideoStream(const StreamParams& stream) {
+  AddStream(&video_, stream);
+}
+
+void MediaStreams::AddDataStream(const StreamParams& stream) {
+  AddStream(&data_, stream);
+}
+
+bool MediaStreams::RemoveAudioStream(
+    const StreamSelector& selector) {
+  return RemoveStream(&audio_, selector);
+}
+
+bool MediaStreams::RemoveVideoStream(
+    const StreamSelector& selector) {
+  return RemoveStream(&video_, selector);
+}
+
+bool MediaStreams::RemoveDataStream(
+    const StreamSelector& selector) {
+  return RemoveStream(&data_, selector);
+}
 
 static std::string SsrcsToString(const std::vector<uint32>& ssrcs) {
   std::ostringstream ost;
