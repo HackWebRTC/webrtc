@@ -730,7 +730,12 @@ bool BaseSession::MaybeEnableMuxingSupport() {
     const std::string* content_name = local_bundle_group->FirstContentName();
     const ContentInfo* content =
         local_description_->GetContentByName(*content_name);
-    ASSERT(content != NULL);
+    if (!content) {
+      LOG(LS_WARNING) << "Content \"" << *content_name
+                      << "\" referenced in BUNDLE group is not present";
+      return false;
+    }
+
     if (!SetSelectedProxy(content->name, local_bundle_group)) {
       LOG(LS_WARNING) << "Failed to set up BUNDLE";
       return false;
