@@ -33,6 +33,22 @@ const int kFlagsTL1 = VP8_EFLAG_NO_REF_ARF | VP8_EFLAG_NO_UPD_ARF |
 const int kFlagsTL1Sync = VP8_EFLAG_NO_REF_ARF | VP8_EFLAG_NO_REF_GF |
     VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_UPD_LAST;
 
+class ScreenshareLayersFT : public ScreenshareLayers {
+ public:
+  ScreenshareLayersFT(int num_temporal_layers,
+                      uint8_t initial_tl0_pic_idx,
+                      FrameDropper* tl0_frame_dropper,
+                      FrameDropper* tl1_frame_dropper)
+      : ScreenshareLayers(num_temporal_layers,
+                          initial_tl0_pic_idx,
+                          tl0_frame_dropper,
+                          tl1_frame_dropper) {}
+  virtual ~ScreenshareLayersFT() {}
+
+ protected:
+  virtual bool TargetBitrateExperimentEnabled() OVERRIDE { return true; }
+};
+
 class ScreenshareLayerTest : public ::testing::Test {
  protected:
   void SetEncodeExpectations(bool drop_tl0, bool drop_tl1, int framerate) {
@@ -77,12 +93,12 @@ class ScreenshareLayerTest : public ::testing::Test {
 
   NiceMock<MockFrameDropper> tl0_frame_dropper_;
   NiceMock<MockFrameDropper> tl1_frame_dropper_;
-  scoped_ptr<ScreenshareLayers> layers_;
+  scoped_ptr<ScreenshareLayersFT> layers_;
 };
 
 TEST_F(ScreenshareLayerTest, 1Layer) {
-  layers_.reset(new ScreenshareLayers(1, 0, &tl0_frame_dropper_,
-                                      &tl1_frame_dropper_));
+  layers_.reset(
+      new ScreenshareLayersFT(1, 0, &tl0_frame_dropper_, &tl1_frame_dropper_));
   EXPECT_TRUE(layers_->ConfigureBitrates(100, 1000, 5, NULL));
   int flags = 0;
   uint32_t timestamp = 0;
@@ -116,8 +132,8 @@ TEST_F(ScreenshareLayerTest, 1Layer) {
 }
 
 TEST_F(ScreenshareLayerTest, 2Layer) {
-  layers_.reset(new ScreenshareLayers(2, 0, &tl0_frame_dropper_,
-                                      &tl1_frame_dropper_));
+  layers_.reset(
+      new ScreenshareLayersFT(2, 0, &tl0_frame_dropper_, &tl1_frame_dropper_));
   EXPECT_TRUE(layers_->ConfigureBitrates(100, 1000, 5, NULL));
   int flags = 0;
   uint32_t timestamp = 0;
@@ -164,8 +180,8 @@ TEST_F(ScreenshareLayerTest, 2Layer) {
 }
 
 TEST_F(ScreenshareLayerTest, 2LayersPeriodicSync) {
-  layers_.reset(new ScreenshareLayers(2, 0, &tl0_frame_dropper_,
-                                      &tl1_frame_dropper_));
+  layers_.reset(
+      new ScreenshareLayersFT(2, 0, &tl0_frame_dropper_, &tl1_frame_dropper_));
   EXPECT_TRUE(layers_->ConfigureBitrates(100, 1000, 5, NULL));
   int flags = 0;
   uint32_t timestamp = 0;
@@ -188,8 +204,8 @@ TEST_F(ScreenshareLayerTest, 2LayersPeriodicSync) {
 }
 
 TEST_F(ScreenshareLayerTest, 2LayersToggling) {
-  layers_.reset(new ScreenshareLayers(2, 0, &tl0_frame_dropper_,
-                                      &tl1_frame_dropper_));
+  layers_.reset(
+      new ScreenshareLayersFT(2, 0, &tl0_frame_dropper_, &tl1_frame_dropper_));
   EXPECT_TRUE(layers_->ConfigureBitrates(100, 1000, 5, NULL));
   int flags = 0;
   uint32_t timestamp = 0;
@@ -213,8 +229,8 @@ TEST_F(ScreenshareLayerTest, 2LayersToggling) {
 }
 
 TEST_F(ScreenshareLayerTest, 2LayersBothDrops) {
-  layers_.reset(new ScreenshareLayers(2, 0, &tl0_frame_dropper_,
-                                      &tl1_frame_dropper_));
+  layers_.reset(
+      new ScreenshareLayersFT(2, 0, &tl0_frame_dropper_, &tl1_frame_dropper_));
   EXPECT_TRUE(layers_->ConfigureBitrates(100, 1000, 5, NULL));
   int flags = 0;
   uint32_t timestamp = 0;
@@ -241,4 +257,37 @@ TEST_F(ScreenshareLayerTest, 2LayersBothDrops) {
   flags = layers_->EncodeFlags(timestamp);
   EXPECT_EQ(-1, flags);
 }
+
+TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL0) {
+  layers_.reset(
+      new ScreenshareLayersFT(2, 0, &tl0_frame_dropper_, &tl1_frame_dropper_));
+
+  vpx_codec_enc_cfg_t cfg;
+  layers_->ConfigureBitrates(100, 1000, 5, &cfg);
+
+  EXPECT_EQ(static_cast<unsigned int>(
+                ScreenshareLayers::kMaxTL0FpsReduction * 100 + 0.5),
+            cfg.rc_target_bitrate);
+}
+
+TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL1) {
+  layers_.reset(
+      new ScreenshareLayersFT(2, 0, &tl0_frame_dropper_, &tl1_frame_dropper_));
+  vpx_codec_enc_cfg_t cfg;
+  layers_->ConfigureBitrates(100, 450, 5, &cfg);
+
+  EXPECT_EQ(static_cast<unsigned int>(
+                450 / ScreenshareLayers::kAcceptableTargetOvershoot),
+            cfg.rc_target_bitrate);
+}
+
+TEST_F(ScreenshareLayerTest, TargetBitrateBelowTL0) {
+  layers_.reset(
+      new ScreenshareLayersFT(2, 0, &tl0_frame_dropper_, &tl1_frame_dropper_));
+  vpx_codec_enc_cfg_t cfg;
+  layers_->ConfigureBitrates(100, 100, 5, &cfg);
+
+  EXPECT_EQ(100U, cfg.rc_target_bitrate);
+}
+
 }  // namespace webrtc

@@ -24,6 +24,9 @@ struct CodecSpecificInfoVP8;
 
 class ScreenshareLayers : public TemporalLayers {
  public:
+  static const double kMaxTL0FpsReduction;
+  static const double kAcceptableTargetOvershoot;
+
   ScreenshareLayers(int num_temporal_layers,
                     uint8_t initial_tl0_pic_idx,
                     FrameDropper* tl0_frame_dropper,
@@ -46,6 +49,9 @@ class ScreenshareLayers : public TemporalLayers {
   virtual void FrameEncoded(unsigned int size, uint32_t timestamp);
 
   virtual int CurrentLayerId() const;
+
+ protected:
+  virtual bool TargetBitrateExperimentEnabled();
 
  private:
   void CalculateFramerate(uint32_t timestamp);
