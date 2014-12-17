@@ -77,16 +77,6 @@
       ],
     },  # target turnserver
     {
-      'target_name': 'login',
-      'type': 'executable',
-      'dependencies': [
-        'libjingle_xmpphelp',
-      ],
-      'sources': [
-        'examples/login/login_main.cc',
-      ],
-    },  # target login
-    {
       'target_name': 'peerconnection_server',
       'type': 'executable',
       'sources': [
@@ -106,56 +96,6 @@
     }, # target peerconnection_server
   ],
   'conditions': [
-    # TODO(ronghuawu): Reenable building call.
-    # ['OS!="android"', {
-    #   'targets': [
-    #     {
-    #       'target_name': 'call',
-    #       'type': 'executable',
-    #       'dependencies': [
-    #         'libjingle.gyp:libjingle_p2p',
-    #         'libjingle_xmpphelp',
-    #       ],
-    #       'sources': [
-    #         'examples/call/call_main.cc',
-    #         'examples/call/callclient.cc',
-    #         'examples/call/callclient.h',
-    #         'examples/call/console.cc',
-    #         'examples/call/console.h',
-    #         'examples/call/friendinvitesendtask.cc',
-    #         'examples/call/friendinvitesendtask.h',
-    #         'examples/call/mediaenginefactory.cc',
-    #         'examples/call/mediaenginefactory.h',
-    #         'examples/call/muc.h',
-    #         'examples/call/mucinviterecvtask.cc',
-    #         'examples/call/mucinviterecvtask.h',
-    #         'examples/call/mucinvitesendtask.cc',
-    #         'examples/call/mucinvitesendtask.h',
-    #         'examples/call/presencepushtask.cc',
-    #         'examples/call/presencepushtask.h',
-    #       ],
-    #       'conditions': [
-    #         ['OS=="linux"', {
-    #           'link_settings': {
-    #             'libraries': [
-    #               '<!@(pkg-config --libs-only-l gobject-2.0 gthread-2.0'
-    #                   ' gtk+-2.0)',
-    #             ],
-    #           },
-    #         }],
-    #         ['OS=="win"', {
-    #           'msvs_settings': {
-    #             'VCLinkerTool': {
-    #               'AdditionalDependencies': [
-    #                 'strmiids.lib',
-    #               ],
-    #             },
-    #           },
-    #         }],
-    #       ],  # conditions
-    #     },  # target call
-    #   ], # targets
-    # }],  # OS!="android"
     ['OS=="linux" or OS=="win"', {
       'targets': [
         {
