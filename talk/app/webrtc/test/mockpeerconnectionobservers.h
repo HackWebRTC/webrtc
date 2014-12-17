@@ -117,67 +117,81 @@ class MockDataChannelObserver : public webrtc::DataChannelObserver {
 
 class MockStatsObserver : public webrtc::StatsObserver {
  public:
-  MockStatsObserver()
-      : called_(false) {}
+  MockStatsObserver() : called_(false), stats_() {}
   virtual ~MockStatsObserver() {}
+
   virtual void OnComplete(const StatsReports& reports) {
+    ASSERT(!called_);
     called_ = true;
-    reports_.clear();
-    reports_.reserve(reports.size());
-    StatsReports::const_iterator it;
-    for (it = reports.begin(); it != reports.end(); ++it)
-      reports_.push_back(StatsReportCopyable(*(*it)));
+    memset(&stats_, sizeof(stats_), 0);
+    stats_.number_of_reports = reports.size();
+    for (const auto* r : reports) {
+      if (r->type == StatsReport::kStatsReportTypeSsrc) {
+        GetIntValue(r, StatsReport::kStatsValueNameAudioOutputLevel,
+            &stats_.audio_output_level);
+        GetIntValue(r, StatsReport::kStatsValueNameAudioInputLevel,
+            &stats_.audio_input_level);
+        GetIntValue(r, StatsReport::kStatsValueNameBytesReceived,
+            &stats_.bytes_received);
+        GetIntValue(r, StatsReport::kStatsValueNameBytesSent,
+            &stats_.bytes_sent);
+      } else if (r->type == StatsReport::kStatsReportTypeBwe) {
+        GetIntValue(r, StatsReport::kStatsValueNameAvailableReceiveBandwidth,
+            &stats_.available_receive_bandwidth);
+      }
+    }
   }
 
   bool called() const { return called_; }
-  size_t number_of_reports() const { return reports_.size(); }
+  size_t number_of_reports() const { return stats_.number_of_reports; }
 
-  int AudioOutputLevel() {
-    return GetStatsValue(StatsReport::kStatsReportTypeSsrc,
-                         StatsReport::kStatsValueNameAudioOutputLevel);
+  int AudioOutputLevel() const {
+    ASSERT(called_);
+    return stats_.audio_output_level;
   }
 
-  int AudioInputLevel() {
-    return GetStatsValue(StatsReport::kStatsReportTypeSsrc,
-                         StatsReport::kStatsValueNameAudioInputLevel);
+  int AudioInputLevel() const {
+    ASSERT(called_);
+    return stats_.audio_input_level;
   }
 
-  int BytesReceived() {
-    return GetStatsValue(StatsReport::kStatsReportTypeSsrc,
-                         StatsReport::kStatsValueNameBytesReceived);
+  int BytesReceived() const {
+    ASSERT(called_);
+    return stats_.bytes_received;
   }
 
-  int BytesSent() {
-    return GetStatsValue(StatsReport::kStatsReportTypeSsrc,
-                         StatsReport::kStatsValueNameBytesSent);
+  int BytesSent() const {
+    ASSERT(called_);
+    return stats_.bytes_sent;
   }
 
-  int AvailableReceiveBandwidth() {
-    return GetStatsValue(StatsReport::kStatsReportTypeBwe,
-                         StatsReport::kStatsValueNameAvailableReceiveBandwidth);
+  int AvailableReceiveBandwidth() const {
+    ASSERT(called_);
+    return stats_.available_receive_bandwidth;
   }
 
  private:
-  int GetStatsValue(const std::string& type, StatsReport::StatsValueName name) {
-    if (reports_.empty()) {
-      return 0;
-    }
-    for (size_t i = 0; i < reports_.size(); ++i) {
-      if (reports_[i].type != type)
-        continue;
-      webrtc::StatsReport::Values::const_iterator it =
-          reports_[i].values.begin();
-      for (; it != reports_[i].values.end(); ++it) {
-        if (it->name == name) {
-          return rtc::FromString<int>(it->value);
-        }
+  bool GetIntValue(const StatsReport* report,
+                   StatsReport::StatsValueName name,
+                   int* value) {
+    for (const auto& v : report->values) {
+      if (v.name == name) {
+        *value = rtc::FromString<int>(v.value);
+        return true;
       }
     }
-    return 0;
+    return false;
   }
 
   bool called_;
-  std::vector<StatsReportCopyable> reports_;
+  struct {
+    size_t number_of_reports;
+    int audio_output_level;
+    int audio_input_level;
+    int bytes_received;
+    int bytes_sent;
+    int available_receive_bandwidth;
+  } stats_;
 };
 
 }  // namespace webrtc
