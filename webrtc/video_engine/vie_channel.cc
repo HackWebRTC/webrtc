@@ -47,8 +47,8 @@ namespace {
 RTCPReportBlock AggregateReportBlocks(
     const std::vector<RTCPReportBlock>& report_blocks,
     std::map<uint32_t, RTCPReportBlock>* prev_report_blocks) {
-  int fraction_lost_sum = 0;
-  int fl_seq_num_sum = 0;
+  int num_sequence_numbers = 0;
+  int num_lost_sequence_numbers = 0;
   int jitter_sum = 0;
   int number_of_report_blocks = 0;
   RTCPReportBlock aggregate;
@@ -63,18 +63,20 @@ RTCPReportBlock AggregateReportBlocks(
       // weight for it.
       int seq_num_diff = report_block->extendedHighSeqNum -
                          prev_report_block->second.extendedHighSeqNum;
-      if (seq_num_diff > 0) {
-        fraction_lost_sum += report_block->fractionLost * seq_num_diff;
-        fl_seq_num_sum += seq_num_diff;
+      int cum_loss_diff = report_block->cumulativeLost -
+                          prev_report_block->second.cumulativeLost;
+      if (seq_num_diff >= 0 && cum_loss_diff >= 0) {
+        num_sequence_numbers += seq_num_diff;
+        num_lost_sequence_numbers += cum_loss_diff;
       }
     }
     jitter_sum += report_block->jitter;
     ++number_of_report_blocks;
     (*prev_report_blocks)[report_block->sourceSSRC] = *report_block;
   }
-  if (fl_seq_num_sum > 0) {
-    aggregate.fractionLost =
-        (fraction_lost_sum + fl_seq_num_sum / 2) / fl_seq_num_sum;
+  if (num_sequence_numbers > 0) {
+    aggregate.fractionLost = ((num_lost_sequence_numbers * 255) +
+        (num_sequence_numbers / 2)) / num_sequence_numbers;
   }
   if (number_of_report_blocks > 0) {
     aggregate.jitter =
