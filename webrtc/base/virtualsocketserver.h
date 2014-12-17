@@ -21,6 +21,7 @@
 
 namespace rtc {
 
+class Packet;
 class VirtualSocket;
 class SocketAddressPair;
 
@@ -230,6 +231,104 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
 
   double drop_prob_;
   DISALLOW_EVIL_CONSTRUCTORS(VirtualSocketServer);
+};
+
+// Implements the socket interface using the virtual network.  Packets are
+// passed as messages using the message queue of the socket server.
+class VirtualSocket : public AsyncSocket, public MessageHandler {
+ public:
+  VirtualSocket(VirtualSocketServer* server, int family, int type, bool async);
+  virtual ~VirtualSocket();
+
+  virtual SocketAddress GetLocalAddress() const;
+  virtual SocketAddress GetRemoteAddress() const;
+
+  // Used by server sockets to set the local address without binding.
+  void SetLocalAddress(const SocketAddress& addr);
+
+  virtual int Bind(const SocketAddress& addr);
+  virtual int Connect(const SocketAddress& addr);
+  virtual int Close();
+  virtual int Send(const void* pv, size_t cb);
+  virtual int SendTo(const void* pv, size_t cb, const SocketAddress& addr);
+  virtual int Recv(void* pv, size_t cb);
+  virtual int RecvFrom(void* pv, size_t cb, SocketAddress* paddr);
+  virtual int Listen(int backlog);
+  virtual VirtualSocket* Accept(SocketAddress* paddr);
+
+  virtual int GetError() const;
+  virtual void SetError(int error);
+  virtual ConnState GetState() const;
+  virtual int GetOption(Option opt, int* value);
+  virtual int SetOption(Option opt, int value);
+  virtual int EstimateMTU(uint16* mtu);
+  void OnMessage(Message* pmsg);
+
+  bool was_any() { return was_any_; }
+  void set_was_any(bool was_any) { was_any_ = was_any; }
+
+  // For testing purpose only. Fired when client socket is bound to an address.
+  sigslot::signal2<VirtualSocket*, const SocketAddress&> SignalAddressReady;
+
+ private:
+  struct NetworkEntry {
+    size_t size;
+    uint32 done_time;
+  };
+
+  typedef std::deque<SocketAddress> ListenQueue;
+  typedef std::deque<NetworkEntry> NetworkQueue;
+  typedef std::vector<char> SendBuffer;
+  typedef std::list<Packet*> RecvBuffer;
+  typedef std::map<Option, int> OptionsMap;
+
+  int InitiateConnect(const SocketAddress& addr, bool use_delay);
+  void CompleteConnect(const SocketAddress& addr, bool notify);
+  int SendUdp(const void* pv, size_t cb, const SocketAddress& addr);
+  int SendTcp(const void* pv, size_t cb);
+
+  VirtualSocketServer* server_;
+  int family_;
+  int type_;
+  bool async_;
+  ConnState state_;
+  int error_;
+  SocketAddress local_addr_;
+  SocketAddress alternative_local_addr_;
+  SocketAddress remote_addr_;
+
+  // Pending sockets which can be Accepted
+  ListenQueue* listen_queue_;
+
+  // Data which tcp has buffered for sending
+  SendBuffer send_buffer_;
+  bool write_enabled_;
+
+  // Critical section to protect the recv_buffer and queue_
+  CriticalSection crit_;
+
+  // Network model that enforces bandwidth and capacity constraints
+  NetworkQueue network_;
+  size_t network_size_;
+
+  // Data which has been received from the network
+  RecvBuffer recv_buffer_;
+  // The amount of data which is in flight or in recv_buffer_
+  size_t recv_buffer_size_;
+
+  // Is this socket bound?
+  bool bound_;
+
+  // When we bind a socket to Any, VSS's Bind gives it another address. For
+  // dual-stack sockets, we want to distinguish between sockets that were
+  // explicitly given a particular address and sockets that had one picked
+  // for them by VSS.
+  bool was_any_;
+
+  // Store the options that are set
+  OptionsMap options_map_;
+
+  friend class VirtualSocketServer;
 };
 
 }  // namespace rtc
