@@ -15,6 +15,7 @@
 #include <limits>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/wav_header.h"
 
@@ -58,17 +59,15 @@ size_t WavReader::ReadSamples(size_t num_samples, int16_t* samples) {
 #ifndef WEBRTC_ARCH_LITTLE_ENDIAN
 #error "Need to convert samples to big-endian when reading from WAV file"
 #endif
-  // TODO(ajm): Import Chromium's safe_conversions.h for this.
-  CHECK_LE(num_samples, std::numeric_limits<uint32_t>::max());
   // There could be metadata after the audio; ensure we don't read it.
-  num_samples = std::min(static_cast<uint32_t>(num_samples),
+  num_samples = std::min(rtc::checked_cast<uint32_t>(num_samples),
                          num_samples_remaining_);
   const size_t read =
       fread(samples, sizeof(*samples), num_samples, file_handle_);
   // If we didn't read what was requested, ensure we've reached the EOF.
   CHECK(read == num_samples || feof(file_handle_));
   CHECK_LE(read, num_samples_remaining_);
-  num_samples_remaining_ -= static_cast<uint32_t>(read);
+  num_samples_remaining_ -= rtc::checked_cast<uint32_t>(read);
   return read;
 }
 
