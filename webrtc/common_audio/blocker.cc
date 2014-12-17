@@ -47,6 +47,20 @@ void CopyFrames(const float* const* src,
   }
 }
 
+// Moves |src| into |dst| channel by channel.
+void MoveFrames(const float* const* src,
+                int src_start_index,
+                int num_frames,
+                int num_channels,
+                float* const* dst,
+                int dst_start_index) {
+  for (int i = 0; i < num_channels; ++i) {
+    memmove(&dst[i][dst_start_index],
+            &src[i][src_start_index],
+            num_frames * sizeof(float));
+  }
+}
+
 void ZeroOut(float* const* buffer,
              int starting_idx,
              int num_frames,
@@ -94,7 +108,6 @@ Blocker::Blocker(int chunk_size,
       shift_amount_(shift_amount),
       callback_(callback) {
   CHECK_LE(num_output_channels_, num_input_channels_);
-  CHECK_GE(chunk_size_, block_size_);
 
   memcpy(window_.get(), window, block_size_ * sizeof(float));
   size_t buffer_size = chunk_size_ + initial_delay_;
@@ -106,7 +119,7 @@ Blocker::Blocker(int chunk_size,
          buffer_size * num_output_channels_ * sizeof(float));
 }
 
-// Both the input and output buffers look like this:
+// When block_size < chunk_size the input and output buffers look like this:
 //
 //                      delay*             chunk_size    chunk_size + delay*
 //  buffer: <-------------|---------------------|---------------|>
@@ -120,10 +133,27 @@ Blocker::Blocker(int chunk_size,
 // 4. We window the current block, fire the callback for processing, window
 //    again, and overlap/add to the output buffer.
 // 5. We copy sections _a_ and _b_ of the output buffer into output.
-// 6. For both the input and the output buffers, we copy section c into
-//    section a.
+// 6. For both the input and the output buffers, we copy section _c_ into
+//    section _a_.
 // 7. We set the new frame_offset to be the difference between the first frame
 //    of |bl| and the border between sections _b_ and _c_.
+//
+// When block_size > chunk_size the input and output buffers look like this:
+//
+//                   chunk_size               delay*       chunk_size + delay*
+//  buffer: <-------------|---------------------|---------------|>
+//                _a_              _b_                 _c_
+//
+// On each call to ProcessChunk():
+// The procedure is the same as above, except for:
+// 1. New input gets read into section _c_ of the input buffer.
+// 3. We block until we reach a block |bl| that doesn't contain any frames
+//    from section _a_ of the input buffer.
+// 5. We copy section _a_ of the output buffer into output.
+// 6. For both the input and the output buffers, we copy sections _b_ and _c_
+//    into section _a_ and _b_.
+// 7. We set the new frame_offset to be the difference between the first frame
+//    of |bl| and the border between sections _a_ and _b_.
 //
 // * delay here refers to inintial_delay_
 //
@@ -193,7 +223,7 @@ void Blocker::ProcessChunk(const float* const* input,
 
   // Copy input buffer [chunk_size_, chunk_size_ + initial_delay]
   // to input buffer [0, initial_delay]
-  CopyFrames(input_buffer_.channels(),
+  MoveFrames(input_buffer_.channels(),
              chunk_size,
              initial_delay_,
              num_input_channels_,
@@ -202,7 +232,7 @@ void Blocker::ProcessChunk(const float* const* input,
 
   // Copy output buffer [chunk_size_, chunk_size_ + initial_delay]
   // to output buffer [0, initial_delay], zero the rest.
-  CopyFrames(output_buffer_.channels(),
+  MoveFrames(output_buffer_.channels(),
              chunk_size,
              initial_delay_,
              num_output_channels_,
