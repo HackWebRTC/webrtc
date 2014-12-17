@@ -1059,7 +1059,7 @@ static int EstCodeLpcCoef(int32_t *LPCCoefQ17,
                           int16_t *model,
                           int32_t *sizeQ11,
                           Bitstr_enc *streamdata,
-                          ISAC_SaveEncData_t* encData,
+                          IsacSaveEncoderData* encData,
                           transcode_obj *transcodingParam) {
   int j, k, n;
   int16_t posQQ, pos2QQ, gainpos;
@@ -1334,7 +1334,7 @@ static int EstCodeLpcCoef(int32_t *LPCCoefQ17,
 
 int WebRtcIsacfix_EstCodeLpcGain(int32_t *gain_lo_hiQ17,
                                  Bitstr_enc *streamdata,
-                                 ISAC_SaveEncData_t* encData) {
+                                 IsacSaveEncoderData* encData) {
   int j, k;
   int16_t posQQ, pos2QQ, gainpos;
   int16_t posg;
@@ -1440,7 +1440,7 @@ int WebRtcIsacfix_EncodeLpc(int32_t *gain_lo_hiQ17,
                             int16_t *model,
                             int32_t *sizeQ11,
                             Bitstr_enc *streamdata,
-                            ISAC_SaveEncData_t* encData,
+                            IsacSaveEncoderData* encData,
                             transcode_obj *transcodeParam)
 {
   int status = 0;
@@ -1599,8 +1599,9 @@ int WebRtcIsacfix_DecodePitchGain(Bitstr_dec *streamdata, int16_t *PitchGains_Q1
 
 
 /* quantize & code Pitch Gains */
-int WebRtcIsacfix_EncodePitchGain(int16_t *PitchGains_Q12, Bitstr_enc *streamdata, ISAC_SaveEncData_t* encData)
-{
+int WebRtcIsacfix_EncodePitchGain(int16_t* PitchGains_Q12,
+                                  Bitstr_enc* streamdata,
+                                  IsacSaveEncoderData* encData) {
   int k,j;
   int16_t SQ15[PITCH_SUBFRAMES];
   int16_t index[3];
@@ -1754,9 +1755,10 @@ int WebRtcIsacfix_DecodePitchLag(Bitstr_dec *streamdata,
 
 
 /* quantize & code Pitch Lags */
-int WebRtcIsacfix_EncodePitchLag(int16_t *PitchLagsQ7,int16_t *PitchGain_Q12,
-                                 Bitstr_enc *streamdata, ISAC_SaveEncData_t* encData)
-{
+int WebRtcIsacfix_EncodePitchLag(int16_t* PitchLagsQ7,
+                                 int16_t* PitchGain_Q12,
+                                 Bitstr_enc* streamdata,
+                                 IsacSaveEncoderData* encData) {
   int k, j;
   int16_t index[PITCH_SUBFRAMES];
   int32_t meangainQ12, CQ17;

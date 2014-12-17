@@ -34,7 +34,7 @@
  *----------------------------------------------------------------*/
 
 void WebRtcIlbcfix_CbSearch(
-    iLBC_Enc_Inst_t *iLBCenc_inst,
+    IlbcEncoder *iLBCenc_inst,
     /* (i) the encoder state structure */
     int16_t *index,  /* (o) Codebook indices */
     int16_t *gain_index, /* (o) Gain quantization indices */

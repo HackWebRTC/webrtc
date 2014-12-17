@@ -33,7 +33,7 @@
 int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
     int16_t *out,     /* (o) enhanced signal */
     int16_t *in,      /* (i) unenhanced signal */
-    iLBC_Dec_Inst_t *iLBCdec_inst /* (i) buffers etc */
+    IlbcDecoder *iLBCdec_inst /* (i) buffers etc */
                                         ){
   int iblock;
   int lag=20, tlag=20;

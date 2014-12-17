@@ -236,7 +236,7 @@ static void LinearResampler( int16_t *in, int16_t *out, int16_t lenIn, int16_t l
 
 
 int16_t WebRtcIsacfix_DecodePlcImpl(int16_t *signal_out16,
-                                    ISACFIX_DecInst_t *ISACdec_obj,
+                                    IsacFixDecoderInstance *ISACdec_obj,
                                     int16_t *current_framesamples )
 {
   int subframecnt;

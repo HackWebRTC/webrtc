@@ -28,7 +28,7 @@
 
 
 int16_t WebRtcIsacfix_DecodeImpl(int16_t       *signal_out16,
-                                 ISACFIX_DecInst_t *ISACdec_obj,
+                                 IsacFixDecoderInstance *ISACdec_obj,
                                  int16_t       *current_framesamples)
 {
   int k;
