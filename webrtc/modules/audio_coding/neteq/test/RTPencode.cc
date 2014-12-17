@@ -204,7 +204,7 @@ WebRtcVadInst *VAD_inst[2];
 	int16_t		  AMRWB_bitrate;
 #endif
 #ifdef CODEC_ILBC
-	iLBC_encinst_t *iLBCenc_inst[2];
+	IlbcEncoderInstance *iLBCenc_inst[2];
 #endif
 #ifdef CODEC_ISAC
 	ISACStruct *ISAC_inst[2];

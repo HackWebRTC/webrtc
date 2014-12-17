@@ -11,12 +11,11 @@
 
 #include <list>
 
+#include "vpx/vpx_encoder.h"
+
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/utility/include/frame_dropper.h"
 #include "webrtc/typedefs.h"
-
-// libvpx forward declaration.
-typedef struct vpx_codec_enc_cfg vpx_codec_enc_cfg_t;
 
 namespace webrtc {
 

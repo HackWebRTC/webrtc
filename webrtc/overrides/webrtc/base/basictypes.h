@@ -92,9 +92,9 @@ const int kForever = -1;
 #if _MSC_VER < 1700
   #define alignof(t) __alignof(t)
 #endif
-#else  // !WEBRTC_WIN 
+#else  // !WEBRTC_WIN
 #define alignof(t) __alignof__(t)
-#endif  // !WEBRTC_WIN 
+#endif  // !WEBRTC_WIN
 #define RTC_IS_ALIGNED(p, a) (0==(reinterpret_cast<uintptr_t>(p) & ((a)-1)))
 #define ALIGNP(p, t) \
   (reinterpret_cast<uint8*>(((reinterpret_cast<uintptr_t>(p) + \

@@ -378,7 +378,7 @@ int VP9DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
     return ret_val;
   }
   if (decoder_ == NULL) {
-    decoder_ = new vpx_dec_ctx_t;
+    decoder_ = new vpx_codec_ctx_t;
   }
   vpx_codec_dec_cfg_t  cfg;
   // Setting number of threads to a constant value (1)

@@ -14,13 +14,8 @@
 
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 
-// VPX forward declaration
-typedef struct vpx_codec_ctx vpx_codec_ctx_t;
-typedef struct vpx_codec_ctx vpx_dec_ctx_t;
-typedef struct vpx_codec_enc_cfg vpx_codec_enc_cfg_t;
-typedef struct vpx_image vpx_image_t;
-typedef struct vpx_ref_frame vpx_ref_frame_t;
-struct vpx_codec_cx_pkt;
+#include "vpx/vpx_decoder.h"
+#include "vpx/vpx_encoder.h"
 
 namespace webrtc {
 
@@ -106,7 +101,7 @@ class VP9DecoderImpl : public VP9Decoder {
   I420VideoFrame decoded_image_;
   DecodedImageCallback* decode_complete_callback_;
   bool inited_;
-  vpx_dec_ctx_t* decoder_;
+  vpx_codec_ctx_t* decoder_;
   VideoCodec codec_;
   bool key_frame_required_;
 };

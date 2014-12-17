@@ -52,8 +52,8 @@ int main(int argc, char* argv[])
   int packetlosscount = 0;
   int frameLen;
   int16_t speechType;
-  iLBC_encinst_t *Enc_Inst;
-  iLBC_decinst_t *Dec_Inst;
+  IlbcEncoderInstance *Enc_Inst;
+  IlbcDecoderInstance *Dec_Inst;
 
 #ifdef __ILBC_WITH_40BITACC
   /* Doublecheck that long long exists */

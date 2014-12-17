@@ -119,7 +119,7 @@ class AudioDecoderIlbc : public AudioDecoder {
   virtual int Init();
 
  private:
-  iLBC_decinst_t* dec_state_;
+  IlbcDecoderInstance* dec_state_;
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderIlbc);
 };
 #endif

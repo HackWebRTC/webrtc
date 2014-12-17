@@ -42,7 +42,6 @@
 // Forward declaration to avoid pulling in libsrtp headers here
 struct srtp_event_data_t;
 struct srtp_ctx_t;
-typedef srtp_ctx_t* srtp_t;
 struct srtp_policy_t;
 
 namespace cricket {
@@ -238,7 +237,7 @@ class SrtpSession {
 
   static std::list<SrtpSession*>* sessions();
 
-  srtp_t session_;
+  srtp_ctx_t* session_;
   int rtp_auth_tag_len_;
   int rtcp_auth_tag_len_;
   rtc::scoped_ptr<SrtpStat> srtp_stat_;

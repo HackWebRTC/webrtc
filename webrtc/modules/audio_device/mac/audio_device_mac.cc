@@ -292,7 +292,7 @@ int32_t AudioDeviceMac::Init()
     if (_paRenderBuffer == NULL)
     {
         _paRenderBuffer = new PaUtilRingBuffer;
-        ring_buffer_size_t bufSize = -1;
+        PaRingBufferSize bufSize = -1;
         bufSize = PaUtil_InitializeRingBuffer(_paRenderBuffer, sizeof(SInt16),
                                               _renderBufSizeSamples,
                                               _renderBufData);
@@ -318,7 +318,7 @@ int32_t AudioDeviceMac::Init()
     if (_paCaptureBuffer == NULL)
     {
         _paCaptureBuffer = new PaUtilRingBuffer;
-        ring_buffer_size_t bufSize = -1;
+        PaRingBufferSize bufSize = -1;
         bufSize = PaUtil_InitializeRingBuffer(_paCaptureBuffer,
                                               sizeof(Float32),
                                               _captureBufSizeSamples,
@@ -2915,7 +2915,7 @@ OSStatus AudioDeviceMac::implDeviceIOProc(const AudioBufferList *inputData,
         }
     }
 
-    ring_buffer_size_t bufSizeSamples =
+    PaRingBufferSize bufSizeSamples =
         PaUtil_GetRingBufferReadAvailable(_paRenderBuffer);
 
     int32_t renderDelayUs = static_cast<int32_t> (1e-3 * (outputTimeNs - nowNs)
@@ -2933,7 +2933,7 @@ OSStatus AudioDeviceMac::implOutConverterProc(UInt32 *numberDataPackets,
                                               AudioBufferList *data)
 {
     assert(data->mNumberBuffers == 1);
-    ring_buffer_size_t numSamples = *numberDataPackets
+    PaRingBufferSize numSamples = *numberDataPackets
         * _outDesiredFormat.mChannelsPerFrame;
 
     data->mBuffers->mNumberChannels = _outDesiredFormat.mChannelsPerFrame;
@@ -2994,7 +2994,7 @@ OSStatus AudioDeviceMac::implInDeviceIOProc(const AudioBufferList *inputData,
         return 0;
     }
 
-    ring_buffer_size_t bufSizeSamples =
+    PaRingBufferSize bufSizeSamples =
         PaUtil_GetRingBufferReadAvailable(_paCaptureBuffer);
 
     int32_t captureDelayUs = static_cast<int32_t> (1e-3 * (nowNs - inputTimeNs)
@@ -3007,7 +3007,7 @@ OSStatus AudioDeviceMac::implInDeviceIOProc(const AudioBufferList *inputData,
     AtomicSet32(&_captureDelayUs, captureDelayUs);
 
     assert(inputData->mNumberBuffers == 1);
-    ring_buffer_size_t numSamples = inputData->mBuffers->mDataByteSize
+    PaRingBufferSize numSamples = inputData->mBuffers->mDataByteSize
         * _inStreamFormat.mChannelsPerFrame / _inStreamFormat.mBytesPerPacket;
     PaUtil_WriteRingBuffer(_paCaptureBuffer, inputData->mBuffers->mData,
                            numSamples);
@@ -3026,7 +3026,7 @@ OSStatus AudioDeviceMac::implInConverterProc(UInt32 *numberDataPackets,
                                              AudioBufferList *data)
 {
     assert(data->mNumberBuffers == 1);
-    ring_buffer_size_t numSamples = *numberDataPackets
+    PaRingBufferSize numSamples = *numberDataPackets
         * _inStreamFormat.mChannelsPerFrame;
 
     while (PaUtil_GetRingBufferReadAvailable(_paCaptureBuffer) < numSamples)
@@ -3054,7 +3054,7 @@ OSStatus AudioDeviceMac::implInConverterProc(UInt32 *numberDataPackets,
 
     // Pass the read pointer directly to the converter to avoid a memcpy.
     void* dummyPtr;
-    ring_buffer_size_t dummySize;
+    PaRingBufferSize dummySize;
     PaUtil_GetRingBufferReadRegions(_paCaptureBuffer, numSamples,
                                     &data->mBuffers->mData, &numSamples,
                                     &dummyPtr, &dummySize);
@@ -3075,7 +3075,7 @@ bool AudioDeviceMac::RunRender(void* ptrThis)
 
 bool AudioDeviceMac::RenderWorkerThread()
 {
-    ring_buffer_size_t numSamples = ENGINE_PLAY_BUF_SIZE_IN_SAMPLES
+    PaRingBufferSize numSamples = ENGINE_PLAY_BUF_SIZE_IN_SAMPLES
         * _outDesiredFormat.mChannelsPerFrame;
     while (PaUtil_GetRingBufferWriteAvailable(_paRenderBuffer)
         - _renderDelayOffsetSamples < numSamples)
