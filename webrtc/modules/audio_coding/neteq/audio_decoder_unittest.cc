@@ -528,14 +528,20 @@ TEST_F(AudioDecoderIsacSwbTest, EncodeDecode) {
   DecodePlcTest();
 }
 
-TEST_F(AudioDecoderIsacFixTest, DISABLED_EncodeDecode) {
+TEST_F(AudioDecoderIsacFixTest, EncodeDecode) {
   int tolerance = 11034;
   double mse = 3.46e6;
   int delay = 54;  // Delay from input to output.
   EXPECT_TRUE(CodecSupported(kDecoderISAC));
-  EncodeDecodeTest(735, tolerance, mse, delay);
+#ifdef WEBRTC_ANDROID
+  static const int kEncodedBytes = 685;
+#else
+  static const int kEncodedBytes = 671;
+#endif
+  EncodeDecodeTest(kEncodedBytes, tolerance, mse, delay);
   ReInitTest();
-  EXPECT_FALSE(decoder_->HasDecodePlc());
+  EXPECT_TRUE(decoder_->HasDecodePlc());
+  DecodePlcTest();
 }
 
 TEST_F(AudioDecoderG722Test, EncodeDecode) {
