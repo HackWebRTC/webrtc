@@ -230,18 +230,6 @@ class Candidate {
   std::string tcptype_;
 };
 
-// Used during parsing and writing to map component to channel name
-// and back.  This is primarily for converting old G-ICE candidate
-// signalling to new ICE candidate classes.
-class CandidateTranslator {
- public:
-  virtual ~CandidateTranslator() {}
-  virtual bool GetChannelNameFromComponent(
-      int component, std::string* channel_name) const = 0;
-  virtual bool GetComponentFromChannelName(
-      const std::string& channel_name, int* component) const = 0;
-};
-
 }  // namespace cricket
 
 #endif  // WEBRTC_P2P_BASE_CANDIDATE_H_

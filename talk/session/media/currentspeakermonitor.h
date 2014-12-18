@@ -39,6 +39,7 @@
 namespace cricket {
 
 class BaseSession;
+class Session;
 struct AudioInfo;
 struct MediaStreams;
 
