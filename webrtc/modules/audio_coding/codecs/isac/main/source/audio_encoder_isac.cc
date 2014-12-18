@@ -18,4 +18,8 @@ namespace webrtc {
 // AudioEncoderDecoderIsac.
 template class AudioEncoderDecoderIsacT<IsacFloat>;
 
+// Explicit instantiation of AudioEncoderDecoderIsacT<IsacRed>, a.k.a.
+// AudioEncoderDecoderIsacRed.
+template class AudioEncoderDecoderIsacT<IsacRed>;
+
 }  // namespace webrtc

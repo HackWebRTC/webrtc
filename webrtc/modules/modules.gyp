@@ -119,6 +119,7 @@
             'audio_coding/codecs/isac/fix/source/lpc_masking_model_unittest.cc',
             'audio_coding/codecs/isac/fix/source/transform_unittest.cc',
             'audio_coding/codecs/isac/main/source/isac_unittest.cc',
+            'audio_coding/codecs/isac/main/source/audio_encoder_isac_red_unittest.cc',
             'audio_coding/codecs/opus/opus_unittest.cc',
             'audio_coding/codecs/red/audio_encoder_copy_red_unittest.cc',
             'audio_coding/neteq/audio_classifier_unittest.cc',

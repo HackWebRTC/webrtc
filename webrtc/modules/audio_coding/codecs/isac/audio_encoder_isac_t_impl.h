@@ -68,7 +68,8 @@ template <typename T>
 AudioEncoderDecoderIsacT<T>::AudioEncoderDecoderIsacT(const Config& config)
     : payload_type_(config.payload_type),
       lock_(CriticalSectionWrapper::CreateCriticalSection()),
-      packet_in_progress_(false) {
+      packet_in_progress_(false),
+      first_output_frame_(true) {
   CHECK(config.IsOk());
   CHECK_EQ(0, T::Create(&isac_state_));
   CHECK_EQ(0, T::EncoderInit(isac_state_, 1));
@@ -82,7 +83,8 @@ AudioEncoderDecoderIsacT<T>::AudioEncoderDecoderIsacT(
     const ConfigAdaptive& config)
     : payload_type_(config.payload_type),
       lock_(CriticalSectionWrapper::CreateCriticalSection()),
-      packet_in_progress_(false) {
+      packet_in_progress_(false),
+      first_output_frame_(true) {
   CHECK(config.IsOk());
   CHECK_EQ(0, T::Create(&isac_state_));
   CHECK_EQ(0, T::EncoderInit(isac_state_, 0));
@@ -148,13 +150,43 @@ bool AudioEncoderDecoderIsacT<T>::EncodeInternal(uint32_t timestamp,
   CHECK(static_cast<size_t>(r) <= max_encoded_bytes);
 
   info->encoded_bytes = r;
-  if (r > 0) {
-    // Got enough input to produce a packet. Return the saved timestamp from
-    // the first chunk of input that went into the packet.
-    packet_in_progress_ = false;
-    info->encoded_timestamp = packet_timestamp_;
-    info->payload_type = payload_type_;
+  if (r == 0)
+    return true;
+
+  // Got enough input to produce a packet. Return the saved timestamp from
+  // the first chunk of input that went into the packet.
+  packet_in_progress_ = false;
+  info->encoded_timestamp = packet_timestamp_;
+  info->payload_type = payload_type_;
+
+  if (!T::has_redundant_encoder)
+    return true;
+
+  if (first_output_frame_) {
+    // Do not emit the first output frame when using redundant encoding.
+    info->encoded_bytes = 0;
+    first_output_frame_ = false;
+  } else {
+    // Call the encoder's method to get redundant encoding.
+    const size_t primary_length = info->encoded_bytes;
+    int16_t secondary_len;
+    {
+      CriticalSectionScoped cs(lock_.get());
+      secondary_len = T::GetRedPayload(isac_state_, &encoded[primary_length]);
+    }
+    DCHECK_GE(secondary_len, 0);
+    // |info| will be implicitly cast to an EncodedInfoLeaf struct, effectively
+    // discarding the (empty) vector of redundant information. This is
+    // intentional.
+    info->redundant.push_back(*info);
+    EncodedInfoLeaf secondary_info;
+    secondary_info.payload_type = info->payload_type;
+    secondary_info.encoded_bytes = secondary_len;
+    secondary_info.encoded_timestamp = last_encoded_timestamp_;
+    info->redundant.push_back(secondary_info);
+    info->encoded_bytes += secondary_len;  // Sum of primary and secondary.
   }
+  last_encoded_timestamp_ = packet_timestamp_;
   return true;
 }
 

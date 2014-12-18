@@ -101,8 +101,14 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
   // Have we accepted input but not yet emitted it in a packet?
   bool packet_in_progress_;
 
+  // Working on the very first output frame.
+  bool first_output_frame_;
+
   // Timestamp of the first input of the currently in-progress packet.
   uint32_t packet_timestamp_;
+
+  // Timestamp of the previously encoded packet.
+  uint32_t last_encoded_timestamp_;
 
   DISALLOW_COPY_AND_ASSIGN(AudioEncoderDecoderIsacT);
 };

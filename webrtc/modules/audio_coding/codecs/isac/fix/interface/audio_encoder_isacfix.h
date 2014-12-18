@@ -19,6 +19,7 @@ namespace webrtc {
 struct IsacFix {
   typedef ISACFIX_MainStruct instance_type;
   static const bool has_32kHz = false;
+  static const bool has_redundant_encoder = false;
   static const uint16_t kFixSampleRate = 16000;
   static inline int16_t Control(instance_type* inst,
                                 int32_t rate,
@@ -99,6 +100,10 @@ struct IsacFix {
                                          uint32_t arr_ts) {
     return WebRtcIsacfix_UpdateBwEstimate(inst, encoded, packet_size,
                                           rtp_seq_number, send_ts, arr_ts);
+  }
+  static inline int16_t GetRedPayload(instance_type* inst, uint8_t* encoded) {
+    FATAL() << "Should never be called.";
+    return -1;
   }
 };
 
