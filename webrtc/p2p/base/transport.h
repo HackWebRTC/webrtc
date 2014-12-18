@@ -56,8 +56,6 @@ struct ParseError;
 struct WriteError;
 class CandidateTranslator;
 class PortAllocator;
-class SessionManager;
-class Session;
 class TransportChannel;
 class TransportChannelImpl;
 

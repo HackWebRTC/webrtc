@@ -11,8 +11,8 @@
 #include "webrtc/p2p/base/sessionmanager.h"
 
 #include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/session.h"
 #include "webrtc/p2p/base/sessionmessages.h"
+#include "webrtc/libjingle/session/session.h"
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/libjingle/xmpp/jid.h"
 #include "webrtc/base/common.h"

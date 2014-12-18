@@ -1555,21 +1555,21 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     // Test failures in SetLocalContent.
     media_channel1_->set_fail_set_recv_codecs(true);
     session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
-    session1_.SetState(cricket::Session::STATE_SENTINITIATE);
+    session1_.SetState(cricket::BaseSession::STATE_SENTINITIATE);
     EXPECT_EQ(cricket::BaseSession::ERROR_CONTENT, session1_.error());
     media_channel1_->set_fail_set_recv_codecs(true);
     session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
-    session1_.SetState(cricket::Session::STATE_SENTACCEPT);
+    session1_.SetState(cricket::BaseSession::STATE_SENTACCEPT);
     EXPECT_EQ(cricket::BaseSession::ERROR_CONTENT, session1_.error());
 
     // Test failures in SetRemoteContent.
     media_channel1_->set_fail_set_send_codecs(true);
     session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
-    session1_.SetState(cricket::Session::STATE_RECEIVEDINITIATE);
+    session1_.SetState(cricket::BaseSession::STATE_RECEIVEDINITIATE);
     EXPECT_EQ(cricket::BaseSession::ERROR_CONTENT, session1_.error());
     media_channel1_->set_fail_set_send_codecs(true);
     session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
-    session1_.SetState(cricket::Session::STATE_RECEIVEDACCEPT);
+    session1_.SetState(cricket::BaseSession::STATE_RECEIVEDACCEPT);
     EXPECT_EQ(cricket::BaseSession::ERROR_CONTENT, session1_.error());
   }
 
@@ -1581,7 +1581,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     session1_.set_local_description(sdesc);
 
     session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
-    session1_.SetState(cricket::Session::STATE_SENTINITIATE);
+    session1_.SetState(cricket::BaseSession::STATE_SENTINITIATE);
     EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
     EXPECT_TRUE(media_channel1_->HasSendStream(1));
 
@@ -1589,7 +1589,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     sdesc = CreateSessionDescriptionWithStream(2);
     session1_.set_local_description(sdesc);
 
-    session1_.SetState(cricket::Session::STATE_SENTINITIATE);
+    session1_.SetState(cricket::BaseSession::STATE_SENTINITIATE);
     EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
     EXPECT_FALSE(media_channel1_->HasSendStream(1));
     EXPECT_TRUE(media_channel1_->HasSendStream(2));
@@ -1603,13 +1603,13 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     session1_.set_remote_description(sdesc);
 
     session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
-    session1_.SetState(cricket::Session::STATE_RECEIVEDINITIATE);
+    session1_.SetState(cricket::BaseSession::STATE_RECEIVEDINITIATE);
     EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
     EXPECT_TRUE(media_channel1_->HasRecvStream(1));
 
     sdesc = CreateSessionDescriptionWithStream(2);
     session1_.set_remote_description(sdesc);
-    session1_.SetState(cricket::Session::STATE_RECEIVEDINITIATE);
+    session1_.SetState(cricket::BaseSession::STATE_RECEIVEDINITIATE);
     EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
     EXPECT_FALSE(media_channel1_->HasRecvStream(1));
     EXPECT_TRUE(media_channel1_->HasRecvStream(2));
@@ -1623,7 +1623,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     session1_.set_remote_description(sdesc);
 
     session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
-    session1_.SetState(cricket::Session::STATE_RECEIVEDINITIATE);
+    session1_.SetState(cricket::BaseSession::STATE_RECEIVEDINITIATE);
     EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
     EXPECT_TRUE(media_channel1_->HasRecvStream(1));
 
@@ -1631,7 +1631,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     sdesc = CreateSessionDescriptionWithStream(2);
     session1_.set_local_description(sdesc);
 
-    session1_.SetState(cricket::Session::STATE_SENTPRACCEPT);
+    session1_.SetState(cricket::BaseSession::STATE_SENTPRACCEPT);
     EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
     EXPECT_TRUE(media_channel1_->HasRecvStream(1));
     EXPECT_TRUE(media_channel1_->HasSendStream(2));
@@ -1640,7 +1640,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     sdesc = CreateSessionDescriptionWithStream(3);
     session1_.set_local_description(sdesc);
 
-    session1_.SetState(cricket::Session::STATE_SENTACCEPT);
+    session1_.SetState(cricket::BaseSession::STATE_SENTACCEPT);
     EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
     EXPECT_TRUE(media_channel1_->HasRecvStream(1));
     EXPECT_FALSE(media_channel1_->HasSendStream(2));
@@ -1655,7 +1655,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     session1_.set_local_description(sdesc);
 
     session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
-    session1_.SetState(cricket::Session::STATE_SENTINITIATE);
+    session1_.SetState(cricket::BaseSession::STATE_SENTINITIATE);
     EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
     EXPECT_TRUE(media_channel1_->HasSendStream(1));
 
@@ -1663,7 +1663,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     sdesc = CreateSessionDescriptionWithStream(2);
     session1_.set_remote_description(sdesc);
 
-    session1_.SetState(cricket::Session::STATE_RECEIVEDPRACCEPT);
+    session1_.SetState(cricket::BaseSession::STATE_RECEIVEDPRACCEPT);
     EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
     EXPECT_TRUE(media_channel1_->HasSendStream(1));
     EXPECT_TRUE(media_channel1_->HasRecvStream(2));
@@ -1672,7 +1672,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     sdesc = CreateSessionDescriptionWithStream(3);
     session1_.set_remote_description(sdesc);
 
-    session1_.SetState(cricket::Session::STATE_RECEIVEDACCEPT);
+    session1_.SetState(cricket::BaseSession::STATE_RECEIVEDACCEPT);
     EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
     EXPECT_TRUE(media_channel1_->HasSendStream(1));
     EXPECT_FALSE(media_channel1_->HasRecvStream(2));
