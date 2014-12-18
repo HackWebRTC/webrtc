@@ -442,7 +442,17 @@ void TurnPort::OnReadPacket(
     const rtc::SocketAddress& remote_addr,
     const rtc::PacketTime& packet_time) {
   ASSERT(socket == socket_);
-  ASSERT(remote_addr == server_address_.address);
+
+  // This is to guard against a STUN response from previous server after
+  // alternative server redirection. TODO(guoweis): add a unit test for this
+  // race condition.
+  if (remote_addr != server_address_.address) {
+    LOG_J(LS_WARNING, this) << "Discarding TURN message from unknown address:"
+                            << remote_addr.ToString()
+                            << ", server_address_:"
+                            << server_address_.address.ToString();
+    return;
+  }
 
   // The message must be at least the size of a channel header.
   if (size < TURN_CHANNEL_HEADER_SIZE) {
