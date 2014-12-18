@@ -15,6 +15,7 @@
 #include <vector>
 #include <set>
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver_help.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
@@ -77,8 +78,6 @@ public:
                 uint16_t* minRTT,
                 uint16_t* maxRTT) const;
 
-    int32_t ResetRTT(const uint32_t remoteSSRC);
-
     int32_t SenderInfoReceived(RTCPSenderInfo* senderInfo) const;
 
     bool GetAndResetXrRrRtt(uint16_t* rtt_ms);
@@ -114,9 +113,6 @@ public:
     RtcpStatisticsCallback* GetRtcpStatisticsCallback();
 
 protected:
-    RTCPHelp::RTCPReportBlockInformation* CreateReportBlockInformation(const uint32_t remoteSSRC);
-    RTCPHelp::RTCPReportBlockInformation* GetReportBlockInformation(const uint32_t remoteSSRC) const;
-
     RTCPUtility::RTCPCnameInformation* CreateCnameInformation(const uint32_t remoteSSRC);
     RTCPUtility::RTCPCnameInformation* GetCnameInformation(const uint32_t remoteSSRC) const;
 
@@ -220,19 +216,32 @@ protected:
  private:
   typedef std::map<uint32_t, RTCPHelp::RTCPReceiveInformation*>
       ReceivedInfoMap;
-  int32_t           _id;
-  Clock*                  _clock;
-  RTCPMethod              _method;
-  int64_t           _lastReceived;
-  ModuleRtpRtcpImpl&      _rtpRtcp;
+  // RTCP report block information mapped by remote SSRC.
+  typedef std::map<uint32_t, RTCPHelp::RTCPReportBlockInformation*>
+      ReportBlockInfoMap;
+  // RTCP report block information map mapped by source SSRC.
+  typedef std::map<uint32_t, ReportBlockInfoMap> ReportBlockMap;
+
+  RTCPHelp::RTCPReportBlockInformation* CreateOrGetReportBlockInformation(
+      uint32_t remote_ssrc, uint32_t source_ssrc)
+          EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
+  RTCPHelp::RTCPReportBlockInformation* GetReportBlockInformation(
+      uint32_t remote_ssrc, uint32_t source_ssrc) const
+          EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
+
+  int32_t _id;
+  Clock* _clock;
+  RTCPMethod _method;
+  int64_t _lastReceived;
+  ModuleRtpRtcpImpl& _rtpRtcp;
 
   CriticalSectionWrapper* _criticalSectionFeedbacks;
-  RtcpBandwidthObserver*  _cbRtcpBandwidthObserver;
+  RtcpBandwidthObserver* _cbRtcpBandwidthObserver;
   RtcpIntraFrameObserver* _cbRtcpIntraFrameObserver;
 
   CriticalSectionWrapper* _criticalSectionRTCPReceiver;
-  uint32_t          main_ssrc_;
-  uint32_t          _remoteSSRC;
+  uint32_t main_ssrc_;
+  uint32_t _remoteSSRC;
   std::set<uint32_t> registered_ssrcs_;
 
   // Received send report
@@ -250,18 +259,17 @@ protected:
   uint16_t xr_rr_rtt_ms_;
 
   // Received report blocks.
-  std::map<uint32_t, RTCPHelp::RTCPReportBlockInformation*>
-      _receivedReportBlockMap;
+  ReportBlockMap _receivedReportBlockMap
+      GUARDED_BY(_criticalSectionRTCPReceiver);
   ReceivedInfoMap _receivedInfoMap;
-  std::map<uint32_t, RTCPUtility::RTCPCnameInformation*>
-      _receivedCnameMap;
+  std::map<uint32_t, RTCPUtility::RTCPCnameInformation*> _receivedCnameMap;
 
-  uint32_t            _packetTimeOutMS;
+  uint32_t _packetTimeOutMS;
 
   // The last time we received an RTCP RR.
   int64_t _lastReceivedRrMs;
 
-  // The time we last received an RTCP RR telling we have ssuccessfully
+  // The time we last received an RTCP RR telling we have successfully
   // delivered RTP packet to the remote side.
   int64_t _lastIncreasedSequenceNumberMs;
 

@@ -767,11 +767,6 @@ int32_t ModuleRtpRtcpImpl::RTT(const uint32_t remote_ssrc,
   return ret;
 }
 
-// Reset RoundTripTime statistics.
-int32_t ModuleRtpRtcpImpl::ResetRTT(const uint32_t remote_ssrc) {
-  return rtcp_receiver_.ResetRTT(remote_ssrc);
-}
-
 // Reset RTP data counters for the sending side.
 int32_t ModuleRtpRtcpImpl::ResetSendDataCountersRTP() {
   rtp_sender_.ResetDataCounters();

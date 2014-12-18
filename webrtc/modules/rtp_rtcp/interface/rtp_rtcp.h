@@ -398,13 +398,6 @@ class RtpRtcp : public Module {
                         uint16_t* maxRTT) const = 0 ;
 
     /*
-    *   Reset RoundTripTime statistics
-    *
-    *   return -1 on failure else 0
-    */
-    virtual int32_t ResetRTT(const uint32_t remoteSSRC)= 0 ;
-
-    /*
     *   Force a send of a RTCP packet
     *   normal SR and RR are triggered via the process function
     *

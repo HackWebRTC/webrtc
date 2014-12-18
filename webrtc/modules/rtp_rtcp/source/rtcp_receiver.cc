@@ -62,11 +62,14 @@ RTCPReceiver::~RTCPReceiver() {
   delete _criticalSectionRTCPReceiver;
   delete _criticalSectionFeedbacks;
 
-  while (!_receivedReportBlockMap.empty()) {
-    std::map<uint32_t, RTCPReportBlockInformation*>::iterator first =
-        _receivedReportBlockMap.begin();
-    delete first->second;
-    _receivedReportBlockMap.erase(first);
+  ReportBlockMap::iterator it = _receivedReportBlockMap.begin();
+  for (; it != _receivedReportBlockMap.end(); ++it) {
+    ReportBlockInfoMap* info_map = &(it->second);
+    while (!info_map->empty()) {
+      ReportBlockInfoMap::iterator it_info = info_map->begin();
+      delete it_info->second;
+      info_map->erase(it_info);
+    }
   }
   while (!_receivedInfoMap.empty()) {
     std::map<uint32_t, RTCPReceiveInformation*>::iterator first =
@@ -167,21 +170,6 @@ void RTCPReceiver::SetSsrcs(uint32_t main_ssrc,
   }
 }
 
-int32_t RTCPReceiver::ResetRTT(const uint32_t remoteSSRC) {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
-  RTCPReportBlockInformation* reportBlock =
-      GetReportBlockInformation(remoteSSRC);
-  if (reportBlock == NULL) {
-    LOG(LS_WARNING) << "Failed to reset rtt for ssrc " << remoteSSRC;
-    return -1;
-  }
-  reportBlock->RTT = 0;
-  reportBlock->avgRTT = 0;
-  reportBlock->minRTT = 0;
-  reportBlock->maxRTT = 0;
-  return 0;
-}
-
 int32_t RTCPReceiver::RTT(uint32_t remoteSSRC,
                           uint16_t* RTT,
                           uint16_t* avgRTT,
@@ -190,7 +178,7 @@ int32_t RTCPReceiver::RTT(uint32_t remoteSSRC,
   CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
   RTCPReportBlockInformation* reportBlock =
-      GetReportBlockInformation(remoteSSRC);
+      GetReportBlockInformation(remoteSSRC, main_ssrc_);
 
   if (reportBlock == NULL) {
     return -1;
@@ -291,13 +279,13 @@ int32_t RTCPReceiver::StatisticsReceived(
     std::vector<RTCPReportBlock>* receiveBlocks) const {
   assert(receiveBlocks);
   CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
-
-  std::map<uint32_t, RTCPReportBlockInformation*>::const_iterator it =
-      _receivedReportBlockMap.begin();
-
-  while (it != _receivedReportBlockMap.end()) {
-    receiveBlocks->push_back(it->second->remoteReceiveBlock);
-    it++;
+  ReportBlockMap::const_iterator it = _receivedReportBlockMap.begin();
+  for (; it != _receivedReportBlockMap.end(); ++it) {
+    const ReportBlockInfoMap* info_map = &(it->second);
+    ReportBlockInfoMap::const_iterator it_info = info_map->begin();
+    for (; it_info != info_map->end(); ++it_info) {
+      receiveBlocks->push_back(it_info->second->remoteReceiveBlock);
+    }
   }
   return 0;
 }
@@ -505,7 +493,8 @@ void RTCPReceiver::HandleReportBlock(
   _criticalSectionRTCPReceiver->Enter();
 
   RTCPReportBlockInformation* reportBlock =
-      CreateReportBlockInformation(remoteSSRC);
+      CreateOrGetReportBlockInformation(remoteSSRC,
+                                        rtcpPacket.ReportBlockItem.SSRC);
   if (reportBlock == NULL) {
     LOG(LS_WARNING) << "Failed to CreateReportBlockInformation("
                     << remoteSSRC << ")";
@@ -592,34 +581,38 @@ void RTCPReceiver::HandleReportBlock(
   rtcpPacketInformation.AddReportInfo(*reportBlock);
 }
 
-RTCPReportBlockInformation*
-RTCPReceiver::CreateReportBlockInformation(uint32_t remoteSSRC) {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
-
-  std::map<uint32_t, RTCPReportBlockInformation*>::iterator it =
-      _receivedReportBlockMap.find(remoteSSRC);
-
-  RTCPReportBlockInformation* ptrReportBlockInfo = NULL;
+RTCPReportBlockInformation* RTCPReceiver::CreateOrGetReportBlockInformation(
+    uint32_t remote_ssrc,
+    uint32_t source_ssrc) {
+  ReportBlockMap::iterator it = _receivedReportBlockMap.find(source_ssrc);
   if (it != _receivedReportBlockMap.end()) {
-    ptrReportBlockInfo = it->second;
-  } else {
-    ptrReportBlockInfo = new RTCPReportBlockInformation;
-    _receivedReportBlockMap[remoteSSRC] = ptrReportBlockInfo;
+    ReportBlockInfoMap* info_map = &(it->second);
+    ReportBlockInfoMap::iterator it_info = info_map->find(remote_ssrc);
+    if (it_info != info_map->end()) {
+      return it_info->second;
+    }
+    RTCPReportBlockInformation* info = new RTCPReportBlockInformation;
+    (*info_map)[remote_ssrc] = info;
+    return info;
   }
-  return ptrReportBlockInfo;
+  RTCPReportBlockInformation* info = new RTCPReportBlockInformation;
+  _receivedReportBlockMap[source_ssrc][remote_ssrc] = info;
+  return info;
 }
 
-RTCPReportBlockInformation*
-RTCPReceiver::GetReportBlockInformation(uint32_t remoteSSRC) const {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
-
-  std::map<uint32_t, RTCPReportBlockInformation*>::const_iterator it =
-      _receivedReportBlockMap.find(remoteSSRC);
-
+RTCPReportBlockInformation* RTCPReceiver::GetReportBlockInformation(
+    uint32_t remote_ssrc,
+    uint32_t source_ssrc) const {
+  ReportBlockMap::const_iterator it = _receivedReportBlockMap.find(source_ssrc);
   if (it == _receivedReportBlockMap.end()) {
     return NULL;
   }
-  return it->second;
+  const ReportBlockInfoMap* info_map = &(it->second);
+  ReportBlockInfoMap::const_iterator it_info = info_map->find(remote_ssrc);
+  if (it_info == info_map->end()) {
+    return NULL;
+  }
+  return it_info->second;
 }
 
 RTCPCnameInformation*
@@ -874,14 +867,17 @@ void RTCPReceiver::HandleBYE(RTCPUtility::RTCPParserV2& rtcpParser) {
 
   // clear our lists
   CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
-  std::map<uint32_t, RTCPReportBlockInformation*>::iterator
-      reportBlockInfoIt = _receivedReportBlockMap.find(
-          rtcpPacket.BYE.SenderSSRC);
-
-  if (reportBlockInfoIt != _receivedReportBlockMap.end()) {
-    delete reportBlockInfoIt->second;
-    _receivedReportBlockMap.erase(reportBlockInfoIt);
+  ReportBlockMap::iterator it = _receivedReportBlockMap.begin();
+  for (; it != _receivedReportBlockMap.end(); ++it) {
+    ReportBlockInfoMap* info_map = &(it->second);
+    ReportBlockInfoMap::iterator it_info = info_map->find(
+        rtcpPacket.BYE.SenderSSRC);
+    if (it_info != info_map->end()) {
+      delete it_info->second;
+      info_map->erase(it_info);
+    }
   }
+
   //  we can't delete it due to TMMBR
   std::map<uint32_t, RTCPReceiveInformation*>::iterator receiveInfoIt =
       _receivedInfoMap.find(rtcpPacket.BYE.SenderSSRC);
