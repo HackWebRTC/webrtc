@@ -51,6 +51,7 @@ const int NUM_SAMPLES = 1000;
 
 enum {
   MSG_ID_PACKET,
+  MSG_ID_ADDRESS_BOUND,
   MSG_ID_CONNECT,
   MSG_ID_DISCONNECT,
 };
@@ -130,9 +131,12 @@ SocketAddress VirtualSocket::GetRemoteAddress() const {
   return remote_addr_;
 }
 
-// Used by server sockets to set the local address without binding.
 void VirtualSocket::SetLocalAddress(const SocketAddress& addr) {
   local_addr_ = addr;
+}
+
+void VirtualSocket::SetAlternativeLocalAddress(const SocketAddress& addr) {
+  alternative_local_addr_ = addr;
 }
 
 int VirtualSocket::Bind(const SocketAddress& addr) {
@@ -148,6 +152,9 @@ int VirtualSocket::Bind(const SocketAddress& addr) {
   } else {
     bound_ = true;
     was_any_ = addr.IsAnyIP();
+    // Post a message here such that test case could have chance to
+    // process the local address. (i.e. SetAlternativeLocalAddress).
+    server_->msg_queue_->Post(this, MSG_ID_ADDRESS_BOUND);
   }
   return result;
 }
@@ -411,6 +418,8 @@ void VirtualSocket::OnMessage(Message* pmsg) {
         SignalCloseEvent(this, error);
       }
     }
+  } else if (pmsg->message_id == MSG_ID_ADDRESS_BOUND) {
+    SignalAddressReady(this, GetLocalAddress());
   } else {
     ASSERT(false);
   }

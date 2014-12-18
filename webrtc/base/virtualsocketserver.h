@@ -246,6 +246,11 @@ class VirtualSocket : public AsyncSocket, public MessageHandler {
   // Used by server sockets to set the local address without binding.
   void SetLocalAddress(const SocketAddress& addr);
 
+  // Used by TurnPortTest to mimic a case where proxy returns local host address
+  // instead of the original one TurnPort was bound against. Please see WebRTC
+  // issue 3927 for more detail.
+  void SetAlternativeLocalAddress(const SocketAddress& addr);
+
   virtual int Bind(const SocketAddress& addr);
   virtual int Connect(const SocketAddress& addr);
   virtual int Close();

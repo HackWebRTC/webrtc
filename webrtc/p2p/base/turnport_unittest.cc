@@ -86,6 +86,14 @@ static int GetFDCount() {
 }
 #endif
 
+class TurnPortTestVirtualSocketServer : public rtc::VirtualSocketServer {
+ public:
+  explicit TurnPortTestVirtualSocketServer(SocketServer* ss)
+      : VirtualSocketServer(ss) {}
+
+  using rtc::VirtualSocketServer::LookupBinding;
+};
+
 class TurnPortTest : public testing::Test,
                      public sigslot::has_slots<>,
                      public rtc::MessageHandler {
@@ -93,7 +101,7 @@ class TurnPortTest : public testing::Test,
   TurnPortTest()
       : main_(rtc::Thread::Current()),
         pss_(new rtc::PhysicalSocketServer),
-        ss_(new rtc::VirtualSocketServer(pss_.get())),
+        ss_(new TurnPortTestVirtualSocketServer(pss_.get())),
         ss_scope_(ss_.get()),
         network_("unittest", "unittest", rtc::IPAddress(INADDR_ANY), 32),
         socket_factory_(rtc::Thread::Current()),
@@ -111,6 +119,21 @@ class TurnPortTest : public testing::Test,
     ASSERT(msg->message_id == MSG_TESTFINISH);
     if (msg->message_id == MSG_TESTFINISH)
       test_finish_ = true;
+  }
+
+  void ConnectSignalAddressReadyToSetLocalhostAsAltenertativeLocalAddress() {
+    rtc::AsyncPacketSocket* socket = turn_port_->socket();
+    rtc::VirtualSocket* virtual_socket =
+        ss_->LookupBinding(socket->GetLocalAddress());
+    virtual_socket->SignalAddressReady.connect(
+        this, &TurnPortTest::SetLocalhostAsAltenertativeLocalAddress);
+  }
+
+  void SetLocalhostAsAltenertativeLocalAddress(
+      rtc::VirtualSocket* socket,
+      const rtc::SocketAddress& address) {
+    SocketAddress local_address("127.0.0.1", 2000);
+    socket->SetAlternativeLocalAddress(local_address);
   }
 
   void OnTurnPortComplete(Port* port) {
@@ -312,7 +335,7 @@ class TurnPortTest : public testing::Test,
  protected:
   rtc::Thread* main_;
   rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
-  rtc::scoped_ptr<rtc::VirtualSocketServer> ss_;
+  rtc::scoped_ptr<TurnPortTestVirtualSocketServer> ss_;
   rtc::SocketServerScope ss_scope_;
   rtc::Network network_;
   rtc::BasicPacketSocketFactory socket_factory_;
@@ -349,6 +372,22 @@ TEST_F(TurnPortTest, TestTurnTcpAllocate) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
   EXPECT_EQ(0, turn_port_->SetOption(rtc::Socket::OPT_SNDBUF, 10*1024));
   turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
+  ASSERT_EQ(1U, turn_port_->Candidates().size());
+  EXPECT_EQ(kTurnUdpExtAddr.ipaddr(),
+            turn_port_->Candidates()[0].address().ipaddr());
+  EXPECT_NE(0, turn_port_->Candidates()[0].address().port());
+}
+
+// Test case for WebRTC issue 3927 where a proxy binds to the local host address
+// instead the address that TurnPort originally bound to. The candidate pair
+// impacted by this behavior should still be used.
+TEST_F(TurnPortTest, TestTurnTcpAllocationWhenProxyChangesAddressToLocalHost) {
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
+  EXPECT_EQ(0, turn_port_->SetOption(rtc::Socket::OPT_SNDBUF, 10 * 1024));
+  turn_port_->PrepareAddress();
+  ConnectSignalAddressReadyToSetLocalhostAsAltenertativeLocalAddress();
   EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
   ASSERT_EQ(1U, turn_port_->Candidates().size());
   EXPECT_EQ(kTurnUdpExtAddr.ipaddr(),

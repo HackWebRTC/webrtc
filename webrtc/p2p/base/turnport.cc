@@ -309,11 +309,24 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
   // the one we asked for. This is seen in Chrome, where TCP sockets cannot be
   // given a binding address, and the platform is expected to pick the
   // correct local address.
+
+  // Further, to workaround issue 3927 in which a proxy is forcing TCP bound to
+  // localhost only, we're allowing Loopback IP even if it's not the same as the
+  // local Turn port.
   if (socket->GetLocalAddress().ipaddr() != ip()) {
-    LOG(LS_WARNING) << "Socket is bound to a different address then the "
-                    << "local port. Discarding TURN port.";
-    OnAllocateError();
-    return;
+    if (socket->GetLocalAddress().IsLoopbackIP()) {
+      LOG(LS_WARNING) << "Socket is bound to a different address:"
+                      << socket->GetLocalAddress().ipaddr().ToString()
+                      << ", rather then the local port:" << ip().ToString()
+                      << ". Still allowing it since it's localhost.";
+    } else {
+      LOG(LS_WARNING) << "Socket is bound to a different address:"
+                      << socket->GetLocalAddress().ipaddr().ToString()
+                      << ", rather then the local port:" << ip().ToString()
+                      << ". Discarding TURN port.";
+      OnAllocateError();
+      return;
+    }
   }
 
   if (server_address_.address.IsUnresolved()) {
