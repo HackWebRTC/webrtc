@@ -41,10 +41,12 @@ VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
     stats = stats_;
   }
   stats.c_name = GetCName();
-  codec_->GetReceiveSideDelay(channel_, &stats.avg_delay_ms);
   stats.discarded_packets = codec_->GetNumDiscardedPackets(channel_);
   codec_->GetReceiveCodecStastistics(
       channel_, stats.key_frames, stats.delta_frames);
+
+  codec_->GetReceiveCodecStastistics(channel_, stats.key_frames,
+                                     stats.delta_frames);
 
   return stats;
 }
@@ -62,6 +64,17 @@ void ReceiveStatisticsProxy::IncomingRate(const int video_channel,
   CriticalSectionScoped lock(crit_.get());
   stats_.network_frame_rate = framerate;
   stats_.total_bitrate_bps = bitrate_bps;
+}
+
+void ReceiveStatisticsProxy::DecoderTiming(int decode_ms,
+                                           int max_decode_ms,
+                                           int current_delay_ms,
+                                           int target_delay_ms,
+                                           int jitter_buffer_ms,
+                                           int min_playout_delay_ms,
+                                           int render_delay_ms) {
+  CriticalSectionScoped lock(crit_.get());
+  stats_.avg_delay_ms = target_delay_ms;
 }
 
 void ReceiveStatisticsProxy::StatisticsUpdated(
