@@ -181,7 +181,7 @@
         ['target_arch=="ia32" or target_arch=="x64"', {
           'dependencies': ['audio_processing_sse2',],
         }],
-        ['(target_arch=="arm" and arm_version==7) or target_arch=="armv7" or target_arch=="arm64"', {
+        ['(target_arch=="arm" and arm_version>=7) or target_arch=="arm64"', {
           'dependencies': ['audio_processing_neon',],
         }],
         ['target_arch=="mipsel" and mips_arch_variant!="r6" and android_webview_build==0', {
@@ -240,7 +240,7 @@
         },
       ],
     }],
-    ['(target_arch=="arm" and arm_version==7) or target_arch=="armv7" or target_arch=="arm64"', {
+    ['(target_arch=="arm" and arm_version>=7) or target_arch=="arm64"', {
       'targets': [{
         'target_name': 'audio_processing_neon',
         'type': 'static_library',

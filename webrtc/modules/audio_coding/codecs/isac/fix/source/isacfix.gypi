@@ -80,7 +80,7 @@
             'WEBRTC_LINUX',
           ],
         }],
-        ['(target_arch=="arm" and arm_version==7) or target_arch=="armv7"', {
+        ['target_arch=="arm" and arm_version>=7', {
           'dependencies': [ 'isac_neon', ],
           'sources': [
             'lattice_armv7.S',
@@ -124,7 +124,7 @@
     },
   ],
   'conditions': [
-    ['(target_arch=="arm" and arm_version==7) or target_arch=="armv7"', {
+    ['target_arch=="arm" and arm_version>=7', {
       'targets': [
         {
           'target_name': 'isac_neon',

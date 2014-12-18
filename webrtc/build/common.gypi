@@ -147,7 +147,7 @@
         'build_libjpeg%': 0,
         'enable_protobuf%': 0,
       }],
-      ['target_arch=="arm" or target_arch=="armv7" or target_arch=="arm64"', {
+      ['target_arch=="arm" or target_arch=="arm64"', {
         'prefer_fixed_point%': 1,
       }],
       ['OS!="ios" and (target_arch!="arm" or arm_version>=7)', {
@@ -256,7 +256,7 @@
           'WEBRTC_ARCH_ARM64_NEON',
         ],
       }],
-      ['target_arch=="arm" or target_arch=="armv7"', {
+      ['target_arch=="arm"', {
         'defines': [
           'WEBRTC_ARCH_ARM',
         ],

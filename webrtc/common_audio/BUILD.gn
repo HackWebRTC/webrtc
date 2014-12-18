@@ -110,7 +110,7 @@ source_set("common_audio") {
       "signal_processing/spl_sqrt_floor_arm.S",
     ]
 
-    if (arm_version == 7) {
+    if (arm_version >= 7) {
       deps += [ ":common_audio_neon" ]
       sources += [ "signal_processing/filter_ar_fast_q12_armv7.S" ]
     } else {
