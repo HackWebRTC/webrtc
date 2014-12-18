@@ -8,12 +8,6 @@
 
 {
   'variables': {
-    'audio_processing_dependencies': [
-      '<(webrtc_root)/base/base.gyp:rtc_base_approved',
-      '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
-      '<(webrtc_root)/modules/modules.gyp:iSAC',
-      '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-    ],
     'shared_generated_dir': '<(SHARED_INTERMEDIATE_DIR)/audio_processing/asm_offsets',
   },
   'targets': [
@@ -31,7 +25,10 @@
         'aec_untrusted_delay_for_testing%': 0,
       },
       'dependencies': [
-        '<@(audio_processing_dependencies)',
+        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
+        '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
+        '<(webrtc_root)/modules/modules.gyp:iSAC',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
         'aec/aec_core.c',
@@ -84,6 +81,10 @@
         'audio_buffer.h',
         'audio_processing_impl.cc',
         'audio_processing_impl.h',
+        'beamformer/complex_matrix.h',
+        'beamformer/covariance_matrix_generator.cc',
+        'beamformer/covariance_matrix_generator.h',
+        'beamformer/matrix.h',
         'channel_buffer.cc',
         'channel_buffer.h',
         'common.h',
@@ -176,6 +177,12 @@
             'ns/ns_core.c',
             'ns/ns_core.h',
             'ns/windows_private.h',
+          ],
+        }],
+        ['rtc_use_openmax_dl==1', {
+          'sources': [
+            'beamformer/beamformer.cc',
+            'beamformer/beamformer.h',
           ],
         }],
         ['target_arch=="ia32" or target_arch=="x64"', {

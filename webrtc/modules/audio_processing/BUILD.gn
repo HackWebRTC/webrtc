@@ -72,6 +72,10 @@ source_set("audio_processing") {
     "audio_buffer.h",
     "audio_processing_impl.cc",
     "audio_processing_impl.h",
+    "beamformer/complex_matrix.h",
+    "beamformer/covariance_matrix_generator.cc",
+    "beamformer/covariance_matrix_generator.h",
+    "beamformer/matrix.h",
     "channel_buffer.cc",
     "channel_buffer.h",
     "common.h",
@@ -164,6 +168,13 @@ source_set("audio_processing") {
       "ns/ns_core.c",
       "ns/ns_core.h",
       "ns/windows_private.h",
+    ]
+  }
+
+  if (rtc_use_openmax_dl) {
+    sources += [
+      "beamformer/beamformer.cc",
+      "beamformer/beamformer.h",
     ]
   }
 
