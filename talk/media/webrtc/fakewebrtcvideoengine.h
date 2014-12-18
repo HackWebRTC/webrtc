@@ -727,6 +727,9 @@ class FakeWebRtcVideoEngine
   WEBRTC_VOID_STUB(RegisterSendStatisticsProxy,
                    (int, webrtc::SendStatisticsProxy*));
 
+  WEBRTC_VOID_STUB(RegisterReceiveStatisticsProxy,
+                   (int, webrtc::ReceiveStatisticsProxy*));
+
   // webrtc::ViECodec
   WEBRTC_FUNC_CONST(NumberOfCodecs, ()) {
     return num_codecs_;

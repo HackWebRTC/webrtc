@@ -586,10 +586,10 @@ class RtpRtcp : public Module {
     virtual bool StorePackets() const = 0;
 
     // Called on receipt of RTCP report block from remote side.
-    virtual void RegisterSendChannelRtcpStatisticsCallback(
+    virtual void RegisterRtcpStatisticsCallback(
         RtcpStatisticsCallback* callback) = 0;
     virtual RtcpStatisticsCallback*
-        GetSendChannelRtcpStatisticsCallback() = 0;
+        GetRtcpStatisticsCallback() = 0;
 
     /**************************************************************************
     *

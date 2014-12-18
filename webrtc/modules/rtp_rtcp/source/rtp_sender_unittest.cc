@@ -768,32 +768,19 @@ TEST_F(RtpSenderTest, SendGenericVideo) {
 TEST_F(RtpSenderTest, FrameCountCallbacks) {
   class TestCallback : public FrameCountObserver {
    public:
-    TestCallback()
-      : FrameCountObserver(), num_calls_(0), ssrc_(0),
-        key_frames_(0), delta_frames_(0) {}
+    TestCallback() : FrameCountObserver(), num_calls_(0), ssrc_(0) {}
     virtual ~TestCallback() {}
 
-    virtual void FrameCountUpdated(FrameType frame_type,
-                                   uint32_t frame_count,
-                                   const unsigned int ssrc) OVERRIDE {
+    virtual void FrameCountUpdated(const FrameCounts& frame_counts,
+                                   uint32_t ssrc) OVERRIDE {
       ++num_calls_;
       ssrc_ = ssrc;
-      switch (frame_type) {
-        case kVideoFrameDelta:
-          delta_frames_ = frame_count;
-          break;
-        case kVideoFrameKey:
-          key_frames_ = frame_count;
-          break;
-        default:
-          break;
-      }
+      frame_counts_ = frame_counts;
     }
 
     uint32_t num_calls_;
     uint32_t ssrc_;
-    uint32_t key_frames_;
-    uint32_t delta_frames_;
+    FrameCounts frame_counts_;
   } callback;
 
   rtp_sender_.reset(new RTPSender(0, false, &fake_clock_, &transport_, NULL,
@@ -813,8 +800,8 @@ TEST_F(RtpSenderTest, FrameCountCallbacks) {
 
   EXPECT_EQ(1U, callback.num_calls_);
   EXPECT_EQ(ssrc, callback.ssrc_);
-  EXPECT_EQ(1U, callback.key_frames_);
-  EXPECT_EQ(0U, callback.delta_frames_);
+  EXPECT_EQ(1, callback.frame_counts_.key_frames);
+  EXPECT_EQ(0, callback.frame_counts_.delta_frames);
 
   ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kVideoFrameDelta,
                                              payload_type, 1234, 4321, payload,
@@ -822,8 +809,8 @@ TEST_F(RtpSenderTest, FrameCountCallbacks) {
 
   EXPECT_EQ(2U, callback.num_calls_);
   EXPECT_EQ(ssrc, callback.ssrc_);
-  EXPECT_EQ(1U, callback.key_frames_);
-  EXPECT_EQ(1U, callback.delta_frames_);
+  EXPECT_EQ(1, callback.frame_counts_.key_frames);
+  EXPECT_EQ(1, callback.frame_counts_.delta_frames);
 
   rtp_sender_.reset();
 }

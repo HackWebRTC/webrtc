@@ -94,7 +94,7 @@ class VCMJitterBuffer {
 
   // Get the number of received frames, by type, since the jitter buffer
   // was started.
-  std::map<FrameType, uint32_t> FrameStatistics() const;
+  FrameCounts FrameStatistics() const;
 
   // The number of packets discarded by the jitter buffer because the decoder
   // won't be able to decode them.
@@ -184,6 +184,8 @@ class VCMJitterBuffer {
   // corresponding to the start and end of the continuous complete buffer.
   void RenderBufferSize(uint32_t* timestamp_start, uint32_t* timestamp_end);
 
+  void RegisterFrameCountObserver(FrameCountObserver* observer);
+
  private:
   class SequenceNumberLessThan {
    public:
@@ -254,7 +256,8 @@ class VCMJitterBuffer {
   // Updates the frame statistics.
   // Counts only complete frames, so decodable incomplete frames will not be
   // counted.
-  void CountFrame(const VCMFrameBuffer& frame);
+  void CountFrame(const VCMFrameBuffer& frame)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Update rolling average of packets per frame.
   void UpdateAveragePacketsPerFrame(int current_number_packets_);
@@ -301,7 +304,8 @@ class VCMJitterBuffer {
 
   // Statistics.
   // Frame counts for each type (key, delta, ...)
-  std::map<FrameType, uint32_t> receive_statistics_;
+  FrameCountObserver* frame_count_observer_ GUARDED_BY(crit_sect_);
+  FrameCounts receive_statistics_;
   // Latest calculated frame rates of incoming stream.
   unsigned int incoming_frame_rate_;
   unsigned int incoming_frame_count_;

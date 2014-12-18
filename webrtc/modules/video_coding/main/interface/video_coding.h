@@ -485,16 +485,6 @@ public:
     //                     < 0,               on error.
     virtual int32_t Delay() const = 0;
 
-    // Get the received frame counters. Keeps track of the number of each frame type
-    // received since the start of the call.
-    //
-    // Output:
-    //      - frameCount      : Struct to be filled with the number of frames received.
-    //
-    // Return value           : VCM_OK,        on success.
-    //                          <0,                 on error.
-    virtual int32_t ReceivedFrameCount(VCMFrameCount& frameCount) const = 0;
-
     // Returns the number of packets discarded by the jitter buffer due to being
     // too late. This can include duplicated packets which arrived after the
     // frame was sent to the decoder. Therefore packets which were prematurely
@@ -592,6 +582,8 @@ public:
         EncodedImageCallback* observer) = 0;
     virtual void RegisterPostEncodeImageCallback(
         EncodedImageCallback* post_encode_callback) = 0;
+    virtual void RegisterReceiveFrameCountObserver(
+        FrameCountObserver* frame_count_observer) = 0;
 };
 
 }  // namespace webrtc

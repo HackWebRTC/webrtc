@@ -29,15 +29,13 @@ class CriticalSectionWrapper;
 class ViECodec;
 class ViEDecoderObserver;
 
-namespace internal {
-
 class ReceiveStatisticsProxy : public ViEDecoderObserver,
                                public RtcpStatisticsCallback,
-                               public StreamDataCountersCallback {
+                               public StreamDataCountersCallback,
+                               public FrameCountObserver {
  public:
   ReceiveStatisticsProxy(uint32_t ssrc,
                          Clock* clock,
-                         ViERTP_RTCP* rtp_rtcp,
                          ViECodec* codec,
                          int channel);
   virtual ~ReceiveStatisticsProxy();
@@ -62,21 +60,23 @@ class ReceiveStatisticsProxy : public ViEDecoderObserver,
                              int render_delay_ms) OVERRIDE;
   virtual void RequestNewKeyFrame(const int video_channel) OVERRIDE {}
 
-  // Overrides RtcpStatisticsBallback.
+  // Overrides RtcpStatisticsCallback.
   virtual void StatisticsUpdated(const webrtc::RtcpStatistics& statistics,
                                  uint32_t ssrc) OVERRIDE;
+  virtual void CNameChanged(const char* cname, uint32_t ssrc) OVERRIDE;
 
   // Overrides StreamDataCountersCallback.
   virtual void DataCountersUpdated(const webrtc::StreamDataCounters& counters,
                                    uint32_t ssrc) OVERRIDE;
 
- private:
-  std::string GetCName() const;
+  // Overrides FrameCountObserver.
+  virtual void FrameCountUpdated(const FrameCounts& frame_counts,
+                                 uint32_t ssrc) OVERRIDE;
 
+ private:
   const int channel_;
   Clock* const clock_;
   ViECodec* const codec_;
-  ViERTP_RTCP* const rtp_rtcp_;
 
   scoped_ptr<CriticalSectionWrapper> crit_;
   VideoReceiveStream::Stats stats_ GUARDED_BY(crit_);
@@ -84,6 +84,5 @@ class ReceiveStatisticsProxy : public ViEDecoderObserver,
   RateStatistics renders_fps_estimator_ GUARDED_BY(crit_);
 };
 
-}  // namespace internal
 }  // namespace webrtc
 #endif  // WEBRTC_VIDEO_RECEIVE_STATISTICS_PROXY_H_

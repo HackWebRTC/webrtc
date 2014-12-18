@@ -48,6 +48,7 @@ class SendStatisticsProxy : public RtcpStatisticsCallback,
   // From RtcpStatisticsCallback.
   virtual void StatisticsUpdated(const RtcpStatistics& statistics,
                                  uint32_t ssrc) OVERRIDE;
+  virtual void CNameChanged(const char *cname, uint32_t ssrc) OVERRIDE;
   // From StreamDataCountersCallback.
   virtual void DataCountersUpdated(const StreamDataCounters& counters,
                                    uint32_t ssrc) OVERRIDE;
@@ -58,9 +59,8 @@ class SendStatisticsProxy : public RtcpStatisticsCallback,
                       uint32_t ssrc) OVERRIDE;
 
   // From FrameCountObserver.
-  virtual void FrameCountUpdated(FrameType frame_type,
-                                 uint32_t frame_count,
-                                 const unsigned int ssrc) OVERRIDE;
+  virtual void FrameCountUpdated(const FrameCounts& frame_counts,
+                                 uint32_t ssrc) OVERRIDE;
 
   // From ViEEncoderObserver.
   virtual void OutgoingRate(const int video_channel,

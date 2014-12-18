@@ -1693,9 +1693,9 @@ TEST_F(TestRunningJitterBuffer, EmptyPackets) {
 }
 
 TEST_F(TestRunningJitterBuffer, StatisticsTest) {
-  std::map<FrameType, uint32_t> frame_stats(jitter_buffer_->FrameStatistics());
-  EXPECT_EQ(0u, frame_stats[kVideoFrameDelta]);
-  EXPECT_EQ(0u, frame_stats[kVideoFrameKey]);
+  FrameCounts frame_stats(jitter_buffer_->FrameStatistics());
+  EXPECT_EQ(0, frame_stats.delta_frames);
+  EXPECT_EQ(0, frame_stats.key_frames);
 
   uint32_t framerate = 0;
   uint32_t bitrate = 0;
@@ -1714,8 +1714,8 @@ TEST_F(TestRunningJitterBuffer, StatisticsTest) {
   EXPECT_TRUE(DecodeCompleteFrame());
   EXPECT_TRUE(DecodeCompleteFrame());
   frame_stats = jitter_buffer_->FrameStatistics();
-  EXPECT_EQ(3u, frame_stats[kVideoFrameDelta]);
-  EXPECT_EQ(2u, frame_stats[kVideoFrameKey]);
+  EXPECT_EQ(3, frame_stats.delta_frames);
+  EXPECT_EQ(2, frame_stats.key_frames);
 
   // Insert 20 more frames to get estimates of bitrate and framerate over
   // 1 second.

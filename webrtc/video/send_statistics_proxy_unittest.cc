@@ -59,8 +59,8 @@ class SendStatisticsProxyTest : public ::testing::Test {
       const SsrcStats& a = it->second;
       const SsrcStats& b = corresponding_it->second;
 
-      EXPECT_EQ(a.key_frames, b.key_frames);
-      EXPECT_EQ(a.delta_frames, b.delta_frames);
+      EXPECT_EQ(a.frame_counts.key_frames, b.frame_counts.key_frames);
+      EXPECT_EQ(a.frame_counts.delta_frames, b.frame_counts.delta_frames);
       EXPECT_EQ(a.total_bitrate_bps, b.total_bitrate_bps);
       EXPECT_EQ(a.avg_delay_ms, b.avg_delay_ms);
       EXPECT_EQ(a.max_delay_ms, b.max_delay_ms);
@@ -169,10 +169,11 @@ TEST_F(SendStatisticsProxyTest, FrameCounts) {
     // Add statistics with some arbitrary, but unique, numbers.
     SsrcStats& stats = expected_.substreams[ssrc];
     uint32_t offset = ssrc * sizeof(SsrcStats);
-    stats.key_frames = offset;
-    stats.delta_frames = offset + 1;
-    observer->FrameCountUpdated(kVideoFrameKey, stats.key_frames, ssrc);
-    observer->FrameCountUpdated(kVideoFrameDelta, stats.delta_frames, ssrc);
+    FrameCounts frame_counts;
+    frame_counts.key_frames = offset;
+    frame_counts.delta_frames = offset + 1;
+    stats.frame_counts = frame_counts;
+    observer->FrameCountUpdated(frame_counts, ssrc);
   }
   for (std::vector<uint32_t>::const_iterator it = config_.rtp.rtx.ssrcs.begin();
        it != config_.rtp.rtx.ssrcs.end();
@@ -181,10 +182,11 @@ TEST_F(SendStatisticsProxyTest, FrameCounts) {
     // Add statistics with some arbitrary, but unique, numbers.
     SsrcStats& stats = expected_.substreams[ssrc];
     uint32_t offset = ssrc * sizeof(SsrcStats);
-    stats.key_frames = offset;
-    stats.delta_frames = offset + 1;
-    observer->FrameCountUpdated(kVideoFrameKey, stats.key_frames, ssrc);
-    observer->FrameCountUpdated(kVideoFrameDelta, stats.delta_frames, ssrc);
+    FrameCounts frame_counts;
+    frame_counts.key_frames = offset;
+    frame_counts.delta_frames = offset + 1;
+    stats.frame_counts = frame_counts;
+    observer->FrameCountUpdated(frame_counts, ssrc);
   }
 
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
@@ -318,7 +320,9 @@ TEST_F(SendStatisticsProxyTest, NoSubstreams) {
 
   // From FrameCountObserver.
   FrameCountObserver* fps_observer = statistics_proxy_.get();
-  fps_observer->FrameCountUpdated(kVideoFrameKey, 1, exluded_ssrc);
+  FrameCounts frame_counts;
+  frame_counts.key_frames = 1;
+  fps_observer->FrameCountUpdated(frame_counts, exluded_ssrc);
 
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
   EXPECT_TRUE(stats.substreams.empty());

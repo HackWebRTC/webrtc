@@ -39,6 +39,7 @@ class EncodedImageCallback;
 class I420FrameCallback;
 class PacedSender;
 class ProcessThread;
+class ReceiveStatisticsProxy;
 class RtcpRttStats;
 class ThreadWrapper;
 class ViEDecoderObserver;
@@ -353,7 +354,8 @@ class ViEChannel
       EncodedImageCallback* pre_decode_callback);
 
   void RegisterSendFrameCountObserver(FrameCountObserver* observer);
-
+  void RegisterReceiveStatisticsProxy(
+      ReceiveStatisticsProxy* receive_statistics_proxy);
   void ReceivedBWEPacket(int64_t arrival_time_ms, size_t payload_size,
                          const RTPHeader& header);
 
@@ -427,14 +429,24 @@ class ViEChannel
 
   class RegisterableFrameCountObserver
       : public RegisterableCallback<FrameCountObserver> {
-    virtual void FrameCountUpdated(FrameType frame_type,
-                                   uint32_t frame_count,
-                                   const unsigned int ssrc) {
+   public:
+    virtual void FrameCountUpdated(const FrameCounts& frame_counts,
+                                   uint32_t ssrc) {
       CriticalSectionScoped cs(critsect_.get());
+      frame_counts_ = frame_counts;
       if (callback_)
-        callback_->FrameCountUpdated(frame_type, frame_count, ssrc);
+        callback_->FrameCountUpdated(frame_counts, ssrc);
     }
-  } send_frame_count_observer_;
+
+    void GetFrameCount(uint32_t* num_key_frames, uint32_t* num_delta_frames) {
+      CriticalSectionScoped cs(critsect_.get());
+      *num_key_frames = frame_counts_.key_frames;
+      *num_delta_frames = frame_counts_.delta_frames;
+    }
+
+   private:
+    FrameCounts frame_counts_ GUARDED_BY(critsect_);
+  } send_frame_count_observer_, receive_frame_count_observer_;
 
   class RegisterableSendSideDelayObserver :
       public RegisterableCallback<SendSideDelayObserver> {

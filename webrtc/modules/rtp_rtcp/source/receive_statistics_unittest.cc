@@ -169,6 +169,8 @@ TEST_F(ReceiveStatisticsTest, RtcpCallbacks) {
       ++num_calls_;
     }
 
+    virtual void CNameChanged(const char* cname, uint32_t ssrc) OVERRIDE {}
+
     uint32_t num_calls_;
     uint32_t ssrc_;
     RtcpStatistics stats_;

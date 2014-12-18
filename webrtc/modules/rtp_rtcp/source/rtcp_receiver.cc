@@ -809,6 +809,10 @@ void RTCPReceiver::HandleSDESChunk(RTCPUtility::RTCPParserV2& rtcpParser) {
 
   cnameInfo->name[RTCP_CNAME_SIZE - 1] = 0;
   strncpy(cnameInfo->name, rtcpPacket.CName.CName, RTCP_CNAME_SIZE - 1);
+  if (stats_callback_ != NULL) {
+    stats_callback_->CNameChanged(rtcpPacket.CName.CName,
+                                  rtcpPacket.CName.SenderSSRC);
+  }
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver

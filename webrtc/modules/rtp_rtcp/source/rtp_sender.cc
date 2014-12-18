@@ -502,9 +502,14 @@ int32_t RTPSender::SendOutgoingData(
   }
 
   CriticalSectionScoped cs(statistics_crit_.get());
-  uint32_t frame_count = ++frame_counts_[frame_type];
+  // Note: This is currently only counting for video.
+  if (frame_type == kVideoFrameKey) {
+    ++frame_counts_.key_frames;
+  } else if (frame_type == kVideoFrameDelta) {
+    ++frame_counts_.delta_frames;
+  }
   if (frame_count_observer_) {
-    frame_count_observer_->FrameCountUpdated(frame_type, frame_count, ssrc);
+    frame_count_observer_->FrameCountUpdated(frame_counts_, ssrc);
   }
 
   return ret_val;

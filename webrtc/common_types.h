@@ -188,13 +188,13 @@ struct RtcpStatistics {
   uint32_t jitter;
 };
 
-// Callback, called whenever a new rtcp report block is transmitted.
 class RtcpStatisticsCallback {
  public:
   virtual ~RtcpStatisticsCallback() {}
 
   virtual void StatisticsUpdated(const RtcpStatistics& statistics,
                                  uint32_t ssrc) = 0;
+  virtual void CNameChanged(const char* cname, uint32_t ssrc) = 0;
 };
 
 // Statistics for RTCP packet types.
@@ -331,13 +331,18 @@ class BitrateStatisticsObserver {
                       uint32_t ssrc) = 0;
 };
 
+struct FrameCounts {
+  FrameCounts() : key_frames(0), delta_frames(0) {}
+  int key_frames;
+  int delta_frames;
+};
+
 // Callback, used to notify an observer whenever frame counts have been updated.
 class FrameCountObserver {
  public:
   virtual ~FrameCountObserver() {}
-  virtual void FrameCountUpdated(FrameType frame_type,
-                                 uint32_t frame_count,
-                                 const unsigned int ssrc) = 0;
+  virtual void FrameCountUpdated(const FrameCounts& frame_counts,
+                                 uint32_t ssrc) = 0;
 };
 
 // Callback, used to notify an observer whenever the send-side delay is updated.

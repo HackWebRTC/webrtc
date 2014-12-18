@@ -16,6 +16,7 @@
 #include "webrtc/common.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/experiments.h"
+#include "webrtc/frame_callback.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
@@ -27,12 +28,12 @@
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/metrics.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video_engine/call_stats.h"
 #include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_engine/include/vie_errors.h"
 #include "webrtc/video_engine/include/vie_image_process.h"
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
-#include "webrtc/frame_callback.h"
 #include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
@@ -156,6 +157,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
   rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
   vie_receiver_.SetRtpRtcpModule(rtp_rtcp_.get());
   vcm_->SetNackSettings(kMaxNackListSize, max_nack_reordering_threshold_, 0);
+  vcm_->RegisterReceiveFrameCountObserver(&receive_frame_count_observer_);
 }
 
 int32_t ViEChannel::Init() {
@@ -424,7 +426,7 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       module_process_thread_.DeRegisterModule(rtp_rtcp);
       rtp_rtcp->SetSendingStatus(false);
       rtp_rtcp->SetSendingMediaStatus(false);
-      rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(NULL);
+      rtp_rtcp->RegisterRtcpStatisticsCallback(NULL);
       rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(NULL);
       simulcast_rtp_rtcp_.pop_back();
       removed_rtp_rtcp_.push_front(rtp_rtcp);
@@ -471,8 +473,8 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
         rtp_rtcp->DeregisterSendRtpHeaderExtension(
             kRtpExtensionAbsoluteSendTime);
       }
-      rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(
-          rtp_rtcp_->GetSendChannelRtcpStatisticsCallback());
+      rtp_rtcp->RegisterRtcpStatisticsCallback(
+          rtp_rtcp_->GetRtcpStatisticsCallback());
       rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(
           rtp_rtcp_->GetSendChannelRtpStatisticsCallback());
     }
@@ -485,7 +487,7 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       module_process_thread_.DeRegisterModule(rtp_rtcp);
       rtp_rtcp->SetSendingStatus(false);
       rtp_rtcp->SetSendingMediaStatus(false);
-      rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(NULL);
+      rtp_rtcp->RegisterRtcpStatisticsCallback(NULL);
       rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(NULL);
       simulcast_rtp_rtcp_.pop_back();
       removed_rtp_rtcp_.push_front(rtp_rtcp);
@@ -577,12 +579,7 @@ int32_t ViEChannel::DeRegisterExternalDecoder(const uint8_t pl_type) {
 
 int32_t ViEChannel::ReceiveCodecStatistics(uint32_t* num_key_frames,
                                            uint32_t* num_delta_frames) {
-  VCMFrameCount received_frames;
-  if (vcm_->ReceivedFrameCount(received_frames) != VCM_OK) {
-    return -1;
-  }
-  *num_key_frames = received_frames.numKeyFrames;
-  *num_delta_frames = received_frames.numDeltaFrames;
+  receive_frame_count_observer_.GetFrameCount(num_key_frames, num_delta_frames);
   return 0;
 }
 
@@ -1127,12 +1124,12 @@ int32_t ViEChannel::GetSendRtcpStatistics(uint16_t* fraction_lost,
 
 void ViEChannel::RegisterSendChannelRtcpStatisticsCallback(
     RtcpStatisticsCallback* callback) {
-  rtp_rtcp_->RegisterSendChannelRtcpStatisticsCallback(callback);
+  rtp_rtcp_->RegisterRtcpStatisticsCallback(callback);
   CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end();
        ++it) {
-    (*it)->RegisterSendChannelRtcpStatisticsCallback(callback);
+    (*it)->RegisterRtcpStatisticsCallback(callback);
   }
 }
 
@@ -1168,6 +1165,7 @@ void ViEChannel::RegisterReceiveChannelRtcpStatisticsCallback(
     RtcpStatisticsCallback* callback) {
   vie_receiver_.GetReceiveStatistics()->RegisterRtcpStatisticsCallback(
       callback);
+  rtp_rtcp_->RegisterRtcpStatisticsCallback(callback);
 }
 
 int32_t ViEChannel::GetRtpStatistics(size_t* bytes_sent,
@@ -1667,7 +1665,7 @@ void ViEChannel::ReserveRtpRtcpModules(size_t num_modules) {
     RtpRtcp* rtp_rtcp = CreateRtpRtcpModule();
     rtp_rtcp->SetSendingStatus(false);
     rtp_rtcp->SetSendingMediaStatus(false);
-    rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(NULL);
+    rtp_rtcp->RegisterRtcpStatisticsCallback(NULL);
     rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(NULL);
     removed_rtp_rtcp_.push_back(rtp_rtcp);
   }
@@ -1846,6 +1844,11 @@ void ViEChannel::ResetStatistics(uint32_t ssrc) {
 void ViEChannel::RegisterSendFrameCountObserver(
     FrameCountObserver* observer) {
   send_frame_count_observer_.Set(observer);
+}
+
+void ViEChannel::RegisterReceiveStatisticsProxy(
+    ReceiveStatisticsProxy* receive_statistics_proxy) {
+  receive_frame_count_observer_.Set(receive_statistics_proxy);
 }
 
 void ViEChannel::ReceivedBWEPacket(int64_t arrival_time_ms,

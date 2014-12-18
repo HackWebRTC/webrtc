@@ -25,6 +25,7 @@ namespace webrtc {
 
 class Config;
 class VoiceEngine;
+class ReceiveStatisticsProxy;
 class SendStatisticsProxy;
 
 // CpuOveruseObserver is called when a system overuse is detected and
@@ -242,6 +243,10 @@ class WEBRTC_DLLEXPORT ViEBase {
   virtual void RegisterSendStatisticsProxy(
       int channel,
       SendStatisticsProxy* send_statistics_proxy) = 0;
+
+  virtual void RegisterReceiveStatisticsProxy(
+      int channel,
+      ReceiveStatisticsProxy* receive_statistics_proxy) = 0;
 
  protected:
   ViEBase() {}

@@ -53,7 +53,6 @@ class VCMReceiver {
                                     bool render_timing = true);
   void ReleaseFrame(VCMEncodedFrame* frame);
   void ReceiveStatistics(uint32_t* bitrate, uint32_t* framerate);
-  void ReceivedFrameCount(VCMFrameCount* frame_count) const;
   uint32_t DiscardedPackets() const;
 
   // NACK.
@@ -79,6 +78,8 @@ class VCMReceiver {
   // jitter buffer. The render time is estimated based on the render delay at
   // the time this function is called.
   int RenderBufferSizeMs();
+
+  void RegisterFrameCountObserver(FrameCountObserver* frame_count_observer);
 
  private:
   static int32_t GenerateReceiverId();

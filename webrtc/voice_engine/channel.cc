@@ -71,6 +71,8 @@ class StatisticsProxy : public RtcpStatisticsCallback {
     }
   }
 
+  virtual void CNameChanged(const char* cname, uint32_t ssrc) OVERRIDE {}
+
   void ResetStatistics() {
     CriticalSectionScoped cs(stats_lock_.get());
     stats_ = ChannelStatistics();

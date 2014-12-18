@@ -128,6 +128,7 @@ class ReceiveStatisticsImpl : public ReceiveStatistics,
  private:
   virtual void StatisticsUpdated(const RtcpStatistics& statistics,
                                  uint32_t ssrc) OVERRIDE;
+  virtual void CNameChanged(const char* cname, uint32_t ssrc) OVERRIDE;
   virtual void DataCountersUpdated(const StreamDataCounters& counters,
                                    uint32_t ssrc) OVERRIDE;
 

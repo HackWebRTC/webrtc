@@ -164,7 +164,6 @@ class VideoReceiver {
   int32_t SetMinimumPlayoutDelay(uint32_t minPlayoutDelayMs);
   int32_t SetRenderDelay(uint32_t timeMS);
   int32_t Delay() const;
-  int32_t ReceivedFrameCount(VCMFrameCount* frameCount) const;
   uint32_t DiscardedPackets() const;
 
   int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
@@ -183,6 +182,7 @@ class VideoReceiver {
   int32_t Process();
 
   void RegisterPreDecodeImageCallback(EncodedImageCallback* observer);
+  void RegisterFrameCountObserver(FrameCountObserver* frame_count_observer);
 
  protected:
   int32_t Decode(const webrtc::VCMEncodedFrame& frame)

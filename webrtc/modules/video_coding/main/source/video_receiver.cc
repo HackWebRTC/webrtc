@@ -592,11 +592,6 @@ int32_t VideoReceiver::NackList(uint16_t* nackList, uint16_t* size) {
   return VCM_OK;
 }
 
-int32_t VideoReceiver::ReceivedFrameCount(VCMFrameCount* frameCount) const {
-  _receiver.ReceivedFrameCount(frameCount);
-  return VCM_OK;
-}
-
 uint32_t VideoReceiver::DiscardedPackets() const {
   return _receiver.DiscardedPackets();
 }
@@ -670,6 +665,10 @@ void VideoReceiver::RegisterPreDecodeImageCallback(
     EncodedImageCallback* observer) {
   CriticalSectionScoped cs(_receiveCritSect);
   pre_decode_image_callback_ = observer;
+}
+void VideoReceiver::RegisterFrameCountObserver(
+    FrameCountObserver* frame_count_observer) {
+  _receiver.RegisterFrameCountObserver(frame_count_observer);
 }
 
 }  // namespace vcm

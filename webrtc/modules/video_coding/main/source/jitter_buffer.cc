@@ -124,6 +124,7 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock, EventFactory* event_factory)
       incomplete_frames_(),
       last_decoded_state_(),
       first_packet_since_reset_(true),
+      frame_count_observer_(NULL),
       incoming_frame_rate_(0),
       incoming_frame_count_(0),
       time_last_incoming_frame_count_(0),
@@ -184,14 +185,15 @@ void VCMJitterBuffer::UpdateHistograms() {
   RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.DuplicatedPacketsInPercent",
       num_duplicated_packets_ * 100 / num_packets_);
 
-  uint32_t total_frames = receive_statistics_[kVideoFrameKey] +
-                          receive_statistics_[kVideoFrameDelta];
+  int total_frames =
+      receive_statistics_.key_frames + receive_statistics_.delta_frames;
   if (total_frames > 0) {
     RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.CompleteFramesReceivedPerSecond",
         static_cast<int>((total_frames / elapsed_sec) + 0.5f));
-    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.KeyFramesReceivedInPermille",
-        static_cast<int>((receive_statistics_[kVideoFrameKey] * 1000.0f /
-            total_frames) + 0.5f));
+    RTC_HISTOGRAM_COUNTS_1000(
+        "WebRTC.Video.KeyFramesReceivedInPermille",
+        static_cast<int>(
+            (receive_statistics_.key_frames * 1000.0f / total_frames) + 0.5f));
   }
 }
 
@@ -203,7 +205,7 @@ void VCMJitterBuffer::Start() {
   incoming_bit_count_ = 0;
   incoming_bit_rate_ = 0;
   time_last_incoming_frame_count_ = clock_->TimeInMilliseconds();
-  receive_statistics_.clear();
+  receive_statistics_ = FrameCounts();
 
   num_consecutive_old_packets_ = 0;
   num_packets_ = 0;
@@ -269,7 +271,7 @@ void VCMJitterBuffer::Flush() {
 }
 
 // Get received key and delta frames
-std::map<FrameType, uint32_t> VCMJitterBuffer::FrameStatistics() const {
+FrameCounts VCMJitterBuffer::FrameStatistics() const {
   CriticalSectionScoped cs(crit_sect_);
   return receive_statistics_;
 }
@@ -1038,6 +1040,12 @@ void VCMJitterBuffer::RenderBufferSize(uint32_t* timestamp_start,
   *timestamp_end = decodable_frames_.Back()->TimeStamp();
 }
 
+void VCMJitterBuffer::RegisterFrameCountObserver(
+    FrameCountObserver* frame_count_observer) {
+  CriticalSectionScoped cs(crit_sect_);
+  frame_count_observer_ = frame_count_observer;
+}
+
 VCMFrameBuffer* VCMJitterBuffer::GetEmptyFrame() {
   if (free_frames_.empty()) {
     if (!TryToIncreaseJitterBufferSize()) {
@@ -1105,7 +1113,13 @@ void VCMJitterBuffer::CountFrame(const VCMFrameBuffer& frame) {
   // Update receive statistics. We count all layers, thus when you use layers
   // adding all key and delta frames might differ from frame count.
   if (frame.IsSessionComplete()) {
-    ++receive_statistics_[frame.FrameType()];
+    if (frame.FrameType() == kVideoFrameKey) {
+      ++receive_statistics_.key_frames;
+    } else {
+      ++receive_statistics_.delta_frames;
+    }
+    if (frame_count_observer_ != NULL)
+      frame_count_observer_->FrameCountUpdated(receive_statistics_, 0);
   }
 }
 

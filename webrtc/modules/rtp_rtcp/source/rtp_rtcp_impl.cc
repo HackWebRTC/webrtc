@@ -988,13 +988,13 @@ bool ModuleRtpRtcpImpl::StorePackets() const {
   return rtp_sender_.StorePackets();
 }
 
-void ModuleRtpRtcpImpl::RegisterSendChannelRtcpStatisticsCallback(
+void ModuleRtpRtcpImpl::RegisterRtcpStatisticsCallback(
     RtcpStatisticsCallback* callback) {
   rtcp_receiver_.RegisterRtcpStatisticsCallback(callback);
 }
 
-RtcpStatisticsCallback* ModuleRtpRtcpImpl::
-        GetSendChannelRtcpStatisticsCallback() {
+RtcpStatisticsCallback*
+ModuleRtpRtcpImpl::GetRtcpStatisticsCallback() {
   return rtcp_receiver_.GetRtcpStatisticsCallback();
 }
 

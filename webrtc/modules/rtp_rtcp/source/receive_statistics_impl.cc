@@ -511,9 +511,14 @@ void ReceiveStatisticsImpl::RegisterRtcpStatisticsCallback(
 void ReceiveStatisticsImpl::StatisticsUpdated(const RtcpStatistics& statistics,
                                               uint32_t ssrc) {
   CriticalSectionScoped cs(receive_statistics_lock_.get());
-  if (rtcp_stats_callback_) {
+  if (rtcp_stats_callback_)
     rtcp_stats_callback_->StatisticsUpdated(statistics, ssrc);
-  }
+}
+
+void ReceiveStatisticsImpl::CNameChanged(const char* cname, uint32_t ssrc) {
+  CriticalSectionScoped cs(receive_statistics_lock_.get());
+  if (rtcp_stats_callback_)
+    rtcp_stats_callback_->CNameChanged(cname, ssrc);
 }
 
 void ReceiveStatisticsImpl::RegisterRtpStatisticsCallback(

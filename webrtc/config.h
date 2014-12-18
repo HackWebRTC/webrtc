@@ -23,16 +23,13 @@ namespace webrtc {
 
 struct SsrcStats {
   SsrcStats()
-      : key_frames(0),
-        delta_frames(0),
-        sent_width(0),
+      : sent_width(0),
         sent_height(0),
         total_bitrate_bps(0),
         retransmit_bitrate_bps(0),
         avg_delay_ms(0),
         max_delay_ms(0) {}
-  uint32_t key_frames;
-  uint32_t delta_frames;
+  FrameCounts frame_counts;
   int sent_width;
   int sent_height;
   // TODO(holmer): Move bitrate_bps out to the webrtc::Call layer.

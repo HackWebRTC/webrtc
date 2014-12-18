@@ -820,6 +820,8 @@ TEST_F(RtcpReceiverTest, Callbacks) {
       ssrc_ = ssrc;
     }
 
+    virtual void CNameChanged(const char* cname, uint32_t ssrc) OVERRIDE {}
+
     bool Matches(uint32_t ssrc, uint32_t extended_max, uint8_t fraction_loss,
                  uint32_t cumulative_loss, uint32_t jitter) {
       return ssrc_ == ssrc &&

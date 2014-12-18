@@ -186,13 +186,6 @@ void VCMReceiver::ReceiveStatistics(uint32_t* bitrate,
   jitter_buffer_.IncomingRateStatistics(framerate, bitrate);
 }
 
-void VCMReceiver::ReceivedFrameCount(VCMFrameCount* frame_count) const {
-  assert(frame_count);
-  std::map<FrameType, uint32_t> counts(jitter_buffer_.FrameStatistics());
-  frame_count->numDeltaFrames = counts[kVideoFrameDelta];
-  frame_count->numKeyFrames = counts[kVideoFrameKey];
-}
-
 uint32_t VCMReceiver::DiscardedPackets() const {
   return jitter_buffer_.num_discarded_packets();
 }
@@ -276,4 +269,10 @@ int VCMReceiver::RenderBufferSizeMs() {
   uint32_t render_end = timing_->RenderTimeMs(timestamp_end, now_ms);
   return render_end - render_start;
 }
+
+void VCMReceiver::RegisterFrameCountObserver(
+    FrameCountObserver* frame_count_observer) {
+  jitter_buffer_.RegisterFrameCountObserver(frame_count_observer);
+}
+
 }  // namespace webrtc

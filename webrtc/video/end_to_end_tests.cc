@@ -1496,8 +1496,13 @@ TEST_F(EndToEndTest, GetStats) {
           stats.rtp_stats.retransmitted_packets != 0;
 
       receive_stats_filled_["CodecStats"] |=
-          stats.avg_delay_ms != 0 || stats.discarded_packets != 0 ||
-          stats.key_frames != 0 || stats.delta_frames != 0;
+          stats.avg_delay_ms != 0 || stats.discarded_packets != 0;
+
+      receive_stats_filled_["FrameCounts"] |=
+          stats.frame_counts.key_frames != 0 ||
+          stats.frame_counts.delta_frames != 0;
+
+      receive_stats_filled_["CName"] |= stats.c_name != "";
 
       return AllStatsFilled(receive_stats_filled_);
     }
@@ -1537,7 +1542,8 @@ TEST_F(EndToEndTest, GetStats) {
             stream_stats.total_bitrate_bps != 0;
 
         send_stats_filled_[CompoundKey("FrameCountObserver", it->first)] |=
-            stream_stats.delta_frames != 0 || stream_stats.key_frames != 0;
+            stream_stats.frame_counts.delta_frames != 0 ||
+            stream_stats.frame_counts.key_frames != 0;
 
         send_stats_filled_[CompoundKey("OutgoingRate", it->first)] |=
             stats.encode_frame_rate != 0;

@@ -115,6 +115,9 @@ void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
   stats->rtcp_stats = statistics;
 }
 
+void SendStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {
+}
+
 void SendStatisticsProxy::DataCountersUpdated(
     const StreamDataCounters& counters,
     uint32_t ssrc) {
@@ -138,26 +141,14 @@ void SendStatisticsProxy::Notify(const BitrateStatistics& total_stats,
   stats->retransmit_bitrate_bps = retransmit_stats.bitrate_bps;
 }
 
-void SendStatisticsProxy::FrameCountUpdated(FrameType frame_type,
-                                            uint32_t frame_count,
-                                            const unsigned int ssrc) {
+void SendStatisticsProxy::FrameCountUpdated(const FrameCounts& frame_counts,
+                                            uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
   SsrcStats* stats = GetStatsEntry(ssrc);
   if (stats == NULL)
     return;
 
-  switch (frame_type) {
-    case kVideoFrameDelta:
-      stats->delta_frames = frame_count;
-      break;
-    case kVideoFrameKey:
-      stats->key_frames = frame_count;
-      break;
-    case kFrameEmpty:
-    case kAudioFrameSpeech:
-    case kAudioFrameCN:
-      break;
-  }
+  stats->frame_counts = frame_counts;
 }
 
 void SendStatisticsProxy::SendSideDelayUpdated(int avg_delay_ms,

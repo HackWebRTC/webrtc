@@ -958,9 +958,10 @@ TEST_F(VideoSendStreamTest, ProducesStats) {
         // Check for data populated by various sources. RTCP excluded as this
         // data is received from remote side. Tested in call tests instead.
         const SsrcStats& entry = stats.substreams[ssrc];
-        if (entry.key_frames > 0u && entry.total_bitrate_bps > 0 &&
-            entry.rtp_stats.packets > 0u && entry.avg_delay_ms > 0 &&
-            entry.max_delay_ms > 0) {
+        if (entry.frame_counts.key_frames > 0 &&
+            entry.frame_counts.delta_frames > 0 &&
+            entry.total_bitrate_bps > 0 && entry.rtp_stats.packets > 0u &&
+            entry.avg_delay_ms > 0 && entry.max_delay_ms > 0) {
           return true;
         }
       }

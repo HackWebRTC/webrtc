@@ -247,10 +247,9 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   virtual bool StorePackets() const OVERRIDE;
 
   // Called on receipt of RTCP report block from remote side.
-  virtual void RegisterSendChannelRtcpStatisticsCallback(
+  virtual void RegisterRtcpStatisticsCallback(
       RtcpStatisticsCallback* callback) OVERRIDE;
-  virtual RtcpStatisticsCallback*
-      GetSendChannelRtcpStatisticsCallback() OVERRIDE;
+  virtual RtcpStatisticsCallback* GetRtcpStatisticsCallback() OVERRIDE;
 
   // (APP) Application specific data.
   virtual int32_t SetRTCPApplicationSpecificData(

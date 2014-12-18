@@ -373,4 +373,17 @@ void ViEBaseImpl::RegisterSendStatisticsProxy(
 
   vie_encoder->RegisterSendStatisticsProxy(send_statistics_proxy);
 }
+
+void ViEBaseImpl::RegisterReceiveStatisticsProxy(
+    int channel,
+    ReceiveStatisticsProxy* receive_statistics_proxy) {
+  LOG_F(LS_VERBOSE) << "RegisterReceiveStatisticsProxy on channel " << channel;
+  ViEChannelManagerScoped cs(*(shared_data_.channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(channel);
+  if (!vie_channel) {
+    shared_data_.SetLastError(kViEBaseInvalidChannelId);
+    return;
+  }
+  vie_channel->RegisterReceiveStatisticsProxy(receive_statistics_proxy);
+}
 }  // namespace webrtc

@@ -371,7 +371,7 @@ class RTPSender : public RTPSenderInterface {
   // Statistics
   scoped_ptr<CriticalSectionWrapper> statistics_crit_;
   SendDelayMap send_delays_ GUARDED_BY(statistics_crit_);
-  std::map<FrameType, uint32_t> frame_counts_ GUARDED_BY(statistics_crit_);
+  FrameCounts frame_counts_ GUARDED_BY(statistics_crit_);
   StreamDataCounters rtp_stats_ GUARDED_BY(statistics_crit_);
   StreamDataCounters rtx_rtp_stats_ GUARDED_BY(statistics_crit_);
   StreamDataCountersCallback* rtp_stats_callback_ GUARDED_BY(statistics_crit_);
