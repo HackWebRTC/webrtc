@@ -168,34 +168,33 @@ struct AecCore {
 #endif
 };
 
-typedef void (*WebRtcAec_FilterFar_t)(AecCore* aec, float yf[2][PART_LEN1]);
-extern WebRtcAec_FilterFar_t WebRtcAec_FilterFar;
-typedef void (*WebRtcAec_ScaleErrorSignal_t)(AecCore* aec,
-                                             float ef[2][PART_LEN1]);
-extern WebRtcAec_ScaleErrorSignal_t WebRtcAec_ScaleErrorSignal;
-typedef void (*WebRtcAec_FilterAdaptation_t)(AecCore* aec,
-                                             float* fft,
-                                             float ef[2][PART_LEN1]);
-extern WebRtcAec_FilterAdaptation_t WebRtcAec_FilterAdaptation;
-typedef void (*WebRtcAec_OverdriveAndSuppress_t)(AecCore* aec,
-                                                 float hNl[PART_LEN1],
-                                                 const float hNlFb,
-                                                 float efw[2][PART_LEN1]);
-extern WebRtcAec_OverdriveAndSuppress_t WebRtcAec_OverdriveAndSuppress;
+typedef void (*WebRtcAecFilterFar)(AecCore* aec, float yf[2][PART_LEN1]);
+extern WebRtcAecFilterFar WebRtcAec_FilterFar;
+typedef void (*WebRtcAecScaleErrorSignal)(AecCore* aec, float ef[2][PART_LEN1]);
+extern WebRtcAecScaleErrorSignal WebRtcAec_ScaleErrorSignal;
+typedef void (*WebRtcAecFilterAdaptation)(AecCore* aec,
+                                          float* fft,
+                                          float ef[2][PART_LEN1]);
+extern WebRtcAecFilterAdaptation WebRtcAec_FilterAdaptation;
+typedef void (*WebRtcAecOverdriveAndSuppress)(AecCore* aec,
+                                              float hNl[PART_LEN1],
+                                              const float hNlFb,
+                                              float efw[2][PART_LEN1]);
+extern WebRtcAecOverdriveAndSuppress WebRtcAec_OverdriveAndSuppress;
 
-typedef void (*WebRtcAec_ComfortNoise_t)(AecCore* aec,
-                                         float efw[2][PART_LEN1],
-                                         complex_t* comfortNoiseHband,
-                                         const float* noisePow,
-                                         const float* lambda);
-extern WebRtcAec_ComfortNoise_t WebRtcAec_ComfortNoise;
+typedef void (*WebRtcAecComfortNoise)(AecCore* aec,
+                                      float efw[2][PART_LEN1],
+                                      complex_t* comfortNoiseHband,
+                                      const float* noisePow,
+                                      const float* lambda);
+extern WebRtcAecComfortNoise WebRtcAec_ComfortNoise;
 
-typedef void (*WebRtcAec_SubbandCoherence_t)(AecCore* aec,
-                                             float efw[2][PART_LEN1],
-                                             float xfw[2][PART_LEN1],
-                                             float* fft,
-                                             float* cohde,
-                                             float* cohxd);
-extern WebRtcAec_SubbandCoherence_t WebRtcAec_SubbandCoherence;
+typedef void (*WebRtcAecSubBandCoherence)(AecCore* aec,
+                                          float efw[2][PART_LEN1],
+                                          float xfw[2][PART_LEN1],
+                                          float* fft,
+                                          float* cohde,
+                                          float* cohxd);
+extern WebRtcAecSubBandCoherence WebRtcAec_SubbandCoherence;
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_INTERNAL_H_

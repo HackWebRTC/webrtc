@@ -122,12 +122,12 @@ enum {
 extern int webrtc_aec_instance_count;
 #endif
 
-WebRtcAec_FilterFar_t WebRtcAec_FilterFar;
-WebRtcAec_ScaleErrorSignal_t WebRtcAec_ScaleErrorSignal;
-WebRtcAec_FilterAdaptation_t WebRtcAec_FilterAdaptation;
-WebRtcAec_OverdriveAndSuppress_t WebRtcAec_OverdriveAndSuppress;
-WebRtcAec_ComfortNoise_t WebRtcAec_ComfortNoise;
-WebRtcAec_SubbandCoherence_t WebRtcAec_SubbandCoherence;
+WebRtcAecFilterFar WebRtcAec_FilterFar;
+WebRtcAecScaleErrorSignal WebRtcAec_ScaleErrorSignal;
+WebRtcAecFilterAdaptation WebRtcAec_FilterAdaptation;
+WebRtcAecOverdriveAndSuppress WebRtcAec_OverdriveAndSuppress;
+WebRtcAecComfortNoise WebRtcAec_ComfortNoise;
+WebRtcAecSubBandCoherence WebRtcAec_SubbandCoherence;
 
 __inline static float MulRe(float aRe, float aIm, float bRe, float bIm) {
   return aRe * bRe - aIm * bIm;
