@@ -585,12 +585,6 @@
         ],
       },
       'sources': [
-        'session/tunnel/pseudotcpchannel.cc',
-        'session/tunnel/pseudotcpchannel.h',
-        'session/tunnel/tunnelsessionclient.cc',
-        'session/tunnel/tunnelsessionclient.h',
-        'session/tunnel/securetunnelsessionclient.cc',
-        'session/tunnel/securetunnelsessionclient.h',
         'session/media/audiomonitor.cc',
         'session/media/audiomonitor.h',
         'session/media/bundlefilter.cc',

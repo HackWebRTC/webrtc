@@ -26,6 +26,45 @@
       ],
     },  # target libjingle_xmpphelp
     {
+      'target_name': 'jingle_session',
+      'type': 'static_library',
+      'dependencies': [
+        '<(webrtc_root)/base/base.gyp:webrtc_base',
+        '<(webrtc_root)/libjingle/xmpp/xmpp.gyp:rtc_xmpp',
+        '<(DEPTH)/third_party/expat/expat.gyp:expat',
+      ],
+      'cflags_cc!': [
+        '-Wnon-virtual-dtor',
+      ],
+      'export_dependent_settings': [
+        '<(DEPTH)/third_party/expat/expat.gyp:expat',
+      ],
+      'sources': [
+        'session/tunnel/pseudotcpchannel.cc',
+        'session/tunnel/pseudotcpchannel.h',
+        'session/tunnel/tunnelsessionclient.cc',
+        'session/tunnel/tunnelsessionclient.h',
+        'session/tunnel/securetunnelsessionclient.cc',
+        'session/tunnel/securetunnelsessionclient.h',
+      ],
+      'direct_dependent_settings': {
+        'cflags_cc!': [
+          '-Wnon-virtual-dtor',
+        ],
+        'defines': [
+          'FEATURE_ENABLE_VOICEMAIL',
+        ],
+      },
+      'conditions': [
+        ['build_with_chromium==0', {
+          'defines': [
+            'FEATURE_ENABLE_VOICEMAIL',
+            'FEATURE_ENABLE_PSTN',
+          ],
+        }],
+      ],
+    },
+    {
       'target_name': 'login',
       'type': 'executable',
       'dependencies': [

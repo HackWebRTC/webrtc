@@ -29,7 +29,7 @@
 #include "webrtc/p2p/base/sessionmanager.h"
 #include "webrtc/p2p/base/transport.h"
 #include "webrtc/p2p/client/fakeportallocator.h"
-#include "talk/session/tunnel/tunnelsessionclient.h"
+#include "webrtc/libjingle/session/tunnel/tunnelsessionclient.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/scoped_ptr.h"
