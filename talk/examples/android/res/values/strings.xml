@@ -57,11 +57,6 @@
     <string name="pref_hwcodec_dlg">Use VP8 VP8 hardware accelerated codec (if available).</string>
     <string name="pref_hwcodec_default">true</string>
 
-    <string name="pref_signaling_key">signaling_preference</string>
-    <string name="pref_signaling_title">Use WebSocket signaling.</string>
-    <string name="pref_signaling_dlg">Use WebSocket signaling.</string>
-    <string name="pref_signaling_default">true</string>
-
     <string name="pref_value_enabled">Enabled</string>
     <string name="pref_value_disabled">Disabled</string>
 

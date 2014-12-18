@@ -53,7 +53,6 @@ public class SettingsActivity extends Activity
     keyprefStartBitrateValue = getString(R.string.pref_startbitratevalue_key);
     keyprefHwCodec = getString(R.string.pref_hwcodec_key);
     keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
-    keyprefSignaling = getString(R.string.pref_signaling_key);
 
     // Display the fragment as the main content.
     settingsFragment = new SettingsFragment();

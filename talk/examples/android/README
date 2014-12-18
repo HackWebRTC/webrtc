@@ -14,12 +14,12 @@ Prerequisites:
 
 Example of building & using the app:
 
-cd <path/to/libjingle>/trunk
+cd <path/to/libjingle>/src
 ninja -C out/Debug AppRTCDemo
 adb install -r out/Debug/AppRTCDemo-debug.apk
 
-In desktop chrome, navigate to https://3-dot-apprtc.appspot.com and note the r=<NNN> room
-this redirects to or navigate directly to https://3-dot-apprtc.appspot.com/room/<NNN> with
+In desktop chrome, navigate to https://apprtc.appspot.com and note the r=<NNN> room
+this redirects to or navigate directly to https://apprtc.appspot.com/r/<NNN> with
 your own room number. Launch AppRTC on the device and add same <NNN> into the room name list.
 
 You can also run application from a command line to connect to the first room in a list:

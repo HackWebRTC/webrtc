@@ -215,17 +215,11 @@ public class AppRTCDemoActivity extends Activity
     runTimeMs = intent.getIntExtra(ConnectActivity.EXTRA_RUNTIME, 0);
     startBitrate = intent.getIntExtra(ConnectActivity.EXTRA_BITRATE, 0);
     hwCodec = intent.getBooleanExtra(ConnectActivity.EXTRA_HWCODEC, true);
-    boolean useWebsocket = intent.getBooleanExtra(
-        ConnectActivity.EXTRA_WEBSOCKET, false);
 
     if (url != null) {
       if (loopback || (roomName != null && !roomName.equals(""))) {
         logAndToast(getString(R.string.connecting_to, url));
-        if (useWebsocket) {
-          appRtcClient = new WebSocketRTCClient(this);
-        } else {
-          appRtcClient = new GAERTCClient(this, this);
-        }
+        appRtcClient = new WebSocketRTCClient(this);
         appRtcClient.connectToRoom(url.toString(), loopback);
         if (loopback) {
           roomNameView.setText("loopback");

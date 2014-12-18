@@ -72,7 +72,6 @@ public class ConnectActivity extends Activity {
   public static final String EXTRA_WEBSOCKET = "org.appspot.apprtc.WEBSOCKET";
   private static final String TAG = "ConnectRTCClient";
   private final String APPRTC_SERVER = "https://apprtc.appspot.com";
-  private final String APPRTC_WS_SERVER = "https://3-dot-apprtc.appspot.com";
   private final int CONNECTION_REQUEST = 1;
   private static boolean commandLineRun = false;
 
@@ -89,7 +88,6 @@ public class ConnectActivity extends Activity {
   private String keyprefBitrateValue;
   private String keyprefHwCodec;
   private String keyprefCpuUsageDetection;
-  private String keyprefWebsocketSignaling;
   private String keyprefRoom;
   private String keyprefRoomList;
   private ArrayList<String> roomList;
@@ -108,7 +106,6 @@ public class ConnectActivity extends Activity {
     keyprefBitrateValue = getString(R.string.pref_startbitratevalue_key);
     keyprefHwCodec = getString(R.string.pref_hwcodec_key);
     keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
-    keyprefWebsocketSignaling = getString(R.string.pref_signaling_key);
     keyprefRoom = getString(R.string.pref_room_key);
     keyprefRoomList = getString(R.string.pref_room_list_key);
 
@@ -244,10 +241,6 @@ public class ConnectActivity extends Activity {
   }
 
   private void connectToRoom(boolean loopback, int runTimeMs) {
-    // Check webSocket signaling flag.
-    boolean useWebsocket = sharedPref.getBoolean(keyprefWebsocketSignaling,
-        Boolean.valueOf(getString(R.string.pref_signaling_default)));
-
     // Get room name (random for loopback).
     String roomName;
     if (loopback) {
@@ -259,18 +252,8 @@ public class ConnectActivity extends Activity {
       }
     }
 
-    // Build room URL.
     String url;
-    if (useWebsocket) {
-      url = APPRTC_WS_SERVER;
-      url += "/register/" + roomName;
-    } else {
-      url = APPRTC_SERVER;
-      url = appendQueryParameter(url, "r=" + roomName);
-      if (loopback) {
-        url = appendQueryParameter(url, "debug=loopback");
-      }
-    }
+    url = APPRTC_SERVER + "/register/" + roomName;
 
     // Check HW codec flag.
     boolean hwCodec = sharedPref.getBoolean(keyprefHwCodec,
@@ -362,7 +345,6 @@ public class ConnectActivity extends Activity {
       intent.putExtra(EXTRA_RUNTIME, runTimeMs);
       intent.putExtra(EXTRA_BITRATE, startBitrate);
       intent.putExtra(EXTRA_HWCODEC, hwCodec);
-      intent.putExtra(EXTRA_WEBSOCKET, useWebsocket);
       startActivityForResult(intent, CONNECTION_REQUEST);
     }
   }
