@@ -83,7 +83,8 @@ BitrateController* BitrateController::CreateBitrateController(
   return new BitrateControllerImpl(clock, enforce_min_bitrate);
 }
 
-BitrateControllerImpl::BitrateControllerImpl(Clock* clock, bool enforce_min_bitrate)
+BitrateControllerImpl::BitrateControllerImpl(Clock* clock,
+                                             bool enforce_min_bitrate)
     : clock_(clock),
       last_bitrate_update_ms_(clock_->TimeInMilliseconds()),
       critsect_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -96,7 +97,9 @@ BitrateControllerImpl::BitrateControllerImpl(Clock* clock, bool enforce_min_bitr
       last_rtt_ms_(0),
       last_enforce_min_bitrate_(!enforce_min_bitrate_),
       bitrate_observers_modified_(false),
-      last_reserved_bitrate_bps_(0) {}
+      last_reserved_bitrate_bps_(0),
+      remb_suppressor_(new RembSuppressor(clock)) {
+}
 
 BitrateControllerImpl::~BitrateControllerImpl() {
   BitrateObserverConfList::iterator it = bitrate_observers_.begin();
@@ -219,6 +222,9 @@ void BitrateControllerImpl::SetReservedBitrate(uint32_t reserved_bitrate_bps) {
 
 void BitrateControllerImpl::OnReceivedEstimatedBitrate(uint32_t bitrate) {
   CriticalSectionScoped cs(critsect_);
+  if (remb_suppressor_->SuppresNewRemb(bitrate)) {
+    return;
+  }
   bandwidth_estimation_.UpdateReceiverEstimate(bitrate);
   MaybeTriggerOnNetworkChanged();
 }
@@ -376,6 +382,16 @@ bool BitrateControllerImpl::AvailableBandwidth(uint32_t* bandwidth) const {
     return true;
   }
   return false;
+}
+
+void BitrateControllerImpl::SetBitrateSent(uint32_t bitrate_sent_bps) {
+  CriticalSectionScoped cs(critsect_);
+  remb_suppressor_->SetBitrateSent(bitrate_sent_bps);
+}
+
+void BitrateControllerImpl::SetCodecMode(webrtc::VideoCodecMode mode) {
+  CriticalSectionScoped cs(critsect_);
+  remb_suppressor_->SetEnabled(mode == kScreensharing);
 }
 
 }  // namespace webrtc

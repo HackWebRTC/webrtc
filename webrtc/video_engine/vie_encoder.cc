@@ -389,6 +389,7 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
                                           video_codec.minBitrate * 1000,
                                           kTransmissionMaxBitrateMultiplier *
                                           video_codec.maxBitrate * 1000);
+  bitrate_controller_->SetCodecMode(video_codec.mode);
 
   CriticalSectionScoped crit(data_cs_.get());
   int pad_up_to_bitrate_kbps = video_codec.startBitrate;
@@ -755,6 +756,7 @@ int32_t ViEEncoder::ProtectionRequest(
 
 int32_t ViEEncoder::SendStatistics(const uint32_t bit_rate,
                                    const uint32_t frame_rate) {
+  bitrate_controller_->SetBitrateSent(bit_rate);
   CriticalSectionScoped cs(callback_cs_.get());
   if (codec_observer_) {
     codec_observer_->OutgoingRate(channel_id_, frame_rate, bit_rate);

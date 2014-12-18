@@ -18,6 +18,8 @@
         'bitrate_controller_impl.cc',
         'bitrate_controller_impl.h',
         'include/bitrate_controller.h',
+        'remb_suppressor.cc',
+        'remb_suppressor.h',
         'send_side_bandwidth_estimation.cc',
         'send_side_bandwidth_estimation.h',
       ],

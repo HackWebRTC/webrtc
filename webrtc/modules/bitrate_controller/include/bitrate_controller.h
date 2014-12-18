@@ -77,6 +77,10 @@ class BitrateController : public Module {
   virtual void EnforceMinBitrate(bool enforce_min_bitrate) = 0;
 
   virtual void SetReservedBitrate(uint32_t reserved_bitrate_bps) = 0;
+
+  virtual void SetBitrateSent(uint32_t bitrate_sent_bps) = 0;
+
+  virtual void SetCodecMode(webrtc::VideoCodecMode mode) = 0;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_
