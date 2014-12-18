@@ -55,7 +55,7 @@ typedef struct
     uint16_t plen;
     // Milliseconds since the start of recording.
     uint32_t offset;
-} rtpDumpPktHdr_t;
+} RtpDumpPacketHeader;
 
 RtpDump* RtpDump::CreateRtpDump()
 {
@@ -159,7 +159,7 @@ int32_t RtpDumpImpl::DumpPacket(const uint8_t* packet, size_t packetLength)
         return -1;
     }
 
-    rtpDumpPktHdr_t hdr;
+    RtpDumpPacketHeader hdr;
     size_t total_size = packetLength + sizeof hdr;
     if (packetLength < 1 || total_size > std::numeric_limits<uint16_t>::max())
     {
