@@ -119,8 +119,8 @@ int WebRtcAgc_AddMic(void *state, int16_t* const* in_mic, int16_t num_bands,
     int32_t *ptr;
     uint16_t targetGainIdx, gain;
     int16_t i, n, L, tmp16, tmp_speech[16];
-    Agc_t *stt;
-    stt = (Agc_t *)state;
+    LegacyAgc* stt;
+    stt = (LegacyAgc*)state;
 
     if (stt->fs == 8000) {
         L = 8;
@@ -252,8 +252,8 @@ int WebRtcAgc_AddMic(void *state, int16_t* const* in_mic, int16_t num_bands,
 
 int WebRtcAgc_AddFarend(void *state, const int16_t *in_far, int16_t samples)
 {
-    Agc_t *stt;
-    stt = (Agc_t *)state;
+  LegacyAgc* stt;
+  stt = (LegacyAgc*)state;
 
     if (stt == NULL)
     {
@@ -287,7 +287,7 @@ int WebRtcAgc_VirtualMic(void *agcInst, int16_t* const* in_near,
     int32_t tmpFlt, micLevelTmp, gainIdx;
     uint16_t gain;
     int16_t ii, j;
-    Agc_t *stt;
+    LegacyAgc* stt;
 
     uint32_t nrg;
     int16_t sampleCntr;
@@ -297,7 +297,7 @@ int WebRtcAgc_VirtualMic(void *agcInst, int16_t* const* in_near,
     const int16_t kZeroCrossingLowLim = 15;
     const int16_t kZeroCrossingHighLim = 20;
 
-    stt = (Agc_t *)agcInst;
+    stt = (LegacyAgc*)agcInst;
 
     /*
      *  Before applying gain decide if this is a low-level signal.
@@ -423,9 +423,7 @@ int WebRtcAgc_VirtualMic(void *agcInst, int16_t* const* in_near,
     return 0;
 }
 
-void WebRtcAgc_UpdateAgcThresholds(Agc_t *stt)
-{
-
+void WebRtcAgc_UpdateAgcThresholds(LegacyAgc* stt) {
     int16_t tmp16;
 #ifdef MIC_LEVEL_FEEDBACK
     int zeros;
@@ -475,8 +473,9 @@ void WebRtcAgc_UpdateAgcThresholds(Agc_t *stt)
     stt->lowerLimit = stt->startLowerLimit;
 }
 
-void WebRtcAgc_SaturationCtrl(Agc_t *stt, uint8_t *saturated, int32_t *env)
-{
+void WebRtcAgc_SaturationCtrl(LegacyAgc* stt,
+                              uint8_t* saturated,
+                              int32_t* env) {
     int16_t i, tmpW16;
 
     /* Check if the signal is saturated */
@@ -500,8 +499,7 @@ void WebRtcAgc_SaturationCtrl(Agc_t *stt, uint8_t *saturated, int32_t *env)
             (int16_t)32440, 15);
 }
 
-void WebRtcAgc_ZeroCtrl(Agc_t *stt, int32_t *inMicLevel, int32_t *env)
-{
+void WebRtcAgc_ZeroCtrl(LegacyAgc* stt, int32_t* inMicLevel, int32_t* env) {
     int16_t i;
     int32_t tmp32 = 0;
     int32_t midVal;
@@ -562,8 +560,7 @@ void WebRtcAgc_ZeroCtrl(Agc_t *stt, int32_t *inMicLevel, int32_t *env)
     }
 }
 
-void WebRtcAgc_SpeakerInactiveCtrl(Agc_t *stt)
-{
+void WebRtcAgc_SpeakerInactiveCtrl(LegacyAgc* stt) {
     /* Check if the near end speaker is inactive.
      * If that is the case the VAD threshold is
      * increased since the VAD speech model gets
@@ -653,9 +650,9 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
     int32_t inMicLevelTmp, lastMicVol;
     int16_t i;
     uint8_t saturated = 0;
-    Agc_t *stt;
+    LegacyAgc* stt;
 
-    stt = (Agc_t *)state;
+    stt = (LegacyAgc*)state;
     inMicLevelTmp = inMicLevel << stt->scale;
 
     if (inMicLevelTmp > stt->maxAnalog)
@@ -1146,9 +1143,9 @@ int WebRtcAgc_Process(void *agcInst, const int16_t* const* in_near,
                       int32_t *outMicLevel, int16_t echo,
                       uint8_t *saturationWarning)
 {
-    Agc_t *stt;
+  LegacyAgc* stt;
 
-    stt = (Agc_t *)agcInst;
+  stt = (LegacyAgc*)agcInst;
 
     //
     if (stt == NULL)
@@ -1237,10 +1234,9 @@ int WebRtcAgc_Process(void *agcInst, const int16_t* const* in_near,
     return 0;
 }
 
-int WebRtcAgc_set_config(void *agcInst, WebRtcAgc_config_t agcConfig)
-{
-    Agc_t *stt;
-    stt = (Agc_t *)agcInst;
+int WebRtcAgc_set_config(void* agcInst, WebRtcAgcConfig agcConfig) {
+  LegacyAgc* stt;
+  stt = (LegacyAgc*)agcInst;
 
     if (stt == NULL)
     {
@@ -1287,7 +1283,7 @@ int WebRtcAgc_set_config(void *agcInst, WebRtcAgc_config_t agcConfig)
 #endif
         return -1;
     }
-    /* Store the config in a WebRtcAgc_config_t */
+    /* Store the config in a WebRtcAgcConfig */
     stt->usedConfig.compressionGaindB = agcConfig.compressionGaindB;
     stt->usedConfig.limiterEnable = agcConfig.limiterEnable;
     stt->usedConfig.targetLevelDbfs = agcConfig.targetLevelDbfs;
@@ -1295,10 +1291,9 @@ int WebRtcAgc_set_config(void *agcInst, WebRtcAgc_config_t agcConfig)
     return 0;
 }
 
-int WebRtcAgc_get_config(void *agcInst, WebRtcAgc_config_t *config)
-{
-    Agc_t *stt;
-    stt = (Agc_t *)agcInst;
+int WebRtcAgc_get_config(void* agcInst, WebRtcAgcConfig* config) {
+  LegacyAgc* stt;
+  stt = (LegacyAgc*)agcInst;
 
     if (stt == NULL)
     {
@@ -1326,12 +1321,12 @@ int WebRtcAgc_get_config(void *agcInst, WebRtcAgc_config_t *config)
 
 int WebRtcAgc_Create(void **agcInst)
 {
-    Agc_t *stt;
+  LegacyAgc* stt;
     if (agcInst == NULL)
     {
         return -1;
     }
-    stt = (Agc_t *)malloc(sizeof(Agc_t));
+    stt = (LegacyAgc*)malloc(sizeof(LegacyAgc));
 
     *agcInst = stt;
     if (stt == NULL)
@@ -1353,9 +1348,9 @@ int WebRtcAgc_Create(void **agcInst)
 
 int WebRtcAgc_Free(void *state)
 {
-    Agc_t *stt;
+  LegacyAgc* stt;
 
-    stt = (Agc_t *)state;
+  stt = (LegacyAgc*)state;
 #ifdef WEBRTC_AGC_DEBUG_DUMP
     fclose(stt->fpt);
     fclose(stt->agcLog);
@@ -1375,10 +1370,10 @@ int WebRtcAgc_Init(void *agcInst, int32_t minLevel, int32_t maxLevel,
     int32_t max_add, tmp32;
     int16_t i;
     int tmpNorm;
-    Agc_t *stt;
+    LegacyAgc* stt;
 
     /* typecast state pointer */
-    stt = (Agc_t *)agcInst;
+    stt = (LegacyAgc*)agcInst;
 
     if (WebRtcAgc_InitDigital(&stt->digitalAgc, agcMode) != 0)
     {

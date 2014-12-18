@@ -56,7 +56,7 @@ const int16_t WebRtcNsx_kLogTableFrac[256] = {
 };
 
 // Update the noise estimation information.
-static void UpdateNoiseEstimateNeon(NsxInst_t* inst, int offset) {
+static void UpdateNoiseEstimateNeon(NoiseSuppressionFixedC* inst, int offset) {
   const int16_t kExp2Const = 11819; // Q13
   int16_t* ptr_noiseEstLogQuantile = NULL;
   int16_t* ptr_noiseEstQuantile = NULL;
@@ -133,7 +133,7 @@ static void UpdateNoiseEstimateNeon(NsxInst_t* inst, int offset) {
 }
 
 // Noise Estimation
-void WebRtcNsx_NoiseEstimationNeon(NsxInst_t* inst,
+void WebRtcNsx_NoiseEstimationNeon(NoiseSuppressionFixedC* inst,
                                    uint16_t* magn,
                                    uint32_t* noise,
                                    int16_t* q_noise) {
@@ -353,7 +353,8 @@ void WebRtcNsx_NoiseEstimationNeon(NsxInst_t* inst,
 }
 
 // Filter the data in the frequency domain, and create spectrum.
-void WebRtcNsx_PrepareSpectrumNeon(NsxInst_t* inst, int16_t* freq_buf) {
+void WebRtcNsx_PrepareSpectrumNeon(NoiseSuppressionFixedC* inst,
+                                   int16_t* freq_buf) {
   assert(inst->magnLen % 8 == 1);
   assert(inst->anaLen2 % 16 == 0);
 
@@ -442,7 +443,7 @@ void WebRtcNsx_PrepareSpectrumNeon(NsxInst_t* inst, int16_t* freq_buf) {
 
 // For the noise supress process, synthesis, read out fully processed segment,
 // and update synthesis buffer.
-void WebRtcNsx_SynthesisUpdateNeon(NsxInst_t* inst,
+void WebRtcNsx_SynthesisUpdateNeon(NoiseSuppressionFixedC* inst,
                                    int16_t* out_frame,
                                    int16_t gain_factor) {
   assert(inst->anaLen % 16 == 0);
@@ -534,7 +535,7 @@ void WebRtcNsx_SynthesisUpdateNeon(NsxInst_t* inst,
 }
 
 // Update analysis buffer for lower band, and window data before FFT.
-void WebRtcNsx_AnalysisUpdateNeon(NsxInst_t* inst,
+void WebRtcNsx_AnalysisUpdateNeon(NoiseSuppressionFixedC* inst,
                                   int16_t* out,
                                   int16_t* new_speech) {
   assert(inst->blockLen10ms % 16 == 0);

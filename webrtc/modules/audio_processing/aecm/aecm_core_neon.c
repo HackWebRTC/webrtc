@@ -42,7 +42,7 @@ static inline void AddLanes(uint32_t* ptr, uint32x4_t v) {
 #endif
 }
 
-void WebRtcAecm_CalcLinearEnergiesNeon(AecmCore_t* aecm,
+void WebRtcAecm_CalcLinearEnergiesNeon(AecmCore* aecm,
                                        const uint16_t* far_spectrum,
                                        int32_t* echo_est,
                                        uint32_t* far_energy,
@@ -114,7 +114,7 @@ void WebRtcAecm_CalcLinearEnergiesNeon(AecmCore_t* aecm,
   *echo_energy_adapt += aecm->channelAdapt16[PART_LEN] * far_spectrum[PART_LEN];
 }
 
-void WebRtcAecm_StoreAdaptiveChannelNeon(AecmCore_t* aecm,
+void WebRtcAecm_StoreAdaptiveChannelNeon(AecmCore* aecm,
                                          const uint16_t* far_spectrum,
                                          int32_t* echo_est) {
   assert((uintptr_t)echo_est % 32 == 0);
@@ -173,7 +173,7 @@ void WebRtcAecm_StoreAdaptiveChannelNeon(AecmCore_t* aecm,
                                              far_spectrum[PART_LEN]);
 }
 
-void WebRtcAecm_ResetAdaptiveChannelNeon(AecmCore_t* aecm) {
+void WebRtcAecm_ResetAdaptiveChannelNeon(AecmCore* aecm) {
   assert((uintptr_t)(aecm->channelStored) % 16 == 0);
   assert((uintptr_t)(aecm->channelAdapt16) % 16 == 0);
   assert((uintptr_t)(aecm->channelAdapt32) % 32 == 0);

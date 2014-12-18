@@ -23,11 +23,10 @@ static const int16_t kIndicatorTable[17] = {
 // speech/noise probability is returned in: probSpeechFinal
 //snrLocPrior is the prior SNR for each frequency (in Q11)
 //snrLocPost is the post SNR for each frequency (in Q11)
-void WebRtcNsx_SpeechNoiseProb(NsxInst_t* inst,
+void WebRtcNsx_SpeechNoiseProb(NoiseSuppressionFixedC* inst,
                                uint16_t* nonSpeechProbFinal,
                                uint32_t* priorLocSnr,
                                uint32_t* postLocSnr) {
-
   uint32_t zeros, num, den, tmpU32no1, tmpU32no2, tmpU32no3;
   int32_t invLrtFX, indPriorFX, tmp32, tmp32no1, tmp32no2, besselTmpFX32;
   int32_t frac32, logTmp;

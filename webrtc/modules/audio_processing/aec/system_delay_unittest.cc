@@ -43,7 +43,7 @@ class SystemDelayTest : public ::testing::Test {
   int MapBufferSizeToSamples(int size_in_ms);
 
   void* handle_;
-  aecpc_t* self_;
+  Aec* self_;
   int samples_per_frame_;
   // Dummy input/output speech data.
   static const int kSamplesPerChunk = 160;
@@ -64,7 +64,7 @@ SystemDelayTest::SystemDelayTest()
 
 void SystemDelayTest::SetUp() {
   ASSERT_EQ(0, WebRtcAec_Create(&handle_));
-  self_ = reinterpret_cast<aecpc_t*>(handle_);
+  self_ = reinterpret_cast<Aec*>(handle_);
 }
 
 void SystemDelayTest::TearDown() {

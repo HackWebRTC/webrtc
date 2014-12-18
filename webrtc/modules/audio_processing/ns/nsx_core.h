@@ -19,7 +19,7 @@
 #include "webrtc/modules/audio_processing/ns/nsx_defines.h"
 #include "webrtc/typedefs.h"
 
-typedef struct NsxInst_t_ {
+typedef struct NoiseSuppressionFixedC_ {
   uint32_t                fs;
 
   const int16_t*          window;
@@ -107,7 +107,7 @@ typedef struct NsxInst_t_ {
   int                     normData;
 
   struct RealFFT* real_fft;
-} NsxInst_t;
+} NoiseSuppressionFixedC;
 
 #ifdef __cplusplus
 extern "C"
@@ -129,7 +129,7 @@ extern "C"
  * Return value         :  0 - Ok
  *                        -1 - Error
  */
-int32_t WebRtcNsx_InitCore(NsxInst_t* inst, uint32_t fs);
+int32_t WebRtcNsx_InitCore(NoiseSuppressionFixedC* inst, uint32_t fs);
 
 /****************************************************************************
  * WebRtcNsx_set_policy_core(...)
@@ -146,7 +146,7 @@ int32_t WebRtcNsx_InitCore(NsxInst_t* inst, uint32_t fs);
  * Return value      :  0 - Ok
  *                     -1 - Error
  */
-int WebRtcNsx_set_policy_core(NsxInst_t* inst, int mode);
+int WebRtcNsx_set_policy_core(NoiseSuppressionFixedC* inst, int mode);
 
 /****************************************************************************
  * WebRtcNsx_ProcessCore
@@ -162,7 +162,7 @@ int WebRtcNsx_set_policy_core(NsxInst_t* inst, int mode);
  *      - inst          : Updated instance
  *      - outFrame      : Output speech frame for each band
  */
-void WebRtcNsx_ProcessCore(NsxInst_t* inst,
+void WebRtcNsx_ProcessCore(NoiseSuppressionFixedC* inst,
                            const short* const* inFrame,
                            int num_bands,
                            short* const* outFrame);
@@ -172,43 +172,45 @@ void WebRtcNsx_ProcessCore(NsxInst_t* inst,
  * generic C code.
  */
 // Noise Estimation.
-typedef void (*NoiseEstimation)(NsxInst_t* inst,
+typedef void (*NoiseEstimation)(NoiseSuppressionFixedC* inst,
                                 uint16_t* magn,
                                 uint32_t* noise,
                                 int16_t* q_noise);
 extern NoiseEstimation WebRtcNsx_NoiseEstimation;
 
 // Filter the data in the frequency domain, and create spectrum.
-typedef void (*PrepareSpectrum)(NsxInst_t* inst,
+typedef void (*PrepareSpectrum)(NoiseSuppressionFixedC* inst,
                                 int16_t* freq_buff);
 extern PrepareSpectrum WebRtcNsx_PrepareSpectrum;
 
 // For the noise supression process, synthesis, read out fully processed
 // segment, and update synthesis buffer.
-typedef void (*SynthesisUpdate)(NsxInst_t* inst,
+typedef void (*SynthesisUpdate)(NoiseSuppressionFixedC* inst,
                                 int16_t* out_frame,
                                 int16_t gain_factor);
 extern SynthesisUpdate WebRtcNsx_SynthesisUpdate;
 
 // Update analysis buffer for lower band, and window data before FFT.
-typedef void (*AnalysisUpdate)(NsxInst_t* inst,
+typedef void (*AnalysisUpdate)(NoiseSuppressionFixedC* inst,
                                int16_t* out,
                                int16_t* new_speech);
 extern AnalysisUpdate WebRtcNsx_AnalysisUpdate;
 
 // Denormalize the real-valued signal |in|, the output from inverse FFT.
-typedef void (*Denormalize) (NsxInst_t* inst, int16_t* in, int factor);
+typedef void (*Denormalize)(NoiseSuppressionFixedC* inst,
+                            int16_t* in,
+                            int factor);
 extern Denormalize WebRtcNsx_Denormalize;
 
 // Normalize the real-valued signal |in|, the input to forward FFT.
-typedef void (*NormalizeRealBuffer) (NsxInst_t* inst,
-                                     const int16_t* in,
-                                     int16_t* out);
+typedef void (*NormalizeRealBuffer)(NoiseSuppressionFixedC* inst,
+                                    const int16_t* in,
+                                    int16_t* out);
 extern NormalizeRealBuffer WebRtcNsx_NormalizeRealBuffer;
 
 // Compute speech/noise probability.
 // Intended to be private.
-void WebRtcNsx_SpeechNoiseProb(NsxInst_t* inst,
+void WebRtcNsx_SpeechNoiseProb(NoiseSuppressionFixedC* inst,
                                uint16_t* nonSpeechProbFinal,
                                uint32_t* priorLocSnr,
                                uint32_t* postLocSnr);
@@ -218,35 +220,39 @@ void WebRtcNsx_SpeechNoiseProb(NsxInst_t* inst,
 // For the above function pointers, functions for generic platforms are declared
 // and defined as static in file nsx_core.c, while those for ARM Neon platforms
 // are declared below and defined in file nsx_core_neon.c.
-void WebRtcNsx_NoiseEstimationNeon(NsxInst_t* inst,
+void WebRtcNsx_NoiseEstimationNeon(NoiseSuppressionFixedC* inst,
                                    uint16_t* magn,
                                    uint32_t* noise,
                                    int16_t* q_noise);
-void WebRtcNsx_SynthesisUpdateNeon(NsxInst_t* inst,
+void WebRtcNsx_SynthesisUpdateNeon(NoiseSuppressionFixedC* inst,
                                    int16_t* out_frame,
                                    int16_t gain_factor);
-void WebRtcNsx_AnalysisUpdateNeon(NsxInst_t* inst,
+void WebRtcNsx_AnalysisUpdateNeon(NoiseSuppressionFixedC* inst,
                                   int16_t* out,
                                   int16_t* new_speech);
-void WebRtcNsx_PrepareSpectrumNeon(NsxInst_t* inst, int16_t* freq_buff);
+void WebRtcNsx_PrepareSpectrumNeon(NoiseSuppressionFixedC* inst,
+                                   int16_t* freq_buff);
 #endif
 
 #if defined(MIPS32_LE)
 // For the above function pointers, functions for generic platforms are declared
 // and defined as static in file nsx_core.c, while those for MIPS platforms
 // are declared below and defined in file nsx_core_mips.c.
-void WebRtcNsx_SynthesisUpdate_mips(NsxInst_t* inst,
+void WebRtcNsx_SynthesisUpdate_mips(NoiseSuppressionFixedC* inst,
                                     int16_t* out_frame,
                                     int16_t gain_factor);
-void WebRtcNsx_AnalysisUpdate_mips(NsxInst_t* inst,
+void WebRtcNsx_AnalysisUpdate_mips(NoiseSuppressionFixedC* inst,
                                    int16_t* out,
                                    int16_t* new_speech);
-void WebRtcNsx_PrepareSpectrum_mips(NsxInst_t* inst, int16_t* freq_buff);
-void WebRtcNsx_NormalizeRealBuffer_mips(NsxInst_t* inst,
+void WebRtcNsx_PrepareSpectrum_mips(NoiseSuppressionFixedC* inst,
+                                    int16_t* freq_buff);
+void WebRtcNsx_NormalizeRealBuffer_mips(NoiseSuppressionFixedC* inst,
                                         const int16_t* in,
                                         int16_t* out);
 #if defined(MIPS_DSP_R1_LE)
-void WebRtcNsx_Denormalize_mips(NsxInst_t* inst, int16_t* in, int factor);
+void WebRtcNsx_Denormalize_mips(NoiseSuppressionFixedC* inst,
+                                int16_t* in,
+                                int factor);
 #endif
 
 #endif

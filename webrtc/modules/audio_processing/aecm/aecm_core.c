@@ -152,7 +152,7 @@ static const int16_t kChannelStored16kHz[PART_LEN1] = {
 //      - far_spectrum  : Pointer to the far end spectrum
 //      - far_q         : Q-domain of far end spectrum
 //
-void WebRtcAecm_UpdateFarHistory(AecmCore_t* self,
+void WebRtcAecm_UpdateFarHistory(AecmCore* self,
                                  uint16_t* far_spectrum,
                                  int far_q) {
   // Get new buffer position
@@ -185,7 +185,7 @@ void WebRtcAecm_UpdateFarHistory(AecmCore_t* self,
 //      - far_spectrum      : Pointer to the aligned far end spectrum
 //                            NULL - Error
 //
-const uint16_t* WebRtcAecm_AlignedFarend(AecmCore_t* self,
+const uint16_t* WebRtcAecm_AlignedFarend(AecmCore* self,
                                          int* far_q,
                                          int delay) {
   int buffer_position = 0;
@@ -207,9 +207,8 @@ CalcLinearEnergies WebRtcAecm_CalcLinearEnergies;
 StoreAdaptiveChannel WebRtcAecm_StoreAdaptiveChannel;
 ResetAdaptiveChannel WebRtcAecm_ResetAdaptiveChannel;
 
-int WebRtcAecm_CreateCore(AecmCore_t **aecmInst)
-{
-    AecmCore_t *aecm = malloc(sizeof(AecmCore_t));
+int WebRtcAecm_CreateCore(AecmCore** aecmInst) {
+    AecmCore* aecm = malloc(sizeof(AecmCore));
     *aecmInst = aecm;
     if (aecm == NULL)
     {
@@ -293,8 +292,7 @@ int WebRtcAecm_CreateCore(AecmCore_t **aecmInst)
     return 0;
 }
 
-void WebRtcAecm_InitEchoPathCore(AecmCore_t* aecm, const int16_t* echo_path)
-{
+void WebRtcAecm_InitEchoPathCore(AecmCore* aecm, const int16_t* echo_path) {
     int i = 0;
 
     // Reset the stored channel
@@ -313,13 +311,12 @@ void WebRtcAecm_InitEchoPathCore(AecmCore_t* aecm, const int16_t* echo_path)
     aecm->mseChannelCount = 0;
 }
 
-static void CalcLinearEnergiesC(AecmCore_t* aecm,
+static void CalcLinearEnergiesC(AecmCore* aecm,
                                 const uint16_t* far_spectrum,
                                 int32_t* echo_est,
                                 uint32_t* far_energy,
                                 uint32_t* echo_energy_adapt,
-                                uint32_t* echo_energy_stored)
-{
+                                uint32_t* echo_energy_stored) {
     int i;
 
     // Get energy for the delayed far end signal and estimated
@@ -334,10 +331,9 @@ static void CalcLinearEnergiesC(AecmCore_t* aecm,
     }
 }
 
-static void StoreAdaptiveChannelC(AecmCore_t* aecm,
+static void StoreAdaptiveChannelC(AecmCore* aecm,
                                   const uint16_t* far_spectrum,
-                                  int32_t* echo_est)
-{
+                                  int32_t* echo_est) {
     int i;
 
     // During startup we store the channel every block.
@@ -358,8 +354,7 @@ static void StoreAdaptiveChannelC(AecmCore_t* aecm,
                                        far_spectrum[i]);
 }
 
-static void ResetAdaptiveChannelC(AecmCore_t* aecm)
-{
+static void ResetAdaptiveChannelC(AecmCore* aecm) {
     int i;
 
     // The stored channel has a significantly lower MSE than the adaptive one for
@@ -413,8 +408,7 @@ static void WebRtcAecm_InitMips(void)
 // Return value         :  0 - Ok
 //                        -1 - Error
 //
-int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
-{
+int WebRtcAecm_InitCore(AecmCore* const aecm, int samplingFreq) {
     int i = 0;
     int32_t tmp32 = PART_LEN1 * PART_LEN1;
     int16_t tmp16 = PART_LEN1;
@@ -545,16 +539,14 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
 
 // TODO(bjornv): This function is currently not used. Add support for these
 // parameters from a higher level
-int WebRtcAecm_Control(AecmCore_t *aecm, int delay, int nlpFlag)
-{
+int WebRtcAecm_Control(AecmCore* aecm, int delay, int nlpFlag) {
     aecm->nlpFlag = nlpFlag;
     aecm->fixedDelay = delay;
 
     return 0;
 }
 
-int WebRtcAecm_FreeCore(AecmCore_t *aecm)
-{
+int WebRtcAecm_FreeCore(AecmCore* aecm) {
     if (aecm == NULL)
     {
         return -1;
@@ -574,12 +566,11 @@ int WebRtcAecm_FreeCore(AecmCore_t *aecm)
     return 0;
 }
 
-int WebRtcAecm_ProcessFrame(AecmCore_t * aecm,
-                            const int16_t * farend,
-                            const int16_t * nearendNoisy,
-                            const int16_t * nearendClean,
-                            int16_t * out)
-{
+int WebRtcAecm_ProcessFrame(AecmCore* aecm,
+                            const int16_t* farend,
+                            const int16_t* nearendNoisy,
+                            const int16_t* nearendClean,
+                            int16_t* out) {
     int16_t outBlock_buf[PART_LEN + 8]; // Align buffer to 8-byte boundary.
     int16_t* outBlock = (int16_t*) (((uintptr_t) outBlock_buf + 15) & ~ 15);
 
@@ -737,12 +728,11 @@ static int16_t LogOfEnergyInQ8(uint32_t energy, int q_domain) {
 //                              Q(aecm->dfaQDomain).
 // @param  echoEst      [out]   Estimated echo in Q(xfa_q+RESOLUTION_CHANNEL16).
 //
-void WebRtcAecm_CalcEnergies(AecmCore_t * aecm,
+void WebRtcAecm_CalcEnergies(AecmCore* aecm,
                              const uint16_t* far_spectrum,
                              const int16_t far_q,
                              const uint32_t nearEner,
-                             int32_t * echoEst)
-{
+                             int32_t* echoEst) {
     // Local variables
     uint32_t tmpAdapt = 0;
     uint32_t tmpStored = 0;
@@ -871,9 +861,7 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * aecm,
 // @param  mu    [out]   (Return value) Stepsize in log2(), i.e. number of shifts.
 //
 //
-int16_t WebRtcAecm_CalcStepSize(AecmCore_t * const aecm)
-{
-
+int16_t WebRtcAecm_CalcStepSize(AecmCore* const aecm) {
     int32_t tmp32;
     int16_t tmp16;
     int16_t mu = MU_MAX;
@@ -919,14 +907,12 @@ int16_t WebRtcAecm_CalcStepSize(AecmCore_t * const aecm)
 // @param  mu           [in]    NLMS step size.
 // @param  echoEst      [i/o]   Estimated echo in Q(far_q+RESOLUTION_CHANNEL16).
 //
-void WebRtcAecm_UpdateChannel(AecmCore_t * aecm,
+void WebRtcAecm_UpdateChannel(AecmCore* aecm,
                               const uint16_t* far_spectrum,
                               const int16_t far_q,
-                              const uint16_t * const dfa,
+                              const uint16_t* const dfa,
                               const int16_t mu,
-                              int32_t * echoEst)
-{
-
+                              int32_t* echoEst) {
     uint32_t tmpU32no1, tmpU32no2;
     int32_t tmp32no1, tmp32no2;
     int32_t mseStored;
@@ -1133,8 +1119,7 @@ void WebRtcAecm_UpdateChannel(AecmCore_t * aecm,
 //                          level (Q14).
 //
 //
-int16_t WebRtcAecm_CalcSuppressionGain(AecmCore_t * const aecm)
-{
+int16_t WebRtcAecm_CalcSuppressionGain(AecmCore* const aecm) {
     int32_t tmp32no1;
 
     int16_t supGain = SUPGAIN_DEFAULT;
@@ -1202,10 +1187,9 @@ int16_t WebRtcAecm_CalcSuppressionGain(AecmCore_t * const aecm)
     return aecm->supGain;
 }
 
-void WebRtcAecm_BufferFarFrame(AecmCore_t* const aecm,
+void WebRtcAecm_BufferFarFrame(AecmCore* const aecm,
                                const int16_t* const farend,
-                               const int farLen)
-{
+                               const int farLen) {
     int writeLen = farLen, writePos = 0;
 
     // Check if the write position must be wrapped
@@ -1225,9 +1209,10 @@ void WebRtcAecm_BufferFarFrame(AecmCore_t* const aecm,
     aecm->farBufWritePos += writeLen;
 }
 
-void WebRtcAecm_FetchFarFrame(AecmCore_t * const aecm, int16_t * const farend,
-                              const int farLen, const int knownDelay)
-{
+void WebRtcAecm_FetchFarFrame(AecmCore* const aecm,
+                              int16_t* const farend,
+                              const int farLen,
+                              const int knownDelay) {
     int readLen = farLen;
     int readPos = 0;
     int delayChange = knownDelay - aecm->lastKnownDelay;

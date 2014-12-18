@@ -50,8 +50,8 @@ typedef struct
     int16_t             targetLevelDbfs;    // Target level in -dBfs of envelope (default -3)
     int16_t             agcMode;            // Hard coded mode (adaptAna/adaptDig/fixedDig)
     uint8_t             limiterEnable;      // Enabling limiter (on/off (default off))
-    WebRtcAgc_config_t  defaultConfig;
-    WebRtcAgc_config_t  usedConfig;
+    WebRtcAgcConfig defaultConfig;
+    WebRtcAgcConfig usedConfig;
 
     // General variables
     int16_t             initFlag;
@@ -118,8 +118,8 @@ typedef struct
     uint8_t             micLvlSat;
 #endif
     // Structs for VAD and digital_agc
-    AgcVad_t            vadMic;
-    DigitalAgc_t        digitalAgc;
+    AgcVad vadMic;
+    DigitalAgc digitalAgc;
 
 #ifdef WEBRTC_AGC_DEBUG_DUMP
     FILE* fpt;
@@ -128,6 +128,6 @@ typedef struct
 #endif
 
     int16_t             lowLevelSignal;
-} Agc_t;
+} LegacyAgc;
 
 #endif // WEBRTC_MODULES_AUDIO_PROCESSING_AGC_LEGACY_ANALOG_AGC_H_

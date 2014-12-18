@@ -256,9 +256,7 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
     return 0;
 }
 
-int32_t WebRtcAgc_InitDigital(DigitalAgc_t *stt, int16_t agcMode)
-{
-
+int32_t WebRtcAgc_InitDigital(DigitalAgc* stt, int16_t agcMode) {
     if (agcMode == kAgcModeFixedDigital)
     {
         // start at minimum to find correct gain faster
@@ -283,9 +281,9 @@ int32_t WebRtcAgc_InitDigital(DigitalAgc_t *stt, int16_t agcMode)
     return 0;
 }
 
-int32_t WebRtcAgc_AddFarendToDigital(DigitalAgc_t *stt, const int16_t *in_far,
-                                     int16_t nrSamples)
-{
+int32_t WebRtcAgc_AddFarendToDigital(DigitalAgc* stt,
+                                     const int16_t* in_far,
+                                     int16_t nrSamples) {
     assert(stt != NULL);
     // VAD for far end
     WebRtcAgc_ProcessVad(&stt->vadFarend, in_far, nrSamples);
@@ -293,13 +291,12 @@ int32_t WebRtcAgc_AddFarendToDigital(DigitalAgc_t *stt, const int16_t *in_far,
     return 0;
 }
 
-int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt,
+int32_t WebRtcAgc_ProcessDigital(DigitalAgc* stt,
                                  const int16_t* const* in_near,
                                  int16_t num_bands,
                                  int16_t* const* out,
                                  uint32_t FS,
-                                 int16_t lowlevelSignal)
-{
+                                 int16_t lowlevelSignal) {
     // array for gains (one value per ms, incl start & end)
     int32_t gains[11];
 
@@ -607,8 +604,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt,
     return 0;
 }
 
-void WebRtcAgc_InitVad(AgcVad_t *state)
-{
+void WebRtcAgc_InitVad(AgcVad* state) {
     int16_t k;
 
     state->HPstate = 0; // state of high pass filter
@@ -635,9 +631,9 @@ void WebRtcAgc_InitVad(AgcVad_t *state)
     }
 }
 
-int16_t WebRtcAgc_ProcessVad(AgcVad_t *state, // (i) VAD state
-                                   const int16_t *in, // (i) Speech signal
-                                   int16_t nrSamples) // (i) number of samples
+int16_t WebRtcAgc_ProcessVad(AgcVad* state,      // (i) VAD state
+                             const int16_t* in,  // (i) Speech signal
+                             int16_t nrSamples)  // (i) number of samples
 {
     int32_t out, nrg, tmp32, tmp32b;
     uint16_t tmpU16;

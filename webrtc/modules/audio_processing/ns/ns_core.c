@@ -20,7 +20,7 @@
 #include "webrtc/modules/audio_processing/utility/fft4g.h"
 
 // Set Feature Extraction Parameters.
-static void set_feature_extraction_parameters(NSinst_t* self) {
+static void set_feature_extraction_parameters(NoiseSuppressionC* self) {
   // Bin size of histogram.
   self->featureExtractionParams.binSizeLrt = 0.1f;
   self->featureExtractionParams.binSizeSpecFlat = 0.05f;
@@ -71,7 +71,7 @@ static void set_feature_extraction_parameters(NSinst_t* self) {
 }
 
 // Initialize state.
-int WebRtcNs_InitCore(NSinst_t* self, uint32_t fs) {
+int WebRtcNs_InitCore(NoiseSuppressionC* self, uint32_t fs) {
   int i;
   // Check for valid pointer.
   if (self == NULL) {
@@ -214,7 +214,9 @@ int WebRtcNs_InitCore(NSinst_t* self, uint32_t fs) {
 }
 
 // Estimate noise.
-static void NoiseEstimation(NSinst_t* self, float* magn, float* noise) {
+static void NoiseEstimation(NoiseSuppressionC* self,
+                            float* magn,
+                            float* noise) {
   int i, s, offset;
   float lmagn[HALF_ANAL_BLOCKL], delta;
 
@@ -288,7 +290,7 @@ static void NoiseEstimation(NSinst_t* self, float* magn, float* noise) {
 // Thresholds and weights are extracted every window.
 // |flag| = 0 updates histogram only, |flag| = 1 computes the threshold/weights.
 // Threshold and weights are returned in: self->priorModelPars.
-static void FeatureParameterExtraction(NSinst_t* self, int flag) {
+static void FeatureParameterExtraction(NoiseSuppressionC* self, int flag) {
   int i, useFeatureSpecFlat, useFeatureSpecDiff, numHistLrt;
   int maxPeak1, maxPeak2;
   int weightPeak1SpecFlat, weightPeak2SpecFlat, weightPeak1SpecDiff,
@@ -518,7 +520,8 @@ static void FeatureParameterExtraction(NSinst_t* self, int flag) {
 // Compute spectral flatness on input spectrum.
 // |magnIn| is the magnitude spectrum.
 // Spectral flatness is returned in self->featureData[0].
-static void ComputeSpectralFlatness(NSinst_t* self, const float* magnIn) {
+static void ComputeSpectralFlatness(NoiseSuppressionC* self,
+                                    const float* magnIn) {
   int i;
   int shiftLP = 1;  // Option to remove first bin(s) from spectral measures.
   float avgSpectralFlatnessNum, avgSpectralFlatnessDen, spectralTmp;
@@ -560,7 +563,7 @@ static void ComputeSpectralFlatness(NSinst_t* self, const float* magnIn) {
 // Outputs:
 //   * |snrLocPrior| is the computed prior SNR.
 //   * |snrLocPost| is the computed post SNR.
-static void ComputeSnr(const NSinst_t* self,
+static void ComputeSnr(const NoiseSuppressionC* self,
                        const float* magn,
                        const float* noise,
                        float* snrLocPrior,
@@ -589,7 +592,7 @@ static void ComputeSnr(const NSinst_t* self,
 // |magnIn| is the input spectrum.
 // The reference/template spectrum is self->magnAvgPause[i].
 // Returns (normalized) spectral difference in self->featureData[4].
-static void ComputeSpectralDifference(NSinst_t* self,
+static void ComputeSpectralDifference(NoiseSuppressionC* self,
                                       const float* magnIn) {
   // avgDiffNormMagn = var(magnIn) - cov(magnIn, magnAvgPause)^2 /
   // var(magnAvgPause)
@@ -636,7 +639,7 @@ static void ComputeSpectralDifference(NSinst_t* self,
 // |noise| is the noise spectrum.
 // |snrLocPrior| is the prior SNR for each frequency.
 // |snrLocPost| is the post SNR for each frequency.
-static void SpeechNoiseProb(NSinst_t* self,
+static void SpeechNoiseProb(NoiseSuppressionC* self,
                             float* probSpeechFinal,
                             const float* snrLocPrior,
                             const float* snrLocPost) {
@@ -749,7 +752,7 @@ static void SpeechNoiseProb(NSinst_t* self,
 // Inputs:
 //   * |magn| is the signal magnitude spectrum estimate.
 //   * |updateParsFlag| is an update flag for parameters.
-static void FeatureUpdate(NSinst_t* self,
+static void FeatureUpdate(NoiseSuppressionC* self,
                           const float* magn,
                           int updateParsFlag) {
   // Compute spectral flatness on input spectrum.
@@ -794,7 +797,7 @@ static void FeatureUpdate(NSinst_t* self,
 //   * |snrLocPost| is the post SNR.
 // Output:
 //   * |noise| is the updated noise magnitude spectrum estimate.
-static void UpdateNoiseEstimate(NSinst_t* self,
+static void UpdateNoiseEstimate(NoiseSuppressionC* self,
                                 const float* magn,
                                 const float* snrLocPrior,
                                 const float* snrLocPost,
@@ -880,7 +883,7 @@ static void UpdateBuffer(const float* frame,
 //   * |real| is the real part of the frequency domain.
 //   * |imag| is the imaginary part of the frequency domain.
 //   * |magn| is the calculated signal magnitude in the frequency domain.
-static void FFT(NSinst_t* self,
+static void FFT(NoiseSuppressionC* self,
                 float* time_data,
                 int time_data_length,
                 int magnitude_length,
@@ -917,7 +920,7 @@ static void FFT(NSinst_t* self,
 //     (2 * (magnitude_length - 1)).
 // Output:
 //   * |time_data| is the signal in the time domain.
-static void IFFT(NSinst_t* self,
+static void IFFT(NoiseSuppressionC* self,
                  const float* real,
                  const float* imag,
                  int magnitude_length,
@@ -979,7 +982,7 @@ static void Windowing(const float* window,
 //   * |magn| is the signal magnitude spectrum estimate.
 // Output:
 //   * |theFilter| is the frequency response of the computed Wiener filter.
-static void ComputeDdBasedWienerFilter(const NSinst_t* self,
+static void ComputeDdBasedWienerFilter(const NoiseSuppressionC* self,
                                        const float* magn,
                                        float* theFilter) {
   int i;
@@ -1007,7 +1010,7 @@ static void ComputeDdBasedWienerFilter(const NSinst_t* self,
 // |mode| = 0 is mild (6dB), |mode| = 1 is medium (10dB) and |mode| = 2 is
 // aggressive (15dB).
 // Returns 0 on success and -1 otherwise.
-int WebRtcNs_set_policy_core(NSinst_t* self, int mode) {
+int WebRtcNs_set_policy_core(NoiseSuppressionC* self, int mode) {
   // Allow for modes: 0, 1, 2, 3.
   if (mode < 0 || mode > 3) {
     return (-1);
@@ -1037,7 +1040,7 @@ int WebRtcNs_set_policy_core(NSinst_t* self, int mode) {
   return 0;
 }
 
-void WebRtcNs_AnalyzeCore(NSinst_t* self, const float* speechFrame) {
+void WebRtcNs_AnalyzeCore(NoiseSuppressionC* self, const float* speechFrame) {
   int i;
   const int kStartBand = 5;  // Skip first frequency bins during estimation.
   int updateParsFlag;
@@ -1177,10 +1180,10 @@ void WebRtcNs_AnalyzeCore(NSinst_t* self, const float* speechFrame) {
   memcpy(self->magnPrevAnalyze, magn, sizeof(*magn) * self->magnLen);
 }
 
-void WebRtcNs_ProcessCore(NSinst_t* self,
-                         const float* const* speechFrame,
-                         int num_bands,
-                         float* const* outFrame) {
+void WebRtcNs_ProcessCore(NoiseSuppressionC* self,
+                          const float* const* speechFrame,
+                          int num_bands,
+                          float* const* outFrame) {
   // Main routine for noise reduction.
   int flagHB = 0;
   int i, j;

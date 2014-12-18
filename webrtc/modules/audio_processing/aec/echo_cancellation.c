@@ -101,9 +101,9 @@ int webrtc_aec_instance_count = 0;
 
 // Estimates delay to set the position of the far-end buffer read pointer
 // (controlled by knownDelay)
-static void EstBufDelayNormal(aecpc_t* aecInst);
-static void EstBufDelayExtended(aecpc_t* aecInst);
-static int ProcessNormal(aecpc_t* self,
+static void EstBufDelayNormal(Aec* aecInst);
+static void EstBufDelayExtended(Aec* aecInst);
+static int ProcessNormal(Aec* self,
                          const float* near,
                          const float* near_high,
                          float* out,
@@ -111,7 +111,7 @@ static int ProcessNormal(aecpc_t* self,
                          int16_t num_samples,
                          int16_t reported_delay_ms,
                          int32_t skew);
-static void ProcessExtended(aecpc_t* self,
+static void ProcessExtended(Aec* self,
                             const float* near,
                             const float* near_high,
                             float* out,
@@ -121,12 +121,12 @@ static void ProcessExtended(aecpc_t* self,
                             int32_t skew);
 
 int32_t WebRtcAec_Create(void** aecInst) {
-  aecpc_t* aecpc;
+  Aec* aecpc;
   if (aecInst == NULL) {
     return -1;
   }
 
-  aecpc = malloc(sizeof(aecpc_t));
+  aecpc = malloc(sizeof(Aec));
   *aecInst = aecpc;
   if (aecpc == NULL) {
     return -1;
@@ -174,7 +174,7 @@ int32_t WebRtcAec_Create(void** aecInst) {
 }
 
 int32_t WebRtcAec_Free(void* aecInst) {
-  aecpc_t* aecpc = aecInst;
+  Aec* aecpc = aecInst;
 
   if (aecpc == NULL) {
     return -1;
@@ -196,7 +196,7 @@ int32_t WebRtcAec_Free(void* aecInst) {
 }
 
 int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq) {
-  aecpc_t* aecpc = aecInst;
+  Aec* aecpc = aecInst;
   AecConfig aecConfig;
 
   if (sampFreq != 8000 && sampFreq != 16000 && sampFreq != 32000) {
@@ -280,7 +280,7 @@ int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq) {
 int32_t WebRtcAec_BufferFarend(void* aecInst,
                                const float* farend,
                                int16_t nrOfSamples) {
-  aecpc_t* aecpc = aecInst;
+  Aec* aecpc = aecInst;
   int newNrOfSamples = (int)nrOfSamples;
   float new_farend[MAX_RESAMP_LEN];
   const float* farend_ptr = farend;
@@ -348,7 +348,7 @@ int32_t WebRtcAec_Process(void* aecInst,
                           int16_t nrOfSamples,
                           int16_t msInSndCardBuf,
                           int32_t skew) {
-  aecpc_t* aecpc = aecInst;
+  Aec* aecpc = aecInst;
   int32_t retVal = 0;
   if (nearend == NULL) {
     aecpc->lastError = AEC_NULL_POINTER_ERROR;
@@ -418,7 +418,7 @@ int32_t WebRtcAec_Process(void* aecInst,
 }
 
 int WebRtcAec_set_config(void* handle, AecConfig config) {
-  aecpc_t* self = (aecpc_t*)handle;
+  Aec* self = (Aec*)handle;
   if (self->initFlag != initCheck) {
     self->lastError = AEC_UNINITIALIZED_ERROR;
     return -1;
@@ -453,7 +453,7 @@ int WebRtcAec_set_config(void* handle, AecConfig config) {
 }
 
 int WebRtcAec_get_echo_status(void* handle, int* status) {
-  aecpc_t* self = (aecpc_t*)handle;
+  Aec* self = (Aec*)handle;
   if (status == NULL) {
     self->lastError = AEC_NULL_POINTER_ERROR;
     return -1;
@@ -472,7 +472,7 @@ int WebRtcAec_GetMetrics(void* handle, AecMetrics* metrics) {
   const float kUpWeight = 0.7f;
   float dtmp;
   int stmp;
-  aecpc_t* self = (aecpc_t*)handle;
+  Aec* self = (Aec*)handle;
   Stats erl;
   Stats erle;
   Stats a_nlp;
@@ -566,7 +566,7 @@ int WebRtcAec_GetMetrics(void* handle, AecMetrics* metrics) {
 }
 
 int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std) {
-  aecpc_t* self = handle;
+  Aec* self = handle;
   if (median == NULL) {
     self->lastError = AEC_NULL_POINTER_ERROR;
     return -1;
@@ -589,7 +589,7 @@ int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std) {
 }
 
 int32_t WebRtcAec_get_error_code(void* aecInst) {
-  aecpc_t* aecpc = aecInst;
+  Aec* aecpc = aecInst;
   return aecpc->lastError;
 }
 
@@ -597,10 +597,10 @@ AecCore* WebRtcAec_aec_core(void* handle) {
   if (!handle) {
     return NULL;
   }
-  return ((aecpc_t*)handle)->aec;
+  return ((Aec*)handle)->aec;
 }
 
-static int ProcessNormal(aecpc_t* aecpc,
+static int ProcessNormal(Aec* aecpc,
                          const float* nearend,
                          const float* nearendH,
                          float* out,
@@ -757,7 +757,7 @@ static int ProcessNormal(aecpc_t* aecpc,
   return retVal;
 }
 
-static void ProcessExtended(aecpc_t* self,
+static void ProcessExtended(Aec* self,
                             const float* near,
                             const float* near_high,
                             float* out,
@@ -834,7 +834,7 @@ static void ProcessExtended(aecpc_t* self,
   }
 }
 
-static void EstBufDelayNormal(aecpc_t* aecpc) {
+static void EstBufDelayNormal(Aec* aecpc) {
   int nSampSndCard = aecpc->msInSndCardBuf * sampMsNb * aecpc->rate_factor;
   int current_delay = nSampSndCard - WebRtcAec_system_delay(aecpc->aec);
   int delay_difference = 0;
@@ -887,7 +887,7 @@ static void EstBufDelayNormal(aecpc_t* aecpc) {
   }
 }
 
-static void EstBufDelayExtended(aecpc_t* self) {
+static void EstBufDelayExtended(Aec* self) {
   int reported_delay = self->msInSndCardBuf * sampMsNb * self->rate_factor;
   int current_delay = reported_delay - WebRtcAec_system_delay(self->aec);
   int delay_difference = 0;

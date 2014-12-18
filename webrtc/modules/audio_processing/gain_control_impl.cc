@@ -323,7 +323,7 @@ int GainControlImpl::InitializeHandle(void* handle) const {
 }
 
 int GainControlImpl::ConfigureHandle(void* handle) const {
-  WebRtcAgc_config_t config;
+  WebRtcAgcConfig config;
   // TODO(ajm): Flip the sign here (since AGC expects a positive value) if we
   //            change the interface.
   //assert(target_level_dbfs_ <= 0);

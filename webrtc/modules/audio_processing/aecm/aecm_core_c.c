@@ -57,16 +57,16 @@ static const uint16_t kBeta3 = 18927;
 static const int16_t kNoiseEstQDomain = 15;
 static const int16_t kNoiseEstIncCount = 5;
 
-static void ComfortNoise(AecmCore_t* aecm,
+static void ComfortNoise(AecmCore* aecm,
                          const uint16_t* dfa,
-                         complex16_t* out,
+                         ComplexInt16* out,
                          const int16_t* lambda);
 
-static void WindowAndFFT(AecmCore_t* aecm,
-                          int16_t* fft,
-                          const int16_t* time_signal,
-                          complex16_t* freq_signal,
-                          int time_signal_scaling) {
+static void WindowAndFFT(AecmCore* aecm,
+                         int16_t* fft,
+                         const int16_t* time_signal,
+                         ComplexInt16* freq_signal,
+                         int time_signal_scaling) {
   int i = 0;
 
   // FFT of signal
@@ -91,12 +91,11 @@ static void WindowAndFFT(AecmCore_t* aecm,
   }
 }
 
-static void InverseFFTAndWindow(AecmCore_t* aecm,
+static void InverseFFTAndWindow(AecmCore* aecm,
                                 int16_t* fft,
-                                complex16_t* efw,
+                                ComplexInt16* efw,
                                 int16_t* output,
-                                const int16_t* nearendClean)
-{
+                                const int16_t* nearendClean) {
   int i, j, outCFFT;
   int32_t tmp32no1;
   // Reuse |efw| for the inverse FFT output after transferring
@@ -162,12 +161,11 @@ static void InverseFFTAndWindow(AecmCore_t* aecm,
 //                              the frequency domain array
 // return value                 The Q-domain of current frequency values
 //
-static int TimeToFrequencyDomain(AecmCore_t* aecm,
+static int TimeToFrequencyDomain(AecmCore* aecm,
                                  const int16_t* time_signal,
-                                 complex16_t* freq_signal,
+                                 ComplexInt16* freq_signal,
                                  uint16_t* freq_signal_abs,
-                                 uint32_t* freq_signal_sum_abs)
-{
+                                 uint32_t* freq_signal_sum_abs) {
   int i = 0;
   int time_signal_scaling = 0;
 
@@ -283,12 +281,11 @@ static int TimeToFrequencyDomain(AecmCore_t* aecm,
   return time_signal_scaling;
 }
 
-int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
-                            const int16_t * farend,
-                            const int16_t * nearendNoisy,
-                            const int16_t * nearendClean,
-                            int16_t * output)
-{
+int WebRtcAecm_ProcessBlock(AecmCore* aecm,
+                            const int16_t* farend,
+                            const int16_t* nearendNoisy,
+                            const int16_t* nearendClean,
+                            int16_t* output) {
   int i;
 
   uint32_t xfaSum;
@@ -306,7 +303,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
   const uint16_t* far_spectrum_ptr = NULL;
 
   // 32 byte aligned buffers (with +8 or +16).
-  // TODO (kma): define fft with complex16_t.
+  // TODO(kma): define fft with ComplexInt16.
   int16_t fft_buf[PART_LEN4 + 2 + 16]; // +2 to make a loop safe.
   int32_t echoEst32_buf[PART_LEN1 + 8];
   int32_t dfw_buf[PART_LEN2 + 8];
@@ -314,8 +311,8 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
 
   int16_t* fft = (int16_t*) (((uintptr_t) fft_buf + 31) & ~ 31);
   int32_t* echoEst32 = (int32_t*) (((uintptr_t) echoEst32_buf + 31) & ~ 31);
-  complex16_t* dfw = (complex16_t*) (((uintptr_t) dfw_buf + 31) & ~ 31);
-  complex16_t* efw = (complex16_t*) (((uintptr_t) efw_buf + 31) & ~ 31);
+  ComplexInt16* dfw = (ComplexInt16*)(((uintptr_t)dfw_buf + 31) & ~31);
+  ComplexInt16* efw = (ComplexInt16*)(((uintptr_t)efw_buf + 31) & ~31);
 
   int16_t hnl[PART_LEN1];
   int16_t numPosCoef = 0;
@@ -644,12 +641,10 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
   return 0;
 }
 
-
-static void ComfortNoise(AecmCore_t* aecm,
+static void ComfortNoise(AecmCore* aecm,
                          const uint16_t* dfa,
-                         complex16_t* out,
-                         const int16_t* lambda)
-{
+                         ComplexInt16* out,
+                         const int16_t* lambda) {
   int16_t i;
   int16_t tmp16;
   int32_t tmp32;

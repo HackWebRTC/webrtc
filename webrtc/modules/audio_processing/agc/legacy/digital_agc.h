@@ -34,7 +34,7 @@ typedef struct
     int16_t meanShortTerm; // Q10
     int32_t varianceShortTerm; // Q8
     int16_t stdShortTerm; // Q10
-} AgcVad_t; // total = 54 bytes
+} AgcVad;  // total = 54 bytes
 
 typedef struct
 {
@@ -44,32 +44,32 @@ typedef struct
     int32_t gainTable[32];
     int16_t gatePrevious;
     int16_t agcMode;
-    AgcVad_t      vadNearend;
-    AgcVad_t      vadFarend;
+    AgcVad vadNearend;
+    AgcVad vadFarend;
 #ifdef WEBRTC_AGC_DEBUG_DUMP
     FILE* logFile;
     int frameCounter;
 #endif
-} DigitalAgc_t;
+} DigitalAgc;
 
-int32_t WebRtcAgc_InitDigital(DigitalAgc_t *digitalAgcInst, int16_t agcMode);
+int32_t WebRtcAgc_InitDigital(DigitalAgc* digitalAgcInst, int16_t agcMode);
 
-int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *digitalAgcInst,
+int32_t WebRtcAgc_ProcessDigital(DigitalAgc* digitalAgcInst,
                                  const int16_t* const* inNear,
                                  int16_t num_bands,
                                  int16_t* const* out,
                                  uint32_t FS,
                                  int16_t lowLevelSignal);
 
-int32_t WebRtcAgc_AddFarendToDigital(DigitalAgc_t *digitalAgcInst,
-                                     const int16_t *inFar,
+int32_t WebRtcAgc_AddFarendToDigital(DigitalAgc* digitalAgcInst,
+                                     const int16_t* inFar,
                                      int16_t nrSamples);
 
-void WebRtcAgc_InitVad(AgcVad_t *vadInst);
+void WebRtcAgc_InitVad(AgcVad* vadInst);
 
-int16_t WebRtcAgc_ProcessVad(AgcVad_t *vadInst, // (i) VAD state
-                             const int16_t *in, // (i) Speech signal
-                             int16_t nrSamples); // (i) number of samples
+int16_t WebRtcAgc_ProcessVad(AgcVad* vadInst,     // (i) VAD state
+                             const int16_t* in,   // (i) Speech signal
+                             int16_t nrSamples);  // (i) number of samples
 
 int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
                                      int16_t compressionGaindB, // Q0 (in dB)

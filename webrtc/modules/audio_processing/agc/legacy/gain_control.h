@@ -42,7 +42,7 @@ typedef struct
     int16_t targetLevelDbfs;   // default 3 (-3 dBOv)
     int16_t compressionGaindB; // default 9 dB
     uint8_t limiterEnable;     // default kAgcTrue (on)
-} WebRtcAgc_config_t;
+} WebRtcAgcConfig;
 
 #if defined(__cplusplus)
 extern "C"
@@ -181,7 +181,7 @@ int WebRtcAgc_Process(void* agcInst,
  *                          :  0 - Normal operation.
  *                          : -1 - Error
  */
-int WebRtcAgc_set_config(void* agcInst, WebRtcAgc_config_t config);
+int WebRtcAgc_set_config(void* agcInst, WebRtcAgcConfig config);
 
 /*
  * This function returns the config parameters (targetLevelDbfs,
@@ -197,7 +197,7 @@ int WebRtcAgc_set_config(void* agcInst, WebRtcAgc_config_t config);
  *                          :  0 - Normal operation.
  *                          : -1 - Error
  */
-int WebRtcAgc_get_config(void* agcInst, WebRtcAgc_config_t* config);
+int WebRtcAgc_get_config(void* agcInst, WebRtcAgcConfig* config);
 
 /*
  * This function creates an AGC instance, which will contain the state

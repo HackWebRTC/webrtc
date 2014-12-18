@@ -300,7 +300,7 @@ static const int16_t kDeterminantEstMatrix[66] = {
 };
 
 // Update the noise estimation information.
-static void UpdateNoiseEstimate(NsxInst_t* inst, int offset) {
+static void UpdateNoiseEstimate(NoiseSuppressionFixedC* inst, int offset) {
   int32_t tmp32no1 = 0;
   int32_t tmp32no2 = 0;
   int16_t tmp16 = 0;
@@ -332,7 +332,7 @@ static void UpdateNoiseEstimate(NsxInst_t* inst, int offset) {
 }
 
 // Noise Estimation
-static void NoiseEstimationC(NsxInst_t* inst,
+static void NoiseEstimationC(NoiseSuppressionFixedC* inst,
                              uint16_t* magn,
                              uint32_t* noise,
                              int16_t* q_noise) {
@@ -453,7 +453,7 @@ static void NoiseEstimationC(NsxInst_t* inst,
 }
 
 // Filter the data in the frequency domain, and create spectrum.
-static void PrepareSpectrumC(NsxInst_t* inst, int16_t* freq_buf) {
+static void PrepareSpectrumC(NoiseSuppressionFixedC* inst, int16_t* freq_buf) {
   int i = 0, j = 0;
 
   for (i = 0; i < inst->magnLen; i++) {
@@ -474,7 +474,9 @@ static void PrepareSpectrumC(NsxInst_t* inst, int16_t* freq_buf) {
 }
 
 // Denormalize the real-valued signal |in|, the output from inverse FFT.
-static void DenormalizeC(NsxInst_t* inst, int16_t* in, int factor) {
+static void DenormalizeC(NoiseSuppressionFixedC* inst,
+                         int16_t* in,
+                         int factor) {
   int i = 0;
   int32_t tmp32 = 0;
   for (i = 0; i < inst->anaLen; i += 1) {
@@ -486,7 +488,7 @@ static void DenormalizeC(NsxInst_t* inst, int16_t* in, int factor) {
 
 // For the noise supression process, synthesis, read out fully processed
 // segment, and update synthesis buffer.
-static void SynthesisUpdateC(NsxInst_t* inst,
+static void SynthesisUpdateC(NoiseSuppressionFixedC* inst,
                              int16_t* out_frame,
                              int16_t gain_factor) {
   int i = 0;
@@ -519,7 +521,7 @@ static void SynthesisUpdateC(NsxInst_t* inst,
 }
 
 // Update analysis buffer for lower band, and window data before FFT.
-static void AnalysisUpdateC(NsxInst_t* inst,
+static void AnalysisUpdateC(NoiseSuppressionFixedC* inst,
                             int16_t* out,
                             int16_t* new_speech) {
   int i = 0;
@@ -539,7 +541,7 @@ static void AnalysisUpdateC(NsxInst_t* inst,
 }
 
 // Normalize the real-valued signal |in|, the input to forward FFT.
-static void NormalizeRealBufferC(NsxInst_t* inst,
+static void NormalizeRealBufferC(NoiseSuppressionFixedC* inst,
                                  const int16_t* in,
                                  int16_t* out) {
   int i = 0;
@@ -581,7 +583,7 @@ static void WebRtcNsx_InitMips(void) {
 }
 #endif
 
-void WebRtcNsx_CalcParametricNoiseEstimate(NsxInst_t* inst,
+void WebRtcNsx_CalcParametricNoiseEstimate(NoiseSuppressionFixedC* inst,
                                            int16_t pink_noise_exp_avg,
                                            int32_t pink_noise_num_avg,
                                            int freq_index,
@@ -627,7 +629,7 @@ void WebRtcNsx_CalcParametricNoiseEstimate(NsxInst_t* inst,
 }
 
 // Initialize state
-int32_t WebRtcNsx_InitCore(NsxInst_t* inst, uint32_t fs) {
+int32_t WebRtcNsx_InitCore(NoiseSuppressionFixedC* inst, uint32_t fs) {
   int i;
 
   //check for valid pointer
@@ -782,7 +784,7 @@ int32_t WebRtcNsx_InitCore(NsxInst_t* inst, uint32_t fs) {
   return 0;
 }
 
-int WebRtcNsx_set_policy_core(NsxInst_t* inst, int mode) {
+int WebRtcNsx_set_policy_core(NoiseSuppressionFixedC* inst, int mode) {
   // allow for modes:0,1,2,3
   if (mode < 0 || mode > 3) {
     return -1;
@@ -817,7 +819,8 @@ int WebRtcNsx_set_policy_core(NsxInst_t* inst, int mode) {
 // thresholds and weights are extracted every window
 // flag 0 means update histogram only, flag 1 means compute the thresholds/weights
 // threshold and weights are returned in: inst->priorModelPars
-void WebRtcNsx_FeatureParameterExtraction(NsxInst_t* inst, int flag) {
+void WebRtcNsx_FeatureParameterExtraction(NoiseSuppressionFixedC* inst,
+                                          int flag) {
   uint32_t tmpU32;
   uint32_t histIndex;
   uint32_t posPeak1SpecFlatFX, posPeak2SpecFlatFX;
@@ -1017,7 +1020,8 @@ void WebRtcNsx_FeatureParameterExtraction(NsxInst_t* inst, int flag) {
 // Compute spectral flatness on input spectrum
 // magn is the magnitude spectrum
 // spectral flatness is returned in inst->featureSpecFlat
-void WebRtcNsx_ComputeSpectralFlatness(NsxInst_t* inst, uint16_t* magn) {
+void WebRtcNsx_ComputeSpectralFlatness(NoiseSuppressionFixedC* inst,
+                                       uint16_t* magn) {
   uint32_t tmpU32;
   uint32_t avgSpectralFlatnessNum, avgSpectralFlatnessDen;
 
@@ -1085,7 +1089,8 @@ void WebRtcNsx_ComputeSpectralFlatness(NsxInst_t* inst, uint16_t* magn) {
 // magn_tmp is the input spectrum
 // the reference/template spectrum is  inst->magn_avg_pause[i]
 // returns (normalized) spectral difference in inst->featureSpecDiff
-void WebRtcNsx_ComputeSpectralDifference(NsxInst_t* inst, uint16_t* magnIn) {
+void WebRtcNsx_ComputeSpectralDifference(NoiseSuppressionFixedC* inst,
+                                         uint16_t* magnIn) {
   // This is to be calculated:
   // avgDiffNormMagn = var(magnIn) - cov(magnIn, magnAvgPause)^2 / var(magnAvgPause)
 
@@ -1177,8 +1182,9 @@ void WebRtcNsx_ComputeSpectralDifference(NsxInst_t* inst, uint16_t* magnIn) {
 }
 
 // Transform input (speechFrame) to frequency domain magnitude (magnU16)
-void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, uint16_t* magnU16) {
-
+void WebRtcNsx_DataAnalysis(NoiseSuppressionFixedC* inst,
+                            short* speechFrame,
+                            uint16_t* magnU16) {
   uint32_t tmpU32no1;
 
   int32_t   tmp_1_w32 = 0;
@@ -1414,7 +1420,7 @@ void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, uint16_t* magnU
   }
 }
 
-void WebRtcNsx_DataSynthesis(NsxInst_t* inst, short* outFrame) {
+void WebRtcNsx_DataSynthesis(NoiseSuppressionFixedC* inst, short* outFrame) {
   int32_t energyOut;
 
   int16_t realImag_buff[ANAL_BLOCKL_MAX * 2 + 16];
@@ -1495,7 +1501,7 @@ void WebRtcNsx_DataSynthesis(NsxInst_t* inst, short* outFrame) {
   WebRtcNsx_SynthesisUpdate(inst, outFrame, gainFactor);
 }
 
-void WebRtcNsx_ProcessCore(NsxInst_t* inst,
+void WebRtcNsx_ProcessCore(NoiseSuppressionFixedC* inst,
                            const short* const* speechFrame,
                            int num_bands,
                            short* const* outFrame) {
