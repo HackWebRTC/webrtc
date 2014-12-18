@@ -37,7 +37,7 @@
 #include "talk/media/base/screencastid.h"
 #include "talk/media/base/streamparams.h"
 #include "talk/media/base/videocommon.h"
-#include "webrtc/p2p/base/session.h"
+#include "webrtc/p2p/base/sessionmanager.h"
 #include "webrtc/p2p/client/socketmonitor.h"
 #include "talk/session/media/audiomonitor.h"
 #include "talk/session/media/currentspeakermonitor.h"
@@ -192,7 +192,7 @@ class Call : public rtc::MessageHandler, public sigslot::has_slots<> {
  private:
   void OnMessage(rtc::Message* message);
   void OnSessionState(BaseSession* base_session, BaseSession::State state);
-  void OnSessionError(BaseSession* base_session, Session::Error error);
+  void OnSessionError(BaseSession* base_session, BaseSession::Error error);
   void OnSessionInfoMessage(
       Session* session, const buzz::XmlElement* action_elem);
   void OnViewRequest(
