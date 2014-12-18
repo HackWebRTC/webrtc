@@ -98,7 +98,7 @@ err_status_t external_hmac_alloc(auth_t** a, int key_len, int out_len) {
     return err_status_bad_param;
 
   // Allocate memory for auth and hmac_ctx_t structures.
-  pointer = new uint8_t[(sizeof(external_hmac_ctx_t) + sizeof(auth_t))];
+  pointer = new uint8_t[(sizeof(ExternalHmacContext) + sizeof(auth_t))];
   if (pointer == NULL)
     return err_status_alloc_fail;
 
@@ -118,7 +118,7 @@ err_status_t external_hmac_alloc(auth_t** a, int key_len, int out_len) {
 
 err_status_t external_hmac_dealloc(auth_t* a) {
   // Zeroize entire state
-  memset((uint8_t *)a, 0, sizeof(external_hmac_ctx_t) + sizeof(auth_t));
+  memset((uint8_t *)a, 0, sizeof(ExternalHmacContext) + sizeof(auth_t));
 
   // Free memory
   delete[] a;
@@ -126,7 +126,7 @@ err_status_t external_hmac_dealloc(auth_t* a) {
   return err_status_ok;
 }
 
-err_status_t external_hmac_init(external_hmac_ctx_t* state,
+err_status_t external_hmac_init(ExternalHmacContext* state,
                                 const uint8_t* key,
                                 int key_len) {
   if (key_len > HMAC_KEY_LENGTH)
@@ -138,17 +138,17 @@ err_status_t external_hmac_init(external_hmac_ctx_t* state,
   return err_status_ok;
 }
 
-err_status_t external_hmac_start(external_hmac_ctx_t* state) {
+err_status_t external_hmac_start(ExternalHmacContext* state) {
   return err_status_ok;
 }
 
-err_status_t external_hmac_update(external_hmac_ctx_t* state,
+err_status_t external_hmac_update(ExternalHmacContext* state,
                                   const uint8_t* message,
                                   int msg_octets) {
   return err_status_ok;
 }
 
-err_status_t external_hmac_compute(external_hmac_ctx_t* state,
+err_status_t external_hmac_compute(ExternalHmacContext* state,
                                    const void* message,
                                    int msg_octets,
                                    int tag_len,

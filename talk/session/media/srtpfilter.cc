@@ -598,12 +598,12 @@ bool SrtpSession::UnprotectRtcp(void* p, int in_len, int* out_len) {
 bool SrtpSession::GetRtpAuthParams(uint8** key, int* key_len,
                                    int* tag_len) {
 #if defined(ENABLE_EXTERNAL_AUTH)
-  external_hmac_ctx_t* external_hmac = NULL;
+  ExternalHmacContext* external_hmac = NULL;
   // stream_template will be the reference context for other streams.
   // Let's use it for getting the keys.
   srtp_stream_ctx_t* srtp_context = session_->stream_template;
   if (srtp_context && srtp_context->rtp_auth) {
-    external_hmac = reinterpret_cast<external_hmac_ctx_t*>(
+    external_hmac = reinterpret_cast<ExternalHmacContext*>(
         srtp_context->rtp_auth->state);
   }
 
