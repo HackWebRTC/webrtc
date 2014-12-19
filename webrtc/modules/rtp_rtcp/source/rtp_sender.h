@@ -295,7 +295,7 @@ class RTPSender : public RTPSenderInterface {
                          uint16_t sequence_number,
                          const std::vector<uint32_t>& csrcs) const;
 
-  void UpdateNACKBitRate(const size_t bytes, const uint32_t now);
+  void UpdateNACKBitRate(uint32_t bytes, int64_t now);
 
   bool PrepareAndSendPacket(uint8_t* buffer,
                             size_t length,

@@ -726,7 +726,7 @@ void RTPSender::OnReceivedNACK(
   TRACE_EVENT2("webrtc_rtp", "RTPSender::OnReceivedNACK",
                "num_seqnum", nack_sequence_numbers.size(), "avg_rtt", avg_rtt);
   const int64_t now = clock_->TimeInMilliseconds();
-  size_t bytes_re_sent = 0;
+  uint32_t bytes_re_sent = 0;
   uint32_t target_bitrate = GetTargetBitrate();
 
   // Enough bandwidth to send NACK?
@@ -745,7 +745,7 @@ void RTPSender::OnReceivedNACK(
       // The packet has previously been resent.
       // Try resending next packet in the list.
       continue;
-    } else if (bytes_sent < 0) {
+    } else {
       // Failed to send one Sequence number. Give up the rest in this nack.
       LOG(LS_WARNING) << "Failed resending RTP packet " << *it
                       << ", Discard rest of packets";
@@ -762,9 +762,7 @@ void RTPSender::OnReceivedNACK(
     }
   }
   if (bytes_re_sent > 0) {
-    // TODO(pwestin) consolidate these two methods.
     UpdateNACKBitRate(bytes_re_sent, now);
-    nack_bitrate_.Update(bytes_re_sent);
   }
 }
 
@@ -798,29 +796,19 @@ bool RTPSender::ProcessNACKBitRate(const uint32_t now) {
   return (byte_count * 8) < (target_bitrate / 1000 * time_interval);
 }
 
-void RTPSender::UpdateNACKBitRate(const size_t bytes,
-                                  const uint32_t now) {
+void RTPSender::UpdateNACKBitRate(uint32_t bytes, int64_t now) {
   CriticalSectionScoped cs(send_critsect_);
-
+  if (bytes == 0)
+    return;
+  nack_bitrate_.Update(bytes);
   // Save bitrate statistics.
-  if (bytes > 0) {
-    if (now == 0) {
-      // Add padding length.
-      nack_byte_count_[0] += bytes;
-    } else {
-      if (nack_byte_count_times_[0] == 0) {
-        // First no shift.
-      } else {
-        // Shift.
-        for (int i = (NACK_BYTECOUNT_SIZE - 2); i >= 0; i--) {
-          nack_byte_count_[i + 1] = nack_byte_count_[i];
-          nack_byte_count_times_[i + 1] = nack_byte_count_times_[i];
-        }
-      }
-      nack_byte_count_[0] = bytes;
-      nack_byte_count_times_[0] = now;
-    }
+  // Shift all but first time.
+  for (int i = NACK_BYTECOUNT_SIZE - 2; i >= 0; i--) {
+    nack_byte_count_[i + 1] = nack_byte_count_[i];
+    nack_byte_count_times_[i + 1] = nack_byte_count_times_[i];
   }
+  nack_byte_count_[0] = bytes;
+  nack_byte_count_times_[0] = now;
 }
 
 // Called from pacer when we can send the packet.
