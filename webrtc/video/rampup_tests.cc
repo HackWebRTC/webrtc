@@ -212,12 +212,12 @@ LowRateStreamObserver::LowRateStreamObserver(
   rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(config));
   rtp_rtcp_->SetREMBStatus(true);
   rtp_rtcp_->SetRTCPStatus(kRtcpNonCompound);
-  rtp_parser_->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
-                                          kTransmissionTimeOffsetExtensionId);
+  rtp_parser_->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
+                                          kAbsSendTimeExtensionId);
   AbsoluteSendTimeRemoteBitrateEstimatorFactory rbe_factory;
   const uint32_t kRemoteBitrateEstimatorMinBitrateBps = 10000;
   remote_bitrate_estimator_.reset(
-      rbe_factory.Create(this, clock, kMimdControl,
+      rbe_factory.Create(this, clock, kAimdControl,
                          kRemoteBitrateEstimatorMinBitrateBps));
   forward_transport_config_.link_capacity_kbps =
       kHighBandwidthLimitBps / 1000;
@@ -461,7 +461,7 @@ void RampUpTest::RunRampUpDownUpTest(size_t number_of_streams, bool rtx) {
 
   send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
   send_config_.rtp.extensions.push_back(RtpExtension(
-      RtpExtension::kTOffset, kTransmissionTimeOffsetExtensionId));
+      RtpExtension::kAbsSendTime, kAbsSendTimeExtensionId));
   send_config_.suspend_below_min_bitrate = true;
   if (rtx) {
     send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
