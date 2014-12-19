@@ -1406,7 +1406,6 @@ bool ViEChannel::Sending() {
 }
 
 int32_t ViEChannel::StartReceive() {
-  CriticalSectionScoped cs(callback_cs_.get());
   if (StartDecodeThread() != 0) {
     vie_receiver_.StopReceive();
     return -1;
