@@ -100,7 +100,7 @@
 
 #include "webrtc/base/common.h"  // for ASSERT
 #include "webrtc/base/compile_assert.h"  // for COMPILE_ASSERT
-#include "webrtc/base/move.h"    // for TALK_MOVE_ONLY_TYPE_FOR_CPP_03
+#include "webrtc/base/move.h"    // for RTC_MOVE_ONLY_TYPE_FOR_CPP_03
 #include "webrtc/base/template_util.h"    // for is_convertible, is_array
 
 #ifdef WEBRTC_WIN
@@ -309,7 +309,7 @@ class scoped_ptr_impl {
 // types.
 template <class T, class D = rtc::DefaultDeleter<T> >
 class scoped_ptr {
-  TALK_MOVE_ONLY_TYPE_FOR_CPP_03(scoped_ptr, RValue)
+  RTC_MOVE_ONLY_TYPE_FOR_CPP_03(scoped_ptr, RValue)
 
  public:
   // The element and deleter types.
@@ -454,7 +454,7 @@ class scoped_ptr {
 
 template <class T, class D>
 class scoped_ptr<T[], D> {
-  TALK_MOVE_ONLY_TYPE_FOR_CPP_03(scoped_ptr, RValue)
+  RTC_MOVE_ONLY_TYPE_FOR_CPP_03(scoped_ptr, RValue)
 
  public:
   // The element and deleter types.
