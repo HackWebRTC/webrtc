@@ -689,11 +689,7 @@ class FakeWebRtcVideoEngine
     channels_[channel]->overuse_observer_ = observer;
     return 0;
   }
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_STUB(GetCpuOveruseMetrics, (int, webrtc::CpuOveruseMetrics*));
-#else
-  WEBRTC_STUB(CpuOveruseMeasures, (int, int*, int*, int*, int*));
-#endif
   WEBRTC_FUNC(SetCpuOveruseOptions,
       (int channel, const webrtc::CpuOveruseOptions& options)) {
     WEBRTC_CHECK_CHANNEL(channel);
@@ -1016,10 +1012,6 @@ class FakeWebRtcVideoEngine
     channels_[channel]->rtx_send_payload_type = payload_type;
     return 0;
   }
-
-#ifdef USE_WEBRTC_DEV_BRANCH
-  WEBRTC_STUB(SetPadWithRedundantPayloads, (int, bool));
-#endif
 
   WEBRTC_FUNC(SetRtxReceivePayloadType, (const int channel,
                                          const uint8 payload_type)) {

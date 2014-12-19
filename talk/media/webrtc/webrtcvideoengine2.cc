@@ -606,7 +606,6 @@ void WebRtcVideoChannel2::SetDefaultOptions() {
   options_.cpu_overuse_detection.Set(false);
   options_.dscp.Set(false);
   options_.suspend_below_min_bitrate.Set(false);
-  options_.use_payload_padding.Set(false);
   options_.video_noise_reduction.Set(true);
   options_.screencast_min_bitrate.Set(0);
 }
@@ -1595,9 +1594,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(
   // Set RTX payload type if RTX is enabled.
   if (!parameters_.config.rtp.rtx.ssrcs.empty()) {
     parameters_.config.rtp.rtx.payload_type = codec_settings.rtx_payload_type;
-
-    options.use_payload_padding.Get(
-        &parameters_.config.rtp.rtx.pad_with_redundant_payloads);
   }
 
   if (IsNackEnabled(codec_settings.codec)) {

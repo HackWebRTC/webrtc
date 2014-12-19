@@ -593,11 +593,6 @@ bool WebRtcSession::Initialize(
       MediaConstraintsInterface::kCpuOveruseEncodeRsdThreshold,
       &video_options_.cpu_overuse_encode_rsd_threshold);
 
-  // Find payload padding constraint.
-  SetOptionFromOptionalConstraint(constraints,
-      MediaConstraintsInterface::kPayloadPadding,
-      &video_options_.use_payload_padding);
-
   SetOptionFromOptionalConstraint(constraints,
       MediaConstraintsInterface::kNumUnsignalledRecvStreams,
       &video_options_.unsignalled_recv_stream_limit);

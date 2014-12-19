@@ -314,7 +314,6 @@ struct VideoOptions {
     unsignalled_recv_stream_limit.SetFrom(change.unsignalled_recv_stream_limit);
     use_simulcast_adapter.SetFrom(change.use_simulcast_adapter);
     screencast_min_bitrate.SetFrom(change.screencast_min_bitrate);
-    use_payload_padding.SetFrom(change.use_payload_padding);
   }
 
   bool operator==(const VideoOptions& o) const {
@@ -342,8 +341,7 @@ struct VideoOptions {
            suspend_below_min_bitrate == o.suspend_below_min_bitrate &&
            unsignalled_recv_stream_limit == o.unsignalled_recv_stream_limit &&
            use_simulcast_adapter == o.use_simulcast_adapter &&
-           screencast_min_bitrate == o.screencast_min_bitrate &&
-           use_payload_padding == o.use_payload_padding;
+           screencast_min_bitrate == o.screencast_min_bitrate;
   }
 
   std::string ToString() const {
@@ -376,7 +374,6 @@ struct VideoOptions {
                          unsignalled_recv_stream_limit);
     ost << ToStringIfSet("use simulcast adapter", use_simulcast_adapter);
     ost << ToStringIfSet("screencast min bitrate", screencast_min_bitrate);
-    ost << ToStringIfSet("payload padding", use_payload_padding);
     ost << "}";
     return ost.str();
   }
@@ -436,8 +433,6 @@ struct VideoOptions {
   Settable<bool> use_simulcast_adapter;
   // Force screencast to use a minimum bitrate
   Settable<int> screencast_min_bitrate;
-  // Enable payload padding.
-  Settable<bool> use_payload_padding;
 };
 
 // A class for playing out soundclips.

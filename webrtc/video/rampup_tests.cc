@@ -421,7 +421,6 @@ void RampUpTest::RunRampUpTest(bool rtx,
   if (rtx) {
     send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
     send_config_.rtp.rtx.ssrcs = rtx_ssrcs;
-    send_config_.rtp.rtx.pad_with_redundant_payloads = true;
   }
 
   if (num_streams == 1) {
@@ -467,7 +466,6 @@ void RampUpTest::RunRampUpDownUpTest(size_t number_of_streams, bool rtx) {
   if (rtx) {
     send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
     send_config_.rtp.rtx.ssrcs = GenerateSsrcs(number_of_streams, 200);
-    send_config_.rtp.rtx.pad_with_redundant_payloads = true;
   }
 
   CreateStreams();

@@ -458,7 +458,6 @@ void VideoSendStream::ConfigureSsrcs() {
   }
 
   if (config_.rtp.rtx.ssrcs.empty()) {
-    assert(!config_.rtp.rtx.pad_with_redundant_payloads);
     return;
   }
 
@@ -473,10 +472,6 @@ void VideoSendStream::ConfigureSsrcs() {
     RtpStateMap::iterator it = suspended_ssrcs_.find(ssrc);
     if (it != suspended_ssrcs_.end())
       rtp_rtcp_->SetRtpStateForSsrc(channel_, ssrc, it->second);
-  }
-
-  if (config_.rtp.rtx.pad_with_redundant_payloads) {
-    rtp_rtcp_->SetPadWithRedundantPayloads(channel_, true);
   }
 
   assert(config_.rtp.rtx.payload_type >= 0);

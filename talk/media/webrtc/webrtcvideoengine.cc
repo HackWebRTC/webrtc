@@ -1078,7 +1078,7 @@ static bool GetCpuOveruseOptions(const VideoOptions& options,
     // Use method based on encode usage.
     overuse_options->low_encode_usage_threshold_percent = underuse_threshold;
     overuse_options->high_encode_usage_threshold_percent = overuse_threshold;
-#ifdef USE_WEBRTC_DEV_BRANCH
+
     // Set optional thresholds, if configured.
     int underuse_rsd_threshold = 0;
     if (options.cpu_underuse_encode_rsd_threshold.Get(
@@ -1089,7 +1089,6 @@ static bool GetCpuOveruseOptions(const VideoOptions& options,
     if (options.cpu_overuse_encode_rsd_threshold.Get(&overuse_rsd_threshold)) {
       overuse_options->high_encode_time_rsd_threshold = overuse_rsd_threshold;
     }
-#endif
   } else {
     // Use default method based on capture jitter.
     overuse_options->low_capture_jitter_threshold_ms =
@@ -2653,35 +2652,12 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
       sinfo.adapt_reason = send_channel->CurrentAdaptReason();
       sinfo.adapt_changes = send_channel->AdaptChanges();
 
-#ifdef USE_WEBRTC_DEV_BRANCH
       webrtc::CpuOveruseMetrics metrics;
       engine()->vie()->base()->GetCpuOveruseMetrics(channel_id, &metrics);
       sinfo.capture_jitter_ms = metrics.capture_jitter_ms;
       sinfo.avg_encode_ms = metrics.avg_encode_time_ms;
       sinfo.encode_usage_percent = metrics.encode_usage_percent;
       sinfo.capture_queue_delay_ms_per_s = metrics.capture_queue_delay_ms_per_s;
-#else
-      sinfo.capture_jitter_ms = -1;
-      sinfo.avg_encode_ms = -1;
-      sinfo.encode_usage_percent = -1;
-      sinfo.capture_queue_delay_ms_per_s = -1;
-
-      int capture_jitter_ms = 0;
-      int avg_encode_time_ms = 0;
-      int encode_usage_percent = 0;
-      int capture_queue_delay_ms_per_s = 0;
-      if (engine()->vie()->base()->CpuOveruseMeasures(
-          channel_id,
-          &capture_jitter_ms,
-          &avg_encode_time_ms,
-          &encode_usage_percent,
-          &capture_queue_delay_ms_per_s) == 0) {
-        sinfo.capture_jitter_ms = capture_jitter_ms;
-        sinfo.avg_encode_ms = avg_encode_time_ms;
-        sinfo.encode_usage_percent = encode_usage_percent;
-        sinfo.capture_queue_delay_ms_per_s = capture_queue_delay_ms_per_s;
-      }
-#endif
 
       webrtc::RtcpPacketTypeCounter rtcp_sent;
       webrtc::RtcpPacketTypeCounter rtcp_received;
@@ -3192,19 +3168,6 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
     }
   }
 
-#ifdef USE_WEBRTC_DEV_BRANCH
-  bool use_payload_padding;
-  if (Changed(options.use_payload_padding,
-              original.use_payload_padding,
-              &use_payload_padding)) {
-    LOG(LS_INFO) << "Payload-based padding called.";
-    for (SendChannelMap::iterator it = send_channels_.begin();
-            it != send_channels_.end(); ++it) {
-      engine()->vie()->rtp()->SetPadWithRedundantPayloads(
-          it->second->channel_id(), use_payload_padding);
-    }
-  }
-#endif
   webrtc::CpuOveruseOptions overuse_options;
   if (GetCpuOveruseOptions(options_, &overuse_options)) {
     for (SendChannelMap::iterator it = send_channels_.begin();
