@@ -41,17 +41,17 @@
 #include "talk/examples/call/callclient.h"
 #include "talk/examples/call/console.h"
 #include "talk/examples/call/mediaenginefactory.h"
-#include "webrtc/p2p/base/constants.h"
-#include "webrtc/libjingle/media/mediasessionclient.h"
 #include "talk/session/media/srtpfilter.h"
-#include "webrtc/libjingle/xmpp/xmppauth.h"
-#include "webrtc/libjingle/xmpp/xmppclientsettings.h"
-#include "webrtc/libjingle/xmpp/xmpppump.h"
-#include "webrtc/libjingle/xmpp/xmppsocket.h"
 #include "webrtc/base/pathutils.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/win32socketserver.h"
+#include "webrtc/libjingle/session/media/mediasessionclient.h"
+#include "webrtc/libjingle/xmpp/xmppauth.h"
+#include "webrtc/libjingle/xmpp/xmppclientsettings.h"
+#include "webrtc/libjingle/xmpp/xmpppump.h"
+#include "webrtc/libjingle/xmpp/xmppsocket.h"
+#include "webrtc/p2p/base/constants.h"
 
 class DebugLog : public sigslot::has_slots<> {
  public:

@@ -29,6 +29,7 @@
       'target_name': 'jingle_session',
       'type': 'static_library',
       'dependencies': [
+        '<(talk_root)/libjingle.gyp:libjingle_media',
         '<(webrtc_root)/base/base.gyp:webrtc_base',
         '<(webrtc_root)/libjingle/xmpp/xmpp.gyp:rtc_xmpp',
         '<(DEPTH)/third_party/expat/expat.gyp:expat',
@@ -44,10 +45,19 @@
         'session/p2ptransportparser.h',
         'session/rawtransportparser.cc',
         'session/rawtransportparser.h',
-        'session/sessionmanager.cc',
+        'session/sessionclient.h',
         'session/sessionmanager.h',
+        'session/sessionmanager.cc',
+        'session/sessionmanagertask.h',
+        'session/sessionsendtask.h',
         'session/transportparser.cc',
         'session/transportparser.h',
+        'session/media/call.cc',
+        'session/media/call.h',
+        'session/media/mediasessionclient.cc',
+        'session/media/mediasessionclient.h',
+        'session/media/mediamessages.cc',
+        'session/media/mediamessages.h',
         'session/tunnel/pseudotcpchannel.cc',
         'session/tunnel/pseudotcpchannel.h',
         'session/tunnel/tunnelsessionclient.cc',
@@ -78,10 +88,26 @@
       'dependencies': [
         'jingle_session',
         '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
+        '<(talk_root)/libjingle.gyp:libjingle',
+        '<(talk_root)/libjingle.gyp:libjingle_p2p',
+        '<(talk_root)/libjingle_tests.gyp:libjingle_unittest_main',
       ],
       'sources': [
+        'session/media/mediamessages_unittest.cc',
+        'session/media/mediasessionclient_unittest.cc',
         'session/session_unittest.cc',
         'session/transportparser_unittest.cc',
+      ],
+      'conditions': [
+        ['OS=="win"', {
+          'msvs_settings': {
+            'VCLinkerTool': {
+              'AdditionalDependencies': [
+                'strmiids.lib',
+              ],
+            },
+          },
+        }],
       ],
     },  # target jingle_session_unittest
     {

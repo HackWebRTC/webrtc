@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MUCINVITESENDTASK_H_
-#define _MUCINVITESENDTASK_H_
+#ifndef WEBRTC_LIBJINGLE_EXAMPLES_CALL_MUCINVITESENDTASK_H_
+#define WEBRTC_LIBJINGLE_EXAMPLES_CALL_MUCINVITESENDTASK_H_
 
 #include "talk/examples/call/muc.h"
 #include "webrtc/libjingle/xmpp/xmppengine.h"

@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MUC_H_
-#define _MUC_H_
+#ifndef WEBRTC_LIBJINGLE_EXAMPLES_CALL_MUC_H_
+#define WEBRTC_LIBJINGLE_EXAMPLES_CALL_MUC_H_
 
 #include <map>
 #include "webrtc/libjingle/xmpp/jid.h"

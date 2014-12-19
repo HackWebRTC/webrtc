@@ -25,23 +25,23 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_SESSION_MEDIA_MEDIASESSIONCLIENT_H_
-#define TALK_SESSION_MEDIA_MEDIASESSIONCLIENT_H_
+#ifndef WEBRTC_LIBJINGLE_SESSION_MEDIA_MEDIASESSIONCLIENT_H_
+#define WEBRTC_LIBJINGLE_SESSION_MEDIA_MEDIASESSIONCLIENT_H_
 
 #include <algorithm>
 #include <map>
 #include <string>
 #include <vector>
+
 #include "talk/media/base/cryptoparams.h"
-#include "talk/session/media/call.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/mediasession.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/libjingle/session/media/call.h"
 #include "webrtc/libjingle/session/sessionmanager.h"
-#include "webrtc/p2p/base/session.h"
 #include "webrtc/p2p/base/sessionclient.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 
@@ -172,4 +172,4 @@ class MediaSessionClient : public SessionClient, public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // TALK_SESSION_MEDIA_MEDIASESSIONCLIENT_H_
+#endif  // WEBRTC_LIBJINGLE_SESSION_MEDIA_MEDIASESSIONCLIENT_H_

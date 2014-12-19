@@ -39,6 +39,12 @@
 #include "talk/media/base/mediaengine.h"
 #include "talk/media/base/rtpdataengine.h"
 #include "talk/media/base/screencastid.h"
+#ifdef HAVE_SCTP
+#include "talk/media/sctp/sctpdataengine.h"
+#endif
+#include "talk/media/base/videorenderer.h"
+#include "talk/media/devices/devicemanager.h"
+#include "talk/media/devices/videorendererfactory.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/network.h"
@@ -47,23 +53,17 @@
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/windowpickerfactory.h"
-#ifdef HAVE_SCTP
-#include "talk/media/sctp/sctpdataengine.h"
-#endif
-#include "talk/media/base/videorenderer.h"
-#include "talk/media/devices/devicemanager.h"
-#include "talk/media/devices/videorendererfactory.h"
+#include "webrtc/libjingle/session/media/mediamessages.h"
+#include "webrtc/libjingle/session/media/mediasessionclient.h"
 #include "webrtc/libjingle/session/sessionmanager.h"
-#include "webrtc/p2p/client/basicportallocator.h"
-#include "webrtc/p2p/client/sessionmanagertask.h"
-#include "webrtc/libjingle/media/mediamessages.h"
-#include "webrtc/libjingle/media/mediasessionclient.h"
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/libjingle/xmpp/hangoutpubsubclient.h"
 #include "webrtc/libjingle/xmpp/mucroomconfigtask.h"
 #include "webrtc/libjingle/xmpp/mucroomlookuptask.h"
 #include "webrtc/libjingle/xmpp/pingtask.h"
 #include "webrtc/libjingle/xmpp/presenceouttask.h"
+#include "webrtc/p2p/client/basicportallocator.h"
+#include "webrtc/p2p/client/sessionmanagertask.h"
 
 namespace {
 

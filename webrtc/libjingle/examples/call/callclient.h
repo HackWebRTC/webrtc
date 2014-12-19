@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_EXAMPLES_CALL_CALLCLIENT_H_
-#define TALK_EXAMPLES_CALL_CALLCLIENT_H_
+#ifndef WEBRTC_LIBJINGLE_EXAMPLES_CALL_CALLCLIENT_H_
+#define WEBRTC_LIBJINGLE_EXAMPLES_CALL_CALLCLIENT_H_
 
 #include <map>
 #include <string>
@@ -34,14 +34,14 @@
 
 #include "talk/examples/call/console.h"
 #include "talk/media/base/mediachannel.h"
-#include "webrtc/p2p/base/session.h"
-#include "webrtc/libjingle/media/mediamessages.h"
-#include "webrtc/libjingle/media/mediasessionclient.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sslidentity.h"
+#include "webrtc/libjingle/session/media/mediamessages.h"
+#include "webrtc/libjingle/session/media/mediasessionclient.h"
 #include "webrtc/libjingle/xmpp/hangoutpubsubclient.h"
 #include "webrtc/libjingle/xmpp/presencestatus.h"
 #include "webrtc/libjingle/xmpp/xmppclient.h"
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/sslidentity.h"
+#include "webrtc/p2p/base/session.h"
 
 namespace buzz {
 class PresencePushTask;
@@ -349,4 +349,4 @@ class CallClient: public sigslot::has_slots<> {
   bool show_roster_messages_;
 };
 
-#endif  // TALK_EXAMPLES_CALL_CALLCLIENT_H_
+#endif  // WEBRTC_LIBJINGLE_EXAMPLES_CALL_CALLCLIENT_H_

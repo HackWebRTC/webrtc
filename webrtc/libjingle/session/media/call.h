@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_SESSION_MEDIA_CALL_H_
-#define TALK_SESSION_MEDIA_CALL_H_
+#ifndef WEBRTC_LIBJINGLE_SESSION_MEDIA_CALL_H_
+#define WEBRTC_LIBJINGLE_SESSION_MEDIA_CALL_H_
 
 #include <deque>
 #include <map>
@@ -39,11 +39,12 @@
 #include "talk/media/base/videocommon.h"
 #include "talk/session/media/audiomonitor.h"
 #include "talk/session/media/currentspeakermonitor.h"
-#include "talk/session/media/mediamessages.h"
 #include "talk/session/media/mediasession.h"
 #include "webrtc/base/messagequeue.h"
+#include "webrtc/libjingle/session/media/mediamessages.h"
 #include "webrtc/libjingle/session/sessionmanager.h"
 #include "webrtc/libjingle/xmpp/jid.h"
+#include "webrtc/p2p/client/socketmonitor.h"
 #include "webrtc/p2p/client/socketmonitor.h"
 
 namespace cricket {
@@ -304,4 +305,4 @@ class Call : public rtc::MessageHandler, public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // TALK_SESSION_MEDIA_CALL_H_
+#endif  // WEBRTC_LIBJINGLE_SESSION_MEDIA_CALL_H_

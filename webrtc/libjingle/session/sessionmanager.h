@@ -16,6 +16,8 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/thread.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/p2p/base/parsing.h"
@@ -24,8 +26,6 @@
 #include "webrtc/p2p/base/sessionclient.h"
 #include "webrtc/p2p/base/sessionmessages.h"
 #include "webrtc/p2p/base/transportdescriptionfactory.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/thread.h"
 
 namespace buzz {
 class QName;

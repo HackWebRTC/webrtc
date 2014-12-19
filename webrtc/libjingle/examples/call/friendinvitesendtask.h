@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FRIENDINVITESENDTASK_H_
-#define _FRIENDINVITESENDTASK_H_
+#ifndef WEBRTC_LIBJINGLE_EXAMPLES_CALL_FRIENDINVITESENDTASK_H_
+#define WEBRTC_LIBJINGLE_EXAMPLES_CALL_FRIENDINVITESENDTASK_H_
 
 #include "webrtc/libjingle/xmpp/xmppengine.h"
 #include "webrtc/libjingle/xmpp/xmpptask.h"

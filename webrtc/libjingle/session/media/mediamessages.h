@@ -33,8 +33,8 @@
  * goto/jinglemuc
  */
 
-#ifndef TALK_SESSION_MEDIA_MEDIAMESSAGES_H_
-#define TALK_SESSION_MEDIA_MEDIAMESSAGES_H_
+#ifndef WEBRTC_LIBJINGLE_SESSION_MEDIA_MEDIAMESSAGES_H_
+#define WEBRTC_LIBJINGLE_SESSION_MEDIA_MEDIAMESSAGES_H_
 
 #include <string>
 #include <vector>
@@ -95,4 +95,4 @@ void WriteJingleRtpHeaderExtensions(
 
 }  // namespace cricket
 
-#endif  // TALK_SESSION_MEDIA_MEDIAMESSAGES_H_
+#endif  // WEBRTC_LIBJINGLE_SESSION_MEDIA_MEDIAMESSAGES_H_
