@@ -33,10 +33,6 @@
 #include <string>
 #include <vector>
 #include "talk/media/base/cryptoparams.h"
-#include "webrtc/p2p/base/session.h"
-#include "webrtc/p2p/base/sessionclient.h"
-#include "webrtc/p2p/base/sessiondescription.h"
-#include "webrtc/p2p/base/sessionmanager.h"
 #include "talk/session/media/call.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/mediasession.h"
@@ -44,6 +40,10 @@
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/libjingle/session/sessionmanager.h"
+#include "webrtc/p2p/base/session.h"
+#include "webrtc/p2p/base/sessionclient.h"
+#include "webrtc/p2p/base/sessiondescription.h"
 
 namespace cricket {
 

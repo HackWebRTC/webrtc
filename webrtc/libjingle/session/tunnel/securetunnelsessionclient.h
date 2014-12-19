@@ -31,8 +31,8 @@
 // SecureTunnelSession is a TunnelSession that wraps the underlying
 // tunnel stream into an SSLStreamAdapter.
 
-#ifndef TALK_SESSION_TUNNEL_SECURETUNNELSESSIONCLIENT_H_
-#define TALK_SESSION_TUNNEL_SECURETUNNELSESSIONCLIENT_H_
+#ifndef WEBRTC_LIBJINGLE_SESSION_TUNNEL_SECURETUNNELSESSIONCLIENT_H_
+#define WEBRTC_LIBJINGLE_SESSION_TUNNEL_SECURETUNNELSESSIONCLIENT_H_
 
 #include <string>
 
@@ -162,4 +162,4 @@ class SecureTunnelSession : public TunnelSession {
 
 }  // namespace cricket
 
-#endif  // TALK_SESSION_TUNNEL_SECURETUNNELSESSIONCLIENT_H_
+#endif  // WEBRTC_LIBJINGLE_SESSION_TUNNEL_SECURETUNNELSESSIONCLIENT_H_

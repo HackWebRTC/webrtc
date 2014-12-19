@@ -20,6 +20,7 @@ class XmlElement;
 namespace cricket {
 
 struct ParseError;
+struct WriteError;
 class Session;
 class ContentDescription;
 

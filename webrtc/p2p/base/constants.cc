@@ -163,6 +163,7 @@ const size_t ICE_UFRAG_MIN_LENGTH = 4;
 const size_t ICE_PWD_MIN_LENGTH = 22;
 const size_t ICE_UFRAG_MAX_LENGTH = 255;
 const size_t ICE_PWD_MAX_LENGTH = 256;
+const size_t GICE_UFRAG_MAX_LENGTH = 16;
 // TODO: This is media-specific, so might belong
 // somewhere like media/base/constants.h
 const int ICE_CANDIDATE_COMPONENT_RTP = 1;

@@ -12,7 +12,6 @@
 #define WEBRTC_P2P_BASE_P2PTRANSPORT_H_
 
 #include <string>
-#include <vector>
 #include "webrtc/p2p/base/transport.h"
 
 namespace cricket {
@@ -33,52 +32,6 @@ class P2PTransport : public Transport {
   friend class P2PTransportChannel;
 
   DISALLOW_EVIL_CONSTRUCTORS(P2PTransport);
-};
-
-class P2PTransportParser : public TransportParser {
- public:
-  P2PTransportParser() {}
-  // Translator may be null, in which case ParseCandidates should
-  // return false if there are candidates to parse.  We can't not call
-  // ParseCandidates because there's no way to know ahead of time if
-  // there are candidates or not.
-
-  // Jingle-specific functions; can be used with either ICE, GICE, or HYBRID.
-  virtual bool ParseTransportDescription(const buzz::XmlElement* elem,
-                                         const CandidateTranslator* translator,
-                                         TransportDescription* desc,
-                                         ParseError* error);
-  virtual bool WriteTransportDescription(const TransportDescription& desc,
-                                         const CandidateTranslator* translator,
-                                         buzz::XmlElement** elem,
-                                         WriteError* error);
-
-  // Legacy Gingle functions; only can be used with GICE.
-  virtual bool ParseGingleCandidate(const buzz::XmlElement* elem,
-                                    const CandidateTranslator* translator,
-                                    Candidate* candidate,
-                                    ParseError* error);
-  virtual bool WriteGingleCandidate(const Candidate& candidate,
-                                    const CandidateTranslator* translator,
-                                    buzz::XmlElement** elem,
-                                    WriteError* error);
-
- private:
-  bool ParseCandidate(TransportProtocol proto,
-                      const buzz::XmlElement* elem,
-                      const CandidateTranslator* translator,
-                      Candidate* candidate,
-                      ParseError* error);
-  bool WriteCandidate(TransportProtocol proto,
-                      const Candidate& candidate,
-                      const CandidateTranslator* translator,
-                      buzz::XmlElement* elem,
-                      WriteError* error);
-  bool VerifyUsernameFormat(TransportProtocol proto,
-                            const std::string& username,
-                            ParseError* error);
-
-  DISALLOW_EVIL_CONSTRUCTORS(P2PTransportParser);
 };
 
 }  // namespace cricket

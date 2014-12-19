@@ -165,6 +165,7 @@ extern const size_t ICE_UFRAG_MIN_LENGTH;
 extern const size_t ICE_PWD_MIN_LENGTH;
 extern const size_t ICE_UFRAG_MAX_LENGTH;
 extern const size_t ICE_PWD_MAX_LENGTH;
+extern const size_t GICE_UFRAG_MAX_LENGTH;
 extern const int ICE_CANDIDATE_COMPONENT_RTP;
 extern const int ICE_CANDIDATE_COMPONENT_RTCP;
 extern const int ICE_CANDIDATE_COMPONENT_DEFAULT;

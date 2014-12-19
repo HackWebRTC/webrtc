@@ -37,14 +37,14 @@
 #include "talk/media/base/screencastid.h"
 #include "talk/media/base/streamparams.h"
 #include "talk/media/base/videocommon.h"
-#include "webrtc/p2p/base/sessionmanager.h"
-#include "webrtc/p2p/client/socketmonitor.h"
 #include "talk/session/media/audiomonitor.h"
 #include "talk/session/media/currentspeakermonitor.h"
 #include "talk/session/media/mediamessages.h"
 #include "talk/session/media/mediasession.h"
-#include "webrtc/libjingle/xmpp/jid.h"
 #include "webrtc/base/messagequeue.h"
+#include "webrtc/libjingle/session/sessionmanager.h"
+#include "webrtc/libjingle/xmpp/jid.h"
+#include "webrtc/p2p/client/socketmonitor.h"
 
 namespace cricket {
 

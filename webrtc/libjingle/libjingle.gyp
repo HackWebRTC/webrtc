@@ -40,6 +40,14 @@
         '<(DEPTH)/third_party/expat/expat.gyp:expat',
       ],
       'sources': [
+        'session/p2ptransportparser.cc',
+        'session/p2ptransportparser.h',
+        'session/rawtransportparser.cc',
+        'session/rawtransportparser.h',
+        'session/sessionmanager.cc',
+        'session/sessionmanager.h',
+        'session/transportparser.cc',
+        'session/transportparser.h',
         'session/tunnel/pseudotcpchannel.cc',
         'session/tunnel/pseudotcpchannel.h',
         'session/tunnel/tunnelsessionclient.cc',
@@ -64,6 +72,18 @@
         }],
       ],
     },
+    {
+      'target_name': 'jingle_session_unittest',
+      'type': 'executable',
+      'dependencies': [
+        'jingle_session',
+        '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
+      ],
+      'sources': [
+        'session/session_unittest.cc',
+        'session/transportparser_unittest.cc',
+      ],
+    },  # target jingle_session_unittest
     {
       'target_name': 'login',
       'type': 'executable',

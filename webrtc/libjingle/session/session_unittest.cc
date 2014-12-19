@@ -22,6 +22,8 @@
 #include "webrtc/base/natserver.h"
 #include "webrtc/base/natsocketfactory.h"
 #include "webrtc/base/stringencode.h"
+#include "webrtc/libjingle/session/sessionmanager.h"
+#include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/p2ptransport.h"
@@ -30,13 +32,11 @@
 #include "webrtc/p2p/base/relayport.h"
 #include "webrtc/p2p/base/relayserver.h"
 #include "webrtc/p2p/base/sessionclient.h"
-#include "webrtc/p2p/base/sessionmanager.h"
 #include "webrtc/p2p/base/stunport.h"
 #include "webrtc/p2p/base/stunserver.h"
 #include "webrtc/p2p/base/transportchannel.h"
 #include "webrtc/p2p/base/transportchannelproxy.h"
 #include "webrtc/p2p/base/udpport.h"
-#include "webrtc/libjingle/xmpp/constants.h"
 
 using cricket::SignalingProtocol;
 using cricket::PROTOCOL_HYBRID;

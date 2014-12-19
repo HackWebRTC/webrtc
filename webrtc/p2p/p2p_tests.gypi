@@ -22,7 +22,6 @@
           'base/pseudotcp_unittest.cc',
           'base/relayport_unittest.cc',
           'base/relayserver_unittest.cc',
-          'base/session_unittest.cc',
           'base/stun_unittest.cc',
           'base/stunport_unittest.cc',
           'base/stunrequest_unittest.cc',

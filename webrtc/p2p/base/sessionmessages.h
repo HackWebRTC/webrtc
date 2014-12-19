@@ -15,14 +15,15 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/basictypes.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/parsing.h"
 #include "webrtc/p2p/base/sessiondescription.h"  // Needed to delete contents.
 #include "webrtc/p2p/base/transport.h"
 #include "webrtc/p2p/base/transportinfo.h"
+#include "webrtc/libjingle/session/transportparser.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "webrtc/base/basictypes.h"
 
 namespace cricket {
 

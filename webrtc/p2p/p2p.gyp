@@ -66,8 +66,6 @@
         'base/sessiondescription.cc',
         'base/sessiondescription.h',
         'base/sessionid.h',
-        'base/sessionmanager.cc',
-        'base/sessionmanager.h',
         'base/sessionmessages.cc',
         'base/sessionmessages.h',
         'base/stun.cc',

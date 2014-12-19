@@ -575,6 +575,7 @@
         '<(DEPTH)/third_party/libsrtp/libsrtp.gyp:libsrtp',
         'libjingle',
         'libjingle_media',
+        '<(webrtc_root)/libjingle/libjingle.gyp:jingle_session',
       ],
       'include_dirs': [
         '<(DEPTH)/testing/gtest/include',

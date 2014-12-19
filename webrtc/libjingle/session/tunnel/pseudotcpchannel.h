@@ -25,14 +25,14 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_SESSION_TUNNEL_PSEUDOTCPCHANNEL_H_
-#define TALK_SESSION_TUNNEL_PSEUDOTCPCHANNEL_H_
+#ifndef WEBRTC_LIBJINGLE_SESSION_TUNNEL_PSEUDOTCPCHANNEL_H_
+#define WEBRTC_LIBJINGLE_SESSION_TUNNEL_PSEUDOTCPCHANNEL_H_
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/stream.h"
+#include "webrtc/libjingle/session/sessionmanager.h"
 #include "webrtc/p2p/base/pseudotcp.h"
-#include "webrtc/p2p/base/sessionmanager.h"
 
 namespace rtc {
 class Thread;
@@ -137,4 +137,4 @@ class PseudoTcpChannel
 
 }  // namespace cricket
 
-#endif  // TALK_SESSION_TUNNEL_PSEUDOTCPCHANNEL_H_
+#endif  // WEBRTC_LIBJINGLE_SESSION_TUNNEL_PSEUDOTCPCHANNEL_H_

@@ -31,19 +31,6 @@
   ],
   'targets': [
     {
-      'target_name': 'libjingle_xmpphelp',
-      'type': 'static_library',
-      'dependencies': [
-        '<(DEPTH)/third_party/expat/expat.gyp:expat',
-        'libjingle.gyp:libjingle',
-        'libjingle.gyp:libjingle_p2p',
-      ],
-      'sources': [
-        '<(webrtc_root)/libjingle/xmpp/jingleinfotask.cc',
-        '<(webrtc_root)/libjingle/xmpp/jingleinfotask.h',
-      ],
-    },  # target libjingle_xmpphelp
-    {
       'target_name': 'relayserver',
       'type': 'executable',
       'dependencies': [
