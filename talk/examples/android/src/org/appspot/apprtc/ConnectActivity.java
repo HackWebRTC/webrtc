@@ -71,7 +71,6 @@ public class ConnectActivity extends Activity {
   public static final String EXTRA_HWCODEC = "org.appspot.apprtc.HWCODEC";
   public static final String EXTRA_WEBSOCKET = "org.appspot.apprtc.WEBSOCKET";
   private static final String TAG = "ConnectRTCClient";
-  private final String APPRTC_SERVER = "https://apprtc.appspot.com";
   private final int CONNECTION_REQUEST = 1;
   private static boolean commandLineRun = false;
 
@@ -88,6 +87,7 @@ public class ConnectActivity extends Activity {
   private String keyprefBitrateValue;
   private String keyprefHwCodec;
   private String keyprefCpuUsageDetection;
+  private String keyprefRoomServerUrl;
   private String keyprefRoom;
   private String keyprefRoomList;
   private ArrayList<String> roomList;
@@ -106,6 +106,7 @@ public class ConnectActivity extends Activity {
     keyprefBitrateValue = getString(R.string.pref_startbitratevalue_key);
     keyprefHwCodec = getString(R.string.pref_hwcodec_key);
     keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
+    keyprefRoomServerUrl = getString(R.string.pref_room_server_url_key);
     keyprefRoom = getString(R.string.pref_room_key);
     keyprefRoomList = getString(R.string.pref_room_list_key);
 
@@ -252,8 +253,10 @@ public class ConnectActivity extends Activity {
       }
     }
 
-    String url;
-    url = APPRTC_SERVER + "/register/" + roomName;
+    String url = sharedPref.getString(
+        keyprefRoomServerUrl,
+        getString(R.string.pref_room_server_url_default));
+    url = url + "/register/" + roomName;
 
     // Check HW codec flag.
     boolean hwCodec = sharedPref.getBoolean(keyprefHwCodec,
