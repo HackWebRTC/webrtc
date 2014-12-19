@@ -108,39 +108,52 @@
 
 - (instancetype)initWithFrame:(CGRect)frame {
   if (self = [super initWithFrame:frame]) {
-    EAGLContext* glContext =
-        [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
-    _glRenderer = [[RTCOpenGLVideoRenderer alloc] initWithContext:glContext];
+    [self configure];
+  }
+  return self;
+}
 
-    // GLKView manages a framebuffer for us.
-    _glkView = [[GLKView alloc] initWithFrame:CGRectZero
-                                      context:glContext];
-    _glkView.drawableColorFormat = GLKViewDrawableColorFormatRGBA8888;
-    _glkView.drawableDepthFormat = GLKViewDrawableDepthFormatNone;
-    _glkView.drawableStencilFormat = GLKViewDrawableStencilFormatNone;
-    _glkView.drawableMultisample = GLKViewDrawableMultisampleNone;
-    _glkView.delegate = self;
-    _glkView.layer.masksToBounds = YES;
-    [self addSubview:_glkView];
+- (instancetype)initWithCoder:(NSCoder *)aDecoder {
+  if (self = [super initWithCoder:aDecoder]) {
+    [self configure];
+  }
+  return self;
+}
 
-    // Listen to application state in order to clean up OpenGL before app goes
-    // away.
-    NSNotificationCenter* notificationCenter =
-        [NSNotificationCenter defaultCenter];
-    [notificationCenter addObserver:self
-                           selector:@selector(willResignActive)
-                               name:UIApplicationWillResignActiveNotification
-                             object:nil];
-    [notificationCenter addObserver:self
-                           selector:@selector(didBecomeActive)
-                               name:UIApplicationDidBecomeActiveNotification
-                             object:nil];
+- (void)configure {
+  EAGLContext* glContext =
+    [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+  _glRenderer = [[RTCOpenGLVideoRenderer alloc] initWithContext:glContext];
 
-    // Frames are received on a separate thread, so we poll for current frame
-    // using a refresh rate proportional to screen refresh frequency. This
-    // occurs on the main thread.
-    __weak RTCEAGLVideoView* weakSelf = self;
-    _timer = [[RTCDisplayLinkTimer alloc] initWithTimerHandler:^{
+  // GLKView manages a framebuffer for us.
+  _glkView = [[GLKView alloc] initWithFrame:CGRectZero
+                                    context:glContext];
+  _glkView.drawableColorFormat = GLKViewDrawableColorFormatRGBA8888;
+  _glkView.drawableDepthFormat = GLKViewDrawableDepthFormatNone;
+  _glkView.drawableStencilFormat = GLKViewDrawableStencilFormatNone;
+  _glkView.drawableMultisample = GLKViewDrawableMultisampleNone;
+  _glkView.delegate = self;
+  _glkView.layer.masksToBounds = YES;
+  [self addSubview:_glkView];
+
+  // Listen to application state in order to clean up OpenGL before app goes
+  // away.
+  NSNotificationCenter* notificationCenter =
+    [NSNotificationCenter defaultCenter];
+  [notificationCenter addObserver:self
+                         selector:@selector(willResignActive)
+                             name:UIApplicationWillResignActiveNotification
+                           object:nil];
+  [notificationCenter addObserver:self
+                         selector:@selector(didBecomeActive)
+                             name:UIApplicationDidBecomeActiveNotification
+                           object:nil];
+
+  // Frames are received on a separate thread, so we poll for current frame
+  // using a refresh rate proportional to screen refresh frequency. This
+  // occurs on the main thread.
+  __weak RTCEAGLVideoView* weakSelf = self;
+  _timer = [[RTCDisplayLinkTimer alloc] initWithTimerHandler:^{
       RTCEAGLVideoView* strongSelf = weakSelf;
       // Don't render if frame hasn't changed.
       if (strongSelf.glRenderer.lastDrawnFrame == strongSelf.i420Frame) {
@@ -150,9 +163,7 @@
       // GLKViewDelegate method implemented below.
       [strongSelf.glkView setNeedsDisplay];
     }];
-    [self setupGL];
-  }
-  return self;
+  [self setupGL];
 }
 
 - (void)dealloc {
