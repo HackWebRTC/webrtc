@@ -76,62 +76,63 @@ RTCPSender::FeedbackState::FeedbackState()
       remote_sr(0),
       has_last_xr_rr(false) {}
 
-RTCPSender::RTCPSender(const int32_t id,
-                       const bool audio,
+RTCPSender::RTCPSender(int32_t id,
+                       bool audio,
                        Clock* clock,
-                       ReceiveStatistics* receive_statistics) :
-    _id(id),
-    _audio(audio),
-    _clock(clock),
-    _method(kRtcpOff),
-    _criticalSectionTransport(CriticalSectionWrapper::CreateCriticalSection()),
-    _cbTransport(NULL),
+                       ReceiveStatistics* receive_statistics)
+    : _id(id),
+      _audio(audio),
+      _clock(clock),
+      _method(kRtcpOff),
+      _criticalSectionTransport(
+          CriticalSectionWrapper::CreateCriticalSection()),
+      _cbTransport(NULL),
 
-    _criticalSectionRTCPSender(CriticalSectionWrapper::CreateCriticalSection()),
-    _usingNack(false),
-    _sending(false),
-    _sendTMMBN(false),
-    _REMB(false),
-    _sendREMB(false),
-    _TMMBR(false),
-    _IJ(false),
-    _nextTimeToSendRTCP(0),
-    start_timestamp_(0),
-    last_rtp_timestamp_(0),
-    last_frame_capture_time_ms_(-1),
-    _SSRC(0),
-    _remoteSSRC(0),
-    _CNAME(),
-    receive_statistics_(receive_statistics),
-    internal_report_blocks_(),
-    external_report_blocks_(),
-    _csrcCNAMEs(),
+      _criticalSectionRTCPSender(
+          CriticalSectionWrapper::CreateCriticalSection()),
+      _usingNack(false),
+      _sending(false),
+      _sendTMMBN(false),
+      _REMB(false),
+      _sendREMB(false),
+      _TMMBR(false),
+      _IJ(false),
+      _nextTimeToSendRTCP(0),
+      start_timestamp_(0),
+      last_rtp_timestamp_(0),
+      last_frame_capture_time_ms_(-1),
+      _SSRC(0),
+      _remoteSSRC(0),
+      _CNAME(),
+      receive_statistics_(receive_statistics),
+      internal_report_blocks_(),
+      external_report_blocks_(),
+      _csrcCNAMEs(),
 
-    _cameraDelayMS(0),
+      _cameraDelayMS(0),
 
-    _lastSendReport(),
-    _lastRTCPTime(),
+      _lastSendReport(),
+      _lastRTCPTime(),
 
-    last_xr_rr_(),
+      last_xr_rr_(),
 
-    _sequenceNumberFIR(0),
+      _sequenceNumberFIR(0),
 
-    _rembBitrate(0),
+      _rembBitrate(0),
 
-    _tmmbrHelp(),
-    _tmmbr_Send(0),
-    _packetOH_Send(0),
+      _tmmbrHelp(),
+      _tmmbr_Send(0),
+      _packetOH_Send(0),
 
-    _appSend(false),
-    _appSubType(0),
-    _appName(),
-    _appData(NULL),
-    _appLength(0),
+      _appSend(false),
+      _appSubType(0),
+      _appName(),
+      _appData(NULL),
+      _appLength(0),
 
-    xrSendReceiverReferenceTimeEnabled_(false),
-    _xrSendVoIPMetric(false),
-    _xrVoIPMetric()
-{
+      xrSendReceiverReferenceTimeEnabled_(false),
+      _xrSendVoIPMetric(false),
+      _xrVoIPMetric() {
     memset(_CNAME, 0, sizeof(_CNAME));
     memset(_lastSendReport, 0, sizeof(_lastSendReport));
     memset(_lastRTCPTime, 0, sizeof(_lastRTCPTime));
@@ -175,24 +176,15 @@ RTCPSender::Status() const
     return _method;
 }
 
-int32_t
-RTCPSender::SetRTCPStatus(const RTCPMethod method)
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPSender);
-    if(method != kRtcpOff)
-    {
-        if(_audio)
-        {
-            _nextTimeToSendRTCP = _clock->TimeInMilliseconds() +
-                (RTCP_INTERVAL_AUDIO_MS/2);
-        } else
-        {
-            _nextTimeToSendRTCP = _clock->TimeInMilliseconds() +
-                (RTCP_INTERVAL_VIDEO_MS/2);
-        }
-    }
-    _method = method;
-    return 0;
+void RTCPSender::SetRTCPStatus(RTCPMethod method) {
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
+  _method = method;
+
+  if (method == kRtcpOff)
+    return;
+  _nextTimeToSendRTCP =
+      _clock->TimeInMilliseconds() +
+      (_audio ? RTCP_INTERVAL_AUDIO_MS / 2 : RTCP_INTERVAL_VIDEO_MS / 2);
 }
 
 bool
@@ -233,27 +225,21 @@ RTCPSender::REMB() const
     return _REMB;
 }
 
-int32_t
-RTCPSender::SetREMBStatus(const bool enable)
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPSender);
-    _REMB = enable;
-    return 0;
+void RTCPSender::SetREMBStatus(bool enable) {
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
+  _REMB = enable;
 }
 
-int32_t
-RTCPSender::SetREMBData(const uint32_t bitrate,
-                        const std::vector<uint32_t>& ssrcs)
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPSender);
-    _rembBitrate = bitrate;
-    remb_ssrcs_ = ssrcs;
+void RTCPSender::SetREMBData(uint32_t bitrate,
+                             const std::vector<uint32_t>& ssrcs) {
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
+  _rembBitrate = bitrate;
+  remb_ssrcs_ = ssrcs;
 
-    _sendREMB = true;
-    // Send a REMB immediately if we have a new REMB. The frequency of REMBs is
-    // throttled by the caller.
-    _nextTimeToSendRTCP = _clock->TimeInMilliseconds();
-    return 0;
+  _sendREMB = true;
+  // Send a REMB immediately if we have a new REMB. The frequency of REMBs is
+  // throttled by the caller.
+  _nextTimeToSendRTCP = _clock->TimeInMilliseconds();
 }
 
 bool
@@ -263,12 +249,9 @@ RTCPSender::TMMBR() const
     return _TMMBR;
 }
 
-int32_t
-RTCPSender::SetTMMBRStatus(const bool enable)
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPSender);
-    _TMMBR = enable;
-    return 0;
+void RTCPSender::SetTMMBRStatus(bool enable) {
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
+  _TMMBR = enable;
 }
 
 bool
@@ -278,12 +261,9 @@ RTCPSender::IJ() const
     return _IJ;
 }
 
-int32_t
-RTCPSender::SetIJStatus(const bool enable)
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPSender);
-    _IJ = enable;
-    return 0;
+void RTCPSender::SetIJStatus(bool enable) {
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
+  _IJ = enable;
 }
 
 void RTCPSender::SetStartTimestamp(uint32_t start_timestamp) {
@@ -303,9 +283,7 @@ void RTCPSender::SetLastRtpTime(uint32_t rtp_timestamp,
   }
 }
 
-void
-RTCPSender::SetSSRC( const uint32_t ssrc)
-{
+void RTCPSender::SetSSRC(uint32_t ssrc) {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
 
     if(_SSRC != 0)
@@ -324,9 +302,7 @@ void RTCPSender::SetRemoteSSRC(uint32_t ssrc)
     _remoteSSRC = ssrc;
 }
 
-int32_t
-RTCPSender::SetCameraDelay(const int32_t delayMS)
-{
+int32_t RTCPSender::SetCameraDelay(int32_t delayMS) {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
     if(delayMS > 1000 || delayMS < -1000)
     {
@@ -348,7 +324,7 @@ int32_t RTCPSender::SetCNAME(const char cName[RTCP_CNAME_SIZE]) {
   return 0;
 }
 
-int32_t RTCPSender::AddMixedCNAME(const uint32_t SSRC,
+int32_t RTCPSender::AddMixedCNAME(uint32_t SSRC,
                                   const char cName[RTCP_CNAME_SIZE]) {
   assert(cName);
   CriticalSectionScoped lock(_criticalSectionRTCPSender);
@@ -362,7 +338,7 @@ int32_t RTCPSender::AddMixedCNAME(const uint32_t SSRC,
   return 0;
 }
 
-int32_t RTCPSender::RemoveMixedCNAME(const uint32_t SSRC) {
+int32_t RTCPSender::RemoveMixedCNAME(uint32_t SSRC) {
   CriticalSectionScoped lock(_criticalSectionRTCPSender);
   std::map<uint32_t, RTCPCnameInformation*>::iterator it =
       _csrcCNAMEs.find(SSRC);
@@ -375,9 +351,7 @@ int32_t RTCPSender::RemoveMixedCNAME(const uint32_t SSRC) {
   return 0;
 }
 
-bool
-RTCPSender::TimeToSendRTCPReport(const bool sendKeyframeBeforeRTP) const
-{
+bool RTCPSender::TimeToSendRTCPReport(bool sendKeyframeBeforeRTP) const {
 /*
     For audio we use a fix 5 sec interval
 
@@ -473,9 +447,7 @@ RTCPSender::LastSendReport( uint32_t& lastRTCPTime)
     return _lastSendReport[0];
 }
 
-uint32_t
-RTCPSender::SendTimeOfSendReport(const uint32_t sendReport)
-{
+uint32_t RTCPSender::SendTimeOfSendReport(uint32_t sendReport) {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
 
     // This is only saved when we are the sender
@@ -732,12 +704,10 @@ int32_t RTCPSender::BuildSDEC(uint8_t* rtcpbuffer, int& pos) {
   return 0;
 }
 
-int32_t
-RTCPSender::BuildRR(uint8_t* rtcpbuffer,
-                    int& pos,
-                    const uint32_t NTPsec,
-                    const uint32_t NTPfrac)
-{
+int32_t RTCPSender::BuildRR(uint8_t* rtcpbuffer,
+                            int& pos,
+                            uint32_t NTPsec,
+                            uint32_t NTPfrac) {
     // sanity one block
     if(pos + 32 >= IP_PACKET_SIZE)
     {
@@ -901,9 +871,7 @@ int32_t RTCPSender::BuildFIR(uint8_t* rtcpbuffer,
    |            First        |        Number           | PictureID |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 */
-int32_t
-RTCPSender::BuildSLI(uint8_t* rtcpbuffer, int& pos, const uint8_t pictureID)
-{
+int32_t RTCPSender::BuildSLI(uint8_t* rtcpbuffer, int& pos, uint8_t pictureID) {
     // sanity
     if(pos + 16 >= IP_PACKET_SIZE)
     {
@@ -947,12 +915,10 @@ RTCPSender::BuildSLI(uint8_t* rtcpbuffer, int& pos, const uint8_t pictureID)
 /*
 *    Note: not generic made for VP8
 */
-int32_t
-RTCPSender::BuildRPSI(uint8_t* rtcpbuffer,
-                     int& pos,
-                     const uint64_t pictureID,
-                     const uint8_t payloadType)
-{
+int32_t RTCPSender::BuildRPSI(uint8_t* rtcpbuffer,
+                              int& pos,
+                              uint64_t pictureID,
+                              uint8_t payloadType) {
     // sanity
     if(pos + 24 >= IP_PACKET_SIZE)
     {
@@ -1302,13 +1268,11 @@ RTCPSender::BuildAPP(uint8_t* rtcpbuffer, int& pos)
     return 0;
 }
 
-int32_t
-RTCPSender::BuildNACK(uint8_t* rtcpbuffer,
-                      int& pos,
-                      const int32_t nackSize,
-                      const uint16_t* nackList,
-                      std::string* nackString)
-{
+int32_t RTCPSender::BuildNACK(uint8_t* rtcpbuffer,
+                              int& pos,
+                              int32_t nackSize,
+                              const uint16_t* nackList,
+                              std::string* nackString) {
     // sanity
     if(pos + 16 >= IP_PACKET_SIZE)
     {
@@ -1981,10 +1945,7 @@ bool RTCPSender::PrepareReport(const FeedbackState& feedback_state,
   return true;
 }
 
-int32_t
-RTCPSender::SendToNetwork(const uint8_t* dataBuffer,
-                          const size_t length)
-{
+int32_t RTCPSender::SendToNetwork(const uint8_t* dataBuffer, size_t length) {
     CriticalSectionScoped lock(_criticalSectionTransport);
     if(_cbTransport)
     {
@@ -2002,12 +1963,10 @@ void RTCPSender::SetCsrcs(const std::vector<uint32_t>& csrcs) {
   csrcs_ = csrcs;
 }
 
-int32_t
-RTCPSender::SetApplicationSpecificData(const uint8_t subType,
-                                       const uint32_t name,
-                                       const uint8_t* data,
-                                       const uint16_t length)
-{
+int32_t RTCPSender::SetApplicationSpecificData(uint8_t subType,
+                                               uint32_t name,
+                                               const uint8_t* data,
+                                               uint16_t length) {
     if(length %4 != 0)
     {
         LOG(LS_ERROR) << "Failed to SetApplicationSpecificData.";
@@ -2050,12 +2009,11 @@ bool RTCPSender::RtcpXrReceiverReferenceTime() const {
 }
 
 // called under critsect _criticalSectionRTCPSender
-int32_t RTCPSender::WriteAllReportBlocksToBuffer(
-    uint8_t* rtcpbuffer,
-    int pos,
-    uint8_t& numberOfReportBlocks,
-    const uint32_t NTPsec,
-    const uint32_t NTPfrac) {
+int32_t RTCPSender::WriteAllReportBlocksToBuffer(uint8_t* rtcpbuffer,
+                                                 int pos,
+                                                 uint8_t& numberOfReportBlocks,
+                                                 uint32_t NTPsec,
+                                                 uint32_t NTPfrac) {
   numberOfReportBlocks = external_report_blocks_.size();
   numberOfReportBlocks += internal_report_blocks_.size();
   if ((pos + numberOfReportBlocks * 24) >= IP_PACKET_SIZE) {
@@ -2116,10 +2074,8 @@ int32_t RTCPSender::WriteReportBlocksToBuffer(
 }
 
 // no callbacks allowed inside this function
-int32_t
-RTCPSender::SetTMMBN(const TMMBRSet* boundingSet,
-                     const uint32_t maxBitrateKbit)
-{
+int32_t RTCPSender::SetTMMBN(const TMMBRSet* boundingSet,
+                             uint32_t maxBitrateKbit) {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
 
     if (0 == _tmmbrHelp.SetTMMBRBoundingSetToSend(boundingSet, maxBitrateKbit))

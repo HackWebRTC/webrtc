@@ -166,9 +166,7 @@ int32_t ViEChannel::Init() {
     return -1;
   }
   // RTP/RTCP initialization.
-  if (rtp_rtcp_->SetSendingMediaStatus(false) != 0) {
-    return -1;
-  }
+  rtp_rtcp_->SetSendingMediaStatus(false);
   if (module_process_thread_.RegisterModule(rtp_rtcp_.get()) != 0) {
     return -1;
   }
@@ -617,7 +615,7 @@ int32_t ViEChannel::SetSignalPacketLossStatus(bool enable,
   return 0;
 }
 
-int32_t ViEChannel::SetRTCPMode(const RTCPMethod rtcp_mode) {
+void ViEChannel::SetRTCPMode(const RTCPMethod rtcp_mode) {
   CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end();
@@ -625,12 +623,11 @@ int32_t ViEChannel::SetRTCPMode(const RTCPMethod rtcp_mode) {
     RtpRtcp* rtp_rtcp = *it;
     rtp_rtcp->SetRTCPStatus(rtcp_mode);
   }
-  return rtp_rtcp_->SetRTCPStatus(rtcp_mode);
+  rtp_rtcp_->SetRTCPStatus(rtcp_mode);
 }
 
-int32_t ViEChannel::GetRTCPMode(RTCPMethod* rtcp_mode) {
-  *rtcp_mode = rtp_rtcp_->RTCP();
-  return 0;
+RTCPMethod ViEChannel::GetRTCPMode() const {
+  return rtp_rtcp_->RTCP();
 }
 
 int32_t ViEChannel::SetNACKStatus(const bool enable) {
@@ -751,9 +748,7 @@ int ViEChannel::SetSenderBufferingMode(int target_delay_ms) {
       nack_history_size_sender_ = kSendSidePacketHistorySize;
     }
   }
-  if (rtp_rtcp_->SetStorePacketsStatus(true, nack_history_size_sender_) != 0) {
-    return -1;
-  }
+  rtp_rtcp_->SetStorePacketsStatus(true, nack_history_size_sender_);
   return 0;
 }
 
@@ -796,10 +791,8 @@ int32_t ViEChannel::SetKeyFrameRequestMethod(
   return rtp_rtcp_->SetKeyFrameRequestMethod(method);
 }
 
-bool ViEChannel::EnableRemb(bool enable) {
-  if (rtp_rtcp_->SetREMBStatus(enable) != 0)
-    return false;
-  return true;
+void ViEChannel::EnableRemb(bool enable) {
+  rtp_rtcp_->SetREMBStatus(enable);
 }
 
 int ViEChannel::SetSendTimestampOffsetStatus(bool enable, int id) {
@@ -882,8 +875,8 @@ void ViEChannel::SetTransmissionSmoothingStatus(bool enable) {
   paced_sender_->SetStatus(enable);
 }
 
-int32_t ViEChannel::EnableTMMBR(const bool enable) {
-  return rtp_rtcp_->SetTMMBRStatus(enable);
+void ViEChannel::EnableTMMBR(bool enable) {
+  rtp_rtcp_->SetTMMBRStatus(enable);
 }
 
 int32_t ViEChannel::EnableKeyFrameRequestCallback(const bool enable) {
@@ -994,7 +987,8 @@ int32_t ViEChannel::SetStartSequenceNumber(uint16_t sequence_number) {
   if (rtp_rtcp_->Sending()) {
     return -1;
   }
-  return rtp_rtcp_->SetSequenceNumber(sequence_number);
+  rtp_rtcp_->SetSequenceNumber(sequence_number);
+  return 0;
 }
 
 void ViEChannel::SetRtpStateForSsrc(uint32_t ssrc, const RtpState& rtp_state) {

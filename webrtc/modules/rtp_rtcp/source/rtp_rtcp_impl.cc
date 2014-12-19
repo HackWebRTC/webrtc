@@ -321,11 +321,9 @@ uint32_t ModuleRtpRtcpImpl::StartTimestamp() const {
 }
 
 // Configure start timestamp, default is a random number.
-int32_t ModuleRtpRtcpImpl::SetStartTimestamp(
-    const uint32_t timestamp) {
+void ModuleRtpRtcpImpl::SetStartTimestamp(const uint32_t timestamp) {
   rtcp_sender_.SetStartTimestamp(timestamp);
   rtp_sender_.SetStartTimestamp(timestamp, true);
-  return 0;  // TODO(pwestin): change to void.
 }
 
 uint16_t ModuleRtpRtcpImpl::SequenceNumber() const {
@@ -333,10 +331,8 @@ uint16_t ModuleRtpRtcpImpl::SequenceNumber() const {
 }
 
 // Set SequenceNumber, default is a random number.
-int32_t ModuleRtpRtcpImpl::SetSequenceNumber(
-    const uint16_t seq_num) {
+void ModuleRtpRtcpImpl::SetSequenceNumber(const uint16_t seq_num) {
   rtp_sender_.SetSequenceNumber(seq_num);
-  return 0;  // TODO(pwestin): change to void.
 }
 
 void ModuleRtpRtcpImpl::SetRtpStateForSsrc(uint32_t ssrc,
@@ -467,9 +463,8 @@ bool ModuleRtpRtcpImpl::Sending() const {
   return rtcp_sender_.Sending();
 }
 
-int32_t ModuleRtpRtcpImpl::SetSendingMediaStatus(const bool sending) {
+void ModuleRtpRtcpImpl::SetSendingMediaStatus(const bool sending) {
   rtp_sender_.SetSendingMediaStatus(sending);
-  return 0;
 }
 
 bool ModuleRtpRtcpImpl::SendingMedia() const {
@@ -705,11 +700,9 @@ RTCPMethod ModuleRtpRtcpImpl::RTCP() const {
 }
 
 // Configure RTCP status i.e on/off.
-int32_t ModuleRtpRtcpImpl::SetRTCPStatus(const RTCPMethod method) {
-  if (rtcp_sender_.SetRTCPStatus(method) == 0) {
-    return rtcp_receiver_.SetRTCPStatus(method);
-  }
-  return -1;
+void ModuleRtpRtcpImpl::SetRTCPStatus(const RTCPMethod method) {
+  rtcp_sender_.SetRTCPStatus(method);
+  rtcp_receiver_.SetRTCPStatus(method);
 }
 
 // Only for internal test.
@@ -722,9 +715,8 @@ int32_t ModuleRtpRtcpImpl::SetCNAME(const char c_name[RTCP_CNAME_SIZE]) {
   return rtcp_sender_.SetCNAME(c_name);
 }
 
-int32_t ModuleRtpRtcpImpl::AddMixedCNAME(
-  const uint32_t ssrc,
-  const char c_name[RTCP_CNAME_SIZE]) {
+int32_t ModuleRtpRtcpImpl::AddMixedCNAME(uint32_t ssrc,
+                                         const char c_name[RTCP_CNAME_SIZE]) {
   return rtcp_sender_.AddMixedCNAME(ssrc, c_name);
 }
 
@@ -859,13 +851,13 @@ bool ModuleRtpRtcpImpl::REMB() const {
   return rtcp_sender_.REMB();
 }
 
-int32_t ModuleRtpRtcpImpl::SetREMBStatus(const bool enable) {
-  return rtcp_sender_.SetREMBStatus(enable);
+void ModuleRtpRtcpImpl::SetREMBStatus(const bool enable) {
+  rtcp_sender_.SetREMBStatus(enable);
 }
 
-int32_t ModuleRtpRtcpImpl::SetREMBData(const uint32_t bitrate,
-                                       const std::vector<uint32_t>& ssrcs) {
-  return rtcp_sender_.SetREMBData(bitrate, ssrcs);
+void ModuleRtpRtcpImpl::SetREMBData(const uint32_t bitrate,
+                                    const std::vector<uint32_t>& ssrcs) {
+  rtcp_sender_.SetREMBData(bitrate, ssrcs);
 }
 
 // (IJ) Extended jitter report.
@@ -873,8 +865,8 @@ bool ModuleRtpRtcpImpl::IJ() const {
   return rtcp_sender_.IJ();
 }
 
-int32_t ModuleRtpRtcpImpl::SetIJStatus(const bool enable) {
-  return rtcp_sender_.SetIJStatus(enable);
+void ModuleRtpRtcpImpl::SetIJStatus(const bool enable) {
+  rtcp_sender_.SetIJStatus(enable);
 }
 
 int32_t ModuleRtpRtcpImpl::RegisterSendRtpHeaderExtension(
@@ -893,8 +885,8 @@ bool ModuleRtpRtcpImpl::TMMBR() const {
   return rtcp_sender_.TMMBR();
 }
 
-int32_t ModuleRtpRtcpImpl::SetTMMBRStatus(const bool enable) {
-  return rtcp_sender_.SetTMMBRStatus(enable);
+void ModuleRtpRtcpImpl::SetTMMBRStatus(const bool enable) {
+  rtcp_sender_.SetTMMBRStatus(enable);
 }
 
 int32_t ModuleRtpRtcpImpl::SetTMMBN(const TMMBRSet* bounding_set) {
@@ -972,11 +964,9 @@ bool ModuleRtpRtcpImpl::TimeToSendFullNackList(int64_t now) const {
 
 // Store the sent packets, needed to answer to a Negative acknowledgment
 // requests.
-int32_t ModuleRtpRtcpImpl::SetStorePacketsStatus(
-    const bool enable,
-    const uint16_t number_to_store) {
+void ModuleRtpRtcpImpl::SetStorePacketsStatus(const bool enable,
+                                              const uint16_t number_to_store) {
   rtp_sender_.SetStorePacketsStatus(enable, number_to_store);
-  return 0;  // TODO(pwestin): change to void.
 }
 
 bool ModuleRtpRtcpImpl::StorePackets() const {

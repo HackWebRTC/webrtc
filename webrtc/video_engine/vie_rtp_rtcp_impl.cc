@@ -292,10 +292,7 @@ int ViERTP_RTCPImpl::SetRTCPStatus(const int video_channel,
   }
 
   RTCPMethod module_mode = ViERTCPModeToRTCPMethod(rtcp_mode);
-  if (vie_channel->SetRTCPMode(module_mode) != 0) {
-    shared_data_->SetLastError(kViERtpRtcpUnknownError);
-    return -1;
-  }
+  vie_channel->SetRTCPMode(module_mode);
   return 0;
 }
 
@@ -307,11 +304,7 @@ int ViERTP_RTCPImpl::GetRTCPStatus(const int video_channel,
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
-  RTCPMethod module_mode = kRtcpOff;
-  if (vie_channel->GetRTCPMode(&module_mode) != 0) {
-    shared_data_->SetLastError(kViERtpRtcpUnknownError);
-    return -1;
-  }
+  RTCPMethod module_mode = vie_channel->GetRTCPMode();
   rtcp_mode = RTCPMethodToViERTCPMode(module_mode);
   return 0;
 }
@@ -370,8 +363,8 @@ int ViERTP_RTCPImpl::SendApplicationDefinedRTCPPacket(
     shared_data_->SetLastError(kViERtpRtcpNotSending);
     return -1;
   }
-  RTCPMethod method;
-  if (vie_channel->GetRTCPMode(&method) != 0 || method == kRtcpOff) {
+  RTCPMethod method = vie_channel->GetRTCPMode();
+  if (method == kRtcpOff) {
     shared_data_->SetLastError(kViERtpRtcpRtcpDisabled);
     return -1;
   }
@@ -545,10 +538,7 @@ int ViERTP_RTCPImpl::SetTMMBRStatus(const int video_channel,
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
-  if (vie_channel->EnableTMMBR(enable) != 0) {
-    shared_data_->SetLastError(kViERtpRtcpUnknownError);
-    return -1;
-  }
+  vie_channel->EnableTMMBR(enable);
   return 0;
 }
 

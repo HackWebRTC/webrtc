@@ -957,15 +957,8 @@ Channel::Init()
     // be transmitted since the Transport object will then be invalid.
     telephone_event_handler_->SetTelephoneEventForwardToDecoder(true);
     // RTCP is enabled by default.
-    if (_rtpRtcpModule->SetRTCPStatus(kRtcpCompound) == -1)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-            "Channel::Init() RTP/RTCP module not initialized");
-        return -1;
-    }
-
-     // --- Register all permanent callbacks
+    _rtpRtcpModule->SetRTCPStatus(kRtcpCompound);
+    // --- Register all permanent callbacks
     const bool fail =
         (audio_coding_->RegisterTransportCallback(this) == -1) ||
         (audio_coding_->RegisterVADCallback(this) == -1);
@@ -2908,20 +2901,10 @@ int Channel::SetReceiveAbsoluteSenderTimeStatus(bool enable, unsigned char id) {
   return 0;
 }
 
-int
-Channel::SetRTCPStatus(bool enable)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::SetRTCPStatus()");
-    if (_rtpRtcpModule->SetRTCPStatus(enable ?
-        kRtcpCompound : kRtcpOff) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-            "SetRTCPStatus() failed to set RTCP status");
-        return -1;
-    }
-    return 0;
+void Channel::SetRTCPStatus(bool enable) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
+               "Channel::SetRTCPStatus()");
+  _rtpRtcpModule->SetRTCPStatus(enable ? kRtcpCompound : kRtcpOff);
 }
 
 int
@@ -3807,47 +3790,28 @@ int Channel::GetPlayoutTimestamp(unsigned int& timestamp) {
   return 0;
 }
 
-int
-Channel::SetInitTimestamp(unsigned int timestamp)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
+int Channel::SetInitTimestamp(unsigned int timestamp) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetInitTimestamp()");
-    if (channel_state_.Get().sending)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_SENDING, kTraceError, "SetInitTimestamp() already sending");
-        return -1;
-    }
-    if (_rtpRtcpModule->SetStartTimestamp(timestamp) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-            "SetInitTimestamp() failed to set timestamp");
-        return -1;
-    }
-    return 0;
+  if (channel_state_.Get().sending) {
+    _engineStatisticsPtr->SetLastError(VE_SENDING, kTraceError,
+                                       "SetInitTimestamp() already sending");
+    return -1;
+  }
+  _rtpRtcpModule->SetStartTimestamp(timestamp);
+  return 0;
 }
 
-int
-Channel::SetInitSequenceNumber(short sequenceNumber)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::SetInitSequenceNumber()");
-    if (channel_state_.Get().sending)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_SENDING, kTraceError,
-            "SetInitSequenceNumber() already sending");
-        return -1;
-    }
-    if (_rtpRtcpModule->SetSequenceNumber(sequenceNumber) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-            "SetInitSequenceNumber() failed to set sequence number");
-        return -1;
-    }
-    return 0;
+int Channel::SetInitSequenceNumber(short sequenceNumber) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
+               "Channel::SetInitSequenceNumber()");
+  if (channel_state_.Get().sending) {
+    _engineStatisticsPtr->SetLastError(
+        VE_SENDING, kTraceError, "SetInitSequenceNumber() already sending");
+    return -1;
+  }
+  _rtpRtcpModule->SetSequenceNumber(sequenceNumber);
+  return 0;
 }
 
 int

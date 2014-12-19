@@ -29,22 +29,21 @@ class ModuleRtpRtcpImpl;
 class RTCPReceiver : public TMMBRHelp
 {
 public:
-    RTCPReceiver(const int32_t id, Clock* clock,
-                 ModuleRtpRtcpImpl* owner);
+ RTCPReceiver(int32_t id, Clock* clock, ModuleRtpRtcpImpl* owner);
     virtual ~RTCPReceiver();
 
-    void ChangeUniqueId(const int32_t id);
+    void ChangeUniqueId(int32_t id);
 
     RTCPMethod Status() const;
-    int32_t SetRTCPStatus(const RTCPMethod method);
+    void SetRTCPStatus(RTCPMethod method);
 
     int64_t LastReceived();
     int64_t LastReceivedReceiverReport() const;
 
     void SetSsrcs(uint32_t main_ssrc,
                   const std::set<uint32_t>& registered_ssrcs);
-    void SetRelaySSRC( const uint32_t ssrc);
-    int32_t SetRemoteSSRC( const uint32_t ssrc);
+    void SetRelaySSRC(uint32_t ssrc);
+    int32_t SetRemoteSSRC(uint32_t ssrc);
     uint32_t RemoteSSRC() const;
 
     uint32_t RelaySSRC() const;
@@ -59,8 +58,7 @@ public:
     void TriggerCallbacksFromRTCPPacket(RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 
     // get received cname
-    int32_t CNAME(const uint32_t remoteSSRC,
-                  char cName[RTCP_CNAME_SIZE]) const;
+    int32_t CNAME(uint32_t remoteSSRC, char cName[RTCP_CNAME_SIZE]) const;
 
     // get received NTP
     bool NTP(uint32_t* ReceivedNTPsecs,
@@ -99,8 +97,8 @@ public:
     bool RtcpRrSequenceNumberTimeout(int64_t rtcp_interval_ms);
 
     // Get TMMBR
-    int32_t TMMBRReceived(const uint32_t size,
-                          const uint32_t accNumCandidates,
+    int32_t TMMBRReceived(uint32_t size,
+                          uint32_t accNumCandidates,
                           TMMBRSet* candidateSet) const;
 
     bool UpdateRTCPReceiveInformationTimers();
@@ -113,21 +111,24 @@ public:
     RtcpStatisticsCallback* GetRtcpStatisticsCallback();
 
 protected:
-    RTCPUtility::RTCPCnameInformation* CreateCnameInformation(const uint32_t remoteSSRC);
-    RTCPUtility::RTCPCnameInformation* GetCnameInformation(const uint32_t remoteSSRC) const;
+ RTCPUtility::RTCPCnameInformation* CreateCnameInformation(uint32_t remoteSSRC);
+ RTCPUtility::RTCPCnameInformation* GetCnameInformation(
+     uint32_t remoteSSRC) const;
 
-    RTCPHelp::RTCPReceiveInformation* CreateReceiveInformation(const uint32_t remoteSSRC);
-    RTCPHelp::RTCPReceiveInformation* GetReceiveInformation(const uint32_t remoteSSRC);
+ RTCPHelp::RTCPReceiveInformation* CreateReceiveInformation(
+     uint32_t remoteSSRC);
+ RTCPHelp::RTCPReceiveInformation* GetReceiveInformation(uint32_t remoteSSRC);
 
     void UpdateReceiveInformation( RTCPHelp::RTCPReceiveInformation& receiveInformation);
 
     void HandleSenderReceiverReport(RTCPUtility::RTCPParserV2& rtcpParser,
                                     RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 
-    void HandleReportBlock(const RTCPUtility::RTCPPacket& rtcpPacket,
-                           RTCPHelp::RTCPPacketInformation& rtcpPacketInformation,
-                           const uint32_t remoteSSRC,
-                           const uint8_t numberOfReportBlocks);
+    void HandleReportBlock(
+        const RTCPUtility::RTCPPacket& rtcpPacket,
+        RTCPHelp::RTCPPacketInformation& rtcpPacketInformation,
+        uint32_t remoteSSRC,
+        uint8_t numberOfReportBlocks);
 
     void HandleSDES(RTCPUtility::RTCPParserV2& rtcpParser);
 
@@ -189,7 +190,7 @@ protected:
     void HandleTMMBRItem(RTCPHelp::RTCPReceiveInformation& receiveInfo,
                          const RTCPUtility::RTCPPacket& rtcpPacket,
                          RTCPHelp::RTCPPacketInformation& rtcpPacketInformation,
-                         const uint32_t senderSSRC);
+                         uint32_t senderSSRC);
 
     void HandleTMMBN(RTCPUtility::RTCPParserV2& rtcpParser,
                      RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);

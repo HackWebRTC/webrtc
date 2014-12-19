@@ -28,33 +28,32 @@ using namespace RTCPHelp;
 // The number of RTCP time intervals needed to trigger a timeout.
 const int kRrTimeoutIntervals = 3;
 
-RTCPReceiver::RTCPReceiver(const int32_t id, Clock* clock,
-                           ModuleRtpRtcpImpl* owner)
+RTCPReceiver::RTCPReceiver(int32_t id, Clock* clock, ModuleRtpRtcpImpl* owner)
     : TMMBRHelp(),
-    _id(id),
-    _clock(clock),
-    _method(kRtcpOff),
-    _lastReceived(0),
-    _rtpRtcp(*owner),
+      _id(id),
+      _clock(clock),
+      _method(kRtcpOff),
+      _lastReceived(0),
+      _rtpRtcp(*owner),
       _criticalSectionFeedbacks(
           CriticalSectionWrapper::CreateCriticalSection()),
-    _cbRtcpBandwidthObserver(NULL),
-    _cbRtcpIntraFrameObserver(NULL),
-    _criticalSectionRTCPReceiver(
-        CriticalSectionWrapper::CreateCriticalSection()),
-    main_ssrc_(0),
-    _remoteSSRC(0),
-    _remoteSenderInfo(),
-    _lastReceivedSRNTPsecs(0),
-    _lastReceivedSRNTPfrac(0),
-    _lastReceivedXRNTPsecs(0),
-    _lastReceivedXRNTPfrac(0),
-    xr_rr_rtt_ms_(0),
-    _receivedInfoMap(),
-    _packetTimeOutMS(0),
-    _lastReceivedRrMs(0),
-    _lastIncreasedSequenceNumberMs(0),
-    stats_callback_(NULL) {
+      _cbRtcpBandwidthObserver(NULL),
+      _cbRtcpIntraFrameObserver(NULL),
+      _criticalSectionRTCPReceiver(
+          CriticalSectionWrapper::CreateCriticalSection()),
+      main_ssrc_(0),
+      _remoteSSRC(0),
+      _remoteSenderInfo(),
+      _lastReceivedSRNTPsecs(0),
+      _lastReceivedSRNTPfrac(0),
+      _lastReceivedXRNTPsecs(0),
+      _lastReceivedXRNTPfrac(0),
+      xr_rr_rtt_ms_(0),
+      _receivedInfoMap(),
+      _packetTimeOutMS(0),
+      _lastReceivedRrMs(0),
+      _lastIncreasedSequenceNumberMs(0),
+      stats_callback_(NULL) {
     memset(&_remoteSenderInfo, 0, sizeof(_remoteSenderInfo));
 }
 
@@ -85,9 +84,7 @@ RTCPReceiver::~RTCPReceiver() {
   }
 }
 
-void
-RTCPReceiver::ChangeUniqueId(const int32_t id)
-{
+void RTCPReceiver::ChangeUniqueId(int32_t id) {
     _id = id;
 }
 
@@ -98,12 +95,9 @@ RTCPReceiver::Status() const
     return _method;
 }
 
-int32_t
-RTCPReceiver::SetRTCPStatus(const RTCPMethod method)
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
-    _method = method;
-    return 0;
+void RTCPReceiver::SetRTCPStatus(RTCPMethod method) {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  _method = method;
 }
 
 int64_t
@@ -126,9 +120,7 @@ RTCPReceiver::LastReceivedReceiverReport() const {
     return last_received_rr;
 }
 
-int32_t
-RTCPReceiver::SetRemoteSSRC( const uint32_t ssrc)
-{
+int32_t RTCPReceiver::SetRemoteSSRC(uint32_t ssrc) {
     CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
     // new SSRC reset old reports
@@ -466,8 +458,8 @@ RTCPReceiver::HandleSenderReceiverReport(RTCPUtility::RTCPParserV2& rtcpParser,
 void RTCPReceiver::HandleReportBlock(
     const RTCPUtility::RTCPPacket& rtcpPacket,
     RTCPPacketInformation& rtcpPacketInformation,
-    const uint32_t remoteSSRC,
-    const uint8_t numberOfReportBlocks)
+    uint32_t remoteSSRC,
+    uint8_t numberOfReportBlocks)
     EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver) {
   // This will be called once per report block in the RTCP packet.
   // We filter out all report blocks that are not for us.
@@ -1079,12 +1071,10 @@ RTCPReceiver::HandleTMMBR(RTCPUtility::RTCPParserV2& rtcpParser,
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
-void
-RTCPReceiver::HandleTMMBRItem(RTCPReceiveInformation& receiveInfo,
-                              const RTCPUtility::RTCPPacket& rtcpPacket,
-                              RTCPPacketInformation& rtcpPacketInformation,
-                              const uint32_t senderSSRC)
-{
+void RTCPReceiver::HandleTMMBRItem(RTCPReceiveInformation& receiveInfo,
+                                   const RTCPUtility::RTCPPacket& rtcpPacket,
+                                   RTCPPacketInformation& rtcpPacketInformation,
+                                   uint32_t senderSSRC) {
     if (main_ssrc_ == rtcpPacket.TMMBRItem.SSRC &&
         rtcpPacket.TMMBRItem.MaxTotalMediaBitRate > 0)
     {
@@ -1464,7 +1454,7 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
   }
 }
 
-int32_t RTCPReceiver::CNAME(const uint32_t remoteSSRC,
+int32_t RTCPReceiver::CNAME(uint32_t remoteSSRC,
                             char cName[RTCP_CNAME_SIZE]) const {
   assert(cName);
 
@@ -1479,8 +1469,8 @@ int32_t RTCPReceiver::CNAME(const uint32_t remoteSSRC,
 }
 
 // no callbacks allowed inside this function
-int32_t RTCPReceiver::TMMBRReceived(const uint32_t size,
-                                    const uint32_t accNumCandidates,
+int32_t RTCPReceiver::TMMBRReceived(uint32_t size,
+                                    uint32_t accNumCandidates,
                                     TMMBRSet* candidateSet) const {
   CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 

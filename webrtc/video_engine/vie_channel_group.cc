@@ -226,16 +226,12 @@ EncoderStateFeedback* ChannelGroup::GetEncoderStateFeedback() {
   return encoder_state_feedback_.get();
 }
 
-bool ChannelGroup::SetChannelRembStatus(int channel_id, bool sender,
-                                        bool receiver, ViEChannel* channel) {
+void ChannelGroup::SetChannelRembStatus(int channel_id,
+                                        bool sender,
+                                        bool receiver,
+                                        ViEChannel* channel) {
   // Update the channel state.
-  if (sender || receiver) {
-    if (!channel->EnableRemb(true)) {
-      return false;
-    }
-  } else {
-    channel->EnableRemb(false);
-  }
+  channel->EnableRemb(sender || receiver);
   // Update the REMB instance with necessary RTP modules.
   RtpRtcp* rtp_module = channel->rtp_rtcp();
   if (sender) {
@@ -248,7 +244,6 @@ bool ChannelGroup::SetChannelRembStatus(int channel_id, bool sender,
   } else {
     remb_->RemoveReceiveChannel(rtp_module);
   }
-  return true;
 }
 
 void ChannelGroup::SetBandwidthEstimationConfig(const webrtc::Config& config) {

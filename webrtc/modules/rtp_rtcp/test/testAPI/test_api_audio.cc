@@ -168,7 +168,7 @@ class RtpRtcpAudioTest : public ::testing::Test {
 
 TEST_F(RtpRtcpAudioTest, Basic) {
   module1->SetSSRC(test_ssrc);
-  EXPECT_EQ(0, module1->SetStartTimestamp(test_timestamp));
+  module1->SetStartTimestamp(test_timestamp);
 
   // Test detection at the end of a DTMF tone.
   //EXPECT_EQ(0, module2->SetTelephoneEventForwardToDecoder(true));
@@ -239,7 +239,7 @@ TEST_F(RtpRtcpAudioTest, RED) {
       (voice_codec.rate < 0) ? 0 : voice_codec.rate));
 
   module1->SetSSRC(test_ssrc);
-  EXPECT_EQ(0, module1->SetStartTimestamp(test_timestamp));
+  module1->SetStartTimestamp(test_timestamp);
   EXPECT_EQ(0, module1->SetSendingStatus(true));
 
   voice_codec.pltype = 127;
@@ -312,7 +312,7 @@ TEST_F(RtpRtcpAudioTest, DTMF) {
       (voice_codec.rate < 0) ? 0 : voice_codec.rate));
 
   module1->SetSSRC(test_ssrc);
-  EXPECT_EQ(0, module1->SetStartTimestamp(test_timestamp));
+  module1->SetStartTimestamp(test_timestamp);
   EXPECT_EQ(0, module1->SetSendingStatus(true));
 
   // Prepare for DTMF.

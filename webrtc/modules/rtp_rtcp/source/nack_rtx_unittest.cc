@@ -194,12 +194,12 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
         &rtp_payload_registry_));
 
     rtp_rtcp_module_->SetSSRC(kTestSsrc);
-    EXPECT_EQ(0, rtp_rtcp_module_->SetRTCPStatus(kRtcpCompound));
+    rtp_rtcp_module_->SetRTCPStatus(kRtcpCompound);
     rtp_receiver_->SetNACKStatus(kNackRtcp);
-    EXPECT_EQ(0, rtp_rtcp_module_->SetStorePacketsStatus(true, 600));
+    rtp_rtcp_module_->SetStorePacketsStatus(true, 600);
     EXPECT_EQ(0, rtp_rtcp_module_->SetSendingStatus(true));
-    EXPECT_EQ(0, rtp_rtcp_module_->SetSequenceNumber(kTestSequenceNumber));
-    EXPECT_EQ(0, rtp_rtcp_module_->SetStartTimestamp(111111));
+    rtp_rtcp_module_->SetSequenceNumber(kTestSequenceNumber);
+    rtp_rtcp_module_->SetStartTimestamp(111111);
 
     transport_.SetSendModule(rtp_rtcp_module_, &rtp_payload_registry_,
                              rtp_receiver_.get());
@@ -304,9 +304,9 @@ TEST_F(RtpRtcpRtxNackTest, LongNackList) {
   uint32_t timestamp = 3000;
   uint16_t nack_list[kNumPacketsToDrop];
   // Disable StorePackets to be able to set a larger packet history.
-  EXPECT_EQ(0, rtp_rtcp_module_->SetStorePacketsStatus(false, 0));
+  rtp_rtcp_module_->SetStorePacketsStatus(false, 0);
   // Enable StorePackets with a packet history of 2000 packets.
-  EXPECT_EQ(0, rtp_rtcp_module_->SetStorePacketsStatus(true, 2000));
+  rtp_rtcp_module_->SetStorePacketsStatus(true, 2000);
   // Drop 900 packets from the second one so that we get a NACK list which is
   // big enough to require 4 RTCP packets to be fully transmitted to the sender.
   transport_.DropConsecutivePackets(2, kNumPacketsToDrop);

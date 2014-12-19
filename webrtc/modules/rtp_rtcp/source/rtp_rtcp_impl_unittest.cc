@@ -110,7 +110,7 @@ class RtpRtcpModule {
     config.rtt_stats = &rtt_stats_;
 
     impl_.reset(new ModuleRtpRtcpImpl(config));
-    EXPECT_EQ(0, impl_->SetRTCPStatus(kRtcpCompound));
+    impl_->SetRTCPStatus(kRtcpCompound);
 
     transport_.SimulateNetworkDelay(kOneWayNetworkDelayMs, clock);
   }
@@ -150,7 +150,7 @@ class RtpRtcpImplTest : public ::testing::Test {
         receiver_(&clock_) {
     // Send module.
     EXPECT_EQ(0, sender_.impl_->SetSendingStatus(true));
-    EXPECT_EQ(0, sender_.impl_->SetSendingMediaStatus(true));
+    sender_.impl_->SetSendingMediaStatus(true);
     sender_.impl_->SetSSRC(kSenderSsrc);
     sender_.impl_->SetRemoteSSRC(kReceiverSsrc);
     sender_.impl_->SetSequenceNumber(kSequenceNumber);
@@ -165,7 +165,7 @@ class RtpRtcpImplTest : public ::testing::Test {
 
     // Receive module.
     EXPECT_EQ(0, receiver_.impl_->SetSendingStatus(false));
-    EXPECT_EQ(0, receiver_.impl_->SetSendingMediaStatus(false));
+    receiver_.impl_->SetSendingMediaStatus(false);
     receiver_.impl_->SetSSRC(kReceiverSsrc);
     receiver_.impl_->SetRemoteSSRC(kSenderSsrc);
     // Transport settings.
@@ -580,7 +580,7 @@ class RtpSendingTest : public ::testing::Test {
       RtpRtcp* sender = RtpRtcp::CreateRtpRtcp(config);
       EXPECT_EQ(0, sender->RegisterSendPayload(codec_));
       EXPECT_EQ(0, sender->SetSendingStatus(true));
-      EXPECT_EQ(0, sender->SetSendingMediaStatus(true));
+      sender->SetSendingMediaStatus(true);
       sender->SetSSRC(kSenderSsrc + i);
       sender->SetRemoteSSRC(kReceiverSsrc + i);
       senders_.push_back(sender);

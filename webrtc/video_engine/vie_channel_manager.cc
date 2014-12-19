@@ -348,7 +348,8 @@ bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
   ViEChannel* channel = ViEChannelPtr(channel_id);
   assert(channel);
 
-  return group->SetChannelRembStatus(channel_id, sender, receiver, channel);
+  group->SetChannelRembStatus(channel_id, sender, receiver, channel);
+  return true;
 }
 
 bool ViEChannelManager::SetReservedTransmitBitrate(

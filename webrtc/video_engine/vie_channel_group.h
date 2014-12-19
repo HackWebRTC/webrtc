@@ -40,7 +40,9 @@ class ChannelGroup {
   bool HasChannel(int channel_id);
   bool Empty();
 
-  bool SetChannelRembStatus(int channel_id, bool sender, bool receiver,
+  void SetChannelRembStatus(int channel_id,
+                            bool sender,
+                            bool receiver,
                             ViEChannel* channel);
   void SetBandwidthEstimationConfig(const webrtc::Config& config);
 

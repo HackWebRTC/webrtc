@@ -126,13 +126,13 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     myRTCPFeedback1->SetModule(module1);
     myRTCPFeedback2->SetModule(module2);
 
-    EXPECT_EQ(0, module1->SetRTCPStatus(kRtcpCompound));
-    EXPECT_EQ(0, module2->SetRTCPStatus(kRtcpCompound));
+    module1->SetRTCPStatus(kRtcpCompound);
+    module2->SetRTCPStatus(kRtcpCompound);
 
     module2->SetSSRC(test_ssrc + 1);
     module1->SetSSRC(test_ssrc);
-    EXPECT_EQ(0, module1->SetSequenceNumber(test_sequence_number));
-    EXPECT_EQ(0, module1->SetStartTimestamp(test_timestamp));
+    module1->SetSequenceNumber(test_sequence_number);
+    module1->SetStartTimestamp(test_timestamp);
 
     module1->SetCsrcs(test_csrcs);
     EXPECT_EQ(0, module1->SetCNAME("john.doe@test.test"));

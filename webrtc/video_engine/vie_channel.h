@@ -107,8 +107,8 @@ class ViEChannel
   // key frames.
   int32_t SetSignalPacketLossStatus(bool enable, bool only_key_frames);
 
-  int32_t SetRTCPMode(const RTCPMethod rtcp_mode);
-  int32_t GetRTCPMode(RTCPMethod* rtcp_mode);
+  void SetRTCPMode(const RTCPMethod rtcp_mode);
+  RTCPMethod GetRTCPMode() const;
   int32_t SetNACKStatus(const bool enable);
   int32_t SetFECStatus(const bool enable,
                        const unsigned char payload_typeRED,
@@ -119,7 +119,7 @@ class ViEChannel
   int SetSenderBufferingMode(int target_delay_ms);
   int SetReceiverBufferingMode(int target_delay_ms);
   int32_t SetKeyFrameRequestMethod(const KeyFrameRequestMethod method);
-  bool EnableRemb(bool enable);
+  void EnableRemb(bool enable);
   int SetSendTimestampOffsetStatus(bool enable, int id);
   int SetReceiveTimestampOffsetStatus(bool enable, int id);
   int SetSendAbsoluteSendTimeStatus(bool enable, int id);
@@ -127,7 +127,7 @@ class ViEChannel
   bool GetReceiveAbsoluteSendTimeStatus() const;
   void SetRtcpXrRrtrStatus(bool enable);
   void SetTransmissionSmoothingStatus(bool enable);
-  int32_t EnableTMMBR(const bool enable);
+  void EnableTMMBR(bool enable);
   int32_t EnableKeyFrameRequestCallback(const bool enable);
 
   // Sets SSRC for outgoing stream.
