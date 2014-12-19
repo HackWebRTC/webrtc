@@ -22,6 +22,7 @@
 #include <list>
 #include <map>
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/video_render/include/video_render_defines.h"
 
 #import "webrtc/modules/video_render/mac/cocoa_full_screen_window.h"
@@ -119,8 +120,8 @@ public: // methods
     bool HasChannels();
     bool HasChannel(int channel);
     int GetChannels(std::list<int>& channelList);
-    void LockAGLCntx();
-    void UnlockAGLCntx();
+    void LockAGLCntx() EXCLUSIVE_LOCK_FUNCTION(_nsglContextCritSec);
+    void UnlockAGLCntx() UNLOCK_FUNCTION(_nsglContextCritSec);
 
     // ********** new module functions ************ //
     int ChangeWindow(CocoaRenderView* newWindowRef);

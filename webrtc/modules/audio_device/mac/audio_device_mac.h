@@ -11,6 +11,7 @@
 #ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_MAC_H
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_MAC_H
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/audio_device/mac/audio_mixer_manager_mac.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -180,12 +181,12 @@ private:
     virtual int32_t MicrophoneIsAvailable(bool& available);
     virtual int32_t SpeakerIsAvailable(bool& available);
 
-    void Lock()
+    void Lock() EXCLUSIVE_LOCK_FUNCTION(_critSect)
     {
         _critSect.Enter();
     }
     ;
-    void UnLock()
+    void UnLock() UNLOCK_FUNCTION(_critSect)
     {
         _critSect.Leave();
     }

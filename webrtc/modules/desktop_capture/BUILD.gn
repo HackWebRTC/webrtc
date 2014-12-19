@@ -109,6 +109,14 @@ source_set("desktop_capture") {
     ]
   }
 
+  if (is_mac) {
+    libs = [
+      "AppKit.framework",
+      "IOKit.framework",
+      "OpenGL.framework",
+    ]
+  }
+
   configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config"]
 

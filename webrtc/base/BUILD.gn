@@ -49,7 +49,7 @@ config("nss_config") {
 }
 
 config("ios_config") {
-  ldflags = [
+  libs = [
     #"Foundation.framework",  # Already included in //build/config:default_libs.
     "Security.framework",
     "SystemConfiguration.framework",
@@ -58,7 +58,7 @@ config("ios_config") {
 }
 
 config("mac_config") {
-  ldflags = [
+  libs = [
     "Cocoa.framework",
     #"Foundation.framework",  # Already included in //build/config:default_libs.
     #"IOKit.framework",  # Already included in //build/config:default_libs.
