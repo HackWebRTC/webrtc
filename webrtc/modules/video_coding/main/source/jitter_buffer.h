@@ -184,7 +184,7 @@ class VCMJitterBuffer {
   // corresponding to the start and end of the continuous complete buffer.
   void RenderBufferSize(uint32_t* timestamp_start, uint32_t* timestamp_end);
 
-  void RegisterFrameCountObserver(FrameCountObserver* observer);
+  void RegisterStatsCallback(VCMReceiveStatisticsCallback* callback);
 
  private:
   class SequenceNumberLessThan {
@@ -303,8 +303,8 @@ class VCMJitterBuffer {
   bool first_packet_since_reset_;
 
   // Statistics.
+  VCMReceiveStatisticsCallback* stats_callback_ GUARDED_BY(crit_sect_);
   // Frame counts for each type (key, delta, ...)
-  FrameCountObserver* frame_count_observer_ GUARDED_BY(crit_sect_);
   FrameCounts receive_statistics_;
   // Latest calculated frame rates of incoming stream.
   unsigned int incoming_frame_rate_;

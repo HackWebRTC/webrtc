@@ -15,13 +15,8 @@
 
 namespace webrtc {
 
-ReceiveStatisticsProxy::ReceiveStatisticsProxy(uint32_t ssrc,
-                                               Clock* clock,
-                                               ViECodec* codec,
-                                               int channel)
-    : channel_(channel),
-      clock_(clock),
-      codec_(codec),
+ReceiveStatisticsProxy::ReceiveStatisticsProxy(uint32_t ssrc, Clock* clock)
+    : clock_(clock),
       crit_(CriticalSectionWrapper::CreateCriticalSection()),
       // 1000ms window, scale 1000 for ms to s.
       decode_fps_estimator_(1000, 1000),
@@ -32,14 +27,8 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(uint32_t ssrc,
 ReceiveStatisticsProxy::~ReceiveStatisticsProxy() {}
 
 VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
-  VideoReceiveStream::Stats stats;
-  {
-    CriticalSectionScoped lock(crit_.get());
-    stats = stats_;
-  }
-  stats.discarded_packets = codec_->GetNumDiscardedPackets(channel_);
-
-  return stats;
+  CriticalSectionScoped lock(crit_.get());
+  return stats_;
 }
 
 void ReceiveStatisticsProxy::IncomingRate(const int video_channel,
@@ -98,10 +87,19 @@ void ReceiveStatisticsProxy::OnRenderedFrame() {
   stats_.render_frame_rate = renders_fps_estimator_.Rate(now);
 }
 
-void ReceiveStatisticsProxy::FrameCountUpdated(const FrameCounts& frame_counts,
-                                               uint32_t ssrc) {
+void ReceiveStatisticsProxy::OnReceiveRatesUpdated(uint32_t bitRate,
+                                                   uint32_t frameRate) {
+}
+
+void ReceiveStatisticsProxy::OnFrameCountsUpdated(
+    const FrameCounts& frame_counts) {
   CriticalSectionScoped lock(crit_.get());
   stats_.frame_counts = frame_counts;
+}
+
+void ReceiveStatisticsProxy::OnDiscardedPacketsUpdated(int discarded_packets) {
+  CriticalSectionScoped lock(crit_.get());
+  stats_.discarded_packets = discarded_packets;
 }
 
 }  // namespace webrtc

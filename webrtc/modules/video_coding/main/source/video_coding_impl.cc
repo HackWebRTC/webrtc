@@ -278,11 +278,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_->RegisterRenderBufferSizeCallback(callback);
   }
 
-  virtual void RegisterReceiveFrameCountObserver(
-      FrameCountObserver* frame_count_observer) OVERRIDE {
-    receiver_->RegisterFrameCountObserver(frame_count_observer);
-  }
-
   virtual int32_t Decode(uint16_t maxWaitTimeMs) OVERRIDE {
     return receiver_->Decode(maxWaitTimeMs);
   }

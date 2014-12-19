@@ -148,8 +148,8 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
     }
   }
 
-  stats_proxy_.reset(new ReceiveStatisticsProxy(config_.rtp.local_ssrc, clock_,
-                                                codec_, channel_));
+  stats_proxy_.reset(
+      new ReceiveStatisticsProxy(config_.rtp.local_ssrc, clock_));
 
   if (rtp_rtcp_->RegisterReceiveChannelRtcpStatisticsCallback(
           channel_, stats_proxy_.get()) != 0) {

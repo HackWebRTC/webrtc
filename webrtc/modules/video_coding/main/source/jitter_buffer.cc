@@ -124,7 +124,7 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock, EventFactory* event_factory)
       incomplete_frames_(),
       last_decoded_state_(),
       first_packet_since_reset_(true),
-      frame_count_observer_(NULL),
+      stats_callback_(NULL),
       incoming_frame_rate_(0),
       incoming_frame_count_(0),
       time_last_incoming_frame_count_(0),
@@ -570,6 +570,8 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
     if (packet.sizeBytes > 0) {
       num_discarded_packets_++;
       num_consecutive_old_packets_++;
+      if (stats_callback_ != NULL)
+        stats_callback_->OnDiscardedPacketsUpdated(num_discarded_packets_);
     }
     // Update last decoded sequence number if the packet arrived late and
     // belongs to a frame with a timestamp equal to the last decoded
@@ -1040,10 +1042,10 @@ void VCMJitterBuffer::RenderBufferSize(uint32_t* timestamp_start,
   *timestamp_end = decodable_frames_.Back()->TimeStamp();
 }
 
-void VCMJitterBuffer::RegisterFrameCountObserver(
-    FrameCountObserver* frame_count_observer) {
+void VCMJitterBuffer::RegisterStatsCallback(
+    VCMReceiveStatisticsCallback* callback) {
   CriticalSectionScoped cs(crit_sect_);
-  frame_count_observer_ = frame_count_observer;
+  stats_callback_ = callback;
 }
 
 VCMFrameBuffer* VCMJitterBuffer::GetEmptyFrame() {
@@ -1118,8 +1120,8 @@ void VCMJitterBuffer::CountFrame(const VCMFrameBuffer& frame) {
     } else {
       ++receive_statistics_.delta_frames;
     }
-    if (frame_count_observer_ != NULL)
-      frame_count_observer_->FrameCountUpdated(receive_statistics_, 0);
+    if (stats_callback_ != NULL)
+      stats_callback_->OnFrameCountsUpdated(receive_statistics_);
   }
 }
 

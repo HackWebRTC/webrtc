@@ -582,8 +582,6 @@ public:
         EncodedImageCallback* observer) = 0;
     virtual void RegisterPostEncodeImageCallback(
         EncodedImageCallback* post_encode_callback) = 0;
-    virtual void RegisterReceiveFrameCountObserver(
-        FrameCountObserver* frame_count_observer) = 0;
 };
 
 }  // namespace webrtc

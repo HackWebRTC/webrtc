@@ -79,7 +79,7 @@ class VCMReceiver {
   // the time this function is called.
   int RenderBufferSizeMs();
 
-  void RegisterFrameCountObserver(FrameCountObserver* frame_count_observer);
+  void RegisterStatsCallback(VCMReceiveStatisticsCallback* callback);
 
  private:
   static int32_t GenerateReceiverId();

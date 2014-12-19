@@ -17,6 +17,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/remote_bitrate_estimator/rate_statistics.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
 #include "webrtc/video_receive_stream.h"
@@ -30,20 +31,23 @@ class ViECodec;
 class ViEDecoderObserver;
 
 class ReceiveStatisticsProxy : public ViEDecoderObserver,
+                               public VCMReceiveStatisticsCallback,
                                public RtcpStatisticsCallback,
-                               public StreamDataCountersCallback,
-                               public FrameCountObserver {
+                               public StreamDataCountersCallback {
  public:
-  ReceiveStatisticsProxy(uint32_t ssrc,
-                         Clock* clock,
-                         ViECodec* codec,
-                         int channel);
+  ReceiveStatisticsProxy(uint32_t ssrc, Clock* clock);
   virtual ~ReceiveStatisticsProxy();
 
   VideoReceiveStream::Stats GetStats() const;
 
   void OnDecodedFrame();
   void OnRenderedFrame();
+
+  // Overrides VCMReceiveStatisticsCallback
+  virtual void OnReceiveRatesUpdated(uint32_t bitRate,
+                                     uint32_t frameRate) OVERRIDE;
+  virtual void OnFrameCountsUpdated(const FrameCounts& frame_counts) OVERRIDE;
+  virtual void OnDiscardedPacketsUpdated(int discarded_packets) OVERRIDE;
 
   // Overrides ViEDecoderObserver.
   virtual void IncomingCodecChanged(const int video_channel,
@@ -69,14 +73,8 @@ class ReceiveStatisticsProxy : public ViEDecoderObserver,
   virtual void DataCountersUpdated(const webrtc::StreamDataCounters& counters,
                                    uint32_t ssrc) OVERRIDE;
 
-  // Overrides FrameCountObserver.
-  virtual void FrameCountUpdated(const FrameCounts& frame_counts,
-                                 uint32_t ssrc) OVERRIDE;
-
  private:
-  const int channel_;
   Clock* const clock_;
-  ViECodec* const codec_;
 
   scoped_ptr<CriticalSectionWrapper> crit_;
   VideoReceiveStream::Stats stats_ GUARDED_BY(crit_);

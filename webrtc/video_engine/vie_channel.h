@@ -314,8 +314,10 @@ class ViEChannel
   virtual void IncomingCodecChanged(const VideoCodec& codec);
 
   // Implements VCMReceiveStatisticsCallback.
-  virtual int32_t OnReceiveStatisticsUpdate(const uint32_t bit_rate,
-                                    const uint32_t frame_rate);
+  virtual void OnReceiveRatesUpdated(uint32_t bit_rate,
+                                     uint32_t frame_rate) OVERRIDE;
+  virtual void OnDiscardedPacketsUpdated(int discarded_packets) OVERRIDE;
+  virtual void OnFrameCountsUpdated(const FrameCounts& frame_counts) OVERRIDE;
 
   // Implements VCMDecoderTimingCallback.
   virtual void OnDecoderTiming(int decode_ms,
@@ -431,20 +433,12 @@ class ViEChannel
     virtual void FrameCountUpdated(const FrameCounts& frame_counts,
                                    uint32_t ssrc) {
       CriticalSectionScoped cs(critsect_.get());
-      frame_counts_ = frame_counts;
       if (callback_)
         callback_->FrameCountUpdated(frame_counts, ssrc);
     }
 
-    void GetFrameCount(uint32_t* num_key_frames, uint32_t* num_delta_frames) {
-      CriticalSectionScoped cs(critsect_.get());
-      *num_key_frames = frame_counts_.key_frames;
-      *num_delta_frames = frame_counts_.delta_frames;
-    }
-
    private:
-    FrameCounts frame_counts_ GUARDED_BY(critsect_);
-  } send_frame_count_observer_, receive_frame_count_observer_;
+  } send_frame_count_observer_;
 
   class RegisterableSendSideDelayObserver :
       public RegisterableCallback<SendSideDelayObserver> {
@@ -481,6 +475,9 @@ class ViEChannel
   scoped_ptr<ChannelStatsObserver> stats_observer_;
 
   // Not owned.
+  VCMReceiveStatisticsCallback* vcm_receive_stats_callback_
+      GUARDED_BY(callback_cs_);
+  FrameCounts receive_frame_counts_ GUARDED_BY(callback_cs_);
   ProcessThread& module_process_thread_;
   ViEDecoderObserver* codec_observer_;
   bool do_key_frame_callbackRequest_;

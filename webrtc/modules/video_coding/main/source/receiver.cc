@@ -270,9 +270,9 @@ int VCMReceiver::RenderBufferSizeMs() {
   return render_end - render_start;
 }
 
-void VCMReceiver::RegisterFrameCountObserver(
-    FrameCountObserver* frame_count_observer) {
-  jitter_buffer_.RegisterFrameCountObserver(frame_count_observer);
+void VCMReceiver::RegisterStatsCallback(
+    VCMReceiveStatisticsCallback* callback) {
+  jitter_buffer_.RegisterStatsCallback(callback);
 }
 
 }  // namespace webrtc

@@ -74,7 +74,7 @@ int32_t VideoReceiver::Process() {
       uint32_t bitRate;
       uint32_t frameRate;
       _receiver.ReceiveStatistics(&bitRate, &frameRate);
-      _receiveStatsCallback->OnReceiveStatisticsUpdate(bitRate, frameRate);
+      _receiveStatsCallback->OnReceiveRatesUpdated(bitRate, frameRate);
     }
 
     if (_decoderTimingCallback != NULL) {
@@ -284,6 +284,7 @@ int32_t VideoReceiver::RegisterReceiveCallback(
 int32_t VideoReceiver::RegisterReceiveStatisticsCallback(
     VCMReceiveStatisticsCallback* receiveStats) {
   CriticalSectionScoped cs(process_crit_sect_.get());
+  _receiver.RegisterStatsCallback(receiveStats);
   _receiveStatsCallback = receiveStats;
   return VCM_OK;
 }
@@ -665,10 +666,6 @@ void VideoReceiver::RegisterPreDecodeImageCallback(
     EncodedImageCallback* observer) {
   CriticalSectionScoped cs(_receiveCritSect);
   pre_decode_image_callback_ = observer;
-}
-void VideoReceiver::RegisterFrameCountObserver(
-    FrameCountObserver* frame_count_observer) {
-  _receiver.RegisterFrameCountObserver(frame_count_observer);
 }
 
 }  // namespace vcm

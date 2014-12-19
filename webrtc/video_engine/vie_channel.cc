@@ -129,6 +129,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
       vie_sender_(channel_id),
       vie_sync_(vcm_, this),
       stats_observer_(new ChannelStatsObserver(this)),
+      vcm_receive_stats_callback_(NULL),
       module_process_thread_(module_process_thread),
       codec_observer_(NULL),
       do_key_frame_callbackRequest_(false),
@@ -156,7 +157,6 @@ ViEChannel::ViEChannel(int32_t channel_id,
   rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
   vie_receiver_.SetRtpRtcpModule(rtp_rtcp_.get());
   vcm_->SetNackSettings(kMaxNackListSize, max_nack_reordering_threshold_, 0);
-  vcm_->RegisterReceiveFrameCountObserver(&receive_frame_count_observer_);
 }
 
 int32_t ViEChannel::Init() {
@@ -576,7 +576,9 @@ int32_t ViEChannel::DeRegisterExternalDecoder(const uint8_t pl_type) {
 
 int32_t ViEChannel::ReceiveCodecStatistics(uint32_t* num_key_frames,
                                            uint32_t* num_delta_frames) {
-  receive_frame_count_observer_.GetFrameCount(num_key_frames, num_delta_frames);
+  CriticalSectionScoped cs(callback_cs_.get());
+  *num_key_frames = receive_frame_counts_.key_frames;
+  *num_delta_frames = receive_frame_counts_.delta_frames;
   return 0;
 }
 
@@ -1568,13 +1570,23 @@ void ViEChannel::IncomingCodecChanged(const VideoCodec& codec) {
   receive_codec_ = codec;
 }
 
-int32_t ViEChannel::OnReceiveStatisticsUpdate(const uint32_t bit_rate,
-                                              const uint32_t frame_rate) {
+void ViEChannel::OnReceiveRatesUpdated(uint32_t bit_rate, uint32_t frame_rate) {
   CriticalSectionScoped cs(callback_cs_.get());
-  if (codec_observer_) {
+  if (codec_observer_)
     codec_observer_->IncomingRate(channel_id_, frame_rate, bit_rate);
-  }
-  return 0;
+}
+
+void ViEChannel::OnDiscardedPacketsUpdated(int discarded_packets) {
+  CriticalSectionScoped cs(callback_cs_.get());
+  if (vcm_receive_stats_callback_ != NULL)
+    vcm_receive_stats_callback_->OnDiscardedPacketsUpdated(discarded_packets);
+}
+
+void ViEChannel::OnFrameCountsUpdated(const FrameCounts& frame_counts) {
+  CriticalSectionScoped cs(callback_cs_.get());
+  receive_frame_counts_ = frame_counts;
+  if (vcm_receive_stats_callback_ != NULL)
+    vcm_receive_stats_callback_->OnFrameCountsUpdated(frame_counts);
 }
 
 void ViEChannel::OnDecoderTiming(int decode_ms,
@@ -1820,7 +1832,8 @@ void ViEChannel::RegisterSendFrameCountObserver(
 
 void ViEChannel::RegisterReceiveStatisticsProxy(
     ReceiveStatisticsProxy* receive_statistics_proxy) {
-  receive_frame_count_observer_.Set(receive_statistics_proxy);
+  CriticalSectionScoped cs(callback_cs_.get());
+  vcm_receive_stats_callback_ = receive_statistics_proxy;
 }
 
 void ViEChannel::ReceivedBWEPacket(int64_t arrival_time_ms,
