@@ -23,6 +23,7 @@ namespace webrtc {
 
 class AgcManagerDirect;
 class AudioBuffer;
+class Beamformer;
 class CriticalSectionWrapper;
 class EchoCancellationImpl;
 class EchoControlMobileImpl;
@@ -168,6 +169,7 @@ class AudioProcessingImpl : public AudioProcessing {
   bool analysis_needed(bool is_data_processed) const;
   int InitializeExperimentalAgc() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   int InitializeTransient() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void InitializeBeamformer() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   EchoCancellationImpl* echo_cancellation_;
   EchoControlMobileImpl* echo_control_mobile_;
@@ -215,6 +217,8 @@ class AudioProcessingImpl : public AudioProcessing {
 
   bool transient_suppressor_enabled_;
   scoped_ptr<TransientSuppressor> transient_suppressor_;
+  const bool beamformer_enabled_;
+  scoped_ptr<Beamformer> beamformer_;
 };
 
 }  // namespace webrtc

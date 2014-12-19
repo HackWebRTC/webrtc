@@ -16,8 +16,8 @@
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_processing/agc/agc_manager_direct.h"
-#include "webrtc/modules/audio_processing/transient/transient_suppressor.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
+#include "webrtc/modules/audio_processing/beamformer/beamformer.h"
 #include "webrtc/modules/audio_processing/channel_buffer.h"
 #include "webrtc/modules/audio_processing/common.h"
 #include "webrtc/modules/audio_processing/echo_cancellation_impl.h"
@@ -27,6 +27,7 @@
 #include "webrtc/modules/audio_processing/level_estimator_impl.h"
 #include "webrtc/modules/audio_processing/noise_suppression_impl.h"
 #include "webrtc/modules/audio_processing/processing_component.h"
+#include "webrtc/modules/audio_processing/transient/transient_suppressor.h"
 #include "webrtc/modules/audio_processing/voice_detection_impl.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/compile_assert.h"
@@ -183,7 +184,8 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config)
 #else
       use_new_agc_(config.Get<ExperimentalAgc>().enabled),
 #endif
-      transient_suppressor_enabled_(config.Get<ExperimentalNs>().enabled) {
+      transient_suppressor_enabled_(config.Get<ExperimentalNs>().enabled),
+      beamformer_enabled_(config.Get<Beamforming>().enabled) {
   echo_cancellation_ = new EchoCancellationImpl(this, crit_);
   component_list_.push_back(echo_cancellation_);
 
@@ -265,6 +267,9 @@ int AudioProcessingImpl::Initialize(int input_sample_rate_hz,
 }
 
 int AudioProcessingImpl::InitializeLocked() {
+  const int fwd_audio_buffer_channels = beamformer_enabled_ ?
+                                        fwd_in_format_.num_channels() :
+                                        fwd_out_format_.num_channels();
   render_audio_.reset(new AudioBuffer(rev_in_format_.samples_per_channel(),
                                       rev_in_format_.num_channels(),
                                       rev_proc_format_.samples_per_channel(),
@@ -273,7 +278,7 @@ int AudioProcessingImpl::InitializeLocked() {
   capture_audio_.reset(new AudioBuffer(fwd_in_format_.samples_per_channel(),
                                        fwd_in_format_.num_channels(),
                                        fwd_proc_format_.samples_per_channel(),
-                                       fwd_out_format_.num_channels(),
+                                       fwd_audio_buffer_channels,
                                        fwd_out_format_.samples_per_channel()));
 
   // Initialize all components.
@@ -294,6 +299,8 @@ int AudioProcessingImpl::InitializeLocked() {
   if (err != kNoError) {
     return err;
   }
+
+  InitializeBeamformer();
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_file_->Open()) {
@@ -392,7 +399,10 @@ int AudioProcessingImpl::MaybeInitializeLocked(int input_sample_rate_hz,
       num_reverse_channels == rev_in_format_.num_channels()) {
     return kNoError;
   }
-
+  if (beamformer_enabled_ &&
+      (num_input_channels < 2 || num_output_channels > 1)) {
+    return kBadNumberChannelsError;
+  }
   return InitializeLocked(input_sample_rate_hz,
                           output_sample_rate_hz,
                           reverse_sample_rate_hz,
@@ -592,6 +602,18 @@ int AudioProcessingImpl::ProcessStreamLocked() {
   if (analysis_needed(data_processed)) {
     ca->SplitIntoFrequencyBands();
   }
+
+#ifdef WEBRTC_BEAMFORMER
+  if (beamformer_enabled_) {
+    beamformer_->ProcessChunk(ca->split_channels_const_f(kBand0To8kHz),
+                              ca->split_channels_const_f(kBand8To16kHz),
+                              ca->num_channels(),
+                              ca->samples_per_split_channel(),
+                              ca->split_channels_f(kBand0To8kHz),
+                              ca->split_channels_f(kBand8To16kHz));
+    ca->set_num_channels(1);
+  }
+#endif
 
   RETURN_ON_ERR(high_pass_filter_->ProcessCaptureAudio(ca));
   RETURN_ON_ERR(gain_control_->AnalyzeCaptureAudio(ca));
@@ -894,6 +916,10 @@ VoiceDetection* AudioProcessingImpl::voice_detection() const {
 }
 
 bool AudioProcessingImpl::is_data_processed() const {
+  if (beamformer_enabled_) {
+    return true;
+  }
+
   int enabled_count = 0;
   std::list<ProcessingComponent*>::const_iterator it;
   for (it = component_list_.begin(); it != component_list_.end(); it++) {
@@ -964,6 +990,20 @@ int AudioProcessingImpl::InitializeTransient() {
                                       fwd_out_format_.num_channels());
   }
   return kNoError;
+}
+
+void AudioProcessingImpl::InitializeBeamformer() {
+  if (beamformer_enabled_) {
+#ifdef WEBRTC_BEAMFORMER
+    // TODO(aluebs): Don't use a hard-coded microphone spacing.
+    beamformer_.reset(new Beamformer(kChunkSizeMs,
+                                     split_rate_,
+                                     fwd_in_format_.num_channels(),
+                                     0.05f));
+#else
+    assert(false);
+#endif
+  }
 }
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP

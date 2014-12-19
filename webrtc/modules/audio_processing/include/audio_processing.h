@@ -82,6 +82,14 @@ struct ExperimentalNs {
   bool enabled;
 };
 
+// Use to enable beamforming. Must be provided through the constructor. It will
+// have no impact if used with AudioProcessing::SetExtraOptions().
+struct Beamforming {
+  Beamforming() : enabled(false) {}
+  explicit Beamforming(bool enabled) : enabled(enabled) {}
+  bool enabled;
+};
+
 static const int kAudioProcMaxNativeSampleRateHz = 32000;
 
 // The Audio Processing Module (APM) provides a collection of voice processing

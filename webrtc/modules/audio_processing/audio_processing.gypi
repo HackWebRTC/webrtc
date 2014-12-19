@@ -180,6 +180,7 @@
           ],
         }],
         ['rtc_use_openmax_dl==1', {
+          'defines': ['WEBRTC_BEAMFORMER'],
           'sources': [
             'beamformer/beamformer.cc',
             'beamformer/beamformer.h',
