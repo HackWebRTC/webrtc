@@ -92,8 +92,7 @@
 
   'WATCHLISTS': {
     'this_file': [''],
-    'all_webrtc': ['giles@mozilla.com',
-                   'tterriberry@mozilla.com'],
+    'all_webrtc': ['tterriberry@mozilla.com'],
     'root_files': ['andrew@webrtc.org',
                    'niklas.enbom@webrtc.org',
                    'yujie.mao@webrtc.org',
