@@ -362,6 +362,10 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     return;
   }
 #if !defined(DISABLE_YUV)
+
+  // Use a temporary buffer to scale
+  rtc::scoped_ptr<uint8[]> scale_buffer;
+
   if (IsScreencast()) {
     int scaled_width, scaled_height;
     if (screencast_max_pixels_ > 0) {
@@ -388,6 +392,8 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
       }
       CapturedFrame* modified_frame =
           const_cast<CapturedFrame*>(captured_frame);
+      const int modified_frame_size = scaled_width * scaled_height * 4;
+      scale_buffer.reset(new uint8[modified_frame_size]);
       // Compute new width such that width * height is less than maximum but
       // maintains original captured frame aspect ratio.
       // Round down width to multiple of 4 so odd width won't round up beyond
@@ -396,12 +402,13 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
       libyuv::ARGBScale(reinterpret_cast<const uint8*>(captured_frame->data),
                         captured_frame->width * 4, captured_frame->width,
                         captured_frame->height,
-                        reinterpret_cast<uint8*>(modified_frame->data),
+                        scale_buffer.get(),
                         scaled_width * 4, scaled_width, scaled_height,
                         libyuv::kFilterBilinear);
       modified_frame->width = scaled_width;
       modified_frame->height = scaled_height;
       modified_frame->data_size = scaled_width * 4 * scaled_height;
+      modified_frame->data = scale_buffer.get();
     }
   }
 
