@@ -34,14 +34,13 @@
 
 #include "talk/media/base/constants.h"
 #include "talk/media/base/cryptoparams.h"
-#include "webrtc/p2p/base/constants.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/srtpfilter.h"
-#include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/p2p/base/constants.h"
 
 #ifdef HAVE_SCTP
 #include "talk/media/sctp/sctpdataengine.h"

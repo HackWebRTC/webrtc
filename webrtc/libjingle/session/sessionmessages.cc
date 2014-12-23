@@ -8,22 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/base/sessionmessages.h"
+#include "webrtc/libjingle/session/sessionmessages.h"
 
 #include <stdio.h>
 #include <string>
 
-#include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/p2ptransport.h"
-#include "webrtc/p2p/base/parsing.h"
-#include "webrtc/p2p/base/sessionclient.h"
-#include "webrtc/p2p/base/sessiondescription.h"
-#include "webrtc/p2p/base/transport.h"
-#include "webrtc/libjingle/xmllite/xmlconstants.h"
-#include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/libjingle/session/parsing.h"
+#include "webrtc/libjingle/session/sessionclient.h"
+#include "webrtc/libjingle/xmllite/xmlconstants.h"
+#include "webrtc/libjingle/xmpp/constants.h"
+#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/p2ptransport.h"
+#include "webrtc/p2p/base/sessiondescription.h"
+#include "webrtc/p2p/base/transport.h"
 
 namespace cricket {
 

@@ -10,7 +10,7 @@
 
 #include "webrtc/libjingle/session/transportparser.h"
 
-#include "webrtc/p2p/base/parsing.h"
+#include "webrtc/libjingle/session/parsing.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/libjingle/xmpp/constants.h"
 

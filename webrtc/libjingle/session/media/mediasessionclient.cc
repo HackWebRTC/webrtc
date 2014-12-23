@@ -42,7 +42,6 @@
 #include "webrtc/libjingle/xmllite/xmlconstants.h"
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/parsing.h"
 
 namespace cricket {
 

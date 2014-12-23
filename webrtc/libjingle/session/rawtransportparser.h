@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_RAWTRANSPORTPARSER_H_
-#define WEBRTC_P2P_BASE_RAWTRANSPORTPARSER_H_
+#ifndef WEBRTC_LIBJINGLE_SESSION_RAWTRANSPORTPARSER_H_
+#define WEBRTC_LIBJINGLE_SESSION_RAWTRANSPORTPARSER_H_
 
 #include <string>
 
 #include "webrtc/p2p/base/constants.h"
+#include "webrtc/libjingle/session/constants.h"
 #include "webrtc/libjingle/session/transportparser.h"
 
 namespace cricket {
@@ -45,4 +46,4 @@ class RawTransportParser : public TransportParser {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_RAWTRANSPORTPARSER_H_
+#endif  // WEBRTC_LIBJINGLE_SESSION_RAWTRANSPORTPARSER_H_

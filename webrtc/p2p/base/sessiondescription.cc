@@ -10,8 +10,6 @@
 
 #include "webrtc/p2p/base/sessiondescription.h"
 
-#include "webrtc/libjingle/xmllite/xmlelement.h"
-
 namespace cricket {
 
 ContentInfo* FindContentInfoByName(

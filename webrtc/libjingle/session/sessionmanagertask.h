@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_CLIENT_SESSIONMANAGERTASK_H_
-#define WEBRTC_P2P_CLIENT_SESSIONMANAGERTASK_H_
+#ifndef WEBRTC_LIBJINGLE_SESSION_SESSIONMANAGERTASK_H_
+#define WEBRTC_LIBJINGLE_SESSION_SESSIONMANAGERTASK_H_
 
 #include "webrtc/libjingle/session/sessionmanager.h"
+#include "webrtc/libjingle/session/sessionsendtask.h"
 #include "webrtc/libjingle/xmpp/xmppengine.h"
 #include "webrtc/libjingle/xmpp/xmpptask.h"
-#include "webrtc/p2p/client/sessionsendtask.h"
 
 namespace cricket {
 

@@ -11,6 +11,7 @@
 #ifndef WEBRTC_P2P_BASE_SESSIONCLIENT_H_
 #define WEBRTC_P2P_BASE_SESSIONCLIENT_H_
 
+#include "webrtc/libjingle/session/constants.h"
 #include "webrtc/p2p/base/constants.h"
 
 namespace buzz {

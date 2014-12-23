@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/p2p/base/parsing.h"
+#include "webrtc/libjingle/session/parsing.h"
 
 #include <stdlib.h>
 #include <algorithm>

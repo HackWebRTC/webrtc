@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_TRANSPORTPARSER_H_
-#define WEBRTC_P2P_BASE_TRANSPORTPARSER_H_
+#ifndef WEBRTC_LIBJINGLE_SESSION_TRANSPORTPARSER_H_
+#define WEBRTC_LIBJINGLE_SESSION_TRANSPORTPARSER_H_
 
 #include <string>
 #include <vector>
@@ -75,4 +75,4 @@ class TransportParser {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_TRANSPORTPARSER_H_
+#endif  // WEBRTC_LIBJINGLE_SESSION_TRANSPORTPARSER_H_

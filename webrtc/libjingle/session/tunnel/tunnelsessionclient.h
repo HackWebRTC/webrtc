@@ -32,13 +32,13 @@
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/stream.h"
+#include "webrtc/libjingle/session/sessionclient.h"
 #include "webrtc/libjingle/session/sessionmanager.h"
 #include "webrtc/libjingle/xmllite/qname.h"
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/pseudotcp.h"
 #include "webrtc/p2p/base/session.h"
-#include "webrtc/p2p/base/sessionclient.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 
 namespace cricket {

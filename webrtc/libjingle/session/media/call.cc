@@ -37,7 +37,7 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/window.h"
 #include "webrtc/libjingle/session/media/mediasessionclient.h"
-#include "webrtc/p2p/base/parsing.h"
+#include "webrtc/libjingle/session/parsing.h"
 
 namespace cricket {
 

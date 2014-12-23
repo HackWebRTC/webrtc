@@ -41,8 +41,8 @@
 #include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/libjingle/session/media/call.h"
+#include "webrtc/libjingle/session/sessionclient.h"
 #include "webrtc/libjingle/session/sessionmanager.h"
-#include "webrtc/p2p/base/sessionclient.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 
 namespace cricket {

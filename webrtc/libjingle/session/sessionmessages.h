@@ -8,22 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_SESSIONMESSAGES_H_
-#define WEBRTC_P2P_BASE_SESSIONMESSAGES_H_
+#ifndef WEBRTC_LIBJINGLE_SESSION_SESSIONMESSAGES_H_
+#define WEBRTC_LIBJINGLE_SESSION_SESSIONMESSAGES_H_
 
 #include <map>
 #include <string>
 #include <vector>
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/libjingle/session/constants.h"
+#include "webrtc/libjingle/session/parsing.h"
+#include "webrtc/libjingle/session/transportparser.h"
+#include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/parsing.h"
 #include "webrtc/p2p/base/sessiondescription.h"  // Needed to delete contents.
 #include "webrtc/p2p/base/transport.h"
 #include "webrtc/p2p/base/transportinfo.h"
-#include "webrtc/libjingle/session/transportparser.h"
-#include "webrtc/libjingle/xmllite/xmlelement.h"
 
 namespace cricket {
 
@@ -215,4 +216,4 @@ bool FindSessionRedirect(const buzz::XmlElement* stanza,
                          SessionRedirect* redirect);
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_SESSIONMESSAGES_H_
+#endif  // WEBRTC_LIBJINGLE_SESSION_SESSIONMESSAGES_H_

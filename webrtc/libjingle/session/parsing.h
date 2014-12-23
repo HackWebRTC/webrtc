@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_PARSING_H_
-#define WEBRTC_P2P_BASE_PARSING_H_
+#ifndef WEBRTC_LIBJINGLE_SESSION_PARSING_H_
+#define WEBRTC_LIBJINGLE_SESSION_PARSING_H_
 
 #include <string>
 #include <vector>
@@ -137,4 +137,4 @@ std::vector<buzz::XmlElement*> CopyOfXmlChildren(const buzz::XmlElement* elem);
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_PARSING_H_
+#endif  // WEBRTC_LIBJINGLE_SESSION_PARSING_H_

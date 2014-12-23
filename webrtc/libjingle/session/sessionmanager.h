@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_SESSIONMANAGER_H_
-#define WEBRTC_P2P_BASE_SESSIONMANAGER_H_
+#ifndef WEBRTC_LIBJINGLE_SESSION_SESSIONMANAGER_H_
+#define WEBRTC_LIBJINGLE_SESSION_SESSIONMANAGER_H_
 
 #include <map>
 #include <string>
@@ -18,13 +18,13 @@
 
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/libjingle/session/parsing.h"
+#include "webrtc/libjingle/session/sessionclient.h"
+#include "webrtc/libjingle/session/sessionmessages.h"
 #include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/libjingle/xmpp/constants.h"
-#include "webrtc/p2p/base/parsing.h"
 #include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/p2p/base/session.h"
-#include "webrtc/p2p/base/sessionclient.h"
-#include "webrtc/p2p/base/sessionmessages.h"
 #include "webrtc/p2p/base/transportdescriptionfactory.h"
 
 namespace buzz {
@@ -433,4 +433,4 @@ class SessionManager : public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_SESSIONMANAGER_H_
+#endif  // WEBRTC_LIBJINGLE_SESSION_SESSIONMANAGER_H_

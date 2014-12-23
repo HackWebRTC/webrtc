@@ -16,10 +16,10 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/libjingle/session/p2ptransportparser.h"
+#include "webrtc/libjingle/session/sessionmessages.h"
 #include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/libjingle/xmpp/jid.h"
 #include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/sessionmessages.h"
 
 namespace cricket {
 

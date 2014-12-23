@@ -12,14 +12,11 @@
 
 #include <string>
 
-#include "webrtc/p2p/base/p2ptransportchannel.h"
-#include "webrtc/libjingle/xmllite/qname.h"
-#include "webrtc/libjingle/xmllite/xmlelement.h"
-#include "webrtc/libjingle/xmpp/constants.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/p2p/base/p2ptransportchannel.h"
 
 namespace cricket {
 
