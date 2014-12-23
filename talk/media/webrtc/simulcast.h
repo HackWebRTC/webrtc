@@ -47,6 +47,23 @@ enum SimulcastBitrateMode {
   SBM_COUNT
 };
 
+// Config for use with screen cast when temporal layers are enabled.
+struct ScreenshareLayerConfig {
+ public:
+  ScreenshareLayerConfig(int tl0_bitrate, int tl1_bitrate);
+
+  // Bitrates, for temporal layers 0 and 1.
+  int tl0_bitrate_kbps;
+  int tl1_bitrate_kbps;
+
+  static ScreenshareLayerConfig GetDefault();
+
+  // Parse bitrate from group name on format "(tl0_bitrate)-(tl1_bitrate)",
+  // eg. "100-1000" for the default rates.
+  static bool FromFieldTrialGroup(const std::string& group,
+                                  ScreenshareLayerConfig* config);
+};
+
 // TODO(pthatcher): Write unit tests just for these functions,
 // independent of WebrtcVideoEngine.
 

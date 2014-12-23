@@ -131,8 +131,6 @@ static const int kDefaultQpMax = 56;
 
 static const int kDefaultRtcpReceiverReportSsrc = 1;
 
-static const int kConferenceModeTemporalLayerBitrateBps = 100000;
-
 // External video encoders are given payloads 120-127. This also means that we
 // only support up to 8 external payload types.
 static const int kExternalVideoPayloadTypeBase = 120;
@@ -1657,9 +1655,17 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   // Conference mode screencast uses 2 temporal layers split at 100kbit.
   if (parameters_.options.conference_mode.GetWithDefaultIfUnset(false) &&
       dimensions.is_screencast && encoder_config.streams.size() == 1) {
+    ScreenshareLayerConfig config = ScreenshareLayerConfig::GetDefault();
+
+    // For screenshare in conference mode, tl0 and tl1 bitrates are piggybacked
+    // on the VideoCodec struct as target and max bitrates, respectively.
+    // See eg. webrtc::VP8EncoderImpl::SetRates().
+    encoder_config.streams[0].target_bitrate_bps =
+        config.tl0_bitrate_kbps * 1000;
+    encoder_config.streams[0].max_bitrate_bps = config.tl1_bitrate_kbps * 1000;
     encoder_config.streams[0].temporal_layer_thresholds_bps.clear();
     encoder_config.streams[0].temporal_layer_thresholds_bps.push_back(
-        kConferenceModeTemporalLayerBitrateBps);
+        config.tl0_bitrate_kbps * 1000);
   }
   return encoder_config;
 }

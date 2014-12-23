@@ -85,8 +85,8 @@ source_set("video_coding") {
 
 source_set("video_coding_utility") {
   sources = [
-    "utility/include/frame_dropper.h",
     "utility/frame_dropper.cc",
+    "utility/include/frame_dropper.h",
     "utility/quality_scaler.cc",
     "utility/quality_scaler.h",
   ]
