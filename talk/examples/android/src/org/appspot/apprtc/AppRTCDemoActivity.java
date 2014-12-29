@@ -203,7 +203,14 @@ public class AppRTCDemoActivity extends Activity
 
     // Create and audio manager that will take care of audio routing,
     // audio modes, audio device enumeration etc.
-    audioManager = AppRTCAudioManager.create(this);
+    audioManager = AppRTCAudioManager.create(this, new Runnable() {
+        // This method will be called each time the audio state (number and
+        // type of devices) has been changed.
+        public void run() {
+          onAudioManagerChangedState();
+        }
+      }
+    );
 
     final Intent intent = getIntent();
     Uri url = intent.getData();
@@ -292,6 +299,11 @@ public class AppRTCDemoActivity extends Activity
     } else {
       VideoRendererGui.update(localRender, 0, 0, 100, 100, scalingType);
     }
+  }
+
+  private void onAudioManagerChangedState() {
+    // TODO(henrika): disable video if AppRTCAudioManager.AudioDevice.EARPIECE
+    // is active.
   }
 
   // Disconnect from remote resources, dispose of local resources, and exit.
@@ -595,5 +607,4 @@ public class AppRTCDemoActivity extends Activity
       disconnectWithErrorMessage(description);
     }
   }
-
 }
