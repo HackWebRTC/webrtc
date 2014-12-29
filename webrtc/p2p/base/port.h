@@ -535,6 +535,16 @@ class Connection : public rtc::MessageHandler,
 
   IceMode remote_ice_mode() const { return remote_ice_mode_; }
 
+  // Update the ICE password of the remote candidate if |ice_ufrag| matches
+  // the candidate's ufrag, and the candidate's passwrod has not been set.
+  void MaybeSetRemoteIceCredentials(const std::string& ice_ufrag,
+                                    const std::string& ice_pwd);
+
+  // If |remote_candidate_| is peer reflexive and is equivalent to
+  // |new_candidate| except the type, update |remote_candidate_| to
+  // |new_candidate|.
+  void MaybeUpdatePeerReflexiveCandidate(const Candidate& new_candidate);
+
  protected:
   // Constructs a new connection to the given remote port.
   Connection(Port* port, size_t index, const Candidate& candidate);

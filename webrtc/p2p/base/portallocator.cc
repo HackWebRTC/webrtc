@@ -28,6 +28,9 @@ PortAllocatorSession::PortAllocatorSession(const std::string& content_name,
       // by itself.
       username_(flags_ & PORTALLOCATOR_ENABLE_SHARED_UFRAG ? ice_ufrag : ""),
       password_(flags_ & PORTALLOCATOR_ENABLE_SHARED_UFRAG ? ice_pwd : "") {
+  // If bundle is enabled, shared ufrag must be enabled too.
+  ASSERT((!(flags_ & PORTALLOCATOR_ENABLE_BUNDLE)) ||
+         (flags_ & PORTALLOCATOR_ENABLE_SHARED_UFRAG));
 }
 
 PortAllocator::~PortAllocator() {
