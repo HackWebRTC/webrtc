@@ -35,10 +35,10 @@ import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
+import org.webrtc.MediaConstraints.KeyValuePair;
 import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
-import org.webrtc.MediaConstraints.KeyValuePair;
 import org.webrtc.PeerConnection.IceConnectionState;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SdpObserver;
@@ -53,6 +53,9 @@ import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * PeerConnection client for AppRTC.
+ */
 public class PeerConnectionClient {
   private static final String TAG = "PCRTCClient";
   public static final String VIDEO_TRACK_ID = "ARDAMSv0";
@@ -312,8 +315,8 @@ public class PeerConnectionClient {
       int[] cameraOrientation = { 0, 90, 180, 270 };
       for (int index : cameraIndex) {
         for (int orientation : cameraOrientation) {
-          String name = "Camera " + index + ", Facing " + facing +
-              ", Orientation " + orientation;
+          String name = "Camera " + index + ", Facing " + facing
+              + ", Orientation " + orientation;
           VideoCapturer capturer = VideoCapturer.create(name);
           if (capturer != null) {
             Log.d(TAG, "Using camera: " + name);
@@ -372,8 +375,8 @@ public class PeerConnectionClient {
     for (int i = 0; i < lines.length; i++) {
       newSdpDescription.append(lines[i]).append("\r\n");
       if (i == lineIndex) {
-        String bitrateSet = "a=fmtp:" + vp8RtpMap +
-            " x-google-start-bitrate=" + bitrateKbps;
+        String bitrateSet = "a=fmtp:" + vp8RtpMap
+            + " x-google-start-bitrate=" + bitrateKbps;
         Log.d(TAG, "Add remote SDP line: " + bitrateSet);
         newSdpDescription.append(bitrateSet).append("\r\n");
       }
@@ -441,8 +444,9 @@ public class PeerConnectionClient {
   }
 
   public void switchCamera() {
-    if (videoConstraints == null)
+    if (videoConstraints == null) {
       return;  // No video is sent.
+    }
 
     if (pc.signalingState() != PeerConnection.SignalingState.STABLE) {
       Log.e(TAG, "Switching camera during negotiation is not handled.");
@@ -531,8 +535,8 @@ public class PeerConnectionClient {
     public void onAddStream(final MediaStream stream){
       uiHandler.post(new Runnable() {
         public void run() {
-          abortUnless(stream.audioTracks.size() <= 1 &&
-              stream.videoTracks.size() <= 1,
+          abortUnless(stream.audioTracks.size() <= 1
+              && stream.videoTracks.size() <= 1,
               "Weird-looking stream: " + stream);
           if (stream.videoTracks.size() == 1) {
             stream.videoTracks.get(0).addRenderer(
@@ -553,8 +557,8 @@ public class PeerConnectionClient {
 
     @Override
     public void onDataChannel(final DataChannel dc) {
-      reportError("AppRTC doesn't use data channels, but got: " + dc.label() +
-          " anyway!");
+      reportError("AppRTC doesn't use data channels, but got: " + dc.label()
+          + " anyway!");
     }
 
     @Override

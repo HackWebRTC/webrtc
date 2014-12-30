@@ -27,9 +27,6 @@
 
 package org.appspot.apprtc;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
@@ -61,6 +58,9 @@ import org.webrtc.StatsReport;
 import org.webrtc.VideoRenderer;
 import org.webrtc.VideoRendererGui;
 import org.webrtc.VideoRendererGui.ScalingType;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Activity of the AppRTCDemo Android app demonstrating interoperability
@@ -107,9 +107,9 @@ public class AppRTCDemoActivity extends Activity
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     getWindow().getDecorView().setSystemUiVisibility(
-        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-        View.SYSTEM_UI_FLAG_FULLSCREEN |
-        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+        | View.SYSTEM_UI_FLAG_FULLSCREEN
+        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 
     setContentView(R.layout.activity_fullscreen);
 
@@ -118,7 +118,7 @@ public class AppRTCDemoActivity extends Activity
     iceConnected = false;
 
     rootView = findViewById(android.R.id.content);
-    encoderStatView = (TextView)findViewById(R.id.encoder_stat);
+    encoderStatView = (TextView) findViewById(R.id.encoder_stat);
     menuBar = findViewById(R.id.menubar_fragment);
     roomNameView = (TextView) findViewById(R.id.room_name);
     videoView = (GLSurfaceView) findViewById(R.id.glview);
@@ -254,6 +254,9 @@ public class AppRTCDemoActivity extends Activity
     }
   }
 
+  /**
+   * MenuBar fragment for AppRTC.
+   */
   public static class MenuBarFragment extends Fragment {
     @Override
     public View onCreateView(
@@ -429,12 +432,12 @@ public class AppRTCDemoActivity extends Activity
     String targetBitrate = null;
     String actualBitrate = null;
     for (StatsReport report : reports) {
-      if (report.type.equals("ssrc") && report.id.contains("ssrc") &&
-          report.id.contains("send")) {
+      if (report.type.equals("ssrc") && report.id.contains("ssrc")
+          && report.id.contains("send")) {
         Map<String, String> reportMap = getReportMap(report);
         String trackId = reportMap.get("googTrackId");
-        if (trackId != null &&
-            trackId.contains(PeerConnectionClient.VIDEO_TRACK_ID)) {
+        if (trackId != null
+            && trackId.contains(PeerConnectionClient.VIDEO_TRACK_ID)) {
           fps = reportMap.get("googFrameRateSent");
         }
       } else if (report.id.equals("bweforvideo")) {
@@ -486,8 +489,8 @@ public class AppRTCDemoActivity extends Activity
           return;
         }
         final Runnable runnableThis = this;
-        if (hudView.getVisibility() == View.INVISIBLE &&
-            encoderStatView.getVisibility() == View.INVISIBLE) {
+        if (hudView.getVisibility() == View.INVISIBLE
+            && encoderStatView.getVisibility() == View.INVISIBLE) {
           videoView.postDelayed(runnableThis, 1000);
           return;
         }

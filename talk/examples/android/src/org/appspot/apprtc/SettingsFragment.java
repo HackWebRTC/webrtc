@@ -30,6 +30,9 @@ package org.appspot.apprtc;
 import android.os.Bundle;
 import android.preference.PreferenceFragment;
 
+/**
+ * Settings fragment for AppRTC.
+ */
 public class SettingsFragment extends PreferenceFragment {
 
   @Override

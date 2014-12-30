@@ -50,13 +50,12 @@ import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-import java.util.Random;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.webrtc.MediaCodecVideoEncoder;
 
+import java.util.ArrayList;
+import java.util.Random;
 
 /**
  * Handles the initial setup where the user selects which room to join.
@@ -69,8 +68,8 @@ public class ConnectActivity extends Activity {
   public static final String EXTRA_RUNTIME = "org.appspot.apprtc.RUNTIME";
   public static final String EXTRA_BITRATE = "org.appspot.apprtc.BITRATE";
   public static final String EXTRA_HWCODEC = "org.appspot.apprtc.HWCODEC";
-  private static final String TAG = "ConnectRTCClient";
-  private final int CONNECTION_REQUEST = 1;
+  private static final String TAG = "ConnectActivity";
+  private static final int CONNECTION_REQUEST = 1;
   private static boolean commandLineRun = false;
 
   private ImageButton addRoomButton;
@@ -141,8 +140,8 @@ public class ConnectActivity extends Activity {
 
     // If an implicit VIEW intent is launching the app, go directly to that URL.
     final Intent intent = getIntent();
-    if ("android.intent.action.VIEW".equals(intent.getAction()) &&
-        !commandLineRun) {
+    if ("android.intent.action.VIEW".equals(intent.getAction())
+        && !commandLineRun) {
       commandLineRun = true;
       boolean loopback = intent.getBooleanExtra(EXTRA_LOOPBACK, false);
       int runTimeMs = intent.getIntExtra(EXTRA_RUNTIME, 0);
@@ -272,8 +271,8 @@ public class ConnectActivity extends Activity {
         int maxWidth = Integer.parseInt(dimensions[0]);
         int maxHeight = Integer.parseInt(dimensions[1]);
         if (maxWidth > 0 && maxHeight > 0) {
-          parametersResolution = "minHeight=" + maxHeight + ",maxHeight=" +
-              maxHeight + ",minWidth=" + maxWidth + ",maxWidth=" + maxWidth;
+          parametersResolution = "minHeight=" + maxHeight + ",maxHeight="
+              + maxHeight + ",minWidth=" + maxWidth + ",maxWidth=" + maxWidth;
         }
       } catch (NumberFormatException e) {
         Log.e(TAG, "Wrong video resolution setting: " + resolution);
@@ -288,8 +287,8 @@ public class ConnectActivity extends Activity {
       try {
         int cameraFps = Integer.parseInt(fpsValues[0]);
         if (cameraFps > 0) {
-          parametersFps = "minFrameRate=" + cameraFps +
-              ",maxFrameRate=" + cameraFps;
+          parametersFps = "minFrameRate=" + cameraFps
+              + ",maxFrameRate=" + cameraFps;
         }
       } catch (NumberFormatException e) {
         Log.e(TAG, "Wrong camera fps setting: " + fps);
@@ -352,8 +351,9 @@ public class ConnectActivity extends Activity {
   }
 
   private boolean validateUrl(String url) {
-    if (URLUtil.isHttpsUrl(url) || URLUtil.isHttpUrl(url))
+    if (URLUtil.isHttpsUrl(url) || URLUtil.isHttpUrl(url)) {
       return true;
+    }
 
     new AlertDialog.Builder(this)
         .setTitle(getText(R.string.invalid_url_title))

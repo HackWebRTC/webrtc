@@ -33,6 +33,9 @@ import org.webrtc.SessionDescription;
 
 import java.util.List;
 
+/**
+ * AppRTCClient is the interface representing an AppRTC client.
+ */
 public interface AppRTCClient {
   /**
    * Asynchronously connect to an AppRTC room URL, e.g.

@@ -33,6 +33,9 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 import android.preference.Preference;
 
+/**
+ * Settings activity for AppRTC.
+ */
 public class SettingsActivity extends Activity
     implements OnSharedPreferenceChangeListener{
   private SettingsFragment settingsFragment;
@@ -92,15 +95,15 @@ public class SettingsActivity extends Activity
   @Override
   public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
       String key) {
-    if (key.equals(keyprefResolution) ||
-        key.equals(keyprefFps) ||
-        key.equals(keyprefStartBitrateType) ||
-        key.equals(keyPrefRoomServerUrl)) {
+    if (key.equals(keyprefResolution)
+        || key.equals(keyprefFps)
+        || key.equals(keyprefStartBitrateType)
+        || key.equals(keyPrefRoomServerUrl)) {
       updateSummary(sharedPreferences, key);
     } else if (key.equals(keyprefStartBitrateValue)) {
       updateSummaryBitrate(sharedPreferences, key);
-    } else if (key.equals(keyprefCpuUsageDetection) ||
-        key.equals(keyprefHwCodec) || key.equals(keyprefSignaling)) {
+    } else if (key.equals(keyprefCpuUsageDetection)
+        || key.equals(keyprefHwCodec) || key.equals(keyprefSignaling)) {
       updateSummaryB(sharedPreferences, key);
     }
     if (key.equals(keyprefStartBitrateType)) {

@@ -34,10 +34,12 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.util.Log;
+
+import org.appspot.apprtc.util.AppRTCUtils;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import org.appspot.apprtc.util.AppRTCUtils;
 
 /**
  * AppRTCAudioManager manages all audio related parts of the AppRTC demo.
@@ -45,7 +47,10 @@ import org.appspot.apprtc.util.AppRTCUtils;
 public class AppRTCAudioManager {
   private static final String TAG = "AppRTCAudioManager";
 
-  // Names of possible audio devices that we currently support.
+  /**
+   * AudioDevice is the names of possible audio devices that we currently
+   * support.
+   */
   // TODO(henrika): add support for BLUETOOTH as well.
   public enum AudioDevice {
     SPEAKER_PHONE,
@@ -88,9 +93,10 @@ public class AppRTCAudioManager {
   private void onProximitySensorChangedState() {
     // The proximity sensor should only be activated when there are exactly two
     // available audio devices.
-    if (audioDevices.size() == 2 &&
-        audioDevices.contains(AppRTCAudioManager.AudioDevice.EARPIECE) &&
-        audioDevices.contains(AppRTCAudioManager.AudioDevice.SPEAKER_PHONE)) {
+    if (audioDevices.size() == 2
+        && audioDevices.contains(AppRTCAudioManager.AudioDevice.EARPIECE)
+        && audioDevices.contains(
+            AppRTCAudioManager.AudioDevice.SPEAKER_PHONE)) {
       if (proximitySensor.sensorReportsNearState()) {
         // Sensor reports that a "handset is being held up to a person's ear",
         // or "something is covering the light sensor".
@@ -346,8 +352,8 @@ public class AppRTCAudioManager {
     // in the list. Given the current implementation, we know that the choice
     // will then be between EARPIECE and SPEAKER_PHONE.
     if (audioDevices.size() == 2) {
-      AppRTCUtils.assertIsTrue(audioDevices.contains(AudioDevice.EARPIECE) &&
-          audioDevices.contains(AudioDevice.SPEAKER_PHONE));
+      AppRTCUtils.assertIsTrue(audioDevices.contains(AudioDevice.EARPIECE)
+          && audioDevices.contains(AudioDevice.SPEAKER_PHONE));
       // Start the proximity sensor.
       proximitySensor.start();
     } else if (audioDevices.size() == 1) {
