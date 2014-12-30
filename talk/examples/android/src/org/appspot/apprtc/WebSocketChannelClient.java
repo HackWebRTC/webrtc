@@ -26,7 +26,6 @@
  */
 package org.appspot.apprtc;
 
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;

@@ -69,7 +69,6 @@ public class ConnectActivity extends Activity {
   public static final String EXTRA_RUNTIME = "org.appspot.apprtc.RUNTIME";
   public static final String EXTRA_BITRATE = "org.appspot.apprtc.BITRATE";
   public static final String EXTRA_HWCODEC = "org.appspot.apprtc.HWCODEC";
-  public static final String EXTRA_WEBSOCKET = "org.appspot.apprtc.WEBSOCKET";
   private static final String TAG = "ConnectRTCClient";
   private final int CONNECTION_REQUEST = 1;
   private static boolean commandLineRun = false;

@@ -513,14 +513,6 @@ public class AppRTCDemoActivity extends Activity
     };
     videoView.postDelayed(repeatedStatsLogger, 1000);
 
-    logAndToast("Waiting for remote connection...");
-  }
-
-  @Override
-  public void onChannelOpen() {
-    if (pc == null) {
-      return;
-    }
     if (signalingParameters.initiator) {
       logAndToast("Creating OFFER...");
       // Create offer. Offer SDP will be sent to answering client in
@@ -598,6 +590,10 @@ public class AppRTCDemoActivity extends Activity
   public void onIceDisconnected() {
     logAndToast("ICE disconnected");
     disconnect();
+  }
+
+  @Override
+  public void onPeerConnectionClosed() {
   }
 
   @Override

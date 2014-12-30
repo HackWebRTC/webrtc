@@ -65,7 +65,6 @@ public interface AppRTCClient {
    * Struct holding the signaling parameters of an AppRTC room.
    */
   public class SignalingParameters {
-    public final boolean websocketSignaling;
     public final List<PeerConnection.IceServer> iceServers;
     public final boolean initiator;
     public final MediaConstraints pcConstraints;
@@ -74,7 +73,6 @@ public interface AppRTCClient {
     public final String roomUrl;
     public final String roomId;
     public final String clientId;
-    public final String channelToken;
     public final String wssUrl;
     public final String wssPostUrl;
     public final SessionDescription offerSdp;
@@ -85,7 +83,7 @@ public interface AppRTCClient {
         boolean initiator, MediaConstraints pcConstraints,
         MediaConstraints videoConstraints, MediaConstraints audioConstraints,
         String roomUrl, String roomId, String clientId,
-        String wssUrl, String wssPostUrl, String channelToken,
+        String wssUrl, String wssPostUrl,
         SessionDescription offerSdp, List<IceCandidate> iceCandidates) {
       this.iceServers = iceServers;
       this.initiator = initiator;
@@ -97,14 +95,8 @@ public interface AppRTCClient {
       this.clientId = clientId;
       this.wssUrl = wssUrl;
       this.wssPostUrl = wssPostUrl;
-      this.channelToken = channelToken;
       this.offerSdp = offerSdp;
       this.iceCandidates = iceCandidates;
-      if (channelToken == null || channelToken.length() == 0) {
-        this.websocketSignaling = true;
-      } else {
-        this.websocketSignaling = false;
-      }
     }
   }
 
@@ -119,12 +111,6 @@ public interface AppRTCClient {
      * SignalingParameters are extracted.
      */
     public void onConnectedToRoom(final SignalingParameters params);
-
-    /**
-     * Callback fired once channel for signaling messages is opened and
-     * ready to receive messages.
-     */
-    public void onChannelOpen();
 
     /**
      * Callback fired once remote SDP is received.

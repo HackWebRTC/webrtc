@@ -246,6 +246,8 @@ public class PeerConnectionClient {
           factory.dispose();
           factory = null;
         }
+        Log.d(TAG, "Closing peer connection done.");
+        events.onPeerConnectionClosed();
       }
     });
   }
@@ -277,9 +279,15 @@ public class PeerConnectionClient {
     public void onIceDisconnected();
 
     /**
+     * Callback fired once peer connection is closed.
+     */
+    public void onPeerConnectionClosed();
+
+    /**
      * Callback fired once peer connection error happened.
      */
     public void onPeerConnectionError(String description);
+
   }
 
   private void reportError(final String errorMessage) {

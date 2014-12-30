@@ -53,7 +53,6 @@ public class RoomParametersFetcher
   private static final String TAG = "RoomRTCClient";
   private Exception exception = null;
   private RoomParametersFetcherEvents events = null;
-  private boolean useNewSignaling;
   private boolean loopback;
 
   /**
@@ -73,10 +72,9 @@ public class RoomParametersFetcher
   }
 
   public RoomParametersFetcher(RoomParametersFetcherEvents events,
-      boolean useNewSignaling, boolean loopback) {
+      boolean loopback) {
     super();
     this.events = events;
-    this.useNewSignaling = useNewSignaling;
     this.loopback = loopback;
   }
 
@@ -119,22 +117,11 @@ public class RoomParametersFetcher
   // Fetches |url| and fishes the signaling parameters out of the JSON.
   private SignalingParameters getParametersForRoomUrl(String url)
       throws IOException, JSONException {
-    if (!useNewSignaling) {
-      if (url.contains("?")) {
-        url += "&t=json";
-      } else {
-        url += "?t=json";
-      }
-    }
     Log.d(TAG, "Connecting to room: " + url);
     HttpURLConnection connection =
         (HttpURLConnection) new URL(url).openConnection();
-    if (useNewSignaling) {
-      connection.setDoOutput(true);
-      connection.setRequestMethod("POST");
-    } else {
-      connection.setRequestMethod("GET");
-    }
+    connection.setDoOutput(true);
+    connection.setRequestMethod("POST");
     connection.setDoInput(true);
 
     InputStream responseStream = connection.getInputStream();
@@ -142,64 +129,44 @@ public class RoomParametersFetcher
     responseStream.close();
     Log.d(TAG, "Room response: " + response);
     JSONObject roomJson = new JSONObject(response);
-
-    String roomId;
-    String clientId;
-    String roomUrl;
-    String channelToken = "";
-    String wssUrl = "";
-    String wssPostUrl = "";
-    boolean initiator;
     LinkedList<IceCandidate> iceCandidates = null;
     SessionDescription offerSdp = null;
 
-    if (useNewSignaling) {
-      String result = roomJson.getString("result");
-      if (!result.equals("SUCCESS")) {
-        throw new JSONException(result);
-      }
-      response = roomJson.getString("params");
-      roomJson = new JSONObject(response);
-      roomId = roomJson.getString("room_id");
-      clientId = roomJson.getString("client_id");
-      wssUrl = roomJson.getString("wss_url");
-      wssPostUrl = roomJson.getString("wss_post_url");
-      initiator = (roomJson.getBoolean("is_initiator"));
-      roomUrl = url.substring(0, url.indexOf("/register"));
-      if (!initiator) {
-        iceCandidates = new LinkedList<IceCandidate>();
-        String messagesString = roomJson.getString("messages");
-        JSONArray messages = new JSONArray(messagesString);
-        for (int i = 0; i < messages.length(); ++i) {
-          String messageString = messages.getString(i);
-          JSONObject message = new JSONObject(messageString);
-          String messageType = message.getString("type");
-          Log.d(TAG, "GAE->C #" + i + " : " + messageString);
-          if (messageType.equals("offer")) {
-            offerSdp = new SessionDescription(
-                SessionDescription.Type.fromCanonicalForm(messageType),
-                message.getString("sdp"));
-          } else if (messageType.equals("candidate")) {
-            IceCandidate candidate = new IceCandidate(
-                message.getString("id"),
-                message.getInt("label"),
-                message.getString("candidate"));
-            iceCandidates.add(candidate);
-          } else {
-            Log.e(TAG, "Unknown message: " + messageString);
-          }
+    String result = roomJson.getString("result");
+    if (!result.equals("SUCCESS")) {
+      throw new JSONException(result);
+    }
+    response = roomJson.getString("params");
+    roomJson = new JSONObject(response);
+    String roomId = roomJson.getString("room_id");
+    String clientId = roomJson.getString("client_id");
+    String wssUrl = roomJson.getString("wss_url");
+    String wssPostUrl = roomJson.getString("wss_post_url");
+    boolean initiator = (roomJson.getBoolean("is_initiator"));
+    String roomUrl = url.substring(0, url.indexOf("/register"));
+    if (!initiator) {
+      iceCandidates = new LinkedList<IceCandidate>();
+      String messagesString = roomJson.getString("messages");
+      JSONArray messages = new JSONArray(messagesString);
+      for (int i = 0; i < messages.length(); ++i) {
+        String messageString = messages.getString(i);
+        JSONObject message = new JSONObject(messageString);
+        String messageType = message.getString("type");
+        Log.d(TAG, "GAE->C #" + i + " : " + messageString);
+        if (messageType.equals("offer")) {
+          offerSdp = new SessionDescription(
+              SessionDescription.Type.fromCanonicalForm(messageType),
+              message.getString("sdp"));
+        } else if (messageType.equals("candidate")) {
+          IceCandidate candidate = new IceCandidate(
+              message.getString("id"),
+              message.getInt("label"),
+              message.getString("candidate"));
+          iceCandidates.add(candidate);
+        } else {
+          Log.e(TAG, "Unknown message: " + messageString);
         }
       }
-    } else {
-      if (roomJson.has("error")) {
-        JSONArray errors = roomJson.getJSONArray("error_messages");
-        throw new IOException(errors.toString());
-      }
-      roomId = roomJson.getString("room_key");
-      clientId = roomJson.getString("me");
-      channelToken = roomJson.optString("token");
-      initiator = (roomJson.getInt("initiator") == 1);
-      roomUrl = url.substring(0, url.indexOf('?'));
     }
 
     Log.d(TAG, "RoomId: " + roomId + ". ClientId: " + clientId);
@@ -242,7 +209,7 @@ public class RoomParametersFetcher
         iceServers, initiator,
         pcConstraints, videoConstraints, audioConstraints,
         roomUrl, roomId, clientId,
-        wssUrl, wssPostUrl, channelToken,
+        wssUrl, wssPostUrl,
         offerSdp, iceCandidates);
   }
 

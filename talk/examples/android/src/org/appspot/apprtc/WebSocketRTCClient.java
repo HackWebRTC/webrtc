@@ -106,7 +106,6 @@ public class WebSocketRTCClient implements AppRTCClient,
 
     // Fire connection and signaling parameters events.
     events.onConnectedToRoom(params);
-    events.onChannelOpen();
     if (!params.initiator) {
       // For call receiver get sdp offer and ice candidates
       // from room parameters.
@@ -212,7 +211,7 @@ public class WebSocketRTCClient implements AppRTCClient,
     wsClient = new WebSocketChannelClient(this);
     // Get room parameters.
     roomState = ConnectionState.NEW;
-    fetcher = new RoomParametersFetcher(this, true, loopback);
+    fetcher = new RoomParametersFetcher(this, loopback);
     fetcher.execute(url);
   }
 
