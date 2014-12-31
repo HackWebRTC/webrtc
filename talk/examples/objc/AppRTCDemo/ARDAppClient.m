@@ -49,13 +49,13 @@
 
 // TODO(tkchin): move these to a configuration object.
 static NSString *kARDRoomServerHostUrl =
-    @"https://3-dot-apprtc.appspot.com";
+    @"https://apprtc.appspot.com";
 static NSString *kARDRoomServerRegisterFormat =
-    @"https://3-dot-apprtc.appspot.com/register/%@";
+    @"https://apprtc.appspot.com/register/%@";
 static NSString *kARDRoomServerMessageFormat =
-    @"https://3-dot-apprtc.appspot.com/message/%@/%@";
+    @"https://apprtc.appspot.com/message/%@/%@";
 static NSString *kARDRoomServerByeFormat =
-    @"https://3-dot-apprtc.appspot.com/bye/%@/%@";
+    @"https://apprtc.appspot.com/bye/%@/%@";
 
 static NSString *kARDDefaultSTUNServerUrl =
     @"stun:stun.l.google.com:19302";
@@ -147,7 +147,7 @@ static NSInteger kARDAppClientErrorInvalidRoom = -7;
     strongSelf.isTurnComplete = YES;
     [strongSelf startSignalingIfReady];
   }];
-  
+
   // Register with room server.
   [self registerWithRoomServerForRoomId:roomId
                       completionHandler:^(ARDRegisterResponse *response) {
