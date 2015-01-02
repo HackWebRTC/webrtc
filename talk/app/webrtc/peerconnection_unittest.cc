@@ -46,14 +46,16 @@
 #include "talk/app/webrtc/test/mockpeerconnectionobservers.h"
 #include "talk/app/webrtc/videosourceinterface.h"
 #include "talk/media/webrtc/fakewebrtcvideoengine.h"
-#include "webrtc/p2p/base/constants.h"
-#include "webrtc/p2p/base/sessiondescription.h"
 #include "talk/session/media/mediasession.h"
 #include "webrtc/base/gunit.h"
+#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/base/virtualsocketserver.h"
+#include "webrtc/p2p/base/constants.h"
+#include "webrtc/p2p/base/sessiondescription.h"
 
 #define MAYBE_SKIP_TEST(feature)                    \
   if (!(feature())) {                               \
@@ -869,10 +871,16 @@ class JsepTestClient
 template <typename SignalingClass>
 class P2PTestConductor : public testing::Test {
  public:
+  P2PTestConductor()
+      : pss_(new rtc::PhysicalSocketServer),
+        ss_(new rtc::VirtualSocketServer(pss_.get())),
+        ss_scope_(ss_.get()) {}
+
   bool SessionActive() {
     return initiating_client_->SessionActive() &&
-        receiving_client_->SessionActive();
+           receiving_client_->SessionActive();
   }
+
   // Return true if the number of frames provided have been received or it is
   // known that that will never occur (e.g. no frames will be sent or
   // captured).
@@ -1058,6 +1066,9 @@ class P2PTestConductor : public testing::Test {
   SignalingClass* receiving_client() { return receiving_client_.get(); }
 
  private:
+  rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
+  rtc::scoped_ptr<rtc::VirtualSocketServer> ss_;
+  rtc::SocketServerScope ss_scope_;
   rtc::scoped_ptr<SignalingClass> initiating_client_;
   rtc::scoped_ptr<SignalingClass> receiving_client_;
 };
