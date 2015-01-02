@@ -14,7 +14,7 @@ Prerequisites:
 
 Example of building & using the app:
 
-cd <path/to/libjingle>/src
+cd <path/to/webrtc>/src
 ninja -C out/Debug AppRTCDemo
 adb install -r out/Debug/AppRTCDemo-debug.apk
 

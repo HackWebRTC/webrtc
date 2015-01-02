@@ -282,7 +282,7 @@
           ],
           'actions': [
             {
-              # TODO(fischman): convert from a custom script to a standard gyp
+              # TODO(glaznev): convert from a custom script to a standard gyp
               # apk build once chromium's apk-building gyp machinery can be used
               # (http://crbug.com/225101)
               'action_name': 'build_apprtcdemo_apk',
@@ -362,6 +362,49 @@
             },
           ],
         },  # target AppRTCDemo
+      ],  # targets
+    }],  # OS=="android"
+
+    ['OS=="android"', {
+      'targets': [
+        {
+          'target_name': 'AppRTCDemoTest',
+          'type': 'none',
+          'dependencies': [
+            'AppRTCDemo',
+          ],
+          'actions': [
+            {
+              # TODO(glaznev): convert from a custom script to a standard gyp
+              # apk build once chromium's apk-building gyp machinery can be used
+              # (http://crbug.com/225101)
+              'action_name': 'build_apprtcdemotest_apk',
+              'inputs' : [
+                'examples/androidtests/AndroidManifest.xml',
+                'examples/androidtests/ant.properties',
+                'examples/androidtests/build.xml',
+                'examples/androidtests/project.properties',
+                'examples/androidtests/src/org/appspot/apprtc/test/PeerConnectionClientTest.java',
+              ],
+              'outputs': [
+                '<(PRODUCT_DIR)/AppRTCDemoTest-debug.apk',
+              ],
+              'variables': {
+                'ant_log': '../../<(INTERMEDIATE_DIR)/ant.log', # ../.. to compensate for the cd examples/androidtests below.
+              },
+              'action': [
+                'bash', '-ec',
+                'mkdir -p <(INTERMEDIATE_DIR) && ' # Must happen _before_ the cd below
+                'cd examples/androidtests && '
+                '{ ANDROID_SDK_ROOT=<(android_sdk_root) '
+                'ant debug > <(ant_log) 2>&1 || '
+                '  { cat <(ant_log) ; exit 1; } } && '
+                'cd - > /dev/null && '
+                'cp examples/androidtests/bin/AppRTCDemoTest-debug.apk <(_outputs)'
+              ],
+            },
+          ],
+        },  # target AppRTCDemoTest
       ],  # targets
     }],  # OS=="android"
   ],
