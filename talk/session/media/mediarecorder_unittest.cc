@@ -51,7 +51,7 @@ class RtpDumpSinkTest : public testing::Test {
  public:
   virtual void SetUp() {
     EXPECT_TRUE(rtc::Filesystem::GetTemporaryFolder(path_, true, NULL));
-    path_.SetFilename("sink-test.rtpdump");
+    path_.SetPathname(rtc::Filesystem::TempFilename(path_, "sink-test"));
     sink_.reset(new RtpDumpSink(Open(path_.pathname())));
 
     for (int i = 0; i < ARRAY_SIZE(rtp_buf_); ++i) {
@@ -185,10 +185,10 @@ void TestMediaRecorder(BaseChannel* channel,
   // Add the channel to the recorder.
   rtc::Pathname path;
   EXPECT_TRUE(rtc::Filesystem::GetTemporaryFolder(path, true, NULL));
-  path.SetFilename("send.rtpdump");
-  std::string send_file = path.pathname();
-  path.SetFilename("recv.rtpdump");
-  std::string recv_file = path.pathname();
+  std::string send_file =
+      rtc::Filesystem::TempFilename(path, "send");
+  std::string recv_file =
+      rtc::Filesystem::TempFilename(path, "recv");
   if (video_media_channel) {
     EXPECT_TRUE(recorder->AddChannel(static_cast<VideoChannel*>(channel),
                                      Open(send_file), Open(recv_file), filter));
@@ -260,10 +260,10 @@ void TestRecordHeaderAndMedia(BaseChannel* channel,
 
   rtc::Pathname path;
   EXPECT_TRUE(rtc::Filesystem::GetTemporaryFolder(path, true, NULL));
-  path.SetFilename("send-header.rtpdump");
-  std::string send_header_file = path.pathname();
-  path.SetFilename("recv-header.rtpdump");
-  std::string recv_header_file = path.pathname();
+  std::string send_header_file =
+      rtc::Filesystem::TempFilename(path, "send-header");
+  std::string recv_header_file =
+      rtc::Filesystem::TempFilename(path, "recv-header");
   if (video_media_channel) {
     EXPECT_TRUE(header_recorder->AddChannel(
         static_cast<VideoChannel*>(channel),
@@ -292,10 +292,10 @@ void TestRecordHeaderAndMedia(BaseChannel* channel,
 
   // Create RTP header recorder.
   rtc::scoped_ptr<MediaRecorder> recorder(new MediaRecorder);
-  path.SetFilename("send.rtpdump");
-  std::string send_file = path.pathname();
-  path.SetFilename("recv.rtpdump");
-  std::string recv_file = path.pathname();
+  std::string send_file =
+      rtc::Filesystem::TempFilename(path, "send");
+  std::string recv_file =
+      rtc::Filesystem::TempFilename(path, "recv");
   if (video_media_channel) {
     EXPECT_TRUE(recorder->AddChannel(
         static_cast<VideoChannel*>(channel),
