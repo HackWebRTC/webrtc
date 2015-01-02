@@ -208,7 +208,6 @@ WebRtcVideoEncoderFactory2::CreateSimulcastVideoStreams(
       GetSimulcastBitrateMode(options),
       codec.width,
       codec.height,
-      min_bitrate_kbps * 1000,
       max_bitrate_kbps * 1000,
       max_qp,
       codec.framerate != 0 ? codec.framerate : kDefaultVideoMaxFramerate);

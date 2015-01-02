@@ -81,7 +81,6 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(
     SimulcastBitrateMode bitrate_mode,
     int width,
     int height,
-    int min_bitrate_bps,
     int max_bitrate_bps,
     int max_qp,
     int max_framerate);

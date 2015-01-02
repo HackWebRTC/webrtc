@@ -235,7 +235,6 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(
     SimulcastBitrateMode bitrate_mode,
     int width,
     int height,
-    int min_bitrate_bps,
     int max_bitrate_bps,
     int max_qp,
     int max_framerate) {
@@ -286,11 +285,6 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(
     streams.back().max_bitrate_bps += bitrate_left_bps;
   }
 
-  // Make sure the first stream respects the bitrate minimum.
-  if (streams[0].min_bitrate_bps < min_bitrate_bps) {
-    streams[0].min_bitrate_bps = min_bitrate_bps;
-  }
-
   return streams;
 }
 
@@ -303,7 +297,6 @@ bool ConfigureSimulcastCodec(
                          bitrate_mode,
                          static_cast<int>(codec->width),
                          static_cast<int>(codec->height),
-                         codec->minBitrate * 1000,
                          codec->maxBitrate * 1000,
                          codec->qpMax,
                          codec->maxFramerate);

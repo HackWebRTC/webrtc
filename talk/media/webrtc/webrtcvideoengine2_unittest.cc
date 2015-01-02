@@ -43,7 +43,6 @@
 namespace {
 static const int kDefaultQpMax = 56;
 static const int kDefaultFramerate = 30;
-static const int kMinBitrateBps = 30000;
 
 static const cricket::VideoCodec kVp8Codec720p(100, "VP8", 1280, 720, 30, 0);
 static const cricket::VideoCodec kVp8Codec360p(100, "VP8", 640, 360, 30, 0);
@@ -1977,7 +1976,6 @@ class WebRtcVideoChannel2SimulcastTest : public WebRtcVideoEngine2SimulcastTest,
         simulcast_bitrate_mode,
         codec.width,
         codec.height,
-        kMinBitrateBps,
         0,
         kDefaultQpMax,
         codec.framerate != 0 ? codec.framerate : kDefaultFramerate);
@@ -2012,8 +2010,6 @@ class WebRtcVideoChannel2SimulcastTest : public WebRtcVideoEngine2SimulcastTest,
       EXPECT_EQ(expected_streams[i].temporal_layer_thresholds_bps,
                 video_streams[i].temporal_layer_thresholds_bps);
     }
-
-    EXPECT_EQ(kMinBitrateBps, video_streams[0].min_bitrate_bps);
   }
 
   FakeVideoSendStream* AddSendStream() {
