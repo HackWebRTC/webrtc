@@ -826,6 +826,7 @@ TEST_F(ApmTest, EchoCancellation) {
 }
 
 TEST_F(ApmTest, DISABLED_EchoCancellationReportsCorrectDelays) {
+  // TODO(bjornv): Fix this test to work with DA-AEC.
   // Enable AEC only.
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_cancellation()->enable_drift_compensation(false));

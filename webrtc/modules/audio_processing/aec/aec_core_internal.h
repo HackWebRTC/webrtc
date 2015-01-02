@@ -24,20 +24,14 @@ enum {
 };
 static const int kNormalNumPartitions = 12;
 
-// Delay estimator constants, used for logging.
-enum {
-  kMaxDelayBlocks = 60
-};
+// Delay estimator constants, used for logging and delay compensation if
+// if reported delays are disabled.
 enum {
   kLookaheadBlocks = 15
 };
 enum {
-#ifdef WEBRTC_ANDROID
   // 500 ms for 16 kHz which is equivalent with the limit of reported delays.
   kHistorySizeBlocks = 125
-#else
-  kHistorySizeBlocks = kMaxDelayBlocks + kLookaheadBlocks
-#endif
 };
 
 // Extended filter adaptation parameters.
