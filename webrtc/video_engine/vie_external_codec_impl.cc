@@ -103,7 +103,7 @@ int ViEExternalCodecImpl::RegisterExternalReceiveCodec(
     VideoDecoder* decoder,
     bool decoder_render,
     int render_delay) {
-  LOG(LS_INFO) << "Register exrernal decoder for channel " << video_channel
+  LOG(LS_INFO) << "Register external decoder for channel " << video_channel
                << ", pl_type " << pl_type
                << ", decoder_render " << decoder_render
                << ", render_delay " << render_delay;
