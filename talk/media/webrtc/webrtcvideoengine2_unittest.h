@@ -113,6 +113,8 @@ class FakeCall : public webrtc::Call {
   std::vector<webrtc::VideoCodec> GetDefaultVideoCodecs();
 
   webrtc::Call::NetworkState GetNetworkState() const;
+  int GetNumCreatedSendStreams() const;
+  int GetNumCreatedReceiveStreams() const;
   void SetStats(const webrtc::Call::Stats& stats);
 
  private:
@@ -142,6 +144,9 @@ class FakeCall : public webrtc::Call {
   std::vector<webrtc::VideoCodec> codecs_;
   std::vector<FakeVideoSendStream*> video_send_streams_;
   std::vector<FakeVideoReceiveStream*> video_receive_streams_;
+
+  int num_created_send_streams_;
+  int num_created_receive_streams_;
 };
 
 }  // namespace cricket

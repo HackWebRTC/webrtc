@@ -28,6 +28,7 @@
 #ifdef HAVE_WEBRTC_VIDEO
 #include "talk/media/webrtc/webrtcvideoengine2.h"
 
+#include <algorithm>
 #include <set>
 #include <string>
 
@@ -165,6 +166,13 @@ static bool ValidateRtpHeaderExtensionIds(
   return true;
 }
 
+static bool CompareRtpHeaderExtensionIds(
+    const webrtc::RtpExtension& extension1,
+    const webrtc::RtpExtension& extension2) {
+  // Sorting on ID is sufficient, more than one extension per ID is unsupported.
+  return extension1.id > extension2.id;
+}
+
 static std::vector<webrtc::RtpExtension> FilterRtpExtensions(
     const std::vector<RtpHeaderExtension>& extensions) {
   std::vector<webrtc::RtpExtension> webrtc_extensions;
@@ -177,7 +185,26 @@ static std::vector<webrtc::RtpExtension> FilterRtpExtensions(
       LOG(LS_WARNING) << "Unsupported RTP extension: " << extensions[i].uri;
     }
   }
+
+  // Sort filtered headers to make sure that they can later be compared
+  // regardless of in which order they were entered.
+  std::sort(webrtc_extensions.begin(), webrtc_extensions.end(),
+            CompareRtpHeaderExtensionIds);
   return webrtc_extensions;
+}
+
+static bool RtpExtensionsHaveChanged(
+    const std::vector<webrtc::RtpExtension>& before,
+    const std::vector<webrtc::RtpExtension>& after) {
+  if (before.size() != after.size())
+    return true;
+  for (size_t i = 0; i < before.size(); ++i) {
+    if (before[i].id != after[i].id)
+      return true;
+    if (before[i].name != after[i].name)
+      return true;
+  }
+  return false;
 }
 
 WebRtcVideoEncoderFactory2::~WebRtcVideoEncoderFactory2() {
@@ -1156,7 +1183,13 @@ bool WebRtcVideoChannel2::SetRecvRtpHeaderExtensions(
   if (!ValidateRtpHeaderExtensionIds(extensions))
     return false;
 
-  recv_rtp_extensions_ = FilterRtpExtensions(extensions);
+  std::vector<webrtc::RtpExtension> filtered_extensions =
+      FilterRtpExtensions(extensions);
+  if (!RtpExtensionsHaveChanged(recv_rtp_extensions_, filtered_extensions))
+    return true;
+
+  recv_rtp_extensions_ = filtered_extensions;
+
   rtc::CritScope stream_lock(&stream_crit_);
   for (std::map<uint32, WebRtcVideoReceiveStream*>::iterator it =
            receive_streams_.begin();
@@ -1174,7 +1207,12 @@ bool WebRtcVideoChannel2::SetSendRtpHeaderExtensions(
   if (!ValidateRtpHeaderExtensionIds(extensions))
     return false;
 
-  send_rtp_extensions_ = FilterRtpExtensions(extensions);
+  std::vector<webrtc::RtpExtension> filtered_extensions =
+      FilterRtpExtensions(extensions);
+  if (!RtpExtensionsHaveChanged(send_rtp_extensions_, filtered_extensions))
+    return true;
+
+  send_rtp_extensions_ = filtered_extensions;
 
   rtc::CritScope stream_lock(&stream_crit_);
   for (std::map<uint32, WebRtcVideoSendStream*>::iterator it =

@@ -25,6 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
 #include <map>
 #include <vector>
 
@@ -188,7 +189,10 @@ void FakeVideoReceiveStream::Stop() {
 }
 
 FakeCall::FakeCall(const webrtc::Call::Config& config)
-    : config_(config), network_state_(kNetworkUp) {
+    : config_(config),
+      network_state_(kNetworkUp),
+      num_created_send_streams_(0),
+      num_created_receive_streams_(0) {
   SetVideoCodecs(GetDefaultVideoCodecs());
 }
 
@@ -265,6 +269,7 @@ webrtc::VideoSendStream* FakeCall::CreateVideoSendStream(
   FakeVideoSendStream* fake_stream =
       new FakeVideoSendStream(config, encoder_config);
   video_send_streams_.push_back(fake_stream);
+  ++num_created_send_streams_;
   return fake_stream;
 }
 
@@ -284,6 +289,7 @@ void FakeCall::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
 webrtc::VideoReceiveStream* FakeCall::CreateVideoReceiveStream(
     const webrtc::VideoReceiveStream::Config& config) {
   video_receive_streams_.push_back(new FakeVideoReceiveStream(config));
+  ++num_created_receive_streams_;
   return video_receive_streams_[video_receive_streams_.size() - 1];
 }
 
@@ -308,6 +314,14 @@ webrtc::PacketReceiver* FakeCall::Receiver() {
 
 void FakeCall::SetStats(const webrtc::Call::Stats& stats) {
   stats_ = stats;
+}
+
+int FakeCall::GetNumCreatedSendStreams() const {
+  return num_created_send_streams_;
+}
+
+int FakeCall::GetNumCreatedReceiveStreams() const {
+  return num_created_receive_streams_;
 }
 
 webrtc::Call::Stats FakeCall::GetStats() const {
@@ -1047,6 +1061,66 @@ TEST_F(WebRtcVideoChannel2Test, SendAbsoluteSendTimeHeaderExtensions) {
 TEST_F(WebRtcVideoChannel2Test, RecvAbsoluteSendTimeHeaderExtensions) {
   TestSetRecvRtpHeaderExtensions(kRtpAbsoluteSenderTimeHeaderExtension,
                                  webrtc::RtpExtension::kAbsSendTime);
+}
+
+TEST_F(WebRtcVideoChannel2Test, IdenticalSendExtensionsDoesntRecreateStream) {
+  const int kTOffsetId = 1;
+  const int kAbsSendTimeId = 2;
+  std::vector<cricket::RtpHeaderExtension> extensions;
+  extensions.push_back(cricket::RtpHeaderExtension(
+      kRtpAbsoluteSenderTimeHeaderExtension, kAbsSendTimeId));
+  extensions.push_back(cricket::RtpHeaderExtension(
+      kRtpTimestampOffsetHeaderExtension, kTOffsetId));
+
+  EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
+  FakeVideoSendStream* send_stream =
+      AddSendStream(cricket::StreamParams::CreateLegacy(123));
+
+  EXPECT_EQ(1, fake_call_->GetNumCreatedSendStreams());
+  ASSERT_EQ(2u, send_stream->GetConfig().rtp.extensions.size());
+
+  // Setting the same extensions (even if in different order) shouldn't
+  // reallocate the stream.
+  std::reverse(extensions.begin(), extensions.end());
+  EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
+
+  EXPECT_EQ(1, fake_call_->GetNumCreatedSendStreams());
+
+  // Setting different extensions should recreate the stream.
+  extensions.resize(1);
+  EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
+
+  EXPECT_EQ(2, fake_call_->GetNumCreatedSendStreams());
+}
+
+TEST_F(WebRtcVideoChannel2Test, IdenticalRecvExtensionsDoesntRecreateStream) {
+  const int kTOffsetId = 1;
+  const int kAbsSendTimeId = 2;
+  std::vector<cricket::RtpHeaderExtension> extensions;
+  extensions.push_back(cricket::RtpHeaderExtension(
+      kRtpAbsoluteSenderTimeHeaderExtension, kAbsSendTimeId));
+  extensions.push_back(cricket::RtpHeaderExtension(
+      kRtpTimestampOffsetHeaderExtension, kTOffsetId));
+
+  EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
+  FakeVideoReceiveStream* send_stream =
+      AddRecvStream(cricket::StreamParams::CreateLegacy(123));
+
+  EXPECT_EQ(1, fake_call_->GetNumCreatedReceiveStreams());
+  ASSERT_EQ(2u, send_stream->GetConfig().rtp.extensions.size());
+
+  // Setting the same extensions (even if in different order) shouldn't
+  // reallocate the stream.
+  std::reverse(extensions.begin(), extensions.end());
+  EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
+
+  EXPECT_EQ(1, fake_call_->GetNumCreatedReceiveStreams());
+
+  // Setting different extensions should recreate the stream.
+  extensions.resize(1);
+  EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
+
+  EXPECT_EQ(2, fake_call_->GetNumCreatedReceiveStreams());
 }
 
 TEST_F(WebRtcVideoChannel2Test,
