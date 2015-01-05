@@ -136,7 +136,7 @@ public class WebSocketChannelClient {
       ws.sendTextMessage(json.toString());
       state = WebSocketConnectionState.REGISTERED;
       // Send any previously accumulated messages.
-      synchronized(wsSendQueue) {
+      synchronized (wsSendQueue) {
         for (String sendMessage : wsSendQueue) {
           send(sendMessage);
         }
@@ -154,7 +154,7 @@ public class WebSocketChannelClient {
         // Store outgoing messages and send them after websocket client
         // is registered.
         Log.d(TAG, "WS ACC: " + message);
-        synchronized(wsSendQueue) {
+        synchronized (wsSendQueue) {
           wsSendQueue.add(message);
           return;
         }
@@ -194,8 +194,8 @@ public class WebSocketChannelClient {
       state = WebSocketConnectionState.CONNECTED;
     }
     // Close WebSocket in CONNECTED or ERROR states only.
-    if (state == WebSocketConnectionState.CONNECTED ||
-        state == WebSocketConnectionState.ERROR) {
+    if (state == WebSocketConnectionState.CONNECTED
+        || state == WebSocketConnectionState.ERROR) {
       ws.disconnect();
 
       // Send DELETE to http WebSocket server.
@@ -244,8 +244,8 @@ public class WebSocketChannelClient {
     try {
       // Send POST or DELETE request.
       String postUrl = postServerUrl + "/" + roomID + "/" + clientID;
-      Log.d(TAG, "WS " + wsHttpMessage.method + " : " + postUrl + " : " +
-          wsHttpMessage.message);
+      Log.d(TAG, "WS " + wsHttpMessage.method + " : " + postUrl + " : "
+        + wsHttpMessage.message);
       HttpURLConnection connection =
           (HttpURLConnection) new URL(postUrl).openConnection();
       connection.setRequestProperty(
@@ -258,8 +258,8 @@ public class WebSocketChannelClient {
       }
       int responseCode = connection.getResponseCode();
       if (responseCode != 200) {
-        reportError("Non-200 response to " + wsHttpMessage.method + " : " +
-            connection.getHeaderField(null));
+        reportError("Non-200 response to " + wsHttpMessage.method + " : "
+          + connection.getHeaderField(null));
       }
     } catch (IOException e) {
       reportError("WS POST error: " + e.getMessage());
@@ -280,8 +280,8 @@ public class WebSocketChannelClient {
 
     @Override
     public void onClose(WebSocketCloseNotification code, String reason) {
-      Log.d(TAG, "WebSocket connection closed. Code: " + code +
-          ". Reason: " + reason);
+      Log.d(TAG, "WebSocket connection closed. Code: " + code
+        + ". Reason: " + reason);
       uiHandler.post(new Runnable() {
         public void run() {
           if (state != WebSocketConnectionState.CLOSED) {
@@ -298,8 +298,8 @@ public class WebSocketChannelClient {
       final String message = payload;
       uiHandler.post(new Runnable() {
         public void run() {
-          if (state == WebSocketConnectionState.CONNECTED ||
-              state == WebSocketConnectionState.REGISTERED) {
+          if (state == WebSocketConnectionState.CONNECTED
+              || state == WebSocketConnectionState.REGISTERED) {
             events.onWebSocketMessage(message);
           }
         }

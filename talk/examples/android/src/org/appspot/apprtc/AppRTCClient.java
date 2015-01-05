@@ -106,7 +106,7 @@ public interface AppRTCClient {
   /**
    * Callback interface for messages delivered on signaling channel.
    *
-   * Methods are guaranteed to be invoked on the UI thread of |activity|.
+   * <p>Methods are guaranteed to be invoked on the UI thread of |activity|.
    */
   public static interface SignalingEvents {
     /**

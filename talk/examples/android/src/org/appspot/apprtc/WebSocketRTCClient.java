@@ -49,7 +49,7 @@ import org.webrtc.SessionDescription;
  * Negotiates signaling for chatting with apprtc.appspot.com "rooms".
  * Uses the client<->server specifics of the apprtc AppEngine webapp.
  *
- * To use: create an instance of this object (registering a message handler) and
+ * <p>To use: create an instance of this object (registering a message handler) and
  * call connectToRoom().  Once room connection is established
  * onConnectedToRoom() callback with room parameters is invoked.
  * Messages to other party (with local Ice candidates and answer SDP) can
@@ -94,10 +94,10 @@ public class WebSocketRTCClient implements AppRTCClient,
       Log.w(TAG, "No offer SDP in room response.");
     }
     initiator = params.initiator;
-    postMessageUrl = params.roomUrl + "/message/" +
-        params.roomId + "/" + params.clientId;
-    byeMessageUrl = params.roomUrl + "/bye/" +
-        params.roomId + "/" + params.clientId;
+    postMessageUrl = params.roomUrl + "/message/"
+      + params.roomId + "/" + params.clientId;
+    byeMessageUrl = params.roomUrl + "/bye/"
+      + params.roomId + "/" + params.clientId;
     roomState = ConnectionState.CONNECTED;
 
     // Connect to WebSocket server.
@@ -176,8 +176,7 @@ public class WebSocketRTCClient implements AppRTCClient,
         } else {
           reportError("Unexpected WebSocket message: " + msg);
         }
-      }
-      else {
+      } else {
         if (errorText != null && errorText.length() > 0) {
           reportError("WebSocket error message: " + errorText);
         } else {
@@ -370,8 +369,8 @@ public class WebSocketRTCClient implements AppRTCClient,
       // Get response.
       int responseCode = connection.getResponseCode();
       if (responseCode != 200) {
-        reportError("Non-200 response to POST: " +
-            connection.getHeaderField(null));
+        reportError("Non-200 response to POST: "
+          + connection.getHeaderField(null));
       }
       InputStream responseStream = connection.getInputStream();
       String response = drainStream(responseStream);

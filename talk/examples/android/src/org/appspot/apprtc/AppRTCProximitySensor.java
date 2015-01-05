@@ -54,11 +54,9 @@ public class AppRTCProximitySensor implements SensorEventListener {
   // the case. Only active when |DEBUG| is set to true.
   private final NonThreadSafe nonThreadSafe = new AppRTCUtils.NonThreadSafe();
 
-  private final Context apprtcContext;
   private final Runnable onSensorStateListener;
   private final SensorManager sensorManager;
   private Sensor proximitySensor = null;
-  private boolean initialized = false;
   private boolean lastStateReportIsNear = false;
 
   /** Construction */
@@ -69,7 +67,6 @@ public class AppRTCProximitySensor implements SensorEventListener {
 
   private AppRTCProximitySensor(Context context, Runnable sensorStateListener) {
     Log.d(TAG, "AppRTCProximitySensor" + AppRTCUtils.getThreadInfo());
-    apprtcContext = context;
     onSensorStateListener = sensorStateListener;
     sensorManager = ((SensorManager) context.getSystemService(
         Context.SENSOR_SERVICE));
@@ -161,8 +158,9 @@ public class AppRTCProximitySensor implements SensorEventListener {
 
   /** Helper method for logging information about the proximity sensor. */
   private void logProximitySensorInfo() {
-    if (proximitySensor == null)
+    if (proximitySensor == null) {
       return;
+    }
     Log.d(TAG, "Proximity sensor: " + "name=" + proximitySensor.getName()
         + ", vendor: " + proximitySensor.getVendor()
         + ", type: " + proximitySensor.getStringType()
