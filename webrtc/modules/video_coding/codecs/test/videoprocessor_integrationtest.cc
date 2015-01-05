@@ -675,15 +675,14 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
 // for the rate control metrics can be lower. One key frame (first frame only).
 // Note: quality after update should be higher but we currently compute quality
 // metrics averaged over whole sequence run.
-// Disabled: See https://code.google.com/p/webrtc/issues/detail?id=4059.
 TEST_F(VideoProcessorIntegrationTest,
-       DISABLED_ProcessNoLossChangeFrameRateFrameDropVP9) {
+       ProcessNoLossChangeFrameRateFrameDropVP9) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
-  SetRateProfilePars(&rate_profile, 0, 50, 24, 0);
-  SetRateProfilePars(&rate_profile, 1, 50, 15, 100);
-  SetRateProfilePars(&rate_profile, 2, 50, 10, 200);
+  SetRateProfilePars(&rate_profile, 0, 80, 24, 0);
+  SetRateProfilePars(&rate_profile, 1, 80, 15, 100);
+  SetRateProfilePars(&rate_profile, 2, 80, 10, 200);
   rate_profile.frame_index_rate_update[3] = kNbrFramesLong + 1;
   rate_profile.num_frames = kNbrFramesLong;
   // Codec/network settings.
@@ -692,12 +691,12 @@ TEST_F(VideoProcessorIntegrationTest,
                      false, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
-  SetQualityMetrics(&quality_metrics, 29.0, 17.0, 0.80, 0.40);
+  SetQualityMetrics(&quality_metrics, 31.5, 19.0, 0.80, 0.45);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[3];
-  SetRateControlMetrics(rc_metrics, 0, 50, 60, 100, 15, 45, 0);
-  SetRateControlMetrics(rc_metrics, 1, 30, 0, 65, 10, 35, 0);
-  SetRateControlMetrics(rc_metrics, 2, 5, 0, 38, 10, 30, 0);
+  SetRateControlMetrics(rc_metrics, 0, 20, 50, 50, 15, 45, 0);
+  SetRateControlMetrics(rc_metrics, 1, 10, 0, 30, 10, 30, 0);
+  SetRateControlMetrics(rc_metrics, 2, 5, 0, 30, 5, 20, 0);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,
