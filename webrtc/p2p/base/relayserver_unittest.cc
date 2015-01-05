@@ -486,14 +486,9 @@ TEST_F(RelayServerTest, TestSendRaw) {
   }
 }
 
-// Flaky on Mac, see https://code.google.com/p/webrtc/issues/detail?id=4134
-#if defined(WEBRTC_MAC)
-#define MAYBE_TestExpiration DISABLED_TestExpiration
-#else
-#define MAYBE_TestExpiration TestExpiration
-#endif
 // Verify that a binding expires properly, and rejects send requests.
-TEST_F(RelayServerTest, MAYBE_TestExpiration) {
+// Flaky, see https://code.google.com/p/webrtc/issues/detail?id=4134
+TEST_F(RelayServerTest, DISABLED_TestExpiration) {
   Allocate();
   Bind();
 
