@@ -54,10 +54,14 @@ int main(int argc, char* argv[]) {
   fseek(read_file, 44, SEEK_SET);
 
   FILE* write_file = fopen(FLAGS_output_file_path.c_str(), "wb");
+
+  std::vector<webrtc::Point> array_geometry;
+  for (int i = 0; i < FLAGS_num_input_channels; ++i) {
+    array_geometry.push_back(webrtc::Point(i * FLAGS_mic_spacing, 0.f, 0.f));
+  }
   webrtc::Beamformer bf(kChunkTimeMilliseconds,
                         FLAGS_sample_rate,
-                        FLAGS_num_input_channels,
-                        FLAGS_mic_spacing);
+                        array_geometry);
   while (true) {
     size_t samples_read = webrtc::PcmReadToFloat(read_file,
                                                  kInputSamplesPerChunk,

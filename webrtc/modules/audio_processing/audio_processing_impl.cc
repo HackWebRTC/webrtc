@@ -185,7 +185,8 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config)
       use_new_agc_(config.Get<ExperimentalAgc>().enabled),
 #endif
       transient_suppressor_enabled_(config.Get<ExperimentalNs>().enabled),
-      beamformer_enabled_(config.Get<Beamforming>().enabled) {
+      beamformer_enabled_(config.Get<Beamforming>().enabled),
+      array_geometry_(config.Get<Beamforming>().array_geometry) {
   echo_cancellation_ = new EchoCancellationImpl(this, crit_);
   component_list_.push_back(echo_cancellation_);
 
@@ -400,7 +401,8 @@ int AudioProcessingImpl::MaybeInitializeLocked(int input_sample_rate_hz,
     return kNoError;
   }
   if (beamformer_enabled_ &&
-      (num_input_channels < 2 || num_output_channels > 1)) {
+      (static_cast<size_t>(num_input_channels) != array_geometry_.size() ||
+       num_output_channels > 1)) {
     return kBadNumberChannelsError;
   }
   return InitializeLocked(input_sample_rate_hz,
@@ -995,11 +997,9 @@ int AudioProcessingImpl::InitializeTransient() {
 void AudioProcessingImpl::InitializeBeamformer() {
   if (beamformer_enabled_) {
 #ifdef WEBRTC_BEAMFORMER
-    // TODO(aluebs): Don't use a hard-coded microphone spacing.
     beamformer_.reset(new Beamformer(kChunkSizeMs,
                                      split_rate_,
-                                     fwd_in_format_.num_channels(),
-                                     0.05f));
+                                     array_geometry_));
 #else
     assert(false);
 #endif

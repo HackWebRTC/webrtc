@@ -13,6 +13,7 @@
 
 #include "webrtc/common_audio/lapped_transform.h"
 #include "webrtc/modules/audio_processing/beamformer/complex_matrix.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc {
 
@@ -26,12 +27,12 @@ namespace webrtc {
 // TODO: Target angle assumed to be 0. Parameterize target angle.
 class Beamformer : public LappedTransform::Callback {
  public:
+  // At the moment it only accepts uniform linear microphone arrays. Using the
+  // first microphone as a reference position [0, 0, 0] is a natural choice.
   Beamformer(int chunk_size_ms,
              // Sample rate corresponds to the lower band.
              int sample_rate_hz,
-             int num_input_channels,
-             // Microphone spacing in meters.
-             float mic_spacing);
+             const std::vector<Point>& array_geometry);
 
   // Process one time-domain chunk of audio. The audio can be separated into
   // two signals by frequency, with the higher half passed in as the second
@@ -90,6 +91,8 @@ class Beamformer : public LappedTransform::Callback {
 
   // Applies both sets of masks to |input| and store in |output|.
   void ApplyMasks(const complex_f* const* input, complex_f* const* output);
+
+  float MicSpacingFromGeometry(const std::vector<Point>& array_geometry);
 
   // Deals with the fft transform and blocking.
   const int chunk_length_;

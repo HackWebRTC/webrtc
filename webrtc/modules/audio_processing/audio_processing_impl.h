@@ -219,6 +219,7 @@ class AudioProcessingImpl : public AudioProcessing {
   scoped_ptr<TransientSuppressor> transient_suppressor_;
   const bool beamformer_enabled_;
   scoped_ptr<Beamformer> beamformer_;
+  const std::vector<Point> array_geometry_;
 };
 
 }  // namespace webrtc

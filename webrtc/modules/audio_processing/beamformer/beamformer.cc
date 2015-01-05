@@ -128,13 +128,12 @@ int Round(float x) {
 
 Beamformer::Beamformer(int chunk_size_ms,
                        int sample_rate_hz,
-                       int num_input_channels,
-                       float mic_spacing)
+                       const std::vector<Point>& array_geometry)
     : chunk_length_(sample_rate_hz / (1000.f / chunk_size_ms)),
       window_(new float[kFftSize]),
-      num_input_channels_(num_input_channels),
+      num_input_channels_(array_geometry.size()),
       sample_rate_hz_(sample_rate_hz),
-      mic_spacing_(mic_spacing),
+      mic_spacing_(MicSpacingFromGeometry(array_geometry)),
       decay_threshold_(
           pow(2, (kFftSize / -2.f) / (sample_rate_hz_ * kHalfLifeSeconds))),
       mid_frequency_lower_bin_bound_(
@@ -475,6 +474,20 @@ void Beamformer::CalculateHighFrequencyMask() {
       high_frequency_upper_bin_bound_ - high_frequency_lower_bin_bound_ + 1;
 
   high_pass_postfilter_mask_ += high_pass_mask;
+}
+
+// This method CHECKs for a uniform linear array.
+float Beamformer::MicSpacingFromGeometry(const std::vector<Point>& geometry) {
+  CHECK_GE(geometry.size(), 2u);
+  float mic_spacing = 0.f;
+  for (size_t i = 0u; i < 3u; ++i) {
+    float difference = geometry[1].c[i] - geometry[0].c[i];
+    for (size_t j = 2u; j < geometry.size(); ++j) {
+      CHECK_LT(geometry[j].c[i] - geometry[j - 1].c[i] - difference, 1e-6);
+    }
+    mic_spacing += difference * difference;
+  }
+  return sqrt(mic_spacing);
 }
 
 }  // namespace webrtc
