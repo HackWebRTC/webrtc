@@ -308,7 +308,8 @@ TEST_F(TransientFileUtilsTest, ReadDoubleBufferFromFile) {
 TEST_F(TransientFileUtilsTest, WriteInt16BufferToFile) {
   scoped_ptr<FileWrapper> file(FileWrapper::Create());
 
-  std::string kOutFileName = test::OutputPath() + "utils_test.out";
+  std::string kOutFileName = test::TempFilename(test::OutputPath(),
+                                                "utils_test");
 
   file->OpenFile(kOutFileName.c_str(),
                  false,   // Write mode.
@@ -349,7 +350,8 @@ TEST_F(TransientFileUtilsTest, WriteInt16BufferToFile) {
 TEST_F(TransientFileUtilsTest, WriteFloatBufferToFile) {
   scoped_ptr<FileWrapper> file(FileWrapper::Create());
 
-  std::string kOutFileName = test::OutputPath() + "utils_test.out";
+  std::string kOutFileName = test::TempFilename(test::OutputPath(),
+                                                "utils_test");
 
   file->OpenFile(kOutFileName.c_str(),
                  false,   // Write mode.
@@ -390,7 +392,8 @@ TEST_F(TransientFileUtilsTest, WriteFloatBufferToFile) {
 TEST_F(TransientFileUtilsTest, WriteDoubleBufferToFile) {
   scoped_ptr<FileWrapper> file(FileWrapper::Create());
 
-  std::string kOutFileName = test::OutputPath() + "utils_test.out";
+  std::string kOutFileName = test::TempFilename(test::OutputPath(),
+                                                "utils_test");
 
   file->OpenFile(kOutFileName.c_str(),
                  false,   // Write mode.
