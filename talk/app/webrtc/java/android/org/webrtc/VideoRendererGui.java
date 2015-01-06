@@ -56,6 +56,7 @@ import org.webrtc.VideoRenderer.I420Frame;
  */
 public class VideoRendererGui implements GLSurfaceView.Renderer {
   private static VideoRendererGui instance = null;
+  private static Runnable eglContextReady = null;
   private static final String TAG = "VideoRendererGui";
   private GLSurfaceView surface;
   private static EGLContext eglContext = null;
@@ -595,9 +596,11 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   }
 
   /** Passes GLSurfaceView to video renderer. */
-  public static void setView(GLSurfaceView surface) {
+  public static void setView(GLSurfaceView surface,
+      Runnable eglContextReadyCallback) {
     Log.d(TAG, "VideoRendererGui.setView");
     instance = new VideoRendererGui(surface);
+    eglContextReady = eglContextReadyCallback;
   }
 
   public static EGLContext getEGLContext() {
@@ -690,7 +693,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   @Override
   public void onSurfaceCreated(GL10 unused, EGLConfig config) {
     Log.d(TAG, "VideoRendererGui.onSurfaceCreated");
-    // Store render EGL context
+    // Store render EGL context.
     if (CURRENT_SDK_VERSION >= EGL14_SDK_VERSION) {
       eglContext = EGL14.eglGetCurrentContext();
       Log.d(TAG, "VideoRendererGui EGL Context: " + eglContext);
@@ -711,6 +714,11 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     }
     checkNoGLES2Error();
     GLES20.glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
+
+    // Fire EGL context ready event.
+    if (eglContextReady != null) {
+      eglContextReady.run();
+    }
   }
 
   @Override

@@ -27,11 +27,13 @@
 
 package org.appspot.apprtc;
 
-import android.os.Handler;
-import android.os.Looper;
+import org.appspot.apprtc.AppRTCClient.SignalingParameters;
+import org.appspot.apprtc.util.LooperExecutor;
+
+import android.content.Context;
+import android.opengl.EGLContext;
 import android.util.Log;
 
-import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
@@ -54,28 +56,32 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * PeerConnection client for AppRTC.
+ * Peer connection client implementation.
+ *
+ * <p>All public methods are routed to local looper thread.
+ * All PeerConnectionEvents callbacks are invoked from the same looper thread.
  */
 public class PeerConnectionClient {
   private static final String TAG = "PCRTCClient";
   public static final String VIDEO_TRACK_ID = "ARDAMSv0";
   public static final String AUDIO_TRACK_ID = "ARDAMSa0";
 
-  private final Handler uiHandler;
-  private PeerConnectionFactory factory;
-  private PeerConnection pc;
+  private final LooperExecutor executor;
+  private PeerConnectionFactory factory = null;
+  private PeerConnection pc = null;
   private VideoSource videoSource;
-  private boolean videoSourceStopped;
+  private boolean videoSourceStopped = false;
+  private boolean isError = false;
   private final PCObserver pcObserver = new PCObserver();
   private final SDPObserver sdpObserver = new SDPObserver();
-  private final VideoRenderer.Callbacks localRender;
-  private final VideoRenderer.Callbacks remoteRender;
+  private VideoRenderer.Callbacks localRender;
+  private VideoRenderer.Callbacks remoteRender;
+  private SignalingParameters signalingParameters;
   // Queued remote ICE candidates are consumed only after both local and
   // remote descriptions are set. Similarly local ICE candidates are sent to
   // remote peer after both local and remote description are set.
   private LinkedList<IceCandidate> queuedRemoteCandidates = null;
   private MediaConstraints sdpMediaConstraints;
-  private MediaConstraints videoConstraints;
   private PeerConnectionEvents events;
   private int startBitrate;
   private boolean isInitiator;
@@ -83,184 +89,12 @@ public class PeerConnectionClient {
   private SessionDescription localSdp = null; // either offer or answer SDP
   private MediaStream mediaStream = null;
 
-  public PeerConnectionClient(
-      VideoRenderer.Callbacks localRender,
-      VideoRenderer.Callbacks remoteRender,
-      SignalingParameters signalingParameters,
-      PeerConnectionEvents events,
-      int startBitrate) {
-    this.localRender = localRender;
-    this.remoteRender = remoteRender;
-    this.events = events;
-    this.startBitrate = startBitrate;
-    uiHandler = new Handler(Looper.getMainLooper());
-    isInitiator = signalingParameters.initiator;
-    queuedRemoteCandidates = new LinkedList<IceCandidate>();
-
-    sdpMediaConstraints = new MediaConstraints();
-    sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
-        "OfferToReceiveAudio", "true"));
-    sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
-        "OfferToReceiveVideo", "true"));
-    videoConstraints = signalingParameters.videoConstraints;
-
-    factory = new PeerConnectionFactory();
-    MediaConstraints pcConstraints = signalingParameters.pcConstraints;
-    pcConstraints.optional.add(
-        new MediaConstraints.KeyValuePair("RtpDataChannels", "true"));
-    pc = factory.createPeerConnection(signalingParameters.iceServers,
-        pcConstraints, pcObserver);
-    isInitiator = false;
-
-    // Uncomment to get ALL WebRTC tracing and SENSITIVE libjingle logging.
-    // NOTE: this _must_ happen while |factory| is alive!
-    // Logging.enableTracing(
-    //     "logcat:",
-    //     EnumSet.of(Logging.TraceLevel.TRACE_ALL),
-    //     Logging.Severity.LS_SENSITIVE);
-
-    mediaStream = factory.createLocalMediaStream("ARDAMS");
-    if (videoConstraints != null) {
-      mediaStream.addTrack(createVideoTrack(useFrontFacingCamera));
-    }
-
-    if (signalingParameters.audioConstraints != null) {
-      mediaStream.addTrack(factory.createAudioTrack(
-          AUDIO_TRACK_ID,
-          factory.createAudioSource(signalingParameters.audioConstraints)));
-    }
-    pc.addStream(mediaStream);
-  }
-
-  public boolean isHDVideo() {
-    if (videoConstraints == null) {
-      return false;
-    }
-    int minWidth = 0;
-    int minHeight = 0;
-    for (KeyValuePair keyValuePair : videoConstraints.mandatory) {
-      if (keyValuePair.getKey().equals("minWidth")) {
-        try {
-          minWidth = Integer.parseInt(keyValuePair.getValue());
-        } catch (NumberFormatException e) {
-          Log.e(TAG, "Can not parse video width from video constraints");
-        }
-      } else if (keyValuePair.getKey().equals("minHeight")) {
-        try {
-          minHeight = Integer.parseInt(keyValuePair.getValue());
-        } catch (NumberFormatException e) {
-          Log.e(TAG, "Can not parse video height from video constraints");
-        }
-      }
-    }
-    if (minWidth * minHeight >= 1280 * 720) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  public boolean getStats(StatsObserver observer, MediaStreamTrack track) {
-    return pc.getStats(observer, track);
-  }
-
-  public void createOffer() {
-    uiHandler.post(new Runnable() {
-      public void run() {
-        if (pc != null) {
-          isInitiator = true;
-          pc.createOffer(sdpObserver, sdpMediaConstraints);
-        }
-      }
-    });
-  }
-
-  public void createAnswer() {
-    uiHandler.post(new Runnable() {
-      public void run() {
-        if (pc != null) {
-          isInitiator = false;
-          pc.createAnswer(sdpObserver, sdpMediaConstraints);
-        }
-      }
-    });
-  }
-
-  public void addRemoteIceCandidate(final IceCandidate candidate) {
-    uiHandler.post(new Runnable() {
-      public void run() {
-        if (pc != null) {
-          if (queuedRemoteCandidates != null) {
-            queuedRemoteCandidates.add(candidate);
-          } else {
-            pc.addIceCandidate(candidate);
-          }
-        }
-      }
-    });
-  }
-
-  public void setRemoteDescription(final SessionDescription sdp) {
-    uiHandler.post(new Runnable() {
-      public void run() {
-        if (pc != null) {
-          String sdpDescription = preferISAC(sdp.description);
-          if (startBitrate > 0) {
-            sdpDescription = setStartBitrate(sdpDescription, startBitrate);
-          }
-          Log.d(TAG, "Set remote SDP.");
-          SessionDescription sdpRemote = new SessionDescription(
-              sdp.type, sdpDescription);
-          pc.setRemoteDescription(sdpObserver, sdpRemote);
-        }
-      }
-    });
-  }
-
-  public void stopVideoSource() {
-    if (videoSource != null) {
-      Log.d(TAG, "Stop video source.");
-      videoSource.stop();
-      videoSourceStopped = true;
-    }
-  }
-
-  public void startVideoSource() {
-    if (videoSource != null && videoSourceStopped) {
-      Log.d(TAG, "Restart video source.");
-      videoSource.restart();
-      videoSourceStopped = false;
-    }
-  }
-
-  public void close() {
-    uiHandler.post(new Runnable() {
-      public void run() {
-        Log.d(TAG, "Closing peer connection.");
-        if (pc != null) {
-          pc.dispose();
-          pc = null;
-        }
-        if (videoSource != null) {
-          videoSource.dispose();
-          videoSource = null;
-        }
-        if (factory != null) {
-          factory.dispose();
-          factory = null;
-        }
-        Log.d(TAG, "Closing peer connection done.");
-        events.onPeerConnectionClosed();
-      }
-    });
-  }
-
   /**
    * SDP/ICE ready callbacks.
    */
   public static interface PeerConnectionEvents {
     /**
-     * Callback fired once offer is created and local SDP is set.
+     * Callback fired once local SDP is created and set.
      */
     public void onLocalDescription(final SessionDescription sdp);
 
@@ -289,15 +123,263 @@ public class PeerConnectionClient {
     /**
      * Callback fired once peer connection error happened.
      */
-    public void onPeerConnectionError(String description);
+    public void onPeerConnectionError(final String description);
 
+  }
+
+  public PeerConnectionClient() {
+    executor = new LooperExecutor();
+  }
+
+  public void createPeerConnectionFactory(
+      final Context context,
+      final boolean vp8HwAcceleration,
+      final EGLContext renderEGLContext,
+      final PeerConnectionEvents events) {
+    this.events = events;
+    executor.requestStart();
+    executor.execute(new Runnable() {
+      @Override
+      public void run() {
+        createPeerConnectionFactoryInternal(
+            context, vp8HwAcceleration, renderEGLContext);
+      }
+    });
+  }
+
+  public void createPeerConnection(
+      final VideoRenderer.Callbacks localRender,
+      final VideoRenderer.Callbacks remoteRender,
+      final SignalingParameters signalingParameters,
+      final int startBitrate) {
+    this.localRender = localRender;
+    this.remoteRender = remoteRender;
+    this.signalingParameters = signalingParameters;
+    this.startBitrate = startBitrate;
+    executor.execute(new Runnable() {
+      @Override
+      public void run() {
+        createPeerConnectionInternal();
+      }
+    });
+  }
+
+  public void close() {
+    executor.execute(new Runnable() {
+      @Override
+      public void run() {
+        closeInternal();
+      }
+    });
+    executor.requestStop();
+  }
+
+  private void createPeerConnectionFactoryInternal(
+      Context context,
+      boolean vp8HwAcceleration,
+      EGLContext renderEGLContext) {
+    Log.d(TAG, "Create peer connection factory.");
+    isError = false;
+    if (!PeerConnectionFactory.initializeAndroidGlobals(
+        context, true, true, vp8HwAcceleration, renderEGLContext)) {
+      events.onPeerConnectionError("Failed to initializeAndroidGlobals");
+    }
+    factory = new PeerConnectionFactory();
+    Log.d(TAG, "Peer connection factory created.");
+  }
+
+  private void createPeerConnectionInternal() {
+    if (factory == null || isError) {
+      Log.e(TAG, "Peerconnection factory is not created");
+      return;
+    }
+    Log.d(TAG, "Create peer connection.");
+    isInitiator = signalingParameters.initiator;
+    queuedRemoteCandidates = new LinkedList<IceCandidate>();
+
+    sdpMediaConstraints = new MediaConstraints();
+    sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
+        "OfferToReceiveAudio", "true"));
+    sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
+        "OfferToReceiveVideo", "true"));
+
+    MediaConstraints pcConstraints = signalingParameters.pcConstraints;
+    pcConstraints.optional.add(
+        new MediaConstraints.KeyValuePair("RtpDataChannels", "true"));
+    pc = factory.createPeerConnection(signalingParameters.iceServers,
+        pcConstraints, pcObserver);
+    isInitiator = false;
+
+    // Uncomment to get ALL WebRTC tracing and SENSITIVE libjingle logging.
+    // NOTE: this _must_ happen while |factory| is alive!
+    // Logging.enableTracing(
+    //     "logcat:",
+    //     EnumSet.of(Logging.TraceLevel.TRACE_ALL),
+    //     Logging.Severity.LS_SENSITIVE);
+
+    mediaStream = factory.createLocalMediaStream("ARDAMS");
+    if (signalingParameters.videoConstraints != null) {
+      mediaStream.addTrack(createVideoTrack(useFrontFacingCamera));
+    }
+
+    if (signalingParameters.audioConstraints != null) {
+      mediaStream.addTrack(factory.createAudioTrack(
+          AUDIO_TRACK_ID,
+          factory.createAudioSource(signalingParameters.audioConstraints)));
+    }
+    pc.addStream(mediaStream);
+    Log.d(TAG, "Peer connection created.");
+  }
+
+  private void closeInternal() {
+    Log.d(TAG, "Closing peer connection.");
+    if (pc != null) {
+      pc.dispose();
+      pc = null;
+    }
+    if (videoSource != null) {
+      videoSource.dispose();
+      videoSource = null;
+    }
+    Log.d(TAG, "Closing peer connection factory.");
+    if (factory != null) {
+      factory.dispose();
+      factory = null;
+    }
+    Log.d(TAG, "Closing peer connection done.");
+    events.onPeerConnectionClosed();
+  }
+
+  public boolean isHDVideo() {
+    if (signalingParameters.videoConstraints == null) {
+      return false;
+    }
+    int minWidth = 0;
+    int minHeight = 0;
+    for (KeyValuePair keyValuePair :
+        signalingParameters.videoConstraints.mandatory) {
+      if (keyValuePair.getKey().equals("minWidth")) {
+        try {
+          minWidth = Integer.parseInt(keyValuePair.getValue());
+        } catch (NumberFormatException e) {
+          Log.e(TAG, "Can not parse video width from video constraints");
+        }
+      } else if (keyValuePair.getKey().equals("minHeight")) {
+        try {
+          minHeight = Integer.parseInt(keyValuePair.getValue());
+        } catch (NumberFormatException e) {
+          Log.e(TAG, "Can not parse video height from video constraints");
+        }
+      }
+    }
+    if (minWidth * minHeight >= 1280 * 720) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  public boolean getStats(StatsObserver observer, MediaStreamTrack track) {
+    if (pc != null && !isError) {
+      return pc.getStats(observer, track);
+    } else {
+      return false;
+    }
+  }
+
+  public void createOffer() {
+    executor.execute(new Runnable() {
+      @Override
+      public void run() {
+        if (pc != null && !isError) {
+          isInitiator = true;
+          pc.createOffer(sdpObserver, sdpMediaConstraints);
+        }
+      }
+    });
+  }
+
+  public void createAnswer() {
+    executor.execute(new Runnable() {
+      @Override
+      public void run() {
+        if (pc != null && !isError) {
+          isInitiator = false;
+          pc.createAnswer(sdpObserver, sdpMediaConstraints);
+        }
+      }
+    });
+  }
+
+  public void addRemoteIceCandidate(final IceCandidate candidate) {
+    executor.execute(new Runnable() {
+      @Override
+      public void run() {
+        if (pc != null && !isError) {
+          if (queuedRemoteCandidates != null) {
+            queuedRemoteCandidates.add(candidate);
+          } else {
+            pc.addIceCandidate(candidate);
+          }
+        }
+      }
+    });
+  }
+
+  public void setRemoteDescription(final SessionDescription sdp) {
+    executor.execute(new Runnable() {
+      @Override
+      public void run() {
+        if (pc == null || isError) {
+          return;
+        }
+        String sdpDescription = preferISAC(sdp.description);
+        if (startBitrate > 0) {
+          sdpDescription = setStartBitrate(sdpDescription, startBitrate);
+        }
+        Log.d(TAG, "Set remote SDP.");
+        SessionDescription sdpRemote = new SessionDescription(
+            sdp.type, sdpDescription);
+        pc.setRemoteDescription(sdpObserver, sdpRemote);
+      }
+    });
+  }
+
+  public void stopVideoSource() {
+    executor.execute(new Runnable() {
+      @Override
+      public void run() {
+        if (videoSource != null && !videoSourceStopped) {
+          Log.d(TAG, "Stop video source.");
+          videoSource.stop();
+          videoSourceStopped = true;
+        }
+      }
+    });
+  }
+
+  public void startVideoSource() {
+    executor.execute(new Runnable() {
+      @Override
+      public void run() {
+        if (videoSource != null && videoSourceStopped) {
+          Log.d(TAG, "Restart video source.");
+          videoSource.restart();
+          videoSourceStopped = false;
+        }
+      }
+    });
   }
 
   private void reportError(final String errorMessage) {
     Log.e(TAG, "Peerconnection error: " + errorMessage);
-    uiHandler.post(new Runnable() {
+    executor.execute(new Runnable() {
+      @Override
       public void run() {
-        events.onPeerConnectionError(errorMessage);
+        if (!isError) {
+          events.onPeerConnectionError(errorMessage);
+          isError = true;
+        }
       }
     });
   }
@@ -336,19 +418,13 @@ public class PeerConnectionClient {
       videoSource.dispose();
     }
 
-    videoSource = factory.createVideoSource(capturer, videoConstraints);
+    videoSource = factory.createVideoSource(
+        capturer, signalingParameters.videoConstraints);
     String trackExtension = frontFacing ? "frontFacing" : "backFacing";
     VideoTrack videoTrack =
         factory.createVideoTrack(VIDEO_TRACK_ID + trackExtension, videoSource);
     videoTrack.addRenderer(new VideoRenderer(localRender));
     return videoTrack;
-  }
-
-  // Poor-man's assert(): die with |msg| unless |condition| is true.
-  private void abortUnless(boolean condition, String msg) {
-    if (!condition) {
-      reportError(msg);
-    }
   }
 
   private static String setStartBitrate(
@@ -443,16 +519,16 @@ public class PeerConnectionClient {
     }
   }
 
-  public void switchCamera() {
-    if (videoConstraints == null) {
+  private void switchCameraInternal() {
+    if (signalingParameters.videoConstraints == null) {
       return;  // No video is sent.
     }
-
     if (pc.signalingState() != PeerConnection.SignalingState.STABLE) {
       Log.e(TAG, "Switching camera during negotiation is not handled.");
       return;
     }
 
+    Log.d(TAG, "Switch camera");
     pc.removeStream(mediaStream);
     VideoTrack currentTrack = mediaStream.videoTracks.get(0);
     mediaStream.removeTrack(currentTrack);
@@ -485,13 +561,26 @@ public class PeerConnectionClient {
       pc.setRemoteDescription(new SwitchCameraSdbObserver(), remoteDesc);
       pc.setLocalDescription(new SwitchCameraSdbObserver(), localSdp);
     }
+    Log.d(TAG, "Switch camera done");
+  }
+
+  public void switchCamera() {
+    executor.execute(new Runnable() {
+      @Override
+      public void run() {
+        if (pc != null && !isError) {
+          switchCameraInternal();
+        }
+      }
+    });
   }
 
   // Implementation detail: observe ICE & stream changes and react accordingly.
   private class PCObserver implements PeerConnection.Observer {
     @Override
     public void onIceCandidate(final IceCandidate candidate){
-      uiHandler.post(new Runnable() {
+      executor.execute(new Runnable() {
+        @Override
         public void run() {
           events.onIceCandidate(candidate);
         }
@@ -506,23 +595,20 @@ public class PeerConnectionClient {
 
     @Override
     public void onIceConnectionChange(
-        PeerConnection.IceConnectionState newState) {
-      Log.d(TAG, "IceConnectionState: " + newState);
-      if (newState == IceConnectionState.CONNECTED) {
-        uiHandler.post(new Runnable() {
-          public void run() {
+        final PeerConnection.IceConnectionState newState) {
+      executor.execute(new Runnable() {
+        @Override
+        public void run() {
+          Log.d(TAG, "IceConnectionState: " + newState);
+          if (newState == IceConnectionState.CONNECTED) {
             events.onIceConnected();
-          }
-        });
-      } else if (newState == IceConnectionState.DISCONNECTED) {
-        uiHandler.post(new Runnable() {
-          public void run() {
+          } else if (newState == IceConnectionState.DISCONNECTED) {
             events.onIceDisconnected();
+          } else if (newState == IceConnectionState.FAILED) {
+            reportError("ICE connection failed.");
           }
-        });
-      } else if (newState == IceConnectionState.FAILED) {
-        reportError("ICE connection failed.");
-      }
+        }
+      });
     }
 
     @Override
@@ -533,11 +619,16 @@ public class PeerConnectionClient {
 
     @Override
     public void onAddStream(final MediaStream stream){
-      uiHandler.post(new Runnable() {
+      executor.execute(new Runnable() {
+        @Override
         public void run() {
-          abortUnless(stream.audioTracks.size() <= 1
-              && stream.videoTracks.size() <= 1,
-              "Weird-looking stream: " + stream);
+          if (pc == null || isError) {
+            return;
+          }
+          if (stream.audioTracks.size() > 1 || stream.videoTracks.size() > 1) {
+            reportError("Weird-looking stream: " + stream);
+            return;
+          }
           if (stream.videoTracks.size() == 1) {
             stream.videoTracks.get(0).addRenderer(
                 new VideoRenderer(remoteRender));
@@ -548,8 +639,12 @@ public class PeerConnectionClient {
 
     @Override
     public void onRemoveStream(final MediaStream stream){
-      uiHandler.post(new Runnable() {
+      executor.execute(new Runnable() {
+        @Override
         public void run() {
+          if (pc == null || isError) {
+            return;
+          }
           stream.videoTracks.get(0).dispose();
         }
       });
@@ -573,13 +668,17 @@ public class PeerConnectionClient {
   private class SDPObserver implements SdpObserver {
     @Override
     public void onCreateSuccess(final SessionDescription origSdp) {
-      abortUnless(localSdp == null, "multiple SDP create?!?");
+      if (localSdp != null) {
+        reportError("Multiple SDP create.");
+        return;
+      }
       final SessionDescription sdp = new SessionDescription(
           origSdp.type, preferISAC(origSdp.description));
       localSdp = sdp;
-      uiHandler.post(new Runnable() {
+      executor.execute(new Runnable() {
+        @Override
         public void run() {
-          if (pc != null) {
+          if (pc != null && !isError) {
             Log.d(TAG, "Set local SDP from " + sdp.type);
             pc.setLocalDescription(sdpObserver, sdp);
           }
@@ -589,9 +688,10 @@ public class PeerConnectionClient {
 
     @Override
     public void onSetSuccess() {
-      uiHandler.post(new Runnable() {
+      executor.execute(new Runnable() {
+        @Override
         public void run() {
-          if (pc == null) {
+          if (pc == null || isError) {
             return;
           }
           if (isInitiator) {

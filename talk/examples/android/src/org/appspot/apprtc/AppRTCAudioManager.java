@@ -27,6 +27,8 @@
 
 package org.appspot.apprtc;
 
+import org.appspot.apprtc.util.AppRTCUtils;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -34,8 +36,6 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.util.Log;
-
-import org.appspot.apprtc.util.AppRTCUtils;
 
 import java.util.Collections;
 import java.util.HashSet;

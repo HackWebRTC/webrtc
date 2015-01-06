@@ -320,7 +320,6 @@
                 'examples/android/AndroidManifest.xml',
                 'examples/android/README',
                 'examples/android/ant.properties',
-                'examples/android/assets/channel.html',
                 'examples/android/third_party/autobanh/autobanh.jar',
                 'examples/android/build.xml',
                 'examples/android/jni/Android.mk',
@@ -362,9 +361,11 @@
                 'examples/android/src/org/appspot/apprtc/SettingsActivity.java',
                 'examples/android/src/org/appspot/apprtc/SettingsFragment.java',
                 'examples/android/src/org/appspot/apprtc/UnhandledExceptionHandler.java',
-                'examples/android/src/org/appspot/apprtc/util/AppRTCUtils.java',
                 'examples/android/src/org/appspot/apprtc/WebSocketChannelClient.java',
                 'examples/android/src/org/appspot/apprtc/WebSocketRTCClient.java',
+                'examples/android/src/org/appspot/apprtc/util/AppRTCUtils.java',
+                'examples/android/src/org/appspot/apprtc/util/AsyncHttpURLConnection.java',
+                'examples/android/src/org/appspot/apprtc/util/LooperExecutor.java',
               ],
               'outputs': [
                 '<(PRODUCT_DIR)/AppRTCDemo-debug.apk',
@@ -412,6 +413,7 @@
                 'examples/androidtests/ant.properties',
                 'examples/androidtests/build.xml',
                 'examples/androidtests/project.properties',
+                'examples/androidtests/src/org/appspot/apprtc/test/LooperExecutorTest.java',
                 'examples/androidtests/src/org/appspot/apprtc/test/PeerConnectionClientTest.java',
               ],
               'outputs': [

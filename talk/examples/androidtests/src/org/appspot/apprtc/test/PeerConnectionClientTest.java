@@ -35,10 +35,10 @@ import java.util.concurrent.TimeUnit;
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.appspot.apprtc.PeerConnectionClient;
 import org.appspot.apprtc.PeerConnectionClient.PeerConnectionEvents;
+import org.appspot.apprtc.util.LooperExecutor;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
-import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SessionDescription;
 import org.webrtc.VideoRenderer;
 
@@ -49,7 +49,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     implements PeerConnectionEvents {
   private static final String TAG = "RTCClientTest";
   private static final String STUN_SERVER = "stun:stun.l.google.com:19302";
-  private static final int WAIT_TIMEOUT = 3000;
+  private static final int WAIT_TIMEOUT = 5000;
   private static final int EXPECTED_VIDEO_FRAMES = 15;
 
   private volatile PeerConnectionClient pcClient;
@@ -222,9 +222,6 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     isClosed = false;
     isIceConnected = false;
     loopback = false;
-    Log.d(TAG, "initializeAndroidGlobals");
-    assertTrue(PeerConnectionFactory.initializeAndroidGlobals(
-        getInstrumentation().getContext(), true, true, true, null));
   }
 
   public void testInitiatorCreation() throws InterruptedException {
@@ -233,8 +230,11 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     MockRenderer remoteRender = new MockRenderer(EXPECTED_VIDEO_FRAMES);
     SignalingParameters signalingParameters = getTestSignalingParameters();
 
-    pcClient = new PeerConnectionClient(
-        localRender, remoteRender, signalingParameters, this, 1000);
+    pcClient = new PeerConnectionClient();
+    pcClient.createPeerConnectionFactory(
+        getInstrumentation().getContext(), true, null, this);
+    pcClient.createPeerConnection(
+        localRender, remoteRender, signalingParameters, 1000);
     pcClient.createOffer();
 
     // Wait for local SDP and ice candidates set events.
@@ -258,8 +258,12 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     MockRenderer remoteRender = new MockRenderer(EXPECTED_VIDEO_FRAMES);
     SignalingParameters signalingParameters = getTestSignalingParameters();
     loopback = true;
-    pcClient = new PeerConnectionClient(
-        localRender, remoteRender, signalingParameters, this, 1000);
+
+    pcClient = new PeerConnectionClient();
+    pcClient.createPeerConnectionFactory(
+        getInstrumentation().getContext(), true, null, this);
+    pcClient.createPeerConnection(
+        localRender, remoteRender, signalingParameters, 1000);
     pcClient.createOffer();
 
     // Wait for local SDP, rename it to answer and set as remote SDP.
@@ -284,5 +288,4 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     assertTrue(waitForPeerConnectionClosed(WAIT_TIMEOUT));
     Log.d(TAG, "testLoopback Done.");
   }
-
 }

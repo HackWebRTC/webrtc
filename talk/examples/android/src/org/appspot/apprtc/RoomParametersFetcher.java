@@ -26,10 +26,12 @@
  */
 package org.appspot.apprtc;
 
-import android.os.AsyncTask;
+import org.appspot.apprtc.AppRTCClient.SignalingParameters;
+import org.appspot.apprtc.util.AsyncHttpURLConnection;
+import org.appspot.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
+
 import android.util.Log;
 
-import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -40,7 +42,6 @@ import org.webrtc.SessionDescription;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.LinkedList;
@@ -50,12 +51,12 @@ import java.util.Scanner;
  * AsyncTask that converts an AppRTC room URL into the set of signaling
  * parameters to use with that room.
  */
-public class RoomParametersFetcher
-    extends AsyncTask<String, Void, SignalingParameters> {
+public class RoomParametersFetcher {
   private static final String TAG = "RoomRTCClient";
-  private Exception exception = null;
-  private RoomParametersFetcherEvents events = null;
-  private boolean loopback;
+  private final RoomParametersFetcherEvents events;
+  private final boolean loopback;
+  private final String registerUrl;
+  private AsyncHttpURLConnection httpConnection;
 
   /**
    * Room parameters fetcher callbacks.
@@ -73,146 +74,125 @@ public class RoomParametersFetcher
     public void onSignalingParametersError(final String description);
   }
 
-  public RoomParametersFetcher(RoomParametersFetcherEvents events,
-      boolean loopback) {
-    super();
-    this.events = events;
+  public RoomParametersFetcher(boolean loopback, String registerUrl,
+      final RoomParametersFetcherEvents events) {
+    Log.d(TAG, "Connecting to room: " + registerUrl);
     this.loopback = loopback;
+    this.registerUrl = registerUrl;
+    this.events = events;
+
+    httpConnection = new AsyncHttpURLConnection("POST", registerUrl, null,
+      new AsyncHttpEvents() {
+        @Override
+        public void OnHttpError(String errorMessage) {
+          Log.e(TAG, "Room connection error: " + errorMessage);
+          events.onSignalingParametersError(errorMessage);
+        }
+
+        @Override
+        public void OnHttpComplete(String response) {
+          RoomHttpResponseParse(response);
+        }
+      });
+    httpConnection.send();
   }
 
-  @Override
-  protected SignalingParameters doInBackground(String... urls) {
-    if (events == null) {
-      exception = new RuntimeException("Room conenction events should be set");
-      return null;
-    }
-    if (urls.length != 1) {
-      exception = new RuntimeException("Must be called with a single URL");
-      return null;
-    }
-    try {
-      exception = null;
-      return getParametersForRoomUrl(urls[0]);
-    } catch (JSONException e) {
-      exception = e;
-    } catch (IOException e) {
-      exception = e;
-    }
-    return null;
-  }
-
-  @Override
-  protected void onPostExecute(SignalingParameters params) {
-    if (exception != null) {
-      Log.e(TAG, "Room connection error: " + exception.toString());
-      events.onSignalingParametersError(exception.getMessage());
-      return;
-    }
-    if (params == null) {
-      Log.e(TAG, "Can not extract room parameters");
-      events.onSignalingParametersError("Can not extract room parameters");
-      return;
-    }
-    events.onSignalingParametersReady(params);
-  }
-
-  // Fetches |url| and fishes the signaling parameters out of the JSON.
-  private SignalingParameters getParametersForRoomUrl(String url)
-      throws IOException, JSONException {
-    Log.d(TAG, "Connecting to room: " + url);
-    HttpURLConnection connection =
-        (HttpURLConnection) new URL(url).openConnection();
-    connection.setDoOutput(true);
-    connection.setRequestMethod("POST");
-    connection.setDoInput(true);
-
-    InputStream responseStream = connection.getInputStream();
-    String response = drainStream(responseStream);
-    responseStream.close();
+  private void RoomHttpResponseParse(String response) {
     Log.d(TAG, "Room response: " + response);
-    JSONObject roomJson = new JSONObject(response);
-    LinkedList<IceCandidate> iceCandidates = null;
-    SessionDescription offerSdp = null;
+    try {
+      LinkedList<IceCandidate> iceCandidates = null;
+      SessionDescription offerSdp = null;
+      JSONObject roomJson = new JSONObject(response);
 
-    String result = roomJson.getString("result");
-    if (!result.equals("SUCCESS")) {
-      throw new JSONException(result);
-    }
-    response = roomJson.getString("params");
-    roomJson = new JSONObject(response);
-    String roomId = roomJson.getString("room_id");
-    String clientId = roomJson.getString("client_id");
-    String wssUrl = roomJson.getString("wss_url");
-    String wssPostUrl = roomJson.getString("wss_post_url");
-    boolean initiator = (roomJson.getBoolean("is_initiator"));
-    String roomUrl = url.substring(0, url.indexOf("/register"));
-    if (!initiator) {
-      iceCandidates = new LinkedList<IceCandidate>();
-      String messagesString = roomJson.getString("messages");
-      JSONArray messages = new JSONArray(messagesString);
-      for (int i = 0; i < messages.length(); ++i) {
-        String messageString = messages.getString(i);
-        JSONObject message = new JSONObject(messageString);
-        String messageType = message.getString("type");
-        Log.d(TAG, "GAE->C #" + i + " : " + messageString);
-        if (messageType.equals("offer")) {
-          offerSdp = new SessionDescription(
-              SessionDescription.Type.fromCanonicalForm(messageType),
-              message.getString("sdp"));
-        } else if (messageType.equals("candidate")) {
-          IceCandidate candidate = new IceCandidate(
-              message.getString("id"),
-              message.getInt("label"),
-              message.getString("candidate"));
-          iceCandidates.add(candidate);
-        } else {
-          Log.e(TAG, "Unknown message: " + messageString);
+      String result = roomJson.getString("result");
+      if (!result.equals("SUCCESS")) {
+        events.onSignalingParametersError("Room response error: " + result);
+        return;
+      }
+      response = roomJson.getString("params");
+      roomJson = new JSONObject(response);
+      String roomId = roomJson.getString("room_id");
+      String clientId = roomJson.getString("client_id");
+      String wssUrl = roomJson.getString("wss_url");
+      String wssPostUrl = roomJson.getString("wss_post_url");
+      boolean initiator = (roomJson.getBoolean("is_initiator"));
+      String roomUrl =
+          registerUrl.substring(0, registerUrl.indexOf("/register"));
+      if (!initiator) {
+        iceCandidates = new LinkedList<IceCandidate>();
+        String messagesString = roomJson.getString("messages");
+        JSONArray messages = new JSONArray(messagesString);
+        for (int i = 0; i < messages.length(); ++i) {
+          String messageString = messages.getString(i);
+          JSONObject message = new JSONObject(messageString);
+          String messageType = message.getString("type");
+          Log.d(TAG, "GAE->C #" + i + " : " + messageString);
+          if (messageType.equals("offer")) {
+            offerSdp = new SessionDescription(
+                SessionDescription.Type.fromCanonicalForm(messageType),
+                message.getString("sdp"));
+          } else if (messageType.equals("candidate")) {
+            IceCandidate candidate = new IceCandidate(
+                message.getString("id"),
+                message.getInt("label"),
+                message.getString("candidate"));
+            iceCandidates.add(candidate);
+          } else {
+            Log.e(TAG, "Unknown message: " + messageString);
+          }
         }
       }
-    }
+      Log.d(TAG, "RoomId: " + roomId + ". ClientId: " + clientId);
+      Log.d(TAG, "Initiator: " + initiator);
+      Log.d(TAG, "Room url: " + roomUrl);
+      Log.d(TAG, "WSS url: " + wssUrl);
+      Log.d(TAG, "WSS POST url: " + wssPostUrl);
 
-    Log.d(TAG, "RoomId: " + roomId + ". ClientId: " + clientId);
-    Log.d(TAG, "Initiator: " + initiator);
-    Log.d(TAG, "Room url: " + roomUrl);
-
-    LinkedList<PeerConnection.IceServer> iceServers =
-        iceServersFromPCConfigJSON(roomJson.getString("pc_config"));
-    boolean isTurnPresent = false;
-    for (PeerConnection.IceServer server : iceServers) {
-      Log.d(TAG, "IceServer: " + server);
-      if (server.uri.startsWith("turn:")) {
-        isTurnPresent = true;
-        break;
+      LinkedList<PeerConnection.IceServer> iceServers =
+          iceServersFromPCConfigJSON(roomJson.getString("pc_config"));
+      boolean isTurnPresent = false;
+      for (PeerConnection.IceServer server : iceServers) {
+        Log.d(TAG, "IceServer: " + server);
+        if (server.uri.startsWith("turn:")) {
+          isTurnPresent = true;
+          break;
+        }
       }
-    }
-    if (!isTurnPresent) {
-      LinkedList<PeerConnection.IceServer> turnServers =
-          requestTurnServers(roomJson.getString("turn_url"));
-      for (PeerConnection.IceServer turnServer : turnServers) {
-        Log.d(TAG, "TurnServer: " + turnServer);
-        iceServers.add(turnServer);
+      if (!isTurnPresent) {
+        LinkedList<PeerConnection.IceServer> turnServers =
+            requestTurnServers(roomJson.getString("turn_url"));
+        for (PeerConnection.IceServer turnServer : turnServers) {
+          Log.d(TAG, "TurnServer: " + turnServer);
+          iceServers.add(turnServer);
+        }
       }
+
+      MediaConstraints pcConstraints = constraintsFromJSON(
+          roomJson.getString("pc_constraints"));
+      addDTLSConstraintIfMissing(pcConstraints, loopback);
+      Log.d(TAG, "pcConstraints: " + pcConstraints);
+      MediaConstraints videoConstraints = constraintsFromJSON(
+          getAVConstraints("video",
+              roomJson.getString("media_constraints")));
+      Log.d(TAG, "videoConstraints: " + videoConstraints);
+      MediaConstraints audioConstraints = constraintsFromJSON(
+          getAVConstraints("audio",
+              roomJson.getString("media_constraints")));
+      Log.d(TAG, "audioConstraints: " + audioConstraints);
+
+      SignalingParameters params = new SignalingParameters(
+          iceServers, initiator,
+          pcConstraints, videoConstraints, audioConstraints,
+          roomUrl, roomId, clientId,
+          wssUrl, wssPostUrl,
+          offerSdp, iceCandidates);
+      events.onSignalingParametersReady(params);
+    } catch (JSONException e) {
+      events.onSignalingParametersError(
+          "Room JSON parsing error: " + e.toString());
+    } catch (IOException e) {
+      events.onSignalingParametersError("Room IO error: " + e.toString());
     }
-
-    MediaConstraints pcConstraints = constraintsFromJSON(
-        roomJson.getString("pc_constraints"));
-    addDTLSConstraintIfMissing(pcConstraints, loopback);
-    Log.d(TAG, "pcConstraints: " + pcConstraints);
-    MediaConstraints videoConstraints = constraintsFromJSON(
-        getAVConstraints("video",
-            roomJson.getString("media_constraints")));
-    Log.d(TAG, "videoConstraints: " + videoConstraints);
-    MediaConstraints audioConstraints = constraintsFromJSON(
-        getAVConstraints("audio",
-            roomJson.getString("media_constraints")));
-    Log.d(TAG, "audioConstraints: " + audioConstraints);
-
-    return new SignalingParameters(
-        iceServers, initiator,
-        pcConstraints, videoConstraints, audioConstraints,
-        roomUrl, roomId, clientId,
-        wssUrl, wssPostUrl,
-        offerSdp, iceCandidates);
   }
 
   // Mimic Chrome and set DtlsSrtpKeyAgreement to true if not set to false by
@@ -245,7 +225,7 @@ public class RoomParametersFetcher
   private String getAVConstraints (
     String type, String mediaConstraintsString) throws JSONException {
     JSONObject json = new JSONObject(mediaConstraintsString);
-    // Tricksy handling of values that are allowed to be (boolean or
+    // Tricky handling of values that are allowed to be (boolean or
     // MediaTrackConstraints) by the getUserMedia() spec.  There are three
     // cases below.
     if (!json.has(type) || !json.optBoolean(type, true)) {

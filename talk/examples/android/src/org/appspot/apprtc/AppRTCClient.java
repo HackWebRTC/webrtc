@@ -42,7 +42,7 @@ public interface AppRTCClient {
    * https://apprtc.appspot.com/?r=NNN. Once connection is established
    * onConnectedToRoom() callback with room parameters is invoked.
    */
-  public void connectToRoom(String url, boolean loopback);
+  public void connectToRoom(final String url, final boolean loopback);
 
   /**
    * Send offer SDP to the other participant.
@@ -60,9 +60,9 @@ public interface AppRTCClient {
   public void sendLocalIceCandidate(final IceCandidate candidate);
 
   /**
-   * Disconnect from the channel.
+   * Disconnect from room.
    */
-  public void disconnect();
+  public void disconnectFromRoom();
 
   /**
    * Struct holding the signaling parameters of an AppRTC room.

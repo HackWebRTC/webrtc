@@ -27,15 +27,16 @@
 
 package org.appspot.apprtc;
 
+import org.appspot.apprtc.util.AppRTCUtils;
+import org.appspot.apprtc.util.AppRTCUtils.NonThreadSafe;
+
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Build;
 import android.util.Log;
-import java.util.List;
-import org.appspot.apprtc.util.AppRTCUtils;
-import org.appspot.apprtc.util.AppRTCUtils.NonThreadSafe;
 
 /**
  * AppRTCProximitySensor manages functions related to the proximity sensor in
@@ -161,16 +162,27 @@ public class AppRTCProximitySensor implements SensorEventListener {
     if (proximitySensor == null) {
       return;
     }
-    Log.d(TAG, "Proximity sensor: " + "name=" + proximitySensor.getName()
-        + ", vendor: " + proximitySensor.getVendor()
-        + ", type: " + proximitySensor.getStringType()
-        + ", reporting mode: " + proximitySensor.getReportingMode()
-        + ", power: " + proximitySensor.getPower()
-        + ", min delay: " + proximitySensor.getMinDelay()
-        + ", max delay: " + proximitySensor.getMaxDelay()
-        + ", resolution: " + proximitySensor.getResolution()
-        + ", max range: " + proximitySensor.getMaximumRange()
-        + ", isWakeUpSensor: " + proximitySensor.isWakeUpSensor());
+    StringBuilder info = new StringBuilder("Proximity sensor: ");
+    info.append("name=" + proximitySensor.getName());
+    info.append(", vendor: " + proximitySensor.getVendor());
+    info.append(", power: " + proximitySensor.getPower());
+    info.append(", resolution: " + proximitySensor.getResolution());
+    info.append(", max range: " + proximitySensor.getMaximumRange());
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
+      // Added in API level 9.
+      info.append(", min delay: " + proximitySensor.getMinDelay());
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+      // Added in API level 20.
+      info.append(", type: " + proximitySensor.getStringType());
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      // Added in API level 21.
+      info.append(", max delay: " + proximitySensor.getMaxDelay());
+      info.append(", reporting mode: " + proximitySensor.getReportingMode());
+      info.append(", isWakeUpSensor: " + proximitySensor.isWakeUpSensor());
+    }
+    Log.d(TAG, info.toString());
   }
 
   /**
