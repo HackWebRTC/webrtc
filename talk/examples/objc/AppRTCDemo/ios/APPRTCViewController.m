@@ -108,6 +108,10 @@ static CGFloat const kLocalViewPadding = 20;
 }
 
 - (void)appClient:(ARDAppClient *)client
+    didChangeConnectionState:(RTCICEConnectionState)state {
+}
+
+- (void)appClient:(ARDAppClient *)client
     didReceiveLocalVideoTrack:(RTCVideoTrack *)localVideoTrack {
   _localVideoTrack = localVideoTrack;
   [_localVideoTrack addRenderer:self.localVideoView];

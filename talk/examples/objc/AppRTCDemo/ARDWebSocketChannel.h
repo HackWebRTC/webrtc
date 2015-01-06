@@ -27,49 +27,22 @@
 
 #import <Foundation/Foundation.h>
 
-#import "ARDSignalingMessage.h"
-
-typedef NS_ENUM(NSInteger, ARDWebSocketChannelState) {
-  // State when disconnected.
-  kARDWebSocketChannelStateClosed,
-  // State when connection is established but not ready for use.
-  kARDWebSocketChannelStateOpen,
-  // State when connection is established and registered.
-  kARDWebSocketChannelStateRegistered,
-  // State when connection encounters a fatal error.
-  kARDWebSocketChannelStateError
-};
-
-@class ARDWebSocketChannel;
-@protocol ARDWebSocketChannelDelegate <NSObject>
-
-- (void)channel:(ARDWebSocketChannel *)channel
-    didChangeState:(ARDWebSocketChannelState)state;
-
-- (void)channel:(ARDWebSocketChannel *)channel
-    didReceiveMessage:(ARDSignalingMessage *)message;
-
-@end
+#import "ARDSignalingChannel.h"
 
 // Wraps a WebSocket connection to the AppRTC WebSocket server.
-@interface ARDWebSocketChannel : NSObject
-
-@property(nonatomic, readonly) NSString *roomId;
-@property(nonatomic, readonly) NSString *clientId;
-@property(nonatomic, readonly) ARDWebSocketChannelState state;
-@property(nonatomic, weak) id<ARDWebSocketChannelDelegate> delegate;
+@interface ARDWebSocketChannel : NSObject <ARDSignalingChannel>
 
 - (instancetype)initWithURL:(NSURL *)url
                     restURL:(NSURL *)restURL
-                   delegate:(id<ARDWebSocketChannelDelegate>)delegate;
+                   delegate:(id<ARDSignalingChannelDelegate>)delegate;
 
 // Registers with the WebSocket server for the given room and client id once
 // the web socket connection is open.
 - (void)registerForRoomId:(NSString *)roomId
                  clientId:(NSString *)clientId;
 
-// Sends data over the WebSocket connection if registered, otherwise POSTs to
+// Sends message over the WebSocket connection if registered, otherwise POSTs to
 // the web socket server instead.
-- (void)sendData:(NSData *)data;
+- (void)sendMessage:(ARDSignalingMessage *)message;
 
 @end

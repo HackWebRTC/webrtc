@@ -45,6 +45,9 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
     didChangeState:(ARDAppClientState)state;
 
 - (void)appClient:(ARDAppClient *)client
+    didChangeConnectionState:(RTCICEConnectionState)state;
+
+- (void)appClient:(ARDAppClient *)client
     didReceiveLocalVideoTrack:(RTCVideoTrack *)localVideoTrack;
 
 - (void)appClient:(ARDAppClient *)client

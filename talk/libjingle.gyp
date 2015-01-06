@@ -278,6 +278,11 @@
               '-lstdc++',
             ],
           },
+          'all_dependent_settings': {
+            'xcode_settings': {
+              'CLANG_ENABLE_OBJC_ARC': 'YES',
+            },
+          },
           'xcode_settings': {
             'CLANG_ENABLE_OBJC_ARC': 'YES',
             # common.gypi enables this for mac but we want this to be disabled

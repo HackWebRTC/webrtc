@@ -94,6 +94,7 @@
 /third_party/modp_b64
 /third_party/nss
 /third_party/oauth2
+/third_party/ocmock
 /third_party/openmax_dl
 /third_party/opus
 /third_party/protobuf

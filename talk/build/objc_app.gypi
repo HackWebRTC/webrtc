@@ -29,27 +29,20 @@
 # used as an iOS or OS/X application.
 
 {
-  'conditions': [
-    ['OS=="ios"', {
-      'variables': {
-        'infoplist_file': './ios_test.plist',
-      },
-      'mac_bundle': 1,
-      'mac_bundle_resources': [
-        '<(infoplist_file)',
-      ],
-      # The plist is listed above so that it appears in XCode's file list,
-      # but we don't actually want to bundle it.
-      'mac_bundle_resources!': [
-        '<(infoplist_file)',
-      ],
-      'xcode_settings': {
-        'CLANG_ENABLE_OBJC_ARC': 'YES',
-        # common.gypi enables this for mac but we want this to be disabled
-        # like it is for ios.
-        'CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS': 'NO',
-        'INFOPLIST_FILE': '<(infoplist_file)',
-      },
-    }],
-  ],  # conditions
+  'variables': {
+    'infoplist_file': './objc_app.plist',
+  },
+  'mac_bundle': 1,
+  'mac_bundle_resources': [
+    '<(infoplist_file)',
+  ],
+  # The plist is listed above so that it appears in XCode's file list,
+  # but we don't actually want to bundle it.
+  'mac_bundle_resources!': [
+    '<(infoplist_file)',
+  ],
+  'xcode_settings': {
+    'CLANG_ENABLE_OBJC_ARC': 'YES',
+    'INFOPLIST_FILE': '<(infoplist_file)',
+  },
 }

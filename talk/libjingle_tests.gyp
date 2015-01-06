@@ -72,7 +72,7 @@
     {
       'target_name': 'libjingle_unittest',
       'type': 'executable',
-      'includes': [ 'build/ios_tests.gypi', ],
+      'includes': [ 'build/objc_app.gypi', ],
       'dependencies': [
         '<(webrtc_root)/base/base.gyp:rtc_base',
         '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
@@ -341,7 +341,7 @@
         {
           'target_name': 'libjingle_peerconnection_objc_test',
           'type': 'executable',
-          'includes': [ 'build/ios_tests.gypi', ],
+          'includes': [ 'build/objc_app.gypi' ],
           'dependencies': [
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
             'libjingle.gyp:libjingle_peerconnection_objc',
@@ -356,46 +356,40 @@
             # needs a GUI driver.
             'app/webrtc/objctests/mac/main.mm',
           ],
-          'FRAMEWORK_SEARCH_PATHS': [
-            '$(inherited)',
-            '$(SDKROOT)/Developer/Library/Frameworks',
-            '$(DEVELOPER_LIBRARY_DIR)/Frameworks',
-          ],
-
-          # TODO(fischman): there is duplication here with
-          # build/ios_tests.gypi, because for historical reasons the
-          # mac x64 bots expect this unittest to be in a bundle
-          # directory (.app).  Once the bots don't expect this
-          # anymore, remove this duplication.
-          'variables': {
-            'infoplist_file': 'build/ios_test.plist',
-          },
-          'mac_bundle': 1,
-          'mac_bundle_resources': [
-            '<(infoplist_file)',
-          ],
-          # The plist is listed above so that it appears in XCode's file list,
-          # but we don't actually want to bundle it.
-          'mac_bundle_resources!': [
-            '<(infoplist_file)',
-          ],
-          'xcode_settings': {
-            'CLANG_ENABLE_OBJC_ARC': 'YES',
-            # common.gypi enables this for mac but we want this to be disabled
-            # like it is for ios.
-            'CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS': 'NO',
-            'INFOPLIST_FILE': '<(infoplist_file)',
-          },
           'conditions': [
             ['OS=="mac"', {
               'xcode_settings': {
                 # Need to build against 10.7 framework for full ARC support
                 # on OSX.
                 'MACOSX_DEPLOYMENT_TARGET' : '10.7',
+                # common.gypi enables this for mac but we want this to be
+                # disabled like it is for ios.
+                'CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS': 'NO',
               },
             }],
           ],
         },  # target libjingle_peerconnection_objc_test
+        {
+          'target_name': 'apprtc_signaling_gunit_test',
+          'type': 'executable',
+          'includes': [ 'build/objc_app.gypi' ],
+          'dependencies': [
+            '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
+            '<(DEPTH)/third_party/ocmock/ocmock.gyp:ocmock',
+            'libjingle_examples.gyp:apprtc_signaling',
+          ],
+          'sources': [
+            'app/webrtc/objctests/mac/main.mm',
+            'examples/objc/AppRTCDemo/tests/ARDAppClientTest.mm',
+          ],
+          'conditions': [
+            ['OS=="mac"', {
+              'xcode_settings': {
+                'MACOSX_DEPLOYMENT_TARGET' : '10.8',
+              },
+            }],
+          ],
+        },  # target apprtc_signaling_gunit_test
       ],
     }],
     ['test_isolation_mode != "noop"', {

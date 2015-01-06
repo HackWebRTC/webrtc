@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "ARDRegisterResponse.h"
+#import "ARDRegisterResponse+Internal.h"
 
 #import "ARDSignalingMessage.h"
 #import "ARDUtilities.h"
@@ -39,18 +39,6 @@ static NSString const *kARDRegisterClientIdKey = @"client_id";
 static NSString const *kARDRegisterMessagesKey = @"messages";
 static NSString const *kARDRegisterWebSocketURLKey = @"wss_url";
 static NSString const *kARDRegisterWebSocketRestURLKey = @"wss_post_url";
-
-@interface ARDRegisterResponse ()
-
-@property(nonatomic, assign) ARDRegisterResultType result;
-@property(nonatomic, assign) BOOL isInitiator;
-@property(nonatomic, strong) NSString *roomId;
-@property(nonatomic, strong) NSString *clientId;
-@property(nonatomic, strong) NSArray *messages;
-@property(nonatomic, strong) NSURL *webSocketURL;
-@property(nonatomic, strong) NSURL *webSocketRestURL;
-
-@end
 
 @implementation ARDRegisterResponse
 

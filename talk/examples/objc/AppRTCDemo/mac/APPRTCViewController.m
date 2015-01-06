@@ -267,6 +267,10 @@ static NSUInteger const kLogViewHeight = 280;
 }
 
 - (void)appClient:(ARDAppClient *)client
+    didChangeConnectionState:(RTCICEConnectionState)state {
+}
+
+- (void)appClient:(ARDAppClient *)client
     didReceiveLocalVideoTrack:(RTCVideoTrack *)localVideoTrack {
   _localVideoTrack = localVideoTrack;
 }

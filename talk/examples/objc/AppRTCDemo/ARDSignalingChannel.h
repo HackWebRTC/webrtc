@@ -25,39 +25,45 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "ARDMessageResponse+Internal.h"
+#import <Foundation/Foundation.h>
 
-#import "ARDUtilities.h"
+#import "ARDSignalingMessage.h"
 
-static NSString const *kARDMessageResultKey = @"result";
+typedef NS_ENUM(NSInteger, ARDSignalingChannelState) {
+  // State when disconnected.
+  kARDSignalingChannelStateClosed,
+  // State when connection is established but not ready for use.
+  kARDSignalingChannelStateOpen,
+  // State when connection is established and registered.
+  kARDSignalingChannelStateRegistered,
+  // State when connection encounters a fatal error.
+  kARDSignalingChannelStateError
+};
 
-@implementation ARDMessageResponse
+@protocol ARDSignalingChannel;
+@protocol ARDSignalingChannelDelegate <NSObject>
 
-@synthesize result = _result;
+- (void)channel:(id<ARDSignalingChannel>)channel
+    didChangeState:(ARDSignalingChannelState)state;
 
-+ (ARDMessageResponse *)responseFromJSONData:(NSData *)data {
-  NSDictionary *responseJSON = [NSDictionary dictionaryWithJSONData:data];
-  if (!responseJSON) {
-    return nil;
-  }
-  ARDMessageResponse *response = [[ARDMessageResponse alloc] init];
-  response.result =
-      [[self class] resultTypeFromString:responseJSON[kARDMessageResultKey]];
-  return response;
-}
-
-#pragma mark - Private
-
-+ (ARDMessageResultType)resultTypeFromString:(NSString *)resultString {
-  ARDMessageResultType result = kARDMessageResultTypeUnknown;
-  if ([resultString isEqualToString:@"SUCCESS"]) {
-    result = kARDMessageResultTypeSuccess;
-  } else if ([resultString isEqualToString:@"INVALID_CLIENT"]) {
-    result = kARDMessageResultTypeInvalidClient;
-  } else if ([resultString isEqualToString:@"INVALID_ROOM"]) {
-    result = kARDMessageResultTypeInvalidRoom;
-  }
-  return result;
-}
+- (void)channel:(id<ARDSignalingChannel>)channel
+    didReceiveMessage:(ARDSignalingMessage *)message;
 
 @end
+
+@protocol ARDSignalingChannel <NSObject>
+
+@property(nonatomic, readonly) NSString *roomId;
+@property(nonatomic, readonly) NSString *clientId;
+@property(nonatomic, readonly) ARDSignalingChannelState state;
+@property(nonatomic, weak) id<ARDSignalingChannelDelegate> delegate;
+
+// Registers the channel for the given room and client id.
+- (void)registerForRoomId:(NSString *)roomId
+                 clientId:(NSString *)clientId;
+
+// Sends signaling message over the channel.
+- (void)sendMessage:(ARDSignalingMessage *)message;
+
+@end
+

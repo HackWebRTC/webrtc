@@ -25,39 +25,26 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "ARDMessageResponse+Internal.h"
+#import <Foundation/Foundation.h>
 
-#import "ARDUtilities.h"
+@class ARDMessageResponse;
+@class ARDRegisterResponse;
+@class ARDSignalingMessage;
 
-static NSString const *kARDMessageResultKey = @"result";
+@protocol ARDRoomServerClient <NSObject>
 
-@implementation ARDMessageResponse
+- (void)registerForRoomId:(NSString *)roomId
+    completionHandler:(void (^)(ARDRegisterResponse *response,
+                                NSError *error))completionHandler;
 
-@synthesize result = _result;
+- (void)sendMessage:(ARDSignalingMessage *)message
+            forRoomId:(NSString *)roomId
+             clientId:(NSString *)clientId
+    completionHandler:(void (^)(ARDMessageResponse *response,
+                                NSError *error))completionHandler;
 
-+ (ARDMessageResponse *)responseFromJSONData:(NSData *)data {
-  NSDictionary *responseJSON = [NSDictionary dictionaryWithJSONData:data];
-  if (!responseJSON) {
-    return nil;
-  }
-  ARDMessageResponse *response = [[ARDMessageResponse alloc] init];
-  response.result =
-      [[self class] resultTypeFromString:responseJSON[kARDMessageResultKey]];
-  return response;
-}
-
-#pragma mark - Private
-
-+ (ARDMessageResultType)resultTypeFromString:(NSString *)resultString {
-  ARDMessageResultType result = kARDMessageResultTypeUnknown;
-  if ([resultString isEqualToString:@"SUCCESS"]) {
-    result = kARDMessageResultTypeSuccess;
-  } else if ([resultString isEqualToString:@"INVALID_CLIENT"]) {
-    result = kARDMessageResultTypeInvalidClient;
-  } else if ([resultString isEqualToString:@"INVALID_ROOM"]) {
-    result = kARDMessageResultTypeInvalidRoom;
-  }
-  return result;
-}
+- (void)deregisterForRoomId:(NSString *)roomId
+                   clientId:(NSString *)clientId
+          completionHandler:(void (^)(NSError *error))completionHandler;
 
 @end

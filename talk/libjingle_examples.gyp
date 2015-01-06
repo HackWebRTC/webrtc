@@ -148,14 +148,70 @@
 
     ['OS=="ios" or (OS=="mac" and target_arch!="ia32" and mac_sdk>="10.8")', {
       'targets': [
+        { 'target_name': 'apprtc_signaling',
+          'type': 'static_library',
+          'dependencies': [
+            'libjingle.gyp:libjingle_peerconnection_objc',
+            'socketrocket',
+          ],
+          'sources': [
+            'examples/objc/AppRTCDemo/ARDAppClient.h',
+            'examples/objc/AppRTCDemo/ARDAppClient.m',
+            'examples/objc/AppRTCDemo/ARDAppClient+Internal.h',
+            'examples/objc/AppRTCDemo/ARDAppEngineClient.h',
+            'examples/objc/AppRTCDemo/ARDAppEngineClient.m',
+            'examples/objc/AppRTCDemo/ARDCEODTURNClient.h',
+            'examples/objc/AppRTCDemo/ARDCEODTURNClient.m',
+            'examples/objc/AppRTCDemo/ARDMessageResponse.h',
+            'examples/objc/AppRTCDemo/ARDMessageResponse.m',
+            'examples/objc/AppRTCDemo/ARDMessageResponse+Internal.h',
+            'examples/objc/AppRTCDemo/ARDRegisterResponse.h',
+            'examples/objc/AppRTCDemo/ARDRegisterResponse.m',
+            'examples/objc/AppRTCDemo/ARDRegisterResponse+Internal.h',
+            'examples/objc/AppRTCDemo/ARDRoomServerClient.h',
+            'examples/objc/AppRTCDemo/ARDSignalingChannel.h',
+            'examples/objc/AppRTCDemo/ARDSignalingMessage.h',
+            'examples/objc/AppRTCDemo/ARDSignalingMessage.m',
+            'examples/objc/AppRTCDemo/ARDTURNClient.h',
+            'examples/objc/AppRTCDemo/ARDUtilities.h',
+            'examples/objc/AppRTCDemo/ARDUtilities.m',
+            'examples/objc/AppRTCDemo/ARDWebSocketChannel.h',
+            'examples/objc/AppRTCDemo/ARDWebSocketChannel.m',
+            'examples/objc/AppRTCDemo/RTCICECandidate+JSON.h',
+            'examples/objc/AppRTCDemo/RTCICECandidate+JSON.m',
+            'examples/objc/AppRTCDemo/RTCICEServer+JSON.h',
+            'examples/objc/AppRTCDemo/RTCICEServer+JSON.m',
+            'examples/objc/AppRTCDemo/RTCMediaConstraints+JSON.h',
+            'examples/objc/AppRTCDemo/RTCMediaConstraints+JSON.m',
+            'examples/objc/AppRTCDemo/RTCSessionDescription+JSON.h',
+            'examples/objc/AppRTCDemo/RTCSessionDescription+JSON.m',
+          ],
+          'include_dirs': [
+            'examples/objc/APPRTCDemo',
+          ],
+          'direct_dependent_settings': {
+            'include_dirs': [
+              'examples/objc/APPRTCDemo',
+            ],
+          },
+          'export_dependent_settings': [
+            'libjingle.gyp:libjingle_peerconnection_objc',
+          ],
+          'conditions': [
+            ['OS=="mac"', {
+              'xcode_settings': {
+                'MACOSX_DEPLOYMENT_TARGET' : '10.8',
+              },
+            }],
+          ],
+        },
         {
           'target_name': 'AppRTCDemo',
           'type': 'executable',
           'product_name': 'AppRTCDemo',
           'mac_bundle': 1,
           'dependencies': [
-            'libjingle.gyp:libjingle_peerconnection_objc',
-            'socketrocket',
+            'apprtc_signaling',
           ],
           'conditions': [
             ['OS=="ios"', {
@@ -199,34 +255,6 @@
               ],
             }],
           ],
-          'include_dirs': [
-            'examples/objc/APPRTCDemo',
-          ],
-          'sources': [
-            'examples/objc/AppRTCDemo/ARDAppClient.h',
-            'examples/objc/AppRTCDemo/ARDAppClient.m',
-            'examples/objc/AppRTCDemo/ARDMessageResponse.h',
-            'examples/objc/AppRTCDemo/ARDMessageResponse.m',
-            'examples/objc/AppRTCDemo/ARDRegisterResponse.h',
-            'examples/objc/AppRTCDemo/ARDRegisterResponse.m',
-            'examples/objc/AppRTCDemo/ARDSignalingMessage.h',
-            'examples/objc/AppRTCDemo/ARDSignalingMessage.m',
-            'examples/objc/AppRTCDemo/ARDUtilities.h',
-            'examples/objc/AppRTCDemo/ARDUtilities.m',
-            'examples/objc/AppRTCDemo/ARDWebSocketChannel.h',
-            'examples/objc/AppRTCDemo/ARDWebSocketChannel.m',
-            'examples/objc/AppRTCDemo/RTCICECandidate+JSON.h',
-            'examples/objc/AppRTCDemo/RTCICECandidate+JSON.m',
-            'examples/objc/AppRTCDemo/RTCICEServer+JSON.h',
-            'examples/objc/AppRTCDemo/RTCICEServer+JSON.m',
-            'examples/objc/AppRTCDemo/RTCMediaConstraints+JSON.h',
-            'examples/objc/AppRTCDemo/RTCMediaConstraints+JSON.m',
-            'examples/objc/AppRTCDemo/RTCSessionDescription+JSON.h',
-            'examples/objc/AppRTCDemo/RTCSessionDescription+JSON.m',
-          ],
-          'xcode_settings': {
-            'CLANG_ENABLE_OBJC_ARC': 'YES',
-          },
         },  # target AppRTCDemo
         {
           # TODO(tkchin): move this into the real third party location and

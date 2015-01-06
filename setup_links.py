@@ -55,6 +55,7 @@ DIRECTORIES = [
   'third_party/libyuv',
   'third_party/llvm-build',
   'third_party/nss',
+  'third_party/ocmock',
   'third_party/openmax_dl',
   'third_party/opus',
   'third_party/protobuf',

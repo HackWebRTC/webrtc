@@ -25,37 +25,25 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "ARDAppClient.h"
+#import "ARDAppClient+Internal.h"
 
 #import <AVFoundation/AVFoundation.h>
 
+#import "ARDAppEngineClient.h"
+#import "ARDCEODTURNClient.h"
 #import "ARDMessageResponse.h"
 #import "ARDRegisterResponse.h"
 #import "ARDSignalingMessage.h"
 #import "ARDUtilities.h"
 #import "ARDWebSocketChannel.h"
 #import "RTCICECandidate+JSON.h"
-#import "RTCICEServer+JSON.h"
+#import "RTCICEServer.h"
 #import "RTCMediaConstraints.h"
 #import "RTCMediaStream.h"
 #import "RTCPair.h"
-#import "RTCPeerConnection.h"
-#import "RTCPeerConnectionDelegate.h"
-#import "RTCPeerConnectionFactory.h"
 #import "RTCSessionDescription+JSON.h"
-#import "RTCSessionDescriptionDelegate.h"
 #import "RTCVideoCapturer.h"
 #import "RTCVideoTrack.h"
-
-// TODO(tkchin): move these to a configuration object.
-static NSString *kARDRoomServerHostUrl =
-    @"https://apprtc.appspot.com";
-static NSString *kARDRoomServerRegisterFormat =
-    @"https://apprtc.appspot.com/register/%@";
-static NSString *kARDRoomServerMessageFormat =
-    @"https://apprtc.appspot.com/message/%@/%@";
-static NSString *kARDRoomServerByeFormat =
-    @"https://apprtc.appspot.com/bye/%@/%@";
 
 static NSString *kARDDefaultSTUNServerUrl =
     @"stun:stun.l.google.com:19302";
@@ -69,34 +57,16 @@ static NSInteger kARDAppClientErrorUnknown = -1;
 static NSInteger kARDAppClientErrorRoomFull = -2;
 static NSInteger kARDAppClientErrorCreateSDP = -3;
 static NSInteger kARDAppClientErrorSetSDP = -4;
-static NSInteger kARDAppClientErrorNetwork = -5;
-static NSInteger kARDAppClientErrorInvalidClient = -6;
-static NSInteger kARDAppClientErrorInvalidRoom = -7;
-
-@interface ARDAppClient () <ARDWebSocketChannelDelegate,
-    RTCPeerConnectionDelegate, RTCSessionDescriptionDelegate>
-@property(nonatomic, strong) ARDWebSocketChannel *channel;
-@property(nonatomic, strong) RTCPeerConnection *peerConnection;
-@property(nonatomic, strong) RTCPeerConnectionFactory *factory;
-@property(nonatomic, strong) NSMutableArray *messageQueue;
-
-@property(nonatomic, assign) BOOL isTurnComplete;
-@property(nonatomic, assign) BOOL hasReceivedSdp;
-@property(nonatomic, readonly) BOOL isRegisteredWithRoomServer;
-
-@property(nonatomic, strong) NSString *roomId;
-@property(nonatomic, strong) NSString *clientId;
-@property(nonatomic, assign) BOOL isInitiator;
-@property(nonatomic, strong) NSMutableArray *iceServers;
-@property(nonatomic, strong) NSURL *webSocketURL;
-@property(nonatomic, strong) NSURL *webSocketRestURL;
-@end
+static NSInteger kARDAppClientErrorInvalidClient = -5;
+static NSInteger kARDAppClientErrorInvalidRoom = -6;
 
 @implementation ARDAppClient
 
 @synthesize delegate = _delegate;
 @synthesize state = _state;
+@synthesize roomServerClient = _roomServerClient;
 @synthesize channel = _channel;
+@synthesize turnClient = _turnClient;
 @synthesize peerConnection = _peerConnection;
 @synthesize factory = _factory;
 @synthesize messageQueue = _messageQueue;
@@ -108,15 +78,44 @@ static NSInteger kARDAppClientErrorInvalidRoom = -7;
 @synthesize iceServers = _iceServers;
 @synthesize webSocketURL = _websocketURL;
 @synthesize webSocketRestURL = _websocketRestURL;
+@synthesize defaultPeerConnectionConstraints =
+    _defaultPeerConnectionConstraints;
 
 - (instancetype)initWithDelegate:(id<ARDAppClientDelegate>)delegate {
   if (self = [super init]) {
+    _roomServerClient = [[ARDAppEngineClient alloc] init];
     _delegate = delegate;
-    _factory = [[RTCPeerConnectionFactory alloc] init];
-    _messageQueue = [NSMutableArray array];
-    _iceServers = [NSMutableArray arrayWithObject:[self defaultSTUNServer]];
+    NSURL *turnRequestURL = [NSURL URLWithString:kARDTurnRequestUrl];
+    _turnClient = [[ARDCEODTURNClient alloc] initWithURL:turnRequestURL];
+    [self configure];
   }
   return self;
+}
+
+// TODO(tkchin): Provide signaling channel factory interface so we can recreate
+// channel if we need to on network failure. Also, make this the default public
+// constructor.
+- (instancetype)initWithRoomServerClient:(id<ARDRoomServerClient>)rsClient
+                        signalingChannel:(id<ARDSignalingChannel>)channel
+                              turnClient:(id<ARDTURNClient>)turnClient
+                                delegate:(id<ARDAppClientDelegate>)delegate {
+  NSParameterAssert(rsClient);
+  NSParameterAssert(channel);
+  NSParameterAssert(turnClient);
+  if (self = [super init]) {
+    _roomServerClient = rsClient;
+    _channel = channel;
+    _turnClient = turnClient;
+    _delegate = delegate;
+    [self configure];
+  }
+  return self;
+}
+
+- (void)configure {
+  _factory = [[RTCPeerConnectionFactory alloc] init];
+  _messageQueue = [NSMutableArray array];
+  _iceServers = [NSMutableArray arrayWithObject:[self defaultSTUNServer]];
 }
 
 - (void)dealloc {
@@ -139,9 +138,11 @@ static NSInteger kARDAppClientErrorInvalidRoom = -7;
 
   // Request TURN.
   __weak ARDAppClient *weakSelf = self;
-  NSURL *turnRequestURL = [NSURL URLWithString:kARDTurnRequestUrl];
-  [self requestTURNServersWithURL:turnRequestURL
-                completionHandler:^(NSArray *turnServers) {
+  [_turnClient requestServersWithCompletionHandler:^(NSArray *turnServers,
+                                                     NSError *error) {
+    if (error) {
+      NSLog(@"Error retrieving TURN servers: %@", error);
+    }
     ARDAppClient *strongSelf = weakSelf;
     [strongSelf.iceServers addObjectsFromArray:turnServers];
     strongSelf.isTurnComplete = YES;
@@ -149,21 +150,19 @@ static NSInteger kARDAppClientErrorInvalidRoom = -7;
   }];
 
   // Register with room server.
-  [self registerWithRoomServerForRoomId:roomId
-                      completionHandler:^(ARDRegisterResponse *response) {
+  [_roomServerClient registerForRoomId:roomId
+      completionHandler:^(ARDRegisterResponse *response, NSError *error) {
     ARDAppClient *strongSelf = weakSelf;
-    if (!response || response.result != kARDRegisterResultTypeSuccess) {
-      NSLog(@"Failed to register with room server. Result:%d",
-          (int)response.result);
-      [strongSelf disconnect];
-      NSDictionary *userInfo = @{
-        NSLocalizedDescriptionKey: @"Room is full.",
-      };
-      NSError *error =
-          [[NSError alloc] initWithDomain:kARDAppClientErrorDomain
-                                     code:kARDAppClientErrorRoomFull
-                                 userInfo:userInfo];
+    if (error) {
       [strongSelf.delegate appClient:strongSelf didError:error];
+      return;
+    }
+    NSError *registerError =
+        [[strongSelf class] errorForRegisterResultType:response.result];
+    if (registerError) {
+      NSLog(@"Failed to register with room server.");
+      [strongSelf disconnect];
+      [strongSelf.delegate appClient:strongSelf didError:registerError];
       return;
     }
     NSLog(@"Registered with room server.");
@@ -191,14 +190,15 @@ static NSInteger kARDAppClientErrorInvalidRoom = -7;
     return;
   }
   if (self.isRegisteredWithRoomServer) {
-    [self unregisterWithRoomServer];
+    [_roomServerClient deregisterForRoomId:_roomId
+                                  clientId:_clientId
+                         completionHandler:nil];
   }
   if (_channel) {
-    if (_channel.state == kARDWebSocketChannelStateRegistered) {
+    if (_channel.state == kARDSignalingChannelStateRegistered) {
       // Tell the other client we're hanging up.
       ARDByeMessage *byeMessage = [[ARDByeMessage alloc] init];
-      NSData *byeData = [byeMessage JSONData];
-      [_channel sendData:byeData];
+      [_channel sendMessage:byeMessage];
     }
     // Disconnect from collider.
     _channel = nil;
@@ -212,9 +212,9 @@ static NSInteger kARDAppClientErrorInvalidRoom = -7;
   self.state = kARDAppClientStateDisconnected;
 }
 
-#pragma mark - ARDWebSocketChannelDelegate
+#pragma mark - ARDSignalingChannelDelegate
 
-- (void)channel:(ARDWebSocketChannel *)channel
+- (void)channel:(id<ARDSignalingChannel>)channel
     didReceiveMessage:(ARDSignalingMessage *)message {
   switch (message.type) {
     case kARDSignalingMessageTypeOffer:
@@ -232,15 +232,15 @@ static NSInteger kARDAppClientErrorInvalidRoom = -7;
   [self drainMessageQueueIfReady];
 }
 
-- (void)channel:(ARDWebSocketChannel *)channel
-    didChangeState:(ARDWebSocketChannelState)state {
+- (void)channel:(id<ARDSignalingChannel>)channel
+    didChangeState:(ARDSignalingChannelState)state {
   switch (state) {
-    case kARDWebSocketChannelStateOpen:
+    case kARDSignalingChannelStateOpen:
       break;
-    case kARDWebSocketChannelStateRegistered:
+    case kARDSignalingChannelStateRegistered:
       break;
-    case kARDWebSocketChannelStateClosed:
-    case kARDWebSocketChannelStateError:
+    case kARDSignalingChannelStateClosed:
+    case kARDSignalingChannelStateError:
       // TODO(tkchin): reconnection scenarios. Right now we just disconnect
       // completely if the websocket connection fails.
       [self disconnect];
@@ -281,6 +281,9 @@ static NSInteger kARDAppClientErrorInvalidRoom = -7;
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
     iceConnectionChanged:(RTCICEConnectionState)newState {
   NSLog(@"ICE state changed: %d", newState);
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [_delegate appClient:self didChangeConnectionState:newState];
+  });
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
@@ -430,9 +433,26 @@ static NSInteger kARDAppClientErrorInvalidRoom = -7;
 
 - (void)sendSignalingMessage:(ARDSignalingMessage *)message {
   if (_isInitiator) {
-    [self sendSignalingMessageToRoomServer:message completionHandler:nil];
+    __weak ARDAppClient *weakSelf = self;
+    [_roomServerClient sendMessage:message
+                         forRoomId:_roomId
+                          clientId:_clientId
+                 completionHandler:^(ARDMessageResponse *response,
+                                     NSError *error) {
+      ARDAppClient *strongSelf = weakSelf;
+      if (error) {
+        [strongSelf.delegate appClient:strongSelf didError:error];
+        return;
+      }
+      NSError *messageError =
+          [[strongSelf class] errorForMessageResultType:response.result];
+      if (messageError) {
+        [strongSelf.delegate appClient:strongSelf didError:messageError];
+        return;
+      }
+    }];
   } else {
-    [self sendSignalingMessageToCollider:message];
+    [_channel sendMessage:message];
   }
 }
 
@@ -473,142 +493,6 @@ static NSInteger kARDAppClientErrorInvalidRoom = -7;
   return localStream;
 }
 
-- (void)requestTURNServersWithURL:(NSURL *)requestURL
-    completionHandler:(void (^)(NSArray *turnServers))completionHandler {
-  NSParameterAssert([requestURL absoluteString].length);
-  NSMutableURLRequest *request =
-      [NSMutableURLRequest requestWithURL:requestURL];
-  // We need to set origin because TURN provider whitelists requests based on
-  // origin.
-  [request addValue:@"Mozilla/5.0" forHTTPHeaderField:@"user-agent"];
-  [request addValue:kARDRoomServerHostUrl forHTTPHeaderField:@"origin"];
-  [NSURLConnection sendAsyncRequest:request
-                  completionHandler:^(NSURLResponse *response,
-                                      NSData *data,
-                                      NSError *error) {
-    NSArray *turnServers = [NSArray array];
-    if (error) {
-      NSLog(@"Unable to get TURN server.");
-      completionHandler(turnServers);
-      return;
-    }
-    NSDictionary *dict = [NSDictionary dictionaryWithJSONData:data];
-    turnServers = [RTCICEServer serversFromCEODJSONDictionary:dict];
-    completionHandler(turnServers);
-  }];
-}
-
-#pragma mark - Room server methods
-
-- (void)registerWithRoomServerForRoomId:(NSString *)roomId
-    completionHandler:(void (^)(ARDRegisterResponse *))completionHandler {
-  NSString *urlString =
-      [NSString stringWithFormat:kARDRoomServerRegisterFormat, roomId];
-  NSURL *roomURL = [NSURL URLWithString:urlString];
-  NSLog(@"Registering with room server.");
-  __weak ARDAppClient *weakSelf = self;
-  [NSURLConnection sendAsyncPostToURL:roomURL
-                             withData:nil
-                    completionHandler:^(BOOL succeeded, NSData *data) {
-    ARDAppClient *strongSelf = weakSelf;
-    if (!succeeded) {
-      NSError *error = [self roomServerNetworkError];
-      [strongSelf.delegate appClient:strongSelf didError:error];
-      completionHandler(nil);
-      return;
-    }
-    ARDRegisterResponse *response =
-        [ARDRegisterResponse responseFromJSONData:data];
-    completionHandler(response);
-  }];
-}
-
-- (void)sendSignalingMessageToRoomServer:(ARDSignalingMessage *)message
-    completionHandler:(void (^)(ARDMessageResponse *))completionHandler {
-  NSData *data = [message JSONData];
-  NSString *urlString =
-      [NSString stringWithFormat:
-          kARDRoomServerMessageFormat, _roomId, _clientId];
-  NSURL *url = [NSURL URLWithString:urlString];
-  NSLog(@"C->RS POST: %@", message);
-  __weak ARDAppClient *weakSelf = self;
-  [NSURLConnection sendAsyncPostToURL:url
-                             withData:data
-                    completionHandler:^(BOOL succeeded, NSData *data) {
-    ARDAppClient *strongSelf = weakSelf;
-    if (!succeeded) {
-      NSError *error = [self roomServerNetworkError];
-      [strongSelf.delegate appClient:strongSelf didError:error];
-      return;
-    }
-    ARDMessageResponse *response =
-        [ARDMessageResponse responseFromJSONData:data];
-    NSError *error = nil;
-    switch (response.result) {
-      case kARDMessageResultTypeSuccess:
-        break;
-      case kARDMessageResultTypeUnknown:
-        error =
-            [[NSError alloc] initWithDomain:kARDAppClientErrorDomain
-                                       code:kARDAppClientErrorUnknown
-                                   userInfo:@{
-          NSLocalizedDescriptionKey: @"Unknown error.",
-        }];
-      case kARDMessageResultTypeInvalidClient:
-        error =
-            [[NSError alloc] initWithDomain:kARDAppClientErrorDomain
-                                       code:kARDAppClientErrorInvalidClient
-                                   userInfo:@{
-          NSLocalizedDescriptionKey: @"Invalid client.",
-        }];
-        break;
-      case kARDMessageResultTypeInvalidRoom:
-        error =
-            [[NSError alloc] initWithDomain:kARDAppClientErrorDomain
-                                       code:kARDAppClientErrorInvalidRoom
-                                   userInfo:@{
-          NSLocalizedDescriptionKey: @"Invalid room.",
-        }];
-        break;
-    };
-    if (error) {
-      [strongSelf.delegate appClient:strongSelf didError:error];
-    }
-    if (completionHandler) {
-      completionHandler(response);
-    }
-  }];
-}
-
-- (void)unregisterWithRoomServer {
-  NSString *urlString =
-      [NSString stringWithFormat:kARDRoomServerByeFormat, _roomId, _clientId];
-  NSURL *url = [NSURL URLWithString:urlString];
-  NSURLRequest *request = [NSURLRequest requestWithURL:url];
-  NSURLResponse *response = nil;
-  // We want a synchronous request so that we know that we're unregistered from
-  // room server before we do any further unregistration.
-  NSLog(@"C->RS: BYE");
-  NSError *error = nil;
-  [NSURLConnection sendSynchronousRequest:request
-                        returningResponse:&response
-                                    error:&error];
-  if (error) {
-    NSLog(@"Error unregistering from room server: %@", error);
-  }
-  NSLog(@"Unregistered from room server.");
-}
-
-- (NSError *)roomServerNetworkError {
-  NSError *error =
-      [[NSError alloc] initWithDomain:kARDAppClientErrorDomain
-                                 code:kARDAppClientErrorNetwork
-                             userInfo:@{
-    NSLocalizedDescriptionKey: @"Room server network error",
-  }];
-  return error;
-}
-
 #pragma mark - Collider methods
 
 - (void)registerWithColliderIfReady {
@@ -616,16 +500,13 @@ static NSInteger kARDAppClientErrorInvalidRoom = -7;
     return;
   }
   // Open WebSocket connection.
-  _channel =
-      [[ARDWebSocketChannel alloc] initWithURL:_websocketURL
-                                       restURL:_websocketRestURL
-                                      delegate:self];
+  if (!_channel) {
+    _channel =
+        [[ARDWebSocketChannel alloc] initWithURL:_websocketURL
+                                         restURL:_websocketRestURL
+                                        delegate:self];
+  }
   [_channel registerForRoomId:_roomId clientId:_clientId];
-}
-
-- (void)sendSignalingMessageToCollider:(ARDSignalingMessage *)message {
-  NSData *data = [message JSONData];
-  [_channel sendData:data];
 }
 
 #pragma mark - Defaults
@@ -655,6 +536,9 @@ static NSInteger kARDAppClientErrorInvalidRoom = -7;
 }
 
 - (RTCMediaConstraints *)defaultPeerConnectionConstraints {
+  if (_defaultPeerConnectionConstraints) {
+    return _defaultPeerConnectionConstraints;
+  }
   NSArray *optionalConstraints = @[
       [[RTCPair alloc] initWithKey:@"DtlsSrtpKeyAgreement" value:@"true"]
   ];
@@ -670,6 +554,63 @@ static NSInteger kARDAppClientErrorInvalidRoom = -7;
   return [[RTCICEServer alloc] initWithURI:defaultSTUNServerURL
                                   username:@""
                                   password:@""];
+}
+
+#pragma mark - Errors
+
++ (NSError *)errorForRegisterResultType:(ARDRegisterResultType)resultType {
+  NSError *error = nil;
+  switch (resultType) {
+    case kARDRegisterResultTypeSuccess:
+      break;
+    case kARDRegisterResultTypeUnknown: {
+      error = [[NSError alloc] initWithDomain:kARDAppClientErrorDomain
+                                         code:kARDAppClientErrorUnknown
+                                     userInfo:@{
+        NSLocalizedDescriptionKey: @"Unknown error.",
+      }];
+      break;
+    }
+    case kARDRegisterResultTypeFull: {
+      error = [[NSError alloc] initWithDomain:kARDAppClientErrorDomain
+                                         code:kARDAppClientErrorRoomFull
+                                     userInfo:@{
+        NSLocalizedDescriptionKey: @"Room is full.",
+      }];
+      break;
+    }
+  }
+  return error;
+}
+
++ (NSError *)errorForMessageResultType:(ARDMessageResultType)resultType {
+  NSError *error = nil;
+  switch (resultType) {
+    case kARDMessageResultTypeSuccess:
+      break;
+    case kARDMessageResultTypeUnknown:
+      error = [[NSError alloc] initWithDomain:kARDAppClientErrorDomain
+                                         code:kARDAppClientErrorUnknown
+                                     userInfo:@{
+        NSLocalizedDescriptionKey: @"Unknown error.",
+      }];
+      break;
+    case kARDMessageResultTypeInvalidClient:
+      error = [[NSError alloc] initWithDomain:kARDAppClientErrorDomain
+                                         code:kARDAppClientErrorInvalidClient
+                                     userInfo:@{
+        NSLocalizedDescriptionKey: @"Invalid client.",
+      }];
+      break;
+    case kARDMessageResultTypeInvalidRoom:
+      error = [[NSError alloc] initWithDomain:kARDAppClientErrorDomain
+                                         code:kARDAppClientErrorInvalidRoom
+                                     userInfo:@{
+        NSLocalizedDescriptionKey: @"Invalid room.",
+      }];
+      break;
+  }
+  return error;
 }
 
 @end

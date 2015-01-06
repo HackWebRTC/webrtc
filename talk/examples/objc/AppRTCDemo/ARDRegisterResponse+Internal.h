@@ -25,39 +25,16 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "ARDMessageResponse+Internal.h"
+#import "ARDRegisterResponse.h"
 
-#import "ARDUtilities.h"
+@interface ARDRegisterResponse ()
 
-static NSString const *kARDMessageResultKey = @"result";
-
-@implementation ARDMessageResponse
-
-@synthesize result = _result;
-
-+ (ARDMessageResponse *)responseFromJSONData:(NSData *)data {
-  NSDictionary *responseJSON = [NSDictionary dictionaryWithJSONData:data];
-  if (!responseJSON) {
-    return nil;
-  }
-  ARDMessageResponse *response = [[ARDMessageResponse alloc] init];
-  response.result =
-      [[self class] resultTypeFromString:responseJSON[kARDMessageResultKey]];
-  return response;
-}
-
-#pragma mark - Private
-
-+ (ARDMessageResultType)resultTypeFromString:(NSString *)resultString {
-  ARDMessageResultType result = kARDMessageResultTypeUnknown;
-  if ([resultString isEqualToString:@"SUCCESS"]) {
-    result = kARDMessageResultTypeSuccess;
-  } else if ([resultString isEqualToString:@"INVALID_CLIENT"]) {
-    result = kARDMessageResultTypeInvalidClient;
-  } else if ([resultString isEqualToString:@"INVALID_ROOM"]) {
-    result = kARDMessageResultTypeInvalidRoom;
-  }
-  return result;
-}
+@property(nonatomic, assign) ARDRegisterResultType result;
+@property(nonatomic, assign) BOOL isInitiator;
+@property(nonatomic, strong) NSString *roomId;
+@property(nonatomic, strong) NSString *clientId;
+@property(nonatomic, strong) NSArray *messages;
+@property(nonatomic, strong) NSURL *webSocketURL;
+@property(nonatomic, strong) NSURL *webSocketRestURL;
 
 @end
