@@ -59,6 +59,7 @@
 /third_party/WebKit/Tools/Scripts
 /third_party/android_testrunner
 /third_party/android_tools
+/third_party/appurify-python
 /third_party/asan
 /third_party/ashmem
 /third_party/binutils
@@ -98,6 +99,7 @@
 /third_party/openmax_dl
 /third_party/opus
 /third_party/protobuf
+/third_party/requests
 /third_party/sqlite
 /third_party/syzygy
 /third_party/usrsctp
