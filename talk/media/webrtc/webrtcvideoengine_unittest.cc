@@ -2376,7 +2376,7 @@ TEST_F(WebRtcVideoMediaChannelTest, SendAndReceiveVp8Vga) {
 TEST_F(WebRtcVideoMediaChannelTest, SendAndReceiveVp8Qvga) {
   SendAndReceive(cricket::VideoCodec(100, "VP8", 320, 200, 30, 0));
 }
-TEST_F(WebRtcVideoMediaChannelTest, SendAndReceiveH264SvcQqvga) {
+TEST_F(WebRtcVideoMediaChannelTest, SendAndReceiveVp8Qqvga) {
   SendAndReceive(cricket::VideoCodec(100, "VP8", 160, 100, 30, 0));
 }
 TEST_F(WebRtcVideoMediaChannelTest, SendManyResizeOnce) {
