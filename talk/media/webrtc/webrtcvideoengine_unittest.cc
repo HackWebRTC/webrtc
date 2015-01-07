@@ -4246,7 +4246,7 @@ TEST_F(WebRtcVideoEngineSimulcastTestFake,
 }
 
 // Flaky on Windows. https://code.google.com/p/webrtc/issues/detail?id=4135
-#if defined(OS_WIN)
+#if defined(WIN32)
 #define MAYBE_SimulcastSend_1280x800 DISABLED_SimulcastSend_1280x800
 #else
 #define MAYBE_SimulcastSend_1280x800 SimulcastSend_1280x800
@@ -4260,7 +4260,7 @@ TEST_F(WebRtcVideoMediaChannelSimulcastTest, MAYBE_SimulcastSend_1280x800) {
 }
 
 // Flaky on Windows. https://code.google.com/p/webrtc/issues/detail?id=4135
-#if defined(OS_WIN)
+#if defined(WIN32)
 #define MAYBE_SimulcastSend_1280x720 DISABLED_SimulcastSend_1280x720
 #else
 #define MAYBE_SimulcastSend_1280x720 SimulcastSend_1280x720
@@ -4274,7 +4274,7 @@ TEST_F(WebRtcVideoMediaChannelSimulcastTest, MAYBE_SimulcastSend_1280x720) {
 }
 
 // Flaky on Windows. https://code.google.com/p/webrtc/issues/detail?id=4135
-#if defined(OS_WIN)
+#if defined(WIN32)
 #define MAYBE_SimulcastSend_960x540 DISABLED_SimulcastSend_960x540
 #else
 #define MAYBE_SimulcastSend_960x540 SimulcastSend_960x540
@@ -4288,7 +4288,7 @@ TEST_F(WebRtcVideoMediaChannelSimulcastTest, MAYBE_SimulcastSend_960x540) {
 }
 
 // Flaky on Windows. https://code.google.com/p/webrtc/issues/detail?id=4135
-#if defined(OS_WIN)
+#if defined(WIN32)
 #define MAYBE_SimulcastSend_960x600 DISABLED_SimulcastSend_960x600
 #else
 #define MAYBE_SimulcastSend_960x600 SimulcastSend_960x600
@@ -4302,7 +4302,7 @@ TEST_F(WebRtcVideoMediaChannelSimulcastTest, MAYBE_SimulcastSend_960x600) {
 }
 
 // Flaky on Windows. https://code.google.com/p/webrtc/issues/detail?id=4135
-#if defined(OS_WIN)
+#if defined(WIN32)
 #define MAYBE_SimulcastSend_640x400 DISABLED_SimulcastSend_640x400
 #else
 #define MAYBE_SimulcastSend_640x400 SimulcastSend_640x400
@@ -4315,7 +4315,7 @@ TEST_F(WebRtcVideoMediaChannelSimulcastTest, MAYBE_SimulcastSend_640x400) {
 }
 
 // Flaky on Windows. https://code.google.com/p/webrtc/issues/detail?id=4135
-#if defined(OS_WIN)
+#if defined(WIN32)
 #define MAYBE_SimulcastSend_640x360 DISABLED_SimulcastSend_640x360
 #else
 #define MAYBE_SimulcastSend_640x360 SimulcastSend_640x360
