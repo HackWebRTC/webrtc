@@ -626,3 +626,261 @@
    fun:_ZN6webrtc9NetEqImpl8GetAudioEmPsPiS2_PNS_15NetEqOutputTypeE
    fun:_ZN6webrtc35NetEqDecodingTest_DecoderError_Test8TestBodyEv
 }
+{
+   bug_4147_1
+   Memcheck:Unaddressable
+   fun:_ZNK6webrtc8internal15scoped_ptr_implINS_13RWLockWrapperENS_14DefaultDeleterIS2_EEE3getEv
+   fun:_ZNK6webrtc10scoped_ptrINS_13RWLockWrapperENS_14DefaultDeleterIS1_EEEdeEv
+   fun:_ZN6webrtc15FileWrapperImpl5FlushEv
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_2
+   Memcheck:Unaddressable
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_3
+   Memcheck:Unaddressable
+   fun:_ZN6webrtc15WriteLockScopedC2ERNS_13RWLockWrapperE
+   fun:_ZN6webrtc15FileWrapperImpl5FlushEv
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_4
+   Memcheck:Unaddressable
+   fun:_ZN6webrtc21CriticalSectionScopedC2EPNS_22CriticalSectionWrapperE
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_5
+   Memcheck:Unaddressable
+   fun:pthread_rwlock_unlock
+   fun:_ZN6webrtc11RWLockPosix20ReleaseLockExclusiveEv
+   fun:_ZN6webrtc15WriteLockScopedD2Ev
+   fun:_ZN6webrtc15FileWrapperImpl5FlushEv
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_6
+   Memcheck:Unaddressable
+   fun:pthread_mutex_lock
+   fun:_ZN6webrtc20CriticalSectionPosix5EnterEv
+   fun:_ZN6webrtc21CriticalSectionScopedC2EPNS_22CriticalSectionWrapperE
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_7
+   Memcheck:Unaddressable
+   fun:__pthread_mutex_lock_full
+   fun:_ZN6webrtc20CriticalSectionPosix5EnterEv
+   fun:_ZN6webrtc21CriticalSectionScopedC2EPNS_22CriticalSectionWrapperE
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_8
+   Memcheck:Unaddressable
+   fun:__pthread_mutex_unlock_full
+   fun:_ZN6webrtc20CriticalSectionPosix5LeaveEv
+   fun:_ZN6webrtc21CriticalSectionScopedD2Ev
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_9
+   Memcheck:Unaddressable
+   fun:pthread_mutex_unlock
+   fun:_ZN6webrtc20CriticalSectionPosix5LeaveEv
+   fun:_ZN6webrtc21CriticalSectionScopedD2Ev
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_10
+   Memcheck:Unaddressable
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_11
+   Memcheck:Unaddressable
+   fun:__pthread_mutex_unlock_full
+   fun:_ZN6webrtc20CriticalSectionPosix5LeaveEv
+   fun:_ZN6webrtc21CriticalSectionScopedD2Ev
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_12
+   Memcheck:Unaddressable
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_13
+   Memcheck:Unaddressable
+   fun:pthread_mutex_lock
+   fun:_ZN6webrtc10EventPosix4WaitEm
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_14
+   Memcheck:Unaddressable
+   fun:_ZN6webrtc15WriteLockScopedD2Ev
+   fun:_ZN6webrtc15FileWrapperImpl5FlushEv
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_15
+   Memcheck:Unaddressable
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_16
+   Memcheck:Unaddressable
+   fun:__pthread_mutex_lock_full
+   fun:_ZN6webrtc10EventPosix4WaitEm
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_17
+   Memcheck:Unaddressable
+   fun:_ZN6webrtc15FileWrapperImpl9FlushImplEv
+   fun:_ZN6webrtc15FileWrapperImpl5FlushEv
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_18
+   Memcheck:Unaddressable
+   fun:pthread_mutex_lock
+   fun:_ZN6webrtc20CriticalSectionPosix5EnterEv
+   fun:_ZN6webrtc21CriticalSectionScopedC2EPNS_22CriticalSectionWrapperE
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_19
+   Memcheck:Unaddressable
+   fun:strcmp
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_20
+   Memcheck:Unaddressable
+   fun:_ZN6webrtc21CriticalSectionScopedC2EPNS_22CriticalSectionWrapperE
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_21
+   Memcheck:Unaddressable
+   fun:_ZN6webrtc21CriticalSectionScopedD2Ev
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_22
+   Memcheck:Unaddressable
+   fun:pthread_rwlock_wrlock
+   fun:_ZN6webrtc11RWLockPosix20AcquireLockExclusiveEv
+   fun:_ZN6webrtc15WriteLockScopedC2ERNS_13RWLockWrapperE
+   fun:_ZN6webrtc15FileWrapperImpl5FlushEv
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_23
+   Memcheck:Unaddressable
+   fun:__pthread_mutex_lock_full
+   fun:_ZN6webrtc20CriticalSectionPosix5EnterEv
+   fun:_ZN6webrtc21CriticalSectionScopedC2EPNS_22CriticalSectionWrapperE
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_24
+   Memcheck:Unaddressable
+   fun:_ZN6webrtc21CriticalSectionScopedD2Ev
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_25
+   Memcheck:Unaddressable
+   fun:pthread_rwlock_unlock
+   fun:_ZN6webrtc11RWLockPosix20ReleaseLockExclusiveEv
+   fun:_ZN6webrtc15WriteLockScopedD2Ev
+   fun:_ZN6webrtc15FileWrapperImpl5FlushEv
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_26
+   Memcheck:Unaddressable
+   fun:pthread_mutex_unlock
+   fun:_ZN6webrtc20CriticalSectionPosix5LeaveEv
+   fun:_ZN6webrtc21CriticalSectionScopedD2Ev
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
+{
+   bug_4147_27
+   Memcheck:Unaddressable
+   fun:pthread_rwlock_wrlock
+   fun:_ZN6webrtc11RWLockPosix20AcquireLockExclusiveEv
+   fun:_ZN6webrtc15WriteLockScopedC2ERNS_13RWLockWrapperE
+   fun:_ZN6webrtc15FileWrapperImpl5FlushEv
+   fun:_ZN6webrtc9TraceImpl7ProcessEv
+   fun:_ZN6webrtc9TraceImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:_ZN6webrtc11StartThreadEPv
+}
