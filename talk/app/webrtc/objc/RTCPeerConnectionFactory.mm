@@ -52,6 +52,7 @@
 #include "talk/app/webrtc/videosourceinterface.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/ssladapter.h"
 
 @interface RTCPeerConnectionFactory ()
@@ -61,7 +62,10 @@
 
 @end
 
-@implementation RTCPeerConnectionFactory
+@implementation RTCPeerConnectionFactory {
+  rtc::scoped_ptr<rtc::Thread> _signalingThread;
+  rtc::scoped_ptr<rtc::Thread> _workerThread;
+}
 
 @synthesize nativeFactory = _nativeFactory;
 
@@ -77,7 +81,12 @@
 
 - (id)init {
   if ((self = [super init])) {
-    _nativeFactory = webrtc::CreatePeerConnectionFactory();
+    _signalingThread.reset(new rtc::Thread());
+    NSAssert(_signalingThread->Start(), @"Failed to start signaling thread.");
+    _workerThread.reset(new rtc::Thread());
+    NSAssert(_workerThread->Start(), @"Failed to start worker thread.");
+    _nativeFactory = webrtc::CreatePeerConnectionFactory(
+        _signalingThread.get(), _workerThread.get(), NULL, NULL, NULL);
     NSAssert(_nativeFactory, @"Failed to initialize PeerConnectionFactory!");
     // Uncomment to get sensitive logs emitted (to stderr or logcat).
     // rtc::LogMessage::LogToDebug(rtc::LS_SENSITIVE);
