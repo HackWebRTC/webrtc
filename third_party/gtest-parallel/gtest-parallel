@@ -80,8 +80,17 @@ class RawFormat:
   def end(self):
     pass
 
+# Remove additional arguments (anything after --).
+additional_args = []
+
+for i in range(len(sys.argv)):
+  if sys.argv[i] == '--':
+    additional_args = sys.argv[i+1:]
+    sys.argv = sys.argv[:i]
+    break
+
 parser = optparse.OptionParser(
-    usage = 'usage: %prog [options] executable [executable ...]')
+    usage = 'usage: %prog [options] binary [binary ...] -- [additional args]')
 
 parser.add_option('-r', '--repeat', type='int', default=1,
                   help='repeat tests')
@@ -121,6 +130,8 @@ for test_binary in binaries:
 
   test_list = subprocess.Popen(command + ['--gtest_list_tests'],
                                stdout=subprocess.PIPE).communicate()[0]
+
+  command += additional_args
 
   test_group = ''
   for line in test_list.split('\n'):
