@@ -507,9 +507,11 @@ bool BasicNetworkManager::IsIgnoredNetwork(const Network& network) const {
     }
   }
 #if defined(WEBRTC_POSIX)
-  // Filter out VMware interfaces, typically named vmnet1 and vmnet8
+  // Filter out VMware/VirtualBox interfaces, typically named vmnet1,
+  // vmnet8, or vboxnet0.
   if (strncmp(network.name().c_str(), "vmnet", 5) == 0 ||
-      strncmp(network.name().c_str(), "vnic", 4) == 0) {
+      strncmp(network.name().c_str(), "vnic", 4) == 0 ||
+      strncmp(network.name().c_str(), "vboxnet", 7) == 0) {
     return true;
   }
 #if defined(WEBRTC_LINUX)
