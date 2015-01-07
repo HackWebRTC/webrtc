@@ -11,6 +11,7 @@
 #include "webrtc/base/autodetectproxy.h"
 #include "webrtc/base/httpcommon.h"
 #include "webrtc/base/httpcommon-inl.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketadapters.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/sslsocketfactory.h"
@@ -153,13 +154,19 @@ AsyncSocket* SslSocketFactory::CreateProxySocket(const ProxyInfo& proxy,
   }
 
   if (!hostname_.empty()) {
-    if (SSLAdapter* ssl_adapter = SSLAdapter::Create(socket)) {
-      ssl_adapter->set_ignore_bad_cert(ignore_bad_cert_);
-      ssl_adapter->StartSSL(hostname_.c_str(), true);
-      socket = ssl_adapter;
-    } else {
+    rtc::scoped_ptr<SSLAdapter> ssl_adapter(SSLAdapter::Create(socket));
+    if (!ssl_adapter) {
       LOG_F(LS_ERROR) << "SSL unavailable";
+      delete socket;
+      return NULL;
     }
+
+    ssl_adapter->set_ignore_bad_cert(ignore_bad_cert_);
+    if (ssl_adapter->StartSSL(hostname_.c_str(), true) != 0) {
+      LOG_F(LS_ERROR) << "SSL failed to start.";
+      return NULL;
+    }
+    socket = ssl_adapter.release();
   }
 
   // Regular logging occurs at the highest level

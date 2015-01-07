@@ -89,7 +89,7 @@ struct SChannelAdapter::SSLImpl {
 };
 
 SChannelAdapter::SChannelAdapter(AsyncSocket* socket)
-  : SSLAdapter(socket), state_(SSL_NONE),
+  : SSLAdapter(socket), state_(SSL_NONE), mode_(SSL_MODE_TLS),
     restartable_(false), signal_close_(false), message_pending_(false),
     impl_(new SSLImpl) {
 }
@@ -98,10 +98,20 @@ SChannelAdapter::~SChannelAdapter() {
   Cleanup();
 }
 
+void
+SChannelAdapter::SetMode(SSLMode mode) {
+  // SSL_MODE_DTLS isn't supported.
+  ASSERT(mode == SSL_MODE_TLS);
+  mode_ = mode;
+}
+
 int
 SChannelAdapter::StartSSL(const char* hostname, bool restartable) {
   if (state_ != SSL_NONE)
-    return ERROR_ALREADY_INITIALIZED;
+    return -1;
+
+  if (mode_ != SSL_MODE_TLS)
+    return -1;
 
   ssl_host_name_ = hostname;
   restartable_ = restartable;
