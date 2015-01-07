@@ -96,11 +96,10 @@ class FileNetworkInterface : public MediaChannel::NetworkInterface {
 class FileMediaEngineTest : public testing::Test {
  public:
   virtual void SetUp() {
-    setup_ok_ = true;
-    setup_ok_ &= GetTempFilename(&voice_input_filename_);
-    setup_ok_ &= GetTempFilename(&voice_output_filename_);
-    setup_ok_ &= GetTempFilename(&video_input_filename_);
-    setup_ok_ &= GetTempFilename(&video_output_filename_);
+    ASSERT_TRUE(GetTempFilename(&voice_input_filename_));
+    ASSERT_TRUE(GetTempFilename(&voice_output_filename_));
+    ASSERT_TRUE(GetTempFilename(&video_input_filename_));
+    ASSERT_TRUE(GetTempFilename(&video_output_filename_));
   }
   virtual void TearDown() {
     // Force to close the dump files, if opened.
@@ -114,7 +113,7 @@ class FileMediaEngineTest : public testing::Test {
   }
 
  protected:
-  bool CreateEngineAndChannels(const std::string& voice_in,
+  void CreateEngineAndChannels(const std::string& voice_in,
                                const std::string& voice_out,
                                const std::string& video_in,
                                const std::string& video_out,
@@ -123,12 +122,11 @@ class FileMediaEngineTest : public testing::Test {
     voice_channel_.reset();
     video_channel_.reset();
 
-    bool ret = setup_ok_;
     if (!voice_in.empty()) {
-      ret &= WriteTestPacketsToFile(voice_in, ssrc_count);
+      EXPECT_TRUE(WriteTestPacketsToFile(voice_in, ssrc_count));
     }
     if (!video_in.empty()) {
-      ret &= WriteTestPacketsToFile(video_in, ssrc_count);
+      EXPECT_TRUE(WriteTestPacketsToFile(video_in, ssrc_count));
     }
 
     engine_.reset(new FileMediaEngine);
@@ -140,8 +138,6 @@ class FileMediaEngineTest : public testing::Test {
 
     voice_channel_.reset(engine_->CreateChannel());
     video_channel_.reset(engine_->CreateVideoChannel(VideoOptions(), NULL));
-
-    return ret;
   }
 
   bool GetTempFilename(std::string* filename) {
@@ -204,7 +200,6 @@ class FileMediaEngineTest : public testing::Test {
   }
 
   static const uint32 kWaitTimeout = 3000;
-  bool setup_ok_;
   std::string voice_input_filename_;
   std::string voice_output_filename_;
   std::string video_input_filename_;
@@ -215,7 +210,7 @@ class FileMediaEngineTest : public testing::Test {
 };
 
 TEST_F(FileMediaEngineTest, TestDefaultImplementation) {
-  EXPECT_TRUE(CreateEngineAndChannels("", "", "", "", 1));
+  CreateEngineAndChannels("", "", "", "", 1);
   EXPECT_TRUE(engine_->Init(rtc::Thread::Current()));
   EXPECT_EQ(0, engine_->GetCapabilities());
   EXPECT_TRUE(NULL == voice_channel_.get());
@@ -251,7 +246,7 @@ TEST_F(FileMediaEngineTest, TestBadFilePath) {
 }
 
 TEST_F(FileMediaEngineTest, TestCodecs) {
-  EXPECT_TRUE(CreateEngineAndChannels("", "", "", "", 1));
+  CreateEngineAndChannels("", "", "", "", 1);
   std::vector<AudioCodec> voice_codecs = engine_->audio_codecs();
   std::vector<VideoCodec> video_codecs = engine_->video_codecs();
   EXPECT_EQ(0U, voice_codecs.size());
@@ -275,27 +270,24 @@ TEST_F(FileMediaEngineTest, TestCodecs) {
 // Test that the capabilities and channel creation of the Filemedia engine
 // depend on the stream parameters passed to its constructor.
 TEST_F(FileMediaEngineTest, TestGetCapabilities) {
-  EXPECT_TRUE(CreateEngineAndChannels(voice_input_filename_, "", "", "", 1));
+  CreateEngineAndChannels(voice_input_filename_, "", "", "", 1);
   EXPECT_EQ(AUDIO_SEND, engine_->GetCapabilities());
   EXPECT_TRUE(NULL != voice_channel_.get());
   EXPECT_TRUE(NULL == video_channel_.get());
 
-  EXPECT_TRUE(CreateEngineAndChannels(voice_input_filename_,
-                                      voice_output_filename_, "", "", 1));
+  CreateEngineAndChannels(voice_input_filename_, voice_output_filename_, "", "",
+                          1);
   EXPECT_EQ(AUDIO_SEND | AUDIO_RECV, engine_->GetCapabilities());
   EXPECT_TRUE(NULL != voice_channel_.get());
   EXPECT_TRUE(NULL == video_channel_.get());
 
-  EXPECT_TRUE(CreateEngineAndChannels("", "", video_input_filename_, "", 1));
+  CreateEngineAndChannels("", "", video_input_filename_, "", 1);
   EXPECT_EQ(VIDEO_SEND, engine_->GetCapabilities());
   EXPECT_TRUE(NULL == voice_channel_.get());
   EXPECT_TRUE(NULL != video_channel_.get());
 
-  EXPECT_TRUE(CreateEngineAndChannels(voice_input_filename_,
-                                      voice_output_filename_,
-                                      video_input_filename_,
-                                      video_output_filename_,
-                                      1));
+  CreateEngineAndChannels(voice_input_filename_, voice_output_filename_,
+                          video_input_filename_, video_output_filename_, 1);
   EXPECT_EQ(AUDIO_SEND | AUDIO_RECV | VIDEO_SEND | VIDEO_RECV,
             engine_->GetCapabilities());
   EXPECT_TRUE(NULL != voice_channel_.get());
@@ -307,8 +299,8 @@ TEST_F(FileMediaEngineTest, TestGetCapabilities) {
 
 // Test that SetSend() controls whether a voice channel sends RTP packets.
 TEST_F(FileMediaEngineTest, TestVoiceChannelSetSend) {
-  EXPECT_TRUE(CreateEngineAndChannels(voice_input_filename_,
-                                      voice_output_filename_, "", "", 1));
+  CreateEngineAndChannels(voice_input_filename_, voice_output_filename_, "", "",
+                          1);
   EXPECT_TRUE(NULL != voice_channel_.get());
   rtc::MemoryStream net_dump;
   FileNetworkInterface net_interface(&net_dump, voice_channel_.get());
@@ -345,8 +337,8 @@ TEST_F(FileMediaEngineTest, TestVoiceChannelSetSend) {
 // Test the sender thread of the channel. The sender sends RTP packets
 // continuously with proper sequence number, timestamp, and payload.
 TEST_F(FileMediaEngineTest, TestVoiceChannelSenderThread) {
-  EXPECT_TRUE(CreateEngineAndChannels(voice_input_filename_,
-                                      voice_output_filename_, "", "", 1));
+  CreateEngineAndChannels(voice_input_filename_, voice_output_filename_, "", "",
+                          1);
   EXPECT_TRUE(NULL != voice_channel_.get());
   rtc::MemoryStream net_dump;
   FileNetworkInterface net_interface(&net_dump, voice_channel_.get());
@@ -380,8 +372,8 @@ TEST_F(FileMediaEngineTest, TestVoiceChannelSenderThread) {
 
 // Test that we can specify the ssrc for outgoing RTP packets.
 TEST_F(FileMediaEngineTest, TestVoiceChannelSendSsrc) {
-  EXPECT_TRUE(CreateEngineAndChannels(voice_input_filename_,
-                                      voice_output_filename_, "", "", 1));
+  CreateEngineAndChannels(voice_input_filename_, voice_output_filename_, "", "",
+                          1);
   EXPECT_TRUE(NULL != voice_channel_.get());
   const uint32 send_ssrc = RtpTestUtility::kDefaultSsrc + 1;
   voice_channel_->AddSendStream(StreamParams::CreateLegacy(send_ssrc));
@@ -417,8 +409,8 @@ TEST_F(FileMediaEngineTest, TestVoiceChannelSendSsrc) {
 
 // Test the sender thread of the channel, where the input rtpdump has two SSRCs.
 TEST_F(FileMediaEngineTest, TestVoiceChannelSenderThreadTwoSsrcs) {
-  EXPECT_TRUE(CreateEngineAndChannels(voice_input_filename_,
-                                      voice_output_filename_, "", "", 2));
+  CreateEngineAndChannels(voice_input_filename_, voice_output_filename_, "", "",
+                          2);
   // Verify that voice_input_filename_ contains 2 *
   // RtpTestUtility::GetTestPacketCount() packets
   // with different SSRCs.
@@ -457,8 +449,8 @@ TEST_F(FileMediaEngineTest, TestVoiceChannelSenderThreadTwoSsrcs) {
 
 // Test SendIntraFrame() and RequestIntraFrame() of video channel.
 TEST_F(FileMediaEngineTest, TestVideoChannelIntraFrame) {
-  EXPECT_TRUE(CreateEngineAndChannels("", "", video_input_filename_,
-                                      video_output_filename_, 1));
+  CreateEngineAndChannels("", "", video_input_filename_, video_output_filename_,
+                          1);
   EXPECT_TRUE(NULL != video_channel_.get());
   EXPECT_FALSE(video_channel_->SendIntraFrame());
   EXPECT_FALSE(video_channel_->RequestIntraFrame());
