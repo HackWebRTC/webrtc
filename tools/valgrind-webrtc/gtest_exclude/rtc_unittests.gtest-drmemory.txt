@@ -4,3 +4,4 @@ P2PTransportChannel*.*
 PortAllocatorTest.*
 PortTest.*
 PseudoTcpTest.TestSendBothUseLargeWindowScale
+SharedExclusiveLockTest.TestSharedShared
