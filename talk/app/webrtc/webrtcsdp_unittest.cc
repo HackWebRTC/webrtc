@@ -1352,22 +1352,6 @@ void TestMismatch(const std::string& string1, const std::string& string2) {
                          << " 2: " << string2.substr(position, 20) << "\n";
 }
 
-std::string GetLine(const std::string& message,
-                    const std::string& session_description_name) {
-  size_t start = message.find(session_description_name);
-  if (std::string::npos == start) {
-    return "";
-  }
-  size_t stop = message.find("\r\n", start);
-  if (std::string::npos == stop) {
-    return "";
-  }
-  if (stop <= start) {
-    return "";
-  }
-  return message.substr(start, stop - start);
-}
-
 TEST_F(WebRtcSdpTest, SerializeSessionDescription) {
   // SessionDescription with desc and candidates.
   std::string message = webrtc::SdpSerialize(jdesc_);
@@ -2204,20 +2188,21 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithConferenceFlag) {
 
 TEST_F(WebRtcSdpTest, DeserializeBrokenSdp) {
   const char kSdpDestroyer[] = "!@#$%^&";
-  const char kSdpInvalidLine1[] = " =candidate";
-  const char kSdpInvalidLine2[] = "a+candidate";
-  const char kSdpInvalidLine3[] = "a= candidate";
-  // Broken fingerprint.
-  const char kSdpInvalidLine4[] = "a=fingerprint:sha-1 "
+  const char kSdpEmptyType[] = " =candidate";
+  const char kSdpEqualAsPlus[] = "a+candidate";
+  const char kSdpSpaceAfterEqual[] = "a= candidate";
+  const char kSdpUpperType[] = "A=candidate";
+  const char kSdpEmptyLine[] = "";
+  const char kSdpMissingValue[] = "a=";
+
+  const char kSdpBrokenFingerprint[] = "a=fingerprint:sha-1 "
       "4AAD:B9:B1:3F:82:18:3B:54:02:12:DF:3E:5D:49:6B:19:E5:7C:AB";
-  // Extra field.
-  const char kSdpInvalidLine5[] = "a=fingerprint:sha-1 "
+  const char kSdpExtraField[] = "a=fingerprint:sha-1 "
       "4A:AD:B9:B1:3F:82:18:3B:54:02:12:DF:3E:5D:49:6B:19:E5:7C:AB XXX";
-  // Missing space.
-  const char kSdpInvalidLine6[] = "a=fingerprint:sha-1"
+  const char kSdpMissingSpace[] = "a=fingerprint:sha-1"
       "4A:AD:B9:B1:3F:82:18:3B:54:02:12:DF:3E:5D:49:6B:19:E5:7C:AB";
   // MD5 is not allowed in fingerprints.
-  const char kSdpInvalidLine7[] = "a=fingerprint:md5 "
+  const char kSdpMd5[] = "a=fingerprint:md5 "
       "4A:AD:B9:B1:3F:82:18:3B:54:02:12:DF:3E:5D:49:6B";
 
   // Broken session description
@@ -2232,17 +2217,22 @@ TEST_F(WebRtcSdpTest, DeserializeBrokenSdp) {
   ExpectParseFailure("m=video", kSdpDestroyer);
 
   // Invalid lines
-  ExpectParseFailure("a=candidate", kSdpInvalidLine1);
-  ExpectParseFailure("a=candidate", kSdpInvalidLine2);
-  ExpectParseFailure("a=candidate", kSdpInvalidLine3);
+  ExpectParseFailure("a=candidate", kSdpEmptyType);
+  ExpectParseFailure("a=candidate", kSdpEqualAsPlus);
+  ExpectParseFailure("a=candidate", kSdpSpaceAfterEqual);
+  ExpectParseFailure("a=candidate", kSdpUpperType);
 
   // Bogus fingerprint replacing a=sendrev. We selected this attribute
   // because it's orthogonal to what we are replacing and hence
   // safe.
-  ExpectParseFailure("a=sendrecv", kSdpInvalidLine4);
-  ExpectParseFailure("a=sendrecv", kSdpInvalidLine5);
-  ExpectParseFailure("a=sendrecv", kSdpInvalidLine6);
-  ExpectParseFailure("a=sendrecv", kSdpInvalidLine7);
+  ExpectParseFailure("a=sendrecv", kSdpBrokenFingerprint);
+  ExpectParseFailure("a=sendrecv", kSdpExtraField);
+  ExpectParseFailure("a=sendrecv", kSdpMissingSpace);
+  ExpectParseFailure("a=sendrecv", kSdpMd5);
+
+  // Empty Line
+  ExpectParseFailure("a=rtcp:2347 IN IP4 74.125.127.126", kSdpEmptyLine);
+  ExpectParseFailure("a=rtcp:2347 IN IP4 74.125.127.126", kSdpMissingValue);
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSdpWithInvalidAttributeValue) {

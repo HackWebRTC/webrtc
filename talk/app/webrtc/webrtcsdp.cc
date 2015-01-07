@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <ctype.h>
 
 #include "talk/app/webrtc/jsepicecandidate.h"
 #include "talk/app/webrtc/jsepsessiondescription.h"
@@ -456,7 +457,8 @@ static bool GetLine(const std::string& message,
   // where <type> MUST be exactly one case-significant character and
   // <value> is structured text whose format depends on <type>.
   // Whitespace MUST NOT be used on either side of the "=" sign.
-  if (cline[0] == kSdpDelimiterSpace ||
+  if (line->length() < 3 ||
+      !islower(cline[0]) ||
       cline[1] != kSdpDelimiterEqual ||
       cline[2] == kSdpDelimiterSpace) {
     *pos = line_begin;
