@@ -383,15 +383,6 @@ int WebRtcSpl_ScaleAndAddVectorsWithRoundC(const int16_t* in_vector1,
                                            int right_shifts,
                                            int16_t* out_vector,
                                            int length);
-#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
-int WebRtcSpl_ScaleAndAddVectorsWithRoundNeon(const int16_t* in_vector1,
-                                              int16_t in_vector1_scale,
-                                              const int16_t* in_vector2,
-                                              int16_t in_vector2_scale,
-                                              int right_shifts,
-                                              int16_t* out_vector,
-                                              int length);
-#endif
 #if defined(MIPS_DSP_R1_LE)
 int WebRtcSpl_ScaleAndAddVectorsWithRound_mips(const int16_t* in_vector1,
                                                int16_t in_vector1_scale,

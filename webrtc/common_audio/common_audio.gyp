@@ -200,7 +200,6 @@
             'signal_processing/cross_correlation_neon.S',
             'signal_processing/downsample_fast_neon.S',
             'signal_processing/min_max_operations_neon.S',
-            'signal_processing/vector_scaling_operations_neon.S',
           ],
           'conditions': [
             # Disable LTO in common_audio_neon target due to compiler bug

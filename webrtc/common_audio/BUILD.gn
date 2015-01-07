@@ -196,7 +196,6 @@ if (rtc_build_armv7_neon) {
       "signal_processing/cross_correlation_neon.S",
       "signal_processing/downsample_fast_neon.S",
       "signal_processing/min_max_operations_neon.S",
-      "signal_processing/vector_scaling_operations_neon.S",
     ]
 
     configs += [ "..:common_config" ]
