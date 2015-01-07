@@ -74,7 +74,7 @@ static long socket_ctrl(BIO* h, int cmd, long arg1, void* arg2);
 static int socket_new(BIO* h);
 static int socket_free(BIO* data);
 
-static BIO_METHOD methods_socket = {
+static const BIO_METHOD methods_socket = {
   BIO_TYPE_BIO,
   "socket",
   socket_write,
@@ -87,7 +87,7 @@ static BIO_METHOD methods_socket = {
   NULL,
 };
 
-static BIO_METHOD* BIO_s_socket2() { return(&methods_socket); }
+static const BIO_METHOD* BIO_s_socket2() { return(&methods_socket); }
 
 static BIO* BIO_new_socket(rtc::AsyncSocket* socket) {
   BIO* ret = BIO_new(BIO_s_socket2());
