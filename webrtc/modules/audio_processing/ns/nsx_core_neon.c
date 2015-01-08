@@ -80,8 +80,7 @@ static void UpdateNoiseEstimateNeon(NoiseSuppressionFixedC* inst, int offset) {
        ptr_noiseEstQuantile < &inst->noiseEstQuantile[inst->magnLen - 3];
        ptr_noiseEstQuantile += 4, ptr_noiseEstLogQuantile += 4) {
 
-    // tmp32no2 = WEBRTC_SPL_MUL_16_16(kExp2Const,
-    //                                inst->noiseEstLogQuantile[offset + i]);
+    // tmp32no2 = kExp2Const * inst->noiseEstLogQuantile[offset + i];
     int16x4_t v16x4 = vld1_s16(ptr_noiseEstLogQuantile);
     int32x4_t v32x4B = vmull_s16(v16x4, kExp2Const16x4);
 
@@ -117,8 +116,7 @@ static void UpdateNoiseEstimateNeon(NoiseSuppressionFixedC* inst, int offset) {
 
   // inst->quantile[i]=exp(inst->lquantile[offset+i]);
   // in Q21
-  int32_t tmp32no2 = WEBRTC_SPL_MUL_16_16(kExp2Const,
-                                          *ptr_noiseEstLogQuantile);
+  int32_t tmp32no2 = kExp2Const * *ptr_noiseEstLogQuantile;
   int32_t tmp32no1 = (0x00200000 | (tmp32no2 & 0x001FFFFF)); // 2^21 + frac
 
   tmp16 = (int16_t)(tmp32no2 >> 21);
@@ -194,7 +192,7 @@ void WebRtcNsx_NoiseEstimationNeon(NoiseSuppressionFixedC* inst,
     counter = inst->noiseEstCounter[s];
     assert(counter < 201);
     countDiv = WebRtcNsx_kCounterDiv[counter];
-    countProd = (int16_t)WEBRTC_SPL_MUL_16_16(counter, countDiv);
+    countProd = (int16_t)(counter * countDiv);
 
     // quant_est(...)
     int16_t deltaBuff[8];

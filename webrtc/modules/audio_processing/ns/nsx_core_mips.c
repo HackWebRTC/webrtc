@@ -141,7 +141,7 @@ void WebRtcNsx_SpeechNoiseProb(NoiseSuppressionFixedC* inst,
       tmpIndFX = 8192 + tmp16no2; // Q14
     }
   }
-  indPriorFX = WEBRTC_SPL_MUL_16_16(inst->weightLogLrt, tmpIndFX); // 6*Q14
+  indPriorFX = inst->weightLogLrt * tmpIndFX;  // 6*Q14
 
   //spectral flatness feature
   if (inst->weightSpecFlat) {
@@ -173,7 +173,7 @@ void WebRtcNsx_SpeechNoiseProb(NoiseSuppressionFixedC* inst,
         tmpIndFX = 8192 - tmp16no2; // Q14
       }
     }
-    indPriorFX += WEBRTC_SPL_MUL_16_16(inst->weightSpecFlat, tmpIndFX); // 6*Q14
+    indPriorFX += inst->weightSpecFlat * tmpIndFX;  // 6*Q14
   }
 
   //for template spectral-difference
@@ -221,7 +221,7 @@ void WebRtcNsx_SpeechNoiseProb(NoiseSuppressionFixedC* inst,
         tmpIndFX = 8192 - tmp16no2;
       }
     }
-    indPriorFX += WEBRTC_SPL_MUL_16_16(inst->weightSpecDiff, tmpIndFX); // 6*Q14
+    indPriorFX += inst->weightSpecDiff * tmpIndFX;  // 6*Q14
   }
 
   //combine the indicator function with the feature weights
