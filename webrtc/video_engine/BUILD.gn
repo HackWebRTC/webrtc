@@ -29,6 +29,8 @@ source_set("video_engine_core") {
     "encoder_state_feedback.h",
     "overuse_frame_detector.cc",
     "overuse_frame_detector.h",
+    "report_block_stats.cc",
+    "report_block_stats.h",
     "stream_synchronization.cc",
     "stream_synchronization.h",
     "vie_base_impl.cc",

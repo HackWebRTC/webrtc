@@ -40,6 +40,7 @@ class I420FrameCallback;
 class PacedSender;
 class ProcessThread;
 class ReceiveStatisticsProxy;
+class ReportBlockStats;
 class RtcpRttStats;
 class ThreadWrapper;
 class ViEDecoderObserver;
@@ -509,7 +510,8 @@ class ViEChannel
   int max_nack_reordering_threshold_;
   I420FrameCallback* pre_render_callback_;
 
-  std::map<uint32_t, RTCPReportBlock> prev_report_blocks_;
+  scoped_ptr<ReportBlockStats> report_block_stats_sender_;
+  scoped_ptr<ReportBlockStats> report_block_stats_receiver_;
 };
 
 }  // namespace webrtc

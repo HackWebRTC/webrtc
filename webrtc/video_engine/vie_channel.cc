@@ -34,6 +34,7 @@
 #include "webrtc/video_engine/include/vie_errors.h"
 #include "webrtc/video_engine/include/vie_image_process.h"
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
+#include "webrtc/video_engine/report_block_stats.h"
 #include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
@@ -42,52 +43,6 @@ const int kMaxDecodeWaitTimeMs = 50;
 const int kInvalidRtpExtensionId = 0;
 static const int kMaxTargetDelayMs = 10000;
 static const float kMaxIncompleteTimeMultiplier = 3.5f;
-
-namespace {
-
-RTCPReportBlock AggregateReportBlocks(
-    const std::vector<RTCPReportBlock>& report_blocks,
-    std::map<uint32_t, RTCPReportBlock>* prev_report_blocks) {
-  int num_sequence_numbers = 0;
-  int num_lost_sequence_numbers = 0;
-  int jitter_sum = 0;
-  int number_of_report_blocks = 0;
-  RTCPReportBlock aggregate;
-  std::vector<RTCPReportBlock>::const_iterator report_block =
-      report_blocks.begin();
-  for (; report_block != report_blocks.end(); ++report_block) {
-    aggregate.cumulativeLost += report_block->cumulativeLost;
-    std::map<uint32_t, RTCPReportBlock>::iterator prev_report_block =
-        prev_report_blocks->find(report_block->sourceSSRC);
-    if (prev_report_block != prev_report_blocks->end()) {
-      // Skip the first report block since we won't be able to get a correct
-      // weight for it.
-      int seq_num_diff = report_block->extendedHighSeqNum -
-                         prev_report_block->second.extendedHighSeqNum;
-      int cum_loss_diff = report_block->cumulativeLost -
-                          prev_report_block->second.cumulativeLost;
-      if (seq_num_diff >= 0 && cum_loss_diff >= 0) {
-        num_sequence_numbers += seq_num_diff;
-        num_lost_sequence_numbers += cum_loss_diff;
-      }
-    }
-    jitter_sum += report_block->jitter;
-    ++number_of_report_blocks;
-    (*prev_report_blocks)[report_block->sourceSSRC] = *report_block;
-  }
-  if (num_sequence_numbers > 0) {
-    aggregate.fractionLost = ((num_lost_sequence_numbers * 255) +
-        (num_sequence_numbers / 2)) / num_sequence_numbers;
-  }
-  if (number_of_report_blocks > 0) {
-    aggregate.jitter =
-        (jitter_sum + number_of_report_blocks / 2) / number_of_report_blocks;
-  }
-  // Not well defined for aggregated report blocks.
-  aggregate.extendedHighSeqNum = 0;
-  return aggregate;
-}
-}  // namespace
 
 // Helper class receiving statistics callbacks.
 class ChannelStatsObserver : public CallStatsObserver {
@@ -150,7 +105,9 @@ ViEChannel::ViEChannel(int32_t channel_id,
       sender_(sender),
       nack_history_size_sender_(kSendSidePacketHistorySize),
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
-      pre_render_callback_(NULL) {
+      pre_render_callback_(NULL),
+      report_block_stats_sender_(new ReportBlockStats()),
+      report_block_stats_receiver_(new ReportBlockStats()) {
   RtpRtcp::Configuration configuration = CreateRtpRtcpConfiguration();
   configuration.remote_bitrate_estimator = remote_bitrate_estimator;
   configuration.receive_statistics = vie_receiver_.GetReceiveStatistics();
@@ -255,6 +212,8 @@ void ViEChannel::UpdateHistograms() {
             "WebRTC.Video.UniqueNackRequestsReceivedInPercent",
                 rtcp_received.UniqueNackRequestsInPercent());
       }
+      RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.SentPacketsLostInPercent",
+          report_block_stats_sender_->FractionLostInPercent());
     }
   } else if (vie_receiver_.GetRemoteSsrc() > 0) {
     // Get receive stats if we are receiving packets, i.e. there is a remote
@@ -271,6 +230,8 @@ void ViEChannel::UpdateHistograms() {
         RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.UniqueNackRequestsSentInPercent",
             rtcp_sent.UniqueNackRequestsInPercent());
       }
+      RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.ReceivedPacketsLostInPercent",
+          report_block_stats_receiver_->FractionLostInPercent());
     }
 
     StreamDataCounters rtp;
@@ -1076,12 +1037,10 @@ int32_t ViEChannel::GetSendRtcpStatistics(uint16_t* fraction_lost,
     remote_ssrc = report_blocks[0].remoteSSRC;
   }
 
-  RTCPReportBlock report;
-  if (report_blocks.size() > 1)
-    report = AggregateReportBlocks(report_blocks, &prev_report_blocks_);
-  else
-    report = report_blocks[0];
-
+  // TODO(asapersson): Change report_block_stats to not rely on
+  // GetSendRtcpStatistics to be called.
+  RTCPReportBlock report =
+      report_block_stats_sender_->AggregateAndStore(report_blocks);
   *fraction_lost = report.fractionLost;
   *cumulative_lost = report.cumulativeLost;
   *extended_max = report.extendedHighSeqNum;
@@ -1127,6 +1086,10 @@ int32_t ViEChannel::GetReceivedRtcpStatistics(uint16_t* fraction_lost,
   *cumulative_lost = receive_stats.cumulative_lost;
   *extended_max = receive_stats.extended_max_sequence_number;
   *jitter_samples = receive_stats.jitter;
+
+  // TODO(asapersson): Change report_block_stats to not rely on
+  // GetReceivedRtcpStatistics to be called.
+  report_block_stats_receiver_->Store(receive_stats, remote_ssrc, 0);
 
   uint16_t dummy = 0;
   uint16_t rtt = 0;
