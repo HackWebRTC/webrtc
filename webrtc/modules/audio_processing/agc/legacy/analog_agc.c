@@ -143,7 +143,7 @@ int WebRtcAgc_AddMic(void *state, int16_t* const* in_mic, int16_t num_bands,
 
         /* Q1 */
         tmp16 = (int16_t)(stt->micVol - stt->maxAnalog);
-        tmp32 = WEBRTC_SPL_MUL_16_16(GAIN_TBL_LEN - 1, tmp16);
+        tmp32 = (GAIN_TBL_LEN - 1) * tmp16;
         tmp16 = (int16_t)(stt->maxLevel - stt->maxAnalog);
         targetGainIdx = tmp32 / tmp16;
         assert(targetGainIdx < GAIN_TBL_LEN);
@@ -200,8 +200,7 @@ int WebRtcAgc_AddMic(void *state, int16_t* const* in_mic, int16_t num_bands,
         max_nrg = 0;
         for (n = 0; n < L; n++)
         {
-            nrg = WEBRTC_SPL_MUL_16_16(in_mic[0][i * L + n],
-                                       in_mic[0][i * L + n]);
+            nrg = in_mic[0][i * L + n] * in_mic[0][i * L + n];
             if (nrg > max_nrg)
             {
                 max_nrg = nrg;
@@ -309,7 +308,7 @@ int WebRtcAgc_VirtualMic(void *agcInst, int16_t* const* in_near,
         frameNrgLimit = frameNrgLimit << 1;
     }
 
-    frameNrg = WEBRTC_SPL_MUL_16_16(in_near[0][0], in_near[0][0]);
+    frameNrg = (uint32_t)(in_near[0][0] * in_near[0][0]);
     for (sampleCntr = 1; sampleCntr < samples; sampleCntr++)
     {
 
@@ -317,9 +316,8 @@ int WebRtcAgc_VirtualMic(void *agcInst, int16_t* const* in_near,
         // the correct value of the energy is not important
         if (frameNrg < frameNrgLimit)
         {
-            nrg = WEBRTC_SPL_MUL_16_16(in_near[0][sampleCntr],
-                                       in_near[0][sampleCntr]);
-            frameNrg += nrg;
+          nrg = (uint32_t)(in_near[0][sampleCntr] * in_near[0][sampleCntr]);
+          frameNrg += nrg;
         }
 
         // Count the zero crossings
@@ -584,8 +582,7 @@ void WebRtcAgc_SpeakerInactiveCtrl(LegacyAgc* stt) {
         }
 
         /* stt->vadThreshold = (31 * stt->vadThreshold + vadThresh) / 32; */
-        tmp32 = (int32_t)vadThresh;
-        tmp32 += WEBRTC_SPL_MUL_16_16((int16_t)31, stt->vadThreshold);
+        tmp32 = vadThresh + 31 * stt->vadThreshold;
         stt->vadThreshold = (int16_t)(tmp32 >> 5);
     }
 }

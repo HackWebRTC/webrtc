@@ -87,11 +87,11 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
 //    kLog10_2 = 49321; // 10*log10(2)  in Q14
 
     // Calculate maximum digital gain and zero gain level
-    tmp32no1 = WEBRTC_SPL_MUL_16_16(digCompGaindB - analogTarget, kCompRatio - 1);
+    tmp32no1 = (digCompGaindB - analogTarget) * (kCompRatio - 1);
     tmp16no1 = analogTarget - targetLevelDbfs;
     tmp16no1 += WebRtcSpl_DivW32W16ResW16(tmp32no1 + (kCompRatio >> 1), kCompRatio);
     maxGain = WEBRTC_SPL_MAX(tmp16no1, (analogTarget - targetLevelDbfs));
-    tmp32no1 = WEBRTC_SPL_MUL_16_16(maxGain, kCompRatio);
+    tmp32no1 = maxGain * kCompRatio;
     zeroGainLvl = digCompGaindB;
     zeroGainLvl -= WebRtcSpl_DivW32W16ResW16(tmp32no1 + ((kCompRatio - 1) >> 1),
                                              kCompRatio - 1);
@@ -104,7 +104,7 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
     // Calculate the difference between maximum gain and gain at 0dB0v:
     //  diffGain = maxGain + (compRatio-1)*zeroGainLvl/compRatio
     //           = (compRatio-1)*digCompGaindB/compRatio
-    tmp32no1 = WEBRTC_SPL_MUL_16_16(digCompGaindB, kCompRatio - 1);
+    tmp32no1 = digCompGaindB * (kCompRatio - 1);
     diffGain = WebRtcSpl_DivW32W16ResW16(tmp32no1 + (kCompRatio >> 1), kCompRatio);
     if (diffGain < 0 || diffGain >= kGenFuncTableSize)
     {
@@ -138,7 +138,7 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
     {
         // Calculate scaled input level (compressor):
         //  inLevel = fix((-constLog10_2*(compRatio-1)*(1-i)+fix(compRatio/2))/compRatio)
-        tmp16 = (int16_t)WEBRTC_SPL_MUL_16_16(kCompRatio - 1, i - 1); // Q0
+        tmp16 = (int16_t)((kCompRatio - 1) * (i - 1));  // Q0
         tmp32 = WEBRTC_SPL_MUL_16_U16(tmp16, kLog10_2) + 1; // Q14
         inLevel = WebRtcSpl_DivW32W16(tmp32, kCompRatio); // Q14
 
@@ -341,7 +341,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc* stt,
     // Account for far end VAD
     if (stt->vadFarend.counter > 10)
     {
-        tmp32 = WEBRTC_SPL_MUL_16_16(3, logratio);
+        tmp32 = 3 * logratio;
         logratio = (int16_t)((tmp32 - stt->vadFarend.logRatio) >> 2);
     }
 
@@ -362,7 +362,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc* stt,
         // decay = (int16_t)(((lower_thr - logratio)
         //       * (2^27/(DecayTime*(upper_thr-lower_thr)))) >> 10);
         // SUBSTITUTED: 2^27/(DecayTime*(upper_thr-lower_thr))  ->  65
-        tmp32 = WEBRTC_SPL_MUL_16_16((lower_thr - logratio), 65);
+        tmp32 = (lower_thr - logratio) * 65;
         decay = (int16_t)(tmp32 >> 10);
     }
 
@@ -376,7 +376,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc* stt,
         } else if (stt->vadNearend.stdLongTerm < 8096)
         {
             // decay = (int16_t)(((stt->vadNearend.stdLongTerm - 4000) * decay) >> 12);
-            tmp32 = WEBRTC_SPL_MUL_16_16((stt->vadNearend.stdLongTerm - 4000), decay);
+            tmp32 = (stt->vadNearend.stdLongTerm - 4000) * decay;
             decay = (int16_t)(tmp32 >> 12);
         }
 
@@ -402,8 +402,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc* stt,
         max_nrg = 0;
         for (n = 0; n < L; n++)
         {
-            int32_t nrg = WEBRTC_SPL_MUL_16_16(out[0][k * L + n],
-                                               out[0][k * L + n]);
+            int32_t nrg = out[0][k * L + n] * out[0][k * L + n];
             if (nrg > max_nrg)
             {
                 max_nrg = nrg;
@@ -487,7 +486,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc* stt,
         stt->gatePrevious = 0;
     } else
     {
-        tmp32 = WEBRTC_SPL_MUL_16_16(stt->gatePrevious, 7);
+        tmp32 = stt->gatePrevious * 7;
         gate = (int16_t)((gate + tmp32) >> 3);
         stt->gatePrevious = gate;
     }
@@ -714,7 +713,7 @@ int16_t WebRtcAgc_ProcessVad(AgcVad* state,      // (i) VAD state
     }
 
     // update short-term estimate of mean energy level (Q10)
-    tmp32 = (WEBRTC_SPL_MUL_16_16(state->meanShortTerm, 15) + (int32_t)dB);
+    tmp32 = state->meanShortTerm * 15 + dB;
     state->meanShortTerm = (int16_t)(tmp32 >> 4);
 
     // update short-term estimate of variance in energy level (Q8)
@@ -723,12 +722,12 @@ int16_t WebRtcAgc_ProcessVad(AgcVad* state,      // (i) VAD state
     state->varianceShortTerm = tmp32 / 16;
 
     // update short-term estimate of standard deviation in energy level (Q10)
-    tmp32 = WEBRTC_SPL_MUL_16_16(state->meanShortTerm, state->meanShortTerm);
+    tmp32 = state->meanShortTerm * state->meanShortTerm;
     tmp32 = (state->varianceShortTerm << 12) - tmp32;
     state->stdShortTerm = (int16_t)WebRtcSpl_Sqrt(tmp32);
 
     // update long-term estimate of mean energy level (Q10)
-    tmp32 = WEBRTC_SPL_MUL_16_16(state->meanLongTerm, state->counter) + (int32_t)dB;
+    tmp32 = state->meanLongTerm * state->counter + dB;
     state->meanLongTerm = WebRtcSpl_DivW32W16ResW16(
         tmp32, WebRtcSpl_AddSatW16(state->counter, 1));
 
@@ -739,13 +738,18 @@ int16_t WebRtcAgc_ProcessVad(AgcVad* state,      // (i) VAD state
         tmp32, WebRtcSpl_AddSatW16(state->counter, 1));
 
     // update long-term estimate of standard deviation in energy level (Q10)
-    tmp32 = WEBRTC_SPL_MUL_16_16(state->meanLongTerm, state->meanLongTerm);
+    tmp32 = state->meanLongTerm * state->meanLongTerm;
     tmp32 = (state->varianceLongTerm << 12) - tmp32;
     state->stdLongTerm = (int16_t)WebRtcSpl_Sqrt(tmp32);
 
     // update voice activity measure (Q10)
     tmp16 = 3 << 12;
-    tmp32 = WEBRTC_SPL_MUL_16_16(tmp16, (dB - state->meanLongTerm));
+    // TODO(bjornv): (dB - state->meanLongTerm) can overflow, e.g., in
+    // ApmTest.Process unit test. Previously the macro WEBRTC_SPL_MUL_16_16()
+    // was used, which did an intermediate cast to (int16_t), hence losing
+    // significant bits. This cause logRatio to max out positive, rather than
+    // negative. This is a bug, but has very little significance.
+    tmp32 = tmp16 * (int16_t)(dB - state->meanLongTerm);
     tmp32 = WebRtcSpl_DivW32W16(tmp32, state->stdLongTerm);
     tmpU16 = (13 << 12);
     tmp32b = WEBRTC_SPL_MUL_16_U16(state->logRatio, tmpU16);
