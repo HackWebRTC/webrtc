@@ -38,6 +38,8 @@ leak:rtc::HttpServer::HandleConnection
 leak:rtc::HttpServer::Connection::onHttpHeaderComplete
 leak:rtc::HttpResponseData::set_success
 leak:rtc::HttpData::changeHeader
+# https://code.google.com/p/webrtc/issues/detail?id=4149 for details.
+leak:StartDNSLookup
 
 # libjingle_media_unittest
 # https://code.google.com/p/webrtc/issues/detail?id=
