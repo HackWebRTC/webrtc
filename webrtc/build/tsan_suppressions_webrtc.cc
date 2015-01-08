@@ -77,6 +77,10 @@ char kTSanDefaultSuppressions[] =
 "deadlock:webrtc::ViEEncoder::OnLocalSsrcChanged\n"
 "deadlock:webrtc::ViESender::RegisterSendTransport\n"
 
+// TODO(pbos): Trace events are racy due to lack of proper POD atomics.
+// https://code.google.com/p/webrtc/issues/detail?id=2497
+"race:*trace_event_unique_catstatic*\n"
+
 // End of suppressions.
 ;  // Please keep this semicolon.
 
