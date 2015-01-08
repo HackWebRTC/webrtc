@@ -101,6 +101,8 @@ source_set("video_engine_core") {
     cflags = [
       # TODO(jschuh): Bug 1348: fix size_t to int truncations.
       "/wd4267",  # size_t to int truncation.
+      # Bug 261.
+      "/wd4373",  # legacy warning for ignoring const / volatile in signatures.
     ]
   }
 

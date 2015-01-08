@@ -82,6 +82,11 @@ source_set("voice_engine") {
 
   if (is_win) {
     defines = [ "WEBRTC_DRIFT_COMPENSATION_SUPPORTED" ]
+
+    cflags = [
+      # TODO(kjellander): Bug 261: fix this warning.
+      "/wd4373",  # virtual function override.
+    ]
   }
 
   configs += [ "..:common_config" ]

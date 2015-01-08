@@ -67,6 +67,13 @@ source_set("video_coding") {
   configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
+  if (is_win) {
+    cflags = [
+      # TODO(jschuh): Bug 1348: fix this warning.
+      "/wd4267",  # size_t to int truncation.
+    ]
+  }
+
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
@@ -148,6 +155,13 @@ source_set("webrtc_vp8") {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
     configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  if (is_win) {
+    cflags = [
+      # TODO(jschuh): Bug 1348: fix this warning.
+      "/wd4267",  # size_t to int truncation.
+    ]
   }
 
   # TODO(kjellander): Remove once libvpx has changed it's libvpx_config to be
