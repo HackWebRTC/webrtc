@@ -32,11 +32,21 @@
 #include <strmif.h>  // must come before ks.h
 #include <ks.h>
 #include <ksmedia.h>
-#define INITGUID  // For PKEY_AudioEndpoint_GUID
 #include <mmdeviceapi.h>
 #include <mmsystem.h>
 #include <functiondiscoverykeys_devpkey.h>
 #include <uuids.h>
+
+// PKEY_AudioEndpoint_GUID isn't included in uuid.lib and we don't want
+// to define INITGUID in order to define all the uuids in this object file
+// as it will conflict with uuid.lib (multiply defined symbols).
+// So our workaround is to define this one missing symbol here manually.
+// See: https://code.google.com/p/webrtc/issues/detail?id=3996
+EXTERN_C const PROPERTYKEY PKEY_AudioEndpoint_GUID = { {
+  0x1da5d803, 0xd492, 0x4edd, {
+    0x8c, 0x23, 0xe0, 0xc0, 0xff, 0xee, 0x7f, 0x0e
+  } }, 4
+};
 
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
