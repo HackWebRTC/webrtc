@@ -317,12 +317,20 @@ def GetPreferredTryMasters(project, change):
       'linux_rel',
       'linux_tsan2',
   ] + linux_gn_bots
+  mac_gn_bots = [
+      'mac_x64_gn',
+      'mac_x64_gn_rel',
+  ]
   mac_bots = [
       'mac',
       'mac_asan',
       'mac_baremetal',
       'mac_rel',
       'mac_x64_rel',
+  ] + mac_gn_bots
+  win_gn_bots = [
+      'win_x64_gn',
+      'win_x64_gn_rel',
   ]
   win_bots = [
       'win',
@@ -331,11 +339,12 @@ def GetPreferredTryMasters(project, change):
       'win_drmemory_light',
       'win_rel',
       'win_x64_rel',
-  ]
+  ] + win_gn_bots
   if not files or all(re.search(r'[\\/]OWNERS$', f) for f in files):
     return {}
   if all(re.search(r'[\\/]BUILD.gn$', f) for f in files):
-    return GetDefaultTryConfigs(android_gn_bots + linux_gn_bots)
+    return GetDefaultTryConfigs(android_gn_bots + linux_gn_bots + mac_gn_bots +
+                                win_gn_bots)
   if all(re.search('\.(m|mm)$|(^|[/_])mac[/_.]', f) for f in files):
     return GetDefaultTryConfigs(mac_bots)
   if all(re.search('(^|[/_])win[/_.]', f) for f in files):
