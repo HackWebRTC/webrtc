@@ -266,8 +266,6 @@ class FakeWebRtcVideoEngine
           receive_(false),
           can_transmit_(true),
           remote_rtx_ssrc_(-1),
-          rtx_send_payload_type(-1),
-          rtx_recv_payload_type(-1),
           rtcp_status_(webrtc::kRtcpNone),
           key_frame_request_method_(webrtc::kViEKeyFrameRequestNone),
           tmmbr_(false),
@@ -305,8 +303,8 @@ class FakeWebRtcVideoEngine
     std::map<int, int> ssrcs_;
     std::map<int, int> rtx_ssrcs_;
     int remote_rtx_ssrc_;
-    int rtx_send_payload_type;
-    int rtx_recv_payload_type;
+    std::map<int, int> rtx_send_payload_types;
+    std::map<int, int> rtx_recv_payload_types;
     std::string cname_;
     webrtc::ViERTCPMode rtcp_status_;
     webrtc::ViEKeyFrameRequestMethod key_frame_request_method_;
@@ -614,14 +612,30 @@ class FakeWebRtcVideoEngine
     WEBRTC_ASSERT_CHANNEL(channel);
     channels_[GetOriginalChannelId(channel)]->receive_bandwidth_ =
         receive_bandwidth;
-  };
-  int GetRtxSendPayloadType(int channel) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    return channels_[channel]->rtx_send_payload_type;
   }
-  int GetRtxRecvPayloadType(int channel) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    return channels_[channel]->rtx_recv_payload_type;
+  std::set<int> GetRtxSendPayloadType(int channel) {
+    std::set<int> rtx_payload_types;
+    if (channels_.find(channel) == channels_.end())
+      return rtx_payload_types;
+
+    std::map<int, int>::const_iterator it;
+    for (it = channels_[channel]->rtx_send_payload_types.begin();
+         it != channels_[channel]->rtx_send_payload_types.end(); ++it) {
+      rtx_payload_types.insert(it->first);
+    }
+    return rtx_payload_types;
+  }
+  std::set<int> GetRtxRecvPayloadType(int channel) {
+    std::set<int> rtx_payload_types;
+    if (channels_.find(channel) == channels_.end())
+      return rtx_payload_types;
+
+    std::map<int, int>::const_iterator it;
+    for (it = channels_[channel]->rtx_recv_payload_types.begin();
+         it != channels_[channel]->rtx_recv_payload_types.end(); ++it) {
+      rtx_payload_types.insert(it->first);
+    }
+    return rtx_payload_types;
   }
   int GetRemoteRtxSsrc(int channel) {
     WEBRTC_CHECK_CHANNEL(channel);
@@ -1006,17 +1020,27 @@ class FakeWebRtcVideoEngine
   WEBRTC_STUB_CONST(GetRemoteSSRC, (const int, unsigned int&));
   WEBRTC_STUB_CONST(GetRemoteCSRCs, (const int, unsigned int*));
 
-  WEBRTC_FUNC(SetRtxSendPayloadType, (const int channel,
-                                      const uint8 payload_type)) {
+  WEBRTC_FUNC(SetRtxSendPayloadType,
+              (const int channel,
+               const uint8 payload_type,
+               const uint8 associated_payload_type)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->rtx_send_payload_type = payload_type;
+    assert(payload_type >= 0);
+    assert(associated_payload_type >= 0);
+    channels_[channel]->rtx_send_payload_types[payload_type] =
+        associated_payload_type;
     return 0;
   }
 
-  WEBRTC_FUNC(SetRtxReceivePayloadType, (const int channel,
-                                         const uint8 payload_type)) {
+  WEBRTC_FUNC(SetRtxReceivePayloadType,
+              (const int channel,
+               const uint8 payload_type,
+               const uint8 associated_payload_type)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->rtx_recv_payload_type = payload_type;
+    assert(payload_type >= 0);
+    assert(associated_payload_type >= 0);
+    channels_[channel]->rtx_recv_payload_types[payload_type] =
+        associated_payload_type;
     return 0;
   }
 

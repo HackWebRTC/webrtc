@@ -40,9 +40,11 @@ class ViERTP_RTCPImpl
   virtual int GetRemoteCSRCs(const int video_channel,
                              unsigned int CSRCs[kRtpCsrcSize]) const;
   virtual int SetRtxSendPayloadType(const int video_channel,
-                                    const uint8_t payload_type);
+                                    const uint8_t payload_type,
+                                    const uint8_t associated_payload_type);
   virtual int SetRtxReceivePayloadType(const int video_channel,
-                                       const uint8_t payload_type);
+                                       const uint8_t payload_type,
+                                       const uint8_t associated_payload_type);
   virtual int SetStartSequenceNumber(const int video_channel,
                                      uint16_t sequence_number);
   virtual void SetRtpStateForSsrc(int video_channel,

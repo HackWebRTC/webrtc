@@ -32,6 +32,8 @@ const uint16_t kTestSequenceNumber = 2345;
 const uint32_t kTestNumberOfPackets = 1350;
 const int kTestNumberOfRtxPackets = 149;
 const int kNumFrames = 30;
+const int kPayloadType = 123;
+const int kRtxPayloadType = 98;
 
 class VerifyingRtxReceiver : public NullRtpData
 {
@@ -206,15 +208,17 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
 
     VideoCodec video_codec;
     memset(&video_codec, 0, sizeof(video_codec));
-    video_codec.plType = 123;
+    video_codec.plType = kPayloadType;
     memcpy(video_codec.plName, "I420", 5);
 
     EXPECT_EQ(0, rtp_rtcp_module_->RegisterSendPayload(video_codec));
+    rtp_rtcp_module_->SetRtxSendPayloadType(kRtxPayloadType, kPayloadType);
     EXPECT_EQ(0, rtp_receiver_->RegisterReceivePayload(video_codec.plName,
                                                        video_codec.plType,
                                                        90000,
                                                        0,
                                                        video_codec.maxBitrate));
+    rtp_payload_registry_.SetRtxPayloadType(kRtxPayloadType, kPayloadType);
 
     for (size_t n = 0; n < payload_data_length; n++) {
       payload_data[n] = n % 10;
@@ -265,12 +269,9 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     uint32_t timestamp = 3000;
     uint16_t nack_list[kVideoNackListSize];
     for (int frame = 0; frame < kNumFrames; ++frame) {
-      EXPECT_EQ(0, rtp_rtcp_module_->SendOutgoingData(webrtc::kVideoFrameDelta,
-                                                      123,
-                                                      timestamp,
-                                                      timestamp / 90,
-                                                      payload_data,
-                                                      payload_data_length));
+      EXPECT_EQ(0, rtp_rtcp_module_->SendOutgoingData(
+                       webrtc::kVideoFrameDelta, kPayloadType, timestamp,
+                       timestamp / 90, payload_data, payload_data_length));
       int length = BuildNackList(nack_list);
       if (length > 0)
         rtp_rtcp_module_->SendNACK(nack_list, length);
@@ -313,12 +314,9 @@ TEST_F(RtpRtcpRtxNackTest, LongNackList) {
   // Send 30 frames which at the default size is roughly what we need to get
   // enough packets.
   for (int frame = 0; frame < kNumFrames; ++frame) {
-    EXPECT_EQ(0, rtp_rtcp_module_->SendOutgoingData(webrtc::kVideoFrameDelta,
-                                                    123,
-                                                    timestamp,
-                                                    timestamp / 90,
-                                                    payload_data,
-                                                    payload_data_length));
+    EXPECT_EQ(0, rtp_rtcp_module_->SendOutgoingData(
+                     webrtc::kVideoFrameDelta, kPayloadType, timestamp,
+                     timestamp / 90, payload_data, payload_data_length));
     // Prepare next frame.
     timestamp += 3000;
     fake_clock.AdvanceTimeMilliseconds(33);

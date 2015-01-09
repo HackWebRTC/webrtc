@@ -106,33 +106,31 @@ TEST_F(RtpRtcpAPITest, RtxSender) {
   unsigned int ssrc = 0;
   int rtx_mode = kRtxOff;
   const int kRtxPayloadType = 119;
-  int payload_type = -1;
+  const int kPayloadType = 100;
   module->SetRTXSendStatus(kRtxRetransmitted);
-  module->SetRtxSendPayloadType(kRtxPayloadType);
+  module->SetRtxSendPayloadType(kRtxPayloadType, kPayloadType);
   module->SetRtxSsrc(1);
+  int payload_type;
   module->RTXSendStatus(&rtx_mode, &ssrc, &payload_type);
   EXPECT_EQ(kRtxRetransmitted, rtx_mode);
   EXPECT_EQ(1u, ssrc);
-  EXPECT_EQ(kRtxPayloadType, payload_type);
   rtx_mode = kRtxOff;
   module->SetRTXSendStatus(kRtxOff);
-  payload_type = -1;
-  module->SetRtxSendPayloadType(kRtxPayloadType);
+  module->SetRtxSendPayloadType(kRtxPayloadType, kPayloadType);
   module->RTXSendStatus(&rtx_mode, &ssrc, &payload_type);
   EXPECT_EQ(kRtxOff, rtx_mode);
-  EXPECT_EQ(kRtxPayloadType, payload_type);
   module->SetRTXSendStatus(kRtxRetransmitted);
   module->RTXSendStatus(&rtx_mode, &ssrc, &payload_type);
   EXPECT_EQ(kRtxRetransmitted, rtx_mode);
-  EXPECT_EQ(kRtxPayloadType, payload_type);
 }
 
 TEST_F(RtpRtcpAPITest, RtxReceiver) {
   const uint32_t kRtxSsrc = 1;
   const int kRtxPayloadType = 119;
+  const int kPayloadType = 100;
   EXPECT_FALSE(rtp_payload_registry_->RtxEnabled());
   rtp_payload_registry_->SetRtxSsrc(kRtxSsrc);
-  rtp_payload_registry_->SetRtxPayloadType(kRtxPayloadType);
+  rtp_payload_registry_->SetRtxPayloadType(kRtxPayloadType, kPayloadType);
   EXPECT_TRUE(rtp_payload_registry_->RtxEnabled());
   RTPHeader rtx_header;
   rtx_header.ssrc = kRtxSsrc;

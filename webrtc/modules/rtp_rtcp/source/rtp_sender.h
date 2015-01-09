@@ -191,7 +191,7 @@ class RTPSender : public RTPSenderInterface {
   uint32_t RtxSsrc() const;
   void SetRtxSsrc(uint32_t ssrc);
 
-  void SetRtxPayloadType(int payloadType);
+  void SetRtxPayloadType(int payloadType, int associated_payload_type);
 
   // Functions wrapping RTPSenderInterface.
   virtual int32_t BuildRTPheader(
@@ -391,7 +391,8 @@ class RTPSender : public RTPSenderInterface {
   std::vector<uint32_t> csrcs_ GUARDED_BY(send_critsect_);
   int rtx_ GUARDED_BY(send_critsect_);
   uint32_t ssrc_rtx_ GUARDED_BY(send_critsect_);
-  int payload_type_rtx_ GUARDED_BY(send_critsect_);
+  // Mapping apt_rtx_types_[apt] = rtx.
+  std::map<int, int> apt_rtx_types_ GUARDED_BY(send_critsect_);
 
   // Note: Don't access this variable directly, always go through
   // SetTargetBitrateKbps or GetTargetBitrateKbps. Also remember

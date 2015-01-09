@@ -24,7 +24,6 @@ RTPPayloadRegistry::RTPPayloadRegistry(
       last_received_payload_type_(-1),
       last_received_media_payload_type_(-1),
       rtx_(false),
-      payload_type_rtx_(-1),
       ssrc_rtx_(0) {}
 
 RTPPayloadRegistry::~RTPPayloadRegistry() {
@@ -264,19 +263,25 @@ bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t** restored_packet,
   RtpUtility::AssignUWord32ToBuffer(*restored_packet + 8, original_ssrc);
 
   CriticalSectionScoped cs(crit_sect_.get());
+  if (!rtx_)
+    return true;
 
-  if (payload_type_rtx_ != -1) {
-    if (header.payloadType == payload_type_rtx_ &&
-        incoming_payload_type_ != -1) {
-      (*restored_packet)[1] = static_cast<uint8_t>(incoming_payload_type_);
-      if (header.markerBit) {
-        (*restored_packet)[1] |= kRtpMarkerBitMask;  // Marker bit is set.
-      }
-    } else {
-      LOG(LS_WARNING) << "Incorrect RTX configuration, dropping packet.";
-      return false;
-    }
+  if (rtx_apt_types_.empty()) {
+    LOG(LS_WARNING) << "No RTX is set, dropping packet.";
+    return false;
   }
+  std::map<int, int>::const_iterator it =
+      rtx_apt_types_.find(header.payloadType);
+  if (it != rtx_apt_types_.end()) {
+    (*restored_packet)[1] = static_cast<uint8_t>(it->second);
+    if (header.markerBit) {
+      (*restored_packet)[1] |= kRtpMarkerBitMask;  // Marker bit is set.
+    }
+  } else {
+    LOG(LS_WARNING) << "Incorrect RTX configuration, dropping packet.";
+    return false;
+  }
+
   return true;
 }
 
@@ -292,10 +297,12 @@ bool RTPPayloadRegistry::GetRtxSsrc(uint32_t* ssrc) const {
   return rtx_;
 }
 
-void RTPPayloadRegistry::SetRtxPayloadType(int payload_type) {
+void RTPPayloadRegistry::SetRtxPayloadType(int payload_type,
+                                           int associated_payload_type) {
   CriticalSectionScoped cs(crit_sect_.get());
   assert(payload_type >= 0);
-  payload_type_rtx_ = payload_type;
+  assert(associated_payload_type >= 0);
+  rtx_apt_types_[payload_type] = associated_payload_type;
   rtx_ = true;
 }
 

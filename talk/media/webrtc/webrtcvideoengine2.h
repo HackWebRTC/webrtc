@@ -285,7 +285,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
   struct VideoCodecSettings {
     VideoCodecSettings();
-
     bool operator ==(const VideoCodecSettings& other) const;
 
     VideoCodec codec;

@@ -228,7 +228,8 @@ class RtpRtcp : public Module {
 
     // Sets the payload type to use when sending RTX packets. Note that this
     // doesn't enable RTX, only the payload type is set.
-    virtual void SetRtxSendPayloadType(int payload_type) = 0;
+    virtual void SetRtxSendPayloadType(int payload_type,
+                                       int associated_payload_type) = 0;
 
     /*
     * Get status of sending RTX (RFC 4588) on a specific SSRC.

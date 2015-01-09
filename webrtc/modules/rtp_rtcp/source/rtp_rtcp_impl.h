@@ -94,7 +94,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   virtual void SetRtxSsrc(uint32_t ssrc) OVERRIDE;
 
-  virtual void SetRtxSendPayloadType(int payload_type) OVERRIDE;
+  virtual void SetRtxSendPayloadType(int payload_type,
+                                     int associated_payload_type) OVERRIDE;
 
   // Sends kRtcpByeCode when going from true to false.
   virtual int32_t SetSendingStatus(bool sending) OVERRIDE;

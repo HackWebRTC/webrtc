@@ -147,7 +147,6 @@ RTPSender::RTPSender(int32_t id,
       last_packet_marker_bit_(false),
       csrcs_(),
       rtx_(kRtxOff),
-      payload_type_rtx_(-1),
       target_bitrate_critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       target_bitrate_(0) {
   memset(nack_byte_count_times_, 0, sizeof(nack_byte_count_times_));
@@ -403,12 +402,17 @@ void RTPSender::RTXStatus(int* mode, uint32_t* ssrc,
   CriticalSectionScoped cs(send_critsect_);
   *mode = rtx_;
   *ssrc = ssrc_rtx_;
-  *payload_type = payload_type_rtx_;
+
+  std::map<int, int>::const_iterator it = apt_rtx_types_.find(payload_type_);
+  *payload_type = (it == apt_rtx_types_.end()) ? -1 : it->second;
 }
 
-void RTPSender::SetRtxPayloadType(int payload_type) {
+void RTPSender::SetRtxPayloadType(int payload_type,
+                                  int associated_payload_type) {
   CriticalSectionScoped cs(send_critsect_);
-  payload_type_rtx_ = payload_type;
+  assert(payload_type >= 0);
+  assert(associated_payload_type >= 0);
+  apt_rtx_types_[associated_payload_type] = payload_type;
 }
 
 int32_t RTPSender::CheckPayloadType(int8_t payload_type,
@@ -610,8 +614,14 @@ size_t RTPSender::SendPadData(uint32_t timestamp,
         ssrc = ssrc_rtx_;
         sequence_number = sequence_number_rtx_;
         ++sequence_number_rtx_;
-        payload_type = ((rtx_ & kRtxRedundantPayloads) > 0) ? payload_type_rtx_
-                                                            : payload_type_;
+
+        if (apt_rtx_types_.empty())
+          return 0;
+        std::map<int, int>::const_iterator it =
+            apt_rtx_types_.find(payload_type_);
+        payload_type = it != apt_rtx_types_.end()
+                           ? it->second
+                           : apt_rtx_types_.begin()->second;
         over_rtx = true;
       }
     }
@@ -1660,9 +1670,10 @@ void RTPSender::BuildRtxPacket(uint8_t* buffer, size_t* length,
   // Add original RTP header.
   memcpy(data_buffer_rtx, buffer, rtp_header.headerLength);
 
-  // Replace payload type, if a specific type is set for RTX.
-  if (payload_type_rtx_ != -1) {
-    data_buffer_rtx[1] = static_cast<uint8_t>(payload_type_rtx_);
+  std::map<int, int>::const_iterator it =
+      apt_rtx_types_.find(rtp_header.payloadType);
+  if (it != apt_rtx_types_.end()) {
+    data_buffer_rtx[1] = static_cast<uint8_t>(it->second);
     if (rtp_header.markerBit)
       data_buffer_rtx[1] |= kRtpMarkerBitMask;
   }

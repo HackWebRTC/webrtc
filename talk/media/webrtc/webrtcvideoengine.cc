@@ -180,6 +180,13 @@ const int kVideoRtpBufferSize = 65536;
 const char kVp8CodecName[] = "VP8";
 const char kVp9CodecName[] = "VP9";
 
+const int kDefaultVp8PlType = 100;
+const int kDefaultVp9PlType = 101;
+const int kDefaultRedPlType = 116;
+const int kDefaultUlpfecType = 117;
+const int kDefaultRtxVp8PlType = 96;
+const int kDefaultRtxRedPlType = 97;
+
 // TODO(ronghuawu): Change to 640x360.
 const int kDefaultVideoMaxWidth = 640;
 const int kDefaultVideoMaxHeight = 400;
@@ -305,14 +312,16 @@ bool CodecIsInternallySupported(const std::string& codec_name) {
 std::vector<VideoCodec> DefaultVideoCodecList() {
   std::vector<VideoCodec> codecs;
   if (CodecIsInternallySupported(kVp9CodecName)) {
-    codecs.push_back(
-        MakeVideoCodecWithDefaultFeedbackParams(101, kVp9CodecName));
+    codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultVp9PlType,
+                                                             kVp9CodecName));
     // TODO(andresp): Add rtx codec for vp9 and verify it works.
   }
-  codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(100, kVp8CodecName));
-  codecs.push_back(MakeRtxCodec(96, 100));
-  codecs.push_back(MakeVideoCodec(116, kRedCodecName));
-  codecs.push_back(MakeVideoCodec(117, kUlpfecCodecName));
+  codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultVp8PlType,
+                                                           kVp8CodecName));
+  codecs.push_back(MakeRtxCodec(kDefaultRtxVp8PlType, kDefaultVp8PlType));
+  codecs.push_back(MakeVideoCodec(kDefaultRedPlType, kRedCodecName));
+  codecs.push_back(MakeRtxCodec(kDefaultRtxRedPlType, kDefaultRedPlType));
+  codecs.push_back(MakeVideoCodec(kDefaultUlpfecType, kUlpfecCodecName));
   return codecs;
 }
 
@@ -1729,7 +1738,6 @@ WebRtcVideoMediaChannel::WebRtcVideoMediaChannel(
       first_receive_ssrc_(kSsrcUnset),
       receiver_report_ssrc_(kSsrcUnset),
       num_unsignalled_recv_channels_(0),
-      send_rtx_type_(-1),
       send_red_type_(-1),
       send_fec_type_(-1),
       sending_(false),
@@ -1819,7 +1827,6 @@ bool WebRtcVideoMediaChannel::SetSendCodecs(
   std::vector<webrtc::VideoCodec> send_codecs;
   VideoCodec checked_codec;
   VideoCodec dummy_current;  // Will be ignored by CanSendCodec.
-  std::map<int, int> primary_rtx_pt_mapping;
   bool nack_enabled = nack_enabled_;
   bool remb_enabled = remb_enabled_;
   for (std::vector<VideoCodec>::const_iterator iter = codecs.begin();
@@ -1832,7 +1839,7 @@ bool WebRtcVideoMediaChannel::SetSendCodecs(
       int rtx_type = iter->id;
       int rtx_primary_type = -1;
       if (iter->GetParam(kCodecParamAssociatedPayloadType, &rtx_primary_type)) {
-        primary_rtx_pt_mapping[rtx_primary_type] = rtx_type;
+        send_rtx_apt_types_[rtx_type] = rtx_primary_type;
       }
     } else if (engine()->CanSendCodec(*iter, dummy_current, &checked_codec)) {
       webrtc::VideoCodec wcodec;
@@ -1896,14 +1903,6 @@ bool WebRtcVideoMediaChannel::SetSendCodecs(
 
   // Select the first matched codec.
   webrtc::VideoCodec& codec(send_codecs[0]);
-
-  // Set RTX payload type if primary now active. This value will be used  in
-  // SetSendCodec.
-  std::map<int, int>::const_iterator rtx_it =
-    primary_rtx_pt_mapping.find(static_cast<int>(codec.plType));
-  if (rtx_it != primary_rtx_pt_mapping.end()) {
-    send_rtx_type_ = rtx_it->second;
-  }
 
   if (BitrateIsSet(codec.minBitrate) && BitrateIsSet(codec.maxBitrate) &&
       codec.minBitrate > codec.maxBitrate) {
@@ -3831,8 +3830,11 @@ void WebRtcVideoMediaChannel::LogSendCodecChange(const std::string& reason) {
                  << vie_codec.codecSpecific.VP8.keyFrameInterval;
   }
 
-  if (send_rtx_type_ != -1) {
-    LOG(LS_INFO) << "RTX payload type: " << send_rtx_type_;
+  std::map<int, int>::const_iterator it;
+  for (it = send_rtx_apt_types_.begin(); it != send_rtx_apt_types_.end();
+       ++it) {
+    LOG(LS_INFO) << "RTX payload type: " << it->first
+                 << ", associated payload type:" << it->second;
   }
 
   LogSimulcastSubstreams(vie_codec);
@@ -3850,7 +3852,6 @@ bool WebRtcVideoMediaChannel::SetReceiveCodecs(
        it != receive_codecs_.end(); ++it) {
     pt_to_codec[it->plType] = &(*it);
   }
-  bool rtx_registered = false;
   for (std::vector<webrtc::VideoCodec>::iterator it = receive_codecs_.begin();
        it != receive_codecs_.end(); ++it) {
     if (it->codecType == webrtc::kVideoCodecRED) {
@@ -3861,11 +3862,6 @@ bool WebRtcVideoMediaChannel::SetReceiveCodecs(
     // If this is an RTX codec we have to verify that it is associated with
     // a valid video codec which we have RTX support for.
     if (_stricmp(it->plName, kRtxCodecName) == 0) {
-      // WebRTC only supports one RTX codec at a time.
-      if (rtx_registered) {
-        LOG(LS_ERROR) << "Only one RTX codec at a time is supported.";
-        return false;
-      }
       std::map<int, int>::iterator apt_it = associated_payload_types_.find(
           it->plType);
       bool valid_apt = false;
@@ -3880,11 +3876,10 @@ bool WebRtcVideoMediaChannel::SetReceiveCodecs(
         return false;
       }
       if (engine()->vie()->rtp()->SetRtxReceivePayloadType(
-          channel_id, it->plType) != 0) {
+              channel_id, it->plType, apt_it->second) != 0) {
         LOG_RTCERR2(SetRtxReceivePayloadType, channel_id, it->plType);
         return false;
       }
-      rtx_registered = true;
       continue;
     }
     if (engine()->vie()->codec()->SetReceiveCodec(channel_id, *it) != 0) {
@@ -4020,11 +4015,14 @@ bool WebRtcVideoMediaChannel::SetSendParams(
   // NOTE: SetRtxSendPayloadType must be called after all SSRCs are
   // configured. Otherwise ssrc's configured after this point will use
   // the primary PT for RTX.
-  if (send_rtx_type_ != -1 &&
-      engine()->vie()->rtp()->SetRtxSendPayloadType(channel_id,
-                                                    send_rtx_type_) != 0) {
-    LOG_RTCERR2(SetRtxSendPayloadType, channel_id, send_rtx_type_);
-    return false;
+  std::map<int, int>::const_iterator it;
+  for (it = send_rtx_apt_types_.begin(); it != send_rtx_apt_types_.end();
+       ++it) {
+    if (engine()->vie()->rtp()->SetRtxSendPayloadType(channel_id, it->first,
+                                                      it->second) != 0) {
+      LOG_RTCERR3(SetRtxSendPayloadType, channel_id, it->first, it->second);
+      return false;
+    }
   }
 
   send_channel->set_send_params(send_params);

@@ -54,13 +54,17 @@ struct NackConfig {
 // Settings for forward error correction, see RFC 5109 for details. Set the
 // payload types to '-1' to disable.
 struct FecConfig {
-  FecConfig() : ulpfec_payload_type(-1), red_payload_type(-1) {}
+  FecConfig()
+      : ulpfec_payload_type(-1), red_payload_type(-1), rtx_payload_type(-1) {}
   std::string ToString() const;
   // Payload type used for ULPFEC packets.
   int ulpfec_payload_type;
 
   // Payload type used for RED packets.
   int red_payload_type;
+
+  // Rtx payload type for RED payload.
+  int rtx_payload_type;
 };
 
 // RTP header extension to use for the video stream, see RFC 5285.

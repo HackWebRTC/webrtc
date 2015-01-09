@@ -899,11 +899,12 @@ int32_t ViEChannel::GetRemoteCSRC(uint32_t CSRCs[kRtpCsrcSize]) {
   return 0;
 }
 
-int ViEChannel::SetRtxSendPayloadType(int payload_type) {
-  rtp_rtcp_->SetRtxSendPayloadType(payload_type);
+int ViEChannel::SetRtxSendPayloadType(int payload_type,
+                                      int associated_payload_type) {
+  rtp_rtcp_->SetRtxSendPayloadType(payload_type, associated_payload_type);
   for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end(); it++) {
-    (*it)->SetRtxSendPayloadType(payload_type);
+    (*it)->SetRtxSendPayloadType(payload_type, associated_payload_type);
   }
   SetRtxSendStatus(true);
   return 0;
@@ -920,8 +921,9 @@ void ViEChannel::SetRtxSendStatus(bool enable) {
   }
 }
 
-void ViEChannel::SetRtxReceivePayloadType(int payload_type) {
-  vie_receiver_.SetRtxPayloadType(payload_type);
+void ViEChannel::SetRtxReceivePayloadType(int payload_type,
+                                          int associated_payload_type) {
+  vie_receiver_.SetRtxPayloadType(payload_type, associated_payload_type);
 }
 
 int32_t ViEChannel::SetStartSequenceNumber(uint16_t sequence_number) {

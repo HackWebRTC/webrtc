@@ -76,6 +76,10 @@ StreamObserver::StreamObserver(const SsrcMap& rtx_media_ssrcs,
   remote_bitrate_estimator_.reset(
       rbe_factory->Create(this, clock, control_type,
                           kRemoteBitrateEstimatorMinBitrateBps));
+  payload_registry_->SetRtxPayloadType(RampUpTest::kSendRtxPayloadType,
+                                       RampUpTest::kFakeSendPayloadType);
+  payload_registry_->SetRtxPayloadType(RampUpTest::kRtxRedPayloadType,
+                                       RampUpTest::kRedPayloadType);
 }
 
 void StreamObserver::set_expected_bitrate_bps(
@@ -118,7 +122,6 @@ bool StreamObserver::SendRtp(const uint8_t* packet, size_t length) {
   RTPHeader header;
   EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));
   receive_stats_->IncomingPacket(header, length, false);
-  payload_registry_->SetIncomingPayloadType(header);
   remote_bitrate_estimator_->IncomingPacket(
       clock_->TimeInMilliseconds(), length - 12, header);
   if (remote_bitrate_estimator_->TimeUntilNextProcess() <= 0) {
@@ -136,11 +139,9 @@ bool StreamObserver::SendRtp(const uint8_t* packet, size_t length) {
     uint8_t restored_packet[kMaxPacketSize];
     uint8_t* restored_packet_ptr = restored_packet;
     size_t restored_length = length;
-    payload_registry_->RestoreOriginalPacket(&restored_packet_ptr,
-                                             packet,
-                                             &restored_length,
-                                             rtx_media_ssrcs_[header.ssrc],
-                                             header);
+    EXPECT_TRUE(payload_registry_->RestoreOriginalPacket(
+        &restored_packet_ptr, packet, &restored_length,
+        rtx_media_ssrcs_[header.ssrc], header));
     length = restored_length;
     EXPECT_TRUE(rtp_parser_->Parse(
         restored_packet, static_cast<int>(length), &header));
@@ -366,10 +367,11 @@ EventTypeWrapper LowRateStreamObserver::Wait() {
   return test_done_->Wait(test::CallTest::kLongTimeoutMs);
 }
 
-void RampUpTest::RunRampUpTest(bool rtx,
-                               size_t num_streams,
+void RampUpTest::RunRampUpTest(size_t num_streams,
                                unsigned int start_bitrate_bps,
-                               const std::string& extension_type) {
+                               const std::string& extension_type,
+                               bool rtx,
+                               bool red) {
   std::vector<uint32_t> ssrcs(GenerateSsrcs(num_streams, 100));
   std::vector<uint32_t> rtx_ssrcs(GenerateSsrcs(num_streams, 200));
   StreamObserver::SsrcMap rtx_ssrc_map;
@@ -422,6 +424,11 @@ void RampUpTest::RunRampUpTest(bool rtx,
     send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
     send_config_.rtp.rtx.ssrcs = rtx_ssrcs;
   }
+  if (red) {
+    send_config_.rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+    send_config_.rtp.fec.red_payload_type = kRedPayloadType;
+    send_config_.rtp.fec.rtx_payload_type = kRtxRedPayloadType;
+  }
 
   if (num_streams == 1) {
     // For single stream rampup until 1mbps
@@ -448,7 +455,9 @@ void RampUpTest::RunRampUpTest(bool rtx,
   DestroyStreams();
 }
 
-void RampUpTest::RunRampUpDownUpTest(size_t number_of_streams, bool rtx) {
+void RampUpTest::RunRampUpDownUpTest(size_t number_of_streams,
+                                     bool rtx,
+                                     bool red) {
   test::DirectTransport receiver_transport;
   LowRateStreamObserver stream_observer(
       &receiver_transport, Clock::GetRealTimeClock(), number_of_streams, rtx);
@@ -467,6 +476,11 @@ void RampUpTest::RunRampUpDownUpTest(size_t number_of_streams, bool rtx) {
     send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
     send_config_.rtp.rtx.ssrcs = GenerateSsrcs(number_of_streams, 200);
   }
+  if (red) {
+    send_config_.rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+    send_config_.rtp.fec.red_payload_type = kRedPayloadType;
+    send_config_.rtp.fec.rtx_payload_type = kRtxRedPayloadType;
+  }
 
   CreateStreams();
   stream_observer.SetSendStream(send_stream_);
@@ -482,43 +496,68 @@ void RampUpTest::RunRampUpDownUpTest(size_t number_of_streams, bool rtx) {
 }
 
 TEST_F(RampUpTest, SingleStream) {
-  RunRampUpTest(false, 1, 0, RtpExtension::kTOffset);
+  RunRampUpTest(1, 0, RtpExtension::kTOffset, false, false);
 }
 
 TEST_F(RampUpTest, Simulcast) {
-  RunRampUpTest(false, 3, 0, RtpExtension::kTOffset);
+  RunRampUpTest(3, 0, RtpExtension::kTOffset, false, false);
 }
 
 TEST_F(RampUpTest, SimulcastWithRtx) {
-  RunRampUpTest(true, 3, 0, RtpExtension::kTOffset);
+  RunRampUpTest(3, 0, RtpExtension::kTOffset, true, false);
+}
+
+TEST_F(RampUpTest, SimulcastByRedWithRtx) {
+  RunRampUpTest(3, 0, RtpExtension::kTOffset, true, true);
 }
 
 TEST_F(RampUpTest, SingleStreamWithHighStartBitrate) {
-  RunRampUpTest(false, 1, 0.9 * kSingleStreamTargetBps, RtpExtension::kTOffset);
+  RunRampUpTest(1, 0.9 * kSingleStreamTargetBps, RtpExtension::kTOffset, false,
+                false);
 }
 
-TEST_F(RampUpTest, UpDownUpOneStream) { RunRampUpDownUpTest(1, false); }
+TEST_F(RampUpTest, UpDownUpOneStream) {
+  RunRampUpDownUpTest(1, false, false);
+}
 
-TEST_F(RampUpTest, UpDownUpThreeStreams) { RunRampUpDownUpTest(3, false); }
+TEST_F(RampUpTest, UpDownUpThreeStreams) {
+  RunRampUpDownUpTest(3, false, false);
+}
 
-TEST_F(RampUpTest, UpDownUpOneStreamRtx) { RunRampUpDownUpTest(1, true); }
+TEST_F(RampUpTest, UpDownUpOneStreamRtx) {
+  RunRampUpDownUpTest(1, true, false);
+}
 
-TEST_F(RampUpTest, UpDownUpThreeStreamsRtx) { RunRampUpDownUpTest(3, true); }
+TEST_F(RampUpTest, UpDownUpThreeStreamsRtx) {
+  RunRampUpDownUpTest(3, true, false);
+}
+
+TEST_F(RampUpTest, UpDownUpOneStreamByRedRtx) {
+  RunRampUpDownUpTest(1, true, true);
+}
+
+TEST_F(RampUpTest, UpDownUpThreeStreamsByRedRtx) {
+  RunRampUpDownUpTest(3, true, true);
+}
 
 TEST_F(RampUpTest, AbsSendTimeSingleStream) {
-  RunRampUpTest(false, 1, 0, RtpExtension::kAbsSendTime);
+  RunRampUpTest(1, 0, RtpExtension::kAbsSendTime, false, false);
 }
 
 TEST_F(RampUpTest, AbsSendTimeSimulcast) {
-  RunRampUpTest(false, 3, 0, RtpExtension::kAbsSendTime);
+  RunRampUpTest(3, 0, RtpExtension::kAbsSendTime, false, false);
 }
 
 TEST_F(RampUpTest, AbsSendTimeSimulcastWithRtx) {
-  RunRampUpTest(true, 3, 0, RtpExtension::kAbsSendTime);
+  RunRampUpTest(3, 0, RtpExtension::kAbsSendTime, true, false);
+}
+
+TEST_F(RampUpTest, AbsSendTimeSimulcastByRedWithRtx) {
+  RunRampUpTest(3, 0, RtpExtension::kAbsSendTime, true, true);
 }
 
 TEST_F(RampUpTest, AbsSendTimeSingleStreamWithHighStartBitrate) {
-  RunRampUpTest(false, 1, 0.9 * kSingleStreamTargetBps,
-                RtpExtension::kAbsSendTime);
+  RunRampUpTest(1, 0.9 * kSingleStreamTargetBps, RtpExtension::kAbsSendTime,
+                false, false);
 }
 }  // namespace webrtc

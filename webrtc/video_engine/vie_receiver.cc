@@ -102,8 +102,10 @@ void ViEReceiver::SetNackStatus(bool enable,
   rtp_receiver_->SetNACKStatus(enable ? kNackRtcp : kNackOff);
 }
 
-void ViEReceiver::SetRtxPayloadType(int payload_type) {
-  rtp_payload_registry_->SetRtxPayloadType(payload_type);
+void ViEReceiver::SetRtxPayloadType(int payload_type,
+                                    int associated_payload_type) {
+  rtp_payload_registry_->SetRtxPayloadType(payload_type,
+                                           associated_payload_type);
 }
 
 void ViEReceiver::SetRtxSsrc(uint32_t ssrc) {

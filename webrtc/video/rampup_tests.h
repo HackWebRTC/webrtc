@@ -148,12 +148,13 @@ class LowRateStreamObserver : public test::DirectTransport,
 
 class RampUpTest : public test::CallTest {
  protected:
-  void RunRampUpTest(bool rtx,
-                     size_t num_streams,
+  void RunRampUpTest(size_t num_streams,
                      unsigned int start_bitrate_bps,
-                     const std::string& extension_type);
+                     const std::string& extension_type,
+                     bool rtx,
+                     bool red);
 
-  void RunRampUpDownUpTest(size_t number_of_streams, bool rtx);
+  void RunRampUpDownUpTest(size_t number_of_streams, bool rtx, bool red);
 };
 }  // namespace webrtc
 #endif  // WEBRTC_VIDEO_RAMPUP_TESTS_H_

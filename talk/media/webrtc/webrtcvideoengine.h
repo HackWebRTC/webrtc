@@ -511,7 +511,8 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   // Global send side state.
   SendChannelMap send_channels_;
   rtc::scoped_ptr<webrtc::VideoCodec> send_codec_;
-  int send_rtx_type_;
+  // A map from RTX payload types to their associated payload types.
+  std::map<int, int> send_rtx_apt_types_;
   int send_red_type_;
   int send_fec_type_;
   bool sending_;

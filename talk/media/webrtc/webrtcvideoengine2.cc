@@ -121,6 +121,15 @@ static void MergeFecConfig(const webrtc::FecConfig& other,
     }
     output->red_payload_type = other.red_payload_type;
   }
+  if (other.rtx_payload_type != -1) {
+    if (output->rtx_payload_type != -1 &&
+        output->rtx_payload_type != other.rtx_payload_type) {
+      LOG(LS_WARNING) << "Conflict merging rtx_payload_type configs: "
+                      << output->rtx_payload_type << " and "
+                      << other.rtx_payload_type;
+    }
+    output->rtx_payload_type = other.rtx_payload_type;
+  }
 }
 }  // namespace
 
@@ -2070,6 +2079,7 @@ bool WebRtcVideoChannel2::VideoCodecSettings::operator==(
   return codec == other.codec &&
          fec.ulpfec_payload_type == other.fec.ulpfec_payload_type &&
          fec.red_payload_type == other.fec.red_payload_type &&
+         fec.rtx_payload_type == other.fec.rtx_payload_type &&
          rtx_payload_type == other.rtx_payload_type;
 }
 
@@ -2142,9 +2152,14 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
       LOG(LS_ERROR) << "RTX mapped to payload not in codec list.";
       return std::vector<VideoCodecSettings>();
     }
-    if (payload_codec_type[it->first] != VideoCodec::CODEC_VIDEO) {
-      LOG(LS_ERROR) << "RTX not mapped to regular video codec.";
+    if (payload_codec_type[it->first] != VideoCodec::CODEC_VIDEO &&
+        payload_codec_type[it->first] != VideoCodec::CODEC_RED) {
+      LOG(LS_ERROR) << "RTX not mapped to regular video codec or RED codec.";
       return std::vector<VideoCodecSettings>();
+    }
+
+    if (it->first == fec_settings.red_payload_type) {
+      fec_settings.rtx_payload_type = it->second;
     }
   }
 
@@ -2152,7 +2167,9 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
   // codecs aren't mapped to bogus payloads.
   for (size_t i = 0; i < video_codecs.size(); ++i) {
     video_codecs[i].fec = fec_settings;
-    if (rtx_mapping[video_codecs[i].codec.id] != 0) {
+    if (rtx_mapping[video_codecs[i].codec.id] != 0 &&
+        rtx_mapping[video_codecs[i].codec.id] !=
+            fec_settings.red_payload_type) {
       video_codecs[i].rtx_payload_type = rtx_mapping[video_codecs[i].codec.id];
     }
   }
