@@ -17,7 +17,6 @@ std::string FecConfig::ToString() const {
   std::stringstream ss;
   ss << "{ulpfec_payload_type: " << ulpfec_payload_type;
   ss << ", red_payload_type: " << red_payload_type;
-  ss << ", rtx_payload_type: " << rtx_payload_type;
   ss << '}';
   return ss.str();
 }

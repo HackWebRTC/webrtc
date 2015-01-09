@@ -88,16 +88,10 @@
       'target_name': 'libjingle_media_unittest',
       'type': 'executable',
       'dependencies': [
-        '<(DEPTH)/testing/gmock.gyp:gmock',
         '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
         'libjingle.gyp:libjingle_media',
         'libjingle_unittest_main',
       ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          '<(DEPTH)/testing/gmock/include',
-        ],
-      },
       'sources': [
         # TODO(ronghuawu): Reenable this test.
         # 'media/base/capturemanager_unittest.cc',

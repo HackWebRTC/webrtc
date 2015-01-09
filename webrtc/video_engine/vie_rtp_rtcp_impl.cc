@@ -191,10 +191,8 @@ int ViERTP_RTCPImpl::GetRemoteCSRCs(const int video_channel,
   return 0;
 }
 
-int ViERTP_RTCPImpl::SetRtxSendPayloadType(
-    const int video_channel,
-    const uint8_t payload_type,
-    const uint8_t associated_payload_type) {
+int ViERTP_RTCPImpl::SetRtxSendPayloadType(const int video_channel,
+                                           const uint8_t payload_type) {
   LOG_F(LS_INFO) << "channel: " << video_channel
                  << " payload_type: " << static_cast<int>(payload_type);
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
@@ -203,17 +201,14 @@ int ViERTP_RTCPImpl::SetRtxSendPayloadType(
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
-  if (vie_channel->SetRtxSendPayloadType(payload_type,
-                                         associated_payload_type) != 0) {
+  if (vie_channel->SetRtxSendPayloadType(payload_type) != 0) {
     return -1;
   }
   return 0;
 }
 
-int ViERTP_RTCPImpl::SetRtxReceivePayloadType(
-    const int video_channel,
-    const uint8_t payload_type,
-    const uint8_t associated_payload_type) {
+int ViERTP_RTCPImpl::SetRtxReceivePayloadType(const int video_channel,
+                                              const uint8_t payload_type) {
   LOG_F(LS_INFO) << "channel: " << video_channel
                  << " payload_type: " << static_cast<int>(payload_type);
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
@@ -222,7 +217,7 @@ int ViERTP_RTCPImpl::SetRtxReceivePayloadType(
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
-  vie_channel->SetRtxReceivePayloadType(payload_type, associated_payload_type);
+  vie_channel->SetRtxReceivePayloadType(payload_type);
   return 0;
 }
 

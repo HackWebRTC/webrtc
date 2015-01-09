@@ -257,9 +257,8 @@ void ModuleRtpRtcpImpl::SetRtxSsrc(uint32_t ssrc) {
   rtp_sender_.SetRtxSsrc(ssrc);
 }
 
-void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type,
-                                              int associated_payload_type) {
-  rtp_sender_.SetRtxPayloadType(payload_type, associated_payload_type);
+void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type) {
+  rtp_sender_.SetRtxPayloadType(payload_type);
 }
 
 int32_t ModuleRtpRtcpImpl::IncomingRtcpPacket(

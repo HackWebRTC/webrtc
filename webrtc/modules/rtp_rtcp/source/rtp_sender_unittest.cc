@@ -30,7 +30,6 @@ namespace {
 const int kTransmissionTimeOffsetExtensionId = 1;
 const int kAbsoluteSendTimeExtensionId = 14;
 const int kPayload = 100;
-const int kRtxPayload = 98;
 const uint32_t kTimestamp = 10;
 const uint16_t kSeqNum = 33;
 const int kTimeOffset = 22222;
@@ -655,7 +654,6 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
   rtp_sender_.reset(new RTPSender(0, false, &fake_clock_, &transport, NULL,
                                   &mock_paced_sender_, NULL, NULL, NULL));
   rtp_sender_->SetSequenceNumber(kSeqNum);
-  rtp_sender_->SetRtxPayloadType(kRtxPayload, kPayload);
   // Make all packets go through the pacer.
   EXPECT_CALL(mock_paced_sender_,
               SendPacket(PacedSender::kNormalPriority, _, _, _, _, _)).
@@ -1125,7 +1123,7 @@ TEST_F(RtpSenderTest, BytesReportedCorrectly) {
   const uint8_t kPayloadType = 127;
   rtp_sender_->SetSSRC(1234);
   rtp_sender_->SetRtxSsrc(4321);
-  rtp_sender_->SetRtxPayloadType(kPayloadType - 1, kPayloadType);
+  rtp_sender_->SetRtxPayloadType(kPayloadType - 1);
   rtp_sender_->SetRTXStatus(kRtxRetransmitted | kRtxRedundantPayloads);
 
   ASSERT_EQ(

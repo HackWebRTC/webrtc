@@ -145,8 +145,8 @@ class ViEChannel
   // Gets the CSRC for the incoming stream.
   int32_t GetRemoteCSRC(uint32_t CSRCs[kRtpCsrcSize]);
 
-  int SetRtxSendPayloadType(int payload_type, int associated_payload_type);
-  void SetRtxReceivePayloadType(int payload_type, int associated_payload_type);
+  int SetRtxSendPayloadType(int payload_type);
+  void SetRtxReceivePayloadType(int payload_type);
 
   // Sets the starting sequence number, must be called before StartSend.
   int32_t SetStartSequenceNumber(uint16_t sequence_number);

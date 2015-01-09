@@ -37,7 +37,6 @@ class CallTest : public ::testing::Test {
   static const uint8_t kSendRtxPayloadType;
   static const uint8_t kFakeSendPayloadType;
   static const uint8_t kRedPayloadType;
-  static const uint8_t kRtxRedPayloadType;
   static const uint8_t kUlpfecPayloadType;
   static const uint32_t kSendRtxSsrcs[kNumSsrcs];
   static const uint32_t kSendSsrcs[kNumSsrcs];

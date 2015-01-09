@@ -49,6 +49,7 @@ std::string VideoSendStream::Config::Rtp::Rtx::ToString()
       ss << "}, {";
   }
   ss << '}';
+
   ss << ", payload_type: " << payload_type;
   ss << '}';
   return ss.str();
@@ -171,11 +172,6 @@ VideoSendStream::VideoSendStream(
           true,
           static_cast<unsigned char>(config_.rtp.fec.red_payload_type),
           static_cast<unsigned char>(config_.rtp.fec.ulpfec_payload_type));
-    }
-    if (config_.rtp.fec.rtx_payload_type != -1) {
-      rtp_rtcp_->SetRtxSendPayloadType(channel_,
-                                       config_.rtp.fec.rtx_payload_type,
-                                       config_.rtp.fec.red_payload_type);
     }
   } else {
     rtp_rtcp_->SetNACKStatus(channel_, config_.rtp.nack.rtp_history_ms > 0);
@@ -479,8 +475,7 @@ void VideoSendStream::ConfigureSsrcs() {
   }
 
   assert(config_.rtp.rtx.payload_type >= 0);
-  rtp_rtcp_->SetRtxSendPayloadType(channel_, config_.rtp.rtx.payload_type,
-                                   config_.encoder_settings.payload_type);
+  rtp_rtcp_->SetRtxSendPayloadType(channel_, config_.rtp.rtx.payload_type);
 }
 
 std::map<uint32_t, RtpState> VideoSendStream::GetRtpStates() const {

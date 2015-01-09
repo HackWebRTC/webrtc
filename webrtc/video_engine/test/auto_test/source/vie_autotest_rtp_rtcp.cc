@@ -172,15 +172,14 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     myTransport.ClearStats();
 
     const uint8_t kRtxPayloadType = 96;
-    const uint8_t kPayloadType = 100;
     // Temporarily disable pacing.
     EXPECT_EQ(0, ViE.rtp_rtcp->SetTransmissionSmoothingStatus(
         tbChannel.videoChannel, false));
     EXPECT_EQ(0, ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel, true));
-    EXPECT_EQ(0, ViE.rtp_rtcp->SetRtxSendPayloadType(
-                     tbChannel.videoChannel, kRtxPayloadType, kPayloadType));
-    EXPECT_EQ(0, ViE.rtp_rtcp->SetRtxReceivePayloadType(
-                     tbChannel.videoChannel, kRtxPayloadType, kPayloadType));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetRtxSendPayloadType(tbChannel.videoChannel,
+                                                     kRtxPayloadType));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetRtxReceivePayloadType(tbChannel.videoChannel,
+                                                        kRtxPayloadType));
     EXPECT_EQ(0, ViE.rtp_rtcp->SetLocalSSRC(tbChannel.videoChannel, 1234,
                                             webrtc::kViEStreamTypeRtx, 0));
     EXPECT_EQ(0, ViE.rtp_rtcp->SetRemoteSSRCType(tbChannel.videoChannel,

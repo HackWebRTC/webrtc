@@ -92,13 +92,12 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   rtp_rtcp_->SetLocalSSRC(channel_, config_.rtp.local_ssrc);
   // TODO(pbos): Support multiple RTX, per video payload.
   Config::Rtp::RtxMap::const_iterator it = config_.rtp.rtx.begin();
-  for (; it != config_.rtp.rtx.end(); ++it) {
+  if (it != config_.rtp.rtx.end()) {
     assert(it->second.ssrc != 0);
     assert(it->second.payload_type != 0);
 
     rtp_rtcp_->SetRemoteSSRCType(channel_, kViEStreamTypeRtx, it->second.ssrc);
-    rtp_rtcp_->SetRtxReceivePayloadType(channel_, it->second.payload_type,
-                                        it->first);
+    rtp_rtcp_->SetRtxReceivePayloadType(channel_, it->second.payload_type);
   }
 
   rtp_rtcp_->SetRembStatus(channel_, false, config_.rtp.remb);
@@ -146,11 +145,6 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
     if (codec_->SetReceiveCodec(channel_, codec) != 0) {
       LOG(LS_ERROR) << "Could not set RED codec. This shouldn't happen.";
       abort();
-    }
-    if (config_.rtp.fec.rtx_payload_type != -1) {
-      rtp_rtcp_->SetRtxReceivePayloadType(channel_,
-                                          config_.rtp.fec.rtx_payload_type,
-                                          config_.rtp.fec.red_payload_type);
     }
   }
 

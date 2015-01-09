@@ -103,8 +103,7 @@ static const uint32_t kSendSsrc = 0x654321;
 static const uint32_t kSendRtxSsrc = 0x654322;
 static const uint32_t kReceiverLocalSsrc = 0x123456;
 
-static const uint8_t kRtxVideoPayloadType = 96;
-static const uint8_t kVideoPayloadType = 124;
+static const uint8_t kRtxPayloadType = 96;
 
 void Loopback() {
   scoped_ptr<test::TraceToStderr> trace_to_stderr_;
@@ -138,7 +137,7 @@ void Loopback() {
   VideoSendStream::Config send_config;
   send_config.rtp.ssrcs.push_back(kSendSsrc);
   send_config.rtp.rtx.ssrcs.push_back(kSendRtxSsrc);
-  send_config.rtp.rtx.payload_type = kRtxVideoPayloadType;
+  send_config.rtp.rtx.payload_type = kRtxPayloadType;
   send_config.rtp.nack.rtp_history_ms = 1000;
   send_config.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeExtensionId));
@@ -156,7 +155,7 @@ void Loopback() {
   }
   send_config.encoder_settings.encoder = encoder.get();
   send_config.encoder_settings.payload_name = flags::Codec();
-  send_config.encoder_settings.payload_type = kVideoPayloadType;
+  send_config.encoder_settings.payload_type = 124;
   VideoEncoderConfig encoder_config;
   encoder_config.streams = test::CreateVideoStreams(1);
   VideoStream* stream = &encoder_config.streams[0];
@@ -184,8 +183,8 @@ void Loopback() {
   receive_config.rtp.remote_ssrc = send_config.rtp.ssrcs[0];
   receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
   receive_config.rtp.nack.rtp_history_ms = 1000;
-  receive_config.rtp.rtx[kVideoPayloadType].ssrc = kSendRtxSsrc;
-  receive_config.rtp.rtx[kVideoPayloadType].payload_type = kRtxVideoPayloadType;
+  receive_config.rtp.rtx[kRtxPayloadType].ssrc = kSendRtxSsrc;
+  receive_config.rtp.rtx[kRtxPayloadType].payload_type = kRtxPayloadType;
   receive_config.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeExtensionId));
   receive_config.renderer = loopback_video.get();

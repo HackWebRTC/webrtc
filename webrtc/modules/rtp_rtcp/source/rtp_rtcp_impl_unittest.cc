@@ -691,7 +691,7 @@ TEST_F(RtpSendingTest, DISABLED_RoundRobinPaddingRtx) {
     // as otherwise the timestmap used for BWE will be broken.
     senders_[i]->RegisterSendRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
                                                 1);
-    senders_[i]->SetRtxSendPayloadType(96, 100);
+    senders_[i]->SetRtxSendPayloadType(96);
     senders_[i]->SetRtxSsrc(kSenderRtxSsrc + i);
     senders_[i]->SetRTXSendStatus(kRtxRetransmitted);
   }
@@ -716,7 +716,7 @@ TEST_F(RtpSendingTest, DISABLED_RoundRobinPaddingRtx) {
 
 TEST_F(RtpSendingTest, DISABLED_RoundRobinPaddingRtxRedundantPayloads) {
   for (int i = 1; i < codec_.numberOfSimulcastStreams + 1; ++i) {
-    senders_[i]->SetRtxSendPayloadType(96, 100);
+    senders_[i]->SetRtxSendPayloadType(96);
     senders_[i]->SetRtxSsrc(kSenderRtxSsrc + i);
     senders_[i]->SetRTXSendStatus(kRtxRetransmitted | kRtxRedundantPayloads);
     senders_[i]->SetStorePacketsStatus(true, 100);
