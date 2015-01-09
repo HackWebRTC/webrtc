@@ -644,8 +644,7 @@ TEST_F(PortAllocatorTest, TestCandidateFilterWithReflexiveOnlyAndNoNAT) {
 
 TEST_F(PortAllocatorTest, TestBasicMuxFeatures) {
   AddInterface(kClientAddr);
-  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_BUNDLE |
-      cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
+  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_BUNDLE);
   // Session ID - session1.
   rtc::scoped_ptr<cricket::PortAllocatorSession> session1(
       CreateSession("session1", cricket::ICE_CANDIDATE_COMPONENT_RTP));
@@ -672,8 +671,7 @@ TEST_F(PortAllocatorTest, TestBasicMuxFeatures) {
 // set of candidates.
 TEST_F(PortAllocatorTest, TestBundleIceRestart) {
   AddInterface(kClientAddr);
-  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_BUNDLE |
-      cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
+  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_BUNDLE);
   // Session ID - session1.
   rtc::scoped_ptr<cricket::PortAllocatorSession> session1(
       CreateSession("session1", kContentName,

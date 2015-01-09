@@ -418,8 +418,7 @@ bool Port::GetStunMessage(const char* data, size_t size,
     if (IsStandardIce() &&
         !stun_msg->ValidateMessageIntegrity(data, size, password_)) {
       LOG_J(LS_ERROR, this) << "Received STUN request with bad M-I "
-                            << "from " << addr.ToSensitiveString()
-                            << ", password_=" << password_;
+                            << "from " << addr.ToSensitiveString();
       SendBindingErrorResponse(stun_msg.get(), addr, STUN_ERROR_UNAUTHORIZED,
                                STUN_ERROR_REASON_UNAUTHORIZED);
       return true;
@@ -1347,27 +1346,6 @@ void Connection::CheckTimeout() {
 
 void Connection::HandleRoleConflictFromPeer() {
   port_->SignalRoleConflict(port_);
-}
-
-void Connection::MaybeSetRemoteIceCredentials(const std::string& ice_ufrag,
-                                              const std::string& ice_pwd) {
-  if (remote_candidate_.username() == ice_ufrag &&
-      remote_candidate_.password().empty()) {
-    remote_candidate_.set_password(ice_pwd);
-  }
-}
-
-void Connection::MaybeUpdatePeerReflexiveCandidate(
-    const Candidate& new_candidate) {
-  if (remote_candidate_.type() == PRFLX_PORT_TYPE &&
-      new_candidate.type() != PRFLX_PORT_TYPE &&
-      remote_candidate_.protocol() == new_candidate.protocol() &&
-      remote_candidate_.address() == new_candidate.address() &&
-      remote_candidate_.username() == new_candidate.username() &&
-      remote_candidate_.password() == new_candidate.password() &&
-      remote_candidate_.generation() == new_candidate.generation()) {
-    remote_candidate_ = new_candidate;
-  }
 }
 
 void Connection::OnMessage(rtc::Message *pmsg) {
