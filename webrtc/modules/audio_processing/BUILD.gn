@@ -172,6 +172,7 @@ source_set("audio_processing") {
   }
 
   if (rtc_use_openmax_dl) {
+    defines += [ "WEBRTC_BEAMFORMER" ]
     sources += [
       "beamformer/beamformer.cc",
       "beamformer/beamformer.h",
