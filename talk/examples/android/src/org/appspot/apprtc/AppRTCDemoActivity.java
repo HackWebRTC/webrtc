@@ -116,6 +116,7 @@ public class AppRTCDemoActivity extends Activity
     Thread.setDefaultUncaughtExceptionHandler(
         new UnhandledExceptionHandler(this));
     iceConnected = false;
+    signalingParameters = null;
 
     rootView = findViewById(android.R.id.content);
     encoderStatView = (TextView) findViewById(R.id.encoder_stat);
@@ -276,6 +277,10 @@ public class AppRTCDemoActivity extends Activity
           pc = new PeerConnectionClient();
           pc.createPeerConnectionFactory(
               thisCopy, hwCodec, VideoRendererGui.getEGLContext(), thisCopy);
+        }
+        if (signalingParameters != null) {
+          Log.w(TAG, "EGL context is ready after room connection.");
+          onConnectedToRoomInternal(signalingParameters);
         }
       }
     });
@@ -487,14 +492,11 @@ public class AppRTCDemoActivity extends Activity
   // are routed to UI thread.
   private void onConnectedToRoomInternal(final SignalingParameters params) {
     signalingParameters = params;
-    logAndToast("Creating peer connection...");
     if (pc == null) {
-      // Create peer connection factory if render EGL context ready event
-      // has not been fired yet.
-      pc = new PeerConnectionClient();
-      pc.createPeerConnectionFactory(
-          this, hwCodec, VideoRendererGui.getEGLContext(), this);
+      Log.w(TAG, "Room is connected, but EGL context is not ready yet.");
+      return;
     }
+    logAndToast("Creating peer connection...");
     pc.createPeerConnection(
         localRender, remoteRender, signalingParameters, startBitrate);
     if (pc.isHDVideo()) {

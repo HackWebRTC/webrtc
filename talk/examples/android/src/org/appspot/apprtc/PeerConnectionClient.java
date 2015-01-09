@@ -63,6 +63,7 @@ import java.util.regex.Pattern;
  */
 public class PeerConnectionClient {
   private static final String TAG = "PCRTCClient";
+  private static final boolean PREFER_ISAC = false;
   public static final String VIDEO_TRACK_ID = "ARDAMSv0";
   public static final String AUDIO_TRACK_ID = "ARDAMSa0";
 
@@ -178,7 +179,8 @@ public class PeerConnectionClient {
       Context context,
       boolean vp8HwAcceleration,
       EGLContext renderEGLContext) {
-    Log.d(TAG, "Create peer connection factory.");
+    Log.d(TAG, "Create peer connection factory with EGLContext "
+      + renderEGLContext);
     isError = false;
     if (!PeerConnectionFactory.initializeAndroidGlobals(
         context, true, true, vp8HwAcceleration, renderEGLContext)) {
@@ -292,6 +294,7 @@ public class PeerConnectionClient {
       @Override
       public void run() {
         if (pc != null && !isError) {
+          Log.d(TAG, "PC Create OFFER");
           isInitiator = true;
           pc.createOffer(sdpObserver, sdpMediaConstraints);
         }
@@ -304,6 +307,7 @@ public class PeerConnectionClient {
       @Override
       public void run() {
         if (pc != null && !isError) {
+          Log.d(TAG, "PC create ANSWER");
           isInitiator = false;
           pc.createAnswer(sdpObserver, sdpMediaConstraints);
         }
@@ -333,7 +337,10 @@ public class PeerConnectionClient {
         if (pc == null || isError) {
           return;
         }
-        String sdpDescription = preferISAC(sdp.description);
+        String sdpDescription = sdp.description;
+        if (PREFER_ISAC) {
+          sdpDescription = preferISAC(sdpDescription);
+        }
         if (startBitrate > 0) {
           sdpDescription = setStartBitrate(sdpDescription, startBitrate);
         }
@@ -672,8 +679,12 @@ public class PeerConnectionClient {
         reportError("Multiple SDP create.");
         return;
       }
+      String sdpDescription = origSdp.description;
+      if (PREFER_ISAC) {
+        sdpDescription = preferISAC(sdpDescription);
+      }
       final SessionDescription sdp = new SessionDescription(
-          origSdp.type, preferISAC(origSdp.description));
+          origSdp.type, sdpDescription);
       localSdp = sdp;
       executor.execute(new Runnable() {
         @Override

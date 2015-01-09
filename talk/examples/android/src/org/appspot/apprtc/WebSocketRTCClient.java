@@ -26,14 +26,15 @@
  */
 package org.appspot.apprtc;
 
-import android.util.Log;
-
-import org.appspot.apprtc.util.AsyncHttpURLConnection;
-import org.appspot.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
-import org.appspot.apprtc.util.LooperExecutor;
 import org.appspot.apprtc.RoomParametersFetcher.RoomParametersFetcherEvents;
 import org.appspot.apprtc.WebSocketChannelClient.WebSocketChannelEvents;
 import org.appspot.apprtc.WebSocketChannelClient.WebSocketConnectionState;
+import org.appspot.apprtc.util.AsyncHttpURLConnection;
+import org.appspot.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
+import org.appspot.apprtc.util.LooperExecutor;
+
+import android.util.Log;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.IceCandidate;
@@ -64,7 +65,6 @@ public class WebSocketRTCClient implements AppRTCClient,
   private boolean initiator;
   private SignalingEvents events;
   private WebSocketChannelClient wsClient;
-  private RoomParametersFetcher fetcher;
   private ConnectionState roomState;
   private String postMessageUrl;
   private String byeMessageUrl;
@@ -109,7 +109,7 @@ public class WebSocketRTCClient implements AppRTCClient,
     // Create WebSocket client.
     wsClient = new WebSocketChannelClient(executor, this);
     // Get room parameters.
-    fetcher = new RoomParametersFetcher(loopback, url,
+    new RoomParametersFetcher(loopback, url,
       new RoomParametersFetcherEvents() {
         @Override
         public void onSignalingParametersReady(
@@ -371,12 +371,12 @@ public class WebSocketRTCClient implements AppRTCClient,
     AsyncHttpURLConnection httpConnection = new AsyncHttpURLConnection(
       "POST", url, message, new AsyncHttpEvents() {
         @Override
-        public void OnHttpError(String errorMessage) {
+        public void onHttpError(String errorMessage) {
           reportError("GAE POST error: " + errorMessage);
         }
 
         @Override
-        public void OnHttpComplete(String response) {
+        public void onHttpComplete(String response) {
           if (messageType == MessageType.MESSAGE) {
             try {
               JSONObject roomJson = new JSONObject(response);

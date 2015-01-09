@@ -45,9 +45,12 @@ public class AsyncHttpURLConnection {
   private final String message;
   private final AsyncHttpEvents events;
 
+  /**
+   * Http requests callbacks.
+   */
   public interface AsyncHttpEvents {
-    public void OnHttpError(String errorMessage);
-    public void OnHttpComplete(String response);
+    public void onHttpError(String errorMessage);
+    public void onHttpComplete(String response);
   }
 
   public AsyncHttpURLConnection(String method, String url, String message,
@@ -99,18 +102,18 @@ public class AsyncHttpURLConnection {
       // Get response.
       int responseCode = connection.getResponseCode();
       if (responseCode != 200) {
-        events.OnHttpError("Non-200 response to " + method + " to URL: "
+        events.onHttpError("Non-200 response to " + method + " to URL: "
             + url + " : " + connection.getHeaderField(null));
         return;
       }
       InputStream responseStream = connection.getInputStream();
       String response = drainStream(responseStream);
       responseStream.close();
-      events.OnHttpComplete(response);
+      events.onHttpComplete(response);
     } catch (SocketTimeoutException e) {
-      events.OnHttpError("HTTP " + method + " to " + url + " timeout");
+      events.onHttpError("HTTP " + method + " to " + url + " timeout");
     } catch (IOException e) {
-      events.OnHttpError("HTTP " + method + " to " + url + " error: "
+      events.onHttpError("HTTP " + method + " to " + url + " error: "
           + e.getMessage());
     }
   }

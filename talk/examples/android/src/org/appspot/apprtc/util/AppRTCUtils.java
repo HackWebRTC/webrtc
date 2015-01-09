@@ -29,8 +29,10 @@ package org.appspot.apprtc.util;
 
 import android.os.Build;
 import android.util.Log;
-import java.lang.Thread;
 
+/**
+ * AppRTCUtils provides helper functions for managing thread safety.
+ */
 public final class AppRTCUtils {
 
   private AppRTCUtils() {

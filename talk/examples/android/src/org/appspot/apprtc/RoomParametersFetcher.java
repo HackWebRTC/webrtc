@@ -82,22 +82,22 @@ public class RoomParametersFetcher {
     this.events = events;
 
     httpConnection = new AsyncHttpURLConnection("POST", registerUrl, null,
-      new AsyncHttpEvents() {
-        @Override
-        public void OnHttpError(String errorMessage) {
-          Log.e(TAG, "Room connection error: " + errorMessage);
-          events.onSignalingParametersError(errorMessage);
-        }
+        new AsyncHttpEvents() {
+          @Override
+          public void onHttpError(String errorMessage) {
+            Log.e(TAG, "Room connection error: " + errorMessage);
+            events.onSignalingParametersError(errorMessage);
+          }
 
-        @Override
-        public void OnHttpComplete(String response) {
-          RoomHttpResponseParse(response);
-        }
-      });
+          @Override
+          public void onHttpComplete(String response) {
+            roomHttpResponseParse(response);
+          }
+        });
     httpConnection.send();
   }
 
-  private void RoomHttpResponseParse(String response) {
+  private void roomHttpResponseParse(String response) {
     Log.d(TAG, "Room response: " + response);
     try {
       LinkedList<IceCandidate> iceCandidates = null;
