@@ -387,6 +387,7 @@ StunAttributeValueType StunMessage::GetAttributeValueType(int type) const {
     case STUN_ATTR_SOFTWARE:            return STUN_VALUE_BYTE_STRING;
     case STUN_ATTR_ALTERNATE_SERVER:    return STUN_VALUE_ADDRESS;
     case STUN_ATTR_FINGERPRINT:         return STUN_VALUE_UINT32;
+    case STUN_ATTR_ORIGIN:              return STUN_VALUE_BYTE_STRING;
     case STUN_ATTR_RETRANSMIT_COUNT:    return STUN_VALUE_UINT32;
     default:                            return STUN_VALUE_UNKNOWN;
   }

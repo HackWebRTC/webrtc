@@ -41,9 +41,10 @@ class TurnPort : public Port {
                           const std::string& password,  // ice password.
                           const ProtocolAddress& server_address,
                           const RelayCredentials& credentials,
-                          int server_priority) {
+                          int server_priority,
+                          const std::string& origin) {
     return new TurnPort(thread, factory, network, socket, username, password,
-                        server_address, credentials, server_priority);
+                        server_address, credentials, server_priority, origin);
   }
 
   static TurnPort* Create(rtc::Thread* thread,
@@ -56,15 +57,18 @@ class TurnPort : public Port {
                           const std::string& password,  // ice password.
                           const ProtocolAddress& server_address,
                           const RelayCredentials& credentials,
-                          int server_priority) {
+                          int server_priority,
+                          const std::string& origin) {
     return new TurnPort(thread, factory, network, ip, min_port, max_port,
                         username, password, server_address, credentials,
-                        server_priority);
+                        server_priority, origin);
   }
 
   virtual ~TurnPort();
 
   const ProtocolAddress& server_address() const { return server_address_; }
+  // Returns an empty address if the local address has not been assigned.
+  rtc::SocketAddress GetLocalAddress() const;
 
   bool connected() const { return connected_; }
   const RelayCredentials& credentials() const { return credentials_; }
@@ -129,7 +133,8 @@ class TurnPort : public Port {
            const std::string& password,
            const ProtocolAddress& server_address,
            const RelayCredentials& credentials,
-           int server_priority);
+           int server_priority,
+           const std::string& origin);
 
   TurnPort(rtc::Thread* thread,
            rtc::PacketSocketFactory* factory,
@@ -141,7 +146,8 @@ class TurnPort : public Port {
            const std::string& password,
            const ProtocolAddress& server_address,
            const RelayCredentials& credentials,
-           int server_priority);
+           int server_priority,
+           const std::string& origin);
 
  private:
   enum {

@@ -262,7 +262,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
 
   // Debugging description of this port
   virtual std::string ToString() const;
-  rtc::IPAddress& ip() { return ip_; }
+  const rtc::IPAddress& ip() const { return ip_; }
   uint16 min_port() { return min_port_; }
   uint16 max_port() { return max_port_; }
 

@@ -32,9 +32,108 @@ namespace cricket {
 
 class StunMessage;
 class TurnMessage;
+class TurnServer;
 
 // The default server port for TURN, as specified in RFC5766.
 const int TURN_SERVER_PORT = 3478;
+
+// Encapsulates the client's connection to the server.
+class TurnServerConnection {
+ public:
+  TurnServerConnection() : proto_(PROTO_UDP), socket_(NULL) {}
+  TurnServerConnection(const rtc::SocketAddress& src,
+                       ProtocolType proto,
+                       rtc::AsyncPacketSocket* socket);
+  const rtc::SocketAddress& src() const { return src_; }
+  rtc::AsyncPacketSocket* socket() { return socket_; }
+  bool operator==(const TurnServerConnection& t) const;
+  bool operator<(const TurnServerConnection& t) const;
+  std::string ToString() const;
+
+ private:
+  rtc::SocketAddress src_;
+  rtc::SocketAddress dst_;
+  cricket::ProtocolType proto_;
+  rtc::AsyncPacketSocket* socket_;
+};
+
+// Encapsulates a TURN allocation.
+// The object is created when an allocation request is received, and then
+// handles TURN messages (via HandleTurnMessage) and channel data messages
+// (via HandleChannelData) for this allocation when received by the server.
+// The object self-deletes and informs the server if its lifetime timer expires.
+class TurnServerAllocation : public rtc::MessageHandler,
+                             public sigslot::has_slots<> {
+ public:
+  TurnServerAllocation(TurnServer* server_,
+                       rtc::Thread* thread,
+                       const TurnServerConnection& conn,
+                       rtc::AsyncPacketSocket* server_socket,
+                       const std::string& key);
+  virtual ~TurnServerAllocation();
+
+  TurnServerConnection* conn() { return &conn_; }
+  const std::string& key() const { return key_; }
+  const std::string& transaction_id() const { return transaction_id_; }
+  const std::string& username() const { return username_; }
+  const std::string& origin() const { return origin_; }
+  const std::string& last_nonce() const { return last_nonce_; }
+  void set_last_nonce(const std::string& nonce) { last_nonce_ = nonce; }
+
+  std::string ToString() const;
+
+  void HandleTurnMessage(const TurnMessage* msg);
+  void HandleChannelData(const char* data, size_t size);
+
+  sigslot::signal1<TurnServerAllocation*> SignalDestroyed;
+
+ private:
+  class Channel;
+  class Permission;
+  typedef std::list<Permission*> PermissionList;
+  typedef std::list<Channel*> ChannelList;
+
+  void HandleAllocateRequest(const TurnMessage* msg);
+  void HandleRefreshRequest(const TurnMessage* msg);
+  void HandleSendIndication(const TurnMessage* msg);
+  void HandleCreatePermissionRequest(const TurnMessage* msg);
+  void HandleChannelBindRequest(const TurnMessage* msg);
+
+  void OnExternalPacket(rtc::AsyncPacketSocket* socket,
+                        const char* data, size_t size,
+                        const rtc::SocketAddress& addr,
+                        const rtc::PacketTime& packet_time);
+
+  static int ComputeLifetime(const TurnMessage* msg);
+  bool HasPermission(const rtc::IPAddress& addr);
+  void AddPermission(const rtc::IPAddress& addr);
+  Permission* FindPermission(const rtc::IPAddress& addr) const;
+  Channel* FindChannel(int channel_id) const;
+  Channel* FindChannel(const rtc::SocketAddress& addr) const;
+
+  void SendResponse(TurnMessage* msg);
+  void SendBadRequestResponse(const TurnMessage* req);
+  void SendErrorResponse(const TurnMessage* req, int code,
+                         const std::string& reason);
+  void SendExternal(const void* data, size_t size,
+                    const rtc::SocketAddress& peer);
+
+  void OnPermissionDestroyed(Permission* perm);
+  void OnChannelDestroyed(Channel* channel);
+  virtual void OnMessage(rtc::Message* msg);
+
+  TurnServer* server_;
+  rtc::Thread* thread_;
+  TurnServerConnection conn_;
+  rtc::scoped_ptr<rtc::AsyncPacketSocket> external_socket_;
+  std::string key_;
+  std::string transaction_id_;
+  std::string username_;
+  std::string origin_;
+  std::string last_nonce_;
+  PermissionList perms_;
+  ChannelList channels_;
+};
 
 // An interface through which the MD5 credential hash can be retrieved.
 class TurnAuthInterface {
@@ -60,6 +159,8 @@ class TurnRedirectInterface {
 // Not yet wired up: TCP support.
 class TurnServer : public sigslot::has_slots<> {
  public:
+  typedef std::map<TurnServerConnection, TurnServerAllocation*> AllocationMap;
+
   explicit TurnServer(rtc::Thread* thread);
   ~TurnServer();
 
@@ -70,6 +171,8 @@ class TurnServer : public sigslot::has_slots<> {
   // Gets/sets the value for the SOFTWARE attribute for TURN messages.
   const std::string& software() const { return software_; }
   void set_software(const std::string& software) { software_ = software; }
+
+  const AllocationMap& allocations() const { return allocations_; }
 
   // Sets the authentication callback; does not take ownership.
   void set_auth_hook(TurnAuthInterface* auth_hook) { auth_hook_ = auth_hook; }
@@ -93,30 +196,6 @@ class TurnServer : public sigslot::has_slots<> {
                                 const rtc::SocketAddress& address);
 
  private:
-  // Encapsulates the client's connection to the server.
-  class Connection {
-   public:
-    Connection() : proto_(PROTO_UDP), socket_(NULL) {}
-    Connection(const rtc::SocketAddress& src,
-               ProtocolType proto,
-               rtc::AsyncPacketSocket* socket);
-    const rtc::SocketAddress& src() const { return src_; }
-    rtc::AsyncPacketSocket* socket() { return socket_; }
-    bool operator==(const Connection& t) const;
-    bool operator<(const Connection& t) const;
-    std::string ToString() const;
-
-   private:
-    rtc::SocketAddress src_;
-    rtc::SocketAddress dst_;
-    cricket::ProtocolType proto_;
-    rtc::AsyncPacketSocket* socket_;
-  };
-  class Allocation;
-  class Permission;
-  class Channel;
-  typedef std::map<Connection, Allocation*> AllocationMap;
-
   void OnInternalPacket(rtc::AsyncPacketSocket* socket, const char* data,
                         size_t size, const rtc::SocketAddress& address,
                         const rtc::PacketTime& packet_time);
@@ -127,38 +206,39 @@ class TurnServer : public sigslot::has_slots<> {
   void AcceptConnection(rtc::AsyncSocket* server_socket);
   void OnInternalSocketClose(rtc::AsyncPacketSocket* socket, int err);
 
-  void HandleStunMessage(Connection* conn, const char* data, size_t size);
-  void HandleBindingRequest(Connection* conn, const StunMessage* msg);
-  void HandleAllocateRequest(Connection* conn, const TurnMessage* msg,
+  void HandleStunMessage(
+      TurnServerConnection* conn, const char* data, size_t size);
+  void HandleBindingRequest(TurnServerConnection* conn, const StunMessage* msg);
+  void HandleAllocateRequest(TurnServerConnection* conn, const TurnMessage* msg,
                              const std::string& key);
 
   bool GetKey(const StunMessage* msg, std::string* key);
-  bool CheckAuthorization(Connection* conn, const StunMessage* msg,
+  bool CheckAuthorization(TurnServerConnection* conn, const StunMessage* msg,
                           const char* data, size_t size,
                           const std::string& key);
   std::string GenerateNonce() const;
   bool ValidateNonce(const std::string& nonce) const;
 
-  Allocation* FindAllocation(Connection* conn);
-  Allocation* CreateAllocation(Connection* conn, int proto,
-                               const std::string& key);
+  TurnServerAllocation* FindAllocation(TurnServerConnection* conn);
+  TurnServerAllocation* CreateAllocation(
+      TurnServerConnection* conn, int proto, const std::string& key);
 
-  void SendErrorResponse(Connection* conn, const StunMessage* req,
+  void SendErrorResponse(TurnServerConnection* conn, const StunMessage* req,
                          int code, const std::string& reason);
 
-  void SendErrorResponseWithRealmAndNonce(Connection* conn,
+  void SendErrorResponseWithRealmAndNonce(TurnServerConnection* conn,
                                           const StunMessage* req,
                                           int code,
                                           const std::string& reason);
 
-  void SendErrorResponseWithAlternateServer(Connection* conn,
+  void SendErrorResponseWithAlternateServer(TurnServerConnection* conn,
                                             const StunMessage* req,
                                             const rtc::SocketAddress& addr);
 
-  void SendStun(Connection* conn, StunMessage* msg);
-  void Send(Connection* conn, const rtc::ByteBuffer& buf);
+  void SendStun(TurnServerConnection* conn, StunMessage* msg);
+  void Send(TurnServerConnection* conn, const rtc::ByteBuffer& buf);
 
-  void OnAllocationDestroyed(Allocation* allocation);
+  void OnAllocationDestroyed(TurnServerAllocation* allocation);
   void DestroyInternalSocket(rtc::AsyncPacketSocket* socket);
 
   typedef std::map<rtc::AsyncPacketSocket*,
@@ -183,6 +263,8 @@ class TurnServer : public sigslot::has_slots<> {
   rtc::SocketAddress external_addr_;
 
   AllocationMap allocations_;
+
+  friend class TurnServerAllocation;
 };
 
 }  // namespace cricket

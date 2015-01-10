@@ -207,7 +207,7 @@ class TestChannel : public sigslot::has_slots<> {
   // Takes ownership of |p1| (but not |p2|).
   TestChannel(Port* p1, Port* p2)
       : ice_mode_(ICEMODE_FULL), src_(p1), dst_(p2), complete_count_(0),
-	conn_(NULL), remote_request_(), nominated_(false) {
+        conn_(NULL), remote_request_(), nominated_(false) {
     src_->SignalPortComplete.connect(
         this, &TestChannel::OnPortComplete);
     src_->SignalUnknownAddress.connect(this, &TestChannel::OnUnknownAddress);
@@ -413,7 +413,8 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   UDPPort* CreateUdpPort(const SocketAddress& addr,
                          PacketSocketFactory* socket_factory) {
     UDPPort* port = UDPPort::Create(main_, socket_factory, &network_,
-                                    addr.ipaddr(), 0, 0, username_, password_);
+                                    addr.ipaddr(), 0, 0, username_, password_,
+                                    std::string());
     port->SetIceProtocolType(ice_protocol_);
     return port;
   }
@@ -436,7 +437,8 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
     stun_servers.insert(kStunAddr);
     StunPort* port = StunPort::Create(main_, factory, &network_,
                                       addr.ipaddr(), 0, 0,
-                                      username_, password_, stun_servers);
+                                      username_, password_, stun_servers,
+                                      std::string());
     port->SetIceProtocolType(ice_protocol_);
     return port;
   }
@@ -461,8 +463,9 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
     TurnPort* port = TurnPort::Create(main_, socket_factory, &network_,
                                       addr.ipaddr(), 0, 0,
                                       username_, password_, ProtocolAddress(
-                                          server_addr, PROTO_UDP),
-                                      kRelayCredentials, 0);
+                                         server_addr, PROTO_UDP),
+                                      kRelayCredentials, 0,
+                                      std::string());
     port->SetIceProtocolType(ice_protocol_);
     return port;
   }

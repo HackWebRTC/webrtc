@@ -164,7 +164,8 @@ TurnPort::TurnPort(rtc::Thread* thread,
                    const std::string& password,
                    const ProtocolAddress& server_address,
                    const RelayCredentials& credentials,
-                   int server_priority)
+                   int server_priority,
+                   const std::string& origin)
     : Port(thread, factory, network, socket->GetLocalAddress().ipaddr(),
            username, password),
       server_address_(server_address),
@@ -178,6 +179,7 @@ TurnPort::TurnPort(rtc::Thread* thread,
       server_priority_(server_priority),
       allocate_mismatch_retries_(0) {
   request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
+  request_manager_.set_origin(origin);
 }
 
 TurnPort::TurnPort(rtc::Thread* thread,
@@ -190,7 +192,8 @@ TurnPort::TurnPort(rtc::Thread* thread,
                    const std::string& password,
                    const ProtocolAddress& server_address,
                    const RelayCredentials& credentials,
-                   int server_priority)
+                   int server_priority,
+                   const std::string& origin)
     : Port(thread, RELAY_PORT_TYPE, factory, network, ip, min_port, max_port,
            username, password),
       server_address_(server_address),
@@ -204,6 +207,7 @@ TurnPort::TurnPort(rtc::Thread* thread,
       server_priority_(server_priority),
       allocate_mismatch_retries_(0) {
   request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
+  request_manager_.set_origin(origin);
 }
 
 TurnPort::~TurnPort() {
@@ -217,6 +221,10 @@ TurnPort::~TurnPort() {
   if (!SharedSocket()) {
     delete socket_;
   }
+}
+
+rtc::SocketAddress TurnPort::GetLocalAddress() const {
+  return socket_ ? socket_->GetLocalAddress() : rtc::SocketAddress();
 }
 
 void TurnPort::PrepareAddress() {

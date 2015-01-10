@@ -60,6 +60,7 @@ static const char kIcePwd1[] = "TESTICEPWD00000000000001";
 static const char kIcePwd2[] = "TESTICEPWD00000000000002";
 static const char kTurnUsername[] = "test";
 static const char kTurnPassword[] = "test";
+static const char kTestOrigin[] = "http://example.com";
 static const unsigned int kTimeout = 1000;
 
 static const cricket::ProtocolAddress kTurnUdpProtoAddr(
@@ -193,7 +194,30 @@ class TurnPortTest : public testing::Test,
     turn_port_.reset(TurnPort::Create(main_, &socket_factory_, &network_,
                                  local_address.ipaddr(), 0, 0,
                                  kIceUfrag1, kIcePwd1,
-                                 server_address, credentials, 0));
+                                 server_address, credentials, 0,
+                                 std::string()));
+    // Set ICE protocol type to ICEPROTO_RFC5245, as port by default will be
+    // in Hybrid mode. Protocol type is necessary to send correct type STUN ping
+    // messages.
+    // This TURN port will be the controlling.
+    turn_port_->SetIceProtocolType(cricket::ICEPROTO_RFC5245);
+    turn_port_->SetIceRole(cricket::ICEROLE_CONTROLLING);
+    ConnectSignals();
+  }
+
+  // Should be identical to CreateTurnPort but specifies an origin value
+  // when creating the instance of TurnPort.
+  void CreateTurnPortWithOrigin(const rtc::SocketAddress& local_address,
+                                const std::string& username,
+                                const std::string& password,
+                                const cricket::ProtocolAddress& server_address,
+                                const std::string& origin) {
+    cricket::RelayCredentials credentials(username, password);
+    turn_port_.reset(TurnPort::Create(main_, &socket_factory_, &network_,
+                                 local_address.ipaddr(), 0, 0,
+                                 kIceUfrag1, kIcePwd1,
+                                 server_address, credentials, 0,
+                                 origin));
     // Set ICE protocol type to ICEPROTO_RFC5245, as port by default will be
     // in Hybrid mode. Protocol type is necessary to send correct type STUN ping
     // messages.
@@ -219,7 +243,7 @@ class TurnPortTest : public testing::Test,
     cricket::RelayCredentials credentials(username, password);
     turn_port_.reset(cricket::TurnPort::Create(
         main_, &socket_factory_, &network_, socket_.get(),
-        kIceUfrag1, kIcePwd1, server_address, credentials, 0));
+        kIceUfrag1, kIcePwd1, server_address, credentials, 0, std::string()));
     // Set ICE protocol type to ICEPROTO_RFC5245, as port by default will be
     // in Hybrid mode. Protocol type is necessary to send correct type STUN ping
     // messages.
@@ -242,7 +266,8 @@ class TurnPortTest : public testing::Test,
   void CreateUdpPort() {
     udp_port_.reset(UDPPort::Create(main_, &socket_factory_, &network_,
                                     kLocalAddr2.ipaddr(), 0, 0,
-                                    kIceUfrag2, kIcePwd2));
+                                    kIceUfrag2, kIcePwd2,
+                                    std::string()));
     // Set protocol type to RFC5245, as turn port is also in same mode.
     // UDP port will be controlled.
     udp_port_->SetIceProtocolType(cricket::ICEPROTO_RFC5245);
@@ -683,6 +708,17 @@ TEST_F(TurnPortTest, TestTurnLocalIPv6AddressServerIPv6ExtenalIPv4) {
   EXPECT_EQ(kTurnUdpExtAddr.ipaddr(),
             turn_port_->Candidates()[0].address().ipaddr());
   EXPECT_NE(0, turn_port_->Candidates()[0].address().port());
+}
+
+TEST_F(TurnPortTest, TestOriginHeader) {
+  CreateTurnPortWithOrigin(kLocalAddr1, kTurnUsername, kTurnPassword,
+                           kTurnUdpProtoAddr, kTestOrigin);
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
+  ASSERT_GT(turn_server_.server()->allocations().size(), 0U);
+  SocketAddress local_address = turn_port_->GetLocalAddress();
+  ASSERT_TRUE(turn_server_.FindAllocation(local_address) != NULL);
+  EXPECT_EQ(kTestOrigin, turn_server_.FindAllocation(local_address)->origin());
 }
 
 // This test verifies any FD's are not leaked after TurnPort is destroyed.

@@ -65,7 +65,7 @@ class StunPortTest : public testing::Test,
     stun_port_.reset(cricket::StunPort::Create(
         rtc::Thread::Current(), &socket_factory_, &network_,
         kLocalAddr.ipaddr(), 0, 0, rtc::CreateRandomString(16),
-        rtc::CreateRandomString(22), stun_servers));
+        rtc::CreateRandomString(22), stun_servers, std::string()));
     stun_port_->set_stun_keepalive_delay(stun_keepalive_delay_);
     stun_port_->SignalPortComplete.connect(this,
         &StunPortTest::OnPortComplete);
@@ -81,7 +81,8 @@ class StunPortTest : public testing::Test,
     stun_port_.reset(cricket::UDPPort::Create(
         rtc::Thread::Current(), &socket_factory_,
         &network_, socket_.get(),
-        rtc::CreateRandomString(16), rtc::CreateRandomString(22)));
+        rtc::CreateRandomString(16), rtc::CreateRandomString(22),
+        std::string()));
     ASSERT_TRUE(stun_port_ != NULL);
     ServerAddresses stun_servers;
     stun_servers.insert(server_addr);

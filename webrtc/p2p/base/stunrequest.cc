@@ -41,6 +41,7 @@ void StunRequestManager::Send(StunRequest* request) {
 void StunRequestManager::SendDelayed(StunRequest* request, int delay) {
   request->set_manager(this);
   ASSERT(requests_.find(request->id()) == requests_.end());
+  request->set_origin(origin_);
   request->Construct();
   requests_[request->id()] = request;
   thread_->PostDelayed(delay, request, MSG_STUN_SEND, NULL);
@@ -138,6 +139,10 @@ StunRequest::~StunRequest() {
 
 void StunRequest::Construct() {
   if (msg_->type() == 0) {
+    if (!origin_.empty()) {
+      msg_->AddAttribute(new StunByteStringAttribute(STUN_ATTR_ORIGIN,
+          origin_));
+    }
     Prepare(msg_);
     ASSERT(msg_->type() != 0);
   }

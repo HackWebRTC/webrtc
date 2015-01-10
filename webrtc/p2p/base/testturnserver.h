@@ -87,6 +87,19 @@ class TestTurnServer : public TurnAuthInterface {
     }
   }
 
+  // Finds the first allocation in the server allocation map with a source
+  // ip and port matching the socket address provided.
+  TurnServerAllocation* FindAllocation(const rtc::SocketAddress& src) {
+    const TurnServer::AllocationMap& map = server_.allocations();
+    for (TurnServer::AllocationMap::const_iterator it = map.begin();
+        it != map.end(); ++it) {
+      if (src == it->first.src()) {
+        return it->second;
+      }
+    }
+    return NULL;
+  }
+
  private:
   // For this test server, succeed if the password is the same as the username.
   // Obviously, do not use this in a production environment.

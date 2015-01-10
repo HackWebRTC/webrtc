@@ -75,7 +75,7 @@ class FakeStunPort : public StunPort {
                const std::string& username, const std::string& password,
                const ServerAddresses& server_addr)
       : StunPort(thread, factory, network, ip, min_port, max_port,
-                 username, password, server_addr) {
+                 username, password, server_addr, std::string()) {
   }
 
   // Just set external address and signal that we are done.
