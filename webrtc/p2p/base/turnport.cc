@@ -348,6 +348,7 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
 
 void TurnPort::OnSocketClose(rtc::AsyncPacketSocket* socket, int error) {
   LOG_J(LS_WARNING, this) << "Connection with server failed, error=" << error;
+  ASSERT(socket == socket_);
   if (!connected_) {
     OnAllocateError();
   }
@@ -644,6 +645,22 @@ void TurnPort::OnMessage(rtc::Message* message) {
     return;
   } else if (message->message_id == MSG_ALLOCATE_MISMATCH) {
     OnAllocateMismatch();
+    return;
+  } else if (message->message_id == MSG_TRY_ALTERNATE_SERVER) {
+    if (server_address().proto == PROTO_UDP) {
+      // Send another allocate request to alternate server, with the received
+      // realm and nonce values.
+      SendRequest(new TurnAllocateRequest(this), 0);
+    } else {
+      // Since it's TCP, we have to delete the connected socket and reconnect
+      // with the alternate server. PrepareAddress will send stun binding once
+      // the new socket is connected.
+      ASSERT(server_address().proto == PROTO_TCP);
+      ASSERT(!SharedSocket());
+      delete socket_;
+      socket_ = NULL;
+      PrepareAddress();
+    }
     return;
   }
 
@@ -959,15 +976,6 @@ void TurnAllocateRequest::OnAuthChallenge(StunMessage* response, int code) {
 }
 
 void TurnAllocateRequest::OnTryAlternate(StunMessage* response, int code) {
-  // TODO(guoweis): Currently, we only support UDP redirect
-  if (port_->server_address().proto != PROTO_UDP) {
-    LOG_J(LS_WARNING, port_) << "Receiving 300 Alternate Server on non-UDP "
-                         << "allocating request from ["
-                         << port_->server_address().address.ToSensitiveString()
-                         << "], failed as currently not supported";
-    port_->OnAllocateError();
-    return;
-  }
 
   // According to RFC 5389 section 11, there are use cases where
   // authentication of response is not possible, we're not validating
@@ -1004,9 +1012,10 @@ void TurnAllocateRequest::OnTryAlternate(StunMessage* response, int code) {
     port_->set_nonce(nonce_attr->GetString());
   }
 
-  // Send another allocate request to alternate server,
-  // with the received realm and nonce values.
-  port_->SendRequest(new TurnAllocateRequest(port_), 0);
+  // For TCP, we can't close the original Tcp socket during handling a 300 as
+  // we're still inside that socket's event handler. Doing so will cause
+  // deadlock.
+  port_->thread()->Post(port_, TurnPort::MSG_TRY_ALTERNATE_SERVER);
 }
 
 TurnRefreshRequest::TurnRefreshRequest(TurnPort* port)

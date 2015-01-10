@@ -152,7 +152,8 @@ class TurnPort : public Port {
  private:
   enum {
     MSG_ERROR = MSG_FIRST_AVAILABLE,
-    MSG_ALLOCATE_MISMATCH
+    MSG_ALLOCATE_MISMATCH,
+    MSG_TRY_ALTERNATE_SERVER
   };
 
   typedef std::list<TurnEntry*> EntryList;
