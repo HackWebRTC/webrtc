@@ -176,8 +176,10 @@ int16_t WebRtcIsacfix_FftRadix16Fastest(int16_t RexQx[], int16_t ImxQx[], int16_
       bjQx = ImxQx[k1] + ImxQx[k2];
       RexQx[kk] = akQx + ajQx;
       ImxQx[kk] = bkQx + bjQx;
-      akQx -= ajQx >> 1;
-      bkQx -= bjQx >> 1;
+      tmp116 = ajQx >> 1;
+      tmp216 = bjQx >> 1;
+      akQx = akQx - tmp116;
+      bkQx = bkQx - tmp216;
       tmp116 = RexQx[k1] - RexQx[k2];
       tmp216 = ImxQx[k1] - ImxQx[k2];
 
