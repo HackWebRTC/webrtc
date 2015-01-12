@@ -32,8 +32,8 @@ void RemoveOldReports(int64_t now, std::list<CallStats::RttTime>* reports) {
   }
 }
 
-uint32_t GetMaxRttMs(std::list<CallStats::RttTime>* reports) {
-  uint32_t max_rtt_ms = 0;
+int64_t GetMaxRttMs(std::list<CallStats::RttTime>* reports) {
+  int64_t max_rtt_ms = 0;
   for (std::list<CallStats::RttTime>::const_iterator it = reports->begin();
        it != reports->end(); ++it) {
     max_rtt_ms = std::max(it->rtt, max_rtt_ms);
@@ -41,11 +41,11 @@ uint32_t GetMaxRttMs(std::list<CallStats::RttTime>* reports) {
   return max_rtt_ms;
 }
 
-uint32_t GetAvgRttMs(std::list<CallStats::RttTime>* reports) {
+int64_t GetAvgRttMs(std::list<CallStats::RttTime>* reports) {
   if (reports->empty()) {
     return 0;
   }
-  uint32_t sum = 0;
+  int64_t sum = 0;
   for (std::list<CallStats::RttTime>::const_iterator it = reports->begin();
        it != reports->end(); ++it) {
     sum += it->rtt;
@@ -53,7 +53,7 @@ uint32_t GetAvgRttMs(std::list<CallStats::RttTime>* reports) {
   return sum / reports->size();
 }
 
-void UpdateAvgRttMs(std::list<CallStats::RttTime>* reports, uint32_t* avg_rtt) {
+void UpdateAvgRttMs(std::list<CallStats::RttTime>* reports, int64_t* avg_rtt) {
   uint32_t cur_rtt_ms = GetAvgRttMs(reports);
   if (cur_rtt_ms == 0) {
     // Reset.
@@ -74,12 +74,12 @@ class RtcpObserver : public RtcpRttStats {
   explicit RtcpObserver(CallStats* owner) : owner_(owner) {}
   virtual ~RtcpObserver() {}
 
-  virtual void OnRttUpdate(uint32_t rtt) {
+  virtual void OnRttUpdate(int64_t rtt) {
     owner_->OnRttUpdate(rtt);
   }
 
   // Returns the average RTT.
-  virtual uint32_t LastProcessedRtt() const {
+  virtual int64_t LastProcessedRtt() const {
     return owner_->avg_rtt_ms();
   }
 
@@ -129,7 +129,7 @@ int32_t CallStats::Process() {
   return 0;
 }
 
-uint32_t CallStats::avg_rtt_ms() const {
+int64_t CallStats::avg_rtt_ms() const {
   CriticalSectionScoped cs(crit_.get());
   return avg_rtt_ms_;
 }
@@ -159,7 +159,7 @@ void CallStats::DeregisterStatsObserver(CallStatsObserver* observer) {
   }
 }
 
-void CallStats::OnRttUpdate(uint32_t rtt) {
+void CallStats::OnRttUpdate(int64_t rtt) {
   CriticalSectionScoped cs(crit_.get());
   reports_.push_back(RttTime(rtt, TickTime::MillisecondTimestamp()));
 }

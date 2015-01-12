@@ -45,16 +45,16 @@ class CallStats : public Module {
 
   // Helper struct keeping track of the time a rtt value is reported.
   struct RttTime {
-    RttTime(uint32_t new_rtt, int64_t rtt_time)
+    RttTime(int64_t new_rtt, int64_t rtt_time)
         : rtt(new_rtt), time(rtt_time) {}
-    const uint32_t rtt;
+    const int64_t rtt;
     const int64_t time;
   };
 
  protected:
-  void OnRttUpdate(uint32_t rtt);
+  void OnRttUpdate(int64_t rtt);
 
-  uint32_t avg_rtt_ms() const;
+  int64_t avg_rtt_ms() const;
 
  private:
   // Protecting all members.
@@ -64,8 +64,8 @@ class CallStats : public Module {
   // The last time 'Process' resulted in statistic update.
   int64_t last_process_time_;
   // The last RTT in the statistics update (zero if there is no valid estimate).
-  uint32_t max_rtt_ms_;
-  uint32_t avg_rtt_ms_;
+  int64_t max_rtt_ms_;
+  int64_t avg_rtt_ms_;
 
   // All Rtt reports within valid time interval, oldest first.
   std::list<RttTime> reports_;

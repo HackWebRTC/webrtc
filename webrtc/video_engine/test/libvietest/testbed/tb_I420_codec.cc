@@ -46,7 +46,7 @@ int32_t TbI420Encoder::Release()
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t TbI420Encoder::SetChannelParameters(uint32_t packetLoss, int rtt) {
+int32_t TbI420Encoder::SetChannelParameters(uint32_t packetLoss, int64_t rtt) {
   _functionCalls.SetChannelParameters++;
   return WEBRTC_VIDEO_CODEC_OK;
 }

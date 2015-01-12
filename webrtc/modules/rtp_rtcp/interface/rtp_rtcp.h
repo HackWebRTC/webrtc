@@ -376,10 +376,10 @@ class RtpRtcp : public Module {
     *   return -1 on failure else 0
     */
     virtual int32_t RTT(uint32_t remoteSSRC,
-                        uint16_t* RTT,
-                        uint16_t* avgRTT,
-                        uint16_t* minRTT,
-                        uint16_t* maxRTT) const = 0;
+                        int64_t* RTT,
+                        int64_t* avgRTT,
+                        int64_t* minRTT,
+                        int64_t* maxRTT) const = 0;
 
     /*
     *   Force a send of a RTCP packet

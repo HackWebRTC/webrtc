@@ -89,7 +89,7 @@ class BitrateControllerImpl : public BitrateController {
   void OnReceivedEstimatedBitrate(uint32_t bitrate);
 
   void OnReceivedRtcpReceiverReport(uint8_t fraction_loss,
-                                    uint32_t rtt,
+                                    int64_t rtt,
                                     int number_of_packets,
                                     int64_t now_ms);
 
@@ -97,18 +97,18 @@ class BitrateControllerImpl : public BitrateController {
 
   void OnNetworkChanged(uint32_t bitrate,
                         uint8_t fraction_loss,  // 0 - 255.
-                        uint32_t rtt)
+                        int64_t rtt)
       EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
 
   void NormalRateAllocation(uint32_t bitrate,
                             uint8_t fraction_loss,
-                            uint32_t rtt,
+                            int64_t rtt,
                             uint32_t sum_min_bitrates)
       EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
 
   void LowRateAllocation(uint32_t bitrate,
                          uint8_t fraction_loss,
-                         uint32_t rtt,
+                         int64_t rtt,
                          uint32_t sum_min_bitrates)
       EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
 
@@ -129,7 +129,7 @@ class BitrateControllerImpl : public BitrateController {
 
   uint32_t last_bitrate_bps_ GUARDED_BY(*critsect_);
   uint8_t last_fraction_loss_ GUARDED_BY(*critsect_);
-  uint32_t last_rtt_ms_ GUARDED_BY(*critsect_);
+  int64_t last_rtt_ms_ GUARDED_BY(*critsect_);
   bool last_enforce_min_bitrate_ GUARDED_BY(*critsect_);
   bool bitrate_observers_modified_ GUARDED_BY(*critsect_);
   uint32_t last_reserved_bitrate_bps_ GUARDED_BY(*critsect_);

@@ -84,7 +84,7 @@ class RemoteBitrateEstimatorAbsSendTimeImpl : public RemoteBitrateEstimator {
   // deleted.
   virtual int32_t Process() OVERRIDE;
   virtual int64_t TimeUntilNextProcess() OVERRIDE;
-  virtual void OnRttUpdate(uint32_t rtt) OVERRIDE;
+  virtual void OnRttUpdate(int64_t rtt) OVERRIDE;
   virtual void RemoveStream(unsigned int ssrc) OVERRIDE;
   virtual bool LatestEstimate(std::vector<unsigned int>* ssrcs,
                               unsigned int* bitrate_bps) const OVERRIDE;
@@ -419,7 +419,7 @@ void RemoteBitrateEstimatorAbsSendTimeImpl::UpdateEstimate(int64_t now_ms) {
   detector_.SetRateControlRegion(region);
 }
 
-void RemoteBitrateEstimatorAbsSendTimeImpl::OnRttUpdate(uint32_t rtt) {
+void RemoteBitrateEstimatorAbsSendTimeImpl::OnRttUpdate(int64_t rtt) {
   CriticalSectionScoped cs(crit_sect_.get());
   remote_rate_->SetRtt(rtt);
 }

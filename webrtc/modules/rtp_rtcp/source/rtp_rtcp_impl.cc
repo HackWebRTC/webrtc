@@ -181,10 +181,10 @@ int32_t ModuleRtpRtcpImpl::Process() {
           last_rtt_process_time_ && process_rtt) {
         std::vector<RTCPReportBlock> receive_blocks;
         rtcp_receiver_.StatisticsReceived(&receive_blocks);
-        uint16_t max_rtt = 0;
+        int64_t max_rtt = 0;
         for (std::vector<RTCPReportBlock>::iterator it = receive_blocks.begin();
              it != receive_blocks.end(); ++it) {
-          uint16_t rtt = 0;
+          int64_t rtt = 0;
           rtcp_receiver_.RTT(it->remoteSSRC, &rtt, NULL, NULL, NULL);
           max_rtt = (rtt > max_rtt) ? rtt : max_rtt;
         }
@@ -216,7 +216,7 @@ int32_t ModuleRtpRtcpImpl::Process() {
     } else {
       // Report rtt from receiver.
       if (process_rtt) {
-         uint16_t rtt_ms;
+         int64_t rtt_ms;
          if (rtt_stats_ && rtcp_receiver_.GetAndResetXrRrRtt(&rtt_ms)) {
            rtt_stats_->OnRttUpdate(rtt_ms);
          }
@@ -707,7 +707,7 @@ void ModuleRtpRtcpImpl::SetRTCPStatus(const RTCPMethod method) {
 
 // Only for internal test.
 uint32_t ModuleRtpRtcpImpl::LastSendReport(
-    uint32_t& last_rtcptime) {
+    int64_t& last_rtcptime) {
   return rtcp_sender_.LastSendReport(last_rtcptime);
 }
 
@@ -747,14 +747,14 @@ int32_t ModuleRtpRtcpImpl::RemoteNTP(
 
 // Get RoundTripTime.
 int32_t ModuleRtpRtcpImpl::RTT(const uint32_t remote_ssrc,
-                               uint16_t* rtt,
-                               uint16_t* avg_rtt,
-                               uint16_t* min_rtt,
-                               uint16_t* max_rtt) const {
+                               int64_t* rtt,
+                               int64_t* avg_rtt,
+                               int64_t* min_rtt,
+                               int64_t* max_rtt) const {
   int32_t ret = rtcp_receiver_.RTT(remote_ssrc, rtt, avg_rtt, min_rtt, max_rtt);
   if (rtt && *rtt == 0) {
     // Try to get RTT from RtcpRttStats class.
-    *rtt = static_cast<uint16_t>(rtt_ms());
+    *rtt = rtt_ms();
   }
   return ret;
 }
@@ -944,7 +944,7 @@ int32_t ModuleRtpRtcpImpl::SendNACK(const uint16_t* nack_list,
 
 bool ModuleRtpRtcpImpl::TimeToSendFullNackList(int64_t now) const {
   // Use RTT from RtcpRttStats class if provided.
-  uint16_t rtt = rtt_ms();
+  int64_t rtt = rtt_ms();
   if (rtt == 0) {
     rtcp_receiver_.RTT(rtcp_receiver_.RemoteSSRC(), NULL, &rtt, NULL, NULL);
   }
@@ -1244,7 +1244,7 @@ int32_t ModuleRtpRtcpImpl::SendRTCPReferencePictureSelection(
       GetFeedbackState(), kRtcpRpsi, 0, 0, false, picture_id);
 }
 
-uint32_t ModuleRtpRtcpImpl::SendTimeOfSendReport(
+int64_t ModuleRtpRtcpImpl::SendTimeOfSendReport(
     const uint32_t send_report) {
   return rtcp_sender_.SendTimeOfSendReport(send_report);
 }
@@ -1261,7 +1261,7 @@ void ModuleRtpRtcpImpl::OnReceivedNACK(
     return;
   }
   // Use RTT from RtcpRttStats class if provided.
-  uint16_t rtt = rtt_ms();
+  int64_t rtt = rtt_ms();
   if (rtt == 0) {
     rtcp_receiver_.RTT(rtcp_receiver_.RemoteSSRC(), NULL, &rtt, NULL, NULL);
   }
@@ -1324,12 +1324,12 @@ void ModuleRtpRtcpImpl::SetRtcpReceiverSsrcs(uint32_t main_ssrc) {
   rtcp_receiver_.SetSsrcs(main_ssrc, ssrcs);
 }
 
-void ModuleRtpRtcpImpl::set_rtt_ms(uint32_t rtt_ms) {
+void ModuleRtpRtcpImpl::set_rtt_ms(int64_t rtt_ms) {
   CriticalSectionScoped cs(critical_section_rtt_.get());
   rtt_ms_ = rtt_ms;
 }
 
-uint32_t ModuleRtpRtcpImpl::rtt_ms() const {
+int64_t ModuleRtpRtcpImpl::rtt_ms() const {
   CriticalSectionScoped cs(critical_section_rtt_.get());
   return rtt_ms_;
 }

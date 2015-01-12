@@ -200,7 +200,7 @@ void MediaOptimization::SetEncodingDataInternal(VideoCodecType send_codec_type,
 uint32_t MediaOptimization::SetTargetRates(
     uint32_t target_bitrate,
     uint8_t fraction_lost,
-    uint32_t round_trip_time_ms,
+    int64_t round_trip_time_ms,
     VCMProtectionCallback* protection_callback,
     VCMQMSettingsCallback* qmsettings_callback) {
   CriticalSectionScoped lock(crit_sect_.get());

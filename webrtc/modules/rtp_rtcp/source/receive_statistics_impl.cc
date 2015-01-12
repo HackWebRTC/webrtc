@@ -345,7 +345,7 @@ void StreamStatisticianImpl::LastReceiveTimeNtp(uint32_t* secs,
 }
 
 bool StreamStatisticianImpl::IsRetransmitOfOldPacket(
-    const RTPHeader& header, int min_rtt) const {
+    const RTPHeader& header, int64_t min_rtt) const {
   CriticalSectionScoped cs(stream_lock_.get());
   if (InOrderPacketInternal(header.sequenceNumber)) {
     return false;
@@ -358,17 +358,16 @@ bool StreamStatisticianImpl::IsRetransmitOfOldPacket(
 
   // Diff in time stamp since last received in order.
   uint32_t timestamp_diff = header.timestamp - last_received_timestamp_;
-  int32_t rtp_time_stamp_diff_ms = static_cast<int32_t>(timestamp_diff) /
-      frequency_khz;
+  uint32_t rtp_time_stamp_diff_ms = timestamp_diff / frequency_khz;
 
-  int32_t max_delay_ms = 0;
+  int64_t max_delay_ms = 0;
   if (min_rtt == 0) {
     // Jitter standard deviation in samples.
     float jitter_std = sqrt(static_cast<float>(jitter_q4_ >> 4));
 
     // 2 times the standard deviation => 95% confidence.
     // And transform to milliseconds by dividing by the frequency in kHz.
-    max_delay_ms = static_cast<int32_t>((2 * jitter_std) / frequency_khz);
+    max_delay_ms = static_cast<int64_t>((2 * jitter_std) / frequency_khz);
 
     // Min max_delay_ms is 1.
     if (max_delay_ms == 0) {

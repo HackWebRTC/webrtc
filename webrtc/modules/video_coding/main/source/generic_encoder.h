@@ -103,7 +103,7 @@ public:
     /**
     * Set a new packet loss rate and a new round-trip time in milliseconds.
     */
-    int32_t SetChannelParameters(int32_t packetLoss, int rtt);
+    int32_t SetChannelParameters(int32_t packetLoss, int64_t rtt);
     int32_t CodecConfigParameters(uint8_t* buffer, int32_t size);
     /**
     * Register a transport callback which will be called to deliver the encoded

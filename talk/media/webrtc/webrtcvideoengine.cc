@@ -2678,7 +2678,7 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
       // It's not a fatal error if we can't, since RTCP may not have arrived
       // yet.
       webrtc::RtcpStatistics outgoing_stream_rtcp_stats;
-      int outgoing_stream_rtt_ms;
+      int64_t outgoing_stream_rtt_ms;
 
       if (engine_->vie()->rtp()->GetSendChannelRtcpStatistics(
           channel_id,
@@ -2782,7 +2782,7 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
 
     // Get our locally created statistics of the received RTP stream.
     webrtc::RtcpStatistics incoming_stream_rtcp_stats;
-    int incoming_stream_rtt_ms;
+    int64_t incoming_stream_rtt_ms;
     if (engine_->vie()->rtp()->GetReceiveChannelRtcpStatistics(
         channel->channel_id(),
         incoming_stream_rtcp_stats,

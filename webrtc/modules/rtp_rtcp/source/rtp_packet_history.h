@@ -53,7 +53,7 @@ class RTPPacketHistory {
   // stored_time_ms: returns the time when the packet was stored.
   // type: returns the storage type set in PutRTPPacket.
   bool GetPacketAndSetSendTime(uint16_t sequence_number,
-                               uint32_t min_elapsed_time_ms,
+                               int64_t min_elapsed_time_ms,
                                bool retransmit,
                                uint8_t* packet,
                                size_t* packet_length,

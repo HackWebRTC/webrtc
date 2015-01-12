@@ -38,7 +38,7 @@ class StreamStatisticianImpl : public StreamStatistician {
   virtual uint32_t BitrateReceived() const OVERRIDE;
   virtual void ResetStatistics() OVERRIDE;
   virtual bool IsRetransmitOfOldPacket(const RTPHeader& header,
-                                       int min_rtt) const OVERRIDE;
+                                       int64_t min_rtt) const OVERRIDE;
   virtual bool IsPacketInOrder(uint16_t sequence_number) const OVERRIDE;
 
   void IncomingPacket(const RTPHeader& rtp_header,

@@ -108,7 +108,7 @@ VcmPayloadSinkFactory::VcmPayloadSinkFactory(
     Clock* clock,
     bool protection_enabled,
     VCMVideoProtection protection_method,
-    uint32_t rtt_ms,
+    int64_t rtt_ms,
     uint32_t render_delay_ms,
     uint32_t min_playout_delay_ms)
     : base_out_filename_(base_out_filename),

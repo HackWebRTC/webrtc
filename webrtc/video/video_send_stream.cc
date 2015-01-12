@@ -517,17 +517,17 @@ void VideoSendStream::SignalNetworkState(Call::NetworkState state) {
     rtp_rtcp_->SetRTCPStatus(channel_, kRtcpNone);
 }
 
-int VideoSendStream::GetPacerQueuingDelayMs() const {
-  int pacer_delay_ms = 0;
+int64_t VideoSendStream::GetPacerQueuingDelayMs() const {
+  int64_t pacer_delay_ms = 0;
   if (rtp_rtcp_->GetPacerQueuingDelayMs(channel_, &pacer_delay_ms) != 0) {
     return 0;
   }
   return pacer_delay_ms;
 }
 
-int VideoSendStream::GetRtt() const {
+int64_t VideoSendStream::GetRtt() const {
   webrtc::RtcpStatistics rtcp_stats;
-  int rtt_ms;
+  int64_t rtt_ms;
   if (rtp_rtcp_->GetSendChannelRtcpStatistics(channel_, rtcp_stats, rtt_ms) ==
       0) {
     return rtt_ms;

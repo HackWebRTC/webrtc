@@ -105,8 +105,8 @@ class Call {
 
     int send_bandwidth_bps;
     int recv_bandwidth_bps;
-    int pacer_delay_ms;
-    int rtt_ms;
+    int64_t pacer_delay_ms;
+    int64_t rtt_ms;
   };
 
   static Call* Create(const Call::Config& config);

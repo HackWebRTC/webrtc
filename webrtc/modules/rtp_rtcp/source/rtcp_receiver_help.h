@@ -34,11 +34,11 @@ public:
     uint32_t        remoteMaxJitter;
 
     // RTT
-    uint16_t    RTT;
-    uint16_t    minRTT;
-    uint16_t    maxRTT;
-    uint16_t    avgRTT;
-    uint32_t    numAverageCalcs;
+    int64_t  RTT;
+    int64_t  minRTT;
+    int64_t  maxRTT;
+    int64_t  avgRTT;
+    uint32_t numAverageCalcs;
 };
 
 class RTCPPacketInformation
@@ -68,7 +68,7 @@ public:
     uint16_t  applicationLength;
 
     ReportBlockList report_blocks;
-    uint16_t rtt;
+    int64_t rtt;
 
     uint32_t  interArrivalJitter;
 

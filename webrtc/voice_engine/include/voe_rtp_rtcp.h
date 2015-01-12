@@ -68,7 +68,7 @@ struct CallStatistics
     unsigned int cumulativeLost;
     unsigned int extendedMax;
     unsigned int jitterSamples;
-    int rttMs;
+    int64_t rttMs;
     size_t bytesSent;
     int packetsSent;
     size_t bytesReceived;

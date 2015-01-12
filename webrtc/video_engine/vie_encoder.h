@@ -110,7 +110,7 @@ class ViEEncoder
   int32_t SendCodecStatistics(uint32_t* num_key_frames,
                               uint32_t* num_delta_frames);
 
-  int PacerQueuingDelayMs() const;
+  int64_t PacerQueuingDelayMs() const;
 
   int CodecTargetBitrate(uint32_t* bitrate) const;
   // Loss protection.
@@ -181,7 +181,7 @@ class ViEEncoder
   // Called by BitrateObserver.
   void OnNetworkChanged(uint32_t bitrate_bps,
                         uint8_t fraction_lost,
-                        uint32_t round_trip_time_ms);
+                        int64_t round_trip_time_ms);
 
   // Called by PacedSender.
   bool TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,

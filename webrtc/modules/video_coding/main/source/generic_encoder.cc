@@ -106,7 +106,7 @@ VCMGenericEncoder::Encode(const I420VideoFrame& inputFrame,
 }
 
 int32_t
-VCMGenericEncoder::SetChannelParameters(int32_t packetLoss, int rtt)
+VCMGenericEncoder::SetChannelParameters(int32_t packetLoss, int64_t rtt)
 {
     return _encoder.SetChannelParameters(packetLoss, rtt);
 }

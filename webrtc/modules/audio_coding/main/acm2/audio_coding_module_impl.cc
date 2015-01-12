@@ -2017,7 +2017,7 @@ void AudioCodingModuleImpl::DisableNack() {
 }
 
 std::vector<uint16_t> AudioCodingModuleImpl::GetNackList(
-    int round_trip_time_ms) const {
+    int64_t round_trip_time_ms) const {
   return receiver_.GetNackList(round_trip_time_ms);
 }
 

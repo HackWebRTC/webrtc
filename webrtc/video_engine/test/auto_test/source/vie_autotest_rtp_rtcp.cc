@@ -120,7 +120,7 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     // Pacing
     //
     webrtc::RtcpStatistics received;
-    int recRttMs = 0;
+    int64_t recRttMs = 0;
     unsigned int sentTotalBitrate = 0;
     unsigned int sentVideoBitrate = 0;
     unsigned int sentFecBitrate = 0;
@@ -240,7 +240,7 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.base->StartSend(tbChannel.videoChannel));
 
     webrtc::RtcpStatistics sent;
-    int sentRttMs = 0;
+    int64_t sentRttMs = 0;
 
     // Fraction lost is a transient value that can get reset after a new rtcp
     // report block. Make regular polls to make sure it is propagated.

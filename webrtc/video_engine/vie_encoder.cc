@@ -98,7 +98,7 @@ class ViEBitrateObserver : public BitrateObserver {
   // Implements BitrateObserver.
   virtual void OnNetworkChanged(uint32_t bitrate_bps,
                                 uint8_t fraction_lost,
-                                uint32_t rtt) {
+                                int64_t rtt) {
     owner_->OnNetworkChanged(bitrate_bps, fraction_lost, rtt);
   }
  private:
@@ -646,7 +646,7 @@ int32_t ViEEncoder::SendCodecStatistics(
   return 0;
 }
 
-int32_t ViEEncoder::PacerQueuingDelayMs() const {
+int64_t ViEEncoder::PacerQueuingDelayMs() const {
   return paced_sender_->QueueInMs();
 }
 
@@ -869,7 +869,7 @@ void ViEEncoder::SetMinTransmitBitrate(int min_transmit_bitrate_kbps) {
 // Called from ViEBitrateObserver.
 void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
                                   uint8_t fraction_lost,
-                                  uint32_t round_trip_time_ms) {
+                                  int64_t round_trip_time_ms) {
   LOG(LS_VERBOSE) << "OnNetworkChanged, bitrate" << bitrate_bps
                   << " packet loss " << fraction_lost
                   << " rtt " << round_trip_time_ms;

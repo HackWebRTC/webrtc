@@ -305,7 +305,7 @@ class AcmReceiver {
   //    -round_trip_time_ms : estimate of the round-trip-time (in milliseconds).
   // Return value           : list of packets to be retransmitted.
   //
-  std::vector<uint16_t> GetNackList(int round_trip_time_ms) const;
+  std::vector<uint16_t> GetNackList(int64_t round_trip_time_ms) const;
 
   //
   // Get statistics of calls to GetAudio().

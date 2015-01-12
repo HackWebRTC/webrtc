@@ -41,7 +41,7 @@ class StreamStatistician {
   // Returns true if the packet with RTP header |header| is likely to be a
   // retransmitted packet, false otherwise.
   virtual bool IsRetransmitOfOldPacket(const RTPHeader& header,
-                                       int min_rtt) const = 0;
+                                       int64_t min_rtt) const = 0;
 
   // Returns true if |sequence_number| is received in order, false otherwise.
   virtual bool IsPacketInOrder(uint16_t sequence_number) const = 0;

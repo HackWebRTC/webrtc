@@ -196,8 +196,8 @@ public:
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
     virtual int32_t SetChannelParameters(uint32_t target_bitrate,
-                                               uint8_t lossRate,
-                                               uint32_t rtt) = 0;
+                                         uint8_t lossRate,
+                                         int64_t rtt) = 0;
 
     // Sets the parameters describing the receive channel. These parameters are inputs to the
     // Media Optimization inside the VCM.
@@ -209,7 +209,7 @@ public:
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
-    virtual int32_t SetReceiveChannelParameters(uint32_t rtt) = 0;
+    virtual int32_t SetReceiveChannelParameters(int64_t rtt) = 0;
 
     // Register a transport callback which will be called to deliver the encoded data and
     // side information.

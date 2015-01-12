@@ -70,7 +70,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
     return rbe_->TimeUntilNextProcess();
   }
 
-  virtual void OnRttUpdate(uint32_t rtt) OVERRIDE {
+  virtual void OnRttUpdate(int64_t rtt) OVERRIDE {
     CriticalSectionScoped cs(crit_sect_.get());
     rbe_->OnRttUpdate(rtt);
   }

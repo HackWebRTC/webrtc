@@ -33,7 +33,7 @@ class BitrateControllerImpl::RtcpBandwidthObserverImpl
   // Received RTCP receiver block.
   virtual void OnReceivedRtcpReceiverReport(
       const ReportBlockList& report_blocks,
-      uint16_t rtt,
+      int64_t rtt,
       int64_t now_ms) OVERRIDE {
     if (report_blocks.empty())
       return;
@@ -153,7 +153,7 @@ void BitrateControllerImpl::SetBitrateObserver(
     }
     uint32_t current_estimate;
     uint8_t loss;
-    uint32_t rtt;
+    int64_t rtt;
     bandwidth_estimation_.CurrentEstimate(&current_estimate, &loss, &rtt);
     bandwidth_estimation_.SetSendBitrate(std::max(sum_start_bitrate,
                                                   current_estimate));
@@ -252,7 +252,7 @@ int32_t BitrateControllerImpl::Process() {
 
 void BitrateControllerImpl::OnReceivedRtcpReceiverReport(
     uint8_t fraction_loss,
-    uint32_t rtt,
+    int64_t rtt,
     int number_of_packets,
     int64_t now_ms) {
   CriticalSectionScoped cs(critsect_);
@@ -264,7 +264,7 @@ void BitrateControllerImpl::OnReceivedRtcpReceiverReport(
 void BitrateControllerImpl::MaybeTriggerOnNetworkChanged() {
   uint32_t bitrate;
   uint8_t fraction_loss;
-  uint32_t rtt;
+  int64_t rtt;
   bandwidth_estimation_.CurrentEstimate(&bitrate, &fraction_loss, &rtt);
   bitrate -= std::min(bitrate, reserved_bitrate_bps_);
 
@@ -286,7 +286,7 @@ void BitrateControllerImpl::MaybeTriggerOnNetworkChanged() {
 
 void BitrateControllerImpl::OnNetworkChanged(uint32_t bitrate,
                                              uint8_t fraction_loss,
-                                             uint32_t rtt) {
+                                             int64_t rtt) {
   // Sanity check.
   if (bitrate_observers_.empty())
     return;
@@ -304,7 +304,7 @@ void BitrateControllerImpl::OnNetworkChanged(uint32_t bitrate,
 
 void BitrateControllerImpl::NormalRateAllocation(uint32_t bitrate,
                                                  uint8_t fraction_loss,
-                                                 uint32_t rtt,
+                                                 int64_t rtt,
                                                  uint32_t sum_min_bitrates) {
   uint32_t number_of_observers = bitrate_observers_.size();
   uint32_t bitrate_per_observer = (bitrate - sum_min_bitrates) /
@@ -344,7 +344,7 @@ void BitrateControllerImpl::NormalRateAllocation(uint32_t bitrate,
 
 void BitrateControllerImpl::LowRateAllocation(uint32_t bitrate,
                                               uint8_t fraction_loss,
-                                              uint32_t rtt,
+                                              int64_t rtt,
                                               uint32_t sum_min_bitrates) {
   if (enforce_min_bitrate_) {
     // Min bitrate to all observers.
@@ -375,7 +375,7 @@ bool BitrateControllerImpl::AvailableBandwidth(uint32_t* bandwidth) const {
   CriticalSectionScoped cs(critsect_);
   uint32_t bitrate;
   uint8_t fraction_loss;
-  uint32_t rtt;
+  int64_t rtt;
   bandwidth_estimation_.CurrentEstimate(&bitrate, &fraction_loss, &rtt);
   if (bitrate) {
     *bandwidth = bitrate - std::min(bitrate, reserved_bitrate_bps_);

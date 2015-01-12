@@ -991,7 +991,8 @@ class AudioCodingModule: public Module {
   // Negative |round_trip_time_ms| results is an error message and empty list
   // is returned.
   //
-  virtual std::vector<uint16_t> GetNackList(int round_trip_time_ms) const = 0;
+  virtual std::vector<uint16_t> GetNackList(
+      int64_t round_trip_time_ms) const = 0;
 
   virtual void GetDecodingCallStatistics(
       AudioDecodingCallStats* call_stats) const = 0;

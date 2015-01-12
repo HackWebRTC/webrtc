@@ -99,10 +99,10 @@ class ViERTP_RTCPImpl
       int video_channel, unsigned int reserved_transmit_bitrate_bps);
   virtual int GetReceiveChannelRtcpStatistics(const int video_channel,
                                               RtcpStatistics& basic_stats,
-                                              int& rtt_ms) const;
+                                              int64_t& rtt_ms) const;
   virtual int GetSendChannelRtcpStatistics(const int video_channel,
                                            RtcpStatistics& basic_stats,
-                                           int& rtt_ms) const;
+                                           int64_t& rtt_ms) const;
   virtual int GetRtpStatistics(const int video_channel,
                                StreamDataCounters& sent,
                                StreamDataCounters& received) const;
@@ -124,7 +124,7 @@ class ViERTP_RTCPImpl
   virtual int GetReceiveBandwidthEstimatorStats(
       const int video_channel, ReceiveBandwidthEstimatorStats* output) const;
   virtual int GetPacerQueuingDelayMs(const int video_channel,
-                                     int* delay_ms) const;
+                                     int64_t* delay_ms) const;
   virtual int StartRTPDump(const int video_channel,
                            const char file_nameUTF8[1024],
                            RTPDirections direction);

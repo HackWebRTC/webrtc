@@ -297,7 +297,7 @@ int SimulcastEncoderAdapter::RegisterEncodeCompleteCallback(
 }
 
 int SimulcastEncoderAdapter::SetChannelParameters(uint32_t packet_loss,
-                                                  int rtt) {
+                                                  int64_t rtt) {
   for (size_t stream_idx = 0; stream_idx < streaminfos_.size(); ++stream_idx) {
     streaminfos_[stream_idx].encoder->SetChannelParameters(packet_loss, rtt);
   }

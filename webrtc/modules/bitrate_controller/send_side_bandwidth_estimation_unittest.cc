@@ -45,7 +45,7 @@ TEST(SendSideBweTest, InitialRembWithProbing) {
   bwe.UpdateEstimate(now_ms);
   uint32_t bitrate;
   uint8_t fraction_loss;
-  uint32_t rtt;
+  int64_t rtt;
   bwe.CurrentEstimate(&bitrate, &fraction_loss, &rtt);
   EXPECT_EQ(kRemb, bitrate);
 
@@ -73,7 +73,7 @@ TEST(SendSideBweTest, InitialRembWithoutProbing) {
   bwe.UpdateEstimate(now_ms);
   uint32_t bitrate;
   uint8_t fraction_loss;
-  uint32_t rtt;
+  int64_t rtt;
   bwe.CurrentEstimate(&bitrate, &fraction_loss, &rtt);
   EXPECT_EQ(kStartBitrate, bitrate);
 }

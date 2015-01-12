@@ -31,7 +31,7 @@
 namespace webrtc {
 
 // Use this rtt if no value has been reported.
-static const uint32_t kDefaultRtt = 200;
+static const int64_t kDefaultRtt = 200;
 
 typedef std::pair<uint32_t, VCMFrameBuffer*> FrameListPair;
 
@@ -783,7 +783,7 @@ uint32_t VCMJitterBuffer::EstimatedJitterMs() {
   // low_rtt_nackThresholdMs_ == -1 means no FEC.
   double rtt_mult = 1.0f;
   if (low_rtt_nack_threshold_ms_ >= 0 &&
-      static_cast<int>(rtt_ms_) >= low_rtt_nack_threshold_ms_) {
+      rtt_ms_ >= low_rtt_nack_threshold_ms_) {
     // For RTTs above low_rtt_nack_threshold_ms_ we don't apply extra delay
     // when waiting for retransmissions.
     rtt_mult = 0.0f;
@@ -791,15 +791,15 @@ uint32_t VCMJitterBuffer::EstimatedJitterMs() {
   return jitter_estimate_.GetJitterEstimate(rtt_mult);
 }
 
-void VCMJitterBuffer::UpdateRtt(uint32_t rtt_ms) {
+void VCMJitterBuffer::UpdateRtt(int64_t rtt_ms) {
   CriticalSectionScoped cs(crit_sect_);
   rtt_ms_ = rtt_ms;
   jitter_estimate_.UpdateRtt(rtt_ms);
 }
 
 void VCMJitterBuffer::SetNackMode(VCMNackMode mode,
-                                  int low_rtt_nack_threshold_ms,
-                                  int high_rtt_nack_threshold_ms) {
+                                  int64_t low_rtt_nack_threshold_ms,
+                                  int64_t high_rtt_nack_threshold_ms) {
   CriticalSectionScoped cs(crit_sect_);
   nack_mode_ = mode;
   if (mode == kNoNack) {
@@ -1214,7 +1214,7 @@ bool VCMJitterBuffer::WaitForRetransmissions() {
   // Evaluate if the RTT is higher than |high_rtt_nack_threshold_ms_|, and in
   // that case we don't wait for retransmissions.
   if (high_rtt_nack_threshold_ms_ >= 0 &&
-      rtt_ms_ >= static_cast<unsigned int>(high_rtt_nack_threshold_ms_)) {
+      rtt_ms_ >= high_rtt_nack_threshold_ms_) {
     return false;
   }
   return true;

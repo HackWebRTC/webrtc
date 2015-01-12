@@ -244,7 +244,7 @@ int VideoSender::FrameRate(unsigned int* framerate) const {
 // Set channel parameters
 int32_t VideoSender::SetChannelParameters(uint32_t target_bitrate,
                                           uint8_t lossRate,
-                                          uint32_t rtt) {
+                                          int64_t rtt) {
   int32_t ret = 0;
   {
     CriticalSectionScoped sendCs(_sendCritSect);

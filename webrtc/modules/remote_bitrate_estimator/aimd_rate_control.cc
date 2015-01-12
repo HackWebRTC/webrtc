@@ -18,7 +18,7 @@
 
 namespace webrtc {
 
-static const uint32_t kDefaultRttMs = 200;
+static const int64_t kDefaultRttMs = 200;
 static const int64_t kLogIntervalMs = 1000;
 static const double kWithinIncomingBitrateHysteresis = 1.05;
 
@@ -66,7 +66,8 @@ int64_t AimdRateControl::GetFeedbackInterval() const {
 
 bool AimdRateControl::TimeToReduceFurther(int64_t time_now,
                                           uint32_t incoming_bitrate_bps) const {
-  const int bitrate_reduction_interval = std::max(std::min(rtt_, 200u), 10u);
+  const int64_t bitrate_reduction_interval =
+      std::max<int64_t>(std::min<int64_t>(rtt_, 200), 10);
   if (time_now - time_last_bitrate_change_ >= bitrate_reduction_interval) {
     return true;
   }
@@ -93,7 +94,7 @@ uint32_t AimdRateControl::UpdateBandwidthEstimate(int64_t now_ms) {
   return current_bitrate_bps_;
 }
 
-void AimdRateControl::SetRtt(uint32_t rtt) {
+void AimdRateControl::SetRtt(int64_t rtt) {
   rtt_ = rtt;
 }
 
@@ -168,7 +169,7 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t current_bitrate_bps,
       }
       if (rate_control_region_ == kRcNearMax) {
         // Approximate the over-use estimator delay to 100 ms.
-        const uint32_t response_time = rtt_ + 100;
+        const int64_t response_time = rtt_ + 100;
         uint32_t additive_increase_bps = AdditiveRateIncrease(
             now_ms, time_last_bitrate_change_, response_time);
         BWE_TEST_LOGGING_PLOT("add_increase#1", -1,
@@ -253,7 +254,7 @@ uint32_t AimdRateControl::MultiplicativeRateIncrease(
 }
 
 uint32_t AimdRateControl::AdditiveRateIncrease(
-    int64_t now_ms, int64_t last_ms, uint32_t response_time_ms) const {
+    int64_t now_ms, int64_t last_ms, int64_t response_time_ms) const {
   assert(response_time_ms > 0);
   double beta = 0.0;
   if (last_ms > 0) {

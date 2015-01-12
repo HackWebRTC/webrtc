@@ -38,7 +38,7 @@ class VP9EncoderImpl : public VP9Encoder {
   virtual int RegisterEncodeCompleteCallback(EncodedImageCallback* callback)
   OVERRIDE;
 
-  virtual int SetChannelParameters(uint32_t packet_loss, int rtt) OVERRIDE;
+  virtual int SetChannelParameters(uint32_t packet_loss, int64_t rtt) OVERRIDE;
 
   virtual int SetRates(uint32_t new_bitrate_kbit, uint32_t frame_rate) OVERRIDE;
 

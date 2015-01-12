@@ -246,7 +246,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   virtual void DisableNack() OVERRIDE;
 
   virtual std::vector<uint16_t> GetNackList(
-      int round_trip_time_ms) const OVERRIDE;
+      int64_t round_trip_time_ms) const OVERRIDE;
 
   virtual void GetDecodingCallStatistics(
       AudioDecodingCallStats* stats) const OVERRIDE;

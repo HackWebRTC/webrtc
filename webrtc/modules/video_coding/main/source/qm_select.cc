@@ -925,7 +925,7 @@ void VCMQmRobustness::Reset() {
 float VCMQmRobustness::AdjustFecFactor(uint8_t code_rate_delta,
                                        float total_rate,
                                        float framerate,
-                                       uint32_t rtt_time,
+                                       int64_t rtt_time,
                                        uint8_t packet_loss) {
   // Default: no adjustment
   float adjust_fec =  1.0f;

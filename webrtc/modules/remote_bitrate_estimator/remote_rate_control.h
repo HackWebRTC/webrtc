@@ -38,7 +38,7 @@ class RemoteRateControl {
                                    uint32_t incoming_bitrate_bps) const = 0;
   virtual uint32_t LatestEstimate() const = 0;
   virtual uint32_t UpdateBandwidthEstimate(int64_t now_ms) = 0;
-  virtual void SetRtt(unsigned int rtt) = 0;
+  virtual void SetRtt(int64_t rtt) = 0;
   virtual RateControlRegion Update(const RateControlInput* input,
                                    int64_t now_ms) = 0;
   virtual void SetEstimate(int bitrate_bps, int64_t time_now_ms) = 0;

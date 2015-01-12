@@ -31,7 +31,7 @@ namespace {
 const uint32_t kSenderSsrc = 0x12345;
 const uint32_t kReceiverSsrc = 0x23456;
 const uint32_t kSenderRtxSsrc = 0x32345;
-const uint32_t kOneWayNetworkDelayMs = 100;
+const int64_t kOneWayNetworkDelayMs = 100;
 const uint8_t kBaseLayerTid = 0;
 const uint8_t kHigherLayerTid = 1;
 const uint16_t kSequenceNumber = 100;
@@ -41,13 +41,13 @@ class RtcpRttStatsTestImpl : public RtcpRttStats {
   RtcpRttStatsTestImpl() : rtt_ms_(0) {}
   virtual ~RtcpRttStatsTestImpl() {}
 
-  virtual void OnRttUpdate(uint32_t rtt_ms) OVERRIDE {
+  virtual void OnRttUpdate(int64_t rtt_ms) OVERRIDE {
     rtt_ms_ = rtt_ms;
   }
-  virtual uint32_t LastProcessedRtt() const OVERRIDE {
+  virtual int64_t LastProcessedRtt() const OVERRIDE {
     return rtt_ms_;
   }
-  uint32_t rtt_ms_;
+  int64_t rtt_ms_;
 };
 
 class SendTransport : public Transport,
@@ -63,7 +63,7 @@ class SendTransport : public Transport,
   void SetRtpRtcpModule(ModuleRtpRtcpImpl* receiver) {
     receiver_ = receiver;
   }
-  void SimulateNetworkDelay(uint32_t delay_ms, SimulatedClock* clock) {
+  void SimulateNetworkDelay(int64_t delay_ms, SimulatedClock* clock) {
     clock_ = clock;
     delay_ms_ = delay_ms;
   }
@@ -92,7 +92,7 @@ class SendTransport : public Transport,
   }
   ModuleRtpRtcpImpl* receiver_;
   SimulatedClock* clock_;
-  uint32_t delay_ms_;
+  int64_t delay_ms_;
   int rtp_packets_sent_;
   RTPHeader last_rtp_header_;
   std::vector<uint16_t> last_nack_list_;
@@ -277,10 +277,10 @@ TEST_F(RtpRtcpImplTest, Rtt) {
   EXPECT_EQ(0, receiver_.impl_->SendRTCP(kRtcpReport));
 
   // Verify RTT.
-  uint16_t rtt;
-  uint16_t avg_rtt;
-  uint16_t min_rtt;
-  uint16_t max_rtt;
+  int64_t rtt;
+  int64_t avg_rtt;
+  int64_t min_rtt;
+  int64_t max_rtt;
   EXPECT_EQ(0,
       sender_.impl_->RTT(kReceiverSsrc, &rtt, &avg_rtt, &min_rtt, &max_rtt));
   EXPECT_EQ(2 * kOneWayNetworkDelayMs, rtt);
@@ -293,8 +293,8 @@ TEST_F(RtpRtcpImplTest, Rtt) {
       sender_.impl_->RTT(kReceiverSsrc+1, &rtt, &avg_rtt, &min_rtt, &max_rtt));
 
   // Verify RTT from rtt_stats config.
-  EXPECT_EQ(0U, sender_.rtt_stats_.LastProcessedRtt());
-  EXPECT_EQ(0U, sender_.impl_->rtt_ms());
+  EXPECT_EQ(0, sender_.rtt_stats_.LastProcessedRtt());
+  EXPECT_EQ(0, sender_.impl_->rtt_ms());
   sender_.impl_->Process();
   EXPECT_EQ(2 * kOneWayNetworkDelayMs, sender_.rtt_stats_.LastProcessedRtt());
   EXPECT_EQ(2 * kOneWayNetworkDelayMs, sender_.impl_->rtt_ms());
@@ -317,8 +317,8 @@ TEST_F(RtpRtcpImplTest, RttForReceiverOnly) {
   EXPECT_EQ(0, sender_.impl_->SendRTCP(kRtcpReport));
 
   // Verify RTT.
-  EXPECT_EQ(0U, receiver_.rtt_stats_.LastProcessedRtt());
-  EXPECT_EQ(0U, receiver_.impl_->rtt_ms());
+  EXPECT_EQ(0, receiver_.rtt_stats_.LastProcessedRtt());
+  EXPECT_EQ(0, receiver_.impl_->rtt_ms());
   receiver_.impl_->Process();
   EXPECT_EQ(2 * kOneWayNetworkDelayMs, receiver_.rtt_stats_.LastProcessedRtt());
   EXPECT_EQ(2 * kOneWayNetworkDelayMs, receiver_.impl_->rtt_ms());

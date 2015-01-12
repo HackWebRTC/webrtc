@@ -681,7 +681,7 @@ struct MediaSenderInfo {
   int packets_sent;
   int packets_lost;
   float fraction_lost;
-  int rtt_ms;
+  int64_t rtt_ms;
   std::string codec_name;
   std::vector<SsrcSenderInfo> local_stats;
   std::vector<SsrcReceiverInfo> remote_stats;
@@ -948,7 +948,7 @@ struct BandwidthEstimationInfo {
   int actual_enc_bitrate;
   int retransmit_bitrate;
   int transmit_bitrate;
-  int bucket_delay;
+  int64_t bucket_delay;
   // The following stats are only valid when
   // StatsOptions::include_received_propagation_stats is true.
   int total_received_propagation_delta_ms;

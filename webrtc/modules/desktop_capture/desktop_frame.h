@@ -51,8 +51,8 @@ class DesktopFrame {
   void set_dpi(const DesktopVector& dpi) { dpi_ = dpi; }
 
   // Time taken to capture the frame in milliseconds.
-  int32_t capture_time_ms() const { return capture_time_ms_; }
-  void set_capture_time_ms(int32_t time_ms) { capture_time_ms_ = time_ms; }
+  int64_t capture_time_ms() const { return capture_time_ms_; }
+  void set_capture_time_ms(int64_t time_ms) { capture_time_ms_ = time_ms; }
 
   // Optional shape for the frame. Frames may be shaped e.g. if
   // capturing the contents of a shaped window.
@@ -87,7 +87,7 @@ class DesktopFrame {
 
   DesktopRegion updated_region_;
   DesktopVector dpi_;
-  int32_t capture_time_ms_;
+  int64_t capture_time_ms_;
   scoped_ptr<DesktopRegion> shape_;
 
  private:

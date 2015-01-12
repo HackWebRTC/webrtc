@@ -158,10 +158,10 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   // Get RoundTripTime.
   virtual int32_t RTT(uint32_t remote_ssrc,
-                      uint16_t* rtt,
-                      uint16_t* avg_rtt,
-                      uint16_t* min_rtt,
-                      uint16_t* max_rtt) const OVERRIDE;
+                      int64_t* rtt,
+                      int64_t* avg_rtt,
+                      int64_t* min_rtt,
+                      int64_t* max_rtt) const OVERRIDE;
 
   // Force a send of an RTCP packet.
   // Normal SR and RR are triggered via the process function.
@@ -326,7 +326,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
                            uint32_t* fec_rate,
                            uint32_t* nackRate) const OVERRIDE;
 
-  uint32_t SendTimeOfSendReport(uint32_t send_report);
+  int64_t SendTimeOfSendReport(uint32_t send_report);
 
   bool SendTimeOfXrRrReport(uint32_t mid_ntp, int64_t* time_ms) const;
 
@@ -367,7 +367,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   uint16_t RemoteSequenceNumber() const;
 
   // Only for internal testing.
-  uint32_t LastSendReport(uint32_t& last_rtcptime);
+  uint32_t LastSendReport(int64_t& last_rtcptime);
 
   RTPSender                 rtp_sender_;
 
@@ -382,8 +382,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   int64_t RtcpReportInterval();
   void SetRtcpReceiverSsrcs(uint32_t main_ssrc);
 
-  void set_rtt_ms(uint32_t rtt_ms);
-  uint32_t rtt_ms() const;
+  void set_rtt_ms(int64_t rtt_ms);
+  int64_t rtt_ms() const;
 
   bool TimeToSendFullNackList(int64_t now) const;
 
@@ -419,7 +419,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   // The processed RTT from RtcpRttStats.
   scoped_ptr<CriticalSectionWrapper> critical_section_rtt_;
-  uint32_t rtt_ms_;
+  int64_t rtt_ms_;
 };
 
 }  // namespace webrtc

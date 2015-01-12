@@ -20,7 +20,7 @@ const webrtc::VCMVideoProtection kConfigProtectionMethod =
     webrtc::kProtectionNack;
 const float kConfigLossRate = 0.0f;
 const bool kConfigReordering = false;
-const uint32_t kConfigRttMs = 0;
+const int64_t kConfigRttMs = 0;
 const uint32_t kConfigRenderDelayMs = 0;
 const uint32_t kConfigMinPlayoutDelayMs = 0;
 const int64_t kConfigMaxRuntimeMs = -1;

@@ -119,7 +119,7 @@ int MTRxTxTest(CmdArgs& args)
     // Nack support is currently not implemented in this test.
     bool          nackEnabled = false;
     bool          fecEnabled = false;
-    uint8_t   rttMS = 20;
+    int64_t   rttMS = 20;
     float         lossRate = 0.0*255; // no packet loss
     uint32_t  renderDelayMs = 0;
     uint32_t  minPlayoutDelayMs = 0;

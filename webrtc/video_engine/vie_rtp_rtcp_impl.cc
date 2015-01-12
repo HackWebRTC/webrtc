@@ -669,7 +669,7 @@ int ViERTP_RTCPImpl::SetReservedTransmitBitrate(
 int ViERTP_RTCPImpl::GetReceiveChannelRtcpStatistics(
     const int video_channel,
     RtcpStatistics& basic_stats,
-    int& rtt_ms) const {
+    int64_t& rtt_ms) const {
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
@@ -694,7 +694,7 @@ int ViERTP_RTCPImpl::GetReceiveChannelRtcpStatistics(
 
 int ViERTP_RTCPImpl::GetSendChannelRtcpStatistics(const int video_channel,
                                                   RtcpStatistics& basic_stats,
-                                                  int& rtt_ms) const {
+                                                  int64_t& rtt_ms) const {
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
@@ -802,7 +802,7 @@ int ViERTP_RTCPImpl::GetReceiveBandwidthEstimatorStats(
 }
 
 int ViERTP_RTCPImpl::GetPacerQueuingDelayMs(
-    const int video_channel, int* delay_ms) const {
+    const int video_channel, int64_t* delay_ms) const {
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEEncoder* vie_encoder = cs.Encoder(video_channel);
   if (!vie_encoder) {

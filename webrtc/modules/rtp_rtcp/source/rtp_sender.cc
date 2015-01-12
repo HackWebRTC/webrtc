@@ -653,7 +653,7 @@ bool RTPSender::StorePackets() const {
   return packet_history_.StorePackets();
 }
 
-int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
+int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
   size_t length = IP_PACKET_SIZE;
   uint8_t data_buffer[IP_PACKET_SIZE];
   int64_t capture_time_ms;
@@ -720,7 +720,7 @@ int RTPSender::SetSelectiveRetransmissions(uint8_t settings) {
 }
 
 void RTPSender::OnReceivedNACK(const std::list<uint16_t>& nack_sequence_numbers,
-                               uint16_t avg_rtt) {
+                               int64_t avg_rtt) {
   TRACE_EVENT2("webrtc_rtp", "RTPSender::OnReceivedNACK",
                "num_seqnum", nack_sequence_numbers.size(), "avg_rtt", avg_rtt);
   const int64_t now = clock_->TimeInMilliseconds();

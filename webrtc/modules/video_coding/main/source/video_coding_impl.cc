@@ -142,7 +142,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 
   virtual int32_t SetChannelParameters(uint32_t target_bitrate,  // bits/s.
                                        uint8_t lossRate,
-                                       uint32_t rtt) OVERRIDE {
+                                       int64_t rtt) OVERRIDE {
     return sender_->SetChannelParameters(target_bitrate, lossRate, rtt);
   }
 
@@ -332,7 +332,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_->SetMinReceiverDelay(desired_delay_ms);
   }
 
-  virtual int32_t SetReceiveChannelParameters(uint32_t rtt) OVERRIDE {
+  virtual int32_t SetReceiveChannelParameters(int64_t rtt) OVERRIDE {
     return receiver_->SetReceiveChannelParameters(rtt);
   }
 

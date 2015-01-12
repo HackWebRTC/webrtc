@@ -38,7 +38,8 @@ class FakeEncoder : public VideoEncoder {
   virtual int32_t RegisterEncodeCompleteCallback(
       EncodedImageCallback* callback) OVERRIDE;
   virtual int32_t Release() OVERRIDE;
-  virtual int32_t SetChannelParameters(uint32_t packet_loss, int rtt) OVERRIDE;
+  virtual int32_t SetChannelParameters(uint32_t packet_loss,
+                                       int64_t rtt) OVERRIDE;
   virtual int32_t SetRates(uint32_t new_target_bitrate,
                            uint32_t framerate) OVERRIDE;
 

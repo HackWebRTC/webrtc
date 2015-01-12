@@ -155,7 +155,11 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(RemoveMixedCNAME,
       int32_t(const uint32_t SSRC));
   MOCK_CONST_METHOD5(RTT,
-      int32_t(const uint32_t remoteSSRC, uint16_t* RTT, uint16_t* avgRTT, uint16_t* minRTT, uint16_t* maxRTT));
+      int32_t(const uint32_t remoteSSRC,
+              int64_t* RTT,
+              int64_t* avgRTT,
+              int64_t* minRTT,
+              int64_t* maxRTT));
   MOCK_METHOD1(SendRTCP,
       int32_t(uint32_t rtcpPacketType));
   MOCK_METHOD1(SendRTCPReferencePictureSelection,

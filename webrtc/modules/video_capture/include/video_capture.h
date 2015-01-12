@@ -87,7 +87,7 @@ class VideoCaptureModule: public RefCountedModule {
     //   - packetLoss   : Fraction lost
     //                    (loss rate in percent = 100 * packetLoss / 255).
     //   - rtt          : Round-trip time in milliseconds.
-    virtual int32_t SetChannelParameters(uint32_t packetLoss, int rtt) = 0;
+    virtual int32_t SetChannelParameters(uint32_t packetLoss, int64_t rtt) = 0;
 
     // Encode the next frame as key frame.
     virtual int32_t EncodeFrameType(const FrameType type) = 0;

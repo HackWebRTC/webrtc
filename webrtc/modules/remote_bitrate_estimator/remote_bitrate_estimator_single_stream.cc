@@ -41,7 +41,7 @@ class RemoteBitrateEstimatorImpl : public RemoteBitrateEstimator {
                               const RTPHeader& header) OVERRIDE;
   virtual int32_t Process() OVERRIDE;
   virtual int64_t TimeUntilNextProcess() OVERRIDE;
-  virtual void OnRttUpdate(uint32_t rtt) OVERRIDE;
+  virtual void OnRttUpdate(int64_t rtt) OVERRIDE;
   virtual void RemoveStream(unsigned int ssrc) OVERRIDE;
   virtual bool LatestEstimate(std::vector<unsigned int>* ssrcs,
                               unsigned int* bitrate_bps) const OVERRIDE;
@@ -230,7 +230,7 @@ void RemoteBitrateEstimatorImpl::UpdateEstimate(int64_t now_ms) {
   }
 }
 
-void RemoteBitrateEstimatorImpl::OnRttUpdate(uint32_t rtt) {
+void RemoteBitrateEstimatorImpl::OnRttUpdate(int64_t rtt) {
   CriticalSectionScoped cs(crit_sect_.get());
   remote_rate_->SetRtt(rtt);
 }

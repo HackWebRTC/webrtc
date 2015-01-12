@@ -319,10 +319,10 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
   EXPECT_EQ(test_sequence_number, stats.extended_max_sequence_number);
   EXPECT_EQ(reportBlockReceived.jitter, stats.jitter);
 
-  uint16_t RTT;
-  uint16_t avgRTT;
-  uint16_t minRTT;
-  uint16_t maxRTT;
+  int64_t RTT;
+  int64_t avgRTT;
+  int64_t minRTT;
+  int64_t maxRTT;
 
   // Get RoundTripTime.
   EXPECT_EQ(0, module1->RTT(test_ssrc + 1, &RTT, &avgRTT, &minRTT, &maxRTT));

@@ -33,7 +33,7 @@ class MimdRateControl : public RemoteRateControl {
       int64_t time_now, uint32_t incoming_bitrate_bps) const OVERRIDE;
   virtual uint32_t LatestEstimate() const OVERRIDE;
   virtual uint32_t UpdateBandwidthEstimate(int64_t now_ms) OVERRIDE;
-  virtual void SetRtt(uint32_t rtt) OVERRIDE;
+  virtual void SetRtt(int64_t rtt) OVERRIDE;
   virtual RateControlRegion Update(const RateControlInput* input,
                                    int64_t now_ms) OVERRIDE;
   virtual void SetEstimate(int bitrate_bps, int64_t now_ms) OVERRIDE;
@@ -45,7 +45,7 @@ class MimdRateControl : public RemoteRateControl {
                          int64_t now_ms);
   double RateIncreaseFactor(int64_t now_ms,
                             int64_t last_ms,
-                            uint32_t reaction_time_ms,
+                            int64_t reaction_time_ms,
                             double noise_var) const;
   void UpdateChangePeriod(int64_t now_ms);
   void UpdateMaxBitRateEstimate(float incoming_bit_rate_kbps);
@@ -70,7 +70,7 @@ class MimdRateControl : public RemoteRateControl {
   float avg_change_period_;
   int64_t last_change_ms_;
   float beta_;
-  uint32_t rtt_;
+  int64_t rtt_;
   int64_t time_of_last_log_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(MimdRateControl);

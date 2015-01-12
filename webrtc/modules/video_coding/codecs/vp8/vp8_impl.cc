@@ -1024,7 +1024,7 @@ int VP8EncoderImpl::GetEncodedPartitions(
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int VP8EncoderImpl::SetChannelParameters(uint32_t packetLoss, int rtt) {
+int VP8EncoderImpl::SetChannelParameters(uint32_t packetLoss, int64_t rtt) {
   rps_.SetRtt(rtt);
   return WEBRTC_VIDEO_CODEC_OK;
 }

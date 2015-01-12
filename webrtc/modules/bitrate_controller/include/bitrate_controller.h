@@ -31,7 +31,7 @@ class BitrateObserver {
  public:
   virtual void OnNetworkChanged(uint32_t target_bitrate,
                                 uint8_t fraction_loss,  // 0 - 255.
-                                uint32_t rtt) = 0;
+                                int64_t rtt) = 0;
 
   virtual ~BitrateObserver() {}
 };

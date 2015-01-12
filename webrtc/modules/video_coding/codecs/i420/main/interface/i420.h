@@ -73,7 +73,7 @@ class I420Encoder : public VideoEncoder {
   }
 
   virtual int SetChannelParameters(uint32_t /*packetLoss*/,
-                                   int /*rtt*/) OVERRIDE {
+                                   int64_t /*rtt*/) OVERRIDE {
     return WEBRTC_VIDEO_CODEC_OK;
   }
 

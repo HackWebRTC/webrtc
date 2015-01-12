@@ -168,7 +168,7 @@ int64_t VideoReceiver::TimeUntilNextProcess() {
   return timeUntilNextProcess;
 }
 
-int32_t VideoReceiver::SetReceiveChannelParameters(uint32_t rtt) {
+int32_t VideoReceiver::SetReceiveChannelParameters(int64_t rtt) {
   CriticalSectionScoped receiveCs(_receiveCritSect);
   _receiver.UpdateRtt(rtt);
   return 0;

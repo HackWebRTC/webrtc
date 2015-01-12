@@ -153,7 +153,7 @@ class VCMJitterBuffer {
   uint32_t EstimatedJitterMs();
 
   // Updates the round-trip time estimate.
-  void UpdateRtt(uint32_t rtt_ms);
+  void UpdateRtt(int64_t rtt_ms);
 
   // Set the NACK mode. |highRttNackThreshold| is an RTT threshold in ms above
   // which NACK will be disabled if the NACK mode is |kNackHybrid|, -1 meaning
@@ -161,8 +161,8 @@ class VCMJitterBuffer {
   // |lowRttNackThreshold| is an RTT threshold in ms below which we expect to
   // rely on NACK only, and therefore are using larger buffers to have time to
   // wait for retransmissions.
-  void SetNackMode(VCMNackMode mode, int low_rtt_nack_threshold_ms,
-                   int high_rtt_nack_threshold_ms);
+  void SetNackMode(VCMNackMode mode, int64_t low_rtt_nack_threshold_ms,
+                   int64_t high_rtt_nack_threshold_ms);
 
   void SetNackSettings(size_t max_nack_list_size,
                        int max_packet_age_to_nack,
@@ -331,12 +331,12 @@ class VCMJitterBuffer {
   // Calculates network delays used for jitter calculations.
   VCMInterFrameDelay inter_frame_delay_;
   VCMJitterSample waiting_for_completion_;
-  uint32_t rtt_ms_;
+  int64_t rtt_ms_;
 
   // NACK and retransmissions.
   VCMNackMode nack_mode_;
-  int low_rtt_nack_threshold_ms_;
-  int high_rtt_nack_threshold_ms_;
+  int64_t low_rtt_nack_threshold_ms_;
+  int64_t high_rtt_nack_threshold_ms_;
   // Holds the internal NACK list (the missing sequence numbers).
   SequenceNumberSet missing_sequence_numbers_;
   uint16_t latest_received_sequence_number_;

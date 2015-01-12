@@ -24,7 +24,7 @@ class SendSideBandwidthEstimation {
   SendSideBandwidthEstimation();
   virtual ~SendSideBandwidthEstimation();
 
-  void CurrentEstimate(uint32_t* bitrate, uint8_t* loss, uint32_t* rtt) const;
+  void CurrentEstimate(uint32_t* bitrate, uint8_t* loss, int64_t* rtt) const;
 
   // Call periodically to update estimate.
   void UpdateEstimate(int64_t now_ms);
@@ -34,7 +34,7 @@ class SendSideBandwidthEstimation {
 
   // Call when we receive a RTCP message with a ReceiveBlock.
   void UpdateReceiverBlock(uint8_t fraction_loss,
-                           uint32_t rtt,
+                           int64_t rtt,
                            int number_of_packets,
                            int64_t now_ms);
 
@@ -50,7 +50,7 @@ class SendSideBandwidthEstimation {
 
   bool IsInStartPhase(int64_t now_ms) const;
 
-  void UpdateUmaStats(int64_t now_ms, int rtt, int lost_packets);
+  void UpdateUmaStats(int64_t now_ms, int64_t rtt, int lost_packets);
 
   // Returns the input bitrate capped to the thresholds defined by the max,
   // min and incoming bandwidth.
@@ -73,7 +73,7 @@ class SendSideBandwidthEstimation {
 
   int64_t time_last_receiver_block_ms_;
   uint8_t last_fraction_loss_;
-  uint16_t last_round_trip_time_ms_;
+  int64_t last_round_trip_time_ms_;
 
   uint32_t bwe_incoming_;
   int64_t time_last_decrease_ms_;

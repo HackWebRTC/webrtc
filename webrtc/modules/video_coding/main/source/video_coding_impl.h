@@ -79,7 +79,7 @@ class VideoSender {
 
   int32_t SetChannelParameters(uint32_t target_bitrate,  // bits/s.
                                uint8_t lossRate,
-                               uint32_t rtt);
+                               int64_t rtt);
 
   int32_t RegisterTransportCallback(VCMPacketizationCallback* transport);
   int32_t RegisterSendStatisticsCallback(VCMSendStatisticsCallback* sendStats);
@@ -175,7 +175,7 @@ class VideoReceiver {
   void SetDecodeErrorMode(VCMDecodeErrorMode decode_error_mode);
   int SetMinReceiverDelay(int desired_delay_ms);
 
-  int32_t SetReceiveChannelParameters(uint32_t rtt);
+  int32_t SetReceiveChannelParameters(int64_t rtt);
   int32_t SetVideoProtection(VCMVideoProtection videoProtection, bool enable);
 
   int64_t TimeUntilNextProcess();

@@ -71,14 +71,14 @@ public:
 
     // get rtt
     int32_t RTT(uint32_t remoteSSRC,
-                uint16_t* RTT,
-                uint16_t* avgRTT,
-                uint16_t* minRTT,
-                uint16_t* maxRTT) const;
+                int64_t* RTT,
+                int64_t* avgRTT,
+                int64_t* minRTT,
+                int64_t* maxRTT) const;
 
     int32_t SenderInfoReceived(RTCPSenderInfo* senderInfo) const;
 
-    bool GetAndResetXrRrRtt(uint16_t* rtt_ms);
+    bool GetAndResetXrRrRtt(int64_t* rtt_ms);
 
     // get statistics
     int32_t StatisticsReceived(
@@ -257,7 +257,7 @@ protected:
   uint32_t _lastReceivedXRNTPsecs;
   uint32_t _lastReceivedXRNTPfrac;
   // Estimated rtt, zero when there is no valid estimate.
-  uint16_t xr_rr_rtt_ms_;
+  int64_t xr_rr_rtt_ms_;
 
   // Received report blocks.
   ReportBlockMap _receivedReportBlockMap

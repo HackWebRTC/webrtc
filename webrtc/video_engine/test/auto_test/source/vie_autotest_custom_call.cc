@@ -1510,7 +1510,7 @@ void PrintRTCCPStatistics(webrtc::ViERTP_RTCP* vie_rtp_rtcp,
   int error = 0;
   int number_of_errors = 0;
   webrtc::RtcpStatistics rtcp_stats;
-  int rtt_ms = 0;
+  int64_t rtt_ms = 0;
 
   switch (stat_type) {
     case kReceivedStatistic:

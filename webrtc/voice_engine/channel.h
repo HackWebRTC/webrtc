@@ -457,7 +457,7 @@ public:
     // From BitrateObserver (called by the RTP/RTCP module).
     void OnNetworkChanged(const uint32_t bitrate_bps,
                           const uint8_t fraction_lost,  // 0 - 255.
-                          const uint32_t rtt);
+                          const int64_t rtt);
 
 private:
     bool ReceivePacket(const uint8_t* packet, size_t packet_length,
@@ -481,7 +481,7 @@ private:
                                   unsigned char id);
 
     int32_t GetPlayoutFrequency();
-    int GetRTT() const;
+    int64_t GetRTT() const;
 
     CriticalSectionWrapper& _fileCritSect;
     CriticalSectionWrapper& _callbackCritSect;

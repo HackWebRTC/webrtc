@@ -53,8 +53,8 @@ VCMProtectionMethod::UpdateContentMetrics(const
     _qmRobustness->UpdateContent(contentMetrics);
 }
 
-VCMNackFecMethod::VCMNackFecMethod(int lowRttNackThresholdMs,
-                                   int highRttNackThresholdMs)
+VCMNackFecMethod::VCMNackFecMethod(int64_t lowRttNackThresholdMs,
+                                   int64_t highRttNackThresholdMs)
     : VCMFecMethod(),
       _lowRttNackMs(lowRttNackThresholdMs),
       _highRttNackMs(highRttNackThresholdMs),
@@ -159,6 +159,8 @@ bool VCMNackFecMethod::BitRateTooLowForFec(
   }
   // TODO (marpan): add condition based on maximum frames used for FEC,
   // and expand condition based on frame size.
+  // Max round trip time threshold in ms.
+  const int64_t kMaxRttTurnOffFec = 200;
   if (estimate_bytes_per_frame < max_bytes_per_frame &&
       parameters->numLayers < 3 &&
       parameters->rtt < kMaxRttTurnOffFec) {
@@ -737,7 +739,7 @@ VCMLossProtectionLogic::RequiredBitRate() const
 }
 
 void
-VCMLossProtectionLogic::UpdateRtt(uint32_t rtt)
+VCMLossProtectionLogic::UpdateRtt(int64_t rtt)
 {
     _rtt = rtt;
 }

@@ -44,7 +44,7 @@ class VCMReceiver {
 
   void Reset();
   int32_t Initialize();
-  void UpdateRtt(uint32_t rtt);
+  void UpdateRtt(int64_t rtt);
   int32_t InsertPacket(const VCMPacket& packet,
                        uint16_t frame_width,
                        uint16_t frame_height);
@@ -57,8 +57,8 @@ class VCMReceiver {
 
   // NACK.
   void SetNackMode(VCMNackMode nackMode,
-                   int low_rtt_nack_threshold_ms,
-                   int high_rtt_nack_threshold_ms);
+                   int64_t low_rtt_nack_threshold_ms,
+                   int64_t high_rtt_nack_threshold_ms);
   void SetNackSettings(size_t max_nack_list_size,
                        int max_packet_age_to_nack,
                        int max_incomplete_time_ms);

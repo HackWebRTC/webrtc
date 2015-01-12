@@ -334,7 +334,7 @@ int VP9EncoderImpl::GetEncodedPartitions(const I420VideoFrame& input_image) {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int VP9EncoderImpl::SetChannelParameters(uint32_t packet_loss, int rtt) {
+int VP9EncoderImpl::SetChannelParameters(uint32_t packet_loss, int64_t rtt) {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 

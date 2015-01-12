@@ -1271,7 +1271,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
       webrtc::EncodedImageCallback* callback) OVERRIDE;
   virtual int32_t Release() OVERRIDE;
   virtual int32_t SetChannelParameters(uint32_t /* packet_loss */,
-                                       int /* rtt */) OVERRIDE;
+                                       int64_t /* rtt */) OVERRIDE;
   virtual int32_t SetRates(uint32_t new_bit_rate, uint32_t frame_rate) OVERRIDE;
 
   // rtc::MessageHandler implementation.
@@ -1472,7 +1472,7 @@ int32_t MediaCodecVideoEncoder::Release() {
 }
 
 int32_t MediaCodecVideoEncoder::SetChannelParameters(uint32_t /* packet_loss */,
-                                                     int /* rtt */) {
+                                                     int64_t /* rtt */) {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 

@@ -594,7 +594,7 @@ JOWW(jobject, VideoEngine_getReceivedRtcpStatistics)(JNIEnv* jni, jobject j_vie,
   unsigned int cumulative_lost;  // NOLINT
   unsigned int extended_max;     // NOLINT
   unsigned int jitter;           // NOLINT
-  int rtt_ms;
+  int64_t rtt_ms;
   VideoEngineData* vie_data = GetVideoEngineData(jni, j_vie);
   if (vie_data->rtp->GetReceivedRTCPStatistics(channel, fraction_lost,
                                                cumulative_lost, extended_max,
@@ -608,7 +608,7 @@ JOWW(jobject, VideoEngine_getReceivedRtcpStatistics)(JNIEnv* jni, jobject j_vie,
   jobject j_rtcp_statistics =
       jni->NewObject(j_rtcp_statistics_class, j_rtcp_statistics_ctor,
                      fraction_lost, cumulative_lost, extended_max, jitter,
-                     rtt_ms);
+                     static_cast<int>(rtt_ms));
   CHECK_EXCEPTION(jni, "error during NewObject");
   return j_rtcp_statistics;
 }

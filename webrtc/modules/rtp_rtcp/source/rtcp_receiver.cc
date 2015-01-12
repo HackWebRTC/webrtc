@@ -163,10 +163,10 @@ void RTCPReceiver::SetSsrcs(uint32_t main_ssrc,
 }
 
 int32_t RTCPReceiver::RTT(uint32_t remoteSSRC,
-                          uint16_t* RTT,
-                          uint16_t* avgRTT,
-                          uint16_t* minRTT,
-                          uint16_t* maxRTT) const {
+                          int64_t* RTT,
+                          int64_t* avgRTT,
+                          int64_t* minRTT,
+                          int64_t* maxRTT) const {
   CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
   RTCPReportBlockInformation* reportBlock =
@@ -190,7 +190,7 @@ int32_t RTCPReceiver::RTT(uint32_t remoteSSRC,
   return 0;
 }
 
-bool RTCPReceiver::GetAndResetXrRrRtt(uint16_t* rtt_ms) {
+bool RTCPReceiver::GetAndResetXrRrRtt(int64_t* rtt_ms) {
   assert(rtt_ms);
   CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
   if (xr_rr_rtt_ms_ == 0) {
@@ -480,7 +480,7 @@ void RTCPReceiver::HandleReportBlock(
   // To avoid problem with acquiring _criticalSectionRTCPSender while holding
   // _criticalSectionRTCPReceiver.
   _criticalSectionRTCPReceiver->Leave();
-  uint32_t sendTimeMS =
+  int64_t sendTimeMS =
       _rtpRtcp.SendTimeOfSendReport(rtcpPacket.ReportBlockItem.LastSR);
   _criticalSectionRTCPReceiver->Enter();
 
@@ -526,15 +526,15 @@ void RTCPReceiver::HandleReportBlock(
   _clock->CurrentNtp(lastReceivedRRNTPsecs, lastReceivedRRNTPfrac);
 
   // time when we received this in MS
-  uint32_t receiveTimeMS = Clock::NtpToMs(lastReceivedRRNTPsecs,
-                                          lastReceivedRRNTPfrac);
+  int64_t receiveTimeMS = Clock::NtpToMs(lastReceivedRRNTPsecs,
+                                         lastReceivedRRNTPfrac);
 
   // Estimate RTT
   uint32_t d = (delaySinceLastSendReport & 0x0000ffff) * 1000;
   d /= 65536;
   d += ((delaySinceLastSendReport & 0xffff0000) >> 16) * 1000;
 
-  int32_t RTT = 0;
+  int64_t RTT = 0;
 
   if (sendTimeMS > 0) {
     RTT = receiveTimeMS - d - sendTimeMS;
@@ -543,27 +543,27 @@ void RTCPReceiver::HandleReportBlock(
     }
     if (RTT > reportBlock->maxRTT) {
       // store max RTT
-      reportBlock->maxRTT = (uint16_t) RTT;
+      reportBlock->maxRTT = RTT;
     }
     if (reportBlock->minRTT == 0) {
       // first RTT
-      reportBlock->minRTT = (uint16_t) RTT;
+      reportBlock->minRTT = RTT;
     } else if (RTT < reportBlock->minRTT) {
       // Store min RTT
-      reportBlock->minRTT = (uint16_t) RTT;
+      reportBlock->minRTT = RTT;
     }
     // store last RTT
-    reportBlock->RTT = (uint16_t) RTT;
+    reportBlock->RTT = RTT;
 
     // store average RTT
     if (reportBlock->numAverageCalcs != 0) {
-      float ac = static_cast<float> (reportBlock->numAverageCalcs);
-      float newAverage = ((ac / (ac + 1)) * reportBlock->avgRTT)
-          + ((1 / (ac + 1)) * RTT);
-      reportBlock->avgRTT = static_cast<int> (newAverage + 0.5f);
+      float ac = static_cast<float>(reportBlock->numAverageCalcs);
+      float newAverage =
+          ((ac / (ac + 1)) * reportBlock->avgRTT) + ((1 / (ac + 1)) * RTT);
+      reportBlock->avgRTT = static_cast<int64_t>(newAverage + 0.5f);
     } else {
       // first RTT
-      reportBlock->avgRTT = (uint16_t) RTT;
+      reportBlock->avgRTT = RTT;
     }
     reportBlock->numAverageCalcs++;
   }
@@ -962,9 +962,9 @@ void RTCPReceiver::HandleXrDlrrReportBlockItem(
       (((packet.XRDLRRReportBlockItem.DelayLastRR & 0x0000ffff) * 1000) >> 16) +
       (((packet.XRDLRRReportBlockItem.DelayLastRR & 0xffff0000) >> 16) * 1000);
 
-  int32_t rtt = _clock->CurrentNtpInMilliseconds() - delay_rr_ms - send_time_ms;
+  int64_t rtt = _clock->CurrentNtpInMilliseconds() - delay_rr_ms - send_time_ms;
 
-  xr_rr_rtt_ms_ = static_cast<uint16_t>(std::max(rtt, 1));
+  xr_rr_rtt_ms_ = std::max<int64_t>(rtt, 1);
 
   rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpXrDlrrReportBlock;
 }

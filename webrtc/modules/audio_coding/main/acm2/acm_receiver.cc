@@ -15,6 +15,7 @@
 #include <algorithm>  // sort
 #include <vector>
 
+#include "webrtc/base/format_macros.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
@@ -727,12 +728,12 @@ void AcmReceiver::DisableNack() {
 }
 
 std::vector<uint16_t> AcmReceiver::GetNackList(
-    int round_trip_time_ms) const {
+    int64_t round_trip_time_ms) const {
   CriticalSectionScoped lock(crit_sect_.get());
   if (round_trip_time_ms < 0) {
     WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, id_,
                  "GetNackList: round trip time cannot be negative."
-                 " round_trip_time_ms=%d", round_trip_time_ms);
+                 " round_trip_time_ms=%" PRId64, round_trip_time_ms);
   }
   if (nack_enabled_ && round_trip_time_ms >= 0) {
     assert(nack_.get());
