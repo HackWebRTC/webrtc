@@ -106,7 +106,11 @@
     # This may be subject to change in accordance to Chromium's MIPS flags
     'mips_dsp_rev%': 0,
     'mips_fpu%' : 1,
-    'enable_android_opensl%': 1,
+
+    # Use Java based audio layer as default for Android.
+    # Change this setting to 1 to use Open SL audio instead.
+    # TODO(henrika): add support for Open SL ES.
+    'enable_android_opensl%': 0,
 
     # Link-Time Optimizations
     # Executes code generation at link-time instead of compile-time

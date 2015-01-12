@@ -59,7 +59,7 @@ declare_args() {
   mips_dsp_rev = 0
   mips_fpu = true
 
-  rtc_enable_android_opensl = true
+  rtc_enable_android_opensl = false
 
   # Link-Time Optimizations.
   # Executes code generation at link-time instead of compile-time.
