@@ -456,17 +456,15 @@ int WebRtcSpl_AutoCorrelation(const int16_t* in_vector,
 // does NOT use the 64 bit class
 //
 // Input:
-//      - auto_corr : Vector with autocorrelation values of length >=
-//                    |use_order|+1
-//      - use_order : The LPC filter order (support up to order 20)
+//      - auto_corr : Vector with autocorrelation values of length >= |order|+1
+//      - order     : The LPC filter order (support up to order 20)
 //
 // Output:
-//      - lpc_coef  : lpc_coef[0..use_order] LPC coefficients in Q12
-//      - refl_coef : refl_coef[0...use_order-1]| Reflection coefficients in
-//                    Q15
+//      - lpc_coef  : lpc_coef[0..order] LPC coefficients in Q12
+//      - refl_coef : refl_coef[0...order-1]| Reflection coefficients in Q15
 //
 // Return value     : 1 for stable 0 for unstable
-int16_t WebRtcSpl_LevinsonDurbin(int32_t* auto_corr,
+int16_t WebRtcSpl_LevinsonDurbin(const int32_t* auto_corr,
                                  int16_t* lpc_coef,
                                  int16_t* refl_coef,
                                  int16_t order);
