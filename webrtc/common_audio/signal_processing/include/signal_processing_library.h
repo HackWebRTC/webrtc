@@ -650,9 +650,23 @@ int WebRtcSpl_FilterAR(const int16_t* ar_coef,
                        int16_t* out_vector_low,
                        int out_vector_low_length);
 
-void WebRtcSpl_FilterMAFastQ12(int16_t* in_vector,
+// WebRtcSpl_FilterMAFastQ12(...)
+//
+// Performs a MA filtering on a vector in Q12
+//
+// Input:
+//      - in_vector         : Input samples (state in positions
+//                            in_vector[-order] .. in_vector[-1])
+//      - ma_coef           : Filter coefficients (in Q12)
+//      - ma_coef_length    : Number of B coefficients (order+1)
+//      - vector_length     : Number of samples to be filtered
+//
+// Output:
+//      - out_vector        : Filtered samples
+//
+void WebRtcSpl_FilterMAFastQ12(const int16_t* in_vector,
                                int16_t* out_vector,
-                               int16_t* ma_coef,
+                               const int16_t* ma_coef,
                                int16_t ma_coef_length,
                                int16_t vector_length);
 
@@ -1497,22 +1511,6 @@ void WebRtcSpl_SynthesisQMF(const int16_t* low_band,
 //                                filtered values.
 //
 // Return value                 : Number of samples in the |out_vector|.
-//
-
-//
-// WebRtcSpl_FilterMAFastQ12(...)
-//
-// Performs a MA filtering on a vector in Q12
-//
-// Input:
-//      - in_vector         : Input samples (state in positions
-//                            in_vector[-order] .. in_vector[-1])
-//      - ma_coef           : Filter coefficients (in Q12)
-//      - ma_coef_length    : Number of B coefficients (order+1)
-//      - vector_length     : Number of samples to be filtered
-//
-// Output:
-//      - out_vector        : Filtered samples
 //
 
 //
