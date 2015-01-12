@@ -63,9 +63,10 @@ const char JsepSessionDescription::kDefaultVideoCodecName[] = "VP8";
 // Used as default max video codec size before we have it in signaling.
 #if defined(ANDROID)
 // Limit default max video codec size for Android to avoid
-// HW VP8 codec initialization failure for resolution higher than 720p.
+// HW VP8 codec initialization failure for resolutions higher
+// than 1280x720 or 720x1280.
 const int JsepSessionDescription::kMaxVideoCodecWidth = 1280;
-const int JsepSessionDescription::kMaxVideoCodecHeight = 720;
+const int JsepSessionDescription::kMaxVideoCodecHeight = 1280;
 #else
 const int JsepSessionDescription::kMaxVideoCodecWidth = 1920;
 const int JsepSessionDescription::kMaxVideoCodecHeight = 1080;
