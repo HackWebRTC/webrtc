@@ -240,6 +240,11 @@ std::string ResourceFilePath(std::string name, int sample_rate_hz) {
   return test::ResourcePath(ss.str(), "pcm");
 }
 
+// Temporary filenames unique to this process. Used to be able to run these
+// tests in parallel as each process needs to be running in isolation they can't
+// have competing filenames.
+std::map<std::string, std::string> temp_filenames;
+
 std::string OutputFilePath(std::string name,
                            int input_rate,
                            int output_rate,
@@ -257,9 +262,12 @@ std::string OutputFilePath(std::string name,
   } else {
     assert(false);
   }
-  ss << output_rate / 1000 << ".pcm";
+  ss << output_rate / 1000 << "_pcm";
 
-  return test::OutputPath() + ss.str();
+  std::string filename = ss.str();
+  if (temp_filenames[filename] == "")
+    temp_filenames[filename] = test::TempFilename(test::OutputPath(), filename);
+  return temp_filenames[filename];
 }
 
 void OpenFileAndReadMessage(const std::string filename,
@@ -278,7 +286,8 @@ class ApmTest : public ::testing::Test {
 
   static void SetUpTestCase() {
     Trace::CreateTrace();
-    std::string trace_filename = test::OutputPath() + "audioproc_trace.txt";
+    std::string trace_filename =
+        test::TempFilename(test::OutputPath(), "audioproc_trace");
     ASSERT_EQ(0, Trace::SetTraceFile(trace_filename.c_str()));
   }
 
@@ -1545,10 +1554,10 @@ void ApmTest::VerifyDebugDumpTest(Format format) {
       format_string = "_float";
       break;
   }
-  const std::string ref_filename =
-      test::OutputPath() + "ref" + format_string + ".aecdump";
-  const std::string out_filename =
-      test::OutputPath() + "out" + format_string + ".aecdump";
+  const std::string ref_filename = test::TempFilename(
+      test::OutputPath(), std::string("ref") + format_string + "_aecdump");
+  const std::string out_filename = test::TempFilename(
+      test::OutputPath(), std::string("out") + format_string + "_aecdump");
   EnableAllComponents();
   ProcessDebugDump(in_filename, ref_filename, format);
   ProcessDebugDump(ref_filename, out_filename, format);
@@ -1588,7 +1597,8 @@ TEST_F(ApmTest, VerifyDebugDumpFloat) {
 
 // TODO(andrew): expand test to verify output.
 TEST_F(ApmTest, DebugDump) {
-  const std::string filename = test::OutputPath() + "debug.aec";
+  const std::string filename =
+      test::TempFilename(test::OutputPath(), "debug_aec");
   EXPECT_EQ(apm_->kNullPointerError,
             apm_->StartDebugRecording(static_cast<const char*>(NULL)));
 
@@ -1622,7 +1632,8 @@ TEST_F(ApmTest, DebugDump) {
 TEST_F(ApmTest, DebugDumpFromFileHandle) {
   FILE* fid = NULL;
   EXPECT_EQ(apm_->kNullPointerError, apm_->StartDebugRecording(fid));
-  const std::string filename = test::OutputPath() + "debug.aec";
+  const std::string filename =
+      test::TempFilename(test::OutputPath(), "debug_aec");
   fid = fopen(filename.c_str(), "w");
   ASSERT_TRUE(fid);
 
