@@ -71,6 +71,16 @@ class ReturnType {
   void Invoke(C* c, M m, T1 a1, T2 a2) { r_ = (c->*m)(a1, a2); }
   template<typename C, typename M, typename T1, typename T2, typename T3>
   void Invoke(C* c, M m, T1 a1, T2 a2, T3 a3) { r_ = (c->*m)(a1, a2, a3); }
+  template<typename C, typename M, typename T1, typename T2, typename T3,
+      typename T4>
+  void Invoke(C* c, M m, T1 a1, T2 a2, T3 a3, T4 a4) {
+    r_ = (c->*m)(a1, a2, a3, a4);
+  }
+  template<typename C, typename M, typename T1, typename T2, typename T3,
+     typename T4, typename T5>
+  void Invoke(C* c, M m, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5) {
+    r_ = (c->*m)(a1, a2, a3, a4, a5);
+  }
 
   R value() { return r_; }
 
@@ -99,7 +109,7 @@ class SynchronousMethodCall
     : public rtc::MessageData,
       public rtc::MessageHandler {
  public:
-  SynchronousMethodCall(rtc::MessageHandler* proxy)
+  explicit SynchronousMethodCall(rtc::MessageHandler* proxy)
       : e_(), proxy_(proxy) {}
   ~SynchronousMethodCall() {}
 
@@ -119,7 +129,7 @@ class SynchronousMethodCall
   rtc::MessageHandler* proxy_;
 };
 
-}  // internal
+}  // namespace internal
 
 template <typename C, typename R>
 class MethodCall0 : public rtc::Message,
@@ -249,6 +259,59 @@ class MethodCall3 : public rtc::Message,
   T3 a3_;
 };
 
+template <typename C, typename R, typename T1, typename T2, typename T3,
+    typename T4>
+class MethodCall4 : public rtc::Message,
+                    public rtc::MessageHandler {
+ public:
+  typedef R (C::*Method)(T1 a1, T2 a2, T3 a3, T4 a4);
+  MethodCall4(C* c, Method m, T1 a1, T2 a2, T3 a3, T4 a4)
+      : c_(c), m_(m), a1_(a1), a2_(a2), a3_(a3), a4_(a4) {}
+
+  R Marshal(rtc::Thread* t) {
+    internal::SynchronousMethodCall(this).Invoke(t);
+    return r_.value();
+  }
+
+ private:
+  void OnMessage(rtc::Message*) { r_.Invoke(c_, m_, a1_, a2_, a3_, a4_); }
+
+  C* c_;
+  Method m_;
+  ReturnType<R> r_;
+  T1 a1_;
+  T2 a2_;
+  T3 a3_;
+  T4 a4_;
+};
+
+template <typename C, typename R, typename T1, typename T2, typename T3,
+    typename T4, typename T5>
+class MethodCall5 : public rtc::Message,
+                    public rtc::MessageHandler {
+ public:
+  typedef R (C::*Method)(T1 a1, T2 a2, T3 a3, T4 a4, T5 a5);
+  MethodCall5(C* c, Method m, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
+      : c_(c), m_(m), a1_(a1), a2_(a2), a3_(a3), a4_(a4), a5_(a5) {}
+
+  R Marshal(rtc::Thread* t) {
+    internal::SynchronousMethodCall(this).Invoke(t);
+    return r_.value();
+  }
+
+ private:
+  void OnMessage(rtc::Message*) { r_.Invoke(c_, m_, a1_, a2_, a3_, a4_, a5_); }
+
+  C* c_;
+  Method m_;
+  ReturnType<R> r_;
+  T1 a1_;
+  T2 a2_;
+  T3 a3_;
+  T4 a4_;
+  T5 a5_;
+};
+
 #define BEGIN_PROXY_MAP(c) \
   class c##Proxy : public c##Interface {\
    protected:\
@@ -299,6 +362,20 @@ class MethodCall3 : public rtc::Message,
 #define PROXY_METHOD3(r, method, t1, t2, t3)\
     r method(t1 a1, t2 a2, t3 a3) OVERRIDE {\
       MethodCall3<C, r, t1, t2, t3> call(c_.get(), &C::method, a1, a2, a3);\
+      return call.Marshal(owner_thread_);\
+    }\
+
+#define PROXY_METHOD4(r, method, t1, t2, t3, t4)\
+    r method(t1 a1, t2 a2, t3 a3, t4 a4) OVERRIDE {\
+      MethodCall4<C, r, t1, t2, t3, t4> call(\
+          c_.get(), &C::method, a1, a2, a3, a4);\
+      return call.Marshal(owner_thread_);\
+    }\
+
+#define PROXY_METHOD5(r, method, t1, t2, t3, t4, t5)\
+    r method(t1 a1, t2 a2, t3 a3, t4 a4, t5 a5) OVERRIDE {\
+      MethodCall5<C, r, t1, t2, t3, t4, t5> call(\
+          c_.get(), &C::method, a1, a2, a3, a4, a5);\
       return call.Marshal(owner_thread_);\
     }\
 

@@ -663,6 +663,7 @@
         'app/webrtc/peerconnection.h',
         'app/webrtc/peerconnectionfactory.cc',
         'app/webrtc/peerconnectionfactory.h',
+        'app/webrtc/peerconnectionfactoryproxy.h',
         'app/webrtc/peerconnectioninterface.h',
         'app/webrtc/peerconnectionproxy.h',
         'app/webrtc/portallocatorfactory.cc',
