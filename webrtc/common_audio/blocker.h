@@ -80,8 +80,6 @@ class Blocker {
   const int num_output_channels_;
 
   // The number of frames of delay to add at the beginning of the first chunk.
-  //
-  // TODO(claguna): find a lower cap for this than |block_size_|.
   const int initial_delay_;
 
   // The frame index into the input buffer where the first block should be read

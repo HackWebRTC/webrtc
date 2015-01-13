@@ -53,12 +53,7 @@ class FftCheckerCallback : public webrtc::LappedTransform::Callback {
     float full_length = (frames - 1) * 2;
     ++block_num_;
 
-    if (block_num_ == 1) {
-      for (int i = 0; i < frames; ++i) {
-        ASSERT_NEAR(in_block[0][i].real(), 0.0f, 1e-5f);
-        ASSERT_NEAR(in_block[0][i].imag(), 0.0f, 1e-5f);
-      }
-    } else {
+    if (block_num_ > 0) {
       ASSERT_NEAR(in_block[0][0].real(), full_length, 1e-5f);
       ASSERT_NEAR(in_block[0][0].imag(), 0.0f, 1e-5f);
       for (int i = 1; i < frames; ++i) {
@@ -114,7 +109,7 @@ TEST(LappedTransformTest, Windowless) {
 
   for (int i = 0; i < kChannels; ++i) {
     for (int j = 0; j < kChunkLength; ++j) {
-      ASSERT_NEAR(out_chunk[i][j], (j < kBlockLength) ? 0.0f : 2.0f, 1e-5f);
+      ASSERT_NEAR(out_chunk[i][j], 2.0f, 1e-5f);
     }
   }
 
@@ -145,7 +140,9 @@ TEST(LappedTransformTest, IdentityProcessor) {
   trans.ProcessChunk(&in_chunk, &out_chunk);
 
   for (int i = 0; i < kChunkLength; ++i) {
-    ASSERT_NEAR(out_chunk[i], (i < kBlockLength) ? 0.0f : 2.0f, 1e-5f);
+    ASSERT_NEAR(out_chunk[i],
+                (i < kBlockLength - kShiftAmount) ? 0.0f : 2.0f,
+                1e-5f);
   }
 
   ASSERT_EQ(kChunkLength / kShiftAmount, noop.block_num());

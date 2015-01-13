@@ -83,6 +83,16 @@ void ApplyWindow(const float* window,
   }
 }
 
+int gcd(int a, int b) {
+  int tmp;
+  while (b) {
+     tmp = a;
+     a = b;
+     b = tmp % b;
+  }
+  return a;
+}
+
 }  // namespace
 
 namespace webrtc {
@@ -98,7 +108,7 @@ Blocker::Blocker(int chunk_size,
       block_size_(block_size),
       num_input_channels_(num_input_channels),
       num_output_channels_(num_output_channels),
-      initial_delay_(block_size_),
+      initial_delay_(block_size_ - gcd(chunk_size, shift_amount)),
       frame_offset_(0),
       input_buffer_(chunk_size_ + initial_delay_, num_input_channels_),
       output_buffer_(chunk_size_ + initial_delay_, num_output_channels_),
