@@ -103,7 +103,7 @@ void RunAgc() {
   FakeVoEExternalMedia media;
   MockVoEVolumeControl volume;
   Agc* agc = new Agc;
-  AudioProcessing* audioproc = AudioProcessing::Create(0);
+  AudioProcessing* audioproc = AudioProcessing::Create();
   ASSERT_TRUE(audioproc != NULL);
   AgcManager manager(&media, &volume, agc, audioproc);
 

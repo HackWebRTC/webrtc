@@ -199,8 +199,6 @@ class AudioProcessing {
   static AudioProcessing* Create();
   // Allows passing in an optional configuration at create-time.
   static AudioProcessing* Create(const Config& config);
-  // TODO(ajm): Deprecated; remove all calls to it.
-  static AudioProcessing* Create(int id);
   virtual ~AudioProcessing() {}
 
   // Initializes internal states, while retaining all user settings. This

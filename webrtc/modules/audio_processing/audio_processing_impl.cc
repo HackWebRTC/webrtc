@@ -136,10 +136,6 @@ class GainControlForNewAgc : public GainControl, public VolumeCallbacks {
   int volume_;
 };
 
-AudioProcessing* AudioProcessing::Create(int id) {
-  return Create();
-}
-
 AudioProcessing* AudioProcessing::Create() {
   Config config;
   return Create(config);

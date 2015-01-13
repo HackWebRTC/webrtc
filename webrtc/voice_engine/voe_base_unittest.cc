@@ -36,7 +36,7 @@ class VoEBaseTest : public ::testing::Test {
 };
 
 TEST_F(VoEBaseTest, AcceptsAudioProcessingPtr) {
-  AudioProcessing* audioproc = AudioProcessing::Create(0);
+  AudioProcessing* audioproc = AudioProcessing::Create();
   EXPECT_EQ(0, base_->Init(adm_.get(), audioproc));
   EXPECT_EQ(audioproc, base_->audio_processing());
 }
