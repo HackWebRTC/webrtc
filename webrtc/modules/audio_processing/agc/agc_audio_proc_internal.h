@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_AGC_AUDIO_PROC_INTERNAL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_AGC_AUDIO_PROC_INTERNAL_H_
 
-#include "webrtc/system_wrappers/interface/compile_assert.h"
+#include "webrtc/base/compile_assert.h"
 
 namespace webrtc {
 

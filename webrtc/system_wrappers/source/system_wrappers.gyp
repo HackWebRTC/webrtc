@@ -29,7 +29,6 @@
         '../interface/aligned_malloc.h',
         '../interface/atomic32.h',
         '../interface/clock.h',
-        '../interface/compile_assert.h',
         '../interface/condition_variable_wrapper.h',
         '../interface/cpu_info.h',
         '../interface/cpu_features_wrapper.h',

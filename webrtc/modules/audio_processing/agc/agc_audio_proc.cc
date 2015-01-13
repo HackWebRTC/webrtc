@@ -13,6 +13,7 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "webrtc/base/compile_assert.h"
 #include "webrtc/modules/audio_processing/agc/agc_audio_proc_internal.h"
 #include "webrtc/modules/audio_processing/agc/pitch_internal.h"
 #include "webrtc/modules/audio_processing/agc/pole_zero_filter.h"
@@ -24,7 +25,6 @@ extern "C" {
 #include "webrtc/modules/audio_processing/utility/fft4g.h"
 }
 #include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/system_wrappers/interface/compile_assert.h"
 
 namespace webrtc {
 

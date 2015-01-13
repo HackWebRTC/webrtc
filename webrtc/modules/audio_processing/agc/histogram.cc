@@ -13,8 +13,8 @@
 #include <cmath>
 #include <cstring>
 
+#include "webrtc/base/compile_assert.h"
 #include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/system_wrappers/interface/compile_assert.h"
 
 namespace webrtc {
 

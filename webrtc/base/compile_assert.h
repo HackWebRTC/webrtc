@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// COMPILE_ASSERT macro, borrowed from google3/base/macros.h.
+// Borrowed from Chromium's src/base/macros.h.
+
 #ifndef WEBRTC_BASE_COMPILE_ASSERT_H_
 #define WEBRTC_BASE_COMPILE_ASSERT_H_
-#include "webrtc/typedefs.h"
 
 // The COMPILE_ASSERT macro can be used to verify that a compile time
 // expression is true. For example, you could use it to verify the
 // size of a static array:
 //
-//   COMPILE_ASSERT(ARRAYSIZE(content_type_names) == CONTENT_NUM_TYPES,
+//   COMPILE_ASSERT(ARRAYSIZE_UNSAFE(content_type_names) == CONTENT_NUM_TYPES,
 //                  content_type_names_incorrect_size);
 //
 // or to make sure a struct is smaller than a certain size:
@@ -31,13 +31,20 @@
 // TODO(ajm): Hack to avoid multiple definitions until the base/ of webrtc and
 // libjingle are merged.
 #if !defined(COMPILE_ASSERT)
+#if __cplusplus >= 201103L
+// Under C++11, just use static_assert.
+#define COMPILE_ASSERT(expr, msg) static_assert(expr, #msg)
+
+#else
 template <bool>
 struct CompileAssert {
 };
 
 #define COMPILE_ASSERT(expr, msg) \
-  typedef CompileAssert<(bool(expr))> msg[bool(expr) ? 1 : -1] ATTRIBUTE_UNUSED
-#endif  // COMPILE_ASSERT
+  typedef CompileAssert<(bool(expr))> msg[bool(expr) ? 1 : -1]
+
+#endif  //  __cplusplus >= 201103L
+#endif  //  !defined(COMPILE_ASSERT)
 
 // Implementation details of COMPILE_ASSERT:
 //

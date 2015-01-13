@@ -14,12 +14,12 @@
 #include <math.h>
 #include <string.h>
 
+#include "webrtc/base/compile_assert.h"
 #include "webrtc/modules/audio_processing/agc/circular_buffer.h"
 #include "webrtc/modules/audio_processing/agc/common.h"
 #include "webrtc/modules/audio_processing/agc/noise_gmm_tables.h"
 #include "webrtc/modules/audio_processing/agc/voice_gmm_tables.h"
 #include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/system_wrappers/interface/compile_assert.h"
 
 namespace webrtc {
 

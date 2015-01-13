@@ -11,8 +11,8 @@
 #include <limits>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/compile_assert.h"
 #include "webrtc/common_audio/wav_header.h"
-#include "webrtc/system_wrappers/interface/compile_assert.h"
 
 namespace webrtc {
 

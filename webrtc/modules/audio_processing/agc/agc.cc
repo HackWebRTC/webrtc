@@ -15,6 +15,7 @@
 
 #include <algorithm>
 
+#include "webrtc/base/compile_assert.h"
 #include "webrtc/common_audio/resampler/include/resampler.h"
 #include "webrtc/modules/audio_processing/agc/agc_audio_proc.h"
 #include "webrtc/modules/audio_processing/agc/common.h"
@@ -23,7 +24,6 @@
 #include "webrtc/modules/audio_processing/agc/standalone_vad.h"
 #include "webrtc/modules/audio_processing/agc/utility.h"
 #include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/system_wrappers/interface/compile_assert.h"
 
 namespace webrtc {
 namespace {

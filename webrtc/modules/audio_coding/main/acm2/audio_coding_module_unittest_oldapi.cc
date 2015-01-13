@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/compile_assert.h"
 #include "webrtc/base/md5digest.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_receive_test_oldapi.h"
@@ -27,7 +28,6 @@
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/compile_assert.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
