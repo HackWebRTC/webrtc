@@ -107,7 +107,7 @@
 #include "webrtc/base/compile_assert.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/move.h"
-#include "webrtc/system_wrappers/interface/template_util.h"
+#include "webrtc/base/template_util.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -133,7 +133,7 @@ struct DefaultDeleter {
     // cannot convert to T*.
     enum { T_must_be_complete = sizeof(T) };
     enum { U_must_be_complete = sizeof(U) };
-    COMPILE_ASSERT((webrtc::is_convertible<U*, T*>::value),
+    COMPILE_ASSERT((rtc::is_convertible<U*, T*>::value),
                    U_ptr_must_implicitly_convert_to_T_ptr);
   }
   inline void operator()(T* ptr) const {
@@ -183,12 +183,13 @@ namespace internal {
 template <typename T>
 struct ShouldAbortOnSelfReset {
   template <typename U>
-  static NoType Test(const typename U::AllowSelfReset*);
+  static rtc::internal::NoType Test(const typename U::AllowSelfReset*);
 
   template <typename U>
-  static YesType Test(...);
+  static rtc::internal::YesType Test(...);
 
-  static const bool value = sizeof(Test<T>(0)) == sizeof(YesType);
+  static const bool value =
+      sizeof(Test<T>(0)) == sizeof(rtc::internal::YesType);
 };
 
 // Minimal implementation of the core logic of scoped_ptr, suitable for
@@ -350,7 +351,7 @@ class scoped_ptr {
   template <typename U, typename V>
   scoped_ptr(scoped_ptr<U, V>&& other)
       : impl_(&other.impl_) {
-    COMPILE_ASSERT(!webrtc::is_array<U>::value, U_cannot_be_an_array);
+    COMPILE_ASSERT(!rtc::is_array<U>::value, U_cannot_be_an_array);
   }
 
   // operator=.  Allows assignment from a scoped_ptr rvalue for a convertible
@@ -365,7 +366,7 @@ class scoped_ptr {
   // scoped_ptr.
   template <typename U, typename V>
   scoped_ptr& operator=(scoped_ptr<U, V>&& rhs) {
-    COMPILE_ASSERT(!webrtc::is_array<U>::value, U_cannot_be_an_array);
+    COMPILE_ASSERT(!rtc::is_array<U>::value, U_cannot_be_an_array);
     impl_.TakeState(&rhs.impl_);
     return *this;
   }

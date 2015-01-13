@@ -55,6 +55,7 @@
         'stringencode.h',
         'stringutils.cc',
         'stringutils.h',
+        'template_util.h',
         'thread_annotations.h',
         'timeutils.cc',
         'timeutils.h',
