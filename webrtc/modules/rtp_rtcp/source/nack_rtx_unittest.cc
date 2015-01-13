@@ -259,7 +259,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
 
   void RunRtxTest(RtxMode rtx_method, int loss) {
     rtp_payload_registry_.SetRtxSsrc(kTestSsrc + 1);
-    rtp_rtcp_module_->SetRTXSendStatus(rtx_method);
+    rtp_rtcp_module_->SetRtxSendStatus(rtx_method);
     rtp_rtcp_module_->SetRtxSsrc(kTestSsrc + 1);
     transport_.DropEveryNthPacket(loss);
     uint32_t timestamp = 3000;

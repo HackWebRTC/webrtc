@@ -87,10 +87,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   int CurrentSendFrequencyHz() const;
 
-  virtual void SetRTXSendStatus(int mode) OVERRIDE;
-
-  virtual void RTXSendStatus(int* mode, uint32_t* ssrc,
-                             int* payloadType) const OVERRIDE;
+  virtual void SetRtxSendStatus(int mode) OVERRIDE;
+  virtual int RtxSendStatus() const OVERRIDE;
 
   virtual void SetRtxSsrc(uint32_t ssrc) OVERRIDE;
 

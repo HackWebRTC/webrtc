@@ -667,7 +667,7 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
   rtp_header_len += 4;  // 4 bytes extension.
   rtp_header_len += 4;  // 4 extra bytes common to all extension headers.
 
-  rtp_sender_->SetRTXStatus(kRtxRetransmitted | kRtxRedundantPayloads);
+  rtp_sender_->SetRtxStatus(kRtxRetransmitted | kRtxRedundantPayloads);
   rtp_sender_->SetRtxSsrc(1234);
 
   // Create and set up parser.
@@ -1124,7 +1124,7 @@ TEST_F(RtpSenderTest, BytesReportedCorrectly) {
   rtp_sender_->SetSSRC(1234);
   rtp_sender_->SetRtxSsrc(4321);
   rtp_sender_->SetRtxPayloadType(kPayloadType - 1);
-  rtp_sender_->SetRTXStatus(kRtxRetransmitted | kRtxRedundantPayloads);
+  rtp_sender_->SetRtxStatus(kRtxRetransmitted | kRtxRedundantPayloads);
 
   ASSERT_EQ(
       0,

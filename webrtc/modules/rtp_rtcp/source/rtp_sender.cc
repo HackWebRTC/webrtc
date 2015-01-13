@@ -383,9 +383,14 @@ size_t RTPSender::MaxPayloadLength() const {
 
 uint16_t RTPSender::PacketOverHead() const { return packet_over_head_; }
 
-void RTPSender::SetRTXStatus(int mode) {
+void RTPSender::SetRtxStatus(int mode) {
   CriticalSectionScoped cs(send_critsect_);
   rtx_ = mode;
+}
+
+int RTPSender::RtxStatus() const {
+  CriticalSectionScoped cs(send_critsect_);
+  return rtx_;
 }
 
 void RTPSender::SetRtxSsrc(uint32_t ssrc) {
@@ -396,14 +401,6 @@ void RTPSender::SetRtxSsrc(uint32_t ssrc) {
 uint32_t RTPSender::RtxSsrc() const {
   CriticalSectionScoped cs(send_critsect_);
   return ssrc_rtx_;
-}
-
-void RTPSender::RTXStatus(int* mode, uint32_t* ssrc,
-                          int* payload_type) const {
-  CriticalSectionScoped cs(send_critsect_);
-  *mode = rtx_;
-  *ssrc = ssrc_rtx_;
-  *payload_type = payload_type_rtx_;
 }
 
 void RTPSender::SetRtxPayloadType(int payload_type) {

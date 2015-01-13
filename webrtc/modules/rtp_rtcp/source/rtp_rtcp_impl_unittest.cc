@@ -693,7 +693,7 @@ TEST_F(RtpSendingTest, DISABLED_RoundRobinPaddingRtx) {
                                                 1);
     senders_[i]->SetRtxSendPayloadType(96);
     senders_[i]->SetRtxSsrc(kSenderRtxSsrc + i);
-    senders_[i]->SetRTXSendStatus(kRtxRetransmitted);
+    senders_[i]->SetRtxSendStatus(kRtxRetransmitted);
   }
   transport_.ResetCounters();
   senders_[0]->TimeToSendPadding(500);
@@ -718,7 +718,7 @@ TEST_F(RtpSendingTest, DISABLED_RoundRobinPaddingRtxRedundantPayloads) {
   for (int i = 1; i < codec_.numberOfSimulcastStreams + 1; ++i) {
     senders_[i]->SetRtxSendPayloadType(96);
     senders_[i]->SetRtxSsrc(kSenderRtxSsrc + i);
-    senders_[i]->SetRTXSendStatus(kRtxRetransmitted | kRtxRedundantPayloads);
+    senders_[i]->SetRtxSendStatus(kRtxRetransmitted | kRtxRedundantPayloads);
     senders_[i]->SetStorePacketsStatus(true, 100);
   }
   // First send payloads so that we have something to retransmit.

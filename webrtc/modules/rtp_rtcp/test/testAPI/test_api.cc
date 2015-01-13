@@ -103,28 +103,17 @@ TEST_F(RtpRtcpAPITest, RTCP) {
 }
 
 TEST_F(RtpRtcpAPITest, RtxSender) {
-  unsigned int ssrc = 0;
-  int rtx_mode = kRtxOff;
-  const int kRtxPayloadType = 119;
-  int payload_type = -1;
-  module->SetRTXSendStatus(kRtxRetransmitted);
-  module->SetRtxSendPayloadType(kRtxPayloadType);
-  module->SetRtxSsrc(1);
-  module->RTXSendStatus(&rtx_mode, &ssrc, &payload_type);
+  module->SetRtxSendStatus(kRtxRetransmitted);
+  int rtx_mode = module->RtxSendStatus();
   EXPECT_EQ(kRtxRetransmitted, rtx_mode);
-  EXPECT_EQ(1u, ssrc);
-  EXPECT_EQ(kRtxPayloadType, payload_type);
-  rtx_mode = kRtxOff;
-  module->SetRTXSendStatus(kRtxOff);
-  payload_type = -1;
-  module->SetRtxSendPayloadType(kRtxPayloadType);
-  module->RTXSendStatus(&rtx_mode, &ssrc, &payload_type);
+
+  module->SetRtxSendStatus(kRtxOff);
+  rtx_mode = module->RtxSendStatus();
   EXPECT_EQ(kRtxOff, rtx_mode);
-  EXPECT_EQ(kRtxPayloadType, payload_type);
-  module->SetRTXSendStatus(kRtxRetransmitted);
-  module->RTXSendStatus(&rtx_mode, &ssrc, &payload_type);
+
+  module->SetRtxSendStatus(kRtxRetransmitted);
+  rtx_mode = module->RtxSendStatus();
   EXPECT_EQ(kRtxRetransmitted, rtx_mode);
-  EXPECT_EQ(kRtxPayloadType, payload_type);
 }
 
 TEST_F(RtpRtcpAPITest, RtxReceiver) {

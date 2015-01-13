@@ -364,12 +364,7 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       }
       rtp_rtcp->SetSendingStatus(rtp_rtcp_->Sending());
       rtp_rtcp->SetSendingMediaStatus(rtp_rtcp_->SendingMedia());
-
-      int mode;
-      uint32_t ssrc;
-      int payload_type;
-      rtp_rtcp_->RTXSendStatus(&mode, &ssrc, &payload_type);
-      rtp_rtcp->SetRTXSendStatus(mode);
+      rtp_rtcp->SetRtxSendStatus(rtp_rtcp_->RtxSendStatus());
       simulcast_rtp_rtcp_.push_back(rtp_rtcp);
 
       // Silently ignore error.
@@ -912,11 +907,11 @@ int ViEChannel::SetRtxSendPayloadType(int payload_type) {
 void ViEChannel::SetRtxSendStatus(bool enable) {
   int rtx_settings =
       enable ? kRtxRetransmitted | kRtxRedundantPayloads : kRtxOff;
-  rtp_rtcp_->SetRTXSendStatus(rtx_settings);
+  rtp_rtcp_->SetRtxSendStatus(rtx_settings);
   CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end(); it++) {
-    (*it)->SetRTXSendStatus(rtx_settings);
+    (*it)->SetRtxSendStatus(rtx_settings);
   }
 }
 

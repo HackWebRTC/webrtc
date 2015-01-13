@@ -243,14 +243,12 @@ int32_t ModuleRtpRtcpImpl::Process() {
   return 0;
 }
 
-void ModuleRtpRtcpImpl::SetRTXSendStatus(int mode) {
-  rtp_sender_.SetRTXStatus(mode);
+void ModuleRtpRtcpImpl::SetRtxSendStatus(int mode) {
+  rtp_sender_.SetRtxStatus(mode);
 }
 
-void ModuleRtpRtcpImpl::RTXSendStatus(int* mode,
-                                      uint32_t* ssrc,
-                                      int* payload_type) const {
-  rtp_sender_.RTXStatus(mode, ssrc, payload_type);
+int ModuleRtpRtcpImpl::RtxSendStatus() const {
+  return rtp_sender_.RtxStatus();
 }
 
 void ModuleRtpRtcpImpl::SetRtxSsrc(uint32_t ssrc) {
@@ -1315,12 +1313,8 @@ int64_t ModuleRtpRtcpImpl::RtcpReportInterval() {
 void ModuleRtpRtcpImpl::SetRtcpReceiverSsrcs(uint32_t main_ssrc) {
   std::set<uint32_t> ssrcs;
   ssrcs.insert(main_ssrc);
-  int rtx_mode = kRtxOff;
-  uint32_t rtx_ssrc = 0;
-  int rtx_payload_type = 0;
-  rtp_sender_.RTXStatus(&rtx_mode, &rtx_ssrc, &rtx_payload_type);
-  if (rtx_mode != kRtxOff)
-    ssrcs.insert(rtx_ssrc);
+  if (rtp_sender_.RtxStatus() != kRtxOff)
+    ssrcs.insert(rtp_sender_.RtxSsrc());
   rtcp_receiver_.SetSsrcs(main_ssrc, ssrcs);
 }
 

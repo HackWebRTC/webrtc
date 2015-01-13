@@ -95,10 +95,8 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetCsrcs, void(const std::vector<uint32_t>& csrcs));
   MOCK_METHOD1(SetCSRCStatus,
       int32_t(const bool include));
-  MOCK_METHOD1(SetRTXSendStatus,
-      void(int modes));
-  MOCK_CONST_METHOD3(RTXSendStatus,
-      void(int* modes, uint32_t* ssrc, int* payload_type));
+  MOCK_METHOD1(SetRtxSendStatus, void(int modes));
+  MOCK_CONST_METHOD0(RtxSendStatus, int());
   MOCK_METHOD1(SetRtxSsrc,
       void(uint32_t));
   MOCK_METHOD1(SetRtxSendPayloadType,
