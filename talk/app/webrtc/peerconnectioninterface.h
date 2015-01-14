@@ -180,18 +180,31 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   typedef std::vector<IceServer> IceServers;
 
   enum IceTransportsType {
+    // TODO(pthatcher): Rename these kTransporTypeXXX, but update
+    // Chromium at the same time.
     kNone,
     kRelay,
     kNoHost,
     kAll
   };
 
-  struct RTCConfiguration {
-    IceTransportsType type;
-    IceServers servers;
+  // https://tools.ietf.org/html/draft-ietf-rtcweb-jsep-08#section-4.1.1
+  enum BundlePolicy {
+    kBundlePolicyBalanced,
+    kBundlePolicyMaxBundle,
+    kBundlePolicyMaxCompat
+  };
 
-    RTCConfiguration() : type(kAll) {}
-    explicit RTCConfiguration(IceTransportsType type) : type(type) {}
+  struct RTCConfiguration {
+    // TODO(pthatcher): Rename this ice_transport_type, but update
+    // Chromium at the same time.
+    IceTransportsType type;
+    // TODO(pthatcher): Rename this ice_servers, but update Chromium
+    // at the same time.
+    IceServers servers;
+    BundlePolicy bundle_policy;
+
+    RTCConfiguration() : type(kAll), bundle_policy(kBundlePolicyBalanced) {}
   };
 
   struct RTCOfferAnswerOptions {
