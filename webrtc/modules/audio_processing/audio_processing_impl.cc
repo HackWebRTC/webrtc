@@ -498,11 +498,9 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
 
   capture_audio_->CopyFrom(src, samples_per_channel, input_layout);
   RETURN_ON_ERR(ProcessStreamLocked());
-  if (output_copy_needed(is_data_processed())) {
-    capture_audio_->CopyTo(fwd_out_format_.samples_per_channel(),
-                           output_layout,
-                           dest);
-  }
+  capture_audio_->CopyTo(fwd_out_format_.samples_per_channel(),
+                         output_layout,
+                         dest);
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_file_->Open()) {

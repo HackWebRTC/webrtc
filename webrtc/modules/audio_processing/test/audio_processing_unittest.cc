@@ -1344,6 +1344,28 @@ TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabled) {
   }
 }
 
+TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabledFloat) {
+  // Test that ProcessStream copies input to output even with no processing.
+  const size_t kSamples = 80;
+  const int sample_rate = 8000;
+  const float src[kSamples] = {
+    -1.0f, 0.0f, 1.0f
+  };
+  float dest[kSamples] = {};
+
+  auto src_channels = &src[0];
+  auto dest_channels = &dest[0];
+
+  apm_.reset(AudioProcessing::Create());
+  EXPECT_NOERR(apm_->ProcessStream(
+      &src_channels, kSamples, sample_rate, LayoutFromChannels(1),
+      sample_rate, LayoutFromChannels(1), &dest_channels));
+
+  for (size_t i = 0; i < kSamples; ++i) {
+    EXPECT_EQ(src[i], dest[i]);
+  }
+}
+
 TEST_F(ApmTest, IdenticalInputChannelsResultInIdenticalOutputChannels) {
   EnableAllComponents();
 
