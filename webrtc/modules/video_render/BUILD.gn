@@ -126,7 +126,8 @@ source_set("video_render_internal_impl") {
     if (directxsdk_exists) {
       directxsdk_path = "//third_party/directxsdk/files"
     } else {
-      directxsdk_path = getenv("DXSDK_DIR")
+      directxsdk_path =
+          exec_script("../../build/find_directx_sdk.py", [], "trim string")
     }
     include_dirs = [ directxsdk_path +  "/Include" ]
   }
