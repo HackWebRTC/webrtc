@@ -45,8 +45,6 @@ DIRECTORIES = [
   'third_party/icu',
   'third_party/instrumented_libraries',
   'third_party/jsoncpp',
-  'third_party/libc++',
-  'third_party/libc++abi',
   'third_party/libjpeg',
   'third_party/libjpeg_turbo',
   'third_party/libsrtp',
