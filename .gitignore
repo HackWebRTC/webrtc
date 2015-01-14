@@ -25,6 +25,7 @@
 *_proto_cpp.xml
 *~
 .*.sw?
+.classpath
 .cproject
 .gdb_history
 .gdbinit
@@ -55,6 +56,9 @@
 /talk/examples/android/local.properties
 /talk/examples/android/obj
 /talk/examples/android/proguard-project.txt
+/talk/app/webrtc/androidtests/bin
+/talk/app/webrtc/androidtests/gen
+/talk/app/webrtc/androidtests/libs
 /testing
 /third_party/WebKit/Tools/Scripts
 /third_party/android_testrunner
