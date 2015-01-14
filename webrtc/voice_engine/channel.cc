@@ -4134,47 +4134,6 @@ Channel::RegisterReceiveCodecsToRTPModule()
     }
 }
 
-int Channel::SetSecondarySendCodec(const CodecInst& codec,
-                                   int red_payload_type) {
-  // Sanity check for payload type.
-  if (red_payload_type < 0 || red_payload_type > 127) {
-    _engineStatisticsPtr->SetLastError(
-        VE_PLTYPE_ERROR, kTraceError,
-        "SetRedPayloadType() invalid RED payload type");
-    return -1;
-  }
-
-  if (SetRedPayloadType(red_payload_type) < 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-        "SetSecondarySendCodec() Failed to register RED ACM");
-    return -1;
-  }
-  if (audio_coding_->RegisterSecondarySendCodec(codec) < 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-        "SetSecondarySendCodec() Failed to register secondary send codec in "
-        "ACM");
-    return -1;
-  }
-
-  return 0;
-}
-
-void Channel::RemoveSecondarySendCodec() {
-  audio_coding_->UnregisterSecondarySendCodec();
-}
-
-int Channel::GetSecondarySendCodec(CodecInst* codec) {
-  if (audio_coding_->SecondarySendCodec(codec) < 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-        "GetSecondarySendCodec() Failed to get secondary sent codec from ACM");
-    return -1;
-  }
-  return 0;
-}
-
 // Assuming this method is called with valid payload type.
 int Channel::SetRedPayloadType(int red_payload_type) {
   CodecInst codec;

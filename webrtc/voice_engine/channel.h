@@ -206,11 +206,6 @@ public:
     int32_t SetSendCNPayloadType(int type, PayloadFrequencies frequency);
     int SetOpusMaxPlaybackRate(int frequency_hz);
 
-    // VoE dual-streaming.
-    int SetSecondarySendCodec(const CodecInst& codec, int red_payload_type);
-    void RemoveSecondarySendCodec();
-    int GetSecondarySendCodec(CodecInst* codec);
-
     // VoENetwork
     int32_t RegisterExternalTransport(Transport& transport);
     int32_t DeRegisterExternalTransport();

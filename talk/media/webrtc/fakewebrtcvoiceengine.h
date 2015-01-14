@@ -534,12 +534,6 @@ class FakeWebRtcVoiceEngine
     codec = channels_[channel]->send_codec;
     return 0;
   }
-  WEBRTC_STUB(SetSecondarySendCodec, (int channel,
-                                      const webrtc::CodecInst& codec,
-                                      int red_payload_type));
-  WEBRTC_STUB(RemoveSecondarySendCodec, (int channel));
-  WEBRTC_STUB(GetSecondarySendCodec, (int channel,
-                                      webrtc::CodecInst& codec));
   WEBRTC_FUNC(GetRecCodec, (int channel, webrtc::CodecInst& codec)) {
     WEBRTC_CHECK_CHANNEL(channel);
     const Channel* c = channels_[channel];
