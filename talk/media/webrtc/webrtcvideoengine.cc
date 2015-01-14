@@ -2243,6 +2243,17 @@ bool WebRtcVideoMediaChannel::RemoveRecvStream(uint32 ssrc) {
 }
 
 bool WebRtcVideoMediaChannel::RemoveRecvStreamInternal(uint32 ssrc) {
+  // First remove the RTX SSRC mapping, to include this step even if exiting in
+  // the default receive channel logic below.
+  SsrcMap::iterator rtx_it = rtx_to_primary_ssrc_.begin();
+  while (rtx_it != rtx_to_primary_ssrc_.end()) {
+    if (rtx_it->second == ssrc) {
+      rtx_to_primary_ssrc_.erase(rtx_it++);
+    } else {
+      ++rtx_it;
+    }
+  }
+
   WebRtcVideoChannelRecvInfo* recv_channel = GetRecvChannelBySsrc(ssrc);
   if (!recv_channel) {
     // TODO(perkj): Remove this once BWE works properly across different send
@@ -2261,16 +2272,6 @@ bool WebRtcVideoMediaChannel::RemoveRecvStreamInternal(uint32 ssrc) {
       return true;
     }
     return false;
-  }
-
-  // Remove any RTX SSRC mappings to this stream.
-  SsrcMap::iterator rtx_it = rtx_to_primary_ssrc_.begin();
-  while (rtx_it != rtx_to_primary_ssrc_.end()) {
-    if (rtx_it->second == ssrc) {
-      rtx_to_primary_ssrc_.erase(rtx_it++);
-    } else {
-      ++rtx_it;
-    }
   }
 
   int channel_id = recv_channel->channel_id();
