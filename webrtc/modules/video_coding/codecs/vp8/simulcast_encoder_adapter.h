@@ -33,8 +33,7 @@ class VideoEncoderFactory {
 class SimulcastEncoderAdapter : public VP8Encoder,
                                 public EncodedImageCallback {
  public:
-  explicit SimulcastEncoderAdapter(scoped_ptr<VideoEncoderFactory> factory);
-
+  explicit SimulcastEncoderAdapter(VideoEncoderFactory* factory);
   virtual ~SimulcastEncoderAdapter();
 
   // Implements VideoEncoder

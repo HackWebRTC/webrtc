@@ -171,8 +171,7 @@ class TestSimulcastEncoderAdapterFakeHelper {
   // Can only be called once as the SimulcastEncoderAdapter will take the
   // ownership of |factory_|.
   VP8Encoder* CreateMockEncoderAdapter() {
-    scoped_ptr<VideoEncoderFactory> scoped_factory(factory_);
-    return new SimulcastEncoderAdapter(scoped_factory.Pass());
+    return new SimulcastEncoderAdapter(factory_);
   }
 
   void ExpectCallSetChannelParameters(uint32_t packetLoss, int64_t rtt) {

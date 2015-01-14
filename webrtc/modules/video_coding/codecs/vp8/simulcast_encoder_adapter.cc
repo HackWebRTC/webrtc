@@ -116,9 +116,8 @@ struct ScreenshareTemporalLayersFactory : webrtc::TemporalLayers::Factory {
 
 namespace webrtc {
 
-SimulcastEncoderAdapter::SimulcastEncoderAdapter(
-    scoped_ptr<VideoEncoderFactory> factory)
-    : factory_(factory.Pass()), encoded_complete_callback_(NULL) {
+SimulcastEncoderAdapter::SimulcastEncoderAdapter(VideoEncoderFactory* factory)
+    : factory_(factory), encoded_complete_callback_(NULL) {
   memset(&codec_, 0, sizeof(webrtc::VideoCodec));
 }
 

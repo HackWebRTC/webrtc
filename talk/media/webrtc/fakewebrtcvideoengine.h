@@ -153,7 +153,14 @@ class FakeWebRtcVideoEncoder : public webrtc::VideoEncoder {
   virtual int32 InitEncode(const webrtc::VideoCodec* codecSettings,
                            int32 numberOfCores,
                            size_t maxPayloadSize) {
+    rtc::CritScope lock(&crit_);
+    codec_settings_ = *codecSettings;
     return WEBRTC_VIDEO_CODEC_OK;
+  }
+
+  webrtc::VideoCodec GetCodecSettings() {
+    rtc::CritScope lock(&crit_);
+    return codec_settings_;
   }
 
   virtual int32 Encode(
@@ -192,6 +199,7 @@ class FakeWebRtcVideoEncoder : public webrtc::VideoEncoder {
  private:
   rtc::CriticalSection crit_;
   int num_frames_encoded_ GUARDED_BY(crit_);
+  webrtc::VideoCodec codec_settings_ GUARDED_BY(crit_);
 };
 
 // Fake class for mocking out WebRtcVideoEncoderFactory.

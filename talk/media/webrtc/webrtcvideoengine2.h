@@ -208,6 +208,7 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
 
   WebRtcVideoDecoderFactory* external_decoder_factory_;
   WebRtcVideoEncoderFactory* external_encoder_factory_;
+  rtc::scoped_ptr<WebRtcVideoEncoderFactory> simulcast_encoder_factory_;
 };
 
 class WebRtcVideoChannel2 : public rtc::MessageHandler,

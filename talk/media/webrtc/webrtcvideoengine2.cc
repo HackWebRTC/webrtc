@@ -477,6 +477,20 @@ void WebRtcVideoEngine2::SetExternalDecoderFactory(
 void WebRtcVideoEngine2::SetExternalEncoderFactory(
     WebRtcVideoEncoderFactory* encoder_factory) {
   assert(!initialized_);
+  if (external_encoder_factory_ == encoder_factory)
+    return;
+
+  // No matter what happens we shouldn't hold on to a stale
+  // WebRtcSimulcastEncoderFactory.
+  simulcast_encoder_factory_.reset();
+
+  if (encoder_factory &&
+      WebRtcSimulcastEncoderFactory::UseSimulcastEncoderFactory(
+          encoder_factory->codecs())) {
+    simulcast_encoder_factory_.reset(
+        new WebRtcSimulcastEncoderFactory(encoder_factory));
+    encoder_factory = simulcast_encoder_factory_.get();
+  }
   external_encoder_factory_ = encoder_factory;
 
   video_codecs_ = GetSupportedCodecs();

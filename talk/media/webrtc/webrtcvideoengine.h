@@ -523,6 +523,28 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   int ratio_h_;
 };
 
+// Wrap encoder factory to a simulcast encoder factory. Exposed here for code to
+// be shared with WebRtcVideoEngine2, not to be used externally.
+class WebRtcSimulcastEncoderFactory
+    : public cricket::WebRtcVideoEncoderFactory {
+ public:
+  // WebRtcSimulcastEncoderFactory doesn't take ownership of |factory|, which is
+  // owned by e.g. PeerConnectionFactory.
+  explicit WebRtcSimulcastEncoderFactory(
+      cricket::WebRtcVideoEncoderFactory* factory);
+  virtual ~WebRtcSimulcastEncoderFactory();
+
+  static bool UseSimulcastEncoderFactory(const std::vector<VideoCodec>& codecs);
+
+  virtual webrtc::VideoEncoder* CreateVideoEncoder(
+      webrtc::VideoCodecType type) OVERRIDE;
+  virtual const std::vector<VideoCodec>& codecs() const OVERRIDE;
+  virtual void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) OVERRIDE;
+
+ private:
+  cricket::WebRtcVideoEncoderFactory* factory_;
+};
+
 }  // namespace cricket
 
 #endif  // TALK_MEDIA_WEBRTCVIDEOENGINE_H_

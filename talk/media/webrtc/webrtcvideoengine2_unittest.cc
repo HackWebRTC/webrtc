@@ -592,6 +592,35 @@ VideoMediaChannel* WebRtcVideoEngine2Test::SetUpForExternalDecoderFactory(
   return channel;
 }
 
+TEST_F(WebRtcVideoEngine2Test, UsesSimulcastAdapterForVp8Factories) {
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kVp8Codec);
+
+  rtc::scoped_ptr<VideoMediaChannel> channel(
+      SetUpForExternalEncoderFactory(&encoder_factory, codecs));
+
+  std::vector<uint32> ssrcs = MAKE_VECTOR(kSsrcs3);
+
+  EXPECT_TRUE(
+      channel->AddSendStream(CreateSimStreamParams("cname", ssrcs)));
+  EXPECT_TRUE(channel->SetSend(true));
+
+  EXPECT_GT(encoder_factory.encoders().size(), 1u);
+
+  // Verify that encoders are configured for simulcast through adapter
+  // (increasing resolution and only configured to send one stream each).
+  int prev_width = -1;
+  for (size_t i = 0; i < encoder_factory.encoders().size(); ++i) {
+    webrtc::VideoCodec codec_settings =
+        encoder_factory.encoders()[i]->GetCodecSettings();
+    EXPECT_EQ(0, codec_settings.numberOfSimulcastStreams);
+    EXPECT_GT(codec_settings.width, prev_width);
+    prev_width = codec_settings.width;
+  }
+}
+
 TEST_F(WebRtcVideoEngine2Test, ChannelWithExternalH264CanChangeToInternalVp8) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
   encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
