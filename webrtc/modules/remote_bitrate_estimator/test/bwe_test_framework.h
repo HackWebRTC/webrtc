@@ -392,7 +392,7 @@ class VideoSender : public PacketSender {
               float fps,
               uint32_t kbps,
               uint32_t ssrc,
-              float first_frame_offset);
+              int64_t first_frame_offset_ms);
   virtual ~VideoSender() {}
 
   uint32_t max_payload_size_bytes() const { return kMaxPayloadSizeBytes; }
@@ -423,9 +423,12 @@ class VideoSender : public PacketSender {
 
 class AdaptiveVideoSender : public VideoSender {
  public:
-  AdaptiveVideoSender(int flow_id, PacketProcessorListener* listener,
-                      float fps, uint32_t kbps, uint32_t ssrc,
-                      float first_frame_offset);
+  AdaptiveVideoSender(int flow_id,
+                      PacketProcessorListener* listener,
+                      float fps,
+                      uint32_t kbps,
+                      uint32_t ssrc,
+                      int64_t first_frame_offset_ms);
   virtual ~AdaptiveVideoSender() {}
 
   virtual int GetFeedbackIntervalMs() const OVERRIDE { return 100; }
@@ -442,7 +445,7 @@ class PeriodicKeyFrameSender : public AdaptiveVideoSender {
                          float fps,
                          uint32_t kbps,
                          uint32_t ssrc,
-                         float first_frame_offset,
+                         int64_t first_frame_offset_ms,
                          int key_frame_interval);
   virtual ~PeriodicKeyFrameSender() {}
 

@@ -191,23 +191,57 @@ TEST_P(MultiFlowBweSimulation, SelfFairnessTest) {
   const int kAllFlowIds[] = {0, 1, 2};
   const size_t kNumFlows = sizeof(kAllFlowIds) / sizeof(kAllFlowIds[0]);
   scoped_ptr<AdaptiveVideoSender> senders[kNumFlows];
+
   for (size_t i = 0; i < kNumFlows; ++i) {
-    senders[i].reset(new AdaptiveVideoSender(kAllFlowIds[i], this, 30, 300, 0,
-                                             0));
+    // Streams started 20 seconds apart to give them different advantage when
+    // competing for the bandwidth.
+    senders[i].reset(
+        new AdaptiveVideoSender(kAllFlowIds[i], this, 30, 300, 0, i * 20000));
   }
-  // Second and third flow.
-  ChokeFilter choke(this, CreateFlowIds(&kAllFlowIds[1], 2));
-  choke.SetCapacity(1500);
-  // First flow.
-  ChokeFilter choke2(this, CreateFlowIds(&kAllFlowIds[0], 1));
-  choke2.SetCapacity(1000);
+
+  ChokeFilter choke(this, CreateFlowIds(kAllFlowIds, kNumFlows));
+  choke.SetCapacity(1000);
 
   scoped_ptr<RateCounterFilter> rate_counters[kNumFlows];
   for (size_t i = 0; i < kNumFlows; ++i) {
     rate_counters[i].reset(new RateCounterFilter(
         this, CreateFlowIds(&kAllFlowIds[i], 1), "receiver_input"));
   }
+
+  RateCounterFilter total_utilization(
+      this, CreateFlowIds(kAllFlowIds, kNumFlows), "total_utilization");
+
   RunFor(30 * 60 * 1000);
+}
+
+TEST_P(MultiFlowBweSimulation, PacedSelfFairnessTest) {
+  VerboseLogging(true);
+  const int kAllFlowIds[] = {0, 1, 2};
+  const size_t kNumFlows = sizeof(kAllFlowIds) / sizeof(kAllFlowIds[0]);
+  scoped_ptr<PeriodicKeyFrameSender> sources[kNumFlows];
+  scoped_ptr<PacedVideoSender> senders[kNumFlows];
+
+  for (size_t i = 0; i < kNumFlows; ++i) {
+    // Streams started 20 seconds apart to give them different advantage when
+    // competing for the bandwidth.
+    sources[i].reset(new PeriodicKeyFrameSender(kAllFlowIds[i], NULL, 30, 300,
+                                                0, i * 20000, 1000));
+    senders[i].reset(new PacedVideoSender(this, 300, sources[i].get()));
+  }
+
+  ChokeFilter choke(this, CreateFlowIds(kAllFlowIds, kNumFlows));
+  choke.SetCapacity(1000);
+
+  scoped_ptr<RateCounterFilter> rate_counters[kNumFlows];
+  for (size_t i = 0; i < kNumFlows; ++i) {
+    rate_counters[i].reset(new RateCounterFilter(
+        this, CreateFlowIds(&kAllFlowIds[i], 1), "receiver_input"));
+  }
+
+  RateCounterFilter total_utilization(
+      this, CreateFlowIds(kAllFlowIds, kNumFlows), "total_utilization");
+
+  RunFor(3 * 60 * 1000);
 }
 #endif  // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 }  // namespace bwe

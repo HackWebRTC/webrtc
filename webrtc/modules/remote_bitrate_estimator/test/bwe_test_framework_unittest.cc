@@ -786,7 +786,7 @@ TEST(BweTestFramework_VideoSenderTest, Fps1Kbps80_1s) {
 
 TEST(BweTestFramework_VideoSenderTest, Fps1Kbps80_1s_Offset) {
   // 1 fps, 80 kbps, offset 0.5 of a frame period, ==0.5s in this case.
-  VideoSender sender(0, NULL, 1.0f, 80, 0x1234, 0.5f);
+  VideoSender sender(0, NULL, 1.0f, 80, 0x1234, 500);
   EXPECT_EQ(10000u, sender.bytes_per_second());
   // 499ms, no output.
   TestVideoSender(&sender, 499, 0, 0, 0);
@@ -859,7 +859,7 @@ TEST(BweTestFramework_VideoSenderTest, Fps30Kbps800_20s) {
 
 TEST(BweTestFramework_VideoSenderTest, TestAppendInOrder) {
   // 1 fps, 80 kbps, 250ms offset.
-  VideoSender sender1(0, NULL, 1.0f, 80, 0x1234, 0.25f);
+  VideoSender sender1(0, NULL, 1.0f, 80, 0x1234, 250);
   EXPECT_EQ(10000u, sender1.bytes_per_second());
   Packets packets;
   // Generate some packets, verify they are sorted.
@@ -873,8 +873,8 @@ TEST(BweTestFramework_VideoSenderTest, TestAppendInOrder) {
   ASSERT_TRUE(IsSequenceNumberSorted(packets));
   EXPECT_EQ(18u, packets.size());
 
-  // Another sender, 2 fps, 160 kpbs, 150ms offset
-  VideoSender sender2(0, NULL, 2.0f, 160, 0x2234, 0.30f);
+  // Another sender, 2 fps, 160 kbps, 150ms offset
+  VideoSender sender2(0, NULL, 2.0f, 160, 0x2234, 150);
   EXPECT_EQ(20000u, sender2.bytes_per_second());
   // Generate some packets, verify that they are merged with the packets already
   // on the list.
