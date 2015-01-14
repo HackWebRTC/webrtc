@@ -15,10 +15,10 @@
 #include "webrtc/system_wrappers/interface/logging.h"
 
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
-    #include "critical_section_wrapper.h"
-    #include "frame_scaler.h"
-    #include "video_coder.h"
-    #include "video_frames_queue.h"
+    #include "webrtc/modules/utility/source/frame_scaler.h"
+    #include "webrtc/modules/utility/source/video_coder.h"
+    #include "webrtc/modules/utility/source/video_frames_queue.h"
+    #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #endif
 
 namespace webrtc {

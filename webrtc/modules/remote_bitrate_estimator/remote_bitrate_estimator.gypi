@@ -16,7 +16,7 @@
       'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/modules/remote_bitrate_estimator/remote_bitrate_estimator_components.gyp:rbe_components',
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
         'include/bwe_defines.h',
@@ -29,7 +29,7 @@
       'target_name': 'bwe_tools_util',
       'type': 'static_library',
       'dependencies': [
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
         'rtp_rtcp',
       ],
       'sources': [
@@ -44,8 +44,8 @@
         '../rtp_rtcp/source/rtp_rtcp.gypi',
       ],
       'dependencies': [
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers_default',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
         'bwe_tools_util',
         'rtp_rtcp',
       ],
@@ -67,8 +67,8 @@
         '../rtp_rtcp/source/rtp_rtcp.gypi',
       ],
       'dependencies': [
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers_default',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
         'bwe_tools_util',
         'rtp_rtcp',
       ],

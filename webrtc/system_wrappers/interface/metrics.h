@@ -41,7 +41,7 @@
 //       Histogram* histogram_pointer, const std::string& name, int sample);
 //
 // - or link with the default implementations (i.e.
-//   system_wrappers/source/system_wrappers.gyp:metrics_default).
+//   system_wrappers/system_wrappers.gyp:metrics_default).
 //
 //
 // Example usage:

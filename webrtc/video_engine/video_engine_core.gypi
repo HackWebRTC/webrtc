@@ -31,7 +31,7 @@
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
 
         # system_wrappers
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
         # interface

@@ -96,7 +96,7 @@
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)system_wrappers_unittests<(SHARED_LIB_SUFFIX)',
       },
       'dependencies': [
-        '<(webrtc_root)/system_wrappers/source/system_wrappers_tests.gyp:system_wrappers_unittests',
+        '<(webrtc_root)/system_wrappers/system_wrappers_tests.gyp:system_wrappers_unittests',
       ],
       'includes': [
         '../../build/apk_test.gypi',

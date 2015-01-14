@@ -13,10 +13,10 @@
 
 #include <math.h>
 
-#include "common_types.h"
-#include "SpatialAudio.h"
-#include "trace.h"
-#include "utility.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/main/test/SpatialAudio.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {

@@ -12,7 +12,7 @@
       'target_name': 'desktop_capture',
       'type': 'static_library',
       'dependencies': [
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/base/base.gyp:rtc_base',
       ],
       'sources': [

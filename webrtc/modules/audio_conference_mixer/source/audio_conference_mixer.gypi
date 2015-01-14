@@ -14,7 +14,7 @@
       'dependencies': [
         'audio_processing',
         'webrtc_utility',
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
         '../interface',

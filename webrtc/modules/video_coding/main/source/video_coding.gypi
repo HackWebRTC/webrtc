@@ -15,7 +15,7 @@
         'webrtc_i420',
         '<(webrtc_root)/common_video/common_video.gyp:common_video',
         '<(webrtc_root)/modules/video_coding/utility/video_coding_utility.gyp:video_coding_utility',
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
         '<(webrtc_vp8_dir)/vp8.gyp:webrtc_vp8',
         '<(webrtc_vp9_dir)/vp9.gyp:webrtc_vp9',
       ],

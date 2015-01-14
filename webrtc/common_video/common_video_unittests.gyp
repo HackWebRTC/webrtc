@@ -15,7 +15,7 @@
       'dependencies': [
          '<(webrtc_root)/common_video/common_video.gyp:common_video',
          '<(DEPTH)/testing/gtest.gyp:gtest',
-         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
          '<(webrtc_root)/test/test.gyp:test_support_main',
       ],
       'sources': [

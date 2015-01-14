@@ -59,7 +59,7 @@ def main():
     'modules_tests': 'webrtc/modules/modules_tests.isolate',
     'modules_unittests': 'webrtc/modules/modules_unittests.isolate',
     'system_wrappers_unittests':
-        'webrtc/system_wrappers/source/system_wrappers_unittests.isolate',
+        'webrtc/system_wrappers/system_wrappers_unittests.isolate',
     'test_support_unittests': 'webrtc/test/test_support_unittests.isolate',
     'tools_unittests': 'webrtc/tools/tools_unittests.isolate',
     'video_capture_tests':

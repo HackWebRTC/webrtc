@@ -12,9 +12,9 @@
 #include "webrtc/system_wrappers/interface/logging.h"
 
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
-    #include "frame_scaler.h"
-    #include "tick_util.h"
-    #include "video_coder.h"
+    #include "webrtc/modules/utility/source/frame_scaler.h"
+    #include "webrtc/modules/utility/source/video_coder.h"
+    #include "webrtc/system_wrappers/interface/tick_util.h"
 #endif
 
 namespace webrtc {

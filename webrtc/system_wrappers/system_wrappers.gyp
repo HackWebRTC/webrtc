@@ -7,19 +7,6 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'targets': [
-    {
-      'target_name': 'paced_sender',
-      'type': 'static_library',
-      'dependencies': [
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-      ],
-      'sources': [
-        'include/paced_sender.h',
-        'bitrate_prober.cc',
-        'bitrate_prober.h',
-        'paced_sender.cc',
-      ],
-    },
-  ], # targets
+  'includes': [ 'system_wrappers.gypi', ],
 }
+

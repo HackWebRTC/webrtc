@@ -31,9 +31,9 @@
 #include "webrtc/typedefs.h"
 
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
-    #include "frame_scaler.h"
-    #include "video_coder.h"
-    #include "video_frames_queue.h"
+    #include "webrtc/modules/utility/source/frame_scaler.h"
+    #include "webrtc/modules/utility/source/video_coder.h"
+    #include "webrtc/modules/utility/source/video_frames_queue.h"
 #endif
 
 namespace webrtc {

@@ -7,44 +7,44 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'includes': ['../../build/common.gypi',],
+  'includes': ['../build/common.gypi',],
   'targets': [
     {
       'target_name': 'system_wrappers_unittests',
       'type': '<(gtest_target_type)',
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/test/test.gyp:test_support_main',
       ],
       'sources': [
-        'aligned_array_unittest.cc',
-        'aligned_malloc_unittest.cc',
-        'clock_unittest.cc',
-        'condition_variable_unittest.cc',
-        'critical_section_unittest.cc',
-        'event_tracer_unittest.cc',
-        'logging_unittest.cc',
-        'data_log_unittest.cc',
-        'data_log_unittest_disabled.cc',
-        'data_log_helpers_unittest.cc',
-        'data_log_c_helpers_unittest.c',
-        'data_log_c_helpers_unittest.h',
-        'rtp_to_ntp_unittest.cc',
-        'scoped_vector_unittest.cc',
-        'stringize_macros_unittest.cc',
-        'stl_util_unittest.cc',
-        'thread_unittest.cc',
-        'thread_posix_unittest.cc',
+        'source/aligned_array_unittest.cc',
+        'source/aligned_malloc_unittest.cc',
+        'source/clock_unittest.cc',
+        'source/condition_variable_unittest.cc',
+        'source/critical_section_unittest.cc',
+        'source/event_tracer_unittest.cc',
+        'source/logging_unittest.cc',
+        'source/data_log_unittest.cc',
+        'source/data_log_unittest_disabled.cc',
+        'source/data_log_helpers_unittest.cc',
+        'source/data_log_c_helpers_unittest.c',
+        'source/data_log_c_helpers_unittest.h',
+        'source/rtp_to_ntp_unittest.cc',
+        'source/scoped_vector_unittest.cc',
+        'source/stringize_macros_unittest.cc',
+        'source/stl_util_unittest.cc',
+        'source/thread_unittest.cc',
+        'source/thread_posix_unittest.cc',
       ],
       'conditions': [
         ['enable_data_logging==1', {
-          'sources!': [ 'data_log_unittest_disabled.cc', ],
+          'sources!': [ 'source/data_log_unittest_disabled.cc', ],
         }, {
-          'sources!': [ 'data_log_unittest.cc', ],
+          'sources!': [ 'source/data_log_unittest.cc', ],
         }],
         ['os_posix==0', {
-          'sources!': [ 'thread_posix_unittest.cc', ],
+          'sources!': [ 'source/thread_posix_unittest.cc', ],
         }],
         ['OS=="android"', {
           'dependencies': [
@@ -79,7 +79,7 @@
             'system_wrappers_unittests',
           ],
           'includes': [
-            '../../build/isolate.gypi',
+            '../build/isolate.gypi',
           ],
           'sources': [
             'system_wrappers_unittests.isolate',

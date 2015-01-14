@@ -18,7 +18,7 @@
         'libyuv/include',
       ],
       'dependencies': [
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'direct_dependent_settings': {
         'include_dirs': [

@@ -9,12 +9,6 @@
 import("//build/config/android/config.gni")
 import("../build/webrtc.gni")
 
-config("system_wrappers_inherited_config") {
-  include_dirs = [
-    "interface",
-  ]
-}
-
 static_library("system_wrappers") {
   sources = [
     "interface/aligned_array.h",
@@ -116,7 +110,6 @@ static_library("system_wrappers") {
 
   public_configs = [
     "..:common_inherited_config",
-    ":system_wrappers_inherited_config",
   ]
 
   if (rtc_enable_data_logging) {
@@ -187,10 +180,6 @@ static_library("system_wrappers") {
       "/wd4334",  # Ignore warning on shift operator promotion.
     ]
   }
-
-  include_dirs = [
-    "source/spreadsortlib",
-  ]
 
   deps += [
     "../base:rtc_base_approved",

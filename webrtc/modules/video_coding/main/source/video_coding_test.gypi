@@ -20,7 +20,7 @@
          '<(webrtc_root)/test/test.gyp:test_support',
          '<(webrtc_root)/test/metrics.gyp:metrics',
          '<(webrtc_root)/common_video/common_video.gyp:common_video',
-         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers_default',
+         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
          '<(webrtc_root)/test/webrtc_test_common.gyp:webrtc_test_common',
       ],
       'sources': [
