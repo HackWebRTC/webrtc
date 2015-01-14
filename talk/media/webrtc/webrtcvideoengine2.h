@@ -106,27 +106,6 @@ class DefaultUnsignalledSsrcHandler : public UnsignalledSsrcHandler {
   VideoRenderer* default_renderer_;
 };
 
-// TODO(pbos): Remove this class and just inline configuring code.
-class WebRtcVideoEncoderFactory2 {
- public:
-  virtual ~WebRtcVideoEncoderFactory2();
-  virtual std::vector<webrtc::VideoStream> CreateVideoStreams(
-      const VideoCodec& codec,
-      const VideoOptions& options,
-      size_t num_streams);
-
-  std::vector<webrtc::VideoStream> CreateSimulcastVideoStreams(
-      const VideoCodec& codec,
-      const VideoOptions& options,
-      size_t num_streams);
-
-  virtual void* CreateVideoEncoderSettings(const VideoCodec& codec,
-                                           const VideoOptions& options);
-
-  virtual void DestroyVideoEncoderSettings(const VideoCodec& codec,
-                                           void* encoder_settings);
-};
-
 // CallFactory, overridden for testing to verify that webrtc::Call is configured
 // properly.
 class WebRtcCallFactory {
@@ -187,8 +166,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
 
   rtc::CpuMonitor* cpu_monitor() { return cpu_monitor_.get(); }
 
-  virtual WebRtcVideoEncoderFactory2* GetVideoEncoderFactory();
-
  private:
   std::vector<VideoCodec> GetSupportedCodecs() const;
 
@@ -201,7 +178,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   bool initialized_;
 
   rtc::scoped_ptr<rtc::CpuMonitor> cpu_monitor_;
-  WebRtcVideoEncoderFactory2 default_video_encoder_factory_;
 
   WebRtcCallFactory default_call_factory_;
   WebRtcCallFactory* call_factory_;
@@ -221,8 +197,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
                       VoiceMediaChannel* voice_channel,
                       const VideoOptions& options,
                       WebRtcVideoEncoderFactory* external_encoder_factory,
-                      WebRtcVideoDecoderFactory* external_decoder_factory,
-                      WebRtcVideoEncoderFactory2* encoder_factory);
+                      WebRtcVideoDecoderFactory* external_decoder_factory);
   ~WebRtcVideoChannel2();
   bool Init();
 
@@ -301,7 +276,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     WebRtcVideoSendStream(
         webrtc::Call* call,
         WebRtcVideoEncoderFactory* external_encoder_factory,
-        WebRtcVideoEncoderFactory2* encoder_factory,
         const VideoOptions& options,
         const Settable<VideoCodecSettings>& codec_settings,
         const StreamParams& sp,
@@ -364,6 +338,24 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
       bool is_screencast;
     };
 
+    union VideoEncoderSettings {
+      webrtc::VideoCodecVP8 vp8;
+      webrtc::VideoCodecVP9 vp9;
+    };
+
+    static std::vector<webrtc::VideoStream> CreateVideoStreams(
+        const VideoCodec& codec,
+        const VideoOptions& options,
+        size_t num_streams);
+    static std::vector<webrtc::VideoStream> CreateSimulcastVideoStreams(
+        const VideoCodec& codec,
+        const VideoOptions& options,
+        size_t num_streams);
+
+    void* ConfigureVideoEncoderSettings(const VideoCodec& codec,
+                                        const VideoOptions& options)
+        EXCLUSIVE_LOCKS_REQUIRED(lock_);
+
     AllocatedEncoder CreateVideoEncoder(const VideoCodec& codec)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
     void DestroyVideoEncoder(AllocatedEncoder* encoder)
@@ -381,11 +373,11 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     webrtc::Call* const call_;
     WebRtcVideoEncoderFactory* const external_encoder_factory_
         GUARDED_BY(lock_);
-    WebRtcVideoEncoderFactory2* const encoder_factory_ GUARDED_BY(lock_);
 
     rtc::CriticalSection lock_;
     webrtc::VideoSendStream* stream_ GUARDED_BY(lock_);
     VideoSendStreamParameters parameters_ GUARDED_BY(lock_);
+    VideoEncoderSettings encoder_settings_ GUARDED_BY(lock_);
     AllocatedEncoder allocated_encoder_ GUARDED_BY(lock_);
     Dimensions last_dimensions_ GUARDED_BY(lock_);
 
@@ -496,7 +488,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   VoiceMediaChannel* const voice_channel_;
   WebRtcVideoEncoderFactory* const external_encoder_factory_;
   WebRtcVideoDecoderFactory* const external_decoder_factory_;
-  WebRtcVideoEncoderFactory2* const encoder_factory_;
   std::vector<VideoCodecSettings> recv_codecs_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
   webrtc::Call::Config::BitrateConfig bitrate_config_;
