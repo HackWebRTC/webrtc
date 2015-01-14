@@ -52,8 +52,12 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
   private static final int WAIT_TIMEOUT = 5000;
   private static final int EXPECTED_VIDEO_FRAMES = 15;
 
+  // The peer connection client is assumed to be thread safe in itself; the
+  // reference is written by the test thread and read by worker threads.
   private volatile PeerConnectionClient pcClient;
   private volatile boolean loopback;
+
+  // These are protected by their respective event objects.
   private boolean isClosed;
   private boolean isIceConnected;
   private SessionDescription localSdp;
@@ -65,10 +69,14 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
 
   // Mock renderer implementation.
   private static class MockRenderer implements VideoRenderer.Callbacks {
-    private final CountDownLatch doneRendering;
+    // These are protected by 'this' since we gets called from worker threads.
     private int width = -1;
     private int height = -1;
-    private int numFramesDelivered = 0;
+    private boolean renderFrameCalled = false;
+    private boolean setSizeCalledBeforeRenderFrame = false;
+
+    // Thread-safe in itself.
+    private final CountDownLatch doneRendering;
 
     public MockRenderer(int expectedFrames) {
       doneRendering = new CountDownLatch(expectedFrames);
@@ -79,18 +87,25 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
       Log.d(TAG, "Set size: " + width + " x " + height);
       this.width = width;
       this.height = height;
+      if (!renderFrameCalled) {
+        setSizeCalledBeforeRenderFrame = true;
+      }
     }
 
     @Override
     public synchronized void renderFrame(VideoRenderer.I420Frame frame) {
-      // Check that video dimensions have been set.
-      if (numFramesDelivered == 0) {
-        assertTrue("Video dimensions were not set.", width > 0 && height > 0);
-      }
-      numFramesDelivered++;
+      renderFrameCalled = true;
       doneRendering.countDown();
     }
 
+    public synchronized int getWidth() { return width; }
+    public synchronized int getHeight() { return width; }
+    public synchronized boolean setSizeCalledBeforeRenderFrame() {
+      return setSizeCalledBeforeRenderFrame;
+    }
+
+    // This method shouldn't hold any locks or touch member variables since it
+    // blocks.
     public boolean waitForFramesRendered(int timeoutMs)
         throws InterruptedException {
       doneRendering.await(timeoutMs, TimeUnit.MILLISECONDS);
@@ -211,31 +226,24 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     return signalingParameters;
   }
 
-  // Unit tests.
-  @Override
-  protected void setUp() throws Exception {
-    Log.d(TAG, "setUp");
-    super.setUp();
-    pcClient = null;
-    localSdp = null;
-    iceCandidates.clear();
-    isClosed = false;
-    isIceConnected = false;
-    loopback = false;
-  }
-
-  public void testInitiatorCreation() throws InterruptedException {
-    Log.d(TAG, "testInitiatorCreation");
-    MockRenderer localRender = new MockRenderer(EXPECTED_VIDEO_FRAMES);
-    MockRenderer remoteRender = new MockRenderer(EXPECTED_VIDEO_FRAMES);
+  PeerConnectionClient createPeerConnectionClient(MockRenderer localRenderer,
+                                                  MockRenderer remoteRenderer) {
     SignalingParameters signalingParameters = getTestSignalingParameters();
 
-    pcClient = new PeerConnectionClient();
-    pcClient.createPeerConnectionFactory(
+    PeerConnectionClient client = new PeerConnectionClient();
+    client.createPeerConnectionFactory(
         getInstrumentation().getContext(), true, null, this);
-    pcClient.createPeerConnection(
-        localRender, remoteRender, signalingParameters, 1000);
-    pcClient.createOffer();
+    client.createPeerConnection(
+        localRenderer, remoteRenderer, signalingParameters, 1000);
+    client.createOffer();
+    return client;
+  }
+
+  public void testSetLocalOfferMakesVideoFlowLocally()
+      throws InterruptedException {
+    Log.d(TAG, "testSetLocalOfferMakesVideoFlowLocally");
+    MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES);
+    pcClient = createPeerConnectionClient(localRenderer, new MockRenderer(0));
 
     // Wait for local SDP and ice candidates set events.
     assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
@@ -244,27 +252,44 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
 
     // Check that local video frames were rendered.
     assertTrue("Local video frames were not rendered.",
-        localRender.waitForFramesRendered(WAIT_TIMEOUT));
+        localRenderer.waitForFramesRendered(WAIT_TIMEOUT));
 
     pcClient.close();
     assertTrue("PeerConnection close event was not received.",
         waitForPeerConnectionClosed(WAIT_TIMEOUT));
-    Log.d(TAG, "testInitiatorCreation Done.");
+    Log.d(TAG, "testSetLocalOfferMakesVideoFlowLocally Done.");
+  }
+
+  public void testSizeIsSetBeforeStartingToRender()
+      throws InterruptedException {
+    Log.d(TAG, "testSizeIsSetBeforeStartingToRender");
+    MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES);
+    pcClient = createPeerConnectionClient(localRenderer, new MockRenderer(0));
+
+    waitForLocalSDP(WAIT_TIMEOUT);
+    waitForIceCandidates(WAIT_TIMEOUT);
+
+    // Check that local video frames were rendered.
+    assertTrue("Local video frames were not rendered.",
+        localRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+    assertTrue("Should have set size before rendering frames; size wasn't set",
+        localRenderer.setSizeCalledBeforeRenderFrame());
+    assertTrue(localRenderer.getWidth() > 0);
+    assertTrue(localRenderer.getHeight() > 0);
+
+    pcClient.close();
+    waitForPeerConnectionClosed(WAIT_TIMEOUT);
+    Log.d(TAG, "testSizeIsSetBeforeStartingToRender Done.");
   }
 
   public void testLoopback() throws InterruptedException {
     Log.d(TAG, "testLoopback");
-    MockRenderer localRender = new MockRenderer(EXPECTED_VIDEO_FRAMES);
-    MockRenderer remoteRender = new MockRenderer(EXPECTED_VIDEO_FRAMES);
-    SignalingParameters signalingParameters = getTestSignalingParameters();
     loopback = true;
 
-    pcClient = new PeerConnectionClient();
-    pcClient.createPeerConnectionFactory(
-        getInstrumentation().getContext(), true, null, this);
-    pcClient.createPeerConnection(
-        localRender, remoteRender, signalingParameters, 1000);
-    pcClient.createOffer();
+    MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES);
+    MockRenderer remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES);
+
+    pcClient = createPeerConnectionClient(localRenderer, remoteRenderer);
 
     // Wait for local SDP, rename it to answer and set as remote SDP.
     assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
@@ -278,11 +303,11 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
 
     // Check that local video frames were rendered.
     assertTrue("Local video frames were not rendered.",
-        localRender.waitForFramesRendered(WAIT_TIMEOUT));
+        localRenderer.waitForFramesRendered(WAIT_TIMEOUT));
 
     // Check that remote video frames were rendered.
     assertTrue("Remote video frames were not rendered.",
-        remoteRender.waitForFramesRendered(WAIT_TIMEOUT));
+        remoteRenderer.waitForFramesRendered(WAIT_TIMEOUT));
 
     pcClient.close();
     assertTrue(waitForPeerConnectionClosed(WAIT_TIMEOUT));
