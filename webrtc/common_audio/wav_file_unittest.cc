@@ -15,7 +15,6 @@
 #include <limits>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/compile_assert.h"
 #include "webrtc/common_audio/wav_header.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -67,7 +66,7 @@ TEST(WavWriterTest, CPP) {
   };
   static const int kContentSize =
       kWavHeaderSize + kNumSamples * sizeof(int16_t) + sizeof(kMetadata);
-  COMPILE_ASSERT(sizeof(kExpectedContents) == kContentSize, content_size);
+  static_assert(sizeof(kExpectedContents) == kContentSize, "content size");
   EXPECT_EQ(size_t(kContentSize), test::GetFileSize(outfile));
   FILE* f = fopen(outfile.c_str(), "rb");
   ASSERT_TRUE(f);
@@ -123,7 +122,7 @@ TEST(WavWriterTest, C) {
   };
   static const int kContentSize =
       kWavHeaderSize + kNumSamples * sizeof(int16_t);
-  COMPILE_ASSERT(sizeof(kExpectedContents) == kContentSize, content_size);
+  static_assert(sizeof(kExpectedContents) == kContentSize, "content size");
   EXPECT_EQ(size_t(kContentSize), test::GetFileSize(outfile));
   FILE* f = fopen(outfile.c_str(), "rb");
   ASSERT_TRUE(f);

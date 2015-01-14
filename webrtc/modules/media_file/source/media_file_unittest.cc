@@ -9,7 +9,6 @@
  */
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/compile_assert.h"
 #include "webrtc/modules/media_file/interface/media_file.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -78,7 +77,7 @@ TEST_F(MediaFileTest, WriteWavFile) {
     'd', 'a', 't', 'a',
     0x40, 0x1, 0, 0,  // size of payload: 320
   };
-  COMPILE_ASSERT(sizeof(kExpectedHeader) == kHeaderSize, header_size);
+  static_assert(sizeof(kExpectedHeader) == kHeaderSize, "header size");
 
   EXPECT_EQ(kHeaderSize + kPayloadSize, webrtc::test::GetFileSize(outfile));
   FILE* f = fopen(outfile.c_str(), "rb");

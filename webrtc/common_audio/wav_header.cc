@@ -29,7 +29,7 @@ struct ChunkHeader {
   uint32_t ID;
   uint32_t Size;
 };
-COMPILE_ASSERT(sizeof(ChunkHeader) == 8, chunk_header_size);
+static_assert(sizeof(ChunkHeader) == 8, "ChunkHeader size");
 
 // We can't nest this definition in WavHeader, because VS2013 gives an error
 // on sizeof(WavHeader::fmt): "error C2070: 'unknown': illegal sizeof operand".
@@ -42,7 +42,7 @@ struct FmtSubchunk {
   uint16_t BlockAlign;
   uint16_t BitsPerSample;
 };
-COMPILE_ASSERT(sizeof(FmtSubchunk) == 24, fmt_subchunk_size);
+static_assert(sizeof(FmtSubchunk) == 24, "FmtSubchunk size");
 const uint32_t kFmtSubchunkSize = sizeof(FmtSubchunk) - sizeof(ChunkHeader);
 
 struct WavHeader {
@@ -55,7 +55,7 @@ struct WavHeader {
     ChunkHeader header;
   } data;
 };
-COMPILE_ASSERT(sizeof(WavHeader) == kWavHeaderSize, no_padding_in_header);
+static_assert(sizeof(WavHeader) == kWavHeaderSize, "no padding in header");
 
 }  // namespace
 

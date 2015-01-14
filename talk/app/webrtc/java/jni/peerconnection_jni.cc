@@ -78,7 +78,6 @@
 #include "third_party/libyuv/include/libyuv/video_common.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/compile_assert.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/ssladapter.h"
@@ -249,11 +248,11 @@ static JNIEnv* AttachCurrentThreadIfNeeded() {
 // because the alternative (of silently passing a 32-bit pointer to a vararg
 // function expecting a 64-bit param) picks up garbage in the high 32 bits.
 static jlong jlongFromPointer(void* ptr) {
-  COMPILE_ASSERT(sizeof(intptr_t) <= sizeof(jlong),
-                 Time_to_rethink_the_use_of_jlongs);
+  static_assert(sizeof(intptr_t) <= sizeof(jlong),
+                "Time to rethink the use of jlongs");
   // Going through intptr_t to be obvious about the definedness of the
   // conversion from pointer to integral type.  intptr_t to jlong is a standard
-  // widening by the COMPILE_ASSERT above.
+  // widening by the static_assert above.
   jlong ret = reinterpret_cast<intptr_t>(ptr);
   assert(reinterpret_cast<void*>(ret) == ptr);
   return ret;

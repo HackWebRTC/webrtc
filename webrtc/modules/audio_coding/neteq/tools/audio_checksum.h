@@ -13,7 +13,6 @@
 
 #include <string>
 
-#include "webrtc/base/compile_assert.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/md5digest.h"
 #include "webrtc/base/stringencode.h"

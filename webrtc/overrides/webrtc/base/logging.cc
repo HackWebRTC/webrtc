@@ -40,8 +40,8 @@ void (*g_logging_delegate_function)(const std::string&) = NULL;
 void (*g_extra_logging_init_function)(
     void (*logging_delegate_function)(const std::string&)) = NULL;
 #ifndef NDEBUG
-COMPILE_ASSERT(sizeof(base::subtle::Atomic32) == sizeof(base::PlatformThreadId),
-               atomic32_not_same_size_as_platformthreadid);
+static_assert(sizeof(base::subtle::Atomic32) == sizeof(base::PlatformThreadId),
+              "Atomic32 not same size as PlatformThreadId");
 base::subtle::Atomic32 g_init_logging_delegate_thread_id = 0;
 #endif
 

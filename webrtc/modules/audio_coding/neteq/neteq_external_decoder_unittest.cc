@@ -15,7 +15,6 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/compile_assert.h"
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_external_decoder_pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
@@ -360,11 +359,11 @@ TEST_F(LargeTimestampJumpTest, JumpLongerThanHalfRange) {
   static const uint32_t kStartTimestamp = 2880;
   static const uint32_t kJumpFromTimestamp = 7200;
   static const uint32_t kJumpToTimestamp = 2869342376;
-  COMPILE_ASSERT(kJumpFromTimestamp < kJumpToTimestamp,
-                 timestamp_jump_should_not_result_in_wrap);
-  COMPILE_ASSERT(
+  static_assert(kJumpFromTimestamp < kJumpToTimestamp,
+                "timestamp jump should not result in wrap");
+  static_assert(
       static_cast<uint32_t>(kJumpToTimestamp - kJumpFromTimestamp) > 0x7FFFFFFF,
-      jump_should_be_larger_than_half_range);
+      "jump should be larger than half range");
   // Replace the default RTP generator with one that jumps in timestamp.
   rtp_generator_.reset(new test::TimestampJumpRtpGenerator(samples_per_ms_,
                                                            kStartSeqeunceNumber,
@@ -384,11 +383,11 @@ TEST_F(LargeTimestampJumpTest, JumpLongerThanHalfRangeAndWrap) {
   static const uint32_t kStartTimestamp = 3221223116;
   static const uint32_t kJumpFromTimestamp = 3221223216;
   static const uint32_t kJumpToTimestamp = 1073744278;
-  COMPILE_ASSERT(kJumpToTimestamp < kJumpFromTimestamp,
-                 timestamp_jump_should_result_in_wrap);
-  COMPILE_ASSERT(
+  static_assert(kJumpToTimestamp < kJumpFromTimestamp,
+                "timestamp jump should result in wrap");
+  static_assert(
       static_cast<uint32_t>(kJumpToTimestamp - kJumpFromTimestamp) > 0x7FFFFFFF,
-      jump_should_be_larger_than_half_range);
+      "jump should be larger than half range");
   // Replace the default RTP generator with one that jumps in timestamp.
   rtp_generator_.reset(new test::TimestampJumpRtpGenerator(samples_per_ms_,
                                                            kStartSeqeunceNumber,
@@ -443,11 +442,11 @@ TEST_F(ShortTimestampJumpTest, JumpShorterThanHalfRange) {
   static const uint32_t kStartTimestamp = 4711;
   static const uint32_t kJumpFromTimestamp = 4811;
   static const uint32_t kJumpToTimestamp = 2147483747;
-  COMPILE_ASSERT(kJumpFromTimestamp < kJumpToTimestamp,
-                 timestamp_jump_should_not_result_in_wrap);
-  COMPILE_ASSERT(
+  static_assert(kJumpFromTimestamp < kJumpToTimestamp,
+                "timestamp jump should not result in wrap");
+  static_assert(
       static_cast<uint32_t>(kJumpToTimestamp - kJumpFromTimestamp) < 0x7FFFFFFF,
-      jump_should_be_smaller_than_half_range);
+      "jump should be smaller than half range");
   // Replace the default RTP generator with one that jumps in timestamp.
   rtp_generator_.reset(new test::TimestampJumpRtpGenerator(samples_per_ms_,
                                                            kStartSeqeunceNumber,
@@ -467,11 +466,11 @@ TEST_F(ShortTimestampJumpTest, JumpShorterThanHalfRangeAndWrap) {
   static const uint32_t kStartTimestamp = 3221227827;
   static const uint32_t kJumpFromTimestamp = 3221227927;
   static const uint32_t kJumpToTimestamp = 1073739567;
-  COMPILE_ASSERT(kJumpToTimestamp < kJumpFromTimestamp,
-                 timestamp_jump_should_result_in_wrap);
-  COMPILE_ASSERT(
+  static_assert(kJumpToTimestamp < kJumpFromTimestamp,
+                "timestamp jump should result in wrap");
+  static_assert(
       static_cast<uint32_t>(kJumpToTimestamp - kJumpFromTimestamp) < 0x7FFFFFFF,
-      jump_should_be_smaller_than_half_range);
+      "jump should be smaller than half range");
   // Replace the default RTP generator with one that jumps in timestamp.
   rtp_generator_.reset(new test::TimestampJumpRtpGenerator(samples_per_ms_,
                                                            kStartSeqeunceNumber,

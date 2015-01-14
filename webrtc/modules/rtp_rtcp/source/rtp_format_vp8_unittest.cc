@@ -14,14 +14,13 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/compile_assert.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp8.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp8_test_helper.h"
 #include "webrtc/typedefs.h"
 
-#define CHECK_ARRAY_SIZE(expected_size, array)                      \
-  COMPILE_ASSERT(expected_size == sizeof(array) / sizeof(array[0]), \
-                 check_array_size);
+#define CHECK_ARRAY_SIZE(expected_size, array)                     \
+  static_assert(expected_size == sizeof(array) / sizeof(array[0]), \
+                "check array size");
 
 namespace webrtc {
 namespace {

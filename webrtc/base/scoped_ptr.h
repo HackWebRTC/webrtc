@@ -99,7 +99,6 @@
 #include <algorithm>  // For std::swap().
 
 #include "webrtc/base/common.h"  // for ASSERT
-#include "webrtc/base/compile_assert.h"  // for COMPILE_ASSERT
 #include "webrtc/base/move.h"    // for RTC_MOVE_ONLY_TYPE_FOR_CPP_03
 #include "webrtc/base/template_util.h"    // for is_convertible, is_array
 
@@ -121,7 +120,7 @@ struct DefaultDeleter {
     //
     // Correct implementation should use SFINAE to disable this
     // constructor. However, since there are no other 1-argument constructors,
-    // using a COMPILE_ASSERT() based on is_convertible<> and requiring
+    // using a static_assert based on is_convertible<> and requiring
     // complete types is simpler and will cause compile failures for equivalent
     // misuses.
     //
@@ -130,8 +129,8 @@ struct DefaultDeleter {
     // cannot convert to T*.
     enum { T_must_be_complete = sizeof(T) };
     enum { U_must_be_complete = sizeof(U) };
-    COMPILE_ASSERT((rtc::is_convertible<U*, T*>::value),
-                   U_ptr_must_implicitly_convert_to_T_ptr);
+    static_assert(rtc::is_convertible<U*, T*>::value,
+                  "U* must implicitly convert to T*");
   }
   inline void operator()(T* ptr) const {
     enum { type_must_be_complete = sizeof(T) };
@@ -161,7 +160,7 @@ struct DefaultDeleter<T[]> {
 template <class T, int n>
 struct DefaultDeleter<T[n]> {
   // Never allow someone to declare something like scoped_ptr<int[10]>.
-  COMPILE_ASSERT(sizeof(T) == -1, do_not_use_array_with_size_as_type);
+  static_assert(sizeof(T) == -1, "do not use array with size as type");
 };
 
 // Function object which invokes 'free' on its parameter, which must be
@@ -337,7 +336,7 @@ class scoped_ptr {
   // implementation of scoped_ptr.
   template <typename U, typename V>
   scoped_ptr(scoped_ptr<U, V> other) : impl_(&other.impl_) {
-    COMPILE_ASSERT(!rtc::is_array<U>::value, U_cannot_be_an_array);
+    static_assert(!rtc::is_array<U>::value, "U cannot be an array");
   }
 
   // Constructor.  Move constructor for C++03 move emulation of this type.
@@ -355,7 +354,7 @@ class scoped_ptr {
   // scoped_ptr.
   template <typename U, typename V>
   scoped_ptr& operator=(scoped_ptr<U, V> rhs) {
-    COMPILE_ASSERT(!rtc::is_array<U>::value, U_cannot_be_an_array);
+    static_assert(!rtc::is_array<U>::value, "U cannot be an array");
     impl_.TakeState(&rhs.impl_);
     return *this;
   }

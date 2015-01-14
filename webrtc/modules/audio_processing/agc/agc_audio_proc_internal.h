@@ -11,8 +11,6 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_AGC_AUDIO_PROC_INTERNAL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_AGC_AUDIO_PROC_INTERNAL_H_
 
-#include "webrtc/base/compile_assert.h"
-
 namespace webrtc {
 
 // These values should match MATLAB counterparts for unit-tests to pass.
@@ -71,10 +69,12 @@ static const float kCoeffNumerator[kFilterOrder + 1] = {0.974827f,  -1.949650f,
 static const float kCoeffDenominator[kFilterOrder + 1] = {1.0f, -1.971999f,
     0.972457f};
 
-COMPILE_ASSERT(kFilterOrder + 1 == sizeof(kCoeffNumerator) /
-    sizeof(kCoeffNumerator[0]), numerator_coefficients_incorrect_size);
-COMPILE_ASSERT(kFilterOrder + 1 == sizeof(kCoeffDenominator) /
-    sizeof(kCoeffDenominator[0]), denominator_coefficients_incorrect_size);
+static_assert(kFilterOrder + 1 ==
+                  sizeof(kCoeffNumerator) / sizeof(kCoeffNumerator[0]),
+              "numerator coefficients incorrect size");
+static_assert(kFilterOrder + 1 ==
+                  sizeof(kCoeffDenominator) / sizeof(kCoeffDenominator[0]),
+              "denominator coefficients incorrect size");
 
 }  // namespace webrtc
 

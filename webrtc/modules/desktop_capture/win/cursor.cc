@@ -12,7 +12,6 @@
 
 #include <algorithm>
 
-#include "webrtc/base/compile_assert.h"
 #include "webrtc/modules/desktop_capture/win/scoped_gdi_object.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
@@ -78,8 +77,8 @@ void AddCursorOutline(int width, int height, uint32_t* data) {
 // Premultiplies RGB components of the pixel data in the given image by
 // the corresponding alpha components.
 void AlphaMul(uint32_t* data, int width, int height) {
-  COMPILE_ASSERT(sizeof(uint32_t) == kBytesPerPixel,
-                 size_of_uint32_should_be_the_bytes_per_pixel);
+  static_assert(sizeof(uint32_t) == kBytesPerPixel,
+                "size of uint32 should be the number of bytes per pixel");
 
   for (uint32_t* data_end = data + width * height; data != data_end; ++data) {
     RGBQUAD* from = reinterpret_cast<RGBQUAD*>(data);

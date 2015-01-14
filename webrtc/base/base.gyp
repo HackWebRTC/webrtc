@@ -41,7 +41,6 @@
       'sources': [
         'checks.cc',
         'checks.h',
-        'compile_assert.h',
         'exp_filter.cc',
         'exp_filter.h',
         'md5.cc',

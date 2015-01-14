@@ -12,7 +12,6 @@
 
 #include <assert.h>
 
-#include "webrtc/base/compile_assert.h"
 #include "webrtc/base/platform_file.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
@@ -55,7 +54,7 @@
 namespace webrtc {
 
 // Throughout webrtc, it's assumed that success is represented by zero.
-COMPILE_ASSERT(AudioProcessing::kNoError == 0, no_error_must_be_zero);
+static_assert(AudioProcessing::kNoError == 0, "kNoError must be zero");
 
 // This class has two main functionalities:
 //

@@ -13,7 +13,6 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "webrtc/base/compile_assert.h"
 #include "webrtc/modules/audio_processing/agc/agc_audio_proc_internal.h"
 #include "webrtc/modules/audio_processing/agc/pitch_internal.h"
 #include "webrtc/modules/audio_processing/agc/pole_zero_filter.h"
@@ -47,11 +46,11 @@ AgcAudioProc::AgcAudioProc()
       pre_filter_handle_(new PreFiltBankstr),
       high_pass_filter_(PoleZeroFilter::Create(
           kCoeffNumerator, kFilterOrder, kCoeffDenominator, kFilterOrder)) {
-  COMPILE_ASSERT(kNumPastSignalSamples + kNumSubframeSamples ==
-      sizeof(kLpcAnalWin) / sizeof(kLpcAnalWin[0]),
-      lpc_analysis_window_incorrect_size);
-  COMPILE_ASSERT(kLpcOrder + 1 == sizeof(kCorrWeight) / sizeof(kCorrWeight[0]),
-      correlation_weight_incorrect_size);
+  static_assert(kNumPastSignalSamples + kNumSubframeSamples ==
+                    sizeof(kLpcAnalWin) / sizeof(kLpcAnalWin[0]),
+                "lpc analysis window incorrect size");
+  static_assert(kLpcOrder + 1 == sizeof(kCorrWeight) / sizeof(kCorrWeight[0]),
+                "correlation weight incorrect size");
 
   // TODO(turajs): Are we doing too much in the constructor?
   float data[kDftSize];

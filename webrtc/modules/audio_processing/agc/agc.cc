@@ -15,7 +15,6 @@
 
 #include <algorithm>
 
-#include "webrtc/base/compile_assert.h"
 #include "webrtc/common_audio/resampler/include/resampler.h"
 #include "webrtc/modules/audio_processing/agc/agc_audio_proc.h"
 #include "webrtc/modules/audio_processing/agc/common.h"
@@ -99,8 +98,8 @@ int Agc::Process(const int16_t* audio, int length, int sample_rate_hz) {
     // Initialize to 0.5 which is a neutral value for combining probabilities,
     // in case the standalone-VAD is not enabled.
     double p_combined[] = {0.5, 0.5, 0.5, 0.5};
-    COMPILE_ASSERT(sizeof(p_combined) / sizeof(p_combined[0]) == kMaxNumFrames,
-                   combined_probability_incorrect_size);
+    static_assert(sizeof(p_combined) / sizeof(p_combined[0]) == kMaxNumFrames,
+                  "combined probability incorrect size");
     if (standalone_vad_enabled_) {
       if (standalone_vad_->GetActivity(p_combined, kMaxNumFrames) < 0)
         return -1;

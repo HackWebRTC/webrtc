@@ -13,7 +13,6 @@
 
 #include <string.h>
 
-#include "webrtc/base/compile_assert.h"
 #include "webrtc/system_wrappers/interface/file_wrapper.h"
 #include "webrtc/typedefs.h"
 
@@ -24,8 +23,8 @@ namespace webrtc {
 template <class Dest, class Source>
 inline Dest bit_cast(const Source& source) {
   // A compile error here means your Dest and Source have different sizes.
-  COMPILE_ASSERT(sizeof(Dest) == sizeof(Source),
-                 dest_and_source_have_different_sizes);
+  static_assert(sizeof(Dest) == sizeof(Source),
+                "Dest and Source have different sizes");
 
   Dest dest;
   memcpy(&dest, &source, sizeof(dest));

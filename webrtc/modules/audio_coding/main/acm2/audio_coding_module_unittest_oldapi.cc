@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/compile_assert.h"
 #include "webrtc/base/md5digest.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_receive_test_oldapi.h"
@@ -137,8 +136,8 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
     input_frame_.sample_rate_hz_ = kSampleRateHz;
     input_frame_.num_channels_ = 1;
     input_frame_.samples_per_channel_ = kSampleRateHz * 10 / 1000;  // 10 ms.
-    COMPILE_ASSERT(kSampleRateHz * 10 / 1000 <= AudioFrame::kMaxDataSizeSamples,
-                   audio_frame_too_small);
+    static_assert(kSampleRateHz * 10 / 1000 <= AudioFrame::kMaxDataSizeSamples,
+                  "audio frame too small");
     memset(input_frame_.data_,
            0,
            input_frame_.samples_per_channel_ * sizeof(input_frame_.data_[0]));
@@ -463,7 +462,7 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
   }
 
   virtual void RegisterCodec() {
-    COMPILE_ASSERT(kSampleRateHz == 16000, test_designed_for_isac_16khz);
+    static_assert(kSampleRateHz == 16000, "test designed for iSAC 16 kHz");
     AudioCodingModule::Codec("ISAC", &codec_, kSampleRateHz, 1);
     codec_.pltype = kPayloadType;
 
