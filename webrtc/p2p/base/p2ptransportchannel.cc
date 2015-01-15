@@ -516,7 +516,7 @@ void P2PTransportChannel::OnUnknownAddress(
         rtc::ToString<uint32>(rtc::ComputeCrc32(new_remote_candidate.id())));
 
     new_remote_candidate.set_priority(new_remote_candidate.GetPriority(
-        ICE_TYPE_PREFERENCE_SRFLX, port->Network()->preference(), 0));
+        ICE_TYPE_PREFERENCE_PRFLX, port->Network()->preference(), 0));
   }
 
   if (port->IceProtocol() == ICEPROTO_RFC5245) {
