@@ -70,7 +70,7 @@ class VideoSendStream {
 
       // Uninitialized VideoEncoder instance to be used for encoding. Will be
       // initialized from inside the VideoSendStream.
-      webrtc::VideoEncoder* encoder;
+      VideoEncoder* encoder;
     } encoder_settings;
 
     static const size_t kDefaultMaxPacketSize = 1500 - 40;  // TCP over IPv4.

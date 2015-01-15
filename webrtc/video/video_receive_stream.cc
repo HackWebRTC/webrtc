@@ -31,6 +31,74 @@
 #include "webrtc/video_receive_stream.h"
 
 namespace webrtc {
+std::string VideoReceiveStream::Decoder::ToString() const {
+  std::stringstream ss;
+  ss << "{decoder: " << (decoder != NULL ? "(VideoDecoder)" : "NULL");
+  ss << ", payload_type: " << payload_type;
+  ss << ", payload_name: " << payload_name;
+  ss << ", is_renderer: " << (is_renderer ? "yes" : "no");
+  ss << ", expected_delay_ms: " << expected_delay_ms;
+  ss << '}';
+
+  return ss.str();
+}
+
+std::string VideoReceiveStream::Config::ToString() const {
+  std::stringstream ss;
+  ss << "{decoders: [";
+  for (size_t i = 0; i < decoders.size(); ++i) {
+    ss << decoders[i].ToString();
+    if (i != decoders.size() - 1)
+      ss << ", ";
+  }
+  ss << ']';
+  ss << ", rtp: " << rtp.ToString();
+  ss << ", renderer: " << (renderer != NULL ? "(renderer)" : "NULL");
+  ss << ", render_delay_ms: " << render_delay_ms;
+  ss << ", audio_channel_id: " << audio_channel_id;
+  ss << ", pre_decode_callback: "
+     << (pre_decode_callback != NULL ? "(EncodedFrameObserver)" : "NULL");
+  ss << ", pre_render_callback: "
+     << (pre_render_callback != NULL ? "(I420FrameCallback)" : "NULL");
+  ss << ", target_delay_ms: " << target_delay_ms;
+  ss << '}';
+
+  return ss.str();
+}
+
+std::string VideoReceiveStream::Config::Rtp::ToString() const {
+  std::stringstream ss;
+  ss << "{remote_ssrc: " << remote_ssrc;
+  ss << ", local_ssrc: " << local_ssrc;
+  ss << ", rtcp_mode: " << (rtcp_mode == newapi::kRtcpCompound
+                                ? "kRtcpCompound"
+                                : "kRtcpReducedSize");
+  ss << ", rtcp_xr: ";
+  ss << "{receiver_reference_time_report: "
+     << (rtcp_xr.receiver_reference_time_report ? "on" : "off");
+  ss << '}';
+  ss << ", remb: " << (remb ? "on" : "off");
+  ss << ", nack: {rtp_history_ms: " << nack.rtp_history_ms << '}';
+  ss << ", fec: " << fec.ToString();
+  ss << ", rtx: {";
+  for (auto& kv : rtx) {
+    ss << kv.first << " -> ";
+    ss << "{ssrc: " << kv.second.ssrc;
+    ss << ", payload_type: " << kv.second.payload_type;
+    ss << '}';
+  }
+  ss << '}';
+  ss << ", extensions: [";
+  for (size_t i = 0; i < extensions.size(); ++i) {
+    ss << extensions[i].ToString();
+    if (i != extensions.size() - 1)
+      ss << ", ";
+  }
+  ss << ']';
+  ss << '}';
+  return ss.str();
+}
+
 namespace internal {
 namespace {
 VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
@@ -173,11 +241,8 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   for (size_t i = 0; i < config_.decoders.size(); ++i) {
     const Decoder& decoder = config_.decoders[i];
     if (external_codec_->RegisterExternalReceiveCodec(
-            channel_,
-            decoder.payload_type,
-            decoder.decoder,
-            decoder.renderer,
-            decoder.expected_delay_ms) != 0) {
+            channel_, decoder.payload_type, decoder.decoder,
+            decoder.is_renderer, decoder.expected_delay_ms) != 0) {
       // TODO(pbos): Abort gracefully? Can this be a runtime error?
       abort();
     }

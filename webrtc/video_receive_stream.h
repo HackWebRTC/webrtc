@@ -39,8 +39,9 @@ class VideoReceiveStream {
     Decoder()
         : decoder(NULL),
           payload_type(0),
-          renderer(false),
+          is_renderer(false),
           expected_delay_ms(0) {}
+    std::string ToString() const;
 
     // The actual decoder instance.
     VideoDecoder* decoder;
@@ -54,7 +55,7 @@ class VideoReceiveStream {
     std::string payload_name;
 
     // 'true' if the decoder handles rendering as well.
-    bool renderer;
+    bool is_renderer;
 
     // The expected delay for decoding and rendering, i.e. the frame will be
     // delivered this many milliseconds, if possible, earlier than the ideal
@@ -89,6 +90,7 @@ class VideoReceiveStream {
           pre_decode_callback(NULL),
           pre_render_callback(NULL),
           target_delay_ms(0) {}
+    std::string ToString() const;
 
     // Decoders for every payload that we can receive.
     std::vector<Decoder> decoders;
@@ -100,6 +102,7 @@ class VideoReceiveStream {
             local_ssrc(0),
             rtcp_mode(newapi::kRtcpReducedSize),
             remb(true) {}
+      std::string ToString() const;
 
       // Synchronization source (stream identifier) to be received.
       uint32_t remote_ssrc;

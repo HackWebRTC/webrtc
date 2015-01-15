@@ -33,8 +33,7 @@ VideoSendStream::Config::EncoderSettings::ToString() const {
   std::stringstream ss;
   ss << "{payload_name: " << payload_name;
   ss << ", payload_type: " << payload_type;
-  if (encoder != NULL)
-    ss << ", encoder: " << (encoder != NULL ? "(encoder)" : "NULL");
+  ss << ", encoder: " << (encoder != NULL ? "(VideoEncoder)" : "NULL");
   ss << '}';
   return ss.str();
 }
@@ -42,13 +41,13 @@ VideoSendStream::Config::EncoderSettings::ToString() const {
 std::string VideoSendStream::Config::Rtp::Rtx::ToString()
     const {
   std::stringstream ss;
-  ss << "{ssrcs: {";
+  ss << "{ssrcs: [";
   for (size_t i = 0; i < ssrcs.size(); ++i) {
     ss << ssrcs[i];
     if (i != ssrcs.size() - 1)
-      ss << "}, {";
+      ss << ", ";
   }
-  ss << '}';
+  ss << ']';
 
   ss << ", payload_type: " << payload_type;
   ss << '}';
@@ -57,32 +56,26 @@ std::string VideoSendStream::Config::Rtp::Rtx::ToString()
 
 std::string VideoSendStream::Config::Rtp::ToString() const {
   std::stringstream ss;
-  ss << "{ssrcs: {";
+  ss << "{ssrcs: [";
   for (size_t i = 0; i < ssrcs.size(); ++i) {
     ss << ssrcs[i];
     if (i != ssrcs.size() - 1)
-      ss << "}, {";
+      ss << ", ";
   }
-  ss << '}';
-
+  ss << ']';
   ss << ", max_packet_size: " << max_packet_size;
-
-  ss << ", extensions: {";
+  ss << ", extensions: [";
   for (size_t i = 0; i < extensions.size(); ++i) {
     ss << extensions[i].ToString();
     if (i != extensions.size() - 1)
-      ss << "}, {";
+      ss << ", ";
   }
-  ss << '}';
+  ss << ']';
 
-  if (nack.rtp_history_ms != 0)
-    ss << ", nack.rtp_history_ms: " << nack.rtp_history_ms;
-  if (fec.ulpfec_payload_type != -1 || fec.red_payload_type != -1)
-    ss << ", fec: " << fec.ToString();
-  if (rtx.payload_type != 0 || !rtx.ssrcs.empty())
-    ss << ", rtx: " << rtx.ToString();
-  if (c_name != "")
-    ss << ", c_name: " << c_name;
+  ss << ", nack: {rtp_history_ms: " << nack.rtp_history_ms << '}';
+  ss << ", fec: " << fec.ToString();
+  ss << ", rtx: " << rtx.ToString();
+  ss << ", c_name: " << c_name;
   ss << '}';
   return ss.str();
 }
@@ -91,17 +84,16 @@ std::string VideoSendStream::Config::ToString() const {
   std::stringstream ss;
   ss << "{encoder_settings: " << encoder_settings.ToString();
   ss << ", rtp: " << rtp.ToString();
-  if (pre_encode_callback != NULL)
-    ss << ", (pre_encode_callback)";
-  if (post_encode_callback != NULL)
-    ss << ", (post_encode_callback)";
-  if (local_renderer != NULL) {
-    ss << ", (local_renderer, render_delay_ms: " << render_delay_ms << ")";
-  }
-  if (target_delay_ms > 0)
-    ss << ", target_delay_ms: " << target_delay_ms;
-  if (suspend_below_min_bitrate)
-    ss << ", suspend_below_min_bitrate: on";
+  ss << ", pre_encode_callback: "
+     << (pre_encode_callback != NULL ? "(I420FrameCallback)" : "NULL");
+  ss << ", post_encode_callback: "
+     << (post_encode_callback != NULL ? "(EncodedFrameObserver)" : "NULL");
+  ss << "local_renderer: " << (local_renderer != NULL ? "(VideoRenderer)"
+                                                      : "NULL");
+  ss << ", render_delay_ms: " << render_delay_ms;
+  ss << ", target_delay_ms: " << target_delay_ms;
+  ss << ", suspend_below_min_bitrate: " << (suspend_below_min_bitrate ? "on"
+                                                                      : "off");
   ss << '}';
   return ss.str();
 }

@@ -22,6 +22,7 @@
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -219,6 +220,7 @@ PacketReceiver* Call::Receiver() { return this; }
 VideoSendStream* Call::CreateVideoSendStream(
     const VideoSendStream::Config& config,
     const VideoEncoderConfig& encoder_config) {
+  LOG(LS_INFO) << "CreateVideoSendStream: " << config.ToString();
   assert(config.rtp.ssrcs.size() > 0);
 
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
@@ -274,6 +276,7 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
 
 VideoReceiveStream* Call::CreateVideoReceiveStream(
     const VideoReceiveStream::Config& config) {
+  LOG(LS_INFO) << "CreateVideoReceiveStream: " << config.ToString();
   VideoReceiveStream* receive_stream =
       new VideoReceiveStream(video_engine_,
                              config,
