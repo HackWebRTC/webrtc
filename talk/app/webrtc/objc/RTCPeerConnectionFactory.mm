@@ -82,9 +82,11 @@
 - (id)init {
   if ((self = [super init])) {
     _signalingThread.reset(new rtc::Thread());
-    NSAssert(_signalingThread->Start(), @"Failed to start signaling thread.");
+    BOOL result = _signalingThread->Start();
+    NSAssert(result, @"Failed to start signaling thread.");
     _workerThread.reset(new rtc::Thread());
-    NSAssert(_workerThread->Start(), @"Failed to start worker thread.");
+    result = _workerThread->Start();
+    NSAssert(result, @"Failed to start worker thread.");
     _nativeFactory = webrtc::CreatePeerConnectionFactory(
         _signalingThread.get(), _workerThread.get(), NULL, NULL, NULL);
     NSAssert(_nativeFactory, @"Failed to initialize PeerConnectionFactory!");

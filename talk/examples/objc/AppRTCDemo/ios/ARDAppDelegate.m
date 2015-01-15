@@ -25,16 +25,35 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import <UIKit/UIKit.h>
+#import "ARDAppDelegate.h"
 
-// The view controller that is displayed when AppRTCDemo is loaded.
-@interface APPRTCViewController : UIViewController<UITextFieldDelegate>
+#import "ARDMainViewController.h"
+#import "RTCPeerConnectionFactory.h"
 
-@property(weak, nonatomic) IBOutlet UITextField* roomInput;
-@property(weak, nonatomic) IBOutlet UITextView* instructionsView;
-@property(weak, nonatomic) IBOutlet UITextView* logView;
-@property(weak, nonatomic) IBOutlet UIView* blackView;
+@implementation ARDAppDelegate {
+  UIWindow *_window;
+}
 
-- (void)applicationWillResignActive:(UIApplication*)application;
+#pragma mark - UIApplicationDelegate methods
+
+- (BOOL)application:(UIApplication *)application
+    didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+  [RTCPeerConnectionFactory initializeSSL];
+  _window =  [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+  [_window makeKeyAndVisible];
+  ARDMainViewController *viewController = [[ARDMainViewController alloc] init];
+  _window.rootViewController = viewController;
+  return YES;
+}
+
+- (void)applicationWillResignActive:(UIApplication *)application {
+  ARDMainViewController *viewController =
+      (ARDMainViewController *)_window.rootViewController;
+  [viewController applicationWillResignActive:application];
+}
+
+- (void)applicationWillTerminate:(UIApplication *)application {
+  [RTCPeerConnectionFactory deinitializeSSL];
+}
 
 @end

@@ -58,5 +58,13 @@
         <array>
                 <string>UIInterfaceOrientationPortrait</string>
         </array>
+        <key>UIAppFonts</key>
+        <array>
+                <string>Roboto-Regular.ttf</string>
+        </array>
+        <key>UIBackgroundModes</key>
+        <array>
+                <string>voip</string>
+        </array>
 </dict>
 </plist>

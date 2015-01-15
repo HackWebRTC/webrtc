@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2015, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,11 +27,23 @@
 
 #import <UIKit/UIKit.h>
 
-#import "ARDAppDelegate.h"
+#import "RTCEAGLVideoView.h"
 
-int main(int argc, char* argv[]) {
-  @autoreleasepool {
-    return UIApplicationMain(
-        argc, argv, nil, NSStringFromClass([ARDAppDelegate class]));
-  }
-}
+@class ARDVideoCallView;
+@protocol ARDVideoCallViewDelegate <NSObject>
+
+// Called when the hangup button is pressed.
+- (void)videoCallViewDidHangup:(ARDVideoCallView *)view;
+
+@end
+
+// Video call view that shows local and remote video, provides a label to
+// display status, and also a hangup button.
+@interface ARDVideoCallView : UIView
+
+@property(nonatomic, readonly) UILabel *statusLabel;
+@property(nonatomic, readonly) RTCEAGLVideoView *localVideoView;
+@property(nonatomic, readonly) RTCEAGLVideoView *remoteVideoView;
+@property(nonatomic, weak) id<ARDVideoCallViewDelegate> delegate;
+
+@end

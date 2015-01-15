@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2015, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,11 +27,18 @@
 
 #import <UIKit/UIKit.h>
 
-#import "ARDAppDelegate.h"
+@class ARDMainView;
 
-int main(int argc, char* argv[]) {
-  @autoreleasepool {
-    return UIApplicationMain(
-        argc, argv, nil, NSStringFromClass([ARDAppDelegate class]));
-  }
-}
+@protocol ARDMainViewDelegate <NSObject>
+
+- (void)mainView:(ARDMainView *)mainView didInputRoom:(NSString *)room;
+
+@end
+
+// The main view of AppRTCDemo. It contains an input field for entering a room
+// name on apprtc to connect to.
+@interface ARDMainView : UIView
+
+@property(nonatomic, weak) id<ARDMainViewDelegate> delegate;
+
+@end

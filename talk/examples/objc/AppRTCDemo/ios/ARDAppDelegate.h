@@ -27,11 +27,8 @@
 
 #import <UIKit/UIKit.h>
 
-#import "ARDAppDelegate.h"
-
-int main(int argc, char* argv[]) {
-  @autoreleasepool {
-    return UIApplicationMain(
-        argc, argv, nil, NSStringFromClass([ARDAppDelegate class]));
-  }
-}
+// The main application class of the AppRTCDemo iOS app demonstrating
+// interoperability between the Objective C implementation of PeerConnection
+// and the apprtc.appspot.com demo webapp.
+@interface ARDAppDelegate : NSObject <UIApplicationDelegate>
+@end

@@ -47,6 +47,12 @@
   return self;
 }
 
+- (void)dealloc {
+  for (RTCVideoRendererAdapter *adapter in _adapters) {
+    self.nativeVideoTrack->RemoveRenderer(adapter.nativeVideoRenderer);
+  }
+}
+
 - (void)addRenderer:(id<RTCVideoRenderer>)renderer {
   // Make sure we don't have this renderer yet.
   for (RTCVideoRendererAdapter* adapter in _adapters) {

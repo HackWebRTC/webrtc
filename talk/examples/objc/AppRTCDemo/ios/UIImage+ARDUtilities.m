@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2015, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,13 +25,24 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import <UIKit/UIKit.h>
+#import "UIImage+ARDUtilities.h"
 
-#import "ARDAppDelegate.h"
+@implementation UIImage (ARDUtilities)
 
-int main(int argc, char* argv[]) {
-  @autoreleasepool {
-    return UIApplicationMain(
-        argc, argv, nil, NSStringFromClass([ARDAppDelegate class]));
++ (UIImage *)imageForName:(NSString *)name color:(UIColor *)color {
+  UIImage *image = [UIImage imageNamed:name];
+  if (!image) {
+    return nil;
   }
+  UIGraphicsBeginImageContextWithOptions(image.size, NO, 0.0f);
+  [color setFill];
+  CGRect bounds = CGRectMake(0, 0, image.size.width, image.size.height);
+  UIRectFill(bounds);
+  [image drawInRect:bounds blendMode:kCGBlendModeDestinationIn alpha:1.0f];
+  UIImage *coloredImage = UIGraphicsGetImageFromCurrentImageContext();
+  UIGraphicsEndImageContext();
+
+  return coloredImage;
 }
+
+@end
