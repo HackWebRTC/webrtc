@@ -24,6 +24,7 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/interface/metrics.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/timestamp_extrapolator.h"
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -62,10 +63,24 @@ ViEReceiver::ViEReceiver(const int32_t channel_id,
 }
 
 ViEReceiver::~ViEReceiver() {
+  UpdateHistograms();
   if (rtp_dump_) {
     rtp_dump_->Stop();
     RtpDump::DestroyRtpDump(rtp_dump_);
     rtp_dump_ = NULL;
+  }
+}
+
+void ViEReceiver::UpdateHistograms() {
+  FecPacketCounter counter = fec_receiver_->GetPacketCounter();
+  if (counter.num_packets > 0) {
+    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.ReceivedFecPacketsInPercent",
+        counter.num_fec_packets * 100 / counter.num_packets);
+  }
+  if (counter.num_fec_packets > 0) {
+    RTC_HISTOGRAM_PERCENTAGE(
+        "WebRTC.Video.RecoveredMediaPacketsInPercentOfFec",
+            counter.num_recovered_packets * 100 / counter.num_fec_packets);
   }
 }
 

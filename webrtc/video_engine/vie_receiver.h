@@ -104,6 +104,7 @@ class ViEReceiver : public RtpData {
   int InsertRTCPPacket(const uint8_t* rtcp_packet, size_t rtcp_packet_length);
   bool IsPacketInOrder(const RTPHeader& header) const;
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
+  void UpdateHistograms();
 
   scoped_ptr<CriticalSectionWrapper> receive_cs_;
   Clock* clock_;

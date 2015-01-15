@@ -16,6 +16,17 @@
 
 namespace webrtc {
 
+struct FecPacketCounter {
+  FecPacketCounter()
+      : num_packets(0),
+        num_fec_packets(0),
+        num_recovered_packets(0) {}
+
+  size_t num_packets;            // Number of received packets.
+  size_t num_fec_packets;        // Number of received FEC packets.
+  size_t num_recovered_packets;  // Number of recovered media packets using FEC.
+};
+
 class FecReceiver {
  public:
   static FecReceiver* Create(RtpData* callback);
@@ -28,6 +39,8 @@ class FecReceiver {
                                        uint8_t ulpfec_payload_type) = 0;
 
   virtual int32_t ProcessReceivedFec() = 0;
+
+  virtual FecPacketCounter GetPacketCounter() const = 0;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_INTERFACE_FEC_RECEIVER_H_
