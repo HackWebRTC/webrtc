@@ -129,8 +129,6 @@
         'utility/delay_estimator_wrapper.h',
         'utility/fft4g.c',
         'utility/fft4g.h',
-        'utility/ring_buffer.c',
-        'utility/ring_buffer.h',
         'voice_detection_impl.cc',
         'voice_detection_impl.h',
       ],

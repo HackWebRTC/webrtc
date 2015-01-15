@@ -8,14 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// TODO(ajm): Make this a comprehensive test.
-
-extern "C" {
-#include "webrtc/modules/audio_processing/utility/ring_buffer.h"
-}
+#include "webrtc/common_audio/ring_buffer.h"
 
 #include <stdlib.h>
 #include <time.h>
+#include <algorithm>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -65,7 +62,7 @@ static void RandomStressTest(int** data_ptr) {
     scoped_ptr<int[]> read_data(new int[buffer_size]);
     scoped_ring_buffer buffer(WebRtc_CreateBuffer(buffer_size, sizeof(int)));
     ASSERT_TRUE(buffer.get() != NULL);
-    ASSERT_EQ(0, WebRtc_InitBuffer(buffer.get()));
+    WebRtc_InitBuffer(buffer.get());
     int buffer_consumed = 0;
     int write_element = 0;
     int read_element = 0;
@@ -123,7 +120,7 @@ TEST(RingBufferTest, PassingNulltoReadBufferForcesMemcpy) {
 
   scoped_ring_buffer buffer(WebRtc_CreateBuffer(kDataSize, sizeof(int)));
   ASSERT_TRUE(buffer.get() != NULL);
-  ASSERT_EQ(0, WebRtc_InitBuffer(buffer.get()));
+  WebRtc_InitBuffer(buffer.get());
 
   SetIncrementingData(write_data, kDataSize, 0);
   EXPECT_EQ(kDataSize, WebRtc_WriteBuffer(buffer.get(), write_data, kDataSize));

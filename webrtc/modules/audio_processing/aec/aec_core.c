@@ -24,12 +24,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "webrtc/common_audio/ring_buffer.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core_internal.h"
 #include "webrtc/modules/audio_processing/aec/aec_rdft.h"
 #include "webrtc/modules/audio_processing/utility/delay_estimator_wrapper.h"
-#include "webrtc/modules/audio_processing/utility/ring_buffer.h"
 #include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
 #include "webrtc/typedefs.h"
 
@@ -1452,33 +1452,16 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
     aec->normal_error_threshold = 1.5e-6f;
   }
 
-  if (WebRtc_InitBuffer(aec->nearFrBuf) == -1) {
-    return -1;
-  }
-
-  if (WebRtc_InitBuffer(aec->outFrBuf) == -1) {
-    return -1;
-  }
-
-  if (WebRtc_InitBuffer(aec->nearFrBufH) == -1) {
-    return -1;
-  }
-
-  if (WebRtc_InitBuffer(aec->outFrBufH) == -1) {
-    return -1;
-  }
+  WebRtc_InitBuffer(aec->nearFrBuf);
+  WebRtc_InitBuffer(aec->outFrBuf);
+  WebRtc_InitBuffer(aec->nearFrBufH);
+  WebRtc_InitBuffer(aec->outFrBufH);
 
   // Initialize far-end buffers.
-  if (WebRtc_InitBuffer(aec->far_buf) == -1) {
-    return -1;
-  }
-  if (WebRtc_InitBuffer(aec->far_buf_windowed) == -1) {
-    return -1;
-  }
+  WebRtc_InitBuffer(aec->far_buf);
+  WebRtc_InitBuffer(aec->far_buf_windowed);
 #ifdef WEBRTC_AEC_DEBUG_DUMP
-  if (WebRtc_InitBuffer(aec->far_time_buf) == -1) {
-    return -1;
-  }
+  WebRtc_InitBuffer(aec->far_time_buf);
   {
     int process_rate = sampFreq > 16000 ? 16000 : sampFreq;
     ReopenWav(&aec->farFile, "aec_far",

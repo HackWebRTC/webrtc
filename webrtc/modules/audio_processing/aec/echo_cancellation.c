@@ -20,11 +20,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "webrtc/common_audio/ring_buffer.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 #include "webrtc/modules/audio_processing/aec/aec_resampler.h"
 #include "webrtc/modules/audio_processing/aec/echo_cancellation_internal.h"
-#include "webrtc/modules/audio_processing/utility/ring_buffer.h"
 #include "webrtc/typedefs.h"
 
 // Measured delays [ms]
@@ -222,10 +222,7 @@ int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq) {
     return -1;
   }
 
-  if (WebRtc_InitBuffer(aecpc->far_pre_buf) == -1) {
-    aecpc->lastError = AEC_UNSPECIFIED_ERROR;
-    return -1;
-  }
+  WebRtc_InitBuffer(aecpc->far_pre_buf);
   WebRtc_MoveReadPtr(aecpc->far_pre_buf, -PART_LEN);  // Start overlap.
 
   aecpc->initFlag = initCheck;  // indicates that initialization has been done

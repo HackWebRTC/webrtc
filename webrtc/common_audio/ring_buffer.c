@@ -11,7 +11,7 @@
 // A ring buffer to hold arbitrary data. Provides no thread safety. Unless
 // otherwise specified, functions return 0 on success and -1 on error.
 
-#include "webrtc/modules/audio_processing/utility/ring_buffer.h"
+#include "webrtc/common_audio/ring_buffer.h"
 
 #include <stddef.h>  // size_t
 #include <stdlib.h>
@@ -85,23 +85,18 @@ RingBuffer* WebRtc_CreateBuffer(size_t element_count, size_t element_size) {
 
   self->element_count = element_count;
   self->element_size = element_size;
+  WebRtc_InitBuffer(self);
 
   return self;
 }
 
-int WebRtc_InitBuffer(RingBuffer* self) {
-  if (!self) {
-    return -1;
-  }
-
+void WebRtc_InitBuffer(RingBuffer* self) {
   self->read_pos = 0;
   self->write_pos = 0;
   self->rw_wrap = SAME_WRAP;
 
   // Initialize buffer to zeros
   memset(self->data, 0, self->element_count * self->element_size);
-
-  return 0;
 }
 
 void WebRtc_FreeBuffer(void* handle) {
