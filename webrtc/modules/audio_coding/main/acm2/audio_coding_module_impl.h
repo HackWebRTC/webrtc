@@ -58,17 +58,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // Can be called multiple times for Codec, CNG, RED.
   virtual int RegisterSendCodec(const CodecInst& send_codec) OVERRIDE;
 
-  // Register Secondary codec for dual-streaming. Dual-streaming is activated
-  // right after the secondary codec is registered.
-  virtual int RegisterSecondarySendCodec(const CodecInst& send_codec) OVERRIDE;
-
-  // Unregister the secondary codec. Dual-streaming is deactivated right after
-  // deregistering secondary codec.
-  virtual void UnregisterSecondarySendCodec() OVERRIDE;
-
-  // Get the secondary codec.
-  virtual int SecondarySendCodec(CodecInst* secondary_codec) const OVERRIDE;
-
   // Get current send codec.
   virtual int SendCodec(CodecInst* current_codec) const OVERRIDE;
 
@@ -266,14 +255,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   int SetVADSafe(bool enable_dtx, bool enable_vad, ACMVADMode mode)
       EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
-  // Process buffered audio when dual-streaming is not enabled (When RED is
-  // enabled still this function is used.)
-  int ProcessSingleStream();
-
-  // Process buffered audio when dual-streaming is enabled, i.e. secondary send
-  // codec is registered.
-  int ProcessDualStream();
-
   // Preprocessing of input audio, including resampling and down-mixing if
   // required, before pushing audio into encoder's buffer.
   //
@@ -292,13 +273,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // Change required states after starting to receive the codec corresponding
   // to |index|.
   int UpdateUponReceivingCodec(int index);
-
-  int EncodeFragmentation(int fragmentation_index,
-                          int payload_type,
-                          uint32_t current_timestamp,
-                          ACMGenericCodec* encoder,
-                          uint8_t* stream)
-      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   void ResetFragmentation(int vector_size)
       EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
@@ -348,7 +322,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // TODO(turajs): |red_buffer_| is allocated in constructor, why having them
   // as pointers and not an array. If concerned about the memory, then make a
   // set-up function to allocate them only when they are going to be used, i.e.
-  // RED or Dual-streaming is enabled.
+  // RED is enabled.
   uint8_t* red_buffer_ GUARDED_BY(acm_crit_sect_);
 
   // TODO(turajs): we actually don't need |fragmentation_| as a member variable.
@@ -374,8 +348,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   bool receiver_initialized_ GUARDED_BY(acm_crit_sect_);
 
   AudioFrame preprocess_frame_ GUARDED_BY(acm_crit_sect_);
-  CodecInst secondary_send_codec_inst_ GUARDED_BY(acm_crit_sect_);
-  scoped_ptr<ACMGenericCodec> secondary_encoder_ GUARDED_BY(acm_crit_sect_);
   uint32_t codec_timestamp_ GUARDED_BY(acm_crit_sect_);
   bool first_10ms_data_ GUARDED_BY(acm_crit_sect_);
 

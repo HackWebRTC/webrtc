@@ -388,7 +388,6 @@
             'audio_coding/main/test/Tester.cc',
             'audio_coding/main/test/TimedTrace.cc',
             'audio_coding/main/test/TwoWayCommunication.cc',
-            'audio_coding/main/test/dual_stream_unittest.cc',
             'audio_coding/main/test/iSACTest.cc',
             'audio_coding/main/test/initial_delay_unittest.cc',
             'audio_coding/main/test/opus_test.cc',

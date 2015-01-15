@@ -245,33 +245,6 @@ class AudioCodingModule: public Module {
   virtual int32_t RegisterSendCodec(const CodecInst& send_codec) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  // int RegisterSecondarySendCodec()
-  // Register a secondary encoder to enable dual-streaming. If a secondary
-  // codec is already registered, it will be removed before the new one is
-  // registered.
-  //
-  // Note: The secondary encoder will be unregistered if a primary codec
-  // is set with a sampling rate which does not match that of the existing
-  // secondary codec.
-  //
-  // Input:
-  //   -send_codec         : Parameters of the codec to be registered, c.f.
-  //                         common_types.h for the definition of
-  //                         CodecInst.
-  //
-  // Return value:
-  //   -1 if failed to register,
-  //    0 if succeeded.
-  //
-  virtual int RegisterSecondarySendCodec(const CodecInst& send_codec) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // void UnregisterSecondarySendCodec()
-  // Unregister the secondary encoder to disable dual-streaming.
-  //
-  virtual void UnregisterSecondarySendCodec() = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   // int32_t SendCodec()
   // Get parameters for the codec currently registered as send codec.
   //
@@ -283,19 +256,6 @@ class AudioCodingModule: public Module {
   //    0 if succeeded.
   //
   virtual int32_t SendCodec(CodecInst* current_send_codec) const = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int SecondarySendCodec()
-  // Get the codec parameters for the current secondary send codec.
-  //
-  // Output:
-  //   -secondary_codec          : parameters of the secondary send codec.
-  //
-  // Return value:
-  //   -1 if failed to get send codec,
-  //    0 if succeeded.
-  //
-  virtual int SecondarySendCodec(CodecInst* secondary_codec) const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t SendFrequency()
