@@ -18,6 +18,7 @@
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_processing/beamformer/mock_beamformer.h"
 #include "webrtc/modules/audio_processing/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
@@ -276,6 +277,35 @@ void OpenFileAndReadMessage(const std::string filename,
   ASSERT_TRUE(file != NULL);
   ReadMessageFromFile(file, msg);
   fclose(file);
+}
+
+// Reads a 10 ms chunk of int16 interleaved audio from the given (assumed
+// stereo) file, converts to deinterleaved float (optionally downmixing) and
+// returns the result in |cb|. Returns false if the file ended (or on error) and
+// true otherwise.
+//
+// |int_data| and |float_data| are just temporary space that must be
+// sufficiently large to hold the 10 ms chunk.
+bool ReadChunk(FILE* file, int16_t* int_data, float* float_data,
+               ChannelBuffer<float>* cb) {
+  // The files always contain stereo audio.
+  size_t frame_size = cb->samples_per_channel() * 2;
+  size_t read_count = fread(int_data, sizeof(int16_t), frame_size, file);
+  if (read_count != frame_size) {
+    // Check that the file really ended.
+    assert(feof(file));
+    return false;  // This is expected.
+  }
+
+  S16ToFloat(int_data, frame_size, float_data);
+  if (cb->num_channels() == 1) {
+    MixStereoToMono(float_data, cb->data(), cb->samples_per_channel());
+  } else {
+    Deinterleave(float_data, cb->samples_per_channel(), 2,
+                 cb->channels());
+  }
+
+  return true;
 }
 
 class ApmTest : public ::testing::Test {
@@ -1164,6 +1194,87 @@ TEST_F(ApmTest, ManualVolumeChangeIsPossible) {
   }
 }
 
+#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
+TEST_F(ApmTest, AgcOnlyAdaptsWhenTargetSignalIsPresent) {
+  const int kSampleRateHz = 16000;
+  const int kSamplesPerChannel =
+      AudioProcessing::kChunkSizeMs * kSampleRateHz / 1000;
+  const int kNumInputChannels = 2;
+  const int kNumOutputChannels = 1;
+  const int kNumChunks = 700;
+  const float kScaleFactor = 0.25f;
+  Config config;
+  std::vector<webrtc::Point> geometry;
+  geometry.push_back(webrtc::Point(0.f, 0.f, 0.f));
+  geometry.push_back(webrtc::Point(0.05f, 0.f, 0.f));
+  config.Set<Beamforming>(new Beamforming(true, geometry));
+  testing::NiceMock<MockBeamformer>* beamformer =
+      new testing::NiceMock<MockBeamformer>(geometry);
+  scoped_ptr<AudioProcessing> apm(AudioProcessing::Create(config, beamformer));
+  EXPECT_EQ(kNoErr, apm->gain_control()->Enable(true));
+  ChannelBuffer<float> src_buf(kSamplesPerChannel, kNumInputChannels);
+  ChannelBuffer<float> dest_buf(kSamplesPerChannel, kNumOutputChannels);
+  const int max_length = kSamplesPerChannel * std::max(kNumInputChannels,
+                                                       kNumOutputChannels);
+  scoped_ptr<int16_t[]> int_data(new int16_t[max_length]);
+  scoped_ptr<float[]> float_data(new float[max_length]);
+  std::string filename = ResourceFilePath("far", kSampleRateHz);
+  FILE* far_file = fopen(filename.c_str(), "rb");
+  ASSERT_TRUE(far_file != NULL) << "Could not open file " << filename << "\n";
+  const int kDefaultVolume = apm->gain_control()->stream_analog_level();
+  const int kDefaultCompressionGain =
+      apm->gain_control()->compression_gain_db();
+  bool is_target = false;
+  EXPECT_CALL(*beamformer, is_target_present())
+      .WillRepeatedly(testing::ReturnPointee(&is_target));
+  for (int i = 0; i < kNumChunks; ++i) {
+    ASSERT_TRUE(ReadChunk(far_file,
+                          int_data.get(),
+                          float_data.get(),
+                          &src_buf));
+    for (int j = 0; j < kNumInputChannels * kSamplesPerChannel; ++j) {
+      src_buf.data()[j] *= kScaleFactor;
+    }
+    EXPECT_EQ(kNoErr,
+              apm->ProcessStream(src_buf.channels(),
+                                 src_buf.samples_per_channel(),
+                                 kSampleRateHz,
+                                 LayoutFromChannels(src_buf.num_channels()),
+                                 kSampleRateHz,
+                                 LayoutFromChannels(dest_buf.num_channels()),
+                                 dest_buf.channels()));
+  }
+  EXPECT_EQ(kDefaultVolume,
+            apm->gain_control()->stream_analog_level());
+  EXPECT_EQ(kDefaultCompressionGain,
+            apm->gain_control()->compression_gain_db());
+  rewind(far_file);
+  is_target = true;
+  for (int i = 0; i < kNumChunks; ++i) {
+    ASSERT_TRUE(ReadChunk(far_file,
+                          int_data.get(),
+                          float_data.get(),
+                          &src_buf));
+    for (int j = 0; j < kNumInputChannels * kSamplesPerChannel; ++j) {
+      src_buf.data()[j] *= kScaleFactor;
+    }
+    EXPECT_EQ(kNoErr,
+              apm->ProcessStream(src_buf.channels(),
+                                 src_buf.samples_per_channel(),
+                                 kSampleRateHz,
+                                 LayoutFromChannels(src_buf.num_channels()),
+                                 kSampleRateHz,
+                                 LayoutFromChannels(dest_buf.num_channels()),
+                                 dest_buf.channels()));
+  }
+  EXPECT_LT(kDefaultVolume,
+            apm->gain_control()->stream_analog_level());
+  EXPECT_LT(kDefaultCompressionGain,
+            apm->gain_control()->compression_gain_db());
+  ASSERT_EQ(0, fclose(far_file));
+}
+#endif
+
 TEST_F(ApmTest, NoiseSuppression) {
   // Test valid suppression levels.
   NoiseSuppression::Level level[] = {
@@ -2029,35 +2140,6 @@ TEST_F(ApmTest, NoErrorsWithKeyboardChannel) {
           out_cb.channels()));
     }
   }
-}
-
-// Reads a 10 ms chunk of int16 interleaved audio from the given (assumed
-// stereo) file, converts to deinterleaved float (optionally downmixing) and
-// returns the result in |cb|. Returns false if the file ended (or on error) and
-// true otherwise.
-//
-// |int_data| and |float_data| are just temporary space that must be
-// sufficiently large to hold the 10 ms chunk.
-bool ReadChunk(FILE* file, int16_t* int_data, float* float_data,
-               ChannelBuffer<float>* cb) {
-  // The files always contain stereo audio.
-  size_t frame_size = cb->samples_per_channel() * 2;
-  size_t read_count = fread(int_data, sizeof(int16_t), frame_size, file);
-  if (read_count != frame_size) {
-    // Check that the file really ended.
-    assert(feof(file));
-    return false;  // This is expected.
-  }
-
-  S16ToFloat(int_data, frame_size, float_data);
-  if (cb->num_channels() == 1) {
-    MixStereoToMono(float_data, cb->data(), cb->samples_per_channel());
-  } else {
-    Deinterleave(float_data, cb->samples_per_channel(), 2,
-                 cb->channels());
-  }
-
-  return true;
 }
 
 // Compares the reference and test arrays over a region around the expected

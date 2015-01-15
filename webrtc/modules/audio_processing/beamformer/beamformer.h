@@ -29,22 +29,29 @@ class Beamformer : public LappedTransform::Callback {
  public:
   // At the moment it only accepts uniform linear microphone arrays. Using the
   // first microphone as a reference position [0, 0, 0] is a natural choice.
-  Beamformer(int chunk_size_ms,
-             // Sample rate corresponds to the lower band.
-             int sample_rate_hz,
-             const std::vector<Point>& array_geometry);
+  explicit Beamformer(const std::vector<Point>& array_geometry);
+  virtual ~Beamformer() {};
+
+  // Sample rate corresponds to the lower band.
+  // Needs to be called before the Beamformer can be used.
+  virtual void Initialize(int chunk_size_ms, int sample_rate_hz);
 
   // Process one time-domain chunk of audio. The audio can be separated into
   // two signals by frequency, with the higher half passed in as the second
   // parameter. Use NULL for |high_pass_split_input| if you only have one
   // audio signal. The number of frames and channels must correspond to the
   // ctor parameters. The same signal can be passed in as |input| and |output|.
-  void ProcessChunk(const float* const* input,
-                    const float* const* high_pass_split_input,
-                    int num_input_channels,
-                    int num_frames_per_band,
-                    float* const* output,
-                    float* const* high_pass_split_output);
+  virtual void ProcessChunk(const float* const* input,
+                            const float* const* high_pass_split_input,
+                            int num_input_channels,
+                            int num_frames_per_band,
+                            float* const* output,
+                            float* const* high_pass_split_output);
+  // After processing each block |is_target_present_| is set to true if the
+  // target signal es present and to false otherwise. This methods can be called
+  // to know if the data is target signal or interference and process it
+  // accordingly.
+  virtual bool is_target_present() { return is_target_present_; }
 
  protected:
   // Process one frequency-domain block of audio. This is where the fun
@@ -53,7 +60,7 @@ class Beamformer : public LappedTransform::Callback {
                          int num_input_channels,
                          int num_freq_bins,
                          int num_output_channels,
-                         complex<float>* const* output);
+                         complex<float>* const* output) override;
 
  private:
   typedef Matrix<float> MatrixF;
@@ -93,23 +100,30 @@ class Beamformer : public LappedTransform::Callback {
   void ApplyMasks(const complex_f* const* input, complex_f* const* output);
 
   float MicSpacingFromGeometry(const std::vector<Point>& array_geometry);
+  void EstimateTargetPresence(float* mask, int length);
+
+  static const int kFftSize = 256;
+  static const int kNumFreqBins = kFftSize / 2 + 1;
+  // How many blocks of past masks (including the current block) we save. Saved
+  // masks are used for postprocessing such as removing musical noise.
+  static const int kNumberSavedPostfilterMasks = 2;
 
   // Deals with the fft transform and blocking.
-  const int chunk_length_;
+  int chunk_length_;
   scoped_ptr<LappedTransform> lapped_transform_;
-  scoped_ptr<float[]> window_;
+  float window_[kFftSize];
 
   // Parameters exposed to the user.
   const int num_input_channels_;
-  const int sample_rate_hz_;
+  int sample_rate_hz_;
   const float mic_spacing_;
 
   // Calculated based on user-input and constants in the .cc file.
-  const float decay_threshold_;
-  const int mid_frequency_lower_bin_bound_;
-  const int mid_frequency_upper_bin_bound_;
-  const int high_frequency_lower_bin_bound_;
-  const int high_frequency_upper_bin_bound_;
+  float decay_threshold_;
+  int mid_frequency_lower_bin_bound_;
+  int mid_frequency_upper_bin_bound_;
+  int high_frequency_lower_bin_bound_;
+  int high_frequency_upper_bin_bound_;
 
   // Indices into |postfilter_masks_|.
   int current_block_ix_;
@@ -117,29 +131,30 @@ class Beamformer : public LappedTransform::Callback {
 
   // Old masks are saved in this ring buffer for smoothing. Array of length
   // |kNumberSavedMasks| matrix of size 1 x |kNumFreqBins|.
-  scoped_ptr<MatrixF[]> postfilter_masks_;
+  MatrixF postfilter_masks_[kNumberSavedPostfilterMasks];
+  float sorted_mask_[kNumFreqBins];
 
   // Array of length |kNumFreqBins|, Matrix of size |1| x |num_channels_|.
-  scoped_ptr<ComplexMatrixF[]> delay_sum_masks_;
+  ComplexMatrixF delay_sum_masks_[kNumFreqBins];
 
   // Array of length |kNumFreqBins|, Matrix of size |num_input_channels_| x
   // |num_input_channels_|.
-  scoped_ptr<ComplexMatrixF[]> target_cov_mats_;
+  ComplexMatrixF target_cov_mats_[kNumFreqBins];
 
   // Array of length |kNumFreqBins|, Matrix of size |num_input_channels_| x
   // |num_input_channels_|.
-  scoped_ptr<ComplexMatrixF[]> interf_cov_mats_;
-  scoped_ptr<ComplexMatrixF[]> reflected_interf_cov_mats_;
+  ComplexMatrixF interf_cov_mats_[kNumFreqBins];
+  ComplexMatrixF reflected_interf_cov_mats_[kNumFreqBins];
 
   // Of length |kNumFreqBins|.
-  scoped_ptr<float[]> mask_thresholds_;
-  scoped_ptr<float[]> wave_numbers_;
+  float mask_thresholds_[kNumFreqBins];
+  float wave_numbers_[kNumFreqBins];
 
   // Preallocated for ProcessAudioBlock()
   // Of length |kNumFreqBins|.
-  scoped_ptr<float[]> rxiws_;
-  scoped_ptr<float[]> rpsiws_;
-  scoped_ptr<float[]> reflected_rpsiws_;
+  float rxiws_[kNumFreqBins];
+  float rpsiws_[kNumFreqBins];
+  float reflected_rpsiws_[kNumFreqBins];
 
   // The microphone normalization factor.
   ComplexMatrixF eig_m_;
@@ -148,6 +163,14 @@ class Beamformer : public LappedTransform::Callback {
   bool high_pass_exists_;
   int num_blocks_in_this_chunk_;
   float high_pass_postfilter_mask_;
+
+  // True when the target signal is present.
+  bool is_target_present_;
+  // Number of blocks after which the data is considered interference if the
+  // mask does not pass |kMaskSignalThreshold|.
+  int hold_target_blocks_;
+  // Number of blocks since the last mask that passed |kMaskSignalThreshold|.
+  int interference_blocks_count_;
 };
 
 }  // namespace webrtc

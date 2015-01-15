@@ -180,6 +180,8 @@
             'audio_processing/beamformer/complex_matrix_unittest.cc',
             'audio_processing/beamformer/covariance_matrix_generator_unittest.cc',
             'audio_processing/beamformer/matrix_unittest.cc',
+            'audio_processing/beamformer/mock_beamformer.cc',
+            'audio_processing/beamformer/mock_beamformer.h',
             'audio_processing/beamformer/pcm_utils.cc',
             'audio_processing/beamformer/pcm_utils.h',
             'audio_processing/echo_cancellation_impl_unittest.cc',

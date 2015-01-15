@@ -27,7 +27,6 @@ const float kAlpha = 1.5f;
 // The minimum value a postprocessing mask can take.
 const float kMaskMinimum = 0.01f;
 
-const int kFftSize = 256;
 const float kSpeedOfSoundMeterSeconds = 340;
 
 // For both target and interf angles, 0 is perpendicular to the microphone
@@ -47,8 +46,6 @@ const float kInterfAngleRadians = static_cast<float>(M_PI) / 4.f;
 // Rpsi = Rpsi_angled * kBalance + Rpsi_uniform * (1 - kBalance)
 const float kBalance = 0.2f;
 
-const int kNumFreqBins = kFftSize / 2 + 1;
-
 // TODO(claguna): need comment here.
 const float kBeamwidthConstant = 0.00001f;
 
@@ -61,10 +58,6 @@ const float kBoxcarHalfWidth = 0.001f;
 // that our covariance matrices are positive semidefinite.
 const float kCovUniformGapHalfWidth = 0.001f;
 
-// How many blocks of past masks (including the current block) we save. Saved
-// masks are used for postprocessing such as removing musical noise.
-const int kNumberSavedPostfilterMasks = 2;
-
 // Lower bound on gain decay.
 const float kHalfLifeSeconds = 0.05f;
 
@@ -72,8 +65,14 @@ const float kHalfLifeSeconds = 0.05f;
 const int kMidFrequnecyLowerBoundHz = 250;
 const int kMidFrequencyUpperBoundHz = 400;
 
-const int kHighFrequnecyLowerBoundHz = 4000;
+const int kHighFrequencyLowerBoundHz = 4000;
 const int kHighFrequencyUpperBoundHz = 7000;
+
+// Mask threshold over which the data is considered signal and not interference.
+const float kMaskTargetThreshold = 0.3f;
+// Time in seconds after which the data is considered interference if the mask
+// does not pass |kMaskTargetThreshold|.
+const float kHoldTargetSeconds = 0.25f;
 
 // Does conjugate(|norm_mat|) * |mat| * transpose(|norm_mat|). No extra space is
 // used; to accomplish this, we compute both multiplications in the same loop.
@@ -126,46 +125,45 @@ int Round(float x) {
 
 }  // namespace
 
-Beamformer::Beamformer(int chunk_size_ms,
-                       int sample_rate_hz,
-                       const std::vector<Point>& array_geometry)
-    : chunk_length_(sample_rate_hz / (1000.f / chunk_size_ms)),
-      window_(new float[kFftSize]),
-      num_input_channels_(array_geometry.size()),
-      sample_rate_hz_(sample_rate_hz),
-      mic_spacing_(MicSpacingFromGeometry(array_geometry)),
-      decay_threshold_(
-          pow(2, (kFftSize / -2.f) / (sample_rate_hz_ * kHalfLifeSeconds))),
-      mid_frequency_lower_bin_bound_(
-          Round(kMidFrequnecyLowerBoundHz * kFftSize / sample_rate_hz_)),
-      mid_frequency_upper_bin_bound_(
-          Round(kMidFrequencyUpperBoundHz * kFftSize / sample_rate_hz_)),
-      high_frequency_lower_bin_bound_(
-          Round(kHighFrequnecyLowerBoundHz * kFftSize / sample_rate_hz_)),
-      high_frequency_upper_bin_bound_(
-          Round(kHighFrequencyUpperBoundHz * kFftSize / sample_rate_hz_)),
-      current_block_ix_(0),
-      previous_block_ix_(-1),
-      postfilter_masks_(new MatrixF[kNumberSavedPostfilterMasks]),
-      delay_sum_masks_(new ComplexMatrixF[kNumFreqBins]),
-      target_cov_mats_(new ComplexMatrixF[kNumFreqBins]),
-      interf_cov_mats_(new ComplexMatrixF[kNumFreqBins]),
-      reflected_interf_cov_mats_(new ComplexMatrixF[kNumFreqBins]),
-      mask_thresholds_(new float[kNumFreqBins]),
-      wave_numbers_(new float[kNumFreqBins]),
-      rxiws_(new float[kNumFreqBins]),
-      rpsiws_(new float[kNumFreqBins]),
-      reflected_rpsiws_(new float[kNumFreqBins]) {
+Beamformer::Beamformer(const std::vector<Point>& array_geometry)
+    : num_input_channels_(array_geometry.size()),
+      mic_spacing_(MicSpacingFromGeometry(array_geometry)) {
+
+  WindowGenerator::KaiserBesselDerived(kAlpha, kFftSize, window_);
+
+  for (int i = 0; i < kNumberSavedPostfilterMasks; ++i) {
+    postfilter_masks_[i].Resize(1, kNumFreqBins);
+  }
+}
+
+void Beamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
+  chunk_length_ = sample_rate_hz / (1000.f / chunk_size_ms);
+  sample_rate_hz_ = sample_rate_hz;
+  decay_threshold_ =
+      pow(2, (kFftSize / -2.f) / (sample_rate_hz_ * kHalfLifeSeconds));
+  mid_frequency_lower_bin_bound_ =
+      Round(kMidFrequnecyLowerBoundHz * kFftSize / sample_rate_hz_);
+  mid_frequency_upper_bin_bound_ =
+      Round(kMidFrequencyUpperBoundHz * kFftSize / sample_rate_hz_);
+  high_frequency_lower_bin_bound_ =
+      Round(kHighFrequencyLowerBoundHz * kFftSize / sample_rate_hz_);
+  high_frequency_upper_bin_bound_ =
+      Round(kHighFrequencyUpperBoundHz * kFftSize / sample_rate_hz_);
+  current_block_ix_ = 0;
+  previous_block_ix_ = -1;
+  is_target_present_ = false;
+  hold_target_blocks_ = kHoldTargetSeconds * 2 * sample_rate_hz / kFftSize;
+  interference_blocks_count_ = hold_target_blocks_;
+
   DCHECK_LE(mid_frequency_upper_bin_bound_, kNumFreqBins);
   DCHECK_LT(mid_frequency_lower_bin_bound_, mid_frequency_upper_bin_bound_);
   DCHECK_LE(high_frequency_upper_bin_bound_, kNumFreqBins);
   DCHECK_LT(high_frequency_lower_bin_bound_, high_frequency_upper_bin_bound_);
 
-  WindowGenerator::KaiserBesselDerived(kAlpha, kFftSize, window_.get());
   lapped_transform_.reset(new LappedTransform(num_input_channels_,
                                               1,
                                               chunk_length_,
-                                              window_.get(),
+                                              window_,
                                               kFftSize,
                                               kFftSize / 2,
                                               this));
@@ -195,9 +193,6 @@ Beamformer::Beamformer(int chunk_size_ms,
   for (int i = 0; i < kNumFreqBins; ++i) {
     reflected_rpsiws_[i] =
         Norm(reflected_interf_cov_mats_[i], delay_sum_masks_[i]);
-  }
-  for (int i = 0; i < kNumberSavedPostfilterMasks; ++i) {
-    postfilter_masks_[i].Resize(1, kNumFreqBins);
   }
 }
 
@@ -379,6 +374,8 @@ void Beamformer::ProcessAudioBlock(const complex_f* const* input,
                                             mask_thresholds_[i]);
   }
 
+  EstimateTargetPresence(mask_data, kNumFreqBins);
+
   // Can't access block_index - 1 on the first block.
   if (previous_block_ix_ >= 0) {
     ApplyDecay();
@@ -488,6 +485,20 @@ float Beamformer::MicSpacingFromGeometry(const std::vector<Point>& geometry) {
     mic_spacing += difference * difference;
   }
   return sqrt(mic_spacing);
+}
+
+void Beamformer::EstimateTargetPresence(float* mask, int length) {
+  memcpy(sorted_mask_, mask, kNumFreqBins * sizeof(*mask));
+  const int median_ix = (length + 1) / 2;
+  std::nth_element(sorted_mask_,
+                   sorted_mask_ + median_ix,
+                   sorted_mask_ + length);
+  if (sorted_mask_[median_ix] > kMaskTargetThreshold) {
+    is_target_present_ = true;
+    interference_blocks_count_ = 0;
+  } else {
+    is_target_present_ = interference_blocks_count_++ < hold_target_blocks_;
+  }
 }
 
 }  // namespace webrtc
