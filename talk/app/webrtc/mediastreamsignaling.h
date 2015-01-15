@@ -162,6 +162,7 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
  public:
   typedef std::map<std::string, rtc::scoped_refptr<DataChannel> >
       RtpDataChannels;
+  typedef std::vector<rtc::scoped_refptr<DataChannel>> SctpDataChannels;
 
   MediaStreamSignaling(rtc::Thread* signaling_thread,
                        MediaStreamSignalingObserver* stream_observer,
@@ -254,6 +255,10 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
   void OnDataTransportCreatedForSctp();
   void OnDtlsRoleReadyForSctp(rtc::SSLRole role);
   void OnRemoteSctpDataChannelClosed(uint32 sid);
+
+  const SctpDataChannels& sctp_data_channels() const {
+    return sctp_data_channels_;
+  }
 
  private:
   struct RemotePeerInfo {
@@ -391,8 +396,6 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
 
   int last_allocated_sctp_even_sid_;
   int last_allocated_sctp_odd_sid_;
-
-  typedef std::vector<rtc::scoped_refptr<DataChannel> > SctpDataChannels;
 
   RtpDataChannels rtp_data_channels_;
   SctpDataChannels sctp_data_channels_;

@@ -137,6 +137,10 @@ class WebRtcSession : public cricket::BaseSession,
     return data_channel_.get();
   }
 
+  virtual const MediaStreamSignaling* mediastream_signaling() const {
+    return mediastream_signaling_;
+  }
+
   void SetSdesPolicy(cricket::SecurePolicy secure_policy);
   cricket::SecurePolicy SdesPolicy() const;
 

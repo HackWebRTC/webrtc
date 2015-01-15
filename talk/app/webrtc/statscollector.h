@@ -36,6 +36,7 @@
 #include <vector>
 
 #include "talk/app/webrtc/mediastreaminterface.h"
+#include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/statstypes.h"
 #include "talk/app/webrtc/webrtcsession.h"
@@ -60,7 +61,7 @@ class StatsCollector {
 
   // The caller is responsible for ensuring that the session outlives the
   // StatsCollector instance.
-  explicit StatsCollector(WebRtcSession* session);
+  StatsCollector(WebRtcSession* session);
   virtual ~StatsCollector();
 
   // Adds a MediaStream with tracks that can be used as a |selector| in a call
@@ -119,6 +120,7 @@ class StatsCollector {
   // returns the leaf certificate's report's ID.
   std::string AddCertificateReports(const rtc::SSLCertificate* cert);
 
+  void ExtractDataInfo();
   void ExtractSessionInfo();
   void ExtractVoiceInfo();
   void ExtractVideoInfo(PeerConnectionInterface::StatsOutputLevel level);

@@ -79,11 +79,14 @@ class StatsReport {
     kStatsValueNameAudioOutputLevel,
     kStatsValueNameBytesReceived,
     kStatsValueNameBytesSent,
+    kStatsValueNameDataChannelId,
     kStatsValueNamePacketsLost,
     kStatsValueNamePacketsReceived,
     kStatsValueNamePacketsSent,
+    kStatsValueNameProtocol,
     kStatsValueNameReadable,
     kStatsValueNameSsrc,
+    kStatsValueNameState,
     kStatsValueNameTransportId,
 
     // Internal StatsValue names.
@@ -143,6 +146,7 @@ class StatsReport {
     kStatsValueNameIssuerId,
     kStatsValueNameJitterBufferMs,
     kStatsValueNameJitterReceived,
+    kStatsValueNameLabel,
     kStatsValueNameLocalAddress,
     kStatsValueNameLocalCandidateId,
     kStatsValueNameLocalCandidateType,
@@ -262,6 +266,10 @@ class StatsReport {
 
   // The id of StatsReport of type VideoBWE.
   static const char kStatsReportVideoBweId[];
+
+  // A StatsReport of |type| = "datachannel" with statistics for a
+  // particular DataChannel.
+  static const char kStatsReportTypeDataChannel[];
 };
 
 // This class is provided for the cases where we need to keep

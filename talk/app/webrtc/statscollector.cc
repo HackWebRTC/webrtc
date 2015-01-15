@@ -403,7 +403,8 @@ const char* AdapterTypeToStatsType(rtc::AdapterType type) {
 }
 
 StatsCollector::StatsCollector(WebRtcSession* session)
-    : session_(session), stats_gathering_started_(0) {
+    : session_(session),
+      stats_gathering_started_(0) {
   ASSERT(session_);
 }
 
@@ -516,6 +517,7 @@ StatsCollector::UpdateStats(PeerConnectionInterface::StatsOutputLevel level) {
     ExtractSessionInfo();
     ExtractVoiceInfo();
     ExtractVideoInfo(level);
+    ExtractDataInfo();
   }
 }
 
@@ -756,14 +758,16 @@ void StatsCollector::ExtractSessionInfo() {
         channel_report->timestamp = stats_gathering_started_;
         channel_report->AddValue(StatsReport::kStatsValueNameComponent,
                                  channel_iter->component);
-        if (!local_cert_report_id.empty())
+        if (!local_cert_report_id.empty()) {
           channel_report->AddValue(
               StatsReport::kStatsValueNameLocalCertificateId,
               local_cert_report_id);
-        if (!remote_cert_report_id.empty())
+        }
+        if (!remote_cert_report_id.empty()) {
           channel_report->AddValue(
               StatsReport::kStatsValueNameRemoteCertificateId,
               remote_cert_report_id);
+        }
         for (size_t i = 0;
              i < channel_iter->connection_infos.size();
              ++i) {
@@ -877,6 +881,22 @@ void StatsCollector::ExtractVideoInfo(
         reports_.FindOrAddNew(StatsReport::kStatsReportVideoBweId);
     ExtractStats(
         video_info.bw_estimations[0], stats_gathering_started_, level, report);
+  }
+}
+
+void StatsCollector::ExtractDataInfo() {
+  ASSERT(session_->signaling_thread()->IsCurrent());
+
+  for (const auto& dc :
+           session_->mediastream_signaling()->sctp_data_channels()) {
+    StatsReport* report = reports_.ReplaceOrAddNew(
+        StatsId(StatsReport::kStatsReportTypeDataChannel, dc->label()));
+    report->type = StatsReport::kStatsReportTypeDataChannel;
+    report->AddValue(StatsReport::kStatsValueNameLabel, dc->label());
+    report->AddValue(StatsReport::kStatsValueNameDataChannelId, dc->id());
+    report->AddValue(StatsReport::kStatsValueNameProtocol, dc->protocol());
+    report->AddValue(StatsReport::kStatsValueNameState,
+                     DataChannelInterface::DataStateString(dc->state()));
   }
 }
 

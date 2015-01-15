@@ -35,6 +35,7 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/buffer.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/refcount.h"
 
 
@@ -105,6 +106,21 @@ class DataChannelInterface : public rtc::RefCountInterface {
     kClosing,
     kClosed
   };
+
+  static const char* DataStateString(DataState state) {
+    switch (state) {
+      case kConnecting:
+        return "connecting";
+      case kOpen:
+        return "open";
+      case kClosing:
+        return "closing";
+      case kClosed:
+        return "closed";
+    }
+    CHECK(false) << "Unknown DataChannel state: " << state;
+    return "";
+  }
 
   virtual void RegisterObserver(DataChannelObserver* observer) = 0;
   virtual void UnregisterObserver() = 0;

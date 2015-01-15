@@ -41,6 +41,7 @@ const char StatsReport::kStatsReportTypeTransport[] = "googTransport";
 const char StatsReport::kStatsReportTypeComponent[] = "googComponent";
 const char StatsReport::kStatsReportTypeCandidatePair[] = "googCandidatePair";
 const char StatsReport::kStatsReportTypeCertificate[] = "googCertificate";
+const char StatsReport::kStatsReportTypeDataChannel[] = "datachannel";
 
 const char StatsReport::kStatsReportVideoBweId[] = "bweforvideo";
 
@@ -109,14 +110,22 @@ const char* StatsReport::Value::display_name() const {
       return "packetsSent";
     case kStatsValueNameBytesReceived:
       return "bytesReceived";
+    case kStatsValueNameLabel:
+      return "label";
     case kStatsValueNamePacketsReceived:
       return "packetsReceived";
     case kStatsValueNamePacketsLost:
       return "packetsLost";
+    case kStatsValueNameProtocol:
+      return "protocol";
     case kStatsValueNameTransportId:
       return "transportId";
     case kStatsValueNameSsrc:
       return "ssrc";
+    case kStatsValueNameState:
+      return "state";
+    case kStatsValueNameDataChannelId:
+      return "datachannelid";
 
     // 'goog' prefixed constants.
     case kStatsValueNameActiveConnection:
