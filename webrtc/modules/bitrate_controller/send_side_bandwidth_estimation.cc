@@ -25,6 +25,18 @@ enum { kAvgPacketSizeBytes = 1000 };
 enum { kStartPhaseMs = 2000 };
 enum { kBweConverganceTimeMs = 20000 };
 
+struct UmaRampUpMetric {
+  std::string metric_name;
+  int bitrate_kbps;
+};
+
+const UmaRampUpMetric kUmaRampupMetrics[] = {
+    {"WebRTC.BWE.RampUpTimeTo500kbpsInMs", 500},
+    {"WebRTC.BWE.RampUpTimeTo1000kbpsInMs", 1000},
+    {"WebRTC.BWE.RampUpTimeTo2000kbpsInMs", 2000}};
+const size_t kNumUmaRampupMetrics =
+    sizeof(kUmaRampupMetrics) / sizeof(kUmaRampupMetrics[0]);
+
 // Calculate the rate that TCP-Friendly Rate Control (TFRC) would apply.
 // The formula in RFC 3448, Section 3.1, is used.
 uint32_t CalcTfrcBps(int64_t rtt, uint8_t loss) {
@@ -50,6 +62,7 @@ uint32_t CalcTfrcBps(int64_t rtt, uint8_t loss) {
 }
 }
 
+
 SendSideBandwidthEstimation::SendSideBandwidthEstimation()
     : accumulate_lost_packets_Q8_(0),
       accumulate_expected_packets_(0),
@@ -64,7 +77,8 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation()
       first_report_time_ms_(-1),
       initially_lost_packets_(0),
       bitrate_at_2_seconds_kbps_(0),
-      uma_update_state_(kNoUpdate) {
+      uma_update_state_(kNoUpdate),
+      rampup_uma_stats_updated_(kNumUmaRampupMetrics, false) {
 }
 
 SendSideBandwidthEstimation::~SendSideBandwidthEstimation() {}
@@ -139,11 +153,20 @@ void SendSideBandwidthEstimation::UpdateReceiverBlock(uint8_t fraction_loss,
 void SendSideBandwidthEstimation::UpdateUmaStats(int64_t now_ms,
                                                  int64_t rtt,
                                                  int lost_packets) {
+  int bitrate_kbps = static_cast<int>((bitrate_ + 500) / 1000);
+  for (size_t i = 0; i < kNumUmaRampupMetrics; ++i) {
+    if (!rampup_uma_stats_updated_[i] &&
+        bitrate_kbps >= kUmaRampupMetrics[i].bitrate_kbps) {
+      RTC_HISTOGRAM_COUNTS_100000(kUmaRampupMetrics[i].metric_name,
+                                  now_ms - first_report_time_ms_);
+      rampup_uma_stats_updated_[i] = true;
+    }
+  }
   if (IsInStartPhase(now_ms)) {
     initially_lost_packets_ += lost_packets;
   } else if (uma_update_state_ == kNoUpdate) {
     uma_update_state_ = kFirstDone;
-    bitrate_at_2_seconds_kbps_ = (bitrate_ + 500) / 1000;
+    bitrate_at_2_seconds_kbps_ = bitrate_kbps;
     RTC_HISTOGRAM_COUNTS(
         "WebRTC.BWE.InitiallyLostPackets", initially_lost_packets_, 0, 100, 50);
     RTC_HISTOGRAM_COUNTS(
@@ -156,9 +179,8 @@ void SendSideBandwidthEstimation::UpdateUmaStats(int64_t now_ms,
   } else if (uma_update_state_ == kFirstDone &&
              now_ms - first_report_time_ms_ >= kBweConverganceTimeMs) {
     uma_update_state_ = kDone;
-    int bitrate_diff_kbps = std::max(
-        bitrate_at_2_seconds_kbps_ - static_cast<int>((bitrate_ + 500) / 1000),
-        0);
+    int bitrate_diff_kbps =
+        std::max(bitrate_at_2_seconds_kbps_ - bitrate_kbps, 0);
     RTC_HISTOGRAM_COUNTS(
         "WebRTC.BWE.InitialVsConvergedDiff", bitrate_diff_kbps, 0, 2000, 50);
   }

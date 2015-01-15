@@ -81,6 +81,7 @@ class SendSideBandwidthEstimation {
   int initially_lost_packets_;
   int bitrate_at_2_seconds_kbps_;
   UmaState uma_update_state_;
+  std::vector<bool> rampup_uma_stats_updated_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
