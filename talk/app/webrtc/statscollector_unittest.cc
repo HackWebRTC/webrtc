@@ -1040,8 +1040,7 @@ TEST_F(StatsCollectorTest, IceCandidateReport) {
   uint32 priority = 1000;
 
   cricket::Candidate c;
-  const std::string& local_id = rtc::CreateRandomString(8);
-  c.set_id(local_id);
+  ASSERT(c.id().length() > 0);
   c.set_type(cricket::LOCAL_PORT_TYPE);
   c.set_protocol(cricket::UDP_PROTOCOL_NAME);
   c.set_address(local_address);
@@ -1049,15 +1048,18 @@ TEST_F(StatsCollectorTest, IceCandidateReport) {
   c.set_network_type(network_type);
   std::string report_id = AddCandidateReport(
       &stats, c, StatsReport::kStatsReportTypeIceLocalCandidate);
-  EXPECT_EQ("Cand-" + local_id, report_id);
+  EXPECT_EQ("Cand-" + c.id(), report_id);
 
-  const std::string& remote_id = rtc::CreateRandomString(8);
-  c.set_id(remote_id);
+  c = cricket::Candidate();
+  ASSERT(c.id().length() > 0);
   c.set_type(cricket::PRFLX_PORT_TYPE);
+  c.set_protocol(cricket::UDP_PROTOCOL_NAME);
   c.set_address(remote_address);
+  c.set_priority(priority);
+  c.set_network_type(network_type);
   report_id = AddCandidateReport(
       &stats, c, StatsReport::kStatsReportTypeIceRemoteCandidate);
-  EXPECT_EQ("Cand-" + remote_id, report_id);
+  EXPECT_EQ("Cand-" + c.id(), report_id);
 
   stats.GetStats(NULL, &reports);
 

@@ -505,14 +505,18 @@ void P2PTransportChannel::OnUnknownAddress(
       }
     }
 
-    std::string id = rtc::CreateRandomString(8);
     new_remote_candidate =
-        Candidate(id, component(), ProtoToString(proto), address, 0,
-                  remote_username, remote_password, type, 0U,
-                  rtc::ToString<uint32>(rtc::ComputeCrc32(id)));
-    new_remote_candidate.set_priority(
-        new_remote_candidate.GetPriority(ICE_TYPE_PREFERENCE_SRFLX,
-                                         port->Network()->preference(), 0));
+        Candidate(component(), ProtoToString(proto), address, 0,
+                  remote_username, remote_password, type, 0U, "");
+
+    // From RFC 5245, section-7.2.1.3:
+    // The foundation of the candidate is set to an arbitrary value, different
+    // from the foundation for all other remote candidates.
+    new_remote_candidate.set_foundation(
+        rtc::ToString<uint32>(rtc::ComputeCrc32(new_remote_candidate.id())));
+
+    new_remote_candidate.set_priority(new_remote_candidate.GetPriority(
+        ICE_TYPE_PREFERENCE_SRFLX, port->Network()->preference(), 0));
   }
 
   if (port->IceProtocol() == ICEPROTO_RFC5245) {
