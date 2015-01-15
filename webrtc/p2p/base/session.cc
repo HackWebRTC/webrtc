@@ -46,25 +46,26 @@ TransportChannel* TransportProxy::GetChannel(int component) {
   return GetChannelProxy(component);
 }
 
-TransportChannel* TransportProxy::CreateChannel(
-    const std::string& name, int component) {
+TransportChannel* TransportProxy::CreateChannel(const std::string& name,
+                                                int component) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(GetChannel(component) == NULL);
   ASSERT(!transport_->get()->HasChannel(component));
 
   // We always create a proxy in case we need to change out the transport later.
-  TransportChannelProxy* channel =
+  TransportChannelProxy* channel_proxy =
       new TransportChannelProxy(content_name(), name, component);
-  channels_[component] = channel;
+  channels_[component] = channel_proxy;
 
   // If we're already negotiated, create an impl and hook it up to the proxy
   // channel. If we're connecting, create an impl but don't hook it up yet.
   if (negotiated_) {
-    SetupChannelProxy_w(component, channel);
+    CreateChannelImpl_w(component);
+    SetChannelImplFromTransport_w(channel_proxy, component);
   } else if (connecting_) {
-    GetOrCreateChannelProxyImpl_w(component);
+    CreateChannelImpl_w(component);
   }
-  return channel;
+  return channel_proxy;
 }
 
 bool TransportProxy::HasChannel(int component) {
@@ -73,28 +74,29 @@ bool TransportProxy::HasChannel(int component) {
 
 void TransportProxy::DestroyChannel(int component) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
-  TransportChannel* channel = GetChannel(component);
-  if (channel) {
-    // If the state of TransportProxy is not NEGOTIATED
-    // then TransportChannelProxy and its impl are not
-    // connected. Both must be connected before
-    // deletion.
-    if (!negotiated_) {
-      SetupChannelProxy_w(component, GetChannelProxy(component));
+  TransportChannelProxy* channel_proxy = GetChannelProxy(component);
+  if (channel_proxy) {
+    // If the state of TransportProxy is not NEGOTIATED then
+    // TransportChannelProxy and its impl are not connected. Both must
+    // be connected before deletion.
+    //
+    // However, if we haven't entered the connecting state then there
+    // is no implementation to hook up.
+    if (connecting_ && !negotiated_) {
+      SetChannelImplFromTransport_w(channel_proxy, component);
     }
 
     channels_.erase(component);
-    channel->SignalDestroyed(channel);
-    delete channel;
+    channel_proxy->SignalDestroyed(channel_proxy);
+    delete channel_proxy;
   }
 }
 
 void TransportProxy::ConnectChannels() {
   if (!connecting_) {
     if (!negotiated_) {
-      for (ChannelMap::iterator iter = channels_.begin();
-           iter != channels_.end(); ++iter) {
-        GetOrCreateChannelProxyImpl(iter->first);
+      for (auto& iter : channels_) {
+        CreateChannelImpl(iter.first);
       }
     }
     connecting_ = true;
@@ -108,9 +110,14 @@ void TransportProxy::ConnectChannels() {
 
 void TransportProxy::CompleteNegotiation() {
   if (!negotiated_) {
-    for (ChannelMap::iterator iter = channels_.begin();
-         iter != channels_.end(); ++iter) {
-      SetupChannelProxy(iter->first, iter->second);
+    // Negotiating assumes connecting_ has happened and
+    // implementations exist. If not we need to create the
+    // implementations.
+    for (auto& iter : channels_) {
+      if (!connecting_) {
+        CreateChannelImpl(iter.first);
+      }
+      SetChannelImplFromTransport(iter.second, iter.first);
     }
     negotiated_ = true;
   }
@@ -169,44 +176,38 @@ TransportChannelProxy* TransportProxy::GetChannelProxyByName(
   return NULL;
 }
 
-TransportChannelImpl* TransportProxy::GetOrCreateChannelProxyImpl(
-    int component) {
-  return worker_thread_->Invoke<TransportChannelImpl*>(Bind(
-      &TransportProxy::GetOrCreateChannelProxyImpl_w, this, component));
+void TransportProxy::CreateChannelImpl(int component) {
+  worker_thread_->Invoke<void>(Bind(
+      &TransportProxy::CreateChannelImpl_w, this, component));
 }
 
-TransportChannelImpl* TransportProxy::GetOrCreateChannelProxyImpl_w(
-    int component) {
+void TransportProxy::CreateChannelImpl_w(int component) {
+  ASSERT(rtc::Thread::Current() == worker_thread_);
+  transport_->get()->CreateChannel(component);
+}
+
+void TransportProxy::SetChannelImplFromTransport(TransportChannelProxy* proxy,
+                                                 int component) {
+  worker_thread_->Invoke<void>(Bind(
+      &TransportProxy::SetChannelImplFromTransport_w, this, proxy, component));
+}
+
+void TransportProxy::SetChannelImplFromTransport_w(TransportChannelProxy* proxy,
+                                                   int component) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   TransportChannelImpl* impl = transport_->get()->GetChannel(component);
-  if (impl == NULL) {
-    impl = transport_->get()->CreateChannel(component);
-  }
-  return impl;
-}
-
-void TransportProxy::SetupChannelProxy(
-    int component, TransportChannelProxy* transproxy) {
-  worker_thread_->Invoke<void>(Bind(
-      &TransportProxy::SetupChannelProxy_w, this, component, transproxy));
-}
-
-void TransportProxy::SetupChannelProxy_w(
-    int component, TransportChannelProxy* transproxy) {
-  ASSERT(rtc::Thread::Current() == worker_thread_);
-  TransportChannelImpl* impl = GetOrCreateChannelProxyImpl(component);
   ASSERT(impl != NULL);
-  transproxy->SetImplementation(impl);
+  ReplaceChannelImpl_w(proxy, impl);
 }
 
-void TransportProxy::ReplaceChannelProxyImpl(TransportChannelProxy* proxy,
-                                             TransportChannelImpl* impl) {
+void TransportProxy::ReplaceChannelImpl(TransportChannelProxy* proxy,
+                                        TransportChannelImpl* impl) {
   worker_thread_->Invoke<void>(Bind(
-      &TransportProxy::ReplaceChannelProxyImpl_w, this, proxy, impl));
+      &TransportProxy::ReplaceChannelImpl_w, this, proxy, impl));
 }
 
-void TransportProxy::ReplaceChannelProxyImpl_w(TransportChannelProxy* proxy,
-                                               TransportChannelImpl* impl) {
+void TransportProxy::ReplaceChannelImpl_w(TransportChannelProxy* proxy,
+                                          TransportChannelImpl* impl) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(proxy != NULL);
   proxy->SetImplementation(impl);
@@ -227,11 +228,11 @@ bool TransportProxy::SetupMux(TransportProxy* target) {
        iter != channels_.end(); ++iter) {
     if (!target->transport_->get()->HasChannel(iter->first)) {
       // Remove if channel doesn't exist in |transport_|.
-      ReplaceChannelProxyImpl(iter->second, NULL);
+      ReplaceChannelImpl(iter->second, NULL);
     } else {
       // Replace the impl for all the TransportProxyChannels with the channels
       // from |target|'s transport. Fail if there's not an exact match.
-      ReplaceChannelProxyImpl(
+      ReplaceChannelImpl(
           iter->second, target->transport_->get()->CreateChannel(iter->first));
     }
   }

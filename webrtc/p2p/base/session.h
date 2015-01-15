@@ -139,18 +139,19 @@ class TransportProxy : public sigslot::has_slots<>,
   TransportChannelProxy* GetChannelProxy(int component) const;
   TransportChannelProxy* GetChannelProxyByName(const std::string& name) const;
 
-  TransportChannelImpl* GetOrCreateChannelProxyImpl(int component);
-  TransportChannelImpl* GetOrCreateChannelProxyImpl_w(int component);
+  // Creates a new channel on the Transport which causes the reference
+  // count to increment.
+  void CreateChannelImpl(int component);
+  void CreateChannelImpl_w(int component);
 
   // Manipulators of transportchannelimpl in channel proxy.
-  void SetupChannelProxy(int component,
-                           TransportChannelProxy* proxy);
-  void SetupChannelProxy_w(int component,
-                             TransportChannelProxy* proxy);
-  void ReplaceChannelProxyImpl(TransportChannelProxy* proxy,
-                               TransportChannelImpl* impl);
-  void ReplaceChannelProxyImpl_w(TransportChannelProxy* proxy,
-                                 TransportChannelImpl* impl);
+  void SetChannelImplFromTransport(TransportChannelProxy* proxy, int component);
+  void SetChannelImplFromTransport_w(TransportChannelProxy* proxy,
+                                     int component);
+  void ReplaceChannelImpl(TransportChannelProxy* proxy,
+                          TransportChannelImpl* impl);
+  void ReplaceChannelImpl_w(TransportChannelProxy* proxy,
+                            TransportChannelImpl* impl);
 
   rtc::Thread* const worker_thread_;
   const std::string sid_;
