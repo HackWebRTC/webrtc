@@ -9,6 +9,7 @@
  */
 
 #include <stdio.h>
+#include <string>
 
 #include "gflags/gflags.h"
 #include "webrtc/base/checks.h"
@@ -23,12 +24,15 @@ DEFINE_string(c, "", "The name of the capture input file to read from.");
 DEFINE_string(o, "out.wav", "Name of the capture output file to write to.");
 DEFINE_int32(o_channels, 0, "Number of output channels. Defaults to input.");
 DEFINE_int32(o_sample_rate, 0, "Output sample rate in Hz. Defaults to input.");
+DEFINE_double(mic_spacing, 0.0,
+    "Microphone spacing in meters.  Used when beamforming is enabled");
 
 DEFINE_bool(aec, false, "Enable echo cancellation.");
 DEFINE_bool(agc, false, "Enable automatic gain control.");
 DEFINE_bool(hpf, false, "Enable high-pass filtering.");
 DEFINE_bool(ns, false, "Enable noise suppression.");
 DEFINE_bool(ts, false, "Enable transient suppression.");
+DEFINE_bool(bf, false, "Enable beamforming.");
 DEFINE_bool(all, false, "Enable all components.");
 
 DEFINE_int32(ns_level, -1, "Noise suppression level [0 - 3].");
@@ -72,13 +76,27 @@ int main(int argc, char* argv[]) {
     o_sample_rate = c_file.sample_rate();
   WavWriter o_file(FLAGS_o, o_sample_rate, o_channels);
 
-  printf("Input file: %s\nChannels: %d, Sample rate: %d Hz\n\n",
-         FLAGS_c.c_str(), c_file.num_channels(), c_file.sample_rate());
-  printf("Output file: %s\nChannels: %d, Sample rate: %d Hz\n\n",
-         FLAGS_o.c_str(), o_file.num_channels(), o_file.sample_rate());
-
   Config config;
   config.Set<ExperimentalNs>(new ExperimentalNs(FLAGS_ts || FLAGS_all));
+
+  if (FLAGS_bf || FLAGS_all) {
+    if (FLAGS_mic_spacing <= 0) {
+      fprintf(stderr,
+          "mic_spacing must a positive value when beamforming is enabled.\n");
+      return 1;
+    }
+
+    const size_t num_mics = c_file.num_channels();
+    std::vector<Point> array_geometry;
+    array_geometry.reserve(num_mics);
+
+    for (size_t i = 0; i < num_mics; ++i) {
+      array_geometry.push_back(Point(0.0, i * FLAGS_mic_spacing, 0.0));
+    }
+
+    config.Set<Beamforming>(new Beamforming(true, array_geometry));
+  }
+
   scoped_ptr<AudioProcessing> ap(AudioProcessing::Create(config));
   if (FLAGS_dump != "") {
     CHECK_EQ(kNoErr, ap->echo_cancellation()->Enable(FLAGS_aec || FLAGS_all));
@@ -93,6 +111,11 @@ int main(int argc, char* argv[]) {
   if (FLAGS_ns_level != -1)
     CHECK_EQ(kNoErr, ap->noise_suppression()->set_level(
         static_cast<NoiseSuppression::Level>(FLAGS_ns_level)));
+
+  printf("Input file: %s\nChannels: %d, Sample rate: %d Hz\n\n",
+         FLAGS_c.c_str(), c_file.num_channels(), c_file.sample_rate());
+  printf("Output file: %s\nChannels: %d, Sample rate: %d Hz\n\n",
+         FLAGS_o.c_str(), o_file.num_channels(), o_file.sample_rate());
 
   ChannelBuffer<float> c_buf(c_file.sample_rate() / kChunksPerSecond,
                              c_file.num_channels());

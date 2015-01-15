@@ -39,7 +39,7 @@ class ReadableWavFile : public ReadableWav {
 
 WavReader::WavReader(const std::string& filename)
     : file_handle_(fopen(filename.c_str(), "rb")) {
-  CHECK(file_handle_);
+  CHECK(file_handle_ && "Could not open wav file for reading.");
 
   ReadableWavFile readable(file_handle_);
   WavFormat format;
@@ -96,7 +96,7 @@ WavWriter::WavWriter(const std::string& filename, int sample_rate,
       num_channels_(num_channels),
       num_samples_(0),
       file_handle_(fopen(filename.c_str(), "wb")) {
-  CHECK(file_handle_);
+  CHECK(file_handle_ && "Could not open wav file for writing.");
   CHECK(CheckWavParameters(num_channels_,
                            sample_rate_,
                            kWavFormat,
