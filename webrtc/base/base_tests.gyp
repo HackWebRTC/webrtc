@@ -72,7 +72,7 @@
           'logging_unittest.cc',
           'md5digest_unittest.cc',
           'messagedigest_unittest.cc',
-          #'messagequeue_unittest.cc',
+          'messagequeue_unittest.cc',
           'multipart_unittest.cc',
           'nat_unittest.cc',
           'network_unittest.cc',
