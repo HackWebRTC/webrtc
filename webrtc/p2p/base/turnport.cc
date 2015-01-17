@@ -78,9 +78,11 @@ class TurnRefreshRequest : public StunRequest {
   virtual void OnResponse(StunMessage* response);
   virtual void OnErrorResponse(StunMessage* response);
   virtual void OnTimeout();
+  void set_lifetime(int lifetime) { lifetime_ = lifetime; }
 
  private:
   TurnPort* port_;
+  int lifetime_;
 };
 
 class TurnCreatePermissionRequest : public StunRequest,
@@ -212,6 +214,15 @@ TurnPort::TurnPort(rtc::Thread* thread,
 
 TurnPort::~TurnPort() {
   // TODO(juberti): Should this even be necessary?
+
+  // release the allocation by sending a refresh with
+  // lifetime 0.
+  if (connected_) {
+    TurnRefreshRequest bye(this);
+    bye.set_lifetime(0);
+    SendRequest(&bye, 0);
+  }
+
   while (!entries_.empty()) {
     DestroyEntry(entries_.front()->address());
   }
@@ -352,6 +363,7 @@ void TurnPort::OnSocketClose(rtc::AsyncPacketSocket* socket, int error) {
   if (!connected_) {
     OnAllocateError();
   }
+  connected_ = false;
 }
 
 void TurnPort::OnAllocateMismatch() {
@@ -1020,13 +1032,19 @@ void TurnAllocateRequest::OnTryAlternate(StunMessage* response, int code) {
 
 TurnRefreshRequest::TurnRefreshRequest(TurnPort* port)
     : StunRequest(new TurnMessage()),
-      port_(port) {
+      port_(port),
+      lifetime_(-1) {
 }
 
 void TurnRefreshRequest::Prepare(StunMessage* request) {
   // Create the request as indicated in RFC 5766, Section 7.1.
   // No attributes need to be included.
   request->SetType(TURN_REFRESH_REQUEST);
+  if (lifetime_ > -1) {
+    VERIFY(request->AddAttribute(new StunUInt32Attribute(
+        STUN_ATTR_LIFETIME, lifetime_)));
+  }
+
   port_->AddRequestAuthInfo(request);
 }
 

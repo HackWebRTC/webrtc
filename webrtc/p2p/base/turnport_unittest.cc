@@ -550,6 +550,10 @@ TEST_F(TurnPortTest, TestTurnAllocateMismatch) {
   EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
   rtc::SocketAddress first_addr(turn_port_->socket()->GetLocalAddress());
 
+  // Clear connected_ flag on turnport to suppress the release of
+  // the allocation.
+  turn_port_->OnSocketClose(turn_port_->socket(), 0);
+
   // Forces the socket server to assign the same port.
   ss_->SetNextPortForTesting(first_addr.port());
 
@@ -575,6 +579,10 @@ TEST_F(TurnPortTest, TestSharedSocketAllocateMismatch) {
   EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
   rtc::SocketAddress first_addr(turn_port_->socket()->GetLocalAddress());
 
+  // Clear connected_ flag on turnport to suppress the release of
+  // the allocation.
+  turn_port_->OnSocketClose(turn_port_->socket(), 0);
+
   turn_ready_ = false;
   CreateSharedTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
 
@@ -598,6 +606,10 @@ TEST_F(TurnPortTest, TestTurnTcpAllocateMismatch) {
   turn_port_->PrepareAddress();
   EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
   rtc::SocketAddress first_addr(turn_port_->socket()->GetLocalAddress());
+
+  // Clear connected_ flag on turnport to suppress the release of
+  // the allocation.
+  turn_port_->OnSocketClose(turn_port_->socket(), 0);
 
   // Forces the socket server to assign the same port.
   ss_->SetNextPortForTesting(first_addr.port());
@@ -745,6 +757,29 @@ TEST_F(TurnPortTest, TestOriginHeader) {
   SocketAddress local_address = turn_port_->GetLocalAddress();
   ASSERT_TRUE(turn_server_.FindAllocation(local_address) != NULL);
   EXPECT_EQ(kTestOrigin, turn_server_.FindAllocation(local_address)->origin());
+}
+
+// Test that a TURN allocation is released when the port is closed.
+TEST_F(TurnPortTest, TestTurnReleaseAllocation) {
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
+
+  ASSERT_GT(turn_server_.server()->allocations().size(), 0U);
+  turn_port_.reset();
+  EXPECT_EQ_WAIT(0U, turn_server_.server()->allocations().size(), kTimeout);
+}
+
+// Test that a TURN TCP allocation is released when the port is closed.
+TEST_F(TurnPortTest, DISABLED_TestTurnTCPReleaseAllocation) {
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
+
+  ASSERT_GT(turn_server_.server()->allocations().size(), 0U);
+  turn_port_.reset();
+  EXPECT_EQ_WAIT(0U, turn_server_.server()->allocations().size(), kTimeout);
 }
 
 // This test verifies any FD's are not leaked after TurnPort is destroyed.

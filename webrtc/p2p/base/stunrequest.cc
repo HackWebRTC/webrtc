@@ -44,7 +44,11 @@ void StunRequestManager::SendDelayed(StunRequest* request, int delay) {
   request->set_origin(origin_);
   request->Construct();
   requests_[request->id()] = request;
-  thread_->PostDelayed(delay, request, MSG_STUN_SEND, NULL);
+  if (delay > 0) {
+    thread_->PostDelayed(delay, request, MSG_STUN_SEND, NULL);
+  } else {
+    thread_->Send(request, MSG_STUN_SEND, NULL);
+  }
 }
 
 void StunRequestManager::Remove(StunRequest* request) {
