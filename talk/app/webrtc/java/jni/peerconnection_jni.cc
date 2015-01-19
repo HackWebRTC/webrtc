@@ -1002,14 +1002,14 @@ class StatsObserverWrapper : public StatsObserver {
     int i = 0;
     for (const auto* report : reports) {
       ScopedLocalRefFrame local_ref_frame(jni);
-      jstring j_id = JavaStringFromStdString(jni, report->id().ToString());
-      jstring j_type = JavaStringFromStdString(jni, report->TypeToString());
-      jobjectArray j_values = ValuesToJava(jni, report->values());
+      jstring j_id = JavaStringFromStdString(jni, report->id);
+      jstring j_type = JavaStringFromStdString(jni, report->type);
+      jobjectArray j_values = ValuesToJava(jni, report->values);
       jobject j_report = jni->NewObject(*j_stats_report_class_,
                                         j_stats_report_ctor_,
                                         j_id,
                                         j_type,
-                                        report->timestamp(),
+                                        report->timestamp,
                                         j_values);
       jni->SetObjectArrayElement(reports_array, i++, j_report);
     }
@@ -1021,11 +1021,11 @@ class StatsObserverWrapper : public StatsObserver {
         values.size(), *j_value_class_, NULL);
     for (int i = 0; i < values.size(); ++i) {
       ScopedLocalRefFrame local_ref_frame(jni);
-      const auto& value = values[i];
+      const StatsReport::Value& value = values[i];
       // Should we use the '.name' enum value here instead of converting the
       // name to a string?
-      jstring j_name = JavaStringFromStdString(jni, value->display_name());
-      jstring j_value = JavaStringFromStdString(jni, value->value);
+      jstring j_name = JavaStringFromStdString(jni, value.display_name());
+      jstring j_value = JavaStringFromStdString(jni, value.value);
       jobject j_element_value =
           jni->NewObject(*j_value_class_, j_value_ctor_, j_name, j_value);
       jni->SetObjectArrayElement(j_values, i, j_element_value);

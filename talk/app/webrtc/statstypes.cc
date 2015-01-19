@@ -27,8 +27,6 @@
 
 #include "talk/app/webrtc/statstypes.h"
 
-using rtc::scoped_ptr;
-
 namespace webrtc {
 
 const char StatsReport::kStatsReportTypeSession[] = "googLibjingleSession";
@@ -48,50 +46,37 @@ const char StatsReport::kStatsReportTypeDataChannel[] = "datachannel";
 const char StatsReport::kStatsReportVideoBweId[] = "bweforvideo";
 
 StatsReport::StatsReport(const StatsReport& src)
-  : id_(src.id_),
+  : id(src.id),
     type(src.type),
-    timestamp_(src.timestamp_),
-    values_(src.values_) {
+    timestamp(src.timestamp),
+    values(src.values) {
 }
 
 StatsReport::StatsReport(const std::string& id)
-    : id_(id), timestamp_(0) {
-}
-
-StatsReport::StatsReport(scoped_ptr<StatsReport::Id> id)
-    : id_(id->ToString()), timestamp_(0) {
-}
-
-// static
-scoped_ptr<StatsReport::Id> StatsReport::NewTypedId(
-    StatsReport::StatsType type, const std::string& id) {
-  std::string internal_id(type);
-  internal_id += '_';
-  internal_id += id;
-  return scoped_ptr<Id>(new Id(internal_id)).Pass();
+    : id(id), timestamp(0) {
 }
 
 StatsReport& StatsReport::operator=(const StatsReport& src) {
-  ASSERT(id_ == src.id_);
+  ASSERT(id == src.id);
   type = src.type;
-  timestamp_ = src.timestamp_;
-  values_ = src.values_;
+  timestamp = src.timestamp;
+  values = src.values;
   return *this;
 }
 
 // Operators provided for STL container/algorithm support.
 bool StatsReport::operator<(const StatsReport& other) const {
-  return id_ < other.id_;
+  return id < other.id;
 }
 
 bool StatsReport::operator==(const StatsReport& other) const {
-  return id_ == other.id_;
+  return id == other.id;
 }
 
 // Special support for being able to use std::find on a container
 // without requiring a new StatsReport instance.
 bool StatsReport::operator==(const std::string& other_id) const {
-  return id_ == other_id;
+  return id == other_id;
 }
 
 // The copy ctor can't be declared as explicit due to problems with STL.
@@ -333,7 +318,7 @@ const char* StatsReport::Value::display_name() const {
 
 void StatsReport::AddValue(StatsReport::StatsValueName name,
                            const std::string& value) {
-  values_.push_back(ValuePtr(new Value(name, value)));
+  values.push_back(Value(name, value));
 }
 
 void StatsReport::AddValue(StatsReport::StatsValueName name, int64 value) {
@@ -375,21 +360,15 @@ void StatsReport::AddBoolean(StatsReport::StatsValueName name, bool value) {
 
 void StatsReport::ReplaceValue(StatsReport::StatsValueName name,
                                const std::string& value) {
-  Values::iterator it = std::find_if(values_.begin(), values_.end(),
-      [&name](const ValuePtr& v)->bool { return v->name == name; });
-  // Values are const once added since they may be used outside of the stats
-  // collection. So we remove it from values_ when replacing and add a new one.
-  if (it != values_.end()) {
-    if ((*it)->value == value)
+  for (Values::iterator it = values.begin(); it != values.end(); ++it) {
+    if ((*it).name == name) {
+      it->value = value;
       return;
-    values_.erase(it);
+    }
   }
-
-  AddValue(name, value);
-}
-
-void StatsReport::ResetValues() {
-  values_.clear();
+  // It is not reachable here, add an ASSERT to make sure the overwriting is
+  // always a success.
+  ASSERT(false);
 }
 
 StatsSet::StatsSet() {

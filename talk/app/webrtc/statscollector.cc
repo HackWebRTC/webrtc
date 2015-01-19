@@ -102,10 +102,10 @@ bool ExtractValueFromReport(
     const StatsReport& report,
     StatsReport::StatsValueName name,
     std::string* value) {
-  StatsReport::Values::const_iterator it = report.values().begin();
-  for (; it != report.values().end(); ++it) {
-    if ((*it)->name == name) {
-      *value = (*it)->value;
+  StatsReport::Values::const_iterator it = report.values.begin();
+  for (; it != report.values.end(); ++it) {
+    if (it->name == name) {
+      *value = it->value;
       return true;
     }
   }
@@ -284,12 +284,13 @@ void ExtractStats(const cricket::BandwidthEstimationInfo& info,
                   double stats_gathering_started,
                   PeerConnectionInterface::StatsOutputLevel level,
                   StatsReport* report) {
+  ASSERT(report->id == StatsReport::kStatsReportVideoBweId);
   report->type = StatsReport::kStatsReportTypeBwe;
 
   // Clear out stats from previous GatherStats calls if any.
-  if (report->timestamp() != stats_gathering_started) {
-    report->ResetValues();
-    report->set_timestamp(stats_gathering_started);
+  if (report->timestamp != stats_gathering_started) {
+    report->values.clear();
+    report->timestamp = stats_gathering_started;
   }
 
   report->AddValue(StatsReport::kStatsValueNameAvailableSendBandwidth,
@@ -323,13 +324,13 @@ void ExtractStats(const cricket::BandwidthEstimationInfo& info,
 
 void ExtractRemoteStats(const cricket::MediaSenderInfo& info,
                         StatsReport* report) {
-  report->set_timestamp(info.remote_stats[0].timestamp);
+  report->timestamp = info.remote_stats[0].timestamp;
   // TODO(hta): Extract some stats here.
 }
 
 void ExtractRemoteStats(const cricket::MediaReceiverInfo& info,
                         StatsReport* report) {
-  report->set_timestamp(info.remote_stats[0].timestamp);
+  report->timestamp = info.remote_stats[0].timestamp;
   // TODO(hta): Extract some stats here.
 }
 
@@ -553,8 +554,8 @@ StatsReport* StatsCollector::PrepareLocalReport(
   // Having the old values in the report will lead to multiple values with
   // the same name.
   // TODO(xians): Consider changing StatsReport to use map instead of vector.
-  report->ResetValues();
-  report->set_timestamp(stats_gathering_started_);
+  report->values.clear();
+  report->timestamp = stats_gathering_started_;
 
   report->AddValue(StatsReport::kStatsValueNameSsrc, ssrc_id);
   report->AddValue(StatsReport::kStatsValueNameTrackId, track_id);
@@ -594,8 +595,8 @@ StatsReport* StatsCollector::PrepareRemoteReport(
 
   // Clear out stats from previous GatherStats calls if any.
   // The timestamp will be added later. Zero it for debugging.
-  report->ResetValues();
-  report->set_timestamp(0);
+  report->values.clear();
+  report->timestamp = 0;
 
   report->AddValue(StatsReport::kStatsValueNameSsrc, ssrc_id);
   report->AddValue(StatsReport::kStatsValueNameTrackId, track_id);
@@ -636,14 +637,14 @@ std::string StatsCollector::AddOneCertificateReport(
   StatsReport* report = reports_.ReplaceOrAddNew(
       StatsId(StatsReport::kStatsReportTypeCertificate, fingerprint));
   report->type = StatsReport::kStatsReportTypeCertificate;
-  report->set_timestamp(stats_gathering_started_);
+  report->timestamp = stats_gathering_started_;
   report->AddValue(StatsReport::kStatsValueNameFingerprint, fingerprint);
   report->AddValue(StatsReport::kStatsValueNameFingerprintAlgorithm,
                    digest_algorithm);
   report->AddValue(StatsReport::kStatsValueNameDer, der_base64);
   if (!issuer_id.empty())
     report->AddValue(StatsReport::kStatsValueNameIssuerId, issuer_id);
-  return report->id().ToString();
+  return report->id;
 }
 
 std::string StatsCollector::AddCertificateReports(
@@ -686,7 +687,7 @@ std::string StatsCollector::AddCandidateReport(
       report->AddValue(StatsReport::kStatsValueNameCandidateNetworkType,
                        AdapterTypeToStatsType(candidate.network_type()));
     }
-    report->set_timestamp(stats_gathering_started_);
+    report->timestamp = stats_gathering_started_;
     report->AddValue(StatsReport::kStatsValueNameCandidateIPAddress,
                      candidate.address().ipaddr().ToString());
     report->AddValue(StatsReport::kStatsValueNameCandidatePortNumber,
@@ -708,8 +709,8 @@ void StatsCollector::ExtractSessionInfo() {
   StatsReport* report = reports_.ReplaceOrAddNew(
       StatsId(StatsReport::kStatsReportTypeSession, session_->id()));
   report->type = StatsReport::kStatsReportTypeSession;
-  report->set_timestamp(stats_gathering_started_);
-  report->ResetValues();
+  report->timestamp = stats_gathering_started_;
+  report->values.clear();
   report->AddBoolean(StatsReport::kStatsValueNameInitiator,
                      session_->initiator());
 
@@ -754,7 +755,7 @@ void StatsCollector::ExtractSessionInfo() {
              << "-" << channel_iter->component;
         StatsReport* channel_report = reports_.ReplaceOrAddNew(ostc.str());
         channel_report->type = StatsReport::kStatsReportTypeComponent;
-        channel_report->set_timestamp(stats_gathering_started_);
+        channel_report->timestamp = stats_gathering_started_;
         channel_report->AddValue(StatsReport::kStatsValueNameComponent,
                                  channel_iter->component);
         if (!local_cert_report_id.empty()) {
@@ -775,10 +776,10 @@ void StatsCollector::ExtractSessionInfo() {
               << channel_iter->component << "-" << i;
           StatsReport* report = reports_.ReplaceOrAddNew(ost.str());
           report->type = StatsReport::kStatsReportTypeCandidatePair;
-          report->set_timestamp(stats_gathering_started_);
+          report->timestamp = stats_gathering_started_;
           // Link from connection to its containing channel.
           report->AddValue(StatsReport::kStatsValueNameChannelId,
-                           channel_report->id().ToString());
+                           channel_report->id);
 
           const cricket::ConnectionInfo& info =
               channel_iter->connection_infos[i];
@@ -918,6 +919,7 @@ StatsReport* StatsCollector::GetOrCreateReport(const std::string& type,
   if (report == NULL) {
     std::string statsid = StatsId(type, id, direction);
     report = reports_.FindOrAddNew(statsid);
+    ASSERT(report->id == statsid);
     report->type = type;
   }
 
