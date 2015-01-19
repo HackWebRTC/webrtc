@@ -4285,8 +4285,8 @@ TEST_F(WebRtcVideoEngineSimulcastTestFake,
   TestSimulcastAdapter(kVP8Codec, false);
 }
 
-// Flaky on Windows. https://code.google.com/p/webrtc/issues/detail?id=4135
-#if defined(WIN32)
+// Flaky on Windows and tsan. https://code.google.com/p/webrtc/issues/detail?id=4135
+#if defined(WIN32) || defined(THREAD_SANITIZER)
 #define MAYBE_SimulcastSend_1280x800 DISABLED_SimulcastSend_1280x800
 #else
 #define MAYBE_SimulcastSend_1280x800 SimulcastSend_1280x800
@@ -4299,8 +4299,8 @@ TEST_F(WebRtcVideoMediaChannelSimulcastTest, MAYBE_SimulcastSend_1280x800) {
   SimulcastSend(codec, MAKE_VECTOR(kSsrcs2));
 }
 
-// Flaky on Windows. https://code.google.com/p/webrtc/issues/detail?id=4135
-#if defined(WIN32)
+// Flaky on Windows and tsan. https://code.google.com/p/webrtc/issues/detail?id=4135
+#if defined(WIN32) || defined(THREAD_SANITIZER)
 #define MAYBE_SimulcastSend_1280x720 DISABLED_SimulcastSend_1280x720
 #else
 #define MAYBE_SimulcastSend_1280x720 SimulcastSend_1280x720
@@ -4313,8 +4313,8 @@ TEST_F(WebRtcVideoMediaChannelSimulcastTest, MAYBE_SimulcastSend_1280x720) {
   SimulcastSend(codec, MAKE_VECTOR(kSsrcs2));
 }
 
-// Flaky on Windows. https://code.google.com/p/webrtc/issues/detail?id=4135
-#if defined(WIN32)
+// Flaky on Windows and tsan. https://code.google.com/p/webrtc/issues/detail?id=4135
+#if defined(WIN32) || defined(THREAD_SANITIZER)
 #define MAYBE_SimulcastSend_960x540 DISABLED_SimulcastSend_960x540
 #else
 #define MAYBE_SimulcastSend_960x540 SimulcastSend_960x540
@@ -4327,8 +4327,8 @@ TEST_F(WebRtcVideoMediaChannelSimulcastTest, MAYBE_SimulcastSend_960x540) {
   SimulcastSend(codec, MAKE_VECTOR(kSsrcs2));
 }
 
-// Flaky on Windows. https://code.google.com/p/webrtc/issues/detail?id=4135
-#if defined(WIN32)
+// Flaky on Windows and tsan. https://code.google.com/p/webrtc/issues/detail?id=4135
+#if defined(WIN32) || defined(THREAD_SANITIZER)
 #define MAYBE_SimulcastSend_960x600 DISABLED_SimulcastSend_960x600
 #else
 #define MAYBE_SimulcastSend_960x600 SimulcastSend_960x600
@@ -4341,8 +4341,8 @@ TEST_F(WebRtcVideoMediaChannelSimulcastTest, MAYBE_SimulcastSend_960x600) {
   SimulcastSend(codec, MAKE_VECTOR(kSsrcs2));
 }
 
-// Flaky on Windows. https://code.google.com/p/webrtc/issues/detail?id=4135
-#if defined(WIN32)
+// Flaky on Windows and tsan. https://code.google.com/p/webrtc/issues/detail?id=4135
+#if defined(WIN32) || defined(THREAD_SANITIZER)
 #define MAYBE_SimulcastSend_640x400 DISABLED_SimulcastSend_640x400
 #else
 #define MAYBE_SimulcastSend_640x400 SimulcastSend_640x400
@@ -4354,20 +4354,26 @@ TEST_F(WebRtcVideoMediaChannelSimulcastTest, MAYBE_SimulcastSend_640x400) {
   SimulcastSend(codec, MAKE_VECTOR(kSsrcs2));
 }
 
-// Flaky on Windows. https://code.google.com/p/webrtc/issues/detail?id=4135
-#if defined(WIN32)
+// Flaky on Windows and tsan. https://code.google.com/p/webrtc/issues/detail?id=4135
+#if defined(WIN32) || defined(THREAD_SANITIZER)
 #define MAYBE_SimulcastSend_640x360 DISABLED_SimulcastSend_640x360
 #else
 #define MAYBE_SimulcastSend_640x360 SimulcastSend_640x360
 #endif
-TEST_F(WebRtcVideoMediaChannelSimulcastTest, SimulcastSend_640x360) {
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, MAYBE_SimulcastSend_640x360) {
   cricket::VideoCodec codec = kVP8Codec;
   codec.width = 640;
   codec.height = 360;
   SimulcastSend(codec, MAKE_VECTOR(kSsrcs2));
 }
 
-TEST_F(WebRtcVideoMediaChannelSimulcastTest, SimulcastSend_480x300) {
+// Flaky on Windows and tsan. https://code.google.com/p/webrtc/issues/detail?id=4135
+#if defined(WIN32) || defined(THREAD_SANITIZER)
+#define MAYBE_SimulcastSend_480x300 DISABLED_SimulcastSend_480x300
+#else
+#define MAYBE_SimulcastSend_480x300 SimulcastSend_480x300
+#endif
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, MAYBE_SimulcastSend_480x300) {
   cricket::VideoCodec codec = kVP8Codec;
   codec.width = 480;
   codec.height = 300;
@@ -4381,14 +4387,26 @@ TEST_F(WebRtcVideoMediaChannelSimulcastTest, DISABLED_SimulcastSend_480x270) {
   SimulcastSend(codec, MAKE_VECTOR(kSsrcs2));
 }
 
-TEST_F(WebRtcVideoMediaChannelSimulcastTest, SimulcastSend_320x200) {
+// Flaky on Windows and tsan. https://code.google.com/p/webrtc/issues/detail?id=4135
+#if defined(WIN32) || defined(THREAD_SANITIZER)
+#define MAYBE_SimulcastSend_320x200 DISABLED_SimulcastSend_320x200
+#else
+#define MAYBE_SimulcastSend_320x200 SimulcastSend_320x200
+#endif
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, MAYBE_SimulcastSend_320x200) {
   cricket::VideoCodec codec = kVP8Codec;
   codec.width = 320;
   codec.height = 200;
   SimulcastSend(codec, MAKE_VECTOR(kSsrcs1));
 }
 
-TEST_F(WebRtcVideoMediaChannelSimulcastTest, SimulcastSend_320x180) {
+// Flaky on Windows and tsan. https://code.google.com/p/webrtc/issues/detail?id=4135
+#if defined(WIN32) || defined(THREAD_SANITIZER)
+#define MAYBE_SimulcastSend_320x180 DISABLED_SimulcastSend_320x180
+#else
+#define MAYBE_SimulcastSend_320x180 SimulcastSend_320x180
+#endif
+TEST_F(WebRtcVideoMediaChannelSimulcastTest, MAYBE_SimulcastSend_320x180) {
   cricket::VideoCodec codec = kVP8Codec;
   codec.width = 320;
   codec.height = 180;
