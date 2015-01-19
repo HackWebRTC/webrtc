@@ -25,7 +25,9 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Wrapper script for running the Java tests under this directory.
+# Wrapper script for running the Java tests under this directory. This script
+# will only work if it has been massaged by the build action and placed in
+# the PRODUCT_DIR (e.g. out/Debug).
 
 # Exit with error immediately if any subcommand fails.
 set -e
@@ -33,14 +35,22 @@ set -e
 # Change directory to the PRODUCT_DIR (e.g. out/Debug).
 cd -P $(dirname $0)
 
+if [ -z "$LD_PRELOAD" ]; then
+  echo "LD_PRELOAD isn't set. It should be set to something like "
+  echo "/usr/lib/x86_64-linux-gnu/libpulse.so.0. I will now refuse to run "
+  echo "to protect you from the consequences of your folly."
+  exit 1
+fi
+
 export CLASSPATH=`pwd`/junit-4.11.jar
 CLASSPATH=$CLASSPATH:`pwd`/libjingle_peerconnection_test.jar
 CLASSPATH=$CLASSPATH:`pwd`/libjingle_peerconnection.jar
 
-export LD_LIBRARY_PATH=`pwd`
+# This sets java.library.path so our lookup of libpeerconnection.so works.
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`:`pwd`/lib:`pwd`/lib.target
 
 # The RHS value is replaced by the build action that copies this script to
-# <(PRODUCT_DIR).
+# <(PRODUCT_DIR), using search-and-replace by the build action.
 export JAVA_HOME=GYP_JAVA_HOME
 
 ${JAVA_HOME}/bin/java -Xcheck:jni -classpath $CLASSPATH \
