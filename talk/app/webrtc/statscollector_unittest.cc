@@ -155,10 +155,9 @@ class FakeAudioTrack
 bool GetValue(const StatsReport* report,
               StatsReport::StatsValueName name,
               std::string* value) {
-  StatsReport::Values::const_iterator it = report->values.begin();
-  for (; it != report->values.end(); ++it) {
-    if (it->name == name) {
-      *value = it->value;
+  for (const auto& v : report->values()) {
+    if (v->name == name) {
+      *value = v->value;
       return true;
     }
   }
@@ -199,12 +198,12 @@ const StatsReport* FindNthReportByType(
 
 const StatsReport* FindReportById(const StatsReports& reports,
                                   const std::string& id) {
-  for (size_t i = 0; i < reports.size(); ++i) {
-    if (reports[i]->id == id) {
-      return reports[i];
+  for (const auto* r : reports) {
+    if (r->id().ToString() == id) {
+      return r;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 std::string ExtractSsrcStatsValue(StatsReports reports,
@@ -1029,7 +1028,7 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
   const StatsReport* remote_report = FindNthReportByType(reports,
       StatsReport::kStatsReportTypeRemoteSsrc, 1);
   EXPECT_FALSE(remote_report == NULL);
-  EXPECT_NE(0, remote_report->timestamp);
+  EXPECT_NE(0, remote_report->timestamp());
 }
 
 // This test verifies that the empty track report exists in the returned stats
