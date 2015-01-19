@@ -32,14 +32,12 @@ static const uint32_t kTimeOffsetSwitchThreshold = 30;
 
 class WrappingBitrateEstimator : public RemoteBitrateEstimator {
  public:
-  WrappingBitrateEstimator(int engine_id,
-                           RemoteBitrateObserver* observer,
+  WrappingBitrateEstimator(RemoteBitrateObserver* observer,
                            Clock* clock,
                            const Config& config)
       : observer_(observer),
         clock_(clock),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-        engine_id_(engine_id),
         min_bitrate_bps_(config.Get<RemoteBitrateEstimatorMinRate>().min_rate),
         rate_control_type_(kAimdControl),
         rbe_(RemoteBitrateEstimatorFactory().Create(observer_,
@@ -142,7 +140,6 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
   RemoteBitrateObserver* observer_;
   Clock* clock_;
   scoped_ptr<CriticalSectionWrapper> crit_sect_;
-  const int engine_id_;
   const uint32_t min_bitrate_bps_;
   RateControlType rate_control_type_;
   scoped_ptr<RemoteBitrateEstimator> rbe_;
@@ -153,8 +150,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 };
 }  // namespace
 
-ChannelGroup::ChannelGroup(int engine_id,
-                           ProcessThread* process_thread,
+ChannelGroup::ChannelGroup(ProcessThread* process_thread,
                            const Config* config)
     : remb_(new VieRemb()),
       bitrate_controller_(
@@ -172,8 +168,7 @@ ChannelGroup::ChannelGroup(int engine_id,
   assert(config_);  // Must have a valid config pointer here.
 
   remote_bitrate_estimator_.reset(
-      new WrappingBitrateEstimator(engine_id,
-                                   remb_.get(),
+      new WrappingBitrateEstimator(remb_.get(),
                                    Clock::GetRealTimeClock(),
                                    *config_));
 

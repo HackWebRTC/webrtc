@@ -85,7 +85,7 @@ int ViEChannelManager::CreateChannel(int* channel_id,
   }
 
   // Create a new channel group and add this channel.
-  ChannelGroup* group = new ChannelGroup(engine_id_, module_process_thread_,
+  ChannelGroup* group = new ChannelGroup(module_process_thread_,
                                          channel_group_config);
   BitrateController* bitrate_controller = group->GetBitrateController();
   ViEEncoder* vie_encoder = new ViEEncoder(engine_id_, new_channel_id,
