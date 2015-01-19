@@ -38,6 +38,8 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/common.h"
+#include "webrtc/base/linked_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringencode.h"
 
 namespace webrtc {
@@ -46,7 +48,7 @@ class StatsReport {
  public:
   // TODO(tommi): Remove this ctor after removing reliance upon it in Chromium
   // (mock_peer_connection_impl.cc).
-  StatsReport() : timestamp(0) {}
+  StatsReport() : timestamp_(0) {}
 
   // TODO(tommi): Make protected and disallow copy completely once not needed.
   StatsReport(const StatsReport& src);
@@ -69,7 +71,7 @@ class StatsReport {
   // This is used as a key for this report in ordered containers,
   // so it must never be changed.
   // TODO(tommi): Make this member variable const.
-  std::string id;  // See below for contents.
+  std::string id_;  // See below for contents.
   std::string type;  // See below for contents.
 
   // StatsValue names.
@@ -179,6 +181,15 @@ class StatsReport {
     kStatsValueNameWritable,
   };
 
+  class Id {
+   public:
+    Id(const std::string& id) : id_(id) {}
+    Id(const Id& id) : id_(id.id_) {}
+    const std::string& ToString() const { return id_; }
+   private:
+    const std::string id_;
+  };
+
   struct Value {
     // The copy ctor can't be declared as explicit due to problems with STL.
     Value(const Value& other);
@@ -198,6 +209,15 @@ class StatsReport {
     std::string value;
   };
 
+  typedef rtc::linked_ptr<Value> ValuePtr;
+  typedef std::vector<ValuePtr> Values;
+  typedef const char* StatsType;
+
+  // Ownership of |id| is passed to |this|.
+  explicit StatsReport(rtc::scoped_ptr<Id> id);
+
+  static rtc::scoped_ptr<Id> NewTypedId(StatsType type, const std::string& id);
+
   void AddValue(StatsValueName name, const std::string& value);
   void AddValue(StatsValueName name, int64 value);
   template <typename T>
@@ -206,9 +226,17 @@ class StatsReport {
 
   void ReplaceValue(StatsValueName name, const std::string& value);
 
-  double timestamp;  // Time since 1970-01-01T00:00:00Z in milliseconds.
-  typedef std::vector<Value> Values;
-  Values values;
+  void ResetValues();
+
+  const Id id() const { return Id(id_); }
+  double timestamp() const { return timestamp_; }
+  void set_timestamp(double t) { timestamp_ = t; }
+  const Values& values() const { return values_; }
+
+  const char* TypeToString() const { return type.c_str(); }
+
+  double timestamp_;  // Time since 1970-01-01T00:00:00Z in milliseconds.
+  Values values_;
 
   // TODO(tommi): These should all be enum values.
 

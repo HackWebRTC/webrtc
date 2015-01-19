@@ -174,9 +174,9 @@ class MockStatsObserver : public webrtc::StatsObserver {
   bool GetIntValue(const StatsReport* report,
                    StatsReport::StatsValueName name,
                    int* value) {
-    for (const auto& v : report->values) {
-      if (v.name == name) {
-        *value = rtc::FromString<int>(v.value);
+    for (const auto& v : report->values()) {
+      if (v->name == name) {
+        *value = rtc::FromString<int>(v->value);
         return true;
       }
     }
