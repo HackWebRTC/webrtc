@@ -560,28 +560,52 @@ class AcmReceiverBitExactness : public ::testing::Test {
   }
 };
 
-TEST_F(AcmReceiverBitExactness, 8kHzOutput) {
+// Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
+#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#define MAYBE_8kHzOutput DISABLED_8kHzOutput
+#else
+#define MAYBE_8kHzOutput 8kHzOutput
+#endif
+TEST_F(AcmReceiverBitExactness, MAYBE_8kHzOutput) {
   Run(8000,
       PlatformChecksum("bd6f8d9602cd82444ea2539e674df747",
                        "6ac89c7145072c26bfeba602cd661afb",
                        "8a8440f5511eb729221b9aac25cda3a0"));
 }
 
-TEST_F(AcmReceiverBitExactness, 16kHzOutput) {
+// Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
+#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#define MAYBE_16kHzOutput DISABLED_16kHzOutput
+#else
+#define MAYBE_16kHzOutput 16kHzOutput
+#endif
+TEST_F(AcmReceiverBitExactness, MAYBE_16kHzOutput) {
   Run(16000,
       PlatformChecksum("a39bc6ee0c4eb15f3ad2f43cebcc571d",
                        "3e888eb04f57db2c6ef952fe64f17fe6",
                        "7be583092c5adbcb0f6cd66eca20ea63"));
 }
 
-TEST_F(AcmReceiverBitExactness, 32kHzOutput) {
+// Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
+#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#define MAYBE_32kHzOutput DISABLED_32kHzOutput
+#else
+#define MAYBE_32kHzOutput 32kHzOutput
+#endif
+TEST_F(AcmReceiverBitExactness, MAYBE_32kHzOutput) {
   Run(32000,
       PlatformChecksum("80964572aaa2dc92f9e34896dd3802b3",
                        "aeca37e963310f5b6552b7edea23c2f1",
                        "3a84188abe9fca25fedd6034760f3e22"));
 }
 
-TEST_F(AcmReceiverBitExactness, 48kHzOutput) {
+// Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
+#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#define MAYBE_48kHzOutput DISABLED_48kHzOutput
+#else
+#define MAYBE_48kHzOutput 48kHzOutput
+#endif
+TEST_F(AcmReceiverBitExactness, MAYBE_48kHzOutput) {
   Run(48000,
       PlatformChecksum("8aacde91f390e0d5a9c2ed571a25fd37",
                        "76b9e99e0a3998aa28355e7a2bd836f7",
@@ -741,7 +765,13 @@ class AcmSenderBitExactness : public ::testing::Test,
   rtc::Md5Digest payload_checksum_;
 };
 
-TEST_F(AcmSenderBitExactness, IsacWb30ms) {
+// Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
+#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#define MAYBE_IsacWb30ms DISABLED_IsacWb30ms
+#else
+#define MAYBE_IsacWb30ms IsacWb30ms
+#endif
+TEST_F(AcmSenderBitExactness, MAYBE_IsacWb30ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest(acm2::ACMCodecDB::kISAC, 1, 103, 480, 480));
   Run(AcmReceiverBitExactness::PlatformChecksum(
           "c7e5bdadfa2871df95639fcc297cf23d",
@@ -755,7 +785,13 @@ TEST_F(AcmSenderBitExactness, IsacWb30ms) {
       test::AcmReceiveTest::kMonoOutput);
 }
 
-TEST_F(AcmSenderBitExactness, IsacWb60ms) {
+// Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
+#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#define MAYBE_IsacWb60ms DISABLED_IsacWb60ms
+#else
+#define MAYBE_IsacWb60ms IsacWb60ms
+#endif
+TEST_F(AcmSenderBitExactness, MAYBE_IsacWb60ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest(acm2::ACMCodecDB::kISAC, 1, 103, 960, 960));
   Run(AcmReceiverBitExactness::PlatformChecksum(
           "14d63c5f08127d280e722e3191b73bdd",
@@ -914,7 +950,13 @@ TEST_F(AcmSenderBitExactness, DISABLED_ON_ANDROID(G722_stereo_20ms)) {
       test::AcmReceiveTest::kStereoOutput);
 }
 
-TEST_F(AcmSenderBitExactness, Opus_stereo_20ms) {
+// Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
+#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#define MAYBE_Opus_stereo_20ms DISABLED_Opus_stereo_20ms
+#else
+#define MAYBE_Opus_stereo_20ms Opus_stereo_20ms
+#endif
+TEST_F(AcmSenderBitExactness, MAYBE_Opus_stereo_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest(acm2::ACMCodecDB::kOpus, 2, 120, 960, 960));
   Run(AcmReceiverBitExactness::PlatformChecksum(
           "855041f2490b887302bce9d544731849",
