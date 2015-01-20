@@ -461,16 +461,16 @@
       ],
       'conditions': [
         ['build_with_chromium==1', {
-	  'dependencies': [
+          'dependencies': [
             '<(webrtc_root)/modules/modules.gyp:video_capture_module_impl',
             '<(webrtc_root)/modules/modules.gyp:video_render_module_impl',
-	  ],
-	}, {
-	  'dependencies': [
+          ],
+        }, {
+          'dependencies': [
             '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
             '<(webrtc_root)/modules/modules.gyp:video_render_module_internal_impl',
-	  ],
-	}],
+          ],
+        }],
         ['OS=="linux"', {
           'sources': [
             'media/devices/gtkvideorenderer.cc',

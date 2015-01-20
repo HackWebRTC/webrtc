@@ -46,114 +46,114 @@
         'external/video_capture_external.cc',
       ],
     },
-    {
-      'target_name': 'video_capture_module_internal_impl',
-      'type': 'static_library',
-      'dependencies': [
-        'video_capture_module',
-      ],
-      'conditions': [
-        ['OS=="linux"', {
-          'sources': [
-            'linux/device_info_linux.cc',
-            'linux/device_info_linux.h',
-            'linux/video_capture_linux.cc',
-            'linux/video_capture_linux.h',
-          ],
-        }],  # linux
-        ['OS=="mac"', {
-          'sources': [
-            'mac/qtkit/video_capture_qtkit.h',
-            'mac/qtkit/video_capture_qtkit.mm',
-            'mac/qtkit/video_capture_qtkit_info.h',
-            'mac/qtkit/video_capture_qtkit_info.mm',
-            'mac/qtkit/video_capture_qtkit_info_objc.h',
-            'mac/qtkit/video_capture_qtkit_info_objc.mm',
-            'mac/qtkit/video_capture_qtkit_objc.h',
-            'mac/qtkit/video_capture_qtkit_objc.mm',
-            'mac/qtkit/video_capture_qtkit_utility.h',
-            'mac/video_capture_mac.mm',
-          ],
-          'link_settings': {
-            'xcode_settings': {
-              'OTHER_LDFLAGS': [
-                '-framework Cocoa',
-                '-framework CoreVideo',
-                '-framework QTKit',
-              ],
-            },
-          },
-        }],  # mac
-        # Note that since winsdk_samples isn't pulled into chromium gyp will
-        # fail to parse this rule and try to resolve the dependencies. This
-        # is not a problem since the internal video capture implementation
-        # should not be used in chrome - issue 3831.
-        ['OS=="win" and build_with_chromium==0', {
-          'dependencies': [
-            '<(DEPTH)/third_party/winsdk_samples/winsdk_samples.gyp:directshow_baseclasses',
-          ],
-          'sources': [
-            'windows/device_info_ds.cc',
-            'windows/device_info_ds.h',
-            'windows/device_info_mf.cc',
-            'windows/device_info_mf.h',
-            'windows/help_functions_ds.cc',
-            'windows/help_functions_ds.h',
-            'windows/sink_filter_ds.cc',
-            'windows/sink_filter_ds.h',
-            'windows/video_capture_ds.cc',
-            'windows/video_capture_ds.h',
-            'windows/video_capture_factory_windows.cc',
-            'windows/video_capture_mf.cc',
-            'windows/video_capture_mf.h',
-          ],
-          'link_settings': {
-            'libraries': [
-              '-lStrmiids.lib',
-            ],
-          },
-        }],  # win
-        ['OS=="android"', {
-          'dependencies': [
-            '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
-            '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
-          ],
-          'sources': [
-            'android/device_info_android.cc',
-            'android/device_info_android.h',
-            'android/video_capture_android.cc',
-            'android/video_capture_android.h',
-          ],
-        }],  # android
-        ['OS=="ios"', {
-          'sources': [
-            'ios/device_info_ios.h',
-            'ios/device_info_ios.mm',
-            'ios/device_info_ios_objc.h',
-            'ios/device_info_ios_objc.mm',
-            'ios/rtc_video_capture_ios_objc.h',
-            'ios/rtc_video_capture_ios_objc.mm',
-            'ios/video_capture_ios.h',
-            'ios/video_capture_ios.mm',
-          ],
-          'xcode_settings': {
-            'CLANG_ENABLE_OBJC_ARC': 'YES',
-          },
-          'all_dependent_settings': {
-            'xcode_settings': {
-              'OTHER_LDFLAGS': [
-                '-framework AVFoundation',
-                '-framework CoreMedia',
-                '-framework CoreVideo',
-                '-framework UIKit',
-              ],
-            },
-          },
-        }],  # ios
-      ], # conditions
-    }
-  ],
+  ], # targets
   'conditions': [
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'video_capture_module_internal_impl',
+          'type': 'static_library',
+          'dependencies': [
+            'video_capture_module',
+          ],
+          'conditions': [
+            ['OS=="linux"', {
+              'sources': [
+                'linux/device_info_linux.cc',
+                'linux/device_info_linux.h',
+                'linux/video_capture_linux.cc',
+                'linux/video_capture_linux.h',
+              ],
+            }],  # linux
+            ['OS=="mac"', {
+              'sources': [
+                'mac/qtkit/video_capture_qtkit.h',
+                'mac/qtkit/video_capture_qtkit.mm',
+                'mac/qtkit/video_capture_qtkit_info.h',
+                'mac/qtkit/video_capture_qtkit_info.mm',
+                'mac/qtkit/video_capture_qtkit_info_objc.h',
+                'mac/qtkit/video_capture_qtkit_info_objc.mm',
+                'mac/qtkit/video_capture_qtkit_objc.h',
+                'mac/qtkit/video_capture_qtkit_objc.mm',
+                'mac/qtkit/video_capture_qtkit_utility.h',
+                'mac/video_capture_mac.mm',
+              ],
+              'link_settings': {
+                'xcode_settings': {
+                  'OTHER_LDFLAGS': [
+                    '-framework Cocoa',
+                    '-framework CoreVideo',
+                    '-framework QTKit',
+                  ],
+                },
+              },
+            }],  # mac
+            ['OS=="win"', {
+              'dependencies': [
+                '<(DEPTH)/third_party/winsdk_samples/winsdk_samples.gyp:directshow_baseclasses',
+              ],
+              'sources': [
+                'windows/device_info_ds.cc',
+                'windows/device_info_ds.h',
+                'windows/device_info_mf.cc',
+                'windows/device_info_mf.h',
+                'windows/help_functions_ds.cc',
+                'windows/help_functions_ds.h',
+                'windows/sink_filter_ds.cc',
+                'windows/sink_filter_ds.h',
+                'windows/video_capture_ds.cc',
+                'windows/video_capture_ds.h',
+                'windows/video_capture_factory_windows.cc',
+                'windows/video_capture_mf.cc',
+                'windows/video_capture_mf.h',
+              ],
+              'link_settings': {
+                'libraries': [
+                  '-lStrmiids.lib',
+                ],
+              },
+            }],  # win
+            ['OS=="android"', {
+              'dependencies': [
+                '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
+                '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
+              ],
+              'sources': [
+                'android/device_info_android.cc',
+                'android/device_info_android.h',
+                'android/video_capture_android.cc',
+                'android/video_capture_android.h',
+              ],
+            }],  # android
+            ['OS=="ios"', {
+              'sources': [
+                'ios/device_info_ios.h',
+                'ios/device_info_ios.mm',
+                'ios/device_info_ios_objc.h',
+                'ios/device_info_ios_objc.mm',
+                'ios/rtc_video_capture_ios_objc.h',
+                'ios/rtc_video_capture_ios_objc.mm',
+                'ios/video_capture_ios.h',
+                'ios/video_capture_ios.mm',
+              ],
+              'xcode_settings': {
+                'CLANG_ENABLE_OBJC_ARC': 'YES',
+              },
+              'all_dependent_settings': {
+                'xcode_settings': {
+                  'OTHER_LDFLAGS': [
+                    '-framework AVFoundation',
+                    '-framework CoreMedia',
+                    '-framework CoreVideo',
+                    '-framework UIKit',
+                  ],
+                },
+              },
+            }],  # ios
+          ], # conditions
+        },
+      ],
+    }], # build_with_chromium==0
     ['include_tests==1', {
       'targets': [
         {
