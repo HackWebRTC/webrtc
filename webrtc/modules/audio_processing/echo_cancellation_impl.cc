@@ -129,9 +129,10 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
       Handle* my_handle = handle(handle_index);
       err = WebRtcAec_Process(
           my_handle,
-          audio->split_bands_const_f(i),
-          audio->num_bands(),
-          audio->split_bands_f(i),
+          audio->split_bands_const_f(i)[kBand0To8kHz],
+          audio->split_bands_const_f(i)[kBand8To16kHz],
+          audio->split_bands_f(i)[kBand0To8kHz],
+          audio->split_bands_f(i)[kBand8To16kHz],
           static_cast<int16_t>(audio->samples_per_split_channel()),
           apm_->stream_delay_ms(),
           stream_drift_samples_);
