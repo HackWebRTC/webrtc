@@ -32,7 +32,7 @@ def _LicenseHeader(input_api):
   years_re = '%s(--%s)?' % (years_re, years_re)
   license_header = (
       r'.*? libjingle\n'
-      r'.*? Copyright %(year)s,? Google Inc\.\n'
+      r'.*? Copyright %(year)s Google Inc\..*\n'
       r'.*?\n'
       r'.*? Redistribution and use in source and binary forms, with or without'
         r'\n'

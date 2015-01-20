@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2012 Google Inc, and Robin Seggelmann
+ * Copyright 2012 Google Inc. and Robin Seggelmann
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
