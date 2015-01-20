@@ -999,6 +999,12 @@ int16_t ACMGenericCodec::REDPayloadISAC(const int32_t /* isac_rate */,
   return -1;
 }
 
+int ACMGenericCodec::SetOpusApplication(OpusApplicationMode /*application*/) {
+  WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, unique_id_,
+      "The send-codec is not Opus, failed to set application.");
+  return -1;
+}
+
 int ACMGenericCodec::SetOpusMaxPlaybackRate(int /* frequency_hz */) {
   WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, unique_id_,
       "The send-codec is not Opus, failed to set maximum playback rate.");

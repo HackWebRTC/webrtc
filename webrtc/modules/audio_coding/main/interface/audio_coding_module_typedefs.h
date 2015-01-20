@@ -200,6 +200,18 @@ enum ACMBackgroundNoiseMode {
   Off
 };
 
+///////////////////////////////////////////////////////////////////////////
+//
+// Enumeration of Opus mode for intended application.
+//
+// kVoip              : optimized for voice signals.
+// kAudio             : optimized for non-voice signals like music.
+//
+enum OpusApplicationMode {
+ kVoip = 0,
+ kAudio = 1,
+};
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_INTERFACE_AUDIO_CODING_MODULE_TYPEDEFS_H_

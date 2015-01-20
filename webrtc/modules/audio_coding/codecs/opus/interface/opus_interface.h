@@ -21,7 +21,29 @@ extern "C" {
 typedef struct WebRtcOpusEncInst OpusEncInst;
 typedef struct WebRtcOpusDecInst OpusDecInst;
 
-int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst, int32_t channels);
+/****************************************************************************
+ * WebRtcOpus_EncoderCreate(...)
+ *
+ * This function create an Opus encoder.
+ *
+ * Input:
+ *      - channels           : number of channels.
+ *      - application        : 0 - VOIP applications.
+ *                                 Favor speech intelligibility.
+ *                             1 - Audio applications.
+ *                                 Favor faithfulness to the original input.
+ *
+ * Output:
+ *      - inst               : a pointer to Encoder context that is created
+ *                             if success.
+ *
+ * Return value              : 0 - Success
+ *                            -1 - Error
+ */
+int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
+                                 int32_t channels,
+                                 int32_t application);
+
 int16_t WebRtcOpus_EncoderFree(OpusEncInst* inst);
 
 /****************************************************************************

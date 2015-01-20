@@ -54,6 +54,8 @@ class AcmSendTestOldApi : public AudioPacketizationCallback,
       size_t payload_len_bytes,
       const RTPFragmentationHeader* fragmentation) OVERRIDE;
 
+  AudioCodingModule* acm() { return acm_.get(); }
+
  private:
   static const int kBlockSizeMs = 10;
 

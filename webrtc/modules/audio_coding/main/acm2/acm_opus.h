@@ -29,23 +29,29 @@ class ACMOpus : public ACMGenericCodec {
   ACMGenericCodec* CreateInstance(void);
 
   int16_t InternalEncode(uint8_t* bitstream,
-                         int16_t* bitstream_len_byte) OVERRIDE
+                         int16_t* bitstream_len_byte) override
+      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
+
+  int16_t InitEncoderSafe(WebRtcACMCodecParams* codec_params,
+                          bool force_initialization) override
       EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   int16_t InternalInitEncoder(WebRtcACMCodecParams *codec_params);
 
-  virtual int SetFEC(bool enable_fec) OVERRIDE;
+  int SetFEC(bool enable_fec) override;
 
-  virtual int SetPacketLossRate(int loss_rate) OVERRIDE;
+  int SetOpusApplication(OpusApplicationMode mode) override;
 
-  virtual int SetOpusMaxPlaybackRate(int frequency_hz) OVERRIDE;
+  int SetPacketLossRate(int loss_rate) override;
+
+  int SetOpusMaxPlaybackRate(int frequency_hz) override;
 
  protected:
   void DestructEncoderSafe();
 
   int16_t InternalCreateEncoder();
 
-  int16_t SetBitRateSafe(const int32_t rate) OVERRIDE
+  int16_t SetBitRateSafe(const int32_t rate) override
       EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   WebRtcOpusEncInst* encoder_inst_ptr_;
@@ -54,6 +60,8 @@ class ACMOpus : public ACMGenericCodec {
   int channels_;
 
   int packet_loss_rate_;
+
+  OpusApplicationMode application_;
 };
 
 }  // namespace acm2

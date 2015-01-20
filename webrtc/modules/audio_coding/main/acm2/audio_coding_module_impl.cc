@@ -1544,6 +1544,14 @@ int AudioCodingModuleImpl::ConfigISACBandwidthEstimator(
       frame_size_ms, rate_bit_per_sec, enforce_frame_size);
 }
 
+int AudioCodingModuleImpl::SetOpusApplication(OpusApplicationMode application) {
+  CriticalSectionScoped lock(acm_crit_sect_);
+  if (!HaveValidEncoder("SetOpusApplication")) {
+    return -1;
+  }
+  return codecs_[current_send_codec_idx_]->SetOpusApplication(application);
+}
+
 // Informs Opus encoder of the maximum playback rate the receiver will render.
 int AudioCodingModuleImpl::SetOpusMaxPlaybackRate(int frequency_hz) {
   CriticalSectionScoped lock(acm_crit_sect_);

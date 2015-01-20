@@ -977,6 +977,22 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms) {
       test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
+TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms_voip) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
+  // If not set, default will be kAudio in case of stereo.
+  send_test_->acm()->SetOpusApplication(kVoip);
+  Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
+          "9b9e12bc3cc793740966e11cbfa8b35b",
+          "57412a4b5771d19ff03ec35deffe7067",
+          "9b9e12bc3cc793740966e11cbfa8b35b"),
+      AcmReceiverBitExactnessOldApi::PlatformChecksum(
+          "c7340b1189652ab6b5e80dade7390cb4",
+          "cdfe85939c411d12b61701c566e22d26",
+          "c7340b1189652ab6b5e80dade7390cb4"),
+      50,
+      test::AcmReceiveTestOldApi::kStereoOutput);
+}
+
 // This test fixture is implemented to run ACM and change the desired output
 // frequency during the call. The input packets are simply PCM16b-wb encoded
 // payloads with a constant value of |kSampleValue|. The test fixture itself

@@ -20,12 +20,18 @@ namespace webrtc {
 
 class AudioEncoderOpus : public AudioEncoder {
  public:
+  enum ApplicationMode {
+    kVoip = 0,
+    kAudio = 1,
+  };
+
   struct Config {
     Config();
     bool IsOk() const;
     int frame_size_ms;
     int num_channels;
     int payload_type;
+    ApplicationMode application;
   };
 
   explicit AudioEncoderOpus(const Config& config);
@@ -47,6 +53,7 @@ class AudioEncoderOpus : public AudioEncoder {
   const int num_10ms_frames_per_packet_;
   const int num_channels_;
   const int payload_type_;
+  const ApplicationMode application_;
   const int samples_per_10ms_frame_;
   std::vector<int16_t> input_buffer_;
   OpusEncInst* inst_;

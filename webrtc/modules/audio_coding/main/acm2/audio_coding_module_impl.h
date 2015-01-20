@@ -224,6 +224,8 @@ class AudioCodingModuleImpl : public AudioCodingModule {
       int rate_bit_per_sec,
       bool enforce_frame_size = false) OVERRIDE;
 
+  int SetOpusApplication(OpusApplicationMode application) override;
+
   // If current send codec is Opus, informs it about the maximum playback rate
   // the receiver will render.
   virtual int SetOpusMaxPlaybackRate(int frequency_hz) OVERRIDE;

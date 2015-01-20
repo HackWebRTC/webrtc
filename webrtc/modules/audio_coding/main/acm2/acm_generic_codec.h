@@ -526,6 +526,20 @@ class ACMGenericCodec {
                                  int16_t* payload_len_bytes);
 
   ///////////////////////////////////////////////////////////////////////////
+  // int SetOpusApplication()
+  // Sets the intended application for the Opus encoder. Opus uses this to
+  // optimize the encoding for applications like VOIP and music.
+  //
+  // Input:
+  //   - application      : intended application.
+  //
+  // Return value:
+  //   -1 if failed or on codecs other than Opus.
+  //    0 if succeeded.
+  //
+  virtual int SetOpusApplication(OpusApplicationMode /*application*/);
+
+  ///////////////////////////////////////////////////////////////////////////
   // int SetOpusMaxPlaybackRate()
   // Sets maximum playback rate the receiver will render, if the codec is Opus.
   // This is to tell Opus that it is enough to code the input audio up to a
@@ -636,8 +650,8 @@ class ACMGenericCodec {
   // See InitEncoder() for the description of function, input(s)/output(s)
   // and return value.
   //
-  int16_t InitEncoderSafe(WebRtcACMCodecParams* codec_params,
-                          bool force_initialization)
+  virtual int16_t InitEncoderSafe(WebRtcACMCodecParams* codec_params,
+                                  bool force_initialization)
       EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   ///////////////////////////////////////////////////////////////////////////

@@ -875,6 +875,20 @@ class AudioCodingModule: public Module {
       bool enforce_frame_size = false) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
+  // int SetOpusApplication()
+  // Sets the intended application for the Opus encoder. Opus uses this to
+  // optimize the encoding for applications like VOIP and music.
+  //
+  // Input:
+  //   - application      : intended application.
+  //
+  // Return value:
+  //   -1 if failed or on codecs other than Opus.
+  //    0 if succeeded.
+  //
+  virtual int SetOpusApplication(OpusApplicationMode /*application*/) = 0;
+
+  ///////////////////////////////////////////////////////////////////////////
   // int SetOpusMaxPlaybackRate()
   // If current send codec is Opus, informs it about maximum playback rate the
   // receiver will render. Opus can use this information to optimize the bit

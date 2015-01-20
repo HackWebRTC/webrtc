@@ -145,8 +145,10 @@ NetEqOpusFecQualityTest::NetEqOpusFecQualityTest()
 }
 
 void NetEqOpusFecQualityTest::SetUp() {
+  // If channels_ == 1, use Opus VOIP mode, otherwise, audio mode.
+  int app = channels_ == 1 ? 0 : 1;
   // Create encoder memory.
-  WebRtcOpus_EncoderCreate(&opus_encoder_, channels_);
+  WebRtcOpus_EncoderCreate(&opus_encoder_, channels_, app);
   ASSERT_TRUE(opus_encoder_ != NULL);
   // Set bitrate.
   EXPECT_EQ(0, WebRtcOpus_SetBitRate(opus_encoder_, bit_rate_kbps_ * 1000));

@@ -37,7 +37,10 @@ int16_t CastInt16(size_t x) {
 }  // namespace
 
 AudioEncoderOpus::Config::Config()
-    : frame_size_ms(20), num_channels(1), payload_type(120) {
+    : frame_size_ms(20),
+      num_channels(1),
+      payload_type(120),
+      application(kVoip) {
 }
 
 bool AudioEncoderOpus::Config::IsOk() const {
@@ -52,10 +55,11 @@ AudioEncoderOpus::AudioEncoderOpus(const Config& config)
     : num_10ms_frames_per_packet_(DivExact(config.frame_size_ms, 10)),
       num_channels_(config.num_channels),
       payload_type_(config.payload_type),
+      application_(config.application),
       samples_per_10ms_frame_(DivExact(kSampleRateHz, 100) * num_channels_) {
   CHECK(config.IsOk());
   input_buffer_.reserve(num_10ms_frames_per_packet_ * samples_per_10ms_frame_);
-  CHECK_EQ(0, WebRtcOpus_EncoderCreate(&inst_, num_channels_));
+  CHECK_EQ(0, WebRtcOpus_EncoderCreate(&inst_, num_channels_, application_));
 }
 
 AudioEncoderOpus::~AudioEncoderOpus() {

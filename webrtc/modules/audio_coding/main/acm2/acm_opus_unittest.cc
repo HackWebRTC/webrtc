@@ -35,6 +35,11 @@ class AcmOpusTest : public ACMOpus {
       : ACMOpus(codec_id) {}
   ~AcmOpusTest() {}
   int packet_loss_rate() { return packet_loss_rate_; }
+  OpusApplicationMode application() { return application_; }
+  bool encoder_initialized() {
+    ReadLockScoped cs(codec_wrapper_lock_);
+    return encoder_initialized_;
+  }
 
   void TestSetPacketLossRate(int from, int to, int expected_return);
 };
@@ -82,6 +87,54 @@ TEST(AcmOpusTest, PacketLossRateOptimized) {
                              kPacketLossRate1);
   opus.TestSetPacketLossRate(0, 0, 0);
 }
+
+TEST(AcmOpusTest, DefaultApplicationMode) {
+  AcmOpusTest opus(ACMCodecDB::kOpus);
+  WebRtcACMCodecParams params;
+  memcpy(&(params.codec_inst), &kOpusCodecInst, sizeof(CodecInst));
+
+  params.codec_inst.channels = 2;
+  // Codec is not initialized, and hence without force initialization (2nd
+  // argument being false), an initialization will take place.
+  EXPECT_FALSE(opus.encoder_initialized());
+  EXPECT_EQ(0, opus.InitEncoder(&params, false));
+  EXPECT_EQ(kAudio, opus.application());
+
+  params.codec_inst.channels = 1;
+  EXPECT_EQ(0, opus.InitEncoder(&params, true));
+  EXPECT_EQ(kVoip, opus.application());
+}
+
+TEST(AcmOpusTest, ChangeApplicationMode) {
+  AcmOpusTest opus(ACMCodecDB::kOpus);
+  WebRtcACMCodecParams params;
+  memcpy(&(params.codec_inst), &kOpusCodecInst, sizeof(CodecInst));
+
+  params.codec_inst.channels = 2;
+  // Codec is not initialized, and hence without force initialization (2nd
+  // argument being false), an initialization will take place.
+  EXPECT_EQ(0, opus.InitEncoder(&params, false));
+  EXPECT_EQ(kAudio, opus.application());
+
+  opus.SetOpusApplication(kVoip);
+  EXPECT_EQ(kVoip, opus.application());
+}
+
+TEST(AcmOpusTest, ResetWontChangeApplicationMode) {
+  AcmOpusTest opus(ACMCodecDB::kOpus);
+  WebRtcACMCodecParams params;
+  memcpy(&(params.codec_inst), &kOpusCodecInst, sizeof(CodecInst));
+
+  params.codec_inst.channels = 2;
+  // Codec is not initialized, and hence without force initialization (2nd
+  // argument being false), an initialization will take place.
+  EXPECT_EQ(0, opus.InitEncoder(&params, false));
+  EXPECT_EQ(kAudio, opus.application());
+
+  opus.ResetEncoder();
+  EXPECT_EQ(kAudio, opus.application());
+}
+
 #else
 void AcmOpusTest:TestSetPacketLossRate(int /* from */, int /* to */,
                                        int /* expected_return */) {

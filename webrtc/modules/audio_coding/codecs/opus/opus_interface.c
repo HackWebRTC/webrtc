@@ -31,17 +31,31 @@ enum {
   kWebRtcOpusDefaultFrameSize = 960,
 };
 
-int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst, int32_t channels) {
+int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
+                                 int32_t channels,
+                                 int32_t application) {
   OpusEncInst* state;
   if (inst != NULL) {
     state = (OpusEncInst*) calloc(1, sizeof(OpusEncInst));
     if (state) {
-      int error;
-      /* Default to VoIP application for mono, and AUDIO for stereo. */
-      int application = (channels == 1) ? OPUS_APPLICATION_VOIP :
-          OPUS_APPLICATION_AUDIO;
+      int opus_app;
+      switch (application) {
+        case 0: {
+          opus_app = OPUS_APPLICATION_VOIP;
+          break;
+        }
+        case 1: {
+          opus_app = OPUS_APPLICATION_AUDIO;
+          break;
+        }
+        default: {
+          free(state);
+          return -1;
+        }
+      }
 
-      state->encoder = opus_encoder_create(48000, channels, application,
+      int error;
+      state->encoder = opus_encoder_create(48000, channels, opus_app,
                                            &error);
       state->in_dtx_mode = 0;
       if (error == OPUS_OK && state->encoder != NULL) {
