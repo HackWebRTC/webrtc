@@ -977,7 +977,13 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms) {
       test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
-TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms_voip) {
+// Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
+#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#define MAYBE_Opus_stereo_20ms_voip DISABLED_Opus_stereo_20ms_voip
+#else
+#define MAYBE_Opus_stereo_20ms_voip Opus_stereo_20ms_voip
+#endif
+TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms_voip) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
   // If not set, default will be kAudio in case of stereo.
   send_test_->acm()->SetOpusApplication(kVoip);
