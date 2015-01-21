@@ -100,6 +100,9 @@ void ReportBlockStats::StoreAndAddPacketIncrement(
 }
 
 int ReportBlockStats::FractionLostInPercent() const {
+  if (num_sequence_numbers_ == 0) {
+    return -1;
+  }
   return FractionLost(
       num_lost_sequence_numbers_, num_sequence_numbers_) * 100 / 255;
 }

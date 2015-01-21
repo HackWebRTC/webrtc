@@ -212,8 +212,11 @@ void ViEChannel::UpdateHistograms() {
             "WebRTC.Video.UniqueNackRequestsReceivedInPercent",
                 rtcp_received.UniqueNackRequestsInPercent());
       }
-      RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.SentPacketsLostInPercent",
-          report_block_stats_sender_->FractionLostInPercent());
+      int fraction_lost = report_block_stats_sender_->FractionLostInPercent();
+      if (fraction_lost != -1) {
+        RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.SentPacketsLostInPercent",
+            fraction_lost);
+      }
     }
   } else if (vie_receiver_.GetRemoteSsrc() > 0) {
     // Get receive stats if we are receiving packets, i.e. there is a remote
@@ -230,8 +233,11 @@ void ViEChannel::UpdateHistograms() {
         RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.UniqueNackRequestsSentInPercent",
             rtcp_sent.UniqueNackRequestsInPercent());
       }
-      RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.ReceivedPacketsLostInPercent",
-          report_block_stats_receiver_->FractionLostInPercent());
+      int fraction_lost = report_block_stats_receiver_->FractionLostInPercent();
+      if (fraction_lost != -1) {
+        RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.ReceivedPacketsLostInPercent",
+            fraction_lost);
+      }
     }
 
     StreamDataCounters rtp;

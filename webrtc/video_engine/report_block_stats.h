@@ -36,7 +36,8 @@ class ReportBlockStats {
              uint32_t remote_ssrc,
              uint32_t source_ssrc);
 
-  // Returns the total fraction of lost packets.
+  // Returns the total fraction of lost packets (or -1 if less than two report
+  // blocks have been stored).
   int FractionLostInPercent() const;
 
  private:
