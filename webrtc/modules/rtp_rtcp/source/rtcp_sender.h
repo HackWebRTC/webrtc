@@ -31,24 +31,22 @@ namespace webrtc {
 class ModuleRtpRtcpImpl;
 class RTCPReceiver;
 
-class NACKStringBuilder
-{
-public:
-    NACKStringBuilder();
-    ~NACKStringBuilder();
+class NACKStringBuilder {
+ public:
+  NACKStringBuilder();
+  ~NACKStringBuilder();
 
-    void PushNACK(uint16_t nack);
-    std::string GetResult();
+  void PushNACK(uint16_t nack);
+  std::string GetResult();
 
-private:
-    std::ostringstream _stream;
-    int _count;
-    uint16_t _prevNack;
-    bool _consecutive;
+ private:
+  std::ostringstream _stream;
+  int _count;
+  uint16_t _prevNack;
+  bool _consecutive;
 };
 
-class RTCPSender
-{
+class RTCPSender {
 public:
  struct FeedbackState {
    FeedbackState();
@@ -120,8 +118,8 @@ public:
         uint64_t pictureID = 0);
 
     int32_t AddExternalReportBlock(
-            uint32_t SSRC,
-            const RTCPReportBlock* receiveBlock);
+        uint32_t SSRC,
+        const RTCPReportBlock* receiveBlock);
 
     int32_t RemoveExternalReportBlock(uint32_t SSRC);
 
@@ -269,24 +267,24 @@ private:
         EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPSender);
 
 private:
-    const int32_t            _id;
-    const bool               _audio;
-    Clock* const             _clock;
-    RTCPMethod               _method GUARDED_BY(_criticalSectionRTCPSender);
+    const int32_t _id;
+    const bool _audio;
+    Clock* const _clock;
+    RTCPMethod _method GUARDED_BY(_criticalSectionRTCPSender);
 
     CriticalSectionWrapper* _criticalSectionTransport;
-    Transport*              _cbTransport GUARDED_BY(_criticalSectionTransport);
+    Transport* _cbTransport GUARDED_BY(_criticalSectionTransport);
 
     CriticalSectionWrapper* _criticalSectionRTCPSender;
-    bool                    _usingNack GUARDED_BY(_criticalSectionRTCPSender);
-    bool                    _sending GUARDED_BY(_criticalSectionRTCPSender);
-    bool                    _sendTMMBN GUARDED_BY(_criticalSectionRTCPSender);
-    bool                    _REMB GUARDED_BY(_criticalSectionRTCPSender);
-    bool                    _sendREMB GUARDED_BY(_criticalSectionRTCPSender);
-    bool                    _TMMBR GUARDED_BY(_criticalSectionRTCPSender);
-    bool                    _IJ GUARDED_BY(_criticalSectionRTCPSender);
+    bool _usingNack GUARDED_BY(_criticalSectionRTCPSender);
+    bool _sending GUARDED_BY(_criticalSectionRTCPSender);
+    bool _sendTMMBN GUARDED_BY(_criticalSectionRTCPSender);
+    bool _REMB GUARDED_BY(_criticalSectionRTCPSender);
+    bool _sendREMB GUARDED_BY(_criticalSectionRTCPSender);
+    bool _TMMBR GUARDED_BY(_criticalSectionRTCPSender);
+    bool _IJ GUARDED_BY(_criticalSectionRTCPSender);
 
-    int64_t        _nextTimeToSendRTCP GUARDED_BY(_criticalSectionRTCPSender);
+    int64_t _nextTimeToSendRTCP GUARDED_BY(_criticalSectionRTCPSender);
 
     uint32_t start_timestamp_ GUARDED_BY(_criticalSectionRTCPSender);
     uint32_t last_rtp_timestamp_ GUARDED_BY(_criticalSectionRTCPSender);
@@ -305,7 +303,7 @@ private:
     std::map<uint32_t, RTCPUtility::RTCPCnameInformation*> _csrcCNAMEs
         GUARDED_BY(_criticalSectionRTCPSender);
 
-    int32_t         _cameraDelayMS GUARDED_BY(_criticalSectionRTCPSender);
+    int32_t _cameraDelayMS GUARDED_BY(_criticalSectionRTCPSender);
 
     // Sent
     uint32_t _lastSendReport[RTCP_NUMBER_OF_SR] GUARDED_BY(
@@ -322,22 +320,22 @@ private:
     std::vector<uint32_t> csrcs_ GUARDED_BY(_criticalSectionRTCPSender);
 
     // Full intra request
-    uint8_t         _sequenceNumberFIR GUARDED_BY(_criticalSectionRTCPSender);
+    uint8_t _sequenceNumberFIR GUARDED_BY(_criticalSectionRTCPSender);
 
     // REMB
-    uint32_t      _rembBitrate GUARDED_BY(_criticalSectionRTCPSender);
-    std::vector<uint32_t>  remb_ssrcs_ GUARDED_BY(_criticalSectionRTCPSender);
+    uint32_t _rembBitrate GUARDED_BY(_criticalSectionRTCPSender);
+    std::vector<uint32_t> remb_ssrcs_ GUARDED_BY(_criticalSectionRTCPSender);
 
-    TMMBRHelp           _tmmbrHelp GUARDED_BY(_criticalSectionRTCPSender);
-    uint32_t      _tmmbr_Send GUARDED_BY(_criticalSectionRTCPSender);
-    uint32_t      _packetOH_Send GUARDED_BY(_criticalSectionRTCPSender);
+    TMMBRHelp _tmmbrHelp GUARDED_BY(_criticalSectionRTCPSender);
+    uint32_t _tmmbr_Send GUARDED_BY(_criticalSectionRTCPSender);
+    uint32_t _packetOH_Send GUARDED_BY(_criticalSectionRTCPSender);
 
     // APP
-    bool                 _appSend GUARDED_BY(_criticalSectionRTCPSender);
-    uint8_t        _appSubType GUARDED_BY(_criticalSectionRTCPSender);
-    uint32_t       _appName GUARDED_BY(_criticalSectionRTCPSender);
-    uint8_t*       _appData GUARDED_BY(_criticalSectionRTCPSender);
-    uint16_t       _appLength GUARDED_BY(_criticalSectionRTCPSender);
+    bool _appSend GUARDED_BY(_criticalSectionRTCPSender);
+    uint8_t _appSubType GUARDED_BY(_criticalSectionRTCPSender);
+    uint32_t _appName GUARDED_BY(_criticalSectionRTCPSender);
+    uint8_t* _appData GUARDED_BY(_criticalSectionRTCPSender);
+    uint16_t _appLength GUARDED_BY(_criticalSectionRTCPSender);
 
     // True if sending of XR Receiver reference time report is enabled.
     bool xrSendReceiverReferenceTimeEnabled_

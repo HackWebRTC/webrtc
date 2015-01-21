@@ -289,8 +289,7 @@ int32_t ModuleRtpRtcpImpl::RegisterSendPayload(
            (voice_codec.rate < 0) ? 0 : voice_codec.rate);
 }
 
-int32_t ModuleRtpRtcpImpl::RegisterSendPayload(
-    const VideoCodec& video_codec) {
+int32_t ModuleRtpRtcpImpl::RegisterSendPayload(const VideoCodec& video_codec) {
   send_video_codec_ = video_codec;
   {
     // simulcast_ is accessed when accessing child_modules_, so this write needs
@@ -305,8 +304,7 @@ int32_t ModuleRtpRtcpImpl::RegisterSendPayload(
                                      video_codec.maxBitrate);
 }
 
-int32_t ModuleRtpRtcpImpl::DeRegisterSendPayload(
-    const int8_t payload_type) {
+int32_t ModuleRtpRtcpImpl::DeRegisterSendPayload(const int8_t payload_type) {
   return rtp_sender_.DeRegisterSendPayload(payload_type);
 }
 
@@ -960,8 +958,7 @@ bool ModuleRtpRtcpImpl::TimeToSendFullNackList(int64_t now) const {
   return now - nack_last_time_sent_full_prev_ > wait_time;
 }
 
-// Store the sent packets, needed to answer to a Negative acknowledgment
-// requests.
+// Store the sent packets, needed to answer to Negative acknowledgment requests.
 void ModuleRtpRtcpImpl::SetStorePacketsStatus(const bool enable,
                                               const uint16_t number_to_store) {
   rtp_sender_.SetStorePacketsStatus(enable, number_to_store);

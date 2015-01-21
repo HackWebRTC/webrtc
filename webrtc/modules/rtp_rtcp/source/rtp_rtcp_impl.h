@@ -120,6 +120,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
                                 uint16_t sequence_number,
                                 int64_t capture_time_ms,
                                 bool retransmission) OVERRIDE;
+
   // Returns the number of padding bytes actually sent, which can be more or
   // less than |bytes|.
   virtual size_t TimeToSendPadding(size_t bytes) OVERRIDE;
@@ -286,7 +287,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   virtual int32_t SendRTCPSliceLossIndication(uint8_t picture_id) OVERRIDE;
 
-  // Set method for requestion a new key frame.
+  // Set method for requesting a new key frame.
   virtual int32_t SetKeyFrameRequestMethod(
       KeyFrameRequestMethod method) OVERRIDE;
 
@@ -367,12 +368,12 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Only for internal testing.
   uint32_t LastSendReport(int64_t& last_rtcptime);
 
-  RTPSender                 rtp_sender_;
+  RTPSender rtp_sender_;
 
-  RTCPSender                rtcp_sender_;
-  RTCPReceiver              rtcp_receiver_;
+  RTCPSender rtcp_sender_;
+  RTCPReceiver rtcp_receiver_;
 
-  Clock*                    clock_;
+  Clock* clock_;
 
  private:
   FRIEND_TEST_ALL_PREFIXES(RtpRtcpImplTest, Rtt);
@@ -387,28 +388,28 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   bool IsDefaultModule() const;
 
-  int32_t             id_;
-  const bool                audio_;
-  bool                      collision_detected_;
-  int64_t             last_process_time_;
-  int64_t             last_bitrate_process_time_;
-  int64_t             last_rtt_process_time_;
-  uint16_t            packet_overhead_;
+  int32_t id_;
+  const bool audio_;
+  bool collision_detected_;
+  int64_t last_process_time_;
+  int64_t last_bitrate_process_time_;
+  int64_t last_rtt_process_time_;
+  uint16_t packet_overhead_;
 
   scoped_ptr<CriticalSectionWrapper> critical_section_module_ptrs_;
   scoped_ptr<CriticalSectionWrapper> critical_section_module_ptrs_feedback_;
-  ModuleRtpRtcpImpl*            default_module_;
+  ModuleRtpRtcpImpl* default_module_;
   std::vector<ModuleRtpRtcpImpl*> child_modules_;
   size_t padding_index_;
 
   // Send side
-  NACKMethod            nack_method_;
+  NACKMethod nack_method_;
   int64_t nack_last_time_sent_full_;
   uint32_t nack_last_time_sent_full_prev_;
   uint16_t nack_last_seq_number_sent_;
 
-  bool                  simulcast_;
-  VideoCodec            send_video_codec_;
+  bool simulcast_;
+  VideoCodec send_video_codec_;
   KeyFrameRequestMethod key_frame_req_method_;
 
   RemoteBitrateEstimator* remote_bitrate_;
