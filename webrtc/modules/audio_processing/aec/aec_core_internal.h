@@ -59,13 +59,13 @@ struct AecCore {
   RingBuffer* nearFrBuf;
   RingBuffer* outFrBuf;
 
-  RingBuffer* nearFrBufH;
-  RingBuffer* outFrBufH;
+  RingBuffer* nearFrBufH[NUM_HIGH_BANDS_MAX];
+  RingBuffer* outFrBufH[NUM_HIGH_BANDS_MAX];
 
   float dBuf[PART_LEN2];  // nearend
   float eBuf[PART_LEN2];  // error
 
-  float dBufH[PART_LEN2];  // nearend
+  float dBufH[NUM_HIGH_BANDS_MAX][PART_LEN2];  // nearend
 
   float xPow[PART_LEN1];
   float dPow[PART_LEN1];
@@ -101,6 +101,7 @@ struct AecCore {
 
   int mult;  // sampling frequency multiple
   int sampFreq;
+  int num_bands;
   uint32_t seed;
 
   float normal_mu;               // stepsize
