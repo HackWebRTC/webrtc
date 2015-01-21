@@ -3176,10 +3176,10 @@ JOW(jobject, PeerConnection_iceConnectionState)(JNIEnv* jni, jobject j_pc) {
   return JavaEnumFromIndex(jni, "PeerConnection$IceConnectionState", state);
 }
 
-JOW(jobject, PeerGathering_iceGatheringState)(JNIEnv* jni, jobject j_pc) {
+JOW(jobject, PeerConnection_iceGatheringState)(JNIEnv* jni, jobject j_pc) {
   PeerConnectionInterface::IceGatheringState state =
       ExtractNativePC(jni, j_pc)->ice_gathering_state();
-  return JavaEnumFromIndex(jni, "PeerGathering$IceGatheringState", state);
+  return JavaEnumFromIndex(jni, "PeerConnection$IceGatheringState", state);
 }
 
 JOW(void, PeerConnection_close)(JNIEnv* jni, jobject j_pc) {
