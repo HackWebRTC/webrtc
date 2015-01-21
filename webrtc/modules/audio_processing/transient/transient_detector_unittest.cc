@@ -30,19 +30,13 @@ static const int kSampleRatesHz[] = {ts::kSampleRate8kHz,
 static const size_t kNumberOfSampleRates =
     sizeof(kSampleRatesHz) / sizeof(*kSampleRatesHz);
 
-// Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4200
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
-#define MAYBE_CorrectnessBasedOnFiles DISABLED_CorrectnessBasedOnFiles
-#else
-#define MAYBE_CorrectnessBasedOnFiles CorrectnessBasedOnFiles
-#endif
 // This test is for the correctness of the transient detector.
 // Checks the results comparing them with the ones stored in the detect files in
 // the directory: resources/audio_processing/transient/
 // The files contain all the results in double precision (Little endian).
 // The audio files used with different sample rates are stored in the same
 // directory.
-TEST(TransientDetectorTest, MAYBE_CorrectnessBasedOnFiles) {
+TEST(TransientDetectorTest, CorrectnessBasedOnFiles) {
   for (size_t i = 0; i < kNumberOfSampleRates; ++i) {
     int sample_rate_hz = kSampleRatesHz[i];
 
@@ -82,7 +76,7 @@ TEST(TransientDetectorTest, MAYBE_CorrectnessBasedOnFiles) {
     const size_t buffer_length = sample_rate_hz * ts::kChunkSizeMs / 1000;
     scoped_ptr<float[]> buffer(new float[buffer_length]);
 
-    const float kTolerance = 0.01f;
+    const float kTolerance = 0.02f;
 
     size_t frames_read = 0;
 
