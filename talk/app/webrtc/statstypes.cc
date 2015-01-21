@@ -30,87 +30,177 @@
 using rtc::scoped_ptr;
 
 namespace webrtc {
+namespace {
 
-const char StatsReport::kStatsReportTypeSession[] = "googLibjingleSession";
-const char StatsReport::kStatsReportTypeBwe[] = "VideoBwe";
-const char StatsReport::kStatsReportTypeRemoteSsrc[] = "remoteSsrc";
-const char StatsReport::kStatsReportTypeSsrc[] = "ssrc";
-const char StatsReport::kStatsReportTypeTrack[] = "googTrack";
-const char StatsReport::kStatsReportTypeIceLocalCandidate[] = "localcandidate";
-const char StatsReport::kStatsReportTypeIceRemoteCandidate[] =
-    "remotecandidate";
-const char StatsReport::kStatsReportTypeTransport[] = "googTransport";
-const char StatsReport::kStatsReportTypeComponent[] = "googComponent";
-const char StatsReport::kStatsReportTypeCandidatePair[] = "googCandidatePair";
-const char StatsReport::kStatsReportTypeCertificate[] = "googCertificate";
-const char StatsReport::kStatsReportTypeDataChannel[] = "datachannel";
+// The id of StatsReport of type kStatsReportTypeBwe.
+const char kStatsReportVideoBweId[] = "bweforvideo";
 
-const char StatsReport::kStatsReportVideoBweId[] = "bweforvideo";
-
-StatsReport::StatsReport(const StatsReport& src)
-  : id_(src.id_),
-    type(src.type),
-    timestamp_(src.timestamp_),
-    values_(src.values_) {
+// NOTE: These names need to be consistent with an external
+// specification (W3C Stats Identifiers).
+const char* InternalTypeToString(StatsReport::StatsType type) {
+  switch (type) {
+    case StatsReport::kStatsReportTypeSession:
+      return "googLibjingleSession";
+    case StatsReport::kStatsReportTypeBwe:
+      return "VideoBwe";
+    case StatsReport::kStatsReportTypeRemoteSsrc:
+      return "remoteSsrc";
+    case StatsReport::kStatsReportTypeSsrc:
+      return "ssrc";
+    case StatsReport::kStatsReportTypeTrack:
+      return "googTrack";
+    case StatsReport::kStatsReportTypeIceLocalCandidate:
+      return "localcandidate";
+    case StatsReport::kStatsReportTypeIceRemoteCandidate:
+      return "remotecandidate";
+    case StatsReport::kStatsReportTypeTransport:
+      return "googTransport";
+    case StatsReport::kStatsReportTypeComponent:
+      return "googComponent";
+    case StatsReport::kStatsReportTypeCandidatePair:
+      return "googCandidatePair";
+    case StatsReport::kStatsReportTypeCertificate:
+      return "googCertificate";
+    case StatsReport::kStatsReportTypeDataChannel:
+      return "datachannel";
+  }
+  ASSERT(false);
+  return nullptr;
 }
 
-StatsReport::StatsReport(const std::string& id)
-    : id_(id), timestamp_(0) {
-}
+class BandwidthEstimationId : public StatsReport::Id {
+ public:
+  BandwidthEstimationId() : StatsReport::Id(StatsReport::kStatsReportTypeBwe) {}
+  std::string ToString() const override { return kStatsReportVideoBweId; }
+};
 
-StatsReport::StatsReport(scoped_ptr<StatsReport::Id> id)
-    : id_(id->ToString()), timestamp_(0) {
-}
+class TypedId : public StatsReport::Id {
+ public:
+  static const char kSeparator = '_';
+  TypedId(StatsReport::StatsType type, const std::string& id)
+      : StatsReport::Id(type), id_(id) {}
 
-// static
-scoped_ptr<StatsReport::Id> StatsReport::NewTypedId(
-    StatsReport::StatsType type, const std::string& id) {
-  std::string internal_id(type);
-  internal_id += '_';
-  internal_id += id;
-  return scoped_ptr<Id>(new Id(internal_id)).Pass();
-}
+  bool Equals(const Id& other) const override {
+    return Id::Equals(other) &&
+           static_cast<const TypedId&>(other).id_ == id_;
+  }
 
-StatsReport& StatsReport::operator=(const StatsReport& src) {
-  ASSERT(id_ == src.id_);
-  type = src.type;
-  timestamp_ = src.timestamp_;
-  values_ = src.values_;
-  return *this;
-}
+  std::string ToString() const override {
+    return std::string(InternalTypeToString(type_)) + kSeparator + id_;
+  }
 
-// Operators provided for STL container/algorithm support.
-bool StatsReport::operator<(const StatsReport& other) const {
-  return id_ < other.id_;
-}
+ protected:
+  const std::string id_;
+};
 
-bool StatsReport::operator==(const StatsReport& other) const {
-  return id_ == other.id_;
-}
+class IdWithDirection : public TypedId {
+ public:
+  IdWithDirection(StatsReport::StatsType type, const std::string& id,
+                  StatsReport::Direction direction)
+      : TypedId(type, id), direction_(direction) {}
 
-// Special support for being able to use std::find on a container
-// without requiring a new StatsReport instance.
-bool StatsReport::operator==(const std::string& other_id) const {
-  return id_ == other_id;
-}
+  bool Equals(const Id& other) const override {
+    return TypedId::Equals(other) &&
+           static_cast<const IdWithDirection&>(other).direction_ == direction_;
+  }
 
-// The copy ctor can't be declared as explicit due to problems with STL.
-StatsReport::Value::Value(const Value& other)
-    : name(other.name), value(other.value) {
-}
+  std::string ToString() const override {
+    std::string ret(TypedId::ToString());
+    ret += '_';
+    ret += direction_ == StatsReport::kSend ? "send" : "recv";
+    return ret;
+  }
 
-StatsReport::Value::Value(StatsValueName name)
-    : name(name) {
+ private:
+  const StatsReport::Direction direction_;
+};
+
+class CandidateId : public TypedId {
+ public:
+  CandidateId(bool local, const std::string& id)
+      : TypedId(local ?
+                    StatsReport::kStatsReportTypeIceLocalCandidate :
+                    StatsReport::kStatsReportTypeIceRemoteCandidate,
+                id) {
+  }
+
+  std::string ToString() const override {
+    return "Cand-" + id_;
+  }
+};
+
+class ComponentId : public StatsReport::Id {
+ public:
+  ComponentId(const std::string& content_name, int component)
+      : ComponentId(StatsReport::kStatsReportTypeComponent, content_name,
+            component) {}
+
+  bool Equals(const Id& other) const override {
+    return Id::Equals(other) &&
+        static_cast<const ComponentId&>(other).component_ == component_ &&
+        static_cast<const ComponentId&>(other).content_name_ == content_name_;
+  }
+
+  std::string ToString() const override {
+    return ToString("Channel-");
+  }
+
+ protected:
+  ComponentId(StatsReport::StatsType type, const std::string& content_name,
+              int component)
+      : Id(type),
+        content_name_(content_name),
+        component_(component) {}
+
+  std::string ToString(const char* prefix) const {
+    std::string ret(prefix);
+    ret += content_name_;
+    ret += '-';
+    ret += rtc::ToString<>(component_);
+    return ret;
+  }
+
+ private:
+  const std::string content_name_;
+  const int component_;
+};
+
+class CandidatePairId : public ComponentId {
+ public:
+  CandidatePairId(const std::string& content_name, int component, int index)
+      : ComponentId(StatsReport::kStatsReportTypeCandidatePair, content_name,
+            component),
+        index_(index) {}
+
+  bool Equals(const Id& other) const override {
+    return ComponentId::Equals(other) &&
+        static_cast<const CandidatePairId&>(other).index_ == index_;
+  }
+
+  std::string ToString() const override {
+    std::string ret(ComponentId::ToString("Conn-"));
+    ret += '-';
+    ret += rtc::ToString<>(index_);
+    return ret;
+  }
+
+ private:
+  const int index_;
+};
+
+}  // namespace
+
+StatsReport::Id::Id(StatsType type) : type_(type) {}
+StatsReport::Id::~Id() {}
+
+StatsReport::StatsType StatsReport::Id::type() const { return type_; }
+
+bool StatsReport::Id::Equals(const Id& other) const {
+  return other.type_ == type_;
 }
 
 StatsReport::Value::Value(StatsValueName name, const std::string& value)
     : name(name), value(value) {
-}
-
-StatsReport::Value& StatsReport::Value::operator=(const Value& other) {
-  const_cast<StatsValueName&>(name) = other.name;
-  value = other.value;
-  return *this;
 }
 
 const char* StatsReport::Value::display_name() const {
@@ -331,6 +421,50 @@ const char* StatsReport::Value::display_name() const {
   return nullptr;
 }
 
+StatsReport::StatsReport(scoped_ptr<Id> id) : id_(id.Pass()), timestamp_(0.0) {
+  ASSERT(id_.get());
+}
+
+// static
+scoped_ptr<StatsReport::Id> StatsReport::NewBandwidthEstimationId() {
+  return scoped_ptr<Id>(new BandwidthEstimationId()).Pass();
+}
+
+// static
+scoped_ptr<StatsReport::Id> StatsReport::NewTypedId(
+    StatsType type, const std::string& id) {
+  return scoped_ptr<Id>(new TypedId(type, id)).Pass();
+}
+
+// static
+scoped_ptr<StatsReport::Id> StatsReport::NewIdWithDirection(
+    StatsType type, const std::string& id, StatsReport::Direction direction) {
+  return scoped_ptr<Id>(new IdWithDirection(type, id, direction)).Pass();
+}
+
+// static
+scoped_ptr<StatsReport::Id> StatsReport::NewCandidateId(
+    bool local, const std::string& id) {
+  return scoped_ptr<Id>(new CandidateId(local, id)).Pass();
+}
+
+// static
+scoped_ptr<StatsReport::Id> StatsReport::NewComponentId(
+    const std::string& content_name, int component) {
+  return scoped_ptr<Id>(new ComponentId(content_name, component)).Pass();
+}
+
+// static
+scoped_ptr<StatsReport::Id> StatsReport::NewCandidatePairId(
+    const std::string& content_name, int component, int index) {
+  return scoped_ptr<Id>(new CandidatePairId(content_name, component, index))
+      .Pass();
+}
+
+const char* StatsReport::TypeToString() const {
+  return InternalTypeToString(id_->type());
+}
+
 void StatsReport::AddValue(StatsReport::StatsValueName name,
                            const std::string& value) {
   values_.push_back(ValuePtr(new Value(name, value)));
@@ -340,6 +474,7 @@ void StatsReport::AddValue(StatsReport::StatsValueName name, int64 value) {
   AddValue(name, rtc::ToString<int64>(value));
 }
 
+// TODO(tommi): Change the way we store vector values.
 template <typename T>
 void StatsReport::AddValue(StatsReport::StatsValueName name,
                            const std::vector<T>& value) {
@@ -370,6 +505,7 @@ void StatsReport::AddValue<int64_t>(
     StatsReport::StatsValueName, const std::vector<int64_t>&);
 
 void StatsReport::AddBoolean(StatsReport::StatsValueName name, bool value) {
+  // TODO(tommi): Store bools as bool.
   AddValue(name, value ? "true" : "false");
 }
 
@@ -392,42 +528,67 @@ void StatsReport::ResetValues() {
   values_.clear();
 }
 
-StatsSet::StatsSet() {
+const StatsReport::Value* StatsReport::FindValue(StatsValueName name) const {
+  Values::const_iterator it = std::find_if(values_.begin(), values_.end(),
+      [&name](const ValuePtr& v)->bool { return v->name == name; });
+  return it == values_.end() ? nullptr : (*it).get();
 }
 
-StatsSet::~StatsSet() {
+StatsCollection::StatsCollection() {
 }
 
-StatsSet::const_iterator StatsSet::begin() const {
+StatsCollection::~StatsCollection() {
+  for (auto* r : list_)
+    delete r;
+}
+
+StatsCollection::const_iterator StatsCollection::begin() const {
   return list_.begin();
 }
 
-StatsSet::const_iterator StatsSet::end() const {
+StatsCollection::const_iterator StatsCollection::end() const {
   return list_.end();
 }
 
-StatsReport* StatsSet::InsertNew(const std::string& id) {
-  ASSERT(Find(id) == NULL);
-  const StatsReport* ret = &(*list_.insert(StatsReportCopyable(id)).first);
-  return const_cast<StatsReport*>(ret);
+size_t StatsCollection::size() const {
+  return list_.size();
 }
 
-StatsReport* StatsSet::FindOrAddNew(const std::string& id) {
-  StatsReport* ret = Find(id);
-  return ret ? ret : InsertNew(id);
+StatsReport* StatsCollection::InsertNew(scoped_ptr<StatsReport::Id> id) {
+  ASSERT(Find(*id.get()) == NULL);
+  StatsReport* report = new StatsReport(id.Pass());
+  list_.push_back(report);
+  return report;
 }
 
-StatsReport* StatsSet::ReplaceOrAddNew(const std::string& id) {
-  list_.erase(id);
-  return InsertNew(id);
+StatsReport* StatsCollection::FindOrAddNew(scoped_ptr<StatsReport::Id> id) {
+  StatsReport* ret = Find(*id.get());
+  return ret ? ret : InsertNew(id.Pass());
+}
+
+StatsReport* StatsCollection::ReplaceOrAddNew(scoped_ptr<StatsReport::Id> id) {
+  ASSERT(id.get());
+  Container::iterator it = std::find_if(list_.begin(), list_.end(),
+      [&id](const StatsReport* r)->bool { return r->id().Equals(*id.get()); });
+  if (it != end()) {
+    delete *it;
+    StatsReport* report = new StatsReport(id.Pass());
+    *it = report;
+    return report;
+  }
+  return InsertNew(id.Pass());
 }
 
 // Looks for a report with the given |id|.  If one is not found, NULL
 // will be returned.
-StatsReport* StatsSet::Find(const std::string& id) {
-  const_iterator it = std::find(begin(), end(), id);
-  return it == end() ? NULL :
-      const_cast<StatsReport*>(static_cast<const StatsReport*>(&(*it)));
+StatsReport* StatsCollection::Find(const StatsReport::Id& id) {
+  Container::iterator it = std::find_if(list_.begin(), list_.end(),
+      [&id](const StatsReport* r)->bool { return r->id().Equals(id); });
+  return it == list_.end() ? nullptr : *it;
+}
+
+StatsReport* StatsCollection::Find(const scoped_ptr<StatsReport::Id>& id) {
+  return Find(*id.get());
 }
 
 }  // namespace webrtc

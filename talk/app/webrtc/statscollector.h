@@ -54,14 +54,9 @@ const char* AdapterTypeToStatsType(rtc::AdapterType type);
 
 class StatsCollector {
  public:
-  enum TrackDirection {
-    kSending = 0,
-    kReceiving,
-  };
-
   // The caller is responsible for ensuring that the session outlives the
   // StatsCollector instance.
-  StatsCollector(WebRtcSession* session);
+  explicit StatsCollector(WebRtcSession* session);
   virtual ~StatsCollector();
 
   // Adds a MediaStream with tracks that can be used as a |selector| in a call
@@ -89,13 +84,10 @@ class StatsCollector {
   void GetStats(MediaStreamTrackInterface* track,
                 StatsReports* reports);
 
-  // Prepare an SSRC report for the given ssrc. Used internally
+  // Prepare a local or remote SSRC report for the given ssrc. Used internally
   // in the ExtractStatsFromList template.
-  StatsReport* PrepareLocalReport(uint32 ssrc, const std::string& transport,
-                                  TrackDirection direction);
-  // Prepare an SSRC report for the given remote ssrc. Used internally.
-  StatsReport* PrepareRemoteReport(uint32 ssrc, const std::string& transport,
-                                   TrackDirection direction);
+  StatsReport* PrepareReport(bool local, uint32 ssrc,
+      const std::string& transport_id, StatsReport::Direction direction);
 
   // Method used by the unittest to force a update of stats since UpdateStats()
   // that occur less than kMinGatherStatsPeriod number of ms apart will be
@@ -114,7 +106,7 @@ class StatsCollector {
   // Helper method for creating IceCandidate report. |is_local| indicates
   // whether this candidate is local or remote.
   std::string AddCandidateReport(const cricket::Candidate& candidate,
-                                 const std::string& report_type);
+                                 bool local);
 
   // Adds a report for this certificate and every certificate in its chain, and
   // returns the leaf certificate's report's ID.
@@ -125,12 +117,12 @@ class StatsCollector {
   void ExtractVoiceInfo();
   void ExtractVideoInfo(PeerConnectionInterface::StatsOutputLevel level);
   void BuildSsrcToTransportId();
-  webrtc::StatsReport* GetOrCreateReport(const std::string& type,
+  webrtc::StatsReport* GetOrCreateReport(const StatsReport::StatsType& type,
                                          const std::string& id,
-                                         TrackDirection direction);
-  webrtc::StatsReport* GetReport(const std::string& type,
+                                         StatsReport::Direction direction);
+  webrtc::StatsReport* GetReport(const StatsReport::StatsType& type,
                                  const std::string& id,
-                                 TrackDirection direction);
+                                 StatsReport::Direction direction);
 
   // Helper method to get stats from the local audio tracks.
   void UpdateStatsFromExistingLocalAudioTracks();
@@ -140,10 +132,10 @@ class StatsCollector {
   // Helper method to get the id for the track identified by ssrc.
   // |direction| tells if the track is for sending or receiving.
   bool GetTrackIdBySsrc(uint32 ssrc, std::string* track_id,
-                        TrackDirection direction);
+                        StatsReport::Direction direction);
 
-  // A map from the report id to the report.
-  StatsSet reports_;
+  // A collection for all of our stats reports.
+  StatsCollection reports_;
   // Raw pointer to the session the statistics are gathered from.
   WebRtcSession* const session_;
   double stats_gathering_started_;

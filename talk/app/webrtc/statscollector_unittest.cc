@@ -48,6 +48,7 @@
 #include "webrtc/p2p/base/fakesession.h"
 
 using cricket::StatsOptions;
+using rtc::scoped_ptr;
 using testing::_;
 using testing::DoAll;
 using testing::Field;
@@ -69,7 +70,6 @@ namespace webrtc {
 
 // Error return values
 const char kNotFound[] = "NOT FOUND";
-const char kNoReports[] = "NO REPORTS";
 
 // Constant names for track identification.
 const char kLocalTrackId[] = "local_track_id";
@@ -152,6 +152,7 @@ class FakeAudioTrack
   rtc::scoped_refptr<FakeAudioProcessor> processor_;
 };
 
+// TODO(tommi): Use FindValue().
 bool GetValue(const StatsReport* report,
               StatsReport::StatsValueName name,
               std::string* value) {
@@ -164,52 +165,69 @@ bool GetValue(const StatsReport* report,
   return false;
 }
 
-std::string ExtractStatsValue(const std::string& type,
+std::string ExtractStatsValue(const StatsReport::StatsType& type,
                               const StatsReports& reports,
                               StatsReport::StatsValueName name) {
-  if (reports.empty()) {
-    return kNoReports;
-  }
-  for (size_t i = 0; i < reports.size(); ++i) {
-    if (reports[i]->type != type)
-      continue;
+  for (const auto* r : reports) {
     std::string ret;
-    if (GetValue(reports[i], name, &ret)) {
+    if (r->type() == type && GetValue(r, name, &ret))
       return ret;
-    }
   }
 
   return kNotFound;
 }
 
+scoped_ptr<StatsReport::Id> TypedIdFromIdString(StatsReport::StatsType type,
+                                                const std::string& value) {
+  EXPECT_FALSE(value.empty());
+  scoped_ptr<StatsReport::Id> id;
+  if (value.empty())
+    return id.Pass();
+
+  // This has assumptions about how the ID is constructed.  As is, this is
+  // OK since this is for testing purposes only, but if we ever need this
+  // in production, we should add a generic method that does this.
+  size_t index = value.find('_');
+  EXPECT_NE(index, std::string::npos);
+  if (index == std::string::npos || index == (value.length() - 1))
+    return id.Pass();
+
+  id = StatsReport::NewTypedId(type, value.substr(index + 1));
+  EXPECT_EQ(id->ToString(), value);
+  return id.Pass();
+}
+
+scoped_ptr<StatsReport::Id> IdFromCertIdString(const std::string& cert_id) {
+  return TypedIdFromIdString(StatsReport::kStatsReportTypeCertificate, cert_id)
+      .Pass();
+}
+
 // Finds the |n|-th report of type |type| in |reports|.
 // |n| starts from 1 for finding the first report.
 const StatsReport* FindNthReportByType(
-    const StatsReports& reports, const std::string& type, int n) {
+    const StatsReports& reports, const StatsReport::StatsType& type, int n) {
   for (size_t i = 0; i < reports.size(); ++i) {
-    if (reports[i]->type == type) {
+    if (reports[i]->type() == type) {
       n--;
       if (n == 0)
         return reports[i];
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 const StatsReport* FindReportById(const StatsReports& reports,
-                                  const std::string& id) {
+                                  const StatsReport::Id& id) {
   for (const auto* r : reports) {
-    if (r->id().ToString() == id) {
+    if (r->id().Equals(id))
       return r;
-    }
   }
   return nullptr;
 }
 
 std::string ExtractSsrcStatsValue(StatsReports reports,
                                   StatsReport::StatsValueName name) {
-  return ExtractStatsValue(
-      StatsReport::kStatsReportTypeSsrc, reports, name);
+  return ExtractStatsValue(StatsReport::kStatsReportTypeSsrc, reports, name);
 }
 
 std::string ExtractBweStatsValue(StatsReports reports,
@@ -234,18 +252,18 @@ std::vector<std::string> DersToPems(
 
 void CheckCertChainReports(const StatsReports& reports,
                            const std::vector<std::string>& ders,
-                           const std::string& start_id) {
-  std::string certificate_id = start_id;
+                           const StatsReport::Id& start_id) {
+  scoped_ptr<StatsReport::Id> cert_id;
+  const StatsReport::Id* certificate_id = &start_id;
   size_t i = 0;
   while (true) {
-    const StatsReport* report = FindReportById(reports, certificate_id);
+    const StatsReport* report = FindReportById(reports, *certificate_id);
     ASSERT_TRUE(report != NULL);
 
     std::string der_base64;
     EXPECT_TRUE(GetValue(
         report, StatsReport::kStatsValueNameDer, &der_base64));
-    std::string der = rtc::Base64::Decode(der_base64,
-                                                rtc::Base64::DO_STRICT);
+    std::string der = rtc::Base64::Decode(der_base64, rtc::Base64::DO_STRICT);
     EXPECT_EQ(ders[i], der);
 
     std::string fingerprint_algorithm;
@@ -257,16 +275,20 @@ void CheckCertChainReports(const StatsReports& reports,
     std::string sha_1_str = rtc::DIGEST_SHA_1;
     EXPECT_EQ(sha_1_str, fingerprint_algorithm);
 
-    std::string dummy_fingerprint;  // Value is not checked.
-    EXPECT_TRUE(GetValue(
-        report,
-        StatsReport::kStatsValueNameFingerprint,
-        &dummy_fingerprint));
+    std::string fingerprint;
+    EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameFingerprint,
+                         &fingerprint));
+    EXPECT_FALSE(fingerprint.empty());
 
     ++i;
-    if (!GetValue(
-        report, StatsReport::kStatsValueNameIssuerId, &certificate_id))
+    std::string issuer_id;
+    if (!GetValue(report, StatsReport::kStatsValueNameIssuerId,
+                  &issuer_id)) {
       break;
+    }
+
+    cert_id = IdFromCertIdString(issuer_id).Pass();
+    certificate_id = cert_id.get();
   }
   EXPECT_EQ(ders.size(), i);
 }
@@ -510,8 +532,8 @@ class StatsCollectorTest : public testing::Test {
 
   std::string AddCandidateReport(StatsCollector* collector,
                                  const cricket::Candidate& candidate,
-                                 const std::string& report_type) {
-    return collector->AddCandidateReport(candidate, report_type);
+                                 bool local) {
+    return collector->AddCandidateReport(candidate, local);
   }
 
   void SetupAndVerifyAudioTrackStats(
@@ -651,7 +673,8 @@ class StatsCollectorTest : public testing::Test {
         StatsReport::kStatsValueNameLocalCertificateId);
     if (local_ders.size() > 0) {
       EXPECT_NE(kNotFound, local_certificate_id);
-      CheckCertChainReports(reports, local_ders, local_certificate_id);
+      scoped_ptr<StatsReport::Id> id(IdFromCertIdString(local_certificate_id));
+      CheckCertChainReports(reports, local_ders, *id.get());
     } else {
       EXPECT_EQ(kNotFound, local_certificate_id);
     }
@@ -663,7 +686,8 @@ class StatsCollectorTest : public testing::Test {
         StatsReport::kStatsValueNameRemoteCertificateId);
     if (remote_ders.size() > 0) {
       EXPECT_NE(kNotFound, remote_certificate_id);
-      CheckCertChainReports(reports, remote_ders, remote_certificate_id);
+      scoped_ptr<StatsReport::Id> id(IdFromCertIdString(remote_certificate_id));
+      CheckCertChainReports(reports, remote_ders, *id.get());
     } else {
       EXPECT_EQ(kNotFound, remote_certificate_id);
     }
@@ -842,8 +866,7 @@ TEST_F(StatsCollectorTest, TrackObjectExistsWithoutUpdateStats) {
   StatsReports reports;
   stats.GetStats(NULL, &reports);
   EXPECT_EQ((size_t)1, reports.size());
-  EXPECT_EQ(std::string(StatsReport::kStatsReportTypeTrack),
-            reports[0]->type);
+  EXPECT_EQ(StatsReport::kStatsReportTypeTrack, reports[0]->type());
 
   std::string trackValue =
       ExtractStatsValue(StatsReport::kStatsReportTypeTrack,
@@ -953,8 +976,19 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
       reports,
       StatsReport::kStatsValueNameTransportId);
   ASSERT_NE(kNotFound, transport_id);
-  const StatsReport* transport_report = FindReportById(reports,
-                                                       transport_id);
+  // Transport id component ID will always be 1.
+  // This has assumptions about how the ID is constructed.  As is, this is
+  // OK since this is for testing purposes only, but if we ever need this
+  // in production, we should add a generic method that does this.
+  size_t index = transport_id.find('-');
+  ASSERT_NE(std::string::npos, index);
+  std::string content = transport_id.substr(index + 1);
+  index = content.rfind('-');
+  ASSERT_NE(std::string::npos, index);
+  content = content.substr(0, index);
+  scoped_ptr<StatsReport::Id> id(StatsReport::NewComponentId(content, 1));
+  ASSERT_EQ(transport_id, id->ToString());
+  const StatsReport* transport_report = FindReportById(reports, *id.get());
   ASSERT_FALSE(transport_report == NULL);
 }
 
@@ -1101,8 +1135,7 @@ TEST_F(StatsCollectorTest, IceCandidateReport) {
   c.set_address(local_address);
   c.set_priority(priority);
   c.set_network_type(network_type);
-  std::string report_id = AddCandidateReport(
-      &stats, c, StatsReport::kStatsReportTypeIceLocalCandidate);
+  std::string report_id = AddCandidateReport(&stats, c, true);
   EXPECT_EQ("Cand-" + c.id(), report_id);
 
   c = cricket::Candidate();
@@ -1112,8 +1145,7 @@ TEST_F(StatsCollectorTest, IceCandidateReport) {
   c.set_address(remote_address);
   c.set_priority(priority);
   c.set_network_type(network_type);
-  report_id = AddCandidateReport(
-      &stats, c, StatsReport::kStatsReportTypeIceRemoteCandidate);
+  report_id = AddCandidateReport(&stats, c, false);
   EXPECT_EQ("Cand-" + c.id(), report_id);
 
   stats.GetStats(NULL, &reports);

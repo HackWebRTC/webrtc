@@ -126,7 +126,7 @@ class MockStatsObserver : public webrtc::StatsObserver {
     memset(&stats_, sizeof(stats_), 0);
     stats_.number_of_reports = reports.size();
     for (const auto* r : reports) {
-      if (r->type == StatsReport::kStatsReportTypeSsrc) {
+      if (r->type() == StatsReport::kStatsReportTypeSsrc) {
         GetIntValue(r, StatsReport::kStatsValueNameAudioOutputLevel,
             &stats_.audio_output_level);
         GetIntValue(r, StatsReport::kStatsValueNameAudioInputLevel,
@@ -135,7 +135,7 @@ class MockStatsObserver : public webrtc::StatsObserver {
             &stats_.bytes_received);
         GetIntValue(r, StatsReport::kStatsValueNameBytesSent,
             &stats_.bytes_sent);
-      } else if (r->type == StatsReport::kStatsReportTypeBwe) {
+      } else if (r->type() == StatsReport::kStatsReportTypeBwe) {
         GetIntValue(r, StatsReport::kStatsValueNameAvailableReceiveBandwidth,
             &stats_.available_receive_bandwidth);
       }
