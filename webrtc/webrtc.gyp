@@ -28,8 +28,6 @@
       'common.gyp:*',
       'common_audio/common_audio.gyp:*',
       'common_video/common_video.gyp:*',
-      'libjingle/xmllite/xmllite.gyp:*',
-      'libjingle/xmpp/xmpp.gyp:*',
       'modules/modules.gyp:*',
       'p2p/p2p.gyp:*',
       'system_wrappers/system_wrappers.gyp:*',
