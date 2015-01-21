@@ -321,7 +321,7 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
   while (WebRtc_available_read(aecpc->far_pre_buf) >= PART_LEN2) {
     // We have enough data to pass to the FFT, hence read PART_LEN2 samples.
     {
-      float* ptmp;
+      float* ptmp = NULL;
       float tmp[PART_LEN2];
       WebRtc_ReadBuffer(aecpc->far_pre_buf, (void**)&ptmp, tmp, PART_LEN2);
       WebRtcAec_BufferFarendPartition(aecpc->aec, ptmp);
