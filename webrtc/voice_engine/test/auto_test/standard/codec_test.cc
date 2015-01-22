@@ -97,16 +97,17 @@ TEST_F(CodecTest, VoiceActivityDetectionTypeSettingsCanBeChanged) {
   EXPECT_EQ(vad_mode, webrtc::kVadAggressiveMid);
   EXPECT_FALSE(dtx_disabled);
 
-  // The fourth argument is the DTX disable flag.
-  EXPECT_EQ(0, voe_codec_->SetVADStatus(
-      channel_, true, webrtc::kVadAggressiveHigh, true));
+  // The fourth argument is the DTX disable flag, which is always supposed to
+  // be false.
+  EXPECT_EQ(0, voe_codec_->SetVADStatus(channel_, true,
+                                        webrtc::kVadAggressiveHigh, false));
   EXPECT_EQ(0, voe_codec_->GetVADStatus(
       channel_, vad_enabled, vad_mode, dtx_disabled));
   EXPECT_EQ(vad_mode, webrtc::kVadAggressiveHigh);
-  EXPECT_TRUE(dtx_disabled);
+  EXPECT_FALSE(dtx_disabled);
 
-  EXPECT_EQ(0, voe_codec_->SetVADStatus(
-      channel_, true, webrtc::kVadConventional, true));
+  EXPECT_EQ(0, voe_codec_->SetVADStatus(channel_, true,
+                                        webrtc::kVadConventional, false));
   EXPECT_EQ(0, voe_codec_->GetVADStatus(
       channel_, vad_enabled, vad_mode, dtx_disabled));
   EXPECT_EQ(vad_mode, webrtc::kVadConventional);

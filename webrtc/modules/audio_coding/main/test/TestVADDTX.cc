@@ -141,8 +141,8 @@ void TestVADDTX::runTestCases() {
   Run();
   VerifyTest();
 
-  // #5 DTX = ON, VAD = OFF, VADNormal
-  SetVAD(true, false, VADNormal);
+  // #5 DTX = ON, VAD = ON, VADNormal
+  SetVAD(true, true, VADNormal);
   Run();
   VerifyTest();
 }
