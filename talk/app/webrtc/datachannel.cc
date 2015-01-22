@@ -463,11 +463,13 @@ void DataChannel::SendQueuedDataMessages() {
   ASSERT(was_ever_writable_ && state_ == kOpen);
 
   while (!queued_send_data_.Empty()) {
-    rtc::scoped_ptr<DataBuffer> buffer(queued_send_data_.Front());
+    DataBuffer* buffer = queued_send_data_.Front();
     if (!SendDataMessage(*buffer, false)) {
+      // Leave the message in the queue if sending is aborted.
       break;
     }
     queued_send_data_.Pop();
+    delete buffer;
   }
 }
 

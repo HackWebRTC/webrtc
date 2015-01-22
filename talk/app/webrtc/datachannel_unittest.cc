@@ -162,6 +162,24 @@ TEST_F(SctpDataChannelTest, QueuedDataSentWhenUnblocked) {
   EXPECT_EQ(0U, webrtc_data_channel_->buffered_amount());
 }
 
+// Tests that no crash when the channel is blocked right away while trying to
+// send queued data.
+TEST_F(SctpDataChannelTest, BlockedWhenSendQueuedDataNoCrash) {
+  SetChannelReady();
+  webrtc::DataBuffer buffer("abcd");
+  provider_.set_send_blocked(true);
+  EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
+
+  // Set channel ready while it is still blocked.
+  SetChannelReady();
+  EXPECT_EQ(buffer.size(), webrtc_data_channel_->buffered_amount());
+
+  // Unblock the channel to send queued data again, there should be no crash.
+  provider_.set_send_blocked(false);
+  SetChannelReady();
+  EXPECT_EQ(0U, webrtc_data_channel_->buffered_amount());
+}
+
 // Tests that the queued control message is sent when channel is ready.
 TEST_F(SctpDataChannelTest, OpenMessageSent) {
   // Initially the id is unassigned.
