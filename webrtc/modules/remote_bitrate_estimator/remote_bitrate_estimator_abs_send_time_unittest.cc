@@ -136,27 +136,105 @@ TEST_F(RemoteBitrateEstimatorAbsSendTimeTest,
        TestProbeDetectionTooHighBitrate) {
   const int kProbeLength = 5;
   int64_t now_ms = clock_.TimeInMilliseconds();
+  int64_t send_time_ms = 0;
   // First burst sent at 8 * 1000 / 10 = 800 kbps.
   for (int i = 0; i < kProbeLength; ++i) {
     clock_.AdvanceTimeMilliseconds(10);
     now_ms = clock_.TimeInMilliseconds();
-    IncomingPacket(0, 1000, now_ms, 90 * now_ms, AbsSendTime(now_ms, 1000));
+    send_time_ms += 10;
+    IncomingPacket(0, 1000, now_ms, 90 * send_time_ms,
+                   AbsSendTime(send_time_ms, 1000));
   }
 
-  // Second burst sent at 8 * 1000 / 5 = 1600 kbps.
+  // Second burst sent at 8 * 1000 / 5 = 1600 kbps, arriving at 8 * 1000 / 8 =
+  // 1000 kbps.
   for (int i = 0; i < kProbeLength; ++i) {
     clock_.AdvanceTimeMilliseconds(8);
     now_ms = clock_.TimeInMilliseconds();
-    IncomingPacket(0,
-                   1000,
-                   now_ms,
-                   90 * (now_ms - 3 * i),
-                   AbsSendTime(now_ms - 3 * i, 1000));
+    send_time_ms += 5;
+    IncomingPacket(0, 1000, now_ms, send_time_ms,
+                   AbsSendTime(send_time_ms, 1000));
   }
 
   EXPECT_EQ(0, bitrate_estimator_->Process());
   EXPECT_TRUE(bitrate_observer_->updated());
-  EXPECT_GT(bitrate_observer_->latest_bitrate(), 700000u);
-  EXPECT_LT(bitrate_observer_->latest_bitrate(), 900000u);
+  EXPECT_NEAR(bitrate_observer_->latest_bitrate(), 800000u, 10000);
+}
+
+TEST_F(RemoteBitrateEstimatorAbsSendTimeTest,
+       TestProbeDetectionSlightlyFasterArrival) {
+  const int kProbeLength = 5;
+  int64_t now_ms = clock_.TimeInMilliseconds();
+  // First burst sent at 8 * 1000 / 10 = 800 kbps.
+  // Arriving at 8 * 1000 / 5 = 1600 kbps.
+  int64_t send_time_ms = 0;
+  for (int i = 0; i < kProbeLength; ++i) {
+    clock_.AdvanceTimeMilliseconds(5);
+    send_time_ms += 10;
+    now_ms = clock_.TimeInMilliseconds();
+    IncomingPacket(0, 1000, now_ms, 90 * send_time_ms,
+                   AbsSendTime(send_time_ms, 1000));
+  }
+
+  EXPECT_EQ(0, bitrate_estimator_->Process());
+  EXPECT_TRUE(bitrate_observer_->updated());
+  EXPECT_GT(bitrate_observer_->latest_bitrate(), 800000u);
+}
+
+TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, TestProbeDetectionFasterArrival) {
+  const int kProbeLength = 5;
+  int64_t now_ms = clock_.TimeInMilliseconds();
+  // First burst sent at 8 * 1000 / 10 = 800 kbps.
+  // Arriving at 8 * 1000 / 5 = 1600 kbps.
+  int64_t send_time_ms = 0;
+  for (int i = 0; i < kProbeLength; ++i) {
+    clock_.AdvanceTimeMilliseconds(1);
+    send_time_ms += 10;
+    now_ms = clock_.TimeInMilliseconds();
+    IncomingPacket(0, 1000, now_ms, 90 * send_time_ms,
+                   AbsSendTime(send_time_ms, 1000));
+  }
+
+  EXPECT_EQ(0, bitrate_estimator_->Process());
+  EXPECT_FALSE(bitrate_observer_->updated());
+}
+
+TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, TestProbeDetectionSlowerArrival) {
+  const int kProbeLength = 5;
+  int64_t now_ms = clock_.TimeInMilliseconds();
+  // First burst sent at 8 * 1000 / 5 = 1600 kbps.
+  // Arriving at 8 * 1000 / 7 = 1142 kbps.
+  int64_t send_time_ms = 0;
+  for (int i = 0; i < kProbeLength; ++i) {
+    clock_.AdvanceTimeMilliseconds(7);
+    send_time_ms += 5;
+    now_ms = clock_.TimeInMilliseconds();
+    IncomingPacket(0, 1000, now_ms, 90 * send_time_ms,
+                   AbsSendTime(send_time_ms, 1000));
+  }
+
+  EXPECT_EQ(0, bitrate_estimator_->Process());
+  EXPECT_TRUE(bitrate_observer_->updated());
+  EXPECT_NEAR(bitrate_observer_->latest_bitrate(), 1140000, 10000);
+}
+
+TEST_F(RemoteBitrateEstimatorAbsSendTimeTest,
+       TestProbeDetectionSlowerArrivalHighBitrate) {
+  const int kProbeLength = 5;
+  int64_t now_ms = clock_.TimeInMilliseconds();
+  // Burst sent at 8 * 1000 / 1 = 8000 kbps.
+  // Arriving at 8 * 1000 / 2 = 4000 kbps.
+  int64_t send_time_ms = 0;
+  for (int i = 0; i < kProbeLength; ++i) {
+    clock_.AdvanceTimeMilliseconds(2);
+    send_time_ms += 1;
+    now_ms = clock_.TimeInMilliseconds();
+    IncomingPacket(0, 1000, now_ms, 90 * send_time_ms,
+                   AbsSendTime(send_time_ms, 1000));
+  }
+
+  EXPECT_EQ(0, bitrate_estimator_->Process());
+  EXPECT_TRUE(bitrate_observer_->updated());
+  EXPECT_NEAR(bitrate_observer_->latest_bitrate(), 4000000u, 10000);
 }
 }  // namespace webrtc
