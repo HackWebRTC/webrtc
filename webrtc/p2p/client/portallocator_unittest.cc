@@ -1064,3 +1064,18 @@ TEST(HttpPortAllocatorTest, TestSessionRequestUrl) {
   EXPECT_EQ(kIceUfrag0, args["username"]);
   EXPECT_EQ(kIcePwd0, args["password"]);
 }
+
+// Tests that destroying ports with non-shared sockets does not crash.
+// b/19074679.
+TEST_F(PortAllocatorTest, TestDestroyPortsNonSharedSockets) {
+  AddInterface(kClientAddr);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
+  EXPECT_EQ(4U, ports_.size());
+
+  auto it = ports_.begin();
+  for (; it != ports_.end(); ++it) {
+    (reinterpret_cast<cricket::Port*>(*it))->Destroy();
+  }
+}
