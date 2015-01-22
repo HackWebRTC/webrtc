@@ -1030,10 +1030,9 @@ bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
   if (action == CA_UPDATE) {
     for (StreamParamsVec::const_iterator it = streams.begin();
          it != streams.end(); ++it) {
-      StreamParams existing_stream;
-      bool stream_exist = GetStreamByIds(local_streams_, it->groupid,
-                                         it->id, &existing_stream);
-      if (!stream_exist && it->has_ssrcs()) {
+      const StreamParams* existing_stream =
+          GetStreamByIds(local_streams_, it->groupid, it->id);
+      if (!existing_stream && it->has_ssrcs()) {
         if (media_channel()->AddSendStream(*it)) {
           local_streams_.push_back(*it);
           LOG(LS_INFO) << "Add send stream ssrc: " << it->first_ssrc();
@@ -1043,15 +1042,15 @@ bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
           SafeSetError(desc.str(), error_desc);
           return false;
         }
-      } else if (stream_exist && !it->has_ssrcs()) {
-        if (!media_channel()->RemoveSendStream(existing_stream.first_ssrc())) {
+      } else if (existing_stream && !it->has_ssrcs()) {
+        if (!media_channel()->RemoveSendStream(existing_stream->first_ssrc())) {
           std::ostringstream desc;
           desc << "Failed to remove send stream with ssrc "
                << it->first_ssrc() << ".";
           SafeSetError(desc.str(), error_desc);
           return false;
         }
-        RemoveStreamBySsrc(&local_streams_, existing_stream.first_ssrc());
+        RemoveStreamBySsrc(&local_streams_, existing_stream->first_ssrc());
       } else {
         LOG(LS_WARNING) << "Ignore unsupported stream update";
       }
@@ -1064,7 +1063,7 @@ bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
   bool ret = true;
   for (StreamParamsVec::const_iterator it = local_streams_.begin();
        it != local_streams_.end(); ++it) {
-    if (!GetStreamBySsrc(streams, it->first_ssrc(), NULL)) {
+    if (!GetStreamBySsrc(streams, it->first_ssrc())) {
       if (!media_channel()->RemoveSendStream(it->first_ssrc())) {
         std::ostringstream desc;
         desc << "Failed to remove send stream with ssrc "
@@ -1077,7 +1076,7 @@ bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
   // Check for new streams.
   for (StreamParamsVec::const_iterator it = streams.begin();
        it != streams.end(); ++it) {
-    if (!GetStreamBySsrc(local_streams_, it->first_ssrc(), NULL)) {
+    if (!GetStreamBySsrc(local_streams_, it->first_ssrc())) {
       if (media_channel()->AddSendStream(*it)) {
         LOG(LS_INFO) << "Add send ssrc: " << it->ssrcs[0];
       } else {
@@ -1104,10 +1103,9 @@ bool BaseChannel::UpdateRemoteStreams_w(
   if (action == CA_UPDATE) {
     for (StreamParamsVec::const_iterator it = streams.begin();
          it != streams.end(); ++it) {
-      StreamParams existing_stream;
-      bool stream_exists = GetStreamByIds(remote_streams_, it->groupid,
-                                          it->id, &existing_stream);
-      if (!stream_exists && it->has_ssrcs()) {
+      const StreamParams* existing_stream =
+          GetStreamByIds(remote_streams_, it->groupid, it->id);
+      if (!existing_stream && it->has_ssrcs()) {
         if (AddRecvStream_w(*it)) {
           remote_streams_.push_back(*it);
           LOG(LS_INFO) << "Add remote stream ssrc: " << it->first_ssrc();
@@ -1117,19 +1115,18 @@ bool BaseChannel::UpdateRemoteStreams_w(
           SafeSetError(desc.str(), error_desc);
           return false;
         }
-      } else if (stream_exists && !it->has_ssrcs()) {
-        if (!RemoveRecvStream_w(existing_stream.first_ssrc())) {
+      } else if (existing_stream && !it->has_ssrcs()) {
+        if (!RemoveRecvStream_w(existing_stream->first_ssrc())) {
           std::ostringstream desc;
           desc << "Failed to remove remote stream with ssrc "
                << it->first_ssrc() << ".";
           SafeSetError(desc.str(), error_desc);
           return false;
         }
-        RemoveStreamBySsrc(&remote_streams_, existing_stream.first_ssrc());
+        RemoveStreamBySsrc(&remote_streams_, existing_stream->first_ssrc());
       } else {
         LOG(LS_WARNING) << "Ignore unsupported stream update."
-                        << " Stream exists? " << stream_exists
-                        << " existing stream = " << existing_stream.ToString()
+                        << " Stream exists? " << (existing_stream != nullptr)
                         << " new stream = " << it->ToString();
       }
     }
@@ -1141,7 +1138,7 @@ bool BaseChannel::UpdateRemoteStreams_w(
   bool ret = true;
   for (StreamParamsVec::const_iterator it = remote_streams_.begin();
        it != remote_streams_.end(); ++it) {
-    if (!GetStreamBySsrc(streams, it->first_ssrc(), NULL)) {
+    if (!GetStreamBySsrc(streams, it->first_ssrc())) {
       if (!RemoveRecvStream_w(it->first_ssrc())) {
         std::ostringstream desc;
         desc << "Failed to remove remote stream with ssrc "
@@ -1154,7 +1151,7 @@ bool BaseChannel::UpdateRemoteStreams_w(
   // Check for new streams.
   for (StreamParamsVec::const_iterator it = streams.begin();
       it != streams.end(); ++it) {
-    if (!GetStreamBySsrc(remote_streams_, it->first_ssrc(), NULL)) {
+    if (!GetStreamBySsrc(remote_streams_, it->first_ssrc())) {
       if (AddRecvStream_w(*it)) {
         LOG(LS_INFO) << "Add remote ssrc: " << it->ssrcs[0];
       } else {
@@ -1923,7 +1920,7 @@ bool VideoChannel::ApplyViewRequest_w(const ViewRequest& request) {
   // Check if the view request has invalid streams.
   for (StaticVideoViews::const_iterator it = request.static_video_views.begin();
       it != request.static_video_views.end(); ++it) {
-    if (!GetStream(local_streams(), it->selector, NULL)) {
+    if (!GetStream(local_streams(), it->selector)) {
       LOG(LS_WARNING) << "View request for ("
                       << it->selector.ssrc << ", '"
                       << it->selector.groupid << "', '"

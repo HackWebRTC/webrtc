@@ -183,11 +183,10 @@ bool Call::SendViewRequest(Session* session,
   StaticVideoViews::const_iterator it;
   for (it = view_request.static_video_views.begin();
        it != view_request.static_video_views.end(); ++it) {
-    StreamParams found_stream;
     bool found = false;
     MediaStreams* recv_streams = GetMediaStreams(session);
     if (recv_streams)
-      found = recv_streams->GetVideoStream(it->selector, &found_stream);
+      found = recv_streams->GetVideoStream(it->selector, nullptr);
     if (!found) {
       LOG(LS_WARNING) << "Trying to send view request for ("
                       << it->selector.ssrc << ", '"
@@ -983,10 +982,11 @@ void FindStreamChanges(const std::vector<StreamParams>& streams,
                        std::vector<StreamParams>* removed_streams) {
   for (std::vector<StreamParams>::const_iterator update = updates.begin();
        update != updates.end(); ++update) {
-    StreamParams stream;
-    if (GetStreamByIds(streams, update->groupid, update->id, &stream)) {
+    const StreamParams* stream =
+        GetStreamByIds(streams, update->groupid, update->id);
+    if (stream) {
       if (!update->has_ssrcs()) {
-        removed_streams->push_back(stream);
+        removed_streams->push_back(*stream);
       }
     } else {
       // There's a bug on reflector that will send <stream>s even

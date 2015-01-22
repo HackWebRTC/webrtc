@@ -209,12 +209,13 @@ static bool GetAudioSsrcByTrackId(
   const cricket::MediaContentDescription* audio_content =
       static_cast<const cricket::MediaContentDescription*>(
           audio_info->description);
-  cricket::StreamParams stream;
-  if (!cricket::GetStreamByIds(audio_content->streams(), "", track_id,
-                               &stream)) {
+  const cricket::StreamParams* stream =
+      cricket::GetStreamByIds(audio_content->streams(), "", track_id);
+  if (!stream) {
     return false;
   }
-  *ssrc = stream.first_ssrc();
+
+  *ssrc = stream->first_ssrc();
   return true;
 }
 
@@ -222,7 +223,6 @@ static bool GetTrackIdBySsrc(const SessionDescription* session_description,
                              uint32 ssrc, std::string* track_id) {
   ASSERT(track_id != NULL);
 
-  cricket::StreamParams stream_out;
   const cricket::ContentInfo* audio_info =
       cricket::GetFirstAudioContent(session_description);
   if (audio_info) {
@@ -230,8 +230,10 @@ static bool GetTrackIdBySsrc(const SessionDescription* session_description,
         static_cast<const cricket::MediaContentDescription*>(
             audio_info->description);
 
-    if (cricket::GetStreamBySsrc(audio_content->streams(), ssrc, &stream_out)) {
-      *track_id = stream_out.id;
+    const auto* found =
+        cricket::GetStreamBySsrc(audio_content->streams(), ssrc);
+    if (found) {
+      *track_id = found->id;
       return true;
     }
   }
@@ -243,8 +245,10 @@ static bool GetTrackIdBySsrc(const SessionDescription* session_description,
         static_cast<const cricket::MediaContentDescription*>(
             video_info->description);
 
-    if (cricket::GetStreamBySsrc(video_content->streams(), ssrc, &stream_out)) {
-      *track_id = stream_out.id;
+    const auto* found =
+        cricket::GetStreamBySsrc(video_content->streams(), ssrc);
+    if (found) {
+      *track_id = found->id;
       return true;
     }
   }

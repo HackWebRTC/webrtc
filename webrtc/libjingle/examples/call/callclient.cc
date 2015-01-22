@@ -771,16 +771,16 @@ void CallClient::SendData(const std::string& streamid,
     return;
   }
 
-  cricket::StreamParams stream;
-  if (!cricket::GetStreamByIds(
-          data->streams(), "", streamid, &stream)) {
+  const cricket::StreamParams* stream =
+      cricket::GetStreamByIds(data->streams(), "", streamid)
+  if (!stream) {
     LOG(LS_WARNING) << "Could not send data: no such stream: "
                     << streamid << ".";
     return;
   }
 
   cricket::SendDataParams params;
-  params.ssrc = stream.first_ssrc();
+  params.ssrc = stream->first_ssrc();
   rtc::Buffer payload(text.data(), text.length());
   cricket::SendDataResult result;
   bool sent = call_->SendData(session, params, payload, &result);
@@ -862,15 +862,16 @@ void CallClient::OnDataReceived(cricket::Call*,
   if (!session)
     return;
 
-  cricket::StreamParams stream;
   const std::vector<cricket::StreamParams>* data_streams =
       call_->GetDataRecvStreams(session);
+  const cricket::StreamParams* stream =
+      data_streams ? GetStreamBySsrc(*data_streams, params.ssrc) : nullptr;
   std::string text(payload.data(), payload.length());
-  if (data_streams && GetStreamBySsrc(*data_streams, params.ssrc, &stream)) {
+  if (stream) {
     console_->PrintLine(
         "Received data from '%s' on stream '%s' (ssrc=%u): %s",
-        stream.groupid.c_str(), stream.id.c_str(),
-        params.ssrc, text.c_str());
+        stream->groupid.c_str(), stream->id.c_str(),
+        params->ssrc, text.c_str());
   } else {
     console_->PrintLine(
         "Received data (ssrc=%u): %s",
