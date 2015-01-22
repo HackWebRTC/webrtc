@@ -86,7 +86,7 @@ struct BweTestConfig {
   std::vector<EstimatorConfig> estimator_configs;
 };
 
-class TestedEstimator;
+class PacketReceiver;
 class PacketProcessorRunner;
 
 class BweTest : public PacketProcessorListener {
@@ -104,11 +104,11 @@ class BweTest : public PacketProcessorListener {
   std::string GetTestName() const;
 
  private:
-  typedef std::map<int, TestedEstimator*> EstimatorMap;
+  typedef std::map<int, PacketReceiver*> EstimatorMap;
 
   void FindPacketsToProcess(const FlowIds& flow_ids, Packets* in,
                             Packets* out);
-  void GiveFeedbackToAffectedSenders(int flow_id, TestedEstimator* estimator);
+  void GiveFeedbackToAffectedSenders(int flow_id, PacketReceiver* estimator);
 
   int64_t run_time_ms_;
   int64_t time_now_ms_;
