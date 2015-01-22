@@ -81,20 +81,20 @@ void StreamStatisticianImpl::UpdateCounters(const RTPHeader& header,
   bool in_order = InOrderPacketInternal(header.sequenceNumber);
   ssrc_ = header.ssrc;
   incoming_bitrate_.Update(packet_length);
-  receive_counters_.bytes +=
+  receive_counters_.transmitted.payload_bytes +=
       packet_length - (header.paddingLength + header.headerLength);
-  receive_counters_.header_bytes += header.headerLength;
-  receive_counters_.padding_bytes += header.paddingLength;
-  ++receive_counters_.packets;
+  receive_counters_.transmitted.header_bytes += header.headerLength;
+  receive_counters_.transmitted.padding_bytes += header.paddingLength;
+  ++receive_counters_.transmitted.packets;
   if (!in_order && retransmitted) {
-    ++receive_counters_.retransmitted_packets;
-    receive_counters_.retransmitted_bytes +=
+    ++receive_counters_.retransmitted.packets;
+    receive_counters_.retransmitted.payload_bytes +=
         packet_length - (header.paddingLength + header.headerLength);
-    receive_counters_.retransmitted_header_bytes += header.headerLength;
-    receive_counters_.retransmitted_padding_bytes += header.paddingLength;
+    receive_counters_.retransmitted.header_bytes += header.headerLength;
+    receive_counters_.retransmitted.padding_bytes += header.paddingLength;
   }
 
-  if (receive_counters_.packets == 1) {
+  if (receive_counters_.transmitted.packets == 1) {
     received_seq_first_ = header.sequenceNumber;
     receive_counters_.first_packet_time_ms = clock_->TimeInMilliseconds();
   }
@@ -108,7 +108,7 @@ void StreamStatisticianImpl::UpdateCounters(const RTPHeader& header,
     clock_->CurrentNtp(receive_time_secs, receive_time_frac);
 
     // Wrong if we use RetransmitOfOldPacket.
-    if (receive_counters_.packets > 1 &&
+    if (receive_counters_.transmitted.packets > 1 &&
         received_seq_max_ > header.sequenceNumber) {
       // Wrap around detected.
       received_seq_wraps_++;
@@ -119,8 +119,8 @@ void StreamStatisticianImpl::UpdateCounters(const RTPHeader& header,
     // If new time stamp and more than one in-order packet received, calculate
     // new jitter statistics.
     if (header.timestamp != last_received_timestamp_ &&
-        (receive_counters_.packets - receive_counters_.retransmitted_packets) >
-            1) {
+        (receive_counters_.transmitted.packets -
+         receive_counters_.retransmitted.packets) > 1) {
       UpdateJitter(header, receive_time_secs, receive_time_frac);
     }
     last_received_timestamp_ = header.timestamp;
@@ -203,7 +203,7 @@ void StreamStatisticianImpl::NotifyRtcpCallback() {
 void StreamStatisticianImpl::FecPacketReceived() {
   {
     CriticalSectionScoped cs(stream_lock_.get());
-    ++receive_counters_.fec_packets;
+    ++receive_counters_.fec.packets;
   }
   NotifyRtpCallback();
 }
@@ -218,7 +218,8 @@ bool StreamStatisticianImpl::GetStatistics(RtcpStatistics* statistics,
                                            bool reset) {
   {
     CriticalSectionScoped cs(stream_lock_.get());
-    if (received_seq_first_ == 0 && receive_counters_.bytes == 0) {
+    if (received_seq_first_ == 0 &&
+        receive_counters_.transmitted.payload_bytes == 0) {
       // We have not received anything.
       return false;
     }
@@ -260,8 +261,8 @@ RtcpStatistics StreamStatisticianImpl::CalculateRtcpStatistics() {
   // Number of received RTP packets since last report, counts all packets but
   // not re-transmissions.
   uint32_t rec_since_last =
-      (receive_counters_.packets - receive_counters_.retransmitted_packets) -
-      last_report_inorder_packets_;
+      (receive_counters_.transmitted.packets -
+       receive_counters_.retransmitted.packets) - last_report_inorder_packets_;
 
   // With NACK we don't know the expected retransmissions during the last
   // second. We know how many "old" packets we have received. We just count
@@ -273,7 +274,7 @@ RtcpStatistics StreamStatisticianImpl::CalculateRtcpStatistics() {
   // re-transmitted. We use RTT to decide if a packet is re-ordered or
   // re-transmitted.
   uint32_t retransmitted_packets =
-      receive_counters_.retransmitted_packets - last_report_old_packets_;
+      receive_counters_.retransmitted.packets - last_report_old_packets_;
   rec_since_last += retransmitted_packets;
 
   int32_t missing = 0;
@@ -301,8 +302,9 @@ RtcpStatistics StreamStatisticianImpl::CalculateRtcpStatistics() {
 
   // Only for report blocks in RTCP SR and RR.
   last_report_inorder_packets_ =
-      receive_counters_.packets - receive_counters_.retransmitted_packets;
-  last_report_old_packets_ = receive_counters_.retransmitted_packets;
+      receive_counters_.transmitted.packets -
+      receive_counters_.retransmitted.packets;
+  last_report_old_packets_ = receive_counters_.retransmitted.packets;
   last_report_seq_max_ = received_seq_max_;
 
   return stats;
@@ -312,11 +314,12 @@ void StreamStatisticianImpl::GetDataCounters(
     size_t* bytes_received, uint32_t* packets_received) const {
   CriticalSectionScoped cs(stream_lock_.get());
   if (bytes_received) {
-    *bytes_received = receive_counters_.bytes + receive_counters_.header_bytes +
-                      receive_counters_.padding_bytes;
+    *bytes_received = receive_counters_.transmitted.payload_bytes +
+                      receive_counters_.transmitted.header_bytes +
+                      receive_counters_.transmitted.padding_bytes;
   }
   if (packets_received) {
-    *packets_received = receive_counters_.packets;
+    *packets_received = receive_counters_.transmitted.packets;
   }
 }
 

@@ -349,10 +349,10 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
     StreamDataCounters sent;
     StreamDataCounters received;
     int ret_code = GetRtpStatistics(video_channel, sent, received);
-    bytes_sent = sent.bytes;
-    packets_sent = sent.packets;
-    bytes_received = received.bytes;
-    packets_received = received.packets;
+    bytes_sent = sent.transmitted.payload_bytes;
+    packets_sent = sent.transmitted.packets;
+    bytes_received = received.transmitted.payload_bytes;
+    packets_received = received.transmitted.packets;
     return ret_code;
   }
 

@@ -65,13 +65,17 @@ class SendStatisticsProxyTest : public ::testing::Test {
       EXPECT_EQ(a.avg_delay_ms, b.avg_delay_ms);
       EXPECT_EQ(a.max_delay_ms, b.max_delay_ms);
 
-      EXPECT_EQ(a.rtp_stats.bytes, b.rtp_stats.bytes);
-      EXPECT_EQ(a.rtp_stats.header_bytes, b.rtp_stats.header_bytes);
-      EXPECT_EQ(a.rtp_stats.padding_bytes, b.rtp_stats.padding_bytes);
-      EXPECT_EQ(a.rtp_stats.packets, b.rtp_stats.packets);
-      EXPECT_EQ(a.rtp_stats.retransmitted_packets,
-                b.rtp_stats.retransmitted_packets);
-      EXPECT_EQ(a.rtp_stats.fec_packets, b.rtp_stats.fec_packets);
+      EXPECT_EQ(a.rtp_stats.transmitted.payload_bytes,
+                b.rtp_stats.transmitted.payload_bytes);
+      EXPECT_EQ(a.rtp_stats.transmitted.header_bytes,
+                b.rtp_stats.transmitted.header_bytes);
+      EXPECT_EQ(a.rtp_stats.transmitted.padding_bytes,
+                b.rtp_stats.transmitted.padding_bytes);
+      EXPECT_EQ(a.rtp_stats.transmitted.packets,
+                b.rtp_stats.transmitted.packets);
+      EXPECT_EQ(a.rtp_stats.retransmitted.packets,
+                b.rtp_stats.retransmitted.packets);
+      EXPECT_EQ(a.rtp_stats.fec.packets, b.rtp_stats.fec.packets);
 
       EXPECT_EQ(a.rtcp_stats.fraction_lost, b.rtcp_stats.fraction_lost);
       EXPECT_EQ(a.rtcp_stats.cumulative_lost, b.rtcp_stats.cumulative_lost);
@@ -203,12 +207,12 @@ TEST_F(SendStatisticsProxyTest, DataCounters) {
     // Add statistics with some arbitrary, but unique, numbers.
     size_t offset = ssrc * sizeof(StreamDataCounters);
     uint32_t offset_uint32 = static_cast<uint32_t>(offset);
-    counters.bytes = offset;
-    counters.header_bytes = offset + 1;
-    counters.fec_packets = offset_uint32 + 2;
-    counters.padding_bytes = offset + 3;
-    counters.retransmitted_packets = offset_uint32 + 4;
-    counters.packets = offset_uint32 + 5;
+    counters.transmitted.payload_bytes = offset;
+    counters.transmitted.header_bytes = offset + 1;
+    counters.fec.packets = offset_uint32 + 2;
+    counters.transmitted.padding_bytes = offset + 3;
+    counters.retransmitted.packets = offset_uint32 + 4;
+    counters.transmitted.packets = offset_uint32 + 5;
     callback->DataCountersUpdated(counters, ssrc);
   }
   for (std::vector<uint32_t>::const_iterator it = config_.rtp.rtx.ssrcs.begin();
@@ -219,12 +223,12 @@ TEST_F(SendStatisticsProxyTest, DataCounters) {
     // Add statistics with some arbitrary, but unique, numbers.
     size_t offset = ssrc * sizeof(StreamDataCounters);
     uint32_t offset_uint32 = static_cast<uint32_t>(offset);
-    counters.bytes = offset;
-    counters.header_bytes = offset + 1;
-    counters.fec_packets = offset_uint32 + 2;
-    counters.padding_bytes = offset + 3;
-    counters.retransmitted_packets = offset_uint32 + 4;
-    counters.packets = offset_uint32 + 5;
+    counters.transmitted.payload_bytes = offset;
+    counters.transmitted.header_bytes = offset + 1;
+    counters.fec.packets = offset_uint32 + 2;
+    counters.transmitted.padding_bytes = offset + 3;
+    counters.retransmitted.packets = offset_uint32 + 4;
+    counters.transmitted.packets = offset_uint32 + 5;
     callback->DataCountersUpdated(counters, ssrc);
   }
 

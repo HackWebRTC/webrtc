@@ -960,7 +960,8 @@ TEST_F(VideoSendStreamTest, ProducesStats) {
         const SsrcStats& entry = stats.substreams[ssrc];
         if (entry.frame_counts.key_frames > 0 &&
             entry.frame_counts.delta_frames > 0 &&
-            entry.total_bitrate_bps > 0 && entry.rtp_stats.packets > 0u &&
+            entry.total_bitrate_bps > 0 &&
+            entry.rtp_stats.transmitted.packets > 0u &&
             entry.avg_delay_ms > 0 && entry.max_delay_ms > 0) {
           return true;
         }

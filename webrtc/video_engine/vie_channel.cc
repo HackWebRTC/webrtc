@@ -248,18 +248,18 @@ void ViEChannel::UpdateHistograms() {
     elapsed_sec = rtp_rtx.TimeSinceFirstPacketInMs(now) / 1000;
     if (elapsed_sec > metrics::kMinRunTimeInSeconds) {
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.BitrateReceivedInKbps",
-          rtp_rtx.TotalBytes() * 8 / elapsed_sec / 1000);
+          rtp_rtx.transmitted.TotalBytes() * 8 / elapsed_sec / 1000);
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.MediaBitrateReceivedInKbps",
           rtp.MediaPayloadBytes() * 8 / elapsed_sec / 1000);
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PaddingBitrateReceivedInKbps",
-          rtp_rtx.padding_bytes * 8 / elapsed_sec / 1000);
+          rtp_rtx.transmitted.padding_bytes * 8 / elapsed_sec / 1000);
       RTC_HISTOGRAM_COUNTS_10000(
           "WebRTC.Video.RetransmittedBitrateReceivedInKbps",
-              rtp_rtx.RetransmittedBytes() * 8 / elapsed_sec / 1000);
+              rtp_rtx.retransmitted.TotalBytes() * 8 / elapsed_sec / 1000);
       uint32_t ssrc = 0;
       if (vie_receiver_.GetRtxSsrc(&ssrc)) {
         RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RtxBitrateReceivedInKbps",
-            rtx.TotalBytes() * 8 / elapsed_sec / 1000);
+            rtx.transmitted.TotalBytes() * 8 / elapsed_sec / 1000);
       }
     }
   }
@@ -278,17 +278,17 @@ void ViEChannel::UpdateHistogramsAtStopSend() {
     return;
   }
   RTC_HISTOGRAM_COUNTS_100000("WebRTC.Video.BitrateSentInKbps",
-      rtp_rtx.TotalBytes() * 8 / elapsed_sec / 1000);
+      rtp_rtx.transmitted.TotalBytes() * 8 / elapsed_sec / 1000);
   RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.MediaBitrateSentInKbps",
       rtp.MediaPayloadBytes() * 8 / elapsed_sec / 1000);
   RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PaddingBitrateSentInKbps",
-      rtp_rtx.padding_bytes * 8 / elapsed_sec / 1000);
+      rtp_rtx.transmitted.padding_bytes * 8 / elapsed_sec / 1000);
   RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RetransmittedBitrateSentInKbps",
-      rtp_rtx.RetransmittedBytes() * 8 / elapsed_sec / 1000);
+      rtp_rtx.retransmitted.TotalBytes() * 8 / elapsed_sec / 1000);
   uint32_t ssrc = 0;
   if (vie_receiver_.GetRtxSsrc(&ssrc)) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RtxBitrateSentInKbps",
-        rtx.TotalBytes() * 8 / elapsed_sec / 1000);
+        rtx.transmitted.TotalBytes() * 8 / elapsed_sec / 1000);
   }
 }
 

@@ -1564,13 +1564,13 @@ void PrintRTPStatistics(webrtc::ViERTP_RTCP* vie_rtp_rtcp,
                                          "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
   std::cout << "\tRTP bytes sent: "
-            << sent.bytes << std::endl;
+            << sent.transmitted.payload_bytes << std::endl;
   std::cout << "\tRTP packets sent: "
-            << sent.packets << std::endl;
+            << sent.transmitted.packets << std::endl;
   std::cout << "\tRTP bytes received: "
-            << received.bytes << std::endl;
+            << received.transmitted.payload_bytes << std::endl;
   std::cout << "\tRTP packets received: "
-            << received.packets << std::endl;
+            << received.transmitted.packets << std::endl;
 }
 
 void PrintBandwidthUsage(webrtc::ViERTP_RTCP* vie_rtp_rtcp,

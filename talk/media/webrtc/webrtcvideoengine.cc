@@ -2754,8 +2754,8 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
     }
     VideoReceiverInfo rinfo;
     rinfo.add_ssrc(ssrc);
-    rinfo.bytes_rcvd = received.bytes;
-    rinfo.packets_rcvd = received.packets;
+    rinfo.bytes_rcvd = received.transmitted.payload_bytes;
+    rinfo.packets_rcvd = received.transmitted.packets;
     rinfo.packets_lost = -1;
     rinfo.packets_concealed = -1;
     rinfo.fraction_lost = -1;  // from SentRTCP

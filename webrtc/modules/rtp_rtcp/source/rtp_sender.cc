@@ -894,25 +894,25 @@ void RTPSender::UpdateRtpStats(const uint8_t* buffer,
   }
 
   total_bitrate_sent_.Update(packet_length);
-  ++counters->packets;
-  if (counters->packets == 1) {
+  ++counters->transmitted.packets;
+  if (counters->first_packet_time_ms == -1) {
     counters->first_packet_time_ms = clock_->TimeInMilliseconds();
   }
   if (IsFecPacket(buffer, header)) {
-    ++counters->fec_packets;
+    ++counters->fec.packets;
   }
 
   if (is_retransmit) {
-    ++counters->retransmitted_packets;
-    counters->retransmitted_bytes +=
+    ++counters->retransmitted.packets;
+    counters->retransmitted.payload_bytes +=
         packet_length - (header.headerLength + header.paddingLength);
-    counters->retransmitted_header_bytes += header.headerLength;
-    counters->retransmitted_padding_bytes += header.paddingLength;
+    counters->retransmitted.header_bytes += header.headerLength;
+    counters->retransmitted.padding_bytes += header.paddingLength;
   }
-  counters->bytes +=
+  counters->transmitted.payload_bytes +=
       packet_length - (header.headerLength + header.paddingLength);
-  counters->header_bytes += header.headerLength;
-  counters->padding_bytes += header.paddingLength;
+  counters->transmitted.header_bytes += header.headerLength;
+  counters->transmitted.padding_bytes += header.paddingLength;
 
   if (rtp_stats_callback_) {
     rtp_stats_callback_->DataCountersUpdated(*counters, ssrc);

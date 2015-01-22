@@ -408,8 +408,10 @@ RTCPSender::FeedbackState ModuleRtpRtcpImpl::GetFeedbackState() {
   RTCPSender::FeedbackState state;
   state.send_payload_type = SendPayloadType();
   state.frequency_hz = CurrentSendFrequencyHz();
-  state.packets_sent = rtp_stats.packets + rtx_stats.packets;
-  state.media_bytes_sent = rtp_stats.bytes + rtx_stats.bytes;
+  state.packets_sent = rtp_stats.transmitted.packets +
+                       rtx_stats.transmitted.packets;
+  state.media_bytes_sent = rtp_stats.transmitted.payload_bytes +
+                           rtx_stats.transmitted.payload_bytes;
   state.module = this;
 
   LastReceivedNTP(&state.last_rr_ntp_secs,
@@ -798,12 +800,16 @@ int32_t ModuleRtpRtcpImpl::DataCountersRTP(
   rtp_sender_.GetDataCounters(&rtp_stats, &rtx_stats);
 
   if (bytes_sent) {
-    *bytes_sent = rtp_stats.bytes + rtp_stats.padding_bytes +
-                  rtp_stats.header_bytes + rtx_stats.bytes +
-                  rtx_stats.padding_bytes + rtx_stats.header_bytes;
+    *bytes_sent = rtp_stats.transmitted.payload_bytes +
+                  rtp_stats.transmitted.padding_bytes +
+                  rtp_stats.transmitted.header_bytes +
+                  rtx_stats.transmitted.payload_bytes +
+                  rtx_stats.transmitted.padding_bytes +
+                  rtx_stats.transmitted.header_bytes;
   }
   if (packets_sent) {
-    *packets_sent = rtp_stats.packets + rtx_stats.packets;
+    *packets_sent = rtp_stats.transmitted.packets +
+                    rtx_stats.transmitted.packets;
   }
   return 0;
 }

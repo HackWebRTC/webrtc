@@ -241,30 +241,38 @@ struct RtcpPacketTypeCounter {
   uint32_t unique_nack_requests;  // Number of unique NACKed RTP packets.
 };
 
-// Data usage statistics for a (rtp) stream.
-struct StreamDataCounters {
-  StreamDataCounters()
-    : first_packet_time_ms(-1),
-      bytes(0),
-      header_bytes(0),
+struct RtpPacketCounter {
+  RtpPacketCounter()
+    : header_bytes(0),
+      payload_bytes(0),
       padding_bytes(0),
-      packets(0),
-      retransmitted_bytes(0),
-      retransmitted_header_bytes(0),
-      retransmitted_padding_bytes(0),
-      retransmitted_packets(0),
-      fec_packets(0) {}
+      packets(0) {}
 
-  void Add(const StreamDataCounters& other) {
-    bytes += other.bytes;
+  void Add(const RtpPacketCounter& other) {
     header_bytes += other.header_bytes;
+    payload_bytes += other.payload_bytes;
     padding_bytes += other.padding_bytes;
     packets += other.packets;
-    retransmitted_bytes += other.retransmitted_bytes;
-    retransmitted_header_bytes += other.retransmitted_header_bytes;
-    retransmitted_padding_bytes += other.retransmitted_padding_bytes;
-    retransmitted_packets += other.retransmitted_packets;
-    fec_packets += other.fec_packets;
+  }
+
+  size_t TotalBytes() const {
+    return header_bytes + payload_bytes + padding_bytes;
+  }
+
+  size_t header_bytes;   // Number of bytes used by RTP headers.
+  size_t payload_bytes;  // Payload bytes, excluding RTP headers and padding.
+  size_t padding_bytes;  // Number of padding bytes.
+  uint32_t packets;      // Number of packets.
+};
+
+// Data usage statistics for a (rtp) stream.
+struct StreamDataCounters {
+  StreamDataCounters() : first_packet_time_ms(-1) {}
+
+  void Add(const StreamDataCounters& other) {
+    transmitted.Add(other.transmitted);
+    retransmitted.Add(other.retransmitted);
+    fec.Add(other.fec);
     if (other.first_packet_time_ms != -1 &&
        (other.first_packet_time_ms < first_packet_time_ms ||
         first_packet_time_ms == -1)) {
@@ -277,30 +285,18 @@ struct StreamDataCounters {
     return (first_packet_time_ms == -1) ? -1 : (now_ms - first_packet_time_ms);
   }
 
-  size_t TotalBytes() const {
-    return bytes + header_bytes + padding_bytes;
-  }
-
-  size_t RetransmittedBytes() const {
-    return retransmitted_bytes + retransmitted_header_bytes +
-           retransmitted_padding_bytes;
-  }
-
+  // Returns the number of bytes corresponding to the actual media payload (i.e.
+  // RTP headers, padding and retransmissions are excluded). Note this function
+  // does not have meaning for an RTX stream.
   size_t MediaPayloadBytes() const {
-    return bytes - retransmitted_bytes;
+    return transmitted.payload_bytes - retransmitted.payload_bytes;
   }
 
-  // TODO(pbos): Rename bytes -> media_bytes.
   int64_t first_packet_time_ms;  // Time when first packet is sent/received.
-  size_t bytes;  // Payload bytes, excluding RTP headers and padding.
-  size_t header_bytes;  // Number of bytes used by RTP headers.
-  size_t padding_bytes;  // Number of padding bytes.
-  uint32_t packets;  // Number of packets.
-  size_t retransmitted_bytes;  // Number of retransmitted payload bytes.
-  size_t retransmitted_header_bytes;  // Retransmitted bytes used by RTP header.
-  size_t retransmitted_padding_bytes;  // Retransmitted padding bytes.
-  uint32_t retransmitted_packets;  // Number of retransmitted packets.
-  uint32_t fec_packets;  // Number of redundancy packets.
+  RtpPacketCounter transmitted;  // Number of transmitted packets/bytes.
+  RtpPacketCounter retransmitted;  // Number of retransmitted packets/bytes.
+  // TODO(asapersson): add FEC bytes.
+  RtpPacketCounter fec;  // Number of redundancy packets/bytes.
 };
 
 // Callback, called whenever byte/packet counts have been updated.

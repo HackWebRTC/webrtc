@@ -1490,10 +1490,12 @@ TEST_F(EndToEndTest, GetStats) {
           stats.rtcp_stats.fraction_lost != 0 || stats.rtcp_stats.jitter != 0;
 
       receive_stats_filled_["DataCountersUpdated"] |=
-          stats.rtp_stats.bytes != 0 || stats.rtp_stats.fec_packets != 0 ||
-          stats.rtp_stats.header_bytes != 0 || stats.rtp_stats.packets != 0 ||
-          stats.rtp_stats.padding_bytes != 0 ||
-          stats.rtp_stats.retransmitted_packets != 0;
+          stats.rtp_stats.transmitted.payload_bytes != 0 ||
+          stats.rtp_stats.fec.packets != 0 ||
+          stats.rtp_stats.transmitted.header_bytes != 0 ||
+          stats.rtp_stats.transmitted.packets != 0 ||
+          stats.rtp_stats.transmitted.padding_bytes != 0 ||
+          stats.rtp_stats.retransmitted.packets != 0;
 
       receive_stats_filled_["CodecStats"] |=
           stats.avg_delay_ms != 0 || stats.discarded_packets != 0;
@@ -1532,10 +1534,10 @@ TEST_F(EndToEndTest, GetStats) {
             stream_stats.rtcp_stats.fraction_lost != 0;
 
         send_stats_filled_[CompoundKey("DataCountersUpdated", it->first)] |=
-            stream_stats.rtp_stats.fec_packets != 0 ||
-            stream_stats.rtp_stats.padding_bytes != 0 ||
-            stream_stats.rtp_stats.retransmitted_packets != 0 ||
-            stream_stats.rtp_stats.packets != 0;
+            stream_stats.rtp_stats.fec.packets != 0 ||
+            stream_stats.rtp_stats.transmitted.padding_bytes != 0 ||
+            stream_stats.rtp_stats.retransmitted.packets != 0 ||
+            stream_stats.rtp_stats.transmitted.packets != 0;
 
         send_stats_filled_[CompoundKey("BitrateStatisticsObserver",
                                        it->first)] |=
@@ -1686,7 +1688,7 @@ TEST_F(EndToEndTest, TestReceivedRtpPacketStats) {
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       if (sent_rtp_ >= kNumRtpPacketsToSend) {
         VideoReceiveStream::Stats stats = receive_stream_->GetStats();
-        if (kNumRtpPacketsToSend == stats.rtp_stats.packets) {
+        if (kNumRtpPacketsToSend == stats.rtp_stats.transmitted.packets) {
           observation_complete_->Set();
         }
         return DROP_PACKET;

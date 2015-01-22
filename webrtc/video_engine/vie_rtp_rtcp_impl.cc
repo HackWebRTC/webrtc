@@ -726,10 +726,10 @@ int ViERTP_RTCPImpl::GetRtpStatistics(const int video_channel,
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
-  if (vie_channel->GetRtpStatistics(&sent.bytes,
-                                    &sent.packets,
-                                    &received.bytes,
-                                    &received.packets) != 0) {
+  if (vie_channel->GetRtpStatistics(&sent.transmitted.payload_bytes,
+                                    &sent.transmitted.packets,
+                                    &received.transmitted.payload_bytes,
+                                    &received.transmitted.packets) != 0) {
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }

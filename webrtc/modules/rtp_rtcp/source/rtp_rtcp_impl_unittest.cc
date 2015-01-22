@@ -364,35 +364,38 @@ TEST_F(RtpRtcpImplTest, AddStreamDataCounters) {
   StreamDataCounters rtp;
   const int64_t kStartTimeMs = 1;
   rtp.first_packet_time_ms = kStartTimeMs;
-  rtp.packets = 1;
-  rtp.bytes = 1;
-  rtp.header_bytes = 2;
-  rtp.padding_bytes = 3;
-  EXPECT_EQ(rtp.TotalBytes(), rtp.bytes + rtp.header_bytes + rtp.padding_bytes);
+  rtp.transmitted.packets = 1;
+  rtp.transmitted.payload_bytes = 1;
+  rtp.transmitted.header_bytes = 2;
+  rtp.transmitted.padding_bytes = 3;
+  EXPECT_EQ(rtp.transmitted.TotalBytes(), rtp.transmitted.payload_bytes +
+                                          rtp.transmitted.header_bytes +
+                                          rtp.transmitted.padding_bytes);
 
   StreamDataCounters rtp2;
   rtp2.first_packet_time_ms = -1;
-  rtp2.packets = 10;
-  rtp2.bytes = 10;
-  rtp2.retransmitted_header_bytes = 4;
-  rtp2.retransmitted_bytes = 5;
-  rtp2.retransmitted_padding_bytes = 6;
-  rtp2.retransmitted_packets = 7;
-  rtp2.fec_packets = 8;
+  rtp2.transmitted.packets = 10;
+  rtp2.transmitted.payload_bytes = 10;
+  rtp2.retransmitted.header_bytes = 4;
+  rtp2.retransmitted.payload_bytes = 5;
+  rtp2.retransmitted.padding_bytes = 6;
+  rtp2.retransmitted.packets = 7;
+  rtp2.fec.packets = 8;
 
   StreamDataCounters sum = rtp;
   sum.Add(rtp2);
   EXPECT_EQ(kStartTimeMs, sum.first_packet_time_ms);
-  EXPECT_EQ(11U, sum.packets);
-  EXPECT_EQ(11U, sum.bytes);
-  EXPECT_EQ(2U, sum.header_bytes);
-  EXPECT_EQ(3U, sum.padding_bytes);
-  EXPECT_EQ(4U, sum.retransmitted_header_bytes);
-  EXPECT_EQ(5U, sum.retransmitted_bytes);
-  EXPECT_EQ(6U, sum.retransmitted_padding_bytes);
-  EXPECT_EQ(7U, sum.retransmitted_packets);
-  EXPECT_EQ(8U, sum.fec_packets);
-  EXPECT_EQ(sum.TotalBytes(), rtp.TotalBytes() + rtp2.TotalBytes());
+  EXPECT_EQ(11U, sum.transmitted.packets);
+  EXPECT_EQ(11U, sum.transmitted.payload_bytes);
+  EXPECT_EQ(2U, sum.transmitted.header_bytes);
+  EXPECT_EQ(3U, sum.transmitted.padding_bytes);
+  EXPECT_EQ(4U, sum.retransmitted.header_bytes);
+  EXPECT_EQ(5U, sum.retransmitted.payload_bytes);
+  EXPECT_EQ(6U, sum.retransmitted.padding_bytes);
+  EXPECT_EQ(7U, sum.retransmitted.packets);
+  EXPECT_EQ(8U, sum.fec.packets);
+  EXPECT_EQ(sum.transmitted.TotalBytes(),
+            rtp.transmitted.TotalBytes() + rtp2.transmitted.TotalBytes());
 
   StreamDataCounters rtp3;
   rtp3.first_packet_time_ms = kStartTimeMs + 10;

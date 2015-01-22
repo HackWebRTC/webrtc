@@ -916,18 +916,23 @@ TEST_F(RtpSenderTest, StreamDataCountersCallbacks) {
     StreamDataCounters counters_;
     void Matches(uint32_t ssrc, const StreamDataCounters& counters) {
       EXPECT_EQ(ssrc, ssrc_);
-      EXPECT_EQ(counters.bytes, counters_.bytes);
-      EXPECT_EQ(counters.header_bytes, counters_.header_bytes);
-      EXPECT_EQ(counters.padding_bytes, counters_.padding_bytes);
-      EXPECT_EQ(counters.packets, counters_.packets);
-      EXPECT_EQ(counters.retransmitted_bytes, counters_.retransmitted_bytes);
-      EXPECT_EQ(counters.retransmitted_header_bytes,
-                counters_.retransmitted_header_bytes);
-      EXPECT_EQ(counters.retransmitted_padding_bytes,
-                counters_.retransmitted_padding_bytes);
-      EXPECT_EQ(counters.retransmitted_packets,
-                counters_.retransmitted_packets);
-      EXPECT_EQ(counters.fec_packets, counters_.fec_packets);
+      EXPECT_EQ(counters.transmitted.payload_bytes,
+                counters_.transmitted.payload_bytes);
+      EXPECT_EQ(counters.transmitted.header_bytes,
+                counters_.transmitted.header_bytes);
+      EXPECT_EQ(counters.transmitted.padding_bytes,
+                counters_.transmitted.padding_bytes);
+      EXPECT_EQ(counters.transmitted.packets,
+                counters_.transmitted.packets);
+      EXPECT_EQ(counters.retransmitted.payload_bytes,
+                counters_.retransmitted.payload_bytes);
+      EXPECT_EQ(counters.retransmitted.header_bytes,
+                counters_.retransmitted.header_bytes);
+      EXPECT_EQ(counters.retransmitted.padding_bytes,
+                counters_.retransmitted.padding_bytes);
+      EXPECT_EQ(counters.retransmitted.packets,
+                counters_.retransmitted.packets);
+      EXPECT_EQ(counters.fec.packets, counters_.fec.packets);
     }
 
   } callback;
@@ -949,35 +954,35 @@ TEST_F(RtpSenderTest, StreamDataCountersCallbacks) {
                                              4321, payload, sizeof(payload),
                                              NULL));
   StreamDataCounters expected;
-  expected.bytes = 6;
-  expected.header_bytes = 12;
-  expected.padding_bytes = 0;
-  expected.packets = 1;
-  expected.retransmitted_bytes = 0;
-  expected.retransmitted_header_bytes = 0;
-  expected.retransmitted_padding_bytes = 0;
-  expected.retransmitted_packets = 0;
-  expected.fec_packets = 0;
+  expected.transmitted.payload_bytes = 6;
+  expected.transmitted.header_bytes = 12;
+  expected.transmitted.padding_bytes = 0;
+  expected.transmitted.packets = 1;
+  expected.retransmitted.payload_bytes = 0;
+  expected.retransmitted.header_bytes = 0;
+  expected.retransmitted.padding_bytes = 0;
+  expected.retransmitted.packets = 0;
+  expected.fec.packets = 0;
   callback.Matches(ssrc, expected);
 
   // Retransmit a frame.
   uint16_t seqno = rtp_sender_->SequenceNumber() - 1;
   rtp_sender_->ReSendPacket(seqno, 0);
-  expected.bytes = 12;
-  expected.header_bytes = 24;
-  expected.packets = 2;
-  expected.retransmitted_bytes = 6;
-  expected.retransmitted_header_bytes = 12;
-  expected.retransmitted_padding_bytes = 0;
-  expected.retransmitted_packets = 1;
+  expected.transmitted.payload_bytes = 12;
+  expected.transmitted.header_bytes = 24;
+  expected.transmitted.packets = 2;
+  expected.retransmitted.payload_bytes = 6;
+  expected.retransmitted.header_bytes = 12;
+  expected.retransmitted.padding_bytes = 0;
+  expected.retransmitted.packets = 1;
   callback.Matches(ssrc, expected);
 
   // Send padding.
   rtp_sender_->TimeToSendPadding(kMaxPaddingSize);
-  expected.bytes = 12;
-  expected.header_bytes = 36;
-  expected.padding_bytes = kMaxPaddingSize;
-  expected.packets = 3;
+  expected.transmitted.payload_bytes = 12;
+  expected.transmitted.header_bytes = 36;
+  expected.transmitted.padding_bytes = kMaxPaddingSize;
+  expected.transmitted.packets = 3;
   callback.Matches(ssrc, expected);
 
   // Send FEC.
@@ -991,10 +996,10 @@ TEST_F(RtpSenderTest, StreamDataCountersCallbacks) {
   ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kVideoFrameDelta, payload_type,
                                              1234, 4321, payload,
                                              sizeof(payload), NULL));
-  expected.bytes = 40;
-  expected.header_bytes = 60;
-  expected.packets = 5;
-  expected.fec_packets = 1;
+  expected.transmitted.payload_bytes = 40;
+  expected.transmitted.header_bytes = 60;
+  expected.transmitted.packets = 5;
+  expected.fec.packets = 1;
   callback.Matches(ssrc, expected);
 
   rtp_sender_->RegisterRtpStatisticsCallback(NULL);
@@ -1150,19 +1155,24 @@ TEST_F(RtpSenderTest, BytesReportedCorrectly) {
 
   // Payload + 1-byte generic header.
   EXPECT_GT(rtp_stats.first_packet_time_ms, -1);
-  EXPECT_EQ(rtp_stats.bytes, sizeof(payload) + 1);
-  EXPECT_EQ(rtp_stats.header_bytes, 12u);
-  EXPECT_EQ(rtp_stats.padding_bytes, 0u);
-  EXPECT_EQ(rtx_stats.bytes, 0u);
-  EXPECT_EQ(rtx_stats.header_bytes, 24u);
-  EXPECT_EQ(rtx_stats.padding_bytes, 2 * kMaxPaddingSize);
+  EXPECT_EQ(rtp_stats.transmitted.payload_bytes, sizeof(payload) + 1);
+  EXPECT_EQ(rtp_stats.transmitted.header_bytes, 12u);
+  EXPECT_EQ(rtp_stats.transmitted.padding_bytes, 0u);
+  EXPECT_EQ(rtx_stats.transmitted.payload_bytes, 0u);
+  EXPECT_EQ(rtx_stats.transmitted.header_bytes, 24u);
+  EXPECT_EQ(rtx_stats.transmitted.padding_bytes, 2 * kMaxPaddingSize);
 
-  EXPECT_EQ(rtp_stats.TotalBytes(),
-      rtp_stats.bytes + rtp_stats.header_bytes + rtp_stats.padding_bytes);
-  EXPECT_EQ(rtx_stats.TotalBytes(),
-      rtx_stats.bytes + rtx_stats.header_bytes + rtx_stats.padding_bytes);
+  EXPECT_EQ(rtp_stats.transmitted.TotalBytes(),
+      rtp_stats.transmitted.payload_bytes +
+      rtp_stats.transmitted.header_bytes +
+      rtp_stats.transmitted.padding_bytes);
+  EXPECT_EQ(rtx_stats.transmitted.TotalBytes(),
+      rtx_stats.transmitted.payload_bytes +
+      rtx_stats.transmitted.header_bytes +
+      rtx_stats.transmitted.padding_bytes);
 
   EXPECT_EQ(transport_.total_bytes_sent_,
-            rtp_stats.TotalBytes() + rtx_stats.TotalBytes());
+            rtp_stats.transmitted.TotalBytes() +
+            rtx_stats.transmitted.TotalBytes());
 }
 }  // namespace webrtc

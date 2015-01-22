@@ -1772,10 +1772,10 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
        ++it) {
     // TODO(pbos): Wire up additional stats, such as padding bytes.
     webrtc::SsrcStats stream_stats = it->second;
-    info.bytes_sent += stream_stats.rtp_stats.bytes +
-                       stream_stats.rtp_stats.header_bytes +
-                       stream_stats.rtp_stats.padding_bytes;
-    info.packets_sent += stream_stats.rtp_stats.packets;
+    info.bytes_sent += stream_stats.rtp_stats.transmitted.payload_bytes +
+                       stream_stats.rtp_stats.transmitted.header_bytes +
+                       stream_stats.rtp_stats.transmitted.padding_bytes;
+    info.packets_sent += stream_stats.rtp_stats.transmitted.packets;
     info.packets_lost += stream_stats.rtcp_stats.cumulative_lost;
     if (stream_stats.sent_width > info.send_frame_width)
       info.send_frame_width = stream_stats.sent_width;
@@ -2020,9 +2020,10 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo() {
   VideoReceiverInfo info;
   info.add_ssrc(config_.rtp.remote_ssrc);
   webrtc::VideoReceiveStream::Stats stats = stream_->GetStats();
-  info.bytes_rcvd = stats.rtp_stats.bytes + stats.rtp_stats.header_bytes +
-                    stats.rtp_stats.padding_bytes;
-  info.packets_rcvd = stats.rtp_stats.packets;
+  info.bytes_rcvd = stats.rtp_stats.transmitted.payload_bytes +
+                    stats.rtp_stats.transmitted.header_bytes +
+                    stats.rtp_stats.transmitted.padding_bytes;
+  info.packets_rcvd = stats.rtp_stats.transmitted.packets;
 
   info.framerate_rcvd = stats.network_frame_rate;
   info.framerate_decoded = stats.decode_frame_rate;
