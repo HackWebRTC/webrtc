@@ -196,7 +196,7 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
     {2, {kIsacPacSize480, kIsacPacSize960}, 0, 1, true},
 # if (defined(WEBRTC_CODEC_ISAC))
-    {1, {kIsacPacSize960}, 0, 1, false},
+    {1, {kIsacPacSize960}, 0, 1, true},
     {1, {kIsacPacSize1440}, 0, 1, true},
 # endif
 #endif

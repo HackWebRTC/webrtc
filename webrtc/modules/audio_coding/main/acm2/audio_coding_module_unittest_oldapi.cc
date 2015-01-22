@@ -579,9 +579,9 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
 #endif
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_8kHzOutput) {
   Run(8000,
-      PlatformChecksum("bd6f8d9602cd82444ea2539e674df747",
+      PlatformChecksum("dcee98c623b147ebe1b40dd30efa896e",
                        "6ac89c7145072c26bfeba602cd661afb",
-                       "8a8440f5511eb729221b9aac25cda3a0"));
+                       "908002dc01fc4eb1d2be24eb1d3f354b"));
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
@@ -592,9 +592,9 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_8kHzOutput) {
 #endif
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_16kHzOutput) {
   Run(16000,
-      PlatformChecksum("a39bc6ee0c4eb15f3ad2f43cebcc571d",
+      PlatformChecksum("f790e7a8cce4e2c8b7bb5e0e4c5dac0d",
                        "3e888eb04f57db2c6ef952fe64f17fe6",
-                       "7be583092c5adbcb0f6cd66eca20ea63"));
+                       "a909560b5ca49fa472b17b7b277195e9"));
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
@@ -605,9 +605,9 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_16kHzOutput) {
 #endif
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_32kHzOutput) {
   Run(32000,
-      PlatformChecksum("80964572aaa2dc92f9e34896dd3802b3",
+      PlatformChecksum("306e0d990ee6e92de3fbecc0123ece37",
                        "aeca37e963310f5b6552b7edea23c2f1",
-                       "3a84188abe9fca25fedd6034760f3e22"));
+                       "441aab4b347fb3db4e9244337aca8d8e"));
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
@@ -618,9 +618,9 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_32kHzOutput) {
 #endif
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_48kHzOutput) {
   Run(48000,
-      PlatformChecksum("8aacde91f390e0d5a9c2ed571a25fd37",
+      PlatformChecksum("aa7c232f63a67b2a72703593bdd172e0",
                        "76b9e99e0a3998aa28355e7a2bd836f7",
-                       "89b4b19bdb4de40f1d88302ef8cb9f9b"));
+                       "4ee2730fa1daae755e8a8fd3abd779ec"));
 }
 
 // This test verifies bit exactness for the send-side of ACM. The test setup is
