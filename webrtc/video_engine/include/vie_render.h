@@ -20,7 +20,6 @@
 
 namespace webrtc {
 
-class I420VideoFrame;
 class VideoEngine;
 class VideoRender;
 class VideoRenderCallback;
@@ -47,9 +46,6 @@ class ExternalRenderer {
                            int64_t render_time_ms,
                            // Handle of the underlying video frame.
                            void* handle) = 0;
-
-  // Alternative interface for I420 frames.
-  virtual int DeliverI420Frame(const I420VideoFrame* webrtc_frame) = 0;
 
   // Returns true if the renderer supports textures. DeliverFrame can be called
   // with NULL |buffer| and non-NULL |handle|.

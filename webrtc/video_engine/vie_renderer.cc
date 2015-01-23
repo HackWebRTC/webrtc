@@ -189,13 +189,6 @@ int32_t ViEExternalRendererImpl::RenderFrame(
     return 0;
   }
 
-  // Fast path for I420 without frame copy.
-  if (external_renderer_format_ == kVideoI420) {
-    NotifyFrameSizeChange(stream_id, video_frame);
-    external_renderer_->DeliverI420Frame(&video_frame);
-    return 0;
-  }
-
   VideoFrame* out_frame = converted_frame_.get();
 
   // Convert to requested format.
@@ -211,6 +204,16 @@ int32_t ViEExternalRendererImpl::RenderFrame(
   converted_frame_->VerifyAndAllocate(buffer_size);
 
   switch (external_renderer_format_) {
+    case kVideoI420: {
+      // TODO(mikhal): need to copy the buffer as is.
+      // can the output here be a I420 frame?
+      int length = ExtractBuffer(video_frame, out_frame->Size(),
+                                 out_frame->Buffer());
+      if (length < 0)
+        return -1;
+      out_frame->SetLength(length);
+      break;
+    }
     case kVideoYV12:
     case kVideoYUY2:
     case kVideoUYVY:

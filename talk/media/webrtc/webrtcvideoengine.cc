@@ -417,40 +417,6 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     }
   }
 
-  virtual int DeliverI420Frame(const webrtc::I420VideoFrame* webrtc_frame) {
-    rtc::CritScope cs(&crit_);
-    DCHECK(webrtc_frame);
-    if (capture_start_rtp_time_stamp_ < 0)
-      capture_start_rtp_time_stamp_ = webrtc_frame->timestamp();
-
-    const int kVideoCodecClockratekHz = cricket::kVideoCodecClockrate / 1000;
-    const int64 elapsed_time_ms =
-        (rtp_ts_wraparound_handler_.Unwrap(webrtc_frame->timestamp()) -
-         capture_start_rtp_time_stamp_) /
-        kVideoCodecClockratekHz;
-    if (webrtc_frame->ntp_time_ms() > 0) {
-      capture_start_ntp_time_ms_ =
-          webrtc_frame->ntp_time_ms() - elapsed_time_ms;
-    }
-    frame_rate_tracker_.Update(1);
-    if (!renderer_)
-      return 0;
-
-    const int64 elapsed_time_ns =
-        elapsed_time_ms * rtc::kNumNanosecsPerMillisec;
-    const int64 render_time_ns =
-        webrtc_frame->render_time_ms() * rtc::kNumNanosecsPerMillisec;
-
-    if (!webrtc_frame->native_handle()) {
-      WebRtcVideoRenderFrame cricket_frame(webrtc_frame, render_time_ns,
-                                           elapsed_time_ns);
-      return renderer_->RenderFrame(&cricket_frame) ? 0 : -1;
-    } else {
-      return DeliverTextureFrame(webrtc_frame->native_handle(), render_time_ns,
-                                 elapsed_time_ns);
-    }
-  }
-
   virtual bool IsTextureSupported() { return true; }
 
   int DeliverBufferFrame(unsigned char* buffer, size_t buffer_size,

@@ -64,8 +64,6 @@ class ViEToFileRenderer: public webrtc::ExternalRenderer {
                    int64_t render_time,
                    void* handle) OVERRIDE;
 
-  int DeliverI420Frame(const webrtc::I420VideoFrame* webrtc_frame) OVERRIDE;
-
   bool IsTextureSupported() OVERRIDE;
 
   const std::string GetFullOutputPath() const;
