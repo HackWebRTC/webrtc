@@ -324,7 +324,9 @@ TEST_F(DtmfSenderTest, InsertEmptyTonesToCancelPreviousTask) {
   VerifyOnObserver("1");
 }
 
-TEST_F(DtmfSenderTest, InsertDtmfWithCommaAsDelay) {
+// Flaky when run in parallel.
+// See https://code.google.com/p/webrtc/issues/detail?id=4219.
+TEST_F(DtmfSenderTest, DISABLED_InsertDtmfWithCommaAsDelay) {
   std::string tones = "3,4";
   int duration = 100;
   int inter_tone_gap = 50;
