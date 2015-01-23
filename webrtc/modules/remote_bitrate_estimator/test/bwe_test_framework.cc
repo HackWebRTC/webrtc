@@ -173,7 +173,18 @@ bool IsTimeSorted(const Packets& packets) {
 
 PacketProcessor::PacketProcessor(PacketProcessorListener* listener,
                                  bool is_sender)
-    : listener_(listener), flow_ids_(1, 0) {
+    : listener_(listener) {
+  flow_ids_.insert(0);
+  if (listener_) {
+    listener_->AddPacketProcessor(this, is_sender);
+  }
+}
+
+PacketProcessor::PacketProcessor(PacketProcessorListener* listener,
+                                 int flow_id,
+                                 bool is_sender)
+    : listener_(listener) {
+  flow_ids_.insert(flow_id);
   if (listener_) {
     listener_->AddPacketProcessor(this, is_sender);
   }
@@ -219,8 +230,8 @@ RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
       name_(name) {
   std::stringstream ss;
   ss << name_ << "_";
-  for (size_t i = 0; i < flow_ids.size(); ++i) {
-    ss << flow_ids[i] << ",";
+  for (auto flow_id : flow_ids) {
+    ss << flow_id << ",";
   }
   name_ = ss.str();
 }
@@ -255,8 +266,8 @@ void RateCounterFilter::Plot(int64_t timestamp_ms) {
 
 void RateCounterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
-  for (PacketsConstIt it = in_out->begin(); it != in_out->end(); ++it) {
-    rate_counter_->UpdateRates(it->send_time_us(), it->payload_size());
+  for (const auto& packet : *in_out) {
+    rate_counter_->UpdateRates(packet.send_time_us(), packet.payload_size());
   }
   packets_per_second_stats_.Push(rate_counter_->packets_per_second());
   kbps_stats_.Push(rate_counter_->bits_per_second() / 1000.0);
@@ -302,10 +313,10 @@ void DelayFilter::SetDelay(int64_t delay_ms) {
 
 void DelayFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
-  for (PacketsIt it = in_out->begin(); it != in_out->end(); ++it) {
-    int64_t new_send_time_us = it->send_time_us() + delay_us_;
+  for (auto& packet : *in_out) {
+    int64_t new_send_time_us = packet.send_time_us() + delay_us_;
     last_send_time_us_ = std::max(last_send_time_us_, new_send_time_us);
-    it->set_send_time_us(last_send_time_us_);
+    packet.set_send_time_us(last_send_time_us_);
   }
 }
 
@@ -326,11 +337,11 @@ void JitterFilter::SetJitter(int64_t stddev_jitter_ms) {
 
 void JitterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
-  for (PacketsIt it = in_out->begin(); it != in_out->end(); ++it) {
-    int64_t new_send_time_us = it->send_time_us();
+  for (auto& packet : *in_out) {
+    int64_t new_send_time_us = packet.send_time_us();
     new_send_time_us += random_.Gaussian(0, stddev_jitter_us_);
     last_send_time_us_ = std::max(last_send_time_us_, new_send_time_us);
-    it->set_send_time_us(last_send_time_us_);
+    packet.set_send_time_us(last_send_time_us_);
   }
 }
 
@@ -522,9 +533,8 @@ void TraceBasedDeliveryFilter::ProceedToNextSlot() {
     ++next_delivery_it_;
     if (next_delivery_it_ == delivery_times_us_.end()) {
       // When the trace wraps we allow two packets to be sent back-to-back.
-      for (TimeList::iterator it = delivery_times_us_.begin();
-           it != delivery_times_us_.end(); ++it) {
-        *it += local_time_us_ - current_offset_us_;
+      for (auto& delivery_time_us : delivery_times_us_) {
+        delivery_time_us += local_time_us_ - current_offset_us_;
       }
       current_offset_us_ += local_time_us_ - current_offset_us_;
       next_delivery_it_ = delivery_times_us_.begin();
@@ -539,7 +549,7 @@ PacketSender::PacketSender(PacketProcessorListener* listener)
     : PacketProcessor(listener, true) {}
 
 PacketSender::PacketSender(PacketProcessorListener* listener, int flow_id)
-    : PacketProcessor(listener, FlowIds(1, flow_id), true) {
+    : PacketProcessor(listener, flow_id, true) {
 }
 
 VideoSender::VideoSender(int flow_id,
@@ -595,8 +605,8 @@ void VideoSender::RunFor(int64_t time_ms, Packets* in_out) {
     while (payload_size > 0) {
       ++prototype_header_.sequenceNumber;
       uint32_t size = NextPacketSize(frame_size, payload_size);
-      new_packets.push_back(Packet(flow_ids()[0], send_time_us, size,
-                                   prototype_header_));
+      new_packets.push_back(
+          Packet(*flow_ids().begin(), send_time_us, size, prototype_header_));
       new_packets.back().SetAbsSendTimeMs(next_frame_ms_);
       payload_size -= size;
     }
@@ -681,7 +691,7 @@ RegularVideoSender::RegularVideoSender(PacketProcessorListener* listener,
     // It is important that the first_frame_offset and the initial time of
     // clock_ are both zero, otherwise we can't have absolute time in this
     // class.
-    : PacketSender(listener, source->flow_ids()[0]),
+    : PacketSender(listener, *source->flow_ids().begin()),
       clock_(0),
       start_of_run_ms_(0),
       bitrate_controller_(BitrateController::CreateBitrateController(&clock_,
@@ -721,7 +731,7 @@ void RegularVideoSender::OnNetworkChanged(uint32_t target_bitrate_bps,
   feedback.estimated_bps = target_bitrate_bps;
   source_->GiveFeedback(feedback);
   std::stringstream ss;
-  ss << "SendEstimate_" << flow_ids()[0] << "#1";
+  ss << "SendEstimate_" << *flow_ids().begin() << "#1";
   BWE_TEST_LOGGING_PLOT(ss.str(), clock_.TimeInMilliseconds(),
                         target_bitrate_bps / 1000);
 }

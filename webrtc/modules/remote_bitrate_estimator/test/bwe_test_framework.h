@@ -39,8 +39,7 @@ namespace bwe {
 class DelayCapHelper;
 class RateCounter;
 
-
-typedef std::vector<int> FlowIds;
+typedef std::set<int> FlowIds;
 const FlowIds CreateFlowIds(const int *flow_ids_array, size_t num_flow_ids);
 
 template<typename T> class Stats {
@@ -74,9 +73,8 @@ template<typename T> class Stats {
       last_variance_count_ = data_.size();
       T mean = GetMean();
       variance_ = 0;
-      for (typename std::vector<T>::const_iterator it = data_.begin();
-          it != data_.end(); ++it) {
-        T diff = (*it - mean);
+      for (const auto& sample : data_) {
+        T diff = (sample - mean);
         variance_ += diff * diff;
       }
       assert(last_variance_count_ != 0);
@@ -200,6 +198,9 @@ class PacketProcessorListener {
 class PacketProcessor {
  public:
   PacketProcessor(PacketProcessorListener* listener, bool is_sender);
+  PacketProcessor(PacketProcessorListener* listener,
+                  int flow_id,
+                  bool is_sender);
   PacketProcessor(PacketProcessorListener* listener, const FlowIds& flow_ids,
                   bool is_sender);
   virtual ~PacketProcessor();
