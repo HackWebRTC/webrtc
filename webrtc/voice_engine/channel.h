@@ -457,9 +457,9 @@ public:
 private:
     bool ReceivePacket(const uint8_t* packet, size_t packet_length,
                        const RTPHeader& header, bool in_order);
-    bool HandleEncapsulation(const uint8_t* packet,
-                             size_t packet_length,
-                             const RTPHeader& header);
+    bool HandleRtxPacket(const uint8_t* packet,
+                         size_t packet_length,
+                         const RTPHeader& header);
     bool IsPacketInOrder(const RTPHeader& header) const;
     bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
     int ResendPackets(const uint16_t* sequence_numbers, int length);

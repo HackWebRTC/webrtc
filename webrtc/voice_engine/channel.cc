@@ -1654,8 +1654,8 @@ bool Channel::ReceivePacket(const uint8_t* packet,
                             size_t packet_length,
                             const RTPHeader& header,
                             bool in_order) {
-  if (rtp_payload_registry_->IsEncapsulated(header)) {
-    return HandleEncapsulation(packet, packet_length, header);
+  if (rtp_payload_registry_->IsRtx(header)) {
+    return HandleRtxPacket(packet, packet_length, header);
   }
   const uint8_t* payload = packet + header.headerLength;
   assert(packet_length >= header.headerLength);
@@ -1669,9 +1669,9 @@ bool Channel::ReceivePacket(const uint8_t* packet,
                                           payload_specific, in_order);
 }
 
-bool Channel::HandleEncapsulation(const uint8_t* packet,
-                                  size_t packet_length,
-                                  const RTPHeader& header) {
+bool Channel::HandleRtxPacket(const uint8_t* packet,
+                              size_t packet_length,
+                              const RTPHeader& header) {
   if (!rtp_payload_registry_->IsRtx(header))
     return false;
 

@@ -457,9 +457,14 @@ void RunTest(std::string out_path) {
       if (option_selection < option_index) {
         res = codec->GetCodec(option_selection, cinst);
         VALIDATE;
-        SetStereoIfOpus(opus_stereo, &cinst);
-        printf("Set primary codec\n");
-        res = codec->SetSendCodec(chan, cinst);
+        if (strcmp(cinst.plname, "red") == 0) {
+          printf("Enabling RED\n");
+          res = rtp_rtcp->SetREDStatus(chan, true, cinst.pltype);
+        } else {
+          SetStereoIfOpus(opus_stereo, &cinst);
+          printf("Set primary codec\n");
+          res = codec->SetSendCodec(chan, cinst);
+        }
         VALIDATE;
       } else if (option_selection == option_index++) {
         enable_cng = !enable_cng;
