@@ -436,14 +436,18 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     if (!renderer_)
       return 0;
 
+    const int64 elapsed_time_ns =
+        elapsed_time_ms * rtc::kNumNanosecsPerMillisec;
+    const int64 render_time_ns =
+        webrtc_frame->render_time_ms() * rtc::kNumNanosecsPerMillisec;
+
     if (!webrtc_frame->native_handle()) {
-      const WebRtcVideoRenderFrame cricket_frame(webrtc_frame, elapsed_time_ms);
+      WebRtcVideoRenderFrame cricket_frame(webrtc_frame, render_time_ns,
+                                           elapsed_time_ns);
       return renderer_->RenderFrame(&cricket_frame) ? 0 : -1;
     } else {
-      return DeliverTextureFrame(
-          webrtc_frame->native_handle(),
-          webrtc_frame->render_time_ms() * rtc::kNumNanosecsPerMillisec,
-          elapsed_time_ms * rtc::kNumNanosecsPerMillisec);
+      return DeliverTextureFrame(webrtc_frame->native_handle(), render_time_ns,
+                                 elapsed_time_ns);
     }
   }
 

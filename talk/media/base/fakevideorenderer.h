@@ -44,8 +44,7 @@ class FakeVideoRenderer : public VideoRenderer {
         height_(0),
         num_set_sizes_(0),
         num_rendered_frames_(0),
-        black_frame_(false),
-        last_frame_elapsed_time_ns_(-1) {
+        black_frame_(false) {
   }
 
   virtual bool SetSize(int width, int height, int reserved) {
@@ -76,7 +75,6 @@ class FakeVideoRenderer : public VideoRenderer {
       ++errors_;
       return false;
     }
-    last_frame_elapsed_time_ns_ = frame->GetElapsedTime();
     ++num_rendered_frames_;
     SignalRenderFrame(frame);
     return true;
@@ -102,11 +100,6 @@ class FakeVideoRenderer : public VideoRenderer {
   bool black_frame() const {
     rtc::CritScope cs(&crit_);
     return black_frame_;
-  }
-
-  int64_t last_frame_elapsed_time_ns() const {
-    rtc::CritScope cs(&crit_);
-    return last_frame_elapsed_time_ns_;
   }
 
   sigslot::signal3<int, int, int> SignalSetSize;
@@ -167,7 +160,6 @@ class FakeVideoRenderer : public VideoRenderer {
   int num_set_sizes_;
   int num_rendered_frames_;
   bool black_frame_;
-  int64_t last_frame_elapsed_time_ns_;
   mutable rtc::CriticalSection crit_;
 };
 

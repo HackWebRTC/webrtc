@@ -139,8 +139,10 @@ class WebRtcVideoFrame : public VideoFrame {
 // be written to.
 class WebRtcVideoRenderFrame : public VideoFrame {
  public:
+  explicit WebRtcVideoRenderFrame(const webrtc::I420VideoFrame* frame);
   WebRtcVideoRenderFrame(const webrtc::I420VideoFrame* frame,
-                         int64_t elapsed_time_ms);
+                         int64_t timestamp,
+                         int64_t elapsed_time);
 
   virtual bool InitToBlack(int w,
                            int h,
@@ -193,7 +195,8 @@ class WebRtcVideoRenderFrame : public VideoFrame {
 
  private:
   const webrtc::I420VideoFrame* const frame_;
-  const int64_t elapsed_time_ms_;
+  int64_t timestamp_;
+  int64_t elapsed_time_;
 };
 
 }  // namespace cricket

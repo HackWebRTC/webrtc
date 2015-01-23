@@ -1870,9 +1870,7 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
       external_decoder_factory_(external_decoder_factory),
       renderer_(NULL),
       last_width_(-1),
-      last_height_(-1),
-      first_frame_timestamp_(-1),
-      estimated_remote_start_ntp_time_ms_(0) {
+      last_height_(-1) {
   config_.renderer = this;
   // SetRecvCodecs will also reset (start) the VideoReceiveStream.
   SetRecvCodecs(recv_codecs);
@@ -1975,17 +1973,6 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
     const webrtc::I420VideoFrame& frame,
     int time_to_render_ms) {
   rtc::CritScope crit(&renderer_lock_);
-
-  if (first_frame_timestamp_ < 0)
-    first_frame_timestamp_ = frame.timestamp();
-  int64_t rtp_time_elapsed_since_first_frame =
-      (timestamp_wraparound_handler_.Unwrap(frame.timestamp()) -
-       first_frame_timestamp_);
-  int64_t elapsed_time_ms = rtp_time_elapsed_since_first_frame /
-                            (cricket::kVideoCodecClockrate / 1000);
-  if (frame.ntp_time_ms() > 0)
-    estimated_remote_start_ntp_time_ms_ = frame.ntp_time_ms() - elapsed_time_ms;
-
   if (renderer_ == NULL) {
     LOG(LS_WARNING) << "VideoReceiveStream not connected to a VideoRenderer.";
     return;
@@ -1998,7 +1985,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
   LOG(LS_VERBOSE) << "RenderFrame: (" << frame.width() << "x" << frame.height()
                   << ")";
 
-  const WebRtcVideoRenderFrame render_frame(&frame, elapsed_time_ms);
+  const WebRtcVideoRenderFrame render_frame(&frame);
   renderer_->RenderFrame(&render_frame);
 }
 
@@ -2045,7 +2032,6 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo() {
   rtc::CritScope frame_cs(&renderer_lock_);
   info.frame_width = last_width_;
   info.frame_height = last_height_;
-  info.capture_start_ntp_time_ms = estimated_remote_start_ntp_time_ms_;
 
   // TODO(pbos): Support or remove the following stats.
   info.packets_concealed = -1;
