@@ -124,7 +124,17 @@
             # with condition and event functions in system_wrappers.
             'WEBRTC_CLOCK_TYPE_REALTIME',
            ],
-          'dependencies': [ 'cpu_features_android', ],
+          'conditions': [
+            ['build_with_chromium==1', {
+              'dependencies': [
+                'cpu_features_chromium.gyp:cpu_features_android',
+              ],
+            }, {
+              'dependencies': [
+                'cpu_features_webrtc.gyp:cpu_features_android',
+              ],
+            }],
+          ],
           'link_settings': {
             'libraries': [
               '-llog',
@@ -213,29 +223,5 @@
       ]
     },
   ], # targets
-  'conditions': [
-    ['OS=="android"', {
-      'targets': [
-        {
-          'target_name': 'cpu_features_android',
-          'type': 'static_library',
-          'sources': [
-            'source/cpu_features_android.c',
-          ],
-          'conditions': [
-            ['android_webview_build == 1', {
-              'libraries': [
-                'cpufeatures.a'
-              ],
-            }, {
-              'dependencies': [
-                '<(android_ndk_root)/android_tools_ndk.gyp:cpu_features',
-              ],
-            }],
-          ],
-        },
-      ],
-    }],
-  ], # conditions
 }
 
