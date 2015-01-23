@@ -48,12 +48,8 @@
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
-class VideoCaptureModule;
 class VideoDecoder;
 class VideoEncoder;
-class VideoRender;
-class VideoSendStreamInput;
-class VideoReceiveStream;
 }
 
 namespace rtc {
@@ -78,8 +74,6 @@ class WebRtcVoiceEngine;
 
 struct CapturedFrame;
 struct Device;
-
-class WebRtcVideoRenderer;
 
 class UnsignalledSsrcHandler {
  public:
@@ -117,7 +111,6 @@ class WebRtcCallFactory {
 // WebRtcVideoEngine2 is used for the new native WebRTC Video API (webrtc:1667).
 class WebRtcVideoEngine2 : public sigslot::has_slots<> {
  public:
-  // Creates the WebRtcVideoEngine2 with internal VideoCaptureModule.
   WebRtcVideoEngine2();
   virtual ~WebRtcVideoEngine2();
 
@@ -444,6 +437,14 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     cricket::VideoRenderer* renderer_ GUARDED_BY(renderer_lock_);
     int last_width_ GUARDED_BY(renderer_lock_);
     int last_height_ GUARDED_BY(renderer_lock_);
+    // Expands remote RTP timestamps to int64_t to be able to estimate how long
+    // the stream has been running.
+    rtc::TimestampWrapAroundHandler timestamp_wraparound_handler_
+        GUARDED_BY(renderer_lock_);
+    int64_t first_frame_timestamp_ GUARDED_BY(renderer_lock_);
+    // Start NTP time is estimated as current remote NTP time (estimated from
+    // RTCP) minus the elapsed time, as soon as remote NTP time is available.
+    int64_t estimated_remote_start_ntp_time_ms_ GUARDED_BY(renderer_lock_);
   };
 
   void Construct(webrtc::Call* call, WebRtcVideoEngine2* engine);
