@@ -837,6 +837,19 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
   if (error() != cricket::BaseSession::ERROR_NONE) {
     return BadRemoteSdp(desc->type(), GetSessionErrorMsg(), err_desc);
   }
+
+  // Set the the ICE connection state to connecting since the connection may
+  // become writable with peer reflexive candidates before any remote candidate
+  // is signaled.
+  // TODO(pthatcher): This is a short-term solution for crbug/446908. A real fix
+  // is to have a new signal the indicates a change in checking state from the
+  // transport and expose a new checking() member from transport that can be
+  // read to determine the current checking state. The existing SignalConnecting
+  // actually means "gathering candidates", so cannot be be used here.
+  if (desc->type() != SessionDescriptionInterface::kOffer &&
+      ice_connection_state_ == PeerConnectionInterface::kIceConnectionNew) {
+    SetIceConnectionState(PeerConnectionInterface::kIceConnectionChecking);
+  }
   return true;
 }
 
