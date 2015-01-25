@@ -334,7 +334,6 @@ def GetPreferredTryMasters(project, change):
   ]
   win_bots = [
       'win',
-      'win_asan',
       'win_baremetal',
       'win_drmemory_light',
       'win_rel',
