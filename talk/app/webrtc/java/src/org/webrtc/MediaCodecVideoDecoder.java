@@ -67,7 +67,7 @@ class MediaCodecVideoDecoder {
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
   // List of supported HW VP8 decoders.
   private static final String[] supportedHwCodecPrefixes =
-    {"OMX.qcom.", "OMX.Nvidia." };
+    {"OMX.qcom.", "OMX.Nvidia.", "OMX.Exynos." };
   // List of supported SW VP8 decoders.
   private static final String[] supportedSwCodecPrefixes =
     {"OMX.google."};
