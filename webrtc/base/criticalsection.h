@@ -37,39 +37,27 @@ namespace rtc {
 #if defined(WEBRTC_WIN)
 class LOCKABLE CriticalSection {
  public:
-  CriticalSection() {
-    InitializeCriticalSection(&crit_);
-    // Windows docs say 0 is not a valid thread id
-    TRACK_OWNER(thread_ = 0);
-  }
-  ~CriticalSection() {
-    DeleteCriticalSection(&crit_);
-  }
+  CriticalSection() { InitializeCriticalSection(&crit_); }
+  ~CriticalSection() { DeleteCriticalSection(&crit_); }
   void Enter() EXCLUSIVE_LOCK_FUNCTION() {
     EnterCriticalSection(&crit_);
-    TRACK_OWNER(thread_ = GetCurrentThreadId());
   }
   bool TryEnter() EXCLUSIVE_TRYLOCK_FUNCTION(true) {
-    if (TryEnterCriticalSection(&crit_) != FALSE) {
-      TRACK_OWNER(thread_ = GetCurrentThreadId());
-      return true;
-    }
-    return false;
+    return TryEnterCriticalSection(&crit_) != FALSE;
   }
   void Leave() UNLOCK_FUNCTION() {
-    TRACK_OWNER(thread_ = 0);
     LeaveCriticalSection(&crit_);
   }
 
-#if CS_TRACK_OWNER
-  bool CurrentThreadIsOwner() const { return thread_ == GetCurrentThreadId(); }
-#endif  // CS_TRACK_OWNER
+  // Used for debugging.
+  bool CurrentThreadIsOwner() const {
+    return crit_.OwningThread == reinterpret_cast<HANDLE>(GetCurrentThreadId());
+  }
 
  private:
   CRITICAL_SECTION crit_;
-  TRACK_OWNER(DWORD thread_);  // The section's owning thread id
 };
-#endif // WEBRTC_WIN 
+#endif // WEBRTC_WIN
 
 #if defined(WEBRTC_POSIX)
 class LOCKABLE CriticalSection {
@@ -101,9 +89,14 @@ class LOCKABLE CriticalSection {
     pthread_mutex_unlock(&mutex_);
   }
 
+  // Used for debugging.
+  bool CurrentThreadIsOwner() const {
 #if CS_TRACK_OWNER
-  bool CurrentThreadIsOwner() const { return pthread_equal(thread_, pthread_self()); }
+    return pthread_equal(thread_, pthread_self());
+#else
+    return true;
 #endif  // CS_TRACK_OWNER
+  }
 
  private:
   pthread_mutex_t mutex_;
