@@ -117,8 +117,6 @@ public class RoomParametersFetcher {
       String wssUrl = roomJson.getString("wss_url");
       String wssPostUrl = roomJson.getString("wss_post_url");
       boolean initiator = (roomJson.getBoolean("is_initiator"));
-      String roomUrl =
-          registerUrl.substring(0, registerUrl.indexOf("/register"));
       if (!initiator) {
         iceCandidates = new LinkedList<IceCandidate>();
         String messagesString = roomJson.getString("messages");
@@ -145,7 +143,6 @@ public class RoomParametersFetcher {
       }
       Log.d(TAG, "RoomId: " + roomId + ". ClientId: " + clientId);
       Log.d(TAG, "Initiator: " + initiator);
-      Log.d(TAG, "Room url: " + roomUrl);
       Log.d(TAG, "WSS url: " + wssUrl);
       Log.d(TAG, "WSS POST url: " + wssPostUrl);
 
@@ -184,7 +181,7 @@ public class RoomParametersFetcher {
       SignalingParameters params = new SignalingParameters(
           iceServers, initiator,
           pcConstraints, videoConstraints, audioConstraints,
-          roomUrl, roomId, clientId,
+          roomId, clientId,
           wssUrl, wssPostUrl,
           offerSdp, iceCandidates);
       events.onSignalingParametersReady(params);

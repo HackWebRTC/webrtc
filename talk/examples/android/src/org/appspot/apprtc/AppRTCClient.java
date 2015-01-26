@@ -74,7 +74,6 @@ public interface AppRTCClient {
     public final MediaConstraints pcConstraints;
     public final MediaConstraints videoConstraints;
     public final MediaConstraints audioConstraints;
-    public final String roomUrl;
     public final String roomId;
     public final String clientId;
     public final String wssUrl;
@@ -86,7 +85,7 @@ public interface AppRTCClient {
         List<PeerConnection.IceServer> iceServers,
         boolean initiator, MediaConstraints pcConstraints,
         MediaConstraints videoConstraints, MediaConstraints audioConstraints,
-        String roomUrl, String roomId, String clientId,
+        String roomId, String clientId,
         String wssUrl, String wssPostUrl,
         SessionDescription offerSdp, List<IceCandidate> iceCandidates) {
       this.iceServers = iceServers;
@@ -94,7 +93,6 @@ public interface AppRTCClient {
       this.pcConstraints = pcConstraints;
       this.videoConstraints = videoConstraints;
       this.audioConstraints = audioConstraints;
-      this.roomUrl = roomUrl;
       this.roomId = roomId;
       this.clientId = clientId;
       this.wssUrl = wssUrl;

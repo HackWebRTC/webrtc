@@ -254,7 +254,7 @@ public class ConnectActivity extends Activity {
     String url = sharedPref.getString(
         keyprefRoomServerUrl,
         getString(R.string.pref_room_server_url_default));
-    url = url + "/register/" + roomName;
+    url = WebSocketRTCClient.getGAEConnectionUrl(url, roomName);
 
     // Check HW codec flag.
     boolean hwCodec = sharedPref.getBoolean(keyprefHwCodec,

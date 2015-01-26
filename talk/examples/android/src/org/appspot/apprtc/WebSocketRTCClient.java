@@ -54,6 +54,9 @@ import org.webrtc.SessionDescription;
 public class WebSocketRTCClient implements AppRTCClient,
     WebSocketChannelEvents {
   private static final String TAG = "WSRTCClient";
+  public static final String GAE_JOIN = "join";
+  private static final String GAE_MESSAGE = "message";
+  private static final String GAE_LEAVE = "leave";
 
   private enum ConnectionState {
     NEW, CONNECTED, CLOSED, ERROR
@@ -67,6 +70,7 @@ public class WebSocketRTCClient implements AppRTCClient,
   private SignalingEvents events;
   private WebSocketChannelClient wsClient;
   private ConnectionState roomState;
+  private String roomUrl;
   private String postMessageUrl;
   private String byeMessageUrl;
 
@@ -107,6 +111,7 @@ public class WebSocketRTCClient implements AppRTCClient,
     Log.d(TAG, "Connect to room: " + url);
     this.loopback = loopback;
     roomState = ConnectionState.NEW;
+    roomUrl = url.substring(0, url.indexOf("/" + GAE_JOIN));
     // Create WebSocket client.
     wsClient = new WebSocketChannelClient(executor, this);
     // Get room parameters.
@@ -144,6 +149,21 @@ public class WebSocketRTCClient implements AppRTCClient,
     }
   }
 
+  // Helper functions to get connection, post message and leave message URLs
+  public static String getGAEConnectionUrl(String roomUrl, String roomId) {
+    return roomUrl + "/" + GAE_JOIN + "/" + roomId;
+  }
+
+  private String getGAEPostMessageUrl(String roomUrl, String roomId,
+      String clientId) {
+    return roomUrl + "/" + GAE_MESSAGE + "/" + roomId + "/" + clientId;
+  }
+
+  private String getGAEByeMessageUrl(String roomUrl, String roomId,
+      String clientId) {
+    return roomUrl + "/" + GAE_LEAVE + "/" + roomId + "/" + clientId;
+  }
+
   // Callback issued when room parameters are extracted. Runs on local
   // looper thread.
   private void signalingParametersReady(final SignalingParameters params) {
@@ -156,10 +176,10 @@ public class WebSocketRTCClient implements AppRTCClient,
       Log.w(TAG, "No offer SDP in room response.");
     }
     initiator = params.initiator;
-    postMessageUrl = params.roomUrl + "/message/"
-      + params.roomId + "/" + params.clientId;
-    byeMessageUrl = params.roomUrl + "/bye/"
-      + params.roomId + "/" + params.clientId;
+    postMessageUrl = getGAEPostMessageUrl(
+        roomUrl, params.roomId, params.clientId);
+    byeMessageUrl = getGAEByeMessageUrl(
+        roomUrl, params.roomId, params.clientId);
     roomState = ConnectionState.CONNECTED;
 
     // Fire connection and signaling parameters events.

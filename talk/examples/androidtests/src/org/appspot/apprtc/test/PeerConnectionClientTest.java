@@ -220,7 +220,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     SignalingParameters signalingParameters = new SignalingParameters(
         iceServers, true,
         pcConstraints, videoConstraints, audioConstraints,
-        null, null, null,
+        null, null,
         null, null,
         null, null);
     return signalingParameters;
