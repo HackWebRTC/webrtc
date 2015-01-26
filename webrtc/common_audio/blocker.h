@@ -11,6 +11,7 @@
 #ifndef WEBRTC_INTERNAL_BEAMFORMER_BLOCKER_H_
 #define WEBRTC_INTERNAL_BEAMFORMER_BLOCKER_H_
 
+#include "webrtc/common_audio/audio_ring_buffer.h"
 #include "webrtc/modules/audio_processing/channel_buffer.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
@@ -93,8 +94,10 @@ class Blocker {
   // input and output buffers are responsible for saving those frames between
   // calls to ProcessChunk().
   //
-  // Both contain |initial delay| + |chunk_size| frames.
-  ChannelBuffer<float> input_buffer_;
+  // Both contain |initial delay| + |chunk_size| frames. The input is a fairly
+  // standard FIFO, but due to the overlap-add it's harder to use an
+  // AudioRingBuffer for the output.
+  AudioRingBuffer input_buffer_;
   ChannelBuffer<float> output_buffer_;
 
   // Space for the input block (can't wrap because of windowing).

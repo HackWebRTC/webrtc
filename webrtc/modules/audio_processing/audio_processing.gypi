@@ -85,8 +85,6 @@
         'beamformer/covariance_matrix_generator.cc',
         'beamformer/covariance_matrix_generator.h',
         'beamformer/matrix.h',
-        'channel_buffer.cc',
-        'channel_buffer.h',
         'common.h',
         'echo_cancellation_impl.cc',
         'echo_cancellation_impl.h',

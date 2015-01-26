@@ -19,7 +19,8 @@
 namespace webrtc {
 
 // Helper to encapsulate a contiguous data buffer with access to a pointer
-// array of the deinterleaved channels.
+// array of the deinterleaved channels. The buffer is zero initialized at
+// creation.
 template <typename T>
 class ChannelBuffer {
  public:
@@ -73,6 +74,19 @@ class ChannelBuffer {
 
   T* const* channels() { return channels_.get(); }
   const T* const* channels() const { return channels_.get(); }
+
+  // Sets the |slice| pointers to the |start_frame| position for each channel.
+  // Returns |slice| for convenience.
+  const T* const* Slice(T** slice, int start_frame) const {
+    DCHECK_LT(start_frame, samples_per_channel_);
+    for (int i = 0; i < num_channels_; ++i)
+      slice[i] = &channels_[i][start_frame];
+    return slice;
+  }
+  T** Slice(T** slice, int start_frame) {
+    const ChannelBuffer<T>* t = this;
+    return const_cast<T**>(t->Slice(slice, start_frame));
+  }
 
   int samples_per_channel() const { return samples_per_channel_; }
   int num_channels() const { return num_channels_; }

@@ -22,7 +22,7 @@ extern "C" {
 
 typedef struct RingBuffer RingBuffer;
 
-// Returns NULL on failure.
+// Creates and initializes the buffer. Returns NULL on failure.
 RingBuffer* WebRtc_CreateBuffer(size_t element_count, size_t element_size);
 void WebRtc_InitBuffer(RingBuffer* handle);
 void WebRtc_FreeBuffer(void* handle);

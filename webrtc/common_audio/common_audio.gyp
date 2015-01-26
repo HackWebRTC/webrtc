@@ -29,8 +29,12 @@
         ],
       },
       'sources': [
+        '../modules/audio_processing/channel_buffer.cc',
+        '../modules/audio_processing/channel_buffer.h',
         'audio_converter.cc',
         'audio_converter.h',
+        'audio_ring_buffer.cc',
+        'audio_ring_buffer.h',
         'audio_util.cc',
         'blocker.cc',
         'blocker.h',
@@ -228,6 +232,7 @@
           ],
           'sources': [
             'audio_converter_unittest.cc',
+            'audio_ring_buffer_unittest.cc',
             'audio_util_unittest.cc',
             'blocker_unittest.cc',
             'fir_filter_unittest.cc',
