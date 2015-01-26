@@ -56,15 +56,15 @@ static void HighPassFilter(const int16_t* data_in, int data_length,
 
   for (i = 0; i < data_length; i++) {
     // All-zero section (filter coefficients in Q14).
-    tmp32 = WEBRTC_SPL_MUL_16_16(kHpZeroCoefs[0], *in_ptr);
-    tmp32 += WEBRTC_SPL_MUL_16_16(kHpZeroCoefs[1], filter_state[0]);
-    tmp32 += WEBRTC_SPL_MUL_16_16(kHpZeroCoefs[2], filter_state[1]);
+    tmp32 = kHpZeroCoefs[0] * *in_ptr;
+    tmp32 += kHpZeroCoefs[1] * filter_state[0];
+    tmp32 += kHpZeroCoefs[2] * filter_state[1];
     filter_state[1] = filter_state[0];
     filter_state[0] = *in_ptr++;
 
     // All-pole section (filter coefficients in Q14).
-    tmp32 -= WEBRTC_SPL_MUL_16_16(kHpPoleCoefs[1], filter_state[2]);
-    tmp32 -= WEBRTC_SPL_MUL_16_16(kHpPoleCoefs[2], filter_state[3]);
+    tmp32 -= kHpPoleCoefs[1] * filter_state[2];
+    tmp32 -= kHpPoleCoefs[2] * filter_state[3];
     filter_state[3] = filter_state[2];
     filter_state[2] = (int16_t) (tmp32 >> 14);
     *out_ptr++ = filter_state[2];

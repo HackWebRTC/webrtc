@@ -79,5 +79,5 @@ int32_t WebRtcVad_GaussianProbability(int16_t input,
 
   // Calculate and return (1 / s) * exp(-(x - m)^2 / (2 * s^2)), in Q20.
   // Q-domain: Q10 * Q10 = Q20.
-  return WEBRTC_SPL_MUL_16_16(inv_std, exp_value);
+  return inv_std * exp_value;
 }

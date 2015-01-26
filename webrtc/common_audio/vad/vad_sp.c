@@ -170,8 +170,8 @@ int16_t WebRtcVad_FindMinimum(VadInstT* self,
       alpha = kSmoothingUp;  // 0.99 in Q15.
     }
   }
-  tmp32 = WEBRTC_SPL_MUL_16_16(alpha + 1, self->mean_value[channel]);
-  tmp32 += WEBRTC_SPL_MUL_16_16(WEBRTC_SPL_WORD16_MAX - alpha, current_median);
+  tmp32 = (alpha + 1) * self->mean_value[channel];
+  tmp32 += (WEBRTC_SPL_WORD16_MAX - alpha) * current_median;
   tmp32 += 16384;
   self->mean_value[channel] = (int16_t) (tmp32 >> 15);
 
