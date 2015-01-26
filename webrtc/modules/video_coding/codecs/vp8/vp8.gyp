@@ -48,9 +48,6 @@
       'msvs_disabled_warnings': [
         4267,  # size_t to int truncation.
       ],
-      'include_dirs': [
-        '<(libyuv_dir)/include',
-      ],
     },
   ], # targets
   'conditions': [

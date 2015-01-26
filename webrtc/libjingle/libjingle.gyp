@@ -30,7 +30,7 @@
       'type': 'static_library',
       'dependencies': [
         '<(talk_root)/libjingle.gyp:libjingle_media',
-        '<(webrtc_root)/base/base.gyp:webrtc_base',
+        '<(webrtc_root)/base/base.gyp:rtc_base',
         '<(webrtc_root)/libjingle/xmpp/xmpp.gyp:rtc_xmpp',
         '<(DEPTH)/third_party/expat/expat.gyp:expat',
       ],

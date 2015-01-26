@@ -192,6 +192,7 @@
                   'OTHER_LDFLAGS': [
                     '-framework AudioToolbox',
                     '-framework AVFoundation',
+                    '-framework Foundation',
                   ],
                 },
               },

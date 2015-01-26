@@ -35,6 +35,7 @@ include_rules = [
   '-base',
   '-chromium',
   '+gflags',
+  '+libyuv',
   '+net',
   '+talk',
   '+testing',

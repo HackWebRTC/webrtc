@@ -178,12 +178,6 @@ source_set("webrtc_vp8") {
       "//third_party/libvpx",
     ]
   }
-  if (rtc_build_libyuv) {
-    deps += [ "//third_party/libyuv" ]
-  } else {
-    # Need to add a directory normally exported by libyuv.
-    include_dirs += [ "//third_party/libyuv/include" ]
-  }
 }
 
 source_set("webrtc_vp9") {

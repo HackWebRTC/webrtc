@@ -141,6 +141,7 @@ source_set("audio_device") {
       libs = [
         "AudioToolbox.framework",
         "AVFoundation.framework",
+        "Foundation.framework",
       ]
     }
     if (is_win) {

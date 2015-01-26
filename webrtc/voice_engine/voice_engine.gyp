@@ -27,9 +27,6 @@
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
-        '../common_types.h',
-        '../engine_configurations.h',
-        '../typedefs.h',
         'include/voe_audio_processing.h',
         'include/voe_base.h',
         'include/voe_codec.h',

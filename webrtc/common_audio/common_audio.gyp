@@ -32,7 +32,6 @@
         'audio_converter.cc',
         'audio_converter.h',
         'audio_util.cc',
-        'audio_util.h',
         'blocker.cc',
         'blocker.h',
         'fir_filter.cc',
