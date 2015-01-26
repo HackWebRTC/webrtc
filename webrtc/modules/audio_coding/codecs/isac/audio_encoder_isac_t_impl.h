@@ -20,11 +20,6 @@ namespace webrtc {
 
 const int kIsacPayloadType = 103;
 
-inline int DivExact(int a, int b) {
-  CHECK_EQ(a % b, 0);
-  return a / b;
-}
-
 template <typename T>
 AudioEncoderDecoderIsacT<T>::Config::Config()
     : payload_type(kIsacPayloadType),
@@ -115,7 +110,8 @@ template <typename T>
 int AudioEncoderDecoderIsacT<T>::Num10MsFramesInNextPacket() const {
   CriticalSectionScoped cs(lock_.get());
   const int samples_in_next_packet = T::GetNewFrameLen(isac_state_);
-  return DivExact(samples_in_next_packet, DivExact(sample_rate_hz(), 100));
+  return rtc::CheckedDivExact(samples_in_next_packet,
+                              rtc::CheckedDivExact(sample_rate_hz(), 100));
 }
 
 template <typename T>

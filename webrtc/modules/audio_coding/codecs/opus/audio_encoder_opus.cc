@@ -19,10 +19,6 @@ namespace {
 // We always encode at 48 kHz.
 const int kSampleRateHz = 48000;
 
-int DivExact(int a, int b) {
-  CHECK_EQ(a % b, 0);
-  return a / b;
-}
 
 int16_t ClampInt16(size_t x) {
   return static_cast<int16_t>(
@@ -52,11 +48,13 @@ bool AudioEncoderOpus::Config::IsOk() const {
 }
 
 AudioEncoderOpus::AudioEncoderOpus(const Config& config)
-    : num_10ms_frames_per_packet_(DivExact(config.frame_size_ms, 10)),
+    : num_10ms_frames_per_packet_(
+          rtc::CheckedDivExact(config.frame_size_ms, 10)),
       num_channels_(config.num_channels),
       payload_type_(config.payload_type),
       application_(config.application),
-      samples_per_10ms_frame_(DivExact(kSampleRateHz, 100) * num_channels_) {
+      samples_per_10ms_frame_(rtc::CheckedDivExact(kSampleRateHz, 100) *
+                              num_channels_) {
   CHECK(config.IsOk());
   input_buffer_.reserve(num_10ms_frames_per_packet_ * samples_per_10ms_frame_);
   CHECK_EQ(0, WebRtcOpus_EncoderCreate(&inst_, num_channels_, application_));
@@ -101,7 +99,8 @@ bool AudioEncoderOpus::EncodeInternal(uint32_t timestamp,
            samples_per_10ms_frame_);
   int16_t r = WebRtcOpus_Encode(
       inst_, &input_buffer_[0],
-      DivExact(CastInt16(input_buffer_.size()), num_channels_),
+      rtc::CheckedDivExact(CastInt16(input_buffer_.size()),
+                           static_cast<int16_t>(num_channels_)),
       ClampInt16(max_encoded_bytes), encoded);
   input_buffer_.clear();
   if (r < 0)

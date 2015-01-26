@@ -217,6 +217,14 @@ class FatalMessage {
   std::ostringstream stream_;
 };
 
+// Performs the integer division a/b and returns the result. CHECKs that the
+// remainder is zero.
+template <typename T>
+inline T CheckedDivExact(T a, T b) {
+  CHECK_EQ(a % b, static_cast<T>(0));
+  return a / b;
+}
+
 }  // namespace rtc
 
 #endif  // WEBRTC_BASE_CHECKS_H_
