@@ -3305,6 +3305,7 @@ Channel::GetREDStatus(bool& enabled, int& redPayloadtype)
                 "module");
             return -1;
         }
+        redPayloadtype = payloadType;
         WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                    VoEId(_instanceId, _channelId),
                    "GetREDStatus() => enabled=%d, redPayloadtype=%d",
