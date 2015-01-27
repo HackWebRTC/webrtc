@@ -25,22 +25,22 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "ARDRegisterResponse+Internal.h"
+#import "ARDJoinResponse+Internal.h"
 
 #import "ARDSignalingMessage.h"
 #import "ARDUtilities.h"
 #import "RTCICEServer+JSON.h"
 
-static NSString const *kARDRegisterResultKey = @"result";
-static NSString const *kARDRegisterResultParamsKey = @"params";
-static NSString const *kARDRegisterInitiatorKey = @"is_initiator";
-static NSString const *kARDRegisterRoomIdKey = @"room_id";
-static NSString const *kARDRegisterClientIdKey = @"client_id";
-static NSString const *kARDRegisterMessagesKey = @"messages";
-static NSString const *kARDRegisterWebSocketURLKey = @"wss_url";
-static NSString const *kARDRegisterWebSocketRestURLKey = @"wss_post_url";
+static NSString const *kARDJoinResultKey = @"result";
+static NSString const *kARDJoinResultParamsKey = @"params";
+static NSString const *kARDJoinInitiatorKey = @"is_initiator";
+static NSString const *kARDJoinRoomIdKey = @"room_id";
+static NSString const *kARDJoinClientIdKey = @"client_id";
+static NSString const *kARDJoinMessagesKey = @"messages";
+static NSString const *kARDJoinWebSocketURLKey = @"wss_url";
+static NSString const *kARDJoinWebSocketRestURLKey = @"wss_post_url";
 
-@implementation ARDRegisterResponse
+@implementation ARDJoinResponse
 
 @synthesize result = _result;
 @synthesize isInitiator = _isInitiator;
@@ -50,22 +50,22 @@ static NSString const *kARDRegisterWebSocketRestURLKey = @"wss_post_url";
 @synthesize webSocketURL = _webSocketURL;
 @synthesize webSocketRestURL = _webSocketRestURL;
 
-+ (ARDRegisterResponse *)responseFromJSONData:(NSData *)data {
++ (ARDJoinResponse *)responseFromJSONData:(NSData *)data {
   NSDictionary *responseJSON = [NSDictionary dictionaryWithJSONData:data];
   if (!responseJSON) {
     return nil;
   }
-  ARDRegisterResponse *response = [[ARDRegisterResponse alloc] init];
-  NSString *resultString = responseJSON[kARDRegisterResultKey];
+  ARDJoinResponse *response = [[ARDJoinResponse alloc] init];
+  NSString *resultString = responseJSON[kARDJoinResultKey];
   response.result = [[self class] resultTypeFromString:resultString];
-  NSDictionary *params = responseJSON[kARDRegisterResultParamsKey];
+  NSDictionary *params = responseJSON[kARDJoinResultParamsKey];
 
-  response.isInitiator = [params[kARDRegisterInitiatorKey] boolValue];
-  response.roomId = params[kARDRegisterRoomIdKey];
-  response.clientId = params[kARDRegisterClientIdKey];
+  response.isInitiator = [params[kARDJoinInitiatorKey] boolValue];
+  response.roomId = params[kARDJoinRoomIdKey];
+  response.clientId = params[kARDJoinClientIdKey];
 
   // Parse messages.
-  NSArray *messages = params[kARDRegisterMessagesKey];
+  NSArray *messages = params[kARDJoinMessagesKey];
   NSMutableArray *signalingMessages =
       [NSMutableArray arrayWithCapacity:messages.count];
   for (NSString *message in messages) {
@@ -76,9 +76,9 @@ static NSString const *kARDRegisterWebSocketRestURLKey = @"wss_post_url";
   response.messages = signalingMessages;
 
   // Parse websocket urls.
-  NSString *webSocketURLString = params[kARDRegisterWebSocketURLKey];
+  NSString *webSocketURLString = params[kARDJoinWebSocketURLKey];
   response.webSocketURL = [NSURL URLWithString:webSocketURLString];
-  NSString *webSocketRestURLString = params[kARDRegisterWebSocketRestURLKey];
+  NSString *webSocketRestURLString = params[kARDJoinWebSocketRestURLKey];
   response.webSocketRestURL = [NSURL URLWithString:webSocketRestURLString];
 
   return response;
@@ -86,12 +86,12 @@ static NSString const *kARDRegisterWebSocketRestURLKey = @"wss_post_url";
 
 #pragma mark - Private
 
-+ (ARDRegisterResultType)resultTypeFromString:(NSString *)resultString {
-  ARDRegisterResultType result = kARDRegisterResultTypeUnknown;
++ (ARDJoinResultType)resultTypeFromString:(NSString *)resultString {
+  ARDJoinResultType result = kARDJoinResultTypeUnknown;
   if ([resultString isEqualToString:@"SUCCESS"]) {
-    result = kARDRegisterResultTypeSuccess;
+    result = kARDJoinResultTypeSuccess;
   } else if ([resultString isEqualToString:@"FULL"]) {
-    result = kARDRegisterResultTypeFull;
+    result = kARDJoinResultTypeFull;
   }
   return result;
 }

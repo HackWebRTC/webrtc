@@ -27,16 +27,16 @@
 
 #import <Foundation/Foundation.h>
 
-typedef NS_ENUM(NSInteger, ARDRegisterResultType) {
-  kARDRegisterResultTypeUnknown,
-  kARDRegisterResultTypeSuccess,
-  kARDRegisterResultTypeFull
+typedef NS_ENUM(NSInteger, ARDJoinResultType) {
+  kARDJoinResultTypeUnknown,
+  kARDJoinResultTypeSuccess,
+  kARDJoinResultTypeFull
 };
 
-// Result of registering with the GAE server.
-@interface ARDRegisterResponse : NSObject
+// Result of joining a room on the room server.
+@interface ARDJoinResponse : NSObject
 
-@property(nonatomic, readonly) ARDRegisterResultType result;
+@property(nonatomic, readonly) ARDJoinResultType result;
 @property(nonatomic, readonly) BOOL isInitiator;
 @property(nonatomic, readonly) NSString *roomId;
 @property(nonatomic, readonly) NSString *clientId;
@@ -44,6 +44,6 @@ typedef NS_ENUM(NSInteger, ARDRegisterResultType) {
 @property(nonatomic, readonly) NSURL *webSocketURL;
 @property(nonatomic, readonly) NSURL *webSocketRestURL;
 
-+ (ARDRegisterResponse *)responseFromJSONData:(NSData *)data;
++ (ARDJoinResponse *)responseFromJSONData:(NSData *)data;
 
 @end

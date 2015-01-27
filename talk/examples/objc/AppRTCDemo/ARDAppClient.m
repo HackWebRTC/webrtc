@@ -31,8 +31,8 @@
 
 #import "ARDAppEngineClient.h"
 #import "ARDCEODTURNClient.h"
+#import "ARDJoinResponse.h"
 #import "ARDMessageResponse.h"
-#import "ARDRegisterResponse.h"
 #import "ARDSignalingMessage.h"
 #import "ARDUtilities.h"
 #import "ARDWebSocketChannel.h"
@@ -149,23 +149,23 @@ static NSInteger kARDAppClientErrorInvalidRoom = -6;
     [strongSelf startSignalingIfReady];
   }];
 
-  // Register with room server.
-  [_roomServerClient registerForRoomId:roomId
-      completionHandler:^(ARDRegisterResponse *response, NSError *error) {
+  // Join room on room server.
+  [_roomServerClient joinRoomWithRoomId:roomId
+      completionHandler:^(ARDJoinResponse *response, NSError *error) {
     ARDAppClient *strongSelf = weakSelf;
     if (error) {
       [strongSelf.delegate appClient:strongSelf didError:error];
       return;
     }
-    NSError *registerError =
-        [[strongSelf class] errorForRegisterResultType:response.result];
-    if (registerError) {
-      NSLog(@"Failed to register with room server.");
+    NSError *joinError =
+        [[strongSelf class] errorForJoinResultType:response.result];
+    if (joinError) {
+      NSLog(@"Failed to join room:%@ on room server.", roomId);
       [strongSelf disconnect];
-      [strongSelf.delegate appClient:strongSelf didError:registerError];
+      [strongSelf.delegate appClient:strongSelf didError:joinError];
       return;
     }
-    NSLog(@"Registered with room server.");
+    NSLog(@"Joined room:%@ on room server.", roomId);
     strongSelf.roomId = response.roomId;
     strongSelf.clientId = response.clientId;
     strongSelf.isInitiator = response.isInitiator;
@@ -189,8 +189,8 @@ static NSInteger kARDAppClientErrorInvalidRoom = -6;
   if (_state == kARDAppClientStateDisconnected) {
     return;
   }
-  if (self.isRegisteredWithRoomServer) {
-    [_roomServerClient deregisterForRoomId:_roomId
+  if (self.hasJoinedRoomServerRoom) {
+    [_roomServerClient leaveRoomWithRoomId:_roomId
                                   clientId:_clientId
                          completionHandler:nil];
   }
@@ -360,12 +360,12 @@ static NSInteger kARDAppClientErrorInvalidRoom = -6;
 
 #pragma mark - Private
 
-- (BOOL)isRegisteredWithRoomServer {
+- (BOOL)hasJoinedRoomServerRoom {
   return _clientId.length;
 }
 
 - (void)startSignalingIfReady {
-  if (!_isTurnComplete || !self.isRegisteredWithRoomServer) {
+  if (!_isTurnComplete || !self.hasJoinedRoomServerRoom) {
     return;
   }
   self.state = kARDAppClientStateConnected;
@@ -496,7 +496,7 @@ static NSInteger kARDAppClientErrorInvalidRoom = -6;
 #pragma mark - Collider methods
 
 - (void)registerWithColliderIfReady {
-  if (!self.isRegisteredWithRoomServer) {
+  if (!self.hasJoinedRoomServerRoom) {
     return;
   }
   // Open WebSocket connection.
@@ -558,12 +558,12 @@ static NSInteger kARDAppClientErrorInvalidRoom = -6;
 
 #pragma mark - Errors
 
-+ (NSError *)errorForRegisterResultType:(ARDRegisterResultType)resultType {
++ (NSError *)errorForJoinResultType:(ARDJoinResultType)resultType {
   NSError *error = nil;
   switch (resultType) {
-    case kARDRegisterResultTypeSuccess:
+    case kARDJoinResultTypeSuccess:
       break;
-    case kARDRegisterResultTypeUnknown: {
+    case kARDJoinResultTypeUnknown: {
       error = [[NSError alloc] initWithDomain:kARDAppClientErrorDomain
                                          code:kARDAppClientErrorUnknown
                                      userInfo:@{
@@ -571,7 +571,7 @@ static NSInteger kARDAppClientErrorInvalidRoom = -6;
       }];
       break;
     }
-    case kARDRegisterResultTypeFull: {
+    case kARDJoinResultTypeFull: {
       error = [[NSError alloc] initWithDomain:kARDAppClientErrorDomain
                                          code:kARDAppClientErrorRoomFull
                                      userInfo:@{

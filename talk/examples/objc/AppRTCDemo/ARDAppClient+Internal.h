@@ -48,7 +48,7 @@
 
 @property(nonatomic, assign) BOOL isTurnComplete;
 @property(nonatomic, assign) BOOL hasReceivedSdp;
-@property(nonatomic, readonly) BOOL isRegisteredWithRoomServer;
+@property(nonatomic, readonly) BOOL hasJoinedRoomServerRoom;
 
 @property(nonatomic, strong) NSString *roomId;
 @property(nonatomic, strong) NSString *clientId;

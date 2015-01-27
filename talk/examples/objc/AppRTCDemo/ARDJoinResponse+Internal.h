@@ -25,11 +25,11 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "ARDRegisterResponse.h"
+#import "ARDJoinResponse.h"
 
-@interface ARDRegisterResponse ()
+@interface ARDJoinResponse ()
 
-@property(nonatomic, assign) ARDRegisterResultType result;
+@property(nonatomic, assign) ARDJoinResultType result;
 @property(nonatomic, assign) BOOL isInitiator;
 @property(nonatomic, strong) NSString *roomId;
 @property(nonatomic, strong) NSString *clientId;
