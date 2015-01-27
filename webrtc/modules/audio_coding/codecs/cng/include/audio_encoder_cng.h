@@ -22,13 +22,12 @@ namespace webrtc {
 
 class Vad;
 
-class AudioEncoderCng : public AudioEncoder {
+class AudioEncoderCng final : public AudioEncoder {
  public:
   struct Config {
     Config();
     bool IsOk() const;
 
-    int sample_rate_hz;
     int num_channels;
     int payload_type;
     // Caller keeps ownership of the AudioEncoder object.
@@ -76,8 +75,6 @@ class AudioEncoderCng : public AudioEncoder {
                     EncodedInfo* info);
 
   AudioEncoder* speech_encoder_;
-  const int sample_rate_hz_;
-  const int num_channels_;
   const int cng_payload_type_;
   const int num_cng_coefficients_;
   std::vector<int16_t> speech_buffer_;

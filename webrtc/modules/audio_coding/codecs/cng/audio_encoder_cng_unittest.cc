@@ -34,7 +34,8 @@ class AudioEncoderCngTest : public ::testing::Test {
   AudioEncoderCngTest()
       : mock_vad_(new MockVad(Vad::kVadNormal)),
         timestamp_(4711),
-        num_audio_samples_10ms_(0) {
+        num_audio_samples_10ms_(0),
+        sample_rate_hz_(8000) {
     memset(encoded_, 0, kMaxEncodedBytes);
     memset(audio_, 0, kMaxNumSamples * 2);
     config_.speech_encoder = &mock_encoder_;
@@ -57,10 +58,10 @@ class AudioEncoderCngTest : public ::testing::Test {
   void CreateCng() {
     // The config_ parameters may be changed by the TEST_Fs up until CreateCng()
     // is called, thus we cannot use the values until now.
-    num_audio_samples_10ms_ = 10 * config_.sample_rate_hz / 1000;
+    num_audio_samples_10ms_ = 10 * sample_rate_hz_ / 1000;
     ASSERT_LE(num_audio_samples_10ms_, kMaxNumSamples);
     EXPECT_CALL(mock_encoder_, sample_rate_hz())
-        .WillRepeatedly(Return(config_.sample_rate_hz));
+        .WillRepeatedly(Return(sample_rate_hz_));
     // Max10MsFramesInAPacket() is just used to verify that the SID frame period
     // is not too small. The return value does not matter that much, as long as
     // it is smaller than 10.
@@ -133,17 +134,16 @@ class AudioEncoderCngTest : public ::testing::Test {
 
     // Let the VAD decision be passive, since an active decision may lead to
     // early termination of the decision loop.
-    const int sample_rate_hz = config_.sample_rate_hz;
     InSequence s;
     EXPECT_CALL(
         *mock_vad_,
-        VoiceActivity(_, expected_first_block_size_ms * sample_rate_hz / 1000,
-                      sample_rate_hz)).WillOnce(Return(Vad::kPassive));
+        VoiceActivity(_, expected_first_block_size_ms * sample_rate_hz_ / 1000,
+                      sample_rate_hz_)).WillOnce(Return(Vad::kPassive));
     if (expected_second_block_size_ms > 0) {
       EXPECT_CALL(*mock_vad_,
                   VoiceActivity(
-                      _, expected_second_block_size_ms * sample_rate_hz / 1000,
-                      sample_rate_hz)).WillOnce(Return(Vad::kPassive));
+                      _, expected_second_block_size_ms * sample_rate_hz_ / 1000,
+                      sample_rate_hz_)).WillOnce(Return(Vad::kPassive));
     }
 
     // With this call to Encode(), |mock_vad_| should be called according to the
@@ -184,6 +184,7 @@ class AudioEncoderCngTest : public ::testing::Test {
   size_t num_audio_samples_10ms_;
   uint8_t encoded_[kMaxEncodedBytes];
   AudioEncoder::EncodedInfo encoded_info_;
+  int sample_rate_hz_;
 };
 
 TEST_F(AudioEncoderCngTest, CreateAndDestroy) {
@@ -425,20 +426,6 @@ TEST_F(AudioEncoderCngDeathTest, WrongFrameSize) {
   EXPECT_DEATH(Encode(), "");
   num_audio_samples_10ms_ = 0;  // Zero samples.
   EXPECT_DEATH(Encode(), "");
-}
-
-TEST_F(AudioEncoderCngDeathTest, WrongSampleRates) {
-  config_.sample_rate_hz = 32000;
-  EXPECT_DEATH(CreateCng(), "Invalid configuration");
-  config_.sample_rate_hz = 48000;
-  EXPECT_DEATH(CreateCng(), "Invalid configuration");
-  config_.sample_rate_hz = 0;
-  EXPECT_DEATH(CreateCng(), "Invalid configuration");
-  config_.sample_rate_hz = -8000;
-  // Don't use CreateCng() here, since the built-in sanity checks will prevent
-  // the test from reaching the expected point-of-death.
-  EXPECT_DEATH(cng_.reset(new AudioEncoderCng(config_)),
-               "Invalid configuration");
 }
 
 TEST_F(AudioEncoderCngDeathTest, WrongNumCoefficients) {
