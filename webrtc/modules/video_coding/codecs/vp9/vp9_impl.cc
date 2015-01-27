@@ -167,7 +167,7 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   config_->rc_end_usage = VPX_CBR;
   config_->g_pass = VPX_RC_ONE_PASS;
   config_->rc_min_quantizer = 2;
-  config_->rc_max_quantizer = 56;
+  config_->rc_max_quantizer = 52;
   config_->rc_undershoot_pct = 50;
   config_->rc_overshoot_pct = 50;
   config_->rc_buf_initial_sz = 500;

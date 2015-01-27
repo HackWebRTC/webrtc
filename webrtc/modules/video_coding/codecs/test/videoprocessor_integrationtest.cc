@@ -659,7 +659,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
   SetQualityMetrics(&quality_metrics, 35.9, 32.0, 0.90, 0.85);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[3];
-  SetRateControlMetrics(rc_metrics, 0, 0, 30, 20, 20, 20, 0);
+  SetRateControlMetrics(rc_metrics, 0, 0, 30, 20, 20, 25, 0);
   SetRateControlMetrics(rc_metrics, 1, 2, 0, 20, 20, 60, 0);
   SetRateControlMetrics(rc_metrics, 2, 0, 0, 25, 20, 40, 0);
   ProcessFramesAndVerify(quality_metrics,
@@ -680,9 +680,9 @@ TEST_F(VideoProcessorIntegrationTest,
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
-  SetRateProfilePars(&rate_profile, 0, 80, 24, 0);
-  SetRateProfilePars(&rate_profile, 1, 80, 15, 100);
-  SetRateProfilePars(&rate_profile, 2, 80, 10, 200);
+  SetRateProfilePars(&rate_profile, 0, 100, 24, 0);
+  SetRateProfilePars(&rate_profile, 1, 100, 15, 100);
+  SetRateProfilePars(&rate_profile, 2, 100, 10, 200);
   rate_profile.frame_index_rate_update[3] = kNbrFramesLong + 1;
   rate_profile.num_frames = kNbrFramesLong;
   // Codec/network settings.
