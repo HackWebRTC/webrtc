@@ -18,4 +18,8 @@ AudioEncoder::EncodedInfo::EncodedInfo() : EncodedInfoLeaf() {
 AudioEncoder::EncodedInfo::~EncodedInfo() {
 }
 
+int AudioEncoder::rtp_timestamp_rate_hz() const {
+  return sample_rate_hz();
+}
+
 }  // namespace webrtc

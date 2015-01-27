@@ -28,6 +28,10 @@ int AudioEncoderCopyRed::sample_rate_hz() const {
   return speech_encoder_->sample_rate_hz();
 }
 
+int AudioEncoderCopyRed::rtp_timestamp_rate_hz() const {
+  return speech_encoder_->rtp_timestamp_rate_hz();
+}
+
 int AudioEncoderCopyRed::num_channels() const {
   return speech_encoder_->num_channels();
 }
@@ -40,12 +44,22 @@ int AudioEncoderCopyRed::Max10MsFramesInAPacket() const {
   return speech_encoder_->Max10MsFramesInAPacket();
 }
 
-bool AudioEncoderCopyRed::EncodeInternal(uint32_t timestamp,
+void AudioEncoderCopyRed::SetTargetBitrate(int bits_per_second) {
+  speech_encoder_->SetTargetBitrate(bits_per_second);
+}
+
+void AudioEncoderCopyRed::SetProjectedPacketLossRate(double fraction) {
+  DCHECK_GE(fraction, 0.0);
+  DCHECK_LE(fraction, 1.0);
+  speech_encoder_->SetProjectedPacketLossRate(fraction);
+}
+
+bool AudioEncoderCopyRed::EncodeInternal(uint32_t rtp_timestamp,
                                          const int16_t* audio,
                                          size_t max_encoded_bytes,
                                          uint8_t* encoded,
                                          EncodedInfo* info) {
-  if (!speech_encoder_->Encode(timestamp, audio,
+  if (!speech_encoder_->Encode(rtp_timestamp, audio,
                                static_cast<size_t>(sample_rate_hz() / 100),
                                max_encoded_bytes, encoded, info))
     return false;

@@ -32,6 +32,7 @@ class AudioEncoderOpus : public AudioEncoder {
     int num_channels;
     int payload_type;
     ApplicationMode application;
+    int bitrate_bps;
   };
 
   explicit AudioEncoderOpus(const Config& config);
@@ -41,9 +42,11 @@ class AudioEncoderOpus : public AudioEncoder {
   virtual int num_channels() const OVERRIDE;
   virtual int Num10MsFramesInNextPacket() const OVERRIDE;
   virtual int Max10MsFramesInAPacket() const OVERRIDE;
+  void SetTargetBitrate(int bits_per_second) override;
+  void SetProjectedPacketLossRate(double fraction) override;
 
  protected:
-  virtual bool EncodeInternal(uint32_t timestamp,
+  virtual bool EncodeInternal(uint32_t rtp_timestamp,
                               const int16_t* audio,
                               size_t max_encoded_bytes,
                               uint8_t* encoded,
@@ -58,6 +61,7 @@ class AudioEncoderOpus : public AudioEncoder {
   std::vector<int16_t> input_buffer_;
   OpusEncInst* inst_;
   uint32_t first_timestamp_in_buffer_;
+  double packet_loss_rate_;
 };
 
 }  // namespace webrtc

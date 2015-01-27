@@ -58,7 +58,7 @@ class AudioEncoder {
   // In case of error, false is returned, otherwise true. It is an error for the
   // encoder to attempt to produce more than |max_encoded_bytes| bytes of
   // output.
-  bool Encode(uint32_t timestamp,
+  bool Encode(uint32_t rtp_timestamp,
               const int16_t* audio,
               size_t num_samples_per_channel,
               size_t max_encoded_bytes,
@@ -66,11 +66,8 @@ class AudioEncoder {
               EncodedInfo* info) {
     CHECK_EQ(num_samples_per_channel,
              static_cast<size_t>(sample_rate_hz() / 100));
-    bool ret = EncodeInternal(timestamp,
-                              audio,
-                              max_encoded_bytes,
-                              encoded,
-                              info);
+    bool ret =
+        EncodeInternal(rtp_timestamp, audio, max_encoded_bytes, encoded, info);
     CHECK_LE(info->encoded_bytes, max_encoded_bytes);
     return ret;
   }
@@ -79,6 +76,10 @@ class AudioEncoder {
   // These are constants set at instantiation time.
   virtual int sample_rate_hz() const = 0;
   virtual int num_channels() const = 0;
+
+  // Returns the rate with which the RTP timestamps are updated. By default,
+  // this is the same as sample_rate_hz().
+  virtual int rtp_timestamp_rate_hz() const;
 
   // Returns the number of 10 ms frames the encoder will put in the next
   // packet. This value may only change when Encode() outputs a packet; i.e.,
@@ -91,8 +92,17 @@ class AudioEncoder {
   // Num10MsFramesInNextPacket().
   virtual int Max10MsFramesInAPacket() const = 0;
 
+  // Changes the target bitrate. The implementation is free to alter this value,
+  // e.g., if the desired value is outside the valid range.
+  virtual void SetTargetBitrate(int bits_per_second) {}
+
+  // Tells the implementation what the projected packet loss rate is. The rate
+  // is in the range [0.0, 1.0]. This rate is typically used to adjust channel
+  // coding efforts, such as FEC.
+  virtual void SetProjectedPacketLossRate(double fraction) {}
+
  protected:
-  virtual bool EncodeInternal(uint32_t timestamp,
+  virtual bool EncodeInternal(uint32_t rtp_timestamp,
                               const int16_t* audio,
                               size_t max_encoded_bytes,
                               uint8_t* encoded,

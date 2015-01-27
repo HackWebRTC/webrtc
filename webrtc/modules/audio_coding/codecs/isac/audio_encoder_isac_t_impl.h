@@ -120,7 +120,7 @@ int AudioEncoderDecoderIsacT<T>::Max10MsFramesInAPacket() const {
 }
 
 template <typename T>
-bool AudioEncoderDecoderIsacT<T>::EncodeInternal(uint32_t timestamp,
+bool AudioEncoderDecoderIsacT<T>::EncodeInternal(uint32_t rtp_timestamp,
                                                  const int16_t* audio,
                                                  size_t max_encoded_bytes,
                                                  uint8_t* encoded,
@@ -128,7 +128,7 @@ bool AudioEncoderDecoderIsacT<T>::EncodeInternal(uint32_t timestamp,
   if (!packet_in_progress_) {
     // Starting a new packet; remember the timestamp for later.
     packet_in_progress_ = true;
-    packet_timestamp_ = timestamp;
+    packet_timestamp_ = rtp_timestamp;
   }
   int r;
   {

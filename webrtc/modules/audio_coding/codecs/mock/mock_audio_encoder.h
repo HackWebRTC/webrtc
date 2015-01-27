@@ -25,6 +25,8 @@ class MockAudioEncoder : public AudioEncoder {
   MOCK_CONST_METHOD0(num_channels, int());
   MOCK_CONST_METHOD0(Num10MsFramesInNextPacket, int());
   MOCK_CONST_METHOD0(Max10MsFramesInAPacket, int());
+  MOCK_METHOD1(SetTargetBitrate, void(int));
+  MOCK_METHOD1(SetProjectedPacketLossRate, void(double));
   // Note, we explicitly chose not to create a mock for the Encode method.
   MOCK_METHOD5(EncodeInternal,
                bool(uint32_t timestamp,

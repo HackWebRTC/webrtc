@@ -196,6 +196,18 @@ TEST_F(AudioEncoderCngTest, CheckFrameSizePropagation) {
   EXPECT_EQ(17, cng_->Num10MsFramesInNextPacket());
 }
 
+TEST_F(AudioEncoderCngTest, CheckChangeBitratePropagation) {
+  CreateCng();
+  EXPECT_CALL(mock_encoder_, SetTargetBitrate(4711));
+  cng_->SetTargetBitrate(4711);
+}
+
+TEST_F(AudioEncoderCngTest, CheckProjectedPacketLossRatePropagation) {
+  CreateCng();
+  EXPECT_CALL(mock_encoder_, SetProjectedPacketLossRate(0.5));
+  cng_->SetProjectedPacketLossRate(0.5);
+}
+
 TEST_F(AudioEncoderCngTest, EncodeCallsVad) {
   EXPECT_CALL(mock_encoder_, Num10MsFramesInNextPacket())
       .WillRepeatedly(Return(1));

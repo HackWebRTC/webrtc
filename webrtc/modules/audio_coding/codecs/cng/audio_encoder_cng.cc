@@ -74,6 +74,10 @@ int AudioEncoderCng::sample_rate_hz() const {
   return sample_rate_hz_;
 }
 
+int AudioEncoderCng::rtp_timestamp_rate_hz() const {
+  return speech_encoder_->rtp_timestamp_rate_hz();
+}
+
 int AudioEncoderCng::num_channels() const {
   return num_channels_;
 }
@@ -86,7 +90,17 @@ int AudioEncoderCng::Max10MsFramesInAPacket() const {
   return speech_encoder_->Max10MsFramesInAPacket();
 }
 
-bool AudioEncoderCng::EncodeInternal(uint32_t timestamp,
+void AudioEncoderCng::SetTargetBitrate(int bits_per_second) {
+  speech_encoder_->SetTargetBitrate(bits_per_second);
+}
+
+void AudioEncoderCng::SetProjectedPacketLossRate(double fraction) {
+  DCHECK_GE(fraction, 0.0);
+  DCHECK_LE(fraction, 1.0);
+  speech_encoder_->SetProjectedPacketLossRate(fraction);
+}
+
+bool AudioEncoderCng::EncodeInternal(uint32_t rtp_timestamp,
                                      const int16_t* audio,
                                      size_t max_encoded_bytes,
                                      uint8_t* encoded,
@@ -99,7 +113,7 @@ bool AudioEncoderCng::EncodeInternal(uint32_t timestamp,
   const int num_samples = sample_rate_hz() / 100 * num_channels();
   if (speech_buffer_.empty()) {
     CHECK_EQ(frames_in_buffer_, 0);
-    first_timestamp_in_buffer_ = timestamp;
+    first_timestamp_in_buffer_ = rtp_timestamp;
   }
   for (int i = 0; i < num_samples; ++i) {
     speech_buffer_.push_back(audio[i]);

@@ -52,7 +52,7 @@ int AudioEncoderIlbc::Max10MsFramesInAPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
-bool AudioEncoderIlbc::EncodeInternal(uint32_t timestamp,
+bool AudioEncoderIlbc::EncodeInternal(uint32_t rtp_timestamp,
                                       const int16_t* audio,
                                       size_t max_encoded_bytes,
                                       uint8_t* encoded,
@@ -63,7 +63,7 @@ bool AudioEncoderIlbc::EncodeInternal(uint32_t timestamp,
 
   // Save timestamp if starting a new packet.
   if (num_10ms_frames_buffered_ == 0)
-    first_timestamp_in_buffer_ = timestamp;
+    first_timestamp_in_buffer_ = rtp_timestamp;
 
   // Buffer input.
   std::memcpy(input_buffer_ + kSampleRateHz / 100 * num_10ms_frames_buffered_,

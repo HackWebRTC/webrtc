@@ -35,7 +35,7 @@ class AudioEncoderIlbc : public AudioEncoder {
   virtual int Max10MsFramesInAPacket() const OVERRIDE;
 
  protected:
-  virtual bool EncodeInternal(uint32_t timestamp,
+  virtual bool EncodeInternal(uint32_t rtp_timestamp,
                               const int16_t* audio,
                               size_t max_encoded_bytes,
                               uint8_t* encoded,

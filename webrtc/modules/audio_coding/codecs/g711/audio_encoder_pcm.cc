@@ -59,14 +59,14 @@ int AudioEncoderPcm::Max10MsFramesInAPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
-bool AudioEncoderPcm::EncodeInternal(uint32_t timestamp,
+bool AudioEncoderPcm::EncodeInternal(uint32_t rtp_timestamp,
                                      const int16_t* audio,
                                      size_t max_encoded_bytes,
                                      uint8_t* encoded,
                                      EncodedInfo* info) {
   const int num_samples = sample_rate_hz() / 100 * num_channels();
   if (speech_buffer_.empty()) {
-    first_timestamp_in_buffer_ = timestamp;
+    first_timestamp_in_buffer_ = rtp_timestamp;
   }
   for (int i = 0; i < num_samples; ++i) {
     speech_buffer_.push_back(audio[i]);

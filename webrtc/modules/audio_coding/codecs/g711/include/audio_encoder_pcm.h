@@ -40,7 +40,7 @@ class AudioEncoderPcm : public AudioEncoder {
  protected:
   AudioEncoderPcm(const Config& config, int sample_rate_hz);
 
-  virtual bool EncodeInternal(uint32_t timestamp,
+  virtual bool EncodeInternal(uint32_t rtp_timestamp,
                               const int16_t* audio,
                               size_t max_encoded_bytes,
                               uint8_t* encoded,
