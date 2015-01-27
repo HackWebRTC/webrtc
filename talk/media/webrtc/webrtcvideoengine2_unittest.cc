@@ -73,6 +73,19 @@ void VerifyCodecHasDefaultFeedbackParams(const cricket::VideoCodec& codec) {
       cricket::kRtcpFbParamCcm, cricket::kRtcpFbCcmParamFir)));
 }
 
+static void CreateBlackFrame(webrtc::I420VideoFrame* video_frame,
+                             int width,
+                             int height) {
+  video_frame->CreateEmptyFrame(
+      width, height, width, (width + 1) / 2, (width + 1) / 2);
+  memset(video_frame->buffer(webrtc::kYPlane), 16,
+         video_frame->allocated_size(webrtc::kYPlane));
+  memset(video_frame->buffer(webrtc::kUPlane), 128,
+         video_frame->allocated_size(webrtc::kUPlane));
+  memset(video_frame->buffer(webrtc::kVPlane), 128,
+         video_frame->allocated_size(webrtc::kVPlane));
+}
+
 }  // namespace
 
 namespace cricket {
@@ -174,6 +187,11 @@ webrtc::VideoReceiveStream::Config FakeVideoReceiveStream::GetConfig() {
 
 bool FakeVideoReceiveStream::IsReceiving() const {
   return receiving_;
+}
+
+void FakeVideoReceiveStream::InjectFrame(const webrtc::I420VideoFrame& frame,
+                                         int time_to_render_ms) {
+  config_.renderer->RenderFrame(frame, time_to_render_ms);
 }
 
 webrtc::VideoReceiveStream::Stats FakeVideoReceiveStream::GetStats() const {
@@ -1583,12 +1601,44 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse) {
   EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_WebRtcShouldLog) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
+TEST_F(WebRtcVideoChannel2Test, EstimatesNtpStartTimeAndElapsedTimeCorrectly) {
+  // Start at last timestamp to verify that wraparounds are estimated correctly.
+  static const uint32_t kInitialTimestamp = 0xFFFFFFFFu;
+  static const int64_t kInitialNtpTimeMs = 1247891230;
+  static const int kFrameOffsetMs = 20;
+  EXPECT_TRUE(channel_->SetRecvCodecs(engine_.codecs()));
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_WebRtcShouldNotLog) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+  FakeVideoReceiveStream* stream = AddRecvStream();
+  cricket::FakeVideoRenderer renderer;
+  EXPECT_TRUE(channel_->SetRenderer(last_ssrc_, &renderer));
+  EXPECT_TRUE(channel_->SetRender(true));
+
+  webrtc::I420VideoFrame video_frame;
+  CreateBlackFrame(&video_frame, 4, 4);
+  video_frame.set_timestamp(kInitialTimestamp);
+  // Initial NTP time is not available on the first frame, but should still be
+  // able to be estimated.
+  stream->InjectFrame(video_frame, 0);
+
+  EXPECT_EQ(1, renderer.num_rendered_frames());
+  EXPECT_EQ(0, renderer.last_frame_elapsed_time_ns());
+
+  // This timestamp is kInitialTimestamp (-1) + kFrameOffsetMs * 90, which
+  // triggers a constant-overflow warning, hence we're calculating it explicitly
+  // here.
+  video_frame.set_timestamp(kFrameOffsetMs * 90 - 1);
+  video_frame.set_ntp_time_ms(kInitialNtpTimeMs + kFrameOffsetMs);
+  stream->InjectFrame(video_frame, 0);
+
+  EXPECT_EQ(2, renderer.num_rendered_frames());
+  EXPECT_EQ(kFrameOffsetMs * rtc::kNumNanosecsPerMillisec,
+            renderer.last_frame_elapsed_time_ns());
+
+  // Verify that NTP time has been correctly deduced.
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_EQ(1u, info.receivers.size());
+  EXPECT_EQ(kInitialNtpTimeMs, info.receivers[0].capture_start_ntp_time_ms);
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetDefaultSendCodecs) {

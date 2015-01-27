@@ -360,8 +360,9 @@ void WebRtcVideoFrame::InitToEmptyBuffer(int w, int h, size_t pixel_width,
 }
 
 WebRtcVideoRenderFrame::WebRtcVideoRenderFrame(
-    const webrtc::I420VideoFrame* frame)
-    : frame_(frame) {
+    const webrtc::I420VideoFrame* frame,
+    int64_t elapsed_time_ms)
+    : frame_(frame), elapsed_time_ms_(elapsed_time_ms) {
 }
 
 bool WebRtcVideoRenderFrame::InitToBlack(int w,
@@ -442,12 +443,10 @@ size_t WebRtcVideoRenderFrame::GetPixelHeight() const {
 }
 
 int64_t WebRtcVideoRenderFrame::GetElapsedTime() const {
-  // Convert millisecond render time to ns timestamp.
-  return frame_->render_time_ms() * rtc::kNumNanosecsPerMillisec;
+  return elapsed_time_ms_ * rtc::kNumNanosecsPerMillisec;
 }
 int64_t WebRtcVideoRenderFrame::GetTimeStamp() const {
-  // Convert 90K rtp timestamp to ns timestamp.
-  return (frame_->timestamp() / 90) * rtc::kNumNanosecsPerMillisec;
+  return frame_->render_time_ms() * rtc::kNumNanosecsPerMillisec;
 }
 void WebRtcVideoRenderFrame::SetElapsedTime(int64_t elapsed_time) {
   UNIMPLEMENTED;
