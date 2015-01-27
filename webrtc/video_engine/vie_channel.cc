@@ -202,11 +202,11 @@ void ViEChannel::UpdateHistograms() {
     int64_t elapsed_sec = rtcp_received.TimeSinceFirstPacketInMs(now) / 1000;
     if (elapsed_sec > metrics::kMinRunTimeInSeconds) {
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.NackPacketsReceivedPerMinute",
-          rtcp_received.nack_packets / elapsed_sec / 60);
+          rtcp_received.nack_packets * 60 / elapsed_sec);
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FirPacketsReceivedPerMinute",
-          rtcp_received.fir_packets / elapsed_sec / 60);
+          rtcp_received.fir_packets * 60 / elapsed_sec);
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PliPacketsReceivedPerMinute",
-          rtcp_received.pli_packets / elapsed_sec / 60);
+          rtcp_received.pli_packets * 60 / elapsed_sec);
       if (rtcp_received.nack_requests > 0) {
         RTC_HISTOGRAM_PERCENTAGE(
             "WebRTC.Video.UniqueNackRequestsReceivedInPercent",
@@ -224,11 +224,11 @@ void ViEChannel::UpdateHistograms() {
     int64_t elapsed_sec = rtcp_sent.TimeSinceFirstPacketInMs(now) / 1000;
     if (elapsed_sec > metrics::kMinRunTimeInSeconds) {
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.NackPacketsSentPerMinute",
-          rtcp_sent.nack_packets / elapsed_sec / 60);
+          rtcp_sent.nack_packets * 60 / elapsed_sec);
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FirPacketsSentPerMinute",
-          rtcp_sent.fir_packets / elapsed_sec / 60);
+          rtcp_sent.fir_packets * 60 / elapsed_sec);
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PliPacketsSentPerMinute",
-          rtcp_sent.pli_packets / elapsed_sec / 60);
+          rtcp_sent.pli_packets * 60 / elapsed_sec);
       if (rtcp_sent.nack_requests > 0) {
         RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.UniqueNackRequestsSentInPercent",
             rtcp_sent.UniqueNackRequestsInPercent());
@@ -261,6 +261,10 @@ void ViEChannel::UpdateHistograms() {
         RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RtxBitrateReceivedInKbps",
             rtx.transmitted.TotalBytes() * 8 / elapsed_sec / 1000);
       }
+      if (vie_receiver_.IsFecEnabled()) {
+        RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FecBitrateReceivedInKbps",
+            rtp_rtx.fec.TotalBytes() * 8 / elapsed_sec / 1000);
+      }
     }
   }
 }
@@ -289,6 +293,14 @@ void ViEChannel::UpdateHistogramsAtStopSend() {
   if (vie_receiver_.GetRtxSsrc(&ssrc)) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RtxBitrateSentInKbps",
         rtx.transmitted.TotalBytes() * 8 / elapsed_sec / 1000);
+  }
+  bool fec_enabled = false;
+  uint8_t pltype_red;
+  uint8_t pltype_fec;
+  rtp_rtcp_->GenericFECStatus(fec_enabled, pltype_red, pltype_fec);
+  if (fec_enabled) {
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FecBitrateSentInKbps",
+        rtp_rtx.fec.TotalBytes() * 8 / elapsed_sec / 1000);
   }
 }
 

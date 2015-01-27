@@ -129,6 +129,10 @@ bool ViEReceiver::GetRtxSsrc(uint32_t* ssrc) const {
   return rtp_payload_registry_->GetRtxSsrc(ssrc);
 }
 
+bool ViEReceiver::IsFecEnabled() const {
+  return rtp_payload_registry_->ulpfec_payload_type() > -1;
+}
+
 uint32_t ViEReceiver::GetRemoteSsrc() const {
   return rtp_receiver_->SSRC();
 }
@@ -319,7 +323,7 @@ bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
   if (rtp_payload_registry_->IsRed(header)) {
     int8_t ulpfec_pt = rtp_payload_registry_->ulpfec_payload_type();
     if (packet[header.headerLength] == ulpfec_pt)
-      rtp_receive_statistics_->FecPacketReceived(header.ssrc);
+      rtp_receive_statistics_->FecPacketReceived(header, packet_length);
     if (fec_receiver_->AddReceivedRedPacket(
             header, packet, packet_length, ulpfec_pt) != 0) {
       return false;

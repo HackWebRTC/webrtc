@@ -51,6 +51,8 @@ class ViEReceiver : public RtpData {
   void SetRtxSsrc(uint32_t ssrc);
   bool GetRtxSsrc(uint32_t* ssrc) const;
 
+  bool IsFecEnabled() const;
+
   uint32_t GetRemoteSsrc() const;
   int GetCsrcs(uint32_t* csrcs) const;
 

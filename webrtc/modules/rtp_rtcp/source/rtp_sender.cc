@@ -900,6 +900,10 @@ void RTPSender::UpdateRtpStats(const uint8_t* buffer,
   }
   if (IsFecPacket(buffer, header)) {
     ++counters->fec.packets;
+    counters->fec.payload_bytes +=
+        packet_length - (header.headerLength + header.paddingLength);
+    counters->fec.header_bytes += header.headerLength;
+    counters->fec.padding_bytes += header.paddingLength;
   }
 
   if (is_retransmit) {

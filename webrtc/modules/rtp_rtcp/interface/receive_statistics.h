@@ -61,7 +61,8 @@ class ReceiveStatistics : public Module {
                               bool retransmitted) = 0;
 
   // Increment counter for number of FEC packets received.
-  virtual void FecPacketReceived(uint32_t ssrc) = 0;
+  virtual void FecPacketReceived(const RTPHeader& header,
+                                 size_t packet_length) = 0;
 
   // Returns a map of all statisticians which have seen an incoming packet
   // during the last two seconds.
@@ -87,7 +88,8 @@ class NullReceiveStatistics : public ReceiveStatistics {
   virtual void IncomingPacket(const RTPHeader& rtp_header,
                               size_t packet_length,
                               bool retransmitted) OVERRIDE;
-  virtual void FecPacketReceived(uint32_t ssrc) OVERRIDE;
+  virtual void FecPacketReceived(const RTPHeader& header,
+                                 size_t packet_length) OVERRIDE;
   virtual StatisticianMap GetActiveStatisticians() const OVERRIDE;
   virtual StreamStatistician* GetStatistician(uint32_t ssrc) const OVERRIDE;
   virtual int64_t TimeUntilNextProcess() OVERRIDE;

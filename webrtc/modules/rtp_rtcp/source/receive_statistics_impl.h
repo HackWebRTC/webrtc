@@ -44,7 +44,7 @@ class StreamStatisticianImpl : public StreamStatistician {
   void IncomingPacket(const RTPHeader& rtp_header,
                       size_t packet_length,
                       bool retransmitted);
-  void FecPacketReceived();
+  void FecPacketReceived(const RTPHeader& header, size_t packet_length);
   void SetMaxReorderingThreshold(int max_reordering_threshold);
   void ProcessBitrate();
   virtual void LastReceiveTimeNtp(uint32_t* secs, uint32_t* frac) const;
@@ -110,7 +110,8 @@ class ReceiveStatisticsImpl : public ReceiveStatistics,
   virtual void IncomingPacket(const RTPHeader& header,
                               size_t packet_length,
                               bool retransmitted) OVERRIDE;
-  virtual void FecPacketReceived(uint32_t ssrc) OVERRIDE;
+  virtual void FecPacketReceived(const RTPHeader& header,
+                                 size_t packet_length) OVERRIDE;
   virtual StatisticianMap GetActiveStatisticians() const OVERRIDE;
   virtual StreamStatistician* GetStatistician(uint32_t ssrc) const OVERRIDE;
   virtual void SetMaxReorderingThreshold(int max_reordering_threshold) OVERRIDE;

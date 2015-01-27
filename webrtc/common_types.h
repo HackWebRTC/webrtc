@@ -286,16 +286,16 @@ struct StreamDataCounters {
   }
 
   // Returns the number of bytes corresponding to the actual media payload (i.e.
-  // RTP headers, padding and retransmissions are excluded). Note this function
-  // does not have meaning for an RTX stream.
+  // RTP headers, padding, retransmissions and fec packets are excluded).
+  // Note this function does not have meaning for an RTX stream.
   size_t MediaPayloadBytes() const {
-    return transmitted.payload_bytes - retransmitted.payload_bytes;
+    return transmitted.payload_bytes - retransmitted.payload_bytes -
+           fec.payload_bytes;
   }
 
   int64_t first_packet_time_ms;  // Time when first packet is sent/received.
   RtpPacketCounter transmitted;  // Number of transmitted packets/bytes.
   RtpPacketCounter retransmitted;  // Number of retransmitted packets/bytes.
-  // TODO(asapersson): add FEC bytes.
   RtpPacketCounter fec;  // Number of redundancy packets/bytes.
 };
 

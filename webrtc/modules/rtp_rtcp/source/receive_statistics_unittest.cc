@@ -276,6 +276,9 @@ class RtpTestCallback : public StreamDataCountersCallback {
     EXPECT_EQ(expected.retransmitted.padding_bytes,
               stats_.retransmitted.padding_bytes);
     EXPECT_EQ(expected.retransmitted.packets, stats_.retransmitted.packets);
+    EXPECT_EQ(expected.fec.payload_bytes, stats_.fec.payload_bytes);
+    EXPECT_EQ(expected.fec.header_bytes, stats_.fec.header_bytes);
+    EXPECT_EQ(expected.fec.padding_bytes, stats_.fec.padding_bytes);
     EXPECT_EQ(expected.fec.packets, stats_.fec.packets);
   }
 
@@ -336,13 +339,16 @@ TEST_F(ReceiveStatisticsTest, RtpCallbacks) {
   header1_.paddingLength = 0;
   ++header1_.sequenceNumber;
   clock_.AdvanceTimeMilliseconds(5);
-  // One recovered packet.
+  // One FEC packet.
   receive_statistics_->IncomingPacket(
       header1_, kPacketSize1 + kHeaderLength, false);
-  receive_statistics_->FecPacketReceived(kSsrc1);
+  receive_statistics_->FecPacketReceived(header1_,
+                                         kPacketSize1 + kHeaderLength);
   expected.transmitted.payload_bytes = kPacketSize1 * 4;
   expected.transmitted.header_bytes = kHeaderLength * 4;
   expected.transmitted.packets = 4;
+  expected.fec.payload_bytes = kPacketSize1;
+  expected.fec.header_bytes = kHeaderLength;
   expected.fec.packets = 1;
   callback.Matches(5, kSsrc1, expected);
 
@@ -361,12 +367,13 @@ TEST_F(ReceiveStatisticsTest, RtpCallbacksFecFirst) {
   receive_statistics_->RegisterRtpStatisticsCallback(&callback);
 
   const uint32_t kHeaderLength = 20;
+  header1_.headerLength = kHeaderLength;
 
   // If first packet is FEC, ignore it.
-  receive_statistics_->FecPacketReceived(kSsrc1);
+  receive_statistics_->FecPacketReceived(header1_,
+                                         kPacketSize1 + kHeaderLength);
   EXPECT_EQ(0u, callback.num_calls_);
 
-  header1_.headerLength = kHeaderLength;
   receive_statistics_->IncomingPacket(
       header1_, kPacketSize1 + kHeaderLength, false);
   StreamDataCounters expected;
@@ -377,7 +384,10 @@ TEST_F(ReceiveStatisticsTest, RtpCallbacksFecFirst) {
   expected.fec.packets = 0;
   callback.Matches(1, kSsrc1, expected);
 
-  receive_statistics_->FecPacketReceived(kSsrc1);
+  receive_statistics_->FecPacketReceived(header1_,
+                                         kPacketSize1 + kHeaderLength);
+  expected.fec.payload_bytes = kPacketSize1;
+  expected.fec.header_bytes = kHeaderLength;
   expected.fec.packets = 1;
   callback.Matches(2, kSsrc1, expected);
 }

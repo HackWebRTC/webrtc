@@ -200,10 +200,15 @@ void StreamStatisticianImpl::NotifyRtcpCallback() {
   rtcp_callback_->StatisticsUpdated(data, ssrc);
 }
 
-void StreamStatisticianImpl::FecPacketReceived() {
+void StreamStatisticianImpl::FecPacketReceived(const RTPHeader& header,
+                                               size_t packet_length) {
   {
     CriticalSectionScoped cs(stream_lock_.get());
     ++receive_counters_.fec.packets;
+    receive_counters_.fec.payload_bytes +=
+        packet_length - (header.headerLength + header.paddingLength);
+    receive_counters_.fec.header_bytes += header.headerLength;
+    receive_counters_.fec.padding_bytes += header.paddingLength;
   }
   NotifyRtpCallback();
 }
@@ -441,12 +446,13 @@ void ReceiveStatisticsImpl::IncomingPacket(const RTPHeader& header,
   impl->IncomingPacket(header, packet_length, retransmitted);
 }
 
-void ReceiveStatisticsImpl::FecPacketReceived(uint32_t ssrc) {
+void ReceiveStatisticsImpl::FecPacketReceived(const RTPHeader& header,
+                                              size_t packet_length) {
   CriticalSectionScoped cs(receive_statistics_lock_.get());
-  StatisticianImplMap::iterator it = statisticians_.find(ssrc);
+  StatisticianImplMap::iterator it = statisticians_.find(header.ssrc);
   // Ignore FEC if it is the first packet.
   if (it != statisticians_.end()) {
-    it->second->FecPacketReceived();
+    it->second->FecPacketReceived(header, packet_length);
   }
 }
 
@@ -543,7 +549,8 @@ void NullReceiveStatistics::IncomingPacket(const RTPHeader& rtp_header,
                                            size_t packet_length,
                                            bool retransmitted) {}
 
-void NullReceiveStatistics::FecPacketReceived(uint32_t ssrc) {}
+void NullReceiveStatistics::FecPacketReceived(const RTPHeader& header,
+                                              size_t packet_length) {}
 
 StatisticianMap NullReceiveStatistics::GetActiveStatisticians() const {
   return StatisticianMap();
