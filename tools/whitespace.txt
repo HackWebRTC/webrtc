@@ -9,3 +9,5 @@ Whitespaces are cool.
 
 
 Really cool.
+
+Testing Git updater.
