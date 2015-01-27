@@ -769,6 +769,55 @@ static void UpdateMetrics(AecCore* aec) {
   }
 }
 
+static void UpdateDelayMetrics(AecCore* self) {
+  int i = 0;
+  int delay_values = 0;
+  int num_delay_values = 0;
+  int median = 0;
+  const int kMsPerBlock = PART_LEN / (self->mult * 8);
+  int64_t l1_norm = 0;
+
+  // Get number of delay values since last update.
+  for (i = 0; i < kHistorySizeBlocks; i++) {
+    num_delay_values += self->delay_histogram[i];
+  }
+  if (num_delay_values == 0) {
+    // We have no new delay value data. Even though -1 is a valid |median| in
+    // the sense that we allow negative values, it will practically never be
+    // used since multiples of |kMsPerBlock| will always be returned.
+    // We therefore use -1 to indicate in the logs that the delay estimator was
+    // not able to estimate the delay.
+    self->delay_median = -1;
+    self->delay_std = -1;
+    return;
+  }
+
+  delay_values = num_delay_values >> 1;  // Start value for median count down.
+  // Get median of delay values since last update.
+  for (i = 0; i < kHistorySizeBlocks; i++) {
+    delay_values -= self->delay_histogram[i];
+    if (delay_values < 0) {
+      median = i;
+      break;
+    }
+  }
+  // Account for lookahead.
+  self->delay_median = (median - WebRtc_lookahead(self->delay_estimator)) *
+      kMsPerBlock;
+
+  // Calculate the L1 norm, with median value as central moment.
+  for (i = 0; i < kHistorySizeBlocks; i++) {
+    l1_norm += abs(i - median) * self->delay_histogram[i];
+  }
+  self->delay_std = (int)((l1_norm + num_delay_values / 2) / num_delay_values) *
+      kMsPerBlock;
+
+  // Reset histogram.
+  memset(self->delay_histogram, 0, sizeof(self->delay_histogram));
+
+  return;
+}
+
 static void TimeToFrequency(float time_data[PART_LEN2],
                             float freq_data[2][PART_LEN1],
                             int window) {
@@ -1507,6 +1556,8 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   }
   aec->delay_logging_enabled = 0;
   memset(aec->delay_histogram, 0, sizeof(aec->delay_histogram));
+  aec->delay_median = -1;
+  aec->delay_std = -1;
 
   aec->signal_delay_correction = 0;
   aec->previous_delay = -2;  // (-2): Uninitialized.
@@ -1778,13 +1829,6 @@ void WebRtcAec_ProcessFrames(AecCore* aec,
 }
 
 int WebRtcAec_GetDelayMetricsCore(AecCore* self, int* median, int* std) {
-  int i = 0;
-  int delay_values = 0;
-  int num_delay_values = 0;
-  int my_median = 0;
-  const int kMsPerBlock = PART_LEN / (self->mult * 8);
-  float l1_norm = 0;
-
   assert(self != NULL);
   assert(median != NULL);
   assert(std != NULL);
@@ -1794,39 +1838,9 @@ int WebRtcAec_GetDelayMetricsCore(AecCore* self, int* median, int* std) {
     return -1;
   }
 
-  // Get number of delay values since last update.
-  for (i = 0; i < kHistorySizeBlocks; i++) {
-    num_delay_values += self->delay_histogram[i];
-  }
-  if (num_delay_values == 0) {
-    // We have no new delay value data. Even though -1 is a valid estimate, it
-    // will practically never be used since multiples of |kMsPerBlock| will
-    // always be returned.
-    *median = -1;
-    *std = -1;
-    return 0;
-  }
-
-  delay_values = num_delay_values >> 1;  // Start value for median count down.
-  // Get median of delay values since last update.
-  for (i = 0; i < kHistorySizeBlocks; i++) {
-    delay_values -= self->delay_histogram[i];
-    if (delay_values < 0) {
-      my_median = i;
-      break;
-    }
-  }
-  // Account for lookahead.
-  *median = (my_median - WebRtc_lookahead(self->delay_estimator)) * kMsPerBlock;
-
-  // Calculate the L1 norm, with median value as central moment.
-  for (i = 0; i < kHistorySizeBlocks; i++) {
-    l1_norm += (float)abs(i - my_median) * self->delay_histogram[i];
-  }
-  *std = (int)(l1_norm / (float)num_delay_values + 0.5f) * kMsPerBlock;
-
-  // Reset histogram.
-  memset(self->delay_histogram, 0, sizeof(self->delay_histogram));
+  UpdateDelayMetrics(self);
+  *median = self->delay_median;
+  *std = self->delay_std;
 
   return 0;
 }

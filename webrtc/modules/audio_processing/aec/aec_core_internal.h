@@ -127,6 +127,8 @@ struct AecCore {
   float cn_scale_Hband;  // scale for comfort noise in H band
 
   int delay_histogram[kHistorySizeBlocks];
+  int delay_median;
+  int delay_std;
   int delay_logging_enabled;
   void* delay_estimator_farend;
   void* delay_estimator;
