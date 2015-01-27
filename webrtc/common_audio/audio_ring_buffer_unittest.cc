@@ -65,7 +65,7 @@ TEST_P(AudioRingBufferTest, ReadDataMatchesWrittenData) {
   ChannelBuffer<float> input(kFrames, static_cast<int>(num_channels));
   for (size_t i = 0; i < num_channels; ++i)
     for (size_t j = 0; j < kFrames; ++j)
-      input.channels()[i][j] = i * j;
+      input.channels()[i][j] = (i + 1) * (j + 1);
 
   ChannelBuffer<float> output(kFrames, static_cast<int>(num_channels));
   ReadAndWriteTest(input,
