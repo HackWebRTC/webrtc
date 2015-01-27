@@ -39,6 +39,7 @@ static const size_t kBufSizePartitions = 250;  // 1 second of audio in 16 kHz.
 // Metrics
 static const int subCountLen = 4;
 static const int countLen = 50;
+static const int kDelayMetricsAggregationWindow = 250;  // One second at 16 kHz.
 
 // Quantities to control H band scaling for SWB input
 static const int flagHbandCn = 1;  // flag for adding comfort noise in H band
@@ -772,16 +773,11 @@ static void UpdateMetrics(AecCore* aec) {
 static void UpdateDelayMetrics(AecCore* self) {
   int i = 0;
   int delay_values = 0;
-  int num_delay_values = 0;
   int median = 0;
   const int kMsPerBlock = PART_LEN / (self->mult * 8);
   int64_t l1_norm = 0;
 
-  // Get number of delay values since last update.
-  for (i = 0; i < kHistorySizeBlocks; i++) {
-    num_delay_values += self->delay_histogram[i];
-  }
-  if (num_delay_values == 0) {
+  if (self->num_delay_values == 0) {
     // We have no new delay value data. Even though -1 is a valid |median| in
     // the sense that we allow negative values, it will practically never be
     // used since multiples of |kMsPerBlock| will always be returned.
@@ -792,7 +788,8 @@ static void UpdateDelayMetrics(AecCore* self) {
     return;
   }
 
-  delay_values = num_delay_values >> 1;  // Start value for median count down.
+  // Start value for median count down.
+  delay_values = self->num_delay_values >> 1;
   // Get median of delay values since last update.
   for (i = 0; i < kHistorySizeBlocks; i++) {
     delay_values -= self->delay_histogram[i];
@@ -809,11 +806,12 @@ static void UpdateDelayMetrics(AecCore* self) {
   for (i = 0; i < kHistorySizeBlocks; i++) {
     l1_norm += abs(i - median) * self->delay_histogram[i];
   }
-  self->delay_std = (int)((l1_norm + num_delay_values / 2) / num_delay_values) *
-      kMsPerBlock;
+  self->delay_std = (int)((l1_norm + self->num_delay_values / 2) /
+      self->num_delay_values) * kMsPerBlock;
 
   // Reset histogram.
   memset(self->delay_histogram, 0, sizeof(self->delay_histogram));
+  self->num_delay_values = 0;
 
   return;
 }
@@ -1247,6 +1245,11 @@ static void ProcessBlock(AecCore* aec) {
       if (delay_estimate >= 0) {
         // Update delay estimate buffer.
         aec->delay_histogram[delay_estimate]++;
+        aec->num_delay_values++;
+      }
+      if (aec->delay_metrics_delivered == 1 &&
+          aec->num_delay_values >= kDelayMetricsAggregationWindow) {
+        UpdateDelayMetrics(aec);
       }
     }
   }
@@ -1555,7 +1558,9 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
     return -1;
   }
   aec->delay_logging_enabled = 0;
+  aec->delay_metrics_delivered = 0;
   memset(aec->delay_histogram, 0, sizeof(aec->delay_histogram));
+  aec->num_delay_values = 0;
   aec->delay_median = -1;
   aec->delay_std = -1;
 
@@ -1838,7 +1843,10 @@ int WebRtcAec_GetDelayMetricsCore(AecCore* self, int* median, int* std) {
     return -1;
   }
 
-  UpdateDelayMetrics(self);
+  if (self->delay_metrics_delivered == 0) {
+    UpdateDelayMetrics(self);
+    self->delay_metrics_delivered = 1;
+  }
   *median = self->delay_median;
   *std = self->delay_std;
 
