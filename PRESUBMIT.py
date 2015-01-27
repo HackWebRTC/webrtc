@@ -123,6 +123,31 @@ def _CheckNoRtcBaseDeps(input_api, gyp_files, output_api):
         items=violating_files)]
   return []
 
+def _CheckNoSourcesAboveGyp(input_api, gyp_files, output_api):
+  # Disallow referencing source files with paths above the GYP file location.
+  source_pattern = input_api.re.compile(r'sources.*?\[(.*?)\]',
+                                        re.MULTILINE | re.DOTALL)
+  file_pattern = input_api.re.compile(r"'(\.\./.*?)'")
+  violating_gyp_files = set()
+  violating_source_entries = []
+  for gyp_file in gyp_files:
+    contents = input_api.ReadFile(gyp_file)
+    for source_block_match in source_pattern.finditer(contents):
+      # Find all source list entries starting with ../ in the source block.
+      for file_list_match in file_pattern.finditer(source_block_match.group(0)):
+        violating_source_entries.append(file_list_match.group(0))
+        violating_gyp_files.add(gyp_file)
+  if violating_gyp_files:
+    return [output_api.PresubmitError(
+        'Referencing source files above the directory of the GYP file is not '
+        'allowed. Please introduce new GYP targets and/or GYP files in the '
+        'proper location instead.\n'
+        'Invalid source entries:\n'
+        '%s\n'
+        'Violating GYP files:' % '\n'.join(violating_source_entries),
+        items=violating_gyp_files)]
+  return []
+
 def _CheckGypChanges(input_api, output_api):
   source_file_filter = lambda x: input_api.FilterSourceFile(
       x, white_list=(r'.+\.(gyp|gypi)$',))
@@ -139,6 +164,7 @@ def _CheckGypChanges(input_api, output_api):
         'BUILD.gn files are also updated.\nChanged GYP files:',
         items=gyp_files))
     result.extend(_CheckNoRtcBaseDeps(input_api, gyp_files, output_api))
+    result.extend(_CheckNoSourcesAboveGyp(input_api, gyp_files, output_api))
   return result
 
 def _CheckUnwantedDependencies(input_api, output_api):
