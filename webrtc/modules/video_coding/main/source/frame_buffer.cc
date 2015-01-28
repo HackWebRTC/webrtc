@@ -127,7 +127,9 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet,
       _encodedHeight = packet.height;
     }
 
-    CopyCodecSpecific(&packet.codecSpecificHeader);
+    // Don't copy payload specific data for empty packets (e.g padding packets).
+    if (packet.sizeBytes > 0)
+      CopyCodecSpecific(&packet.codecSpecificHeader);
 
     int retVal = _sessionInfo.InsertPacket(packet, _buffer,
                                            decode_error_mode,

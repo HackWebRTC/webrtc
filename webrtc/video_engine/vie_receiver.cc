@@ -322,8 +322,11 @@ bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
                                                     const RTPHeader& header) {
   if (rtp_payload_registry_->IsRed(header)) {
     int8_t ulpfec_pt = rtp_payload_registry_->ulpfec_payload_type();
-    if (packet[header.headerLength] == ulpfec_pt)
+    if (packet[header.headerLength] == ulpfec_pt) {
       rtp_receive_statistics_->FecPacketReceived(header, packet_length);
+      // Notify vcm about received FEC packets to avoid NACKing these packets.
+      NotifyReceiverOfFecPacket(header);
+    }
     if (fec_receiver_->AddReceivedRedPacket(
             header, packet, packet_length, ulpfec_pt) != 0) {
       return false;
@@ -358,6 +361,28 @@ bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
     return ret;
   }
   return false;
+}
+
+void ViEReceiver::NotifyReceiverOfFecPacket(const RTPHeader& header) {
+  int8_t last_media_payload_type =
+      rtp_payload_registry_->last_received_media_payload_type();
+  if (last_media_payload_type < 0) {
+    LOG(LS_WARNING) << "Failed to get last media payload type.";
+    return;
+  }
+  // Fake an empty media packet.
+  WebRtcRTPHeader rtp_header = {};
+  rtp_header.header = header;
+  rtp_header.header.payloadType = last_media_payload_type;
+  rtp_header.header.paddingLength = 0;
+  PayloadUnion payload_specific;
+  if (!rtp_payload_registry_->GetPayloadSpecifics(last_media_payload_type,
+                                                  &payload_specific)) {
+    LOG(LS_WARNING) << "Failed to get payload specifics.";
+    return;
+  }
+  rtp_header.type.Video.codec = payload_specific.Video.videoCodecType;
+  OnReceivedPayloadData(NULL, 0, &rtp_header);
 }
 
 int ViEReceiver::InsertRTCPPacket(const uint8_t* rtcp_packet,

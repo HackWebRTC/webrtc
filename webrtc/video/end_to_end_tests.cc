@@ -35,6 +35,7 @@
 #include "webrtc/test/frame_generator.h"
 #include "webrtc/test/frame_generator_capturer.h"
 #include "webrtc/test/null_transport.h"
+#include "webrtc/test/rtcp_packet_parser.h"
 #include "webrtc/test/rtp_rtcp_observer.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
@@ -75,6 +76,7 @@ class EndToEndTest : public test::CallTest {
   void TestXrReceiverReferenceTimeReport(bool enable_rrtr);
   void TestSendsSetSsrcs(size_t num_ssrcs, bool send_single_ssrc_first);
   void TestRtpStatePreservation(bool use_rtx);
+  void TestReceivedFecPacketsNotNacked(const FakeNetworkPipe::Config& config);
 };
 
 TEST_F(EndToEndTest, ReceiverCanBeStartedTwice) {
@@ -532,6 +534,118 @@ TEST_F(EndToEndTest, CanReceiveFec) {
     std::set<uint32_t> protected_sequence_numbers_ GUARDED_BY(crit_);
     std::set<uint32_t> protected_timestamps_ GUARDED_BY(crit_);
   } test;
+
+  RunBaseTest(&test);
+}
+
+TEST_F(EndToEndTest, ReceivedFecPacketsNotNacked) {
+  // At low RTT (< kLowRttNackMs) -> NACK only, no FEC.
+  // Configure some network delay.
+  const int kNetworkDelayMs = 50;
+  FakeNetworkPipe::Config config;
+  config.queue_delay_ms = kNetworkDelayMs;
+  TestReceivedFecPacketsNotNacked(config);
+}
+
+void EndToEndTest::TestReceivedFecPacketsNotNacked(
+    const FakeNetworkPipe::Config& config) {
+  class FecNackObserver : public test::EndToEndTest {
+   public:
+    explicit FecNackObserver(const FakeNetworkPipe::Config& config)
+        : EndToEndTest(kDefaultTimeoutMs, config),
+          state_(kDropEveryOtherPacketUntilFec),
+          fec_sequence_number_(0),
+          has_last_sequence_number_(false),
+          last_sequence_number_(0) {}
+
+   private:
+    virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
+      RTPHeader header;
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
+      EXPECT_EQ(kRedPayloadType, header.payloadType);
+
+      int encapsulated_payload_type =
+          static_cast<int>(packet[header.headerLength]);
+      if (encapsulated_payload_type != kFakeSendPayloadType)
+        EXPECT_EQ(kUlpfecPayloadType, encapsulated_payload_type);
+
+      if (has_last_sequence_number_ &&
+          !IsNewerSequenceNumber(header.sequenceNumber,
+                                 last_sequence_number_)) {
+        // Drop retransmitted packets.
+        return DROP_PACKET;
+      }
+      last_sequence_number_ = header.sequenceNumber;
+      has_last_sequence_number_ = true;
+
+      bool fec_packet = encapsulated_payload_type == kUlpfecPayloadType;
+      switch (state_) {
+        case kDropEveryOtherPacketUntilFec:
+          if (fec_packet) {
+            state_ = kDropAllMediaPacketsUntilFec;
+          } else if (header.sequenceNumber % 2 == 0) {
+            return DROP_PACKET;
+          }
+          break;
+        case kDropAllMediaPacketsUntilFec:
+          if (!fec_packet)
+            return DROP_PACKET;
+          fec_sequence_number_ = header.sequenceNumber;
+          state_ = kVerifyFecPacketNotInNackList;
+          break;
+        case kVerifyFecPacketNotInNackList:
+          // Continue to drop packets. Make sure no frame can be decoded.
+          if (fec_packet || header.sequenceNumber % 2 == 0)
+            return DROP_PACKET;
+          break;
+      }
+      return SEND_PACKET;
+    }
+
+    virtual Action OnReceiveRtcp(const uint8_t* packet, size_t length)
+        OVERRIDE {
+      if (state_ == kVerifyFecPacketNotInNackList) {
+        test::RtcpPacketParser rtcp_parser;
+        rtcp_parser.Parse(packet, length);
+        std::vector<uint16_t> nacks = rtcp_parser.nack_item()->last_nack_list();
+        if (!nacks.empty() &&
+            IsNewerSequenceNumber(nacks.back(), fec_sequence_number_)) {
+          EXPECT_TRUE(std::find(
+              nacks.begin(), nacks.end(), fec_sequence_number_) == nacks.end());
+          observation_complete_->Set();
+        }
+      }
+      return SEND_PACKET;
+    }
+
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) OVERRIDE {
+      // Configure hybrid NACK/FEC.
+      send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      send_config->rtp.fec.red_payload_type = kRedPayloadType;
+      send_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+      (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      (*receive_configs)[0].rtp.fec.red_payload_type = kRedPayloadType;
+      (*receive_configs)[0].rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+    }
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting for FEC packets to be received.";
+    }
+
+    enum {
+      kDropEveryOtherPacketUntilFec,
+      kDropAllMediaPacketsUntilFec,
+      kVerifyFecPacketNotInNackList,
+    } state_;
+
+    uint16_t fec_sequence_number_;
+    bool has_last_sequence_number_;
+    uint16_t last_sequence_number_;
+  } test(config);
 
   RunBaseTest(&test);
 }

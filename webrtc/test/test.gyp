@@ -64,6 +64,7 @@
         'rtp_file_writer.h',
       ],
       'dependencies': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
       ],
     },
