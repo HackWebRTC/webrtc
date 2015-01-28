@@ -126,7 +126,7 @@ class OveruseFrameDetector : public Module {
 
   CpuOveruseOptions options_ GUARDED_BY(crit_);
 
-  Clock* clock_;
+  Clock* const clock_;
   int64_t next_process_time_;
   int64_t num_process_times_ GUARDED_BY(crit_);
 

@@ -413,11 +413,11 @@ class Transport : public rtc::MessageHandler,
   // Sends SignalCompleted if we are now in that state.
   void MaybeCompleted_w();
 
-  rtc::Thread* signaling_thread_;
-  rtc::Thread* worker_thread_;
-  std::string content_name_;
-  std::string type_;
-  PortAllocator* allocator_;
+  rtc::Thread* const signaling_thread_;
+  rtc::Thread* const worker_thread_;
+  const std::string content_name_;
+  const std::string type_;
+  PortAllocator* const allocator_;
   bool destroyed_;
   TransportState readable_;
   TransportState writable_;
