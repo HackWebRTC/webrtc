@@ -37,6 +37,7 @@
 #include "talk/media/webrtc/webrtcvideoengine2.h"
 #include "talk/media/webrtc/webrtcvideoengine2_unittest.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/video_encoder.h"
@@ -1213,9 +1214,8 @@ TEST_F(WebRtcVideoChannel2Test,
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSendRtpHeaderExtensionsRejectsIncorrectIds) {
-  const size_t kNumIncorrectIds = 4;
-  const int kIncorrectIds[kNumIncorrectIds] = {-2, -1, 15, 16};
-  for (size_t i = 0; i < kNumIncorrectIds; ++i) {
+  const int kIncorrectIds[] = {-2, -1, 15, 16};
+  for (size_t i = 0; i < arraysize(kIncorrectIds); ++i) {
     std::vector<cricket::RtpHeaderExtension> extensions;
     extensions.push_back(cricket::RtpHeaderExtension(
         webrtc::RtpExtension::kTOffset, kIncorrectIds[i]));
@@ -1225,9 +1225,8 @@ TEST_F(WebRtcVideoChannel2Test, SetSendRtpHeaderExtensionsRejectsIncorrectIds) {
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetRecvRtpHeaderExtensionsRejectsIncorrectIds) {
-  const size_t kNumIncorrectIds = 4;
-  const int kIncorrectIds[kNumIncorrectIds] = {-2, -1, 15, 16};
-  for (size_t i = 0; i < kNumIncorrectIds; ++i) {
+  const int kIncorrectIds[] = {-2, -1, 15, 16};
+  for (size_t i = 0; i < arraysize(kIncorrectIds); ++i) {
     std::vector<cricket::RtpHeaderExtension> extensions;
     extensions.push_back(cricket::RtpHeaderExtension(
         webrtc::RtpExtension::kTOffset, kIncorrectIds[i]));
@@ -1815,12 +1814,10 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsRejectBadDimensions) {
 
 TEST_F(WebRtcVideoChannel2Test, SetSendCodecsRejectBadPayloadTypes) {
   // TODO(pbos): Should we only allow the dynamic range?
-  static const size_t kNumIncorrectPayloads = 4;
-  static const int kIncorrectPayloads[kNumIncorrectPayloads] = {
-      -2, -1, 128, 129};
+  static const int kIncorrectPayloads[] = {-2, -1, 128, 129};
   std::vector<cricket::VideoCodec> codecs;
   codecs.push_back(kVp8Codec);
-  for (size_t i = 0; i < kNumIncorrectPayloads; ++i) {
+  for (size_t i = 0; i < arraysize(kIncorrectPayloads); ++i) {
     int payload_type = kIncorrectPayloads[i];
     codecs[0].id = payload_type;
     EXPECT_FALSE(channel_->SetSendCodecs(codecs))

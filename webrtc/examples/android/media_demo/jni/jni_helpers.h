@@ -44,9 +44,6 @@
     }                             \
   }
 
-#define ARRAYSIZE(instance)                                     \
-  static_cast<int>(sizeof(instance) / sizeof(instance[0]))
-
 // JNIEnv-helper methods that CHECK success: no Java exception thrown and found
 // object/class/method/field is non-null.
 jmethodID GetMethodID(JNIEnv* jni, jclass c, const std::string& name,

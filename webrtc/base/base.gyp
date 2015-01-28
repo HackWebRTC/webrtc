@@ -65,6 +65,7 @@
         'USE_WEBRTC_DEV_BRANCH',
       ],
       'sources': [
+        'arraysize.h',
         'asyncfile.cc',
         'asyncfile.h',
         'asynchttprequest.cc',

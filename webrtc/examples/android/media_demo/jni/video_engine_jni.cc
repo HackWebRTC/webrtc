@@ -16,6 +16,7 @@
 #include <map>
 #include <string>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/common_types.h"
 #include "webrtc/examples/android/media_demo/jni/jni_helpers.h"
 #include "webrtc/examples/android/media_demo/jni/media_codec_video_decoder.h"
@@ -330,7 +331,7 @@ void SetVieDeviceObjects(JavaVM* vm) {
   webrtc::AttachThreadScoped ats(g_vm);
   JNIEnv* jni = ats.env();
   g_class_reference_holder = new ClassReferenceHolder(
-      jni, g_classes, ARRAYSIZE(g_classes));
+      jni, g_classes, arraysize(g_classes));
 }
 
 void ClearVieDeviceObjects() {

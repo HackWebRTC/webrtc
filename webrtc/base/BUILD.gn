@@ -153,6 +153,7 @@ static_library("rtc_base") {
   ]
 
   sources = [
+    "arraysize.h",
     "asyncfile.cc",
     "asyncfile.h",
     "asynchttprequest.cc",
