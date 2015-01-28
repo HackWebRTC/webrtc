@@ -19,6 +19,7 @@
 #include "webrtc/common.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -439,8 +440,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(const uint8_t* packet,
   if (length < 12)
     return DELIVERY_PACKET_ERROR;
 
-  const uint8_t* ptr = &packet[8];
-  uint32_t ssrc = ptr[0] << 24 | ptr[1] << 16 | ptr[2] << 8 | ptr[3];
+  uint32_t ssrc = ByteReader<uint32_t>::ReadBigEndian(&packet[8]);
 
   ReadLockScoped read_lock(*receive_crit_);
   std::map<uint32_t, VideoReceiveStream*>::iterator it =
