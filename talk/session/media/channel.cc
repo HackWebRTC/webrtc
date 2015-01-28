@@ -554,7 +554,9 @@ void BaseChannel::HandlePacket(bool rtcp, rtc::Buffer* packet,
     return;
   }
 
-  if (!has_received_packet_) {
+  // We are only interested in the first rtp packet because that
+  // indicates the media has started flowing.
+  if (!has_received_packet_ && !rtcp) {
     has_received_packet_ = true;
     signaling_thread()->Post(this, MSG_FIRSTPACKETRECEIVED);
   }
