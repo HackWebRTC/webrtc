@@ -151,6 +151,13 @@ void NetworkManagerBase::GetNetworks(NetworkList* result) const {
 
 void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
                                           bool* changed) {
+  NetworkManager::Stats stats;
+  MergeNetworkList(new_networks, changed, &stats);
+}
+
+void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
+                                          bool* changed,
+                                          NetworkManager::Stats* stats) {
   // AddressList in this map will track IP addresses for all Networks
   // with the same key.
   std::map<std::string, AddressList> consolidated_address_list;
@@ -185,6 +192,13 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
     }
     if (!might_add_to_merged_list) {
       delete network;
+    } else {
+      if (current_list.ips[0].family() == AF_INET) {
+        stats->ipv4_network_count++;
+      } else {
+        ASSERT(current_list.ips[0].family() == AF_INET6);
+        stats->ipv6_network_count++;
+      }
     }
   }
 
@@ -213,7 +227,7 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
   networks_ = merged_list;
 
   // If the network lists changes, we resort it.
-  if (changed) {
+  if (*changed) {
     std::sort(networks_.begin(), networks_.end(), SortNetworks);
     // Now network interfaces are sorted, we should set the preference value
     // for each of the interfaces we are planning to use.

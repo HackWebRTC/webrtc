@@ -34,10 +34,13 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
     callback_called_ = true;
   }
 
-  void MergeNetworkList(BasicNetworkManager& network_manager,
-                        const NetworkManager::NetworkList& list,
-                        bool* changed ) {
-    network_manager.MergeNetworkList(list, changed);
+  NetworkManager::Stats MergeNetworkList(
+      BasicNetworkManager& network_manager,
+      const NetworkManager::NetworkList& list,
+      bool* changed) {
+    NetworkManager::Stats stats;
+    network_manager.MergeNetworkList(list, changed, &stats);
+    return stats;
   }
 
   bool IsIgnoredNetwork(BasicNetworkManager& network_manager,
@@ -182,8 +185,10 @@ TEST_F(NetworkTest, TestBasicMergeNetworkList) {
   NetworkManager::NetworkList list;
   list.push_back(new Network(ipv4_network1));
   bool changed;
-  MergeNetworkList(manager, list, &changed);
+  NetworkManager::Stats stats = MergeNetworkList(manager, list, &changed);
   EXPECT_TRUE(changed);
+  EXPECT_EQ(stats.ipv6_network_count, 0);
+  EXPECT_EQ(stats.ipv4_network_count, 1);
   list.clear();
 
   manager.GetNetworks(&list);
@@ -194,8 +199,10 @@ TEST_F(NetworkTest, TestBasicMergeNetworkList) {
 
   // Replace ipv4_network1 with ipv4_network2.
   list.push_back(new Network(ipv4_network2));
-  MergeNetworkList(manager, list, &changed);
+  stats = MergeNetworkList(manager, list, &changed);
   EXPECT_TRUE(changed);
+  EXPECT_EQ(stats.ipv6_network_count, 0);
+  EXPECT_EQ(stats.ipv4_network_count, 1);
   list.clear();
 
   manager.GetNetworks(&list);
@@ -207,8 +214,10 @@ TEST_F(NetworkTest, TestBasicMergeNetworkList) {
   // Add Network2 back.
   list.push_back(new Network(ipv4_network1));
   list.push_back(new Network(ipv4_network2));
-  MergeNetworkList(manager, list, &changed);
+  stats = MergeNetworkList(manager, list, &changed);
   EXPECT_TRUE(changed);
+  EXPECT_EQ(stats.ipv6_network_count, 0);
+  EXPECT_EQ(stats.ipv4_network_count, 2);
   list.clear();
 
   // Verify that we get previous instances of Network objects.
@@ -222,8 +231,10 @@ TEST_F(NetworkTest, TestBasicMergeNetworkList) {
   // notification.
   list.push_back(new Network(ipv4_network2));
   list.push_back(new Network(ipv4_network1));
-  MergeNetworkList(manager, list, &changed);
+  stats = MergeNetworkList(manager, list, &changed);
   EXPECT_FALSE(changed);
+  EXPECT_EQ(stats.ipv6_network_count, 0);
+  EXPECT_EQ(stats.ipv4_network_count, 2);
   list.clear();
 
   // Verify that we get previous instances of Network objects.
@@ -274,8 +285,11 @@ TEST_F(NetworkTest, TestIPv6MergeNetworkList) {
   NetworkManager::NetworkList original_list;
   SetupNetworks(&original_list);
   bool changed = false;
-  MergeNetworkList(manager, original_list, &changed);
+  NetworkManager::Stats stats =
+      MergeNetworkList(manager, original_list, &changed);
   EXPECT_TRUE(changed);
+  EXPECT_EQ(stats.ipv6_network_count, 4);
+  EXPECT_EQ(stats.ipv4_network_count, 0);
   NetworkManager::NetworkList list;
   manager.GetNetworks(&list);
   EXPECT_EQ(original_list.size(), list.size());

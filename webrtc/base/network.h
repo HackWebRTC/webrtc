@@ -76,6 +76,15 @@ class NetworkManager {
 
   // Dumps a list of networks available to LS_INFO.
   virtual void DumpNetworks(bool include_ignored) {}
+
+  struct Stats {
+    int ipv4_network_count;
+    int ipv6_network_count;
+    Stats() {
+      ipv4_network_count = 0;
+      ipv6_network_count = 0;
+    }
+  };
 };
 
 // Base class for NetworkManager implementations.
@@ -96,6 +105,11 @@ class NetworkManagerBase : public NetworkManager {
   // objects in the |list|. |changed| will be set to true if there is
   // any change in the network list.
   void MergeNetworkList(const NetworkList& list, bool* changed);
+
+  // |stats| will be populated even if |*changed| is false.
+  void MergeNetworkList(const NetworkList& list,
+                        bool* changed,
+                        NetworkManager::Stats* stats);
 
  private:
   friend class NetworkTest;
