@@ -27,12 +27,16 @@ AudioEncoderIlbc::AudioEncoderIlbc(const Config& config)
     : payload_type_(config.payload_type),
       num_10ms_frames_per_packet_(config.frame_size_ms / 10),
       num_10ms_frames_buffered_(0) {
-  CHECK(config.frame_size_ms == 20 || config.frame_size_ms == 30)
-      << "Frame size must be 20 or 30 ms.";
+  CHECK(config.frame_size_ms == 20 || config.frame_size_ms == 30 ||
+        config.frame_size_ms == 40 || config.frame_size_ms == 60)
+      << "Frame size must be 20, 30, 40, or 60 ms.";
   DCHECK_LE(kSampleRateHz / 100 * num_10ms_frames_per_packet_,
             kMaxSamplesPerPacket);
   CHECK_EQ(0, WebRtcIlbcfix_EncoderCreate(&encoder_));
-  CHECK_EQ(0, WebRtcIlbcfix_EncoderInit(encoder_, config.frame_size_ms));
+  const int encoder_frame_size_ms = config.frame_size_ms > 30
+                                        ? config.frame_size_ms / 2
+                                        : config.frame_size_ms;
+  CHECK_EQ(0, WebRtcIlbcfix_EncoderInit(encoder_, encoder_frame_size_ms));
 }
 
 AudioEncoderIlbc::~AudioEncoderIlbc() {
@@ -57,8 +61,23 @@ bool AudioEncoderIlbc::EncodeInternal(uint32_t rtp_timestamp,
                                       size_t max_encoded_bytes,
                                       uint8_t* encoded,
                                       EncodedInfo* info) {
-  const size_t expected_output_len =
-      num_10ms_frames_per_packet_ == 2 ? 38 : 50;
+  size_t expected_output_len;
+  switch (num_10ms_frames_per_packet_) {
+    case 2:
+      expected_output_len = 38;
+      break;
+    case 3:
+      expected_output_len = 50;
+      break;
+    case 4:
+      expected_output_len = 2 * 38;
+      break;
+    case 6:
+      expected_output_len = 2 * 50;
+      break;
+    default:
+      FATAL();
+  }
   DCHECK_GE(max_encoded_bytes, expected_output_len);
 
   // Save timestamp if starting a new packet.
