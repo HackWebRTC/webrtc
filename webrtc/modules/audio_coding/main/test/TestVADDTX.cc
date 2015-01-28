@@ -121,13 +121,13 @@ void TestVADDTX::Perform() {
 }
 
 void TestVADDTX::runTestCases() {
-  // #1 DTX = OFF, VAD = ON, VADNormal
-  SetVAD(false, true, VADNormal);
+  // #1 DTX = OFF, VAD = OFF, VADNormal
+  SetVAD(false, false, VADNormal);
   Run();
   VerifyTest();
 
-  // #2 DTX = OFF, VAD = ON, VADAggr
-  SetVAD(false, true, VADAggr);
+  // #2 DTX = ON, VAD = ON, VADAggr
+  SetVAD(true, true, VADAggr);
   Run();
   VerifyTest();
 
@@ -141,8 +141,8 @@ void TestVADDTX::runTestCases() {
   Run();
   VerifyTest();
 
-  // #5 DTX = ON, VAD = OFF, VADNormal
-  SetVAD(true, false, VADNormal);
+  // #5 DTX = ON, VAD = ON, VADNormal
+  SetVAD(true, true, VADNormal);
   Run();
   VerifyTest();
 }

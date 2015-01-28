@@ -1352,6 +1352,7 @@ Channel::SetVADStatus(bool enableVAD, ACMVADMode mode, bool disableDTX)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetVADStatus(mode=%d)", mode);
+    assert(!(disableDTX && enableVAD));  // disableDTX mode is deprecated.
     // To disable VAD, DTX must be disabled too
     disableDTX = ((enableVAD == false) ? true : disableDTX);
     if (audio_coding_->SetVAD(!disableDTX, enableVAD, mode) != 0)
