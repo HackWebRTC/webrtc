@@ -129,14 +129,6 @@ static_library("rtc_base_approved") {
   ]
 }
 
-# Temporary target until Chromium's use of webrtc_base is updated to rtc_base.
-# TODO(kjellander): Remove when this is rolled into Chromium's DEPS.
-group("webrtc_base") {
-  deps = [
-    ":rtc_base",
-  ]
-}
-
 static_library("rtc_base") {
   cflags = []
   cflags_cc = []
