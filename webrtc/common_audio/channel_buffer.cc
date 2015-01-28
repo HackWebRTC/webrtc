@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/channel_buffer.h"
+#include "webrtc/common_audio/channel_buffer.h"
 
 namespace webrtc {
 

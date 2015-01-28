@@ -14,7 +14,7 @@
 #include <math.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/audio_processing/channel_buffer.h"
+#include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/splitting_filter.h"
 #include "webrtc/common_audio/include/audio_util.h"
 

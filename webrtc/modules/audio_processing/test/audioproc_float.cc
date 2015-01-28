@@ -13,8 +13,8 @@
 
 #include "gflags/gflags.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/common_audio/wav_file.h"
-#include "webrtc/modules/audio_processing/channel_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"

@@ -29,8 +29,8 @@
         ],
       },
       'sources': [
-        '../modules/audio_processing/channel_buffer.cc',
-        '../modules/audio_processing/channel_buffer.h',
+        'channel_buffer.cc',
+        'channel_buffer.h',
         'audio_converter.cc',
         'audio_converter.h',
         'audio_ring_buffer.cc',

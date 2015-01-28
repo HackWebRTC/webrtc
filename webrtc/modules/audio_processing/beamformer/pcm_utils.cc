@@ -12,7 +12,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/common_audio/include/audio_util.h"
-#include "webrtc/modules/audio_processing/channel_buffer.h"
+#include "webrtc/common_audio/channel_buffer.h"
 
 namespace webrtc {
 

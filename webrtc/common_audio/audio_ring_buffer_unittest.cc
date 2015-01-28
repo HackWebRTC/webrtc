@@ -11,7 +11,7 @@
 #include "webrtc/common_audio/audio_ring_buffer.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/audio_processing/channel_buffer.h"
+#include "webrtc/common_audio/channel_buffer.h"
 
 namespace webrtc {
 

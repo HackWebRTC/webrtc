@@ -17,7 +17,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_processing/channel_buffer.h"
+#include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace {

@@ -12,7 +12,7 @@
 #define WEBRTC_INTERNAL_BEAMFORMER_BLOCKER_H_
 
 #include "webrtc/common_audio/audio_ring_buffer.h"
-#include "webrtc/modules/audio_processing/channel_buffer.h"
+#include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {

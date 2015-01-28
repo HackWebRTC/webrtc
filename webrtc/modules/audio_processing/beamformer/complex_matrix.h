@@ -14,7 +14,7 @@
 #include <complex>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_processing/channel_buffer.h"
+#include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/beamformer/matrix.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
