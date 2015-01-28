@@ -664,6 +664,7 @@ int32_t FuncTestManager::DoTest(const TestType testType)
             TestSpeakerVolume();
             TestMicrophoneVolume();
             TestLoopback();
+            FALLTHROUGH();
         case TTAudioLayerSelection:
             TestAudioLayerSelection();
             break;
@@ -702,6 +703,7 @@ int32_t FuncTestManager::DoTest(const TestType testType)
             break;
         case TTMobileAPI:
             TestAdvancedMBAPI();
+            FALLTHROUGH();
         case TTTest:
             TestExtra();
             break;

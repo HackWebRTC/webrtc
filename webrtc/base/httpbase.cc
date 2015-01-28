@@ -11,9 +11,9 @@
 
 #if defined(WEBRTC_WIN)
 #include "webrtc/base/win32.h"
-#else  // !WEBRTC_WIN 
+#else  // !WEBRTC_WIN
 #define SEC_E_CERT_EXPIRED (-2146893016)
-#endif  // !WEBRTC_WIN 
+#endif  // !WEBRTC_WIN
 
 #include "webrtc/base/common.h"
 #include "webrtc/base/httpbase.h"
@@ -528,8 +528,9 @@ bool HttpBase::DoReceiveLoop(HttpError* error) {
         // Attempt to process the data already in our buffer.
         break;
       case SR_EOS:
-        // Clean close, with no error.  Fall through to HandleStreamClose.
+        // Clean close, with no error.
         read_error = 0;
+        FALLTHROUGH();  // Fall through to HandleStreamClose.
       case SR_ERROR:
         *error = HandleStreamClose(read_error);
         return true;

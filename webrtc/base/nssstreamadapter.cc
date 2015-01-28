@@ -569,7 +569,7 @@ int NSSStreamAdapter::ContinueSSL() {
         return -1;
       } else {
         LOG(LS_INFO) << "Malformed DTLS message. Ignoring.";
-        // Fall through
+        FALLTHROUGH();  // Fall through
       }
     case PR_WOULD_BLOCK_ERROR:
       LOG(LS_INFO) << "Would have blocked";

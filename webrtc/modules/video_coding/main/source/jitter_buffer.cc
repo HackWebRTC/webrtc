@@ -674,6 +674,7 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
           frame_event_->Set();
         }
       }
+      FALLTHROUGH();
     }
     // Note: There is no break here - continuing to kDecodableSession.
     case kDecodableSession: {

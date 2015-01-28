@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
@@ -626,9 +627,10 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
           default: {
             return NULL;
           }
-          return new ACMG722_1(codec_id);
         }
+        return new ACMG722_1(codec_id);
 #endif
+        FALLTHROUGH();
       }
       case 32000: {
 #ifdef WEBRTC_CODEC_G722_1C
@@ -649,10 +651,13 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
           default: {
             return NULL;
           }
-          return new ACMG722_1C(codec_id);
         }
+        return new ACMG722_1C(codec_id);
 #endif
+        FALLTHROUGH();
       }
+      default:
+        FATAL();
     }
   } else if (!STR_CASE_CMP(codec_inst.plname, "CN")) {
     // For CN we need to check sampling frequency to know what codec to create.

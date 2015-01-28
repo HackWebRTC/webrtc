@@ -244,6 +244,7 @@
           }],
           ['clang==1', {
             'cflags': [
+              '-Wimplicit-fallthrough',
               '-Wthread-safety',
             ],
           }],

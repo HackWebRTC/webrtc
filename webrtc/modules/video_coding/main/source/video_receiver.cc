@@ -467,6 +467,7 @@ int32_t VideoReceiver::Decode(const VCMEncodedFrame& frame) {
       case kKeyOnLoss: {
         request_key_frame = true;
         ret = VCM_OK;
+        break;
       }
       default:
         break;

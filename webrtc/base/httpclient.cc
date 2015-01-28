@@ -540,6 +540,7 @@ bool HttpClient::CheckCache() {
         return false;
       }
       // Couldn't validate, fall through.
+      FALLTHROUGH();
     case HCS_NONE:
       // Cache content is not useable.  Issue a regular request.
       response().clear(false);

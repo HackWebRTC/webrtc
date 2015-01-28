@@ -764,6 +764,7 @@ int NetEqImpl::GetAudioInternal(size_t max_length, int16_t* output,
       sync_buffer_->IncreaseEndTimestamp(output_size_samples_);
       // Skipping break on purpose. Execution should move on into the
       // next case.
+      FALLTHROUGH();
     }
     case kAudioRepetition: {
       // TODO(hlundin): Write test for this.

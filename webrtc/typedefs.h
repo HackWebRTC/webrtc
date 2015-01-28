@@ -120,6 +120,16 @@ typedef unsigned __int64    uint64_t;
 #endif
 #endif
 
+// Macro to be used for switch-case fallthrough (required for enabling
+// -Wimplicit-fallthrough warning on Clang).
+#ifndef FALLTHROUGH
+#if defined(__clang__)
+#define FALLTHROUGH() [[clang::fallthrough]]
+#else
+#define FALLTHROUGH() do { } while (0)
+#endif
+#endif
+
 // Annotate a function that will not return control flow to the caller.
 #if defined(_MSC_VER)
 #define NO_RETURN __declspec(noreturn)
