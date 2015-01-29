@@ -52,12 +52,11 @@ void AsyncInvoker::Flush(Thread* thread, uint32 id /*= MQID_ANY*/) {
   }
 }
 
-void AsyncInvoker::DoInvoke(Thread* thread, AsyncClosure* closure,
+void AsyncInvoker::DoInvoke(Thread* thread,
+                            const scoped_refptr<AsyncClosure>& closure,
                             uint32 id) {
   if (destroying_) {
     LOG(LS_WARNING) << "Tried to invoke while destroying the invoker.";
-    // Since this call transwers ownership of |closure|, we clean it up here.
-    delete closure;
     return;
   }
   thread->Post(this, id, new ScopedRefMessageData<AsyncClosure>(closure));
