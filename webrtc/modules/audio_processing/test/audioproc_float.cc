@@ -9,6 +9,7 @@
  */
 
 #include <stdio.h>
+#include <sstream>
 #include <string>
 
 #include "gflags/gflags.h"
@@ -25,7 +26,12 @@ DEFINE_string(o, "out.wav", "Name of the capture output file to write to.");
 DEFINE_int32(o_channels, 0, "Number of output channels. Defaults to input.");
 DEFINE_int32(o_sample_rate, 0, "Output sample rate in Hz. Defaults to input.");
 DEFINE_double(mic_spacing, 0.0,
-    "Microphone spacing in meters.  Used when beamforming is enabled");
+    "Alternate way to specify mic_positions. "
+    "Assumes uniform linear array with specified spacings.");
+DEFINE_string(mic_positions, "",
+    "Space delimited cartesian coordinates of microphones in meters. "
+    "The coordinates of each point are contiguous. "
+    "For a two element array: \"x1 y1 z1 x2 y2 z2\"");
 
 DEFINE_bool(aec, false, "Enable echo cancellation.");
 DEFINE_bool(agc, false, "Enable automatic gain control.");
@@ -47,6 +53,63 @@ static const char kUsage[] =
     "are enabled, only debug dump files are permitted.";
 
 namespace webrtc {
+
+namespace {
+
+// Returns a vector<T> parsed from whitespace delimited values in to_parse,
+// or an empty vector if the string could not be parsed.
+template<typename T>
+std::vector<T> parse_list(std::string to_parse) {
+  std::vector<T> values;
+
+  std::istringstream str(to_parse);
+  std::copy(
+      std::istream_iterator<T>(str),
+      std::istream_iterator<T>(),
+      std::back_inserter(values));
+
+  return values;
+}
+
+// Parses the array geometry from the command line.
+//
+// If a vector with size != num_mics is returned, an error has occurred and an
+// appropriate error message has been printed to stdout.
+std::vector<Point> get_array_geometry(size_t num_mics) {
+  std::vector<Point> result;
+  result.reserve(num_mics);
+
+  if (FLAGS_mic_positions.length()) {
+    CHECK(FLAGS_mic_spacing == 0.0 &&
+        "mic_positions and mic_spacing should not both be specified");
+
+    const std::vector<float> values = parse_list<float>(FLAGS_mic_positions);
+    if (values.size() != 3 * num_mics) {
+      fprintf(stderr,
+          "Could not parse mic_positions or incorrect number of points.\n");
+    } else {
+      for (size_t i = 0; i < values.size(); i += 3) {
+        double x = values[i + 0];
+        double y = values[i + 1];
+        double z = values[i + 2];
+        result.push_back(Point(x, y, z));
+      }
+    }
+  } else {
+    if (FLAGS_mic_spacing <= 0) {
+      fprintf(stderr,
+          "mic_spacing must a positive value when beamforming is enabled.\n");
+    } else {
+      for (size_t i = 0; i < num_mics; ++i) {
+        result.push_back(Point(0.0, i * FLAGS_mic_spacing, 0.0));
+      }
+    }
+  }
+
+  return result;
+}
+
+}  // namespace
 
 int main(int argc, char* argv[]) {
   {
@@ -80,18 +143,10 @@ int main(int argc, char* argv[]) {
   config.Set<ExperimentalNs>(new ExperimentalNs(FLAGS_ts || FLAGS_all));
 
   if (FLAGS_bf || FLAGS_all) {
-    if (FLAGS_mic_spacing <= 0) {
-      fprintf(stderr,
-          "mic_spacing must a positive value when beamforming is enabled.\n");
-      return 1;
-    }
-
     const size_t num_mics = c_file.num_channels();
-    std::vector<Point> array_geometry;
-    array_geometry.reserve(num_mics);
-
-    for (size_t i = 0; i < num_mics; ++i) {
-      array_geometry.push_back(Point(0.0, i * FLAGS_mic_spacing, 0.0));
+    const std::vector<Point> array_geometry = get_array_geometry(num_mics);
+    if (array_geometry.size() != num_mics) {
+      return 1;
     }
 
     config.Set<Beamforming>(new Beamforming(true, array_geometry));
