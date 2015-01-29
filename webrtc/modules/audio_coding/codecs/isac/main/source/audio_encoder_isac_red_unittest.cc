@@ -22,6 +22,7 @@ namespace webrtc {
 TEST(AudioEncoderIsacRedTest, CompareRedAndNoRed) {
   static const int kSampleRateHz = 16000;
   static const int k10MsSamples = kSampleRateHz / 100;
+  static const int kRedPayloadType = 100;
   // Fill the input array with pseudo-random noise in the range [-1000, 1000].
   int16_t input[k10MsSamples];
   srand(1418811752);
@@ -37,6 +38,9 @@ TEST(AudioEncoderIsacRedTest, CompareRedAndNoRed) {
   AudioEncoderDecoderIsac isac_encoder(config);
   AudioEncoderDecoderIsacRed::Config red_config;
   red_config.sample_rate_hz = kSampleRateHz;
+  red_config.red_payload_type = kRedPayloadType;
+  ASSERT_NE(red_config.red_payload_type, red_config.payload_type)
+      << "iSAC and RED payload types must be different.";
   AudioEncoderDecoderIsacRed isac_red_encoder(red_config);
   AudioEncoder::EncodedInfo info, red_info;
 
