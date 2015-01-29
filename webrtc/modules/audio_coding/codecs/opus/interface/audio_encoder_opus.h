@@ -18,7 +18,10 @@
 
 namespace webrtc {
 
-class AudioEncoderOpus : public AudioEncoder {
+// NOTE: This class has neither ThreadChecker, nor locks. The owner of an
+// AudioEncoderOpus object must ensure that it is not accessed concurrently.
+
+class AudioEncoderOpus final : public AudioEncoder {
  public:
   enum ApplicationMode {
     kVoip = 0,
@@ -33,6 +36,8 @@ class AudioEncoderOpus : public AudioEncoder {
     int payload_type;
     ApplicationMode application;
     int bitrate_bps;
+    bool fec_enabled;
+    int max_playback_rate_hz;
   };
 
   explicit AudioEncoderOpus(const Config& config);

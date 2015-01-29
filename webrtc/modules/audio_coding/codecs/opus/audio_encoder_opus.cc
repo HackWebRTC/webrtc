@@ -23,7 +23,6 @@ const int kMaxBitrateBps = 512000;
 // We always encode at 48 kHz.
 const int kSampleRateHz = 48000;
 
-
 int16_t ClampInt16(size_t x) {
   return static_cast<int16_t>(
       std::min(x, static_cast<size_t>(std::numeric_limits<int16_t>::max())));
@@ -41,13 +40,15 @@ AudioEncoderOpus::Config::Config()
       num_channels(1),
       payload_type(120),
       application(kVoip),
-      bitrate_bps(64000) {
+      bitrate_bps(64000),
+      fec_enabled(false),
+      max_playback_rate_hz(48000) {
 }
 
 bool AudioEncoderOpus::Config::IsOk() const {
   if (frame_size_ms <= 0 || frame_size_ms % 10 != 0)
     return false;
-  if (num_channels <= 0)
+  if (num_channels != 1 && num_channels != 2)
     return false;
   if (bitrate_bps < kMinBitrateBps || bitrate_bps > kMaxBitrateBps)
     return false;
@@ -67,6 +68,13 @@ AudioEncoderOpus::AudioEncoderOpus(const Config& config)
   input_buffer_.reserve(num_10ms_frames_per_packet_ * samples_per_10ms_frame_);
   CHECK_EQ(0, WebRtcOpus_EncoderCreate(&inst_, num_channels_, application_));
   SetTargetBitrate(config.bitrate_bps);
+  if (config.fec_enabled) {
+    CHECK_EQ(0, WebRtcOpus_EnableFec(inst_));
+  } else {
+    CHECK_EQ(0, WebRtcOpus_DisableFec(inst_));
+  }
+  CHECK_EQ(0,
+           WebRtcOpus_SetMaxPlaybackRate(inst_, config.max_playback_rate_hz));
 }
 
 AudioEncoderOpus::~AudioEncoderOpus() {
