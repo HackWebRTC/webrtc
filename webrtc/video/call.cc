@@ -27,6 +27,7 @@
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video/video_receive_stream.h"
 #include "webrtc/video/video_send_stream.h"
 #include "webrtc/video_engine/include/vie_base.h"
@@ -221,6 +222,7 @@ PacketReceiver* Call::Receiver() { return this; }
 VideoSendStream* Call::CreateVideoSendStream(
     const VideoSendStream::Config& config,
     const VideoEncoderConfig& encoder_config) {
+  TRACE_EVENT0("webrtc", "Call::CreateVideoSendStream");
   LOG(LS_INFO) << "CreateVideoSendStream: " << config.ToString();
   assert(config.rtp.ssrcs.size() > 0);
 
@@ -245,6 +247,7 @@ VideoSendStream* Call::CreateVideoSendStream(
 }
 
 void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
+  TRACE_EVENT0("webrtc", "Call::DestroyVideoSendStream");
   assert(send_stream != NULL);
 
   send_stream->Stop();
@@ -277,6 +280,7 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
 
 VideoReceiveStream* Call::CreateVideoReceiveStream(
     const VideoReceiveStream::Config& config) {
+  TRACE_EVENT0("webrtc", "Call::CreateVideoReceiveStream");
   LOG(LS_INFO) << "CreateVideoReceiveStream: " << config.ToString();
   VideoReceiveStream* receive_stream =
       new VideoReceiveStream(video_engine_,
@@ -304,6 +308,7 @@ VideoReceiveStream* Call::CreateVideoReceiveStream(
 
 void Call::DestroyVideoReceiveStream(
     webrtc::VideoReceiveStream* receive_stream) {
+  TRACE_EVENT0("webrtc", "Call::DestroyVideoReceiveStream");
   assert(receive_stream != NULL);
 
   VideoReceiveStream* receive_stream_impl = NULL;
@@ -356,6 +361,7 @@ Call::Stats Call::GetStats() const {
 
 void Call::SetBitrateConfig(
     const webrtc::Call::Config::BitrateConfig& bitrate_config) {
+  TRACE_EVENT0("webrtc", "Call::SetBitrateConfig");
   assert(bitrate_config.min_bitrate_bps >= 0);
   assert(bitrate_config.max_bitrate_bps == -1 ||
          bitrate_config.max_bitrate_bps > 0);

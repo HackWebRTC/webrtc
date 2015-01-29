@@ -45,6 +45,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/call.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video_decoder.h"
 #include "webrtc/video_encoder.h"
 
@@ -673,6 +674,7 @@ WebRtcVideoChannel2::FilterSupportedCodecs(
 }
 
 bool WebRtcVideoChannel2::SetRecvCodecs(const std::vector<VideoCodec>& codecs) {
+  TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetRecvCodecs");
   LOG(LS_INFO) << "SetRecvCodecs: " << CodecVectorToString(codecs);
   if (!ValidateCodecFormats(codecs)) {
     return false;
@@ -706,6 +708,7 @@ bool WebRtcVideoChannel2::SetRecvCodecs(const std::vector<VideoCodec>& codecs) {
 }
 
 bool WebRtcVideoChannel2::SetSendCodecs(const std::vector<VideoCodec>& codecs) {
+  TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetSendCodecs");
   LOG(LS_INFO) << "SetSendCodecs: " << CodecVectorToString(codecs);
   if (!ValidateCodecFormats(codecs)) {
     return false;
@@ -1166,6 +1169,7 @@ bool WebRtcVideoChannel2::MuteStream(uint32 ssrc, bool mute) {
 
 bool WebRtcVideoChannel2::SetRecvRtpHeaderExtensions(
     const std::vector<RtpHeaderExtension>& extensions) {
+  TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetRecvRtpHeaderExtensions");
   LOG(LS_INFO) << "SetRecvRtpHeaderExtensions: "
                << RtpExtensionsToString(extensions);
   if (!ValidateRtpHeaderExtensionIds(extensions))
@@ -1190,6 +1194,7 @@ bool WebRtcVideoChannel2::SetRecvRtpHeaderExtensions(
 
 bool WebRtcVideoChannel2::SetSendRtpHeaderExtensions(
     const std::vector<RtpHeaderExtension>& extensions) {
+  TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetSendRtpHeaderExtensions");
   LOG(LS_INFO) << "SetSendRtpHeaderExtensions: "
                << RtpExtensionsToString(extensions);
   if (!ValidateRtpHeaderExtensionIds(extensions))
@@ -1229,6 +1234,7 @@ bool WebRtcVideoChannel2::SetMaxSendBandwidth(int max_bitrate_bps) {
 }
 
 bool WebRtcVideoChannel2::SetOptions(const VideoOptions& options) {
+  TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetOptions");
   LOG(LS_INFO) << "SetOptions: " << options.ToString();
   VideoOptions old_options = options_;
   options_.SetAll(options);
