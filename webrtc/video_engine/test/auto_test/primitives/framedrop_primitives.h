@@ -230,7 +230,11 @@ class FrameDropMonitoringRemoteFileRenderer : public ViEToFileRenderer {
                    int64_t ntp_time_ms,
                    int64_t render_time,
                    void* handle) OVERRIDE;
+  int DeliverI420Frame(const webrtc::I420VideoFrame* webrtc_frame) OVERRIDE;
+
  private:
+  void ReportFrameStats(uint32_t time_stamp, int64_t render_time);
+
   FrameDropDetector* frame_drop_detector_;
 };
 

@@ -58,6 +58,9 @@ class WebRtcVideoFrame : public VideoFrame {
 
   bool Init(const CapturedFrame* frame, int dw, int dh);
 
+  void InitToEmptyBuffer(int w, int h, size_t pixel_width, size_t pixel_height,
+                         int64_t elapsed_time, int64_t time_stamp);
+
   // Aliases this WebRtcVideoFrame to a CapturedFrame. |frame| must outlive
   // this WebRtcVideoFrame.
   bool Alias(const CapturedFrame* frame, int dw, int dh);
@@ -122,8 +125,6 @@ class WebRtcVideoFrame : public VideoFrame {
                                        size_t pixel_height,
                                        int64_t elapsed_time,
                                        int64_t time_stamp) const;
-  void InitToEmptyBuffer(int w, int h, size_t pixel_width, size_t pixel_height,
-                         int64_t elapsed_time, int64_t time_stamp);
 
   rtc::scoped_refptr<RefCountedBuffer> video_buffer_;
   size_t pixel_width_;

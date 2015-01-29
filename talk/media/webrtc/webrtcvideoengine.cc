@@ -383,19 +383,8 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
                            int64_t render_time,
                            void* handle) {
     rtc::CritScope cs(&crit_);
-    if (capture_start_rtp_time_stamp_ < 0) {
-      capture_start_rtp_time_stamp_ = rtp_time_stamp;
-    }
-
-    const int kVideoCodecClockratekHz = cricket::kVideoCodecClockrate / 1000;
-
-    int64 elapsed_time_ms =
-        (rtp_ts_wraparound_handler_.Unwrap(rtp_time_stamp) -
-         capture_start_rtp_time_stamp_) / kVideoCodecClockratekHz;
-    if (ntp_time_ms > 0) {
-      capture_start_ntp_time_ms_ = ntp_time_ms - elapsed_time_ms;
-    }
-    frame_rate_tracker_.Update(1);
+    const int64_t elapsed_time_ms = ElapsedTimeMs(rtp_time_stamp);
+    UpdateFrameStats(elapsed_time_ms, ntp_time_ms);
     if (!renderer_) {
       return 0;
     }
@@ -414,6 +403,25 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     } else {
       return DeliverTextureFrame(handle, render_time_ns,
                                  elapsed_time_ns);
+    }
+  }
+
+  virtual int DeliverI420Frame(const webrtc::I420VideoFrame* webrtc_frame) {
+    rtc::CritScope cs(&crit_);
+    DCHECK(webrtc_frame);
+    const int64_t elapsed_time_ms = ElapsedTimeMs(webrtc_frame->timestamp());
+    UpdateFrameStats(elapsed_time_ms, webrtc_frame->ntp_time_ms());
+    if (!renderer_) {
+      return 0;
+    }
+    if (!webrtc_frame->native_handle()) {
+      WebRtcVideoRenderFrame cricket_frame(webrtc_frame, elapsed_time_ms);
+      return renderer_->RenderFrame(&cricket_frame) ? 0 : -1;
+    } else {
+      return DeliverTextureFrame(
+          webrtc_frame->native_handle(),
+          webrtc_frame->render_time_ms() * rtc::kNumNanosecsPerMillisec,
+          elapsed_time_ms * rtc::kNumNanosecsPerMillisec);
     }
   }
 
@@ -469,6 +477,22 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
   }
 
  private:
+  int64_t ElapsedTimeMs(uint32_t rtp_time_stamp) {
+    if (capture_start_rtp_time_stamp_ < 0) {
+      capture_start_rtp_time_stamp_ = rtp_time_stamp;
+    }
+    const int kVideoCodecClockratekHz = cricket::kVideoCodecClockrate / 1000;
+    return (rtp_ts_wraparound_handler_.Unwrap(rtp_time_stamp) -
+            capture_start_rtp_time_stamp_) / kVideoCodecClockratekHz;
+  }
+
+  void UpdateFrameStats(int64_t elapsed_time_ms, int64_t ntp_time_ms) {
+    if (ntp_time_ms > 0) {
+      capture_start_ntp_time_ms_ = ntp_time_ms - elapsed_time_ms;
+    }
+    frame_rate_tracker_.Update(1);
+  }
+
   rtc::CriticalSection crit_;
   VideoRenderer* renderer_;
   int channel_id_;

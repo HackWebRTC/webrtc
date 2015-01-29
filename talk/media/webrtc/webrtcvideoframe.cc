@@ -460,9 +460,19 @@ int WebRtcVideoRenderFrame::GetRotation() const {
   return ROTATION_0;
 }
 
+// TODO(magjed): Make this copy shallow instead of deep, BUG=1128. There is no
+// way to guarantee that the underlying webrtc::I420VideoFrame |frame_| will
+// outlive the returned object. The only safe option is to make a deep copy.
+// This can be fixed by making webrtc::I420VideoFrame reference counted, or
+// adding a similar shallow copy function to it.
 VideoFrame* WebRtcVideoRenderFrame::Copy() const {
-  UNIMPLEMENTED;
-  return NULL;
+  WebRtcVideoFrame* new_frame = new WebRtcVideoFrame();
+  new_frame->InitToEmptyBuffer(frame_->width(), frame_->height(), 1, 1,
+                               GetElapsedTime(), GetTimeStamp());
+  CopyToPlanes(new_frame->GetYPlane(), new_frame->GetUPlane(),
+               new_frame->GetVPlane(), new_frame->GetYPitch(),
+               new_frame->GetUPitch(), new_frame->GetVPitch());
+  return new_frame;
 }
 
 bool WebRtcVideoRenderFrame::MakeExclusive() {
