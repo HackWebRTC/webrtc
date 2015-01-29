@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_TEST_FAKE_AGC_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_TEST_FAKE_AGC_H_
+#ifndef WEBRTC_TOOLS_AGC_FAKE_AGC_H_
+#define WEBRTC_TOOLS_AGC_FAKE_AGC_H_
 
 #include "webrtc/modules/audio_processing/agc/agc.h"
 
@@ -43,4 +43,4 @@ class FakeAgc : public Agc {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AGC_TEST_FAKE_AGC_H_
+#endif  // WEBRTC_TOOLS_AGC_FAKE_AGC_H_

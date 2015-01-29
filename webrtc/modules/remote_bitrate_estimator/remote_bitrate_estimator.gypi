@@ -40,63 +40,67 @@
         'test/bwe_test_logging.h',
       ], # source
     },
-    {
-      'target_name': 'bwe_tools_util',
-      'type': 'static_library',
-      'dependencies': [
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-        'rtp_rtcp',
-      ],
-      'sources': [
-        'tools/bwe_rtp.cc',
-        'tools/bwe_rtp.h',
-      ],
-    },
-    {
-      'target_name': 'bwe_rtp_to_text',
-      'type': 'executable',
-      'includes': [
-        '../rtp_rtcp/source/rtp_rtcp.gypi',
-      ],
-      'dependencies': [
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
-        'bwe_tools_util',
-        'rtp_rtcp',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          'include',
-        ],
-      },
-      'sources': [
-        'tools/rtp_to_text.cc',
-        '<(webrtc_root)/test/rtp_file_reader.cc',
-        '<(webrtc_root)/test/rtp_file_reader.h',
-      ], # source
-    },
-    {
-      'target_name': 'bwe_rtp_play',
-      'type': 'executable',
-      'includes': [
-        '../rtp_rtcp/source/rtp_rtcp.gypi',
-      ],
-      'dependencies': [
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
-        'bwe_tools_util',
-        'rtp_rtcp',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          'include',
-        ],
-      },
-      'sources': [
-        'tools/bwe_rtp_play.cc',
-        '<(webrtc_root)/test/rtp_file_reader.cc',
-        '<(webrtc_root)/test/rtp_file_reader.h',
-      ], # source
-    },
   ], # targets
+  'conditions': [
+    ['include_tests==1', {
+      'targets': [
+        {
+          'target_name': 'bwe_tools_util',
+          'type': 'static_library',
+          'dependencies': [
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+            'rtp_rtcp',
+          ],
+          'sources': [
+            'tools/bwe_rtp.cc',
+            'tools/bwe_rtp.h',
+          ],
+        },
+        {
+          'target_name': 'bwe_rtp_to_text',
+          'type': 'executable',
+          'includes': [
+            '../rtp_rtcp/source/rtp_rtcp.gypi',
+          ],
+          'dependencies': [
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
+            '<(webrtc_root)/test/test.gyp:rtp_test_utils',
+            'bwe_tools_util',
+            'rtp_rtcp',
+          ],
+          'direct_dependent_settings': {
+            'include_dirs': [
+              'include',
+            ],
+          },
+          'sources': [
+            'tools/rtp_to_text.cc',
+          ], # source
+        },
+        {
+          'target_name': 'bwe_rtp_play',
+          'type': 'executable',
+          'includes': [
+            '../rtp_rtcp/source/rtp_rtcp.gypi',
+          ],
+          'dependencies': [
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
+            '<(webrtc_root)/test/test.gyp:rtp_test_utils',
+            'bwe_tools_util',
+            'rtp_rtcp',
+          ],
+          'direct_dependent_settings': {
+            'include_dirs': [
+              'include',
+            ],
+          },
+          'sources': [
+            'tools/bwe_rtp_play.cc',
+          ], # source
+        },
+      ],
+    }],  # include_tests==1
+  ],
 }

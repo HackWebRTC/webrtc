@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/agc/test/agc_manager.h"
+#include "webrtc/tools/agc/agc_manager.h"
 
 #include <assert.h>
 

@@ -110,8 +110,16 @@
             '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
           ],
           'sources': [
-            '<(webrtc_root)/modules/audio_processing/agc/test/agc_manager.cc',
-            '<(webrtc_root)/modules/audio_processing/agc/test/agc_manager.h',
+            'agc/agc_manager.cc',
+            'agc/agc_manager.h',
+          ],
+        },
+        {
+          'target_name': 'agc_test_utils',
+          'type': 'static_library',
+          'sources': [
+            'agc/test_utils.cc',
+            'agc/test_utils.h',
           ],
         },
         {
@@ -126,7 +134,7 @@
             'agc_manager',
           ],
           'sources': [
-            '<(webrtc_root)/modules/audio_processing/agc/test/agc_harness.cc',
+            'agc/agc_harness.cc',
           ],
         },  # agc_harness
         {
@@ -139,10 +147,10 @@
             '<(webrtc_root)/test/test.gyp:test_support',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
             'agc_manager',
+            'agc_test_utils',
           ],
           'sources': [
-            '<(webrtc_root)/modules/audio_processing/agc/test/agc_test.cc',
-            '<(webrtc_root)/modules/audio_processing/agc/test/test_utils.cc',
+            'agc/agc_test.cc',
           ],
         },  # agc_proc
         {
@@ -154,7 +162,7 @@
             'agc_manager',
           ],
           'sources': [
-            '<(webrtc_root)/modules/audio_processing/agc/test/activity_metric.cc',
+            'agc/activity_metric.cc',
           ],
         },  # activity_metric
         {
