@@ -61,6 +61,7 @@
       'dependencies': [
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
+        '<(webrtc_root)/test/test.gyp:rtp_test_utils',
         'bwe_tools_util',
         'rtp_rtcp',
       ],
@@ -71,8 +72,6 @@
       },
       'sources': [
         'tools/rtp_to_text.cc',
-        '<(webrtc_root)/test/rtp_file_reader.cc',
-        '<(webrtc_root)/test/rtp_file_reader.h',
       ], # source
     },
     {
@@ -84,6 +83,7 @@
       'dependencies': [
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
+        '<(webrtc_root)/test/test.gyp:rtp_test_utils',
         'bwe_tools_util',
         'rtp_rtcp',
       ],
@@ -94,8 +94,6 @@
       },
       'sources': [
         'tools/bwe_rtp_play.cc',
-        '<(webrtc_root)/test/rtp_file_reader.cc',
-        '<(webrtc_root)/test/rtp_file_reader.h',
       ], # source
     },
   ], # targets
