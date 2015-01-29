@@ -82,12 +82,6 @@ int32_t VideoCaptureImpl::RotationInDegrees(VideoCaptureRotation rotation,
   return -1;
 }
 
-int32_t VideoCaptureImpl::ChangeUniqueId(const int32_t id)
-{
-    _id = id;
-    return 0;
-}
-
 // returns the number of milliseconds until the module want a worker thread to call Process
 int64_t VideoCaptureImpl::TimeUntilNextProcess()
 {

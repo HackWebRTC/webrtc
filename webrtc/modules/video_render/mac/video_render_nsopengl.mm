@@ -1176,14 +1176,6 @@ int VideoRenderNSOpenGL::GetWindowRect(Rect& rect)
     }
 }
 
-int32_t VideoRenderNSOpenGL::ChangeUniqueID(int32_t id)
-{
-
-    CriticalSectionScoped cs(&_nsglContextCritSec);
-    _id = id;
-    return 0;
-}
-
 int32_t VideoRenderNSOpenGL::SetText(const uint8_t /*textId*/,
                                      const uint8_t* /*text*/,
                                      const int32_t /*textLength*/,

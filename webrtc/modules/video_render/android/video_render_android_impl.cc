@@ -70,13 +70,6 @@ VideoRenderAndroid::~VideoRenderAndroid() {
   delete &_critSect;
 }
 
-int32_t VideoRenderAndroid::ChangeUniqueId(const int32_t id) {
-  CriticalSectionScoped cs(&_critSect);
-  _id = id;
-
-  return 0;
-}
-
 int32_t VideoRenderAndroid::ChangeWindow(void* /*window*/) {
   return -1;
 }

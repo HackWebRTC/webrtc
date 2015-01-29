@@ -49,8 +49,6 @@ class VideoRenderAndroid: IVideoRender {
 
   virtual int32_t Init()=0;
 
-  virtual int32_t ChangeUniqueId(const int32_t id);
-
   virtual int32_t ChangeWindow(void* window);
 
   virtual VideoRenderCallback* AddIncomingRenderStream(

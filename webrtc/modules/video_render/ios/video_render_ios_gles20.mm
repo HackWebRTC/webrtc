@@ -33,8 +33,7 @@ VideoRenderIosGles20::VideoRenderIosGles20(VideoRenderIosView* view,
       agl_channels_(),
       z_order_to_channel_(),
       gles_context_([view context]),
-      is_rendering_(true),
-      id_(render_id) {
+      is_rendering_(true) {
   screen_update_thread_ = ThreadWrapper::CreateThread(
       ScreenUpdateThreadProc, this, kRealtimePriority);
   screen_update_event_ = EventWrapper::Create();
@@ -251,14 +250,6 @@ int VideoRenderIosGles20::ChangeWindow(void* new_window) {
   CriticalSectionScoped cs(gles_crit_sec_.get());
 
   view_ = (__bridge VideoRenderIosView*)new_window;
-
-  return 0;
-}
-
-int VideoRenderIosGles20::ChangeUniqueID(int unique_id) {
-  CriticalSectionScoped cs(gles_crit_sec_.get());
-
-  id_ = unique_id;
 
   return 0;
 }

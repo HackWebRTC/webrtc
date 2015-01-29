@@ -108,12 +108,6 @@ bool UdpSocket2ManagerWindows::Init(int32_t id,
   return true;
 }
 
-int32_t UdpSocket2ManagerWindows::ChangeUniqueId(const int32_t id)
-{
-    _id = id;
-    return 0;
-}
-
 bool UdpSocket2ManagerWindows::Start()
 {
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,

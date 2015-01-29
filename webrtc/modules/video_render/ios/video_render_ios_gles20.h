@@ -51,7 +51,6 @@ class VideoRenderIosGles20 {
                         const float bottom);
 
   int ChangeWindow(void* new_window);
-  int ChangeUniqueID(int unique_id);
   int StartRender();
   int StopRender();
 
@@ -81,7 +80,6 @@ class VideoRenderIosGles20 {
   std::multimap<int, int> z_order_to_channel_;
   EAGLContext* gles_context_;
   bool is_rendering_;
-  int id_;
 };
 }  // namespace webrtc
 

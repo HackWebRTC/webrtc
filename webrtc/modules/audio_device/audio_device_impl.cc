@@ -464,16 +464,6 @@ AudioDeviceModuleImpl::~AudioDeviceModuleImpl()
 // ============================================================================
 
 // ----------------------------------------------------------------------------
-//  Module::ChangeUniqueId
-// ----------------------------------------------------------------------------
-
-int32_t AudioDeviceModuleImpl::ChangeUniqueId(const int32_t id)
-{
-    _id = id;
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
 //  Module::TimeUntilNextProcess
 //
 //  Returns the number of milliseconds until the module want a worker thread

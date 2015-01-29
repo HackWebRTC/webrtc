@@ -78,7 +78,6 @@ class FakeAudioCaptureModule
   // PeerConnection an assertion is triggered if it is in fact called.
   virtual int64_t TimeUntilNextProcess() OVERRIDE;
   virtual int32_t Process() OVERRIDE;
-  virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE;
 
   virtual int32_t ActiveAudioLayer(AudioLayer* audio_layer) const OVERRIDE;
 

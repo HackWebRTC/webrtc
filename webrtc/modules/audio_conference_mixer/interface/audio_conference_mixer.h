@@ -40,7 +40,6 @@ public:
     virtual ~AudioConferenceMixer() {}
 
     // Module functions
-    virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE = 0;
     virtual int64_t TimeUntilNextProcess() OVERRIDE = 0;
     virtual int32_t Process() OVERRIDE = 0;
 

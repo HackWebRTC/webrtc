@@ -27,10 +27,6 @@ class VideoProcessingModuleImpl : public VideoProcessingModule {
 
   virtual ~VideoProcessingModuleImpl();
 
-  int32_t Id() const;
-
-  virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE;
-
   virtual void Reset() OVERRIDE;
 
   virtual int32_t Deflickering(I420VideoFrame* frame,
@@ -70,11 +66,10 @@ class VideoProcessingModuleImpl : public VideoProcessingModule {
   virtual VideoContentMetrics* ContentMetrics() const OVERRIDE;
 
  private:
-  int32_t  id_;
   CriticalSectionWrapper& mutex_;
   VPMDeflickering deflickering_;
   VPMBrightnessDetection brightness_detection_;
-  VPMFramePreprocessor  frame_pre_processor_;
+  VPMFramePreprocessor frame_pre_processor_;
 };
 
 }  // namespace

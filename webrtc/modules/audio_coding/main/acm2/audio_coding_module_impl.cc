@@ -222,22 +222,6 @@ AudioCodingModuleImpl::~AudioCodingModuleImpl() {
                "Destroyed");
 }
 
-int32_t AudioCodingModuleImpl::ChangeUniqueId(const int32_t id) {
-  {
-    CriticalSectionScoped lock(acm_crit_sect_);
-    id_ = id;
-
-    for (int i = 0; i < ACMCodecDB::kMaxNumCodecs; i++) {
-      if (codecs_[i] != NULL) {
-        codecs_[i]->SetUniqueID(id);
-      }
-    }
-  }
-
-  receiver_.set_id(id_);
-  return 0;
-}
-
 // Returns the number of milliseconds until the module want a
 // worker thread to call Process.
 int64_t AudioCodingModuleImpl::TimeUntilNextProcess() {

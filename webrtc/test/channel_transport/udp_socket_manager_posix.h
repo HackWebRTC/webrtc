@@ -40,8 +40,6 @@ public:
 
     virtual bool Init(int32_t id, uint8_t& numOfWorkThreads) OVERRIDE;
 
-    virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE;
-
     virtual bool Start() OVERRIDE;
     virtual bool Stop() OVERRIDE;
 

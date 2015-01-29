@@ -18,6 +18,7 @@
 #include "webrtc/modules/audio_device/android/audio_record_jni.h"
 
 #include <android/log.h>
+#include <assert.h>
 #include <stdlib.h>
 
 #include "webrtc/modules/audio_device/android/audio_common.h"

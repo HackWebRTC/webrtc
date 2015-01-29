@@ -17,8 +17,8 @@ VideoRenderExternalImpl::VideoRenderExternalImpl(
                                                  const VideoRenderType videoRenderType,
                                                  void* window,
                                                  const bool fullscreen) :
-    _id(id), _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
-            _fullscreen(fullscreen)
+    _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
+    _fullscreen(fullscreen)
 {
 }
 
@@ -29,13 +29,6 @@ VideoRenderExternalImpl::~VideoRenderExternalImpl()
 
 int32_t VideoRenderExternalImpl::Init()
 {
-    return 0;
-}
-
-int32_t VideoRenderExternalImpl::ChangeUniqueId(const int32_t id)
-{
-    CriticalSectionScoped cs(&_critSect);
-    _id = id;
     return 0;
 }
 

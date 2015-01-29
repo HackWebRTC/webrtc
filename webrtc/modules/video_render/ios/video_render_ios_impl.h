@@ -31,7 +31,6 @@ class VideoRenderIosImpl : IVideoRender {
 
   // Implementation of IVideoRender.
   int32_t Init() OVERRIDE;
-  int32_t ChangeUniqueId(const int32_t id) OVERRIDE;
   int32_t ChangeWindow(void* window) OVERRIDE;
 
   VideoRenderCallback* AddIncomingRenderStream(const uint32_t stream_id,

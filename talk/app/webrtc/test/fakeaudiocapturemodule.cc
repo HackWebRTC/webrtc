@@ -112,11 +112,6 @@ int32_t FakeAudioCaptureModule::Process() {
   return 0;
 }
 
-int32_t FakeAudioCaptureModule::ChangeUniqueId(const int32_t /*id*/) {
-  ASSERT(false);
-  return 0;
-}
-
 int32_t FakeAudioCaptureModule::ActiveAudioLayer(
     AudioLayer* /*audio_layer*/) const {
   ASSERT(false);

@@ -191,11 +191,6 @@ AudioConferenceMixerImpl::~AudioConferenceMixerImpl() {
     assert(_audioFramePool == NULL);
 }
 
-int32_t AudioConferenceMixerImpl::ChangeUniqueId(const int32_t id) {
-    _id = id;
-    return 0;
-}
-
 // Process should be called every kProcessPeriodicityInMs ms
 int64_t AudioConferenceMixerImpl::TimeUntilNextProcess() {
     int64_t timeUntilNextProcess = 0;

@@ -120,7 +120,6 @@ public:
     virtual ~UdpSocket2ManagerWindows();
 
     virtual bool Init(int32_t id, uint8_t& numOfWorkThreads);
-    virtual int32_t ChangeUniqueId(const int32_t id);
 
     virtual bool Start();
     virtual bool Stop();

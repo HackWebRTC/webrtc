@@ -58,9 +58,6 @@ public:
     static int32_t RotationInDegrees(VideoCaptureRotation rotation,
                                      int* degrees);
 
-    // Implements Module declared functions.
-    virtual int32_t ChangeUniqueId(const int32_t id);
-
     //Call backs
     virtual void RegisterCaptureDataCallback(
         VideoCaptureDataCallback& dataCallback);

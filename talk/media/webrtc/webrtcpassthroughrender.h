@@ -41,10 +41,6 @@ class WebRtcPassthroughRender : public webrtc::VideoRender {
   WebRtcPassthroughRender();
   virtual ~WebRtcPassthroughRender();
 
-  virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE {
-    return 0;
-  }
-
   virtual int64_t TimeUntilNextProcess() OVERRIDE { return 0; }
 
   virtual int32_t Process() OVERRIDE { return 0; }

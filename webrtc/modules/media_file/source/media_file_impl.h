@@ -26,7 +26,6 @@ public:
     MediaFileImpl(const int32_t id);
     ~MediaFileImpl();
 
-    virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE;
     virtual int32_t Process() OVERRIDE;
     virtual int64_t TimeUntilNextProcess() OVERRIDE;
 

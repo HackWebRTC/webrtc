@@ -52,10 +52,6 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
   virtual int32_t Process() OVERRIDE {
     return 0;
   }
-  virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE {
-    id_ = id;
-    return 0;
-  }
   virtual void RegisterCaptureDataCallback(
       webrtc::VideoCaptureDataCallback& callback) OVERRIDE {
     callback_ = &callback;

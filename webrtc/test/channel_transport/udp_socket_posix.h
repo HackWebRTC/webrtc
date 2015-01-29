@@ -33,8 +33,6 @@ public:
 
     virtual ~UdpSocketPosix();
 
-    virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE;
-
     virtual bool SetCallback(CallbackObj obj,
                              IncomingSocketCallback cb) OVERRIDE;
 
@@ -72,7 +70,7 @@ public:
 private:
     friend class UdpSocketManagerPosix;
 
-    int32_t _id;
+    const int32_t _id;
     IncomingSocketCallback _incomingCb;
     CallbackObj _obj;
 

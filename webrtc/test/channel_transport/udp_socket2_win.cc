@@ -216,16 +216,6 @@ UdpSocket2Windows::~UdpSocket2Windows()
     }
 }
 
-int32_t UdpSocket2Windows::ChangeUniqueId(const int32_t id)
-{
-    _id = id;
-    if (_gtc)
-    {
-        _gtc->ChangeUniqueId(id);
-    }
-    return 0;
-}
-
 bool UdpSocket2Windows::ValidHandle()
 {
     return GetFd() != INVALID_SOCKET;

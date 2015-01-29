@@ -50,9 +50,6 @@ public:
                                           bool ipV6Enable = false,
                                           bool disableGQOS = false);
 
-    // Set the unique identifier of this class to id.
-    virtual int32_t ChangeUniqueId(const int32_t id) = 0;
-
     // Register cb for receiving callbacks when there are incoming packets.
     // Register obj so that it will be passed in calls to cb.
     virtual bool SetCallback(CallbackObj obj, IncomingSocketCallback cb) = 0;

@@ -554,7 +554,7 @@ _threadID( )
 
 #endif
 
-#ifdef NEW_HIVIEW_EVENT_HANDLER	
+#ifdef NEW_HIVIEW_EVENT_HANDLER
     //WEBRTC_TRACE(kTraceDebug, "%s:%d Installing Eventhandler for hiviewRef", __FUNCTION__, __LINE__);
 
     static const EventTypeSpec hiviewEventTypes[] =
@@ -668,7 +668,7 @@ VideoRenderAGL::~VideoRenderAGL()
     }
 #endif
 
-#ifdef NEW_HIVIEW_EVENT_HANDLER	
+#ifdef NEW_HIVIEW_EVENT_HANDLER
     if(_hiviewEventHandlerRef)
     {
         status = RemoveEventHandler(_hiviewEventHandlerRef);
@@ -1278,7 +1278,7 @@ int VideoRenderAGL::CreateMixingContext()
 
     //WEBRTC_LOG(kTraceDebug, "Entering CreateMixingContext()");
 
-    // Use both AGL_ACCELERATED and AGL_NO_RECOVERY to make sure 
+    // Use both AGL_ACCELERATED and AGL_NO_RECOVERY to make sure
     // a hardware renderer is used and not a software renderer.
 
     GLint attributes[] =
@@ -1867,13 +1867,6 @@ bool VideoRenderAGL::CheckValidRegion(RgnHandle rHandle)
 int VideoRenderAGL::ChangeWindow(void* newWindowRef)
 {
 
-    LockAGLCntx();
-
-    UnlockAGLCntx();
-    return -1;
-}
-int32_t VideoRenderAGL::ChangeUniqueID(int32_t id)
-{
     LockAGLCntx();
 
     UnlockAGLCntx();

@@ -32,8 +32,6 @@ class MockRtpData : public RtpData {
 
 class MockRtpRtcp : public RtpRtcp {
  public:
-  MOCK_METHOD1(ChangeUniqueId,
-      int32_t(const int32_t id));
   MOCK_METHOD1(RegisterDefaultModule,
       int32_t(RtpRtcp* module));
   MOCK_METHOD0(DeRegisterDefaultModule,

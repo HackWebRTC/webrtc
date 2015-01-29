@@ -73,12 +73,6 @@ UdpSocketManagerPosix::~UdpSocketManagerPosix()
     delete _critSect;
 }
 
-int32_t UdpSocketManagerPosix::ChangeUniqueId(const int32_t id)
-{
-    _id = id;
-    return 0;
-}
-
 bool UdpSocketManagerPosix::Start()
 {
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,

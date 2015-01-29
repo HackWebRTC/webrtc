@@ -40,8 +40,6 @@ public:
 
     virtual ~MonitorModule();
 public:	// module
-    virtual int32_t ChangeUniqueId(int32_t id) OVERRIDE;
-
     virtual int64_t TimeUntilNextProcess() OVERRIDE;
 
     virtual int32_t Process() OVERRIDE;

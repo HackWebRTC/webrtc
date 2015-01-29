@@ -110,7 +110,6 @@ class VideoRenderAGL {
 
   // ********** new module functions ************ //
   int ChangeWindow(void* newWindowRef);
-  int32_t ChangeUniqueID(int32_t id);
   int32_t StartRender();
   int32_t StopRender();
   int32_t DeleteAGLChannel(const uint32_t streamID);

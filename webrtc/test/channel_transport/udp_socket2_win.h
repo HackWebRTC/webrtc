@@ -42,8 +42,6 @@ public:
                       bool ipV6Enable = false, bool disableGQOS = false);
     virtual ~UdpSocket2Windows();
 
-    virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE;
-
     virtual bool ValidHandle() OVERRIDE;
 
     virtual bool SetCallback(CallbackObj, IncomingSocketCallback) OVERRIDE;

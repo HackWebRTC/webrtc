@@ -34,11 +34,6 @@ public:
 
     virtual ~ModuleVideoRenderImpl();
 
-    /*
-     *   Change the unique identifier of this object
-     */
-    virtual int32_t ChangeUniqueId(const int32_t id);
-
     virtual int64_t TimeUntilNextProcess();
     virtual int32_t Process();
 

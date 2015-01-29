@@ -35,9 +35,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   explicit AudioCodingModuleImpl(const AudioCodingModule::Config& config);
   ~AudioCodingModuleImpl();
 
-  // Change the unique identifier of this object.
-  virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE;
-
   // Returns the number of milliseconds until the module want a worker thread
   // to call Process.
   virtual int64_t TimeUntilNextProcess() OVERRIDE;

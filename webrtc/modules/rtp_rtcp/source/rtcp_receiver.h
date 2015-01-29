@@ -32,8 +32,6 @@ public:
  RTCPReceiver(int32_t id, Clock* clock, ModuleRtpRtcpImpl* owner);
     virtual ~RTCPReceiver();
 
-    void ChangeUniqueId(int32_t id);
-
     RTCPMethod Status() const;
     void SetRTCPStatus(RTCPMethod method);
 
@@ -233,7 +231,6 @@ protected:
       uint32_t remote_ssrc, uint32_t source_ssrc) const
           EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
-  int32_t _id;
   Clock* _clock;
   RTCPMethod _method;
   int64_t _lastReceived;

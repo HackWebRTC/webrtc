@@ -30,7 +30,6 @@ const int kRrTimeoutIntervals = 3;
 
 RTCPReceiver::RTCPReceiver(int32_t id, Clock* clock, ModuleRtpRtcpImpl* owner)
     : TMMBRHelp(),
-      _id(id),
       _clock(clock),
       _method(kRtcpOff),
       _lastReceived(0),
@@ -82,10 +81,6 @@ RTCPReceiver::~RTCPReceiver() {
     delete first->second;
     _receivedCnameMap.erase(first);
   }
-}
-
-void RTCPReceiver::ChangeUniqueId(int32_t id) {
-  _id = id;
 }
 
 RTCPMethod RTCPReceiver::Status() const {

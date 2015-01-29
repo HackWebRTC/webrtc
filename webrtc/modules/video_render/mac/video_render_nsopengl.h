@@ -78,7 +78,7 @@ public:
 private:
 
     NSOpenGLContext* _nsglContext;
-    int _id;
+    const int _id;
     VideoRenderNSOpenGL* _owner;
     int32_t _width;
     int32_t _height;
@@ -125,7 +125,6 @@ public: // methods
 
     // ********** new module functions ************ //
     int ChangeWindow(CocoaRenderView* newWindowRef);
-    int32_t ChangeUniqueID(int32_t id);
     int32_t StartRender();
     int32_t StopRender();
     int32_t DeleteNSGLChannel(const uint32_t streamID);

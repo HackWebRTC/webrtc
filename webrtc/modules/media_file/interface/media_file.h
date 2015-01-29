@@ -26,9 +26,6 @@ public:
     static MediaFile* CreateMediaFile(const int32_t id);
     static void DestroyMediaFile(MediaFile* module);
 
-    // Set the MediaFile instance identifier.
-    virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE = 0;
-
     // Put 10-60ms of audio data from file into the audioBuffer depending on
     // codec frame size. dataLengthInBytes is both an input and output
     // parameter. As input parameter it indicates the size of audioBuffer.

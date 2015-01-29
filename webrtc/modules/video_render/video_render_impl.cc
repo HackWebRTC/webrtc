@@ -114,21 +114,6 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
     }
 }
 
-int32_t ModuleVideoRenderImpl::ChangeUniqueId(const int32_t id)
-{
-
-    CriticalSectionScoped cs(&_moduleCrit);
-
-    _id = id;
-
-    if (_ptrRenderer)
-    {
-        _ptrRenderer->ChangeUniqueId(_id);
-    }
-
-    return 0;
-}
-
 int64_t ModuleVideoRenderImpl::TimeUntilNextProcess()
 {
     // Not used

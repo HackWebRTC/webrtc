@@ -85,12 +85,6 @@ MediaFileImpl::~MediaFileImpl()
     delete _callbackCrit;
 }
 
-int32_t MediaFileImpl::ChangeUniqueId(const int32_t id)
-{
-    _id = id;
-    return 0;
-}
-
 int64_t MediaFileImpl::TimeUntilNextProcess()
 {
     WEBRTC_TRACE(
