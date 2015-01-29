@@ -1001,6 +1001,7 @@ int32_t RTPSender::SendToNetwork(
   if (capture_time_ms > 0) {
     UpdateDelayStatistics(capture_time_ms, now_ms);
   }
+
   size_t length = payload_length + rtp_header_length;
   if (!SendPacketToNetwork(buffer, length))
     return -1;
@@ -1008,6 +1009,7 @@ int32_t RTPSender::SendToNetwork(
     CriticalSectionScoped lock(send_critsect_);
     media_has_been_sent_ = true;
   }
+  packet_history_.SetSent(rtp_header.sequenceNumber);
   UpdateRtpStats(buffer, length, rtp_header, false, false);
   return 0;
 }

@@ -203,4 +203,49 @@ TEST_F(RtpPacketHistoryTest, MinResendTime) {
   EXPECT_FALSE(hist_->GetPacketAndSetSendTime(kSeqNum, 101, false, packet_,
                                               &len, &time));
 }
+
+TEST_F(RtpPacketHistoryTest, DynamicExpansion) {
+  hist_->SetStorePacketsStatus(true, 10);
+  size_t len;
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
+  int64_t time;
+
+  // Add 4 packets, and then send them.
+  for (int i = 0; i < 4; ++i) {
+    len = 0;
+    CreateRtpPacket(kSeqNum + i, kSsrc, kPayload, kTimestamp, packet_, &len);
+    EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
+                                     capture_time_ms, kAllowRetransmission));
+  }
+  for (int i = 0; i < 4; ++i) {
+    len = kMaxPacketLength;
+    EXPECT_TRUE(hist_->GetPacketAndSetSendTime(kSeqNum + i, 100, false, packet_,
+                                               &len, &time));
+  }
+  capture_time_ms += 33;
+
+  // Add 16 packets, and then send them. History should expand to make this
+  // work.
+  for (int i = 4; i < 20; ++i) {
+    len = 0;
+    CreateRtpPacket(kSeqNum + i, kSsrc, kPayload, kTimestamp, packet_, &len);
+    EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
+                                     capture_time_ms, kAllowRetransmission));
+  }
+  for (int i = 4; i < 20; ++i) {
+    len = kMaxPacketLength;
+    EXPECT_TRUE(hist_->GetPacketAndSetSendTime(kSeqNum + i, 100, false, packet_,
+                                               &len, &time));
+  }
+
+  fake_clock_.AdvanceTimeMilliseconds(100);
+
+  // Retransmit last 16 packets.
+  for (int i = 4; i < 20; ++i) {
+    len = kMaxPacketLength;
+    EXPECT_TRUE(hist_->GetPacketAndSetSendTime(kSeqNum + i, 100, false, packet_,
+                                               &len, &time));
+  }
+}
+
 }  // namespace webrtc

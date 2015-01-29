@@ -22,7 +22,8 @@
 
 namespace webrtc {
 
-enum { kMinPacketRequestBytes = 50 };
+static const int kMinPacketRequestBytes = 50;
+static const size_t kMaxSize = 9600;  // "Should be enough for anyone."
 
 RTPPacketHistory::RTPPacketHistory(Clock* clock)
   : clock_(clock),
@@ -33,30 +34,26 @@ RTPPacketHistory::RTPPacketHistory(Clock* clock)
 }
 
 RTPPacketHistory::~RTPPacketHistory() {
-  {
-    CriticalSectionScoped cs(critsect_);
-    Free();
-  }
-  delete critsect_;
 }
 
 void RTPPacketHistory::SetStorePacketsStatus(bool enable,
                                              uint16_t number_to_store) {
-  CriticalSectionScoped cs(critsect_);
+  CriticalSectionScoped cs(critsect_.get());
   if (enable) {
     if (store_) {
       LOG(LS_WARNING) << "Purging packet history in order to re-set status.";
       Free();
     }
+    assert(!store_);
     Allocate(number_to_store);
   } else {
     Free();
   }
 }
 
-void RTPPacketHistory::Allocate(uint16_t number_to_store) {
+void RTPPacketHistory::Allocate(size_t number_to_store) {
   assert(number_to_store > 0);
-  assert(!store_);
+  assert(number_to_store <= kMaxSize);
   store_ = true;
   stored_packets_.resize(number_to_store);
   stored_seq_nums_.resize(number_to_store);
@@ -89,26 +86,30 @@ void RTPPacketHistory::Free() {
 }
 
 bool RTPPacketHistory::StorePackets() const {
-  CriticalSectionScoped cs(critsect_);
+  CriticalSectionScoped cs(critsect_.get());
   return store_;
 }
 
-// private, lock should already be taken
-void RTPPacketHistory::VerifyAndAllocatePacketLength(size_t packet_length) {
+void RTPPacketHistory::VerifyAndAllocatePacketLength(size_t packet_length,
+                                                     uint32_t start_index) {
   assert(packet_length > 0);
   if (!store_) {
     return;
   }
 
-  if (packet_length <= max_packet_length_) {
+  // If start_index > 0 this is a resize and we must check any new (empty)
+  // packets created during the resize.
+  if (start_index == 0 && packet_length <= max_packet_length_) {
     return;
   }
 
+  max_packet_length_ = std::max(packet_length, max_packet_length_);
+
   std::vector<std::vector<uint8_t> >::iterator it;
-  for (it = stored_packets_.begin(); it != stored_packets_.end(); ++it) {
-    it->resize(packet_length);
+  for (it = stored_packets_.begin() + start_index; it != stored_packets_.end();
+       ++it) {
+    it->resize(max_packet_length_);
   }
-  max_packet_length_ = packet_length;
 }
 
 int32_t RTPPacketHistory::PutRTPPacket(const uint8_t* packet,
@@ -120,7 +121,7 @@ int32_t RTPPacketHistory::PutRTPPacket(const uint8_t* packet,
     return 0;
   }
 
-  CriticalSectionScoped cs(critsect_);
+  CriticalSectionScoped cs(critsect_.get());
   if (!store_) {
     return 0;
   }
@@ -128,7 +129,7 @@ int32_t RTPPacketHistory::PutRTPPacket(const uint8_t* packet,
   assert(packet);
   assert(packet_length > 3);
 
-  VerifyAndAllocatePacketLength(max_packet_length);
+  VerifyAndAllocatePacketLength(max_packet_length, 0);
 
   if (packet_length > max_packet_length_) {
     LOG(LS_WARNING) << "Failed to store RTP packet with length: "
@@ -138,9 +139,26 @@ int32_t RTPPacketHistory::PutRTPPacket(const uint8_t* packet,
 
   const uint16_t seq_num = (packet[2] << 8) + packet[3];
 
+  // If index we're about to overwrite contains a packet that has not
+  // yet been sent (probably pending in paced sender), we need to expand
+  // the buffer.
+  if (stored_lengths_[prev_index_] > 0 &&
+      stored_send_times_[prev_index_] == 0) {
+    size_t current_size = static_cast<uint16_t>(stored_packets_.size());
+    size_t expanded_size = std::max(current_size * 3 / 2, current_size + 1);
+    expanded_size = std::min(expanded_size, kMaxSize);
+    Allocate(expanded_size);
+    VerifyAndAllocatePacketLength(max_packet_length, current_size);
+    // Causes discontinuity, but that's OK-ish. FindSeqNum() will still work,
+    // but may be slower - at least until buffer has wrapped around once.
+    prev_index_ = current_size;
+  }
+
   // Store packet
   std::vector<std::vector<uint8_t> >::iterator it =
       stored_packets_.begin() + prev_index_;
+  // TODO(sprang): Overhaul this class and get rid of this copy step.
+  //               (Finally introduce the RtpPacket class?)
   std::copy(packet, packet + packet_length, it->begin());
 
   stored_seq_nums_[prev_index_] = seq_num;
@@ -158,7 +176,7 @@ int32_t RTPPacketHistory::PutRTPPacket(const uint8_t* packet,
 }
 
 bool RTPPacketHistory::HasRTPPacket(uint16_t sequence_number) const {
-  CriticalSectionScoped cs(critsect_);
+  CriticalSectionScoped cs(critsect_.get());
   if (!store_) {
     return false;
   }
@@ -177,14 +195,35 @@ bool RTPPacketHistory::HasRTPPacket(uint16_t sequence_number) const {
   return true;
 }
 
+bool RTPPacketHistory::SetSent(uint16_t sequence_number) {
+  CriticalSectionScoped cs(critsect_.get());
+  if (!store_) {
+    return false;
+  }
+
+  int32_t index = 0;
+  bool found = FindSeqNum(sequence_number, &index);
+  if (!found) {
+    return false;
+  }
+
+  // Send time already set.
+  if (stored_send_times_[index] != 0) {
+    return false;
+  }
+
+  stored_send_times_[index] = clock_->TimeInMilliseconds();
+  return true;
+}
+
 bool RTPPacketHistory::GetPacketAndSetSendTime(uint16_t sequence_number,
                                                int64_t min_elapsed_time_ms,
                                                bool retransmit,
                                                uint8_t* packet,
                                                size_t* packet_length,
                                                int64_t* stored_time_ms) {
+  CriticalSectionScoped cs(critsect_.get());
   assert(*packet_length >= max_packet_length_);
-  CriticalSectionScoped cs(critsect_);
   if (!store_) {
     return false;
   }
@@ -238,7 +277,7 @@ void RTPPacketHistory::GetPacket(int index,
 bool RTPPacketHistory::GetBestFittingPacket(uint8_t* packet,
                                             size_t* packet_length,
                                             int64_t* stored_time_ms) {
-  CriticalSectionScoped cs(critsect_);
+  CriticalSectionScoped cs(critsect_.get());
   if (!store_)
     return false;
   int index = FindBestFittingPacket(*packet_length);

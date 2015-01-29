@@ -271,10 +271,12 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
                                                       timestamp / 90,
                                                       payload_data,
                                                       payload_data_length));
+      // Min required delay until retransmit = 5 + RTT ms (RTT = 0).
+      fake_clock.AdvanceTimeMilliseconds(5);
       int length = BuildNackList(nack_list);
       if (length > 0)
         rtp_rtcp_module_->SendNACK(nack_list, length);
-      fake_clock.AdvanceTimeMilliseconds(33);
+      fake_clock.AdvanceTimeMilliseconds(28);  //  33ms - 5ms delay.
       rtp_rtcp_module_->Process();
       // Prepare next frame.
       timestamp += 3000;

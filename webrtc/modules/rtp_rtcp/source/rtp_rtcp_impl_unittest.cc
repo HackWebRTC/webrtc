@@ -221,6 +221,9 @@ TEST_F(RtpRtcpImplTest, SetSelectiveRetransmissions_BaseLayer) {
   EXPECT_EQ(3, sender_.RtpSent());
   EXPECT_EQ(kSequenceNumber + 2, sender_.LastRtpSequenceNumber());
 
+  // Min required delay until retransmit = 5 + RTT ms (RTT = 0).
+  clock_.AdvanceTimeMilliseconds(5);
+
   // Frame with kBaseLayerTid re-sent.
   IncomingRtcpNack(&sender_, kSequenceNumber);
   EXPECT_EQ(4, sender_.RtpSent());
@@ -246,6 +249,9 @@ TEST_F(RtpRtcpImplTest, SetSelectiveRetransmissions_HigherLayers) {
   SendFrame(&sender_, kNoTemporalIdx);   // kSequenceNumber + 2
   EXPECT_EQ(3, sender_.RtpSent());
   EXPECT_EQ(kSequenceNumber + 2, sender_.LastRtpSequenceNumber());
+
+  // Min required delay until retransmit = 5 + RTT ms (RTT = 0).
+  clock_.AdvanceTimeMilliseconds(5);
 
   // Frame with kBaseLayerTid re-sent.
   IncomingRtcpNack(&sender_, kSequenceNumber);

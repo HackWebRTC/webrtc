@@ -64,28 +64,36 @@ class RTPPacketHistory {
 
   bool HasRTPPacket(uint16_t sequence_number) const;
 
+  bool SetSent(uint16_t sequence_number);
+
  private:
-  void GetPacket(int index, uint8_t* packet, size_t* packet_length,
-                 int64_t* stored_time_ms) const;
-  void Allocate(uint16_t number_to_store) EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
+  void GetPacket(int index,
+                 uint8_t* packet,
+                 size_t* packet_length,
+                 int64_t* stored_time_ms) const
+      EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
+  void Allocate(size_t number_to_store) EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
   void Free() EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
-  void VerifyAndAllocatePacketLength(size_t packet_length);
-  bool FindSeqNum(uint16_t sequence_number, int32_t* index) const;
-  int FindBestFittingPacket(size_t size) const;
+  void VerifyAndAllocatePacketLength(size_t packet_length, uint32_t start_index)
+      EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
+  bool FindSeqNum(uint16_t sequence_number, int32_t* index) const
+      EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
+  int FindBestFittingPacket(size_t size) const
+      EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
 
  private:
   Clock* clock_;
-  CriticalSectionWrapper* critsect_;
-  bool store_;
-  uint32_t prev_index_;
-  size_t max_packet_length_;
+  scoped_ptr<CriticalSectionWrapper> critsect_;
+  bool store_ GUARDED_BY(critsect_);
+  uint32_t prev_index_ GUARDED_BY(critsect_);
+  size_t max_packet_length_ GUARDED_BY(critsect_);
 
-  std::vector<std::vector<uint8_t> > stored_packets_;
-  std::vector<uint16_t> stored_seq_nums_;
-  std::vector<size_t> stored_lengths_;
-  std::vector<int64_t> stored_times_;
-  std::vector<int64_t> stored_send_times_;
-  std::vector<StorageType> stored_types_;
+  std::vector<std::vector<uint8_t> > stored_packets_ GUARDED_BY(critsect_);
+  std::vector<uint16_t> stored_seq_nums_ GUARDED_BY(critsect_);
+  std::vector<size_t> stored_lengths_ GUARDED_BY(critsect_);
+  std::vector<int64_t> stored_times_ GUARDED_BY(critsect_);
+  std::vector<int64_t> stored_send_times_ GUARDED_BY(critsect_);
+  std::vector<StorageType> stored_types_ GUARDED_BY(critsect_);
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_RTP_PACKET_HISTORY_H_
