@@ -381,7 +381,13 @@ ApmTest::ApmTest()
 #if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
       ref_filename_(ref_path_ + "output_data_fixed.pb"),
 #elif defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
+#if defined(WEBRTC_MAC)
+      // A different file for Mac is needed because on this platform the AEC
+      // constant |kFixedDelayMs| value is 20 and not 50 as it is on the rest.
+      ref_filename_(ref_path_ + "output_data_mac.pb"),
+#else
       ref_filename_(ref_path_ + "output_data_float.pb"),
+#endif
 #endif
       frame_(NULL),
       revframe_(NULL),
@@ -1915,12 +1921,20 @@ TEST_F(ApmTest, Process) {
           test->set_num_input_channels(kChannels[j]);
           test->set_num_output_channels(kChannels[j]);
           test->set_sample_rate(kProcessSampleRates[l]);
+          test->set_use_aec_extended_filter(false);
         }
       }
     }
+#if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
+    // To test the extended filter mode.
+    audioproc::Test* test = ref_data.add_test();
+    test->set_num_reverse_channels(2);
+    test->set_num_input_channels(2);
+    test->set_num_output_channels(2);
+    test->set_sample_rate(AudioProcessing::kSampleRate32kHz);
+    test->set_use_aec_extended_filter(true);
+#endif
   }
-
-  EnableAllComponents();
 
   for (int i = 0; i < ref_data.test_size(); i++) {
     printf("Running test %d of %d...\n", i + 1, ref_data.test_size());
@@ -1930,6 +1944,14 @@ TEST_F(ApmTest, Process) {
     // these tests for now, but they should be removed from the set.
     if (test->num_input_channels() != test->num_output_channels())
       continue;
+
+    Config config;
+    config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
+    config.Set<DelayCorrection>(
+        new DelayCorrection(test->use_aec_extended_filter()));
+    apm_.reset(AudioProcessing::Create(config));
+
+    EnableAllComponents();
 
     Init(test->sample_rate(),
          test->sample_rate(),
