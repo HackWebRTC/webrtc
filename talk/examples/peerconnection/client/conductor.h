@@ -71,6 +71,8 @@ class Conductor
  protected:
   ~Conductor();
   bool InitializePeerConnection();
+  bool ReinitializePeerConnectionForLoopback();
+  bool CreatePeerConnection(bool dtls);
   void DeletePeerConnection();
   void EnsureStreamingUI();
   void AddStreams();
@@ -129,6 +131,7 @@ class Conductor
   void SendMessage(const std::string& json_object);
 
   int peer_id_;
+  bool loopback_;
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;

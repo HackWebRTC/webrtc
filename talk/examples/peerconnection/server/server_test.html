@@ -33,28 +33,12 @@ function handlePeerMessage(peer_id, data) {
   trace(str);
   if (document.getElementById("loopback").checked) {
     if (data.search("offer") != -1) {
-      // In loopback mode, replace the offer with an answer.
-      data = data.replace("offer", "answer");
-      // Keep only the first crypto line for each m line in the answer.
-      var mlines = data.split("m=");
-      // Start from 1 because the first item in the array is not a m line.
-      for (var i = 1; i < mlines.length; ++i) {
-        var mline = mlines[i];
-        var cryptoBegin = mline.indexOf("a=crypto:", 0);
-        if (cryptoBegin == -1) {
-          // No crypto line found.
-          continue;
-        }
-        // Skip the first crypto line.
-        cryptoBegin = mline.indexOf("a=crypto:", cryptoBegin + 1);
-        while (cryptoBegin != -1) {
-          var cryptoEnd = mline.indexOf("\\n", cryptoBegin);
-          var crypto = mline.substring(cryptoBegin, cryptoEnd + 2);
-          data = data.replace(crypto, "");
-          // Search for the the next crypto line.
-          cryptoBegin = mline.indexOf("a=crypto:", cryptoBegin + 1);
-        }
-      }
+      // In loopback mode, if DTLS is enabled, notify the client to disable it.
+      // Otherwise replace the offer with an answer.
+      if (data.search("fingerprint") != -1)
+        data = data.replace("offer", "offer-loopback");
+      else
+        data = data.replace("offer", "answer");
     }
     sendToPeer(peer_id, data);
   }
