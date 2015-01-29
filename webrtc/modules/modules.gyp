@@ -9,7 +9,17 @@
 {
   'includes': [
     '../build/common.gypi',
-    'audio_coding/audio_coding.gypi',
+    'audio_coding/codecs/interfaces.gypi',
+    'audio_coding/codecs/cng/cng.gypi',
+    'audio_coding/codecs/g711/g711.gypi',
+    'audio_coding/codecs/g722/g722.gypi',
+    'audio_coding/codecs/ilbc/ilbc.gypi',
+    'audio_coding/codecs/isac/main/source/isac.gypi',
+    'audio_coding/codecs/isac/fix/source/isacfix.gypi',
+    'audio_coding/codecs/pcm16b/pcm16b.gypi',
+    'audio_coding/codecs/red/red.gypi',
+    'audio_coding/main/acm2/audio_coding_module.gypi',
+    'audio_coding/neteq/neteq.gypi',
     'audio_conference_mixer/source/audio_conference_mixer.gypi',
     'audio_device/audio_device.gypi',
     'audio_processing/audio_processing.gypi',
@@ -27,8 +37,14 @@
     'video_render/video_render.gypi',
   ],
   'conditions': [
+    ['include_opus==1', {
+      'includes': ['audio_coding/codecs/opus/opus.gypi',],
+    }],
     ['include_tests==1', {
       'includes': [
+        'audio_coding/codecs/isac/isac_test.gypi',
+        'audio_coding/codecs/isac/isacfix_test.gypi',
+        'audio_coding/codecs/tools/audio_codec_speed_tests.gypi',
         'audio_processing/audio_processing_tests.gypi',
         'rtp_rtcp/test/testFec/test_fec.gypi',
         'video_coding/main/source/video_coding_test.gypi',
@@ -85,7 +101,6 @@
             '<(webrtc_root)/test/test.gyp:frame_generator',
             '<(webrtc_root)/test/test.gyp:rtp_test_utils',
             '<(webrtc_root)/test/test.gyp:test_support_main',
-            '<(webrtc_root)/tools/tools.gyp:agc_test_utils',
           ],
           'sources': [
             'audio_coding/codecs/cng/audio_encoder_cng_unittest.cc',
@@ -160,6 +175,7 @@
             'audio_processing/agc/pitch_internal_unittest.cc',
             'audio_processing/agc/pole_zero_filter_unittest.cc',
             'audio_processing/agc/standalone_vad_unittest.cc',
+            'audio_processing/agc/test/test_utils.cc',
             'audio_processing/beamformer/complex_matrix_unittest.cc',
             'audio_processing/beamformer/covariance_matrix_generator_unittest.cc',
             'audio_processing/beamformer/matrix_unittest.cc',

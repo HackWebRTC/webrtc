@@ -96,13 +96,13 @@
       'target_name': 'video_engine_tests',
       'type': '<(gtest_target_type)',
       'sources': [
-        'test/common_unittest.cc',
-        'test/testsupport/metrics/video_metrics_unittest.cc',
-        'tools/agc/agc_manager_unittest.cc',
+        'modules/audio_processing/agc/test/agc_manager_unittest.cc',
         'video/bitrate_estimator_tests.cc',
         'video/end_to_end_tests.cc',
         'video/send_statistics_proxy_unittest.cc',
         'video/video_send_stream_tests.cc',
+        'test/common_unittest.cc',
+        'test/testsupport/metrics/video_metrics_unittest.cc',
       ],
       'dependencies': [
         '<(DEPTH)/testing/gmock.gyp:gmock',
@@ -131,7 +131,7 @@
       'type': '<(gtest_target_type)',
       'sources': [
         'modules/audio_coding/neteq/test/neteq_performance_unittest.cc',
-        'tools/agc/agc_manager_integrationtest.cc',
+        'modules/audio_processing/agc/test/agc_manager_integrationtest.cc',
         'video/call_perf_tests.cc',
         'video/full_stack.cc',
         'video/rampup_tests.cc',

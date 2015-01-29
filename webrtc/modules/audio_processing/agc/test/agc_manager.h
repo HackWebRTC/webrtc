@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TOOLS_AGC_AGC_MANAGER_H_
-#define WEBRTC_TOOLS_AGC_AGC_MANAGER_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_TEST_AGC_MANAGER_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_TEST_AGC_MANAGER_H_
 
 #include "webrtc/modules/audio_processing/agc/agc_manager_direct.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -78,4 +78,4 @@ class AgcManager {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_TOOLS_AGC_AGC_MANAGER_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AGC_TEST_AGC_MANAGER_H_

@@ -127,7 +127,7 @@ def _CheckNoSourcesAboveGyp(input_api, gyp_files, output_api):
   # Disallow referencing source files with paths above the GYP file location.
   source_pattern = input_api.re.compile(r'sources.*?\[(.*?)\]',
                                         re.MULTILINE | re.DOTALL)
-  file_pattern = input_api.re.compile(r"'((\.\./.*?)|(<\(webrtc_root\).*?))'")
+  file_pattern = input_api.re.compile(r"'(\.\./.*?)'")
   violating_gyp_files = set()
   violating_source_entries = []
   for gyp_file in gyp_files:
