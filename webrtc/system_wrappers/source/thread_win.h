@@ -15,47 +15,34 @@
 
 #include <windows.h>
 
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/base/thread_checker.h"
 
 namespace webrtc {
 
 class ThreadWindows : public ThreadWrapper {
  public:
-  ThreadWindows(ThreadRunFunction func, ThreadObj obj, ThreadPriority prio,
+  ThreadWindows(ThreadRunFunction func, void* obj, ThreadPriority prio,
                 const char* thread_name);
-  virtual ~ThreadWindows();
+  ~ThreadWindows() override;
 
-  virtual bool Start(unsigned int& id);
-  virtual bool Stop();
-  virtual void SetNotAlive();
-
-  static unsigned int WINAPI StartThread(LPVOID lp_parameter);
+  bool Start(unsigned int& id) override;
+  bool Stop() override;
+  void SetNotAlive() override;
 
  protected:
-  virtual void Run();
+  void Run();
 
  private:
-  ThreadRunFunction    run_function_;
-  ThreadObj            obj_;
+  static DWORD WINAPI StartThread(void* param);
 
-  bool                    alive_;
-  bool                    dead_;
-
-  // TODO(hellner)
-  // do_not_close_handle_ member seem pretty redundant. Should be able to remove
-  // it. Basically it should be fine to reclaim the handle when calling stop
-  // and in the destructor.
-  bool                    do_not_close_handle_;
-  ThreadPriority          prio_;
-  EventWrapper*           event_;
-  CriticalSectionWrapper* critsect_stop_;
-
-  HANDLE                  thread_;
-  unsigned int            id_;
-  char                    name_[kThreadMaxNameLength];
-  bool                    set_thread_name_;
-
+  ThreadRunFunction const run_function_;
+  void* const obj_;
+  HANDLE event_;  // Used to signal stoppage.
+  // TODO(tommi): Consider having a SetPriority method instead of this variable.
+  ThreadPriority prio_;
+  HANDLE thread_;
+  const std::string name_;
+  rtc::ThreadChecker main_thread_;
 };
 
 }  // namespace webrtc

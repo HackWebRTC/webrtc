@@ -10,11 +10,11 @@
 
 #include "webrtc/system_wrappers/source/thread_win.h"
 
-#include <assert.h>
 #include <process.h>
 #include <stdio.h>
 #include <windows.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/system_wrappers/source/set_thread_name_win.h"
 
@@ -22,162 +22,97 @@ namespace webrtc {
 
 ThreadWindows::ThreadWindows(ThreadRunFunction func, ThreadObj obj,
                              ThreadPriority prio, const char* thread_name)
-    : ThreadWrapper(),
-      run_function_(func),
+    : run_function_(func),
       obj_(obj),
-      alive_(false),
-      dead_(true),
-      do_not_close_handle_(false),
       prio_(prio),
-      event_(NULL),
+      event_(CreateEvent(NULL, FALSE, FALSE, NULL)),
       thread_(NULL),
-      id_(0),
-      name_(),
-      set_thread_name_(false) {
-  event_ = EventWrapper::Create();
-  critsect_stop_ = CriticalSectionWrapper::CreateCriticalSection();
-  if (thread_name != NULL) {
-    // Set the thread name to appear in the VS debugger.
-    set_thread_name_ = true;
-    strncpy(name_, thread_name, kThreadMaxNameLength);
-  }
+      name_(thread_name ? thread_name : "webrtc") {
+  DCHECK(func);
+  DCHECK(event_);
 }
 
 ThreadWindows::~ThreadWindows() {
-#ifdef _DEBUG
-  assert(!alive_);
-#endif
-  if (thread_) {
-    CloseHandle(thread_);
-  }
-  if (event_) {
-    delete event_;
-  }
-  if (critsect_stop_) {
-    delete critsect_stop_;
-  }
+  DCHECK(main_thread_.CalledOnValidThread());
+  DCHECK(!thread_);
+  CloseHandle(event_);
 }
 
+// static
 uint32_t ThreadWrapper::GetThreadId() {
   return GetCurrentThreadId();
 }
 
-unsigned int WINAPI ThreadWindows::StartThread(LPVOID lp_parameter) {
-  static_cast<ThreadWindows*>(lp_parameter)->Run();
+// static
+DWORD WINAPI ThreadWindows::StartThread(void* param) {
+  static_cast<ThreadWindows*>(param)->Run();
   return 0;
 }
 
-bool ThreadWindows::Start(unsigned int& thread_id) {
-  if (!run_function_) {
+bool ThreadWindows::Start(unsigned int& id) {
+  DCHECK(main_thread_.CalledOnValidThread());
+  DCHECK(!thread_);
+
+  // See bug 2902 for stack size.
+  DWORD thread_id;
+  thread_ = ::CreateThread(NULL, 0, &StartThread, this,
+      STACK_SIZE_PARAM_IS_A_RESERVATION, &thread_id);
+  if (!thread_ ) {
+    DCHECK(false) << "CreateThread failed";
     return false;
   }
-  do_not_close_handle_ = false;
 
-  // Set stack size to 1M
-  thread_ = (HANDLE)_beginthreadex(NULL, 1024 * 1024, StartThread, (void*)this,
-                                   0, &thread_id);
-  if (thread_ == NULL) {
-    return false;
+  id = thread_id;
+
+  if (prio_ != kNormalPriority) {
+    int priority = THREAD_PRIORITY_NORMAL;
+    switch (prio_) {
+      case kLowPriority:
+        priority = THREAD_PRIORITY_BELOW_NORMAL;
+        break;
+      case kHighPriority:
+        priority = THREAD_PRIORITY_ABOVE_NORMAL;
+        break;
+      case kHighestPriority:
+        priority = THREAD_PRIORITY_HIGHEST;
+        break;
+      case kRealtimePriority:
+        priority = THREAD_PRIORITY_TIME_CRITICAL;
+        break;
+      default:
+        break;
+    }
+
+    SetThreadPriority(thread_, priority);
   }
-  id_ = thread_id;
-  event_->Wait(INFINITE);
 
-  switch (prio_) {
-    case kLowPriority:
-      SetThreadPriority(thread_, THREAD_PRIORITY_BELOW_NORMAL);
-      break;
-    case kNormalPriority:
-      SetThreadPriority(thread_, THREAD_PRIORITY_NORMAL);
-      break;
-    case kHighPriority:
-      SetThreadPriority(thread_, THREAD_PRIORITY_ABOVE_NORMAL);
-      break;
-    case kHighestPriority:
-      SetThreadPriority(thread_, THREAD_PRIORITY_HIGHEST);
-      break;
-    case kRealtimePriority:
-      SetThreadPriority(thread_, THREAD_PRIORITY_TIME_CRITICAL);
-      break;
-  };
   return true;
 }
 
 void ThreadWindows::SetNotAlive() {
-  alive_ = false;
+  DCHECK(main_thread_.CalledOnValidThread());
 }
 
 bool ThreadWindows::Stop() {
-  critsect_stop_->Enter();
-
-  // Prevents the handle from being closed in ThreadWindows::Run()
-  do_not_close_handle_ = true;
-  alive_ = false;
-  bool signaled = false;
-  if (thread_ && !dead_) {
-    critsect_stop_->Leave();
-
-    // Wait up to 2 seconds for the thread to complete.
-    if (WAIT_OBJECT_0 == WaitForSingleObject(thread_, 2000)) {
-      signaled = true;
-    }
-    critsect_stop_->Enter();
-  }
+  DCHECK(main_thread_.CalledOnValidThread());
   if (thread_) {
+    SetEvent(event_);
+    WaitForSingleObject(thread_, INFINITE);
     CloseHandle(thread_);
-    thread_ = NULL;
+    thread_ = nullptr;
   }
-  critsect_stop_->Leave();
 
-  if (dead_ || signaled) {
-    return true;
-  } else {
-    return false;
-  }
+  return true;
 }
 
 void ThreadWindows::Run() {
-  alive_ = true;
-  dead_ = false;
-  event_->Set();
-
-  // All tracing must be after event_->Set to avoid deadlock in Trace.
-  if (set_thread_name_) {
-    WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, id_,
-                 "Thread with name:%s started ", name_);
-    SetThreadName(static_cast<DWORD>(-1), name_); // -1 == caller thread.
-  } else {
-    WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, id_,
-                 "Thread without name started");
-  }
+  if (!name_.empty())
+    SetThreadName(static_cast<DWORD>(-1), name_.c_str());
 
   do {
-    if (run_function_) {
-      if (!run_function_(obj_)) {
-        alive_ = false;
-      }
-    } else {
-      alive_ = false;
-    }
-  } while (alive_);
-
-  if (set_thread_name_) {
-    WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, id_,
-                 "Thread with name:%s stopped", name_);
-  } else {
-    WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, id_,
-                 "Thread without name stopped");
-  }
-
-  critsect_stop_->Enter();
-
-  if (thread_ && !do_not_close_handle_) {
-    HANDLE thread = thread_;
-    thread_ = NULL;
-    CloseHandle(thread);
-  }
-  dead_ = true;
-
-  critsect_stop_->Leave();
-};
+    if (!run_function_(obj_))
+      break;
+  } while (WaitForSingleObject(event_, 0) == WAIT_TIMEOUT);
+}
 
 }  // namespace webrtc

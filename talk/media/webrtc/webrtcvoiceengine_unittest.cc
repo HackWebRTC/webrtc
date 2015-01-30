@@ -3185,25 +3185,6 @@ TEST(WebRtcVoiceEngineTest, DISABLED_HasUnencryptedLogging) {
   EXPECT_TRUE(cleartext);
 }
 
-// Tests we do not see any references to a monitor thread being spun up
-// when initiating the engine.
-TEST(WebRtcVoiceEngineTest, HasNoMonitorThread) {
-  cricket::WebRtcVoiceEngine engine;
-  rtc::scoped_ptr<rtc::MemoryStream> stream(
-      new rtc::MemoryStream);
-  rtc::LogMessage::AddLogToStream(stream.get(), rtc::LS_VERBOSE);
-  engine.SetLogging(rtc::LS_VERBOSE, "");
-  EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
-  engine.Terminate();
-  rtc::LogMessage::RemoveLogToStream(stream.get());
-
-  size_t size = 0;
-  EXPECT_TRUE(stream->GetSize(&size));
-  EXPECT_GT(size, 0U);
-  const std::string logs(stream->GetBuffer(), size);
-  EXPECT_NE(std::string::npos, logs.find("ProcessThread"));
-}
-
 // Tests that the library is configured with the codecs we want.
 TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
   cricket::WebRtcVoiceEngine engine;
