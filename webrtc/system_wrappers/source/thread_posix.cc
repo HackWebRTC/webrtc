@@ -208,49 +208,6 @@ bool ThreadPosix::Start(unsigned int& thread_id)
   return true;
 }
 
-// CPU_ZERO and CPU_SET are not available in NDK r7, so disable
-// SetAffinity on Android for now.
-#if (defined(WEBRTC_LINUX) && (!defined(WEBRTC_ANDROID)))
-bool ThreadPosix::SetAffinity(const int* processor_numbers,
-                              const unsigned int amount_of_processors) {
-  if (!processor_numbers || (amount_of_processors == 0)) {
-    return false;
-  }
-  cpu_set_t mask;
-  CPU_ZERO(&mask);
-
-  for (unsigned int processor = 0;
-       processor < amount_of_processors;
-       ++processor) {
-    CPU_SET(processor_numbers[processor], &mask);
-  }
-#if defined(WEBRTC_ANDROID)
-  // Android.
-  const int result = syscall(__NR_sched_setaffinity,
-                             pid_,
-                             sizeof(mask),
-                             &mask);
-#else
-  // "Normal" Linux.
-  const int result = sched_setaffinity(pid_,
-                                       sizeof(mask),
-                                       &mask);
-#endif
-  if (result != 0) {
-    return false;
-  }
-  return true;
-}
-
-#else
-// NOTE: On Mac OS X, use the Thread affinity API in
-// /usr/include/mach/thread_policy.h: thread_policy_set and mach_thread_self()
-// instead of Linux gettid() syscall.
-bool ThreadPosix::SetAffinity(const int* , const unsigned int) {
-  return false;
-}
-#endif
-
 void ThreadPosix::SetNotAlive() {
   CriticalSectionScoped cs(crit_state_);
   alive_ = false;

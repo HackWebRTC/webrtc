@@ -27,8 +27,6 @@ class ThreadWindows : public ThreadWrapper {
   virtual ~ThreadWindows();
 
   virtual bool Start(unsigned int& id);
-  bool SetAffinity(const int* processor_numbers,
-                   const unsigned int amount_of_processors);
   virtual bool Stop();
   virtual void SetNotAlive();
 

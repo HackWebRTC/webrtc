@@ -102,21 +102,6 @@ bool ThreadWindows::Start(unsigned int& thread_id) {
   return true;
 }
 
-bool ThreadWindows::SetAffinity(const int* processor_numbers,
-                                const unsigned int amount_of_processors) {
-  DWORD_PTR processor_bit_mask = 0;
-  for (unsigned int processor_index = 0;
-       processor_index < amount_of_processors;
-       ++processor_index) {
-    // Convert from an array with processor numbers to a bitmask
-    // Processor numbers start at zero.
-    // TODO(hellner): this looks like a bug. Shouldn't the '=' be a '+='?
-    // Or even better |=
-    processor_bit_mask = 1 << processor_numbers[processor_index];
-  }
-  return SetThreadAffinityMask(thread_, processor_bit_mask) != 0;
-}
-
 void ThreadWindows::SetNotAlive() {
   alive_ = false;
 }

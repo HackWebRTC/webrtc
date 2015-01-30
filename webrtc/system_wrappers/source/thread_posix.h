@@ -35,9 +35,6 @@ class ThreadPosix : public ThreadWrapper {
   // From ThreadWrapper.
   virtual void SetNotAlive() OVERRIDE;
   virtual bool Start(unsigned int& id) OVERRIDE;
-  // Not implemented on Mac.
-  virtual bool SetAffinity(const int* processor_numbers,
-                           unsigned int amount_of_processors) OVERRIDE;
   virtual bool Stop() OVERRIDE;
 
   void Run();
