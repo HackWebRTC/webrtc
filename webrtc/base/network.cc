@@ -57,6 +57,11 @@
 namespace rtc {
 namespace {
 
+// Turning on IPv6 could make many IPv6 interfaces available for connectivity
+// check and delay the call setup time. kMaxIPv6Networks is the default upper
+// limit of IPv6 networks but could be changed by set_max_ipv6_networks().
+const int kMaxIPv6Networks = 5;
+
 const uint32 kUpdateNetworksMessage = 1;
 const uint32 kSignalNetworksMessage = 2;
 
@@ -136,7 +141,8 @@ NetworkManager::NetworkManager() {
 NetworkManager::~NetworkManager() {
 }
 
-NetworkManagerBase::NetworkManagerBase() : ipv6_enabled_(true) {
+NetworkManagerBase::NetworkManagerBase()
+    : max_ipv6_networks_(kMaxIPv6Networks), ipv6_enabled_(true) {
 }
 
 NetworkManagerBase::~NetworkManagerBase() {
@@ -146,7 +152,18 @@ NetworkManagerBase::~NetworkManagerBase() {
 }
 
 void NetworkManagerBase::GetNetworks(NetworkList* result) const {
-  *result = networks_;
+  int ipv6_networks = 0;
+  result->clear();
+  for (Network* network : networks_) {
+    // Keep the number of IPv6 networks under |max_ipv6_networks_|.
+    if (network->prefix().family() == AF_INET6) {
+      if (ipv6_networks >= max_ipv6_networks_) {
+        continue;
+      }
+      ++ipv6_networks;
+    }
+    result->push_back(network);
+  }
 }
 
 void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,

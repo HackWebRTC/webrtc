@@ -97,6 +97,9 @@ class NetworkManagerBase : public NetworkManager {
   bool ipv6_enabled() const { return ipv6_enabled_; }
   void set_ipv6_enabled(bool enabled) { ipv6_enabled_ = enabled; }
 
+  void set_max_ipv6_networks(int networks) { max_ipv6_networks_ = networks; }
+  int max_ipv6_networks() { return max_ipv6_networks_; }
+
  protected:
   typedef std::map<std::string, Network*> NetworkMap;
   // Updates |networks_| with the networks listed in |list|. If
@@ -116,6 +119,8 @@ class NetworkManagerBase : public NetworkManager {
   void DoUpdateNetworks();
 
   NetworkList networks_;
+  int max_ipv6_networks_;
+
   NetworkMap networks_map_;
   bool ipv6_enabled_;
 };

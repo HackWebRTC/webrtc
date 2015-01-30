@@ -300,6 +300,45 @@ TEST_F(NetworkTest, TestIPv6MergeNetworkList) {
   }
 }
 
+// Test that no more than manager.max_ipv6_networks() IPv6 networks get
+// returned.
+TEST_F(NetworkTest, TestIPv6MergeNetworkListTrimExcessive) {
+  BasicNetworkManager manager;
+  manager.SignalNetworksChanged.connect(static_cast<NetworkTest*>(this),
+                                        &NetworkTest::OnNetworksChanged);
+  NetworkManager::NetworkList original_list;
+
+  // Add twice the allowed number of IPv6 networks.
+  for (int i = 0; i < 2 * manager.max_ipv6_networks(); i++) {
+    // Make a network with different prefix length.
+    IPAddress ip;
+    EXPECT_TRUE(IPFromString("2401:fa01:4:1000:be30:faa:fee:faa", &ip));
+    IPAddress prefix = TruncateIP(ip, 64 - i);
+    Network* ipv6_network =
+        new Network("test_eth0", "Test Network Adapter 1", prefix, 64 - i);
+    ipv6_network->AddIP(ip);
+    original_list.push_back(ipv6_network);
+  }
+
+  // Add one IPv4 network.
+  Network* ipv4_network = new Network("test_eth0", "Test Network Adapter 1",
+                                      IPAddress(0x12345600U), 24);
+  ipv4_network->AddIP(IPAddress(0x12345600U));
+  original_list.push_back(ipv4_network);
+
+  bool changed = false;
+  MergeNetworkList(manager, original_list, &changed);
+  EXPECT_TRUE(changed);
+  NetworkManager::NetworkList list;
+  manager.GetNetworks(&list);
+
+  // List size should be the max allowed IPv6 networks plus one IPv4 network.
+  EXPECT_EQ(manager.max_ipv6_networks() + 1, (int)list.size());
+
+  // Verify that the IPv4 network is in the list.
+  EXPECT_NE(list.end(), std::find(list.begin(), list.end(), ipv4_network));
+}
+
 // Tests that when two network lists that describe the same set of networks are
 // merged, that the changed callback is not called, and that the original
 // objects remain in the result list.
