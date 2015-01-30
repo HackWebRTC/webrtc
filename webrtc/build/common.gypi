@@ -162,11 +162,6 @@
     ], # conditions
   },
   'target_defaults': {
-    'include_dirs': [
-      # To include the top-level directory when building in Chrome, so we can
-      # use full paths (e.g. headers inside testing/ or third_party/).
-      '<(DEPTH)',
-    ],
     'conditions': [
       ['restrict_webrtc_logging==1', {
         'defines': ['WEBRTC_RESTRICT_LOGGING',],
@@ -198,14 +193,21 @@
           'LOGGING_INSIDE_WEBRTC',
         ],
         'include_dirs': [
-          # overrides must be included first as that is the mechanism for
-          # selecting the override headers in Chromium.
+          # Include the top-level directory when building in Chrome, so we can
+          # use full paths (e.g. headers inside testing/ or third_party/).
+          '<(DEPTH)',
+          # The overrides must be included before the WebRTC root as that's the
+          # mechanism for selecting the override headers in Chromium.
           '../overrides',
-          # Allow includes to be prefixed with webrtc/ in case it is not an
-          # immediate subdirectory of <(DEPTH).
+          # The WebRTC root is needed to allow includes in the WebRTC code base
+          # to be prefixed with webrtc/.
           '../..',
         ],
       }, {
+         # Include the top-level dir so the WebRTC code can use full paths.
+        'include_dirs': [
+          '../..',
+        ],
         'conditions': [
           ['os_posix==1', {
             'configurations': {
