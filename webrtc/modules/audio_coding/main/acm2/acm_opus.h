@@ -23,7 +23,7 @@ namespace acm2 {
 
 class ACMOpus : public ACMGenericCodec {
  public:
-  explicit ACMOpus(int16_t codec_id);
+  ACMOpus(int16_t codec_id, bool enable_red);
   ~ACMOpus();
 
   ACMGenericCodec* CreateInstance(void);

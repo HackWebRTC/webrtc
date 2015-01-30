@@ -23,7 +23,7 @@ namespace acm2 {
 
 class ACMILBC : public ACMGenericCodec {
  public:
-  explicit ACMILBC(int16_t codec_id);
+  ACMILBC(int16_t codec_id, bool enable_red);
   ~ACMILBC();
 
   // for FEC

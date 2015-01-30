@@ -23,7 +23,7 @@ namespace acm2 {
 
 class ACMGSMFR : public ACMGenericCodec {
  public:
-  explicit ACMGSMFR(int16_t codec_id);
+  ACMGSMFR(int16_t codec_id, bool enable_red);
   ~ACMGSMFR();
 
   // for FEC

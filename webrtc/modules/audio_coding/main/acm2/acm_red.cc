@@ -17,7 +17,10 @@ namespace webrtc {
 
 namespace acm2 {
 
-ACMRED::ACMRED(int16_t codec_id) { codec_id_ = codec_id; }
+ACMRED::ACMRED(int16_t codec_id, bool enable_red)
+    : ACMGenericCodec(enable_red) {
+  codec_id_ = codec_id;
+}
 
 ACMRED::~ACMRED() {}
 

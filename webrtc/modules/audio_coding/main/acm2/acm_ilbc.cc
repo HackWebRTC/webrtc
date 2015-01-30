@@ -44,7 +44,8 @@ int16_t ACMILBC::SetBitRateSafe(const int32_t /* rate */) { return -1; }
 
 #else  //===================== Actual Implementation =======================
 
-ACMILBC::ACMILBC(int16_t codec_id) : encoder_inst_ptr_(NULL) {
+ACMILBC::ACMILBC(int16_t codec_id, bool enable_red)
+    : ACMGenericCodec(enable_red), encoder_inst_ptr_(NULL) {
   codec_id_ = codec_id;
   return;
 }

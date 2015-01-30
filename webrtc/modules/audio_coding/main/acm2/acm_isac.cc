@@ -261,8 +261,9 @@ static uint16_t ACMISACFixGetDecSampRate(ACM_ISAC_STRUCT* /* inst */) {
 
 #endif
 
-ACMISAC::ACMISAC(int16_t codec_id)
-    : codec_inst_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
+ACMISAC::ACMISAC(int16_t codec_id, bool enable_red)
+    : ACMGenericCodec(enable_red),
+      codec_inst_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       is_enc_initialized_(false),
       isac_coding_mode_(CHANNEL_INDEPENDENT),
       enforce_frame_size_(false),
