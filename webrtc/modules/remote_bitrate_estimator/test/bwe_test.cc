@@ -288,8 +288,7 @@ void BweTest::AddPacketProcessor(PacketProcessor* processor, bool is_sender) {
   }
 }
 
-void BweTest::RemovePacketProcessor(
-    PacketProcessor* processor) {
+void BweTest::RemovePacketProcessor(PacketProcessor* processor) {
   for (vector<PacketProcessorRunner>::iterator it = processors_.begin();
        it != processors_.end(); ++it) {
     if (it->HasProcessor(processor)) {

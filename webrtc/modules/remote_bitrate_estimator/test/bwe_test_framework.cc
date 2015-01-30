@@ -545,22 +545,14 @@ void TraceBasedDeliveryFilter::ProceedToNextSlot() {
   rate_counter_->UpdateRates(local_time_us_, kPayloadSize);
 }
 
-PacketSender::PacketSender(PacketProcessorListener* listener)
-    : PacketProcessor(listener, true) {}
-
-PacketSender::PacketSender(PacketProcessorListener* listener, int flow_id)
-    : PacketProcessor(listener, flow_id, true) {
-}
-
-VideoSender::VideoSender(int flow_id,
-                         PacketProcessorListener* listener,
+VideoSource::VideoSource(int flow_id,
                          float fps,
                          uint32_t kbps,
                          uint32_t ssrc,
                          int64_t first_frame_offset_ms)
-    : PacketSender(listener, flow_id),
-      kMaxPayloadSizeBytes(1200),
+    : kMaxPayloadSizeBytes(1200),
       kTimestampBase(0xff80ff00ul),
+      flow_id_(flow_id),
       frame_period_ms_(1000.0 / fps),
       bytes_per_second_((1000 * kbps) / 8),
       frame_size_bytes_(bytes_per_second_ / fps),
@@ -572,20 +564,16 @@ VideoSender::VideoSender(int flow_id,
   prototype_header_.sequenceNumber = 0xf000u;
 }
 
-uint32_t VideoSender::GetCapacityKbps() const {
-  return (bytes_per_second_ * 8) / 1000;
-}
-
-uint32_t VideoSender::NextFrameSize() {
+uint32_t VideoSource::NextFrameSize() {
   return frame_size_bytes_;
 }
 
-uint32_t VideoSender::NextPacketSize(uint32_t frame_size,
+uint32_t VideoSource::NextPacketSize(uint32_t frame_size,
                                      uint32_t remaining_payload) {
   return std::min(kMaxPayloadSizeBytes, remaining_payload);
 }
 
-void VideoSender::RunFor(int64_t time_ms, Packets* in_out) {
+void VideoSource::RunFor(int64_t time_ms, Packets* in_out) {
   assert(in_out);
   now_ms_ += time_ms;
   Packets new_packets;
@@ -606,7 +594,7 @@ void VideoSender::RunFor(int64_t time_ms, Packets* in_out) {
       ++prototype_header_.sequenceNumber;
       uint32_t size = NextPacketSize(frame_size, payload_size);
       new_packets.push_back(
-          Packet(*flow_ids().begin(), send_time_us, size, prototype_header_));
+          Packet(flow_id_, send_time_us, size, prototype_header_));
       new_packets.back().SetAbsSendTimeMs(next_frame_ms_);
       payload_size -= size;
     }
@@ -616,41 +604,33 @@ void VideoSender::RunFor(int64_t time_ms, Packets* in_out) {
   in_out->merge(new_packets);
 }
 
-AdaptiveVideoSender::AdaptiveVideoSender(int flow_id,
-                                         PacketProcessorListener* listener,
+AdaptiveVideoSource::AdaptiveVideoSource(int flow_id,
                                          float fps,
                                          uint32_t kbps,
                                          uint32_t ssrc,
                                          int64_t first_frame_offset_ms)
-    : VideoSender(flow_id, listener, fps, kbps, ssrc, first_frame_offset_ms) {
+    : VideoSource(flow_id, fps, kbps, ssrc, first_frame_offset_ms) {
 }
 
-void AdaptiveVideoSender::GiveFeedback(const PacketSender::Feedback& feedback) {
-  bytes_per_second_ = std::min(feedback.estimated_bps / 8, 2500000u / 8);
+void AdaptiveVideoSource::SetBitrateBps(int bitrate_bps) {
+  bytes_per_second_ = std::min(bitrate_bps / 8, 2500000 / 8);
   frame_size_bytes_ = (bytes_per_second_ * frame_period_ms_ + 500) / 1000;
 }
 
-PeriodicKeyFrameSender::PeriodicKeyFrameSender(
-    int flow_id,
-    PacketProcessorListener* listener,
-    float fps,
-    uint32_t kbps,
-    uint32_t ssrc,
-    int64_t first_frame_offset_ms,
-    int key_frame_interval)
-    : AdaptiveVideoSender(flow_id,
-                          listener,
-                          fps,
-                          kbps,
-                          ssrc,
-                          first_frame_offset_ms),
+PeriodicKeyFrameSource::PeriodicKeyFrameSource(int flow_id,
+                                               float fps,
+                                               uint32_t kbps,
+                                               uint32_t ssrc,
+                                               int64_t first_frame_offset_ms,
+                                               int key_frame_interval)
+    : AdaptiveVideoSource(flow_id, fps, kbps, ssrc, first_frame_offset_ms),
       key_frame_interval_(key_frame_interval),
       frame_counter_(0),
       compensation_bytes_(0),
       compensation_per_frame_(0) {
 }
 
-uint32_t PeriodicKeyFrameSender::NextFrameSize() {
+uint32_t PeriodicKeyFrameSource::NextFrameSize() {
   uint32_t payload_size = frame_size_bytes_;
   if (frame_counter_ == 0) {
     payload_size = kMaxPayloadSizeBytes * 12;
@@ -677,7 +657,7 @@ uint32_t PeriodicKeyFrameSender::NextFrameSize() {
   return payload_size;
 }
 
-uint32_t PeriodicKeyFrameSender::NextPacketSize(uint32_t frame_size,
+uint32_t PeriodicKeyFrameSource::NextPacketSize(uint32_t frame_size,
                                                 uint32_t remaining_payload) {
   uint32_t fragments =
       (frame_size + (kMaxPayloadSizeBytes - 1)) / kMaxPayloadSizeBytes;
@@ -685,19 +665,26 @@ uint32_t PeriodicKeyFrameSender::NextPacketSize(uint32_t frame_size,
   return std::min(avg_size, remaining_payload);
 }
 
+PacketSender::PacketSender(PacketProcessorListener* listener,
+                           VideoSource* source)
+    : PacketProcessor(listener, source->flow_id(), true), source_(source) {
+}
+
+void PacketSender::RunFor(int64_t time_ms, Packets* in_out) {
+  source_->RunFor(time_ms, in_out);
+}
+
 RegularVideoSender::RegularVideoSender(PacketProcessorListener* listener,
-                                       uint32_t kbps,
-                                       AdaptiveVideoSender* source)
+                                       VideoSource* source,
+                                       uint32_t kbps)
     // It is important that the first_frame_offset and the initial time of
     // clock_ are both zero, otherwise we can't have absolute time in this
     // class.
-    : PacketSender(listener, *source->flow_ids().begin()),
-      clock_(0),
-      start_of_run_ms_(0),
+    : PacketSender(listener, source),
+      clock_(kInitialTimeMs),
       bitrate_controller_(BitrateController::CreateBitrateController(&clock_,
                                                                      false)),
       feedback_observer_(bitrate_controller_->CreateRtcpBandwidthObserver()),
-      source_(source),
       modules_() {
   const int kMinBitrateBps = 10000;
   const int kMaxBitrateBps = 20000000;
@@ -720,16 +707,21 @@ void RegularVideoSender::GiveFeedback(const Feedback& feedback) {
 
 void RegularVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
   start_of_run_ms_ = clock_.TimeInMilliseconds();
-  source_->RunFor(time_ms, in_out);
-  clock_.AdvanceTimeMilliseconds(time_ms);
+  int64_t time_left_ms = time_ms;
+  while (time_left_ms > 0) {
+    const int64_t kMaxRunTimeMs = 100;
+    int64_t time_to_run_ms = std::min(time_left_ms, kMaxRunTimeMs);
+    PacketSender::RunFor(time_to_run_ms, in_out);
+    clock_.AdvanceTimeMilliseconds(time_to_run_ms);
+    bitrate_controller_->Process();
+    time_left_ms -= time_to_run_ms;
+  }
 }
 
 void RegularVideoSender::OnNetworkChanged(uint32_t target_bitrate_bps,
                                           uint8_t fraction_lost,
                                           int64_t rtt) {
-  PacketSender::Feedback feedback;
-  feedback.estimated_bps = target_bitrate_bps;
-  source_->GiveFeedback(feedback);
+  source_->SetBitrateBps(target_bitrate_bps);
   std::stringstream ss;
   ss << "SendEstimate_" << *flow_ids().begin() << "#1";
   BWE_TEST_LOGGING_PLOT(ss.str(), clock_.TimeInMilliseconds(),
@@ -737,12 +729,12 @@ void RegularVideoSender::OnNetworkChanged(uint32_t target_bitrate_bps,
 }
 
 PacedVideoSender::PacedVideoSender(PacketProcessorListener* listener,
-                                   uint32_t kbps,
-                                   AdaptiveVideoSender* source)
+                                   VideoSource* source,
+                                   uint32_t kbps)
     // It is important that the first_frame_offset and the initial time of
     // clock_ are both zero, otherwise we can't have absolute time in this
     // class.
-    : RegularVideoSender(listener, kbps, source),
+    : RegularVideoSender(listener, source, kbps),
       pacer_(&clock_,
              this,
              kbps,

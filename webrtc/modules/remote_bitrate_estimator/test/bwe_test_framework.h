@@ -367,47 +367,21 @@ class TraceBasedDeliveryFilter : public PacketProcessor {
   DISALLOW_COPY_AND_ASSIGN(TraceBasedDeliveryFilter);
 };
 
-class PacketSender : public PacketProcessor {
+class VideoSource {
  public:
-  struct Feedback {
-    uint32_t estimated_bps;
-    RTCPReportBlock report_block;
-  };
-
-  explicit PacketSender(PacketProcessorListener* listener);
-  PacketSender(PacketProcessorListener* listener, int flow_id);
-  virtual ~PacketSender() {}
-
-  virtual uint32_t GetCapacityKbps() const { return 0; }
-
-  // Call GiveFeedback() with the returned interval in milliseconds, provided
-  // there is a new estimate available.
-  // Note that changing the feedback interval affects the timing of when the
-  // output of the estimators is sampled and therefore the baseline files may
-  // have to be regenerated.
-  virtual int GetFeedbackIntervalMs() const { return 1000; }
-  virtual void GiveFeedback(const Feedback& feedback) {}
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(PacketSender);
-};
-
-class VideoSender : public PacketSender {
- public:
-  VideoSender(int flow_id,
-              PacketProcessorListener* listener,
+  VideoSource(int flow_id,
               float fps,
               uint32_t kbps,
               uint32_t ssrc,
               int64_t first_frame_offset_ms);
-  virtual ~VideoSender() {}
+  virtual ~VideoSource() {}
 
   uint32_t max_payload_size_bytes() const { return kMaxPayloadSizeBytes; }
   uint32_t bytes_per_second() const { return bytes_per_second_; }
 
-  virtual uint32_t GetCapacityKbps() const OVERRIDE;
-
-  virtual void RunFor(int64_t time_ms, Packets* in_out) OVERRIDE;
+  virtual void RunFor(int64_t time_ms, Packets* in_out);
+  virtual void SetBitrateBps(int bitrate_bps) {}
+  virtual int flow_id() const { return flow_id_; }
 
  protected:
   virtual uint32_t NextFrameSize();
@@ -416,6 +390,7 @@ class VideoSender : public PacketSender {
 
   const uint32_t kMaxPayloadSizeBytes;
   const uint32_t kTimestampBase;
+  const int flow_id_;
   const double frame_period_ms_;
   uint32_t bytes_per_second_;
   uint32_t frame_size_bytes_;
@@ -425,36 +400,33 @@ class VideoSender : public PacketSender {
   double now_ms_;
   RTPHeader prototype_header_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(VideoSender);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(VideoSource);
 };
 
-class AdaptiveVideoSender : public VideoSender {
+class AdaptiveVideoSource : public VideoSource {
  public:
-  AdaptiveVideoSender(int flow_id,
-                      PacketProcessorListener* listener,
+  AdaptiveVideoSource(int flow_id,
                       float fps,
                       uint32_t kbps,
                       uint32_t ssrc,
                       int64_t first_frame_offset_ms);
-  virtual ~AdaptiveVideoSender() {}
+  virtual ~AdaptiveVideoSource() {}
 
-  virtual int GetFeedbackIntervalMs() const OVERRIDE { return 100; }
-  virtual void GiveFeedback(const Feedback& feedback) OVERRIDE;
+  virtual void SetBitrateBps(int bitrate_bps) OVERRIDE;
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(AdaptiveVideoSender);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(AdaptiveVideoSource);
 };
 
-class PeriodicKeyFrameSender : public AdaptiveVideoSender {
+class PeriodicKeyFrameSource : public AdaptiveVideoSource {
  public:
-  PeriodicKeyFrameSender(int flow_id,
-                         PacketProcessorListener* listener,
+  PeriodicKeyFrameSource(int flow_id,
                          float fps,
                          uint32_t kbps,
                          uint32_t ssrc,
                          int64_t first_frame_offset_ms,
                          int key_frame_interval);
-  virtual ~PeriodicKeyFrameSender() {}
+  virtual ~PeriodicKeyFrameSource() {}
 
  protected:
   virtual uint32_t NextFrameSize() OVERRIDE;
@@ -466,14 +438,44 @@ class PeriodicKeyFrameSender : public AdaptiveVideoSender {
   uint32_t frame_counter_;
   int compensation_bytes_;
   int compensation_per_frame_;
-  DISALLOW_IMPLICIT_CONSTRUCTORS(PeriodicKeyFrameSender);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(PeriodicKeyFrameSource);
+};
+
+class PacketSender : public PacketProcessor {
+ public:
+  struct Feedback {
+    uint32_t estimated_bps;
+    RTCPReportBlock report_block;
+  };
+
+  PacketSender(PacketProcessorListener* listener, VideoSource* source);
+  virtual ~PacketSender() {}
+
+  virtual uint32_t GetCapacityKbps() const { return 0; }
+
+  // Call GiveFeedback() with the returned interval in milliseconds, provided
+  // there is a new estimate available.
+  // Note that changing the feedback interval affects the timing of when the
+  // output of the estimators is sampled and therefore the baseline files may
+  // have to be regenerated.
+  virtual int GetFeedbackIntervalMs() const { return 1000; }
+  virtual void GiveFeedback(const Feedback& feedback) {}
+  virtual void RunFor(int64_t time_ms, Packets* in_out) OVERRIDE;
+
+  virtual VideoSource* source() const { return source_; }
+
+ protected:
+  VideoSource* source_;
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(PacketSender);
 };
 
 class RegularVideoSender : public PacketSender, public BitrateObserver {
  public:
   RegularVideoSender(PacketProcessorListener* listener,
-                     uint32_t kbps,
-                     AdaptiveVideoSender* source);
+                     VideoSource* source,
+                     uint32_t kbps);
   virtual ~RegularVideoSender();
 
   virtual int GetFeedbackIntervalMs() const OVERRIDE { return 100; }
@@ -491,7 +493,6 @@ class RegularVideoSender : public PacketSender, public BitrateObserver {
   int64_t start_of_run_ms_;
   scoped_ptr<BitrateController> bitrate_controller_;
   scoped_ptr<RtcpBandwidthObserver> feedback_observer_;
-  AdaptiveVideoSender* source_;
   std::list<Module*> modules_;
 
  private:
@@ -502,8 +503,8 @@ class PacedVideoSender : public RegularVideoSender,
                          public PacedSender::Callback {
  public:
   PacedVideoSender(PacketProcessorListener* listener,
-                   uint32_t kbps,
-                   AdaptiveVideoSender* source);
+                   VideoSource* source,
+                   uint32_t kbps);
   virtual ~PacedVideoSender();
 
   virtual void RunFor(int64_t time_ms, Packets* in_out) OVERRIDE;

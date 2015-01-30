@@ -57,14 +57,14 @@ DefaultBweTestConfig MakeBweTestConfig(uint32_t sender_count,
 class DefaultBweTest : public BweTest,
                        public ::testing::TestWithParam<DefaultBweTestConfig> {
  public:
-  DefaultBweTest() : packet_senders_() {}
   virtual ~DefaultBweTest() {}
 
   virtual void SetUp() {
     const DefaultBweTestConfig& config = GetParam();
     SetupTestFromConfig(config.bwe_test_config);
     for (size_t i = 0; i < config.number_of_senders; ++i) {
-      packet_senders_.push_back(new VideoSender(0, this, 30, 300, 0, 0));
+      sources_.push_back(new VideoSource(0, 30, 300, 0, 0));
+      packet_senders_.push_back(new PacketSender(this, sources_.back()));
     }
   }
 
@@ -73,9 +73,14 @@ class DefaultBweTest : public BweTest,
       delete packet_senders_.front();
       packet_senders_.pop_front();
     }
+    while (!sources_.empty()) {
+      delete sources_.front();
+      sources_.pop_front();
+    }
   }
 
  protected:
+  std::list<VideoSource*> sources_;
   std::list<PacketSender*> packet_senders_;
 };
 
@@ -277,7 +282,8 @@ class BweFeedbackTest : public BweTest,
 };
 
 TEST_F(BweFeedbackTest, Choke1000kbps500kbps1000kbps) {
-  AdaptiveVideoSender sender(0, this, 30, 300, 0, 0);
+  AdaptiveVideoSource source(0, 30, 300, 0, 0);
+  RegularVideoSender sender(this, &source, 300);
   ChokeFilter filter(this);
   RateCounterFilter counter(this, "receiver_input");
   const int kHighCapacityKbps = 1000;
@@ -294,7 +300,8 @@ TEST_F(BweFeedbackTest, Choke1000kbps500kbps1000kbps) {
 }
 
 TEST_F(BweFeedbackTest, Choke200kbps30kbps200kbps) {
-  AdaptiveVideoSender sender(0, this, 30, 300, 0, 0);
+  AdaptiveVideoSource source(0, 30, 300, 0, 0);
+  RegularVideoSender sender(this, &source, 300);
   ChokeFilter filter(this);
   RateCounterFilter counter(this, "receiver_input");
   const int kHighCapacityKbps = 200;
@@ -312,7 +319,8 @@ TEST_F(BweFeedbackTest, Choke200kbps30kbps200kbps) {
 }
 
 TEST_F(BweFeedbackTest, Verizon4gDownlinkTest) {
-  AdaptiveVideoSender sender(0, this, 30, 300, 0, 0);
+  AdaptiveVideoSource source(0, 30, 300, 0, 0);
+  RegularVideoSender sender(this, &source, 300);
   RateCounterFilter counter1(this, "sender_output");
   TraceBasedDeliveryFilter filter(this, "link_capacity");
   RateCounterFilter counter2(this, "receiver_input");
@@ -324,7 +332,8 @@ TEST_F(BweFeedbackTest, Verizon4gDownlinkTest) {
 
 // webrtc:3277
 TEST_F(BweFeedbackTest, DISABLED_GoogleWifiTrace3Mbps) {
-  AdaptiveVideoSender sender(0, this, 30, 300, 0, 0);
+  AdaptiveVideoSource source(0, 30, 300, 0, 0);
+  RegularVideoSender sender(this, &source, 300);
   RateCounterFilter counter1(this, "sender_output");
   TraceBasedDeliveryFilter filter(this, "link_capacity");
   filter.SetMaxDelay(500);

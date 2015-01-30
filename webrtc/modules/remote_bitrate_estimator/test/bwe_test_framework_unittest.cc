@@ -730,7 +730,8 @@ TEST_F(BweTestFramework_ChokeFilterTest, ShortTraceMaxDelay) {
   TestChoke(&filter, 25, 1, 1);
 }
 
-void TestVideoSender(VideoSender* sender, int64_t run_for_ms,
+void TestVideoSender(PacketSender* sender,
+                     int64_t run_for_ms,
                      uint32_t expected_packets,
                      uint32_t expected_payload_size,
                      uint32_t expected_total_payload_size) {
@@ -749,7 +750,7 @@ void TestVideoSender(VideoSender* sender, int64_t run_for_ms,
   for (PacketsIt it = packets.begin(); it != packets.end(); ++it) {
     EXPECT_LE(send_time_us, it->send_time_us());
     send_time_us = it->send_time_us();
-    if (sender->max_payload_size_bytes() != it->payload_size()) {
+    if (sender->source()->max_payload_size_bytes() != it->payload_size()) {
       EXPECT_EQ(expected_payload_size, it->payload_size());
     }
     total_payload_size += it->payload_size();
@@ -769,8 +770,9 @@ void TestVideoSender(VideoSender* sender, int64_t run_for_ms,
 
 TEST(BweTestFramework_VideoSenderTest, Fps1Kbps80_1s) {
   // 1 fps, 80 kbps
-  VideoSender sender(0, NULL, 1.0f, 80, 0x1234, 0);
-  EXPECT_EQ(10000u, sender.bytes_per_second());
+  VideoSource source(0, 1.0f, 80, 0x1234, 0);
+  PacketSender sender(NULL, &source);
+  EXPECT_EQ(10000u, source.bytes_per_second());
   // We're at 1 fps, so all packets should be generated on first call, giving 10
   // packets of each 1000 bytes, total 10000 bytes.
   TestVideoSender(&sender, 1, 9, 400, 10000);
@@ -786,8 +788,9 @@ TEST(BweTestFramework_VideoSenderTest, Fps1Kbps80_1s) {
 
 TEST(BweTestFramework_VideoSenderTest, Fps1Kbps80_1s_Offset) {
   // 1 fps, 80 kbps, offset 0.5 of a frame period, ==0.5s in this case.
-  VideoSender sender(0, NULL, 1.0f, 80, 0x1234, 500);
-  EXPECT_EQ(10000u, sender.bytes_per_second());
+  VideoSource source(0, 1.0f, 80, 0x1234, 500);
+  PacketSender sender(NULL, &source);
+  EXPECT_EQ(10000u, source.bytes_per_second());
   // 499ms, no output.
   TestVideoSender(&sender, 499, 0, 0, 0);
   // 500ms, first frame (this is the offset we set), 10 packets of 1000 bytes.
@@ -806,8 +809,9 @@ TEST(BweTestFramework_VideoSenderTest, Fps1Kbps80_1s_Offset) {
 
 TEST(BweTestFramework_VideoSenderTest, Fps50Kpbs80_11s) {
   // 50 fps, 80 kbps.
-  VideoSender sender(0, NULL, 50.0f, 80, 0x1234, 0);
-  EXPECT_EQ(10000u, sender.bytes_per_second());
+  VideoSource source(0, 50.0f, 80, 0x1234, 0);
+  PacketSender sender(NULL, &source);
+  EXPECT_EQ(10000u, source.bytes_per_second());
   // 9998ms, should see 500 frames, 200 byte payloads, total 100000 bytes.
   TestVideoSender(&sender, 9998, 500, 200, 100000);
   // 9999ms, nothing.
@@ -822,8 +826,9 @@ TEST(BweTestFramework_VideoSenderTest, Fps50Kpbs80_11s) {
 
 TEST(BweTestFramework_VideoSenderTest, Fps10Kpbs120_1s) {
   // 20 fps, 120 kbps.
-  VideoSender sender(0, NULL, 20.0f, 120, 0x1234, 0);
-  EXPECT_EQ(15000u, sender.bytes_per_second());
+  VideoSource source(0, 20.0f, 120, 0x1234, 0);
+  PacketSender sender(NULL, &source);
+  EXPECT_EQ(15000u, source.bytes_per_second());
   // 498ms, 10 frames with 750 byte payloads, total 7500 bytes.
   TestVideoSender(&sender, 498, 10, 750, 7500);
   // 499ms, nothing.
@@ -838,8 +843,9 @@ TEST(BweTestFramework_VideoSenderTest, Fps10Kpbs120_1s) {
 
 TEST(BweTestFramework_VideoSenderTest, Fps30Kbps800_20s) {
   // 20 fps, 820 kbps.
-  VideoSender sender(0, NULL, 25.0f, 820, 0x1234, 0);
-  EXPECT_EQ(102500u, sender.bytes_per_second());
+  VideoSource source(0, 25.0f, 820, 0x1234, 0);
+  PacketSender sender(NULL, &source);
+  EXPECT_EQ(102500u, source.bytes_per_second());
   // 9998ms, 250 frames. 820 kbps = 102500 bytes/s, so total should be 1025000.
   // Each frame is 102500/25=4100 bytes, or 5 packets (4 @1000 bytes, 1 @100),
   // so packet count should be 5*250=1250 and last packet of each frame has
@@ -859,8 +865,9 @@ TEST(BweTestFramework_VideoSenderTest, Fps30Kbps800_20s) {
 
 TEST(BweTestFramework_VideoSenderTest, TestAppendInOrder) {
   // 1 fps, 80 kbps, 250ms offset.
-  VideoSender sender1(0, NULL, 1.0f, 80, 0x1234, 250);
-  EXPECT_EQ(10000u, sender1.bytes_per_second());
+  VideoSource source1(0, 1.0f, 80, 0x1234, 250);
+  PacketSender sender1(NULL, &source1);
+  EXPECT_EQ(10000u, source1.bytes_per_second());
   Packets packets;
   // Generate some packets, verify they are sorted.
   sender1.RunFor(999, &packets);
@@ -874,8 +881,9 @@ TEST(BweTestFramework_VideoSenderTest, TestAppendInOrder) {
   EXPECT_EQ(18u, packets.size());
 
   // Another sender, 2 fps, 160 kbps, 150ms offset
-  VideoSender sender2(0, NULL, 2.0f, 160, 0x2234, 150);
-  EXPECT_EQ(20000u, sender2.bytes_per_second());
+  VideoSource source2(0, 2.0f, 160, 0x2234, 150);
+  PacketSender sender2(NULL, &source2);
+  EXPECT_EQ(20000u, source2.bytes_per_second());
   // Generate some packets, verify that they are merged with the packets already
   // on the list.
   sender2.RunFor(999, &packets);
@@ -888,34 +896,38 @@ TEST(BweTestFramework_VideoSenderTest, TestAppendInOrder) {
 }
 
 TEST(BweTestFramework_VideoSenderTest, FeedbackIneffective) {
-  VideoSender sender(0, NULL, 25.0f, 820, 0x1234, 0);
-  EXPECT_EQ(102500u, sender.bytes_per_second());
+  VideoSource source(0, 25.0f, 820, 0x1234, 0);
+  PacketSender sender(NULL, &source);
+
+  EXPECT_EQ(102500u, source.bytes_per_second());
   TestVideoSender(&sender, 9998, 1000, 500, 1025000);
 
   // Make sure feedback has no effect on a regular video sender.
   PacketSender::Feedback feedback = { 512000 };
   sender.GiveFeedback(feedback);
-  EXPECT_EQ(102500u, sender.bytes_per_second());
+  EXPECT_EQ(102500u, source.bytes_per_second());
   TestVideoSender(&sender, 9998, 1000, 500, 1025000);
 }
 
 TEST(BweTestFramework_AdaptiveVideoSenderTest, FeedbackChangesBitrate) {
-  AdaptiveVideoSender sender(0, NULL, 25.0f, 820, 0x1234, 0);
-  EXPECT_EQ(102500u, sender.bytes_per_second());
+  AdaptiveVideoSource source(0, 25.0f, 820, 0x1234, 0);
+  RegularVideoSender sender(NULL, &source, 820);
+  EXPECT_EQ(102500u, source.bytes_per_second());
   TestVideoSender(&sender, 9998, 1000, 500, 1025000);
 
   // Make sure we can reduce the bitrate.
   PacketSender::Feedback feedback = { 512000 };
   sender.GiveFeedback(feedback);
-  EXPECT_EQ(64000u, sender.bytes_per_second());
+  EXPECT_EQ(64000u, source.bytes_per_second());
   TestVideoSender(&sender, 9998, 750, 160, 640000);
 
   // Increase the bitrate to the initial bitrate and verify that the output is
   // the same.
   feedback.estimated_bps = 820000;
   sender.GiveFeedback(feedback);
-  EXPECT_EQ(102500u, sender.bytes_per_second());
-  TestVideoSender(&sender, 9998, 1000, 500, 1025000);
+  Packets packets;
+  sender.RunFor(10000, &packets);
+  EXPECT_EQ(102500u, source.bytes_per_second());
 }
 }  // namespace bwe
 }  // namespace testing
