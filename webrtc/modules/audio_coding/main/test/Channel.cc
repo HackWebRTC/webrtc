@@ -51,8 +51,8 @@ int32_t Channel::SendData(FrameType frameType,
   // Treat fragmentation separately
   if (fragmentation != NULL) {
     // If silence for too long, send only new data.
-    if ((fragmentation->fragmentationTimeDiff[1] <= 0x3fff) &&
-        (fragmentation->fragmentationVectorSize == 2)) {
+    if ((fragmentation->fragmentationVectorSize == 2) &&
+        (fragmentation->fragmentationTimeDiff[1] <= 0x3fff)) {
       // only 0x80 if we have multiple blocks
       _payloadData[0] = 0x80 + fragmentation->fragmentationPlType[1];
       size_t REDheader = (fragmentation->fragmentationTimeDiff[1] << 10) +
