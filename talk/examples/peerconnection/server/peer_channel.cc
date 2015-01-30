@@ -114,7 +114,7 @@ std::string ChannelMember::GetEntry() const {
 
   // name, 11-digit int, 1-digit bool, newline, null
   char entry[kMaxNameLength + 15];
-  sprintfn(entry, sizeof(entry), "%s%d%d\n",
+  sprintfn(entry, sizeof(entry), "%s,%d,%d\n",
            name_.substr(0, kMaxNameLength).c_str(), id_, connected_);
   return entry;
 }
