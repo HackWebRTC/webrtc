@@ -43,11 +43,13 @@ namespace webrtc {
 namespace acm2 {
 
 #ifndef WEBRTC_CODEC_AMRWB
-ACMAMRwb::ACMAMRwb(int16_t /* codec_id */)
-    : encoder_inst_ptr_(NULL),
+ACMAMRwb::ACMAMRwb(int16_t /* codec_id */, bool enable_red)
+    : ACMGenericCodec(enable_red),
+      encoder_inst_ptr_(NULL),
       encoding_mode_(-1),  // invalid value
       encoding_rate_(0),   // invalid value
-      encoder_packing_format_(AMRBandwidthEfficient) {}
+      encoder_packing_format_(AMRBandwidthEfficient) {
+}
 
 ACMAMRwb::~ACMAMRwb() {}
 
@@ -103,8 +105,9 @@ ACMAMRPackingFormat ACMAMRwb::AMRwbDecoderPackingFormat() const {
 #define AMRWB_MODE_23k 7
 #define AMRWB_MODE_24k 8
 
-ACMAMRwb::ACMAMRwb(int16_t codec_id)
-    : encoder_inst_ptr_(NULL),
+ACMAMRwb::ACMAMRwb(int16_t codec_id, bool enable_red)
+    : ACMGenericCodec(enable_red),
+      encoder_inst_ptr_(NULL),
       encoding_mode_(-1),  // invalid value
       encoding_rate_(0) {  // invalid value
   codec_id_ = codec_id;

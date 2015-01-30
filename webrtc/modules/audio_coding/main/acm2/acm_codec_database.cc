@@ -572,38 +572,38 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
   // All we have support for right now.
   if (!STR_CASE_CMP(codec_inst.plname, "ISAC")) {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-    return new ACMISAC(kISAC);
+    return new ACMISAC(kISAC, false);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "PCMU")) {
     if (codec_inst.channels == 1) {
-      return new ACMPCMU(kPCMU);
+      return new ACMPCMU(kPCMU, false);
     } else {
-      return new ACMPCMU(kPCMU_2ch);
+      return new ACMPCMU(kPCMU_2ch, false);
     }
   } else if (!STR_CASE_CMP(codec_inst.plname, "PCMA")) {
     if (codec_inst.channels == 1) {
-      return new ACMPCMA(kPCMA);
+      return new ACMPCMA(kPCMA, false);
     } else {
-      return new ACMPCMA(kPCMA_2ch);
+      return new ACMPCMA(kPCMA_2ch, false);
     }
   } else if (!STR_CASE_CMP(codec_inst.plname, "ILBC")) {
 #ifdef WEBRTC_CODEC_ILBC
-    return new ACMILBC(kILBC);
+    return new ACMILBC(kILBC, false);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "AMR")) {
 #ifdef WEBRTC_CODEC_AMR
-    return new ACMAMR(kGSMAMR);
+    return new ACMAMR(kGSMAMR, false);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "AMR-WB")) {
 #ifdef WEBRTC_CODEC_AMRWB
-    return new ACMAMRwb(kGSMAMRWB);
+    return new ACMAMRwb(kGSMAMRWB, false);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "G722")) {
 #ifdef WEBRTC_CODEC_G722
     if (codec_inst.channels == 1) {
-      return new ACMG722(kG722);
+      return new ACMG722(kG722, false);
     } else {
-      return new ACMG722(kG722_2ch);
+      return new ACMG722(kG722_2ch, false);
     }
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "G7221")) {
@@ -628,7 +628,7 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
             return NULL;
           }
         }
-        return new ACMG722_1(codec_id);
+        return new ACMG722_1(codec_id, false);
 #endif
         FALLTHROUGH();
       }
@@ -652,7 +652,7 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
             return NULL;
           }
         }
-        return new ACMG722_1C(codec_id);
+        return new ACMG722_1C(codec_id, false);
 #endif
         FALLTHROUGH();
       }
@@ -685,18 +685,18 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
         return NULL;
       }
     }
-    return new ACMCNG(codec_id);
+    return new ACMCNG(codec_id, false);
   } else if (!STR_CASE_CMP(codec_inst.plname, "G729")) {
 #ifdef WEBRTC_CODEC_G729
-    return new ACMG729(kG729);
+    return new ACMG729(kG729, false);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "G7291")) {
 #ifdef WEBRTC_CODEC_G729_1
-    return new ACMG729_1(kG729_1);
+    return new ACMG729_1(kG729_1, false);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "opus")) {
 #ifdef WEBRTC_CODEC_OPUS
-    return new ACMOpus(kOpus);
+    return new ACMOpus(kOpus, false);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "speex")) {
 #ifdef WEBRTC_CODEC_SPEEX
@@ -714,7 +714,7 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
         return NULL;
       }
     }
-    return new ACMSPEEX(codec_id);
+    return new ACMSPEEX(codec_id, false);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "CN")) {
     // For CN we need to check sampling frequency to know what codec to create.
@@ -742,7 +742,7 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
         return NULL;
       }
     }
-    return new ACMCNG(codec_id);
+    return new ACMCNG(codec_id, false);
   } else if (!STR_CASE_CMP(codec_inst.plname, "L16")) {
 #ifdef WEBRTC_CODEC_PCM16
     // For L16 we need to check sampling frequency to know what codec to create.
@@ -784,15 +784,15 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
         }
       }
     }
-    return new ACMPCM16B(codec_id);
+    return new ACMPCM16B(codec_id, false);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "telephone-event")) {
 #ifdef WEBRTC_CODEC_AVT
-    return new ACMDTMFPlayout(kAVT);
+    return new ACMDTMFPlayout(kAVT, false);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "red")) {
 #ifdef WEBRTC_CODEC_RED
-    return new ACMRED(kRED);
+    return new ACMRED(kRED, false);
 #endif
   }
   return NULL;

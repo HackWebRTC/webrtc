@@ -22,7 +22,9 @@ namespace acm2 {
 
 #ifndef WEBRTC_CODEC_AVT
 
-ACMDTMFPlayout::ACMDTMFPlayout(int16_t /* codec_id */) { return; }
+ACMDTMFPlayout::ACMDTMFPlayout(int16_t /* codec_id */, bool enable_red)
+    : ACMGenericCodec(enable_red) {
+}
 
 ACMDTMFPlayout::~ACMDTMFPlayout() { return; }
 
@@ -46,7 +48,10 @@ void ACMDTMFPlayout::DestructEncoderSafe() {
 
 #else  //===================== Actual Implementation =======================
 
-ACMDTMFPlayout::ACMDTMFPlayout(int16_t codec_id) { codec_id_ = codec_id; }
+ACMDTMFPlayout::ACMDTMFPlayout(int16_t codec_id, bool enable_red)
+    : ACMGenericCodec(enable_red) {
+  codec_id_ = codec_id;
+}
 
 ACMDTMFPlayout::~ACMDTMFPlayout() { return; }
 

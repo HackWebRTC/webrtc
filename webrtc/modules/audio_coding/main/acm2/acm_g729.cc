@@ -26,7 +26,9 @@ namespace acm2 {
 
 #ifndef WEBRTC_CODEC_G729
 
-ACMG729::ACMG729(int16_t /* codec_id */) : encoder_inst_ptr_(NULL) {}
+ACMG729::ACMG729(int16_t /* codec_id */, bool enable_red)
+    : ACMGenericCodec(enable_red), encoder_inst_ptr_(NULL) {
+}
 
 ACMG729::~ACMG729() { return; }
 
@@ -58,10 +60,12 @@ int16_t ACMG729::InternalCreateEncoder() { return -1; }
 void ACMG729::DestructEncoderSafe() { return; }
 
 #else  //===================== Actual Implementation =======================
-ACMG729::ACMG729(int16_t codec_id)
-    : codec_id_(codec_id),
+ACMG729::ACMG729(int16_t codec_id, bool enable_red)
+    : ACMGenericCodec(enable_red),
+      codec_id_(codec_id),
       has_internal_dtx_(),
-      encoder_inst_ptr_(NULL) {}
+      encoder_inst_ptr_(NULL) {
+}
 
 ACMG729::~ACMG729() {
   if (encoder_inst_ptr_ != NULL) {

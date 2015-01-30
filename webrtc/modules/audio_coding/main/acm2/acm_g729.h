@@ -23,7 +23,7 @@ namespace acm2 {
 
 class ACMG729 : public ACMGenericCodec {
  public:
-  explicit ACMG729(int16_t codec_id);
+  ACMG729(int16_t codec_id, bool enable_red);
   ~ACMG729();
 
   // for FEC

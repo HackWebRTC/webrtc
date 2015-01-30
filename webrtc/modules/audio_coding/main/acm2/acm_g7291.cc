@@ -25,8 +25,9 @@ namespace acm2 {
 
 #ifndef WEBRTC_CODEC_G729_1
 
-ACMG729_1::ACMG729_1(int16_t /* codec_id */)
-    : encoder_inst_ptr_(NULL),
+ACMG729_1::ACMG729_1(int16_t /* codec_id */, bool enable_red)
+    : ACMGenericCodec(enable_red),
+      encoder_inst_ptr_(NULL),
       my_rate_(32000),
       flag_8khz_(0),
       flag_g729_mode_(0) {
@@ -57,8 +58,9 @@ int16_t ACMG729_1::SetBitRateSafe(const int32_t /*rate*/) { return -1; }
 
 struct G729_1_inst_t_;
 
-ACMG729_1::ACMG729_1(int16_t codec_id)
-    : encoder_inst_ptr_(NULL),
+ACMG729_1::ACMG729_1(int16_t codec_id, bool enable_red)
+    : ACMGenericCodec(enable_red),
+      encoder_inst_ptr_(NULL),
       my_rate_(32000),  // Default rate.
       flag_8khz_(0),
       flag_g729_mode_(0) {

@@ -27,7 +27,7 @@ struct ACMG722DecStr;
 
 class ACMG722 : public ACMGenericCodec {
  public:
-  explicit ACMG722(int16_t codec_id);
+  ACMG722(int16_t codec_id, bool enable_red);
   ~ACMG722();
 
   // For FEC.

@@ -31,7 +31,7 @@ enum IsacCodingMode {
 
 class ACMISAC : public ACMGenericCodec, AudioDecoder {
  public:
-  explicit ACMISAC(int16_t codec_id);
+  ACMISAC(int16_t codec_id, bool enable_red);
   ~ACMISAC();
 
   int16_t InternalInitDecoder(WebRtcACMCodecParams* codec_params)

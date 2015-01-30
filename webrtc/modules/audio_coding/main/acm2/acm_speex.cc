@@ -24,8 +24,9 @@ namespace webrtc {
 namespace acm2 {
 
 #ifndef WEBRTC_CODEC_SPEEX
-ACMSPEEX::ACMSPEEX(int16_t /* codec_id */)
-    : encoder_inst_ptr_(NULL),
+ACMSPEEX::ACMSPEEX(int16_t /* codec_id */, bool enable_red)
+    : ACMGenericCodec(enable_red),
+      encoder_inst_ptr_(NULL),
       compl_mode_(0),
       vbr_enabled_(false),
       encoding_rate_(-1),
@@ -68,7 +69,8 @@ int16_t ACMSPEEX::SetComplMode(int16_t mode) { return -1; }
 
 #else  //===================== Actual Implementation =======================
 
-ACMSPEEX::ACMSPEEX(int16_t codec_id) : encoder_inst_ptr_(NULL) {
+ACMSPEEX::ACMSPEEX(int16_t codec_id, bool enable_red)
+    : ACMGenericCodec(enable_red), encoder_inst_ptr_(NULL) {
   codec_id_ = codec_id;
 
   // Set sampling frequency, frame size and rate Speex

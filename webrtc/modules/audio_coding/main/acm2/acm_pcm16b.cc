@@ -23,7 +23,9 @@ namespace acm2 {
 
 #ifndef WEBRTC_CODEC_PCM16
 
-ACMPCM16B::ACMPCM16B(int16_t /* codec_id */) { return; }
+ACMPCM16B::ACMPCM16B(int16_t /* codec_id */, bool enable_red)
+    : ACMGenericCodec(enable_red) {
+}
 
 ACMPCM16B::~ACMPCM16B() { return; }
 
@@ -44,7 +46,8 @@ int16_t ACMPCM16B::InternalCreateEncoder() { return -1; }
 void ACMPCM16B::DestructEncoderSafe() { return; }
 
 #else  //===================== Actual Implementation =======================
-ACMPCM16B::ACMPCM16B(int16_t codec_id) {
+ACMPCM16B::ACMPCM16B(int16_t codec_id, bool enable_red)
+    : ACMGenericCodec(enable_red) {
   codec_id_ = codec_id;
   sampling_freq_hz_ = ACMCodecDB::CodecFreq(codec_id_);
 }
