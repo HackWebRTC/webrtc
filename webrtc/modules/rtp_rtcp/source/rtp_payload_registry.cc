@@ -91,7 +91,8 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
         return 0;
       }
     }
-    LOG(LS_ERROR) << "Payload type already registered: " << payload_type;
+    LOG(LS_ERROR) << "Payload type already registered: "
+                  << static_cast<int>(payload_type);
     return -1;
   }
 

@@ -3907,7 +3907,8 @@ bool WebRtcVideoMediaChannel::SetReceiveCodecs(
       }
       if (engine()->vie()->rtp()->SetRtxReceivePayloadType(
           channel_id, it->plType) != 0) {
-        LOG_RTCERR2(SetRtxReceivePayloadType, channel_id, it->plType);
+        LOG_RTCERR2(SetRtxReceivePayloadType, channel_id,
+                    static_cast<int>(it->plType));
         return false;
       }
       rtx_registered = true;

@@ -645,7 +645,7 @@ VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
   const VCMDecoderMapItem* decoder_item = FindDecoderItem(payload_type);
   if (!decoder_item) {
     LOG(LS_ERROR) << "Can't find a decoder associated with payload type: "
-                  << payload_type;
+                  << static_cast<int>(payload_type);
     return NULL;
   }
   VCMGenericDecoder* ptr_decoder = NULL;

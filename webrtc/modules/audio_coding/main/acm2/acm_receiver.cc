@@ -274,8 +274,9 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
 
     int codec_id = RtpHeaderToCodecIndex(*header, incoming_payload);
     if (codec_id < 0) {
-      LOG_F(LS_ERROR) << "Payload-type " << header->payloadType
-          << " is not registered.";
+      LOG_F(LS_ERROR) << "Payload-type "
+                      << static_cast<int>(header->payloadType)
+                      << " is not registered.";
       return -1;
     }
     assert(codec_id < ACMCodecDB::kMaxNumCodecs);
@@ -340,8 +341,9 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
 
   if (neteq_->InsertPacket(rtp_header, incoming_payload, length_payload,
                            receive_timestamp) < 0) {
-    LOG_FERR1(LS_ERROR, "AcmReceiver::InsertPacket", header->payloadType) <<
-        " Failed to insert packet";
+    LOG_FERR1(LS_ERROR, "AcmReceiver::InsertPacket",
+              static_cast<int>(header->payloadType))
+        << " Failed to insert packet";
     return -1;
   }
   return 0;
@@ -506,7 +508,7 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
     if (neteq_->RemovePayloadType(decoders_[acm_codec_id].payload_type) !=
         NetEq::kOK) {
       LOG_F(LS_ERROR) << "Cannot remover payload "
-          << decoders_[acm_codec_id].payload_type;
+          << static_cast<int>(decoders_[acm_codec_id].payload_type);
       return -1;
     }
   }
@@ -519,8 +521,8 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
         audio_decoder, neteq_decoder, payload_type);
   }
   if (ret_val != NetEq::kOK) {
-    LOG_FERR3(LS_ERROR, "AcmReceiver::AddCodec", acm_codec_id, payload_type,
-              channels);
+    LOG_FERR3(LS_ERROR, "AcmReceiver::AddCodec", acm_codec_id,
+              static_cast<int>(payload_type), channels);
     // Registration failed, delete the allocated space and set the pointer to
     // NULL, for the record.
     decoders_[acm_codec_id].registered = false;
@@ -560,7 +562,7 @@ int AcmReceiver::RemoveAllCodecs() {
         decoders_[n].registered = false;
       } else {
         LOG_F(LS_ERROR) << "Cannot remove payload "
-            << decoders_[n].payload_type;
+            << static_cast<int>(decoders_[n].payload_type);
         ret_val = -1;
       }
     }
@@ -576,7 +578,8 @@ int AcmReceiver::RemoveCodec(uint8_t payload_type) {
     return 0;
   }
   if (neteq_->RemovePayloadType(payload_type) != NetEq::kOK) {
-    LOG_FERR1(LS_ERROR, "AcmReceiver::RemoveCodec", payload_type);
+    LOG_FERR1(LS_ERROR, "AcmReceiver::RemoveCodec",
+              static_cast<int>(payload_type));
     return -1;
   }
   CriticalSectionScoped lock(crit_sect_.get());
@@ -683,7 +686,8 @@ int AcmReceiver::DecoderByPayloadType(uint8_t payload_type,
   CriticalSectionScoped lock(crit_sect_.get());
   int codec_index = PayloadType2CodecIndex(payload_type);
   if (codec_index < 0) {
-    LOG_FERR1(LS_ERROR, "AcmReceiver::DecoderByPayloadType", payload_type);
+    LOG_FERR1(LS_ERROR, "AcmReceiver::DecoderByPayloadType",
+              static_cast<int>(payload_type));
     return -1;
   }
   memcpy(codec, &ACMCodecDB::database_[codec_index], sizeof(CodecInst));

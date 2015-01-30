@@ -182,7 +182,8 @@ int NetEqImpl::RegisterPayloadType(enum NetEqDecoder codec,
   LOG_API2(static_cast<int>(rtp_payload_type), codec);
   int ret = decoder_database_->RegisterPayload(rtp_payload_type, codec);
   if (ret != DecoderDatabase::kOK) {
-    LOG_FERR2(LS_WARNING, RegisterPayload, rtp_payload_type, codec);
+    LOG_FERR2(LS_WARNING, RegisterPayload, static_cast<int>(rtp_payload_type),
+              codec);
     switch (ret) {
       case DecoderDatabase::kInvalidRtpPayloadType:
         error_code_ = kInvalidRtpPayloadType;
@@ -215,7 +216,8 @@ int NetEqImpl::RegisterExternalDecoder(AudioDecoder* decoder,
   int ret = decoder_database_->InsertExternal(rtp_payload_type, codec,
                                               sample_rate_hz, decoder);
   if (ret != DecoderDatabase::kOK) {
-    LOG_FERR2(LS_WARNING, InsertExternal, rtp_payload_type, codec);
+    LOG_FERR2(LS_WARNING, InsertExternal, static_cast<int>(rtp_payload_type),
+              codec);
     switch (ret) {
       case DecoderDatabase::kInvalidRtpPayloadType:
         error_code_ = kInvalidRtpPayloadType;
@@ -251,7 +253,7 @@ int NetEqImpl::RemovePayloadType(uint8_t rtp_payload_type) {
   } else {
     error_code_ = kOtherError;
   }
-  LOG_FERR1(LS_WARNING, Remove, rtp_payload_type);
+  LOG_FERR1(LS_WARNING, Remove, static_cast<int>(rtp_payload_type));
   return kFail;
 }
 
@@ -412,7 +414,7 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
         decoder_database_->IsRed(rtp_header.header.payloadType) ||
         decoder_database_->IsComfortNoise(rtp_header.header.payloadType)) {
       LOG_F(LS_ERROR) << "Sync-packet with an unacceptable payload type "
-          << rtp_header.header.payloadType;
+          << static_cast<int>(rtp_header.header.payloadType);
       return kSyncPacketNotAccepted;
     }
     if (first_packet_ ||
@@ -1801,8 +1803,9 @@ int NetEqImpl::ExtractPackets(int required_samples, PacketList* packet_list) {
                                              packet->payload_length);
       }
     } else {
-      LOG_FERR1(LS_WARNING, GetDecoder, packet->header.payloadType) <<
-          "Could not find a decoder for a packet about to be extracted.";
+      LOG_FERR1(LS_WARNING, GetDecoder,
+                static_cast<int>(packet->header.payloadType))
+          << "Could not find a decoder for a packet about to be extracted.";
       assert(false);
     }
     if (packet_duration <= 0) {

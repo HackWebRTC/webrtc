@@ -112,7 +112,7 @@ int32_t RTPReceiverVideo::InvokeOnInitializeDecoder(
       callback->OnInitializeDecoder(
           id, payload_type, payload_name, kVideoPayloadTypeFrequency, 1, 0)) {
     LOG(LS_ERROR) << "Failed to created decoder for payload type: "
-                  << payload_type;
+                  << static_cast<int>(payload_type);
     return -1;
   }
   return 0;

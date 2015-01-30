@@ -114,7 +114,7 @@ int32_t RtpReceiverImpl::RegisterReceivePayload(
     if (rtp_media_receiver_->OnNewPayloadTypeCreated(payload_name, payload_type,
                                                      frequency) != 0) {
       LOG(LS_ERROR) << "Failed to register payload: " << payload_name << "/"
-                 << payload_type;
+                    << static_cast<int>(payload_type);
       return -1;
     }
   }
@@ -318,7 +318,7 @@ void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
         rtp_header.payload_type_frequency, channels, rate)) {
       // New stream, same codec.
       LOG(LS_ERROR) << "Failed to create decoder for payload type: "
-                    << rtp_header.payloadType;
+                    << static_cast<int>(rtp_header.payloadType);
     }
   }
 }

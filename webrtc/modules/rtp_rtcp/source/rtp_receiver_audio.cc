@@ -278,7 +278,7 @@ int32_t RTPReceiverAudio::InvokeOnInitializeDecoder(
                                           specific_payload.Audio.channels,
                                           specific_payload.Audio.rate)) {
     LOG(LS_ERROR) << "Failed to create decoder for payload type: "
-                  << payload_name << "/" << payload_type;
+                  << payload_name << "/" << static_cast<int>(payload_type);
     return -1;
   }
   return 0;
