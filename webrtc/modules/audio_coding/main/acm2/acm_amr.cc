@@ -46,9 +46,8 @@ namespace webrtc {
 namespace acm2 {
 
 #ifndef WEBRTC_CODEC_AMR
-ACMAMR::ACMAMR(int16_t /* codec_id */, bool enable_red)
-    : ACMGenericCodec(enable_red),
-      encoder_inst_ptr_(NULL),
+ACMAMR::ACMAMR(int16_t /* codec_id */)
+    : encoder_inst_ptr_(NULL),
       encoding_mode_(-1),  // Invalid value.
       encoding_rate_(0),   // Invalid value.
       encoder_packing_format_(AMRBandwidthEfficient) {

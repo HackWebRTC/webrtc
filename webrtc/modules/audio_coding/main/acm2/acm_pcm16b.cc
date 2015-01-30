@@ -44,8 +44,7 @@ int16_t ACMPCM16B::InternalCreateEncoder() { return -1; }
 void ACMPCM16B::DestructEncoderSafe() { return; }
 
 #else  //===================== Actual Implementation =======================
-ACMPCM16B::ACMPCM16B(int16_t codec_id, bool enable_red)
-    : ACMGenericCodec(enable_red) {
+ACMPCM16B::ACMPCM16B(int16_t codec_id) {
   codec_id_ = codec_id;
   sampling_freq_hz_ = ACMCodecDB::CodecFreq(codec_id_);
 }

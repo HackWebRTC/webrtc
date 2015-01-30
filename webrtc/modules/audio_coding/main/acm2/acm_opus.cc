@@ -63,12 +63,11 @@ int16_t ACMOpus::SetBitRateSafe(const int32_t /*rate*/) {
 
 #else  //===================== Actual Implementation =======================
 
-ACMOpus::ACMOpus(int16_t codec_id, bool enable_red)
-    : ACMGenericCodec(enable_red),
-      encoder_inst_ptr_(NULL),
-      sample_freq_(32000),   // Default sampling frequency.
-      bitrate_(20000),       // Default bit-rate.
-      channels_(1),          // Default mono.
+ACMOpus::ACMOpus(int16_t codec_id)
+    : encoder_inst_ptr_(NULL),
+      sample_freq_(32000),  // Default sampling frequency.
+      bitrate_(20000),  // Default bit-rate.
+      channels_(1),  // Default mono.
       packet_loss_rate_(0),  // Initial packet loss rate.
       application_(kVoip) {  // Initial application mode.
   codec_id_ = codec_id;

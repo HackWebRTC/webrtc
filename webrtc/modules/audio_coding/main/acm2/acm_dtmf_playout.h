@@ -19,7 +19,7 @@ namespace acm2 {
 
 class ACMDTMFPlayout : public ACMGenericCodec {
  public:
-  ACMDTMFPlayout(int16_t codec_id, bool enable_red);
+  explicit ACMDTMFPlayout(int16_t codec_id);
   ~ACMDTMFPlayout();
 
   // for FEC

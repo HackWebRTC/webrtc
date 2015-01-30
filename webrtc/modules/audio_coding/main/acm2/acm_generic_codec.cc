@@ -37,7 +37,7 @@ enum {
 // We set some of the variables to invalid values as a check point
 // if a proper initialization has happened. Another approach is
 // to initialize to a default codec that we are sure is always included.
-ACMGenericCodec::ACMGenericCodec(bool enable_red)
+ACMGenericCodec::ACMGenericCodec()
     : in_audio_ix_write_(0),
       in_audio_ix_read_(0),
       in_timestamp_ix_write_(0),
@@ -60,7 +60,6 @@ ACMGenericCodec::ACMGenericCodec(bool enable_red)
       sent_cn_previous_(false),
       prev_frame_cng_(0),
       has_internal_fec_(false),
-      copy_red_enabled_(enable_red),
       codec_wrapper_lock_(*RWLockWrapper::CreateRWLock()),
       last_timestamp_(0xD87F3F9F),
       unique_id_(0) {
@@ -201,16 +200,6 @@ int ACMGenericCodec::SetFEC(bool enable_fec) {
   if (!HasInternalFEC() && enable_fec)
     return -1;
   return 0;
-}
-
-void ACMGenericCodec::EnableCopyRed(bool enable, int /*red_payload_type*/) {
-  WriteLockScoped lockCodec(codec_wrapper_lock_);
-  copy_red_enabled_ = enable;
-}
-
-bool ACMGenericCodec::ExternalRedNeeded() {
-  ReadLockScoped lockCodec(codec_wrapper_lock_);
-  return copy_red_enabled_;
 }
 
 int16_t ACMGenericCodec::Encode(uint8_t* bitstream,

@@ -31,7 +31,8 @@ namespace {
 
 class AcmOpusTest : public ACMOpus {
  public:
-  explicit AcmOpusTest(int16_t codec_id) : ACMOpus(codec_id, false) {}
+  explicit AcmOpusTest(int16_t codec_id)
+      : ACMOpus(codec_id) {}
   ~AcmOpusTest() {}
   int packet_loss_rate() { return packet_loss_rate_; }
   OpusApplicationMode application() { return application_; }

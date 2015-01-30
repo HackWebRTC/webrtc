@@ -19,7 +19,7 @@ namespace acm2 {
 
 class ACMPCMA : public ACMGenericCodec {
  public:
-  ACMPCMA(int16_t codec_id, bool enable_red);
+  explicit ACMPCMA(int16_t codec_id);
   ~ACMPCMA();
 
   // For FEC.

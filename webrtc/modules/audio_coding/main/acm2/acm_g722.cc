@@ -64,10 +64,8 @@ struct ACMG722DecStr {
   G722DecInst* inst_right;  // instance for right channel in case of stereo
 };
 
-ACMG722::ACMG722(int16_t codec_id, bool enable_red)
-    : ACMGenericCodec(enable_red),
-      encoder_inst_ptr_(NULL),
-      encoder_inst_ptr_right_(NULL) {
+ACMG722::ACMG722(int16_t codec_id)
+    : encoder_inst_ptr_(NULL), encoder_inst_ptr_right_(NULL) {
   ptr_enc_str_ = new ACMG722EncStr;
   if (ptr_enc_str_ != NULL) {
     ptr_enc_str_->inst = NULL;

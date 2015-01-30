@@ -23,7 +23,7 @@ namespace acm2 {
 
 class ACMSPEEX : public ACMGenericCodec {
  public:
-  ACMSPEEX(int16_t codec_id, bool enable_red);
+  explicit ACMSPEEX(int16_t codec_id);
   ~ACMSPEEX();
 
   // For FEC.

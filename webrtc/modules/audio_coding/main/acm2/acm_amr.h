@@ -25,7 +25,7 @@ namespace acm2 {
 
 class ACMAMR : public ACMGenericCodec {
  public:
-  ACMAMR(int16_t codec_id, bool enable_red);
+  explicit ACMAMR(int16_t codec_id);
   ~ACMAMR();
 
   // for FEC

@@ -19,8 +19,7 @@ namespace webrtc {
 
 namespace acm2 {
 
-ACMCNG::ACMCNG(int16_t codec_id, bool enable_red)
-    : ACMGenericCodec(enable_red) {
+ACMCNG::ACMCNG(int16_t codec_id) {
   encoder_inst_ptr_ = NULL;
   codec_id_ = codec_id;
   samp_freq_hz_ = ACMCodecDB::CodecFreq(codec_id_);

@@ -40,7 +40,7 @@ class ACMGenericCodec {
   ///////////////////////////////////////////////////////////////////////////
   // Constructor of the class
   //
-  explicit ACMGenericCodec(bool enable_red);
+  ACMGenericCodec();
 
   ///////////////////////////////////////////////////////////////////////////
   // Destructor of the class.
@@ -614,13 +614,6 @@ class ACMGenericCodec {
   //
   virtual int SetPacketLossRate(int /* loss_rate */) { return 0; }
 
-  // Sets if CopyRed should be enabled.
-  virtual void EnableCopyRed(bool enable, int red_payload_type);
-
-  // Returns true if the caller needs to produce RED data manually (that is, if
-  // RED has been enabled but the codec isn't able to produce the data itself).
-  virtual bool ExternalRedNeeded();
-
  protected:
   ///////////////////////////////////////////////////////////////////////////
   // All the functions with FunctionNameSafe(...) contain the actual
@@ -959,8 +952,6 @@ class ACMGenericCodec {
 
   // FEC.
   bool has_internal_fec_ GUARDED_BY(codec_wrapper_lock_);
-
-  bool copy_red_enabled_ GUARDED_BY(codec_wrapper_lock_);
 
   WebRtcACMCodecParams encoder_params_ GUARDED_BY(codec_wrapper_lock_);
 
