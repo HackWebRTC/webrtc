@@ -433,7 +433,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
 
   void CreateOfferAsRemoteDescription() {
     rtc::scoped_ptr<SessionDescriptionInterface> offer;
-    EXPECT_TRUE(DoCreateOffer(offer.use()));
+    ASSERT_TRUE(DoCreateOffer(offer.use()));
     std::string sdp;
     EXPECT_TRUE(offer->ToString(&sdp));
     SessionDescriptionInterface* remote_offer =
@@ -445,7 +445,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
 
   void CreateAnswerAsLocalDescription() {
     scoped_ptr<SessionDescriptionInterface> answer;
-    EXPECT_TRUE(DoCreateAnswer(answer.use()));
+    ASSERT_TRUE(DoCreateAnswer(answer.use()));
 
     // TODO(perkj): Currently SetLocalDescription fails if any parameters in an
     // audio codec change, even if the parameter has nothing to do with
@@ -465,7 +465,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
 
   void CreatePrAnswerAsLocalDescription() {
     scoped_ptr<SessionDescriptionInterface> answer;
-    EXPECT_TRUE(DoCreateAnswer(answer.use()));
+    ASSERT_TRUE(DoCreateAnswer(answer.use()));
 
     std::string sdp;
     EXPECT_TRUE(answer->ToString(&sdp));
@@ -711,7 +711,7 @@ TEST_F(PeerConnectionInterfaceTest, SsrcInOfferAnswer) {
 
   // Test CreateOffer
   scoped_ptr<SessionDescriptionInterface> offer;
-  EXPECT_TRUE(DoCreateOffer(offer.use()));
+  ASSERT_TRUE(DoCreateOffer(offer.use()));
   int audio_ssrc = 0;
   int video_ssrc = 0;
   EXPECT_TRUE(GetFirstSsrc(GetFirstAudioContent(offer->description()),
@@ -723,7 +723,7 @@ TEST_F(PeerConnectionInterfaceTest, SsrcInOfferAnswer) {
   // Test CreateAnswer
   EXPECT_TRUE(DoSetRemoteDescription(offer.release()));
   scoped_ptr<SessionDescriptionInterface> answer;
-  EXPECT_TRUE(DoCreateAnswer(answer.use()));
+  ASSERT_TRUE(DoCreateAnswer(answer.use()));
   audio_ssrc = 0;
   video_ssrc = 0;
   EXPECT_TRUE(GetFirstSsrc(GetFirstAudioContent(answer->description()),
