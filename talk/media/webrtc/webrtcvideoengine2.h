@@ -157,8 +157,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
 
   VideoFormat GetStartCaptureFormat() const { return default_codec_format_; }
 
-  rtc::CpuMonitor* cpu_monitor() { return cpu_monitor_.get(); }
-
  private:
   std::vector<VideoCodec> GetSupportedCodecs() const;
 
@@ -169,8 +167,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   VideoFormat default_codec_format_;
 
   bool initialized_;
-
-  rtc::scoped_ptr<rtc::CpuMonitor> cpu_monitor_;
 
   WebRtcCallFactory default_call_factory_;
   WebRtcCallFactory* call_factory_;

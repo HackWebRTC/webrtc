@@ -330,7 +330,6 @@ WebRtcVideoEngine2::WebRtcVideoEngine2()
                             FPS_TO_INTERVAL(kDefaultVideoMaxFramerate),
                             FOURCC_ANY),
       initialized_(false),
-      cpu_monitor_(new rtc::CpuMonitor(NULL)),
       call_factory_(&default_call_factory_),
       external_decoder_factory_(NULL),
       external_encoder_factory_(NULL) {
@@ -362,21 +361,12 @@ bool WebRtcVideoEngine2::Init(rtc::Thread* worker_thread) {
   worker_thread_ = worker_thread;
   ASSERT(worker_thread_ != NULL);
 
-  cpu_monitor_->set_thread(worker_thread_);
-  if (!cpu_monitor_->Start(kCpuMonitorPeriodMs)) {
-    LOG(LS_ERROR) << "Failed to start CPU monitor.";
-    cpu_monitor_.reset();
-  }
-
   initialized_ = true;
   return true;
 }
 
 void WebRtcVideoEngine2::Terminate() {
   LOG(LS_INFO) << "WebRtcVideoEngine2::Terminate";
-
-  if (cpu_monitor_.get() != NULL)
-    cpu_monitor_->Stop();
 
   initialized_ = false;
 }
