@@ -99,7 +99,7 @@ int ViEExternalCodecImpl::DeRegisterExternalSendCodec(
 
 int ViEExternalCodecImpl::RegisterExternalReceiveCodec(
     const int video_channel,
-    const unsigned int pl_type,
+    const unsigned char pl_type,
     VideoDecoder* decoder,
     bool decoder_render,
     int render_delay) {

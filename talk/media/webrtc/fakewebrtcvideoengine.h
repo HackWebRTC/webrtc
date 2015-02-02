@@ -1264,7 +1264,7 @@ class FakeWebRtcVideoEngine
     return 0;
   }
   WEBRTC_FUNC(RegisterExternalReceiveCodec,
-      (const int channel, const unsigned int pl_type, webrtc::VideoDecoder*,
+      (const int channel, const unsigned char pl_type, webrtc::VideoDecoder*,
        bool, int)) {
     WEBRTC_CHECK_CHANNEL(channel);
     channels_[channel]->ext_decoder_pl_types_.insert(pl_type);
