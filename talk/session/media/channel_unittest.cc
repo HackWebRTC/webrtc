@@ -423,7 +423,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     rtc::SetBE32(const_cast<char*>(data.c_str()) + 8, ssrc);
     rtc::SetBE16(const_cast<char*>(data.c_str()) + 2, sequence_number);
     if (pl_type >= 0) {
-      rtc::Set8(const_cast<char*>(data.c_str()), 1, pl_type);
+      rtc::Set8(const_cast<char*>(data.c_str()), 1,
+                static_cast<uint8_t>(pl_type));
     }
     return data;
   }

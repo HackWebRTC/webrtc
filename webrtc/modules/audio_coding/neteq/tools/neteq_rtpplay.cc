@@ -187,57 +187,64 @@ std::string CodecName(webrtc::NetEqDecoder codec) {
 void RegisterPayloadTypes(NetEq* neteq) {
   assert(neteq);
   int error;
-  error = neteq->RegisterPayloadType(webrtc::kDecoderPCMu, FLAGS_pcmu);
+  error = neteq->RegisterPayloadType(webrtc::kDecoderPCMu,
+                                     static_cast<uint8_t>(FLAGS_pcmu));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_pcmu <<
         " as " << CodecName(webrtc::kDecoderPCMu).c_str() << std::endl;
     exit(1);
   }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderPCMa, FLAGS_pcma);
+  error = neteq->RegisterPayloadType(webrtc::kDecoderPCMa,
+                                     static_cast<uint8_t>(FLAGS_pcma));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_pcma <<
         " as " << CodecName(webrtc::kDecoderPCMa).c_str() << std::endl;
     exit(1);
   }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderILBC, FLAGS_ilbc);
+  error = neteq->RegisterPayloadType(webrtc::kDecoderILBC,
+                                     static_cast<uint8_t>(FLAGS_ilbc));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_ilbc <<
         " as " << CodecName(webrtc::kDecoderILBC).c_str() << std::endl;
     exit(1);
   }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderISAC, FLAGS_isac);
+  error = neteq->RegisterPayloadType(webrtc::kDecoderISAC,
+                                     static_cast<uint8_t>(FLAGS_isac));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_isac <<
         " as " << CodecName(webrtc::kDecoderISAC).c_str() << std::endl;
     exit(1);
   }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderISACswb, FLAGS_isac_swb);
+  error = neteq->RegisterPayloadType(webrtc::kDecoderISACswb,
+                                     static_cast<uint8_t>(FLAGS_isac_swb));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_isac_swb <<
         " as " << CodecName(webrtc::kDecoderISACswb).c_str() << std::endl;
     exit(1);
   }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderOpus, FLAGS_opus);
+  error = neteq->RegisterPayloadType(webrtc::kDecoderOpus,
+                                     static_cast<uint8_t>(FLAGS_opus));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_opus << " as "
               << CodecName(webrtc::kDecoderOpus).c_str() << std::endl;
     exit(1);
   }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderPCM16B, FLAGS_pcm16b);
+  error = neteq->RegisterPayloadType(webrtc::kDecoderPCM16B,
+                                     static_cast<uint8_t>(FLAGS_pcm16b));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_pcm16b <<
         " as " << CodecName(webrtc::kDecoderPCM16B).c_str() << std::endl;
     exit(1);
   }
   error = neteq->RegisterPayloadType(webrtc::kDecoderPCM16Bwb,
-                                      FLAGS_pcm16b_wb);
+                                     static_cast<uint8_t>(FLAGS_pcm16b_wb));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_pcm16b_wb <<
         " as " << CodecName(webrtc::kDecoderPCM16Bwb).c_str() << std::endl;
     exit(1);
   }
   error = neteq->RegisterPayloadType(webrtc::kDecoderPCM16Bswb32kHz,
-                                      FLAGS_pcm16b_swb32);
+                                     static_cast<uint8_t>(FLAGS_pcm16b_swb32));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_pcm16b_swb32 <<
         " as " << CodecName(webrtc::kDecoderPCM16Bswb32kHz).c_str() <<
@@ -245,52 +252,57 @@ void RegisterPayloadTypes(NetEq* neteq) {
     exit(1);
   }
   error = neteq->RegisterPayloadType(webrtc::kDecoderPCM16Bswb48kHz,
-                                      FLAGS_pcm16b_swb48);
+                                     static_cast<uint8_t>(FLAGS_pcm16b_swb48));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_pcm16b_swb48 <<
         " as " << CodecName(webrtc::kDecoderPCM16Bswb48kHz).c_str() <<
         std::endl;
     exit(1);
   }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderG722, FLAGS_g722);
+  error = neteq->RegisterPayloadType(webrtc::kDecoderG722,
+                                     static_cast<uint8_t>(FLAGS_g722));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_g722 <<
         " as " << CodecName(webrtc::kDecoderG722).c_str() << std::endl;
     exit(1);
   }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderAVT, FLAGS_avt);
+  error = neteq->RegisterPayloadType(webrtc::kDecoderAVT,
+                                     static_cast<uint8_t>(FLAGS_avt));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_avt <<
         " as " << CodecName(webrtc::kDecoderAVT).c_str() << std::endl;
     exit(1);
   }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderRED, FLAGS_red);
+  error = neteq->RegisterPayloadType(webrtc::kDecoderRED,
+                                     static_cast<uint8_t>(FLAGS_red));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_red <<
         " as " << CodecName(webrtc::kDecoderRED).c_str() << std::endl;
     exit(1);
   }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderCNGnb, FLAGS_cn_nb);
+  error = neteq->RegisterPayloadType(webrtc::kDecoderCNGnb,
+                                     static_cast<uint8_t>(FLAGS_cn_nb));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_cn_nb <<
         " as " << CodecName(webrtc::kDecoderCNGnb).c_str() << std::endl;
     exit(1);
   }
-  error = neteq->RegisterPayloadType(webrtc::kDecoderCNGwb, FLAGS_cn_wb);
+  error = neteq->RegisterPayloadType(webrtc::kDecoderCNGwb,
+                                     static_cast<uint8_t>(FLAGS_cn_wb));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_cn_wb <<
         " as " << CodecName(webrtc::kDecoderCNGwb).c_str() << std::endl;
     exit(1);
   }
   error = neteq->RegisterPayloadType(webrtc::kDecoderCNGswb32kHz,
-                                      FLAGS_cn_swb32);
+                                     static_cast<uint8_t>(FLAGS_cn_swb32));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_cn_swb32 <<
         " as " << CodecName(webrtc::kDecoderCNGswb32kHz).c_str() << std::endl;
     exit(1);
   }
   error = neteq->RegisterPayloadType(webrtc::kDecoderCNGswb48kHz,
-                                     FLAGS_cn_swb48);
+                                     static_cast<uint8_t>(FLAGS_cn_swb48));
   if (error) {
     std::cerr << "Cannot register payload type " << FLAGS_cn_swb48 <<
         " as " << CodecName(webrtc::kDecoderCNGswb48kHz).c_str() << std::endl;
@@ -442,16 +454,18 @@ size_t ReplacePayload(webrtc::test::InputAudioFile* replacement_audio_file,
     // Change payload type to PCM16.
     switch (CodecSampleRate(rtp_header->header.payloadType)) {
       case 8000:
-        rtp_header->header.payloadType = FLAGS_pcm16b;
+        rtp_header->header.payloadType = static_cast<uint8_t>(FLAGS_pcm16b);
         break;
       case 16000:
-        rtp_header->header.payloadType = FLAGS_pcm16b_wb;
+        rtp_header->header.payloadType = static_cast<uint8_t>(FLAGS_pcm16b_wb);
         break;
       case 32000:
-        rtp_header->header.payloadType = FLAGS_pcm16b_swb32;
+        rtp_header->header.payloadType =
+            static_cast<uint8_t>(FLAGS_pcm16b_swb32);
         break;
       case 48000:
-        rtp_header->header.payloadType = FLAGS_pcm16b_swb48;
+        rtp_header->header.payloadType =
+            static_cast<uint8_t>(FLAGS_pcm16b_swb48);
         break;
       default:
         std::cerr << "Payload type " <<

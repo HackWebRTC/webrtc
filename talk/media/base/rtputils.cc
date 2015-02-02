@@ -29,7 +29,7 @@
 
 namespace cricket {
 
-static const int kRtpVersion = 2;
+static const uint8_t kRtpVersion = 2;
 static const size_t kRtpFlagsOffset = 0;
 static const size_t kRtpPayloadTypeOffset = 1;
 static const size_t kRtpSeqNumOffset = 2;
@@ -62,7 +62,7 @@ bool GetUint32(const void* data, size_t offset, uint32* value) {
   return true;
 }
 
-bool SetUint8(void* data, size_t offset, int value) {
+bool SetUint8(void* data, size_t offset, uint8_t value) {
   if (!data) {
     return false;
   }
@@ -70,7 +70,7 @@ bool SetUint8(void* data, size_t offset, int value) {
   return true;
 }
 
-bool SetUint16(void* data, size_t offset, int value) {
+bool SetUint16(void* data, size_t offset, uint16_t value) {
   if (!data) {
     return false;
   }
@@ -142,16 +142,6 @@ bool GetRtpHeaderLen(const void* data, size_t len, size_t* value) {
   return true;
 }
 
-bool GetRtpVersion(const void* data, size_t len, int* version) {
-  if (len == 0) {
-    return false;
-  }
-
-  const uint8 first = static_cast<const uint8*>(data)[0];
-  *version = static_cast<int>((first >> 6) & 0x3);
-  return true;
-}
-
 bool GetRtpHeader(const void* data, size_t len, RtpHeader* header) {
   return (GetRtpPayloadType(data, len, &(header->payload_type)) &&
           GetRtpSeqNum(data, len, &(header->seq_num)) &&
@@ -180,46 +170,20 @@ bool GetRtcpSsrc(const void* data, size_t len, uint32* value) {
   return true;
 }
 
-bool SetRtpHeaderFlags(
-    void* data, size_t len,
-    bool padding, bool extension, int csrc_count) {
-  if (csrc_count > 0x0F) {
-    return false;
-  }
-  int flags = 0;
-  flags |= (kRtpVersion << 6);
-  flags |= ((padding ? 1 : 0) << 5);
-  flags |= ((extension ? 1 : 0) << 4);
-  flags |= csrc_count;
-  return SetUint8(data, kRtpFlagsOffset, flags);
-}
-
-// Assumes marker bit is 0.
-bool SetRtpPayloadType(void* data, size_t len, int value) {
-  if (value >= 0x7F) {
-    return false;
-  }
-  return SetUint8(data, kRtpPayloadTypeOffset, value & 0x7F);
-}
-
-bool SetRtpSeqNum(void* data, size_t len, int value) {
-  return SetUint16(data, kRtpSeqNumOffset, value);
-}
-
-bool SetRtpTimestamp(void* data, size_t len, uint32 value) {
-  return SetUint32(data, kRtpTimestampOffset, value);
-}
-
 bool SetRtpSsrc(void* data, size_t len, uint32 value) {
   return SetUint32(data, kRtpSsrcOffset, value);
 }
 
 // Assumes version 2, no padding, no extensions, no csrcs.
 bool SetRtpHeader(void* data, size_t len, const RtpHeader& header) {
-  return (SetRtpHeaderFlags(data, len, false, false, 0) &&
-          SetRtpPayloadType(data, len, header.payload_type) &&
-          SetRtpSeqNum(data, len, header.seq_num) &&
-          SetRtpTimestamp(data, len, header.timestamp) &&
+  if (header.payload_type >= 0x7F) {
+    return false;
+  }
+  return (SetUint8(data, kRtpFlagsOffset, kRtpVersion << 6) &&
+          SetUint8(data, kRtpPayloadTypeOffset, header.payload_type & 0x7F) &&
+          SetUint16(data, kRtpSeqNumOffset,
+                    static_cast<uint16_t>(header.seq_num)) &&
+          SetUint32(data, kRtpTimestampOffset, header.timestamp) &&
           SetRtpSsrc(data, len, header.ssrc));
 }
 
@@ -227,11 +191,7 @@ bool IsRtpPacket(const void* data, size_t len) {
   if (len < kMinRtpPacketLen)
     return false;
 
-  int version = 0;
-  if (!GetRtpVersion(data, len, &version))
-    return false;
-
-  return version == kRtpVersion;
+  return (static_cast<const uint8*>(data)[0] >> 6) == kRtpVersion;
 }
 
 }  // namespace cricket

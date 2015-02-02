@@ -1129,12 +1129,12 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
   AudioDecoder* decoder = NULL;
   if (!packet_list->empty()) {
     const Packet* packet = packet_list->front();
-    int payload_type = packet->header.payloadType;
+    uint8_t payload_type = packet->header.payloadType;
     if (!decoder_database_->IsComfortNoise(payload_type)) {
       decoder = decoder_database_->GetDecoder(payload_type);
       assert(decoder);
       if (!decoder) {
-        LOG_FERR1(LS_WARNING, GetDecoder, payload_type);
+        LOG_FERR1(LS_WARNING, GetDecoder, static_cast<int>(payload_type));
         PacketBuffer::DeleteAllPackets(packet_list);
         return kDecoderNotFound;
       }
@@ -1146,7 +1146,7 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
             ->GetDecoderInfo(payload_type);
         assert(decoder_info);
         if (!decoder_info) {
-          LOG_FERR1(LS_WARNING, GetDecoderInfo, payload_type);
+          LOG_FERR1(LS_WARNING, GetDecoderInfo, static_cast<int>(payload_type));
           PacketBuffer::DeleteAllPackets(packet_list);
           return kDecoderNotFound;
         }

@@ -55,7 +55,7 @@ void RedPacket::CreateHeader(const uint8_t* rtp_header, size_t header_length,
   data_[1] += red_pl_type;
   // Add RED header
   // f-bit always 0
-  data_[header_length] = pl_type;
+  data_[header_length] = static_cast<uint8_t>(pl_type);
   header_length_ = header_length + kREDForFECHeaderLength;
 }
 

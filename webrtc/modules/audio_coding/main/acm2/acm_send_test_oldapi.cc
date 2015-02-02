@@ -64,7 +64,7 @@ bool AcmSendTestOldApi::RegisterCodec(const char* payload_name,
 
 Packet* AcmSendTestOldApi::NextPacket() {
   assert(codec_registered_);
-  if (filter_.test(payload_type_)) {
+  if (filter_.test(static_cast<size_t>(payload_type_))) {
     // This payload type should be filtered out. Since the payload type is the
     // same throughout the whole test run, no packet at all will be delivered.
     // We can just as well signal that the test is over by returning NULL.
@@ -115,7 +115,7 @@ Packet* AcmSendTestOldApi::CreatePacket() {
   uint8_t* packet_memory = new uint8_t[allocated_bytes];
   // Populate the header bytes.
   packet_memory[0] = 0x80;
-  packet_memory[1] = payload_type_;
+  packet_memory[1] = static_cast<uint8_t>(payload_type_);
   packet_memory[2] = (sequence_number_ >> 8) & 0xFF;
   packet_memory[3] = (sequence_number_) & 0xFF;
   packet_memory[4] = (timestamp_ >> 24) & 0xFF;

@@ -75,9 +75,7 @@ static const unsigned char kNonCompoundRtcpSDESPacket[] = {
 };
 
 TEST(RtpUtilsTest, GetRtp) {
-  int ver;
-  EXPECT_TRUE(GetRtpVersion(kPcmuFrame, sizeof(kPcmuFrame), &ver));
-  EXPECT_EQ(2, ver);
+  EXPECT_TRUE(IsRtpPacket(kPcmuFrame, sizeof(kPcmuFrame)));
 
   int pt;
   EXPECT_TRUE(GetRtpPayloadType(kPcmuFrame, sizeof(kPcmuFrame), &pt));
@@ -111,40 +109,20 @@ TEST(RtpUtilsTest, GetRtp) {
   EXPECT_FALSE(GetRtpSsrc(kInvalidPacket, sizeof(kInvalidPacket), &ssrc));
 }
 
-TEST(RtpUtilsTest, SetRtp) {
+TEST(RtpUtilsTest, SetRtpHeader) {
   unsigned char packet[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   };
 
-  EXPECT_TRUE(SetRtpHeaderFlags(packet, sizeof(packet), false, false, 0));
-  EXPECT_TRUE(SetRtpPayloadType(packet, sizeof(packet), 9u));
-  EXPECT_TRUE(SetRtpSeqNum(packet, sizeof(packet), 1111u));
-  EXPECT_TRUE(SetRtpTimestamp(packet, sizeof(packet), 2222u));
-  EXPECT_TRUE(SetRtpSsrc(packet, sizeof(packet), 3333u));
+  RtpHeader header = { 9, 1111, 2222u, 3333u };
+  EXPECT_TRUE(SetRtpHeader(packet, sizeof(packet), header));
 
   // Bits: 10 0 0 0000
   EXPECT_EQ(128u, packet[0]);
   size_t len;
   EXPECT_TRUE(GetRtpHeaderLen(packet, sizeof(packet), &len));
   EXPECT_EQ(12U, len);
-  RtpHeader header;
   EXPECT_TRUE(GetRtpHeader(packet, sizeof(packet), &header));
-  EXPECT_EQ(9, header.payload_type);
-  EXPECT_EQ(1111, header.seq_num);
-  EXPECT_EQ(2222u, header.timestamp);
-  EXPECT_EQ(3333u, header.ssrc);
-
-  unsigned char packet2[] = {
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-  };
-
-  EXPECT_TRUE(SetRtpHeader(packet2, sizeof(packet2), header));
-
-  // Bits: 10 0 0 0000
-  EXPECT_EQ(128u, packet2[0]);
-  EXPECT_TRUE(GetRtpHeaderLen(packet2, sizeof(packet2), &len));
-  EXPECT_EQ(12U, len);
-  EXPECT_TRUE(GetRtpHeader(packet2, sizeof(packet2), &header));
   EXPECT_EQ(9, header.payload_type);
   EXPECT_EQ(1111, header.seq_num);
   EXPECT_EQ(2222u, header.timestamp);
