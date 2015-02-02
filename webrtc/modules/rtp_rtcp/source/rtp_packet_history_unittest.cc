@@ -15,6 +15,7 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -242,6 +243,28 @@ TEST_F(RtpPacketHistoryTest, DynamicExpansion) {
 
   // Retransmit last 16 packets.
   for (int i = 4; i < 20; ++i) {
+    len = kMaxPacketLength;
+    EXPECT_TRUE(hist_->GetPacketAndSetSendTime(kSeqNum + i, 100, false, packet_,
+                                               &len, &time));
+  }
+}
+
+TEST_F(RtpPacketHistoryTest, FullExpansion) {
+  hist_->SetStorePacketsStatus(true, kSendSidePacketHistorySize);
+  size_t len;
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
+  int64_t time;
+  for (size_t i = 0; i < kMaxHistoryCapacity + 1; ++i) {
+    len = 0;
+    CreateRtpPacket(kSeqNum + i, kSsrc, kPayload, kTimestamp, packet_, &len);
+    EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
+                                     capture_time_ms, kAllowRetransmission));
+  }
+
+  fake_clock_.AdvanceTimeMilliseconds(100);
+
+  // Retransmit all packets currently in buffer.
+  for (size_t i = 1; i < kMaxHistoryCapacity + 1; ++i) {
     len = kMaxPacketLength;
     EXPECT_TRUE(hist_->GetPacketAndSetSendTime(kSeqNum + i, 100, false, packet_,
                                                &len, &time));

@@ -23,7 +23,6 @@
 namespace webrtc {
 
 static const int kMinPacketRequestBytes = 50;
-static const size_t kMaxSize = 9600;  // "Should be enough for anyone."
 
 RTPPacketHistory::RTPPacketHistory(Clock* clock)
   : clock_(clock),
@@ -53,7 +52,7 @@ void RTPPacketHistory::SetStorePacketsStatus(bool enable,
 
 void RTPPacketHistory::Allocate(size_t number_to_store) {
   assert(number_to_store > 0);
-  assert(number_to_store <= kMaxSize);
+  assert(number_to_store <= kMaxHistoryCapacity);
   store_ = true;
   stored_packets_.resize(number_to_store);
   stored_seq_nums_.resize(number_to_store);
@@ -145,13 +144,15 @@ int32_t RTPPacketHistory::PutRTPPacket(const uint8_t* packet,
   if (stored_lengths_[prev_index_] > 0 &&
       stored_send_times_[prev_index_] == 0) {
     size_t current_size = static_cast<uint16_t>(stored_packets_.size());
-    size_t expanded_size = std::max(current_size * 3 / 2, current_size + 1);
-    expanded_size = std::min(expanded_size, kMaxSize);
-    Allocate(expanded_size);
-    VerifyAndAllocatePacketLength(max_packet_length, current_size);
-    // Causes discontinuity, but that's OK-ish. FindSeqNum() will still work,
-    // but may be slower - at least until buffer has wrapped around once.
-    prev_index_ = current_size;
+    if (current_size < kMaxHistoryCapacity) {
+      size_t expanded_size = std::max(current_size * 3 / 2, current_size + 1);
+      expanded_size = std::min(expanded_size, kMaxHistoryCapacity);
+      Allocate(expanded_size);
+      VerifyAndAllocatePacketLength(max_packet_length, current_size);
+      // Causes discontinuity, but that's OK-ish. FindSeqNum() will still work,
+      // but may be slower - at least until buffer has wrapped around once.
+      prev_index_ = current_size;
+    }
   }
 
   // Store packet

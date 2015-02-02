@@ -1003,13 +1003,21 @@ int32_t RTPSender::SendToNetwork(
   }
 
   size_t length = payload_length + rtp_header_length;
-  if (!SendPacketToNetwork(buffer, length))
+  bool sent = SendPacketToNetwork(buffer, length);
+
+  if (storage != kDontStore) {
+    // Mark the packet as sent in the history even if send failed. Dropping a
+    // packet here should be treated as any other packet drop so we should be
+    // ready for a retransmission.
+    packet_history_.SetSent(rtp_header.sequenceNumber);
+  }
+  if (!sent)
     return -1;
+
   {
     CriticalSectionScoped lock(send_critsect_);
     media_has_been_sent_ = true;
   }
-  packet_history_.SetSent(rtp_header.sequenceNumber);
   UpdateRtpStats(buffer, length, rtp_header, false, false);
   return 0;
 }

@@ -25,6 +25,8 @@ namespace webrtc {
 class Clock;
 class CriticalSectionWrapper;
 
+static const size_t kMaxHistoryCapacity = 9600;
+
 class RTPPacketHistory {
  public:
   RTPPacketHistory(Clock* clock);
