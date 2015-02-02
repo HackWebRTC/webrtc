@@ -191,7 +191,7 @@ bool AudioEncoderDecoderIsacT<T>::EncodeInternal(uint32_t rtp_timestamp,
                                                  size_t max_encoded_bytes,
                                                  uint8_t* encoded,
                                                  EncodedInfo* info) {
-  CriticalSectionScoped cs(lock_.get());
+  CriticalSectionScoped cs_lock(lock_.get());
   if (!packet_in_progress_) {
     // Starting a new packet; remember the timestamp for later.
     packet_in_progress_ = true;
