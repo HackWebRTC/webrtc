@@ -140,10 +140,9 @@ AudioDecoderG722::~AudioDecoderG722() {
 int AudioDecoderG722::Decode(const uint8_t* encoded, size_t encoded_len,
                              int16_t* decoded, SpeechType* speech_type) {
   int16_t temp_type = 1;  // Default is speech.
-  int16_t ret = WebRtcG722_Decode(
-      dec_state_,
-      const_cast<int16_t*>(reinterpret_cast<const int16_t*>(encoded)),
-      static_cast<int16_t>(encoded_len), decoded, &temp_type);
+  int16_t ret =
+      WebRtcG722_Decode(dec_state_, encoded, static_cast<int16_t>(encoded_len),
+                        decoded, &temp_type);
   *speech_type = ConvertSpeechType(temp_type);
   return ret;
 }
@@ -176,16 +175,15 @@ int AudioDecoderG722Stereo::Decode(const uint8_t* encoded, size_t encoded_len,
   uint8_t* encoded_deinterleaved = new uint8_t[encoded_len];
   SplitStereoPacket(encoded, encoded_len, encoded_deinterleaved);
   // Decode left and right.
-  int16_t ret = WebRtcG722_Decode(
-      dec_state_left_,
-      reinterpret_cast<int16_t*>(encoded_deinterleaved),
-      static_cast<int16_t>(encoded_len / 2), decoded, &temp_type);
+  int16_t ret = WebRtcG722_Decode(dec_state_left_, encoded_deinterleaved,
+                                  static_cast<int16_t>(encoded_len / 2),
+                                  decoded, &temp_type);
   if (ret >= 0) {
     int decoded_len = ret;
-    ret = WebRtcG722_Decode(
-      dec_state_right_,
-      reinterpret_cast<int16_t*>(&encoded_deinterleaved[encoded_len / 2]),
-      static_cast<int16_t>(encoded_len / 2), &decoded[decoded_len], &temp_type);
+    ret = WebRtcG722_Decode(dec_state_right_,
+                            &encoded_deinterleaved[encoded_len / 2],
+                            static_cast<int16_t>(encoded_len / 2),
+                            &decoded[decoded_len], &temp_type);
     if (ret == decoded_len) {
       decoded_len += ret;
       // Interleave output.
