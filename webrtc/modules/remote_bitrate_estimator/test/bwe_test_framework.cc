@@ -145,6 +145,9 @@ Packet::Packet(int64_t send_time_us, uint32_t sequence_number)
   header_.sequenceNumber = sequence_number;
 }
 
+Packet::~Packet() {
+}
+
 bool Packet::operator<(const Packet& rhs) const {
   return send_time_us_ < rhs.send_time_us_;
 }
@@ -163,7 +166,7 @@ void Packet::SetAbsSendTimeMs(int64_t abs_send_time_ms) {
 bool IsTimeSorted(const Packets& packets) {
   PacketsConstIt last_it = packets.begin();
   for (PacketsConstIt it = last_it; it != packets.end(); ++it) {
-    if (it != last_it && *it < *last_it) {
+    if (it != last_it && **it < **last_it) {
       return false;
     }
     last_it = it;
@@ -266,8 +269,8 @@ void RateCounterFilter::Plot(int64_t timestamp_ms) {
 
 void RateCounterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
-  for (const auto& packet : *in_out) {
-    rate_counter_->UpdateRates(packet.send_time_us(), packet.payload_size());
+  for (const auto* packet : *in_out) {
+    rate_counter_->UpdateRates(packet->send_time_us(), packet->payload_size());
   }
   packets_per_second_stats_.Push(rate_counter_->packets_per_second());
   kbps_stats_.Push(rate_counter_->bits_per_second() / 1000.0);
@@ -291,6 +294,7 @@ void LossFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
   for (PacketsIt it = in_out->begin(); it != in_out->end(); ) {
     if (random_.Rand() < loss_fraction_) {
+      delete *it;
       it = in_out->erase(it);
     } else {
       ++it;
@@ -313,10 +317,10 @@ void DelayFilter::SetDelay(int64_t delay_ms) {
 
 void DelayFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
-  for (auto& packet : *in_out) {
-    int64_t new_send_time_us = packet.send_time_us() + delay_us_;
+  for (auto* packet : *in_out) {
+    int64_t new_send_time_us = packet->send_time_us() + delay_us_;
     last_send_time_us_ = std::max(last_send_time_us_, new_send_time_us);
-    packet.set_send_time_us(last_send_time_us_);
+    packet->set_send_time_us(last_send_time_us_);
   }
 }
 
@@ -337,11 +341,11 @@ void JitterFilter::SetJitter(int64_t stddev_jitter_ms) {
 
 void JitterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
-  for (auto& packet : *in_out) {
-    int64_t new_send_time_us = packet.send_time_us();
+  for (auto* packet : *in_out) {
+    int64_t new_send_time_us = packet->send_time_us();
     new_send_time_us += random_.Gaussian(0, stddev_jitter_us_);
     last_send_time_us_ = std::max(last_send_time_us_, new_send_time_us);
-    packet.set_send_time_us(last_send_time_us_);
+    packet->set_send_time_us(last_send_time_us_);
   }
 }
 
@@ -366,11 +370,11 @@ void ReorderFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
     PacketsIt it = last_it;
     while (++it != in_out->end()) {
       if (random_.Rand() < reorder_fraction_) {
-        int64_t t1 = last_it->send_time_us();
-        int64_t t2 = it->send_time_us();
-        std::swap(*last_it, *it);
-        last_it->set_send_time_us(t1);
-        it->set_send_time_us(t2);
+        int64_t t1 = (*last_it)->send_time_us();
+        int64_t t2 = (*it)->send_time_us();
+        std::swap(**last_it, **it);
+        (*last_it)->set_send_time_us(t1);
+        (*it)->set_send_time_us(t2);
       }
       last_it = it;
     }
@@ -403,16 +407,18 @@ void ChokeFilter::SetCapacity(uint32_t kbps) {
 void ChokeFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
   for (PacketsIt it = in_out->begin(); it != in_out->end(); ) {
-    int64_t earliest_send_time_us = last_send_time_us_ +
-        (it->payload_size() * 8 * 1000 + kbps_ / 2) / kbps_;
-    int64_t new_send_time_us = std::max(it->send_time_us(),
-                                        earliest_send_time_us);
+    int64_t earliest_send_time_us =
+        last_send_time_us_ +
+        ((*it)->payload_size() * 8 * 1000 + kbps_ / 2) / kbps_;
+    int64_t new_send_time_us =
+        std::max((*it)->send_time_us(), earliest_send_time_us);
     if (delay_cap_helper_->ShouldSendPacket(new_send_time_us,
-                                            it->send_time_us())) {
-      it->set_send_time_us(new_send_time_us);
+                                            (*it)->send_time_us())) {
+      (*it)->set_send_time_us(new_send_time_us);
       last_send_time_us_ = new_send_time_us;
       ++it;
     } else {
+      delete *it;
       it = in_out->erase(it);
     }
   }
@@ -495,19 +501,20 @@ void TraceBasedDeliveryFilter::Plot(int64_t timestamp_ms) {
 void TraceBasedDeliveryFilter::RunFor(int64_t time_ms, Packets* in_out) {
   assert(in_out);
   for (PacketsIt it = in_out->begin(); it != in_out->end();) {
-    while (local_time_us_ < it->send_time_us()) {
+    while (local_time_us_ < (*it)->send_time_us()) {
       ProceedToNextSlot();
     }
     // Drop any packets that have been queued for too long.
     while (!delay_cap_helper_->ShouldSendPacket(local_time_us_,
-                                                it->send_time_us())) {
+                                                (*it)->send_time_us())) {
+      delete *it;
       it = in_out->erase(it);
       if (it == in_out->end()) {
         return;
       }
     }
-    if (local_time_us_ >= it->send_time_us()) {
-      it->set_send_time_us(local_time_us_);
+    if (local_time_us_ >= (*it)->send_time_us()) {
+      (*it)->set_send_time_us(local_time_us_);
       ProceedToNextSlot();
     }
     ++it;
@@ -594,14 +601,14 @@ void VideoSource::RunFor(int64_t time_ms, Packets* in_out) {
       ++prototype_header_.sequenceNumber;
       uint32_t size = NextPacketSize(frame_size, payload_size);
       new_packets.push_back(
-          Packet(flow_id_, send_time_us, size, prototype_header_));
-      new_packets.back().SetAbsSendTimeMs(next_frame_ms_);
+          new Packet(flow_id_, send_time_us, size, prototype_header_));
+      new_packets.back()->SetAbsSendTimeMs(next_frame_ms_);
       payload_size -= size;
     }
 
     next_frame_ms_ += frame_period_ms_;
   }
-  in_out->merge(new_packets);
+  in_out->merge(new_packets, DereferencingComparator<Packet>);
 }
 
 AdaptiveVideoSource::AdaptiveVideoSource(int flow_id,
@@ -707,14 +714,12 @@ void RegularVideoSender::GiveFeedback(const Feedback& feedback) {
 
 void RegularVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
   start_of_run_ms_ = clock_.TimeInMilliseconds();
-  int64_t time_left_ms = time_ms;
-  while (time_left_ms > 0) {
-    const int64_t kMaxRunTimeMs = 100;
-    int64_t time_to_run_ms = std::min(time_left_ms, kMaxRunTimeMs);
+  while (time_ms > 0) {
+    int64_t time_to_run_ms = std::min(time_ms, static_cast<int64_t>(100));
     PacketSender::RunFor(time_to_run_ms, in_out);
     clock_.AdvanceTimeMilliseconds(time_to_run_ms);
     bitrate_controller_->Process();
-    time_left_ms -= time_to_run_ms;
+    time_ms -= time_to_run_ms;
   }
 }
 
@@ -723,7 +728,7 @@ void RegularVideoSender::OnNetworkChanged(uint32_t target_bitrate_bps,
                                           int64_t rtt) {
   source_->SetBitrateBps(target_bitrate_bps);
   std::stringstream ss;
-  ss << "SendEstimate_" << *flow_ids().begin() << "#1";
+  ss << "SendEstimate_" << source_->flow_id() << "#1";
   BWE_TEST_LOGGING_PLOT(ss.str(), clock_.TimeInMilliseconds(),
                         target_bitrate_bps / 1000);
 }
@@ -744,6 +749,10 @@ PacedVideoSender::PacedVideoSender(PacketProcessorListener* listener,
 }
 
 PacedVideoSender::~PacedVideoSender() {
+  for (auto* packet : pacer_queue_)
+    delete packet;
+  for (auto* packet : queue_)
+    delete packet;
 }
 
 void PacedVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
@@ -759,7 +768,7 @@ void PacedVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
     int time_until_packet_ms = time_ms;
     if (it != generated_packets.end())
       time_until_packet_ms =
-          (it->send_time_us() + 500) / 1000 - clock_.TimeInMilliseconds();
+          ((*it)->send_time_us() + 500) / 1000 - clock_.TimeInMilliseconds();
     assert(time_until_packet_ms >= 0);
 
     int time_until_next_event_ms = time_until_packet_ms;
@@ -777,17 +786,12 @@ void PacedVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
       CallProcess(modules_);
     } else {
       // Time to send next packet to pacer.
-      pacer_.SendPacket(PacedSender::kNormalPriority,
-                        it->header().ssrc,
-                        it->header().sequenceNumber,
-                        (it->send_time_us() + 500) / 1000,
-                        it->payload_size(),
-                        false);
+      pacer_.SendPacket(PacedSender::kNormalPriority, (*it)->header().ssrc,
+                        (*it)->header().sequenceNumber,
+                        ((*it)->send_time_us() + 500) / 1000,
+                        (*it)->payload_size(), false);
       pacer_queue_.push_back(*it);
-      const size_t kMaxPacerQueueSize = 10000;
-      if (pacer_queue_.size() > kMaxPacerQueueSize) {
-        pacer_queue_.pop_front();
-      }
+      assert(pacer_queue_.size() < 10000);
       ++it;
     }
   }
@@ -817,19 +821,19 @@ void PacedVideoSender::CallProcess(const std::list<Module*>& modules) {
 
 void PacedVideoSender::QueuePackets(Packets* batch,
                                     int64_t end_of_batch_time_us) {
-  queue_.merge(*batch);
+  queue_.merge(*batch, DereferencingComparator<Packet>);
   if (queue_.empty()) {
     return;
   }
   Packets::iterator it = queue_.begin();
   for (; it != queue_.end(); ++it) {
-    if (it->send_time_us() > end_of_batch_time_us) {
+    if ((*it)->send_time_us() > end_of_batch_time_us) {
       break;
     }
   }
   Packets to_transfer;
   to_transfer.splice(to_transfer.begin(), queue_, queue_.begin(), it);
-  batch->merge(to_transfer);
+  batch->merge(to_transfer, DereferencingComparator<Packet>);
 }
 
 bool PacedVideoSender::TimeToSendPacket(uint32_t ssrc,
@@ -838,14 +842,15 @@ bool PacedVideoSender::TimeToSendPacket(uint32_t ssrc,
                                         bool retransmission) {
   for (Packets::iterator it = pacer_queue_.begin(); it != pacer_queue_.end();
        ++it) {
-    if (it->header().sequenceNumber == sequence_number) {
+    if ((*it)->header().sequenceNumber == sequence_number) {
       int64_t pace_out_time_ms = clock_.TimeInMilliseconds();
       // Make sure a packet is never paced out earlier than when it was put into
       // the pacer.
-      assert(pace_out_time_ms >= (it->send_time_us() + 500) / 1000);
-      it->SetAbsSendTimeMs(pace_out_time_ms);
-      it->set_send_time_us(1000 * pace_out_time_ms);
+      assert(pace_out_time_ms >= ((*it)->send_time_us() + 500) / 1000);
+      (*it)->SetAbsSendTimeMs(pace_out_time_ms);
+      (*it)->set_send_time_us(1000 * pace_out_time_ms);
       queue_.push_back(*it);
+      pacer_queue_.erase(it);
       return true;
     }
   }

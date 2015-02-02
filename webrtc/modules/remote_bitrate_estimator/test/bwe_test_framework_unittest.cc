@@ -58,8 +58,8 @@ TEST(BweTestFramework_RandomTest, Gaussian) {
 static bool IsSequenceNumberSorted(const Packets& packets) {
   PacketsConstIt last_it = packets.begin();
   for (PacketsConstIt it = last_it; it != packets.end(); ++it) {
-    if (IsNewerSequenceNumber(last_it->header().sequenceNumber,
-                              it->header().sequenceNumber)) {
+    if (IsNewerSequenceNumber((*last_it)->header().sequenceNumber,
+                              (*it)->header().sequenceNumber)) {
       return false;
     }
     last_it = it;
@@ -72,20 +72,24 @@ TEST(BweTestFramework_PacketTest, IsTimeSorted) {
   // Insert some packets in order...
   EXPECT_TRUE(IsTimeSorted(packets));
 
-  packets.push_back(Packet(100, 0));
+  packets.push_back(new Packet(100, 0));
   EXPECT_TRUE(IsTimeSorted(packets));
 
-  packets.push_back(Packet(110, 0));
+  packets.push_back(new Packet(110, 0));
   EXPECT_TRUE(IsTimeSorted(packets));
 
   // ...and one out-of-order...
-  packets.push_back(Packet(100, 0));
+  packets.push_back(new Packet(100, 0));
   EXPECT_FALSE(IsTimeSorted(packets));
 
   // ...remove the out-of-order packet, insert another in-order packet.
+  delete packets.back();
   packets.pop_back();
-  packets.push_back(Packet(120, 0));
+  packets.push_back(new Packet(120, 0));
   EXPECT_TRUE(IsTimeSorted(packets));
+
+  for (auto* packet : packets)
+    delete packet;
 }
 
 TEST(BweTestFramework_PacketTest, IsSequenceNumberSorted) {
@@ -93,20 +97,24 @@ TEST(BweTestFramework_PacketTest, IsSequenceNumberSorted) {
   // Insert some packets in order...
   EXPECT_TRUE(IsSequenceNumberSorted(packets));
 
-  packets.push_back(Packet(0, 100));
+  packets.push_back(new Packet(0, 100));
   EXPECT_TRUE(IsSequenceNumberSorted(packets));
 
-  packets.push_back(Packet(0, 110));
+  packets.push_back(new Packet(0, 110));
   EXPECT_TRUE(IsSequenceNumberSorted(packets));
 
   // ...and one out-of-order...
-  packets.push_back(Packet(0, 100));
+  packets.push_back(new Packet(0, 100));
   EXPECT_FALSE(IsSequenceNumberSorted(packets));
 
   // ...remove the out-of-order packet, insert another in-order packet.
+  delete packets.back();
   packets.pop_back();
-  packets.push_back(Packet(0, 120));
+  packets.push_back(new Packet(0, 120));
   EXPECT_TRUE(IsSequenceNumberSorted(packets));
+
+  for (auto* packet : packets)
+    delete packet;
 }
 
 TEST(BweTestFramework_StatsTest, Mean) {
@@ -184,12 +192,16 @@ class BweTestFramework_RateCounterFilterTest : public ::testing::Test {
     RTPHeader header;
     // "Send" a packet every 10 ms.
     for (int64_t i = 0; i < run_for_ms; i += 10, now_ms_ += 10) {
-      packets.push_back(Packet(0, now_ms_ * 1000, payload_bits / 8, header));
+      packets.push_back(
+          new Packet(0, now_ms_ * 1000, payload_bits / 8, header));
     }
     filter_.RunFor(run_for_ms, &packets);
     ASSERT_TRUE(IsTimeSorted(packets));
     EXPECT_EQ(expected_pps, filter_.packets_per_second());
     EXPECT_EQ(expected_bps, filter_.bits_per_second());
+
+    for (auto* packet : packets)
+      delete packet;
   }
 
  private:
@@ -245,17 +257,22 @@ static void TestLossFilter(float loss_percent, bool zero_tolerance) {
     remaining_packets += packets.size();
     EXPECT_EQ(0u, sent_packets);
     EXPECT_EQ(0u, remaining_packets);
+    for (auto* packet : packets)
+      delete packet;
   }
 
   // Generate and process 10000 packets in different batch sizes (some empty)
   for (int i = 0; i < 2225; ++i) {
     Packets packets;
-    packets.insert(packets.end(), i % 10, Packet());
+    for (int j = 0; j < i % 10; ++j)
+      packets.push_back(new Packet(i, i));
     sent_packets += packets.size();
     filter.RunFor(0, &packets);
     ASSERT_TRUE(IsTimeSorted(packets));
     ASSERT_TRUE(IsSequenceNumberSorted(packets));
     remaining_packets += packets.size();
+    for (auto* packet : packets)
+      delete packet;
   }
 
   float loss_fraction = 0.01f * (100.0f - loss_percent);
@@ -293,22 +310,25 @@ class BweTestFramework_DelayFilterTest : public ::testing::Test {
       now_ms_(0),
       sequence_number_(0) {
   }
-  virtual ~BweTestFramework_DelayFilterTest() {}
+  virtual ~BweTestFramework_DelayFilterTest() {
+    for (auto* packet : accumulated_packets_)
+      delete packet;
+  }
 
  protected:
   void TestDelayFilter(int64_t run_for_ms, uint32_t in_packets,
                        uint32_t out_packets) {
     Packets packets;
     for (uint32_t i = 0; i < in_packets; ++i) {
-      packets.push_back(Packet(now_ms_ * 1000 + (sequence_number_ >> 4),
-                                  sequence_number_));
+      packets.push_back(new Packet(now_ms_ * 1000 + (sequence_number_ >> 4),
+                                   sequence_number_));
       sequence_number_++;
     }
     filter_.RunFor(run_for_ms, &packets);
     ASSERT_TRUE(IsTimeSorted(packets));
     ASSERT_TRUE(IsSequenceNumberSorted(packets));
     for (PacketsConstIt it = packets.begin(); it != packets.end(); ++it) {
-      EXPECT_LE(now_ms_ * 1000, it->send_time_us());
+      EXPECT_LE(now_ms_ * 1000, (*it)->send_time_us());
     }
     EXPECT_EQ(out_packets, packets.size());
     accumulated_packets_.splice(accumulated_packets_.end(), packets);
@@ -401,7 +421,7 @@ TEST_F(BweTestFramework_DelayFilterTest, JumpToZeroDelay) {
   // Delay a bunch of packets, accumulate them to the 'acc' list.
   delay.SetDelay(100.0f);
   for (uint32_t i = 0; i < 10; ++i) {
-    packets.push_back(Packet(i * 100, i));
+    packets.push_back(new Packet(i * 100, i));
   }
   delay.RunFor(1000, &packets);
   acc.splice(acc.end(), packets);
@@ -412,12 +432,15 @@ TEST_F(BweTestFramework_DelayFilterTest, JumpToZeroDelay) {
   // to the 'acc' list and verify that it is all sorted.
   delay.SetDelay(0.0f);
   for (uint32_t i = 10; i < 50; ++i) {
-    packets.push_back(Packet(i * 100, i));
+    packets.push_back(new Packet(i * 100, i));
   }
   delay.RunFor(1000, &packets);
   acc.splice(acc.end(), packets);
   ASSERT_TRUE(IsTimeSorted(acc));
   ASSERT_TRUE(IsSequenceNumberSorted(acc));
+
+  for (auto* packet : acc)
+    delete packet;
 }
 
 TEST_F(BweTestFramework_DelayFilterTest, IncreasingDelay) {
@@ -451,10 +474,11 @@ static void TestJitterFilter(int64_t stddev_jitter_ms) {
   for (uint32_t i = 0; i < 1000; ++i) {
     Packets packets;
     for (uint32_t j = 0; j < i % 100; ++j) {
-      packets.push_back(Packet(now_ms * 1000, sequence_number++));
+      packets.push_back(new Packet(now_ms * 1000, sequence_number));
+      original.push_back(new Packet(now_ms * 1000, sequence_number));
+      ++sequence_number;
       now_ms += 5 * stddev_jitter_ms;
     }
-    original.insert(original.end(), packets.begin(), packets.end());
     filter.RunFor(stddev_jitter_ms, &packets);
     jittered.splice(jittered.end(), packets);
   }
@@ -472,12 +496,16 @@ static void TestJitterFilter(int64_t stddev_jitter_ms) {
   Stats<double> jitter_us;
   for (PacketsIt it1 = original.begin(), it2 = jittered.begin();
        it1 != original.end() && it2 != jittered.end(); ++it1, ++it2) {
-    EXPECT_EQ(it1->header().sequenceNumber, it2->header().sequenceNumber);
-    jitter_us.Push(it2->send_time_us() - it1->send_time_us());
+    EXPECT_EQ((*it1)->header().sequenceNumber, (*it2)->header().sequenceNumber);
+    jitter_us.Push((*it2)->send_time_us() - (*it1)->send_time_us());
   }
   EXPECT_NEAR(0.0, jitter_us.GetMean(), stddev_jitter_ms * 1000.0 * 0.008);
   EXPECT_NEAR(stddev_jitter_ms * 1000.0, jitter_us.GetStdDev(),
               stddev_jitter_ms * 1000.0 * 0.02);
+  for (auto* packet : original)
+    delete packet;
+  for (auto* packet : jittered)
+    delete packet;
 }
 
 TEST(BweTestFramework_JitterFilterTest, Jitter0) {
@@ -508,7 +536,7 @@ static void TestReorderFilter(uint32_t reorder_percent, uint32_t near_value) {
   int64_t now_ms = 0;
   uint32_t sequence_number = 1;
   for (uint32_t i = 0; i < kPacketCount; ++i, now_ms += 10) {
-    packets.push_back(Packet(now_ms * 1000, sequence_number++));
+    packets.push_back(new Packet(now_ms * 1000, sequence_number++));
   }
   ASSERT_TRUE(IsTimeSorted(packets));
   ASSERT_TRUE(IsSequenceNumberSorted(packets));
@@ -523,8 +551,8 @@ static void TestReorderFilter(uint32_t reorder_percent, uint32_t near_value) {
   // of-order packets have been moved in the stream.
   uint32_t distance = 0;
   uint32_t last_sequence_number = 0;
-  for (PacketsIt it = packets.begin(); it != packets.end(); ++it) {
-    uint32_t sequence_number = it->header().sequenceNumber;
+  for (auto* packet : packets) {
+    uint32_t sequence_number = packet->header().sequenceNumber;
     if (sequence_number < last_sequence_number) {
       distance += last_sequence_number - sequence_number;
     }
@@ -535,6 +563,9 @@ static void TestReorderFilter(uint32_t reorder_percent, uint32_t near_value) {
   // maximum distance a packet can be moved is PacketCount - 1.
   EXPECT_NEAR(
     ((kPacketCount - 1) * reorder_percent) / 100, distance, near_value);
+
+  for (auto* packet : packets)
+    delete packet;
 }
 
 TEST(BweTestFramework_ReorderFilterTest, Reorder0) {
@@ -574,7 +605,10 @@ class BweTestFramework_ChokeFilterTest : public ::testing::Test {
       output_packets_(),
       send_times_us_() {
   }
-  virtual ~BweTestFramework_ChokeFilterTest() {}
+  virtual ~BweTestFramework_ChokeFilterTest() {
+    for (auto* packet : output_packets_)
+      delete packet;
+  }
 
  protected:
   void TestChoke(PacketProcessor* filter,
@@ -588,7 +622,7 @@ class BweTestFramework_ChokeFilterTest : public ::testing::Test {
       int64_t send_time_ms = now_ms_ + (i * run_for_ms) / packets_to_generate;
       header.sequenceNumber = sequence_number_++;
       // Payload is 1000 bits.
-      packets.push_back(Packet(0, send_time_ms * 1000, 125, header));
+      packets.push_back(new Packet(0, send_time_ms * 1000, 125, header));
       send_times_us_.push_back(send_time_ms * 1000);
     }
     ASSERT_TRUE(IsTimeSorted(packets));
@@ -601,22 +635,21 @@ class BweTestFramework_ChokeFilterTest : public ::testing::Test {
     // Sum up the transmitted bytes up until the current time.
     uint32_t bytes_transmitted = 0;
     while (!output_packets_.empty()) {
-      const Packet& packet = output_packets_.front();
-      if (packet.send_time_us() > now_ms_ * 1000) {
+      const Packet* packet = output_packets_.front();
+      if (packet->send_time_us() > now_ms_ * 1000) {
         break;
       }
-      bytes_transmitted += packet.payload_size();
+      bytes_transmitted += packet->payload_size();
+      delete output_packets_.front();
       output_packets_.pop_front();
     }
     EXPECT_EQ(expected_kbit_transmitted, (bytes_transmitted * 8) / 1000);
   }
 
   void CheckMaxDelay(int64_t max_delay_ms) {
-    for (PacketsIt it = output_packets_.begin(); it != output_packets_.end();
-        ++it) {
-      const Packet& packet = *it;
-      int64_t delay_us = packet.send_time_us() -
-          send_times_us_[packet.header().sequenceNumber];
+    for (const auto* packet : output_packets_) {
+      int64_t delay_us = packet->send_time_us() -
+                         send_times_us_[packet->header().sequenceNumber];
       EXPECT_GE(max_delay_ms * 1000, delay_us);
     }
   }
@@ -747,25 +780,28 @@ void TestVideoSender(PacketSender* sender,
   uint32_t absolute_send_time_wraps = 0;
   uint32_t rtp_timestamp = 0;
   uint32_t rtp_timestamp_wraps = 0;
-  for (PacketsIt it = packets.begin(); it != packets.end(); ++it) {
-    EXPECT_LE(send_time_us, it->send_time_us());
-    send_time_us = it->send_time_us();
-    if (sender->source()->max_payload_size_bytes() != it->payload_size()) {
-      EXPECT_EQ(expected_payload_size, it->payload_size());
+  for (const auto* packet : packets) {
+    EXPECT_LE(send_time_us, packet->send_time_us());
+    send_time_us = packet->send_time_us();
+    if (sender->source()->max_payload_size_bytes() != packet->payload_size()) {
+      EXPECT_EQ(expected_payload_size, packet->payload_size());
     }
-    total_payload_size += it->payload_size();
-    if (absolute_send_time > it->header().extension.absoluteSendTime) {
+    total_payload_size += packet->payload_size();
+    if (absolute_send_time > packet->header().extension.absoluteSendTime) {
       absolute_send_time_wraps++;
     }
-    absolute_send_time = it->header().extension.absoluteSendTime;
-    if (rtp_timestamp > it->header().timestamp) {
+    absolute_send_time = packet->header().extension.absoluteSendTime;
+    if (rtp_timestamp > packet->header().timestamp) {
       rtp_timestamp_wraps++;
     }
-    rtp_timestamp = it->header().timestamp;
+    rtp_timestamp = packet->header().timestamp;
   }
   EXPECT_EQ(expected_total_payload_size, total_payload_size);
   EXPECT_GE(1u, absolute_send_time_wraps);
   EXPECT_GE(1u, rtp_timestamp_wraps);
+
+  for (auto* packet : packets)
+    delete packet;
 }
 
 TEST(BweTestFramework_VideoSenderTest, Fps1Kbps80_1s) {
@@ -893,6 +929,9 @@ TEST(BweTestFramework_VideoSenderTest, TestAppendInOrder) {
   sender2.RunFor(1000, &packets);
   ASSERT_TRUE(IsTimeSorted(packets));
   EXPECT_EQ(54u, packets.size());
+
+  for (auto* packet : packets)
+    delete packet;
 }
 
 TEST(BweTestFramework_VideoSenderTest, FeedbackIneffective) {
@@ -928,6 +967,9 @@ TEST(BweTestFramework_AdaptiveVideoSenderTest, FeedbackChangesBitrate) {
   Packets packets;
   sender.RunFor(10000, &packets);
   EXPECT_EQ(102500u, source.bytes_per_second());
+
+  for (auto* packet : packets)
+    delete packet;
 }
 }  // namespace bwe
 }  // namespace testing

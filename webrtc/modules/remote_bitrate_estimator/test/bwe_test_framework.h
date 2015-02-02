@@ -42,6 +42,11 @@ class RateCounter;
 typedef std::set<int> FlowIds;
 const FlowIds CreateFlowIds(const int *flow_ids_array, size_t num_flow_ids);
 
+template <typename T>
+bool DereferencingComparator(const T* const& a, const T* const& b) {
+  return *a < *b;
+}
+
 template<typename T> class Stats {
  public:
   Stats()
@@ -160,6 +165,8 @@ class Packet {
          const RTPHeader& header);
   Packet(int64_t send_time_us, uint32_t sequence_number);
 
+  virtual ~Packet();
+
   bool operator<(const Packet& rhs) const;
 
   int flow_id() const { return flow_id_; }
@@ -178,9 +185,9 @@ class Packet {
   RTPHeader header_;       // Actual contents.
 };
 
-typedef std::list<Packet> Packets;
-typedef std::list<Packet>::iterator PacketsIt;
-typedef std::list<Packet>::const_iterator PacketsConstIt;
+typedef std::list<Packet*> Packets;
+typedef std::list<Packet*>::iterator PacketsIt;
+typedef std::list<Packet*>::const_iterator PacketsConstIt;
 
 bool IsTimeSorted(const Packets& packets);
 

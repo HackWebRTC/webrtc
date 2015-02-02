@@ -247,7 +247,7 @@ TEST_P(MultiFlowBweSimulation, PacedSelfFairnessTest) {
   RateCounterFilter total_utilization(
       this, CreateFlowIds(kAllFlowIds, kNumFlows), "total_utilization");
 
-  RunFor(3 * 60 * 1000);
+  RunFor(30 * 60 * 1000);
 }
 #endif  // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 }  // namespace bwe

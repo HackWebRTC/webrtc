@@ -184,6 +184,11 @@ class PacketProcessorRunner {
   explicit PacketProcessorRunner(PacketProcessor* processor)
       : processor_(processor) {}
 
+  ~PacketProcessorRunner() {
+    for (auto* packet : queue_)
+      delete packet;
+  }
+
   bool HasProcessor(const PacketProcessor* processor) const {
     return processor == processor_;
   }
@@ -194,9 +199,9 @@ class PacketProcessorRunner {
     processor_->RunFor(time_ms, &to_process);
     QueuePackets(&to_process, time_now_ms * 1000);
     if (!to_process.empty()) {
-      processor_->Plot((to_process.back().send_time_us() + 500) / 1000);
+      processor_->Plot((to_process.back()->send_time_us() + 500) / 1000);
     }
-    in_out->merge(to_process);
+    in_out->merge(to_process, DereferencingComparator<Packet>);
   }
 
  private:
@@ -207,7 +212,7 @@ class PacketProcessorRunner {
       // TODO(holmer): Further optimize this by looking for consecutive flow ids
       // in the packet list and only doing the binary search + splice once for a
       // sequence.
-      if (flow_ids.find(it->flow_id()) != flow_ids.end()) {
+      if (flow_ids.find((*it)->flow_id()) != flow_ids.end()) {
         Packets::iterator next = it;
         ++next;
         out->splice(out->end(), *in, it);
@@ -219,19 +224,19 @@ class PacketProcessorRunner {
   }
 
   void QueuePackets(Packets* batch, int64_t end_of_batch_time_us) {
-    queue_.merge(*batch);
+    queue_.merge(*batch, DereferencingComparator<Packet>);
     if (queue_.empty()) {
       return;
     }
     Packets::iterator it = queue_.begin();
     for (; it != queue_.end(); ++it) {
-      if (it->send_time_us() > end_of_batch_time_us) {
+      if ((*it)->send_time_us() > end_of_batch_time_us) {
         break;
       }
     }
     Packets to_transfer;
     to_transfer.splice(to_transfer.begin(), queue_, queue_.begin(), it);
-    batch->merge(to_transfer);
+    batch->merge(to_transfer, DereferencingComparator<Packet>);
   }
 
   PacketProcessor* processor_;
@@ -278,10 +283,10 @@ void BweTest::SetupTestFromConfig(const BweTestConfig& config) {
 
 void BweTest::AddPacketProcessor(PacketProcessor* processor, bool is_sender) {
   assert(processor);
-  processors_.push_back(PacketProcessorRunner(processor));
   if (is_sender) {
     senders_.push_back(static_cast<PacketSender*>(processor));
   }
+  processors_.push_back(PacketProcessorRunner(processor));
   for (const auto& flow_id : processor->flow_ids()) {
     RTC_UNUSED(flow_id);
     assert(estimators_.count(flow_id) == 1);
@@ -345,18 +350,20 @@ void BweTest::RunFor(int64_t time_ms) {
         packets.splice(packets.begin(), previous_packets_,
                        --previous_packets_.end());
         ASSERT_TRUE(IsTimeSorted(packets));
+        delete packets.front();
         packets.erase(packets.begin());
       }
-      ASSERT_LE(packets.front().send_time_us(), time_now_ms_ * 1000);
-      ASSERT_LE(packets.back().send_time_us(), time_now_ms_ * 1000);
+      ASSERT_LE(packets.front()->send_time_us(), time_now_ms_ * 1000);
+      ASSERT_LE(packets.back()->send_time_us(), time_now_ms_ * 1000);
     } else {
       ASSERT_TRUE(IsTimeSorted(packets));
     }
 
-    for (const auto& packet : packets) {
-      EstimatorMap::iterator est_it = estimators_.find(packet.flow_id());
+    for (const auto* packet : packets) {
+      EstimatorMap::iterator est_it = estimators_.find(packet->flow_id());
       ASSERT_TRUE(est_it != estimators_.end());
-      est_it->second->EatPacket(packet);
+      est_it->second->EatPacket(*packet);
+      delete packet;
     }
 
     for (const auto& estimator : estimators_) {
