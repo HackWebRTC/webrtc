@@ -11,6 +11,7 @@
 #ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_MAC_H
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_MAC_H
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/audio_device/mac/audio_mixer_manager_mac.h"
@@ -292,10 +293,13 @@ private:
     EventWrapper& _stopEventRec;
     EventWrapper& _stopEvent;
 
-    ThreadWrapper* _captureWorkerThread;
-    ThreadWrapper* _renderWorkerThread;
-    uint32_t _captureWorkerThreadId;
-    uint32_t _renderWorkerThreadId;
+    // Only valid/running between calls to StartRecording and StopRecording.
+    rtc::scoped_ptr<ThreadWrapper> capture_worker_thread_;
+    unsigned int capture_worker_thread_id_;
+
+    // Only valid/running between calls to StartPlayout and StopPlayout.
+    rtc::scoped_ptr<ThreadWrapper> render_worker_thread_;
+    unsigned int render_worker_thread_id_;
 
     int32_t _id;
 

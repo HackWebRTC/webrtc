@@ -11,6 +11,8 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_THREAD_POSIX_H_
 #define WEBRTC_SYSTEM_WRAPPERS_SOURCE_THREAD_POSIX_H_
 
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
 #include <pthread.h>
@@ -25,44 +27,31 @@ int ConvertToSystemPriority(ThreadPriority priority, int min_prio,
 
 class ThreadPosix : public ThreadWrapper {
  public:
-  static ThreadWrapper* Create(ThreadRunFunction func, ThreadObj obj,
-                               ThreadPriority prio, const char* thread_name);
-
   ThreadPosix(ThreadRunFunction func, ThreadObj obj, ThreadPriority prio,
               const char* thread_name);
-  virtual ~ThreadPosix();
+  ~ThreadPosix() override;
 
   // From ThreadWrapper.
-  virtual void SetNotAlive() OVERRIDE;
-  virtual bool Start(unsigned int& id) OVERRIDE;
-  virtual bool Stop() OVERRIDE;
-
-  void Run();
+  void SetNotAlive() override;
+  bool Start(unsigned int& id) override;
+  bool Stop() override;
 
  private:
-  int Construct();
+  static void* StartThread(void* param);
 
- private:
-  ThreadRunFunction   run_function_;
-  ThreadObj           obj_;
+  struct InitParams;
+  void Run(InitParams* params);
 
-  // Internal state.
-  CriticalSectionWrapper* crit_state_;  // Protects alive_ and dead_
-  bool                    alive_;
-  bool                    dead_;
-  ThreadPriority          prio_;
-  EventWrapper*           event_;
+  rtc::ThreadChecker thread_checker_;
+  ThreadRunFunction const run_function_;
+  void* const obj_;
+  ThreadPriority prio_;
+  // TODO(tommi): std::condition_variable?
+  const rtc::scoped_ptr<EventWrapper> stop_event_;
+  const std::string name_;
 
-  // Zero-terminated thread name string.
-  char                    name_[kThreadMaxNameLength];
-  bool                    set_thread_name_;
-
-  // Handle to thread.
-#if (defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID))
-  pid_t                   pid_;
-#endif
-  pthread_attr_t          attr_;
-  pthread_t               thread_;
+  pid_t thread_id_;
+  pthread_t thread_;
 };
 
 }  // namespace webrtc

@@ -8,17 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_utility.h"
 #include "webrtc/modules/audio_device/mac/audio_device_mac.h"
-
 #include "webrtc/modules/audio_device/mac/portaudio/pa_ringbuffer.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 #include <ApplicationServices/ApplicationServices.h>
-#include <assert.h>
 #include <libkern/OSAtomic.h>   // OSAtomicCompareAndSwap()
 #include <mach/mach.h>          // mach_task_self()
 #include <sys/sysctl.h>         // sysctlbyname()
@@ -56,8 +55,6 @@ namespace webrtc
         }                                                               \
     } while(0)
 
-#define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
-
 enum
 {
     MaxNumberDevices = 64
@@ -94,8 +91,8 @@ void AudioDeviceMac::logCAMsg(const TraceLevel level,
                               const int32_t id, const char *msg,
                               const char *err)
 {
-    assert(msg != NULL);
-    assert(err != NULL);
+    DCHECK(msg != NULL);
+    DCHECK(err != NULL);
 
 #ifdef WEBRTC_ARCH_BIG_ENDIAN
     WEBRTC_TRACE(level, module, id, "%s: %.4s", msg, err);
@@ -111,10 +108,8 @@ AudioDeviceMac::AudioDeviceMac(const int32_t id) :
     _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _stopEventRec(*EventWrapper::Create()),
     _stopEvent(*EventWrapper::Create()),
-    _captureWorkerThread(NULL),
-    _renderWorkerThread(NULL),
-    _captureWorkerThreadId(0),
-    _renderWorkerThreadId(0),
+    capture_worker_thread_id_(0),
+    render_worker_thread_id_(0),
     _id(id),
     _mixerManager(id),
     _inputDeviceIndex(0),
@@ -161,8 +156,8 @@ AudioDeviceMac::AudioDeviceMac(const int32_t id) :
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, id,
                  "%s created", __FUNCTION__);
 
-    assert(&_stopEvent != NULL);
-    assert(&_stopEventRec != NULL);
+    DCHECK(&_stopEvent != NULL);
+    DCHECK(&_stopEventRec != NULL);
 
     memset(_renderConvertData, 0, sizeof(_renderConvertData));
     memset(&_outStreamFormat, 0, sizeof(AudioStreamBasicDescription));
@@ -182,17 +177,8 @@ AudioDeviceMac::~AudioDeviceMac()
         Terminate();
     }
 
-    if (_captureWorkerThread)
-    {
-        delete _captureWorkerThread;
-        _captureWorkerThread = NULL;
-    }
-
-    if (_renderWorkerThread)
-    {
-        delete _renderWorkerThread;
-        _renderWorkerThread = NULL;
-    }
+    DCHECK(!capture_worker_thread_.get());
+    DCHECK(!render_worker_thread_.get());
 
     if (_paRenderBuffer)
     {
@@ -331,32 +317,6 @@ int32_t AudioDeviceMac::Init()
         }
     }
 
-    if (_renderWorkerThread == NULL)
-    {
-        _renderWorkerThread
-            = ThreadWrapper::CreateThread(RunRender, this, kRealtimePriority,
-                                          "RenderWorkerThread");
-        if (_renderWorkerThread == NULL)
-        {
-            WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice,
-                         _id, " Render CreateThread() error");
-            return -1;
-        }
-    }
-
-    if (_captureWorkerThread == NULL)
-    {
-        _captureWorkerThread
-            = ThreadWrapper::CreateThread(RunCapture, this, kRealtimePriority,
-                                          "CaptureWorkerThread");
-        if (_captureWorkerThread == NULL)
-        {
-            WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice,
-                         _id, " Capture CreateThread() error");
-            return -1;
-        }
-    }
-
     kern_return_t kernErr = KERN_SUCCESS;
     kernErr = semaphore_create(mach_task_self(), &_renderSemaphore,
                                SYNC_POLICY_FIFO, 0);
@@ -469,12 +429,12 @@ int32_t AudioDeviceMac::Terminate()
         retVal = -1;
     }
 
-    _critSect.Leave();
-
     _isShutDown = true;
     _initialized = false;
     _outputDeviceIsSpecified = false;
     _inputDeviceIsSpecified = false;
+
+    _critSect.Leave();
 
     return retVal;
 }
@@ -1104,6 +1064,7 @@ int16_t AudioDeviceMac::PlayoutDevices()
 
 int32_t AudioDeviceMac::SetPlayoutDevice(uint16_t index)
 {
+    CriticalSectionScoped lock(&_critSect);
 
     if (_playIsInitialized)
     {
@@ -1287,7 +1248,6 @@ int32_t AudioDeviceMac::RecordingIsAvailable(bool& available)
 
 int32_t AudioDeviceMac::InitPlayout()
 {
-
     CriticalSectionScoped lock(&_critSect);
 
     if (_playing)
@@ -1794,15 +1754,14 @@ int32_t AudioDeviceMac::StartRecording()
         return -1;
     }
 
+    DCHECK(!capture_worker_thread_.get());
+    capture_worker_thread_.reset(
+        ThreadWrapper::CreateThread(RunCapture, this, kRealtimePriority,
+                                    "CaptureWorkerThread"));
+    DCHECK(capture_worker_thread_.get());
+    capture_worker_thread_->Start(capture_worker_thread_id_);
+
     OSStatus err = noErr;
-
-    unsigned int threadID(0);
-    if (_captureWorkerThread != NULL)
-    {
-        _captureWorkerThread->Start(threadID);
-    }
-    _captureWorkerThreadId = threadID;
-
     if (_twoDevices)
     {
         WEBRTC_CA_RETURN_ON_ERR(AudioDeviceStart(_inputDeviceID, _inDeviceIOProcID));
@@ -1893,17 +1852,13 @@ int32_t AudioDeviceMac::StopRecording()
 
     // Setting this signal will allow the worker thread to be stopped.
     AtomicSet32(&_captureDeviceIsAlive, 0);
-    _critSect.Leave();
-    if (_captureWorkerThread != NULL)
-    {
-        if (!_captureWorkerThread->Stop())
-        {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                         " Timed out waiting for the render worker thread to "
-                             "stop.");
-        }
+
+    if (capture_worker_thread_.get()) {
+        _critSect.Leave();
+        capture_worker_thread_->Stop();
+        capture_worker_thread_.reset();
+        _critSect.Enter();
     }
-    _critSect.Enter();
 
     WEBRTC_CA_LOG_WARN(AudioConverterDispose(_captureConverter));
 
@@ -1954,17 +1909,15 @@ int32_t AudioDeviceMac::StartPlayout()
         return 0;
     }
 
-    OSStatus err = noErr;
-
-    unsigned int threadID(0);
-    if (_renderWorkerThread != NULL)
-    {
-        _renderWorkerThread->Start(threadID);
-    }
-    _renderWorkerThreadId = threadID;
+    DCHECK(!render_worker_thread_.get());
+    render_worker_thread_.reset(
+        ThreadWrapper::CreateThread(RunRender, this, kRealtimePriority,
+                                    "RenderWorkerThread"));
+    render_worker_thread_->Start(render_worker_thread_id_);
 
     if (_twoDevices || !_recording)
     {
+        OSStatus err = noErr;
         WEBRTC_CA_RETURN_ON_ERR(AudioDeviceStart(_outputDeviceID, _deviceIOProcID));
     }
     _playing = true;
@@ -2019,17 +1972,12 @@ int32_t AudioDeviceMac::StopPlayout()
 
     // Setting this signal will allow the worker thread to be stopped.
     AtomicSet32(&_renderDeviceIsAlive, 0);
-    _critSect.Leave();
-    if (_renderWorkerThread != NULL)
-    {
-        if (!_renderWorkerThread->Stop())
-        {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                         " Timed out waiting for the render worker thread to "
-                         "stop.");
-        }
+    if (render_worker_thread_.get()) {
+        _critSect.Leave();
+        render_worker_thread_->Stop();
+        render_worker_thread_.reset();
+        _critSect.Enter();
     }
-    _critSect.Enter();
 
     WEBRTC_CA_LOG_WARN(AudioConverterDispose(_renderConverter));
 
@@ -2483,7 +2431,7 @@ OSStatus AudioDeviceMac::objectListenerProc(
     void* clientData)
 {
     AudioDeviceMac *ptrThis = (AudioDeviceMac *) clientData;
-    assert(ptrThis != NULL);
+    DCHECK(ptrThis != NULL);
 
     ptrThis->implObjectListenerProc(objectId, numberAddresses, addresses);
 
@@ -2791,7 +2739,7 @@ OSStatus AudioDeviceMac::deviceIOProc(AudioDeviceID, const AudioTimeStamp*,
                                       void *clientData)
 {
     AudioDeviceMac *ptrThis = (AudioDeviceMac *) clientData;
-    assert(ptrThis != NULL);
+    DCHECK(ptrThis != NULL);
 
     ptrThis->implDeviceIOProc(inputData, inputTime, outputData, outputTime);
 
@@ -2806,7 +2754,7 @@ OSStatus AudioDeviceMac::outConverterProc(AudioConverterRef,
                                           void *userData)
 {
     AudioDeviceMac *ptrThis = (AudioDeviceMac *) userData;
-    assert(ptrThis != NULL);
+    DCHECK(ptrThis != NULL);
 
     return ptrThis->implOutConverterProc(numberDataPackets, data);
 }
@@ -2818,7 +2766,7 @@ OSStatus AudioDeviceMac::inDeviceIOProc(AudioDeviceID, const AudioTimeStamp*,
                                         const AudioTimeStamp*, void* clientData)
 {
     AudioDeviceMac *ptrThis = (AudioDeviceMac *) clientData;
-    assert(ptrThis != NULL);
+    DCHECK(ptrThis != NULL);
 
     ptrThis->implInDeviceIOProc(inputData, inputTime);
 
@@ -2834,7 +2782,7 @@ OSStatus AudioDeviceMac::inConverterProc(
     void *userData)
 {
     AudioDeviceMac *ptrThis = static_cast<AudioDeviceMac*> (userData);
-    assert(ptrThis != NULL);
+    DCHECK(ptrThis != NULL);
 
     return ptrThis->implInConverterProc(numberDataPackets, data);
 }
@@ -2891,7 +2839,7 @@ OSStatus AudioDeviceMac::implDeviceIOProc(const AudioBufferList *inputData,
         return 0;
     }
 
-    assert(_outStreamFormat.mBytesPerFrame != 0);
+    DCHECK(_outStreamFormat.mBytesPerFrame != 0);
     UInt32 size = outputData->mBuffers->mDataByteSize
         / _outStreamFormat.mBytesPerFrame;
 
@@ -2932,7 +2880,7 @@ OSStatus AudioDeviceMac::implDeviceIOProc(const AudioBufferList *inputData,
 OSStatus AudioDeviceMac::implOutConverterProc(UInt32 *numberDataPackets,
                                               AudioBufferList *data)
 {
-    assert(data->mNumberBuffers == 1);
+    DCHECK(data->mNumberBuffers == 1);
     PaRingBufferSize numSamples = *numberDataPackets
         * _outDesiredFormat.mChannelsPerFrame;
 
@@ -3006,7 +2954,7 @@ OSStatus AudioDeviceMac::implInDeviceIOProc(const AudioBufferList *inputData,
 
     AtomicSet32(&_captureDelayUs, captureDelayUs);
 
-    assert(inputData->mNumberBuffers == 1);
+    DCHECK(inputData->mNumberBuffers == 1);
     PaRingBufferSize numSamples = inputData->mBuffers->mDataByteSize
         * _inStreamFormat.mChannelsPerFrame / _inStreamFormat.mBytesPerPacket;
     PaUtil_WriteRingBuffer(_paCaptureBuffer, inputData->mBuffers->mData,
@@ -3025,7 +2973,7 @@ OSStatus AudioDeviceMac::implInDeviceIOProc(const AudioBufferList *inputData,
 OSStatus AudioDeviceMac::implInConverterProc(UInt32 *numberDataPackets,
                                              AudioBufferList *data)
 {
-    assert(data->mNumberBuffers == 1);
+    DCHECK(data->mNumberBuffers == 1);
     PaRingBufferSize numSamples = *numberDataPackets
         * _inStreamFormat.mChannelsPerFrame;
 

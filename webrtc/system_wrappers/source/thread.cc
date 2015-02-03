@@ -24,7 +24,7 @@ ThreadWrapper* ThreadWrapper::CreateThread(ThreadRunFunction func,
 #if defined(_WIN32)
   return new ThreadWindows(func, obj, prio, thread_name);
 #else
-  return ThreadPosix::Create(func, obj, prio, thread_name);
+  return new ThreadPosix(func, obj, prio, thread_name);
 #endif
 }
 

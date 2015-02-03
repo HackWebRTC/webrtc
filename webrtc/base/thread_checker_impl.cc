@@ -19,14 +19,14 @@
 #endif
 
 namespace rtc {
-namespace {
+
 PlatformThreadId CurrentThreadId() {
 #if defined(WEBRTC_WIN)
   return GetCurrentThreadId();
 #elif defined(WEBRTC_POSIX)
   // Pthreads doesn't have the concept of a thread ID, so we have to reach down
   // into the kernel.
-#if defined(WEBRTC_MAC)
+#if defined(WEBRTC_MAC) || defined(WEBRTC_IOS)
   return pthread_mach_thread_np(pthread_self());
 #elif defined(WEBRTC_LINUX)
   return syscall(__NR_gettid);
@@ -38,7 +38,6 @@ PlatformThreadId CurrentThreadId() {
 #endif
 #endif  // defined(WEBRTC_POSIX)
 }
-}  // namespace
 
 ThreadCheckerImpl::ThreadCheckerImpl() : valid_thread_(CurrentThreadId()) {
 }

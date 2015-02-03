@@ -29,6 +29,9 @@ typedef DWORD PlatformThreadId;
 typedef pid_t PlatformThreadId;
 #endif
 
+// TODO(tommi): This+PlatformThreadId belongs in a common thread related header.
+PlatformThreadId CurrentThreadId();
+
 // Real implementation of ThreadChecker, for use in debug mode, or
 // for temporary use in release mode (e.g. to CHECK on a threading issue
 // seen only in the wild).
