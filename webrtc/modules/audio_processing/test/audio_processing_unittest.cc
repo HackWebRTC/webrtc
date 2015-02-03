@@ -271,6 +271,11 @@ std::string OutputFilePath(std::string name,
   return temp_filenames[filename];
 }
 
+void ClearTempFiles() {
+  for (auto& kv : temp_filenames)
+    remove(kv.second.c_str());
+}
+
 void OpenFileAndReadMessage(const std::string filename,
                             ::google::protobuf::MessageLite* msg) {
   FILE* file = fopen(filename.c_str(), "rb");
@@ -323,6 +328,7 @@ class ApmTest : public ::testing::Test {
 
   static void TearDownTestCase() {
     Trace::ReturnTrace();
+    ClearTempFiles();
   }
 
   // Used to select between int and float interface tests.
@@ -2262,6 +2268,9 @@ class AudioProcessingTest
     }
   }
 
+  static void TearDownTestCase() {
+    ClearTempFiles();
+  }
   // Runs a process pass on files with the given parameters and dumps the output
   // to a file specified with |output_file_prefix|.
   static void ProcessFormat(int input_rate,
