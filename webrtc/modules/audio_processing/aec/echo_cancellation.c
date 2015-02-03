@@ -556,7 +556,10 @@ int WebRtcAec_GetMetrics(void* handle, AecMetrics* metrics) {
   return 0;
 }
 
-int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std) {
+int WebRtcAec_GetDelayMetrics(void* handle,
+                              int* median,
+                              int* std,
+                              float* fraction_poor_delays) {
   Aec* self = handle;
   if (median == NULL) {
     self->lastError = AEC_NULL_POINTER_ERROR;
@@ -570,7 +573,9 @@ int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std) {
     self->lastError = AEC_UNINITIALIZED_ERROR;
     return -1;
   }
-  if (WebRtcAec_GetDelayMetricsCore(self->aec, median, std) == -1) {
+  if (WebRtcAec_GetDelayMetricsCore(self->aec, median, std,
+                                    fraction_poor_delays) ==
+      -1) {
     // Logging disabled.
     self->lastError = AEC_UNSUPPORTED_FUNCTION_ERROR;
     return -1;

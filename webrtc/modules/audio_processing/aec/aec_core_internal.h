@@ -131,6 +131,7 @@ struct AecCore {
   int num_delay_values;
   int delay_median;
   int delay_std;
+  float fraction_poor_delays;
   int delay_logging_enabled;
   void* delay_estimator_farend;
   void* delay_estimator;

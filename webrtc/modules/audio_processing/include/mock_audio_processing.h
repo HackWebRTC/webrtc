@@ -48,6 +48,8 @@ class MockEchoCancellation : public EchoCancellation {
       bool());
   MOCK_METHOD2(GetDelayMetrics,
       int(int* median, int* std));
+  MOCK_METHOD3(GetDelayMetrics,
+      int(int* median, int* std, float* fraction_poor_delays));
   MOCK_CONST_METHOD0(aec_core,
       struct AecCore*());
 };

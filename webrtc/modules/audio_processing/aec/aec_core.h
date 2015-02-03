@@ -75,9 +75,14 @@ void WebRtcAec_ProcessFrames(AecCore* aec,
 // corresponding amount in ms.
 int WebRtcAec_MoveFarReadPtr(AecCore* aec, int elements);
 
-// Calculates the median and standard deviation among the delay estimates
-// collected since the last call to this function.
-int WebRtcAec_GetDelayMetricsCore(AecCore* self, int* median, int* std);
+// Calculates the median, standard deviation and amount of poor values among the
+// delay estimates aggregated up to the first call to the function. After that
+// first call the metrics are aggregated and updated every second. With poor
+// values we mean values that most likely will cause the AEC to perform poorly.
+// TODO(bjornv): Consider changing tests and tools to handle constant
+// constant aggregation window throughout the session instead.
+int WebRtcAec_GetDelayMetricsCore(AecCore* self, int* median, int* std,
+                                  float* fraction_poor_delays);
 
 // Returns the echo state (1: echo, 0: no echo).
 int WebRtcAec_echo_state(AecCore* self);

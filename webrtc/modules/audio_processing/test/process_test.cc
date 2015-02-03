@@ -1081,10 +1081,13 @@ void void_main(int argc, char* argv[]) {
     if (apm->echo_cancellation()->is_delay_logging_enabled()) {
       int median = 0;
       int std = 0;
-      apm->echo_cancellation()->GetDelayMetrics(&median, &std);
+      float fraction_poor_delays = 0;
+      apm->echo_cancellation()->GetDelayMetrics(&median, &std,
+                                                &fraction_poor_delays);
       printf("\n--Delay metrics--\n");
       printf("Median:             %3d\n", median);
       printf("Standard deviation: %3d\n", std);
+      printf("Poor delay values:  %3.1f%%\n", fraction_poor_delays * 100);
     }
   }
 

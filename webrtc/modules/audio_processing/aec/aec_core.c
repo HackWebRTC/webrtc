@@ -774,6 +774,7 @@ static void UpdateDelayMetrics(AecCore* self) {
   int i = 0;
   int delay_values = 0;
   int median = 0;
+  int lookahead = WebRtc_lookahead(self->delay_estimator);
   const int kMsPerBlock = PART_LEN / (self->mult * 8);
   int64_t l1_norm = 0;
 
@@ -785,6 +786,7 @@ static void UpdateDelayMetrics(AecCore* self) {
     // not able to estimate the delay.
     self->delay_median = -1;
     self->delay_std = -1;
+    self->fraction_poor_delays = -1;
     return;
   }
 
@@ -799,8 +801,7 @@ static void UpdateDelayMetrics(AecCore* self) {
     }
   }
   // Account for lookahead.
-  self->delay_median = (median - WebRtc_lookahead(self->delay_estimator)) *
-      kMsPerBlock;
+  self->delay_median = (median - lookahead) * kMsPerBlock;
 
   // Calculate the L1 norm, with median value as central moment.
   for (i = 0; i < kHistorySizeBlocks; i++) {
@@ -808,6 +809,17 @@ static void UpdateDelayMetrics(AecCore* self) {
   }
   self->delay_std = (int)((l1_norm + self->num_delay_values / 2) /
       self->num_delay_values) * kMsPerBlock;
+
+  // Determine fraction of delays that are out of bounds, that is, either
+  // negative (anti-causal system) or larger than the AEC filter length.
+  {
+    int num_delays_out_of_bounds = self->num_delay_values;
+    for (i = lookahead; i < lookahead + self->num_partitions; ++i) {
+      num_delays_out_of_bounds -= self->delay_histogram[i];
+    }
+    self->fraction_poor_delays = (float)num_delays_out_of_bounds /
+        self->num_delay_values;
+  }
 
   // Reset histogram.
   memset(self->delay_histogram, 0, sizeof(self->delay_histogram));
@@ -1563,6 +1575,7 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   aec->num_delay_values = 0;
   aec->delay_median = -1;
   aec->delay_std = -1;
+  aec->fraction_poor_delays = -1;
 
   aec->signal_delay_correction = 0;
   aec->previous_delay = -2;  // (-2): Uninitialized.
@@ -1833,7 +1846,8 @@ void WebRtcAec_ProcessFrames(AecCore* aec,
   }
 }
 
-int WebRtcAec_GetDelayMetricsCore(AecCore* self, int* median, int* std) {
+int WebRtcAec_GetDelayMetricsCore(AecCore* self, int* median, int* std,
+                                  float* fraction_poor_delays) {
   assert(self != NULL);
   assert(median != NULL);
   assert(std != NULL);
@@ -1849,6 +1863,7 @@ int WebRtcAec_GetDelayMetricsCore(AecCore* self, int* median, int* std) {
   }
   *median = self->delay_median;
   *std = self->delay_std;
+  *fraction_poor_delays = self->fraction_poor_delays;
 
   return 0;
 }

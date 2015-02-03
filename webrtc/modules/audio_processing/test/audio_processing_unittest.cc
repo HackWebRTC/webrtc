@@ -635,9 +635,11 @@ void ApmTest::ProcessDelayVerificationTest(int delay_ms, int system_delay_ms,
     if (frame_count == 250) {
       int median;
       int std;
+      float poor_fraction;
       // Discard the first delay metrics to avoid convergence effects.
       EXPECT_EQ(apm_->kNoError,
-                apm_->echo_cancellation()->GetDelayMetrics(&median, &std));
+                apm_->echo_cancellation()->GetDelayMetrics(&median, &std,
+                                                           &poor_fraction));
     }
   }
 
@@ -659,8 +661,10 @@ void ApmTest::ProcessDelayVerificationTest(int delay_ms, int system_delay_ms,
   // Verify delay metrics.
   int median;
   int std;
+  float poor_fraction;
   EXPECT_EQ(apm_->kNoError,
-            apm_->echo_cancellation()->GetDelayMetrics(&median, &std));
+            apm_->echo_cancellation()->GetDelayMetrics(&median, &std,
+                                                       &poor_fraction));
   EXPECT_GE(expected_median_high, median);
   EXPECT_LE(expected_median_low, median);
 }
@@ -847,8 +851,10 @@ TEST_F(ApmTest, EchoCancellation) {
 
   int median = 0;
   int std = 0;
+  float poor_fraction = 0;
   EXPECT_EQ(apm_->kNotEnabledError,
-            apm_->echo_cancellation()->GetDelayMetrics(&median, &std));
+            apm_->echo_cancellation()->GetDelayMetrics(&median, &std,
+                                                       &poor_fraction));
 
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_cancellation()->enable_delay_logging(true));
@@ -2026,8 +2032,10 @@ TEST_F(ApmTest, Process) {
               apm_->echo_cancellation()->GetMetrics(&echo_metrics));
     int median = 0;
     int std = 0;
+    float fraction_poor_delays = 0;
     EXPECT_EQ(apm_->kNoError,
-              apm_->echo_cancellation()->GetDelayMetrics(&median, &std));
+              apm_->echo_cancellation()->GetDelayMetrics(
+                  &median, &std, &fraction_poor_delays));
 
     int rms_level = apm_->level_estimator()->RMS();
     EXPECT_LE(0, rms_level);
@@ -2079,6 +2087,8 @@ TEST_F(ApmTest, Process) {
       audioproc::Test::DelayMetrics reference_delay = test->delay_metrics();
       EXPECT_NEAR(reference_delay.median(), median, kIntNear);
       EXPECT_NEAR(reference_delay.std(), std, kIntNear);
+      EXPECT_NEAR(reference_delay.fraction_poor_delays(), fraction_poor_delays,
+                  kFloatNear);
 
       EXPECT_NEAR(test->rms_level(), rms_level, kIntNear);
 
@@ -2109,6 +2119,7 @@ TEST_F(ApmTest, Process) {
           test->mutable_delay_metrics();
       message_delay->set_median(median);
       message_delay->set_std(std);
+      message_delay->set_fraction_poor_delays(fraction_poor_delays);
 
       test->set_rms_level(rms_level);
 

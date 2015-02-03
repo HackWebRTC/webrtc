@@ -211,17 +211,22 @@ int WebRtcAec_GetMetrics(void* handle, AecMetrics* metrics);
  *
  * Inputs                       Description
  * -------------------------------------------------------------------
- * void*      handle            Pointer to the AEC instance
+ * void*   handle               Pointer to the AEC instance
  *
  * Outputs                      Description
  * -------------------------------------------------------------------
- * int*       median            Delay median value.
- * int*       std               Delay standard deviation.
+ * int*    median               Delay median value.
+ * int*    std                  Delay standard deviation.
+ * float*  fraction_poor_delays Fraction of the delay estimates that may
+ *                              cause the AEC to perform poorly.
  *
- * int        return             0: OK
+ * int     return                0: OK
  *                              -1: error
  */
-int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std);
+int WebRtcAec_GetDelayMetrics(void* handle,
+                              int* median,
+                              int* std,
+                              float* fraction_poor_delays);
 
 /*
  * Gets the last error code.

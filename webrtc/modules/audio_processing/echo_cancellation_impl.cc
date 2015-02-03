@@ -281,6 +281,12 @@ bool EchoCancellationImpl::is_delay_logging_enabled() const {
 
 // TODO(bjornv): How should we handle the multi-channel case?
 int EchoCancellationImpl::GetDelayMetrics(int* median, int* std) {
+  float fraction_poor_delays = 0;
+  return GetDelayMetrics(median, std, &fraction_poor_delays);
+}
+
+int EchoCancellationImpl::GetDelayMetrics(int* median, int* std,
+                                          float* fraction_poor_delays) {
   CriticalSectionScoped crit_scoped(crit_);
   if (median == NULL) {
     return apm_->kNullPointerError;
@@ -294,7 +300,7 @@ int EchoCancellationImpl::GetDelayMetrics(int* median, int* std) {
   }
 
   Handle* my_handle = static_cast<Handle*>(handle(0));
-  if (WebRtcAec_GetDelayMetrics(my_handle, median, std) !=
+  if (WebRtcAec_GetDelayMetrics(my_handle, median, std, fraction_poor_delays) !=
       apm_->kNoError) {
     return GetHandleError(my_handle);
   }

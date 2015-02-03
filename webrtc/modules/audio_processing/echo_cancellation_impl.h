@@ -52,6 +52,8 @@ class EchoCancellationImpl : public EchoCancellation,
   virtual int enable_delay_logging(bool enable) OVERRIDE;
   virtual bool is_delay_logging_enabled() const OVERRIDE;
   virtual int GetDelayMetrics(int* median, int* std) OVERRIDE;
+  virtual int GetDelayMetrics(int* median, int* std,
+                              float* fraction_poor_delays) OVERRIDE;
   virtual struct AecCore* aec_core() const OVERRIDE;
 
   // ProcessingComponent implementation.
