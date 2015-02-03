@@ -1482,7 +1482,7 @@ void WebRtcSession::RemoveUnusedChannelsAndTransports(
     SignalVideoChannelDestroyed();
     const std::string content_name = video_channel_->content_name();
     channel_manager_->DestroyVideoChannel(video_channel_.release());
-    DestroyTransportProxy(content_name);
+    DestroyTransportProxyWhenUnused(content_name);
   }
 
   const cricket::ContentInfo* voice_info =
@@ -1492,7 +1492,7 @@ void WebRtcSession::RemoveUnusedChannelsAndTransports(
     SignalVoiceChannelDestroyed();
     const std::string content_name = voice_channel_->content_name();
     channel_manager_->DestroyVoiceChannel(voice_channel_.release());
-    DestroyTransportProxy(content_name);
+    DestroyTransportProxyWhenUnused(content_name);
   }
 
   const cricket::ContentInfo* data_info =
@@ -1502,7 +1502,7 @@ void WebRtcSession::RemoveUnusedChannelsAndTransports(
     SignalDataChannelDestroyed();
     const std::string content_name = data_channel_->content_name();
     channel_manager_->DestroyDataChannel(data_channel_.release());
-    DestroyTransportProxy(content_name);
+    DestroyTransportProxyWhenUnused(content_name);
   }
 }
 

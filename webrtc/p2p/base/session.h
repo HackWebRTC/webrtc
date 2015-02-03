@@ -19,6 +19,7 @@
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/port.h"
 #include "webrtc/p2p/base/transport.h"
+#include "webrtc/p2p/base/transportchannelproxy.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
@@ -30,11 +31,12 @@ class BaseSession;
 class P2PTransportChannel;
 class Transport;
 class TransportChannel;
-class TransportChannelProxy;
 class TransportChannelImpl;
 
-typedef rtc::RefCountedObject<rtc::scoped_ptr<Transport> >
-TransportWrapper;
+// Transport and TransportChannelProxy are incomplete types. Thus we
+// wrap them in a scoped_ptr.
+typedef rtc::RefCountedObject<rtc::scoped_ptr<Transport> > TransportWrapper;
+typedef rtc::RefCountedObject<TransportChannelProxy> TransportChannelProxyRef;
 
 // Bundles a Transport and ChannelMap together. ChannelMap is used to
 // create transport channels before receiving or sending a session
@@ -42,7 +44,7 @@ TransportWrapper;
 // session had one ChannelMap and transport.  Now, with multiple
 // transports per session, we need multiple ChannelMaps as well.
 
-typedef std::map<int, TransportChannelProxy*> ChannelMap;
+typedef std::map<int, TransportChannelProxyRef*> ChannelMap;
 
 class TransportProxy : public sigslot::has_slots<>,
                        public CandidateTranslator {
@@ -82,9 +84,14 @@ class TransportProxy : public sigslot::has_slots<>,
   }
 
   TransportChannel* GetChannel(int component);
+
+  // Returns the channel for component. This channel may be used by
+  // others and should only be deleted by calling DestroyChannel.
   TransportChannel* CreateChannel(const std::string& channel_name,
                                   int component);
   bool HasChannel(int component);
+
+  // Destroy the channel for component.
   void DestroyChannel(int component);
 
   void AddSentCandidates(const Candidates& candidates);
@@ -117,6 +124,9 @@ class TransportProxy : public sigslot::has_slots<>,
       int component, std::string* channel_name) const;
   virtual bool GetComponentFromChannelName(
       const std::string& channel_name, int* component) const;
+
+  // Determine if TransportProxy has any active channels.
+  bool HasChannels() const;
 
   // Called when a transport signals that it has new candidates.
   void OnTransportCandidatesReady(cricket::Transport* transport,
@@ -346,6 +356,8 @@ class BaseSession : public sigslot::has_slots<>,
   TransportProxy* GetTransportProxy(const Transport* transport);
   TransportProxy* GetFirstTransportProxy();
   void DestroyTransportProxy(const std::string& content_name);
+  // Calls DestroyTransportProxy if the TransportProxy is not used.
+  void DestroyTransportProxyWhenUnused(const std::string& content_name);
   // TransportProxy is owned by session.  Return proxy just for convenience.
   TransportProxy* GetOrCreateTransportProxy(const std::string& content_name);
   // Creates the actual transport object. Overridable for testing.

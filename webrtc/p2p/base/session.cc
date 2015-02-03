@@ -30,11 +30,12 @@ namespace cricket {
 using rtc::Bind;
 
 TransportProxy::~TransportProxy() {
-  for (ChannelMap::iterator iter = channels_.begin();
-       iter != channels_.end(); ++iter) {
-    iter->second->SignalDestroyed(iter->second);
-    delete iter->second;
-  }
+  ASSERT(channels_.empty());
+}
+
+bool TransportProxy::HasChannels() const {
+  ASSERT(rtc::Thread::Current() == worker_thread_);
+  return !channels_.empty();
 }
 
 const std::string& TransportProxy::type() const {
@@ -49,22 +50,35 @@ TransportChannel* TransportProxy::GetChannel(int component) {
 TransportChannel* TransportProxy::CreateChannel(const std::string& name,
                                                 int component) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
-  ASSERT(GetChannel(component) == NULL);
-  ASSERT(!transport_->get()->HasChannel(component));
 
-  // We always create a proxy in case we need to change out the transport later.
-  TransportChannelProxy* channel_proxy =
-      new TransportChannelProxy(content_name(), name, component);
-  channels_[component] = channel_proxy;
+  TransportChannelProxyRef* channel_proxy;
+  if (channels_.find(component) == channels_.end()) {
+    channel_proxy =
+        new TransportChannelProxyRef(content_name(), name, component);
+    channels_[component] = channel_proxy;
 
-  // If we're already negotiated, create an impl and hook it up to the proxy
-  // channel. If we're connecting, create an impl but don't hook it up yet.
-  if (negotiated_) {
-    CreateChannelImpl_w(component);
-    SetChannelImplFromTransport_w(channel_proxy, component);
-  } else if (connecting_) {
-    CreateChannelImpl_w(component);
+    // TransportProxy maintains its own reference
+    // here. RefCountedObject automatically deletes the pointer when
+    // the refcount hits 0. This prevents RefCountedObject from
+    // deleting the object when all *external* references are
+    // gone. Things need to be done in DestroyChannel prior to the
+    // proxy being deleted.
+    channel_proxy->AddRef();
+
+    // If we're already negotiated, create an impl and hook it up to the proxy
+    // channel. If we're connecting, create an impl but don't hook it up yet.
+    if (negotiated_) {
+      CreateChannelImpl_w(component);
+      SetChannelImplFromTransport_w(channel_proxy, component);
+    } else if (connecting_) {
+      CreateChannelImpl_w(component);
+    }
+  } else {
+    channel_proxy = channels_[component];
   }
+
+  channel_proxy->AddRef();
+
   return channel_proxy;
 }
 
@@ -74,22 +88,37 @@ bool TransportProxy::HasChannel(int component) {
 
 void TransportProxy::DestroyChannel(int component) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
-  TransportChannelProxy* channel_proxy = GetChannelProxy(component);
-  if (channel_proxy) {
-    // If the state of TransportProxy is not NEGOTIATED then
-    // TransportChannelProxy and its impl are not connected. Both must
-    // be connected before deletion.
-    //
-    // However, if we haven't entered the connecting state then there
-    // is no implementation to hook up.
-    if (connecting_ && !negotiated_) {
-      SetChannelImplFromTransport_w(channel_proxy, component);
-    }
 
-    channels_.erase(component);
-    channel_proxy->SignalDestroyed(channel_proxy);
-    delete channel_proxy;
+  ChannelMap::const_iterator iter = channels_.find(component);
+  if (iter == channels_.end()) {
+    return;
   }
+
+  TransportChannelProxyRef* channel_proxy = iter->second;
+  int ref_count = channel_proxy->Release();
+  if (ref_count > 1) {
+    return;
+  }
+  // TransportProxy owns the last reference on the TransportChannelProxy.
+  // It should *never* be the case that ref_count is less than one
+  // here but this makes me sleep better at night.
+  ASSERT(ref_count == 1);
+
+  // If the state of TransportProxy is not NEGOTIATED then
+  // TransportChannelProxy and its impl are not connected. Both must
+  // be connected before deletion.
+  //
+  // However, if we haven't entered the connecting state then there
+  // is no implementation to hook up.
+  if (connecting_ && !negotiated_) {
+    SetChannelImplFromTransport_w(channel_proxy, component);
+  }
+
+  channels_.erase(component);
+  channel_proxy->SignalDestroyed(channel_proxy);
+
+  // Implicitly deletes the object since ref_count is now 0.
+  channel_proxy->Release();
 }
 
 void TransportProxy::ConnectChannels() {
@@ -590,8 +619,15 @@ TransportProxy* BaseSession::GetFirstTransportProxy() {
   return transports_.begin()->second;
 }
 
-void BaseSession::DestroyTransportProxy(
+void BaseSession::DestroyTransportProxyWhenUnused(
     const std::string& content_name) {
+  TransportProxy *tp = GetTransportProxy(content_name);
+  if(tp && !tp->HasChannels()) {
+    DestroyTransportProxy(content_name);
+  }
+}
+
+void BaseSession::DestroyTransportProxy(const std::string& content_name) {
   TransportMap::iterator iter = transports_.find(content_name);
   if (iter != transports_.end()) {
     delete iter->second;
