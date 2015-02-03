@@ -52,6 +52,7 @@ class TransportChannelProxy : public TransportChannel,
                          const rtc::PacketOptions& options,
                          int flags);
   virtual int SetOption(rtc::Socket::Option opt, int value);
+  virtual bool GetOption(rtc::Socket::Option opt, int* value);
   virtual int GetError();
   virtual IceRole GetIceRole() const;
   virtual bool GetStats(ConnectionInfos* infos);

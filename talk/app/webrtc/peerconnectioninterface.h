@@ -506,13 +506,13 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   // http://dev.w3.org/2011/webrtc/editor/webrtc.html
   inline rtc::scoped_refptr<PeerConnectionInterface>
       CreatePeerConnection(
-          const PeerConnectionInterface::IceServers& configuration,
+          const PeerConnectionInterface::IceServers& servers,
           const MediaConstraintsInterface* constraints,
           PortAllocatorFactoryInterface* allocator_factory,
           DTLSIdentityServiceInterface* dtls_identity_service,
           PeerConnectionObserver* observer) {
       PeerConnectionInterface::RTCConfiguration rtc_config;
-      rtc_config.servers = configuration;
+      rtc_config.servers = servers;
       return CreatePeerConnection(rtc_config, constraints, allocator_factory,
                                   dtls_identity_service, observer);
   }
