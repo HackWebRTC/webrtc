@@ -42,9 +42,6 @@ class SendSideBandwidthEstimation {
   void SetMinMaxBitrate(uint32_t min_bitrate, uint32_t max_bitrate);
   void SetMinBitrate(uint32_t min_bitrate);
 
- protected:
-  virtual bool ProbingExperimentIsEnabled() const;
-
  private:
   enum UmaState { kNoUpdate, kFirstDone, kDone };
 

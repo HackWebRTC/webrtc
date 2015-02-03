@@ -188,14 +188,12 @@ void SendSideBandwidthEstimation::UpdateUmaStats(int64_t now_ms,
 void SendSideBandwidthEstimation::UpdateEstimate(int64_t now_ms) {
   // We trust the REMB during the first 2 seconds if we haven't had any
   // packet loss reported, to allow startup bitrate probing.
-  if (ProbingExperimentIsEnabled()) {
-    if (last_fraction_loss_ == 0 && IsInStartPhase(now_ms) &&
-        bwe_incoming_ > bitrate_) {
-      bitrate_ = CapBitrateToThresholds(bwe_incoming_);
-      min_bitrate_history_.clear();
-      min_bitrate_history_.push_back(std::make_pair(now_ms, bitrate_));
-      return;
-    }
+  if (last_fraction_loss_ == 0 && IsInStartPhase(now_ms) &&
+      bwe_incoming_ > bitrate_) {
+    bitrate_ = CapBitrateToThresholds(bwe_incoming_);
+    min_bitrate_history_.clear();
+    min_bitrate_history_.push_back(std::make_pair(now_ms, bitrate_));
+    return;
   }
   UpdateMinHistory(now_ms);
   // Only start updating bitrate when receiving receiver blocks.
@@ -285,10 +283,5 @@ uint32_t SendSideBandwidthEstimation::CapBitrateToThresholds(uint32_t bitrate) {
     bitrate = min_bitrate_configured_;
   }
   return bitrate;
-}
-
-bool SendSideBandwidthEstimation::ProbingExperimentIsEnabled() const {
-  return webrtc::field_trial::FindFullName("WebRTC-BitrateProbing") ==
-         "Enabled";
 }
 }  // namespace webrtc
