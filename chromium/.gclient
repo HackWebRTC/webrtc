@@ -12,7 +12,6 @@ solutions = [{
     'src/third_party/ffmpeg': None,
     'src/third_party/junit/src': None,
     'src/third_party/WebKit': None,
-    'src/v8': None,
   },
   'safesync_url': ''
 }]

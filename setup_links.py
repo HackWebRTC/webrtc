@@ -88,6 +88,7 @@ if 'android' in get_target_os_list():
     'third_party/modp_b64',
     'third_party/requests',
     'tools/android',
+    'tools/grit',
     'tools/relocation_packer'
   ]
 
