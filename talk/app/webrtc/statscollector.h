@@ -97,6 +97,9 @@ class StatsCollector {
  private:
   friend class StatsCollectorTest;
 
+  // Overridden in unit tests to fake timing.
+  virtual double GetTimeNow();
+
   bool CopySelectedReports(const std::string& selector, StatsReports* reports);
 
   // Helper method for AddCertificateReports.

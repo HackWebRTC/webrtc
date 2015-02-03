@@ -229,6 +229,8 @@ class StatsReport {
    protected:
     Id(StatsType type);  // Only meant for derived classes.
     const StatsType type_;
+
+    static const char kSeparator = '_';
   };
 
   struct Value {
@@ -254,6 +256,7 @@ class StatsReport {
   // Factory functions for various types of stats IDs.
   static rtc::scoped_ptr<Id> NewBandwidthEstimationId();
   static rtc::scoped_ptr<Id> NewTypedId(StatsType type, const std::string& id);
+  static rtc::scoped_ptr<Id> NewTypedIntId(StatsType type, int id);
   static rtc::scoped_ptr<Id> NewIdWithDirection(
       StatsType type, const std::string& id, Direction direction);
   static rtc::scoped_ptr<Id> NewCandidateId(bool local, const std::string& id);

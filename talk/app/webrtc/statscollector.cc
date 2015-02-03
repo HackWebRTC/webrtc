@@ -56,10 +56,6 @@ const char* STATSREPORT_ADAPTER_TYPE_WIFI = "wlan";
 const char* STATSREPORT_ADAPTER_TYPE_WWAN = "wwan";
 const char* STATSREPORT_ADAPTER_TYPE_VPN = "vpn";
 
-double GetTimeNow() {
-  return rtc::Timing::WallTimeNow() * rtc::kNumMillisecsPerSec;
-}
-
 bool GetTransportIdFromProxy(const cricket::ProxyTransportMap& map,
                              const std::string& proxy,
                              std::string* transport) {
@@ -377,6 +373,10 @@ StatsCollector::StatsCollector(WebRtcSession* session)
 
 StatsCollector::~StatsCollector() {
   ASSERT(session_->signaling_thread()->IsCurrent());
+}
+
+double StatsCollector::GetTimeNow() {
+  return rtc::Timing::WallTimeNow() * rtc::kNumMillisecsPerSec;
 }
 
 // Adds a MediaStream with tracks that can be used as a |selector| in a call
@@ -830,10 +830,10 @@ void StatsCollector::ExtractDataInfo() {
 
   for (const auto& dc :
            session_->mediastream_signaling()->sctp_data_channels()) {
-    rtc::scoped_ptr<StatsReport::Id> id(
-        StatsReport::NewTypedId(StatsReport::kStatsReportTypeDataChannel,
-                                dc->label()));
+    rtc::scoped_ptr<StatsReport::Id> id(StatsReport::NewTypedIntId(
+        StatsReport::kStatsReportTypeDataChannel, dc->id()));
     StatsReport* report = reports_.ReplaceOrAddNew(id.Pass());
+    report->set_timestamp(stats_gathering_started_);
     report->AddValue(StatsReport::kStatsValueNameLabel, dc->label());
     report->AddValue(StatsReport::kStatsValueNameDataChannelId, dc->id());
     report->AddValue(StatsReport::kStatsValueNameProtocol, dc->protocol());

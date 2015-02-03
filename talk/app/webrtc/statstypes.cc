@@ -76,7 +76,6 @@ class BandwidthEstimationId : public StatsReport::Id {
 
 class TypedId : public StatsReport::Id {
  public:
-  static const char kSeparator = '_';
   TypedId(StatsReport::StatsType type, const std::string& id)
       : StatsReport::Id(type), id_(id) {}
 
@@ -93,6 +92,26 @@ class TypedId : public StatsReport::Id {
   const std::string id_;
 };
 
+class TypedIntId : public StatsReport::Id {
+ public:
+  TypedIntId(StatsReport::StatsType type, int id)
+      : StatsReport::Id(type), id_(id) {}
+
+  bool Equals(const Id& other) const override {
+    return Id::Equals(other) &&
+           static_cast<const TypedIntId&>(other).id_ == id_;
+  }
+
+  std::string ToString() const override {
+    return std::string(InternalTypeToString(type_)) +
+           kSeparator +
+           rtc::ToString<int>(id_);
+  }
+
+ protected:
+  const int id_;
+};
+
 class IdWithDirection : public TypedId {
  public:
   IdWithDirection(StatsReport::StatsType type, const std::string& id,
@@ -106,7 +125,7 @@ class IdWithDirection : public TypedId {
 
   std::string ToString() const override {
     std::string ret(TypedId::ToString());
-    ret += '_';
+    ret += kSeparator;
     ret += direction_ == StatsReport::kSend ? "send" : "recv";
     return ret;
   }
@@ -434,6 +453,11 @@ scoped_ptr<StatsReport::Id> StatsReport::NewBandwidthEstimationId() {
 scoped_ptr<StatsReport::Id> StatsReport::NewTypedId(
     StatsType type, const std::string& id) {
   return scoped_ptr<Id>(new TypedId(type, id)).Pass();
+}
+
+// static
+scoped_ptr<StatsReport::Id> StatsReport::NewTypedIntId(StatsType type, int id) {
+  return scoped_ptr<Id>(new TypedIntId(type, id)).Pass();
 }
 
 // static
