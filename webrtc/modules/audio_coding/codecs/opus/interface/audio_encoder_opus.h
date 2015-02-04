@@ -49,6 +49,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   virtual int Max10MsFramesInAPacket() const OVERRIDE;
   void SetTargetBitrate(int bits_per_second) override;
   void SetProjectedPacketLossRate(double fraction) override;
+  double packet_loss_rate() const { return packet_loss_rate_; }
 
  protected:
   virtual bool EncodeInternal(uint32_t rtp_timestamp,
