@@ -177,7 +177,7 @@ TEST_F(CondVarTest, InitFunctionsWork) {
 }
 
 // This test verifies that one can use the baton multiple times.
-TEST_F(CondVarTest, PassBatonMultipleTimes) {
+TEST_F(CondVarTest, DISABLED_PassBatonMultipleTimes) {
   const int kNumberOfRounds = 2;
   for (int i = 0; i < kNumberOfRounds; ++i) {
     ASSERT_TRUE(baton_.Pass(kShortWaitMs));
