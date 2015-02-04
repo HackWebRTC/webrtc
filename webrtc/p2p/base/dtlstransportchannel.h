@@ -126,9 +126,6 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   virtual int SetOption(rtc::Socket::Option opt, int value) {
     return channel_->SetOption(opt, value);
   }
-  virtual bool GetOption(rtc::Socket::Option opt, int* value) {
-    return channel_->GetOption(opt, value);
-  }
   virtual int GetError() {
     return channel_->GetError();
   }

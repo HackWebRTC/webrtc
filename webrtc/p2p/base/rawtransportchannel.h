@@ -50,7 +50,6 @@ class RawTransportChannel : public TransportChannelImpl,
   virtual int SendPacket(const char *data, size_t len,
                          const rtc::PacketOptions& options, int flags);
   virtual int SetOption(rtc::Socket::Option opt, int value);
-  virtual bool GetOption(rtc::Socket::Option opt, int* value);
   virtual int GetError();
 
   // Implements TransportChannelImpl.

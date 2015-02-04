@@ -118,8 +118,7 @@ class WebRtcSession : public cricket::BaseSession,
   bool Initialize(const PeerConnectionFactoryInterface::Options& options,
                   const MediaConstraintsInterface* constraints,
                   DTLSIdentityServiceInterface* dtls_identity_service,
-                  PeerConnectionInterface::IceTransportsType ice_transport_type,
-                  PeerConnectionInterface::BundlePolicy bundle_policy);
+                  PeerConnectionInterface::IceTransportsType ice_transport);
   // Deletes the voice, video and data channel and changes the session state
   // to STATE_RECEIVEDTERMINATE.
   void Terminate();
@@ -372,9 +371,6 @@ class WebRtcSession : public cricket::BaseSession,
   cricket::AudioOptions audio_options_;
   cricket::VideoOptions video_options_;
   MetricsObserverInterface* metrics_observer_;
-
-  // Declares the bundle policy for the WebRTCSession.
-  PeerConnectionInterface::BundlePolicy bundle_policy_;
 
   DISALLOW_COPY_AND_ASSIGN(WebRtcSession);
 };

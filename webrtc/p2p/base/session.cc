@@ -823,11 +823,8 @@ void BaseSession::OnTransportCandidatesAllocationDone(Transport* transport) {
 bool BaseSession::IsCandidateAllocationDone() const {
   for (TransportMap::const_iterator iter = transports_.begin();
        iter != transports_.end(); ++iter) {
-    if (!iter->second->candidates_allocated()) {
-      LOG(LS_INFO) << "Candidate allocation not done for "
-                   << iter->second->content_name();
+    if (!iter->second->candidates_allocated())
       return false;
-    }
   }
   return true;
 }

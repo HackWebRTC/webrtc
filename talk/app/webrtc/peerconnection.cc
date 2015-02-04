@@ -323,16 +323,28 @@ bool PeerConnection::Initialize(
     PortAllocatorFactoryInterface* allocator_factory,
     DTLSIdentityServiceInterface* dtls_identity_service,
     PeerConnectionObserver* observer) {
-  ASSERT(observer != NULL);
-  if (!observer)
-    return false;
-  observer_ = observer;
-
   std::vector<PortAllocatorFactoryInterface::StunConfiguration> stun_config;
   std::vector<PortAllocatorFactoryInterface::TurnConfiguration> turn_config;
   if (!ParseIceServers(configuration.servers, &stun_config, &turn_config)) {
     return false;
   }
+
+  return DoInitialize(configuration.type, stun_config, turn_config, constraints,
+                      allocator_factory, dtls_identity_service, observer);
+}
+
+bool PeerConnection::DoInitialize(
+    IceTransportsType type,
+    const StunConfigurations& stun_config,
+    const TurnConfigurations& turn_config,
+    const MediaConstraintsInterface* constraints,
+    webrtc::PortAllocatorFactoryInterface* allocator_factory,
+    DTLSIdentityServiceInterface* dtls_identity_service,
+    PeerConnectionObserver* observer) {
+  ASSERT(observer != NULL);
+  if (!observer)
+    return false;
+  observer_ = observer;
   port_allocator_.reset(
       allocator_factory->CreatePortAllocator(stun_config, turn_config));
 
@@ -372,9 +384,7 @@ bool PeerConnection::Initialize(
 
   // Initialize the WebRtcSession. It creates transport channels etc.
   if (!session_->Initialize(factory_->options(), constraints,
-                            dtls_identity_service,
-                            configuration.type,
-                            configuration.bundle_policy))
+                            dtls_identity_service, type))
     return false;
 
   // Register PeerConnection as receiver of local ice candidates.

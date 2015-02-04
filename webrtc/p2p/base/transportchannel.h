@@ -81,7 +81,6 @@ class TransportChannel : public sigslot::has_slots<> {
   // Sets a socket option on this channel.  Note that not all options are
   // supported by all transport types.
   virtual int SetOption(rtc::Socket::Option opt, int value) = 0;
-  virtual bool GetOption(rtc::Socket::Option opt, int* value) = 0;
 
   // Returns the most recent error that occurred on this channel.
   virtual int GetError() = 0;
