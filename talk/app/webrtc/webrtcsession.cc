@@ -466,11 +466,12 @@ class IceRestartAnswerLatch {
   bool ice_restart_;
 };
 
-WebRtcSession::WebRtcSession(cricket::ChannelManager* channel_manager,
-                             rtc::Thread* signaling_thread,
-                             rtc::Thread* worker_thread,
-                             cricket::PortAllocator* port_allocator,
-                             MediaStreamSignaling* mediastream_signaling)
+WebRtcSession::WebRtcSession(
+    cricket::ChannelManager* channel_manager,
+    rtc::Thread* signaling_thread,
+    rtc::Thread* worker_thread,
+    cricket::PortAllocator* port_allocator,
+    MediaStreamSignaling* mediastream_signaling)
     : cricket::BaseSession(signaling_thread,
                            worker_thread,
                            port_allocator,
@@ -516,7 +517,10 @@ bool WebRtcSession::Initialize(
     const PeerConnectionFactoryInterface::Options& options,
     const MediaConstraintsInterface*  constraints,
     DTLSIdentityServiceInterface* dtls_identity_service,
-    PeerConnectionInterface::IceTransportsType ice_transport) {
+    PeerConnectionInterface::IceTransportsType ice_transport_type,
+    PeerConnectionInterface::BundlePolicy bundle_policy) {
+  bundle_policy_ = bundle_policy;
+
   // TODO(perkj): Take |constraints| into consideration. Return false if not all
   // mandatory constraints can be fulfilled. Note that |constraints|
   // can be null.
@@ -659,7 +663,7 @@ bool WebRtcSession::Initialize(
     webrtc_session_desc_factory_->SetSdesPolicy(cricket::SEC_DISABLED);
   }
   port_allocator()->set_candidate_filter(
-      ConvertIceTransportTypeToCandidateFilter(ice_transport));
+      ConvertIceTransportTypeToCandidateFilter(ice_transport_type));
   return true;
 }
 

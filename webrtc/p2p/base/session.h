@@ -415,6 +415,8 @@ class BaseSession : public sigslot::has_slots<>,
   virtual void OnMessage(rtc::Message *pmsg);
 
  protected:
+  bool IsCandidateAllocationDone() const;
+
   State state_;
   Error error_;
   std::string error_desc_;
@@ -428,7 +430,6 @@ class BaseSession : public sigslot::has_slots<>,
       const SessionDescription* sdesc, ContentAction action,
       std::string* error_desc);
 
-  bool IsCandidateAllocationDone() const;
   void MaybeCandidateAllocationDone();
 
   // This method will delete the Transport and TransportChannelImpls and

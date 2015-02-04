@@ -198,6 +198,9 @@ class FakeTransportChannel : public TransportChannelImpl,
   virtual int SetOption(rtc::Socket::Option opt, int value) {
     return true;
   }
+  virtual bool GetOption(rtc::Socket::Option opt, int* value) {
+    return true;
+  }
   virtual int GetError() {
     return 0;
   }

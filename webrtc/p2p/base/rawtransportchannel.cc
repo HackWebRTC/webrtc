@@ -72,6 +72,10 @@ int RawTransportChannel::SetOption(rtc::Socket::Option opt, int value) {
   return port_->SetOption(opt, value);
 }
 
+bool RawTransportChannel::GetOption(rtc::Socket::Option opt, int* value) {
+  return false;
+}
+
 int RawTransportChannel::GetError() {
   return (port_ != NULL) ? port_->GetError() : 0;
 }

@@ -79,6 +79,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   virtual int SendPacket(const char *data, size_t len,
                          const rtc::PacketOptions& options, int flags);
   virtual int SetOption(rtc::Socket::Option opt, int value);
+  virtual bool GetOption(rtc::Socket::Option opt, int* value);
   virtual int GetError() { return error_; }
   virtual bool GetStats(std::vector<ConnectionInfo>* stats);
 

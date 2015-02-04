@@ -81,6 +81,9 @@ class TransportChannel : public sigslot::has_slots<> {
   // Sets a socket option on this channel.  Note that not all options are
   // supported by all transport types.
   virtual int SetOption(rtc::Socket::Option opt, int value) = 0;
+  // TODO(pthatcher): Once Chrome's MockTransportChannel implments
+  // this, remove the default implementation.
+  virtual bool GetOption(rtc::Socket::Option opt, int* value) { return false; }
 
   // Returns the most recent error that occurred on this channel.
   virtual int GetError() = 0;

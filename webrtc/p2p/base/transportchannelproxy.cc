@@ -104,6 +104,21 @@ int TransportChannelProxy::SetOption(rtc::Socket::Option opt, int value) {
   return impl_->SetOption(opt, value);
 }
 
+bool TransportChannelProxy::GetOption(rtc::Socket::Option opt, int* value) {
+  ASSERT(rtc::Thread::Current() == worker_thread_);
+  if (impl_) {
+    return impl_->GetOption(opt, value);
+  }
+
+  for (const auto& pending : pending_options_) {
+    if (pending.first == opt) {
+      *value = pending.second;
+      return true;
+    }
+  }
+  return false;
+}
+
 int TransportChannelProxy::GetError() {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   if (!impl_) {
