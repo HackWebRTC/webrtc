@@ -330,7 +330,6 @@ int32_t AudioDeviceWindowsWave::Terminate()
         _ptrThread = NULL;
         _critSect.Leave();
 
-        tmpThread->SetNotAlive();
         _timeEvent.Set();
 
         if (tmpThread->Stop())

@@ -47,17 +47,17 @@ VideoCaptureModule* VideoCaptureImpl::Create(const int32_t id,
 }
 
 VideoCaptureModuleV4L2::VideoCaptureModuleV4L2(const int32_t id)
-    : VideoCaptureImpl(id), 
+    : VideoCaptureImpl(id),
       _captureThread(NULL),
       _captureCritSect(CriticalSectionWrapper::CreateCriticalSection()),
-      _deviceId(-1), 
+      _deviceId(-1),
       _deviceFd(-1),
       _buffersAllocatedByDevice(-1),
-      _currentWidth(-1), 
+      _currentWidth(-1),
       _currentHeight(-1),
-      _currentFrameRate(-1), 
+      _currentFrameRate(-1),
       _captureStarted(false),
-      _captureVideoType(kVideoI420), 
+      _captureVideoType(kVideoI420),
       _pool(NULL)
 {
 }
@@ -306,7 +306,6 @@ int32_t VideoCaptureModuleV4L2::StopCapture()
 {
     if (_captureThread) {
         // Make sure the capture thread stop stop using the critsect.
-        _captureThread->SetNotAlive();
         if (_captureThread->Stop()) {
             delete _captureThread;
             _captureThread = NULL;

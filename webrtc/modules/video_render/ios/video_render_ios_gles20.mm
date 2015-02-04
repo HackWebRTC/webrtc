@@ -46,7 +46,6 @@ VideoRenderIosGles20::~VideoRenderIosGles20() {
   screen_update_thread_ = NULL;
 
   if (thread_wrapper) {
-    thread_wrapper->SetNotAlive();
     screen_update_event_->Set();
     screen_update_event_->StopTimer();
 

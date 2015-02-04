@@ -266,9 +266,6 @@ bool EventPosix::Process() {
 }
 
 bool EventPosix::StopTimer() {
-  if (timer_thread_) {
-    timer_thread_->SetNotAlive();
-  }
   if (timer_event_) {
     timer_event_->Set();
   }

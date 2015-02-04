@@ -444,7 +444,6 @@ void DataLogImpl::Process() {
 
 void DataLogImpl::StopThread() {
   if (file_writer_thread_ != NULL) {
-    file_writer_thread_->SetNotAlive();
     flush_event_->Set();
     // Call Stop() repeatedly, waiting for the Flush() call in Process() to
     // finish.

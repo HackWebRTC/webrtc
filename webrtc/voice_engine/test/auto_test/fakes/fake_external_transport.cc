@@ -38,7 +38,6 @@ FakeExternalTransport::FakeExternalTransport(webrtc::VoENetwork* ptr)
 
 FakeExternalTransport::~FakeExternalTransport() {
   if (thread_) {
-    thread_->SetNotAlive();
     event_->Set();
     if (thread_->Stop()) {
       delete thread_;

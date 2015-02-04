@@ -918,7 +918,6 @@ MatlabEngine::~MatlabEngine()
 
     if (_plotThread)
     {
-        _plotThread->SetNotAlive();
         _running = false;
         _eventPtr->Set();
 

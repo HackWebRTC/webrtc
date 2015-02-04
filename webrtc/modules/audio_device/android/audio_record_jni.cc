@@ -227,7 +227,6 @@ int32_t AudioRecordJni::Terminate() {
     ThreadWrapper* tmpThread = _ptrThreadRec;
     _ptrThreadRec = NULL;
     _critSect.Leave();
-    tmpThread->SetNotAlive();
     // Release again, we might have returned to waiting state
     _timeEventRec.Set();
     if (tmpThread->Stop())

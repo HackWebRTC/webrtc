@@ -157,7 +157,6 @@ class CondVarTest : public ::testing::Test {
     // Thus, we need to pin it down inside its Run function (between Grab
     // and Pass).
     ASSERT_TRUE(baton_.Pass(kShortWaitMs));
-    thread_->SetNotAlive();
     ASSERT_TRUE(baton_.Grab(kShortWaitMs));
     ASSERT_TRUE(thread_->Stop());
     delete thread_;

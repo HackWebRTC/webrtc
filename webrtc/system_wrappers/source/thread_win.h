@@ -27,7 +27,6 @@ class ThreadWindows : public ThreadWrapper {
 
   bool Start(unsigned int& id) override;
   bool Stop() override;
-  void SetNotAlive() override;
 
  protected:
   void Run();

@@ -185,7 +185,6 @@ ThreadTest::~ThreadTest()
 {
     if (_thread)
     {
-        _thread->SetNotAlive();
         if (_thread->Stop())
         {
             delete _thread;
@@ -272,7 +271,6 @@ bool ThreadTest::Process()
             "sending instance started from thread");
 #endif
 
-    _thread->SetNotAlive();
     _thread->Stop();
 
     //res = veData1.jvm->DetachCurrentThread();

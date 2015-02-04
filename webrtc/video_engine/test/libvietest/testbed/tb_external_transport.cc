@@ -86,7 +86,6 @@ TbExternalTransport::TbExternalTransport(
 
 TbExternalTransport::~TbExternalTransport()
 {
-    _thread.SetNotAlive();
     _event.Set();
     if (_thread.Stop())
     {

@@ -199,7 +199,6 @@ int32_t TestSenderReceiver::Stop ()
 
     if (_procThread)
     {
-        _procThread->SetNotAlive();
         _running = false;
         _eventPtr->Set();
 

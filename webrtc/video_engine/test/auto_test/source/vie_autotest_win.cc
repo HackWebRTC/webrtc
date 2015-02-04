@@ -102,8 +102,6 @@ int ViEAutoTestWindowManager::CreateWindows(AutoTestRect window1Size,
 }
 
 int ViEAutoTestWindowManager::TerminateWindows() {
-  _eventThread.SetNotAlive();
-
   _terminate = true;
   if (_eventThread.Stop()) {
     _crit.Enter();

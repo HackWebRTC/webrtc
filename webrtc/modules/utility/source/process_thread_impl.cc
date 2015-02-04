@@ -65,8 +65,6 @@ int32_t ProcessThreadImpl::Stop()
     _critSectModules->Enter();
     if(_thread)
     {
-        _thread->SetNotAlive();
-
         ThreadWrapper* thread = _thread;
         _thread = NULL;
 

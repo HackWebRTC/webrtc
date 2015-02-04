@@ -250,7 +250,6 @@ int32_t IncomingVideoStream::Stop() {
   if (incoming_render_thread_) {
     ThreadWrapper* thread = incoming_render_thread_;
     incoming_render_thread_ = NULL;
-    thread->SetNotAlive();
 #ifndef WIN32_
     deliver_buffer_event_.StopTimer();
 #endif

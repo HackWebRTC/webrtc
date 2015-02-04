@@ -72,7 +72,6 @@ bool ViEToFileRenderer::PrepareForRendering(
 void ViEToFileRenderer::StopRendering() {
   assert(output_file_ != NULL);
   if (thread_.get() != NULL) {
-    thread_->SetNotAlive();
     // Signal that a frame is ready to be written to file.
     frame_render_event_->Set();
     // Call Stop() repeatedly, waiting for ProcessRenderQueue() to finish.

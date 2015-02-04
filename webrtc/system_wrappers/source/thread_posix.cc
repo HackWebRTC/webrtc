@@ -118,10 +118,6 @@ bool ThreadPosix::Start(unsigned int& thread_id) {
   return true;
 }
 
-void ThreadPosix::SetNotAlive() {
-  DCHECK(thread_checker_.CalledOnValidThread());
-}
-
 bool ThreadPosix::Stop() {
   DCHECK(thread_checker_.CalledOnValidThread());
   if (!thread_id_)

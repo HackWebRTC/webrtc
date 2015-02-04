@@ -221,7 +221,6 @@ int32_t AudioTrackJni::Terminate() {
     ThreadWrapper* tmpThread = _ptrThreadPlay;
     _ptrThreadPlay = NULL;
     _critSect.Leave();
-    tmpThread->SetNotAlive();
     _timeEventPlay.Set();
     if (tmpThread->Stop())
     {

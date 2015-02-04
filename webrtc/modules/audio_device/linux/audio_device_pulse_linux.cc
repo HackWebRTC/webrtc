@@ -280,7 +280,6 @@ int32_t AudioDeviceLinuxPulse::Terminate()
         _ptrThreadRec = NULL;
         UnLock();
 
-        tmpThread->SetNotAlive();
         _timeEventRec.Set();
         if (tmpThread->Stop())
         {
@@ -301,7 +300,6 @@ int32_t AudioDeviceLinuxPulse::Terminate()
         _ptrThreadPlay = NULL;
         _critSect.Leave();
 
-        tmpThread->SetNotAlive();
         _timeEventPlay.Set();
         if (tmpThread->Stop())
         {

@@ -664,7 +664,6 @@ VideoRenderNSOpenGL::~VideoRenderNSOpenGL()
 
     if (tmpPtr)
     {
-        tmpPtr->SetNotAlive();
         _screenUpdateEvent->Set();
         _screenUpdateEvent->StopTimer();
 
@@ -873,7 +872,6 @@ int VideoRenderNSOpenGL::StopThread()
 
     if (tmpPtr)
     {
-        tmpPtr->SetNotAlive();
         _screenUpdateEvent->Set();
         if (tmpPtr->Stop())
         {

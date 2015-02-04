@@ -218,8 +218,6 @@ int32_t AudioDeviceLinuxALSA::Terminate()
         _ptrThreadRec = NULL;
         _critSect.Leave();
 
-        tmpThread->SetNotAlive();
-
         if (tmpThread->Stop())
         {
             delete tmpThread;
@@ -239,8 +237,6 @@ int32_t AudioDeviceLinuxALSA::Terminate()
         ThreadWrapper* tmpThread = _ptrThreadPlay;
         _ptrThreadPlay = NULL;
         _critSect.Leave();
-
-        tmpThread->SetNotAlive();
 
         if (tmpThread->Stop())
         {

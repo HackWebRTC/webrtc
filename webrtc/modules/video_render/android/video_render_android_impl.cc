@@ -178,7 +178,6 @@ int32_t VideoRenderAndroid::StopRender() {
 
   _javaShutdownEvent.Wait(3000);
   CriticalSectionScoped cs(&_critSect);
-  _javaRenderThread->SetNotAlive();
   if (_javaRenderThread->Stop()) {
     delete _javaRenderThread;
     _javaRenderThread = NULL;

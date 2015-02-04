@@ -100,7 +100,6 @@ int32_t TestLoadGenerator::Stop ()
 
     if (_genThread)
     {
-        _genThread->SetNotAlive();
         _running = false;
         _eventPtr->Set();
 

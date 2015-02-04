@@ -89,10 +89,6 @@ bool ThreadWindows::Start(unsigned int& id) {
   return true;
 }
 
-void ThreadWindows::SetNotAlive() {
-  DCHECK(main_thread_.CalledOnValidThread());
-}
-
 bool ThreadWindows::Stop() {
   DCHECK(main_thread_.CalledOnValidThread());
   if (thread_) {

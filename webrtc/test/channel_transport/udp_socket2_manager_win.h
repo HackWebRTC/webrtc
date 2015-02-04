@@ -100,7 +100,6 @@ public:
     virtual bool Start();
     virtual bool Stop();
     virtual int32_t Init();
-    virtual void SetNotAlive();
 protected:
     static bool Run(ThreadObj obj);
     bool Process();

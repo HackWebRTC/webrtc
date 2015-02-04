@@ -685,7 +685,6 @@ VideoRenderAGL::~VideoRenderAGL()
 
     if (tmpPtr)
     {
-        tmpPtr->SetNotAlive();
         _screenUpdateEvent->Set();
         _screenUpdateEvent->StopTimer();
 
@@ -868,7 +867,6 @@ int VideoRenderAGL::StopThread()
 
     if (tmpPtr)
     {
-        tmpPtr->SetNotAlive();
         _screenUpdateEvent->Set();
         if (tmpPtr->Stop())
         {

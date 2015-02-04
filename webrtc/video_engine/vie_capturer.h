@@ -168,6 +168,8 @@ class ViECapturer
   EventWrapper& capture_event_;
   EventWrapper& deliver_event_;
 
+  bool stop_;
+
   scoped_ptr<I420VideoFrame> captured_frame_;
   scoped_ptr<I420VideoFrame> deliver_frame_;
 

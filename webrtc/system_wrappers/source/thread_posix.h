@@ -32,7 +32,6 @@ class ThreadPosix : public ThreadWrapper {
   ~ThreadPosix() override;
 
   // From ThreadWrapper.
-  void SetNotAlive() override;
   bool Start(unsigned int& id) override;
   bool Stop() override;
 

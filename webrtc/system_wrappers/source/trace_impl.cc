@@ -103,7 +103,6 @@ bool TraceImpl::StopThread() {
   //                messages?
   SleepMs(10);
 
-  thread_.SetNotAlive();
   // Make sure the thread finishes as quickly as possible (instead of having
   // to wait for the timeout).
   event_.Set();

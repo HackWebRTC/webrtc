@@ -1703,7 +1703,6 @@ int32_t ViEChannel::StopDecodeThread() {
     return 0;
   }
 
-  decode_thread_->SetNotAlive();
   if (decode_thread_->Stop()) {
     delete decode_thread_;
   } else {
