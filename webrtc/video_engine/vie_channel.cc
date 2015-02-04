@@ -289,8 +289,7 @@ void ViEChannel::UpdateHistogramsAtStopSend() {
       rtp_rtx.transmitted.padding_bytes * 8 / elapsed_sec / 1000);
   RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RetransmittedBitrateSentInKbps",
       rtp_rtx.retransmitted.TotalBytes() * 8 / elapsed_sec / 1000);
-  uint32_t ssrc = 0;
-  if (vie_receiver_.GetRtxSsrc(&ssrc)) {
+  if (rtp_rtcp_->RtxSendStatus() != kRtxOff) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RtxBitrateSentInKbps",
         rtx.transmitted.TotalBytes() * 8 / elapsed_sec / 1000);
   }

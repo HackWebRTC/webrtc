@@ -914,24 +914,19 @@ TEST_F(RtpSenderTest, StreamDataCountersCallbacks) {
 
     uint32_t ssrc_;
     StreamDataCounters counters_;
+
+    void MatchPacketCounter(const RtpPacketCounter& expected,
+                            const RtpPacketCounter& actual) {
+      EXPECT_EQ(expected.payload_bytes, actual.payload_bytes);
+      EXPECT_EQ(expected.header_bytes, actual.header_bytes);
+      EXPECT_EQ(expected.padding_bytes, actual.padding_bytes);
+      EXPECT_EQ(expected.packets, actual.packets);
+    }
+
     void Matches(uint32_t ssrc, const StreamDataCounters& counters) {
       EXPECT_EQ(ssrc, ssrc_);
-      EXPECT_EQ(counters.transmitted.payload_bytes,
-                counters_.transmitted.payload_bytes);
-      EXPECT_EQ(counters.transmitted.header_bytes,
-                counters_.transmitted.header_bytes);
-      EXPECT_EQ(counters.transmitted.padding_bytes,
-                counters_.transmitted.padding_bytes);
-      EXPECT_EQ(counters.transmitted.packets,
-                counters_.transmitted.packets);
-      EXPECT_EQ(counters.retransmitted.payload_bytes,
-                counters_.retransmitted.payload_bytes);
-      EXPECT_EQ(counters.retransmitted.header_bytes,
-                counters_.retransmitted.header_bytes);
-      EXPECT_EQ(counters.retransmitted.padding_bytes,
-                counters_.retransmitted.padding_bytes);
-      EXPECT_EQ(counters.retransmitted.packets,
-                counters_.retransmitted.packets);
+      MatchPacketCounter(counters.transmitted, counters_.transmitted);
+      MatchPacketCounter(counters.retransmitted, counters_.retransmitted);
       EXPECT_EQ(counters.fec.packets, counters_.fec.packets);
     }
 

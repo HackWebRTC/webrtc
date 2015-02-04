@@ -257,29 +257,22 @@ class RtpTestCallback : public StreamDataCountersCallback {
     ++num_calls_;
   }
 
+  void MatchPacketCounter(const RtpPacketCounter& expected,
+                          const RtpPacketCounter& actual) {
+    EXPECT_EQ(expected.payload_bytes, actual.payload_bytes);
+    EXPECT_EQ(expected.header_bytes, actual.header_bytes);
+    EXPECT_EQ(expected.padding_bytes, actual.padding_bytes);
+    EXPECT_EQ(expected.packets, actual.packets);
+  }
+
   void Matches(uint32_t num_calls,
                uint32_t ssrc,
                const StreamDataCounters& expected) {
     EXPECT_EQ(num_calls, num_calls_);
     EXPECT_EQ(ssrc, ssrc_);
-    EXPECT_EQ(expected.transmitted.payload_bytes,
-              stats_.transmitted.payload_bytes);
-    EXPECT_EQ(expected.transmitted.header_bytes,
-              stats_.transmitted.header_bytes);
-    EXPECT_EQ(expected.transmitted.padding_bytes,
-              stats_.transmitted.padding_bytes);
-    EXPECT_EQ(expected.transmitted.packets, stats_.transmitted.packets);
-    EXPECT_EQ(expected.retransmitted.payload_bytes,
-              stats_.retransmitted.payload_bytes);
-    EXPECT_EQ(expected.retransmitted.header_bytes,
-              stats_.retransmitted.header_bytes);
-    EXPECT_EQ(expected.retransmitted.padding_bytes,
-              stats_.retransmitted.padding_bytes);
-    EXPECT_EQ(expected.retransmitted.packets, stats_.retransmitted.packets);
-    EXPECT_EQ(expected.fec.payload_bytes, stats_.fec.payload_bytes);
-    EXPECT_EQ(expected.fec.header_bytes, stats_.fec.header_bytes);
-    EXPECT_EQ(expected.fec.padding_bytes, stats_.fec.padding_bytes);
-    EXPECT_EQ(expected.fec.packets, stats_.fec.packets);
+    MatchPacketCounter(expected.transmitted, stats_.transmitted);
+    MatchPacketCounter(expected.retransmitted, stats_.retransmitted);
+    MatchPacketCounter(expected.fec, stats_.fec);
   }
 
   uint32_t num_calls_;

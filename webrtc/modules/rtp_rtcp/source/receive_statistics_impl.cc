@@ -81,17 +81,9 @@ void StreamStatisticianImpl::UpdateCounters(const RTPHeader& header,
   bool in_order = InOrderPacketInternal(header.sequenceNumber);
   ssrc_ = header.ssrc;
   incoming_bitrate_.Update(packet_length);
-  receive_counters_.transmitted.payload_bytes +=
-      packet_length - (header.paddingLength + header.headerLength);
-  receive_counters_.transmitted.header_bytes += header.headerLength;
-  receive_counters_.transmitted.padding_bytes += header.paddingLength;
-  ++receive_counters_.transmitted.packets;
+  receive_counters_.transmitted.AddPacket(packet_length, header);
   if (!in_order && retransmitted) {
-    ++receive_counters_.retransmitted.packets;
-    receive_counters_.retransmitted.payload_bytes +=
-        packet_length - (header.paddingLength + header.headerLength);
-    receive_counters_.retransmitted.header_bytes += header.headerLength;
-    receive_counters_.retransmitted.padding_bytes += header.paddingLength;
+    receive_counters_.retransmitted.AddPacket(packet_length, header);
   }
 
   if (receive_counters_.transmitted.packets == 1) {
@@ -204,11 +196,7 @@ void StreamStatisticianImpl::FecPacketReceived(const RTPHeader& header,
                                                size_t packet_length) {
   {
     CriticalSectionScoped cs(stream_lock_.get());
-    ++receive_counters_.fec.packets;
-    receive_counters_.fec.payload_bytes +=
-        packet_length - (header.headerLength + header.paddingLength);
-    receive_counters_.fec.header_bytes += header.headerLength;
-    receive_counters_.fec.padding_bytes += header.paddingLength;
+    receive_counters_.fec.AddPacket(packet_length, header);
   }
   NotifyRtpCallback();
 }

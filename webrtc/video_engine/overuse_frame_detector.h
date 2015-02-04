@@ -144,11 +144,13 @@ class OveruseFrameDetector : public Module {
   // Number of pixels of last captured frame.
   int num_pixels_ GUARDED_BY(crit_);
 
-  int64_t last_encode_sample_ms_ GUARDED_BY(crit_);
+  int64_t last_encode_sample_ms_;  // Only accessed by one thread.
+
   scoped_ptr<EncodeTimeAvg> encode_time_ GUARDED_BY(crit_);
   scoped_ptr<SendProcessingUsage> usage_ GUARDED_BY(crit_);
   scoped_ptr<FrameQueue> frame_queue_ GUARDED_BY(crit_);
-  int64_t last_sample_time_ms_ GUARDED_BY(crit_);
+
+  int64_t last_sample_time_ms_;  // Only accessed by one thread.
 
   scoped_ptr<CaptureQueueDelay> capture_queue_delay_ GUARDED_BY(crit_);
 
