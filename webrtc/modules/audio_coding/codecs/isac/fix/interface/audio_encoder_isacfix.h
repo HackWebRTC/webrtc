@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_INTERFACE_AUDIO_ENCODER_ISACFIX_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_INTERFACE_AUDIO_ENCODER_ISACFIX_H_
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/codecs/isac/audio_encoder_isac_t.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
 

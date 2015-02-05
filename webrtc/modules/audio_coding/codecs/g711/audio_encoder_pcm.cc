@@ -12,6 +12,7 @@
 
 #include <limits>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/g711_interface.h"
 
 namespace webrtc {

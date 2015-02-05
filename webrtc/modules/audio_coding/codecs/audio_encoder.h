@@ -14,7 +14,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -63,14 +62,7 @@ class AudioEncoder {
               size_t num_samples_per_channel,
               size_t max_encoded_bytes,
               uint8_t* encoded,
-              EncodedInfo* info) {
-    CHECK_EQ(num_samples_per_channel,
-             static_cast<size_t>(sample_rate_hz() / 100));
-    bool ret =
-        EncodeInternal(rtp_timestamp, audio, max_encoded_bytes, encoded, info);
-    CHECK_LE(info->encoded_bytes, max_encoded_bytes);
-    return ret;
-  }
+              EncodedInfo* info);
 
   // Return the input sample rate in Hz and the number of input channels.
   // These are constants set at instantiation time.

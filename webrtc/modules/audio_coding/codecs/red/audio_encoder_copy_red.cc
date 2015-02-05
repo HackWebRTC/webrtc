@@ -12,6 +12,8 @@
 
 #include <string.h>
 
+#include "webrtc/base/checks.h"
+
 namespace webrtc {
 
 AudioEncoderCopyRed::AudioEncoderCopyRed(const Config& config)
