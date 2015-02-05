@@ -11,15 +11,11 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_AUDIO_CLASSIFIER_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_AUDIO_CLASSIFIER_H_
 
-#if defined(__cplusplus)
 extern "C" {
-#endif
 #include "celt.h"
 #include "analysis.h"
 #include "opus_private.h"
-#if defined(__cplusplus)
 }
-#endif
 
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
