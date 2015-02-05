@@ -157,9 +157,9 @@ int32_t FakeH264Encoder::Encoded(const EncodedImage& encoded_image,
     fragmentation.fragmentationOffset[2] = kSpsSize + kPpsSize;
     fragmentation.fragmentationLength[2] =
         encoded_image._length - (kSpsSize + kPpsSize);
-    const size_t kSpsNalHeader = 0x37;
-    const size_t kPpsNalHeader = 0x38;
-    const size_t kIdrNalHeader = 0x15;
+    const size_t kSpsNalHeader = 0x67;
+    const size_t kPpsNalHeader = 0x68;
+    const size_t kIdrNalHeader = 0x65;
     encoded_image._buffer[fragmentation.fragmentationOffset[0]] = kSpsNalHeader;
     encoded_image._buffer[fragmentation.fragmentationOffset[1]] = kPpsNalHeader;
     encoded_image._buffer[fragmentation.fragmentationOffset[2]] = kIdrNalHeader;
@@ -168,7 +168,7 @@ int32_t FakeH264Encoder::Encoded(const EncodedImage& encoded_image,
     fragmentation.VerifyAndAllocateFragmentationHeader(kNumSlices);
     fragmentation.fragmentationOffset[0] = 0;
     fragmentation.fragmentationLength[0] = encoded_image._length;
-    const size_t kNalHeader = 0x11;
+    const size_t kNalHeader = 0x41;
     encoded_image._buffer[fragmentation.fragmentationOffset[0]] = kNalHeader;
   }
   uint8_t value = 0;
