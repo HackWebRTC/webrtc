@@ -258,9 +258,9 @@ int32_t AudioCodingModuleImpl::Process() {
     if (!HaveValidEncoder("Process")) {
       return -1;
     }
-    status = codecs_[current_send_codec_idx_]->Encode(stream, &length_bytes,
-                                                      &rtp_timestamp,
-                                                      &encoding_type);
+    AudioEncoder::EncodedInfo encoded_info;
+    status = codecs_[current_send_codec_idx_]->Encode(
+        stream, &length_bytes, &rtp_timestamp, &encoding_type, &encoded_info);
     if (status < 0) {
       // Encode failed.
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
