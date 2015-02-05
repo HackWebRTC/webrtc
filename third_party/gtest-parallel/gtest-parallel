@@ -48,6 +48,8 @@ class FilterFormat:
         self.failures.append(self.tests[job_id])
         for line in self.outputs[job_id]:
           print line
+        print ("[%d/%d] %s returned/aborted with exit code %d (%d ms)"
+            % (self.finished_tests, self.total_tests, test, exit_code, time_ms))
     elif command == "TESTCNT":
       self.total_tests = int(arg.split(' ', 1)[1])
       print "[0/%d] Running tests...\r" % self.total_tests,
