@@ -171,7 +171,8 @@ class CondVarTest : public ::testing::Test {
 
 // The SetUp and TearDown functions use condition variables.
 // This test verifies those pieces in isolation.
-TEST_F(CondVarTest, InitFunctionsWork) {
+// Disabled due to flakiness.  See bug 4262 for details.
+TEST_F(CondVarTest, DISABLED_InitFunctionsWork) {
   // All relevant asserts are in the SetUp and TearDown functions.
 }
 
