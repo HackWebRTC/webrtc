@@ -555,9 +555,9 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       }
       // Check input frame parameters.
       if (frame.yuvFrame) {
-        if (!(frame.yuvStrides[0] == frame.width &&
-            frame.yuvStrides[1] == frame.width / 2 &&
-            frame.yuvStrides[2] == frame.width / 2)) {
+        if (frame.yuvStrides[0] < frame.width ||
+            frame.yuvStrides[1] < frame.width / 2 ||
+            frame.yuvStrides[2] < frame.width / 2) {
           Log.e(TAG, "Incorrect strides " + frame.yuvStrides[0] + ", " +
               frame.yuvStrides[1] + ", " + frame.yuvStrides[2]);
           return;

@@ -3223,6 +3223,32 @@ JOW(jlong, VideoRenderer_nativeWrapVideoRenderer)(
   return (jlong)renderer.release();
 }
 
+JOW(void, VideoRenderer_nativeCopyPlane)(
+    JNIEnv *jni, jclass, jobject j_src_buffer, jint width, jint height,
+    jint src_stride, jobject j_dst_buffer, jint dst_stride) {
+  size_t src_size = jni->GetDirectBufferCapacity(j_src_buffer);
+  size_t dst_size = jni->GetDirectBufferCapacity(j_dst_buffer);
+  CHECK(src_stride >= width) << "Wrong source stride " << src_stride;
+  CHECK(dst_stride >= width) << "Wrong destination stride " << dst_stride;
+  CHECK(src_size >= src_stride * height)
+      << "Insufficient source buffer capacity " << src_size;
+  CHECK(dst_size >= dst_stride * height)
+      << "Isufficient destination buffer capacity " << dst_size;
+  uint8_t *src =
+      reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(j_src_buffer));
+  uint8_t *dst =
+      reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(j_dst_buffer));
+  if (src_stride == dst_stride) {
+    memcpy(dst, src, src_stride * height);
+  } else {
+    for (int i = 0; i < height; i++) {
+      memcpy(dst, src, width);
+      src += src_stride;
+      dst += dst_stride;
+    }
+  }
+}
+
 JOW(jlong, VideoSource_stop)(JNIEnv* jni, jclass, jlong j_p) {
   cricket::VideoCapturer* capturer =
       reinterpret_cast<VideoSourceInterface*>(j_p)->GetVideoCapturer();
