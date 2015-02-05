@@ -115,7 +115,7 @@ void CovarianceMatrixGenerator::DCCovarianceMatrix(int num_input_channels,
 
   complex<float>* const* elements = mat->elements();
 
-  float diagonal_value = 1 - (2 * half_width);
+  float diagonal_value = 1.f - 2.f * half_width;
   for (int i = 0; i < num_input_channels; ++i) {
     for (int j = 0; j < num_input_channels; ++j) {
       if (i == j) {

@@ -24,12 +24,12 @@ namespace {
 // Alpha for the Kaiser Bessel Derived window.
 const float kAlpha = 1.5f;
 
-// The minimum value a postprocessing mask can take.
+// The minimum value a post-processing mask can take.
 const float kMaskMinimum = 0.01f;
 
 const float kSpeedOfSoundMeterSeconds = 340;
 
-// For both target and interf angles, 0 is perpendicular to the microphone
+// For both target and interference angles, 0 is perpendicular to the microphone
 // array, facing forwards. The positive direction goes counterclockwise.
 // The angle at which we amplify sound.
 const float kTargetAngleRadians = 0.f;
@@ -40,7 +40,7 @@ const float kTargetAngleRadians = 0.f;
 // suppress sound coming from angles near +-|kInterfAngleRadians| as well.
 const float kInterfAngleRadians = static_cast<float>(M_PI) / 4.f;
 
-// When calculating the interf covariance matrix, this is the weight for
+// When calculating the interference covariance matrix, this is the weight for
 // the weighted average between the uniform covariance matrix and the angled
 // covariance matrix.
 // Rpsi = Rpsi_angled * kBalance + Rpsi_uniform * (1 - kBalance)
@@ -171,26 +171,19 @@ void Beamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
   for (int i = 0; i < kNumFreqBins; ++i) {
     float freq_hz = (static_cast<float>(i) / kFftSize) * sample_rate_hz_;
     wave_numbers_[i] = 2 * M_PI * freq_hz / kSpeedOfSoundMeterSeconds;
-  }
-
-  for (int i = 0; i < kNumFreqBins; ++i) {
     mask_thresholds_[i] = num_input_channels_ * num_input_channels_ *
                           kBeamwidthConstant * wave_numbers_[i] *
                           wave_numbers_[i];
   }
 
-  // Init all nonadaptive values before looping through the frames.
+  // Initialize all nonadaptive values before looping through the frames.
   InitDelaySumMasks();
   InitTargetCovMats();
   InitInterfCovMats();
 
   for (int i = 0; i < kNumFreqBins; ++i) {
     rxiws_[i] = Norm(target_cov_mats_[i], delay_sum_masks_[i]);
-  }
-  for (int i = 0; i < kNumFreqBins; ++i) {
     rpsiws_[i] = Norm(interf_cov_mats_[i], delay_sum_masks_[i]);
-  }
-  for (int i = 0; i < kNumFreqBins; ++i) {
     reflected_rpsiws_[i] =
         Norm(reflected_interf_cov_mats_[i], delay_sum_masks_[i]);
   }
@@ -224,10 +217,8 @@ void Beamformer::InitTargetCovMats() {
   target_cov_mats_[0].Scale(1.f / normalization_factor);
 
   for (int i = 1; i < kNumFreqBins; ++i) {
-    float wave_number = wave_numbers_[i];
-
     target_cov_mats_[i].Resize(num_input_channels_, num_input_channels_);
-    CovarianceMatrixGenerator::Boxcar(wave_number,
+    CovarianceMatrixGenerator::Boxcar(wave_numbers_[i],
                                       num_input_channels_,
                                       mic_spacing_,
                                       kBoxcarHalfWidth,
@@ -245,16 +236,14 @@ void Beamformer::InitInterfCovMats() {
 
   complex_f normalization_factor = interf_cov_mats_[0].Trace();
   interf_cov_mats_[0].Scale(1.f / normalization_factor);
-
+  reflected_interf_cov_mats_[0].PointwiseConjugate(interf_cov_mats_[0]);
   for (int i = 1; i < kNumFreqBins; ++i) {
-    float wave_number = wave_numbers_[i];
-
     interf_cov_mats_[i].Resize(num_input_channels_, num_input_channels_);
     ComplexMatrixF uniform_cov_mat(num_input_channels_, num_input_channels_);
     ComplexMatrixF angled_cov_mat(num_input_channels_, num_input_channels_);
 
     CovarianceMatrixGenerator::GappedUniformCovarianceMatrix(
-        wave_number,
+        wave_numbers_[i],
         num_input_channels_,
         mic_spacing_,
         kCovUniformGapHalfWidth,
@@ -279,9 +268,6 @@ void Beamformer::InitInterfCovMats() {
     uniform_cov_mat.Scale(1 - kBalance);
     angled_cov_mat.Scale(kBalance);
     interf_cov_mats_[i].Add(uniform_cov_mat, angled_cov_mat);
-  }
-
-  for (int i = 0; i < kNumFreqBins; ++i) {
     reflected_interf_cov_mats_[i].PointwiseConjugate(interf_cov_mats_[i]);
   }
 }
@@ -301,7 +287,7 @@ void Beamformer::ProcessChunk(const float* const* input,
   high_pass_exists_ = high_pass_split_input != NULL;
   lapped_transform_->ProcessChunk(input, output);
 
-  // Apply delay and sum and postfilter in the time domain. WARNING: only works
+  // Apply delay and sum and post-filter in the time domain. WARNING: only works
   // because delay-and-sum is not frequency dependent.
   if (high_pass_exists_) {
     high_pass_postfilter_mask_ /= num_blocks_in_this_chunk_;
@@ -340,7 +326,7 @@ void Beamformer::ProcessAudioBlock(const complex_f* const* input,
 
   float* mask_data = postfilter_masks_[current_block_ix_].elements()[0];
 
-  // Calculating the postfilter masks. Note that we need two for each
+  // Calculating the post-filter masks. Note that we need two for each
   // frequency bin to account for the positive and negative interferer
   // angle.
   for (int i = 0; i < kNumFreqBins; ++i) {
