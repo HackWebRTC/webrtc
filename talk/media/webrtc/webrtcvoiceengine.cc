@@ -3323,7 +3323,9 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     }
 
     int median, std;
-    if (engine()->voe()->processing()->GetEcDelayMetrics(median, std) != -1) {
+    float dummy;
+    if (engine()->voe()->processing()->GetEcDelayMetrics(
+        median, std, dummy) != -1) {
       echo_delay_median_ms = median;
       echo_delay_std_ms = std;
     }

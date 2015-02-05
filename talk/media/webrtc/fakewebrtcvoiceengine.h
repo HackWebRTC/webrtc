@@ -1167,7 +1167,8 @@ class FakeWebRtcVoiceEngine
     return 0;
   }
   WEBRTC_STUB(GetEchoMetrics, (int& ERL, int& ERLE, int& RERL, int& A_NLP));
-  WEBRTC_STUB(GetEcDelayMetrics, (int& delay_median, int& delay_std));
+  WEBRTC_STUB(GetEcDelayMetrics, (int& delay_median, int& delay_std,
+      float& fraction_poor_delays));
 
   WEBRTC_STUB(StartDebugRecording, (const char* fileNameUTF8));
   WEBRTC_STUB(StartDebugRecording, (FILE* handle));

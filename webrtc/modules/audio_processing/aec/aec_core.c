@@ -1575,7 +1575,7 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   aec->num_delay_values = 0;
   aec->delay_median = -1;
   aec->delay_std = -1;
-  aec->fraction_poor_delays = -1;
+  aec->fraction_poor_delays = -1.0f;
 
   aec->signal_delay_correction = 0;
   aec->previous_delay = -2;  // (-2): Uninitialized.
