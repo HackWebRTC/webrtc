@@ -11,17 +11,12 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_GENERIC_CODEC_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_GENERIC_CODEC_H_
 
-#include <map>
-
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 #define MAX_FRAME_SIZE_10MSEC 6
@@ -111,11 +106,10 @@ class ACMGenericCodec {
   //   -1 if error is occurred, otherwise the length of the bit-stream in
   //      bytes.
   //
-  virtual int16_t Encode(uint8_t* bitstream,
-                         int16_t* bitstream_len_byte,
-                         uint32_t* timestamp,
-                         WebRtcACMEncodingType* encoding_type,
-                         AudioEncoder::EncodedInfo* encoded_info);
+  int16_t Encode(uint8_t* bitstream,
+                 int16_t* bitstream_len_byte,
+                 uint32_t* timestamp,
+                 WebRtcACMEncodingType* encoding_type);
 
   ///////////////////////////////////////////////////////////////////////////
   // bool EncoderInitialized();
@@ -124,7 +118,7 @@ class ACMGenericCodec {
   //   True if the encoder is successfully initialized,
   //   false otherwise.
   //
-  virtual bool EncoderInitialized();
+  bool EncoderInitialized();
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t EncoderParams()
@@ -140,7 +134,7 @@ class ACMGenericCodec {
   //   -1 if the encoder is not initialized,
   //    0 otherwise.
   //
-  virtual int16_t EncoderParams(WebRtcACMCodecParams* enc_params);
+  int16_t EncoderParams(WebRtcACMCodecParams* enc_params);
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t InitEncoder(...)
@@ -158,8 +152,8 @@ class ACMGenericCodec {
   //  -1 if failed to initialize.
   //
   //
-  virtual int16_t InitEncoder(WebRtcACMCodecParams* codec_params,
-                              bool force_initialization);
+  int16_t InitEncoder(WebRtcACMCodecParams* codec_params,
+                      bool force_initialization);
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t Add10MsData(...)
@@ -180,10 +174,10 @@ class ACMGenericCodec {
   //   -1 if failed
   //    0 otherwise.
   //
-  virtual int32_t Add10MsData(const uint32_t timestamp,
-                              const int16_t* data,
-                              const uint16_t length,
-                              const uint8_t audio_channel);
+  int32_t Add10MsData(const uint32_t timestamp,
+                      const int16_t* data,
+                      const uint16_t length,
+                      const uint8_t audio_channel);
 
   ///////////////////////////////////////////////////////////////////////////
   // uint32_t NoMissedSamples()
@@ -195,14 +189,14 @@ class ACMGenericCodec {
   // Return Value:
   //   Number of samples which are overwritten.
   //
-  virtual uint32_t NoMissedSamples() const;
+  uint32_t NoMissedSamples() const;
 
   ///////////////////////////////////////////////////////////////////////////
   // void ResetNoMissedSamples()
   // This function resets the number of overwritten samples to zero.
   // (We might remove this function if we remove NoMissedSamples())
   //
-  virtual void ResetNoMissedSamples();
+  void ResetNoMissedSamples();
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t SetBitRate()
@@ -216,7 +210,7 @@ class ACMGenericCodec {
   //      codec is not rate-adjustable.
   //    0 if the rate is adjusted successfully
   //
-  virtual int16_t SetBitRate(const int32_t bitrate_bps);
+  int16_t SetBitRate(const int32_t bitrate_bps);
 
   ///////////////////////////////////////////////////////////////////////////
   // uint32_t EarliestTimestamp()
@@ -226,7 +220,7 @@ class ACMGenericCodec {
   // Return value:
   //   timestamp of the first 10 ms audio in the audio buffer.
   //
-  virtual uint32_t EarliestTimestamp() const;
+  uint32_t EarliestTimestamp() const;
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t SetVAD()
@@ -255,10 +249,7 @@ class ACMGenericCodec {
   //   -1 if failed to set DTX & VAD as specified,
   //    0 if succeeded.
   //
-  virtual int16_t SetVAD(bool* enable_dtx, bool* enable_vad, ACMVADMode* mode);
-
-  // Registers comfort noise at |sample_rate_hz| to use |payload_type|.
-  virtual void SetCngPt(int sample_rate_hz, int payload_type);
+  int16_t SetVAD(bool* enable_dtx, bool* enable_vad, ACMVADMode* mode);
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t ReplaceInternalDTX()
@@ -273,7 +264,7 @@ class ACMGenericCodec {
   //   -1 if failed to replace internal DTX,
   //    0 if succeeded.
   //
-  virtual int32_t ReplaceInternalDTX(const bool replace_internal_dtx);
+  int32_t ReplaceInternalDTX(const bool replace_internal_dtx);
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t IsInternalDTXReplaced()
@@ -312,7 +303,7 @@ class ACMGenericCodec {
   //   -1 if fails to get decoder estimated bandwidth,
   //    >0 estimated bandwidth in bits/sec.
   //
-  virtual int32_t GetEstimatedBandwidth();
+  int32_t GetEstimatedBandwidth();
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t SetEstimatedBandwidth()
@@ -326,7 +317,7 @@ class ACMGenericCodec {
   //   -1 if fails to set estimated bandwidth,
   //    0 on success.
   //
-  virtual int32_t SetEstimatedBandwidth(int32_t estimated_bandwidth);
+  int32_t SetEstimatedBandwidth(int32_t estimated_bandwidth);
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t GetRedPayload()
@@ -341,7 +332,7 @@ class ACMGenericCodec {
   //   -1 if fails to get codec specific RED,
   //    0 if succeeded.
   //
-  virtual int32_t GetRedPayload(uint8_t* red_payload, int16_t* payload_bytes);
+  int32_t GetRedPayload(uint8_t* red_payload, int16_t* payload_bytes);
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t ResetEncoder()
@@ -353,7 +344,7 @@ class ACMGenericCodec {
   //   -1 if failed,
   //    0 if succeeded.
   //
-  virtual int16_t ResetEncoder();
+  int16_t ResetEncoder();
 
   ///////////////////////////////////////////////////////////////////////////
   // void DestructEncoder()
@@ -362,7 +353,7 @@ class ACMGenericCodec {
   // instance we cannot delete the encoder and instead we will initialize the
   // encoder. We also delete VAD and DTX if they have been created.
   //
-  virtual void DestructEncoder();
+  void DestructEncoder();
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t SamplesLeftToEncode()
@@ -371,7 +362,7 @@ class ACMGenericCodec {
   // Return value:
   //   Number of samples.
   //
-  virtual int16_t SamplesLeftToEncode();
+  int16_t SamplesLeftToEncode();
 
   ///////////////////////////////////////////////////////////////////////////
   // SetUniqueID()
@@ -380,7 +371,7 @@ class ACMGenericCodec {
   // Input
   //   -id                 : A number to identify the codec.
   //
-  virtual void SetUniqueID(const uint32_t id);
+  void SetUniqueID(const uint32_t id);
 
   ///////////////////////////////////////////////////////////////////////////
   // UpdateDecoderSampFreq()
@@ -569,7 +560,7 @@ class ACMGenericCodec {
   // Returns true if there is enough audio buffered for encoding, such that
   // calling Encode() will return a payload.
   //
-  virtual bool HasFrameToEncode() const;
+  bool HasFrameToEncode() const;
 
   //
   // Returns pointer to the AudioDecoder class of this codec. A codec which
@@ -979,181 +970,6 @@ class ACMGenericCodec {
 
   uint32_t last_timestamp_ GUARDED_BY(codec_wrapper_lock_);
   uint32_t unique_id_;
-};
-
-// Proxy for AudioDecoder
-class AudioDecoderProxy final : public AudioDecoder {
- public:
-  AudioDecoderProxy();
-  void SetDecoder(AudioDecoder* decoder);
-  bool IsSet() const;
-  int Decode(const uint8_t* encoded,
-             size_t encoded_len,
-             int16_t* decoded,
-             SpeechType* speech_type) override;
-  int DecodeRedundant(const uint8_t* encoded,
-                      size_t encoded_len,
-                      int16_t* decoded,
-                      SpeechType* speech_type) override;
-  bool HasDecodePlc() const override;
-  int DecodePlc(int num_frames, int16_t* decoded) override;
-  int Init() override;
-  int IncomingPacket(const uint8_t* payload,
-                     size_t payload_len,
-                     uint16_t rtp_sequence_number,
-                     uint32_t rtp_timestamp,
-                     uint32_t arrival_timestamp) override;
-  int ErrorCode() override;
-  int PacketDuration(const uint8_t* encoded, size_t encoded_len) override;
-  int PacketDurationRedundant(const uint8_t* encoded,
-                              size_t encoded_len) const override;
-  bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const override;
-  CNG_dec_inst* CngDecoderInstance() override;
-
- private:
-  scoped_ptr<CriticalSectionWrapper> decoder_lock_;
-  AudioDecoder* decoder_ GUARDED_BY(decoder_lock_);
-};
-
-class ACMGenericCodecWrapper : public ACMGenericCodec {
- public:
-  ACMGenericCodecWrapper(const CodecInst& codec_inst,
-                         int cng_pt_nb,
-                         int cng_pt_wb,
-                         int cng_pt_swb,
-                         int cng_pt_fb,
-                         bool enable_red,
-                         int red_payload_type);
-  virtual ~ACMGenericCodecWrapper() = default;
-
-  ACMGenericCodec* CreateInstance() override;
-
-  int16_t Encode(uint8_t* bitstream,
-                 int16_t* bitstream_len_byte,
-                 uint32_t* timestamp,
-                 WebRtcACMEncodingType* encoding_type,
-                 AudioEncoder::EncodedInfo* encoded_info) override;
-
-  bool EncoderInitialized() override;
-
-  int16_t EncoderParams(WebRtcACMCodecParams* enc_params) override;
-
-  int16_t InitEncoder(WebRtcACMCodecParams* codec_params,
-                      bool force_initialization) override;
-
-  int32_t Add10MsData(const uint32_t timestamp,
-                      const int16_t* data,
-                      const uint16_t length,
-                      const uint8_t audio_channel) override;
-
-  uint32_t NoMissedSamples() const override;
-
-  void ResetNoMissedSamples() override;
-
-  int16_t SetBitRate(const int32_t bitrate_bps) override;
-
-  uint32_t EarliestTimestamp() const override;
-
-  int16_t SetVAD(bool* enable_dtx, bool* enable_vad, ACMVADMode* mode) override;
-
-  void SetCngPt(int sample_rate_hz, int payload_type) override;
-
-  int32_t ReplaceInternalDTX(const bool replace_internal_dtx) override;
-
-  int32_t GetEstimatedBandwidth() override;
-
-  int32_t SetEstimatedBandwidth(int32_t estimated_bandwidth) override;
-
-  int32_t GetRedPayload(uint8_t* red_payload, int16_t* payload_bytes) override;
-
-  int16_t ResetEncoder() override;
-
-  void DestructEncoder() override;
-
-  int16_t SamplesLeftToEncode() override;
-
-  void SetUniqueID(const uint32_t id) override;
-
-  int16_t UpdateDecoderSampFreq(int16_t codec_id) override;
-
-  int16_t UpdateEncoderSampFreq(uint16_t samp_freq_hz) override
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
-
-  int16_t EncoderSampFreq(uint16_t* samp_freq_hz) override
-      SHARED_LOCKS_REQUIRED(codec_wrapper_lock_);
-
-  int32_t ConfigISACBandwidthEstimator(const uint8_t init_frame_size_msec,
-                                       const uint16_t init_rate_bps,
-                                       const bool enforce_frame_size) override;
-
-  int32_t SetISACMaxPayloadSize(const uint16_t max_payload_len_bytes) override;
-
-  int32_t SetISACMaxRate(const uint32_t max_rate_bps) override;
-
-  int16_t REDPayloadISAC(const int32_t isac_rate,
-                         const int16_t isac_bw_estimate,
-                         uint8_t* payload,
-                         int16_t* payload_len_bytes) override;
-
-  int SetOpusMaxPlaybackRate(int /* frequency_hz */) override;
-
-  bool HasFrameToEncode() const override;
-
-  AudioDecoder* Decoder(int /* codec_id */) override;
-
-  int SetFEC(bool enable_fec) override;
-
-  int SetOpusApplication(OpusApplicationMode mode) override;
-
-  int SetPacketLossRate(int /* loss_rate */) override;
-
-  void EnableCopyRed(bool enable, int red_payload_type) override;
-
-  bool ExternalRedNeeded() override;
-
- protected:
-  void DestructEncoderSafe() override
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
-
-  int16_t InternalEncode(uint8_t* bitstream,
-                         int16_t* bitstream_len_byte) override
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
-
-  int16_t InternalInitEncoder(WebRtcACMCodecParams* codec_params) override
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
-
-  int16_t InternalCreateEncoder() override;
-
- private:
-  void ResetAudioEncoder() EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
-
-  OpusApplicationMode GetOpusApplication(int num_channels) const
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
-
-  scoped_ptr<AudioEncoder> audio_encoder_ GUARDED_BY(codec_wrapper_lock_);
-  scoped_ptr<AudioEncoder> cng_encoder_ GUARDED_BY(codec_wrapper_lock_);
-  scoped_ptr<AudioEncoder> red_encoder_ GUARDED_BY(codec_wrapper_lock_);
-  AudioEncoder* encoder_ GUARDED_BY(codec_wrapper_lock_);
-  AudioDecoderProxy decoder_proxy_ GUARDED_BY(codec_wrapper_lock_);
-  std::vector<int16_t> input_ GUARDED_BY(codec_wrapper_lock_);
-  WebRtcACMCodecParams acm_codec_params_ GUARDED_BY(codec_wrapper_lock_);
-  int bitrate_bps_ GUARDED_BY(codec_wrapper_lock_);
-  bool fec_enabled_ GUARDED_BY(codec_wrapper_lock_);
-  int loss_rate_ GUARDED_BY(codec_wrapper_lock_);
-  int max_playback_rate_hz_ GUARDED_BY(codec_wrapper_lock_);
-  int max_payload_size_bytes_ GUARDED_BY(codec_wrapper_lock_);
-  int max_rate_bps_ GUARDED_BY(codec_wrapper_lock_);
-  bool is_opus_ GUARDED_BY(codec_wrapper_lock_);
-  bool is_isac_ GUARDED_BY(codec_wrapper_lock_);
-  bool first_frame_ GUARDED_BY(codec_wrapper_lock_);
-  uint32_t rtp_timestamp_ GUARDED_BY(codec_wrapper_lock_);
-  uint32_t last_rtp_timestamp_ GUARDED_BY(codec_wrapper_lock_);
-  // Map from payload type to sample rate (Hz) and encoding type.
-  std::map<int, std::pair<int, WebRtcACMEncodingType>> cng_pt_
-      GUARDED_BY(codec_wrapper_lock_);
-  int red_payload_type_ GUARDED_BY(codec_wrapper_lock_);
-  OpusApplicationMode opus_application_ GUARDED_BY(codec_wrapper_lock_);
-  bool opus_application_set_ GUARDED_BY(codec_wrapper_lock_);
 };
 
 }  // namespace acm2
