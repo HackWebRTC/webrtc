@@ -668,8 +668,9 @@ static int GetCandidatePreferenceFromType(const std::string& type) {
   return preference;
 }
 
-// Get ip and port of the default destination from the |candidates| with
-// the given value of |component_id|.
+// Get ip and port of the default destination from the |candidates| with the
+// given value of |component_id|. The default candidate should be the one most
+// likely to work, typically IPv4 relay.
 // RFC 5245
 // The value of |component_id| currently supported are 1 (RTP) and 2 (RTCP).
 // TODO: Decide the default destination in webrtcsession and
@@ -682,25 +683,35 @@ static void GetDefaultDestination(
   *port = kDummyPort;
   *ip = kDummyAddress;
   int current_preference = kPreferenceUnknown;
+  int current_family = AF_UNSPEC;
   for (std::vector<Candidate>::const_iterator it = candidates.begin();
        it != candidates.end(); ++it) {
     if (it->component() != component_id) {
       continue;
     }
-    const int preference = GetCandidatePreferenceFromType(it->type());
-    // See if this candidate is more preferable then the current one.
-    if (preference <= current_preference) {
+    // Default destination should be UDP only.
+    if (it->protocol() != cricket::UDP_PROTOCOL_NAME) {
       continue;
     }
-    current_preference = preference;
-    *port = it->address().PortAsString();
-    *ip = it->address().ipaddr().ToString();
-    int family = it->address().ipaddr().family();
+    const int preference = GetCandidatePreferenceFromType(it->type());
+    const int family = it->address().ipaddr().family();
+    // See if this candidate is more preferable then the current one if it's the
+    // same family. Or if the current family is IPv4 already so we could safely
+    // ignore all IPv6 ones. WebRTC bug 4269.
+    // http://code.google.com/p/webrtc/issues/detail?id=4269
+    if ((preference <= current_preference && current_family == family) ||
+        (current_family == AF_INET && family == AF_INET6)) {
+      continue;
+    }
     if (family == AF_INET) {
       addr_type->assign(kConnectionIpv4Addrtype);
     } else if (family == AF_INET6) {
       addr_type->assign(kConnectionIpv6Addrtype);
     }
+    current_preference = preference;
+    current_family = family;
+    *port = it->address().PortAsString();
+    *ip = it->address().ipaddr().ToString();
   }
 }
 

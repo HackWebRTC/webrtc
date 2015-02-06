@@ -1363,6 +1363,127 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionEmpty) {
   EXPECT_EQ("", webrtc::SdpSerialize(jdesc_empty));
 }
 
+// This tests serialization of SDP with only IPv6 candidates and verifies that
+// IPv6 is used as default address in c line according to preference.
+TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithIPv6Only) {
+  // Only test 1 m line.
+  desc_.RemoveContentByName("video_content_name");
+  // Stun has a high preference than local host.
+  cricket::Candidate candidate1(
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "udp",
+      rtc::SocketAddress("::1", 1234), kCandidatePriority, "", "",
+      cricket::STUN_PORT_TYPE, kCandidateGeneration, kCandidateFoundation1);
+  cricket::Candidate candidate2(
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "udp",
+      rtc::SocketAddress("::2", 1235), kCandidatePriority, "", "",
+      cricket::LOCAL_PORT_TYPE, kCandidateGeneration, kCandidateFoundation1);
+  JsepSessionDescription jdesc(kDummyString);
+  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+
+  // Only add the candidates to audio m line.
+  JsepIceCandidate jice1("audio_content_name", 0, candidate1);
+  JsepIceCandidate jice2("audio_content_name", 0, candidate2);
+  ASSERT_TRUE(jdesc.AddCandidate(&jice1));
+  ASSERT_TRUE(jdesc.AddCandidate(&jice2));
+  std::string message = webrtc::SdpSerialize(jdesc);
+
+  // Audio line should have a c line like this one.
+  EXPECT_NE(message.find("c=IN IP6 ::1"), std::string::npos);
+  // Shouldn't have a IP4 c line.
+  EXPECT_EQ(message.find("c=IN IP4"), std::string::npos);
+}
+
+// This tests serialization of SDP with both IPv4 and IPv6 candidates and
+// verifies that IPv4 is used as default address in c line even if the
+// preference of IPv4 is lower.
+TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithBothIPFamilies) {
+  // Only test 1 m line.
+  desc_.RemoveContentByName("video_content_name");
+  cricket::Candidate candidate_v4(
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "udp",
+      rtc::SocketAddress("192.168.1.5", 1234), kCandidatePriority, "", "",
+      cricket::STUN_PORT_TYPE, kCandidateGeneration, kCandidateFoundation1);
+  cricket::Candidate candidate_v6(
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "udp",
+      rtc::SocketAddress("::1", 1234), kCandidatePriority, "", "",
+      cricket::LOCAL_PORT_TYPE, kCandidateGeneration, kCandidateFoundation1);
+  JsepSessionDescription jdesc(kDummyString);
+  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+
+  // Only add the candidates to audio m line.
+  JsepIceCandidate jice_v4("audio_content_name", 0, candidate_v4);
+  JsepIceCandidate jice_v6("audio_content_name", 0, candidate_v6);
+  ASSERT_TRUE(jdesc.AddCandidate(&jice_v4));
+  ASSERT_TRUE(jdesc.AddCandidate(&jice_v6));
+  std::string message = webrtc::SdpSerialize(jdesc);
+
+  // Audio line should have a c line like this one.
+  EXPECT_NE(message.find("c=IN IP4 192.168.1.5"), std::string::npos);
+  // Shouldn't have a IP6 c line.
+  EXPECT_EQ(message.find("c=IN IP6"), std::string::npos);
+}
+
+// This tests serialization of SDP with both UDP and TCP candidates and
+// verifies that UDP is used as default address in c line even if the
+// preference of UDP is lower.
+TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithBothProtocols) {
+  // Only test 1 m line.
+  desc_.RemoveContentByName("video_content_name");
+  // Stun has a high preference than local host.
+  cricket::Candidate candidate1(
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "tcp",
+      rtc::SocketAddress("::1", 1234), kCandidatePriority, "", "",
+      cricket::STUN_PORT_TYPE, kCandidateGeneration, kCandidateFoundation1);
+  cricket::Candidate candidate2(
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "udp",
+      rtc::SocketAddress("fe80::1234:5678:abcd:ef12", 1235), kCandidatePriority,
+      "", "", cricket::LOCAL_PORT_TYPE, kCandidateGeneration,
+      kCandidateFoundation1);
+  JsepSessionDescription jdesc(kDummyString);
+  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+
+  // Only add the candidates to audio m line.
+  JsepIceCandidate jice1("audio_content_name", 0, candidate1);
+  JsepIceCandidate jice2("audio_content_name", 0, candidate2);
+  ASSERT_TRUE(jdesc.AddCandidate(&jice1));
+  ASSERT_TRUE(jdesc.AddCandidate(&jice2));
+  std::string message = webrtc::SdpSerialize(jdesc);
+
+  // Audio line should have a c line like this one.
+  EXPECT_NE(message.find("c=IN IP6 fe80::1234:5678:abcd:ef12"),
+            std::string::npos);
+  // Shouldn't have a IP4 c line.
+  EXPECT_EQ(message.find("c=IN IP4"), std::string::npos);
+}
+
+// This tests serialization of SDP with only TCP candidates and verifies that
+// null IPv4 is used as default address in c line.
+TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithTCPOnly) {
+  // Only test 1 m line.
+  desc_.RemoveContentByName("video_content_name");
+  // Stun has a high preference than local host.
+  cricket::Candidate candidate1(
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "tcp",
+      rtc::SocketAddress("::1", 1234), kCandidatePriority, "", "",
+      cricket::STUN_PORT_TYPE, kCandidateGeneration, kCandidateFoundation1);
+  cricket::Candidate candidate2(
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "tcp",
+      rtc::SocketAddress("::2", 1235), kCandidatePriority, "", "",
+      cricket::LOCAL_PORT_TYPE, kCandidateGeneration, kCandidateFoundation1);
+  JsepSessionDescription jdesc(kDummyString);
+  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+
+  // Only add the candidates to audio m line.
+  JsepIceCandidate jice1("audio_content_name", 0, candidate1);
+  JsepIceCandidate jice2("audio_content_name", 0, candidate2);
+  ASSERT_TRUE(jdesc.AddCandidate(&jice1));
+  ASSERT_TRUE(jdesc.AddCandidate(&jice2));
+  std::string message = webrtc::SdpSerialize(jdesc);
+
+  // Audio line should have a c line like this one when no any default exists.
+  EXPECT_NE(message.find("c=IN IP4 0.0.0.0"), std::string::npos);
+}
+
 // This tests serialization of SDP with a=crypto and a=fingerprint, as would be
 // the case in a DTLS offer.
 TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithFingerprint) {
