@@ -98,10 +98,6 @@ bool CapturedFrame::GetDataSize(uint32* size) const {
   return true;
 }
 
-webrtc::VideoFrameRotation CapturedFrame::GetRotation() const {
-  return webrtc::ClockwiseRotationFromDegree(rotation);
-}
-
 /////////////////////////////////////////////////////////////////////
 // Implementation of class VideoCapturer
 /////////////////////////////////////////////////////////////////////

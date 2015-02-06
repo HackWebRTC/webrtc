@@ -430,8 +430,8 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
   int DeliverBufferFrame(unsigned char* buffer, size_t buffer_size,
                          int64 time_stamp, int64 elapsed_time) {
     WebRtcVideoFrame video_frame;
-    video_frame.Alias(buffer, buffer_size, width_, height_, 1, 1, elapsed_time,
-                      time_stamp, webrtc::VideoFrameRotation_0);
+    video_frame.Alias(buffer, buffer_size, width_, height_,
+                      1, 1, elapsed_time, time_stamp, 0);
 
     // Sanity check on decoded frame size.
     if (buffer_size != VideoFrame::SizeOf(width_, height_)) {
