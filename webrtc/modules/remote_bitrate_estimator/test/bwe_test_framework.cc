@@ -805,10 +805,8 @@ SendSideBwe* CreateEstimator(BandwidthEstimatorType estimator,
       return new RembSendSideBwe(kbps, observer, clock);
     case kFullSendSideEstimator:
       return new FullSendSideBwe(kbps, observer, clock);
-    case kNullEstimator: {
-      static NullSendSideBwe null_bwe;
-      return &null_bwe;
-    }
+    case kNullEstimator:
+      return new NullSendSideBwe();
   }
   assert(false);
   return NULL;
