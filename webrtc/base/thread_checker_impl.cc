@@ -59,7 +59,7 @@ bool ThreadCheckerImpl::CalledOnValidThread() const {
   if (valid_thread_ != current_thread) {
     // At the moment, this file cannot use logging from either webrtc or
     // libjingle. :(
-    printf("*** WRONG THREAD *** current=%i vs valid=%i\n",
+    fprintf(stderr, "*** WRONG THREAD *** current=%i vs valid=%i\n",
         current_thread, valid_thread_);
   }
   return true;  // le sigh.

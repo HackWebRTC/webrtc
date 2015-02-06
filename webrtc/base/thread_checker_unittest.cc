@@ -157,7 +157,15 @@ void ThreadCheckerClass::MethodOnDifferentThreadImpl() {
 }
 
 #if ENABLE_THREAD_CHECKER
-TEST(ThreadCheckerDeathTest, MethodNotAllowedOnDifferentThreadInDebug) {
+// TODO(tommi): Re-enable tests after figuring out issue with Chromium try bots.
+#if defined(WEBRTC_MAC) || defined(WEBRTC_IOS)
+#define MAYBE_MethodNotAllowedOnDifferentThreadInDebug \
+    DISABLED_MethodNotAllowedOnDifferentThreadInDebug
+#else
+#define MAYBE_MethodNotAllowedOnDifferentThreadInDebug \
+    MethodNotAllowedOnDifferentThreadInDebug
+#endif
+TEST(ThreadCheckerDeathTest, MAYBE_MethodNotAllowedOnDifferentThreadInDebug) {
   ASSERT_DEATH({
       ThreadCheckerClass::MethodOnDifferentThreadImpl();
     }, "");
@@ -186,7 +194,13 @@ void ThreadCheckerClass::DetachThenCallFromDifferentThreadImpl() {
 }
 
 #if ENABLE_THREAD_CHECKER
-TEST(ThreadCheckerDeathTest, DetachFromThreadInDebug) {
+// TODO(tommi): Re-enable tests after figuring out issue with Chromium try bots.
+#if defined(WEBRTC_MAC) || defined(WEBRTC_IOS)
+#define MAYBE_DetachFromThreadInDebug DISABLED_DetachFromThreadInDebug
+#else
+#define MAYBE_DetachFromThreadInDebug DetachFromThreadInDebug
+#endif
+TEST(ThreadCheckerDeathTest, MAYBE_DetachFromThreadInDebug) {
   ASSERT_DEATH({
     ThreadCheckerClass::DetachThenCallFromDifferentThreadImpl();
     }, "");
