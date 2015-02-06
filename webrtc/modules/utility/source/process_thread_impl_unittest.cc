@@ -139,7 +139,8 @@ void ProcessCallAfterAFewMs(int64_t milliseconds) {
   EXPECT_CALL(module, Process())
       .WillOnce(DoAll(SetTimestamp(&called_time),
                       SetEvent(event.get()),
-                      Return(0)));
+                      Return(0)))
+      .WillRepeatedly(Return(0));
 
   EXPECT_EQ(0, thread.RegisterModule(&module));
 
