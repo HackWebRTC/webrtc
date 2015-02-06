@@ -771,7 +771,7 @@ TEST_F(TurnPortTest, TestTurnReleaseAllocation) {
 }
 
 // Test that a TURN TCP allocation is released when the port is closed.
-TEST_F(TurnPortTest, DISABLED_TestTurnTCPReleaseAllocation) {
+TEST_F(TurnPortTest, TestTurnTCPReleaseAllocation) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
   turn_port_->PrepareAddress();

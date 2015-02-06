@@ -723,7 +723,9 @@ int VirtualSocketServer::Connect(VirtualSocket* socket,
 bool VirtualSocketServer::Disconnect(VirtualSocket* socket) {
   if (socket) {
     // Remove the mapping.
-    msg_queue_->Post(socket, MSG_ID_DISCONNECT);
+    // Posted at network_delay_ + 1 so it is scheduled after any
+    // pending packets.
+    msg_queue_->PostAt(network_delay_ + 1, socket, MSG_ID_DISCONNECT);
     return true;
   }
   return false;
