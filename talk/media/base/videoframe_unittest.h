@@ -42,6 +42,7 @@
 #include "webrtc/base/pathutils.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/common_video/rotation.h"
 
 #if defined(_MSC_VER)
 #define ALIGN16(var) __declspec(align(16)) var
@@ -83,11 +84,16 @@ class VideoFrameTest : public testing::Test {
 
   bool LoadFrame(const std::string& filename, uint32 format,
                  int32 width, int32 height, T* frame) {
-    return LoadFrame(filename, format, width, height,
-                     width, abs(height), 0, frame);
+    return LoadFrame(filename, format, width, height, width, abs(height),
+                     webrtc::kVideoRotation_0, frame);
   }
-  bool LoadFrame(const std::string& filename, uint32 format,
-                 int32 width, int32 height, int dw, int dh, int rotation,
+  bool LoadFrame(const std::string& filename,
+                 uint32 format,
+                 int32 width,
+                 int32 height,
+                 int dw,
+                 int dh,
+                 webrtc::kVideoRotation rotation,
                  T* frame) {
     rtc::scoped_ptr<rtc::MemoryStream> ms(LoadSample(filename));
     return LoadFrame(ms.get(), format, width, height, dw, dh, rotation, frame);
@@ -95,11 +101,16 @@ class VideoFrameTest : public testing::Test {
   // Load a video frame from a memory stream.
   bool LoadFrame(rtc::MemoryStream* ms, uint32 format,
                  int32 width, int32 height, T* frame) {
-    return LoadFrame(ms, format, width, height,
-                     width, abs(height), 0, frame);
+    return LoadFrame(ms, format, width, height, width, abs(height),
+                     webrtc::kVideoRotation_0, frame);
   }
-  bool LoadFrame(rtc::MemoryStream* ms, uint32 format,
-                 int32 width, int32 height, int dw, int dh, int rotation,
+  bool LoadFrame(rtc::MemoryStream* ms,
+                 uint32 format,
+                 int32 width,
+                 int32 height,
+                 int dw,
+                 int dh,
+                 webrtc::kVideoRotation rotation,
                  T* frame) {
     if (!ms) {
       return false;
@@ -116,11 +127,17 @@ class VideoFrameTest : public testing::Test {
   // Load a frame from a raw buffer.
   bool LoadFrame(uint8* sample, size_t sample_size, uint32 format,
                  int32 width, int32 height, T* frame) {
-    return LoadFrame(sample, sample_size, format, width, height,
-                     width, abs(height), 0, frame);
+    return LoadFrame(sample, sample_size, format, width, height, width,
+                     abs(height), webrtc::kVideoRotation_0, frame);
   }
-  bool LoadFrame(uint8* sample, size_t sample_size, uint32 format,
-                 int32 width, int32 height, int dw, int dh, int rotation,
+  bool LoadFrame(uint8* sample,
+                 size_t sample_size,
+                 uint32 format,
+                 int32 width,
+                 int32 height,
+                 int dw,
+                 int dh,
+                 webrtc::kVideoRotation rotation,
                  T* frame) {
     bool ret = false;
     for (int i = 0; i < repeat_; ++i) {
@@ -805,32 +822,30 @@ class VideoFrameTest : public testing::Test {
 
 // Macro to help test different rotations
 #define TEST_MIRROR(FOURCC, BPP)                                               \
-void Construct##FOURCC##Mirror() {                                             \
+  void Construct##FOURCC##Mirror() {                                           \
     T frame1, frame2, frame3;                                                  \
-    rtc::scoped_ptr<rtc::MemoryStream> ms(                         \
+    rtc::scoped_ptr<rtc::MemoryStream> ms(                                     \
         CreateYuvSample(kWidth, kHeight, BPP));                                \
     ASSERT_TRUE(ms.get() != NULL);                                             \
-    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_##FOURCC,                  \
-                          kWidth, -kHeight, kWidth, kHeight,                   \
-                          cricket::ROTATION_180, &frame1));                    \
+    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_##FOURCC, kWidth,          \
+                          -kHeight, kWidth, kHeight,                           \
+                          webrtc::kVideoRotation_180, &frame1));               \
     size_t data_size;                                                          \
     bool ret = ms->GetSize(&data_size);                                        \
     EXPECT_TRUE(ret);                                                          \
-    EXPECT_TRUE(frame2.Init(cricket::FOURCC_##FOURCC,                          \
-                            kWidth, kHeight, kWidth, kHeight,                  \
+    EXPECT_TRUE(frame2.Init(cricket::FOURCC_##FOURCC, kWidth, kHeight, kWidth, \
+                            kHeight,                                           \
                             reinterpret_cast<uint8*>(ms->GetBuffer()),         \
-                            data_size,                                         \
-                            1, 1, 0, 0, 0));                                   \
+                            data_size, 1, 1, 0, 0, webrtc::kVideoRotation_0)); \
     int width_rotate = static_cast<int>(frame1.GetWidth());                    \
     int height_rotate = static_cast<int>(frame1.GetHeight());                  \
     EXPECT_TRUE(frame3.InitToBlack(width_rotate, height_rotate, 1, 1, 0, 0));  \
-    libyuv::I420Mirror(frame2.GetYPlane(), frame2.GetYPitch(),                 \
-                       frame2.GetUPlane(), frame2.GetUPitch(),                 \
-                       frame2.GetVPlane(), frame2.GetVPitch(),                 \
-                       frame3.GetYPlane(), frame3.GetYPitch(),                 \
-                       frame3.GetUPlane(), frame3.GetUPitch(),                 \
-                       frame3.GetVPlane(), frame3.GetVPitch(),                 \
-                       kWidth, kHeight);                                       \
+    libyuv::I420Mirror(                                                        \
+        frame2.GetYPlane(), frame2.GetYPitch(), frame2.GetUPlane(),            \
+        frame2.GetUPitch(), frame2.GetVPlane(), frame2.GetVPitch(),            \
+        frame3.GetYPlane(), frame3.GetYPitch(), frame3.GetUPlane(),            \
+        frame3.GetUPitch(), frame3.GetVPlane(), frame3.GetVPitch(), kWidth,    \
+        kHeight);                                                              \
     EXPECT_TRUE(IsEqual(frame1, frame3, 0));                                   \
   }
 
@@ -838,32 +853,30 @@ void Construct##FOURCC##Mirror() {                                             \
 
 // Macro to help test different rotations
 #define TEST_ROTATE(FOURCC, BPP, ROTATE)                                       \
-void Construct##FOURCC##Rotate##ROTATE() {                                     \
+  void Construct##FOURCC##Rotate##ROTATE() {                                   \
     T frame1, frame2, frame3;                                                  \
-    rtc::scoped_ptr<rtc::MemoryStream> ms(                         \
+    rtc::scoped_ptr<rtc::MemoryStream> ms(                                     \
         CreateYuvSample(kWidth, kHeight, BPP));                                \
     ASSERT_TRUE(ms.get() != NULL);                                             \
-    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_##FOURCC,                  \
-                          kWidth, kHeight, kWidth, kHeight,                    \
-                          cricket::ROTATION_##ROTATE, &frame1));               \
+    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_##FOURCC, kWidth, kHeight, \
+                          kWidth, kHeight, webrtc::kVideoRotation_##ROTATE,    \
+                          &frame1));                                           \
     size_t data_size;                                                          \
     bool ret = ms->GetSize(&data_size);                                        \
     EXPECT_TRUE(ret);                                                          \
-    EXPECT_TRUE(frame2.Init(cricket::FOURCC_##FOURCC,                          \
-                            kWidth, kHeight, kWidth, kHeight,                  \
+    EXPECT_TRUE(frame2.Init(cricket::FOURCC_##FOURCC, kWidth, kHeight, kWidth, \
+                            kHeight,                                           \
                             reinterpret_cast<uint8*>(ms->GetBuffer()),         \
-                            data_size,                                         \
-                            1, 1, 0, 0, 0));                                   \
+                            data_size, 1, 1, 0, 0, webrtc::kVideoRotation_0)); \
     int width_rotate = static_cast<int>(frame1.GetWidth());                    \
     int height_rotate = static_cast<int>(frame1.GetHeight());                  \
     EXPECT_TRUE(frame3.InitToBlack(width_rotate, height_rotate, 1, 1, 0, 0));  \
-    libyuv::I420Rotate(frame2.GetYPlane(), frame2.GetYPitch(),                 \
-                       frame2.GetUPlane(), frame2.GetUPitch(),                 \
-                       frame2.GetVPlane(), frame2.GetVPitch(),                 \
-                       frame3.GetYPlane(), frame3.GetYPitch(),                 \
-                       frame3.GetUPlane(), frame3.GetUPitch(),                 \
-                       frame3.GetVPlane(), frame3.GetVPitch(),                 \
-                       kWidth, kHeight, libyuv::kRotate##ROTATE);              \
+    libyuv::I420Rotate(                                                        \
+        frame2.GetYPlane(), frame2.GetYPitch(), frame2.GetUPlane(),            \
+        frame2.GetUPitch(), frame2.GetVPlane(), frame2.GetVPitch(),            \
+        frame3.GetYPlane(), frame3.GetYPitch(), frame3.GetUPlane(),            \
+        frame3.GetUPitch(), frame3.GetVPlane(), frame3.GetVPitch(), kWidth,    \
+        kHeight, libyuv::kRotate##ROTATE);                                     \
     EXPECT_TRUE(IsEqual(frame1, frame3, 0));                                   \
   }
 
@@ -899,9 +912,8 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_UYVY, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
-    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_UYVY,
-                          kWidth, kHeight, kWidth, kHeight,
-                          cricket::ROTATION_90, &frame2));
+    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_UYVY, kWidth, kHeight,
+                          kWidth, kHeight, webrtc::kVideoRotation_90, &frame2));
   }
 
   // Test constructing an image from a UYVY buffer rotated 180 degrees.
@@ -910,9 +922,9 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_UYVY, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
-    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_UYVY,
-                          kWidth, kHeight, kWidth, kHeight,
-                          cricket::ROTATION_180, &frame2));
+    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_UYVY, kWidth, kHeight,
+                          kWidth, kHeight, webrtc::kVideoRotation_180,
+                          &frame2));
   }
 
   // Test constructing an image from a UYVY buffer rotated 270 degrees.
@@ -921,9 +933,9 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_UYVY, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
-    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_UYVY,
-                          kWidth, kHeight, kWidth, kHeight,
-                          cricket::ROTATION_270, &frame2));
+    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_UYVY, kWidth, kHeight,
+                          kWidth, kHeight, webrtc::kVideoRotation_270,
+                          &frame2));
   }
 
   // Test constructing an image from a YUY2 buffer rotated 90 degrees.
@@ -932,9 +944,8 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_YUY2, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
-    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_YUY2,
-                          kWidth, kHeight, kWidth, kHeight,
-                          cricket::ROTATION_90, &frame2));
+    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_YUY2, kWidth, kHeight,
+                          kWidth, kHeight, webrtc::kVideoRotation_90, &frame2));
   }
 
   // Test constructing an image from a YUY2 buffer rotated 180 degrees.
@@ -943,9 +954,9 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_YUY2, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
-    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_YUY2,
-                          kWidth, kHeight, kWidth, kHeight,
-                          cricket::ROTATION_180, &frame2));
+    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_YUY2, kWidth, kHeight,
+                          kWidth, kHeight, webrtc::kVideoRotation_180,
+                          &frame2));
   }
 
   // Test constructing an image from a YUY2 buffer rotated 270 degrees.
@@ -954,9 +965,9 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_YUY2, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
-    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_YUY2,
-                          kWidth, kHeight, kWidth, kHeight,
-                          cricket::ROTATION_270, &frame2));
+    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_YUY2, kWidth, kHeight,
+                          kWidth, kHeight, webrtc::kVideoRotation_270,
+                          &frame2));
   }
 
   // Test 1 pixel edge case image I420 buffer.
@@ -964,9 +975,9 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     T frame;
     uint8 pixel[3] = { 1, 2, 3 };
     for (int i = 0; i < repeat_; ++i) {
-      EXPECT_TRUE(frame.Init(cricket::FOURCC_I420, 1, 1, 1, 1,
-                             pixel, sizeof(pixel),
-                             1, 1, 0, 0, 0));
+      EXPECT_TRUE(frame.Init(cricket::FOURCC_I420, 1, 1, 1, 1, pixel,
+                             sizeof(pixel), 1, 1, 0, 0,
+                             webrtc::kVideoRotation_0));
     }
     const uint8* y = pixel;
     const uint8* u = y + 1;
@@ -981,9 +992,9 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     uint8 pixels5x5[5 * 5 + ((5 + 1) / 2 * (5 + 1) / 2) *  2];
     memset(pixels5x5, 1, 5 * 5 + ((5 + 1) / 2 * (5 + 1) / 2) *  2);
     for (int i = 0; i < repeat_; ++i) {
-      EXPECT_TRUE(frame.Init(cricket::FOURCC_I420, 5, 5, 5, 5,
-                             pixels5x5, sizeof(pixels5x5),
-                             1, 1, 0, 0, 0));
+      EXPECT_TRUE(frame.Init(cricket::FOURCC_I420, 5, 5, 5, 5, pixels5x5,
+                             sizeof(pixels5x5), 1, 1, 0, 0,
+                             webrtc::kVideoRotation_0));
     }
     EXPECT_EQ(4u, frame.GetWidth());
     EXPECT_EQ(4u, frame.GetHeight());
@@ -997,9 +1008,9 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     T frame;
     uint8 pixel[4] = { 64, 128, 192, 255 };
     for (int i = 0; i < repeat_; ++i) {
-      EXPECT_TRUE(frame.Init(cricket::FOURCC_ARGB, 1, 1, 1, 1,
-                             pixel, sizeof(pixel),
-                             1, 1, 0, 0, 0));
+      EXPECT_TRUE(frame.Init(cricket::FOURCC_ARGB, 1, 1, 1, 1, pixel,
+                             sizeof(pixel), 1, 1, 0, 0,
+                             webrtc::kVideoRotation_0));
     }
     // Convert back to ARGB.
     size_t out_size = 4;
@@ -1034,9 +1045,9 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
                             255, 255, 255, 255 };
 
     for (int i = 0; i < repeat_; ++i) {
-      EXPECT_TRUE(frame.Init(cricket::FOURCC_ARGB, 10, 1, 10, 1,
-                             pixel, sizeof(pixel),
-                             1, 1, 0, 0, 0));
+      EXPECT_TRUE(frame.Init(cricket::FOURCC_ARGB, 10, 1, 10, 1, pixel,
+                             sizeof(pixel), 1, 1, 0, 0,
+                             webrtc::kVideoRotation_0));
     }
     // Convert back to ARGB
     size_t out_size = 10 * 4;
@@ -1057,7 +1068,8 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     ASSERT_TRUE(LoadFrame(kImageFilename, cricket::FOURCC_I420, kWidth, kHeight,
-                          kWidth * 3 / 4, kHeight, 0, &frame2));
+                          kWidth * 3 / 4, kHeight, webrtc::kVideoRotation_0,
+                          &frame2));
     EXPECT_TRUE(IsEqualWithCrop(frame2, frame1, kWidth / 8, 0, 0));
   }
 
@@ -1070,7 +1082,8 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     EXPECT_TRUE(ConvertYuv422(ms.get(), cricket::FOURCC_YUY2, kWidth, kHeight,
                               &frame1));
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_YUY2, kWidth, kHeight,
-                          kWidth * 3 / 4, kHeight, 0, &frame2));
+                          kWidth * 3 / 4, kHeight, webrtc::kVideoRotation_0,
+                          &frame2));
     EXPECT_TRUE(IsEqualWithCrop(frame2, frame1, kWidth / 8, 0, 0));
   }
 
@@ -1083,7 +1096,8 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     EXPECT_TRUE(ConvertRgb(ms.get(), cricket::FOURCC_ARGB, kWidth, kHeight,
                            &frame1));
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_ARGB, kWidth, kHeight,
-                          kWidth * 3 / 4, kHeight, 0, &frame2));
+                          kWidth * 3 / 4, kHeight, webrtc::kVideoRotation_0,
+                          &frame2));
     EXPECT_TRUE(IsEqualWithCrop(frame2, frame1, kWidth / 8, 0, 2));
   }
 
@@ -1092,7 +1106,8 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     ASSERT_TRUE(LoadFrame(kImageFilename, cricket::FOURCC_I420, kWidth, kHeight,
-                          kWidth, kHeight * 3 / 4, 0, &frame2));
+                          kWidth, kHeight * 3 / 4, webrtc::kVideoRotation_0,
+                          &frame2));
     EXPECT_TRUE(IsEqualWithCrop(frame2, frame1, 0, kHeight / 8, 0));
   }
 
@@ -1410,10 +1425,9 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     EXPECT_TRUE(frame2.InitToBlack(kWidth, kHeight, 1, 1, 0, 0));
     EXPECT_TRUE(IsBlack(frame1));
     EXPECT_TRUE(IsEqual(frame1, frame2, 0));
-    EXPECT_TRUE(frame1.Reset(cricket::FOURCC_I420,
-                             kWidth, kHeight, kWidth, kHeight,
-                             reinterpret_cast<uint8*>(ms->GetBuffer()),
-                             data_size, 1, 1, 0, 0, 0));
+    EXPECT_TRUE(frame1.Reset(cricket::FOURCC_I420, kWidth, kHeight, kWidth,
+                             kHeight, reinterpret_cast<uint8*>(ms->GetBuffer()),
+                             data_size, 1, 1, 0, 0, webrtc::kVideoRotation_0));
     EXPECT_FALSE(IsBlack(frame1));
     EXPECT_FALSE(IsEqual(frame1, frame2, 0));
   }
@@ -1866,10 +1880,9 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
                                       v, kWidth / 2,
                                       kWidth, kHeight));
     }
-    EXPECT_TRUE(frame2.Init(cricket::FOURCC_I422,
-                            kWidth, kHeight, kWidth, kHeight,
-                            y,
-                            out_size,  1, 1, 0, 0, cricket::ROTATION_0));
+    EXPECT_TRUE(frame2.Init(cricket::FOURCC_I422, kWidth, kHeight, kWidth,
+                            kHeight, y, out_size, 1, 1, 0, 0,
+                            webrtc::kVideoRotation_0));
     EXPECT_TRUE(IsEqual(frame1, frame2, 1));
   }
 
@@ -2074,9 +2087,9 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     memset(out.get(), 0xfb, out_size + 1);  // Fill buffer
     uint8 pixel[3] = { 1, 2, 3 };
     T frame;
-    EXPECT_TRUE(frame.Init(cricket::FOURCC_I420, 1, 1, 1, 1,
-                           pixel, sizeof(pixel),
-                           1, 1, 0, 0, 0));
+    EXPECT_TRUE(frame.Init(cricket::FOURCC_I420, 1, 1, 1, 1, pixel,
+                           sizeof(pixel), 1, 1, 0, 0,
+                           webrtc::kVideoRotation_0));
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_EQ(out_size, frame.CopyToBuffer(out.get(), out_size));
     }

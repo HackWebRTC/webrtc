@@ -35,10 +35,18 @@ namespace cricket {
 // Simple subclass for use in mocks.
 class NullVideoFrame : public VideoFrame {
  public:
-  virtual bool Reset(uint32 format, int w, int h, int dw, int dh, uint8 *sample,
-                     size_t sample_size, size_t pixel_width,
-                     size_t pixel_height, int64 elapsed_time, int64 time_stamp,
-                     int rotation) {
+  virtual bool Reset(uint32 format,
+                     int w,
+                     int h,
+                     int dw,
+                     int dh,
+                     uint8* sample,
+                     size_t sample_size,
+                     size_t pixel_width,
+                     size_t pixel_height,
+                     int64 elapsed_time,
+                     int64 time_stamp,
+                     webrtc::kVideoRotation rotation) {
     return false;
   }
   virtual bool InitToBlack(int w, int h, size_t pixel_width,
@@ -65,7 +73,9 @@ class NullVideoFrame : public VideoFrame {
   virtual int64 GetTimeStamp() const { return 0; }
   virtual void SetElapsedTime(int64 elapsed_time) {}
   virtual void SetTimeStamp(int64 time_stamp) {}
-  virtual int GetRotation() const { return 0; }
+  virtual webrtc::kVideoRotation GetRotation() const {
+    return webrtc::kVideoRotation_0;
+  }
 
   virtual VideoFrame *Copy() const { return NULL; }
 

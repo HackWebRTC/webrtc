@@ -30,16 +30,9 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/stream.h"
+#include "webrtc/common_video/rotation.h"
 
 namespace cricket {
-
-// Simple rotation constants.
-enum {
-  ROTATION_0 = 0,
-  ROTATION_90 = 90,
-  ROTATION_180 = 180,
-  ROTATION_270 = 270
-};
 
 // Represents a YUV420 (a.k.a. I420) video frame.
 class VideoFrame {
@@ -55,10 +48,18 @@ class VideoFrame {
   // |dw| is destination width; can be less than |w| if cropping is desired.
   // |dh| is destination height, like |dw|, but must be a positive number.
   // Returns whether the function succeeded or failed.
-  virtual bool Reset(uint32 fourcc, int w, int h, int dw, int dh, uint8 *sample,
-                     size_t sample_size, size_t pixel_width,
-                     size_t pixel_height, int64_t elapsed_time,
-                     int64_t time_stamp, int rotation) = 0;
+  virtual bool Reset(uint32 fourcc,
+                     int w,
+                     int h,
+                     int dw,
+                     int dh,
+                     uint8* sample,
+                     size_t sample_size,
+                     size_t pixel_width,
+                     size_t pixel_height,
+                     int64_t elapsed_time,
+                     int64_t time_stamp,
+                     webrtc::kVideoRotation rotation) = 0;
 
   // Basic accessors.
   virtual size_t GetWidth() const = 0;
@@ -94,7 +95,7 @@ class VideoFrame {
   virtual void SetTimeStamp(int64_t time_stamp) = 0;
 
   // Indicates the rotation angle in degrees.
-  virtual int GetRotation() const = 0;
+  virtual webrtc::kVideoRotation GetRotation() const = 0;
 
   // Make a shallow copy of the frame. The frame buffer itself is not copied.
   // Both the current and new VideoFrame will share a single reference-counted
