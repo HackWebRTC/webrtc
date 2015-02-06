@@ -29,55 +29,59 @@ struct BweTestConfig {
         : debug_name(),
           flow_id(0),
           estimator_factory(NULL),
-          control_type(kMimdControl),
+          control_type(kAimdControl),
+          bwe_type(kRembEstimator),
           update_baseline(false),
           plot_delay(true),
-          plot_estimate(true) {
-    }
+          plot_estimate(true) {}
     EstimatorConfig(std::string debug_name,
                     int flow_id,
                     const RemoteBitrateEstimatorFactory* estimator_factory,
+                    BandwidthEstimatorType estimator_type,
                     bool plot_delay,
                     bool plot_estimate)
         : debug_name(debug_name),
           flow_id(flow_id),
           estimator_factory(estimator_factory),
-          control_type(kMimdControl),
+          control_type(kAimdControl),
+          bwe_type(kRembEstimator),
           update_baseline(false),
           plot_delay(plot_delay),
-          plot_estimate(plot_estimate) {
-    }
+          plot_estimate(plot_estimate) {}
     EstimatorConfig(std::string debug_name,
                     int flow_id,
                     const RemoteBitrateEstimatorFactory* estimator_factory,
                     RateControlType control_type,
+                    BandwidthEstimatorType estimator_type,
                     bool plot_delay,
                     bool plot_estimate)
         : debug_name(debug_name),
           flow_id(flow_id),
           estimator_factory(estimator_factory),
           control_type(control_type),
+          bwe_type(estimator_type),
           update_baseline(false),
           plot_delay(plot_delay),
-          plot_estimate(plot_estimate) {
-    }
+          plot_estimate(plot_estimate) {}
     EstimatorConfig(std::string debug_name,
                     int flow_id,
                     const RemoteBitrateEstimatorFactory* estimator_factory,
                     RateControlType control_type,
+                    BandwidthEstimatorType estimator_type,
                     bool update_baseline)
         : debug_name(debug_name),
           flow_id(flow_id),
           estimator_factory(estimator_factory),
           control_type(control_type),
+          bwe_type(kRembEstimator),
           update_baseline(update_baseline),
           plot_delay(false),
-          plot_estimate(false) {
-    }
+          plot_estimate(false) {}
     std::string debug_name;
     int flow_id;
     const RemoteBitrateEstimatorFactory* estimator_factory;
     RateControlType control_type;
+    BandwidthEstimatorType bwe_type;
     bool update_baseline;
     bool plot_delay;
     bool plot_estimate;
@@ -108,7 +112,7 @@ class BweTest : public PacketProcessorListener {
 
   void FindPacketsToProcess(const FlowIds& flow_ids, Packets* in,
                             Packets* out);
-  void GiveFeedbackToAffectedSenders(int flow_id, PacketReceiver* estimator);
+  void GiveFeedbackToAffectedSenders(PacketReceiver* estimator);
 
   int64_t run_time_ms_;
   int64_t time_now_ms_;

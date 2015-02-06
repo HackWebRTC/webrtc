@@ -58,8 +58,10 @@ TEST(BweTestFramework_RandomTest, Gaussian) {
 static bool IsSequenceNumberSorted(const Packets& packets) {
   PacketsConstIt last_it = packets.begin();
   for (PacketsConstIt it = last_it; it != packets.end(); ++it) {
-    if (IsNewerSequenceNumber((*last_it)->header().sequenceNumber,
-                              (*it)->header().sequenceNumber)) {
+    const MediaPacket* packet = static_cast<const MediaPacket*>(*it);
+    const MediaPacket* last_packet = static_cast<const MediaPacket*>(*last_it);
+    if (IsNewerSequenceNumber(last_packet->header().sequenceNumber,
+                              packet->header().sequenceNumber)) {
       return false;
     }
     last_it = it;
@@ -72,20 +74,20 @@ TEST(BweTestFramework_PacketTest, IsTimeSorted) {
   // Insert some packets in order...
   EXPECT_TRUE(IsTimeSorted(packets));
 
-  packets.push_back(new Packet(100, 0));
+  packets.push_back(new MediaPacket(100, 0));
   EXPECT_TRUE(IsTimeSorted(packets));
 
-  packets.push_back(new Packet(110, 0));
+  packets.push_back(new MediaPacket(110, 0));
   EXPECT_TRUE(IsTimeSorted(packets));
 
   // ...and one out-of-order...
-  packets.push_back(new Packet(100, 0));
+  packets.push_back(new MediaPacket(100, 0));
   EXPECT_FALSE(IsTimeSorted(packets));
 
   // ...remove the out-of-order packet, insert another in-order packet.
   delete packets.back();
   packets.pop_back();
-  packets.push_back(new Packet(120, 0));
+  packets.push_back(new MediaPacket(120, 0));
   EXPECT_TRUE(IsTimeSorted(packets));
 
   for (auto* packet : packets)
@@ -97,20 +99,20 @@ TEST(BweTestFramework_PacketTest, IsSequenceNumberSorted) {
   // Insert some packets in order...
   EXPECT_TRUE(IsSequenceNumberSorted(packets));
 
-  packets.push_back(new Packet(0, 100));
+  packets.push_back(new MediaPacket(0, 100));
   EXPECT_TRUE(IsSequenceNumberSorted(packets));
 
-  packets.push_back(new Packet(0, 110));
+  packets.push_back(new MediaPacket(0, 110));
   EXPECT_TRUE(IsSequenceNumberSorted(packets));
 
   // ...and one out-of-order...
-  packets.push_back(new Packet(0, 100));
+  packets.push_back(new MediaPacket(0, 100));
   EXPECT_FALSE(IsSequenceNumberSorted(packets));
 
   // ...remove the out-of-order packet, insert another in-order packet.
   delete packets.back();
   packets.pop_back();
-  packets.push_back(new Packet(0, 120));
+  packets.push_back(new MediaPacket(0, 120));
   EXPECT_TRUE(IsSequenceNumberSorted(packets));
 
   for (auto* packet : packets)
@@ -193,7 +195,7 @@ class BweTestFramework_RateCounterFilterTest : public ::testing::Test {
     // "Send" a packet every 10 ms.
     for (int64_t i = 0; i < run_for_ms; i += 10, now_ms_ += 10) {
       packets.push_back(
-          new Packet(0, now_ms_ * 1000, payload_bits / 8, header));
+          new MediaPacket(0, now_ms_ * 1000, payload_bits / 8, header));
     }
     filter_.RunFor(run_for_ms, &packets);
     ASSERT_TRUE(IsTimeSorted(packets));
@@ -265,7 +267,7 @@ static void TestLossFilter(float loss_percent, bool zero_tolerance) {
   for (int i = 0; i < 2225; ++i) {
     Packets packets;
     for (int j = 0; j < i % 10; ++j)
-      packets.push_back(new Packet(i, i));
+      packets.push_back(new MediaPacket(i, i));
     sent_packets += packets.size();
     filter.RunFor(0, &packets);
     ASSERT_TRUE(IsTimeSorted(packets));
@@ -320,8 +322,8 @@ class BweTestFramework_DelayFilterTest : public ::testing::Test {
                        uint32_t out_packets) {
     Packets packets;
     for (uint32_t i = 0; i < in_packets; ++i) {
-      packets.push_back(new Packet(now_ms_ * 1000 + (sequence_number_ >> 4),
-                                   sequence_number_));
+      packets.push_back(new MediaPacket(
+          now_ms_ * 1000 + (sequence_number_ >> 4), sequence_number_));
       sequence_number_++;
     }
     filter_.RunFor(run_for_ms, &packets);
@@ -421,7 +423,7 @@ TEST_F(BweTestFramework_DelayFilterTest, JumpToZeroDelay) {
   // Delay a bunch of packets, accumulate them to the 'acc' list.
   delay.SetDelay(100.0f);
   for (uint32_t i = 0; i < 10; ++i) {
-    packets.push_back(new Packet(i * 100, i));
+    packets.push_back(new MediaPacket(i * 100, i));
   }
   delay.RunFor(1000, &packets);
   acc.splice(acc.end(), packets);
@@ -432,7 +434,7 @@ TEST_F(BweTestFramework_DelayFilterTest, JumpToZeroDelay) {
   // to the 'acc' list and verify that it is all sorted.
   delay.SetDelay(0.0f);
   for (uint32_t i = 10; i < 50; ++i) {
-    packets.push_back(new Packet(i * 100, i));
+    packets.push_back(new MediaPacket(i * 100, i));
   }
   delay.RunFor(1000, &packets);
   acc.splice(acc.end(), packets);
@@ -474,8 +476,8 @@ static void TestJitterFilter(int64_t stddev_jitter_ms) {
   for (uint32_t i = 0; i < 1000; ++i) {
     Packets packets;
     for (uint32_t j = 0; j < i % 100; ++j) {
-      packets.push_back(new Packet(now_ms * 1000, sequence_number));
-      original.push_back(new Packet(now_ms * 1000, sequence_number));
+      packets.push_back(new MediaPacket(now_ms * 1000, sequence_number));
+      original.push_back(new MediaPacket(now_ms * 1000, sequence_number));
       ++sequence_number;
       now_ms += 5 * stddev_jitter_ms;
     }
@@ -496,8 +498,11 @@ static void TestJitterFilter(int64_t stddev_jitter_ms) {
   Stats<double> jitter_us;
   for (PacketsIt it1 = original.begin(), it2 = jittered.begin();
        it1 != original.end() && it2 != jittered.end(); ++it1, ++it2) {
-    EXPECT_EQ((*it1)->header().sequenceNumber, (*it2)->header().sequenceNumber);
-    jitter_us.Push((*it2)->send_time_us() - (*it1)->send_time_us());
+    const MediaPacket* packet1 = static_cast<const MediaPacket*>(*it1);
+    const MediaPacket* packet2 = static_cast<const MediaPacket*>(*it2);
+    EXPECT_EQ(packet1->header().sequenceNumber,
+              packet2->header().sequenceNumber);
+    jitter_us.Push(packet1->send_time_us() - packet2->send_time_us());
   }
   EXPECT_NEAR(0.0, jitter_us.GetMean(), stddev_jitter_ms * 1000.0 * 0.008);
   EXPECT_NEAR(stddev_jitter_ms * 1000.0, jitter_us.GetStdDev(),
@@ -536,7 +541,7 @@ static void TestReorderFilter(uint32_t reorder_percent, uint32_t near_value) {
   int64_t now_ms = 0;
   uint32_t sequence_number = 1;
   for (uint32_t i = 0; i < kPacketCount; ++i, now_ms += 10) {
-    packets.push_back(new Packet(now_ms * 1000, sequence_number++));
+    packets.push_back(new MediaPacket(now_ms * 1000, sequence_number++));
   }
   ASSERT_TRUE(IsTimeSorted(packets));
   ASSERT_TRUE(IsSequenceNumberSorted(packets));
@@ -552,7 +557,8 @@ static void TestReorderFilter(uint32_t reorder_percent, uint32_t near_value) {
   uint32_t distance = 0;
   uint32_t last_sequence_number = 0;
   for (auto* packet : packets) {
-    uint32_t sequence_number = packet->header().sequenceNumber;
+    const MediaPacket* media_packet = static_cast<const MediaPacket*>(packet);
+    uint32_t sequence_number = media_packet->header().sequenceNumber;
     if (sequence_number < last_sequence_number) {
       distance += last_sequence_number - sequence_number;
     }
@@ -622,7 +628,7 @@ class BweTestFramework_ChokeFilterTest : public ::testing::Test {
       int64_t send_time_ms = now_ms_ + (i * run_for_ms) / packets_to_generate;
       header.sequenceNumber = sequence_number_++;
       // Payload is 1000 bits.
-      packets.push_back(new Packet(0, send_time_ms * 1000, 125, header));
+      packets.push_back(new MediaPacket(0, send_time_ms * 1000, 125, header));
       send_times_us_.push_back(send_time_ms * 1000);
     }
     ASSERT_TRUE(IsTimeSorted(packets));
@@ -648,8 +654,9 @@ class BweTestFramework_ChokeFilterTest : public ::testing::Test {
 
   void CheckMaxDelay(int64_t max_delay_ms) {
     for (const auto* packet : output_packets_) {
-      int64_t delay_us = packet->send_time_us() -
-                         send_times_us_[packet->header().sequenceNumber];
+      const MediaPacket* media_packet = static_cast<const MediaPacket*>(packet);
+      int64_t delay_us = media_packet->send_time_us() -
+                         send_times_us_[media_packet->header().sequenceNumber];
       EXPECT_GE(max_delay_ms * 1000, delay_us);
     }
   }
@@ -781,20 +788,23 @@ void TestVideoSender(PacketSender* sender,
   uint32_t rtp_timestamp = 0;
   uint32_t rtp_timestamp_wraps = 0;
   for (const auto* packet : packets) {
-    EXPECT_LE(send_time_us, packet->send_time_us());
-    send_time_us = packet->send_time_us();
-    if (sender->source()->max_payload_size_bytes() != packet->payload_size()) {
-      EXPECT_EQ(expected_payload_size, packet->payload_size());
+    const MediaPacket* media_packet = static_cast<const MediaPacket*>(packet);
+    EXPECT_LE(send_time_us, media_packet->send_time_us());
+    send_time_us = media_packet->send_time_us();
+    if (sender->source()->max_payload_size_bytes() !=
+        media_packet->payload_size()) {
+      EXPECT_EQ(expected_payload_size, media_packet->payload_size());
     }
-    total_payload_size += packet->payload_size();
-    if (absolute_send_time > packet->header().extension.absoluteSendTime) {
+    total_payload_size += media_packet->payload_size();
+    if (absolute_send_time >
+        media_packet->header().extension.absoluteSendTime) {
       absolute_send_time_wraps++;
     }
-    absolute_send_time = packet->header().extension.absoluteSendTime;
-    if (rtp_timestamp > packet->header().timestamp) {
+    absolute_send_time = media_packet->header().extension.absoluteSendTime;
+    if (rtp_timestamp > media_packet->header().timestamp) {
       rtp_timestamp_wraps++;
     }
-    rtp_timestamp = packet->header().timestamp;
+    rtp_timestamp = media_packet->header().timestamp;
   }
   EXPECT_EQ(expected_total_payload_size, total_payload_size);
   EXPECT_GE(1u, absolute_send_time_wraps);
@@ -807,7 +817,7 @@ void TestVideoSender(PacketSender* sender,
 TEST(BweTestFramework_VideoSenderTest, Fps1Kbps80_1s) {
   // 1 fps, 80 kbps
   VideoSource source(0, 1.0f, 80, 0x1234, 0);
-  PacketSender sender(NULL, &source);
+  PacketSender sender(NULL, &source, kNullEstimator);
   EXPECT_EQ(10000u, source.bytes_per_second());
   // We're at 1 fps, so all packets should be generated on first call, giving 10
   // packets of each 1000 bytes, total 10000 bytes.
@@ -825,7 +835,7 @@ TEST(BweTestFramework_VideoSenderTest, Fps1Kbps80_1s) {
 TEST(BweTestFramework_VideoSenderTest, Fps1Kbps80_1s_Offset) {
   // 1 fps, 80 kbps, offset 0.5 of a frame period, ==0.5s in this case.
   VideoSource source(0, 1.0f, 80, 0x1234, 500);
-  PacketSender sender(NULL, &source);
+  PacketSender sender(NULL, &source, kNullEstimator);
   EXPECT_EQ(10000u, source.bytes_per_second());
   // 499ms, no output.
   TestVideoSender(&sender, 499, 0, 0, 0);
@@ -846,7 +856,7 @@ TEST(BweTestFramework_VideoSenderTest, Fps1Kbps80_1s_Offset) {
 TEST(BweTestFramework_VideoSenderTest, Fps50Kpbs80_11s) {
   // 50 fps, 80 kbps.
   VideoSource source(0, 50.0f, 80, 0x1234, 0);
-  PacketSender sender(NULL, &source);
+  PacketSender sender(NULL, &source, kNullEstimator);
   EXPECT_EQ(10000u, source.bytes_per_second());
   // 9998ms, should see 500 frames, 200 byte payloads, total 100000 bytes.
   TestVideoSender(&sender, 9998, 500, 200, 100000);
@@ -863,7 +873,7 @@ TEST(BweTestFramework_VideoSenderTest, Fps50Kpbs80_11s) {
 TEST(BweTestFramework_VideoSenderTest, Fps10Kpbs120_1s) {
   // 20 fps, 120 kbps.
   VideoSource source(0, 20.0f, 120, 0x1234, 0);
-  PacketSender sender(NULL, &source);
+  PacketSender sender(NULL, &source, kNullEstimator);
   EXPECT_EQ(15000u, source.bytes_per_second());
   // 498ms, 10 frames with 750 byte payloads, total 7500 bytes.
   TestVideoSender(&sender, 498, 10, 750, 7500);
@@ -880,7 +890,7 @@ TEST(BweTestFramework_VideoSenderTest, Fps10Kpbs120_1s) {
 TEST(BweTestFramework_VideoSenderTest, Fps30Kbps800_20s) {
   // 20 fps, 820 kbps.
   VideoSource source(0, 25.0f, 820, 0x1234, 0);
-  PacketSender sender(NULL, &source);
+  PacketSender sender(NULL, &source, kNullEstimator);
   EXPECT_EQ(102500u, source.bytes_per_second());
   // 9998ms, 250 frames. 820 kbps = 102500 bytes/s, so total should be 1025000.
   // Each frame is 102500/25=4100 bytes, or 5 packets (4 @1000 bytes, 1 @100),
@@ -902,7 +912,7 @@ TEST(BweTestFramework_VideoSenderTest, Fps30Kbps800_20s) {
 TEST(BweTestFramework_VideoSenderTest, TestAppendInOrder) {
   // 1 fps, 80 kbps, 250ms offset.
   VideoSource source1(0, 1.0f, 80, 0x1234, 250);
-  PacketSender sender1(NULL, &source1);
+  PacketSender sender1(NULL, &source1, kNullEstimator);
   EXPECT_EQ(10000u, source1.bytes_per_second());
   Packets packets;
   // Generate some packets, verify they are sorted.
@@ -918,7 +928,7 @@ TEST(BweTestFramework_VideoSenderTest, TestAppendInOrder) {
 
   // Another sender, 2 fps, 160 kbps, 150ms offset
   VideoSource source2(0, 2.0f, 160, 0x2234, 150);
-  PacketSender sender2(NULL, &source2);
+  PacketSender sender2(NULL, &source2, kNullEstimator);
   EXPECT_EQ(20000u, source2.bytes_per_second());
   // Generate some packets, verify that they are merged with the packets already
   // on the list.
@@ -936,13 +946,13 @@ TEST(BweTestFramework_VideoSenderTest, TestAppendInOrder) {
 
 TEST(BweTestFramework_VideoSenderTest, FeedbackIneffective) {
   VideoSource source(0, 25.0f, 820, 0x1234, 0);
-  PacketSender sender(NULL, &source);
+  PacketSender sender(NULL, &source, kNullEstimator);
 
   EXPECT_EQ(102500u, source.bytes_per_second());
   TestVideoSender(&sender, 9998, 1000, 500, 1025000);
 
   // Make sure feedback has no effect on a regular video sender.
-  PacketSender::Feedback feedback = { 512000 };
+  RembFeedback feedback(0, 0, 512000, RTCPReportBlock());
   sender.GiveFeedback(feedback);
   EXPECT_EQ(102500u, source.bytes_per_second());
   TestVideoSender(&sender, 9998, 1000, 500, 1025000);
@@ -950,20 +960,20 @@ TEST(BweTestFramework_VideoSenderTest, FeedbackIneffective) {
 
 TEST(BweTestFramework_AdaptiveVideoSenderTest, FeedbackChangesBitrate) {
   AdaptiveVideoSource source(0, 25.0f, 820, 0x1234, 0);
-  RegularVideoSender sender(NULL, &source, 820);
+  PacketSender sender(NULL, &source, kRembEstimator);
   EXPECT_EQ(102500u, source.bytes_per_second());
   TestVideoSender(&sender, 9998, 1000, 500, 1025000);
 
   // Make sure we can reduce the bitrate.
-  PacketSender::Feedback feedback = { 512000 };
+  RembFeedback feedback(0, 0, 512000, RTCPReportBlock());
   sender.GiveFeedback(feedback);
   EXPECT_EQ(64000u, source.bytes_per_second());
   TestVideoSender(&sender, 9998, 750, 160, 640000);
 
   // Increase the bitrate to the initial bitrate and verify that the output is
   // the same.
-  feedback.estimated_bps = 820000;
-  sender.GiveFeedback(feedback);
+  RembFeedback feedback2(0, 0, 820000, RTCPReportBlock());
+  sender.GiveFeedback(feedback2);
   Packets packets;
   sender.RunFor(10000, &packets);
   EXPECT_EQ(102500u, source.bytes_per_second());

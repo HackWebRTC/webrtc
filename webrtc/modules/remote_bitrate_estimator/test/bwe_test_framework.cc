@@ -17,6 +17,10 @@
 namespace webrtc {
 namespace testing {
 namespace bwe {
+
+const int kMinBitrateKbps = 10;
+const int kMaxBitrateKbps = 20000;
+
 class DelayCapHelper {
  public:
   DelayCapHelper() : max_delay_us_(0), delay_stats_() {}
@@ -120,29 +124,14 @@ int Random::Gaussian(int mean, int standard_deviation) {
 }
 
 Packet::Packet()
-    : flow_id_(0),
-      creation_time_us_(-1),
-      send_time_us_(-1),
-      payload_size_(0) {
-  memset(&header_, 0, sizeof(header_));
+    : flow_id_(0), creation_time_us_(-1), send_time_us_(-1), payload_size_(0) {
 }
 
-Packet::Packet(int flow_id, int64_t send_time_us, size_t payload_size,
-               const RTPHeader& header)
+Packet::Packet(int flow_id, int64_t send_time_us, size_t payload_size)
     : flow_id_(flow_id),
       creation_time_us_(send_time_us),
       send_time_us_(send_time_us),
-      payload_size_(payload_size),
-      header_(header) {
-}
-
-Packet::Packet(int64_t send_time_us, uint32_t sequence_number)
-    : flow_id_(0),
-      creation_time_us_(send_time_us),
-      send_time_us_(send_time_us),
-      payload_size_(0) {
-  memset(&header_, 0, sizeof(header_));
-  header_.sequenceNumber = sequence_number;
+      payload_size_(payload_size) {
 }
 
 Packet::~Packet() {
@@ -157,10 +146,54 @@ void Packet::set_send_time_us(int64_t send_time_us) {
   send_time_us_ = send_time_us;
 }
 
-void Packet::SetAbsSendTimeMs(int64_t abs_send_time_ms) {
+MediaPacket::MediaPacket() {
+  memset(&header_, 0, sizeof(header_));
+}
+
+MediaPacket::MediaPacket(int flow_id,
+                         int64_t send_time_us,
+                         size_t payload_size,
+                         const RTPHeader& header)
+    : Packet(flow_id, send_time_us, payload_size), header_(header) {
+}
+
+MediaPacket::MediaPacket(int64_t send_time_us, uint32_t sequence_number)
+    : Packet(0, send_time_us, 0) {
+  memset(&header_, 0, sizeof(header_));
+  header_.sequenceNumber = sequence_number;
+}
+
+int64_t MediaPacket::GetAbsSendTimeInMs() const {
+  const int kInterArrivalShift = 26;
+  const int kAbsSendTimeInterArrivalUpshift = 8;
+  const double kTimestampToMs =
+      1000.0 / static_cast<double>(1 << kInterArrivalShift);
+  uint32_t timestamp = header_.extension.absoluteSendTime
+                       << kAbsSendTimeInterArrivalUpshift;
+  return static_cast<int64_t>(timestamp) * kTimestampToMs;
+}
+
+void MediaPacket::SetAbsSendTimeMs(int64_t abs_send_time_ms) {
   header_.extension.hasAbsoluteSendTime = true;
   header_.extension.absoluteSendTime = ((static_cast<int64_t>(abs_send_time_ms *
     (1 << 18)) + 500) / 1000) & 0x00fffffful;
+}
+
+RembFeedback::RembFeedback(int flow_id,
+                           int64_t send_time_us,
+                           uint32_t estimated_bps,
+                           RTCPReportBlock report_block)
+    : FeedbackPacket(flow_id, send_time_us),
+      estimated_bps_(estimated_bps),
+      report_block_(report_block) {
+}
+
+SendSideBweFeedback::SendSideBweFeedback(
+    int flow_id,
+    int64_t send_time_us,
+    const std::vector<PacketInfo>& packet_feedback_vector)
+    : FeedbackPacket(flow_id, send_time_us),
+      packet_feedback_vector_(packet_feedback_vector) {
 }
 
 bool IsTimeSorted(const Packets& packets) {
@@ -233,7 +266,7 @@ RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
       name_(name) {
   std::stringstream ss;
   ss << name_ << "_";
-  for (auto flow_id : flow_ids) {
+  for (int flow_id : flow_ids) {
     ss << flow_id << ",";
   }
   name_ = ss.str();
@@ -269,7 +302,7 @@ void RateCounterFilter::Plot(int64_t timestamp_ms) {
 
 void RateCounterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
-  for (const auto* packet : *in_out) {
+  for (const Packet* packet : *in_out) {
     rate_counter_->UpdateRates(packet->send_time_us(), packet->payload_size());
   }
   packets_per_second_stats_.Push(rate_counter_->packets_per_second());
@@ -317,7 +350,7 @@ void DelayFilter::SetDelay(int64_t delay_ms) {
 
 void DelayFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
-  for (auto* packet : *in_out) {
+  for (Packet* packet : *in_out) {
     int64_t new_send_time_us = packet->send_time_us() + delay_us_;
     last_send_time_us_ = std::max(last_send_time_us_, new_send_time_us);
     packet->set_send_time_us(last_send_time_us_);
@@ -341,7 +374,7 @@ void JitterFilter::SetJitter(int64_t stddev_jitter_ms) {
 
 void JitterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
-  for (auto* packet : *in_out) {
+  for (Packet* packet : *in_out) {
     int64_t new_send_time_us = packet->send_time_us();
     new_send_time_us += random_.Gaussian(0, stddev_jitter_us_);
     last_send_time_us_ = std::max(last_send_time_us_, new_send_time_us);
@@ -372,7 +405,7 @@ void ReorderFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
       if (random_.Rand() < reorder_fraction_) {
         int64_t t1 = (*last_it)->send_time_us();
         int64_t t2 = (*it)->send_time_us();
-        std::swap(**last_it, **it);
+        std::swap(*last_it, *it);
         (*last_it)->set_send_time_us(t1);
         (*it)->set_send_time_us(t2);
       }
@@ -540,7 +573,7 @@ void TraceBasedDeliveryFilter::ProceedToNextSlot() {
     ++next_delivery_it_;
     if (next_delivery_it_ == delivery_times_us_.end()) {
       // When the trace wraps we allow two packets to be sent back-to-back.
-      for (auto& delivery_time_us : delivery_times_us_) {
+      for (int64_t& delivery_time_us : delivery_times_us_) {
         delivery_time_us += local_time_us_ - current_offset_us_;
       }
       current_offset_us_ += local_time_us_ - current_offset_us_;
@@ -600,9 +633,10 @@ void VideoSource::RunFor(int64_t time_ms, Packets* in_out) {
     while (payload_size > 0) {
       ++prototype_header_.sequenceNumber;
       uint32_t size = NextPacketSize(frame_size, payload_size);
-      new_packets.push_back(
-          new Packet(flow_id_, send_time_us, size, prototype_header_));
-      new_packets.back()->SetAbsSendTimeMs(next_frame_ms_);
+      MediaPacket* new_packet =
+          new MediaPacket(flow_id_, send_time_us, size, prototype_header_);
+      new_packets.push_back(new_packet);
+      new_packet->SetAbsSendTimeMs(next_frame_ms_);
       payload_size -= size;
     }
 
@@ -672,60 +706,155 @@ uint32_t PeriodicKeyFrameSource::NextPacketSize(uint32_t frame_size,
   return std::min(avg_size, remaining_payload);
 }
 
-PacketSender::PacketSender(PacketProcessorListener* listener,
-                           VideoSource* source)
-    : PacketProcessor(listener, source->flow_id(), true), source_(source) {
-}
-
-void PacketSender::RunFor(int64_t time_ms, Packets* in_out) {
-  source_->RunFor(time_ms, in_out);
-}
-
-RegularVideoSender::RegularVideoSender(PacketProcessorListener* listener,
-                                       VideoSource* source,
-                                       uint32_t kbps)
-    // It is important that the first_frame_offset and the initial time of
-    // clock_ are both zero, otherwise we can't have absolute time in this
-    // class.
-    : PacketSender(listener, source),
-      clock_(kInitialTimeMs),
-      bitrate_controller_(BitrateController::CreateBitrateController(&clock_,
-                                                                     false)),
+RembSendSideBwe::RembSendSideBwe(int kbps,
+                                 BitrateObserver* observer,
+                                 Clock* clock)
+    : bitrate_controller_(
+          BitrateController::CreateBitrateController(clock, false)),
       feedback_observer_(bitrate_controller_->CreateRtcpBandwidthObserver()),
-      modules_() {
-  const int kMinBitrateBps = 10000;
-  const int kMaxBitrateBps = 20000000;
-  bitrate_controller_->SetBitrateObserver(this, 1000 * kbps, kMinBitrateBps,
-                                          kMaxBitrateBps);
-  modules_.push_back(bitrate_controller_.get());
+      clock_(clock) {
+  assert(kbps >= kMinBitrateKbps);
+  assert(kbps <= kMaxBitrateKbps);
+  bitrate_controller_->SetBitrateObserver(
+      observer, 1000 * kbps, 1000 * kMinBitrateKbps, 1000 * kMaxBitrateKbps);
 }
 
-RegularVideoSender::~RegularVideoSender() {
+RembSendSideBwe::~RembSendSideBwe() {
 }
 
-void RegularVideoSender::GiveFeedback(const Feedback& feedback) {
-  feedback_observer_->OnReceivedEstimatedBitrate(feedback.estimated_bps);
+void RembSendSideBwe::GiveFeedback(const FeedbackPacket& feedback) {
+  const RembFeedback& remb_feedback =
+      static_cast<const RembFeedback&>(feedback);
+  feedback_observer_->OnReceivedEstimatedBitrate(remb_feedback.estimated_bps());
   ReportBlockList report_blocks;
-  report_blocks.push_back(feedback.report_block);
-  feedback_observer_->OnReceivedRtcpReceiverReport(report_blocks, 0,
-                                                   clock_.TimeInMilliseconds());
+  report_blocks.push_back(remb_feedback.report_block());
+  feedback_observer_->OnReceivedRtcpReceiverReport(
+      report_blocks, 0, clock_->TimeInMilliseconds());
   bitrate_controller_->Process();
 }
 
-void RegularVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
+int64_t RembSendSideBwe::TimeUntilNextProcess() {
+  return bitrate_controller_->TimeUntilNextProcess();
+}
+
+int RembSendSideBwe::Process() {
+  return bitrate_controller_->Process();
+}
+
+FullSendSideBwe::FullSendSideBwe(int kbps,
+                                 BitrateObserver* observer,
+                                 Clock* clock)
+    : bitrate_controller_(
+          BitrateController::CreateBitrateController(clock, false)),
+      rbe_(AbsoluteSendTimeRemoteBitrateEstimatorFactory()
+               .Create(this, clock, kAimdControl, 1000 * kMinBitrateKbps)),
+      feedback_observer_(bitrate_controller_->CreateRtcpBandwidthObserver()),
+      clock_(clock) {
+  assert(kbps >= kMinBitrateKbps);
+  assert(kbps <= kMaxBitrateKbps);
+  bitrate_controller_->SetBitrateObserver(
+      observer, 1000 * kbps, 1000 * kMinBitrateKbps, 1000 * kMaxBitrateKbps);
+}
+
+FullSendSideBwe::~FullSendSideBwe() {
+}
+
+void FullSendSideBwe::GiveFeedback(const FeedbackPacket& feedback) {
+  const SendSideBweFeedback& fb =
+      static_cast<const SendSideBweFeedback&>(feedback);
+  if (fb.packet_feedback_vector().empty())
+    return;
+  rbe_->IncomingPacketFeedbackVector(fb.packet_feedback_vector());
+  if (rbe_->TimeUntilNextProcess() <= 0)
+    rbe_->Process();
+  // TODO(holmer): Handle losses in between feedback packets.
+  int expected_packets = fb.packet_feedback_vector().back().sequence_number -
+                         fb.packet_feedback_vector().front().sequence_number +
+                         1;
+  int lost_packets = expected_packets - fb.packet_feedback_vector().size();
+  report_block_.fractionLost = (lost_packets << 8) / expected_packets;
+  report_block_.cumulativeLost += lost_packets;
+  ReportBlockList report_blocks;
+  report_blocks.push_back(report_block_);
+  feedback_observer_->OnReceivedRtcpReceiverReport(
+      report_blocks, 0, clock_->TimeInMilliseconds());
+  bitrate_controller_->Process();
+}
+
+void FullSendSideBwe::OnReceiveBitrateChanged(
+    const std::vector<unsigned int>& ssrcs,
+    unsigned int bitrate) {
+  feedback_observer_->OnReceivedEstimatedBitrate(bitrate);
+}
+
+int64_t FullSendSideBwe::TimeUntilNextProcess() {
+  return bitrate_controller_->TimeUntilNextProcess();
+}
+
+int FullSendSideBwe::Process() {
+  rbe_->Process();
+  return bitrate_controller_->Process();
+}
+
+SendSideBwe* CreateEstimator(BandwidthEstimatorType estimator,
+                             int kbps,
+                             BitrateObserver* observer,
+                             Clock* clock) {
+  switch (estimator) {
+    case kRembEstimator:
+      return new RembSendSideBwe(kbps, observer, clock);
+    case kFullSendSideEstimator:
+      return new FullSendSideBwe(kbps, observer, clock);
+    case kNullEstimator: {
+      static NullSendSideBwe null_bwe;
+      return &null_bwe;
+    }
+  }
+  assert(false);
+  return NULL;
+}
+
+PacketSender::PacketSender(PacketProcessorListener* listener,
+                           VideoSource* source,
+                           BandwidthEstimatorType estimator)
+    : PacketProcessor(listener, source->flow_id(), true),
+      // For Packet::send_time_us() to be comparable with timestamps from
+      // clock_, the clock of the PacketSender and the Source must be aligned.
+      // We assume that both start at time 0.
+      clock_(0),
+      source_(source),
+      bwe_(CreateEstimator(estimator,
+                           8 * source_->bytes_per_second() / 1000,
+                           this,
+                           &clock_)) {
+  modules_.push_back(bwe_.get());
+}
+
+PacketSender::~PacketSender() {
+}
+
+void PacketSender::RunFor(int64_t time_ms, Packets* in_out) {
   start_of_run_ms_ = clock_.TimeInMilliseconds();
   while (time_ms > 0) {
     int64_t time_to_run_ms = std::min(time_ms, static_cast<int64_t>(100));
-    PacketSender::RunFor(time_to_run_ms, in_out);
+    source_->RunFor(time_to_run_ms, in_out);
     clock_.AdvanceTimeMilliseconds(time_to_run_ms);
-    bitrate_controller_->Process();
+    bwe_->Process();
     time_ms -= time_to_run_ms;
   }
 }
 
-void RegularVideoSender::OnNetworkChanged(uint32_t target_bitrate_bps,
-                                          uint8_t fraction_lost,
-                                          int64_t rtt) {
+int PacketSender::GetFeedbackIntervalMs() const {
+  return bwe_->GetFeedbackIntervalMs();
+}
+
+void PacketSender::GiveFeedback(const FeedbackPacket& feedback) {
+  bwe_->GiveFeedback(feedback);
+}
+
+void PacketSender::OnNetworkChanged(uint32_t target_bitrate_bps,
+                                    uint8_t fraction_lost,
+                                    int64_t rtt) {
   source_->SetBitrateBps(target_bitrate_bps);
   std::stringstream ss;
   ss << "SendEstimate_" << source_->flow_id() << "#1";
@@ -735,23 +864,22 @@ void RegularVideoSender::OnNetworkChanged(uint32_t target_bitrate_bps,
 
 PacedVideoSender::PacedVideoSender(PacketProcessorListener* listener,
                                    VideoSource* source,
-                                   uint32_t kbps)
-    // It is important that the first_frame_offset and the initial time of
-    // clock_ are both zero, otherwise we can't have absolute time in this
-    // class.
-    : RegularVideoSender(listener, source, kbps),
+                                   BandwidthEstimatorType estimator)
+    : PacketSender(listener, source, estimator),
       pacer_(&clock_,
              this,
-             kbps,
-             PacedSender::kDefaultPaceMultiplier* kbps,
+             8 * source->bytes_per_second() / 1000,
+             PacedSender::kDefaultPaceMultiplier * 8 *
+                 source->bytes_per_second() /
+                 1000,
              0) {
   modules_.push_back(&pacer_);
 }
 
 PacedVideoSender::~PacedVideoSender() {
-  for (auto* packet : pacer_queue_)
+  for (Packet* packet : pacer_queue_)
     delete packet;
-  for (auto* packet : queue_)
+  for (Packet* packet : queue_)
     delete packet;
 }
 
@@ -786,11 +914,13 @@ void PacedVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
       CallProcess(modules_);
     } else {
       // Time to send next packet to pacer.
-      pacer_.SendPacket(PacedSender::kNormalPriority, (*it)->header().ssrc,
-                        (*it)->header().sequenceNumber,
-                        ((*it)->send_time_us() + 500) / 1000,
-                        (*it)->payload_size(), false);
-      pacer_queue_.push_back(*it);
+      MediaPacket* media_packet = static_cast<MediaPacket*>(*it);
+      pacer_.SendPacket(PacedSender::kNormalPriority,
+                        media_packet->header().ssrc,
+                        media_packet->header().sequenceNumber,
+                        (media_packet->send_time_us() + 500) / 1000,
+                        media_packet->payload_size(), false);
+      pacer_queue_.push_back(media_packet);
       assert(pacer_queue_.size() < 10000);
       ++it;
     }
@@ -801,7 +931,7 @@ void PacedVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
 int64_t PacedVideoSender::TimeUntilNextProcess(
     const std::list<Module*>& modules) {
   int64_t time_until_next_process_ms = 10;
-  for (auto* module : modules) {
+  for (Module* module : modules) {
     int64_t next_process_ms = module->TimeUntilNextProcess();
     if (next_process_ms < time_until_next_process_ms)
       time_until_next_process_ms = next_process_ms;
@@ -812,7 +942,7 @@ int64_t PacedVideoSender::TimeUntilNextProcess(
 }
 
 void PacedVideoSender::CallProcess(const std::list<Module*>& modules) {
-  for (auto* module : modules) {
+  for (Module* module : modules) {
     if (module->TimeUntilNextProcess() <= 0) {
       module->Process();
     }
@@ -842,14 +972,15 @@ bool PacedVideoSender::TimeToSendPacket(uint32_t ssrc,
                                         bool retransmission) {
   for (Packets::iterator it = pacer_queue_.begin(); it != pacer_queue_.end();
        ++it) {
-    if ((*it)->header().sequenceNumber == sequence_number) {
+    MediaPacket* media_packet = static_cast<MediaPacket*>(*it);
+    if (media_packet->header().sequenceNumber == sequence_number) {
       int64_t pace_out_time_ms = clock_.TimeInMilliseconds();
       // Make sure a packet is never paced out earlier than when it was put into
       // the pacer.
-      assert(pace_out_time_ms >= ((*it)->send_time_us() + 500) / 1000);
-      (*it)->SetAbsSendTimeMs(pace_out_time_ms);
-      (*it)->set_send_time_us(1000 * pace_out_time_ms);
-      queue_.push_back(*it);
+      assert(pace_out_time_ms >= (media_packet->send_time_us() + 500) / 1000);
+      media_packet->SetAbsSendTimeMs(pace_out_time_ms);
+      media_packet->set_send_time_us(1000 * pace_out_time_ms);
+      queue_.push_back(media_packet);
       pacer_queue_.erase(it);
       return true;
     }
@@ -864,7 +995,7 @@ size_t PacedVideoSender::TimeToSendPadding(size_t bytes) {
 void PacedVideoSender::OnNetworkChanged(uint32_t target_bitrate_bps,
                                         uint8_t fraction_lost,
                                         int64_t rtt) {
-  RegularVideoSender::OnNetworkChanged(target_bitrate_bps, fraction_lost, rtt);
+  PacketSender::OnNetworkChanged(target_bitrate_bps, fraction_lost, rtt);
   pacer_.UpdateBitrate(
       target_bitrate_bps / 1000,
       PacedSender::kDefaultPaceMultiplier * target_bitrate_bps / 1000, 0);

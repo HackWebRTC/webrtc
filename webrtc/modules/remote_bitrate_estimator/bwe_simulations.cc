@@ -25,7 +25,8 @@ BweTestConfig::EstimatorConfig CreateEstimatorConfig(
       AbsoluteSendTimeRemoteBitrateEstimatorFactory();
 
   return BweTestConfig::EstimatorConfig("AST", flow_id, &factory, kAimdControl,
-                                        plot_delay, plot_estimate);
+                                        kRembEstimator, plot_delay,
+                                        plot_estimate);
 }
 
 BweTestConfig MakeAdaptiveBweTestConfig() {
@@ -65,7 +66,7 @@ INSTANTIATE_TEST_CASE_P(VideoSendersTest, BweSimulation,
 TEST_P(BweSimulation, SprintUplinkTest) {
   VerboseLogging(true);
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  RegularVideoSender sender(this, &source, 300);
+  PacketSender sender(this, &source, kRembEstimator);
   RateCounterFilter counter1(this, "sender_output");
   TraceBasedDeliveryFilter filter(this, "link_capacity");
   RateCounterFilter counter2(this, "receiver_input");
@@ -76,7 +77,7 @@ TEST_P(BweSimulation, SprintUplinkTest) {
 TEST_P(BweSimulation, Verizon4gDownlinkTest) {
   VerboseLogging(true);
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  RegularVideoSender sender(this, &source, 300);
+  PacketSender sender(this, &source, kRembEstimator);
   RateCounterFilter counter1(this, "sender_output");
   TraceBasedDeliveryFilter filter(this, "link_capacity");
   RateCounterFilter counter2(this, "receiver_input");
@@ -87,7 +88,7 @@ TEST_P(BweSimulation, Verizon4gDownlinkTest) {
 TEST_P(BweSimulation, Choke1000kbps500kbps1000kbps) {
   VerboseLogging(true);
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  RegularVideoSender sender(this, &source, 300);
+  PacketSender sender(this, &source, kRembEstimator);
   ChokeFilter filter(this);
   RateCounterFilter counter(this, "receiver_input");
   filter.SetCapacity(1000);
@@ -102,7 +103,7 @@ TEST_P(BweSimulation, Choke1000kbps500kbps1000kbps) {
 TEST_P(BweSimulation, PacerChoke1000kbps500kbps1000kbps) {
   VerboseLogging(true);
   PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000);
-  PacedVideoSender sender(this, &source, 300);
+  PacedVideoSender sender(this, &source, kRembEstimator);
   ChokeFilter filter(this);
   RateCounterFilter counter(this, "receiver_input");
   filter.SetCapacity(1000);
@@ -117,7 +118,7 @@ TEST_P(BweSimulation, PacerChoke1000kbps500kbps1000kbps) {
 TEST_P(BweSimulation, PacerChoke10000kbps) {
   VerboseLogging(true);
   PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000);
-  PacedVideoSender sender(this, &source, 300);
+  PacedVideoSender sender(this, &source, kRembEstimator);
   ChokeFilter filter(this);
   RateCounterFilter counter(this, "receiver_input");
   filter.SetCapacity(10000);
@@ -128,7 +129,7 @@ TEST_P(BweSimulation, PacerChoke10000kbps) {
 TEST_P(BweSimulation, PacerChoke200kbps30kbps200kbps) {
   VerboseLogging(true);
   PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000);
-  PacedVideoSender sender(this, &source, 300);
+  PacedVideoSender sender(this, &source, kRembEstimator);
   ChokeFilter filter(this);
   RateCounterFilter counter(this, "receiver_input");
   filter.SetCapacity(200);
@@ -143,7 +144,7 @@ TEST_P(BweSimulation, PacerChoke200kbps30kbps200kbps) {
 TEST_P(BweSimulation, Choke200kbps30kbps200kbps) {
   VerboseLogging(true);
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  RegularVideoSender sender(this, &source, 300);
+  PacketSender sender(this, &source, kRembEstimator);
   ChokeFilter filter(this);
   RateCounterFilter counter(this, "receiver_input");
   filter.SetCapacity(200);
@@ -158,7 +159,7 @@ TEST_P(BweSimulation, Choke200kbps30kbps200kbps) {
 TEST_P(BweSimulation, GoogleWifiTrace3Mbps) {
   VerboseLogging(true);
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  RegularVideoSender sender(this, &source, 300);
+  PacketSender sender(this, &source, kRembEstimator);
   RateCounterFilter counter1(this, "sender_output");
   TraceBasedDeliveryFilter filter(this, "link_capacity");
   filter.SetMaxDelay(500);
@@ -170,7 +171,7 @@ TEST_P(BweSimulation, GoogleWifiTrace3Mbps) {
 TEST_P(BweSimulation, PacerGoogleWifiTrace3Mbps) {
   VerboseLogging(true);
   PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000);
-  PacedVideoSender sender(this, &source, 300);
+  PacedVideoSender sender(this, &source, kRembEstimator);
   RateCounterFilter counter1(this, "sender_output");
   TraceBasedDeliveryFilter filter(this, "link_capacity");
   filter.SetMaxDelay(500);
@@ -196,13 +197,13 @@ TEST_P(MultiFlowBweSimulation, SelfFairnessTest) {
   const int kAllFlowIds[] = {0, 1, 2};
   const size_t kNumFlows = sizeof(kAllFlowIds) / sizeof(kAllFlowIds[0]);
   scoped_ptr<AdaptiveVideoSource> sources[kNumFlows];
-  scoped_ptr<RegularVideoSender> senders[kNumFlows];
+  scoped_ptr<PacketSender> senders[kNumFlows];
   for (size_t i = 0; i < kNumFlows; ++i) {
     // Streams started 20 seconds apart to give them different advantage when
     // competing for the bandwidth.
     sources[i].reset(
         new AdaptiveVideoSource(kAllFlowIds[i], 30, 300, 0, i * 20000));
-    senders[i].reset(new RegularVideoSender(this, sources[i].get(), 300));
+    senders[i].reset(new PacketSender(this, sources[i].get(), kRembEstimator));
   }
 
   ChokeFilter choke(this, CreateFlowIds(kAllFlowIds, kNumFlows));
@@ -232,7 +233,8 @@ TEST_P(MultiFlowBweSimulation, PacedSelfFairnessTest) {
     // competing for the bandwidth.
     sources[i].reset(new PeriodicKeyFrameSource(kAllFlowIds[i], 30, 300, 0,
                                                 i * 20000, 1000));
-    senders[i].reset(new PacedVideoSender(this, sources[i].get(), 300));
+    senders[i].reset(
+        new PacedVideoSender(this, sources[i].get(), kRembEstimator));
   }
 
   ChokeFilter choke(this, CreateFlowIds(kAllFlowIds, kNumFlows));
