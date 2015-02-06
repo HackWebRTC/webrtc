@@ -13,10 +13,6 @@
 
 #include "webrtc/base/thread_annotations.h"
 
-// Note, Windows pre-Vista version of RW locks are not supported natively. For
-// these OSs regular critical sections have been used to approximate RW lock
-// functionality and will therefore have worse performance.
-
 namespace webrtc {
 
 class LOCKABLE RWLockWrapper {
@@ -31,8 +27,6 @@ class LOCKABLE RWLockWrapper {
   virtual void ReleaseLockShared() UNLOCK_FUNCTION() = 0;
 };
 
-// RAII extensions of the RW lock. Prevents Acquire/Release missmatches and
-// provides more compact locking syntax.
 class SCOPED_LOCKABLE ReadLockScoped {
  public:
   ReadLockScoped(RWLockWrapper& rw_lock) SHARED_LOCK_FUNCTION(rw_lock)

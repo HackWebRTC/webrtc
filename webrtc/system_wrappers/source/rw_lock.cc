@@ -10,28 +10,32 @@
 
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 
-#include <assert.h>
-
-#if defined(_WIN32)
-#include "webrtc/system_wrappers/source/rw_lock_generic.h"
-#include "webrtc/system_wrappers/source/rw_lock_win.h"
-#else
-#include "webrtc/system_wrappers/source/rw_lock_posix.h"
-#endif
+#include "webrtc/base/sharedexclusivelock.h"
+#include "webrtc/base/thread_annotations.h"
 
 namespace webrtc {
 
-RWLockWrapper* RWLockWrapper::CreateRWLock() {
-#ifdef _WIN32
-  // Native implementation is faster, so use that if available.
-  RWLockWrapper* lock = RWLockWin::Create();
-  if (lock) {
-    return lock;
+class LOCKABLE RwLock : public RWLockWrapper {
+  virtual void AcquireLockExclusive() override EXCLUSIVE_LOCK_FUNCTION() {
+    lock_.LockExclusive();
   }
-  return new RWLockGeneric();
-#else
-  return RWLockPosix::Create();
-#endif
+  virtual void ReleaseLockExclusive() override UNLOCK_FUNCTION() {
+    lock_.UnlockExclusive();
+  }
+
+  virtual void AcquireLockShared() override SHARED_LOCK_FUNCTION() {
+    lock_.LockShared();
+  }
+  virtual void ReleaseLockShared() override UNLOCK_FUNCTION() {
+    lock_.UnlockShared();
+  }
+
+ private:
+  rtc::SharedExclusiveLock lock_;
+};
+
+RWLockWrapper* RWLockWrapper::CreateRWLock() {
+  return new RwLock();
 }
 
 }  // namespace webrtc
