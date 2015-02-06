@@ -274,6 +274,7 @@
                 'build/build_jar.sh',
                 '<@(java_files)',
                 '<(PRODUCT_DIR)/libjingle_peerconnection.jar',
+                '<(PRODUCT_DIR)/lib/libjingle_peerconnection_so.so',
                 '<(DEPTH)/third_party/junit/junit-4.11.jar',
               ],
               'outputs': [
