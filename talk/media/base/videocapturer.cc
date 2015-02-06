@@ -98,11 +98,6 @@ bool CapturedFrame::GetDataSize(uint32* size) const {
   return true;
 }
 
-webrtc::kVideoRotation CapturedFrame::GetRotation() const {
-  ASSERT(rotation == 0 || rotation == 90 || rotation == 180 || rotation == 270);
-  return static_cast<webrtc::kVideoRotation>(rotation);
-}
-
 /////////////////////////////////////////////////////////////////////
 // Implementation of class VideoCapturer
 /////////////////////////////////////////////////////////////////////

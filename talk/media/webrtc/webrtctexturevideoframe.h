@@ -46,18 +46,11 @@ class WebRtcTextureVideoFrame : public VideoFrame {
   virtual bool InitToBlack(int w, int h, size_t pixel_width,
                            size_t pixel_height, int64_t elapsed_time,
                            int64_t time_stamp);
-  virtual bool Reset(uint32 fourcc,
-                     int w,
-                     int h,
-                     int dw,
-                     int dh,
-                     uint8* sample,
-                     size_t sample_size,
-                     size_t pixel_width,
-                     size_t pixel_height,
-                     int64_t elapsed_time,
+  virtual bool Reset(uint32 fourcc, int w, int h, int dw, int dh, uint8* sample,
+                     size_t sample_size, size_t pixel_width,
+                     size_t pixel_height, int64_t elapsed_time,
                      int64_t time_stamp,
-                     webrtc::kVideoRotation rotation);
+                     int rotation);
   virtual size_t GetWidth() const { return width_; }
   virtual size_t GetHeight() const { return height_; }
   virtual const uint8* GetYPlane() const;
@@ -77,9 +70,7 @@ class WebRtcTextureVideoFrame : public VideoFrame {
     elapsed_time_ = elapsed_time;
   }
   virtual void SetTimeStamp(int64_t time_stamp) { time_stamp_ = time_stamp; }
-  virtual webrtc::kVideoRotation GetRotation() const {
-    return webrtc::kVideoRotation_0;
-  }
+  virtual int GetRotation() const { return 0; }
   virtual VideoFrame* Copy() const;
   virtual bool MakeExclusive();
   virtual size_t CopyToBuffer(uint8* buffer, size_t size) const;
