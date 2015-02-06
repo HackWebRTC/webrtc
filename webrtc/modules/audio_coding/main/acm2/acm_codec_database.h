@@ -292,11 +292,21 @@ class ACMCodecDB {
   //   Mirror id on success, otherwise -1.
   static int MirrorID(int codec_id);
 
-  // Create memory/instance for storing codec state.
-  // Input:
-  //   [codec_inst] - information about codec. Only name of codec, "plname", is
-  //                  used in this function.
-  static ACMGenericCodec* CreateCodecInstance(const CodecInst& codec_inst);
+  // Creates a codec wrapper containing an AudioEncoder object (or an
+  // ACMGenericCodec subclass during the refactoring time). The type of
+  // AudioEncoder is decided by looking at the information in |codec_inst|.
+  // The |cng_pt_*| parameters should contain the RTP payload type used for each
+  // type of comfort noise; if not used (or not know when this function is
+  // called), -1 can be set. The parameter |enable_red| indicates that RED
+  // is enabled, and that |red_payload_type| should be used as RTP payload type
+  // for RED encodings.
+  static ACMGenericCodec* CreateCodecInstance(const CodecInst& codec_inst,
+                                              int cng_pt_nb,
+                                              int cng_pt_wb,
+                                              int cng_pt_swb,
+                                              int cng_pt_fb,
+                                              bool enable_red,
+                                              int red_payload_type);
 
   // Specifies if the codec specified by |codec_id| MUST own its own decoder.
   // This is the case for codecs which *should* share a single codec instance

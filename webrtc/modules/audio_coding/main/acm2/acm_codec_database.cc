@@ -568,42 +568,41 @@ int ACMCodecDB::MirrorID(int codec_id) {
 }
 
 // Creates memory/instance for storing codec state.
-ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
+ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst,
+                                                 int cng_pt_nb,
+                                                 int cng_pt_wb,
+                                                 int cng_pt_swb,
+                                                 int cng_pt_fb,
+                                                 bool enable_red,
+                                                 int red_payload_type) {
   // All we have support for right now.
   if (!STR_CASE_CMP(codec_inst.plname, "ISAC")) {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-    return new ACMISAC(kISAC, false);
+    return new ACMISAC(kISAC, enable_red);
 #endif
-  } else if (!STR_CASE_CMP(codec_inst.plname, "PCMU")) {
-    if (codec_inst.channels == 1) {
-      return new ACMPCMU(kPCMU, false);
-    } else {
-      return new ACMPCMU(kPCMU_2ch, false);
-    }
-  } else if (!STR_CASE_CMP(codec_inst.plname, "PCMA")) {
-    if (codec_inst.channels == 1) {
-      return new ACMPCMA(kPCMA, false);
-    } else {
-      return new ACMPCMA(kPCMA_2ch, false);
-    }
+  } else if (!STR_CASE_CMP(codec_inst.plname, "PCMU") ||
+             !STR_CASE_CMP(codec_inst.plname, "PCMA")) {
+    return new ACMGenericCodecWrapper(codec_inst, cng_pt_nb, cng_pt_wb,
+                                      cng_pt_swb, cng_pt_fb, enable_red,
+                                      red_payload_type);
   } else if (!STR_CASE_CMP(codec_inst.plname, "ILBC")) {
 #ifdef WEBRTC_CODEC_ILBC
-    return new ACMILBC(kILBC, false);
+    return new ACMILBC(kILBC, enable_red);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "AMR")) {
 #ifdef WEBRTC_CODEC_AMR
-    return new ACMAMR(kGSMAMR, false);
+    return new ACMAMR(kGSMAMR, enable_red);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "AMR-WB")) {
 #ifdef WEBRTC_CODEC_AMRWB
-    return new ACMAMRwb(kGSMAMRWB, false);
+    return new ACMAMRwb(kGSMAMRWB, enable_red);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "G722")) {
 #ifdef WEBRTC_CODEC_G722
     if (codec_inst.channels == 1) {
-      return new ACMG722(kG722, false);
+      return new ACMG722(kG722, enable_red);
     } else {
-      return new ACMG722(kG722_2ch, false);
+      return new ACMG722(kG722_2ch, enable_red);
     }
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "G7221")) {
@@ -628,7 +627,7 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
             return NULL;
           }
         }
-        return new ACMG722_1(codec_id, false);
+        return new ACMG722_1(codec_id, enable_red);
 #endif
         FALLTHROUGH();
       }
@@ -652,7 +651,7 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
             return NULL;
           }
         }
-        return new ACMG722_1C(codec_id, false);
+        return new ACMG722_1C(codec_id, enable_red);
 #endif
         FALLTHROUGH();
       }
@@ -685,18 +684,18 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
         return NULL;
       }
     }
-    return new ACMCNG(codec_id, false);
+    return new ACMCNG(codec_id, enable_red);
   } else if (!STR_CASE_CMP(codec_inst.plname, "G729")) {
 #ifdef WEBRTC_CODEC_G729
-    return new ACMG729(kG729, false);
+    return new ACMG729(kG729, enable_red);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "G7291")) {
 #ifdef WEBRTC_CODEC_G729_1
-    return new ACMG729_1(kG729_1, false);
+    return new ACMG729_1(kG729_1, enable_red);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "opus")) {
 #ifdef WEBRTC_CODEC_OPUS
-    return new ACMOpus(kOpus, false);
+    return new ACMOpus(kOpus, enable_red);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "speex")) {
 #ifdef WEBRTC_CODEC_SPEEX
@@ -714,7 +713,7 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
         return NULL;
       }
     }
-    return new ACMSPEEX(codec_id, false);
+    return new ACMSPEEX(codec_id, enable_red);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "CN")) {
     // For CN we need to check sampling frequency to know what codec to create.
@@ -742,7 +741,7 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
         return NULL;
       }
     }
-    return new ACMCNG(codec_id, false);
+    return new ACMCNG(codec_id, enable_red);
   } else if (!STR_CASE_CMP(codec_inst.plname, "L16")) {
 #ifdef WEBRTC_CODEC_PCM16
     // For L16 we need to check sampling frequency to know what codec to create.
@@ -784,15 +783,15 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
         }
       }
     }
-    return new ACMPCM16B(codec_id, false);
+    return new ACMPCM16B(codec_id, enable_red);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "telephone-event")) {
 #ifdef WEBRTC_CODEC_AVT
-    return new ACMDTMFPlayout(kAVT, false);
+    return new ACMDTMFPlayout(kAVT, enable_red);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "red")) {
 #ifdef WEBRTC_CODEC_RED
-    return new ACMRED(kRED, false);
+    return new ACMRED(kRED, enable_red);
 #endif
   }
   return NULL;

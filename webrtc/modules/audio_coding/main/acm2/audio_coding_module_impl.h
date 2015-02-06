@@ -290,6 +290,12 @@ class AudioCodingModuleImpl : public AudioCodingModule {
                       int mirror_id, AudioDecoder** decoder)
       EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
+  void SetCngPayloadType(int sample_rate_hz, int payload_type)
+      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
+
+  void EnableCopyRedForAllCodecs(bool enable)
+      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
+
   CriticalSectionWrapper* acm_crit_sect_;
   int id_;  // TODO(henrik.lundin) Make const.
   uint32_t expected_codec_ts_ GUARDED_BY(acm_crit_sect_);

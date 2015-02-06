@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
@@ -96,6 +97,27 @@ int UpMix(const AudioFrame& frame, int length_out_buff, int16_t* out_buff) {
   return 0;
 }
 
+void ConvertEncodedInfoToFragmentationHeader(
+    const AudioEncoder::EncodedInfo& info,
+    RTPFragmentationHeader* frag) {
+  if (info.redundant.empty()) {
+    frag->fragmentationVectorSize = 0;
+    return;
+  }
+
+  frag->VerifyAndAllocateFragmentationHeader(
+      static_cast<uint16_t>(info.redundant.size()));
+  frag->fragmentationVectorSize = static_cast<uint16_t>(info.redundant.size());
+  size_t offset = 0;
+  for (size_t i = 0; i < info.redundant.size(); ++i) {
+    frag->fragmentationOffset[i] = offset;
+    offset += info.redundant[i].encoded_bytes;
+    frag->fragmentationLength[i] = info.redundant[i].encoded_bytes;
+    frag->fragmentationTimeDiff[i] = rtc::checked_cast<uint16_t>(
+        info.encoded_timestamp - info.redundant[i].encoded_timestamp);
+    frag->fragmentationPlType[i] = info.redundant[i].payload_type;
+  }
+}
 }  // namespace
 
 AudioCodingModuleImpl::AudioCodingModuleImpl(
@@ -312,12 +334,22 @@ int32_t AudioCodingModuleImpl::Process() {
       has_data_to_send = true;
       previous_pltype_ = current_payload_type;
 
+      ConvertEncodedInfoToFragmentationHeader(encoded_info, &my_fragmentation);
+      // If RED is produced by the AudioEncoder object, the payload type for
+      // RED must be set.
+      if (!encoded_info.redundant.empty())
+        current_payload_type = encoded_info.payload_type;
+
       // Redundancy encode is done here. The two bitstreams packetized into
       // one RTP packet and the fragmentation points are set.
       // Only apply RED on speech data.
-      if ((red_enabled_) &&
+      // Note: This will only happen if |encoded_info| did not contain any
+      // redundancy data. The if statement below will be removed once all codecs
+      // have been switched to the new AudioEncoder interface.
+      if ((codecs_[current_send_codec_idx_]->ExternalRedNeeded()) &&
           ((encoding_type == kActiveNormalEncoded) ||
               (encoding_type == kPassiveNormalEncoded))) {
+        DCHECK(encoded_info.redundant.empty());
         // RED is enabled within this scope.
         //
         // Note that, a special solution exists for iSAC since it is the only
@@ -425,7 +457,7 @@ int32_t AudioCodingModuleImpl::Process() {
     CriticalSectionScoped lock(callback_crit_sect_);
 
     if (packetization_callback_ != NULL) {
-      if (red_active) {
+      if (red_active || my_fragmentation.fragmentationVectorSize > 0) {
         // Callback with payload data, including redundant data (RED).
         packetization_callback_->SendData(frame_type, current_payload_type,
                                           rtp_timestamp, stream, length_bytes,
@@ -488,8 +520,10 @@ int AudioCodingModuleImpl::ResetEncoder() {
 
 ACMGenericCodec* AudioCodingModuleImpl::CreateCodec(const CodecInst& codec) {
   ACMGenericCodec* my_codec = NULL;
-
-  my_codec = ACMCodecDB::CreateCodecInstance(codec);
+  CriticalSectionScoped lock(acm_crit_sect_);
+  my_codec = ACMCodecDB::CreateCodecInstance(
+      codec, cng_nb_pltype_, cng_wb_pltype_, cng_swb_pltype_, cng_fb_pltype_,
+      red_enabled_, red_pltype_);
   if (my_codec == NULL) {
     // Error, could not create the codec.
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
@@ -629,6 +663,7 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
         return -1;
       }
     }
+    SetCngPayloadType(send_codec.plfreq, send_codec.pltype);
     return 0;
   }
 
@@ -1074,6 +1109,8 @@ int AudioCodingModuleImpl::SetREDStatus(
                  "Codec internal FEC and RED cannot be co-enabled.");
     return -1;
   }
+
+  EnableCopyRedForAllCodecs(enable_red);
 
   if (red_enabled_ != enable_red) {
     // Reset the RED buffer.
@@ -1641,6 +1678,23 @@ int AudioCodingModuleImpl::GetAudioDecoder(const CodecInst& codec, int codec_id,
   }
 
   return 0;
+}
+
+void AudioCodingModuleImpl::SetCngPayloadType(int sample_rate_hz,
+                                              int payload_type) {
+  for (auto codec : codecs_) {
+    if (codec) {
+      codec->SetCngPt(sample_rate_hz, payload_type);
+    }
+  }
+}
+
+void AudioCodingModuleImpl::EnableCopyRedForAllCodecs(bool enable) {
+  for (auto codec : codecs_) {
+    if (codec) {
+      codec->EnableCopyRed(enable, red_pltype_);
+    }
+  }
 }
 
 int AudioCodingModuleImpl::SetInitialPlayoutDelay(int delay_ms) {
