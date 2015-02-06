@@ -558,7 +558,6 @@ void AudioTransportImpl::PullRenderData(int bits_per_sample, int sample_rate,
                                         int64_t* ntp_time_ms) {}
 
 FuncTestManager::FuncTestManager() :
-    _processThread(NULL),
     _audioDevice(NULL),
     _audioEventObserver(NULL),
     _audioTransport(NULL)
@@ -579,7 +578,7 @@ FuncTestManager::~FuncTestManager()
 
 int32_t FuncTestManager::Init()
 {
-    EXPECT_TRUE((_processThread = ProcessThread::CreateProcessThread()) != NULL);
+    EXPECT_TRUE((_processThread = ProcessThread::Create()) != NULL);
     if (_processThread == NULL)
     {
         return -1;
@@ -620,7 +619,7 @@ int32_t FuncTestManager::Close()
     {
         _processThread->DeRegisterModule(_audioDevice);
         _processThread->Stop();
-        ProcessThread::DestroyProcessThread(_processThread);
+        _processThread.reset();
     }
 
     // delete the audio observer
@@ -789,7 +788,7 @@ int32_t FuncTestManager::TestAudioLayerSelection()
         {
             _processThread->DeRegisterModule(_audioDevice);
             _processThread->Stop();
-            ProcessThread::DestroyProcessThread(_processThread);
+            _processThread.reset();
         }
 
         // delete the audio observer
@@ -816,7 +815,7 @@ int32_t FuncTestManager::TestAudioLayerSelection()
         // ==================================================
         // Next, try to make fresh start with new audio layer
 
-        EXPECT_TRUE((_processThread = ProcessThread::CreateProcessThread()) != NULL);
+        EXPECT_TRUE((_processThread = ProcessThread::Create()) != NULL);
         if (_processThread == NULL)
         {
             return -1;

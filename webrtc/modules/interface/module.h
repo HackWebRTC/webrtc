@@ -21,6 +21,11 @@ class Module {
   // thread to call Process.
   // This method is called on the same worker thread as Process will
   // be called on.
+  // TODO(tommi): Almost all implementations of this function, need to know
+  // the current tick count.  Consider passing it as an argument.  It could
+  // also improve the accuracy of when the next callback occurs since the
+  // thread that calls Process() will also have it's tick count reference
+  // which might not match with what the implementations use.
   virtual int64_t TimeUntilNextProcess() = 0;
 
   // Process any pending tasks such as timeouts.

@@ -436,7 +436,7 @@ class VideoCaptureExternalTest : public testing::Test {
  public:
   void SetUp() {
     capture_module_ = VideoCaptureFactory::Create(0, capture_input_interface_);
-    process_module_ = webrtc::ProcessThread::CreateProcessThread();
+    process_module_ = webrtc::ProcessThread::Create();
     process_module_->Start();
     process_module_->RegisterModule(capture_module_);
 
@@ -464,12 +464,11 @@ class VideoCaptureExternalTest : public testing::Test {
 
   void TearDown() {
     process_module_->Stop();
-    webrtc::ProcessThread::DestroyProcessThread(process_module_);
   }
 
   webrtc::VideoCaptureExternal* capture_input_interface_;
   webrtc::scoped_refptr<VideoCaptureModule> capture_module_;
-  webrtc::ProcessThread* process_module_;
+  rtc::scoped_ptr<webrtc::ProcessThread> process_module_;
   webrtc::I420VideoFrame test_frame_;
   TestVideoCaptureCallback capture_callback_;
   TestVideoCaptureFeedBack capture_feedback_;

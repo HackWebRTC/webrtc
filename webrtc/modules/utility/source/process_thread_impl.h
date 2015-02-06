@@ -13,37 +13,52 @@
 
 #include <list>
 
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-class ProcessThreadImpl : public ProcessThread
-{
-public:
-    ProcessThreadImpl();
-    virtual ~ProcessThreadImpl();
 
-    virtual int32_t Start();
-    virtual int32_t Stop();
+class ProcessThreadImpl : public ProcessThread {
+ public:
+  ProcessThreadImpl();
+  ~ProcessThreadImpl() override;
 
-    virtual int32_t RegisterModule(Module* module);
-    virtual int32_t DeRegisterModule(const Module* module);
+  int32_t Start() override;
+  int32_t Stop() override;
 
-protected:
-    static bool Run(void* obj);
+  void WakeUp(Module* module) override;
 
-    bool Process();
+  int32_t RegisterModule(Module* module);
+  int32_t DeRegisterModule(const Module* module);
 
-private:
-    typedef std::list<Module*> ModuleList;
-    EventWrapper&           _timeEvent;
-    CriticalSectionWrapper* _critSectModules;
-    ModuleList              _modules;
-    ThreadWrapper*          _thread;
+ protected:
+  static bool Run(void* obj);
+  bool Process();
+
+ private:
+  rtc::ThreadChecker thread_checker_;
+  const rtc::scoped_ptr<EventWrapper> wake_up_;
+  rtc::scoped_ptr<ThreadWrapper> thread_;
+
+  struct ModuleCallback {
+    ModuleCallback(Module* module) : module(module), next_callback(0) {}
+    bool operator==(const ModuleCallback& cb) const {
+      return cb.module == module;
+    }
+    Module* const module;
+    int64_t next_callback;  // Absolute timestamp.
+  };
+
+  rtc::CriticalSection lock_;  // Used to guard modules_ and stop_.
+  typedef std::list<ModuleCallback> ModuleList;
+  ModuleList modules_;
+  bool stop_;
 };
+
 }  // namespace webrtc
 
 #endif // WEBRTC_MODULES_UTILITY_SOURCE_PROCESS_THREAD_IMPL_H_
