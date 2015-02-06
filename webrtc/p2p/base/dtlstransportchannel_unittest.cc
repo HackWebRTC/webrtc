@@ -213,6 +213,22 @@ class DtlsTestClient : public sigslot::has_slots<> {
     }
   }
 
+  void CheckSsl(const std::string& expected_cipher) {
+    for (std::vector<cricket::DtlsTransportChannelWrapper*>::iterator it =
+           channels_.begin(); it != channels_.end(); ++it) {
+      std::string cipher;
+
+      bool rv = (*it)->GetSslCipher(&cipher);
+      if (negotiated_dtls_ && !expected_cipher.empty()) {
+        ASSERT_TRUE(rv);
+
+        ASSERT_EQ(cipher, expected_cipher);
+      } else {
+        ASSERT_FALSE(rv);
+      }
+    }
+  }
+
   void SendPackets(size_t channel, size_t size, size_t count, bool srtp) {
     ASSERT(channel < channels_.size());
     rtc::scoped_ptr<char[]> packet(new char[size]);
@@ -433,6 +449,8 @@ class DtlsTransportChannelTest : public testing::Test {
       client1_.CheckSrtp("");
       client2_.CheckSrtp("");
     }
+    client1_.CheckSsl(rtc::SSLStreamAdapter::GetDefaultSslCipher());
+    client2_.CheckSsl(rtc::SSLStreamAdapter::GetDefaultSslCipher());
 
     return true;
   }

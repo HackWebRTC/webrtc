@@ -454,9 +454,12 @@ bool Transport::GetStats_w(TransportStats* stats) {
   for (ChannelMap::iterator iter = channels_.begin();
        iter != channels_.end();
        ++iter) {
+    ChannelMapEntry& entry = iter->second;
     TransportChannelStats substats;
-    substats.component = iter->second->component();
-    if (!iter->second->GetStats(&substats.connection_infos)) {
+    substats.component = entry->component();
+    entry->GetSrtpCipher(&substats.srtp_cipher);
+    entry->GetSslCipher(&substats.ssl_cipher);
+    if (!entry->GetStats(&substats.connection_infos)) {
       return false;
     }
     stats->channel_stats.push_back(substats);
