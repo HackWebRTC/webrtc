@@ -38,6 +38,7 @@ class CriticalSectionWrapper;
 class EncodedImageCallback;
 class I420FrameCallback;
 class PacedSender;
+class PayloadRouter;
 class ProcessThread;
 class ReceiveStatisticsProxy;
 class ReportBlockStats;
@@ -301,6 +302,7 @@ class ViEChannel
 
   // Gets the modules used by the channel.
   RtpRtcp* rtp_rtcp();
+  PayloadRouter* send_payload_router();
 
   CallStatsObserver* GetStatsObserver();
 
@@ -467,6 +469,8 @@ class ViEChannel
   scoped_ptr<RtpRtcp> rtp_rtcp_;
   std::list<RtpRtcp*> simulcast_rtp_rtcp_;
   std::list<RtpRtcp*> removed_rtp_rtcp_;
+  scoped_ptr<PayloadRouter> send_payload_router_;
+
   VideoCodingModule* const vcm_;
   ViEReceiver vie_receiver_;
   ViESender vie_sender_;

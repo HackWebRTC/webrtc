@@ -13,6 +13,7 @@
 
 #include <list>
 #include <map>
+#include <vector>
 
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
@@ -32,6 +33,7 @@ class Config;
 class CriticalSectionWrapper;
 class EncodedImageCallback;
 class PacedSender;
+class PayloadRouter;
 class ProcessThread;
 class QMVideoSettingsCallback;
 class RtpRtcp;
@@ -61,6 +63,9 @@ class ViEEncoder
   ~ViEEncoder();
 
   bool Init();
+
+  // This function is assumed to be called before any frames are delivered.
+  void SetSendPayloadRouter(PayloadRouter* send_payload_router);
 
   void SetNetworkTransmissionState(bool is_transmitting);
 
@@ -201,6 +206,7 @@ class ViEEncoder
   VideoCodingModule& vcm_;
   VideoProcessingModule& vpm_;
   scoped_ptr<RtpRtcp> default_rtp_rtcp_;
+  PayloadRouter* send_payload_router_;
   scoped_ptr<CriticalSectionWrapper> callback_cs_;
   scoped_ptr<CriticalSectionWrapper> data_cs_;
   scoped_ptr<BitrateObserver> bitrate_observer_;

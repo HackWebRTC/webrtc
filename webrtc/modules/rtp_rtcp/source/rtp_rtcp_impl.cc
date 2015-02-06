@@ -13,6 +13,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <set>
+
 #include "webrtc/common_types.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -491,74 +493,21 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
     size_t payload_size,
     const RTPFragmentationHeader* fragmentation,
     const RTPVideoHeader* rtp_video_hdr) {
-  rtcp_sender_.SetLastRtpTime(time_stamp, capture_time_ms);
+  assert(!IsDefaultModule());
 
-  if (!IsDefaultModule()) {
-    // Don't send RTCP from default module.
-    if (rtcp_sender_.TimeToSendRTCPReport(kVideoFrameKey == frame_type)) {
+  rtcp_sender_.SetLastRtpTime(time_stamp, capture_time_ms);
+  if (rtcp_sender_.TimeToSendRTCPReport(kVideoFrameKey == frame_type)) {
       rtcp_sender_.SendRTCP(GetFeedbackState(), kRtcpReport);
-    }
-    return rtp_sender_.SendOutgoingData(frame_type,
-                                        payload_type,
-                                        time_stamp,
-                                        capture_time_ms,
-                                        payload_data,
-                                        payload_size,
-                                        fragmentation,
-                                        NULL,
-                                        &(rtp_video_hdr->codecHeader));
   }
-  int32_t ret_val = -1;
-  CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-  if (simulcast_) {
-    if (rtp_video_hdr == NULL) {
-      return -1;
-    }
-    int idx = 0;
-    std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
-    for (; idx < rtp_video_hdr->simulcastIdx; ++it) {
-      if (it == child_modules_.end()) {
-        return -1;
-      }
-      if ((*it)->SendingMedia()) {
-        ++idx;
-      }
-    }
-    for (; it != child_modules_.end(); ++it) {
-      if ((*it)->SendingMedia()) {
-        break;
-      }
-      ++idx;
-    }
-    if (it == child_modules_.end()) {
-      return -1;
-    }
-    return (*it)->SendOutgoingData(frame_type,
-                                   payload_type,
-                                   time_stamp,
-                                   capture_time_ms,
-                                   payload_data,
-                                   payload_size,
-                                   fragmentation,
-                                   rtp_video_hdr);
-  } else {
-    std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
-    // Send to all "child" modules
-    while (it != child_modules_.end()) {
-      if ((*it)->SendingMedia()) {
-        ret_val = (*it)->SendOutgoingData(frame_type,
-                                          payload_type,
-                                          time_stamp,
-                                          capture_time_ms,
-                                          payload_data,
-                                          payload_size,
-                                          fragmentation,
-                                          rtp_video_hdr);
-      }
-      it++;
-    }
-  }
-  return ret_val;
+  return rtp_sender_.SendOutgoingData(frame_type,
+                                      payload_type,
+                                      time_stamp,
+                                      capture_time_ms,
+                                      payload_data,
+                                      payload_size,
+                                      fragmentation,
+                                      NULL,
+                                      &(rtp_video_hdr->codecHeader));
 }
 
 bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
@@ -1346,4 +1295,4 @@ bool ModuleRtpRtcpImpl::IsDefaultModule() const {
   return !child_modules_.empty();
 }
 
-}  // Namespace webrtc
+}  // namespace webrtc

@@ -10,6 +10,8 @@
 
 #include "webrtc/video_engine/vie_channel_manager.h"
 
+#include <vector>
+
 #include "webrtc/common.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
@@ -114,6 +116,9 @@ int ViEChannelManager::CreateChannel(int* channel_id,
     delete group;
     return -1;
   }
+  // Connect the encoder with the send packet router, to enable sending.
+  vie_encoder->SetSendPayloadRouter(
+      channel_map_[new_channel_id]->send_payload_router());
 
   // Add ViEEncoder to EncoderFeedBackObserver.
   unsigned int ssrc = 0;
@@ -174,6 +179,10 @@ int ViEChannelManager::CreateChannel(int* channel_id,
       delete vie_encoder;
       vie_encoder = NULL;
     }
+    // Connect the encoder with the send packet router, to enable sending.
+    vie_encoder->SetSendPayloadRouter(
+        channel_map_[new_channel_id]->send_payload_router());
+
     // Register the ViEEncoder to get key frame requests for this channel.
     unsigned int ssrc = 0;
     int stream_idx = 0;

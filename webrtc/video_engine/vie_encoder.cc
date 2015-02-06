@@ -14,6 +14,7 @@
 
 #include <algorithm>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_video/interface/video_image.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/frame_callback.h"
@@ -33,6 +34,7 @@
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_engine/include/vie_image_process.h"
+#include "webrtc/video_engine/payload_router.h"
 #include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
@@ -137,6 +139,7 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
     vcm_(*webrtc::VideoCodingModule::Create()),
     vpm_(*webrtc::VideoProcessingModule::Create(ViEModuleId(engine_id,
                                                             channel_id))),
+    send_payload_router_(NULL),
     callback_cs_(CriticalSectionWrapper::CreateCriticalSection()),
     data_cs_(CriticalSectionWrapper::CreateCriticalSection()),
     bitrate_controller_(bitrate_controller),
@@ -226,6 +229,11 @@ bool ViEEncoder::Init() {
     return false;
   }
   return true;
+}
+
+void ViEEncoder::SetSendPayloadRouter(PayloadRouter* send_payload_router) {
+  DCHECK(send_payload_router_ == NULL);
+  send_payload_router_ = send_payload_router;
 }
 
 ViEEncoder::~ViEEncoder() {
@@ -504,8 +512,10 @@ RtpRtcp* ViEEncoder::SendRtpRtcpModule() {
 void ViEEncoder::DeliverFrame(int id,
                               I420VideoFrame* video_frame,
                               const std::vector<uint32_t>& csrcs) {
-  if (default_rtp_rtcp_->SendingMedia() == false) {
-    // We've paused or we have no channels attached, don't encode.
+  DCHECK(send_payload_router_ != NULL);
+  if (!default_rtp_rtcp_->SendingMedia() || !send_payload_router_->active()) {
+    // We've paused or we have no channels attached, don't waste resources on
+    // encoding.
     return;
   }
   {
@@ -731,15 +741,17 @@ int32_t ViEEncoder::SendData(
     const EncodedImage& encoded_image,
     const webrtc::RTPFragmentationHeader& fragmentation_header,
     const RTPVideoHeader* rtp_video_hdr) {
+  DCHECK(send_payload_router_ != NULL);
+
   if (send_statistics_proxy_ != NULL) {
     send_statistics_proxy_->OnSendEncodedImage(encoded_image, rtp_video_hdr);
   }
-  // New encoded data, hand over to the rtp module.
-  return default_rtp_rtcp_->SendOutgoingData(
+
+  return send_payload_router_->RoutePayload(
       VCMEncodedFrame::ConvertFrameType(encoded_image._frameType), payload_type,
       encoded_image._timeStamp, encoded_image.capture_time_ms_,
       encoded_image._buffer, encoded_image._length, &fragmentation_header,
-      rtp_video_hdr);
+      rtp_video_hdr) ? 0 : -1;
 }
 
 int32_t ViEEncoder::ProtectionRequest(
