@@ -20,6 +20,7 @@
 #endif
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/common.h"
 
 namespace rtc {
 

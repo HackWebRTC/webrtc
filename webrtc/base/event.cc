@@ -10,8 +10,6 @@
 
 #include "webrtc/base/event.h"
 
-#include "webrtc/base/checks.h"
-
 #if defined(WEBRTC_WIN)
 #include <windows.h>
 #elif defined(WEBRTC_POSIX)
@@ -33,7 +31,7 @@ Event::Event(bool manual_reset, bool initially_signaled)
                                 is_manual_reset_,
                                 is_initially_signaled_,
                                 NULL);                // Name.
-  CHECK(event_handle_ != NULL);
+  ASSERT(event_handle_ != NULL);
 }
 
 Event::~Event() {
@@ -58,8 +56,8 @@ bool Event::Wait(int cms) {
 Event::Event(bool manual_reset, bool initially_signaled)
     : is_manual_reset_(manual_reset),
       event_status_(initially_signaled) {
-  CHECK(pthread_mutex_init(&event_mutex_, NULL) == 0);
-  CHECK(pthread_cond_init(&event_cond_, NULL) == 0);
+  VERIFY(pthread_mutex_init(&event_mutex_, NULL) == 0);
+  VERIFY(pthread_cond_init(&event_cond_, NULL) == 0);
 }
 
 Event::~Event() {
