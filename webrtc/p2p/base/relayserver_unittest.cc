@@ -96,6 +96,13 @@ class RelayServerTest : public testing::Test {
     client->SendTo(data, len, addr);
   }
 
+  bool Receive1Fails() {
+    return client1_.get()->CheckNoPacket();
+  }
+  bool Receive2Fails() {
+    return client2_.get()->CheckNoPacket();
+  }
+
   StunMessage* Receive1() {
     return Receive(client1_.get());
   }
@@ -110,7 +117,8 @@ class RelayServerTest : public testing::Test {
   }
   StunMessage* Receive(rtc::TestClient* client) {
     StunMessage* msg = NULL;
-    rtc::TestClient::Packet* packet = client->NextPacket();
+    rtc::TestClient::Packet* packet =
+        client->NextPacket(rtc::TestClient::kTimeoutMs);
     if (packet) {
       rtc::ByteBuffer buf(packet->buf, packet->size);
       msg = new RelayMessage();
@@ -121,7 +129,8 @@ class RelayServerTest : public testing::Test {
   }
   std::string ReceiveRaw(rtc::TestClient* client) {
     std::string raw;
-    rtc::TestClient::Packet* packet = client->NextPacket();
+    rtc::TestClient::Packet* packet =
+        client->NextPacket(rtc::TestClient::kTimeoutMs);
     if (packet) {
       raw = std::string(packet->buf, packet->size);
       delete packet;
@@ -174,12 +183,8 @@ class RelayServerTest : public testing::Test {
 
 // Send a complete nonsense message and verify that it is eaten.
 TEST_F(RelayServerTest, TestBadRequest) {
-  rtc::scoped_ptr<StunMessage> res;
-
   SendRaw1(bad, static_cast<int>(strlen(bad)));
-  res.reset(Receive1());
-
-  ASSERT_TRUE(!res);
+  ASSERT_TRUE(Receive1Fails());
 }
 
 // Send an allocate request without a username and verify it is rejected.
@@ -310,7 +315,7 @@ TEST_F(RelayServerTest, TestRemoteBind) {
   EXPECT_EQ(client2_addr.ipaddr(), src_addr->ipaddr());
   EXPECT_EQ(client2_addr.port(), src_addr->port());
 
-  EXPECT_TRUE(Receive2() == NULL);
+  EXPECT_TRUE(Receive2Fails());
 }
 
 // Send a complete nonsense message to the established connection and verify
@@ -320,8 +325,8 @@ TEST_F(RelayServerTest, TestRemoteBadRequest) {
   Bind();
 
   SendRaw1(bad, static_cast<int>(strlen(bad)));
-  EXPECT_TRUE(Receive1() == NULL);
-  EXPECT_TRUE(Receive2() == NULL);
+  EXPECT_TRUE(Receive1Fails());
+  EXPECT_TRUE(Receive2Fails());
 }
 
 // Send a send request without a username and verify it is rejected.

@@ -46,9 +46,13 @@ class StunServerTest : public testing::Test {
   void Send(const char* buf, int len) {
     client_->SendTo(buf, len, server_addr);
   }
+  bool ReceiveFails() {
+    return(client_->CheckNoPacket());
+  }
   StunMessage* Receive() {
     StunMessage* msg = NULL;
-    rtc::TestClient::Packet* packet = client_->NextPacket();
+    rtc::TestClient::Packet* packet =
+        client_->NextPacket(rtc::TestClient::kTimeoutMs);
     if (packet) {
       rtc::ByteBuffer buf(packet->buf, packet->size);
       msg = new StunMessage();
@@ -104,6 +108,5 @@ TEST_F(StunServerTest, TestBad) {
                     "look anything like a normal stun message";
   Send(bad, static_cast<int>(strlen(bad)));
 
-  StunMessage* msg = Receive();
-  ASSERT_TRUE(msg == NULL);
+  ASSERT_TRUE(ReceiveFails());
 }

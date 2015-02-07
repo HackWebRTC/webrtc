@@ -736,7 +736,7 @@ class VirtualSocketServerTest : public testing::Test {
 
   // Test cross-family datagram sending between a client bound to client_addr
   // and a server bound to server_addr. shouldSucceed indicates if sending is
-  // expected to succed or not.
+  // expected to succeed or not.
   void CrossFamilyDatagramTest(const SocketAddress& client_addr,
                                const SocketAddress& server_addr,
                                bool shouldSucceed) {
@@ -759,7 +759,7 @@ class VirtualSocketServerTest : public testing::Test {
       EXPECT_EQ(client1_addr, bound_server_addr);
     } else {
       EXPECT_EQ(-1, client2->SendTo("foo", 3, bound_server_addr));
-      EXPECT_FALSE(client1->CheckNextPacket("foo", 3, 0));
+      EXPECT_TRUE(client1->CheckNoPacket());
     }
   }
 
