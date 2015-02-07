@@ -61,8 +61,6 @@ class NSSStreamAdapter : public SSLStreamAdapterHelper {
                              size_t* written, int* error);
   void OnMessage(Message *msg);
 
-  virtual bool GetSslCipher(std::string* cipher);
-
   // Key Extractor interface
   virtual bool ExportKeyingMaterial(const std::string& label,
                                     const uint8* context,
@@ -79,7 +77,6 @@ class NSSStreamAdapter : public SSLStreamAdapterHelper {
   static bool HaveDtls();
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
-  static std::string GetDefaultSslCipher();
 
  protected:
   // Override SSLStreamAdapter

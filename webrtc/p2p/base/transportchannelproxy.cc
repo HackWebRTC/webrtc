@@ -186,14 +186,6 @@ bool TransportChannelProxy::GetSrtpCipher(std::string* cipher) {
   return impl_->GetSrtpCipher(cipher);
 }
 
-bool TransportChannelProxy::GetSslCipher(std::string* cipher) {
-  ASSERT(rtc::Thread::Current() == worker_thread_);
-  if (!impl_) {
-    return false;
-  }
-  return impl_->GetSslCipher(cipher);
-}
-
 bool TransportChannelProxy::GetLocalIdentity(
     rtc::SSLIdentity** identity) const {
   ASSERT(rtc::Thread::Current() == worker_thread_);

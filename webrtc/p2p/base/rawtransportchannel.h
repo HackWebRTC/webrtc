@@ -114,13 +114,8 @@ class RawTransportChannel : public TransportChannelImpl,
     return false;
   }
 
-  // Find out which DTLS-SRTP cipher was negotiated.
+  // Find out which DTLS-SRTP cipher was negotiated
   virtual bool GetSrtpCipher(std::string* cipher) {
-    return false;
-  }
-
-  // Find out which DTLS cipher was negotiated.
-  virtual bool GetSslCipher(std::string* cipher) {
     return false;
   }
 

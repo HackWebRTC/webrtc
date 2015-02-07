@@ -150,9 +150,6 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   virtual bool GetSslRole(rtc::SSLRole* role) const;
   virtual bool SetSslRole(rtc::SSLRole role);
 
-  // Find out which DTLS cipher was negotiated
-  virtual bool GetSslCipher(std::string* cipher);
-
   // Once DTLS has been established, this method retrieves the certificate in
   // use by the remote peer, for use in external identity verification.
   virtual bool GetRemoteCertificate(rtc::SSLCertificate** cert) const;

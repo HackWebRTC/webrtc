@@ -186,14 +186,6 @@ bool DtlsTransportChannelWrapper::GetSslRole(rtc::SSLRole* role) const {
   return true;
 }
 
-bool DtlsTransportChannelWrapper::GetSslCipher(std::string* cipher) {
-  if (dtls_state_ != STATE_OPEN) {
-    return false;
-  }
-
-  return dtls_->GetSslCipher(cipher);
-}
-
 bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
     const std::string& digest_alg,
     const uint8* digest,
