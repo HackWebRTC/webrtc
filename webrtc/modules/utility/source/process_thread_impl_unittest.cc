@@ -160,15 +160,21 @@ void ProcessCallAfterAFewMs(int64_t milliseconds) {
   EXPECT_LT(diff, milliseconds + 15);
 }
 
-TEST(ProcessThreadImpl, ProcessCallAfter5ms) {
+// DISABLED for now since the virtual build bots are too slow :(
+// TODO(tommi): Fix.
+TEST(ProcessThreadImpl, DISABLED_ProcessCallAfter5ms) {
   ProcessCallAfterAFewMs(5);
 }
 
-TEST(ProcessThreadImpl, ProcessCallAfter50ms) {
+// DISABLED for now since the virtual build bots are too slow :(
+// TODO(tommi): Fix.
+TEST(ProcessThreadImpl, DISABLED_ProcessCallAfter50ms) {
   ProcessCallAfterAFewMs(50);
 }
 
-TEST(ProcessThreadImpl, ProcessCallAfter200ms) {
+// DISABLED for now since the virtual build bots are too slow :(
+// TODO(tommi): Fix.
+TEST(ProcessThreadImpl, DISABLED_ProcessCallAfter200ms) {
   ProcessCallAfterAFewMs(200);
 }
 
@@ -176,7 +182,10 @@ TEST(ProcessThreadImpl, ProcessCallAfter200ms) {
 // (on average 1 callback every 20ms).  On real hardware, we're usually pretty
 // close to that, but the test bots that run on virtual machines, will
 // typically be in the range 30-40 callbacks.
-TEST(ProcessThreadImpl, MANUAL_Process50Times) {
+// DISABLED for now since this can take up to 2 seconds to run on the slowest
+// build bots.
+// TODO(tommi): Fix.
+TEST(ProcessThreadImpl, DISABLED_Process50Times) {
   ProcessThreadImpl thread;
   ASSERT_EQ(0, thread.Start());
 
