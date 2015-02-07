@@ -25,8 +25,6 @@ PlatformThreadId CurrentThreadId() {
 #if defined(WEBRTC_WIN)
   ret = GetCurrentThreadId();
 #elif defined(WEBRTC_POSIX)
-  // Pthreads doesn't have the concept of a thread ID, so we have to reach down
-  // into the kernel.
 #if defined(WEBRTC_MAC) || defined(WEBRTC_IOS)
   ret = pthread_mach_thread_np(pthread_self());
 #elif defined(WEBRTC_LINUX)
@@ -42,30 +40,34 @@ PlatformThreadId CurrentThreadId() {
   return ret;
 }
 
-ThreadCheckerImpl::ThreadCheckerImpl() : valid_thread_(CurrentThreadId()) {
+PlatformThreadRef CurrentThreadRef() {
+#if defined(WEBRTC_WIN)
+  return GetCurrentThreadId();
+#elif defined(WEBRTC_POSIX)
+  return pthread_self();
+#endif
+}
+
+bool IsThreadRefEqual(const PlatformThreadRef& a, const PlatformThreadRef& b) {
+#if defined(WEBRTC_WIN)
+  return a == b;
+#elif defined(WEBRTC_POSIX)
+  return pthread_equal(a, b);
+#endif
+}
+
+ThreadCheckerImpl::ThreadCheckerImpl() : valid_thread_(CurrentThreadRef()) {
 }
 
 ThreadCheckerImpl::~ThreadCheckerImpl() {
 }
 
 bool ThreadCheckerImpl::CalledOnValidThread() const {
-  const PlatformThreadId current_thread = CurrentThreadId();
+  const PlatformThreadRef current_thread = CurrentThreadRef();
   CritScope scoped_lock(&lock_);
   if (!valid_thread_)  // Set if previously detached.
     valid_thread_ = current_thread;
-#if defined(WEBRTC_MAC) || defined(WEBRTC_IOS)
-  // TODO(tommi): Remove this hack after we've figured out the roll issue
-  // with chromium's Mac 10.9 debug bot.
-  if (valid_thread_ != current_thread) {
-    // At the moment, this file cannot use logging from either webrtc or
-    // libjingle. :(
-    fprintf(stderr, "*** WRONG THREAD *** current=%i vs valid=%i\n",
-        current_thread, valid_thread_);
-  }
-  return true;  // le sigh.
-#else
-  return valid_thread_ == current_thread;
-#endif
+  return IsThreadRefEqual(valid_thread_, current_thread);
 }
 
 void ThreadCheckerImpl::DetachFromThread() {
