@@ -94,7 +94,7 @@ class Beamformer : public LappedTransform::Callback {
   // in the time-domain. Further, we average these block-masks over a chunk,
   // resulting in one postfilter mask per audio chunk. This allows us to skip
   // both transforming and blocking the high-frequency signal.
-  void CalculateHighFrequencyMask();
+  void ApplyHighFrequencyCorrection();
 
   // Applies both sets of masks to |input| and store in |output|.
   void ApplyMasks(const complex_f* const* input, complex_f* const* output);
@@ -120,10 +120,10 @@ class Beamformer : public LappedTransform::Callback {
 
   // Calculated based on user-input and constants in the .cc file.
   float decay_threshold_;
-  int mid_frequency_lower_bin_bound_;
-  int mid_frequency_upper_bin_bound_;
-  int high_frequency_lower_bin_bound_;
-  int high_frequency_upper_bin_bound_;
+  int low_average_start_bin_;
+  int low_average_end_bin_;
+  int high_average_start_bin_;
+  int high_average_end_bin_;
 
   // Indices into |postfilter_masks_|.
   int current_block_ix_;
