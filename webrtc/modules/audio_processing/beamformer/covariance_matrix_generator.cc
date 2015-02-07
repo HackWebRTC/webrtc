@@ -143,6 +143,7 @@ void CovarianceMatrixGenerator::PhaseAlignmentMasks(int frequency_bin,
 
   complex<float>* const* mat_els = mat->elements();
   for (int c_ix = 0; c_ix < num_input_channels; ++c_ix) {
+    // TODO(aluebs): Generalize for non-uniform-linear microphone arrays.
     float distance = mic_spacing * c_ix * sin_angle * -1.f;
     float phase_shift = 2 * M_PI * distance * freq_in_hertz / sound_speed;
 

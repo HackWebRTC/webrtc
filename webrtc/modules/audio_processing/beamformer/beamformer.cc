@@ -123,6 +123,18 @@ int Round(float x) {
   return std::floor(x + 0.5f);
 }
 
+// Calculates the sum of absolute values of a complex matrix.
+float SumAbs(const ComplexMatrix<float>& mat) {
+  float sum_abs = 0.f;
+  const complex<float>* const* mat_els = mat.elements();
+  for (int i = 0; i < mat.num_rows(); ++i) {
+    for (int j = 0; j < mat.num_columns(); ++j) {
+      sum_abs += std::abs(mat_els[i][j]);
+    }
+  }
+  return sum_abs;
+}
+
 }  // namespace
 
 Beamformer::Beamformer(const std::vector<Point>& array_geometry)
@@ -205,6 +217,9 @@ void Beamformer::InitDelaySumMasks() {
     complex_f norm_factor = sqrt(
         ConjugateDotProduct(delay_sum_masks_[f_ix], delay_sum_masks_[f_ix]));
     delay_sum_masks_[f_ix].Scale(1.f / norm_factor);
+    normalized_delay_sum_masks_[f_ix].CopyFrom(delay_sum_masks_[f_ix]);
+    normalized_delay_sum_masks_[f_ix].Scale(1.f / SumAbs(
+        normalized_delay_sum_masks_[f_ix]));
   }
 }
 
@@ -405,7 +420,8 @@ void Beamformer::ApplyMasks(const complex_f* const* input,
   for (int f_ix = 0; f_ix < kNumFreqBins; ++f_ix) {
     output_channel[f_ix] = complex_f(0.f, 0.f);
 
-    const complex_f* delay_sum_mask_els = delay_sum_masks_[f_ix].elements()[0];
+    const complex_f* delay_sum_mask_els =
+        normalized_delay_sum_masks_[f_ix].elements()[0];
     for (int c_ix = 0; c_ix < num_input_channels_; ++c_ix) {
       output_channel[f_ix] += input[c_ix][f_ix] * delay_sum_mask_els[c_ix];
     }

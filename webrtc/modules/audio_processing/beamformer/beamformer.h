@@ -136,6 +136,7 @@ class Beamformer : public LappedTransform::Callback {
 
   // Array of length |kNumFreqBins|, Matrix of size |1| x |num_channels_|.
   ComplexMatrixF delay_sum_masks_[kNumFreqBins];
+  ComplexMatrixF normalized_delay_sum_masks_[kNumFreqBins];
 
   // Array of length |kNumFreqBins|, Matrix of size |num_input_channels_| x
   // |num_input_channels_|.
