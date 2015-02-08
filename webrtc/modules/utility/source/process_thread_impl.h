@@ -32,29 +32,44 @@ class ProcessThreadImpl : public ProcessThread {
 
   void WakeUp(Module* module) override;
 
-  int32_t RegisterModule(Module* module);
-  int32_t DeRegisterModule(const Module* module);
+  int32_t RegisterModule(Module* module) override;
+  int32_t DeRegisterModule(const Module* module) override;
 
  protected:
   static bool Run(void* obj);
   bool Process();
 
  private:
-  rtc::ThreadChecker thread_checker_;
-  const rtc::scoped_ptr<EventWrapper> wake_up_;
-  rtc::scoped_ptr<ThreadWrapper> thread_;
-
   struct ModuleCallback {
+    ModuleCallback() : module(nullptr), next_callback(0) {}
+    ModuleCallback(const ModuleCallback& cb)
+        : module(cb.module), next_callback(cb.next_callback) {}
     ModuleCallback(Module* module) : module(module), next_callback(0) {}
     bool operator==(const ModuleCallback& cb) const {
       return cb.module == module;
     }
+
     Module* const module;
     int64_t next_callback;  // Absolute timestamp.
+
+   private:
+    ModuleCallback& operator=(ModuleCallback&);
   };
 
-  rtc::CriticalSection lock_;  // Used to guard modules_ and stop_.
   typedef std::list<ModuleCallback> ModuleList;
+
+  // Warning: For some reason, if |lock_| comes immediately before |modules_|
+  // with the current class layout, we will  start to have mysterious crashes
+  // on Mac 10.9 debug.  I (Tommi) suspect we're hitting some obscure alignemnt
+  // issues, but I haven't figured out what they are, if there are alignment
+  // requirements for mutexes on Mac or if there's something else to it.
+  // So be careful with changing the layout.
+  rtc::CriticalSection lock_;  // Used to guard modules_ and stop_.
+
+  rtc::ThreadChecker thread_checker_;
+  const rtc::scoped_ptr<EventWrapper> wake_up_;
+  rtc::scoped_ptr<ThreadWrapper> thread_;
+
   ModuleList modules_;
   bool stop_;
 };

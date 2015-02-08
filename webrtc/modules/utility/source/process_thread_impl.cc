@@ -88,24 +88,26 @@ void ProcessThreadImpl::WakeUp(Module* module) {
   // Allowed to be called on any thread.
   {
     rtc::CritScope lock(&lock_);
-    ModuleCallback cb(module);
-    const auto& found = std::find(modules_.begin(), modules_.end(), cb);
-    DCHECK(found != modules_.end()) << "programmer error?";
-    (*found).next_callback = 0;
+    for (ModuleCallback& m : modules_) {
+      if (m.module == module)
+        m.next_callback = 0;
+    }
   }
   wake_up_->Set();
 }
 
 int32_t ProcessThreadImpl::RegisterModule(Module* module) {
   // Allowed to be called on any thread.
+  DCHECK(module);
   {
     rtc::CritScope lock(&lock_);
-
     // Only allow module to be registered once.
-    ModuleCallback cb(module);
-    if (std::find(modules_.begin(), modules_.end(), cb) != modules_.end())
-      return -1;
-    modules_.push_front(cb);
+    for (const ModuleCallback& mc : modules_) {
+      if (mc.module == module)
+        return -1;
+    }
+
+    modules_.push_back(ModuleCallback(module));
   }
 
   // Wake the thread calling ProcessThreadImpl::Process() to update the
@@ -118,6 +120,7 @@ int32_t ProcessThreadImpl::RegisterModule(Module* module) {
 
 int32_t ProcessThreadImpl::DeRegisterModule(const Module* module) {
   // Allowed to be called on any thread.
+  DCHECK(module);
   rtc::CritScope lock(&lock_);
   modules_.remove_if([&module](const ModuleCallback& m) {
       return m.module == module;
@@ -137,7 +140,7 @@ bool ProcessThreadImpl::Process() {
     rtc::CritScope lock(&lock_);
     if (stop_)
       return false;
-    for (auto& m : modules_) {
+    for (ModuleCallback& m : modules_) {
       // TODO(tommi): Would be good to measure the time TimeUntilNextProcess
       // takes and dcheck if it takes too long (e.g. >=10ms).  Ideally this
       // operation should not require taking a lock, so querying all modules
@@ -150,7 +153,7 @@ bool ProcessThreadImpl::Process() {
         // Use a new 'now' reference to calculate when the next callback
         // should occur.  We'll continue to use 'now' above for the baseline
         // of calculating how long we should wait, to reduce variance.
-        auto new_now = TickTime::MillisecondTimestamp();
+        int64_t new_now = TickTime::MillisecondTimestamp();
         m.next_callback = GetNextCallbackTime(m.module, new_now);
       }
 
@@ -159,7 +162,7 @@ bool ProcessThreadImpl::Process() {
     }
   }
 
-  auto time_to_wait = next_checkpoint - TickTime::MillisecondTimestamp();
+  int64_t time_to_wait = next_checkpoint - TickTime::MillisecondTimestamp();
   if (time_to_wait > 0)
     wake_up_->Wait(static_cast<unsigned long>(time_to_wait));
 
