@@ -119,7 +119,7 @@ int I420Encoder::Encode(const I420VideoFrame& inputImage,
     return WEBRTC_VIDEO_CODEC_MEMORY;
   _encodedImage._length = ret_length + kI420HeaderSize;
 
-  _encodedCompleteCallback->Encoded(_encodedImage);
+  _encodedCompleteCallback->Encoded(_encodedImage, NULL, NULL);
   return WEBRTC_VIDEO_CODEC_OK;
 }
 

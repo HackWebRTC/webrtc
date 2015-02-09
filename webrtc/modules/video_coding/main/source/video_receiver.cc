@@ -365,7 +365,7 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
 
     if (pre_decode_image_callback_) {
       EncodedImage encoded_image(frame->EncodedImage());
-      pre_decode_image_callback_->Encoded(encoded_image);
+      pre_decode_image_callback_->Encoded(encoded_image, NULL, NULL);
     }
 
 #ifdef DEBUG_DECODER_BIT_STREAM

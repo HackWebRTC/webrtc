@@ -208,47 +208,39 @@ VCMEncodedFrameCallback::SetTransportCallback(VCMPacketizationCallback* transpor
     return VCM_OK;
 }
 
-int32_t
-VCMEncodedFrameCallback::Encoded(
-    const EncodedImage &encodedImage,
+int32_t VCMEncodedFrameCallback::Encoded(
+    const EncodedImage& encodedImage,
     const CodecSpecificInfo* codecSpecificInfo,
-    const RTPFragmentationHeader* fragmentationHeader)
-{
-    post_encode_callback_->Encoded(encodedImage);
+    const RTPFragmentationHeader* fragmentationHeader) {
+  post_encode_callback_->Encoded(encodedImage, NULL, NULL);
 
-    if (_sendCallback != NULL)
-    {
+  if (_sendCallback == NULL) {
+    return VCM_UNINITIALIZED;
+  }
+
 #ifdef DEBUG_ENCODER_BIT_STREAM
-        if (_bitStreamAfterEncoder != NULL)
-        {
-            fwrite(encodedImage._buffer, 1, encodedImage._length, _bitStreamAfterEncoder);
-        }
+  if (_bitStreamAfterEncoder != NULL) {
+    fwrite(encodedImage._buffer, 1, encodedImage._length,
+           _bitStreamAfterEncoder);
+  }
 #endif
 
-        RTPVideoHeader rtpVideoHeader;
-        RTPVideoHeader* rtpVideoHeaderPtr = &rtpVideoHeader;
-        CopyCodecSpecific(codecSpecificInfo, &rtpVideoHeaderPtr);
+  RTPVideoHeader rtpVideoHeader;
+  RTPVideoHeader* rtpVideoHeaderPtr = &rtpVideoHeader;
+  CopyCodecSpecific(codecSpecificInfo, &rtpVideoHeaderPtr);
 
-        int32_t callbackReturn = _sendCallback->SendData(
-            _payloadType,
-            encodedImage,
-            *fragmentationHeader,
-            rtpVideoHeaderPtr);
-       if (callbackReturn < 0)
-       {
-           return callbackReturn;
-       }
-    }
-    else
-    {
-        return VCM_UNINITIALIZED;
-    }
-    if (_mediaOpt != NULL) {
-      _mediaOpt->UpdateWithEncodedData(encodedImage);
-      if (_internalSource)
-        return _mediaOpt->DropFrame(); // Signal to encoder to drop next frame.
-    }
-    return VCM_OK;
+  int32_t callbackReturn = _sendCallback->SendData(
+      _payloadType, encodedImage, *fragmentationHeader, rtpVideoHeaderPtr);
+  if (callbackReturn < 0) {
+    return callbackReturn;
+  }
+
+  if (_mediaOpt != NULL) {
+    _mediaOpt->UpdateWithEncodedData(encodedImage);
+    if (_internalSource)
+      return _mediaOpt->DropFrame();  // Signal to encoder to drop next frame.
+  }
+  return VCM_OK;
 }
 
 void

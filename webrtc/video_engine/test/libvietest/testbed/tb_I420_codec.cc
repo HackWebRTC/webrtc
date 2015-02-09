@@ -132,7 +132,7 @@ int32_t TbI420Encoder::Encode(
     }
 
     _encodedImage._length = reqSize;
-    _encodedCompleteCallback->Encoded(_encodedImage);
+    _encodedCompleteCallback->Encoded(_encodedImage, NULL, NULL);
     return WEBRTC_VIDEO_CODEC_OK;
 }
 

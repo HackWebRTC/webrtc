@@ -29,11 +29,9 @@ class EncodedImageCallback {
   virtual ~EncodedImageCallback() {}
 
   // Callback function which is called when an image has been encoded.
-  // TODO(pbos): Remove default arguments.
-  virtual int32_t Encoded(
-      const EncodedImage& encoded_image,
-      const CodecSpecificInfo* codec_specific_info = NULL,
-      const RTPFragmentationHeader* fragmentation = NULL) = 0;
+  virtual int32_t Encoded(const EncodedImage& encoded_image,
+                          const CodecSpecificInfo* codec_specific_info,
+                          const RTPFragmentationHeader* fragmentation) = 0;
 };
 
 class VideoEncoder {
