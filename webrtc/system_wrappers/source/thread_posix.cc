@@ -110,10 +110,7 @@ bool ThreadPosix::Start(unsigned int& thread_id) {
   if (result != 0)
     return false;
 
-  // TODO(tommi): Change the timeout back to WEBRTC_EVENT_INFINITE when we've
-  // figured out where we're seeing tests hang.
-  auto state = params.started->Wait(30 * 1000);
-  CHECK_EQ(kEventSignaled, state);
+  CHECK_EQ(kEventSignaled, params.started->Wait(WEBRTC_EVENT_INFINITE));
   DCHECK_NE(thread_id_, 0);
 
   thread_id = thread_id_;
