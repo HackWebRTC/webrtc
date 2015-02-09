@@ -18,6 +18,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include "webrtc/base/checks.h"
+
 namespace webrtc {
 
 const long int E6 = 1000000;
@@ -145,6 +147,9 @@ EventTypeWrapper EventPosix::Wait(unsigned long timeout) {
       ret_val = pthread_cond_wait(&cond_, &mutex_);
     }
   }
+
+  if (ret_val == 0)
+    CHECK(state_ == kUp);
 
   state_ = kDown;
   pthread_mutex_unlock(&mutex_);
