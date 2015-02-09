@@ -1558,12 +1558,12 @@ int NetEQTest_encode(int coder, int16_t *indata, int frameLen, unsigned char * e
         /* Encode with the selected coder type */
         if (coder==webrtc::kDecoderPCMu) { /*g711 u-law */
 #ifdef CODEC_G711
-            cdlen = WebRtcG711_EncodeU(indata, frameLen, (int16_t*) encoded);
+            cdlen = WebRtcG711_EncodeU(indata, frameLen, encoded);
 #endif
         }  
         else if (coder==webrtc::kDecoderPCMa) { /*g711 A-law */
 #ifdef CODEC_G711
-            cdlen = WebRtcG711_EncodeA(indata, frameLen, (int16_t*) encoded);
+            cdlen = WebRtcG711_EncodeA(indata, frameLen, encoded);
         }
 #endif
 #ifdef CODEC_PCM16B

@@ -41,9 +41,8 @@ namespace webrtc {
 int AudioDecoderPcmU::Decode(const uint8_t* encoded, size_t encoded_len,
                               int16_t* decoded, SpeechType* speech_type) {
   int16_t temp_type = 1;  // Default is speech.
-  int16_t ret = WebRtcG711_DecodeU(
-      reinterpret_cast<int16_t*>(const_cast<uint8_t*>(encoded)),
-      static_cast<int16_t>(encoded_len), decoded, &temp_type);
+  int16_t ret = WebRtcG711_DecodeU(encoded, static_cast<int16_t>(encoded_len),
+                                   decoded, &temp_type);
   *speech_type = ConvertSpeechType(temp_type);
   return ret;
 }
@@ -58,9 +57,8 @@ int AudioDecoderPcmU::PacketDuration(const uint8_t* encoded,
 int AudioDecoderPcmA::Decode(const uint8_t* encoded, size_t encoded_len,
                               int16_t* decoded, SpeechType* speech_type) {
   int16_t temp_type = 1;  // Default is speech.
-  int16_t ret = WebRtcG711_DecodeA(
-      reinterpret_cast<int16_t*>(const_cast<uint8_t*>(encoded)),
-      static_cast<int16_t>(encoded_len), decoded, &temp_type);
+  int16_t ret = WebRtcG711_DecodeA(encoded, static_cast<int16_t>(encoded_len),
+                                   decoded, &temp_type);
   *speech_type = ConvertSpeechType(temp_type);
   return ret;
 }

@@ -90,17 +90,13 @@ bool AudioEncoderPcm::EncodeInternal(uint32_t rtp_timestamp,
 int16_t AudioEncoderPcmA::EncodeCall(const int16_t* audio,
                                      size_t input_len,
                                      uint8_t* encoded) {
-  return WebRtcG711_EncodeA(const_cast<int16_t*>(audio),
-                            static_cast<int16_t>(input_len),
-                            reinterpret_cast<int16_t*>(encoded));
+  return WebRtcG711_EncodeA(audio, static_cast<int16_t>(input_len), encoded);
 }
 
 int16_t AudioEncoderPcmU::EncodeCall(const int16_t* audio,
                                      size_t input_len,
                                      uint8_t* encoded) {
-  return WebRtcG711_EncodeU(const_cast<int16_t*>(audio),
-                            static_cast<int16_t>(input_len),
-                            reinterpret_cast<int16_t*>(encoded));
+  return WebRtcG711_EncodeU(audio, static_cast<int16_t>(input_len), encoded);
 }
 
 }  // namespace webrtc
