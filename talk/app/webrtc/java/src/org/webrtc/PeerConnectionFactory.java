@@ -53,13 +53,16 @@ public class PeerConnectionFactory {
       Object context, boolean initializeAudio, boolean initializeVideo,
       boolean vp8HwAcceleration, Object renderEGLContext);
 
+  // Field trial initialization. Must be called before PeerConnectionFactory
+  // is created.
+  public static native void initializeFieldTrials(String fieldTrialsInitString);
+
   public PeerConnectionFactory() {
     nativeFactory = nativeCreatePeerConnectionFactory();
     if (nativeFactory == 0) {
       throw new RuntimeException("Failed to initialize PeerConnectionFactory!");
     }
   }
-
 
   public PeerConnection createPeerConnection(
       List<PeerConnection.IceServer> iceServers,

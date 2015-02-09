@@ -56,7 +56,6 @@ public class RoomParametersFetcher {
   private static final String TAG = "RoomRTCClient";
   private final RoomParametersFetcherEvents events;
   private final boolean loopback;
-  private final String registerUrl;
   private AsyncHttpURLConnection httpConnection;
 
   /**
@@ -79,7 +78,6 @@ public class RoomParametersFetcher {
       final RoomParametersFetcherEvents events) {
     Log.d(TAG, "Connecting to room: " + registerUrl);
     this.loopback = loopback;
-    this.registerUrl = registerUrl;
     this.events = events;
 
     httpConnection = new AsyncHttpURLConnection("POST", registerUrl, null,

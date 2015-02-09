@@ -28,7 +28,6 @@
 package org.webrtc;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 /**
  * Java version of VideoRendererInterface.  In addition to allowing clients to

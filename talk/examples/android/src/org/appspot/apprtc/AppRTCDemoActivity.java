@@ -34,7 +34,6 @@ import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.net.Uri;
 import android.opengl.GLSurfaceView;
@@ -93,7 +92,8 @@ public class AppRTCDemoActivity extends Activity
   private boolean activityRunning;
   private int runTimeMs;
   private int startBitrate;
-  private boolean hwCodec;
+  private String videoCodec;
+  private boolean hwCodecAcceleration;
   private boolean iceConnected;
   private boolean isError;
 
@@ -216,7 +216,13 @@ public class AppRTCDemoActivity extends Activity
         ConnectActivity.EXTRA_CMDLINE, false);
     runTimeMs = intent.getIntExtra(ConnectActivity.EXTRA_RUNTIME, 0);
     startBitrate = intent.getIntExtra(ConnectActivity.EXTRA_BITRATE, 0);
-    hwCodec = intent.getBooleanExtra(ConnectActivity.EXTRA_HWCODEC, true);
+    if (intent.hasExtra(ConnectActivity.EXTRA_VIDEOCODEC)) {
+      videoCodec = intent.getStringExtra(ConnectActivity.EXTRA_VIDEOCODEC);
+    } else {
+      videoCodec = PeerConnectionClient.VIDEO_CODEC_VP8; // use VP8 by default.
+    }
+    hwCodecAcceleration = intent.getBooleanExtra(
+        ConnectActivity.EXTRA_HWCODEC, true);
 
     if (url != null) {
       if (loopback || (roomName != null && !roomName.equals(""))) {
@@ -269,14 +275,14 @@ public class AppRTCDemoActivity extends Activity
 
   // Create peer connection factory when EGL context is ready.
   private void createPeerConnectionFactory() {
-    final AppRTCDemoActivity thisCopy = this;
     runOnUiThread(new Runnable() {
       @Override
       public void run() {
         if (pc == null) {
           pc = new PeerConnectionClient();
-          pc.createPeerConnectionFactory(
-              thisCopy, hwCodec, VideoRendererGui.getEGLContext(), thisCopy);
+          pc.createPeerConnectionFactory(AppRTCDemoActivity.this,
+              videoCodec, hwCodecAcceleration,
+              VideoRendererGui.getEGLContext(), AppRTCDemoActivity.this);
         }
         if (signalingParameters != null) {
           Log.w(TAG, "EGL context is ready after room connection.");
@@ -499,11 +505,6 @@ public class AppRTCDemoActivity extends Activity
     logAndToast("Creating peer connection...");
     pc.createPeerConnection(
         localRender, remoteRender, signalingParameters, startBitrate);
-    if (pc.isHDVideo()) {
-      setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-    } else {
-      setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-    }
 
     // Schedule statistics display.
     final Runnable repeatedStatsLogger = new Runnable() {
@@ -533,7 +534,8 @@ public class AppRTCDemoActivity extends Activity
             }
           }, null);
         if (!success) {
-          Log.e(TAG, "getStats() return false!");
+          Log.w(TAG, "getStats() return false!");
+          videoView.postDelayed(runnableThis, 1000);
         }
       }
     };

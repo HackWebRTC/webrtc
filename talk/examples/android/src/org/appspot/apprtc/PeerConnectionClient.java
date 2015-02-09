@@ -37,7 +37,6 @@ import android.util.Log;
 import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
-import org.webrtc.MediaConstraints.KeyValuePair;
 import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
@@ -64,6 +63,9 @@ import java.util.regex.Pattern;
 public class PeerConnectionClient {
   private static final String TAG = "PCRTCClient";
   private static final boolean PREFER_ISAC = false;
+  public static final String VIDEO_CODEC_VP8 = "VP8";
+  public static final String VIDEO_CODEC_VP9 = "VP9";
+  private static final String FIELD_TRIAL_VP9 = "WebRTC-SupportVP9/Enabled/";
   public static final String VIDEO_TRACK_ID = "ARDAMSv0";
   public static final String AUDIO_TRACK_ID = "ARDAMSa0";
 
@@ -134,7 +136,8 @@ public class PeerConnectionClient {
 
   public void createPeerConnectionFactory(
       final Context context,
-      final boolean vp8HwAcceleration,
+      final String videoCodec,
+      final boolean videoCodecHwAcceleration,
       final EGLContext renderEGLContext,
       final PeerConnectionEvents events) {
     this.events = events;
@@ -143,7 +146,7 @@ public class PeerConnectionClient {
       @Override
       public void run() {
         createPeerConnectionFactoryInternal(
-            context, vp8HwAcceleration, renderEGLContext);
+            context, videoCodec, videoCodecHwAcceleration, renderEGLContext);
       }
     });
   }
@@ -177,13 +180,19 @@ public class PeerConnectionClient {
 
   private void createPeerConnectionFactoryInternal(
       Context context,
-      boolean vp8HwAcceleration,
+      String videoCodec,
+      boolean videoCodecHwAcceleration,
       EGLContext renderEGLContext) {
     Log.d(TAG, "Create peer connection factory with EGLContext "
       + renderEGLContext);
     isError = false;
+    if (videoCodec.equals(VIDEO_CODEC_VP9)) {
+      PeerConnectionFactory.initializeFieldTrials(FIELD_TRIAL_VP9);
+    } else {
+      PeerConnectionFactory.initializeFieldTrials(null);
+    }
     if (!PeerConnectionFactory.initializeAndroidGlobals(
-        context, true, true, vp8HwAcceleration, renderEGLContext)) {
+        context, true, true, videoCodecHwAcceleration, renderEGLContext)) {
       events.onPeerConnectionError("Failed to initializeAndroidGlobals");
     }
     factory = new PeerConnectionFactory();
@@ -250,35 +259,6 @@ public class PeerConnectionClient {
     }
     Log.d(TAG, "Closing peer connection done.");
     events.onPeerConnectionClosed();
-  }
-
-  public boolean isHDVideo() {
-    if (signalingParameters.videoConstraints == null) {
-      return false;
-    }
-    int minWidth = 0;
-    int minHeight = 0;
-    for (KeyValuePair keyValuePair :
-        signalingParameters.videoConstraints.mandatory) {
-      if (keyValuePair.getKey().equals("minWidth")) {
-        try {
-          minWidth = Integer.parseInt(keyValuePair.getValue());
-        } catch (NumberFormatException e) {
-          Log.e(TAG, "Can not parse video width from video constraints");
-        }
-      } else if (keyValuePair.getKey().equals("minHeight")) {
-        try {
-          minHeight = Integer.parseInt(keyValuePair.getValue());
-        } catch (NumberFormatException e) {
-          Log.e(TAG, "Can not parse video height from video constraints");
-        }
-      }
-    }
-    if (minWidth * minHeight >= 1280 * 720) {
-      return true;
-    } else {
-      return false;
-    }
   }
 
   public boolean getStats(StatsObserver observer, MediaStreamTrack track) {

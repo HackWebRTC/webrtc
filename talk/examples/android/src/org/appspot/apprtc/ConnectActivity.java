@@ -67,6 +67,7 @@ public class ConnectActivity extends Activity {
   public static final String EXTRA_CMDLINE = "org.appspot.apprtc.CMDLINE";
   public static final String EXTRA_RUNTIME = "org.appspot.apprtc.RUNTIME";
   public static final String EXTRA_BITRATE = "org.appspot.apprtc.BITRATE";
+  public static final String EXTRA_VIDEOCODEC = "org.appspot.apprtc.VIDEOCODEC";
   public static final String EXTRA_HWCODEC = "org.appspot.apprtc.HWCODEC";
   private static final String TAG = "ConnectActivity";
   private static final int CONNECTION_REQUEST = 1;
@@ -83,7 +84,8 @@ public class ConnectActivity extends Activity {
   private String keyprefFps;
   private String keyprefBitrateType;
   private String keyprefBitrateValue;
-  private String keyprefHwCodec;
+  private String keyprefVideoCodec;
+  private String keyprefHwCodecAcceleration;
   private String keyprefCpuUsageDetection;
   private String keyprefRoomServerUrl;
   private String keyprefRoom;
@@ -102,7 +104,8 @@ public class ConnectActivity extends Activity {
     keyprefFps = getString(R.string.pref_fps_key);
     keyprefBitrateType = getString(R.string.pref_startbitrate_key);
     keyprefBitrateValue = getString(R.string.pref_startbitratevalue_key);
-    keyprefHwCodec = getString(R.string.pref_hwcodec_key);
+    keyprefVideoCodec = getString(R.string.pref_videocodec_key);
+    keyprefHwCodecAcceleration = getString(R.string.pref_hwcodec_key);
     keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
     keyprefRoomServerUrl = getString(R.string.pref_room_server_url_key);
     keyprefRoom = getString(R.string.pref_room_key);
@@ -256,8 +259,12 @@ public class ConnectActivity extends Activity {
         getString(R.string.pref_room_server_url_default));
     url = WebSocketRTCClient.getGAEConnectionUrl(url, roomName);
 
+    // Get default video codec.
+    String videoCodec = sharedPref.getString(keyprefVideoCodec,
+        getString(R.string.pref_videocodec_default));
+
     // Check HW codec flag.
-    boolean hwCodec = sharedPref.getBoolean(keyprefHwCodec,
+    boolean hwCodec = sharedPref.getBoolean(keyprefHwCodecAcceleration,
         Boolean.valueOf(getString(R.string.pref_hwcodec_default)));
 
     // Add video resolution constraints.
@@ -345,6 +352,7 @@ public class ConnectActivity extends Activity {
       intent.putExtra(EXTRA_CMDLINE, commandLineRun);
       intent.putExtra(EXTRA_RUNTIME, runTimeMs);
       intent.putExtra(EXTRA_BITRATE, startBitrate);
+      intent.putExtra(EXTRA_VIDEOCODEC, videoCodec);
       intent.putExtra(EXTRA_HWCODEC, hwCodec);
       startActivityForResult(intent, CONNECTION_REQUEST);
     }

@@ -99,7 +99,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     }
 
     public synchronized int getWidth() { return width; }
-    public synchronized int getHeight() { return width; }
+    public synchronized int getHeight() { return height; }
     public synchronized boolean setSizeCalledBeforeRenderFrame() {
       return setSizeCalledBeforeRenderFrame;
     }
@@ -232,7 +232,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
 
     PeerConnectionClient client = new PeerConnectionClient();
     client.createPeerConnectionFactory(
-        getInstrumentation().getContext(), true, null, this);
+        getInstrumentation().getContext(), "VP8", true, null, this);
     client.createPeerConnection(
         localRenderer, remoteRenderer, signalingParameters, 1000);
     client.createOffer();

@@ -81,8 +81,10 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/ssladapter.h"
+#include "webrtc/base/stringutils.h"
 #include "webrtc/common_video/interface/texture_video_frame.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/system_wrappers/interface/field_trial_default.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/voice_engine/include/voe_base.h"
@@ -159,6 +161,9 @@ static pthread_once_t g_jni_ptr_once = PTHREAD_ONCE_INIT;
 // AttachCurrentThreadIfNeeded(), NULL in unattached threads and threads that
 // were attached by the JVM because of a Java->native call.
 static pthread_key_t g_jni_ptr;
+
+// Field trials initialization string
+static char *field_trials_init_string = NULL;
 
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
 // Set in PeerConnectionFactory_initializeAndroidGlobals().
@@ -2837,6 +2842,21 @@ JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
 }
 #endif  // defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
 
+JOW(void, PeerConnectionFactory_initializeFieldTrials)(
+    JNIEnv* jni, jclass, jstring j_trials_init_string) {
+  field_trials_init_string = NULL;
+  if (j_trials_init_string != NULL) {
+    const char* init_string =
+        jni->GetStringUTFChars(j_trials_init_string, NULL);
+    int init_string_length = jni->GetStringUTFLength(j_trials_init_string);
+    field_trials_init_string = new char[init_string_length + 1];
+    rtc::strcpyn(field_trials_init_string, init_string_length + 1, init_string);
+    jni->ReleaseStringUTFChars(j_trials_init_string, init_string);
+    LOG(LS_INFO) << "initializeFieldTrials: " << field_trials_init_string ;
+  }
+  webrtc::field_trial::InitFieldTrialsFromString(field_trials_init_string);
+}
+
 // Helper struct for working around the fact that CreatePeerConnectionFactory()
 // comes in two flavors: either entirely automagical (constructing its own
 // threads and deleting them on teardown, but no external codec factory support)
@@ -2898,6 +2918,11 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
 
 JOW(void, PeerConnectionFactory_freeFactory)(JNIEnv*, jclass, jlong j_p) {
   delete reinterpret_cast<OwnedFactoryAndThreads*>(j_p);
+  if (field_trials_init_string) {
+    webrtc::field_trial::InitFieldTrialsFromString(NULL);
+    delete field_trials_init_string;
+    field_trials_init_string = NULL;
+  }
   webrtc::Trace::ReturnTrace();
 }
 

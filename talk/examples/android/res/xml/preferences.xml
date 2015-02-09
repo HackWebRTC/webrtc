@@ -31,6 +31,14 @@
         android:defaultValue="@string/pref_startbitratevalue_default"
         android:dialogTitle="@string/pref_startbitratevalue_dlg" />
 
+    <ListPreference
+        android:key="@string/pref_videocodec_key"
+        android:title="@string/pref_videocodec_title"
+        android:defaultValue="@string/pref_videocodec_default"
+        android:dialogTitle="@string/pref_videocodec_dlg"
+        android:entries="@array/videoCodecs"
+        android:entryValues="@array/videoCodecs" />
+
     <CheckBoxPreference
         android:key="@string/pref_hwcodec_key"
         android:title="@string/pref_hwcodec_title"
@@ -49,4 +57,5 @@
         android:inputType="text"
         android:defaultValue="@string/pref_room_server_url_default"
         android:dialogTitle="@string/pref_room_server_url_dlg" />
+
 </PreferenceScreen>
