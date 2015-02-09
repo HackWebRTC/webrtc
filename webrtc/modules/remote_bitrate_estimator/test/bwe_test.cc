@@ -25,41 +25,81 @@ using std::vector;
 namespace webrtc {
 namespace testing {
 namespace bwe {
-class BweReceiver {
- public:
-  explicit BweReceiver(int flow_id) : flow_id_(flow_id) {}
-  virtual ~BweReceiver() {}
 
-  virtual void ReceivePacket(int64_t arrival_time_ms,
-                             size_t payload_size,
-                             const RTPHeader& header) {}
+class PacketReceiver {
+ public:
+  PacketReceiver(const string& test_name,
+                 const BweTestConfig::EstimatorConfig& config)
+      : flow_id_(config.flow_id),
+        debug_name_(config.debug_name),
+        delay_log_prefix_(),
+        last_delay_plot_ms_(0),
+        plot_delay_(config.plot_delay),
+        baseline_(BaseLineFileInterface::Create(test_name + "_" + debug_name_,
+                                                config.update_baseline)) {
+    // Setup the prefix strings used when logging.
+    std::stringstream ss;
+    ss << "Delay_" << config.flow_id << "#2";
+    delay_log_prefix_ = ss.str();
+  }
+  virtual ~PacketReceiver() {}
+
+  virtual void ReceivePacket(const Packet& packet) {}
+
   virtual FeedbackPacket* GetFeedback() { return NULL; }
 
- protected:
-  int flow_id_;
-};
-
-int64_t GetAbsSendTimeInMs(uint32_t abs_send_time) {
-  const int kInterArrivalShift = 26;
-  const int kAbsSendTimeInterArrivalUpshift = 8;
-  const double kTimestampToMs =
-      1000.0 / static_cast<double>(1 << kInterArrivalShift);
-  uint32_t timestamp = abs_send_time << kAbsSendTimeInterArrivalUpshift;
-  return static_cast<int64_t>(timestamp) * kTimestampToMs;
-}
-
-class SendSideBweReceiver : public BweReceiver {
- public:
-  explicit SendSideBweReceiver(int flow_id) : BweReceiver(flow_id) {}
-  virtual void ReceivePacket(int64_t arrival_time_ms,
-                             size_t payload_size,
-                             const RTPHeader& header) OVERRIDE {
-    packet_feedback_vector_.push_back(PacketInfo(
-        arrival_time_ms, GetAbsSendTimeInMs(header.extension.absoluteSendTime),
-        header.sequenceNumber, payload_size));
+  void LogStats() {
+    BWE_TEST_LOGGING_CONTEXT(debug_name_);
+    BWE_TEST_LOGGING_CONTEXT("Mean");
+    stats_.Log("kbps");
   }
 
-  virtual FeedbackPacket* GetFeedback() OVERRIDE {
+  void VerifyOrWriteBaseline() { EXPECT_TRUE(baseline_->VerifyOrWrite()); }
+
+ protected:
+  static const int kDelayPlotIntervalMs = 100;
+
+  void LogDelay(int64_t arrival_time_ms, int64_t send_time_ms) {
+    if (plot_delay_) {
+      if (arrival_time_ms - last_delay_plot_ms_ > kDelayPlotIntervalMs) {
+        BWE_TEST_LOGGING_PLOT(delay_log_prefix_, arrival_time_ms,
+                              arrival_time_ms - send_time_ms);
+        last_delay_plot_ms_ = arrival_time_ms;
+      }
+    }
+  }
+
+  const int flow_id_;
+  const string debug_name_;
+  string delay_log_prefix_;
+  int64_t last_delay_plot_ms_;
+  bool plot_delay_;
+  scoped_ptr<BaseLineFileInterface> baseline_;
+  Stats<double> stats_;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(PacketReceiver);
+};
+
+class SendSideBweReceiver : public PacketReceiver {
+ public:
+  SendSideBweReceiver(const string& test_name,
+                      const BweTestConfig::EstimatorConfig& config)
+      : PacketReceiver(test_name, config) {}
+
+  virtual void EatPacket(const Packet& packet) {
+    const MediaPacket& media_packet = static_cast<const MediaPacket&>(packet);
+    // We're treating the send time (from previous filter) as the arrival
+    // time once packet reaches the estimator.
+    int64_t arrival_time_ms = (media_packet.send_time_us() + 500) / 1000;
+    BWE_TEST_LOGGING_TIME(arrival_time_ms);
+    LogDelay(arrival_time_ms, (media_packet.creation_time_us() + 500) / 1000);
+    packet_feedback_vector_.push_back(PacketInfo(
+        arrival_time_ms, media_packet.GetAbsSendTimeInMs(),
+        media_packet.header().sequenceNumber, media_packet.payload_size()));
+  }
+
+  virtual FeedbackPacket* GetFeedback() {
     FeedbackPacket* fb =
         new SendSideBweFeedback(flow_id_, 0, packet_feedback_vector_);
     packet_feedback_vector_.clear();
@@ -70,33 +110,44 @@ class SendSideBweReceiver : public BweReceiver {
   std::vector<PacketInfo> packet_feedback_vector_;
 };
 
-class RembReceiver : public BweReceiver, public RemoteBitrateObserver {
+class RembReceiver : public PacketReceiver, public RemoteBitrateObserver {
  public:
   static const uint32_t kRemoteBitrateEstimatorMinBitrateBps = 30000;
 
-  RembReceiver(int flow_id, bool plot)
-      : BweReceiver(flow_id),
+  RembReceiver(const string& test_name,
+               const BweTestConfig::EstimatorConfig& config)
+      : PacketReceiver(test_name, config),
         estimate_log_prefix_(),
-        plot_estimate_(plot),
+        plot_estimate_(config.plot_estimate),
         clock_(0),
         recv_stats_(ReceiveStatistics::Create(&clock_)),
         latest_estimate_bps_(-1),
-        estimator_(AbsoluteSendTimeRemoteBitrateEstimatorFactory().Create(
+        estimator_(config.estimator_factory->Create(
             this,
             &clock_,
-            kAimdControl,
+            config.control_type,
             kRemoteBitrateEstimatorMinBitrateBps)) {
+    assert(estimator_.get());
+    assert(baseline_.get());
     std::stringstream ss;
-    ss << "Estimate_" << flow_id_ << "#1";
+    ss.str("");
+    ss << "Estimate_" << config.flow_id << "#1";
     estimate_log_prefix_ = ss.str();
     // Default RTT in RemoteRateControl is 200 ms ; 50 ms is more realistic.
     estimator_->OnRttUpdate(50);
   }
 
-  virtual void ReceivePacket(int64_t arrival_time_ms,
-                             size_t payload_size,
-                             const RTPHeader& header) {
-    recv_stats_->IncomingPacket(header, payload_size, false);
+  virtual void ReceivePacket(const Packet& packet) {
+    BWE_TEST_LOGGING_CONTEXT(debug_name_);
+    assert(packet.GetPacketType() == Packet::kMediaPacket);
+    const MediaPacket& media_packet = static_cast<const MediaPacket&>(packet);
+    // We're treating the send time (from previous filter) as the arrival
+    // time once packet reaches the estimator.
+    int64_t arrival_time_ms = (media_packet.send_time_us() + 500) / 1000;
+    BWE_TEST_LOGGING_TIME(arrival_time_ms);
+    LogDelay(arrival_time_ms, (media_packet.creation_time_us() + 500) / 1000);
+    recv_stats_->IncomingPacket(media_packet.header(),
+                                media_packet.payload_size(), false);
 
     latest_estimate_bps_ = -1;
 
@@ -106,14 +157,15 @@ class RembReceiver : public BweReceiver, public RemoteBitrateObserver {
       estimator_->Process();
       step_ms = std::max<int64_t>(estimator_->TimeUntilNextProcess(), 0);
     }
-    estimator_->IncomingPacket(arrival_time_ms, payload_size, header);
+    estimator_->IncomingPacket(arrival_time_ms, media_packet.payload_size(),
+                               media_packet.header());
     clock_.AdvanceTimeMilliseconds(arrival_time_ms -
                                    clock_.TimeInMilliseconds());
     ASSERT_TRUE(arrival_time_ms == clock_.TimeInMilliseconds());
   }
 
   virtual FeedbackPacket* GetFeedback() {
-    BWE_TEST_LOGGING_CONTEXT("Remb");
+    BWE_TEST_LOGGING_CONTEXT(debug_name_);
     uint32_t estimated_bps = 0;
     RembFeedback* feedback = NULL;
     if (LatestEstimate(&estimated_bps)) {
@@ -124,8 +176,10 @@ class RembReceiver : public BweReceiver, public RemoteBitrateObserver {
       }
       feedback = new RembFeedback(flow_id_, clock_.TimeInMilliseconds(),
                                   estimated_bps, report_block);
+      baseline_->Estimate(clock_.TimeInMilliseconds(), estimated_bps);
 
       double estimated_kbps = static_cast<double>(estimated_bps) / 1000.0;
+      stats_.Push(estimated_kbps);
       if (plot_estimate_) {
         BWE_TEST_LOGGING_PLOT(estimate_log_prefix_, clock_.TimeInMilliseconds(),
                               estimated_kbps);
@@ -174,75 +228,20 @@ class RembReceiver : public BweReceiver, public RemoteBitrateObserver {
   DISALLOW_IMPLICIT_CONSTRUCTORS(RembReceiver);
 };
 
-BweReceiver* CreateBweReceiver(BandwidthEstimatorType type,
-                               int flow_id,
-                               bool plot) {
+PacketReceiver* CreatePacketReceiver(
+    BandwidthEstimatorType type,
+    const string& test_name,
+    const BweTestConfig::EstimatorConfig& config) {
   switch (type) {
     case kRembEstimator:
-      return new RembReceiver(flow_id, plot);
+      return new RembReceiver(test_name, config);
     case kFullSendSideEstimator:
-      return new SendSideBweReceiver(flow_id);
+      return new SendSideBweReceiver(test_name, config);
     case kNullEstimator:
-      return new BweReceiver(flow_id);
+      return new PacketReceiver(test_name, config);
   }
   assert(false);
   return NULL;
-}
-
-PacketReceiver::PacketReceiver(PacketProcessorListener* listener,
-                               int flow_id,
-                               BandwidthEstimatorType bwe_type,
-                               bool plot_delay,
-                               bool plot_bwe)
-    : PacketProcessor(listener, flow_id, kReceiver),
-      delay_log_prefix_(),
-      last_delay_plot_ms_(0),
-      plot_delay_(plot_delay),
-      bwe_receiver_(CreateBweReceiver(bwe_type, flow_id, plot_bwe)) {
-  // Setup the prefix strings used when logging.
-  std::stringstream ss;
-  ss << "Delay_" << flow_id << "#2";
-  delay_log_prefix_ = ss.str();
-}
-
-PacketReceiver::~PacketReceiver() {
-}
-
-void PacketReceiver::RunFor(int64_t time_ms, Packets* in_out) {
-  for (const auto* packet : *in_out) {
-    // PacketReceivers are only associated with a single stream, and therefore
-    // should only process a single flow id.
-    // TODO(holmer): Break this out into a Demuxer which implements both
-    // PacketProcessorListener and PacketProcessor.
-    if (packet->flow_id() != *flow_ids().begin())
-      continue;
-    BWE_TEST_LOGGING_CONTEXT("Receiver");
-    assert(packet->GetPacketType() == Packet::kMedia);
-    const MediaPacket& media_packet = static_cast<const MediaPacket&>(*packet);
-    // We're treating the send time (from previous filter) as the arrival
-    // time once packet reaches the estimator.
-    int64_t arrival_time_ms = (media_packet.send_time_us() + 500) / 1000;
-    BWE_TEST_LOGGING_TIME(arrival_time_ms);
-    PlotDelay(arrival_time_ms, (media_packet.creation_time_us() + 500) / 1000);
-
-    bwe_receiver_->ReceivePacket(arrival_time_ms, media_packet.payload_size(),
-                                 media_packet.header());
-  }
-}
-
-FeedbackPacket* PacketReceiver::GetFeedback() {
-  return bwe_receiver_->GetFeedback();
-}
-
-void PacketReceiver::PlotDelay(int64_t arrival_time_ms, int64_t send_time_ms) {
-  static const int kDelayPlotIntervalMs = 100;
-  if (!plot_delay_)
-    return;
-  if (arrival_time_ms - last_delay_plot_ms_ > kDelayPlotIntervalMs) {
-    BWE_TEST_LOGGING_PLOT(delay_log_prefix_, arrival_time_ms,
-                          arrival_time_ms - send_time_ms);
-    last_delay_plot_ms_ = arrival_time_ms;
-  }
 }
 
 class PacketProcessorRunner {
@@ -310,35 +309,51 @@ class PacketProcessorRunner {
 };
 
 BweTest::BweTest()
-    : run_time_ms_(0), time_now_ms_(-1), simulation_interval_ms_(-1) {
+    : run_time_ms_(0),
+      time_now_ms_(-1),
+      simulation_interval_ms_(-1),
+      estimators_(),
+      processors_() {
 }
 
 BweTest::~BweTest() {
+  BWE_TEST_LOGGING_GLOBAL_ENABLE(true);
+  for (const auto& estimator : estimators_) {
+    estimator.second->VerifyOrWriteBaseline();
+    estimator.second->LogStats();
+  }
+  BWE_TEST_LOGGING_GLOBAL_CONTEXT("");
+
+  for (const auto& estimator : estimators_) {
+    delete estimator.second;
+  }
 }
 
-void BweTest::SetUp() {
+void BweTest::SetupTestFromConfig(const BweTestConfig& config) {
   const ::testing::TestInfo* const test_info =
       ::testing::UnitTest::GetInstance()->current_test_info();
   string test_name =
       string(test_info->test_case_name()) + "_" + string(test_info->name());
   BWE_TEST_LOGGING_GLOBAL_CONTEXT(test_name);
+  for (const auto& estimator_config : config.estimator_configs) {
+    estimators_.insert(
+        std::make_pair(estimator_config.flow_id,
+                       CreatePacketReceiver(estimator_config.bwe_type,
+                                            test_name, estimator_config)));
+  }
   BWE_TEST_LOGGING_GLOBAL_ENABLE(false);
 }
 
-void BweTest::AddPacketProcessor(PacketProcessor* processor,
-                                 ProcessorType processor_type) {
+void BweTest::AddPacketProcessor(PacketProcessor* processor, bool is_sender) {
   assert(processor);
-  switch (processor_type) {
-    case kSender:
-      senders_.push_back(static_cast<PacketSender*>(processor));
-      break;
-    case kReceiver:
-      receivers_.push_back(static_cast<PacketReceiver*>(processor));
-      break;
-    case kRegular:
-      break;
+  if (is_sender) {
+    senders_.push_back(static_cast<PacketSender*>(processor));
   }
   processors_.push_back(PacketProcessorRunner(processor));
+  for (const int& flow_id : processor->flow_ids()) {
+    RTC_UNUSED(flow_id);
+    assert(estimators_.count(flow_id) == 1);
+  }
 }
 
 void BweTest::RemovePacketProcessor(PacketProcessor* processor) {
@@ -356,8 +371,8 @@ void BweTest::VerboseLogging(bool enable) {
   BWE_TEST_LOGGING_GLOBAL_ENABLE(enable);
 }
 
-void BweTest::GiveFeedbackToAffectedSenders(PacketReceiver* receiver) {
-  FeedbackPacket* feedback = receiver->GetFeedback();
+void BweTest::GiveFeedbackToAffectedSenders(PacketReceiver* estimator) {
+  FeedbackPacket* feedback = estimator->GetFeedback();
   if (feedback) {
     for (PacketSender* sender : senders_) {
       if (sender->flow_ids().find(feedback->flow_id()) !=
@@ -403,11 +418,15 @@ void BweTest::RunFor(int64_t time_ms) {
       ASSERT_TRUE(IsTimeSorted(packets));
     }
 
-    for (const auto* packet : packets)
+    for (const Packet* packet : packets) {
+      EstimatorMap::iterator est_it = estimators_.find(packet->flow_id());
+      ASSERT_TRUE(est_it != estimators_.end());
+      est_it->second->ReceivePacket(*packet);
       delete packet;
+    }
 
-    for (const auto& receiver : receivers_) {
-      GiveFeedbackToAffectedSenders(receiver);
+    for (const auto& estimator : estimators_) {
+      GiveFeedbackToAffectedSenders(estimator.second);
     }
   }
 }
