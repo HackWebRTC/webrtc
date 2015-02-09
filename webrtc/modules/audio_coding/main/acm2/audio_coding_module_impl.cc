@@ -1682,7 +1682,7 @@ int AudioCodingModuleImpl::GetAudioDecoder(const CodecInst& codec, int codec_id,
 
 void AudioCodingModuleImpl::SetCngPayloadType(int sample_rate_hz,
                                               int payload_type) {
-  for (auto codec : codecs_) {
+  for (auto* codec : codecs_) {
     if (codec) {
       codec->SetCngPt(sample_rate_hz, payload_type);
     }
@@ -1690,7 +1690,7 @@ void AudioCodingModuleImpl::SetCngPayloadType(int sample_rate_hz,
 }
 
 void AudioCodingModuleImpl::EnableCopyRedForAllCodecs(bool enable) {
-  for (auto codec : codecs_) {
+  for (auto* codec : codecs_) {
     if (codec) {
       codec->EnableCopyRed(enable, red_pltype_);
     }
