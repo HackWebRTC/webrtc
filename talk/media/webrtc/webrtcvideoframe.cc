@@ -115,10 +115,18 @@ WebRtcVideoFrame::WebRtcVideoFrame()
 
 WebRtcVideoFrame::~WebRtcVideoFrame() {}
 
-bool WebRtcVideoFrame::Init(
-    uint32 format, int w, int h, int dw, int dh, uint8* sample,
-    size_t sample_size, size_t pixel_width, size_t pixel_height,
-    int64_t elapsed_time, int64_t time_stamp, int rotation) {
+bool WebRtcVideoFrame::Init(uint32 format,
+                            int w,
+                            int h,
+                            int dw,
+                            int dh,
+                            uint8* sample,
+                            size_t sample_size,
+                            size_t pixel_width,
+                            size_t pixel_height,
+                            int64_t elapsed_time,
+                            int64_t time_stamp,
+                            webrtc::VideoRotation rotation) {
   return Reset(format, w, h, dw, dh, sample, sample_size, pixel_width,
                pixel_height, elapsed_time, time_stamp, rotation);
 }
@@ -127,24 +135,19 @@ bool WebRtcVideoFrame::Init(const CapturedFrame* frame, int dw, int dh) {
   return Reset(frame->fourcc, frame->width, frame->height, dw, dh,
                static_cast<uint8*>(frame->data), frame->data_size,
                frame->pixel_width, frame->pixel_height, frame->elapsed_time,
-               frame->time_stamp, frame->rotation);
+               frame->time_stamp, frame->GetRotation());
 }
 
 bool WebRtcVideoFrame::Alias(const CapturedFrame* frame, int dw, int dh) {
-  if (CanonicalFourCC(frame->fourcc) != FOURCC_I420 || frame->rotation != 0 ||
+  if (CanonicalFourCC(frame->fourcc) != FOURCC_I420 ||
+      (frame->GetRotation() != webrtc::kVideoRotation_0) ||
       frame->width != dw || frame->height != dh) {
     // TODO(fbarchard): Enable aliasing of more formats.
     return Init(frame, dw, dh);
   } else {
-    Alias(static_cast<uint8*>(frame->data),
-          frame->data_size,
-          frame->width,
-          frame->height,
-          frame->pixel_width,
-          frame->pixel_height,
-          frame->elapsed_time,
-          frame->time_stamp,
-          frame->rotation);
+    Alias(static_cast<uint8*>(frame->data), frame->data_size, frame->width,
+          frame->height, frame->pixel_width, frame->pixel_height,
+          frame->elapsed_time, frame->time_stamp, frame->GetRotation());
     return true;
   }
 }
@@ -156,10 +159,15 @@ bool WebRtcVideoFrame::InitToBlack(int w, int h, size_t pixel_width,
   return SetToBlack();
 }
 
-void WebRtcVideoFrame::Alias(
-    uint8* buffer, size_t buffer_size, int w, int h, size_t pixel_width,
-    size_t pixel_height, int64_t elapsed_time, int64_t time_stamp,
-    int rotation) {
+void WebRtcVideoFrame::Alias(uint8* buffer,
+                             size_t buffer_size,
+                             int w,
+                             int h,
+                             size_t pixel_width,
+                             size_t pixel_height,
+                             int64_t elapsed_time,
+                             int64_t time_stamp,
+                             webrtc::VideoRotation rotation) {
   rtc::scoped_refptr<RefCountedBuffer> video_buffer(
       new RefCountedBuffer());
   video_buffer->Alias(buffer, buffer_size);
@@ -257,10 +265,15 @@ size_t WebRtcVideoFrame::ConvertToRgbBuffer(uint32 to_fourcc, uint8* buffer,
   return VideoFrame::ConvertToRgbBuffer(to_fourcc, buffer, size, stride_rgb);
 }
 
-void WebRtcVideoFrame::Attach(
-    RefCountedBuffer* video_buffer, size_t buffer_size, int w, int h,
-    size_t pixel_width, size_t pixel_height, int64_t elapsed_time,
-    int64_t time_stamp, int rotation) {
+void WebRtcVideoFrame::Attach(RefCountedBuffer* video_buffer,
+                              size_t buffer_size,
+                              int w,
+                              int h,
+                              size_t pixel_width,
+                              size_t pixel_height,
+                              int64_t elapsed_time,
+                              int64_t time_stamp,
+                              webrtc::VideoRotation rotation) {
   if (video_buffer_.get() == video_buffer) {
     return;
   }
@@ -282,10 +295,18 @@ const webrtc::VideoFrame* WebRtcVideoFrame::frame() const {
   return video_buffer_->frame();
 }
 
-bool WebRtcVideoFrame::Reset(
-    uint32 format, int w, int h, int dw, int dh, uint8* sample,
-    size_t sample_size, size_t pixel_width, size_t pixel_height,
-    int64_t elapsed_time, int64_t time_stamp, int rotation) {
+bool WebRtcVideoFrame::Reset(uint32 format,
+                             int w,
+                             int h,
+                             int dw,
+                             int dh,
+                             uint8* sample,
+                             size_t sample_size,
+                             size_t pixel_width,
+                             size_t pixel_height,
+                             int64_t elapsed_time,
+                             int64_t time_stamp,
+                             webrtc::VideoRotation rotation) {
   if (!Validate(format, w, h, sample, sample_size)) {
     return false;
   }
@@ -313,7 +334,7 @@ bool WebRtcVideoFrame::Reset(
   // Since the libyuv::ConvertToI420 will handle the rotation, so the
   // new frame's rotation should always be 0.
   Attach(video_buffer.get(), desired_size, new_width, new_height, pixel_width,
-         pixel_height, elapsed_time, time_stamp, 0);
+         pixel_height, elapsed_time, time_stamp, webrtc::kVideoRotation_0);
 
   int horiz_crop = ((w - dw) / 2) & ~1;
   // ARGB on Windows has negative height.
@@ -356,7 +377,7 @@ void WebRtcVideoFrame::InitToEmptyBuffer(int w, int h, size_t pixel_width,
   rtc::scoped_refptr<RefCountedBuffer> video_buffer(
       new RefCountedBuffer(buffer_size));
   Attach(video_buffer.get(), buffer_size, w, h, pixel_width, pixel_height,
-         elapsed_time, time_stamp, 0);
+         elapsed_time, time_stamp, webrtc::kVideoRotation_0);
 }
 
 WebRtcVideoRenderFrame::WebRtcVideoRenderFrame(
@@ -386,7 +407,7 @@ bool WebRtcVideoRenderFrame::Reset(uint32 fourcc,
                                    size_t pixel_height,
                                    int64_t elapsed_time,
                                    int64_t time_stamp,
-                                   int rotation) {
+                                   webrtc::VideoRotation rotation) {
   UNIMPLEMENTED;
   return false;
 }
@@ -455,9 +476,9 @@ void WebRtcVideoRenderFrame::SetTimeStamp(int64_t time_stamp) {
   UNIMPLEMENTED;
 }
 
-int WebRtcVideoRenderFrame::GetRotation() const {
+webrtc::VideoRotation WebRtcVideoRenderFrame::GetVideoRotation() const {
   UNIMPLEMENTED;
-  return ROTATION_0;
+  return webrtc::kVideoRotation_0;
 }
 
 // TODO(magjed): Make this copy shallow instead of deep, BUG=1128. There is no

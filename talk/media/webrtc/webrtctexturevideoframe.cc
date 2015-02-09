@@ -52,10 +52,18 @@ bool WebRtcTextureVideoFrame::InitToBlack(
   return false;
 }
 
-bool WebRtcTextureVideoFrame::Reset(
-    uint32 fourcc, int w, int h, int dw, int dh, uint8* sample,
-    size_t sample_size, size_t pixel_width, size_t pixel_height,
-    int64_t elapsed_time, int64_t time_stamp, int rotation) {
+bool WebRtcTextureVideoFrame::Reset(uint32 fourcc,
+                                    int w,
+                                    int h,
+                                    int dw,
+                                    int dh,
+                                    uint8* sample,
+                                    size_t sample_size,
+                                    size_t pixel_width,
+                                    size_t pixel_height,
+                                    int64_t elapsed_time,
+                                    int64_t time_stamp,
+                                    webrtc::VideoRotation rotation) {
   UNIMPLEMENTED;
   return false;
 }

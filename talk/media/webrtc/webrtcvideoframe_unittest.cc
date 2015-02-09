@@ -44,7 +44,7 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
     captured_frame.pixel_height = 1;
     captured_frame.elapsed_time = 1234;
     captured_frame.time_stamp = 5678;
-    captured_frame.rotation = 0;
+    captured_frame.rotation = webrtc::kVideoRotation_0;
     captured_frame.width = frame_width;
     captured_frame.height = frame_height;
     captured_frame.data_size = (frame_width * frame_height) +
@@ -62,7 +62,7 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
     EXPECT_EQ(1u, frame.GetPixelHeight());
     EXPECT_EQ(1234, frame.GetElapsedTime());
     EXPECT_EQ(5678, frame.GetTimeStamp());
-    EXPECT_EQ(0, frame.GetRotation());
+    EXPECT_EQ(webrtc::kVideoRotation_0, frame.GetRotation());
     // The size of the new frame should have been cropped to multiple of 4.
     EXPECT_EQ(static_cast<size_t>(cropped_width & ~3), frame.GetWidth());
     EXPECT_EQ(static_cast<size_t>(cropped_height & ~3), frame.GetHeight());
@@ -266,9 +266,9 @@ TEST_F(WebRtcVideoFrameTest, Alias) {
   const int64 time_stamp = INT64_C(0x7FFFFFFFFFFFFFF0);
   frame1.SetTimeStamp(time_stamp);
   EXPECT_EQ(time_stamp, frame1.GetTimeStamp());
-  frame2.Alias(frame1.frame()->Buffer(), frame1.frame()->Size(),
-               kWidth, kHeight, 1, 1,
-               frame1.GetElapsedTime(), frame1.GetTimeStamp(), 0);
+  frame2.Alias(frame1.frame()->Buffer(), frame1.frame()->Size(), kWidth,
+               kHeight, 1, 1, frame1.GetElapsedTime(), frame1.GetTimeStamp(),
+               webrtc::kVideoRotation_0);
   EXPECT_TRUE(IsEqual(frame1, frame2, 0));
 }
 
