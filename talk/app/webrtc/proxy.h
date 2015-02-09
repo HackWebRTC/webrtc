@@ -119,7 +119,7 @@ class SynchronousMethodCall
     } else {
       e_.reset(new rtc::Event(false, false));
       t->Post(this, 0);
-      e_->Wait(rtc::kForever);
+      e_->Wait(rtc::Event::kForever);
     }
   }
 

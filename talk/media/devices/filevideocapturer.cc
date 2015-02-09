@@ -330,7 +330,7 @@ bool FileVideoCapturer::ReadFrame(bool first_frame, int* wait_time_ms) {
   // 2.1 Read the frame header.
   rtc::StreamResult result = ReadFrameHeader(&captured_frame_);
   if (rtc::SR_EOS == result) {  // Loop back if repeat.
-    if (repeat_ != rtc::kForever) {
+    if (repeat_ != kForever) {
       if (repeat_ > 0) {
         --repeat_;
       } else {

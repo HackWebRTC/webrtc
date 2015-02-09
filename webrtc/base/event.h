@@ -25,6 +25,8 @@ namespace rtc {
 
 class Event {
  public:
+  static const int kForever = -1;
+
   Event(bool manual_reset, bool initially_signaled);
   ~Event();
 

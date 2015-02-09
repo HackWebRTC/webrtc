@@ -158,7 +158,7 @@ TEST_F(FileVideoCapturerTest, TestRepeatForever) {
   VideoCapturerListener listener;
   capturer_->SignalFrameCaptured.connect(
       &listener, &VideoCapturerListener::OnFrameCaptured);
-  capturer_->set_repeat(rtc::kForever);
+  capturer_->set_repeat(cricket::FileVideoCapturer::kForever);
   capture_format_ = capturer_->GetSupportedFormats()->at(0);
   capture_format_.interval = cricket::VideoFormat::FpsToInterval(50);
   EXPECT_EQ(cricket::CS_RUNNING, capturer_->Start(capture_format_));

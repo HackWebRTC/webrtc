@@ -318,7 +318,7 @@ class SctpDataMediaChannelTest : public testing::Test,
     rtc::Thread* thread = rtc::Thread::Current();
     while (!thread->empty()) {
       rtc::Message msg;
-      if (thread->Get(&msg, rtc::kForever)) {
+      if (thread->Get(&msg, rtc::Thread::kForever)) {
         thread->Dispatch(&msg);
       }
     }

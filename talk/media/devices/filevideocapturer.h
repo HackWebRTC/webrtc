@@ -77,6 +77,8 @@ class VideoRecorder {
 // Simulated video capturer that periodically reads frames from a file.
 class FileVideoCapturer : public VideoCapturer {
  public:
+  static const int kForever = -1;
+
   FileVideoCapturer();
   virtual ~FileVideoCapturer();
 
@@ -94,7 +96,7 @@ class FileVideoCapturer : public VideoCapturer {
   }
 
   // Set how many times to repeat reading the file. Repeat forever if the
-  // parameter is rtc::kForever(-1); no repeat if the parameter is 0 or
+  // parameter is kForever; no repeat if the parameter is 0 or
   // less than -1.
   void set_repeat(int repeat) { repeat_ = repeat; }
 

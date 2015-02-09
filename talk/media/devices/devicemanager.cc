@@ -224,7 +224,7 @@ VideoCapturer* DeviceManager::MaybeConstructFakeVideoCapturer(
       return NULL;
     }
     LOG(LS_INFO) << "Created file video capturer " << device.name;
-    capturer->set_repeat(rtc::kForever);
+    capturer->set_repeat(FileVideoCapturer::kForever);
     return capturer;
   }
 

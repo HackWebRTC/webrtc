@@ -55,7 +55,7 @@ void AutoDetectProxy::DoWork() {
     LOG(LS_INFO) << "AutoDetectProxy initiating proxy classification";
     Next();
     // Process I/O until Stop()
-    Thread::Current()->ProcessMessages(kForever);
+    Thread::Current()->ProcessMessages(Thread::kForever);
     // Clean up the autodetect socket, from the thread that created it
     delete socket_;
   }

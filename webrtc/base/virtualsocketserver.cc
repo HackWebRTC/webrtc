@@ -594,7 +594,7 @@ bool VirtualSocketServer::ProcessMessagesUntilIdle() {
   stop_on_idle_ = true;
   while (!msg_queue_->empty()) {
     Message msg;
-    if (msg_queue_->Get(&msg, kForever)) {
+    if (msg_queue_->Get(&msg, Thread::kForever)) {
       msg_queue_->Dispatch(&msg);
     }
   }

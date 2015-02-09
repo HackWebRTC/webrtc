@@ -165,6 +165,8 @@ class DelayedMessage {
 
 class MessageQueue {
  public:
+  static const int kForever = -1;
+
   explicit MessageQueue(SocketServer* ss = NULL);
   virtual ~MessageQueue();
 

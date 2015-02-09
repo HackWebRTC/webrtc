@@ -33,6 +33,8 @@ class Thread;
 
 class ThreadManager {
  public:
+  static const int kForever = -1;
+
   ThreadManager();
   ~ThreadManager();
 
