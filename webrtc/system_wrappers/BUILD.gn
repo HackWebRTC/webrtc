@@ -188,6 +188,7 @@ static_library("system_wrappers") {
 
 source_set("field_trial_default") {
   sources = [
+    "interface/field_trial_default.h",
     "source/field_trial_default.cc",
   ]
 

@@ -205,6 +205,7 @@
       'target_name': 'field_trial_default',
       'type': 'static_library',
       'sources': [
+        'interface/field_trial_default.h',
         'source/field_trial_default.cc',
       ],
       'dependencies': [
