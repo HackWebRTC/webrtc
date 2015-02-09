@@ -956,7 +956,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
         new webrtc::DelayCorrection(experimental_aec));
   }
 
-#ifdef USE_WEBRTC_DEV_BRANCH
   experimental_ns_.SetFrom(options.experimental_ns);
   bool experimental_ns;
   if (experimental_ns_.Get(&experimental_ns)) {
@@ -964,7 +963,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     config.Set<webrtc::ExperimentalNs>(
         new webrtc::ExperimentalNs(experimental_ns));
   }
-#endif
 
   // We check audioproc for the benefit of tests, since FakeWebRtcVoiceEngine
   // returns NULL on audio_processing().
@@ -972,24 +970,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   if (audioproc) {
     audioproc->SetExtraOptions(config);
   }
-
-#ifndef USE_WEBRTC_DEV_BRANCH
-  bool experimental_ns;
-  if (options.experimental_ns.Get(&experimental_ns)) {
-    LOG(LS_INFO) << "Experimental ns is enabled? " << experimental_ns;
-    // We check audioproc for the benefit of tests, since FakeWebRtcVoiceEngine
-    // returns NULL on audio_processing().
-    if (audioproc) {
-      if (audioproc->EnableExperimentalNs(experimental_ns) == -1) {
-        LOG_RTCERR1(EnableExperimentalNs, experimental_ns);
-        return false;
-      }
-    } else {
-      LOG(LS_VERBOSE) << "Experimental noise suppression set to "
-                      << experimental_ns;
-    }
-  }
-#endif
 
   uint32 recording_sample_rate;
   if (options.recording_sample_rate.Get(&recording_sample_rate)) {
@@ -2073,13 +2053,8 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   // Disable VAD, FEC, and RED unless we know the other side wants them.
   engine()->voe()->codec()->SetVADStatus(channel, false);
   engine()->voe()->rtp()->SetNACKStatus(channel, false, 0);
-#ifdef USE_WEBRTC_DEV_BRANCH
   engine()->voe()->rtp()->SetREDStatus(channel, false);
   engine()->voe()->codec()->SetFECStatus(channel, false);
-#else
-  // TODO(minyue): Remove code under #else case after new WebRTC roll.
-  engine()->voe()->rtp()->SetFECStatus(channel, false);
-#endif  // USE_WEBRTC_DEV_BRANCH
 
   // Scan through the list to figure out the codec to use for sending, along
   // with the proper configuration for VAD and DTMF.
@@ -2121,16 +2096,9 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
 
       // Enable redundant encoding of the specified codec. Treat any
       // failure as a fatal internal error.
-#ifdef USE_WEBRTC_DEV_BRANCH
       LOG(LS_INFO) << "Enabling RED on channel " << channel;
       if (engine()->voe()->rtp()->SetREDStatus(channel, true, it->id) == -1) {
         LOG_RTCERR3(SetREDStatus, channel, true, it->id);
-#else
-      // TODO(minyue): Remove code under #else case after new WebRTC roll.
-      LOG(LS_INFO) << "Enabling FEC";
-      if (engine()->voe()->rtp()->SetFECStatus(channel, true, it->id) == -1) {
-        LOG_RTCERR3(SetFECStatus, channel, true, it->id);
-#endif  // USE_WEBRTC_DEV_BRANCH
         return false;
       }
     } else {
@@ -2166,13 +2134,11 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   if (enable_codec_fec) {
     LOG(LS_INFO) << "Attempt to enable codec internal FEC on channel "
                  << channel;
-#ifdef USE_WEBRTC_DEV_BRANCH
     if (engine()->voe()->codec()->SetFECStatus(channel, true) == -1) {
       // Enable codec internal FEC. Treat any failure as fatal internal error.
       LOG_RTCERR2(SetFECStatus, channel, true);
       return false;
     }
-#endif  // USE_WEBRTC_DEV_BRANCH
   }
 
   // maxplaybackrate should be set after SetSendCodec.
@@ -2183,12 +2149,10 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
                  << opus_max_playback_rate
                  << " Hz on channel "
                  << channel;
-#ifdef USE_WEBRTC_DEV_BRANCH
     if (engine()->voe()->codec()->SetOpusMaxPlaybackRate(
         channel, opus_max_playback_rate) == -1) {
       LOG(LS_WARNING) << "Could not set maximum playback rate.";
     }
-#endif
   }
 
   // Always update the |send_codec_| to the currently set send codec.
@@ -3432,9 +3396,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
       rinfo.fraction_lost = static_cast<float>(cs.fractionLost) / (1 << 8);
       rinfo.packets_lost = cs.cumulativeLost;
       rinfo.ext_seqnum = cs.extendedMax;
-#ifdef USE_WEBRTC_DEV_BRANCH
       rinfo.capture_start_ntp_time_ms = cs.capture_start_ntp_time_ms_;
-#endif
       if (codec.pltype != -1) {
         rinfo.codec_name = codec.plname;
       }

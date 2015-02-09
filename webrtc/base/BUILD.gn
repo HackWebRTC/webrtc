@@ -19,7 +19,6 @@ config("rtc_base_config") {
   defines = [
     "FEATURE_ENABLE_SSL",
     "LOGGING=1",
-    "USE_WEBRTC_DEV_BRANCH",
   ]
 
   # TODO(henrike): issue 3307, make rtc_base build without disabling
@@ -149,7 +148,6 @@ static_library("rtc_base") {
 
   defines = [
     "LOGGING=1",
-    "USE_WEBRTC_DEV_BRANCH",
   ]
 
   sources = [

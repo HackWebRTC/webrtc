@@ -1159,7 +1159,6 @@ TEST_F(WebRtcVoiceEngineTestFake, AddRecvStreamEnableNack) {
   EXPECT_TRUE(voe_.GetNACK(channel_num));
 }
 
-#ifdef USE_WEBRTC_DEV_BRANCH
 // Test that without useinbandfec, Opus FEC is off.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecNoOpusFec) {
   EXPECT_TRUE(SetupEngine());
@@ -1410,7 +1409,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOpusMaxPlaybackRateOnTwoStreams) {
   EXPECT_EQ(cricket::kOpusBandwidthNb,
             voe_.GetMaxEncodingBandwidth(channel_num));
 }
-#endif  // USE_WEBRTC_DEV_BRANCH
 
 // Test that we can apply CELT with stereo mode but fail with mono mode.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCelt) {

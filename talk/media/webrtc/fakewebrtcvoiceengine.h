@@ -40,9 +40,7 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
-#ifdef USE_WEBRTC_DEV_BRANCH
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
-#endif
 #include "webrtc/video_engine/include/vie_network.h"
 
 namespace cricket {
@@ -76,7 +74,6 @@ static const int kOpusBandwidthFb = 20000;
     } \
   } while (0);
 
-#ifdef USE_WEBRTC_DEV_BRANCH
 class FakeAudioProcessing : public webrtc::AudioProcessing {
  public:
   FakeAudioProcessing() : experimental_ns_enabled_(false) {}
@@ -156,7 +153,6 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
  private:
   bool experimental_ns_enabled_;
 };
-#endif
 
 class FakeWebRtcVoiceEngine
     : public webrtc::VoEAudioProcessing,
@@ -442,11 +438,7 @@ class FakeWebRtcVoiceEngine
     return 0;
   }
   virtual webrtc::AudioProcessing* audio_processing() OVERRIDE {
-#ifdef USE_WEBRTC_DEV_BRANCH
     return &audio_processing_;
-#else
-    return NULL;
-#endif
   }
   WEBRTC_FUNC(CreateChannel, ()) {
     return AddChannel();
@@ -628,7 +620,6 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(GetVADStatus, (int channel, bool& enabled,
                              webrtc::VadModes& mode, bool& disabledDTX));
 
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_FUNC(SetFECStatus, (int channel, bool enable)) {
     WEBRTC_CHECK_CHANNEL(channel);
     if (_stricmp(channels_[channel]->send_codec.plname, "opus") != 0) {
@@ -663,7 +654,6 @@ class FakeWebRtcVoiceEngine
       channels_[channel]->max_encoding_bandwidth = kOpusBandwidthFb;
     return 0;
   }
-#endif  // USE_WEBRTC_DEV_BRANCH
 
   // webrtc::VoEDtmf
   WEBRTC_FUNC(SendTelephoneEvent, (int channel, int event_code,
@@ -970,11 +960,9 @@ class FakeWebRtcVoiceEngine
     stats.packetsReceived = kIntStatValue;
     return 0;
   }
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_FUNC(SetREDStatus, (int channel, bool enable, int redPayloadtype)) {
     return SetFECStatus(channel, enable, redPayloadtype);
   }
-#endif
   // TODO(minyue): remove the below function when transition to SetREDStatus
   //               is finished.
   WEBRTC_FUNC(SetFECStatus, (int channel, bool enable, int redPayloadtype)) {
@@ -983,11 +971,9 @@ class FakeWebRtcVoiceEngine
     channels_[channel]->red_type = redPayloadtype;
     return 0;
   }
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_FUNC(GetREDStatus, (int channel, bool& enable, int& redPayloadtype)) {
     return GetFECStatus(channel, enable, redPayloadtype);
   }
-#endif
   // TODO(minyue): remove the below function when transition to GetREDStatus
   //               is finished.
   WEBRTC_FUNC(GetFECStatus, (int channel, bool& enable, int& redPayloadtype)) {
@@ -1310,9 +1296,7 @@ class FakeWebRtcVoiceEngine
   int playout_sample_rate_;
   DtmfInfo dtmf_info_;
   webrtc::VoEMediaProcess* media_processor_;
-#ifdef USE_WEBRTC_DEV_BRANCH
   FakeAudioProcessing audio_processing_;
-#endif
 };
 
 #undef WEBRTC_CHECK_HEADER_EXTENSION_ID

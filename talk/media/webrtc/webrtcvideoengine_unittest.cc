@@ -1213,11 +1213,9 @@ TEST_F(WebRtcVideoEngineTestFake, SetCpuOveruseOptionsWithEncodeUsageMethod) {
   EXPECT_EQ(20, cpu_option.high_encode_usage_threshold_percent);
   EXPECT_FALSE(cpu_option.enable_capture_jitter_method);
   EXPECT_TRUE(cpu_option.enable_encode_usage_method);
-#ifdef USE_WEBRTC_DEV_BRANCH
   // Verify that optional encode rsd thresholds are not set.
   EXPECT_EQ(-1, cpu_option.low_encode_time_rsd_threshold);
   EXPECT_EQ(-1, cpu_option.high_encode_time_rsd_threshold);
-#endif
 
   // Add a new send stream and verify that cpu options are set from start.
   EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(3)));
@@ -1228,11 +1226,9 @@ TEST_F(WebRtcVideoEngineTestFake, SetCpuOveruseOptionsWithEncodeUsageMethod) {
   EXPECT_EQ(20, cpu_option.high_encode_usage_threshold_percent);
   EXPECT_FALSE(cpu_option.enable_capture_jitter_method);
   EXPECT_TRUE(cpu_option.enable_encode_usage_method);
-#ifdef USE_WEBRTC_DEV_BRANCH
   // Verify that optional encode rsd thresholds are not set.
   EXPECT_EQ(-1, cpu_option.low_encode_time_rsd_threshold);
   EXPECT_EQ(-1, cpu_option.high_encode_time_rsd_threshold);
-#endif
 }
 
 TEST_F(WebRtcVideoEngineTestFake, SetCpuOveruseOptionsWithEncodeRsdThresholds) {
@@ -1255,10 +1251,8 @@ TEST_F(WebRtcVideoEngineTestFake, SetCpuOveruseOptionsWithEncodeRsdThresholds) {
   EXPECT_EQ(20, cpu_option.high_encode_usage_threshold_percent);
   EXPECT_FALSE(cpu_option.enable_capture_jitter_method);
   EXPECT_TRUE(cpu_option.enable_encode_usage_method);
-#ifdef USE_WEBRTC_DEV_BRANCH
   EXPECT_EQ(30, cpu_option.low_encode_time_rsd_threshold);
   EXPECT_EQ(40, cpu_option.high_encode_time_rsd_threshold);
-#endif
 
   // Add a new send stream and verify that cpu options are set from start.
   EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(3)));
@@ -1269,10 +1263,8 @@ TEST_F(WebRtcVideoEngineTestFake, SetCpuOveruseOptionsWithEncodeRsdThresholds) {
   EXPECT_EQ(20, cpu_option.high_encode_usage_threshold_percent);
   EXPECT_FALSE(cpu_option.enable_capture_jitter_method);
   EXPECT_TRUE(cpu_option.enable_encode_usage_method);
-#ifdef USE_WEBRTC_DEV_BRANCH
   EXPECT_EQ(30, cpu_option.low_encode_time_rsd_threshold);
   EXPECT_EQ(40, cpu_option.high_encode_time_rsd_threshold);
-#endif
 }
 
 // Test that AddRecvStream doesn't create new channel for 1:1 call.
@@ -2105,7 +2097,6 @@ TEST_F(WebRtcVideoEngineTestFake, ExternalCodecIgnored) {
   EXPECT_NE("VP8", codecs[codecs.size() - 1].name);
 }
 
-#ifdef USE_WEBRTC_DEV_BRANCH
 TEST_F(WebRtcVideoEngineTestFake, SetSendCodecsWithExternalH264) {
   encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
   engine_.SetExternalEncoderFactory(&encoder_factory_);
@@ -2241,7 +2232,6 @@ TEST_F(WebRtcVideoEngineTestFake, SetRecvCodecsWithVP8AndExternalH264) {
   // The RTX payload type should have been set.
   EXPECT_EQ(rtx_codec.id, vie_.GetRtxRecvPayloadType(channel_num));
 }
-#endif
 
 // Tests that OnReadyToSend will be propagated into ViE.
 TEST_F(WebRtcVideoEngineTestFake, OnReadyToSend) {
@@ -2445,19 +2435,11 @@ TEST_F(WebRtcVideoMediaChannelTest, DISABLED_SendVp8HdAndReceiveAdaptedVp8Vga) {
   EXPECT_FRAME_WAIT(1, codec.width, codec.height, kTimeout);
 }
 
-#ifdef USE_WEBRTC_DEV_BRANCH
 TEST_F(WebRtcVideoMediaChannelTest, GetStats) {
-#else
-TEST_F(WebRtcVideoMediaChannelTest, DISABLED_GetStats) {
-#endif
   Base::GetStats();
 }
 
-#ifdef USE_WEBRTC_DEV_BRANCH
 TEST_F(WebRtcVideoMediaChannelTest, GetStatsMultipleRecvStreams) {
-#else
-TEST_F(WebRtcVideoMediaChannelTest, DISABLED_GetStatsMultipleRecvStreams) {
-#endif
   Base::GetStatsMultipleRecvStreams();
 }
 

@@ -62,7 +62,6 @@
       'defines': [
         'FEATURE_ENABLE_SSL',
         'LOGGING=1',
-        'USE_WEBRTC_DEV_BRANCH',
       ],
       'sources': [
         'arraysize.h',

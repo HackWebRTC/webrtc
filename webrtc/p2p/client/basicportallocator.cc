@@ -414,11 +414,7 @@ void BasicPortAllocatorSession::DoAllocate() {
       }
 
       if (!(sequence_flags & PORTALLOCATOR_ENABLE_IPV6) &&
-#ifdef USE_WEBRTC_DEV_BRANCH
           networks[i]->GetBestIP().family() == AF_INET6) {
-#else  // USE_WEBRTC_DEV_BRANCH
-          networks[i]->ip().family() == AF_INET6) {
-#endif  // USE_WEBRTC_DEV_BRANCH
         // Skip IPv6 networks unless the flag's been set.
         continue;
       }
@@ -718,12 +714,7 @@ AllocationSequence::AllocationSequence(BasicPortAllocatorSession* session,
                                        uint32 flags)
     : session_(session),
       network_(network),
-
-#ifdef USE_WEBRTC_DEV_BRANCH
       ip_(network->GetBestIP()),
-#else  // USE_WEBRTC_DEV_BRANCH
-      ip_(network->ip()),
-#endif  // USE_WEBRTC_DEV_BRANCH
       config_(config),
       state_(kInit),
       flags_(flags),
@@ -766,11 +757,7 @@ AllocationSequence::~AllocationSequence() {
 
 void AllocationSequence::DisableEquivalentPhases(rtc::Network* network,
     PortConfiguration* config, uint32* flags) {
-#ifdef USE_WEBRTC_DEV_BRANCH
   if (!((network == network_) && (ip_ == network->GetBestIP()))) {
-#else  // USE_WEBRTC_DEV_BRANCH
-  if (!((network == network_) && (ip_ == network->ip()))) {
-#endif  // USE_WEBRTC_DEV_BRANCH
     // Different network setup; nothing is equivalent.
     return;
   }

@@ -222,11 +222,7 @@ void ConnectivityChecker::OnRequestDone(rtc::AsyncHttpRequest* request) {
   }
   rtc::ProxyInfo proxy_info = request->proxy();
   NicMap::iterator i =
-#ifdef USE_WEBRTC_DEV_BRANCH
       nics_.find(NicId(networks[0]->GetBestIP(), proxy_info.address));
-#else  // USE_WEBRTC_DEV_BRANCH
-      nics_.find(NicId(networks[0]->ip(), proxy_info.address));
-#endif  // USE_WEBRTC_DEV_BRANCH
   if (i != nics_.end()) {
     int port = request->port();
     uint32 now = rtc::Time();
@@ -257,11 +253,7 @@ void ConnectivityChecker::OnRelayPortComplete(Port* port) {
   ASSERT(worker_ == rtc::Thread::Current());
   RelayPort* relay_port = reinterpret_cast<RelayPort*>(port);
   const ProtocolAddress* address = relay_port->ServerAddress(0);
-#ifdef USE_WEBRTC_DEV_BRANCH
   rtc::IPAddress ip = port->Network()->GetBestIP();
-#else  // USE_WEBRTC_DEV_BRANCH
-  rtc::IPAddress ip = port->Network()->ip();
-#endif  // USE_WEBRTC_DEV_BRANCH
   NicMap::iterator i = nics_.find(NicId(ip, port->proxy().address));
   if (i != nics_.end()) {
     // We have it already, add the new information.
@@ -295,11 +287,7 @@ void ConnectivityChecker::OnStunPortComplete(Port* port) {
   ASSERT(worker_ == rtc::Thread::Current());
   const std::vector<Candidate> candidates = port->Candidates();
   Candidate c = candidates[0];
-#ifdef USE_WEBRTC_DEV_BRANCH
   rtc::IPAddress ip = port->Network()->GetBestIP();
-#else  // USE_WEBRTC_DEV_BRANCH
-  rtc::IPAddress ip = port->Network()->ip();
-#endif  // USE_WEBRTC_DEV_BRANCH
   NicMap::iterator i = nics_.find(NicId(ip, port->proxy().address));
   if (i != nics_.end()) {
     // We have it already, add the new information.
@@ -318,11 +306,7 @@ void ConnectivityChecker::OnStunPortComplete(Port* port) {
 void ConnectivityChecker::OnStunPortError(Port* port) {
   ASSERT(worker_ == rtc::Thread::Current());
   LOG(LS_ERROR) << "Stun address error.";
-#ifdef USE_WEBRTC_DEV_BRANCH
   rtc::IPAddress ip = port->Network()->GetBestIP();
-#else  // USE_WEBRTC_DEV_BRANCH
-  rtc::IPAddress ip = port->Network()->ip();
-#endif  // USE_WEBRTC_DEV_BRANCH
   NicMap::iterator i = nics_.find(NicId(ip, port->proxy().address));
   if (i != nics_.end()) {
     // We have it already, add the new information.
@@ -362,11 +346,7 @@ StunPort* ConnectivityChecker::CreateStunPort(
   return StunPort::Create(worker_,
                           socket_factory_.get(),
                           network,
-#ifdef USE_WEBRTC_DEV_BRANCH
                           network->GetBestIP(),
-#else  // USE_WEBRTC_DEV_BRANCH
-                          network->ip(),
-#endif  // USE_WEBRTC_DEV_BRANCH
                           0,
                           0,
                           username,
@@ -381,11 +361,7 @@ RelayPort* ConnectivityChecker::CreateRelayPort(
   return RelayPort::Create(worker_,
                            socket_factory_.get(),
                            network,
-#ifdef USE_WEBRTC_DEV_BRANCH
                            network->GetBestIP(),
-#else  // USE_WEBRTC_DEV_BRANCH
-                           network->ip(),
-#endif  // USE_WEBRTC_DEV_BRANCH
                            port_allocator_->min_port(),
                            port_allocator_->max_port(),
                            username,
@@ -406,11 +382,7 @@ void ConnectivityChecker::CreateRelayPorts(
        relay != config->relays.end(); ++relay) {
     for (uint32 i = 0; i < networks.size(); ++i) {
       NicMap::iterator iter =
-#ifdef USE_WEBRTC_DEV_BRANCH
           nics_.find(NicId(networks[i]->GetBestIP(), proxy_info.address));
-#else  // USE_WEBRTC_DEV_BRANCH
-          nics_.find(NicId(networks[i]->ip(), proxy_info.address));
-#endif  // USE_WEBRTC_DEV_BRANCH
       if (iter != nics_.end()) {
         // TODO: Now setting the same start time for all protocols.
         // This might affect accuracy, but since we are mainly looking for
@@ -467,11 +439,7 @@ void ConnectivityChecker::AllocatePorts() {
   rtc::ProxyInfo proxy_info = GetProxyInfo();
   bool allocate_relay_ports = false;
   for (uint32 i = 0; i < networks.size(); ++i) {
-#ifdef USE_WEBRTC_DEV_BRANCH
     if (AddNic(networks[i]->GetBestIP(), proxy_info.address)) {
-#else  // USE_WEBRTC_DEV_BRANCH
-    if (AddNic(networks[i]->ip(), proxy_info.address)) {
-#endif  // USE_WEBRTC_DEV_BRANCH
       Port* port = CreateStunPort(username, password, &config, networks[i]);
       if (port) {
 
@@ -547,11 +515,7 @@ void ConnectivityChecker::RegisterHttpStart(int port) {
   }
   rtc::ProxyInfo proxy_info = GetProxyInfo();
   NicMap::iterator i =
-#ifdef USE_WEBRTC_DEV_BRANCH
       nics_.find(NicId(networks[0]->GetBestIP(), proxy_info.address));
-#else  // USE_WEBRTC_DEV_BRANCH
-      nics_.find(NicId(networks[0]->ip(), proxy_info.address));
-#endif  // USE_WEBRTC_DEV_BRANCH
   if (i != nics_.end()) {
     uint32 now = rtc::Time();
     NicInfo* nic_info = &i->second;

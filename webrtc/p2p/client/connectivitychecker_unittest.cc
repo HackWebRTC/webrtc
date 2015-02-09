@@ -221,11 +221,7 @@ class ConnectivityCheckerForTest : public ConnectivityChecker {
     return new FakeStunPort(worker(),
                             socket_factory_,
                             network,
-#ifdef USE_WEBRTC_DEV_BRANCH
                             network->GetBestIP(),
-#else  // USE_WEBRTC_DEV_BRANCH
-                            network->ip(),
-#endif  // USE_WEBRTC_DEV_BRANCH
                             kMinPort,
                             kMaxPort,
                             username,
@@ -238,11 +234,7 @@ class ConnectivityCheckerForTest : public ConnectivityChecker {
     return new FakeRelayPort(worker(),
                              socket_factory_,
                              network,
-#ifdef USE_WEBRTC_DEV_BRANCH
                              network->GetBestIP(),
-#else  // USE_WEBRTC_DEV_BRANCH
-                             network->ip(),
-#endif  // USE_WEBRTC_DEV_BRANCH
                              kMinPort,
                              kMaxPort,
                              username,

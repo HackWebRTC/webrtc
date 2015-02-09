@@ -67,7 +67,6 @@
       'HAVE_SRTP',
       'HAVE_WEBRTC_VIDEO',
       'HAVE_WEBRTC_VOICE',
-      'USE_WEBRTC_DEV_BRANCH',
     ],
     'conditions': [
       # TODO(ronghuawu): Support dynamic library build.
