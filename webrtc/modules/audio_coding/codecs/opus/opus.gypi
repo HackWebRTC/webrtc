@@ -19,7 +19,7 @@
            ]
         }, {
           'dependencies': [
-            '<(DEPTH)/third_party/opus/opus.gyp:opus'
+            '<(opus_dir)/opus.gyp:opus'
           ],
         }],
       ],

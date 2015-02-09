@@ -41,6 +41,7 @@
       'webrtc_vp8_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp8',
       'webrtc_vp9_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp9',
       'include_opus%': 1,
+      'opus_dir%': '<(DEPTH)/third_party/opus',
     },
     'build_with_chromium%': '<(build_with_chromium)',
     'build_with_libjingle%': '<(build_with_libjingle)',
@@ -92,6 +93,7 @@
     'build_libjpeg%': 1,
     'build_libyuv%': 1,
     'build_libvpx%': 1,
+    'build_vp9%': 1,
     'build_ssl%': 1,
 
     # Disable by default
@@ -100,7 +102,10 @@
     # Enable to use the Mozilla internal settings.
     'build_with_mozilla%': 0,
 
+    # Make it possible to provide custom locations for some libraries.
+    'libvpx_dir%': '<(DEPTH)/third_party/libvpx',
     'libyuv_dir%': '<(DEPTH)/third_party/libyuv',
+    'opus_dir%': '<(opus_dir)',
 
     # Define MIPS architecture variant, MIPS DSP variant and MIPS FPU
     # This may be subject to change in accordance to Chromium's MIPS flags
@@ -121,6 +126,10 @@
     # choosing openssl or nss directly.  In practice, this can be used to
     # enable schannel on windows.
     'use_legacy_ssl_defaults%': 0,
+
+    # Directly call the trace callback instead of passing it to a logging
+    # thread. Used for components that provide their own threaded logging.
+    'rtc_use_direct_trace%': 0,
 
     'conditions': [
       ['build_with_chromium==1', {

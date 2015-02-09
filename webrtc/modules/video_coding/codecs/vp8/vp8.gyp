@@ -22,7 +22,7 @@
       'conditions': [
         ['build_libvpx==1', {
           'dependencies': [
-            '<(DEPTH)/third_party/libvpx/libvpx.gyp:libvpx',
+            '<(libvpx_dir)/libvpx.gyp:libvpx',
           ],
         }],
       ],

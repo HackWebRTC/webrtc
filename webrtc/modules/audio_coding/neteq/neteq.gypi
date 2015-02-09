@@ -26,7 +26,7 @@
     ],
     'neteq_dependencies': [
       '<@(codecs)',
-      '<(DEPTH)/third_party/opus/opus.gyp:opus',
+      '<(opus_dir)/opus.gyp:opus',
       '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
       '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       'audio_decoder_interface',
@@ -55,7 +55,7 @@
         ],
       },
       'export_dependent_settings': [
-        '<(DEPTH)/third_party/opus/opus.gyp:opus',
+        '<(opus_dir)/opus.gyp:opus',
       ],
       'sources': [
         'interface/neteq.h',

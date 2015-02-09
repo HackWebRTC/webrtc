@@ -22,14 +22,20 @@
       'conditions': [
         ['build_libvpx==1', {
           'dependencies': [
-            '<(DEPTH)/third_party/libvpx/libvpx.gyp:libvpx',
+            '<(libvpx_dir)/libvpx.gyp:libvpx',
           ],
         }],
-      ],
-      'sources': [
-        'include/vp9.h',
-        'vp9_impl.cc',
-        'vp9_impl.h',
+        ['build_vp9==1', {
+          'sources': [
+            'include/vp9.h',
+            'vp9_impl.cc',
+            'vp9_impl.h',
+          ],
+        }, {
+          'sources': [
+            'vp9_dummy_impl.cc',
+          ],
+        }],
       ],
     },
   ],
