@@ -174,6 +174,8 @@ class FileRenderPassthrough : public VideoRenderer {
     PrintI420VideoFrame(video_frame, file_);
   }
 
+  virtual bool IsTextureSupported() const override { return false; }
+
   const std::string basename_;
   VideoRenderer* const renderer_;
   FILE* file_;

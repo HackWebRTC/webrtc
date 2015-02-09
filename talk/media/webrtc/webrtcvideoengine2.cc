@@ -1998,6 +1998,10 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
   renderer_->RenderFrame(&render_frame);
 }
 
+bool WebRtcVideoChannel2::WebRtcVideoReceiveStream::IsTextureSupported() const {
+  return true;
+}
+
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRenderer(
     cricket::VideoRenderer* renderer) {
   rtc::CritScope crit(&renderer_lock_);

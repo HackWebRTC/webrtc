@@ -180,6 +180,8 @@ class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
     }
   }
 
+  virtual bool IsTextureSupported() const override { return false; }
+
  private:
   Clock* const clock_;
   int voe_channel_;
@@ -371,6 +373,8 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
           "capture_ntp_time", "", "real - estimated", ss.str(), "ms", true);
       EXPECT_TRUE(std::abs(time_offset_ms) < threshold_ms_);
     }
+
+    virtual bool IsTextureSupported() const override { return false; }
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) {
       RTPHeader header;

@@ -191,6 +191,8 @@ class VideoAnalyzer : public PacketReceiver,
     last_rendered_frame_.CopyFrame(video_frame);
   }
 
+  virtual bool IsTextureSupported() const override { return false; }
+
   void Wait() {
     EXPECT_EQ(kEventSignaled, done_->Wait(FullStackTest::kLongTimeoutMs));
   }

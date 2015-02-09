@@ -40,7 +40,7 @@ namespace internal {
 
 class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public I420FrameCallback,
-                           public VideoRenderCallback {
+                           public ExternalRenderer {
  public:
   VideoReceiveStream(webrtc::VideoEngine* video_engine,
                      const VideoReceiveStream::Config& config,
@@ -49,16 +49,25 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                      int base_channel);
   virtual ~VideoReceiveStream();
 
-  virtual void Start() OVERRIDE;
-  virtual void Stop() OVERRIDE;
-  virtual Stats GetStats() const OVERRIDE;
+  virtual void Start() override;
+  virtual void Stop() override;
+  virtual Stats GetStats() const override;
 
   // Overrides I420FrameCallback.
-  virtual void FrameCallback(I420VideoFrame* video_frame) OVERRIDE;
+  virtual void FrameCallback(I420VideoFrame* video_frame) override;
 
-  // Overrides VideoRenderCallback.
-  virtual int32_t RenderFrame(const uint32_t stream_id,
-                              I420VideoFrame& video_frame) OVERRIDE;
+  // Overrides ExternalRenderer.
+  virtual int FrameSizeChange(unsigned int width,
+                              unsigned int height,
+                              unsigned int number_of_streams) override;
+  virtual int DeliverFrame(unsigned char* buffer,
+                           size_t buffer_size,
+                           uint32_t timestamp,
+                           int64_t ntp_time_ms,
+                           int64_t render_time_ms,
+                           void* handle) override;
+  virtual int DeliverI420Frame(const I420VideoFrame* webrtc_frame) override;
+  virtual bool IsTextureSupported() override;
 
   void SignalNetworkState(Call::NetworkState state);
 
