@@ -20,7 +20,6 @@
 #endif
 
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/common.h"
 
 namespace rtc {
 
@@ -34,15 +33,13 @@ class Event {
   bool Wait(int cms);
 
  private:
-  bool is_manual_reset_;
-
 #if defined(WEBRTC_WIN)
-  bool is_initially_signaled_;
   HANDLE event_handle_;
 #elif defined(WEBRTC_POSIX)
-  bool event_status_;
   pthread_mutex_t event_mutex_;
   pthread_cond_t event_cond_;
+  const bool is_manual_reset_;
+  bool event_status_;
 #endif
 };
 

@@ -31,6 +31,8 @@
       'sources': [
         'checks.cc',
         'checks.h',
+        'event.cc',
+        'event.h',
         'exp_filter.cc',
         'exp_filter.h',
         'md5.cc',
@@ -112,8 +114,6 @@
         'diskcache.h',
         'diskcache_win32.cc',
         'diskcache_win32.h',
-        'event.cc',
-        'event.h',
         'filelock.cc',
         'filelock.h',
         'fileutils.cc',

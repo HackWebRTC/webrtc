@@ -105,6 +105,8 @@ static_library("rtc_base_approved") {
   sources = [
     "checks.cc",
     "checks.h",
+    "event.cc",
+    "event.h",
     "exp_filter.cc",
     "exp_filter.h",
     "md5.cc",
@@ -181,8 +183,6 @@ static_library("rtc_base") {
     "cryptstring.h",
     "diskcache.cc",
     "diskcache.h",
-    "event.cc",
-    "event.h",
     "fileutils.cc",
     "fileutils.h",
     "firewallsocketserver.cc",
