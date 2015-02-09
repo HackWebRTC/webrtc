@@ -82,7 +82,7 @@ ThreadPosix::ThreadPosix(ThreadRunFunction func, ThreadObj obj,
     : run_function_(func),
       obj_(obj),
       prio_(prio),
-      stop_event_(EventWrapper::Create()),
+      stop_event_(true, false),
       name_(thread_name ? thread_name : "webrtc"),
       thread_id_(0),
       thread_(0) {
@@ -126,10 +126,10 @@ bool ThreadPosix::Stop() {
   if (!thread_id_)
     return true;
 
-  stop_event_->Set();
+  stop_event_.Set();
   CHECK_EQ(0, pthread_join(thread_, nullptr));
   thread_id_ = 0;
-  stop_event_->Reset();
+  stop_event_.Reset();
 
   return true;
 }
@@ -175,7 +175,7 @@ void ThreadPosix::Run(ThreadPosix::InitParams* params) {
   do {
     if (!run_function_(obj_))
       break;
-  } while (stop_event_->Wait(0) == kEventTimeout);
+  } while (!stop_event_.Wait(0));
 }
 
 }  // namespace webrtc

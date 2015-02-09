@@ -11,6 +11,7 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_THREAD_POSIX_H_
 #define WEBRTC_SYSTEM_WRAPPERS_SOURCE_THREAD_POSIX_H_
 
+#include "webrtc/base/event.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
@@ -18,9 +19,6 @@
 #include <pthread.h>
 
 namespace webrtc {
-
-class CriticalSectionWrapper;
-class EventWrapper;
 
 int ConvertToSystemPriority(ThreadPriority priority, int min_prio,
                             int max_prio);
@@ -45,8 +43,7 @@ class ThreadPosix : public ThreadWrapper {
   ThreadRunFunction const run_function_;
   void* const obj_;
   ThreadPriority prio_;
-  // TODO(tommi): std::condition_variable?
-  const rtc::scoped_ptr<EventWrapper> stop_event_;
+  rtc::Event stop_event_;
   const std::string name_;
 
   pid_t thread_id_;
