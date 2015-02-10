@@ -15,13 +15,13 @@
 #include <map>
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/video_engine/vie_defines.h"
@@ -205,13 +205,13 @@ class ViEEncoder
 
   VideoCodingModule& vcm_;
   VideoProcessingModule& vpm_;
-  scoped_ptr<RtpRtcp> default_rtp_rtcp_;
+  rtc::scoped_ptr<RtpRtcp> default_rtp_rtcp_;
   PayloadRouter* send_payload_router_;
-  scoped_ptr<CriticalSectionWrapper> callback_cs_;
-  scoped_ptr<CriticalSectionWrapper> data_cs_;
-  scoped_ptr<BitrateObserver> bitrate_observer_;
-  scoped_ptr<PacedSender> paced_sender_;
-  scoped_ptr<ViEPacedSenderCallback> pacing_callback_;
+  rtc::scoped_ptr<CriticalSectionWrapper> callback_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> data_cs_;
+  rtc::scoped_ptr<BitrateObserver> bitrate_observer_;
+  rtc::scoped_ptr<PacedSender> paced_sender_;
+  rtc::scoped_ptr<ViEPacedSenderCallback> pacing_callback_;
 
   BitrateController* bitrate_controller_;
 
@@ -231,6 +231,7 @@ class ViEEncoder
   ViEEncoderObserver* codec_observer_ GUARDED_BY(callback_cs_);
   ViEEffectFilter* effect_filter_ GUARDED_BY(callback_cs_);
   ProcessThread& module_process_thread_;
+  rtc::scoped_ptr<ProcessThread> pacer_thread_;
 
   bool has_received_sli_ GUARDED_BY(data_cs_);
   uint8_t picture_id_sli_ GUARDED_BY(data_cs_);

@@ -155,6 +155,7 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
     codec_observer_(NULL),
     effect_filter_(NULL),
     module_process_thread_(module_process_thread),
+    pacer_thread_(ProcessThread::Create()),
     has_received_sli_(false),
     picture_id_sli_(0),
     has_received_rpsi_(false),
@@ -189,8 +190,11 @@ bool ViEEncoder::Init() {
   vpm_.EnableContentAnalysis(false);
 
   if (module_process_thread_.RegisterModule(&vcm_) != 0 ||
-      module_process_thread_.RegisterModule(default_rtp_rtcp_.get()) != 0 ||
-      module_process_thread_.RegisterModule(paced_sender_.get()) != 0) {
+      module_process_thread_.RegisterModule(default_rtp_rtcp_.get()) != 0) {
+    return false;
+  }
+  if (pacer_thread_->RegisterModule(paced_sender_.get()) != 0 ||
+      pacer_thread_->Start() != 0) {
     return false;
   }
   if (qm_callback_) {
@@ -241,10 +245,11 @@ ViEEncoder::~ViEEncoder() {
   if (bitrate_controller_) {
     bitrate_controller_->RemoveBitrateObserver(bitrate_observer_.get());
   }
+  pacer_thread_->Stop();
+  pacer_thread_->DeRegisterModule(paced_sender_.get());
   module_process_thread_.DeRegisterModule(&vcm_);
   module_process_thread_.DeRegisterModule(&vpm_);
   module_process_thread_.DeRegisterModule(default_rtp_rtcp_.get());
-  module_process_thread_.DeRegisterModule(paced_sender_.get());
   VideoCodingModule::Destroy(&vcm_);
   VideoProcessingModule::Destroy(&vpm_);
   delete qm_callback_;
@@ -559,7 +564,7 @@ void ViEEncoder::DeliverFrame(int id,
       if (effect_filter_) {
         size_t length =
             CalcBufferSize(kI420, video_frame->width(), video_frame->height());
-        scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
+        rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
         ExtractBuffer(*video_frame, length, video_buffer.get());
         effect_filter_->Transform(length,
                                   video_buffer.get(),
