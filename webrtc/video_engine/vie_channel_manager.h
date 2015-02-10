@@ -70,8 +70,6 @@ class ViEChannelManager: private ViEManagerBase {
   // Disables lip sync of the channel.
   int DisconnectVoiceChannel(int channel_id);
 
-  VoiceEngine* GetVoiceEngine();
-
   // Adds a channel to include when sending REMB.
   bool SetRembStatus(int channel_id, bool sender, bool receiver);
 
@@ -142,7 +140,6 @@ class ViEChannelManager: private ViEManagerBase {
   EncoderMap vie_encoder_map_;
   VoEVideoSync* voice_sync_interface_;
 
-  VoiceEngine* voice_engine_;
   ProcessThread* module_process_thread_;
   const Config& engine_config_;
 };

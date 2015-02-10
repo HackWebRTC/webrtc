@@ -38,7 +38,6 @@ ViEChannelManager::ViEChannelManager(
       free_channel_ids_(new bool[kViEMaxNumberOfChannels]),
       free_channel_ids_size_(kViEMaxNumberOfChannels),
       voice_sync_interface_(NULL),
-      voice_engine_(NULL),
       module_process_thread_(NULL),
       engine_config_(config) {
   for (int idx = 0; idx < free_channel_ids_size_; idx++) {
@@ -313,7 +312,6 @@ int ViEChannelManager::SetVoiceEngine(VoiceEngine* voice_engine) {
   if (voice_sync_interface_) {
     voice_sync_interface_->Release();
   }
-  voice_engine_ = voice_engine;
   voice_sync_interface_ = sync_interface;
   return 0;
 }
@@ -340,11 +338,6 @@ int ViEChannelManager::DisconnectVoiceChannel(int channel_id) {
     return 0;
   }
   return -1;
-}
-
-VoiceEngine* ViEChannelManager::GetVoiceEngine() {
-  CriticalSectionScoped cs(channel_id_critsect_);
-  return voice_engine_;
 }
 
 bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
