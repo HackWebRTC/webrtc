@@ -66,7 +66,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            int64_t ntp_time_ms,
                            int64_t render_time_ms,
                            void* handle) override;
-  virtual int DeliverI420Frame(const I420VideoFrame* webrtc_frame) override;
+  virtual int DeliverI420Frame(const I420VideoFrame& webrtc_frame) override;
   virtual bool IsTextureSupported() override;
 
   void SignalNetworkState(Call::NetworkState state);

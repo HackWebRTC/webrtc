@@ -361,11 +361,11 @@ int VideoReceiveStream::DeliverFrame(unsigned char* buffer,
   return 0;
 }
 
-int VideoReceiveStream::DeliverI420Frame(const I420VideoFrame* video_frame) {
+int VideoReceiveStream::DeliverI420Frame(const I420VideoFrame& video_frame) {
   if (config_.renderer != NULL)
     config_.renderer->RenderFrame(
-        *video_frame,
-        video_frame->render_time_ms() - clock_->TimeInMilliseconds());
+        video_frame,
+        video_frame.render_time_ms() - clock_->TimeInMilliseconds());
 
   stats_proxy_->OnRenderedFrame();
 

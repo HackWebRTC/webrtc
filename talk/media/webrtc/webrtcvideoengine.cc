@@ -382,67 +382,30 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
                            int64_t ntp_time_ms,
                            int64_t render_time,
                            void* handle) {
-    rtc::CritScope cs(&crit_);
-    const int64_t elapsed_time_ms = ElapsedTimeMs(rtp_time_stamp);
-    UpdateFrameStats(elapsed_time_ms, ntp_time_ms);
-    if (!renderer_) {
-      return 0;
-    }
-    // Convert elapsed_time_ms to ns timestamp.
-    int64 elapsed_time_ns =
-        elapsed_time_ms * rtc::kNumNanosecsPerMillisec;
-    // Convert milisecond render time to ns timestamp.
-    int64 render_time_ns = render_time *
-        rtc::kNumNanosecsPerMillisec;
-    // Note that here we send the |elapsed_time_ns| to renderer as the
-    // cricket::VideoFrame's elapsed_time_ and the |render_time_ns| as the
-    // cricket::VideoFrame's time_stamp_.
-    if (!handle) {
-      return DeliverBufferFrame(buffer, buffer_size, render_time_ns,
-                                elapsed_time_ns);
-    } else {
-      return DeliverTextureFrame(handle, render_time_ns,
-                                 elapsed_time_ns);
-    }
+    CHECK(false) << "All frames should be delivered as I420 frames through "
+                    "DeliverI420Frame.";
+    return 0;
   }
 
-  virtual int DeliverI420Frame(const webrtc::I420VideoFrame* webrtc_frame) {
+  virtual int DeliverI420Frame(const webrtc::I420VideoFrame& webrtc_frame) {
     rtc::CritScope cs(&crit_);
-    DCHECK(webrtc_frame);
-    const int64_t elapsed_time_ms = ElapsedTimeMs(webrtc_frame->timestamp());
-    UpdateFrameStats(elapsed_time_ms, webrtc_frame->ntp_time_ms());
+    const int64_t elapsed_time_ms = ElapsedTimeMs(webrtc_frame.timestamp());
+    UpdateFrameStats(elapsed_time_ms, webrtc_frame.ntp_time_ms());
     if (!renderer_) {
       return 0;
     }
-    if (!webrtc_frame->native_handle()) {
-      WebRtcVideoRenderFrame cricket_frame(webrtc_frame, elapsed_time_ms);
+    if (webrtc_frame.native_handle() == NULL) {
+      WebRtcVideoRenderFrame cricket_frame(&webrtc_frame, elapsed_time_ms);
       return renderer_->RenderFrame(&cricket_frame) ? 0 : -1;
     } else {
       return DeliverTextureFrame(
-          webrtc_frame->native_handle(),
-          webrtc_frame->render_time_ms() * rtc::kNumNanosecsPerMillisec,
+          webrtc_frame.native_handle(),
+          webrtc_frame.render_time_ms() * rtc::kNumNanosecsPerMillisec,
           elapsed_time_ms * rtc::kNumNanosecsPerMillisec);
     }
   }
 
   virtual bool IsTextureSupported() { return true; }
-
-  int DeliverBufferFrame(unsigned char* buffer, size_t buffer_size,
-                         int64 time_stamp, int64 elapsed_time) {
-    WebRtcVideoFrame video_frame;
-    video_frame.Alias(buffer, buffer_size, width_, height_, 1, 1, elapsed_time,
-                      time_stamp, webrtc::kVideoRotation_0);
-
-    // Sanity check on decoded frame size.
-    if (buffer_size != VideoFrame::SizeOf(width_, height_)) {
-      LOG(LS_WARNING) << "WebRtcRenderAdapter (channel " << channel_id_
-                      << ") received a strange frame size: "
-                      << buffer_size;
-    }
-
-    int ret = renderer_->RenderFrame(&video_frame) ? 0 : -1;
-    return ret;
-  }
 
   int DeliverTextureFrame(void* handle, int64 time_stamp, int64 elapsed_time) {
     WebRtcTextureVideoFrame video_frame(

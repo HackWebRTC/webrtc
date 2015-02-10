@@ -170,9 +170,25 @@ int ViEExternalRendererImpl::SetViEExternalRenderer(
   return 0;
 }
 
-int32_t ViEExternalRendererImpl::RenderFrame(
-    const uint32_t stream_id,
-    I420VideoFrame&   video_frame) {
+int32_t ViEExternalRendererImpl::RenderFrame(const uint32_t stream_id,
+                                             I420VideoFrame& video_frame) {
+  if (external_renderer_format_ != kVideoI420)
+    return ConvertAndRenderFrame(stream_id, video_frame);
+
+  // Fast path for I420 without frame copy.
+  NotifyFrameSizeChange(stream_id, video_frame);
+  if (video_frame.native_handle() == NULL ||
+      external_renderer_->IsTextureSupported()) {
+    external_renderer_->DeliverI420Frame(video_frame);
+  } else {
+    // TODO(wuchengli): readback the pixels and deliver the frame.
+  }
+  return 0;
+}
+
+int32_t ViEExternalRendererImpl::ConvertAndRenderFrame(
+    uint32_t stream_id,
+    I420VideoFrame& video_frame) {
   if (video_frame.native_handle() != NULL) {
     NotifyFrameSizeChange(stream_id, video_frame);
 
@@ -186,13 +202,6 @@ int32_t ViEExternalRendererImpl::RenderFrame(
     } else {
       // TODO(wuchengli): readback the pixels and deliver the frame.
     }
-    return 0;
-  }
-
-  // Fast path for I420 without frame copy.
-  if (external_renderer_format_ == kVideoI420) {
-    NotifyFrameSizeChange(stream_id, video_frame);
-    external_renderer_->DeliverI420Frame(&video_frame);
     return 0;
   }
 

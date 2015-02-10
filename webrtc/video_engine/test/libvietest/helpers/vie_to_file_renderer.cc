@@ -146,19 +146,18 @@ int ViEToFileRenderer::DeliverFrame(unsigned char *buffer,
 }
 
 int ViEToFileRenderer::DeliverI420Frame(
-    const webrtc::I420VideoFrame* input_frame) {
-  assert(input_frame);
-  const size_t buffer_size = CalcBufferSize(webrtc::kI420, input_frame->width(),
-                                            input_frame->height());
+    const webrtc::I420VideoFrame& input_frame) {
+  const size_t buffer_size =
+      CalcBufferSize(webrtc::kI420, input_frame.width(), input_frame.height());
   webrtc::CriticalSectionScoped lock(frame_queue_cs_.get());
   test::Frame* frame = NewFrame(buffer_size);
   const int length =
-      ExtractBuffer(*input_frame, frame->buffer_size, frame->buffer.get());
+      ExtractBuffer(input_frame, frame->buffer_size, frame->buffer.get());
   assert(static_cast<size_t>(length) == buffer_size);
   if (length < 0)
     return -1;
-  frame->timestamp = input_frame->timestamp();
-  frame->render_time = input_frame->render_time_ms();
+  frame->timestamp = input_frame.timestamp();
+  frame->render_time = input_frame.render_time_ms();
 
   render_queue_.push_back(frame);
   // Signal that a frame is ready to be written to file.

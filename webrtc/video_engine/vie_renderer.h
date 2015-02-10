@@ -37,6 +37,8 @@ class ViEExternalRendererImpl : public VideoRenderCallback {
  private:
   void NotifyFrameSizeChange(const uint32_t stream_id,
                              I420VideoFrame& video_frame);
+  int32_t ConvertAndRenderFrame(uint32_t stream_id,
+                                I420VideoFrame& video_frame);
   ExternalRenderer* external_renderer_;
   RawVideoType external_renderer_format_;
   int external_renderer_width_;

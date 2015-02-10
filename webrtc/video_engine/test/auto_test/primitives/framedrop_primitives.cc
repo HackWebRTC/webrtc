@@ -617,8 +617,8 @@ void FrameDropMonitoringRemoteFileRenderer::ReportFrameStats(
 }
 
 int FrameDropMonitoringRemoteFileRenderer::DeliverI420Frame(
-    const webrtc::I420VideoFrame* webrtc_frame) {
-  ReportFrameStats(webrtc_frame->timestamp(), webrtc_frame->render_time_ms());
+    const webrtc::I420VideoFrame& webrtc_frame) {
+  ReportFrameStats(webrtc_frame.timestamp(), webrtc_frame.render_time_ms());
   return ViEToFileRenderer::DeliverI420Frame(webrtc_frame);
 }
 
