@@ -28,14 +28,14 @@ ScopedBuffer CreateBuffer(const std::vector<float>& data, int frames) {
   ScopedBuffer sb(new ChannelBuffer<float>(frames, num_channels));
   for (int i = 0; i < num_channels; ++i)
     for (int j = 0; j < frames; ++j)
-      sb->channel(i)[j] = data[i] * j;
+      sb->channels()[i][j] = data[i] * j;
   return sb;
 }
 
 void VerifyParams(const ChannelBuffer<float>& ref,
                   const ChannelBuffer<float>& test) {
   EXPECT_EQ(ref.num_channels(), test.num_channels());
-  EXPECT_EQ(ref.samples_per_channel(), test.samples_per_channel());
+  EXPECT_EQ(ref.num_frames(), test.num_frames());
 }
 
 // Computes the best SNR based on the error between |ref_frame| and
@@ -50,20 +50,20 @@ float ComputeSNR(const ChannelBuffer<float>& ref,
 
   // Search within one sample of the expected delay.
   for (int delay = std::max(expected_delay - 1, 0);
-       delay <= std::min(expected_delay + 1, ref.samples_per_channel());
+       delay <= std::min(expected_delay + 1, ref.num_frames());
        ++delay) {
     float mse = 0;
     float variance = 0;
     float mean = 0;
     for (int i = 0; i < ref.num_channels(); ++i) {
-      for (int j = 0; j < ref.samples_per_channel() - delay; ++j) {
-        float error = ref.channel(i)[j] - test.channel(i)[j + delay];
+      for (int j = 0; j < ref.num_frames() - delay; ++j) {
+        float error = ref.channels()[i][j] - test.channels()[i][j + delay];
         mse += error * error;
-        variance += ref.channel(i)[j] * ref.channel(i)[j];
-        mean += ref.channel(i)[j];
+        variance += ref.channels()[i][j] * ref.channels()[i][j];
+        mean += ref.channels()[i][j];
       }
     }
-    const int length = ref.num_channels() * (ref.samples_per_channel() - delay);
+    const int length = ref.num_channels() * (ref.num_frames() - delay);
     mse /= length;
     variance /= length;
     mean /= length;

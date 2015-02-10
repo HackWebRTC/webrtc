@@ -27,7 +27,6 @@ namespace webrtc {
 class PushSincResampler;
 class IFChannelBuffer;
 
-static const int kMaxNumBands = 3;
 enum Band {
   kBand0To8kHz = 0,
   kBand8To16kHz = 1,
@@ -37,25 +36,23 @@ enum Band {
 class AudioBuffer {
  public:
   // TODO(ajm): Switch to take ChannelLayouts.
-  AudioBuffer(int input_samples_per_channel,
+  AudioBuffer(int input_num_frames,
               int num_input_channels,
-              int process_samples_per_channel,
+              int process_num_frames,
               int num_process_channels,
-              int output_samples_per_channel);
+              int output_num_frames);
   virtual ~AudioBuffer();
 
   int num_channels() const;
   void set_num_channels(int num_channels);
-  int samples_per_channel() const;
-  int samples_per_split_channel() const;
-  int samples_per_keyboard_channel() const;
+  int num_frames() const;
+  int num_frames_per_band() const;
+  int num_keyboard_frames() const;
   int num_bands() const;
 
   // Sample array accessors. Channels are guaranteed to be stored contiguously
   // in memory. Prefer to use the const variants of each accessor when
   // possible, since they incur less float<->int16 conversion overhead.
-  int16_t* data(int channel);
-  const int16_t* data_const(int channel) const;
   int16_t* const* channels();
   const int16_t* const* channels_const() const;
   int16_t* const* split_bands(int channel);
@@ -70,8 +67,6 @@ class AudioBuffer {
 
   // Float versions of the accessors, with automatic conversion back and forth
   // as necessary. The range of the numbers are the same as for int16_t.
-  float* data_f(int channel);
-  const float* data_const_f(int channel) const;
   float* const* channels_f();
   const float* const* channels_const_f() const;
   float* const* split_bands_f(int channel);
@@ -92,9 +87,9 @@ class AudioBuffer {
 
   // Use for float deinterleaved data.
   void CopyFrom(const float* const* data,
-                int samples_per_channel,
+                int num_frames,
                 AudioProcessing::ChannelLayout layout);
-  void CopyTo(int samples_per_channel,
+  void CopyTo(int num_frames,
               AudioProcessing::ChannelLayout layout,
               float* const* data);
   void CopyLowPassToReference();
@@ -110,29 +105,27 @@ class AudioBuffer {
 
   // The audio is passed into DeinterleaveFrom() or CopyFrom() with input
   // format (samples per channel and number of channels).
-  const int input_samples_per_channel_;
+  const int input_num_frames_;
   const int num_input_channels_;
   // The audio is stored by DeinterleaveFrom() or CopyFrom() with processing
   // format.
-  const int proc_samples_per_channel_;
+  const int proc_num_frames_;
   const int num_proc_channels_;
   // The audio is returned by InterleaveTo() and CopyTo() with output samples
   // per channels and the current number of channels. This last one can be
   // changed at any time using set_num_channels().
-  const int output_samples_per_channel_;
+  const int output_num_frames_;
   int num_channels_;
 
   int num_bands_;
-  int samples_per_split_channel_;
+  int num_split_frames_;
   bool mixed_low_pass_valid_;
   bool reference_copied_;
   AudioFrame::VADActivity activity_;
 
   const float* keyboard_data_;
-  scoped_ptr<IFChannelBuffer> channels_;
-  ScopedVector<IFChannelBuffer> split_channels_;
-  scoped_ptr<int16_t*[]> bands_;
-  scoped_ptr<float*[]> bands_f_;
+  scoped_ptr<IFChannelBuffer> data_;
+  scoped_ptr<IFChannelBuffer> split_data_;
   scoped_ptr<SplittingFilter> splitting_filter_;
   scoped_ptr<ChannelBuffer<int16_t> > mixed_low_pass_channels_;
   scoped_ptr<ChannelBuffer<int16_t> > low_pass_reference_channels_;

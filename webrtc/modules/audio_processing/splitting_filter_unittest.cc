@@ -35,36 +35,32 @@ TEST(SplittingFilterTest, SplitsIntoThreeBandsAndReconstructs) {
   static const float kAmplitude = 8192;
   static const int kChunks = 8;
   SplittingFilter splitting_filter(kChannels);
-  IFChannelBuffer in_data(kSamplesPer48kHzChannel, kChannels);
-  IFChannelBuffer out_data(kSamplesPer48kHzChannel, kChannels);
-  ScopedVector<IFChannelBuffer> bands;
-  for (int i = 0; i < kNumBands; ++i) {
-    bands.push_back(new IFChannelBuffer(kSamplesPer16kHzChannel, kChannels));
-  }
+  IFChannelBuffer in_data(kSamplesPer48kHzChannel, kChannels, kNumBands);
+  IFChannelBuffer out_data(kSamplesPer48kHzChannel, kChannels, kNumBands);
   for (int i = 0; i < kChunks; ++i) {
     // Input signal generation.
     bool is_present[kNumBands];
-    memset(in_data.fbuf()->channel(0),
+    memset(in_data.fbuf()->channels()[0],
            0,
-           kSamplesPer48kHzChannel * sizeof(in_data.fbuf()->channel(0)[0]));
+           kSamplesPer48kHzChannel * sizeof(in_data.fbuf()->channels()[0][0]));
     for (int j = 0; j < kNumBands; ++j) {
       is_present[j] = i & (1 << j);
       float amplitude = is_present[j] ? kAmplitude : 0;
       for (int k = 0; k < kSamplesPer48kHzChannel; ++k) {
-        in_data.fbuf()->channel(0)[k] +=
+        in_data.fbuf()->channels()[0][k] +=
             amplitude * sin(2 * M_PI * kFrequenciesHz[j] *
                 (i * kSamplesPer48kHzChannel + k) / kSampleRateHz);
       }
     }
     // Three band splitting filter.
-    splitting_filter.Analysis(&in_data, bands.get());
+    splitting_filter.Analysis(&in_data, &out_data);
     // Energy calculation.
     float energy[kNumBands];
     for (int j = 0; j < kNumBands; ++j) {
       energy[j] = 0;
       for (int k = 0; k < kSamplesPer16kHzChannel; ++k) {
-        energy[j] += bands[j]->fbuf_const()->channel(0)[k] *
-                     bands[j]->fbuf_const()->channel(0)[k];
+        energy[j] += out_data.fbuf_const()->channels(j)[0][k] *
+                     out_data.fbuf_const()->channels(j)[0][k];
       }
       energy[j] /= kSamplesPer16kHzChannel;
       if (is_present[j]) {
@@ -74,14 +70,14 @@ TEST(SplittingFilterTest, SplitsIntoThreeBandsAndReconstructs) {
       }
     }
     // Three band merge.
-    splitting_filter.Synthesis(bands.get(), &out_data);
+    splitting_filter.Synthesis(&out_data, &out_data);
     // Delay and cross correlation estimation.
     float xcorr = 0;
     for (int delay = 0; delay < kSamplesPer48kHzChannel; ++delay) {
       float tmpcorr = 0;
       for (int j = delay; j < kSamplesPer48kHzChannel; ++j) {
-        tmpcorr += in_data.fbuf_const()->channel(0)[j] *
-                   out_data.fbuf_const()->channel(0)[j - delay];
+        tmpcorr += in_data.fbuf_const()->channels()[0][j] *
+                   out_data.fbuf_const()->channels()[0][j - delay];
       }
       tmpcorr /= kSamplesPer48kHzChannel;
       if (tmpcorr > xcorr) {

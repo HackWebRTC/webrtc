@@ -25,7 +25,7 @@ void ReadAndWriteTest(const ChannelBuffer<float>& input,
                       size_t buffer_frames,
                       ChannelBuffer<float>* output) {
   const size_t num_channels = input.num_channels();
-  const size_t total_frames = input.samples_per_channel();
+  const size_t total_frames = input.num_frames();
   AudioRingBuffer buf(num_channels, buffer_frames);
   scoped_ptr<float*[]> slice(new float*[num_channels]);
 
@@ -91,17 +91,18 @@ TEST_F(AudioRingBufferTest, MoveReadPosition) {
   const size_t kNumChannels = 1;
   const float kInputArray[] = {1, 2, 3, 4};
   const size_t kNumFrames = sizeof(kInputArray) / sizeof(*kInputArray);
-  ChannelBuffer<float> input(kInputArray, kNumFrames, kNumChannels);
+  ChannelBuffer<float> input(kNumFrames, kNumChannels);
+  input.SetDataForTesting(kInputArray, kNumFrames);
   AudioRingBuffer buf(kNumChannels, kNumFrames);
   buf.Write(input.channels(), kNumChannels, kNumFrames);
 
   buf.MoveReadPosition(3);
   ChannelBuffer<float> output(1, kNumChannels);
   buf.Read(output.channels(), kNumChannels, 1);
-  EXPECT_EQ(4, output.data()[0]);
+  EXPECT_EQ(4, output.channels()[0][0]);
   buf.MoveReadPosition(-3);
   buf.Read(output.channels(), kNumChannels, 1);
-  EXPECT_EQ(2, output.data()[0]);
+  EXPECT_EQ(2, output.channels()[0][0]);
 }
 
 }  // namespace webrtc

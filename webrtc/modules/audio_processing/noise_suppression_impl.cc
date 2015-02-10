@@ -60,7 +60,7 @@ int NoiseSuppressionImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
   if (!is_component_enabled()) {
     return apm_->kNoError;
   }
-  assert(audio->samples_per_split_channel() <= 160);
+  assert(audio->num_frames_per_band() <= 160);
   assert(audio->num_channels() == num_handles());
 
   for (int i = 0; i < num_handles(); ++i) {
@@ -76,7 +76,7 @@ int NoiseSuppressionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   if (!is_component_enabled()) {
     return apm_->kNoError;
   }
-  assert(audio->samples_per_split_channel() <= 160);
+  assert(audio->num_frames_per_band() <= 160);
   assert(audio->num_channels() == num_handles());
 
   for (int i = 0; i < num_handles(); ++i) {

@@ -51,7 +51,7 @@ size_t PcmReadToFloat(FILE* file,
       PcmRead(file, length, num_channels, deinterleaved_buffer->channels());
 
   for (int i = 0; i < num_channels; ++i) {
-    S16ToFloat(deinterleaved_buffer->channel(i), num_frames, buffer[i]);
+    S16ToFloat(deinterleaved_buffer->channels()[i], num_frames, buffer[i]);
   }
   return elements_read;
 }
@@ -82,7 +82,7 @@ void PcmWriteFromFloat(FILE* file,
       new ChannelBuffer<int16_t>(num_frames, num_channels));
 
   for (int i = 0; i < num_channels; ++i) {
-    FloatToS16(buffer[i], num_frames, deinterleaved_buffer->channel(i));
+    FloatToS16(buffer[i], num_frames, deinterleaved_buffer->channels()[i]);
   }
   PcmWrite(file, length, num_channels, deinterleaved_buffer->channels());
 }

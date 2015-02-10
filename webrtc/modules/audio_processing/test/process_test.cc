@@ -654,7 +654,10 @@ void void_main(int argc, char* argv[]) {
           memcpy(far_frame.data_, msg.data().data(), msg.data().size());
         } else {
           for (int i = 0; i < msg.channel_size(); ++i) {
-            reverse_cb->CopyFrom(msg.channel(i).data(), i);
+            memcpy(reverse_cb->channels()[i],
+                   msg.channel(i).data(),
+                   reverse_cb->num_frames() *
+                       sizeof(reverse_cb->channels()[i][0]));
           }
         }
 
@@ -704,7 +707,10 @@ void void_main(int argc, char* argv[]) {
           near_read_bytes += msg.input_data().size();
         } else {
           for (int i = 0; i < msg.input_channel_size(); ++i) {
-            primary_cb->CopyFrom(msg.input_channel(i).data(), i);
+            memcpy(primary_cb->channels()[i],
+                   msg.input_channel(i).data(),
+                   primary_cb->num_frames() *
+                       sizeof(primary_cb->channels()[i][0]));
             near_read_bytes += msg.input_channel(i).size();
           }
         }

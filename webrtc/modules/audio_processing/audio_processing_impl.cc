@@ -598,7 +598,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
 
   AudioBuffer* ca = capture_audio_.get();  // For brevity.
   if (use_new_agc_ && gain_control_->is_enabled()) {
-    agc_manager_->AnalyzePreProcess(ca->data(0),
+    agc_manager_->AnalyzePreProcess(ca->channels()[0],
                                     ca->num_channels(),
                                     fwd_proc_format_.samples_per_channel());
   }
@@ -613,7 +613,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
     beamformer_->ProcessChunk(ca->split_channels_const_f(kBand0To8kHz),
                               ca->split_channels_const_f(kBand8To16kHz),
                               ca->num_channels(),
-                              ca->samples_per_split_channel(),
+                              ca->num_frames_per_band(),
                               ca->split_channels_f(kBand0To8kHz),
                               ca->split_channels_f(kBand8To16kHz));
     ca->set_num_channels(1);
@@ -636,7 +636,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
       gain_control_->is_enabled() &&
       (!beamformer_enabled_ || beamformer_->is_target_present())) {
     agc_manager_->Process(ca->split_bands_const(0)[kBand0To8kHz],
-                          ca->samples_per_split_channel(),
+                          ca->num_frames_per_band(),
                           split_rate_);
   }
   RETURN_ON_ERR(gain_control_->ProcessCaptureAudio(ca));
@@ -651,13 +651,13 @@ int AudioProcessingImpl::ProcessStreamLocked() {
     float voice_probability =
         agc_manager_.get() ? agc_manager_->voice_probability() : 1.f;
 
-    transient_suppressor_->Suppress(ca->data_f(0),
-                                    ca->samples_per_channel(),
+    transient_suppressor_->Suppress(ca->channels_f()[0],
+                                    ca->num_frames(),
                                     ca->num_channels(),
                                     ca->split_bands_const_f(0)[kBand0To8kHz],
-                                    ca->samples_per_split_channel(),
+                                    ca->num_frames_per_band(),
                                     ca->keyboard_data(),
-                                    ca->samples_per_keyboard_channel(),
+                                    ca->num_keyboard_frames(),
                                     voice_probability,
                                     key_pressed_);
   }

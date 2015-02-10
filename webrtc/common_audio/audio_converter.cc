@@ -89,7 +89,7 @@ void AudioConverter::Convert(const float* const* src,
     if (src_frames != dst_frames) {
       // Downmix to a buffer for subsequent resampling.
       DCHECK_EQ(downmix_buffer_->num_channels(), dst_channels);
-      DCHECK_EQ(downmix_buffer_->samples_per_channel(), src_frames);
+      DCHECK_EQ(downmix_buffer_->num_frames(), src_frames);
       dst_ptr = downmix_buffer_->channels();
     }
 

@@ -177,27 +177,30 @@ int main(int argc, char* argv[]) {
   ChannelBuffer<float> o_buf(o_file.sample_rate() / kChunksPerSecond,
                              o_file.num_channels());
 
-  const size_t c_length = static_cast<size_t>(c_buf.length());
+  const size_t c_length =
+      static_cast<size_t>(c_buf.num_channels() * c_buf.num_frames());
+  const size_t o_length =
+      static_cast<size_t>(o_buf.num_channels() * o_buf.num_frames());
   scoped_ptr<float[]> c_interleaved(new float[c_length]);
-  scoped_ptr<float[]> o_interleaved(new float[o_buf.length()]);
+  scoped_ptr<float[]> o_interleaved(new float[o_length]);
   while (c_file.ReadSamples(c_length, c_interleaved.get()) == c_length) {
     FloatS16ToFloat(c_interleaved.get(), c_length, c_interleaved.get());
-    Deinterleave(c_interleaved.get(), c_buf.samples_per_channel(),
+    Deinterleave(c_interleaved.get(), c_buf.num_frames(),
                  c_buf.num_channels(), c_buf.channels());
 
     CHECK_EQ(kNoErr,
         ap->ProcessStream(c_buf.channels(),
-                          c_buf.samples_per_channel(),
+                          c_buf.num_frames(),
                           c_file.sample_rate(),
                           LayoutFromChannels(c_buf.num_channels()),
                           o_file.sample_rate(),
                           LayoutFromChannels(o_buf.num_channels()),
                           o_buf.channels()));
 
-    Interleave(o_buf.channels(), o_buf.samples_per_channel(),
+    Interleave(o_buf.channels(), o_buf.num_frames(),
                o_buf.num_channels(), o_interleaved.get());
-    FloatToFloatS16(o_interleaved.get(), o_buf.length(), o_interleaved.get());
-    o_file.WriteSamples(o_interleaved.get(), o_buf.length());
+    FloatToFloatS16(o_interleaved.get(), o_length, o_interleaved.get());
+    o_file.WriteSamples(o_interleaved.get(), o_length);
   }
 
   return 0;

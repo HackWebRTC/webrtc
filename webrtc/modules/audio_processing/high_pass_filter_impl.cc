@@ -114,13 +114,13 @@ int HighPassFilterImpl::ProcessCaptureAudio(AudioBuffer* audio) {
     return apm_->kNoError;
   }
 
-  assert(audio->samples_per_split_channel() <= 160);
+  assert(audio->num_frames_per_band() <= 160);
 
   for (int i = 0; i < num_handles(); i++) {
     Handle* my_handle = static_cast<Handle*>(handle(i));
     err = Filter(my_handle,
                  audio->split_bands(i)[kBand0To8kHz],
-                 audio->samples_per_split_channel());
+                 audio->num_frames_per_band());
 
     if (err != apm_->kNoError) {
       return GetHandleError(my_handle);
