@@ -11,6 +11,8 @@
 #ifndef WEBRTC_BASE_ARRAYSIZE_H_
 #define WEBRTC_BASE_ARRAYSIZE_H_
 
+#include <stddef.h>
+
 // This file defines the arraysize() macro and is derived from Chromium's
 // base/macros.h.
 
