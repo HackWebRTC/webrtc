@@ -148,10 +148,13 @@ EventTypeWrapper EventPosix::Wait(unsigned long timeout) {
     }
   }
 
-  if (ret_val == 0)
-    CHECK(state_ == kUp);
+  // Be careful to only change the state if we're about to report that the
+  // event was signaled.
+  if (ret_val == 0) {
+    DCHECK(state_ == kUp);
+    state_ = kDown;
+  }
 
-  state_ = kDown;
   pthread_mutex_unlock(&mutex_);
 
   switch (ret_val) {
