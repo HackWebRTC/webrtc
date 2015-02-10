@@ -690,6 +690,19 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     }
   }
 
+  public static void remove(VideoRenderer.Callbacks renderer) {
+    Log.d(TAG, "VideoRendererGui.remove");
+    if (instance == null) {
+      throw new RuntimeException(
+          "Attempt to remove yuv renderer before setting GLSurfaceView");
+    }
+    synchronized (instance.yuvImageRenderers) {
+      if (!instance.yuvImageRenderers.remove(renderer)) {
+        Log.w(TAG, "Couldn't remove renderer (not present in current list)");
+      }
+    }
+  }
+
   @Override
   public void onSurfaceCreated(GL10 unused, EGLConfig config) {
     Log.d(TAG, "VideoRendererGui.onSurfaceCreated");
