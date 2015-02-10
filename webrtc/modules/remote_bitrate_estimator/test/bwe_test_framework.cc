@@ -163,16 +163,6 @@ MediaPacket::MediaPacket(int64_t send_time_us, uint32_t sequence_number)
   header_.sequenceNumber = sequence_number;
 }
 
-int64_t MediaPacket::GetAbsSendTimeInMs() const {
-  const int kInterArrivalShift = 26;
-  const int kAbsSendTimeInterArrivalUpshift = 8;
-  const double kTimestampToMs =
-      1000.0 / static_cast<double>(1 << kInterArrivalShift);
-  uint32_t timestamp = header_.extension.absoluteSendTime
-                       << kAbsSendTimeInterArrivalUpshift;
-  return static_cast<int64_t>(timestamp) * kTimestampToMs;
-}
-
 void MediaPacket::SetAbsSendTimeMs(int64_t abs_send_time_ms) {
   header_.extension.hasAbsoluteSendTime = true;
   header_.extension.absoluteSendTime = ((static_cast<int64_t>(abs_send_time_ms *
@@ -208,30 +198,30 @@ bool IsTimeSorted(const Packets& packets) {
 }
 
 PacketProcessor::PacketProcessor(PacketProcessorListener* listener,
-                                 bool is_sender)
+                                 ProcessorType type)
     : listener_(listener) {
   flow_ids_.insert(0);
   if (listener_) {
-    listener_->AddPacketProcessor(this, is_sender);
+    listener_->AddPacketProcessor(this, type);
   }
 }
 
 PacketProcessor::PacketProcessor(PacketProcessorListener* listener,
                                  int flow_id,
-                                 bool is_sender)
+                                 ProcessorType type)
     : listener_(listener) {
   flow_ids_.insert(flow_id);
   if (listener_) {
-    listener_->AddPacketProcessor(this, is_sender);
+    listener_->AddPacketProcessor(this, type);
   }
 }
 
 PacketProcessor::PacketProcessor(PacketProcessorListener* listener,
                                  const FlowIds& flow_ids,
-                                 bool is_sender)
+                                 ProcessorType type)
     : listener_(listener), flow_ids_(flow_ids) {
   if (listener_) {
-    listener_->AddPacketProcessor(this, is_sender);
+    listener_->AddPacketProcessor(this, type);
   }
 }
 
@@ -242,24 +232,26 @@ PacketProcessor::~PacketProcessor() {
 }
 
 RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener)
-    : PacketProcessor(listener, false),
+    : PacketProcessor(listener, kRegular),
       rate_counter_(new RateCounter()),
       packets_per_second_stats_(),
       kbps_stats_(),
-      name_("") {}
+      name_("") {
+}
 
 RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
                                      const std::string& name)
-    : PacketProcessor(listener, false),
+    : PacketProcessor(listener, kRegular),
       rate_counter_(new RateCounter()),
       packets_per_second_stats_(),
       kbps_stats_(),
-      name_(name) {}
+      name_(name) {
+}
 
 RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
                                      const FlowIds& flow_ids,
                                      const std::string& name)
-    : PacketProcessor(listener, flow_ids, false),
+    : PacketProcessor(listener, flow_ids, kRegular),
       rate_counter_(new RateCounter()),
       packets_per_second_stats_(),
       kbps_stats_(),
@@ -310,7 +302,7 @@ void RateCounterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
 }
 
 LossFilter::LossFilter(PacketProcessorListener* listener)
-    : PacketProcessor(listener, false),
+    : PacketProcessor(listener, kRegular),
       random_(0x12345678),
       loss_fraction_(0.0f) {
 }
@@ -336,9 +328,7 @@ void LossFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
 }
 
 DelayFilter::DelayFilter(PacketProcessorListener* listener)
-    : PacketProcessor(listener, false),
-      delay_us_(0),
-      last_send_time_us_(0) {
+    : PacketProcessor(listener, kRegular), delay_us_(0), last_send_time_us_(0) {
 }
 
 void DelayFilter::SetDelay(int64_t delay_ms) {
@@ -358,7 +348,7 @@ void DelayFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
 }
 
 JitterFilter::JitterFilter(PacketProcessorListener* listener)
-    : PacketProcessor(listener, false),
+    : PacketProcessor(listener, kRegular),
       random_(0x89674523),
       stddev_jitter_us_(0),
       last_send_time_us_(0) {
@@ -383,7 +373,7 @@ void JitterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
 }
 
 ReorderFilter::ReorderFilter(PacketProcessorListener* listener)
-    : PacketProcessor(listener, false),
+    : PacketProcessor(listener, kRegular),
       random_(0x27452389),
       reorder_fraction_(0.0f) {
 }
@@ -415,7 +405,7 @@ void ReorderFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
 }
 
 ChokeFilter::ChokeFilter(PacketProcessorListener* listener)
-    : PacketProcessor(listener, false),
+    : PacketProcessor(listener, kRegular),
       kbps_(1200),
       last_send_time_us_(0),
       delay_cap_helper_(new DelayCapHelper()) {
@@ -423,7 +413,7 @@ ChokeFilter::ChokeFilter(PacketProcessorListener* listener)
 
 ChokeFilter::ChokeFilter(PacketProcessorListener* listener,
                          const FlowIds& flow_ids)
-    : PacketProcessor(listener, flow_ids, false),
+    : PacketProcessor(listener, flow_ids, kRegular),
       kbps_(1200),
       last_send_time_us_(0),
       delay_cap_helper_(new DelayCapHelper()) {
@@ -467,7 +457,7 @@ Stats<double> ChokeFilter::GetDelayStats() const {
 
 TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
     PacketProcessorListener* listener)
-    : PacketProcessor(listener, false),
+    : PacketProcessor(listener, kRegular),
       current_offset_us_(0),
       delivery_times_us_(),
       next_delivery_it_(),
@@ -476,12 +466,13 @@ TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
       name_(""),
       delay_cap_helper_(new DelayCapHelper()),
       packets_per_second_stats_(),
-      kbps_stats_() {}
+      kbps_stats_() {
+}
 
 TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
     PacketProcessorListener* listener,
     const std::string& name)
-    : PacketProcessor(listener, false),
+    : PacketProcessor(listener, kRegular),
       current_offset_us_(0),
       delivery_times_us_(),
       next_delivery_it_(),
@@ -490,7 +481,8 @@ TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
       name_(name),
       delay_cap_helper_(new DelayCapHelper()),
       packets_per_second_stats_(),
-      kbps_stats_() {}
+      kbps_stats_() {
+}
 
 TraceBasedDeliveryFilter::~TraceBasedDeliveryFilter() {
 }
@@ -771,6 +763,9 @@ void FullSendSideBwe::GiveFeedback(const FeedbackPacket& feedback) {
   int expected_packets = fb.packet_feedback_vector().back().sequence_number -
                          fb.packet_feedback_vector().front().sequence_number +
                          1;
+  // Assuming no reordering for now.
+  if (expected_packets <= 0)
+    return;
   int lost_packets = expected_packets - fb.packet_feedback_vector().size();
   report_block_.fractionLost = (lost_packets << 8) / expected_packets;
   report_block_.cumulativeLost += lost_packets;
@@ -815,7 +810,7 @@ SendSideBwe* CreateEstimator(BandwidthEstimatorType estimator,
 PacketSender::PacketSender(PacketProcessorListener* listener,
                            VideoSource* source,
                            BandwidthEstimatorType estimator)
-    : PacketProcessor(listener, source->flow_id(), true),
+    : PacketProcessor(listener, source->flow_id(), kSender),
       // For Packet::send_time_us() to be comparable with timestamps from
       // clock_, the clock of the PacketSender and the Source must be aligned.
       // We assume that both start at time 0.

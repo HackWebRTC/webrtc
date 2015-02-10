@@ -162,7 +162,7 @@ class Random {
 
 class Packet {
  public:
-  enum Type { kMediaPacket, kFeedbackPacket };
+  enum Type { kMedia, kFeedback };
 
   Packet();
   Packet(int flow_id, int64_t send_time_us, size_t payload_size);
@@ -197,7 +197,7 @@ class MediaPacket : public Packet {
   int64_t GetAbsSendTimeInMs() const;
   void SetAbsSendTimeMs(int64_t abs_send_time_ms);
   const RTPHeader& header() const { return header_; }
-  virtual Packet::Type GetPacketType() const { return kMediaPacket; }
+  virtual Packet::Type GetPacketType() const { return kMedia; }
 
  private:
   RTPHeader header_;
@@ -209,7 +209,7 @@ class FeedbackPacket : public Packet {
       : Packet(flow_id, send_time_us, 0) {}
   virtual ~FeedbackPacket() {}
 
-  virtual Packet::Type GetPacketType() const { return kFeedbackPacket; }
+  virtual Packet::Type GetPacketType() const { return kFeedback; }
 };
 
 class RembFeedback : public FeedbackPacket {
@@ -252,23 +252,26 @@ bool IsTimeSorted(const Packets& packets);
 
 class PacketProcessor;
 
+enum ProcessorType { kSender, kReceiver, kRegular };
+
 class PacketProcessorListener {
  public:
   virtual ~PacketProcessorListener() {}
 
   virtual void AddPacketProcessor(PacketProcessor* processor,
-                                  bool is_sender) = 0;
+                                  ProcessorType type) = 0;
   virtual void RemovePacketProcessor(PacketProcessor* processor) = 0;
 };
 
 class PacketProcessor {
  public:
-  PacketProcessor(PacketProcessorListener* listener, bool is_sender);
+  PacketProcessor(PacketProcessorListener* listener, ProcessorType type);
   PacketProcessor(PacketProcessorListener* listener,
                   int flow_id,
-                  bool is_sender);
-  PacketProcessor(PacketProcessorListener* listener, const FlowIds& flow_ids,
-                  bool is_sender);
+                  ProcessorType type);
+  PacketProcessor(PacketProcessorListener* listener,
+                  const FlowIds& flow_ids,
+                  ProcessorType type);
   virtual ~PacketProcessor();
 
   // Called after each simulation batch to allow the processor to plot any
