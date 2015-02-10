@@ -76,6 +76,7 @@ const float kHoldTargetSeconds = 0.25f;
 
 // Does conjugate(|norm_mat|) * |mat| * transpose(|norm_mat|). No extra space is
 // used; to accomplish this, we compute both multiplications in the same loop.
+// The returned norm is clamped to be non-negative.
 float Norm(const ComplexMatrix<float>& mat,
            const ComplexMatrix<float>& norm_mat) {
   CHECK_EQ(norm_mat.num_rows(), 1);
@@ -97,7 +98,7 @@ float Norm(const ComplexMatrix<float>& mat,
     second_product += first_product * norm_mat_els[0][i];
     first_product = 0.f;
   }
-  return second_product.real();
+  return std::max(second_product.real(), 0.f);
 }
 
 // Does conjugate(|lhs|) * |rhs| for row vectors |lhs| and |rhs|.
@@ -352,7 +353,7 @@ void Beamformer::ProcessAudioBlock(const complex_f* const* input,
 
     float rxim = Norm(target_cov_mats_[i], eig_m_);
     float ratio_rxiw_rxim = 0.f;
-    if (rxim != 0.f) {
+    if (rxim > 0.f) {
       ratio_rxiw_rxim = rxiws_[i] / rxim;
     }
 
@@ -398,7 +399,10 @@ float Beamformer::CalculatePostfilterMask(const ComplexMatrixF& interf_cov_mat,
   float rpsim = Norm(interf_cov_mat, eig_m_);
 
   // Find lambda.
-  float ratio = rpsiw / rpsim;
+  float ratio = 0.f;
+  if (rpsim > 0.f) {
+    ratio = rpsiw / rpsim;
+  }
   float numerator = rmw_r - ratio;
   float denominator = ratio_rxiw_rxim - ratio;
 
