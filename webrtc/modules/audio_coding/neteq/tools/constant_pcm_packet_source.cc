@@ -31,7 +31,7 @@ ConstantPcmPacketSource::ConstantPcmPacketSource(size_t payload_len_samples,
       seq_number_(0),
       timestamp_(0),
       payload_ssrc_(0xABCD1234) {
-  int encoded_len = WebRtcPcm16b_EncodeW16(&sample_value, 1, &encoded_sample_);
+  int encoded_len = WebRtcPcm16b_Encode(&sample_value, 1, encoded_sample_);
   CHECK_EQ(encoded_len, 2);
 }
 
@@ -39,9 +39,8 @@ Packet* ConstantPcmPacketSource::NextPacket() {
   CHECK_GT(packet_len_bytes_, kHeaderLenBytes);
   uint8_t* packet_memory = new uint8_t[packet_len_bytes_];
   // Fill the payload part of the packet memory with the pre-encoded value.
-  std::fill_n(reinterpret_cast<int16_t*>(packet_memory + kHeaderLenBytes),
-              payload_len_samples_,
-              encoded_sample_);
+  for (unsigned i = 0; i < 2 * payload_len_samples_; ++i)
+    packet_memory[kHeaderLenBytes + i] = encoded_sample_[i % 2];
   WriteHeader(packet_memory);
   // |packet| assumes ownership of |packet_memory|.
   Packet* packet =

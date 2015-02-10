@@ -1569,7 +1569,7 @@ int NetEQTest_encode(int coder, int16_t *indata, int frameLen, unsigned char * e
 #ifdef CODEC_PCM16B
         else if ((coder==webrtc::kDecoderPCM16B)||(coder==webrtc::kDecoderPCM16Bwb)||
             (coder==webrtc::kDecoderPCM16Bswb32kHz)||(coder==webrtc::kDecoderPCM16Bswb48kHz)) { /*pcm16b (8kHz, 16kHz, 32kHz or 48kHz) */
-                cdlen = WebRtcPcm16b_EncodeW16(indata, frameLen, (int16_t*) encoded);
+                cdlen = WebRtcPcm16b_Encode(indata, frameLen, encoded);
             }
 #endif
 #ifdef CODEC_G722
