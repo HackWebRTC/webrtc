@@ -83,7 +83,7 @@ class Beamformer : public LappedTransform::Callback {
 
   // Prevents the postfilter masks from degenerating too quickly (a cause of
   // musical noise).
-  void ApplyDecay();
+  void ApplyMaskSmoothing();
 
   // The postfilter masks are unreliable at low frequencies. Calculates a better
   // mask by averaging mid-low frequency values.
@@ -119,7 +119,6 @@ class Beamformer : public LappedTransform::Callback {
   const float mic_spacing_;
 
   // Calculated based on user-input and constants in the .cc file.
-  float decay_threshold_;
   int low_average_start_bin_;
   int low_average_end_bin_;
   int high_average_start_bin_;

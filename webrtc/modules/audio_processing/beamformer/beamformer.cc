@@ -58,8 +58,8 @@ const float kBoxcarHalfWidth = 0.001f;
 // that our covariance matrices are positive semidefinite.
 const float kCovUniformGapHalfWidth = 0.001f;
 
-// Lower bound on gain decay.
-const float kHalfLifeSeconds = 0.05f;
+// Alpha coefficient for mask smoothing.
+const float kMaskSmoothAlpha = 0.2f;
 
 // The average mask is computed from masks in this mid-frequency range.
 const int kLowAverageStartHz = 200;
@@ -151,8 +151,6 @@ Beamformer::Beamformer(const std::vector<Point>& array_geometry)
 void Beamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
   chunk_length_ = sample_rate_hz / (1000.f / chunk_size_ms);
   sample_rate_hz_ = sample_rate_hz;
-  decay_threshold_ =
-      pow(2, (kFftSize / -2.f) / (sample_rate_hz_ * kHalfLifeSeconds));
   low_average_start_bin_ =
       Round(kLowAverageStartHz * kFftSize / sample_rate_hz_);
   low_average_end_bin_ =
@@ -379,7 +377,7 @@ void Beamformer::ProcessAudioBlock(const complex_f* const* input,
 
   // Can't access block_index - 1 on the first block.
   if (previous_block_ix_ >= 0) {
-    ApplyDecay();
+    ApplyMaskSmoothing();
   }
 
   ApplyLowFrequencyCorrection();
@@ -430,13 +428,13 @@ void Beamformer::ApplyMasks(const complex_f* const* input,
   }
 }
 
-void Beamformer::ApplyDecay() {
+void Beamformer::ApplyMaskSmoothing() {
   float* current_mask_els = postfilter_masks_[current_block_ix_].elements()[0];
   const float* previous_block_els =
       postfilter_masks_[previous_block_ix_].elements()[0];
   for (int i = 0; i < kNumFreqBins; ++i) {
-    current_mask_els[i] =
-        std::max(current_mask_els[i], previous_block_els[i] * decay_threshold_);
+    current_mask_els[i] = kMaskSmoothAlpha * current_mask_els[i] +
+                          (1.f - kMaskSmoothAlpha) * previous_block_els[i];
   }
 }
 
