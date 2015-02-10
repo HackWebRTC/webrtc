@@ -46,8 +46,8 @@ void Event::Reset() {
   ResetEvent(event_handle_);
 }
 
-bool Event::Wait(int cms) {
-  DWORD ms = (cms == kForever) ? INFINITE : cms;
+bool Event::Wait(int milliseconds) {
+  DWORD ms = (milliseconds == kForever) ? INFINITE : milliseconds;
   return (WaitForSingleObject(event_handle_, ms) == WAIT_OBJECT_0);
 }
 
@@ -78,11 +78,11 @@ void Event::Reset() {
   pthread_mutex_unlock(&event_mutex_);
 }
 
-bool Event::Wait(int cms) {
+bool Event::Wait(int milliseconds) {
   pthread_mutex_lock(&event_mutex_);
   int error = 0;
 
-  if (cms != kForever) {
+  if (milliseconds != kForever) {
     // Converting from seconds and microseconds (1e-6) plus
     // milliseconds (1e-3) to seconds and nanoseconds (1e-9).
 
@@ -90,14 +90,14 @@ bool Event::Wait(int cms) {
 #if HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE
     // Use relative time version, which tends to be more efficient for
     // pthread implementations where provided (like on Android).
-    ts.tv_sec = cms / 1000;
-    ts.tv_nsec = (cms % 1000) * 1000000;
+    ts.tv_sec = milliseconds / 1000;
+    ts.tv_nsec = (milliseconds % 1000) * 1000000;
 #else
     struct timeval tv;
     gettimeofday(&tv, NULL);
 
-    ts.tv_sec = tv.tv_sec + (cms / 1000);
-    ts.tv_nsec = tv.tv_usec * 1000 + (cms % 1000) * 1000000;
+    ts.tv_sec = tv.tv_sec + (milliseconds / 1000);
+    ts.tv_nsec = tv.tv_usec * 1000 + (milliseconds % 1000) * 1000000;
 
     // Handle overflow.
     if (ts.tv_nsec >= 1000000000) {

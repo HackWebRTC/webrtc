@@ -32,7 +32,10 @@ class Event {
 
   void Set();
   void Reset();
-  bool Wait(int cms);
+
+  // Wait for the event to become signaled, for the specified number of
+  // |milliseconds|.  To wait indefinetly, pass kForever.
+  bool Wait(int milliseconds);
 
  private:
 #if defined(WEBRTC_WIN)
