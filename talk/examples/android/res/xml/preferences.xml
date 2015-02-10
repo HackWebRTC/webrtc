@@ -58,4 +58,10 @@
         android:defaultValue="@string/pref_room_server_url_default"
         android:dialogTitle="@string/pref_room_server_url_dlg" />
 
+    <CheckBoxPreference
+        android:key="@string/pref_displayhud_key"
+        android:title="@string/pref_displayhud_title"
+        android:dialogTitle="@string/pref_displayhud_dlg"
+        android:defaultValue="@string/pref_displayhud_default" />
+
 </PreferenceScreen>

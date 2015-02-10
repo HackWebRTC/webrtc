@@ -39,11 +39,11 @@
                   android:label="@string/settings_name">
         </activity>
 
-        <activity android:name="AppRTCDemoActivity"
+        <activity android:name="CallActivity"
                   android:label="@string/app_name"
                   android:screenOrientation="fullUser"
                   android:configChanges="orientation|screenSize"
-                  android:theme="@style/AppRTCDemoActivityTheme">
+                  android:theme="@style/CallActivityTheme">
         </activity>
     </application>
 </manifest>

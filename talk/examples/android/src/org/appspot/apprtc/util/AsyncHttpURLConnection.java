@@ -36,7 +36,7 @@ import java.net.URL;
 import java.util.Scanner;
 
 /**
- * Asynchronious http requests implementation.
+ * Asynchronous http requests implementation.
  */
 public class AsyncHttpURLConnection {
   private static final int HTTP_TIMEOUT_MS = 5000;

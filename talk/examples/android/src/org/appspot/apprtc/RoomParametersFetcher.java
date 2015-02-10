@@ -56,6 +56,8 @@ public class RoomParametersFetcher {
   private static final String TAG = "RoomRTCClient";
   private final RoomParametersFetcherEvents events;
   private final boolean loopback;
+  private final String registerUrl;
+  private final String registerMessage;
   private AsyncHttpURLConnection httpConnection;
 
   /**
@@ -75,12 +77,17 @@ public class RoomParametersFetcher {
   }
 
   public RoomParametersFetcher(boolean loopback, String registerUrl,
-      final RoomParametersFetcherEvents events) {
-    Log.d(TAG, "Connecting to room: " + registerUrl);
+      String registerMessage, final RoomParametersFetcherEvents events) {
     this.loopback = loopback;
+    this.registerUrl = registerUrl;
+    this.registerMessage = registerMessage;
     this.events = events;
+  }
 
-    httpConnection = new AsyncHttpURLConnection("POST", registerUrl, null,
+  public void makeRequest() {
+    Log.d(TAG, "Connecting to room: " + registerUrl);
+    httpConnection = new AsyncHttpURLConnection(
+        "POST", registerUrl, registerMessage,
         new AsyncHttpEvents() {
           @Override
           public void onHttpError(String errorMessage) {
@@ -179,8 +186,7 @@ public class RoomParametersFetcher {
       SignalingParameters params = new SignalingParameters(
           iceServers, initiator,
           pcConstraints, videoConstraints, audioConstraints,
-          roomId, clientId,
-          wssUrl, wssPostUrl,
+          clientId, wssUrl, wssPostUrl,
           offerSdp, iceCandidates);
       events.onSignalingParametersReady(params);
     } catch (JSONException e) {

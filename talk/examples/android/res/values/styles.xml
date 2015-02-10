@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <style name="AppRTCDemoActivityTheme" parent="android:Theme.Black">
+  <style name="CallActivityTheme" parent="android:Theme.Black">
     <item name="android:windowActionBar">false</item>
     <item name="android:windowFullscreen">true</item>
     <item name="android:windowNoTitle">true</item>

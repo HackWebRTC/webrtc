@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/encoder_stat_call"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:textStyle="bold"
+        android:textColor="#C000FF00"
+        android:textSize="12dp"
+        android:layout_margin="8dp"/>
+
+    <TextView
+        android:id="@+id/contact_name_call"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@+id/buttons_call_container"
+        android:textSize="24sp"
+        android:layout_margin="8dp"/>
+
+    <TextView
+        android:id="@+id/hud_stat_call"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:alpha="0.4"
+        android:background="@android:color/white"
+        android:textColor="@android:color/black" />
+
+    <ImageButton
+        android:id="@+id/button_toggle_debug"
+        android:background="@android:drawable/ic_menu_info_details"
+        android:contentDescription="@string/toggle_debug"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_width="48dp"
+        android:layout_height="48dp"/>
+
+    <LinearLayout
+           android:id="@+id/buttons_call_container"
+           android:orientation="horizontal"
+           android:layout_alignParentBottom="true"
+           android:layout_marginBottom="32dp"
+           android:layout_centerHorizontal="true"
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content">
+
+       <ImageButton
+           android:id="@+id/button_call_disconnect"
+           android:background="@drawable/disconnect"
+           android:contentDescription="@string/disconnect_call"
+           android:layout_marginRight="16dp"
+           android:layout_width="48dp"
+           android:layout_height="48dp"/>
+
+       <ImageButton
+           android:id="@+id/button_call_switch_camera"
+           android:background="@android:drawable/ic_menu_camera"
+           android:contentDescription="@string/switch_camera"
+           android:layout_marginRight="8dp"
+           android:layout_width="48dp"
+           android:layout_height="48dp"/>
+
+        <ImageButton
+           android:id="@+id/button_call_scaling_mode"
+           android:background="@drawable/ic_action_return_from_full_screen"
+           android:contentDescription="@string/disconnect_call"
+           android:layout_width="48dp"
+           android:layout_height="48dp"/>
+    </LinearLayout>
+
+</RelativeLayout>

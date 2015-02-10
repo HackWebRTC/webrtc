@@ -35,11 +35,13 @@ import java.util.concurrent.TimeUnit;
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.appspot.apprtc.PeerConnectionClient;
 import org.appspot.apprtc.PeerConnectionClient.PeerConnectionEvents;
+import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
 import org.appspot.apprtc.util.LooperExecutor;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
 import org.webrtc.SessionDescription;
+import org.webrtc.StatsReport;
 import org.webrtc.VideoRenderer;
 
 import android.test.InstrumentationTestCase;
@@ -167,6 +169,10 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     fail("PC Error: " + description);
   }
 
+  @Override
+  public void onPeerConnectionStatsReady(StatsReport[] reports) {
+  }
+
   // Helper wait functions.
   private boolean waitForLocalSDP(int timeoutMs)
       throws InterruptedException {
@@ -220,8 +226,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     SignalingParameters signalingParameters = new SignalingParameters(
         iceServers, true,
         pcConstraints, videoConstraints, audioConstraints,
-        null, null,
-        null, null,
+        null, null, null,
         null, null);
     return signalingParameters;
   }
@@ -229,12 +234,14 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
   PeerConnectionClient createPeerConnectionClient(MockRenderer localRenderer,
                                                   MockRenderer remoteRenderer) {
     SignalingParameters signalingParameters = getTestSignalingParameters();
+    PeerConnectionParameters peerConnectionParameters =
+        new PeerConnectionParameters(0, 0, 0, 0, false);
 
     PeerConnectionClient client = new PeerConnectionClient();
     client.createPeerConnectionFactory(
         getInstrumentation().getContext(), "VP8", true, null, this);
-    client.createPeerConnection(
-        localRenderer, remoteRenderer, signalingParameters, 1000);
+    client.createPeerConnection(localRenderer, remoteRenderer,
+        signalingParameters, peerConnectionParameters);
     client.createOffer();
     return client;
   }
@@ -313,4 +320,5 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     assertTrue(waitForPeerConnectionClosed(WAIT_TIMEOUT));
     Log.d(TAG, "testLoopback Done.");
   }
+
 }

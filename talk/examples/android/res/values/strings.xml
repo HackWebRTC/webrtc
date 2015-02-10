@@ -17,6 +17,7 @@
     <string name="missing_url">FATAL ERROR: Missing URL to connect to.</string>
     <string name="ok">OK</string>
     <string name="switch_camera">Switch front/back camera</string>
+    <string name="toggle_debug">Toggle debug view</string>
     <string name="action_settings">Settings</string>
     <string name="add_room_description">Add new room to the list</string>
     <string name="remove_room_description">Remove room from the list</string>
@@ -40,7 +41,7 @@
     <string name="pref_cpu_usage_detection_key">cpu_usage_detection</string>
     <string name="pref_cpu_usage_detection_title">CPU overuse detection.</string>
     <string name="pref_cpu_usage_detection_dlg">Adapt transmission to CPU status.</string>
-    <string name="pref_cpu_usage_detection_default">true</string>
+    <string name="pref_cpu_usage_detection_default" translatable="false">true</string>
 
     <string name="pref_startbitrate_key">startbitrate_preference</string>
     <string name="pref_startbitrate_title">Start bitrate setting.</string>
@@ -68,6 +69,11 @@
     <string name="pref_room_server_url_key">room_server_url_preference</string>
     <string name="pref_room_server_url_title">Room server URL.</string>
     <string name="pref_room_server_url_dlg">Enter a room server URL.</string>
-    <string name="pref_room_server_url_default">https://apprtc.appspot.com</string>
+    <string name="pref_room_server_url_default" translatable="false">https://apprtc.appspot.com</string>
+
+    <string name="pref_displayhud_key">displayhud_preference</string>
+    <string name="pref_displayhud_title">Display call statistics.</string>
+    <string name="pref_displayhud_dlg">Display call statistics.</string>
+    <string name="pref_displayhud_default" translatable="false">false</string>
 
 </resources>

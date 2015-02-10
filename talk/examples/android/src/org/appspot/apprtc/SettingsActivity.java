@@ -47,6 +47,7 @@ public class SettingsActivity extends Activity
   private String keyprefHwCodec;
   private String keyprefCpuUsageDetection;
   private String keyPrefRoomServerUrl;
+  private String keyPrefDisplayHud;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +60,7 @@ public class SettingsActivity extends Activity
     keyprefHwCodec = getString(R.string.pref_hwcodec_key);
     keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
     keyPrefRoomServerUrl = getString(R.string.pref_room_server_url_key);
+    keyPrefDisplayHud = getString(R.string.pref_displayhud_key);
 
     // Display the fragment as the main content.
     settingsFragment = new SettingsFragment();
@@ -83,6 +85,7 @@ public class SettingsActivity extends Activity
     updateSummaryB(sharedPreferences, keyprefHwCodec);
     updateSummaryB(sharedPreferences, keyprefCpuUsageDetection);
     updateSummary(sharedPreferences, keyPrefRoomServerUrl);
+    updateSummaryB(sharedPreferences, keyPrefDisplayHud);
   }
 
   @Override
@@ -105,7 +108,7 @@ public class SettingsActivity extends Activity
     } else if (key.equals(keyprefStartBitrateValue)) {
       updateSummaryBitrate(sharedPreferences, key);
     } else if (key.equals(keyprefCpuUsageDetection)
-        || key.equals(keyprefHwCodec)) {
+        || key.equals(keyprefHwCodec) || key.equals(keyPrefDisplayHud)) {
       updateSummaryB(sharedPreferences, key);
     }
     if (key.equals(keyprefStartBitrateType)) {
