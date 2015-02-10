@@ -1349,14 +1349,16 @@ void NetEqImpl::DoMerge(int16_t* decoded_buffer, size_t decoded_length,
   int new_length = merge_->Process(decoded_buffer, decoded_length,
                                    mute_factor_array_.get(),
                                    algorithm_buffer_.get());
+  int expand_length_correction = new_length -
+      static_cast<int>(decoded_length / algorithm_buffer_->Channels());
 
   // Update in-call and post-call statistics.
   if (expand_->MuteFactor(0) == 0) {
     // Expand generates only noise.
-    stats_.ExpandedNoiseSamples(new_length - static_cast<int>(decoded_length));
+    stats_.ExpandedNoiseSamples(expand_length_correction);
   } else {
     // Expansion generates more than only noise.
-    stats_.ExpandedVoiceSamples(new_length - static_cast<int>(decoded_length));
+    stats_.ExpandedVoiceSamples(expand_length_correction);
   }
 
   last_mode_ = kModeMerge;
