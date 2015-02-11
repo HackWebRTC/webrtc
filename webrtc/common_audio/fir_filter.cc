@@ -57,7 +57,7 @@ FIRFilter* FIRFilter::Create(const float* coefficients,
     filter = new FIRFilterC(coefficients, coefficients_length);
   }
 #endif
-#elif defined(WEBRTC_ARCH_ARM_V7)
+#elif defined(WEBRTC_DETECT_ARM_NEON) || defined(WEBRTC_ARCH_ARM_NEON)
 #if defined(WEBRTC_ARCH_ARM_NEON)
   filter =
       new FIRFilterNEON(coefficients, coefficients_length, max_input_length);
