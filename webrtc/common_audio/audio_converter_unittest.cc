@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <math.h>
+#include <cmath>
 #include <algorithm>
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_audio/audio_converter.h"
-#include "webrtc/common_audio/resampler/push_sinc_resampler.h"
 #include "webrtc/common_audio/channel_buffer.h"
+#include "webrtc/common_audio/resampler/push_sinc_resampler.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
@@ -63,6 +63,7 @@ float ComputeSNR(const ChannelBuffer<float>& ref,
         mean += ref.channels()[i][j];
       }
     }
+
     const int length = ref.num_channels() * (ref.num_frames() - delay);
     mse /= length;
     variance /= length;
@@ -70,7 +71,7 @@ float ComputeSNR(const ChannelBuffer<float>& ref,
     variance -= mean * mean;
     float snr = 100;  // We assign 100 dB to the zero-error case.
     if (mse > 0)
-      snr = 10 * log10(variance / mse);
+      snr = 10 * std::log10(variance / mse);
     if (snr > best_snr) {
       best_snr = snr;
       best_delay = delay;
@@ -127,9 +128,11 @@ void RunAudioConverterTest(int src_channels,
   printf("(%d, %d Hz) -> (%d, %d Hz) ",  // SNR reported on the same line later.
       src_channels, src_sample_rate_hz, dst_channels, dst_sample_rate_hz);
 
-  AudioConverter converter(src_channels, src_frames, dst_channels, dst_frames);
-  converter.Convert(src_buffer->channels(), src_channels, src_frames,
-                    dst_channels, dst_frames, dst_buffer->channels());
+  scoped_ptr<AudioConverter> converter =
+      AudioConverter::Create(src_channels, src_frames, dst_channels,
+                             dst_frames);
+  converter->Convert(src_buffer->channels(), src_buffer->size(),
+                     dst_buffer->channels(), dst_buffer->size());
 
   EXPECT_LT(43.f,
             ComputeSNR(*ref_buffer.get(), *dst_buffer.get(), delay_frames));
