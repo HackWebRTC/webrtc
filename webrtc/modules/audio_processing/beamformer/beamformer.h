@@ -160,8 +160,6 @@ class Beamformer : public LappedTransform::Callback {
   ComplexMatrixF eig_m_;
 
   // For processing the high-frequency input signal.
-  bool high_pass_exists_;
-  int num_blocks_in_this_chunk_;
   float high_pass_postfilter_mask_;
 
   // True when the target signal is present.

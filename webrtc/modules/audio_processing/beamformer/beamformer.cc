@@ -295,17 +295,12 @@ void Beamformer::ProcessChunk(const float* const* input,
   CHECK_EQ(num_input_channels, num_input_channels_);
   CHECK_EQ(num_frames_per_band, chunk_length_);
 
-  num_blocks_in_this_chunk_ = 0;
   float old_high_pass_mask = high_pass_postfilter_mask_;
-  high_pass_postfilter_mask_ = 0.f;
-  high_pass_exists_ = high_pass_split_input != NULL;
   lapped_transform_->ProcessChunk(input, output);
 
   // Apply delay and sum and post-filter in the time domain. WARNING: only works
   // because delay-and-sum is not frequency dependent.
-  if (high_pass_exists_) {
-    high_pass_postfilter_mask_ /= num_blocks_in_this_chunk_;
-
+  if (high_pass_split_input != NULL) {
     if (previous_block_ix_ == -1) {
       old_high_pass_mask = high_pass_postfilter_mask_;
     }
@@ -388,7 +383,6 @@ void Beamformer::ProcessAudioBlock(const complex_f* const* input,
 
   previous_block_ix_ = current_block_ix_;
   current_block_ix_ = (current_block_ix_ + 1) % kNumberSavedPostfilterMasks;
-  num_blocks_in_this_chunk_++;
 }
 
 float Beamformer::CalculatePostfilterMask(const ComplexMatrixF& interf_cov_mat,
@@ -457,19 +451,17 @@ void Beamformer::ApplyLowFrequencyCorrection() {
 }
 
 void Beamformer::ApplyHighFrequencyCorrection() {
-  float high_pass_mask = 0.f;
+  high_pass_postfilter_mask_ = 0.f;
   float* mask_els = postfilter_masks_[current_block_ix_].elements()[0];
   for (int i = high_average_start_bin_; i < high_average_end_bin_; ++i) {
-    high_pass_mask += mask_els[i];
+    high_pass_postfilter_mask_ += mask_els[i];
   }
 
-  high_pass_mask /= high_average_end_bin_ - high_average_start_bin_;
+  high_pass_postfilter_mask_ /= high_average_end_bin_ - high_average_start_bin_;
 
   for (int i = high_average_end_bin_; i < kNumFreqBins; ++i) {
-    mask_els[i] = high_pass_mask;
+    mask_els[i] = high_pass_postfilter_mask_;
   }
-
-  high_pass_postfilter_mask_ += high_pass_mask;
 }
 
 // This method CHECKs for a uniform linear array.
