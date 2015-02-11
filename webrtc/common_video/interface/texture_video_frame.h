@@ -48,6 +48,18 @@ class TextureVideoFrame : public I420VideoFrame {
                           int stride_y,
                           int stride_u,
                           int stride_v) OVERRIDE;
+  virtual int CreateFrame(int size_y,
+                          const uint8_t* buffer_y,
+                          int size_u,
+                          const uint8_t* buffer_u,
+                          int size_v,
+                          const uint8_t* buffer_v,
+                          int width,
+                          int height,
+                          int stride_y,
+                          int stride_u,
+                          int stride_v,
+                          webrtc::VideoRotation rotation) OVERRIDE;
   virtual int CopyFrame(const I420VideoFrame& videoFrame) OVERRIDE;
   virtual I420VideoFrame* CloneFrame() const OVERRIDE;
   virtual void SwapFrame(I420VideoFrame* videoFrame) OVERRIDE;

@@ -68,6 +68,10 @@ public:
     virtual void SetCaptureDelay(int32_t delayMS);
     virtual int32_t CaptureDelay();
     virtual int32_t SetCaptureRotation(VideoCaptureRotation rotation);
+    virtual bool SetApplyRotation(bool enable);
+    virtual bool GetApplyRotation() {
+      return apply_rotation_;
+    }
 
     virtual void EnableFrameRateCallback(const bool enable);
     virtual void EnableNoPictureAlarm(const bool enable);
@@ -140,6 +144,9 @@ private:
 
     // Delta used for translating between NTP and internal timestamps.
     const int64_t delta_ntp_internal_ms_;
+
+    // Indicate whether rotation should be applied before delivered externally.
+    bool apply_rotation_;
 };
 }  // namespace videocapturemodule
 }  // namespace webrtc

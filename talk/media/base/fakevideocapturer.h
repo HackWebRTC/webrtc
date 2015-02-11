@@ -49,7 +49,8 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
       : running_(false),
         initial_unix_timestamp_(time(NULL) * rtc::kNumNanosecsPerSec),
         next_timestamp_(rtc::kNumNanosecsPerMillisec),
-        is_screencast_(false) {
+        is_screencast_(false),
+        rotation_(webrtc::kVideoRotation_0) {
 #ifdef HAVE_WEBRTC_VIDEO
     set_frame_factory(new cricket::WebRtcVideoFrameFactory());
 #endif
@@ -115,6 +116,7 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
     memset(reinterpret_cast<uint8*>(frame.data) + (size / 2), 2,
          size - (size / 2));
     memcpy(frame.data, reinterpret_cast<const uint8*>(&fourcc), 4);
+    frame.rotation = rotation_;
     // TODO(zhurunz): SignalFrameCaptured carry returned value to be able to
     // capture results from downstream.
     SignalFrameCaptured(this, &frame);
@@ -148,11 +150,18 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
     return true;
   }
 
+  void SetRotation(webrtc::VideoRotation rotation) {
+    rotation_ = rotation;
+  }
+
+  webrtc::VideoRotation GetRotation() { return rotation_; }
+
  private:
   bool running_;
   int64 initial_unix_timestamp_;
   int64 next_timestamp_;
   bool is_screencast_;
+  webrtc::VideoRotation rotation_;
 };
 
 }  // namespace cricket

@@ -118,11 +118,13 @@ class VideoFrame {
 
   // Indicates the rotation angle in degrees.
   // TODO(guoweis): Remove this function, rename GetVideoRotation and remove the
-  // skeleton implementation to GetRotation once chrome is updated.
+  // skeleton implementation of GetRotation once chrome is updated.
   virtual int GetRotation() const { return GetVideoRotation(); }
   virtual webrtc::VideoRotation GetVideoRotation() const {
     return webrtc::kVideoRotation_0;
   }
+  // TODO(guoweis): Remove the skeleton implementation once chrome is updated.
+  virtual void SetRotation(webrtc::VideoRotation rotation) {}
 
   // Make a shallow copy of the frame. The frame buffer itself is not copied.
   // Both the current and new VideoFrame will share a single reference-counted
