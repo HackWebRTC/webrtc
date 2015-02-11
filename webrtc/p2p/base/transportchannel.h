@@ -100,8 +100,11 @@ class TransportChannel : public sigslot::has_slots<> {
   // Sets up the ciphers to use for DTLS-SRTP.
   virtual bool SetSrtpCiphers(const std::vector<std::string>& ciphers) = 0;
 
-  // Finds out which DTLS-SRTP cipher was negotiated
+  // Finds out which DTLS-SRTP cipher was negotiated.
   virtual bool GetSrtpCipher(std::string* cipher) = 0;
+
+  // Finds out which DTLS cipher was negotiated.
+  virtual bool GetSslCipher(std::string* cipher) = 0;
 
   // Gets a copy of the local SSL identity, owned by the caller.
   virtual bool GetLocalIdentity(rtc::SSLIdentity** identity) const = 0;

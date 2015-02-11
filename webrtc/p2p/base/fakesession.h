@@ -246,6 +246,10 @@ class FakeTransportChannel : public TransportChannelImpl,
     return false;
   }
 
+  virtual bool GetSslCipher(std::string* cipher) {
+    return false;
+  }
+
   virtual bool GetLocalIdentity(rtc::SSLIdentity** identity) const {
     if (!identity_)
       return false;

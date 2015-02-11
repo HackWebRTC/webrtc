@@ -20,6 +20,7 @@
 
 typedef struct ssl_st SSL;
 typedef struct ssl_ctx_st SSL_CTX;
+typedef struct ssl_cipher_st SSL_CIPHER;
 typedef struct x509_store_ctx_st X509_STORE_CTX;
 
 namespace rtc {
@@ -81,6 +82,11 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   virtual void Close();
   virtual StreamState GetState() const;
 
+  // Return the RFC (5246, 3268, etc.) cipher name for an OpenSSL cipher.
+  static const char* GetRfcSslCipherName(const SSL_CIPHER* cipher);
+
+  virtual bool GetSslCipher(std::string* cipher);
+
   // Key Extractor interface
   virtual bool ExportKeyingMaterial(const std::string& label,
                                     const uint8* context,
@@ -98,6 +104,7 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   static bool HaveDtls();
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
+  static std::string GetDefaultSslCipher();
 
  protected:
   virtual void OnEvent(StreamInterface* stream, int events, int err);

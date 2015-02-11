@@ -119,6 +119,12 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   // chain. The returned certificate is owned by the caller.
   virtual bool GetPeerCertificate(SSLCertificate** cert) const = 0;
 
+  // Retrieves the name of the cipher suite used for the connection
+  // (e.g. "TLS_RSA_WITH_AES_128_CBC_SHA").
+  virtual bool GetSslCipher(std::string* cipher) {
+    return false;
+  }
+
   // Key Exporter interface from RFC 5705
   // Arguments are:
   // label               -- the exporter label.
@@ -154,6 +160,10 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   static bool HaveDtls();
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
+
+  // Returns the default Ssl cipher used between streams of this class.
+  // This is used by the unit tests.
+  static std::string GetDefaultSslCipher();
 
  private:
   // If true, the server certificate need not match the configured

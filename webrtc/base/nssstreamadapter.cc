@@ -66,6 +66,10 @@ static const SrtpCipherMapEntry kSrtpCipherMap[] = {
 };
 #endif
 
+// Default cipher used between NSS stream adapters.
+// This needs to be updated when the default of the SSL library changes.
+static const char kDefaultSslCipher[] = "TLS_RSA_WITH_AES_128_CBC_SHA";
+
 
 // Implementation of NSPR methods
 static PRStatus StreamClose(PRFileDesc *socket) {
@@ -866,6 +870,27 @@ SECStatus NSSStreamAdapter::GetClientAuthDataHook(void *arg, PRFileDesc *fd,
   return SECSuccess;
 }
 
+bool NSSStreamAdapter::GetSslCipher(std::string* cipher) {
+  ASSERT(state_ == SSL_CONNECTED);
+  if (state_ != SSL_CONNECTED)
+    return false;
+
+  SSLChannelInfo channel_info;
+  SECStatus rv = SSL_GetChannelInfo(ssl_fd_, &channel_info,
+                                    sizeof(channel_info));
+  if (rv == SECFailure)
+    return false;
+
+  SSLCipherSuiteInfo ciphersuite_info;
+  rv = SSL_GetCipherSuiteInfo(channel_info.cipherSuite, &ciphersuite_info,
+                              sizeof(ciphersuite_info));
+  if (rv == SECFailure)
+    return false;
+
+  *cipher = ciphersuite_info.cipherSuiteName;
+  return true;
+}
+
 // RFC 5705 Key Exporter
 bool NSSStreamAdapter::ExportKeyingMaterial(const std::string& label,
                                             const uint8* context,
@@ -1009,6 +1034,10 @@ bool NSSStreamAdapter::HaveDtlsSrtp() {
 
 bool NSSStreamAdapter::HaveExporter() {
   return true;
+}
+
+std::string NSSStreamAdapter::GetDefaultSslCipher() {
+  return kDefaultSslCipher;
 }
 
 }  // namespace rtc
