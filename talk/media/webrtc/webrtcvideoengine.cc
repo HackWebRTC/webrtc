@@ -394,25 +394,12 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     if (!renderer_) {
       return 0;
     }
-    if (webrtc_frame.native_handle() == NULL) {
-      WebRtcVideoRenderFrame cricket_frame(&webrtc_frame, elapsed_time_ms);
-      return renderer_->RenderFrame(&cricket_frame) ? 0 : -1;
-    } else {
-      return DeliverTextureFrame(
-          webrtc_frame.native_handle(),
-          webrtc_frame.render_time_ms() * rtc::kNumNanosecsPerMillisec,
-          elapsed_time_ms * rtc::kNumNanosecsPerMillisec);
-    }
+
+    WebRtcVideoRenderFrame cricket_frame(&webrtc_frame, elapsed_time_ms);
+    return renderer_->RenderFrame(&cricket_frame) ? 0 : -1;
   }
 
   virtual bool IsTextureSupported() { return true; }
-
-  int DeliverTextureFrame(void* handle, int64 time_stamp, int64 elapsed_time) {
-    WebRtcTextureVideoFrame video_frame(
-        static_cast<webrtc::NativeHandle*>(handle), width_, height_,
-        elapsed_time, time_stamp);
-    return renderer_->RenderFrame(&video_frame);
-  }
 
   unsigned int width() {
     rtc::CritScope cs(&crit_);

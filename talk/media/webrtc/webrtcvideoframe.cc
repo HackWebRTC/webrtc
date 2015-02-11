@@ -32,6 +32,7 @@
 #include "libyuv/planar_functions.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videocommon.h"
+#include "talk/media/webrtc/webrtctexturevideoframe.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/video_frame.h"
 
@@ -453,7 +454,7 @@ int32 WebRtcVideoRenderFrame::GetVPitch() const {
 }
 
 void* WebRtcVideoRenderFrame::GetNativeHandle() const {
-  return NULL;
+  return frame_->native_handle();
 }
 
 size_t WebRtcVideoRenderFrame::GetPixelWidth() const {
@@ -487,6 +488,13 @@ webrtc::VideoRotation WebRtcVideoRenderFrame::GetVideoRotation() const {
 // This can be fixed by making webrtc::I420VideoFrame reference counted, or
 // adding a similar shallow copy function to it.
 VideoFrame* WebRtcVideoRenderFrame::Copy() const {
+  if (frame_->native_handle() != NULL) {
+    return new WebRtcTextureVideoFrame(
+        static_cast<webrtc::NativeHandle*>(frame_->native_handle()),
+        static_cast<size_t>(frame_->width()),
+        static_cast<size_t>(frame_->height()), GetElapsedTime(),
+        GetTimeStamp());
+  }
   WebRtcVideoFrame* new_frame = new WebRtcVideoFrame();
   new_frame->InitToEmptyBuffer(frame_->width(), frame_->height(), 1, 1,
                                GetElapsedTime(), GetTimeStamp());
