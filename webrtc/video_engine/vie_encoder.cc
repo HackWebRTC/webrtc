@@ -518,6 +518,7 @@ void ViEEncoder::DeliverFrame(int id,
                               I420VideoFrame* video_frame,
                               const std::vector<uint32_t>& csrcs) {
   DCHECK(send_payload_router_ != NULL);
+  DCHECK(csrcs.empty());
   if (!default_rtp_rtcp_->SendingMedia() || !send_payload_router_->active()) {
     // We've paused or we have no channels attached, don't waste resources on
     // encoding.
@@ -542,19 +543,6 @@ void ViEEncoder::DeliverFrame(int id,
   TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", video_frame->render_time_ms(),
                           "Encode");
   video_frame->set_timestamp(time_stamp);
-
-  // Make sure the CSRC list is correct.
-  if (csrcs.size() > 0) {
-    std::vector<uint32_t> temp_csrcs(csrcs.size());
-    for (size_t i = 0; i < csrcs.size(); i++) {
-      if (csrcs[i] == 1) {
-        temp_csrcs[i] = default_rtp_rtcp_->SSRC();
-      } else {
-        temp_csrcs[i] = csrcs[i];
-      }
-    }
-    default_rtp_rtcp_->SetCsrcs(temp_csrcs);
-  }
 
   I420VideoFrame* decimated_frame = NULL;
   // TODO(wuchengli): support texture frames.

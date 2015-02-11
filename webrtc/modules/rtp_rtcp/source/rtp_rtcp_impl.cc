@@ -381,21 +381,7 @@ void ModuleRtpRtcpImpl::SetSSRC(const uint32_t ssrc) {
 }
 
 void ModuleRtpRtcpImpl::SetCsrcs(const std::vector<uint32_t>& csrcs) {
-  if (IsDefaultModule()) {
-    // For default we need to update all child modules too.
-    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-
-    std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
-    while (it != child_modules_.end()) {
-      RtpRtcp* module = *it;
-      if (module) {
-        module->SetCsrcs(csrcs);
-      }
-      it++;
-    }
-    return;
-  }
-
+  assert(!IsDefaultModule());
   rtcp_sender_.SetCsrcs(csrcs);
   rtp_sender_.SetCsrcs(csrcs);
 }
