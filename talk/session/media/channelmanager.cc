@@ -149,6 +149,10 @@ ChannelManager::~ChannelManager() {
     // shutdown.
     ShutdownSrtp();
   }
+  // Always delete the media engine on the worker thread to match how it was
+  // created.
+  worker_thread_->Invoke<void>(Bind(
+      &ChannelManager::DeleteMediaEngine_w, this));
 }
 
 bool ChannelManager::SetVideoRtxEnabled(bool enable) {
@@ -215,77 +219,86 @@ bool ChannelManager::Init() {
   if (initialized_) {
     return false;
   }
-
   ASSERT(worker_thread_ != NULL);
-  if (worker_thread_) {
-    if (worker_thread_ != rtc::Thread::Current()) {
-      // Do not allow invoking calls to other threads on the worker thread.
-      worker_thread_->Invoke<bool>(rtc::Bind(
-          &rtc::Thread::SetAllowBlockingCalls, worker_thread_, false));
-    }
-
-    if (media_engine_->Init(worker_thread_)) {
-      initialized_ = true;
-
-      // Now that we're initialized, apply any stored preferences. A preferred
-      // device might have been unplugged. In this case, we fallback to the
-      // default device but keep the user preferences. The preferences are
-      // changed only when the Javascript FE changes them.
-      const std::string preferred_audio_in_device = audio_in_device_;
-      const std::string preferred_audio_out_device = audio_out_device_;
-      const std::string preferred_camera_device = camera_device_;
-      Device device;
-      if (!device_manager_->GetAudioInputDevice(audio_in_device_, &device)) {
-        LOG(LS_WARNING) << "The preferred microphone '" << audio_in_device_
-                        << "' is unavailable. Fall back to the default.";
-        audio_in_device_ = DeviceManagerInterface::kDefaultDeviceName;
-      }
-      if (!device_manager_->GetAudioOutputDevice(audio_out_device_, &device)) {
-        LOG(LS_WARNING) << "The preferred speaker '" << audio_out_device_
-                        << "' is unavailable. Fall back to the default.";
-        audio_out_device_ = DeviceManagerInterface::kDefaultDeviceName;
-      }
-      if (!device_manager_->GetVideoCaptureDevice(camera_device_, &device)) {
-        if (!camera_device_.empty()) {
-          LOG(LS_WARNING) << "The preferred camera '" << camera_device_
-                          << "' is unavailable. Fall back to the default.";
-        }
-        camera_device_ = DeviceManagerInterface::kDefaultDeviceName;
-      }
-
-      if (!SetAudioOptions(audio_in_device_, audio_out_device_,
-                           audio_options_, audio_delay_offset_)) {
-        LOG(LS_WARNING) << "Failed to SetAudioOptions with"
-                        << " microphone: " << audio_in_device_
-                        << " speaker: " << audio_out_device_
-                        << " options: " << audio_options_.ToString()
-                        << " delay: " << audio_delay_offset_;
-      }
-
-      // If audio_output_volume_ has been set via SetOutputVolume(), set the
-      // audio output volume of the engine.
-      if (kNotSetOutputVolume != audio_output_volume_ &&
-          !SetOutputVolume(audio_output_volume_)) {
-        LOG(LS_WARNING) << "Failed to SetOutputVolume to "
-                        << audio_output_volume_;
-      }
-      if (!SetCaptureDevice(camera_device_) && !camera_device_.empty()) {
-        LOG(LS_WARNING) << "Failed to SetCaptureDevice with camera: "
-                        << camera_device_;
-      }
-
-      // Restore the user preferences.
-      audio_in_device_ = preferred_audio_in_device;
-      audio_out_device_ = preferred_audio_out_device;
-      camera_device_ = preferred_camera_device;
-
-      // Now apply the default video codec that has been set earlier.
-      if (default_video_encoder_config_.max_codec.id != 0) {
-        SetDefaultVideoEncoderConfig(default_video_encoder_config_);
-      }
-    }
+  if (!worker_thread_) {
+    return false;
   }
+  if (worker_thread_ != rtc::Thread::Current()) {
+    // Do not allow invoking calls to other threads on the worker thread.
+    worker_thread_->Invoke<bool>(rtc::Bind(
+        &rtc::Thread::SetAllowBlockingCalls, worker_thread_, false));
+  }
+
+  initialized_ = worker_thread_->Invoke<bool>(Bind(
+      &ChannelManager::InitMediaEngine_w, this));
+  ASSERT(initialized_);
+  if (!initialized_) {
+    return false;
+  }
+
+  // Now that we're initialized, apply any stored preferences. A preferred
+  // device might have been unplugged. In this case, we fallback to the
+  // default device but keep the user preferences. The preferences are
+  // changed only when the Javascript FE changes them.
+  const std::string preferred_audio_in_device = audio_in_device_;
+  const std::string preferred_audio_out_device = audio_out_device_;
+  const std::string preferred_camera_device = camera_device_;
+  Device device;
+  if (!device_manager_->GetAudioInputDevice(audio_in_device_, &device)) {
+    LOG(LS_WARNING) << "The preferred microphone '" << audio_in_device_
+                    << "' is unavailable. Fall back to the default.";
+    audio_in_device_ = DeviceManagerInterface::kDefaultDeviceName;
+  }
+  if (!device_manager_->GetAudioOutputDevice(audio_out_device_, &device)) {
+    LOG(LS_WARNING) << "The preferred speaker '" << audio_out_device_
+                    << "' is unavailable. Fall back to the default.";
+    audio_out_device_ = DeviceManagerInterface::kDefaultDeviceName;
+  }
+  if (!device_manager_->GetVideoCaptureDevice(camera_device_, &device)) {
+    if (!camera_device_.empty()) {
+      LOG(LS_WARNING) << "The preferred camera '" << camera_device_
+                      << "' is unavailable. Fall back to the default.";
+    }
+    camera_device_ = DeviceManagerInterface::kDefaultDeviceName;
+  }
+
+  if (!SetAudioOptions(audio_in_device_, audio_out_device_,
+                       audio_options_, audio_delay_offset_)) {
+    LOG(LS_WARNING) << "Failed to SetAudioOptions with"
+                    << " microphone: " << audio_in_device_
+                    << " speaker: " << audio_out_device_
+                    << " options: " << audio_options_.ToString()
+                    << " delay: " << audio_delay_offset_;
+  }
+
+  // If audio_output_volume_ has been set via SetOutputVolume(), set the
+  // audio output volume of the engine.
+  if (kNotSetOutputVolume != audio_output_volume_ &&
+      !SetOutputVolume(audio_output_volume_)) {
+    LOG(LS_WARNING) << "Failed to SetOutputVolume to "
+                    << audio_output_volume_;
+  }
+  if (!SetCaptureDevice(camera_device_) && !camera_device_.empty()) {
+    LOG(LS_WARNING) << "Failed to SetCaptureDevice with camera: "
+                    << camera_device_;
+  }
+
+  // Restore the user preferences.
+  audio_in_device_ = preferred_audio_in_device;
+  audio_out_device_ = preferred_audio_out_device;
+  camera_device_ = preferred_camera_device;
+
+  // Now apply the default video codec that has been set earlier.
+  if (default_video_encoder_config_.max_codec.id != 0) {
+    SetDefaultVideoEncoderConfig(default_video_encoder_config_);
+  }
+
   return initialized_;
+}
+
+bool ChannelManager::InitMediaEngine_w() {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+  return (media_engine_->Init(worker_thread_));
 }
 
 void ChannelManager::Terminate() {
@@ -294,8 +307,12 @@ void ChannelManager::Terminate() {
     return;
   }
   worker_thread_->Invoke<void>(Bind(&ChannelManager::Terminate_w, this));
-  media_engine_->Terminate();
   initialized_ = false;
+}
+
+void ChannelManager::DeleteMediaEngine_w() {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+  media_engine_.reset(NULL);
 }
 
 void ChannelManager::Terminate_w() {
@@ -313,6 +330,7 @@ void ChannelManager::Terminate_w() {
   if (!SetCaptureDevice_w(NULL)) {
     LOG(LS_WARNING) << "failed to delete video capturer";
   }
+  media_engine_->Terminate();
 }
 
 VoiceChannel* ChannelManager::CreateVoiceChannel(

@@ -90,6 +90,8 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   virtual ~PeerConnectionFactory();
 
  private:
+  cricket::MediaEngineInterface* CreateMediaEngine_w();
+
   bool owns_ptrs_;
   bool wraps_current_thread_;
   rtc::Thread* signaling_thread_;

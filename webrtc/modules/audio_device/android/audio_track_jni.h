@@ -107,6 +107,7 @@ class AudioTrackJni : public PlayoutDelayProvider {
   int32_t GetLoudspeakerStatus(bool& enable) const;  // NOLINT
 
  protected:
+  // TODO(henrika): improve this estimate.
   virtual int PlayoutDelayMs() { return 0; }
 
  private:

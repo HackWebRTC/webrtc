@@ -15,6 +15,7 @@ namespace webrtc {
 
 enum {
   kDefaultSampleRate = 44100,
+  kBitsPerSample = 16,
   kNumChannels = 1,
   kDefaultBufSizeInSamples = kDefaultSampleRate * 10 / 1000,
 };

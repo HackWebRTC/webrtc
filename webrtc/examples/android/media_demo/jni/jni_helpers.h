@@ -34,7 +34,7 @@
 
 // Abort the process if |jni| has a Java exception pending, emitting |msg| to
 // logcat.
-#define CHECK_EXCEPTION(jni, msg) \
+#define CHECK_JNI_EXCEPTION(jni, msg) \
   if (0) {                        \
   } else {                        \
     if (jni->ExceptionCheck()) {  \

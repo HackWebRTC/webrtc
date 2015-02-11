@@ -19,7 +19,7 @@ using icu::UnicodeString;
 jmethodID GetMethodID(JNIEnv* jni, jclass c, const std::string& name,
                       const char* signature) {
   jmethodID m = jni->GetMethodID(c, name.c_str(), signature);
-  CHECK_EXCEPTION(jni, "error during GetMethodID");
+  CHECK_JNI_EXCEPTION(jni, "error during GetMethodID");
   return m;
 }
 
@@ -37,11 +37,11 @@ jlong jlongFromPointer(void* ptr) {
 // Given a (UTF-16) jstring return a new UTF-8 native string.
 std::string JavaToStdString(JNIEnv* jni, const jstring& j_string) {
   const jchar* jchars = jni->GetStringChars(j_string, NULL);
-  CHECK_EXCEPTION(jni, "Error during GetStringChars");
+  CHECK_JNI_EXCEPTION(jni, "Error during GetStringChars");
   UnicodeString ustr(jchars, jni->GetStringLength(j_string));
-  CHECK_EXCEPTION(jni, "Error during GetStringLength");
+  CHECK_JNI_EXCEPTION(jni, "Error during GetStringLength");
   jni->ReleaseStringChars(j_string, jchars);
-  CHECK_EXCEPTION(jni, "Error during ReleaseStringChars");
+  CHECK_JNI_EXCEPTION(jni, "Error during ReleaseStringChars");
   std::string ret;
   return ustr.toUTF8String(ret);
 }
@@ -72,10 +72,10 @@ jclass ClassReferenceHolder::GetClass(const std::string& name) {
 
 void ClassReferenceHolder::LoadClass(JNIEnv* jni, const std::string& name) {
   jclass localRef = jni->FindClass(name.c_str());
-  CHECK_EXCEPTION(jni, "Could not load class");
+  CHECK_JNI_EXCEPTION(jni, "Could not load class");
   CHECK(localRef, name.c_str());
   jclass globalRef = reinterpret_cast<jclass>(jni->NewGlobalRef(localRef));
-  CHECK_EXCEPTION(jni, "error during NewGlobalRef");
+  CHECK_JNI_EXCEPTION(jni, "error during NewGlobalRef");
   CHECK(globalRef, name.c_str());
   bool inserted = classes_.insert(std::make_pair(name, globalRef)).second;
   CHECK(inserted, "Duplicate class name");

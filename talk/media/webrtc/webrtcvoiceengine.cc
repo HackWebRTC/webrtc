@@ -589,6 +589,7 @@ WebRtcVoiceEngine::~WebRtcVoiceEngine() {
 }
 
 bool WebRtcVoiceEngine::Init(rtc::Thread* worker_thread) {
+  ASSERT(worker_thread == rtc::Thread::Current());
   LOG(LS_INFO) << "WebRtcVoiceEngine::Init";
   bool res = InitInternal();
   if (res) {

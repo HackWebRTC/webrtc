@@ -147,16 +147,16 @@ bool PeerConnectionFactory::Initialize() {
 
   cricket::DummyDeviceManager* device_manager(
       new cricket::DummyDeviceManager());
+
   // TODO:  Need to make sure only one VoE is created inside
   // WebRtcMediaEngine.
-  cricket::MediaEngineInterface* media_engine(
-      cricket::WebRtcMediaEngineFactory::Create(default_adm_.get(),
-                                                NULL,  // No secondary adm.
-                                                video_encoder_factory_.get(),
-                                                video_decoder_factory_.get()));
+  cricket::MediaEngineInterface* media_engine =
+      worker_thread_->Invoke<cricket::MediaEngineInterface*>(rtc::Bind(
+      &PeerConnectionFactory::CreateMediaEngine_w, this));
 
   channel_manager_.reset(new cricket::ChannelManager(
       media_engine, device_manager, worker_thread_));
+
   channel_manager_->SetVideoRtxEnabled(true);
   if (!channel_manager_->Init()) {
     return false;
@@ -250,6 +250,13 @@ rtc::Thread* PeerConnectionFactory::signaling_thread() {
 rtc::Thread* PeerConnectionFactory::worker_thread() {
   DCHECK(signaling_thread_->IsCurrent());
   return worker_thread_;
+}
+
+cricket::MediaEngineInterface* PeerConnectionFactory::CreateMediaEngine_w() {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+  return cricket::WebRtcMediaEngineFactory::Create(
+      default_adm_.get(), NULL, video_encoder_factory_.get(),
+      video_decoder_factory_.get());
 }
 
 }  // namespace webrtc

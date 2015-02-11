@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_AUDIO_DEVICE_TEMPLATE_H_
 #define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_AUDIO_DEVICE_TEMPLATE_H_
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
-
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
@@ -22,13 +22,11 @@ namespace webrtc {
 template <class InputType, class OutputType>
 class AudioDeviceTemplate : public AudioDeviceGeneric {
  public:
-  static int32_t SetAndroidAudioDeviceObjects(void* javaVM,
-                                       void* env,
-                                       void* context) {
-    if (OutputType::SetAndroidAudioDeviceObjects(javaVM, env, context) == -1) {
-      return -1;
-    }
-    return InputType::SetAndroidAudioDeviceObjects(javaVM, env, context);
+  static void SetAndroidAudioDeviceObjects(void* javaVM,
+                                           void* env,
+                                           void* context) {
+    OutputType::SetAndroidAudioDeviceObjects(javaVM, env, context);
+    InputType::SetAndroidAudioDeviceObjects(javaVM, env, context);
   }
 
   static void ClearAndroidAudioDeviceObjects() {
@@ -38,7 +36,8 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
 
   explicit AudioDeviceTemplate(const int32_t id)
       : output_(id),
-        input_(id, &output_) {
+        // TODO(henrika): provide proper delay estimate using input_(&output_).
+        input_() {
   }
 
   virtual ~AudioDeviceTemplate() {
@@ -59,7 +58,7 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   bool Initialized() const {
-    return output_.Initialized() && input_.Initialized();
+    return output_.Initialized();
   }
 
   int16_t PlayoutDevices() {
@@ -67,7 +66,7 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int16_t RecordingDevices() {
-    return input_.RecordingDevices();
+    return 1;
   }
 
   int32_t PlayoutDeviceName(
@@ -81,7 +80,7 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
       uint16_t index,
       char name[kAdmMaxDeviceNameSize],
       char guid[kAdmMaxGuidSize]) {
-    return input_.RecordingDeviceName(index, name, guid);
+    return -1;
   }
 
   int32_t SetPlayoutDevice(uint16_t index) {
@@ -94,12 +93,15 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t SetRecordingDevice(uint16_t index) {
-    return input_.SetRecordingDevice(index);
+    // OK to use but it has no effect currently since device selection is
+    // done using Andoid APIs instead.
+    return 0;
   }
 
   int32_t SetRecordingDevice(
       AudioDeviceModule::WindowsDeviceType device) {
-    return input_.SetRecordingDevice(device);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t PlayoutIsAvailable(
@@ -117,7 +119,8 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
 
   int32_t RecordingIsAvailable(
       bool& available) {  // NOLINT
-    return input_.RecordingIsAvailable(available);
+    available = true;
+    return 0;
   }
 
   int32_t InitRecording() {
@@ -153,17 +156,19 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t SetAGC(bool enable) {
-    return input_.SetAGC(enable);
+    if (enable) {
+      FATAL() << "Should never be called";
+    }
+    return -1;
   }
 
   bool AGC() const {
-    return input_.AGC();
+    return false;
   }
 
   int32_t SetWaveOutVolume(uint16_t volumeLeft,
                            uint16_t volumeRight) {
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, 0,
-                 "  API call not supported on this platform");
+     FATAL() << "Should never be called";
     return -1;
   }
 
@@ -184,11 +189,11 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t InitMicrophone() {
-    return input_.InitMicrophone();
+    return 0;
   }
 
   bool MicrophoneIsInitialized() const {
-    return input_.MicrophoneIsInitialized();
+    return true;
   }
 
   int32_t SpeakerVolumeIsAvailable(
@@ -222,31 +227,38 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
 
   int32_t MicrophoneVolumeIsAvailable(
       bool& available) {  // NOLINT
-    return input_.MicrophoneVolumeIsAvailable(available);
+    available = false;
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t SetMicrophoneVolume(uint32_t volume) {
-    return input_.SetMicrophoneVolume(volume);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t MicrophoneVolume(
       uint32_t& volume) const {  // NOLINT
-    return input_.MicrophoneVolume(volume);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t MaxMicrophoneVolume(
       uint32_t& maxVolume) const {  // NOLINT
-    return input_.MaxMicrophoneVolume(maxVolume);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t MinMicrophoneVolume(
       uint32_t& minVolume) const {  // NOLINT
-    return input_.MinMicrophoneVolume(minVolume);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t MicrophoneVolumeStepSize(
       uint16_t& stepSize) const {  // NOLINT
-    return input_.MicrophoneVolumeStepSize(stepSize);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t SpeakerMuteIsAvailable(
@@ -265,30 +277,36 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
 
   int32_t MicrophoneMuteIsAvailable(
       bool& available) {  // NOLINT
-    return input_.MicrophoneMuteIsAvailable(available);
+    FATAL() << "Not implemented";
+    return -1;
   }
 
   int32_t SetMicrophoneMute(bool enable) {
-    return input_.SetMicrophoneMute(enable);
+    FATAL() << "Not implemented";
+    return -1;
   }
 
   int32_t MicrophoneMute(
       bool& enabled) const {  // NOLINT
-    return input_.MicrophoneMute(enabled);
+    FATAL() << "Not implemented";
+    return -1;
   }
 
   int32_t MicrophoneBoostIsAvailable(
       bool& available) {  // NOLINT
-    return input_.MicrophoneBoostIsAvailable(available);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t SetMicrophoneBoost(bool enable) {
-    return input_.SetMicrophoneBoost(enable);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t MicrophoneBoost(
       bool& enabled) const {  // NOLINT
-    return input_.MicrophoneBoost(enabled);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t StereoPlayoutIsAvailable(
@@ -307,16 +325,18 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
 
   int32_t StereoRecordingIsAvailable(
       bool& available) {  // NOLINT
-    return input_.StereoRecordingIsAvailable(available);
+    available = false;
+    return 0;
   }
 
   int32_t SetStereoRecording(bool enable) {
-    return input_.SetStereoRecording(enable);
+    return -1;
   }
 
   int32_t StereoRecording(
       bool& enabled) const {  // NOLINT
-    return input_.StereoRecording(enabled);
+    enabled = false;
+    return 0;
   }
 
   int32_t SetPlayoutBuffer(
@@ -343,8 +363,7 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
 
   int32_t CPULoad(
       uint16_t& load) const {  // NOLINT
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, 0,
-                 "  API call not supported on this platform");
+    FATAL() << "Should never be called";
     return -1;
   }
 
@@ -357,11 +376,11 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   bool RecordingWarning() const {
-    return input_.RecordingWarning();
+    return false;
   }
 
   bool RecordingError() const {
-    return input_.RecordingError();
+    return false;
   }
 
   void ClearPlayoutWarning() {
@@ -372,23 +391,14 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     return output_.ClearPlayoutError();
   }
 
-  void ClearRecordingWarning() {
-    return input_.ClearRecordingWarning();
-  }
+  void ClearRecordingWarning() {}
 
-  void ClearRecordingError() {
-    return input_.ClearRecordingError();
-  }
+  void ClearRecordingError() {}
 
   void AttachAudioBuffer(
       AudioDeviceBuffer* audioBuffer) {
     output_.AttachAudioBuffer(audioBuffer);
     input_.AttachAudioBuffer(audioBuffer);
-  }
-
-  int32_t SetRecordingSampleRate(
-      const uint32_t samplesPerSec) {
-    return input_.SetRecordingSampleRate(samplesPerSec);
   }
 
   int32_t SetPlayoutSampleRate(

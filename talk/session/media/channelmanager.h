@@ -264,6 +264,8 @@ class ChannelManager : public rtc::MessageHandler,
                  DeviceManagerInterface* dm,
                  CaptureManager* cm,
                  rtc::Thread* worker_thread);
+  bool InitMediaEngine_w();
+  void DeleteMediaEngine_w();
   void Terminate_w();
   VoiceChannel* CreateVoiceChannel_w(
       BaseSession* session, const std::string& content_name, bool rtcp);

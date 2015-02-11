@@ -115,7 +115,7 @@ class VideoDecodeEncodeObserver : public webrtc::ViEDecoderObserver,
     jmethodID j_codec_ctor = GetMethodID(jni, j_codec_class, "<init>", "(J)V");
     jobject j_codec =
         jni->NewObject(j_codec_class, j_codec_ctor, jlongFromPointer(codec));
-    CHECK_EXCEPTION(jni, "error during NewObject");
+    CHECK_JNI_EXCEPTION(jni, "error during NewObject");
     jni->CallVoidMethod(j_observer_, incoming_codec_changed_, video_channel,
                         j_codec);
   }
@@ -456,7 +456,7 @@ JOWW(jobject, VideoEngine_getCodec)(JNIEnv* jni, jobject j_vie, jint index) {
   jmethodID j_codec_ctor = GetMethodID(jni, j_codec_class, "<init>", "(J)V");
   jobject j_codec =
       jni->NewObject(j_codec_class, j_codec_ctor, jlongFromPointer(codec));
-  CHECK_EXCEPTION(jni, "error during NewObject");
+  CHECK_JNI_EXCEPTION(jni, "error during NewObject");
   return j_codec;
 }
 
@@ -515,7 +515,7 @@ JOWW(jobject,
   jmethodID j_camera_ctor = GetMethodID(jni, j_camera_class, "<init>", "(J)V");
   jobject j_camera = jni->NewObject(j_camera_class, j_camera_ctor,
                                     jlongFromPointer(camera_info));
-  CHECK_EXCEPTION(jni, "error during NewObject");
+  CHECK_JNI_EXCEPTION(jni, "error during NewObject");
   return j_camera;
 }
 
@@ -610,7 +610,7 @@ JOWW(jobject, VideoEngine_getReceivedRtcpStatistics)(JNIEnv* jni, jobject j_vie,
       jni->NewObject(j_rtcp_statistics_class, j_rtcp_statistics_ctor,
                      fraction_lost, cumulative_lost, extended_max, jitter,
                      static_cast<int>(rtt_ms));
-  CHECK_EXCEPTION(jni, "error during NewObject");
+  CHECK_JNI_EXCEPTION(jni, "error during NewObject");
   return j_rtcp_statistics;
 }
 
