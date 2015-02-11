@@ -20,6 +20,16 @@ namespace {
 const int kMinBitrateBps = 500;
 const int kMaxBitrateBps = 512000;
 
+// TODO(tlegrand): Remove this code when we have proper APIs to set the
+// complexity at a higher level.
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS) || defined(WEBRTC_ARCH_ARM)
+// If we are on Android, iOS and/or ARM, use a lower complexity setting as
+// default, to save encoder complexity.
+const int kDefaultComplexity = 5;
+#else
+const int kDefaultComplexity = 9;
+#endif
+
 // We always encode at 48 kHz.
 const int kSampleRateHz = 48000;
 
@@ -42,7 +52,8 @@ AudioEncoderOpus::Config::Config()
       application(kVoip),
       bitrate_bps(64000),
       fec_enabled(false),
-      max_playback_rate_hz(48000) {
+      max_playback_rate_hz(48000),
+      complexity(kDefaultComplexity) {
 }
 
 bool AudioEncoderOpus::Config::IsOk() const {
@@ -51,6 +62,8 @@ bool AudioEncoderOpus::Config::IsOk() const {
   if (num_channels != 1 && num_channels != 2)
     return false;
   if (bitrate_bps < kMinBitrateBps || bitrate_bps > kMaxBitrateBps)
+    return false;
+  if (complexity < 0 || complexity > 10)
     return false;
   return true;
 }
@@ -75,6 +88,8 @@ AudioEncoderOpus::AudioEncoderOpus(const Config& config)
   }
   CHECK_EQ(0,
            WebRtcOpus_SetMaxPlaybackRate(inst_, config.max_playback_rate_hz));
+  CHECK_EQ(0, WebRtcOpus_SetComplexity(inst_, config.complexity));
+
 }
 
 AudioEncoderOpus::~AudioEncoderOpus() {

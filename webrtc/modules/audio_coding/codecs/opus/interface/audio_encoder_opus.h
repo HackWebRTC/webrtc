@@ -38,6 +38,7 @@ class AudioEncoderOpus final : public AudioEncoder {
     int bitrate_bps;
     bool fec_enabled;
     int max_playback_rate_hz;
+    int complexity;
   };
 
   explicit AudioEncoderOpus(const Config& config);

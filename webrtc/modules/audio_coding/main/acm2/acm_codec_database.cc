@@ -695,7 +695,9 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst,
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "opus")) {
 #ifdef WEBRTC_CODEC_OPUS
-    return new ACMOpus(kOpus, enable_red);
+    return new ACMGenericCodecWrapper(codec_inst, cng_pt_nb, cng_pt_wb,
+                                      cng_pt_swb, cng_pt_fb, enable_red,
+                                      red_payload_type);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "speex")) {
 #ifdef WEBRTC_CODEC_SPEEX
