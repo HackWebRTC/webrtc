@@ -40,7 +40,7 @@ class VideoFrame;
 // depending on the subclass of VideoFrameFactory.
 class VideoFrameFactory {
  public:
-  VideoFrameFactory() : apply_rotation_(true) {}
+  VideoFrameFactory() {}
   virtual ~VideoFrameFactory() {}
 
   // The returned frame aliases the aliased_frame if the input color
@@ -64,11 +64,6 @@ class VideoFrameFactory {
                                          int cropped_input_height,
                                          int output_width,
                                          int output_height) const;
-
-  void SetApplyRotation(bool enable) { apply_rotation_ = enable; }
-
- protected:
-  bool apply_rotation_;
 
  private:
   // An internal frame buffer to avoid reallocations. It is mutable because it

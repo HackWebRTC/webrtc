@@ -83,26 +83,16 @@ class VideoCapturerTest
       : capture_state_(cricket::CS_STOPPED),
         num_state_changes_(0),
         video_frames_received_(0),
-        last_frame_elapsed_time_(0),
-        expects_rotation_applied_(true) {
+        last_frame_elapsed_time_(0) {
     capturer_.SignalVideoFrame.connect(this, &VideoCapturerTest::OnVideoFrame);
     capturer_.SignalStateChange.connect(this,
                                         &VideoCapturerTest::OnStateChange);
-  }
-
-  void set_expected_compensation(bool compensation) {
-    expects_rotation_applied_ = compensation;
   }
 
  protected:
   void OnVideoFrame(cricket::VideoCapturer*, const cricket::VideoFrame* frame) {
     ++video_frames_received_;
     last_frame_elapsed_time_ = frame->GetElapsedTime();
-    if (expects_rotation_applied_) {
-      EXPECT_EQ(webrtc::kVideoRotation_0, frame->GetRotation());
-    } else {
-      EXPECT_EQ(capturer_.GetRotation(), frame->GetRotation());
-    }
     renderer_.RenderFrame(frame);
   }
   void OnStateChange(cricket::VideoCapturer*,
@@ -123,7 +113,6 @@ class VideoCapturerTest
   int video_frames_received_;
   int64 last_frame_elapsed_time_;
   cricket::FakeVideoRenderer renderer_;
-  bool expects_rotation_applied_;
 };
 
 TEST_F(VideoCapturerTest, CaptureState) {
@@ -285,107 +274,6 @@ TEST_F(VideoCapturerTest, ScreencastScaledOddWidth) {
   renderer_.SetSize(expected_width, expected_height, 0);
   EXPECT_TRUE(capturer_.CaptureFrame());
   EXPECT_EQ(1, renderer_.num_rendered_frames());
-}
-
-TEST_F(VideoCapturerTest, TestRotationPending) {
-  int kWidth = 800;
-  int kHeight = 400;
-  int frame_count = 0;
-
-  std::vector<cricket::VideoFormat> formats;
-  formats.push_back(cricket::VideoFormat(kWidth, kHeight,
-                                         cricket::VideoFormat::FpsToInterval(5),
-                                         cricket::FOURCC_I420));
-
-  capturer_.ResetSupportedFormats(formats);
-  // capturer_ should compensate rotation as default.
-  capturer_.UpdateAspectRatio(400, 200);
-
-  EXPECT_EQ(cricket::CS_RUNNING,
-            capturer_.Start(cricket::VideoFormat(
-                kWidth, kHeight, cricket::VideoFormat::FpsToInterval(30),
-                cricket::FOURCC_I420)));
-  EXPECT_TRUE(capturer_.IsRunning());
-  EXPECT_EQ(0, renderer_.num_rendered_frames());
-
-  // If the frame's rotation is compensated anywhere in the pipeline based on
-  // the rotation information, the renderer should be given the right dimension
-  // such that the frame could be rendered.
-
-  // Swap the dimension for the next 2 frames which are rotated by 90 and 270
-  // degree.
-  int expected_width = kHeight;
-  int expected_height = kWidth;
-  NormalizeVideoSize(&expected_width, &expected_height);
-  renderer_.SetSize(expected_width, expected_height, 0);
-
-  capturer_.SetRotation(webrtc::kVideoRotation_90);
-  EXPECT_TRUE(capturer_.CaptureFrame());
-  EXPECT_EQ(++frame_count, renderer_.num_rendered_frames());
-
-  capturer_.SetRotation(webrtc::kVideoRotation_270);
-  EXPECT_TRUE(capturer_.CaptureFrame());
-  EXPECT_EQ(++frame_count, renderer_.num_rendered_frames());
-
-  // Reset the renderer to have corresponding width and height.
-  expected_width = kWidth;
-  expected_height = kHeight;
-  NormalizeVideoSize(&expected_width, &expected_height);
-  renderer_.SetSize(expected_width, expected_height, 0);
-
-  capturer_.SetRotation(webrtc::kVideoRotation_180);
-  EXPECT_TRUE(capturer_.CaptureFrame());
-  EXPECT_EQ(++frame_count, renderer_.num_rendered_frames());
-}
-
-TEST_F(VideoCapturerTest, TestRotationApplied) {
-  int kWidth = 800;
-  int kHeight = 400;
-
-  std::vector<cricket::VideoFormat> formats;
-  formats.push_back(cricket::VideoFormat(kWidth, kHeight,
-                                         cricket::VideoFormat::FpsToInterval(5),
-                                         cricket::FOURCC_I420));
-
-  capturer_.ResetSupportedFormats(formats);
-  // capturer_ should not compensate rotation.
-  capturer_.SetApplyRotation(false);
-  capturer_.UpdateAspectRatio(400, 200);
-  set_expected_compensation(false);
-
-  EXPECT_EQ(cricket::CS_RUNNING,
-            capturer_.Start(cricket::VideoFormat(
-                kWidth, kHeight, cricket::VideoFormat::FpsToInterval(30),
-                cricket::FOURCC_I420)));
-  EXPECT_TRUE(capturer_.IsRunning());
-  EXPECT_EQ(0, renderer_.num_rendered_frames());
-
-  int expected_width = kWidth;
-  int expected_height = kHeight;
-  NormalizeVideoSize(&expected_width, &expected_height);
-  renderer_.SetSize(expected_width, expected_height, 0);
-
-  // If the frame's rotation is compensated anywhere in the pipeline, the frame
-  // won't have its original dimension out from capturer. Since the renderer
-  // here has the same dimension as the capturer, it will skip that frame as the
-  // resolution won't match anymore.
-
-  int frame_count = 0;
-  capturer_.SetRotation(webrtc::kVideoRotation_0);
-  EXPECT_TRUE(capturer_.CaptureFrame());
-  EXPECT_EQ(++frame_count, renderer_.num_rendered_frames());
-
-  capturer_.SetRotation(webrtc::kVideoRotation_90);
-  EXPECT_TRUE(capturer_.CaptureFrame());
-  EXPECT_EQ(++frame_count, renderer_.num_rendered_frames());
-
-  capturer_.SetRotation(webrtc::kVideoRotation_180);
-  EXPECT_TRUE(capturer_.CaptureFrame());
-  EXPECT_EQ(++frame_count, renderer_.num_rendered_frames());
-
-  capturer_.SetRotation(webrtc::kVideoRotation_270);
-  EXPECT_TRUE(capturer_.CaptureFrame());
-  EXPECT_EQ(++frame_count, renderer_.num_rendered_frames());
 }
 
 TEST_F(VideoCapturerTest, ScreencastScaledSuperLarge) {

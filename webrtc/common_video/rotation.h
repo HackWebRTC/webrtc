@@ -11,6 +11,8 @@
 #ifndef WEBRTC_COMMON_VIDEO_ROTATION_H_
 #define WEBRTC_COMMON_VIDEO_ROTATION_H_
 
+#include "webrtc/base/common.h"
+
 namespace webrtc {
 
 // enum for clockwise rotation.

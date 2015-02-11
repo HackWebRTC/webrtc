@@ -21,9 +21,7 @@ I420VideoFrame::I420VideoFrame()
       height_(0),
       timestamp_(0),
       ntp_time_ms_(0),
-      render_time_ms_(0),
-      rotation_(kVideoRotation_0) {
-}
+      render_time_ms_(0) {}
 
 I420VideoFrame::~I420VideoFrame() {}
 
@@ -44,7 +42,6 @@ int I420VideoFrame::CreateEmptyFrame(int width, int height,
   timestamp_ = 0;
   ntp_time_ms_ = 0;
   render_time_ms_ = 0;
-  rotation_ = kVideoRotation_0;
   return 0;
 }
 
@@ -53,23 +50,6 @@ int I420VideoFrame::CreateFrame(int size_y, const uint8_t* buffer_y,
                                 int size_v, const uint8_t* buffer_v,
                                 int width, int height,
                                 int stride_y, int stride_u, int stride_v) {
-  return CreateFrame(size_y, buffer_y, size_u, buffer_u, size_v, buffer_v,
-                     width, height, stride_y, stride_u, stride_v,
-                     kVideoRotation_0);
-}
-
-int I420VideoFrame::CreateFrame(int size_y,
-                                const uint8_t* buffer_y,
-                                int size_u,
-                                const uint8_t* buffer_u,
-                                int size_v,
-                                const uint8_t* buffer_v,
-                                int width,
-                                int height,
-                                int stride_y,
-                                int stride_u,
-                                int stride_v,
-                                VideoRotation rotation) {
   if (size_y < 1 || size_u < 1 || size_v < 1)
     return -1;
   if (CheckDimensions(width, height, stride_y, stride_u, stride_v) < 0)
@@ -79,7 +59,6 @@ int I420VideoFrame::CreateFrame(int size_y,
   v_plane_.Copy(size_v, stride_v, buffer_v);
   width_ = width;
   height_ = height;
-  rotation_ = rotation;
   return 0;
 }
 
@@ -98,7 +77,6 @@ int I420VideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
   timestamp_ = videoFrame.timestamp_;
   ntp_time_ms_ = videoFrame.ntp_time_ms_;
   render_time_ms_ = videoFrame.render_time_ms_;
-  rotation_ = videoFrame.rotation_;
   return 0;
 }
 
@@ -120,7 +98,6 @@ void I420VideoFrame::SwapFrame(I420VideoFrame* videoFrame) {
   std::swap(timestamp_, videoFrame->timestamp_);
   std::swap(ntp_time_ms_, videoFrame->ntp_time_ms_);
   std::swap(render_time_ms_, videoFrame->render_time_ms_);
-  std::swap(rotation_, videoFrame->rotation_);
 }
 
 uint8_t* I420VideoFrame::buffer(PlaneType type) {

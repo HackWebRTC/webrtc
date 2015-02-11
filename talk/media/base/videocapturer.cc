@@ -110,8 +110,7 @@ VideoCapturer::VideoCapturer()
     : thread_(rtc::Thread::Current()),
       adapt_frame_drops_data_(kMaxAccumulatorSize),
       effect_frame_drops_data_(kMaxAccumulatorSize),
-      frame_time_data_(kMaxAccumulatorSize),
-      apply_rotation_(true) {
+      frame_time_data_(kMaxAccumulatorSize) {
   Construct();
 }
 
@@ -119,8 +118,7 @@ VideoCapturer::VideoCapturer(rtc::Thread* thread)
     : thread_(thread),
       adapt_frame_drops_data_(kMaxAccumulatorSize),
       effect_frame_drops_data_(kMaxAccumulatorSize),
-      frame_time_data_(kMaxAccumulatorSize),
-      apply_rotation_(true) {
+      frame_time_data_(kMaxAccumulatorSize) {
   Construct();
 }
 
@@ -256,14 +254,6 @@ bool VideoCapturer::MuteToBlackThenPause(bool muted) {
   return Pause(false);
 }
 
-bool VideoCapturer::SetApplyRotation(bool enable) {
-  apply_rotation_ = enable;
-  if (frame_factory_) {
-    frame_factory_->SetApplyRotation(apply_rotation_);
-  }
-  return true;
-}
-
 void VideoCapturer::SetSupportedFormats(
     const std::vector<VideoFormat>& formats) {
   supported_formats_ = formats;
@@ -348,13 +338,6 @@ std::string VideoCapturer::ToString(const CapturedFrame* captured_frame) const {
   ss << fourcc_name << captured_frame->width << "x" << captured_frame->height
      << "x" << VideoFormat::IntervalToFpsFloat(captured_frame->elapsed_time);
   return ss.str();
-}
-
-void VideoCapturer::set_frame_factory(VideoFrameFactory* frame_factory) {
-  frame_factory_.reset(frame_factory);
-  if (frame_factory) {
-    frame_factory->SetApplyRotation(apply_rotation_);
-  }
 }
 
 void VideoCapturer::GetStats(VariableInfo<int>* adapt_drops_stats,

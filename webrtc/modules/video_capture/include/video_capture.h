@@ -135,15 +135,6 @@ class VideoCaptureModule: public RefCountedModule {
   // displayed correctly if rendered.
   virtual int32_t SetCaptureRotation(VideoCaptureRotation rotation) = 0;
 
-  // Tells the capture module whether to apply the pending rotation. By default,
-  // the rotation is applied and the generated frame is up right. When set to
-  // false, generated frames will carry the rotation information from
-  // SetCaptureRotation. Return value indicates whether this operation succeeds.
-  virtual bool SetApplyRotation(bool enable) = 0;
-
-  // Return whether the rotation is applied or left pending.
-  virtual bool GetApplyRotation() = 0;
-
   // Gets a pointer to an encode interface if the capture device supports the
   // requested type and size.  NULL otherwise.
   virtual VideoCaptureEncodeInterface* GetEncodeInterface(

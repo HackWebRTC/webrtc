@@ -225,13 +225,6 @@ class VideoCapturer
     return capture_state_;
   }
 
-  // Tells videocapturer whether to apply the pending rotation. By default, the
-  // rotation is applied and the generated frame is up right. When set to false,
-  // generated frames will carry the rotation information from
-  // SetCaptureRotation. Return value indicates whether this operation succeeds.
-  virtual bool SetApplyRotation(bool enable);
-  virtual bool GetApplyRotation() { return apply_rotation_; }
-
   // Adds a video processor that will be applied on VideoFrames returned by
   // |SignalVideoFrame|. Multiple video processors can be added. The video
   // processors will be applied in the order they were added.
@@ -308,7 +301,9 @@ class VideoCapturer
   }
 
   // Takes ownership.
-  void set_frame_factory(VideoFrameFactory* frame_factory);
+  void set_frame_factory(VideoFrameFactory* frame_factory) {
+    frame_factory_.reset(frame_factory);
+  }
 
   // Gets statistics for tracked variables recorded since the last call to
   // GetStats.  Note that calling GetStats resets any gathered data so it
@@ -416,9 +411,6 @@ class VideoCapturer
 
   rtc::CriticalSection crit_;
   VideoProcessors video_processors_;
-
-  // Whether capturer should apply rotation to the frame before signaling it.
-  bool apply_rotation_;
 
   DISALLOW_COPY_AND_ASSIGN(VideoCapturer);
 };

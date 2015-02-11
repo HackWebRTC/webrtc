@@ -139,13 +139,9 @@ bool WebRtcVideoFrame::Init(const CapturedFrame* frame, int dw, int dh) {
                frame->time_stamp, frame->GetRotation());
 }
 
-bool WebRtcVideoFrame::Alias(const CapturedFrame* frame,
-                             int dw,
-                             int dh,
-                             bool apply_rotation) {
+bool WebRtcVideoFrame::Alias(const CapturedFrame* frame, int dw, int dh) {
   if (CanonicalFourCC(frame->fourcc) != FOURCC_I420 ||
-      (apply_rotation &&
-       frame->GetRotation() != webrtc::kVideoRotation_0) ||
+      (frame->GetRotation() != webrtc::kVideoRotation_0) ||
       frame->width != dw || frame->height != dh) {
     // TODO(fbarchard): Enable aliasing of more formats.
     return Init(frame, dw, dh);

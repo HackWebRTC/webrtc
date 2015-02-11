@@ -213,10 +213,6 @@ bool WebRtcVideoCapturer::Init(const Device& device) {
   module_->AddRef();
   SetId(device.id);
   SetSupportedFormats(supported);
-
-  // Ensure these 2 have the same value.
-  SetApplyRotation(module_->GetApplyRotation());
-
   return true;
 }
 
@@ -252,16 +248,6 @@ bool WebRtcVideoCapturer::GetBestCaptureFormat(const VideoFormat& desired,
                  << best_format->ToString();
   }
   return true;
-}
-bool WebRtcVideoCapturer::SetApplyRotation(bool enable) {
-  rtc::CritScope cs(&critical_section_stopping_);
-
-  assert(module_);
-
-  if (!VideoCapturer::SetApplyRotation(enable)) {
-    return false;
-  }
-  return module_->SetApplyRotation(enable);
 }
 
 CaptureState WebRtcVideoCapturer::Start(const VideoFormat& capture_format) {
@@ -395,7 +381,6 @@ WebRtcCapturedFrame::WebRtcCapturedFrame(const webrtc::I420VideoFrame& sample,
   time_stamp = elapsed_time;
   data_size = rtc::checked_cast<uint32>(length);
   data = buffer;
-  rotation = sample.rotation();
 }
 
 }  // namespace cricket

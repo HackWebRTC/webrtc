@@ -394,24 +394,6 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     if (!renderer_) {
       return 0;
     }
-    if (!webrtc_frame->native_handle()) {
-      WebRtcVideoRenderFrame cricket_frame(webrtc_frame, elapsed_time_ms);
-      return renderer_->RenderFrame(&cricket_frame) ? 0 : -1;
-    } else {
-      return DeliverTextureFrame(
-          webrtc_frame->native_handle(),
-          webrtc_frame->render_time_ms() * rtc::kNumNanosecsPerMillisec,
-          elapsed_time_ms * rtc::kNumNanosecsPerMillisec);
-    }
-  }
-
-  virtual bool IsTextureSupported() { return true; }
-
-  int DeliverBufferFrame(unsigned char* buffer, size_t buffer_size,
-                         int64 time_stamp, int64 elapsed_time) {
-    WebRtcVideoFrame video_frame;
-    video_frame.Alias(buffer, buffer_size, width_, height_, 1, 1, elapsed_time,
-                      time_stamp, webrtc::kVideoRotation_0);
 
     WebRtcVideoRenderFrame cricket_frame(&webrtc_frame, elapsed_time_ms);
     return renderer_->RenderFrame(&cricket_frame) ? 0 : -1;

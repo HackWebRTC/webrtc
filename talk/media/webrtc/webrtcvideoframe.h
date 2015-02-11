@@ -72,10 +72,7 @@ class WebRtcVideoFrame : public VideoFrame {
 
   // Aliases this WebRtcVideoFrame to a CapturedFrame. |frame| must outlive
   // this WebRtcVideoFrame.
-  bool Alias(const CapturedFrame* frame,
-             int dw,
-             int dh,
-             bool apply_rotation);
+  bool Alias(const CapturedFrame* frame, int dw, int dh);
 
   bool InitToBlack(int w, int h, size_t pixel_width, size_t pixel_height,
                    int64_t elapsed_time, int64_t time_stamp);
@@ -132,9 +129,6 @@ class WebRtcVideoFrame : public VideoFrame {
   virtual void SetTimeStamp(int64_t time_stamp) { time_stamp_ = time_stamp; }
 
   virtual webrtc::VideoRotation GetVideoRotation() const { return rotation_; }
-  virtual void SetRotation(webrtc::VideoRotation rotation) {
-    rotation_ = rotation;
-  }
 
   virtual VideoFrame* Copy() const;
   virtual bool MakeExclusive();
