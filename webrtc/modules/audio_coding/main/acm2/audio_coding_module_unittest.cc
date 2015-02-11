@@ -809,15 +809,14 @@ TEST_F(AcmSenderBitExactness, DISABLED_ON_ANDROID(IsacSwb30ms)) {
   ASSERT_NO_FATAL_FAILURE(
       SetUpTest(acm2::ACMCodecDB::kISACSWB, 1, 104, 960, 960));
   Run(AcmReceiverBitExactness::PlatformChecksum(
-          "98d960600eb4ddb3fcbe11f5057ddfd7",
+          "2b3c387d06f00b7b7aad4c9be56fb83d",
           "",
-          "2f6dfe142f735f1d96f6bd86d2526f42"),
+          "5683b58da0fbf2063c7adc2e6bfb3fb8"),
       AcmReceiverBitExactness::PlatformChecksum(
-          "cc9d2d86a71d6f99f97680a5c27e2762",
+          "bcc2041e7744c7ebd9f701866856849c",
           "",
-          "7b214fc3a5e33d68bf30e77969371f31"),
-      33,
-      test::AcmReceiveTest::kMonoOutput);
+          "ce86106a93419aefb063097108ec94ab"),
+      33, test::AcmReceiveTest::kMonoOutput);
 }
 
 TEST_F(AcmSenderBitExactness, Pcm16_8000khz_10ms) {
