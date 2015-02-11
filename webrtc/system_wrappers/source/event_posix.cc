@@ -151,7 +151,7 @@ EventTypeWrapper EventPosix::Wait(unsigned long timeout) {
   // Be careful to only change the state if we're about to report that the
   // event was signaled.
   if (ret_val == 0) {
-    DCHECK(state_ == kUp);
+    // state_ might already be kDown, in case of multiple waiters. That's OK.
     state_ = kDown;
   }
 
