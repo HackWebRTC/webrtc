@@ -601,11 +601,9 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst,
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "G722")) {
 #ifdef WEBRTC_CODEC_G722
-    if (codec_inst.channels == 1) {
-      return new ACMG722(kG722, enable_red);
-    } else {
-      return new ACMG722(kG722_2ch, enable_red);
-    }
+    return new ACMGenericCodecWrapper(codec_inst, cng_pt_nb, cng_pt_wb,
+                                      cng_pt_swb, cng_pt_fb, enable_red,
+                                      red_payload_type);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "G7221")) {
     switch (codec_inst.plfreq) {
