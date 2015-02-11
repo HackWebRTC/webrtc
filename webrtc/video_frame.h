@@ -18,6 +18,7 @@
 // used).
 #include "webrtc/system_wrappers/interface/scoped_refptr.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/common_video/rotation.h"
 
 namespace webrtc {
 
@@ -73,6 +74,20 @@ class I420VideoFrame {
                           int stride_u,
                           int stride_v);
 
+  // TODO(guoweis): remove the previous CreateFrame when chromium has this code.
+  virtual int CreateFrame(int size_y,
+                          const uint8_t* buffer_y,
+                          int size_u,
+                          const uint8_t* buffer_u,
+                          int size_v,
+                          const uint8_t* buffer_v,
+                          int width,
+                          int height,
+                          int stride_y,
+                          int stride_u,
+                          int stride_v,
+                          VideoRotation rotation);
+
   // Copy frame: If required size is bigger than allocated one, new buffers of
   // adequate size will be allocated.
   // Return value: 0 on success, -1 on error.
@@ -122,6 +137,21 @@ class I420VideoFrame {
   // Get capture ntp time in miliseconds.
   virtual int64_t ntp_time_ms() const { return ntp_time_ms_; }
 
+  // Naming convention for Coordination of Video Orientation. Please see
+  // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/ts_126114v120700p.pdf
+  //
+  // "pending rotation" or "pending" = a frame that has a VideoRotation > 0.
+  //
+  // "not pending" = a frame that has a VideoRotation == 0.
+  //
+  // "apply rotation" = modify a frame from being "pending" to being "not
+  //                    pending" rotation (a no-op for "unrotated").
+  //
+  virtual VideoRotation rotation() const { return rotation_; }
+  virtual void set_rotation(VideoRotation rotation) {
+    rotation_ = rotation;
+  }
+
   // Set render time in miliseconds.
   virtual void set_render_time_ms(int64_t render_time_ms) {
     render_time_ms_ = render_time_ms;
@@ -165,6 +195,7 @@ class I420VideoFrame {
   uint32_t timestamp_;
   int64_t ntp_time_ms_;
   int64_t render_time_ms_;
+  VideoRotation rotation_;
 };
 
 enum VideoFrameType {

@@ -52,6 +52,22 @@ int TextureVideoFrame::CreateFrame(int size_y,
   return -1;
 }
 
+int TextureVideoFrame::CreateFrame(int size_y,
+                                   const uint8_t* buffer_y,
+                                   int size_u,
+                                   const uint8_t* buffer_u,
+                                   int size_v,
+                                   const uint8_t* buffer_v,
+                                   int width,
+                                   int height,
+                                   int stride_y,
+                                   int stride_u,
+                                   int stride_v,
+                                   webrtc::VideoRotation rotation) {
+  assert(false);  // Should not be called.
+  return -1;
+}
+
 int TextureVideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
   assert(false);  // Should not be called.
   return -1;

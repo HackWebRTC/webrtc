@@ -29,6 +29,7 @@ TEST(TestI420VideoFrame, InitialValues) {
   I420VideoFrame frame;
   // Invalid arguments - one call for each variable.
   EXPECT_TRUE(frame.IsZeroSize());
+  EXPECT_EQ(kVideoRotation_0, frame.rotation());
   EXPECT_EQ(-1, frame.CreateEmptyFrame(0, 10, 10, 14, 14));
   EXPECT_EQ(-1, frame.CreateEmptyFrame(10, -1, 10, 90, 14));
   EXPECT_EQ(-1, frame.CreateEmptyFrame(10, 10, 0, 14, 18));
@@ -100,22 +101,23 @@ TEST(TestI420VideoFrame, CopyFrame) {
   const int kSizeY = 225;
   const int kSizeU = 80;
   const int kSizeV = 80;
+  const VideoRotation kRotation = kVideoRotation_270;
   uint8_t buffer_y[kSizeY];
   uint8_t buffer_u[kSizeU];
   uint8_t buffer_v[kSizeV];
   memset(buffer_y, 16, kSizeY);
   memset(buffer_u, 8, kSizeU);
   memset(buffer_v, 4, kSizeV);
-  frame2.CreateFrame(kSizeY, buffer_y,
-                     kSizeU, buffer_u,
-                     kSizeV, buffer_v,
-                     width + 5, height + 5, stride_y + 5, stride_u, stride_v);
+  frame2.CreateFrame(kSizeY, buffer_y, kSizeU, buffer_u, kSizeV, buffer_v,
+                     width + 5, height + 5, stride_y + 5, stride_u, stride_v,
+                     kRotation);
   // Frame of smaller dimensions - allocated sizes should not vary.
   EXPECT_EQ(0, frame1.CopyFrame(frame2));
   EXPECT_TRUE(EqualFramesExceptSize(frame1, frame2));
   EXPECT_EQ(kSizeY, frame1.allocated_size(kYPlane));
   EXPECT_EQ(kSizeU, frame1.allocated_size(kUPlane));
   EXPECT_EQ(kSizeV, frame1.allocated_size(kVPlane));
+  EXPECT_EQ(kRotation, frame1.rotation());
   // Verify copy of all parameters.
   // Frame of larger dimensions - update allocated sizes.
   EXPECT_EQ(0, frame2.CopyFrame(frame1));

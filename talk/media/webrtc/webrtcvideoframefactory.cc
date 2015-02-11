@@ -36,7 +36,7 @@ VideoFrame* WebRtcVideoFrameFactory::CreateAliasedFrame(
   // TODO(pthatcher): Move Alias logic into the VideoFrameFactory and
   // out of the VideoFrame.
   rtc::scoped_ptr<WebRtcVideoFrame> frame(new WebRtcVideoFrame());
-  if (!frame->Alias(aliased_frame, width, height)) {
+  if (!frame->Alias(aliased_frame, width, height, apply_rotation_)) {
     LOG(LS_ERROR) <<
         "Failed to create WebRtcVideoFrame in CreateAliasedFrame.";
     return NULL;

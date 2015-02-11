@@ -100,6 +100,12 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
       webrtc::VideoCaptureRotation rotation) OVERRIDE {
     return -1;  // not implemented
   }
+  virtual bool SetApplyRotation(bool enable) OVERRIDE {
+    return false;  // not implemented
+  }
+  virtual bool GetApplyRotation() OVERRIDE {
+    return true;  // Rotation compensation is turned on.
+  }
   virtual VideoCaptureEncodeInterface* GetEncodeInterface(
       const webrtc::VideoCodec& codec) OVERRIDE {
     return NULL;  // not implemented
