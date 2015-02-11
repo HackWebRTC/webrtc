@@ -110,9 +110,8 @@
                   'app/webrtc/java/android/org/webrtc/VideoRendererGui.java',
                   'app/webrtc/java/src/org/webrtc/MediaCodecVideoEncoder.java',
                   'app/webrtc/java/src/org/webrtc/MediaCodecVideoDecoder.java',
+                  'app/webrtc/java/src/org/webrtc/VideoCapturerAndroid.java',
                   '<(webrtc_modules_dir)/audio_device/android/java/src/org/webrtc/voiceengine/AudioManagerAndroid.java',
-                  '<(webrtc_modules_dir)/video_capture/android/java/src/org/webrtc/videoengine/VideoCaptureAndroid.java',
-                  '<(webrtc_modules_dir)/video_capture/android/java/src/org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid.java',
                   '<(webrtc_modules_dir)/video_render/android/java/src/org/webrtc/videoengine/ViEAndroidGLES20.java',
                   '<(webrtc_modules_dir)/video_render/android/java/src/org/webrtc/videoengine/ViERenderer.java',
                   '<(webrtc_modules_dir)/video_render/android/java/src/org/webrtc/videoengine/ViESurfaceRenderer.java',
@@ -693,6 +692,14 @@
         'app/webrtc/webrtcsession.h',
         'app/webrtc/webrtcsessiondescriptionfactory.cc',
         'app/webrtc/webrtcsessiondescriptionfactory.h',
+      ],
+      'conditions': [
+        ['OS=="android" and build_with_chromium==0', {
+          'sources': [
+            'app/webrtc/androidvideocapturer.h',
+            'app/webrtc/androidvideocapturer.cc',
+           ],
+        }],
       ],
     },  # target libjingle_peerconnection
   ],

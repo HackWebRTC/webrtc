@@ -27,13 +27,12 @@
 
 package org.appspot.apprtc;
 
-import org.appspot.apprtc.AppRTCClient.SignalingParameters;
-import org.appspot.apprtc.util.LooperExecutor;
-
 import android.content.Context;
 import android.opengl.EGLContext;
 import android.util.Log;
 
+import org.appspot.apprtc.AppRTCClient.SignalingParameters;
+import org.appspot.apprtc.util.LooperExecutor;
 import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaCodecVideoEncoder;
@@ -47,7 +46,7 @@ import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsObserver;
 import org.webrtc.StatsReport;
-import org.webrtc.VideoCapturer;
+import org.webrtc.VideoCapturerAndroid;
 import org.webrtc.VideoRenderer;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
@@ -109,6 +108,8 @@ public class PeerConnectionClient {
   private boolean useFrontFacingCamera = true;
   private SessionDescription localSdp = null; // either offer or answer SDP
   private MediaStream mediaStream = null;
+  private VideoCapturerAndroid videoCapturer = null;
+  private Context context = null;
   // enableVideo is set to true if video should be rendered and sent.
   private boolean renderVideo = true;
   private VideoTrack localVideoTrack = null;
@@ -282,6 +283,7 @@ public class PeerConnectionClient {
       events.onPeerConnectionError("Failed to initializeAndroidGlobals");
     }
     factory = new PeerConnectionFactory();
+    this.context = context;
     Log.d(TAG, "Peer connection factory created.");
   }
 
@@ -317,7 +319,9 @@ public class PeerConnectionClient {
 
     mediaStream = factory.createLocalMediaStream("ARDAMS");
     if (videoConstraints != null) {
-      mediaStream.addTrack(createVideoTrack(useFrontFacingCamera));
+      videoCapturer = VideoCapturerAndroid.create(
+          VideoCapturerAndroid.getNameOfFrontFacingDevice());
+      mediaStream.addTrack(createVideoTrack(videoCapturer));
     }
 
     if (signalingParameters.audioConstraints != null) {
@@ -529,45 +533,12 @@ public class PeerConnectionClient {
     });
   }
 
-  // Cycle through likely device names for the camera and return the first
-  // capturer that works, or crash if none do.
-  private VideoCapturer getVideoCapturer(boolean useFrontFacing) {
-    String[] cameraFacing = { "front", "back" };
-    if (!useFrontFacing) {
-      cameraFacing[0] = "back";
-      cameraFacing[1] = "front";
-    }
-    for (String facing : cameraFacing) {
-      int[] cameraIndex = { 0, 1 };
-      int[] cameraOrientation = { 0, 90, 180, 270 };
-      for (int index : cameraIndex) {
-        for (int orientation : cameraOrientation) {
-          String name = "Camera " + index + ", Facing " + facing
-              + ", Orientation " + orientation;
-          VideoCapturer capturer = VideoCapturer.create(name);
-          if (capturer != null) {
-            Log.d(TAG, "Using camera: " + name);
-            return capturer;
-          }
-        }
-      }
-    }
-    reportError("Failed to open capturer");
-    return null;
-  }
-
-  private VideoTrack createVideoTrack(boolean frontFacing) {
-    VideoCapturer capturer = getVideoCapturer(frontFacing);
-    if (videoSource != null) {
-      videoSource.stop();
-      videoSource.dispose();
-    }
-
-    videoSource = factory.createVideoSource(capturer, videoConstraints);
-    String trackExtension = frontFacing ? "frontFacing" : "backFacing";
+  private VideoTrack createVideoTrack(VideoCapturerAndroid capturer) {
+    videoSource = factory.createVideoSource(
+        capturer, signalingParameters.videoConstraints);
 
     localVideoTrack =
-        factory.createVideoTrack(VIDEO_TRACK_ID + trackExtension, videoSource);
+        factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
     localVideoTrack.setEnabled(renderVideo);
     localVideoTrack.addRenderer(new VideoRenderer(localRender));
     return localVideoTrack;
@@ -669,50 +640,8 @@ public class PeerConnectionClient {
     if (videoConstraints == null) {
       return;  // No video is sent.
     }
-    if (peerConnection.signalingState()
-        != PeerConnection.SignalingState.STABLE) {
-      Log.e(TAG, "Switching camera during negotiation is not handled.");
-      return;
-    }
-
+    videoCapturer.switchCamera();
     Log.d(TAG, "Switch camera");
-    peerConnection.removeStream(mediaStream);
-    VideoTrack currentTrack = mediaStream.videoTracks.get(0);
-    mediaStream.removeTrack(currentTrack);
-
-    String trackId = currentTrack.id();
-    // On Android, there can only be one camera open at the time and we
-    // need to release our implicit references to the videoSource before the
-    // PeerConnectionFactory is released. Since createVideoTrack creates a new
-    // videoSource and frees the old one, we need to release the track here.
-    currentTrack.dispose();
-
-    useFrontFacingCamera = !useFrontFacingCamera;
-    VideoTrack newTrack = createVideoTrack(useFrontFacingCamera);
-    mediaStream.addTrack(newTrack);
-    peerConnection.addStream(mediaStream);
-
-    SessionDescription remoteDesc = peerConnection.getRemoteDescription();
-    if (localSdp == null || remoteDesc == null) {
-      Log.d(TAG, "Switching camera before the negotiation started.");
-      return;
-    }
-
-    localSdp = new SessionDescription(localSdp.type,
-        localSdp.description.replaceAll(trackId, newTrack.id()));
-
-    if (isInitiator) {
-      peerConnection.setLocalDescription(
-          new SwitchCameraSdbObserver(), localSdp);
-      peerConnection.setRemoteDescription(
-          new SwitchCameraSdbObserver(), remoteDesc);
-    } else {
-      peerConnection.setRemoteDescription(
-          new SwitchCameraSdbObserver(), remoteDesc);
-      peerConnection.setLocalDescription(
-          new SwitchCameraSdbObserver(), localSdp);
-    }
-    Log.d(TAG, "Switch camera done");
   }
 
   public void switchCamera() {
@@ -891,26 +820,6 @@ public class PeerConnectionClient {
     @Override
     public void onSetFailure(final String error) {
       reportError("setSDP error: " + error);
-    }
-  }
-
-  private class SwitchCameraSdbObserver implements SdpObserver {
-    @Override
-    public void onCreateSuccess(SessionDescription sdp) {
-    }
-
-    @Override
-    public void onSetSuccess() {
-      Log.d(TAG, "Camera switch SDP set succesfully");
-    }
-
-    @Override
-    public void onCreateFailure(final String error) {
-    }
-
-    @Override
-    public void onSetFailure(final String error) {
-      reportError("setSDP error while switching camera: " + error);
     }
   }
 }

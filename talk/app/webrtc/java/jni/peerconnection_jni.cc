@@ -91,7 +91,7 @@
 
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
 #include <android/log.h>
-#include "webrtc/modules/video_capture/video_capture_internal.h"
+#include "talk/app/webrtc/androidvideocapturer.h"
 #include "webrtc/modules/video_render/video_render_internal.h"
 #include "webrtc/system_wrappers/interface/logcat_trace_context.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
@@ -279,6 +279,8 @@ class ClassReferenceHolder {
     LoadClass(jni, "org/webrtc/IceCandidate");
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
     LoadClass(jni, "android/graphics/SurfaceTexture");
+    LoadClass(jni, "org/webrtc/VideoCapturerAndroid");
+    LoadClass(jni, "org/webrtc/VideoCapturerAndroid$NativeFrameObserver");
     LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder");
     LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder$OutputBufferInfo");
     LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder");
@@ -304,6 +306,7 @@ class ClassReferenceHolder {
     LoadClass(jni, "org/webrtc/StatsReport");
     LoadClass(jni, "org/webrtc/StatsReport$Value");
     LoadClass(jni, "org/webrtc/VideoRenderer$I420Frame");
+    LoadClass(jni, "org/webrtc/VideoCapturer");
     LoadClass(jni, "org/webrtc/VideoTrack");
   }
 
@@ -423,6 +426,36 @@ jobject NewGlobalRef(JNIEnv* jni, jobject o) {
 void DeleteGlobalRef(JNIEnv* jni, jobject o) {
   jni->DeleteGlobalRef(o);
   CHECK_EXCEPTION(jni) << "error during DeleteGlobalRef";
+}
+
+// Convenience macro defining JNI-accessible methods in the org.webrtc package.
+// Eliminates unnecessary boilerplate and line-wraps, reducing visual clutter.
+#define JOW(rettype, name) extern "C" rettype JNIEXPORT JNICALL \
+  Java_org_webrtc_##name
+
+extern "C" jint JNIEXPORT JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
+  CHECK(!g_jvm) << "JNI_OnLoad called more than once!";
+  g_jvm = jvm;
+  CHECK(g_jvm) << "JNI_OnLoad handed NULL?";
+
+  CHECK(!pthread_once(&g_jni_ptr_once, &CreateJNIPtrKey)) << "pthread_once";
+
+  CHECK(rtc::InitializeSSL()) << "Failed to InitializeSSL()";
+
+  JNIEnv* jni;
+  if (jvm->GetEnv(reinterpret_cast<void**>(&jni), JNI_VERSION_1_6) != JNI_OK)
+    return -1;
+  g_class_reference_holder = new ClassReferenceHolder(jni);
+
+  return JNI_VERSION_1_6;
+}
+
+extern "C" void JNIEXPORT JNICALL JNI_OnUnLoad(JavaVM *jvm, void *reserved) {
+  g_class_reference_holder->FreeReferences(AttachCurrentThreadIfNeeded());
+  delete g_class_reference_holder;
+  g_class_reference_holder = NULL;
+  CHECK(rtc::CleanupSSL()) << "Failed to CleanupSSL()";
+  g_jvm = NULL;
 }
 
 // Given a jweak reference, allocate a (strong) local reference scoped to the
@@ -2634,45 +2667,112 @@ webrtc::VideoDecoder* MediaCodecVideoDecoderFactory::CreateVideoDecoder(
   return new MediaCodecVideoDecoder(AttachCurrentThreadIfNeeded());
 }
 
-
 void MediaCodecVideoDecoderFactory::DestroyVideoDecoder(
     webrtc::VideoDecoder* decoder) {
   delete decoder;
 }
 
+// AndroidVideoCapturerJni implements AndroidVideoCapturerDelegate.
+// The purpose of the delegate is to hide the JNI specifics from the C++ only
+// AndroidVideoCapturer.
+// TODO(perkj): Refactor this to a separate file once the jni utility functions
+// and classes have been moved.
+class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
+ public:
+  static int SetAndroidObjects(JNIEnv* jni, jobject appliction_context) {
+    if (application_context_) {
+      jni->DeleteGlobalRef(application_context_);
+    }
+    application_context_ = NewGlobalRef(jni, appliction_context);
+
+    return 0;
+  }
+
+  AndroidVideoCapturerJni(JNIEnv* jni, jobject j_video_capturer)
+      : j_capturer_global_(jni, j_video_capturer),
+        j_video_capturer_class_(
+            jni, FindClass(jni, "org/webrtc/VideoCapturerAndroid")),
+        j_frame_observer_class_(
+            jni,
+            FindClass(jni,
+                      "org/webrtc/VideoCapturerAndroid$NativeFrameObserver")) {
+  }
+
+  void Start(int width, int height, int framerate,
+             webrtc::AndroidVideoCapturer* capturer) override {
+    j_frame_observer_ = NewGlobalRef(
+        jni(),
+        jni()->NewObject(*j_frame_observer_class_,
+                         GetMethodID(jni(),
+                                     *j_frame_observer_class_,
+                                     "<init>",
+                                     "(J)V"),
+                         jlongFromPointer(capturer)));
+    CHECK_EXCEPTION(jni()) << "error during NewObject";
+
+    jmethodID m = GetMethodID(
+        jni(), *j_video_capturer_class_, "startCapture",
+        "(IIILandroid/content/Context;"
+        "Lorg/webrtc/VideoCapturerAndroid$CapturerObserver;)V");
+    jni()->CallVoidMethod(*j_capturer_global_,
+                          m, width, height,
+                          framerate,
+                          application_context_,
+                          j_frame_observer_);
+    CHECK_EXCEPTION(jni()) << "error during VideoCapturerAndroid.startCapture";
+  }
+
+  bool Stop() override {
+    jmethodID m = GetMethodID(jni(), *j_video_capturer_class_,
+                              "stopCapture", "()Z");
+    jboolean result = jni()->CallBooleanMethod(*j_capturer_global_, m);
+    CHECK_EXCEPTION(jni()) << "error during VideoCapturerAndroid.stopCapture";
+    DeleteGlobalRef(jni(), j_frame_observer_);
+    return result;
+  }
+
+  std::string GetSupportedFormats() override {
+    jmethodID m =
+        GetMethodID(jni(), *j_video_capturer_class_,
+                    "getSupportedFormatsAsJson", "()Ljava/lang/String;");
+    jstring j_json_caps =
+        (jstring) jni()->CallObjectMethod(*j_capturer_global_, m);
+    CHECK_EXCEPTION(jni()) << "error during supportedFormatsAsJson";
+    return JavaToStdString(jni(), j_json_caps);
+  }
+
+ private:
+  JNIEnv* jni() { return AttachCurrentThreadIfNeeded(); }
+
+  const ScopedGlobalRef<jobject> j_capturer_global_;
+  const ScopedGlobalRef<jclass> j_video_capturer_class_;
+  const ScopedGlobalRef<jclass> j_frame_observer_class_;
+  jobject j_frame_observer_;
+
+  static jobject application_context_;
+};
+
+jobject AndroidVideoCapturerJni::application_context_ = nullptr;
+
+JOW(void, VideoCapturerAndroid_00024NativeFrameObserver_nativeOnFrameCaptured)
+    (JNIEnv* jni, jclass, jlong j_capturer, jbyteArray j_frame,
+        jint rotation, jlong ts) {
+  jbyte* bytes = jni->GetByteArrayElements(j_frame, NULL);
+  reinterpret_cast<webrtc::AndroidVideoCapturer*>(
+      j_capturer)->OnIncomingFrame(bytes, jni->GetArrayLength(j_frame),
+                                   rotation, ts);
+  jni->ReleaseByteArrayElements(j_frame, bytes, JNI_ABORT);
+}
+
+JOW(void, VideoCapturerAndroid_00024NativeFrameObserver_nativeCapturerStarted)
+    (JNIEnv* jni, jclass, jlong j_capturer, jboolean j_success) {
+  reinterpret_cast<webrtc::AndroidVideoCapturer*>(
+      j_capturer)->OnCapturerStarted(j_success);
+}
+
 #endif  // #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
 
 }  // anonymous namespace
-
-// Convenience macro defining JNI-accessible methods in the org.webrtc package.
-// Eliminates unnecessary boilerplate and line-wraps, reducing visual clutter.
-#define JOW(rettype, name) extern "C" rettype JNIEXPORT JNICALL \
-  Java_org_webrtc_##name
-
-extern "C" jint JNIEXPORT JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
-  CHECK(!g_jvm) << "JNI_OnLoad called more than once!";
-  g_jvm = jvm;
-  CHECK(g_jvm) << "JNI_OnLoad handed NULL?";
-
-  CHECK(!pthread_once(&g_jni_ptr_once, &CreateJNIPtrKey)) << "pthread_once";
-
-  CHECK(rtc::InitializeSSL()) << "Failed to InitializeSSL()";
-
-  JNIEnv* jni;
-  if (jvm->GetEnv(reinterpret_cast<void**>(&jni), JNI_VERSION_1_6) != JNI_OK)
-    return -1;
-  g_class_reference_holder = new ClassReferenceHolder(jni);
-
-  return JNI_VERSION_1_6;
-}
-
-extern "C" void JNIEXPORT JNICALL JNI_OnUnLoad(JavaVM *jvm, void *reserved) {
-  g_class_reference_holder->FreeReferences(AttachCurrentThreadIfNeeded());
-  delete g_class_reference_holder;
-  g_class_reference_holder = NULL;
-  CHECK(rtc::CleanupSSL()) << "Failed to CleanupSSL()";
-  g_jvm = NULL;
-}
 
 static DataChannelInterface* ExtractNativeDC(JNIEnv* jni, jobject j_dc) {
   jfieldID native_dc_id = GetFieldID(jni,
@@ -2828,16 +2928,17 @@ JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
   vp8_hw_acceleration_enabled = vp8_hw_acceleration;
   if (!factory_static_initialized) {
     if (initialize_video) {
-      failure |= webrtc::SetCaptureAndroidVM(g_jvm, context);
       failure |= webrtc::SetRenderAndroidVM(g_jvm);
+      failure |= AndroidVideoCapturerJni::SetAndroidObjects(jni, context);
     }
     if (initialize_audio)
       failure |= webrtc::VoiceEngine::SetAndroidObjects(g_jvm, jni, context);
     factory_static_initialized = true;
   }
-  if (initialize_video)
+  if (initialize_video) {
     failure |= MediaCodecVideoDecoder::SetAndroidObjects(jni,
         render_egl_context);
+  }
   return !failure;
 }
 #endif  // defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
@@ -3218,8 +3319,32 @@ JOW(jobject, MediaSource_nativeState)(JNIEnv* jni, jclass, jlong j_p) {
   return JavaEnumFromIndex(jni, "MediaSource$State", p->state());
 }
 
-JOW(jlong, VideoCapturer_nativeCreateVideoCapturer)(
+JOW(jobject, VideoCapturer_nativeCreateVideoCapturer)(
     JNIEnv* jni, jclass, jstring j_device_name) {
+// Since we can't create platform specific java implementations in Java, we
+// defer the creation to C land.
+#if defined(ANDROID)
+  jclass j_video_capturer_class(
+      FindClass(jni, "org/webrtc/VideoCapturerAndroid"));
+  const jmethodID j_videocapturer_ctor(GetMethodID(
+      jni, j_video_capturer_class, "<init>", "()V"));
+  jobject j_video_capturer = jni->NewObject(j_video_capturer_class,
+                                            j_videocapturer_ctor);
+  CHECK_EXCEPTION(jni) << "error during NewObject";
+
+  const jmethodID m(GetMethodID(
+      jni, j_video_capturer_class, "Init", "(Ljava/lang/String;)Z"));
+  if (!jni->CallBooleanMethod(j_video_capturer, m, j_device_name)) {
+    return nullptr;
+  }
+  CHECK_EXCEPTION(jni) << "error during CallVoidMethod";
+
+  rtc::scoped_ptr<webrtc::AndroidVideoCapturerDelegate> delegate(
+      new AndroidVideoCapturerJni(jni, j_video_capturer));
+  rtc::scoped_ptr<webrtc::AndroidVideoCapturer> capturer(
+      new webrtc::AndroidVideoCapturer(delegate.Pass()));
+
+#else
   std::string device_name = JavaToStdString(jni, j_device_name);
   scoped_ptr<cricket::DeviceManagerInterface> device_manager(
       cricket::DeviceManagerFactory::Create());
@@ -3231,7 +3356,24 @@ JOW(jlong, VideoCapturer_nativeCreateVideoCapturer)(
   }
   scoped_ptr<cricket::VideoCapturer> capturer(
       device_manager->CreateVideoCapturer(device));
-  return (jlong)capturer.release();
+
+  jclass j_video_capturer_class(
+      FindClass(jni, "org/webrtc/VideoCapturer"));
+  const jmethodID j_videocapturer_ctor(GetMethodID(
+      jni, j_video_capturer_class, "<init>", "()V"));
+  jobject j_video_capturer =
+      jni->NewObject(j_video_capturer_class,
+                     j_videocapturer_ctor);
+  CHECK_EXCEPTION(jni) << "error during creation of VideoCapturer";
+
+#endif
+  const jmethodID j_videocapturer_set_native_capturer(GetMethodID(
+      jni, j_video_capturer_class, "setNativeCapturer", "(J)V"));
+  jni->CallVoidMethod(j_video_capturer,
+                      j_videocapturer_set_native_capturer,
+                      (jlong)capturer.release());
+  CHECK_EXCEPTION(jni) << "error during setNativeCapturer";
+  return j_video_capturer;
 }
 
 JOW(jlong, VideoRenderer_nativeCreateGuiVideoRenderer)(

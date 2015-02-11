@@ -31,16 +31,19 @@ package org.webrtc;
 public class VideoCapturer {
   private long nativeVideoCapturer;
 
-  private VideoCapturer(long nativeVideoCapturer) {
-    this.nativeVideoCapturer = nativeVideoCapturer;
+  protected VideoCapturer() {
   }
 
   public static VideoCapturer create(String deviceName) {
-    long nativeVideoCapturer = nativeCreateVideoCapturer(deviceName);
-    if (nativeVideoCapturer == 0) {
-      return null;
-    }
-    return new VideoCapturer(nativeVideoCapturer);
+    Object capturer = nativeCreateVideoCapturer(deviceName);
+    if (capturer != null)
+      return (VideoCapturer) (capturer);
+    return null;
+  }
+
+  // Sets |nativeCapturer| to be owned by VideoCapturer.
+  protected void setNativeCapturer(long nativeCapturer) {
+    this.nativeVideoCapturer = nativeCapturer;
   }
 
   // Package-visible for PeerConnectionFactory.
@@ -61,7 +64,7 @@ public class VideoCapturer {
     }
   }
 
-  private static native long nativeCreateVideoCapturer(String deviceName);
+  private static native Object nativeCreateVideoCapturer(String deviceName);
 
   private static native void free(long nativeVideoCapturer);
 }
