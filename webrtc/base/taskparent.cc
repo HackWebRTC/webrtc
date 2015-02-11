@@ -12,6 +12,7 @@
 
 #include "webrtc/base/taskparent.h"
 
+#include "webrtc/base/common.h"
 #include "webrtc/base/task.h"
 #include "webrtc/base/taskrunner.h"
 

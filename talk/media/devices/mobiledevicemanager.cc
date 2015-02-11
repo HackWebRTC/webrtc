@@ -26,6 +26,7 @@
  */
 
 #include "talk/media/devices/devicemanager.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"
 
 namespace cricket {
@@ -56,7 +57,7 @@ bool MobileDeviceManager::GetVideoCaptureDevices(std::vector<Device>* devs) {
   char id[256];
   char name[256];
   for (uint32 i = 0; i < num_cams; ++i) {
-    if (info->GetDeviceName(i, name, ARRAY_SIZE(name), id, ARRAY_SIZE(id)))
+    if (info->GetDeviceName(i, name, arraysize(name), id, arraysize(id)))
       continue;
     devs->push_back(Device(name, id));
   }

@@ -13,6 +13,7 @@
 
 #include <string.h>
 
+#include "webrtc/base/common.h"
 #include "webrtc/base/scoped_ptr.h"
 
 namespace rtc {

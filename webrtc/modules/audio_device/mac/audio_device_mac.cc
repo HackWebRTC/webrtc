@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_utility.h"
@@ -3213,7 +3214,7 @@ bool AudioDeviceMac::KeyPressed() {
   bool key_down = false;
   // Loop through all Mac virtual key constant values.
   for (unsigned int key_index = 0;
-                    key_index < ARRAY_SIZE(prev_key_state_);
+                    key_index < arraysize(prev_key_state_);
                     ++key_index) {
     bool keyState = CGEventSourceKeyState(
                              kCGEventSourceStateHIDSystemState,

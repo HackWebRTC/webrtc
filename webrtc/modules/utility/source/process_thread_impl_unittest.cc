@@ -155,7 +155,7 @@ void ProcessCallAfterAFewMs(int64_t milliseconds) {
   // thereof), can make the test run in "0"ms time.
   EXPECT_GE(called_time, start_time);
   // Check for an acceptable range.
-  uint32 diff = called_time - start_time;
+  uint32_t diff = called_time - start_time;
   EXPECT_GE(diff, milliseconds - 15);
   EXPECT_LT(diff, milliseconds + 15);
 }
@@ -247,7 +247,7 @@ TEST(ProcessThreadImpl, WakeUp) {
   ASSERT_GT(start_time, 0);
   ASSERT_GT(called_time, 0);
   EXPECT_GE(called_time, start_time);
-  uint32 diff = called_time - start_time;
+  uint32_t diff = called_time - start_time;
   // We should have been called back much quicker than 1sec.
   EXPECT_LE(diff, 100u);
 }
