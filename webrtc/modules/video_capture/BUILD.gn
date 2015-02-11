@@ -9,10 +9,10 @@
 import("../../build/webrtc.gni")
 
 # Note this target is missing an implementation for the video capture.
-# Targets must link with either 'video_capture_impl' or
+# Targets must link with either 'video_capture' or
 # 'video_capture_internal_impl' depending on whether they want to
 # use the internal capturer.
-source_set("video_capture") {
+source_set("video_capture_module") {
   sources = [
     "device_info_impl.cc",
     "device_info_impl.h",
@@ -42,14 +42,14 @@ source_set("video_capture") {
   }
 }
 
-source_set("video_capture_impl") {
+source_set("video_capture") {
   sources = [
     "external/device_info_external.cc",
     "external/video_capture_external.cc",
   ]
 
   deps = [
-    ":video_capture",
+    ":video_capture_module",
     "../../system_wrappers",
   ]
 
@@ -76,7 +76,7 @@ if (!build_with_chromium) {
 
   source_set("video_capture_internal_impl") {
     deps = [
-      ":video_capture",
+      ":video_capture_module",
       "../../system_wrappers",
     ]
 

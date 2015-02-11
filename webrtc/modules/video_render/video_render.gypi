@@ -10,7 +10,7 @@
   'targets': [
     {
       # Note this library is missing an implementation for the video render.
-      # For that targets must link with 'video_render_module_impl' or
+      # For that targets must link with 'video_render' or
       # 'video_render_module_internal_impl' if they want to compile and use
       # the internal render as the default renderer.
       'target_name': 'video_render_module',
@@ -34,9 +34,19 @@
       ],
     },
     {
+      # TODO(kjellander): Remove this target as soon the
+      # video_render_module_impl -> video_render rename has been rolled into
+      # Chromium and src/third_party/libjingle/libjingle.gyp has been updated.
+      'target_name': 'video_render_module_impl',
+      'type': 'none',
+      'dependencies': [
+        'video_render',
+      ],
+    },
+    {
       # Default video_render_module implementation that only supports external
       # renders.
-      'target_name': 'video_render_module_impl',
+      'target_name': 'video_render',
       'type': 'static_library',
       'dependencies': [
         'video_render_module',

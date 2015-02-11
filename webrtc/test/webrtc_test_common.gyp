@@ -58,7 +58,7 @@
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         '<(webrtc_root)/base/base.gyp:rtc_base',
         '<(webrtc_root)/modules/modules.gyp:media_file',
-        '<(webrtc_root)/modules/modules.gyp:video_render_module_impl',
+        '<(webrtc_root)/modules/modules.gyp:video_render',
         '<(webrtc_root)/test/test.gyp:frame_generator',
         '<(webrtc_root)/test/test.gyp:test_support',
         '<(webrtc_root)/test/test.gyp:rtp_test_utils',
@@ -151,7 +151,7 @@
             'webrtc_test_common',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(DEPTH)/testing/gmock.gyp:gmock',
-            '<(webrtc_root)/modules/modules.gyp:video_capture_module_impl',
+            '<(webrtc_root)/modules/modules.gyp:video_capture',
             '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'sources': [

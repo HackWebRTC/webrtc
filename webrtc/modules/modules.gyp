@@ -79,7 +79,7 @@
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
-            '<(webrtc_root)/modules/modules.gyp:video_capture_module_impl',
+            '<(webrtc_root)/modules/modules.gyp:video_capture',
             '<(webrtc_root)/modules/video_coding/codecs/vp8/vp8.gyp:webrtc_vp8',
             '<(webrtc_root)/modules/video_coding/codecs/vp9/vp9.gyp:webrtc_vp9',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',

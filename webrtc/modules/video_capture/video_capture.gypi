@@ -10,7 +10,7 @@
   'targets': [
     {
       # Note this library is missing an implementation for the video capture.
-      # Targets must link with either 'video_capture_module_impl' or
+      # Targets must link with either 'video_capture' or
       # 'video_capture_module_internal_impl' depending on whether they want to
       # use the internal capturer.
       'target_name': 'video_capture_module',
@@ -34,9 +34,19 @@
       ],
     },
     {
+      # TODO(kjellander): Remove this target as soon the
+      # video_capture_module_impl -> video_capture rename has been rolled into
+      # Chromium and src/third_party/libjingle/libjingle.gyp has been updated.
+      'target_name': 'video_capture_module_impl',
+      'type': 'none',
+      'dependencies': [
+        'video_capture',
+      ],
+    },
+    {
       # Default video capture module implementation that only supports external
       # capture.
-      'target_name': 'video_capture_module_impl',
+      'target_name': 'video_capture',
       'type': 'static_library',
       'dependencies': [
         'video_capture_module',

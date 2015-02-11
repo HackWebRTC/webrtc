@@ -8,7 +8,7 @@
 
 import("../../build/webrtc.gni")
 
-source_set("video_render") {
+source_set("video_render_module") {
   sources = [
     "external/video_render_external_impl.cc",
     "external/video_render_external_impl.h",
@@ -38,12 +38,12 @@ source_set("video_render") {
   }
 }
 
-source_set("video_render_impl") {
+source_set("video_render") {
   sources = [
     "video_render_impl.cc",
   ]
   deps = [
-    ":video_render",
+    ":video_render_module",
     "../../system_wrappers",
   ]
 
@@ -73,7 +73,7 @@ if (!build_with_chromium) {
       "video_render_internal_impl.cc",
     ]
     deps = [
-      ":video_render",
+      ":video_render_module",
       "../../system_wrappers",
     ]
 
