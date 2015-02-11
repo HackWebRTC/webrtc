@@ -36,7 +36,7 @@ class ThreadWindows : public ThreadWrapper {
 
   ThreadRunFunction const run_function_;
   void* const obj_;
-  HANDLE event_;  // Used to signal stoppage.
+  bool stop_;
   // TODO(tommi): Consider having a SetPriority method instead of this variable.
   ThreadPriority prio_;
   HANDLE thread_;
