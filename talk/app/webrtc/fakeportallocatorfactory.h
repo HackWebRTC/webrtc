@@ -60,6 +60,8 @@ class FakePortAllocatorFactory : public PortAllocatorFactoryInterface {
     return turn_configs_;
   }
 
+  void SetNetworkIgnoreMask(int network_ignore_mask) {}
+
  protected:
   FakePortAllocatorFactory() {}
   ~FakePortAllocatorFactory() {}

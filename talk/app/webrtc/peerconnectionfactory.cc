@@ -129,7 +129,7 @@ PeerConnectionFactory::PeerConnectionFactory(
 PeerConnectionFactory::~PeerConnectionFactory() {
   DCHECK(signaling_thread_->IsCurrent());
   channel_manager_.reset(NULL);
-  allocator_factory_ = NULL;
+  default_allocator_factory_ = NULL;
   if (owns_ptrs_) {
     if (wraps_current_thread_)
       rtc::ThreadManager::Instance()->UnwrapCurrentThread();
@@ -141,8 +141,8 @@ bool PeerConnectionFactory::Initialize() {
   DCHECK(signaling_thread_->IsCurrent());
   rtc::InitRandom(rtc::Time());
 
-  allocator_factory_ = PortAllocatorFactory::Create(worker_thread_);
-  if (!allocator_factory_)
+  default_allocator_factory_ = PortAllocatorFactory::Create(worker_thread_);
+  if (!default_allocator_factory_)
     return false;
 
   cricket::DummyDeviceManager* device_manager(
@@ -196,13 +196,18 @@ PeerConnectionFactory::CreatePeerConnection(
     DTLSIdentityServiceInterface* dtls_identity_service,
     PeerConnectionObserver* observer) {
   DCHECK(signaling_thread_->IsCurrent());
-  DCHECK(allocator_factory || allocator_factory_);
+  DCHECK(allocator_factory || default_allocator_factory_);
+
+  PortAllocatorFactoryInterface* chosen_allocator_factory =
+      allocator_factory ? allocator_factory : default_allocator_factory_.get();
+  chosen_allocator_factory->SetNetworkIgnoreMask(options_.network_ignore_mask);
+
   rtc::scoped_refptr<PeerConnection> pc(
       new rtc::RefCountedObject<PeerConnection>(this));
   if (!pc->Initialize(
       configuration,
       constraints,
-      allocator_factory ? allocator_factory : allocator_factory_.get(),
+      chosen_allocator_factory,
       dtls_identity_service,
       observer)) {
     return NULL;

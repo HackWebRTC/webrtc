@@ -106,6 +106,7 @@ public class PeerConnectionTest {
     @Override
     public synchronized void onIceCandidate(IceCandidate candidate) {
       --expectedIceCandidates;
+
       // We don't assert expectedIceCandidates >= 0 because it's hard to know
       // how many to expect, in general.  We only use expectIceCandidates to
       // assert a minimal count.
@@ -507,6 +508,12 @@ public class PeerConnectionTest {
     //     "/tmp/PeerConnectionTest-log.txt",
     //     EnumSet.of(Logging.TraceLevel.TRACE_ALL),
     //     Logging.Severity.LS_SENSITIVE);
+
+    // Allow loopback interfaces too since our Android devices often don't
+    // have those.
+    PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
+    options.networkIgnoreMask = 0;
+    factory.setOptions(options);
 
     MediaConstraints pcConstraints = new MediaConstraints();
     pcConstraints.mandatory.add(

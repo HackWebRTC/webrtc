@@ -120,8 +120,10 @@ std::string AdapterTypeToString(AdapterType type) {
       return "Cellular";
     case ADAPTER_TYPE_VPN:
       return "VPN";
+    case ADAPTER_TYPE_LOOPBACK:
+      return "Loopback";
     default:
-      ASSERT(false);
+      DCHECK(false) << "Invalid type " << type;
       return std::string();
   }
 }
@@ -268,6 +270,7 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
 
 BasicNetworkManager::BasicNetworkManager()
     : thread_(NULL), sent_first_update_(false), start_count_(0),
+      network_ignore_mask_(kDefaultNetworkIgnoreMask),
       ignore_non_default_routes_(false) {
 }
 
@@ -331,15 +334,19 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
                                      prefix, prefix_length);
     auto existing_network = current_networks.find(key);
     if (existing_network == current_networks.end()) {
+      AdapterType adapter_type = ADAPTER_TYPE_UNKNOWN;
+      if (cursor->ifa_flags & IFF_LOOPBACK) {
+        // TODO(phoglund): Need to recognize other types as well.
+        adapter_type = ADAPTER_TYPE_LOOPBACK;
+      }
       scoped_ptr<Network> network(new Network(cursor->ifa_name,
                                               cursor->ifa_name,
                                               prefix,
-                                              prefix_length));
+                                              prefix_length,
+                                              adapter_type));
       network->set_scope_id(scope_id);
       network->AddIP(ip);
-      bool ignored = ((cursor->ifa_flags & IFF_LOOPBACK) ||
-                      IsIgnoredNetwork(*network));
-      network->set_ignored(ignored);
+      network->set_ignored(IsIgnoredNetwork(*network));
       if (include_ignored || !network->ignored()) {
         networks->push_back(network.release());
       }
@@ -477,15 +484,20 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
         std::string key = MakeNetworkKey(name, prefix, prefix_length);
         auto existing_network = current_networks.find(key);
         if (existing_network == current_networks.end()) {
+          AdapterType adapter_type = ADAPTER_TYPE_UNKNOWN;
+          if (adapter_addrs->IfType == IF_TYPE_SOFTWARE_LOOPBACK) {
+            // TODO(phoglund): Need to recognize other types as well.
+            adapter_type = ADAPTER_TYPE_LOOPBACK;
+          }
           scoped_ptr<Network> network(new Network(name,
                                                   description,
                                                   prefix,
-                                                  prefix_length));
+                                                  prefix_length,
+                                                  adapter_type));
           network->set_scope_id(scope_id);
           network->AddIP(ip);
-          bool ignore = ((adapter_addrs->IfType == IF_TYPE_SOFTWARE_LOOPBACK) ||
-                         IsIgnoredNetwork(*network));
-          network->set_ignored(ignore);
+          bool ignored = IsIgnoredNetwork(*network);
+          network->set_ignored(ignored);
           if (include_ignored || !network->ignored()) {
             networks->push_back(network.release());
           }
@@ -536,6 +548,10 @@ bool BasicNetworkManager::IsIgnoredNetwork(const Network& network) const {
     if (network.name() == ignored_name) {
       return true;
     }
+  }
+
+  if (network_ignore_mask_ & network.type()) {
+    return true;
   }
 #if defined(WEBRTC_POSIX)
   // Filter out VMware/VirtualBox interfaces, typically named vmnet1,

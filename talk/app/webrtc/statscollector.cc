@@ -55,6 +55,7 @@ const char* STATSREPORT_ADAPTER_TYPE_ETHERNET = "lan";
 const char* STATSREPORT_ADAPTER_TYPE_WIFI = "wlan";
 const char* STATSREPORT_ADAPTER_TYPE_WWAN = "wwan";
 const char* STATSREPORT_ADAPTER_TYPE_VPN = "vpn";
+const char* STATSREPORT_ADAPTER_TYPE_LOOPBACK = "loopback";
 
 bool GetTransportIdFromProxy(const cricket::ProxyTransportMap& map,
                              const std::string& proxy,
@@ -359,6 +360,8 @@ const char* AdapterTypeToStatsType(rtc::AdapterType type) {
       return STATSREPORT_ADAPTER_TYPE_WWAN;
     case rtc::ADAPTER_TYPE_VPN:
       return STATSREPORT_ADAPTER_TYPE_VPN;
+    case rtc::ADAPTER_TYPE_LOOPBACK:
+      return STATSREPORT_ADAPTER_TYPE_LOOPBACK;
     default:
       ASSERT(false);
       return "";

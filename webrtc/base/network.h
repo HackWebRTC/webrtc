@@ -33,11 +33,15 @@ class Thread;
 enum AdapterType {
   // This enum resembles the one in Chromium net::ConnectionType.
   ADAPTER_TYPE_UNKNOWN = 0,
-  ADAPTER_TYPE_ETHERNET = 1,
-  ADAPTER_TYPE_WIFI = 2,
-  ADAPTER_TYPE_CELLULAR = 3,
-  ADAPTER_TYPE_VPN = 4
+  ADAPTER_TYPE_ETHERNET = 1 << 0,
+  ADAPTER_TYPE_WIFI = 1 << 1,
+  ADAPTER_TYPE_CELLULAR = 1 << 2,
+  ADAPTER_TYPE_VPN = 1 << 3,
+  ADAPTER_TYPE_LOOPBACK = 1 << 4
 };
+
+// By default, ignore loopback interfaces on the host.
+const int kDefaultNetworkIgnoreMask = ADAPTER_TYPE_LOOPBACK;
 
 // Makes a string key for this network. Used in the network manager's maps.
 // Network objects are keyed on interface name, network prefix and the
@@ -61,9 +65,9 @@ class NetworkManager {
   sigslot::signal0<> SignalError;
 
   // Start/Stop monitoring of network interfaces
-  // list. SignalNetworksChanged or SignalError is emitted immidiately
+  // list. SignalNetworksChanged or SignalError is emitted immediately
   // after StartUpdating() is called. After that SignalNetworksChanged
-  // is emitted wheneven list of networks changes.
+  // is emitted whenever list of networks changes.
   virtual void StartUpdating() = 0;
   virtual void StopUpdating() = 0;
 
@@ -143,11 +147,24 @@ class BasicNetworkManager : public NetworkManagerBase,
   virtual void OnMessage(Message* msg);
   bool started() { return start_count_ > 0; }
 
-  // Sets the network ignore list, which is empty by default. Any network on
-  // the ignore list will be filtered from network enumeration results.
+  // Sets the network ignore list, which is empty by default. Any network on the
+  // ignore list will be filtered from network enumeration results.
   void set_network_ignore_list(const std::vector<std::string>& list) {
     network_ignore_list_ = list;
   }
+
+  // Sets the network types to ignore. For instance, calling this with
+  // ADAPTER_TYPE_ETHERNET | ADAPTER_TYPE_LOOPBACK will ignore Ethernet and
+  // loopback interfaces. Set to kDefaultNetworkIgnoreMask by default.
+  void set_network_ignore_mask(int network_ignore_mask) {
+    // TODO(phoglund): implement support for other types than loopback.
+    // See https://code.google.com/p/webrtc/issues/detail?id=4288.
+    // Then remove set_network_ignore_list.
+    network_ignore_mask_ = network_ignore_mask;
+  }
+
+  int network_ignore_mask() const { return network_ignore_mask_; }
+
 #if defined(WEBRTC_LINUX)
   // Sets the flag for ignoring non-default routes.
   void set_ignore_non_default_routes(bool value) {
@@ -178,6 +195,7 @@ class BasicNetworkManager : public NetworkManagerBase,
   bool sent_first_update_;
   int start_count_;
   std::vector<std::string> network_ignore_list_;
+  int network_ignore_mask_;
   bool ignore_non_default_routes_;
 };
 

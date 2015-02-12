@@ -52,6 +52,10 @@ PortAllocatorFactory::PortAllocatorFactory(rtc::Thread* worker_thread)
 
 PortAllocatorFactory::~PortAllocatorFactory() {}
 
+void PortAllocatorFactory::SetNetworkIgnoreMask(int network_ignore_mask) {
+  network_manager_->set_network_ignore_mask(network_ignore_mask);
+}
+
 cricket::PortAllocator* PortAllocatorFactory::CreatePortAllocator(
     const std::vector<StunConfiguration>& stun,
     const std::vector<TurnConfiguration>& turn) {

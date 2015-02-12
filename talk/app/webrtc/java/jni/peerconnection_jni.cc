@@ -3088,6 +3088,23 @@ JOW(jlong, PeerConnectionFactory_nativeCreateAudioTrack)(
   return (jlong)track.release();
 }
 
+JOW(void, PeerConnectionFactory_nativeSetOptions)(
+    JNIEnv* jni, jclass, jlong native_factory, jobject options) {
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
+      factoryFromJava(native_factory));
+  jclass options_class = jni->GetObjectClass(options);
+  jfieldID network_ignore_mask_field =
+      jni->GetFieldID(options_class, "networkIgnoreMask", "I");
+  int network_ignore_mask =
+      jni->GetIntField(options, network_ignore_mask_field);
+  PeerConnectionFactoryInterface::Options options_to_set;
+
+  // This doesn't necessarily match the c++ version of this struct; feel free
+  // to add more parameters as necessary.
+  options_to_set.network_ignore_mask = network_ignore_mask;
+  factory->SetOptions(options_to_set);
+}
+
 static void JavaIceServersToJsepIceServers(
     JNIEnv* jni, jobject j_ice_servers,
     PeerConnectionInterface::IceServers* ice_servers) {

@@ -41,6 +41,18 @@ public class PeerConnectionFactory {
 
   private final long nativeFactory;
 
+  static class Options {
+    // Keep in sync with webrtc/base/network.h!
+    static final int ADAPTER_TYPE_UNKNOWN = 0;
+    static final int ADAPTER_TYPE_ETHERNET = 1 << 0;
+    static final int ADAPTER_TYPE_WIFI = 1 << 1;
+    static final int ADAPTER_TYPE_CELLULAR = 1 << 2;
+    static final int ADAPTER_TYPE_VPN = 1 << 3;
+    static final int ADAPTER_TYPE_LOOPBACK = 1 << 4;
+
+    public int networkIgnoreMask;
+  }
+
   // |context| is an android.content.Context object, but we keep it untyped here
   // to allow building on non-Android platforms.
   // Callers may specify either |initializeAudio| or |initializeVideo| as false
@@ -105,9 +117,15 @@ public class PeerConnectionFactory {
         nativeFactory, id, source.nativeSource));
   }
 
+  public void setOptions(Options options) {
+    nativeSetOptions(nativeFactory, options);
+  }
+
   public void dispose() {
     freeFactory(nativeFactory);
   }
+
+  public native void nativeSetOptions(long nativeFactory, Options options);
 
   private static native long nativeCreatePeerConnectionFactory();
 

@@ -97,7 +97,7 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   rtc::Thread* signaling_thread_;
   rtc::Thread* worker_thread_;
   Options options_;
-  rtc::scoped_refptr<PortAllocatorFactoryInterface> allocator_factory_;
+  rtc::scoped_refptr<PortAllocatorFactoryInterface> default_allocator_factory_;
   // External Audio device used for audio playback.
   rtc::scoped_refptr<AudioDeviceModule> default_adm_;
   rtc::scoped_ptr<cricket::ChannelManager> channel_manager_;

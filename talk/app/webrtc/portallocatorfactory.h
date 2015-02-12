@@ -56,6 +56,8 @@ class PortAllocatorFactory : public PortAllocatorFactoryInterface {
       const std::vector<StunConfiguration>& stun,
       const std::vector<TurnConfiguration>& turn);
 
+  virtual void SetNetworkIgnoreMask(int network_ignore_mask);
+
  protected:
   explicit PortAllocatorFactory(rtc::Thread* worker_thread);
   ~PortAllocatorFactory();
