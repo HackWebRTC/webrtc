@@ -12,6 +12,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc {
@@ -21,6 +22,11 @@ PayloadRouter::PayloadRouter()
       active_(false) {}
 
 PayloadRouter::~PayloadRouter() {}
+
+size_t PayloadRouter::DefaultMaxPayloadLength() {
+  const size_t kIpUdpSrtpLength = 44;
+  return IP_PACKET_SIZE - kIpUdpSrtpLength;
+}
 
 void PayloadRouter::SetSendingRtpModules(
     const std::list<RtpRtcp*>& rtp_modules) {
@@ -47,7 +53,7 @@ bool PayloadRouter::RoutePayload(FrameType frame_type,
                                  uint32_t time_stamp,
                                  int64_t capture_time_ms,
                                  const uint8_t* payload_data,
-                                 size_t payload_size,
+                                 size_t payload_length,
                                  const RTPFragmentationHeader* fragmentation,
                                  const RTPVideoHeader* rtp_video_hdr) {
   CriticalSectionScoped cs(crit_.get());
@@ -62,7 +68,18 @@ bool PayloadRouter::RoutePayload(FrameType frame_type,
     stream_idx = rtp_video_hdr->simulcastIdx;
   return rtp_modules_[stream_idx]->SendOutgoingData(
       frame_type, payload_type, time_stamp, capture_time_ms, payload_data,
-      payload_size, fragmentation, rtp_video_hdr) == 0 ? true : false;
+      payload_length, fragmentation, rtp_video_hdr) == 0 ? true : false;
+}
+
+size_t PayloadRouter::MaxPayloadLength() const {
+  size_t min_payload_length = DefaultMaxPayloadLength();
+  CriticalSectionScoped cs(crit_.get());
+  for (auto* rtp_module : rtp_modules_) {
+    size_t module_payload_length = rtp_module->MaxDataPayloadLength();
+    if (module_payload_length < min_payload_length)
+      min_payload_length = module_payload_length;
+  }
+  return min_payload_length;
 }
 
 }  // namespace webrtc

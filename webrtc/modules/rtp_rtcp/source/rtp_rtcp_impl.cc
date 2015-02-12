@@ -555,31 +555,8 @@ uint16_t ModuleRtpRtcpImpl::MaxPayloadLength() const {
 }
 
 uint16_t ModuleRtpRtcpImpl::MaxDataPayloadLength() const {
-  // Assuming IP/UDP.
-  uint16_t min_data_payload_length = IP_PACKET_SIZE - 28;
-
-  if (IsDefaultModule()) {
-    // For default we need to update all child modules too.
-    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    std::vector<ModuleRtpRtcpImpl*>::const_iterator it = child_modules_.begin();
-    while (it != child_modules_.end()) {
-      RtpRtcp* module = *it;
-      if (module) {
-        uint16_t data_payload_length =
-          module->MaxDataPayloadLength();
-        if (data_payload_length < min_data_payload_length) {
-          min_data_payload_length = data_payload_length;
-        }
-      }
-      it++;
-    }
-  }
-
-  uint16_t data_payload_length = rtp_sender_.MaxDataPayloadLength();
-  if (data_payload_length < min_data_payload_length) {
-    min_data_payload_length = data_payload_length;
-  }
-  return min_data_payload_length;
+  assert(!IsDefaultModule());
+  return rtp_sender_.MaxDataPayloadLength();
 }
 
 int32_t ModuleRtpRtcpImpl::SetTransportOverhead(

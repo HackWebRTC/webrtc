@@ -33,6 +33,8 @@ class PayloadRouter {
   PayloadRouter();
   ~PayloadRouter();
 
+  static size_t DefaultMaxPayloadLength();
+
   // Rtp modules are assumed to be sorted in simulcast index order.
   void SetSendingRtpModules(const std::list<RtpRtcp*>& rtp_modules);
 
@@ -51,6 +53,10 @@ class PayloadRouter {
                     size_t payload_size,
                     const RTPFragmentationHeader* fragmentation,
                     const RTPVideoHeader* rtp_video_hdr);
+
+  // Returns the maximum allowed data payload length, given the configured MTU
+  // and RTP headers.
+  size_t MaxPayloadLength() const;
 
  private:
   scoped_ptr<CriticalSectionWrapper> crit_;

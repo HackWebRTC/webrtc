@@ -217,7 +217,7 @@ bool ViEEncoder::Init() {
     send_padding_ = video_codec.numberOfSimulcastStreams > 1;
   }
   if (vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
-                             default_rtp_rtcp_->MaxDataPayloadLength()) != 0) {
+                             PayloadRouter::DefaultMaxPayloadLength()) != 0) {
     return false;
   }
   if (default_rtp_rtcp_->RegisterSendPayload(video_codec) != 0) {
@@ -324,6 +324,7 @@ int32_t ViEEncoder::RegisterExternalEncoder(webrtc::VideoEncoder* encoder,
 }
 
 int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
+  DCHECK(send_payload_router_ != NULL);
   webrtc::VideoCodec current_send_codec;
   if (vcm_.SendCodec(&current_send_codec) == VCM_OK) {
     uint32_t current_bitrate_bps = 0;
@@ -340,8 +341,6 @@ int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
   // If the external encoder is the current send codec, use vcm internal
   // encoder.
   if (current_send_codec.plType == pl_type) {
-    uint16_t max_data_payload_length =
-        default_rtp_rtcp_->MaxDataPayloadLength();
     {
       CriticalSectionScoped cs(data_cs_.get());
       send_padding_ = current_send_codec.numberOfSimulcastStreams > 1;
@@ -351,6 +350,7 @@ int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
     // a hack to prevent the following code from crashing.  This should be fixed
     // for realz.  https://code.google.com/p/chromium/issues/detail?id=348222
     current_send_codec.extra_options = NULL;
+    size_t max_data_payload_length = send_payload_router_->MaxPayloadLength();
     if (vcm_.RegisterSendCodec(&current_send_codec, number_of_cores_,
                                max_data_payload_length) != VCM_OK) {
       LOG(LS_INFO) << "De-registered the currently used external encoder ("
@@ -363,6 +363,7 @@ int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
 }
 
 int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
+  DCHECK(send_payload_router_ != NULL);
   // Setting target width and height for VPM.
   if (vpm_.SetTargetResolution(video_codec.width, video_codec.height,
                                video_codec.maxFramerate) != VPM_OK) {
@@ -379,13 +380,11 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
       video_codec.numberOfSimulcastStreams);
   default_rtp_rtcp_->SetTargetSendBitrate(stream_bitrates);
 
-  uint16_t max_data_payload_length =
-      default_rtp_rtcp_->MaxDataPayloadLength();
-
   {
     CriticalSectionScoped cs(data_cs_.get());
     send_padding_ = video_codec.numberOfSimulcastStreams > 1;
   }
+  size_t max_data_payload_length = send_payload_router_->MaxPayloadLength();
   if (vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
                              max_data_payload_length) != VCM_OK) {
     return -1;
@@ -660,6 +659,7 @@ int ViEEncoder::CodecTargetBitrate(uint32_t* bitrate) const {
 }
 
 int32_t ViEEncoder::UpdateProtectionMethod(bool enable_nack) {
+  DCHECK(send_payload_router_ != NULL);
   bool fec_enabled = false;
   uint8_t dummy_ptype_red = 0;
   uint8_t dummy_ptypeFEC = 0;
@@ -693,7 +693,6 @@ int32_t ViEEncoder::UpdateProtectionMethod(bool enable_nack) {
     // The send codec must be registered to set correct MTU.
     webrtc::VideoCodec codec;
     if (vcm_.SendCodec(&codec) == 0) {
-      uint16_t max_pay_load = default_rtp_rtcp_->MaxDataPayloadLength();
       uint32_t current_bitrate_bps = 0;
       if (vcm_.Bitrate(&current_bitrate_bps) != 0) {
         LOG_F(LS_WARNING) <<
@@ -701,7 +700,9 @@ int32_t ViEEncoder::UpdateProtectionMethod(bool enable_nack) {
       }
       // Convert to start bitrate in kbps.
       codec.startBitrate = (current_bitrate_bps + 500) / 1000;
-      if (vcm_.RegisterSendCodec(&codec, number_of_cores_, max_pay_load) != 0) {
+      size_t max_payload_length = send_payload_router_->MaxPayloadLength();
+      if (vcm_.RegisterSendCodec(&codec, number_of_cores_,
+                                 max_payload_length) != 0) {
         return -1;
       }
     }

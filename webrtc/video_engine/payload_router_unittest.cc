@@ -127,5 +127,38 @@ TEST_F(PayloadRouterTest, SendSimulcast) {
                                              &payload_2, 1, NULL, &rtp_hdr_2));
 }
 
+TEST_F(PayloadRouterTest, MaxPayloadLength) {
+  // Without any limitations from the modules, verify we get the max payload
+  // length for IP/UDP/SRTP with a MTU of 150 bytes.
+  const size_t kDefaultMaxLength = 1500 - 20 - 8 - 12 - 4;
+  EXPECT_EQ(kDefaultMaxLength, payload_router_->DefaultMaxPayloadLength());
+  EXPECT_EQ(kDefaultMaxLength, payload_router_->MaxPayloadLength());
+
+  MockRtpRtcp rtp_1;
+  MockRtpRtcp rtp_2;
+  std::list<RtpRtcp*> modules;
+  modules.push_back(&rtp_1);
+  modules.push_back(&rtp_2);
+  payload_router_->SetSendingRtpModules(modules);
+
+  // Modules return a higher length than the default value.
+  EXPECT_CALL(rtp_1, MaxDataPayloadLength())
+      .Times(1)
+      .WillOnce(Return(kDefaultMaxLength + 10));
+  EXPECT_CALL(rtp_2, MaxDataPayloadLength())
+      .Times(1)
+      .WillOnce(Return(kDefaultMaxLength + 10));
+  EXPECT_EQ(kDefaultMaxLength, payload_router_->MaxPayloadLength());
+
+  // The modules return a value lower than default.
+  const size_t kTestMinPayloadLength = 1001;
+  EXPECT_CALL(rtp_1, MaxDataPayloadLength())
+      .Times(1)
+      .WillOnce(Return(kTestMinPayloadLength + 10));
+  EXPECT_CALL(rtp_2, MaxDataPayloadLength())
+      .Times(1)
+      .WillOnce(Return(kTestMinPayloadLength));
+  EXPECT_EQ(kTestMinPayloadLength, payload_router_->MaxPayloadLength());
+}
 
 }  // namespace webrtc
