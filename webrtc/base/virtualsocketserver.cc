@@ -283,7 +283,7 @@ int VirtualSocket::RecvFrom(void* pv, size_t cb, SocketAddress* paddr) {
 
   // Return the packet at the front of the queue.
   Packet* packet = recv_buffer_.front();
-  size_t data_read = _min(cb, packet->size());
+  size_t data_read = std::min(cb, packet->size());
   memcpy(pv, packet->data(), data_read);
   *paddr = packet->from();
 
@@ -491,7 +491,7 @@ int VirtualSocket::SendTcp(const void* pv, size_t cb) {
     error_ = EWOULDBLOCK;
     return -1;
   }
-  size_t consumed = _min(cb, capacity);
+  size_t consumed = std::min(cb, capacity);
   const char* cpv = static_cast<const char*>(pv);
   send_buffer_.insert(send_buffer_.end(), cpv, cpv + consumed);
   server_->SendTcp(this);
@@ -806,8 +806,9 @@ void VirtualSocketServer::SendTcp(VirtualSocket* socket) {
 
   while (true) {
     size_t available = recv_buffer_capacity_ - recipient->recv_buffer_size_;
-    size_t max_data_size = _min<size_t>(available, TCP_MSS - TCP_HEADER_SIZE);
-    size_t data_size = _min(socket->send_buffer_.size(), max_data_size);
+    size_t max_data_size =
+        std::min<size_t>(available, TCP_MSS - TCP_HEADER_SIZE);
+    size_t data_size = std::min(socket->send_buffer_.size(), max_data_size);
     if (0 == data_size)
       break;
 

@@ -607,8 +607,8 @@ bool WebRtcSession::Initialize(
   if (video_options_.unsignalled_recv_stream_limit.IsSet()) {
     int stream_limit;
     video_options_.unsignalled_recv_stream_limit.Get(&stream_limit);
-    stream_limit = rtc::_min(kMaxUnsignalledRecvStreams, stream_limit);
-    stream_limit = rtc::_max(0, stream_limit);
+    stream_limit = std::min(kMaxUnsignalledRecvStreams, stream_limit);
+    stream_limit = std::max(0, stream_limit);
     video_options_.unsignalled_recv_stream_limit.Set(stream_limit);
   }
 

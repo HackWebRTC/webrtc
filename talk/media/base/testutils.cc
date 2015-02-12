@@ -28,6 +28,7 @@
 #include "talk/media/base/testutils.h"
 
 #include <math.h>
+#include <algorithm>
 
 #include "talk/media/base/executablehelpers.h"
 #include "talk/media/base/rtpdump.h"
@@ -129,9 +130,8 @@ const RawRtcpPacket RtpTestUtility::kTestRawRtcpPackets[] = {
 };
 
 size_t RtpTestUtility::GetTestPacketCount() {
-  return rtc::_min(
-      ARRAY_SIZE(kTestRawRtpPackets),
-      ARRAY_SIZE(kTestRawRtcpPackets));
+  return std::min(ARRAY_SIZE(kTestRawRtpPackets),
+                  ARRAY_SIZE(kTestRawRtcpPackets));
 }
 
 bool RtpTestUtility::WriteTestPackets(

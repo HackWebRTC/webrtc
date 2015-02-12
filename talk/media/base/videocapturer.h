@@ -30,6 +30,7 @@
 #ifndef TALK_MEDIA_BASE_VIDEOCAPTURER_H_
 #define TALK_MEDIA_BASE_VIDEOCAPTURER_H_
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -291,7 +292,7 @@ class VideoCapturer
   // resolution of 2048 x 1280.
   int screencast_max_pixels() const { return screencast_max_pixels_; }
   void set_screencast_max_pixels(int p) {
-    screencast_max_pixels_ = rtc::_max(0, p);
+    screencast_max_pixels_ = std::max(0, p);
   }
 
   // If true, run video adaptation. By default, video adaptation is enabled

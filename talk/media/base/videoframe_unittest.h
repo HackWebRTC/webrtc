@@ -28,6 +28,7 @@
 #ifndef TALK_MEDIA_BASE_VIDEOFRAME_UNITTEST_H_
 #define TALK_MEDIA_BASE_VIDEOFRAME_UNITTEST_H_
 
+#include <algorithm>
 #include <string>
 
 #include "libyuv/convert.h"
@@ -1196,7 +1197,7 @@ class VideoFrameTest : public testing::Test {
       return;
     }
     data_ptr += kPadToHeapSized + (-(static_cast<int>(data_size)) & 4095);
-    memcpy(data_ptr, sample, rtc::_min(data_size, sample_size));
+    memcpy(data_ptr, sample, std::min(data_size, sample_size));
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_EQ(expected_result, frame.Validate(fourcc, kWidth, kHeight,
                                                 data_ptr,

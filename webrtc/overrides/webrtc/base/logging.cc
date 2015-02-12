@@ -14,6 +14,7 @@
 #include <CoreServices/CoreServices.h>
 #endif  // OS_MACOSX
 
+#include <algorithm>
 #include <iomanip>
 
 #include "base/atomicops.h"
@@ -198,7 +199,7 @@ void LogMultiline(LoggingSeverity level, const char* label, bool input,
     while (len > 0) {
       memset(asc_line, ' ', sizeof(asc_line));
       memset(hex_line, ' ', sizeof(hex_line));
-      size_t line_len = _min(len, LINE_SIZE);
+      size_t line_len = std::min(len, LINE_SIZE);
       for (size_t i = 0; i < line_len; ++i) {
         unsigned char ch = udata[i];
         asc_line[i] = isprint(ch) ? ch : '.';

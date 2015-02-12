@@ -79,11 +79,6 @@ typedef __int64 int64;
 typedef int socklen_t;
 #endif
 
-namespace rtc {
-template<class T> inline T _min(T a, T b) { return (a > b) ? b : a; }
-template<class T> inline T _max(T a, T b) { return (a < b) ? b : a; }
-}
-
 #if defined(WEBRTC_WIN)
 #if _MSC_VER < 1700
   #define alignof(t) __alignof(t)

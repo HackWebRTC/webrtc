@@ -10,6 +10,7 @@
 
 #include "webrtc/p2p/base/stunrequest.h"
 
+#include <algorithm>
 #include "webrtc/base/common.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
@@ -192,7 +193,7 @@ void StunRequest::OnMessage(rtc::Message* pmsg) {
 }
 
 int StunRequest::GetNextDelay() {
-  int delay = DELAY_UNIT * rtc::_min(1 << count_, DELAY_MAX_FACTOR);
+  int delay = DELAY_UNIT * std::min(1 << count_, DELAY_MAX_FACTOR);
   count_ += 1;
   if (count_ == MAX_SENDS)
     timeout_ = true;

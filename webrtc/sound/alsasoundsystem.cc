@@ -10,6 +10,7 @@
 
 #include "webrtc/sound/alsasoundsystem.h"
 
+#include <algorithm>
 #include "webrtc/sound/sounddevicelocator.h"
 #include "webrtc/sound/soundinputstreaminterface.h"
 #include "webrtc/sound/soundoutputstreaminterface.h"
@@ -660,7 +661,7 @@ StreamInterface *AlsaSoundSystem::OpenDevice(
         params.freq /
         FrameSize(params);
     // And this is what we'll actually use.
-    latency = rtc::_max(latency, kMinimumLatencyUsecs);
+    latency = std::max(latency, kMinimumLatencyUsecs);
   }
 
   ASSERT(static_cast<int>(params.format) <

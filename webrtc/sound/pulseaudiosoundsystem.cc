@@ -12,6 +12,7 @@
 
 #ifdef HAVE_LIBPULSE
 
+#include <algorithm>
 #include "webrtc/sound/sounddevicelocator.h"
 #include "webrtc/sound/soundinputstreaminterface.h"
 #include "webrtc/sound/soundoutputstreaminterface.h"
@@ -1441,11 +1442,9 @@ SoundOutputStreamInterface *PulseAudioSoundSystem::ConnectOutputStream(
   if (latency != kNoLatencyRequirements) {
     // kLowLatency is 0, so we treat it the same as a request for zero latency.
     ssize_t bytes_per_sec = symbol_table_.pa_bytes_per_second()(&spec);
-    latency = rtc::_max(
-        latency,
-        static_cast<int>(
-            bytes_per_sec * kPlaybackLatencyMinimumMsecs /
-            rtc::kNumMicrosecsPerSec));
+    latency = std::max(
+        latency, static_cast<int>(bytes_per_sec * kPlaybackLatencyMinimumMsecs /
+                                  rtc::kNumMicrosecsPerSec));
     FillPlaybackBufferAttr(latency, &attr);
     pattr = &attr;
   }

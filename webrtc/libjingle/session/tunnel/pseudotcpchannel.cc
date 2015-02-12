@@ -25,7 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
 #include <string>
+
 #include "pseudotcpchannel.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/transportchannel.h"
@@ -532,7 +534,7 @@ void PseudoTcpChannel::AdjustClock(bool clear) {
     // Reset the next clock, by clearing the old and setting a new one.
     if (clear)
       worker_thread_->Clear(this, MSG_WK_CLOCK);
-    worker_thread_->PostDelayed(_max(timeout, 0L), this, MSG_WK_CLOCK);
+    worker_thread_->PostDelayed(std::max(timeout, 0L), this, MSG_WK_CLOCK);
     return;
   }
 

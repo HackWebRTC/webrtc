@@ -14,7 +14,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
+
+#include <algorithm>
 #include <string>
+
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
@@ -220,7 +223,7 @@ StreamResult StreamSegment::Read(void* buffer, size_t buffer_len,
   if (SIZE_UNKNOWN != length_) {
     if (pos_ >= length_)
       return SR_EOS;
-    buffer_len = _min(buffer_len, length_ - pos_);
+    buffer_len = std::min(buffer_len, length_ - pos_);
   }
   size_t backup_read;
   if (!read) {
@@ -266,7 +269,7 @@ bool StreamSegment::GetSize(size_t* size) const {
       *size -= start_;
     }
     if (SIZE_UNKNOWN != length_) {
-      *size = _min(*size, length_);
+      *size = std::min(*size, length_);
     }
   }
   return true;
@@ -276,7 +279,7 @@ bool StreamSegment::GetAvailable(size_t* size) const {
   if (!StreamAdapterInterface::GetAvailable(size))
     return false;
   if (size && (SIZE_UNKNOWN != length_))
-    *size = _min(*size, length_ - pos_);
+    *size = std::min(*size, length_ - pos_);
   return true;
 }
 
@@ -575,7 +578,7 @@ StreamResult CircularFileStream::Read(void* buffer, size_t buffer_len,
   size_t local_read;
   if (!read) read = &local_read;
 
-  size_t to_read = rtc::_min(buffer_len, read_segment_available_);
+  size_t to_read = std::min(buffer_len, read_segment_available_);
   rtc::StreamResult result
     = rtc::FileStream::Read(buffer, to_read, read, error);
   if (result == rtc::SR_SUCCESS) {
@@ -597,7 +600,7 @@ StreamResult CircularFileStream::Write(const void* data, size_t data_len,
   if (!written) written = &local_written;
 
   size_t to_eof = max_write_size_ - position_;
-  size_t to_write = rtc::_min(data_len, to_eof);
+  size_t to_write = std::min(data_len, to_eof);
   rtc::StreamResult result
     = rtc::FileStream::Write(data, to_write, written, error);
   if (result == rtc::SR_SUCCESS) {
@@ -764,8 +767,8 @@ StreamResult MemoryStreamBase::Write(const void* buffer, size_t bytes,
     // Increase buffer size to the larger of:
     // a) new position rounded up to next 256 bytes
     // b) double the previous length
-    size_t new_buffer_length = _max(((seek_position_ + bytes) | 0xFF) + 1,
-                                    buffer_length_ * 2);
+    size_t new_buffer_length =
+        std::max(((seek_position_ + bytes) | 0xFF) + 1, buffer_length_ * 2);
     StreamResult result = DoReserve(new_buffer_length, error);
     if (SR_SUCCESS != result) {
       return result;
@@ -927,7 +930,7 @@ bool FifoBuffer::SetCapacity(size_t size) {
   if (size != buffer_length_) {
     char* buffer = new char[size];
     const size_t copy = data_length_;
-    const size_t tail_copy = _min(copy, buffer_length_ - read_position_);
+    const size_t tail_copy = std::min(copy, buffer_length_ - read_position_);
     memcpy(buffer, &buffer_[read_position_], tail_copy);
     memcpy(buffer + tail_copy, &buffer_[0], copy - tail_copy);
     buffer_.reset(buffer);
@@ -1068,8 +1071,8 @@ StreamResult FifoBuffer::ReadOffsetLocked(void* buffer,
 
   const size_t available = data_length_ - offset;
   const size_t read_position = (read_position_ + offset) % buffer_length_;
-  const size_t copy = _min(bytes, available);
-  const size_t tail_copy = _min(copy, buffer_length_ - read_position);
+  const size_t copy = std::min(bytes, available);
+  const size_t tail_copy = std::min(copy, buffer_length_ - read_position);
   char* const p = static_cast<char*>(buffer);
   memcpy(p, &buffer_[read_position], tail_copy);
   memcpy(p + tail_copy, &buffer_[0], copy - tail_copy);
@@ -1095,8 +1098,8 @@ StreamResult FifoBuffer::WriteOffsetLocked(const void* buffer,
   const size_t available = buffer_length_ - data_length_ - offset;
   const size_t write_position = (read_position_ + data_length_ + offset)
       % buffer_length_;
-  const size_t copy = _min(bytes, available);
-  const size_t tail_copy = _min(copy, buffer_length_ - write_position);
+  const size_t copy = std::min(bytes, available);
+  const size_t tail_copy = std::min(copy, buffer_length_ - write_position);
   const char* const p = static_cast<const char*>(buffer);
   memcpy(&buffer_[write_position], p, tail_copy);
   memcpy(&buffer_[0], p + tail_copy, copy - tail_copy);
@@ -1185,7 +1188,7 @@ StreamState StringStream::GetState() const {
 
 StreamResult StringStream::Read(void* buffer, size_t buffer_len,
                                       size_t* read, int* error) {
-  size_t available = _min(buffer_len, str_.size() - read_pos_);
+  size_t available = std::min(buffer_len, str_.size() - read_pos_);
   if (!available)
     return SR_EOS;
   memcpy(buffer, str_.data() + read_pos_, available);

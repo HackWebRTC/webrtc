@@ -512,8 +512,7 @@ bool WebRtcVideoEngine2::CanSendCodec(const VideoCodec& requested,
   out->name = requested.name;
   out->preference = requested.preference;
   out->params = requested.params;
-  out->framerate =
-      rtc::_min(requested.framerate, matching_codec.framerate);
+  out->framerate = std::min(requested.framerate, matching_codec.framerate);
   out->params = requested.params;
   out->feedback_params = requested.feedback_params;
   out->width = requested.width;

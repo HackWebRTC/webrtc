@@ -87,7 +87,7 @@ const uint32 DEFAULT_RTT = MAXIMUM_RTT;
 
 // Computes our estimate of the RTT given the current estimate.
 inline uint32 ConservativeRTTEstimate(uint32 rtt) {
-  return rtc::_max(MINIMUM_RTT, rtc::_min(MAXIMUM_RTT, 2 * rtt));
+  return std::max(MINIMUM_RTT, std::min(MAXIMUM_RTT, 2 * rtt));
 }
 
 // Weighting of the old rtt value to new data.
@@ -908,9 +908,9 @@ uint64 Connection::priority() const {
       g = remote_candidate_.priority();
       d = local_candidate().priority();
     }
-    priority = rtc::_min(g, d);
+    priority = std::min(g, d);
     priority = priority << 32;
-    priority += 2 * rtc::_max(g, d) + (g > d ? 1 : 0);
+    priority += 2 * std::max(g, d) + (g > d ? 1 : 0);
   }
   return priority;
 }

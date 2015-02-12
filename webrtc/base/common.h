@@ -52,12 +52,7 @@ inline void RtcUnused(const void*) {}
 #define stricmp(x, y) strcasecmp(x, y)
 #endif
 
-// TODO(fbarchard): Remove this. std::max should be used everywhere in the code.
-// NOMINMAX must be defined where we include <windows.h>.
-#define stdmax(x, y) std::max(x, y)
-#else
-#define stdmax(x, y) rtc::_max(x, y)
-#endif
+#endif  // !defined(WEBRTC_WIN)
 
 #define ARRAY_SIZE(x) (static_cast<int>(sizeof(x) / sizeof(x[0])))
 

@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <algorithm>
 #include <set>
 
 #include "webrtc/base/basictypes.h"
@@ -150,7 +151,7 @@ inline uint16 bytes_to_short(const void* buf) {
 }
 
 uint32 bound(uint32 lower, uint32 middle, uint32 upper) {
-  return rtc::_min(rtc::_max(lower, middle), upper);
+  return std::min(std::max(lower, middle), upper);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -303,13 +304,13 @@ void PseudoTcp::NotifyClock(uint32 now) {
       }
 
       uint32 nInFlight = m_snd_nxt - m_snd_una;
-      m_ssthresh = rtc::_max(nInFlight / 2, 2 * m_mss);
+      m_ssthresh = std::max(nInFlight / 2, 2 * m_mss);
       //LOG(LS_INFO) << "m_ssthresh: " << m_ssthresh << "  nInFlight: " << nInFlight << "  m_mss: " << m_mss;
       m_cwnd = m_mss;
 
       // Back off retransmit timer.  Note: the limit is lower when connecting.
       uint32 rto_limit = (m_state < TCP_ESTABLISHED) ? DEF_RTO : MAX_RTO;
-      m_rx_rto = rtc::_min(rto_limit, m_rx_rto * 2);
+      m_rx_rto = std::min(rto_limit, m_rx_rto * 2);
       m_rto_base = now;
     }
   }
@@ -327,7 +328,7 @@ void PseudoTcp::NotifyClock(uint32 now) {
     m_lastsend = now;
 
     // back off retransmit timer
-    m_rx_rto = rtc::_min(MAX_RTO, m_rx_rto * 2);
+    m_rx_rto = std::min(MAX_RTO, m_rx_rto * 2);
   }
 
   // Check if it's time to send delayed acks
@@ -433,7 +434,7 @@ int PseudoTcp::Recv(char* buffer, size_t len) {
   m_rbuf.GetWriteRemaining(&available_space);
 
   if (uint32(available_space) - m_rcv_wnd >=
-      rtc::_min<uint32>(m_rbuf_len / 2, m_mss)) {
+      std::min<uint32>(m_rbuf_len / 2, m_mss)) {
     // TODO(jbeda): !?! Not sure about this was closed business
     bool bWasClosed = (m_rcv_wnd == 0);
     m_rcv_wnd = static_cast<uint32>(available_space);
@@ -614,20 +615,23 @@ bool PseudoTcp::clock_check(uint32 now, long& nTimeout) {
   nTimeout = DEFAULT_TIMEOUT;
 
   if (m_t_ack) {
-    nTimeout = rtc::_min<int32>(nTimeout,
-      rtc::TimeDiff(m_t_ack + m_ack_delay, now));
+    nTimeout =
+        std::min<int32>(nTimeout, rtc::TimeDiff(m_t_ack + m_ack_delay, now));
   }
   if (m_rto_base) {
-    nTimeout = rtc::_min<int32>(nTimeout,
-      rtc::TimeDiff(m_rto_base + m_rx_rto, now));
+    nTimeout =
+        std::min<int32>(nTimeout, rtc::TimeDiff(m_rto_base + m_rx_rto, now));
   }
   if (m_snd_wnd == 0) {
-    nTimeout = rtc::_min<int32>(nTimeout, rtc::TimeDiff(m_lastsend + m_rx_rto, now));
+    nTimeout =
+        std::min<int32>(nTimeout, rtc::TimeDiff(m_lastsend + m_rx_rto, now));
   }
 #if PSEUDO_KEEPALIVE
   if (m_state == TCP_ESTABLISHED) {
-    nTimeout = rtc::_min<int32>(nTimeout,
-      rtc::TimeDiff(m_lasttraffic + (m_bOutgoing ? IDLE_PING * 3/2 : IDLE_PING), now));
+    nTimeout = std::min<int32>(
+        nTimeout, rtc::TimeDiff(m_lasttraffic + (m_bOutgoing ? IDLE_PING * 3 / 2
+                                                             : IDLE_PING),
+                                now));
   }
 #endif // PSEUDO_KEEPALIVE
   return true;
@@ -712,8 +716,8 @@ bool PseudoTcp::process(Segment& seg) {
           m_rx_rttvar = (3 * m_rx_rttvar + abs_err) / 4;
           m_rx_srtt = (7 * m_rx_srtt + rtt) / 8;
         }
-        m_rx_rto = bound(MIN_RTO, m_rx_srtt +
-            rtc::_max<uint32>(1, 4 * m_rx_rttvar), MAX_RTO);
+        m_rx_rto = bound(
+            MIN_RTO, m_rx_srtt + std::max<uint32>(1, 4 * m_rx_rttvar), MAX_RTO);
 #if _DEBUGMSG >= _DBG_VERBOSE
         LOG(LS_INFO) << "rtt: " << rtt
                      << "  srtt: " << m_rx_srtt
@@ -750,7 +754,7 @@ bool PseudoTcp::process(Segment& seg) {
     if (m_dup_acks >= 3) {
       if (m_snd_una >= m_recover) { // NewReno
         uint32 nInFlight = m_snd_nxt - m_snd_una;
-        m_cwnd = rtc::_min(m_ssthresh, nInFlight + m_mss); // (Fast Retransmit)
+        m_cwnd = std::min(m_ssthresh, nInFlight + m_mss);  // (Fast Retransmit)
 #if _DEBUGMSG >= _DBG_NORMAL
         LOG(LS_INFO) << "exit recovery";
 #endif // _DEBUGMSG
@@ -763,7 +767,7 @@ bool PseudoTcp::process(Segment& seg) {
           closedown(ECONNABORTED);
           return false;
         }
-        m_cwnd += m_mss - rtc::_min(nAcked, m_cwnd);
+        m_cwnd += m_mss - std::min(nAcked, m_cwnd);
       }
     } else {
       m_dup_acks = 0;
@@ -771,7 +775,7 @@ bool PseudoTcp::process(Segment& seg) {
       if (m_cwnd < m_ssthresh) {
         m_cwnd += m_mss;
       } else {
-        m_cwnd += rtc::_max<uint32>(1, m_mss * m_mss / m_cwnd);
+        m_cwnd += std::max<uint32>(1, m_mss * m_mss / m_cwnd);
       }
     }
   } else if (seg.ack == m_snd_una) {
@@ -794,7 +798,7 @@ bool PseudoTcp::process(Segment& seg) {
         }
         m_recover = m_snd_nxt;
         uint32 nInFlight = m_snd_nxt - m_snd_una;
-        m_ssthresh = rtc::_max(nInFlight / 2, 2 * m_mss);
+        m_ssthresh = std::max(nInFlight / 2, 2 * m_mss);
         //LOG(LS_INFO) << "m_ssthresh: " << m_ssthresh << "  nInFlight: " << nInFlight << "  m_mss: " << m_mss;
         m_cwnd = m_ssthresh + 3 * m_mss;
       } else if (m_dup_acks > 3) {
@@ -952,7 +956,7 @@ bool PseudoTcp::transmit(const SList::iterator& seg, uint32 now) {
     return false;
   }
 
-  uint32 nTransmit = rtc::_min(seg->len, m_mss);
+  uint32 nTransmit = std::min(seg->len, m_mss);
 
   while (true) {
     uint32 seq = seg->seq;
@@ -1032,14 +1036,14 @@ void PseudoTcp::attemptSend(SendFlags sflags) {
     if ((m_dup_acks == 1) || (m_dup_acks == 2)) { // Limited Transmit
       cwnd += m_dup_acks * m_mss;
     }
-    uint32 nWindow = rtc::_min(m_snd_wnd, cwnd);
+    uint32 nWindow = std::min(m_snd_wnd, cwnd);
     uint32 nInFlight = m_snd_nxt - m_snd_una;
     uint32 nUseable = (nInFlight < nWindow) ? (nWindow - nInFlight) : 0;
 
     size_t snd_buffered = 0;
     m_sbuf.GetBuffered(&snd_buffered);
     uint32 nAvailable =
-        rtc::_min(static_cast<uint32>(snd_buffered) - nInFlight, m_mss);
+        std::min(static_cast<uint32>(snd_buffered) - nInFlight, m_mss);
 
     if (nAvailable > nUseable) {
       if (nUseable * 4 < nWindow) {
@@ -1136,8 +1140,8 @@ PseudoTcp::adjustMTU() {
   LOG(LS_INFO) << "Adjusting mss to " << m_mss << " bytes";
 #endif // _DEBUGMSG
   // Enforce minimums on ssthresh and cwnd
-  m_ssthresh = rtc::_max(m_ssthresh, 2 * m_mss);
-  m_cwnd = rtc::_max(m_cwnd, m_mss);
+  m_ssthresh = std::max(m_ssthresh, 2 * m_mss);
+  m_cwnd = std::max(m_cwnd, m_mss);
 }
 
 bool

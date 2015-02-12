@@ -13,6 +13,7 @@
 #include <security.h>
 #include <schannel.h>
 
+#include <algorithm>
 #include <iomanip>
 #include <vector>
 
@@ -568,7 +569,7 @@ SChannelAdapter::Recv(void* pv, size_t cb) {
     SetError(EWOULDBLOCK);
     return SOCKET_ERROR;
   }
-  size_t read = _min(cb, readable.size());
+  size_t read = std::min(cb, readable.size());
   memcpy(pv, &readable[0], read);
   if (size_t remaining = readable.size() - read) {
     memmove(&readable[0], &readable[read], remaining);

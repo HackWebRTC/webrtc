@@ -25,6 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
 #include "talk/media/base/constants.h"
 #include "talk/media/base/fakenetworkinterface.h"
 #include "talk/media/base/fakevideorenderer.h"
@@ -248,7 +249,7 @@ class WebRtcVideoEngineTestFake : public testing::Test,
     EXPECT_EQ(100, gcodec.plType);
     EXPECT_EQ(width, gcodec.width);
     EXPECT_EQ(height, gcodec.height);
-    EXPECT_EQ(rtc::_min(start_bitrate, max_bitrate), gcodec.startBitrate);
+    EXPECT_EQ(std::min(start_bitrate, max_bitrate), gcodec.startBitrate);
     EXPECT_EQ(max_bitrate, gcodec.maxBitrate);
     EXPECT_EQ(min_bitrate, gcodec.minBitrate);
     EXPECT_EQ(fps, gcodec.maxFramerate);
@@ -2792,7 +2793,7 @@ class WebRtcVideoEngineSimulcastTestFake : public testing::Test,
     EXPECT_EQ(100, gcodec.plType);
     EXPECT_EQ(width, gcodec.width);
     EXPECT_EQ(height, gcodec.height);
-    EXPECT_EQ(rtc::_min(start_bitrate, max_bitrate), gcodec.startBitrate);
+    EXPECT_EQ(std::min(start_bitrate, max_bitrate), gcodec.startBitrate);
     EXPECT_EQ(max_bitrate, gcodec.maxBitrate);
     EXPECT_EQ(min_bitrate, gcodec.minBitrate);
     EXPECT_EQ(fps, gcodec.maxFramerate);

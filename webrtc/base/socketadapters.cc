@@ -24,6 +24,8 @@
 #include <security.h>
 #endif
 
+#include <algorithm>
+
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/httpcommon.h"
@@ -66,7 +68,7 @@ int BufferedReadAdapter::Recv(void *pv, size_t cb) {
   size_t read = 0;
 
   if (data_len_) {
-    read = _min(cb, data_len_);
+    read = std::min(cb, data_len_);
     memcpy(pv, buffer_, read);
     data_len_ -= read;
     if (data_len_ > 0) {
@@ -305,7 +307,7 @@ void AsyncHttpsProxySocket::ProcessInput(char* data, size_t* len) {
   size_t start = 0;
   for (size_t pos = start; state_ < PS_TUNNEL && pos < *len;) {
     if (state_ == PS_SKIP_BODY) {
-      size_t consume = _min(*len - pos, content_length_);
+      size_t consume = std::min(*len - pos, content_length_);
       pos += consume;
       start = pos;
       content_length_ -= consume;

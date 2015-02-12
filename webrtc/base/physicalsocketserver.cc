@@ -1547,7 +1547,7 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
     if (cmsWait == kForever) {
       cmsNext = cmsWait;
     } else {
-      cmsNext = _max(0, cmsTotal - cmsElapsed);
+      cmsNext = std::max(0, cmsTotal - cmsElapsed);
     }
 
     // Wait for one of the events to signal

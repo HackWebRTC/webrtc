@@ -263,8 +263,8 @@ void RelayServer::OnExternalPacket(
     return;
   }
 
-  uint32 length = rtc::_min(static_cast<uint32>(username_attr->length()),
-                                  USERNAME_LENGTH);
+  uint32 length =
+      std::min(static_cast<uint32>(username_attr->length()), USERNAME_LENGTH);
   std::string username(username_attr->bytes(), length);
   // TODO: Check the HMAC.
 
@@ -359,7 +359,7 @@ void RelayServer::HandleStunAllocate(
     const StunUInt32Attribute* lifetime_attr =
         request.GetUInt32(STUN_ATTR_LIFETIME);
     if (lifetime_attr)
-      lifetime = rtc::_min(lifetime, lifetime_attr->value() * 1000);
+      lifetime = std::min(lifetime, lifetime_attr->value() * 1000);
 
     binding = new RelayServerBinding(this, username, "0", lifetime);
     binding->SignalTimeout.connect(this, &RelayServer::OnTimeout);

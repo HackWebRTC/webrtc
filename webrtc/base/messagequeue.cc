@@ -12,6 +12,8 @@
 #include <sys/time.h>
 #endif
 
+#include <algorithm>
+
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagequeue.h"
@@ -244,7 +246,7 @@ bool MessageQueue::Get(Message *pmsg, int cmsWait, bool process_io) {
     if (cmsWait == kForever) {
       cmsNext = cmsDelayNext;
     } else {
-      cmsNext = _max(0, cmsTotal - cmsElapsed);
+      cmsNext = std::max(0, cmsTotal - cmsElapsed);
       if ((cmsDelayNext != kForever) && (cmsDelayNext < cmsNext))
         cmsNext = cmsDelayNext;
     }

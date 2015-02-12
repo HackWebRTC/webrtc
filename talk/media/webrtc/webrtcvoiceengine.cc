@@ -2887,7 +2887,7 @@ int WebRtcVoiceMediaChannel::GetOutputLevel() {
   for (ChannelMap::iterator it = receive_channels_.begin();
        it != receive_channels_.end(); ++it) {
     int level = GetOutputLevel(it->second->channel());
-    highest = rtc::_max(level, highest);
+    highest = std::max(level, highest);
   }
   return highest;
 }
@@ -2942,7 +2942,7 @@ bool WebRtcVoiceMediaChannel::SetOutputScaling(
 
   // Scale the output volume for the collected channels. We first normalize to
   // scale the volume and then set the left and right pan.
-  float scale = static_cast<float>(rtc::_max(left, right));
+  float scale = static_cast<float>(std::max(left, right));
   if (scale > 0.0001f) {
     left /= scale;
     right /= scale;
