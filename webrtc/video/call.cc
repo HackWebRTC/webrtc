@@ -22,6 +22,7 @@
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
+#include "webrtc/modules/video_render/include/video_render.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
@@ -152,8 +153,11 @@ class Call : public webrtc::Call, public PacketReceiver {
   VideoEngine* video_engine_;
   ViERTP_RTCP* rtp_rtcp_;
   ViECodec* codec_;
+  ViERender* render_;
   ViEBase* base_;
   int base_channel_id_;
+
+  scoped_ptr<VideoRender> external_render_;
 
   DISALLOW_COPY_AND_ASSIGN(Call);
 };
@@ -177,7 +181,9 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
       receive_crit_(RWLockWrapper::CreateRWLock()),
       send_crit_(RWLockWrapper::CreateRWLock()),
       video_engine_(video_engine),
-      base_channel_id_(-1) {
+      base_channel_id_(-1),
+      external_render_(
+          VideoRender::CreateVideoRender(42, NULL, false, kRenderExternal)) {
   assert(video_engine != NULL);
   assert(config.send_transport != NULL);
 
@@ -193,6 +199,11 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
     overuse_observer_proxy_.reset(
         new CpuOveruseObserverProxy(config.overuse_callback));
   }
+
+  render_ = ViERender::GetInterface(video_engine_);
+  assert(render_ != NULL);
+
+  render_->RegisterVideoRenderModule(*external_render_.get());
 
   rtp_rtcp_ = ViERTP_RTCP::GetInterface(video_engine_);
   assert(rtp_rtcp_ != NULL);
@@ -211,8 +222,12 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
 
 Call::~Call() {
   base_->DeleteChannel(base_channel_id_);
+
+  render_->DeRegisterVideoRenderModule(*external_render_.get());
+
   base_->Release();
   codec_->Release();
+  render_->Release();
   rtp_rtcp_->Release();
   webrtc::VideoEngine::Delete(video_engine_);
 }

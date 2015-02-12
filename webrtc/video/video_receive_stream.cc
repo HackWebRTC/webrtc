@@ -102,6 +102,7 @@ std::string VideoReceiveStream::Config::Rtp::ToString() const {
 
 namespace internal {
 namespace {
+
 VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
   VideoCodec codec;
   memset(&codec, 0, sizeof(codec));

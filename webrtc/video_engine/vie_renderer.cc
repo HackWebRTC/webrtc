@@ -39,8 +39,7 @@ ViERenderer::~ViERenderer(void) {
   if (render_callback_)
     render_module_.DeleteIncomingRenderStream(render_id_);
 
-  if (incoming_external_callback_)
-    delete incoming_external_callback_;
+  delete incoming_external_callback_;
 }
 
 int32_t ViERenderer::StartRender() {
