@@ -1166,8 +1166,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestOfferDtlsButNotSdes) {
 
 // This test sets up a Jsep call between two parties, and the callee only
 // accept to receive video.
-// BUG=https://code.google.com/p/webrtc/issues/detail?id=2288
-TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestAnswerVideo) {
+TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerVideo) {
   ASSERT_TRUE(CreateTestClients());
   receiving_client()->SetReceiveAudioVideo(false, true);
   LocalP2PTest();
@@ -1175,7 +1174,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestAnswerVideo) {
 
 // This test sets up a Jsep call between two parties, and the callee only
 // accept to receive audio.
-TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestAnswerAudio) {
+TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerAudio) {
   ASSERT_TRUE(CreateTestClients());
   receiving_client()->SetReceiveAudioVideo(true, false);
   LocalP2PTest();
