@@ -171,6 +171,7 @@ int32_t AudioRecordJni::StartRecording() {
     ALOGE("StartRecording failed!");
     return -1;
   }
+  recording_ = true;
   return 0;
 }
 
