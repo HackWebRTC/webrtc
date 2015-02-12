@@ -294,7 +294,7 @@ int32_t AudioCodingModuleImpl::Process() {
     } else {
       switch (encoding_type) {
         case kNoEncoding: {
-          FATAL() << "This case is no longer valid.";
+          current_payload_type = previous_pltype_;
           frame_type = kFrameEmpty;
           length_bytes = 0;
           break;

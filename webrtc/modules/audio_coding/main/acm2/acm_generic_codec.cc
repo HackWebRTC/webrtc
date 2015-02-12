@@ -1211,7 +1211,7 @@ int16_t ACMGenericCodecWrapper::Encode(
   *bitstream_len_byte = static_cast<int16_t>(encoded_info->encoded_bytes);
   if (encoded_info->encoded_bytes == 0) {
     *encoding_type = kNoEncoding;
-    return 0;
+    return encoded_info->send_even_if_empty ? 1 : 0;
   }
   *timestamp = encoded_info->encoded_timestamp;
 

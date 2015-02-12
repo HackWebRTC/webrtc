@@ -24,11 +24,15 @@ class AudioEncoder {
  public:
   struct EncodedInfoLeaf {
     EncodedInfoLeaf()
-        : encoded_bytes(0), encoded_timestamp(0), payload_type(0) {}
+        : encoded_bytes(0),
+          encoded_timestamp(0),
+          payload_type(0),
+          send_even_if_empty(false) {}
 
     size_t encoded_bytes;
     uint32_t encoded_timestamp;
     int payload_type;
+    bool send_even_if_empty;
   };
 
   // This is the main struct for auxiliary encoding information. Each encoded

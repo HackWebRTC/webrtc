@@ -154,6 +154,7 @@ bool AudioEncoderCng::EncodeInternal(uint32_t rtp_timestamp,
       return_val = EncodePassive(encoded, &info->encoded_bytes);
       info->encoded_timestamp = first_timestamp_in_buffer_;
       info->payload_type = cng_payload_type_;
+      info->send_even_if_empty = true;
       last_frame_active_ = false;
       break;
     }
