@@ -388,17 +388,6 @@ void ViEChannelManager::UpdateSsrcs(int channel_id,
   }
 }
 
-bool ViEChannelManager::SetBandwidthEstimationConfig(
-    int channel_id, const webrtc::Config& config) {
-  CriticalSectionScoped cs(channel_id_critsect_);
-  ChannelGroup* group = FindGroup(channel_id);
-  if (!group) {
-    return false;
-  }
-  group->SetBandwidthEstimationConfig(config);
-  return true;
-}
-
 bool ViEChannelManager::GetEstimatedSendBandwidth(
     int channel_id, uint32_t* estimated_bandwidth) const {
   CriticalSectionScoped cs(channel_id_critsect_);

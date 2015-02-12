@@ -162,11 +162,4 @@ int ViENetworkImpl::ReceivedBWEPacket(const int video_channel,
   vie_channel->ReceivedBWEPacket(arrival_time_ms, payload_size, header);
   return 0;
 }
-
-bool ViENetworkImpl::SetBandwidthEstimationConfig(
-    int video_channel, const webrtc::Config& config) {
-  LOG_F(LS_INFO) << "channel: " << video_channel;
-  return shared_data_->channel_manager()->SetBandwidthEstimationConfig(
-      video_channel, config);
-}
 }  // namespace webrtc

@@ -44,10 +44,6 @@ class ViENetworkImpl
                                 size_t payload_size,
                                 const RTPHeader& header) OVERRIDE;
 
-  virtual bool SetBandwidthEstimationConfig(
-      int video_channel,
-      const webrtc::Config& config) OVERRIDE;
-
  protected:
   explicit ViENetworkImpl(ViESharedData* shared_data);
   virtual ~ViENetworkImpl();

@@ -3660,16 +3660,6 @@ bool WebRtcVideoMediaChannel::ConfigureSending(int channel_id,
     return false;
   }
 
-  // Enable improved WiFi Bandwidth Estimation
-  {
-    webrtc::Config config;
-    config.Set(new webrtc::AimdRemoteRateControl(true));
-    if (!engine()->vie()->network()->SetBandwidthEstimationConfig(channel_id,
-                                                                  config)) {
-      return false;
-    }
-  }
-
   send_channels_[local_ssrc_key] = send_channel.release();
 
   return true;

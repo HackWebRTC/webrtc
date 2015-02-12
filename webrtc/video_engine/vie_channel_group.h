@@ -43,7 +43,6 @@ class ChannelGroup {
                             bool sender,
                             bool receiver,
                             ViEChannel* channel);
-  void SetBandwidthEstimationConfig(const webrtc::Config& config);
 
   BitrateController* GetBitrateController();
   CallStats* GetCallStats();

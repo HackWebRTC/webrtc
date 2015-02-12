@@ -80,10 +80,6 @@ class ViEChannelManager: private ViEManagerBase {
   // it will simply be ignored and no error is returned.
   void UpdateSsrcs(int channel_id, const std::list<unsigned int>& ssrcs);
 
-  // Sets bandwidth estimation related configurations.
-  bool SetBandwidthEstimationConfig(int channel_id,
-                                    const webrtc::Config& config);
-
   bool GetEstimatedSendBandwidth(int channel_id,
                                  uint32_t* estimated_bandwidth) const;
   bool GetEstimatedReceiveBandwidth(int channel_id,
