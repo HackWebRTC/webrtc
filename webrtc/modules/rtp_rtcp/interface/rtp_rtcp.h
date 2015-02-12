@@ -571,16 +571,6 @@ class RtpRtcp : public Module {
     virtual int32_t SetAudioPacketSize(uint16_t packetSizeSamples) = 0;
 
     /*
-    *   SendTelephoneEventActive
-    *
-    *   return true if we currently send a telephone event and 100 ms after an
-    *   event is sent used to prevent the telephone event tone to be recorded
-    *   by the microphone and send inband just after the tone has ended.
-    */
-    virtual bool SendTelephoneEventActive(
-        int8_t& telephoneEvent) const = 0;
-
-    /*
     *   Send a TelephoneEvent tone using RFC 2833 (4733)
     *
     *   return -1 on failure else 0

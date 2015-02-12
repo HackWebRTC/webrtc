@@ -221,8 +221,6 @@ class RTPSender : public RTPSenderInterface {
   // Send a DTMF tone using RFC 2833 (4733).
   int32_t SendTelephoneEvent(uint8_t key, uint16_t time_ms, uint8_t level);
 
-  bool SendTelephoneEventActive(int8_t *telephone_event) const;
-
   // Set audio packet size, used to determine when it's time to send a DTMF
   // packet in silence (CNG).
   int32_t SetAudioPacketSize(uint16_t packet_size_samples);
@@ -334,13 +332,14 @@ class RTPSender : public RTPSenderInterface {
   Bitrate total_bitrate_sent_;
 
   int32_t id_;
+
   const bool audio_configured_;
-  RTPSenderAudio *audio_;
-  RTPSenderVideo *video_;
+  scoped_ptr<RTPSenderAudio> audio_;
+  scoped_ptr<RTPSenderVideo> video_;
 
   PacedSender *paced_sender_;
   int64_t last_capture_time_ms_sent_;
-  CriticalSectionWrapper *send_critsect_;
+  scoped_ptr<CriticalSectionWrapper> send_critsect_;
 
   Transport *transport_;
   bool sending_media_ GUARDED_BY(send_critsect_);

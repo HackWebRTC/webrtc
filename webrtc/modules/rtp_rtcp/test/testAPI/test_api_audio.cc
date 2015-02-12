@@ -203,7 +203,6 @@ TEST_F(RtpRtcpAudioTest, Basic) {
       voice_codec.plfreq,
       voice_codec.channels,
       (voice_codec.rate < 0) ? 0 : voice_codec.rate));
-  printf("4\n");
 
   const uint8_t test[5] = "test";
   EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,

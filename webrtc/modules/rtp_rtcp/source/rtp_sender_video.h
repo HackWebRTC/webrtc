@@ -106,7 +106,6 @@ class RTPSenderVideo {
  private:
   RTPSenderInterface& _rtpSender;
 
-  CriticalSectionWrapper* _sendVideoCritsect;
   RtpVideoCodecTypes _videoType;
   VideoCodecInformation* _videoCodecInformation;
   uint32_t _maxBitrate;

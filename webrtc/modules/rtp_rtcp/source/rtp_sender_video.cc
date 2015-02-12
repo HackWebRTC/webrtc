@@ -33,7 +33,6 @@ struct RtpPacket {
 
 RTPSenderVideo::RTPSenderVideo(Clock* clock, RTPSenderInterface* rtpSender)
     : _rtpSender(*rtpSender),
-      _sendVideoCritsect(CriticalSectionWrapper::CreateCriticalSection()),
       _videoType(kRtpVideoGeneric),
       _videoCodecInformation(NULL),
       _maxBitrate(0),
@@ -61,11 +60,9 @@ RTPSenderVideo::~RTPSenderVideo() {
   if (_videoCodecInformation) {
     delete _videoCodecInformation;
   }
-  delete _sendVideoCritsect;
 }
 
 void RTPSenderVideo::SetVideoCodecType(RtpVideoCodecTypes videoType) {
-  CriticalSectionScoped cs(_sendVideoCritsect);
   _videoType = videoType;
 }
 
@@ -78,8 +75,6 @@ int32_t RTPSenderVideo::RegisterVideoPayload(
     const int8_t payloadType,
     const uint32_t maxBitRate,
     RtpUtility::Payload*& payload) {
-  CriticalSectionScoped cs(_sendVideoCritsect);
-
   RtpVideoCodecTypes videoType = kRtpVideoGeneric;
   if (RtpUtility::StringCompare(payloadName, "VP8", 3)) {
     videoType = kRtpVideoVp8;

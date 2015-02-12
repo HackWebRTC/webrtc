@@ -219,8 +219,6 @@ class MockRtpRtcp : public RtpRtcp {
       int32_t(RtpAudioFeedback* messagesCallback));
   MOCK_METHOD1(SetAudioPacketSize,
       int32_t(const uint16_t packetSizeSamples));
-  MOCK_CONST_METHOD1(SendTelephoneEventActive,
-      bool(int8_t& telephoneEvent));
   MOCK_METHOD3(SendTelephoneEventOutband,
       int32_t(const uint8_t key, const uint16_t time_ms, const uint8_t level));
   MOCK_METHOD1(SetSendREDPayloadType,

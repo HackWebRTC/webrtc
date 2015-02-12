@@ -266,8 +266,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // packet in silence (CNG).
   virtual int32_t SetAudioPacketSize(uint16_t packet_size_samples) OVERRIDE;
 
-  virtual bool SendTelephoneEventActive(int8_t& telephone_event) const OVERRIDE;
-
   // Send a TelephoneEvent tone using RFC 2833 (4733).
   virtual int32_t SendTelephoneEventOutband(uint8_t key,
                                             uint16_t time_ms,

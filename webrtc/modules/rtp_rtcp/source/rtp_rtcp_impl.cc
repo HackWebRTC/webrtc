@@ -904,11 +904,6 @@ int32_t ModuleRtpRtcpImpl::SendTelephoneEventOutband(
   return rtp_sender_.SendTelephoneEvent(key, time_ms, level);
 }
 
-bool ModuleRtpRtcpImpl::SendTelephoneEventActive(
-    int8_t& telephone_event) const {
-  return rtp_sender_.SendTelephoneEventActive(&telephone_event);
-}
-
 // Set audio packet size, used to determine when it's time to send a DTMF
 // packet in silence (CNG).
 int32_t ModuleRtpRtcpImpl::SetAudioPacketSize(
