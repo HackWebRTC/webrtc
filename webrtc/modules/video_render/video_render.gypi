@@ -34,16 +34,6 @@
       ],
     },
     {
-      # TODO(kjellander): Remove this target as soon the
-      # video_render_module_impl -> video_render rename has been rolled into
-      # Chromium and src/third_party/libjingle/libjingle.gyp has been updated.
-      'target_name': 'video_render_module_impl',
-      'type': 'none',
-      'dependencies': [
-        'video_render',
-      ],
-    },
-    {
       # Default video_render_module implementation that only supports external
       # renders.
       'target_name': 'video_render',

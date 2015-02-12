@@ -34,16 +34,6 @@
       ],
     },
     {
-      # TODO(kjellander): Remove this target as soon the
-      # video_capture_module_impl -> video_capture rename has been rolled into
-      # Chromium and src/third_party/libjingle/libjingle.gyp has been updated.
-      'target_name': 'video_capture_module_impl',
-      'type': 'none',
-      'dependencies': [
-        'video_capture',
-      ],
-    },
-    {
       # Default video capture module implementation that only supports external
       # capture.
       'target_name': 'video_capture',
