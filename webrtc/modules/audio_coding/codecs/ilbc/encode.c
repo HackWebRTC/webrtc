@@ -154,7 +154,7 @@ void WebRtcIlbcfix_EncodeImpl(
 
     index = (iLBCbits_inst->startIdx-1)*SUBL;
     max=WebRtcSpl_MaxAbsValueW16(&residual[index], 2*SUBL);
-    scale=WebRtcSpl_GetSizeInBits(WEBRTC_SPL_MUL_16_16(max,max));
+    scale = WebRtcSpl_GetSizeInBits((uint32_t)(max * max));
 
     /* Scale to maximum 25 bits so that the MAC won't cause overflow */
     scale = scale - 25;

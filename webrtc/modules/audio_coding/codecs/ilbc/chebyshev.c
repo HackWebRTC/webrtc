@@ -50,8 +50,7 @@ int16_t WebRtcIlbcfix_Chebyshev(
     b1_low = (int16_t)((tmp1W32 - ((int32_t)b1_high << 16)) >> 1);
 
     /* Calculate 2*x*b1-b2+f[i] */
-    tmp1W32 = WEBRTC_SPL_LSHIFT_W32( (WEBRTC_SPL_MUL_16_16(b1_high, x) +
-                                      WEBRTC_SPL_MUL_16_16_RSFT(b1_low, x, 15)), 2);
+    tmp1W32 = WEBRTC_SPL_LSHIFT_W32(b1_high * x + ((b1_low * x) >> 15), 2);
 
     tmp1W32 -= b2;
     tmp1W32 += WEBRTC_SPL_LSHIFT_W32((int32_t)f[i], 14);
@@ -65,7 +64,7 @@ int16_t WebRtcIlbcfix_Chebyshev(
   b1_low = (int16_t)((tmp1W32 - ((int32_t)b1_high << 16)) >> 1);
 
   /* tmp1W32 = x*b1 - b2 + f[i]/2 */
-  tmp1W32 = WEBRTC_SPL_LSHIFT_W32(WEBRTC_SPL_MUL_16_16(b1_high, x), 1) +
+  tmp1W32 = WEBRTC_SPL_LSHIFT_W32(b1_high * x, 1) +
       WEBRTC_SPL_LSHIFT_W32(WEBRTC_SPL_MUL_16_16_RSFT(b1_low, x, 15), 1);
 
   tmp1W32 -= b2;

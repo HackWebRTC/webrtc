@@ -43,16 +43,16 @@ void WebRtcIlbcfix_HpOutput(
       + (-a[1])*y[i-1] + (-a[2])*y[i-2];
     */
 
-    tmpW32  = WEBRTC_SPL_MUL_16_16(y[1], ba[3]);     /* (-a[1])*y[i-1] (low part) */
-    tmpW32 += WEBRTC_SPL_MUL_16_16(y[3], ba[4]);     /* (-a[2])*y[i-2] (low part) */
+    tmpW32 = y[1] * ba[3];  /* (-a[1])*y[i-1] (low part) */
+    tmpW32 += y[3] * ba[4];  /* (-a[2])*y[i-2] (low part) */
     tmpW32 = (tmpW32>>15);
-    tmpW32 += WEBRTC_SPL_MUL_16_16(y[0], ba[3]);     /* (-a[1])*y[i-1] (high part) */
-    tmpW32 += WEBRTC_SPL_MUL_16_16(y[2], ba[4]);     /* (-a[2])*y[i-2] (high part) */
+    tmpW32 += y[0] * ba[3];  /* (-a[1])*y[i-1] (high part) */
+    tmpW32 += y[2] * ba[4];  /* (-a[2])*y[i-2] (high part) */
     tmpW32 = (tmpW32<<1);
 
-    tmpW32 += WEBRTC_SPL_MUL_16_16(signal[i], ba[0]);   /* b[0]*x[0] */
-    tmpW32 += WEBRTC_SPL_MUL_16_16(x[0],      ba[1]);   /* b[1]*x[i-1] */
-    tmpW32 += WEBRTC_SPL_MUL_16_16(x[1],      ba[2]);   /* b[2]*x[i-2] */
+    tmpW32 += signal[i] * ba[0];  /* b[0]*x[0] */
+    tmpW32 += x[0] * ba[1];  /* b[1]*x[i-1] */
+    tmpW32 += x[1] * ba[2];  /* b[2]*x[i-2] */
 
     /* Update state (input part) */
     x[1] = x[0];

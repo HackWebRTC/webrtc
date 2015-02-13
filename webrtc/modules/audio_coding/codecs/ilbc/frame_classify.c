@@ -46,7 +46,7 @@ int16_t WebRtcIlbcfix_FrameClassify(
   */
 
   max = WebRtcSpl_MaxAbsValueW16(residualFIX, iLBCenc_inst->blockl);
-  scale=WebRtcSpl_GetSizeInBits(WEBRTC_SPL_MUL_16_16(max,max));
+  scale = WebRtcSpl_GetSizeInBits((uint32_t)(max * max));
 
   /* Scale to maximum 24 bits so that it won't overflow for 76 samples */
   scale = scale-24;

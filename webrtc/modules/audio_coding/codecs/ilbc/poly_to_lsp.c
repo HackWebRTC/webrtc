@@ -89,14 +89,14 @@ void WebRtcIlbcfix_Poly2Lsp(
     xlow = WebRtcIlbcfix_kCosGrid[j];
     ylow = WebRtcIlbcfix_Chebyshev(xlow, f[fi_select]);
 
-    if (WEBRTC_SPL_MUL_16_16(ylow, yhigh) <= 0) {
+    if (ylow * yhigh <= 0) {
       /* Run 4 times to reduce the interval */
       for (i = 0; i < 4; i++) {
         /* xmid =(xlow + xhigh)/2 */
         xmid = (xlow >> 1) + (xhigh >> 1);
         ymid = WebRtcIlbcfix_Chebyshev(xmid, f[fi_select]);
 
-        if (WEBRTC_SPL_MUL_16_16(ylow, ymid) <= 0) {
+        if (ylow * ymid <= 0) {
           yhigh = ymid;
           xhigh = xmid;
         } else {

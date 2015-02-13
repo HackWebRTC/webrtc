@@ -51,7 +51,7 @@ void WebRtcIlbcfix_Smooth(
   maxtot=WEBRTC_SPL_MAX(max1, max2);
 
   scale=WebRtcSpl_GetSizeInBits(maxtot);
-  scale = (int16_t)WEBRTC_SPL_MUL_16_16(2,scale)-26;
+  scale = (int16_t)(2 * scale) - 26;
   scale=WEBRTC_SPL_MAX(0, scale);
 
   w00=WebRtcSpl_DotProductWithScale(current,current,ENH_BLOCKL,scale);
@@ -122,17 +122,14 @@ void WebRtcIlbcfix_Smooth(
       scale = scale1;
     }
 
-    w11w00 = WEBRTC_SPL_MUL_16_16(
-        (int16_t)WEBRTC_SPL_SHIFT_W32(w11, -scale),
-        (int16_t)WEBRTC_SPL_SHIFT_W32(w00, -scale));
+    w11w00 = (int16_t)WEBRTC_SPL_SHIFT_W32(w11, -scale) *
+        (int16_t)WEBRTC_SPL_SHIFT_W32(w00, -scale);
 
-    w10w10 = WEBRTC_SPL_MUL_16_16(
-        (int16_t)WEBRTC_SPL_SHIFT_W32(w10, -scale),
-        (int16_t)WEBRTC_SPL_SHIFT_W32(w10, -scale));
+    w10w10 = (int16_t)WEBRTC_SPL_SHIFT_W32(w10, -scale) *
+        (int16_t)WEBRTC_SPL_SHIFT_W32(w10, -scale);
 
-    w00w00 = WEBRTC_SPL_MUL_16_16(
-        (int16_t)WEBRTC_SPL_SHIFT_W32(w00, -scale),
-        (int16_t)WEBRTC_SPL_SHIFT_W32(w00, -scale));
+    w00w00 = (int16_t)WEBRTC_SPL_SHIFT_W32(w00, -scale) *
+        (int16_t)WEBRTC_SPL_SHIFT_W32(w00, -scale);
 
     /* Calculate (w11*w00-w10*w10)/(w00*w00) in Q16 */
     if (w00w00>65536) {

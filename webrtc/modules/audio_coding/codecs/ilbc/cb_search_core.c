@@ -70,7 +70,7 @@ void WebRtcIlbcfix_CbSearchCore(
     cDotSqW16 = (int16_t)(((int32_t)(tmp16)*(tmp16))>>16);
 
     /* Calculate the criteria (cDot*cDot/energy) */
-    *critPtr=WEBRTC_SPL_MUL_16_16(cDotSqW16, (*inverseEnergyPtr));
+    *critPtr = cDotSqW16 * *inverseEnergyPtr;
 
     /* Extract the maximum shift value under the constraint
        that the criteria is not zero */

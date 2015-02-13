@@ -53,7 +53,7 @@ void WebRtcIlbcfix_Lsf2Lsp(
     }
 
     /* Calculate linear approximation */
-    tmpW32 = WEBRTC_SPL_MUL_16_16(WebRtcIlbcfix_kCosDerivative[k], diff);
+    tmpW32 = WebRtcIlbcfix_kCosDerivative[k] * diff;
     lsp[i] = WebRtcIlbcfix_kCos[k] + (int16_t)(tmpW32 >> 12);
   }
 

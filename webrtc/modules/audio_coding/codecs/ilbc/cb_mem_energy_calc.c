@@ -45,8 +45,7 @@ void WebRtcIlbcfix_CbMemEnergyCalc(
 
     /* Calculate next energy by a +/-
        operation on the edge samples */
-    tmp  = WEBRTC_SPL_MUL_16_16(*ppi, *ppi);
-    tmp -= WEBRTC_SPL_MUL_16_16(*ppo, *ppo);
+    tmp = (*ppi) * (*ppi) - (*ppo) * (*ppo);
     energy += tmp >> scale;
     energy = WEBRTC_SPL_MAX(energy, 0);
 

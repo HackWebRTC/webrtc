@@ -107,12 +107,11 @@ void WebRtcIlbcfix_DoThePlc(
                                                                WEBRTC_SPL_SHIFT_W32(cross_comp, -shift1), 15);
 
         shift2 = WebRtcSpl_GetSizeInBits(ener)-15;
-        measure = WEBRTC_SPL_MUL_16_16(WEBRTC_SPL_SHIFT_W32(ener, -shift2),
-                                       crossSquare);
+        measure = (int16_t)WEBRTC_SPL_SHIFT_W32(ener, -shift2) * crossSquare;
 
         shift3 = WebRtcSpl_GetSizeInBits(ener_comp)-15;
-        maxMeasure = WEBRTC_SPL_MUL_16_16(WEBRTC_SPL_SHIFT_W32(ener_comp, -shift3),
-                                          crossSquareMax);
+        maxMeasure = (int16_t)WEBRTC_SPL_SHIFT_W32(ener_comp, -shift3) *
+            crossSquareMax;
 
         /* Calculate shift value, so that the two measures can
            be put in the same Q domain */
@@ -164,7 +163,7 @@ void WebRtcIlbcfix_DoThePlc(
         tmp1 = (int16_t)WEBRTC_SPL_SHIFT_W32(cross, (totscale>>1));
         tmp2 = (int16_t)WEBRTC_SPL_SHIFT_W32(cross, totscale-(totscale>>1));
 
-        nom = WEBRTC_SPL_MUL_16_16(tmp1, tmp2);
+        nom = tmp1 * tmp2;
         max_perSquare = (int16_t)WebRtcSpl_DivW32W16(nom, denom);
 
       } else {
@@ -230,7 +229,7 @@ void WebRtcIlbcfix_DoThePlc(
     for (i=0; i<iLBCdec_inst->blockl; i++) {
 
       /* noise component -  52 < randlagFIX < 117 */
-      iLBCdec_inst->seed = (int16_t)(WEBRTC_SPL_MUL_16_16(iLBCdec_inst->seed, 31821)+(int32_t)13849);
+      iLBCdec_inst->seed = (int16_t)(iLBCdec_inst->seed * 31821 + 13849);
       randlag = 53 + (int16_t)(iLBCdec_inst->seed & 63);
 
       pick = i - randlag;
