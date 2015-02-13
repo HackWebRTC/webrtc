@@ -50,7 +50,11 @@
             '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
           ],
           'sources': [
-            'app/webrtc/java/jni/peerconnection_jni.cc'
+            'app/webrtc/java/jni/classreferenceholder.cc',
+            'app/webrtc/java/jni/classreferenceholder.h',
+            'app/webrtc/java/jni/jni_helpers.cc',
+            'app/webrtc/java/jni/jni_helpers.h',
+            'app/webrtc/java/jni/peerconnection_jni.cc',
           ],
           'include_dirs': [
             '<(DEPTH)/third_party/libyuv/include',
@@ -70,6 +74,12 @@
                       ' gtk+-2.0)',
                 ],
               },
+            }],
+            ['OS=="android"', {
+              'sources': [
+                'app/webrtc/java/jni/androidvideocapturer_jni.cc',
+                'app/webrtc/java/jni/androidvideocapturer_jni.h',
+              ]
             }],
           ],
         },
