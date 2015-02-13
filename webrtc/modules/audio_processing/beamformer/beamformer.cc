@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/common_audio/window_generator.h"
 #include "webrtc/modules/audio_processing/beamformer/covariance_matrix_generator.h"
 
@@ -61,13 +62,16 @@ const float kCovUniformGapHalfWidth = 0.001f;
 // Alpha coefficient for mask smoothing.
 const float kMaskSmoothAlpha = 0.2f;
 
-// The average mask is computed from masks in this mid-frequency range.
+// The average mask is computed from masks in this mid-frequency range. If these
+// ranges are changed |kMaskQuantile| might need to be adjusted.
 const int kLowAverageStartHz = 200;
 const int kLowAverageEndHz = 400;
 
 const int kHighAverageStartHz = 6000;
 const int kHighAverageEndHz = 6500;
 
+// Quantile of mask values which is used to estimate target presence.
+const float kMaskQuantile = 0.3f;
 // Mask threshold over which the data is considered signal and not interference.
 const float kMaskTargetThreshold = 0.3f;
 // Time in seconds after which the data is considered interference if the mask
@@ -141,12 +145,7 @@ float SumAbs(const ComplexMatrix<float>& mat) {
 Beamformer::Beamformer(const std::vector<Point>& array_geometry)
     : num_input_channels_(array_geometry.size()),
       mic_spacing_(MicSpacingFromGeometry(array_geometry)) {
-
   WindowGenerator::KaiserBesselDerived(kAlpha, kFftSize, window_);
-
-  for (int i = 0; i < kNumberSavedPostfilterMasks; ++i) {
-    postfilter_masks_[i].Resize(1, kNumFreqBins);
-  }
 }
 
 void Beamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
@@ -160,8 +159,7 @@ void Beamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
       Round(kHighAverageStartHz * kFftSize / sample_rate_hz_);
   high_average_end_bin_ =
       Round(kHighAverageEndHz * kFftSize / sample_rate_hz_);
-  current_block_ix_ = 0;
-  previous_block_ix_ = -1;
+  high_pass_postfilter_mask_ = 1.f;
   is_target_present_ = false;
   hold_target_blocks_ = kHoldTargetSeconds * 2 * sample_rate_hz / kFftSize;
   interference_blocks_count_ = hold_target_blocks_;
@@ -178,8 +176,8 @@ void Beamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
                                               kFftSize,
                                               kFftSize / 2,
                                               this));
-
   for (int i = 0; i < kNumFreqBins; ++i) {
+    postfilter_mask_[i] = 1.f;
     float freq_hz = (static_cast<float>(i) / kFftSize) * sample_rate_hz_;
     wave_numbers_[i] = 2 * M_PI * freq_hz / kSpeedOfSoundMeterSeconds;
     mask_thresholds_[i] = num_input_channels_ * num_input_channels_ *
@@ -301,10 +299,6 @@ void Beamformer::ProcessChunk(const float* const* input,
   // Apply delay and sum and post-filter in the time domain. WARNING: only works
   // because delay-and-sum is not frequency dependent.
   if (high_pass_split_input != NULL) {
-    if (previous_block_ix_ == -1) {
-      old_high_pass_mask = high_pass_postfilter_mask_;
-    }
-
     // Ramp up/down for smoothing. 1 mask per 10ms results in audible
     // discontinuities.
     float ramp_inc =
@@ -333,8 +327,6 @@ void Beamformer::ProcessAudioBlock(const complex_f* const* input,
   CHECK_EQ(num_input_channels, num_input_channels_);
   CHECK_EQ(num_output_channels, 1);
 
-  float* mask_data = postfilter_masks_[current_block_ix_].elements()[0];
-
   // Calculating the post-filter masks. Note that we need two for each
   // frequency bin to account for the positive and negative interferer
   // angle.
@@ -356,33 +348,25 @@ void Beamformer::ProcessAudioBlock(const complex_f* const* input,
     rmw *= rmw;
     float rmw_r = rmw.real();
 
-    mask_data[i] = CalculatePostfilterMask(interf_cov_mats_[i],
+    new_mask_[i] = CalculatePostfilterMask(interf_cov_mats_[i],
                                            rpsiws_[i],
                                            ratio_rxiw_rxim,
                                            rmw_r,
                                            mask_thresholds_[i]);
 
-    mask_data[i] *= CalculatePostfilterMask(reflected_interf_cov_mats_[i],
+    new_mask_[i] *= CalculatePostfilterMask(reflected_interf_cov_mats_[i],
                                             reflected_rpsiws_[i],
                                             ratio_rxiw_rxim,
                                             rmw_r,
                                             mask_thresholds_[i]);
   }
 
-  EstimateTargetPresence(mask_data, kNumFreqBins);
-
-  // Can't access block_index - 1 on the first block.
-  if (previous_block_ix_ >= 0) {
-    ApplyMaskSmoothing();
-  }
-
+  ApplyMaskSmoothing();
   ApplyLowFrequencyCorrection();
   ApplyHighFrequencyCorrection();
-
   ApplyMasks(input, output);
 
-  previous_block_ix_ = current_block_ix_;
-  current_block_ix_ = (current_block_ix_ + 1) % kNumberSavedPostfilterMasks;
+  EstimateTargetPresence();
 }
 
 float Beamformer::CalculatePostfilterMask(const ComplexMatrixF& interf_cov_mat,
@@ -411,8 +395,6 @@ float Beamformer::CalculatePostfilterMask(const ComplexMatrixF& interf_cov_mat,
 void Beamformer::ApplyMasks(const complex_f* const* input,
                             complex_f* const* output) {
   complex_f* output_channel = output[0];
-  const float* postfilter_mask_els =
-      postfilter_masks_[current_block_ix_].elements()[0];
   for (int f_ix = 0; f_ix < kNumFreqBins; ++f_ix) {
     output_channel[f_ix] = complex_f(0.f, 0.f);
 
@@ -422,45 +404,40 @@ void Beamformer::ApplyMasks(const complex_f* const* input,
       output_channel[f_ix] += input[c_ix][f_ix] * delay_sum_mask_els[c_ix];
     }
 
-    output_channel[f_ix] *= postfilter_mask_els[f_ix];
+    output_channel[f_ix] *= postfilter_mask_[f_ix];
   }
 }
 
 void Beamformer::ApplyMaskSmoothing() {
-  float* current_mask_els = postfilter_masks_[current_block_ix_].elements()[0];
-  const float* previous_block_els =
-      postfilter_masks_[previous_block_ix_].elements()[0];
   for (int i = 0; i < kNumFreqBins; ++i) {
-    current_mask_els[i] = kMaskSmoothAlpha * current_mask_els[i] +
-                          (1.f - kMaskSmoothAlpha) * previous_block_els[i];
+    postfilter_mask_[i] = kMaskSmoothAlpha * new_mask_[i] +
+                          (1.f - kMaskSmoothAlpha) * postfilter_mask_[i];
   }
 }
 
 void Beamformer::ApplyLowFrequencyCorrection() {
   float low_frequency_mask = 0.f;
-  float* mask_els = postfilter_masks_[current_block_ix_].elements()[0];
   for (int i = low_average_start_bin_; i < low_average_end_bin_; ++i) {
-    low_frequency_mask += mask_els[i];
+    low_frequency_mask += postfilter_mask_[i];
   }
 
   low_frequency_mask /= low_average_end_bin_ - low_average_start_bin_;
 
   for (int i = 0; i < low_average_start_bin_; ++i) {
-    mask_els[i] = low_frequency_mask;
+    postfilter_mask_[i] = low_frequency_mask;
   }
 }
 
 void Beamformer::ApplyHighFrequencyCorrection() {
   high_pass_postfilter_mask_ = 0.f;
-  float* mask_els = postfilter_masks_[current_block_ix_].elements()[0];
   for (int i = high_average_start_bin_; i < high_average_end_bin_; ++i) {
-    high_pass_postfilter_mask_ += mask_els[i];
+    high_pass_postfilter_mask_ += postfilter_mask_[i];
   }
 
   high_pass_postfilter_mask_ /= high_average_end_bin_ - high_average_start_bin_;
 
   for (int i = high_average_end_bin_; i < kNumFreqBins; ++i) {
-    mask_els[i] = high_pass_postfilter_mask_;
+    postfilter_mask_[i] = high_pass_postfilter_mask_;
   }
 }
 
@@ -478,13 +455,13 @@ float Beamformer::MicSpacingFromGeometry(const std::vector<Point>& geometry) {
   return sqrt(mic_spacing);
 }
 
-void Beamformer::EstimateTargetPresence(float* mask, int length) {
-  memcpy(sorted_mask_, mask, kNumFreqBins * sizeof(*mask));
-  const int median_ix = (length + 1) / 2;
-  std::nth_element(sorted_mask_,
-                   sorted_mask_ + median_ix,
-                   sorted_mask_ + length);
-  if (sorted_mask_[median_ix] > kMaskTargetThreshold) {
+void Beamformer::EstimateTargetPresence() {
+  const int quantile = (1.f - kMaskQuantile) * high_average_end_bin_ +
+                       kMaskQuantile * low_average_start_bin_;
+  std::nth_element(new_mask_ + low_average_start_bin_,
+                   new_mask_ + quantile,
+                   new_mask_ + high_average_end_bin_);
+  if (new_mask_[quantile] > kMaskTargetThreshold) {
     is_target_present_ = true;
     interference_blocks_count_ = 0;
   } else {

@@ -100,13 +100,10 @@ class Beamformer : public LappedTransform::Callback {
   void ApplyMasks(const complex_f* const* input, complex_f* const* output);
 
   float MicSpacingFromGeometry(const std::vector<Point>& array_geometry);
-  void EstimateTargetPresence(float* mask, int length);
+  void EstimateTargetPresence();
 
   static const int kFftSize = 256;
   static const int kNumFreqBins = kFftSize / 2 + 1;
-  // How many blocks of past masks (including the current block) we save. Saved
-  // masks are used for postprocessing such as removing musical noise.
-  static const int kNumberSavedPostfilterMasks = 2;
 
   // Deals with the fft transform and blocking.
   int chunk_length_;
@@ -124,14 +121,9 @@ class Beamformer : public LappedTransform::Callback {
   int high_average_start_bin_;
   int high_average_end_bin_;
 
-  // Indices into |postfilter_masks_|.
-  int current_block_ix_;
-  int previous_block_ix_;
-
-  // Old masks are saved in this ring buffer for smoothing. Array of length
-  // |kNumberSavedMasks| matrix of size 1 x |kNumFreqBins|.
-  MatrixF postfilter_masks_[kNumberSavedPostfilterMasks];
-  float sorted_mask_[kNumFreqBins];
+  // Old masks are saved for smoothing. Matrix of size 1 x |kNumFreqBins|.
+  float postfilter_mask_[kNumFreqBins];
+  float new_mask_[kNumFreqBins];
 
   // Array of length |kNumFreqBins|, Matrix of size |1| x |num_channels_|.
   ComplexMatrixF delay_sum_masks_[kNumFreqBins];
