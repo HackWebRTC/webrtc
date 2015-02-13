@@ -30,7 +30,7 @@ class OpenSlRunnerTemplate {
  public:
   OpenSlRunnerTemplate()
       : output_(0),
-        input_(0, &output_) {
+        input_() {
     output_.AttachAudioBuffer(&audio_buffer_);
     if (output_.Init() != 0) {
       assert(false);

@@ -25,8 +25,6 @@
   do {                                                           \
     SLresult err = (op);                                         \
     if (err != SL_RESULT_SUCCESS) {                              \
-      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, id_,          \
-                   "OpenSL error: %d", err);                     \
       assert(false);                                             \
       return ret_val;                                            \
     }                                                            \
@@ -43,11 +41,8 @@ enum {
 
 namespace webrtc {
 
-OpenSlesInput::OpenSlesInput(
-    const int32_t id, PlayoutDelayProvider* delay_provider)
-    : id_(id),
-      delay_provider_(delay_provider),
-      initialized_(false),
+OpenSlesInput::OpenSlesInput()
+    : initialized_(false),
       mic_initialized_(false),
       rec_initialized_(false),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -419,7 +414,6 @@ bool OpenSlesInput::HandleOverrun(int event_id, int event_msg) {
   if (event_id == kNoOverrun) {
     return false;
   }
-  WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, id_, "Audio overrun");
   assert(event_id == kOverrun);
   assert(event_msg > 0);
   // Wait for all enqueued buffers be flushed.
@@ -533,7 +527,8 @@ bool OpenSlesInput::CbThreadImpl() {
   while (fifo_->size() > 0 && recording_) {
     int8_t* audio = fifo_->Pop();
     audio_buffer_->SetRecordedBuffer(audio, buffer_size_samples());
-    audio_buffer_->SetVQEData(delay_provider_->PlayoutDelayMs(),
+    // TODO(henrika): improve the delay estimate.
+    audio_buffer_->SetVQEData(100,
                               recording_delay_, 0);
     audio_buffer_->DeliverRecordedData();
   }
