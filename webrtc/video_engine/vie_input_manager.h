@@ -16,6 +16,7 @@
 #include "webrtc/modules/video_capture/include/video_capture.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/common_video/rotation.h"
 #include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/video_engine/vie_frame_provider_base.h"
@@ -64,7 +65,7 @@ class ViEInputManager : private ViEManagerBase {
                                       uint32_t positionX,
                                       uint32_t positionY);
   int GetOrientation(const char* device_unique_idUTF8,
-                     RotateCapturedFrame& orientation);
+                     VideoRotation& orientation);
 
   // Creates a capture module for the specified capture device and assigns
   // a capture device id for the device.

@@ -560,7 +560,7 @@ JOWW(jint, VideoEngine_getOrientation)(JNIEnv* jni, jobject j_vie,
                                        jobject j_camera) {
   VideoEngineData* vie_data = GetVideoEngineData(jni, j_vie);
   CameraDesc* camera_info = GetCameraDesc(jni, j_camera);
-  webrtc::RotateCapturedFrame orientation;
+  webrtc::VideoRotation orientation;
   if (vie_data->capture->GetOrientation(camera_info->unique_id, orientation) !=
       0) {
     return -1;
@@ -568,11 +568,13 @@ JOWW(jint, VideoEngine_getOrientation)(JNIEnv* jni, jobject j_vie,
   return static_cast<jint>(orientation);
 }
 
-JOWW(jint, VideoEngine_setRotateCapturedFrames)(JNIEnv* jni, jobject j_vie,
-                                                jint capture_id, jint degrees) {
+JOWW(jint, VideoEngine_setVideoRotations)(JNIEnv* jni,
+                                          jobject j_vie,
+                                          jint capture_id,
+                                          jint degrees) {
   VideoEngineData* vie_data = GetVideoEngineData(jni, j_vie);
-  return vie_data->capture->SetRotateCapturedFrames(
-      capture_id, static_cast<webrtc::RotateCapturedFrame>(degrees));
+  return vie_data->capture->SetVideoRotation(
+      capture_id, static_cast<webrtc::VideoRotation>(degrees));
 }
 
 JOWW(jint, VideoEngine_setNackStatus)(JNIEnv* jni, jobject j_vie, jint channel,

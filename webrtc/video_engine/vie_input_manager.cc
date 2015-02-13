@@ -116,31 +116,14 @@ int ViEInputManager::GetCaptureCapability(
 }
 
 int ViEInputManager::GetOrientation(const char* device_unique_idUTF8,
-                                    RotateCapturedFrame& orientation) {
+                                    VideoRotation& orientation) {
   CriticalSectionScoped cs(device_info_cs_.get());
   if (capture_device_info_ == NULL)
     capture_device_info_ = VideoCaptureFactory::CreateDeviceInfo(
         ViEModuleId(engine_id_));
   assert(capture_device_info_);
-  VideoCaptureRotation module_orientation;
-  int result = capture_device_info_->GetOrientation(device_unique_idUTF8,
-                                                    module_orientation);
-  // Copy from module type to public type.
-  switch (module_orientation) {
-    case kCameraRotate0:
-      orientation = RotateCapturedFrame_0;
-      break;
-    case kCameraRotate90:
-      orientation = RotateCapturedFrame_90;
-      break;
-    case kCameraRotate180:
-      orientation = RotateCapturedFrame_180;
-      break;
-    case kCameraRotate270:
-      orientation = RotateCapturedFrame_270;
-      break;
-  }
-  return result;
+  return capture_device_info_->GetOrientation(device_unique_idUTF8,
+                                              orientation);
 }
 
 int ViEInputManager::DisplayCaptureSettingsDialogBox(

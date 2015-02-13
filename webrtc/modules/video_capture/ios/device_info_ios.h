@@ -51,7 +51,7 @@ class DeviceInfoIos : public DeviceInfoImpl {
       uint32_t positionY) OVERRIDE;
 
   virtual int32_t GetOrientation(const char* deviceUniqueIdUTF8,
-                                 VideoCaptureRotation& orientation) OVERRIDE;
+                                 VideoRotation& orientation) OVERRIDE;
 
   virtual int32_t CreateCapabilityMap(
       const char* device_unique_id_utf8) OVERRIDE;

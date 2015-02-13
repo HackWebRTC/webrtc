@@ -96,8 +96,7 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
     return 0;
   }
 
-  virtual int32_t SetCaptureRotation(
-      webrtc::VideoCaptureRotation rotation) OVERRIDE {
+  virtual int32_t SetCaptureRotation(webrtc::VideoRotation rotation) OVERRIDE {
     return -1;  // not implemented
   }
   virtual bool SetApplyRotation(bool enable) OVERRIDE {

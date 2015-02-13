@@ -38,7 +38,7 @@ class MockVideoCaptureModule : public VideoCaptureModule {
   MOCK_METHOD1(CaptureSettings, int32_t(VideoCaptureCapability& settings));
   MOCK_METHOD1(SetCaptureDelay, void(int32_t delayMS));
   MOCK_METHOD0(CaptureDelay, int32_t());
-  MOCK_METHOD1(SetCaptureRotation, int32_t(VideoCaptureRotation rotation));
+  MOCK_METHOD1(SetCaptureRotation, int32_t(VideoRotation rotation));
   MOCK_METHOD1(SetApplyRotation, bool(bool));
   MOCK_METHOD0(GetApplyRotation, bool());
   MOCK_METHOD1(GetEncodeInterface,

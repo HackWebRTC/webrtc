@@ -52,11 +52,9 @@ public:
     static DeviceInfo* CreateDeviceInfo(const int32_t id);
 
     // Helpers for converting between (integral) degrees and
-    // VideoCaptureRotation values.  Return 0 on success.
-    static int32_t RotationFromDegrees(int degrees,
-                                       VideoCaptureRotation* rotation);
-    static int32_t RotationInDegrees(VideoCaptureRotation rotation,
-                                     int* degrees);
+    // VideoRotation values.  Return 0 on success.
+    static int32_t RotationFromDegrees(int degrees, VideoRotation* rotation);
+    static int32_t RotationInDegrees(VideoRotation rotation, int* degrees);
 
     //Call backs
     virtual void RegisterCaptureDataCallback(
@@ -67,7 +65,7 @@ public:
 
     virtual void SetCaptureDelay(int32_t delayMS);
     virtual int32_t CaptureDelay();
-    virtual int32_t SetCaptureRotation(VideoCaptureRotation rotation);
+    virtual int32_t SetCaptureRotation(VideoRotation rotation);
     virtual bool SetApplyRotation(bool enable);
     virtual bool GetApplyRotation() {
       return apply_rotation_;

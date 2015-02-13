@@ -255,24 +255,8 @@ int32_t ViECapturer::SetCaptureDelay(int32_t delay_ms) {
   return 0;
 }
 
-int32_t ViECapturer::SetRotateCapturedFrames(
-  const RotateCapturedFrame rotation) {
-  VideoCaptureRotation converted_rotation = kCameraRotate0;
-  switch (rotation) {
-    case RotateCapturedFrame_0:
-      converted_rotation = kCameraRotate0;
-      break;
-    case RotateCapturedFrame_90:
-      converted_rotation = kCameraRotate90;
-      break;
-    case RotateCapturedFrame_180:
-      converted_rotation = kCameraRotate180;
-      break;
-    case RotateCapturedFrame_270:
-      converted_rotation = kCameraRotate270;
-      break;
-  }
-  return capture_module_->SetCaptureRotation(converted_rotation);
+int32_t ViECapturer::SetVideoRotation(const VideoRotation rotation) {
+  return capture_module_->SetCaptureRotation(rotation);
 }
 
 int ViECapturer::IncomingFrame(unsigned char* video_frame,

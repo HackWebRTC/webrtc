@@ -876,15 +876,14 @@ class FakeWebRtcVideoEngine
   }
   WEBRTC_STUB(StartCapture, (const int, const webrtc::CaptureCapability&));
   WEBRTC_STUB(StopCapture, (const int));
-  WEBRTC_STUB(SetRotateCapturedFrames, (const int,
-      const webrtc::RotateCapturedFrame));
+  WEBRTC_STUB(SetVideoRotation, (const int, const webrtc::VideoRotation));
   WEBRTC_STUB(SetCaptureDelay, (const int, const unsigned int));
   WEBRTC_STUB(NumberOfCapabilities, (const char*, const unsigned int));
   WEBRTC_STUB(GetCaptureCapability, (const char*, const unsigned int,
       const unsigned int, webrtc::CaptureCapability&));
   WEBRTC_STUB(ShowCaptureSettingsDialogBox, (const char*, const unsigned int,
       const char*, void*, const unsigned int, const unsigned int));
-  WEBRTC_STUB(GetOrientation, (const char*, webrtc::RotateCapturedFrame&));
+  WEBRTC_STUB(GetOrientation, (const char*, webrtc::VideoRotation&));
   WEBRTC_STUB(EnableBrightnessAlarm, (const int, const bool));
   WEBRTC_STUB(RegisterObserver, (const int, webrtc::ViECaptureObserver&));
   WEBRTC_STUB(DeregisterObserver, (const int));

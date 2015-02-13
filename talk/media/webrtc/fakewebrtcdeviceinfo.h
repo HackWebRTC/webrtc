@@ -91,7 +91,7 @@ class FakeWebRtcDeviceInfo : public webrtc::VideoCaptureModule::DeviceInfo {
     return 0;
   }
   virtual int32_t GetOrientation(const char* device_id,
-                                 webrtc::VideoCaptureRotation& rotation) {
+                                 webrtc::VideoRotation& rotation) {
     return -1;  // not implemented
   }
   virtual int32_t GetBestMatchedCapability(

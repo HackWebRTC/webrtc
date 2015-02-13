@@ -742,9 +742,8 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
     int cameraRotation = rotationFromRealWorldUp(
         cameras[getCameraIndex()], deviceOrientation);
     // Egress streams should have real world up as up.
-    check(
-        vie.setRotateCapturedFrames(currentCameraHandle, cameraRotation) == 0,
-        "Failed setRotateCapturedFrames: camera " + currentCameraHandle +
-        "rotation " + cameraRotation);
+    check(vie.setVideoRotations(currentCameraHandle, cameraRotation) == 0,
+            "Failed setVideoRotations: camera " + currentCameraHandle +
+            "rotation " + cameraRotation);
   }
 }

@@ -252,26 +252,10 @@ int ViECaptureImpl::StopCapture(const int capture_id) {
   return 0;
 }
 
-int ViECaptureImpl::SetRotateCapturedFrames(
-    const int capture_id,
-    const RotateCapturedFrame rotation) {
-  int i_rotation = -1;
-  switch (rotation) {
-    case RotateCapturedFrame_0:
-      i_rotation = 0;
-      break;
-    case RotateCapturedFrame_90:
-      i_rotation = 90;
-      break;
-    case RotateCapturedFrame_180:
-      i_rotation = 180;
-      break;
-    case RotateCapturedFrame_270:
-      i_rotation = 270;
-      break;
-  }
-  LOG(LS_INFO) << "SetRotateCaptureFrames for " << capture_id
-               << ", rotation " << i_rotation;
+int ViECaptureImpl::SetVideoRotation(const int capture_id,
+                                     const VideoRotation rotation) {
+  LOG(LS_INFO) << "SetRotateCaptureFrames for " << capture_id << ", rotation "
+               << static_cast<int>(rotation);
 
   ViEInputManagerScoped is(*(shared_data_->input_manager()));
   ViECapturer* vie_capture = is.Capture(capture_id);
@@ -279,7 +263,7 @@ int ViECaptureImpl::SetRotateCapturedFrames(
     shared_data_->SetLastError(kViECaptureDeviceDoesNotExist);
     return -1;
   }
-  if (vie_capture->SetRotateCapturedFrames(rotation) != 0) {
+  if (vie_capture->SetVideoRotation(rotation) != 0) {
     shared_data_->SetLastError(kViECaptureDeviceUnknownError);
     return -1;
   }
@@ -367,7 +351,7 @@ int ViECaptureImpl::ShowCaptureSettingsDialogBox(
 }
 
 int ViECaptureImpl::GetOrientation(const char* unique_idUTF8,
-                                   RotateCapturedFrame& orientation) {
+                                   VideoRotation& orientation) {
   if (shared_data_->input_manager()->GetOrientation(
       unique_idUTF8,
       orientation) != 0) {

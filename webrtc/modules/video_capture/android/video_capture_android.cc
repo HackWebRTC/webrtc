@@ -111,12 +111,12 @@ int32_t VideoCaptureAndroid::OnIncomingFrame(uint8_t* videoFrame,
                                              int64_t captureTime) {
   if (!_captureStarted)
     return 0;
-  VideoCaptureRotation current_rotation =
-      (degrees <= 45 || degrees > 315) ? kCameraRotate0 :
-      (degrees > 45 && degrees <= 135) ? kCameraRotate90 :
-      (degrees > 135 && degrees <= 225) ? kCameraRotate180 :
-      (degrees > 225 && degrees <= 315) ? kCameraRotate270 :
-      kCameraRotate0;  // Impossible.
+  VideoRotation current_rotation =
+      (degrees <= 45 || degrees > 315) ? kVideoRotation_0 :
+      (degrees > 45 && degrees <= 135) ? kVideoRotation_90 :
+      (degrees > 135 && degrees <= 225) ? kVideoRotation_180 :
+      (degrees > 225 && degrees <= 315) ? kVideoRotation_270 :
+      kVideoRotation_0;  // Impossible.
   if (_rotation != current_rotation) {
     LOG(LS_INFO) << "New camera rotation: " << degrees;
     _rotation = current_rotation;
@@ -157,7 +157,7 @@ int32_t VideoCaptureAndroid::Init(const int32_t id,
   _jCapturer = env->NewGlobalRef(
       env->NewObject(g_java_capturer_class, ctor, camera_id, j_this));
   assert(_jCapturer);
-  _rotation = kCameraRotate0;
+  _rotation = kVideoRotation_0;
   return 0;
 }
 
@@ -232,8 +232,7 @@ int32_t VideoCaptureAndroid::CaptureSettings(
   return 0;
 }
 
-int32_t VideoCaptureAndroid::SetCaptureRotation(
-    VideoCaptureRotation rotation) {
+int32_t VideoCaptureAndroid::SetCaptureRotation(VideoRotation rotation) {
   int32_t status = VideoCaptureImpl::SetCaptureRotation(rotation);
   if (status != 0)
     return status;

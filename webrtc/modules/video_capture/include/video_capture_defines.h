@@ -26,15 +26,6 @@ enum {kVideoCaptureUniqueNameLength =1024}; //Max unique capture device name len
 enum {kVideoCaptureDeviceNameLength =256}; //Max capture device name lenght
 enum {kVideoCaptureProductIdLength =128}; //Max product id length
 
-// Enums
-enum VideoCaptureRotation
-{
-    kCameraRotate0 = 0,
-    kCameraRotate90 = 5,
-    kCameraRotate180 = 10,
-    kCameraRotate270 = 15
-};
-
 struct VideoCaptureCapability
 {
     int32_t width;

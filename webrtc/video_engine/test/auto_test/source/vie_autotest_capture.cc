@@ -360,26 +360,26 @@ void ViEAutoTest::ViECaptureAPITest() {
   EXPECT_EQ(kViECaptureDeviceDoesNotExist, video_engine.LastError());
 
   // Test GetOrientation.
-  webrtc::VideoCaptureRotation orientation;
+  webrtc::VideoRotation orientation;
   char dummy_name[5];
   EXPECT_NE(0, dev_info->GetOrientation(dummy_name, orientation));
 
   // Test SetRotation.
-  EXPECT_NE(0, video_engine.capture->SetRotateCapturedFrames(
-      capture_id, webrtc::RotateCapturedFrame_90));
+  EXPECT_NE(0, video_engine.capture->SetVideoRotation(
+                   capture_id, webrtc::kVideoRotation_90));
   EXPECT_EQ(kViECaptureDeviceDoesNotExist, video_engine.LastError());
 
   // Allocate capture device.
   EXPECT_EQ(0, video_engine.capture->AllocateCaptureDevice(*vcpm, capture_id));
 
-  EXPECT_EQ(0, video_engine.capture->SetRotateCapturedFrames(
-      capture_id, webrtc::RotateCapturedFrame_0));
-  EXPECT_EQ(0, video_engine.capture->SetRotateCapturedFrames(
-      capture_id, webrtc::RotateCapturedFrame_90));
-  EXPECT_EQ(0, video_engine.capture->SetRotateCapturedFrames(
-      capture_id, webrtc::RotateCapturedFrame_180));
-  EXPECT_EQ(0, video_engine.capture->SetRotateCapturedFrames(
-      capture_id, webrtc::RotateCapturedFrame_270));
+  EXPECT_EQ(0, video_engine.capture->SetVideoRotation(
+                   capture_id, webrtc::kVideoRotation_0));
+  EXPECT_EQ(0, video_engine.capture->SetVideoRotation(
+                   capture_id, webrtc::kVideoRotation_90));
+  EXPECT_EQ(0, video_engine.capture->SetVideoRotation(
+                   capture_id, webrtc::kVideoRotation_180));
+  EXPECT_EQ(0, video_engine.capture->SetVideoRotation(
+                   capture_id, webrtc::kVideoRotation_270));
 
   // Release the capture device
   EXPECT_EQ(0, video_engine.capture->ReleaseCaptureDevice(capture_id));

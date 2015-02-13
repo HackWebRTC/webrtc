@@ -88,7 +88,7 @@ public class VideoEngine {
   public native int stopCapture(int cameraId);
   public native int releaseCaptureDevice(int cameraId);
   public native int getOrientation(CameraDesc camera);
-  public native int setRotateCapturedFrames(int cameraId, int degrees);
+  public native int setVideoRotations(int cameraId, int degrees);
   public native int setNackStatus(int channel, boolean enable);
   public int setKeyFrameRequestMethod(int channel,
       VieKeyFrameRequestMethod requestMethod) {

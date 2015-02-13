@@ -60,19 +60,19 @@ const char* VideoCaptureImpl::CurrentDeviceName() const
 
 // static
 int32_t VideoCaptureImpl::RotationFromDegrees(int degrees,
-                                              VideoCaptureRotation* rotation) {
+                                              VideoRotation* rotation) {
   switch (degrees) {
     case 0:
-      *rotation = kCameraRotate0;
+      *rotation = kVideoRotation_0;
       return 0;
     case 90:
-      *rotation = kCameraRotate90;
+      *rotation = kVideoRotation_90;
       return 0;
     case 180:
-      *rotation = kCameraRotate180;
+      *rotation = kVideoRotation_180;
       return 0;
     case 270:
-      *rotation = kCameraRotate270;
+      *rotation = kVideoRotation_270;
       return 0;
     default:
       return -1;;
@@ -80,19 +80,19 @@ int32_t VideoCaptureImpl::RotationFromDegrees(int degrees,
 }
 
 // static
-int32_t VideoCaptureImpl::RotationInDegrees(VideoCaptureRotation rotation,
+int32_t VideoCaptureImpl::RotationInDegrees(VideoRotation rotation,
                                             int* degrees) {
   switch (rotation) {
-    case kCameraRotate0:
+    case kVideoRotation_0:
       *degrees = 0;
       return 0;
-    case kCameraRotate90:
+    case kVideoRotation_90:
       *degrees = 90;
       return 0;
-    case kCameraRotate180:
+    case kVideoRotation_180:
       *degrees = 180;
       return 0;
-    case kCameraRotate270:
+    case kVideoRotation_270:
       *degrees = 270;
       return 0;
   }
@@ -359,20 +359,20 @@ int32_t VideoCaptureImpl::IncomingI420VideoFrame(I420VideoFrame* video_frame,
   return 0;
 }
 
-int32_t VideoCaptureImpl::SetCaptureRotation(VideoCaptureRotation rotation) {
+int32_t VideoCaptureImpl::SetCaptureRotation(VideoRotation rotation) {
   CriticalSectionScoped cs(&_apiCs);
   CriticalSectionScoped cs2(&_callBackCs);
   switch (rotation){
-    case kCameraRotate0:
+    case kVideoRotation_0:
       _rotateFrame = kRotateNone;
       break;
-    case kCameraRotate90:
+    case kVideoRotation_90:
       _rotateFrame = kRotate90;
       break;
-    case kCameraRotate180:
+    case kVideoRotation_180:
       _rotateFrame = kRotate180;
       break;
-    case kCameraRotate270:
+    case kVideoRotation_270:
       _rotateFrame = kRotate270;
       break;
     default:
