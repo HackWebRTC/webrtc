@@ -39,7 +39,7 @@ TEST_P(DefaultBweTest, UnlimitedSpeed) {
   RunFor(10 * 60 * 1000);
 }
 
-TEST_P(DefaultBweTest, DISABLED_SteadyLoss) {
+TEST_P(DefaultBweTest, SteadyLoss) {
   VideoSource source(0, 30, 300, 0, 0);
   PacketSender sender(this, &source, GetParam());
   LossFilter loss(this);
@@ -68,7 +68,7 @@ TEST_P(DefaultBweTest, SteadyDelay) {
   RunFor(10 * 60 * 1000);
 }
 
-TEST_P(DefaultBweTest, DISABLED_IncreasingDelay1) {
+TEST_P(DefaultBweTest, IncreasingDelay1) {
   VideoSource source(0, 30, 300, 0, 0);
   PacketSender sender(this, &source, GetParam());
   DelayFilter delay(this);
@@ -168,7 +168,7 @@ TEST_P(DefaultBweTest, IncreasingReorder1) {
   }
 }
 
-TEST_P(DefaultBweTest, DISABLED_SteadyChoke) {
+TEST_P(DefaultBweTest, SteadyChoke) {
   VideoSource source(0, 30, 300, 0, 0);
   PacketSender sender(this, &source, GetParam());
   ChokeFilter choke(this);
@@ -177,7 +177,7 @@ TEST_P(DefaultBweTest, DISABLED_SteadyChoke) {
   RunFor(10 * 60 * 1000);
 }
 
-TEST_P(DefaultBweTest, DISABLED_IncreasingChoke1) {
+TEST_P(DefaultBweTest, IncreasingChoke1) {
   VideoSource source(0, 30, 300, 0, 0);
   PacketSender sender(this, &source, GetParam());
   ChokeFilter choke(this);
@@ -188,7 +188,7 @@ TEST_P(DefaultBweTest, DISABLED_IncreasingChoke1) {
   }
 }
 
-TEST_P(DefaultBweTest, DISABLED_IncreasingChoke2) {
+TEST_P(DefaultBweTest, IncreasingChoke2) {
   VideoSource source(0, 30, 300, 0, 0);
   PacketSender sender(this, &source, GetParam());
   ChokeFilter choke(this);
@@ -200,7 +200,7 @@ TEST_P(DefaultBweTest, DISABLED_IncreasingChoke2) {
   }
 }
 
-TEST_P(DefaultBweTest, DISABLED_Multi1) {
+TEST_P(DefaultBweTest, Multi1) {
   VideoSource source(0, 30, 300, 0, 0);
   PacketSender sender(this, &source, GetParam());
   DelayFilter delay(this);
