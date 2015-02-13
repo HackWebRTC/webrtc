@@ -22,7 +22,6 @@ namespace testing {
 namespace bwe {
 
 class BweReceiver;
-class PacketReceiver;
 class PacketProcessorRunner;
 
 class PacketReceiver : public PacketProcessor {
@@ -37,13 +36,12 @@ class PacketReceiver : public PacketProcessor {
   // Implements PacketProcessor.
   virtual void RunFor(int64_t time_ms, Packets* in_out) OVERRIDE;
 
-  FeedbackPacket* GetFeedback();
-
   void LogStats();
 
  protected:
   void PlotDelay(int64_t arrival_time_ms, int64_t send_time_ms);
 
+  int64_t now_ms_;
   std::string delay_log_prefix_;
   int64_t last_delay_plot_ms_;
   bool plot_delay_;
@@ -53,21 +51,37 @@ class PacketReceiver : public PacketProcessor {
   DISALLOW_IMPLICIT_CONSTRUCTORS(PacketReceiver);
 };
 
-class BweTest : public PacketProcessorListener {
+class Link : public PacketProcessorListener {
  public:
-  BweTest();
-  virtual ~BweTest();
-
   virtual void AddPacketProcessor(PacketProcessor* processor,
                                   ProcessorType type);
   virtual void RemovePacketProcessor(PacketProcessor* processor);
 
+  void Run(int64_t run_for_ms, int64_t now_ms, Packets* packets);
+
+  const std::vector<PacketSender*>& senders() { return senders_; }
+  const std::vector<PacketProcessorRunner>& processors() { return processors_; }
+
+ private:
+  std::vector<PacketSender*> senders_;
+  std::vector<PacketReceiver*> receivers_;
+  std::vector<PacketProcessorRunner> processors_;
+};
+
+class BweTest {
+ public:
+  BweTest();
+  ~BweTest();
+
  protected:
-  virtual void SetUp();
+  void SetUp();
 
   void VerboseLogging(bool enable);
   void RunFor(int64_t time_ms);
   std::string GetTestName() const;
+
+  Link downlink_;
+  Link uplink_;
 
  private:
   void FindPacketsToProcess(const FlowIds& flow_ids, Packets* in,
@@ -77,10 +91,8 @@ class BweTest : public PacketProcessorListener {
   int64_t run_time_ms_;
   int64_t time_now_ms_;
   int64_t simulation_interval_ms_;
-  Packets previous_packets_;
-  std::vector<PacketSender*> senders_;
-  std::vector<PacketReceiver*> receivers_;
-  std::vector<PacketProcessorRunner> processors_;
+  std::vector<Link*> links_;
+  Packets packets_;
 
   DISALLOW_COPY_AND_ASSIGN(BweTest);
 };

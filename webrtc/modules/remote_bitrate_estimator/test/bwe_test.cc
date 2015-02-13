@@ -33,7 +33,7 @@ class BweReceiver {
   virtual void ReceivePacket(int64_t arrival_time_ms,
                              size_t payload_size,
                              const RTPHeader& header) {}
-  virtual FeedbackPacket* GetFeedback() { return NULL; }
+  virtual FeedbackPacket* GetFeedback(int64_t now_ms) { return NULL; }
 
  protected:
   int flow_id_;
@@ -50,7 +50,8 @@ int64_t GetAbsSendTimeInMs(uint32_t abs_send_time) {
 
 class SendSideBweReceiver : public BweReceiver {
  public:
-  explicit SendSideBweReceiver(int flow_id) : BweReceiver(flow_id) {}
+  explicit SendSideBweReceiver(int flow_id)
+      : BweReceiver(flow_id), last_feedback_ms_(0) {}
   virtual void ReceivePacket(int64_t arrival_time_ms,
                              size_t payload_size,
                              const RTPHeader& header) OVERRIDE {
@@ -59,14 +60,18 @@ class SendSideBweReceiver : public BweReceiver {
         header.sequenceNumber, payload_size));
   }
 
-  virtual FeedbackPacket* GetFeedback() OVERRIDE {
-    FeedbackPacket* fb =
-        new SendSideBweFeedback(flow_id_, 0, packet_feedback_vector_);
+  virtual FeedbackPacket* GetFeedback(int64_t now_ms) OVERRIDE {
+    if (now_ms - last_feedback_ms_ < 100)
+      return NULL;
+    last_feedback_ms_ = now_ms;
+    FeedbackPacket* fb = new SendSideBweFeedback(flow_id_, now_ms * 1000,
+                                                 packet_feedback_vector_);
     packet_feedback_vector_.clear();
     return fb;
   }
 
  private:
+  int64_t last_feedback_ms_;
   std::vector<PacketInfo> packet_feedback_vector_;
 };
 
@@ -112,7 +117,7 @@ class RembReceiver : public BweReceiver, public RemoteBitrateObserver {
     ASSERT_TRUE(arrival_time_ms == clock_.TimeInMilliseconds());
   }
 
-  virtual FeedbackPacket* GetFeedback() {
+  virtual FeedbackPacket* GetFeedback(int64_t now_ms) OVERRIDE {
     BWE_TEST_LOGGING_CONTEXT("Remb");
     uint32_t estimated_bps = 0;
     RembFeedback* feedback = NULL;
@@ -122,8 +127,8 @@ class RembReceiver : public BweReceiver, public RemoteBitrateObserver {
       if (!statisticians.empty()) {
         report_block = BuildReportBlock(statisticians.begin()->second);
       }
-      feedback = new RembFeedback(flow_id_, clock_.TimeInMilliseconds(),
-                                  estimated_bps, report_block);
+      feedback = new RembFeedback(flow_id_, now_ms * 1000, estimated_bps,
+                                  report_block);
 
       double estimated_kbps = static_cast<double>(estimated_bps) / 1000.0;
       RTC_UNUSED(estimated_kbps);
@@ -135,9 +140,9 @@ class RembReceiver : public BweReceiver, public RemoteBitrateObserver {
     return feedback;
   }
 
+  // Implements RemoteBitrateObserver.
   virtual void OnReceiveBitrateChanged(const vector<unsigned int>& ssrcs,
-                                       unsigned int bitrate) {
-  }
+                                       unsigned int bitrate) OVERRIDE {}
 
  private:
   static RTCPReportBlock BuildReportBlock(StreamStatistician* statistician) {
@@ -210,29 +215,37 @@ PacketReceiver::~PacketReceiver() {
 }
 
 void PacketReceiver::RunFor(int64_t time_ms, Packets* in_out) {
-  for (const auto* packet : *in_out) {
+  Packets feedback;
+  for (auto it = in_out->begin(); it != in_out->end();) {
     // PacketReceivers are only associated with a single stream, and therefore
     // should only process a single flow id.
     // TODO(holmer): Break this out into a Demuxer which implements both
     // PacketProcessorListener and PacketProcessor.
-    if (packet->flow_id() != *flow_ids().begin())
-      continue;
-    BWE_TEST_LOGGING_CONTEXT("Receiver");
-    assert(packet->GetPacketType() == Packet::kMedia);
-    const MediaPacket& media_packet = static_cast<const MediaPacket&>(*packet);
-    // We're treating the send time (from previous filter) as the arrival
-    // time once packet reaches the estimator.
-    int64_t arrival_time_ms = (media_packet.send_time_us() + 500) / 1000;
-    BWE_TEST_LOGGING_TIME(arrival_time_ms);
-    PlotDelay(arrival_time_ms, (media_packet.creation_time_us() + 500) / 1000);
+    if ((*it)->GetPacketType() == Packet::kMedia &&
+        (*it)->flow_id() == *flow_ids().begin()) {
+      BWE_TEST_LOGGING_CONTEXT("Receiver");
+      const MediaPacket* media_packet = static_cast<const MediaPacket*>(*it);
+      // We're treating the send time (from previous filter) as the arrival
+      // time once packet reaches the estimator.
+      int64_t arrival_time_ms = (media_packet->send_time_us() + 500) / 1000;
+      BWE_TEST_LOGGING_TIME(arrival_time_ms);
+      PlotDelay(arrival_time_ms,
+                (media_packet->creation_time_us() + 500) / 1000);
 
-    bwe_receiver_->ReceivePacket(arrival_time_ms, media_packet.payload_size(),
-                                 media_packet.header());
+      bwe_receiver_->ReceivePacket(arrival_time_ms,
+                                   media_packet->payload_size(),
+                                   media_packet->header());
+      FeedbackPacket* fb = bwe_receiver_->GetFeedback(arrival_time_ms);
+      if (fb)
+        feedback.push_back(fb);
+      delete media_packet;
+      it = in_out->erase(it);
+    } else {
+      ++it;
+    }
   }
-}
-
-FeedbackPacket* PacketReceiver::GetFeedback() {
-  return bwe_receiver_->GetFeedback();
+  // Insert feedback packets to be sent back to the sender.
+  in_out->merge(feedback, DereferencingComparator<Packet>);
 }
 
 void PacketReceiver::PlotDelay(int64_t arrival_time_ms, int64_t send_time_ms) {
@@ -256,7 +269,7 @@ class PacketProcessorRunner {
       delete packet;
   }
 
-  bool HasProcessor(const PacketProcessor* processor) const {
+  bool RunsProcessor(const PacketProcessor* processor) const {
     return processor == processor_;
   }
 
@@ -312,9 +325,13 @@ class PacketProcessorRunner {
 
 BweTest::BweTest()
     : run_time_ms_(0), time_now_ms_(-1), simulation_interval_ms_(-1) {
+  links_.push_back(&uplink_);
+  links_.push_back(&downlink_);
 }
 
 BweTest::~BweTest() {
+  for (Packet* packet : packets_)
+    delete packet;
 }
 
 void BweTest::SetUp() {
@@ -326,8 +343,8 @@ void BweTest::SetUp() {
   BWE_TEST_LOGGING_GLOBAL_ENABLE(false);
 }
 
-void BweTest::AddPacketProcessor(PacketProcessor* processor,
-                                 ProcessorType processor_type) {
+void Link::AddPacketProcessor(PacketProcessor* processor,
+                              ProcessorType processor_type) {
   assert(processor);
   switch (processor_type) {
     case kSender:
@@ -342,10 +359,10 @@ void BweTest::AddPacketProcessor(PacketProcessor* processor,
   processors_.push_back(PacketProcessorRunner(processor));
 }
 
-void BweTest::RemovePacketProcessor(PacketProcessor* processor) {
+void Link::RemovePacketProcessor(PacketProcessor* processor) {
   for (vector<PacketProcessorRunner>::iterator it = processors_.begin();
        it != processors_.end(); ++it) {
-    if (it->HasProcessor(processor)) {
+    if (it->RunsProcessor(processor)) {
       processors_.erase(it);
       return;
     }
@@ -353,29 +370,24 @@ void BweTest::RemovePacketProcessor(PacketProcessor* processor) {
   assert(false);
 }
 
-void BweTest::VerboseLogging(bool enable) {
-  BWE_TEST_LOGGING_GLOBAL_ENABLE(enable);
+// Ownership of the created packets is handed over to the caller.
+void Link::Run(int64_t run_for_ms, int64_t now_ms, Packets* packets) {
+  for (auto& processor : processors_) {
+    processor.RunFor(run_for_ms, now_ms, packets);
+  }
 }
 
-void BweTest::GiveFeedbackToAffectedSenders(PacketReceiver* receiver) {
-  FeedbackPacket* feedback = receiver->GetFeedback();
-  if (feedback) {
-    for (PacketSender* sender : senders_) {
-      if (sender->flow_ids().find(feedback->flow_id()) !=
-          sender->flow_ids().end()) {
-        sender->GiveFeedback(*feedback);
-        break;
-      }
-    }
-  }
-  delete feedback;
+void BweTest::VerboseLogging(bool enable) {
+  BWE_TEST_LOGGING_GLOBAL_ENABLE(enable);
 }
 
 void BweTest::RunFor(int64_t time_ms) {
   // Set simulation interval from first packet sender.
   // TODO(holmer): Support different feedback intervals for different flows.
-  if (!senders_.empty()) {
-    simulation_interval_ms_ = senders_[0]->GetFeedbackIntervalMs();
+  if (!uplink_.senders().empty()) {
+    simulation_interval_ms_ = uplink_.senders()[0]->GetFeedbackIntervalMs();
+  } else if (!downlink_.senders().empty()) {
+    simulation_interval_ms_ = downlink_.senders()[0]->GetFeedbackIntervalMs();
   }
   assert(simulation_interval_ms_ > 0);
   if (time_now_ms_ == -1) {
@@ -384,32 +396,12 @@ void BweTest::RunFor(int64_t time_ms) {
   for (run_time_ms_ += time_ms;
        time_now_ms_ <= run_time_ms_ - simulation_interval_ms_;
        time_now_ms_ += simulation_interval_ms_) {
-    Packets packets;
-    for (PacketProcessorRunner& processor : processors_) {
-      processor.RunFor(simulation_interval_ms_, time_now_ms_, &packets);
-    }
-
-    // Verify packets are in order between batches.
-    if (!packets.empty()) {
-      if (!previous_packets_.empty()) {
-        packets.splice(packets.begin(), previous_packets_,
-                       --previous_packets_.end());
-        ASSERT_TRUE(IsTimeSorted(packets));
-        delete packets.front();
-        packets.erase(packets.begin());
-      }
-      ASSERT_LE(packets.front()->send_time_us(), time_now_ms_ * 1000);
-      ASSERT_LE(packets.back()->send_time_us(), time_now_ms_ * 1000);
-    } else {
-      ASSERT_TRUE(IsTimeSorted(packets));
-    }
-
-    for (const auto* packet : packets)
-      delete packet;
-
-    for (const auto& receiver : receivers_) {
-      GiveFeedbackToAffectedSenders(receiver);
-    }
+    // Packets are first generated on the first link, passed through all the
+    // PacketProcessors and PacketReceivers. The PacketReceivers produces
+    // FeedbackPackets which are then processed by the next link, where they
+    // at some point will be consumed by a PacketSender.
+    for (Link* link : links_)
+      link->Run(simulation_interval_ms_, time_now_ms_, &packets_);
   }
 }
 

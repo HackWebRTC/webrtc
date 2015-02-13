@@ -46,6 +46,8 @@ const FlowIds CreateFlowIds(const int *flow_ids_array, size_t num_flow_ids);
 
 template <typename T>
 bool DereferencingComparator(const T* const& a, const T* const& b) {
+  assert(a != NULL);
+  assert(b != NULL);
   return *a < *b;
 }
 
@@ -265,7 +267,6 @@ class PacketProcessorListener {
 
 class PacketProcessor {
  public:
-  PacketProcessor(PacketProcessorListener* listener, ProcessorType type);
   PacketProcessor(PacketProcessorListener* listener,
                   int flow_id,
                   ProcessorType type);
@@ -294,12 +295,12 @@ class PacketProcessor {
 
 class RateCounterFilter : public PacketProcessor {
  public:
-  explicit RateCounterFilter(PacketProcessorListener* listener);
   RateCounterFilter(PacketProcessorListener* listener,
-                    const std::string& name);
+                    int flow_id,
+                    const char* name);
   RateCounterFilter(PacketProcessorListener* listener,
                     const FlowIds& flow_ids,
-                    const std::string& name);
+                    const char* name);
   virtual ~RateCounterFilter();
 
   uint32_t packets_per_second() const;
@@ -321,7 +322,8 @@ class RateCounterFilter : public PacketProcessor {
 
 class LossFilter : public PacketProcessor {
  public:
-  explicit LossFilter(PacketProcessorListener* listener);
+  LossFilter(PacketProcessorListener* listener, int flow_id);
+  LossFilter(PacketProcessorListener* listener, const FlowIds& flow_ids);
   virtual ~LossFilter() {}
 
   void SetLoss(float loss_percent);
@@ -336,7 +338,8 @@ class LossFilter : public PacketProcessor {
 
 class DelayFilter : public PacketProcessor {
  public:
-  explicit DelayFilter(PacketProcessorListener* listener);
+  DelayFilter(PacketProcessorListener* listener, int flow_id);
+  DelayFilter(PacketProcessorListener* listener, const FlowIds& flow_ids);
   virtual ~DelayFilter() {}
 
   void SetDelay(int64_t delay_ms);
@@ -351,7 +354,8 @@ class DelayFilter : public PacketProcessor {
 
 class JitterFilter : public PacketProcessor {
  public:
-  explicit JitterFilter(PacketProcessorListener* listener);
+  JitterFilter(PacketProcessorListener* listener, int flow_id);
+  JitterFilter(PacketProcessorListener* listener, const FlowIds& flow_ids);
   virtual ~JitterFilter() {}
 
   void SetJitter(int64_t stddev_jitter_ms);
@@ -368,7 +372,8 @@ class JitterFilter : public PacketProcessor {
 // Reorders two consecutive packets with a probability of reorder_percent.
 class ReorderFilter : public PacketProcessor {
  public:
-  explicit ReorderFilter(PacketProcessorListener* listener);
+  ReorderFilter(PacketProcessorListener* listener, int flow_id);
+  ReorderFilter(PacketProcessorListener* listener, const FlowIds& flow_ids);
   virtual ~ReorderFilter() {}
 
   void SetReorder(float reorder_percent);
@@ -384,7 +389,7 @@ class ReorderFilter : public PacketProcessor {
 // Apply a bitrate choke with an infinite queue on the packet stream.
 class ChokeFilter : public PacketProcessor {
  public:
-  explicit ChokeFilter(PacketProcessorListener* listener);
+  ChokeFilter(PacketProcessorListener* listener, int flow_id);
   ChokeFilter(PacketProcessorListener* listener, const FlowIds& flow_ids);
   virtual ~ChokeFilter();
 
@@ -404,9 +409,12 @@ class ChokeFilter : public PacketProcessor {
 
 class TraceBasedDeliveryFilter : public PacketProcessor {
  public:
-  explicit TraceBasedDeliveryFilter(PacketProcessorListener* listener);
+  TraceBasedDeliveryFilter(PacketProcessorListener* listener, int flow_id);
   TraceBasedDeliveryFilter(PacketProcessorListener* listener,
-                           const std::string& name);
+                           const FlowIds& flow_ids);
+  TraceBasedDeliveryFilter(PacketProcessorListener* listener,
+                           int flow_id,
+                           const char* name);
   virtual ~TraceBasedDeliveryFilter();
 
   // The file should contain nanosecond timestamps corresponding to the time
@@ -446,12 +454,13 @@ class VideoSource {
               int64_t first_frame_offset_ms);
   virtual ~VideoSource() {}
 
-  uint32_t max_payload_size_bytes() const { return kMaxPayloadSizeBytes; }
-  uint32_t bytes_per_second() const { return bytes_per_second_; }
-
   virtual void RunFor(int64_t time_ms, Packets* in_out);
-  virtual void SetBitrateBps(int bitrate_bps) {}
+
   virtual int flow_id() const { return flow_id_; }
+  virtual void SetBitrateBps(int bitrate_bps) {}
+  uint32_t bits_per_second() const { return bits_per_second_; }
+  uint32_t max_payload_size_bytes() const { return kMaxPayloadSizeBytes; }
+  int64_t GetTimeUntilNextFrameMs() const { return next_frame_ms_ - now_ms_; }
 
  protected:
   virtual uint32_t NextFrameSize();
@@ -460,14 +469,14 @@ class VideoSource {
 
   const uint32_t kMaxPayloadSizeBytes;
   const uint32_t kTimestampBase;
-  const int flow_id_;
   const double frame_period_ms_;
-  uint32_t bytes_per_second_;
+  uint32_t bits_per_second_;
   uint32_t frame_size_bytes_;
 
  private:
-  double next_frame_ms_;
-  double now_ms_;
+  const int flow_id_;
+  int64_t next_frame_ms_;
+  int64_t now_ms_;
   RTPHeader prototype_header_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(VideoSource);
@@ -602,7 +611,6 @@ class PacketSender : public PacketProcessor, public BitrateObserver {
   // output of the estimators is sampled and therefore the baseline files may
   // have to be regenerated.
   virtual int GetFeedbackIntervalMs() const;
-  virtual void GiveFeedback(const FeedbackPacket& feedback);
   virtual void RunFor(int64_t time_ms, Packets* in_out) OVERRIDE;
 
   virtual VideoSource* source() const { return source_; }
@@ -613,6 +621,12 @@ class PacketSender : public PacketProcessor, public BitrateObserver {
                                 int64_t rtt) OVERRIDE;
 
  protected:
+  void ProcessFeedbackAndGeneratePackets(int64_t time_ms,
+                                         std::list<FeedbackPacket*>* feedbacks,
+                                         Packets* generated);
+  std::list<FeedbackPacket*> GetFeedbackPackets(Packets* in_out,
+                                                int64_t end_time_ms);
+
   SimulatedClock clock_;
   VideoSource* source_;
   scoped_ptr<SendSideBwe> bwe_;

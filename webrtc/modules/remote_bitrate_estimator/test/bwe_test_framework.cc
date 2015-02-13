@@ -84,6 +84,7 @@ class RateCounter {
   uint32_t bits_per_second() const {
     return bytes_per_second_ * 8;
   }
+
   uint32_t packets_per_second() const { return packets_per_second_; }
 
  private:
@@ -198,15 +199,6 @@ bool IsTimeSorted(const Packets& packets) {
 }
 
 PacketProcessor::PacketProcessor(PacketProcessorListener* listener,
-                                 ProcessorType type)
-    : listener_(listener) {
-  flow_ids_.insert(0);
-  if (listener_) {
-    listener_->AddPacketProcessor(this, type);
-  }
-}
-
-PacketProcessor::PacketProcessor(PacketProcessorListener* listener,
                                  int flow_id,
                                  ProcessorType type)
     : listener_(listener) {
@@ -231,17 +223,10 @@ PacketProcessor::~PacketProcessor() {
   }
 }
 
-RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener)
-    : PacketProcessor(listener, kRegular),
-      rate_counter_(new RateCounter()),
-      packets_per_second_stats_(),
-      kbps_stats_(),
-      name_("") {
-}
-
 RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
-                                     const std::string& name)
-    : PacketProcessor(listener, kRegular),
+                                     int flow_id,
+                                     const char* name)
+    : PacketProcessor(listener, flow_id, kRegular),
       rate_counter_(new RateCounter()),
       packets_per_second_stats_(),
       kbps_stats_(),
@@ -250,7 +235,7 @@ RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
 
 RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
                                      const FlowIds& flow_ids,
-                                     const std::string& name)
+                                     const char* name)
     : PacketProcessor(listener, flow_ids, kRegular),
       rate_counter_(new RateCounter()),
       packets_per_second_stats_(),
@@ -301,8 +286,15 @@ void RateCounterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   kbps_stats_.Push(rate_counter_->bits_per_second() / 1000.0);
 }
 
-LossFilter::LossFilter(PacketProcessorListener* listener)
-    : PacketProcessor(listener, kRegular),
+LossFilter::LossFilter(PacketProcessorListener* listener, int flow_id)
+    : PacketProcessor(listener, flow_id, kRegular),
+      random_(0x12345678),
+      loss_fraction_(0.0f) {
+}
+
+LossFilter::LossFilter(PacketProcessorListener* listener,
+                       const FlowIds& flow_ids)
+    : PacketProcessor(listener, flow_ids, kRegular),
       random_(0x12345678),
       loss_fraction_(0.0f) {
 }
@@ -327,8 +319,17 @@ void LossFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   }
 }
 
-DelayFilter::DelayFilter(PacketProcessorListener* listener)
-    : PacketProcessor(listener, kRegular), delay_us_(0), last_send_time_us_(0) {
+DelayFilter::DelayFilter(PacketProcessorListener* listener, int flow_id)
+    : PacketProcessor(listener, flow_id, kRegular),
+      delay_us_(0),
+      last_send_time_us_(0) {
+}
+
+DelayFilter::DelayFilter(PacketProcessorListener* listener,
+                         const FlowIds& flow_ids)
+    : PacketProcessor(listener, flow_ids, kRegular),
+      delay_us_(0),
+      last_send_time_us_(0) {
 }
 
 void DelayFilter::SetDelay(int64_t delay_ms) {
@@ -347,8 +348,16 @@ void DelayFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   }
 }
 
-JitterFilter::JitterFilter(PacketProcessorListener* listener)
-    : PacketProcessor(listener, kRegular),
+JitterFilter::JitterFilter(PacketProcessorListener* listener, int flow_id)
+    : PacketProcessor(listener, flow_id, kRegular),
+      random_(0x89674523),
+      stddev_jitter_us_(0),
+      last_send_time_us_(0) {
+}
+
+JitterFilter::JitterFilter(PacketProcessorListener* listener,
+                           const FlowIds& flow_ids)
+    : PacketProcessor(listener, flow_ids, kRegular),
       random_(0x89674523),
       stddev_jitter_us_(0),
       last_send_time_us_(0) {
@@ -372,8 +381,15 @@ void JitterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   }
 }
 
-ReorderFilter::ReorderFilter(PacketProcessorListener* listener)
-    : PacketProcessor(listener, kRegular),
+ReorderFilter::ReorderFilter(PacketProcessorListener* listener, int flow_id)
+    : PacketProcessor(listener, flow_id, kRegular),
+      random_(0x27452389),
+      reorder_fraction_(0.0f) {
+}
+
+ReorderFilter::ReorderFilter(PacketProcessorListener* listener,
+                             const FlowIds& flow_ids)
+    : PacketProcessor(listener, flow_ids, kRegular),
       random_(0x27452389),
       reorder_fraction_(0.0f) {
 }
@@ -404,8 +420,8 @@ void ReorderFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   }
 }
 
-ChokeFilter::ChokeFilter(PacketProcessorListener* listener)
-    : PacketProcessor(listener, kRegular),
+ChokeFilter::ChokeFilter(PacketProcessorListener* listener, int flow_id)
+    : PacketProcessor(listener, flow_id, kRegular),
       kbps_(1200),
       last_send_time_us_(0),
       delay_cap_helper_(new DelayCapHelper()) {
@@ -456,8 +472,9 @@ Stats<double> ChokeFilter::GetDelayStats() const {
 }
 
 TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
-    PacketProcessorListener* listener)
-    : PacketProcessor(listener, kRegular),
+    PacketProcessorListener* listener,
+    int flow_id)
+    : PacketProcessor(listener, flow_id, kRegular),
       current_offset_us_(0),
       delivery_times_us_(),
       next_delivery_it_(),
@@ -471,8 +488,24 @@ TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
 
 TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
     PacketProcessorListener* listener,
-    const std::string& name)
-    : PacketProcessor(listener, kRegular),
+    const FlowIds& flow_ids)
+    : PacketProcessor(listener, flow_ids, kRegular),
+      current_offset_us_(0),
+      delivery_times_us_(),
+      next_delivery_it_(),
+      local_time_us_(-1),
+      rate_counter_(new RateCounter),
+      name_(""),
+      delay_cap_helper_(new DelayCapHelper()),
+      packets_per_second_stats_(),
+      kbps_stats_() {
+}
+
+TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
+    PacketProcessorListener* listener,
+    int flow_id,
+    const char* name)
+    : PacketProcessor(listener, flow_id, kRegular),
       current_offset_us_(0),
       delivery_times_us_(),
       next_delivery_it_(),
@@ -584,12 +617,12 @@ VideoSource::VideoSource(int flow_id,
                          int64_t first_frame_offset_ms)
     : kMaxPayloadSizeBytes(1200),
       kTimestampBase(0xff80ff00ul),
-      flow_id_(flow_id),
       frame_period_ms_(1000.0 / fps),
-      bytes_per_second_((1000 * kbps) / 8),
-      frame_size_bytes_(bytes_per_second_ / fps),
+      bits_per_second_(1000 * kbps),
+      frame_size_bytes_(bits_per_second_ / 8 / fps),
+      flow_id_(flow_id),
       next_frame_ms_(first_frame_offset_ms),
-      now_ms_(0.0),
+      now_ms_(0),
       prototype_header_() {
   memset(&prototype_header_, 0, sizeof(prototype_header_));
   prototype_header_.ssrc = ssrc;
@@ -646,8 +679,8 @@ AdaptiveVideoSource::AdaptiveVideoSource(int flow_id,
 }
 
 void AdaptiveVideoSource::SetBitrateBps(int bitrate_bps) {
-  bytes_per_second_ = std::min(bitrate_bps / 8, 2500000 / 8);
-  frame_size_bytes_ = (bytes_per_second_ * frame_period_ms_ + 500) / 1000;
+  bits_per_second_ = std::min(bitrate_bps, 2500000);
+  frame_size_bytes_ = (bits_per_second_ / 8 * frame_period_ms_ + 500) / 1000;
 }
 
 PeriodicKeyFrameSource::PeriodicKeyFrameSource(int flow_id,
@@ -757,8 +790,6 @@ void FullSendSideBwe::GiveFeedback(const FeedbackPacket& feedback) {
   if (fb.packet_feedback_vector().empty())
     return;
   rbe_->IncomingPacketFeedbackVector(fb.packet_feedback_vector());
-  if (rbe_->TimeUntilNextProcess() <= 0)
-    rbe_->Process();
   // TODO(holmer): Handle losses in between feedback packets.
   int expected_packets = fb.packet_feedback_vector().back().sequence_number -
                          fb.packet_feedback_vector().front().sequence_number +
@@ -817,7 +848,7 @@ PacketSender::PacketSender(PacketProcessorListener* listener,
       clock_(0),
       source_(source),
       bwe_(CreateEstimator(estimator,
-                           8 * source_->bytes_per_second() / 1000,
+                           source_->bits_per_second() / 1000,
                            this,
                            &clock_)) {
   modules_.push_back(bwe_.get());
@@ -827,22 +858,59 @@ PacketSender::~PacketSender() {
 }
 
 void PacketSender::RunFor(int64_t time_ms, Packets* in_out) {
-  start_of_run_ms_ = clock_.TimeInMilliseconds();
-  while (time_ms > 0) {
-    int64_t time_to_run_ms = std::min(time_ms, static_cast<int64_t>(100));
-    source_->RunFor(time_to_run_ms, in_out);
+  int64_t now_ms = clock_.TimeInMilliseconds();
+  std::list<FeedbackPacket*> feedbacks =
+      GetFeedbackPackets(in_out, now_ms + time_ms);
+  ProcessFeedbackAndGeneratePackets(time_ms, &feedbacks, in_out);
+}
+
+void PacketSender::ProcessFeedbackAndGeneratePackets(
+    int64_t time_ms,
+    std::list<FeedbackPacket*>* feedbacks,
+    Packets* generated) {
+  do {
+    // Make sure to at least run Process() below every 100 ms.
+    int64_t time_to_run_ms = std::min<int64_t>(time_ms, 100);
+    if (!feedbacks->empty()) {
+      int64_t time_until_feedback_ms =
+          feedbacks->front()->send_time_us() / 1000 -
+          clock_.TimeInMilliseconds();
+      time_to_run_ms =
+          std::max<int64_t>(std::min(time_ms, time_until_feedback_ms), 0);
+    }
+    source_->RunFor(time_to_run_ms, generated);
     clock_.AdvanceTimeMilliseconds(time_to_run_ms);
+    if (!feedbacks->empty()) {
+      bwe_->GiveFeedback(*feedbacks->front());
+      delete feedbacks->front();
+      feedbacks->pop_front();
+    }
     bwe_->Process();
     time_ms -= time_to_run_ms;
-  }
+  } while (time_ms > 0);
+  assert(feedbacks->empty());
 }
 
 int PacketSender::GetFeedbackIntervalMs() const {
   return bwe_->GetFeedbackIntervalMs();
 }
 
-void PacketSender::GiveFeedback(const FeedbackPacket& feedback) {
-  bwe_->GiveFeedback(feedback);
+std::list<FeedbackPacket*> PacketSender::GetFeedbackPackets(
+    Packets* in_out,
+    int64_t end_time_ms) {
+  std::list<FeedbackPacket*> fb_packets;
+  for (auto it = in_out->begin(); it != in_out->end();) {
+    if ((*it)->send_time_us() > 1000 * end_time_ms)
+      break;
+    if ((*it)->GetPacketType() == Packet::kFeedback &&
+        source()->flow_id() == (*it)->flow_id()) {
+      fb_packets.push_back(static_cast<FeedbackPacket*>(*it));
+      it = in_out->erase(it);
+    } else {
+      ++it;
+    }
+  }
+  return fb_packets;
 }
 
 void PacketSender::OnNetworkChanged(uint32_t target_bitrate_bps,
@@ -861,9 +929,8 @@ PacedVideoSender::PacedVideoSender(PacketProcessorListener* listener,
     : PacketSender(listener, source, estimator),
       pacer_(&clock_,
              this,
-             8 * source->bytes_per_second() / 1000,
-             PacedSender::kDefaultPaceMultiplier * 8 *
-                 source->bytes_per_second() /
+             source->bits_per_second() / 1000,
+             PacedSender::kDefaultPaceMultiplier * source->bits_per_second() /
                  1000,
              0) {
   modules_.push_back(&pacer_);
@@ -877,47 +944,64 @@ PacedVideoSender::~PacedVideoSender() {
 }
 
 void PacedVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
-  start_of_run_ms_ = clock_.TimeInMilliseconds();
-  Packets generated_packets;
-  source_->RunFor(time_ms, &generated_packets);
-  // Run process periodically to allow the packets to be paced out.
   int64_t end_time_ms = clock_.TimeInMilliseconds() + time_ms;
-  Packets::iterator it = generated_packets.begin();
-  while (clock_.TimeInMilliseconds() <= end_time_ms) {
+  // Run process periodically to allow the packets to be paced out.
+  std::list<FeedbackPacket*> feedbacks =
+      GetFeedbackPackets(in_out, end_time_ms);
+  int64_t last_run_time_ms = -1;
+  do {
     int64_t time_until_process_ms = TimeUntilNextProcess(modules_);
+    int64_t time_until_feedback_ms = time_ms;
+    if (!feedbacks.empty())
+      time_until_feedback_ms = feedbacks.front()->send_time_us() / 1000 -
+                               clock_.TimeInMilliseconds();
 
-    int time_until_packet_ms = time_ms;
-    if (it != generated_packets.end())
-      time_until_packet_ms =
-          ((*it)->send_time_us() + 500) / 1000 - clock_.TimeInMilliseconds();
-    assert(time_until_packet_ms >= 0);
+    int64_t time_until_next_event_ms =
+        std::min(time_until_feedback_ms, time_until_process_ms);
 
-    int time_until_next_event_ms = time_until_packet_ms;
-    if (time_until_process_ms < time_until_packet_ms) {
-      time_until_next_event_ms = time_until_process_ms;
+    time_until_next_event_ms =
+        std::min(source_->GetTimeUntilNextFrameMs(), time_until_next_event_ms);
+
+    // Never run for longer than we have been asked for.
+    if (clock_.TimeInMilliseconds() + time_until_next_event_ms > end_time_ms)
+      time_until_next_event_ms = end_time_ms - clock_.TimeInMilliseconds();
+
+    // Make sure we don't get stuck if an event doesn't trigger. This typically
+    // happens if the prober wants to probe, but there's no packet to send.
+    if (time_until_next_event_ms == 0 && last_run_time_ms == 0)
+      time_until_next_event_ms = 1;
+    last_run_time_ms = time_until_next_event_ms;
+
+    Packets generated_packets;
+    source_->RunFor(time_until_next_event_ms, &generated_packets);
+    if (!generated_packets.empty()) {
+      for (Packet* packet : generated_packets) {
+        MediaPacket* media_packet = static_cast<MediaPacket*>(packet);
+        pacer_.SendPacket(PacedSender::kNormalPriority,
+                          media_packet->header().ssrc,
+                          media_packet->header().sequenceNumber,
+                          (media_packet->send_time_us() + 500) / 1000,
+                          media_packet->payload_size(), false);
+        pacer_queue_.push_back(packet);
+        assert(pacer_queue_.size() < 10000);
+      }
     }
 
-    if (clock_.TimeInMilliseconds() + time_until_next_event_ms > end_time_ms) {
-      clock_.AdvanceTimeMilliseconds(end_time_ms - clock_.TimeInMilliseconds());
-      break;
-    }
     clock_.AdvanceTimeMilliseconds(time_until_next_event_ms);
-    if (time_until_process_ms < time_until_packet_ms) {
-      // Time to process.
-      CallProcess(modules_);
-    } else {
-      // Time to send next packet to pacer.
-      MediaPacket* media_packet = static_cast<MediaPacket*>(*it);
-      pacer_.SendPacket(PacedSender::kNormalPriority,
-                        media_packet->header().ssrc,
-                        media_packet->header().sequenceNumber,
-                        (media_packet->send_time_us() + 500) / 1000,
-                        media_packet->payload_size(), false);
-      pacer_queue_.push_back(media_packet);
-      assert(pacer_queue_.size() < 10000);
-      ++it;
+
+    if (time_until_next_event_ms == time_until_feedback_ms) {
+      if (!feedbacks.empty()) {
+        bwe_->GiveFeedback(*feedbacks.front());
+        delete feedbacks.front();
+        feedbacks.pop_front();
+      }
+      bwe_->Process();
     }
-  }
+
+    if (time_until_next_event_ms == time_until_process_ms) {
+      CallProcess(modules_);
+    }
+  } while (clock_.TimeInMilliseconds() < end_time_ms);
   QueuePackets(in_out, end_time_ms * 1000);
 }
 
