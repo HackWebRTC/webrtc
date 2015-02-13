@@ -169,12 +169,18 @@ int ViEBaseImpl::CreateChannel(int& video_channel,  // NOLINT
 
 int ViEBaseImpl::CreateChannel(int& video_channel,  // NOLINT
                                int original_channel) {
-  return CreateChannel(video_channel, original_channel, true);
+  return CreateChannel(video_channel, original_channel, true, false);
+}
+
+int ViEBaseImpl::CreateChannelWithoutDefaultEncoder(
+    int& video_channel,  // NOLINT
+    int original_channel) {
+  return CreateChannel(video_channel, original_channel, true, true);
 }
 
 int ViEBaseImpl::CreateReceiveChannel(int& video_channel,  // NOLINT
                                       int original_channel) {
-  return CreateChannel(video_channel, original_channel, false);
+  return CreateChannel(video_channel, original_channel, false, true);
 }
 
 int ViEBaseImpl::DeleteChannel(const int video_channel) {
@@ -338,16 +344,18 @@ int ViEBaseImpl::LastError() {
 }
 
 int ViEBaseImpl::CreateChannel(int& video_channel,  // NOLINT
-                               int original_channel, bool sender) {
+                               int original_channel,
+                               bool sender,
+                               bool disable_default_encoder) {
   ViEChannelManagerScoped cs(*(shared_data_.channel_manager()));
   if (!cs.Channel(original_channel)) {
     shared_data_.SetLastError(kViEBaseInvalidChannelId);
     return -1;
   }
 
-  if (shared_data_.channel_manager()->CreateChannel(&video_channel,
-                                                    original_channel,
-                                                    sender) == -1) {
+  if (shared_data_.channel_manager()->CreateChannel(
+          &video_channel, original_channel, sender, disable_default_encoder) ==
+      -1) {
     video_channel = -1;
     shared_data_.SetLastError(kViEBaseChannelCreationFailed);
     return -1;

@@ -59,7 +59,8 @@ class ViEEncoder
              uint32_t number_of_cores,
              const Config& config,
              ProcessThread& module_process_thread,
-             BitrateController* bitrate_controller);
+             BitrateController* bitrate_controller,
+             bool disable_default_encoder);
   ~ViEEncoder();
 
   bool Init();
@@ -202,6 +203,7 @@ class ViEEncoder
   int32_t engine_id_;
   const int channel_id_;
   const uint32_t number_of_cores_;
+  const bool disable_default_encoder_;
 
   VideoCodingModule& vcm_;
   VideoProcessingModule& vpm_;

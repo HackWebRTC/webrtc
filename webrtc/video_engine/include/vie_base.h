@@ -184,6 +184,9 @@ class WEBRTC_DLLEXPORT ViEBase {
   virtual int CreateChannel(int& video_channel,
                             int original_channel) = 0;
 
+  virtual int CreateChannelWithoutDefaultEncoder(int& video_channel,
+                                                 int original_channel) = 0;
+
   // Creates a new channel grouped together with |original_channel|. The channel
   // can only receive video and it is assumed the remote end-point is the same
   // as for |original_channel|.

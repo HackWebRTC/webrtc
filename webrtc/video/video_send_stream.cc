@@ -126,7 +126,8 @@ VideoSendStream::VideoSendStream(
     assert(bitrate_config.max_bitrate_bps >= bitrate_config.start_bitrate_bps);
 
   video_engine_base_ = ViEBase::GetInterface(video_engine);
-  video_engine_base_->CreateChannel(channel_, base_channel);
+  video_engine_base_->CreateChannelWithoutDefaultEncoder(channel_,
+                                                         base_channel);
   assert(channel_ != -1);
 
   rtp_rtcp_ = ViERTP_RTCP::GetInterface(video_engine);

@@ -680,6 +680,7 @@ class FakeWebRtcVideoEngine
     channels_[channel]->original_channel_id_ = original_channel;
     return 0;
   }
+  WEBRTC_STUB(CreateChannelWithoutDefaultEncoder, (int&, int original_channel));
   WEBRTC_FUNC(CreateReceiveChannel, (int& channel, int original_channel)) {
     return CreateChannel(channel, original_channel);
   }

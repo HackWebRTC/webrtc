@@ -28,7 +28,7 @@ namespace webrtc {
 class MockVieEncoder : public ViEEncoder {
  public:
   explicit MockVieEncoder(ProcessThread* process_thread)
-      : ViEEncoder(1, 1, 1, config_, *process_thread, NULL) {}
+      : ViEEncoder(1, 1, 1, config_, *process_thread, NULL, false) {}
   ~MockVieEncoder() {}
 
   MOCK_METHOD1(OnReceivedIntraFrameRequest,

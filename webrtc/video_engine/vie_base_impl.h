@@ -44,6 +44,9 @@ class ViEBaseImpl
                             const Config* config);
   virtual int CreateChannel(int& video_channel,  // NOLINT
                             int original_channel);
+  virtual int CreateChannelWithoutDefaultEncoder(int& video_channel,  // NOLINT
+                                                 int original_channel);
+
   virtual int CreateReceiveChannel(int& video_channel,  // NOLINT
                                    int original_channel);
   virtual int DeleteChannel(const int video_channel);
@@ -65,7 +68,7 @@ class ViEBaseImpl
 
  private:
   int CreateChannel(int& video_channel, int original_channel,  // NOLINT
-                    bool sender);
+                    bool sender, bool disable_default_encoder);
 
   virtual void RegisterSendStatisticsProxy(
       int channel,

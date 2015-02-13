@@ -71,7 +71,8 @@ ViEChannel::ViEChannel(int32_t channel_id,
                        RtcpRttStats* rtt_stats,
                        PacedSender* paced_sender,
                        RtpRtcp* default_rtp_rtcp,
-                       bool sender)
+                       bool sender,
+                       bool disable_default_encoder)
     : ViEFrameProviderBase(channel_id, engine_id),
       channel_id_(channel_id),
       engine_id_(engine_id),
@@ -105,6 +106,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
       color_enhancement_(false),
       mtu_(0),
       sender_(sender),
+      disable_default_encoder_(disable_default_encoder),
       nack_history_size_sender_(kSendSidePacketHistorySize),
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
       pre_render_callback_(NULL),
@@ -155,18 +157,20 @@ int32_t ViEChannel::Init() {
     return -1;
   }
 #ifdef VIDEOCODEC_VP8
-  VideoCodec video_codec;
-  if (vcm_->Codec(kVideoCodecVP8, &video_codec) == VCM_OK) {
-    rtp_rtcp_->RegisterSendPayload(video_codec);
-    // TODO(holmer): Can we call SetReceiveCodec() here instead?
-    if (!vie_receiver_.RegisterPayload(video_codec)) {
-      return -1;
+  if (!disable_default_encoder_) {
+    VideoCodec video_codec;
+    if (vcm_->Codec(kVideoCodecVP8, &video_codec) == VCM_OK) {
+      rtp_rtcp_->RegisterSendPayload(video_codec);
+      // TODO(holmer): Can we call SetReceiveCodec() here instead?
+      if (!vie_receiver_.RegisterPayload(video_codec)) {
+        return -1;
+      }
+      vcm_->RegisterReceiveCodec(&video_codec, number_of_cores_);
+      vcm_->RegisterSendCodec(&video_codec, number_of_cores_,
+                              rtp_rtcp_->MaxDataPayloadLength());
+    } else {
+      assert(false);
     }
-    vcm_->RegisterReceiveCodec(&video_codec, number_of_cores_);
-    vcm_->RegisterSendCodec(&video_codec, number_of_cores_,
-                           rtp_rtcp_->MaxDataPayloadLength());
-  } else {
-    assert(false);
   }
 #endif
 
