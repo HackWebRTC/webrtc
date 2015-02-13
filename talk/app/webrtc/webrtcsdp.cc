@@ -261,7 +261,8 @@ static void BuildCandidate(const std::vector<Candidate>& candidates,
                            std::string* message);
 static void BuildIceOptions(const std::vector<std::string>& transport_options,
                             std::string* message);
-
+static bool IsRtp(const std::string& protocol);
+static bool IsDtlsSctp(const std::string& protocol);
 static bool ParseSessionDescription(const std::string& message, size_t* pos,
                                     std::string* session_id,
                                     std::string* session_version,
@@ -1191,7 +1192,6 @@ void BuildMediaDescription(const ContentInfo* content_info,
           content_info->description);
   ASSERT(media_desc != NULL);
 
-  bool is_sctp = (media_desc->protocol() == cricket::kMediaProtocolDtlsSctp);
   int sctp_port = cricket::kSctpDefaultPort;
 
   // RFC 4566
@@ -1229,7 +1229,7 @@ void BuildMediaDescription(const ContentInfo* content_info,
   } else if (media_type == cricket::MEDIA_TYPE_DATA) {
     const DataContentDescription* data_desc =
           static_cast<const DataContentDescription*>(media_desc);
-    if (is_sctp) {
+    if (IsDtlsSctp(media_desc->protocol())) {
       fmt.append(" ");
 
       for (std::vector<cricket::DataCodec>::const_iterator it =
@@ -1292,11 +1292,7 @@ void BuildMediaDescription(const ContentInfo* content_info,
   }
 
   // Add the a=rtcp line.
-  bool is_rtp =
-      media_desc->protocol().empty() ||
-      rtc::starts_with(media_desc->protocol().data(),
-                             cricket::kMediaProtocolRtpPrefix);
-  if (is_rtp) {
+  if (IsRtp(media_desc->protocol())) {
     std::string rtcp_line = GetRtcpLine(candidates);
     if (!rtcp_line.empty()) {
       AddLine(rtcp_line, message);
@@ -1357,9 +1353,9 @@ void BuildMediaDescription(const ContentInfo* content_info,
   os << kSdpDelimiterColon << content_info->name;
   AddLine(os.str(), message);
 
-  if (is_sctp) {
+  if (IsDtlsSctp(media_desc->protocol())) {
     BuildSctpContentAttributes(message, sctp_port);
-  } else {
+  } else if (IsRtp(media_desc->protocol())) {
     BuildRtpContentAttributes(media_desc, media_type, message);
   }
 }
@@ -1806,6 +1802,16 @@ void BuildIceOptions(const std::vector<std::string>& transport_options,
   }
 }
 
+bool IsRtp(const std::string& protocol) {
+  return protocol.empty() ||
+      (protocol.find(cricket::kMediaProtocolRtpPrefix) != std::string::npos);
+}
+
+bool IsDtlsSctp(const std::string& protocol) {
+  // This intentionally excludes "SCTP" and "SCTP/DTLS".
+  return protocol.find(cricket::kMediaProtocolDtlsSctp) != std::string::npos;
+}
+
 bool ParseSessionDescription(const std::string& message, size_t* pos,
                              std::string* session_id,
                              std::string* session_version,
@@ -2188,11 +2194,10 @@ bool ParseMediaDescription(const std::string& message,
     }
 
     std::string protocol = fields[2];
-    bool is_sctp = (protocol == cricket::kMediaProtocolDtlsSctp);
 
     // <fmt>
     std::vector<int> codec_preference;
-    if (!is_sctp) {
+    if (IsRtp(protocol)) {
       for (size_t j = 3 ; j < fields.size(); ++j) {
         // TODO(wu): Remove when below bug is fixed.
         // https://bugzilla.mozilla.org/show_bug.cgi?id=996329
@@ -2240,8 +2245,7 @@ bool ParseMediaDescription(const std::string& message,
       content.reset(data_desc);
 
       int p;
-      if (data_desc && protocol == cricket::kMediaProtocolDtlsSctp &&
-          rtc::FromString(fields[3], &p)) {
+      if (data_desc && IsDtlsSctp(protocol) && rtc::FromString(fields[3], &p)) {
         if (!AddSctpDataCodec(data_desc, p))
           return false;
       }
@@ -2265,7 +2269,7 @@ bool ParseMediaDescription(const std::string& message,
       return false;
     }
 
-    if (!is_sctp) {
+    if (IsRtp(protocol)) {
       // Make sure to set the media direction correctly. If the direction is not
       // MD_RECVONLY or Inactive and no streams are parsed,
       // a default MediaStream will be created to prepare for receiving media.
@@ -2288,8 +2292,8 @@ bool ParseMediaDescription(const std::string& message,
     }
     content->set_protocol(protocol);
     desc->AddContent(content_name,
-                     is_sctp ? cricket::NS_JINGLE_DRAFT_SCTP :
-                               cricket::NS_JINGLE_RTP,
+                     IsDtlsSctp(protocol) ? cricket::NS_JINGLE_DRAFT_SCTP :
+                                            cricket::NS_JINGLE_RTP,
                      rejected,
                      content.release());
     // Create TransportInfo with the media level "ice-pwd" and "ice-ufrag".
@@ -2495,11 +2499,6 @@ bool ParseContent(const std::string& message,
   std::string maxptime_as_string;
   std::string ptime_as_string;
 
-  bool is_rtp =
-      protocol.empty() ||
-      rtc::starts_with(protocol.data(),
-                             cricket::kMediaProtocolRtpPrefix);
-
   // Loop until the next m line
   while (!IsLineType(message, kLineTypeMedia, *pos)) {
     if (!GetLine(message, pos, &line)) {
@@ -2577,7 +2576,7 @@ bool ParseContent(const std::string& message,
       if (!ParseDtlsSetup(line, &(transport->connection_role), error)) {
         return false;
       }
-    } else if (HasAttribute(line, kAttributeSctpPort)) {
+    } else if (IsDtlsSctp(protocol) && HasAttribute(line, kAttributeSctpPort)) {
       int sctp_port;
       if (!ParseSctpPort(line, &sctp_port, error)) {
         return false;
@@ -2586,7 +2585,7 @@ bool ParseContent(const std::string& message,
                             sctp_port)) {
         return false;
       }
-    } else if (is_rtp) {
+    } else if (IsRtp(protocol)) {
       //
       // RTP specific attrubtes
       //
