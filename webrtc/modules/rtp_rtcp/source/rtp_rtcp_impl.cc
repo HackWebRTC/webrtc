@@ -283,6 +283,7 @@ int32_t ModuleRtpRtcpImpl::IncomingRtcpPacket(
 
 int32_t ModuleRtpRtcpImpl::RegisterSendPayload(
     const CodecInst& voice_codec) {
+  assert(!IsDefaultModule());
   return rtp_sender_.RegisterPayload(
            voice_codec.plname,
            voice_codec.pltype,

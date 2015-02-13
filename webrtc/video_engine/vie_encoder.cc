@@ -219,11 +219,7 @@ bool ViEEncoder::Init() {
       send_padding_ = video_codec.numberOfSimulcastStreams > 1;
     }
     if (vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
-                               PayloadRouter::DefaultMaxPayloadLength()) !=
-        0) {
-      return false;
-    }
-    if (default_rtp_rtcp_->RegisterSendPayload(video_codec) != 0) {
+                               PayloadRouter::DefaultMaxPayloadLength()) != 0) {
       return false;
     }
   }
@@ -377,9 +373,6 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
     return -1;
   }
 
-  if (default_rtp_rtcp_->RegisterSendPayload(video_codec) != 0) {
-    return -1;
-  }
   // Convert from kbps to bps.
   std::vector<uint32_t> stream_bitrates = AllocateStreamBitrates(
       video_codec.startBitrate * 1000,
