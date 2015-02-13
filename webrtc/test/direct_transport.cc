@@ -82,7 +82,6 @@ bool DirectTransport::SendPackets() {
   if (wait_time_ms > 0) {
     switch (packet_event_->Wait(static_cast<unsigned long>(wait_time_ms))) {
       case kEventSignaled:
-        packet_event_->Reset();
         break;
       case kEventTimeout:
         break;

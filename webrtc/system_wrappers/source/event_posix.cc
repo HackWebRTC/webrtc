@@ -92,15 +92,6 @@ EventPosix::~EventPosix() {
   pthread_mutex_destroy(&mutex_);
 }
 
-bool EventPosix::Reset() {
-  if (0 != pthread_mutex_lock(&mutex_)) {
-    return false;
-  }
-  state_ = kDown;
-  pthread_mutex_unlock(&mutex_);
-  return true;
-}
-
 bool EventPosix::Set() {
   if (0 != pthread_mutex_lock(&mutex_)) {
     return false;

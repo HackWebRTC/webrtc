@@ -2120,40 +2120,24 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
           FakeEncoder(Clock::GetRealTimeClock()),
           test_crit_(CriticalSectionWrapper::CreateCriticalSection()),
           encoded_frames_(EventWrapper::Create()),
-          sender_packets_(EventWrapper::Create()),
-          receiver_packets_(EventWrapper::Create()),
+          packet_event_(EventWrapper::Create()),
           sender_state_(Call::kNetworkUp),
-          down_sender_rtp_(0),
-          down_sender_rtcp_(0),
-          receiver_state_(Call::kNetworkUp),
-          down_receiver_rtcp_(0),
+          sender_rtp_(0),
+          sender_rtcp_(0),
+          receiver_rtcp_(0),
           down_frames_(0) {}
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) override {
       CriticalSectionScoped lock(test_crit_.get());
-      if (sender_state_ == Call::kNetworkDown) {
-        ++down_sender_rtp_;
-        EXPECT_LE(down_sender_rtp_, kNumAcceptedDowntimeRtp)
-            << "RTP sent during sender-side downtime.";
-        if (down_sender_rtp_> kNumAcceptedDowntimeRtp)
-          sender_packets_->Set();
-      } else {
-        sender_packets_->Set();
-      }
+      ++sender_rtp_;
+      packet_event_->Set();
       return SEND_PACKET;
     }
 
     virtual Action OnSendRtcp(const uint8_t* packet, size_t length) override {
       CriticalSectionScoped lock(test_crit_.get());
-      if (sender_state_ == Call::kNetworkDown) {
-        ++down_sender_rtcp_;
-        EXPECT_LE(down_sender_rtcp_, kNumAcceptedDowntimeRtcp)
-            << "RTCP sent during sender-side downtime.";
-        if (down_sender_rtcp_ > kNumAcceptedDowntimeRtcp)
-          sender_packets_->Set();
-      } else {
-        sender_packets_->Set();
-      }
+      ++sender_rtcp_;
+      packet_event_->Set();
       return SEND_PACKET;
     }
 
@@ -2165,15 +2149,8 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
     virtual Action OnReceiveRtcp(const uint8_t* packet,
                                  size_t length) override {
       CriticalSectionScoped lock(test_crit_.get());
-      if (receiver_state_ == Call::kNetworkDown) {
-        ++down_receiver_rtcp_;
-        EXPECT_LE(down_receiver_rtcp_, kNumAcceptedDowntimeRtcp)
-            << "RTCP sent during receiver-side downtime.";
-        if (down_receiver_rtcp_ > kNumAcceptedDowntimeRtcp)
-          receiver_packets_->Set();
-      } else {
-        receiver_packets_->Set();
-      }
+      ++receiver_rtcp_;
+      packet_event_->Set();
       return SEND_PACKET;
     }
 
@@ -2193,45 +2170,33 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
     virtual void PerformTest() override {
       EXPECT_EQ(kEventSignaled, encoded_frames_->Wait(kDefaultTimeoutMs))
           << "No frames received by the encoder.";
-      EXPECT_EQ(kEventSignaled, sender_packets_->Wait(kDefaultTimeoutMs))
-          << "Timed out waiting for send-side packets.";
-      EXPECT_EQ(kEventSignaled, receiver_packets_->Wait(kDefaultTimeoutMs))
-          << "Timed out waiting for receiver-side packets.";
+      // Wait for packets from both sender/receiver.
+      WaitForPacketsOrSilence(false, false);
 
       // Sender-side network down.
       sender_call_->SignalNetworkState(Call::kNetworkDown);
       {
         CriticalSectionScoped lock(test_crit_.get());
-        sender_packets_->Reset();  // Earlier packets should not count.
+        // After network goes down we shouldn't be encoding more frames.
         sender_state_ = Call::kNetworkDown;
       }
-      EXPECT_EQ(kEventTimeout, sender_packets_->Wait(kSilenceTimeoutMs))
-          << "Packets sent during sender-network downtime.";
-      EXPECT_EQ(kEventSignaled, receiver_packets_->Wait(kDefaultTimeoutMs))
-          << "Timed out waiting for receiver-side packets.";
+      // Wait for receiver-packets and no sender packets.
+      WaitForPacketsOrSilence(true, false);
+
       // Receiver-side network down.
       receiver_call_->SignalNetworkState(Call::kNetworkDown);
-      {
-        CriticalSectionScoped lock(test_crit_.get());
-        receiver_packets_->Reset();  // Earlier packets should not count.
-        receiver_state_ = Call::kNetworkDown;
-      }
-      EXPECT_EQ(kEventTimeout, receiver_packets_->Wait(kSilenceTimeoutMs))
-          << "Packets sent during receiver-network downtime.";
+      WaitForPacketsOrSilence(true, true);
 
       // Network back up again for both.
       {
         CriticalSectionScoped lock(test_crit_.get());
-        sender_packets_->Reset();  // Earlier packets should not count.
-        receiver_packets_->Reset();  // Earlier packets should not count.
-        sender_state_ = receiver_state_ = Call::kNetworkUp;
+        // It's OK to encode frames again, as we're about to bring up the
+        // network.
+        sender_state_ = Call::kNetworkUp;
       }
       sender_call_->SignalNetworkState(Call::kNetworkUp);
       receiver_call_->SignalNetworkState(Call::kNetworkUp);
-      EXPECT_EQ(kEventSignaled, sender_packets_->Wait(kDefaultTimeoutMs))
-          << "Timed out waiting for send-side packets.";
-      EXPECT_EQ(kEventSignaled, receiver_packets_->Wait(kDefaultTimeoutMs))
-          << "Timed out waiting for receiver-side packets.";
+      WaitForPacketsOrSilence(false, false);
     }
 
     virtual int32_t Encode(
@@ -2255,17 +2220,61 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
     }
 
    private:
+    void WaitForPacketsOrSilence(bool sender_down, bool receiver_down) {
+      int64_t initial_time_ms = clock_->TimeInMilliseconds();
+      int initial_sender_rtp;
+      int initial_sender_rtcp;
+      int initial_receiver_rtcp;
+      {
+        CriticalSectionScoped lock(test_crit_.get());
+        initial_sender_rtp = sender_rtp_;
+        initial_sender_rtcp = sender_rtcp_;
+        initial_receiver_rtcp = receiver_rtcp_;
+      }
+      bool sender_done = false;
+      bool receiver_done = false;
+      while(!sender_done || !receiver_done) {
+        packet_event_->Wait(kSilenceTimeoutMs);
+        int64_t time_now_ms = clock_->TimeInMilliseconds();
+        CriticalSectionScoped lock(test_crit_.get());
+        if (sender_down) {
+          ASSERT_LE(sender_rtp_ - initial_sender_rtp, kNumAcceptedDowntimeRtp)
+              << "RTP sent during sender-side downtime.";
+          ASSERT_LE(sender_rtcp_ - initial_sender_rtcp,
+                    kNumAcceptedDowntimeRtcp)
+              << "RTCP sent during sender-side downtime.";
+          if (time_now_ms - initial_time_ms >=
+              static_cast<int64_t>(kSilenceTimeoutMs)) {
+            sender_done = true;
+          }
+        } else {
+          if (sender_rtp_ > initial_sender_rtp)
+            sender_done = true;
+        }
+        if (receiver_down) {
+          ASSERT_LE(receiver_rtcp_ - initial_receiver_rtcp,
+                    kNumAcceptedDowntimeRtcp)
+              << "RTCP sent during receiver-side downtime.";
+          if (time_now_ms - initial_time_ms >=
+              static_cast<int64_t>(kSilenceTimeoutMs)) {
+            receiver_done = true;
+          }
+        } else {
+          if (receiver_rtcp_ > initial_receiver_rtcp)
+            receiver_done = true;
+        }
+      }
+    }
+
     const scoped_ptr<CriticalSectionWrapper> test_crit_;
-    scoped_ptr<EventWrapper> encoded_frames_;
-    scoped_ptr<EventWrapper> sender_packets_;
-    scoped_ptr<EventWrapper> receiver_packets_;
+    const scoped_ptr<EventWrapper> encoded_frames_;
+    const scoped_ptr<EventWrapper> packet_event_;
     Call* sender_call_;
     Call* receiver_call_;
     Call::NetworkState sender_state_ GUARDED_BY(test_crit_);
-    int down_sender_rtp_ GUARDED_BY(test_crit_);
-    int down_sender_rtcp_ GUARDED_BY(test_crit_);
-    Call::NetworkState receiver_state_ GUARDED_BY(test_crit_);
-    int down_receiver_rtcp_ GUARDED_BY(test_crit_);
+    int sender_rtp_ GUARDED_BY(test_crit_);
+    int sender_rtcp_ GUARDED_BY(test_crit_);
+    int receiver_rtcp_ GUARDED_BY(test_crit_);
     int down_frames_ GUARDED_BY(test_crit_);
   } test;
 

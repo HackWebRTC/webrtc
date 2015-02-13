@@ -214,7 +214,6 @@ void VCMJitterBuffer::Start() {
   time_first_packet_ms_ = 0;
 
   // Start in a non-signaled state.
-  frame_event_->Reset();
   waiting_for_completion_.frame_size = 0;
   waiting_for_completion_.timestamp = 0;
   waiting_for_completion_.latest_packet_time = -1;
@@ -258,7 +257,6 @@ void VCMJitterBuffer::Flush() {
   decodable_frames_.Reset(&free_frames_);
   incomplete_frames_.Reset(&free_frames_);
   last_decoded_state_.Reset();  // TODO(mikhal): sync reset.
-  frame_event_->Reset();
   num_consecutive_old_packets_ = 0;
   // Also reset the jitter and delay estimates
   jitter_estimate_.Reset();
@@ -409,10 +407,6 @@ bool VCMJitterBuffer::NextCompleteTimestamp(
         break;
       }
     }
-    // Inside |crit_sect_|.
-  } else {
-    // We already have a frame, reset the event.
-    frame_event_->Reset();
   }
   if (decodable_frames_.empty() ||
       decodable_frames_.Front()->GetState() != kStateComplete) {

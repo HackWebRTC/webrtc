@@ -214,7 +214,6 @@ int32_t AudioTrackJni::Terminate() {
       // If we close thread anyway, the app will crash
       return -1;
     }
-    _playStartStopEvent.Reset();
     _critSect.Enter();
 
     // Close down play thread
@@ -521,7 +520,6 @@ int32_t AudioTrackJni::StartPlayout() {
       WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                    "  Timeout or error starting");
     }
-    _playStartStopEvent.Reset();
     _critSect.Enter();
 
     // Detach this thread if it was attached
@@ -1284,7 +1282,6 @@ bool AudioTrackJni::PlayThreadProcess()
         case kEventSignaled:
           WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice,
                        _id, "Playout thread event signal");
-          _timeEventPlay.Reset();
           break;
         case kEventError:
           WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice,

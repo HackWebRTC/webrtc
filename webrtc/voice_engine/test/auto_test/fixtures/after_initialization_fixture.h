@@ -78,8 +78,10 @@ class LoopBackTransport : public webrtc::Transport {
   void StorePacket(Packet::Type type, int channel,
                    const void* data,
                    size_t len) {
-    webrtc::CriticalSectionScoped lock(crit_.get());
-    packet_queue_.push_back(Packet(type, channel, data, len));
+    {
+      webrtc::CriticalSectionScoped lock(crit_.get());
+      packet_queue_.push_back(Packet(type, channel, data, len));
+    }
     packet_event_->Set();
   }
 
@@ -90,7 +92,6 @@ class LoopBackTransport : public webrtc::Transport {
   bool SendPackets() {
     switch (packet_event_->Wait(10)) {
       case webrtc::kEventSignaled:
-        packet_event_->Reset();
         break;
       case webrtc::kEventTimeout:
         break;
@@ -123,9 +124,9 @@ class LoopBackTransport : public webrtc::Transport {
     return true;
   }
 
-  webrtc::scoped_ptr<webrtc::CriticalSectionWrapper> crit_;
-  webrtc::scoped_ptr<webrtc::EventWrapper> packet_event_;
-  webrtc::scoped_ptr<webrtc::ThreadWrapper> thread_;
+  const webrtc::scoped_ptr<webrtc::CriticalSectionWrapper> crit_;
+  const webrtc::scoped_ptr<webrtc::EventWrapper> packet_event_;
+  const webrtc::scoped_ptr<webrtc::ThreadWrapper> thread_;
   std::deque<Packet> packet_queue_ GUARDED_BY(crit_.get());
   webrtc::VoENetwork* const voe_network_;
   webrtc::Atomic32 transmitted_packets_;

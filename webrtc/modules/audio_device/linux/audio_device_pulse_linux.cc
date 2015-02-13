@@ -2636,7 +2636,6 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess()
     switch (_timeEventPlay.Wait(1000))
     {
         case kEventSignaled:
-            _timeEventPlay.Reset();
             break;
         case kEventError:
             WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
@@ -2878,7 +2877,6 @@ bool AudioDeviceLinuxPulse::RecThreadProcess()
     switch (_timeEventRec.Wait(1000))
     {
         case kEventSignaled:
-            _timeEventRec.Reset();
             break;
         case kEventError:
             WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,

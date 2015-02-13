@@ -49,7 +49,6 @@ void VCMReceiver::Reset() {
   } else {
     jitter_buffer_.Flush();
   }
-  render_wait_event_->Reset();
   state_ = kReceiving;
 }
 
