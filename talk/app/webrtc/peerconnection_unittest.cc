@@ -92,7 +92,6 @@ static const int kMaxWaitMs = 2000;
 // warnings.
 #if !defined(THREAD_SANITIZER)
 static const int kMaxWaitForStatsMs = 3000;
-static const int kMaxWaitForRembMs = 5000;
 #endif
 static const int kMaxWaitForFramesMs = 10000;
 static const int kEndAudioFrameCount = 3;
@@ -1038,30 +1037,6 @@ class P2PTestConductor : public testing::Test {
     }
   }
 
-  // Wait until 'size' bytes of audio has been seen by the receiver, on the
-  // first audio stream.
-  void WaitForAudioData(int size) {
-    const int kMaxWaitForAudioDataMs = 10000;
-
-    StreamCollectionInterface* local_streams =
-        initializing_client()->local_streams();
-    ASSERT_GT(local_streams->count(), 0u);
-    ASSERT_GT(local_streams->at(0)->GetAudioTracks().size(), 0u);
-    MediaStreamTrackInterface* local_audio_track =
-        local_streams->at(0)->GetAudioTracks()[0];
-
-    // Wait until *any* audio has been received.
-    EXPECT_TRUE_WAIT(
-        receiving_client()->GetBytesReceivedStats(local_audio_track) > 0,
-        kMaxWaitForAudioDataMs);
-
-    // Wait until 'size' number of bytes have been received.
-    size += receiving_client()->GetBytesReceivedStats(local_audio_track);
-    EXPECT_TRUE_WAIT(
-        receiving_client()->GetBytesReceivedStats(local_audio_track) > size,
-        kMaxWaitForAudioDataMs);
-  }
-
   SignalingClass* initializing_client() { return initiating_client_.get(); }
   SignalingClass* receiving_client() { return receiving_client_.get(); }
 
@@ -1472,7 +1447,6 @@ TEST_F(JsepPeerConnectionP2PTestClient, IceRestart) {
   EXPECT_NE(receiver_candidate, receiver_candidate_restart);
 }
 
-
 // This test sets up a Jsep call between two parties with external
 // VideoDecoderFactory.
 // TODO(holmer): Disabled due to sometimes crashing on buildbots.
@@ -1482,72 +1456,6 @@ TEST_F(JsepPeerConnectionP2PTestClient,
   ASSERT_TRUE(CreateTestClients());
   EnableVideoDecoderFactory();
   LocalP2PTest();
-}
-
-// Test receive bandwidth stats with only audio enabled at receiver.
-TEST_F(JsepPeerConnectionP2PTestClient, ReceivedBweStatsAudio) {
-  ASSERT_TRUE(CreateTestClients());
-  receiving_client()->SetReceiveAudioVideo(true, false);
-  LocalP2PTest();
-
-  // Wait until we have received some audio data. Following REMB shoud be zero.
-  WaitForAudioData(10000);
-  EXPECT_EQ_WAIT(
-      receiving_client()->GetAvailableReceivedBandwidthStats(), 0,
-      kMaxWaitForRembMs);
-}
-
-// Test receive bandwidth stats with combined BWE.
-// Disabled due to https://code.google.com/p/webrtc/issues/detail?id=3871.
-TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_ReceivedBweStatsCombined) {
-  FakeConstraints setup_constraints;
-  setup_constraints.AddOptional(
-      MediaConstraintsInterface::kCombinedAudioVideoBwe, true);
-  ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
-  initializing_client()->AddMediaStream(true, true);
-  initializing_client()->AddMediaStream(false, true);
-  initializing_client()->AddMediaStream(false, true);
-  initializing_client()->AddMediaStream(false, true);
-  LocalP2PTest();
-
-  // Run until a non-zero bw is reported.
-  EXPECT_TRUE_WAIT(receiving_client()->GetAvailableReceivedBandwidthStats() > 0,
-                   kMaxWaitForRembMs);
-
-  // Halt video capturers, then run until we have gotten some audio. Following
-  // REMB should be non-zero.
-  initializing_client()->StopVideoCapturers();
-  WaitForAudioData(10000);
-  EXPECT_TRUE_WAIT(
-      receiving_client()->GetAvailableReceivedBandwidthStats() > 0,
-      kMaxWaitForRembMs);
-}
-
-// Test receive bandwidth stats with 1 video, 3 audio streams but no combined
-// BWE.
-// Disabled due to https://code.google.com/p/webrtc/issues/detail?id=3871.
-TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_ReceivedBweStatsNotCombined) {
-  FakeConstraints setup_constraints;
-  setup_constraints.AddOptional(
-      MediaConstraintsInterface::kCombinedAudioVideoBwe, false);
-  ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
-  initializing_client()->AddMediaStream(true, true);
-  initializing_client()->AddMediaStream(false, true);
-  initializing_client()->AddMediaStream(false, true);
-  initializing_client()->AddMediaStream(false, true);
-  LocalP2PTest();
-
-  // Run until a non-zero bw is reported.
-  EXPECT_TRUE_WAIT(receiving_client()->GetAvailableReceivedBandwidthStats() > 0,
-                   kMaxWaitForRembMs);
-
-  // Halt video capturers, then run until we have gotten some audio. Following
-  // REMB should be zero.
-  initializing_client()->StopVideoCapturers();
-  WaitForAudioData(10000);
-  EXPECT_EQ_WAIT(
-      receiving_client()->GetAvailableReceivedBandwidthStats(), 0,
-      kMaxWaitForRembMs);
 }
 
 #endif // if !defined(THREAD_SANITIZER)
