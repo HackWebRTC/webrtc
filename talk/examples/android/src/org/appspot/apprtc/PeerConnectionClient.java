@@ -105,11 +105,9 @@ public class PeerConnectionClient {
   private MediaConstraints sdpMediaConstraints;
   private PeerConnectionEvents events;
   private boolean isInitiator;
-  private boolean useFrontFacingCamera = true;
   private SessionDescription localSdp = null; // either offer or answer SDP
   private MediaStream mediaStream = null;
   private VideoCapturerAndroid videoCapturer = null;
-  private Context context = null;
   // enableVideo is set to true if video should be rendered and sent.
   private boolean renderVideo = true;
   private VideoTrack localVideoTrack = null;
@@ -283,7 +281,6 @@ public class PeerConnectionClient {
       events.onPeerConnectionError("Failed to initializeAndroidGlobals");
     }
     factory = new PeerConnectionFactory();
-    this.context = context;
     Log.d(TAG, "Peer connection factory created.");
   }
 
@@ -483,8 +480,10 @@ public class PeerConnectionClient {
           sdpDescription = preferISAC(sdpDescription);
         }
         if (peerConnectionParameters.videoStartBitrate > 0) {
-          sdpDescription = setStartBitrate(sdpDescription,
-              peerConnectionParameters.videoStartBitrate);
+          sdpDescription = setStartBitrate(VIDEO_CODEC_VP8,
+              sdpDescription, peerConnectionParameters.videoStartBitrate);
+          sdpDescription = setStartBitrate(VIDEO_CODEC_VP9,
+              sdpDescription, peerConnectionParameters.videoStartBitrate);
         }
         Log.d(TAG, "Set remote SDP.");
         SessionDescription sdpRemote = new SessionDescription(
@@ -544,31 +543,34 @@ public class PeerConnectionClient {
     return localVideoTrack;
   }
 
-  private static String setStartBitrate(
+  // Mangle SDP to add video start bitrate.
+  private static String setStartBitrate(String codec,
       String sdpDescription, int bitrateKbps) {
     String[] lines = sdpDescription.split("\r\n");
     int lineIndex = -1;
-    String vp8RtpMap = null;
-    Pattern vp8Pattern =
-        Pattern.compile("^a=rtpmap:(\\d+) VP8/90000[\r]?$");
+    String codecRtpMap = null;
+    // a=rtpmap:<payload type> <encoding name>/<clock rate> [/<encoding parameters>]
+    String regex = "^a=rtpmap:(\\d+) " + codec + "(/\\d+)+[\r]?$";
+    Pattern codecPattern = Pattern.compile(regex);
     for (int i = 0; i < lines.length; i++) {
-      Matcher vp8Matcher = vp8Pattern.matcher(lines[i]);
-      if (vp8Matcher.matches()) {
-        vp8RtpMap = vp8Matcher.group(1);
+      Matcher codecMatcher = codecPattern.matcher(lines[i]);
+      if (codecMatcher.matches()) {
+        codecRtpMap = codecMatcher.group(1);
         lineIndex = i;
         break;
       }
     }
-    if (vp8RtpMap == null) {
-      Log.e(TAG, "No rtpmap for VP8 codec");
+    if (codecRtpMap == null) {
+      Log.w(TAG, "No rtpmap for " + codec + " codec");
       return sdpDescription;
     }
-    Log.d(TAG, "Found rtpmap " + vp8RtpMap + " at " + lines[lineIndex]);
+    Log.d(TAG, "Found " +  codec + " rtpmap " + codecRtpMap
+        + " at " + lines[lineIndex]);
     StringBuilder newSdpDescription = new StringBuilder();
     for (int i = 0; i < lines.length; i++) {
       newSdpDescription.append(lines[i]).append("\r\n");
       if (i == lineIndex) {
-        String bitrateSet = "a=fmtp:" + vp8RtpMap
+        String bitrateSet = "a=fmtp:" + codecRtpMap
             + " x-google-start-bitrate=" + bitrateKbps;
         Log.d(TAG, "Add remote SDP line: " + bitrateSet);
         newSdpDescription.append(bitrateSet).append("\r\n");
@@ -640,8 +642,8 @@ public class PeerConnectionClient {
     if (videoConstraints == null) {
       return;  // No video is sent.
     }
-    videoCapturer.switchCamera();
     Log.d(TAG, "Switch camera");
+    videoCapturer.switchCamera();
   }
 
   public void switchCamera() {
