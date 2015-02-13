@@ -32,6 +32,28 @@ static const size_t kRedHeaderLength = 4;  // 4 bytes RED header.
 static const uint16_t kSequenceNumber = 0;
 static const uint32_t kBaseTimestamp = 0x12345678;
 
+// A possible Opus packet that contains FEC is the following.
+// The frame is 20 ms in duration.
+//
+// 0                   1                   2                   3
+// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// |0|0|0|0|1|0|0|0|x|1|x|x|x|x|x|x|x|                             |
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                             |
+// |                    Compressed frame 1 (N-2 bytes)...          :
+// :                                                               |
+// |                                                               |
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+void CreateOpusFecPayload(uint8_t* payload, size_t payload_length,
+                          uint8_t payload_value) {
+  if (payload_length < 2) {
+    return;
+  }
+  payload[0] = 0x08;
+  payload[1] = 0x40;
+  memset(&payload[2], payload_value, payload_length - 2);
+}
+
 // RED headers (according to RFC 2198):
 //
 //    0                   1                   2                   3
@@ -52,7 +74,8 @@ static const uint32_t kBaseTimestamp = 0x12345678;
 // "behind" the the previous payload.
 Packet* CreateRedPayload(size_t num_payloads,
                          uint8_t* payload_types,
-                         int timestamp_offset) {
+                         int timestamp_offset,
+                         bool embed_opus_fec = false) {
   Packet* packet = new Packet;
   packet->header.payloadType = kRedPayloadType;
   packet->header.timestamp = kBaseTimestamp;
@@ -84,52 +107,34 @@ Packet* CreateRedPayload(size_t num_payloads,
   }
   for (size_t i = 0; i < num_payloads; ++i) {
     // Write |i| to all bytes in each payload.
-    memset(payload_ptr, static_cast<int>(i), kPayloadLength);
+    if (embed_opus_fec) {
+      CreateOpusFecPayload(payload_ptr, kPayloadLength,
+                           static_cast<uint8_t>(i));
+    } else {
+      memset(payload_ptr, static_cast<int>(i), kPayloadLength);
+    }
     payload_ptr += kPayloadLength;
   }
   packet->payload = payload;
   return packet;
 }
 
-
-// A possible Opus packet that contains FEC is the following.
-// The frame is 20 ms in duration.
-//
-// 0                   1                   2                   3
-// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |0|0|0|0|1|0|0|0|x|1|x|x|x|x|x|x|x|                             |
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                             |
-// |                    Compressed frame 1 (N-2 bytes)...          :
-// :                                                               |
-// |                                                               |
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-Packet* CreateOpusFecPacket(uint8_t payload_type, size_t payload_length,
-                            uint8_t payload_value) {
-  Packet* packet = new Packet;
-  packet->header.payloadType = payload_type;
-  packet->header.timestamp = kBaseTimestamp;
-  packet->header.sequenceNumber = kSequenceNumber;
-  packet->payload_length = payload_length;
-  uint8_t* payload = new uint8_t[packet->payload_length];
-  payload[0] = 0x08;
-  payload[1] = 0x40;
-  memset(&payload[2], payload_value, payload_length - 2);
-  packet->payload = payload;
-  return packet;
-}
-
 // Create a packet with all payload bytes set to |payload_value|.
 Packet* CreatePacket(uint8_t payload_type, size_t payload_length,
-                     uint8_t payload_value) {
+                     uint8_t payload_value, bool opus_fec = false) {
   Packet* packet = new Packet;
   packet->header.payloadType = payload_type;
   packet->header.timestamp = kBaseTimestamp;
   packet->header.sequenceNumber = kSequenceNumber;
   packet->payload_length = payload_length;
   uint8_t* payload = new uint8_t[packet->payload_length];
-  memset(payload, payload_value, payload_length);
   packet->payload = payload;
+  if (opus_fec) {
+    CreateOpusFecPayload(packet->payload, packet->payload_length,
+                         payload_value);
+  } else {
+    memset(payload, payload_value, payload_length);
+  }
   return packet;
 }
 
@@ -726,7 +731,7 @@ TEST(FecPayloadSplitter, MixedPayload) {
   decoder_database.RegisterPayload(0, kDecoderOpus);
   decoder_database.RegisterPayload(1, kDecoderPCMu);
 
-  Packet* packet = CreateOpusFecPacket(0, 10, 0xFF);
+  Packet* packet = CreatePacket(0, 10, 0xFF, true);
   packet_list.push_back(packet);
 
   packet = CreatePacket(0, 10, 0); // Non-FEC Opus payload.
@@ -772,6 +777,69 @@ TEST(FecPayloadSplitter, MixedPayload) {
   VerifyPacket(packet, 10, 1, kSequenceNumber, kBaseTimestamp, 0, true);
   delete [] packet->payload;
   delete packet;
+}
+
+TEST(FecPayloadSplitter, EmbedFecInRed) {
+  PacketList packet_list;
+  DecoderDatabase decoder_database;
+
+  const int kTimestampOffset = 20 * 48;  // 20 ms * 48 kHz.
+  uint8_t payload_types[] = {0, 0};
+  decoder_database.RegisterPayload(0, kDecoderOpus);
+  Packet* packet = CreateRedPayload(2, payload_types, kTimestampOffset, true);
+  packet_list.push_back(packet);
+
+  PayloadSplitter splitter;
+  EXPECT_EQ(PayloadSplitter::kOK,
+            splitter.SplitRed(&packet_list));
+  EXPECT_EQ(PayloadSplitter::kOK,
+            splitter.SplitFec(&packet_list, &decoder_database));
+
+  EXPECT_EQ(4u, packet_list.size());
+
+  // Check first packet. FEC packet copied from primary payload in RED.
+  packet = packet_list.front();
+  EXPECT_EQ(0, packet->header.payloadType);
+  EXPECT_EQ(kBaseTimestamp - kTimestampOffset, packet->header.timestamp);
+  EXPECT_EQ(kPayloadLength, packet->payload_length);
+  EXPECT_FALSE(packet->primary);
+  EXPECT_EQ(packet->payload[3], 1);
+  delete [] packet->payload;
+  delete packet;
+  packet_list.pop_front();
+
+  // Check second packet. Normal packet copied from primary payload in RED.
+  packet = packet_list.front();
+  EXPECT_EQ(0, packet->header.payloadType);
+  EXPECT_EQ(kBaseTimestamp, packet->header.timestamp);
+  EXPECT_EQ(kPayloadLength, packet->payload_length);
+  EXPECT_TRUE(packet->primary);
+  EXPECT_EQ(packet->payload[3], 1);
+  delete [] packet->payload;
+  delete packet;
+  packet_list.pop_front();
+
+  // Check third packet. FEC packet copied from secondary payload in RED.
+  packet = packet_list.front();
+  EXPECT_EQ(0, packet->header.payloadType);
+  EXPECT_EQ(kBaseTimestamp - 2 * kTimestampOffset, packet->header.timestamp);
+  EXPECT_EQ(kPayloadLength, packet->payload_length);
+  EXPECT_FALSE(packet->primary);
+  EXPECT_EQ(packet->payload[3], 0);
+  delete [] packet->payload;
+  delete packet;
+  packet_list.pop_front();
+
+  // Check fourth packet. Normal packet copied from primary payload in RED.
+  packet = packet_list.front();
+  EXPECT_EQ(0, packet->header.payloadType);
+  EXPECT_EQ(kBaseTimestamp - kTimestampOffset, packet->header.timestamp);
+  EXPECT_EQ(kPayloadLength, packet->payload_length);
+  EXPECT_TRUE(packet->primary);
+  EXPECT_EQ(packet->payload[3], 0);
+  delete [] packet->payload;
+  delete packet;
+  packet_list.pop_front();
 }
 
 }  // namespace webrtc

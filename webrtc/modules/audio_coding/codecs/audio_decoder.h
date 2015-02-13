@@ -69,7 +69,7 @@ class AudioDecoder {
   // Returns the duration in samples of the payload in |encoded| which is
   // |encoded_len| bytes long. Returns kNotImplemented if no duration estimate
   // is available, or -1 in case of an error.
-  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len);
+  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len) const;
 
   // Returns the duration in samples of the redandant payload in |encoded| which
   // is |encoded_len| bytes long. Returns kNotImplemented if no duration

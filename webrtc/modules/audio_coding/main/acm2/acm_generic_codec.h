@@ -1004,7 +1004,7 @@ class AudioDecoderProxy final : public AudioDecoder {
                      uint32_t rtp_timestamp,
                      uint32_t arrival_timestamp) override;
   int ErrorCode() override;
-  int PacketDuration(const uint8_t* encoded, size_t encoded_len) override;
+  int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
   int PacketDurationRedundant(const uint8_t* encoded,
                               size_t encoded_len) const override;
   bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const override;

@@ -1134,7 +1134,7 @@ int AudioDecoderProxy::ErrorCode() {
 }
 
 int AudioDecoderProxy::PacketDuration(const uint8_t* encoded,
-                                      size_t encoded_len) {
+                                      size_t encoded_len) const {
   CriticalSectionScoped decoder_lock(decoder_lock_.get());
   return decoder_->PacketDuration(encoded, encoded_len);
 }

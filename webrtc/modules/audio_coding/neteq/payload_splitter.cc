@@ -151,8 +151,11 @@ int PayloadSplitter::SplitFec(PacketList* packet_list,
     switch (info->codec_type) {
       case kDecoderOpus:
       case kDecoderOpus_2ch: {
-        Packet* new_packet = new Packet;
+        // The main payload of this packet should be decoded as a primary
+        // payload, even if it comes as a secondary payload in a RED packet.
+        packet->primary = true;
 
+        Packet* new_packet = new Packet;
         new_packet->header = packet->header;
         int duration = decoder->
             PacketDurationRedundant(packet->payload, packet->payload_length);

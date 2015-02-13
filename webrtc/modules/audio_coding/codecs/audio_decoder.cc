@@ -37,7 +37,8 @@ int AudioDecoder::IncomingPacket(const uint8_t* payload,
 
 int AudioDecoder::ErrorCode() { return 0; }
 
-int AudioDecoder::PacketDuration(const uint8_t* encoded, size_t encoded_len) {
+int AudioDecoder::PacketDuration(const uint8_t* encoded,
+                                 size_t encoded_len) const {
   return kNotImplemented;
 }
 

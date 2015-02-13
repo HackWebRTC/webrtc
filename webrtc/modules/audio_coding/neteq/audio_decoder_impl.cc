@@ -48,7 +48,7 @@ int AudioDecoderPcmU::Decode(const uint8_t* encoded, size_t encoded_len,
 }
 
 int AudioDecoderPcmU::PacketDuration(const uint8_t* encoded,
-                                     size_t encoded_len) {
+                                     size_t encoded_len) const {
   // One encoded byte per sample per channel.
   return static_cast<int>(encoded_len / channels_);
 }
@@ -64,7 +64,7 @@ int AudioDecoderPcmA::Decode(const uint8_t* encoded, size_t encoded_len,
 }
 
 int AudioDecoderPcmA::PacketDuration(const uint8_t* encoded,
-                                     size_t encoded_len) {
+                                     size_t encoded_len) const {
   // One encoded byte per sample per channel.
   return static_cast<int>(encoded_len / channels_);
 }
@@ -82,7 +82,7 @@ int AudioDecoderPcm16B::Decode(const uint8_t* encoded, size_t encoded_len,
 }
 
 int AudioDecoderPcm16B::PacketDuration(const uint8_t* encoded,
-                                       size_t encoded_len) {
+                                       size_t encoded_len) const {
   // Two encoded byte per sample per channel.
   return static_cast<int>(encoded_len / (2 * channels_));
 }
@@ -148,7 +148,7 @@ int AudioDecoderG722::Init() {
 }
 
 int AudioDecoderG722::PacketDuration(const uint8_t* encoded,
-                                     size_t encoded_len) {
+                                     size_t encoded_len) const {
   // 1/2 encoded byte per sample per channel.
   return static_cast<int>(2 * encoded_len / channels_);
 }
@@ -260,6 +260,11 @@ int AudioDecoderOpus::Decode(const uint8_t* encoded, size_t encoded_len,
 int AudioDecoderOpus::DecodeRedundant(const uint8_t* encoded,
                                       size_t encoded_len, int16_t* decoded,
                                       SpeechType* speech_type) {
+  if (!PacketHasFec(encoded, encoded_len)) {
+    // This packet is a RED packet.
+    return Decode(encoded, encoded_len, decoded, speech_type);
+  }
+
   int16_t temp_type = 1;  // Default is speech.
   int16_t ret = WebRtcOpus_DecodeFec(dec_state_, encoded,
                                      static_cast<int16_t>(encoded_len), decoded,
@@ -275,13 +280,18 @@ int AudioDecoderOpus::Init() {
 }
 
 int AudioDecoderOpus::PacketDuration(const uint8_t* encoded,
-                                     size_t encoded_len) {
+                                     size_t encoded_len) const {
   return WebRtcOpus_DurationEst(dec_state_,
                                 encoded, static_cast<int>(encoded_len));
 }
 
 int AudioDecoderOpus::PacketDurationRedundant(const uint8_t* encoded,
                                               size_t encoded_len) const {
+  if (!PacketHasFec(encoded, encoded_len)) {
+    // This packet is a RED packet.
+    return PacketDuration(encoded, encoded_len);
+  }
+
   return WebRtcOpus_FecDurationEst(encoded, static_cast<int>(encoded_len));
 }
 

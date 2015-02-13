@@ -40,7 +40,7 @@ class AudioDecoderPcmU : public AudioDecoder {
   virtual int Decode(const uint8_t* encoded, size_t encoded_len,
                      int16_t* decoded, SpeechType* speech_type);
   virtual int Init() { return 0; }
-  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len);
+  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len) const;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmU);
@@ -52,7 +52,7 @@ class AudioDecoderPcmA : public AudioDecoder {
   virtual int Decode(const uint8_t* encoded, size_t encoded_len,
                      int16_t* decoded, SpeechType* speech_type);
   virtual int Init() { return 0; }
-  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len);
+  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len) const;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmA);
@@ -89,7 +89,7 @@ class AudioDecoderPcm16B : public AudioDecoder {
   virtual int Decode(const uint8_t* encoded, size_t encoded_len,
                      int16_t* decoded, SpeechType* speech_type);
   virtual int Init() { return 0; }
-  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len);
+  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len) const;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcm16B);
@@ -133,7 +133,7 @@ class AudioDecoderG722 : public AudioDecoder {
                      int16_t* decoded, SpeechType* speech_type);
   virtual bool HasDecodePlc() const { return false; }
   virtual int Init();
-  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len);
+  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len) const;
 
  private:
   G722DecInst* dec_state_;
@@ -174,7 +174,7 @@ class AudioDecoderOpus : public AudioDecoder {
   virtual int DecodeRedundant(const uint8_t* encoded, size_t encoded_len,
                               int16_t* decoded, SpeechType* speech_type);
   virtual int Init();
-  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len);
+  virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len) const;
   virtual int PacketDurationRedundant(const uint8_t* encoded,
                                       size_t encoded_len) const;
   virtual bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const;
