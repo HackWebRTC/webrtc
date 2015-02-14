@@ -623,9 +623,7 @@ int VirtualSocketServer::Bind(VirtualSocket* socket,
 int VirtualSocketServer::Bind(VirtualSocket* socket, SocketAddress* addr) {
   ASSERT(NULL != socket);
 
-  if (IPIsAny(addr->ipaddr())) {
-    addr->SetIP(GetNextIP(addr->ipaddr().family()));
-  } else if (!IPIsUnspec(addr->ipaddr())) {
+  if (!IPIsUnspec(addr->ipaddr())) {
     addr->SetIP(addr->ipaddr().Normalized());
   } else {
     ASSERT(false);

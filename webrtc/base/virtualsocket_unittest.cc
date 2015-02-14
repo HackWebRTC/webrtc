@@ -130,8 +130,8 @@ class VirtualSocketServerTest : public testing::Test {
                               kIPv6AnyAddress(IPAddress(in6addr_any), 0) {
   }
 
-  void CheckAddressIncrementalization(const SocketAddress& post,
-                                      const SocketAddress& pre) {
+  void CheckPortIncrementalization(const SocketAddress& post,
+                                   const SocketAddress& pre) {
     EXPECT_EQ(post.port(), pre.port() + 1);
     IPAddress post_ip = post.ipaddr();
     IPAddress pre_ip = pre.ipaddr();
@@ -139,14 +139,13 @@ class VirtualSocketServerTest : public testing::Test {
     if (post_ip.family() == AF_INET) {
       in_addr pre_ipv4 = pre_ip.ipv4_address();
       in_addr post_ipv4 = post_ip.ipv4_address();
-      int difference = ntohl(post_ipv4.s_addr) - ntohl(pre_ipv4.s_addr);
-      EXPECT_EQ(1, difference);
+      EXPECT_EQ(post_ipv4.s_addr, pre_ipv4.s_addr);
     } else if (post_ip.family() == AF_INET6) {
       in6_addr post_ip6 = post_ip.ipv6_address();
       in6_addr pre_ip6 = pre_ip.ipv6_address();
       uint32* post_as_ints = reinterpret_cast<uint32*>(&post_ip6.s6_addr);
       uint32* pre_as_ints = reinterpret_cast<uint32*>(&pre_ip6.s6_addr);
-      EXPECT_EQ(post_as_ints[3], pre_as_ints[3] + 1);
+      EXPECT_EQ(post_as_ints[3], pre_as_ints[3]);
     }
   }
 
@@ -179,7 +178,7 @@ class VirtualSocketServerTest : public testing::Test {
       SocketAddress next_client2_addr;
       EXPECT_EQ(3, client2->SendTo("foo", 3, server_addr));
       EXPECT_TRUE(client1->CheckNextPacket("foo", 3, &next_client2_addr));
-      CheckAddressIncrementalization(next_client2_addr, client2_addr);
+      CheckPortIncrementalization(next_client2_addr, client2_addr);
       // EXPECT_EQ(next_client2_addr.port(), client2_addr.port() + 1);
 
       SocketAddress server_addr2;
@@ -606,15 +605,16 @@ class VirtualSocketServerTest : public testing::Test {
     }
   }
 
-  void BandwidthTest(const SocketAddress& initial_addr) {
+  void BandwidthTest(const SocketAddress& send_address,
+                     const SocketAddress& recv_address) {
     AsyncSocket* send_socket =
-        ss_->CreateAsyncSocket(initial_addr.family(), SOCK_DGRAM);
+        ss_->CreateAsyncSocket(send_address.family(), SOCK_DGRAM);
     AsyncSocket* recv_socket =
-        ss_->CreateAsyncSocket(initial_addr.family(), SOCK_DGRAM);
-    ASSERT_EQ(0, send_socket->Bind(initial_addr));
-    ASSERT_EQ(0, recv_socket->Bind(initial_addr));
-    EXPECT_EQ(send_socket->GetLocalAddress().family(), initial_addr.family());
-    EXPECT_EQ(recv_socket->GetLocalAddress().family(), initial_addr.family());
+        ss_->CreateAsyncSocket(recv_address.family(), SOCK_DGRAM);
+    ASSERT_EQ(0, send_socket->Bind(send_address));
+    ASSERT_EQ(0, recv_socket->Bind(recv_address));
+    EXPECT_EQ(send_socket->GetLocalAddress().family(), send_address.family());
+    EXPECT_EQ(recv_socket->GetLocalAddress().family(), recv_address.family());
     ASSERT_EQ(0, send_socket->Connect(recv_socket->GetLocalAddress()));
 
     uint32 bandwidth = 64 * 1024;
@@ -634,7 +634,8 @@ class VirtualSocketServerTest : public testing::Test {
     ss_->set_bandwidth(0);
   }
 
-  void DelayTest(const SocketAddress& initial_addr) {
+  void DelayTest(const SocketAddress& send_addr,
+                 const SocketAddress& recv_addr) {
     time_t seed = ::time(NULL);
     LOG(LS_VERBOSE) << "seed = " << seed;
     srand(static_cast<unsigned int>(seed));
@@ -647,13 +648,13 @@ class VirtualSocketServerTest : public testing::Test {
     ss_->UpdateDelayDistribution();
 
     AsyncSocket* send_socket =
-        ss_->CreateAsyncSocket(initial_addr.family(), SOCK_DGRAM);
+        ss_->CreateAsyncSocket(send_addr.family(), SOCK_DGRAM);
     AsyncSocket* recv_socket =
-        ss_->CreateAsyncSocket(initial_addr.family(), SOCK_DGRAM);
-    ASSERT_EQ(0, send_socket->Bind(initial_addr));
-    ASSERT_EQ(0, recv_socket->Bind(initial_addr));
-    EXPECT_EQ(send_socket->GetLocalAddress().family(), initial_addr.family());
-    EXPECT_EQ(recv_socket->GetLocalAddress().family(), initial_addr.family());
+        ss_->CreateAsyncSocket(recv_addr.family(), SOCK_DGRAM);
+    ASSERT_EQ(0, send_socket->Bind(send_addr));
+    ASSERT_EQ(0, recv_socket->Bind(recv_addr));
+    EXPECT_EQ(send_socket->GetLocalAddress().family(), send_addr.family());
+    EXPECT_EQ(recv_socket->GetLocalAddress().family(), recv_addr.family());
     ASSERT_EQ(0, send_socket->Connect(recv_socket->GetLocalAddress()));
 
     Thread* pthMain = Thread::Current();
@@ -835,24 +836,28 @@ TEST_F(VirtualSocketServerTest, TcpSendsPacketsInOrder_v6) {
 }
 
 TEST_F(VirtualSocketServerTest, bandwidth_v4) {
-  SocketAddress ipv4_test_addr(IPAddress(INADDR_ANY), 1000);
-  BandwidthTest(ipv4_test_addr);
+  SocketAddress send_address("1.1.1.1", 1000);
+  SocketAddress recv_address("1.1.1.2", 1000);
+  BandwidthTest(send_address, recv_address);
 }
 
 TEST_F(VirtualSocketServerTest, bandwidth_v6) {
-  SocketAddress ipv6_test_addr(IPAddress(in6addr_any), 1000);
-  BandwidthTest(ipv6_test_addr);
+  SocketAddress send_address("::1", 1000);
+  SocketAddress recv_address("::2", 1000);
+  BandwidthTest(send_address, recv_address);
 }
 
 TEST_F(VirtualSocketServerTest, delay_v4) {
-  SocketAddress ipv4_test_addr(IPAddress(INADDR_ANY), 1000);
-  DelayTest(ipv4_test_addr);
+  SocketAddress send_address("1.1.1.1", 1000);
+  SocketAddress recv_address("1.1.1.2", 1000);
+  DelayTest(send_address, recv_address);
 }
 
 // See: https://code.google.com/p/webrtc/issues/detail?id=2409
 TEST_F(VirtualSocketServerTest, DISABLED_delay_v6) {
-  SocketAddress ipv6_test_addr(IPAddress(in6addr_any), 1000);
-  DelayTest(ipv6_test_addr);
+  SocketAddress send_address("::1", 1000);
+  SocketAddress recv_address("::2", 1000);
+  DelayTest(send_address, recv_address);
 }
 
 // Works, receiving socket sees 127.0.0.2.
