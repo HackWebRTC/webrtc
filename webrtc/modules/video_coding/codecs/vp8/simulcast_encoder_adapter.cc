@@ -126,6 +126,11 @@ SimulcastEncoderAdapter::~SimulcastEncoderAdapter() {
 }
 
 int SimulcastEncoderAdapter::Release() {
+  // TODO(pbos): Keep the last encoder instance but call ::Release() on it, then
+  // re-use this instance in ::InitEncode(). This means that changing
+  // resolutions doesn't require reallocation of the first encoder, but only
+  // reinitialization, which makes sense. Then Destroy this instance instead in
+  // ~SimulcastEncoderAdapter().
   while (!streaminfos_.empty()) {
     VideoEncoder* encoder = streaminfos_.back().encoder;
     factory_->Destroy(encoder);

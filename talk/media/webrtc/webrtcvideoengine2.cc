@@ -1396,6 +1396,7 @@ static void ConvertToI420VideoFrame(const VideoFrame& frame,
 void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
     VideoCapturer* capturer,
     const VideoFrame* frame) {
+  TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::InputFrame");
   LOG(LS_VERBOSE) << "InputFrame: " << frame->GetWidth() << "x"
                   << frame->GetHeight();
   // Lock before copying, can be called concurrently when swapping input source.
@@ -1408,6 +1409,12 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
                        "configured, dropping.";
     return;
   }
+
+  // Not sending, abort early to prevent expensive reconfigurations while
+  // setting up codecs etc.
+  if (!sending_)
+    return;
+
   if (format_.width == 0) {  // Dropping frames.
     assert(format_.height == 0);
     LOG(LS_VERBOSE) << "VideoFormat 0x0 set, Dropping frame.";
@@ -1585,16 +1592,10 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::DestroyVideoEncoder(
 void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(
     const VideoCodecSettings& codec_settings,
     const VideoOptions& options) {
-  if (last_dimensions_.width == -1) {
-    last_dimensions_.width = codec_settings.codec.width;
-    last_dimensions_.height = codec_settings.codec.height;
-    last_dimensions_.is_screencast = false;
-  }
   parameters_.encoder_config =
       CreateVideoEncoderConfig(last_dimensions_, codec_settings.codec);
-  if (parameters_.encoder_config.streams.empty()) {
+  if (parameters_.encoder_config.streams.empty())
     return;
-  }
 
   format_ = VideoFormat(codec_settings.codec.width,
                         codec_settings.codec.height,

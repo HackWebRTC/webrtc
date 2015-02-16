@@ -319,7 +319,9 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     };
 
     struct Dimensions {
-      Dimensions() : width(-1), height(-1), is_screencast(false) {}
+      // Use low width/height to make encoder creation (before first frame)
+      // cheap.
+      Dimensions() : width(16), height(16), is_screencast(false) {}
       int width;
       int height;
       bool is_screencast;
