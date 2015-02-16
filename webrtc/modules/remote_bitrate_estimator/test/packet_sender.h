@@ -85,27 +85,11 @@ class PacedVideoSender : public PacketSender, public PacedSender::Callback {
                                 int64_t rtt) OVERRIDE;
 
  private:
-  class ProbingPacedSender : public PacedSender {
-   public:
-    ProbingPacedSender(Clock* clock,
-                       Callback* callback,
-                       int bitrate_kbps,
-                       int max_bitrate_kbps,
-                       int min_bitrate_kbps)
-        : PacedSender(clock,
-                      callback,
-                      bitrate_kbps,
-                      max_bitrate_kbps,
-                      min_bitrate_kbps) {}
-
-    virtual bool ProbingExperimentIsEnabled() const OVERRIDE { return true; }
-  };
-
   int64_t TimeUntilNextProcess(const std::list<Module*>& modules);
   void CallProcess(const std::list<Module*>& modules);
   void QueuePackets(Packets* batch, int64_t end_of_batch_time_us);
 
-  ProbingPacedSender pacer_;
+  PacedSender pacer_;
   Packets queue_;
   Packets pacer_queue_;
 

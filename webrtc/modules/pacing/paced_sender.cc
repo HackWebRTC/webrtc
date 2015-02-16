@@ -90,9 +90,9 @@ class PacketQueue {
   virtual ~PacketQueue() {}
 
   void Push(const Packet& packet) {
-    if (!AddToDupeSet(packet))
+    if (!AddToDupeSet(packet)) {
       return;
-
+    }
     // Store packet in list, use pointers in priority queue for cheaper moves.
     // Packets have a handle to its own iterator in the list, for easy removal
     // when popping from queue.
@@ -215,6 +215,7 @@ PacedSender::PacedSender(Clock* clock,
       critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       enabled_(true),
       paused_(false),
+      probing_enabled_(true),
       media_budget_(new paced_sender::IntervalBudget(max_bitrate_kbps)),
       padding_budget_(new paced_sender::IntervalBudget(min_bitrate_kbps)),
       prober_(new BitrateProber()),
@@ -235,6 +236,11 @@ void PacedSender::Pause() {
 void PacedSender::Resume() {
   CriticalSectionScoped cs(critsect_.get());
   paused_ = false;
+}
+
+void PacedSender::SetProbingEnabled(bool enabled) {
+  assert(packet_counter_ == 0);
+  probing_enabled_ = enabled;
 }
 
 void PacedSender::SetStatus(bool enable) {
@@ -264,8 +270,7 @@ bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
   if (!enabled_) {
     return true;  // We can send now.
   }
-  // Enable probing if the probing experiment is enabled.
-  if (!prober_->IsProbing() && ProbingExperimentIsEnabled()) {
+  if (probing_enabled_ && !prober_->IsProbing()) {
     prober_->SetEnabled(true);
   }
   prober_->MaybeInitializeProbe(bitrate_bps_);
@@ -305,7 +310,10 @@ int64_t PacedSender::QueueInMs() const {
 int64_t PacedSender::TimeUntilNextProcess() {
   CriticalSectionScoped cs(critsect_.get());
   if (prober_->IsProbing()) {
-    return prober_->TimeUntilNextProbe(clock_->TimeInMilliseconds());
+    int64_t ret = prober_->TimeUntilNextProbe(clock_->TimeInMilliseconds());
+    if (ret >= 0) {
+      return ret;
+    }
   }
   int64_t elapsed_time_us = clock_->TimeInMicroseconds() - time_last_update_us_;
   int64_t elapsed_time_ms = (elapsed_time_us + 500) / 1000;
@@ -325,10 +333,10 @@ int32_t PacedSender::Process() {
       int64_t delta_time_ms = std::min(kMaxIntervalTimeMs, elapsed_time_ms);
       UpdateBytesPerInterval(delta_time_ms);
     }
-
     while (!packets_->Empty()) {
-      if (media_budget_->bytes_remaining() <= 0 && !prober_->IsProbing())
+      if (media_budget_->bytes_remaining() <= 0 && !prober_->IsProbing()) {
         return 0;
+      }
 
       // Since we need to release the lock in order to send, we first pop the
       // element from the priority queue but keep it in storage, so that we can
@@ -337,8 +345,9 @@ int32_t PacedSender::Process() {
       if (SendPacket(packet)) {
         // Send succeeded, remove it from the queue.
         packets_->FinalizePop(packet);
-        if (prober_->IsProbing())
+        if (prober_->IsProbing()) {
           return 0;
+        }
       } else {
         // Send failed, put it back into the queue.
         packets_->CancelPop(packet);
@@ -385,10 +394,5 @@ void PacedSender::SendPadding(size_t padding_needed) {
 void PacedSender::UpdateBytesPerInterval(int64_t delta_time_ms) {
   media_budget_->IncreaseBudget(delta_time_ms);
   padding_budget_->IncreaseBudget(delta_time_ms);
-}
-
-bool PacedSender::ProbingExperimentIsEnabled() const {
-  return webrtc::field_trial::FindFullName("WebRTC-BitrateProbing") ==
-         "Enabled";
 }
 }  // namespace webrtc

@@ -87,6 +87,11 @@ class PacedSender : public Module {
   // Resume sending packets.
   void Resume();
 
+  // Enable bitrate probing. Enabled by default, mostly here to simplify
+  // testing. Must be called before any packets are being sent to have an
+  // effect.
+  void SetProbingEnabled(bool enabled);
+
   // Set target bitrates for the pacer.
   // We will pace out bursts of packets at a bitrate of |max_bitrate_kbps|.
   // |bitrate_kbps| is our estimate of what we are allowed to send on average.
@@ -121,9 +126,6 @@ class PacedSender : public Module {
   // Process any pending packets in the queue(s).
   virtual int32_t Process() OVERRIDE;
 
- protected:
-  virtual bool ProbingExperimentIsEnabled() const;
-
  private:
   // Updates the number of bytes that can be sent for the next time interval.
   void UpdateBytesPerInterval(int64_t delta_time_in_ms)
@@ -139,6 +141,7 @@ class PacedSender : public Module {
   scoped_ptr<CriticalSectionWrapper> critsect_;
   bool enabled_ GUARDED_BY(critsect_);
   bool paused_ GUARDED_BY(critsect_);
+  bool probing_enabled_;
   // This is the media budget, keeping track of how many bits of media
   // we can pace out during the current interval.
   scoped_ptr<paced_sender::IntervalBudget> media_budget_ GUARDED_BY(critsect_);
@@ -154,7 +157,7 @@ class PacedSender : public Module {
   int64_t time_last_update_us_ GUARDED_BY(critsect_);
 
   scoped_ptr<paced_sender::PacketQueue> packets_ GUARDED_BY(critsect_);
-  uint64_t packet_counter_ GUARDED_BY(critsect_);
+  uint64_t packet_counter_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_PACING_INCLUDE_PACED_SENDER_H_
