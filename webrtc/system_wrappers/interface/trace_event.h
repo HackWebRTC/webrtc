@@ -147,6 +147,10 @@
 #define TRACE_STR_COPY(str) \
     webrtc::trace_event_internal::TraceStringWithCopy(str)
 
+// This will mark the trace event as disabled by default. The user will need
+// to explicitly enable the event.
+#define TRACE_DISABLED_BY_DEFAULT(name) "disabled-by-default-" name
+
 // By default, uint64 ID argument values are not mangled with the Process ID in
 // TRACE_EVENT_ASYNC macros. Use this macro to force Process ID mangling.
 #define TRACE_ID_MANGLE(id) \

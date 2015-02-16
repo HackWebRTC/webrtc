@@ -473,10 +473,10 @@ RTPSenderAudio::SendTelephoneEventPacket(bool ended,
         dtmfbuffer[13] = E|R|volume;
         RtpUtility::AssignUWord16ToBuffer(dtmfbuffer + 14, duration);
 
-        TRACE_EVENT_INSTANT2("webrtc_rtp",
-                             "Audio::SendTelephoneEvent",
-                             "timestamp", dtmfTimeStamp,
-                             "seqnum", _rtpSender->SequenceNumber());
+        TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
+                             "Audio::SendTelephoneEvent", "timestamp",
+                             dtmfTimeStamp, "seqnum",
+                             _rtpSender->SequenceNumber());
         retVal = _rtpSender->SendToNetwork(dtmfbuffer, 4, 12, -1,
                                            kAllowRetransmission,
                                            PacedSender::kHighPriority);

@@ -685,8 +685,9 @@ bool RTPSender::SendPacketToNetwork(const uint8_t *packet, size_t size) {
   if (transport_) {
     bytes_sent = transport_->SendPacket(id_, packet, size);
   }
-  TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPSender::SendPacketToNetwork",
-                       "size", size, "sent", bytes_sent);
+  TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
+                       "RTPSender::SendPacketToNetwork", "size", size, "sent",
+                       bytes_sent);
   // TODO(pwestin): Add a separate bitrate for sent bitrate after pacer.
   if (bytes_sent <= 0) {
     LOG(LS_WARNING) << "Transport failed to send packet";
@@ -709,8 +710,9 @@ int RTPSender::SetSelectiveRetransmissions(uint8_t settings) {
 
 void RTPSender::OnReceivedNACK(const std::list<uint16_t>& nack_sequence_numbers,
                                int64_t avg_rtt) {
-  TRACE_EVENT2("webrtc_rtp", "RTPSender::OnReceivedNACK",
-               "num_seqnum", nack_sequence_numbers.size(), "avg_rtt", avg_rtt);
+  TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
+               "RTPSender::OnReceivedNACK", "num_seqnum",
+               nack_sequence_numbers.size(), "avg_rtt", avg_rtt);
   const int64_t now = clock_->TimeInMilliseconds();
   uint32_t bytes_re_sent = 0;
   uint32_t target_bitrate = GetTargetBitrate();
@@ -840,12 +842,13 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
   RTPHeader rtp_header;
   rtp_parser.Parse(rtp_header);
   if (!is_retransmit && rtp_header.markerBit) {
-    TRACE_EVENT_ASYNC_END0("webrtc_rtp", "PacedSend", capture_time_ms);
+    TRACE_EVENT_ASYNC_END0(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "PacedSend",
+                           capture_time_ms);
   }
 
-  TRACE_EVENT_INSTANT2("webrtc_rtp", "PrepareAndSendPacket",
-                       "timestamp", rtp_header.timestamp,
-                       "seqnum", rtp_header.sequenceNumber);
+  TRACE_EVENT_INSTANT2(
+      TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "PrepareAndSendPacket",
+      "timestamp", rtp_header.timestamp, "seqnum", rtp_header.sequenceNumber);
 
   uint8_t data_buffer_rtx[IP_PACKET_SIZE];
   if (send_over_rtx) {
@@ -969,7 +972,8 @@ int32_t RTPSender::SendToNetwork(
       if (last_capture_time_ms_sent_ == 0 ||
           corrected_time_ms > last_capture_time_ms_sent_) {
         last_capture_time_ms_sent_ = corrected_time_ms;
-        TRACE_EVENT_ASYNC_BEGIN1("webrtc_rtp", "PacedSend", corrected_time_ms,
+        TRACE_EVENT_ASYNC_BEGIN1(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
+                                 "PacedSend", corrected_time_ms,
                                  "capture_time_ms", corrected_time_ms);
       }
       // We can't send the packet right now.

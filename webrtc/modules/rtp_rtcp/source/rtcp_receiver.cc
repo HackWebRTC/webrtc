@@ -394,9 +394,8 @@ RTCPReceiver::HandleSenderReceiverReport(RTCPUtility::RTCPParserV2& rtcpParser,
 
     if (rtcpPacketType == RTCPUtility::kRtcpSrCode)
     {
-        TRACE_EVENT_INSTANT2("webrtc_rtp", "SR",
-                             "remote_ssrc", remoteSSRC,
-                             "ssrc", main_ssrc_);
+      TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "SR",
+                           "remote_ssrc", remoteSSRC, "ssrc", main_ssrc_);
 
         if (_remoteSSRC == remoteSSRC) // have I received RTP packets from this party
         {
@@ -425,9 +424,8 @@ RTCPReceiver::HandleSenderReceiverReport(RTCPUtility::RTCPParserV2& rtcpParser,
         }
     } else
     {
-        TRACE_EVENT_INSTANT2("webrtc_rtp", "RR",
-                             "remote_ssrc", remoteSSRC,
-                             "ssrc", main_ssrc_);
+      TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "RR",
+                           "remote_ssrc", remoteSSRC, "ssrc", main_ssrc_);
 
         rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpRr;
     }
@@ -555,7 +553,8 @@ void RTCPReceiver::HandleReportBlock(
     reportBlock->numAverageCalcs++;
   }
 
-  TRACE_COUNTER_ID1("webrtc_rtp", "RR_RTT", rb.SSRC, RTT);
+  TRACE_COUNTER_ID1(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "RR_RTT", rb.SSRC,
+                    RTT);
 
   rtcpPacketInformation.AddReportInfo(*reportBlock);
 }
@@ -986,7 +985,7 @@ void RTCPReceiver::HandlePLI(RTCPUtility::RTCPParserV2& rtcpParser,
                              RTCPPacketInformation& rtcpPacketInformation) {
   const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
   if (main_ssrc_ == rtcpPacket.PLI.MediaSSRC) {
-    TRACE_EVENT_INSTANT0("webrtc_rtp", "PLI");
+    TRACE_EVENT_INSTANT0(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "PLI");
 
     ++packet_type_counter_.pli_packets;
     // Received a signal that we need to send a new key frame.
