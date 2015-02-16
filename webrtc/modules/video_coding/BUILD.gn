@@ -166,7 +166,7 @@ source_set("webrtc_vp8") {
 
   # TODO(kjellander): Remove once libvpx has changed it's libvpx_config to be
   # in direct_dependent_configs.
-  configs += [ "//third_party/libvpx:libvpx_config" ]
+  configs += [ "$rtc_libvpx_dir:libvpx_config" ]
 
   deps = [
     ":video_coding_utility",
@@ -175,17 +175,21 @@ source_set("webrtc_vp8") {
   ]
   if (rtc_build_libvpx) {
     deps += [
-      "//third_party/libvpx",
+      rtc_libvpx_dir,
     ]
   }
 }
 
 source_set("webrtc_vp9") {
-  sources = [
-    "codecs/vp9/include/vp9.h",
-    "codecs/vp9/vp9_impl.cc",
-    "codecs/vp9/vp9_impl.h",
-  ]
+  if (rtc_build_vp9) {
+    sources = [
+      "codecs/vp9/include/vp9.h",
+      "codecs/vp9/vp9_impl.cc",
+      "codecs/vp9/vp9_impl.h",
+    ]
+  } else {
+    sources = [ "codecs/vp9/vp9_dummy_impl.cc" ]
+  }
 
   configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
@@ -198,7 +202,7 @@ source_set("webrtc_vp9") {
 
   # TODO(kjellander): Remove once libvpx has changed it's libvpx_config to be
   # in direct_dependent_configs.
-  configs += [ "//third_party/libvpx:libvpx_config" ]
+  configs += [ "$rtc_libvpx_dir:libvpx_config" ]
 
   deps = [
     ":video_coding_utility",
@@ -207,7 +211,7 @@ source_set("webrtc_vp9") {
   ]
   if (rtc_build_libvpx) {
     deps += [
-      "//third_party/libvpx",
+      rtc_libvpx_dir,
     ]
   }
 }

@@ -46,6 +46,7 @@ declare_args() {
   rtc_build_libjpeg = true
   rtc_build_libyuv = true
   rtc_build_libvpx = true
+  rtc_build_vp9 = true
   rtc_build_ssl = true
 
   # Disable by default.
@@ -65,6 +66,10 @@ declare_args() {
   # Executes code generation at link-time instead of compile-time.
   # https://gcc.gnu.org/wiki/LinkTimeOptimization
   rtc_use_lto = false
+
+  # Directly call the trace callback instead of passing it to a logging
+  # thread. Used for components that provide their own threaded logging.
+  rtc_use_direct_trace = false
 
   if (build_with_chromium) {
     # Exclude pulse audio on Chromium since its prerequisites don't require
@@ -116,3 +121,9 @@ declare_args() {
   # //build/config/arm.gni (since it disables Neon for Android).
   rtc_build_armv7_neon = (cpu_arch == "arm" && arm_version >= 7)
 }
+
+# Make it possible to provide custom locations for some libraries (move these
+# up into declare_args should we need to actually use them for the GN build).
+rtc_libvpx_dir = "//third_party/libvpx"
+rtc_libyuv_dir = "//third_party/libyuv"
+rtc_opus_dir = "//third_party/opus"

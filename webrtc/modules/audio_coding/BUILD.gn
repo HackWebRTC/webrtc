@@ -718,7 +718,7 @@ source_set("webrtc_opus") {
     configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
-    deps += [ "//third_party/opus" ]
+    deps += [ rtc_opus_dir ]
   }
 }
 
@@ -806,7 +806,7 @@ source_set("neteq") {
     ":neteq_config",
   ]
 
-  forward_dependent_configs_from = [ "//third_party/opus" ]
+  forward_dependent_configs_from = [ rtc_opus_dir ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
@@ -825,6 +825,6 @@ source_set("neteq") {
     ":pcm16b",
     "../../common_audio",
     "../../system_wrappers",
-    "//third_party/opus",
+    rtc_opus_dir,
   ]
 }

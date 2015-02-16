@@ -122,6 +122,10 @@ static_library("system_wrappers") {
   libs = []
   deps = []
 
+  if (rtc_use_direct_trace) {
+    defines += [ "WEBRTC_DIRECT_TRACE" ]
+  }
+
   if (is_android) {
     sources += [
       "interface/logcat_trace_context.h",
