@@ -23,6 +23,7 @@ namespace webrtc {
 
 const int kIsacPayloadType = 103;
 const int kInvalidPayloadType = -1;
+const int kDefaultBitRate = 32000;
 
 template <typename T>
 AudioEncoderDecoderIsacT<T>::Config::Config()
@@ -30,7 +31,7 @@ AudioEncoderDecoderIsacT<T>::Config::Config()
       red_payload_type(kInvalidPayloadType),
       sample_rate_hz(16000),
       frame_size_ms(30),
-      bit_rate(32000),
+      bit_rate(kDefaultBitRate),
       max_bit_rate(-1),
       max_payload_size_bytes(-1) {
 }
@@ -48,7 +49,7 @@ bool AudioEncoderDecoderIsacT<T>::Config::IsOk() const {
       if (max_payload_size_bytes > 400)
         return false;
       return (frame_size_ms == 30 || frame_size_ms == 60) &&
-             bit_rate >= 10000 && bit_rate <= 32000;
+             ((bit_rate >= 10000 && bit_rate <= 32000) || bit_rate == 0);
     case 32000:
     case 48000:
       if (max_bit_rate > 160000)
@@ -56,7 +57,8 @@ bool AudioEncoderDecoderIsacT<T>::Config::IsOk() const {
       if (max_payload_size_bytes > 600)
         return false;
       return T::has_swb &&
-             (frame_size_ms == 30 && bit_rate >= 10000 && bit_rate <= 56000);
+             (frame_size_ms == 30 &&
+              ((bit_rate >= 10000 && bit_rate <= 56000) || bit_rate == 0));
     default:
       return false;
   }
@@ -68,7 +70,7 @@ AudioEncoderDecoderIsacT<T>::ConfigAdaptive::ConfigAdaptive()
       red_payload_type(kInvalidPayloadType),
       sample_rate_hz(16000),
       initial_frame_size_ms(30),
-      initial_bit_rate(32000),
+      initial_bit_rate(kDefaultBitRate),
       max_bit_rate(-1),
       enforce_frame_size(false),
       max_payload_size_bytes(-1) {
@@ -114,7 +116,9 @@ AudioEncoderDecoderIsacT<T>::AudioEncoderDecoderIsacT(const Config& config)
   CHECK_EQ(0, T::Create(&isac_state_));
   CHECK_EQ(0, T::EncoderInit(isac_state_, 1));
   CHECK_EQ(0, T::SetEncSampRate(isac_state_, config.sample_rate_hz));
-  CHECK_EQ(0, T::Control(isac_state_, config.bit_rate, config.frame_size_ms));
+  CHECK_EQ(0, T::Control(isac_state_, config.bit_rate == 0 ? kDefaultBitRate
+                                                           : config.bit_rate,
+                         config.frame_size_ms));
   // When config.sample_rate_hz is set to 48000 Hz (iSAC-fb), the decoder is
   // still set to 32000 Hz, since there is no full-band mode in the decoder.
   CHECK_EQ(0, T::SetDecSampRate(isac_state_,
