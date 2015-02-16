@@ -15,7 +15,6 @@
 #include <math.h>
 
 #include <algorithm>
-#include <limits>
 #include <list>
 #include <numeric>
 #include <sstream>
@@ -27,6 +26,7 @@
 #include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
+#include "webrtc/modules/remote_bitrate_estimator/test/packet.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -161,94 +161,6 @@ class Random {
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Random);
 };
-
-class Packet {
- public:
-  enum Type { kMedia, kFeedback };
-
-  Packet();
-  Packet(int flow_id, int64_t send_time_us, size_t payload_size);
-  virtual ~Packet();
-
-  virtual bool operator<(const Packet& rhs) const;
-
-  virtual int flow_id() const { return flow_id_; }
-  virtual int64_t creation_time_us() const { return creation_time_us_; }
-  virtual void set_send_time_us(int64_t send_time_us);
-  virtual int64_t send_time_us() const { return send_time_us_; }
-  virtual size_t payload_size() const { return payload_size_; }
-  virtual Packet::Type GetPacketType() const = 0;
-
- private:
-  int flow_id_;
-  int64_t creation_time_us_;  // Time when the packet was created.
-  int64_t send_time_us_;   // Time the packet left last processor touching it.
-  size_t payload_size_;    // Size of the (non-existent, simulated) payload.
-};
-
-class MediaPacket : public Packet {
- public:
-  MediaPacket();
-  MediaPacket(int flow_id,
-              int64_t send_time_us,
-              size_t payload_size,
-              const RTPHeader& header);
-  MediaPacket(int64_t send_time_us, uint32_t sequence_number);
-  virtual ~MediaPacket() {}
-
-  int64_t GetAbsSendTimeInMs() const;
-  void SetAbsSendTimeMs(int64_t abs_send_time_ms);
-  const RTPHeader& header() const { return header_; }
-  virtual Packet::Type GetPacketType() const { return kMedia; }
-
- private:
-  RTPHeader header_;
-};
-
-class FeedbackPacket : public Packet {
- public:
-  FeedbackPacket(int flow_id, int64_t send_time_us)
-      : Packet(flow_id, send_time_us, 0) {}
-  virtual ~FeedbackPacket() {}
-
-  virtual Packet::Type GetPacketType() const { return kFeedback; }
-};
-
-class RembFeedback : public FeedbackPacket {
- public:
-  RembFeedback(int flow_id,
-               int64_t send_time_us,
-               uint32_t estimated_bps,
-               RTCPReportBlock report_block);
-  virtual ~RembFeedback() {}
-
-  uint32_t estimated_bps() const { return estimated_bps_; }
-  RTCPReportBlock report_block() const { return report_block_; }
-
- private:
-  const uint32_t estimated_bps_;
-  const RTCPReportBlock report_block_;
-};
-
-class SendSideBweFeedback : public FeedbackPacket {
- public:
-  typedef std::map<uint16_t, int64_t> ArrivalTimesMap;
-  SendSideBweFeedback(int flow_id,
-                      int64_t send_time_us,
-                      const std::vector<PacketInfo>& packet_feedback_vector);
-  virtual ~SendSideBweFeedback() {}
-
-  const std::vector<PacketInfo>& packet_feedback_vector() const {
-    return packet_feedback_vector_;
-  }
-
- private:
-  const std::vector<PacketInfo> packet_feedback_vector_;
-};
-
-typedef std::list<Packet*> Packets;
-typedef std::list<Packet*>::iterator PacketsIt;
-typedef std::list<Packet*>::const_iterator PacketsConstIt;
 
 bool IsTimeSorted(const Packets& packets);
 
@@ -518,172 +430,6 @@ class PeriodicKeyFrameSource : public AdaptiveVideoSource {
   int compensation_bytes_;
   int compensation_per_frame_;
   DISALLOW_IMPLICIT_CONSTRUCTORS(PeriodicKeyFrameSource);
-};
-
-class SendSideBwe : public Module {
- public:
-  SendSideBwe() {}
-  virtual ~SendSideBwe() {}
-
-  virtual int GetFeedbackIntervalMs() const = 0;
-  virtual void GiveFeedback(const FeedbackPacket& feedback) = 0;
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(SendSideBwe);
-};
-
-class NullSendSideBwe : public SendSideBwe {
- public:
-  NullSendSideBwe() {}
-  virtual ~NullSendSideBwe() {}
-
-  virtual int GetFeedbackIntervalMs() const OVERRIDE { return 1000; }
-  virtual void GiveFeedback(const FeedbackPacket& feedback) OVERRIDE {}
-  virtual int64_t TimeUntilNextProcess() OVERRIDE {
-    return std::numeric_limits<int64_t>::max();
-  }
-  virtual int Process() OVERRIDE { return 0; }
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(NullSendSideBwe);
-};
-
-class RembSendSideBwe : public SendSideBwe {
- public:
-  RembSendSideBwe(int kbps, BitrateObserver* observer, Clock* clock);
-  virtual ~RembSendSideBwe();
-
-  virtual int GetFeedbackIntervalMs() const OVERRIDE { return 100; }
-  virtual void GiveFeedback(const FeedbackPacket& feedback) OVERRIDE;
-  virtual int64_t TimeUntilNextProcess() OVERRIDE;
-  virtual int Process() OVERRIDE;
-
- protected:
-  scoped_ptr<BitrateController> bitrate_controller_;
-  scoped_ptr<RtcpBandwidthObserver> feedback_observer_;
-
- private:
-  Clock* clock_;
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(RembSendSideBwe);
-};
-
-class FullSendSideBwe : public SendSideBwe, public RemoteBitrateObserver {
- public:
-  FullSendSideBwe(int kbps, BitrateObserver* observer, Clock* clock);
-  virtual ~FullSendSideBwe();
-
-  virtual int GetFeedbackIntervalMs() const OVERRIDE { return 100; }
-  virtual void GiveFeedback(const FeedbackPacket& feedback) OVERRIDE;
-  virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
-                                       unsigned int bitrate) OVERRIDE;
-  virtual int64_t TimeUntilNextProcess() OVERRIDE;
-  virtual int Process() OVERRIDE;
-
- protected:
-  scoped_ptr<BitrateController> bitrate_controller_;
-  scoped_ptr<RemoteBitrateEstimator> rbe_;
-  scoped_ptr<RtcpBandwidthObserver> feedback_observer_;
-
- private:
-  Clock* const clock_;
-  RTCPReportBlock report_block_;
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(FullSendSideBwe);
-};
-
-enum BandwidthEstimatorType {
-  kNullEstimator,
-  kRembEstimator,
-  kFullSendSideEstimator
-};
-
-class PacketSender : public PacketProcessor, public BitrateObserver {
- public:
-  PacketSender(PacketProcessorListener* listener,
-               VideoSource* source,
-               BandwidthEstimatorType estimator);
-  virtual ~PacketSender();
-
-  // Call GiveFeedback() with the returned interval in milliseconds, provided
-  // there is a new estimate available.
-  // Note that changing the feedback interval affects the timing of when the
-  // output of the estimators is sampled and therefore the baseline files may
-  // have to be regenerated.
-  virtual int GetFeedbackIntervalMs() const;
-  virtual void RunFor(int64_t time_ms, Packets* in_out) OVERRIDE;
-
-  virtual VideoSource* source() const { return source_; }
-
-  // Implements BitrateObserver.
-  virtual void OnNetworkChanged(uint32_t target_bitrate_bps,
-                                uint8_t fraction_lost,
-                                int64_t rtt) OVERRIDE;
-
- protected:
-  void ProcessFeedbackAndGeneratePackets(int64_t time_ms,
-                                         std::list<FeedbackPacket*>* feedbacks,
-                                         Packets* generated);
-  std::list<FeedbackPacket*> GetFeedbackPackets(Packets* in_out,
-                                                int64_t end_time_ms);
-
-  SimulatedClock clock_;
-  VideoSource* source_;
-  scoped_ptr<SendSideBwe> bwe_;
-  int64_t start_of_run_ms_;
-  std::list<Module*> modules_;
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(PacketSender);
-};
-
-class PacedVideoSender : public PacketSender, public PacedSender::Callback {
- public:
-  PacedVideoSender(PacketProcessorListener* listener,
-                   VideoSource* source,
-                   BandwidthEstimatorType estimator);
-  virtual ~PacedVideoSender();
-
-  virtual void RunFor(int64_t time_ms, Packets* in_out) OVERRIDE;
-
-  // Implements PacedSender::Callback.
-  virtual bool TimeToSendPacket(uint32_t ssrc,
-                                uint16_t sequence_number,
-                                int64_t capture_time_ms,
-                                bool retransmission) OVERRIDE;
-  virtual size_t TimeToSendPadding(size_t bytes) OVERRIDE;
-
-  // Implements BitrateObserver.
-  virtual void OnNetworkChanged(uint32_t target_bitrate_bps,
-                                uint8_t fraction_lost,
-                                int64_t rtt) OVERRIDE;
-
- private:
-  class ProbingPacedSender : public PacedSender {
-   public:
-    ProbingPacedSender(Clock* clock,
-                       Callback* callback,
-                       int bitrate_kbps,
-                       int max_bitrate_kbps,
-                       int min_bitrate_kbps)
-        : PacedSender(clock,
-                      callback,
-                      bitrate_kbps,
-                      max_bitrate_kbps,
-                      min_bitrate_kbps) {}
-
-    virtual bool ProbingExperimentIsEnabled() const OVERRIDE { return true; }
-  };
-
-  int64_t TimeUntilNextProcess(const std::list<Module*>& modules);
-  void CallProcess(const std::list<Module*>& modules);
-  void QueuePackets(Packets* batch, int64_t end_of_batch_time_us);
-
-  ProbingPacedSender pacer_;
-  Packets queue_;
-  Packets pacer_queue_;
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(PacedVideoSender);
 };
 }  // namespace bwe
 }  // namespace testing

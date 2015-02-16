@@ -8,6 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_H_
+#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_H_
+
 #include <map>
 #include <string>
 #include <vector>
@@ -22,37 +25,29 @@ namespace testing {
 namespace bwe {
 
 class BweReceiver;
-class PacketProcessorRunner;
+class PacketReceiver;
+class PacketSender;
 
-class PacketReceiver : public PacketProcessor {
+class PacketProcessorRunner {
  public:
-  PacketReceiver(PacketProcessorListener* listener,
-                 int flow_id,
-                 BandwidthEstimatorType bwe_type,
-                 bool plot_delay,
-                 bool plot_bwe);
-  ~PacketReceiver();
+  explicit PacketProcessorRunner(PacketProcessor* processor);
+  ~PacketProcessorRunner();
 
-  // Implements PacketProcessor.
-  virtual void RunFor(int64_t time_ms, Packets* in_out) OVERRIDE;
-
-  void LogStats();
-
- protected:
-  void PlotDelay(int64_t arrival_time_ms, int64_t send_time_ms);
-
-  int64_t now_ms_;
-  std::string delay_log_prefix_;
-  int64_t last_delay_plot_ms_;
-  bool plot_delay_;
-  scoped_ptr<BweReceiver> bwe_receiver_;
+  bool RunsProcessor(const PacketProcessor* processor) const;
+  void RunFor(int64_t time_ms, int64_t time_now_ms, Packets* in_out);
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(PacketReceiver);
+  void FindPacketsToProcess(const FlowIds& flow_ids, Packets* in, Packets* out);
+  void QueuePackets(Packets* batch, int64_t end_of_batch_time_us);
+
+  PacketProcessor* processor_;
+  Packets queue_;
 };
 
 class Link : public PacketProcessorListener {
  public:
+  virtual ~Link() {}
+
   virtual void AddPacketProcessor(PacketProcessor* processor,
                                   ProcessorType type);
   virtual void RemovePacketProcessor(PacketProcessor* processor);
@@ -99,3 +94,5 @@ class BweTest {
 }  // namespace bwe
 }  // namespace testing
 }  // namespace webrtc
+
+#endif  // WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_H_

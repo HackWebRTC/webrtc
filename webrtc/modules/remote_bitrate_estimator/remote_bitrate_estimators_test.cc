@@ -12,6 +12,8 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test.h"
+#include "webrtc/modules/remote_bitrate_estimator/test/packet_receiver.h"
+#include "webrtc/modules/remote_bitrate_estimator/test/packet_sender.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/perf_test.h"
 
