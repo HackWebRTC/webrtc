@@ -36,6 +36,16 @@ namespace webrtc {
 namespace {
 static const int kInvalidPayloadType = 255;
 
+std::map<int, std::pair<int, WebRtcACMEncodingType>>::iterator
+FindSampleRateInMap(
+    std::map<int, std::pair<int, WebRtcACMEncodingType>>* cng_pt_map,
+    int sample_rate_hz) {
+  return find_if(cng_pt_map->begin(), cng_pt_map->end(),
+                 [sample_rate_hz](decltype(*cng_pt_map->begin()) p) {
+    return p.second.first == sample_rate_hz;
+  });
+}
+
 void SetCngPtInMap(
     std::map<int, std::pair<int, WebRtcACMEncodingType>>* cng_pt_map,
     int sample_rate_hz,
@@ -60,6 +70,11 @@ void SetCngPtInMap(
       break;
     default:
       FATAL() << "Unsupported frequency.";
+  }
+  auto pt_iter = FindSampleRateInMap(cng_pt_map, sample_rate_hz);
+  if (pt_iter != cng_pt_map->end()) {
+    // Remove item in map with sample_rate_hz.
+    cng_pt_map->erase(pt_iter);
   }
   (*cng_pt_map)[payload_type] = std::make_pair(sample_rate_hz, encoding_type);
 }
@@ -1417,14 +1432,8 @@ void ACMGenericCodecWrapper::ResetAudioEncoder() {
 
   // Attach CNG if needed.
   // Reverse-lookup from sample rate to complete key-value pair.
-  const int sample_rate_hz = audio_encoder_->sample_rate_hz();
-  // Create a local const reference to cng_pt_. The reason is that GCC doesn't
-  // accept using "const decltype(...)" for the argument in the lambda below.
-  const auto& cng_pt = cng_pt_;
-  auto pt_iter = find_if(cng_pt.begin(), cng_pt.end(),
-                         [sample_rate_hz](decltype(*cng_pt.begin()) p) {
-    return p.second.first == sample_rate_hz;
-  });
+  auto pt_iter =
+      FindSampleRateInMap(&cng_pt_, audio_encoder_->sample_rate_hz());
   if (acm_codec_params_.enable_dtx && pt_iter != cng_pt_.end()) {
     AudioEncoderCng::Config config;
     config.num_channels = acm_codec_params_.codec_inst.channels;

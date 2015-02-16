@@ -325,7 +325,8 @@ TEST_F(AudioCodingModuleTestOldApi, TransportCallbackIsInvokedForEachPacket) {
 // Introduce this class to set different expectations on the number of encoded
 // bytes. This class expects all encoded packets to be 9 bytes (matching one
 // CNG SID frame) or 0 bytes. This test depends on |input_frame_| containing
-// (near-)zero values.
+// (near-)zero values. It also introduces a way to register comfort noise with
+// a custom payload type.
 class AudioCodingModuleTestWithComfortNoiseOldApi
     : public AudioCodingModuleTestOldApi {
  protected:
@@ -335,53 +336,80 @@ class AudioCodingModuleTestWithComfortNoiseOldApi
     // at all.
     EXPECT_TRUE(encoded_bytes == 9 || encoded_bytes == 0);
   }
+
+  void RegisterCngCodec(int rtp_payload_type) {
+    CodecInst codec;
+    AudioCodingModule::Codec("CN", &codec, kSampleRateHz, 1);
+    codec.pltype = rtp_payload_type;
+    ASSERT_EQ(0, acm_->RegisterReceiveCodec(codec));
+    ASSERT_EQ(0, acm_->RegisterSendCodec(codec));
+  }
+
+  void DoTest(int blocks_per_packet, int cng_pt) {
+    const int kLoops = 40;
+    // This array defines the expected frame types, and when they should arrive.
+    // We expect a frame to arrive each time the speech encoder would have
+    // produced a packet, and once every 100 ms the frame should be non-empty,
+    // that is contain comfort noise.
+    const struct {
+      int ix;
+      FrameType type;
+    } expectation[] = {{2, kAudioFrameCN},
+                       {5, kFrameEmpty},
+                       {8, kFrameEmpty},
+                       {11, kAudioFrameCN},
+                       {14, kFrameEmpty},
+                       {17, kFrameEmpty},
+                       {20, kAudioFrameCN},
+                       {23, kFrameEmpty},
+                       {26, kFrameEmpty},
+                       {29, kFrameEmpty},
+                       {32, kAudioFrameCN},
+                       {35, kFrameEmpty},
+                       {38, kFrameEmpty}};
+    for (int i = 0; i < kLoops; ++i) {
+      int num_calls_before = packet_cb_.num_calls();
+      EXPECT_EQ(i / blocks_per_packet, num_calls_before);
+      InsertAudio();
+      Encode();
+      int num_calls = packet_cb_.num_calls();
+      if (num_calls == num_calls_before + 1) {
+        EXPECT_EQ(expectation[num_calls - 1].ix, i);
+        EXPECT_EQ(expectation[num_calls - 1].type, packet_cb_.last_frame_type())
+            << "Wrong frame type for lap " << i;
+        EXPECT_EQ(cng_pt, packet_cb_.last_payload_type());
+      } else {
+        EXPECT_EQ(num_calls, num_calls_before);
+      }
+    }
+  }
 };
 
-// Checks that the transport callback is invoked once for frame period of the
+// Checks that the transport callback is invoked once per frame period of the
 // underlying speech encoder, even when comfort noise is produced.
 // Also checks that the frame type is kAudioFrameCN or kFrameEmpty.
+// This test and the next check the same thing, but differ in the order of
+// speech codec and CNG registration.
 TEST_F(AudioCodingModuleTestWithComfortNoiseOldApi,
-       TransportCallbackTestForComfortNoise) {
+       TransportCallbackTestForComfortNoiseRegisterCngLast) {
   const int k10MsBlocksPerPacket = 3;
   packet_size_samples_ = k10MsBlocksPerPacket * kSampleRateHz / 100;
   RegisterCodec();
+  const int kCngPayloadType = 105;
+  RegisterCngCodec(kCngPayloadType);
   ASSERT_EQ(0, acm_->SetVAD(true, true));
-  const int kLoops = 40;
-  // This array defines the expected frame types, and when they should arrive.
-  // We expect a frame to arrive each time the speech encoder would have
-  // produced a packet, and once every 100 ms the frame should be non-empty,
-  // that is contain comfort noise.
-  const struct {
-    int ix;
-    FrameType type;
-  } expectation[] = {{2, kAudioFrameCN},
-                     {5, kFrameEmpty},
-                     {8, kFrameEmpty},
-                     {11, kAudioFrameCN},
-                     {14, kFrameEmpty},
-                     {17, kFrameEmpty},
-                     {20, kAudioFrameCN},
-                     {23, kFrameEmpty},
-                     {26, kFrameEmpty},
-                     {29, kFrameEmpty},
-                     {32, kAudioFrameCN},
-                     {35, kFrameEmpty},
-                     {38, kFrameEmpty}};
-  for (int i = 0; i < kLoops; ++i) {
-    int num_calls_before = packet_cb_.num_calls();
-    EXPECT_EQ(i / k10MsBlocksPerPacket, num_calls_before);
-    InsertAudio();
-    Encode();
-    int num_calls = packet_cb_.num_calls();
-    if (num_calls == num_calls_before + 1) {
-      EXPECT_EQ(expectation[num_calls - 1].ix, i);
-      EXPECT_EQ(expectation[num_calls - 1].type, packet_cb_.last_frame_type())
-          << "Wrong frame type for lap " << i;
-      EXPECT_EQ(98, packet_cb_.last_payload_type());  // Default CNG-wb type.
-    } else {
-      EXPECT_EQ(num_calls, num_calls_before);
-    }
-  }
+  DoTest(k10MsBlocksPerPacket, kCngPayloadType);
+}
+
+TEST_F(AudioCodingModuleTestWithComfortNoiseOldApi,
+       TransportCallbackTestForComfortNoiseRegisterCngFirst) {
+  const int k10MsBlocksPerPacket = 3;
+  packet_size_samples_ = k10MsBlocksPerPacket * kSampleRateHz / 100;
+  const int kCngPayloadType = 105;
+  RegisterCngCodec(kCngPayloadType);
+  RegisterCodec();
+  ASSERT_EQ(0, acm_->SetVAD(true, true));
+  DoTest(k10MsBlocksPerPacket, kCngPayloadType);
 }
 
 // A multi-threaded test for ACM. This base class is using the PCM16b 16 kHz
