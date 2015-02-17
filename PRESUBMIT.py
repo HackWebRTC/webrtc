@@ -352,6 +352,7 @@ def GetPreferredTryMasters(project, change):
       'mac_asan',
       'mac_baremetal',
       'mac_rel',
+      'mac_x64',
       'mac_x64_rel',
   ] + mac_gn_bots
   win_gn_bots = [
