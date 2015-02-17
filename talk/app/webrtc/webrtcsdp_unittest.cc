@@ -157,7 +157,7 @@ static const char kSdpFullString[] =
     "dummy_session_params\r\n"
     "a=rtpmap:111 opus/48000/2\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
-    "a=rtpmap:104 CELT/32000/2\r\n"
+    "a=rtpmap:104 ISAC/32000\r\n"
     "a=ssrc:1 cname:stream_1_cname\r\n"
     "a=ssrc:1 msid:local_stream_1 audio_track_id_1\r\n"
     "a=ssrc:1 mslabel:local_stream_1\r\n"
@@ -224,7 +224,7 @@ static const char kSdpString[] =
     "dummy_session_params\r\n"
     "a=rtpmap:111 opus/48000/2\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
-    "a=rtpmap:104 CELT/32000/2\r\n"
+    "a=rtpmap:104 ISAC/32000\r\n"
     "a=ssrc:1 cname:stream_1_cname\r\n"
     "a=ssrc:1 msid:local_stream_1 audio_track_id_1\r\n"
     "a=ssrc:1 mslabel:local_stream_1\r\n"
@@ -531,7 +531,7 @@ class WebRtcSdpTest : public testing::Test {
     AudioCodec opus(111, "opus", 48000, 0, 2, 3);
     audio_desc_->AddCodec(opus);
     audio_desc_->AddCodec(AudioCodec(103, "ISAC", 16000, 32000, 1, 2));
-    audio_desc_->AddCodec(AudioCodec(104, "CELT", 32000, 0, 2, 1));
+    audio_desc_->AddCodec(AudioCodec(104, "ISAC", 32000, 56000, 1, 1));
     desc_.AddContent(kAudioContentName, NS_JINGLE_RTP, audio_desc_);
 
     // VideoContentDescription
@@ -1181,13 +1181,12 @@ class WebRtcSdpTest : public testing::Test {
         // description.
         "a=msid-semantic: WMS\r\n"
         // Pl type 111 preferred.
-        "m=audio 9 RTP/SAVPF 111 104 103 102\r\n"
+        "m=audio 9 RTP/SAVPF 111 104 103\r\n"
         // Pltype 111 listed before 103 and 104 in the map.
         "a=rtpmap:111 opus/48000/2\r\n"
         // Pltype 103 listed before 104.
         "a=rtpmap:103 ISAC/16000\r\n"
-        "a=rtpmap:104 CELT/32000/2\r\n"
-        "a=rtpmap:102 ISAC/32000/1\r\n"
+        "a=rtpmap:104 ISAC/32000\r\n"
         "a=fmtp:111 0-15,66,70\r\n"
         "a=fmtp:111 ";
     std::ostringstream os;
@@ -1794,7 +1793,7 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithoutRtpmap) {
       "t=0 0\r\n"
       "m=audio 49232 RTP/AVP 0 18 103\r\n"
       // Codec that doesn't appear in the m= line will be ignored.
-      "a=rtpmap:104 CELT/32000/2\r\n"
+      "a=rtpmap:104 ISAC/32000\r\n"
       // The rtpmap line for static payload codec is optional.
       "a=rtpmap:18 G729/16000\r\n"
       "a=rtpmap:103 ISAC/16000\r\n";
@@ -2407,7 +2406,7 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithReorderedPltypes) {
       "a=rtpmap:111 opus/48000/2\r\n"  // Pltype 111 listed before 103 and 104
                                        // in the map.
       "a=rtpmap:103 ISAC/16000\r\n"  // Pltype 103 listed before 104 in the map.
-      "a=rtpmap:104 CELT/32000/2\r\n";
+      "a=rtpmap:104 ISAC/32000\r\n";
 
   // Deserialize
   EXPECT_TRUE(SdpDeserialize(kSdpWithReorderedPlTypesString, &jdesc_output));
@@ -2417,7 +2416,8 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithReorderedPltypes) {
   const AudioContentDescription* acd =
       static_cast<const AudioContentDescription*>(ac->description);
   ASSERT_FALSE(acd->codecs().empty());
-  EXPECT_EQ("CELT", acd->codecs()[0].name);
+  EXPECT_EQ("ISAC", acd->codecs()[0].name);
+  EXPECT_EQ(32000, acd->codecs()[0].clockrate);
   EXPECT_EQ(104, acd->codecs()[0].id);
 }
 

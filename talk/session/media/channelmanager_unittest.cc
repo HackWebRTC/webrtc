@@ -41,7 +41,6 @@ namespace cricket {
 
 static const AudioCodec kAudioCodecs[] = {
   AudioCodec(97, "voice", 1, 2, 3, 0),
-  AudioCodec(110, "CELT", 32000, 48000, 2, 0),
   AudioCodec(111, "OPUS", 48000, 32000, 2, 0),
 };
 

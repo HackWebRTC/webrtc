@@ -466,9 +466,6 @@ int ACMCodecDB::CodecNumber(const CodecInst& codec_inst, int* mirror_id) {
   } else if (STR_CASE_CMP("speex", codec_inst.plname) == 0) {
     return IsSpeexRateValid(codec_inst.rate)
         ? codec_id : kInvalidRate;
-  } else if (STR_CASE_CMP("celt", codec_inst.plname) == 0) {
-    return IsCeltRateValid(codec_inst.rate)
-        ? codec_id : kInvalidRate;
   }
 
   return IsRateValid(codec_id, codec_inst.rate) ?
@@ -872,15 +869,6 @@ bool ACMCodecDB::IsOpusRateValid(int rate) {
     return false;
   }
   return true;
-}
-
-// Checks if the bitrate is valid for Celt.
-bool ACMCodecDB::IsCeltRateValid(int rate) {
-  if ((rate >= 48000) && (rate <= 128000)) {
-    return true;
-  } else {
-    return false;
-  }
 }
 
 // Checks if the payload type is in the valid range.
