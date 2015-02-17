@@ -582,6 +582,8 @@ public:
         EncodedImageCallback* observer) = 0;
     virtual void RegisterPostEncodeImageCallback(
         EncodedImageCallback* post_encode_callback) = 0;
+    // Releases pending decode calls, permitting faster thread shutdown.
+    virtual void TriggerDecoderShutdown() = 0;
 };
 
 }  // namespace webrtc

@@ -345,6 +345,10 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     post_encode_callback_.Register(observer);
   }
 
+  void TriggerDecoderShutdown() override {
+    receiver_->TriggerDecoderShutdown();
+  }
+
  private:
   EncodedImageCallbackWrapper post_encode_callback_;
   scoped_ptr<vcm::VideoSender> sender_;

@@ -1733,6 +1733,8 @@ int32_t ViEChannel::StopDecodeThread() {
     return 0;
   }
 
+  vcm_->TriggerDecoderShutdown();
+
   if (decode_thread_->Stop()) {
     delete decode_thread_;
   } else {

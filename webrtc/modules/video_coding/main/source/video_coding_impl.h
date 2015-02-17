@@ -182,6 +182,7 @@ class VideoReceiver {
   int32_t Process();
 
   void RegisterPreDecodeImageCallback(EncodedImageCallback* observer);
+  void TriggerDecoderShutdown();
 
  protected:
   int32_t Decode(const webrtc::VCMEncodedFrame& frame)

@@ -335,6 +335,10 @@ int VideoReceiver::RegisterRenderBufferSizeCallback(
   return VCM_OK;
 }
 
+void VideoReceiver::TriggerDecoderShutdown() {
+  _receiver.TriggerDecoderShutdown();
+}
+
 // Decode next frame, blocking.
 // Should be called as often as possible to get the most out of the decoder.
 int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {

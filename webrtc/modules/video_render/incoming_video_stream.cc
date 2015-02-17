@@ -246,14 +246,21 @@ int32_t IncomingVideoStream::Stop() {
     return 0;
   }
 
-  thread_critsect_.Enter();
-  if (incoming_render_thread_) {
-    ThreadWrapper* thread = incoming_render_thread_;
-    incoming_render_thread_ = NULL;
-#ifndef WIN32_
-    deliver_buffer_event_.StopTimer();
-#endif
-    thread_critsect_.Leave();
+  ThreadWrapper* thread = NULL;
+  {
+    CriticalSectionScoped cs_thread(&thread_critsect_);
+    if (incoming_render_thread_ != NULL) {
+      thread = incoming_render_thread_;
+      // Setting the incoming render thread to NULL marks that we're performing
+      // a shutdown and will make IncomingVideoStreamProcess abort after wakeup.
+      incoming_render_thread_ = NULL;
+      deliver_buffer_event_.StopTimer();
+      // Set the event to allow the thread to wake up and shut down without
+      // waiting for a timeout.
+      deliver_buffer_event_.Set();
+    }
+  }
+  if (thread) {
     if (thread->Stop()) {
       delete thread;
     } else {
@@ -261,8 +268,6 @@ int32_t IncomingVideoStream::Stop() {
       WEBRTC_TRACE(kTraceWarning, kTraceVideoRenderer, module_id_,
                    "%s: Not able to stop thread, leaking", __FUNCTION__);
     }
-  } else {
-    thread_critsect_.Leave();
   }
   running_ = false;
   return 0;
