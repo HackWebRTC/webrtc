@@ -141,11 +141,11 @@ int16_t WebRtcIlbcfix_Decoderinit30Ms(IlbcDecoderInstance *iLBCdec_inst) {
 }
 
 
-int16_t WebRtcIlbcfix_Decode(IlbcDecoderInstance *iLBCdec_inst,
-                             const int16_t *encoded,
+int16_t WebRtcIlbcfix_Decode(IlbcDecoderInstance* iLBCdec_inst,
+                             const uint8_t* encoded,
                              int16_t len,
-                             int16_t *decoded,
-                             int16_t *speechType)
+                             int16_t* decoded,
+                             int16_t* speechType)
 {
   int i=0;
   /* Allow for automatic switching between the frame sizes
@@ -185,7 +185,7 @@ int16_t WebRtcIlbcfix_Decode(IlbcDecoderInstance *iLBCdec_inst,
     WebRtcIlbcfix_DecodeImpl(
         &decoded[i * ((IlbcDecoder*)iLBCdec_inst)->blockl],
         (const uint16_t*)&encoded
-            [i * ((IlbcDecoder*)iLBCdec_inst)->no_of_words],
+            [2 * i * ((IlbcDecoder*)iLBCdec_inst)->no_of_words],
         (IlbcDecoder*)iLBCdec_inst, 1);
     i++;
   }
@@ -194,11 +194,11 @@ int16_t WebRtcIlbcfix_Decode(IlbcDecoderInstance *iLBCdec_inst,
   return(i*((IlbcDecoder*)iLBCdec_inst)->blockl);
 }
 
-int16_t WebRtcIlbcfix_Decode20Ms(IlbcDecoderInstance *iLBCdec_inst,
-                                 const int16_t *encoded,
+int16_t WebRtcIlbcfix_Decode20Ms(IlbcDecoderInstance* iLBCdec_inst,
+                                 const uint8_t* encoded,
                                  int16_t len,
-                                 int16_t *decoded,
-                                 int16_t *speechType)
+                                 int16_t* decoded,
+                                 int16_t* speechType)
 {
   int i=0;
   if ((len==((IlbcDecoder*)iLBCdec_inst)->no_of_bytes)||
@@ -213,7 +213,7 @@ int16_t WebRtcIlbcfix_Decode20Ms(IlbcDecoderInstance *iLBCdec_inst,
     WebRtcIlbcfix_DecodeImpl(
         &decoded[i * ((IlbcDecoder*)iLBCdec_inst)->blockl],
         (const uint16_t*)&encoded
-            [i * ((IlbcDecoder*)iLBCdec_inst)->no_of_words],
+            [2 * i * ((IlbcDecoder*)iLBCdec_inst)->no_of_words],
         (IlbcDecoder*)iLBCdec_inst, 1);
     i++;
   }
@@ -222,11 +222,11 @@ int16_t WebRtcIlbcfix_Decode20Ms(IlbcDecoderInstance *iLBCdec_inst,
   return(i*((IlbcDecoder*)iLBCdec_inst)->blockl);
 }
 
-int16_t WebRtcIlbcfix_Decode30Ms(IlbcDecoderInstance *iLBCdec_inst,
-                                 const int16_t *encoded,
+int16_t WebRtcIlbcfix_Decode30Ms(IlbcDecoderInstance* iLBCdec_inst,
+                                 const uint8_t* encoded,
                                  int16_t len,
-                                 int16_t *decoded,
-                                 int16_t *speechType)
+                                 int16_t* decoded,
+                                 int16_t* speechType)
 {
   int i=0;
   if ((len==((IlbcDecoder*)iLBCdec_inst)->no_of_bytes)||
@@ -241,7 +241,7 @@ int16_t WebRtcIlbcfix_Decode30Ms(IlbcDecoderInstance *iLBCdec_inst,
     WebRtcIlbcfix_DecodeImpl(
         &decoded[i * ((IlbcDecoder*)iLBCdec_inst)->blockl],
         (const uint16_t*)&encoded
-            [i * ((IlbcDecoder*)iLBCdec_inst)->no_of_words],
+            [2 * i * ((IlbcDecoder*)iLBCdec_inst)->no_of_words],
         (IlbcDecoder*)iLBCdec_inst, 1);
     i++;
   }

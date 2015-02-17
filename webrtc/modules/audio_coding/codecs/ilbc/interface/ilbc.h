@@ -180,21 +180,21 @@ extern "C" {
    *                            -1 - Error
    */
 
-  int16_t WebRtcIlbcfix_Decode(IlbcDecoderInstance *iLBCdec_inst,
-                               const int16_t* encoded,
+  int16_t WebRtcIlbcfix_Decode(IlbcDecoderInstance* iLBCdec_inst,
+                               const uint8_t* encoded,
                                int16_t len,
-                               int16_t *decoded,
-                               int16_t *speechType);
-  int16_t WebRtcIlbcfix_Decode20Ms(IlbcDecoderInstance *iLBCdec_inst,
-                                   const int16_t *encoded,
+                               int16_t* decoded,
+                               int16_t* speechType);
+  int16_t WebRtcIlbcfix_Decode20Ms(IlbcDecoderInstance* iLBCdec_inst,
+                                   const uint8_t* encoded,
                                    int16_t len,
-                                   int16_t *decoded,
-                                   int16_t *speechType);
-  int16_t WebRtcIlbcfix_Decode30Ms(IlbcDecoderInstance *iLBCdec_inst,
-                                   const int16_t *encoded,
+                                   int16_t* decoded,
+                                   int16_t* speechType);
+  int16_t WebRtcIlbcfix_Decode30Ms(IlbcDecoderInstance* iLBCdec_inst,
+                                   const uint8_t* encoded,
                                    int16_t len,
-                                   int16_t *decoded,
-                                   int16_t *speechType);
+                                   int16_t* decoded,
+                                   int16_t* speechType);
 
   /****************************************************************************
    * WebRtcIlbcfix_DecodePlc(...)
