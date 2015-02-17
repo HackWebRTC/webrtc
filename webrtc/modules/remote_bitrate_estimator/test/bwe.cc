@@ -17,6 +17,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/common.h"
+#include "webrtc/modules/remote_bitrate_estimator/rate_statistics.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 
@@ -24,13 +25,13 @@ namespace webrtc {
 namespace testing {
 namespace bwe {
 
-const int kMinBitrateKbps = 30;
-const int kMaxBitrateKbps = 20000;
+const int kMinBitrateKbps = 150;
+const int kMaxBitrateKbps = 2000;
 
-class NullSendSideBwe : public SendSideBwe {
+class NullBweSender : public BweSender {
  public:
-  NullSendSideBwe() {}
-  virtual ~NullSendSideBwe() {}
+  NullBweSender() {}
+  virtual ~NullBweSender() {}
 
   virtual int GetFeedbackIntervalMs() const OVERRIDE { return 1000; }
   virtual void GiveFeedback(const FeedbackPacket& feedback) OVERRIDE {}
@@ -40,13 +41,13 @@ class NullSendSideBwe : public SendSideBwe {
   virtual int Process() OVERRIDE { return 0; }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(NullSendSideBwe);
+  DISALLOW_COPY_AND_ASSIGN(NullBweSender);
 };
 
-class RembSendSideBwe : public SendSideBwe {
+class RembBweSender : public BweSender {
  public:
-  RembSendSideBwe(int kbps, BitrateObserver* observer, Clock* clock);
-  virtual ~RembSendSideBwe();
+  RembBweSender(int kbps, BitrateObserver* observer, Clock* clock);
+  virtual ~RembBweSender();
 
   virtual int GetFeedbackIntervalMs() const OVERRIDE { return 100; }
   virtual void GiveFeedback(const FeedbackPacket& feedback) OVERRIDE;
@@ -60,13 +61,13 @@ class RembSendSideBwe : public SendSideBwe {
  private:
   Clock* clock_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(RembSendSideBwe);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(RembBweSender);
 };
 
-class FullSendSideBwe : public SendSideBwe, public RemoteBitrateObserver {
+class FullBweSender : public BweSender, public RemoteBitrateObserver {
  public:
-  FullSendSideBwe(int kbps, BitrateObserver* observer, Clock* clock);
-  virtual ~FullSendSideBwe();
+  FullBweSender(int kbps, BitrateObserver* observer, Clock* clock);
+  virtual ~FullBweSender();
 
   virtual int GetFeedbackIntervalMs() const OVERRIDE { return 100; }
   virtual void GiveFeedback(const FeedbackPacket& feedback) OVERRIDE;
@@ -84,12 +85,10 @@ class FullSendSideBwe : public SendSideBwe, public RemoteBitrateObserver {
   Clock* const clock_;
   RTCPReportBlock report_block_;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(FullSendSideBwe);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(FullBweSender);
 };
 
-RembSendSideBwe::RembSendSideBwe(int kbps,
-                                 BitrateObserver* observer,
-                                 Clock* clock)
+RembBweSender::RembBweSender(int kbps, BitrateObserver* observer, Clock* clock)
     : bitrate_controller_(
           BitrateController::CreateBitrateController(clock, false)),
       feedback_observer_(bitrate_controller_->CreateRtcpBandwidthObserver()),
@@ -100,10 +99,10 @@ RembSendSideBwe::RembSendSideBwe(int kbps,
       observer, 1000 * kbps, 1000 * kMinBitrateKbps, 1000 * kMaxBitrateKbps);
 }
 
-RembSendSideBwe::~RembSendSideBwe() {
+RembBweSender::~RembBweSender() {
 }
 
-void RembSendSideBwe::GiveFeedback(const FeedbackPacket& feedback) {
+void RembBweSender::GiveFeedback(const FeedbackPacket& feedback) {
   const RembFeedback& remb_feedback =
       static_cast<const RembFeedback&>(feedback);
   feedback_observer_->OnReceivedEstimatedBitrate(remb_feedback.estimated_bps());
@@ -114,17 +113,15 @@ void RembSendSideBwe::GiveFeedback(const FeedbackPacket& feedback) {
   bitrate_controller_->Process();
 }
 
-int64_t RembSendSideBwe::TimeUntilNextProcess() {
+int64_t RembBweSender::TimeUntilNextProcess() {
   return bitrate_controller_->TimeUntilNextProcess();
 }
 
-int RembSendSideBwe::Process() {
+int RembBweSender::Process() {
   return bitrate_controller_->Process();
 }
 
-FullSendSideBwe::FullSendSideBwe(int kbps,
-                                 BitrateObserver* observer,
-                                 Clock* clock)
+FullBweSender::FullBweSender(int kbps, BitrateObserver* observer, Clock* clock)
     : bitrate_controller_(
           BitrateController::CreateBitrateController(clock, false)),
       rbe_(AbsoluteSendTimeRemoteBitrateEstimatorFactory()
@@ -137,10 +134,10 @@ FullSendSideBwe::FullSendSideBwe(int kbps,
       observer, 1000 * kbps, 1000 * kMinBitrateKbps, 1000 * kMaxBitrateKbps);
 }
 
-FullSendSideBwe::~FullSendSideBwe() {
+FullBweSender::~FullBweSender() {
 }
 
-void FullSendSideBwe::GiveFeedback(const FeedbackPacket& feedback) {
+void FullBweSender::GiveFeedback(const FeedbackPacket& feedback) {
   const SendSideBweFeedback& fb =
       static_cast<const SendSideBweFeedback&>(feedback);
   if (fb.packet_feedback_vector().empty())
@@ -163,17 +160,17 @@ void FullSendSideBwe::GiveFeedback(const FeedbackPacket& feedback) {
   bitrate_controller_->Process();
 }
 
-void FullSendSideBwe::OnReceiveBitrateChanged(
+void FullBweSender::OnReceiveBitrateChanged(
     const std::vector<unsigned int>& ssrcs,
     unsigned int bitrate) {
   feedback_observer_->OnReceivedEstimatedBitrate(bitrate);
 }
 
-int64_t FullSendSideBwe::TimeUntilNextProcess() {
+int64_t FullBweSender::TimeUntilNextProcess() {
   return bitrate_controller_->TimeUntilNextProcess();
 }
 
-int FullSendSideBwe::Process() {
+int FullBweSender::Process() {
   rbe_->Process();
   return bitrate_controller_->Process();
 }
@@ -192,11 +189,11 @@ class SendSideBweReceiver : public BweReceiver {
   explicit SendSideBweReceiver(int flow_id)
       : BweReceiver(flow_id), last_feedback_ms_(0) {}
   virtual void ReceivePacket(int64_t arrival_time_ms,
-                             size_t payload_size,
-                             const RTPHeader& header) OVERRIDE {
+                             const MediaPacket& media_packet) OVERRIDE {
     packet_feedback_vector_.push_back(PacketInfo(
-        arrival_time_ms, GetAbsSendTimeInMs(header.extension.absoluteSendTime),
-        header.sequenceNumber, payload_size));
+        arrival_time_ms,
+        GetAbsSendTimeInMs(media_packet.header().extension.absoluteSendTime),
+        media_packet.header().sequenceNumber, media_packet.payload_size()));
   }
 
   virtual FeedbackPacket* GetFeedback(int64_t now_ms) OVERRIDE {
@@ -238,9 +235,9 @@ class RembReceiver : public BweReceiver, public RemoteBitrateObserver {
   }
 
   virtual void ReceivePacket(int64_t arrival_time_ms,
-                             size_t payload_size,
-                             const RTPHeader& header) {
-    recv_stats_->IncomingPacket(header, payload_size, false);
+                             const MediaPacket& media_packet) {
+    recv_stats_->IncomingPacket(media_packet.header(),
+                                media_packet.payload_size(), false);
 
     latest_estimate_bps_ = -1;
 
@@ -250,7 +247,8 @@ class RembReceiver : public BweReceiver, public RemoteBitrateObserver {
       estimator_->Process();
       step_ms = std::max<int64_t>(estimator_->TimeUntilNextProcess(), 0);
     }
-    estimator_->IncomingPacket(arrival_time_ms, payload_size, header);
+    estimator_->IncomingPacket(arrival_time_ms, media_packet.payload_size(),
+                               media_packet.header());
     clock_.AdvanceTimeMilliseconds(arrival_time_ms -
                                    clock_.TimeInMilliseconds());
     ASSERT_TRUE(arrival_time_ms == clock_.TimeInMilliseconds());
@@ -319,17 +317,134 @@ class RembReceiver : public BweReceiver, public RemoteBitrateObserver {
   DISALLOW_IMPLICIT_CONSTRUCTORS(RembReceiver);
 };
 
-SendSideBwe* CreateBweSender(BandwidthEstimatorType estimator,
-                             int kbps,
-                             BitrateObserver* observer,
-                             Clock* clock) {
+class NadaBweReceiver : public BweReceiver {
+ public:
+  explicit NadaBweReceiver(int flow_id)
+      : BweReceiver(flow_id),
+        clock_(0),
+        last_feedback_ms_(0),
+        recv_stats_(ReceiveStatistics::Create(&clock_)),
+        baseline_delay_ms_(0),
+        delay_signal_ms_(0),
+        last_congestion_signal_ms_(0) {}
+
+  virtual void ReceivePacket(int64_t arrival_time_ms,
+                             const MediaPacket& media_packet) OVERRIDE {
+    clock_.AdvanceTimeMilliseconds(arrival_time_ms -
+                                   clock_.TimeInMilliseconds());
+    recv_stats_->IncomingPacket(media_packet.header(),
+                                media_packet.payload_size(), false);
+    int64_t delay_ms = arrival_time_ms - media_packet.creation_time_us() / 1000;
+    // TODO(holmer): The min should time out after 10 minutes.
+    if (delay_ms < baseline_delay_ms_) {
+      baseline_delay_ms_ = delay_ms;
+    }
+    delay_signal_ms_ = delay_ms - baseline_delay_ms_;
+  }
+
+  virtual FeedbackPacket* GetFeedback(int64_t now_ms) OVERRIDE {
+    if (now_ms - last_feedback_ms_ < 100)
+      return NULL;
+
+    StatisticianMap statisticians = recv_stats_->GetActiveStatisticians();
+    int64_t loss_signal_ms = 0.0f;
+    if (!statisticians.empty()) {
+      RtcpStatistics stats;
+      if (!statisticians.begin()->second->GetStatistics(&stats, true)) {
+        const float kLossSignalWeight = 1000.0f;
+        loss_signal_ms =
+            (kLossSignalWeight * static_cast<float>(stats.fraction_lost) +
+             127) /
+            255;
+      }
+    }
+
+    int64_t congestion_signal_ms = delay_signal_ms_ + loss_signal_ms;
+
+    float derivative = 0.0f;
+    if (last_feedback_ms_ > 0) {
+      derivative = (congestion_signal_ms - last_congestion_signal_ms_) /
+                   static_cast<float>(now_ms - last_feedback_ms_);
+    }
+    last_feedback_ms_ = now_ms;
+    last_congestion_signal_ms_ = congestion_signal_ms;
+    return new NadaFeedback(flow_id_, now_ms, congestion_signal_ms, derivative);
+  }
+
+ private:
+  SimulatedClock clock_;
+  int64_t last_feedback_ms_;
+  scoped_ptr<ReceiveStatistics> recv_stats_;
+  int64_t baseline_delay_ms_;
+  int64_t delay_signal_ms_;
+  int64_t last_congestion_signal_ms_;
+};
+
+class NadaBweSender : public BweSender {
+ public:
+  NadaBweSender(int kbps, BitrateObserver* observer, Clock* clock)
+      : clock_(clock),
+        observer_(observer),
+        bitrate_kbps_(kbps),
+        last_feedback_ms_(0) {}
+  virtual ~NadaBweSender() {}
+
+  virtual int GetFeedbackIntervalMs() const OVERRIDE { return 100; }
+
+  virtual void GiveFeedback(const FeedbackPacket& feedback) {
+    const NadaFeedback& fb = static_cast<const NadaFeedback&>(feedback);
+
+    // TODO(holmer): Implement special start-up behavior.
+
+    const float kEta = 2.0f;
+    const float kTaoO = 500.0f;
+    float x_hat = fb.congestion_signal() + kEta * kTaoO * fb.derivative();
+
+    int64_t now_ms = clock_->TimeInMilliseconds();
+    float delta_s = now_ms - last_feedback_ms_;
+    last_feedback_ms_ = now_ms;
+
+    const float kPriorityWeight = 1.0f;
+    const float kReferenceDelayS = 10.0f;
+    float kTheta = kPriorityWeight * (kMaxBitrateKbps - kMinBitrateKbps) *
+                   kReferenceDelayS;
+
+    const float kKappa = 1.0f;
+    bitrate_kbps_ = bitrate_kbps_ +
+                    kKappa * delta_s / (kTaoO * kTaoO) *
+                        (kTheta - (bitrate_kbps_ - kMinBitrateKbps) * x_hat) +
+                    0.5f;
+    bitrate_kbps_ = std::min(bitrate_kbps_, kMaxBitrateKbps);
+    bitrate_kbps_ = std::max(bitrate_kbps_, kMinBitrateKbps);
+
+    observer_->OnNetworkChanged(1000 * bitrate_kbps_, 0, 0);
+  }
+
+  virtual int64_t TimeUntilNextProcess() OVERRIDE { return 100; }
+  virtual int Process() OVERRIDE { return 0; }
+
+ private:
+  Clock* const clock_;
+  BitrateObserver* const observer_;
+  int bitrate_kbps_;
+  int64_t last_feedback_ms_;
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(NadaBweSender);
+};
+
+BweSender* CreateBweSender(BandwidthEstimatorType estimator,
+                           int kbps,
+                           BitrateObserver* observer,
+                           Clock* clock) {
   switch (estimator) {
     case kRembEstimator:
-      return new RembSendSideBwe(kbps, observer, clock);
+      return new RembBweSender(kbps, observer, clock);
     case kFullSendSideEstimator:
-      return new FullSendSideBwe(kbps, observer, clock);
+      return new FullBweSender(kbps, observer, clock);
+    case kNadaEstimator:
+      return new NadaBweSender(kbps, observer, clock);
     case kNullEstimator:
-      return new NullSendSideBwe();
+      return new NullBweSender();
   }
   assert(false);
   return NULL;
@@ -343,6 +458,8 @@ BweReceiver* CreateBweReceiver(BandwidthEstimatorType type,
       return new RembReceiver(flow_id, plot);
     case kFullSendSideEstimator:
       return new SendSideBweReceiver(flow_id);
+    case kNadaEstimator:
+      return new NadaBweReceiver(flow_id);
     case kNullEstimator:
       return new BweReceiver(flow_id);
   }

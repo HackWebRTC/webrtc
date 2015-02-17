@@ -39,7 +39,8 @@ class BweSimulation : public BweTest,
 INSTANTIATE_TEST_CASE_P(VideoSendersTest,
                         BweSimulation,
                         ::testing::Values(kRembEstimator,
-                                          kFullSendSideEstimator));
+                                          kFullSendSideEstimator,
+                                          kNadaEstimator));
 
 TEST_P(BweSimulation, SprintUplinkTest) {
   VerboseLogging(true);
@@ -65,7 +66,7 @@ TEST_P(BweSimulation, Verizon4gDownlinkTest) {
   RunFor(22 * 60 * 1000);
 }
 
-TEST_P(BweSimulation, Choke1000kbps500kbps1000kbps) {
+TEST_P(BweSimulation, Choke1000kbps500kbps1000kbpsBiDirectional) {
   VerboseLogging(true);
 
   const int kFlowIds[] = {0, 1};
@@ -86,6 +87,24 @@ TEST_P(BweSimulation, Choke1000kbps500kbps1000kbps) {
 
   choke2.SetCapacity(500);
   delay.SetDelay(0);
+
+  choke.SetCapacity(1000);
+  choke.SetMaxDelay(500);
+  RunFor(60 * 1000);
+  choke.SetCapacity(500);
+  RunFor(60 * 1000);
+  choke.SetCapacity(1000);
+  RunFor(60 * 1000);
+}
+
+TEST_P(BweSimulation, Choke1000kbps500kbps1000kbps) {
+  VerboseLogging(true);
+
+  AdaptiveVideoSource source(0, 30, 300, 0, 0);
+  PacketSender sender(&uplink_, &source, GetParam());
+  ChokeFilter choke(&uplink_, 0);
+  RateCounterFilter counter(&uplink_, 0, "receiver_input");
+  PacketReceiver receiver(&uplink_, 0, GetParam(), true, false);
 
   choke.SetCapacity(1000);
   choke.SetMaxDelay(500);

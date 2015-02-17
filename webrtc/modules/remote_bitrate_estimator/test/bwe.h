@@ -20,16 +20,16 @@ namespace webrtc {
 namespace testing {
 namespace bwe {
 
-class SendSideBwe : public Module {
+class BweSender : public Module {
  public:
-  SendSideBwe() {}
-  virtual ~SendSideBwe() {}
+  BweSender() {}
+  virtual ~BweSender() {}
 
   virtual int GetFeedbackIntervalMs() const = 0;
   virtual void GiveFeedback(const FeedbackPacket& feedback) = 0;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(SendSideBwe);
+  DISALLOW_COPY_AND_ASSIGN(BweSender);
 };
 
 class BweReceiver {
@@ -38,8 +38,7 @@ class BweReceiver {
   virtual ~BweReceiver() {}
 
   virtual void ReceivePacket(int64_t arrival_time_ms,
-                             size_t payload_size,
-                             const RTPHeader& header) {}
+                             const MediaPacket& media_packet) {}
   virtual FeedbackPacket* GetFeedback(int64_t now_ms) { return NULL; }
 
  protected:
@@ -48,14 +47,15 @@ class BweReceiver {
 
 enum BandwidthEstimatorType {
   kNullEstimator,
+  kNadaEstimator,
   kRembEstimator,
   kFullSendSideEstimator
 };
 
-SendSideBwe* CreateBweSender(BandwidthEstimatorType estimator,
-                             int kbps,
-                             BitrateObserver* observer,
-                             Clock* clock);
+BweSender* CreateBweSender(BandwidthEstimatorType estimator,
+                           int kbps,
+                           BitrateObserver* observer,
+                           Clock* clock);
 
 BweReceiver* CreateBweReceiver(BandwidthEstimatorType type,
                                int flow_id,

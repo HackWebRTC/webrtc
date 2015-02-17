@@ -61,9 +61,7 @@ void PacketReceiver::RunFor(int64_t time_ms, Packets* in_out) {
       PlotDelay(arrival_time_ms,
                 (media_packet->creation_time_us() + 500) / 1000);
 
-      bwe_receiver_->ReceivePacket(arrival_time_ms,
-                                   media_packet->payload_size(),
-                                   media_packet->header());
+      bwe_receiver_->ReceivePacket(arrival_time_ms, *media_packet);
       FeedbackPacket* fb = bwe_receiver_->GetFeedback(arrival_time_ms);
       if (fb)
         feedback.push_back(fb);

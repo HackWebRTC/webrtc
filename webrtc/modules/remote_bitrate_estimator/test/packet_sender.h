@@ -55,7 +55,7 @@ class PacketSender : public PacketProcessor, public BitrateObserver {
 
   SimulatedClock clock_;
   VideoSource* source_;
-  scoped_ptr<SendSideBwe> bwe_;
+  scoped_ptr<BweSender> bwe_;
   int64_t start_of_run_ms_;
   std::list<Module*> modules_;
 

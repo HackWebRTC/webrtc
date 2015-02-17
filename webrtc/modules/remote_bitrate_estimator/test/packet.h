@@ -107,6 +107,25 @@ class SendSideBweFeedback : public FeedbackPacket {
   const std::vector<PacketInfo> packet_feedback_vector_;
 };
 
+class NadaFeedback : public FeedbackPacket {
+ public:
+  NadaFeedback(int flow_id,
+               int64_t send_time_us,
+               int64_t congestion_signal,
+               float derivative)
+      : FeedbackPacket(flow_id, send_time_us),
+        congestion_signal_(congestion_signal),
+        derivative_(derivative) {}
+  virtual ~NadaFeedback() {}
+
+  int64_t congestion_signal() const { return congestion_signal_; }
+  float derivative() const { return derivative_; }
+
+ private:
+  int64_t congestion_signal_;
+  float derivative_;
+};
+
 typedef std::list<Packet*> Packets;
 typedef std::list<Packet*>::iterator PacketsIt;
 typedef std::list<Packet*>::const_iterator PacketsConstIt;
