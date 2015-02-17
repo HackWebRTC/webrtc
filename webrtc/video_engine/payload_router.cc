@@ -71,6 +71,29 @@ bool PayloadRouter::RoutePayload(FrameType frame_type,
       payload_length, fragmentation, rtp_video_hdr) == 0 ? true : false;
 }
 
+bool PayloadRouter::TimeToSendPacket(uint32_t ssrc,
+                                     uint16_t sequence_number,
+                                     int64_t capture_timestamp,
+                                     bool retransmission) {
+  CriticalSectionScoped cs(crit_.get());
+  for (auto* rtp_module : rtp_modules_) {
+    if (rtp_module->SendingMedia() && ssrc == rtp_module->SSRC()) {
+      return rtp_module->TimeToSendPacket(ssrc, sequence_number,
+                                          capture_timestamp, retransmission);
+    }
+  }
+  return true;
+}
+
+size_t PayloadRouter::TimeToSendPadding(size_t bytes) {
+  CriticalSectionScoped cs(crit_.get());
+  for(auto* rtp_module : rtp_modules_) {
+    if (rtp_module->SendingMedia())
+      return rtp_module->TimeToSendPadding(bytes);
+  }
+  return 0;
+}
+
 size_t PayloadRouter::MaxPayloadLength() const {
   size_t min_payload_length = DefaultMaxPayloadLength();
   CriticalSectionScoped cs(crit_.get());

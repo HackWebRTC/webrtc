@@ -65,8 +65,15 @@ class ViEEncoder
 
   bool Init();
 
-  // This function is assumed to be called before any frames are delivered.
-  void SetSendPayloadRouter(PayloadRouter* send_payload_router);
+  // This function is assumed to be called before any frames are delivered and
+  // only once.
+  // Ideally this would be done in Init, but the dependencies between ViEEncoder
+  // and ViEChannel makes it really hard to do in a good way.
+  void StartThreadsAndSetSendPayloadRouter(PayloadRouter* send_payload_router);
+
+  // This function must be called before the corresponding ViEChannel is
+  // deleted.
+  void StopThreadsAndRemovePayloadRouter();
 
   void SetNetworkTransmissionState(bool is_transmitting);
 

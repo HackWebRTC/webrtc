@@ -107,6 +107,7 @@ class ViEBitrateObserver : public BitrateObserver {
   ViEEncoder* owner_;
 };
 
+// TODO(mflodman): Move this observer to PayloadRouter class.
 class ViEPacedSenderCallback : public PacedSender::Callback {
  public:
   explicit ViEPacedSenderCallback(ViEEncoder* owner)
@@ -191,14 +192,6 @@ bool ViEEncoder::Init() {
   // Enable/disable content analysis: off by default for now.
   vpm_.EnableContentAnalysis(false);
 
-  if (module_process_thread_.RegisterModule(&vcm_) != 0 ||
-      module_process_thread_.RegisterModule(default_rtp_rtcp_.get()) != 0) {
-    return false;
-  }
-  if (pacer_thread_->RegisterModule(paced_sender_.get()) != 0 ||
-      pacer_thread_->Start() != 0) {
-    return false;
-  }
   if (qm_callback_) {
     delete qm_callback_;
   }
@@ -235,9 +228,24 @@ bool ViEEncoder::Init() {
   return true;
 }
 
-void ViEEncoder::SetSendPayloadRouter(PayloadRouter* send_payload_router) {
+void ViEEncoder::StartThreadsAndSetSendPayloadRouter(
+    PayloadRouter* send_payload_router) {
   DCHECK(send_payload_router_ == NULL);
   send_payload_router_ = send_payload_router;
+
+  module_process_thread_.RegisterModule(&vcm_);
+  module_process_thread_.RegisterModule(default_rtp_rtcp_.get());
+  pacer_thread_->RegisterModule(paced_sender_.get());
+  pacer_thread_->Start();
+}
+
+void ViEEncoder::StopThreadsAndRemovePayloadRouter() {
+  pacer_thread_->Stop();
+  pacer_thread_->DeRegisterModule(paced_sender_.get());
+  module_process_thread_.DeRegisterModule(&vcm_);
+  module_process_thread_.DeRegisterModule(&vpm_);
+  module_process_thread_.DeRegisterModule(default_rtp_rtcp_.get());
+  send_payload_router_ = nullptr;
 }
 
 ViEEncoder::~ViEEncoder() {
@@ -245,11 +253,6 @@ ViEEncoder::~ViEEncoder() {
   if (bitrate_controller_) {
     bitrate_controller_->RemoveBitrateObserver(bitrate_observer_.get());
   }
-  pacer_thread_->Stop();
-  pacer_thread_->DeRegisterModule(paced_sender_.get());
-  module_process_thread_.DeRegisterModule(&vcm_);
-  module_process_thread_.DeRegisterModule(&vpm_);
-  module_process_thread_.DeRegisterModule(default_rtp_rtcp_.get());
   VideoCodingModule::Destroy(&vcm_);
   VideoProcessingModule::Destroy(&vpm_);
   delete qm_callback_;
@@ -453,8 +456,8 @@ bool ViEEncoder::TimeToSendPacket(uint32_t ssrc,
                                   uint16_t sequence_number,
                                   int64_t capture_time_ms,
                                   bool retransmission) {
-  return default_rtp_rtcp_->TimeToSendPacket(ssrc, sequence_number,
-                                             capture_time_ms, retransmission);
+  return send_payload_router_->TimeToSendPacket(
+      ssrc, sequence_number, capture_time_ms, retransmission);
 }
 
 size_t ViEEncoder::TimeToSendPadding(size_t bytes) {
@@ -465,7 +468,7 @@ size_t ViEEncoder::TimeToSendPadding(size_t bytes) {
         send_padding_ || video_suspended_ || min_transmit_bitrate_kbps_ > 0;
   }
   if (send_padding) {
-    return default_rtp_rtcp_->TimeToSendPadding(bytes);
+    return send_payload_router_->TimeToSendPadding(bytes);
   }
   return 0;
 }

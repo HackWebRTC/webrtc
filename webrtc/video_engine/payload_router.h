@@ -54,11 +54,23 @@ class PayloadRouter {
                     const RTPFragmentationHeader* fragmentation,
                     const RTPVideoHeader* rtp_video_hdr);
 
+  // Called when it's time to send a stored packet.
+  bool TimeToSendPacket(uint32_t ssrc,
+                        uint16_t sequence_number,
+                        int64_t capture_timestamp,
+                        bool retransmission);
+
+  // Called when it's time to send padding, returns the number of bytes actually
+  // sent.
+  size_t TimeToSendPadding(size_t bytes);
+
   // Returns the maximum allowed data payload length, given the configured MTU
   // and RTP headers.
   size_t MaxPayloadLength() const;
 
  private:
+  // TODO(mflodman): When the new video API has launched, remove crit_ and
+  // assume rtp_modules_ will never change during a call.
   scoped_ptr<CriticalSectionWrapper> crit_;
 
   // Active sending RTP modules, in layer order.

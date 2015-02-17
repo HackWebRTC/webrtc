@@ -117,7 +117,7 @@ int ViEChannelManager::CreateChannel(int* channel_id,
     return -1;
   }
   // Connect the encoder with the send packet router, to enable sending.
-  vie_encoder->SetSendPayloadRouter(
+  vie_encoder->StartThreadsAndSetSendPayloadRouter(
       channel_map_[new_channel_id]->send_payload_router());
 
   // Add ViEEncoder to EncoderFeedBackObserver.
@@ -183,7 +183,7 @@ int ViEChannelManager::CreateChannel(int* channel_id,
       vie_encoder = NULL;
     }
     // Connect the encoder with the send packet router, to enable sending.
-    vie_encoder->SetSendPayloadRouter(
+    vie_encoder->StartThreadsAndSetSendPayloadRouter(
         channel_map_[new_channel_id]->send_payload_router());
 
     // Register the ViEEncoder to get key frame requests for this channel.
@@ -249,9 +249,11 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
         vie_channel->GetStatsObserver());
     group->SetChannelRembStatus(channel_id, false, false, vie_channel);
 
-    // Remove the feedback if we're owning the encoder.
+    // If we're owning the encoder, remove the feedback and stop all encoding
+    // threads and processing. This must be done before deleting the channel.
     if (vie_encoder->channel_id() == channel_id) {
       group->GetEncoderStateFeedback()->RemoveEncoder(vie_encoder);
+      vie_encoder->StopThreadsAndRemovePayloadRouter();
     }
 
     unsigned int remote_ssrc = 0;

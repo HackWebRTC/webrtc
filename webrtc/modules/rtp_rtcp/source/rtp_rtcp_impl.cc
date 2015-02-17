@@ -501,42 +501,18 @@ bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
                                          uint16_t sequence_number,
                                          int64_t capture_time_ms,
                                          bool retransmission) {
-  if (!IsDefaultModule()) {
-    // Don't send from default module.
-    if (SendingMedia() && ssrc == rtp_sender_.SSRC()) {
-      return rtp_sender_.TimeToSendPacket(sequence_number, capture_time_ms,
-                                          retransmission);
-    }
-  } else {
-    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
-    while (it != child_modules_.end()) {
-      if ((*it)->SendingMedia() && ssrc == (*it)->rtp_sender_.SSRC()) {
-        return (*it)->rtp_sender_.TimeToSendPacket(sequence_number,
-                                                   capture_time_ms,
-                                                   retransmission);
-      }
-      ++it;
-    }
+  assert(!IsDefaultModule());
+  if (SendingMedia() && ssrc == rtp_sender_.SSRC()) {
+    return rtp_sender_.TimeToSendPacket(
+        sequence_number, capture_time_ms, retransmission);
   }
   // No RTP sender is interested in sending this packet.
   return true;
 }
 
 size_t ModuleRtpRtcpImpl::TimeToSendPadding(size_t bytes) {
-  if (!IsDefaultModule()) {
-    // Don't send from default module.
-    return rtp_sender_.TimeToSendPadding(bytes);
-  } else {
-    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    for (size_t i = 0; i < child_modules_.size(); ++i) {
-      // Send padding on one of the modules sending media.
-      if (child_modules_[i]->SendingMedia()) {
-        return child_modules_[i]->rtp_sender_.TimeToSendPadding(bytes);
-      }
-    }
-  }
-  return 0;
+  assert(!IsDefaultModule());
+  return rtp_sender_.TimeToSendPadding(bytes);
 }
 
 bool ModuleRtpRtcpImpl::GetSendSideDelay(int* avg_send_delay_ms,
