@@ -45,8 +45,9 @@ class VideoSourceInterface : public MediaSourceInterface {
   virtual cricket::VideoCapturer* GetVideoCapturer() = 0;
 
   // Stop the video capturer.
-  virtual void Stop() = 0;
-  virtual void Restart() = 0;
+  // TODO(perkj): Make pure virtual after updating Chrome.
+  virtual void Stop() {};
+  virtual void Restart() {};
 
   // Adds |output| to the source to receive frames.
   virtual void AddSink(cricket::VideoRenderer* output) = 0;
