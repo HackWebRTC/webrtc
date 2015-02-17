@@ -135,7 +135,6 @@ private:
     VideoRotationMode _rotateFrame; //Set if the frame should be rotated by the capture module.
 
     I420VideoFrame _captureFrame;
-    VideoFrame _capture_encoded_frame;
 
     // Used to make sure incoming timestamp is increasing for every frame.
     int64_t last_capture_time_;
