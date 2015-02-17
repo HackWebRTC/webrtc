@@ -92,22 +92,59 @@ class StatisticsProxy : public RtcpStatisticsCallback {
   ChannelStatistics stats_;
 };
 
-class VoEBitrateObserver : public BitrateObserver {
+class VoERtcpObserver : public RtcpBandwidthObserver {
  public:
-  explicit VoEBitrateObserver(Channel* owner)
-      : owner_(owner) {}
-  virtual ~VoEBitrateObserver() {}
+  explicit VoERtcpObserver(Channel* owner) : owner_(owner) {}
+  virtual ~VoERtcpObserver() {}
 
-  // Implements BitrateObserver.
-  virtual void OnNetworkChanged(const uint32_t bitrate_bps,
-                                const uint8_t fraction_lost,
-                                const int64_t rtt) OVERRIDE {
-    // |fraction_lost| has a scale of 0 - 255.
-    owner_->OnNetworkChanged(bitrate_bps, fraction_lost, rtt);
+  void OnReceivedEstimatedBitrate(uint32_t bitrate) override {
+    // Not used for Voice Engine.
+  }
+
+  virtual void OnReceivedRtcpReceiverReport(
+      const ReportBlockList& report_blocks,
+      int64_t rtt,
+      int64_t now_ms) override {
+    // TODO(mflodman): Do we need to aggregate reports here or can we jut send
+    // what we get? I.e. do we ever get multiple reports bundled into one RTCP
+    // report for VoiceEngine?
+    if (report_blocks.empty())
+      return;
+
+    int fraction_lost_aggregate = 0;
+    int total_number_of_packets = 0;
+
+    // If receiving multiple report blocks, calculate the weighted average based
+    // on the number of packets a report refers to.
+    for (ReportBlockList::const_iterator block_it = report_blocks.begin();
+         block_it != report_blocks.end(); ++block_it) {
+      // Find the previous extended high sequence number for this remote SSRC,
+      // to calculate the number of RTP packets this report refers to. Ignore if
+      // we haven't seen this SSRC before.
+      std::map<uint32_t, uint32_t>::iterator seq_num_it =
+          extended_max_sequence_number_.find(block_it->sourceSSRC);
+      int number_of_packets = 0;
+      if (seq_num_it != extended_max_sequence_number_.end()) {
+        number_of_packets = block_it->extendedHighSeqNum - seq_num_it->second;
+      }
+      fraction_lost_aggregate += number_of_packets * block_it->fractionLost;
+      total_number_of_packets += number_of_packets;
+
+      extended_max_sequence_number_[block_it->sourceSSRC] =
+          block_it->extendedHighSeqNum;
+    }
+    int weighted_fraction_lost = 0;
+    if (total_number_of_packets > 0) {
+      weighted_fraction_lost = (fraction_lost_aggregate +
+          total_number_of_packets / 2) / total_number_of_packets;
+    }
+    owner_->OnIncomingFractionLoss(weighted_fraction_lost);
   }
 
  private:
   Channel* owner_;
+  // Maps remote side ssrc to extended highest sequence number received.
+  std::map<uint32_t, uint32_t> extended_max_sequence_number_;
 };
 
 int32_t
@@ -788,12 +825,7 @@ Channel::Channel(int32_t channelId,
     _rxAgcIsEnabled(false),
     _rxNsIsEnabled(false),
     restored_packet_in_use_(false),
-    bitrate_controller_(
-        BitrateController::CreateBitrateController(Clock::GetRealTimeClock(),
-                                                   true)),
-    rtcp_bandwidth_observer_(
-        bitrate_controller_->CreateRtcpBandwidthObserver()),
-    send_bitrate_observer_(new VoEBitrateObserver(this)),
+    rtcp_observer_(new VoERtcpObserver(this)),
     network_predictor_(new NetworkPredictor(Clock::GetRealTimeClock()))
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -808,7 +840,7 @@ Channel::Channel(int32_t channelId,
     configuration.outgoing_transport = this;
     configuration.audio_messages = this;
     configuration.receive_statistics = rtp_receive_statistics_.get();
-    configuration.bandwidth_callback = rtcp_bandwidth_observer_.get();
+    configuration.bandwidth_callback = rtcp_observer_.get();
 
     _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
 
@@ -1321,28 +1353,16 @@ Channel::SetSendCodec(const CodecInst& codec)
         return -1;
     }
 
-    bitrate_controller_->SetBitrateObserver(send_bitrate_observer_.get(),
-                                            codec.rate, 0, 0);
-
     return 0;
 }
 
-void
-Channel::OnNetworkChanged(const uint32_t bitrate_bps,
-                          const uint8_t fraction_lost,  // 0 - 255.
-                          const int64_t rtt) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-      "Channel::OnNetworkChanged(bitrate_bps=%d, fration_lost=%d, rtt=%" PRId64
-      ")", bitrate_bps, fraction_lost, rtt);
-  // |fraction_lost| from BitrateObserver is short time observation of packet
-  // loss rate from past. We use network predictor to make a more reasonable
-  // loss rate estimation.
+void Channel::OnIncomingFractionLoss(int fraction_lost) {
   network_predictor_->UpdatePacketLossRate(fraction_lost);
-  uint8_t loss_rate = network_predictor_->GetLossRate();
+  uint8_t average_fraction_loss = network_predictor_->GetLossRate();
+
   // Normalizes rate to 0 - 100.
-  if (audio_coding_->SetPacketLossRate(100 * loss_rate / 255) != 0) {
-    _engineStatisticsPtr->SetLastError(VE_AUDIO_CODING_MODULE_ERROR,
-        kTraceError, "OnNetworkChanged() failed to set packet loss rate");
+  if (audio_coding_->SetPacketLossRate(
+      100 * average_fraction_loss / 255) != 0) {
     assert(false);  // This should not happen.
   }
 }

@@ -68,10 +68,11 @@ struct SenderInfo;
 
 namespace voe {
 
+class OutputMixer;
 class Statistics;
 class StatisticsProxy;
 class TransmitMixer;
-class OutputMixer;
+class VoERtcpObserver;
 
 // Helper class to simplify locking scheme for members that are accessed from
 // multiple threads.
@@ -163,6 +164,8 @@ class Channel:
     public MixerParticipant // supplies output mixer with audio frames
 {
 public:
+    friend class VoERtcpObserver;
+
     enum {KNumSocketThreads = 1};
     enum {KNumberOfSocketBuffers = 8};
     virtual ~Channel();
@@ -449,10 +452,8 @@ public:
     uint32_t PrepareEncodeAndSend(int mixingFrequency);
     uint32_t EncodeAndSend();
 
-    // From BitrateObserver (called by the RTP/RTCP module).
-    void OnNetworkChanged(const uint32_t bitrate_bps,
-                          const uint8_t fraction_lost,  // 0 - 255.
-                          const int64_t rtt);
+protected:
+    void OnIncomingFractionLoss(int fraction_lost);
 
 private:
     bool ReceivePacket(const uint8_t* packet, size_t packet_length,
@@ -581,9 +582,7 @@ private:
     bool _rxNsIsEnabled;
     bool restored_packet_in_use_;
     // RtcpBandwidthObserver
-    scoped_ptr<BitrateController> bitrate_controller_;
-    scoped_ptr<RtcpBandwidthObserver> rtcp_bandwidth_observer_;
-    scoped_ptr<BitrateObserver> send_bitrate_observer_;
+    scoped_ptr<VoERtcpObserver> rtcp_observer_;
     scoped_ptr<NetworkPredictor> network_predictor_;
 };
 
