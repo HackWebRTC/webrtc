@@ -28,7 +28,7 @@ const float kAlpha = 1.5f;
 // The minimum value a post-processing mask can take.
 const float kMaskMinimum = 0.01f;
 
-const float kSpeedOfSoundMeterSeconds = 340;
+const float kSpeedOfSoundMeterSeconds = 343;
 
 // For both target and interference angles, 0 is perpendicular to the microphone
 // array, facing forwards. The positive direction goes counterclockwise.
@@ -45,19 +45,19 @@ const float kInterfAngleRadians = static_cast<float>(M_PI) / 4.f;
 // the weighted average between the uniform covariance matrix and the angled
 // covariance matrix.
 // Rpsi = Rpsi_angled * kBalance + Rpsi_uniform * (1 - kBalance)
-const float kBalance = 0.2f;
+const float kBalance = 0.4f;
 
 // TODO(claguna): need comment here.
-const float kBeamwidthConstant = 0.00001f;
+const float kBeamwidthConstant = 0.00002f;
 
 // Width of the boxcar.
-const float kBoxcarHalfWidth = 0.001f;
+const float kBoxcarHalfWidth = 0.01f;
 
 // We put a gap in the covariance matrix where we expect the target to come
 // from. Warning: This must be very small, ex. < 0.01, because otherwise it can
 // cause the covariance matrix not to be positive semidefinite, and we require
 // that our covariance matrices are positive semidefinite.
-const float kCovUniformGapHalfWidth = 0.001f;
+const float kCovUniformGapHalfWidth = 0.01f;
 
 // Alpha coefficient for mask smoothing.
 const float kMaskSmoothAlpha = 0.2f;
