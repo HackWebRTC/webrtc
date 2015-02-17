@@ -274,7 +274,7 @@ protected:
   // delivered RTP packet to the remote side.
   int64_t _lastIncreasedSequenceNumberMs;
 
-  RtcpStatisticsCallback* stats_callback_;
+  RtcpStatisticsCallback* stats_callback_ GUARDED_BY(_criticalSectionFeedbacks);
 
   RtcpPacketTypeCounter packet_type_counter_;
 
