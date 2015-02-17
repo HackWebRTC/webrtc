@@ -93,8 +93,6 @@ public:
 
     void SetRemoteSSRC(uint32_t ssrc);
 
-    int32_t SetCameraDelay(int32_t delayMS);
-
     int32_t SetCNAME(const char cName[RTCP_CNAME_SIZE]);
 
     int32_t AddMixedCNAME(uint32_t SSRC, const char cName[RTCP_CNAME_SIZE]);
@@ -302,8 +300,6 @@ private:
         GUARDED_BY(_criticalSectionRTCPSender);
     std::map<uint32_t, RTCPUtility::RTCPCnameInformation*> _csrcCNAMEs
         GUARDED_BY(_criticalSectionRTCPSender);
-
-    int32_t _cameraDelayMS GUARDED_BY(_criticalSectionRTCPSender);
 
     // Sent
     uint32_t _lastSendReport[RTCP_NUMBER_OF_SR] GUARDED_BY(

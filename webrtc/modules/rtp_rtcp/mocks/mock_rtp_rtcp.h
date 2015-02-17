@@ -231,8 +231,6 @@ class MockRtpRtcp : public RtpRtcp {
       int32_t(bool& enable, uint8_t& ID));
   MOCK_METHOD1(SetAudioLevel,
       int32_t(const uint8_t level_dBov));
-  MOCK_METHOD1(SetCameraDelay,
-      int32_t(const int32_t delayMS));
   MOCK_METHOD1(SetTargetSendBitrate,
       void(const std::vector<uint32_t>& stream_bitrates));
   MOCK_METHOD3(SetGenericFECStatus,

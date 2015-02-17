@@ -108,9 +108,6 @@ RTCPSender::RTCPSender(int32_t id,
       internal_report_blocks_(),
       external_report_blocks_(),
       _csrcCNAMEs(),
-
-      _cameraDelayMS(0),
-
       _lastSendReport(),
       _lastRTCPTime(),
 
@@ -300,18 +297,6 @@ void RTCPSender::SetRemoteSSRC(uint32_t ssrc)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
     _remoteSSRC = ssrc;
-}
-
-int32_t RTCPSender::SetCameraDelay(int32_t delayMS) {
-    CriticalSectionScoped lock(_criticalSectionRTCPSender);
-    if(delayMS > 1000 || delayMS < -1000)
-    {
-        LOG(LS_WARNING) << "Delay can't be larger than 1 second: "
-                        << delayMS << " ms";
-        return -1;
-    }
-    _cameraDelayMS = delayMS;
-    return 0;
 }
 
 int32_t RTCPSender::SetCNAME(const char cName[RTCP_CNAME_SIZE]) {

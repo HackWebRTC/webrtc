@@ -959,22 +959,6 @@ int32_t ModuleRtpRtcpImpl::SendRTCPSliceLossIndication(
       GetFeedbackState(), kRtcpSli, 0, 0, false, picture_id);
 }
 
-int32_t ModuleRtpRtcpImpl::SetCameraDelay(const int32_t delay_ms) {
-  if (IsDefaultModule()) {
-    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
-    while (it != child_modules_.end()) {
-      RtpRtcp* module = *it;
-      if (module) {
-        module->SetCameraDelay(delay_ms);
-      }
-      it++;
-    }
-    return 0;
-  }
-  return rtcp_sender_.SetCameraDelay(delay_ms);
-}
-
 int32_t ModuleRtpRtcpImpl::SetGenericFECStatus(
     const bool enable,
     const uint8_t payload_type_red,

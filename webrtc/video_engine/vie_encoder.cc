@@ -618,7 +618,6 @@ void ViEEncoder::DeliverFrame(int id,
 }
 
 void ViEEncoder::DelayChanged(int id, int frame_delay) {
-  default_rtp_rtcp_->SetCameraDelay(frame_delay);
 }
 
 int ViEEncoder::GetPreferedFrameSettings(int* width,

@@ -292,8 +292,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Send a request for a keyframe.
   virtual int32_t RequestKeyFrame() OVERRIDE;
 
-  virtual int32_t SetCameraDelay(int32_t delay_ms) OVERRIDE;
-
   virtual void SetTargetSendBitrate(
       const std::vector<uint32_t>& stream_bitrates) OVERRIDE;
 
