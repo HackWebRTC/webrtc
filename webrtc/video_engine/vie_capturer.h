@@ -146,7 +146,6 @@ class ViECapturer
   bool ViECaptureProcess();
 
   void DeliverI420Frame(I420VideoFrame* video_frame);
-  void DeliverCodedFrame(VideoFrame* video_frame);
 
  private:
   bool SwapCapturedAndDeliverFrameIfAvailable();
