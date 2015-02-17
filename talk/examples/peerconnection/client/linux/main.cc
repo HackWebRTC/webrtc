@@ -72,7 +72,11 @@ class CustomSocketServer : public rtc::PhysicalSocketServer {
 int main(int argc, char* argv[]) {
   gtk_init(&argc, &argv);
   g_type_init();
-  g_thread_init(NULL);
+  // g_thread_init API is deprecated since glib 2.31.0, see release note:
+  // http://mail.gnome.org/archives/gnome-announce-list/2011-October/msg00041.html
+#if !GLIB_CHECK_VERSION(2, 31, 0)
+    g_thread_init(NULL);
+#endif
 
   rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
   if (FLAG_help) {
@@ -116,4 +120,3 @@ int main(int argc, char* argv[]) {
   rtc::CleanupSSL();
   return 0;
 }
-
