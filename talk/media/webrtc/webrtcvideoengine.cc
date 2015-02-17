@@ -1772,6 +1772,8 @@ bool WebRtcVideoMediaChannel::SetRecvCodecs(
         receive_codecs_.push_back(wcodec);
         int apt;
         if (iter->GetParam(cricket::kCodecParamAssociatedPayloadType, &apt)) {
+          if (!IsValidRtpPayloadType(apt))
+            return false;
           associated_payload_types_[wcodec.plType] = apt;
         }
       }
@@ -1808,6 +1810,8 @@ bool WebRtcVideoMediaChannel::SetSendCodecs(
       int rtx_type = iter->id;
       int rtx_primary_type = -1;
       if (iter->GetParam(kCodecParamAssociatedPayloadType, &rtx_primary_type)) {
+        if (!IsValidRtpPayloadType(rtx_primary_type))
+          return false;
         primary_rtx_pt_mapping[rtx_primary_type] = rtx_type;
       }
     } else if (engine()->CanSendCodec(*iter, dummy_current, &checked_codec)) {

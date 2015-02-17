@@ -176,7 +176,8 @@ bool SetRtpSsrc(void* data, size_t len, uint32 value) {
 
 // Assumes version 2, no padding, no extensions, no csrcs.
 bool SetRtpHeader(void* data, size_t len, const RtpHeader& header) {
-  if (header.payload_type >= 0x7F) {
+  if (!IsValidRtpPayloadType(header.payload_type) ||
+      header.seq_num < 0 || header.seq_num > UINT16_MAX) {
     return false;
   }
   return (SetUint8(data, kRtpFlagsOffset, kRtpVersion << 6) &&
@@ -192,6 +193,10 @@ bool IsRtpPacket(const void* data, size_t len) {
     return false;
 
   return (static_cast<const uint8*>(data)[0] >> 6) == kRtpVersion;
+}
+
+bool IsValidRtpPayloadType(int payload_type) {
+  return payload_type >= 0 && payload_type <= 127;
 }
 
 }  // namespace cricket

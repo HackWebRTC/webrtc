@@ -39,6 +39,7 @@
 #include "talk/media/base/codec.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/cryptoparams.h"
+#include "talk/media/base/rtputils.h"
 #include "talk/media/sctp/sctpdataengine.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/constants.h"
@@ -585,6 +586,14 @@ static bool GetValueFromString(const std::string& line,
     return ParseFailed(line, description.str(), error);
   }
   return true;
+}
+
+static bool GetPayloadTypeFromString(const std::string& line,
+                                     const std::string& s,
+                                     int* payload_type,
+                                     SdpParseError* error) {
+  return GetValueFromString(line, s, payload_type, error) &&
+      cricket::IsValidRtpPayloadType(*payload_type);
 }
 
 void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
@@ -2206,7 +2215,7 @@ bool ParseMediaDescription(const std::string& message,
         }
 
         int pl = 0;
-        if (!GetValueFromString(line, fields[j], &pl, error)) {
+        if (!GetPayloadTypeFromString(line, fields[j], &pl, error)) {
           return false;
         }
         codec_preference.push_back(pl);
@@ -2923,7 +2932,8 @@ bool ParseRtpmapAttribute(const std::string& line,
     return false;
   }
   int payload_type = 0;
-  if (!GetValueFromString(line, payload_type_value, &payload_type, error)) {
+  if (!GetPayloadTypeFromString(line, payload_type_value, &payload_type,
+                                error)) {
     return false;
   }
 
@@ -3061,7 +3071,7 @@ bool ParseFmtpAttributes(const std::string& line, const MediaType media_type,
   }
 
   int int_payload_type = 0;
-  if (!GetValueFromString(line, payload_type, &int_payload_type, error)) {
+  if (!GetPayloadTypeFromString(line, payload_type, &int_payload_type, error)) {
     return false;
   }
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
@@ -3093,7 +3103,8 @@ bool ParseRtcpFbAttribute(const std::string& line, const MediaType media_type,
   }
   int payload_type = kWildcardPayloadType;
   if (payload_type_string != "*") {
-    if (!GetValueFromString(line, payload_type_string, &payload_type, error)) {
+    if (!GetPayloadTypeFromString(line, payload_type_string, &payload_type,
+                                  error)) {
       return false;
     }
   }

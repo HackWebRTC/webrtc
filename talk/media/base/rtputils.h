@@ -67,6 +67,10 @@ bool SetRtpSsrc(void* data, size_t len, uint32 value);
 bool SetRtpHeader(void* data, size_t len, const RtpHeader& header);
 
 bool IsRtpPacket(const void* data, size_t len);
+
+// True if |payload type| is 0-127.
+bool IsValidRtpPayloadType(int payload_type);
+
 }  // namespace cricket
 
 #endif  // TALK_MEDIA_BASE_RTPUTILS_H_

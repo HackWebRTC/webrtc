@@ -2105,9 +2105,11 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
       case VideoCodec::CODEC_RTX: {
         int associated_payload_type;
         if (!in_codec.GetParam(kCodecParamAssociatedPayloadType,
-                               &associated_payload_type)) {
-          LOG(LS_ERROR) << "RTX codec without associated payload type: "
-                        << in_codec.ToString();
+                               &associated_payload_type) ||
+            !IsValidRtpPayloadType(associated_payload_type)) {
+          LOG(LS_ERROR)
+              << "RTX codec with invalid or no associated payload type: "
+              << in_codec.ToString();
           return std::vector<VideoCodecSettings>();
         }
         rtx_mapping[associated_payload_type] = in_codec.id;

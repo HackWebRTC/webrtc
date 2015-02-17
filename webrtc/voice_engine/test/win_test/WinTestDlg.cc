@@ -927,7 +927,7 @@ void CTelephonyEvent::OnBnClickedButtonSetRxTelephonePt()
 {
     BOOL ret;
     int pt = GetDlgItemInt(IDC_EDIT_EVENT_RX_PT, &ret);
-    if (ret == FALSE)
+    if (ret == FALSE || pt < 0 || pt > 127)
         return;
     CodecInst codec;
     strcpy_s(codec.plname, 32, "telephone-event");
@@ -940,7 +940,7 @@ void CTelephonyEvent::OnBnClickedButtonSetTxTelephonePt()
 {
     BOOL ret;
     int pt = GetDlgItemInt(IDC_EDIT_EVENT_TX_PT, &ret);
-    if (ret == FALSE)
+    if (ret == FALSE || pt < 0 || pt > 127)
         return;
     TEST2(_veDTMFPtr->SetSendTelephoneEventPayloadType(_channel, pt) == 0,
         _T("SetSendTelephoneEventPayloadType(channel=%d, type=%u)"), _channel, pt);
