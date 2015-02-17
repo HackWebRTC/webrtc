@@ -28,7 +28,8 @@ StatisticsCalculator::StatisticsCalculator()
       lost_timestamps_(0),
       timestamps_since_last_report_(0),
       len_waiting_times_(0),
-      next_waiting_time_index_(0) {
+      next_waiting_time_index_(0),
+      secondary_decoded_samples_(0) {
   memset(waiting_times_, 0, kLenWaitingTimes * sizeof(waiting_times_[0]));
 }
 
@@ -38,6 +39,7 @@ void StatisticsCalculator::Reset() {
   added_zero_samples_ = 0;
   expanded_voice_samples_ = 0;
   expanded_noise_samples_ = 0;
+  secondary_decoded_samples_ = 0;
 }
 
 void StatisticsCalculator::ResetMcu() {
@@ -90,6 +92,10 @@ void StatisticsCalculator::IncreaseCounter(int num_samples, int fs_hz) {
   }
 }
 
+void StatisticsCalculator::SecondaryDecodedSamples(int num_samples) {
+  secondary_decoded_samples_ += num_samples;
+}
+
 void StatisticsCalculator::StoreWaitingTime(int waiting_time_ms) {
   assert(next_waiting_time_index_ < kLenWaitingTimes);
   waiting_times_[next_waiting_time_index_] = waiting_time_ms;
@@ -138,6 +144,10 @@ void StatisticsCalculator::GetNetworkStatistics(
 
   stats->expand_rate =
       CalculateQ14Ratio(expanded_voice_samples_ + expanded_noise_samples_,
+                        timestamps_since_last_report_);
+
+  stats->secondary_decoded_rate =
+      CalculateQ14Ratio(secondary_decoded_samples_,
                         timestamps_since_last_report_);
 
   // Reset counters.

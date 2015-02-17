@@ -80,8 +80,6 @@ class MockExternalPcm16B : public ExternalPcm16B {
           uint32_t arrival_timestamp));
   MOCK_METHOD0(ErrorCode,
       int());
-  MOCK_CONST_METHOD0(codec_type,
-      NetEqDecoder());
 
  private:
   ExternalPcm16B real_;

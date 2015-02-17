@@ -38,6 +38,8 @@ struct NetEqNetworkStatistics {
                              // expansion (in Q14).
   uint16_t accelerate_rate;  // Fraction of data removed through acceleration
                              // (in Q14).
+  uint16_t secondary_decoded_rate;  // Fraction of data coming from secondary
+                                    // decoding (in Q14).
   int32_t clockdrift_ppm;  // Average clock-drift in parts-per-million
                            // (positive or negative).
   int added_zero_samples;  // Number of zero samples added in "off" mode.

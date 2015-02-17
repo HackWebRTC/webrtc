@@ -1799,10 +1799,14 @@ int NetEqImpl::ExtractPackets(int required_samples, PacketList* packet_list) {
       if (packet->sync_packet) {
         packet_duration = decoder_frame_length_;
       } else {
-        packet_duration = packet->primary ?
-            decoder->PacketDuration(packet->payload, packet->payload_length) :
-            decoder->PacketDurationRedundant(packet->payload,
-                                             packet->payload_length);
+        if (packet->primary) {
+          packet_duration = decoder->PacketDuration(packet->payload,
+                                                    packet->payload_length);
+        } else {
+          packet_duration = decoder->
+              PacketDurationRedundant(packet->payload, packet->payload_length);
+          stats_.SecondaryDecodedSamples(packet_duration);
+        }
       }
     } else {
       LOG_FERR1(LS_WARNING, GetDecoder,

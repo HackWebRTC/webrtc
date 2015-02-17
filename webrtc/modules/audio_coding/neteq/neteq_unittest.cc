@@ -137,13 +137,42 @@ void RefFiles::WriteToFile(const NetEqNetworkStatistics& stats) {
 
 void RefFiles::ReadFromFileAndCompare(
     const NetEqNetworkStatistics& stats) {
+  // TODO(minyue): Update resource/audio_coding/neteq_network_stats.dat and
+  // resource/audio_coding/neteq_network_stats_win32.dat.
+  struct NetEqNetworkStatisticsOld {
+    uint16_t current_buffer_size_ms;  // Current jitter buffer size in ms.
+    uint16_t preferred_buffer_size_ms;  // Target buffer size in ms.
+    uint16_t jitter_peaks_found;  // 1 if adding extra delay due to peaky
+                                  // jitter; 0 otherwise.
+    uint16_t packet_loss_rate;  // Loss rate (network + late) in Q14.
+    uint16_t packet_discard_rate;  // Late loss rate in Q14.
+    uint16_t expand_rate;  // Fraction (of original stream) of synthesized
+                           // speech inserted through expansion (in Q14).
+    uint16_t preemptive_rate;  // Fraction of data inserted through pre-emptive
+                               // expansion (in Q14).
+    uint16_t accelerate_rate;  // Fraction of data removed through acceleration
+                               // (in Q14).
+    int32_t clockdrift_ppm;  // Average clock-drift in parts-per-million
+                             // (positive or negative).
+    int added_zero_samples;  // Number of zero samples added in "off" mode.
+  };
   if (input_fp_) {
     // Read from ref file.
-    size_t stat_size = sizeof(NetEqNetworkStatistics);
-    NetEqNetworkStatistics ref_stats;
+    size_t stat_size = sizeof(NetEqNetworkStatisticsOld);
+    NetEqNetworkStatisticsOld ref_stats;
     ASSERT_EQ(1u, fread(&ref_stats, stat_size, 1, input_fp_));
     // Compare
-    ASSERT_EQ(0, memcmp(&stats, &ref_stats, stat_size));
+    ASSERT_EQ(stats.current_buffer_size_ms, ref_stats.current_buffer_size_ms);
+    ASSERT_EQ(stats.preferred_buffer_size_ms,
+              ref_stats.preferred_buffer_size_ms);
+    ASSERT_EQ(stats.jitter_peaks_found, ref_stats.jitter_peaks_found);
+    ASSERT_EQ(stats.packet_loss_rate, ref_stats.packet_loss_rate);
+    ASSERT_EQ(stats.packet_discard_rate, ref_stats.packet_discard_rate);
+    ASSERT_EQ(stats.preemptive_rate, ref_stats.preemptive_rate);
+    ASSERT_EQ(stats.accelerate_rate, ref_stats.accelerate_rate);
+    ASSERT_EQ(stats.clockdrift_ppm, ref_stats.clockdrift_ppm);
+    ASSERT_EQ(stats.added_zero_samples, ref_stats.added_zero_samples);
+    ASSERT_EQ(stats.secondary_decoded_rate, 0);
   }
 }
 

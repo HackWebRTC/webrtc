@@ -164,6 +164,8 @@
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
       ],
       'sources': [
+        'tools/neteq_external_decoder_test.cc',
+        'tools/neteq_external_decoder_test.h',
         'tools/neteq_performance_test.cc',
         'tools/neteq_performance_test.h',
         'tools/neteq_quality_test.cc',

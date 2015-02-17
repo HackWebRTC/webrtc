@@ -64,6 +64,7 @@
             'iSACFix',
             'media_file',
             'neteq',
+            'neteq_test_support',
             'neteq_unittest_tools',
             'paced_sender',
             'PCM16B',  # Needed by NetEq tests.
@@ -125,6 +126,7 @@
             'audio_coding/neteq/merge_unittest.cc',
             'audio_coding/neteq/neteq_external_decoder_unittest.cc',
             'audio_coding/neteq/neteq_impl_unittest.cc',
+            'audio_coding/neteq/neteq_network_stats_unittest.cc',
             'audio_coding/neteq/neteq_stereo_unittest.cc',
             'audio_coding/neteq/neteq_unittest.cc',
             'audio_coding/neteq/normal_unittest.cc',
