@@ -142,12 +142,6 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
     last_render_time_ms_ = videoFrame.render_time_ms();
     last_frame_.CopyFrame(videoFrame);
   }
-  virtual void OnIncomingCapturedEncodedFrame(const int32_t id,
-                                              webrtc::VideoFrame& videoFrame,
-                                              webrtc::VideoCodecType codecType)
- {
-     assert(false);
- }
 
   virtual void OnCaptureDelayChanged(const int32_t id,
                                      const int32_t delay) {

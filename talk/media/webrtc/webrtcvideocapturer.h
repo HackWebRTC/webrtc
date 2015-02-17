@@ -82,10 +82,6 @@ class WebRtcVideoCapturer : public VideoCapturer,
   // Callback when a frame is captured by camera.
   virtual void OnIncomingCapturedFrame(const int32_t id,
                                        webrtc::I420VideoFrame& frame);
-  virtual void OnIncomingCapturedEncodedFrame(const int32_t id,
-      webrtc::VideoFrame& frame,
-      webrtc::VideoCodecType codec_type) {
-  }
   virtual void OnCaptureDelayChanged(const int32_t id,
                                      const int32_t delay);
 
