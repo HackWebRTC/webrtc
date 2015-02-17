@@ -28,6 +28,8 @@
 #ifndef TALK_APP_WEBRTC_VIDEOSOURCE_H_
 #define TALK_APP_WEBRTC_VIDEOSOURCE_H_
 
+#include <list>
+
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/notifier.h"
 #include "talk/app/webrtc/videosourceinterface.h"
@@ -73,6 +75,10 @@ class VideoSource : public Notifier<VideoSourceInterface>,
   virtual cricket::VideoCapturer* GetVideoCapturer() {
     return video_capturer_.get();
   }
+
+  void Stop() override;
+  void Restart() override;
+
   // |output| will be served video frames as long as the underlying capturer
   // is running video frames.
   virtual void AddSink(cricket::VideoRenderer* output);
@@ -92,6 +98,8 @@ class VideoSource : public Notifier<VideoSourceInterface>,
   cricket::ChannelManager* channel_manager_;
   rtc::scoped_ptr<cricket::VideoCapturer> video_capturer_;
   rtc::scoped_ptr<cricket::VideoRenderer> frame_input_;
+
+  std::list<cricket::VideoRenderer*> sinks_;
 
   cricket::VideoFormat format_;
   cricket::VideoOptions options_;

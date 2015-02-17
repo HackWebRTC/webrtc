@@ -422,8 +422,9 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         @Override public void run() {
           stopCaptureOnCameraThread(result);
         }
-      });
+    });
     boolean status = exchange(result, false);  // |false| is a dummy value here.
+    Log.d(TAG, "stopCapture wait");
     try {
       cameraThread.join();
     } catch (InterruptedException e) {

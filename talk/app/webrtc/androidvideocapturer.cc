@@ -100,7 +100,8 @@ AndroidVideoCapturer::AndroidVideoCapturer(
     : running_(false),
       delegate_(delegate.Pass()),
       worker_thread_(NULL),
-      frame_factory_(NULL) {
+      frame_factory_(NULL),
+      current_state_(cricket::CS_STOPPED){
   std::string json_string = delegate_->GetSupportedFormats();
   LOG(LS_INFO) << json_string;
 
@@ -132,7 +133,7 @@ AndroidVideoCapturer::~AndroidVideoCapturer() {
 cricket::CaptureState AndroidVideoCapturer::Start(
     const cricket::VideoFormat& capture_format) {
   DCHECK(!running_);
-  DCHECK(worker_thread_ == nullptr);
+  DCHECK(worker_thread_ == nullptr || worker_thread_ == rtc::Thread::Current());
   // TODO(perkj): Better way to get a handle to the worker thread?
   worker_thread_ = rtc::Thread::Current();
 
@@ -146,7 +147,9 @@ cricket::CaptureState AndroidVideoCapturer::Start(
   delegate_->Start(
       capture_format.width, capture_format.height,
       cricket::VideoFormat::IntervalToFps(capture_format.interval), this);
-  return cricket::CS_STARTING;
+  SetCaptureFormat(&capture_format);
+  current_state_ = cricket::CS_STARTING;
+  return current_state_;
 }
 
 void AndroidVideoCapturer::Stop() {
@@ -157,7 +160,8 @@ void AndroidVideoCapturer::Stop() {
   SetCaptureFormat(NULL);
 
   delegate_->Stop();
-  SignalStateChange(this, cricket::CS_STOPPED);
+  current_state_ = cricket::CS_STOPPED;
+  SignalStateChange(this, current_state_);
 }
 
 bool AndroidVideoCapturer::IsRunning() {
@@ -180,7 +184,14 @@ void AndroidVideoCapturer::OnCapturerStarted_w(bool success) {
   DCHECK(worker_thread_->IsCurrent());
   cricket::CaptureState new_state =
       success ? cricket::CS_RUNNING : cricket::CS_FAILED;
-  SetCaptureState(new_state);
+  if (new_state == current_state_)
+    return;
+  current_state_ = new_state;
+
+  // TODO(perkj): SetCaptureState can not be used since it posts to |thread_|.
+  // But |thread_ | is currently just the thread that happened to create the
+  // cricket::VideoCapturer.
+  SignalStateChange(this, new_state);
 }
 
 void AndroidVideoCapturer::OnIncomingFrame(signed char* videoFrame,

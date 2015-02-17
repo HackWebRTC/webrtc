@@ -102,6 +102,8 @@ class AndroidVideoCapturer : public cricket::VideoCapturer {
 
   class FrameFactory;
   FrameFactory* frame_factory_;  // Owned by cricket::VideoCapturer.
+
+  cricket::CaptureState current_state_;
 };
 
 }  // namespace webrtc

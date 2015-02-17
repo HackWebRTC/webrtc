@@ -2950,28 +2950,13 @@ JOW(void, VideoRenderer_nativeCopyPlane)(
   }
 }
 
-JOW(jlong, VideoSource_stop)(JNIEnv* jni, jclass, jlong j_p) {
-  cricket::VideoCapturer* capturer =
-      reinterpret_cast<VideoSourceInterface*>(j_p)->GetVideoCapturer();
-  scoped_ptr<cricket::VideoFormatPod> format(
-      new cricket::VideoFormatPod(*capturer->GetCaptureFormat()));
-  capturer->Stop();
-  return jlongFromPointer(format.release());
+JOW(void, VideoSource_stop)(JNIEnv* jni, jclass, jlong j_p) {
+  reinterpret_cast<VideoSourceInterface*>(j_p)->Stop();
 }
 
 JOW(void, VideoSource_restart)(
     JNIEnv* jni, jclass, jlong j_p_source, jlong j_p_format) {
-  CHECK(j_p_source);
-  CHECK(j_p_format);
-  scoped_ptr<cricket::VideoFormatPod> format(
-      reinterpret_cast<cricket::VideoFormatPod*>(j_p_format));
-  reinterpret_cast<VideoSourceInterface*>(j_p_source)->GetVideoCapturer()->
-      StartCapturing(cricket::VideoFormat(*format));
-}
-
-JOW(void, VideoSource_freeNativeVideoFormat)(
-    JNIEnv* jni, jclass, jlong j_p) {
-  delete reinterpret_cast<cricket::VideoFormatPod*>(j_p);
+  reinterpret_cast<VideoSourceInterface*>(j_p_source)->Restart();
 }
 
 JOW(jstring, MediaStreamTrack_nativeId)(JNIEnv* jni, jclass, jlong j_p) {

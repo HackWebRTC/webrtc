@@ -122,6 +122,8 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     RendererCallbacks callbacks = new RendererCallbacks();
     track.addRenderer(new VideoRenderer(callbacks));
     assertTrue(callbacks.WaitForNextFrameToRender() > 0);
+    track.dispose();
+    source.dispose();
   }
 
   @Override
@@ -195,6 +197,32 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     RendererCallbacks callbacks = new RendererCallbacks();
     track.addRenderer(new VideoRenderer(callbacks));
     assertTrue(callbacks.WaitForNextFrameToRender() > 0);
+    track.dispose();
+    source.dispose();
+  }
+
+  @SmallTest
+  // This test that the VideoSource that the VideoCapturer is connected to can
+  // be stopped and restarted. It tests both the Java and the C++ layer.
+  public void testStopRestartVideoSource() throws Exception {
+    PeerConnectionFactory factory = new PeerConnectionFactory();
+    VideoCapturerAndroid capturer = VideoCapturerAndroid.create("");
+    VideoSource source =
+        factory.createVideoSource(capturer, new MediaConstraints());
+    VideoTrack track = factory.createVideoTrack("dummy", source);
+    RendererCallbacks callbacks = new RendererCallbacks();
+    track.addRenderer(new VideoRenderer(callbacks));
+    assertTrue(callbacks.WaitForNextFrameToRender() > 0);
+    assertEquals(MediaSource.State.LIVE, source.state());
+
+    source.stop();
+    assertEquals(MediaSource.State.ENDED, source.state());
+
+    source.restart();
+    assertTrue(callbacks.WaitForNextFrameToRender() > 0);
+    assertEquals(MediaSource.State.LIVE, source.state());
+    track.dispose();
+    source.dispose();
   }
 
   @SmallTest
@@ -218,5 +246,6 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
       assertEquals((format.width*format.height*3)/2, observer.frameSize());
       assertTrue(capturer.stopCapture());
     }
+    capturer.dispose();
   }
 }

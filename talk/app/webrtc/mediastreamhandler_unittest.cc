@@ -85,6 +85,8 @@ class FakeVideoSource : public Notifier<VideoSourceInterface> {
   virtual cricket::VideoCapturer* GetVideoCapturer() {
     return &fake_capturer_;
   }
+  virtual void Stop() {}
+  virtual void Restart() {}
   virtual void AddSink(cricket::VideoRenderer* output) {}
   virtual void RemoveSink(cricket::VideoRenderer* output) {}
   virtual SourceState state() const { return state_; }

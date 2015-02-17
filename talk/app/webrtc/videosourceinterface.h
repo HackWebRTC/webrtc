@@ -43,6 +43,11 @@ class VideoSourceInterface : public MediaSourceInterface {
   // This can be used for receiving frames and state notifications.
   // But it should not be used for starting or stopping capturing.
   virtual cricket::VideoCapturer* GetVideoCapturer() = 0;
+
+  // Stop the video capturer.
+  virtual void Stop() = 0;
+  virtual void Restart() = 0;
+
   // Adds |output| to the source to receive frames.
   virtual void AddSink(cricket::VideoRenderer* output) = 0;
   virtual void RemoveSink(cricket::VideoRenderer* output) = 0;

@@ -169,7 +169,7 @@ class VideoSourceTest : public testing::Test {
 // Test that a VideoSource transition to kLive state when the capture
 // device have started and kEnded if it is stopped.
 // It also test that an output can receive video frames.
-TEST_F(VideoSourceTest, StartStop) {
+TEST_F(VideoSourceTest, CapturerStartStop) {
   // Initialize without constraints.
   CreateVideoSource();
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
@@ -181,6 +181,30 @@ TEST_F(VideoSourceTest, StartStop) {
   capturer_->Stop();
   EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
                  kMaxWaitMs);
+}
+
+// Test that a VideoSource can be stopped and restarted.
+TEST_F(VideoSourceTest, StopRestart) {
+  // Initialize without constraints.
+  CreateVideoSource();
+  EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
+                 kMaxWaitMs);
+
+  ASSERT_TRUE(capturer_->CaptureFrame());
+  EXPECT_EQ(1, renderer_.num_rendered_frames());
+
+  source_->Stop();
+  EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
+                 kMaxWaitMs);
+
+  source_->Restart();
+  EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
+                 kMaxWaitMs);
+
+  ASSERT_TRUE(capturer_->CaptureFrame());
+  EXPECT_EQ(2, renderer_.num_rendered_frames());
+
+  source_->Stop();
 }
 
 // Test start stop with a remote VideoSource - the video source that has a

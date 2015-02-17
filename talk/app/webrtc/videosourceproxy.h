@@ -39,6 +39,8 @@ namespace webrtc {
 BEGIN_PROXY_MAP(VideoSource)
   PROXY_CONSTMETHOD0(SourceState, state)
   PROXY_METHOD0(cricket::VideoCapturer*, GetVideoCapturer)
+  PROXY_METHOD0(void, Stop)
+  PROXY_METHOD0(void, Restart)
   PROXY_METHOD1(void, AddSink, cricket::VideoRenderer*)
   PROXY_METHOD1(void, RemoveSink, cricket::VideoRenderer*)
   PROXY_CONSTMETHOD0(const cricket::VideoOptions*, options)

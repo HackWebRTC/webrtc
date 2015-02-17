@@ -432,11 +432,27 @@ cricket::VideoRenderer* VideoSource::FrameInput() {
   return frame_input_.get();
 }
 
+void VideoSource::Stop() {
+  channel_manager_->StopVideoCapture(video_capturer_.get(), format_);
+}
+
+void VideoSource::Restart() {
+  if (!channel_manager_->StartVideoCapture(video_capturer_.get(), format_)) {
+    SetState(kEnded);
+    return;
+  }
+  for(cricket::VideoRenderer* sink : sinks_) {
+    channel_manager_->AddVideoRenderer(video_capturer_.get(), sink);
+  }
+}
+
 void VideoSource::AddSink(cricket::VideoRenderer* output) {
+  sinks_.push_back(output);
   channel_manager_->AddVideoRenderer(video_capturer_.get(), output);
 }
 
 void VideoSource::RemoveSink(cricket::VideoRenderer* output) {
+  sinks_.remove(output);
   channel_manager_->RemoveVideoRenderer(video_capturer_.get(), output);
 }
 
