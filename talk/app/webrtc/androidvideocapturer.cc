@@ -63,7 +63,7 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
                            int length,
                            int rotation,
                            int64 time_stamp_in_ms) {
-    captured_frame_.fourcc = static_cast<uint32>(cricket::FOURCC_NV21);
+    captured_frame_.fourcc = static_cast<uint32>(cricket::FOURCC_YV12);
     captured_frame_.data = frame_data;
     captured_frame_.elapsed_time = rtc::TimeNanos() - start_time_;
     captured_frame_.time_stamp =
@@ -120,7 +120,7 @@ AndroidVideoCapturer::AndroidVideoCapturer(
           json_value["width"].asInt(),
           json_value["height"].asInt(),
           cricket::VideoFormat::FpsToInterval(json_value["framerate"].asInt()),
-          cricket::FOURCC_NV21);
+          cricket::FOURCC_YV12);
       formats.push_back(format);
   }
   SetSupportedFormats(formats);
@@ -169,7 +169,7 @@ bool AndroidVideoCapturer::IsRunning() {
 }
 
 bool AndroidVideoCapturer::GetPreferredFourccs(std::vector<uint32>* fourccs) {
-  fourccs->push_back(cricket::FOURCC_NV21);
+  fourccs->push_back(cricket::FOURCC_YV12);
   return true;
 }
 

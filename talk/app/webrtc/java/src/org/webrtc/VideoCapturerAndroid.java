@@ -386,7 +386,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       }
       parameters.setPictureSize(width, height);
       parameters.setPreviewSize(width, height);
-      int format = ImageFormat.NV21;
+      int format = ImageFormat.YV12;
       parameters.setPreviewFormat(format);
       camera.setParameters(parameters);
       // Note: setRecordingHint(true) actually decrease frame rate on N5.
