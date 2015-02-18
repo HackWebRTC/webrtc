@@ -29,12 +29,9 @@
 
 #include <string.h>
 
-#if !defined(DISABLE_YUV)
 #include "libyuv/compare.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/scale.h"
-#endif
-
 #include "talk/media/base/videocommon.h"
 #include "webrtc/base/logging.h"
 
@@ -86,7 +83,6 @@ rtc::StreamResult VideoFrame::Write(rtc::StreamInterface* stream,
 bool VideoFrame::CopyToPlanes(
     uint8* dst_y, uint8* dst_u, uint8* dst_v,
     int32 dst_pitch_y, int32 dst_pitch_u, int32 dst_pitch_v) const {
-#if !defined(DISABLE_YUV)
   int32 src_width = static_cast<int>(GetWidth());
   int32 src_height = static_cast<int>(GetHeight());
   return libyuv::I420Copy(GetYPlane(), GetYPitch(),
@@ -96,13 +92,6 @@ bool VideoFrame::CopyToPlanes(
                           dst_u, dst_pitch_u,
                           dst_v, dst_pitch_v,
                           src_width, src_height) == 0;
-#else
-  int uv_size = GetUPitch() * GetChromaHeight();
-  memcpy(dst_y, GetYPlane(), GetWidth() * GetHeight());
-  memcpy(dst_u, GetUPlane(), uv_size);
-  memcpy(dst_v, GetVPlane(), uv_size);
-  return true;
-#endif
 }
 
 void VideoFrame::CopyToFrame(VideoFrame* dst) const {
@@ -176,15 +165,12 @@ void VideoFrame::StretchToPlanes(
     }
   }
 
-  // TODO(fbarchard): Implement a simple scale for non-libyuv.
-#if !defined(DISABLE_YUV)
   // Scale to the output I420 frame.
   libyuv::Scale(src_y, src_u, src_v,
                 GetYPitch(), GetUPitch(), GetVPitch(),
                 static_cast<int>(src_width), static_cast<int>(src_height),
                 dst_y, dst_u, dst_v, dst_pitch_y, dst_pitch_u, dst_pitch_v,
                 static_cast<int>(width), static_cast<int>(height), interpolate);
-#endif
 }
 
 size_t VideoFrame::StretchToBuffer(size_t dst_width, size_t dst_height,
@@ -237,7 +223,6 @@ VideoFrame* VideoFrame::Stretch(size_t dst_width, size_t dst_height,
 }
 
 bool VideoFrame::SetToBlack() {
-#if !defined(DISABLE_YUV)
   return libyuv::I420Rect(GetYPlane(), GetYPitch(),
                           GetUPlane(), GetUPitch(),
                           GetVPlane(), GetVPitch(),
@@ -245,13 +230,6 @@ bool VideoFrame::SetToBlack() {
                           static_cast<int>(GetWidth()),
                           static_cast<int>(GetHeight()),
                           16, 128, 128) == 0;
-#else
-  int uv_size = GetUPitch() * GetChromaHeight();
-  memset(GetYPlane(), 16, GetWidth() * GetHeight());
-  memset(GetUPlane(), 128, uv_size);
-  memset(GetVPlane(), 128, uv_size);
-  return true;
-#endif
 }
 
 static const size_t kMaxSampleSize = 1000000000u;

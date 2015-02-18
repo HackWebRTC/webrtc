@@ -31,9 +31,7 @@
 
 #include <algorithm>
 
-#if !defined(DISABLE_YUV)
 #include "libyuv/scale_argb.h"
-#endif
 #include "talk/media/base/videoframefactory.h"
 #include "talk/media/base/videoprocessor.h"
 #include "webrtc/base/common.h"
@@ -385,7 +383,6 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
   if (SignalVideoFrame.is_empty()) {
     return;
   }
-#if !defined(DISABLE_YUV)
 
   // Use a temporary buffer to scale
   rtc::scoped_ptr<uint8[]> scale_buffer;
@@ -505,7 +502,6 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     modified_frame->data_size = modified_frame_size;
     modified_frame->data = temp_buffer_data;
   }
-#endif  // !DISABLE_YUV
 
   // Size to crop captured frame to.  This adjusts the captured frames
   // aspect ratio to match the final view aspect ratio, considering pixel

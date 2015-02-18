@@ -31,9 +31,7 @@
 #include <string>
 #include <vector>
 
-#if !defined(DISABLE_YUV)
 #include "libyuv/compare.h"
-#endif
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videocommon.h"
@@ -185,28 +183,13 @@ std::string GetTestFilePath(const std::string& filename);
 // PSNR formula: psnr = 10 * log10 (Peak Signal^2 / mse)
 // sse is set to a small number for identical frames or sse == 0
 static inline double ComputePSNR(double sse, double count) {
-#if !defined(DISABLE_YUV)
   return libyuv::SumSquareErrorToPsnr(static_cast<uint64>(sse),
                                       static_cast<uint64>(count));
-#else
-  if (sse <= 0.)
-    sse = 65025.0 * count / pow(10., 128./10.);  // produces max PSNR of 128
-  return 10.0 * log10(65025.0 * count / sse);
-#endif
 }
 
 static inline double ComputeSumSquareError(const uint8 *org, const uint8 *rec,
                                            int size) {
-#if !defined(DISABLE_YUV)
   return static_cast<double>(libyuv::ComputeSumSquareError(org, rec, size));
-#else
-  double sse = 0.;
-  for (int j = 0; j < size; ++j) {
-    const int diff = static_cast<int>(org[j]) - static_cast<int>(rec[j]);
-    sse += static_cast<double>(diff * diff);
-  }
-  return sse;
-#endif
 }
 
 // Loads the image with the specified prefix and size into |out|.
