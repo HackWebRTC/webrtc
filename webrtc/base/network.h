@@ -83,7 +83,8 @@ class NetworkManager {
   // IP address.  (i.e. INADDR_ANY for IPv4 or in6addr_any for IPv6). This is
   // useful as binding to such interfaces allow default routing behavior like
   // http traffic.
-  virtual void GetAnyAddressNetworks(NetworkList* networks) = 0;
+  // TODO(guoweis): remove this body when chromium implements this.
+  virtual void GetAnyAddressNetworks(NetworkList* networks) {}
 
   // Dumps a list of networks available to LS_INFO.
   virtual void DumpNetworks(bool include_ignored) {}
