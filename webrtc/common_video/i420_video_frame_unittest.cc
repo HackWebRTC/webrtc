@@ -19,10 +19,12 @@
 
 namespace webrtc {
 
-bool EqualFrames(const I420VideoFrame& frame1,
-                 const I420VideoFrame& frame2);
-bool EqualFramesExceptSize(const I420VideoFrame& frame1,
-                           const I420VideoFrame& frame2);
+bool EqualPlane(const uint8_t* data1,
+                const uint8_t* data2,
+                int stride,
+                int width,
+                int height);
+bool EqualFrames(const I420VideoFrame& frame1, const I420VideoFrame& frame2);
 int ExpectedSize(int plane_stride, int image_height, PlaneType type);
 
 TEST(TestI420VideoFrame, InitialValues) {
@@ -83,7 +85,6 @@ TEST(TestI420VideoFrame, ResetSize) {
 }
 
 TEST(TestI420VideoFrame, CopyFrame) {
-  I420VideoFrame frame1, frame2;
   uint32_t timestamp = 1;
   int64_t ntp_time_ms = 2;
   int64_t render_time_ms = 3;
@@ -93,14 +94,15 @@ TEST(TestI420VideoFrame, CopyFrame) {
   int width = 15;
   int height = 15;
   // Copy frame.
-  EXPECT_EQ(0, frame1.CreateEmptyFrame(width, height,
-                                       stride_y, stride_u, stride_v));
-  frame1.set_timestamp(timestamp);
-  frame1.set_ntp_time_ms(ntp_time_ms);
-  frame1.set_render_time_ms(render_time_ms);
-  const int kSizeY = 225;
-  const int kSizeU = 80;
-  const int kSizeV = 80;
+  I420VideoFrame small_frame;
+  EXPECT_EQ(0, small_frame.CreateEmptyFrame(width, height,
+                                            stride_y, stride_u, stride_v));
+  small_frame.set_timestamp(timestamp);
+  small_frame.set_ntp_time_ms(ntp_time_ms);
+  small_frame.set_render_time_ms(render_time_ms);
+  const int kSizeY = 400;
+  const int kSizeU = 100;
+  const int kSizeV = 100;
   const VideoRotation kRotation = kVideoRotation_270;
   uint8_t buffer_y[kSizeY];
   uint8_t buffer_u[kSizeU];
@@ -108,28 +110,29 @@ TEST(TestI420VideoFrame, CopyFrame) {
   memset(buffer_y, 16, kSizeY);
   memset(buffer_u, 8, kSizeU);
   memset(buffer_v, 4, kSizeV);
-  frame2.CreateFrame(kSizeY, buffer_y, kSizeU, buffer_u, kSizeV, buffer_v,
-                     width + 5, height + 5, stride_y + 5, stride_u, stride_v,
-                     kRotation);
-  // Frame of smaller dimensions - allocated sizes should not vary.
-  EXPECT_EQ(0, frame1.CopyFrame(frame2));
-  EXPECT_TRUE(EqualFramesExceptSize(frame1, frame2));
-  EXPECT_EQ(kSizeY, frame1.allocated_size(kYPlane));
-  EXPECT_EQ(kSizeU, frame1.allocated_size(kUPlane));
-  EXPECT_EQ(kSizeV, frame1.allocated_size(kVPlane));
-  EXPECT_EQ(kRotation, frame1.rotation());
-  // Verify copy of all parameters.
-  // Frame of larger dimensions - update allocated sizes.
-  EXPECT_EQ(0, frame2.CopyFrame(frame1));
-  EXPECT_TRUE(EqualFrames(frame1, frame2));
+  I420VideoFrame big_frame;
+  EXPECT_EQ(0,
+            big_frame.CreateFrame(kSizeY, buffer_y, kSizeU, buffer_u, kSizeV,
+                                  buffer_v, width + 5, height + 5, stride_y + 5,
+                                  stride_u, stride_v, kRotation));
+  // Frame of smaller dimensions.
+  EXPECT_EQ(0, small_frame.CopyFrame(big_frame));
+  EXPECT_TRUE(EqualFrames(small_frame, big_frame));
+  EXPECT_EQ(kRotation, small_frame.rotation());
+
+  // Frame of larger dimensions.
+  EXPECT_EQ(0, small_frame.CreateEmptyFrame(width, height,
+                                            stride_y, stride_u, stride_v));
+  EXPECT_EQ(0, big_frame.CopyFrame(small_frame));
+  EXPECT_TRUE(EqualFrames(small_frame, big_frame));
 }
 
 TEST(TestI420VideoFrame, CloneFrame) {
   I420VideoFrame frame1;
   scoped_ptr<I420VideoFrame> frame2;
-  const int kSizeY = 225;
-  const int kSizeU = 80;
-  const int kSizeV = 80;
+  const int kSizeY = 400;
+  const int kSizeU = 100;
+  const int kSizeV = 100;
   uint8_t buffer_y[kSizeY];
   uint8_t buffer_u[kSizeU];
   uint8_t buffer_v[kSizeV];
@@ -167,11 +170,12 @@ TEST(TestI420VideoFrame, CopyBuffer) {
                      kSizeUv, buffer_u,
                      kSizeUv, buffer_v,
                      width, height, stride_y, stride_uv, stride_uv);
-  // Copy memory (at least allocated size).
-  EXPECT_EQ(memcmp(buffer_y, frame2.buffer(kYPlane), kSizeY), 0);
-  EXPECT_EQ(memcmp(buffer_u, frame2.buffer(kUPlane), kSizeUv), 0);
-  EXPECT_EQ(memcmp(buffer_v, frame2.buffer(kVPlane), kSizeUv), 0);
-  // Comapre size.
+  // Expect exactly the same pixel data.
+  EXPECT_TRUE(EqualPlane(buffer_y, frame2.buffer(kYPlane), stride_y, 15, 15));
+  EXPECT_TRUE(EqualPlane(buffer_u, frame2.buffer(kUPlane), stride_uv, 8, 8));
+  EXPECT_TRUE(EqualPlane(buffer_v, frame2.buffer(kVPlane), stride_uv, 8, 8));
+
+  // Compare size.
   EXPECT_LE(kSizeY, frame2.allocated_size(kYPlane));
   EXPECT_LE(kSizeUv, frame2.allocated_size(kUPlane));
   EXPECT_LE(kSizeUv, frame2.allocated_size(kVPlane));
@@ -257,16 +261,21 @@ TEST(TestI420VideoFrame, RefCountedInstantiation) {
   EXPECT_EQ(1, ref_count_frame->Release());
 }
 
-bool EqualFrames(const I420VideoFrame& frame1,
-                 const I420VideoFrame& frame2) {
-  return (EqualFramesExceptSize(frame1, frame2) &&
-          (frame1.allocated_size(kYPlane) == frame2.allocated_size(kYPlane)) &&
-          (frame1.allocated_size(kUPlane) == frame2.allocated_size(kUPlane)) &&
-          (frame1.allocated_size(kVPlane) == frame2.allocated_size(kVPlane)));
+bool EqualPlane(const uint8_t* data1,
+                const uint8_t* data2,
+                int stride,
+                int width,
+                int height) {
+  for (int y = 0; y < height; ++y) {
+    if (memcmp(data1, data2, width) != 0)
+      return false;
+    data1 += stride;
+    data2 += stride;
+  }
+  return true;
 }
 
-bool EqualFramesExceptSize(const I420VideoFrame& frame1,
-                           const I420VideoFrame& frame2) {
+bool EqualFrames(const I420VideoFrame& frame1, const I420VideoFrame& frame2) {
   if ((frame1.width() != frame2.width()) ||
       (frame1.height() != frame2.height()) ||
       (frame1.stride(kYPlane) != frame2.stride(kYPlane)) ||
@@ -277,16 +286,14 @@ bool EqualFramesExceptSize(const I420VideoFrame& frame1,
       (frame1.render_time_ms() != frame2.render_time_ms())) {
     return false;
   }
-  // Memory should be the equal for the minimum of the two sizes.
-  int size_y = std::min(frame1.allocated_size(kYPlane),
-                        frame2.allocated_size(kYPlane));
-  int size_u = std::min(frame1.allocated_size(kUPlane),
-                        frame2.allocated_size(kUPlane));
-  int size_v = std::min(frame1.allocated_size(kVPlane),
-                        frame2.allocated_size(kVPlane));
-  return (memcmp(frame1.buffer(kYPlane), frame2.buffer(kYPlane), size_y) == 0 &&
-          memcmp(frame1.buffer(kUPlane), frame2.buffer(kUPlane), size_u) == 0 &&
-          memcmp(frame1.buffer(kVPlane), frame2.buffer(kVPlane), size_v) == 0);
+  const int half_width = (frame1.width() + 1) / 2;
+  const int half_height = (frame1.height() + 1) / 2;
+  return EqualPlane(frame1.buffer(kYPlane), frame2.buffer(kYPlane),
+                    frame1.stride(kYPlane), frame1.width(), frame1.height()) &&
+         EqualPlane(frame1.buffer(kUPlane), frame2.buffer(kUPlane),
+                    frame1.stride(kUPlane), half_width, half_height) &&
+         EqualPlane(frame1.buffer(kVPlane), frame2.buffer(kVPlane),
+                    frame1.stride(kVPlane), half_width, half_height);
 }
 
 int ExpectedSize(int plane_stride, int image_height, PlaneType type) {
