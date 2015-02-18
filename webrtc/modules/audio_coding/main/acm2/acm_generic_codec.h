@@ -1111,6 +1111,9 @@ class ACMGenericCodecWrapper : public ACMGenericCodec {
 
   bool ExternalRedNeeded() override;
 
+  // This method is only for testing.
+  const AudioEncoder* GetAudioEncoder() const;
+
  protected:
   void DestructEncoderSafe() override
       EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);

@@ -1715,6 +1715,11 @@ bool ACMGenericCodecWrapper::ExternalRedNeeded() {
   return false;
 }
 
+const AudioEncoder* ACMGenericCodecWrapper::GetAudioEncoder() const {
+  WriteLockScoped wl(codec_wrapper_lock_);
+  return encoder_;
+}
+
 void ACMGenericCodecWrapper::DestructEncoderSafe() {
   FATAL();
 }
