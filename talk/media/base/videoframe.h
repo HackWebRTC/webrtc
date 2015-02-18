@@ -142,7 +142,7 @@ class VideoFrame {
   // sufficient size. Returns the frame's actual size, regardless of whether
   // it was written or not (like snprintf). If there is insufficient space,
   // nothing is written.
-  virtual size_t CopyToBuffer(uint8 *buffer, size_t size) const = 0;
+  virtual size_t CopyToBuffer(uint8 *buffer, size_t size) const;
 
   // Writes the frame into the given planes, stretched to the given width and
   // height. The parameter "interpolate" controls whether to interpolate or just

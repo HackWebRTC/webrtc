@@ -250,18 +250,6 @@ bool WebRtcVideoFrame::MakeExclusive() {
   return true;
 }
 
-size_t WebRtcVideoFrame::CopyToBuffer(uint8* buffer, size_t size) const {
-  if (!frame()->Buffer()) {
-    return 0;
-  }
-
-  size_t needed = frame()->Length();
-  if (needed <= size) {
-    memcpy(buffer, frame()->Buffer(), needed);
-  }
-  return needed;
-}
-
 size_t WebRtcVideoFrame::ConvertToRgbBuffer(uint32 to_fourcc, uint8* buffer,
                                             size_t size, int stride_rgb) const {
   if (!frame()->Buffer()) {

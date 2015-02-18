@@ -138,7 +138,6 @@ class WebRtcVideoFrame : public VideoFrame {
 
   virtual VideoFrame* Copy() const;
   virtual bool MakeExclusive();
-  virtual size_t CopyToBuffer(uint8* buffer, size_t size) const;
   virtual size_t ConvertToRgbBuffer(uint32 to_fourcc, uint8* buffer,
                                     size_t size, int stride_rgb) const;
 

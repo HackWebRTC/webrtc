@@ -80,9 +80,25 @@ rtc::StreamResult VideoFrame::Write(rtc::StreamInterface* stream,
   return result;
 }
 
+size_t VideoFrame::CopyToBuffer(uint8* buffer, size_t size) const {
+  const size_t y_size = GetHeight() * GetYPitch();
+  const size_t u_size = GetUPitch() * GetChromaHeight();
+  const size_t v_size = GetVPitch() * GetChromaHeight();
+  const size_t needed = y_size + u_size + v_size;
+  if (size < needed)
+    return needed;
+  CopyToPlanes(buffer, buffer + y_size, buffer + y_size + u_size,
+               GetYPitch(), GetUPitch(), GetVPitch());
+  return needed;
+}
+
 bool VideoFrame::CopyToPlanes(
     uint8* dst_y, uint8* dst_u, uint8* dst_v,
     int32 dst_pitch_y, int32 dst_pitch_u, int32 dst_pitch_v) const {
+  if (!GetYPlane() || !GetUPlane() || !GetVPlane()) {
+    LOG(LS_ERROR) << "NULL plane pointer.";
+    return false;
+  }
   int32 src_width = static_cast<int>(GetWidth());
   int32 src_height = static_cast<int>(GetHeight());
   return libyuv::I420Copy(GetYPlane(), GetYPitch(),
