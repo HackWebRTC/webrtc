@@ -621,9 +621,9 @@ bool BasicPortAllocatorSession::CheckCandidateFilter(const Candidate& c) {
   }
 
   if (c.type() == RELAY_PORT_TYPE) {
-    return (filter & CF_RELAY);
+    return ((filter & CF_RELAY) != 0);
   } else if (c.type() == STUN_PORT_TYPE) {
-    return (filter & CF_REFLEXIVE);
+    return ((filter & CF_REFLEXIVE) != 0);
   } else if (c.type() == LOCAL_PORT_TYPE) {
     if ((filter & CF_REFLEXIVE) && !c.address().IsPrivateIP()) {
       // We allow host candidates if the filter allows server-reflexive
@@ -646,7 +646,7 @@ bool BasicPortAllocatorSession::CheckCandidateFilter(const Candidate& c) {
       return false;
     }
 
-    return (filter & CF_HOST);
+    return ((filter & CF_HOST) != 0);
   }
   return false;
 }
