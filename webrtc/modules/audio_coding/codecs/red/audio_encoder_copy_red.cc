@@ -26,16 +26,16 @@ AudioEncoderCopyRed::AudioEncoderCopyRed(const Config& config)
 AudioEncoderCopyRed::~AudioEncoderCopyRed() {
 }
 
-int AudioEncoderCopyRed::sample_rate_hz() const {
-  return speech_encoder_->sample_rate_hz();
+int AudioEncoderCopyRed::SampleRateHz() const {
+  return speech_encoder_->SampleRateHz();
 }
 
-int AudioEncoderCopyRed::rtp_timestamp_rate_hz() const {
-  return speech_encoder_->rtp_timestamp_rate_hz();
+int AudioEncoderCopyRed::RtpTimestampRateHz() const {
+  return speech_encoder_->RtpTimestampRateHz();
 }
 
-int AudioEncoderCopyRed::num_channels() const {
-  return speech_encoder_->num_channels();
+int AudioEncoderCopyRed::NumChannels() const {
+  return speech_encoder_->NumChannels();
 }
 
 int AudioEncoderCopyRed::Num10MsFramesInNextPacket() const {
@@ -62,7 +62,7 @@ bool AudioEncoderCopyRed::EncodeInternal(uint32_t rtp_timestamp,
                                          uint8_t* encoded,
                                          EncodedInfo* info) {
   if (!speech_encoder_->Encode(rtp_timestamp, audio,
-                               static_cast<size_t>(sample_rate_hz() / 100),
+                               static_cast<size_t>(SampleRateHz() / 100),
                                max_encoded_bytes, encoded, info))
     return false;
   if (max_encoded_bytes < info->encoded_bytes + secondary_info_.encoded_bytes)

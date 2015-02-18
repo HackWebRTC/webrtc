@@ -43,10 +43,10 @@ AudioEncoderIlbc::~AudioEncoderIlbc() {
   CHECK_EQ(0, WebRtcIlbcfix_EncoderFree(encoder_));
 }
 
-int AudioEncoderIlbc::sample_rate_hz() const {
+int AudioEncoderIlbc::SampleRateHz() const {
   return kSampleRateHz;
 }
-int AudioEncoderIlbc::num_channels() const {
+int AudioEncoderIlbc::NumChannels() const {
   return 1;
 }
 int AudioEncoderIlbc::Num10MsFramesInNextPacket() const {

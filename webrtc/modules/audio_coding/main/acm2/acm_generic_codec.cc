@@ -1220,7 +1220,7 @@ int16_t ACMGenericCodecWrapper::Encode(
   WriteLockScoped wl(codec_wrapper_lock_);
   CHECK(!input_.empty());
   CHECK(encoder_->Encode(rtp_timestamp_, &input_[0],
-                         input_.size() / encoder_->num_channels(),
+                         input_.size() / encoder_->NumChannels(),
                          2 * MAX_PAYLOAD_SIZE_BYTE, bitstream, encoded_info));
   input_.clear();
   *bitstream_len_byte = static_cast<int16_t>(encoded_info->encoded_bytes);
@@ -1433,7 +1433,7 @@ void ACMGenericCodecWrapper::ResetAudioEncoder() {
   // Attach CNG if needed.
   // Reverse-lookup from sample rate to complete key-value pair.
   auto pt_iter =
-      FindSampleRateInMap(&cng_pt_, audio_encoder_->sample_rate_hz());
+      FindSampleRateInMap(&cng_pt_, audio_encoder_->SampleRateHz());
   if (acm_codec_params_.enable_dtx && pt_iter != cng_pt_.end()) {
     AudioEncoderCng::Config config;
     config.num_channels = acm_codec_params_.codec_inst.channels;
@@ -1475,8 +1475,8 @@ int32_t ACMGenericCodecWrapper::Add10MsData(const uint32_t timestamp,
                                             const uint8_t audio_channel) {
   WriteLockScoped wl(codec_wrapper_lock_);
   CHECK(input_.empty());
-  CHECK_EQ(length_per_channel, encoder_->sample_rate_hz() / 100);
-  for (int i = 0; i < length_per_channel * encoder_->num_channels(); ++i) {
+  CHECK_EQ(length_per_channel, encoder_->SampleRateHz() / 100);
+  for (int i = 0; i < length_per_channel * encoder_->NumChannels(); ++i) {
     input_.push_back(data[i]);
   }
   rtp_timestamp_ = first_frame_
@@ -1485,13 +1485,13 @@ int32_t ACMGenericCodecWrapper::Add10MsData(const uint32_t timestamp,
                              rtc::CheckedDivExact(
                                  timestamp - last_timestamp_,
                                  static_cast<uint32_t>(rtc::CheckedDivExact(
-                                     audio_encoder_->sample_rate_hz(),
-                                     audio_encoder_->rtp_timestamp_rate_hz())));
+                                     audio_encoder_->SampleRateHz(),
+                                     audio_encoder_->RtpTimestampRateHz())));
   last_timestamp_ = timestamp;
   last_rtp_timestamp_ = rtp_timestamp_;
   first_frame_ = false;
 
-  CHECK_EQ(audio_channel, encoder_->num_channels());
+  CHECK_EQ(audio_channel, encoder_->NumChannels());
   return 0;
 }
 

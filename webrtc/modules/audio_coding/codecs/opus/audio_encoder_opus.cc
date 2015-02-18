@@ -96,11 +96,11 @@ AudioEncoderOpus::~AudioEncoderOpus() {
   CHECK_EQ(0, WebRtcOpus_EncoderFree(inst_));
 }
 
-int AudioEncoderOpus::sample_rate_hz() const {
+int AudioEncoderOpus::SampleRateHz() const {
   return kSampleRateHz;
 }
 
-int AudioEncoderOpus::num_channels() const {
+int AudioEncoderOpus::NumChannels() const {
   return num_channels_;
 }
 

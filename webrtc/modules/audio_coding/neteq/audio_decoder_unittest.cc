@@ -105,7 +105,7 @@ class AudioDecoderTest : public ::testing::Test {
 
   virtual void SetUp() {
     if (audio_encoder_)
-      codec_input_rate_hz_ = audio_encoder_->sample_rate_hz();
+      codec_input_rate_hz_ = audio_encoder_->SampleRateHz();
     // Create arrays.
     ASSERT_GT(data_length_, 0u) << "The test must set data_length_ > 0";
     // Longest encoded data is produced by PCM16b with 2 bytes per sample.
@@ -136,7 +136,7 @@ class AudioDecoderTest : public ::testing::Test {
                           size_t input_len_samples,
                           uint8_t* output) {
     encoded_info_.encoded_bytes = 0;
-    const size_t samples_per_10ms = audio_encoder_->sample_rate_hz() / 100;
+    const size_t samples_per_10ms = audio_encoder_->SampleRateHz() / 100;
     CHECK_EQ(samples_per_10ms * audio_encoder_->Num10MsFramesInNextPacket(),
              input_len_samples);
     scoped_ptr<int16_t[]> interleaved_input(
@@ -151,7 +151,7 @@ class AudioDecoderTest : public ::testing::Test {
                                                  interleaved_input.get());
 
       EXPECT_TRUE(audio_encoder_->Encode(
-          0, interleaved_input.get(), audio_encoder_->sample_rate_hz() / 100,
+          0, interleaved_input.get(), audio_encoder_->SampleRateHz() / 100,
           data_length_ * 2, output, &encoded_info_));
     }
     EXPECT_EQ(payload_type_, encoded_info_.payload_type);

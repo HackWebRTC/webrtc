@@ -26,15 +26,15 @@ bool AudioEncoder::Encode(uint32_t rtp_timestamp,
                           uint8_t* encoded,
                           EncodedInfo* info) {
   CHECK_EQ(num_samples_per_channel,
-           static_cast<size_t>(sample_rate_hz() / 100));
+           static_cast<size_t>(SampleRateHz() / 100));
   bool ret =
       EncodeInternal(rtp_timestamp, audio, max_encoded_bytes, encoded, info);
   CHECK_LE(info->encoded_bytes, max_encoded_bytes);
   return ret;
 }
 
-int AudioEncoder::rtp_timestamp_rate_hz() const {
-  return sample_rate_hz();
+int AudioEncoder::RtpTimestampRateHz() const {
+  return SampleRateHz();
 }
 
 }  // namespace webrtc

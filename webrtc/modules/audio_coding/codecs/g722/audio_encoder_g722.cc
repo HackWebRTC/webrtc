@@ -51,15 +51,15 @@ AudioEncoderG722::AudioEncoderG722(const Config& config)
 
 AudioEncoderG722::~AudioEncoderG722() {}
 
-int AudioEncoderG722::sample_rate_hz() const {
+int AudioEncoderG722::SampleRateHz() const {
   return kSampleRateHz;
 }
-int AudioEncoderG722::rtp_timestamp_rate_hz() const {
+int AudioEncoderG722::RtpTimestampRateHz() const {
   // The RTP timestamp rate for G.722 is 8000 Hz, even though it is a 16 kHz
   // codec.
   return kSampleRateHz / 2;
 }
-int AudioEncoderG722::num_channels() const {
+int AudioEncoderG722::NumChannels() const {
   return num_channels_;
 }
 int AudioEncoderG722::Num10MsFramesInNextPacket() const {

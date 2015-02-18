@@ -21,8 +21,8 @@ class MockAudioEncoder : public AudioEncoder {
  public:
   virtual ~MockAudioEncoder() { Die(); }
   MOCK_METHOD0(Die, void());
-  MOCK_CONST_METHOD0(sample_rate_hz, int());
-  MOCK_CONST_METHOD0(num_channels, int());
+  MOCK_CONST_METHOD0(SampleRateHz, int());
+  MOCK_CONST_METHOD0(NumChannels, int());
   MOCK_CONST_METHOD0(Num10MsFramesInNextPacket, int());
   MOCK_CONST_METHOD0(Max10MsFramesInAPacket, int());
   MOCK_METHOD1(SetTargetBitrate, void(int));

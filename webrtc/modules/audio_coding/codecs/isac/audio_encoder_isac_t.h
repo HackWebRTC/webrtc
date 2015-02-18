@@ -69,8 +69,8 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
   void UpdateDecoderSampleRate(int sample_rate_hz);
 
   // AudioEncoder public methods.
-  virtual int sample_rate_hz() const OVERRIDE;
-  virtual int num_channels() const OVERRIDE;
+  virtual int SampleRateHz() const OVERRIDE;
+  virtual int NumChannels() const OVERRIDE;
   virtual int Num10MsFramesInNextPacket() const OVERRIDE;
   virtual int Max10MsFramesInAPacket() const OVERRIDE;
 

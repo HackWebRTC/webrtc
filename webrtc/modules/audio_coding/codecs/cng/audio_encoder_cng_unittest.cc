@@ -39,7 +39,7 @@ class AudioEncoderCngTest : public ::testing::Test {
     memset(encoded_, 0, kMaxEncodedBytes);
     memset(audio_, 0, kMaxNumSamples * 2);
     config_.speech_encoder = &mock_encoder_;
-    EXPECT_CALL(mock_encoder_, num_channels()).WillRepeatedly(Return(1));
+    EXPECT_CALL(mock_encoder_, NumChannels()).WillRepeatedly(Return(1));
     // Let the AudioEncoderCng object use a MockVad instead of its internally
     // created Vad object.
     config_.vad = mock_vad_;
@@ -60,7 +60,7 @@ class AudioEncoderCngTest : public ::testing::Test {
     // is called, thus we cannot use the values until now.
     num_audio_samples_10ms_ = 10 * sample_rate_hz_ / 1000;
     ASSERT_LE(num_audio_samples_10ms_, kMaxNumSamples);
-    EXPECT_CALL(mock_encoder_, sample_rate_hz())
+    EXPECT_CALL(mock_encoder_, SampleRateHz())
         .WillRepeatedly(Return(sample_rate_hz_));
     // Max10MsFramesInAPacket() is just used to verify that the SID frame period
     // is not too small. The return value does not matter that much, as long as
@@ -443,7 +443,7 @@ TEST_F(AudioEncoderCngDeathTest, NullSpeechEncoder) {
 }
 
 TEST_F(AudioEncoderCngDeathTest, Stereo) {
-  EXPECT_CALL(mock_encoder_, num_channels()).WillRepeatedly(Return(2));
+  EXPECT_CALL(mock_encoder_, NumChannels()).WillRepeatedly(Return(2));
   EXPECT_DEATH(CreateCng(), "Invalid configuration");
   config_.num_channels = 2;
   EXPECT_DEATH(CreateCng(), "Invalid configuration");

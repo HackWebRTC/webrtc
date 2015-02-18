@@ -166,13 +166,13 @@ void AudioEncoderDecoderIsacT<T>::UpdateDecoderSampleRate(int sample_rate_hz) {
 }
 
 template <typename T>
-int AudioEncoderDecoderIsacT<T>::sample_rate_hz() const {
+int AudioEncoderDecoderIsacT<T>::SampleRateHz() const {
   CriticalSectionScoped cs(state_lock_.get());
   return T::EncSampRate(isac_state_);
 }
 
 template <typename T>
-int AudioEncoderDecoderIsacT<T>::num_channels() const {
+int AudioEncoderDecoderIsacT<T>::NumChannels() const {
   return 1;
 }
 
@@ -181,7 +181,7 @@ int AudioEncoderDecoderIsacT<T>::Num10MsFramesInNextPacket() const {
   CriticalSectionScoped cs(state_lock_.get());
   const int samples_in_next_packet = T::GetNewFrameLen(isac_state_);
   return rtc::CheckedDivExact(samples_in_next_packet,
-                              rtc::CheckedDivExact(sample_rate_hz(), 100));
+                              rtc::CheckedDivExact(SampleRateHz(), 100));
 }
 
 template <typename T>

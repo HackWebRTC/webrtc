@@ -35,9 +35,9 @@ class AudioEncoderCopyRed : public AudioEncoder {
 
   virtual ~AudioEncoderCopyRed();
 
-  virtual int sample_rate_hz() const OVERRIDE;
-  int rtp_timestamp_rate_hz() const override;
-  virtual int num_channels() const OVERRIDE;
+  virtual int SampleRateHz() const OVERRIDE;
+  int RtpTimestampRateHz() const override;
+  virtual int NumChannels() const OVERRIDE;
   virtual int Num10MsFramesInNextPacket() const OVERRIDE;
   virtual int Max10MsFramesInAPacket() const OVERRIDE;
   void SetTargetBitrate(int bits_per_second) override;

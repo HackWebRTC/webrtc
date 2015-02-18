@@ -41,8 +41,8 @@ class AudioEncoderCopyRedTest : public ::testing::Test {
     red_.reset(new AudioEncoderCopyRed(config));
     memset(encoded_, 0, sizeof(encoded_));
     memset(audio_, 0, sizeof(audio_));
-    EXPECT_CALL(mock_encoder_, num_channels()).WillRepeatedly(Return(1));
-    EXPECT_CALL(mock_encoder_, sample_rate_hz())
+    EXPECT_CALL(mock_encoder_, NumChannels()).WillRepeatedly(Return(1));
+    EXPECT_CALL(mock_encoder_, SampleRateHz())
         .WillRepeatedly(Return(sample_rate_hz_));
   }
 
@@ -103,13 +103,13 @@ TEST_F(AudioEncoderCopyRedTest, CreateAndDestroy) {
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckSampleRatePropagation) {
-  EXPECT_CALL(mock_encoder_, sample_rate_hz()).WillOnce(Return(17));
-  EXPECT_EQ(17, red_->sample_rate_hz());
+  EXPECT_CALL(mock_encoder_, SampleRateHz()).WillOnce(Return(17));
+  EXPECT_EQ(17, red_->SampleRateHz());
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckNumChannelsPropagation) {
-  EXPECT_CALL(mock_encoder_, num_channels()).WillOnce(Return(17));
-  EXPECT_EQ(17, red_->num_channels());
+  EXPECT_CALL(mock_encoder_, NumChannels()).WillOnce(Return(17));
+  EXPECT_EQ(17, red_->NumChannels());
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckFrameSizePropagation) {

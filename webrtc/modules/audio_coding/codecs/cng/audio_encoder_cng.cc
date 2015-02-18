@@ -29,7 +29,7 @@ bool AudioEncoderCng::Config::IsOk() const {
     return false;
   if (!speech_encoder)
     return false;
-  if (num_channels != speech_encoder->num_channels())
+  if (num_channels != speech_encoder->NumChannels())
     return false;
   if (sid_frame_interval_ms < speech_encoder->Max10MsFramesInAPacket() * 10)
     return false;
@@ -55,7 +55,7 @@ AudioEncoderCng::AudioEncoderCng(const Config& config)
   CNG_enc_inst* cng_inst;
   CHECK_EQ(WebRtcCng_CreateEnc(&cng_inst), 0) << "WebRtcCng_CreateEnc failed.";
   cng_inst_.reset(cng_inst);  // Transfer ownership to scoped_ptr.
-  CHECK_EQ(WebRtcCng_InitEnc(cng_inst_.get(), sample_rate_hz(),
+  CHECK_EQ(WebRtcCng_InitEnc(cng_inst_.get(), SampleRateHz(),
                              config.sid_frame_interval_ms,
                              config.num_cng_coefficients),
            0)
@@ -65,15 +65,15 @@ AudioEncoderCng::AudioEncoderCng(const Config& config)
 AudioEncoderCng::~AudioEncoderCng() {
 }
 
-int AudioEncoderCng::sample_rate_hz() const {
-  return speech_encoder_->sample_rate_hz();
+int AudioEncoderCng::SampleRateHz() const {
+  return speech_encoder_->SampleRateHz();
 }
 
-int AudioEncoderCng::rtp_timestamp_rate_hz() const {
-  return speech_encoder_->rtp_timestamp_rate_hz();
+int AudioEncoderCng::RtpTimestampRateHz() const {
+  return speech_encoder_->RtpTimestampRateHz();
 }
 
-int AudioEncoderCng::num_channels() const {
+int AudioEncoderCng::NumChannels() const {
   return 1;
 }
 
@@ -105,7 +105,7 @@ bool AudioEncoderCng::EncodeInternal(uint32_t rtp_timestamp,
     return false;
   }
   info->encoded_bytes = 0;
-  const int num_samples = sample_rate_hz() / 100 * num_channels();
+  const int num_samples = SampleRateHz() / 100 * NumChannels();
   if (speech_buffer_.empty()) {
     CHECK_EQ(frames_in_buffer_, 0);
     first_timestamp_in_buffer_ = rtp_timestamp;
@@ -119,7 +119,7 @@ bool AudioEncoderCng::EncodeInternal(uint32_t rtp_timestamp,
   }
   CHECK_LE(frames_in_buffer_, 6)
       << "Frame size cannot be larger than 60 ms when using VAD/CNG.";
-  const size_t samples_per_10ms_frame = 10 * sample_rate_hz() / 1000;
+  const size_t samples_per_10ms_frame = 10 * SampleRateHz() / 1000;
   CHECK_EQ(speech_buffer_.size(),
            static_cast<size_t>(frames_in_buffer_) * samples_per_10ms_frame);
 
@@ -139,12 +139,12 @@ bool AudioEncoderCng::EncodeInternal(uint32_t rtp_timestamp,
   // block.
   Vad::Activity activity = vad_->VoiceActivity(
       &speech_buffer_[0], samples_per_10ms_frame * blocks_in_first_vad_call,
-      sample_rate_hz());
+      SampleRateHz());
   if (activity == Vad::kPassive && blocks_in_second_vad_call > 0) {
     // Only check the second block if the first was passive.
     activity = vad_->VoiceActivity(
         &speech_buffer_[samples_per_10ms_frame * blocks_in_first_vad_call],
-        samples_per_10ms_frame * blocks_in_second_vad_call, sample_rate_hz());
+        samples_per_10ms_frame * blocks_in_second_vad_call, SampleRateHz());
   }
   DCHECK_NE(activity, Vad::kError);
 
@@ -177,7 +177,7 @@ bool AudioEncoderCng::EncodeInternal(uint32_t rtp_timestamp,
 bool AudioEncoderCng::EncodePassive(uint8_t* encoded, size_t* encoded_bytes) {
   bool force_sid = last_frame_active_;
   bool output_produced = false;
-  const size_t samples_per_10ms_frame = 10 * sample_rate_hz() / 1000;
+  const size_t samples_per_10ms_frame = 10 * SampleRateHz() / 1000;
   for (int i = 0; i < frames_in_buffer_; ++i) {
     int16_t encoded_bytes_tmp = 0;
     if (WebRtcCng_Encode(cng_inst_.get(),
@@ -198,7 +198,7 @@ bool AudioEncoderCng::EncodePassive(uint8_t* encoded, size_t* encoded_bytes) {
 bool AudioEncoderCng::EncodeActive(size_t max_encoded_bytes,
                                    uint8_t* encoded,
                                    EncodedInfo* info) {
-  const size_t samples_per_10ms_frame = 10 * sample_rate_hz() / 1000;
+  const size_t samples_per_10ms_frame = 10 * SampleRateHz() / 1000;
   for (int i = 0; i < frames_in_buffer_; ++i) {
     if (!speech_encoder_->Encode(first_timestamp_in_buffer_,
                                  &speech_buffer_[i * samples_per_10ms_frame],

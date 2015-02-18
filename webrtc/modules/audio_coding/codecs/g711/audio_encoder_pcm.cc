@@ -46,10 +46,10 @@ AudioEncoderPcm::AudioEncoderPcm(const Config& config, int sample_rate_hz)
 AudioEncoderPcm::~AudioEncoderPcm() {
 }
 
-int AudioEncoderPcm::sample_rate_hz() const {
+int AudioEncoderPcm::SampleRateHz() const {
   return sample_rate_hz_;
 }
-int AudioEncoderPcm::num_channels() const {
+int AudioEncoderPcm::NumChannels() const {
   return num_channels_;
 }
 int AudioEncoderPcm::Num10MsFramesInNextPacket() const {
@@ -65,7 +65,7 @@ bool AudioEncoderPcm::EncodeInternal(uint32_t rtp_timestamp,
                                      size_t max_encoded_bytes,
                                      uint8_t* encoded,
                                      EncodedInfo* info) {
-  const int num_samples = sample_rate_hz() / 100 * num_channels();
+  const int num_samples = SampleRateHz() / 100 * NumChannels();
   if (speech_buffer_.empty()) {
     first_timestamp_in_buffer_ = rtp_timestamp;
   }

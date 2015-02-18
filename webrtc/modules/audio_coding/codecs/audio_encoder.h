@@ -70,12 +70,12 @@ class AudioEncoder {
 
   // Return the input sample rate in Hz and the number of input channels.
   // These are constants set at instantiation time.
-  virtual int sample_rate_hz() const = 0;
-  virtual int num_channels() const = 0;
+  virtual int SampleRateHz() const = 0;
+  virtual int NumChannels() const = 0;
 
   // Returns the rate with which the RTP timestamps are updated. By default,
   // this is the same as sample_rate_hz().
-  virtual int rtp_timestamp_rate_hz() const;
+  virtual int RtpTimestampRateHz() const;
 
   // Returns the number of 10 ms frames the encoder will put in the next
   // packet. This value may only change when Encode() outputs a packet; i.e.,
