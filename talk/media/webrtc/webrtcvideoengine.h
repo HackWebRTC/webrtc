@@ -236,15 +236,7 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   rtc::scoped_ptr<rtc::CpuMonitor> cpu_monitor_;
 };
 
-struct CapturedFrameInfo {
-  CapturedFrameInfo() : width(0), height(0), screencast(false) {}
-  CapturedFrameInfo(size_t width, size_t height, bool screencast) :
-      width(width), height(height), screencast(screencast) {}
-
-  size_t width;
-  size_t height;
-  bool screencast;
-};
+struct CapturedFrameInfo;
 
 // TODO(pthatcher): Add VideoOptions.
 struct VideoSendParams {

@@ -1350,14 +1350,15 @@ class VideoMediaChannelTest : public testing::Test,
       EXPECT_FALSE(renderer_.black_frame());
       EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
       // Make sure a black frame is generated within the specified timeout.
-      // The black frame should be the resolution of the send codec.
+      // The black frame should be the resolution of the previous frame to
+      // prevent expensive encoder reconfigurations.
       EXPECT_TRUE_WAIT(renderer_.num_rendered_frames() >= captured_frames &&
-                       codec.width == renderer_.width() &&
-                       codec.height == renderer_.height() &&
+                       format.width == renderer_.width() &&
+                       format.height == renderer_.height() &&
                        renderer_.black_frame(), kTimeout);
       EXPECT_GE(renderer_.num_rendered_frames(), captured_frames);
-      EXPECT_EQ(codec.width, renderer_.width());
-      EXPECT_EQ(codec.height, renderer_.height());
+      EXPECT_EQ(format.width, renderer_.width());
+      EXPECT_EQ(format.height, renderer_.height());
       EXPECT_TRUE(renderer_.black_frame());
 
       // The black frame has the same timestamp as the next frame since it's

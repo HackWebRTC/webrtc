@@ -319,9 +319,14 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     };
 
     struct Dimensions {
-      // Use low width/height to make encoder creation (before first frame)
-      // cheap.
-      Dimensions() : width(16), height(16), is_screencast(false) {}
+      // Initial encoder configuration (QCIF, 176x144) frame (to ensure that
+      // hardware encoders can be initialized). This gives us low memory usage
+      // but also makes it so configuration errors are discovered at the time we
+      // apply the settings rather than when we get the first frame (waiting for
+      // the first frame to know that you gave a bad codec parameter could make
+      // debugging hard).
+      // TODO(pbos): Consider setting up encoders lazily.
+      Dimensions() : width(176), height(144), is_screencast(false) {}
       int width;
       int height;
       bool is_screencast;

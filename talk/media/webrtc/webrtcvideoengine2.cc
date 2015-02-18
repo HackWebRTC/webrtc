@@ -1356,25 +1356,17 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::~WebRtcVideoSendStream() {
   DestroyVideoEncoder(&allocated_encoder_);
 }
 
-static void SetWebRtcFrameToBlack(webrtc::I420VideoFrame* video_frame) {
-  assert(video_frame != NULL);
-  memset(video_frame->buffer(webrtc::kYPlane),
-         16,
-         video_frame->allocated_size(webrtc::kYPlane));
-  memset(video_frame->buffer(webrtc::kUPlane),
-         128,
-         video_frame->allocated_size(webrtc::kUPlane));
-  memset(video_frame->buffer(webrtc::kVPlane),
-         128,
-         video_frame->allocated_size(webrtc::kVPlane));
-}
-
 static void CreateBlackFrame(webrtc::I420VideoFrame* video_frame,
                              int width,
                              int height) {
-  video_frame->CreateEmptyFrame(
-      width, height, width, (width + 1) / 2, (width + 1) / 2);
-  SetWebRtcFrameToBlack(video_frame);
+  video_frame->CreateEmptyFrame(width, height, width, (width + 1) / 2,
+                                (width + 1) / 2);
+  memset(video_frame->buffer(webrtc::kYPlane), 16,
+         video_frame->allocated_size(webrtc::kYPlane));
+  memset(video_frame->buffer(webrtc::kUPlane), 128,
+         video_frame->allocated_size(webrtc::kUPlane));
+  memset(video_frame->buffer(webrtc::kVPlane), 128,
+         video_frame->allocated_size(webrtc::kVPlane));
 }
 
 static void ConvertToI420VideoFrame(const VideoFrame& frame,
@@ -1439,6 +1431,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
 
 bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
     VideoCapturer* capturer) {
+  TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::SetCapturer");
   if (!DisconnectCapturer() && capturer == NULL) {
     return false;
   }
@@ -1451,16 +1444,8 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
         LOG(LS_VERBOSE) << "Disabling capturer, sending black frame.";
         webrtc::I420VideoFrame black_frame;
 
-        // TODO(pbos): Base width/height on last_dimensions_. This will however
-        // fail the test AddRemoveCapturer which needs to be fixed to permit
-        // sending black frames in the same size that was previously sent.
-        int width = format_.width;
-        int height = format_.height;
-        int half_width = (width + 1) / 2;
-        black_frame.CreateEmptyFrame(
-            width, height, width, half_width, half_width);
-        SetWebRtcFrameToBlack(&black_frame);
-        SetDimensions(width, height, last_dimensions_.is_screencast);
+        CreateBlackFrame(&black_frame, last_dimensions_.width,
+                         last_dimensions_.height);
         stream_->Input()->SwapFrame(&black_frame);
       }
 

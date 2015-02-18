@@ -574,22 +574,35 @@ class WebRtcEncoderObserver : public webrtc::ViEEncoderObserver {
   bool suspended_;
 };
 
+struct CapturedFrameInfo {
+  CapturedFrameInfo()
+      : width(0),
+        height(0),
+        screencast(false),
+        elapsed_time(-1),
+        timestamp(-1) {}
+  CapturedFrameInfo(size_t width,
+                    size_t height,
+                    bool screencast,
+                    int64_t elapsed_time,
+                    int64_t timestamp)
+      : width(width),
+        height(height),
+        screencast(screencast),
+        elapsed_time(elapsed_time),
+        timestamp(timestamp) {}
+
+  size_t width;
+  size_t height;
+  bool screencast;
+
+  int64_t elapsed_time;
+  int64_t timestamp;
+};
+
 class WebRtcLocalStreamInfo {
  public:
-  WebRtcLocalStreamInfo()
-      : width_(0), height_(0), elapsed_time_(-1), time_stamp_(-1) {}
-  size_t width() const {
-    rtc::CritScope cs(&crit_);
-    return width_;
-  }
-  size_t height() const {
-    rtc::CritScope cs(&crit_);
-    return height_;
-  }
-  int64 elapsed_time() const {
-    rtc::CritScope cs(&crit_);
-    return elapsed_time_;
-  }
+  WebRtcLocalStreamInfo() : time_stamp_(-1) {}
   int64 time_stamp() const {
     rtc::CritScope cs(&crit_);
     return time_stamp_;
@@ -598,30 +611,15 @@ class WebRtcLocalStreamInfo {
     rtc::CritScope cs(&crit_);
     return static_cast<int>(rate_tracker_.units_second());
   }
-  void GetLastFrameInfo(
-      size_t* width, size_t* height, int64* elapsed_time) const {
-    rtc::CritScope cs(&crit_);
-    *width = width_;
-    *height = height_;
-    *elapsed_time = elapsed_time_;
-  }
 
   void UpdateFrame(const VideoFrame* frame) {
     rtc::CritScope cs(&crit_);
-
-    width_ = frame->GetWidth();
-    height_ = frame->GetHeight();
-    elapsed_time_ = frame->GetElapsedTime();
     time_stamp_ = frame->GetTimeStamp();
-
     rate_tracker_.Update(1);
   }
 
  private:
   mutable rtc::CriticalSection crit_;
-  size_t width_;
-  size_t height_;
-  int64 elapsed_time_;
   int64 time_stamp_;
   rtc::RateTracker rate_tracker_;
 
@@ -771,17 +769,14 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   void SetLastCapturedFrameInfo(
       const VideoFrame* frame, bool screencast, bool* changed) {
     CapturedFrameInfo last;
-    if (last_captured_frame_info_.Get(&last) &&
-        frame->GetWidth() == last.width &&
-        frame->GetHeight() == last.height &&
-        screencast == last.screencast) {
-      *changed = false;
-      return;
-    }
+    *changed =
+        !(last_captured_frame_info_.Get(&last) &&
+          frame->GetWidth() == last.width &&
+          frame->GetHeight() == last.height && screencast == last.screencast);
 
-    last_captured_frame_info_.Set(CapturedFrameInfo(
-        frame->GetWidth(), frame->GetHeight(), screencast));
-    *changed = true;
+    last_captured_frame_info_.Set(
+        CapturedFrameInfo(frame->GetWidth(), frame->GetHeight(), screencast,
+                          frame->GetElapsedTime(), frame->GetTimeStamp()));
   }
 
   // Tells the video adapter to adapt down to a given format.  The
@@ -4140,33 +4135,23 @@ void WebRtcVideoMediaChannel::QueueBlackFrame(uint32 ssrc, int64 timestamp,
 }
 
 void WebRtcVideoMediaChannel::FlushBlackFrame(
-    uint32 ssrc, int64 timestamp, int interval) {
+    uint32 ssrc, int64 timestamp, int timestamp_delta) {
   WebRtcVideoChannelSendInfo* send_channel = GetSendChannelBySsrc(ssrc);
   if (!send_channel) {
     return;
   }
-  rtc::scoped_ptr<const VideoFrame> black_frame_ptr;
 
-  const WebRtcLocalStreamInfo* channel_stream_info =
-      send_channel->local_stream_info();
-  int64 last_frame_time_stamp = channel_stream_info->time_stamp();
-  if (last_frame_time_stamp == timestamp) {
-    size_t last_frame_width = 0;
-    size_t last_frame_height = 0;
-    int64 last_frame_elapsed_time = 0;
-    channel_stream_info->GetLastFrameInfo(&last_frame_width, &last_frame_height,
-                                          &last_frame_elapsed_time);
-    if (!last_frame_width || !last_frame_height) {
-      return;
-    }
+  CapturedFrameInfo last_frame_info;
+  if (!send_channel->last_captured_frame_info().Get(&last_frame_info))
+    return;
+
+  if (last_frame_info.timestamp == timestamp) {
     WebRtcVideoFrame black_frame;
-    // Black frame is not screencast.
-    const bool screencasting = false;
-    const int64 timestamp_delta = interval;
-    if (!black_frame.InitToBlack(send_codec_->width, send_codec_->height, 1, 1,
-                                 last_frame_elapsed_time + timestamp_delta,
-                                 last_frame_time_stamp + timestamp_delta) ||
-        !SendFrame(send_channel, &black_frame, screencasting)) {
+    if (!black_frame.InitToBlack(static_cast<int>(last_frame_info.width),
+                                 static_cast<int>(last_frame_info.height), 1, 1,
+                                 last_frame_info.elapsed_time + timestamp_delta,
+                                 last_frame_info.timestamp + timestamp_delta) ||
+        !SendFrame(send_channel, &black_frame, last_frame_info.screencast)) {
       LOG(LS_ERROR) << "Failed to send black frame.";
     }
   }
