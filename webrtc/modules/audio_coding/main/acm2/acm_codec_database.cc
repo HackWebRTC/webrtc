@@ -575,9 +575,7 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst,
   // All we have support for right now.
   if (!STR_CASE_CMP(codec_inst.plname, "ISAC")) {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-    return new ACMGenericCodecWrapper(codec_inst, cng_pt_nb, cng_pt_wb,
-                                      cng_pt_swb, cng_pt_fb, enable_red,
-                                      red_payload_type);
+    return new ACMISAC(kISAC, enable_red);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "PCMU") ||
              !STR_CASE_CMP(codec_inst.plname, "PCMA")) {
