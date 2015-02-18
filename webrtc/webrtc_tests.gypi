@@ -36,13 +36,28 @@
       ],
     },
     {
+      'target_name': 'loopback_base',
+      'type': 'static_library',
+      'sources': [
+        'video/loopback.cc',
+        'video/loopback.h',
+      ],
+      'dependencies': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
+        '<(webrtc_root)/modules/modules.gyp:video_render',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+        'webrtc',
+      ],
+    },
+    {
       'target_name': 'video_loopback',
       'type': 'executable',
       'sources': [
         'test/mac/run_test.mm',
         'test/run_test.cc',
         'test/run_test.h',
-        'video/loopback.cc',
+        'video/video_loopback.cc',
       ],
       'conditions': [
         ['OS=="mac"', {
@@ -52,13 +67,37 @@
         }],
       ],
       'dependencies': [
+        'loopback_base',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         'test/webrtc_test_common.gyp:webrtc_test_common',
         'test/webrtc_test_common.gyp:webrtc_test_renderer',
-        '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
-        '<(webrtc_root)/modules/modules.gyp:video_render',
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+        'test/test.gyp:test_main',
+        'webrtc',
+      ],
+    },
+        {
+      'target_name': 'screenshare_loopback',
+      'type': 'executable',
+      'sources': [
+        'test/mac/run_test.mm',
+        'test/run_test.cc',
+        'test/run_test.h',
+        'video/screenshare_loopback.cc',
+      ],
+      'conditions': [
+        ['OS=="mac"', {
+          'sources!': [
+            'test/run_test.cc',
+          ],
+        }],
+      ],
+      'dependencies': [
+        'loopback_base',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+        'test/webrtc_test_common.gyp:webrtc_test_common',
+        'test/webrtc_test_common.gyp:webrtc_test_renderer',
         'test/test.gyp:test_main',
         'webrtc',
       ],

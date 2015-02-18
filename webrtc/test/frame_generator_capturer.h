@@ -10,6 +10,8 @@
 #ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_FRAME_GENERATOR_CAPTURER_H_
 #define WEBRTC_VIDEO_ENGINE_TEST_COMMON_FRAME_GENERATOR_CAPTURER_H_
 
+#include <string>
+
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/video_capturer.h"
 #include "webrtc/typedefs.h"
@@ -33,7 +35,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
                                         Clock* clock);
 
   static FrameGeneratorCapturer* CreateFromYuvFile(VideoSendStreamInput* input,
-                                                   const char* file_name,
+                                                   const std::string& file_name,
                                                    size_t width,
                                                    size_t height,
                                                    int target_fps,
@@ -45,12 +47,13 @@ class FrameGeneratorCapturer : public VideoCapturer {
 
   int64_t first_frame_capture_time() const { return first_frame_capture_time_; }
 
- private:
   FrameGeneratorCapturer(Clock* clock,
                          VideoSendStreamInput* input,
                          FrameGenerator* frame_generator,
                          int target_fps);
   bool Init();
+
+ private:
   void InsertFrame();
   static bool Run(void* obj);
 

@@ -169,7 +169,7 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
   // Create frames that are smaller than the send width/height, this is done to
   // check that the callbacks are done after processing video.
   scoped_ptr<test::FrameGenerator> frame_generator(
-      test::FrameGenerator::Create(kWidth, kHeight));
+      test::FrameGenerator::CreateChromaGenerator(kWidth, kHeight));
   send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
   EXPECT_EQ(kEventSignaled, pre_render_callback.Wait())
       << "Timed out while waiting for pre-render callback.";
@@ -215,8 +215,9 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
   CreateStreams();
   Start();
 
-  scoped_ptr<test::FrameGenerator> frame_generator(test::FrameGenerator::Create(
-      encoder_config_.streams[0].width, encoder_config_.streams[0].height));
+  scoped_ptr<test::FrameGenerator> frame_generator(
+      test::FrameGenerator::CreateChromaGenerator(
+          encoder_config_.streams[0].width, encoder_config_.streams[0].height));
   send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
 
   EXPECT_EQ(kEventSignaled, renderer.Wait())
@@ -834,7 +835,7 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
   // Create frames that are smaller than the send width/height, this is done to
   // check that the callbacks are done after processing video.
   scoped_ptr<test::FrameGenerator> frame_generator(
-      test::FrameGenerator::Create(kWidth / 2, kHeight / 2));
+      test::FrameGenerator::CreateChromaGenerator(kWidth / 2, kHeight / 2));
   send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
 
   EXPECT_EQ(kEventSignaled, pre_encode_callback.Wait())
@@ -1265,8 +1266,9 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
   CreateStreams();
   Start();
 
-  scoped_ptr<test::FrameGenerator> frame_generator(test::FrameGenerator::Create(
-      encoder_config_.streams[0].width, encoder_config_.streams[0].height));
+  scoped_ptr<test::FrameGenerator> frame_generator(
+      test::FrameGenerator::CreateChromaGenerator(
+          encoder_config_.streams[0].width, encoder_config_.streams[0].height));
   send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
 
   EXPECT_EQ(kEventSignaled, post_encode_observer.Wait())

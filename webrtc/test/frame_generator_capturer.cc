@@ -28,7 +28,8 @@ FrameGeneratorCapturer* FrameGeneratorCapturer::Create(
     int target_fps,
     Clock* clock) {
   FrameGeneratorCapturer* capturer = new FrameGeneratorCapturer(
-      clock, input, FrameGenerator::Create(width, height), target_fps);
+      clock, input, FrameGenerator::CreateChromaGenerator(width, height),
+      target_fps);
   if (!capturer->Init()) {
     delete capturer;
     return NULL;
@@ -39,15 +40,15 @@ FrameGeneratorCapturer* FrameGeneratorCapturer::Create(
 
 FrameGeneratorCapturer* FrameGeneratorCapturer::CreateFromYuvFile(
     VideoSendStreamInput* input,
-    const char* file_name,
+    const std::string& file_name,
     size_t width,
     size_t height,
     int target_fps,
     Clock* clock) {
   FrameGeneratorCapturer* capturer = new FrameGeneratorCapturer(
-      clock,
-      input,
-      FrameGenerator::CreateFromYuvFile(file_name, width, height),
+      clock, input,
+      FrameGenerator::CreateFromYuvFile(std::vector<std::string>(1, file_name),
+                                        width, height, 1),
       target_fps);
   if (!capturer->Init()) {
     delete capturer;
