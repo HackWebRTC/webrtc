@@ -202,11 +202,6 @@ public:
                                     const I420VideoFrame& videoFrame,
                                     const uint32_t timeout);
 
-    virtual int32_t MirrorRenderStream(const int renderId,
-                                       const bool enable,
-                                       const bool mirrorXAxis,
-                                       const bool mirrorYAxis);
-
 private:
     int32_t _id;
     CriticalSectionWrapper& _moduleCrit;

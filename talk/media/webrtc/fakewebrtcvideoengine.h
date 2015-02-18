@@ -956,8 +956,6 @@ class FakeWebRtcVideoEngine
   WEBRTC_STUB(SetExpectedRenderDelay, (int render_id, int render_delay));
   WEBRTC_STUB(ConfigureRender, (int, const unsigned int, const float,
       const float, const float, const float));
-  WEBRTC_STUB(MirrorRenderStream, (const int, const bool, const bool,
-      const bool));
   WEBRTC_FUNC(AddRenderer, (const int render_id,
                             webrtc::RawVideoType video_type,
                             webrtc::ExternalRenderer* renderer)) {

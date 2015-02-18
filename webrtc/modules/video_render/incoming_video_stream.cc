@@ -54,10 +54,7 @@ IncomingVideoStream::IncomingVideoStream(const int32_t module_id,
       temp_frame_(),
       start_image_(),
       timeout_image_(),
-      timeout_time_(),
-      mirror_frames_enabled_(false),
-      mirroring_(),
-      transformed_video_frame_() {
+      timeout_time_() {
   WEBRTC_TRACE(kTraceMemory, kTraceVideoRenderer, module_id_,
                "%s created for stream %d", __FUNCTION__, stream_id);
 }
@@ -100,25 +97,6 @@ int32_t IncomingVideoStream::RenderFrame(const uint32_t stream_id,
     return -1;
   }
 
-  // Mirroring is not supported if the frame is backed by a texture.
-  if (true == mirror_frames_enabled_ && video_frame.native_handle() == NULL) {
-    transformed_video_frame_.CreateEmptyFrame(video_frame.width(),
-                                              video_frame.height(),
-                                              video_frame.stride(kYPlane),
-                                              video_frame.stride(kUPlane),
-                                              video_frame.stride(kVPlane));
-    if (mirroring_.mirror_x_axis) {
-      MirrorI420UpDown(&video_frame,
-                       &transformed_video_frame_);
-      video_frame.SwapFrame(&transformed_video_frame_);
-    }
-    if (mirroring_.mirror_y_axis) {
-      MirrorI420LeftRight(&video_frame,
-                          &transformed_video_frame_);
-      video_frame.SwapFrame(&transformed_video_frame_);
-    }
-  }
-
   // Rate statistics.
   num_frames_since_last_calculation_++;
   int64_t now_ms = TickTime::MillisecondTimestamp();
@@ -159,17 +137,6 @@ int32_t IncomingVideoStream::SetRenderCallback(
                "%s(%x) for stream %d", __FUNCTION__, render_callback,
                stream_id_);
   render_callback_ = render_callback;
-  return 0;
-}
-
-int32_t IncomingVideoStream::EnableMirroring(const bool enable,
-                                             const bool mirror_x_axis,
-                                             const bool mirror_y_axis) {
-  CriticalSectionScoped cs(&stream_critsect_);
-  mirror_frames_enabled_ = enable;
-  mirroring_.mirror_x_axis = mirror_x_axis;
-  mirroring_.mirror_y_axis = mirror_y_axis;
-
   return 0;
 }
 

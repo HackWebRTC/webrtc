@@ -76,11 +76,6 @@ class ViERenderer: public ViEFrameCallback {
 
   VideoRender& RenderModule();
 
-  int32_t EnableMirroring(const int32_t render_id,
-                          const bool enable,
-                          const bool mirror_xaxis,
-                          const bool mirror_yaxis);
-
   int32_t SetTimeoutImage(const I420VideoFrame& timeout_image,
                           const int32_t timeout_value);
   int32_t SetRenderStartImage(const I420VideoFrame& start_image);

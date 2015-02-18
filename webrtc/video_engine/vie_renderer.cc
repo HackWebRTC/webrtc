@@ -71,14 +71,6 @@ VideoRender& ViERenderer::RenderModule() {
   return render_module_;
 }
 
-int32_t ViERenderer::EnableMirroring(const int32_t render_id,
-                                     const bool enable,
-                                     const bool mirror_xaxis,
-                                     const bool mirror_yaxis) {
-  return render_module_.MirrorRenderStream(render_id, enable, mirror_xaxis,
-                                           mirror_yaxis);
-}
-
 int32_t ViERenderer::SetTimeoutImage(const I420VideoFrame& timeout_image,
                                      const int32_t timeout_value) {
   return render_module_.SetTimeoutImage(render_id_, timeout_image,

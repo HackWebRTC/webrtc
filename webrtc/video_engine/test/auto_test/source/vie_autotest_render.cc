@@ -220,29 +220,6 @@ void ViEAutoTest::ViERenderExtendedTest()
     AutoTestSleep(kAutoTestSleepTimeMs);
 #endif
 
-    ViETest::Log("Mirroring Local Preview (Window1) Left-Right");
-    EXPECT_EQ(0, ViE.render->MirrorRenderStream(
-        tbCapture.captureId, true, false, true));
-    AutoTestSleep(kAutoTestSleepTimeMs);
-
-    ViETest::Log("\nMirroring Local Preview (Window1) Left-Right and Up-Down");
-    EXPECT_EQ(0, ViE.render->MirrorRenderStream(
-        tbCapture.captureId, true, true, true));
-    AutoTestSleep(kAutoTestSleepTimeMs);
-
-    ViETest::Log("\nMirroring Remote Window(Window2) Up-Down");
-    EXPECT_EQ(0, ViE.render->MirrorRenderStream(
-        tbChannel.videoChannel, true, true, false));
-    AutoTestSleep(kAutoTestSleepTimeMs);
-
-    ViETest::Log("Disabling Mirroing on Window1 and Window2");
-    EXPECT_EQ(0, ViE.render->MirrorRenderStream(
-        tbCapture.captureId, false, false, false));
-    AutoTestSleep(kAutoTestSleepTimeMs);
-    EXPECT_EQ(0, ViE.render->MirrorRenderStream(
-        tbChannel.videoChannel, false, false, false));
-    AutoTestSleep(kAutoTestSleepTimeMs);
-
     ViETest::Log("\nEnabling Full Screen render in 5 sec");
 
     EXPECT_EQ(0, ViE.render->RemoveRenderer(tbCapture.captureId));

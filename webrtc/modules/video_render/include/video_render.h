@@ -271,11 +271,6 @@ public:
     virtual int32_t SetTimeoutImage(const uint32_t streamId,
                                     const I420VideoFrame& videoFrame,
                                     const uint32_t timeout)= 0;
-
-    virtual int32_t MirrorRenderStream(const int renderId,
-                                       const bool enable,
-                                       const bool mirrorXAxis,
-                                       const bool mirrorYAxis) = 0;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_VIDEO_RENDER_MAIN_INTERFACE_VIDEO_RENDER_H_

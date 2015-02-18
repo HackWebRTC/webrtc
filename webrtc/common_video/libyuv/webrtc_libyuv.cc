@@ -288,50 +288,6 @@ int ConvertFromYV12(const I420VideoFrame& src_frame,
                                  ConvertVideoType(dst_video_type));
 }
 
-int MirrorI420LeftRight(const I420VideoFrame* src_frame,
-                        I420VideoFrame* dst_frame) {
-  // Source and destination frames should have equal resolution.
-  if (src_frame->width() != dst_frame->width() ||
-      src_frame->height() != dst_frame->height())
-    return -1;
-  return libyuv::I420Mirror(src_frame->buffer(kYPlane),
-                            src_frame->stride(kYPlane),
-                            src_frame->buffer(kUPlane),
-                            src_frame->stride(kUPlane),
-                            src_frame->buffer(kVPlane),
-                            src_frame->stride(kVPlane),
-                            dst_frame->buffer(kYPlane),
-                            dst_frame->stride(kYPlane),
-                            dst_frame->buffer(kUPlane),
-                            dst_frame->stride(kUPlane),
-                            dst_frame->buffer(kVPlane),
-                            dst_frame->stride(kVPlane),
-                            src_frame->width(), src_frame->height());
-}
-
-int MirrorI420UpDown(const I420VideoFrame* src_frame,
-                     I420VideoFrame* dst_frame) {
-  // Source and destination frames should have equal resolution
-  if (src_frame->width() != dst_frame->width() ||
-      src_frame->height() != dst_frame->height())
-    return -1;
-
-  // Inserting negative height flips the frame.
-  return libyuv::I420Copy(src_frame->buffer(kYPlane),
-                          src_frame->stride(kYPlane),
-                          src_frame->buffer(kUPlane),
-                          src_frame->stride(kUPlane),
-                          src_frame->buffer(kVPlane),
-                          src_frame->stride(kVPlane),
-                          dst_frame->buffer(kYPlane),
-                          dst_frame->stride(kYPlane),
-                          dst_frame->buffer(kUPlane),
-                          dst_frame->stride(kUPlane),
-                          dst_frame->buffer(kVPlane),
-                          dst_frame->stride(kVPlane),
-                          src_frame->width(), -(src_frame->height()));
-}
-
 // Compute PSNR for an I420 frame (all planes)
 double I420PSNR(const I420VideoFrame* ref_frame,
                 const I420VideoFrame* test_frame) {

@@ -326,69 +326,6 @@ TEST_F(TestLibYuv, RotateTest) {
                              0, kRotate180, &rotated_res_i420_frame));
 }
 
-TEST_F(TestLibYuv, MirrorTest) {
-  // TODO(mikhal): Add an automated test to confirm output.
-  std::string str;
-  int width = 16;
-  int half_width = (width + 1) / 2;
-  int height = 8;
-  int half_height = (height + 1) / 2;
-
-  I420VideoFrame test_frame;
-  test_frame.CreateEmptyFrame(width, height, width,
-                              half_width, half_width);
-  memset(test_frame.buffer(kYPlane), 255, width * height);
-  memset(test_frame.buffer(kUPlane), 255, half_width * half_height);
-  memset(test_frame.buffer(kVPlane), 255, half_width * half_height);
-
-  // Create input frame.
-  I420VideoFrame in_frame, test_in_frame;
-  in_frame.CreateEmptyFrame(width, height, width,
-                            half_width ,half_width);
-  int plane_offset[kNumOfPlanes];
-  plane_offset[kYPlane] = 10;
-  plane_offset[kUPlane] = 100;
-  plane_offset[kVPlane] = 200;
-  CreateImage(&in_frame, plane_offset);
-  EXPECT_EQ(0, PrintFrame(&in_frame, "InputFrame"));
-  test_in_frame.CopyFrame(in_frame);
-
-  I420VideoFrame out_frame, test_out_frame;
-  out_frame.CreateEmptyFrame(width, height, width,
-                             half_width ,half_width);
-  CreateImage(&out_frame, plane_offset);
-  test_out_frame.CopyFrame(out_frame);
-
-  // Left-Right.
-  std::cout << "Test Mirror function: LeftRight" << std::endl;
-  EXPECT_EQ(0, MirrorI420LeftRight(&in_frame, &out_frame));
-  EXPECT_EQ(0, PrintFrame(&out_frame, "OutputFrame"));
-  EXPECT_EQ(0, MirrorI420LeftRight(&out_frame, &in_frame));
-
-  EXPECT_EQ(0, memcmp(in_frame.buffer(kYPlane),
-    test_in_frame.buffer(kYPlane), width * height));
-  EXPECT_EQ(0, memcmp(in_frame.buffer(kUPlane),
-    test_in_frame.buffer(kUPlane), half_width * half_height));
-  EXPECT_EQ(0, memcmp(in_frame.buffer(kVPlane),
-    test_in_frame.buffer(kVPlane), half_width * half_height));
-
-  // UpDown
-  std::cout << "Test Mirror function: UpDown" << std::endl;
-  EXPECT_EQ(0, MirrorI420UpDown(&in_frame, &out_frame));
-  EXPECT_EQ(0, PrintFrame(&out_frame, "OutputFrame"));
-  EXPECT_EQ(0, MirrorI420UpDown(&out_frame, &test_frame));
-  EXPECT_EQ(0, memcmp(in_frame.buffer(kYPlane),
-    test_in_frame.buffer(kYPlane), width * height));
-  EXPECT_EQ(0, memcmp(in_frame.buffer(kUPlane),
-    test_in_frame.buffer(kUPlane), half_width * half_height));
-  EXPECT_EQ(0, memcmp(in_frame.buffer(kVPlane),
-    test_in_frame.buffer(kVPlane), half_width * half_height));
-
-  // TODO(mikhal): Write to a file, and ask to look at the file.
-
-  std::cout << "Do the mirrored frames look correct?" << std::endl;
-}
-
 TEST_F(TestLibYuv, alignment) {
   int value = 0x3FF; // 1023
   EXPECT_EQ(0x400, AlignInt(value, 128));  // Low 7 bits are zero.

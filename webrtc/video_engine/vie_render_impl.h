@@ -40,9 +40,6 @@ class ViERenderImpl
   virtual int ConfigureRender(int render_id, const unsigned int z_order,
                               const float left, const float top,
                               const float right, const float bottom);
-  virtual int MirrorRenderStream(const int render_id, const bool enable,
-                                 const bool mirror_xaxis,
-                                 const bool mirror_yaxis);
   virtual int AddRenderer(const int render_id, RawVideoType video_input_format,
                           ExternalRenderer* renderer);
 

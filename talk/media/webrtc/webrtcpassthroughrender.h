@@ -177,13 +177,6 @@ class WebRtcPassthroughRender : public webrtc::VideoRender {
     return -1;
   }
 
-  virtual int32_t MirrorRenderStream(const int renderId,
-                                     const bool enable,
-                                     const bool mirrorXAxis,
-                                     const bool mirrorYAxis) OVERRIDE {
-    return -1;
-  }
-
  private:
   typedef std::map<uint32_t, PassthroughStream*> StreamMap;
 

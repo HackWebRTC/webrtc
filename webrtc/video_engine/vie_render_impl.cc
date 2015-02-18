@@ -236,23 +236,6 @@ int ViERenderImpl::ConfigureRender(int render_id, const unsigned int z_order,
   return 0;
 }
 
-int ViERenderImpl::MirrorRenderStream(const int render_id, const bool enable,
-                                      const bool mirror_xaxis,
-                                      const bool mirror_yaxis) {
-  ViERenderManagerScoped rs(*(shared_data_->render_manager()));
-  ViERenderer* renderer = rs.Renderer(render_id);
-  if (!renderer) {
-    shared_data_->SetLastError(kViERenderInvalidRenderId);
-    return -1;
-  }
-  if (renderer->EnableMirroring(render_id, enable, mirror_xaxis, mirror_yaxis)
-      != 0) {
-    shared_data_->SetLastError(kViERenderUnknownError);
-    return -1;
-  }
-  return 0;
-}
-
 int ViERenderImpl::AddRenderer(const int render_id,
                                RawVideoType video_input_format,
                                ExternalRenderer* external_renderer) {

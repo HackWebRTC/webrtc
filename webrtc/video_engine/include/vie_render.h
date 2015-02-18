@@ -108,12 +108,6 @@ class ViERender {
                               const float right,
                               const float bottom) = 0;
 
-  // This function mirrors the rendered stream left and right or up and down.
-  virtual int MirrorRenderStream(const int render_id,
-                                 const bool enable,
-                                 const bool mirror_xaxis,
-                                 const bool mirror_yaxis) = 0;
-
   // External render.
   virtual int AddRenderer(const int render_id,
                           RawVideoType video_input_format,

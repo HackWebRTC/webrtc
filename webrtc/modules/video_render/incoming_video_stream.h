@@ -20,12 +20,6 @@ class ThreadWrapper;
 class VideoRenderCallback;
 class VideoRenderFrames;
 
-struct VideoMirroring {
-  VideoMirroring() : mirror_x_axis(false), mirror_y_axis(false) {}
-  bool mirror_x_axis;
-  bool mirror_y_axis;
-};
-
 class IncomingVideoStream : public VideoRenderCallback {
  public:
   IncomingVideoStream(const int32_t module_id,
@@ -62,10 +56,6 @@ class IncomingVideoStream : public VideoRenderCallback {
 
   int32_t SetTimeoutImage(const I420VideoFrame& video_frame,
                           const uint32_t timeout);
-
-  int32_t EnableMirroring(const bool enable,
-                          const bool mirror_xaxis,
-                          const bool mirror_yaxis);
 
   int32_t SetExpectedRenderDelay(int32_t delay_ms);
 
@@ -104,10 +94,6 @@ class IncomingVideoStream : public VideoRenderCallback {
   I420VideoFrame start_image_;
   I420VideoFrame timeout_image_;
   uint32_t timeout_time_;
-
-  bool mirror_frames_enabled_;
-  VideoMirroring mirroring_;
-  I420VideoFrame transformed_video_frame_;
 };
 
 }  // namespace webrtc
