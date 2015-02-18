@@ -226,6 +226,7 @@ int32_t VCMEncodedFrameCallback::Encoded(
 #endif
 
   RTPVideoHeader rtpVideoHeader;
+  memset(&rtpVideoHeader, 0, sizeof(RTPVideoHeader));
   RTPVideoHeader* rtpVideoHeaderPtr = &rtpVideoHeader;
   CopyCodecSpecific(codecSpecificInfo, &rtpVideoHeaderPtr);
 
