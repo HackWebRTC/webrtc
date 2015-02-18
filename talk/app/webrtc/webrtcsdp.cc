@@ -2436,10 +2436,9 @@ void UpdateCodec(MediaContentDescription* content_desc, int payload_type,
   AddOrReplaceCodec<T, U>(content_desc, new_codec);
 }
 
-bool PopWildcardCodec(std::vector<cricket::VideoCodec>* codecs,
-                      cricket::VideoCodec* wildcard_codec) {
-  for (std::vector<cricket::VideoCodec>::iterator iter = codecs->begin();
-       iter != codecs->end(); ++iter) {
+template <class T>
+bool PopWildcardCodec(std::vector<T>* codecs, T* wildcard_codec) {
+  for (auto iter = codecs->begin(); iter != codecs->end(); ++iter) {
     if (iter->id == kWildcardPayloadType) {
       *wildcard_codec = *iter;
       codecs->erase(iter);
@@ -2449,18 +2448,17 @@ bool PopWildcardCodec(std::vector<cricket::VideoCodec>* codecs,
   return false;
 }
 
-void UpdateFromWildcardVideoCodecs(VideoContentDescription* video_desc) {
-  std::vector<cricket::VideoCodec> codecs = video_desc->codecs();
-  cricket::VideoCodec wildcard_codec;
+template<class T>
+void UpdateFromWildcardCodecs(cricket::MediaContentDescriptionImpl<T>* desc) {
+  auto codecs = desc->codecs();
+  T wildcard_codec;
   if (!PopWildcardCodec(&codecs, &wildcard_codec)) {
     return;
   }
-  for (std::vector<cricket::VideoCodec>::iterator iter = codecs.begin();
-       iter != codecs.end(); ++iter) {
-    cricket::VideoCodec& codec = *iter;
+  for (auto& codec : codecs) {
     AddFeedbackParameters(wildcard_codec.feedback_params, &codec);
   }
-  video_desc->set_codecs(codecs);
+  desc->set_codecs(codecs);
 }
 
 void AddAudioAttribute(const std::string& name, const std::string& value,
@@ -2704,6 +2702,8 @@ bool ParseContent(const std::string& message,
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
     AudioContentDescription* audio_desc =
         static_cast<AudioContentDescription*>(media_desc);
+    UpdateFromWildcardCodecs(audio_desc);
+
     // Verify audio codec ensures that no audio codec has been populated with
     // only fmtp.
     if (!VerifyAudioCodecs(audio_desc)) {
@@ -2714,14 +2714,14 @@ bool ParseContent(const std::string& message,
   }
 
   if (media_type == cricket::MEDIA_TYPE_VIDEO) {
-      VideoContentDescription* video_desc =
-          static_cast<VideoContentDescription*>(media_desc);
-      UpdateFromWildcardVideoCodecs(video_desc);
-      // Verify video codec ensures that no video codec has been populated with
-      // only rtcp-fb.
-      if (!VerifyVideoCodecs(video_desc)) {
-        return ParseFailed("Failed to parse video codecs correctly.", error);
-      }
+    VideoContentDescription* video_desc =
+        static_cast<VideoContentDescription*>(media_desc);
+    UpdateFromWildcardCodecs(video_desc);
+    // Verify video codec ensures that no video codec has been populated with
+    // only rtcp-fb.
+    if (!VerifyVideoCodecs(video_desc)) {
+      return ParseFailed("Failed to parse video codecs correctly.", error);
+    }
   }
 
   // RFC 5245

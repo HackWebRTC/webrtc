@@ -1255,7 +1255,7 @@ class WebRtcSdpTest : public testing::Test {
 
   void TestDeserializeRtcpFb(JsepSessionDescription* jdesc_output,
                              bool use_wildcard) {
-    std::string sdp =
+    std::string sdp_session_and_audio =
         "v=0\r\n"
         "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
         "s=-\r\n"
@@ -1265,17 +1265,19 @@ class WebRtcSdpTest : public testing::Test {
         // description.
         "a=msid-semantic: WMS\r\n"
         "m=audio 9 RTP/SAVPF 111\r\n"
-        "a=rtpmap:111 opus/48000/2\r\n"
-        "a=rtcp-fb:111 nack\r\n"
+        "a=rtpmap:111 opus/48000/2\r\n";
+    std::string sdp_video =
         "m=video 3457 RTP/SAVPF 101\r\n"
         "a=rtpmap:101 VP8/90000\r\n"
         "a=rtcp-fb:101 nack\r\n"
         "a=rtcp-fb:101 nack pli\r\n"
-        "a=rtcp-fb:101 goog-remb\r\n"
-        "a=rtcp-fb:101 ccm fir\r\n";
+        "a=rtcp-fb:101 goog-remb\r\n";
     std::ostringstream os;
+    os << sdp_session_and_audio;
+    os << "a=rtcp-fb:" << (use_wildcard ? "*" : "111") <<  " nack\r\n";
+    os << sdp_video;
     os << "a=rtcp-fb:" << (use_wildcard ? "*" : "101") <<  " ccm fir\r\n";
-    sdp += os.str();
+    std::string sdp = os.str();
     // Deserialize
     SdpParseError error;
     EXPECT_TRUE(webrtc::SdpDeserialize(sdp, jdesc_output, &error));
