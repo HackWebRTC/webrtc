@@ -205,6 +205,7 @@
       },
       'sources': [
         'app/webrtc/datachannel_unittest.cc',
+        'app/webrtc/dtlsidentitystore_unittest.cc',
         'app/webrtc/dtmfsender_unittest.cc',
         'app/webrtc/jsepsessiondescription_unittest.cc',
         'app/webrtc/localaudiosource_unittest.cc',
