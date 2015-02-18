@@ -113,6 +113,10 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
                    info.delay_estimate_ms);
   report->AddValue(StatsReport::kStatsValueNameExpandRate,
                    rtc::ToString<float>(info.expand_rate));
+  report->AddValue(StatsReport::kStatsValueNameSpeechExpandRate,
+                   rtc::ToString<float>(info.speech_expand_rate));
+  report->AddValue(StatsReport::kStatsValueNameSecondaryDecodedRate,
+                   rtc::ToString<float>(info.secondary_decoded_rate));
   report->AddValue(StatsReport::kStatsValueNamePacketsReceived,
                    info.packets_rcvd);
   report->AddValue(StatsReport::kStatsValueNamePacketsLost,

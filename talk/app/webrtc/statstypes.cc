@@ -416,8 +416,12 @@ const char* StatsReport::Value::display_name() const {
       return "googRetransmitBitrate";
     case kStatsValueNameRtt:
       return "googRtt";
+    case kStatsValueNameSecondaryDecodedRate:
+      return "googSecondaryDecodedRate";
     case kStatsValueNameSendPacketsDiscarded:
       return "packetsDiscardedOnSend";
+    case kStatsValueNameSpeechExpandRate:
+      return "googSpeechExpandRate";
     case kStatsValueNameTargetEncBitrate:
       return "googTargetEncBitrate";
     case kStatsValueNameTransmitBitrate:
