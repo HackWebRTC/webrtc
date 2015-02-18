@@ -153,6 +153,26 @@ NetworkManagerBase::~NetworkManagerBase() {
   }
 }
 
+void NetworkManagerBase::GetAnyAddressNetworks(NetworkList* networks) {
+  if (!ipv4_any_address_network_) {
+    const rtc::IPAddress ipv4_any_address(INADDR_ANY);
+    ipv4_any_address_network_.reset(
+        new rtc::Network("any", "any", ipv4_any_address, 0));
+    ipv4_any_address_network_->AddIP(ipv4_any_address);
+  }
+  networks->push_back(ipv4_any_address_network_.get());
+
+  if (ipv6_enabled()) {
+    if (!ipv6_any_address_network_) {
+      const rtc::IPAddress ipv6_any_address(in6addr_any);
+      ipv6_any_address_network_.reset(
+          new rtc::Network("any", "any", ipv6_any_address, 0));
+      ipv6_any_address_network_->AddIP(ipv6_any_address);
+    }
+    networks->push_back(ipv6_any_address_network_.get());
+  }
+}
+
 void NetworkManagerBase::GetNetworks(NetworkList* result) const {
   int ipv6_networks = 0;
   result->clear();

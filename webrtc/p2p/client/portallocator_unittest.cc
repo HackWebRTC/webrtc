@@ -37,6 +37,7 @@ using rtc::Thread;
 
 static const SocketAddress kClientAddr("11.11.11.11", 0);
 static const SocketAddress kPrivateAddr("192.168.1.11", 0);
+static const SocketAddress kPrivateAddr2("192.168.1.12", 0);
 static const SocketAddress kClientIPv6Addr(
     "2401:fa00:4:1000:be30:5bff:fee5:c3", 0);
 static const SocketAddress kClientAddr2("22.22.22.22", 0);
@@ -225,6 +226,29 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
         ASSERT_EQ(expected, send_buffer_size);
       }
     }
+  }
+
+  void CheckDisableAdapterEnumeration() {
+    EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+    session_->set_flags(cricket::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
+    session_->StartGettingPorts();
+    EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+
+    // Only 2 candidates as local UDP/TCP are all 0s and get trimmed out.
+    EXPECT_EQ(2U, candidates_.size());
+    EXPECT_EQ(2U, ports_.size());  // One stunport and one turnport.
+
+    EXPECT_PRED5(CheckCandidate, candidates_[0],
+                 cricket::ICE_CANDIDATE_COMPONENT_RTP, "stun", "udp",
+                 rtc::SocketAddress(kNatAddr.ipaddr(), 0));
+    EXPECT_EQ(
+        rtc::EmptySocketAddressWithFamily(candidates_[0].address().family()),
+        candidates_[0].related_address());
+
+    EXPECT_PRED5(CheckCandidate, candidates_[1],
+                 cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
+                 rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+    EXPECT_EQ(kNatAddr.ipaddr(), candidates_[1].related_address().ipaddr());
   }
 
  protected:
@@ -423,6 +447,28 @@ TEST_F(PortAllocatorTest, TestGetAllPortsNoAdapters) {
   // Without network adapter, we should not get any candidate.
   EXPECT_EQ(0U, candidates_.size());
   EXPECT_TRUE(candidate_allocation_done_);
+}
+
+// Test that we should only get STUN and TURN candidates when adapter
+// enumeration is disabled.
+TEST_F(PortAllocatorTest, TestDisableAdapterEnumeration) {
+  AddInterface(kClientAddr);
+  // GTURN is not configured here.
+  ResetWithNatServer(kStunAddr);
+  AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
+
+  CheckDisableAdapterEnumeration();
+}
+
+// Test that even with multiple interfaces, the result should be only 1 Stun
+// candidate since we bind to any address (i.e. all 0s).
+TEST_F(PortAllocatorTest, TestDisableAdapterEnumerationMultipleInterfaces) {
+  AddInterface(kPrivateAddr);
+  AddInterface(kPrivateAddr2);
+  ResetWithNatServer(kStunAddr);
+  AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
+
+  CheckDisableAdapterEnumeration();
 }
 
 // Test that we can get OnCandidatesAllocationDone callback when all the ports

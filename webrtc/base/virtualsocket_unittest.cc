@@ -605,16 +605,18 @@ class VirtualSocketServerTest : public testing::Test {
     }
   }
 
-  void BandwidthTest(const SocketAddress& send_address,
-                     const SocketAddress& recv_address) {
+  // It is important that initial_addr's port has to be 0 such that the
+  // incremental port behavior could ensure the 2 Binds result in different
+  // address.
+  void BandwidthTest(const SocketAddress& initial_addr) {
     AsyncSocket* send_socket =
-        ss_->CreateAsyncSocket(send_address.family(), SOCK_DGRAM);
+        ss_->CreateAsyncSocket(initial_addr.family(), SOCK_DGRAM);
     AsyncSocket* recv_socket =
-        ss_->CreateAsyncSocket(recv_address.family(), SOCK_DGRAM);
-    ASSERT_EQ(0, send_socket->Bind(send_address));
-    ASSERT_EQ(0, recv_socket->Bind(recv_address));
-    EXPECT_EQ(send_socket->GetLocalAddress().family(), send_address.family());
-    EXPECT_EQ(recv_socket->GetLocalAddress().family(), recv_address.family());
+        ss_->CreateAsyncSocket(initial_addr.family(), SOCK_DGRAM);
+    ASSERT_EQ(0, send_socket->Bind(initial_addr));
+    ASSERT_EQ(0, recv_socket->Bind(initial_addr));
+    EXPECT_EQ(send_socket->GetLocalAddress().family(), initial_addr.family());
+    EXPECT_EQ(recv_socket->GetLocalAddress().family(), initial_addr.family());
     ASSERT_EQ(0, send_socket->Connect(recv_socket->GetLocalAddress()));
 
     uint32 bandwidth = 64 * 1024;
@@ -634,8 +636,10 @@ class VirtualSocketServerTest : public testing::Test {
     ss_->set_bandwidth(0);
   }
 
-  void DelayTest(const SocketAddress& send_addr,
-                 const SocketAddress& recv_addr) {
+  // It is important that initial_addr's port has to be 0 such that the
+  // incremental port behavior could ensure the 2 Binds result in different
+  // address.
+  void DelayTest(const SocketAddress& initial_addr) {
     time_t seed = ::time(NULL);
     LOG(LS_VERBOSE) << "seed = " << seed;
     srand(static_cast<unsigned int>(seed));
@@ -648,13 +652,13 @@ class VirtualSocketServerTest : public testing::Test {
     ss_->UpdateDelayDistribution();
 
     AsyncSocket* send_socket =
-        ss_->CreateAsyncSocket(send_addr.family(), SOCK_DGRAM);
+        ss_->CreateAsyncSocket(initial_addr.family(), SOCK_DGRAM);
     AsyncSocket* recv_socket =
-        ss_->CreateAsyncSocket(recv_addr.family(), SOCK_DGRAM);
-    ASSERT_EQ(0, send_socket->Bind(send_addr));
-    ASSERT_EQ(0, recv_socket->Bind(recv_addr));
-    EXPECT_EQ(send_socket->GetLocalAddress().family(), send_addr.family());
-    EXPECT_EQ(recv_socket->GetLocalAddress().family(), recv_addr.family());
+        ss_->CreateAsyncSocket(initial_addr.family(), SOCK_DGRAM);
+    ASSERT_EQ(0, send_socket->Bind(initial_addr));
+    ASSERT_EQ(0, recv_socket->Bind(initial_addr));
+    EXPECT_EQ(send_socket->GetLocalAddress().family(), initial_addr.family());
+    EXPECT_EQ(recv_socket->GetLocalAddress().family(), initial_addr.family());
     ASSERT_EQ(0, send_socket->Connect(recv_socket->GetLocalAddress()));
 
     Thread* pthMain = Thread::Current();
@@ -836,28 +840,20 @@ TEST_F(VirtualSocketServerTest, TcpSendsPacketsInOrder_v6) {
 }
 
 TEST_F(VirtualSocketServerTest, bandwidth_v4) {
-  SocketAddress send_address("1.1.1.1", 1000);
-  SocketAddress recv_address("1.1.1.2", 1000);
-  BandwidthTest(send_address, recv_address);
+  BandwidthTest(kIPv4AnyAddress);
 }
 
 TEST_F(VirtualSocketServerTest, bandwidth_v6) {
-  SocketAddress send_address("::1", 1000);
-  SocketAddress recv_address("::2", 1000);
-  BandwidthTest(send_address, recv_address);
+  BandwidthTest(kIPv6AnyAddress);
 }
 
 TEST_F(VirtualSocketServerTest, delay_v4) {
-  SocketAddress send_address("1.1.1.1", 1000);
-  SocketAddress recv_address("1.1.1.2", 1000);
-  DelayTest(send_address, recv_address);
+  DelayTest(kIPv4AnyAddress);
 }
 
 // See: https://code.google.com/p/webrtc/issues/detail?id=2409
 TEST_F(VirtualSocketServerTest, DISABLED_delay_v6) {
-  SocketAddress send_address("::1", 1000);
-  SocketAddress recv_address("::2", 1000);
-  DelayTest(send_address, recv_address);
+  DelayTest(kIPv6AnyAddress);
 }
 
 // Works, receiving socket sees 127.0.0.2.

@@ -19,6 +19,7 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/ipaddress.h"
 #include "webrtc/base/messagehandler.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 
 #if defined(WEBRTC_POSIX)
@@ -78,6 +79,12 @@ class NetworkManager {
   // include ignored networks.
   virtual void GetNetworks(NetworkList* networks) const = 0;
 
+  // "AnyAddressNetwork" is a network which only contains single "any address"
+  // IP address.  (i.e. INADDR_ANY for IPv4 or in6addr_any for IPv6). This is
+  // useful as binding to such interfaces allow default routing behavior like
+  // http traffic.
+  virtual void GetAnyAddressNetworks(NetworkList* networks) = 0;
+
   // Dumps a list of networks available to LS_INFO.
   virtual void DumpNetworks(bool include_ignored) {}
 
@@ -98,6 +105,7 @@ class NetworkManagerBase : public NetworkManager {
   virtual ~NetworkManagerBase();
 
   virtual void GetNetworks(std::vector<Network*>* networks) const;
+  virtual void GetAnyAddressNetworks(NetworkList* networks);
   bool ipv6_enabled() const { return ipv6_enabled_; }
   void set_ipv6_enabled(bool enabled) { ipv6_enabled_ = enabled; }
 
@@ -127,6 +135,9 @@ class NetworkManagerBase : public NetworkManager {
 
   NetworkMap networks_map_;
   bool ipv6_enabled_;
+
+  rtc::scoped_ptr<rtc::Network> ipv4_any_address_network_;
+  rtc::scoped_ptr<rtc::Network> ipv6_any_address_network_;
 };
 
 // Basic implementation of the NetworkManager interface that gets list

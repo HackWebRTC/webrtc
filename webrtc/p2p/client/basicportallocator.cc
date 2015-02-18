@@ -385,7 +385,16 @@ void BasicPortAllocatorSession::OnAllocate() {
 void BasicPortAllocatorSession::DoAllocate() {
   bool done_signal_needed = false;
   std::vector<rtc::Network*> networks;
-  allocator_->network_manager()->GetNetworks(&networks);
+
+  // If the adapter enumeration is disabled, we'll just bind to any address
+  // instead of specific NIC. This is to ensure the same routing for http
+  // traffic by OS is also used here to avoid any local or public IP leakage
+  // during stun process.
+  if (flags() & PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION) {
+    allocator_->network_manager()->GetAnyAddressNetworks(&networks);
+  } else {
+    allocator_->network_manager()->GetNetworks(&networks);
+  }
   if (networks.empty()) {
     LOG(LS_WARNING) << "Machine has no networks; no ports will be allocated";
     done_signal_needed = true;
@@ -477,7 +486,14 @@ void BasicPortAllocatorSession::AddAllocatedPort(Port* port,
       PORTALLOCATOR_ENABLE_STUN_RETRANSMIT_ATTRIBUTE) != 0);
 
   // Push down the candidate_filter to individual port.
-  port->set_candidate_filter(allocator_->candidate_filter());
+  uint32 candidate_filter = allocator_->candidate_filter();
+
+  // When adapter enumeration is disabled, disable CF_HOST at port level so
+  // local address is not leaked by stunport in the candidate's related address.
+  if (flags() & PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION) {
+    candidate_filter &= ~CF_HOST;
+  }
+  port->set_candidate_filter(candidate_filter);
 
   PortData data(port, seq);
   ports_.push_back(data);
@@ -595,27 +611,44 @@ void BasicPortAllocatorSession::OnProtocolEnabled(AllocationSequence* seq,
 
 bool BasicPortAllocatorSession::CheckCandidateFilter(const Candidate& c) {
   uint32 filter = allocator_->candidate_filter();
-  bool allowed = false;
-  if (filter & CF_RELAY) {
-    allowed |= (c.type() == RELAY_PORT_TYPE);
+
+  // When binding to any address, before sending packets out, the getsockname
+  // returns all 0s, but after sending packets, it'll be the NIC used to
+  // send. All 0s is not a valid ICE candidate address and should be filtered
+  // out.
+  if (c.address().IsAnyIP()) {
+    return false;
   }
 
-  if (filter & CF_REFLEXIVE) {
-    // We allow host candidates if the filter allows server-reflexive candidates
-    // and the candidate is a public IP. Because we don't generate
-    // server-reflexive candidates if they have the same IP as the host
-    // candidate (i.e. when the host candidate is a public IP), filtering to
-    // only server-reflexive candidates won't work right when the host
-    // candidates have public IPs.
-    allowed |= (c.type() == STUN_PORT_TYPE) ||
-               (c.type() == LOCAL_PORT_TYPE && !c.address().IsPrivateIP());
-  }
+  if (c.type() == RELAY_PORT_TYPE) {
+    return (filter & CF_RELAY);
+  } else if (c.type() == STUN_PORT_TYPE) {
+    return (filter & CF_REFLEXIVE);
+  } else if (c.type() == LOCAL_PORT_TYPE) {
+    if ((filter & CF_REFLEXIVE) && !c.address().IsPrivateIP()) {
+      // We allow host candidates if the filter allows server-reflexive
+      // candidates and the candidate is a public IP. Because we don't generate
+      // server-reflexive candidates if they have the same IP as the host
+      // candidate (i.e. when the host candidate is a public IP), filtering to
+      // only server-reflexive candidates won't work right when the host
+      // candidates have public IPs.
+      return true;
+    }
 
-  if (filter & CF_HOST) {
-    allowed |= (c.type() == LOCAL_PORT_TYPE);
-  }
+    // This is just to prevent the case when binding to any address (all 0s), if
+    // somehow the host candidate address is not all 0s. Either because local
+    // installed proxy changes the address or a packet has been sent for any
+    // reason before getsockname is called.
+    if (flags() & PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION) {
+      LOG(LS_WARNING) << "Received non-0 host address: "
+                      << c.address().ToString()
+                      << " when adapter enumeration is disabled";
+      return false;
+    }
 
-  return allowed;
+    return (filter & CF_HOST);
+  }
+  return false;
 }
 
 void BasicPortAllocatorSession::OnPortAllocationComplete(
