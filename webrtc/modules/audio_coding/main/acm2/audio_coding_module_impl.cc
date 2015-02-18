@@ -1451,8 +1451,8 @@ int AudioCodingModuleImpl::PlayoutData10Ms(int desired_freq_hz,
 
 // TODO(turajs) change the return value to void. Also change the corresponding
 // NetEq function.
-int AudioCodingModuleImpl::NetworkStatistics(ACMNetworkStatistics* statistics) {
-  receiver_.NetworkStatistics(statistics);
+int AudioCodingModuleImpl::GetNetworkStatistics(NetworkStatistics* statistics) {
+  receiver_.GetNetworkStatistics(statistics);
   return 0;
 }
 
@@ -1841,8 +1841,8 @@ bool AudioCodingImpl::Get10MsAudio(AudioFrame* audio_frame) {
   return acm_old_->PlayoutData10Ms(playout_frequency_hz_, audio_frame) == 0;
 }
 
-bool AudioCodingImpl::NetworkStatistics(
-    ACMNetworkStatistics* network_statistics) {
+bool AudioCodingImpl::GetNetworkStatistics(
+    NetworkStatistics* network_statistics) {
   FATAL() << "Not implemented yet.";
   return false;
 }

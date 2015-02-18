@@ -1992,6 +1992,12 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
   EXPECT_EQ(cricket::kIntStatValue, info.receivers[0].packets_lost);
   EXPECT_EQ(cricket::kIntStatValue, info.receivers[0].ext_seqnum);
   EXPECT_EQ(kPcmuCodec.name, info.receivers[0].codec_name);
+  EXPECT_EQ(static_cast<float>(cricket::kNetStats.currentExpandRate) /
+      (1 << 14), info.receivers[0].expand_rate);
+  EXPECT_EQ(static_cast<float>(cricket::kNetStats.currentSpeechExpandRate) /
+      (1 << 14), info.receivers[0].speech_expand_rate);
+  EXPECT_EQ(static_cast<float>(cricket::kNetStats.currentSecondaryDecodedRate) /
+      (1 << 14), info.receivers[0].secondary_decoded_rate);
 }
 
 // Test that we can add and remove receive streams, and do proper send/playout.
@@ -2319,6 +2325,12 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStats) {
   EXPECT_EQ(cricket::kIntStatValue, info.receivers[0].packets_lost);
   EXPECT_EQ(cricket::kIntStatValue, info.receivers[0].ext_seqnum);
   EXPECT_EQ(kPcmuCodec.name, info.receivers[0].codec_name);
+  EXPECT_EQ(static_cast<float>(cricket::kNetStats.currentExpandRate) /
+      (1 << 14), info.receivers[0].expand_rate);
+  EXPECT_EQ(static_cast<float>(cricket::kNetStats.currentSpeechExpandRate) /
+      (1 << 14), info.receivers[0].speech_expand_rate);
+  EXPECT_EQ(static_cast<float>(cricket::kNetStats.currentSecondaryDecodedRate) /
+      (1 << 14), info.receivers[0].secondary_decoded_rate);
   // TODO(sriniv): Add testing for more receiver fields.
 }
 

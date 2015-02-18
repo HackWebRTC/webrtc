@@ -198,7 +198,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   //   Statistics
   //
 
-  virtual int NetworkStatistics(ACMNetworkStatistics* statistics) OVERRIDE;
+  virtual int GetNetworkStatistics(NetworkStatistics* statistics) OVERRIDE;
 
   // GET RED payload for iSAC. The method id called when 'this' ACM is
   // the default ACM.
@@ -418,8 +418,8 @@ class AudioCodingImpl : public AudioCoding {
 
   virtual bool Get10MsAudio(AudioFrame* audio_frame) OVERRIDE;
 
-  virtual bool NetworkStatistics(
-      ACMNetworkStatistics* network_statistics) OVERRIDE;
+  virtual bool GetNetworkStatistics(
+      NetworkStatistics* network_statistics) OVERRIDE;
 
   virtual bool EnableNack(size_t max_nack_list_size) OVERRIDE;
 

@@ -346,14 +346,19 @@ struct NetworkStatistics           // NETEQ statistics
     uint16_t currentPacketLossRate;
     // Late loss rate; fraction between 0 and 1, scaled to Q14.
     uint16_t currentDiscardRate;
-    // fraction (of original stream) of synthesized speech inserted through
+    // fraction (of original stream) of synthesized audio inserted through
     // expansion (in Q14)
     uint16_t currentExpandRate;
+    // fraction (of original stream) of synthesized speech inserted through
+    // expansion (in Q14)
+    uint16_t currentSpeechExpandRate;
     // fraction of synthesized speech inserted through pre-emptive expansion
     // (in Q14)
     uint16_t currentPreemptiveRate;
     // fraction of data removed through acceleration (in Q14)
     uint16_t currentAccelerateRate;
+    // fraction of data coming from secondary decoding (in Q14)
+    uint16_t currentSecondaryDecodedRate;
     // clock-drift in parts-per-million (negative or positive)
     int32_t clockDriftPPM;
     // average packet waiting time in the jitter buffer (ms)

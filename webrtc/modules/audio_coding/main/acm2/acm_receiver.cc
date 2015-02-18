@@ -639,7 +639,7 @@ int AcmReceiver::LastAudioCodec(CodecInst* codec) const {
   return 0;
 }
 
-void AcmReceiver::NetworkStatistics(ACMNetworkStatistics* acm_stat) {
+void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) {
   NetEqNetworkStatistics neteq_stat;
   // NetEq function always returns zero, so we don't check the return value.
   neteq_->NetworkStatistics(&neteq_stat);
@@ -650,8 +650,10 @@ void AcmReceiver::NetworkStatistics(ACMNetworkStatistics* acm_stat) {
   acm_stat->currentPacketLossRate = neteq_stat.packet_loss_rate;
   acm_stat->currentDiscardRate = neteq_stat.packet_discard_rate;
   acm_stat->currentExpandRate = neteq_stat.expand_rate;
+  acm_stat->currentSpeechExpandRate = neteq_stat.speech_expand_rate;
   acm_stat->currentPreemptiveRate = neteq_stat.preemptive_rate;
   acm_stat->currentAccelerateRate = neteq_stat.accelerate_rate;
+  acm_stat->currentSecondaryDecodedRate = neteq_stat.secondary_decoded_rate;
   acm_stat->clockDriftPPM = neteq_stat.clockdrift_ppm;
   acm_stat->addedSamples = neteq_stat.added_zero_samples;
 

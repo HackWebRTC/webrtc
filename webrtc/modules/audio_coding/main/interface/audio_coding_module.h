@@ -909,7 +909,7 @@ class AudioCodingModule: public Module {
   //
 
   ///////////////////////////////////////////////////////////////////////////
-  // int32_t  NetworkStatistics()
+  // int32_t  GetNetworkStatistics()
   // Get network statistics. Note that the internal statistics of NetEq are
   // reset by this call.
   //
@@ -920,8 +920,8 @@ class AudioCodingModule: public Module {
   //   -1 if failed to set the network statistics,
   //    0 if statistics are set successfully.
   //
-  virtual int32_t NetworkStatistics(
-      ACMNetworkStatistics* network_statistics) = 0;
+  virtual int32_t GetNetworkStatistics(
+      NetworkStatistics* network_statistics) = 0;
 
   //
   // Set an initial delay for playout.
@@ -1107,7 +1107,7 @@ class AudioCoding {
 
   // Returns the network statistics. Note that the internal statistics of NetEq
   // are reset by this call. Returns true if successful, false otherwise.
-  virtual bool NetworkStatistics(ACMNetworkStatistics* network_statistics) = 0;
+  virtual bool GetNetworkStatistics(NetworkStatistics* network_statistics) = 0;
 
   // Enables NACK and sets the maximum size of the NACK list. If NACK is already
   // enabled then the maximum NACK list size is modified accordingly. Returns

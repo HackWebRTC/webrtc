@@ -191,7 +191,7 @@ class AcmReceiver {
   // Output:
   //   - statistics           : The current network statistics.
   //
-  void NetworkStatistics(ACMNetworkStatistics* statistics);
+  void GetNetworkStatistics(NetworkStatistics* statistics);
 
   //
   // Enable post-decoding VAD.

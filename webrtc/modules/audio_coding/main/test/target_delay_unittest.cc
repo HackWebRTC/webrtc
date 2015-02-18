@@ -185,8 +185,8 @@ class TargetDelayTest : public ::testing::Test {
   }
 
   int GetCurrentOptimalDelayMs() {
-    ACMNetworkStatistics stats;
-    acm_->NetworkStatistics(&stats);
+    NetworkStatistics stats;
+    acm_->GetNetworkStatistics(&stats);
     return stats.preferredBufferSize;
   }
 

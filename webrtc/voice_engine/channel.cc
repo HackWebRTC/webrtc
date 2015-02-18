@@ -3686,12 +3686,7 @@ Channel::GetNetworkStatistics(NetworkStatistics& stats)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetNetworkStatistics()");
-    ACMNetworkStatistics acm_stats;
-    int return_value = audio_coding_->NetworkStatistics(&acm_stats);
-    if (return_value >= 0) {
-      memcpy(&stats, &acm_stats, sizeof(NetworkStatistics));
-    }
-    return return_value;
+    return audio_coding_->GetNetworkStatistics(&stats);
 }
 
 void Channel::GetDecodingCallStatistics(AudioDecodingCallStats* stats) const {

@@ -65,6 +65,25 @@ static const int kOpusBandwidthWb = 8000;
 static const int kOpusBandwidthSwb = 12000;
 static const int kOpusBandwidthFb = 20000;
 
+static const webrtc::NetworkStatistics kNetStats = {
+    1,  // uint16_t currentBufferSize;
+    2,  // uint16_t preferredBufferSize;
+    true,  // bool jitterPeaksFound;
+    1234,  // uint16_t currentPacketLossRate;
+    567,   // uint16_t currentDiscardRate;
+    8901,  // uint16_t currentExpandRate;
+    234,  // uint16_t currentSpeechExpandRate;
+    5678, // uint16_t currentPreemptiveRate;
+    9012, // uint16_t currentAccelerateRate;
+    3456, // uint16_t currentSecondaryDecodedRate;
+    7890, // int32_t clockDriftPPM;
+    54,  // meanWaitingTimeMs;
+    32,  // int medianWaitingTimeMs;
+    1,  // int minWaitingTimeMs;
+    98, // int maxWaitingTimeMs;
+    7654,  // int addedSamples;
+};  // These random but non-trivial numbers are used for testing.
+
 // Verify the header extension ID, if enabled, is within the bounds specified in
 // [RFC5285]: 1-14 inclusive.
 #define WEBRTC_CHECK_HEADER_EXTENSION_ID(enable, id) \
@@ -823,7 +842,13 @@ class FakeWebRtcVoiceEngine
   virtual bool BuiltInAECIsAvailable() const { return false; }
 
   // webrtc::VoENetEqStats
-  WEBRTC_STUB(GetNetworkStatistics, (int, webrtc::NetworkStatistics&));
+  WEBRTC_FUNC(GetNetworkStatistics, (int channel,
+                                     webrtc::NetworkStatistics& ns)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    memcpy(&ns, &kNetStats, sizeof(webrtc::NetworkStatistics));
+    return 0;
+  }
+
   WEBRTC_FUNC_CONST(GetDecodingCallStatistics, (int channel,
       webrtc::AudioDecodingCallStats*)) {
     WEBRTC_CHECK_CHANNEL(channel);

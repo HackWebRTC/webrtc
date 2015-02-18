@@ -219,8 +219,8 @@ class InsertPacketWithTiming {
 
   // Jitter buffer delay.
   void Delay(int* optimal_delay, int* current_delay) {
-    ACMNetworkStatistics statistics;
-    receive_acm_->NetworkStatistics(&statistics);
+    NetworkStatistics statistics;
+    receive_acm_->GetNetworkStatistics(&statistics);
     *optimal_delay = statistics.preferredBufferSize;
     *current_delay = statistics.currentBufferSize;
   }

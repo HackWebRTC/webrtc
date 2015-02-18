@@ -785,8 +785,8 @@ void APITest::TestDelay(char side) {
 
   *myMinDelay = (rand() % 1000) + 1;
 
-  ACMNetworkStatistics networkStat;
-  CHECK_ERROR_MT(myACM->NetworkStatistics(&networkStat));
+  NetworkStatistics networkStat;
+  CHECK_ERROR_MT(myACM->GetNetworkStatistics(&networkStat));
 
   if (!_randomTest) {
     fprintf(stdout, "\n\nJitter Statistics at Side %c\n", side);
@@ -803,10 +803,14 @@ void APITest::TestDelay(char side) {
             networkStat.currentDiscardRate);
     fprintf(stdout, "expand rate............. %d\n",
             networkStat.currentExpandRate);
+    fprintf(stdout, "speech expand rate...... %d\n",
+            networkStat.currentSpeechExpandRate);
     fprintf(stdout, "Preemptive rate......... %d\n",
             networkStat.currentPreemptiveRate);
     fprintf(stdout, "Accelerate rate......... %d\n",
             networkStat.currentAccelerateRate);
+    fprintf(stdout, "Secondary decoded rate.. %d\n",
+            networkStat.currentSecondaryDecodedRate);
     fprintf(stdout, "Clock-drift............. %d\n", networkStat.clockDriftPPM);
     fprintf(stdout, "Mean waiting time....... %d\n",
             networkStat.meanWaitingTimeMs);

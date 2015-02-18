@@ -3413,6 +3413,10 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
         rinfo.jitter_buffer_preferred_ms = ns.preferredBufferSize;
         rinfo.expand_rate =
             static_cast<float>(ns.currentExpandRate) / (1 << 14);
+        rinfo.speech_expand_rate =
+            static_cast<float>(ns.currentSpeechExpandRate) / (1 << 14);
+        rinfo.secondary_decoded_rate =
+            static_cast<float>(ns.currentSecondaryDecodedRate) / (1 << 14);
       }
 
       webrtc::AudioDecodingCallStats ds;

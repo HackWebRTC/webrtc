@@ -196,8 +196,8 @@ class DelayTest {
 
       // Print delay information every 16 frame
       if ((num_frames & 0x3F) == 0x3F) {
-        ACMNetworkStatistics statistics;
-        acm_b_->NetworkStatistics(&statistics);
+        NetworkStatistics statistics;
+        acm_b_->GetNetworkStatistics(&statistics);
         fprintf(stdout, "delay: min=%3d  max=%3d  mean=%3d  median=%3d"
                 " ts-based average = %6.3f, "
                 "curr buff-lev = %4u opt buff-lev = %4u \n",

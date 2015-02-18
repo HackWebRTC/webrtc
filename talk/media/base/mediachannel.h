@@ -779,6 +779,8 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
         delay_estimate_ms(0),
         audio_level(0),
         expand_rate(0),
+        speech_expand_rate(0),
+        secondary_decoded_rate(0),
         decoding_calls_to_silence_generator(0),
         decoding_calls_to_neteq(0),
         decoding_normal(0),
@@ -794,8 +796,12 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   int jitter_buffer_preferred_ms;
   int delay_estimate_ms;
   int audio_level;
-  // fraction of synthesized speech inserted through pre-emptive expansion
+  // fraction of synthesized audio inserted through expansion.
   float expand_rate;
+  // fraction of synthesized speech inserted through expansion.
+  float speech_expand_rate;
+  // fraction of data out of secondary decoding, including FEC and RED.
+  float secondary_decoded_rate;
   int decoding_calls_to_silence_generator;
   int decoding_calls_to_neteq;
   int decoding_normal;
