@@ -147,7 +147,7 @@ void RefFiles::ReadFromFileAndCompare(
     uint16_t packet_loss_rate;  // Loss rate (network + late) in Q14.
     uint16_t packet_discard_rate;  // Late loss rate in Q14.
     uint16_t expand_rate;  // Fraction (of original stream) of synthesized
-                           // speech inserted through expansion (in Q14).
+                           // audio inserted through expansion (in Q14).
     uint16_t preemptive_rate;  // Fraction of data inserted through pre-emptive
                                // expansion (in Q14).
     uint16_t accelerate_rate;  // Fraction of data removed through acceleration
@@ -168,11 +168,13 @@ void RefFiles::ReadFromFileAndCompare(
     ASSERT_EQ(stats.jitter_peaks_found, ref_stats.jitter_peaks_found);
     ASSERT_EQ(stats.packet_loss_rate, ref_stats.packet_loss_rate);
     ASSERT_EQ(stats.packet_discard_rate, ref_stats.packet_discard_rate);
+    ASSERT_EQ(stats.expand_rate, ref_stats.expand_rate);
     ASSERT_EQ(stats.preemptive_rate, ref_stats.preemptive_rate);
     ASSERT_EQ(stats.accelerate_rate, ref_stats.accelerate_rate);
     ASSERT_EQ(stats.clockdrift_ppm, ref_stats.clockdrift_ppm);
     ASSERT_EQ(stats.added_zero_samples, ref_stats.added_zero_samples);
     ASSERT_EQ(stats.secondary_decoded_rate, 0);
+    ASSERT_LE(stats.speech_expand_rate, ref_stats.expand_rate);
   }
 }
 

@@ -22,7 +22,7 @@ StatisticsCalculator::StatisticsCalculator()
     : preemptive_samples_(0),
       accelerate_samples_(0),
       added_zero_samples_(0),
-      expanded_voice_samples_(0),
+      expanded_speech_samples_(0),
       expanded_noise_samples_(0),
       discarded_packets_(0),
       lost_timestamps_(0),
@@ -37,7 +37,7 @@ void StatisticsCalculator::Reset() {
   preemptive_samples_ = 0;
   accelerate_samples_ = 0;
   added_zero_samples_ = 0;
-  expanded_voice_samples_ = 0;
+  expanded_speech_samples_ = 0;
   expanded_noise_samples_ = 0;
   secondary_decoded_samples_ = 0;
 }
@@ -55,7 +55,7 @@ void StatisticsCalculator::ResetWaitingTimeStatistics() {
 }
 
 void StatisticsCalculator::ExpandedVoiceSamples(int num_samples) {
-  expanded_voice_samples_ += num_samples;
+  expanded_speech_samples_ += num_samples;
 }
 
 void StatisticsCalculator::ExpandedNoiseSamples(int num_samples) {
@@ -143,8 +143,12 @@ void StatisticsCalculator::GetNetworkStatistics(
       CalculateQ14Ratio(preemptive_samples_, timestamps_since_last_report_);
 
   stats->expand_rate =
-      CalculateQ14Ratio(expanded_voice_samples_ + expanded_noise_samples_,
+      CalculateQ14Ratio(expanded_speech_samples_ + expanded_noise_samples_,
                         timestamps_since_last_report_);
+
+  stats->speech_expand_rate =
+      CalculateQ14Ratio(expanded_speech_samples_,
+      timestamps_since_last_report_);
 
   stats->secondary_decoded_rate =
       CalculateQ14Ratio(secondary_decoded_samples_,

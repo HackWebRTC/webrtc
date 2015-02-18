@@ -96,7 +96,7 @@ class StatisticsCalculator {
   uint32_t preemptive_samples_;
   uint32_t accelerate_samples_;
   int added_zero_samples_;
-  uint32_t expanded_voice_samples_;
+  uint32_t expanded_speech_samples_;
   uint32_t expanded_noise_samples_;
   int discarded_packets_;
   uint32_t lost_timestamps_;

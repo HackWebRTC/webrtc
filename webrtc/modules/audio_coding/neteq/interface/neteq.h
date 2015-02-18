@@ -33,7 +33,9 @@ struct NetEqNetworkStatistics {
   uint16_t packet_loss_rate;  // Loss rate (network + late) in Q14.
   uint16_t packet_discard_rate;  // Late loss rate in Q14.
   uint16_t expand_rate;  // Fraction (of original stream) of synthesized
-                         // speech inserted through expansion (in Q14).
+                         // audio inserted through expansion (in Q14).
+  uint16_t speech_expand_rate;  // Fraction (of original stream) of synthesized
+                                // speech inserted through expansion (in Q14).
   uint16_t preemptive_rate;  // Fraction of data inserted through pre-emptive
                              // expansion (in Q14).
   uint16_t accelerate_rate;  // Fraction of data removed through acceleration

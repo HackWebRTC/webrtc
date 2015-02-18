@@ -90,6 +90,7 @@ struct NetEqNetworkStatsCheck {
   logic packet_loss_rate;
   logic packet_discard_rate;
   logic expand_rate;
+  logic speech_expand_rate;
   logic preemptive_rate;
   logic accelerate_rate;
   logic secondary_decoded_rate;
@@ -153,6 +154,7 @@ struct NetEqNetworkStatsCheck {
     CHECK_NETEQ_NETWORK_STATS(packet_loss_rate);
     CHECK_NETEQ_NETWORK_STATS(packet_discard_rate);
     CHECK_NETEQ_NETWORK_STATS(expand_rate);
+    CHECK_NETEQ_NETWORK_STATS(speech_expand_rate);
     CHECK_NETEQ_NETWORK_STATS(preemptive_rate);
     CHECK_NETEQ_NETWORK_STATS(accelerate_rate);
     CHECK_NETEQ_NETWORK_STATS(secondary_decoded_rate);
@@ -198,28 +200,53 @@ struct NetEqNetworkStatsCheck {
       EQUAL,  // packet_loss_rate
       EQUAL,  // packet_discard_rate
       EQUAL,  // expand_rate
+      EQUAL,  // voice_expand_rate
       IGNORE,  // preemptive_rate
       EQUAL,  // accelerate_rate
       EQUAL,  // decoded_fec_rate
       IGNORE,  // clockdrift_ppm
       EQUAL,  // added_zero_samples
-      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
     };
     RunTest(50, expects);
 
     // Next we introduce packet losses.
     SetPacketLossRate(0.1);
     expects.stats_ref.packet_loss_rate = 1337;
-    expects.stats_ref.expand_rate = 1065;
+    expects.stats_ref.expand_rate = expects.stats_ref.speech_expand_rate = 1065;
     RunTest(50, expects);
 
     // Next we enable Opus FEC.
     external_decoder_->set_fec_enabled(true);
     // If FEC fills in the lost packets, no packet loss will be counted.
     expects.stats_ref.packet_loss_rate = 0;
-    expects.stats_ref.expand_rate = 0;
+    expects.stats_ref.expand_rate = expects.stats_ref.speech_expand_rate = 0;
     expects.stats_ref.secondary_decoded_rate = 2006;
     RunTest(50, expects);
+  }
+
+  void NoiseExpansionTest() {
+    NetEqNetworkStatsCheck expects = {
+      IGNORE,  // current_buffer_size_ms
+      IGNORE,  // preferred_buffer_size_ms
+      IGNORE,  // jitter_peaks_found
+      EQUAL,  // packet_loss_rate
+      EQUAL,  // packet_discard_rate
+      EQUAL,  // expand_rate
+      EQUAL,  // speech_expand_rate
+      IGNORE,  // preemptive_rate
+      EQUAL,  // accelerate_rate
+      EQUAL,  // decoded_fec_rate
+      IGNORE,  // clockdrift_ppm
+      EQUAL,  // added_zero_samples
+      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+    };
+    RunTest(50, expects);
+
+    SetPacketLossRate(1);
+    expects.stats_ref.expand_rate = 16384;
+    expects.stats_ref.speech_expand_rate = 5324;
+    RunTest(10, expects);  // Lost 10 * 20ms in a row.
   }
 
  private:
@@ -247,6 +274,14 @@ TEST(NetEqNetworkStatsTest, StereoOpusDecodeFec) {
   EXPECT_CALL(decoder, Init());
   NetEqNetworkStatsTest test(kDecoderOpus, &decoder);
   test.DecodeFecTest();
+  EXPECT_CALL(decoder, Die()).Times(1);
+}
+
+TEST(NetEqNetworkStatsTest, NoiseExpansionTest) {
+  MockAudioDecoderOpus decoder(1);
+  EXPECT_CALL(decoder, Init());
+  NetEqNetworkStatsTest test(kDecoderOpus, &decoder);
+  test.NoiseExpansionTest();
   EXPECT_CALL(decoder, Die()).Times(1);
 }
 
