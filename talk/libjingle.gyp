@@ -54,6 +54,7 @@
             'app/webrtc/java/jni/classreferenceholder.h',
             'app/webrtc/java/jni/jni_helpers.cc',
             'app/webrtc/java/jni/jni_helpers.h',
+            'app/webrtc/java/jni/native_handle_impl.h',
             'app/webrtc/java/jni/peerconnection_jni.cc',
           ],
           'include_dirs': [
@@ -79,6 +80,15 @@
               'sources': [
                 'app/webrtc/java/jni/androidvideocapturer_jni.cc',
                 'app/webrtc/java/jni/androidvideocapturer_jni.h',
+              ]
+            }],
+            ['OS=="android" and build_with_chromium==0', {
+              'sources': [
+                'app/webrtc/java/jni/androidmediacodeccommon.h',
+                'app/webrtc/java/jni/androidmediadecoder_jni.cc',
+                'app/webrtc/java/jni/androidmediadecoder_jni.h',
+                'app/webrtc/java/jni/androidmediaencoder_jni.cc',
+                'app/webrtc/java/jni/androidmediaencoder_jni.h',
               ]
             }],
           ],
