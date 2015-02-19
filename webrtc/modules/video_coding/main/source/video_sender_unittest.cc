@@ -71,12 +71,12 @@ MATCHER_P(MatchesVp8StreamInfo, expected, "") {
 class EmptyFrameGenerator : public FrameGenerator {
  public:
   virtual I420VideoFrame* NextFrame() OVERRIDE {
-    frame_.ResetSize();
-    return &frame_;
+    frame_.reset(new I420VideoFrame());
+    return frame_.get();
   }
 
  private:
-  I420VideoFrame frame_;
+  scoped_ptr<I420VideoFrame> frame_;
 };
 
 class PacketizationCallback : public VCMPacketizationCallback {

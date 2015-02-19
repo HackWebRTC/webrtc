@@ -599,7 +599,6 @@ bool ViECapturer::SwapCapturedAndDeliverFrameIfAvailable() {
   if (deliver_frame_ == NULL)
     deliver_frame_.reset(new I420VideoFrame());
   deliver_frame_->SwapFrame(captured_frame_.get());
-  captured_frame_->ResetSize();
   return true;
 }
 

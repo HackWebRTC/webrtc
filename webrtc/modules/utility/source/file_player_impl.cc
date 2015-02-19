@@ -511,7 +511,6 @@ int32_t VideoFilePlayerImpl::GetVideoFromFile(I420VideoFrame& videoFrame)
     // No new video data read from file.
     if(_encodedData.payloadSize == 0)
     {
-        videoFrame.ResetSize();
         return -1;
     }
     int32_t retVal = 0;

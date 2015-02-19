@@ -151,33 +151,8 @@ int I420VideoFrame::stride(PlaneType type) const {
   return -1;
 }
 
-int I420VideoFrame::set_width(int width) {
-  if (CheckDimensions(width, height_,
-                      y_plane_.stride(), u_plane_.stride(),
-                      v_plane_.stride()) < 0)
-    return -1;
-  width_ = width;
-  return 0;
-}
-
-int I420VideoFrame::set_height(int height) {
-  if (CheckDimensions(width_, height,
-                      y_plane_.stride(), u_plane_.stride(),
-                      v_plane_.stride()) < 0)
-    return -1;
-  height_ = height;
-  return 0;
-}
-
 bool I420VideoFrame::IsZeroSize() const {
-  return (y_plane_.IsZeroSize() && u_plane_.IsZeroSize() &&
-    v_plane_.IsZeroSize());
-}
-
-void I420VideoFrame::ResetSize() {
-  y_plane_.ResetSize();
-  u_plane_.ResetSize();
-  v_plane_.ResetSize();
+  return width() == 0 || height() == 0;
 }
 
 void* I420VideoFrame::native_handle() const { return NULL; }

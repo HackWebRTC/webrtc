@@ -93,10 +93,7 @@ int32_t VideoFramesQueue::ReturnFrame(I420VideoFrame* ptrOldFrame) {
   // No need to reuse texture frames because they do not allocate memory.
   if (ptrOldFrame->native_handle() == NULL) {
     ptrOldFrame->set_timestamp(0);
-    ptrOldFrame->set_width(0);
-    ptrOldFrame->set_height(0);
     ptrOldFrame->set_render_time_ms(0);
-    ptrOldFrame->ResetSize();
     _emptyFrames.push_back(ptrOldFrame);
   } else {
     delete ptrOldFrame;

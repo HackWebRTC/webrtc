@@ -20,8 +20,8 @@ TextureVideoFrame::TextureVideoFrame(NativeHandle* handle,
                                      uint32_t timestamp,
                                      int64_t render_time_ms)
     : handle_(handle) {
-  set_width(width);
-  set_height(height);
+  width_ = width;
+  height_ = height;
   set_timestamp(timestamp);
   set_render_time_ms(render_time_ms);
 }
@@ -105,10 +105,6 @@ int TextureVideoFrame::stride(PlaneType type) const {
 bool TextureVideoFrame::IsZeroSize() const {
   assert(false);  // Should not be called.
   return true;
-}
-
-void TextureVideoFrame::ResetSize() {
-  assert(false);  // Should not be called.
 }
 
 void* TextureVideoFrame::native_handle() const { return handle_.get(); }
