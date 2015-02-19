@@ -11,8 +11,9 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_RENDERER_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_RENDERER_H_
 
+#include <vector>
+
 #include "webrtc/modules/video_render/include/video_render_defines.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video_engine/include/vie_render.h"
 #include "webrtc/video_engine/vie_frame_provider_base.h"
 
@@ -44,7 +45,7 @@ class ViEExternalRendererImpl : public VideoRenderCallback {
   int external_renderer_width_;
   int external_renderer_height_;
   // Converted_frame_ in color format specified by render_format_.
-  scoped_ptr<VideoFrame> converted_frame_;
+  std::vector<uint8_t> converted_frame_;
 };
 
 class ViERenderer: public ViEFrameCallback {

@@ -149,8 +149,7 @@ ViEExternalRendererImpl::ViEExternalRendererImpl()
     : external_renderer_(NULL),
       external_renderer_format_(kVideoUnknown),
       external_renderer_width_(0),
-      external_renderer_height_(0),
-      converted_frame_(new VideoFrame()) {
+      external_renderer_height_(0) {
 }
 
 int ViEExternalRendererImpl::SetViEExternalRenderer(
@@ -196,8 +195,6 @@ int32_t ViEExternalRendererImpl::ConvertAndRenderFrame(
     return 0;
   }
 
-  VideoFrame* out_frame = converted_frame_.get();
-
   // Convert to requested format.
   VideoType type =
       RawVideoTypeToCommonVideoVideoType(external_renderer_format_);
@@ -208,7 +205,8 @@ int32_t ViEExternalRendererImpl::ConvertAndRenderFrame(
     assert(false);
     return -1;
   }
-  converted_frame_->VerifyAndAllocate(buffer_size);
+  converted_frame_.resize(buffer_size);
+  uint8_t* out_frame = &converted_frame_[0];
 
   switch (external_renderer_format_) {
     case kVideoYV12:
@@ -218,13 +216,9 @@ int32_t ViEExternalRendererImpl::ConvertAndRenderFrame(
     case kVideoRGB24:
     case kVideoRGB565:
     case kVideoARGB4444:
-    case kVideoARGB1555 :
-      {
-        if (ConvertFromI420(video_frame, type, 0,
-                            converted_frame_->Buffer()) < 0)
-          return -1;
-        converted_frame_->SetLength(buffer_size);
-      }
+    case kVideoARGB1555:
+      if (ConvertFromI420(video_frame, type, 0, out_frame) < 0)
+        return -1;
       break;
     case kVideoIYUV:
       // no conversion available
@@ -238,8 +232,8 @@ int32_t ViEExternalRendererImpl::ConvertAndRenderFrame(
   NotifyFrameSizeChange(stream_id, video_frame);
 
   if (out_frame) {
-    external_renderer_->DeliverFrame(out_frame->Buffer(),
-                                     out_frame->Length(),
+    external_renderer_->DeliverFrame(out_frame,
+                                     converted_frame_.size(),
                                      video_frame.timestamp(),
                                      video_frame.ntp_time_ms(),
                                      video_frame.render_time_ms(),
