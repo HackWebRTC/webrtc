@@ -92,7 +92,6 @@
         'source/rw_lock_posix.h',
         'source/rw_lock_win.cc',
         'source/rw_lock_win.h',
-        'source/set_thread_name_win.h',
         'source/sleep.cc',
         'source/sort.cc',
         'source/tick_util.cc',
