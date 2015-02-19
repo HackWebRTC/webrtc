@@ -72,7 +72,7 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
   LoadClass(jni, "android/graphics/SurfaceTexture");
   LoadClass(jni, "org/webrtc/VideoCapturerAndroid");
-  LoadClass(jni, "org/webrtc/VideoCapturerAndroid$NativeFrameObserver");
+  LoadClass(jni, "org/webrtc/VideoCapturerAndroid$NativeObserver");
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder");
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder$OutputBufferInfo");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder");

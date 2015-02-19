@@ -1385,15 +1385,10 @@ JOW(jobject, VideoCapturer_nativeCreateVideoCapturer)(
                                             j_videocapturer_ctor);
   CHECK_EXCEPTION(jni) << "error during NewObject";
 
-  const jmethodID m(GetMethodID(
-      jni, j_video_capturer_class, "Init", "(Ljava/lang/String;)Z"));
-  if (!jni->CallBooleanMethod(j_video_capturer, m, j_device_name)) {
-    return nullptr;
-  }
-  CHECK_EXCEPTION(jni) << "error during CallVoidMethod";
-
-  rtc::scoped_ptr<webrtc::AndroidVideoCapturerDelegate> delegate(
+  rtc::scoped_ptr<AndroidVideoCapturerJni> delegate(
       new AndroidVideoCapturerJni(jni, j_video_capturer));
+  if (!delegate->Init(j_device_name))
+    return nullptr;
   rtc::scoped_ptr<webrtc::AndroidVideoCapturer> capturer(
       new webrtc::AndroidVideoCapturer(delegate.Pass()));
 

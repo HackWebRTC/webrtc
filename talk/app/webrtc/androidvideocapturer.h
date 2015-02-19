@@ -44,9 +44,9 @@ class AndroidVideoCapturerDelegate {
   virtual void Start(int width, int height, int framerate,
                      AndroidVideoCapturer* capturer) = 0;
 
-  // Stops capturing. The implementation must synchronously stop the capturer.
+  // Stops capturing.
   // The delegate may not call into AndroidVideoCapturer after this call.
-  virtual bool Stop() = 0;
+  virtual void Stop() = 0;
 
   // Must returns a JSON string "{{width=xxx, height=xxx, framerate = xxx}}"
   virtual std::string GetSupportedFormats() = 0;
@@ -74,13 +74,6 @@ class AndroidVideoCapturer : public cricket::VideoCapturer {
   AndroidVideoCapturerDelegate* delegate() { return delegate_.get(); }
 
  private:
-  void OnCapturerStarted_w(bool success);
-
-  void OnIncomingFrame_w(signed char* frame_data,
-                         int length,
-                         int rotation,
-                         int64 time_stamp);
-
   // cricket::VideoCapturer implementation.
   // Video frames will be delivered using
   // cricket::VideoCapturer::SignalFrameCaptured on the thread that calls Start.

@@ -178,30 +178,50 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
   // Called by native code.
   // Enumerates resolution and frame rates for all cameras to be able to switch
-  // cameras. Initializes local variables for the camera named |deviceName|.
+  // cameras. Initializes local variables for the camera named |deviceName| and
+  // starts a thread to be used for capturing.
   // If deviceName is empty, the first available device is used in order to be
   // compatible with the generic VideoCapturer class.
-  boolean Init(String deviceName) {
-    Log.e(TAG, "Init " + deviceName);
-    if (!InitStatics())
+  boolean init(String deviceName) {
+    Log.d(TAG, "init " + deviceName);
+    if (!initStatics())
       return false;
 
+    boolean foundDevice = false;
     if (deviceName.isEmpty()) {
       this.id = 0;
-      return true;
-    }
-
-    Boolean foundDevice = false;
-    for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
-      if (deviceName.equals(getDeviceName(i))) {
-        this.id = i;
-        foundDevice = true;
+      foundDevice = true;
+    } else {
+      for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
+        if (deviceName.equals(getDeviceName(i))) {
+          this.id = i;
+          foundDevice = true;
+        }
       }
     }
+    Exchanger<Handler> handlerExchanger = new Exchanger<Handler>();
+    cameraThread = new CameraThread(handlerExchanger);
+    cameraThread.start();
+    cameraThreadHandler = exchange(handlerExchanger, null);
     return foundDevice;
   }
 
-  private static boolean InitStatics() {
+  // Called by native code. Frees the Java thread created in Init.
+  void deInit() throws InterruptedException {
+    Log.d(TAG, "deInit");
+    if (cameraThreadHandler != null) {
+      cameraThreadHandler.post(new Runnable() {
+        @Override public void run() {
+          Log.d(TAG, "stop CameraThread");
+          Looper.myLooper().quit();
+        }
+      });
+      cameraThread.join();
+      cameraThreadHandler = null;
+    }
+  }
+
+  private static boolean initStatics() {
     if (supportedFormats != null)
       return true;
     try {
@@ -298,20 +318,15 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       final Context applicationContext, final CapturerObserver frameObserver) {
     Log.d(TAG, "startCapture requested: " + width + "x" + height
         + "@" + framerate);
-    if (cameraThread != null || cameraThreadHandler != null) {
-      throw new RuntimeException("Camera thread already started!");
-    }
     if (applicationContext == null) {
       throw new RuntimeException("applicationContext not set.");
     }
     if (frameObserver == null) {
       throw new RuntimeException("frameObserver not set.");
     }
-
-    Exchanger<Handler> handlerExchanger = new Exchanger<Handler>();
-    cameraThread = new CameraThread(handlerExchanger);
-    cameraThread.start();
-    cameraThreadHandler = exchange(handlerExchanger, null);
+    this.width = width;
+    this.height = height;
+    this.framerate = framerate;
 
     cameraThreadHandler.post(new Runnable() {
       @Override public void run() {
@@ -327,9 +342,6 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     Throwable error = null;
     this.applicationContext = applicationContext;
     this.frameObserver = frameObserver;
-    this.width = width;
-    this.height = height;
-    this.framerate = framerate;
     try {
       this.camera = Camera.open(id);
       this.info = new Camera.CameraInfo();
@@ -406,8 +418,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
     Log.e(TAG, "startCapture failed", error);
     if (camera != null) {
-      Exchanger<Boolean> resultDropper = new Exchanger<Boolean>();
-      stopCaptureOnCameraThread(resultDropper);
+      stopCaptureOnCameraThread();
       frameObserver.OnCapturerStarted(false);
     }
     frameObserver.OnCapturerStarted(false);
@@ -415,37 +426,19 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   }
 
   // Called by native code.  Returns true when camera is known to be stopped.
-  synchronized boolean stopCapture() {
+  synchronized void stopCapture() {
     Log.d(TAG, "stopCapture");
-    final Exchanger<Boolean> result = new Exchanger<Boolean>();
     cameraThreadHandler.post(new Runnable() {
         @Override public void run() {
-          stopCaptureOnCameraThread(result);
+          stopCaptureOnCameraThread();
         }
     });
-    boolean status = exchange(result, false);  // |false| is a dummy value here.
-    Log.d(TAG, "stopCapture wait");
-    try {
-      cameraThread.join();
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-    cameraThreadHandler = null;
-    cameraThread = null;
-    Log.d(TAG, "stopCapture done");
-    return status;
   }
 
-  private void stopCaptureOnCameraThread(Exchanger<Boolean> result) {
+  private void stopCaptureOnCameraThread() {
     Log.d(TAG, "stopCaptureOnCameraThread");
-    if (camera == null) {
-      throw new RuntimeException("Camera is already stopped!");
-    }
-    frameObserver = null;
-
     doStopCaptureOnCamerathread();
-    exchange(result, true);
-    Looper.myLooper().quit();
+    frameObserver.OnCapturerStopped();
     return;
   }
 
@@ -570,9 +563,13 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
   // Interface used for providing callbacks to an observer.
   interface CapturerObserver {
-    // Notify if the camera have beens started successfully or not.
+    // Notify if the camera have been started successfully or not.
     // Called on a Java thread owned by VideoCapturerAndroid.
     abstract void OnCapturerStarted(boolean success);
+
+    // Notify that the camera have been stopped.
+    // Called on a Java thread owned by VideoCapturerAndroid.
+    abstract void OnCapturerStopped();
     // Delivers a captured frame. Called on a Java thread owned by
     // VideoCapturerAndroid.
     abstract void OnFrameCaptured(byte[] data, int rotation, long timeStamp);
@@ -580,27 +577,32 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
   // An implementation of CapturerObserver that forwards all calls from
   // Java to the C layer.
-  public static class NativeFrameObserver implements CapturerObserver {
-    private final long nativeCapturer;
+  public static class NativeObserver implements CapturerObserver {
+    private final long nativeProxy;
 
-    public NativeFrameObserver(long nativeCapturer) {
-      this.nativeCapturer = nativeCapturer;
+    public NativeObserver(long nativeProxy) {
+      this.nativeProxy = nativeProxy;
     }
 
     @Override
     public void OnFrameCaptured(byte[] data, int rotation, long timeStamp) {
-      nativeOnFrameCaptured(nativeCapturer, data, rotation, timeStamp);
+      nativeOnFrameCaptured(nativeProxy, data, rotation, timeStamp);
     }
-
-    private native void nativeOnFrameCaptured(
-        long captureObject, byte[] data, int rotation, long timeStamp);
 
     @Override
     public void OnCapturerStarted(boolean success) {
-      nativeCapturerStarted(nativeCapturer, success);
+      nativeCapturerStarted(nativeProxy, success);
     }
 
-    private native void nativeCapturerStarted(long captureObject,
+    @Override
+    public void OnCapturerStopped() {
+      nativeCapturerStopped(nativeProxy);
+    }
+
+    private native void nativeCapturerStarted(long proxyObject,
         boolean success);
+    private native void nativeCapturerStopped(long proxyObject);
+    private native void nativeOnFrameCaptured(
+        long proxyObject, byte[] data, int rotation, long timeStamp);
   }
 }

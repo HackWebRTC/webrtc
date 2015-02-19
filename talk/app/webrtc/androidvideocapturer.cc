@@ -27,7 +27,6 @@
 #include "talk/app/webrtc/androidvideocapturer.h"
 
 #include "talk/media/webrtc/webrtcvideoframe.h"
-#include "webrtc/base/bind.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/json.h"
 #include "webrtc/base/timeutils.h"
@@ -101,7 +100,7 @@ AndroidVideoCapturer::AndroidVideoCapturer(
       delegate_(delegate.Pass()),
       worker_thread_(NULL),
       frame_factory_(NULL),
-      current_state_(cricket::CS_STOPPED){
+      current_state_(cricket::CS_STOPPED) {
   std::string json_string = delegate_->GetSupportedFormats();
   LOG(LS_INFO) << json_string;
 
@@ -174,13 +173,6 @@ bool AndroidVideoCapturer::GetPreferredFourccs(std::vector<uint32>* fourccs) {
 }
 
 void AndroidVideoCapturer::OnCapturerStarted(bool success) {
-  // This method is called from a Java thread.
-  DCHECK(!worker_thread_->IsCurrent());
-  worker_thread_->Invoke<void>(
-      rtc::Bind(&AndroidVideoCapturer::OnCapturerStarted_w, this, success));
-}
-
-void AndroidVideoCapturer::OnCapturerStarted_w(bool success) {
   DCHECK(worker_thread_->IsCurrent());
   cricket::CaptureState new_state =
       success ? cricket::CS_RUNNING : cricket::CS_FAILED;
@@ -194,21 +186,10 @@ void AndroidVideoCapturer::OnCapturerStarted_w(bool success) {
   SignalStateChange(this, new_state);
 }
 
-void AndroidVideoCapturer::OnIncomingFrame(signed char* videoFrame,
+void AndroidVideoCapturer::OnIncomingFrame(signed char* frame_data,
                                            int length,
                                            int rotation,
                                            int64 time_stamp) {
-  // This method is called from a Java thread.
-  DCHECK(!worker_thread_->IsCurrent());
-  worker_thread_->Invoke<void>(
-      rtc::Bind(&AndroidVideoCapturer::OnIncomingFrame_w, this, videoFrame,
-                length, rotation, time_stamp));
-}
-
-void AndroidVideoCapturer::OnIncomingFrame_w(signed char* frame_data,
-                                             int length,
-                                             int rotation,
-                                             int64 time_stamp) {
   DCHECK(worker_thread_->IsCurrent());
   frame_factory_->UpdateCapturedFrame(frame_data, length, rotation, time_stamp);
   SignalFrameCaptured(this, frame_factory_->GetCapturedFrame());

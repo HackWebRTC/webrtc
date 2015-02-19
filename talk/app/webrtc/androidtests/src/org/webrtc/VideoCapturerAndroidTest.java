@@ -67,6 +67,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     private int frameSize = 0;
     private Object frameLock = 0;
     private Object capturerStartLock = 0;
+    private Object capturerStopLock = 0;
     private boolean captureStartResult = false;
 
     @Override
@@ -74,6 +75,13 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
       synchronized (capturerStartLock) {
         captureStartResult = success;
         capturerStartLock.notify();
+      }
+    }
+
+    @Override
+    public void OnCapturerStopped() {
+      synchronized (capturerStopLock) {
+        capturerStopLock.notify();
       }
     }
 
@@ -90,6 +98,12 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
       synchronized (capturerStartLock) {
         capturerStartLock.wait();
         return captureStartResult;
+      }
+    }
+
+    public void WaitForCapturerToStop() throws InterruptedException {
+      synchronized (capturerStopLock) {
+        capturerStopLock.wait();
       }
     }
 
@@ -124,6 +138,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     assertTrue(callbacks.WaitForNextFrameToRender() > 0);
     track.dispose();
     source.dispose();
+    factory.dispose();
   }
 
   @Override
@@ -199,6 +214,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     assertTrue(callbacks.WaitForNextFrameToRender() > 0);
     track.dispose();
     source.dispose();
+    factory.dispose();
   }
 
   @SmallTest
@@ -223,6 +239,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     assertEquals(MediaSource.State.LIVE, source.state());
     track.dispose();
     source.dispose();
+    factory.dispose();
   }
 
   @SmallTest
@@ -242,9 +259,10 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
           getInstrumentation().getContext(), observer);
       assertTrue(observer.WaitForCapturerToStart());
       observer.WaitForNextCapturedFrame();
-      // Check the frame size. NV21 is assumed.
+      // Check the frame size.
       assertEquals((format.width*format.height*3)/2, observer.frameSize());
-      assertTrue(capturer.stopCapture());
+      capturer.stopCapture();
+      observer.WaitForCapturerToStop();
     }
     capturer.dispose();
   }
