@@ -86,15 +86,11 @@ struct Codec {
   FeedbackParams feedback_params;
 
   // Creates a codec with the given parameters.
-  Codec(int id, const std::string& name, int clockrate, int preference)
-      : id(id),
-        name(name),
-        clockrate(clockrate),
-        preference(preference) {
-  }
-
+  Codec(int id, const std::string& name, int clockrate, int preference);
   // Creates an empty codec.
-  Codec() : id(0), clockrate(0), preference(0) {}
+  Codec();
+  Codec(const Codec& c);
+  ~Codec();
 
   // Indicates if this codec is compatible with the specified codec.
   bool Matches(const Codec& codec) const;
@@ -121,24 +117,9 @@ struct Codec {
   // and |other| are kept.
   void IntersectFeedbackParams(const Codec& other);
 
-  Codec& operator=(const Codec& c) {
-    this->id = c.id;  // id is reserved in objective-c
-    name = c.name;
-    clockrate = c.clockrate;
-    preference = c.preference;
-    params = c.params;
-    feedback_params = c.feedback_params;
-    return *this;
-  }
+  Codec& operator=(const Codec& c);
 
-  bool operator==(const Codec& c) const {
-    return this->id == c.id &&  // id is reserved in objective-c
-        name == c.name &&
-        clockrate == c.clockrate &&
-        preference == c.preference &&
-        params == c.params &&
-        feedback_params == c.feedback_params;
-  }
+  bool operator==(const Codec& c) const;
 
   bool operator!=(const Codec& c) const {
     return !(*this == c);
@@ -150,14 +131,11 @@ struct AudioCodec : public Codec {
   int channels;
 
   // Creates a codec with the given parameters.
-  AudioCodec(int pt, const std::string& nm, int cr, int br, int cs, int pr)
-      : Codec(pt, nm, cr, pr),
-        bitrate(br),
-        channels(cs) {
-  }
-
+  AudioCodec(int pt, const std::string& nm, int cr, int br, int cs, int pr);
   // Creates an empty codec.
-  AudioCodec() : Codec(), bitrate(0), channels(0) {}
+  AudioCodec();
+  AudioCodec(const AudioCodec& c);
+  ~AudioCodec() = default;
 
   // Indicates if this codec is compatible with the specified codec.
   bool Matches(const AudioCodec& codec) const;
@@ -168,28 +146,9 @@ struct AudioCodec : public Codec {
 
   std::string ToString() const;
 
-  AudioCodec& operator=(const AudioCodec& c) {
-    this->id = c.id;  // id is reserved in objective-c
-    name = c.name;
-    clockrate = c.clockrate;
-    bitrate = c.bitrate;
-    channels = c.channels;
-    preference =  c.preference;
-    params = c.params;
-    feedback_params = c.feedback_params;
-    return *this;
-  }
+  AudioCodec& operator=(const AudioCodec& c);
 
-  bool operator==(const AudioCodec& c) const {
-    return this->id == c.id &&  // id is reserved in objective-c
-           name == c.name &&
-           clockrate == c.clockrate &&
-           bitrate == c.bitrate &&
-           channels == c.channels &&
-           preference == c.preference &&
-           params == c.params &&
-           feedback_params == c.feedback_params;
-  }
+  bool operator==(const AudioCodec& c) const;
 
   bool operator!=(const AudioCodec& c) const {
     return !(*this == c);
@@ -202,21 +161,11 @@ struct VideoCodec : public Codec {
   int framerate;
 
   // Creates a codec with the given parameters.
-  VideoCodec(int pt, const std::string& nm, int w, int h, int fr, int pr)
-      : Codec(pt, nm, kVideoCodecClockrate, pr),
-        width(w),
-        height(h),
-        framerate(fr) {
-  }
-
+  VideoCodec(int pt, const std::string& nm, int w, int h, int fr, int pr);
   // Creates an empty codec.
-  VideoCodec()
-      : Codec(),
-        width(0),
-        height(0),
-        framerate(0) {
-    clockrate = kVideoCodecClockrate;
-  }
+  VideoCodec();
+  VideoCodec(const VideoCodec& c);
+  ~VideoCodec() = default;
 
   static bool Preferable(const VideoCodec& first, const VideoCodec& other) {
     return first.preference > other.preference;
@@ -224,30 +173,9 @@ struct VideoCodec : public Codec {
 
   std::string ToString() const;
 
-  VideoCodec& operator=(const VideoCodec& c) {
-    this->id = c.id;  // id is reserved in objective-c
-    name = c.name;
-    clockrate = c.clockrate;
-    width = c.width;
-    height = c.height;
-    framerate = c.framerate;
-    preference =  c.preference;
-    params = c.params;
-    feedback_params = c.feedback_params;
-    return *this;
-  }
+  VideoCodec& operator=(const VideoCodec& c);
 
-  bool operator==(const VideoCodec& c) const {
-    return this->id == c.id &&  // id is reserved in objective-c
-           name == c.name &&
-           clockrate == c.clockrate &&
-           width == c.width &&
-           height == c.height &&
-           framerate == c.framerate &&
-           preference == c.preference &&
-           params == c.params &&
-           feedback_params == c.feedback_params;
-  }
+  bool operator==(const VideoCodec& c) const;
 
   bool operator!=(const VideoCodec& c) const {
     return !(*this == c);
@@ -271,13 +199,11 @@ struct VideoCodec : public Codec {
 };
 
 struct DataCodec : public Codec {
-  DataCodec(int id, const std::string& name, int preference)
-      : Codec(id, name, kDataCodecClockrate, preference) {
-  }
+  DataCodec(int id, const std::string& name, int preference);
+  DataCodec();
+  DataCodec(const DataCodec& c);
 
-  DataCodec() : Codec() {
-    clockrate = kDataCodecClockrate;
-  }
+  DataCodec& operator=(const DataCodec& c);
 
   std::string ToString() const;
 };
