@@ -814,8 +814,7 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
 
 struct VideoSenderInfo : public MediaSenderInfo {
   VideoSenderInfo()
-      : packets_cached(0),
-        firs_rcvd(0),
+      : firs_rcvd(0),
         plis_rcvd(0),
         nacks_rcvd(0),
         input_frame_width(0),
@@ -831,11 +830,8 @@ struct VideoSenderInfo : public MediaSenderInfo {
         capture_jitter_ms(0),
         avg_encode_ms(0),
         encode_usage_percent(0),
-        capture_queue_delay_ms_per_s(0) {
-  }
+        capture_queue_delay_ms_per_s(0) {}
 
-  std::vector<SsrcGroup> ssrc_groups;
-  int packets_cached;
   int firs_rcvd;
   int plis_rcvd;
   int nacks_rcvd;
@@ -860,8 +856,7 @@ struct VideoSenderInfo : public MediaSenderInfo {
 
 struct VideoReceiverInfo : public MediaReceiverInfo {
   VideoReceiverInfo()
-      : packets_concealed(0),
-        firs_sent(0),
+      : firs_sent(0),
         plis_sent(0),
         nacks_sent(0),
         frame_width(0),
@@ -869,8 +864,6 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
         framerate_rcvd(0),
         framerate_decoded(0),
         framerate_output(0),
-        framerate_render_input(0),
-        framerate_render_output(0),
         decode_ms(0),
         max_decode_ms(0),
         jitter_buffer_ms(0),
@@ -878,11 +871,8 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
         render_delay_ms(0),
         target_delay_ms(0),
         current_delay_ms(0),
-        capture_start_ntp_time_ms(-1) {
-  }
+        capture_start_ntp_time_ms(-1) {}
 
-  std::vector<SsrcGroup> ssrc_groups;
-  int packets_concealed;
   int firs_sent;
   int plis_sent;
   int nacks_sent;
@@ -891,10 +881,6 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   int framerate_rcvd;
   int framerate_decoded;
   int framerate_output;
-  // Framerate as sent to the renderer.
-  int framerate_render_input;
-  // Framerate that the renderer reports.
-  int framerate_render_output;
 
   // All stats below are gathered per-VideoReceiver, but some will be correlated
   // across MediaStreamTracks.  NOTE(hta): when sinking stats into per-SSRC
