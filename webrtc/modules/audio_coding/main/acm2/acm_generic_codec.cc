@@ -1224,11 +1224,15 @@ int16_t ACMGenericCodecWrapper::Encode(
                          2 * MAX_PAYLOAD_SIZE_BYTE, bitstream, encoded_info));
   input_.clear();
   *bitstream_len_byte = static_cast<int16_t>(encoded_info->encoded_bytes);
+  *timestamp = encoded_info->encoded_timestamp;
   if (encoded_info->encoded_bytes == 0) {
     *encoding_type = kNoEncoding;
-    return encoded_info->send_even_if_empty ? 1 : 0;
+    if (encoded_info->send_even_if_empty) {
+      bitstream[0] = 0;
+      return 1;
+    }
+    return 0;
   }
-  *timestamp = encoded_info->encoded_timestamp;
 
   int payload_type = encoded_info->payload_type;
   if (!encoded_info->redundant.empty())
