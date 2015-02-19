@@ -76,7 +76,7 @@ class Matrix {
 
   // Copies |data| into the new Matrix.
   Matrix(const T* data, int num_rows, int num_columns)
-      : num_rows_(num_rows), num_columns_(num_columns) {
+      : num_rows_(0), num_columns_(0) {
     CopyFrom(data, num_rows, num_columns);
     scratch_data_.resize(num_rows_ * num_columns_);
     scratch_elements_.resize(num_rows_);
@@ -91,15 +91,8 @@ class Matrix {
 
   // Copy |data| into the Matrix. The current data is lost.
   void CopyFrom(const T* const data, int num_rows, int num_columns) {
-    num_rows_ = num_rows;
-    num_columns_ = num_columns;
-    size_t size = num_rows_ * num_columns_;
-
-    data_.assign(data, data + size);
-    elements_.resize(num_rows_);
-    for (int i = 0; i < num_rows_; ++i) {
-      elements_[i] = &data_[i * num_columns_];
-    }
+    Resize(num_rows, num_columns);
+    memcpy(&data_[0], data, num_rows_ * num_columns_ * sizeof(data_[0]));
   }
 
   Matrix& CopyFromColumn(const T* const* src, int column_index, int num_rows) {
@@ -112,9 +105,11 @@ class Matrix {
   }
 
   void Resize(int num_rows, int num_columns) {
-    num_rows_ = num_rows;
-    num_columns_ = num_columns;
-    Resize();
+    if (num_rows != num_rows_ || num_columns != num_columns_) {
+      num_rows_ = num_rows;
+      num_columns_ = num_columns;
+      Resize();
+    }
   }
 
   // Accessors and mutators.
@@ -136,8 +131,7 @@ class Matrix {
   // Matrix Operations. Returns *this to support method chaining.
   Matrix& Transpose() {
     CopyDataToScratch();
-    std::swap(num_rows_, num_columns_);
-    Resize();
+    Resize(num_columns_, num_rows_);
     return Transpose(scratch_elements());
   }
 
@@ -278,8 +272,7 @@ class Matrix {
     CHECK_EQ(num_columns_, rhs.num_rows_);
 
     CopyDataToScratch();
-    num_columns_ = rhs.num_columns_;
-    Resize();
+    Resize(num_rows_, rhs.num_columns_);
     return Multiply(scratch_elements(), rhs.num_rows_, rhs.elements());
   }
 

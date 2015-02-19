@@ -95,9 +95,7 @@ float Norm(const ComplexMatrix<float>& mat,
 
   for (int i = 0; i < norm_mat.num_columns(); ++i) {
     for (int j = 0; j < norm_mat.num_columns(); ++j) {
-      complex<float> cur_norm_element = conj(norm_mat_els[0][j]);
-      complex<float> cur_mat_element = mat_els[j][i];
-      first_product += cur_norm_element * cur_mat_element;
+      first_product += conj(norm_mat_els[0][j]) * mat_els[j][i];
     }
     second_product += first_product * norm_mat_els[0][i];
     first_product = 0.f;
@@ -138,6 +136,19 @@ float SumAbs(const ComplexMatrix<float>& mat) {
     }
   }
   return sum_abs;
+}
+
+// Calculates the sum of squares of a complex matrix.
+float SumSquares(const ComplexMatrix<float>& mat) {
+  float sum_squares = 0.f;
+  const complex<float>* const* mat_els = mat.elements();
+  for (int i = 0; i < mat.num_rows(); ++i) {
+    for (int j = 0; j < mat.num_columns(); ++j) {
+      float abs_value = std::abs(mat_els[i][j]);
+      sum_squares += abs_value * abs_value;
+    }
+  }
+  return sum_squares;
 }
 
 }  // namespace
@@ -332,8 +343,7 @@ void Beamformer::ProcessAudioBlock(const complex_f* const* input,
   // angle.
   for (int i = low_average_start_bin_; i < high_average_end_bin_; ++i) {
     eig_m_.CopyFromColumn(input, i, num_input_channels_);
-    float eig_m_norm_factor =
-        std::sqrt(ConjugateDotProduct(eig_m_, eig_m_)).real();
+    float eig_m_norm_factor = std::sqrt(SumSquares(eig_m_));
     if (eig_m_norm_factor != 0.f) {
       eig_m_.Scale(1.f / eig_m_norm_factor);
     }
