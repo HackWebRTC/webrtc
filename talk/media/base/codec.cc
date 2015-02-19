@@ -90,10 +90,7 @@ bool FeedbackParams::HasDuplicateEntries() const {
 }
 
 Codec::Codec(int id, const std::string& name, int clockrate, int preference)
-  : id(id),
-    name(name),
-    clockrate(clockrate),
-    preference(preference) {
+    : id(id), name(name), clockrate(clockrate), preference(preference) {
 }
 
 Codec::Codec() : id(0), clockrate(0), preference(0) {
@@ -115,10 +112,8 @@ Codec& Codec::operator=(const Codec& c) {
 
 bool Codec::operator==(const Codec& c) const {
   return this->id == c.id &&  // id is reserved in objective-c
-         name == c.name &&
-         clockrate == c.clockrate &&
-         preference == c.preference &&
-         params == c.params &&
+         name == c.name && clockrate == c.clockrate &&
+         preference == c.preference && params == c.params &&
          feedback_params == c.feedback_params;
 }
 
@@ -174,15 +169,10 @@ AudioCodec::AudioCodec(int pt,
                        int br,
                        int cs,
                        int pr)
-    : Codec(pt, nm, cr, pr),
-      bitrate(br),
-      channels(cs) {
+    : Codec(pt, nm, cr, pr), bitrate(br), channels(cs) {
 }
 
-AudioCodec::AudioCodec()
-    : Codec(),
-      bitrate(0),
-      channels(0) {
+AudioCodec::AudioCodec() : Codec(), bitrate(0), channels(0) {
 }
 
 AudioCodec::AudioCodec(const AudioCodec& c) = default;
@@ -195,8 +185,7 @@ AudioCodec& AudioCodec::operator=(const AudioCodec& c) {
 }
 
 bool AudioCodec::operator==(const AudioCodec& c) const {
-  return clockrate == c.clockrate && bitrate == c.bitrate &&
-         Codec::operator==(c);
+  return bitrate == c.bitrate && channels == c.channels && Codec::operator==(c);
 }
 
 bool AudioCodec::Matches(const AudioCodec& codec) const {
