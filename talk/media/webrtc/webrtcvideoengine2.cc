@@ -1785,6 +1785,9 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
     info.input_frame_height = last_captured_frame_format.height;
   }
 
+  // TODO(pbos): Support or remove the following stats.
+  info.packets_cached = -1;
+
   return info;
 }
 
@@ -2037,6 +2040,9 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo() {
   info.firs_sent = stats.rtcp_packet_type_counts.fir_packets;
   info.plis_sent = stats.rtcp_packet_type_counts.pli_packets;
   info.nacks_sent = stats.rtcp_packet_type_counts.nack_packets;
+
+  // TODO(pbos): Support or remove the following stats.
+  info.packets_concealed = -1;
 
   return info;
 }

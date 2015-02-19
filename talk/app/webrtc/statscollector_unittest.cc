@@ -1111,9 +1111,11 @@ TEST_F(StatsCollectorTest, ReportsFromRemoteTrack) {
   // Constructs an ssrc stats update.
   cricket::VideoReceiverInfo video_receiver_info;
   cricket::VideoMediaInfo stats_read;
+  const int64 kNumOfPacketsConcealed = 54321;
 
   // Construct a stats value to read.
   video_receiver_info.add_ssrc(1234);
+  video_receiver_info.packets_concealed = kNumOfPacketsConcealed;
   stats_read.receivers.push_back(video_receiver_info);
 
   EXPECT_CALL(session_, video_channel()).WillRepeatedly(Return(&video_channel));

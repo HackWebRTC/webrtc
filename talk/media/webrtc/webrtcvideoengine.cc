@@ -2586,6 +2586,7 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
       sinfo.codec_name = send_codec_->plName;
       sinfo.bytes_sent = bytes_sent;
       sinfo.packets_sent = packets_sent;
+      sinfo.packets_cached = -1;
       sinfo.packets_lost = -1;
       sinfo.fraction_lost = -1;
       sinfo.rtt_ms = -1;
@@ -2730,6 +2731,7 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
     rinfo.bytes_rcvd = received.transmitted.payload_bytes;
     rinfo.packets_rcvd = received.transmitted.packets;
     rinfo.packets_lost = -1;
+    rinfo.packets_concealed = -1;
     rinfo.fraction_lost = -1;  // from SentRTCP
     rinfo.frame_width = channel->render_adapter()->width();
     rinfo.frame_height = channel->render_adapter()->height();
