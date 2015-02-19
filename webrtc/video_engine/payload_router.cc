@@ -45,7 +45,7 @@ void PayloadRouter::set_active(bool active) {
 
 bool PayloadRouter::active() {
   CriticalSectionScoped cs(crit_.get());
-  return active_;
+  return active_ && !rtp_modules_.empty();
 }
 
 bool PayloadRouter::RoutePayload(FrameType frame_type,

@@ -10,11 +10,11 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 
-#include <assert.h>
 #include <string.h>
 
 #include <set>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_types.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -115,7 +115,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
 
 ModuleRtpRtcpImpl::~ModuleRtpRtcpImpl() {
   // All child modules MUST be deleted before deleting the default.
-  assert(child_modules_.empty());
+  DCHECK(child_modules_.empty());
 
   // Deregister for the child modules.
   // Will go in to the default and remove it self.
@@ -283,7 +283,7 @@ int32_t ModuleRtpRtcpImpl::IncomingRtcpPacket(
 
 int32_t ModuleRtpRtcpImpl::RegisterSendPayload(
     const CodecInst& voice_codec) {
-  assert(!IsDefaultModule());
+  DCHECK(!IsDefaultModule());
   return rtp_sender_.RegisterPayload(
            voice_codec.plname,
            voice_codec.pltype,
@@ -382,7 +382,7 @@ void ModuleRtpRtcpImpl::SetSSRC(const uint32_t ssrc) {
 }
 
 void ModuleRtpRtcpImpl::SetCsrcs(const std::vector<uint32_t>& csrcs) {
-  assert(!IsDefaultModule());
+  DCHECK(!IsDefaultModule());
   rtcp_sender_.SetCsrcs(csrcs);
   rtp_sender_.SetCsrcs(csrcs);
 }
@@ -419,6 +419,8 @@ int ModuleRtpRtcpImpl::CurrentSendFrequencyHz() const {
 }
 
 int32_t ModuleRtpRtcpImpl::SetSendingStatus(const bool sending) {
+  DCHECK(!IsDefaultModule());
+
   if (rtcp_sender_.Sending() != sending) {
     // Sends RTCP BYE when going from true to false
     if (rtcp_sender_.SetSendingStatus(GetFeedbackState(), sending) != 0) {
@@ -447,28 +449,18 @@ int32_t ModuleRtpRtcpImpl::SetSendingStatus(const bool sending) {
 }
 
 bool ModuleRtpRtcpImpl::Sending() const {
+  DCHECK(!IsDefaultModule());
   return rtcp_sender_.Sending();
 }
 
 void ModuleRtpRtcpImpl::SetSendingMediaStatus(const bool sending) {
+  DCHECK(!IsDefaultModule());
   rtp_sender_.SetSendingMediaStatus(sending);
 }
 
 bool ModuleRtpRtcpImpl::SendingMedia() const {
-  if (!IsDefaultModule()) {
-    return rtp_sender_.SendingMedia();
-  }
-
-  CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-  std::vector<ModuleRtpRtcpImpl*>::const_iterator it = child_modules_.begin();
-  while (it != child_modules_.end()) {
-    RTPSender& rtp_sender = (*it)->rtp_sender_;
-    if (rtp_sender.SendingMedia()) {
-      return true;
-    }
-    it++;
-  }
-  return false;
+  DCHECK(!IsDefaultModule());
+  return rtp_sender_.SendingMedia();
 }
 
 int32_t ModuleRtpRtcpImpl::SendOutgoingData(
@@ -480,7 +472,7 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
     size_t payload_size,
     const RTPFragmentationHeader* fragmentation,
     const RTPVideoHeader* rtp_video_hdr) {
-  assert(!IsDefaultModule());
+  DCHECK(!IsDefaultModule());
 
   rtcp_sender_.SetLastRtpTime(time_stamp, capture_time_ms);
   if (rtcp_sender_.TimeToSendRTCPReport(kVideoFrameKey == frame_type)) {
@@ -501,7 +493,7 @@ bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
                                          uint16_t sequence_number,
                                          int64_t capture_time_ms,
                                          bool retransmission) {
-  assert(!IsDefaultModule());
+  DCHECK(!IsDefaultModule());
   if (SendingMedia() && ssrc == rtp_sender_.SSRC()) {
     return rtp_sender_.TimeToSendPacket(
         sequence_number, capture_time_ms, retransmission);
@@ -511,14 +503,14 @@ bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
 }
 
 size_t ModuleRtpRtcpImpl::TimeToSendPadding(size_t bytes) {
-  assert(!IsDefaultModule());
+  DCHECK(!IsDefaultModule());
   return rtp_sender_.TimeToSendPadding(bytes);
 }
 
 bool ModuleRtpRtcpImpl::GetSendSideDelay(int* avg_send_delay_ms,
                                          int* max_send_delay_ms) const {
-  assert(avg_send_delay_ms);
-  assert(max_send_delay_ms);
+  DCHECK(avg_send_delay_ms);
+  DCHECK(max_send_delay_ms);
 
   if (IsDefaultModule()) {
     // This API is only supported for child modules.
@@ -532,7 +524,7 @@ uint16_t ModuleRtpRtcpImpl::MaxPayloadLength() const {
 }
 
 uint16_t ModuleRtpRtcpImpl::MaxDataPayloadLength() const {
-  assert(!IsDefaultModule());
+  DCHECK(!IsDefaultModule());
   return rtp_sender_.MaxDataPayloadLength();
 }
 

@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/experiments.h"
@@ -138,7 +139,7 @@ int32_t ViEChannel::Init() {
   if (sender_) {
      std::list<RtpRtcp*> send_rtp_modules(1, rtp_rtcp_.get());
      send_payload_router_->SetSendingRtpModules(send_rtp_modules);
-     send_payload_router_->set_active(true);
+     DCHECK(!send_payload_router_->active());
   }
   if (vcm_->InitializeReceiver() != 0) {
     return -1;

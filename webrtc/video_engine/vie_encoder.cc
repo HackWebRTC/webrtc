@@ -393,12 +393,6 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
     return -1;
   }
 
-  // Set this module as sending right away, let the slave module in the channel
-  // start and stop sending.
-  if (default_rtp_rtcp_->SetSendingStatus(true) != 0) {
-    return -1;
-  }
-
   bitrate_controller_->SetBitrateObserver(bitrate_observer_.get(),
                                           video_codec.startBitrate * 1000,
                                           video_codec.minBitrate * 1000,
@@ -521,7 +515,7 @@ void ViEEncoder::DeliverFrame(int id,
                               const std::vector<uint32_t>& csrcs) {
   DCHECK(send_payload_router_ != NULL);
   DCHECK(csrcs.empty());
-  if (!default_rtp_rtcp_->SendingMedia() || !send_payload_router_->active()) {
+  if (!send_payload_router_->active()) {
     // We've paused or we have no channels attached, don't waste resources on
     // encoding.
     return;
