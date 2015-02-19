@@ -85,10 +85,19 @@ class WebRtcVideoCapturer : public VideoCapturer,
   virtual void OnCaptureDelayChanged(const int32_t id,
                                      const int32_t delay);
 
+  // Used to signal captured frames on the same thread as invoked Start().
+  // With WebRTC's current VideoCapturer implementations, this will mean a
+  // thread hop, but in other implementations (e.g. Chrome) it will be called
+  // directly from OnIncomingCapturedFrame.
+  // TODO(tommi): Remove this workaround when we've updated the WebRTC capturers
+  // to follow the same contract.
+  void SignalFrameCapturedOnStartThread(webrtc::I420VideoFrame* frame);
+
   rtc::scoped_ptr<WebRtcVcmFactoryInterface> factory_;
   webrtc::VideoCaptureModule* module_;
   int captured_frames_;
   std::vector<uint8_t> capture_buffer_;
+  rtc::Thread* start_thread_;  // Set in Start(), unset in Stop();
 
   // Critical section to avoid Stop during an OnIncomingCapturedFrame callback.
   rtc::CriticalSection critical_section_stopping_;

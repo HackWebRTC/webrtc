@@ -111,12 +111,18 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return sender_->RegisterSendCodec(sendCodec, numberOfCores, maxPayloadSize);
   }
 
-  virtual int32_t SendCodec(VideoCodec* currentSendCodec) const OVERRIDE {
-    return sender_->SendCodec(currentSendCodec);
+  virtual const VideoCodec& GetSendCodec() const OVERRIDE {
+    return sender_->GetSendCodec();
   }
 
+  // DEPRECATED.
+  virtual int32_t SendCodec(VideoCodec* currentSendCodec) const OVERRIDE {
+    return sender_->SendCodecBlocking(currentSendCodec);
+  }
+
+  // DEPRECATED.
   virtual VideoCodecType SendCodec() const OVERRIDE {
-    return sender_->SendCodec();
+    return sender_->SendCodecBlocking();
   }
 
   virtual int32_t RegisterExternalEncoder(VideoEncoder* externalEncoder,
@@ -351,6 +357,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 
  private:
   EncodedImageCallbackWrapper post_encode_callback_;
+  // TODO(tommi): Change sender_ and receiver_ to be non pointers
+  // (construction is 1 alloc instead of 3).
   scoped_ptr<vcm::VideoSender> sender_;
   scoped_ptr<vcm::VideoReceiver> receiver_;
   scoped_ptr<EventFactory> own_event_factory_;

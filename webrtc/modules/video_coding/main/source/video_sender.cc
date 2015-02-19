@@ -12,6 +12,7 @@
 
 #include <algorithm>  // std::max
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/main/source/encoded_frame.h"
@@ -72,8 +73,10 @@ VideoSender::VideoSender(Clock* clock,
       _codecDataBase(),
       frame_dropper_enabled_(true),
       _sendStatsTimer(1000, clock_),
+      current_codec_(),
       qm_settings_callback_(NULL),
-      protection_callback_(NULL) {}
+      protection_callback_(NULL) {
+}
 
 VideoSender::~VideoSender() {
   delete _sendCritSect;
@@ -86,13 +89,8 @@ int32_t VideoSender::Process() {
     _sendStatsTimer.Processed();
     CriticalSectionScoped cs(process_crit_sect_.get());
     if (_sendStatsCallback != NULL) {
-      uint32_t bitRate;
-      uint32_t frameRate;
-      {
-        CriticalSectionScoped cs(_sendCritSect);
-        bitRate = _mediaOpt.SentBitRate();
-        frameRate = _mediaOpt.SentFrameRate();
-      }
+      uint32_t bitRate = _mediaOpt.SentBitRate();
+      uint32_t frameRate = _mediaOpt.SentFrameRate();
       _sendStatsCallback->SendStatistics(bitRate, frameRate);
     }
   }
@@ -102,6 +100,7 @@ int32_t VideoSender::Process() {
 
 // Reset send side to initial state - all components
 int32_t VideoSender::InitializeSender() {
+  DCHECK(main_thread_.CalledOnValidThread());
   CriticalSectionScoped cs(_sendCritSect);
   _codecDataBase.ResetSender();
   _encoder = NULL;
@@ -118,6 +117,7 @@ int64_t VideoSender::TimeUntilNextProcess() {
 int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
                                        uint32_t numberOfCores,
                                        uint32_t maxPayloadSize) {
+  DCHECK(main_thread_.CalledOnValidThread());
   CriticalSectionScoped cs(_sendCritSect);
   if (sendCodec == NULL) {
     return VCM_PARAMETER_ERROR;
@@ -129,6 +129,9 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
   // Update encoder regardless of result to make sure that we're not holding on
   // to a deleted instance.
   _encoder = _codecDataBase.GetEncoder();
+  // Cache the current codec here so they can be fetched from this thread
+  // without requiring the _sendCritSect lock.
+  current_codec_ = *sendCodec;
 
   if (!ret) {
     LOG(LS_ERROR) << "Failed to initialize the encoder with payload name "
@@ -162,20 +165,21 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
   return VCM_OK;
 }
 
-// Get current send codec
-int32_t VideoSender::SendCodec(VideoCodec* currentSendCodec) const {
-  CriticalSectionScoped cs(_sendCritSect);
+const VideoCodec& VideoSender::GetSendCodec() const {
+  DCHECK(main_thread_.CalledOnValidThread());
+  return current_codec_;
+}
 
+int32_t VideoSender::SendCodecBlocking(VideoCodec* currentSendCodec) const {
+  CriticalSectionScoped cs(_sendCritSect);
   if (currentSendCodec == NULL) {
     return VCM_PARAMETER_ERROR;
   }
   return _codecDataBase.SendCodec(currentSendCodec) ? 0 : -1;
 }
 
-// Get the current send codec type
-VideoCodecType VideoSender::SendCodec() const {
+VideoCodecType VideoSender::SendCodecBlocking() const {
   CriticalSectionScoped cs(_sendCritSect);
-
   return _codecDataBase.SendCodec();
 }
 
@@ -214,7 +218,6 @@ int32_t VideoSender::CodecConfigParameters(uint8_t* buffer,
 // TODO(andresp): Make const once media_opt is thread-safe and this has a
 // pointer to it.
 int32_t VideoSender::SentFrameCount(VCMFrameCount* frameCount) {
-  CriticalSectionScoped cs(_sendCritSect);
   *frameCount = _mediaOpt.SentFrameCount();
   return VCM_OK;
 }
@@ -400,8 +403,6 @@ int32_t VideoSender::EnableFrameDropper(bool enable) {
 }
 
 int VideoSender::SetSenderNackMode(SenderNackMode mode) {
-  CriticalSectionScoped cs(_sendCritSect);
-
   switch (mode) {
     case VideoCodingModule::kNackNone:
       _mediaOpt.EnableProtectionMethod(false, media_optimization::kNack);
@@ -411,7 +412,6 @@ int VideoSender::SetSenderNackMode(SenderNackMode mode) {
       break;
     case VideoCodingModule::kNackSelective:
       return VCM_NOT_IMPLEMENTED;
-      break;
   }
   return VCM_OK;
 }
@@ -421,7 +421,6 @@ int VideoSender::SetSenderReferenceSelection(bool enable) {
 }
 
 int VideoSender::SetSenderFEC(bool enable) {
-  CriticalSectionScoped cs(_sendCritSect);
   _mediaOpt.EnableProtectionMethod(enable, media_optimization::kFec);
   return VCM_OK;
 }
@@ -439,17 +438,12 @@ void VideoSender::StopDebugRecording() {
 }
 
 void VideoSender::SuspendBelowMinBitrate() {
-  CriticalSectionScoped cs(_sendCritSect);
-  VideoCodec current_send_codec;
-  if (SendCodec(&current_send_codec) != 0) {
-    assert(false);  // Must set a send codec before SuspendBelowMinBitrate.
-    return;
-  }
+  DCHECK(main_thread_.CalledOnValidThread());
   int threshold_bps;
-  if (current_send_codec.numberOfSimulcastStreams == 0) {
-    threshold_bps = current_send_codec.minBitrate * 1000;
+  if (current_codec_.numberOfSimulcastStreams == 0) {
+    threshold_bps = current_codec_.minBitrate * 1000;
   } else {
-    threshold_bps = current_send_codec.simulcastStream[0].minBitrate * 1000;
+    threshold_bps = current_codec_.simulcastStream[0].minBitrate * 1000;
   }
   // Set the hysteresis window to be at 10% of the threshold, but at least
   // 10 kbps.

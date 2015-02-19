@@ -414,9 +414,7 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
 }
 
 int32_t ViEEncoder::GetEncoder(VideoCodec* video_codec) {
-  if (vcm_.SendCodec(video_codec) != 0) {
-    return -1;
-  }
+  *video_codec = vcm_.GetSendCodec();
   return 0;
 }
 

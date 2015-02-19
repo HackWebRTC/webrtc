@@ -3904,6 +3904,7 @@ int WebRtcVideoMediaChannel::GetRecvChannelId(uint32 ssrc) {
 bool WebRtcVideoMediaChannel::SetSendParams(
     WebRtcVideoChannelSendInfo* send_channel,
     const VideoSendParams& send_params) {
+  ASSERT(engine()->worker_thread()->IsCurrent());
   const int channel_id = send_channel->channel_id();
 
   MaybeRegisterExternalEncoder(send_channel, send_params.codec);
