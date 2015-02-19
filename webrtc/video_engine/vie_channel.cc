@@ -1142,6 +1142,11 @@ void ViEChannel::RegisterReceiveChannelRtcpStatisticsCallback(
   rtp_rtcp_->RegisterRtcpStatisticsCallback(callback);
 }
 
+void ViEChannel::RegisterRtcpPacketTypeCounterObserver(
+    RtcpPacketTypeCounterObserver* observer) {
+  rtcp_packet_type_counter_observer_.Set(observer);
+}
+
 int32_t ViEChannel::GetRtpStatistics(size_t* bytes_sent,
                                      uint32_t* packets_sent,
                                      size_t* bytes_received,
@@ -1241,25 +1246,24 @@ void ViEChannel::RegisterReceiveChannelRtpStatisticsCallback(
 void ViEChannel::GetRtcpPacketTypeCounters(
     RtcpPacketTypeCounter* packets_sent,
     RtcpPacketTypeCounter* packets_received) const {
-  rtp_rtcp_->GetRtcpPacketTypeCounters(packets_sent, packets_received);
+  std::map<uint32_t, RtcpPacketTypeCounter> counter_map =
+      rtcp_packet_type_counter_observer_.GetPacketTypeCounterMap();
+  RtcpPacketTypeCounter sent_counter;
+  sent_counter.Add(counter_map[rtp_rtcp_->SSRC()]);
+  RtcpPacketTypeCounter received_counter;
+  received_counter.Add(counter_map[vie_receiver_.GetRemoteSsrc()]);
 
   CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end(); ++it) {
-    RtcpPacketTypeCounter sent;
-    RtcpPacketTypeCounter received;
-    (*it)->GetRtcpPacketTypeCounters(&sent, &received);
-    packets_sent->Add(sent);
-    packets_received->Add(received);
+    sent_counter.Add(counter_map[(*it)->SSRC()]);
   }
   for (std::list<RtpRtcp*>::const_iterator it = removed_rtp_rtcp_.begin();
        it != removed_rtp_rtcp_.end(); ++it) {
-    RtcpPacketTypeCounter sent;
-    RtcpPacketTypeCounter received;
-    (*it)->GetRtcpPacketTypeCounters(&sent, &received);
-    packets_sent->Add(sent);
-    packets_received->Add(received);
+    sent_counter.Add(counter_map[(*it)->SSRC()]);
   }
+  *packets_sent = sent_counter;
+  *packets_received = received_counter;
 }
 
 void ViEChannel::GetBandwidthUsage(uint32_t* total_bitrate_sent,
@@ -1694,6 +1698,8 @@ RtpRtcp::Configuration ViEChannel::CreateRtpRtcpConfiguration() {
   configuration.intra_frame_callback = intra_frame_observer_;
   configuration.bandwidth_callback = bandwidth_observer_.get();
   configuration.rtt_stats = rtt_stats_;
+  configuration.rtcp_packet_type_counter_observer =
+      &rtcp_packet_type_counter_observer_;
   configuration.paced_sender = paced_sender_;
   configuration.send_bitrate_observer = &send_bitrate_observer_;
   configuration.send_frame_count_observer = &send_frame_count_observer_;

@@ -358,6 +358,8 @@ class ViEChannel
       EncodedImageCallback* pre_decode_callback);
 
   void RegisterSendFrameCountObserver(FrameCountObserver* observer);
+  void RegisterRtcpPacketTypeCounterObserver(
+      RtcpPacketTypeCounterObserver* observer);
   void RegisterReceiveStatisticsProxy(
       ReceiveStatisticsProxy* receive_statistics_proxy);
   void ReceivedBWEPacket(int64_t arrival_time_ms, size_t payload_size,
@@ -454,6 +456,29 @@ class ViEChannel
         callback_->SendSideDelayUpdated(avg_delay_ms, max_delay_ms, ssrc);
     }
   } send_side_delay_observer_;
+
+  class RegisterableRtcpPacketTypeCounterObserver
+      : public RegisterableCallback<RtcpPacketTypeCounterObserver> {
+   public:
+    virtual void RtcpPacketTypesCounterUpdated(
+        uint32_t ssrc,
+        const RtcpPacketTypeCounter& packet_counter) override {
+      CriticalSectionScoped cs(critsect_.get());
+      if (callback_)
+        callback_->RtcpPacketTypesCounterUpdated(ssrc, packet_counter);
+      counter_map_[ssrc] = packet_counter;
+    }
+
+    virtual std::map<uint32_t, RtcpPacketTypeCounter> GetPacketTypeCounterMap()
+        const {
+      CriticalSectionScoped cs(critsect_.get());
+      return counter_map_;
+    }
+
+   private:
+    std::map<uint32_t, RtcpPacketTypeCounter> counter_map_
+        GUARDED_BY(critsect_);
+  } rtcp_packet_type_counter_observer_;
 
   int32_t channel_id_;
   int32_t engine_id_;

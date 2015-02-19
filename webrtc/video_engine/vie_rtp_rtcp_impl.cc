@@ -1019,4 +1019,18 @@ int ViERTP_RTCPImpl::DeregisterSendFrameCountObserver(
   vie_channel->RegisterSendFrameCountObserver(NULL);
   return 0;
 }
+
+int ViERTP_RTCPImpl::RegisterRtcpPacketTypeCounterObserver(
+    int video_channel,
+    RtcpPacketTypeCounterObserver* observer) {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
+    return -1;
+  }
+  vie_channel->RegisterRtcpPacketTypeCounterObserver(observer);
+  return 0;
+}
+
 }  // namespace webrtc

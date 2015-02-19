@@ -98,7 +98,7 @@ class SendTransport : public Transport,
   std::vector<uint16_t> last_nack_list_;
 };
 
-class RtpRtcpModule {
+class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
  public:
   RtpRtcpModule(SimulatedClock* clock)
       : receive_statistics_(ReceiveStatistics::Create(clock)) {
@@ -107,6 +107,7 @@ class RtpRtcpModule {
     config.clock = clock;
     config.outgoing_transport = &transport_;
     config.receive_statistics = receive_statistics_.get();
+    config.rtcp_packet_type_counter_observer = this;
     config.rtt_stats = &rtt_stats_;
 
     impl_.reset(new ModuleRtpRtcpImpl(config));
@@ -121,14 +122,27 @@ class RtpRtcpModule {
   SendTransport transport_;
   RtcpRttStatsTestImpl rtt_stats_;
   scoped_ptr<ModuleRtpRtcpImpl> impl_;
+  uint32_t remote_ssrc_;
+
+  void SetRemoteSsrc(uint32_t ssrc) {
+    remote_ssrc_ = ssrc;
+    impl_->SetRemoteSSRC(ssrc);
+  }
+
+  void RtcpPacketTypesCounterUpdated(
+      uint32_t ssrc,
+      const RtcpPacketTypeCounter& packet_counter) override {
+    counter_map_[ssrc] = packet_counter;
+  }
 
   RtcpPacketTypeCounter RtcpSent() {
-    impl_->GetRtcpPacketTypeCounters(&packets_sent_, &packets_received_);
-    return packets_sent_;
+    // RTCP counters for remote SSRC.
+    return counter_map_[remote_ssrc_];
   }
+
   RtcpPacketTypeCounter RtcpReceived() {
-    impl_->GetRtcpPacketTypeCounters(&packets_sent_, &packets_received_);
-    return packets_received_;
+    // Received RTCP stats for (own) local SSRC.
+    return counter_map_[impl_->SSRC()];
   }
   int RtpSent() {
     return transport_.rtp_packets_sent_;
@@ -139,6 +153,9 @@ class RtpRtcpModule {
   std::vector<uint16_t> LastNackListSent() {
     return transport_.last_nack_list_;
   }
+
+ private:
+  std::map<uint32_t, RtcpPacketTypeCounter> counter_map_;
 };
 }  // namespace
 
@@ -152,7 +169,7 @@ class RtpRtcpImplTest : public ::testing::Test {
     EXPECT_EQ(0, sender_.impl_->SetSendingStatus(true));
     sender_.impl_->SetSendingMediaStatus(true);
     sender_.impl_->SetSSRC(kSenderSsrc);
-    sender_.impl_->SetRemoteSSRC(kReceiverSsrc);
+    sender_.SetRemoteSsrc(kReceiverSsrc);
     sender_.impl_->SetSequenceNumber(kSequenceNumber);
     sender_.impl_->SetStorePacketsStatus(true, 100);
 
@@ -167,7 +184,7 @@ class RtpRtcpImplTest : public ::testing::Test {
     EXPECT_EQ(0, receiver_.impl_->SetSendingStatus(false));
     receiver_.impl_->SetSendingMediaStatus(false);
     receiver_.impl_->SetSSRC(kReceiverSsrc);
-    receiver_.impl_->SetRemoteSSRC(kSenderSsrc);
+    receiver_.SetRemoteSsrc(kSenderSsrc);
     // Transport settings.
     sender_.transport_.SetRtpRtcpModule(receiver_.impl_.get());
     receiver_.transport_.SetRtpRtcpModule(sender_.impl_.get());

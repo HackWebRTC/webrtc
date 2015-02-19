@@ -229,6 +229,7 @@ VideoSendStream::VideoSendStream(
                                                        &stats_proxy_);
   rtp_rtcp_->RegisterSendChannelRtpStatisticsCallback(channel_,
                                                       &stats_proxy_);
+  rtp_rtcp_->RegisterRtcpPacketTypeCounterObserver(channel_, &stats_proxy_);
   rtp_rtcp_->RegisterSendBitrateObserver(channel_, &stats_proxy_);
   rtp_rtcp_->RegisterSendFrameCountObserver(channel_, &stats_proxy_);
 
@@ -242,6 +243,7 @@ VideoSendStream::~VideoSendStream() {
 
   rtp_rtcp_->DeregisterSendFrameCountObserver(channel_, &stats_proxy_);
   rtp_rtcp_->DeregisterSendBitrateObserver(channel_, &stats_proxy_);
+  rtp_rtcp_->RegisterRtcpPacketTypeCounterObserver(channel_, NULL);
   rtp_rtcp_->DeregisterSendChannelRtpStatisticsCallback(channel_,
                                                         &stats_proxy_);
   rtp_rtcp_->DeregisterSendChannelRtcpStatisticsCallback(channel_,
@@ -443,6 +445,7 @@ VideoSendStream::Stats VideoSendStream::GetStats() {
 }
 
 void VideoSendStream::ConfigureSsrcs() {
+  rtp_rtcp_->SetLocalSSRC(channel_, config_.rtp.ssrcs.front());
   for (size_t i = 0; i < config_.rtp.ssrcs.size(); ++i) {
     uint32_t ssrc = config_.rtp.ssrcs[i];
     rtp_rtcp_->SetLocalSSRC(

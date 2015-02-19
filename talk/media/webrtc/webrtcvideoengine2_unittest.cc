@@ -196,7 +196,7 @@ void FakeVideoReceiveStream::InjectFrame(const webrtc::I420VideoFrame& frame,
 }
 
 webrtc::VideoReceiveStream::Stats FakeVideoReceiveStream::GetStats() const {
-  return webrtc::VideoReceiveStream::Stats();
+  return stats_;
 }
 
 void FakeVideoReceiveStream::Start() {
@@ -205,6 +205,11 @@ void FakeVideoReceiveStream::Start() {
 
 void FakeVideoReceiveStream::Stop() {
   receiving_ = false;
+}
+
+void FakeVideoReceiveStream::SetStats(
+    const webrtc::VideoReceiveStream::Stats& stats) {
+  stats_ = stats;
 }
 
 FakeCall::FakeCall(const webrtc::Call::Config& config)
@@ -2051,6 +2056,46 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsReportsUpperResolution) {
   ASSERT_EQ(1u, info.senders.size());
   EXPECT_EQ(123, info.senders[0].send_frame_width);
   EXPECT_EQ(90, info.senders[0].send_frame_height);
+}
+
+TEST_F(WebRtcVideoChannel2Test,
+       GetStatsTranslatesSendRtcpPacketTypesCorrectly) {
+  FakeVideoSendStream* stream = AddSendStream();
+  webrtc::VideoSendStream::Stats stats;
+  stats.substreams[17].rtcp_packet_type_counts.fir_packets = 2;
+  stats.substreams[17].rtcp_packet_type_counts.nack_packets = 3;
+  stats.substreams[17].rtcp_packet_type_counts.pli_packets = 4;
+
+  stats.substreams[42].rtcp_packet_type_counts.fir_packets = 5;
+  stats.substreams[42].rtcp_packet_type_counts.nack_packets = 7;
+  stats.substreams[42].rtcp_packet_type_counts.pli_packets = 9;
+
+  stream->SetStats(stats);
+
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  EXPECT_EQ(7, info.senders[0].firs_rcvd);
+  EXPECT_EQ(10, info.senders[0].nacks_rcvd);
+  EXPECT_EQ(13, info.senders[0].plis_rcvd);
+}
+
+TEST_F(WebRtcVideoChannel2Test,
+       GetStatsTranslatesReceiveRtcpPacketTypesCorrectly) {
+  FakeVideoReceiveStream* stream = AddRecvStream();
+  webrtc::VideoReceiveStream::Stats stats;
+  stats.rtcp_packet_type_counts.fir_packets = 2;
+  stats.rtcp_packet_type_counts.nack_packets = 3;
+  stats.rtcp_packet_type_counts.pli_packets = 4;
+  stream->SetStats(stats);
+
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  EXPECT_EQ(stats.rtcp_packet_type_counts.fir_packets,
+            info.receivers[0].firs_sent);
+  EXPECT_EQ(stats.rtcp_packet_type_counts.nack_packets,
+            info.receivers[0].nacks_sent);
+  EXPECT_EQ(stats.rtcp_packet_type_counts.pli_packets,
+            info.receivers[0].plis_sent);
 }
 
 TEST_F(WebRtcVideoChannel2Test, TranslatesCallStatsCorrectly) {

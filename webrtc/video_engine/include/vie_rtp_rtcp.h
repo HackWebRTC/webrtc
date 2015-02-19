@@ -448,6 +448,12 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   virtual int DeregisterSendFrameCountObserver(
       int video_channel, FrameCountObserver* observer) = 0;
 
+  // Called when RTCP packet type counters might have been changed. User has to
+  // filter on SSRCs to determine whether it's status sent or received.
+  virtual int RegisterRtcpPacketTypeCounterObserver(
+      int video_channel,
+      RtcpPacketTypeCounterObserver* observer) = 0;
+
  protected:
   virtual ~ViERTP_RTCP() {}
 };

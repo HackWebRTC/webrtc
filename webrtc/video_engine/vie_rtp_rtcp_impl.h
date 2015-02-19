@@ -157,6 +157,9 @@ class ViERTP_RTCPImpl
       int channel, FrameCountObserver* callback);
   virtual int DeregisterSendFrameCountObserver(
       int channel, FrameCountObserver* callback);
+  virtual int RegisterRtcpPacketTypeCounterObserver(
+      int video_channel,
+      RtcpPacketTypeCounterObserver* observer) override;
 
  protected:
   explicit ViERTP_RTCPImpl(ViESharedData* shared_data);

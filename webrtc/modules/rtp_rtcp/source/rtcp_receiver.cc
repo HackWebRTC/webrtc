@@ -28,7 +28,11 @@ using namespace RTCPHelp;
 // The number of RTCP time intervals needed to trigger a timeout.
 const int kRrTimeoutIntervals = 3;
 
-RTCPReceiver::RTCPReceiver(int32_t id, Clock* clock, ModuleRtpRtcpImpl* owner)
+RTCPReceiver::RTCPReceiver(
+    int32_t id,
+    Clock* clock,
+    RtcpPacketTypeCounterObserver* packet_type_counter_observer,
+    ModuleRtpRtcpImpl* owner)
     : TMMBRHelp(),
       _clock(clock),
       _method(kRtcpOff),
@@ -52,7 +56,8 @@ RTCPReceiver::RTCPReceiver(int32_t id, Clock* clock, ModuleRtpRtcpImpl* owner)
       _packetTimeOutMS(0),
       _lastReceivedRrMs(0),
       _lastIncreasedSequenceNumberMs(0),
-      stats_callback_(NULL) {
+      stats_callback_(NULL),
+      packet_type_counter_observer_(packet_type_counter_observer) {
   memset(&_remoteSenderInfo, 0, sizeof(_remoteSenderInfo));
 }
 
@@ -271,12 +276,6 @@ int32_t RTCPReceiver::StatisticsReceived(
   return 0;
 }
 
-void RTCPReceiver::GetPacketTypeCounter(
-    RtcpPacketTypeCounter* packet_counter) const {
-  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
-  *packet_counter = packet_type_counter_;
-}
-
 int32_t
 RTCPReceiver::IncomingRTCPPacket(RTCPPacketInformation& rtcpPacketInformation,
                                  RTCPUtility::RTCPParserV2* rtcpParser)
@@ -362,6 +361,12 @@ RTCPReceiver::IncomingRTCPPacket(RTCPPacketInformation& rtcpPacketInformation,
         }
         pktType = rtcpParser->PacketType();
     }
+
+    if (packet_type_counter_observer_ != NULL) {
+      packet_type_counter_observer_->RtcpPacketTypesCounterUpdated(
+          main_ssrc_, packet_type_counter_);
+    }
+
     return 0;
 }
 
@@ -770,10 +775,12 @@ void RTCPReceiver::HandleSDESChunk(RTCPUtility::RTCPParserV2& rtcpParser) {
 
   cnameInfo->name[RTCP_CNAME_SIZE - 1] = 0;
   strncpy(cnameInfo->name, rtcpPacket.CName.CName, RTCP_CNAME_SIZE - 1);
-  CriticalSectionScoped lock(_criticalSectionFeedbacks);
-  if (stats_callback_ != NULL) {
-    stats_callback_->CNameChanged(rtcpPacket.CName.CName,
-                                  rtcpPacket.CName.SenderSSRC);
+  {
+    CriticalSectionScoped lock(_criticalSectionFeedbacks);
+    if (stats_callback_ != NULL) {
+      stats_callback_->CNameChanged(rtcpPacket.CName.CName,
+                                    rtcpPacket.CName.SenderSSRC);
+    }
   }
 }
 

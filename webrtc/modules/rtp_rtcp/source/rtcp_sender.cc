@@ -76,10 +76,12 @@ RTCPSender::FeedbackState::FeedbackState()
       remote_sr(0),
       has_last_xr_rr(false) {}
 
-RTCPSender::RTCPSender(int32_t id,
-                       bool audio,
-                       Clock* clock,
-                       ReceiveStatistics* receive_statistics)
+RTCPSender::RTCPSender(
+    int32_t id,
+    bool audio,
+    Clock* clock,
+    ReceiveStatistics* receive_statistics,
+    RtcpPacketTypeCounterObserver* packet_type_counter_observer)
     : _id(id),
       _audio(audio),
       _clock(clock),
@@ -129,7 +131,8 @@ RTCPSender::RTCPSender(int32_t id,
 
       xrSendReceiverReferenceTimeEnabled_(false),
       _xrSendVoIPMetric(false),
-      _xrVoIPMetric() {
+      _xrVoIPMetric(),
+      packet_type_counter_observer_(packet_type_counter_observer) {
     memset(_CNAME, 0, sizeof(_CNAME));
     memset(_lastSendReport, 0, sizeof(_lastSendReport));
     memset(_lastRTCPTime, 0, sizeof(_lastRTCPTime));
@@ -464,12 +467,6 @@ bool RTCPSender::SendTimeOfXrRrReport(uint32_t mid_ntp,
   }
   *time_ms = it->second;
   return true;
-}
-
-void RTCPSender::GetPacketTypeCounter(
-    RtcpPacketTypeCounter* packet_counter) const {
-  CriticalSectionScoped lock(_criticalSectionRTCPSender);
-  *packet_counter = packet_type_counter_;
 }
 
 int32_t RTCPSender::AddExternalReportBlock(
@@ -1889,6 +1886,12 @@ int RTCPSender::PrepareRTCP(const FeedbackState& feedback_state,
         return position;
       }
   }
+
+  if (packet_type_counter_observer_ != NULL) {
+    packet_type_counter_observer_->RtcpPacketTypesCounterUpdated(
+        _remoteSSRC, packet_type_counter_);
+  }
+
   return position;
 }
 

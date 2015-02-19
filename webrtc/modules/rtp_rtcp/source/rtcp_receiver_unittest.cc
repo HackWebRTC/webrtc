@@ -86,7 +86,7 @@ class RtcpReceiverTest : public ::testing::Test {
     configuration.outgoing_transport = test_transport_;
     configuration.remote_bitrate_estimator = remote_bitrate_estimator_.get();
     rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
-    rtcp_receiver_ = new RTCPReceiver(0, &system_clock_, rtp_rtcp_impl_);
+    rtcp_receiver_ = new RTCPReceiver(0, &system_clock_, NULL, rtp_rtcp_impl_);
     test_transport_->SetRTCPReceiver(rtcp_receiver_);
   }
   ~RtcpReceiverTest() {

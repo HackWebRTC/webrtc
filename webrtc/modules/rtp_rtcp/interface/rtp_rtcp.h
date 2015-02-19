@@ -61,6 +61,7 @@ class RtpRtcp : public Module {
     RtcpIntraFrameObserver* intra_frame_callback;
     RtcpBandwidthObserver* bandwidth_callback;
     RtcpRttStats* rtt_stats;
+    RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer;
     RtpAudioFeedback* audio_messages;
     RemoteBitrateEstimator* remote_bitrate_estimator;
     PacedSender* paced_sender;
@@ -454,13 +455,6 @@ class RtpRtcp : public Module {
     *   return -1 on failure else 0
     */
     virtual int32_t RemoveRTCPReportBlock(uint32_t SSRC) = 0;
-
-    /*
-    *   Get number of sent and received RTCP packet types.
-    */
-    virtual void GetRtcpPacketTypeCounters(
-        RtcpPacketTypeCounter* packets_sent,
-        RtcpPacketTypeCounter* packets_received) const = 0;
 
     /*
     *   (APP) Application specific data

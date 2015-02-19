@@ -241,6 +241,14 @@ struct RtcpPacketTypeCounter {
   uint32_t unique_nack_requests;  // Number of unique NACKed RTP packets.
 };
 
+class RtcpPacketTypeCounterObserver {
+ public:
+  virtual ~RtcpPacketTypeCounterObserver() {}
+  virtual void RtcpPacketTypesCounterUpdated(
+      uint32_t ssrc,
+      const RtcpPacketTypeCounter& packet_counter) = 0;
+};
+
 // Rate statistics for a stream.
 struct BitrateStatistics {
   BitrateStatistics() : bitrate_bps(0), packet_rate(0), timestamp_ms(0) {}

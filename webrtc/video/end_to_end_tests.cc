@@ -1564,11 +1564,9 @@ TEST_F(EndToEndTest, GetStats) {
   static const int kStartBitrateBps = 3000000;
   class StatsObserver : public test::EndToEndTest, public I420FrameCallback {
    public:
-    StatsObserver()
-        : EndToEndTest(kLongTimeoutMs),
-          receive_stream_(NULL),
+    explicit StatsObserver(const FakeNetworkPipe::Config& config)
+        : EndToEndTest(kLongTimeoutMs, config),
           send_stream_(NULL),
-          expected_receive_ssrc_(),
           expected_send_ssrcs_(),
           check_stats_event_(EventWrapper::Create()) {}
 
@@ -1602,40 +1600,49 @@ TEST_F(EndToEndTest, GetStats) {
     }
 
     bool CheckReceiveStats() {
-      assert(receive_stream_ != NULL);
-      VideoReceiveStream::Stats stats = receive_stream_->GetStats();
-      EXPECT_EQ(expected_receive_ssrc_, stats.ssrc);
+      for (size_t i = 0; i < receive_streams_.size(); ++i) {
+        VideoReceiveStream::Stats stats = receive_streams_[i]->GetStats();
+        EXPECT_EQ(expected_receive_ssrcs_[i], stats.ssrc);
 
-      // Make sure all fields have been populated.
+        // Make sure all fields have been populated.
+        // TODO(pbos): Use CompoundKey if/when we ever know that all stats are
+        // always filled for all receivers.
+        receive_stats_filled_["IncomingRate"] |=
+            stats.network_frame_rate != 0 || stats.total_bitrate_bps != 0;
 
-      receive_stats_filled_["IncomingRate"] |=
-          stats.network_frame_rate != 0 || stats.total_bitrate_bps != 0;
+        receive_stats_filled_["FrameCallback"] |= stats.decode_frame_rate != 0;
 
-      receive_stats_filled_["FrameCallback"] |= stats.decode_frame_rate != 0;
+        receive_stats_filled_["FrameRendered"] |= stats.render_frame_rate != 0;
 
-      receive_stats_filled_["FrameRendered"] |= stats.render_frame_rate != 0;
+        receive_stats_filled_["StatisticsUpdated"] |=
+            stats.rtcp_stats.cumulative_lost != 0 ||
+            stats.rtcp_stats.extended_max_sequence_number != 0 ||
+            stats.rtcp_stats.fraction_lost != 0 || stats.rtcp_stats.jitter != 0;
 
-      receive_stats_filled_["StatisticsUpdated"] |=
-          stats.rtcp_stats.cumulative_lost != 0 ||
-          stats.rtcp_stats.extended_max_sequence_number != 0 ||
-          stats.rtcp_stats.fraction_lost != 0 || stats.rtcp_stats.jitter != 0;
+        receive_stats_filled_["DataCountersUpdated"] |=
+            stats.rtp_stats.transmitted.payload_bytes != 0 ||
+            stats.rtp_stats.fec.packets != 0 ||
+            stats.rtp_stats.transmitted.header_bytes != 0 ||
+            stats.rtp_stats.transmitted.packets != 0 ||
+            stats.rtp_stats.transmitted.padding_bytes != 0 ||
+            stats.rtp_stats.retransmitted.packets != 0;
 
-      receive_stats_filled_["DataCountersUpdated"] |=
-          stats.rtp_stats.transmitted.payload_bytes != 0 ||
-          stats.rtp_stats.fec.packets != 0 ||
-          stats.rtp_stats.transmitted.header_bytes != 0 ||
-          stats.rtp_stats.transmitted.packets != 0 ||
-          stats.rtp_stats.transmitted.padding_bytes != 0 ||
-          stats.rtp_stats.retransmitted.packets != 0;
+        receive_stats_filled_["CodecStats"] |=
+            stats.avg_delay_ms != 0 || stats.discarded_packets != 0;
 
-      receive_stats_filled_["CodecStats"] |=
-          stats.avg_delay_ms != 0 || stats.discarded_packets != 0;
+        receive_stats_filled_["FrameCounts"] |=
+            stats.frame_counts.key_frames != 0 ||
+            stats.frame_counts.delta_frames != 0;
 
-      receive_stats_filled_["FrameCounts"] |=
-          stats.frame_counts.key_frames != 0 ||
-          stats.frame_counts.delta_frames != 0;
+        receive_stats_filled_["CName"] |= stats.c_name != "";
 
-      receive_stats_filled_["CName"] |= stats.c_name != "";
+        receive_stats_filled_["RtcpPacketTypeCount"] |=
+            stats.rtcp_packet_type_counts.fir_packets != 0 ||
+            stats.rtcp_packet_type_counts.nack_packets != 0 ||
+            stats.rtcp_packet_type_counts.pli_packets != 0 ||
+            stats.rtcp_packet_type_counts.nack_requests != 0 ||
+            stats.rtcp_packet_type_counts.unique_nack_requests != 0;
+      }
 
       return AllStatsFilled(receive_stats_filled_);
     }
@@ -1654,7 +1661,7 @@ TEST_F(EndToEndTest, GetStats) {
         EXPECT_TRUE(expected_send_ssrcs_.find(it->first) !=
                     expected_send_ssrcs_.end());
 
-        send_stats_filled_[CompoundKey("IncomingRate", it->first)] |=
+        send_stats_filled_[CompoundKey("CapturedFrameRate", it->first)] |=
             stats.input_frame_rate != 0;
 
         const SsrcStats& stream_stats = it->second;
@@ -1683,6 +1690,15 @@ TEST_F(EndToEndTest, GetStats) {
 
         send_stats_filled_[CompoundKey("Delay", it->first)] |=
             stream_stats.avg_delay_ms != 0 || stream_stats.max_delay_ms != 0;
+
+        // TODO(pbos): Use CompoundKey when the test makes sure that all SSRCs
+        // report dropped packets.
+        send_stats_filled_["RtcpPacketTypeCount"] |=
+            stream_stats.rtcp_packet_type_counts.fir_packets != 0 ||
+            stream_stats.rtcp_packet_type_counts.nack_packets != 0 ||
+            stream_stats.rtcp_packet_type_counts.pli_packets != 0 ||
+            stream_stats.rtcp_packet_type_counts.nack_requests != 0 ||
+            stream_stats.rtcp_packet_type_counts.unique_nack_requests != 0;
       }
 
       return AllStatsFilled(send_stats_filled_);
@@ -1715,14 +1731,14 @@ TEST_F(EndToEndTest, GetStats) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->pre_encode_callback = this;  // Used to inject delay.
-      send_config->rtp.c_name = "SomeCName";
+      expected_cname_ = send_config->rtp.c_name = "SomeCName";
 
-      expected_receive_ssrc_ = (*receive_configs)[0].rtp.local_ssrc;
       const std::vector<uint32_t>& ssrcs = send_config->rtp.ssrcs;
-      for (size_t i = 0; i < ssrcs.size(); ++i)
+      for (size_t i = 0; i < ssrcs.size(); ++i) {
         expected_send_ssrcs_.insert(ssrcs[i]);
-
-      expected_cname_ = send_config->rtp.c_name;
+        expected_receive_ssrcs_.push_back(
+            (*receive_configs)[i].rtp.remote_ssrc);
+      }
     }
 
     virtual size_t GetNumStreams() const override { return kNumSsrcs; }
@@ -1731,7 +1747,7 @@ TEST_F(EndToEndTest, GetStats) {
         VideoSendStream* send_stream,
         const std::vector<VideoReceiveStream*>& receive_streams) override {
       send_stream_ = send_stream;
-      receive_stream_ = receive_streams[0];
+      receive_streams_ = receive_streams;
     }
 
     virtual void PerformTest() override {
@@ -1776,19 +1792,23 @@ TEST_F(EndToEndTest, GetStats) {
       }
     }
 
-    VideoReceiveStream* receive_stream_;
+    std::vector<VideoReceiveStream*> receive_streams_;
     std::map<std::string, bool> receive_stats_filled_;
 
     VideoSendStream* send_stream_;
     std::map<std::string, bool> send_stats_filled_;
 
-    uint32_t expected_receive_ssrc_;
+    std::vector<uint32_t> expected_receive_ssrcs_;
     std::set<uint32_t> expected_send_ssrcs_;
     std::string expected_cname_;
 
     scoped_ptr<EventWrapper> check_stats_event_;
-  } test;
+  };
 
+  FakeNetworkPipe::Config network_config;
+  network_config.loss_percent = 5;
+
+  StatsObserver test(network_config);
   RunBaseTest(&test);
 }
 

@@ -27,6 +27,7 @@ namespace webrtc {
 class CriticalSectionWrapper;
 
 class SendStatisticsProxy : public RtcpStatisticsCallback,
+                            public RtcpPacketTypeCounterObserver,
                             public StreamDataCountersCallback,
                             public BitrateStatisticsObserver,
                             public FrameCountObserver,
@@ -49,6 +50,10 @@ class SendStatisticsProxy : public RtcpStatisticsCallback,
   virtual void StatisticsUpdated(const RtcpStatistics& statistics,
                                  uint32_t ssrc) OVERRIDE;
   virtual void CNameChanged(const char *cname, uint32_t ssrc) OVERRIDE;
+  // From RtcpPacketTypeCounterObserver
+  virtual void RtcpPacketTypesCounterUpdated(
+      uint32_t ssrc,
+      const RtcpPacketTypeCounter& packet_counter) OVERRIDE;
   // From StreamDataCountersCallback.
   virtual void DataCountersUpdated(const StreamDataCounters& counters,
                                    uint32_t ssrc) OVERRIDE;

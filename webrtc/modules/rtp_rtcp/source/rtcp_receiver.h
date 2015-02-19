@@ -29,7 +29,10 @@ class ModuleRtpRtcpImpl;
 class RTCPReceiver : public TMMBRHelp
 {
 public:
- RTCPReceiver(int32_t id, Clock* clock, ModuleRtpRtcpImpl* owner);
+ RTCPReceiver(int32_t id,
+              Clock* clock,
+              RtcpPacketTypeCounterObserver* packet_type_counter_observer,
+              ModuleRtpRtcpImpl* owner);
     virtual ~RTCPReceiver();
 
     RTCPMethod Status() const;
@@ -82,8 +85,6 @@ public:
     // get statistics
     int32_t StatisticsReceived(
         std::vector<RTCPReportBlock>* receiveBlocks) const;
-
-    void GetPacketTypeCounter(RtcpPacketTypeCounter* packet_counter) const;
 
     // Returns true if we haven't received an RTCP RR for several RTCP
     // intervals, but only triggers true once.
@@ -276,6 +277,7 @@ protected:
 
   RtcpStatisticsCallback* stats_callback_ GUARDED_BY(_criticalSectionFeedbacks);
 
+  RtcpPacketTypeCounterObserver* const packet_type_counter_observer_;
   RtcpPacketTypeCounter packet_type_counter_;
 
   RTCPUtility::NackStats nack_stats_;

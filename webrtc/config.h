@@ -38,6 +38,7 @@ struct SsrcStats {
   int avg_delay_ms;
   int max_delay_ms;
   StreamDataCounters rtp_stats;
+  RtcpPacketTypeCounter rtcp_packet_type_counts;
   RtcpStatistics rtcp_stats;
 };
 

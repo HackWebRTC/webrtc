@@ -304,8 +304,8 @@ class RtcpSenderTest : public ::testing::Test {
     rtp_receiver_.reset(RtpReceiver::CreateVideoReceiver(
         0, &clock_, test_transport_, NULL, rtp_payload_registry_.get()));
     rtcp_sender_ =
-        new RTCPSender(0, false, &clock_, receive_statistics_.get());
-    rtcp_receiver_ = new RTCPReceiver(0, &clock_, rtp_rtcp_impl_);
+        new RTCPSender(0, false, &clock_, receive_statistics_.get(), NULL);
+    rtcp_receiver_ = new RTCPReceiver(0, &clock_, NULL, rtp_rtcp_impl_);
     test_transport_->SetRTCPReceiver(rtcp_receiver_);
     // Initialize
     EXPECT_EQ(0, rtcp_sender_->RegisterSendTransport(test_transport_));

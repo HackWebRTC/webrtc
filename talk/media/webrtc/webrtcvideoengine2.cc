@@ -1762,6 +1762,9 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
       info.send_frame_width = stream_stats.sent_width;
     if (stream_stats.sent_height > info.send_frame_height)
       info.send_frame_height = stream_stats.sent_height;
+    info.firs_rcvd += stream_stats.rtcp_packet_type_counts.fir_packets;
+    info.nacks_rcvd += stream_stats.rtcp_packet_type_counts.nack_packets;
+    info.plis_rcvd += stream_stats.rtcp_packet_type_counts.pli_packets;
   }
 
   if (!stats.substreams.empty()) {
@@ -2027,10 +2030,16 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo() {
   info.framerate_decoded = stats.decode_frame_rate;
   info.framerate_output = stats.render_frame_rate;
 
-  rtc::CritScope frame_cs(&renderer_lock_);
-  info.frame_width = last_width_;
-  info.frame_height = last_height_;
-  info.capture_start_ntp_time_ms = estimated_remote_start_ntp_time_ms_;
+  {
+    rtc::CritScope frame_cs(&renderer_lock_);
+    info.frame_width = last_width_;
+    info.frame_height = last_height_;
+    info.capture_start_ntp_time_ms = estimated_remote_start_ntp_time_ms_;
+  }
+
+  info.firs_sent = stats.rtcp_packet_type_counts.fir_packets;
+  info.plis_sent = stats.rtcp_packet_type_counts.pli_packets;
+  info.nacks_sent = stats.rtcp_packet_type_counts.nack_packets;
 
   // TODO(pbos): Support or remove the following stats.
   info.packets_concealed = -1;

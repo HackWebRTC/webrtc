@@ -219,7 +219,7 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   }
 
   stats_proxy_.reset(
-      new ReceiveStatisticsProxy(config_.rtp.local_ssrc, clock_));
+      new ReceiveStatisticsProxy(config_.rtp.remote_ssrc, clock_));
 
   if (rtp_rtcp_->RegisterReceiveChannelRtcpStatisticsCallback(
           channel_, stats_proxy_.get()) != 0) {
@@ -227,6 +227,11 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   }
 
   if (rtp_rtcp_->RegisterReceiveChannelRtpStatisticsCallback(
+          channel_, stats_proxy_.get()) != 0) {
+    abort();
+  }
+
+  if (rtp_rtcp_->RegisterRtcpPacketTypeCounterObserver(
           channel_, stats_proxy_.get()) != 0) {
     abort();
   }
@@ -301,6 +306,7 @@ VideoReceiveStream::~VideoReceiveStream() {
                                                            stats_proxy_.get());
   rtp_rtcp_->DeregisterReceiveChannelRtcpStatisticsCallback(channel_,
                                                             stats_proxy_.get());
+  rtp_rtcp_->RegisterRtcpPacketTypeCounterObserver(channel_, NULL);
   codec_->Release();
   network_->Release();
   render_->Release();

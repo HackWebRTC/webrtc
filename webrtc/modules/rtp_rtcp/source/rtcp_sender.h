@@ -70,7 +70,8 @@ public:
  RTCPSender(int32_t id,
             bool audio,
             Clock* clock,
-            ReceiveStatistics* receive_statistics);
+            ReceiveStatistics* receive_statistics,
+            RtcpPacketTypeCounterObserver* packet_type_counter_observer);
     virtual ~RTCPSender();
 
     int32_t RegisterSendTransport(Transport* outgoingTransport);
@@ -164,8 +165,6 @@ public:
     void SetCsrcs(const std::vector<uint32_t>& csrcs);
 
     void SetTargetBitrate(unsigned int target_bitrate);
-
-    void GetPacketTypeCounter(RtcpPacketTypeCounter* packet_counter) const;
 
 private:
  int32_t SendToNetwork(const uint8_t* dataBuffer, size_t length);
@@ -341,6 +340,7 @@ private:
     bool _xrSendVoIPMetric GUARDED_BY(_criticalSectionRTCPSender);
     RTCPVoIPMetric _xrVoIPMetric GUARDED_BY(_criticalSectionRTCPSender);
 
+    RtcpPacketTypeCounterObserver* const packet_type_counter_observer_;
     RtcpPacketTypeCounter packet_type_counter_
         GUARDED_BY(_criticalSectionRTCPSender);
 

@@ -1215,6 +1215,8 @@ class FakeWebRtcVideoEngine
                     (int, webrtc::FrameCountObserver*));
   WEBRTC_STUB(DeregisterSendFrameCountObserver,
                     (int, webrtc::FrameCountObserver*));
+  WEBRTC_STUB(RegisterRtcpPacketTypeCounterObserver,
+                    (int, webrtc::RtcpPacketTypeCounterObserver*));
 
   WEBRTC_STUB(StartRTPDump, (const int, const char*, webrtc::RTPDirections));
   WEBRTC_STUB(StopRTPDump, (const int, webrtc::RTPDirections));

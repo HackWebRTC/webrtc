@@ -33,6 +33,7 @@ class ViEDecoderObserver;
 class ReceiveStatisticsProxy : public ViEDecoderObserver,
                                public VCMReceiveStatisticsCallback,
                                public RtcpStatisticsCallback,
+                               public RtcpPacketTypeCounterObserver,
                                public StreamDataCountersCallback {
  public:
   ReceiveStatisticsProxy(uint32_t ssrc, Clock* clock);
@@ -69,6 +70,10 @@ class ReceiveStatisticsProxy : public ViEDecoderObserver,
                                  uint32_t ssrc) OVERRIDE;
   virtual void CNameChanged(const char* cname, uint32_t ssrc) OVERRIDE;
 
+  // Overrides RtcpPacketTypeCounterObserver
+  virtual void RtcpPacketTypesCounterUpdated(
+      uint32_t ssrc,
+      const RtcpPacketTypeCounter& packet_counter) OVERRIDE;
   // Overrides StreamDataCountersCallback.
   virtual void DataCountersUpdated(const webrtc::StreamDataCounters& counters,
                                    uint32_t ssrc) OVERRIDE;

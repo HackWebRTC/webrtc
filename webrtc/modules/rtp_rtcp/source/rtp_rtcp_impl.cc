@@ -36,6 +36,7 @@ RtpRtcp::Configuration::Configuration()
       intra_frame_callback(NULL),
       bandwidth_callback(NULL),
       rtt_stats(NULL),
+      rtcp_packet_type_counter_observer(NULL),
       audio_messages(NullObjectRtpAudioFeedback()),
       remote_bitrate_estimator(NULL),
       paced_sender(NULL),
@@ -70,8 +71,12 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       rtcp_sender_(configuration.id,
                    configuration.audio,
                    configuration.clock,
-                   configuration.receive_statistics),
-      rtcp_receiver_(configuration.id, configuration.clock, this),
+                   configuration.receive_statistics,
+                   configuration.rtcp_packet_type_counter_observer),
+      rtcp_receiver_(configuration.id,
+                     configuration.clock,
+                     configuration.rtcp_packet_type_counter_observer,
+                     this),
       clock_(configuration.clock),
       id_(configuration.id),
       audio_(configuration.audio),
@@ -722,13 +727,6 @@ int32_t ModuleRtpRtcpImpl::RemoveRTCPReportBlock(
   return rtcp_sender_.RemoveExternalReportBlock(ssrc);
 }
 
-void ModuleRtpRtcpImpl::GetRtcpPacketTypeCounters(
-    RtcpPacketTypeCounter* packets_sent,
-    RtcpPacketTypeCounter* packets_received) const {
-  rtcp_sender_.GetPacketTypeCounter(packets_sent);
-  rtcp_receiver_.GetPacketTypeCounter(packets_received);
-}
-
 // (REMB) Receiver Estimated Max Bitrate.
 bool ModuleRtpRtcpImpl::REMB() const {
   return rtcp_sender_.REMB();
@@ -860,8 +858,7 @@ void ModuleRtpRtcpImpl::RegisterRtcpStatisticsCallback(
   rtcp_receiver_.RegisterRtcpStatisticsCallback(callback);
 }
 
-RtcpStatisticsCallback*
-ModuleRtpRtcpImpl::GetRtcpStatisticsCallback() {
+RtcpStatisticsCallback* ModuleRtpRtcpImpl::GetRtcpStatisticsCallback() {
   return rtcp_receiver_.GetRtcpStatisticsCallback();
 }
 

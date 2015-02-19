@@ -86,6 +86,8 @@ class FakeVideoReceiveStream : public webrtc::VideoReceiveStream {
 
   void InjectFrame(const webrtc::I420VideoFrame& frame, int time_to_render_ms);
 
+  void SetStats(const webrtc::VideoReceiveStream::Stats& stats);
+
  private:
   virtual webrtc::VideoReceiveStream::Stats GetStats() const OVERRIDE;
 
@@ -94,6 +96,7 @@ class FakeVideoReceiveStream : public webrtc::VideoReceiveStream {
 
   webrtc::VideoReceiveStream::Config config_;
   bool receiving_;
+  webrtc::VideoReceiveStream::Stats stats_;
 };
 
 class FakeCall : public webrtc::Call {

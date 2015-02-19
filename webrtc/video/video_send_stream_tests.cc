@@ -324,8 +324,8 @@ TEST_F(VideoSendStreamTest, SupportsFec) {
         // Receive statistics reporting having lost 50% of the packets.
         FakeReceiveStatistics lossy_receive_stats(
             kSendSsrcs[0], header.sequenceNumber, send_count_ / 2, 127);
-        RTCPSender rtcp_sender(
-            0, false, Clock::GetRealTimeClock(), &lossy_receive_stats);
+        RTCPSender rtcp_sender(0, false, Clock::GetRealTimeClock(),
+                               &lossy_receive_stats, nullptr);
         EXPECT_EQ(0, rtcp_sender.RegisterSendTransport(&transport_adapter_));
 
         rtcp_sender.SetRTCPStatus(kRtcpNonCompound);
@@ -400,7 +400,7 @@ void VideoSendStreamTest::TestNackRetransmission(
         nacked_sequence_number_ = nack_sequence_number;
         NullReceiveStatistics null_stats;
         RTCPSender rtcp_sender(
-            0, false, Clock::GetRealTimeClock(), &null_stats);
+            0, false, Clock::GetRealTimeClock(), &null_stats, nullptr);
         EXPECT_EQ(0, rtcp_sender.RegisterSendTransport(&transport_adapter_));
 
         rtcp_sender.SetRTCPStatus(kRtcpNonCompound);
@@ -582,8 +582,8 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
         // Receive statistics reporting having lost 50% of the packets.
         FakeReceiveStatistics lossy_receive_stats(
             kSendSsrcs[0], header.sequenceNumber, packet_count_ / 2, 127);
-        RTCPSender rtcp_sender(
-            0, false, Clock::GetRealTimeClock(), &lossy_receive_stats);
+        RTCPSender rtcp_sender(0, false, Clock::GetRealTimeClock(),
+                               &lossy_receive_stats, nullptr);
         EXPECT_EQ(0, rtcp_sender.RegisterSendTransport(&transport_adapter_));
 
         rtcp_sender.SetRTCPStatus(kRtcpNonCompound);
@@ -812,7 +812,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
         EXCLUSIVE_LOCKS_REQUIRED(crit_) {
       FakeReceiveStatistics receive_stats(
           kSendSsrcs[0], last_sequence_number_, rtp_count_, 0);
-      RTCPSender rtcp_sender(0, false, clock_, &receive_stats);
+      RTCPSender rtcp_sender(0, false, clock_, &receive_stats, nullptr);
       EXPECT_EQ(0, rtcp_sender.RegisterSendTransport(&transport_adapter_));
 
       rtcp_sender.SetRTCPStatus(kRtcpNonCompound);
@@ -872,8 +872,8 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
         observation_complete_->Set();
       // Receive statistics reporting having lost 50% of the packets.
       FakeReceiveStatistics receive_stats(kSendSsrcs[0], 1, 1, 0);
-      RTCPSender rtcp_sender(
-          0, false, Clock::GetRealTimeClock(), &receive_stats);
+      RTCPSender rtcp_sender(0, false, Clock::GetRealTimeClock(),
+                             &receive_stats, nullptr);
       EXPECT_EQ(0, rtcp_sender.RegisterSendTransport(&transport_adapter_));
 
       rtcp_sender.SetRTCPStatus(kRtcpNonCompound);

@@ -105,6 +105,17 @@ void SendStatisticsProxy::OnSendEncodedImage(
   update_times_[ssrc].resolution_update_ms = clock_->TimeInMilliseconds();
 }
 
+void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(
+    uint32_t ssrc,
+    const RtcpPacketTypeCounter& packet_counter) {
+  CriticalSectionScoped lock(crit_.get());
+  SsrcStats* stats = GetStatsEntry(ssrc);
+  if (stats == NULL)
+    return;
+
+  stats->rtcp_packet_type_counts = packet_counter;
+}
+
 void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
                                             uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
