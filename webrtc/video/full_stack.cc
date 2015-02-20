@@ -592,7 +592,7 @@ TEST_F(FullStackTest, ForemanCifWithoutPacketLoss) {
   RunTest(foreman_cif);
 }
 
-TEST_F(FullStackTest, ForemanCifPlr5) {
+TEST_F(FullStackTest, DISABLED_ForemanCifPlr5) {
   FullStackTestParams foreman_cif = {"foreman_cif_delay_50_0_plr_5",
                                      {"foreman_cif", 352, 288, 30},
                                      false,
