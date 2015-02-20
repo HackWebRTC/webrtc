@@ -24,6 +24,7 @@
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/frame_callback.h"
+#include "webrtc/system_wrappers/interface/scoped_refptr.h"
 #include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/video_engine/vie_frame_provider_base.h"
 
@@ -69,7 +70,8 @@ class ViEEncoder
   // only once.
   // Ideally this would be done in Init, but the dependencies between ViEEncoder
   // and ViEChannel makes it really hard to do in a good way.
-  void StartThreadsAndSetSendPayloadRouter(PayloadRouter* send_payload_router);
+  void StartThreadsAndSetSendPayloadRouter(
+      scoped_refptr<PayloadRouter> send_payload_router);
 
   // This function must be called before the corresponding ViEChannel is
   // deleted.
@@ -215,7 +217,7 @@ class ViEEncoder
   VideoCodingModule& vcm_;
   VideoProcessingModule& vpm_;
   rtc::scoped_ptr<RtpRtcp> default_rtp_rtcp_;
-  PayloadRouter* send_payload_router_;
+  scoped_refptr<PayloadRouter> send_payload_router_;
   rtc::scoped_ptr<CriticalSectionWrapper> callback_cs_;
   rtc::scoped_ptr<CriticalSectionWrapper> data_cs_;
   rtc::scoped_ptr<BitrateObserver> bitrate_observer_;

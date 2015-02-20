@@ -17,6 +17,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
+#include "webrtc/system_wrappers/interface/atomic32.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
@@ -68,6 +69,9 @@ class PayloadRouter {
   // and RTP headers.
   size_t MaxPayloadLength() const;
 
+  void AddRef() { ++ref_count_; }
+  void Release() { if (--ref_count_ == 0) { delete this; } }
+
  private:
   // TODO(mflodman): When the new video API has launched, remove crit_ and
   // assume rtp_modules_ will never change during a call.
@@ -76,6 +80,8 @@ class PayloadRouter {
   // Active sending RTP modules, in layer order.
   std::vector<RtpRtcp*> rtp_modules_ GUARDED_BY(crit_.get());
   bool active_ GUARDED_BY(crit_.get());
+
+  Atomic32 ref_count_;
 
   DISALLOW_COPY_AND_ASSIGN(PayloadRouter);
 };

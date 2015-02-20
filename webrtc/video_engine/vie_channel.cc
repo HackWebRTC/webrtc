@@ -1509,8 +1509,8 @@ RtpRtcp* ViEChannel::rtp_rtcp() {
   return rtp_rtcp_.get();
 }
 
-PayloadRouter* ViEChannel::send_payload_router() {
-  return send_payload_router_.get();
+scoped_refptr<PayloadRouter> ViEChannel::send_payload_router() {
+  return send_payload_router_;
 }
 
 CallStatsObserver* ViEChannel::GetStatsObserver() {

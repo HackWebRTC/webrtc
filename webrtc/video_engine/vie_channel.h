@@ -19,6 +19,7 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/scoped_refptr.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/include/vie_network.h"
@@ -303,7 +304,7 @@ class ViEChannel
 
   // Gets the modules used by the channel.
   RtpRtcp* rtp_rtcp();
-  PayloadRouter* send_payload_router();
+  scoped_refptr<PayloadRouter> send_payload_router();
 
   CallStatsObserver* GetStatsObserver();
 
@@ -495,7 +496,7 @@ class ViEChannel
   scoped_ptr<RtpRtcp> rtp_rtcp_;
   std::list<RtpRtcp*> simulcast_rtp_rtcp_;
   std::list<RtpRtcp*> removed_rtp_rtcp_;
-  scoped_ptr<PayloadRouter> send_payload_router_;
+  scoped_refptr<PayloadRouter> send_payload_router_;
 
   VideoCodingModule* const vcm_;
   ViEReceiver vie_receiver_;

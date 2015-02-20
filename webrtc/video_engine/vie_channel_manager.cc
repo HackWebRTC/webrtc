@@ -20,6 +20,7 @@
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/video_engine/call_stats.h"
 #include "webrtc/video_engine/encoder_state_feedback.h"
+#include "webrtc/video_engine/payload_router.h"
 #include "webrtc/video_engine/vie_channel.h"
 #include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/video_engine/vie_encoder.h"

@@ -229,7 +229,7 @@ bool ViEEncoder::Init() {
 }
 
 void ViEEncoder::StartThreadsAndSetSendPayloadRouter(
-    PayloadRouter* send_payload_router) {
+    scoped_refptr<PayloadRouter> send_payload_router) {
   DCHECK(send_payload_router_ == NULL);
   send_payload_router_ = send_payload_router;
 
@@ -245,7 +245,6 @@ void ViEEncoder::StopThreadsAndRemovePayloadRouter() {
   module_process_thread_.DeRegisterModule(&vcm_);
   module_process_thread_.DeRegisterModule(&vpm_);
   module_process_thread_.DeRegisterModule(default_rtp_rtcp_.get());
-  send_payload_router_ = nullptr;
 }
 
 ViEEncoder::~ViEEncoder() {
