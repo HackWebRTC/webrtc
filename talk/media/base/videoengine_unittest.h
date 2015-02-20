@@ -968,7 +968,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_FRAME_WAIT(1, DefaultCodec().width, DefaultCodec().height, kTimeout);
 
     // Add an additional capturer, and hook up a renderer to receive it.
-    cricket::FakeVideoRenderer renderer1;
+    cricket::FakeVideoRenderer renderer2;
     rtc::scoped_ptr<cricket::FakeVideoCapturer> capturer(
         CreateFakeVideoCapturer());
     capturer->SetScreencast(true);
@@ -983,18 +983,30 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(channel_->SetCapturer(5678, capturer.get()));
     EXPECT_TRUE(channel_->AddRecvStream(
         cricket::StreamParams::CreateLegacy(5678)));
-    EXPECT_TRUE(channel_->SetRenderer(5678, &renderer1));
+    EXPECT_TRUE(channel_->SetRenderer(5678, &renderer2));
     EXPECT_TRUE(capturer->CaptureCustomFrame(
         kTestWidth, kTestHeight, cricket::FOURCC_I420));
     EXPECT_FRAME_ON_RENDERER_WAIT(
-        renderer1, 1, kTestWidth, kTestHeight, kTimeout);
+        renderer2, 1, kTestWidth, kTestHeight, kTimeout);
 
-    // Get stats, and make sure they are correct for two senders.
+    // Get stats, and make sure they are correct for two senders. We wait until
+    // the number of expected packets have been sent to avoid races where we
+    // check stats before it has been updated.
     cricket::VideoMediaInfo info;
-    EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
-    ASSERT_EQ(2U, info.senders.size());
+    for (uint32 i = 0; i < kTimeout; ++i) {
+      rtc::Thread::Current()->ProcessMessages(1);
+      EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+      ASSERT_EQ(2U, info.senders.size());
+      if (info.senders[0].packets_sent + info.senders[1].packets_sent ==
+          NumRtpPackets()) {
+        // Stats have been updated for both sent frames, expectations can be
+        // checked now.
+        break;
+      }
+    }
     EXPECT_EQ(NumRtpPackets(),
-        info.senders[0].packets_sent + info.senders[1].packets_sent);
+              info.senders[0].packets_sent + info.senders[1].packets_sent)
+        << "Timed out while waiting for packet counts for all sent packets.";
     EXPECT_EQ(1U, info.senders[0].ssrcs().size());
     EXPECT_EQ(1234U, info.senders[0].ssrcs()[0]);
     EXPECT_EQ(DefaultCodec().width, info.senders[0].send_frame_width);
