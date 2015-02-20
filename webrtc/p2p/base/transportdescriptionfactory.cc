@@ -19,7 +19,7 @@
 
 namespace cricket {
 
-static TransportProtocol kDefaultProtocol = ICEPROTO_GOOGLE;
+static TransportProtocol kDefaultProtocol = ICEPROTO_RFC5245;
 
 TransportDescriptionFactory::TransportDescriptionFactory()
     : protocol_(kDefaultProtocol),

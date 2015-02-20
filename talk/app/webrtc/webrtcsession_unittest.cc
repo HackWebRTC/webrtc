@@ -1131,7 +1131,7 @@ class WebRtcSessionTest : public testing::Test {
 
     loopback_network_manager.ApplyFirewallRules(fss_.get());
     LOG(LS_INFO) << "Firewall Rules applied again";
-    EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionFailed,
+    EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
                    observer_.ice_connection_state_,
                    kIceCandidatesTimeout + port_timeout);
   }
@@ -2857,9 +2857,9 @@ TEST_F(WebRtcSessionTest, TestInitiatorGIceInAnswer) {
               &sdp);
   SessionDescriptionInterface* answer_with_gice =
       CreateSessionDescription(JsepSessionDescription::kAnswer, sdp, NULL);
-  SetRemoteDescriptionWithoutError(answer_with_gice);
-  VerifyTransportType("audio", cricket::ICEPROTO_GOOGLE);
-  VerifyTransportType("video", cricket::ICEPROTO_GOOGLE);
+  // Default offer is ICEPROTO_RFC5245, so we expect responder with
+  // only gice to fail.
+  SetRemoteDescriptionAnswerExpectError(kPushDownTDFailed, answer_with_gice);
 }
 
 // This test verifies the ice protocol type at initiator of the call
@@ -2877,28 +2877,6 @@ TEST_F(WebRtcSessionTest, TestInitiatorIceInAnswer) {
 }
 
 // This test verifies the ice protocol type at receiver side of the call if
-// receiver decides to use google-ice.
-TEST_F(WebRtcSessionTest, TestReceiverGIceInOffer) {
-  Init();
-  mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer();
-  SetRemoteDescriptionWithoutError(offer);
-  rtc::scoped_ptr<SessionDescriptionInterface> answer(
-      CreateAnswer(NULL));
-  std::string sdp;
-  EXPECT_TRUE(answer->ToString(&sdp));
-  // Adding ice-options to the session level.
-  InjectAfter("t=0 0\r\n",
-              "a=ice-options:google-ice\r\n",
-              &sdp);
-  SessionDescriptionInterface* answer_with_gice =
-      CreateSessionDescription(JsepSessionDescription::kAnswer, sdp, NULL);
-  SetLocalDescriptionWithoutError(answer_with_gice);
-  VerifyTransportType("audio", cricket::ICEPROTO_GOOGLE);
-  VerifyTransportType("video", cricket::ICEPROTO_GOOGLE);
-}
-
-// This test verifies the ice protocol type at receiver side of the call if
 // receiver decides to use ice RFC 5245.
 TEST_F(WebRtcSessionTest, TestReceiverIceInOffer) {
   Init();
@@ -2909,39 +2887,6 @@ TEST_F(WebRtcSessionTest, TestReceiverIceInOffer) {
   SetLocalDescriptionWithoutError(answer);
   VerifyTransportType("audio", cricket::ICEPROTO_RFC5245);
   VerifyTransportType("video", cricket::ICEPROTO_RFC5245);
-}
-
-// This test verifies the session state when ICE RFC5245 in offer and
-// ICE google-ice in answer.
-TEST_F(WebRtcSessionTest, TestIceOfferGIceOnlyAnswer) {
-  Init();
-  mediastream_signaling_.SendAudioVideoStream1();
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
-
-  std::string offer_str;
-  offer->ToString(&offer_str);
-  // Disable google-ice
-  const std::string gice_option = "google-ice";
-  const std::string xgoogle_xice = "xgoogle-xice";
-  rtc::replace_substrs(gice_option.c_str(), gice_option.length(),
-                             xgoogle_xice.c_str(), xgoogle_xice.length(),
-                             &offer_str);
-  JsepSessionDescription *ice_only_offer =
-      new JsepSessionDescription(JsepSessionDescription::kOffer);
-  EXPECT_TRUE((ice_only_offer)->Initialize(offer_str, NULL));
-  SetLocalDescriptionWithoutError(ice_only_offer);
-  std::string original_offer_sdp;
-  EXPECT_TRUE(offer->ToString(&original_offer_sdp));
-  SessionDescriptionInterface* pranswer_with_gice =
-      CreateSessionDescription(JsepSessionDescription::kPrAnswer,
-                               original_offer_sdp, NULL);
-  SetRemoteDescriptionPranswerExpectError(kPushDownTDFailed,
-                                          pranswer_with_gice);
-  SessionDescriptionInterface* answer_with_gice =
-      CreateSessionDescription(JsepSessionDescription::kAnswer,
-                               original_offer_sdp, NULL);
-  SetRemoteDescriptionAnswerExpectError(kPushDownTDFailed,
-                                        answer_with_gice);
 }
 
 // Verifing local offer and remote answer have matching m-lines as per RFC 3264.
