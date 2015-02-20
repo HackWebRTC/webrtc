@@ -368,6 +368,7 @@
                 'examples/android/src/org/appspot/apprtc/CallActivity.java',
                 'examples/android/src/org/appspot/apprtc/CallFragment.java',
                 'examples/android/src/org/appspot/apprtc/ConnectActivity.java',
+                'examples/android/src/org/appspot/apprtc/CpuMonitor.java',
                 'examples/android/src/org/appspot/apprtc/PeerConnectionClient.java',
                 'examples/android/src/org/appspot/apprtc/RoomParametersFetcher.java',
                 'examples/android/src/org/appspot/apprtc/SettingsActivity.java',
