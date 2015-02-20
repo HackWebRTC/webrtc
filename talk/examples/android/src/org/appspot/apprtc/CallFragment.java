@@ -59,6 +59,7 @@ public class CallFragment extends Fragment {
   private boolean displayHud;
   private volatile boolean isRunning;
   private TextView hudView;
+  private final CpuMonitor cpuMonitor = new CpuMonitor();
 
   /**
    * Call control interface for container activity.
@@ -223,6 +224,15 @@ public class CallFragment extends Fragment {
       stat.append("Actual BR: ")
           .append(actualBitrate)
           .append("\n");
+    }
+
+    if (cpuMonitor.sampleCpuUtilization()) {
+      stat.append("CPU%: ")
+          .append(cpuMonitor.getCpuCurrent())
+          .append("/")
+          .append(cpuMonitor.getCpuAvg3())
+          .append("/")
+          .append(cpuMonitor.getCpuAvgAll());
     }
     encoderStatView.setText(stat.toString());
     hudView.setText(bweBuilder.toString() + hudView.getText());
