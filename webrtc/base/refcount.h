@@ -66,11 +66,21 @@ class RefCountedObject : public T {
     return count;
   }
 
+  // Return whether the reference count is one. If the reference count is used
+  // in the conventional way, a reference count of 1 implies that the current
+  // thread owns the reference and no other thread shares it. This call
+  // performs the test for a reference count of one, and performs the memory
+  // barrier needed for the owning thread to act on the object, knowing that it
+  // has exclusive access to the object.
+  virtual bool HasOneRef() const {
+    return rtc::AtomicOps::Load(&ref_count_) == 1;
+  }
+
  protected:
   virtual ~RefCountedObject() {
   }
 
-  int ref_count_;
+  volatile int ref_count_;
 };
 
 }  // namespace rtc

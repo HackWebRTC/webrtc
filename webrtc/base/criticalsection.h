@@ -152,18 +152,25 @@ class AtomicOps {
  public:
 #if defined(WEBRTC_WIN)
   // Assumes sizeof(int) == sizeof(LONG), which it is on Win32 and Win64.
-  static int Increment(int* i) {
-    return ::InterlockedIncrement(reinterpret_cast<LONG*>(i));
+  static int Increment(volatile int* i) {
+    return ::InterlockedIncrement(reinterpret_cast<volatile LONG*>(i));
   }
-  static int Decrement(int* i) {
-    return ::InterlockedDecrement(reinterpret_cast<LONG*>(i));
+  static int Decrement(volatile int* i) {
+    return ::InterlockedDecrement(reinterpret_cast<volatile LONG*>(i));
+  }
+  static int Load(volatile const int* i) {
+    return *i;
   }
 #else
-  static int Increment(int* i) {
+  static int Increment(volatile int* i) {
     return __sync_add_and_fetch(i, 1);
   }
-  static int Decrement(int* i) {
+  static int Decrement(volatile int* i) {
     return __sync_sub_and_fetch(i, 1);
+  }
+  static int Load(volatile const int* i) {
+    // Adding 0 is a no-op, so const_cast is fine.
+    return __sync_add_and_fetch(const_cast<volatile int*>(i), 0);
   }
 #endif
 };
