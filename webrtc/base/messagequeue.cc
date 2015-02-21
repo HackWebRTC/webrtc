@@ -361,7 +361,6 @@ void MessageQueue::Clear(MessageHandler *phandler, uint32 id,
   }
 
   // Remove from priority queue. Not directly iterable, so use this approach
-
   PriorityQueue::container_type::iterator new_end = dmsgq_.container().begin();
   for (PriorityQueue::container_type::iterator it = new_end;
        it != dmsgq_.container().end(); ++it) {
@@ -372,7 +371,10 @@ void MessageQueue::Clear(MessageHandler *phandler, uint32 id,
         delete it->msg_.pdata;
       }
     } else {
-      *new_end++ = *it;
+      if (new_end != it) {
+        *new_end = *it;
+      }
+      new_end++;
     }
   }
   dmsgq_.container().erase(new_end, dmsgq_.container().end());
