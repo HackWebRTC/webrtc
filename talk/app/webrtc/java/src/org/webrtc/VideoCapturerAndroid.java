@@ -287,6 +287,13 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     List<Camera.Size> supportedSizes =
         parameters.getSupportedPreviewSizes();
     for (Camera.Size size : supportedSizes) {
+      if (size.width % 16 != 0) {
+        // If the width is not a multiple of 16, The frames received from the
+        // camera will have a stride != width when YV12 is used. Since we
+        // currently only support tightly packed images, we simply ignore those
+        // resolutions.
+        continue;
+      }
       formatList.add(new CaptureFormat(size.width, size.height,
           range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
           range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]));
@@ -323,6 +330,9 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
     if (frameObserver == null) {
       throw new RuntimeException("frameObserver not set.");
+    }
+    if (width % 16 != 0) {
+      throw new RuntimeException("widht must be a multiple of 16." );
     }
     this.width = width;
     this.height = height;
@@ -398,7 +408,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       }
       parameters.setPictureSize(width, height);
       parameters.setPreviewSize(width, height);
-      int format = ImageFormat.NV21;
+      int format = ImageFormat.YV12;
       parameters.setPreviewFormat(format);
       camera.setParameters(parameters);
       // Note: setRecordingHint(true) actually decrease frame rate on N5.
