@@ -1732,18 +1732,40 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::Stop() {
 VideoSenderInfo
 WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
   VideoSenderInfo info;
-  rtc::CritScope cs(&lock_);
-  for (size_t i = 0; i < parameters_.config.rtp.ssrcs.size(); ++i) {
-    info.add_ssrc(parameters_.config.rtp.ssrcs[i]);
-  }
+  webrtc::VideoSendStream::Stats stats;
+  {
+    rtc::CritScope cs(&lock_);
+    for (uint32_t ssrc : parameters_.config.rtp.ssrcs)
+      info.add_ssrc(ssrc);
 
-  if (stream_ == NULL) {
-    return info;
-  }
+    for (size_t i = 0; i < parameters_.encoder_config.streams.size(); ++i) {
+      if (i == parameters_.encoder_config.streams.size() - 1) {
+        info.preferred_bitrate +=
+            parameters_.encoder_config.streams[i].max_bitrate_bps;
+      } else {
+        info.preferred_bitrate +=
+            parameters_.encoder_config.streams[i].target_bitrate_bps;
+      }
+    }
 
-  webrtc::VideoSendStream::Stats stats = stream_->GetStats();
+    if (stream_ == NULL)
+      return info;
+
+    stats = stream_->GetStats();
+
+    if (capturer_ != NULL && !capturer_->IsMuted()) {
+      VideoFormat last_captured_frame_format;
+      capturer_->GetStats(&info.adapt_frame_drops, &info.effects_frame_drops,
+                          &info.capturer_frame_time,
+                          &last_captured_frame_format);
+      info.input_frame_width = last_captured_frame_format.width;
+      info.input_frame_height = last_captured_frame_format.height;
+    }
+  }
   info.framerate_input = stats.input_frame_rate;
   info.framerate_sent = stats.encode_frame_rate;
+
+  info.nominal_bitrate = stats.media_bitrate_bps;
 
   info.send_frame_width = 0;
   info.send_frame_height = 0;
@@ -1775,19 +1797,6 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
         (1 << 8);
   }
 
-  if (capturer_ != NULL && !capturer_->IsMuted()) {
-    VideoFormat last_captured_frame_format;
-    capturer_->GetStats(&info.adapt_frame_drops,
-                        &info.effects_frame_drops,
-                        &info.capturer_frame_time,
-                        &last_captured_frame_format);
-    info.input_frame_width = last_captured_frame_format.width;
-    info.input_frame_height = last_captured_frame_format.height;
-  }
-
-  // TODO(pbos): Support or remove the following stats.
-  info.packets_cached = -1;
-
   return info;
 }
 
@@ -1805,7 +1814,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::FillBandwidthEstimationInfo(
     bwe_info->transmit_bitrate += it->second.total_bitrate_bps;
     bwe_info->retransmit_bitrate += it->second.retransmit_bitrate_bps;
   }
-  bwe_info->actual_enc_bitrate = stats.media_bitrate_bps;
+  bwe_info->actual_enc_bitrate += stats.media_bitrate_bps;
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::OnCpuResolutionRequest(
@@ -2040,9 +2049,6 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo() {
   info.firs_sent = stats.rtcp_packet_type_counts.fir_packets;
   info.plis_sent = stats.rtcp_packet_type_counts.pli_packets;
   info.nacks_sent = stats.rtcp_packet_type_counts.nack_packets;
-
-  // TODO(pbos): Support or remove the following stats.
-  info.packets_concealed = -1;
 
   return info;
 }

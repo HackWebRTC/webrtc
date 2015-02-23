@@ -2112,6 +2112,40 @@ TEST_F(WebRtcVideoChannel2Test, TranslatesCallStatsCorrectly) {
   EXPECT_EQ(stats.rtt_ms, info.senders[1].rtt_ms);
 }
 
+TEST_F(WebRtcVideoChannel2Test, TranslatesSenderBitrateStatsCorrectly) {
+  FakeVideoSendStream* stream = AddSendStream();
+  webrtc::VideoSendStream::Stats stats;
+  stats.media_bitrate_bps = 123;
+  stats.substreams[17].total_bitrate_bps = 1;
+  stats.substreams[17].retransmit_bitrate_bps = 2;
+  stats.substreams[42].total_bitrate_bps = 3;
+  stats.substreams[42].retransmit_bitrate_bps = 4;
+  stream->SetStats(stats);
+
+  FakeVideoSendStream* stream2 = AddSendStream();
+  webrtc::VideoSendStream::Stats stats2;
+  stats2.media_bitrate_bps = 321;
+  stats2.substreams[13].total_bitrate_bps = 5;
+  stats2.substreams[13].retransmit_bitrate_bps = 6;
+  stats2.substreams[21].total_bitrate_bps = 7;
+  stats2.substreams[21].retransmit_bitrate_bps = 8;
+  stream2->SetStats(stats2);
+
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_EQ(2u, info.senders.size());
+  // Assuming stream and stream2 corresponds to senders[0] and [1] respectively
+  // is OK as std::maps are sorted and AddSendStream() gives increasing SSRCs.
+  EXPECT_EQ(stats.media_bitrate_bps, info.senders[0].nominal_bitrate);
+  EXPECT_EQ(stats2.media_bitrate_bps, info.senders[1].nominal_bitrate);
+  EXPECT_EQ(stats.media_bitrate_bps + stats2.media_bitrate_bps,
+            info.bw_estimations[0].actual_enc_bitrate);
+  EXPECT_EQ(1 + 3 + 5 + 7, info.bw_estimations[0].transmit_bitrate)
+      << "Bandwidth stats should take all streams into account.";
+  EXPECT_EQ(2 + 4 + 6 + 8, info.bw_estimations[0].retransmit_bitrate)
+      << "Bandwidth stats should take all streams into account.";
+}
+
 class WebRtcVideoEngine2SimulcastTest : public testing::Test {
  public:
   WebRtcVideoEngine2SimulcastTest()
@@ -2211,6 +2245,7 @@ class WebRtcVideoChannel2SimulcastTest : public WebRtcVideoEngine2SimulcastTest,
     ASSERT_EQ(expected_streams.size(), video_streams.size());
 
     size_t num_streams = video_streams.size();
+    int total_max_bitrate_bps = 0;
     for (size_t i = 0; i < num_streams; ++i) {
       EXPECT_EQ(expected_streams[i].width, video_streams[i].width);
       EXPECT_EQ(expected_streams[i].height, video_streams[i].height);
@@ -2237,7 +2272,18 @@ class WebRtcVideoChannel2SimulcastTest : public WebRtcVideoEngine2SimulcastTest,
       EXPECT_FALSE(expected_streams[i].temporal_layer_thresholds_bps.empty());
       EXPECT_EQ(expected_streams[i].temporal_layer_thresholds_bps,
                 video_streams[i].temporal_layer_thresholds_bps);
+
+      if (i == num_streams - 1) {
+        total_max_bitrate_bps += video_streams[i].max_bitrate_bps;
+      } else {
+        total_max_bitrate_bps += video_streams[i].target_bitrate_bps;
+      }
     }
+    cricket::VideoMediaInfo info;
+    ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+    ASSERT_EQ(1u, info.senders.size());
+    EXPECT_EQ(total_max_bitrate_bps, info.senders[0].preferred_bitrate);
+
     EXPECT_TRUE(channel_->SetCapturer(ssrcs.front(), NULL));
   }
 
