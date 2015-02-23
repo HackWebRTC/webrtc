@@ -252,8 +252,9 @@ int64_t AudioCodingModuleImpl::TimeUntilNextProcess() {
   if (!HaveValidEncoder("TimeUntilNextProcess")) {
     return -1;
   }
-  return codecs_[current_send_codec_idx_]->SamplesLeftToEncode() /
-      (send_codec_inst_.plfreq / 1000);
+  FATAL() << "Dead code?";
+//  return codecs_[current_send_codec_idx_]->SamplesLeftToEncode() /
+//      (send_codec_inst_.plfreq / 1000);
 }
 
 // Process any pending tasks such as timeouts.
@@ -909,7 +910,8 @@ int AudioCodingModuleImpl::SendBitrate() const {
 // received from the remote party.
 int AudioCodingModuleImpl::SetReceivedEstimatedBandwidth(int bw) {
   CriticalSectionScoped lock(acm_crit_sect_);
-  return codecs_[current_send_codec_idx_]->SetEstimatedBandwidth(bw);
+  FATAL() << "Dead code?";
+//  return codecs_[current_send_codec_idx_]->SetEstimatedBandwidth(bw);
 }
 
 // Register a transport callback which will be called to deliver
@@ -1409,7 +1411,8 @@ int AudioCodingModuleImpl::DecoderEstimatedBandwidth() const {
   if (last_audio_codec_id >= 0 &&
       STR_CASE_CMP("ISAC", ACMCodecDB::database_[last_audio_codec_id].plname)) {
     CriticalSectionScoped lock(acm_crit_sect_);
-    return codecs_[last_audio_codec_id]->GetEstimatedBandwidth();
+    FATAL() << "Dead code?";
+//    return codecs_[last_audio_codec_id]->GetEstimatedBandwidth();
   }
   return -1;
 }
@@ -1496,32 +1499,25 @@ int AudioCodingModuleImpl::ReplaceInternalDTXWithWebRtc(bool use_webrtc_dtx) {
     return -1;
   }
 
-  int res = codecs_[current_send_codec_idx_]->ReplaceInternalDTX(
-      use_webrtc_dtx);
+  FATAL() << "Dead code?";
+//  int res = codecs_[current_send_codec_idx_]->ReplaceInternalDTX(
+//      use_webrtc_dtx);
   // Check if VAD is turned on, or if there is any error.
-  if (res == 1) {
-    vad_enabled_ = true;
-  } else if (res < 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
-                 "Failed to set ReplaceInternalDTXWithWebRtc(%d)",
-                 use_webrtc_dtx);
-    return res;
-  }
+//  if (res == 1) {
+//    vad_enabled_ = true;
+//  } else if (res < 0) {
+//    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
+//                 "Failed to set ReplaceInternalDTXWithWebRtc(%d)",
+//                 use_webrtc_dtx);
+//    return res;
+//  }
 
   return 0;
 }
 
 int AudioCodingModuleImpl::IsInternalDTXReplacedWithWebRtc(
     bool* uses_webrtc_dtx) {
-  CriticalSectionScoped lock(acm_crit_sect_);
-
-  if (!HaveValidEncoder("IsInternalDTXReplacedWithWebRtc")) {
-    return -1;
-  }
-  if (codecs_[current_send_codec_idx_]->IsInternalDTXReplaced(uses_webrtc_dtx)
-      < 0) {
-    return -1;
-  }
+  *uses_webrtc_dtx = true;
   return 0;
 }
 
@@ -1556,8 +1552,9 @@ int AudioCodingModuleImpl::ConfigISACBandwidthEstimator(
     return -1;
   }
 
-  return codecs_[current_send_codec_idx_]->ConfigISACBandwidthEstimator(
-      frame_size_ms, rate_bit_per_sec, enforce_frame_size);
+  FATAL() << "Dead code?";
+//  return codecs_[current_send_codec_idx_]->ConfigISACBandwidthEstimator(
+//      frame_size_ms, rate_bit_per_sec, enforce_frame_size);
 }
 
 int AudioCodingModuleImpl::SetOpusApplication(OpusApplicationMode application) {
@@ -1616,12 +1613,13 @@ int AudioCodingModuleImpl::REDPayloadISAC(int isac_rate,
   if (!HaveValidEncoder("EncodeData")) {
     return -1;
   }
-  int status;
-  status = codecs_[current_send_codec_idx_]->REDPayloadISAC(isac_rate,
-                                                            isac_bw_estimate,
-                                                            payload,
-                                                            length_bytes);
-  return status;
+  FATAL() << "Dead code?";
+//  int status;
+//  status = codecs_[current_send_codec_idx_]->REDPayloadISAC(isac_rate,
+//                                                            isac_bw_estimate,
+//                                                            payload,
+//                                                            length_bytes);
+//  return status;
 }
 
 void AudioCodingModuleImpl::ResetFragmentation(int vector_size) {

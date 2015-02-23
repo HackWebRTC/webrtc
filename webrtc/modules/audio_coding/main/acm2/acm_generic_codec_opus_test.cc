@@ -29,7 +29,7 @@ class AcmGenericCodecOpusTest : public ::testing::Test {
   }
 
   void CreateCodec() {
-    codec_wrapper_.reset(new ACMGenericCodecWrapper(
+    codec_wrapper_.reset(new ACMGenericCodec(
         acm_codec_params_.codec_inst, kCngPt, kCngPt, kCngPt, kCngPt,
         false /* enable RED */, kRedPt));
     ASSERT_TRUE(codec_wrapper_);
@@ -43,7 +43,7 @@ class AcmGenericCodecOpusTest : public ::testing::Test {
     return ptr;
   }
   WebRtcACMCodecParams acm_codec_params_;
-  scoped_ptr<ACMGenericCodecWrapper> codec_wrapper_;
+  scoped_ptr<ACMGenericCodec> codec_wrapper_;
 };
 
 TEST_F(AcmGenericCodecOpusTest, DefaultApplicationModeMono) {

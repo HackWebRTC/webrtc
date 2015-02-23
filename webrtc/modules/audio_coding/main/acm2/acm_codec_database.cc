@@ -415,38 +415,32 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst,
   // All we have support for right now.
   if (!STR_CASE_CMP(codec_inst.plname, "ISAC")) {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-    return new ACMGenericCodecWrapper(codec_inst, cng_pt_nb, cng_pt_wb,
-                                      cng_pt_swb, cng_pt_fb, enable_red,
-                                      red_payload_type);
+    return new ACMGenericCodec(codec_inst, cng_pt_nb, cng_pt_wb, cng_pt_swb,
+                               cng_pt_fb, enable_red, red_payload_type);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "PCMU") ||
              !STR_CASE_CMP(codec_inst.plname, "PCMA")) {
-    return new ACMGenericCodecWrapper(codec_inst, cng_pt_nb, cng_pt_wb,
-                                      cng_pt_swb, cng_pt_fb, enable_red,
-                                      red_payload_type);
+    return new ACMGenericCodec(codec_inst, cng_pt_nb, cng_pt_wb, cng_pt_swb,
+                               cng_pt_fb, enable_red, red_payload_type);
   } else if (!STR_CASE_CMP(codec_inst.plname, "ILBC")) {
 #ifdef WEBRTC_CODEC_ILBC
-    return new ACMGenericCodecWrapper(codec_inst, cng_pt_nb, cng_pt_wb,
-                                      cng_pt_swb, cng_pt_fb, enable_red,
-                                      red_payload_type);
+    return new ACMGenericCodec(codec_inst, cng_pt_nb, cng_pt_wb, cng_pt_swb,
+                               cng_pt_fb, enable_red, red_payload_type);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "G722")) {
 #ifdef WEBRTC_CODEC_G722
-    return new ACMGenericCodecWrapper(codec_inst, cng_pt_nb, cng_pt_wb,
-                                      cng_pt_swb, cng_pt_fb, enable_red,
-                                      red_payload_type);
+    return new ACMGenericCodec(codec_inst, cng_pt_nb, cng_pt_wb, cng_pt_swb,
+                               cng_pt_fb, enable_red, red_payload_type);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "opus")) {
 #ifdef WEBRTC_CODEC_OPUS
-    return new ACMGenericCodecWrapper(codec_inst, cng_pt_nb, cng_pt_wb,
-                                      cng_pt_swb, cng_pt_fb, enable_red,
-                                      red_payload_type);
+    return new ACMGenericCodec(codec_inst, cng_pt_nb, cng_pt_wb, cng_pt_swb,
+                               cng_pt_fb, enable_red, red_payload_type);
 #endif
   } else if (!STR_CASE_CMP(codec_inst.plname, "L16")) {
 #ifdef WEBRTC_CODEC_PCM16
-    return new ACMGenericCodecWrapper(codec_inst, cng_pt_nb, cng_pt_wb,
-                                      cng_pt_swb, cng_pt_fb, enable_red,
-                                      red_payload_type);
+    return new ACMGenericCodec(codec_inst, cng_pt_nb, cng_pt_wb, cng_pt_swb,
+                               cng_pt_fb, enable_red, red_payload_type);
 #endif
   }
   return NULL;
