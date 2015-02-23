@@ -98,7 +98,7 @@ class VideoAnalyzer : public PacketReceiver,
     uint32_t num_cores = CpuInfo::DetectNumberOfCores();
     assert(num_cores >= 1);
     static const uint32_t kMinCoresLeft = 4;
-    static const uint32_t kMaxComparisonThreads = 12;
+    static const uint32_t kMaxComparisonThreads = 8;
 
     if (num_cores <= kMinCoresLeft) {
       num_cores = 1;
@@ -520,7 +520,7 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
   receive_configs_[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
   receive_configs_[0].rtp.rtx[kSendRtxPayloadType].ssrc = kSendRtxSsrcs[0];
   receive_configs_[0].rtp.rtx[kSendRtxPayloadType].payload_type =
-      kSendRtxSsrcs[0];
+      kSendRtxPayloadType;
 
   CreateStreams();
   analyzer.input_ = send_stream_->Input();
@@ -592,7 +592,7 @@ TEST_F(FullStackTest, ForemanCifWithoutPacketLoss) {
   RunTest(foreman_cif);
 }
 
-TEST_F(FullStackTest, DISABLED_ForemanCifPlr5) {
+TEST_F(FullStackTest, ForemanCifPlr5) {
   FullStackTestParams foreman_cif = {"foreman_cif_delay_50_0_plr_5",
                                      {"foreman_cif", 352, 288, 30},
                                      false,
