@@ -91,8 +91,7 @@ int16_t WebRtcG722_FreeEncoder(G722EncInst *G722enc_inst);
  * Output:
  *        - encoded           : The encoded data vector
  *
- * Return value               : >0 - Length (in bytes) of coded data
- *                              -1 - Error
+ * Return value              : Length (in bytes) of coded data
  */
 
 int16_t WebRtcG722_Encode(G722EncInst* G722enc_inst,

@@ -101,6 +101,7 @@ bool AudioEncoderG722::EncodeInternal(uint32_t rtp_timestamp,
     const int encoded = WebRtcG722_Encode(
         encoders_[i].encoder, encoders_[i].speech_buffer.get(),
         samples_per_channel, encoders_[i].encoded_buffer.get());
+    CHECK_GE(encoded, 0);
     CHECK_EQ(encoded, samples_per_channel / 2);
   }
 
