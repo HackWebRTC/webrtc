@@ -57,10 +57,13 @@ bool PayloadRouter::RoutePayload(FrameType frame_type,
                                  const RTPFragmentationHeader* fragmentation,
                                  const RTPVideoHeader* rtp_video_hdr) {
   CriticalSectionScoped cs(crit_.get());
-  DCHECK(rtp_video_hdr == NULL ||
-         rtp_video_hdr->simulcastIdx <= rtp_modules_.size());
-
   if (!active_ || rtp_modules_.empty())
+    return false;
+
+  // The simulcast index might actually be larger than the number of modules in
+  // case the encoder was processing a frame during a codec reconfig.
+  if (rtp_video_hdr != NULL &&
+      rtp_video_hdr->simulcastIdx >= rtp_modules_.size())
     return false;
 
   int stream_idx = 0;
@@ -83,6 +86,19 @@ bool PayloadRouter::TimeToSendPacket(uint32_t ssrc,
     }
   }
   return true;
+}
+
+void PayloadRouter::SetTargetSendBitrates(
+    const std::vector<uint32_t>& stream_bitrates) {
+  CriticalSectionScoped cs(crit_.get());
+  if (stream_bitrates.size() < rtp_modules_.size()) {
+    // There can be a size mis-match during codec reconfiguration.
+    return;
+  }
+  int idx = 0;
+  for (auto* rtp_module : rtp_modules_) {
+    rtp_module->SetTargetSendBitrate(stream_bitrates[idx++]);
+  }
 }
 
 size_t PayloadRouter::TimeToSendPadding(size_t bytes) {

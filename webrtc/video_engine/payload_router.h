@@ -65,6 +65,10 @@ class PayloadRouter {
   // sent.
   size_t TimeToSendPadding(size_t bytes);
 
+  // Configures current target bitrate per module. 'stream_bitrates' is assumed
+  // to be in the same order as 'SetSendingRtpModules'.
+  void SetTargetSendBitrates(const std::vector<uint32_t>& stream_bitrates);
+
   // Returns the maximum allowed data payload length, given the configured MTU
   // and RTP headers.
   size_t MaxPayloadLength() const;

@@ -894,34 +894,9 @@ int32_t ModuleRtpRtcpImpl::SendREDPayloadType(
   return rtp_sender_.RED(&payload_type);
 }
 
-void ModuleRtpRtcpImpl::SetTargetSendBitrate(
-    const std::vector<uint32_t>& stream_bitrates) {
-  if (IsDefaultModule()) {
-    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    if (simulcast_) {
-      std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
-      for (size_t i = 0;
-           it != child_modules_.end() && i < stream_bitrates.size(); ++it) {
-        if ((*it)->SendingMedia()) {
-          RTPSender& rtp_sender = (*it)->rtp_sender_;
-          rtp_sender.SetTargetBitrate(stream_bitrates[i]);
-          ++i;
-        }
-      }
-    } else {
-      if (stream_bitrates.size() > 1)
-        return;
-      std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
-      for (; it != child_modules_.end(); ++it) {
-        RTPSender& rtp_sender = (*it)->rtp_sender_;
-        rtp_sender.SetTargetBitrate(stream_bitrates[0]);
-      }
-    }
-  } else {
-    if (stream_bitrates.size() > 1)
-      return;
-    rtp_sender_.SetTargetBitrate(stream_bitrates[0]);
-  }
+void ModuleRtpRtcpImpl::SetTargetSendBitrate(uint32_t bitrate_bps) {
+  DCHECK(!IsDefaultModule());
+  rtp_sender_.SetTargetBitrate(bitrate_bps);
 }
 
 int32_t ModuleRtpRtcpImpl::SetKeyFrameRequestMethod(

@@ -116,6 +116,7 @@ TEST_F(PayloadRouterTest, SendSimulcast) {
   EXPECT_TRUE(payload_router_->RoutePayload(frame_type_2, payload_type_2, 0, 0,
                                             &payload_2, 1, NULL, &rtp_hdr_2));
 
+  // Inactive.
   payload_router_->set_active(false);
   EXPECT_CALL(rtp_1, SendOutgoingData(_, _, _, _, _, _, _, _))
       .Times(0);
@@ -125,6 +126,16 @@ TEST_F(PayloadRouterTest, SendSimulcast) {
                                              &payload_1, 1, NULL, &rtp_hdr_1));
   EXPECT_FALSE(payload_router_->RoutePayload(frame_type_2, payload_type_2, 0, 0,
                                              &payload_2, 1, NULL, &rtp_hdr_2));
+
+  // Invalid simulcast index.
+  payload_router_->set_active(true);
+  EXPECT_CALL(rtp_1, SendOutgoingData(_, _, _, _, _, _, _, _))
+      .Times(0);
+  EXPECT_CALL(rtp_2, SendOutgoingData(_, _, _, _, _, _, _, _))
+      .Times(0);
+  rtp_hdr_1.simulcastIdx = 2;
+  EXPECT_FALSE(payload_router_->RoutePayload(frame_type_1, payload_type_1, 0, 0,
+                                             &payload_1, 1, NULL, &rtp_hdr_1));
 }
 
 TEST_F(PayloadRouterTest, MaxPayloadLength) {
@@ -257,7 +268,6 @@ TEST_F(PayloadRouterTest, TimeToSendPadding) {
   modules.push_back(&rtp_2);
   payload_router_->SetSendingRtpModules(modules);
 
-
   // Default configuration, sending padding on the first sending module.
   const size_t requested_padding_bytes = 1000;
   const size_t sent_padding_bytes = 890;
@@ -302,4 +312,39 @@ TEST_F(PayloadRouterTest, TimeToSendPadding) {
   EXPECT_EQ(static_cast<size_t>(0),
             payload_router_->TimeToSendPadding(requested_padding_bytes));
 }
+
+TEST_F(PayloadRouterTest, SetTargetSendBitrates) {
+  MockRtpRtcp rtp_1;
+  MockRtpRtcp rtp_2;
+  std::list<RtpRtcp*> modules;
+  modules.push_back(&rtp_1);
+  modules.push_back(&rtp_2);
+  payload_router_->SetSendingRtpModules(modules);
+
+  const uint32_t bitrate_1 = 10000;
+  const uint32_t bitrate_2 = 76543;
+  std::vector<uint32_t> bitrates (2, bitrate_1);
+  bitrates[1] = bitrate_2;
+  EXPECT_CALL(rtp_1, SetTargetSendBitrate(bitrate_1))
+      .Times(1);
+  EXPECT_CALL(rtp_2, SetTargetSendBitrate(bitrate_2))
+      .Times(1);
+  payload_router_->SetTargetSendBitrates(bitrates);
+
+  bitrates.resize(1);
+  EXPECT_CALL(rtp_1, SetTargetSendBitrate(bitrate_1))
+      .Times(0);
+  EXPECT_CALL(rtp_2, SetTargetSendBitrate(bitrate_2))
+      .Times(0);
+  payload_router_->SetTargetSendBitrates(bitrates);
+
+  bitrates.resize(3);
+  bitrates[1] = bitrate_2;
+  bitrates[2] = bitrate_1 + bitrate_2;
+  EXPECT_CALL(rtp_1, SetTargetSendBitrate(bitrate_1))
+      .Times(1);
+  EXPECT_CALL(rtp_2, SetTargetSendBitrate(bitrate_2))
+      .Times(1);
+  payload_router_->SetTargetSendBitrates(bitrates);
+  }
 }  // namespace webrtc

@@ -288,8 +288,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Send a request for a keyframe.
   virtual int32_t RequestKeyFrame() OVERRIDE;
 
-  virtual void SetTargetSendBitrate(
-      const std::vector<uint32_t>& stream_bitrates) OVERRIDE;
+  virtual void SetTargetSendBitrate(uint32_t bitrate_bps) OVERRIDE;
 
   virtual int32_t SetGenericFECStatus(bool enable,
                                       uint8_t payload_type_red,

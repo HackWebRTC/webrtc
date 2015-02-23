@@ -232,7 +232,7 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetAudioLevel,
       int32_t(const uint8_t level_dBov));
   MOCK_METHOD1(SetTargetSendBitrate,
-      void(const std::vector<uint32_t>& stream_bitrates));
+      void(uint32_t bitrate_bps));
   MOCK_METHOD3(SetGenericFECStatus,
       int32_t(const bool enable, const uint8_t payloadTypeRED, const uint8_t payloadTypeFEC));
   MOCK_METHOD3(GenericFECStatus,

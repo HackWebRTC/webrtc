@@ -380,7 +380,7 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
       video_codec.startBitrate * 1000,
       video_codec.simulcastStream,
       video_codec.numberOfSimulcastStreams);
-  default_rtp_rtcp_->SetTargetSendBitrate(stream_bitrates);
+  send_payload_router_->SetTargetSendBitrates(stream_bitrates);
 
   {
     CriticalSectionScoped cs(data_cs_.get());
@@ -872,6 +872,7 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
   LOG(LS_VERBOSE) << "OnNetworkChanged, bitrate" << bitrate_bps
                   << " packet loss " << fraction_lost
                   << " rtt " << round_trip_time_ms;
+  DCHECK(send_payload_router_ != NULL);
   vcm_.SetChannelParameters(bitrate_bps, fraction_lost, round_trip_time_ms);
   bool video_is_suspended = vcm_.VideoSuspended();
   int bitrate_kbps = bitrate_bps / 1000;
@@ -924,7 +925,7 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
         bitrate_kbps,
         PacedSender::kDefaultPaceMultiplier * bitrate_kbps,
         pad_up_to_bitrate_kbps);
-    default_rtp_rtcp_->SetTargetSendBitrate(stream_bitrates);
+    send_payload_router_->SetTargetSendBitrates(stream_bitrates);
     if (video_suspended_ == video_is_suspended)
       return;
     video_suspended_ = video_is_suspended;
