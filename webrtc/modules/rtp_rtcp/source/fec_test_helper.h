@@ -16,15 +16,9 @@
 
 namespace webrtc {
 
-enum {
-  kFecPayloadType = 96
-};
-enum {
-  kRedPayloadType = 97
-};
-enum {
-  kVp8PayloadType = 120
-};
+const uint8_t kFecPayloadType = 96;
+const uint8_t kRedPayloadType = 97;
+const uint8_t kVp8PayloadType = 120;
 
 typedef ForwardErrorCorrection::Packet Packet;
 

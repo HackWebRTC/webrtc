@@ -240,8 +240,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
       AudioDecodingCallStats* stats) const OVERRIDE;
 
  private:
-  int UnregisterReceiveCodecSafe(int payload_type);
-
   ACMGenericCodec* CreateCodec(const CodecInst& codec);
 
   int InitializeReceiverSafe() EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);

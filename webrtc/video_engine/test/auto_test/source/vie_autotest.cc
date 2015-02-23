@@ -138,7 +138,7 @@ void ViEAutoTest::PrintAudioCodec(const webrtc::CodecInst audioCodec)
     ViETest::Log("\t: %u", audioCodec.pacsize);
     ViETest::Log("\t: %u", audioCodec.plfreq);
     ViETest::Log("\t: %s", audioCodec.plname);
-    ViETest::Log("\t: %u", audioCodec.pltype);
+    ViETest::Log("\t: %d", audioCodec.pltype);
     ViETest::Log("\t: %u", audioCodec.rate);
     ViETest::Log("");
 }

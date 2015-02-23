@@ -649,8 +649,8 @@ VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
     return NULL;
   }
   VCMGenericDecoder* ptr_decoder = NULL;
-  const VCMExtDecoderMapItem* external_dec_item = FindExternalDecoderItem(
-                                              payload_type);
+  const VCMExtDecoderMapItem* external_dec_item =
+      FindExternalDecoderItem(payload_type);
   if (external_dec_item) {
     // External codec.
     ptr_decoder = new VCMGenericDecoder(

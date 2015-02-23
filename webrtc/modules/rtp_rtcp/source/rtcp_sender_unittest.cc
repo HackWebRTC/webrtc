@@ -185,23 +185,23 @@ TEST(NACKStringBuilderTest, TestCase13) {
   EXPECT_EQ(std::string("5-6,9"), builder.GetResult());
 }
 
-void CreateRtpPacket(const bool marker_bit, const uint8_t payload,
+void CreateRtpPacket(const bool marker_bit, const uint8_t payload_type,
     const uint16_t seq_num, const uint32_t timestamp,
     const uint32_t ssrc, uint8_t* array,
     size_t* cur_pos) {
-  ASSERT_TRUE(payload <= 127);
+  ASSERT_LE(payload_type, 127);
   array[(*cur_pos)++] = 0x80;
-  array[(*cur_pos)++] = payload | (marker_bit ? 0x80 : 0);
+  array[(*cur_pos)++] = payload_type | (marker_bit ? 0x80 : 0);
   array[(*cur_pos)++] = seq_num >> 8;
-  array[(*cur_pos)++] = seq_num;
+  array[(*cur_pos)++] = seq_num & 0xFF;
   array[(*cur_pos)++] = timestamp >> 24;
-  array[(*cur_pos)++] = timestamp >> 16;
-  array[(*cur_pos)++] = timestamp >> 8;
-  array[(*cur_pos)++] = timestamp;
+  array[(*cur_pos)++] = (timestamp >> 16) & 0xFF;
+  array[(*cur_pos)++] = (timestamp >> 8) & 0xFF;
+  array[(*cur_pos)++] = timestamp & 0xFF;
   array[(*cur_pos)++] = ssrc >> 24;
-  array[(*cur_pos)++] = ssrc >> 16;
-  array[(*cur_pos)++] = ssrc >> 8;
-  array[(*cur_pos)++] = ssrc;
+  array[(*cur_pos)++] = (ssrc >> 16) & 0xFF;
+  array[(*cur_pos)++] = (ssrc >> 8) & 0xFF;
+  array[(*cur_pos)++] = ssrc & 0xFF;
   // VP8 payload header
   array[(*cur_pos)++] = 0x90;  // X bit = 1
   array[(*cur_pos)++] = 0x20;  // T bit = 1
@@ -353,19 +353,19 @@ TEST_F(RtcpSenderTest, IJStatus) {
 
 TEST_F(RtcpSenderTest, TestCompound) {
   const bool marker_bit = false;
-  const uint8_t payload = 100;
+  const uint8_t payload_type = 100;
   const uint16_t seq_num = 11111;
   const uint32_t timestamp = 1234567;
   const uint32_t ssrc = 0x11111111;
   size_t packet_length = 0;
-  CreateRtpPacket(marker_bit, payload, seq_num, timestamp, ssrc, packet_,
+  CreateRtpPacket(marker_bit, payload_type, seq_num, timestamp, ssrc, packet_,
       &packet_length);
   EXPECT_EQ(25u, packet_length);
 
   VideoCodec codec_inst;
   strncpy(codec_inst.plName, "VP8", webrtc::kPayloadNameSize - 1);
   codec_inst.codecType = webrtc::kVideoCodecVP8;
-  codec_inst.plType = payload;
+  codec_inst.plType = payload_type;
   EXPECT_EQ(0, rtp_receiver_->RegisterReceivePayload(codec_inst.plName,
                                                      codec_inst.plType,
                                                      90000,

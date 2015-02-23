@@ -38,15 +38,13 @@ class VCMNTEncodeCompleteCallback : public webrtc::VCMPacketizationCallback
       const webrtc::RTPFragmentationHeader& fragmentationHeader,
       const webrtc::RTPVideoHeader* videoHdr) OVERRIDE;
 
-  // Register exisitng VCM.
+  // Register existing VCM.
   // Currently - encode and decode with the same vcm module.
   void RegisterReceiverVCM(webrtc::VideoCodingModule *vcm);
   // Return sum of encoded data (all frames in the sequence)
   size_t EncodedBytes();
   // return number of encoder-skipped frames
   uint32_t SkipCnt();
-  // conversion function for payload type (needed for the callback function)
-//    RTPVideoVideoCodecTypes ConvertPayloadType(uint8_t payloadType);
 
  private:
   FILE*                       _encodedFile;

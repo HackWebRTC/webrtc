@@ -64,7 +64,7 @@ bool RTPReceiverAudio::TelephoneEventForwardToDecoder() const {
 bool RTPReceiverAudio::TelephoneEventPayloadType(
     int8_t payload_type) const {
   CriticalSectionScoped lock(crit_sect_.get());
-  return (telephone_event_payload_type_ == payload_type) ? true : false;
+  return telephone_event_payload_type_ == payload_type;
 }
 
 bool RTPReceiverAudio::CNGPayloadType(int8_t payload_type,

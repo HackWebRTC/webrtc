@@ -36,7 +36,6 @@ public:
     int readFixedFromFile(FILE *fp, size_t len);
     virtual int writeToFile(FILE *fp);
     void blockPT(uint8_t pt);
-    //int16_t payloadType();
     virtual void parseHeader();
     void parseHeader(webrtc::WebRtcRTPHeader* rtp_header);
     const webrtc::WebRtcRTPHeader* RTPinfo() const;

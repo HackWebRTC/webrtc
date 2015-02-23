@@ -539,7 +539,7 @@ void WebRtcVoiceEngine::ConstructCodecs() {
             codec.params[kCodecParamMaxPTime] =
                 rtc::ToString(kPreferredMaxPTime);
           }
-          codec.SetParam(kCodecParamUseInbandFec, "1");
+          codec.SetParam(kCodecParamUseInbandFec, 1);
 
           // TODO(hellner): Add ptime, sprop-stereo, and stereo
           // when they can be set to values other than the default.

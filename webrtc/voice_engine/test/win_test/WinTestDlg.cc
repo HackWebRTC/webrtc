@@ -931,9 +931,12 @@ void CTelephonyEvent::OnBnClickedButtonSetRxTelephonePt()
         return;
     CodecInst codec;
     strcpy_s(codec.plname, 32, "telephone-event");
-    codec.pltype = pt; codec.channels = 1; codec.plfreq = 8000;
+    codec.pltype = pt;
+    codec.channels = 1;
+    codec.plfreq = 8000;
     TEST2(_veCodecPtr->SetRecPayloadType(_channel, codec) == 0,
-        _T("SetSendTelephoneEventPayloadType(channel=%d, codec.pltype=%u)"), _channel, codec.pltype);
+          _T("SetRecPayloadType(channel=%d, codec.pltype=%d)"), _channel,
+          codec.pltype);
 }
 
 void CTelephonyEvent::OnBnClickedButtonSetTxTelephonePt()
@@ -943,7 +946,8 @@ void CTelephonyEvent::OnBnClickedButtonSetTxTelephonePt()
     if (ret == FALSE || pt < 0 || pt > 127)
         return;
     TEST2(_veDTMFPtr->SetSendTelephoneEventPayloadType(_channel, pt) == 0,
-        _T("SetSendTelephoneEventPayloadType(channel=%d, type=%u)"), _channel, pt);
+          _T("SetSendTelephoneEventPayloadType(channel=%d, type=%d)"), _channel,
+          pt);
 }
 
 void CTelephonyEvent::OnBnClickedCheckDetectInband()

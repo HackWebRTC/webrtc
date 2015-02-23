@@ -66,7 +66,7 @@ class Channel : public AudioPacketizationCallback {
 
   void Stats(uint32_t* numPackets);
 
-  void Stats(uint8_t* payloadLenByte, uint32_t* payloadType);
+  void Stats(uint8_t* payloadType, uint32_t* payloadLenByte);
 
   void PrintStats(CodecInst& codecInst);
 

@@ -1513,7 +1513,7 @@ Channel::GetRecPayloadType(CodecInst& codec)
     }
     codec.pltype = payloadType;
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::GetRecPayloadType() => pltype=%u", codec.pltype);
+                 "Channel::GetRecPayloadType() => pltype=%d", codec.pltype);
     return 0;
 }
 

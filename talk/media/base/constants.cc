@@ -43,10 +43,6 @@ const char kRtxCodecName[] = "rtx";
 const char kRedCodecName[] = "red";
 const char kUlpfecCodecName[] = "ulpfec";
 
-// RTP payload type is in the 0-127 range. Use 128 to indicate "all" payload
-// types.
-const int kWildcardPayloadType = -1;
-
 const char kCodecParamAssociatedPayloadType[] = "apt";
 
 const char kOpusCodecName[] = "opus";

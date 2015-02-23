@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/format_macros.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
@@ -259,15 +260,15 @@ class PcapReader : public RtpFileReaderImpl {
     }
 
     printf("Total packets in file: %d\n", total_packet_count);
-    printf("Total RTP/RTCP packets: %d\n", static_cast<int>(packets_.size()));
+    printf("Total RTP/RTCP packets: %" PRIuS "\n", packets_.size());
 
     for (SsrcMapIterator mit = packets_by_ssrc_.begin();
         mit != packets_by_ssrc_.end(); ++mit) {
       uint32_t ssrc = mit->first;
       const std::vector<uint32_t>& packet_numbers = mit->second;
       uint8_t pt = packets_[packet_numbers[0]].rtp_header.payloadType;
-      printf("SSRC: %08x, %d packets, pt=%d\n", ssrc,
-             static_cast<int>(packet_numbers.size()), pt);
+      printf("SSRC: %08x, %" PRIuS " packets, pt=%d\n", ssrc,
+             packet_numbers.size(), pt);
     }
 
     // TODO(solenberg): Better validation of identified SSRC streams.

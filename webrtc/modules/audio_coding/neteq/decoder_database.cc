@@ -38,7 +38,7 @@ void DecoderDatabase::Reset() {
 
 int DecoderDatabase::RegisterPayload(uint8_t rtp_payload_type,
                                      NetEqDecoder codec_type) {
-  if (rtp_payload_type > kMaxRtpPayloadType) {
+  if (rtp_payload_type > 0x7F) {
     return kInvalidRtpPayloadType;
   }
   if (!CodecSupported(codec_type)) {
@@ -74,8 +74,7 @@ int DecoderDatabase::InsertExternal(uint8_t rtp_payload_type,
   decoder->Init();
   std::pair<DecoderMap::iterator, bool> ret;
   DecoderInfo info(codec_type, fs_hz, decoder, true);
-  ret = decoders_.insert(
-      std::pair<uint8_t, DecoderInfo>(rtp_payload_type, info));
+  ret = decoders_.insert(std::make_pair(rtp_payload_type, info));
   if (ret.second == false) {
     // Database already contains a decoder with type |rtp_payload_type|.
     return kDecoderExists;

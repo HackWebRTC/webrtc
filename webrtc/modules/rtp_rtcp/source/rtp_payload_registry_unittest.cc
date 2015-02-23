@@ -225,8 +225,7 @@ TEST_P(ParameterizedRtpPayloadRegistryTest,
 
   bool ignored;
   EXPECT_EQ(-1, rtp_payload_registry_->RegisterReceivePayload(
-      "whatever", static_cast<uint8_t>(payload_type), 19, 1, 17,
-      &ignored));
+      "whatever", static_cast<uint8_t>(payload_type), 19, 1, 17, &ignored));
 }
 
 INSTANTIATE_TEST_CASE_P(TestKnownBadPayloadTypes,

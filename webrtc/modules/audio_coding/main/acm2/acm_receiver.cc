@@ -507,8 +507,8 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
     // First unregister. Then register with new payload-type/channels.
     if (neteq_->RemovePayloadType(decoders_[acm_codec_id].payload_type) !=
         NetEq::kOK) {
-      LOG_F(LS_ERROR) << "Cannot remover payload "
-          << static_cast<int>(decoders_[acm_codec_id].payload_type);
+      LOG_F(LS_ERROR) << "Cannot remove payload "
+                      << static_cast<int>(decoders_[acm_codec_id].payload_type);
       return -1;
     }
   }
@@ -562,7 +562,7 @@ int AcmReceiver::RemoveAllCodecs() {
         decoders_[n].registered = false;
       } else {
         LOG_F(LS_ERROR) << "Cannot remove payload "
-            << static_cast<int>(decoders_[n].payload_type);
+                        << static_cast<int>(decoders_[n].payload_type);
         ret_val = -1;
       }
     }

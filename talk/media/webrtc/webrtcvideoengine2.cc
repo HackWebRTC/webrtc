@@ -133,13 +133,6 @@ static const int kDefaultQpMax = 56;
 
 static const int kDefaultRtcpReceiverReportSsrc = 1;
 
-// External video encoders are given payloads 120-127. This also means that we
-// only support up to 8 external payload types.
-static const int kExternalVideoPayloadTypeBase = 120;
-#ifndef NDEBUG
-static const size_t kMaxExternalVideoCodecs = 8;
-#endif
-
 const char kH264CodecName[] = "H264";
 
 static bool FindFirstMatchingCodec(const std::vector<VideoCodec>& codecs,
@@ -557,7 +550,6 @@ std::vector<VideoCodec> WebRtcVideoEngine2::GetSupportedCodecs() const {
     return supported_codecs;
   }
 
-  assert(external_encoder_factory_->codecs().size() <= kMaxExternalVideoCodecs);
   const std::vector<WebRtcVideoEncoderFactory::VideoCodec>& codecs =
       external_encoder_factory_->codecs();
   for (size_t i = 0; i < codecs.size(); ++i) {
@@ -566,7 +558,12 @@ std::vector<VideoCodec> WebRtcVideoEngine2::GetSupportedCodecs() const {
       continue;
     }
 
-    VideoCodec codec(kExternalVideoPayloadTypeBase + static_cast<int>(i),
+    // External video encoders are given payloads 120-127. This also means that
+    // we only support up to 8 external payload types.
+    const int kExternalVideoPayloadTypeBase = 120;
+    size_t payload_type = kExternalVideoPayloadTypeBase + i;
+    assert(payload_type < 128);
+    VideoCodec codec(static_cast<int>(payload_type),
                      codecs[i].name,
                      codecs[i].max_width,
                      codecs[i].max_height,
@@ -2071,7 +2068,8 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
   std::vector<VideoCodecSettings> video_codecs;
   std::map<int, bool> payload_used;
   std::map<int, VideoCodec::CodecType> payload_codec_type;
-  std::map<int, int> rtx_mapping;  // video payload type -> rtx payload type.
+  // |rtx_mapping| maps video payload type to rtx payload type.
+  std::map<int, int> rtx_mapping;
 
   webrtc::FecConfig fec_settings;
 

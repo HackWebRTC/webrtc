@@ -234,7 +234,9 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetTargetSendBitrate,
       void(uint32_t bitrate_bps));
   MOCK_METHOD3(SetGenericFECStatus,
-      int32_t(const bool enable, const uint8_t payloadTypeRED, const uint8_t payloadTypeFEC));
+      int32_t(const bool enable,
+              const uint8_t payloadTypeRED,
+              const uint8_t payloadTypeFEC));
   MOCK_METHOD3(GenericFECStatus,
       int32_t(bool& enable, uint8_t& payloadTypeRED, uint8_t& payloadTypeFEC));
   MOCK_METHOD2(SetFecParameters,

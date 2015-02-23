@@ -57,7 +57,6 @@ class DecoderDatabase {
     bool external;
   };
 
-  static const uint8_t kMaxRtpPayloadType = 0x7F;  // Max for a 7-bit number.
   // Maximum value for 8 bits, and an invalid RTP payload type (since it is
   // only 7 bits).
   static const uint8_t kRtpPayloadTypeError = 0xFF;

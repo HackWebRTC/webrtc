@@ -51,14 +51,14 @@ Packet* ConstantPcmPacketSource::NextPacket() {
 
 void ConstantPcmPacketSource::WriteHeader(uint8_t* packet_memory) {
   packet_memory[0] = 0x80;
-  packet_memory[1] = payload_type_ & 0xFF;
-  packet_memory[2] = (seq_number_ >> 8) & 0xFF;
+  packet_memory[1] = static_cast<uint8_t>(payload_type_);
+  packet_memory[2] = seq_number_ >> 8;
   packet_memory[3] = seq_number_ & 0xFF;
-  packet_memory[4] = (timestamp_ >> 24) & 0xFF;
+  packet_memory[4] = timestamp_ >> 24;
   packet_memory[5] = (timestamp_ >> 16) & 0xFF;
   packet_memory[6] = (timestamp_ >> 8) & 0xFF;
   packet_memory[7] = timestamp_ & 0xFF;
-  packet_memory[8] = (payload_ssrc_ >> 24) & 0xFF;
+  packet_memory[8] = payload_ssrc_ >> 24;
   packet_memory[9] = (payload_ssrc_ >> 16) & 0xFF;
   packet_memory[10] = (payload_ssrc_ >> 8) & 0xFF;
   packet_memory[11] = payload_ssrc_ & 0xFF;

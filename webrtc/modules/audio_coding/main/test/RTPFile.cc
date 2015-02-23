@@ -43,21 +43,18 @@ void RTPStream::ParseRTPHeader(WebRtcRTPHeader* rtpInfo,
 void RTPStream::MakeRTPheader(uint8_t* rtpHeader, uint8_t payloadType,
                               int16_t seqNo, uint32_t timeStamp,
                               uint32_t ssrc) {
-  rtpHeader[0] = (unsigned char) 0x80;
-  rtpHeader[1] = (unsigned char) (payloadType & 0xFF);
-  rtpHeader[2] = (unsigned char) ((seqNo >> 8) & 0xFF);
-  rtpHeader[3] = (unsigned char) ((seqNo) & 0xFF);
-  rtpHeader[4] = (unsigned char) ((timeStamp >> 24) & 0xFF);
-  rtpHeader[5] = (unsigned char) ((timeStamp >> 16) & 0xFF);
-
-  rtpHeader[6] = (unsigned char) ((timeStamp >> 8) & 0xFF);
-  rtpHeader[7] = (unsigned char) (timeStamp & 0xFF);
-
-  rtpHeader[8] = (unsigned char) ((ssrc >> 24) & 0xFF);
-  rtpHeader[9] = (unsigned char) ((ssrc >> 16) & 0xFF);
-
-  rtpHeader[10] = (unsigned char) ((ssrc >> 8) & 0xFF);
-  rtpHeader[11] = (unsigned char) (ssrc & 0xFF);
+  rtpHeader[0] = 0x80;
+  rtpHeader[1] = payloadType;
+  rtpHeader[2] = (seqNo >> 8) & 0xFF;
+  rtpHeader[3] = seqNo & 0xFF;
+  rtpHeader[4] = timeStamp >> 24;
+  rtpHeader[5] = (timeStamp >> 16) & 0xFF;
+  rtpHeader[6] = (timeStamp >> 8) & 0xFF;
+  rtpHeader[7] = timeStamp & 0xFF;
+  rtpHeader[8] = ssrc >> 24;
+  rtpHeader[9] = (ssrc >> 16) & 0xFF;
+  rtpHeader[10] = (ssrc >> 8) & 0xFF;
+  rtpHeader[11] = ssrc & 0xFF;
 }
 
 RTPPacket::RTPPacket(uint8_t payloadType, uint32_t timeStamp, int16_t seqNo,

@@ -37,7 +37,6 @@
 
 namespace cricket {
 
-static const int kMaxStaticPayloadId = 95;
 const int kMaxPayloadId = 127;
 
 bool FeedbackParam::operator==(const FeedbackParam& other) const {
@@ -120,6 +119,7 @@ bool Codec::operator==(const Codec& c) const {
 bool Codec::Matches(const Codec& codec) const {
   // Match the codec id/name based on the typical static/dynamic name rules.
   // Matching is case-insensitive.
+  const int kMaxStaticPayloadId = 95;
   return (codec.id <= kMaxStaticPayloadId) ?
       (id == codec.id) : (_stricmp(name.c_str(), codec.name.c_str()) == 0);
 }

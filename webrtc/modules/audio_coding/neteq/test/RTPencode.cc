@@ -71,15 +71,47 @@
 /* Function declarations */
 /*************************/
 
-void NetEQTest_GetCodec_and_PT(char * name, webrtc::NetEqDecoder *codec, int *PT, int frameLen, int *fs, int *bitrate, int *useRed);
-int NetEQTest_init_coders(webrtc::NetEqDecoder coder, int enc_frameSize, int bitrate, int sampfreq , int vad, int numChannels);
-void defineCodecs(webrtc::NetEqDecoder *usedCodec, int *noOfCodecs );
+void NetEQTest_GetCodec_and_PT(char* name,
+                               webrtc::NetEqDecoder* codec,
+                               int* PT,
+                               int frameLen,
+                               int* fs,
+                               int* bitrate,
+                               int* useRed);
+int NetEQTest_init_coders(webrtc::NetEqDecoder coder,
+                          int enc_frameSize,
+                          int bitrate,
+                          int sampfreq,
+                          int vad,
+                          int numChannels);
+void defineCodecs(webrtc::NetEqDecoder* usedCodec, int* noOfCodecs);
 int NetEQTest_free_coders(webrtc::NetEqDecoder coder, int numChannels);
-int NetEQTest_encode(int coder, int16_t *indata, int frameLen, unsigned char * encoded,int sampleRate , int * vad, int useVAD, int bitrate, int numChannels);
-void makeRTPheader(unsigned char* rtp_data, int payloadType, int seqNo, uint32_t timestamp, uint32_t ssrc);
-int makeRedundantHeader(unsigned char* rtp_data, int *payloadType, int numPayloads, uint32_t *timestamp, uint16_t *blockLen,
-                        int seqNo, uint32_t ssrc);
-int makeDTMFpayload(unsigned char* payload_data, int Event, int End, int Volume, int Duration);
+int NetEQTest_encode(int coder,
+                     int16_t* indata,
+                     int frameLen,
+                     unsigned char* encoded,
+                     int sampleRate,
+                     int* vad,
+                     int useVAD,
+                     int bitrate,
+                     int numChannels);
+void makeRTPheader(unsigned char* rtp_data,
+                   int payloadType,
+                   int seqNo,
+                   uint32_t timestamp,
+                   uint32_t ssrc);
+int makeRedundantHeader(unsigned char* rtp_data,
+                        int* payloadType,
+                        int numPayloads,
+                        uint32_t* timestamp,
+                        uint16_t* blockLen,
+                        int seqNo,
+                        uint32_t ssrc);
+int makeDTMFpayload(unsigned char* payload_data,
+                    int Event,
+                    int End,
+                    int Volume,
+                    int Duration);
 void stereoDeInterleave(int16_t* audioSamples, int numSamples);
 void stereoInterleave(unsigned char* data, int dataLen, int stride);
 
@@ -231,37 +263,37 @@ WebRtcVadInst *VAD_inst[2];
 
 int main(int argc, char* argv[])
 {
-	int packet_size, fs;
-	webrtc::NetEqDecoder usedCodec;
-	int payloadType;
-	int bitrate = 0;
-	int useVAD, vad;
+    int packet_size, fs;
+    webrtc::NetEqDecoder usedCodec;
+    int payloadType;
+    int bitrate = 0;
+    int useVAD, vad;
     int useRed=0;
-	int len, enc_len;
-	int16_t org_data[4000];
-	unsigned char rtp_data[8000];
-	int16_t seqNo=0xFFF;
-	uint32_t ssrc=1235412312;
-	uint32_t timestamp=0xAC1245;
-        uint16_t length, plen;
-	uint32_t offset;
-	double sendtime = 0;
+    int len, enc_len;
+    int16_t org_data[4000];
+    unsigned char rtp_data[8000];
+    int16_t seqNo=0xFFF;
+    uint32_t ssrc=1235412312;
+    uint32_t timestamp=0xAC1245;
+    uint16_t length, plen;
+    uint32_t offset;
+    double sendtime = 0;
     int red_PT[2] = {0};
     uint32_t red_TS[2] = {0};
     uint16_t red_len[2] = {0};
     int RTPheaderLen=12;
     uint8_t red_data[8000];
 #ifdef INSERT_OLD_PACKETS
-	uint16_t old_length, old_plen;
-	int old_enc_len;
-	int first_old_packet=1;
-	unsigned char old_rtp_data[8000];
-	int packet_age=0;
+    uint16_t old_length, old_plen;
+    int old_enc_len;
+    int first_old_packet=1;
+    unsigned char old_rtp_data[8000];
+    int packet_age=0;
 #endif
 #ifdef INSERT_DTMF_PACKETS
-	int NTone = 1;
-	int DTMFfirst = 1;
-	uint32_t DTMFtimestamp;
+    int NTone = 1;
+    int DTMFfirst = 1;
+    uint32_t DTMFtimestamp;
     bool dtmfSent = false;
 #endif
     bool usingStereo = false;
@@ -789,7 +821,13 @@ int main(int argc, char* argv[])
 /* Subfunctions */
 /****************/
 
-void NetEQTest_GetCodec_and_PT(char * name, webrtc::NetEqDecoder *codec, int *PT, int frameLen, int *fs, int *bitrate, int *useRed) {
+void NetEQTest_GetCodec_and_PT(char* name,
+                               webrtc::NetEqDecoder* codec,
+                               int* PT,
+                               int frameLen,
+                               int* fs,
+                               int* bitrate,
+                               int* useRed) {
 
 	*bitrate = 0; /* Default bitrate setting */
     *useRed = 0; /* Default no redundancy */
@@ -1626,59 +1664,71 @@ int NetEQTest_encode(int coder, int16_t *indata, int frameLen, unsigned char * e
 
 
 
-void makeRTPheader(unsigned char* rtp_data, int payloadType, int seqNo, uint32_t timestamp, uint32_t ssrc){
-			
-			rtp_data[0]=(unsigned char)0x80;
-			rtp_data[1]=(unsigned char)(payloadType & 0xFF);
-			rtp_data[2]=(unsigned char)((seqNo>>8)&0xFF);
-			rtp_data[3]=(unsigned char)((seqNo)&0xFF);
-			rtp_data[4]=(unsigned char)((timestamp>>24)&0xFF);
-			rtp_data[5]=(unsigned char)((timestamp>>16)&0xFF);
-
-			rtp_data[6]=(unsigned char)((timestamp>>8)&0xFF); 
-			rtp_data[7]=(unsigned char)(timestamp & 0xFF);
-
-			rtp_data[8]=(unsigned char)((ssrc>>24)&0xFF);
-			rtp_data[9]=(unsigned char)((ssrc>>16)&0xFF);
-
-			rtp_data[10]=(unsigned char)((ssrc>>8)&0xFF);
-			rtp_data[11]=(unsigned char)(ssrc & 0xFF);
+void makeRTPheader(unsigned char* rtp_data,
+                   int payloadType,
+                   int seqNo,
+                   uint32_t timestamp,
+                   uint32_t ssrc) {
+    rtp_data[0] = 0x80;
+    rtp_data[1] = payloadType & 0xFF;
+    rtp_data[2] = (seqNo >> 8) & 0xFF;
+    rtp_data[3] = seqNo & 0xFF;
+    rtp_data[4] = timestamp >> 24;
+    rtp_data[5] = (timestamp >> 16) & 0xFF;
+    rtp_data[6] = (timestamp >> 8) & 0xFF;
+    rtp_data[7] = timestamp & 0xFF;
+    rtp_data[8] = ssrc >> 24;
+    rtp_data[9] = (ssrc >> 16) & 0xFF;
+    rtp_data[10] = (ssrc >> 8) & 0xFF;
+    rtp_data[11] = ssrc & 0xFF;
 }
 
 
-int makeRedundantHeader(unsigned char* rtp_data, int *payloadType, int numPayloads, uint32_t *timestamp, uint16_t *blockLen,
-                        int seqNo, uint32_t ssrc)
+int makeRedundantHeader(unsigned char* rtp_data,
+                        int* payloadType,
+                        int numPayloads,
+                        uint32_t* timestamp,
+                        uint16_t* blockLen,
+                        int seqNo,
+                        uint32_t ssrc)
 {
-
     int i;
-    unsigned char *rtpPointer;
+    unsigned char* rtpPointer;
     uint16_t offset;
 
     /* first create "standard" RTP header */
-    makeRTPheader(rtp_data, NETEQ_CODEC_RED_PT, seqNo, timestamp[numPayloads-1], ssrc);
+    makeRTPheader(rtp_data, NETEQ_CODEC_RED_PT, seqNo, timestamp[numPayloads-1],
+                  ssrc);
 
     rtpPointer = &rtp_data[12];
 
     /* add one sub-header for each redundant payload (not the primary) */
-    for(i=0; i<numPayloads-1; i++) {                                            /* |0 1 2 3 4 5 6 7| */
-        if(blockLen[i] > 0) {
-            offset = (uint16_t) (timestamp[numPayloads-1] - timestamp[i]);
+    for (i = 0; i < numPayloads - 1; i++) {
+        if (blockLen[i] > 0) {
+            offset = static_cast<uint16_t>(
+                timestamp[numPayloads - 1] - timestamp[i]);
 
-            rtpPointer[0] = (unsigned char) ( 0x80 | (0x7F & payloadType[i]) ); /* |F|   block PT  | */
-            rtpPointer[1] = (unsigned char) ((offset >> 6) & 0xFF);             /* |  timestamp-   | */
-            rtpPointer[2] = (unsigned char) ( ((offset & 0x3F)<<2) |
-                ( (blockLen[i]>>8) & 0x03 ) );                                  /* | -offset   |bl-| */
-            rtpPointer[3] = (unsigned char) ( blockLen[i] & 0xFF );             /* | -ock length   | */
+            // Byte |0|       |1       2     |  3       |
+            // Bit  |0|1234567|01234567012345|6701234567|
+            //      |F|payload|   timestamp  |   block  |
+            //      | |  type |    offset    |  length  |
+            rtpPointer[0] = (payloadType[i] & 0x7F) | 0x80;
+            rtpPointer[1] = (offset >> 6) & 0xFF;
+            rtpPointer[2] =
+                ((offset & 0x3F) << 2) | ((blockLen[i] >> 8) & 0x03);
+            rtpPointer[3] = blockLen[i] & 0xFF;
 
             rtpPointer += 4;
         }
     }
 
-    /* last sub-header */
-    rtpPointer[0]= (unsigned char) (0x00 | (0x7F&payloadType[numPayloads-1]));/* |F|   block PT  | */
-    rtpPointer += 1;
+    // Bit  |0|1234567|
+    //      |0|payload|
+    //      | |  type |
+    rtpPointer[0] = payloadType[numPayloads - 1] & 0x7F;
+    ++rtpPointer;
 
-    return(rtpPointer - rtp_data); /* length of header in bytes */
+    return rtpPointer - rtp_data;  // length of header in bytes
 }
 
 

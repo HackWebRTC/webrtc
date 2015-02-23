@@ -191,8 +191,8 @@ public:
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
     virtual int32_t RegisterExternalEncoder(VideoEncoder* externalEncoder,
-                                                  uint8_t payloadType,
-                                                  bool internalSource = false) = 0;
+                                            uint8_t payloadType,
+                                            bool internalSource = false) = 0;
 
     // API to get codec config parameters to be sent out-of-band to a receiver.
     //
@@ -380,8 +380,8 @@ public:
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
     virtual int32_t RegisterExternalDecoder(VideoDecoder* externalDecoder,
-                                                  uint8_t payloadType,
-                                                  bool internalRenderTiming) = 0;
+                                            uint8_t payloadType,
+                                            bool internalRenderTiming) = 0;
 
     // Register a receive callback. Will be called whenever there is a new frame ready
     // for rendering.

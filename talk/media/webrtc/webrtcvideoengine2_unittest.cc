@@ -1679,8 +1679,7 @@ TEST_F(WebRtcVideoChannel2Test, SetDefaultSendCodecs) {
 
   EXPECT_EQ(1u, config.rtp.rtx.ssrcs.size());
   EXPECT_EQ(kRtxSsrcs1[0], config.rtp.rtx.ssrcs[0]);
-  EXPECT_EQ(static_cast<int>(default_rtx_codec_.id),
-            config.rtp.rtx.payload_type);
+  EXPECT_EQ(default_rtx_codec_.id, config.rtp.rtx.payload_type);
   // TODO(juberti): Check RTCP, PLI, TMMBR.
 }
 
@@ -1846,10 +1845,9 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsRejectBadPayloadTypes) {
   std::vector<cricket::VideoCodec> codecs;
   codecs.push_back(kVp8Codec);
   for (size_t i = 0; i < arraysize(kIncorrectPayloads); ++i) {
-    int payload_type = kIncorrectPayloads[i];
-    codecs[0].id = payload_type;
+    codecs[0].id = kIncorrectPayloads[i];
     EXPECT_FALSE(channel_->SetSendCodecs(codecs))
-        << "Bad payload type '" << payload_type << "' accepted.";
+        << "Bad payload type '" << kIncorrectPayloads[i] << "' accepted.";
   }
 }
 

@@ -242,21 +242,19 @@ bool RtpHeaderParser::RTCP() const {
     return false;
   }
 
-  const uint8_t V  = _ptrRTPDataBegin[0] >> 6;
+  const uint8_t V = _ptrRTPDataBegin[0] >> 6;
   if (V != kRtcpExpectedVersion) {
     return false;
   }
 
-  const uint8_t  payloadType = _ptrRTPDataBegin[1];
-  bool RTCP = false;
+  const uint8_t payloadType = _ptrRTPDataBegin[1];
   switch (payloadType) {
     case 192:
-      RTCP = true;
-      break;
+      return true;
     case 193:
       // not supported
       // pass through and check for a potential RTP packet
-      break;
+      return false;
     case 195:
     case 200:
     case 201:
@@ -266,10 +264,10 @@ bool RtpHeaderParser::RTCP() const {
     case 205:
     case 206:
     case 207:
-      RTCP = true;
-      break;
+      return true;
+    default:
+      return false;
   }
-  return RTCP;
 }
 
 bool RtpHeaderParser::ParseRtcp(RTPHeader* header) const {

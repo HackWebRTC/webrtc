@@ -414,7 +414,7 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
         decoder_database_->IsRed(rtp_header.header.payloadType) ||
         decoder_database_->IsComfortNoise(rtp_header.header.payloadType)) {
       LOG_F(LS_ERROR) << "Sync-packet with an unacceptable payload type "
-          << static_cast<int>(rtp_header.header.payloadType);
+                      << static_cast<int>(rtp_header.header.payloadType);
       return kSyncPacketNotAccepted;
     }
     if (first_packet_ ||
@@ -422,8 +422,8 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
         rtp_header.header.ssrc != ssrc_) {
       // Even if |current_rtp_payload_type_| is 0xFF, sync-packet isn't
       // accepted.
-      LOG_F(LS_ERROR) << "Changing codec, SSRC or first packet "
-          "with sync-packet.";
+      LOG_F(LS_ERROR)
+          << "Changing codec, SSRC or first packet with sync-packet.";
       return kSyncPacketNotAccepted;
     }
   }

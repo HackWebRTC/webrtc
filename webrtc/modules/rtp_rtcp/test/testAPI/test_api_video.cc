@@ -22,6 +22,12 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/rtp_rtcp/test/testAPI/test_api.h"
 
+namespace {
+
+const unsigned char kPayloadType = 100;
+
+};
+
 namespace webrtc {
 
 class RtpRtcpVideoTest : public ::testing::Test {
@@ -136,7 +142,6 @@ class RtpRtcpVideoTest : public ::testing::Test {
   uint8_t  video_frame_[65000];
   size_t payload_data_length_;
   SimulatedClock fake_clock;
-  enum { kPayloadType = 100 };
 };
 
 TEST_F(RtpRtcpVideoTest, BasicVideo) {
@@ -172,7 +177,7 @@ TEST_F(RtpRtcpVideoTest, PaddingOnlyFrames) {
       EXPECT_TRUE(parser->Parse(padding_packet, packet_size, &header));
       PayloadUnion payload_specific;
       EXPECT_TRUE(rtp_payload_registry_.GetPayloadSpecifics(header.payloadType,
-                                                           &payload_specific));
+                                                            &payload_specific));
       const uint8_t* payload = padding_packet + header.headerLength;
       const size_t payload_length = packet_size - header.headerLength;
       EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(header, payload,

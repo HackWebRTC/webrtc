@@ -2182,8 +2182,8 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelAndNewPort) {
   DataContentDescription* dcdesc = static_cast<DataContentDescription*>(
       mutant->GetContentDescriptionByName(kDataContentName));
   std::vector<cricket::DataCodec> codecs(dcdesc->codecs());
-  EXPECT_EQ(codecs.size(), 1UL);
-  EXPECT_EQ(codecs[0].id, cricket::kGoogleSctpDataCodecId);
+  EXPECT_EQ(1U, codecs.size());
+  EXPECT_EQ(cricket::kGoogleSctpDataCodecId, codecs[0].id);
   codecs[0].SetParam(cricket::kCodecParamPort, kUnusualSctpPort);
   dcdesc->set_codecs(codecs);
 

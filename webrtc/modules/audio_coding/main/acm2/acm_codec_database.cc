@@ -448,20 +448,12 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst,
 
 // Checks if the bitrate is valid for the codec.
 bool ACMCodecDB::IsRateValid(int codec_id, int rate) {
-  if (database_[codec_id].rate == rate) {
-    return true;
-  } else {
-    return false;
-  }
+  return database_[codec_id].rate == rate;
 }
 
 // Checks if the bitrate is valid for iSAC.
 bool ACMCodecDB::IsISACRateValid(int rate) {
-  if ((rate == -1) || ((rate <= 56000) && (rate >= 10000))) {
-    return true;
-  } else {
-    return false;
-  }
+  return (rate == -1) || ((rate <= 56000) && (rate >= 10000));
 }
 
 // Checks if the bitrate is valid for iLBC.
@@ -541,27 +533,17 @@ bool ACMCodecDB::IsG7291RateValid(int rate) {
 
 // Checks if the bitrate is valid for Speex.
 bool ACMCodecDB::IsSpeexRateValid(int rate) {
-  if (rate > 2000) {
-    return true;
-  } else {
-    return false;
-  }
+  return rate > 2000;
 }
 
 // Checks if the bitrate is valid for Opus.
 bool ACMCodecDB::IsOpusRateValid(int rate) {
-  if ((rate < 6000) || (rate > 510000)) {
-    return false;
-  }
-  return true;
+  return (rate >= 6000) && (rate <= 510000);
 }
 
 // Checks if the payload type is in the valid range.
 bool ACMCodecDB::ValidPayloadType(int payload_type) {
-  if ((payload_type < 0) || (payload_type > 127)) {
-    return false;
-  }
-  return true;
+  return (payload_type >= 0) && (payload_type <= 127);
 }
 
 bool ACMCodecDB::OwnsDecoder(int codec_id) {

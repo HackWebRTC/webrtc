@@ -169,8 +169,6 @@ static const int kDefaultLogSeverity = rtc::LS_WARNING;
 
 static const int kDefaultNumberOfTemporalLayers = 1;  // 1:1
 
-static const int kExternalVideoPayloadTypeBase = 120;
-
 static const int kChannelIdUnset = -1;
 static const uint32 kDefaultChannelSsrcKey = 0;
 static const uint32 kSsrcUnset = 0;
@@ -184,12 +182,11 @@ static int GetBitrate(int value, int deflt) {
 }
 
 // Static allocation of payload type values for external video codec.
-static int GetExternalVideoPayloadType(int index) {
-#if ENABLE_DEBUG
-  static const int kMaxExternalVideoCodecs = 8;
-  ASSERT(index >= 0 && index < kMaxExternalVideoCodecs);
-#endif
-  return kExternalVideoPayloadTypeBase + index;
+static int GetExternalVideoPayloadType(size_t index) {
+  static const int kExternalVideoPayloadTypeBase = 120;
+  index += kExternalVideoPayloadTypeBase;
+  ASSERT(index < 128);
+  return static_cast<int>(index);
 }
 
 static void LogMultiline(rtc::LoggingSeverity sev, char* text) {
@@ -633,7 +630,7 @@ class WebRtcLocalStreamInfo {
 // from the worker thread.
 class WebRtcVideoChannelRecvInfo  {
  public:
-  typedef std::map<int, webrtc::VideoDecoder*> DecoderMap;  // key: payload type
+  typedef std::map<int, webrtc::VideoDecoder*> DecoderMap;  // Key: payload type
   explicit WebRtcVideoChannelRecvInfo(int channel_id)
       : channel_id_(channel_id),
         render_adapter_(NULL, channel_id),
@@ -712,7 +709,7 @@ class WebRtcOveruseObserver : public webrtc::CpuOveruseObserver {
 
 class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
  public:
-  typedef std::map<int, webrtc::VideoEncoder*> EncoderMap;  // key: payload type
+  typedef std::map<int, webrtc::VideoEncoder*> EncoderMap;  // Key: payload type
 
   enum AdaptFormatType {
     // This is how we make SetSendStreamFormat take precedence over
@@ -1298,8 +1295,8 @@ bool WebRtcVideoEngine::FindCodec(const VideoCodec& in) {
     const std::vector<WebRtcVideoEncoderFactory::VideoCodec>& codecs =
         encoder_factory_->codecs();
     for (size_t j = 0; j < codecs.size(); ++j) {
-      VideoCodec codec(GetExternalVideoPayloadType(static_cast<int>(j)),
-                       codecs[j].name, 0, 0, 0, 0);
+      VideoCodec codec(GetExternalVideoPayloadType(j), codecs[j].name, 0, 0, 0,
+                       0);
       if (codec.Matches(in))
         return true;
     }
@@ -1406,9 +1403,9 @@ bool WebRtcVideoEngine::ConvertFromCricketVideoCodec(
     for (size_t i = 0; i < codecs.size(); ++i) {
       if (_stricmp(in_codec.name.c_str(), codecs[i].name.c_str()) == 0) {
         out_codec->codecType = codecs[i].type;
-        out_codec->plType = GetExternalVideoPayloadType(static_cast<int>(i));
+        out_codec->plType = GetExternalVideoPayloadType(i);
         rtc::strcpyn(out_codec->plName, sizeof(out_codec->plName),
-                           codecs[i].name.c_str(), codecs[i].name.length());
+                     codecs[i].name.c_str(), codecs[i].name.length());
         found = true;
         break;
       }
@@ -1545,7 +1542,7 @@ bool WebRtcVideoEngine::RebuildCodecList(const VideoCodec& in_codec) {
           internal_codec_names.end();
       if (!is_internal_codec) {
         VideoCodec codec(
-            GetExternalVideoPayloadType(static_cast<int>(i)),
+            GetExternalVideoPayloadType(i),
             codecs[i].name,
             codecs[i].max_width,
             codecs[i].max_height,
@@ -1872,10 +1869,10 @@ bool WebRtcVideoMediaChannel::SetSendCodecs(
   // Select the first matched codec.
   webrtc::VideoCodec& codec(send_codecs[0]);
 
-  // Set RTX payload type if primary now active. This value will be used  in
+  // Set RTX payload type if primary now active. This value will be used in
   // SetSendCodec.
   std::map<int, int>::const_iterator rtx_it =
-    primary_rtx_pt_mapping.find(static_cast<int>(codec.plType));
+      primary_rtx_pt_mapping.find(codec.plType);
   if (rtx_it != primary_rtx_pt_mapping.end()) {
     send_rtx_type_ = rtx_it->second;
   }
@@ -3673,8 +3670,8 @@ bool WebRtcVideoMediaChannel::SetNackFec(int channel_id,
   if (enable) {
     if (engine_->vie()->rtp()->SetHybridNACKFECStatus(
         channel_id, nack_enabled, red_payload_type, fec_payload_type) != 0) {
-      LOG_RTCERR4(SetHybridNACKFECStatus,
-                  channel_id, nack_enabled, red_payload_type, fec_payload_type);
+      LOG_RTCERR4(SetHybridNACKFECStatus, channel_id, nack_enabled,
+                  red_payload_type, fec_payload_type);
       return false;
     }
     LOG(LS_INFO) << "Hybrid NACK/FEC enabled for channel " << channel_id;
@@ -3832,8 +3829,8 @@ bool WebRtcVideoMediaChannel::SetReceiveCodecs(
         LOG(LS_ERROR) << "Only one RTX codec at a time is supported.";
         return false;
       }
-      std::map<int, int>::iterator apt_it = associated_payload_types_.find(
-          it->plType);
+      std::map<int, int>::iterator apt_it =
+          associated_payload_types_.find(it->plType);
       bool valid_apt = false;
       if (apt_it != associated_payload_types_.end()) {
         std::map<int, webrtc::VideoCodec*>::iterator codec_it =

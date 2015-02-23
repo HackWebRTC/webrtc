@@ -74,7 +74,6 @@ using cricket::kCodecParamSctpStreams;
 using cricket::kCodecParamMaxAverageBitrate;
 using cricket::kCodecParamMaxPlaybackRate;
 using cricket::kCodecParamAssociatedPayloadType;
-using cricket::kWildcardPayloadType;
 using cricket::MediaContentDescription;
 using cricket::MediaType;
 using cricket::NS_JINGLE_ICE_UDP;
@@ -222,6 +221,10 @@ static const int kIsacWbDefaultRate = 32000;  // From acm_common_defs.h
 static const int kIsacSwbDefaultRate = 56000;  // From acm_common_defs.h
 
 static const char kDefaultSctpmapProtocol[] = "webrtc-datachannel";
+
+// RTP payload type is in the 0-127 range. Use -1 to indicate "all" payload
+// types.
+const int kWildcardPayloadType = -1;
 
 struct SsrcInfo {
   SsrcInfo()
@@ -3049,8 +3052,8 @@ bool ParseFmtpAttributes(const std::string& line, const MediaType media_type,
     return false;
   }
 
-  std::string payload_type;
-  if (!GetValue(fields[0], kAttributeFmtp, &payload_type, error)) {
+  std::string payload_type_str;
+  if (!GetValue(fields[0], kAttributeFmtp, &payload_type_str, error)) {
     return false;
   }
 
@@ -3070,16 +3073,16 @@ bool ParseFmtpAttributes(const std::string& line, const MediaType media_type,
     codec_params[name] = value;
   }
 
-  int int_payload_type = 0;
-  if (!GetPayloadTypeFromString(line, payload_type, &int_payload_type, error)) {
+  int payload_type = 0;
+  if (!GetPayloadTypeFromString(line, payload_type_str, &payload_type, error)) {
     return false;
   }
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
     UpdateCodec<AudioContentDescription, cricket::AudioCodec>(
-        media_desc, int_payload_type, codec_params);
+        media_desc, payload_type, codec_params);
   } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
     UpdateCodec<VideoContentDescription, cricket::VideoCodec>(
-        media_desc, int_payload_type, codec_params);
+        media_desc, payload_type, codec_params);
   }
   return true;
 }
@@ -3117,13 +3120,11 @@ bool ParseRtcpFbAttribute(const std::string& line, const MediaType media_type,
   const cricket::FeedbackParam feedback_param(id, param);
 
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
-    UpdateCodec<AudioContentDescription, cricket::AudioCodec>(media_desc,
-                                                              payload_type,
-                                                              feedback_param);
+    UpdateCodec<AudioContentDescription, cricket::AudioCodec>(
+        media_desc, payload_type, feedback_param);
   } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
-    UpdateCodec<VideoContentDescription, cricket::VideoCodec>(media_desc,
-                                                              payload_type,
-                                                              feedback_param);
+    UpdateCodec<VideoContentDescription, cricket::VideoCodec>(
+        media_desc, payload_type, feedback_param);
   }
   return true;
 }

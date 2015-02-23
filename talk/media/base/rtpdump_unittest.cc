@@ -44,22 +44,23 @@ TEST(RtpDumpTest, ReadRtpDumpPacket) {
   RtpTestUtility::kTestRawRtpPackets[0].WriteToByteBuffer(kTestSsrc, &rtp_buf);
   RtpDumpPacket rtp_packet(rtp_buf.Data(), rtp_buf.Length(), 0, false);
 
-  int type;
+  int payload_type;
   int seq_num;
   uint32 ts;
   uint32 ssrc;
+  int rtcp_type;
   EXPECT_FALSE(rtp_packet.is_rtcp());
   EXPECT_TRUE(rtp_packet.IsValidRtpPacket());
   EXPECT_FALSE(rtp_packet.IsValidRtcpPacket());
-  EXPECT_TRUE(rtp_packet.GetRtpPayloadType(&type));
-  EXPECT_EQ(0, type);
+  EXPECT_TRUE(rtp_packet.GetRtpPayloadType(&payload_type));
+  EXPECT_EQ(0, payload_type);
   EXPECT_TRUE(rtp_packet.GetRtpSeqNum(&seq_num));
   EXPECT_EQ(0, seq_num);
   EXPECT_TRUE(rtp_packet.GetRtpTimestamp(&ts));
   EXPECT_EQ(0U, ts);
   EXPECT_TRUE(rtp_packet.GetRtpSsrc(&ssrc));
   EXPECT_EQ(kTestSsrc, ssrc);
-  EXPECT_FALSE(rtp_packet.GetRtcpType(&type));
+  EXPECT_FALSE(rtp_packet.GetRtcpType(&rtcp_type));
 
   rtc::ByteBuffer rtcp_buf;
   RtpTestUtility::kTestRawRtcpPackets[0].WriteToByteBuffer(&rtcp_buf);
@@ -68,8 +69,8 @@ TEST(RtpDumpTest, ReadRtpDumpPacket) {
   EXPECT_TRUE(rtcp_packet.is_rtcp());
   EXPECT_FALSE(rtcp_packet.IsValidRtpPacket());
   EXPECT_TRUE(rtcp_packet.IsValidRtcpPacket());
-  EXPECT_TRUE(rtcp_packet.GetRtcpType(&type));
-  EXPECT_EQ(0, type);
+  EXPECT_TRUE(rtcp_packet.GetRtcpType(&rtcp_type));
+  EXPECT_EQ(0, rtcp_type);
 }
 
 // Test that we read only the RTP dump file.

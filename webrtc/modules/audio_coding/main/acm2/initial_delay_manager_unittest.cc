@@ -332,7 +332,6 @@ TEST_F(InitialDelayManagerTest, NoLatePacketAfterCng) {
 
   // Second packet as CNG.
   NextRtpHeader(&rtp_info_, &rtp_receive_timestamp_);
-  const uint8_t kCngPayloadType = 1;  // Arbitrary.
   rtp_info_.header.payloadType = kCngPayloadType;
   manager_->UpdateLastReceivedPacket(rtp_info_, rtp_receive_timestamp_,
                                      InitialDelayManager::kCngPacket, false,

@@ -1614,9 +1614,9 @@ int32_t RTPSender::SetGenericFECStatus(bool enable,
                                      payload_type_fec);
 }
 
-int32_t RTPSender::GenericFECStatus(
-    bool *enable, uint8_t *payload_type_red,
-    uint8_t *payload_type_fec) const {
+int32_t RTPSender::GenericFECStatus(bool* enable,
+                                    uint8_t* payload_type_red,
+                                    uint8_t* payload_type_fec) const {
   if (audio_configured_) {
     return -1;
   }

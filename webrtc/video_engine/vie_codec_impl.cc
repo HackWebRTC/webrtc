@@ -650,7 +650,7 @@ bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
   }
 
   if (video_codec.plType == 0 || video_codec.plType > 127) {
-    LOG(LS_ERROR) << "Invalif payload type: "
+    LOG(LS_ERROR) << "Invalid payload type: "
                   << static_cast<int>(video_codec.plType);
     return false;
   }
