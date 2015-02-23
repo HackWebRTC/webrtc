@@ -59,16 +59,27 @@ class MediaCodecVideoDecoder {
 
   private static final String TAG = "MediaCodecVideoDecoder";
 
+  // Tracks webrtc::VideoCodecType.
+  public enum VideoCodecType {
+    VIDEO_CODEC_VP8,
+    VIDEO_CODEC_VP9,
+    VIDEO_CODEC_H264
+  }
+
   private static final int DEQUEUE_INPUT_TIMEOUT = 500000;  // 500 ms timeout.
   private Thread mediaCodecThread;
   private MediaCodec mediaCodec;
   private ByteBuffer[] inputBuffers;
   private ByteBuffer[] outputBuffers;
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
+  private static final String H264_MIME_TYPE = "video/avc";
   // List of supported HW VP8 decoders.
-  private static final String[] supportedHwCodecPrefixes =
+  private static final String[] supportedVp8HwCodecPrefixes =
     {"OMX.qcom.", "OMX.Nvidia.", "OMX.Exynos." };
-  // List of supported SW VP8 decoders.
+  // List of supported HW H.264 decoders.
+  private static final String[] supportedH264HwCodecPrefixes =
+    {"OMX.qcom." };
+  // List of supported SW decoders.
   private static final String[] supportedSwCodecPrefixes =
     {"OMX.google."};
   // NV12 color format supported by QCOM codec, but not declared in MediaCodec -
@@ -113,13 +124,10 @@ class MediaCodecVideoDecoder {
     public final int colorFormat;  // Color format supported by codec.
   }
 
-  private static DecoderProperties findVp8Decoder(boolean useSwCodec) {
+  private static DecoderProperties findDecoder(
+      String mime, String[] supportedCodecPrefixes) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
       return null; // MediaCodec.setParameters is missing.
-    }
-    String[] supportedCodecPrefixes = supportedHwCodecPrefixes;
-    if (useSwCodec) {
-      supportedCodecPrefixes = supportedSwCodecPrefixes;
     }
     for (int i = 0; i < MediaCodecList.getCodecCount(); ++i) {
       MediaCodecInfo info = MediaCodecList.getCodecInfoAt(i);
@@ -128,15 +136,15 @@ class MediaCodecVideoDecoder {
       }
       String name = null;
       for (String mimeType : info.getSupportedTypes()) {
-        if (mimeType.equals(VP8_MIME_TYPE)) {
+        if (mimeType.equals(mime)) {
           name = info.getName();
           break;
         }
       }
       if (name == null) {
-        continue;  // No VP8 support in this codec; try the next one.
+        continue;  // No HW support in this codec; try the next one.
       }
-      Log.d(TAG, "Found candidate decoder " + name);
+      Log.v(TAG, "Found candidate decoder " + name);
 
       // Check if this is supported decoder.
       boolean supportedCodec = false;
@@ -152,14 +160,14 @@ class MediaCodecVideoDecoder {
 
       // Check if codec supports either yuv420 or nv12.
       CodecCapabilities capabilities =
-          info.getCapabilitiesForType(VP8_MIME_TYPE);
+          info.getCapabilitiesForType(mime);
       for (int colorFormat : capabilities.colorFormats) {
-        Log.d(TAG, "   Color: 0x" + Integer.toHexString(colorFormat));
+        Log.v(TAG, "   Color: 0x" + Integer.toHexString(colorFormat));
       }
       for (int supportedColorFormat : supportedColorList) {
         for (int codecColorFormat : capabilities.colorFormats) {
           if (codecColorFormat == supportedColorFormat) {
-            // Found supported HW VP8 decoder.
+            // Found supported HW decoder.
             Log.d(TAG, "Found target decoder " + name +
                 ". Color: 0x" + Integer.toHexString(codecColorFormat));
             return new DecoderProperties(name, codecColorFormat);
@@ -167,7 +175,7 @@ class MediaCodecVideoDecoder {
         }
       }
     }
-    return null;  // No HW VP8 decoder.
+    return null;  // No HW decoder.
   }
 
   private static boolean isEGL14Supported() {
@@ -175,8 +183,12 @@ class MediaCodecVideoDecoder {
     return (CURRENT_SDK_VERSION >= EGL14_SDK_VERSION);
   }
 
-  private static boolean isPlatformSupported() {
-    return findVp8Decoder(false) != null;
+  private static boolean isVp8HwSupported() {
+    return findDecoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes) != null;
+  }
+
+  private static boolean isH264HwSupported() {
+    return findDecoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes) != null;
   }
 
   private void checkOnMediaCodecThread() {
@@ -281,7 +293,8 @@ class MediaCodecVideoDecoder {
     }
   }
 
-  private boolean initDecode(int width, int height, boolean useSwCodec,
+  private boolean initDecode(
+      VideoCodecType type, int width, int height, boolean useSwCodec,
       boolean useSurface, EGLContext sharedContext) {
     if (mediaCodecThread != null) {
       throw new RuntimeException("Forgot to release()?");
@@ -289,11 +302,25 @@ class MediaCodecVideoDecoder {
     if (useSurface && sharedContext == null) {
       throw new RuntimeException("No shared EGL context.");
     }
-    DecoderProperties properties = findVp8Decoder(useSwCodec);
-    if (properties == null) {
-      throw new RuntimeException("Cannot find HW VP8 decoder");
+    String mime = null;
+    String[] supportedCodecPrefixes = null;
+    if (type == VideoCodecType.VIDEO_CODEC_VP8) {
+      mime = VP8_MIME_TYPE;
+      supportedCodecPrefixes = supportedVp8HwCodecPrefixes;
+    } else if (type == VideoCodecType.VIDEO_CODEC_H264) {
+      mime = H264_MIME_TYPE;
+      supportedCodecPrefixes = supportedH264HwCodecPrefixes;
+    } else {
+      throw new RuntimeException("Non supported codec " + type);
     }
-    Log.d(TAG, "Java initDecode: " + width + " x " + height +
+    if (useSwCodec) {
+      supportedCodecPrefixes = supportedSwCodecPrefixes;
+    }
+    DecoderProperties properties = findDecoder(mime, supportedCodecPrefixes);
+    if (properties == null) {
+      throw new RuntimeException("Cannot find HW decoder for " + type);
+    }
+    Log.d(TAG, "Java initDecode: " + type + " : "+ width + " x " + height +
         ". Color: 0x" + Integer.toHexString(properties.colorFormat) +
         ". Use Surface: " + useSurface + ". Use SW codec: " + useSwCodec);
     if (sharedContext != null) {
@@ -336,8 +363,7 @@ class MediaCodecVideoDecoder {
         decodeSurface = surface;
      }
 
-      MediaFormat format =
-          MediaFormat.createVideoFormat(VP8_MIME_TYPE, width, height);
+      MediaFormat format = MediaFormat.createVideoFormat(mime, width, height);
       if (!useSurface) {
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, properties.colorFormat);
       }

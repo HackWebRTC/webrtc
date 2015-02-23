@@ -153,7 +153,7 @@ extern "C" void JNIEXPORT JNICALL JNI_OnUnLoad(JavaVM *jvm, void *reserved) {
 
 // Return the (singleton) Java Enum object corresponding to |index|;
 // |state_class_fragment| is something like "MediaSource$State".
-jobject JavaEnumFromIndex(
+static jobject JavaEnumFromIndex(
     JNIEnv* jni, const std::string& state_class_fragment, int index) {
   const std::string state_class = "org/webrtc/" + state_class_fragment;
   return JavaEnumFromIndex(jni, FindClass(jni, state_class.c_str()),

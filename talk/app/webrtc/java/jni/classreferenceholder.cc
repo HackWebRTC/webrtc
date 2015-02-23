@@ -75,8 +75,10 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/VideoCapturerAndroid$NativeObserver");
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder");
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder$OutputBufferInfo");
+  LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder$VideoCodecType");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder");
   LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$DecoderOutputBufferInfo");
+  LoadClass(jni, "org/webrtc/MediaCodecVideoDecoder$VideoCodecType");
   jclass j_decoder_class = GetClass("org/webrtc/MediaCodecVideoDecoder");
   jmethodID j_is_egl14_supported_method = jni->GetStaticMethodID(
       j_decoder_class, "isEGL14Supported", "()Z");

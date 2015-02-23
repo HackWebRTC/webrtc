@@ -51,7 +51,7 @@ class MediaCodecVideoDecoderFactory
   static jobject render_egl_context_;
 
  private:
-  bool is_platform_supported_;
+  std::vector<webrtc::VideoCodecType> supported_codec_types_;
 };
 
 }  // namespace webrtc_jni

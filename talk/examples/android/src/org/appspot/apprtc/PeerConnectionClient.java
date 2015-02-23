@@ -68,8 +68,11 @@ public class PeerConnectionClient {
   public static final String AUDIO_TRACK_ID = "ARDAMSa0";
   private static final String TAG = "PCRTCClient";
   private static final boolean PREFER_ISAC = false;
+  private static final boolean PREFER_H264 = false;
+  public static final String AUDIO_CODEC_ISAC = "ISAC";
   public static final String VIDEO_CODEC_VP8 = "VP8";
   public static final String VIDEO_CODEC_VP9 = "VP9";
+  public static final String VIDEO_CODEC_H264 = "H264";
   private static final String FIELD_TRIAL_VP9 = "WebRTC-SupportVP9/Enabled/";
   private static final String MAX_VIDEO_WIDTH_CONSTRAINT = "maxWidth";
   private static final String MIN_VIDEO_WIDTH_CONSTRAINT = "minWidth";
@@ -216,7 +219,7 @@ public class PeerConnectionClient {
       // If HW video encoder is supported and video resolution is not
       // specified force it to HD.
       if ((videoWidth == 0 || videoHeight == 0) && videoCodecHwAcceleration &&
-          MediaCodecVideoEncoder.isPlatformSupported()) {
+          MediaCodecVideoEncoder.isVp8HwSupported()) {
         videoWidth = HD_VIDEO_WIDTH;
         videoHeight = HD_VIDEO_HEIGHT;
       }
@@ -477,7 +480,10 @@ public class PeerConnectionClient {
         }
         String sdpDescription = sdp.description;
         if (PREFER_ISAC) {
-          sdpDescription = preferISAC(sdpDescription);
+          sdpDescription = preferCodec(sdpDescription, AUDIO_CODEC_ISAC, true);
+        }
+        if (PREFER_H264) {
+          sdpDescription = preferCodec(sdpDescription, VIDEO_CODEC_H264, false);
         }
         if (peerConnectionParameters.videoStartBitrate > 0) {
           sdpDescription = setStartBitrate(VIDEO_CODEC_VP8,
@@ -572,41 +578,47 @@ public class PeerConnectionClient {
       if (i == lineIndex) {
         String bitrateSet = "a=fmtp:" + codecRtpMap
             + " x-google-start-bitrate=" + bitrateKbps;
-        Log.d(TAG, "Add remote SDP line: " + bitrateSet);
+        Log.d(TAG, "Add bitrate SDP line: " + bitrateSet);
         newSdpDescription.append(bitrateSet).append("\r\n");
       }
     }
     return newSdpDescription.toString();
   }
 
-  // Mangle SDP to prefer ISAC/16000 over any other audio codec.
-  private static String preferISAC(String sdpDescription) {
+  private static String preferCodec(
+      String sdpDescription, String codec, boolean isAudio) {
     String[] lines = sdpDescription.split("\r\n");
     int mLineIndex = -1;
-    String isac16kRtpMap = null;
-    Pattern isac16kPattern =
-        Pattern.compile("^a=rtpmap:(\\d+) ISAC/16000[\r]?$");
-    for (int i = 0;
-         (i < lines.length) && (mLineIndex == -1 || isac16kRtpMap == null);
-         ++i) {
-      if (lines[i].startsWith("m=audio ")) {
+    String codecRtpMap = null;
+    // a=rtpmap:<payload type> <encoding name>/<clock rate> [/<encoding parameters>]
+    String regex = "^a=rtpmap:(\\d+) " + codec + "(/\\d+)+[\r]?$";
+    Pattern codecPattern = Pattern.compile(regex);
+    String mediaDescription = "m=video ";
+    if (isAudio) {
+      mediaDescription = "m=audio ";
+    }
+    for (int i = 0; (i < lines.length) &&
+        (mLineIndex == -1 || codecRtpMap == null); i++) {
+      if (lines[i].startsWith(mediaDescription)) {
         mLineIndex = i;
         continue;
       }
-      Matcher isac16kMatcher = isac16kPattern.matcher(lines[i]);
-      if (isac16kMatcher.matches()) {
-        isac16kRtpMap = isac16kMatcher.group(1);
+      Matcher codecMatcher = codecPattern.matcher(lines[i]);
+      if (codecMatcher.matches()) {
+        codecRtpMap = codecMatcher.group(1);
         continue;
       }
     }
     if (mLineIndex == -1) {
-      Log.d(TAG, "No m=audio line, so can't prefer iSAC");
+      Log.w(TAG, "No " + mediaDescription + " line, so can't prefer " + codec);
       return sdpDescription;
     }
-    if (isac16kRtpMap == null) {
-      Log.d(TAG, "No ISAC/16000 line, so can't prefer iSAC");
+    if (codecRtpMap == null) {
+      Log.w(TAG, "No rtpmap for " + codec);
       return sdpDescription;
     }
+    Log.d(TAG, "Found " +  codec + " rtpmap " + codecRtpMap + ", prefer at " +
+        lines[mLineIndex]);
     String[] origMLineParts = lines[mLineIndex].split(" ");
     StringBuilder newMLine = new StringBuilder();
     int origPartIndex = 0;
@@ -614,13 +626,14 @@ public class PeerConnectionClient {
     newMLine.append(origMLineParts[origPartIndex++]).append(" ");
     newMLine.append(origMLineParts[origPartIndex++]).append(" ");
     newMLine.append(origMLineParts[origPartIndex++]).append(" ");
-    newMLine.append(isac16kRtpMap);
-    for (; origPartIndex < origMLineParts.length; ++origPartIndex) {
-      if (!origMLineParts[origPartIndex].equals(isac16kRtpMap)) {
+    newMLine.append(codecRtpMap);
+    for (; origPartIndex < origMLineParts.length; origPartIndex++) {
+      if (!origMLineParts[origPartIndex].equals(codecRtpMap)) {
         newMLine.append(" ").append(origMLineParts[origPartIndex]);
       }
     }
     lines[mLineIndex] = newMLine.toString();
+    Log.d(TAG, "Change media description: " + lines[mLineIndex]);
     StringBuilder newSdpDescription = new StringBuilder();
     for (String line : lines) {
       newSdpDescription.append(line).append("\r\n");
@@ -758,7 +771,10 @@ public class PeerConnectionClient {
       }
       String sdpDescription = origSdp.description;
       if (PREFER_ISAC) {
-        sdpDescription = preferISAC(sdpDescription);
+        sdpDescription = preferCodec(sdpDescription, AUDIO_CODEC_ISAC, true);
+      }
+      if (PREFER_H264) {
+        sdpDescription = preferCodec(sdpDescription, VIDEO_CODEC_H264, false);
       }
       final SessionDescription sdp = new SessionDescription(
           origSdp.type, sdpDescription);

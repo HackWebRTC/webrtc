@@ -51,15 +51,28 @@ public class MediaCodecVideoEncoder {
 
   private static final String TAG = "MediaCodecVideoEncoder";
 
+  // Tracks webrtc::VideoCodecType.
+  public enum VideoCodecType {
+    VIDEO_CODEC_VP8,
+    VIDEO_CODEC_VP9,
+    VIDEO_CODEC_H264
+  }
+
   private static final int DEQUEUE_TIMEOUT = 0;  // Non-blocking, no wait.
   private Thread mediaCodecThread;
   private MediaCodec mediaCodec;
   private ByteBuffer[] outputBuffers;
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
+  private static final String H264_MIME_TYPE = "video/avc";
   // List of supported HW VP8 codecs.
-  private static final String[] supportedHwCodecPrefixes =
+  private static final String[] supportedVp8HwCodecPrefixes =
     {"OMX.qcom.", "OMX.Nvidia." };
-  // Bitrate mode
+  // List of supported HW H.264 codecs.
+  private static final String[] supportedH264HwCodecPrefixes =
+    {"OMX.qcom." };
+  // Bitrate modes - should be in sync with OMX_VIDEO_CONTROLRATETYPE defined
+  // in OMX_Video.h
+  private static final int VIDEO_ControlRateVariable = 1;
   private static final int VIDEO_ControlRateConstant = 2;
   // NV12 color format supported by QCOM codec, but not declared in MediaCodec -
   // see /hardware/qcom/media/mm-core/inc/OMX_QCOMExtns.h
@@ -73,20 +86,25 @@ public class MediaCodecVideoEncoder {
     COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m
   };
   private int colorFormat;
+  // Video encoder type.
+  private VideoCodecType type;
+  // SPS and PPS NALs (Config frame) for H.264.
+  private ByteBuffer configData = null;
 
   private MediaCodecVideoEncoder() {}
 
-  // Helper struct for findVp8HwEncoder() below.
+  // Helper struct for findHwEncoder() below.
   private static class EncoderProperties {
     public EncoderProperties(String codecName, int colorFormat) {
       this.codecName = codecName;
       this.colorFormat = colorFormat;
     }
-    public final String codecName; // OpenMax component name for VP8 codec.
+    public final String codecName; // OpenMax component name for HW codec.
     public final int colorFormat;  // Color format supported by codec.
   }
 
-  private static EncoderProperties findVp8HwEncoder() {
+  private static EncoderProperties findHwEncoder(
+      String mime, String[] supportedHwCodecPrefixes) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT)
       return null; // MediaCodec.setParameters is missing.
 
@@ -97,15 +115,15 @@ public class MediaCodecVideoEncoder {
       }
       String name = null;
       for (String mimeType : info.getSupportedTypes()) {
-        if (mimeType.equals(VP8_MIME_TYPE)) {
+        if (mimeType.equals(mime)) {
           name = info.getName();
           break;
         }
       }
       if (name == null) {
-        continue;  // No VP8 support in this codec; try the next one.
+        continue;  // No HW support in this codec; try the next one.
       }
-      Log.d(TAG, "Found candidate encoder " + name);
+      Log.v(TAG, "Found candidate encoder " + name);
 
       // Check if this is supported HW encoder.
       boolean supportedCodec = false;
@@ -119,18 +137,17 @@ public class MediaCodecVideoEncoder {
         continue;
       }
 
-      CodecCapabilities capabilities =
-          info.getCapabilitiesForType(VP8_MIME_TYPE);
+      CodecCapabilities capabilities = info.getCapabilitiesForType(mime);
       for (int colorFormat : capabilities.colorFormats) {
-        Log.d(TAG, "   Color: 0x" + Integer.toHexString(colorFormat));
+        Log.v(TAG, "   Color: 0x" + Integer.toHexString(colorFormat));
       }
 
       // Check if codec supports either yuv420 or nv12.
       for (int supportedColorFormat : supportedColorList) {
         for (int codecColorFormat : capabilities.colorFormats) {
           if (codecColorFormat == supportedColorFormat) {
-            // Found supported HW VP8 encoder.
-            Log.d(TAG, "Found target encoder " + name +
+            // Found supported HW encoder.
+            Log.d(TAG, "Found target encoder for mime " + mime + " : " + name +
                 ". Color: 0x" + Integer.toHexString(codecColorFormat));
             return new EncoderProperties(name, codecColorFormat);
           }
@@ -140,8 +157,12 @@ public class MediaCodecVideoEncoder {
     return null;  // No HW VP8 encoder.
   }
 
-  public static boolean isPlatformSupported() {
-    return findVp8HwEncoder() != null;
+  public static boolean isVp8HwSupported() {
+    return findHwEncoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes) != null;
+  }
+
+  public static boolean isH264HwSupported() {
+    return findHwEncoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes) != null;
   }
 
   private void checkOnMediaCodecThread() {
@@ -163,27 +184,38 @@ public class MediaCodecVideoEncoder {
   }
 
   // Return the array of input buffers, or null on failure.
-  private ByteBuffer[] initEncode(int width, int height, int kbps, int fps) {
-    Log.d(TAG, "Java initEncode: " + width + " x " + height +
+  private ByteBuffer[] initEncode(
+      VideoCodecType type, int width, int height, int kbps, int fps) {
+    Log.d(TAG, "Java initEncode: " + type + " : " + width + " x " + height +
         ". @ " + kbps + " kbps. Fps: " + fps +
         ". Color: 0x" + Integer.toHexString(colorFormat));
     if (mediaCodecThread != null) {
       throw new RuntimeException("Forgot to release()?");
     }
-    EncoderProperties properties = findVp8HwEncoder();
+    this.type = type;
+    EncoderProperties properties = null;
+    String mime = null;
+    int keyFrameIntervalSec = 0;
+    if (type == VideoCodecType.VIDEO_CODEC_VP8) {
+      mime = VP8_MIME_TYPE;
+      properties = findHwEncoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes);
+      keyFrameIntervalSec = 100;
+    } else if (type == VideoCodecType.VIDEO_CODEC_H264) {
+      mime = H264_MIME_TYPE;
+      properties = findHwEncoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes);
+      keyFrameIntervalSec = 20;
+    }
     if (properties == null) {
-      throw new RuntimeException("Can not find HW VP8 encoder");
+      throw new RuntimeException("Can not find HW encoder for " + type);
     }
     mediaCodecThread = Thread.currentThread();
     try {
-      MediaFormat format =
-          MediaFormat.createVideoFormat(VP8_MIME_TYPE, width, height);
+      MediaFormat format = MediaFormat.createVideoFormat(mime, width, height);
       format.setInteger(MediaFormat.KEY_BIT_RATE, 1000 * kbps);
       format.setInteger("bitrate-mode", VIDEO_ControlRateConstant);
       format.setInteger(MediaFormat.KEY_COLOR_FORMAT, properties.colorFormat);
-      // Default WebRTC settings
       format.setInteger(MediaFormat.KEY_FRAME_RATE, fps);
-      format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 100);
+      format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, keyFrameIntervalSec);
       Log.d(TAG, "  Format: " + format);
       mediaCodec = createByCodecName(properties.codecName);
       if (mediaCodec == null) {
@@ -273,8 +305,8 @@ public class MediaCodecVideoEncoder {
   // Helper struct for dequeueOutputBuffer() below.
   private static class OutputBufferInfo {
     public OutputBufferInfo(
-        int index, ByteBuffer buffer, boolean isKeyFrame,
-        long presentationTimestampUs) {
+        int index, ByteBuffer buffer,
+        boolean isKeyFrame, long presentationTimestampUs) {
       this.index = index;
       this.buffer = buffer;
       this.isKeyFrame = isKeyFrame;
@@ -294,6 +326,23 @@ public class MediaCodecVideoEncoder {
     try {
       MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
       int result = mediaCodec.dequeueOutputBuffer(info, DEQUEUE_TIMEOUT);
+      // Check if this is config frame and save configuration data.
+      if (result >= 0) {
+        boolean isConfigFrame =
+            (info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0;
+        if (isConfigFrame) {
+          Log.d(TAG, "Config frame generated. Offset: " + info.offset +
+              ". Size: " + info.size);
+          configData = ByteBuffer.allocateDirect(info.size);
+          outputBuffers[result].position(info.offset);
+          outputBuffers[result].limit(info.offset + info.size);
+          configData.put(outputBuffers[result]);
+          // Release buffer back.
+          mediaCodec.releaseOutputBuffer(result, false);
+          // Query next output.
+          result = mediaCodec.dequeueOutputBuffer(info, DEQUEUE_TIMEOUT);
+        }
+      }
       if (result >= 0) {
         // MediaCodec doesn't care about Buffer position/remaining/etc so we can
         // mess with them to get a slice and avoid having to pass extra
@@ -301,13 +350,29 @@ public class MediaCodecVideoEncoder {
         ByteBuffer outputBuffer = outputBuffers[result].duplicate();
         outputBuffer.position(info.offset);
         outputBuffer.limit(info.offset + info.size);
+        // Check key frame flag.
         boolean isKeyFrame =
             (info.flags & MediaCodec.BUFFER_FLAG_SYNC_FRAME) != 0;
         if (isKeyFrame) {
           Log.d(TAG, "Sync frame generated");
         }
-        return new OutputBufferInfo(
-            result, outputBuffer.slice(), isKeyFrame, info.presentationTimeUs);
+        if (isKeyFrame && type == VideoCodecType.VIDEO_CODEC_H264) {
+          Log.d(TAG, "Appending config frame of size " + configData.capacity() +
+              " to output buffer with offset " + info.offset + ", size " +
+              info.size);
+          // For H.264 key frame append SPS and PPS NALs at the start
+          ByteBuffer keyFrameBuffer = ByteBuffer.allocateDirect(
+              configData.capacity() + info.size);
+          configData.rewind();
+          keyFrameBuffer.put(configData);
+          keyFrameBuffer.put(outputBuffer);
+          keyFrameBuffer.position(0);
+          return new OutputBufferInfo(result, keyFrameBuffer,
+              isKeyFrame, info.presentationTimeUs);
+        } else {
+          return new OutputBufferInfo(result, outputBuffer.slice(),
+              isKeyFrame, info.presentationTimeUs);
+        }
       } else if (result == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
         outputBuffers = mediaCodec.getOutputBuffers();
         return dequeueOutputBuffer();
