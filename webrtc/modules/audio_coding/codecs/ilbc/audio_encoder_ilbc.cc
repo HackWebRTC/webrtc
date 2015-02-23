@@ -104,8 +104,7 @@ bool AudioEncoderIlbc::EncodeInternal(uint32_t rtp_timestamp,
       input_buffer_,
       kSampleRateHz / 100 * num_10ms_frames_per_packet_,
       encoded);
-  if (output_len == -1)
-    return false;  // Encoding error.
+  CHECK_GE(output_len, 0);
   DCHECK_EQ(output_len, static_cast<int>(expected_output_len));
   info->encoded_bytes = output_len;
   info->encoded_timestamp = first_timestamp_in_buffer_;
