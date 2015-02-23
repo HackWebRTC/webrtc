@@ -150,7 +150,7 @@ source_set("audio_processing") {
       "ns/nsx_core.h",
       "ns/nsx_defines.h",
     ]
-    if (cpu_arch == "mipsel") {
+    if (current_cpu == "mipsel") {
       sources += [ "ns/nsx_core_mips.c" ]
     } else {
       sources += [ "ns/nsx_core_c.c" ]
@@ -175,15 +175,15 @@ source_set("audio_processing") {
     ]
   }
 
-  if (cpu_arch == "x86" || cpu_arch == "x64") {
+  if (current_cpu == "x86" || current_cpu == "x64") {
     deps += [ ":audio_processing_sse2" ]
   }
 
-  if (rtc_build_armv7_neon || cpu_arch == "arm64") {
+  if (rtc_build_armv7_neon || current_cpu == "arm64") {
     deps += [ ":audio_processing_neon" ]
   }
 
-  if (cpu_arch == "mipsel") {
+  if (current_cpu == "mipsel") {
     sources += [ "aecm/aecm_core_mips.c" ]
     if (mips_fpu)  {
       sources += [
@@ -223,7 +223,7 @@ if (rtc_enable_protobuf) {
   }
 }
 
-if (cpu_arch == "x86" || cpu_arch == "x64") {
+if (current_cpu == "x86" || current_cpu == "x64") {
   source_set("audio_processing_sse2") {
     sources = [
       "aec/aec_core_sse2.c",
@@ -237,7 +237,7 @@ if (cpu_arch == "x86" || cpu_arch == "x64") {
   }
 }
 
-if (rtc_build_armv7_neon || cpu_arch == "arm64") {
+if (rtc_build_armv7_neon || current_cpu == "arm64") {
   source_set("audio_processing_neon") {
     sources = [
       "aec/aec_core_neon.c",
@@ -260,7 +260,7 @@ if (rtc_build_armv7_neon || cpu_arch == "arm64") {
     configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
 
     # "-mfpu=neon" is not requried for arm64 in GCC.
-    if (cpu_arch != "arm64") {
+    if (current_cpu != "arm64") {
        cflags = [ "-mfpu=neon" ]
     }
 

@@ -80,7 +80,12 @@
               'sources': [
                 'app/webrtc/java/jni/androidvideocapturer_jni.cc',
                 'app/webrtc/java/jni/androidvideocapturer_jni.h',
-              ]
+              ],
+              'variables': {
+                # This library uses native JNI exports; tell GYP so that the
+                # required symbols will be kept.
+                'use_native_jni_exports': 1,
+              },
             }],
             ['OS=="android" and build_with_chromium==0', {
               'sources': [

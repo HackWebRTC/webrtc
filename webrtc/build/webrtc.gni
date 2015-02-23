@@ -104,13 +104,13 @@ declare_args() {
     rtc_enable_protobuf = false
   }
 
-  if (cpu_arch == "arm") {
+  if (current_cpu == "arm") {
     rtc_prefer_fixed_point = true
   }
 
   # TODO(ljubomir): Unset rtc_use_openmax_dl for mips64el once mips64el gets
   # supported in GN (since openmax_dl is not supported for mips64el).
-  if (!is_ios && (cpu_arch != "arm" || arm_version >= 7)) {
+  if (!is_ios && (current_cpu != "arm" || arm_version >= 7)) {
     rtc_use_openmax_dl = true
   } else {
     rtc_use_openmax_dl = false
@@ -119,7 +119,7 @@ declare_args() {
   # WebRTC builds ARM v7 Neon instruction set optimized code for both iOS and
   # Android, which is why we currently cannot use the variables in
   # //build/config/arm.gni (since it disables Neon for Android).
-  rtc_build_armv7_neon = (cpu_arch == "arm" && arm_version >= 7)
+  rtc_build_armv7_neon = (current_cpu == "arm" && arm_version >= 7)
 }
 
 # Make it possible to provide custom locations for some libraries (move these

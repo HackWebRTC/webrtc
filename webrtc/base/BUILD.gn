@@ -544,7 +544,7 @@ static_library("rtc_base") {
 
     all_dependent_configs = [ ":mac_config" ]
 
-    if (cpu_arch == "x86") {
+    if (current_cpu == "x86") {
       all_dependent_configs += [ ":mac_x86_config" ]
     }
   }
@@ -590,7 +590,7 @@ static_library("rtc_base") {
     defines += [ "_DEBUG" ]
   }
 
-  if (is_ios || (is_mac && cpu_arch != "x86")) {
+  if (is_ios || (is_mac && current_cpu != "x86")) {
     defines += [ "CARBON_DEPRECATED=YES" ]
   }
 

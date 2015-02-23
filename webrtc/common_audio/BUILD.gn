@@ -110,7 +110,7 @@ source_set("common_audio") {
     deps += [ "//third_party/openmax_dl/dl" ]
   }
 
-  if (cpu_arch == "arm") {
+  if (current_cpu == "arm") {
     sources += [
       "signal_processing/complex_bit_reverse_arm.S",
       "signal_processing/spl_sqrt_floor_arm.S",
@@ -124,7 +124,7 @@ source_set("common_audio") {
     }
   }
 
-  if (cpu_arch == "mipsel") {
+  if (current_cpu == "mipsel") {
     sources += [
       "signal_processing/include/spl_inl_mips.h",
       "signal_processing/complex_bit_reverse_mips.c",
@@ -143,7 +143,7 @@ source_set("common_audio") {
     sources += [ "signal_processing/complex_fft.c" ]
   }
 
-  if (cpu_arch != "arm" && cpu_arch != "mipsel") {
+  if (current_cpu != "arm" && current_cpu != "mipsel") {
     sources += [
       "signal_processing/complex_bit_reverse.c",
       "signal_processing/filter_ar_fast_q12.c",
@@ -170,12 +170,12 @@ source_set("common_audio") {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  if (cpu_arch == "x86" || cpu_arch == "x64") {
+  if (current_cpu == "x86" || current_cpu == "x64") {
     deps += [ ":common_audio_sse2" ]
   }
 }
 
-if (cpu_arch == "x86" || cpu_arch == "x64") {
+if (current_cpu == "x86" || current_cpu == "x64") {
   source_set("common_audio_sse2") {
     sources = [
       "fir_filter_sse.cc",
