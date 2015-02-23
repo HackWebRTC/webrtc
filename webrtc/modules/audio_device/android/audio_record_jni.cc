@@ -25,10 +25,6 @@
 
 namespace webrtc {
 
-// Number of bytes per audio frame.
-// Example: 16-bit PCM in mono => 1*(16/8)=2 [bytes/frame]
-static const int kBytesPerFrame = kNumChannels * (kBitsPerSample / 8);
-
 // We are unable to obtain exact measurements of the hardware delay on Android.
 // Instead, a lower bound (based on measurements) is used.
 // TODO(henrika): is it possible to improve this?
@@ -59,6 +55,8 @@ void AudioRecordJni::SetAndroidAudioDeviceObjects(void* jvm, void* env,
       jni, "org/webrtc/voiceengine/WebRtcAudioRecord");
   g_audio_record_class = reinterpret_cast<jclass>(
       NewGlobalRef(jni, local_class));
+  jni->DeleteLocalRef(local_class);
+  CHECK_EXCEPTION(jni);
 
   // Register native methods with the WebRtcAudioRecord class. These methods
   // are declared private native in WebRtcAudioRecord.java.
@@ -86,15 +84,17 @@ void AudioRecordJni::ClearAndroidAudioDeviceObjects() {
   g_jvm = NULL;
 }
 
-AudioRecordJni::AudioRecordJni()
-    : j_audio_record_(NULL),
+AudioRecordJni::AudioRecordJni(PlayoutDelayProvider* delay_provider)
+    : delay_provider_(delay_provider),
+      j_audio_record_(NULL),
       direct_buffer_address_(NULL),
       direct_buffer_capacity_in_bytes_(0),
       frames_per_buffer_(0),
       initialized_(false),
       recording_(false),
       audio_device_buffer_(NULL),
-      sample_rate_hz_(0) {
+      sample_rate_hz_(0),
+      playout_delay_in_milliseconds_(0) {
   ALOGD("ctor%s", GetThreadInfo().c_str());
   CHECK(HasDeviceObjects());
   CreateJavaInstance();
@@ -197,7 +197,6 @@ int32_t AudioRecordJni::StopRecording() {
   initialized_ = false;
   recording_ = false;
   return 0;
-
 }
 
 int32_t AudioRecordJni::RecordingDelay(uint16_t& delayMS) const {  // NOLINT
@@ -268,7 +267,7 @@ void AudioRecordJni::OnCacheDirectBufferAddress(
 void JNICALL AudioRecordJni::DataIsRecorded(
   JNIEnv* env, jobject obj, jint length, jlong nativeAudioRecord) {
   webrtc::AudioRecordJni* this_object =
-      reinterpret_cast<webrtc::AudioRecordJni*> (nativeAudioRecord  );
+      reinterpret_cast<webrtc::AudioRecordJni*> (nativeAudioRecord);
   this_object->OnDataIsRecorded(length);
 }
 
@@ -276,10 +275,15 @@ void JNICALL AudioRecordJni::DataIsRecorded(
 // the thread is 'AudioRecordThread'.
 void AudioRecordJni::OnDataIsRecorded(int length) {
   DCHECK(thread_checker_java_.CalledOnValidThread());
+  if (playout_delay_in_milliseconds_ == 0) {
+    playout_delay_in_milliseconds_ = delay_provider_->PlayoutDelayMs();
+    ALOGD("cached playout delay: %d", playout_delay_in_milliseconds_);
+  }
   audio_device_buffer_->SetRecordedBuffer(direct_buffer_address_,
                                           frames_per_buffer_);
-  // TODO(henrika): improve playout delay estimate.
-  audio_device_buffer_->SetVQEData(0, kHardwareDelayInMilliseconds, 0);
+  audio_device_buffer_->SetVQEData(playout_delay_in_milliseconds_,
+                                   kHardwareDelayInMilliseconds,
+                                   0 /* clockDrift */);
   audio_device_buffer_->DeliverRecordedData();
 }
 

@@ -34,10 +34,10 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     InputType::ClearAndroidAudioDeviceObjects();
   }
 
+  // TODO(henrika): remove id
   explicit AudioDeviceTemplate(const int32_t id)
-      : output_(id),
-        // TODO(henrika): provide proper delay estimate using input_(&output_).
-        input_() {
+      : output_(),
+        input_(&output_) {
   }
 
   virtual ~AudioDeviceTemplate() {
@@ -58,11 +58,11 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   bool Initialized() const {
-    return output_.Initialized();
+    return true;
   }
 
   int16_t PlayoutDevices() {
-    return output_.PlayoutDevices();
+    return 1;
   }
 
   int16_t RecordingDevices() {
@@ -73,23 +73,28 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
       uint16_t index,
       char name[kAdmMaxDeviceNameSize],
       char guid[kAdmMaxGuidSize]) {
-    return output_.PlayoutDeviceName(index, name, guid);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t RecordingDeviceName(
       uint16_t index,
       char name[kAdmMaxDeviceNameSize],
       char guid[kAdmMaxGuidSize]) {
+    FATAL() << "Should never be called";
     return -1;
   }
 
   int32_t SetPlayoutDevice(uint16_t index) {
-    return output_.SetPlayoutDevice(index);
+    // OK to use but it has no effect currently since device selection is
+    // done using Andoid APIs instead.
+    return 0;
   }
 
   int32_t SetPlayoutDevice(
       AudioDeviceModule::WindowsDeviceType device) {
-    return output_.SetPlayoutDevice(device);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t SetRecordingDevice(uint16_t index) {
@@ -106,7 +111,8 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
 
   int32_t PlayoutIsAvailable(
       bool& available) {  // NOLINT
-    return output_.PlayoutIsAvailable(available);
+    available = true;
+    return 0;
   }
 
   int32_t InitPlayout() {
@@ -175,17 +181,16 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   int32_t WaveOutVolume(
       uint16_t& volumeLeft,           // NOLINT
       uint16_t& volumeRight) const {  // NOLINT
-    WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, 0,
-                 "  API call not supported on this platform");
+    FATAL() << "Should never be called";
     return -1;
   }
 
   int32_t InitSpeaker() {
-    return output_.InitSpeaker();
+    return 0;
   }
 
   bool SpeakerIsInitialized() const {
-    return output_.SpeakerIsInitialized();
+    return true;
   }
 
   int32_t InitMicrophone() {
@@ -198,31 +203,42 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
 
   int32_t SpeakerVolumeIsAvailable(
       bool& available) {  // NOLINT
-    return output_.SpeakerVolumeIsAvailable(available);
+    available = false;
+    FATAL() << "Should never be called";
+    return -1;
   }
 
+  // TODO(henrika): add support  if/when needed.
   int32_t SetSpeakerVolume(uint32_t volume) {
-    return output_.SetSpeakerVolume(volume);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
+  // TODO(henrika): add support  if/when needed.
   int32_t SpeakerVolume(
       uint32_t& volume) const {  // NOLINT
-    return output_.SpeakerVolume(volume);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
+  // TODO(henrika): add support  if/when needed.
   int32_t MaxSpeakerVolume(
       uint32_t& maxVolume) const {  // NOLINT
-    return output_.MaxSpeakerVolume(maxVolume);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
+  // TODO(henrika): add support  if/when needed.
   int32_t MinSpeakerVolume(
       uint32_t& minVolume) const {  // NOLINT
-    return output_.MinSpeakerVolume(minVolume);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t SpeakerVolumeStepSize(
       uint16_t& stepSize) const {  // NOLINT
-    return output_.SpeakerVolumeStepSize(stepSize);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t MicrophoneVolumeIsAvailable(
@@ -263,16 +279,19 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
 
   int32_t SpeakerMuteIsAvailable(
       bool& available) {  // NOLINT
-    return output_.SpeakerMuteIsAvailable(available);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t SetSpeakerMute(bool enable) {
-    return output_.SetSpeakerMute(enable);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t SpeakerMute(
       bool& enabled) const {  // NOLINT
-    return output_.SpeakerMute(enabled);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t MicrophoneMuteIsAvailable(
@@ -311,16 +330,19 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
 
   int32_t StereoPlayoutIsAvailable(
       bool& available) {  // NOLINT
-    return output_.StereoPlayoutIsAvailable(available);
+    available = false;
+    return 0;
   }
 
   int32_t SetStereoPlayout(bool enable) {
-    return output_.SetStereoPlayout(enable);
+    return -1;
   }
 
   int32_t StereoPlayout(
       bool& enabled) const {  // NOLINT
-    return output_.StereoPlayout(enabled);
+    enabled = false;
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t StereoRecordingIsAvailable(
@@ -342,13 +364,15 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   int32_t SetPlayoutBuffer(
       const AudioDeviceModule::BufferType type,
       uint16_t sizeMS) {
-    return output_.SetPlayoutBuffer(type, sizeMS);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t PlayoutBuffer(
       AudioDeviceModule::BufferType& type,
       uint16_t& sizeMS) const {  // NOLINT
-    return output_.PlayoutBuffer(type, sizeMS);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t PlayoutDelay(
@@ -368,11 +392,11 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   bool PlayoutWarning() const {
-    return output_.PlayoutWarning();
+    return false;
   }
 
   bool PlayoutError() const {
-    return output_.PlayoutError();
+    return false;
   }
 
   bool RecordingWarning() const {
@@ -383,13 +407,9 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     return false;
   }
 
-  void ClearPlayoutWarning() {
-    return output_.ClearPlayoutWarning();
-  }
+  void ClearPlayoutWarning() {}
 
-  void ClearPlayoutError() {
-    return output_.ClearPlayoutError();
-  }
+  void ClearPlayoutError() {}
 
   void ClearRecordingWarning() {}
 
@@ -401,18 +421,22 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     input_.AttachAudioBuffer(audioBuffer);
   }
 
+  // TODO(henrika): remove
   int32_t SetPlayoutSampleRate(
       const uint32_t samplesPerSec) {
-    return output_.SetPlayoutSampleRate(samplesPerSec);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t SetLoudspeakerStatus(bool enable) {
-    return output_.SetLoudspeakerStatus(enable);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   int32_t GetLoudspeakerStatus(
       bool& enable) const {  // NOLINT
-    return output_.GetLoudspeakerStatus(enable);
+    FATAL() << "Should never be called";
+    return -1;
   }
 
   bool BuiltInAECIsAvailable() const {

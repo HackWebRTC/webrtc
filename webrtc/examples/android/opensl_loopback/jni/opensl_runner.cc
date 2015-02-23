@@ -29,8 +29,8 @@ template <class InputType, class OutputType>
 class OpenSlRunnerTemplate {
  public:
   OpenSlRunnerTemplate()
-      : output_(0),
-        input_() {
+      : output_(),
+        input_(&output_) {
     output_.AttachAudioBuffer(&audio_buffer_);
     if (output_.Init() != 0) {
       assert(false);

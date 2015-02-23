@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -11,12 +11,8 @@
 package org.webrtc.voiceengine;
 
 import java.lang.System;
-import java.lang.Thread;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
 import android.content.Context;
 import android.media.AudioFormat;
@@ -35,9 +31,6 @@ class  WebRtcAudioRecord {
   private static final boolean DEBUG = false;
 
   private static final String TAG = "WebRtcAudioRecord";
-
-  // Use 44.1kHz as the default sampling rate.
-  private static final int SAMPLE_RATE_HZ = 44100;
 
   // Mono recording is default.
   private static final int CHANNELS = 1;
@@ -71,16 +64,6 @@ class  WebRtcAudioRecord {
   private AcousticEchoCanceler aec = null;
   private boolean useBuiltInAEC = false;
 
-  private final Set<Long> threadIds = new HashSet<Long>();
-
-  private static boolean runningOnJellyBeanOrHigher() {
-    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN;
-  }
-
-  private static boolean runningOnJellyBeanMR1OrHigher() {
-    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1;
-  }
-
   /**
    * Audio thread which keeps calling ByteBuffer.read() waiting for audio
    * to be recorded. Feeds recorded data to the native counterpart as a
@@ -97,16 +80,15 @@ class  WebRtcAudioRecord {
     @Override
     public void run() {
       Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
-      DoLog("AudioRecordThread" + getThreadInfo());
-      AddThreadId();
+      Logd("AudioRecordThread" + WebRtcAudioUtils.getThreadInfo());
 
       try {
         audioRecord.startRecording();
       } catch (IllegalStateException e) {
-          DoLogErr("AudioRecord.startRecording failed: " + e.getMessage());
+          Loge("AudioRecord.startRecording failed: " + e.getMessage());
         return;
       }
-      assertIsTrue(audioRecord.getRecordingState()
+      assertTrue(audioRecord.getRecordingState()
           == AudioRecord.RECORDSTATE_RECORDING);
 
       long lastTime = System.nanoTime();
@@ -115,7 +97,7 @@ class  WebRtcAudioRecord {
         if (bytesRead == byteBuffer.capacity()) {
           nativeDataIsRecorded(bytesRead, nativeAudioRecord);
         } else {
-          DoLogErr("AudioRecord.read failed: " + bytesRead);
+          Loge("AudioRecord.read failed: " + bytesRead);
           if (bytesRead == AudioRecord.ERROR_INVALID_OPERATION) {
             keepAlive = false;
           }
@@ -125,16 +107,15 @@ class  WebRtcAudioRecord {
           long durationInMs =
               TimeUnit.NANOSECONDS.toMillis((nowTime - lastTime));
           lastTime = nowTime;
-          DoLog("bytesRead[" + durationInMs + "] " + bytesRead);
+          Logd("bytesRead[" + durationInMs + "] " + bytesRead);
         }
       }
 
       try {
         audioRecord.stop();
       } catch (IllegalStateException e) {
-        DoLogErr("AudioRecord.stop failed: " + e.getMessage());
+        Loge("AudioRecord.stop failed: " + e.getMessage());
       }
-      RemoveThreadId();
     }
 
     public void joinThread() {
@@ -150,43 +131,34 @@ class  WebRtcAudioRecord {
   }
 
   WebRtcAudioRecord(Context context, long nativeAudioRecord) {
-    DoLog("ctor" + getThreadInfo());
+    Logd("ctor" + WebRtcAudioUtils.getThreadInfo());
     this.context = context;
     this.nativeAudioRecord = nativeAudioRecord;
-    audioManager = ((AudioManager) context.getSystemService(
-        Context.AUDIO_SERVICE));
+    audioManager = (AudioManager) context.getSystemService(
+        Context.AUDIO_SERVICE);
     sampleRate = GetNativeSampleRate();
     bytesPerBuffer = BYTES_PER_FRAME * (sampleRate / BUFFERS_PER_SECOND);
     framesPerBuffer = sampleRate / BUFFERS_PER_SECOND;
     byteBuffer = byteBuffer.allocateDirect(bytesPerBuffer);
-    DoLog("byteBuffer.capacity: " + byteBuffer.capacity());
+    Logd("byteBuffer.capacity: " + byteBuffer.capacity());
 
     // Rather than passing the ByteBuffer with every callback (requiring
     // the potentially expensive GetDirectBufferAddress) we simply have the
     // the native class cache the address to the memory once.
     nativeCacheDirectBufferAddress(byteBuffer, nativeAudioRecord);
-    AddThreadId();
+
+    if (DEBUG) {
+      WebRtcAudioUtils.logDeviceInfo(TAG);
+    }
   }
 
-  /**
-   * Returns the native or optimal input sample rate for this device's
-   * primary input stream. Unit is in Hz.
-   * Note that we actually query the output device but the same result is
-   * also valid for input.
-   */
   private int GetNativeSampleRate() {
-    if (!runningOnJellyBeanMR1OrHigher()) {
-      return SAMPLE_RATE_HZ;
-    }
-    String sampleRateString = audioManager.getProperty(
-        AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
-    return (sampleRateString == null) ?
-        SAMPLE_RATE_HZ : Integer.parseInt(sampleRateString);
+    return WebRtcAudioUtils.GetNativeSampleRate(audioManager);
   }
 
   public static boolean BuiltInAECIsAvailable() {
     // AcousticEchoCanceler was added in API level 16 (Jelly Bean).
-    if (!runningOnJellyBeanOrHigher()) {
+    if (!WebRtcAudioUtils.runningOnJellyBeanOrHigher()) {
       return false;
     }
     // TODO(henrika): add black-list based on device name. We could also
@@ -196,10 +168,9 @@ class  WebRtcAudioRecord {
   }
 
   private boolean EnableBuiltInAEC(boolean enable) {
-    DoLog("EnableBuiltInAEC(" + enable + ')');
-    AddThreadId();
+    Logd("EnableBuiltInAEC(" + enable + ')');
     // AcousticEchoCanceler was added in API level 16 (Jelly Bean).
-    if (!runningOnJellyBeanOrHigher()) {
+    if (!WebRtcAudioUtils.runningOnJellyBeanOrHigher()) {
       return false;
     }
     // Store the AEC state.
@@ -208,17 +179,16 @@ class  WebRtcAudioRecord {
     if (aec != null) {
       int ret = aec.setEnabled(enable);
       if (ret != AudioEffect.SUCCESS) {
-        DoLogErr("AcousticEchoCanceler.setEnabled failed");
+        Loge("AcousticEchoCanceler.setEnabled failed");
         return false;
       }
-      DoLog("AcousticEchoCanceler.getEnabled: " + aec.getEnabled());
+      Logd("AcousticEchoCanceler.getEnabled: " + aec.getEnabled());
     }
     return true;
   }
 
   private int InitRecording(int sampleRate) {
-    DoLog("InitRecording(sampleRate=" + sampleRate + ")");
-    AddThreadId();
+    Logd("InitRecording(sampleRate=" + sampleRate + ")");
     // Get the minimum buffer size required for the successful creation of
     // an AudioRecord object, in byte units.
     // Note that this size doesn't guarantee a smooth recording under load.
@@ -227,19 +197,16 @@ class  WebRtcAudioRecord {
           sampleRate,
           AudioFormat.CHANNEL_IN_MONO,
           AudioFormat.ENCODING_PCM_16BIT);
-    DoLog("AudioRecord.getMinBufferSize: " + minBufferSize);
+    Logd("AudioRecord.getMinBufferSize: " + minBufferSize);
 
     if (aec != null) {
       aec.release();
       aec = null;
     }
-    if (audioRecord != null) {
-      audioRecord.release();
-      audioRecord = null;
-    }
+    assertTrue(audioRecord == null);
 
     int bufferSizeInBytes = Math.max(byteBuffer.capacity(), minBufferSize);
-    DoLog("bufferSizeInBytes: " + bufferSizeInBytes);
+    Logd("bufferSizeInBytes: " + bufferSizeInBytes);
     try {
       audioRecord = new AudioRecord(AudioSource.VOICE_COMMUNICATION,
                                     sampleRate,
@@ -248,105 +215,76 @@ class  WebRtcAudioRecord {
                                     bufferSizeInBytes);
 
     } catch (IllegalArgumentException e) {
-      DoLog(e.getMessage());
+      Logd(e.getMessage());
       return -1;
     }
-    assertIsTrue(audioRecord.getState() == AudioRecord.STATE_INITIALIZED);
+    assertTrue(audioRecord.getState() == AudioRecord.STATE_INITIALIZED);
 
-    DoLog("AudioRecord " +
+    Logd("AudioRecord " +
           "session ID: " + audioRecord.getAudioSessionId() + ", " +
           "audio format: " + audioRecord.getAudioFormat() + ", " +
           "channels: " + audioRecord.getChannelCount() + ", " +
           "sample rate: " + audioRecord.getSampleRate());
-    DoLog("AcousticEchoCanceler.isAvailable: " + BuiltInAECIsAvailable());
+    Logd("AcousticEchoCanceler.isAvailable: " + BuiltInAECIsAvailable());
     if (!BuiltInAECIsAvailable()) {
       return framesPerBuffer;
     }
 
     aec = AcousticEchoCanceler.create(audioRecord.getAudioSessionId());
     if (aec == null) {
-      DoLogErr("AcousticEchoCanceler.create failed");
+      Loge("AcousticEchoCanceler.create failed");
       return -1;
     }
     int ret = aec.setEnabled(useBuiltInAEC);
     if (ret != AudioEffect.SUCCESS) {
-      DoLogErr("AcousticEchoCanceler.setEnabled failed");
+      Loge("AcousticEchoCanceler.setEnabled failed");
       return -1;
     }
     Descriptor descriptor = aec.getDescriptor();
-    DoLog("AcousticEchoCanceler " +
+    Logd("AcousticEchoCanceler " +
           "name: " + descriptor.name + ", " +
           "implementor: " + descriptor.implementor + ", " +
           "uuid: " + descriptor.uuid);
-    DoLog("AcousticEchoCanceler.getEnabled: " + aec.getEnabled());
+    Logd("AcousticEchoCanceler.getEnabled: " + aec.getEnabled());
     return framesPerBuffer;
   }
 
   private boolean StartRecording() {
-    DoLog("StartRecording");
-    AddThreadId();
-    if (audioRecord == null) {
-      DoLogErr("start() called before init()");
-      return false;
-    }
-    if (audioThread != null) {
-      DoLogErr("start() was already called");
-      return false;
-    }
+    Logd("StartRecording");
+    assertTrue(audioRecord != null);
+    assertTrue(audioThread == null);
     audioThread = new AudioRecordThread("AudioRecordJavaThread");
     audioThread.start();
     return true;
   }
 
   private boolean StopRecording() {
-    DoLog("StopRecording");
-    AddThreadId();
-    if (audioThread == null) {
-      DoLogErr("start() was never called, or stop() was already called");
-      return false;
-    }
+    Logd("StopRecording");
+    assertTrue(audioThread != null);
     audioThread.joinThread();
     audioThread = null;
     if (aec != null) {
       aec.release();
       aec = null;
     }
-    if (audioRecord != null) {
-      audioRecord.release();
-      audioRecord = null;
-    }
+    audioRecord.release();
+    audioRecord = null;
     return true;
   }
 
-  private void DoLog(String msg) {
-    Log.d(TAG, msg);
-  }
-
-  private void DoLogErr(String msg) {
-    Log.e(TAG, msg);
-  }
-
-  /** Helper method for building a string of thread information.*/
-  private static String getThreadInfo() {
-    return "@[name=" + Thread.currentThread().getName()
-        + ", id=" + Thread.currentThread().getId() + "]";
-  }
-
-  /** Helper method which throws an exception when an assertion has failed. */
-  private static void assertIsTrue(boolean condition) {
+  /** Helper method which throws an exception  when an assertion has failed. */
+  private static void assertTrue(boolean condition) {
     if (!condition) {
       throw new AssertionError("Expected condition to be true");
     }
   }
 
-  private void AddThreadId() {
-    threadIds.add(Thread.currentThread().getId());
-    DoLog("threadIds: " + threadIds + " (#threads=" + threadIds.size() + ")");
+  private static void Logd(String msg) {
+    Log.d(TAG, msg);
   }
 
-  private void RemoveThreadId() {
-    threadIds.remove(Thread.currentThread().getId());
-    DoLog("threadIds: " + threadIds + " (#threads=" + threadIds.size() + ")");
+  private static void Loge(String msg) {
+    Log.e(TAG, msg);
   }
 
   private native void nativeCacheDirectBufferAddress(

@@ -25,8 +25,6 @@
   do {                                                           \
     SLresult err = (op);                                         \
     if (err != SL_RESULT_SUCCESS) {                              \
-      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, id_,          \
-                   "OpenSL error: %d", err);                     \
       assert(false);                                             \
       return ret_val;                                            \
     }                                                            \
@@ -43,9 +41,8 @@ enum {
 
 namespace webrtc {
 
-OpenSlesOutput::OpenSlesOutput(const int32_t id)
-    : id_(id),
-      initialized_(false),
+OpenSlesOutput::OpenSlesOutput()
+    : initialized_(false),
       speaker_initialized_(false),
       play_initialized_(false),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -468,7 +465,6 @@ bool OpenSlesOutput::HandleUnderrun(int event_id, int event_msg) {
   if (event_id == kNoUnderrun) {
     return false;
   }
-  WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, id_, "Audio underrun");
   assert(event_id == kUnderrun);
   assert(event_msg > 0);
   // Wait for all enqueued buffers to be flushed.

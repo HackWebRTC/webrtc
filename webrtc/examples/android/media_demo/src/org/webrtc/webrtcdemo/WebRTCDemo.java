@@ -230,5 +230,5 @@ public class WebRTCDemo extends Activity implements MenuStateProvider {
         main.toggleStart();
         handler.postDelayed(startOrStopCallback, getCallRestartPeriodicity());
       }
-    };
+  };
 }

@@ -35,7 +35,7 @@ class ThreadWrapper;
 // to non-const methods require exclusive access to the object.
 class OpenSlesInput {
  public:
-  OpenSlesInput();
+  OpenSlesInput(PlayoutDelayProvider* delay_provider);
   ~OpenSlesInput();
 
   static int32_t SetAndroidAudioDeviceObjects(void* javaVM,
@@ -173,6 +173,8 @@ class OpenSlesInput {
   // class' public functions. It is a requirement for this class to be
   // Thread-compatible.
   bool CbThreadImpl();
+
+  PlayoutDelayProvider* delay_provider_;
 
   // Java API handle
   AudioManagerJni audio_manager_;

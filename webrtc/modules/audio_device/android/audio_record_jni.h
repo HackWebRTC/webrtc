@@ -41,7 +41,7 @@ class PlayoutDelayProvider;
 // CHECK that the calling thread is attached to a Java VM.
 //
 // All methods use AttachThreadScoped to attach to a Java VM if needed and then
-// detach when method goes out of scope. We do so beacuse this class does not
+// detach when method goes out of scope. We do so because this class does not
 // own the thread is is created and called on and other objects on the same
 // thread might put us in a detached state at any time.
 class AudioRecordJni {
@@ -57,7 +57,7 @@ class AudioRecordJni {
   // existing global references and enables garbage collection.
   static void ClearAndroidAudioDeviceObjects();
 
-  AudioRecordJni();
+  AudioRecordJni(PlayoutDelayProvider* delay_provider);
   ~AudioRecordJni();
 
   int32_t Init();
@@ -118,10 +118,11 @@ class AudioRecordJni {
   // thread in Java. Detached during construction of this object.
   rtc::ThreadChecker thread_checker_java_;
 
-
-  // Should return the current playout delay.
-  // TODO(henrika): fix on Android. Reports zero today.
-  // PlayoutDelayProvider* delay_provider_;
+  // Returns the current playout delay.
+  // TODO(henrika): this value is currently fixed since initial tests have
+  // shown that the estimated delay varies very little over time. It might be
+  // possible to make improvements in this area.
+  PlayoutDelayProvider* delay_provider_;
 
   // The Java WebRtcAudioRecord instance.
   jobject j_audio_record_;
@@ -151,6 +152,8 @@ class AudioRecordJni {
   // and audio configuration.
   int sample_rate_hz_;
 
+  // Contains a delay estimate from the playout side given by |delay_provider_|.
+  int playout_delay_in_milliseconds_;
 };
 
 }  // namespace webrtc

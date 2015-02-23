@@ -174,8 +174,6 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
       cameras[info.facing] = info;
     }
     setDefaultCamera();
-    check(voe.setSpeakerVolume(volumeLevel) == 0,
-        "Failed setSpeakerVolume");
     check(voe.setAecmMode(VoiceEngine.AecmModes.SPEAKERPHONE, false) == 0,
         "VoE set Aecm speakerphone mode failed");
     check(vie.setKeyFrameRequestMethod(videoChannel,
