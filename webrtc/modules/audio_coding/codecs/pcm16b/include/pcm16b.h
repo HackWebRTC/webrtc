@@ -32,7 +32,8 @@ extern "C" {
  * Output:
  *              - encoded       : Encoded data vector (big endian 16 bit)
  *
- * Returned value               : Size in bytes of encoded
+ * Returned value               : Length (in bytes) of coded data.
+ *                                Always equal to twice the len input parameter.
  */
 
 int16_t WebRtcPcm16b_Encode(const int16_t* speech,

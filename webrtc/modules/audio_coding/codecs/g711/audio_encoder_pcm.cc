@@ -78,7 +78,7 @@ bool AudioEncoderPcm::EncodeInternal(uint32_t rtp_timestamp,
   }
   CHECK_EQ(speech_buffer_.size(), static_cast<size_t>(full_frame_samples_));
   int16_t ret = EncodeCall(&speech_buffer_[0], full_frame_samples_, encoded);
-  DCHECK_GE(ret, 0);
+  CHECK_GE(ret, 0);
   speech_buffer_.clear();
   info->encoded_timestamp = first_timestamp_in_buffer_;
   info->payload_type = payload_type_;

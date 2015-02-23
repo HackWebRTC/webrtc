@@ -34,8 +34,8 @@ extern "C" {
  * Output:
  *      - encoded            : The encoded data vector
  *
- * Return value              : >0 - Length (in bytes) of coded data
- *                             -1 - Error
+ * Return value              : Length (in bytes) of coded data.
+ *                             Always equal to len input parameter.
  */
 
 int16_t WebRtcG711_EncodeA(const int16_t* speechIn,
@@ -55,8 +55,8 @@ int16_t WebRtcG711_EncodeA(const int16_t* speechIn,
  * Output:
  *      - encoded            : The encoded data vector
  *
- * Return value              : >0 - Length (in bytes) of coded data
- *                             -1 - Error
+ * Return value              : Length (in bytes) of coded data.
+ *                             Always equal to len input parameter.
  */
 
 int16_t WebRtcG711_EncodeU(const int16_t* speechIn,
