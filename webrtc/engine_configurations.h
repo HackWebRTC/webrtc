@@ -139,7 +139,6 @@
 //  Deprecated
 // ----------------------------------------------------------------------------
 
-// #define WEBRTC_CODEC_G729
 // #define WEBRTC_DTMF_DETECTION
 
 #endif  // WEBRTC_ENGINE_CONFIGURATIONS_H_

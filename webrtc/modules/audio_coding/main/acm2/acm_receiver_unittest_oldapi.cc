@@ -293,7 +293,7 @@ TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(PostdecodingVad)) {
 TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(LastAudioCodec)) {
   const int kCodecId[] = {
       ACMCodecDB::kISAC, ACMCodecDB::kPCMA, ACMCodecDB::kISACSWB,
-      ACMCodecDB::kPCM16Bswb32kHz, ACMCodecDB::kG722_1C_48,
+      ACMCodecDB::kPCM16Bswb32kHz,
       -1  // Terminator.
   };
   AddSetOfCodecs(kCodecId);

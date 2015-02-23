@@ -57,44 +57,15 @@ class ACMCodecDB {
 #ifdef WEBRTC_CODEC_ILBC
     , kILBC
 #endif
-#ifdef WEBRTC_CODEC_AMR
-    , kGSMAMR
-#endif
-#ifdef WEBRTC_CODEC_AMRWB
-    , kGSMAMRWB
-#endif
 #ifdef WEBRTC_CODEC_G722
     // Mono
     , kG722
     // Stereo
     , kG722_2ch
 #endif
-#ifdef WEBRTC_CODEC_G722_1
-    , kG722_1_32
-    , kG722_1_24
-    , kG722_1_16
-#endif
-#ifdef WEBRTC_CODEC_G722_1C
-    , kG722_1C_48
-    , kG722_1C_32
-    , kG722_1C_24
-#endif
-#ifdef WEBRTC_CODEC_G729
-    , kG729
-#endif
-#ifdef WEBRTC_CODEC_G729_1
-    , kG729_1
-#endif
-#ifdef WEBRTC_CODEC_GSMFR
-    , kGSMFR
-#endif
 #ifdef WEBRTC_CODEC_OPUS
     // Mono and stereo
     , kOpus
-#endif
-#ifdef WEBRTC_CODEC_SPEEX
-    , kSPEEX8
-    , kSPEEX16
 #endif
     , kCNNB
     , kCNWB
@@ -134,40 +105,11 @@ class ACMCodecDB {
 #ifndef WEBRTC_CODEC_ILBC
   enum {kILBC = -1};
 #endif
-#ifndef WEBRTC_CODEC_AMR
-  enum {kGSMAMR = -1};
-#endif
-#ifndef WEBRTC_CODEC_AMRWB
-  enum {kGSMAMRWB = -1};
-#endif
 #ifndef WEBRTC_CODEC_G722
   // Mono
   enum {kG722 = -1};
   // Stereo
   enum {kG722_2ch = -1};
-#endif
-#ifndef WEBRTC_CODEC_G722_1
-  enum {kG722_1_32 = -1};
-  enum {kG722_1_24 = -1};
-  enum {kG722_1_16 = -1};
-#endif
-#ifndef WEBRTC_CODEC_G722_1C
-  enum {kG722_1C_48 = -1};
-  enum {kG722_1C_32 = -1};
-  enum {kG722_1C_24 = -1};
-#endif
-#ifndef WEBRTC_CODEC_G729
-  enum {kG729 = -1};
-#endif
-#ifndef WEBRTC_CODEC_G729_1
-  enum {kG729_1 = -1};
-#endif
-#ifndef WEBRTC_CODEC_GSMFR
-  enum {kGSMFR = -1};
-#endif
-#ifndef WEBRTC_CODEC_SPEEX
-  enum {kSPEEX8 = -1};
-  enum {kSPEEX16 = -1};
 #endif
 #ifndef WEBRTC_CODEC_OPUS
   // Mono and stereo

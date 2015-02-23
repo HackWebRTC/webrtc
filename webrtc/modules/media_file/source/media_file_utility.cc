@@ -1309,8 +1309,7 @@ int32_t ModuleFileUtility::InitCompressedReading(
         start,
         stop);
 
-#if defined(WEBRTC_CODEC_AMR) || defined(WEBRTC_CODEC_AMRWB) || \
-    defined(WEBRTC_CODEC_ILBC)
+#if defined(WEBRTC_CODEC_ILBC)
     int16_t read_len = 0;
 #endif
     _codecId = kCodecNoCodec;
@@ -1319,13 +1318,6 @@ int32_t ModuleFileUtility::InitCompressedReading(
 
     _startPointInMs = start;
     _stopPointInMs = stop;
-
-#ifdef WEBRTC_CODEC_AMR
-    int32_t AMRmode2bytes[9]={12,13,15,17,19,20,26,31,5};
-#endif
-#ifdef WEBRTC_CODEC_AMRWB
-    int32_t AMRWBmode2bytes[10]={17,23,32,36,40,46,50,58,60,6};
-#endif
 
     // Read the codec name
     int32_t cnt = 0;
@@ -1342,94 +1334,6 @@ int32_t ModuleFileUtility::InitCompressedReading(
         buf[cnt]=0;
     }
 
-#ifdef WEBRTC_CODEC_AMR
-    if(!strcmp("#!AMR\n", buf))
-    {
-        strcpy(codec_info_.plname, "amr");
-        codec_info_.pacsize = 160;
-        _codecId = kCodecAmr;
-        codec_info_.pltype = 112;
-        codec_info_.rate = 12200;
-        codec_info_.plfreq = 8000;
-        codec_info_.channels = 1;
-
-        int16_t mode = 0;
-        if(_startPointInMs > 0)
-        {
-            while (_playoutPositionMs <= _startPointInMs)
-            {
-                // First read byte contain the AMR mode.
-                read_len = in.Read(buf, 1);
-                if(read_len != 1)
-                {
-                    return -1;
-                }
-
-                mode = (buf[0]>>3)&0xF;
-                if((mode < 0) || (mode > 8))
-                {
-                    if(mode != 15)
-                    {
-                        return -1;
-                    }
-                }
-                if(mode != 15)
-                {
-                    read_len = in.Read(&buf[1], AMRmode2bytes[mode]);
-                    if(read_len != AMRmode2bytes[mode])
-                    {
-                        return -1;
-                    }
-                }
-                _playoutPositionMs += 20;
-            }
-        }
-    }
-#endif
-#ifdef WEBRTC_CODEC_AMRWB
-    if(!strcmp("#!AMRWB\n", buf))
-    {
-        strcpy(codec_info_.plname, "amr-wb");
-        codec_info_.pacsize = 320;
-        _codecId = kCodecAmrWb;
-        codec_info_.pltype = 120;
-        codec_info_.rate = 20000;
-        codec_info_.plfreq = 16000;
-        codec_info_.channels = 1;
-
-        int16_t mode = 0;
-        if(_startPointInMs > 0)
-        {
-            while (_playoutPositionMs <= _startPointInMs)
-            {
-                // First read byte contain the AMR mode.
-                read_len = in.Read(buf, 1);
-                if(read_len != 1)
-                {
-                    return -1;
-                }
-
-                mode = (buf[0]>>3)&0xF;
-                if((mode < 0) || (mode > 9))
-                {
-                    if(mode != 15)
-                    {
-                        return -1;
-                    }
-                }
-                if(mode != 15)
-                {
-                    read_len = in.Read(&buf[1], AMRWBmode2bytes[mode]);
-                    if(read_len != AMRWBmode2bytes[mode])
-                    {
-                        return -1;
-                    }
-                }
-                _playoutPositionMs += 20;
-            }
-        }
-    }
-#endif
 #ifdef WEBRTC_CODEC_ILBC
     if(!strcmp("#!iLBC20\n", buf))
     {
@@ -1507,12 +1411,6 @@ int32_t ModuleFileUtility::ReadCompressedData(InStream& in,
         outData,
         bufferSize);
 
-#ifdef WEBRTC_CODEC_AMR
-    uint32_t AMRmode2bytes[9]={12,13,15,17,19,20,26,31,5};
-#endif
-#ifdef WEBRTC_CODEC_AMRWB
-    uint32_t AMRWBmode2bytes[10]={17,23,32,36,40,46,50,58,60,6};
-#endif
     uint32_t bytesRead = 0;
 
     if(! _reading)
@@ -1521,119 +1419,6 @@ int32_t ModuleFileUtility::ReadCompressedData(InStream& in,
         return -1;
     }
 
-#ifdef WEBRTC_CODEC_AMR
-    if(_codecId == kCodecAmr)
-    {
-        int32_t res = in.Read(outData, 1);
-        if(res != 1)
-        {
-            if(!in.Rewind())
-            {
-                InitCompressedReading(in, _startPointInMs, _stopPointInMs);
-                res = in.Read(outData, 1);
-                if(res != 1)
-                {
-                    _reading = false;
-                    return -1;
-                }
-            }
-            else
-            {
-                _reading = false;
-                return -1;
-            }
-        }
-         const int16_t mode = (outData[0]>>3)&0xF;
-        if((mode < 0) ||
-           (mode > 8))
-        {
-            if(mode != 15)
-            {
-                return -1;
-            }
-        }
-        if(mode != 15)
-        {
-            if(bufferSize < static_cast<size_t>(AMRmode2bytes[mode] + 1))
-            {
-                WEBRTC_TRACE(
-                    kTraceError,
-                    kTraceFile,
-                    _id,
-                    "output buffer is too short to read AMR compressed data.");
-                assert(false);
-                return -1;
-            }
-            bytesRead = in.Read(&outData[1], AMRmode2bytes[mode]);
-            if(bytesRead != AMRmode2bytes[mode])
-            {
-                _reading = false;
-                return -1;
-            }
-            // Count the mode byte to bytes read.
-            bytesRead++;
-        }
-        else
-        {
-            bytesRead = 1;
-        }
-    }
-#endif
-#ifdef WEBRTC_CODEC_AMRWB
-    if(_codecId == kCodecAmrWb)
-    {
-        int32_t res = in.Read(outData, 1);
-        if(res != 1)
-        {
-            if(!in.Rewind())
-            {
-                InitCompressedReading(in, _startPointInMs, _stopPointInMs);
-                res = in.Read(outData, 1);
-                if(res != 1)
-                {
-                    _reading = false;
-                    return -1;
-                }
-            }
-            else
-            {
-                _reading = false;
-                return -1;
-            }
-        }
-         int16_t mode = (outData[0]>>3)&0xF;
-        if((mode < 0) ||
-           (mode > 8))
-        {
-            if(mode != 15)
-            {
-                return -1;
-            }
-        }
-        if(mode != 15)
-        {
-            if(bufferSize < static_cast<size_t>(AMRWBmode2bytes[mode] + 1))
-            {
-                WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                           "output buffer is too short to read AMRWB\
- compressed.");
-                assert(false);
-                return -1;
-            }
-             bytesRead = in.Read(&outData[1], AMRWBmode2bytes[mode]);
-            if(bytesRead != AMRWBmode2bytes[mode])
-            {
-                _reading = false;
-                return -1;
-            }
-            bytesRead++;
-        }
-        else
-        {
-            bytesRead = 1;
-        }
-    }
-#endif
 #ifdef WEBRTC_CODEC_ILBC
     if((_codecId == kCodecIlbc20Ms) ||
         (_codecId == kCodecIlbc30Ms))
@@ -1711,32 +1496,6 @@ int32_t ModuleFileUtility::InitCompressedWriting(
 
     _writing = false;
 
-#ifdef WEBRTC_CODEC_AMR
-    if(STR_CASE_CMP(codecInst.plname, "amr") == 0)
-    {
-        if(codecInst.pacsize == 160)
-        {
-            memcpy(&codec_info_,&codecInst,sizeof(CodecInst));
-            _codecId = kCodecAmr;
-            out.Write("#!AMR\n",6);
-            _writing = true;
-            return 0;
-        }
-    }
-#endif
-#ifdef WEBRTC_CODEC_AMRWB
-    if(STR_CASE_CMP(codecInst.plname, "amr-wb") == 0)
-    {
-        if(codecInst.pacsize == 320)
-        {
-            memcpy(&codec_info_,&codecInst,sizeof(CodecInst));
-            _codecId = kCodecAmrWb;
-            out.Write("#!AMRWB\n",8);
-            _writing = true;
-            return 0;
-        }
-    }
-#endif
 #ifdef WEBRTC_CODEC_ILBC
     if(STR_CASE_CMP(codecInst.plname, "ilbc") == 0)
     {
@@ -2075,18 +1834,6 @@ int32_t ModuleFileUtility::set_codec_info(const CodecInst& codecInst)
             _codecId = kCodecL16_32Khz;
         }
     }
-#ifdef WEBRTC_CODEC_AMR
-    else if(STR_CASE_CMP(codecInst.plname, "amr") == 0)
-    {
-        _codecId = kCodecAmr;
-    }
-#endif
-#ifdef WEBRTC_CODEC_AMRWB
-    else if(STR_CASE_CMP(codecInst.plname, "amr-wb") == 0)
-    {
-        _codecId = kCodecAmrWb;
-    }
-#endif
 #ifdef WEBRTC_CODEC_ILBC
     else if(STR_CASE_CMP(codecInst.plname, "ilbc") == 0)
     {
@@ -2113,96 +1860,10 @@ int32_t ModuleFileUtility::set_codec_info(const CodecInst& codecInst)
         }
     }
 #endif
-#ifdef WEBRTC_CODEC_ISACLC
-    else if(STR_CASE_CMP(codecInst.plname, "isaclc") == 0)
-    {
-        _codecId = kCodecIsacLc;
-    }
-#endif
 #ifdef WEBRTC_CODEC_G722
     else if(STR_CASE_CMP(codecInst.plname, "G722") == 0)
     {
         _codecId = kCodecG722;
-    }
-#endif
-    else if(STR_CASE_CMP(codecInst.plname, "G7221") == 0)
-    {
-#ifdef WEBRTC_CODEC_G722_1
-        if(codecInst.plfreq == 16000)
-        {
-            if(codecInst.rate == 16000)
-            {
-                _codecId = kCodecG722_1_16Kbps;
-            }
-            else if(codecInst.rate == 24000)
-            {
-                _codecId = kCodecG722_1_24Kbps;
-            }
-            else if(codecInst.rate == 32000)
-            {
-                _codecId = kCodecG722_1_32Kbps;
-            }
-        }
-#endif
-#ifdef WEBRTC_CODEC_G722_1C
-        if(codecInst.plfreq == 32000)
-        {
-            if(codecInst.rate == 48000)
-            {
-                _codecId = kCodecG722_1c_48;
-            }
-            else if(codecInst.rate == 32000)
-            {
-                _codecId = kCodecG722_1c_32;
-            }
-            else if(codecInst.rate == 24000)
-            {
-                _codecId = kCodecG722_1c_24;
-            }
-        }
-#endif
-    }
-#ifdef WEBRTC_CODEC_G726
-    else if(STR_CASE_CMP(codecInst.plname, "G726-40") == 0)
-    {
-        _codecId = kCodecG726_40;
-    }
-    else if(STR_CASE_CMP(codecInst.plname, "G726-32") == 0)
-    {
-        _codecId = kCodecG726_24;
-    }
-    else if(STR_CASE_CMP(codecInst.plname, "G726-24") == 0)
-    {
-        _codecId = kCodecG726_32;
-    }
-    else if(STR_CASE_CMP(codecInst.plname, "G726-16") == 0)
-    {
-        _codecId = kCodecG726_16;
-    }
-#endif
-#ifdef WEBRTC_CODEC_G729
-    else if(STR_CASE_CMP(codecInst.plname, "G729") == 0)
-    {
-        _codecId = kCodecG729;
-    }
-#endif
-#ifdef WEBRTC_CODEC_G729_1
-    else if(STR_CASE_CMP(codecInst.plname, "G7291") == 0)
-    {
-        _codecId = kCodecG729_1;
-    }
-#endif
-#ifdef WEBRTC_CODEC_SPEEX
-    else if(STR_CASE_CMP(codecInst.plname, "speex") == 0)
-    {
-        if(codecInst.plfreq == 8000)
-        {
-            _codecId = kCodecSpeex8Khz;
-        }
-        else if(codecInst.plfreq == 16000)
-        {
-            _codecId = kCodecSpeex16Khz;
-        }
     }
 #endif
     if(_codecId == kCodecNoCodec)
@@ -2297,124 +1958,6 @@ int32_t ModuleFileUtility::FileDurationMs(const char* fileName,
             {
                 buf[cnt] = 0;
             }
-#ifdef WEBRTC_CODEC_AMR
-            if(!strcmp("#!AMR\n", buf))
-            {
-                uint8_t dummy;
-                read_len = inStreamObj->Read(&dummy, 1);
-                if(read_len != 1)
-                {
-                    return -1;
-                }
-
-                int16_t AMRMode = (dummy>>3)&0xF;
-
-                // TODO (hellner): use tables instead of hardcoding like this!
-                //                 Additionally, this calculation does not
-                //                 take octet alignment into consideration.
-                switch (AMRMode)
-                {
-                        // Mode 0: 4.75 kbit/sec -> 95 bits per 20 ms frame.
-                        // 20 ms = 95 bits ->
-                        // file size in bytes * 8 / 95 is the number of
-                        // 20 ms frames in the file ->
-                        // time_in_ms = file size * 8 / 95 * 20
-                    case 0:
-                        time_in_ms = ((file_size.st_size)*160)/95;
-                        break;
-                        // Mode 1: 5.15 kbit/sec -> 103 bits per 20 ms frame.
-                    case 1:
-                        time_in_ms = ((file_size.st_size)*160)/103;
-                        break;
-                        // Mode 2: 5.90 kbit/sec -> 118 bits per 20 ms frame.
-                    case 2:
-                        time_in_ms = ((file_size.st_size)*160)/118;
-                        break;
-                        // Mode 3: 6.70 kbit/sec -> 134 bits per 20 ms frame.
-                    case 3:
-                        time_in_ms = ((file_size.st_size)*160)/134;
-                        break;
-                        // Mode 4: 7.40 kbit/sec -> 148 bits per 20 ms frame.
-                    case 4:
-                        time_in_ms = ((file_size.st_size)*160)/148;
-                        break;
-                        // Mode 5: 7.95 bit/sec -> 159 bits per 20 ms frame.
-                    case 5:
-                        time_in_ms = ((file_size.st_size)*160)/159;
-                        break;
-                        // Mode 6: 10.2 bit/sec -> 204 bits per 20 ms frame.
-                    case 6:
-                        time_in_ms = ((file_size.st_size)*160)/204;
-                        break;
-                        // Mode 7: 12.2 bit/sec -> 244 bits per 20 ms frame.
-                    case 7:
-                        time_in_ms = ((file_size.st_size)*160)/244;
-                        break;
-                        // Mode 8: SID Mode -> 39 bits per 20 ms frame.
-                    case 8:
-                        time_in_ms = ((file_size.st_size)*160)/39;
-                        break;
-                    default:
-                        break;
-                }
-            }
-#endif
-#ifdef WEBRTC_CODEC_AMRWB
-            if(!strcmp("#!AMRWB\n", buf))
-            {
-                uint8_t dummy;
-                read_len = inStreamObj->Read(&dummy, 1);
-                if(read_len != 1)
-                {
-                    return -1;
-                }
-
-                // TODO (hellner): use tables instead of hardcoding like this!
-                int16_t AMRWBMode = (dummy>>3)&0xF;
-                switch(AMRWBMode)
-                {
-                        // Mode 0: 6.6 kbit/sec -> 132 bits per 20 ms frame.
-                    case 0:
-                        time_in_ms = ((file_size.st_size)*160)/132;
-                        break;
-                        // Mode 1: 8.85 kbit/sec -> 177 bits per 20 ms frame.
-                    case 1:
-                        time_in_ms = ((file_size.st_size)*160)/177;
-                        break;
-                        // Mode 2: 12.65 kbit/sec -> 253 bits per 20 ms frame.
-                    case 2:
-                        time_in_ms = ((file_size.st_size)*160)/253;
-                        break;
-                        // Mode 3: 14.25 kbit/sec -> 285 bits per 20 ms frame.
-                    case 3:
-                        time_in_ms = ((file_size.st_size)*160)/285;
-                        break;
-                        // Mode 4: 15.85 kbit/sec -> 317 bits per 20 ms frame.
-                    case 4:
-                        time_in_ms = ((file_size.st_size)*160)/317;
-                        break;
-                        // Mode 5: 18.25 kbit/sec -> 365 bits per 20 ms frame.
-                    case 5:
-                        time_in_ms = ((file_size.st_size)*160)/365;
-                        break;
-                        // Mode 6: 19.85 kbit/sec -> 397 bits per 20 ms frame.
-                    case 6:
-                        time_in_ms = ((file_size.st_size)*160)/397;
-                        break;
-                        // Mode 7: 23.05 kbit/sec -> 461 bits per 20 ms frame.
-                    case 7:
-                        time_in_ms = ((file_size.st_size)*160)/461;
-                        break;
-                        // Mode 8: 23.85 kbit/sec -> 477 bits per 20 ms frame.
-                    case 8:
-                        time_in_ms = ((file_size.st_size)*160)/477;
-                        break;
-                    default:
-                        delete inStreamObj;
-                        return -1;
-                }
-            }
-#endif
 #ifdef WEBRTC_CODEC_ILBC
             if(!strcmp("#!iLBC20\n", buf))
             {
