@@ -284,10 +284,10 @@ static const char kSdpSctpDataChannelString[] =
     "a=mid:data_content_name\r\n"
     "a=sctpmap:5000 webrtc-datachannel 1024\r\n";
 
-// draft-ietf-mmusic-sctp-sdp-07
+// draft-ietf-mmusic-sctp-sdp-12
 static const char kSdpSctpDataChannelStringWithSctpPort[] =
-    "m=application 9 DTLS/SCTP webrtc-datachannel\r\n"
-    "a=fmtp:webrtc-datachannel max-message-size=100000\r\n"
+    "m=application 9 UDP/DTLS/SCTP webrtc-datachannel\r\n"
+    "a=max-message-size=100000\r\n"
     "a=sctp-port 5000\r\n"
     "c=IN IP4 0.0.0.0\r\n"
     "a=ice-ufrag:ufrag_data\r\n"

@@ -86,6 +86,7 @@ extern const char kMediaProtocolRtpPrefix[];
 
 extern const char kMediaProtocolSctp[];
 extern const char kMediaProtocolDtlsSctp[];
+extern const char kMediaProtocolUdpDtlsSctp[];
 
 // Options to control how session descriptions are generated.
 const int kAutoBandwidth = -1;
