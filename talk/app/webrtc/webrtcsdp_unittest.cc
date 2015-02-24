@@ -114,6 +114,10 @@ static const uint8 kIdentityDigest[] = {0x4A, 0xAD, 0xB9, 0xB1,
                                         0x3E, 0x5D, 0x49, 0x6B,
                                         0x19, 0xE5, 0x7C, 0xAB};
 
+const static char kDtlsSctp[] = "DTLS/SCTP";
+const static char kUdpDtlsSctp[] = "UDP/DTLS/SCTP";
+const static char kTcpDtlsSctp[] = "TCP/DTLS/SCTP";
+
 struct CodecParams {
   int max_ptime;
   int ptime;
@@ -286,15 +290,6 @@ static const char kSdpSctpDataChannelString[] =
 
 // draft-ietf-mmusic-sctp-sdp-12
 static const char kSdpSctpDataChannelStringWithSctpPort[] =
-    "m=application 9 UDP/DTLS/SCTP webrtc-datachannel\r\n"
-    "a=max-message-size=100000\r\n"
-    "a=sctp-port 5000\r\n"
-    "c=IN IP4 0.0.0.0\r\n"
-    "a=ice-ufrag:ufrag_data\r\n"
-    "a=ice-pwd:pwd_data\r\n"
-    "a=mid:data_content_name\r\n";
-
-static const char kSdpSctpDataChannelStringWithJustDtlsAndSctpPort[] =
     "m=application 9 DTLS/SCTP webrtc-datachannel\r\n"
     "a=max-message-size=100000\r\n"
     "a=sctp-port 5000\r\n"
@@ -754,11 +749,13 @@ class WebRtcSdpTest : public testing::Test {
     // Use an equivalence class here, for old and new versions of the
     // protocol description.
     if (cd1->protocol() == cricket::kMediaProtocolDtlsSctp
-        || cd1->protocol() == cricket::kMediaProtocolUdpDtlsSctp) {
-      const bool cd2_is_also_udp_dtls_sctp =
+        || cd1->protocol() == cricket::kMediaProtocolUdpDtlsSctp
+        || cd1->protocol() == cricket::kMediaProtocolTcpDtlsSctp) {
+      const bool cd2_is_also_dtls_sctp =
         cd2->protocol() == cricket::kMediaProtocolDtlsSctp
-        || cd2->protocol() == cricket::kMediaProtocolUdpDtlsSctp;
-      EXPECT_TRUE(cd2_is_also_udp_dtls_sctp);
+        || cd2->protocol() == cricket::kMediaProtocolUdpDtlsSctp
+        || cd2->protocol() == cricket::kMediaProtocolTcpDtlsSctp;
+      EXPECT_TRUE(cd2_is_also_dtls_sctp);
     } else {
       EXPECT_EQ(cd1->protocol(), cd2->protocol());
     }
@@ -2139,6 +2136,19 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannels) {
   sdp_with_data.append(kSdpSctpDataChannelString);
   JsepSessionDescription jdesc_output(kDummyString);
 
+  // Verify with DTLS/SCTP (already in kSdpSctpDataChannelString).
+  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
+  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
+
+  // Verify with UDP/DTLS/SCTP.
+  sdp_with_data.replace(sdp_with_data.find(kDtlsSctp),
+                        strlen(kDtlsSctp), kUdpDtlsSctp);
+  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
+  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
+
+  // Verify with TCP/DTLS/SCTP.
+  sdp_with_data.replace(sdp_with_data.find(kUdpDtlsSctp),
+                        strlen(kUdpDtlsSctp), kTcpDtlsSctp);
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
 }
@@ -2152,19 +2162,19 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpPort) {
   sdp_with_data.append(kSdpSctpDataChannelStringWithSctpPort);
   JsepSessionDescription jdesc_output(kDummyString);
 
+  // Verify with DTLS/SCTP (already in kSdpSctpDataChannelStringWithSctpPort).
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
-}
 
-TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithJustDtlsAndPort) {
-  AddSctpDataChannel();
-  JsepSessionDescription jdesc(kDummyString);
-  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+  // Verify with UDP/DTLS/SCTP.
+  sdp_with_data.replace(sdp_with_data.find(kDtlsSctp),
+                        strlen(kDtlsSctp), kUdpDtlsSctp);
+  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
+  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
 
-  std::string sdp_with_data = kSdpString;
-  sdp_with_data.append(kSdpSctpDataChannelStringWithJustDtlsAndSctpPort);
-  JsepSessionDescription jdesc_output(kDummyString);
-
+  // Verify with TCP/DTLS/SCTP.
+  sdp_with_data.replace(sdp_with_data.find(kUdpDtlsSctp),
+                        strlen(kUdpDtlsSctp), kTcpDtlsSctp);
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
 }
