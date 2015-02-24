@@ -72,6 +72,7 @@ const char kMediaProtocolRtpPrefix[] = "RTP/";
 const char kMediaProtocolSctp[] = "SCTP";
 const char kMediaProtocolDtlsSctp[] = "DTLS/SCTP";
 const char kMediaProtocolUdpDtlsSctp[] = "UDP/DTLS/SCTP";
+const char kMediaProtocolTcpDtlsSctp[] = "TCP/DTLS/SCTP";
 
 static bool IsMediaContentOfType(const ContentInfo* content,
                                  MediaType media_type) {

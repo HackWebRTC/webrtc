@@ -1185,12 +1185,6 @@ bool ParseExtmap(const std::string& line, RtpHeaderExtension* extmap,
   return true;
 }
 
-static bool IsSctp(const std::string& protocol) {
-  return protocol == cricket::kMediaProtocolDtlsSctp
-    || protocol == cricket::kMediaProtocolUdpDtlsSctp
-    || protocol == cricket::kMediaProtocolSctp;
-}
-
 void BuildMediaDescription(const ContentInfo* content_info,
                            const TransportInfo* transport_info,
                            const MediaType media_type,
@@ -1827,8 +1821,7 @@ bool IsRtp(const std::string& protocol) {
 
 bool IsDtlsSctp(const std::string& protocol) {
   // This intentionally excludes "SCTP" and "SCTP/DTLS".
-  return protocol.find(cricket::kMediaProtocolDtlsSctp) != std::string::npos
-    || protocol.find(cricket::kMediaProtocolUdpDtlsSctp) != std::string::npos;
+  return protocol.find(cricket::kMediaProtocolDtlsSctp) != std::string::npos;
 }
 
 bool ParseSessionDescription(const std::string& message, size_t* pos,
