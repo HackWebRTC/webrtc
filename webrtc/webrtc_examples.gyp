@@ -30,6 +30,11 @@
             'examples/android/media_demo/jni/voice_engine_jni.cc',
             'examples/android/media_demo/jni/media_codec_video_decoder.cc',
           ],
+          'variables': {
+            # This library uses native JNI exports; tell GYP so that the
+            # required symbols will be kept.
+            'use_native_jni_exports': 1,
+          },
           'link_settings': {
             'libraries': [
               '-llog',
