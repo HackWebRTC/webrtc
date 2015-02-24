@@ -336,6 +336,8 @@ static bool ParseDtlsSetup(const std::string& line,
                            cricket::ConnectionRole* role,
                            SdpParseError* error);
 
+static bool IsSctp(const std::string& protocol);
+
 // Helper functions
 
 // Below ParseFailed*** functions output the line that caused the parsing
@@ -1183,6 +1185,11 @@ bool ParseExtmap(const std::string& line, RtpHeaderExtension* extmap,
 
   *extmap = RtpHeaderExtension(uri, value);
   return true;
+}
+
+static bool IsSctp(const std::string& protocol) {
+  return protocol == cricket::kMediaProtocolDtlsSctp
+    || protocol == cricket::kMediaProtocolUdpDtlsSctp;
 }
 
 void BuildMediaDescription(const ContentInfo* content_info,
