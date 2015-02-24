@@ -158,22 +158,18 @@ bool AudioDecoderProxy::IsSet() const {
 
 int AudioDecoderProxy::Decode(const uint8_t* encoded,
                               size_t encoded_len,
-                              int sample_rate_hz,
                               int16_t* decoded,
                               SpeechType* speech_type) {
   CriticalSectionScoped decoder_lock(decoder_lock_.get());
-  return decoder_->Decode(encoded, encoded_len, sample_rate_hz, decoded,
-                          speech_type);
+  return decoder_->Decode(encoded, encoded_len, decoded, speech_type);
 }
 
 int AudioDecoderProxy::DecodeRedundant(const uint8_t* encoded,
                                        size_t encoded_len,
-                                       int sample_rate_hz,
                                        int16_t* decoded,
                                        SpeechType* speech_type) {
   CriticalSectionScoped decoder_lock(decoder_lock_.get());
-  return decoder_->DecodeRedundant(encoded, encoded_len, sample_rate_hz,
-                                   decoded, speech_type);
+  return decoder_->DecodeRedundant(encoded, encoded_len, decoded, speech_type);
 }
 
 bool AudioDecoderProxy::HasDecodePlc() const {
@@ -551,6 +547,28 @@ void ACMGenericCodec::SetCngPt(int sample_rate_hz, int payload_type) {
   WriteLockScoped wl(codec_wrapper_lock_);
   SetCngPtInMap(&cng_pt_, sample_rate_hz, payload_type);
   ResetAudioEncoder();
+}
+
+int16_t ACMGenericCodec::UpdateDecoderSampFreq(int16_t codec_id) {
+#ifdef WEBRTC_CODEC_ISAC
+  WriteLockScoped wl(codec_wrapper_lock_);
+  if (is_isac_) {
+    switch (codec_id) {
+      case ACMCodecDB::kISAC:
+        static_cast<AudioEncoderDecoderIsac*>(audio_encoder_.get())
+            ->UpdateDecoderSampleRate(16000);
+        return 0;
+      case ACMCodecDB::kISACSWB:
+      case ACMCodecDB::kISACFB:
+        static_cast<AudioEncoderDecoderIsac*>(audio_encoder_.get())
+            ->UpdateDecoderSampleRate(32000);
+        return 0;
+      default:
+        FATAL() << "Unexpected codec id.";
+    }
+  }
+#endif
+  return 0;
 }
 
 int32_t ACMGenericCodec::SetISACMaxPayloadSize(

@@ -48,12 +48,10 @@ class AudioDecoderProxy final : public AudioDecoder {
   bool IsSet() const;
   int Decode(const uint8_t* encoded,
              size_t encoded_len,
-             int sample_rate_hz,
              int16_t* decoded,
              SpeechType* speech_type) override;
   int DecodeRedundant(const uint8_t* encoded,
                       size_t encoded_len,
-                      int sample_rate_hz,
                       int16_t* decoded,
                       SpeechType* speech_type) override;
   bool HasDecodePlc() const override;
@@ -294,6 +292,33 @@ class ACMGenericCodec {
 
   // Registers comfort noise at |sample_rate_hz| to use |payload_type|.
   void SetCngPt(int sample_rate_hz, int payload_type);
+
+  ///////////////////////////////////////////////////////////////////////////
+  // UpdateDecoderSampFreq()
+  // For most of the codecs this function does nothing. It must be
+  // implemented for those codecs that one codec instance serves as the
+  // decoder for different flavors of the codec. One example is iSAC. there,
+  // iSAC 16 kHz and iSAC 32 kHz are treated as two different codecs with
+  // different payload types, however, there is only one iSAC instance to
+  // decode. The reason for that is we would like to decode and encode with
+  // the same codec instance for bandwidth estimator to work.
+  //
+  // Each time that we receive a new payload type, we call this function to
+  // prepare the decoder associated with the new payload. Normally, decoders
+  // doesn't have to do anything. For iSAC the decoder has to change it's
+  // sampling rate. The input parameter specifies the current flavor of the
+  // codec in codec database. For instance, if we just got a SWB payload then
+  // the input parameter is ACMCodecDB::isacswb.
+  //
+  // Input:
+  //   -codec_id           : the ID of the codec associated with the
+  //                         payload type that we just received.
+  //
+  // Return value:
+  //    0 if succeeded in updating the decoder.
+  //   -1 if failed to update.
+  //
+  int16_t UpdateDecoderSampFreq(int16_t /* codec_id */);
 
   ///////////////////////////////////////////////////////////////////////////
   // UpdateEncoderSampFreq()

@@ -186,9 +186,10 @@ class AudioDecoderTest : public ::testing::Test {
       // Make sure that frame_size_ * channels_ samples are allocated and free.
       decoded.resize((processed_samples + frame_size_) * channels_, 0);
       AudioDecoder::SpeechType speech_type;
-      size_t dec_len = decoder_->Decode(
-          &encoded_[encoded_bytes_], enc_len, codec_input_rate_hz_,
-          &decoded[processed_samples * channels_], &speech_type);
+      size_t dec_len = decoder_->Decode(&encoded_[encoded_bytes_],
+                                        enc_len,
+                                        &decoded[processed_samples * channels_],
+                                        &speech_type);
       EXPECT_EQ(frame_size_ * channels_, dec_len);
       encoded_bytes_ += enc_len;
       processed_samples += frame_size_;
@@ -221,15 +222,13 @@ class AudioDecoderTest : public ::testing::Test {
     AudioDecoder::SpeechType speech_type1, speech_type2;
     EXPECT_EQ(0, decoder_->Init());
     scoped_ptr<int16_t[]> output1(new int16_t[frame_size_ * channels_]);
-    dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
-                               output1.get(), &speech_type1);
+    dec_len = decoder_->Decode(encoded_, enc_len, output1.get(), &speech_type1);
     ASSERT_LE(dec_len, frame_size_ * channels_);
     EXPECT_EQ(frame_size_ * channels_, dec_len);
     // Re-init decoder and decode again.
     EXPECT_EQ(0, decoder_->Init());
     scoped_ptr<int16_t[]> output2(new int16_t[frame_size_ * channels_]);
-    dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
-                               output2.get(), &speech_type2);
+    dec_len = decoder_->Decode(encoded_, enc_len, output2.get(), &speech_type2);
     ASSERT_LE(dec_len, frame_size_ * channels_);
     EXPECT_EQ(frame_size_ * channels_, dec_len);
     for (unsigned int n = 0; n < frame_size_; ++n) {
@@ -248,8 +247,8 @@ class AudioDecoderTest : public ::testing::Test {
     AudioDecoder::SpeechType speech_type;
     EXPECT_EQ(0, decoder_->Init());
     scoped_ptr<int16_t[]> output(new int16_t[frame_size_ * channels_]);
-    size_t dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
-                                      output.get(), &speech_type);
+    size_t dec_len =
+        decoder_->Decode(encoded_, enc_len, output.get(), &speech_type);
     EXPECT_EQ(frame_size_ * channels_, dec_len);
     // Call DecodePlc and verify that we get one frame of data.
     // (Overwrite the output from the above Decode call, but that does not
@@ -339,8 +338,8 @@ class AudioDecoderIlbcTest : public AudioDecoderTest {
     AudioDecoder::SpeechType speech_type;
     EXPECT_EQ(0, decoder_->Init());
     scoped_ptr<int16_t[]> output(new int16_t[frame_size_ * channels_]);
-    size_t dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
-                                      output.get(), &speech_type);
+    size_t dec_len =
+        decoder_->Decode(encoded_, enc_len, output.get(), &speech_type);
     EXPECT_EQ(frame_size_, dec_len);
     // Simply call DecodePlc and verify that we get 0 as return value.
     EXPECT_EQ(0, decoder_->DecodePlc(1, output.get()));

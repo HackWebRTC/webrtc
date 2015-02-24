@@ -430,7 +430,6 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
     // Produce as many samples as input bytes (|encoded_len|).
     virtual int Decode(const uint8_t* encoded,
                        size_t encoded_len,
-                       int /*sample_rate_hz*/,
                        int16_t* decoded,
                        SpeechType* speech_type) {
       for (size_t i = 0; i < encoded_len; ++i) {
@@ -522,11 +521,10 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
   int16_t dummy_output[kPayloadLengthSamples] = {0};
   // The below expectation will make the mock decoder write
   // |kPayloadLengthSamples| zeros to the output array, and mark it as speech.
-  EXPECT_CALL(mock_decoder,
-              Decode(Pointee(0), kPayloadLengthBytes, kSampleRateHz, _, _))
-      .WillOnce(DoAll(SetArrayArgument<3>(dummy_output,
+  EXPECT_CALL(mock_decoder, Decode(Pointee(0), kPayloadLengthBytes, _, _))
+      .WillOnce(DoAll(SetArrayArgument<2>(dummy_output,
                                           dummy_output + kPayloadLengthSamples),
-                      SetArgPointee<4>(AudioDecoder::kSpeech),
+                      SetArgPointee<3>(AudioDecoder::kSpeech),
                       Return(kPayloadLengthSamples)));
   EXPECT_EQ(NetEq::kOK,
             neteq_->RegisterExternalDecoder(
@@ -568,11 +566,10 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
 
   // Expect only the second packet to be decoded (the one with "2" as the first
   // payload byte).
-  EXPECT_CALL(mock_decoder,
-              Decode(Pointee(2), kPayloadLengthBytes, kSampleRateHz, _, _))
-      .WillOnce(DoAll(SetArrayArgument<3>(dummy_output,
+  EXPECT_CALL(mock_decoder, Decode(Pointee(2), kPayloadLengthBytes, _, _))
+      .WillOnce(DoAll(SetArrayArgument<2>(dummy_output,
                                           dummy_output + kPayloadLengthSamples),
-                      SetArgPointee<4>(AudioDecoder::kSpeech),
+                      SetArgPointee<3>(AudioDecoder::kSpeech),
                       Return(kPayloadLengthSamples)));
 
   // Pull audio once.
@@ -685,31 +682,28 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
 
   // Pointee(x) verifies that first byte of the payload equals x, this makes it
   // possible to verify that the correct payload is fed to Decode().
-  EXPECT_CALL(mock_decoder, Decode(Pointee(0), kPayloadLengthBytes,
-                                   kSampleRateKhz * 1000, _, _))
-      .WillOnce(DoAll(SetArrayArgument<3>(dummy_output,
+  EXPECT_CALL(mock_decoder, Decode(Pointee(0), kPayloadLengthBytes, _, _))
+      .WillOnce(DoAll(SetArrayArgument<2>(dummy_output,
                                           dummy_output + kPayloadLengthSamples),
-                      SetArgPointee<4>(AudioDecoder::kSpeech),
+                      SetArgPointee<3>(AudioDecoder::kSpeech),
                       Return(kPayloadLengthSamples)));
 
-  EXPECT_CALL(mock_decoder, Decode(Pointee(1), kPayloadLengthBytes,
-                                   kSampleRateKhz * 1000, _, _))
-      .WillOnce(DoAll(SetArrayArgument<3>(dummy_output,
+  EXPECT_CALL(mock_decoder, Decode(Pointee(1), kPayloadLengthBytes, _, _))
+      .WillOnce(DoAll(SetArrayArgument<2>(dummy_output,
                                           dummy_output + kPayloadLengthSamples),
-                      SetArgPointee<4>(AudioDecoder::kComfortNoise),
+                      SetArgPointee<3>(AudioDecoder::kComfortNoise),
                       Return(kPayloadLengthSamples)));
 
-  EXPECT_CALL(mock_decoder, Decode(IsNull(), 0, kSampleRateKhz * 1000, _, _))
-      .WillOnce(DoAll(SetArrayArgument<3>(dummy_output,
+  EXPECT_CALL(mock_decoder, Decode(IsNull(), 0, _, _))
+      .WillOnce(DoAll(SetArrayArgument<2>(dummy_output,
                                           dummy_output + kPayloadLengthSamples),
-                      SetArgPointee<4>(AudioDecoder::kComfortNoise),
+                      SetArgPointee<3>(AudioDecoder::kComfortNoise),
                       Return(kPayloadLengthSamples)));
 
-  EXPECT_CALL(mock_decoder, Decode(Pointee(2), kPayloadLengthBytes,
-                                   kSampleRateKhz * 1000, _, _))
-      .WillOnce(DoAll(SetArrayArgument<3>(dummy_output,
+  EXPECT_CALL(mock_decoder, Decode(Pointee(2), kPayloadLengthBytes, _, _))
+      .WillOnce(DoAll(SetArrayArgument<2>(dummy_output,
                                           dummy_output + kPayloadLengthSamples),
-                      SetArgPointee<4>(AudioDecoder::kSpeech),
+                      SetArgPointee<3>(AudioDecoder::kSpeech),
                       Return(kPayloadLengthSamples)));
 
   EXPECT_EQ(NetEq::kOK,

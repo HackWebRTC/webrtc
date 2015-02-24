@@ -66,6 +66,8 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
   explicit AudioEncoderDecoderIsacT(const ConfigAdaptive& config);
   virtual ~AudioEncoderDecoderIsacT() OVERRIDE;
 
+  void UpdateDecoderSampleRate(int sample_rate_hz);
+
   // AudioEncoder public methods.
   virtual int SampleRateHz() const OVERRIDE;
   virtual int NumChannels() const OVERRIDE;
@@ -75,12 +77,10 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
   // AudioDecoder methods.
   virtual int Decode(const uint8_t* encoded,
                      size_t encoded_len,
-                     int sample_rate_hz,
                      int16_t* decoded,
                      SpeechType* speech_type) OVERRIDE;
   virtual int DecodeRedundant(const uint8_t* encoded,
                               size_t encoded_len,
-                              int sample_rate_hz,
                               int16_t* decoded,
                               SpeechType* speech_type) OVERRIDE;
   virtual bool HasDecodePlc() const OVERRIDE;
@@ -115,8 +115,6 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
   const scoped_ptr<CriticalSectionWrapper> state_lock_;
   typename T::instance_type* isac_state_
       GUARDED_BY(state_lock_) /* PT_GUARDED_BY(lock_)*/;
-
-  int decoder_sample_rate_hz_ GUARDED_BY(state_lock_);
 
   // Must be acquired before state_lock_.
   const scoped_ptr<CriticalSectionWrapper> lock_;

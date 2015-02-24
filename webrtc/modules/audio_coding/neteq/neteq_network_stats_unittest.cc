@@ -36,22 +36,16 @@ class MockAudioDecoderOpus : public AudioDecoderOpus {
   MOCK_METHOD0(Init, int());
 
   // Override the following methods such that no actual payload is needed.
-  int Decode(const uint8_t* encoded,
-             size_t encoded_len,
-             int /*sample_rate_hz*/,
-             int16_t* decoded,
+  int Decode(const uint8_t* encoded, size_t encoded_len, int16_t* decoded,
              SpeechType* speech_type) override {
     *speech_type = kSpeech;
     memset(decoded, 0, sizeof(int16_t) * kPacketDuration * channels_);
     return kPacketDuration * channels_;
   }
 
-  int DecodeRedundant(const uint8_t* encoded,
-                      size_t encoded_len,
-                      int sample_rate_hz,
-                      int16_t* decoded,
-                      SpeechType* speech_type) override {
-    return Decode(encoded, encoded_len, sample_rate_hz, decoded, speech_type);
+  int DecodeRedundant(const uint8_t* encoded, size_t encoded_len,
+                      int16_t* decoded, SpeechType* speech_type) override {
+    return Decode(encoded, encoded_len, decoded, speech_type);
   }
 
   int PacketDuration(const uint8_t* encoded,

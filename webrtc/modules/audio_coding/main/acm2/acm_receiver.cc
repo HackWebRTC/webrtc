@@ -609,6 +609,14 @@ int AcmReceiver::last_audio_codec_id() const {
   return last_audio_decoder_;
 }
 
+int AcmReceiver::last_audio_payload_type() const {
+  CriticalSectionScoped lock(crit_sect_.get());
+  if (last_audio_decoder_ < 0)
+    return -1;
+  assert(decoders_[last_audio_decoder_].registered);
+  return decoders_[last_audio_decoder_].payload_type;
+}
+
 int AcmReceiver::RedPayloadType() const {
   CriticalSectionScoped lock(crit_sect_.get());
   if (ACMCodecDB::kRED < 0 ||
