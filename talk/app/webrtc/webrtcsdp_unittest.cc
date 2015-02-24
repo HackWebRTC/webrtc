@@ -740,8 +740,19 @@ class WebRtcSdpTest : public testing::Test {
       EXPECT_EQ(c1.key_params, c2.key_params);
       EXPECT_EQ(c1.session_params, c2.session_params);
     }
+
     // protocol
-    EXPECT_EQ(cd1->protocol(), cd2->protocol());
+    // Use an equivalence class here, for old and new versions of the
+    // protocol description.
+    if (cd1->protocol() == cricket::kMediaProtocolDtlsSctp
+        || cd1->protocol() == cricket::kMediaProtocolUdpDtlsSctp) {
+      const bool cd2_is_also_udp_dtls_sctp =
+        cd2->protocol() == cricket::kMediaProtocolDtlsSctp
+        || cd2->protocol() == cricket::kMediaProtocolUdpDtlsSctp;
+      EXPECT_TRUE(cd2_is_also_udp_dtls_sctp);
+    } else {
+      EXPECT_EQ(cd1->protocol(), cd2->protocol());
+    }
 
     // codecs
     EXPECT_EQ(cd1->codecs(), cd2->codecs());
