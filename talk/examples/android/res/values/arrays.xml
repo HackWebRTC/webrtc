@@ -28,6 +28,12 @@
     <string-array name="videoCodecs">
         <item>VP8</item>
         <item>VP9</item>
+        <item>H264</item>
+    </string-array>
+
+    <string-array name="audioCodecs">
+        <item>OPUS</item>
+        <item>ISAC</item>
     </string-array>
 
 </resources>

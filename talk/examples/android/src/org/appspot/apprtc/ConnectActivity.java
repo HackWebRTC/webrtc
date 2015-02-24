@@ -71,11 +71,15 @@ public class ConnectActivity extends Activity {
   private EditText roomEditText;
   private ListView roomListView;
   private SharedPreferences sharedPref;
+  private String keyprefVideoCallEnabled;
   private String keyprefResolution;
   private String keyprefFps;
-  private String keyprefBitrateType;
-  private String keyprefBitrateValue;
+  private String keyprefVideoBitrateType;
+  private String keyprefVideoBitrateValue;
   private String keyprefVideoCodec;
+  private String keyprefAudioBitrateType;
+  private String keyprefAudioBitrateValue;
+  private String keyprefAudioCodec;
   private String keyprefHwCodecAcceleration;
   private String keyprefCpuUsageDetection;
   private String keyprefDisplayHud;
@@ -92,12 +96,16 @@ public class ConnectActivity extends Activity {
     // Get setting keys.
     PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
     sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+    keyprefVideoCallEnabled = getString(R.string.pref_videocall_key);
     keyprefResolution = getString(R.string.pref_resolution_key);
     keyprefFps = getString(R.string.pref_fps_key);
-    keyprefBitrateType = getString(R.string.pref_startbitrate_key);
-    keyprefBitrateValue = getString(R.string.pref_startbitratevalue_key);
+    keyprefVideoBitrateType = getString(R.string.pref_startvideobitrate_key);
+    keyprefVideoBitrateValue = getString(R.string.pref_startvideobitratevalue_key);
     keyprefVideoCodec = getString(R.string.pref_videocodec_key);
     keyprefHwCodecAcceleration = getString(R.string.pref_hwcodec_key);
+    keyprefAudioBitrateType = getString(R.string.pref_startaudiobitrate_key);
+    keyprefAudioBitrateValue = getString(R.string.pref_startaudiobitratevalue_key);
+    keyprefAudioCodec = getString(R.string.pref_audiocodec_key);
     keyprefCpuUsageDetection = getString(R.string.pref_cpu_usage_detection_key);
     keyprefDisplayHud = getString(R.string.pref_displayhud_key);
     keyprefRoomServerUrl = getString(R.string.pref_room_server_url_key);
@@ -244,9 +252,15 @@ public class ConnectActivity extends Activity {
         keyprefRoomServerUrl,
         getString(R.string.pref_room_server_url_default));
 
-    // Get default video codec.
+    // Video call enabled flag.
+    boolean videoCallEnabled = sharedPref.getBoolean(keyprefVideoCallEnabled,
+        Boolean.valueOf(getString(R.string.pref_videocall_default)));
+
+    // Get default codecs.
     String videoCodec = sharedPref.getString(keyprefVideoCodec,
         getString(R.string.pref_videocodec_default));
+    String audioCodec = sharedPref.getString(keyprefAudioCodec,
+        getString(R.string.pref_audiocodec_default));
 
     // Check HW codec flag.
     boolean hwCodec = sharedPref.getBoolean(keyprefHwCodecAcceleration,
@@ -282,15 +296,25 @@ public class ConnectActivity extends Activity {
       }
     }
 
-    // Get start bitrate.
-    int startBitrate = 0;
-    String bitrateTypeDefault = getString(R.string.pref_startbitrate_default);
+    // Get video and audio start bitrate.
+    int videoStartBitrate = 0;
+    String bitrateTypeDefault = getString(
+        R.string.pref_startvideobitrate_default);
     String bitrateType = sharedPref.getString(
-        keyprefBitrateType, bitrateTypeDefault);
+        keyprefVideoBitrateType, bitrateTypeDefault);
     if (!bitrateType.equals(bitrateTypeDefault)) {
-      String bitrateValue = sharedPref.getString(keyprefBitrateValue,
-          getString(R.string.pref_startbitratevalue_default));
-      startBitrate = Integer.parseInt(bitrateValue);
+      String bitrateValue = sharedPref.getString(keyprefVideoBitrateValue,
+          getString(R.string.pref_startvideobitratevalue_default));
+      videoStartBitrate = Integer.parseInt(bitrateValue);
+    }
+    int audioStartBitrate = 0;
+    bitrateTypeDefault = getString(R.string.pref_startaudiobitrate_default);
+    bitrateType = sharedPref.getString(
+        keyprefAudioBitrateType, bitrateTypeDefault);
+    if (!bitrateType.equals(bitrateTypeDefault)) {
+      String bitrateValue = sharedPref.getString(keyprefAudioBitrateValue,
+          getString(R.string.pref_startaudiobitratevalue_default));
+      audioStartBitrate = Integer.parseInt(bitrateValue);
     }
 
     // Test if CpuOveruseDetection should be disabled. By default is on.
@@ -311,12 +335,15 @@ public class ConnectActivity extends Activity {
       intent.setData(uri);
       intent.putExtra(CallActivity.EXTRA_ROOMID, roomId);
       intent.putExtra(CallActivity.EXTRA_LOOPBACK, loopback);
-      intent.putExtra(CallActivity.EXTRA_VIDEOCODEC, videoCodec);
-      intent.putExtra(CallActivity.EXTRA_HWCODEC, hwCodec);
-      intent.putExtra(CallActivity.EXTRA_VIDEO_BITRATE, startBitrate);
+      intent.putExtra(CallActivity.EXTRA_VIDEO_CALL, videoCallEnabled);
       intent.putExtra(CallActivity.EXTRA_VIDEO_WIDTH, videoWidth);
       intent.putExtra(CallActivity.EXTRA_VIDEO_HEIGHT, videoHeight);
       intent.putExtra(CallActivity.EXTRA_VIDEO_FPS, cameraFps);
+      intent.putExtra(CallActivity.EXTRA_VIDEO_BITRATE, videoStartBitrate);
+      intent.putExtra(CallActivity.EXTRA_VIDEOCODEC, videoCodec);
+      intent.putExtra(CallActivity.EXTRA_HWCODEC_ENABLED, hwCodec);
+      intent.putExtra(CallActivity.EXTRA_AUDIO_BITRATE, audioStartBitrate);
+      intent.putExtra(CallActivity.EXTRA_AUDIOCODEC, audioCodec);
       intent.putExtra(CallActivity.EXTRA_CPUOVERUSE_DETECTION,
           cpuOveruseDetection);
       intent.putExtra(CallActivity.EXTRA_DISPLAY_HUD, displayHud);

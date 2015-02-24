@@ -67,13 +67,15 @@ public class PeerConnectionClient {
   public static final String VIDEO_TRACK_ID = "ARDAMSv0";
   public static final String AUDIO_TRACK_ID = "ARDAMSa0";
   private static final String TAG = "PCRTCClient";
-  private static final boolean PREFER_ISAC = false;
-  private static final boolean PREFER_H264 = false;
-  public static final String AUDIO_CODEC_ISAC = "ISAC";
-  public static final String VIDEO_CODEC_VP8 = "VP8";
-  public static final String VIDEO_CODEC_VP9 = "VP9";
-  public static final String VIDEO_CODEC_H264 = "H264";
   private static final String FIELD_TRIAL_VP9 = "WebRTC-SupportVP9/Enabled/";
+  private static final String VIDEO_CODEC_VP8 = "VP8";
+  private static final String VIDEO_CODEC_VP9 = "VP9";
+  private static final String VIDEO_CODEC_H264 = "H264";
+  private static final String AUDIO_CODEC_OPUS = "opus";
+  private static final String AUDIO_CODEC_ISAC = "ISAC";
+  private static final String VIDEO_CODEC_PARAM_START_BITRATE =
+      "x-google-start-bitrate";
+  private static final String AUDIO_CODEC_PARAM_BITRATE = "maxaveragebitrate";
   private static final String MAX_VIDEO_WIDTH_CONSTRAINT = "maxWidth";
   private static final String MIN_VIDEO_WIDTH_CONSTRAINT = "minWidth";
   private static final String MAX_VIDEO_HEIGHT_CONSTRAINT = "maxHeight";
@@ -90,9 +92,11 @@ public class PeerConnectionClient {
   private PeerConnectionFactory factory = null;
   private PeerConnection peerConnection = null;
   private VideoSource videoSource;
+  private boolean videoCallEnabled = true;
+  private boolean preferIsac = false;
+  private boolean preferH264 = false;
   private boolean videoSourceStopped = false;
   private boolean isError = false;
-  private boolean videoCodecHwAcceleration;
   private final Timer statsTimer = new Timer();
   private final PCObserver pcObserver = new PCObserver();
   private final SDPObserver sdpObserver = new SDPObserver();
@@ -120,18 +124,34 @@ public class PeerConnectionClient {
    * Peer connection parameters.
    */
   public static class PeerConnectionParameters {
+    public final boolean videoCallEnabled;
+    public final boolean loopback;
     public final int videoWidth;
     public final int videoHeight;
     public final int videoFps;
     public final int videoStartBitrate;
+    public final String videoCodec;
+    public final boolean videoCodecHwAcceleration;
+    public final int audioStartBitrate;
+    public final String audioCodec;
     public final boolean cpuOveruseDetection;
 
-    public PeerConnectionParameters(int videoWidth, int videoHeight,
-        int videoFps, int videoStartBitrate, boolean cpuOveruseDetection) {
+    public PeerConnectionParameters(
+        boolean videoCallEnabled, boolean loopback,
+        int videoWidth, int videoHeight, int videoFps, int videoStartBitrate,
+        String videoCodec, boolean videoCodecHwAcceleration,
+        int audioStartBitrate, String audioCodec,
+        boolean cpuOveruseDetection) {
+      this.videoCallEnabled = videoCallEnabled;
+      this.loopback = loopback;
       this.videoWidth = videoWidth;
       this.videoHeight = videoHeight;
       this.videoFps = videoFps;
       this.videoStartBitrate = videoStartBitrate;
+      this.videoCodec = videoCodec;
+      this.videoCodecHwAcceleration = videoCodecHwAcceleration;
+      this.audioStartBitrate = audioStartBitrate;
+      this.audioCodec = audioCodec;
       this.cpuOveruseDetection = cpuOveruseDetection;
     }
   }
@@ -184,18 +204,16 @@ public class PeerConnectionClient {
 
   public void createPeerConnectionFactory(
       final Context context,
-      final String videoCodec,
-      final boolean videoCodecHwAcceleration,
       final EGLContext renderEGLContext,
+      final PeerConnectionParameters peerConnectionParameters,
       final PeerConnectionEvents events) {
+    this.peerConnectionParameters = peerConnectionParameters;
     this.events = events;
-    this.videoCodecHwAcceleration = videoCodecHwAcceleration;
     executor.requestStart();
     executor.execute(new Runnable() {
       @Override
       public void run() {
-        createPeerConnectionFactoryInternal(
-            context, videoCodec, renderEGLContext);
+        createPeerConnectionFactoryInternal(context, renderEGLContext);
       }
     });
   }
@@ -203,23 +221,29 @@ public class PeerConnectionClient {
   public void createPeerConnection(
       final VideoRenderer.Callbacks localRender,
       final VideoRenderer.Callbacks remoteRender,
-      final SignalingParameters signalingParameters,
-      final PeerConnectionParameters peerConnectionParameters) {
+      final SignalingParameters signalingParameters) {
+    if (peerConnectionParameters == null) {
+      Log.e(TAG, "Creating peer connection without initializing factory.");
+      return;
+    }
     this.localRender = localRender;
     this.remoteRender = remoteRender;
     this.signalingParameters = signalingParameters;
-    this.peerConnectionParameters = peerConnectionParameters;
     // Merge video constraints from signaling parameters and peer connection
     // parameters.
     videoConstraints = signalingParameters.videoConstraints;
-    if (videoConstraints != null && peerConnectionParameters != null) {
+    if (signalingParameters.videoConstraints == null) {
+      videoCallEnabled = false;
+    }
+    if (videoCallEnabled) {
       int videoWidth = peerConnectionParameters.videoWidth;
       int videoHeight = peerConnectionParameters.videoHeight;
 
       // If HW video encoder is supported and video resolution is not
       // specified force it to HD.
-      if ((videoWidth == 0 || videoHeight == 0) && videoCodecHwAcceleration &&
-          MediaCodecVideoEncoder.isVp8HwSupported()) {
+      if ((videoWidth == 0 || videoHeight == 0)
+          && peerConnectionParameters.videoCodecHwAcceleration
+          && MediaCodecVideoEncoder.isVp8HwSupported()) {
         videoWidth = HD_VIDEO_WIDTH;
         videoHeight = HD_VIDEO_HEIGHT;
       }
@@ -268,19 +292,34 @@ public class PeerConnectionClient {
   }
 
   private void createPeerConnectionFactoryInternal(
-      Context context,
-      String videoCodec,
-      EGLContext renderEGLContext) {
+      Context context, EGLContext renderEGLContext) {
     Log.d(TAG, "Create peer connection factory with EGLContext "
-      + renderEGLContext);
+        + renderEGLContext + ". Use video: "
+        + peerConnectionParameters.videoCallEnabled);
+    videoCallEnabled = peerConnectionParameters.videoCallEnabled;
     isError = false;
-    if (videoCodec.equals(VIDEO_CODEC_VP9)) {
+    // Check if VP9 is used by default.
+    if (videoCallEnabled && peerConnectionParameters.videoCodec != null
+        && peerConnectionParameters.videoCodec.equals(VIDEO_CODEC_VP9)) {
       PeerConnectionFactory.initializeFieldTrials(FIELD_TRIAL_VP9);
     } else {
       PeerConnectionFactory.initializeFieldTrials(null);
     }
+    // Check if H.264 is used by default.
+    preferH264 = false;
+    if (videoCallEnabled && peerConnectionParameters.videoCodec != null
+        && peerConnectionParameters.videoCodec.equals(VIDEO_CODEC_H264)) {
+      preferH264 = true;
+    }
+    // Check if ISAC is used by default.
+    preferIsac = false;
+    if (peerConnectionParameters.audioCodec != null
+        && peerConnectionParameters.audioCodec.equals(AUDIO_CODEC_ISAC)) {
+      preferIsac = true;
+    }
     if (!PeerConnectionFactory.initializeAndroidGlobals(
-        context, true, true, videoCodecHwAcceleration, renderEGLContext)) {
+        context, true, true,
+        peerConnectionParameters.videoCodecHwAcceleration, renderEGLContext)) {
       events.onPeerConnectionError("Failed to initializeAndroidGlobals");
     }
     factory = new PeerConnectionFactory();
@@ -292,16 +331,23 @@ public class PeerConnectionClient {
       Log.e(TAG, "Peerconnection factory is not created");
       return;
     }
-    Log.d(TAG, "Create peer connection. VideoConstraints: "
-        + videoConstraints.toString());
+    Log.d(TAG, "Create peer connection");
+    if (videoConstraints != null) {
+      Log.d(TAG, "VideoConstraints: " + videoConstraints.toString());
+    }
     isInitiator = signalingParameters.initiator;
     queuedRemoteCandidates = new LinkedList<IceCandidate>();
 
     sdpMediaConstraints = new MediaConstraints();
     sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
         "OfferToReceiveAudio", "true"));
-    sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
-        "OfferToReceiveVideo", "true"));
+    if (videoCallEnabled || peerConnectionParameters.loopback) {
+      sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
+          "OfferToReceiveVideo", "true"));
+    } else {
+      sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
+          "OfferToReceiveVideo", "false"));
+    }
 
     MediaConstraints pcConstraints = signalingParameters.pcConstraints;
     pcConstraints.optional.add(
@@ -318,7 +364,7 @@ public class PeerConnectionClient {
     //     Logging.Severity.LS_SENSITIVE);
 
     mediaStream = factory.createLocalMediaStream("ARDAMS");
-    if (videoConstraints != null) {
+    if (videoCallEnabled) {
       videoCapturer = VideoCapturerAndroid.create(
           VideoCapturerAndroid.getNameOfFrontFacingDevice());
       mediaStream.addTrack(createVideoTrack(videoCapturer));
@@ -355,7 +401,7 @@ public class PeerConnectionClient {
   }
 
   public boolean isHDVideo() {
-    if (videoConstraints == null) {
+    if (!videoCallEnabled) {
       return false;
     }
     int minWidth = 0;
@@ -479,17 +525,23 @@ public class PeerConnectionClient {
           return;
         }
         String sdpDescription = sdp.description;
-        if (PREFER_ISAC) {
+        if (preferIsac) {
           sdpDescription = preferCodec(sdpDescription, AUDIO_CODEC_ISAC, true);
         }
-        if (PREFER_H264) {
+        if (videoCallEnabled && preferH264) {
           sdpDescription = preferCodec(sdpDescription, VIDEO_CODEC_H264, false);
         }
-        if (peerConnectionParameters.videoStartBitrate > 0) {
-          sdpDescription = setStartBitrate(VIDEO_CODEC_VP8,
+        if (videoCallEnabled && peerConnectionParameters.videoStartBitrate > 0) {
+          sdpDescription = setStartBitrate(VIDEO_CODEC_VP8, true,
               sdpDescription, peerConnectionParameters.videoStartBitrate);
-          sdpDescription = setStartBitrate(VIDEO_CODEC_VP9,
+          sdpDescription = setStartBitrate(VIDEO_CODEC_VP9, true,
               sdpDescription, peerConnectionParameters.videoStartBitrate);
+          sdpDescription = setStartBitrate(VIDEO_CODEC_H264, true,
+              sdpDescription, peerConnectionParameters.videoStartBitrate);
+        }
+        if (peerConnectionParameters.audioStartBitrate > 0) {
+          sdpDescription = setStartBitrate(AUDIO_CODEC_OPUS, false,
+              sdpDescription, peerConnectionParameters.audioStartBitrate);
         }
         Log.d(TAG, "Set remote SDP.");
         SessionDescription sdpRemote = new SessionDescription(
@@ -549,12 +601,13 @@ public class PeerConnectionClient {
     return localVideoTrack;
   }
 
-  // Mangle SDP to add video start bitrate.
-  private static String setStartBitrate(String codec,
+  private static String setStartBitrate(String codec, boolean isVideoCodec,
       String sdpDescription, int bitrateKbps) {
     String[] lines = sdpDescription.split("\r\n");
-    int lineIndex = -1;
+    int rtpmapLineIndex = -1;
+    boolean sdpFormatUpdated = false;
     String codecRtpMap = null;
+    // Search for codec rtpmap in format
     // a=rtpmap:<payload type> <encoding name>/<clock rate> [/<encoding parameters>]
     String regex = "^a=rtpmap:(\\d+) " + codec + "(/\\d+)+[\r]?$";
     Pattern codecPattern = Pattern.compile(regex);
@@ -562,7 +615,7 @@ public class PeerConnectionClient {
       Matcher codecMatcher = codecPattern.matcher(lines[i]);
       if (codecMatcher.matches()) {
         codecRtpMap = codecMatcher.group(1);
-        lineIndex = i;
+        rtpmapLineIndex = i;
         break;
       }
     }
@@ -571,16 +624,46 @@ public class PeerConnectionClient {
       return sdpDescription;
     }
     Log.d(TAG, "Found " +  codec + " rtpmap " + codecRtpMap
-        + " at " + lines[lineIndex]);
+        + " at " + lines[rtpmapLineIndex]);
+
+    // Check if a=fmtp string already exist in remote SDP for this codec and
+    // update it with new bitrate parameter.
+    regex = "^a=fmtp:" + codecRtpMap + " \\w+=\\d+.*[\r]?$";
+    codecPattern = Pattern.compile(regex);
+    for (int i = 0; i < lines.length; i++) {
+      Matcher codecMatcher = codecPattern.matcher(lines[i]);
+      if (codecMatcher.matches()) {
+        Log.d(TAG, "Found " +  codec + " " + lines[i]);
+        if (isVideoCodec) {
+          lines[i] += "; " + VIDEO_CODEC_PARAM_START_BITRATE
+              + "=" + bitrateKbps;
+        } else {
+          lines[i] += "; " + AUDIO_CODEC_PARAM_BITRATE
+              + "=" + (bitrateKbps * 1000);
+        }
+        Log.d(TAG, "Update remote SDP line: " + lines[i]);
+        sdpFormatUpdated = true;
+        break;
+      }
+    }
+
     StringBuilder newSdpDescription = new StringBuilder();
     for (int i = 0; i < lines.length; i++) {
       newSdpDescription.append(lines[i]).append("\r\n");
-      if (i == lineIndex) {
-        String bitrateSet = "a=fmtp:" + codecRtpMap
-            + " x-google-start-bitrate=" + bitrateKbps;
-        Log.d(TAG, "Add bitrate SDP line: " + bitrateSet);
+      // Append new a=fmtp line if no such line exist for a codec.
+      if (!sdpFormatUpdated && i == rtpmapLineIndex) {
+        String bitrateSet;
+        if (isVideoCodec) {
+          bitrateSet = "a=fmtp:" + codecRtpMap + " "
+              + VIDEO_CODEC_PARAM_START_BITRATE + "=" + bitrateKbps;
+        } else {
+          bitrateSet = "a=fmtp:" + codecRtpMap + " "
+              + AUDIO_CODEC_PARAM_BITRATE + "=" + (bitrateKbps * 1000);
+        }
+        Log.d(TAG, "Add remote SDP line: " + bitrateSet);
         newSdpDescription.append(bitrateSet).append("\r\n");
       }
+
     }
     return newSdpDescription.toString();
   }
@@ -652,7 +735,7 @@ public class PeerConnectionClient {
   }
 
   private void switchCameraInternal() {
-    if (videoConstraints == null) {
+    if (!videoCallEnabled) {
       return;  // No video is sent.
     }
     Log.d(TAG, "Switch camera");
@@ -770,10 +853,10 @@ public class PeerConnectionClient {
         return;
       }
       String sdpDescription = origSdp.description;
-      if (PREFER_ISAC) {
+      if (preferIsac) {
         sdpDescription = preferCodec(sdpDescription, AUDIO_CODEC_ISAC, true);
       }
-      if (PREFER_H264) {
+      if (videoCallEnabled && preferH264) {
         sdpDescription = preferCodec(sdpDescription, VIDEO_CODEC_H264, false);
       }
       final SessionDescription sdp = new SessionDescription(
