@@ -41,7 +41,7 @@ public class PeerConnectionFactory {
 
   private final long nativeFactory;
 
-  static class Options {
+  public static class Options {
     // Keep in sync with webrtc/base/network.h!
     static final int ADAPTER_TYPE_UNKNOWN = 0;
     static final int ADAPTER_TYPE_ETHERNET = 1 << 0;
