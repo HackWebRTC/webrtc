@@ -12,6 +12,8 @@
 
 #include <map>
 
+#include "webrtc/base/checks.h"
+
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 
@@ -134,6 +136,8 @@ void SendStatisticsProxy::DataCountersUpdated(
     uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
   SsrcStats* stats = GetStatsEntry(ssrc);
+  DCHECK(stats != NULL) << "DataCountersUpdated reported for unknown ssrc: "
+                        << ssrc;
   if (stats == NULL)
     return;
 

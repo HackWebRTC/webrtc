@@ -300,7 +300,7 @@ TEST_F(SendStatisticsProxyTest, SendSideDelay) {
 }
 
 TEST_F(SendStatisticsProxyTest, NoSubstreams) {
-  uint32_t exluded_ssrc =
+  uint32_t excluded_ssrc =
       std::max(
           *std::max_element(config_.rtp.ssrcs.begin(), config_.rtp.ssrcs.end()),
           *std::max_element(config_.rtp.rtx.ssrcs.begin(),
@@ -309,24 +309,19 @@ TEST_F(SendStatisticsProxyTest, NoSubstreams) {
   // From RtcpStatisticsCallback.
   RtcpStatistics rtcp_stats;
   RtcpStatisticsCallback* rtcp_callback = statistics_proxy_.get();
-  rtcp_callback->StatisticsUpdated(rtcp_stats, exluded_ssrc);
-
-  // From StreamDataCountersCallback.
-  StreamDataCounters rtp_stats;
-  StreamDataCountersCallback* rtp_callback = statistics_proxy_.get();
-  rtp_callback->DataCountersUpdated(rtp_stats, exluded_ssrc);
+  rtcp_callback->StatisticsUpdated(rtcp_stats, excluded_ssrc);
 
   // From BitrateStatisticsObserver.
   BitrateStatistics total;
   BitrateStatistics retransmit;
   BitrateStatisticsObserver* bitrate_observer = statistics_proxy_.get();
-  bitrate_observer->Notify(total, retransmit, exluded_ssrc);
+  bitrate_observer->Notify(total, retransmit, excluded_ssrc);
 
   // From FrameCountObserver.
   FrameCountObserver* fps_observer = statistics_proxy_.get();
   FrameCounts frame_counts;
   frame_counts.key_frames = 1;
-  fps_observer->FrameCountUpdated(frame_counts, exluded_ssrc);
+  fps_observer->FrameCountUpdated(frame_counts, excluded_ssrc);
 
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
   EXPECT_TRUE(stats.substreams.empty());

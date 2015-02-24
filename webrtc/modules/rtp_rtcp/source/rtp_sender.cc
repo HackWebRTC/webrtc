@@ -1054,17 +1054,20 @@ uint16_t RTPSender::IncrementSequenceNumber() {
 void RTPSender::ResetDataCounters() {
   uint32_t ssrc;
   uint32_t ssrc_rtx;
+  bool report_rtx;
   {
     CriticalSectionScoped ssrc_lock(send_critsect_.get());
     ssrc = ssrc_;
     ssrc_rtx = ssrc_rtx_;
+    report_rtx = rtx_ != kRtxOff;
   }
   CriticalSectionScoped lock(statistics_crit_.get());
   rtp_stats_ = StreamDataCounters();
   rtx_rtp_stats_ = StreamDataCounters();
   if (rtp_stats_callback_) {
     rtp_stats_callback_->DataCountersUpdated(rtp_stats_, ssrc);
-    rtp_stats_callback_->DataCountersUpdated(rtx_rtp_stats_, ssrc_rtx);
+    if (report_rtx)
+      rtp_stats_callback_->DataCountersUpdated(rtx_rtp_stats_, ssrc_rtx);
   }
 }
 
