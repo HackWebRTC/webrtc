@@ -1189,7 +1189,8 @@ bool ParseExtmap(const std::string& line, RtpHeaderExtension* extmap,
 
 static bool IsSctp(const std::string& protocol) {
   return protocol == cricket::kMediaProtocolDtlsSctp
-    || protocol == cricket::kMediaProtocolUdpDtlsSctp;
+    || protocol == cricket::kMediaProtocolUdpDtlsSctp
+    || protocol == cricket::kMediaProtocolSctp;
 }
 
 void BuildMediaDescription(const ContentInfo* content_info,
