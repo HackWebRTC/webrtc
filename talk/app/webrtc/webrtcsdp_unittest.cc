@@ -114,9 +114,9 @@ static const uint8 kIdentityDigest[] = {0x4A, 0xAD, 0xB9, 0xB1,
                                         0x3E, 0x5D, 0x49, 0x6B,
                                         0x19, 0xE5, 0x7C, 0xAB};
 
-const static char kDtlsSctp[] = "DTLS/SCTP";
-const static char kUdpDtlsSctp[] = "UDP/DTLS/SCTP";
-const static char kTcpDtlsSctp[] = "TCP/DTLS/SCTP";
+static const char kDtlsSctp[] = "DTLS/SCTP";
+static const char kUdpDtlsSctp[] = "UDP/DTLS/SCTP";
+static const char kTcpDtlsSctp[] = "TCP/DTLS/SCTP";
 
 struct CodecParams {
   int max_ptime;
