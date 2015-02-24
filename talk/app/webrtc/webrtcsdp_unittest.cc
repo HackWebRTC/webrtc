@@ -294,7 +294,7 @@ static const char kSdpSctpDataChannelStringWithSctpPort[] =
     "a=ice-pwd:pwd_data\r\n"
     "a=mid:data_content_name\r\n";
 
-static const char kSdpSctpDataChannelStringWithOldProtocol[] =
+static const char kSdpSctpDataChannelStringWithJustDtlsAndSctpPort[] =
     "m=application 9 DTLS/SCTP webrtc-datachannel\r\n"
     "a=max-message-size=100000\r\n"
     "a=sctp-port 5000\r\n"
@@ -2156,13 +2156,13 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpPort) {
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
 }
 
-TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithOldProtocol) {
+TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithJustDtlsAndPort) {
   AddSctpDataChannel();
   JsepSessionDescription jdesc(kDummyString);
   ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
 
   std::string sdp_with_data = kSdpString;
-  sdp_with_data.append(kSdpSctpDataChannelStringWithOldProtocol);
+  sdp_with_data.append(kSdpSctpDataChannelStringWithJustDtlsAndSctpPort);
   JsepSessionDescription jdesc_output(kDummyString);
 
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
