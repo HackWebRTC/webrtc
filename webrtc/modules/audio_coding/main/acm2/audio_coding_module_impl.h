@@ -271,9 +271,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // to |index|.
   int UpdateUponReceivingCodec(int index);
 
-  void ResetFragmentation(int vector_size)
-      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
-
   // Get a pointer to AudioDecoder of the given codec. For some codecs, e.g.
   // iSAC, encoding and decoding have to be performed on a shared
   // codec-instance. By calling this method, we get the codec-instance that ACM
@@ -319,20 +316,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   AcmReceiver receiver_;  // AcmReceiver has it's own internal lock.
 
   // RED.
-  bool is_first_red_ GUARDED_BY(acm_crit_sect_);
   bool red_enabled_ GUARDED_BY(acm_crit_sect_);
-
-  // TODO(turajs): |red_buffer_| is allocated in constructor, why having them
-  // as pointers and not an array. If concerned about the memory, then make a
-  // set-up function to allocate them only when they are going to be used, i.e.
-  // RED is enabled.
-  uint8_t* red_buffer_ GUARDED_BY(acm_crit_sect_);
-
-  // TODO(turajs): we actually don't need |fragmentation_| as a member variable.
-  // It is sufficient to keep the length & payload type of previous payload in
-  // member variables.
-  RTPFragmentationHeader fragmentation_ GUARDED_BY(acm_crit_sect_);
-  uint32_t last_red_timestamp_ GUARDED_BY(acm_crit_sect_);
 
   // Codec internal FEC
   bool codec_fec_enabled_ GUARDED_BY(acm_crit_sect_);
@@ -351,7 +335,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   bool receiver_initialized_ GUARDED_BY(acm_crit_sect_);
 
   AudioFrame preprocess_frame_ GUARDED_BY(acm_crit_sect_);
-  uint32_t codec_timestamp_ GUARDED_BY(acm_crit_sect_);
   bool first_10ms_data_ GUARDED_BY(acm_crit_sect_);
 
   CriticalSectionWrapper* callback_crit_sect_;

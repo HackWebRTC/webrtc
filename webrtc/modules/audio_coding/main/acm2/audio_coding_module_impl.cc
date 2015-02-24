@@ -139,14 +139,11 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
       current_send_codec_idx_(-1),
       send_codec_registered_(false),
       receiver_(config),
-      is_first_red_(true),
       red_enabled_(false),
-      last_red_timestamp_(0),
       codec_fec_enabled_(false),
       previous_pltype_(255),
       aux_rtp_header_(NULL),
       receiver_initialized_(false),
-      codec_timestamp_(expected_codec_ts_),
       first_10ms_data_(false),
       callback_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       packetization_callback_(NULL),
@@ -162,24 +159,6 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
     codecs_[i] = NULL;
     mirror_codec_idx_[i] = -1;
   }
-
-  // Allocate memory for RED.
-  red_buffer_ = new uint8_t[MAX_PAYLOAD_SIZE_BYTE];
-
-  // TODO(turajs): This might not be exactly how this class is supposed to work.
-  // The external usage might be that |fragmentationVectorSize| has to match
-  // the allocated space for the member-arrays, while here, we allocate
-  // according to the maximum number of fragmentations and change
-  // |fragmentationVectorSize| on-the-fly based on actual number of
-  // fragmentations. However, due to copying to local variable before calling
-  // SendData, the RTP module receives a "valid" fragmentation, where allocated
-  // space matches |fragmentationVectorSize|, therefore, this should not cause
-  // any problem. A better approach is not using RTPFragmentationHeader as
-  // member variable, instead, use an ACM-specific structure to hold RED-related
-  // data. See module_common_type.h for the definition of
-  // RTPFragmentationHeader.
-  fragmentation_.VerifyAndAllocateFragmentationHeader(
-      kMaxNumFragmentationVectors);
 
   // Register the default payload type for RED and for CNG at sampling rates of
   // 8, 16, 32 and 48 kHz.
@@ -223,11 +202,6 @@ AudioCodingModuleImpl::~AudioCodingModuleImpl() {
         codecs_[i] = NULL;
       }
     }
-
-    if (red_buffer_ != NULL) {
-      delete[] red_buffer_;
-      red_buffer_ = NULL;
-    }
   }
 
   if (aux_rtp_header_ != NULL) {
@@ -264,7 +238,6 @@ int32_t AudioCodingModuleImpl::Process() {
   // TODO(turajs): |length_bytes| & |red_length_bytes| can be of type int if
   // ACMGenericCodec::Encode() & ACMGenericCodec::GetRedPayload() allows.
   int16_t length_bytes = 2 * MAX_PAYLOAD_SIZE_BYTE;
-  int16_t red_length_bytes = length_bytes;
   uint32_t rtp_timestamp;
   int status;
   WebRtcACMEncodingType encoding_type;
@@ -307,22 +280,18 @@ int32_t AudioCodingModuleImpl::Process() {
         }
         case kPassiveDTXNB: {
           frame_type = kAudioFrameCN;
-          is_first_red_ = true;
           break;
         }
         case kPassiveDTXWB: {
           frame_type = kAudioFrameCN;
-          is_first_red_ = true;
           break;
         }
         case kPassiveDTXSWB: {
           frame_type = kAudioFrameCN;
-          is_first_red_ = true;
           break;
         }
         case kPassiveDTXFB: {
           frame_type = kAudioFrameCN;
-          is_first_red_ = true;
           break;
         }
       }
@@ -331,121 +300,6 @@ int32_t AudioCodingModuleImpl::Process() {
       previous_pltype_ = current_payload_type;
 
       ConvertEncodedInfoToFragmentationHeader(encoded_info, &my_fragmentation);
-      // If RED is produced by the AudioEncoder object, the payload type for
-      // RED must be set.
-      if (!encoded_info.redundant.empty())
-        current_payload_type = encoded_info.payload_type;
-
-      // Redundancy encode is done here. The two bitstreams packetized into
-      // one RTP packet and the fragmentation points are set.
-      // Only apply RED on speech data.
-      // Note: This will only happen if |encoded_info| did not contain any
-      // redundancy data. The if statement below will be removed once all codecs
-      // have been switched to the new AudioEncoder interface.
-      if ((codecs_[current_send_codec_idx_]->ExternalRedNeeded()) &&
-          ((encoding_type == kActiveNormalEncoded) ||
-           (encoding_type == kPassiveNormalEncoded))) {
-        DCHECK(encoded_info.redundant.empty());
-        FATAL() << "Don't go here!";
-        // RED is enabled within this scope.
-        //
-        // Note that, a special solution exists for iSAC since it is the only
-        // codec for which GetRedPayload has a non-empty implementation.
-        //
-        // Summary of the RED scheme below (use iSAC as example):
-        //
-        //  1st (is_first_red_ is true) encoded iSAC frame (primary #1) =>
-        //      - call GetRedPayload() and store redundancy for packet #1 in
-        //        second fragment of RED buffer (old data)
-        //      - drop the primary iSAC frame
-        //      - don't call SendData
-        //  2nd (is_first_red_ is false) encoded iSAC frame (primary #2) =>
-        //      - store primary #2 in 1st fragment of RED buffer and send the
-        //        combined packet
-        //      - the transmitted packet contains primary #2 (new) and
-        //        redundancy for packet #1 (old)
-        //      - call GetRed_Payload() and store redundancy for packet #2 in
-        //        second fragment of RED buffer
-        //
-        //  ...
-        //
-        //  Nth encoded iSAC frame (primary #N) =>
-        //      - store primary #N in 1st fragment of RED buffer and send the
-        //        combined packet
-        //      - the transmitted packet contains primary #N (new) and
-        //        reduncancy for packet #(N-1) (old)
-        //      - call GetRedPayload() and store redundancy for packet #N in
-        //        second fragment of RED buffer
-        //
-        //  For all other codecs, GetRedPayload does nothing and returns -1 =>
-        //  redundant data is only a copy.
-        //
-        //  First combined packet contains : #2 (new) and #1 (old)
-        //  Second combined packet contains: #3 (new) and #2 (old)
-        //  Third combined packet contains : #4 (new) and #3 (old)
-        //
-        //  Hence, even if every second packet is dropped, perfect
-        //  reconstruction is possible.
-
-        has_data_to_send = false;
-        // Skip the following part for the first packet in a RED session.
-        if (!is_first_red_) {
-          // Rearrange stream such that RED packets are included.
-          // Replace stream now that we have stored current stream.
-          memcpy(stream + fragmentation_.fragmentationOffset[1], red_buffer_,
-                 fragmentation_.fragmentationLength[1]);
-          // Update the fragmentation time difference vector, in number of
-          // timestamps.
-          uint16_t time_since_last = static_cast<uint16_t>(
-              rtp_timestamp - last_red_timestamp_);
-
-          // Update fragmentation vectors.
-          fragmentation_.fragmentationPlType[1] =
-              fragmentation_.fragmentationPlType[0];
-          fragmentation_.fragmentationTimeDiff[1] = time_since_last;
-          has_data_to_send = true;
-        }
-
-        // Insert new packet length.
-        fragmentation_.fragmentationLength[0] = length_bytes;
-
-        // Insert new packet payload type.
-        fragmentation_.fragmentationPlType[0] = current_payload_type;
-        last_red_timestamp_ = rtp_timestamp;
-
-        // Can be modified by the GetRedPayload() call if iSAC is utilized.
-        red_length_bytes = length_bytes;
-
-        // A fragmentation header is provided => packetization according to
-        // RFC 2198 (RTP Payload for Redundant Audio Data) will be used.
-        // First fragment is the current data (new).
-        // Second fragment is the previous data (old).
-        length_bytes = static_cast<int16_t>(
-            fragmentation_.fragmentationLength[0] +
-            fragmentation_.fragmentationLength[1]);
-
-        // Get, and store, redundant data from the encoder based on the recently
-        // encoded frame.
-        // NOTE - only iSAC contains an implementation; all other codecs does
-        // nothing and returns -1.
-        if (codecs_[current_send_codec_idx_]->GetRedPayload(
-            red_buffer_, &red_length_bytes) == -1) {
-          // The codec was not iSAC => use current encoder output as redundant
-          // data instead (trivial RED scheme).
-          memcpy(red_buffer_, stream, red_length_bytes);
-        }
-
-        is_first_red_ = false;
-        // Update payload type with RED payload type.
-        current_payload_type = red_pltype_;
-        // We have packed 2 payloads.
-        fragmentation_.fragmentationVectorSize = kNumRedFragmentationVectors;
-
-        // Copy to local variable, as it will be used outside ACM lock.
-        my_fragmentation.CopyFrom(fragmentation_);
-        // Store RED length.
-        fragmentation_.fragmentationLength[1] = red_length_bytes;
-      }
     }
   }
 
@@ -487,31 +341,16 @@ int AudioCodingModuleImpl::InitializeSender() {
   current_send_codec_idx_ = -1;
   send_codec_inst_.plname[0] = '\0';
 
-  // Delete all encoders to start fresh.
-  for (int id = 0; id < ACMCodecDB::kMaxNumCodecs; id++) {
-    if (codecs_[id] != NULL) {
-      codecs_[id]->DestructEncoder();
-    }
-  }
-
-  // Initialize RED.
-  is_first_red_ = true;
-  if (red_enabled_) {
-    if (red_buffer_ != NULL) {
-      memset(red_buffer_, 0, MAX_PAYLOAD_SIZE_BYTE);
-    }
-    ResetFragmentation(kNumRedFragmentationVectors);
-  }
-
   return 0;
 }
 
+// TODO(henrik.lundin): Remove this method; only used in tests.
 int AudioCodingModuleImpl::ResetEncoder() {
   CriticalSectionScoped lock(acm_crit_sect_);
   if (!HaveValidEncoder("ResetEncoder")) {
     return -1;
   }
-  return codecs_[current_send_codec_idx_]->ResetEncoder();
+  return 0;
 }
 
 ACMGenericCodec* AudioCodingModuleImpl::CreateCodec(const CodecInst& codec) {
@@ -526,7 +365,6 @@ ACMGenericCodec* AudioCodingModuleImpl::CreateCodec(const CodecInst& codec) {
                  "ACMCodecDB::CreateCodecInstance() failed in CreateCodec()");
     return my_codec;
   }
-  my_codec->SetUniqueID(id_);
 
   return my_codec;
 }
@@ -740,7 +578,6 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
     if (send_codec_registered_) {
       // If we change codec we start fresh with RED.
       // This is not strictly required by the standard.
-      is_first_red_ = true;
       codec_ptr->SetVAD(&dtx_enabled_, &vad_enabled_, &vad_mode_);
 
       if (!codec_ptr->HasInternalFEC()) {
@@ -757,7 +594,6 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
     current_send_codec_idx_ = codec_id;
     send_codec_registered_ = true;
     memcpy(&send_codec_inst_, &send_codec, sizeof(CodecInst));
-    previous_pltype_ = send_codec_inst_.pltype;
     return 0;
   } else {
     // If codec is the same as already registered check if any parameters
@@ -789,9 +625,6 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
     // frequency if required.
     if (send_codec_inst_.plfreq != send_codec.plfreq) {
       force_init = true;
-
-      // If sampling frequency is changed we have to start fresh with RED.
-      is_first_red_ = true;
     }
 
     // If packet size or number of channels has changed, we need to
@@ -848,7 +681,6 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
       }
     }
 
-    previous_pltype_ = send_codec_inst_.pltype;
     return 0;
   }
 }
@@ -891,6 +723,7 @@ int AudioCodingModuleImpl::SendFrequency() const {
 // Get encode bitrate.
 // Adaptive rate codecs return their current encode target rate, while other
 // codecs return there longterm avarage or their fixed rate.
+// TODO(henrik.lundin): Remove; not used.
 int AudioCodingModuleImpl::SendBitrate() const {
   CriticalSectionScoped lock(acm_crit_sect_);
 
@@ -908,6 +741,7 @@ int AudioCodingModuleImpl::SendBitrate() const {
 
 // Set available bandwidth, inform the encoder about the estimated bandwidth
 // received from the remote party.
+// TODO(henrik.lundin): Remove; not used.
 int AudioCodingModuleImpl::SetReceivedEstimatedBandwidth(int bw) {
   CriticalSectionScoped lock(acm_crit_sect_);
   FATAL() << "Dead code?";
@@ -1108,24 +942,12 @@ int AudioCodingModuleImpl::SetREDStatus(
   }
 
   EnableCopyRedForAllCodecs(enable_red);
-
-  if (red_enabled_ != enable_red) {
-    // Reset the RED buffer.
-    memset(red_buffer_, 0, MAX_PAYLOAD_SIZE_BYTE);
-
-    // Reset fragmentation buffers.
-    ResetFragmentation(kNumRedFragmentationVectors);
-    // Set red_enabled_.
-    red_enabled_ = enable_red;
-  }
-  is_first_red_ = true;  // Make sure we restart RED.
+  red_enabled_ = enable_red;
   return 0;
 #else
     bool /* enable_red */) {
-  red_enabled_ = false;
   WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, id_,
-               "  WEBRTC_CODEC_RED is undefined => red_enabled_ = %d",
-               red_enabled_);
+               "  WEBRTC_CODEC_RED is undefined");
   return -1;
 #endif
 }
@@ -1277,6 +1099,7 @@ int AudioCodingModuleImpl::InitializeReceiverSafe() {
 // implement this method. Otherwise it should be removed. I might be that by
 // removing and registering a decoder we can achieve the effect of resetting.
 // Reset the decoder state.
+// TODO(henrik.lundin): Remove; only used in one test, and does nothing.
 int AudioCodingModuleImpl::ResetDecoder() {
   return 0;
 }
@@ -1521,6 +1344,7 @@ int AudioCodingModuleImpl::IsInternalDTXReplacedWithWebRtc(
   return 0;
 }
 
+// TODO(henrik.lundin): Remove? Only used in tests. Deprecated in VoiceEngine.
 int AudioCodingModuleImpl::SetISACMaxRate(int max_bit_per_sec) {
   CriticalSectionScoped lock(acm_crit_sect_);
 
@@ -1531,6 +1355,7 @@ int AudioCodingModuleImpl::SetISACMaxRate(int max_bit_per_sec) {
   return codecs_[current_send_codec_idx_]->SetISACMaxRate(max_bit_per_sec);
 }
 
+// TODO(henrik.lundin): Remove? Only used in tests. Deprecated in VoiceEngine.
 int AudioCodingModuleImpl::SetISACMaxPayloadSize(int max_size_bytes) {
   CriticalSectionScoped lock(acm_crit_sect_);
 
@@ -1542,6 +1367,7 @@ int AudioCodingModuleImpl::SetISACMaxPayloadSize(int max_size_bytes) {
       max_size_bytes);
 }
 
+// TODO(henrik.lundin): Remove? Only used in tests.
 int AudioCodingModuleImpl::ConfigISACBandwidthEstimator(
     int frame_size_ms,
     int rate_bit_per_sec,
@@ -1622,21 +1448,6 @@ int AudioCodingModuleImpl::REDPayloadISAC(int isac_rate,
 //  return status;
 }
 
-void AudioCodingModuleImpl::ResetFragmentation(int vector_size) {
-  for (size_t n = 0; n < kMaxNumFragmentationVectors; n++) {
-    fragmentation_.fragmentationOffset[n] = n * MAX_PAYLOAD_SIZE_BYTE;
-  }
-  memset(fragmentation_.fragmentationLength, 0, kMaxNumFragmentationVectors *
-         sizeof(fragmentation_.fragmentationLength[0]));
-  memset(fragmentation_.fragmentationTimeDiff, 0, kMaxNumFragmentationVectors *
-         sizeof(fragmentation_.fragmentationTimeDiff[0]));
-  memset(fragmentation_.fragmentationPlType,
-         0,
-         kMaxNumFragmentationVectors *
-             sizeof(fragmentation_.fragmentationPlType[0]));
-  fragmentation_.fragmentationVectorSize = static_cast<uint16_t>(vector_size);
-}
-
 int AudioCodingModuleImpl::GetAudioDecoder(const CodecInst& codec, int codec_id,
                                            int mirror_id,
                                            AudioDecoder** decoder) {
@@ -1661,7 +1472,7 @@ int AudioCodingModuleImpl::GetAudioDecoder(const CodecInst& codec, int codec_id,
       codecs_[codec_id] = codecs_[mirror_id];
       mirror_codec_idx_[codec_id] = mirror_id;
     }
-    *decoder = codecs_[codec_id]->Decoder(codec_id);
+    *decoder = codecs_[codec_id]->Decoder();
     if (!*decoder) {
       assert(false);
       return -1;

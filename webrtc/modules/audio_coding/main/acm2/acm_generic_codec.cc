@@ -103,28 +103,7 @@ ACMGenericCodec::ACMGenericCodec(const CodecInst& codec_inst,
                                  int cng_pt_fb,
                                  bool enable_red,
                                  int red_payload_type)
-    : in_audio_ix_write_(0),
-      in_audio_ix_read_(0),
-      in_timestamp_ix_write_(0),
-      in_audio_(NULL),
-      in_timestamp_(NULL),
-      frame_len_smpl_(-1),  // invalid value
-      num_channels_(1),
-      codec_id_(-1),  // invalid value
-      num_missed_samples_(0),
-      encoder_exist_(false),
-      encoder_initialized_(false),
-      registered_in_neteq_(false),
-      has_internal_dtx_(false),
-      ptr_vad_inst_(NULL),
-      vad_enabled_(false),
-      vad_mode_(VADNormal),
-      dtx_enabled_(false),
-      ptr_dtx_inst_(NULL),
-      num_lpc_params_(kNewCNGNumLPCParams),
-      sent_cn_previous_(false),
-      prev_frame_cng_(0),
-      has_internal_fec_(false),
+    : has_internal_fec_(false),
       copy_red_enabled_(enable_red),
       codec_wrapper_lock_(*RWLockWrapper::CreateRWLock()),
       last_timestamp_(0xD87F3F9F),
@@ -141,12 +120,6 @@ ACMGenericCodec::ACMGenericCodec(const CodecInst& codec_inst,
       first_frame_(true),
       red_payload_type_(red_payload_type),
       opus_application_set_(false) {
-  // Initialize VAD vector.
-  for (int i = 0; i < MAX_FRAME_SIZE_10MSEC; i++) {
-    vad_label_[i] = 0;
-  }
-  // Nullify memory for encoder and decoder, and set payload type to an
-  // invalid value.
   memset(&encoder_params_, 0, sizeof(WebRtcACMCodecParams));
   encoder_params_.codec_inst.pltype = -1;
 
@@ -163,24 +136,6 @@ ACMGenericCodec::ACMGenericCodec(const CodecInst& codec_inst,
 }
 
 ACMGenericCodec::~ACMGenericCodec() {
-  // Check all the members which are pointers, and if they are not NULL
-  // delete/free them.
-  if (ptr_vad_inst_ != NULL) {
-    WebRtcVad_Free(ptr_vad_inst_);
-    ptr_vad_inst_ = NULL;
-  }
-  if (in_audio_ != NULL) {
-    delete[] in_audio_;
-    in_audio_ = NULL;
-  }
-  if (in_timestamp_ != NULL) {
-    delete[] in_timestamp_;
-    in_timestamp_ = NULL;
-  }
-  if (ptr_dtx_inst_ != NULL) {
-    WebRtcCng_FreeEnc(ptr_dtx_inst_);
-    ptr_dtx_inst_ = NULL;
-  }
   delete &codec_wrapper_lock_;
 }
 
@@ -594,23 +549,6 @@ void ACMGenericCodec::SetCngPt(int sample_rate_hz, int payload_type) {
   ResetAudioEncoder();
 }
 
-int32_t ACMGenericCodec::GetRedPayload(uint8_t* red_payload,
-                                       int16_t* payload_bytes) {
-  FATAL();
-  return 0;
-}
-
-int16_t ACMGenericCodec::ResetEncoder() {
-  return 0;
-}
-
-void ACMGenericCodec::DestructEncoder() {
-}
-
-void ACMGenericCodec::SetUniqueID(const uint32_t id) {
-  // Do nothing.
-}
-
 int16_t ACMGenericCodec::UpdateDecoderSampFreq(int16_t codec_id) {
 #ifdef WEBRTC_CODEC_ISAC
   WriteLockScoped wl(codec_wrapper_lock_);
@@ -661,7 +599,7 @@ int ACMGenericCodec::SetOpusMaxPlaybackRate(int frequency_hz) {
   return 0;
 }
 
-AudioDecoder* ACMGenericCodec::Decoder(int /* codec_id */) {
+AudioDecoder* ACMGenericCodec::Decoder() {
   ReadLockScoped rl(codec_wrapper_lock_);
   return decoder_proxy_.IsSet() ? &decoder_proxy_ : nullptr;
 }
@@ -697,10 +635,6 @@ void ACMGenericCodec::EnableCopyRed(bool enable, int red_payload_type) {
   copy_red_enabled_ = enable;
   red_payload_type_ = red_payload_type;
   ResetAudioEncoder();
-}
-
-bool ACMGenericCodec::ExternalRedNeeded() {
-  return false;
 }
 
 const AudioEncoder* ACMGenericCodec::GetAudioEncoder() const {

@@ -294,64 +294,6 @@ class ACMGenericCodec {
   void SetCngPt(int sample_rate_hz, int payload_type);
 
   ///////////////////////////////////////////////////////////////////////////
-  // bool HasInternalDTX()
-  // Used to check if the codec has internal DTX.
-  //
-  // Return value:
-  //   true if the codec has an internal DTX, e.g. G729,
-  //   false otherwise.
-  //
-  bool HasInternalDTX() const {
-    ReadLockScoped rl(codec_wrapper_lock_);
-    return has_internal_dtx_;
-  }
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int32_t GetRedPayload()
-  // Used to get codec specific RED payload (if such is implemented).
-  // Currently only done in iSAC.
-  //
-  // Outputs:
-  //   -red_payload       : a pointer to the data for RED payload.
-  //   -payload_bytes     : number of bytes in RED payload.
-  //
-  // Return value:
-  //   -1 if fails to get codec specific RED,
-  //    0 if succeeded.
-  //
-  int32_t GetRedPayload(uint8_t* red_payload, int16_t* payload_bytes);
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int16_t ResetEncoder()
-  // By calling this function you would re-initialize the encoder with the
-  // current parameters. All the settings, e.g. VAD/DTX, frame-size... should
-  // remain unchanged. (In case of iSAC we don't want to lose BWE history.)
-  //
-  // Return value
-  //   -1 if failed,
-  //    0 if succeeded.
-  //
-  int16_t ResetEncoder();
-
-  ///////////////////////////////////////////////////////////////////////////
-  // void DestructEncoder()
-  // This function is called to delete the encoder instance, if possible, to
-  // have a fresh start. For codecs where encoder and decoder share the same
-  // instance we cannot delete the encoder and instead we will initialize the
-  // encoder. We also delete VAD and DTX if they have been created.
-  //
-  void DestructEncoder();
-
-  ///////////////////////////////////////////////////////////////////////////
-  // SetUniqueID()
-  // Set a unique ID for the codec to be used for tracing and debugging
-  //
-  // Input
-  //   -id                 : A number to identify the codec.
-  //
-  void SetUniqueID(const uint32_t id);
-
-  ///////////////////////////////////////////////////////////////////////////
   // UpdateDecoderSampFreq()
   // For most of the codecs this function does nothing. It must be
   // implemented for those codecs that one codec instance serves as the
@@ -483,14 +425,9 @@ class ACMGenericCodec {
   //
   bool HasFrameToEncode() const;
 
-  //
-  // Returns pointer to the AudioDecoder class of this codec. A codec which
-  // should own its own decoder (e.g. iSAC which need same instance for encoding
-  // and decoding, or a codec which should access decoder instance for specific
-  // decoder setting) should implement this method. This method is called if
-  // and only if the ACMCodecDB::codec_settings[codec_id].owns_decoder is true.
-  //
-  AudioDecoder* Decoder(int /* codec_id */);
+  // Returns a pointer to the AudioDecoder part of a joint encoder-decoder
+  // object, if it exists. Otherwise, nullptr is returned.
+  AudioDecoder* Decoder();
 
   ///////////////////////////////////////////////////////////////////////////
   // bool HasInternalFEC()
@@ -538,64 +475,10 @@ class ACMGenericCodec {
   // Sets if CopyRed should be enabled.
   void EnableCopyRed(bool enable, int red_payload_type);
 
-  // Returns true if the caller needs to produce RED data manually (that is, if
-  // RED has been enabled but the codec isn't able to produce the data itself).
-  bool ExternalRedNeeded();
-
   // This method is only for testing.
   const AudioEncoder* GetAudioEncoder() const;
 
  private:
-  // &in_audio_[in_audio_ix_write_] always point to where new audio can be
-  // written to
-  int16_t in_audio_ix_write_ GUARDED_BY(codec_wrapper_lock_);
-
-  // &in_audio_[in_audio_ix_read_] points to where audio has to be read from
-  int16_t in_audio_ix_read_ GUARDED_BY(codec_wrapper_lock_);
-
-  int16_t in_timestamp_ix_write_ GUARDED_BY(codec_wrapper_lock_);
-
-  // Where the audio is stored before encoding,
-  // To save memory the following buffer can be allocated
-  // dynamically for 80 ms depending on the sampling frequency
-  // of the codec.
-  int16_t* in_audio_ GUARDED_BY(codec_wrapper_lock_);
-  uint32_t* in_timestamp_ GUARDED_BY(codec_wrapper_lock_);
-
-  int16_t frame_len_smpl_ GUARDED_BY(codec_wrapper_lock_);
-  uint16_t num_channels_ GUARDED_BY(codec_wrapper_lock_);
-
-  // This will point to a static database of the supported codecs
-  int16_t codec_id_ GUARDED_BY(codec_wrapper_lock_);
-
-  // This will account for the number of samples  were not encoded
-  // the case is rare, either samples are missed due to overwrite
-  // at input buffer or due to encoding error
-  uint32_t num_missed_samples_ GUARDED_BY(codec_wrapper_lock_);
-
-  // True if the encoder instance created
-  bool encoder_exist_ GUARDED_BY(codec_wrapper_lock_);
-
-  // True if the encoder instance initialized
-  bool encoder_initialized_ GUARDED_BY(codec_wrapper_lock_);
-
-  const bool registered_in_neteq_
-      GUARDED_BY(codec_wrapper_lock_);  // TODO(henrik.lundin) Remove?
-
-  // VAD/DTX
-  bool has_internal_dtx_ GUARDED_BY(codec_wrapper_lock_);
-  WebRtcVadInst* ptr_vad_inst_ GUARDED_BY(codec_wrapper_lock_);
-  bool vad_enabled_ GUARDED_BY(codec_wrapper_lock_);
-  ACMVADMode vad_mode_ GUARDED_BY(codec_wrapper_lock_);
-  int16_t vad_label_[MAX_FRAME_SIZE_10MSEC] GUARDED_BY(codec_wrapper_lock_);
-  bool dtx_enabled_ GUARDED_BY(codec_wrapper_lock_);
-  WebRtcCngEncInst* ptr_dtx_inst_ GUARDED_BY(codec_wrapper_lock_);
-  uint8_t num_lpc_params_               // TODO(henrik.lundin) Delete and
-      GUARDED_BY(codec_wrapper_lock_);  // replace with kNewCNGNumLPCParams.
-  bool sent_cn_previous_ GUARDED_BY(codec_wrapper_lock_);
-  int16_t prev_frame_cng_ GUARDED_BY(codec_wrapper_lock_);
-
-  // FEC.
   bool has_internal_fec_ GUARDED_BY(codec_wrapper_lock_);
 
   bool copy_red_enabled_ GUARDED_BY(codec_wrapper_lock_);
