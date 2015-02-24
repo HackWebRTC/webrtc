@@ -248,12 +248,6 @@ class AcmReceiver {
   int last_audio_codec_id() const;  // TODO(turajs): can be inline.
 
   //
-  // Return the payload-type of the last non-CNG/non-DTMF RTP packet. If no
-  // non-CNG/non-DTMF packet is received -1 is returned.
-  //
-  int last_audio_payload_type() const;  // TODO(turajs): can be inline.
-
-  //
   // Get the audio codec associated with the last non-CNG/non-DTMF received
   // payload. If no non-CNG/non-DTMF packet is received -1 is returned,
   // otherwise return 0.

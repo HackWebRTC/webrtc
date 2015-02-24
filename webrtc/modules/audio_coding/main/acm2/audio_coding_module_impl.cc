@@ -1185,24 +1185,7 @@ int AudioCodingModuleImpl::ReceiveCodec(CodecInst* current_codec) const {
 int AudioCodingModuleImpl::IncomingPacket(const uint8_t* incoming_payload,
                                           const size_t payload_length,
                                           const WebRtcRTPHeader& rtp_header) {
-  int last_audio_pltype = receiver_.last_audio_payload_type();
-  if (receiver_.InsertPacket(rtp_header, incoming_payload, payload_length) <
-      0) {
-    return -1;
-  }
-  if (receiver_.last_audio_payload_type() != last_audio_pltype) {
-    int index = receiver_.last_audio_codec_id();
-    assert(index >= 0);
-    CriticalSectionScoped lock(acm_crit_sect_);
-
-    // |codec_[index]| might not be even created, simply because it is not
-    // yet registered as send codec. Even if it is registered, unless the
-    // codec shares same instance for encoder and decoder, this call is
-    // useless.
-    if (codecs_[index] != NULL)
-      codecs_[index]->UpdateDecoderSampFreq(index);
-  }
-  return 0;
+  return receiver_.InsertPacket(rtp_header, incoming_payload, payload_length);
 }
 
 // Minimum playout delay (Used for lip-sync).

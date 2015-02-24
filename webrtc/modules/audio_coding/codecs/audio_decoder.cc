@@ -18,9 +18,10 @@ namespace webrtc {
 
 int AudioDecoder::DecodeRedundant(const uint8_t* encoded,
                                   size_t encoded_len,
+                                  int sample_rate_hz,
                                   int16_t* decoded,
                                   SpeechType* speech_type) {
-  return Decode(encoded, encoded_len, decoded, speech_type);
+  return Decode(encoded, encoded_len, sample_rate_hz, decoded, speech_type);
 }
 
 bool AudioDecoder::HasDecodePlc() const { return false; }
