@@ -146,12 +146,10 @@ bool AudioEncoderCng::EncodeInternal(uint32_t rtp_timestamp,
         &speech_buffer_[samples_per_10ms_frame * blocks_in_first_vad_call],
         samples_per_10ms_frame * blocks_in_second_vad_call, SampleRateHz());
   }
-  DCHECK_NE(activity, Vad::kError);
 
-  bool return_val = true;
   switch (activity) {
     case Vad::kPassive: {
-      return_val = EncodePassive(encoded, &info->encoded_bytes);
+      EncodePassive(encoded, &info->encoded_bytes);
       info->encoded_timestamp = first_timestamp_in_buffer_;
       info->payload_type = cng_payload_type_;
       info->send_even_if_empty = true;
@@ -159,32 +157,31 @@ bool AudioEncoderCng::EncodeInternal(uint32_t rtp_timestamp,
       break;
     }
     case Vad::kActive: {
-      return_val = EncodeActive(max_encoded_bytes, encoded, info);
+      EncodeActive(max_encoded_bytes, encoded, info);
       last_frame_active_ = true;
       break;
     }
     case Vad::kError: {
-      return_val = false;
+      FATAL();  // Fails only if fed invalid data.
       break;
     }
   }
 
   speech_buffer_.clear();
   frames_in_buffer_ = 0;
-  return return_val;
+  return true;
 }
 
-bool AudioEncoderCng::EncodePassive(uint8_t* encoded, size_t* encoded_bytes) {
+void AudioEncoderCng::EncodePassive(uint8_t* encoded, size_t* encoded_bytes) {
   bool force_sid = last_frame_active_;
   bool output_produced = false;
   const size_t samples_per_10ms_frame = 10 * SampleRateHz() / 1000;
   for (int i = 0; i < frames_in_buffer_; ++i) {
     int16_t encoded_bytes_tmp = 0;
-    if (WebRtcCng_Encode(cng_inst_.get(),
-                         &speech_buffer_[i * samples_per_10ms_frame],
-                         static_cast<int16_t>(samples_per_10ms_frame), encoded,
-                         &encoded_bytes_tmp, force_sid) < 0)
-      return false;
+    CHECK_GE(WebRtcCng_Encode(cng_inst_.get(),
+                              &speech_buffer_[i * samples_per_10ms_frame],
+                              static_cast<int16_t>(samples_per_10ms_frame),
+                              encoded, &encoded_bytes_tmp, force_sid), 0);
     if (encoded_bytes_tmp > 0) {
       CHECK(!output_produced);
       *encoded_bytes = static_cast<size_t>(encoded_bytes_tmp);
@@ -192,24 +189,21 @@ bool AudioEncoderCng::EncodePassive(uint8_t* encoded, size_t* encoded_bytes) {
       force_sid = false;
     }
   }
-  return true;
 }
 
-bool AudioEncoderCng::EncodeActive(size_t max_encoded_bytes,
+void AudioEncoderCng::EncodeActive(size_t max_encoded_bytes,
                                    uint8_t* encoded,
                                    EncodedInfo* info) {
   const size_t samples_per_10ms_frame = 10 * SampleRateHz() / 1000;
   for (int i = 0; i < frames_in_buffer_; ++i) {
-    if (!speech_encoder_->Encode(first_timestamp_in_buffer_,
-                                 &speech_buffer_[i * samples_per_10ms_frame],
-                                 samples_per_10ms_frame, max_encoded_bytes,
-                                 encoded, info))
-      return false;
+    CHECK(speech_encoder_->Encode(first_timestamp_in_buffer_,
+                                  &speech_buffer_[i * samples_per_10ms_frame],
+                                  samples_per_10ms_frame, max_encoded_bytes,
+                                  encoded, info));
     if (i < frames_in_buffer_ - 1) {
       CHECK_EQ(info->encoded_bytes, 0u) << "Encoder delivered data too early.";
     }
   }
-  return true;
 }
 
 }  // namespace webrtc

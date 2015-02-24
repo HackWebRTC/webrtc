@@ -68,9 +68,9 @@ class AudioEncoderCng final : public AudioEncoder {
     inline void operator()(CNG_enc_inst* ptr) const { WebRtcCng_FreeEnc(ptr); }
   };
 
-  bool EncodePassive(uint8_t* encoded, size_t* encoded_bytes);
+  void EncodePassive(uint8_t* encoded, size_t* encoded_bytes);
 
-  bool EncodeActive(size_t max_encoded_bytes,
+  void EncodeActive(size_t max_encoded_bytes,
                     uint8_t* encoded,
                     EncodedInfo* info);
 
