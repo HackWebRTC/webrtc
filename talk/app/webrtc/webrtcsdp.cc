@@ -1827,7 +1827,8 @@ bool IsRtp(const std::string& protocol) {
 
 bool IsDtlsSctp(const std::string& protocol) {
   // This intentionally excludes "SCTP" and "SCTP/DTLS".
-  return protocol.find(cricket::kMediaProtocolDtlsSctp) != std::string::npos;
+  return protocol.find(cricket::kMediaProtocolDtlsSctp) != std::string::npos
+    || protocol.find(cricket::kMediaProtocolUdpDtlsSctp) != std::string::npos;
 }
 
 bool ParseSessionDescription(const std::string& message, size_t* pos,
