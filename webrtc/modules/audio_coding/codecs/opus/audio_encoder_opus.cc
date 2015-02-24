@@ -188,9 +188,8 @@ bool AudioEncoderOpus::EncodeInternal(uint32_t rtp_timestamp,
       rtc::CheckedDivExact(CastInt16(input_buffer_.size()),
                            static_cast<int16_t>(num_channels_)),
       ClampInt16(max_encoded_bytes), encoded);
+  CHECK_GE(r, 0);  // Fails only if fed invalid data.
   input_buffer_.clear();
-  if (r < 0)
-    return false;
   info->encoded_bytes = r;
   info->encoded_timestamp = first_timestamp_in_buffer_;
   info->payload_type = payload_type_;
