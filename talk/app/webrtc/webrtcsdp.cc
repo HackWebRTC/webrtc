@@ -336,8 +336,6 @@ static bool ParseDtlsSetup(const std::string& line,
                            cricket::ConnectionRole* role,
                            SdpParseError* error);
 
-static bool IsSctp(const std::string& protocol);
-
 // Helper functions
 
 // Below ParseFailed*** functions output the line that caused the parsing
