@@ -123,7 +123,7 @@ class MockStatsObserver : public webrtc::StatsObserver {
   virtual void OnComplete(const StatsReports& reports) {
     ASSERT(!called_);
     called_ = true;
-    memset(&stats_, sizeof(stats_), 0);
+    memset(&stats_, 0, sizeof(stats_));
     stats_.number_of_reports = reports.size();
     for (const auto* r : reports) {
       if (r->type() == StatsReport::kStatsReportTypeSsrc) {
