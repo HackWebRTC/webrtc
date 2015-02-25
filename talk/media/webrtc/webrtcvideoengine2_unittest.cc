@@ -2041,12 +2041,12 @@ TEST_F(WebRtcVideoChannel2Test, OnReadyToSendSignalsNetworkState) {
 TEST_F(WebRtcVideoChannel2Test, GetStatsReportsUpperResolution) {
   FakeVideoSendStream* stream = AddSendStream();
   webrtc::VideoSendStream::Stats stats;
-  stats.substreams[17].sent_width = 123;
-  stats.substreams[17].sent_height = 40;
-  stats.substreams[42].sent_width = 80;
-  stats.substreams[42].sent_height = 31;
-  stats.substreams[11].sent_width = 20;
-  stats.substreams[11].sent_height = 90;
+  stats.substreams[17].width = 123;
+  stats.substreams[17].height = 40;
+  stats.substreams[42].width = 80;
+  stats.substreams[42].height = 31;
+  stats.substreams[11].width = 20;
+  stats.substreams[11].height = 90;
   stream->SetStats(stats);
 
   cricket::VideoMediaInfo info;
@@ -2094,6 +2094,29 @@ TEST_F(WebRtcVideoChannel2Test,
             info.receivers[0].nacks_sent);
   EXPECT_EQ(stats.rtcp_packet_type_counts.pli_packets,
             info.receivers[0].plis_sent);
+}
+
+TEST_F(WebRtcVideoChannel2Test, GetStatsTranslatesDecodeStatsCorrectly) {
+  FakeVideoReceiveStream* stream = AddRecvStream();
+  webrtc::VideoReceiveStream::Stats stats;
+  stats.decode_ms = 2;
+  stats.max_decode_ms = 3;
+  stats.current_delay_ms = 4;
+  stats.target_delay_ms = 5;
+  stats.jitter_buffer_ms = 6;
+  stats.min_playout_delay_ms = 7;
+  stats.render_delay_ms = 8;
+  stream->SetStats(stats);
+
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  EXPECT_EQ(stats.decode_ms, info.receivers[0].decode_ms);
+  EXPECT_EQ(stats.max_decode_ms, info.receivers[0].max_decode_ms);
+  EXPECT_EQ(stats.current_delay_ms, info.receivers[0].current_delay_ms);
+  EXPECT_EQ(stats.target_delay_ms, info.receivers[0].target_delay_ms);
+  EXPECT_EQ(stats.jitter_buffer_ms, info.receivers[0].jitter_buffer_ms);
+  EXPECT_EQ(stats.min_playout_delay_ms, info.receivers[0].min_playout_delay_ms);
+  EXPECT_EQ(stats.render_delay_ms, info.receivers[0].render_delay_ms);
 }
 
 TEST_F(WebRtcVideoChannel2Test, TranslatesCallStatsCorrectly) {

@@ -21,27 +21,6 @@
 
 namespace webrtc {
 
-struct SsrcStats {
-  SsrcStats()
-      : sent_width(0),
-        sent_height(0),
-        total_bitrate_bps(0),
-        retransmit_bitrate_bps(0),
-        avg_delay_ms(0),
-        max_delay_ms(0) {}
-  FrameCounts frame_counts;
-  int sent_width;
-  int sent_height;
-  // TODO(holmer): Move bitrate_bps out to the webrtc::Call layer.
-  int total_bitrate_bps;
-  int retransmit_bitrate_bps;
-  int avg_delay_ms;
-  int max_delay_ms;
-  StreamDataCounters rtp_stats;
-  RtcpPacketTypeCounter rtcp_packet_type_counts;
-  RtcpStatistics rtcp_stats;
-};
-
 // Settings for NACK, see RFC 4585 for details.
 struct NackConfig {
   NackConfig() : rtp_history_ms(0) {}

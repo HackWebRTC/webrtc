@@ -94,7 +94,8 @@ class SendStatisticsProxy : public RtcpStatisticsCallback,
     int64_t resolution_update_ms;
   };
   void PurgeOldStats() EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  SsrcStats* GetStatsEntry(uint32_t ssrc) EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  VideoSendStream::StreamStats* GetStatsEntry(uint32_t ssrc)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   Clock* const clock_;
   const VideoSendStream::Config config_;

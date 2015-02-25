@@ -1673,9 +1673,10 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
                     stats.substreams.end())
             << "No stats for SSRC: " << kSendSsrcs[i]
             << ", stats should exist as soon as frames have been encoded.";
-        SsrcStats ssrc_stats = stats.substreams[kSendSsrcs[i]];
-        EXPECT_EQ(kEncodedResolution[i].width, ssrc_stats.sent_width);
-        EXPECT_EQ(kEncodedResolution[i].height, ssrc_stats.sent_height);
+        VideoSendStream::StreamStats ssrc_stats =
+            stats.substreams[kSendSsrcs[i]];
+        EXPECT_EQ(kEncodedResolution[i].width, ssrc_stats.width);
+        EXPECT_EQ(kEncodedResolution[i].height, ssrc_stats.height);
       }
     }
 

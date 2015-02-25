@@ -1630,7 +1630,7 @@ TEST_F(EndToEndTest, GetStats) {
             stats.rtp_stats.retransmitted.packets != 0;
 
         receive_stats_filled_["CodecStats"] |=
-            stats.avg_delay_ms != 0 || stats.discarded_packets != 0;
+            stats.target_delay_ms != 0 || stats.discarded_packets != 0;
 
         receive_stats_filled_["FrameCounts"] |=
             stats.frame_counts.key_frames != 0 ||
@@ -1656,17 +1656,16 @@ TEST_F(EndToEndTest, GetStats) {
       send_stats_filled_["NumStreams"] |=
           stats.substreams.size() == expected_send_ssrcs_.size();
 
-      for (std::map<uint32_t, SsrcStats>::const_iterator it =
+      for (std::map<uint32_t, VideoSendStream::StreamStats>::const_iterator it =
                stats.substreams.begin();
-           it != stats.substreams.end();
-           ++it) {
+           it != stats.substreams.end(); ++it) {
         EXPECT_TRUE(expected_send_ssrcs_.find(it->first) !=
                     expected_send_ssrcs_.end());
 
         send_stats_filled_[CompoundKey("CapturedFrameRate", it->first)] |=
             stats.input_frame_rate != 0;
 
-        const SsrcStats& stream_stats = it->second;
+        const VideoSendStream::StreamStats& stream_stats = it->second;
 
         send_stats_filled_[CompoundKey("StatisticsUpdated", it->first)] |=
             stream_stats.rtcp_stats.cumulative_lost != 0 ||

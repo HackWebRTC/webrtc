@@ -57,20 +57,23 @@ VideoSendStream::Stats SendStatisticsProxy::GetStats() {
 
 void SendStatisticsProxy::PurgeOldStats() {
   int64_t current_time_ms = clock_->TimeInMilliseconds();
-  for (std::map<uint32_t, SsrcStats>::iterator it = stats_.substreams.begin();
+  for (std::map<uint32_t, VideoSendStream::StreamStats>::iterator it =
+           stats_.substreams.begin();
        it != stats_.substreams.end(); ++it) {
     uint32_t ssrc = it->first;
     if (update_times_[ssrc].resolution_update_ms + kStatsTimeoutMs >
         current_time_ms)
       continue;
 
-    it->second.sent_width = 0;
-    it->second.sent_height = 0;
+    it->second.width = 0;
+    it->second.height = 0;
   }
 }
 
-SsrcStats* SendStatisticsProxy::GetStatsEntry(uint32_t ssrc) {
-  std::map<uint32_t, SsrcStats>::iterator it = stats_.substreams.find(ssrc);
+VideoSendStream::StreamStats* SendStatisticsProxy::GetStatsEntry(
+    uint32_t ssrc) {
+  std::map<uint32_t, VideoSendStream::StreamStats>::iterator it =
+      stats_.substreams.find(ssrc);
   if (it != stats_.substreams.end())
     return &it->second;
 
@@ -98,12 +101,12 @@ void SendStatisticsProxy::OnSendEncodedImage(
   uint32_t ssrc = config_.rtp.ssrcs[simulcast_idx];
 
   CriticalSectionScoped lock(crit_.get());
-  SsrcStats* stats = GetStatsEntry(ssrc);
+  VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (stats == NULL)
     return;
 
-  stats->sent_width = encoded_image._encodedWidth;
-  stats->sent_height = encoded_image._encodedHeight;
+  stats->width = encoded_image._encodedWidth;
+  stats->height = encoded_image._encodedHeight;
   update_times_[ssrc].resolution_update_ms = clock_->TimeInMilliseconds();
 }
 
@@ -111,7 +114,7 @@ void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(
     uint32_t ssrc,
     const RtcpPacketTypeCounter& packet_counter) {
   CriticalSectionScoped lock(crit_.get());
-  SsrcStats* stats = GetStatsEntry(ssrc);
+  VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (stats == NULL)
     return;
 
@@ -121,7 +124,7 @@ void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(
 void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
                                             uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
-  SsrcStats* stats = GetStatsEntry(ssrc);
+  VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (stats == NULL)
     return;
 
@@ -135,11 +138,9 @@ void SendStatisticsProxy::DataCountersUpdated(
     const StreamDataCounters& counters,
     uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
-  SsrcStats* stats = GetStatsEntry(ssrc);
+  VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   DCHECK(stats != NULL) << "DataCountersUpdated reported for unknown ssrc: "
                         << ssrc;
-  if (stats == NULL)
-    return;
 
   stats->rtp_stats = counters;
 }
@@ -148,7 +149,7 @@ void SendStatisticsProxy::Notify(const BitrateStatistics& total_stats,
                                  const BitrateStatistics& retransmit_stats,
                                  uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
-  SsrcStats* stats = GetStatsEntry(ssrc);
+  VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (stats == NULL)
     return;
 
@@ -159,7 +160,7 @@ void SendStatisticsProxy::Notify(const BitrateStatistics& total_stats,
 void SendStatisticsProxy::FrameCountUpdated(const FrameCounts& frame_counts,
                                             uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
-  SsrcStats* stats = GetStatsEntry(ssrc);
+  VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (stats == NULL)
     return;
 
@@ -170,7 +171,7 @@ void SendStatisticsProxy::SendSideDelayUpdated(int avg_delay_ms,
                                                int max_delay_ms,
                                                uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
-  SsrcStats* stats = GetStatsEntry(ssrc);
+  VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (stats == NULL)
     return;
   stats->avg_delay_ms = avg_delay_ms;

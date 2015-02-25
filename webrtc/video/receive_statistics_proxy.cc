@@ -47,7 +47,13 @@ void ReceiveStatisticsProxy::DecoderTiming(int decode_ms,
                                            int min_playout_delay_ms,
                                            int render_delay_ms) {
   CriticalSectionScoped lock(crit_.get());
-  stats_.avg_delay_ms = target_delay_ms;
+  stats_.decode_ms = decode_ms;
+  stats_.max_decode_ms = max_decode_ms;
+  stats_.current_delay_ms = current_delay_ms;
+  stats_.target_delay_ms = target_delay_ms;
+  stats_.jitter_buffer_ms = jitter_buffer_ms;
+  stats_.min_playout_delay_ms = min_playout_delay_ms;
+  stats_.render_delay_ms = render_delay_ms;
 }
 
 void ReceiveStatisticsProxy::RtcpPacketTypesCounterUpdated(

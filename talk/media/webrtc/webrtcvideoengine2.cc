@@ -1766,21 +1766,20 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
 
   info.send_frame_width = 0;
   info.send_frame_height = 0;
-  for (std::map<uint32_t, webrtc::SsrcStats>::iterator it =
+  for (std::map<uint32_t, webrtc::VideoSendStream::StreamStats>::iterator it =
            stats.substreams.begin();
-       it != stats.substreams.end();
-       ++it) {
+       it != stats.substreams.end(); ++it) {
     // TODO(pbos): Wire up additional stats, such as padding bytes.
-    webrtc::SsrcStats stream_stats = it->second;
+    webrtc::VideoSendStream::StreamStats stream_stats = it->second;
     info.bytes_sent += stream_stats.rtp_stats.transmitted.payload_bytes +
                        stream_stats.rtp_stats.transmitted.header_bytes +
                        stream_stats.rtp_stats.transmitted.padding_bytes;
     info.packets_sent += stream_stats.rtp_stats.transmitted.packets;
     info.packets_lost += stream_stats.rtcp_stats.cumulative_lost;
-    if (stream_stats.sent_width > info.send_frame_width)
-      info.send_frame_width = stream_stats.sent_width;
-    if (stream_stats.sent_height > info.send_frame_height)
-      info.send_frame_height = stream_stats.sent_height;
+    if (stream_stats.width > info.send_frame_width)
+      info.send_frame_width = stream_stats.width;
+    if (stream_stats.height > info.send_frame_height)
+      info.send_frame_height = stream_stats.height;
     info.firs_rcvd += stream_stats.rtcp_packet_type_counts.fir_packets;
     info.nacks_rcvd += stream_stats.rtcp_packet_type_counts.nack_packets;
     info.plis_rcvd += stream_stats.rtcp_packet_type_counts.pli_packets;
@@ -1788,7 +1787,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
 
   if (!stats.substreams.empty()) {
     // TODO(pbos): Report fraction lost per SSRC.
-    webrtc::SsrcStats first_stream_stats = stats.substreams.begin()->second;
+    webrtc::VideoSendStream::StreamStats first_stream_stats =
+        stats.substreams.begin()->second;
     info.fraction_lost =
         static_cast<float>(first_stream_stats.rtcp_stats.fraction_lost) /
         (1 << 8);
@@ -1804,10 +1804,9 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::FillBandwidthEstimationInfo(
     return;
   }
   webrtc::VideoSendStream::Stats stats = stream_->GetStats();
-  for (std::map<uint32_t, webrtc::SsrcStats>::iterator it =
+  for (std::map<uint32_t, webrtc::VideoSendStream::StreamStats>::iterator it =
            stats.substreams.begin();
-       it != stats.substreams.end();
-       ++it) {
+       it != stats.substreams.end(); ++it) {
     bwe_info->transmit_bitrate += it->second.total_bitrate_bps;
     bwe_info->retransmit_bitrate += it->second.retransmit_bitrate_bps;
   }
@@ -2042,6 +2041,14 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo() {
     info.frame_height = last_height_;
     info.capture_start_ntp_time_ms = estimated_remote_start_ntp_time_ms_;
   }
+
+  info.decode_ms = stats.decode_ms;
+  info.max_decode_ms = stats.max_decode_ms;
+  info.current_delay_ms = stats.current_delay_ms;
+  info.target_delay_ms = stats.target_delay_ms;
+  info.jitter_buffer_ms = stats.jitter_buffer_ms;
+  info.min_playout_delay_ms = stats.min_playout_delay_ms;
+  info.render_delay_ms = stats.render_delay_ms;
 
   info.firs_sent = stats.rtcp_packet_type_counts.fir_packets;
   info.plis_sent = stats.rtcp_packet_type_counts.pli_packets;

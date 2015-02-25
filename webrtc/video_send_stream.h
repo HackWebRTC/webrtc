@@ -37,6 +37,20 @@ class VideoSendStreamInput {
 
 class VideoSendStream {
  public:
+  struct StreamStats {
+    FrameCounts frame_counts;
+    int width = 0;
+    int height = 0;
+    // TODO(holmer): Move bitrate_bps out to the webrtc::Call layer.
+    int total_bitrate_bps = 0;
+    int retransmit_bitrate_bps = 0;
+    int avg_delay_ms = 0;
+    int max_delay_ms = 0;
+    StreamDataCounters rtp_stats;
+    RtcpPacketTypeCounter rtcp_packet_type_counts;
+    RtcpStatistics rtcp_stats;
+  };
+
   struct Stats {
     Stats()
         : input_frame_rate(0),
@@ -47,7 +61,7 @@ class VideoSendStream {
     int encode_frame_rate;
     int media_bitrate_bps;
     bool suspended;
-    std::map<uint32_t, SsrcStats> substreams;
+    std::map<uint32_t, StreamStats> substreams;
   };
 
   struct Config {
