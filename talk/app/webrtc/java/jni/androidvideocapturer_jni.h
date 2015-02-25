@@ -33,11 +33,10 @@
 
 #include "talk/app/webrtc/androidvideocapturer.h"
 #include "talk/app/webrtc/java/jni/jni_helpers.h"
+#include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/thread_checker.h"
 
 namespace webrtc_jni {
-
-class JavaCaptureProxy;
 
 // AndroidVideoCapturerJni implements AndroidVideoCapturerDelegate.
 // The purpose of the delegate is to hide the JNI specifics from the C++ only
@@ -45,20 +44,42 @@ class JavaCaptureProxy;
 class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
  public:
   static int SetAndroidObjects(JNIEnv* jni, jobject appliction_context);
-  AndroidVideoCapturerJni(JNIEnv* jni, jobject j_video_capturer);
   ~AndroidVideoCapturerJni();
 
-  bool Init(jstring device_name);
+  // Creates a new instance of AndroidVideoCapturerJni. Returns a nullptr if
+  // it can't be created. This happens if |device_name| is invalid.
+  static rtc::scoped_ptr<AndroidVideoCapturerJni> Create(
+      JNIEnv* jni,
+      jobject j_video_capture, // Instance of VideoCapturerAndroid
+      jstring device_name); // Name of the camera to use.
 
   void Start(int width, int height, int framerate,
              webrtc::AndroidVideoCapturer* capturer) override;
   void Stop() override;
 
+  virtual void ReturnBuffer(int64 time_stamp) override;
+
   std::string GetSupportedFormats() override;
 
- private:
+  // Called from VideoCapturerAndroid::NativeObserver on a Java thread.
+  void OnCapturerStarted(bool success);
+  void OnIncomingFrame(void* video_frame,
+                       int length,
+                       int rotation,
+                       int64 time_stamp);
+
+private:
+  AndroidVideoCapturerJni(JNIEnv* jni, jobject j_video_capturer);
+  bool Init(jstring device_name);
+
+  void OnCapturerStarted_w(bool success);
+  void OnCapturerStopped_w();
+  void OnIncomingFrame_w(void* video_frame,
+                         int length,
+                         int rotation,
+                         int64 time_stamp);
+
   JNIEnv* jni();
-  void DeInit();
 
   const ScopedGlobalRef<jobject> j_capturer_global_;
   const ScopedGlobalRef<jclass> j_video_capturer_class_;
@@ -67,9 +88,12 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
 
   rtc::ThreadChecker thread_checker_;
 
-  // The proxy is a valid pointer between calling Start and Stop.
-  // It destroys itself when Java VideoCapturerAndroid has been stopped.
-  JavaCaptureProxy* proxy_;
+  rtc::Thread* thread_;  // The thread where Start is called on.
+  // |capturer| is a guaranteed to be a valid pointer between a call to
+  // AndroidVideoCapturerDelegate::Start
+  // until AndroidVideoCapturerDelegate::Stop.
+  webrtc::AndroidVideoCapturer* capturer_;
+  rtc::AsyncInvoker invoker_;
 
   static jobject application_context_;
 

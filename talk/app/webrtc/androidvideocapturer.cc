@@ -58,7 +58,7 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
     captured_frame_.fourcc = static_cast<uint32>(cricket::FOURCC_ANY);
   }
 
-  void UpdateCapturedFrame(signed char* frame_data,
+  void UpdateCapturedFrame(void* frame_data,
                            int length,
                            int rotation,
                            int64 time_stamp_in_ms) {
@@ -186,13 +186,14 @@ void AndroidVideoCapturer::OnCapturerStarted(bool success) {
   SignalStateChange(this, new_state);
 }
 
-void AndroidVideoCapturer::OnIncomingFrame(signed char* frame_data,
+void AndroidVideoCapturer::OnIncomingFrame(void* frame_data,
                                            int length,
                                            int rotation,
                                            int64 time_stamp) {
   DCHECK(worker_thread_->IsCurrent());
   frame_factory_->UpdateCapturedFrame(frame_data, length, rotation, time_stamp);
   SignalFrameCaptured(this, frame_factory_->GetCapturedFrame());
+  delegate_->ReturnBuffer(time_stamp);
 }
 
 }  // namespace webrtc

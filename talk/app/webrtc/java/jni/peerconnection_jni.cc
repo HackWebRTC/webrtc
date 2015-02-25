@@ -1385,9 +1385,9 @@ JOW(jobject, VideoCapturer_nativeCreateVideoCapturer)(
                                             j_videocapturer_ctor);
   CHECK_EXCEPTION(jni) << "error during NewObject";
 
-  rtc::scoped_ptr<AndroidVideoCapturerJni> delegate(
-      new AndroidVideoCapturerJni(jni, j_video_capturer));
-  if (!delegate->Init(j_device_name))
+  rtc::scoped_ptr<AndroidVideoCapturerJni> delegate =
+      AndroidVideoCapturerJni::Create(jni, j_video_capturer, j_device_name);
+  if (!delegate.get())
     return nullptr;
   rtc::scoped_ptr<webrtc::AndroidVideoCapturer> capturer(
       new webrtc::AndroidVideoCapturer(delegate.Pass()));

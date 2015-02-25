@@ -48,6 +48,10 @@ class AndroidVideoCapturerDelegate {
   // The delegate may not call into AndroidVideoCapturer after this call.
   virtual void Stop() = 0;
 
+  // Notify that a frame received in OnIncomingFrame with |time_stamp| has been
+  // processed and can be returned.
+  virtual void ReturnBuffer(int64 time_stamp) = 0;
+
   // Must returns a JSON string "{{width=xxx, height=xxx, framerate = xxx}}"
   virtual std::string GetSupportedFormats() = 0;
 };
@@ -60,13 +64,11 @@ class AndroidVideoCapturer : public cricket::VideoCapturer {
       rtc::scoped_ptr<AndroidVideoCapturerDelegate> delegate);
   virtual ~AndroidVideoCapturer();
 
-  // Called from JNI when the capturer has been started. Called from a Java
-  // thread.
+  // Called from JNI when the capturer has been started.
   void OnCapturerStarted(bool success);
 
-  // Called from JNI when a new frame has been captured. Called from a Java
-  // thread.
-  void OnIncomingFrame(signed char* videoFrame,
+  // Called from JNI when a new frame has been captured.
+  void OnIncomingFrame(void* video_frame,
                        int length,
                        int rotation,
                        int64 time_stamp);

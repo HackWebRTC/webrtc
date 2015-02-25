@@ -35,64 +35,6 @@ namespace webrtc_jni {
 
 jobject AndroidVideoCapturerJni::application_context_ = nullptr;
 
-// JavaCaptureProxy is responsible for marshaling calls from the
-// Java VideoCapturerAndroid to the C++ class AndroidVideoCapturer.
-// Calls from Java occur on a Java thread and are marshaled to
-// AndroidVideoCapturer on the thread that creates an instance of this object.
-//
-// An instance is created when AndroidVideoCapturerJni::Start is called and
-// ownership is passed to an instance of the Java class NativeObserver.
-// JavaCaptureProxy is destroyed when NativeObserver has reported that the
-// capturer has stopped, see
-// VideoCapturerAndroid_00024NativeObserver_nativeCapturerStopped.
-// Marshaling is done as long as JavaCaptureProxy has a pointer to the
-// AndroidVideoCapturer.
-class JavaCaptureProxy {
- public:
-  JavaCaptureProxy() : thread_(rtc::Thread::Current()), capturer_(nullptr) {
-  }
-
-  ~JavaCaptureProxy() {
-  }
-
-  void SetAndroidCapturer(webrtc::AndroidVideoCapturer* capturer) {
-    DCHECK(thread_->IsCurrent());
-    capturer_ = capturer;
-  }
-
-  void OnCapturerStarted(bool success) {
-    thread_->Invoke<void>(
-        rtc::Bind(&JavaCaptureProxy::OnCapturerStarted_w, this, success));
-  }
-
-  void OnIncomingFrame(signed char* video_frame,
-                       int length,
-                       int rotation,
-                       int64 time_stamp) {
-    thread_->Invoke<void>(
-        rtc::Bind(&JavaCaptureProxy::OnIncomingFrame_w, this, video_frame,
-                  length, rotation, time_stamp));
-  }
-
- private:
-  void OnCapturerStarted_w(bool success) {
-    DCHECK(thread_->IsCurrent());
-    if (capturer_)
-      capturer_->OnCapturerStarted(success);
-  }
-  void OnIncomingFrame_w(signed char* video_frame,
-                         int length,
-                         int rotation,
-                         int64 time_stamp) {
-    DCHECK(thread_->IsCurrent());
-    if (capturer_)
-      capturer_->OnIncomingFrame(video_frame, length, rotation, time_stamp);
-  }
-
-  rtc::Thread* thread_;
-  webrtc::AndroidVideoCapturer* capturer_;
-};
-
 // static
 int AndroidVideoCapturerJni::SetAndroidObjects(JNIEnv* jni,
                                                jobject appliction_context) {
@@ -104,6 +46,20 @@ int AndroidVideoCapturerJni::SetAndroidObjects(JNIEnv* jni,
   return 0;
 }
 
+// static
+rtc::scoped_ptr<AndroidVideoCapturerJni>
+AndroidVideoCapturerJni::Create(JNIEnv* jni,
+                                jobject j_video_capture,
+                                jstring device_name) {
+  rtc::scoped_ptr<AndroidVideoCapturerJni> capturer(
+      new AndroidVideoCapturerJni(jni,
+                                  j_video_capture));
+
+  if (capturer->Init(device_name))
+    return capturer.Pass();
+  return nullptr;
+}
+
 AndroidVideoCapturerJni::AndroidVideoCapturerJni(JNIEnv* jni,
                                                  jobject j_video_capturer)
     : j_capturer_global_(jni, j_video_capturer),
@@ -113,7 +69,7 @@ AndroidVideoCapturerJni::AndroidVideoCapturerJni(JNIEnv* jni,
           jni,
           FindClass(jni,
                     "org/webrtc/VideoCapturerAndroid$NativeObserver")),
-      proxy_(nullptr) {
+      capturer_(nullptr) {
   thread_checker_.DetachFromThread();
 }
 
@@ -128,22 +84,14 @@ bool AndroidVideoCapturerJni::Init(jstring device_name) {
 }
 
 AndroidVideoCapturerJni::~AndroidVideoCapturerJni() {
-  DeInit();
-}
-
-void AndroidVideoCapturerJni::DeInit() {
-  DCHECK(proxy_ == nullptr);
-  jmethodID m = GetMethodID(jni(), *j_video_capturer_class_, "deInit", "()V");
-  jni()->CallVoidMethod(*j_capturer_global_, m);
-  CHECK_EXCEPTION(jni()) << "error during VideoCapturerAndroid.DeInit";
 }
 
 void AndroidVideoCapturerJni::Start(int width, int height, int framerate,
                                     webrtc::AndroidVideoCapturer* capturer) {
   DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(proxy_ == nullptr);
-  proxy_ = new JavaCaptureProxy();
-  proxy_->SetAndroidCapturer(capturer);
+  DCHECK(capturer_ == nullptr);
+  thread_ = rtc::Thread::Current();
+  capturer_ = capturer;
 
   j_frame_observer_ = NewGlobalRef(
       jni(),
@@ -152,7 +100,7 @@ void AndroidVideoCapturerJni::Start(int width, int height, int framerate,
                                    *j_observer_class_,
                                    "<init>",
                                    "(J)V"),
-                                   jlongFromPointer(proxy_)));
+                                   jlongFromPointer(this)));
   CHECK_EXCEPTION(jni()) << "error during NewObject";
 
   jmethodID m = GetMethodID(
@@ -169,13 +117,21 @@ void AndroidVideoCapturerJni::Start(int width, int height, int framerate,
 
 void AndroidVideoCapturerJni::Stop() {
   DCHECK(thread_checker_.CalledOnValidThread());
-  proxy_->SetAndroidCapturer(nullptr);
-  proxy_ = nullptr;
+  capturer_ = nullptr;
   jmethodID m = GetMethodID(jni(), *j_video_capturer_class_,
                             "stopCapture", "()V");
   jni()->CallVoidMethod(*j_capturer_global_, m);
   CHECK_EXCEPTION(jni()) << "error during VideoCapturerAndroid.stopCapture";
   DeleteGlobalRef(jni(), j_frame_observer_);
+  // Do not process frames in flight after stop have returned since
+  // the memory buffers they point to have been deleted.
+  rtc::MessageQueueManager::Clear(&invoker_);
+}
+
+void AndroidVideoCapturerJni::ReturnBuffer(int64 time_stamp) {
+  jmethodID m = GetMethodID(jni(), *j_video_capturer_class_,
+                            "returnBuffer", "(J)V");
+  jni()->CallVoidMethod(*j_capturer_global_, m, time_stamp);
 }
 
 std::string AndroidVideoCapturerJni::GetSupportedFormats() {
@@ -188,29 +144,53 @@ std::string AndroidVideoCapturerJni::GetSupportedFormats() {
   return JavaToStdString(jni(), j_json_caps);
 }
 
+void AndroidVideoCapturerJni::OnCapturerStarted(bool success) {
+  invoker_.AsyncInvoke<void>(
+      thread_,
+      rtc::Bind(&AndroidVideoCapturerJni::OnCapturerStarted_w, this, success));
+}
+
+void AndroidVideoCapturerJni::OnIncomingFrame(void* video_frame,
+                                              int length,
+                                              int rotation,
+                                              int64 time_stamp) {
+  invoker_.AsyncInvoke<void>(
+      thread_,
+      rtc::Bind(&AndroidVideoCapturerJni::OnIncomingFrame_w,
+                this, video_frame, length, rotation, time_stamp));
+}
+
+void AndroidVideoCapturerJni::OnCapturerStarted_w(bool success) {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  if (capturer_)
+    capturer_->OnCapturerStarted(success);
+}
+
+void AndroidVideoCapturerJni::OnIncomingFrame_w(void* video_frame,
+                                                int length,
+                                                int rotation,
+                                                int64 time_stamp) {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  if (capturer_)
+    capturer_->OnIncomingFrame(video_frame, length, rotation, time_stamp);
+}
+
 JNIEnv* AndroidVideoCapturerJni::jni() { return AttachCurrentThreadIfNeeded(); }
 
 JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeOnFrameCaptured)
-    (JNIEnv* jni, jclass, jlong j_proxy, jbyteArray j_frame,
+    (JNIEnv* jni, jclass, jlong j_capturer, jobject j_frame,
         jint rotation, jlong ts) {
-  jbyte* bytes = jni->GetByteArrayElements(j_frame, NULL);
-  reinterpret_cast<JavaCaptureProxy*>(
-      j_proxy)->OnIncomingFrame(bytes, jni->GetArrayLength(j_frame), rotation,
-                                ts);
-  jni->ReleaseByteArrayElements(j_frame, bytes, JNI_ABORT);
+  void* bytes = jni->GetDirectBufferAddress(j_frame);
+  DCHECK(bytes != NULL);
+  jlong length = jni->GetDirectBufferCapacity(j_frame);
+  reinterpret_cast<AndroidVideoCapturerJni*>(
+      j_capturer)->OnIncomingFrame(bytes, length, rotation, ts);
 }
 
 JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeCapturerStarted)
-    (JNIEnv* jni, jclass, jlong j_proxy, jboolean j_success) {
-  JavaCaptureProxy* proxy = reinterpret_cast<JavaCaptureProxy*>(j_proxy);
-  proxy->OnCapturerStarted(j_success);
-  if (!j_success)
-    delete proxy;
-}
-
-JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeCapturerStopped)
-    (JNIEnv* jni, jclass, jlong j_proxy) {
-  delete reinterpret_cast<JavaCaptureProxy*>(j_proxy);
+    (JNIEnv* jni, jclass, jlong j_capturer, jboolean j_success) {
+  reinterpret_cast<AndroidVideoCapturerJni*>(j_capturer)->OnCapturerStarted(
+      j_success);
 }
 
 }  // namespace webrtc_jni

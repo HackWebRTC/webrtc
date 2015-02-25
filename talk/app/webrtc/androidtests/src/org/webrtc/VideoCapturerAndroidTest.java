@@ -33,6 +33,7 @@ import android.test.suitebuilder.annotation.SmallTest;
 import org.webrtc.VideoCapturerAndroid.CaptureFormat;
 import org.webrtc.VideoRenderer.I420Frame;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 @SuppressWarnings("deprecation")
@@ -67,7 +68,6 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     private int frameSize = 0;
     private Object frameLock = 0;
     private Object capturerStartLock = 0;
-    private Object capturerStopLock = 0;
     private boolean captureStartResult = false;
 
     @Override
@@ -79,17 +79,12 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     }
 
     @Override
-    public void OnCapturerStopped() {
-      synchronized (capturerStopLock) {
-        capturerStopLock.notify();
-      }
-    }
-
-    @Override
-    public void OnFrameCaptured(byte[] data, int rotation, long timeStamp) {
+    public void OnFrameCaptured(ByteBuffer frame, int rotation,
+        long timeStamp) {
+      assertTrue(frame.isDirect());
       synchronized (frameLock) {
         ++framesCaptured;
-        frameSize = data.length;
+        frameSize = frame.capacity();
         frameLock.notify();
       }
     }
@@ -98,12 +93,6 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
       synchronized (capturerStartLock) {
         capturerStartLock.wait();
         return captureStartResult;
-      }
-    }
-
-    public void WaitForCapturerToStop() throws InterruptedException {
-      synchronized (capturerStopLock) {
-        capturerStopLock.wait();
       }
     }
 
@@ -262,7 +251,6 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
       // Check the frame size.
       assertEquals((format.width*format.height*3)/2, observer.frameSize());
       capturer.stopCapture();
-      observer.WaitForCapturerToStop();
     }
     capturer.dispose();
   }
