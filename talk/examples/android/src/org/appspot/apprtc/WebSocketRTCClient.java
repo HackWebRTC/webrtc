@@ -233,10 +233,6 @@ public class WebSocketRTCClient implements AppRTCClient,
           Log.e(TAG, "Sending answer in loopback mode.");
           return;
         }
-        if (wsClient.getState() != WebSocketConnectionState.REGISTERED) {
-          reportError("Sending answer SDP in non registered state.");
-          return;
-        }
         JSONObject json = new JSONObject();
         jsonPut(json, "sdp", sdp.description);
         jsonPut(json, "type", "answer");
@@ -268,10 +264,6 @@ public class WebSocketRTCClient implements AppRTCClient,
           }
         } else {
           // Call receiver sends ice candidates to websocket server.
-          if (wsClient.getState() != WebSocketConnectionState.REGISTERED) {
-            reportError("Sending ICE candidate in non registered state.");
-            return;
-          }
           wsClient.send(json.toString());
         }
       }
