@@ -28,6 +28,10 @@ public final class WebRtcAudioUtils {
     return Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1;
   }
 
+  public static boolean runningOnLollipopOrHigher() {
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
+  }
+
   /** Helper method for building a string of thread information.*/
   public static String getThreadInfo() {
     return "@[name=" + Thread.currentThread().getName()

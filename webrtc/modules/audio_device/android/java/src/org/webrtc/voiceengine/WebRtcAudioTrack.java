@@ -96,9 +96,16 @@ class WebRtcAudioTrack {
         // Upon return, the buffer position will have been advanced to reflect
         // the amount of data that was successfully written to the AudioTrack.
         assertTrue(sizeInBytes <= byteBuffer.remaining());
-        int bytesWritten = audioTrack.write(byteBuffer,
-                                            sizeInBytes,
-                                            AudioTrack.WRITE_BLOCKING);
+        int bytesWritten = 0;
+        if (WebRtcAudioUtils.runningOnLollipopOrHigher()) {
+          bytesWritten = audioTrack.write(byteBuffer,
+                                          sizeInBytes,
+                                          AudioTrack.WRITE_BLOCKING);
+        } else {
+          bytesWritten = audioTrack.write(byteBuffer.array(),
+                                          0,
+                                          sizeInBytes);
+        }
         if (bytesWritten != sizeInBytes) {
           Loge("AudioTrack.write failed: " + bytesWritten);
           if (bytesWritten == AudioTrack.ERROR_INVALID_OPERATION) {
@@ -146,7 +153,6 @@ class WebRtcAudioTrack {
     byteBuffer = byteBuffer.allocateDirect(
         BYTES_PER_FRAME * (sampleRate / BUFFERS_PER_SECOND));
     Logd("byteBuffer.capacity: " + byteBuffer.capacity());
-
     // Rather than passing the ByteBuffer with every callback (requiring
     // the potentially expensive GetDirectBufferAddress) we simply have the
     // the native class cache the address to the memory once.
