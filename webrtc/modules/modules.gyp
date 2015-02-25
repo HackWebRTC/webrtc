@@ -15,7 +15,7 @@
     'audio_processing/audio_processing.gypi',
     'bitrate_controller/bitrate_controller.gypi',
     'desktop_capture/desktop_capture.gypi',
-    'media_file/source/media_file.gypi',
+    'media_file/media_file.gypi',
     'pacing/pacing.gypi',
     'remote_bitrate_estimator/remote_bitrate_estimator.gypi',
     'rtp_rtcp/source/rtp_rtcp.gypi',

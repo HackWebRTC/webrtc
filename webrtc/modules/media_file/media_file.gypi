@@ -13,26 +13,17 @@
       'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
       ],
-      'include_dirs': [
-        '../interface',
-        '../../interface',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          '../interface',
-          '../../interface',
-        ],
-      },
       'sources': [
-        '../interface/media_file.h',
-        '../interface/media_file_defines.h',
-        'avi_file.cc',
-        'avi_file.h',
-        'media_file_impl.cc',
-        'media_file_impl.h',
-        'media_file_utility.cc',
-        'media_file_utility.h',
+        'interface/media_file.h',
+        'interface/media_file_defines.h',
+        'source/avi_file.cc',
+        'source/avi_file.h',
+        'source/media_file_impl.cc',
+        'source/media_file_impl.h',
+        'source/media_file_utility.cc',
+        'source/media_file_utility.h',
       ], # source
       # TODO(jschuh): Bug 1348: fix size_t to int truncations.
       'msvs_disabled_warnings': [ 4267, ],

@@ -10,10 +10,6 @@ import("../../build/webrtc.gni")
 
 config("media_file_config") {
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
-  include_dirs = [
-    "interface",
-    "../interface",
-  ]
 }
 
 source_set("media_file") {
@@ -47,5 +43,8 @@ source_set("media_file") {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  deps = [ "../../system_wrappers" ]
+  deps = [
+    "../../system_wrappers",
+    "../../common_audio",
+  ]
 }
