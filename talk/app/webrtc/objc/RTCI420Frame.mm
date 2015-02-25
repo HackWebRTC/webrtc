@@ -55,15 +55,18 @@
 }
 
 - (const uint8_t*)yPlane {
-  return _videoFrame->GetYPlane();
+  const cricket::VideoFrame* const_frame = _videoFrame.get();
+  return const_frame->GetYPlane();
 }
 
 - (const uint8_t*)uPlane {
-  return _videoFrame->GetUPlane();
+  const cricket::VideoFrame* const_frame = _videoFrame.get();
+  return const_frame->GetUPlane();
 }
 
 - (const uint8_t*)vPlane {
-  return _videoFrame->GetVPlane();
+  const cricket::VideoFrame* const_frame = _videoFrame.get();
+  return const_frame->GetVPlane();
 }
 
 - (NSInteger)yPitch {

@@ -2007,13 +2007,14 @@ class VideoFrameTest : public testing::Test {
 
   void CopyIsRef() {
     rtc::scoped_ptr<T> source(new T);
-    rtc::scoped_ptr<cricket::VideoFrame> target;
+    rtc::scoped_ptr<const cricket::VideoFrame> target;
     ASSERT_TRUE(LoadFrameNoRepeat(source.get()));
     target.reset(source->Copy());
     EXPECT_TRUE(IsEqual(*source, *target, 0));
-    EXPECT_EQ(source->GetYPlane(), target->GetYPlane());
-    EXPECT_EQ(source->GetUPlane(), target->GetUPlane());
-    EXPECT_EQ(source->GetVPlane(), target->GetVPlane());
+    const T* const_source = source.get();
+    EXPECT_EQ(const_source->GetYPlane(), target->GetYPlane());
+    EXPECT_EQ(const_source->GetUPlane(), target->GetUPlane());
+    EXPECT_EQ(const_source->GetVPlane(), target->GetVPlane());
   }
 
   void MakeExclusive() {

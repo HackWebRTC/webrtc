@@ -419,7 +419,8 @@ TEST_F(VideoAdapterTest, BlackOutput) {
   EXPECT_TRUE_WAIT(!capturer_->IsRunning() ||
                    listener_->GetStats().captured_frames >= 10, kWaitTimeout);
   // Verify that the output frame is not black.
-  rtc::scoped_ptr<VideoFrame> adapted_frame(listener_->CopyAdaptedFrame());
+  rtc::scoped_ptr<const VideoFrame> adapted_frame(
+      listener_->CopyAdaptedFrame());
   EXPECT_NE(16, *adapted_frame->GetYPlane());
   EXPECT_NE(128, *adapted_frame->GetUPlane());
   EXPECT_NE(128, *adapted_frame->GetVPlane());

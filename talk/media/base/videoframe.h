@@ -159,8 +159,8 @@ class VideoFrame {
   // See webrtc/base/stream.h for a description of StreamResult and error.
   // Error may be NULL. If a non-success value is returned from
   // StreamInterface::Write(), we immediately return with that value.
-  virtual rtc::StreamResult Write(rtc::StreamInterface *stream,
-                                        int *error);
+  virtual rtc::StreamResult Write(rtc::StreamInterface* stream,
+                                  int* error) const;
 
   // Converts the I420 data to RGB of a certain type such as ARGB and ABGR.
   // Returns the frame's actual size, regardless of whether it was written or

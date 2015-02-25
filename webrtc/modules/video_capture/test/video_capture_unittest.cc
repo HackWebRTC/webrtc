@@ -514,9 +514,10 @@ TEST_F(VideoCaptureExternalTest, DISABLED_TestExternalCaptureI420) {
   int uv_width = kTestWidth / 2;
   int y_rows = kTestHeight;
   int uv_rows = kTestHeight / 2;
-  unsigned char* y_plane = test_frame_.buffer(webrtc::kYPlane);
-  unsigned char* u_plane = test_frame_.buffer(webrtc::kUPlane);
-  unsigned char* v_plane = test_frame_.buffer(webrtc::kVPlane);
+  const webrtc::I420VideoFrame& const_test_frame = test_frame_;
+  const unsigned char* y_plane = const_test_frame.buffer(webrtc::kYPlane);
+  const unsigned char* u_plane = const_test_frame.buffer(webrtc::kUPlane);
+  const unsigned char* v_plane = const_test_frame.buffer(webrtc::kVPlane);
   // Copy Y
   unsigned char* current_pointer = aligned_test_frame.buffer(webrtc::kYPlane);
   for (int i = 0; i < y_rows; ++i) {

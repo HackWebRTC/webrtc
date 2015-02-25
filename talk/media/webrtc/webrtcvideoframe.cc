@@ -207,11 +207,13 @@ const uint8* WebRtcVideoFrame::GetVPlane() const {
 }
 
 uint8* WebRtcVideoFrame::GetYPlane() {
+  DCHECK(video_buffer_->HasOneRef());
   uint8_t* buffer = frame()->Buffer();
   return buffer;
 }
 
 uint8* WebRtcVideoFrame::GetUPlane() {
+  DCHECK(video_buffer_->HasOneRef());
   uint8_t* buffer = frame()->Buffer();
   if (buffer) {
     buffer += (frame()->Width() * frame()->Height());
@@ -220,6 +222,7 @@ uint8* WebRtcVideoFrame::GetUPlane() {
 }
 
 uint8* WebRtcVideoFrame::GetVPlane() {
+  DCHECK(video_buffer_->HasOneRef());
   uint8_t* buffer = frame()->Buffer();
   if (buffer) {
     int uv_size = static_cast<int>(GetChromaSize());
@@ -321,13 +324,17 @@ bool WebRtcVideoFrame::Reset(uint32 format,
     new_height = dw;
   }
 
-  size_t desired_size = SizeOf(new_width, new_height);
-  rtc::scoped_refptr<RefCountedBuffer> video_buffer(
-      new RefCountedBuffer(desired_size));
-  // Since the libyuv::ConvertToI420 will handle the rotation, so the
-  // new frame's rotation should always be 0.
-  Attach(video_buffer.get(), desired_size, new_width, new_height, pixel_width,
-         pixel_height, elapsed_time, time_stamp, webrtc::kVideoRotation_0);
+  // Release reference in |video_buffer| at the end of this scope, so that
+  // |video_buffer_| becomes the sole owner.
+  {
+    size_t desired_size = SizeOf(new_width, new_height);
+    rtc::scoped_refptr<RefCountedBuffer> video_buffer(
+        new RefCountedBuffer(desired_size));
+    // Since the libyuv::ConvertToI420 will handle the rotation, so the
+    // new frame's rotation should always be 0.
+    Attach(video_buffer.get(), desired_size, new_width, new_height, pixel_width,
+           pixel_height, elapsed_time, time_stamp, webrtc::kVideoRotation_0);
+  }
 
   int horiz_crop = ((w - dw) / 2) & ~1;
   // ARGB on Windows has negative height.

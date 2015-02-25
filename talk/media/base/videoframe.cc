@@ -41,7 +41,7 @@ namespace cricket {
 #define ROUNDTO2(v) (v & ~1)
 
 rtc::StreamResult VideoFrame::Write(rtc::StreamInterface* stream,
-                                          int* error) {
+                                          int* error) const {
   rtc::StreamResult result = rtc::SR_SUCCESS;
   const uint8* src_y = GetYPlane();
   const uint8* src_u = GetUPlane();

@@ -94,7 +94,7 @@ class ViECapturerTest : public ::testing::Test {
     data_callback_->OnIncomingCapturedFrame(0, *frame);
   }
 
-  void AddOutputFrame(I420VideoFrame* frame) {
+  void AddOutputFrame(const I420VideoFrame* frame) {
     if (frame->native_handle() == NULL)
       output_frame_ybuffers_.push_back(frame->buffer(kYPlane));
     // Clone the frames because ViECapturer owns the frames.
@@ -126,7 +126,7 @@ class ViECapturerTest : public ::testing::Test {
 
   // The pointers of Y plane buffers of output frames. This is used to verify
   // the frame are swapped and not copied.
-  std::vector<uint8_t*> output_frame_ybuffers_;
+  std::vector<const uint8_t*> output_frame_ybuffers_;
 };
 
 TEST_F(ViECapturerTest, TestTextureFrames) {
@@ -145,10 +145,11 @@ TEST_F(ViECapturerTest, TestTextureFrames) {
 TEST_F(ViECapturerTest, TestI420Frames) {
   const int kNumFrame = 4;
   ScopedVector<I420VideoFrame> copied_input_frames;
-  std::vector<uint8_t*> ybuffer_pointers;
+  std::vector<const uint8_t*> ybuffer_pointers;
   for (int i = 0; i < kNumFrame; ++i) {
     input_frames_.push_back(CreateI420VideoFrame(static_cast<uint8_t>(i + 1)));
-    ybuffer_pointers.push_back(input_frames_[i]->buffer(kYPlane));
+    const I420VideoFrame* const_input_frame = input_frames_[i];
+    ybuffer_pointers.push_back(const_input_frame->buffer(kYPlane));
     // Copy input frames because the buffer data will be swapped.
     copied_input_frames.push_back(input_frames_[i]->CloneFrame());
     AddInputFrame(input_frames_[i]);
