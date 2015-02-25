@@ -218,19 +218,6 @@ AudioCodingModuleImpl::~AudioCodingModuleImpl() {
                "Destroyed");
 }
 
-// Returns the number of milliseconds until the module want a
-// worker thread to call Process.
-int64_t AudioCodingModuleImpl::TimeUntilNextProcess() {
-  CriticalSectionScoped lock(acm_crit_sect_);
-
-  if (!HaveValidEncoder("TimeUntilNextProcess")) {
-    return -1;
-  }
-  FATAL() << "Dead code?";
-//  return codecs_[current_send_codec_idx_]->SamplesLeftToEncode() /
-//      (send_codec_inst_.plfreq / 1000);
-}
-
 int32_t AudioCodingModuleImpl::Process() {
   CriticalSectionScoped lock(acm_crit_sect_);
   return last_encode_value_;

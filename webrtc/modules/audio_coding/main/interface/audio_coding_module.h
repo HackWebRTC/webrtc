@@ -74,7 +74,7 @@ class ACMVQMonCallback {
       const uint16_t delayMS) = 0;  // average delay in ms
 };
 
-class AudioCodingModule: public Module {
+class AudioCodingModule {
  protected:
   AudioCodingModule() {}
 
@@ -100,6 +100,8 @@ class AudioCodingModule: public Module {
   static AudioCodingModule* Create(int id);
   static AudioCodingModule* Create(int id, Clock* clock);
   virtual ~AudioCodingModule() {};
+
+  virtual int32_t Process() = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   //   Utility functions
