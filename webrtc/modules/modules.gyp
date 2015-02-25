@@ -91,6 +91,7 @@
           ],
           'sources': [
             'audio_coding/codecs/cng/audio_encoder_cng_unittest.cc',
+            'audio_coding/main/acm2/acm_generic_codec_test.cc',
             'audio_coding/main/acm2/acm_generic_codec_opus_test.cc',
             'audio_coding/main/acm2/acm_receiver_unittest.cc',
             'audio_coding/main/acm2/acm_receiver_unittest_oldapi.cc',
