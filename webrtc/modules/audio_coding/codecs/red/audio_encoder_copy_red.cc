@@ -61,12 +61,11 @@ bool AudioEncoderCopyRed::EncodeInternal(uint32_t rtp_timestamp,
                                          size_t max_encoded_bytes,
                                          uint8_t* encoded,
                                          EncodedInfo* info) {
-  if (!speech_encoder_->Encode(rtp_timestamp, audio,
-                               static_cast<size_t>(SampleRateHz() / 100),
-                               max_encoded_bytes, encoded, info))
-    return false;
-  if (max_encoded_bytes < info->encoded_bytes + secondary_info_.encoded_bytes)
-    return false;
+  CHECK(speech_encoder_->Encode(rtp_timestamp, audio,
+                                static_cast<size_t>(SampleRateHz() / 100),
+                                max_encoded_bytes, encoded, info));
+  CHECK_GE(max_encoded_bytes,
+           info->encoded_bytes + secondary_info_.encoded_bytes);
   CHECK(info->redundant.empty()) << "Cannot use nested redundant encoders.";
 
   if (info->encoded_bytes > 0) {
