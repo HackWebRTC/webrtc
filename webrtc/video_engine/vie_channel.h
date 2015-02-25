@@ -45,6 +45,7 @@ class ReceiveStatisticsProxy;
 class ReportBlockStats;
 class RtcpRttStats;
 class ThreadWrapper;
+class ViEChannelProtectionCallback;
 class ViEDecoderObserver;
 class ViEEffectFilter;
 class ViERTPObserver;
@@ -63,6 +64,7 @@ class ViEChannel
       public ViEFrameProviderBase {
  public:
   friend class ChannelStatsObserver;
+  friend class ViEChannelProtectionCallback;
 
   ViEChannel(int32_t channel_id,
              int32_t engine_id,
@@ -120,6 +122,7 @@ class ViEChannel
   int32_t SetHybridNACKFECStatus(const bool enable,
                                  const unsigned char payload_typeRED,
                                  const unsigned char payload_typeFEC);
+  bool IsSendingFecEnabled();
   int SetSenderBufferingMode(int target_delay_ms);
   int SetReceiverBufferingMode(int target_delay_ms);
   int32_t SetKeyFrameRequestMethod(const KeyFrameRequestMethod method);
@@ -305,6 +308,8 @@ class ViEChannel
   // Gets the modules used by the channel.
   RtpRtcp* rtp_rtcp();
   scoped_refptr<PayloadRouter> send_payload_router();
+  VCMProtectionCallback* vcm_protection_callback();
+
 
   CallStatsObserver* GetStatsObserver();
 
@@ -371,6 +376,12 @@ class ViEChannel
   bool ChannelDecodeProcess();
 
   void OnRttUpdate(int64_t rtt);
+
+  int ProtectionRequest(const FecProtectionParams* delta_fec_params,
+                        const FecProtectionParams* key_fec_params,
+                        uint32_t* sent_video_rate_bps,
+                        uint32_t* sent_nack_rate_bps,
+                        uint32_t* sent_fec_rate_bps);
 
  private:
   void ReserveRtpRtcpModules(size_t total_modules)
@@ -497,6 +508,7 @@ class ViEChannel
   std::list<RtpRtcp*> simulcast_rtp_rtcp_;
   std::list<RtpRtcp*> removed_rtp_rtcp_;
   scoped_refptr<PayloadRouter> send_payload_router_;
+  scoped_ptr<ViEChannelProtectionCallback> vcm_protection_callback_;
 
   VideoCodingModule* const vcm_;
   ViEReceiver vie_receiver_;

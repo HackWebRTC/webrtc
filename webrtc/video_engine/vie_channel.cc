@@ -58,6 +58,26 @@ class ChannelStatsObserver : public CallStatsObserver {
   }
 
  private:
+  ViEChannel* const owner_;
+};
+
+class ViEChannelProtectionCallback : public VCMProtectionCallback {
+ public:
+  ViEChannelProtectionCallback(ViEChannel* owner) : owner_(owner) {}
+  ~ViEChannelProtectionCallback() {}
+
+
+  int ProtectionRequest(
+      const FecProtectionParams* delta_fec_params,
+      const FecProtectionParams* key_fec_params,
+      uint32_t* sent_video_rate_bps,
+      uint32_t* sent_nack_rate_bps,
+      uint32_t* sent_fec_rate_bps) override {
+    return owner_->ProtectionRequest(delta_fec_params, key_fec_params,
+                                     sent_video_rate_bps, sent_nack_rate_bps,
+                                     sent_fec_rate_bps);
+  }
+ private:
   ViEChannel* owner_;
 };
 
@@ -83,6 +103,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
       rtp_rtcp_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       default_rtp_rtcp_(default_rtp_rtcp),
       send_payload_router_(new PayloadRouter()),
+      vcm_protection_callback_(new ViEChannelProtectionCallback(this)),
       vcm_(VideoCodingModule::Create()),
       vie_receiver_(channel_id, vcm_, remote_bitrate_estimator, this),
       vie_sender_(channel_id),
@@ -697,6 +718,23 @@ int32_t ViEChannel::SetFECStatus(const bool enable,
   }
 
   return ProcessFECRequest(enable, payload_typeRED, payload_typeFEC);
+}
+
+bool ViEChannel::IsSendingFecEnabled() {
+  bool fec_enabled = false;
+  uint8_t pltype_red = 0;
+  uint8_t pltype_fec = 0;
+  rtp_rtcp_->GenericFECStatus(fec_enabled, pltype_red, pltype_fec);
+  if (fec_enabled)
+    return true;
+
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+  for (auto* module : simulcast_rtp_rtcp_) {
+    module->GenericFECStatus(fec_enabled, pltype_red, pltype_fec);
+    if (fec_enabled)
+      return true;
+  }
+  return false;
 }
 
 int32_t ViEChannel::ProcessFECRequest(
@@ -1513,6 +1551,10 @@ scoped_refptr<PayloadRouter> ViEChannel::send_payload_router() {
   return send_payload_router_;
 }
 
+VCMProtectionCallback* ViEChannel::vcm_protection_callback() {
+  return vcm_protection_callback_.get();
+}
+
 CallStatsObserver* ViEChannel::GetStatsObserver() {
   return stats_observer_.get();
 }
@@ -1648,6 +1690,30 @@ bool ViEChannel::ChannelDecodeProcess() {
 
 void ViEChannel::OnRttUpdate(int64_t rtt) {
   vcm_->SetReceiveChannelParameters(rtt);
+}
+
+int ViEChannel::ProtectionRequest(const FecProtectionParams* delta_fec_params,
+                                  const FecProtectionParams* key_fec_params,
+                                  uint32_t* video_rate_bps,
+                                  uint32_t* nack_rate_bps,
+                                  uint32_t* fec_rate_bps) {
+  uint32_t not_used = 0;
+  rtp_rtcp_->SetFecParameters(delta_fec_params, key_fec_params);
+  rtp_rtcp_->BitrateSent(&not_used, video_rate_bps, fec_rate_bps,
+                         nack_rate_bps);
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+  for (auto* module : simulcast_rtp_rtcp_) {
+    uint32_t child_video_rate = 0;
+    uint32_t child_fec_rate = 0;
+    uint32_t child_nack_rate = 0;
+    module->SetFecParameters(delta_fec_params, key_fec_params);
+    module->BitrateSent(&not_used, &child_video_rate, &child_fec_rate,
+                        &child_nack_rate);
+    *video_rate_bps += child_video_rate;
+    *nack_rate_bps += child_nack_rate;
+    *fec_rate_bps += child_fec_rate;
+  }
+  return 0;
 }
 
 void ViEChannel::ReserveRtpRtcpModules(size_t num_modules) {

@@ -143,6 +143,7 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
     vpm_(*webrtc::VideoProcessingModule::Create(ViEModuleId(engine_id,
                                                             channel_id))),
     send_payload_router_(NULL),
+    vcm_protection_callback_(NULL),
     callback_cs_(CriticalSectionWrapper::CreateCriticalSection()),
     data_cs_(CriticalSectionWrapper::CreateCriticalSection()),
     bitrate_controller_(bitrate_controller),
@@ -228,10 +229,14 @@ bool ViEEncoder::Init() {
   return true;
 }
 
-void ViEEncoder::StartThreadsAndSetSendPayloadRouter(
-    scoped_refptr<PayloadRouter> send_payload_router) {
+void ViEEncoder::StartThreadsAndSetSharedMembers(
+    scoped_refptr<PayloadRouter> send_payload_router,
+    VCMProtectionCallback* vcm_protection_callback) {
   DCHECK(send_payload_router_ == NULL);
+  DCHECK(vcm_protection_callback_ == NULL);
+
   send_payload_router_ = send_payload_router;
+  vcm_protection_callback_ = vcm_protection_callback;
 
   module_process_thread_.RegisterModule(&vcm_);
   module_process_thread_.RegisterModule(default_rtp_rtcp_.get());
@@ -239,7 +244,9 @@ void ViEEncoder::StartThreadsAndSetSendPayloadRouter(
   pacer_thread_->Start();
 }
 
-void ViEEncoder::StopThreadsAndRemovePayloadRouter() {
+void ViEEncoder::StopThreadsAndRemoveSharedMembers() {
+  vcm_.RegisterProtectionCallback(NULL);
+  vcm_protection_callback_ = NULL;
   pacer_thread_->Stop();
   pacer_thread_->DeRegisterModule(paced_sender_.get());
   module_process_thread_.DeRegisterModule(&vcm_);
@@ -651,29 +658,19 @@ int ViEEncoder::CodecTargetBitrate(uint32_t* bitrate) const {
   return 0;
 }
 
-int32_t ViEEncoder::UpdateProtectionMethod(bool enable_nack) {
+int32_t ViEEncoder::UpdateProtectionMethod(bool nack, bool fec) {
   DCHECK(send_payload_router_ != NULL);
-  bool fec_enabled = false;
-  uint8_t dummy_ptype_red = 0;
-  uint8_t dummy_ptypeFEC = 0;
+  DCHECK(vcm_protection_callback_ != NULL);
 
-  // Updated protection method to VCM to get correct packetization sizes.
-  // FEC has larger overhead than NACK -> set FEC if used.
-  int32_t error = default_rtp_rtcp_->GenericFECStatus(fec_enabled,
-                                                      dummy_ptype_red,
-                                                      dummy_ptypeFEC);
-  if (error) {
-    return -1;
-  }
-  if (fec_enabled_ == fec_enabled && nack_enabled_ == enable_nack) {
+  if (fec_enabled_ == fec && nack_enabled_ == nack) {
     // No change needed, we're already in correct state.
     return 0;
   }
-  fec_enabled_ = fec_enabled;
-  nack_enabled_ = enable_nack;
+  fec_enabled_ = fec;
+  nack_enabled_ = nack;
 
   // Set Video Protection for VCM.
-  if (fec_enabled && nack_enabled_) {
+  if (fec_enabled_ && nack_enabled_) {
     vcm_.SetVideoProtection(webrtc::kProtectionNackFEC, true);
   } else {
     vcm_.SetVideoProtection(webrtc::kProtectionFEC, fec_enabled_);
@@ -682,7 +679,7 @@ int32_t ViEEncoder::UpdateProtectionMethod(bool enable_nack) {
   }
 
   if (fec_enabled_ || nack_enabled_) {
-    vcm_.RegisterProtectionCallback(this);
+    vcm_.RegisterProtectionCallback(vcm_protection_callback_);
     // The send codec must be registered to set correct MTU.
     webrtc::VideoCodec codec;
     if (vcm_.SendCodec(&codec) == 0) {
@@ -739,18 +736,6 @@ int32_t ViEEncoder::SendData(
       encoded_image._timeStamp, encoded_image.capture_time_ms_,
       encoded_image._buffer, encoded_image._length, &fragmentation_header,
       rtp_video_hdr) ? 0 : -1;
-}
-
-int32_t ViEEncoder::ProtectionRequest(
-    const FecProtectionParams* delta_fec_params,
-    const FecProtectionParams* key_fec_params,
-    uint32_t* sent_video_rate_bps,
-    uint32_t* sent_nack_rate_bps,
-    uint32_t* sent_fec_rate_bps) {
-  default_rtp_rtcp_->SetFecParameters(delta_fec_params, key_fec_params);
-  default_rtp_rtcp_->BitrateSent(NULL, sent_video_rate_bps, sent_fec_rate_bps,
-                                sent_nack_rate_bps);
-  return 0;
 }
 
 int32_t ViEEncoder::SendStatistics(const uint32_t bit_rate,

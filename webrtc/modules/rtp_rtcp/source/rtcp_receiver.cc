@@ -32,6 +32,8 @@ RTCPReceiver::RTCPReceiver(
     int32_t id,
     Clock* clock,
     RtcpPacketTypeCounterObserver* packet_type_counter_observer,
+    RtcpBandwidthObserver* rtcp_bandwidth_observer,
+    RtcpIntraFrameObserver* rtcp_intra_frame_observer,
     ModuleRtpRtcpImpl* owner)
     : TMMBRHelp(),
       _clock(clock),
@@ -40,8 +42,8 @@ RTCPReceiver::RTCPReceiver(
       _rtpRtcp(*owner),
       _criticalSectionFeedbacks(
           CriticalSectionWrapper::CreateCriticalSection()),
-      _cbRtcpBandwidthObserver(NULL),
-      _cbRtcpIntraFrameObserver(NULL),
+      _cbRtcpBandwidthObserver(rtcp_bandwidth_observer),
+      _cbRtcpIntraFrameObserver(rtcp_intra_frame_observer),
       _criticalSectionRTCPReceiver(
           CriticalSectionWrapper::CreateCriticalSection()),
       main_ssrc_(0),
@@ -131,14 +133,6 @@ uint32_t RTCPReceiver::RemoteSSRC() const {
   return _remoteSSRC;
 }
 
-void RTCPReceiver::RegisterRtcpObservers(
-    RtcpIntraFrameObserver* intra_frame_callback,
-    RtcpBandwidthObserver* bandwidth_callback) {
-  CriticalSectionScoped lock(_criticalSectionFeedbacks);
-  _cbRtcpIntraFrameObserver = intra_frame_callback;
-  _cbRtcpBandwidthObserver = bandwidth_callback;
-}
-
 void RTCPReceiver::SetSsrcs(uint32_t main_ssrc,
                             const std::set<uint32_t>& registered_ssrcs) {
   uint32_t old_ssrc = 0;
@@ -149,7 +143,6 @@ void RTCPReceiver::SetSsrcs(uint32_t main_ssrc,
     registered_ssrcs_ = registered_ssrcs;
   }
   {
-    CriticalSectionScoped lock(_criticalSectionFeedbacks);
     if (_cbRtcpIntraFrameObserver && old_ssrc != main_ssrc) {
       _cbRtcpIntraFrameObserver->OnLocalSsrcChanged(old_ssrc, main_ssrc);
     }
@@ -1291,7 +1284,6 @@ int32_t RTCPReceiver::UpdateTMMBR() {
   // Get net bitrate from bounding set depending on sent packet rate
   if (CalcMinBitRate(&bitrate)) {
     // we have a new bandwidth estimate on this channel
-    CriticalSectionScoped lock(_criticalSectionFeedbacks);
     if (_cbRtcpBandwidthObserver) {
         _cbRtcpBandwidthObserver->OnReceivedEstimatedBitrate(bitrate * 1000);
     }
@@ -1336,8 +1328,6 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
     }
   }
   {
-    CriticalSectionScoped lock(_criticalSectionFeedbacks);
-
     // We need feedback that we have received a report block(s) so that we
     // can generate a new packet in a conference relay scenario, one received
     // report can generate several RTCP packets, based on number relayed/mixed

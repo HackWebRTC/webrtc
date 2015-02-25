@@ -32,6 +32,8 @@ public:
  RTCPReceiver(int32_t id,
               Clock* clock,
               RtcpPacketTypeCounterObserver* packet_type_counter_observer,
+              RtcpBandwidthObserver* rtcp_bandwidth_observer,
+              RtcpIntraFrameObserver* rtcp_intra_frame_observer,
               ModuleRtpRtcpImpl* owner);
     virtual ~RTCPReceiver();
 
@@ -48,9 +50,6 @@ public:
     uint32_t RemoteSSRC() const;
 
     uint32_t RelaySSRC() const;
-
-    void RegisterRtcpObservers(RtcpIntraFrameObserver* intra_frame_callback,
-                               RtcpBandwidthObserver* bandwidth_callback);
 
     int32_t IncomingRTCPPacket(
         RTCPHelp::RTCPPacketInformation& rtcpPacketInformation,
@@ -238,8 +237,8 @@ protected:
   ModuleRtpRtcpImpl& _rtpRtcp;
 
   CriticalSectionWrapper* _criticalSectionFeedbacks;
-  RtcpBandwidthObserver* _cbRtcpBandwidthObserver;
-  RtcpIntraFrameObserver* _cbRtcpIntraFrameObserver;
+  RtcpBandwidthObserver* const _cbRtcpBandwidthObserver;
+  RtcpIntraFrameObserver* const _cbRtcpIntraFrameObserver;
 
   CriticalSectionWrapper* _criticalSectionRTCPReceiver;
   uint32_t main_ssrc_;

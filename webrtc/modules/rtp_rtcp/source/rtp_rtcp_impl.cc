@@ -76,6 +76,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       rtcp_receiver_(configuration.id,
                      configuration.clock,
                      configuration.rtcp_packet_type_counter_observer,
+                     configuration.bandwidth_callback,
+                     configuration.intra_frame_callback,
                      this),
       clock_(configuration.clock),
       id_(configuration.id),
@@ -108,8 +110,6 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
     default_module_->RegisterChildModule(this);
   }
   // TODO(pwestin) move to constructors of each rtp/rtcp sender/receiver object.
-  rtcp_receiver_.RegisterRtcpObservers(configuration.intra_frame_callback,
-                                       configuration.bandwidth_callback);
   rtcp_sender_.RegisterSendTransport(configuration.outgoing_transport);
 
   // Make sure that RTCP objects are aware of our SSRC.
@@ -970,20 +970,7 @@ int32_t ModuleRtpRtcpImpl::GenericFECStatus(
 int32_t ModuleRtpRtcpImpl::SetFecParameters(
     const FecProtectionParams* delta_params,
     const FecProtectionParams* key_params) {
-  if (IsDefaultModule())  {
-    // For default we need to update all child modules too.
-    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-
-    std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
-    while (it != child_modules_.end()) {
-      RtpRtcp* module = *it;
-      if (module) {
-        module->SetFecParameters(delta_params, key_params);
-      }
-      it++;
-    }
-    return 0;
-  }
+  DCHECK(!IsDefaultModule());
   return rtp_sender_.SetFecParameters(delta_params, key_params);
 }
 
@@ -1015,52 +1002,11 @@ void ModuleRtpRtcpImpl::BitrateSent(uint32_t* total_rate,
                                     uint32_t* video_rate,
                                     uint32_t* fec_rate,
                                     uint32_t* nack_rate) const {
-  if (IsDefaultModule()) {
-    // For default we need to update the send bitrate.
-    CriticalSectionScoped lock(critical_section_module_ptrs_feedback_.get());
-
-    if (total_rate != NULL)
-      *total_rate = 0;
-    if (video_rate != NULL)
-      *video_rate = 0;
-    if (fec_rate != NULL)
-      *fec_rate = 0;
-    if (nack_rate != NULL)
-      *nack_rate = 0;
-
-    std::vector<ModuleRtpRtcpImpl*>::const_iterator it = child_modules_.begin();
-    while (it != child_modules_.end()) {
-      RtpRtcp* module = *it;
-      if (module) {
-        uint32_t child_total_rate = 0;
-        uint32_t child_video_rate = 0;
-        uint32_t child_fec_rate = 0;
-        uint32_t child_nack_rate = 0;
-        module->BitrateSent(&child_total_rate,
-                            &child_video_rate,
-                            &child_fec_rate,
-                            &child_nack_rate);
-        if (total_rate != NULL && child_total_rate > *total_rate)
-          *total_rate = child_total_rate;
-        if (video_rate != NULL && child_video_rate > *video_rate)
-          *video_rate = child_video_rate;
-        if (fec_rate != NULL && child_fec_rate > *fec_rate)
-          *fec_rate = child_fec_rate;
-        if (nack_rate != NULL && child_nack_rate > *nack_rate)
-          *nack_rate = child_nack_rate;
-      }
-      it++;
-    }
-    return;
-  }
-  if (total_rate != NULL)
-    *total_rate = rtp_sender_.BitrateSent();
-  if (video_rate != NULL)
-    *video_rate = rtp_sender_.VideoBitrateSent();
-  if (fec_rate != NULL)
-    *fec_rate = rtp_sender_.FecOverheadRate();
-  if (nack_rate != NULL)
-    *nack_rate = rtp_sender_.NackOverheadRate();
+  DCHECK(!IsDefaultModule());
+  *total_rate = rtp_sender_.BitrateSent();
+  *video_rate = rtp_sender_.VideoBitrateSent();
+  *fec_rate = rtp_sender_.FecOverheadRate();
+  *nack_rate = rtp_sender_.NackOverheadRate();
 }
 
 void ModuleRtpRtcpImpl::OnRequestIntraFrame() {

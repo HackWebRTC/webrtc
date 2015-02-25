@@ -48,7 +48,6 @@ class ViEPacedSenderCallback;
 class ViEEncoder
     : public RtcpIntraFrameObserver,
       public VCMPacketizationCallback,
-      public VCMProtectionCallback,
       public VCMSendStatisticsCallback,
       public ViEFrameCallback {
  public:
@@ -70,12 +69,13 @@ class ViEEncoder
   // only once.
   // Ideally this would be done in Init, but the dependencies between ViEEncoder
   // and ViEChannel makes it really hard to do in a good way.
-  void StartThreadsAndSetSendPayloadRouter(
-      scoped_refptr<PayloadRouter> send_payload_router);
+  void StartThreadsAndSetSharedMembers(
+      scoped_refptr<PayloadRouter> send_payload_router,
+      VCMProtectionCallback* vcm_protection_callback);
 
   // This function must be called before the corresponding ViEChannel is
   // deleted.
-  void StopThreadsAndRemovePayloadRouter();
+  void StopThreadsAndRemoveSharedMembers();
 
   void SetNetworkTransmissionState(bool is_transmitting);
 
@@ -129,7 +129,7 @@ class ViEEncoder
 
   int CodecTargetBitrate(uint32_t* bitrate) const;
   // Loss protection.
-  int32_t UpdateProtectionMethod(bool enable_nack);
+  int32_t UpdateProtectionMethod(bool nack, bool fec);
   bool nack_enabled() const { return nack_enabled_; }
 
   // Buffering mode.
@@ -140,14 +140,6 @@ class ViEEncoder
                            const EncodedImage& encoded_image,
                            const RTPFragmentationHeader& fragmentation_header,
                            const RTPVideoHeader* rtp_video_hdr) OVERRIDE;
-
-  // Implements VideoProtectionCallback.
-  virtual int ProtectionRequest(
-      const FecProtectionParams* delta_fec_params,
-      const FecProtectionParams* key_fec_params,
-      uint32_t* sent_video_rate_bps,
-      uint32_t* sent_nack_rate_bps,
-      uint32_t* sent_fec_rate_bps) OVERRIDE;
 
   // Implements VideoSendStatisticsCallback.
   virtual int32_t SendStatistics(const uint32_t bit_rate,
@@ -218,6 +210,8 @@ class ViEEncoder
   VideoProcessingModule& vpm_;
   rtc::scoped_ptr<RtpRtcp> default_rtp_rtcp_;
   scoped_refptr<PayloadRouter> send_payload_router_;
+  VCMProtectionCallback* vcm_protection_callback_;
+
   rtc::scoped_ptr<CriticalSectionWrapper> callback_cs_;
   rtc::scoped_ptr<CriticalSectionWrapper> data_cs_;
   rtc::scoped_ptr<BitrateObserver> bitrate_observer_;
