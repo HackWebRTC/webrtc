@@ -1266,7 +1266,7 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
           ", ssrc=" << packet->header.ssrc <<
           ", len=" << packet->payload_length;
       decode_length = decoder->DecodeRedundant(
-          packet->payload, packet->payload_length,
+          packet->payload, packet->payload_length, fs_hz_,
           &decoded_buffer_[*decoded_length], speech_type);
     } else {
       LOG(LS_VERBOSE) << "Decoding packet: ts=" << packet->header.timestamp <<
@@ -1274,10 +1274,9 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
           ", pt=" << static_cast<int>(packet->header.payloadType) <<
           ", ssrc=" << packet->header.ssrc <<
           ", len=" << packet->payload_length;
-      decode_length = decoder->Decode(packet->payload,
-                                      packet->payload_length,
-                                      &decoded_buffer_[*decoded_length],
-                                      speech_type);
+      decode_length =
+          decoder->Decode(packet->payload, packet->payload_length, fs_hz_,
+                          &decoded_buffer_[*decoded_length], speech_type);
     }
 
     delete[] packet->payload;
@@ -1607,7 +1606,8 @@ void NetEqImpl::DoCodecInternalCng() {
   if (decoder) {
     const uint8_t* dummy_payload = NULL;
     AudioDecoder::SpeechType speech_type;
-    length = decoder->Decode(dummy_payload, 0, decoded_buffer, &speech_type);
+    length =
+        decoder->Decode(dummy_payload, 0, fs_hz_, decoded_buffer, &speech_type);
   }
   assert(mute_factor_array_.get());
   normal_->Process(decoded_buffer, length, last_mode_, mute_factor_array_.get(),

@@ -321,7 +321,6 @@ TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(LastAudioCodec)) {
   // Has received, only, DTX. Last Audio codec is undefined.
   EXPECT_EQ(-1, receiver_->LastAudioCodec(&codec));
   EXPECT_EQ(-1, receiver_->last_audio_codec_id());
-  EXPECT_EQ(-1, receiver_->last_audio_payload_type());
 
   n = 0;
   while (kCodecId[n] >= 0) {  // Loop over codecs.
@@ -347,8 +346,6 @@ TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(LastAudioCodec)) {
       ASSERT_TRUE(packet_sent_);
     }
     EXPECT_EQ(kCodecId[n], receiver_->last_audio_codec_id());
-    EXPECT_EQ(codecs_[kCodecId[n]].pltype,
-              receiver_->last_audio_payload_type());
     EXPECT_EQ(0, receiver_->LastAudioCodec(&codec));
     EXPECT_TRUE(CodecsEqual(codecs_[kCodecId[n]], codec));
     ++n;
