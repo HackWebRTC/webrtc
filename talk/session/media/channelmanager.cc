@@ -149,10 +149,10 @@ ChannelManager::~ChannelManager() {
     // shutdown.
     ShutdownSrtp();
   }
-  // Always delete the media engine on the worker thread to match how it was
-  // created.
+  // Some deletes need to be on the worker thread for thread safe destruction,
+  // this includes the media engine and capture manager.
   worker_thread_->Invoke<void>(Bind(
-      &ChannelManager::DeleteMediaEngine_w, this));
+      &ChannelManager::DestructorDeletes_w, this));
 }
 
 bool ChannelManager::SetVideoRtxEnabled(bool enable) {
@@ -310,9 +310,10 @@ void ChannelManager::Terminate() {
   initialized_ = false;
 }
 
-void ChannelManager::DeleteMediaEngine_w() {
+void ChannelManager::DestructorDeletes_w() {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   media_engine_.reset(NULL);
+  capture_manager_.reset(NULL);
 }
 
 void ChannelManager::Terminate_w() {

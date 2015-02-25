@@ -49,6 +49,7 @@
 #include "talk/media/base/capturerenderadapter.h"
 #include "talk/media/base/videocommon.h"
 #include "webrtc/base/sigslotrepeater.h"
+#include "webrtc/base/thread_checker.h"
 
 namespace cricket {
 
@@ -64,7 +65,7 @@ class CaptureManager : public sigslot::has_slots<> {
     kForceRestart
   };
 
-  CaptureManager() {}
+  CaptureManager();
   virtual ~CaptureManager();
 
   virtual bool StartVideoCapture(VideoCapturer* video_capturer,
@@ -106,6 +107,7 @@ class CaptureManager : public sigslot::has_slots<> {
   VideoCapturerState* GetCaptureState(VideoCapturer* video_capturer) const;
   CaptureRenderAdapter* GetAdapter(VideoCapturer* video_capturer) const;
 
+  rtc::ThreadChecker thread_checker_;
   CaptureStates capture_states_;
 };
 

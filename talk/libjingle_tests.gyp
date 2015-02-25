@@ -92,8 +92,7 @@
         'libjingle_unittest_main',
       ],
       'sources': [
-        # TODO(ronghuawu): Reenable this test.
-        # 'media/base/capturemanager_unittest.cc',
+        'media/base/capturemanager_unittest.cc',
         'media/base/codec_unittest.cc',
         'media/base/filemediaengine_unittest.cc',
         'media/base/rtpdataengine_unittest.cc',
