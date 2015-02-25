@@ -65,9 +65,13 @@ enum COLOR_FORMATTYPE {
 // Arbitrary interval to poll the codec for new outputs.
 enum { kMediaCodecPollMs = 10 };
 // Media codec maximum output buffer ready timeout.
-enum { kMediaCodecTimeoutMs = 500 };
+enum { kMediaCodecTimeoutMs = 1000 };
 // Interval to print codec statistics (bitrate, fps, encoding/decoding time).
 enum { kMediaCodecStatisticsIntervalMs = 3000 };
+// Maximum amount of pending frames for VP8 decoder.
+enum { kMaxPendingFramesVp8 = 1 };
+// Maximum amount of pending frames for H.264 decoder.
+enum { kMaxPendingFramesH264 = 30 };
 
 static inline int64_t GetCurrentTimeMs() {
   return webrtc::TickTime::Now().Ticks() / 1000000LL;

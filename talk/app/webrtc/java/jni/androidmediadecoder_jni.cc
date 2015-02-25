@@ -315,9 +315,15 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
   }
   inited_ = true;
 
-  max_pending_frames_ = 0;
-  if (use_surface_) {
-    max_pending_frames_ = 1;
+  switch (codecType_) {
+    case kVideoCodecVP8:
+      max_pending_frames_ = kMaxPendingFramesVp8;
+      break;
+    case kVideoCodecH264:
+      max_pending_frames_ = kMaxPendingFramesH264;
+      break;
+    default:
+      max_pending_frames_ = 0;
   }
   start_time_ms_ = GetCurrentTimeMs();
   current_frames_ = 0;
@@ -436,7 +442,8 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   // Try to drain the decoder and wait until output is not too
   // much behind the input.
   if (frames_received_ > frames_decoded_ + max_pending_frames_) {
-    ALOGV("Wait for output...");
+    ALOGV("Received: %d. Decoded: %d. Wait for output...",
+        frames_received_, frames_decoded_);
     if (!DeliverPendingOutputs(jni, kMediaCodecTimeoutMs * 1000)) {
       error_count_++;
       Reset();
@@ -475,9 +482,10 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
     Reset();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
-  ALOGV("Decoder frame in # %d. Type: %d. Buffer # %d. Size: %d",
-      frames_received_, inputImage._frameType,
-      j_input_buffer_index, inputImage._length);
+  jlong timestamp_us = (frames_received_ * 1000000) / codec_.maxFramerate;
+  ALOGV("Decoder frame in # %d. Type: %d. Buffer # %d. TS: %lld. Size: %d",
+      frames_received_, inputImage._frameType, j_input_buffer_index,
+      timestamp_us / 1000, inputImage._length);
   memcpy(buffer, inputImage._buffer, inputImage._length);
 
   // Save input image timestamps for later output.
@@ -488,7 +496,6 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   frame_rtc_times_ms_.push_back(GetCurrentTimeMs());
 
   // Feed input to decoder.
-  jlong timestamp_us = (frames_received_ * 1000000) / codec_.maxFramerate;
   bool success = jni->CallBooleanMethod(*j_media_codec_video_decoder_,
                                         j_queue_input_buffer_method_,
                                         j_input_buffer_index,
@@ -541,6 +548,9 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       GetIntField(jni, j_decoder_output_buffer_info, j_info_offset_field_);
   int output_buffer_size =
       GetIntField(jni, j_decoder_output_buffer_info, j_info_size_field_);
+  long output_timestamps_ms = GetLongField(jni, j_decoder_output_buffer_info,
+      j_info_presentation_timestamp_us_field_) / 1000;
+
   CHECK_EXCEPTION(jni);
 
   // Get decoded video frame properties.
@@ -610,9 +620,9 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     frame_decoding_time_ms = GetCurrentTimeMs() - frame_rtc_times_ms_.front();
     frame_rtc_times_ms_.erase(frame_rtc_times_ms_.begin());
   }
-  ALOGV("Decoder frame out # %d. %d x %d. %d x %d. Color: 0x%x. Size: %d."
+  ALOGV("Decoder frame out # %d. %d x %d. %d x %d. Color: 0x%x. TS: %ld."
       " DecTime: %lld", frames_decoded_, width, height, stride, slice_height,
-      color_format, output_buffer_size, frame_decoding_time_ms);
+      color_format, output_timestamps_ms, frame_decoding_time_ms);
 
   // Return output buffer back to codec.
   bool success = jni->CallBooleanMethod(

@@ -41,7 +41,6 @@ import android.opengl.EGLSurface;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.os.Build;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.Surface;
 
@@ -465,10 +464,10 @@ class MediaCodecVideoDecoder {
           result == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
         if (result == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
           outputBuffers = mediaCodec.getOutputBuffers();
-          Log.d(TAG, "Output buffers changed: " + outputBuffers.length);
+          Log.d(TAG, "Decoder output buffers changed: " + outputBuffers.length);
         } else if (result == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
           MediaFormat format = mediaCodec.getOutputFormat();
-          Log.d(TAG, "Format changed: " + format.toString());
+          Log.d(TAG, "Decoder format changed: " + format.toString());
           width = format.getInteger(MediaFormat.KEY_WIDTH);
           height = format.getInteger(MediaFormat.KEY_HEIGHT);
           if (!useSurface && format.containsKey(MediaFormat.KEY_COLOR_FORMAT)) {
