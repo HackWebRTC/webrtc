@@ -363,21 +363,21 @@ VideoSource::~VideoSource() {
 void VideoSource::Initialize(
     const webrtc::MediaConstraintsInterface* constraints) {
 
-  std::vector<cricket::VideoFormat> formats;
-  if (video_capturer_->GetSupportedFormats() &&
-      video_capturer_->GetSupportedFormats()->size() > 0) {
-    formats = *video_capturer_->GetSupportedFormats();
-  } else if (video_capturer_->IsScreencast()) {
-    // The screen capturer can accept any resolution and we will derive the
-    // format from the constraints if any.
-    // Note that this only affects tab capturing, not desktop capturing,
-    // since desktop capturer does not respect the VideoFormat passed in.
-    formats.push_back(cricket::VideoFormat(kDefaultFormat));
-  } else {
-    // The VideoCapturer implementation doesn't support capability enumeration.
-    // We need to guess what the camera support.
-    for (int i = 0; i < ARRAY_SIZE(kVideoFormats); ++i) {
-      formats.push_back(cricket::VideoFormat(kVideoFormats[i]));
+  std::vector<cricket::VideoFormat> formats =
+      channel_manager_->GetSupportedFormats(video_capturer_.get());
+  if (formats.empty()) {
+    if (video_capturer_->IsScreencast()) {
+      // The screen capturer can accept any resolution and we will derive the
+      // format from the constraints if any.
+      // Note that this only affects tab capturing, not desktop capturing,
+      // since the desktop capturer does not respect the VideoFormat passed in.
+      formats.push_back(cricket::VideoFormat(kDefaultFormat));
+    } else {
+      // The VideoCapturer implementation doesn't support capability
+      // enumeration. We need to guess what the camera supports.
+      for (int i = 0; i < ARRAY_SIZE(kVideoFormats); ++i) {
+        formats.push_back(cricket::VideoFormat(kVideoFormats[i]));
+      }
     }
   }
 

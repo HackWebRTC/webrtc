@@ -183,6 +183,9 @@ class ChannelManager : public rtc::MessageHandler,
   void SetVoiceLogging(int level, const char* filter);
   void SetVideoLogging(int level, const char* filter);
 
+  // Gets capturer's supported formats in a thread safe manner
+  std::vector<cricket::VideoFormat> GetSupportedFormats(
+      VideoCapturer* capturer) const;
   // The channel manager handles the Tx side for Video processing,
   // as well as Tx and Rx side for Voice processing.
   // (The Rx Video processing will go throug the simplerenderingmanager,
@@ -288,6 +291,9 @@ class ChannelManager : public rtc::MessageHandler,
   bool SetCaptureDevice_w(const Device* cam_device);
   void OnVideoCaptureStateChange(VideoCapturer* capturer,
                                  CaptureState result);
+  void GetSupportedFormats_w(
+      VideoCapturer* capturer,
+      std::vector<cricket::VideoFormat>* out_formats) const;
   bool RegisterVideoProcessor_w(VideoCapturer* capturer,
                                 VideoProcessor* processor);
   bool UnregisterVideoProcessor_w(VideoCapturer* capturer,

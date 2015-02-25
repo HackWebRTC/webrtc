@@ -816,6 +816,23 @@ void ChannelManager::SetVideoLogging(int level, const char* filter) {
   }
 }
 
+std::vector<cricket::VideoFormat> ChannelManager::GetSupportedFormats(
+    VideoCapturer* capturer) const {
+  ASSERT(capturer != NULL);
+  std::vector<VideoFormat> formats;
+  worker_thread_->Invoke<void>(rtc::Bind(&ChannelManager::GetSupportedFormats_w,
+                                         this, capturer, &formats));
+  return formats;
+}
+
+void ChannelManager::GetSupportedFormats_w(
+    VideoCapturer* capturer,
+    std::vector<cricket::VideoFormat>* out_formats) const {
+  const std::vector<VideoFormat>* formats = capturer->GetSupportedFormats();
+  if (formats != NULL)
+    *out_formats = *formats;
+}
+
 // TODO(janahan): For now pass this request through the mediaengine to the
 // voice and video engines to do the real work. Once the capturer refactoring
 // is done, we will access the capturer using the ssrc (similar to how the
