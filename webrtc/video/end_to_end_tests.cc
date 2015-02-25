@@ -565,7 +565,7 @@ void EndToEndTest::TestReceivedFecPacketsNotNacked(
    public:
     explicit FecNackObserver(const FakeNetworkPipe::Config& config)
         : EndToEndTest(kDefaultTimeoutMs, config),
-          state_(kDropEveryOtherPacketUntilFec),
+          state_(kFirstPacket),
           fec_sequence_number_(0),
           has_last_sequence_number_(false),
           last_sequence_number_(0) {}
@@ -592,6 +592,9 @@ void EndToEndTest::TestReceivedFecPacketsNotNacked(
 
       bool fec_packet = encapsulated_payload_type == kUlpfecPayloadType;
       switch (state_) {
+        case kFirstPacket:
+          state_ = kDropEveryOtherPacketUntilFec;
+          break;
         case kDropEveryOtherPacketUntilFec:
           if (fec_packet) {
             state_ = kDropAllMediaPacketsUntilFec;
@@ -649,6 +652,7 @@ void EndToEndTest::TestReceivedFecPacketsNotNacked(
     }
 
     enum {
+      kFirstPacket,
       kDropEveryOtherPacketUntilFec,
       kDropAllMediaPacketsUntilFec,
       kVerifyFecPacketNotInNackList,
