@@ -145,10 +145,10 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
       aux_rtp_header_(NULL),
       receiver_initialized_(false),
       first_10ms_data_(false),
+      last_encode_value_(0),
       callback_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       packetization_callback_(NULL),
       vad_callback_(NULL) {
-
   // Nullify send codec memory, set payload type and set codec name to
   // invalid values.
   const char no_name[] = "noCodecRegistered";
@@ -231,8 +231,12 @@ int64_t AudioCodingModuleImpl::TimeUntilNextProcess() {
 //      (send_codec_inst_.plfreq / 1000);
 }
 
-// Process any pending tasks such as timeouts.
 int32_t AudioCodingModuleImpl::Process() {
+  CriticalSectionScoped lock(acm_crit_sect_);
+  return last_encode_value_;
+}
+
+int32_t AudioCodingModuleImpl::Encode() {
   // Make room for 1 RED payload.
   uint8_t stream[2 * MAX_PAYLOAD_SIZE_BYTE];
   // TODO(turajs): |length_bytes| & |red_length_bytes| can be of type int if
@@ -758,8 +762,20 @@ int AudioCodingModuleImpl::RegisterTransportCallback(
 }
 
 // Add 10MS of raw (PCM) audio data to the encoder.
-int AudioCodingModuleImpl::Add10MsData(
-    const AudioFrame& audio_frame) {
+int AudioCodingModuleImpl::Add10MsData(const AudioFrame& audio_frame) {
+  int r = Add10MsDataInternal(audio_frame);
+  if (r < 0) {
+    CriticalSectionScoped lock(acm_crit_sect_);
+    last_encode_value_ = -1;
+  } else {
+    int r_encode = Encode();
+    CriticalSectionScoped lock(acm_crit_sect_);
+    last_encode_value_ = r_encode;
+  }
+  return r;
+}
+
+int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame) {
   if (audio_frame.samples_per_channel_ <= 0) {
     assert(false);
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,

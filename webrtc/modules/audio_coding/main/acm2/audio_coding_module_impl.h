@@ -240,6 +240,9 @@ class AudioCodingModuleImpl : public AudioCodingModule {
       AudioDecodingCallStats* stats) const OVERRIDE;
 
  private:
+  int Add10MsDataInternal(const AudioFrame& audio_frame);
+  int Encode();
+
   ACMGenericCodec* CreateCodec(const CodecInst& codec);
 
   int InitializeReceiverSafe() EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
@@ -336,6 +339,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   AudioFrame preprocess_frame_ GUARDED_BY(acm_crit_sect_);
   bool first_10ms_data_ GUARDED_BY(acm_crit_sect_);
+  int last_encode_value_ GUARDED_BY(acm_crit_sect_);
 
   CriticalSectionWrapper* callback_crit_sect_;
   AudioPacketizationCallback* packetization_callback_
