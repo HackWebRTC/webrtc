@@ -56,12 +56,11 @@ class AudioEncoder {
 
   // Accepts one 10 ms block of input audio (i.e., sample_rate_hz() / 100 *
   // num_channels() samples). Multi-channel audio must be sample-interleaved.
-  // If successful, the encoder produces zero or more bytes of output in
-  // |encoded|, and provides the number of encoded bytes in |encoded_bytes|.
-  // In case of error, false is returned, otherwise true. It is an error for the
-  // encoder to attempt to produce more than |max_encoded_bytes| bytes of
-  // output.
-  bool Encode(uint32_t rtp_timestamp,
+  // The encoder produces zero or more bytes of output in |encoded|,
+  // and provides the number of encoded bytes in |encoded_bytes|.
+  // The caller is responsible for making sure that |max_encoded_bytes| is
+  // not smaller than the number of bytes actually produced by the encoder.
+  void Encode(uint32_t rtp_timestamp,
               const int16_t* audio,
               size_t num_samples_per_channel,
               size_t max_encoded_bytes,
@@ -98,7 +97,7 @@ class AudioEncoder {
   virtual void SetProjectedPacketLossRate(double fraction) {}
 
  protected:
-  virtual bool EncodeInternal(uint32_t rtp_timestamp,
+  virtual void EncodeInternal(uint32_t rtp_timestamp,
                               const int16_t* audio,
                               size_t max_encoded_bytes,
                               uint8_t* encoded,

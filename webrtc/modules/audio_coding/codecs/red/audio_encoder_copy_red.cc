@@ -56,14 +56,14 @@ void AudioEncoderCopyRed::SetProjectedPacketLossRate(double fraction) {
   speech_encoder_->SetProjectedPacketLossRate(fraction);
 }
 
-bool AudioEncoderCopyRed::EncodeInternal(uint32_t rtp_timestamp,
+void AudioEncoderCopyRed::EncodeInternal(uint32_t rtp_timestamp,
                                          const int16_t* audio,
                                          size_t max_encoded_bytes,
                                          uint8_t* encoded,
                                          EncodedInfo* info) {
-  CHECK(speech_encoder_->Encode(rtp_timestamp, audio,
-                                static_cast<size_t>(SampleRateHz() / 100),
-                                max_encoded_bytes, encoded, info));
+  speech_encoder_->Encode(rtp_timestamp, audio,
+                          static_cast<size_t>(SampleRateHz() / 100),
+                          max_encoded_bytes, encoded, info);
   CHECK_GE(max_encoded_bytes,
            info->encoded_bytes + secondary_info_.encoded_bytes);
   CHECK(info->redundant.empty()) << "Cannot use nested redundant encoders.";
@@ -97,7 +97,6 @@ bool AudioEncoderCopyRed::EncodeInternal(uint32_t rtp_timestamp,
        it != info->redundant.end(); ++it) {
     info->encoded_bytes += it->encoded_bytes;
   }
-  return true;
 }
 
 }  // namespace webrtc

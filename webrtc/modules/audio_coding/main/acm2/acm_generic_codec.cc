@@ -236,9 +236,9 @@ int16_t ACMGenericCodec::Encode(uint8_t* bitstream,
                                 AudioEncoder::EncodedInfo* encoded_info) {
   WriteLockScoped wl(codec_wrapper_lock_);
   CHECK(!input_.empty());
-  CHECK(encoder_->Encode(rtp_timestamp_, &input_[0],
-                         input_.size() / encoder_->NumChannels(),
-                         2 * MAX_PAYLOAD_SIZE_BYTE, bitstream, encoded_info));
+  encoder_->Encode(rtp_timestamp_, &input_[0],
+                   input_.size() / encoder_->NumChannels(),
+                   2 * MAX_PAYLOAD_SIZE_BYTE, bitstream, encoded_info);
   input_.clear();
   *bitstream_len_byte = static_cast<int16_t>(encoded_info->encoded_bytes);
   *timestamp = encoded_info->encoded_timestamp;

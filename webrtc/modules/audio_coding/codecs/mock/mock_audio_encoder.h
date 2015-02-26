@@ -29,7 +29,7 @@ class MockAudioEncoder : public AudioEncoder {
   MOCK_METHOD1(SetProjectedPacketLossRate, void(double));
   // Note, we explicitly chose not to create a mock for the Encode method.
   MOCK_METHOD5(EncodeInternal,
-               bool(uint32_t timestamp,
+               void(uint32_t timestamp,
                     const int16_t* audio,
                     size_t max_encoded_bytes,
                     uint8_t* encoded,

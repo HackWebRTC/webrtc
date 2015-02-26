@@ -56,7 +56,7 @@ int AudioEncoderIlbc::Max10MsFramesInAPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
-bool AudioEncoderIlbc::EncodeInternal(uint32_t rtp_timestamp,
+void AudioEncoderIlbc::EncodeInternal(uint32_t rtp_timestamp,
                                       const int16_t* audio,
                                       size_t max_encoded_bytes,
                                       uint8_t* encoded,
@@ -93,7 +93,7 @@ bool AudioEncoderIlbc::EncodeInternal(uint32_t rtp_timestamp,
   // for now.
   if (++num_10ms_frames_buffered_ < num_10ms_frames_per_packet_) {
     info->encoded_bytes = 0;
-    return true;
+    return;
   }
 
   // Encode buffered input.
@@ -109,7 +109,6 @@ bool AudioEncoderIlbc::EncodeInternal(uint32_t rtp_timestamp,
   info->encoded_bytes = output_len;
   info->encoded_timestamp = first_timestamp_in_buffer_;
   info->payload_type = payload_type_;
-  return true;
 }
 
 }  // namespace webrtc

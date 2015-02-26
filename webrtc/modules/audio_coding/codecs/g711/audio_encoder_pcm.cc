@@ -60,7 +60,7 @@ int AudioEncoderPcm::Max10MsFramesInAPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
-bool AudioEncoderPcm::EncodeInternal(uint32_t rtp_timestamp,
+void AudioEncoderPcm::EncodeInternal(uint32_t rtp_timestamp,
                                      const int16_t* audio,
                                      size_t max_encoded_bytes,
                                      uint8_t* encoded,
@@ -74,7 +74,7 @@ bool AudioEncoderPcm::EncodeInternal(uint32_t rtp_timestamp,
   }
   if (speech_buffer_.size() < static_cast<size_t>(full_frame_samples_)) {
     info->encoded_bytes = 0;
-    return true;
+    return;
   }
   CHECK_EQ(speech_buffer_.size(), static_cast<size_t>(full_frame_samples_));
   int16_t ret = EncodeCall(&speech_buffer_[0], full_frame_samples_, encoded);
@@ -83,7 +83,6 @@ bool AudioEncoderPcm::EncodeInternal(uint32_t rtp_timestamp,
   info->encoded_timestamp = first_timestamp_in_buffer_;
   info->payload_type = payload_type_;
   info->encoded_bytes = static_cast<size_t>(ret);
-  return true;
 }
 
 int16_t AudioEncoderPcmA::EncodeCall(const int16_t* audio,

@@ -69,7 +69,7 @@ int AudioEncoderG722::Max10MsFramesInAPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
-bool AudioEncoderG722::EncodeInternal(uint32_t rtp_timestamp,
+void AudioEncoderG722::EncodeInternal(uint32_t rtp_timestamp,
                                       const int16_t* audio,
                                       size_t max_encoded_bytes,
                                       uint8_t* encoded,
@@ -91,7 +91,7 @@ bool AudioEncoderG722::EncodeInternal(uint32_t rtp_timestamp,
   // If we don't yet have enough samples for a packet, we're done for now.
   if (++num_10ms_frames_buffered_ < num_10ms_frames_per_packet_) {
     info->encoded_bytes = 0;
-    return true;
+    return;
   }
 
   // Encode each channel separately.
@@ -121,7 +121,6 @@ bool AudioEncoderG722::EncodeInternal(uint32_t rtp_timestamp,
   info->encoded_bytes = samples_per_channel / 2 * num_channels_;
   info->encoded_timestamp = first_timestamp_in_buffer_;
   info->payload_type = payload_type_;
-  return true;
 }
 
 }  // namespace webrtc

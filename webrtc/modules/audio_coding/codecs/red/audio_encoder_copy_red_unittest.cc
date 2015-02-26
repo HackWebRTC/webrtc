@@ -57,8 +57,8 @@ class AudioEncoderCopyRedTest : public ::testing::Test {
   void Encode() {
     ASSERT_TRUE(red_.get() != NULL);
     encoded_info_ = AudioEncoder::EncodedInfo();
-    ASSERT_TRUE(red_->Encode(timestamp_, audio_, num_audio_samples_10ms,
-                             kMaxEncodedBytes, encoded_, &encoded_info_));
+    red_->Encode(timestamp_, audio_, num_audio_samples_10ms,
+                 kMaxEncodedBytes, encoded_, &encoded_info_);
     timestamp_ += num_audio_samples_10ms;
   }
 
@@ -79,7 +79,7 @@ class MockEncodeHelper {
     memset(&info_, 0, sizeof(info_));
   }
 
-  bool Encode(uint32_t timestamp,
+  void Encode(uint32_t timestamp,
               const int16_t* audio,
               size_t max_encoded_bytes,
               uint8_t* encoded,
@@ -91,7 +91,6 @@ class MockEncodeHelper {
     }
     CHECK(info);
     *info = info_;
-    return true;
   }
 
   AudioEncoder::EncodedInfo info_;
@@ -141,8 +140,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckImmediateEncode) {
   InSequence s;
   MockFunction<void(int check_point_id)> check;
   for (int i = 1; i <= 6; ++i) {
-    EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
-        .WillOnce(Return(true));
+    EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _));
     EXPECT_CALL(check, Call(i));
     Encode();
     check.Call(i);
@@ -157,7 +155,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckNoOuput) {
   AudioEncoder::EncodedInfo info;
   info.encoded_bytes = kEncodedSize;
   EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
-      .WillOnce(DoAll(SetArgPointee<4>(info), Return(true)));
+      .WillOnce(SetArgPointee<4>(info));
   Encode();
   // First call is a special case, since it does not include a secondary
   // payload.
@@ -167,14 +165,14 @@ TEST_F(AudioEncoderCopyRedTest, CheckNoOuput) {
   // Next call to the speech encoder will not produce any output.
   info.encoded_bytes = 0;
   EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
-      .WillOnce(DoAll(SetArgPointee<4>(info), Return(true)));
+      .WillOnce(SetArgPointee<4>(info));
   Encode();
   EXPECT_EQ(0u, encoded_info_.encoded_bytes);
 
   // Final call to the speech encoder will produce output.
   info.encoded_bytes = kEncodedSize;
   EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
-      .WillOnce(DoAll(SetArgPointee<4>(info), Return(true)));
+      .WillOnce(SetArgPointee<4>(info));
   Encode();
   EXPECT_EQ(2 * kEncodedSize, encoded_info_.encoded_bytes);
   ASSERT_EQ(2u, encoded_info_.redundant.size());
@@ -191,7 +189,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes) {
     AudioEncoder::EncodedInfo info;
     info.encoded_bytes = encode_size;
     EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
-        .WillOnce(DoAll(SetArgPointee<4>(info), Return(true)));
+        .WillOnce(SetArgPointee<4>(info));
   }
 
   // First call is a special case, since it does not include a secondary

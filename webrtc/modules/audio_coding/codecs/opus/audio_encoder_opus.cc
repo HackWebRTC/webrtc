@@ -166,7 +166,7 @@ void AudioEncoderOpus::SetProjectedPacketLossRate(double fraction) {
   }
 }
 
-bool AudioEncoderOpus::EncodeInternal(uint32_t rtp_timestamp,
+void AudioEncoderOpus::EncodeInternal(uint32_t rtp_timestamp,
                                       const int16_t* audio,
                                       size_t max_encoded_bytes,
                                       uint8_t* encoded,
@@ -178,7 +178,7 @@ bool AudioEncoderOpus::EncodeInternal(uint32_t rtp_timestamp,
   if (input_buffer_.size() < (static_cast<size_t>(num_10ms_frames_per_packet_) *
                               samples_per_10ms_frame_)) {
     info->encoded_bytes = 0;
-    return true;
+    return;
   }
   CHECK_EQ(input_buffer_.size(),
            static_cast<size_t>(num_10ms_frames_per_packet_) *
@@ -193,7 +193,6 @@ bool AudioEncoderOpus::EncodeInternal(uint32_t rtp_timestamp,
   info->encoded_bytes = r;
   info->encoded_timestamp = first_timestamp_in_buffer_;
   info->payload_type = payload_type_;
-  return true;
 }
 
 }  // namespace webrtc

@@ -51,11 +51,10 @@ TEST(AudioEncoderIsacRedTest, CompareRedAndNoRed) {
     EXPECT_EQ(0u, red_info.encoded_bytes);
     EXPECT_EQ(0u, red_info.redundant.size());
     const uint32_t timestamp = static_cast<uint32_t>(i);
-    EXPECT_TRUE(isac_encoder.Encode(timestamp, input, k10MsSamples,
-                                    kMaxEncodedSizeBytes, encoded, &info));
-    EXPECT_TRUE(isac_red_encoder.Encode(timestamp, input, k10MsSamples,
-                                        kMaxEncodedSizeBytes, red_encoded,
-                                        &red_info));
+    isac_encoder.Encode(timestamp, input, k10MsSamples, kMaxEncodedSizeBytes,
+                        encoded, &info);
+    isac_red_encoder.Encode(timestamp, input, k10MsSamples,
+                            kMaxEncodedSizeBytes, red_encoded, &red_info);
   }
   EXPECT_GT(info.encoded_bytes, 0u)
       << "Regular codec did not produce any output";

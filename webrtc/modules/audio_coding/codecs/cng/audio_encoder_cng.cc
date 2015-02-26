@@ -95,15 +95,12 @@ void AudioEncoderCng::SetProjectedPacketLossRate(double fraction) {
   speech_encoder_->SetProjectedPacketLossRate(fraction);
 }
 
-bool AudioEncoderCng::EncodeInternal(uint32_t rtp_timestamp,
+void AudioEncoderCng::EncodeInternal(uint32_t rtp_timestamp,
                                      const int16_t* audio,
                                      size_t max_encoded_bytes,
                                      uint8_t* encoded,
                                      EncodedInfo* info) {
-  DCHECK_GE(max_encoded_bytes, static_cast<size_t>(num_cng_coefficients_ + 1));
-  if (max_encoded_bytes < static_cast<size_t>(num_cng_coefficients_ + 1)) {
-    return false;
-  }
+  CHECK_GE(max_encoded_bytes, static_cast<size_t>(num_cng_coefficients_ + 1));
   info->encoded_bytes = 0;
   const int num_samples = SampleRateHz() / 100 * NumChannels();
   if (speech_buffer_.empty()) {
@@ -115,7 +112,7 @@ bool AudioEncoderCng::EncodeInternal(uint32_t rtp_timestamp,
   }
   ++frames_in_buffer_;
   if (frames_in_buffer_ < speech_encoder_->Num10MsFramesInNextPacket()) {
-    return true;
+    return;
   }
   CHECK_LE(frames_in_buffer_, 6)
       << "Frame size cannot be larger than 60 ms when using VAD/CNG.";
@@ -169,7 +166,6 @@ bool AudioEncoderCng::EncodeInternal(uint32_t rtp_timestamp,
 
   speech_buffer_.clear();
   frames_in_buffer_ = 0;
-  return true;
 }
 
 void AudioEncoderCng::EncodePassive(uint8_t* encoded, size_t* encoded_bytes) {
@@ -196,10 +192,10 @@ void AudioEncoderCng::EncodeActive(size_t max_encoded_bytes,
                                    EncodedInfo* info) {
   const size_t samples_per_10ms_frame = 10 * SampleRateHz() / 1000;
   for (int i = 0; i < frames_in_buffer_; ++i) {
-    CHECK(speech_encoder_->Encode(first_timestamp_in_buffer_,
-                                  &speech_buffer_[i * samples_per_10ms_frame],
-                                  samples_per_10ms_frame, max_encoded_bytes,
-                                  encoded, info));
+    speech_encoder_->Encode(first_timestamp_in_buffer_,
+                            &speech_buffer_[i * samples_per_10ms_frame],
+                            samples_per_10ms_frame, max_encoded_bytes,
+                            encoded, info);
     if (i < frames_in_buffer_ - 1) {
       CHECK_EQ(info->encoded_bytes, 0u) << "Encoder delivered data too early.";
     }

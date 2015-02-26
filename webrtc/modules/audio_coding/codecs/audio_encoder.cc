@@ -19,7 +19,7 @@ AudioEncoder::EncodedInfo::EncodedInfo() : EncodedInfoLeaf() {
 AudioEncoder::EncodedInfo::~EncodedInfo() {
 }
 
-bool AudioEncoder::Encode(uint32_t rtp_timestamp,
+void AudioEncoder::Encode(uint32_t rtp_timestamp,
                           const int16_t* audio,
                           size_t num_samples_per_channel,
                           size_t max_encoded_bytes,
@@ -27,10 +27,8 @@ bool AudioEncoder::Encode(uint32_t rtp_timestamp,
                           EncodedInfo* info) {
   CHECK_EQ(num_samples_per_channel,
            static_cast<size_t>(SampleRateHz() / 100));
-  bool ret =
-      EncodeInternal(rtp_timestamp, audio, max_encoded_bytes, encoded, info);
+  EncodeInternal(rtp_timestamp, audio, max_encoded_bytes, encoded, info);
   CHECK_LE(info->encoded_bytes, max_encoded_bytes);
-  return ret;
 }
 
 int AudioEncoder::RtpTimestampRateHz() const {

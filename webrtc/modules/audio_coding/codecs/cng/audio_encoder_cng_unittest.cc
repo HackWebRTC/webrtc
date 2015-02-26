@@ -72,8 +72,8 @@ class AudioEncoderCngTest : public ::testing::Test {
   void Encode() {
     ASSERT_TRUE(cng_) << "Must call CreateCng() first.";
     encoded_info_ = AudioEncoder::EncodedInfo();
-    ASSERT_TRUE(cng_->Encode(timestamp_, audio_, num_audio_samples_10ms_,
-                             kMaxEncodedBytes, encoded_, &encoded_info_));
+    cng_->Encode(timestamp_, audio_, num_audio_samples_10ms_,
+                 kMaxEncodedBytes, encoded_, &encoded_info_);
     timestamp_ += num_audio_samples_10ms_;
   }
 
@@ -101,11 +101,11 @@ class AudioEncoderCngTest : public ::testing::Test {
       InSequence s;
       for (int j = 0; j < blocks_per_frame - 1; ++j) {
         EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
-            .WillOnce(DoAll(SetArgPointee<4>(info), Return(true)));
+            .WillOnce(SetArgPointee<4>(info));
       }
       info.encoded_bytes = kMockReturnEncodedBytes;
       EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
-          .WillOnce(DoAll(SetArgPointee<4>(info), Return(true)));
+          .WillOnce(SetArgPointee<4>(info));
     }
     Encode();
     if (active_speech) {
@@ -280,20 +280,17 @@ TEST_F(AudioEncoderCngTest, MixedActivePassive) {
 
   // All of the frame is active speech.
   EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
-      .Times(6)
-      .WillRepeatedly(Return(true));
+      .Times(6);
   EXPECT_TRUE(CheckMixedActivePassive(Vad::kActive, Vad::kActive));
 
   // First half of the frame is active speech.
   EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
-      .Times(6)
-      .WillRepeatedly(Return(true));
+      .Times(6);
   EXPECT_TRUE(CheckMixedActivePassive(Vad::kActive, Vad::kPassive));
 
   // Second half of the frame is active speech.
   EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
-      .Times(6)
-      .WillRepeatedly(Return(true));
+      .Times(6);
   EXPECT_TRUE(CheckMixedActivePassive(Vad::kPassive, Vad::kActive));
 
   // All of the frame is passive speech. Expect no calls to |mock_encoder_|.
@@ -335,8 +332,7 @@ TEST_F(AudioEncoderCngTest, VadInputSize60Ms) {
 // speech encoder.
 TEST_F(AudioEncoderCngTest, VerifyEncoderInfoPropagation) {
   CreateCng();
-  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, &encoded_info_))
-      .WillOnce(Return(true));
+  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, &encoded_info_));
   EXPECT_CALL(mock_encoder_, Num10MsFramesInNextPacket()).WillOnce(Return(1));
   EXPECT_CALL(*mock_vad_, VoiceActivity(_, _, _))
       .WillOnce(Return(Vad::kActive));
@@ -381,7 +377,7 @@ TEST_F(AudioEncoderCngTest, VerifySidFrameAfterSpeech) {
   AudioEncoder::EncodedInfo info;
   info.encoded_bytes = kMockReturnEncodedBytes;
   EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
-      .WillOnce(DoAll(SetArgPointee<4>(info), Return(true)));
+      .WillOnce(SetArgPointee<4>(info));
   Encode();
   EXPECT_EQ(kMockReturnEncodedBytes, encoded_info_.encoded_bytes);
 

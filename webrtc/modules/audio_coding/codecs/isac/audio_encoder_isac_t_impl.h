@@ -186,7 +186,7 @@ int AudioEncoderDecoderIsacT<T>::Max10MsFramesInAPacket() const {
 }
 
 template <typename T>
-bool AudioEncoderDecoderIsacT<T>::EncodeInternal(uint32_t rtp_timestamp,
+void AudioEncoderDecoderIsacT<T>::EncodeInternal(uint32_t rtp_timestamp,
                                                  const int16_t* audio,
                                                  size_t max_encoded_bytes,
                                                  uint8_t* encoded,
@@ -202,11 +202,7 @@ bool AudioEncoderDecoderIsacT<T>::EncodeInternal(uint32_t rtp_timestamp,
     CriticalSectionScoped cs(state_lock_.get());
     r = T::Encode(isac_state_, audio, encoded);
   }
-  if (r < 0) {
-    // An error occurred; propagate it to the caller.
-    packet_in_progress_ = false;
-    return false;
-  }
+  CHECK_GE(r, 0);
 
   // T::Encode doesn't allow us to tell it the size of the output
   // buffer. All we can do is check for an overrun after the fact.
@@ -214,7 +210,7 @@ bool AudioEncoderDecoderIsacT<T>::EncodeInternal(uint32_t rtp_timestamp,
 
   info->encoded_bytes = r;
   if (r == 0)
-    return true;
+    return;
 
   // Got enough input to produce a packet. Return the saved timestamp from
   // the first chunk of input that went into the packet.
@@ -223,7 +219,7 @@ bool AudioEncoderDecoderIsacT<T>::EncodeInternal(uint32_t rtp_timestamp,
   info->payload_type = payload_type_;
 
   if (!T::has_redundant_encoder)
-    return true;
+    return;
 
   if (redundant_length_bytes_ == 0) {
     // Do not emit the first output frame when using redundant encoding.
@@ -260,7 +256,6 @@ bool AudioEncoderDecoderIsacT<T>::EncodeInternal(uint32_t rtp_timestamp,
   DCHECK_LE(redundant_length_bytes_, sizeof(redundant_payload_));
   DCHECK_GE(redundant_length_bytes_, 0u);
   last_encoded_timestamp_ = packet_timestamp_;
-  return true;
 }
 
 template <typename T>
