@@ -372,7 +372,9 @@ bool WebRtcVideoEngine2::SetDefaultEncoderConfig(
   bool supports_codec = false;
   for (size_t i = 0; i < video_codecs_.size(); ++i) {
     if (CodecNameMatches(video_codecs_[i].name, codec.name)) {
-      video_codecs_[i] = codec;
+      video_codecs_[i].width = codec.width;
+      video_codecs_[i].height = codec.height;
+      video_codecs_[i].framerate = codec.framerate;
       supports_codec = true;
       break;
     }

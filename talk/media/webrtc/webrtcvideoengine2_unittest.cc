@@ -497,6 +497,26 @@ TEST_F(WebRtcVideoEngine2Test, FindCodec) {
   EXPECT_TRUE(engine_.FindCodec(rtx));
 }
 
+TEST_F(WebRtcVideoEngine2Test, SetDefaultEncoderConfigPreservesFeedbackParams) {
+  cricket::VideoCodec max_settings(
+      engine_.codecs()[0].id, engine_.codecs()[0].name,
+      engine_.codecs()[0].width / 2, engine_.codecs()[0].height / 2, 30, 0);
+  // This codec shouldn't have NACK by default or the test is pointless.
+  EXPECT_FALSE(max_settings.HasFeedbackParam(
+      FeedbackParam(kRtcpFbParamNack, kParamValueEmpty)));
+  // The engine should by default have it however.
+  EXPECT_TRUE(engine_.codecs()[0].HasFeedbackParam(
+      FeedbackParam(kRtcpFbParamNack, kParamValueEmpty)));
+
+  // Set constrained max codec settings.
+  EXPECT_TRUE(engine_.SetDefaultEncoderConfig(
+      cricket::VideoEncoderConfig(max_settings)));
+
+  // Verify that feedback parameters are retained.
+  EXPECT_TRUE(engine_.codecs()[0].HasFeedbackParam(
+      FeedbackParam(kRtcpFbParamNack, kParamValueEmpty)));
+}
+
 TEST_F(WebRtcVideoEngine2Test, DefaultRtxCodecHasAssociatedPayloadTypeSet) {
   std::vector<VideoCodec> engine_codecs = engine_.codecs();
   for (size_t i = 0; i < engine_codecs.size(); ++i) {
