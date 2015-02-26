@@ -37,7 +37,6 @@ class PacedSender;
 class PayloadRouter;
 class ProcessThread;
 class QMVideoSettingsCallback;
-class RtpRtcp;
 class SendStatisticsProxy;
 class ViEBitrateObserver;
 class ViEEffectFilter;
@@ -54,8 +53,7 @@ class ViEEncoder
   friend class ViEBitrateObserver;
   friend class ViEPacedSenderCallback;
 
-  ViEEncoder(int32_t engine_id,
-             int32_t channel_id,
+  ViEEncoder(int32_t channel_id,
              uint32_t number_of_cores,
              const Config& config,
              ProcessThread& module_process_thread,
@@ -104,9 +102,6 @@ class ViEEncoder
 
   // Scale or crop/pad image.
   int32_t ScaleInputImage(bool enable);
-
-  // RTP settings.
-  RtpRtcp* SendRtpRtcpModule();
 
   // Implementing ViEFrameCallback.
   virtual void DeliverFrame(int id,
@@ -201,14 +196,12 @@ class ViEEncoder
 
   void UpdateHistograms();
 
-  int32_t engine_id_;
   const int channel_id_;
   const uint32_t number_of_cores_;
   const bool disable_default_encoder_;
 
   VideoCodingModule& vcm_;
   VideoProcessingModule& vpm_;
-  rtc::scoped_ptr<RtpRtcp> default_rtp_rtcp_;
   scoped_refptr<PayloadRouter> send_payload_router_;
   VCMProtectionCallback* vcm_protection_callback_;
 

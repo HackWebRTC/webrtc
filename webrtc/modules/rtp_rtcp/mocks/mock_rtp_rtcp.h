@@ -82,7 +82,7 @@ class MockRtpRtcp : public RtpRtcp {
       uint16_t());
   MOCK_METHOD1(SetSequenceNumber, void(const uint16_t seq));
   MOCK_METHOD2(SetRtpStateForSsrc,
-               void(uint32_t ssrc, const RtpState& rtp_state));
+               bool(uint32_t ssrc, const RtpState& rtp_state));
   MOCK_METHOD2(GetRtpStateForSsrc, bool(uint32_t ssrc, RtpState* rtp_state));
   MOCK_CONST_METHOD0(SSRC,
       uint32_t());

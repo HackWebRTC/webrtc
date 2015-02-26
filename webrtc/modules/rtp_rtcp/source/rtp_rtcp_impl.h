@@ -27,8 +27,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
  public:
   explicit ModuleRtpRtcpImpl(const RtpRtcp::Configuration& configuration);
 
-  virtual ~ModuleRtpRtcpImpl();
-
   // Returns the number of milliseconds until the module want a worker thread to
   // call Process.
   virtual int64_t TimeUntilNextProcess() OVERRIDE;
@@ -72,7 +70,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Set SequenceNumber, default is a random number.
   virtual void SetSequenceNumber(uint16_t seq) OVERRIDE;
 
-  virtual void SetRtpStateForSsrc(uint32_t ssrc,
+  virtual bool SetRtpStateForSsrc(uint32_t ssrc,
                                   const RtpState& rtp_state) OVERRIDE;
   virtual bool GetRtpStateForSsrc(uint32_t ssrc, RtpState* rtp_state) OVERRIDE;
 
@@ -345,10 +343,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   void OnRequestSendReport();
 
  protected:
-  void RegisterChildModule(RtpRtcp* module);
-
-  void DeRegisterChildModule(RtpRtcp* module);
-
   bool UpdateRTCPReceiveInformationTimers();
 
   uint32_t BitrateReceivedNow() const;
@@ -377,8 +371,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   bool TimeToSendFullNackList(int64_t now) const;
 
-  bool IsDefaultModule() const;
-
   int32_t id_;
   const bool audio_;
   bool collision_detected_;
@@ -387,10 +379,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   int64_t last_rtt_process_time_;
   uint16_t packet_overhead_;
 
-  scoped_ptr<CriticalSectionWrapper> critical_section_module_ptrs_;
-  scoped_ptr<CriticalSectionWrapper> critical_section_module_ptrs_feedback_;
-  ModuleRtpRtcpImpl* default_module_;
-  std::vector<ModuleRtpRtcpImpl*> child_modules_;
   size_t padding_index_;
 
   // Send side
@@ -399,7 +387,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   uint32_t nack_last_time_sent_full_prev_;
   uint16_t nack_last_seq_number_sent_;
 
-  bool simulcast_;
   VideoCodec send_video_codec_;
   KeyFrameRequestMethod key_frame_req_method_;
 

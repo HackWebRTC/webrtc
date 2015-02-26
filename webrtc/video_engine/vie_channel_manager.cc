@@ -90,7 +90,7 @@ int ViEChannelManager::CreateChannel(int* channel_id,
   ChannelGroup* group = new ChannelGroup(module_process_thread_,
                                          channel_group_config);
   BitrateController* bitrate_controller = group->GetBitrateController();
-  ViEEncoder* vie_encoder = new ViEEncoder(engine_id_, new_channel_id,
+  ViEEncoder* vie_encoder = new ViEEncoder(new_channel_id,
                                            number_of_cores_,
                                            engine_config_,
                                            *module_process_thread_,
@@ -166,7 +166,7 @@ int ViEChannelManager::CreateChannel(int* channel_id,
   ViEEncoder* vie_encoder = NULL;
   if (sender) {
     // We need to create a new ViEEncoder.
-    vie_encoder = new ViEEncoder(engine_id_, new_channel_id, number_of_cores_,
+    vie_encoder = new ViEEncoder(new_channel_id, number_of_cores_,
                                  engine_config_,
                                  *module_process_thread_,
                                  bitrate_controller,
@@ -435,9 +435,6 @@ bool ViEChannelManager::CreateChannelObject(
     bool disable_default_encoder) {
   PacedSender* paced_sender = vie_encoder->GetPacedSender();
 
-  // Register the channel at the encoder.
-  RtpRtcp* send_rtp_rtcp_module = vie_encoder->SendRtpRtcpModule();
-
   ViEChannel* vie_channel = new ViEChannel(channel_id, engine_id_,
                                            number_of_cores_,
                                            engine_config_,
@@ -447,7 +444,6 @@ bool ViEChannelManager::CreateChannelObject(
                                            remote_bitrate_estimator,
                                            rtcp_rtt_stats,
                                            paced_sender,
-                                           send_rtp_rtcp_module,
                                            sender,
                                            disable_default_encoder);
   if (vie_channel->Init() != 0) {

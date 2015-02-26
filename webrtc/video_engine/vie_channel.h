@@ -76,7 +76,6 @@ class ViEChannel
              RemoteBitrateEstimator* remote_bitrate_estimator,
              RtcpRttStats* rtt_stats,
              PacedSender* paced_sender,
-             RtpRtcp* default_rtp_rtcp,
              bool sender,
              bool disable_default_encoder);
   ~ViEChannel();
@@ -499,8 +498,6 @@ class ViEChannel
   // Used for all registered callbacks except rendering.
   scoped_ptr<CriticalSectionWrapper> callback_cs_;
   scoped_ptr<CriticalSectionWrapper> rtp_rtcp_cs_;
-
-  RtpRtcp* default_rtp_rtcp_;
 
   // Owned modules/classes.
   scoped_ptr<RtpRtcp> rtp_rtcp_;

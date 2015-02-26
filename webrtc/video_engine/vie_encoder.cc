@@ -19,7 +19,6 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
@@ -128,20 +127,17 @@ class ViEPacedSenderCallback : public PacedSender::Callback {
   ViEEncoder* owner_;
 };
 
-ViEEncoder::ViEEncoder(int32_t engine_id,
-                       int32_t channel_id,
+ViEEncoder::ViEEncoder(int32_t channel_id,
                        uint32_t number_of_cores,
                        const Config& config,
                        ProcessThread& module_process_thread,
                        BitrateController* bitrate_controller,
                        bool disable_default_encoder)
-  : engine_id_(engine_id),
-    channel_id_(channel_id),
+  : channel_id_(channel_id),
     number_of_cores_(number_of_cores),
     disable_default_encoder_(disable_default_encoder),
     vcm_(*webrtc::VideoCodingModule::Create()),
-    vpm_(*webrtc::VideoProcessingModule::Create(ViEModuleId(engine_id,
-                                                            channel_id))),
+    vpm_(*webrtc::VideoProcessingModule::Create(ViEModuleId(-1, channel_id))),
     send_payload_router_(NULL),
     vcm_protection_callback_(NULL),
     callback_cs_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -169,11 +165,6 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
     pre_encode_callback_(NULL),
     start_ms_(Clock::GetRealTimeClock()->TimeInMilliseconds()),
     send_statistics_proxy_(NULL) {
-  RtpRtcp::Configuration configuration;
-  configuration.id = ViEModuleId(engine_id_, channel_id_);
-  configuration.audio = false;  // Video.
-
-  default_rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
   bitrate_observer_.reset(new ViEBitrateObserver(this));
   pacing_callback_.reset(new ViEPacedSenderCallback(this));
   paced_sender_.reset(new PacedSender(
@@ -239,7 +230,6 @@ void ViEEncoder::StartThreadsAndSetSharedMembers(
   vcm_protection_callback_ = vcm_protection_callback;
 
   module_process_thread_.RegisterModule(&vcm_);
-  module_process_thread_.RegisterModule(default_rtp_rtcp_.get());
   pacer_thread_->RegisterModule(paced_sender_.get());
   pacer_thread_->Start();
 }
@@ -251,7 +241,6 @@ void ViEEncoder::StopThreadsAndRemoveSharedMembers() {
   pacer_thread_->DeRegisterModule(paced_sender_.get());
   module_process_thread_.DeRegisterModule(&vcm_);
   module_process_thread_.DeRegisterModule(&vpm_);
-  module_process_thread_.DeRegisterModule(default_rtp_rtcp_.get());
 }
 
 ViEEncoder::~ViEEncoder() {
@@ -508,10 +497,6 @@ void ViEEncoder::TraceFrameDropEnd() {
     TRACE_EVENT_ASYNC_END0("webrtc", "EncoderPaused", this);
   }
   encoder_paused_and_dropped_frame_ = false;
-}
-
-RtpRtcp* ViEEncoder::SendRtpRtcpModule() {
-  return default_rtp_rtcp_.get();
 }
 
 void ViEEncoder::DeliverFrame(int id,

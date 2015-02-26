@@ -55,7 +55,6 @@ class RtpRtcp : public Module {
     int32_t id;
     bool audio;
     Clock* clock;
-    RtpRtcp* default_module;
     ReceiveStatistics* receive_statistics;
     Transport* outgoing_transport;
     RtcpIntraFrameObserver* intra_frame_callback;
@@ -196,7 +195,8 @@ class RtpRtcp : public Module {
     */
     virtual void SetSequenceNumber(uint16_t seq) = 0;
 
-    virtual void SetRtpStateForSsrc(uint32_t ssrc,
+    // Returns true if the ssrc matched this module, false otherwise.
+    virtual bool SetRtpStateForSsrc(uint32_t ssrc,
                                     const RtpState& rtp_state) = 0;
     virtual bool GetRtpStateForSsrc(uint32_t ssrc, RtpState* rtp_state) = 0;
 

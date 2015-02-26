@@ -91,7 +91,6 @@ ViEChannel::ViEChannel(int32_t channel_id,
                        RemoteBitrateEstimator* remote_bitrate_estimator,
                        RtcpRttStats* rtt_stats,
                        PacedSender* paced_sender,
-                       RtpRtcp* default_rtp_rtcp,
                        bool sender,
                        bool disable_default_encoder)
     : ViEFrameProviderBase(channel_id, engine_id),
@@ -101,7 +100,6 @@ ViEChannel::ViEChannel(int32_t channel_id,
       num_socket_threads_(kViESocketThreads),
       callback_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       rtp_rtcp_cs_(CriticalSectionWrapper::CreateCriticalSection()),
-      default_rtp_rtcp_(default_rtp_rtcp),
       send_payload_router_(new PayloadRouter()),
       vcm_protection_callback_(new ViEChannelProtectionCallback(this)),
       vcm_(VideoCodingModule::Create()),
@@ -1009,16 +1007,36 @@ int32_t ViEChannel::SetStartSequenceNumber(uint16_t sequence_number) {
 
 void ViEChannel::SetRtpStateForSsrc(uint32_t ssrc, const RtpState& rtp_state) {
   assert(!rtp_rtcp_->Sending());
-  default_rtp_rtcp_->SetRtpStateForSsrc(ssrc, rtp_state);
+  if (rtp_rtcp_->SetRtpStateForSsrc(ssrc, rtp_state))
+    return;
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+  for (auto* module : simulcast_rtp_rtcp_) {
+    if (module->SetRtpStateForSsrc(ssrc, rtp_state))
+      return;
+  }
+  for (auto* module : removed_rtp_rtcp_) {
+    if (module->SetRtpStateForSsrc(ssrc, rtp_state))
+      return;
+  }
 }
 
 RtpState ViEChannel::GetRtpStateForSsrc(uint32_t ssrc) {
   assert(!rtp_rtcp_->Sending());
 
   RtpState rtp_state;
-  if (!default_rtp_rtcp_->GetRtpStateForSsrc(ssrc, &rtp_state)) {
-    LOG(LS_ERROR) << "Couldn't get RTP state for ssrc: " << ssrc;
+  if (rtp_rtcp_->GetRtpStateForSsrc(ssrc, &rtp_state))
+    return rtp_state;
+
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+  for (auto* module : simulcast_rtp_rtcp_) {
+    if (module->GetRtpStateForSsrc(ssrc, &rtp_state))
+      return rtp_state;
   }
+  for (auto* module : removed_rtp_rtcp_) {
+    if (module->GetRtpStateForSsrc(ssrc, &rtp_state))
+      return rtp_state;
+  }
+  LOG(LS_ERROR) << "Couldn't get RTP state for ssrc: " << ssrc;
   return rtp_state;
 }
 
@@ -1759,7 +1777,6 @@ RtpRtcp::Configuration ViEChannel::CreateRtpRtcpConfiguration() {
   RtpRtcp::Configuration configuration;
   configuration.id = ViEModuleId(engine_id_, channel_id_);
   configuration.audio = false;
-  configuration.default_module = default_rtp_rtcp_;
   configuration.outgoing_transport = &vie_sender_;
   configuration.intra_frame_callback = intra_frame_observer_;
   configuration.bandwidth_callback = bandwidth_observer_.get();
