@@ -81,7 +81,8 @@ public:
         kReferenceSelection
     };
 
-    static VideoCodingModule* Create();
+    static VideoCodingModule* Create(
+        VideoEncoderRateObserver* encoder_rate_observer);
 
     static VideoCodingModule* Create(Clock* clock, EventFactory* event_factory);
 

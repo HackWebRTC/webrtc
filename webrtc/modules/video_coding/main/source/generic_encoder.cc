@@ -55,17 +55,17 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader** rtp) {
 
 //#define DEBUG_ENCODER_BIT_STREAM
 
-VCMGenericEncoder::VCMGenericEncoder(VideoEncoder& encoder, bool internalSource /*= false*/)
-:
-_encoder(encoder),
-_codecType(kVideoCodecUnknown),
-_VCMencodedFrameCallback(NULL),
-_bitRate(0),
-_frameRate(0),
-_internalSource(internalSource)
-{
+VCMGenericEncoder::VCMGenericEncoder(VideoEncoder* encoder,
+                                     VideoEncoderRateObserver* rate_observer,
+                                     bool internalSource)
+    : encoder_(encoder),
+      rate_observer_(rate_observer),
+      _codecType(kVideoCodecUnknown),
+      _VCMencodedFrameCallback(NULL),
+      _bitRate(0),
+      _frameRate(0),
+      _internalSource(internalSource) {
 }
-
 
 VCMGenericEncoder::~VCMGenericEncoder()
 {
@@ -76,7 +76,7 @@ int32_t VCMGenericEncoder::Release()
     _bitRate = 0;
     _frameRate = 0;
     _VCMencodedFrameCallback = NULL;
-    return _encoder.Release();
+    return encoder_->Release();
 }
 
 int32_t
@@ -87,7 +87,7 @@ VCMGenericEncoder::InitEncode(const VideoCodec* settings,
     _bitRate = settings->startBitrate * 1000;
     _frameRate = settings->maxFramerate;
     _codecType = settings->codecType;
-    if (_encoder.InitEncode(settings, numberOfCores, maxPayloadSize) != 0) {
+    if (encoder_->InitEncode(settings, numberOfCores, maxPayloadSize) != 0) {
       LOG(LS_ERROR) << "Failed to initialize the encoder associated with "
                        "payload name: " << settings->plName;
       return -1;
@@ -102,33 +102,35 @@ VCMGenericEncoder::Encode(const I420VideoFrame& inputFrame,
   std::vector<VideoFrameType> video_frame_types(frameTypes.size(),
                                                 kDeltaFrame);
   VCMEncodedFrame::ConvertFrameTypes(frameTypes, &video_frame_types);
-  return _encoder.Encode(inputFrame, codecSpecificInfo, &video_frame_types);
+  return encoder_->Encode(inputFrame, codecSpecificInfo, &video_frame_types);
 }
 
 int32_t
 VCMGenericEncoder::SetChannelParameters(int32_t packetLoss, int64_t rtt)
 {
-    return _encoder.SetChannelParameters(packetLoss, rtt);
+    return encoder_->SetChannelParameters(packetLoss, rtt);
 }
 
 int32_t
 VCMGenericEncoder::SetRates(uint32_t newBitRate, uint32_t frameRate)
 {
     uint32_t target_bitrate_kbps = (newBitRate + 500) / 1000;
-    int32_t ret = _encoder.SetRates(target_bitrate_kbps, frameRate);
+    int32_t ret = encoder_->SetRates(target_bitrate_kbps, frameRate);
     if (ret < 0)
     {
         return ret;
     }
     _bitRate = newBitRate;
     _frameRate = frameRate;
+    if (rate_observer_ != nullptr)
+      rate_observer_->OnSetRates(newBitRate, frameRate);
     return VCM_OK;
 }
 
 int32_t
 VCMGenericEncoder::CodecConfigParameters(uint8_t* buffer, int32_t size)
 {
-    int32_t ret = _encoder.CodecConfigParameters(buffer, size);
+    int32_t ret = encoder_->CodecConfigParameters(buffer, size);
     if (ret < 0)
     {
         return ret;
@@ -149,7 +151,7 @@ uint32_t VCMGenericEncoder::FrameRate() const
 int32_t
 VCMGenericEncoder::SetPeriodicKeyFrames(bool enable)
 {
-    return _encoder.SetPeriodicKeyFrames(enable);
+    return encoder_->SetPeriodicKeyFrames(enable);
 }
 
 int32_t VCMGenericEncoder::RequestFrame(
@@ -158,7 +160,7 @@ int32_t VCMGenericEncoder::RequestFrame(
   std::vector<VideoFrameType> video_frame_types(frame_types.size(),
                                                 kDeltaFrame);
   VCMEncodedFrame::ConvertFrameTypes(frame_types, &video_frame_types);
-  return _encoder.Encode(image, NULL, &video_frame_types);
+  return encoder_->Encode(image, NULL, &video_frame_types);
 }
 
 int32_t
@@ -166,7 +168,7 @@ VCMGenericEncoder::RegisterEncodeCallback(VCMEncodedFrameCallback* VCMencodedFra
 {
    _VCMencodedFrameCallback = VCMencodedFrameCallback;
    _VCMencodedFrameCallback->SetInternalSource(_internalSource);
-   return _encoder.RegisterEncodeCompleteCallback(_VCMencodedFrameCallback);
+   return encoder_->RegisterEncodeCompleteCallback(_VCMencodedFrameCallback);
 }
 
 bool

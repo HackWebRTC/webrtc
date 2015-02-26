@@ -46,7 +46,7 @@ struct VCMExtDecoderMapItem {
 
 class VCMCodecDataBase {
  public:
-  VCMCodecDataBase();
+  explicit VCMCodecDataBase(VideoEncoderRateObserver* encoder_rate_observer);
   ~VCMCodecDataBase();
 
   // Sender Side
@@ -180,6 +180,7 @@ class VCMCodecDataBase {
   uint8_t external_payload_type_;
   VideoEncoder* external_encoder_;
   bool internal_source_;
+  VideoEncoderRateObserver* const encoder_rate_observer_;
   VCMGenericEncoder* ptr_encoder_;
   VCMGenericDecoder* ptr_decoder_;
   bool current_dec_is_external_;

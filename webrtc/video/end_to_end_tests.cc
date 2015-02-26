@@ -1566,6 +1566,64 @@ void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
   RunBaseTest(&test);
 }
 
+TEST_F(EndToEndTest, ReportsSetEncoderRates) {
+  class EncoderRateStatsTest : public test::EndToEndTest,
+                               public test::FakeEncoder {
+   public:
+    EncoderRateStatsTest()
+        : EndToEndTest(kDefaultTimeoutMs),
+          FakeEncoder(Clock::GetRealTimeClock()) {}
+
+    virtual void OnStreamsCreated(
+        VideoSendStream* send_stream,
+        const std::vector<VideoReceiveStream*>& receive_streams) override {
+      send_stream_ = send_stream;
+    }
+
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      send_config->encoder_settings.encoder = this;
+    }
+
+    int32_t SetRates(uint32_t new_target_bitrate, uint32_t framerate) override {
+      // Make sure not to trigger on any default zero bitrates.
+      if (new_target_bitrate == 0)
+        return 0;
+      CriticalSectionScoped lock(crit_.get());
+      bitrate_kbps_ = new_target_bitrate;
+      observation_complete_->Set();
+      return 0;
+    }
+
+    void PerformTest() override {
+      ASSERT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting for encoder SetRates() call.";
+      // Wait for GetStats to report a corresponding bitrate.
+      for (unsigned int i = 0; i < kDefaultTimeoutMs; ++i) {
+        VideoSendStream::Stats stats = send_stream_->GetStats();
+        {
+          CriticalSectionScoped lock(crit_.get());
+          if ((stats.target_media_bitrate_bps + 500) / 1000 ==
+              static_cast<int>(bitrate_kbps_)) {
+            return;
+          }
+        }
+        SleepMs(1);
+      }
+      FAIL()
+          << "Timed out waiting for stats reporting the currently set bitrate.";
+    }
+
+   private:
+    VideoSendStream* send_stream_;
+    uint32_t bitrate_kbps_ GUARDED_BY(crit_);
+  } test;
+
+  RunBaseTest(&test);
+}
+
 TEST_F(EndToEndTest, GetStats) {
   static const int kStartBitrateBps = 3000000;
   class StatsObserver : public test::EndToEndTest, public I420FrameCallback {

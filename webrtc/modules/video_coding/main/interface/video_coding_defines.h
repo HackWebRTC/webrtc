@@ -148,6 +148,12 @@ class VCMProtectionCallback {
   }
 };
 
+class VideoEncoderRateObserver {
+ public:
+  virtual ~VideoEncoderRateObserver() {}
+  virtual void OnSetRates(uint32_t bitrate_bps, int framerate) = 0;
+};
+
 // Callback class used for telling the user about what frame type needed to continue decoding.
 // Typically a key frame when the stream has been corrupted in some way.
 class VCMFrameTypeCallback {

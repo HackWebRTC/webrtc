@@ -16,6 +16,7 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video_engine/include/vie_base.h"
@@ -35,6 +36,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
                             public FrameCountObserver,
                             public ViEEncoderObserver,
                             public ViECaptureObserver,
+                            public VideoEncoderRateObserver,
                             public SendSideDelayObserver {
  public:
   static const int kStatsTimeoutMs;
@@ -46,6 +48,9 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
 
   virtual void OnSendEncodedImage(const EncodedImage& encoded_image,
                                   const RTPVideoHeader* rtp_video_header);
+
+  // From VideoEncoderRateObserver.
+  void OnSetRates(uint32_t bitrate_bps, int framerate) override;
 
  protected:
   // From CpuOveruseMetricsObserver.

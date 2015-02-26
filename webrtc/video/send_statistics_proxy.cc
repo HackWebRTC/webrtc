@@ -95,6 +95,11 @@ VideoSendStream::StreamStats* SendStatisticsProxy::GetStatsEntry(
   return &stats_.substreams[ssrc];  // Insert new entry and return ptr.
 }
 
+void SendStatisticsProxy::OnSetRates(uint32_t bitrate_bps, int framerate) {
+  CriticalSectionScoped lock(crit_.get());
+  stats_.target_media_bitrate_bps = bitrate_bps;
+}
+
 void SendStatisticsProxy::OnSendEncodedImage(
     const EncodedImage& encoded_image,
     const RTPVideoHeader* rtp_video_header) {

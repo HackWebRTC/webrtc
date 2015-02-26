@@ -136,7 +136,7 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
   : channel_id_(channel_id),
     number_of_cores_(number_of_cores),
     disable_default_encoder_(disable_default_encoder),
-    vcm_(*webrtc::VideoCodingModule::Create()),
+    vcm_(*webrtc::VideoCodingModule::Create(this)),
     vpm_(*webrtc::VideoProcessingModule::Create(ViEModuleId(-1, channel_id))),
     send_payload_router_(NULL),
     vcm_protection_callback_(NULL),
@@ -705,6 +705,12 @@ void ViEEncoder::SetSenderBufferingMode(int target_delay_ms) {
   }
 }
 
+void ViEEncoder::OnSetRates(uint32_t bitrate_bps, int framerate) {
+  CriticalSectionScoped cs(callback_cs_.get());
+  if (send_statistics_proxy_ != nullptr)
+    send_statistics_proxy_->OnSetRates(bitrate_bps, framerate);
+}
+
 int32_t ViEEncoder::SendData(
     const uint8_t payload_type,
     const EncodedImage& encoded_image,
@@ -712,8 +718,10 @@ int32_t ViEEncoder::SendData(
     const RTPVideoHeader* rtp_video_hdr) {
   DCHECK(send_payload_router_ != NULL);
 
-  if (send_statistics_proxy_ != NULL) {
-    send_statistics_proxy_->OnSendEncodedImage(encoded_image, rtp_video_hdr);
+  {
+    CriticalSectionScoped cs(callback_cs_.get());
+    if (send_statistics_proxy_ != NULL)
+      send_statistics_proxy_->OnSendEncodedImage(encoded_image, rtp_video_hdr);
   }
 
   return send_payload_router_->RoutePayload(
@@ -959,6 +967,7 @@ void ViEEncoder::DeRegisterPostEncodeImageCallback() {
 
 void ViEEncoder::RegisterSendStatisticsProxy(
     SendStatisticsProxy* send_statistics_proxy) {
+  CriticalSectionScoped cs(callback_cs_.get());
   send_statistics_proxy_ = send_statistics_proxy;
 }
 

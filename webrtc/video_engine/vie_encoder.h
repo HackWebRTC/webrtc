@@ -46,6 +46,7 @@ class ViEPacedSenderCallback;
 
 class ViEEncoder
     : public RtcpIntraFrameObserver,
+      public VideoEncoderRateObserver,
       public VCMPacketizationCallback,
       public VCMSendStatisticsCallback,
       public ViEFrameCallback {
@@ -129,6 +130,9 @@ class ViEEncoder
 
   // Buffering mode.
   void SetSenderBufferingMode(int target_delay_ms);
+
+  // Implements VideoEncoderRateObserver.
+  void OnSetRates(uint32_t bitrate_bps, int framerate) override;
 
   // Implements VCMPacketizationCallback.
   virtual int32_t SendData(uint8_t payload_type,
@@ -243,7 +247,7 @@ class ViEEncoder
   I420FrameCallback* pre_encode_callback_ GUARDED_BY(callback_cs_);
   const int64_t start_ms_;
 
-  SendStatisticsProxy* send_statistics_proxy_;
+  SendStatisticsProxy* send_statistics_proxy_ GUARDED_BY(callback_cs_);
 };
 
 }  // namespace webrtc

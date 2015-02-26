@@ -93,7 +93,8 @@ VCMExtDecoderMapItem::VCMExtDecoderMapItem(
       internal_render_timing(internal_render_timing) {
 }
 
-VCMCodecDataBase::VCMCodecDataBase()
+VCMCodecDataBase::VCMCodecDataBase(
+    VideoEncoderRateObserver* encoder_rate_observer)
     : number_of_cores_(0),
       max_payload_size_(kDefaultPayloadSize),
       periodic_key_frames_(false),
@@ -104,11 +105,13 @@ VCMCodecDataBase::VCMCodecDataBase()
       external_payload_type_(0),
       external_encoder_(NULL),
       internal_source_(false),
+      encoder_rate_observer_(encoder_rate_observer),
       ptr_encoder_(NULL),
       ptr_decoder_(NULL),
       current_dec_is_external_(false),
       dec_map_(),
-      dec_external_map_() {}
+      dec_external_map_() {
+}
 
 VCMCodecDataBase::~VCMCodecDataBase() {
   ResetSender();
@@ -295,7 +298,8 @@ bool VCMCodecDataBase::SetSendCodec(
   DeleteEncoder();
   if (send_codec->plType == external_payload_type_) {
     // External encoder.
-    ptr_encoder_ = new VCMGenericEncoder(*external_encoder_, internal_source_);
+    ptr_encoder_ = new VCMGenericEncoder(
+        external_encoder_, encoder_rate_observer_, internal_source_);
     current_enc_is_external_ = true;
   } else {
     ptr_encoder_ = CreateEncoder(send_codec->codecType);
@@ -679,15 +683,18 @@ VCMGenericEncoder* VCMCodecDataBase::CreateEncoder(
   switch (type) {
 #ifdef VIDEOCODEC_VP8
     case kVideoCodecVP8:
-      return new VCMGenericEncoder(*(VP8Encoder::Create()));
+      return new VCMGenericEncoder(VP8Encoder::Create(), encoder_rate_observer_,
+                                   false);
 #endif
 #ifdef VIDEOCODEC_VP9
     case kVideoCodecVP9:
-      return new VCMGenericEncoder(*(VP9Encoder::Create()));
+      return new VCMGenericEncoder(VP9Encoder::Create(), encoder_rate_observer_,
+                                   false);
 #endif
 #ifdef VIDEOCODEC_I420
     case kVideoCodecI420:
-      return new VCMGenericEncoder(*(new I420Encoder));
+      return new VCMGenericEncoder(new I420Encoder(), encoder_rate_observer_,
+                                   false);
 #endif
     default:
       LOG(LS_WARNING) << "No internal encoder of this type exists.";
@@ -698,9 +705,8 @@ VCMGenericEncoder* VCMCodecDataBase::CreateEncoder(
 void VCMCodecDataBase::DeleteEncoder() {
   if (ptr_encoder_) {
     ptr_encoder_->Release();
-    if (!current_enc_is_external_) {
-      delete &ptr_encoder_->_encoder;
-    }
+    if (!current_enc_is_external_)
+      delete ptr_encoder_->encoder_;
     delete ptr_encoder_;
     ptr_encoder_ = NULL;
   }

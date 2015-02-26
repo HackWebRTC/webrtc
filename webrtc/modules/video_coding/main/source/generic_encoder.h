@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_VIDEO_CODING_GENERIC_ENCODER_H_
 
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 
 #include <stdio.h>
 
@@ -73,7 +74,9 @@ class VCMGenericEncoder
 {
     friend class VCMCodecDataBase;
 public:
-    VCMGenericEncoder(VideoEncoder& encoder, bool internalSource = false);
+ VCMGenericEncoder(VideoEncoder* encoder,
+                   VideoEncoderRateObserver* rate_observer,
+                   bool internalSource);
     ~VCMGenericEncoder();
     /**
     * Free encoder memory
@@ -127,7 +130,8 @@ public:
     bool InternalSource() const;
 
 private:
-    VideoEncoder&               _encoder;
+    VideoEncoder* const encoder_;
+    VideoEncoderRateObserver* const rate_observer_;
     VideoCodecType              _codecType;
     VCMEncodedFrameCallback*    _VCMencodedFrameCallback;
     uint32_t                    _bitRate;

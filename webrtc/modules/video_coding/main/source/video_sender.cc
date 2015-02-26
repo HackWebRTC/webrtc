@@ -60,7 +60,8 @@ class DebugRecorder {
 };
 
 VideoSender::VideoSender(Clock* clock,
-                         EncodedImageCallback* post_encode_callback)
+                         EncodedImageCallback* post_encode_callback,
+                         VideoEncoderRateObserver* encoder_rate_observer)
     : clock_(clock),
       recorder_(new DebugRecorder()),
       process_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -70,7 +71,7 @@ VideoSender::VideoSender(Clock* clock,
       _nextFrameTypes(1, kVideoFrameDelta),
       _mediaOpt(clock_),
       _sendStatsCallback(NULL),
-      _codecDataBase(),
+      _codecDataBase(encoder_rate_observer),
       frame_dropper_enabled_(true),
       _sendStatsTimer(1000, clock_),
       current_codec_(),

@@ -73,9 +73,12 @@ class VideoCodingModuleImpl : public VideoCodingModule {
  public:
   VideoCodingModuleImpl(Clock* clock,
                         EventFactory* event_factory,
-                        bool owns_event_factory)
+                        bool owns_event_factory,
+                        VideoEncoderRateObserver* encoder_rate_observer)
       : VideoCodingModule(),
-        sender_(new vcm::VideoSender(clock, &post_encode_callback_)),
+        sender_(new vcm::VideoSender(clock,
+                                     &post_encode_callback_,
+                                     encoder_rate_observer)),
         receiver_(new vcm::VideoReceiver(clock, event_factory)),
         own_event_factory_(owns_event_factory ? event_factory : NULL) {}
 
@@ -383,16 +386,19 @@ int32_t VideoCodingModule::Codec(VideoCodecType codecType, VideoCodec* codec) {
   return VCMCodecDataBase::Codec(codecType, codec) ? 0 : -1;
 }
 
-VideoCodingModule* VideoCodingModule::Create() {
-  return new VideoCodingModuleImpl(
-      Clock::GetRealTimeClock(), new EventFactoryImpl, true);
+VideoCodingModule* VideoCodingModule::Create(
+    VideoEncoderRateObserver* encoder_rate_observer) {
+  return new VideoCodingModuleImpl(Clock::GetRealTimeClock(),
+                                   new EventFactoryImpl, true,
+                                   encoder_rate_observer);
 }
 
-VideoCodingModule* VideoCodingModule::Create(Clock* clock,
-                                             EventFactory* event_factory) {
+VideoCodingModule* VideoCodingModule::Create(
+    Clock* clock,
+    EventFactory* event_factory) {
   assert(clock);
   assert(event_factory);
-  return new VideoCodingModuleImpl(clock, event_factory, false);
+  return new VideoCodingModuleImpl(clock, event_factory, false, nullptr);
 }
 
 void VideoCodingModule::Destroy(VideoCodingModule* module) {

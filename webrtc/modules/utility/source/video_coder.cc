@@ -14,7 +14,8 @@
 #include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 
 namespace webrtc {
-VideoCoder::VideoCoder() : _vcm(VideoCodingModule::Create()), _decodedVideo(0) {
+VideoCoder::VideoCoder()
+    : _vcm(VideoCodingModule::Create(nullptr)), _decodedVideo(0) {
     _vcm->InitializeSender();
     _vcm->InitializeReceiver();
 

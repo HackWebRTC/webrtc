@@ -2224,6 +2224,7 @@ TEST_F(WebRtcVideoChannel2Test, TranslatesCallStatsCorrectly) {
 TEST_F(WebRtcVideoChannel2Test, TranslatesSenderBitrateStatsCorrectly) {
   FakeVideoSendStream* stream = AddSendStream();
   webrtc::VideoSendStream::Stats stats;
+  stats.target_media_bitrate_bps = 156;
   stats.media_bitrate_bps = 123;
   stats.substreams[17].total_bitrate_bps = 1;
   stats.substreams[17].retransmit_bitrate_bps = 2;
@@ -2233,6 +2234,7 @@ TEST_F(WebRtcVideoChannel2Test, TranslatesSenderBitrateStatsCorrectly) {
 
   FakeVideoSendStream* stream2 = AddSendStream();
   webrtc::VideoSendStream::Stats stats2;
+  stats2.target_media_bitrate_bps = 200;
   stats2.media_bitrate_bps = 321;
   stats2.substreams[13].total_bitrate_bps = 5;
   stats2.substreams[13].retransmit_bitrate_bps = 6;
@@ -2247,6 +2249,8 @@ TEST_F(WebRtcVideoChannel2Test, TranslatesSenderBitrateStatsCorrectly) {
   // is OK as std::maps are sorted and AddSendStream() gives increasing SSRCs.
   EXPECT_EQ(stats.media_bitrate_bps, info.senders[0].nominal_bitrate);
   EXPECT_EQ(stats2.media_bitrate_bps, info.senders[1].nominal_bitrate);
+  EXPECT_EQ(stats.target_media_bitrate_bps + stats2.target_media_bitrate_bps,
+            info.bw_estimations[0].target_enc_bitrate);
   EXPECT_EQ(stats.media_bitrate_bps + stats2.media_bitrate_bps,
             info.bw_estimations[0].actual_enc_bitrate);
   EXPECT_EQ(1 + 3 + 5 + 7, info.bw_estimations[0].transmit_bitrate)
