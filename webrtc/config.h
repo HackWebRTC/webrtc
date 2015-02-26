@@ -56,14 +56,8 @@ struct RtpExtension {
 };
 
 struct VideoStream {
-  VideoStream()
-      : width(0),
-        height(0),
-        max_framerate(-1),
-        min_bitrate_bps(-1),
-        target_bitrate_bps(-1),
-        max_bitrate_bps(-1),
-        max_qp(-1) {}
+  VideoStream();
+  ~VideoStream();
   std::string ToString() const;
 
   size_t width;
@@ -95,11 +89,8 @@ struct VideoEncoderConfig {
     kScreenshare,
   };
 
-  VideoEncoderConfig()
-      : content_type(kRealtimeVideo),
-        encoder_specific_settings(NULL),
-        min_transmit_bitrate_bps(0) {}
-
+  VideoEncoderConfig();
+  ~VideoEncoderConfig();
   std::string ToString() const;
 
   std::vector<VideoStream> streams;

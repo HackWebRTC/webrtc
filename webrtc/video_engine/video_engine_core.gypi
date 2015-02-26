@@ -12,6 +12,7 @@
       'target_name': 'video_engine_core',
       'type': 'static_library',
       'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
 
         # common_video
        '<(webrtc_root)/common_video/common_video.gyp:common_video',

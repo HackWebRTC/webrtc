@@ -96,6 +96,7 @@ source_set("voice_engine") {
   }
 
   deps = [
+    "..:webrtc_common",
     "../common_audio",
     "../modules/audio_coding",
     "../modules/audio_conference_mixer",

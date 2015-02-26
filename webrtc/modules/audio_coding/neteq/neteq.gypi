@@ -38,6 +38,7 @@
       'type': 'static_library',
       'dependencies': [
         '<@(neteq_dependencies)',
+        '<(webrtc_root)/common.gyp:webrtc_common',
       ],
       'defines': [
         '<@(neteq_defines)',

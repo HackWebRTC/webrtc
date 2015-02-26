@@ -15,6 +15,7 @@
       'target_name': 'webrtc_vp8',
       'type': 'static_library',
       'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/common_video/common_video.gyp:common_video',
         '<(webrtc_root)/modules/video_coding/utility/video_coding_utility.gyp:video_coding_utility',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',

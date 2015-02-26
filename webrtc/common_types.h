@@ -57,7 +57,7 @@ class InStream
 {
 public:
     virtual int Read(void *buf, size_t len) = 0;
-    virtual int Rewind() {return -1;}
+    virtual int Rewind();
     virtual ~InStream() {}
 protected:
     InStream() {}
@@ -67,7 +67,7 @@ class OutStream
 {
 public:
     virtual bool Write(const void *buf, size_t len) = 0;
-    virtual int Rewind() {return -1;}
+    virtual int Rewind();
     virtual ~OutStream() {}
 protected:
     OutStream() {}
@@ -809,19 +809,7 @@ struct RTPHeaderExtension {
 };
 
 struct RTPHeader {
-  RTPHeader()
-      : markerBit(false),
-        payloadType(0),
-        sequenceNumber(0),
-        timestamp(0),
-        ssrc(0),
-        numCSRCs(0),
-        paddingLength(0),
-        headerLength(0),
-        payload_type_frequency(0),
-        extension() {
-    memset(&arrOfCSRCs, 0, sizeof(arrOfCSRCs));
-  }
+  RTPHeader();
 
   bool markerBit;
   uint8_t payloadType;
@@ -870,7 +858,7 @@ struct RtpPacketCounter {
 
 // Data usage statistics for a (rtp) stream.
 struct StreamDataCounters {
-  StreamDataCounters() : first_packet_time_ms(-1) {}
+  StreamDataCounters();
 
   void Add(const StreamDataCounters& other) {
     transmitted.Add(other.transmitted);

@@ -12,6 +12,7 @@
       'target_name': 'vie_auto_test',
       'type': 'executable',
       'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
         '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',

@@ -59,6 +59,7 @@
       'target_name': 'rtc_base',
       'type': 'static_library',
       'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
         'rtc_base_approved',
       ],
       'defines': [

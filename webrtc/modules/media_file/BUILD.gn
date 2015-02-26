@@ -44,6 +44,7 @@ source_set("media_file") {
   }
 
   deps = [
+    "../..:webrtc_common",
     "../../system_wrappers",
     "../../common_audio",
   ]

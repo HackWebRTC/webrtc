@@ -85,6 +85,7 @@ source_set("video_coding") {
     ":webrtc_i420",
     ":webrtc_vp8",
     ":webrtc_vp9",
+    "../..:webrtc_common",
     "../../common_video",
     "../../system_wrappers",
   ]
@@ -170,6 +171,7 @@ source_set("webrtc_vp8") {
 
   deps = [
     ":video_coding_utility",
+    "../..:webrtc_common",
     "../../common_video",
     "../../system_wrappers",
   ]

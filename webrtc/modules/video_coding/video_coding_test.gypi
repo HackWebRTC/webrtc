@@ -17,6 +17,7 @@
          'webrtc_utility',
          '<(DEPTH)/testing/gtest.gyp:gtest',
          '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+         '<(webrtc_root)/common.gyp:webrtc_common',
          '<(webrtc_root)/test/test.gyp:test_support',
          '<(webrtc_root)/test/metrics.gyp:metrics',
          '<(webrtc_root)/common_video/common_video.gyp:common_video',

@@ -23,6 +23,7 @@ source_set("video_render_module") {
   ]
 
   deps = [
+    "../..:webrtc_common",
     "../../common_video",
     "../../system_wrappers",
     "../utility",
@@ -86,6 +87,8 @@ if (!build_with_chromium) {
         "linux/video_x11_render.cc",
         "linux/video_x11_render.h",
       ]
+
+      deps += [ "../..:webrtc_common" ]
 
       libs += [ "Xext" ]
     }
@@ -159,6 +162,8 @@ if (!build_with_chromium) {
         "ios/video_render_ios_view.h",
         "ios/video_render_ios_view.mm",
       ]
+
+      deps += [ "../..:webrtc_common" ]
 
       cflags += [ "-fobjc-arc" ]  # CLANG_ENABLE_OBJC_ARC = YES.
     }

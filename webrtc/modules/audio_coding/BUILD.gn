@@ -72,6 +72,7 @@ source_set("audio_coding") {
     ":neteq",
     ":pcm16b",
     ":red",
+    "../..:webrtc_common",
     "../../common_audio",
     "../../system_wrappers",
   ]
@@ -89,6 +90,7 @@ source_set("audio_decoder_interface") {
   ]
   configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
+  deps = [ "../..:webrtc_common" ]
 }
 
 source_set("audio_encoder_interface") {
@@ -98,6 +100,7 @@ source_set("audio_encoder_interface") {
   ]
   configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
+  deps = [ "../..:webrtc_common" ]
 }
 
 config("cng_config") {
@@ -439,12 +442,6 @@ source_set("isac") {
     "codecs/isac/main/source/transform.c",
   ]
 
-  if (is_clang) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   if (is_linux) {
     libs = [ "m" ]
   }
@@ -517,12 +514,6 @@ source_set("isacfix") {
     "codecs/isac/fix/source/transform.c",
     "codecs/isac/fix/source/transform_tables.c",
   ]
-
-  if (is_clang) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
-  }
 
   if (!is_win) {
     defines = [ "WEBRTC_LINUX" ]
@@ -786,6 +777,7 @@ source_set("neteq") {
     ":isac",
     ":isacfix",
     ":pcm16b",
+    "../..:webrtc_common",
     "../../common_audio",
     "../../system_wrappers",
     rtc_opus_dir,

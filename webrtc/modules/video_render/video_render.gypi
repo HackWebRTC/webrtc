@@ -17,6 +17,7 @@
       'type': 'static_library',
       'dependencies': [
         'webrtc_utility',
+        '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/common_video/common_video.gyp:common_video',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
@@ -56,6 +57,7 @@
           'target_name': 'video_render_module_internal_impl',
           'type': 'static_library',
           'dependencies': [
+            '<(webrtc_root)/common.gyp:webrtc_common',
             'video_render_module',
           ],
           'sources': [
@@ -163,6 +165,7 @@
           'dependencies': [
             'video_render_module_internal_impl',
             'webrtc_utility',
+            '<(webrtc_root)/common.gyp:webrtc_common',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/common_video/common_video.gyp:common_video',
           ],

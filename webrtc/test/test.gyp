@@ -17,6 +17,7 @@
       'type': 'static_library',
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
@@ -64,6 +65,7 @@
         'rtp_file_writer.h',
       ],
       'dependencies': [
+        '<(DEPTH)/webrtc/common.gyp:webrtc_common',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
       ],
@@ -76,6 +78,7 @@
         'field_trial.h',
       ],
       'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
     },

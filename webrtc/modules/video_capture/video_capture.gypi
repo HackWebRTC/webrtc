@@ -17,6 +17,7 @@
       'type': 'static_library',
       'dependencies': [
         'webrtc_utility',
+        '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/common_video/common_video.gyp:common_video',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
@@ -55,6 +56,7 @@
           'type': 'static_library',
           'dependencies': [
             'video_capture_module',
+            '<(webrtc_root)/common.gyp:webrtc_common',
           ],
           'conditions': [
             ['OS=="linux"', {

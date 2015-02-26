@@ -13,6 +13,7 @@
       'target_name': 'system_wrappers',
       'type': 'static_library',
       'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
         '../base/base.gyp:rtc_base_approved',
       ],
       'sources': [

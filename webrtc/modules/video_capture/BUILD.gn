@@ -27,6 +27,7 @@ source_set("video_capture_module") {
   ]
 
   deps = [
+    "../..:webrtc_common",
     "../../common_video",
     "../../system_wrappers",
     "../utility",
@@ -87,6 +88,7 @@ if (!build_with_chromium) {
         "linux/video_capture_linux.cc",
         "linux/video_capture_linux.h",
       ]
+      deps += [ "../..:webrtc_common" ]
     }
     if (is_mac) {
       sources = [

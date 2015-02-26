@@ -234,6 +234,7 @@
         'iLBC',
         'iSAC',
         'CNG',
+        '<(webrtc_root)/common.gyp:webrtc_common',
         '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
       'direct_dependent_settings': {

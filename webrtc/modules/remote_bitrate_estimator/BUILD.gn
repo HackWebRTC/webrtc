@@ -18,6 +18,7 @@ source_set("remote_bitrate_estimator") {
 
   deps = [
     ":rbe_components",
+    "../..:webrtc_common",
     "../../system_wrappers",
   ]
 }
@@ -42,6 +43,7 @@ source_set("rbe_components") {
 
   configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
+  deps = [ "../..:webrtc_common" ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.

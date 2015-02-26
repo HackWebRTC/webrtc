@@ -109,6 +109,7 @@ source_set("video_engine_core") {
   }
 
   deps = [
+    "..:webrtc_common",
     "../common_video",
     "../modules/bitrate_controller",
     "../modules/rtp_rtcp",

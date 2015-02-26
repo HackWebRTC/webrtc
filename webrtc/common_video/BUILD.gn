@@ -44,7 +44,10 @@ source_set("common_video") {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  deps = [ "../system_wrappers" ]
+  deps = [
+    "..:webrtc_common",
+    "../system_wrappers",
+  ]
 
   if (rtc_build_libyuv) {
     deps += [ "$rtc_libyuv_dir" ]

@@ -300,6 +300,8 @@ static_library("rtc_base") {
       "../overrides/webrtc/base/logging.h",
     ]
 
+    deps += [ "..:webrtc_common" ]
+
     if (is_win) {
       sources += [ "../overrides/webrtc/base/win32socketinit.cc" ]
     }
@@ -375,6 +377,8 @@ static_library("rtc_base") {
       "windowpickerfactory.h",
       "windowpicker.h",
     ]
+
+    deps += [ "..:webrtc_common" ]
 
     if (is_posix) {
       sources += [

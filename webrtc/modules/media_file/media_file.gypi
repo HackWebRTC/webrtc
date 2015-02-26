@@ -12,6 +12,7 @@
       'target_name': 'media_file',
       'type': 'static_library',
       'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
       ],

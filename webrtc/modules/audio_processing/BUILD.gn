@@ -126,7 +126,7 @@ source_set("audio_processing") {
   public_configs = [ "../..:common_inherited_config" ]
 
   defines = []
-  deps = []
+  deps = [ "../..:webrtc_common" ]
 
   if (aec_debug_dump) {
     defines += [ "WEBRTC_AEC_DEBUG_DUMP" ]
