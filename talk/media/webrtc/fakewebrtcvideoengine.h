@@ -699,6 +699,8 @@ class FakeWebRtcVideoEngine
     return 0;
   }
   WEBRTC_STUB(GetCpuOveruseMetrics, (int, webrtc::CpuOveruseMetrics*));
+  WEBRTC_VOID_STUB(RegisterCpuOveruseMetricsObserver,
+                   (int, webrtc::CpuOveruseMetricsObserver*));
   WEBRTC_FUNC(SetCpuOveruseOptions,
       (int channel, const webrtc::CpuOveruseOptions& options)) {
     WEBRTC_CHECK_CHANNEL(channel);

@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
@@ -20,6 +21,7 @@
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/include/vie_base.h"
@@ -39,6 +41,7 @@ class ThreadWrapper;
 class ViEEffectFilter;
 class ViEEncoder;
 struct ViEPicture;
+class RegistrableCpuOveruseMetricsObserver;
 
 class ViECapturer
     : public ViEFrameProviderBase,
@@ -107,6 +110,7 @@ class ViECapturer
 
   void RegisterCpuOveruseObserver(CpuOveruseObserver* observer);
   void SetCpuOveruseOptions(const CpuOveruseOptions& options);
+  void RegisterCpuOveruseMetricsObserver(CpuOveruseMetricsObserver* observer);
   void GetCpuOveruseMetrics(CpuOveruseMetrics* metrics) const;
 
  protected:
@@ -187,6 +191,9 @@ class ViECapturer
 
   CaptureCapability requested_capability_;
 
+  // Must be declared before overuse_detector_ where it's registered.
+  const scoped_ptr<RegistrableCpuOveruseMetricsObserver>
+      cpu_overuse_metrics_observer_;
   scoped_ptr<OveruseFrameDetector> overuse_detector_;
 };
 

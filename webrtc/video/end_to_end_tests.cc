@@ -1660,6 +1660,9 @@ TEST_F(EndToEndTest, GetStats) {
       send_stats_filled_["NumStreams"] |=
           stats.substreams.size() == expected_send_ssrcs_.size();
 
+      send_stats_filled_["CpuOveruseMetrics"] |=
+          stats.avg_encode_time_ms != 0 || stats.encode_usage_percent != 0;
+
       for (std::map<uint32_t, VideoSendStream::StreamStats>::const_iterator it =
                stats.substreams.begin();
            it != stats.substreams.end(); ++it) {

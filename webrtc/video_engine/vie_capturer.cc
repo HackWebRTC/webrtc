@@ -32,6 +32,32 @@ namespace webrtc {
 
 const int kThreadWaitTimeMs = 100;
 
+class RegistrableCpuOveruseMetricsObserver : public CpuOveruseMetricsObserver {
+ public:
+  virtual void CpuOveruseMetricsUpdated(
+      const CpuOveruseMetrics& metrics) override {
+    rtc::CritScope lock(&crit_);
+    if (observer_)
+      observer_->CpuOveruseMetricsUpdated(metrics);
+    metrics_ = metrics;
+  }
+
+  CpuOveruseMetrics GetCpuOveruseMetrics() const {
+    rtc::CritScope lock(&crit_);
+    return metrics_;
+  }
+
+  void Set(CpuOveruseMetricsObserver* observer) {
+    rtc::CritScope lock(&crit_);
+    observer_ = observer;
+  }
+
+ private:
+  mutable rtc::CriticalSection crit_;
+  CpuOveruseMetricsObserver* observer_ GUARDED_BY(crit_) = nullptr;
+  CpuOveruseMetrics metrics_ GUARDED_BY(crit_);
+};
+
 ViECapturer::ViECapturer(int capture_id,
                          int engine_id,
                          const Config& config,
@@ -45,7 +71,8 @@ ViECapturer::ViECapturer(int capture_id,
       capture_id_(capture_id),
       incoming_frame_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       capture_thread_(*ThreadWrapper::CreateThread(ViECaptureThreadFunction,
-                                                   this, kHighPriority,
+                                                   this,
+                                                   kHighPriority,
                                                    "ViECaptureThread")),
       capture_event_(*EventWrapper::Create()),
       deliver_event_(*EventWrapper::Create()),
@@ -59,7 +86,10 @@ ViECapturer::ViECapturer(int capture_id,
       reported_brightness_level_(Normal),
       observer_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       observer_(NULL),
-      overuse_detector_(new OveruseFrameDetector(Clock::GetRealTimeClock())) {
+      cpu_overuse_metrics_observer_(new RegistrableCpuOveruseMetricsObserver()),
+      overuse_detector_(
+          new OveruseFrameDetector(Clock::GetRealTimeClock(),
+                                   cpu_overuse_metrics_observer_.get())) {
   unsigned int t_id = 0;
   if (!capture_thread_.Start(t_id)) {
     assert(false);
@@ -246,8 +276,13 @@ void ViECapturer::SetCpuOveruseOptions(const CpuOveruseOptions& options) {
   overuse_detector_->SetOptions(options);
 }
 
+void ViECapturer::RegisterCpuOveruseMetricsObserver(
+    CpuOveruseMetricsObserver* observer) {
+  cpu_overuse_metrics_observer_->Set(observer);
+}
+
 void ViECapturer::GetCpuOveruseMetrics(CpuOveruseMetrics* metrics) const {
-  overuse_detector_->GetCpuOveruseMetrics(metrics);
+  *metrics = cpu_overuse_metrics_observer_->GetCpuOveruseMetrics();
 }
 
 int32_t ViECapturer::SetCaptureDelay(int32_t delay_ms) {

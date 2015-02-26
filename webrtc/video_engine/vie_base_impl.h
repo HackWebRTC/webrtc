@@ -35,6 +35,9 @@ class ViEBaseImpl
                                          CpuOveruseObserver* observer);
   virtual int SetCpuOveruseOptions(int channel,
                                    const CpuOveruseOptions& options);
+  virtual void RegisterCpuOveruseMetricsObserver(
+      int channel,
+      CpuOveruseMetricsObserver* observer) override;
   virtual int GetCpuOveruseMetrics(int channel,
                                    CpuOveruseMetrics* metrics);
   virtual void RegisterSendSideDelayObserver(int channel,

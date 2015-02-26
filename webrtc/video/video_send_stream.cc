@@ -210,6 +210,9 @@ VideoSendStream::VideoSendStream(
 
   if (overuse_observer)
     video_engine_base_->RegisterCpuOveruseObserver(channel_, overuse_observer);
+  // Registered regardless of monitoring, used for stats.
+  video_engine_base_->RegisterCpuOveruseMetricsObserver(channel_,
+                                                        &stats_proxy_);
 
   video_engine_base_->RegisterSendSideDelayObserver(channel_, &stats_proxy_);
   video_engine_base_->RegisterSendStatisticsProxy(channel_, &stats_proxy_);

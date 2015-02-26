@@ -112,7 +112,6 @@ struct CpuOveruseMetrics {
       : capture_jitter_ms(-1),
         avg_encode_time_ms(-1),
         encode_usage_percent(-1),
-        encode_rsd(-1),
         capture_queue_delay_ms_per_s(-1) {}
 
   int capture_jitter_ms;  // The current estimated jitter in ms based on
@@ -120,12 +119,16 @@ struct CpuOveruseMetrics {
   int avg_encode_time_ms;   // The average encode time in ms.
   int encode_usage_percent; // The average encode time divided by the average
                             // time difference between incoming captured frames.
-  // TODO(asapersson): Remove metric, not used.
-  int encode_rsd;           // The relative std dev of encode time of frames.
   int capture_queue_delay_ms_per_s;  // The current time delay between an
                                      // incoming captured frame until the frame
                                      // is being processed. The delay is
                                      // expressed in ms delay per second.
+};
+
+class CpuOveruseMetricsObserver {
+ public:
+  virtual ~CpuOveruseMetricsObserver() {}
+  virtual void CpuOveruseMetricsUpdated(const CpuOveruseMetrics& metrics) = 0;
 };
 
 class WEBRTC_DLLEXPORT VideoEngine {
@@ -208,6 +211,9 @@ class WEBRTC_DLLEXPORT ViEBase {
 
   // Gets cpu overuse measures.
   virtual int GetCpuOveruseMetrics(int channel, CpuOveruseMetrics* metrics) = 0;
+  virtual void RegisterCpuOveruseMetricsObserver(
+      int channel,
+      CpuOveruseMetricsObserver* observer) = 0;
 
   // Registers a callback which is called when send-side delay statistics has
   // been updated.

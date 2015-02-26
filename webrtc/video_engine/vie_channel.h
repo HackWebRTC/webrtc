@@ -442,8 +442,7 @@ class ViEChannel
       if (callback_)
         callback_->Notify(total_stats, retransmit_stats, ssrc);
     }
-  }
-  send_bitrate_observer_;
+  } send_bitrate_observer_;
 
   class RegisterableFrameCountObserver
       : public RegisterableCallback<FrameCountObserver> {

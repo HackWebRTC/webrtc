@@ -18,6 +18,7 @@
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_send_stream.h"
@@ -26,7 +27,8 @@ namespace webrtc {
 
 class CriticalSectionWrapper;
 
-class SendStatisticsProxy : public RtcpStatisticsCallback,
+class SendStatisticsProxy : public CpuOveruseMetricsObserver,
+                            public RtcpStatisticsCallback,
                             public RtcpPacketTypeCounterObserver,
                             public StreamDataCountersCallback,
                             public BitrateStatisticsObserver,
@@ -46,6 +48,8 @@ class SendStatisticsProxy : public RtcpStatisticsCallback,
                                   const RTPVideoHeader* rtp_video_header);
 
  protected:
+  // From CpuOveruseMetricsObserver.
+  void CpuOveruseMetricsUpdated(const CpuOveruseMetrics& metrics) OVERRIDE;
   // From RtcpStatisticsCallback.
   virtual void StatisticsUpdated(const RtcpStatistics& statistics,
                                  uint32_t ssrc) OVERRIDE;

@@ -120,6 +120,23 @@ int ViEBaseImpl::SetCpuOveruseOptions(int video_channel,
   return -1;
 }
 
+void ViEBaseImpl::RegisterCpuOveruseMetricsObserver(
+    int video_channel,
+    CpuOveruseMetricsObserver* observer) {
+  ViEChannelManagerScoped cs(*(shared_data_.channel_manager()));
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  assert(vie_encoder);
+
+  ViEInputManagerScoped is(*(shared_data_.input_manager()));
+  ViEFrameProviderBase* provider = is.FrameProvider(vie_encoder);
+  assert(provider != NULL);
+
+  ViECapturer* capturer = is.Capture(provider->Id());
+  assert(capturer);
+
+  capturer->RegisterCpuOveruseMetricsObserver(observer);
+}
+
 int ViEBaseImpl::GetCpuOveruseMetrics(int video_channel,
                                       CpuOveruseMetrics* metrics) {
   ViEChannelManagerScoped cs(*(shared_data_.channel_manager()));

@@ -2038,6 +2038,19 @@ TEST_F(WebRtcVideoChannel2Test, OnReadyToSendSignalsNetworkState) {
   EXPECT_EQ(webrtc::Call::kNetworkUp, fake_call_->GetNetworkState());
 }
 
+TEST_F(WebRtcVideoChannel2Test, GetStatsReportsCpuOveruseMetrics) {
+  FakeVideoSendStream* stream = AddSendStream();
+  webrtc::VideoSendStream::Stats stats;
+  stats.avg_encode_time_ms = 13;
+  stats.encode_usage_percent = 42;
+  stream->SetStats(stats);
+
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  EXPECT_EQ(stats.avg_encode_time_ms, info.senders[0].avg_encode_ms);
+  EXPECT_EQ(stats.encode_usage_percent, info.senders[0].encode_usage_percent);
+}
+
 TEST_F(WebRtcVideoChannel2Test, GetStatsReportsUpperResolution) {
   FakeVideoSendStream* stream = AddSendStream();
   webrtc::VideoSendStream::Stats stats;

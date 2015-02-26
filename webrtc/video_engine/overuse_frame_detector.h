@@ -52,7 +52,8 @@ class Statistics {
 // Use to detect system overuse based on jitter in incoming frames.
 class OveruseFrameDetector : public Module {
  public:
-  explicit OveruseFrameDetector(Clock* clock);
+  OveruseFrameDetector(Clock* clock,
+                       CpuOveruseMetricsObserver* metrics_observer);
   ~OveruseFrameDetector();
 
   // Registers an observer receiving overuse and underuse callbacks. Set
@@ -74,26 +75,6 @@ class OveruseFrameDetector : public Module {
   // Called for each sent frame.
   void FrameSent(int64_t capture_time_ms);
 
-  // Accessors.
-
-  // Returns CpuOveruseMetrics where
-  // capture_jitter_ms: The estimated jitter based on incoming captured frames.
-  // avg_encode_time_ms: Running average of reported encode time
-  //                     (FrameEncoded()). Only used for stats.
-  // TODO(asapersson): Rename metric.
-  // encode_usage_percent: The average processing time of a frame on the
-  //                       send-side divided by the average time difference
-  //                       between incoming captured frames.
-  // capture_queue_delay_ms_per_s: The current time delay between an incoming
-  //                               captured frame (FrameCaptured()) until the
-  //                               frame is being processed
-  //                               (FrameProcessingStarted()). (Note: if a new
-  //                               frame is received before an old frame has
-  //                               been processed, the old frame is skipped).
-  //                               The delay is expressed in ms delay per sec.
-  //                               Only used for stats.
-  void GetCpuOveruseMetrics(CpuOveruseMetrics* metrics) const;
-
   // Only public for testing.
   int CaptureQueueDelayMsPerS() const;
   int LastProcessingTimeMs() const;
@@ -108,6 +89,8 @@ class OveruseFrameDetector : public Module {
   class SendProcessingUsage;
   class CaptureQueueDelay;
   class FrameQueue;
+
+  void UpdateCpuOveruseMetrics() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // TODO(asapersson): This method is only used on one thread, so it shouldn't
   // need a guard.
@@ -135,6 +118,10 @@ class OveruseFrameDetector : public Module {
   CpuOveruseObserver* observer_ GUARDED_BY(crit_);
 
   CpuOveruseOptions options_ GUARDED_BY(crit_);
+
+  // Stats metrics.
+  CpuOveruseMetricsObserver* const metrics_observer_;
+  CpuOveruseMetrics metrics_ GUARDED_BY(crit_);
 
   Clock* const clock_;
   int64_t next_process_time_;  // Only accessed on the processing thread.

@@ -38,6 +38,13 @@ void SendStatisticsProxy::OutgoingRate(const int video_channel,
   stats_.media_bitrate_bps = bitrate;
 }
 
+void SendStatisticsProxy::CpuOveruseMetricsUpdated(
+    const CpuOveruseMetrics& metrics) {
+  CriticalSectionScoped lock(crit_.get());
+  stats_.avg_encode_time_ms = metrics.avg_encode_time_ms;
+  stats_.encode_usage_percent = metrics.encode_usage_percent;
+}
+
 void SendStatisticsProxy::SuspendChange(int video_channel, bool is_suspended) {
   CriticalSectionScoped lock(crit_.get());
   stats_.suspended = is_suspended;

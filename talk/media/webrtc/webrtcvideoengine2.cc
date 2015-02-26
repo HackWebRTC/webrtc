@@ -1774,6 +1774,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
   }
   info.framerate_input = stats.input_frame_rate;
   info.framerate_sent = stats.encode_frame_rate;
+  info.avg_encode_ms = stats.avg_encode_time_ms;
+  info.encode_usage_percent = stats.encode_usage_percent;
 
   info.nominal_bitrate = stats.media_bitrate_bps;
 
