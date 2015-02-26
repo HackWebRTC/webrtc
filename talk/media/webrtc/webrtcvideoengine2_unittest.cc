@@ -2056,6 +2056,81 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsReportsUpperResolution) {
   EXPECT_EQ(90, info.senders[0].send_frame_height);
 }
 
+TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationStats) {
+  AddSendStream(cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs3)));
+
+  // Capture format VGA.
+  cricket::FakeVideoCapturer video_capturer_vga;
+  const std::vector<cricket::VideoFormat>* formats =
+      video_capturer_vga.GetSupportedFormats();
+  cricket::VideoFormat capture_format_vga = (*formats)[1];
+  EXPECT_EQ(cricket::CS_RUNNING, video_capturer_vga.Start(capture_format_vga));
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], &video_capturer_vga));
+  EXPECT_TRUE(video_capturer_vga.CaptureFrame());
+
+  cricket::VideoCodec send_codec(100, "VP8", 640, 480, 30, 0);
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(send_codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_TRUE(channel_->SetSend(true));
+
+  // Verify that the CpuOveruseObserver is registered and trigger downgrade.
+  cricket::VideoOptions options;
+  options.cpu_overuse_detection.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  // Trigger overuse.
+  webrtc::LoadObserver* overuse_callback =
+      fake_call_->GetConfig().overuse_callback;
+  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
+
+  // Capture format VGA -> adapt (OnCpuResolutionRequest downgrade) -> VGA/2.
+  EXPECT_TRUE(video_capturer_vga.CaptureFrame());
+  cricket::VideoMediaInfo info;
+  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_EQ(1U, info.senders.size());
+  EXPECT_EQ(1, info.senders[0].adapt_changes);
+  EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_CPU,
+            info.senders[0].adapt_reason);
+
+  // Trigger upgrade and verify that we adapt back up to VGA.
+  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kUnderuse);
+  EXPECT_TRUE(video_capturer_vga.CaptureFrame());
+  info.Clear();
+  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_EQ(1U, info.senders.size());
+  EXPECT_EQ(2, info.senders[0].adapt_changes);
+  EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_NONE,
+            info.senders[0].adapt_reason);
+
+  // No capturer (no adapter). Adapt changes from old adapter should be kept.
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], NULL));
+  info.Clear();
+  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_EQ(1U, info.senders.size());
+  EXPECT_EQ(2, info.senders[0].adapt_changes);
+  EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_NONE,
+            info.senders[0].adapt_reason);
+
+  // Set new capturer, capture format HD.
+  cricket::FakeVideoCapturer video_capturer_hd;
+  cricket::VideoFormat capture_format_hd = (*formats)[0];
+  EXPECT_EQ(cricket::CS_RUNNING, video_capturer_hd.Start(capture_format_hd));
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], &video_capturer_hd));
+  EXPECT_TRUE(video_capturer_hd.CaptureFrame());
+
+  // Trigger overuse, HD -> adapt (OnCpuResolutionRequest downgrade) -> HD/2.
+  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
+  EXPECT_TRUE(video_capturer_hd.CaptureFrame());
+  info.Clear();
+  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_EQ(1U, info.senders.size());
+  EXPECT_EQ(3, info.senders[0].adapt_changes);
+  EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_CPU,
+            info.senders[0].adapt_reason);
+
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], NULL));
+}
+
 TEST_F(WebRtcVideoChannel2Test,
        GetStatsTranslatesSendRtcpPacketTypesCorrectly) {
   FakeVideoSendStream* stream = AddSendStream();

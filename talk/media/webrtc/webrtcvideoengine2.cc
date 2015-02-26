@@ -1330,7 +1330,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       allocated_encoder_(NULL, webrtc::kVideoCodecUnknown, false),
       capturer_(NULL),
       sending_(false),
-      muted_(false) {
+      muted_(false),
+      old_adapt_changes_(0) {
   parameters_.config.rtp.max_packet_size = kVideoMtu;
 
   sp.GetPrimarySsrcs(&parameters_.config.rtp.ssrcs);
@@ -1492,9 +1493,12 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectCapturer() {
   cricket::VideoCapturer* capturer;
   {
     rtc::CritScope cs(&lock_);
-    if (capturer_ == NULL) {
+    if (capturer_ == NULL)
       return false;
-    }
+
+    if (capturer_->video_adapter() != nullptr)
+      old_adapt_changes_ += capturer_->video_adapter()->adaptation_changes();
+
     capturer = capturer_;
     capturer_ = NULL;
   }
@@ -1750,13 +1754,22 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
 
     stats = stream_->GetStats();
 
-    if (capturer_ != NULL && !capturer_->IsMuted()) {
-      VideoFormat last_captured_frame_format;
-      capturer_->GetStats(&info.adapt_frame_drops, &info.effects_frame_drops,
-                          &info.capturer_frame_time,
-                          &last_captured_frame_format);
-      info.input_frame_width = last_captured_frame_format.width;
-      info.input_frame_height = last_captured_frame_format.height;
+    info.adapt_changes = old_adapt_changes_;
+    info.adapt_reason = CoordinatedVideoAdapter::ADAPTREASON_NONE;
+
+    if (capturer_ != NULL) {
+      if (!capturer_->IsMuted()) {
+        VideoFormat last_captured_frame_format;
+        capturer_->GetStats(&info.adapt_frame_drops, &info.effects_frame_drops,
+                            &info.capturer_frame_time,
+                            &last_captured_frame_format);
+        info.input_frame_width = last_captured_frame_format.width;
+        info.input_frame_height = last_captured_frame_format.height;
+      }
+      if (capturer_->video_adapter() != nullptr) {
+        info.adapt_changes += capturer_->video_adapter()->adaptation_changes();
+        info.adapt_reason = capturer_->video_adapter()->adapt_reason();
+      }
     }
   }
   info.framerate_input = stats.input_frame_rate;
@@ -1818,12 +1831,10 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnCpuResolutionRequest(
   rtc::CritScope cs(&lock_);
   bool adapt_cpu;
   parameters_.options.cpu_overuse_detection.Get(&adapt_cpu);
-  if (!adapt_cpu) {
+  if (!adapt_cpu)
     return;
-  }
-  if (capturer_ == NULL || capturer_->video_adapter() == NULL) {
+  if (capturer_ == NULL || capturer_->video_adapter() == NULL)
     return;
-  }
 
   capturer_->video_adapter()->OnCpuResolutionRequest(adapt_request);
 }
