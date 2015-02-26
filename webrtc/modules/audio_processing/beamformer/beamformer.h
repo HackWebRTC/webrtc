@@ -36,17 +36,12 @@ class Beamformer : public LappedTransform::Callback {
   // Needs to be called before the Beamformer can be used.
   virtual void Initialize(int chunk_size_ms, int sample_rate_hz);
 
-  // Process one time-domain chunk of audio. The audio can be separated into
-  // two signals by frequency, with the higher half passed in as the second
-  // parameter. Use NULL for |high_pass_split_input| if you only have one
-  // audio signal. The number of frames and channels must correspond to the
-  // ctor parameters. The same signal can be passed in as |input| and |output|.
-  virtual void ProcessChunk(const float* const* input,
-                            const float* const* high_pass_split_input,
-                            int num_input_channels,
-                            int num_frames_per_band,
-                            float* const* output,
-                            float* const* high_pass_split_output);
+  // Process one time-domain chunk of audio. The audio is expected to be split
+  // into frequency bands inside the ChannelBuffer. The number of frames and
+  // channels must correspond to the constructor parameters. The same
+  // ChannelBuffer can be passed in as |input| and |output|.
+  virtual void ProcessChunk(const ChannelBuffer<float>* input,
+                            ChannelBuffer<float>* output);
   // After processing each block |is_target_present_| is set to true if the
   // target signal es present and to false otherwise. This methods can be called
   // to know if the data is target signal or interference and process it

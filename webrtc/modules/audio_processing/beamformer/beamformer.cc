@@ -295,36 +295,32 @@ void Beamformer::InitInterfCovMats() {
   }
 }
 
-void Beamformer::ProcessChunk(const float* const* input,
-                              const float* const* high_pass_split_input,
-                              int num_input_channels,
-                              int num_frames_per_band,
-                              float* const* output,
-                              float* const* high_pass_split_output) {
-  CHECK_EQ(num_input_channels, num_input_channels_);
-  CHECK_EQ(num_frames_per_band, chunk_length_);
+void Beamformer::ProcessChunk(const ChannelBuffer<float>* input,
+                              ChannelBuffer<float>* output) {
+  DCHECK_EQ(input->num_channels(), num_input_channels_);
+  DCHECK_EQ(input->num_frames_per_band(), chunk_length_);
 
   float old_high_pass_mask = high_pass_postfilter_mask_;
-  lapped_transform_->ProcessChunk(input, output);
-
+  lapped_transform_->ProcessChunk(input->channels(0), output->channels(0));
+  // Ramp up/down for smoothing. 1 mask per 10ms results in audible
+  // discontinuities.
+  const float ramp_increment =
+      (high_pass_postfilter_mask_ - old_high_pass_mask) /
+      input->num_frames_per_band();
   // Apply delay and sum and post-filter in the time domain. WARNING: only works
   // because delay-and-sum is not frequency dependent.
-  if (high_pass_split_input != NULL) {
-    // Ramp up/down for smoothing. 1 mask per 10ms results in audible
-    // discontinuities.
-    float ramp_inc =
-        (high_pass_postfilter_mask_ - old_high_pass_mask) / num_frames_per_band;
-    for (int i = 0; i < num_frames_per_band; ++i) {
-      old_high_pass_mask += ramp_inc;
+  for (int i = 1; i < input->num_bands(); ++i) {
+    float smoothed_mask = old_high_pass_mask;
+    for (int j = 0; j < input->num_frames_per_band(); ++j) {
+      smoothed_mask += ramp_increment;
 
       // Applying the delay and sum (at zero degrees, this is equivalent to
       // averaging).
       float sum = 0.f;
-      for (int j = 0; j < num_input_channels; ++j) {
-        sum += high_pass_split_input[j][i];
+      for (int k = 0; k < input->num_channels(); ++k) {
+        sum += input->channels(i)[k][j];
       }
-      high_pass_split_output[0][i] =
-          sum / num_input_channels * old_high_pass_mask;
+      output->channels(i)[0][j] = sum / input->num_channels() * smoothed_mask;
     }
   }
 }

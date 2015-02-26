@@ -610,12 +610,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
 
 #ifdef WEBRTC_BEAMFORMER
   if (beamformer_enabled_) {
-    beamformer_->ProcessChunk(ca->split_channels_const_f(kBand0To8kHz),
-                              ca->split_channels_const_f(kBand8To16kHz),
-                              ca->num_channels(),
-                              ca->num_frames_per_band(),
-                              ca->split_channels_f(kBand0To8kHz),
-                              ca->split_channels_f(kBand8To16kHz));
+    beamformer_->ProcessChunk(ca->split_data_f(), ca->split_data_f());
     ca->set_num_channels(1);
   }
 #endif

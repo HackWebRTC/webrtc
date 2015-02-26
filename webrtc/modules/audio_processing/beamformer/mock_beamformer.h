@@ -24,12 +24,8 @@ class MockBeamformer : public Beamformer {
   ~MockBeamformer() override;
 
   MOCK_METHOD2(Initialize, void(int chunk_size_ms, int sample_rate_hz));
-  MOCK_METHOD6(ProcessChunk, void(const float* const* input,
-                                  const float* const* high_pass_split_input,
-                                  int num_input_channels,
-                                  int num_frames_per_band,
-                                  float* const* output,
-                                  float* const* high_pass_split_output));
+  MOCK_METHOD2(ProcessChunk, void(const ChannelBuffer<float>* input,
+                                  ChannelBuffer<float>* output));
   MOCK_METHOD0(is_target_present, bool());
 };
 

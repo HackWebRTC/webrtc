@@ -71,12 +71,7 @@ int main(int argc, char* argv[]) {
       break;
     }
 
-    bf.ProcessChunk(captured_audio_cb.channels(),
-                    NULL,
-                    FLAGS_num_input_channels,
-                    kChunkSize,
-                    captured_audio_cb.channels(),
-                    NULL);
+    bf.ProcessChunk(&captured_audio_cb, &captured_audio_cb);
     webrtc::PcmWriteFromFloat(
         write_file, kChunkSize, 1, captured_audio_cb.channels());
   }
