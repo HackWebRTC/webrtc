@@ -187,11 +187,11 @@
             'examples/objc/AppRTCDemo/RTCSessionDescription+JSON.m',
           ],
           'include_dirs': [
-            'examples/objc/APPRTCDemo',
+            'examples/objc/AppRTCDemo',
           ],
           'direct_dependent_settings': {
             'include_dirs': [
-              'examples/objc/APPRTCDemo',
+              'examples/objc/AppRTCDemo',
             ],
           },
           'export_dependent_settings': [
