@@ -11,8 +11,8 @@
 #include <map>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/rtp_file_reader.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
@@ -43,7 +43,7 @@ class TestRtpFileReader : public ::testing::Test {
   }
 
  private:
-  scoped_ptr<test::RtpFileReader> rtp_packet_source_;
+  rtc::scoped_ptr<test::RtpFileReader> rtp_packet_source_;
   bool headers_only_file_;
 };
 
@@ -93,7 +93,7 @@ class TestPcapFileReader : public ::testing::Test {
   }
 
  private:
-  scoped_ptr<test::RtpFileReader> rtp_packet_source_;
+  rtc::scoped_ptr<test::RtpFileReader> rtp_packet_source_;
 };
 
 TEST_F(TestPcapFileReader, TestEthernetIIFrame) {

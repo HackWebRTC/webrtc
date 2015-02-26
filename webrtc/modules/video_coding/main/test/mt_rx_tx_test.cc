@@ -156,11 +156,10 @@ int MTRxTxTest(CmdArgs& args)
     configuration.audio = false;
     configuration.outgoing_transport = outgoingTransport;
     RtpRtcp* rtp = RtpRtcp::CreateRtpRtcp(configuration);
-    scoped_ptr<RTPPayloadRegistry> registry(new RTPPayloadRegistry(
-        RTPPayloadStrategy::CreateStrategy(false)));
-    scoped_ptr<RtpReceiver> rtp_receiver(
-        RtpReceiver::CreateVideoReceiver(-1, Clock::GetRealTimeClock(),
-                                         &dataCallback, NULL, registry.get()));
+    rtc::scoped_ptr<RTPPayloadRegistry> registry(
+        new RTPPayloadRegistry(RTPPayloadStrategy::CreateStrategy(false)));
+    rtc::scoped_ptr<RtpReceiver> rtp_receiver(RtpReceiver::CreateVideoReceiver(
+        -1, Clock::GetRealTimeClock(), &dataCallback, NULL, registry.get()));
 
     // registering codecs for the RTP module
     VideoCodec video_codec;

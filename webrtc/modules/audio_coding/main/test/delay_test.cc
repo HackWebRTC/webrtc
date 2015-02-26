@@ -15,6 +15,7 @@
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
@@ -25,7 +26,6 @@
 #include "webrtc/modules/audio_coding/main/test/PCMFile.h"
 #include "webrtc/modules/audio_coding/main/test/utility.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 DEFINE_string(codec, "isac", "Codec Name");
@@ -229,8 +229,8 @@ class DelayTest {
     out_file_b_.Close();
   }
 
-  scoped_ptr<AudioCodingModule> acm_a_;
-  scoped_ptr<AudioCodingModule> acm_b_;
+  rtc::scoped_ptr<AudioCodingModule> acm_a_;
+  rtc::scoped_ptr<AudioCodingModule> acm_b_;
 
   Channel* channel_a2b_;
 

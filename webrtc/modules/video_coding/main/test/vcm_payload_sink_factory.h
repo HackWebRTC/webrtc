@@ -12,9 +12,9 @@
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/modules/video_coding/main/test/rtp_player.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 class NullEventFactory;
 
@@ -53,8 +53,8 @@ class VcmPayloadSinkFactory : public PayloadSinkFactoryInterface {
   int64_t rtt_ms_;
   uint32_t render_delay_ms_;
   uint32_t min_playout_delay_ms_;
-  scoped_ptr<NullEventFactory> null_event_factory_;
-  scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  rtc::scoped_ptr<NullEventFactory> null_event_factory_;
+  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
   Sinks sinks_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(VcmPayloadSinkFactory);

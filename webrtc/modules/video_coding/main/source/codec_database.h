@@ -13,11 +13,11 @@
 
 #include <map>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/source/generic_decoder.h"
 #include "webrtc/modules/video_coding/main/source/generic_encoder.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -28,7 +28,7 @@ struct VCMDecoderMapItem {
                     int number_of_cores,
                     bool require_key_frame);
 
-  scoped_ptr<VideoCodec> settings;
+  rtc::scoped_ptr<VideoCodec> settings;
   int number_of_cores;
   bool require_key_frame;
 };

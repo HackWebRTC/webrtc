@@ -11,8 +11,8 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/video_engine/call_stats.h"
 
@@ -36,7 +36,7 @@ class CallStatsTest : public ::testing::Test {
     TickTime::UseFakeClock(12345);
     call_stats_.reset(new CallStats());
   }
-  scoped_ptr<CallStats> call_stats_;
+  rtc::scoped_ptr<CallStats> call_stats_;
 };
 
 TEST_F(CallStatsTest, AddAndTriggerCallback) {

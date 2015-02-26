@@ -55,7 +55,7 @@ class DebugRecorder {
   }
 
  private:
-  scoped_ptr<CriticalSectionWrapper> cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> cs_;
   FILE* file_ GUARDED_BY(cs_);
 };
 

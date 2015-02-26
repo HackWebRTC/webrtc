@@ -43,7 +43,7 @@ class AcmGenericCodecOpusTest : public ::testing::Test {
     return ptr;
   }
   WebRtcACMCodecParams acm_codec_params_;
-  scoped_ptr<ACMGenericCodec> codec_wrapper_;
+  rtc::scoped_ptr<ACMGenericCodec> codec_wrapper_;
 };
 
 TEST_F(AcmGenericCodecOpusTest, DefaultApplicationModeMono) {

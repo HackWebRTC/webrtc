@@ -14,11 +14,11 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/interface/fec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_test_helper.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 using ::testing::_;
 using ::testing::Args;
@@ -82,9 +82,9 @@ class ReceiverFecTest : public ::testing::Test {
   }
 
   MockRtpData rtp_data_callback_;
-  scoped_ptr<ForwardErrorCorrection> fec_;
-  scoped_ptr<FecReceiver> receiver_fec_;
-  scoped_ptr<FrameGenerator> generator_;
+  rtc::scoped_ptr<ForwardErrorCorrection> fec_;
+  rtc::scoped_ptr<FecReceiver> receiver_fec_;
+  rtc::scoped_ptr<FrameGenerator> generator_;
 };
 
 void DeletePackets(std::list<Packet*>* packets) {

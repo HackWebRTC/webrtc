@@ -11,12 +11,12 @@
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test.h"
 
 #include "webrtc/base/common.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet_receiver.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet_sender.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 using std::string;
 using std::vector;

@@ -13,11 +13,11 @@
 
 #include <deque>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/system_wrappers/interface/atomic32.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/voice_engine/test/auto_test/fixtures/before_initialization_fixture.h"
@@ -124,9 +124,9 @@ class LoopBackTransport : public webrtc::Transport {
     return true;
   }
 
-  const webrtc::scoped_ptr<webrtc::CriticalSectionWrapper> crit_;
-  const webrtc::scoped_ptr<webrtc::EventWrapper> packet_event_;
-  const webrtc::scoped_ptr<webrtc::ThreadWrapper> thread_;
+  const rtc::scoped_ptr<webrtc::CriticalSectionWrapper> crit_;
+  const rtc::scoped_ptr<webrtc::EventWrapper> packet_event_;
+  const rtc::scoped_ptr<webrtc::ThreadWrapper> thread_;
   std::deque<Packet> packet_queue_ GUARDED_BY(crit_.get());
   webrtc::VoENetwork* const voe_network_;
   webrtc::Atomic32 transmitted_packets_;
@@ -143,7 +143,7 @@ class AfterInitializationFixture : public BeforeInitializationFixture {
   virtual ~AfterInitializationFixture();
 
  protected:
-  webrtc::scoped_ptr<TestErrorObserver> error_observer_;
+  rtc::scoped_ptr<TestErrorObserver> error_observer_;
 };
 
 #endif  // SRC_VOICE_ENGINE_MAIN_TEST_AUTO_TEST_STANDARD_TEST_BASE_AFTER_INIT_H_

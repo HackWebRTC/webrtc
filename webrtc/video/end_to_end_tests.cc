@@ -16,6 +16,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
@@ -24,7 +25,6 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/direct_transport.h"
@@ -130,7 +130,7 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
 
     EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
 
-    scoped_ptr<EventWrapper> event_;
+    rtc::scoped_ptr<EventWrapper> event_;
   } renderer;
 
   class TestFrameCallback : public I420FrameCallback {
@@ -145,7 +145,7 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
       event_->Set();
     }
 
-    scoped_ptr<EventWrapper> event_;
+    rtc::scoped_ptr<EventWrapper> event_;
   };
 
   test::DirectTransport sender_transport, receiver_transport;
@@ -168,7 +168,7 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
 
   // Create frames that are smaller than the send width/height, this is done to
   // check that the callbacks are done after processing video.
-  scoped_ptr<test::FrameGenerator> frame_generator(
+  rtc::scoped_ptr<test::FrameGenerator> frame_generator(
       test::FrameGenerator::CreateChromaGenerator(kWidth, kHeight));
   send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
   EXPECT_EQ(kEventSignaled, pre_render_callback.Wait())
@@ -197,7 +197,7 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
 
     EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
 
-    scoped_ptr<EventWrapper> event_;
+    rtc::scoped_ptr<EventWrapper> event_;
   } renderer;
 
   test::DirectTransport sender_transport, receiver_transport;
@@ -215,7 +215,7 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
   CreateStreams();
   Start();
 
-  scoped_ptr<test::FrameGenerator> frame_generator(
+  rtc::scoped_ptr<test::FrameGenerator> frame_generator(
       test::FrameGenerator::CreateChromaGenerator(
           encoder_config_.streams[0].width, encoder_config_.streams[0].height));
   send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
@@ -275,8 +275,8 @@ TEST_F(EndToEndTest, SendsAndReceivesVP9) {
     virtual bool IsTextureSupported() const override { return false; }
 
    private:
-    scoped_ptr<webrtc::VideoEncoder> encoder_;
-    scoped_ptr<webrtc::VideoDecoder> decoder_;
+    rtc::scoped_ptr<webrtc::VideoEncoder> encoder_;
+    rtc::scoped_ptr<webrtc::VideoDecoder> decoder_;
     int frame_counter_;
   } test;
 
@@ -443,7 +443,7 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
              "rendered.";
     }
 
-    scoped_ptr<RtpHeaderParser> rtp_parser_;
+    rtc::scoped_ptr<RtpHeaderParser> rtp_parser_;
     std::set<uint16_t> dropped_packets_;
     std::set<uint16_t> retransmitted_packets_;
     uint64_t sent_rtp_packets_;
@@ -774,7 +774,7 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
     virtual bool IsTextureSupported() const override { return false; }
 
     EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
-    scoped_ptr<EventWrapper> event_;
+    rtc::scoped_ptr<EventWrapper> event_;
   } renderer;
 
   class TestFrameCallback : public I420FrameCallback {
@@ -805,7 +805,7 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
       event_->Set();
     }
 
-    scoped_ptr<EventWrapper> event_;
+    rtc::scoped_ptr<EventWrapper> event_;
     int expected_luma_byte_;
     int next_luma_byte_;
   };
@@ -822,7 +822,7 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
   CreateSendConfig(1);
-  scoped_ptr<VideoEncoder> encoder(
+  rtc::scoped_ptr<VideoEncoder> encoder(
       VideoEncoder::Create(VideoEncoder::kVp8));
   send_config_.encoder_settings.encoder = encoder.get();
   send_config_.encoder_settings.payload_name = "VP8";
@@ -840,7 +840,7 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
 
   // Create frames that are smaller than the send width/height, this is done to
   // check that the callbacks are done after processing video.
-  scoped_ptr<test::FrameGenerator> frame_generator(
+  rtc::scoped_ptr<test::FrameGenerator> frame_generator(
       test::FrameGenerator::CreateChromaGenerator(kWidth / 2, kHeight / 2));
   send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
 
@@ -981,7 +981,7 @@ TEST_F(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
     }
 
     PacketReceiver* receiver_;
-    scoped_ptr<EventWrapper> delivered_packet_;
+    rtc::scoped_ptr<EventWrapper> delivered_packet_;
   };
 
   test::DirectTransport send_transport, receive_transport;
@@ -1134,7 +1134,7 @@ TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
     test::FrameGeneratorCapturer** capturer_;
     int width_;
     int height_;
-    scoped_ptr<EventWrapper> done_;
+    rtc::scoped_ptr<EventWrapper> done_;
   };
 
   struct {
@@ -1144,8 +1144,9 @@ TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
   } codec_settings[kNumStreams] = {{1, 640, 480}, {2, 320, 240}, {3, 240, 160}};
 
   test::DirectTransport sender_transport, receiver_transport;
-  scoped_ptr<Call> sender_call(Call::Create(Call::Config(&sender_transport)));
-  scoped_ptr<Call> receiver_call(
+  rtc::scoped_ptr<Call> sender_call(
+      Call::Create(Call::Config(&sender_transport)));
+  rtc::scoped_ptr<Call> receiver_call(
       Call::Create(Call::Config(&receiver_transport)));
   sender_transport.SetReceiver(receiver_call->Receiver());
   receiver_transport.SetReceiver(sender_call->Receiver());
@@ -1156,7 +1157,7 @@ TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
   VideoOutputObserver* observers[kNumStreams];
   test::FrameGeneratorCapturer* frame_generators[kNumStreams];
 
-  scoped_ptr<VideoEncoder> encoders[kNumStreams];
+  rtc::scoped_ptr<VideoEncoder> encoders[kNumStreams];
   for (size_t i = 0; i < kNumStreams; ++i)
     encoders[i].reset(VideoEncoder::Create(VideoEncoder::kVp8));
 
@@ -1247,10 +1248,10 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
     }
 
    private:
-    scoped_ptr<uint8_t[]> buffer_;
+    rtc::scoped_ptr<uint8_t[]> buffer_;
     size_t length_;
     FrameType frame_type_;
-    scoped_ptr<EventWrapper> called_;
+    rtc::scoped_ptr<EventWrapper> called_;
   };
 
   EncodedFrameTestObserver post_encode_observer;
@@ -1272,7 +1273,7 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
   CreateStreams();
   Start();
 
-  scoped_ptr<test::FrameGenerator> frame_generator(
+  rtc::scoped_ptr<test::FrameGenerator> frame_generator(
       test::FrameGenerator::CreateChromaGenerator(
           encoder_config_.streams[0].width, encoder_config_.streams[0].height));
   send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
@@ -1868,7 +1869,7 @@ TEST_F(EndToEndTest, GetStats) {
     std::set<uint32_t> expected_send_ssrcs_;
     std::string expected_cname_;
 
-    scoped_ptr<EventWrapper> check_stats_event_;
+    rtc::scoped_ptr<EventWrapper> check_stats_event_;
   };
 
   FakeNetworkPipe::Config network_config;
@@ -2094,7 +2095,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
     std::map<uint32_t, uint32_t> last_observed_timestamp_;
     std::map<uint32_t, bool> configured_ssrcs_;
 
-    scoped_ptr<CriticalSectionWrapper> crit_;
+    rtc::scoped_ptr<CriticalSectionWrapper> crit_;
     size_t ssrcs_to_observe_ GUARDED_BY(crit_);
     std::map<uint32_t, bool> ssrc_observed_ GUARDED_BY(crit_);
   } observer(use_rtx);
@@ -2354,9 +2355,9 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
       }
     }
 
-    const scoped_ptr<CriticalSectionWrapper> test_crit_;
-    const scoped_ptr<EventWrapper> encoded_frames_;
-    const scoped_ptr<EventWrapper> packet_event_;
+    const rtc::scoped_ptr<CriticalSectionWrapper> test_crit_;
+    const rtc::scoped_ptr<EventWrapper> encoded_frames_;
+    const rtc::scoped_ptr<EventWrapper> packet_event_;
     Call* sender_call_;
     Call* receiver_call_;
     Call::NetworkState sender_state_ GUARDED_BY(test_crit_);
@@ -2467,7 +2468,7 @@ TEST_F(EndToEndTest, NewReceiveStreamsRespectNetworkDown) {
 // a backend. This is to test that we hand channels back properly.
 TEST_F(EndToEndTest, CanCreateAndDestroyManyVideoStreams) {
   test::NullTransport transport;
-  scoped_ptr<Call> call(Call::Create(Call::Config(&transport)));
+  rtc::scoped_ptr<Call> call(Call::Create(Call::Config(&transport)));
   test::FakeDecoder fake_decoder;
   test::FakeEncoder fake_encoder(Clock::GetRealTimeClock());
   for (size_t i = 0; i < 100; ++i) {

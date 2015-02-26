@@ -12,8 +12,8 @@
 
 #include <string>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_device/include/fake_audio_device.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -57,11 +57,11 @@ class FakeAudioDevice : public FakeAudioDeviceModule {
   int64_t last_playout_ms_;
 
   Clock* clock_;
-  scoped_ptr<EventWrapper> tick_;
-  scoped_ptr<CriticalSectionWrapper> lock_;
-  scoped_ptr<ThreadWrapper> thread_;
-  scoped_ptr<ModuleFileUtility> file_utility_;
-  scoped_ptr<FileWrapper> input_stream_;
+  rtc::scoped_ptr<EventWrapper> tick_;
+  rtc::scoped_ptr<CriticalSectionWrapper> lock_;
+  rtc::scoped_ptr<ThreadWrapper> thread_;
+  rtc::scoped_ptr<ModuleFileUtility> file_utility_;
+  rtc::scoped_ptr<FileWrapper> input_stream_;
 };
 }  // namespace test
 }  // namespace webrtc

@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
@@ -29,7 +30,6 @@
 #include "webrtc/modules/remote_bitrate_estimator/test/packet.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -224,7 +224,7 @@ class RateCounterFilter : public PacketProcessor {
   virtual void RunFor(int64_t time_ms, Packets* in_out);
 
  private:
-  scoped_ptr<RateCounter> rate_counter_;
+  rtc::scoped_ptr<RateCounter> rate_counter_;
   Stats<double> packets_per_second_stats_;
   Stats<double> kbps_stats_;
   std::string name_;
@@ -314,7 +314,7 @@ class ChokeFilter : public PacketProcessor {
  private:
   uint32_t kbps_;
   int64_t last_send_time_us_;
-  scoped_ptr<DelayCapHelper> delay_cap_helper_;
+  rtc::scoped_ptr<DelayCapHelper> delay_cap_helper_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(ChokeFilter);
 };
@@ -348,9 +348,9 @@ class TraceBasedDeliveryFilter : public PacketProcessor {
   TimeList delivery_times_us_;
   TimeList::const_iterator next_delivery_it_;
   int64_t local_time_us_;
-  scoped_ptr<RateCounter> rate_counter_;
+  rtc::scoped_ptr<RateCounter> rate_counter_;
   std::string name_;
-  scoped_ptr<DelayCapHelper> delay_cap_helper_;
+  rtc::scoped_ptr<DelayCapHelper> delay_cap_helper_;
   Stats<double> packets_per_second_stats_;
   Stats<double> kbps_stats_;
 

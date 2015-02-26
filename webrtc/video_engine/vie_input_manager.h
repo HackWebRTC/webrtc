@@ -13,8 +13,8 @@
 
 #include <map>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_capture/include/video_capture.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/video_engine/include/vie_capture.h"
@@ -98,8 +98,8 @@ class ViEInputManager : private ViEManagerBase {
 
   const Config& config_;
   int engine_id_;
-  scoped_ptr<CriticalSectionWrapper> map_cs_;
-  scoped_ptr<CriticalSectionWrapper> device_info_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> map_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> device_info_cs_;
 
   typedef std::map<int, ViEFrameProviderBase*> FrameProviderMap;
   FrameProviderMap vie_frame_provider_map_;

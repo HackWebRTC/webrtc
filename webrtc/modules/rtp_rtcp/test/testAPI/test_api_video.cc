@@ -130,9 +130,9 @@ class RtpRtcpVideoTest : public ::testing::Test {
   }
 
   int test_id_;
-  scoped_ptr<ReceiveStatistics> receive_statistics_;
+  rtc::scoped_ptr<ReceiveStatistics> receive_statistics_;
   RTPPayloadRegistry rtp_payload_registry_;
-  scoped_ptr<RtpReceiver> rtp_receiver_;
+  rtc::scoped_ptr<RtpReceiver> rtp_receiver_;
   RtpRtcp* video_module_;
   LoopBackTransport* transport_;
   TestRtpReceiver* receiver_;
@@ -173,7 +173,7 @@ TEST_F(RtpRtcpVideoTest, PaddingOnlyFrames) {
                                          kPadSize);
       ++seq_num;
       RTPHeader header;
-      scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+      rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
       EXPECT_TRUE(parser->Parse(padding_packet, packet_size, &header));
       PayloadUnion payload_specific;
       EXPECT_TRUE(rtp_payload_registry_.GetPayloadSpecifics(header.payloadType,

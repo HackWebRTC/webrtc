@@ -13,10 +13,10 @@
 
 #include <list>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/include/vie_network.h"
 #include "webrtc/video_engine/vie_defines.h"
@@ -109,19 +109,19 @@ class ViEReceiver : public RtpData {
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
   void UpdateHistograms();
 
-  scoped_ptr<CriticalSectionWrapper> receive_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> receive_cs_;
   Clock* clock_;
-  scoped_ptr<RtpHeaderParser> rtp_header_parser_;
-  scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
-  scoped_ptr<RtpReceiver> rtp_receiver_;
-  scoped_ptr<ReceiveStatistics> rtp_receive_statistics_;
-  scoped_ptr<FecReceiver> fec_receiver_;
+  rtc::scoped_ptr<RtpHeaderParser> rtp_header_parser_;
+  rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
+  rtc::scoped_ptr<RtpReceiver> rtp_receiver_;
+  rtc::scoped_ptr<ReceiveStatistics> rtp_receive_statistics_;
+  rtc::scoped_ptr<FecReceiver> fec_receiver_;
   RtpRtcp* rtp_rtcp_;
   std::list<RtpRtcp*> rtp_rtcp_simulcast_;
   VideoCodingModule* vcm_;
   RemoteBitrateEstimator* remote_bitrate_estimator_;
 
-  scoped_ptr<RemoteNtpTimeEstimator> ntp_estimator_;
+  rtc::scoped_ptr<RemoteNtpTimeEstimator> ntp_estimator_;
 
   RtpDump* rtp_dump_;
   bool receiving_;

@@ -11,8 +11,8 @@
 #ifndef WEBRTC_TOOLS_AGC_AGC_MANAGER_H_
 #define WEBRTC_TOOLS_AGC_AGC_MANAGER_H_
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_processing/agc/agc_manager_direct.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -66,12 +66,12 @@ class AgcManager {
   int CheckVolumeAndReset();
 
   VoEExternalMedia* media_;
-  scoped_ptr<VolumeCallbacks> volume_callbacks_;
-  scoped_ptr<CriticalSectionWrapper> crit_;
-  scoped_ptr<AudioProcessing> audioproc_;
-  scoped_ptr<AgcManagerDirect> direct_;
-  scoped_ptr<MediaCallback> media_callback_;
-  scoped_ptr<PreprocCallback> preproc_callback_;
+  rtc::scoped_ptr<VolumeCallbacks> volume_callbacks_;
+  rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  rtc::scoped_ptr<AudioProcessing> audioproc_;
+  rtc::scoped_ptr<AgcManagerDirect> direct_;
+  rtc::scoped_ptr<MediaCallback> media_callback_;
+  rtc::scoped_ptr<PreprocCallback> preproc_callback_;
   bool enabled_;
   bool initialized_;
 };

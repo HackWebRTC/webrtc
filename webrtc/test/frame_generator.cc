@@ -118,7 +118,7 @@ class YuvFileGenerator : public FrameGenerator {
   const size_t width_;
   const size_t height_;
   const size_t frame_size_;
-  const scoped_ptr<uint8_t[]> frame_buffer_;
+  const rtc::scoped_ptr<uint8_t[]> frame_buffer_;
   const int frame_display_count_;
   int current_display_count_;
   I420VideoFrame current_frame_;

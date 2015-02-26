@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -139,7 +139,7 @@ class DataLogImpl {
 
   // Collection of tables indexed by the table name as std::string.
   typedef std::map<std::string, LogTable*> TableMap;
-  typedef webrtc::scoped_ptr<CriticalSectionWrapper> CritSectScopedPtr;
+  typedef rtc::scoped_ptr<CriticalSectionWrapper> CritSectScopedPtr;
 
   static CritSectScopedPtr  crit_sect_;
   static DataLogImpl*       instance_;

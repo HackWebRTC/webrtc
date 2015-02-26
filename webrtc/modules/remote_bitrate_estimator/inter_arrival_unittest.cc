@@ -10,9 +10,9 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/inter_arrival.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 namespace testing {
@@ -199,8 +199,8 @@ class InterArrivalTest : public ::testing::Test {
     EXPECT_EQ(expected_packet_size_delta, delta_packet_size);
   }
 
-  scoped_ptr<InterArrival> inter_arrival_rtp_;
-  scoped_ptr<InterArrival> inter_arrival_ast_;
+  rtc::scoped_ptr<InterArrival> inter_arrival_rtp_;
+  rtc::scoped_ptr<InterArrival> inter_arrival_ast_;
 };
 
 TEST_F(InterArrivalTest, FirstPacket) {

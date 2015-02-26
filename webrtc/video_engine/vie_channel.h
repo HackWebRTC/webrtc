@@ -13,12 +13,12 @@
 
 #include <list>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/scoped_refptr.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/typedefs.h"
@@ -425,7 +425,7 @@ class ViEChannel
     // Note: this should be implemented with a RW-lock to allow simultaneous
     // calls into the callback. However that doesn't seem to be needed for the
     // current type of callbacks covered by this class.
-    scoped_ptr<CriticalSectionWrapper> critsect_;
+    rtc::scoped_ptr<CriticalSectionWrapper> critsect_;
     T* callback_ GUARDED_BY(critsect_);
 
    private:
@@ -496,15 +496,15 @@ class ViEChannel
   uint8_t num_socket_threads_;
 
   // Used for all registered callbacks except rendering.
-  scoped_ptr<CriticalSectionWrapper> callback_cs_;
-  scoped_ptr<CriticalSectionWrapper> rtp_rtcp_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> callback_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> rtp_rtcp_cs_;
 
   // Owned modules/classes.
-  scoped_ptr<RtpRtcp> rtp_rtcp_;
+  rtc::scoped_ptr<RtpRtcp> rtp_rtcp_;
   std::list<RtpRtcp*> simulcast_rtp_rtcp_;
   std::list<RtpRtcp*> removed_rtp_rtcp_;
   scoped_refptr<PayloadRouter> send_payload_router_;
-  scoped_ptr<ViEChannelProtectionCallback> vcm_protection_callback_;
+  rtc::scoped_ptr<ViEChannelProtectionCallback> vcm_protection_callback_;
 
   VideoCodingModule* const vcm_;
   ViEReceiver vie_receiver_;
@@ -512,7 +512,7 @@ class ViEChannel
   ViESyncModule vie_sync_;
 
   // Helper to report call statistics.
-  scoped_ptr<ChannelStatsObserver> stats_observer_;
+  rtc::scoped_ptr<ChannelStatsObserver> stats_observer_;
 
   // Not owned.
   VCMReceiveStatisticsCallback* vcm_receive_stats_callback_
@@ -526,7 +526,7 @@ class ViEChannel
   RtcpRttStats* rtt_stats_;
   PacedSender* paced_sender_;
 
-  scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;
+  rtc::scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;
   int send_timestamp_extension_id_;
   int absolute_send_time_extension_id_;
 
@@ -551,8 +551,8 @@ class ViEChannel
   int max_nack_reordering_threshold_;
   I420FrameCallback* pre_render_callback_;
 
-  scoped_ptr<ReportBlockStats> report_block_stats_sender_;
-  scoped_ptr<ReportBlockStats> report_block_stats_receiver_;
+  rtc::scoped_ptr<ReportBlockStats> report_block_stats_sender_;
+  rtc::scoped_ptr<ReportBlockStats> report_block_stats_receiver_;
 };
 
 }  // namespace webrtc

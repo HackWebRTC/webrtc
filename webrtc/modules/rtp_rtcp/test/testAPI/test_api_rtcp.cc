@@ -179,14 +179,14 @@ class RtpRtcpRtcpTest : public ::testing::Test {
   }
 
   int test_id;
-  scoped_ptr<TestRtpFeedback> rtp_feedback1_;
-  scoped_ptr<TestRtpFeedback> rtp_feedback2_;
-  scoped_ptr<ReceiveStatistics> receive_statistics1_;
-  scoped_ptr<ReceiveStatistics> receive_statistics2_;
-  scoped_ptr<RTPPayloadRegistry> rtp_payload_registry1_;
-  scoped_ptr<RTPPayloadRegistry> rtp_payload_registry2_;
-  scoped_ptr<RtpReceiver> rtp_receiver1_;
-  scoped_ptr<RtpReceiver> rtp_receiver2_;
+  rtc::scoped_ptr<TestRtpFeedback> rtp_feedback1_;
+  rtc::scoped_ptr<TestRtpFeedback> rtp_feedback2_;
+  rtc::scoped_ptr<ReceiveStatistics> receive_statistics1_;
+  rtc::scoped_ptr<ReceiveStatistics> receive_statistics2_;
+  rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry1_;
+  rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry2_;
+  rtc::scoped_ptr<RtpReceiver> rtp_receiver1_;
+  rtc::scoped_ptr<RtpReceiver> rtp_receiver2_;
   RtpRtcp* module1;
   RtpRtcp* module2;
   TestRtpReceiver* receiver;

@@ -14,10 +14,10 @@
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet_source.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -61,7 +61,7 @@ class AcmSendTest : public AudioPacketizationCallback, public PacketSource {
   Packet* CreatePacket();
 
   SimulatedClock clock_;
-  scoped_ptr<AudioCoding> acm_;
+  rtc::scoped_ptr<AudioCoding> acm_;
   InputAudioFile* audio_source_;
   int source_rate_hz_;
   const int input_block_size_samples_;

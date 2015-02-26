@@ -13,8 +13,8 @@
 
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -88,10 +88,10 @@ class ViEFrameProviderBase {
   // Frame callbacks.
   typedef std::vector<ViEFrameCallback*> FrameCallbacks;
   FrameCallbacks frame_callbacks_;
-  scoped_ptr<CriticalSectionWrapper> provider_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> provider_cs_;
 
  private:
-  scoped_ptr<I420VideoFrame> extra_frame_;
+  rtc::scoped_ptr<I420VideoFrame> extra_frame_;
   int frame_delay_;
 };
 

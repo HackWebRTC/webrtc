@@ -15,11 +15,11 @@
 #include <SLES/OpenSLES_Android.h>
 #include <SLES/OpenSLES_AndroidConfiguration.h>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_device/android/audio_manager_jni.h"
 #include "webrtc/modules/audio_device/android/low_latency_event.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -188,8 +188,8 @@ class OpenSlesInput {
 
   // Members that are read/write accessed concurrently by the process thread and
   // threads calling public functions of this class.
-  scoped_ptr<ThreadWrapper> rec_thread_;  // Processing thread
-  scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  rtc::scoped_ptr<ThreadWrapper> rec_thread_;  // Processing thread
+  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
   // This member controls the starting and stopping of recording audio to the
   // the device.
   bool recording_;
@@ -197,7 +197,7 @@ class OpenSlesInput {
   // Only one thread, T1, may push and only one thread, T2, may pull. T1 may or
   // may not be the same thread as T2. T2 is the process thread and T1 is the
   // OpenSL thread.
-  scoped_ptr<SingleRwFifo> fifo_;
+  rtc::scoped_ptr<SingleRwFifo> fifo_;
   int num_fifo_buffers_needed_;
   LowLatencyEvent event_;
   int number_overruns_;
@@ -212,7 +212,7 @@ class OpenSlesInput {
   // Audio buffers
   AudioDeviceBuffer* audio_buffer_;
   // Holds all allocated memory such that it is deallocated properly.
-  scoped_ptr<scoped_ptr<int8_t[]>[]> rec_buf_;
+  rtc::scoped_ptr<rtc::scoped_ptr<int8_t[]>[]> rec_buf_;
   // Index in |rec_buf_| pointing to the audio buffer that will be ready the
   // next time RecorderSimpleBufferQueueCallbackHandler is invoked.
   // Ready means buffer contains audio data from the device.

@@ -313,7 +313,7 @@ bool RTPSenderVideo::Send(const RtpVideoCodecTypes videoType,
   const uint8_t* data = payloadData;
   size_t max_payload_length = _rtpSender.MaxDataPayloadLength();
 
-  scoped_ptr<RtpPacketizer> packetizer(RtpPacketizer::Create(
+  rtc::scoped_ptr<RtpPacketizer> packetizer(RtpPacketizer::Create(
       videoType, max_payload_length, rtpTypeHdr, frameType));
 
   // TODO(changbin): we currently don't support to configure the codec to

@@ -32,9 +32,9 @@ class FullBweSender : public BweSender, public RemoteBitrateObserver {
   int Process() override;
 
  protected:
-  scoped_ptr<BitrateController> bitrate_controller_;
-  scoped_ptr<RemoteBitrateEstimator> rbe_;
-  scoped_ptr<RtcpBandwidthObserver> feedback_observer_;
+  rtc::scoped_ptr<BitrateController> bitrate_controller_;
+  rtc::scoped_ptr<RemoteBitrateEstimator> rbe_;
+  rtc::scoped_ptr<RtcpBandwidthObserver> feedback_observer_;
 
  private:
   Clock* const clock_;

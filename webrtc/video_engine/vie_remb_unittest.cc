@@ -16,10 +16,10 @@
 
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/mock/mock_process_thread.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/video_engine/vie_remb.h"
 
@@ -37,8 +37,8 @@ class ViERembTest : public ::testing::Test {
     process_thread_.reset(new NiceMock<MockProcessThread>);
     vie_remb_.reset(new VieRemb());
   }
-  scoped_ptr<MockProcessThread> process_thread_;
-  scoped_ptr<VieRemb> vie_remb_;
+  rtc::scoped_ptr<MockProcessThread> process_thread_;
+  rtc::scoped_ptr<VieRemb> vie_remb_;
 };
 
 TEST_F(ViERembTest, OneModuleTestForSendingRemb) {

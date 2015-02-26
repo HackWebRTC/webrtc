@@ -12,9 +12,9 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_processing/agc/mock_agc.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
@@ -72,7 +72,7 @@ class AgcManagerTest : public ::testing::Test {
   VoiceEngine* voe_;
   VoEBase* base_;
   MockAgc* agc_;
-  scoped_ptr<test::VoiceChannelTransport> channel_transport_;
+  rtc::scoped_ptr<test::VoiceChannelTransport> channel_transport_;
   // We use a pointer for the manager, so we can tear it down and test
   // base_->Release() in the destructor.
   AgcManager* manager_;

@@ -13,10 +13,10 @@
 
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/vad/include/vad.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/codecs/cng/include/webrtc_cng.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -63,7 +63,7 @@ class AudioEncoderCng final : public AudioEncoder {
 
  private:
   // Deleter for use with scoped_ptr. E.g., use as
-  //   scoped_ptr<CNG_enc_inst, CngInstDeleter> cng_inst_;
+  //   rtc::scoped_ptr<CNG_enc_inst, CngInstDeleter> cng_inst_;
   struct CngInstDeleter {
     inline void operator()(CNG_enc_inst* ptr) const { WebRtcCng_FreeEnc(ptr); }
   };
@@ -81,8 +81,8 @@ class AudioEncoderCng final : public AudioEncoder {
   uint32_t first_timestamp_in_buffer_;
   int frames_in_buffer_;
   bool last_frame_active_;
-  scoped_ptr<Vad> vad_;
-  scoped_ptr<CNG_enc_inst, CngInstDeleter> cng_inst_;
+  rtc::scoped_ptr<Vad> vad_;
+  rtc::scoped_ptr<CNG_enc_inst, CngInstDeleter> cng_inst_;
 };
 
 }  // namespace webrtc

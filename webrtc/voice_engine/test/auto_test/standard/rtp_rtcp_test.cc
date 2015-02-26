@@ -35,9 +35,9 @@ class TestRtpObserver : public webrtc::VoERTPObserver {
     incoming_ssrc_ = ssrc;
   }
  public:
-  voetest::scoped_ptr<voetest::CriticalSectionWrapper> crit_;
+  rtc::scoped_ptr<voetest::CriticalSectionWrapper> crit_;
   unsigned int incoming_ssrc_;
-  voetest::scoped_ptr<voetest::EventWrapper> changed_ssrc_event_;
+  rtc::scoped_ptr<voetest::EventWrapper> changed_ssrc_event_;
 };
 
 void TestRtpObserver::OnIncomingSSRCChanged(int channel,

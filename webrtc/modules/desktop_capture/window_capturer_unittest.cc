@@ -11,11 +11,11 @@
 #include "webrtc/modules/desktop_capture/window_capturer.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 #include "webrtc/system_wrappers/interface/logging.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -40,8 +40,8 @@ class WindowCapturerTest : public testing::Test,
   }
 
  protected:
-  scoped_ptr<WindowCapturer> capturer_;
-  scoped_ptr<DesktopFrame> frame_;
+  rtc::scoped_ptr<WindowCapturer> capturer_;
+  rtc::scoped_ptr<DesktopFrame> frame_;
 };
 
 // Verify that we can enumerate windows.

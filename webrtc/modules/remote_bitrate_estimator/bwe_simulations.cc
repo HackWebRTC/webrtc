@@ -205,8 +205,8 @@ TEST_P(BweSimulation, SelfFairnessTest) {
   VerboseLogging(true);
   const int kAllFlowIds[] = {0, 1, 2};
   const size_t kNumFlows = sizeof(kAllFlowIds) / sizeof(kAllFlowIds[0]);
-  scoped_ptr<AdaptiveVideoSource> sources[kNumFlows];
-  scoped_ptr<PacketSender> senders[kNumFlows];
+  rtc::scoped_ptr<AdaptiveVideoSource> sources[kNumFlows];
+  rtc::scoped_ptr<PacketSender> senders[kNumFlows];
   for (size_t i = 0; i < kNumFlows; ++i) {
     // Streams started 20 seconds apart to give them different advantage when
     // competing for the bandwidth.
@@ -218,7 +218,7 @@ TEST_P(BweSimulation, SelfFairnessTest) {
   ChokeFilter choke(&uplink_, CreateFlowIds(kAllFlowIds, kNumFlows));
   choke.SetCapacity(1000);
 
-  scoped_ptr<RateCounterFilter> rate_counters[kNumFlows];
+  rtc::scoped_ptr<RateCounterFilter> rate_counters[kNumFlows];
   for (size_t i = 0; i < kNumFlows; ++i) {
     rate_counters[i].reset(new RateCounterFilter(
         &uplink_, CreateFlowIds(&kAllFlowIds[i], 1), "receiver_input"));
@@ -240,8 +240,8 @@ TEST_P(BweSimulation, PacedSelfFairnessTest) {
   VerboseLogging(true);
   const int kAllFlowIds[] = {0, 1, 2};
   const size_t kNumFlows = sizeof(kAllFlowIds) / sizeof(kAllFlowIds[0]);
-  scoped_ptr<PeriodicKeyFrameSource> sources[kNumFlows];
-  scoped_ptr<PacedVideoSender> senders[kNumFlows];
+  rtc::scoped_ptr<PeriodicKeyFrameSource> sources[kNumFlows];
+  rtc::scoped_ptr<PacedVideoSender> senders[kNumFlows];
 
   for (size_t i = 0; i < kNumFlows; ++i) {
     // Streams started 20 seconds apart to give them different advantage when
@@ -255,7 +255,7 @@ TEST_P(BweSimulation, PacedSelfFairnessTest) {
   ChokeFilter choke(&uplink_, CreateFlowIds(kAllFlowIds, kNumFlows));
   choke.SetCapacity(1000);
 
-  scoped_ptr<RateCounterFilter> rate_counters[kNumFlows];
+  rtc::scoped_ptr<RateCounterFilter> rate_counters[kNumFlows];
   for (size_t i = 0; i < kNumFlows; ++i) {
     rate_counters[i].reset(new RateCounterFilter(
         &uplink_, CreateFlowIds(&kAllFlowIds[i], 1), "receiver_input"));

@@ -15,10 +15,10 @@
 
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -37,7 +37,7 @@ class FrameScaler {
                             int out_height);
 
  private:
-    scoped_ptr<Scaler> scaler_;
+  rtc::scoped_ptr<Scaler> scaler_;
     I420VideoFrame scaled_frame_;
 };
 

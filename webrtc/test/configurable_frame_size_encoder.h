@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/video_encoder.h"
 
 namespace webrtc {
@@ -53,7 +53,7 @@ class ConfigurableFrameSizeEncoder : public VideoEncoder {
   EncodedImageCallback* callback_;
   const size_t max_frame_size_;
   size_t current_frame_size_;
-  scoped_ptr<uint8_t[]> buffer_;
+  rtc::scoped_ptr<uint8_t[]> buffer_;
 };
 
 }  // namespace test

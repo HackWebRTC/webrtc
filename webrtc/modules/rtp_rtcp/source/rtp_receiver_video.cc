@@ -68,7 +68,7 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
   }
 
   // We are not allowed to hold a critical section when calling below functions.
-  scoped_ptr<RtpDepacketizer> depacketizer(
+  rtc::scoped_ptr<RtpDepacketizer> depacketizer(
       RtpDepacketizer::Create(rtp_header->type.Video.codec));
   if (depacketizer.get() == NULL) {
     LOG(LS_ERROR) << "Failed to create depacketizer.";

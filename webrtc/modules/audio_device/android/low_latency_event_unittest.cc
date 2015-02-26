@@ -11,7 +11,7 @@
 #include "webrtc/modules/audio_device/android/low_latency_event.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
@@ -69,7 +69,7 @@ class LowLatencyEventTest : public testing::Test {
 
   LowLatencyEvent event_;
 
-  scoped_ptr<ThreadWrapper> process_thread_;
+  rtc::scoped_ptr<ThreadWrapper> process_thread_;
   bool terminated_;
   int iteration_count_;
   int allowed_iterations_;

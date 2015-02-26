@@ -16,8 +16,8 @@
 #include <list>
 #include <string>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -180,19 +180,19 @@ class AudioProcessingImpl : public AudioProcessing {
   LevelEstimatorImpl* level_estimator_;
   NoiseSuppressionImpl* noise_suppression_;
   VoiceDetectionImpl* voice_detection_;
-  scoped_ptr<GainControlForNewAgc> gain_control_for_new_agc_;
+  rtc::scoped_ptr<GainControlForNewAgc> gain_control_for_new_agc_;
 
   std::list<ProcessingComponent*> component_list_;
   CriticalSectionWrapper* crit_;
-  scoped_ptr<AudioBuffer> render_audio_;
-  scoped_ptr<AudioBuffer> capture_audio_;
+  rtc::scoped_ptr<AudioBuffer> render_audio_;
+  rtc::scoped_ptr<AudioBuffer> capture_audio_;
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   // TODO(andrew): make this more graceful. Ideally we would split this stuff
   // out into a separate class with an "enabled" and "disabled" implementation.
   int WriteMessageToDebugFile();
   int WriteInitMessage();
-  scoped_ptr<FileWrapper> debug_file_;
-  scoped_ptr<audioproc::Event> event_msg_;  // Protobuf message.
+  rtc::scoped_ptr<FileWrapper> debug_file_;
+  rtc::scoped_ptr<audioproc::Event> event_msg_;  // Protobuf message.
   std::string event_str_;  // Memory for protobuf serialization.
 #endif
 
@@ -215,12 +215,12 @@ class AudioProcessingImpl : public AudioProcessing {
 
   // Only set through the constructor's Config parameter.
   const bool use_new_agc_;
-  scoped_ptr<AgcManagerDirect> agc_manager_ GUARDED_BY(crit_);
+  rtc::scoped_ptr<AgcManagerDirect> agc_manager_ GUARDED_BY(crit_);
 
   bool transient_suppressor_enabled_;
-  scoped_ptr<TransientSuppressor> transient_suppressor_;
+  rtc::scoped_ptr<TransientSuppressor> transient_suppressor_;
   const bool beamformer_enabled_;
-  scoped_ptr<Beamformer> beamformer_;
+  rtc::scoped_ptr<Beamformer> beamformer_;
   const std::vector<Point> array_geometry_;
 };
 

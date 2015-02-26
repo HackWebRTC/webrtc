@@ -11,9 +11,9 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_INTERFACE_AUDIO_ENCODER_ILBC_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_INTERFACE_AUDIO_ENCODER_ILBC_H_
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 

@@ -13,8 +13,8 @@
 
 #include <string.h>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/scoped_vector.h"
 #include "webrtc/typedefs.h"
 
@@ -69,12 +69,12 @@ class SplittingFilter {
   void InitBuffers();
 
   int channels_;
-  scoped_ptr<TwoBandsStates[]> two_bands_states_;
-  scoped_ptr<TwoBandsStates[]> band1_states_;
-  scoped_ptr<TwoBandsStates[]> band2_states_;
+  rtc::scoped_ptr<TwoBandsStates[]> two_bands_states_;
+  rtc::scoped_ptr<TwoBandsStates[]> band1_states_;
+  rtc::scoped_ptr<TwoBandsStates[]> band2_states_;
   ScopedVector<PushSincResampler> analysis_resamplers_;
   ScopedVector<PushSincResampler> synthesis_resamplers_;
-  scoped_ptr<int16_t[]> int_buffer_;
+  rtc::scoped_ptr<int16_t[]> int_buffer_;
 };
 
 }  // namespace webrtc

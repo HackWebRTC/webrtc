@@ -37,7 +37,7 @@ class HistogramTest : public ::testing::Test {
 
  private:
   void TestClean();
-  scoped_ptr<Histogram> hist_;
+  rtc::scoped_ptr<Histogram> hist_;
 };
 
 void HistogramTest::TestClean() {

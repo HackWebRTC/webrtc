@@ -11,6 +11,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/common_video/interface/native_handle.h"
@@ -23,7 +24,6 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/scoped_vector.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
@@ -269,7 +269,7 @@ class FakeReceiveStatistics : public NullReceiveStatistics {
     RtcpStatistics stats_;
   };
 
-  scoped_ptr<LossyStatistician> lossy_stats_;
+  rtc::scoped_ptr<LossyStatistician> lossy_stats_;
   StatisticianMap stats_map_;
 };
 
@@ -830,7 +830,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
     Clock* const clock_;
     VideoSendStream* stream_;
 
-    const scoped_ptr<CriticalSectionWrapper> crit_;
+    const rtc::scoped_ptr<CriticalSectionWrapper> crit_;
     TestState test_state_ GUARDED_BY(crit_);
     int rtp_count_ GUARDED_BY(crit_);
     int last_sequence_number_ GUARDED_BY(crit_);
@@ -907,7 +907,7 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
 
     Clock* const clock_;
     internal::TransportAdapter transport_adapter_;
-    const scoped_ptr<CriticalSectionWrapper> crit_;
+    const rtc::scoped_ptr<CriticalSectionWrapper> crit_;
     int64_t last_packet_time_ms_ GUARDED_BY(crit_);
     test::FrameGeneratorCapturer* capturer_ GUARDED_BY(crit_);
   } test;
@@ -999,7 +999,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
           << "Timeout while waiting for low bitrate stats after REMB.";
     }
 
-    scoped_ptr<RtpRtcp> rtp_rtcp_;
+    rtc::scoped_ptr<RtpRtcp> rtp_rtcp_;
     internal::TransportAdapter feedback_transport_;
     VideoSendStream* stream_;
     bool bitrate_capped_;
@@ -1034,7 +1034,7 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndI420VideoFrames) {
     ScopedVector<I420VideoFrame> output_frames_;
 
     // Indicate an output frame has arrived.
-    scoped_ptr<EventWrapper> output_frame_event_;
+    rtc::scoped_ptr<EventWrapper> output_frame_event_;
   };
 
   // Initialize send stream.
@@ -1066,7 +1066,7 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndI420VideoFrames) {
   send_stream_->Start();
   for (size_t i = 0; i < input_frames.size(); i++) {
     // Make a copy of the input frame because the buffer will be swapped.
-    scoped_ptr<I420VideoFrame> frame(input_frames[i]->CloneFrame());
+    rtc::scoped_ptr<I420VideoFrame> frame(input_frames[i]->CloneFrame());
     send_stream_->Input()->SwapFrame(frame.get());
     // Do not send the next frame too fast, so the frame dropper won't drop it.
     if (i < input_frames.size() - 1)
@@ -1135,7 +1135,7 @@ I420VideoFrame* CreateI420VideoFrame(int width, int height, uint8_t data) {
   I420VideoFrame* frame = new I420VideoFrame();
   const int kSizeY = width * height * 2;
   const int kSizeUV = width * height;
-  scoped_ptr<uint8_t[]> buffer(new uint8_t[kSizeY]);
+  rtc::scoped_ptr<uint8_t[]> buffer(new uint8_t[kSizeY]);
   memset(buffer.get(), data, kSizeY);
   frame->CreateFrame(kSizeY,
                      buffer.get(),
@@ -1264,7 +1264,7 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
           << "Timed out while waiting for Encode.";
     }
 
-    scoped_ptr<CriticalSectionWrapper> crit_;
+    rtc::scoped_ptr<CriticalSectionWrapper> crit_;
     VideoSendStream* stream_;
     bool initialized_ GUARDED_BY(crit_);
     bool callback_registered_ GUARDED_BY(crit_);

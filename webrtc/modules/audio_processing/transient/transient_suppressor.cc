@@ -17,6 +17,7 @@
 #include <deque>
 #include <set>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_processing/transient/common.h"
@@ -26,7 +27,6 @@ extern "C" {
 #include "webrtc/modules/audio_processing/utility/fft4g.h"
 }
 #include "webrtc/system_wrappers/interface/logging.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

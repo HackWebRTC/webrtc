@@ -14,6 +14,7 @@
 #include <sstream>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
@@ -21,15 +22,14 @@
 #include "webrtc/modules/video_capture/include/video_capture.h"
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/scoped_refptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 
+using rtc::scoped_ptr;
 using webrtc::CriticalSectionWrapper;
 using webrtc::CriticalSectionScoped;
-using webrtc::scoped_ptr;
 using webrtc::SleepMs;
 using webrtc::TickTime;
 using webrtc::VideoCaptureAlarm;
@@ -472,7 +472,7 @@ TEST_F(VideoCaptureExternalTest, TestExternalCapture) {
   size_t length = webrtc::CalcBufferSize(webrtc::kI420,
                                          test_frame_.width(),
                                          test_frame_.height());
-  webrtc::scoped_ptr<uint8_t[]> test_buffer(new uint8_t[length]);
+  scoped_ptr<uint8_t[]> test_buffer(new uint8_t[length]);
   webrtc::ExtractBuffer(test_frame_, length, test_buffer.get());
   EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
       length, capture_callback_.capability(), 0));
@@ -559,7 +559,7 @@ TEST_F(VideoCaptureExternalTest, DISABLED_ON_WIN(FrameRate)) {
      size_t length = webrtc::CalcBufferSize(webrtc::kI420,
                                             test_frame_.width(),
                                             test_frame_.height());
-     webrtc::scoped_ptr<uint8_t[]> test_buffer(new uint8_t[length]);
+     scoped_ptr<uint8_t[]> test_buffer(new uint8_t[length]);
      webrtc::ExtractBuffer(test_frame_, length, test_buffer.get());
      EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
        length, capture_callback_.capability(), 0));
@@ -575,7 +575,7 @@ TEST_F(VideoCaptureExternalTest, DISABLED_ON_WIN(FrameRate)) {
     size_t length = webrtc::CalcBufferSize(webrtc::kI420,
                                            test_frame_.width(),
                                            test_frame_.height());
-    webrtc::scoped_ptr<uint8_t[]> test_buffer(new uint8_t[length]);
+    scoped_ptr<uint8_t[]> test_buffer(new uint8_t[length]);
     webrtc::ExtractBuffer(test_frame_, length, test_buffer.get());
     EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
       length, capture_callback_.capability(), 0));
@@ -593,7 +593,7 @@ TEST_F(VideoCaptureExternalTest, Rotation) {
   size_t length = webrtc::CalcBufferSize(webrtc::kI420,
                                          test_frame_.width(),
                                          test_frame_.height());
-  webrtc::scoped_ptr<uint8_t[]> test_buffer(new uint8_t[length]);
+  scoped_ptr<uint8_t[]> test_buffer(new uint8_t[length]);
   webrtc::ExtractBuffer(test_frame_, length, test_buffer.get());
   EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
     length, capture_callback_.capability(), 0));

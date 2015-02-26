@@ -14,13 +14,13 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/pacing/include/mock/mock_paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/mock_transport.h"
 #include "webrtc/typedefs.h"
 
@@ -101,7 +101,7 @@ class RtpSenderTest : public ::testing::Test {
 
   SimulatedClock fake_clock_;
   MockPacedSender mock_paced_sender_;
-  scoped_ptr<RTPSender> rtp_sender_;
+  rtc::scoped_ptr<RTPSender> rtp_sender_;
   int payload_;
   LoopbackTransportTest transport_;
   const bool kMarkerBit;
@@ -553,7 +553,7 @@ TEST_F(RtpSenderTest, SendPadding) {
   rtp_header_len += 4;  // 4 extra bytes common to all extension headers.
 
   // Create and set up parser.
-  scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(
+  rtc::scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(
       webrtc::RtpHeaderParser::Create());
   ASSERT_TRUE(rtp_parser.get() != NULL);
   rtp_parser->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
@@ -671,7 +671,7 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
   rtp_sender_->SetRtxSsrc(1234);
 
   // Create and set up parser.
-  scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(
+  rtc::scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(
       webrtc::RtpHeaderParser::Create());
   ASSERT_TRUE(rtp_parser.get() != NULL);
   rtp_parser->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
@@ -1097,7 +1097,7 @@ TEST_F(RtpSenderAudioTest, CheckMarkerBitForTelephoneEvents) {
                                              capture_time_ms+2000,
                                              0, NULL, 0,
                                              NULL));
-  scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(
+  rtc::scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(
       webrtc::RtpHeaderParser::Create());
   ASSERT_TRUE(rtp_parser.get() != NULL);
   webrtc::RTPHeader rtp_header;

@@ -147,12 +147,12 @@ class RtpRtcpAudioTest : public ::testing::Test {
   int test_id;
   RtpRtcp* module1;
   RtpRtcp* module2;
-  scoped_ptr<ReceiveStatistics> receive_statistics1_;
-  scoped_ptr<ReceiveStatistics> receive_statistics2_;
-  scoped_ptr<RtpReceiver> rtp_receiver1_;
-  scoped_ptr<RtpReceiver> rtp_receiver2_;
-  scoped_ptr<RTPPayloadRegistry> rtp_payload_registry1_;
-  scoped_ptr<RTPPayloadRegistry> rtp_payload_registry2_;
+  rtc::scoped_ptr<ReceiveStatistics> receive_statistics1_;
+  rtc::scoped_ptr<ReceiveStatistics> receive_statistics2_;
+  rtc::scoped_ptr<RtpReceiver> rtp_receiver1_;
+  rtc::scoped_ptr<RtpReceiver> rtp_receiver2_;
+  rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry1_;
+  rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry2_;
   VerifyingAudioReceiver* data_receiver1;
   VerifyingAudioReceiver* data_receiver2;
   LoopBackTransport* transport1;

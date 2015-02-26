@@ -12,10 +12,10 @@
 #include <sstream>
 
 #include "webrtc/base/format_macros.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/remote_bitrate_estimator/tools/bwe_rtp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/rtp_file_reader.h"
 
 int main(int argc, char** argv) {
@@ -37,8 +37,8 @@ int main(int argc, char** argv) {
     return -1;
   }
   bool arrival_time_only = (argc >= 5 && strncmp(argv[4], "-t", 2) == 0);
-  webrtc::scoped_ptr<webrtc::test::RtpFileReader> rtp_reader(reader);
-  webrtc::scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(parser);
+  rtc::scoped_ptr<webrtc::test::RtpFileReader> rtp_reader(reader);
+  rtc::scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(parser);
   fprintf(stdout, "seqnum timestamp ts_offset abs_sendtime recvtime "
           "markerbit ssrc size original_size\n");
   int packet_counter = 0;

@@ -13,6 +13,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/md5digest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_receive_test_oldapi.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_send_test_oldapi.h"
@@ -29,7 +30,6 @@
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -131,7 +131,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
   FrameType last_frame_type_ GUARDED_BY(crit_sect_);
   int last_payload_type_ GUARDED_BY(crit_sect_);
   std::vector<uint8_t> last_payload_vec_ GUARDED_BY(crit_sect_);
-  const scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
 };
 
 class AudioCodingModuleTestOldApi : public ::testing::Test {
@@ -205,8 +205,8 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
   }
 
   const int id_;
-  scoped_ptr<RtpUtility> rtp_utility_;
-  scoped_ptr<AudioCodingModule> acm_;
+  rtc::scoped_ptr<RtpUtility> rtp_utility_;
+  rtc::scoped_ptr<AudioCodingModule> acm_;
   PacketizationCallbackStubOldApi packet_cb_;
   WebRtcRTPHeader rtp_header_;
   AudioFrame input_frame_;
@@ -541,16 +541,16 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
     return true;
   }
 
-  scoped_ptr<ThreadWrapper> send_thread_;
-  scoped_ptr<ThreadWrapper> insert_packet_thread_;
-  scoped_ptr<ThreadWrapper> pull_audio_thread_;
-  const scoped_ptr<EventWrapper> test_complete_;
+  rtc::scoped_ptr<ThreadWrapper> send_thread_;
+  rtc::scoped_ptr<ThreadWrapper> insert_packet_thread_;
+  rtc::scoped_ptr<ThreadWrapper> pull_audio_thread_;
+  const rtc::scoped_ptr<EventWrapper> test_complete_;
   int send_count_;
   int insert_packet_count_;
   int pull_audio_count_ GUARDED_BY(crit_sect_);
-  const scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
   int64_t next_insert_packet_time_ms_ GUARDED_BY(crit_sect_);
-  scoped_ptr<SimulatedClock> fake_clock_;
+  rtc::scoped_ptr<SimulatedClock> fake_clock_;
 };
 
 TEST_F(AudioCodingModuleMtTestOldApi, DoTest) {
@@ -675,7 +675,7 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
   void Run(int output_freq_hz, const std::string& checksum_ref) {
     const std::string input_file_name =
         webrtc::test::ResourcePath("audio_coding/neteq_universal_new", "rtp");
-    scoped_ptr<test::RtpFileSource> packet_source(
+    rtc::scoped_ptr<test::RtpFileSource> packet_source(
         test::RtpFileSource::Create(input_file_name));
 #ifdef WEBRTC_ANDROID
     // Filter out iLBC and iSAC-swb since they are not supported on Android.
@@ -907,8 +907,8 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
                                   codec_frame_size_rtp_timestamps));
   }
 
-  scoped_ptr<test::AcmSendTestOldApi> send_test_;
-  scoped_ptr<test::InputAudioFile> audio_source_;
+  rtc::scoped_ptr<test::AcmSendTestOldApi> send_test_;
+  rtc::scoped_ptr<test::InputAudioFile> audio_source_;
   uint32_t frame_size_rtp_timestamps_;
   int packet_count_;
   uint8_t payload_type_;

@@ -25,10 +25,10 @@
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/typedefs.h"
@@ -262,8 +262,8 @@ class NetEqDecodingTest : public ::testing::Test {
 
   NetEq* neteq_;
   NetEq::Config config_;
-  scoped_ptr<test::RtpFileSource> rtp_source_;
-  scoped_ptr<test::Packet> packet_;
+  rtc::scoped_ptr<test::RtpFileSource> rtp_source_;
+  rtc::scoped_ptr<test::Packet> packet_;
   unsigned int sim_clock_;
   int16_t out_data_[kMaxBlockSize];
   int output_sample_rate_;

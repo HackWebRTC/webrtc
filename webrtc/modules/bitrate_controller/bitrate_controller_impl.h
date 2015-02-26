@@ -21,10 +21,10 @@
 #include <map>
 #include <utility>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/bitrate_controller/remb_suppressor.h"
 #include "webrtc/modules/bitrate_controller/send_side_bandwidth_estimation.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -133,7 +133,7 @@ class BitrateControllerImpl : public BitrateController {
   bool last_enforce_min_bitrate_ GUARDED_BY(*critsect_);
   bool bitrate_observers_modified_ GUARDED_BY(*critsect_);
   uint32_t last_reserved_bitrate_bps_ GUARDED_BY(*critsect_);
-  scoped_ptr<RembSuppressor> remb_suppressor_ GUARDED_BY(*critsect_);
+  rtc::scoped_ptr<RembSuppressor> remb_suppressor_ GUARDED_BY(*critsect_);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(BitrateControllerImpl);
 };

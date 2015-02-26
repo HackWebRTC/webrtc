@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_RATE_STATISTICS_H_
 #define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_RATE_STATISTICS_H_
 
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -34,7 +34,7 @@ class RateStatistics {
   // Counters are kept in buckets (circular buffer), with one bucket
   // per millisecond.
   const int num_buckets_;
-  scoped_ptr<size_t[]> buckets_;
+  rtc::scoped_ptr<size_t[]> buckets_;
 
   // Total count recorded in buckets.
   size_t accumulated_count_;

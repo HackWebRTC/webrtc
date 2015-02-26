@@ -15,10 +15,10 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/utility/interface/mock/mock_process_thread.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video_engine/vie_encoder.h"
 
 using ::testing::NiceMock;
@@ -49,8 +49,8 @@ class VieKeyRequestTest : public ::testing::Test {
     process_thread_.reset(new NiceMock<MockProcessThread>);
     encoder_state_feedback_.reset(new EncoderStateFeedback());
   }
-  scoped_ptr<MockProcessThread> process_thread_;
-  scoped_ptr<EncoderStateFeedback> encoder_state_feedback_;
+  rtc::scoped_ptr<MockProcessThread> process_thread_;
+  rtc::scoped_ptr<EncoderStateFeedback> encoder_state_feedback_;
 };
 
 TEST_F(VieKeyRequestTest, CreateAndTriggerRequests) {

@@ -12,9 +12,9 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/mock/mock_rtp_payload_strategy.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -57,7 +57,7 @@ class RtpPayloadRegistryTest : public ::testing::Test {
     return returned_payload_on_heap;
   }
 
-  scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
+  rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
   testing::NiceMock<MockRTPPayloadStrategy>* mock_payload_strategy_;
 };
 

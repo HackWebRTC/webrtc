@@ -13,7 +13,7 @@
 
 #include <set>
 
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -52,15 +52,15 @@ class ChannelGroup {
  private:
   typedef std::set<int> ChannelSet;
 
-  scoped_ptr<VieRemb> remb_;
-  scoped_ptr<BitrateController> bitrate_controller_;
-  scoped_ptr<CallStats> call_stats_;
-  scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
-  scoped_ptr<EncoderStateFeedback> encoder_state_feedback_;
+  rtc::scoped_ptr<VieRemb> remb_;
+  rtc::scoped_ptr<BitrateController> bitrate_controller_;
+  rtc::scoped_ptr<CallStats> call_stats_;
+  rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
+  rtc::scoped_ptr<EncoderStateFeedback> encoder_state_feedback_;
   ChannelSet channels_;
   const Config* config_;
   // Placeholder for the case where this owns the config.
-  scoped_ptr<Config> own_config_;
+  rtc::scoped_ptr<Config> own_config_;
 
   // Registered at construct time and assumed to outlive this class.
   ProcessThread* process_thread_;

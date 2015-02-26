@@ -103,7 +103,7 @@ int I420VideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
 }
 
 I420VideoFrame* I420VideoFrame::CloneFrame() const {
-  scoped_ptr<I420VideoFrame> new_frame(new I420VideoFrame());
+  rtc::scoped_ptr<I420VideoFrame> new_frame(new I420VideoFrame());
   if (new_frame->CopyFrame(*this) == -1) {
     // CopyFrame failed.
     return NULL;

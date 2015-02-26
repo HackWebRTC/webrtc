@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_AGC_AUDIO_PROC_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_AGC_AUDIO_PROC_H_
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_processing/agc/common.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -73,9 +73,9 @@ class AgcAudioProc {
   double log_old_gain_;
   double old_lag_;
 
-  scoped_ptr<PitchAnalysisStruct> pitch_analysis_handle_;
-  scoped_ptr<PreFiltBankstr> pre_filter_handle_;
-  scoped_ptr<PoleZeroFilter> high_pass_filter_;
+  rtc::scoped_ptr<PitchAnalysisStruct> pitch_analysis_handle_;
+  rtc::scoped_ptr<PreFiltBankstr> pre_filter_handle_;
+  rtc::scoped_ptr<PoleZeroFilter> high_pass_filter_;
 };
 
 }  // namespace webrtc

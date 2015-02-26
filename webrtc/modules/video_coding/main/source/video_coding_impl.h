@@ -127,9 +127,9 @@ class VideoSender {
  private:
   Clock* clock_;
 
-  scoped_ptr<DebugRecorder> recorder_;
+  rtc::scoped_ptr<DebugRecorder> recorder_;
 
-  scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
+  rtc::scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
   CriticalSectionWrapper* _sendCritSect;
   VCMGenericEncoder* _encoder;
   VCMEncodedFrameCallback _encodedFrameCallback;
@@ -221,7 +221,7 @@ class VideoReceiver {
   };
 
   Clock* const clock_;
-  scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
+  rtc::scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
   CriticalSectionWrapper* _receiveCritSect;
   bool _receiverInited GUARDED_BY(_receiveCritSect);
   VCMTiming _timing;

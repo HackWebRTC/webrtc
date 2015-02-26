@@ -10,9 +10,9 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/red/audio_encoder_copy_red.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_encoder.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 using ::testing::Return;
 using ::testing::_;
@@ -63,7 +63,7 @@ class AudioEncoderCopyRedTest : public ::testing::Test {
   }
 
   MockAudioEncoder mock_encoder_;
-  scoped_ptr<AudioEncoderCopyRed> red_;
+  rtc::scoped_ptr<AudioEncoderCopyRed> red_;
   uint32_t timestamp_;
   int16_t audio_[kMaxNumSamples];
   const int sample_rate_hz_;

@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/g722/include/audio_encoder_g722.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/audio_encoder_ilbc.h"
@@ -26,7 +27,6 @@
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_encoder_pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/tools/resample_input_audio_file.h"
 #include "webrtc/system_wrappers/interface/data_log.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -139,7 +139,7 @@ class AudioDecoderTest : public ::testing::Test {
     const size_t samples_per_10ms = audio_encoder_->SampleRateHz() / 100;
     CHECK_EQ(samples_per_10ms * audio_encoder_->Num10MsFramesInNextPacket(),
              input_len_samples);
-    scoped_ptr<int16_t[]> interleaved_input(
+    rtc::scoped_ptr<int16_t[]> interleaved_input(
         new int16_t[channels_ * samples_per_10ms]);
     for (int i = 0; i < audio_encoder_->Num10MsFramesInNextPacket(); ++i) {
       EXPECT_EQ(0u, encoded_info_.encoded_bytes);
@@ -213,21 +213,21 @@ class AudioDecoderTest : public ::testing::Test {
   // decode. Verifies that the decoded result is the same.
   void ReInitTest() {
     InitEncoder();
-    scoped_ptr<int16_t[]> input(new int16_t[frame_size_]);
+    rtc::scoped_ptr<int16_t[]> input(new int16_t[frame_size_]);
     ASSERT_TRUE(
         input_audio_.Read(frame_size_, codec_input_rate_hz_, input.get()));
     size_t enc_len = EncodeFrame(input.get(), frame_size_, encoded_);
     size_t dec_len;
     AudioDecoder::SpeechType speech_type1, speech_type2;
     EXPECT_EQ(0, decoder_->Init());
-    scoped_ptr<int16_t[]> output1(new int16_t[frame_size_ * channels_]);
+    rtc::scoped_ptr<int16_t[]> output1(new int16_t[frame_size_ * channels_]);
     dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
                                output1.get(), &speech_type1);
     ASSERT_LE(dec_len, frame_size_ * channels_);
     EXPECT_EQ(frame_size_ * channels_, dec_len);
     // Re-init decoder and decode again.
     EXPECT_EQ(0, decoder_->Init());
-    scoped_ptr<int16_t[]> output2(new int16_t[frame_size_ * channels_]);
+    rtc::scoped_ptr<int16_t[]> output2(new int16_t[frame_size_ * channels_]);
     dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
                                output2.get(), &speech_type2);
     ASSERT_LE(dec_len, frame_size_ * channels_);
@@ -241,13 +241,13 @@ class AudioDecoderTest : public ::testing::Test {
   // Call DecodePlc and verify that the correct number of samples is produced.
   void DecodePlcTest() {
     InitEncoder();
-    scoped_ptr<int16_t[]> input(new int16_t[frame_size_]);
+    rtc::scoped_ptr<int16_t[]> input(new int16_t[frame_size_]);
     ASSERT_TRUE(
         input_audio_.Read(frame_size_, codec_input_rate_hz_, input.get()));
     size_t enc_len = EncodeFrame(input.get(), frame_size_, encoded_);
     AudioDecoder::SpeechType speech_type;
     EXPECT_EQ(0, decoder_->Init());
-    scoped_ptr<int16_t[]> output(new int16_t[frame_size_ * channels_]);
+    rtc::scoped_ptr<int16_t[]> output(new int16_t[frame_size_ * channels_]);
     size_t dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
                                       output.get(), &speech_type);
     EXPECT_EQ(frame_size_ * channels_, dec_len);
@@ -268,7 +268,7 @@ class AudioDecoderTest : public ::testing::Test {
   const int payload_type_;
   AudioEncoder::EncodedInfo encoded_info_;
   AudioDecoder* decoder_;
-  scoped_ptr<AudioEncoder> audio_encoder_;
+  rtc::scoped_ptr<AudioEncoder> audio_encoder_;
 };
 
 class AudioDecoderPcmUTest : public AudioDecoderTest {
@@ -332,13 +332,13 @@ class AudioDecoderIlbcTest : public AudioDecoderTest {
   // not return any data. It simply resets a few states and returns 0.
   void DecodePlcTest() {
     InitEncoder();
-    scoped_ptr<int16_t[]> input(new int16_t[frame_size_]);
+    rtc::scoped_ptr<int16_t[]> input(new int16_t[frame_size_]);
     ASSERT_TRUE(
         input_audio_.Read(frame_size_, codec_input_rate_hz_, input.get()));
     size_t enc_len = EncodeFrame(input.get(), frame_size_, encoded_);
     AudioDecoder::SpeechType speech_type;
     EXPECT_EQ(0, decoder_->Init());
-    scoped_ptr<int16_t[]> output(new int16_t[frame_size_ * channels_]);
+    rtc::scoped_ptr<int16_t[]> output(new int16_t[frame_size_ * channels_]);
     size_t dec_len = decoder_->Decode(encoded_, enc_len, codec_input_rate_hz_,
                                       output.get(), &speech_type);
     EXPECT_EQ(frame_size_, dec_len);

@@ -37,8 +37,8 @@ class RembBweSender : public BweSender {
   int Process() override;
 
  protected:
-  scoped_ptr<BitrateController> bitrate_controller_;
-  scoped_ptr<RtcpBandwidthObserver> feedback_observer_;
+  rtc::scoped_ptr<BitrateController> bitrate_controller_;
+  rtc::scoped_ptr<RtcpBandwidthObserver> feedback_observer_;
 
  private:
   Clock* clock_;
@@ -67,9 +67,9 @@ class RembReceiver : public BweReceiver, public RemoteBitrateObserver {
   std::string estimate_log_prefix_;
   bool plot_estimate_;
   SimulatedClock clock_;
-  scoped_ptr<ReceiveStatistics> recv_stats_;
+  rtc::scoped_ptr<ReceiveStatistics> recv_stats_;
   int64_t latest_estimate_bps_;
-  scoped_ptr<RemoteBitrateEstimator> estimator_;
+  rtc::scoped_ptr<RemoteBitrateEstimator> estimator_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(RembReceiver);
 };

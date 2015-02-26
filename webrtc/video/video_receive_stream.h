@@ -13,11 +13,11 @@
 
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_render/include/video_render_defines.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video/transport_adapter.h"
@@ -90,7 +90,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   ViERTP_RTCP* rtp_rtcp_;
   ViEImageProcess* image_process_;
 
-  scoped_ptr<ReceiveStatisticsProxy> stats_proxy_;
+  rtc::scoped_ptr<ReceiveStatisticsProxy> stats_proxy_;
 
   int channel_;
 };

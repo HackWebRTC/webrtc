@@ -85,7 +85,7 @@ class RTPPacketHistory {
 
  private:
   Clock* clock_;
-  scoped_ptr<CriticalSectionWrapper> critsect_;
+  rtc::scoped_ptr<CriticalSectionWrapper> critsect_;
   bool store_ GUARDED_BY(critsect_);
   uint32_t prev_index_ GUARDED_BY(critsect_);
   size_t max_packet_length_ GUARDED_BY(critsect_);

@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/video_coding/codecs/i420/main/interface/i420.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_capture.h"
@@ -190,9 +190,8 @@ void ViEAutoTest::ViECodecStandardTest() {
   const char* ip_address = "127.0.0.1";
   const uint16_t rtp_port = 6000;
 
-  webrtc::scoped_ptr<webrtc::test::VideoChannelTransport>
-      video_channel_transport(
-          new webrtc::test::VideoChannelTransport(network, video_channel));
+  rtc::scoped_ptr<webrtc::test::VideoChannelTransport> video_channel_transport(
+      new webrtc::test::VideoChannelTransport(network, video_channel));
 
   ASSERT_EQ(0, video_channel_transport->SetSendDestination(ip_address,
                                                            rtp_port));
@@ -336,7 +335,7 @@ void ViEAutoTest::ViECodecExtendedTest() {
     const char* ip_address = "127.0.0.1";
     const uint16_t rtp_port = 6000;
 
-    webrtc::scoped_ptr<webrtc::test::VideoChannelTransport>
+    rtc::scoped_ptr<webrtc::test::VideoChannelTransport>
         video_channel_transport(
             new webrtc::test::VideoChannelTransport(network, video_channel));
 
@@ -387,7 +386,7 @@ void ViEAutoTest::ViECodecExtendedTest() {
     uint16_t rtp_port_1 = 12000;
     uint16_t rtp_port_2 = 13000;
 
-    webrtc::scoped_ptr<webrtc::test::VideoChannelTransport>
+    rtc::scoped_ptr<webrtc::test::VideoChannelTransport>
         video_channel_transport_1(
             new webrtc::test::VideoChannelTransport(network, video_channel_1));
 
@@ -395,7 +394,7 @@ void ViEAutoTest::ViECodecExtendedTest() {
                                                                rtp_port_1));
     ASSERT_EQ(0, video_channel_transport_1->SetLocalReceiver(rtp_port_1));
 
-    webrtc::scoped_ptr<webrtc::test::VideoChannelTransport>
+    rtc::scoped_ptr<webrtc::test::VideoChannelTransport>
         video_channel_transport_2(
             new webrtc::test::VideoChannelTransport(network, video_channel_2));
 

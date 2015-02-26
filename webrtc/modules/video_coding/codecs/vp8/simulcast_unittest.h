@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
 #include "webrtc/experiments.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
@@ -21,7 +22,6 @@
 #include "webrtc/modules/video_coding/codecs/interface/mock/mock_video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 #include "gtest/gtest.h"
 
@@ -987,9 +987,9 @@ class TestVp8Simulcast : public ::testing::Test {
     }
   }
 
-  scoped_ptr<VP8Encoder> encoder_;
+  rtc::scoped_ptr<VP8Encoder> encoder_;
   MockEncodedImageCallback encoder_callback_;
-  scoped_ptr<VP8Decoder> decoder_;
+  rtc::scoped_ptr<VP8Decoder> decoder_;
   MockDecodedImageCallback decoder_callback_;
   VideoCodec settings_;
   I420VideoFrame input_frame_;

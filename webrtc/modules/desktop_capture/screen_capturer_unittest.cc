@@ -36,7 +36,7 @@ class ScreenCapturerTest : public testing::Test {
   }
 
  protected:
-  scoped_ptr<ScreenCapturer> capturer_;
+  rtc::scoped_ptr<ScreenCapturer> capturer_;
   MockScreenCapturerCallback callback_;
 };
 

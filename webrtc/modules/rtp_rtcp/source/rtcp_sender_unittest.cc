@@ -326,15 +326,15 @@ class RtcpSenderTest : public ::testing::Test {
 
   OverUseDetectorOptions over_use_detector_options_;
   SimulatedClock clock_;
-  scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
-  scoped_ptr<RtpReceiver> rtp_receiver_;
+  rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
+  rtc::scoped_ptr<RtpReceiver> rtp_receiver_;
   ModuleRtpRtcpImpl* rtp_rtcp_impl_;
   RTCPSender* rtcp_sender_;
   RTCPReceiver* rtcp_receiver_;
   TestTransport* test_transport_;
   MockRemoteBitrateObserver remote_bitrate_observer_;
-  scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
-  scoped_ptr<ReceiveStatistics> receive_statistics_;
+  rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
+  rtc::scoped_ptr<ReceiveStatistics> receive_statistics_;
 
   enum {kMaxPacketLength = 1500};
   uint8_t packet_[kMaxPacketLength];
@@ -374,7 +374,7 @@ TEST_F(RtcpSenderTest, TestCompound) {
                                                      codec_inst.maxBitrate));
 
   // Make sure RTP packet has been received.
-  scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+  rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
   RTPHeader header;
   EXPECT_TRUE(parser->Parse(packet_, packet_length, &header));
   PayloadUnion payload_specific;

@@ -11,7 +11,7 @@
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 
 namespace webrtc {

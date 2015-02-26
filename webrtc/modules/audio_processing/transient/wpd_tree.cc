@@ -14,9 +14,9 @@
 #include <math.h>
 #include <string.h>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_processing/transient/dyadic_decimator.h"
 #include "webrtc/modules/audio_processing/transient/wpd_node.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -32,7 +32,7 @@ WPDTree::WPDTree(size_t data_length, const float* high_pass_coefficients,
          levels > 0);
   // Size is 1 more, so we can use the array as 1-based. nodes_[0] is never
   // allocated.
-  nodes_.reset(new scoped_ptr<WPDNode>[num_nodes_ + 1]);
+  nodes_.reset(new rtc::scoped_ptr<WPDNode>[num_nodes_ + 1]);
 
   // Create the first node
   const float kRootCoefficient = 1.f;  // Identity Coefficient.

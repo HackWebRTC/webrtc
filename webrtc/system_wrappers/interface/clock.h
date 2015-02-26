@@ -11,8 +11,8 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CLOCK_H_
 #define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CLOCK_H_
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -77,7 +77,7 @@ class SimulatedClock : public Clock {
 
  private:
   int64_t time_us_;
-  scoped_ptr<RWLockWrapper> lock_;
+  rtc::scoped_ptr<RWLockWrapper> lock_;
 };
 
 };  // namespace webrtc

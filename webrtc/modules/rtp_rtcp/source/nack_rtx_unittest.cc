@@ -14,6 +14,7 @@
 #include <set>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
@@ -21,7 +22,6 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 using namespace webrtc;
 
@@ -118,7 +118,7 @@ class RtxLoopBackTransport : public webrtc::Transport {
     uint8_t restored_packet[1500] = {0};
     uint8_t* restored_packet_ptr = restored_packet;
     RTPHeader header;
-    scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+    rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     if (!parser->Parse(ptr, len, &header)) {
       return -1;
     }
@@ -288,11 +288,11 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     delete rtp_rtcp_module_;
   }
 
-  scoped_ptr<ReceiveStatistics> receive_statistics_;
+  rtc::scoped_ptr<ReceiveStatistics> receive_statistics_;
   RTPPayloadRegistry rtp_payload_registry_;
-  scoped_ptr<RtpReceiver> rtp_receiver_;
+  rtc::scoped_ptr<RtpReceiver> rtp_receiver_;
   RtpRtcp* rtp_rtcp_module_;
-  scoped_ptr<TestRtpFeedback> rtp_feedback_;
+  rtc::scoped_ptr<TestRtpFeedback> rtp_feedback_;
   RtxLoopBackTransport transport_;
   VerifyingRtxReceiver receiver_;
   uint8_t  payload_data[65000];

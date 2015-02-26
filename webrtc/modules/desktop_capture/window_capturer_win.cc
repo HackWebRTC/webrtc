@@ -12,11 +12,11 @@
 
 #include <assert.h>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/win32.h"
 #include "webrtc/modules/desktop_capture/desktop_frame_win.h"
 #include "webrtc/modules/desktop_capture/win/window_capture_utils.h"
 #include "webrtc/system_wrappers/interface/logging.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -199,8 +199,8 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
     return;
   }
 
-  scoped_ptr<DesktopFrameWin> frame(DesktopFrameWin::Create(
-      cropped_rect.size(), NULL, window_dc));
+  rtc::scoped_ptr<DesktopFrameWin> frame(
+      DesktopFrameWin::Create(cropped_rect.size(), NULL, window_dc));
   if (!frame.get()) {
     ReleaseDC(window_, window_dc);
     callback_->OnCaptureCompleted(NULL);

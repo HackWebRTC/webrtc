@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TRANSIENT_WPD_TREE_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_TRANSIENT_WPD_TREE_H_
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_processing/transient/wpd_node.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -83,7 +83,7 @@ class WPDTree {
   size_t data_length_;
   int levels_;
   int num_nodes_;
-  scoped_ptr<scoped_ptr<WPDNode>[]> nodes_;
+  rtc::scoped_ptr<rtc::scoped_ptr<WPDNode>[]> nodes_;
 };
 
 }  // namespace webrtc

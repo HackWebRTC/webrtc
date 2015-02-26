@@ -14,10 +14,10 @@
 #include <string>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_processing/transient/daubechies_8_wavelet_coeffs.h"
 #include "webrtc/modules/audio_processing/transient/file_utils.h"
 #include "webrtc/system_wrappers/interface/file_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -81,8 +81,8 @@ TEST(WPDTreeTest, CorrectnessBasedOnMatlabFiles) {
                kDaubechies8CoefficientsLength,
                kLevels);
   // Allocate and open all matlab and out files.
-  scoped_ptr<FileWrapper> matlab_files_data[kLeaves];
-  scoped_ptr<FileWrapper> out_files_data[kLeaves];
+  rtc::scoped_ptr<FileWrapper> matlab_files_data[kLeaves];
+  rtc::scoped_ptr<FileWrapper> out_files_data[kLeaves];
 
   for (int i = 0; i < kLeaves; ++i) {
     // Matlab files.
@@ -119,7 +119,7 @@ TEST(WPDTreeTest, CorrectnessBasedOnMatlabFiles) {
   std::string test_file_name = test::ResourcePath(
       "audio_processing/transient/ajm-macbook-1-spke16m", "pcm");
 
-  scoped_ptr<FileWrapper> test_file(FileWrapper::Create());
+  rtc::scoped_ptr<FileWrapper> test_file(FileWrapper::Create());
 
   test_file->OpenFile(test_file_name.c_str(),
                       true,    // Read only.

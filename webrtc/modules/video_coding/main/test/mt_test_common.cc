@@ -92,7 +92,7 @@ TransportCallback::TransportPackets()
         _rtpPackets.pop_front();
         // Send to receive side
         RTPHeader header;
-        scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+        rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
         if (!parser->Parse(packet->data, packet->length, &header)) {
           delete packet;
           return -1;

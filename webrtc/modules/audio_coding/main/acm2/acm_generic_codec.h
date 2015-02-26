@@ -13,6 +13,7 @@
 
 #include <map>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
@@ -21,7 +22,6 @@
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 #define MAX_FRAME_SIZE_10MSEC 6
@@ -72,7 +72,7 @@ class AudioDecoderProxy final : public AudioDecoder {
   CNG_dec_inst* CngDecoderInstance() override;
 
  private:
-  scoped_ptr<CriticalSectionWrapper> decoder_lock_;
+  rtc::scoped_ptr<CriticalSectionWrapper> decoder_lock_;
   AudioDecoder* decoder_ GUARDED_BY(decoder_lock_);
 };
 
@@ -472,9 +472,9 @@ class ACMGenericCodec {
   OpusApplicationMode GetOpusApplication(int num_channels) const
       EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
-  scoped_ptr<AudioEncoder> audio_encoder_ GUARDED_BY(codec_wrapper_lock_);
-  scoped_ptr<AudioEncoder> cng_encoder_ GUARDED_BY(codec_wrapper_lock_);
-  scoped_ptr<AudioEncoder> red_encoder_ GUARDED_BY(codec_wrapper_lock_);
+  rtc::scoped_ptr<AudioEncoder> audio_encoder_ GUARDED_BY(codec_wrapper_lock_);
+  rtc::scoped_ptr<AudioEncoder> cng_encoder_ GUARDED_BY(codec_wrapper_lock_);
+  rtc::scoped_ptr<AudioEncoder> red_encoder_ GUARDED_BY(codec_wrapper_lock_);
   AudioEncoder* encoder_ GUARDED_BY(codec_wrapper_lock_);
   AudioDecoderProxy decoder_proxy_ GUARDED_BY(codec_wrapper_lock_);
   std::vector<int16_t> input_ GUARDED_BY(codec_wrapper_lock_);

@@ -22,7 +22,7 @@ struct Frame {
  public:
   Frame() : buffer(nullptr), buffer_size(0), timestamp(0), render_time(0) {}
 
-  webrtc::scoped_ptr<unsigned char[]> buffer;
+  rtc::scoped_ptr<unsigned char[]> buffer;
   size_t buffer_size;
   uint32_t timestamp;
   int64_t render_time;

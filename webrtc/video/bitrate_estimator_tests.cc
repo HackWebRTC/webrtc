@@ -13,11 +13,11 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/direct_transport.h"
@@ -103,10 +103,10 @@ class TraceObserver {
 
    private:
     typedef std::list<std::string> Strings;
-    const scoped_ptr<CriticalSectionWrapper> crit_sect_;
+    const rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
     Strings received_log_lines_ GUARDED_BY(crit_sect_);
     Strings expected_log_lines_ GUARDED_BY(crit_sect_);
-    scoped_ptr<EventWrapper> done_;
+    rtc::scoped_ptr<EventWrapper> done_;
   };
 
   Callback callback_;
@@ -238,7 +238,7 @@ class BitrateEstimatorTest : public test::CallTest {
     bool is_sending_receiving_;
     VideoSendStream* send_stream_;
     VideoReceiveStream* receive_stream_;
-    scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer_;
+    rtc::scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer_;
     test::FakeEncoder fake_encoder_;
     test::FakeDecoder fake_decoder_;
   };
@@ -246,8 +246,8 @@ class BitrateEstimatorTest : public test::CallTest {
   TraceObserver receiver_trace_;
   test::DirectTransport send_transport_;
   test::DirectTransport receive_transport_;
-  scoped_ptr<Call> sender_call_;
-  scoped_ptr<Call> receiver_call_;
+  rtc::scoped_ptr<Call> sender_call_;
+  rtc::scoped_ptr<Call> receiver_call_;
   VideoReceiveStream::Config receive_config_;
   std::vector<Stream*> streams_;
 };

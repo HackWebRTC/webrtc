@@ -14,10 +14,10 @@
 #include <gflags/gflags.h>
 #include <string>
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_generator.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 using google::RegisterFlagValidator;
@@ -57,7 +57,7 @@ class GilbertElliotLoss : public LossModel {
   // Prob. of losing current packet, when previous packet is not lost.
   double prob_trans_01_;
   bool lost_last_;
-  scoped_ptr<UniformLoss> uniform_loss_model_;
+  rtc::scoped_ptr<UniformLoss> uniform_loss_model_;
 };
 
 class NetEqQualityTest : public ::testing::Test {
@@ -121,17 +121,17 @@ class NetEqQualityTest : public ::testing::Test {
   size_t payload_size_bytes_;
   int max_payload_bytes_;
 
-  scoped_ptr<InputAudioFile> in_file_;
+  rtc::scoped_ptr<InputAudioFile> in_file_;
   FILE* out_file_;
   FILE* log_file_;
 
-  scoped_ptr<RtpGenerator> rtp_generator_;
-  scoped_ptr<NetEq> neteq_;
-  scoped_ptr<LossModel> loss_model_;
+  rtc::scoped_ptr<RtpGenerator> rtp_generator_;
+  rtc::scoped_ptr<NetEq> neteq_;
+  rtc::scoped_ptr<LossModel> loss_model_;
 
-  scoped_ptr<int16_t[]> in_data_;
-  scoped_ptr<uint8_t[]> payload_;
-  scoped_ptr<int16_t[]> out_data_;
+  rtc::scoped_ptr<int16_t[]> in_data_;
+  rtc::scoped_ptr<uint8_t[]> payload_;
+  rtc::scoped_ptr<int16_t[]> out_data_;
   WebRtcRTPHeader rtp_header_;
 
   size_t total_payload_size_bytes_;

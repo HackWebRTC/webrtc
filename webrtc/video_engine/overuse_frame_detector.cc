@@ -135,7 +135,7 @@ class OveruseFrameDetector::EncodeTimeAvg {
  private:
   const float kWeightFactor;
   const float kInitialAvgEncodeTimeMs;
-  scoped_ptr<rtc::ExpFilter> filtered_encode_time_ms_;
+  rtc::scoped_ptr<rtc::ExpFilter> filtered_encode_time_ms_;
 };
 
 // Class for calculating the processing usage on the send-side (the average
@@ -208,8 +208,8 @@ class OveruseFrameDetector::SendProcessingUsage {
   const float kMaxSampleDiffMs;
   uint64_t count_;
   CpuOveruseOptions options_;
-  scoped_ptr<rtc::ExpFilter> filtered_processing_ms_;
-  scoped_ptr<rtc::ExpFilter> filtered_frame_diff_ms_;
+  rtc::scoped_ptr<rtc::ExpFilter> filtered_processing_ms_;
+  rtc::scoped_ptr<rtc::ExpFilter> filtered_frame_diff_ms_;
 };
 
 // Class for calculating the processing time of frames.
@@ -314,7 +314,7 @@ class OveruseFrameDetector::CaptureQueueDelay {
   const float kWeightFactor;
   std::list<int64_t> frames_;
   int delay_ms_;
-  scoped_ptr<rtc::ExpFilter> filtered_delay_ms_per_s_;
+  rtc::scoped_ptr<rtc::ExpFilter> filtered_delay_ms_per_s_;
 };
 
 OveruseFrameDetector::OveruseFrameDetector(

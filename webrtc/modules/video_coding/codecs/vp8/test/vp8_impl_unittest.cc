@@ -11,9 +11,9 @@
 #include <stdio.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
@@ -41,7 +41,7 @@ class Vp8UnitTestEncodeCompleteCallback : public webrtc::EncodedImageCallback {
 
  private:
   EncodedImage* const encoded_frame_;
-  scoped_ptr<uint8_t[]> frame_buffer_;
+  rtc::scoped_ptr<uint8_t[]> frame_buffer_;
   bool encode_complete_;
 };
 
@@ -177,13 +177,13 @@ class TestVp8Impl : public ::testing::Test {
   const int kWidth = 172;
   const int kHeight = 144;
 
-  scoped_ptr<Vp8UnitTestEncodeCompleteCallback> encode_complete_callback_;
-  scoped_ptr<Vp8UnitTestDecodeCompleteCallback> decode_complete_callback_;
-  scoped_ptr<uint8_t[]> source_buffer_;
+  rtc::scoped_ptr<Vp8UnitTestEncodeCompleteCallback> encode_complete_callback_;
+  rtc::scoped_ptr<Vp8UnitTestDecodeCompleteCallback> decode_complete_callback_;
+  rtc::scoped_ptr<uint8_t[]> source_buffer_;
   FILE* source_file_;
   I420VideoFrame input_frame_;
-  scoped_ptr<VideoEncoder> encoder_;
-  scoped_ptr<VideoDecoder> decoder_;
+  rtc::scoped_ptr<VideoEncoder> encoder_;
+  rtc::scoped_ptr<VideoDecoder> decoder_;
   EncodedImage encoded_frame_;
   I420VideoFrame decoded_frame_;
   size_t length_source_frame_;
@@ -257,13 +257,13 @@ TEST_F(TestVp8Impl, TestReset) {
   EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, NULL));
   EXPECT_EQ(0, decoder_->Decode(encoded_frame_, false, NULL));
   size_t length = CalcBufferSize(kI420, kWidth, kHeight);
-  scoped_ptr<uint8_t[]> first_frame_buffer(new uint8_t[length]);
+  rtc::scoped_ptr<uint8_t[]> first_frame_buffer(new uint8_t[length]);
   ExtractBuffer(decoded_frame_, length, first_frame_buffer.get());
 
   EXPECT_EQ(0, decoder_->Reset());
 
   EXPECT_EQ(0, decoder_->Decode(encoded_frame_, false, NULL));
-  scoped_ptr<uint8_t[]> second_frame_buffer(new uint8_t[length]);
+  rtc::scoped_ptr<uint8_t[]> second_frame_buffer(new uint8_t[length]);
   ExtractBuffer(decoded_frame_, length, second_frame_buffer.get());
 
   EXPECT_EQ(

@@ -13,8 +13,8 @@
 
 #include <stdio.h>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/file_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -53,7 +53,7 @@ class FileWrapperImpl : public FileWrapper {
   int CloseFileImpl();
   int FlushImpl();
 
-  scoped_ptr<RWLockWrapper> rw_lock_;
+  rtc::scoped_ptr<RWLockWrapper> rw_lock_;
 
   FILE* id_;
   bool managed_file_handle_;

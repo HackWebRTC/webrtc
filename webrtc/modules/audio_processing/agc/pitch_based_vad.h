@@ -11,9 +11,9 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_PITCH_BASED_VAD_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_PITCH_BASED_VAD_H_
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_processing/agc/common.h"
 #include "webrtc/modules/audio_processing/agc/gmm.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -49,7 +49,7 @@ class PitchBasedVad {
 
   double p_prior_;
 
-  scoped_ptr<AgcCircularBuffer> circular_buffer_;
+  rtc::scoped_ptr<AgcCircularBuffer> circular_buffer_;
 };
 
 }  // namespace webrtc

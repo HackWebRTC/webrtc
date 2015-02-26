@@ -13,14 +13,14 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/audio_converter.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
-typedef scoped_ptr<ChannelBuffer<float>> ScopedBuffer;
+typedef rtc::scoped_ptr<ChannelBuffer<float>> ScopedBuffer;
 
 // Sets the signal value to increase by |data| with every sample.
 ScopedBuffer CreateBuffer(const std::vector<float>& data, int frames) {
@@ -128,9 +128,8 @@ void RunAudioConverterTest(int src_channels,
   printf("(%d, %d Hz) -> (%d, %d Hz) ",  // SNR reported on the same line later.
       src_channels, src_sample_rate_hz, dst_channels, dst_sample_rate_hz);
 
-  scoped_ptr<AudioConverter> converter =
-      AudioConverter::Create(src_channels, src_frames, dst_channels,
-                             dst_frames);
+  rtc::scoped_ptr<AudioConverter> converter = AudioConverter::Create(
+      src_channels, src_frames, dst_channels, dst_frames);
   converter->Convert(src_buffer->channels(), src_buffer->size(),
                      dst_buffer->channels(), dst_buffer->size());
 

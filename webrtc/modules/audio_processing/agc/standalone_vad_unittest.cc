@@ -13,14 +13,14 @@
 #include <string.h>
 
 #include "gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
 
 TEST(StandaloneVadTest, Api) {
-  scoped_ptr<StandaloneVad> vad(StandaloneVad::Create());
+  rtc::scoped_ptr<StandaloneVad> vad(StandaloneVad::Create());
   int16_t data[kLength10Ms] = { 0 };
 
   // Valid frame length (for 32 kHz rate), but not what the VAD is expecting.
@@ -55,7 +55,7 @@ TEST(StandaloneVadTest, Api) {
 }
 
 TEST(StandaloneVadTest, ActivityDetection) {
-  scoped_ptr<StandaloneVad> vad(StandaloneVad::Create());
+  rtc::scoped_ptr<StandaloneVad> vad(StandaloneVad::Create());
   const size_t kDataLength = kLength10Ms;
   int16_t data[kDataLength] = { 0 };
 

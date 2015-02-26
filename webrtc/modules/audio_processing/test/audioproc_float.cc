@@ -14,11 +14,11 @@
 
 #include "gflags/gflags.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 DEFINE_string(dump, "", "The name of the debug dump file to read from.");
 DEFINE_string(c, "", "The name of the capture input file to read from.");
@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
     config.Set<Beamforming>(new Beamforming(true, array_geometry));
   }
 
-  scoped_ptr<AudioProcessing> ap(AudioProcessing::Create(config));
+  rtc::scoped_ptr<AudioProcessing> ap(AudioProcessing::Create(config));
   if (FLAGS_dump != "") {
     CHECK_EQ(kNoErr, ap->echo_cancellation()->Enable(FLAGS_aec || FLAGS_all));
   } else if (FLAGS_aec) {
@@ -181,8 +181,8 @@ int main(int argc, char* argv[]) {
       static_cast<size_t>(c_buf.num_channels() * c_buf.num_frames());
   const size_t o_length =
       static_cast<size_t>(o_buf.num_channels() * o_buf.num_frames());
-  scoped_ptr<float[]> c_interleaved(new float[c_length]);
-  scoped_ptr<float[]> o_interleaved(new float[o_length]);
+  rtc::scoped_ptr<float[]> c_interleaved(new float[c_length]);
+  rtc::scoped_ptr<float[]> o_interleaved(new float[o_length]);
   while (c_file.ReadSamples(c_length, c_interleaved.get()) == c_length) {
     FloatS16ToFloat(c_interleaved.get(), c_length, c_interleaved.get());
     Deinterleave(c_interleaved.get(), c_buf.num_frames(),

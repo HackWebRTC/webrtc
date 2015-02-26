@@ -13,11 +13,11 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/exp_filter.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/interface/module.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video_engine/include/vie_base.h"
 
 namespace webrtc {
@@ -45,8 +45,8 @@ class Statistics {
   float sum_;
   uint64_t count_;
   CpuOveruseOptions options_;
-  scoped_ptr<rtc::ExpFilter> filtered_samples_;
-  scoped_ptr<rtc::ExpFilter> filtered_variance_;
+  rtc::scoped_ptr<rtc::ExpFilter> filtered_samples_;
+  rtc::scoped_ptr<rtc::ExpFilter> filtered_variance_;
 };
 
 // Use to detect system overuse based on jitter in incoming frames.
@@ -146,13 +146,14 @@ class OveruseFrameDetector : public Module {
 
   // TODO(asapersson): Can these be regular members (avoid separate heap
   // allocs)?
-  const scoped_ptr<EncodeTimeAvg> encode_time_ GUARDED_BY(crit_);
-  const scoped_ptr<SendProcessingUsage> usage_ GUARDED_BY(crit_);
-  const scoped_ptr<FrameQueue> frame_queue_ GUARDED_BY(crit_);
+  const rtc::scoped_ptr<EncodeTimeAvg> encode_time_ GUARDED_BY(crit_);
+  const rtc::scoped_ptr<SendProcessingUsage> usage_ GUARDED_BY(crit_);
+  const rtc::scoped_ptr<FrameQueue> frame_queue_ GUARDED_BY(crit_);
 
   int64_t last_sample_time_ms_;  // Only accessed by one thread.
 
-  const scoped_ptr<CaptureQueueDelay> capture_queue_delay_ GUARDED_BY(crit_);
+  const rtc::scoped_ptr<CaptureQueueDelay> capture_queue_delay_
+      GUARDED_BY(crit_);
 
   rtc::ThreadChecker processing_thread_;
 

@@ -13,9 +13,9 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video_engine/payload_router.h"
 
 using ::testing::_;
@@ -30,7 +30,7 @@ class PayloadRouterTest : public ::testing::Test {
   virtual void SetUp() {
     payload_router_.reset(new PayloadRouter());
   }
-  scoped_ptr<PayloadRouter> payload_router_;
+  rtc::scoped_ptr<PayloadRouter> payload_router_;
 };
 
 TEST_F(PayloadRouterTest, SendOnOneModule) {

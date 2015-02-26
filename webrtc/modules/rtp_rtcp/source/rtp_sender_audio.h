@@ -78,7 +78,7 @@ private:
  RTPSender* const _rtpSender;
  RtpAudioFeedback* const _audioFeedback;
 
- scoped_ptr<CriticalSectionWrapper> _sendAudioCritsect;
+ rtc::scoped_ptr<CriticalSectionWrapper> _sendAudioCritsect;
 
  uint16_t _packetSizeSamples GUARDED_BY(_sendAudioCritsect);
 

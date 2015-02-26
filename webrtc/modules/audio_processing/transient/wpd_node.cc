@@ -14,9 +14,9 @@
 #include <math.h>
 #include <string.h>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/fir_filter.h"
 #include "webrtc/modules/audio_processing/transient/dyadic_decimator.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 

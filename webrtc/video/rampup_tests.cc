@@ -380,7 +380,7 @@ void RampUpTest::RunRampUpTest(bool rtx,
 
   CreateSendConfig(num_streams);
 
-  scoped_ptr<RemoteBitrateEstimatorFactory> rbe_factory;
+  rtc::scoped_ptr<RemoteBitrateEstimatorFactory> rbe_factory;
   RateControlType control_type;
   if (extension_type == RtpExtension::kAbsSendTime) {
     control_type = kAimdControl;

@@ -16,11 +16,11 @@
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/null_transport.h"
@@ -185,8 +185,8 @@ class FileRenderPassthrough : public VideoRenderer {
 };
 
 void RtpReplay() {
-  scoped_ptr<test::VideoRenderer> playback_video(test::VideoRenderer::Create(
-      "Playback Video", 640, 480));
+  rtc::scoped_ptr<test::VideoRenderer> playback_video(
+      test::VideoRenderer::Create("Playback Video", 640, 480));
   FileRenderPassthrough file_passthrough(flags::OutBase(),
                                          playback_video.get());
 
@@ -194,7 +194,7 @@ void RtpReplay() {
   //             etc.
   test::NullTransport transport;
   Call::Config call_config(&transport);
-  scoped_ptr<Call> call(Call::Create(call_config));
+  rtc::scoped_ptr<Call> call(Call::Create(call_config));
 
   VideoReceiveStream::Config receive_config;
   receive_config.rtp.remote_ssrc = flags::Ssrc();
@@ -222,7 +222,7 @@ void RtpReplay() {
   VideoReceiveStream* receive_stream =
       call->CreateVideoReceiveStream(receive_config);
 
-  scoped_ptr<test::RtpFileReader> rtp_reader(test::RtpFileReader::Create(
+  rtc::scoped_ptr<test::RtpFileReader> rtp_reader(test::RtpFileReader::Create(
       test::RtpFileReader::kRtpDump, flags::InputFile()));
   if (rtp_reader.get() == NULL) {
     rtp_reader.reset(test::RtpFileReader::Create(test::RtpFileReader::kPcap,
@@ -249,7 +249,7 @@ void RtpReplay() {
         break;
       case PacketReceiver::DELIVERY_UNKNOWN_SSRC: {
         RTPHeader header;
-        scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+        rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
         parser->Parse(packet.data, packet.length, &header);
         if (unknown_packets[header.ssrc] == 0)
           fprintf(stderr, "Unknown SSRC: %u!\n", header.ssrc);

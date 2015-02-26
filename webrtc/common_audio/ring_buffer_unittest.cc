@@ -15,7 +15,7 @@
 #include <algorithm>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -24,7 +24,7 @@ struct FreeBufferDeleter {
     WebRtc_FreeBuffer(ptr);
   }
 };
-typedef scoped_ptr<RingBuffer, FreeBufferDeleter> scoped_ring_buffer;
+typedef rtc::scoped_ptr<RingBuffer, FreeBufferDeleter> scoped_ring_buffer;
 
 static void AssertElementEq(int expected, int actual) {
   ASSERT_EQ(expected, actual);
@@ -58,8 +58,8 @@ static void RandomStressTest(int** data_ptr) {
   srand(seed);
   for (int i = 0; i < kNumTests; i++) {
     const int buffer_size = std::max(rand() % kMaxBufferSize, 1);
-    scoped_ptr<int[]> write_data(new int[buffer_size]);
-    scoped_ptr<int[]> read_data(new int[buffer_size]);
+    rtc::scoped_ptr<int[]> write_data(new int[buffer_size]);
+    rtc::scoped_ptr<int[]> read_data(new int[buffer_size]);
     scoped_ring_buffer buffer(WebRtc_CreateBuffer(buffer_size, sizeof(int)));
     ASSERT_TRUE(buffer.get() != NULL);
     WebRtc_InitBuffer(buffer.get());

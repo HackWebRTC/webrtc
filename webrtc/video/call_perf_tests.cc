@@ -15,6 +15,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
@@ -22,7 +23,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/rtp_to_ntp.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/encoder_settings.h"
@@ -115,7 +115,7 @@ class SyncRtcpObserver : public test::RtpRtcpObserver {
     ntp_rtp_pairs_.push_front(ntp_rtp_pair);
   }
 
-  const scoped_ptr<CriticalSectionWrapper> crit_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> crit_;
   RtcpList ntp_rtp_pairs_ GUARDED_BY(crit_);
 };
 
@@ -213,7 +213,7 @@ void CallPerfTest::TestAudioVideoSync(bool fec) {
    private:
     int channel_;
     VoENetwork* voe_network_;
-    scoped_ptr<RtpHeaderParser> parser_;
+    rtc::scoped_ptr<RtpHeaderParser> parser_;
   };
 
   VoiceEngine* voice_engine = VoiceEngine::Create();
@@ -678,7 +678,7 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
     }
 
    private:
-    scoped_ptr<webrtc::EventWrapper> time_to_reconfigure_;
+    rtc::scoped_ptr<webrtc::EventWrapper> time_to_reconfigure_;
     int encoder_inits_;
     uint32_t last_set_bitrate_;
     VideoSendStream* send_stream_;

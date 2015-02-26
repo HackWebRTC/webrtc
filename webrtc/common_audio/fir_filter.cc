@@ -13,10 +13,10 @@
 #include <assert.h>
 #include <string.h>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/fir_filter_neon.h"
 #include "webrtc/common_audio/fir_filter_sse.h"
 #include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -30,8 +30,8 @@ class FIRFilterC : public FIRFilter {
  private:
   size_t coefficients_length_;
   size_t state_length_;
-  scoped_ptr<float[]> coefficients_;
-  scoped_ptr<float[]> state_;
+  rtc::scoped_ptr<float[]> coefficients_;
+  rtc::scoped_ptr<float[]> state_;
 };
 
 FIRFilter* FIRFilter::Create(const float* coefficients,

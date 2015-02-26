@@ -9,8 +9,8 @@
  */
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/opus/interface/audio_encoder_opus.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -32,7 +32,7 @@ class AudioEncoderOpusTest : public ::testing::Test {
     }
   }
 
-  scoped_ptr<AudioEncoderOpus> opus_;
+  rtc::scoped_ptr<AudioEncoderOpus> opus_;
 };
 
 namespace {

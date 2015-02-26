@@ -13,8 +13,8 @@
 
 #include <complex>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/aligned_malloc.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 // Uniform interface class for the real DFT and its inverse, for power-of-2
 // input lengths. Also contains helper functions for buffer allocation, taking
@@ -25,8 +25,9 @@ namespace webrtc {
 class RealFourier {
  public:
   // Shorthand typenames for the scopers used by the buffer allocation helpers.
-  typedef scoped_ptr<float[], AlignedFreeDeleter> fft_real_scoper;
-  typedef scoped_ptr<std::complex<float>[], AlignedFreeDeleter> fft_cplx_scoper;
+  typedef rtc::scoped_ptr<float[], AlignedFreeDeleter> fft_real_scoper;
+  typedef rtc::scoped_ptr<std::complex<float>[], AlignedFreeDeleter>
+      fft_cplx_scoper;
 
   // The maximum input order supported by this implementation.
   static const int kMaxFftOrder;

@@ -14,6 +14,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -22,7 +23,6 @@
 #include "webrtc/system_wrappers/interface/cpu_info.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/direct_transport.h"
@@ -133,7 +133,7 @@ class VideoAnalyzer : public PacketReceiver,
 
   virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
                                        size_t length) OVERRIDE {
-    scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+    rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     RTPHeader header;
     parser->Parse(packet, length, &header);
     {
@@ -172,7 +172,7 @@ class VideoAnalyzer : public PacketReceiver,
   }
 
   virtual bool SendRtp(const uint8_t* packet, size_t length) OVERRIDE {
-    scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+    rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     RTPHeader header;
     parser->Parse(packet, length, &header);
 
@@ -453,7 +453,7 @@ class VideoAnalyzer : public PacketReceiver,
   int64_t last_render_time_;
   uint32_t rtp_timestamp_delta_;
 
-  const scoped_ptr<CriticalSectionWrapper> crit_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> crit_;
   std::deque<I420VideoFrame*> frames_ GUARDED_BY(crit_);
   std::deque<I420VideoFrame*> frame_pool_ GUARDED_BY(crit_);
   I420VideoFrame last_rendered_frame_ GUARDED_BY(crit_);
@@ -463,11 +463,11 @@ class VideoAnalyzer : public PacketReceiver,
   const double avg_psnr_threshold_;
   const double avg_ssim_threshold_;
 
-  const scoped_ptr<CriticalSectionWrapper> comparison_lock_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> comparison_lock_;
   std::vector<ThreadWrapper*> comparison_thread_pool_;
-  const scoped_ptr<EventWrapper> comparison_available_event_;
+  const rtc::scoped_ptr<EventWrapper> comparison_available_event_;
   std::deque<FrameComparison> comparisons_ GUARDED_BY(comparison_lock_);
-  const scoped_ptr<EventWrapper> done_;
+  const rtc::scoped_ptr<EventWrapper> done_;
 };
 
 void FullStackTest::RunTest(const FullStackTestParams& params) {
@@ -485,7 +485,7 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
 
   CreateSendConfig(1);
 
-  scoped_ptr<VideoEncoder> encoder(
+  rtc::scoped_ptr<VideoEncoder> encoder(
       VideoEncoder::Create(VideoEncoder::kVp8));
   send_config_.encoder_settings.encoder = encoder.get();
   send_config_.encoder_settings.payload_name = "VP8";
@@ -532,7 +532,7 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
     slides.push_back(test::ResourcePath("photo_1850_1110", "yuv"));
     slides.push_back(test::ResourcePath("difficult_photo_1850_1110", "yuv"));
 
-    scoped_ptr<test::FrameGenerator> frame_generator(
+    rtc::scoped_ptr<test::FrameGenerator> frame_generator(
         test::FrameGenerator::CreateFromYuvFile(
             slides, 1850, 1110,
             10 * params.clip.fps)  // Cycle image every 10 seconds.

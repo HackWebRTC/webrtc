@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_AGC_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_AGC_H_
 
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -56,12 +56,12 @@ class Agc {
   double last_voice_probability_;
   int target_level_dbfs_;
   bool standalone_vad_enabled_;
-  scoped_ptr<Histogram> histogram_;
-  scoped_ptr<Histogram> inactive_histogram_;
-  scoped_ptr<AgcAudioProc> audio_processing_;
-  scoped_ptr<PitchBasedVad> pitch_based_vad_;
-  scoped_ptr<StandaloneVad> standalone_vad_;
-  scoped_ptr<Resampler> resampler_;
+  rtc::scoped_ptr<Histogram> histogram_;
+  rtc::scoped_ptr<Histogram> inactive_histogram_;
+  rtc::scoped_ptr<AgcAudioProc> audio_processing_;
+  rtc::scoped_ptr<PitchBasedVad> pitch_based_vad_;
+  rtc::scoped_ptr<StandaloneVad> standalone_vad_;
+  rtc::scoped_ptr<Resampler> resampler_;
 };
 
 }  // namespace webrtc

@@ -11,13 +11,13 @@
 #include "webrtc/modules/desktop_capture/desktop_and_cursor_composer.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor.h"
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/window_capturer.h"
 #include "webrtc/system_wrappers/interface/logging.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -89,7 +89,7 @@ class FakeScreenCapturer : public DesktopCapturer {
  private:
   Callback* callback_;
 
-  scoped_ptr<DesktopFrame> next_frame_;
+  rtc::scoped_ptr<DesktopFrame> next_frame_;
 };
 
 class FakeMouseMonitor : public MouseCursorMonitor {
@@ -113,7 +113,7 @@ class FakeMouseMonitor : public MouseCursorMonitor {
 
   virtual void Capture() OVERRIDE {
     if (changed_) {
-      scoped_ptr<DesktopFrame> image(
+      rtc::scoped_ptr<DesktopFrame> image(
           new BasicDesktopFrame(DesktopSize(kCursorWidth, kCursorHeight)));
       uint32_t* data = reinterpret_cast<uint32_t*>(image->data());
       memset(data, 0, image->stride() * kCursorHeight);
@@ -186,7 +186,7 @@ class DesktopAndCursorComposerTest : public testing::Test,
   FakeMouseMonitor* fake_cursor_;
 
   DesktopAndCursorComposer blender_;
-  scoped_ptr<DesktopFrame> frame_;
+  rtc::scoped_ptr<DesktopFrame> frame_;
 };
 
 // Verify DesktopAndCursorComposer can handle the case when the screen capturer
@@ -238,7 +238,7 @@ TEST_F(DesktopAndCursorComposerTest, Blend) {
     DesktopVector pos(tests[i].x, tests[i].y);
     fake_cursor_->SetState(state, pos);
 
-    scoped_ptr<SharedDesktopFrame> frame(
+    rtc::scoped_ptr<SharedDesktopFrame> frame(
         SharedDesktopFrame::Wrap(CreateTestFrame()));
     fake_screen_->SetNextFrame(frame->Share());
 

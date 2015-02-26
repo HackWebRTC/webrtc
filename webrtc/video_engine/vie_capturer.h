@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
@@ -22,7 +23,6 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_capture.h"
@@ -155,15 +155,15 @@ class ViECapturer
   bool SwapCapturedAndDeliverFrameIfAvailable();
 
   // Never take capture_cs_ before deliver_cs_!
-  scoped_ptr<CriticalSectionWrapper> capture_cs_;
-  scoped_ptr<CriticalSectionWrapper> deliver_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> capture_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> deliver_cs_;
   VideoCaptureModule* capture_module_;
   VideoCaptureExternal* external_capture_module_;
   ProcessThread& module_process_thread_;
   const int capture_id_;
 
   // Frame used in IncomingFrameI420.
-  scoped_ptr<CriticalSectionWrapper> incoming_frame_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> incoming_frame_cs_;
   I420VideoFrame incoming_frame_;
 
   // Capture thread.
@@ -173,8 +173,8 @@ class ViECapturer
 
   bool stop_;
 
-  scoped_ptr<I420VideoFrame> captured_frame_;
-  scoped_ptr<I420VideoFrame> deliver_frame_;
+  rtc::scoped_ptr<I420VideoFrame> captured_frame_;
+  rtc::scoped_ptr<I420VideoFrame> deliver_frame_;
 
   // Image processing.
   ViEEffectFilter* effect_filter_;
@@ -186,15 +186,15 @@ class ViECapturer
   Brightness reported_brightness_level_;
 
   // Statistics observer.
-  scoped_ptr<CriticalSectionWrapper> observer_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> observer_cs_;
   ViECaptureObserver* observer_ GUARDED_BY(observer_cs_.get());
 
   CaptureCapability requested_capability_;
 
   // Must be declared before overuse_detector_ where it's registered.
-  const scoped_ptr<RegistrableCpuOveruseMetricsObserver>
+  const rtc::scoped_ptr<RegistrableCpuOveruseMetricsObserver>
       cpu_overuse_metrics_observer_;
-  scoped_ptr<OveruseFrameDetector> overuse_detector_;
+  rtc::scoped_ptr<OveruseFrameDetector> overuse_detector_;
 };
 
 }  // namespace webrtc

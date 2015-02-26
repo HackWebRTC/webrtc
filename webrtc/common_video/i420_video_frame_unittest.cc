@@ -12,9 +12,9 @@
 #include <string.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/scoped_refptr.h"
 
 namespace webrtc {
@@ -116,7 +116,7 @@ TEST(TestI420VideoFrame, CopyFrame) {
 
 TEST(TestI420VideoFrame, CloneFrame) {
   I420VideoFrame frame1;
-  scoped_ptr<I420VideoFrame> frame2;
+  rtc::scoped_ptr<I420VideoFrame> frame2;
   const int kSizeY = 400;
   const int kSizeU = 100;
   const int kSizeV = 100;

@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TRANSIENT_WPD_NODE_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_TRANSIENT_WPD_NODE_H_
 
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -36,9 +36,9 @@ class WPDNode {
   size_t length() const { return length_; }
 
  private:
-  scoped_ptr<float[]> data_;
+  rtc::scoped_ptr<float[]> data_;
   size_t length_;
-  scoped_ptr<FIRFilter> filter_;
+  rtc::scoped_ptr<FIRFilter> filter_;
 };
 
 }  // namespace webrtc

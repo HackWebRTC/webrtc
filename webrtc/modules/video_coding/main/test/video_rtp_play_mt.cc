@@ -38,7 +38,7 @@ bool PlayerThread(void* obj) {
   assert(obj);
   RtpPlayerInterface* rtp_player = static_cast<RtpPlayerInterface*>(obj);
 
-  webrtc::scoped_ptr<webrtc::EventWrapper> wait_event(
+  rtc::scoped_ptr<webrtc::EventWrapper> wait_event(
       webrtc::EventWrapper::Create());
   if (wait_event.get() == NULL) {
     return false;
@@ -82,7 +82,7 @@ int RtpPlayMT(const CmdArgs& args) {
   VcmPayloadSinkFactory factory(output_file, clock, kConfigProtectionEnabled,
       kConfigProtectionMethod, kConfigRttMs, kConfigRenderDelayMs,
       kConfigMinPlayoutDelayMs);
-  webrtc::scoped_ptr<RtpPlayerInterface> rtp_player(webrtc::rtpplayer::Create(
+  rtc::scoped_ptr<RtpPlayerInterface> rtp_player(webrtc::rtpplayer::Create(
       args.inputFile, &factory, clock, payload_types, kConfigLossRate,
       kConfigRttMs, kConfigReordering));
   if (rtp_player.get() == NULL) {
@@ -90,31 +90,33 @@ int RtpPlayMT(const CmdArgs& args) {
   }
 
   {
-    webrtc::scoped_ptr<webrtc::ThreadWrapper> player_thread(
+    rtc::scoped_ptr<webrtc::ThreadWrapper> player_thread(
         webrtc::ThreadWrapper::CreateThread(PlayerThread, rtp_player.get(),
-            webrtc::kNormalPriority, "PlayerThread"));
+                                            webrtc::kNormalPriority,
+                                            "PlayerThread"));
     if (player_thread.get() == NULL) {
       printf("Unable to start RTP reader thread\n");
       return -1;
     }
 
-    webrtc::scoped_ptr<webrtc::ThreadWrapper> processing_thread(
+    rtc::scoped_ptr<webrtc::ThreadWrapper> processing_thread(
         webrtc::ThreadWrapper::CreateThread(ProcessingThread, &factory,
-            webrtc::kNormalPriority, "ProcessingThread"));
+                                            webrtc::kNormalPriority,
+                                            "ProcessingThread"));
     if (processing_thread.get() == NULL) {
       printf("Unable to start processing thread\n");
       return -1;
     }
 
-    webrtc::scoped_ptr<webrtc::ThreadWrapper> decode_thread(
-        webrtc::ThreadWrapper::CreateThread(DecodeThread, &factory,
-            webrtc::kNormalPriority, "DecodeThread"));
+    rtc::scoped_ptr<webrtc::ThreadWrapper> decode_thread(
+        webrtc::ThreadWrapper::CreateThread(
+            DecodeThread, &factory, webrtc::kNormalPriority, "DecodeThread"));
     if (decode_thread.get() == NULL) {
       printf("Unable to start decode thread\n");
       return -1;
     }
 
-    webrtc::scoped_ptr<webrtc::EventWrapper> wait_event(
+    rtc::scoped_ptr<webrtc::EventWrapper> wait_event(
         webrtc::EventWrapper::Create());
     if (wait_event.get() == NULL) {
       printf("Unable to create wait event\n");

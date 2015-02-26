@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
 #include "webrtc/engine_configurations.h"
@@ -23,7 +24,6 @@
 #include "webrtc/modules/audio_coding/main/acm2/initial_delay_manager.h"
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
 #include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -320,7 +320,7 @@ class AcmReceiver {
 
   void InsertStreamOfSyncPackets(InitialDelayManager::SyncStream* sync_stream);
 
-  scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
   int id_;  // TODO(henrik.lundin) Make const.
   int last_audio_decoder_ GUARDED_BY(crit_sect_);
   AudioFrame::VADActivity previous_audio_activity_ GUARDED_BY(crit_sect_);
@@ -328,9 +328,9 @@ class AcmReceiver {
   ACMResampler resampler_ GUARDED_BY(crit_sect_);
   // Used in GetAudio, declared as member to avoid allocating every 10ms.
   // TODO(henrik.lundin) Stack-allocate in GetAudio instead?
-  scoped_ptr<int16_t[]> audio_buffer_ GUARDED_BY(crit_sect_);
-  scoped_ptr<int16_t[]> last_audio_buffer_ GUARDED_BY(crit_sect_);
-  scoped_ptr<Nack> nack_ GUARDED_BY(crit_sect_);
+  rtc::scoped_ptr<int16_t[]> audio_buffer_ GUARDED_BY(crit_sect_);
+  rtc::scoped_ptr<int16_t[]> last_audio_buffer_ GUARDED_BY(crit_sect_);
+  rtc::scoped_ptr<Nack> nack_ GUARDED_BY(crit_sect_);
   bool nack_enabled_ GUARDED_BY(crit_sect_);
   CallStatistics call_stats_ GUARDED_BY(crit_sect_);
   NetEq* neteq_;
@@ -342,15 +342,15 @@ class AcmReceiver {
   // Indicates if a non-zero initial delay is set, and the receiver is in
   // AV-sync mode.
   bool av_sync_;
-  scoped_ptr<InitialDelayManager> initial_delay_manager_;
+  rtc::scoped_ptr<InitialDelayManager> initial_delay_manager_;
 
   // The following are defined as members to avoid creating them in every
   // iteration. |missing_packets_sync_stream_| is *ONLY* used in InsertPacket().
   // |late_packets_sync_stream_| is only used in GetAudio(). Both of these
   // member variables are allocated only when we AV-sync is enabled, i.e.
   // initial delay is set.
-  scoped_ptr<InitialDelayManager::SyncStream> missing_packets_sync_stream_;
-  scoped_ptr<InitialDelayManager::SyncStream> late_packets_sync_stream_;
+  rtc::scoped_ptr<InitialDelayManager::SyncStream> missing_packets_sync_stream_;
+  rtc::scoped_ptr<InitialDelayManager::SyncStream> late_packets_sync_stream_;
 };
 
 }  // namespace acm2

@@ -14,7 +14,7 @@
 #include <deque>
 #include <set>
 
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/test/testsupport/gtest_prod_util.h"
 #include "webrtc/typedefs.h"
 
@@ -71,7 +71,7 @@ class TransientSuppressor {
   void HardRestoration(float* spectral_mean);
   void SoftRestoration(float* spectral_mean);
 
-  scoped_ptr<TransientDetector> detector_;
+  rtc::scoped_ptr<TransientDetector> detector_;
 
   size_t data_length_;
   size_t detection_length_;
@@ -80,25 +80,25 @@ class TransientSuppressor {
   size_t complex_analysis_length_;
   int num_channels_;
   // Input buffer where the original samples are stored.
-  scoped_ptr<float[]> in_buffer_;
-  scoped_ptr<float[]> detection_buffer_;
+  rtc::scoped_ptr<float[]> in_buffer_;
+  rtc::scoped_ptr<float[]> detection_buffer_;
   // Output buffer where the restored samples are stored.
-  scoped_ptr<float[]> out_buffer_;
+  rtc::scoped_ptr<float[]> out_buffer_;
 
   // Arrays for fft.
-  scoped_ptr<int[]> ip_;
-  scoped_ptr<float[]> wfft_;
+  rtc::scoped_ptr<int[]> ip_;
+  rtc::scoped_ptr<float[]> wfft_;
 
-  scoped_ptr<float[]> spectral_mean_;
+  rtc::scoped_ptr<float[]> spectral_mean_;
 
   // Stores the data for the fft.
-  scoped_ptr<float[]> fft_buffer_;
+  rtc::scoped_ptr<float[]> fft_buffer_;
 
-  scoped_ptr<float[]> magnitudes_;
+  rtc::scoped_ptr<float[]> magnitudes_;
 
   const float* window_;
 
-  scoped_ptr<float[]> mean_factor_;
+  rtc::scoped_ptr<float[]> mean_factor_;
 
   float detector_smoothed_;
 

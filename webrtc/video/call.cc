@@ -14,6 +14,7 @@
 #include <map>
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
 #include "webrtc/common.h"
@@ -26,7 +27,6 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video/video_receive_stream.h"
@@ -94,7 +94,7 @@ class CpuOveruseObserverProxy : public webrtc::CpuOveruseObserver {
   }
 
  private:
-  const scoped_ptr<CriticalSectionWrapper> crit_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> crit_;
   LoadObserver* overuse_callback_ GUARDED_BY(crit_);
 };
 
@@ -136,17 +136,17 @@ class Call : public webrtc::Call, public PacketReceiver {
   // Needs to be held while write-locking |receive_crit_| or |send_crit_|. This
   // ensures that we have a consistent network state signalled to all senders
   // and receivers.
-  scoped_ptr<CriticalSectionWrapper> network_enabled_crit_;
+  rtc::scoped_ptr<CriticalSectionWrapper> network_enabled_crit_;
   bool network_enabled_ GUARDED_BY(network_enabled_crit_);
 
-  scoped_ptr<RWLockWrapper> receive_crit_;
+  rtc::scoped_ptr<RWLockWrapper> receive_crit_;
   std::map<uint32_t, VideoReceiveStream*> receive_ssrcs_
       GUARDED_BY(receive_crit_);
 
-  scoped_ptr<RWLockWrapper> send_crit_;
+  rtc::scoped_ptr<RWLockWrapper> send_crit_;
   std::map<uint32_t, VideoSendStream*> send_ssrcs_ GUARDED_BY(send_crit_);
 
-  scoped_ptr<CpuOveruseObserverProxy> overuse_observer_proxy_;
+  rtc::scoped_ptr<CpuOveruseObserverProxy> overuse_observer_proxy_;
 
   VideoSendStream::RtpStateMap suspended_send_ssrcs_;
 
@@ -157,7 +157,7 @@ class Call : public webrtc::Call, public PacketReceiver {
   ViEBase* base_;
   int base_channel_id_;
 
-  scoped_ptr<VideoRender> external_render_;
+  rtc::scoped_ptr<VideoRender> external_render_;
 
   DISALLOW_COPY_AND_ASSIGN(Call);
 };

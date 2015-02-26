@@ -73,7 +73,7 @@ class AcmGenericCodecTest : public ::testing::Test {
   }
 
   WebRtcACMCodecParams acm_codec_params_;
-  scoped_ptr<ACMGenericCodec> codec_;
+  rtc::scoped_ptr<ACMGenericCodec> codec_;
   uint32_t timestamp_;
 };
 

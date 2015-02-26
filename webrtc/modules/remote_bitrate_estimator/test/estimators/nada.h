@@ -32,7 +32,7 @@ class NadaBweReceiver : public BweReceiver {
  private:
   SimulatedClock clock_;
   int64_t last_feedback_ms_;
-  scoped_ptr<ReceiveStatistics> recv_stats_;
+  rtc::scoped_ptr<ReceiveStatistics> recv_stats_;
   int64_t baseline_delay_ms_;
   int64_t delay_signal_ms_;
   int64_t last_congestion_signal_ms_;

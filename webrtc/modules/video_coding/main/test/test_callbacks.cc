@@ -292,7 +292,7 @@ RTPSendCompleteCallback::SendPacket(int channel, const void *data, size_t len)
         assert(_rtp);  // We must have a configured RTP module for this test.
         // Send to receive side
         RTPHeader header;
-        scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+        rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
         if (!parser->Parse(packet->data, packet->length, &header)) {
           delete packet;
           return -1;

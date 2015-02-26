@@ -11,11 +11,11 @@
 #include <stdio.h>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/test/rtp_file_reader.h"
 #include "webrtc/test/rtp_file_writer.h"
 
-using webrtc::scoped_ptr;
+using rtc::scoped_ptr;
 using webrtc::test::RtpFileReader;
 using webrtc::test::RtpFileWriter;
 

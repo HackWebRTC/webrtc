@@ -16,6 +16,7 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
 #include "webrtc/common_video/interface/native_handle.h"
 #include "webrtc/common_video/interface/texture_video_frame.h"
@@ -24,7 +25,6 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/scoped_vector.h"
 #include "webrtc/video_engine/mock/mock_vie_frame_provider_base.h"
 
@@ -106,20 +106,20 @@ class ViECapturerTest : public ::testing::Test {
     EXPECT_EQ(kEventSignaled, output_frame_event_->Wait(FRAME_TIMEOUT_MS));
   }
 
-  scoped_ptr<MockVideoCaptureModule> mock_capture_module_;
-  scoped_ptr<MockProcessThread> mock_process_thread_;
-  scoped_ptr<MockViEFrameCallback> mock_frame_callback_;
+  rtc::scoped_ptr<MockVideoCaptureModule> mock_capture_module_;
+  rtc::scoped_ptr<MockProcessThread> mock_process_thread_;
+  rtc::scoped_ptr<MockViEFrameCallback> mock_frame_callback_;
 
   // Used to send input capture frames to ViECapturer.
   VideoCaptureDataCallback* data_callback_;
 
-  scoped_ptr<ViECapturer> vie_capturer_;
+  rtc::scoped_ptr<ViECapturer> vie_capturer_;
 
   // Input capture frames of ViECapturer.
   ScopedVector<I420VideoFrame> input_frames_;
 
   // Indicate an output frame has arrived.
-  scoped_ptr<EventWrapper> output_frame_event_;
+  rtc::scoped_ptr<EventWrapper> output_frame_event_;
 
   // Output delivered frames of ViECaptuer.
   ScopedVector<I420VideoFrame> output_frames_;
@@ -174,7 +174,8 @@ TEST_F(ViECapturerTest, TestI420FrameAfterTextureFrame) {
   WaitOutputFrame();
 
   input_frames_.push_back(CreateI420VideoFrame(1));
-  scoped_ptr<I420VideoFrame> copied_input_frame(input_frames_[1]->CloneFrame());
+  rtc::scoped_ptr<I420VideoFrame> copied_input_frame(
+      input_frames_[1]->CloneFrame());
   AddInputFrame(copied_input_frame.get());
   WaitOutputFrame();
 
@@ -183,7 +184,8 @@ TEST_F(ViECapturerTest, TestI420FrameAfterTextureFrame) {
 
 TEST_F(ViECapturerTest, TestTextureFrameAfterI420Frame) {
   input_frames_.push_back(CreateI420VideoFrame(1));
-  scoped_ptr<I420VideoFrame> copied_input_frame(input_frames_[0]->CloneFrame());
+  rtc::scoped_ptr<I420VideoFrame> copied_input_frame(
+      input_frames_[0]->CloneFrame());
   AddInputFrame(copied_input_frame.get());
   WaitOutputFrame();
 

@@ -18,7 +18,7 @@ class CroppedDesktopFrame : public DesktopFrame {
   CroppedDesktopFrame(DesktopFrame* frame, const DesktopRect& rect);
 
  private:
-  scoped_ptr<DesktopFrame> frame_;
+  rtc::scoped_ptr<DesktopFrame> frame_;
 
   DISALLOW_COPY_AND_ASSIGN(CroppedDesktopFrame);
 };

@@ -63,16 +63,16 @@ class CallTest : public ::testing::Test {
 
   Clock* const clock_;
 
-  scoped_ptr<Call> sender_call_;
+  rtc::scoped_ptr<Call> sender_call_;
   VideoSendStream::Config send_config_;
   VideoEncoderConfig encoder_config_;
   VideoSendStream* send_stream_;
 
-  scoped_ptr<Call> receiver_call_;
+  rtc::scoped_ptr<Call> receiver_call_;
   std::vector<VideoReceiveStream::Config> receive_configs_;
   std::vector<VideoReceiveStream*> receive_streams_;
 
-  scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer_;
+  rtc::scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer_;
   test::FakeEncoder fake_encoder_;
   ScopedVector<VideoDecoder> allocated_decoders_;
 };

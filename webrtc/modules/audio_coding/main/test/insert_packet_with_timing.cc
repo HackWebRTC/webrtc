@@ -12,13 +12,13 @@
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/main/test/Channel.h"
 #include "webrtc/modules/audio_coding/main/test/PCMFile.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 // Codec.
@@ -249,8 +249,8 @@ class InsertPacketWithTiming {
   SimulatedClock* sender_clock_;
   SimulatedClock* receiver_clock_;
 
-  scoped_ptr<AudioCodingModule> send_acm_;
-  scoped_ptr<AudioCodingModule> receive_acm_;
+  rtc::scoped_ptr<AudioCodingModule> send_acm_;
+  rtc::scoped_ptr<AudioCodingModule> receive_acm_;
   Channel* channel_;
 
   FILE* seq_num_fid_;  // Input (text), one sequence number per line.

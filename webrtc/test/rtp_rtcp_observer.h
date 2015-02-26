@@ -169,9 +169,9 @@ class RtpRtcpObserver {
   };
 
  protected:
-  const scoped_ptr<CriticalSectionWrapper> crit_;
-  const scoped_ptr<EventWrapper> observation_complete_;
-  const scoped_ptr<RtpHeaderParser> parser_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  const rtc::scoped_ptr<EventWrapper> observation_complete_;
+  const rtc::scoped_ptr<RtpHeaderParser> parser_;
 
  private:
   PacketTransport send_transport_, receive_transport_;

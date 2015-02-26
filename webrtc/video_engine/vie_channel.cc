@@ -1603,7 +1603,7 @@ int32_t ViEChannel::FrameToRender(
     if (effect_filter_) {
       size_t length =
           CalcBufferSize(kI420, video_frame.width(), video_frame.height());
-      scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
+      rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
       ExtractBuffer(video_frame, length, video_buffer.get());
       effect_filter_->Transform(length,
                                 video_buffer.get(),

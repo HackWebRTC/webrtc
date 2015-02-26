@@ -12,8 +12,8 @@
 
 #include "webrtc/system_wrappers/interface/scoped_vector.h"
 
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 namespace {
@@ -105,7 +105,7 @@ class LifeCycleWatcher : public LifeCycleObject::Observer {
 
  private:
   LifeCycleState life_cycle_state_;
-  scoped_ptr<LifeCycleObject> constructed_life_cycle_object_;
+  rtc::scoped_ptr<LifeCycleObject> constructed_life_cycle_object_;
 
   DISALLOW_COPY_AND_ASSIGN(LifeCycleWatcher);
 };

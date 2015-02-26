@@ -107,7 +107,7 @@ class Beamformer : public LappedTransform::Callback {
 
   // Deals with the fft transform and blocking.
   int chunk_length_;
-  scoped_ptr<LappedTransform> lapped_transform_;
+  rtc::scoped_ptr<LappedTransform> lapped_transform_;
   float window_[kFftSize];
 
   // Parameters exposed to the user.

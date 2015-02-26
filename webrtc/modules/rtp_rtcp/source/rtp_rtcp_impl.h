@@ -14,11 +14,11 @@
 #include <list>
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/gtest_prod_util.h"
 
 namespace webrtc {
@@ -395,7 +395,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   RtcpRttStats* rtt_stats_;
 
   // The processed RTT from RtcpRttStats.
-  scoped_ptr<CriticalSectionWrapper> critical_section_rtt_;
+  rtc::scoped_ptr<CriticalSectionWrapper> critical_section_rtt_;
   int64_t rtt_ms_;
 };
 

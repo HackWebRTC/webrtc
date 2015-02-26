@@ -27,7 +27,7 @@ void ReadAndWriteTest(const ChannelBuffer<float>& input,
   const size_t num_channels = input.num_channels();
   const size_t total_frames = input.num_frames();
   AudioRingBuffer buf(num_channels, buffer_frames);
-  scoped_ptr<float*[]> slice(new float*[num_channels]);
+  rtc::scoped_ptr<float* []> slice(new float* [num_channels]);
 
   size_t input_pos = 0;
   size_t output_pos = 0;

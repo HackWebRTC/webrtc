@@ -12,7 +12,7 @@
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
@@ -217,16 +217,13 @@ class AgcVoiceEngine {
   int channel_;
   int capture_idx_;
   int render_idx_;
-  scoped_ptr<test::VoiceChannelTransport> channel_transport_;
+  rtc::scoped_ptr<test::VoiceChannelTransport> channel_transport_;
 };
 
 void RunHarness() {
-  scoped_ptr<AgcVoiceEngine> voe1(new AgcVoiceEngine(FLAGS_internal,
-                                                     2000,
-                                                     2000,
-                                                     FLAGS_capture1,
-                                                     FLAGS_render1));
-  scoped_ptr<AgcVoiceEngine> voe2;
+  rtc::scoped_ptr<AgcVoiceEngine> voe1(new AgcVoiceEngine(
+      FLAGS_internal, 2000, 2000, FLAGS_capture1, FLAGS_render1));
+  rtc::scoped_ptr<AgcVoiceEngine> voe2;
   if (FLAGS_parallel) {
     voe2.reset(new AgcVoiceEngine(!FLAGS_internal, 3000, 3000, FLAGS_capture2,
                                   FLAGS_render2));

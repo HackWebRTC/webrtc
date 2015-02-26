@@ -281,8 +281,8 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test {
   }
 
  protected:
-  scoped_ptr<TestSimulcastEncoderAdapterFakeHelper> helper_;
-  scoped_ptr<VP8Encoder> adapter_;
+  rtc::scoped_ptr<TestSimulcastEncoderAdapterFakeHelper> helper_;
+  rtc::scoped_ptr<VP8Encoder> adapter_;
   VideoCodec codec_;
 };
 

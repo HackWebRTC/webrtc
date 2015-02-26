@@ -50,9 +50,10 @@ int RtpPlay(const CmdArgs& args) {
   webrtc::rtpplayer::VcmPayloadSinkFactory factory(output_file, &clock,
       kConfigProtectionEnabled, kConfigProtectionMethod, kConfigRttMs,
       kConfigRenderDelayMs, kConfigMinPlayoutDelayMs);
-  webrtc::scoped_ptr<webrtc::rtpplayer::RtpPlayerInterface> rtp_player(
+  rtc::scoped_ptr<webrtc::rtpplayer::RtpPlayerInterface> rtp_player(
       webrtc::rtpplayer::Create(args.inputFile, &factory, &clock, payload_types,
-          kConfigLossRate, kConfigRttMs, kConfigReordering));
+                                kConfigLossRate, kConfigRttMs,
+                                kConfigReordering));
   if (rtp_player.get() == NULL) {
     return -1;
   }

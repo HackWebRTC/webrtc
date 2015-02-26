@@ -306,7 +306,7 @@ TEST_F(BlockerTest, InitialDelaysAreMinimum) {
   CopyBlockerCallback callback;
 
   for (size_t i = 0; i < (sizeof(kChunkSize) / sizeof(*kChunkSize)); ++i) {
-    scoped_ptr<float[]> window(new float[kBlockSize[i]]);
+    rtc::scoped_ptr<float[]> window(new float[kBlockSize[i]]);
     for (int j = 0; j < kBlockSize[i]; ++j) {
       window[j] = 1.f;
     }

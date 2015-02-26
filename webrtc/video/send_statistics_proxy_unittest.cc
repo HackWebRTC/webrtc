@@ -84,7 +84,7 @@ class SendStatisticsProxyTest : public ::testing::Test {
     }
   }
 
-  scoped_ptr<SendStatisticsProxy> statistics_proxy_;
+  rtc::scoped_ptr<SendStatisticsProxy> statistics_proxy_;
   SimulatedClock fake_clock_;
   VideoSendStream::Config config_;
   int avg_delay_ms_;

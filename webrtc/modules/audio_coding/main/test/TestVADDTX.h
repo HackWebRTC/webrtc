@@ -11,10 +11,10 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_TESTVADDTX_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_TESTVADDTX_H_
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/main/test/ACMTest.h"
 #include "webrtc/modules/audio_coding/main/test/Channel.h"
 #include "webrtc/modules/audio_coding/main/test/PCMFile.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -65,8 +65,8 @@ class TestVADDTX : public ACMTest {
   void SetVAD(bool statusDTX, bool statusVAD, int16_t vadMode);
   VADDTXstruct GetVAD();
   int16_t VerifyTest();
-  scoped_ptr<AudioCodingModule> _acmA;
-  scoped_ptr<AudioCodingModule> _acmB;
+  rtc::scoped_ptr<AudioCodingModule> _acmA;
+  rtc::scoped_ptr<AudioCodingModule> _acmB;
 
   Channel* _channelA2B;
 

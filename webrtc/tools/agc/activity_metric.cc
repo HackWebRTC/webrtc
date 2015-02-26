@@ -154,10 +154,10 @@ class AgcStat {
   int video_index_;
   double activity_threshold_;
   double video_vad_[kMaxNumFrames];
-  scoped_ptr<Histogram> audio_content_;
-  scoped_ptr<AgcAudioProc> audio_processing_;
-  scoped_ptr<PitchBasedVad> vad_;
-  scoped_ptr<StandaloneVad> standalone_vad_;
+  rtc::scoped_ptr<Histogram> audio_content_;
+  rtc::scoped_ptr<AgcAudioProc> audio_processing_;
+  rtc::scoped_ptr<PitchBasedVad> vad_;
+  rtc::scoped_ptr<StandaloneVad> standalone_vad_;
 
   FILE* audio_content_fid_;
 };

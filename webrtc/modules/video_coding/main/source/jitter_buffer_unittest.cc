@@ -111,10 +111,10 @@ class TestBasicJitterBuffer : public ::testing::Test {
   uint32_t timestamp_;
   int size_;
   uint8_t data_[1500];
-  scoped_ptr<VCMPacket> packet_;
-  scoped_ptr<SimulatedClock> clock_;
+  rtc::scoped_ptr<VCMPacket> packet_;
+  rtc::scoped_ptr<SimulatedClock> clock_;
   NullEventFactory event_factory_;
-  scoped_ptr<VCMJitterBuffer> jitter_buffer_;
+  rtc::scoped_ptr<VCMJitterBuffer> jitter_buffer_;
 };
 
 
@@ -218,7 +218,7 @@ class TestRunningJitterBuffer : public ::testing::Test {
 
   VCMJitterBuffer* jitter_buffer_;
   StreamGenerator* stream_generator_;
-  scoped_ptr<SimulatedClock> clock_;
+  rtc::scoped_ptr<SimulatedClock> clock_;
   NullEventFactory event_factory_;
   size_t max_nack_list_size_;
   int oldest_packet_to_nack_;

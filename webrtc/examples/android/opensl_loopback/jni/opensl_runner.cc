@@ -11,13 +11,13 @@
 #include <assert.h>
 #include <jni.h>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/examples/android/opensl_loopback/fake_audio_device_buffer.h"
 #include "webrtc/modules/audio_device/android/audio_device_template.h"
 #include "webrtc/modules/audio_device/android/audio_record_jni.h"
 #include "webrtc/modules/audio_device/android/audio_track_jni.h"
 #include "webrtc/modules/audio_device/android/opensles_input.h"
 #include "webrtc/modules/audio_device/android/opensles_output.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 // Java globals
 static JavaVM* g_vm = NULL;

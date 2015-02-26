@@ -13,13 +13,13 @@
 
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_receiver.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_resampler.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -429,7 +429,7 @@ class AudioCodingImpl : public AudioCoding {
   int playout_frequency_hz_;
   // TODO(henrik.lundin): All members below this line are temporary and should
   // be removed after refactoring is completed.
-  scoped_ptr<acm2::AudioCodingModuleImpl> acm_old_;
+  rtc::scoped_ptr<acm2::AudioCodingModuleImpl> acm_old_;
   CodecInst current_send_codec_;
 };
 

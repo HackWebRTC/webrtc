@@ -11,8 +11,8 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/overuse_frame_detector.h"
 
@@ -137,9 +137,9 @@ class OveruseFrameDetectorTest : public ::testing::Test,
   int UsagePercent() { return metrics_.encode_usage_percent; }
 
   CpuOveruseOptions options_;
-  scoped_ptr<SimulatedClock> clock_;
-  scoped_ptr<MockCpuOveruseObserver> observer_;
-  scoped_ptr<OveruseFrameDetector> overuse_detector_;
+  rtc::scoped_ptr<SimulatedClock> clock_;
+  rtc::scoped_ptr<MockCpuOveruseObserver> observer_;
+  rtc::scoped_ptr<OveruseFrameDetector> overuse_detector_;
   CpuOveruseMetrics metrics_;
 };
 

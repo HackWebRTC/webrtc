@@ -17,9 +17,9 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 namespace testing {
@@ -207,9 +207,9 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
   static const int kArrivalTimeClockOffsetMs = 60000;
 
   SimulatedClock clock_;  // Time at the receiver.
-  scoped_ptr<testing::TestBitrateObserver> bitrate_observer_;
-  scoped_ptr<RemoteBitrateEstimator> bitrate_estimator_;
-  scoped_ptr<testing::StreamGenerator> stream_generator_;
+  rtc::scoped_ptr<testing::TestBitrateObserver> bitrate_observer_;
+  rtc::scoped_ptr<RemoteBitrateEstimator> bitrate_estimator_;
+  rtc::scoped_ptr<testing::StreamGenerator> stream_generator_;
 
   DISALLOW_COPY_AND_ASSIGN(RemoteBitrateEstimatorTest);
 };

@@ -11,6 +11,7 @@
 #ifndef WEBRTC_VOICE_ENGINE_CHANNEL_H_
 #define WEBRTC_VOICE_ENGINE_CHANNEL_H_
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
@@ -22,7 +23,6 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/file_player.h"
 #include "webrtc/modules/utility/interface/file_recorder.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/voice_engine/dtmf_inband.h"
 #include "webrtc/voice_engine/dtmf_inband_queue.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
@@ -149,7 +149,7 @@ class ChannelState {
     }
 
 private:
-    scoped_ptr<CriticalSectionWrapper> lock_;
+ rtc::scoped_ptr<CriticalSectionWrapper> lock_;
     State state_;
 };
 
@@ -487,20 +487,20 @@ private:
 
     ChannelState channel_state_;
 
-    scoped_ptr<RtpHeaderParser> rtp_header_parser_;
-    scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
-    scoped_ptr<ReceiveStatistics> rtp_receive_statistics_;
-    scoped_ptr<StatisticsProxy> statistics_proxy_;
-    scoped_ptr<RtpReceiver> rtp_receiver_;
+    rtc::scoped_ptr<RtpHeaderParser> rtp_header_parser_;
+    rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
+    rtc::scoped_ptr<ReceiveStatistics> rtp_receive_statistics_;
+    rtc::scoped_ptr<StatisticsProxy> statistics_proxy_;
+    rtc::scoped_ptr<RtpReceiver> rtp_receiver_;
     TelephoneEventHandler* telephone_event_handler_;
-    scoped_ptr<RtpRtcp> _rtpRtcpModule;
-    scoped_ptr<AudioCodingModule> audio_coding_;
+    rtc::scoped_ptr<RtpRtcp> _rtpRtcpModule;
+    rtc::scoped_ptr<AudioCodingModule> audio_coding_;
     RtpDump& _rtpDumpIn;
     RtpDump& _rtpDumpOut;
     AudioLevel _outputAudioLevel;
     bool _externalTransport;
     AudioFrame _audioFrame;
-    scoped_ptr<int16_t[]> mono_recording_audio_;
+    rtc::scoped_ptr<int16_t[]> mono_recording_audio_;
     // Downsamples to the codec rate if necessary.
     PushResampler<int16_t> input_resampler_;
     FilePlayer* _inputFilePlayerPtr;
@@ -529,9 +529,9 @@ private:
     uint16_t send_sequence_number_;
     uint8_t restored_packet_[kVoiceEngineMaxIpPacketSizeBytes];
 
-    scoped_ptr<CriticalSectionWrapper> ts_stats_lock_;
+    rtc::scoped_ptr<CriticalSectionWrapper> ts_stats_lock_;
 
-    scoped_ptr<rtc::TimestampWrapAroundHandler> rtp_ts_wraparound_handler_;
+    rtc::scoped_ptr<rtc::TimestampWrapAroundHandler> rtp_ts_wraparound_handler_;
     // The rtp timestamp of the first played out audio frame.
     int64_t capture_start_rtp_time_stamp_;
     // The capture ntp time (in local timebase) of the first played out audio
@@ -548,7 +548,7 @@ private:
     CriticalSectionWrapper* _callbackCritSectPtr; // owned by base
     Transport* _transportPtr; // WebRtc socket or external transport
     RMSLevel rms_level_;
-    scoped_ptr<AudioProcessing> rx_audioproc_; // far end AudioProcessing
+    rtc::scoped_ptr<AudioProcessing> rx_audioproc_;  // far end AudioProcessing
     VoERxVadCallback* _rxVadObserverPtr;
     int32_t _oldVadDecision;
     int32_t _sendFrameType; // Send data is voice, 1-voice, 0-otherwise
@@ -582,8 +582,8 @@ private:
     bool _rxNsIsEnabled;
     bool restored_packet_in_use_;
     // RtcpBandwidthObserver
-    scoped_ptr<VoERtcpObserver> rtcp_observer_;
-    scoped_ptr<NetworkPredictor> network_predictor_;
+    rtc::scoped_ptr<VoERtcpObserver> rtcp_observer_;
+    rtc::scoped_ptr<NetworkPredictor> network_predictor_;
 };
 
 }  // namespace voe

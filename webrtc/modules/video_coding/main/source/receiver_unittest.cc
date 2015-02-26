@@ -89,11 +89,11 @@ class TestVCMReceiver : public ::testing::Test {
     return true;
   }
 
-  scoped_ptr<SimulatedClock> clock_;
+  rtc::scoped_ptr<SimulatedClock> clock_;
   VCMTiming timing_;
   NullEventFactory event_factory_;
   VCMReceiver receiver_;
-  scoped_ptr<StreamGenerator> stream_generator_;
+  rtc::scoped_ptr<StreamGenerator> stream_generator_;
   uint8_t data_buffer_[kDataBufferSize];
 };
 

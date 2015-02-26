@@ -328,18 +328,18 @@ class RTPSender : public RTPSenderInterface {
   Clock* clock_;
   int64_t clock_delta_ms_;
 
-  scoped_ptr<BitrateAggregator> bitrates_;
+  rtc::scoped_ptr<BitrateAggregator> bitrates_;
   Bitrate total_bitrate_sent_;
 
   int32_t id_;
 
   const bool audio_configured_;
-  scoped_ptr<RTPSenderAudio> audio_;
-  scoped_ptr<RTPSenderVideo> video_;
+  rtc::scoped_ptr<RTPSenderAudio> audio_;
+  rtc::scoped_ptr<RTPSenderVideo> video_;
 
   PacedSender *paced_sender_;
   int64_t last_capture_time_ms_sent_;
-  scoped_ptr<CriticalSectionWrapper> send_critsect_;
+  rtc::scoped_ptr<CriticalSectionWrapper> send_critsect_;
 
   Transport *transport_;
   bool sending_media_ GUARDED_BY(send_critsect_);
@@ -362,7 +362,7 @@ class RTPSender : public RTPSenderInterface {
   RTPPacketHistory packet_history_;
 
   // Statistics
-  scoped_ptr<CriticalSectionWrapper> statistics_crit_;
+  rtc::scoped_ptr<CriticalSectionWrapper> statistics_crit_;
   SendDelayMap send_delays_ GUARDED_BY(statistics_crit_);
   FrameCounts frame_counts_ GUARDED_BY(statistics_crit_);
   StreamDataCounters rtp_stats_ GUARDED_BY(statistics_crit_);
@@ -395,7 +395,7 @@ class RTPSender : public RTPSenderInterface {
   // SetTargetBitrateKbps or GetTargetBitrateKbps. Also remember
   // that by the time the function returns there is no guarantee
   // that the target bitrate is still valid.
-  scoped_ptr<CriticalSectionWrapper> target_bitrate_critsect_;
+  rtc::scoped_ptr<CriticalSectionWrapper> target_bitrate_critsect_;
   uint32_t target_bitrate_ GUARDED_BY(target_bitrate_critsect_);
 };
 

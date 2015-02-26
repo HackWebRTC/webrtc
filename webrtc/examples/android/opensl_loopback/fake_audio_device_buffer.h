@@ -11,10 +11,10 @@
 #ifndef WEBRTC_EXAMPLES_ANDROID_OPENSL_LOOPBACK_FAKE_AUDIO_DEVICE_BUFFER_H_
 #define WEBRTC_EXAMPLES_ANDROID_OPENSL_LOOPBACK_FAKE_AUDIO_DEVICE_BUFFER_H_
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_device/android/audio_manager_jni.h"
 #include "webrtc/modules/audio_device/android/single_rw_fifo.h"
 #include "webrtc/modules/audio_device/audio_device_buffer.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -55,7 +55,7 @@ class FakeAudioDeviceBuffer : public AudioDeviceBuffer {
   AudioManagerJni audio_manager_;
 
   SingleRwFifo fifo_;
-  scoped_ptr<scoped_ptr<int8_t[]>[]> buf_;
+  rtc::scoped_ptr<rtc::scoped_ptr<int8_t[]>[]> buf_;
   int next_available_buffer_;
 
   uint8_t record_channels_;

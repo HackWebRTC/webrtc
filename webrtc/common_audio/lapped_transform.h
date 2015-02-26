@@ -14,10 +14,10 @@
 #include <complex>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/blocker.h"
 #include "webrtc/common_audio/real_fourier.h"
 #include "webrtc/system_wrappers/interface/aligned_array.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -86,7 +86,7 @@ class LappedTransform {
   int block_length_;
   int chunk_length_;
   Callback* block_processor_;
-  scoped_ptr<Blocker> blocker_;
+  rtc::scoped_ptr<Blocker> blocker_;
 
   RealFourier fft_;
   int cplx_length_;

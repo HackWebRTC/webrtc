@@ -90,7 +90,7 @@ class VCMReceiver {
   Clock* const clock_;
   VCMJitterBuffer jitter_buffer_;
   VCMTiming* timing_;
-  scoped_ptr<EventWrapper> render_wait_event_;
+  rtc::scoped_ptr<EventWrapper> render_wait_event_;
   VCMReceiverState state_;
   int max_video_delay_ms_;
 

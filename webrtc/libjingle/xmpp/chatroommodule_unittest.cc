@@ -161,11 +161,11 @@ public:
     std::stringstream dump;
 
     // Configure the engine
-    scoped_ptr<XmppEngine> engine(XmppEngine::Create());
+    rtc::scoped_ptr<XmppEngine> engine(XmppEngine::Create());
     XmppTestHandler handler(engine.get());
 
     // Configure the module and handler
-    scoped_ptr<XmppChatroomModule> chatroom(XmppChatroomModule::Create());
+    rtc::scoped_ptr<XmppChatroomModule> chatroom(XmppChatroomModule::Create());
 
     // Configure the module handler
     chatroom->RegisterEngine(engine.get());

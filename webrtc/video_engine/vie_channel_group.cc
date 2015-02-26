@@ -127,9 +127,9 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 
   RemoteBitrateObserver* observer_;
   Clock* clock_;
-  scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
   const uint32_t min_bitrate_bps_;
-  scoped_ptr<RemoteBitrateEstimator> rbe_;
+  rtc::scoped_ptr<RemoteBitrateEstimator> rbe_;
   bool using_absolute_send_time_;
   uint32_t packets_since_absolute_send_time_;
 

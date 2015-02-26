@@ -80,7 +80,7 @@ class VCMRobustnessTest : public ::testing::Test {
   MockPacketRequestCallback request_callback_;
   NiceMock<MockVideoDecoder> decoder_;
   NiceMock<MockVideoDecoder> decoderCopy_;
-  scoped_ptr<SimulatedClock> clock_;
+  rtc::scoped_ptr<SimulatedClock> clock_;
   NullEventFactory event_factory_;
 };
 

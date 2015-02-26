@@ -14,8 +14,8 @@
 #include <list>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/interface/module.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -58,9 +58,9 @@ class CallStats : public Module {
 
  private:
   // Protecting all members.
-  scoped_ptr<CriticalSectionWrapper> crit_;
+  rtc::scoped_ptr<CriticalSectionWrapper> crit_;
   // Observer receiving statistics updates.
-  scoped_ptr<RtcpRttStats> rtcp_rtt_stats_;
+  rtc::scoped_ptr<RtcpRttStats> rtcp_rtt_stats_;
   // The last time 'Process' resulted in statistic update.
   int64_t last_process_time_;
   // The last RTT in the statistics update (zero if there is no valid estimate).

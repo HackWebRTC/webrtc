@@ -15,10 +15,10 @@
 #include <string>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 namespace testing {
@@ -55,7 +55,7 @@ class PacketSender : public PacketProcessor, public BitrateObserver {
 
   SimulatedClock clock_;
   VideoSource* source_;
-  scoped_ptr<BweSender> bwe_;
+  rtc::scoped_ptr<BweSender> bwe_;
   int64_t start_of_run_ms_;
   std::list<Module*> modules_;
 

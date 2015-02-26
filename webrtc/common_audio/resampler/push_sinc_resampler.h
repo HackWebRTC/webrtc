@@ -12,8 +12,8 @@
 #define WEBRTC_COMMON_AUDIO_RESAMPLER_PUSH_SINC_RESAMPLER_H_
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/resampler/sinc_resampler.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -56,8 +56,8 @@ class PushSincResampler : public SincResamplerCallback {
   friend class PushSincResamplerTest;
   SincResampler* get_resampler_for_testing() { return resampler_.get(); }
 
-  scoped_ptr<SincResampler> resampler_;
-  scoped_ptr<float[]> float_buffer_;
+  rtc::scoped_ptr<SincResampler> resampler_;
+  rtc::scoped_ptr<float[]> float_buffer_;
   const float* source_ptr_;
   const int16_t* source_ptr_int_;
   const int destination_frames_;

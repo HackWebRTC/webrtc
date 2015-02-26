@@ -9,10 +9,10 @@
  */
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/vad/mock/mock_vad.h"
 #include "webrtc/modules/audio_coding/codecs/cng/include/audio_encoder_cng.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_encoder.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 using ::testing::Return;
 using ::testing::_;
@@ -176,7 +176,7 @@ class AudioEncoderCngTest : public ::testing::Test {
   }
 
   AudioEncoderCng::Config config_;
-  scoped_ptr<AudioEncoderCng> cng_;
+  rtc::scoped_ptr<AudioEncoderCng> cng_;
   MockAudioEncoder mock_encoder_;
   MockVad* mock_vad_;  // Ownership is transferred to |cng_|.
   uint32_t timestamp_;

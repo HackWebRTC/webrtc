@@ -13,10 +13,10 @@
 
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -112,14 +112,14 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
   // iSAC encoder/decoder state, guarded by a mutex to ensure that encode calls
   // from one thread won't clash with decode calls from another thread.
   // Note: PT_GUARDED_BY is disabled since it is not yet supported by clang.
-  const scoped_ptr<CriticalSectionWrapper> state_lock_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> state_lock_;
   typename T::instance_type* isac_state_
       GUARDED_BY(state_lock_) /* PT_GUARDED_BY(lock_)*/;
 
   int decoder_sample_rate_hz_ GUARDED_BY(state_lock_);
 
   // Must be acquired before state_lock_.
-  const scoped_ptr<CriticalSectionWrapper> lock_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> lock_;
 
   // Have we accepted input but not yet emitted it in a packet?
   bool packet_in_progress_ GUARDED_BY(lock_);

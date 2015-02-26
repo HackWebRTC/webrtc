@@ -18,7 +18,7 @@
 #include <string>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/video_engine/include/vie_render.h"
 
 namespace webrtc {
@@ -83,9 +83,9 @@ class ViEToFileRenderer: public webrtc::ExternalRenderer {
   FILE* output_file_;
   std::string output_path_;
   std::string output_filename_;
-  webrtc::scoped_ptr<webrtc::ThreadWrapper> thread_;
-  webrtc::scoped_ptr<webrtc::CriticalSectionWrapper> frame_queue_cs_;
-  webrtc::scoped_ptr<webrtc::EventWrapper> frame_render_event_;
+  rtc::scoped_ptr<webrtc::ThreadWrapper> thread_;
+  rtc::scoped_ptr<webrtc::CriticalSectionWrapper> frame_queue_cs_;
+  rtc::scoped_ptr<webrtc::EventWrapper> frame_render_event_;
   FrameQueue render_queue_;
   FrameQueue free_frame_queue_;
 };

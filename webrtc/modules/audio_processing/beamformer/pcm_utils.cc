@@ -22,7 +22,7 @@ size_t PcmRead(FILE* file,
                int16_t* const* buffer) {
   CHECK_GE(num_channels, 1);
 
-  scoped_ptr<int16_t[]> interleaved_buffer(new int16_t[length]);
+  rtc::scoped_ptr<int16_t[]> interleaved_buffer(new int16_t[length]);
   size_t elements_read = fread(interleaved_buffer.get(), sizeof(int16_t),
                                length, file);
   if (elements_read != length) {
@@ -44,7 +44,7 @@ size_t PcmReadToFloat(FILE* file,
   CHECK_GE(num_channels, 1);
 
   int num_frames = static_cast<int>(length) / num_channels;
-  scoped_ptr<ChannelBuffer<int16_t> > deinterleaved_buffer(
+  rtc::scoped_ptr<ChannelBuffer<int16_t> > deinterleaved_buffer(
       new ChannelBuffer<int16_t>(num_frames, num_channels));
 
   size_t elements_read =
@@ -62,7 +62,7 @@ void PcmWrite(FILE* file,
               const int16_t* const* buffer) {
   CHECK_GE(num_channels, 1);
 
-  scoped_ptr<int16_t[]> interleaved_buffer(new int16_t[length]);
+  rtc::scoped_ptr<int16_t[]> interleaved_buffer(new int16_t[length]);
   Interleave(buffer,
              static_cast<int>(length) / num_channels,
              num_channels,
@@ -78,7 +78,7 @@ void PcmWriteFromFloat(FILE* file,
   CHECK_GE(num_channels, 1);
 
   int num_frames = static_cast<int>(length) / num_channels;
-  scoped_ptr<ChannelBuffer<int16_t> > deinterleaved_buffer(
+  rtc::scoped_ptr<ChannelBuffer<int16_t> > deinterleaved_buffer(
       new ChannelBuffer<int16_t>(num_frames, num_channels));
 
   for (int i = 0; i < num_channels; ++i) {

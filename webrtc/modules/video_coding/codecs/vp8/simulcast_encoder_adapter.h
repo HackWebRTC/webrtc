@@ -14,8 +14,8 @@
 
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -97,8 +97,8 @@ class SimulcastEncoderAdapter : public VP8Encoder,
 
   bool Initialized() const;
 
-  scoped_ptr<VideoEncoderFactory> factory_;
-  scoped_ptr<Config> screensharing_extra_options_;
+  rtc::scoped_ptr<VideoEncoderFactory> factory_;
+  rtc::scoped_ptr<Config> screensharing_extra_options_;
   VideoCodec codec_;
   std::vector<StreamInfo> streaminfos_;
   EncodedImageCallback* encoded_complete_callback_;

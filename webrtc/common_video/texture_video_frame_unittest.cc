@@ -58,7 +58,7 @@ TEST(TestTextureVideoFrame, RefCount) {
 TEST(TestTextureVideoFrame, CloneFrame) {
   NativeHandleImpl handle;
   TextureVideoFrame frame1(&handle, 640, 480, 100, 200);
-  scoped_ptr<I420VideoFrame> frame2(frame1.CloneFrame());
+  rtc::scoped_ptr<I420VideoFrame> frame2(frame1.CloneFrame());
   EXPECT_TRUE(frame2.get() != NULL);
   EXPECT_TRUE(EqualTextureFrames(frame1, *frame2));
 }

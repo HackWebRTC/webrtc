@@ -14,11 +14,11 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/inter_arrival.h"
 #include "webrtc/modules/remote_bitrate_estimator/overuse_detector.h"
 #include "webrtc/modules/remote_bitrate_estimator/overuse_estimator.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
@@ -112,9 +112,9 @@ class OveruseDetectorTest : public ::testing::Test {
   int64_t receive_time_ms_;
   uint32_t rtp_timestamp_;
   OverUseDetectorOptions options_;
-  scoped_ptr<OveruseDetector> overuse_detector_;
-  scoped_ptr<OveruseEstimator> overuse_estimator_;
-  scoped_ptr<InterArrival> inter_arrival_;
+  rtc::scoped_ptr<OveruseDetector> overuse_detector_;
+  rtc::scoped_ptr<OveruseEstimator> overuse_estimator_;
+  rtc::scoped_ptr<InterArrival> inter_arrival_;
 };
 
 TEST_F(OveruseDetectorTest, GaussianRandom) {

@@ -86,7 +86,7 @@ void AcmReceiveTest::RegisterNetEqTestCodecs() {
 }
 
 void AcmReceiveTest::Run() {
-  for (scoped_ptr<Packet> packet(packet_source_->NextPacket()); packet;
+  for (rtc::scoped_ptr<Packet> packet(packet_source_->NextPacket()); packet;
        packet.reset(packet_source_->NextPacket())) {
     // Pull audio until time to insert packet.
     while (clock_.TimeInMilliseconds() < packet->time_ms()) {

@@ -9,9 +9,9 @@
  */
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 using ::std::string;
 using ::std::tr1::tuple;
@@ -60,9 +60,9 @@ class OpusFecTest : public TestWithParam<coding_param> {
 
   string in_filename_;
 
-  scoped_ptr<int16_t[]> in_data_;
-  scoped_ptr<int16_t[]> out_data_;
-  scoped_ptr<uint8_t[]> bit_stream_;
+  rtc::scoped_ptr<int16_t[]> in_data_;
+  rtc::scoped_ptr<int16_t[]> out_data_;
+  rtc::scoped_ptr<uint8_t[]> bit_stream_;
 };
 
 void OpusFecTest::SetUp() {

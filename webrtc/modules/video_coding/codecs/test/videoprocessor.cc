@@ -271,7 +271,7 @@ void VideoProcessorImpl::FrameEncoded(const EncodedImage& encoded_image) {
         assert(false);
     }
   }
-  scoped_ptr<uint8_t[]> copied_buffer(new uint8_t[encoded_image._length]);
+  rtc::scoped_ptr<uint8_t[]> copied_buffer(new uint8_t[encoded_image._length]);
   memcpy(copied_buffer.get(), encoded_image._buffer, encoded_image._length);
   EncodedImage copied_image;
   memcpy(&copied_image, &encoded_image, sizeof(copied_image));
@@ -337,7 +337,7 @@ void VideoProcessorImpl::FrameDecoded(const I420VideoFrame& image) {
     }
     // TODO(mikhal): Extracting the buffer for now - need to update test.
     size_t length = CalcBufferSize(kI420, up_image.width(), up_image.height());
-    scoped_ptr<uint8_t[]> image_buffer(new uint8_t[length]);
+    rtc::scoped_ptr<uint8_t[]> image_buffer(new uint8_t[length]);
     int extracted_length = ExtractBuffer(up_image, length, image_buffer.get());
     assert(extracted_length > 0);
     // Update our copy of the last successful frame:
@@ -351,7 +351,7 @@ void VideoProcessorImpl::FrameDecoded(const I420VideoFrame& image) {
     // Update our copy of the last successful frame:
     // TODO(mikhal): Add as a member function, so won't be allocated per frame.
     size_t length = CalcBufferSize(kI420, image.width(), image.height());
-    scoped_ptr<uint8_t[]> image_buffer(new uint8_t[length]);
+    rtc::scoped_ptr<uint8_t[]> image_buffer(new uint8_t[length]);
     int extracted_length = ExtractBuffer(image, length, image_buffer.get());
     assert(extracted_length > 0);
     memcpy(last_successful_frame_buffer_, image_buffer.get(), extracted_length);

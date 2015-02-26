@@ -11,7 +11,7 @@
 #include <string.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/test/rtp_file_reader.h"
 #include "webrtc/test/rtp_file_writer.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -43,7 +43,7 @@ class RtpFileWriterTest : public ::testing::Test {
   void VerifyFileContents(int expected_packets) {
     ASSERT_TRUE(rtp_writer_.get() == NULL)
         << "Must call CloseOutputFile before VerifyFileContents";
-    scoped_ptr<test::RtpFileReader> rtp_reader(
+    rtc::scoped_ptr<test::RtpFileReader> rtp_reader(
         test::RtpFileReader::Create(test::RtpFileReader::kRtpDump, filename_));
     ASSERT_TRUE(rtp_reader.get() != NULL);
     test::RtpPacket packet;
@@ -61,7 +61,7 @@ class RtpFileWriterTest : public ::testing::Test {
   }
 
  private:
-  scoped_ptr<test::RtpFileWriter> rtp_writer_;
+  rtc::scoped_ptr<test::RtpFileWriter> rtp_writer_;
   std::string filename_;
 };
 

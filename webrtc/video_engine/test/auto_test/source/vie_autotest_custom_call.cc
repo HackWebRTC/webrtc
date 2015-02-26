@@ -15,7 +15,7 @@
 #include <algorithm>
 
 #include "gflags/gflags.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 #include "webrtc/video_engine/test/auto_test/interface/vie_autotest.h"
 #include "webrtc/video_engine/test/auto_test/interface/vie_autotest_defines.h"
@@ -283,10 +283,8 @@ int ViEAutoTest::ViECustomCall() {
   int buffer_delay_ms = 0;
   bool is_image_scale_enabled = false;
   bool remb = true;
-  webrtc::scoped_ptr<webrtc::test::VideoChannelTransport>
-      video_channel_transport;
-  webrtc::scoped_ptr<webrtc::test::VoiceChannelTransport>
-      voice_channel_transport;
+  rtc::scoped_ptr<webrtc::test::VideoChannelTransport> video_channel_transport;
+  rtc::scoped_ptr<webrtc::test::VoiceChannelTransport> voice_channel_transport;
 
   while (!start_call) {
     // Get the IP address to use from call.

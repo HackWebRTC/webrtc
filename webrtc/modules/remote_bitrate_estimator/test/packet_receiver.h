@@ -14,9 +14,9 @@
 #include <string>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 namespace testing {
@@ -43,7 +43,7 @@ class PacketReceiver : public PacketProcessor {
   std::string delay_log_prefix_;
   int64_t last_delay_plot_ms_;
   bool plot_delay_;
-  scoped_ptr<BweReceiver> bwe_receiver_;
+  rtc::scoped_ptr<BweReceiver> bwe_receiver_;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(PacketReceiver);

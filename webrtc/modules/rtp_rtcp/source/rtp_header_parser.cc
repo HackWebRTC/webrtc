@@ -9,10 +9,10 @@
  */
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -31,7 +31,7 @@ class RtpHeaderParserImpl : public RtpHeaderParser {
   virtual bool DeregisterRtpHeaderExtension(RTPExtensionType type) OVERRIDE;
 
  private:
-  scoped_ptr<CriticalSectionWrapper> critical_section_;
+  rtc::scoped_ptr<CriticalSectionWrapper> critical_section_;
   RtpHeaderExtensionMap rtp_header_extension_map_ GUARDED_BY(critical_section_);
 };
 

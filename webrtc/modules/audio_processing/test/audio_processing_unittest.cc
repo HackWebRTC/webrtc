@@ -14,6 +14,7 @@
 #include <limits>
 #include <queue>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
@@ -24,7 +25,6 @@
 #include "webrtc/modules/audio_processing/test/test_utils.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
@@ -223,7 +223,7 @@ void OpenFileAndWriteMessage(const std::string filename,
 
   int32_t size = msg.ByteSize();
   ASSERT_GT(size, 0);
-  scoped_ptr<uint8_t[]> array(new uint8_t[size]);
+  rtc::scoped_ptr<uint8_t[]> array(new uint8_t[size]);
   ASSERT_TRUE(msg.SerializeToArray(array.get(), size));
 
   ASSERT_EQ(1u, fwrite(&size, sizeof(size), 1, file));
@@ -371,11 +371,11 @@ class ApmTest : public ::testing::Test {
   const std::string output_path_;
   const std::string ref_path_;
   const std::string ref_filename_;
-  scoped_ptr<AudioProcessing> apm_;
+  rtc::scoped_ptr<AudioProcessing> apm_;
   AudioFrame* frame_;
   AudioFrame* revframe_;
-  scoped_ptr<ChannelBuffer<float> > float_cb_;
-  scoped_ptr<ChannelBuffer<float> > revfloat_cb_;
+  rtc::scoped_ptr<ChannelBuffer<float> > float_cb_;
+  rtc::scoped_ptr<ChannelBuffer<float> > revfloat_cb_;
   int output_sample_rate_hz_;
   int num_output_channels_;
   FILE* far_file_;
@@ -1004,8 +1004,8 @@ TEST_F(ApmTest, EchoControlMobile) {
   // Set and get echo path
   const size_t echo_path_size =
       apm_->echo_control_mobile()->echo_path_size_bytes();
-  scoped_ptr<char[]> echo_path_in(new char[echo_path_size]);
-  scoped_ptr<char[]> echo_path_out(new char[echo_path_size]);
+  rtc::scoped_ptr<char[]> echo_path_in(new char[echo_path_size]);
+  rtc::scoped_ptr<char[]> echo_path_out(new char[echo_path_size]);
   EXPECT_EQ(apm_->kNullPointerError,
             apm_->echo_control_mobile()->SetEchoPath(NULL, echo_path_size));
   EXPECT_EQ(apm_->kNullPointerError,
@@ -1230,14 +1230,15 @@ TEST_F(ApmTest, AgcOnlyAdaptsWhenTargetSignalIsPresent) {
   config.Set<Beamforming>(new Beamforming(true, geometry));
   testing::NiceMock<MockBeamformer>* beamformer =
       new testing::NiceMock<MockBeamformer>(geometry);
-  scoped_ptr<AudioProcessing> apm(AudioProcessing::Create(config, beamformer));
+  rtc::scoped_ptr<AudioProcessing> apm(
+      AudioProcessing::Create(config, beamformer));
   EXPECT_EQ(kNoErr, apm->gain_control()->Enable(true));
   ChannelBuffer<float> src_buf(kSamplesPerChannel, kNumInputChannels);
   ChannelBuffer<float> dest_buf(kSamplesPerChannel, kNumOutputChannels);
   const int max_length = kSamplesPerChannel * std::max(kNumInputChannels,
                                                        kNumOutputChannels);
-  scoped_ptr<int16_t[]> int_data(new int16_t[max_length]);
-  scoped_ptr<float[]> float_data(new float[max_length]);
+  rtc::scoped_ptr<int16_t[]> int_data(new int16_t[max_length]);
+  rtc::scoped_ptr<float[]> float_data(new float[max_length]);
   std::string filename = ResourceFilePath("far", kSampleRateHz);
   FILE* far_file = fopen(filename.c_str(), "rb");
   ASSERT_TRUE(far_file != NULL) << "Could not open file " << filename << "\n";
@@ -1725,8 +1726,8 @@ void ApmTest::VerifyDebugDumpTest(Format format) {
   FILE* out_file = fopen(out_filename.c_str(), "rb");
   ASSERT_TRUE(ref_file != NULL);
   ASSERT_TRUE(out_file != NULL);
-  scoped_ptr<uint8_t[]> ref_bytes;
-  scoped_ptr<uint8_t[]> out_bytes;
+  rtc::scoped_ptr<uint8_t[]> ref_bytes;
+  rtc::scoped_ptr<uint8_t[]> out_bytes;
 
   size_t ref_size = ReadMessageBytesFromFile(ref_file, &ref_bytes);
   size_t out_size = ReadMessageBytesFromFile(out_file, &out_bytes);
@@ -1827,7 +1828,7 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveSimilarResults) {
 
   Config config;
   config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
-  scoped_ptr<AudioProcessing> fapm(AudioProcessing::Create(config));
+  rtc::scoped_ptr<AudioProcessing> fapm(AudioProcessing::Create(config));
   EnableAllComponents();
   EnableAllAPComponents(fapm.get());
   for (int i = 0; i < ref_data.test_size(); i++) {
@@ -2165,7 +2166,7 @@ TEST_F(ApmTest, NoErrorsWithKeyboardChannel) {
   };
   size_t channel_format_size = sizeof(cf) / sizeof(*cf);
 
-  scoped_ptr<AudioProcessing> ap(AudioProcessing::Create());
+  rtc::scoped_ptr<AudioProcessing> ap(AudioProcessing::Create());
   // Enable one component just to ensure some processing takes place.
   ap->noise_suppression()->Enable(true);
   for (size_t i = 0; i < channel_format_size; ++i) {
@@ -2291,7 +2292,7 @@ class AudioProcessingTest
                             std::string output_file_prefix) {
     Config config;
     config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
-    scoped_ptr<AudioProcessing> ap(AudioProcessing::Create(config));
+    rtc::scoped_ptr<AudioProcessing> ap(AudioProcessing::Create(config));
     EnableAllAPComponents(ap.get());
     ap->Initialize(input_rate,
                    output_rate,
@@ -2325,8 +2326,8 @@ class AudioProcessingTest
         2 * std::max(out_cb.num_frames(),
                      std::max(fwd_cb.num_frames(),
                               rev_cb.num_frames()));
-    scoped_ptr<float[]> float_data(new float[max_length]);
-    scoped_ptr<int16_t[]> int_data(new int16_t[max_length]);
+    rtc::scoped_ptr<float[]> float_data(new float[max_length]);
+    rtc::scoped_ptr<int16_t[]> int_data(new int16_t[max_length]);
 
     int analog_level = 127;
     while (ReadChunk(far_file, int_data.get(), float_data.get(), &rev_cb) &&
@@ -2432,12 +2433,12 @@ TEST_P(AudioProcessingTest, Formats) {
     const int ref_length = SamplesFromRate(ref_rate) * cf[i].num_output;
     const int out_length = SamplesFromRate(output_rate_) * cf[i].num_output;
     // Data from the reference file.
-    scoped_ptr<float[]> ref_data(new float[ref_length]);
+    rtc::scoped_ptr<float[]> ref_data(new float[ref_length]);
     // Data from the output file.
-    scoped_ptr<float[]> out_data(new float[out_length]);
+    rtc::scoped_ptr<float[]> out_data(new float[out_length]);
     // Data from the resampled output, in case the reference and output rates
     // don't match.
-    scoped_ptr<float[]> cmp_data(new float[ref_length]);
+    rtc::scoped_ptr<float[]> cmp_data(new float[ref_length]);
 
     PushResampler<float> resampler;
     resampler.InitializeIfNeeded(output_rate_, ref_rate, cf[i].num_output);

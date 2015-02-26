@@ -78,7 +78,7 @@ class InitialDelayManagerTest : public ::testing::Test {
     NextRtpHeader(rtp_info, rtp_receive_timestamp);
   }
 
-  scoped_ptr<InitialDelayManager> manager_;
+  rtc::scoped_ptr<InitialDelayManager> manager_;
   WebRtcRTPHeader rtp_info_;
   uint32_t rtp_receive_timestamp_;
 };

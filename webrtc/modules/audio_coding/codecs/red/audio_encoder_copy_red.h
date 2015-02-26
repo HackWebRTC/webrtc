@@ -13,8 +13,8 @@
 
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -53,7 +53,7 @@ class AudioEncoderCopyRed : public AudioEncoder {
  private:
   AudioEncoder* speech_encoder_;
   int red_payload_type_;
-  scoped_ptr<uint8_t[]> secondary_encoded_;
+  rtc::scoped_ptr<uint8_t[]> secondary_encoded_;
   size_t secondary_allocated_;
   EncodedInfoLeaf secondary_info_;
 };

@@ -130,7 +130,7 @@ class PacedSenderTest : public ::testing::Test {
 
   SimulatedClock clock_;
   MockPacedSenderCallback callback_;
-  scoped_ptr<PacedSender> send_bucket_;
+  rtc::scoped_ptr<PacedSender> send_bucket_;
 };
 
 TEST_F(PacedSenderTest, QueuePacket) {

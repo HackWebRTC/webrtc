@@ -38,7 +38,7 @@ int LoopBackTransport::SendPacket(int channel, const void* data, size_t len) {
     }
   }
   RTPHeader header;
-  scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+  rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
   if (!parser->Parse(static_cast<const uint8_t*>(data), len, &header)) {
     return -1;
   }
@@ -102,9 +102,9 @@ class RtpRtcpAPITest : public ::testing::Test {
   }
 
   int test_id;
-  scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
-  scoped_ptr<RtpReceiver> rtp_receiver_;
-  scoped_ptr<RtpRtcp> module_;
+  rtc::scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
+  rtc::scoped_ptr<RtpReceiver> rtp_receiver_;
+  rtc::scoped_ptr<RtpRtcp> module_;
   uint32_t test_ssrc_;
   uint32_t test_timestamp_;
   uint16_t test_sequence_number_;

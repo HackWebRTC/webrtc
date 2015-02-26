@@ -65,7 +65,7 @@ class EncodedImageCallbackWrapper : public EncodedImageCallback {
   }
 
  private:
-  scoped_ptr<CriticalSectionWrapper> cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> cs_;
   EncodedImageCallback* callback_ GUARDED_BY(cs_);
 };
 
@@ -362,9 +362,9 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   EncodedImageCallbackWrapper post_encode_callback_;
   // TODO(tommi): Change sender_ and receiver_ to be non pointers
   // (construction is 1 alloc instead of 3).
-  scoped_ptr<vcm::VideoSender> sender_;
-  scoped_ptr<vcm::VideoReceiver> receiver_;
-  scoped_ptr<EventFactory> own_event_factory_;
+  rtc::scoped_ptr<vcm::VideoSender> sender_;
+  rtc::scoped_ptr<vcm::VideoReceiver> receiver_;
+  rtc::scoped_ptr<EventFactory> own_event_factory_;
 };
 }  // namespace
 

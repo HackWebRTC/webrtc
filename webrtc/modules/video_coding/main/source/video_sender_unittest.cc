@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
 #include "webrtc/modules/video_coding/codecs/interface/mock/mock_video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
@@ -20,7 +21,6 @@
 #include "webrtc/modules/video_coding/main/source/video_coding_impl.h"
 #include "webrtc/modules/video_coding/main/test/test_util.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/frame_generator.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
@@ -76,7 +76,7 @@ class EmptyFrameGenerator : public FrameGenerator {
   }
 
  private:
-  scoped_ptr<I420VideoFrame> frame_;
+  rtc::scoped_ptr<I420VideoFrame> frame_;
 };
 
 class PacketizationCallback : public VCMPacketizationCallback {
@@ -185,8 +185,8 @@ class TestVideoSender : public ::testing::Test {
   SimulatedClock clock_;
   PacketizationCallback packetization_callback_;
   MockEncodedImageCallback post_encode_callback_;
-  scoped_ptr<VideoSender> sender_;
-  scoped_ptr<FrameGenerator> generator_;
+  rtc::scoped_ptr<VideoSender> sender_;
+  rtc::scoped_ptr<FrameGenerator> generator_;
 };
 
 class TestVideoSenderWithMockEncoder : public TestVideoSender {

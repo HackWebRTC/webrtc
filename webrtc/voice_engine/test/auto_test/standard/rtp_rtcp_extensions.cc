@@ -84,7 +84,7 @@ class ExtensionVerifyTransport : public webrtc::Transport {
     kPacketsExpected = 10,
     kSleepIntervalMs = 10
   };
-  webrtc::scoped_ptr<webrtc::RtpHeaderParser> parser_;
+  rtc::scoped_ptr<webrtc::RtpHeaderParser> parser_;
   webrtc::Atomic32 received_packets_;
   webrtc::Atomic32 bad_packets_;
   int audio_level_id_;

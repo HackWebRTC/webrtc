@@ -9,11 +9,11 @@
  */
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/common_video/interface/video_image.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/metrics/video_metrics.h"
@@ -142,7 +142,7 @@ int SequenceCoder(webrtc::test::CommandLineParser& parser) {
   EXPECT_EQ(0, decoder->InitDecode(&inst, 1));
   webrtc::I420VideoFrame input_frame;
   size_t length = webrtc::CalcBufferSize(webrtc::kI420, width, height);
-  webrtc::scoped_ptr<uint8_t[]> frame_buffer(new uint8_t[length]);
+  rtc::scoped_ptr<uint8_t[]> frame_buffer(new uint8_t[length]);
 
   int half_width = (width + 1) / 2;
   // Set and register callbacks.
