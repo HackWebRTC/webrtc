@@ -736,6 +736,7 @@ int AudioCodingModuleImpl::SendBitrate() const {
 int AudioCodingModuleImpl::SetReceivedEstimatedBandwidth(int bw) {
   CriticalSectionScoped lock(acm_crit_sect_);
   FATAL() << "Dead code?";
+  return -1;
 //  return codecs_[current_send_codec_idx_]->SetEstimatedBandwidth(bw);
 }
 
@@ -1365,6 +1366,7 @@ int AudioCodingModuleImpl::ConfigISACBandwidthEstimator(
   }
 
   FATAL() << "Dead code?";
+  return -1;
 //  return codecs_[current_send_codec_idx_]->ConfigISACBandwidthEstimator(
 //      frame_size_ms, rate_bit_per_sec, enforce_frame_size);
 }
@@ -1426,6 +1428,7 @@ int AudioCodingModuleImpl::REDPayloadISAC(int isac_rate,
     return -1;
   }
   FATAL() << "Dead code?";
+  return -1;
 //  int status;
 //  status = codecs_[current_send_codec_idx_]->REDPayloadISAC(isac_rate,
 //                                                            isac_bw_estimate,
