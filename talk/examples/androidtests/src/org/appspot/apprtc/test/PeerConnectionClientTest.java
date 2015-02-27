@@ -235,13 +235,18 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
                                                   MockRenderer remoteRenderer) {
     SignalingParameters signalingParameters = getTestSignalingParameters();
     PeerConnectionParameters peerConnectionParameters =
-        new PeerConnectionParameters(0, 0, 0, 0, false);
+        new PeerConnectionParameters(
+            true, false,    // adding whatever parameters to make it compile
+            0, 0, 0, 0,
+            "VP8", true,
+            0, "opus",      // random audio codec
+            false);
 
     PeerConnectionClient client = new PeerConnectionClient();
-    client.createPeerConnectionFactory(
-        getInstrumentation().getContext(), "VP8", true, null, this);
-    client.createPeerConnection(localRenderer, remoteRenderer,
-        signalingParameters, peerConnectionParameters);
+    client.createPeerConnectionFactory(  // changed params to make it compile
+        getInstrumentation().getContext(), null, null, null);
+    client.createPeerConnection(null, null,
+        signalingParameters);   // changed paramaters to make it compile
     client.createOffer();
     return client;
   }
