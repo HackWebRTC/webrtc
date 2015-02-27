@@ -81,6 +81,7 @@ class ViECapturerTest : public ::testing::Test {
   }
 
   virtual void TearDown() {
+    vie_capturer_->DeregisterFrameCallback(mock_frame_callback_.get());
     // ViECapturer accesses |mock_process_thread_| in destructor and should
     // be deleted first.
     vie_capturer_.reset();

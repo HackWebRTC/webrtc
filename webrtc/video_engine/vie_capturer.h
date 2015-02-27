@@ -67,8 +67,6 @@ class ViECapturer
 
   // Implements ViEFrameProviderBase.
   int FrameCallbackChanged();
-  virtual int DeregisterFrameCallback(const ViEFrameCallback* callbackObject);
-  bool IsFrameCallbackRegistered(const ViEFrameCallback* callbackObject);
 
   // Implements ExternalCapture.
   virtual int IncomingFrame(unsigned char* video_frame,

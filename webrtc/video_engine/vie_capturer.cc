@@ -554,17 +554,6 @@ void ViECapturer::DeliverI420Frame(I420VideoFrame* video_frame) {
   ViEFrameProviderBase::DeliverFrame(video_frame, std::vector<uint32_t>());
 }
 
-int ViECapturer::DeregisterFrameCallback(
-    const ViEFrameCallback* callbackObject) {
-  return ViEFrameProviderBase::DeregisterFrameCallback(callbackObject);
-}
-
-bool ViECapturer::IsFrameCallbackRegistered(
-    const ViEFrameCallback* callbackObject) {
-  CriticalSectionScoped cs(provider_cs_.get());
-  return ViEFrameProviderBase::IsFrameCallbackRegistered(callbackObject);
-}
-
 bool ViECapturer::CaptureCapabilityFixed() {
   return requested_capability_.width != 0 &&
       requested_capability_.height != 0 &&

@@ -152,3 +152,11 @@ void ViEAutoTest::RenderCaptureDeviceAndOutputStream(
   RenderInWindow(
       video_engine->render, video_channel->videoChannel, _window2, 1);
 }
+
+void ViEAutoTest::StopRenderCaptureDeviceAndOutputStream(
+    TbInterfaces* video_engine,
+    TbVideoChannel* video_channel,
+    TbCaptureDevice* capture_device) {
+  StopRenderInWindow(video_engine->render, capture_device->captureId);
+  StopRenderInWindow(video_engine->render, video_channel->videoChannel);
+}

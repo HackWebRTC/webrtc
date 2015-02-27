@@ -252,12 +252,6 @@ int ViEInputManager::DestroyCaptureDevice(const int capture_id) {
       LOG(LS_ERROR) << "No such capture device id: " << capture_id;
       return -1;
     }
-    uint32_t num_callbacks =
-        vie_capture->NumberOfRegisteredFrameCallbacks();
-    if (num_callbacks > 0) {
-      LOG(LS_WARNING) << num_callbacks << " still registered to capture id "
-                      << capture_id << " when destroying capture device.";
-    }
     vie_frame_provider_map_.erase(capture_id);
     ReturnCaptureId(capture_id);
     // Leave cs before deleting the capture object. This is because deleting the

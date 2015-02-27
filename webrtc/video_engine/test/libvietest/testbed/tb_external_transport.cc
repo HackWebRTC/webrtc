@@ -227,6 +227,7 @@ int TbExternalTransport::SendPacket(int channel, const void *data, size_t len)
     }
 
     VideoPacket* newPacket = new VideoPacket();
+    assert(len <= sizeof(newPacket->packetBuffer));
     memcpy(newPacket->packetBuffer, data, len);
 
     if (_temporalLayers)
@@ -290,6 +291,7 @@ int TbExternalTransport::SendRTCPPacket(int channel,
     _statCrit.Leave();
 
     VideoPacket* newPacket = new VideoPacket();
+    assert(len <= sizeof(newPacket->packetBuffer));
     memcpy(newPacket->packetBuffer, data, len);
     newPacket->length = len;
     newPacket->channel = channel;

@@ -297,6 +297,7 @@ void ViEAutoTest::ViERenderAPITest() {
   // Already started.
   EXPECT_EQ(-1, ViE.render->SetExpectedRenderDelay(tbChannel.videoChannel, 50));
   EXPECT_EQ(0, ViE.render->StopRender(tbChannel.videoChannel));
+
   // Invalid values.
   EXPECT_EQ(-1, ViE.render->SetExpectedRenderDelay(tbChannel.videoChannel, 9));
   EXPECT_EQ(-1, ViE.render->SetExpectedRenderDelay(tbChannel.videoChannel,
@@ -304,4 +305,8 @@ void ViEAutoTest::ViERenderAPITest() {
   // Valid values.
   EXPECT_EQ(0, ViE.render->SetExpectedRenderDelay(tbChannel.videoChannel, 11));
   EXPECT_EQ(0, ViE.render->SetExpectedRenderDelay(tbChannel.videoChannel, 499));
+
+  EXPECT_EQ(0, ViE.render->RemoveRenderer(tbChannel.videoChannel));
+  EXPECT_EQ(0, ViE.render->RemoveRenderer(tbCapture.captureId));
+  tbCapture.Disconnect(tbChannel.videoChannel);
 }

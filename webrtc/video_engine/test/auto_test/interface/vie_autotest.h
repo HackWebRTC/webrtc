@@ -112,6 +112,13 @@ private:
                                             TbVideoChannel* video_channel,
                                             TbCaptureDevice* capture_device);
 
+    // Stops rendering into the two windows as was set up by a call to
+    // RenderCaptureDeviceAndOutputStream.
+    void StopRenderCaptureDeviceAndOutputStream(
+        TbInterfaces* video_engine,
+        TbVideoChannel* video_channel,
+        TbCaptureDevice* capture_device);
+
     void* _window1;
     void* _window2;
 
