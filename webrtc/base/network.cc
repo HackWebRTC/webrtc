@@ -719,8 +719,7 @@ bool Network::SetIPs(const std::vector<InterfaceAddress>& ips, bool changed) {
   return changed;
 }
 
-// Select the best IP address to use from this Network. For IPv6 addresses, we
-// only allow temporary IPv6 addresses to be selected to prevent MAC tracking.
+// Select the best IP address to use from this Network.
 IPAddress Network::GetBestIP() const {
   if (ips_.size() == 0) {
     return IPAddress();
@@ -730,17 +729,32 @@ IPAddress Network::GetBestIP() const {
     return static_cast<IPAddress>(ips_.at(0));
   }
 
+  InterfaceAddress selected_ip, ula_ip;
+
   for (const InterfaceAddress& ip : ips_) {
-    // Ignore all deprecated and non-temporary addresses.
-    if ((ip.ipv6_flags() & IPV6_ADDRESS_FLAG_DEPRECATED) ||
-        !(ip.ipv6_flags() & IPV6_ADDRESS_FLAG_TEMPORARY)) {
+    // Ignore any address which has been deprecated already.
+    if (ip.ipv6_flags() & IPV6_ADDRESS_FLAG_DEPRECATED)
+      continue;
+
+    // ULA address should only be returned when we have no other
+    // global IP.
+    if (IPIsULA(static_cast<const IPAddress&>(ip))) {
+      ula_ip = ip;
       continue;
     }
+    selected_ip = ip;
 
-    return static_cast<IPAddress>(ip);
+    // Search could stop once a temporary non-deprecated one is found.
+    if (ip.ipv6_flags() & IPV6_ADDRESS_FLAG_TEMPORARY)
+      break;
   }
 
-  return IPAddress();
+  // No proper global IPv6 address found, use ULA instead.
+  if (IPIsUnspec(selected_ip) && !IPIsUnspec(ula_ip)) {
+    selected_ip = ula_ip;
+  }
+
+  return static_cast<IPAddress>(selected_ip);
 }
 
 std::string Network::ToString() const {

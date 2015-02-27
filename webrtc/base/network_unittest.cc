@@ -759,20 +759,18 @@ TEST_F(NetworkTest, TestIPv6Selection) {
   ipv6_network.AddIP(ip);
   EXPECT_EQ(ipv6_network.GetBestIP(), IPAddress());
 
-  // Add ULA one. ULA is the unique local address which starts with either 0xfc
-  // or 0xfd. Since it doesn't have the temporary address attribute, it'll be
-  // ignored.
+  // Add ULA one. ULA is unique local address which is starting either
+  // with 0xfc or 0xfd.
   ipstr = "fd00:fa00:4:1000:be30:5bff:fee5:c4";
   ASSERT_TRUE(IPFromString(ipstr, IPV6_ADDRESS_FLAG_NONE, &ip));
   ipv6_network.AddIP(ip);
-  EXPECT_EQ(ipv6_network.GetBestIP(), IPAddress());
+  EXPECT_EQ(ipv6_network.GetBestIP(), static_cast<IPAddress>(ip));
 
-  // Add global one. Since it doesn't have the temporary address attribute,
-  // it'll be ignored.
+  // Add global one.
   ipstr = "2401:fa00:4:1000:be30:5bff:fee5:c5";
   ASSERT_TRUE(IPFromString(ipstr, IPV6_ADDRESS_FLAG_NONE, &ip));
   ipv6_network.AddIP(ip);
-  EXPECT_EQ(ipv6_network.GetBestIP(), IPAddress());
+  EXPECT_EQ(ipv6_network.GetBestIP(), static_cast<IPAddress>(ip));
 
   // Add global dynamic temporary one.
   ipstr = "2401:fa00:4:1000:be30:5bff:fee5:c6";
