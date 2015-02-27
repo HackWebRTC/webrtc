@@ -67,10 +67,6 @@ declare_args() {
   # https://gcc.gnu.org/wiki/LinkTimeOptimization
   rtc_use_lto = false
 
-  # Directly call the trace callback instead of passing it to a logging
-  # thread. Used for components that provide their own threaded logging.
-  rtc_use_direct_trace = false
-
   if (build_with_chromium) {
     # Exclude pulse audio on Chromium since its prerequisites don't require
     # pulse audio.

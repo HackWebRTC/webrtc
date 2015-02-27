@@ -115,11 +115,6 @@
         }, {
           'sources!': [ 'source/data_log.cc', ],
         },],
-        ['rtc_use_direct_trace==1', {
-          'defines': [
-            'WEBRTC_DIRECT_TRACE',
-          ],
-        }],
         ['OS=="android"', {
           'defines': [
             'WEBRTC_THREAD_RR',

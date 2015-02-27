@@ -127,10 +127,6 @@
     # enable schannel on windows.
     'use_legacy_ssl_defaults%': 0,
 
-    # Directly call the trace callback instead of passing it to a logging
-    # thread. Used for components that provide their own threaded logging.
-    'rtc_use_direct_trace%': 0,
-
     'conditions': [
       ['build_with_chromium==1', {
         # Exclude pulse audio on Chromium since its prerequisites don't require
