@@ -536,10 +536,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       rotation = 360 - rotation;
     }
     rotation = (info.orientation + rotation) % 360;
-
-    frameObserver.OnFrameCaptured(
-        videoBuffers.reserveByteBuffer(data, captureTimeMs),
-        rotation,
+    // Mark the frame owning |data| as used.
+    // Note that since data is directBuffer,
+    // data.length >= videoBuffers.frameSize.
+    videoBuffers.reserveByteBuffer(data, captureTimeMs);
+    frameObserver.OnFrameCaptured(data, videoBuffers.frameSize, rotation,
         captureTimeMs);
   }
 
@@ -578,14 +579,14 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     // potentially stalling the capturer if it runs out of buffers to write to).
     private static int numCaptureBuffers = 3;
     private final Frame cameraFrames[];
+    public final int frameSize;
 
     private static class Frame {
-      public final ByteBuffer buffer;
+      private final ByteBuffer buffer;
       public long timeStamp = -1;
 
-      Frame(int width, int height, int format) {
-        int bufSize = width * height * ImageFormat.getBitsPerPixel(format) / 8;
-        buffer = ByteBuffer.allocateDirect(bufSize);
+      Frame(int frameSize) {
+        buffer = ByteBuffer.allocateDirect(frameSize);
       }
 
       byte[] data() {
@@ -595,8 +596,9 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
     FramePool(int width, int height, int format) {
       cameraFrames = new Frame[numCaptureBuffers];
+      frameSize = width * height * ImageFormat.getBitsPerPixel(format) / 8;
       for (int i = 0; i < numCaptureBuffers; i++) {
-        cameraFrames[i] = new Frame(width, height, format);
+        cameraFrames[i] = new Frame(frameSize);
       }
     }
 
@@ -608,11 +610,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       }
     }
 
-    ByteBuffer reserveByteBuffer(byte[] data, long timeStamp) {
+    void reserveByteBuffer(byte[] data, long timeStamp) {
       for (Frame frame : cameraFrames) {
         if (data == frame.data()) {
           frame.timeStamp = timeStamp;
-          return frame.buffer;
+          return;
         }
       }
       throw new RuntimeException("unknown data buffer?!?");
@@ -639,7 +641,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
     // Delivers a captured frame. Called on a Java thread owned by
     // VideoCapturerAndroid.
-    abstract void OnFrameCaptured(ByteBuffer buffer, int rotation, long timeStamp);
+    abstract void OnFrameCaptured(byte[] data, int length, int rotation,
+        long timeStamp);
   }
 
   // An implementation of CapturerObserver that forwards all calls from
@@ -657,14 +660,14 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
 
     @Override
-    public void OnFrameCaptured(ByteBuffer byteBuffer, int rotation,
+    public void OnFrameCaptured(byte[] data, int length, int rotation,
         long timeStamp) {
-      nativeOnFrameCaptured(nativeCapturer, byteBuffer, rotation, timeStamp);
+      nativeOnFrameCaptured(nativeCapturer, data, length, rotation, timeStamp);
     }
 
     private native void nativeCapturerStarted(long nativeCapturer,
         boolean success);
     private native void nativeOnFrameCaptured(long nativeCapturer,
-        ByteBuffer byteBuffer, int rotation, long timeStamp);
+        byte[] data, int length, int rotation, long timeStamp);
   }
 }

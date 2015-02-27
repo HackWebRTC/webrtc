@@ -33,7 +33,6 @@ import android.test.suitebuilder.annotation.SmallTest;
 import org.webrtc.VideoCapturerAndroid.CaptureFormat;
 import org.webrtc.VideoRenderer.I420Frame;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 @SuppressWarnings("deprecation")
@@ -79,12 +78,11 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     }
 
     @Override
-    public void OnFrameCaptured(ByteBuffer frame, int rotation,
+    public void OnFrameCaptured(byte[] frame, int length, int rotation,
         long timeStamp) {
-      assertTrue(frame.isDirect());
       synchronized (frameLock) {
         ++framesCaptured;
-        frameSize = frame.capacity();
+        frameSize = length;
         frameLock.notify();
       }
     }

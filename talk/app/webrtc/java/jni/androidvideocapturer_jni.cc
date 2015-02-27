@@ -178,13 +178,20 @@ void AndroidVideoCapturerJni::OnIncomingFrame_w(void* video_frame,
 JNIEnv* AndroidVideoCapturerJni::jni() { return AttachCurrentThreadIfNeeded(); }
 
 JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeOnFrameCaptured)
-    (JNIEnv* jni, jclass, jlong j_capturer, jobject j_frame,
+    (JNIEnv* jni, jclass, jlong j_capturer, jbyteArray j_frame, jint length,
         jint rotation, jlong ts) {
-  void* bytes = jni->GetDirectBufferAddress(j_frame);
-  DCHECK(bytes != NULL);
-  jlong length = jni->GetDirectBufferCapacity(j_frame);
-  reinterpret_cast<AndroidVideoCapturerJni*>(
-      j_capturer)->OnIncomingFrame(bytes, length, rotation, ts);
+  jboolean is_copy = true;
+  jbyte* bytes = jni->GetByteArrayElements(j_frame, &is_copy);
+  if (!is_copy) {
+    reinterpret_cast<AndroidVideoCapturerJni*>(
+        j_capturer)->OnIncomingFrame(bytes, length, rotation, ts);
+  }  else {
+    // If this is a copy of the original frame, it means that the memory
+    // is not direct memory and thus VideoCapturerAndroid does not guarantee
+    // that the memory is valid when we have released |j_frame|.
+    DCHECK(false) << "j_frame is a copy.";
+  }
+  jni->ReleaseByteArrayElements(j_frame, bytes, JNI_ABORT);
 }
 
 JOW(void, VideoCapturerAndroid_00024NativeObserver_nativeCapturerStarted)
