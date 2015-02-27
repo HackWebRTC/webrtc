@@ -57,7 +57,7 @@ class AudioEncoder {
   // Accepts one 10 ms block of input audio (i.e., sample_rate_hz() / 100 *
   // num_channels() samples). Multi-channel audio must be sample-interleaved.
   // The encoder produces zero or more bytes of output in |encoded|,
-  // and provides the number of encoded bytes in |encoded_bytes|.
+  // and provides additional encoding information in |info|.
   // The caller is responsible for making sure that |max_encoded_bytes| is
   // not smaller than the number of bytes actually produced by the encoder.
   void Encode(uint32_t rtp_timestamp,
