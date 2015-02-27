@@ -141,15 +141,12 @@ ViEChannel::ViEChannel(int32_t channel_id,
 }
 
 int32_t ViEChannel::Init() {
-  if (module_process_thread_.RegisterModule(
-      vie_receiver_.GetReceiveStatistics()) != 0) {
-    return -1;
-  }
+  module_process_thread_.RegisterModule(vie_receiver_.GetReceiveStatistics());
+
   // RTP/RTCP initialization.
   rtp_rtcp_->SetSendingMediaStatus(false);
-  if (module_process_thread_.RegisterModule(rtp_rtcp_.get()) != 0) {
-    return -1;
-  }
+  module_process_thread_.RegisterModule(rtp_rtcp_.get());
+
   rtp_rtcp_->SetKeyFrameRequestMethod(kKeyFrameReqFirRtp);
   rtp_rtcp_->SetRTCPStatus(kRtcpCompound);
   if (paced_sender_) {
@@ -173,9 +170,10 @@ int32_t ViEChannel::Init() {
   vcm_->RegisterReceiveStatisticsCallback(this);
   vcm_->RegisterDecoderTimingCallback(this);
   vcm_->SetRenderDelay(kViEDefaultRenderDelayMs);
-  if (module_process_thread_.RegisterModule(vcm_) != 0) {
-    return -1;
-  }
+
+  module_process_thread_.RegisterModule(vcm_);
+  module_process_thread_.RegisterModule(&vie_sync_);
+
 #ifdef VIDEOCODEC_VP8
   if (!disable_default_encoder_) {
     VideoCodec video_codec;
@@ -1835,13 +1833,7 @@ int32_t ViEChannel::StopDecodeThread() {
 }
 
 int32_t ViEChannel::SetVoiceChannel(int32_t ve_channel_id,
-                                          VoEVideoSync* ve_sync_interface) {
-  if (ve_sync_interface) {
-    // Register lip sync
-    module_process_thread_.RegisterModule(&vie_sync_);
-  } else {
-    module_process_thread_.DeRegisterModule(&vie_sync_);
-  }
+                                    VoEVideoSync* ve_sync_interface) {
   return vie_sync_.ConfigureSync(ve_channel_id,
                                  ve_sync_interface,
                                  rtp_rtcp_.get(),

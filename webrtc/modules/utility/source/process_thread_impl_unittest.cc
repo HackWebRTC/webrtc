@@ -27,6 +27,7 @@ class MockModule : public Module {
  public:
   MOCK_METHOD0(TimeUntilNextProcess, int64_t());
   MOCK_METHOD0(Process, int32_t());
+  MOCK_METHOD1(ProcessThreadAttached, void(ProcessThread*));
 };
 
 ACTION_P(SetEvent, event) {
@@ -43,22 +44,22 @@ ACTION_P(SetTimestamp, ptr) {
 
 TEST(ProcessThreadImpl, StartStop) {
   ProcessThreadImpl thread;
-  EXPECT_EQ(0, thread.Start());
-  EXPECT_EQ(0, thread.Stop());
+  thread.Start();
+  thread.Stop();
 }
 
 TEST(ProcessThreadImpl, MultipleStartStop) {
   ProcessThreadImpl thread;
   for (int i = 0; i < 5; ++i) {
-    EXPECT_EQ(0, thread.Start());
-    EXPECT_EQ(0, thread.Stop());
+    thread.Start();
+    thread.Stop();
   }
 }
 
 // Verifies that we get at least call back to Process() on the worker thread.
 TEST(ProcessThreadImpl, ProcessCall) {
   ProcessThreadImpl thread;
-  ASSERT_EQ(0, thread.Start());
+  thread.Start();
 
   rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
 
@@ -67,10 +68,13 @@ TEST(ProcessThreadImpl, ProcessCall) {
   EXPECT_CALL(module, Process())
       .WillOnce(DoAll(SetEvent(event.get()), Return(0)))
       .WillRepeatedly(Return(0));
+  EXPECT_CALL(module, ProcessThreadAttached(&thread)).Times(1);
 
-  ASSERT_EQ(0, thread.RegisterModule(&module));
+  thread.RegisterModule(&module);
   EXPECT_EQ(kEventSignaled, event->Wait(100));
-  EXPECT_EQ(0, thread.Stop());
+
+  EXPECT_CALL(module, ProcessThreadAttached(nullptr)).Times(1);
+  thread.Stop();
 }
 
 // Same as ProcessCall except the module is registered before the
@@ -85,10 +89,14 @@ TEST(ProcessThreadImpl, ProcessCall2) {
       .WillOnce(DoAll(SetEvent(event.get()), Return(0)))
       .WillRepeatedly(Return(0));
 
-  ASSERT_EQ(0, thread.RegisterModule(&module));
-  ASSERT_EQ(thread.Start(), 0);
+  thread.RegisterModule(&module);
+
+  EXPECT_CALL(module, ProcessThreadAttached(&thread)).Times(1);
+  thread.Start();
   EXPECT_EQ(kEventSignaled, event->Wait(100));
-  EXPECT_EQ(thread.Stop(), 0);
+
+  EXPECT_CALL(module, ProcessThreadAttached(nullptr)).Times(1);
+  thread.Stop();
 }
 
 // Tests setting up a module for callbacks and then unregister that module.
@@ -106,18 +114,23 @@ TEST(ProcessThreadImpl, Deregister) {
                       Return(0)))
       .WillRepeatedly(DoAll(Increment(&process_count), Return(0)));
 
-  ASSERT_EQ(0, thread.RegisterModule(&module));
-  ASSERT_EQ(0, thread.Start());
+  thread.RegisterModule(&module);
+
+  EXPECT_CALL(module, ProcessThreadAttached(&thread)).Times(1);
+  thread.Start();
 
   EXPECT_EQ(kEventSignaled, event->Wait(100));
-  ASSERT_EQ(0, thread.DeRegisterModule(&module));
+
+  EXPECT_CALL(module, ProcessThreadAttached(nullptr)).Times(1);
+  thread.DeRegisterModule(&module);
+
   EXPECT_GE(process_count, 1);
   int count_after_deregister = process_count;
 
   // We shouldn't get any more callbacks.
   EXPECT_EQ(kEventTimeout, event->Wait(20));
   EXPECT_EQ(count_after_deregister, process_count);
-  EXPECT_EQ(0, thread.Stop());
+  thread.Stop();
 }
 
 // Helper function for testing receiving a callback after a certain amount of
@@ -125,7 +138,7 @@ TEST(ProcessThreadImpl, Deregister) {
 // flakiness on bots.
 void ProcessCallAfterAFewMs(int64_t milliseconds) {
   ProcessThreadImpl thread;
-  ASSERT_EQ(0, thread.Start());
+  thread.Start();
 
   rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
 
@@ -142,12 +155,15 @@ void ProcessCallAfterAFewMs(int64_t milliseconds) {
                       Return(0)))
       .WillRepeatedly(Return(0));
 
-  EXPECT_EQ(0, thread.RegisterModule(&module));
+  EXPECT_CALL(module, ProcessThreadAttached(&thread)).Times(1);
+  thread.RegisterModule(&module);
 
   // Add a buffer of 50ms due to slowness of some trybots
   // (e.g. win_drmemory_light)
   EXPECT_EQ(kEventSignaled, event->Wait(milliseconds + 50));
-  ASSERT_EQ(0, thread.Stop());
+
+  EXPECT_CALL(module, ProcessThreadAttached(nullptr)).Times(1);
+  thread.Stop();
 
   ASSERT_GT(start_time, 0);
   ASSERT_GT(called_time, 0);
@@ -187,7 +203,7 @@ TEST(ProcessThreadImpl, DISABLED_ProcessCallAfter200ms) {
 // TODO(tommi): Fix.
 TEST(ProcessThreadImpl, DISABLED_Process50Times) {
   ProcessThreadImpl thread;
-  ASSERT_EQ(0, thread.Start());
+  thread.Start();
 
   rtc::scoped_ptr<EventWrapper> event(EventWrapper::Create());
 
@@ -200,10 +216,13 @@ TEST(ProcessThreadImpl, DISABLED_Process50Times) {
       .WillRepeatedly(DoAll(Increment(&callback_count),
                             Return(0)));
 
-  EXPECT_EQ(0, thread.RegisterModule(&module));
+  EXPECT_CALL(module, ProcessThreadAttached(&thread)).Times(1);
+  thread.RegisterModule(&module);
 
   EXPECT_EQ(kEventTimeout, event->Wait(1000));
-  ASSERT_EQ(0, thread.Stop());
+
+  EXPECT_CALL(module, ProcessThreadAttached(nullptr)).Times(1);
+  thread.Stop();
 
   printf("Callback count: %i\n", callback_count);
   // Check that we got called back up to 50 times.
@@ -217,7 +236,7 @@ TEST(ProcessThreadImpl, DISABLED_Process50Times) {
 // away when we know the thread is sleeping.
 TEST(ProcessThreadImpl, WakeUp) {
   ProcessThreadImpl thread;
-  ASSERT_EQ(0, thread.Start());
+  thread.Start();
 
   rtc::scoped_ptr<EventWrapper> started(EventWrapper::Create());
   rtc::scoped_ptr<EventWrapper> called(EventWrapper::Create());
@@ -225,24 +244,33 @@ TEST(ProcessThreadImpl, WakeUp) {
   MockModule module;
   int64_t start_time = 0;
   int64_t called_time = 0;
-  // Ask for a callback after 1000ms first, then 0ms.
+  // Ask for a callback after 1000ms.
+  // TimeUntilNextProcess will be called twice.
+  // The first time we use it to get the thread into a waiting state.
+  // Then we  wake the thread and there should not be another call made to
+  // TimeUntilNextProcess before Process() is called.
+  // The second time TimeUntilNextProcess is then called, is after Process
+  // has been called and we don't expect any more calls.
   EXPECT_CALL(module, TimeUntilNextProcess())
       .WillOnce(DoAll(SetTimestamp(&start_time),
                       SetEvent(started.get()),
                       Return(1000)))
-      .WillRepeatedly(Return(0));
+      .WillOnce(Return(1000));
   EXPECT_CALL(module, Process())
       .WillOnce(DoAll(SetTimestamp(&called_time),
                       SetEvent(called.get()),
                       Return(0)))
       .WillRepeatedly(Return(0));
 
-  EXPECT_EQ(0, thread.RegisterModule(&module));
+  EXPECT_CALL(module, ProcessThreadAttached(&thread)).Times(1);
+  thread.RegisterModule(&module);
 
   EXPECT_EQ(kEventSignaled, started->Wait(100));
   thread.WakeUp(&module);
   EXPECT_EQ(kEventSignaled, called->Wait(100));
-  ASSERT_EQ(0, thread.Stop());
+
+  EXPECT_CALL(module, ProcessThreadAttached(nullptr)).Times(1);
+  thread.Stop();
 
   ASSERT_GT(start_time, 0);
   ASSERT_GT(called_time, 0);

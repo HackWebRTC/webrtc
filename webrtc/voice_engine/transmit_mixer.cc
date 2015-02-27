@@ -259,15 +259,8 @@ TransmitMixer::SetEngineInformation(ProcessThread& processThread,
     _engineStatisticsPtr = &engineStatistics;
     _channelManagerPtr = &channelManager;
 
-    if (_processThreadPtr->RegisterModule(&_monitorModule) == -1)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                     "TransmitMixer::SetEngineInformation() failed to"
-                     "register the monitor module");
-    } else
-    {
-        _monitorModule.RegisterObserver(*this);
-    }
+    _processThreadPtr->RegisterModule(&_monitorModule);
+    _monitorModule.RegisterObserver(*this);
 
     return 0;
 }

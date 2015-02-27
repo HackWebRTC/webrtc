@@ -15,6 +15,8 @@
 
 namespace webrtc {
 
+class ProcessThread;
+
 class Module {
  public:
   // Returns the number of milliseconds until the module wants a worker
@@ -31,6 +33,27 @@ class Module {
   // Process any pending tasks such as timeouts.
   // Called on a worker thread.
   virtual int32_t Process() = 0;
+
+  // This method is called when the module is attached to a *running* process
+  // thread or detached from one.  In the case of detaching, |process_thread|
+  // will be nullptr.
+  //
+  // This method will be called in the following cases:
+  //
+  // * Non-null process_thread:
+  //   * ProcessThread::RegisterModule() is called while the thread is running.
+  //   * ProcessThread::Start() is called and RegisterModule has previously
+  //     been called.  The thread will be started immediately after notifying
+  //     all modules.
+  //
+  // * Null process_thread:
+  //   * ProcessThread::DeRegisterModule() is called while the thread is
+  //     running.
+  //   * ProcessThread::Stop() was called and the thread has been stopped.
+  //
+  // NOTE: This method is not called from the worker thread itself, but from
+  //       the thread that registers/deregisters the module or calls Start/Stop.
+  virtual void ProcessThreadAttached(ProcessThread* process_thread) {}
 
  protected:
   virtual ~Module() {}

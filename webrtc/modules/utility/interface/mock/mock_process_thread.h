@@ -19,11 +19,11 @@ namespace webrtc {
 
 class MockProcessThread : public ProcessThread {
  public:
-  MOCK_METHOD0(Start, int32_t());
-  MOCK_METHOD0(Stop, int32_t());
+  MOCK_METHOD0(Start, void());
+  MOCK_METHOD0(Stop, void());
   MOCK_METHOD1(WakeUp, void(Module* module));
-  MOCK_METHOD1(RegisterModule, int32_t(Module* module));
-  MOCK_METHOD1(DeRegisterModule, int32_t(const Module* module));
+  MOCK_METHOD1(RegisterModule, void(Module* module));
+  MOCK_METHOD1(DeRegisterModule, void(Module* module));
 };
 
 }  // namespace webrtc

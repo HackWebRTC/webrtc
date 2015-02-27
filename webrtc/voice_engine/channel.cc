@@ -914,12 +914,8 @@ Channel::~Channel()
                      " (Audio coding module)");
     }
     // De-register modules in process thread
-    if (_moduleProcessThreadPtr->DeRegisterModule(_rtpRtcpModule.get()) == -1)
-    {
-        WEBRTC_TRACE(kTraceInfo, kTraceVoice,
-                     VoEId(_instanceId,_channelId),
-                     "~Channel() failed to deregister RTP/RTCP module");
-    }
+    _moduleProcessThreadPtr->DeRegisterModule(_rtpRtcpModule.get());
+
     // End of modules shutdown
 
     // Delete other objects
@@ -955,16 +951,8 @@ Channel::Init()
 
     // --- Add modules to process thread (for periodic schedulation)
 
-    const bool processThreadFail =
-        ((_moduleProcessThreadPtr->RegisterModule(_rtpRtcpModule.get()) != 0) ||
-        false);
-    if (processThreadFail)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_CANNOT_INIT_CHANNEL, kTraceError,
-            "Channel::Init() modules not registered");
-        return -1;
-    }
+    _moduleProcessThreadPtr->RegisterModule(_rtpRtcpModule.get());
+
     // --- ACM initialization
 
     if ((audio_coding_->InitializeReceiver() == -1) ||

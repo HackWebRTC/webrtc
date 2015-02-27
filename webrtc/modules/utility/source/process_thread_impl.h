@@ -27,13 +27,13 @@ class ProcessThreadImpl : public ProcessThread {
   ProcessThreadImpl();
   ~ProcessThreadImpl() override;
 
-  int32_t Start() override;
-  int32_t Stop() override;
+  void Start() override;
+  void Stop() override;
 
   void WakeUp(Module* module) override;
 
-  int32_t RegisterModule(Module* module) override;
-  int32_t DeRegisterModule(const Module* module) override;
+  void RegisterModule(Module* module) override;
+  void DeRegisterModule(Module* module) override;
 
  protected:
   static bool Run(void* obj);

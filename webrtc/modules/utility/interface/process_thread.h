@@ -24,10 +24,10 @@ class ProcessThread {
   static rtc::scoped_ptr<ProcessThread> Create();
 
   // Starts the worker thread.  Must be called from the construction thread.
-  virtual int32_t Start() = 0;
+  virtual void Start() = 0;
 
   // Stops the worker thread.  Must be called from the construction thread.
-  virtual int32_t Stop() = 0;
+  virtual void Stop() = 0;
 
   // Wakes the thread up to give a module a chance to do processing right
   // away.  This causes the worker thread to wake up and requery the specified
@@ -38,11 +38,11 @@ class ProcessThread {
 
   // Adds a module that will start to receive callbacks on the worker thread.
   // Can be called from any thread.
-  virtual int32_t RegisterModule(Module* module) = 0;
+  virtual void RegisterModule(Module* module) = 0;
 
   // Removes a previously registered module.
   // Can be called from any thread.
-  virtual int32_t DeRegisterModule(const Module* module) = 0;
+  virtual void DeRegisterModule(Module* module) = 0;
 };
 
 }  // namespace webrtc

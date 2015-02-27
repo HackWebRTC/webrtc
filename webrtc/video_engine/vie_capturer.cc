@@ -150,10 +150,7 @@ int32_t ViECapturer::Init(VideoCaptureModule* capture_module) {
   capture_module_ = capture_module;
   capture_module_->RegisterCaptureDataCallback(*this);
   capture_module_->AddRef();
-  if (module_process_thread_.RegisterModule(capture_module_) != 0) {
-    return -1;
-  }
-
+  module_process_thread_.RegisterModule(capture_module_);
   return 0;
 }
 
@@ -189,9 +186,7 @@ int32_t ViECapturer::Init(const char* device_unique_idUTF8,
   }
   capture_module_->AddRef();
   capture_module_->RegisterCaptureDataCallback(*this);
-  if (module_process_thread_.RegisterModule(capture_module_) != 0) {
-    return -1;
-  }
+  module_process_thread_.RegisterModule(capture_module_);
 
   return 0;
 }
