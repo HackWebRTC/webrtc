@@ -174,8 +174,6 @@ VideoAdapter::VideoAdapter()
       adaption_changes_(0),
       previous_width_(0),
       previous_height_(0),
-      black_output_(false),
-      is_black_(false),
       interval_next_frame_(0) {
 }
 
@@ -248,16 +246,6 @@ bool VideoAdapter::drops_all_frames() const {
 const VideoFormat& VideoAdapter::output_format() {
   rtc::CritScope cs(&critical_section_);
   return output_format_;
-}
-
-void VideoAdapter::SetBlackOutput(bool black) {
-  rtc::CritScope cs(&critical_section_);
-  black_output_ = black;
-}
-
-bool VideoAdapter::IsBlackOutput() {
-  rtc::CritScope cs(&critical_section_);
-  return black_output_;
 }
 
 // Constrain output resolution to this many pixels overall
@@ -377,8 +365,7 @@ bool VideoAdapter::AdaptFrame(VideoFrame* in_frame, VideoFrame** out_frame) {
     return true;
   }
 
-  if (!black_output_ &&
-      in_frame->GetWidth() == static_cast<size_t>(adapted_format.width) &&
+  if (in_frame->GetWidth() == static_cast<size_t>(adapted_format.width) &&
       in_frame->GetHeight() == static_cast<size_t>(adapted_format.height)) {
     // The dimensions are correct and we aren't muting, so use the input frame.
     *out_frame = in_frame;
@@ -419,24 +406,13 @@ bool VideoAdapter::StretchToOutputFrame(const VideoFrame* in_frame) {
       return false;
     }
     stretched = true;
-    is_black_ = false;
   }
 
-  if (!black_output_) {
-    if (!stretched) {
-      // The output frame does not need to be blacken and has not been stretched
-      // from the input frame yet, stretch the input frame. This is the most
-      // common case.
-      in_frame->StretchToFrame(output_frame_.get(), true, true);
-    }
-    is_black_ = false;
-  } else {
-    if (!is_black_) {
-      output_frame_->SetToBlack();
-      is_black_ = true;
-    }
-    output_frame_->SetElapsedTime(in_frame->GetElapsedTime());
-    output_frame_->SetTimeStamp(in_frame->GetTimeStamp());
+  if (!stretched) {
+    // The output frame does not need to be blacken and has not been stretched
+    // from the input frame yet, stretch the input frame. This is the most
+    // common case.
+    in_frame->StretchToFrame(output_frame_.get(), true, true);
   }
 
   return true;

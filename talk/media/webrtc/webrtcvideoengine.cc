@@ -749,7 +749,6 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   }
   void set_muted(bool on) {
     // TODO(asapersson): add support.
-    // video_adapter_.SetBlackOutput(on);
     muted_ = on;
   }
   bool muted() {return muted_; }

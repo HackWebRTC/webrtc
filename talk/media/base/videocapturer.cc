@@ -570,7 +570,7 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     ++effect_frame_drops_;
     return;
   }
-  if (muted_ || (enable_video_adapter_ && video_adapter_.IsBlackOutput())) {
+  if (muted_) {
     // TODO(pthatcher): Use frame_factory_->CreateBlackFrame() instead.
     adapted_frame->SetToBlack();
   }
