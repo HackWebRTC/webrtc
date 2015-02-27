@@ -28,6 +28,7 @@
 #include "talk/examples/peerconnection/client/conductor.h"
 
 #include <utility>
+#include <vector>
 
 #include "talk/app/webrtc/videosourceinterface.h"
 #include "talk/examples/peerconnection/client/defaults.h"
@@ -103,7 +104,7 @@ bool Conductor::InitializePeerConnection() {
     return false;
   }
 
- if (!CreatePeerConnection(DTLS_ON)) {
+  if (!CreatePeerConnection(DTLS_ON)) {
     main_wnd_->MessageBox("Error",
         "CreatePeerConnection failed", true);
     DeletePeerConnection();
