@@ -112,8 +112,7 @@ const webrtc::VideoFrame* WebRtcVideoFrame::FrameBuffer::frame() const {
 }
 
 WebRtcVideoFrame::WebRtcVideoFrame()
-    : video_buffer_(new RefCountedBuffer()),
-      rotation_(webrtc::kVideoRotation_0) {}
+    : video_buffer_(new RefCountedBuffer()) {}
 
 WebRtcVideoFrame::~WebRtcVideoFrame() {}
 
@@ -130,18 +129,14 @@ bool WebRtcVideoFrame::Init(uint32 format,
                             int64_t time_stamp,
                             webrtc::VideoRotation rotation) {
   return Reset(format, w, h, dw, dh, sample, sample_size, pixel_width,
-               pixel_height, elapsed_time, time_stamp, rotation,
-               true /*apply_rotation*/);
+               pixel_height, elapsed_time, time_stamp, rotation);
 }
 
-bool WebRtcVideoFrame::Init(const CapturedFrame* frame, int dw, int dh,
-                            bool apply_rotation) {
+bool WebRtcVideoFrame::Init(const CapturedFrame* frame, int dw, int dh) {
   return Reset(frame->fourcc, frame->width, frame->height, dw, dh,
                static_cast<uint8*>(frame->data), frame->data_size,
                frame->pixel_width, frame->pixel_height, frame->elapsed_time,
-               frame->time_stamp,
-               frame->GetRotation(),
-               apply_rotation);
+               frame->time_stamp, frame->GetRotation());
 }
 
 bool WebRtcVideoFrame::Alias(const CapturedFrame* frame,
@@ -153,7 +148,7 @@ bool WebRtcVideoFrame::Alias(const CapturedFrame* frame,
        frame->GetRotation() != webrtc::kVideoRotation_0) ||
       frame->width != dw || frame->height != dh) {
     // TODO(fbarchard): Enable aliasing of more formats.
-    return Init(frame, dw, dh, apply_rotation);
+    return Init(frame, dw, dh);
   } else {
     Alias(static_cast<uint8*>(frame->data), frame->data_size, frame->width,
           frame->height, frame->pixel_width, frame->pixel_height,
@@ -307,8 +302,7 @@ bool WebRtcVideoFrame::Reset(uint32 format,
                              size_t pixel_height,
                              int64_t elapsed_time,
                              int64_t time_stamp,
-                             webrtc::VideoRotation rotation,
-                             bool apply_rotation) {
+                             webrtc::VideoRotation rotation) {
   if (!Validate(format, w, h, sample, sample_size)) {
     return false;
   }
@@ -325,8 +319,7 @@ bool WebRtcVideoFrame::Reset(uint32 format,
   // TODO(fbarchard): Support lazy allocation.
   int new_width = dw;
   int new_height = dh;
-  // If rotated swap width, height.
-  if (apply_rotation && (rotation == 90 || rotation == 270)) {
+  if (rotation == 90 || rotation == 270) {  // If rotated swap width, height.
     new_width = dh;
     new_height = dw;
   }
@@ -357,9 +350,7 @@ bool WebRtcVideoFrame::Reset(uint32 format,
   int v_stride = GetVPitch();
   int r = libyuv::ConvertToI420(
       sample, sample_size, y, y_stride, u, u_stride, v, v_stride, horiz_crop,
-      vert_crop, w, h, dw, idh,
-      static_cast<libyuv::RotationMode>(
-          apply_rotation ? rotation : webrtc::kVideoRotation_0),
+      vert_crop, w, h, dw, idh, static_cast<libyuv::RotationMode>(rotation),
       format);
   if (r) {
     LOG(LS_ERROR) << "Error parsing format: " << GetFourccName(format)
@@ -416,8 +407,7 @@ bool WebRtcVideoRenderFrame::Reset(uint32 fourcc,
                                    size_t pixel_height,
                                    int64_t elapsed_time,
                                    int64_t time_stamp,
-                                   webrtc::VideoRotation rotation,
-                                   bool apply_rotation) {
+                                   webrtc::VideoRotation rotation) {
   UNIMPLEMENTED;
   return false;
 }

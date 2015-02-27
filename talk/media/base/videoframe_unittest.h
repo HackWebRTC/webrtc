@@ -1428,8 +1428,7 @@ class VideoFrameTest : public testing::Test {
     EXPECT_TRUE(IsEqual(frame1, frame2, 0));
     EXPECT_TRUE(frame1.Reset(cricket::FOURCC_I420, kWidth, kHeight, kWidth,
                              kHeight, reinterpret_cast<uint8*>(ms->GetBuffer()),
-                             data_size, 1, 1, 0, 0, webrtc::kVideoRotation_0,
-                             true));
+                             data_size, 1, 1, 0, 0, webrtc::kVideoRotation_0));
     EXPECT_FALSE(IsBlack(frame1));
     EXPECT_FALSE(IsEqual(frame1, frame2, 0));
   }
