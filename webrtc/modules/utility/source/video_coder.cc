@@ -64,6 +64,7 @@ int32_t VideoCoder::SetDecodeCodec(VideoCodec& videoCodecInst,
 int32_t VideoCoder::Decode(I420VideoFrame& decodedVideo,
                            const EncodedVideoData& encodedData)
 {
+    decodedVideo.ResetSize();
     if(encodedData.payloadSize <= 0)
     {
         return -1;

@@ -44,8 +44,13 @@ TEST(TestI420VideoFrame, InitialValues) {
 TEST(TestI420VideoFrame, WidthHeightValues) {
   I420VideoFrame frame;
   const int valid_value = 10;
+  const int invalid_value = -1;
   EXPECT_EQ(0, frame.CreateEmptyFrame(10, 10, 10, 14, 90));
   EXPECT_EQ(valid_value, frame.width());
+  EXPECT_EQ(invalid_value, frame.set_width(invalid_value));
+  EXPECT_EQ(valid_value, frame.height());
+  EXPECT_EQ(valid_value, frame.height());
+  EXPECT_EQ(invalid_value, frame.set_height(0));
   EXPECT_EQ(valid_value, frame.height());
   frame.set_timestamp(123u);
   EXPECT_EQ(123u, frame.timestamp());
@@ -69,6 +74,14 @@ TEST(TestI420VideoFrame, SizeAllocation) {
             frame.allocated_size(kUPlane));
   EXPECT_EQ(ExpectedSize(stride_v, height, kVPlane),
             frame.allocated_size(kVPlane));
+}
+
+TEST(TestI420VideoFrame, ResetSize) {
+  I420VideoFrame frame;
+  EXPECT_EQ(0, frame. CreateEmptyFrame(10, 10, 12, 14, 220));
+  EXPECT_FALSE(frame.IsZeroSize());
+  frame.ResetSize();
+  EXPECT_TRUE(frame.IsZeroSize());
 }
 
 TEST(TestI420VideoFrame, CopyFrame) {

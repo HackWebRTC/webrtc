@@ -91,6 +91,8 @@ TEST_F(VideoProcessingModuleTest, HandleNullBuffer) {
   VideoProcessingModule::FrameStats stats;
   // Video frame with unallocated buffer.
   I420VideoFrame videoFrame;
+  videoFrame.set_width(width_);
+  videoFrame.set_height(height_);
 
   EXPECT_EQ(-3, vpm_->GetFrameStats(&stats, videoFrame));
 
@@ -118,21 +120,21 @@ TEST_F(VideoProcessingModuleTest, HandleBadStats) {
 TEST_F(VideoProcessingModuleTest, HandleBadSize) {
   VideoProcessingModule::FrameStats stats;
 
-  I420VideoFrame bad_frame;
-  bad_frame.CreateEmptyFrame(width_, 0, width_, (width_ + 1) / 2,
-                             (width_ + 1) / 2);
-  EXPECT_EQ(-3, vpm_->GetFrameStats(&stats, bad_frame));
+  video_frame_.ResetSize();
+  video_frame_.set_width(width_);
+  video_frame_.set_height(0);
+  EXPECT_EQ(-3, vpm_->GetFrameStats(&stats, video_frame_));
 
-  EXPECT_EQ(-1, vpm_->ColorEnhancement(&bad_frame));
+  EXPECT_EQ(-1, vpm_->ColorEnhancement(&video_frame_));
 
-  EXPECT_EQ(-1, vpm_->Deflickering(&bad_frame, &stats));
+  EXPECT_EQ(-1, vpm_->Deflickering(&video_frame_, &stats));
 
-  EXPECT_EQ(-3, vpm_->BrightnessDetection(bad_frame, stats));
+  EXPECT_EQ(-3, vpm_->BrightnessDetection(video_frame_, stats));
 
   EXPECT_EQ(VPM_PARAMETER_ERROR, vpm_->SetTargetResolution(0,0,0));
 
   I420VideoFrame *out_frame = NULL;
-  EXPECT_EQ(VPM_PARAMETER_ERROR, vpm_->PreprocessFrame(bad_frame,
+  EXPECT_EQ(VPM_PARAMETER_ERROR, vpm_->PreprocessFrame(video_frame_,
                                                        &out_frame));
 }
 
@@ -333,10 +335,8 @@ void CropFrame(const uint8_t* source_data,
                int cropped_width,
                int cropped_height,
                I420VideoFrame* cropped_frame) {
-  cropped_frame->CreateEmptyFrame(cropped_width, cropped_height,
-                                  cropped_width,
-                                  (cropped_width + 1) / 2,
-                                  (cropped_width + 1) / 2);
+  cropped_frame->set_width(cropped_width);
+  cropped_frame->set_height(cropped_height);
   EXPECT_EQ(0,
             ConvertToI420(kI420, source_data, offset_x, offset_y, source_width,
                           source_height, 0, kRotateNone, cropped_frame));

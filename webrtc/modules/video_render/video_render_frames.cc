@@ -125,6 +125,7 @@ I420VideoFrame* VideoRenderFrames::FrameToRender() {
 int32_t VideoRenderFrames::ReturnFrame(I420VideoFrame* old_frame) {
   // No need to reuse texture frames because they do not allocate memory.
   if (old_frame->native_handle() == NULL) {
+    old_frame->ResetSize();
     old_frame->set_timestamp(0);
     old_frame->set_render_time_ms(0);
     empty_frames_.push_back(old_frame);
