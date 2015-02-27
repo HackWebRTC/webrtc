@@ -236,24 +236,9 @@ class Network {
   // interfaces. Key is derived from interface name and it's prefix.
   std::string key() const { return key_; }
 
-  // Returns the Network's current idea of the 'best' IP it has.
-  // Or return an unset IP if this network has no active addresses.
-  // Here is the rule on how we mark the IPv6 address as ignorable for WebRTC.
-  // 1) return all global temporary dynamic and non-deprecrated ones.
-  // 2) if #1 not available, return global ones.
-  // 3) if #2 not available, use ULA ipv6 as last resort. (ULA stands
-  // for unique local address, which is not route-able in open
-  // internet but might be useful for a close WebRTC deployment.
-
-  // TODO(guoweis): rule #3 actually won't happen at current
-  // implementation. The reason being that ULA address starting with
-  // 0xfc 0r 0xfd will be grouped into its own Network. The result of
-  // that is WebRTC will have one extra Network to generate candidates
-  // but the lack of rule #3 shouldn't prevent turning on IPv6 since
-  // ULA should only be tried in a close deployment anyway.
-
-  // Note that when not specifying any flag, it's treated as case global
-  // IPv6 address
+  // Returns the Network's current idea of the 'best' IP it has. For privacy
+  // reasons, in the case of IPv6, only temporary addresses will be selected.
+  // Additionally, the unique local address (ULA) will never be selected.
   IPAddress GetBestIP() const;
 
   // Keep the original function here for now.
