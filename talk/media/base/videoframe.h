@@ -62,8 +62,7 @@ class VideoFrame {
                      size_t pixel_height,
                      int64_t elapsed_time,
                      int64_t time_stamp,
-                     webrtc::VideoRotation rotation,
-                     bool apply_rotation) {
+                     webrtc::VideoRotation rotation) {
     return false;
   }
 
@@ -81,7 +80,7 @@ class VideoFrame {
                      int rotation) {
     return Reset(fourcc, w, h, dw, dh, sample, sample_size, pixel_width,
                  pixel_height, elapsed_time, time_stamp,
-                 static_cast<webrtc::VideoRotation>(rotation), true);
+                 static_cast<webrtc::VideoRotation>(rotation));
   }
 
   // Basic accessors.
@@ -124,6 +123,8 @@ class VideoFrame {
   virtual webrtc::VideoRotation GetVideoRotation() const {
     return webrtc::kVideoRotation_0;
   }
+  // TODO(guoweis): Remove the skeleton implementation once chrome is updated.
+  virtual void SetRotation(webrtc::VideoRotation rotation) {}
 
   // Make a shallow copy of the frame. The frame buffer itself is not copied.
   // Both the current and new VideoFrame will share a single reference-counted
