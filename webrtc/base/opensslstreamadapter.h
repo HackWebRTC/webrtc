@@ -82,8 +82,10 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   virtual void Close();
   virtual StreamState GetState() const;
 
+#ifndef OPENSSL_IS_BORINGSSL
   // Return the RFC (5246, 3268, etc.) cipher name for an OpenSSL cipher.
   static const char* GetRfcSslCipherName(const SSL_CIPHER* cipher);
+#endif
 
   virtual bool GetSslCipher(std::string* cipher);
 

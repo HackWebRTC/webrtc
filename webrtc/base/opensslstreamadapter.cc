@@ -57,6 +57,7 @@ static SrtpCipherMapEntry SrtpCipherMap[] = {
 };
 #endif
 
+#ifndef OPENSSL_IS_BORINGSSL
 // Cipher name table. Maps internal OpenSSL cipher ids to the RFC name.
 struct SslCipherMapEntry {
   uint32_t openssl_id;
@@ -134,17 +135,9 @@ static const SslCipherMapEntry kSslCipherMap[] = {
   DEFINE_CIPHER_ENTRY_TLS1(ECDHE_RSA_WITH_AES_128_GCM_SHA256),
   DEFINE_CIPHER_ENTRY_TLS1(ECDHE_RSA_WITH_AES_256_GCM_SHA384),
 
-#ifdef OPENSSL_IS_BORINGSSL
-  {TLS1_CK_ECDHE_RSA_CHACHA20_POLY1305,
-      "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"},
-  {TLS1_CK_ECDHE_ECDSA_CHACHA20_POLY1305,
-      "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256"},
-  {TLS1_CK_DHE_RSA_CHACHA20_POLY1305,
-      "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256"},
-#endif
-
   {0, NULL}
 };
+#endif  // #ifndef OPENSSL_IS_BORINGSSL
 
 // Default cipher used between OpenSSL/BoringSSL stream adapters.
 // This needs to be updated when the default of the SSL library changes.
@@ -316,6 +309,7 @@ bool OpenSSLStreamAdapter::SetPeerCertificateDigest(const std::string
   return true;
 }
 
+#ifndef OPENSSL_IS_BORINGSSL
 const char* OpenSSLStreamAdapter::GetRfcSslCipherName(
     const SSL_CIPHER* cipher) {
   ASSERT(cipher != NULL);
@@ -327,6 +321,7 @@ const char* OpenSSLStreamAdapter::GetRfcSslCipherName(
   }
   return NULL;
 }
+#endif
 
 bool OpenSSLStreamAdapter::GetSslCipher(std::string* cipher) {
   if (state_ != SSL_CONNECTED)
@@ -337,12 +332,19 @@ bool OpenSSLStreamAdapter::GetSslCipher(std::string* cipher) {
     return false;
   }
 
+#ifdef OPENSSL_IS_BORINGSSL
+  char* cipher_name = SSL_CIPHER_get_rfc_name(current_cipher);
+#else
   const char* cipher_name = GetRfcSslCipherName(current_cipher);
+#endif
   if (cipher_name == NULL) {
     return false;
   }
 
   *cipher = cipher_name;
+#ifdef OPENSSL_IS_BORINGSSL
+  OPENSSL_free(cipher_name);
+#endif
   return true;
 }
 
