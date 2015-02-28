@@ -22,6 +22,22 @@
 #include <pthread.h>
 #endif
 
+#if defined(WEBRTC_MAC)
+// TODO(tommi): This is a temporary test to see if critical section objects are
+// somehow causing pointer co-member variables that follow a critical section
+// variable, are somehow throwing off the alignment and causing crash on
+// the Mac 10.9 debug bot:
+// http://build.chromium.org/p/chromium.mac/builders/Mac10.9%20Tests%20(dbg)
+#define _MUTEX_ALIGNMENT __attribute__((__aligned__(8)))
+#define _STATIC_ASSERT_CRITICAL_SECTION_SIZE() \
+    static_assert(sizeof(CriticalSection) % 8 == 0, \
+                "Bad size of CriticalSection")
+
+#else
+#define _MUTEX_ALIGNMENT
+#define _STATIC_ASSERT_CRITICAL_SECTION_SIZE()
+#endif
+
 #ifdef _DEBUG
 #define CS_TRACK_OWNER 1
 #endif  // _DEBUG
@@ -63,6 +79,7 @@ class LOCKABLE CriticalSection {
 class LOCKABLE CriticalSection {
  public:
   CriticalSection() {
+    _STATIC_ASSERT_CRITICAL_SECTION_SIZE();
     pthread_mutexattr_t mutex_attribute;
     pthread_mutexattr_init(&mutex_attribute);
     pthread_mutexattr_settype(&mutex_attribute, PTHREAD_MUTEX_RECURSIVE);
@@ -99,7 +116,7 @@ class LOCKABLE CriticalSection {
   }
 
  private:
-  pthread_mutex_t mutex_;
+  _MUTEX_ALIGNMENT pthread_mutex_t mutex_;
   TRACK_OWNER(pthread_t thread_);
 };
 #endif // WEBRTC_POSIX

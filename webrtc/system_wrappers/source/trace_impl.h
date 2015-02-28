@@ -93,12 +93,12 @@ class TraceImpl : public Trace {
   void WriteToFile(const char* msg, uint16_t length)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  rtc::CriticalSection crit_;
   TraceCallback* callback_ GUARDED_BY(crit_);
   uint32_t row_count_text_ GUARDED_BY(crit_);
   uint32_t file_count_text_ GUARDED_BY(crit_);
 
   const rtc::scoped_ptr<FileWrapper> trace_file_ GUARDED_BY(crit_);
+  rtc::CriticalSection crit_;
 };
 
 }  // namespace webrtc
