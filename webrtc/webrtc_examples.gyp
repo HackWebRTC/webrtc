@@ -75,7 +75,7 @@
               'outputs': ['<(PRODUCT_DIR)/WebRTCDemo-debug.apk'],
               'action': [
                 'bash', '-ec',
-                'rm -fr <(_outputs) <(android_webrtc_demo_root)/{bin,libs} && '
+                'rm -fr <(_outputs) <(android_webrtc_demo_root)/{bin,libs,gen,obj} && '
                 'mkdir -p <(INTERMEDIATE_DIR) && ' # Must happen _before_ the cd below
                 'mkdir -p <(android_webrtc_demo_root)/libs/<(android_app_abi) && '
                 'cp <(PRODUCT_DIR)/lib.java/audio_device_module_java.jar <(android_webrtc_demo_root)/libs/ &&'
@@ -139,7 +139,7 @@
               'outputs': ['<(PRODUCT_DIR)/OpenSlDemo-debug.apk'],
               'action': [
                 'bash', '-ec',
-                'rm -fr <(_outputs) <(android_opensl_demo_root)/{bin,libs} && '
+                'rm -fr <(_outputs) <(android_opensl_demo_root)/{bin,libs,gen,obj} && '
                 'mkdir -p <(android_opensl_demo_root)/libs/<(android_app_abi) && '
                 'mkdir -p <(INTERMEDIATE_DIR) && ' # Must happen _before_ the cd below
                 '<(android_strip) -o <(android_opensl_demo_root)/libs/<(android_app_abi)/libopensl-demo-jni.so <(PRODUCT_DIR)/libopensl-demo-jni.so && '

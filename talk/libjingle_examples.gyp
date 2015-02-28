@@ -385,22 +385,23 @@
                 '<(PRODUCT_DIR)/AppRTCDemo-debug.apk',
               ],
               'variables': {
+                'apprtc_demo_root': 'examples/android',
                 'ant_log': '../../<(INTERMEDIATE_DIR)/ant.log', # ../.. to compensate for the cd examples/android below.
               },
               'action': [
                 'bash', '-ec',
-                'rm -fr <(_outputs) examples/android/{bin,libs} && '
+                'rm -fr <(_outputs) <(apprtc_demo_root)/{bin,libs,gen,obj} && '
                 'mkdir -p <(INTERMEDIATE_DIR) && ' # Must happen _before_ the cd below
-                'mkdir -p examples/android/libs/<(android_app_abi) && '
-                'cp <(PRODUCT_DIR)/libjingle_peerconnection.jar examples/android/libs/ &&'
-                'cp examples/android/third_party/autobanh/autobanh.jar examples/android/libs/ &&'
-                '<(android_strip) -o examples/android/libs/<(android_app_abi)/libjingle_peerconnection_so.so  <(PRODUCT_DIR)/lib/libjingle_peerconnection_so.so &&'
-                'cd examples/android && '
+                'mkdir -p <(apprtc_demo_root)/libs/<(android_app_abi) && '
+                'cp <(PRODUCT_DIR)/libjingle_peerconnection.jar <(apprtc_demo_root)/libs/ &&'
+                'cp <(apprtc_demo_root)/third_party/autobanh/autobanh.jar <(apprtc_demo_root)/libs/ &&'
+                '<(android_strip) -o <(apprtc_demo_root)/libs/<(android_app_abi)/libjingle_peerconnection_so.so  <(PRODUCT_DIR)/lib/libjingle_peerconnection_so.so &&'
+                'cd <(apprtc_demo_root) && '
                 '{ ANDROID_SDK_ROOT=<(android_sdk_root) '
                 'ant debug > <(ant_log) 2>&1 || '
                 '  { cat <(ant_log) ; exit 1; } } && '
                 'cd - > /dev/null && '
-                'cp examples/android/bin/AppRTCDemo-debug.apk <(_outputs)'
+                'cp <(apprtc_demo_root)/bin/AppRTCDemo-debug.apk <(_outputs)'
               ],
             },
           ],
@@ -434,17 +435,19 @@
                 '<(PRODUCT_DIR)/AppRTCDemoTest-debug.apk',
               ],
               'variables': {
+                'android_webrtc_demo_test_root': 'examples/androidtests',
                 'ant_log': '../../<(INTERMEDIATE_DIR)/ant.log', # ../.. to compensate for the cd examples/androidtests below.
               },
               'action': [
                 'bash', '-ec',
+                'rm -fr <(_outputs) <(android_webrtc_demo_test_root)/{bin,libs,gen} && '
                 'mkdir -p <(INTERMEDIATE_DIR) && ' # Must happen _before_ the cd below
-                'cd examples/androidtests && '
+                'cd <(android_webrtc_demo_test_root) && '
                 '{ ANDROID_SDK_ROOT=<(android_sdk_root) '
                 'ant debug > <(ant_log) 2>&1 || '
                 '  { cat <(ant_log) ; exit 1; } } && '
                 'cd - > /dev/null && '
-                'cp examples/androidtests/bin/AppRTCDemoTest-debug.apk <(_outputs)'
+                'cp <(android_webrtc_demo_test_root)/bin/AppRTCDemoTest-debug.apk <(_outputs)'
               ],
             },
           ],
