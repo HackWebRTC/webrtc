@@ -275,7 +275,7 @@ bool IPIsAny(const IPAddress& ip) {
     case AF_INET:
       return ip == IPAddress(INADDR_ANY);
     case AF_INET6:
-      return ip == IPAddress(in6addr_any);
+      return ip == IPAddress(in6addr_any) || ip == IPAddress(kV4MappedPrefix);
     case AF_UNSPEC:
       return false;
   }

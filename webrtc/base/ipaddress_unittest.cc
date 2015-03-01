@@ -552,6 +552,19 @@ TEST(IPAddressTest, TestIsLoopback) {
   EXPECT_TRUE(IPIsLoopback(IPAddress(in6addr_loopback)));
 }
 
+// Verify that IPIsAny catches all cases of "any" address.
+TEST(IPAddressTest, TestIsAny) {
+  IPAddress addr;
+
+  EXPECT_TRUE(IPFromString(kIPv6AnyAddrString, &addr));
+  EXPECT_TRUE(IPIsAny(addr));
+
+  EXPECT_TRUE(IPFromString(kIPv4AnyAddrString, &addr));
+  EXPECT_TRUE(IPIsAny(addr));
+
+  EXPECT_TRUE(IPIsAny(IPAddress(kIPv4MappedAnyAddr)));
+}
+
 TEST(IPAddressTest, TestNormalized) {
   // Check normalizing a ::ffff:a.b.c.d address.
   IPAddress addr;
