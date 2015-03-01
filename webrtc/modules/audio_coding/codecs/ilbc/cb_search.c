@@ -359,7 +359,7 @@ void WebRtcIlbcfix_CbSearch(
     bits = 16 - temp2;
   }
 
-  tmp = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(gains[1],gains[1], 14);
+  tmp = (int16_t)((gains[1] * gains[1]) >> 14);
 
   targetEner = (int16_t)WEBRTC_SPL_SHIFT_W32(targetEner, -bits) * tmp;
 

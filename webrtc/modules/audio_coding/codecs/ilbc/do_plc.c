@@ -92,8 +92,9 @@ void WebRtcIlbcfix_DoThePlc(
 
       /* Normalize and store cross^2 and the number of shifts */
       shiftMax = WebRtcSpl_GetSizeInBits(WEBRTC_SPL_ABS_W32(cross))-15;
-      crossSquareMax = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(WEBRTC_SPL_SHIFT_W32(cross, -shiftMax),
-                                                                WEBRTC_SPL_SHIFT_W32(cross, -shiftMax), 15);
+      crossSquareMax = (int16_t)((
+          (int16_t)WEBRTC_SPL_SHIFT_W32(cross, -shiftMax) *
+          (int16_t)WEBRTC_SPL_SHIFT_W32(cross, -shiftMax)) >> 15);
 
       for (j=inlag-2;j<=inlag+3;j++) {
         WebRtcIlbcfix_CompCorr( &cross_comp, &ener_comp,
@@ -103,8 +104,9 @@ void WebRtcIlbcfix_DoThePlc(
            this lag is better or not. To avoid the division,
            do a cross multiplication */
         shift1 = WebRtcSpl_GetSizeInBits(WEBRTC_SPL_ABS_W32(cross_comp))-15;
-        crossSquare = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(WEBRTC_SPL_SHIFT_W32(cross_comp, -shift1),
-                                                               WEBRTC_SPL_SHIFT_W32(cross_comp, -shift1), 15);
+        crossSquare = (int16_t)((
+            (int16_t)WEBRTC_SPL_SHIFT_W32(cross_comp, -shift1) *
+            (int16_t)WEBRTC_SPL_SHIFT_W32(cross_comp, -shift1)) >> 15);
 
         shift2 = WebRtcSpl_GetSizeInBits(ener)-15;
         measure = (int16_t)WEBRTC_SPL_SHIFT_W32(ener, -shift2) * crossSquare;
@@ -154,7 +156,7 @@ void WebRtcIlbcfix_DoThePlc(
 
         scale2=(int16_t)WebRtcSpl_NormW32(ener)-16;
         tmp2=(int16_t)WEBRTC_SPL_SHIFT_W32(ener, scale2);
-        denom=(int16_t)WEBRTC_SPL_MUL_16_16_RSFT(tmp1, tmp2, 16); /* denom in Q(scale1+scale2-16) */
+        denom = (int16_t)((tmp1 * tmp2) >> 16);  /* in Q(scale1+scale2-16) */
 
         /* Square the cross correlation and norm it such that max_perSquare
            will be in Q15 after the division */
@@ -209,7 +211,8 @@ void WebRtcIlbcfix_DoThePlc(
       }
       /* pitch fact is approximated by first order */
       tmpW32 = (int32_t)WebRtcIlbcfix_kPlcPitchFact[ind] +
-          WEBRTC_SPL_MUL_16_16_RSFT(WebRtcIlbcfix_kPlcPfSlope[ind], (max_perSquare-WebRtcIlbcfix_kPlcPerSqr[ind]), 11);
+          ((WebRtcIlbcfix_kPlcPfSlope[ind] *
+              (max_perSquare - WebRtcIlbcfix_kPlcPerSqr[ind])) >> 11);
 
       pitchfact = (int16_t)WEBRTC_SPL_MIN(tmpW32, 32767); /* guard against overflow */
 
@@ -253,25 +256,21 @@ void WebRtcIlbcfix_DoThePlc(
       if (i<80) {
         tot_gain=use_gain;
       } else if (i<160) {
-        tot_gain=(int16_t)WEBRTC_SPL_MUL_16_16_RSFT(31130, use_gain, 15); /* 0.95*use_gain */
+        tot_gain = (int16_t)((31130 * use_gain) >> 15);  /* 0.95*use_gain */
       } else {
-        tot_gain=(int16_t)WEBRTC_SPL_MUL_16_16_RSFT(29491, use_gain, 15); /* 0.9*use_gain */
+        tot_gain = (int16_t)((29491 * use_gain) >> 15);  /* 0.9*use_gain */
       }
 
 
       /* mix noise and pitch repeatition */
-
-      PLCresidual[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(
-          tot_gain,
-          (pitchfact * PLCresidual[i] + (32767 - pitchfact) * randvec[i] +
-              16384) >> 15,
-          15);
+      PLCresidual[i] = (int16_t)((tot_gain *
+          ((pitchfact * PLCresidual[i] + (32767 - pitchfact) * randvec[i] +
+              16384) >> 15)) >> 15);
 
       /* Shifting down the result one step extra to ensure that no overflow
          will occur */
-      energy += WEBRTC_SPL_MUL_16_16_RSFT(PLCresidual[i],
-                                          PLCresidual[i], (iLBCdec_inst->prevScale+1));
-
+      energy += (PLCresidual[i] * PLCresidual[i]) >>
+          (iLBCdec_inst->prevScale + 1);
     }
 
     /* less than 30 dB, use only noise */

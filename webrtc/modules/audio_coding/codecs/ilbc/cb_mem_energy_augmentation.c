@@ -44,8 +44,7 @@ void WebRtcIlbcfix_CbMemEnergyAugmentation(
   for (lagcount=20; lagcount<=39; lagcount++) {
 
     /* Update the energy recursively to save complexity */
-    nrjRecursive = nrjRecursive +
-        WEBRTC_SPL_MUL_16_16_RSFT(*ppe, *ppe, scale);
+    nrjRecursive += (*ppe * *ppe) >> scale;
     ppe--;
     energy = nrjRecursive;
 

@@ -122,7 +122,7 @@ void WebRtcIlbcfix_Poly2Lsp(
         y <<= shifts;
         y = (int16_t)WebRtcSpl_DivW32W16(536838144, y); /* 1/(yhigh-ylow) */
 
-        tmpW32 = WEBRTC_SPL_MUL_16_16_RSFT(x, y, (19-shifts));
+        tmpW32 = (x * y) >> (19 - shifts);
 
         /* y=(xhigh-xlow)/(yhigh-ylow) */
         y = (int16_t)(tmpW32&0xFFFF);
@@ -131,7 +131,7 @@ void WebRtcIlbcfix_Poly2Lsp(
           y = -y;
         }
         /* tmpW32 = ylow*(xhigh-xlow)/(yhigh-ylow) */
-        tmpW32 = WEBRTC_SPL_MUL_16_16_RSFT(ylow, y, 10);
+        tmpW32 = (ylow * y) >> 10;
         xint = xlow-(int16_t)(tmpW32&0xFFFF);
       }
 

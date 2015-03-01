@@ -53,10 +53,9 @@ void WebRtcIlbcfix_Window32W32(
     y_low = (int16_t)((y[i] - temp) >> 1);
 
     /* Calculate z by a 32 bit multiplication using both low and high from x and y */
-    temp = (x_hi * y_hi) << 1;
-    temp = (temp + (WEBRTC_SPL_MUL_16_16_RSFT(x_hi, y_low, 14)));
+    temp = ((x_hi * y_hi) << 1) + ((x_hi * y_low) >> 14);
 
-    z[i] = (temp + (WEBRTC_SPL_MUL_16_16_RSFT(x_low, y_hi, 14)));
+    z[i] = temp + ((x_low * y_hi) >> 14);
   }
 
   WebRtcSpl_VectorBitShiftW32(z, N, z, left_shifts);

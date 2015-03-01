@@ -149,8 +149,7 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
                                            ENH_BLOCKL_HALF, shifts);
       enerSh = 15-WebRtcSpl_GetSizeInBits(ener);
       corr16[i] = (int16_t)WEBRTC_SPL_SHIFT_W32(corrmax[i], corrSh);
-      corr16[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(corr16[i],
-                                                           corr16[i], 16);
+      corr16[i] = (int16_t)((corr16[i] * corr16[i]) >> 16);
       en16[i] = (int16_t)WEBRTC_SPL_SHIFT_W32(ener, enerSh);
       totsh[i] = enerSh - WEBRTC_SPL_LSHIFT_W32(corrSh, 1);
     }
@@ -160,14 +159,12 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
     for (i=1; i<3; i++) {
       if (totsh[ind] > totsh[i]) {
         sh = WEBRTC_SPL_MIN(31, totsh[ind]-totsh[i]);
-        if (corr16[ind] * en16[i] <
-            WEBRTC_SPL_MUL_16_16_RSFT(corr16[i], en16[ind], sh)) {
+        if (corr16[ind] * en16[i] < (corr16[i] * en16[ind]) >> sh) {
           ind = i;
         }
       } else {
         sh = WEBRTC_SPL_MIN(31, totsh[i]-totsh[ind]);
-        if (WEBRTC_SPL_MUL_16_16_RSFT(corr16[ind], en16[i], sh) <
-            corr16[i] * en16[ind]) {
+        if ((corr16[ind] * en16[i]) >> sh < corr16[i] * en16[ind]) {
           ind = i;
         }
       }
@@ -297,8 +294,8 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
         tmpW16ptr=&plc_pred[plc_blockl-16];
 
         for (i=16;i>0;i--) {
-          (*tmpW16ptr)=(int16_t)WEBRTC_SPL_MUL_16_16_RSFT(
-              (*tmpW16ptr), (SqrtEnChange+(win>>1)), 14);
+          *tmpW16ptr = (int16_t)(
+              (*tmpW16ptr * (SqrtEnChange + (win >> 1))) >> 14);
           /* multiply by (2.0*SqrtEnChange+win) */
 
           win += inc;
@@ -319,10 +316,9 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
       enh_bufPtr1=&enh_buf[ENH_BUFL-1-iLBCdec_inst->blockl];
       for (i=0; i<plc_blockl; i++) {
         win+=inc;
-        *enh_bufPtr1 =
-            (int16_t)WEBRTC_SPL_MUL_16_16_RSFT((*enh_bufPtr1), win, 14);
-        *enh_bufPtr1 += (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(
-                (16384-win), plc_pred[plc_blockl-1-i], 14);
+        *enh_bufPtr1 = (int16_t)((*enh_bufPtr1 * win) >> 14);
+        *enh_bufPtr1 += (int16_t)(
+            ((16384 - win) * plc_pred[plc_blockl - 1 - i]) >> 14);
         enh_bufPtr1--;
       }
     } else {
