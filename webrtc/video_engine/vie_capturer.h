@@ -169,7 +169,7 @@ class ViECapturer
   EventWrapper& capture_event_;
   EventWrapper& deliver_event_;
 
-  bool stop_;
+  volatile int stop_;
 
   rtc::scoped_ptr<I420VideoFrame> captured_frame_;
   rtc::scoped_ptr<I420VideoFrame> deliver_frame_;

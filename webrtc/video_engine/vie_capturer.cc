@@ -79,7 +79,7 @@ ViECapturer::ViECapturer(int capture_id,
                                                    "ViECaptureThread")),
       capture_event_(*EventWrapper::Create()),
       deliver_event_(*EventWrapper::Create()),
-      stop_(false),
+      stop_(0),
       effect_filter_(NULL),
       image_proc_module_(NULL),
       image_proc_module_ref_counter_(0),
@@ -104,7 +104,7 @@ ViECapturer::~ViECapturer() {
   module_process_thread_.DeRegisterModule(overuse_detector_.get());
 
   // Stop the thread.
-  stop_ = true;
+  rtc::AtomicOps::Increment(&stop_);
   capture_event_.Set();
 
   // Stop the camera input.
@@ -468,7 +468,7 @@ bool ViECapturer::ViECaptureThreadFunction(void* obj) {
 bool ViECapturer::ViECaptureProcess() {
   int64_t capture_time = -1;
   if (capture_event_.Wait(kThreadWaitTimeMs) == kEventSignaled) {
-    if (stop_)
+    if (rtc::AtomicOps::Load(&stop_))
       return false;
 
     overuse_detector_->FrameProcessingStarted();
