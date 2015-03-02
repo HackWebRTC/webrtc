@@ -177,7 +177,7 @@ name=https://code.google.com/p/webrtc/issues/detail?id=3158 (3)
 *!_threadstartex
 KERNEL32.dll!BaseThreadInitThunk
 
-# libjingle_unittest, fails on Win DrMemory Full
+# rtc_unittest, fails on Win DrMemory Full
 UNINITIALIZED READ
 name=https://code.google.com/p/webrtc/issues/detail?id=3158 (4)
 *!_towlower_l

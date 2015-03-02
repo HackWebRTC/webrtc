@@ -69,21 +69,6 @@
       ],
     },  # target libjingle_unittest_main
     {
-      'target_name': 'libjingle_unittest',
-      'type': 'executable',
-      'includes': [ 'build/objc_app.gypi', ],
-      'dependencies': [
-        '<(webrtc_root)/base/base.gyp:rtc_base',
-        '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
-        '<(webrtc_root)/libjingle/xmllite/xmllite.gyp:rtc_xmllite',
-        'libjingle.gyp:libjingle',
-        'libjingle_unittest_main',
-      ],
-      'sources': [
-        '<(DEPTH)/webrtc/test/testsupport/always_passing_unittest.cc',
-      ],  # sources
-    },  # target libjingle_unittest
-    {
       'target_name': 'libjingle_media_unittest',
       'type': 'executable',
       'dependencies': [

@@ -74,6 +74,18 @@ char kLSanDefaultSuppressions[] =
 "leak:rtc::HttpData::changeHeader\n"
 // https://code.google.com/p/webrtc/issues/detail?id=4149 for details.
 "leak:StartDNSLookup\n"
+// https://code.google.com/p/webrtc/issues/detail?id=2527
+"leak:buzz::FakeXmppClient::SendStanza\n"
+"leak:buzz::XmppTask::XmppTask\n"
+"leak:HangoutPubSubClientTest::HangoutPubSubClientTest\n"
+"leak:MucRoomConfigTaskTest::SetUp\n"
+"leak:MucRoomDiscoveryTaskTest::SetUp\n"
+"leak:MucRoomLookupTaskTest::SetUp\n"
+"leak:MucRoomUniqueHangoutIdTaskTest::SetUp\n"
+"leak:PingTaskTest::SetUp\n"
+"leak:PingXmppClient::SendStanza\n"
+"leak:PubSubClientTest::PubSubClientTest\n"
+"leak:PubSubTasksTest::PubSubTasksTest\n"
 
 // libjingle_media_unittest
 "leak:cricket::FakeNetworkInterface::SetOption\n"
@@ -108,20 +120,6 @@ char kLSanDefaultSuppressions[] =
 "leak:WebRtcSdpTest_SerializeSessionDescriptionWithBandwidth_Test::TestBody\n"
 "leak:WebRtcSessionTest::SetLocalDescriptionExpectError\n"
 "leak:WebRtcSessionTest_TestAVOfferWithAudioOnlyAnswer_Test::TestBody\n"
-
-// libjingle_unittest
-// https://code.google.com/p/webrtc/issues/detail?id=2527
-"leak:buzz::FakeXmppClient::SendStanza\n"
-"leak:buzz::XmppTask::XmppTask\n"
-"leak:HangoutPubSubClientTest::HangoutPubSubClientTest\n"
-"leak:MucRoomConfigTaskTest::SetUp\n"
-"leak:MucRoomDiscoveryTaskTest::SetUp\n"
-"leak:MucRoomLookupTaskTest::SetUp\n"
-"leak:MucRoomUniqueHangoutIdTaskTest::SetUp\n"
-"leak:PingTaskTest::SetUp\n"
-"leak:PingXmppClient::SendStanza\n"
-"leak:PubSubClientTest::PubSubClientTest\n"
-"leak:PubSubTasksTest::PubSubTasksTest\n"
 
 // PLEASE READ ABOVE BEFORE ADDING NEW SUPPRESSIONS.
 
