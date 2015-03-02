@@ -171,9 +171,6 @@ void SpatialAudio::EncodeDecode(const double leftPanning,
     }
     CHECK_ERROR(_acmRight->Add10MsData(audioFrame));
 
-    CHECK_ERROR(_acmLeft->Process());
-    CHECK_ERROR(_acmRight->Process());
-
     CHECK_ERROR(_acmReceiver->PlayoutData10Ms(outFileSampFreq, &audioFrame));
     _outFile.Write10MsData(audioFrame);
   }
@@ -189,8 +186,6 @@ void SpatialAudio::EncodeDecode() {
   while (!_inFile.EndOfFile()) {
     _inFile.Read10MsData(audioFrame);
     CHECK_ERROR(_acmLeft->Add10MsData(audioFrame));
-
-    CHECK_ERROR(_acmLeft->Process());
 
     CHECK_ERROR(_acmReceiver->PlayoutData10Ms(outFileSampFreq, &audioFrame));
     _outFile.Write10MsData(audioFrame);

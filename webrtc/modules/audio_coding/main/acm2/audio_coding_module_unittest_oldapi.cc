@@ -193,15 +193,15 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
   }
 
   virtual void InsertAudio() {
-    ASSERT_EQ(0, acm_->Add10MsData(input_frame_));
+    ASSERT_GE(acm_->Add10MsData(input_frame_), 0);
+    VerifyEncoding();
     input_frame_.timestamp_ += kNumSamples10ms;
   }
 
-  virtual void Encode() {
-    int32_t encoded_bytes = acm_->Process();
-    // Expect to get one packet with two bytes per sample, or no packet at all,
-    // depending on how many 10 ms blocks go into |codec_.pacsize|.
-    EXPECT_TRUE(encoded_bytes == 2 * codec_.pacsize || encoded_bytes == 0);
+  virtual void VerifyEncoding() {
+    int last_length = packet_cb_.last_payload_len_bytes();
+    EXPECT_TRUE(last_length == 2 * codec_.pacsize || last_length == 0)
+        << "Last encoded packet was " << last_length << " bytes.";
   }
 
   const int id_;
@@ -316,7 +316,6 @@ TEST_F(AudioCodingModuleTestOldApi, TransportCallbackIsInvokedForEachPacket) {
     if (packet_cb_.num_calls() > 0)
       EXPECT_EQ(kAudioFrameSpeech, packet_cb_.last_frame_type());
     InsertAudio();
-    Encode();
   }
   EXPECT_EQ(kLoops / k10MsBlocksPerPacket, packet_cb_.num_calls());
   EXPECT_EQ(kAudioFrameSpeech, packet_cb_.last_frame_type());
@@ -330,19 +329,18 @@ TEST_F(AudioCodingModuleTestOldApi, TransportCallbackIsInvokedForEachPacket) {
 class AudioCodingModuleTestWithComfortNoiseOldApi
     : public AudioCodingModuleTestOldApi {
  protected:
-  void Encode() override {
-    int32_t encoded_bytes = acm_->Process();
-    // Expect either one packet with 9 comfort noise parameters, or no packet
-    // at all.
-    EXPECT_TRUE(encoded_bytes == 9 || encoded_bytes == 0);
-  }
-
   void RegisterCngCodec(int rtp_payload_type) {
     CodecInst codec;
     AudioCodingModule::Codec("CN", &codec, kSampleRateHz, 1);
     codec.pltype = rtp_payload_type;
     ASSERT_EQ(0, acm_->RegisterReceiveCodec(codec));
     ASSERT_EQ(0, acm_->RegisterSendCodec(codec));
+  }
+
+  void VerifyEncoding() override {
+    int last_length = packet_cb_.last_payload_len_bytes();
+    EXPECT_TRUE(last_length == 9 || last_length == 0)
+        << "Last encoded packet was " << last_length << " bytes.";
   }
 
   void DoTest(int blocks_per_packet, int cng_pt) {
@@ -371,7 +369,6 @@ class AudioCodingModuleTestWithComfortNoiseOldApi
       int num_calls_before = packet_cb_.num_calls();
       EXPECT_EQ(i / blocks_per_packet, num_calls_before);
       InsertAudio();
-      Encode();
       int num_calls = packet_cb_.num_calls();
       if (num_calls == num_calls_before + 1) {
         EXPECT_EQ(expectation[num_calls - 1].ix, i);
@@ -493,7 +490,6 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
     }
     ++send_count_;
     InsertAudio();
-    Encode();
     if (TestDone()) {
       test_complete_->Set();
     }
@@ -586,7 +582,6 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
     int loop_counter = 0;
     while (packet_cb_.last_payload_len_bytes() == 0) {
       InsertAudio();
-      Encode();
       ASSERT_LT(loop_counter++, 10);
     }
     // Set |last_packet_number_| to one less that |num_calls| so that the packet
@@ -632,7 +627,9 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
     AudioCodingModuleTestOldApi::InsertAudio();
   }
 
-  void Encode() { ASSERT_GE(acm_->Process(), 0); }
+  // Override the verification function with no-op, since iSAC produces variable
+  // payload sizes.
+  void VerifyEncoding() override {}
 
   // This method is the same as AudioCodingModuleMtTestOldApi::TestDone(), but
   // here it is using the constants defined in this class (i.e., shorter test

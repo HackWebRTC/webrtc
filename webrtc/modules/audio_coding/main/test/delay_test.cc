@@ -209,8 +209,7 @@ class DelayTest {
       }
 
       in_file_a_.Read10MsData(audio_frame);
-      ASSERT_EQ(0, acm_a_->Add10MsData(audio_frame));
-      ASSERT_LE(0, acm_a_->Process());
+      ASSERT_GE(acm_a_->Add10MsData(audio_frame), 0);
       ASSERT_EQ(0, acm_b_->PlayoutData10Ms(out_freq_hz_b, &audio_frame));
       out_file_b_.Write10MsData(
           audio_frame.data_,

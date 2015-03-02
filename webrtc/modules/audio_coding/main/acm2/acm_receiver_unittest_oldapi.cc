@@ -96,17 +96,13 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
     frame.num_channels_ = codec.channels;
     memset(frame.data_, 0, frame.samples_per_channel_ * frame.num_channels_ *
            sizeof(int16_t));
-    int num_bytes = 0;
     packet_sent_ = false;
     last_packet_send_timestamp_ = timestamp_;
-    while (num_bytes == 0) {
+    while (!packet_sent_) {
       frame.timestamp_ = timestamp_;
       timestamp_ += frame.samples_per_channel_;
-      ASSERT_EQ(0, acm_->Add10MsData(frame));
-      num_bytes = acm_->Process();
-      ASSERT_GE(num_bytes, 0);
+      ASSERT_GE(acm_->Add10MsData(frame), 0);
     }
-    ASSERT_TRUE(packet_sent_);  // Sanity check.
   }
 
   // Last element of id should be negative.

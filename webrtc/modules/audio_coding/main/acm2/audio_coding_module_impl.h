@@ -24,6 +24,7 @@
 namespace webrtc {
 
 class CriticalSectionWrapper;
+class AudioCodingImpl;
 
 namespace acm2 {
 
@@ -32,11 +33,10 @@ class ACMGenericCodec;
 
 class AudioCodingModuleImpl : public AudioCodingModule {
  public:
+  friend webrtc::AudioCodingImpl;
+
   explicit AudioCodingModuleImpl(const AudioCodingModule::Config& config);
   ~AudioCodingModuleImpl();
-
-  // Process any pending tasks such as timeouts.
-  virtual int32_t Process() OVERRIDE;
 
   /////////////////////////////////////////
   //   Sender
@@ -335,7 +335,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   AudioFrame preprocess_frame_ GUARDED_BY(acm_crit_sect_);
   bool first_10ms_data_ GUARDED_BY(acm_crit_sect_);
-  int last_encode_value_ GUARDED_BY(acm_crit_sect_);
 
   CriticalSectionWrapper* callback_crit_sect_;
   AudioPacketizationCallback* packetization_callback_

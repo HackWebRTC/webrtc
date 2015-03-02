@@ -311,8 +311,7 @@ void TestRedFec::Run() {
 
   while (!_inFileA.EndOfFile()) {
     EXPECT_GT(_inFileA.Read10MsData(audioFrame), 0);
-    EXPECT_EQ(0, _acmA->Add10MsData(audioFrame));
-    EXPECT_GT(_acmA->Process(), -1);
+    EXPECT_GE(_acmA->Add10MsData(audioFrame), 0);
     EXPECT_EQ(0, _acmB->PlayoutData10Ms(outFreqHzB, &audioFrame));
     _outFileB.Write10MsData(audioFrame.data_, audioFrame.samples_per_channel_);
     msecPassed += 10;

@@ -145,8 +145,7 @@ class InitialPlayoutDelayTest : public ::testing::Test {
     while (rms < kAmp / 2) {
       in_audio_frame.timestamp_ = timestamp;
       timestamp += in_audio_frame.samples_per_channel_;
-      ASSERT_EQ(0, acm_a_->Add10MsData(in_audio_frame));
-      ASSERT_LE(0, acm_a_->Process());
+      ASSERT_GE(acm_a_->Add10MsData(in_audio_frame), 0);
       ASSERT_EQ(0, acm_b_->PlayoutData10Ms(codec.plfreq, &out_audio_frame));
       rms = FrameRms(out_audio_frame);
       ++num_frames;

@@ -434,9 +434,6 @@ void TestAllCodecs::Run(TestPack* channel) {
     infile_a_.Read10MsData(audio_frame);
     CHECK_ERROR(acm_a_->Add10MsData(audio_frame));
 
-    // Run sender side of ACM.
-    CHECK_ERROR(acm_a_->Process());
-
     // Verify that the received packet size matches the settings.
     receive_size = channel->payload_size();
     if (receive_size) {

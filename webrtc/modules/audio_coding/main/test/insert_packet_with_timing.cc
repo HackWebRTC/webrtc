@@ -164,7 +164,7 @@ class InsertPacketWithTiming {
       // Push in just enough audio.
       for (int n = 0; n < num_10ms_in_codec_frame_; n++) {
         pcm_in_fid_.Read10MsData(frame_);
-        EXPECT_EQ(0, send_acm_->Add10MsData(frame_));
+        EXPECT_GE(send_acm_->Add10MsData(frame_), 0);
       }
 
       // Set the parameters for the packet to be pushed in receiver ACM right
@@ -178,10 +178,6 @@ class InsertPacketWithTiming {
         channel_->set_num_packets_to_drop(1);
         lost = true;
       }
-
-      // Process audio in send ACM, this should result in generation of a
-      // packet.
-      EXPECT_GT(send_acm_->Process(), 0);
 
       if (FLAGS_verbose) {
         if (!lost) {

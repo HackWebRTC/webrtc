@@ -79,6 +79,7 @@ class AcmSendTestOldApi : public AudioPacketizationCallback,
   uint32_t timestamp_;
   uint16_t sequence_number_;
   std::vector<uint8_t> last_payload_vec_;
+  bool data_to_send_;
 
   DISALLOW_COPY_AND_ASSIGN(AcmSendTestOldApi);
 };

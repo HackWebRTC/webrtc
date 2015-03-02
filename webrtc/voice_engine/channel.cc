@@ -3560,7 +3560,10 @@ Channel::EncodeAndSend()
 
     // The ACM resamples internally.
     _audioFrame.timestamp_ = _timeStamp;
-    if (audio_coding_->Add10MsData((AudioFrame&)_audioFrame) != 0)
+    // This call will trigger AudioPacketizationCallback::SendData if encoding
+    // is done and payload is ready for packetization and transmission.
+    // Otherwise, it will return without invoking the callback.
+    if (audio_coding_->Add10MsData((AudioFrame&)_audioFrame) < 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,_channelId),
                      "Channel::EncodeAndSend() ACM encoding failed");
@@ -3568,12 +3571,7 @@ Channel::EncodeAndSend()
     }
 
     _timeStamp += _audioFrame.samples_per_channel_;
-
-    // --- Encode if complete frame is ready
-
-    // This call will trigger AudioPacketizationCallback::SendData if encoding
-    // is done and payload is ready for packetization and transmission.
-    return audio_coding_->Process();
+    return 0;
 }
 
 int Channel::RegisterExternalMediaProcessing(

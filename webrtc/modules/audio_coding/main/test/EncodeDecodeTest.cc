@@ -100,11 +100,8 @@ bool Sender::Add10MsData() {
   if (!_pcmFile.EndOfFile()) {
     EXPECT_GT(_pcmFile.Read10MsData(_audioFrame), 0);
     int32_t ok = _acm->Add10MsData(_audioFrame);
-    EXPECT_EQ(0, ok);
-    if (ok != 0) {
-      return false;
-    }
-    return true;
+    EXPECT_GE(ok, 0);
+    return ok >= 0 ? true : false;
   }
   return false;
 }
@@ -114,7 +111,6 @@ void Sender::Run() {
     if (!Add10MsData()) {
       break;
     }
-    EXPECT_GT(_acm->Process(), -1);
   }
 }
 

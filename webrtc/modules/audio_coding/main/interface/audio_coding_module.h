@@ -101,8 +101,6 @@ class AudioCodingModule {
   static AudioCodingModule* Create(int id, Clock* clock);
   virtual ~AudioCodingModule() {};
 
-  virtual int32_t Process() = 0;
-
   ///////////////////////////////////////////////////////////////////////////
   //   Utility functions
   //
@@ -317,9 +315,12 @@ class AudioCodingModule {
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t Add10MsData()
-  // Add 10MS of raw (PCM) audio data to the encoder. If the sampling
+  // Add 10MS of raw (PCM) audio data and encode it. If the sampling
   // frequency of the audio does not match the sampling frequency of the
-  // current encoder ACM will resample the audio.
+  // current encoder ACM will resample the audio. If an encoded packet was
+  // produced, it will be delivered via the callback object registered using
+  // RegisterTransportCallback, and the return value from this function will
+  // be the number of bytes encoded.
   //
   // Input:
   //   -audio_frame        : the input audio frame, containing raw audio
@@ -328,10 +329,8 @@ class AudioCodingModule {
   //                         AudioFrame.
   //
   // Return value:
-  //      0   successfully added the frame.
-  //     -1   some error occurred and data is not added.
-  //   < -1   to add the frame to the buffer n samples had to be
-  //          overwritten, -n is the return value in this case.
+  //   >= 0   number of bytes encoded.
+  //     -1   some error occurred.
   //
   virtual int32_t Add10MsData(const AudioFrame& audio_frame) = 0;
 

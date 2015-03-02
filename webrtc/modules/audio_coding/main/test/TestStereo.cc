@@ -779,10 +779,7 @@ void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
       }
       in_file_stereo_->Read10MsData(audio_frame);
     }
-    EXPECT_EQ(0, acm_a_->Add10MsData(audio_frame));
-
-    // Run sender side of ACM
-    EXPECT_GT(acm_a_->Process(), -1);
+    EXPECT_GE(acm_a_->Add10MsData(audio_frame), 0);
 
     // Verify that the received packet size matches the settings.
     rec_size = channel->payload_size();

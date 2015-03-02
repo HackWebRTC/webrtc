@@ -411,33 +411,11 @@ bool APITest::PushAudioRunB() {
 
 bool APITest::ProcessRunA() {
   _processEventA->Wait(100);
-  if (_acmA->Process() < 0) {
-    // do not print error message if there is no encoder
-    bool thereIsEncoder;
-    {
-      ReadLockScoped rl(_apiTestRWLock);
-      thereIsEncoder = _thereIsEncoderA;
-    }
-
-    if (thereIsEncoder) {
-      fprintf(stderr, "\n>>>>>      Process Failed at A     <<<<<\n");
-    }
-  }
   return true;
 }
 
 bool APITest::ProcessRunB() {
   _processEventB->Wait(100);
-  if (_acmB->Process() < 0) {
-    bool thereIsEncoder;
-    {
-      ReadLockScoped rl(_apiTestRWLock);
-      thereIsEncoder = _thereIsEncoderB;
-    }
-    if (thereIsEncoder) {
-      fprintf(stderr, "\n>>>>>      Process Failed at B     <<<<<\n");
-    }
-  }
   return true;
 }
 

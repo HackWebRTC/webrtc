@@ -80,10 +80,10 @@ Packet* AcmSendTestOldApi::NextPacket() {
                                            input_frame_.num_channels_,
                                            input_frame_.data_);
     }
-    CHECK_EQ(0, acm_->Add10MsData(input_frame_));
+    data_to_send_ = false;
+    CHECK_GE(acm_->Add10MsData(input_frame_), 0);
     input_frame_.timestamp_ += input_block_size_samples_;
-    int32_t encoded_bytes = acm_->Process();
-    if (encoded_bytes > 0) {
+    if (data_to_send_) {
       // Encoded packet received.
       return CreatePacket();
     }
@@ -106,6 +106,7 @@ int32_t AcmSendTestOldApi::SendData(
   timestamp_ = timestamp;
   last_payload_vec_.assign(payload_data, payload_data + payload_len_bytes);
   assert(last_payload_vec_.size() == payload_len_bytes);
+  data_to_send_ = true;
   return 0;
 }
 

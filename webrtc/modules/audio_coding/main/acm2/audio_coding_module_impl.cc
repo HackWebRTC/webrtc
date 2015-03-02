@@ -145,7 +145,6 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
       aux_rtp_header_(NULL),
       receiver_initialized_(false),
       first_10ms_data_(false),
-      last_encode_value_(0),
       callback_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       packetization_callback_(NULL),
       vad_callback_(NULL) {
@@ -216,11 +215,6 @@ AudioCodingModuleImpl::~AudioCodingModuleImpl() {
   acm_crit_sect_ = NULL;
   WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceAudioCoding, id_,
                "Destroyed");
-}
-
-int32_t AudioCodingModuleImpl::Process() {
-  CriticalSectionScoped lock(acm_crit_sect_);
-  return last_encode_value_;
 }
 
 int32_t AudioCodingModuleImpl::Encode() {
@@ -752,15 +746,7 @@ int AudioCodingModuleImpl::RegisterTransportCallback(
 // Add 10MS of raw (PCM) audio data to the encoder.
 int AudioCodingModuleImpl::Add10MsData(const AudioFrame& audio_frame) {
   int r = Add10MsDataInternal(audio_frame);
-  if (r < 0) {
-    CriticalSectionScoped lock(acm_crit_sect_);
-    last_encode_value_ = -1;
-  } else {
-    int r_encode = Encode();
-    CriticalSectionScoped lock(acm_crit_sect_);
-    last_encode_value_ = r_encode;
-  }
-  return r;
+  return r < 0 ? r : Encode();
 }
 
 int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame) {
@@ -1563,10 +1549,9 @@ const CodecInst* AudioCodingImpl::GetSenderCodecInst() {
 }
 
 int AudioCodingImpl::Add10MsAudio(const AudioFrame& audio_frame) {
-  if (acm_old_->Add10MsData(audio_frame) != 0) {
+  if (acm_old_->Add10MsDataInternal(audio_frame) != 0)
     return -1;
-  }
-  return acm_old_->Process();
+  return acm_old_->Encode();
 }
 
 const ReceiverInfo* AudioCodingImpl::GetReceiverInfo() const {
