@@ -132,9 +132,14 @@ class VideoFrame {
   virtual VideoFrame *Copy() const = 0;
 
   // Since VideoFrame supports shallow copy and the internal frame buffer might
-  // be shared, in case VideoFrame needs exclusive access of the frame buffer,
-  // user can call MakeExclusive() to make sure the frame buffer is exclusive
-  // accessable to the current object.  This might mean a deep copy of the frame
+  // be shared, this function can be used to check exclusive ownership. The
+  // default implementation is conservative and returns false. Subclasses with
+  // knowledge of implementation specific details can override this.
+  virtual bool IsExclusive() const { return false; }
+
+  // In case VideoFrame needs exclusive access of the frame buffer, user can
+  // call MakeExclusive() to make sure the frame buffer is exclusively
+  // accessible to the current object.  This might mean a deep copy of the frame
   // buffer if it is currently shared by other objects.
   virtual bool MakeExclusive() = 0;
 

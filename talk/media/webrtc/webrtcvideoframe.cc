@@ -244,7 +244,15 @@ VideoFrame* WebRtcVideoFrame::Copy() const {
   return ret_val;
 }
 
+bool WebRtcVideoFrame::IsExclusive() const {
+  return video_buffer_->HasOneRef();
+}
+
 bool WebRtcVideoFrame::MakeExclusive() {
+  if (IsExclusive())
+    return true;
+
+  // Not exclusive already, need to copy.
   const size_t length = video_buffer_->length();
   RefCountedBuffer* exclusive_buffer = new RefCountedBuffer(length);
   memcpy(exclusive_buffer->data(), video_buffer_->data(), length);
