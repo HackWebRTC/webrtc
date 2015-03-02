@@ -444,6 +444,10 @@ const char* StatsReport::Value::display_name() const {
   return nullptr;
 }
 
+const std::string& StatsReport::Value::ToString() const {
+  return value;
+}
+
 StatsReport::StatsReport(scoped_ptr<Id> id) : id_(id.Pass()), timestamp_(0.0) {
   ASSERT(id_.get());
 }

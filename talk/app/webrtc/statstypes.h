@@ -240,6 +240,7 @@ class StatsReport {
 
     // Returns the string representation of |name|.
     const char* display_name() const;
+    const std::string& ToString() const;
 
     const StatsValueName name;
     // TODO(tommi): Support more value types than string.
