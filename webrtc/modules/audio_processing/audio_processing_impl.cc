@@ -191,7 +191,8 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
       transient_suppressor_enabled_(config.Get<ExperimentalNs>().enabled),
       beamformer_enabled_(config.Get<Beamforming>().enabled),
       beamformer_(beamformer),
-      array_geometry_(config.Get<Beamforming>().array_geometry) {
+      array_geometry_(config.Get<Beamforming>().array_geometry),
+      supports_48kHz_(config.Get<AudioProcessing48kHzSupport>().enabled) {
   echo_cancellation_ = new EchoCancellationImpl(this, crit_);
   component_list_.push_back(echo_cancellation_);
 
@@ -353,7 +354,9 @@ int AudioProcessingImpl::InitializeLocked(int input_sample_rate_hz,
   // We process at the closest native rate >= min(input rate, output rate)...
   int min_proc_rate = std::min(fwd_in_format_.rate(), fwd_out_format_.rate());
   int fwd_proc_rate;
-  if (min_proc_rate > kSampleRate16kHz) {
+  if (supports_48kHz_ && min_proc_rate > kSampleRate32kHz) {
+    fwd_proc_rate = kSampleRate48kHz;
+  } else if (min_proc_rate > kSampleRate16kHz) {
     fwd_proc_rate = kSampleRate32kHz;
   } else if (min_proc_rate > kSampleRate8kHz) {
     fwd_proc_rate = kSampleRate16kHz;
