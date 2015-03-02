@@ -43,9 +43,76 @@ static uint16_t kPacketHeaderSize = 8;
     }                                                  \
   } while (0)
 
+bool ReadUint32(uint32_t* out, FILE* file) {
+  *out = 0;
+  for (size_t i = 0; i < 4; ++i) {
+    *out <<= 8;
+    uint8_t tmp;
+    if (fread(&tmp, 1, sizeof(uint8_t), file) != sizeof(uint8_t))
+      return false;
+    *out |= tmp;
+  }
+  return true;
+}
+
+bool ReadUint16(uint16_t* out, FILE* file) {
+  *out = 0;
+  for (size_t i = 0; i < 2; ++i) {
+    *out <<= 8;
+    uint8_t tmp;
+    if (fread(&tmp, 1, sizeof(uint8_t), file) != sizeof(uint8_t))
+      return false;
+    *out |= tmp;
+  }
+  return true;
+}
+
 class RtpFileReaderImpl : public RtpFileReader {
  public:
   virtual bool Init(const std::string& filename) = 0;
+};
+
+class InterleavedRtpFileReader : public RtpFileReaderImpl {
+ public:
+  virtual ~InterleavedRtpFileReader() {
+    if (file_ != NULL) {
+      fclose(file_);
+      file_ = NULL;
+    }
+  }
+
+  virtual bool Init(const std::string& filename) {
+    file_ = fopen(filename.c_str(), "rb");
+    if (file_ == NULL) {
+      printf("ERROR: Can't open file: %s\n", filename.c_str());
+      return false;
+    }
+    return true;
+  }
+  virtual bool NextPacket(RtpPacket* packet) {
+    assert(file_ != NULL);
+    packet->length = RtpPacket::kMaxPacketBufferSize;
+    uint32_t len = 0;
+    TRY(ReadUint32(&len, file_));
+    if (packet->length < len) {
+      FATAL() << "Packet is too large to fit: " << len << " bytes vs "
+              << packet->length
+              << " bytes allocated. Consider increasing the buffer "
+                 "size";
+    }
+    if (fread(packet->data, 1, len, file_) != len)
+      return false;
+
+    packet->length = len;
+    packet->original_length = len;
+    packet->time_ms = time_ms_;
+    time_ms_ += 5;
+    return true;
+  }
+
+ private:
+  FILE* file_ = NULL;
+  int64_t time_ms_ = 0;
 };
 
 // Read RTP packets from file in rtpdump format, as documented at:
@@ -92,11 +159,11 @@ class RtpDumpReader : public RtpFileReaderImpl {
     uint32_t source;
     uint16_t port;
     uint16_t padding;
-    TRY(ReadUint32(&start_sec));
-    TRY(ReadUint32(&start_usec));
-    TRY(ReadUint32(&source));
-    TRY(ReadUint16(&port));
-    TRY(ReadUint16(&padding));
+    TRY(ReadUint32(&start_sec, file_));
+    TRY(ReadUint32(&start_usec, file_));
+    TRY(ReadUint32(&source, file_));
+    TRY(ReadUint16(&port, file_));
+    TRY(ReadUint16(&padding, file_));
 
     return true;
   }
@@ -108,9 +175,9 @@ class RtpDumpReader : public RtpFileReaderImpl {
     uint16_t len;
     uint16_t plen;
     uint32_t offset;
-    TRY(ReadUint16(&len));
-    TRY(ReadUint16(&plen));
-    TRY(ReadUint32(&offset));
+    TRY(ReadUint16(&len, file_));
+    TRY(ReadUint16(&plen, file_));
+    TRY(ReadUint32(&offset, file_));
 
     // Use 'len' here because a 'plen' of 0 specifies rtcp.
     len -= kPacketHeaderSize;
@@ -131,30 +198,6 @@ class RtpDumpReader : public RtpFileReaderImpl {
   }
 
  private:
-  bool ReadUint32(uint32_t* out) {
-    *out = 0;
-    for (size_t i = 0; i < 4; ++i) {
-      *out <<= 8;
-      uint8_t tmp;
-      if (fread(&tmp, 1, sizeof(uint8_t), file_) != sizeof(uint8_t))
-        return false;
-      *out |= tmp;
-    }
-    return true;
-  }
-
-  bool ReadUint16(uint16_t* out) {
-    *out = 0;
-    for (size_t i = 0; i < 2; ++i) {
-      *out <<= 8;
-      uint8_t tmp;
-      if (fread(&tmp, 1, sizeof(uint8_t), file_) != sizeof(uint8_t))
-        return false;
-      *out |= tmp;
-    }
-    return true;
-  }
-
   FILE* file_;
 
   DISALLOW_COPY_AND_ASSIGN(RtpDumpReader);
@@ -597,6 +640,9 @@ RtpFileReader* RtpFileReader::Create(FileFormat format,
       break;
     case kRtpDump:
       reader = new RtpDumpReader();
+      break;
+    case kLengthPacketInterleaved:
+      reader = new InterleavedRtpFileReader();
       break;
   }
   if (!reader->Init(filename)) {
