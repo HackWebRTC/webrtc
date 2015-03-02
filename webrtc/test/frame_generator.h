@@ -33,7 +33,7 @@ class FrameGenerator {
 
   // Creates a frame generator that repeatedly plays a set of yuv files.
   // The frame_repeat_count determines how many times each frame is shown,
-  // with 0 = show the first frame indefinitely, 1 = show each frame once, etc.
+  // with 1 = show each frame once, etc.
   static FrameGenerator* CreateFromYuvFile(std::vector<std::string> files,
                                            size_t width,
                                            size_t height,

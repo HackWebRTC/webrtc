@@ -69,7 +69,7 @@ class YuvFileGenerator : public FrameGenerator {
         current_display_count_(0) {
     assert(width > 0);
     assert(height > 0);
-    ReadNextFrame();
+    assert(frame_repeat_count > 0);
   }
 
   virtual ~YuvFileGenerator() {
@@ -78,17 +78,18 @@ class YuvFileGenerator : public FrameGenerator {
   }
 
   virtual I420VideoFrame* NextFrame() OVERRIDE {
-    if (frame_display_count_ > 0) {
-      if (current_display_count_ < frame_display_count_) {
-        ++current_display_count_;
-      } else {
-        ReadNextFrame();
-        current_display_count_ = 0;
-      }
-    }
+    if (current_display_count_ == 0)
+      ReadNextFrame();
+    if (++current_display_count_ >= frame_display_count_)
+      current_display_count_ = 0;
 
-    current_frame_.CopyFrame(last_read_frame_);
-    return &current_frame_;
+    // If this is the last repeatition of this frame, it's OK to use the
+    // original instance, otherwise use a copy.
+    if (current_display_count_ == frame_display_count_)
+      return &last_read_frame_;
+
+    temp_frame_copy_.CopyFrame(last_read_frame_);
+    return &temp_frame_copy_;
   }
 
   void ReadNextFrame() {
@@ -121,8 +122,8 @@ class YuvFileGenerator : public FrameGenerator {
   const rtc::scoped_ptr<uint8_t[]> frame_buffer_;
   const int frame_display_count_;
   int current_display_count_;
-  I420VideoFrame current_frame_;
   I420VideoFrame last_read_frame_;
+  I420VideoFrame temp_frame_copy_;
 };
 }  // namespace
 
