@@ -1066,8 +1066,8 @@ static bool GetCpuOveruseOptions(const VideoOptions& options,
   return true;
 }
 
-WebRtcVideoEngine::WebRtcVideoEngine() {
-  Construct(new ViEWrapper(), new ViETraceWrapper(), NULL,
+WebRtcVideoEngine::WebRtcVideoEngine(WebRtcVoiceEngine* voice_engine) {
+  Construct(new ViEWrapper(), new ViETraceWrapper(), voice_engine,
       new rtc::CpuMonitor(NULL));
 }
 
@@ -1471,15 +1471,6 @@ void WebRtcVideoEngine::UnregisterChannel(WebRtcVideoMediaChannel *channel) {
   rtc::CritScope cs(&channels_crit_);
   channels_.erase(std::remove(channels_.begin(), channels_.end(), channel),
                   channels_.end());
-}
-
-bool WebRtcVideoEngine::SetVoiceEngine(WebRtcVoiceEngine* voice_engine) {
-  if (initialized_) {
-    LOG(LS_WARNING) << "SetVoiceEngine can not be called after Init";
-    return false;
-  }
-  voice_engine_ = voice_engine;
-  return true;
 }
 
 bool WebRtcVideoEngine::EnableTimedRender() {

@@ -111,7 +111,7 @@ class WebRtcCallFactory {
 // WebRtcVideoEngine2 is used for the new native WebRTC Video API (webrtc:1667).
 class WebRtcVideoEngine2 : public sigslot::has_slots<> {
  public:
-  WebRtcVideoEngine2();
+  explicit WebRtcVideoEngine2(WebRtcVoiceEngine* voice_engine);
   virtual ~WebRtcVideoEngine2();
 
   // Used for testing to be able to check and use the webrtc::Call config.
@@ -144,9 +144,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   bool EnableTimedRender();
   // This is currently ignored.
   sigslot::repeater2<VideoCapturer*, CaptureState> SignalCaptureStateChange;
-
-  // Set the VoiceEngine for A/V sync. This can only be called before Init.
-  bool SetVoiceEngine(WebRtcVoiceEngine* voice_engine);
 
   bool FindCodec(const VideoCodec& in);
   bool CanSendCodec(const VideoCodec& in,

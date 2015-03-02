@@ -363,7 +363,9 @@ void FakeCall::SignalNetworkState(webrtc::Call::NetworkState state) {
 
 class WebRtcVideoEngine2Test : public ::testing::Test {
  public:
-  WebRtcVideoEngine2Test() {
+  WebRtcVideoEngine2Test() : WebRtcVideoEngine2Test(nullptr) {}
+  WebRtcVideoEngine2Test(WebRtcVoiceEngine* voice_engine)
+      : engine_(voice_engine) {
     std::vector<VideoCodec> engine_codecs = engine_.codecs();
     assert(!engine_codecs.empty());
     bool codec_set = false;
@@ -408,6 +410,9 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
       cricket::WebRtcVideoDecoderFactory* decoder_factory,
       const std::vector<VideoCodec>& codecs);
 
+  // Used in WebRtcVideoEngine2VoiceTest, but defined here so it's properly
+  // initialized when the constructor is called.
+  WebRtcVoiceEngine voice_engine_;
   WebRtcVideoEngine2 engine_;
   VideoCodec default_codec_;
   VideoCodec default_red_codec_;
@@ -415,17 +420,20 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
   VideoCodec default_rtx_codec_;
 };
 
-TEST_F(WebRtcVideoEngine2Test, ConfiguresAvSyncForFirstReceiveChannel) {
+class WebRtcVideoEngine2VoiceTest : public WebRtcVideoEngine2Test {
+ public:
+  WebRtcVideoEngine2VoiceTest() : WebRtcVideoEngine2Test(&voice_engine_) {}
+};
+
+TEST_F(WebRtcVideoEngine2VoiceTest, ConfiguresAvSyncForFirstReceiveChannel) {
   FakeCallFactory call_factory;
   engine_.SetCallFactory(&call_factory);
 
-  WebRtcVoiceEngine voice_engine;
-  engine_.SetVoiceEngine(&voice_engine);
-  voice_engine.Init(rtc::Thread::Current());
+  voice_engine_.Init(rtc::Thread::Current());
   engine_.Init(rtc::Thread::Current());
 
   rtc::scoped_ptr<VoiceMediaChannel> voice_channel(
-      voice_engine.CreateChannel());
+      voice_engine_.CreateChannel());
   ASSERT_TRUE(voice_channel.get() != NULL);
   WebRtcVoiceMediaChannel* webrtc_voice_channel =
       static_cast<WebRtcVoiceMediaChannel*>(voice_channel.get());
@@ -438,8 +446,8 @@ TEST_F(WebRtcVideoEngine2Test, ConfiguresAvSyncForFirstReceiveChannel) {
 
   webrtc::Call::Config call_config = fake_call->GetConfig();
 
-  ASSERT_TRUE(voice_engine.voe()->engine() != NULL);
-  ASSERT_EQ(voice_engine.voe()->engine(), call_config.voice_engine);
+  ASSERT_TRUE(voice_engine_.voe()->engine() != NULL);
+  ASSERT_EQ(voice_engine_.voe()->engine(), call_config.voice_engine);
 
   EXPECT_TRUE(channel->AddRecvStream(StreamParams::CreateLegacy(kSsrc)));
   EXPECT_TRUE(channel->AddRecvStream(StreamParams::CreateLegacy(kSsrc + 1)));
@@ -2282,7 +2290,7 @@ TEST_F(WebRtcVideoChannel2Test, TranslatesSenderBitrateStatsCorrectly) {
 class WebRtcVideoEngine2SimulcastTest : public testing::Test {
  public:
   WebRtcVideoEngine2SimulcastTest()
-      : engine_codecs_(engine_.codecs()) {
+      : engine_(nullptr), engine_codecs_(engine_.codecs()) {
     assert(!engine_codecs_.empty());
 
     bool codec_set = false;

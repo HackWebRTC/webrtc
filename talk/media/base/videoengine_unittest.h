@@ -100,7 +100,7 @@ inline int TimeBetweenSend(const cricket::VideoCodec& codec) {
 template<class T>
 class VideoEngineOverride : public T {
  public:
-  VideoEngineOverride() {
+  VideoEngineOverride() : T(nullptr) {
   }
   virtual ~VideoEngineOverride() {
   }

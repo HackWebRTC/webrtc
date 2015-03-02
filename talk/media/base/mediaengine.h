@@ -172,7 +172,7 @@ class MediaEngineFactory {
 template<class VOICE, class VIDEO>
 class CompositeMediaEngine : public MediaEngineInterface {
  public:
-  CompositeMediaEngine() {}
+  CompositeMediaEngine() : video_(&voice_) {}
   virtual ~CompositeMediaEngine() {}
   virtual bool Init(rtc::Thread* worker_thread) {
     if (!voice_.Init(worker_thread))

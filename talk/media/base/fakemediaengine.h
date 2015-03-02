@@ -860,7 +860,9 @@ class FakeVoiceEngine : public FakeBaseEngine {
 
 class FakeVideoEngine : public FakeBaseEngine {
  public:
-  FakeVideoEngine() : capture_(false), processor_(NULL) {
+  FakeVideoEngine() : FakeVideoEngine(nullptr) {}
+  explicit FakeVideoEngine(FakeVoiceEngine* voice)
+      : capture_(false), processor_(NULL) {
     // Add a fake video codec. Note that the name must not be "" as there are
     // sanity checks against that.
     codecs_.push_back(VideoCodec(0, "fake_video_codec", 0, 0, 0, 0));

@@ -315,9 +315,9 @@ void DefaultUnsignalledSsrcHandler::SetDefaultRenderer(
   }
 }
 
-WebRtcVideoEngine2::WebRtcVideoEngine2()
+WebRtcVideoEngine2::WebRtcVideoEngine2(WebRtcVoiceEngine* voice_engine)
     : worker_thread_(NULL),
-      voice_engine_(NULL),
+      voice_engine_(voice_engine),
       default_codec_format_(kDefaultVideoMaxWidth,
                             kDefaultVideoMaxHeight,
                             FPS_TO_INTERVAL(kDefaultVideoMaxFramerate),
@@ -522,15 +522,6 @@ bool WebRtcVideoEngine2::CanSendCodec(const VideoCodec& requested,
   }
 
   return out->width > 0 && out->height > 0;
-}
-
-bool WebRtcVideoEngine2::SetVoiceEngine(WebRtcVoiceEngine* voice_engine) {
-  if (initialized_) {
-    LOG(LS_WARNING) << "SetVoiceEngine can not be called after Init";
-    return false;
-  }
-  voice_engine_ = voice_engine;
-  return true;
 }
 
 // Ignore spammy trace messages, mostly from the stats API when we haven't

@@ -98,7 +98,7 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
                           public webrtc::TraceCallback {
  public:
   // Creates the WebRtcVideoEngine with internal VideoCaptureModule.
-  WebRtcVideoEngine();
+  explicit WebRtcVideoEngine(WebRtcVoiceEngine* voice_engine);
   // For testing purposes. Allows the WebRtcVoiceEngine,
   // ViEWrapper and CpuMonitor to be mocks.
   // TODO(juberti): Remove the 3-arg ctor once fake tracing is implemented.
@@ -131,8 +131,6 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
 
   sigslot::repeater2<VideoCapturer*, CaptureState> SignalCaptureStateChange;
 
-  // Set the VoiceEngine for A/V sync. This can only be called before Init.
-  bool SetVoiceEngine(WebRtcVoiceEngine* voice_engine);
   // Set a WebRtcVideoDecoderFactory for external decoding. Video engine does
   // not take the ownership of |decoder_factory|. The caller needs to make sure
   // that |decoder_factory| outlives the video engine.
