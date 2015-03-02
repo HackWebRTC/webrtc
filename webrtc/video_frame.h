@@ -157,10 +157,6 @@ class I420VideoFrame {
   // Return true if underlying plane buffers are of zero size, false if not.
   virtual bool IsZeroSize() const;
 
-  // Reset underlying plane buffers sizes to 0. This function doesn't
-  // clear memory.
-  virtual void ResetSize();
-
   // Return the handle of the underlying video frame. This is used when the
   // frame is backed by a texture. The object should be destroyed when it is no
   // longer in use, so the underlying resource can be freed.

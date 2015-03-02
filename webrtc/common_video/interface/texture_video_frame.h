@@ -68,7 +68,6 @@ class TextureVideoFrame : public I420VideoFrame {
   virtual int allocated_size(PlaneType type) const OVERRIDE;
   virtual int stride(PlaneType type) const OVERRIDE;
   virtual bool IsZeroSize() const OVERRIDE;
-  virtual void ResetSize() OVERRIDE;
   virtual void* native_handle() const OVERRIDE;
 
  protected:

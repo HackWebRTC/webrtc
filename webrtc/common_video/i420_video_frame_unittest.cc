@@ -71,14 +71,6 @@ TEST(TestI420VideoFrame, SizeAllocation) {
             frame.allocated_size(kVPlane));
 }
 
-TEST(TestI420VideoFrame, ResetSize) {
-  I420VideoFrame frame;
-  EXPECT_EQ(0, frame. CreateEmptyFrame(10, 10, 12, 14, 220));
-  EXPECT_FALSE(frame.IsZeroSize());
-  frame.ResetSize();
-  EXPECT_TRUE(frame.IsZeroSize());
-}
-
 TEST(TestI420VideoFrame, CopyFrame) {
   uint32_t timestamp = 1;
   int64_t ntp_time_ms = 2;

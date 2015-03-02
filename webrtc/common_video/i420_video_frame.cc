@@ -156,12 +156,6 @@ bool I420VideoFrame::IsZeroSize() const {
     v_plane_.IsZeroSize());
 }
 
-void I420VideoFrame::ResetSize() {
-  y_plane_.ResetSize();
-  u_plane_.ResetSize();
-  v_plane_.ResetSize();
-}
-
 void* I420VideoFrame::native_handle() const { return NULL; }
 
 int I420VideoFrame::CheckDimensions(int width, int height,

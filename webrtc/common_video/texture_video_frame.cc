@@ -107,10 +107,6 @@ bool TextureVideoFrame::IsZeroSize() const {
   return true;
 }
 
-void TextureVideoFrame::ResetSize() {
-  assert(false);  // Should not be called.
-}
-
 void* TextureVideoFrame::native_handle() const { return handle_.get(); }
 
 int TextureVideoFrame::CheckDimensions(

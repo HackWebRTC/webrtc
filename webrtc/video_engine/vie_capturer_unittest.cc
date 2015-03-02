@@ -161,10 +161,6 @@ TEST_F(ViECapturerTest, TestI420Frames) {
   // Make sure the buffer is swapped and not copied.
   for (int i = 0; i < kNumFrame; ++i)
     EXPECT_EQ(ybuffer_pointers[i], output_frame_ybuffers_[i]);
-  // The pipeline should be filled with frames with allocated buffers. Check
-  // the last input frame has the same allocated size after swapping.
-  EXPECT_EQ(input_frames_.back()->allocated_size(kYPlane),
-            copied_input_frames.back()->allocated_size(kYPlane));
 }
 
 TEST_F(ViECapturerTest, TestI420FrameAfterTextureFrame) {

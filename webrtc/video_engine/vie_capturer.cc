@@ -610,18 +610,7 @@ bool ViECapturer::SwapCapturedAndDeliverFrameIfAvailable() {
   if (captured_frame_ == NULL)
     return false;
 
-  if (captured_frame_->native_handle() != NULL) {
-    deliver_frame_.reset(captured_frame_.release());
-    return true;
-  }
-
-  if (captured_frame_->IsZeroSize())
-    return false;
-
-  if (deliver_frame_ == NULL)
-    deliver_frame_.reset(new I420VideoFrame());
-  deliver_frame_->SwapFrame(captured_frame_.get());
-  captured_frame_->ResetSize();
+  deliver_frame_.reset(captured_frame_.release());
   return true;
 }
 
