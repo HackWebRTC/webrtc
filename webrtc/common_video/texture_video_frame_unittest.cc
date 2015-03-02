@@ -40,10 +40,6 @@ TEST(TestTextureVideoFrame, InitialValues) {
   EXPECT_EQ(10, frame.render_time_ms());
   EXPECT_EQ(&handle, frame.native_handle());
 
-  EXPECT_EQ(0, frame.set_width(320));
-  EXPECT_EQ(320, frame.width());
-  EXPECT_EQ(0, frame.set_height(240));
-  EXPECT_EQ(240, frame.height());
   frame.set_timestamp(200);
   EXPECT_EQ(200u, frame.timestamp());
   frame.set_render_time_ms(20);

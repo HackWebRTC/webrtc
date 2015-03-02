@@ -111,12 +111,6 @@ class I420VideoFrame {
   // Get allocated stride per plane.
   virtual int stride(PlaneType type) const;
 
-  // Set frame width.
-  virtual int set_width(int width);
-
-  // Set frame height.
-  virtual int set_height(int height);
-
   // Get frame width.
   virtual int width() const { return width_; }
 
@@ -180,6 +174,9 @@ class I420VideoFrame {
                               int stride_y,
                               int stride_u,
                               int stride_v);
+  // TODO(magjed): Move these to an internal frame buffer instead.
+  int width_;
+  int height_;
 
  private:
   // Get the pointer to a specific plane.
@@ -190,8 +187,6 @@ class I420VideoFrame {
   Plane y_plane_;
   Plane u_plane_;
   Plane v_plane_;
-  int width_;
-  int height_;
   uint32_t timestamp_;
   int64_t ntp_time_ms_;
   int64_t render_time_ms_;
