@@ -94,8 +94,7 @@ bool IsNackEnabled(const VideoCodec& codec);
 bool IsRembEnabled(const VideoCodec& codec);
 void AddDefaultFeedbackParams(VideoCodec* codec);
 
-class WebRtcVideoEngine : public sigslot::has_slots<>,
-                          public webrtc::TraceCallback {
+class WebRtcVideoEngine : public sigslot::has_slots<> {
  public:
   // Creates the WebRtcVideoEngine with internal VideoCaptureModule.
   explicit WebRtcVideoEngine(WebRtcVoiceEngine* voice_engine);
@@ -174,8 +173,6 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   void UnregisterChannel(WebRtcVideoMediaChannel* channel);
   bool ConvertFromCricketVideoCodec(const VideoCodec& in_codec,
                                     webrtc::VideoCodec* out_codec);
-  // Check whether the supplied trace should be ignored.
-  bool ShouldIgnoreTrace(const std::string& trace);
   int GetNumOfChannels();
 
   VideoFormat GetStartCaptureFormat() const { return default_codec_format_; }
@@ -183,6 +180,19 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   rtc::CpuMonitor* cpu_monitor() { return cpu_monitor_.get(); }
 
  protected:
+  class TraceCallbackImpl : public webrtc::TraceCallback {
+   public:
+    TraceCallbackImpl(WebRtcVoiceEngine* voice_engine)
+        : voice_engine_(voice_engine) {}
+    ~TraceCallbackImpl() override {}
+
+   private:
+    void Print(webrtc::TraceLevel level, const char* trace,
+               int length) override;
+
+    WebRtcVoiceEngine* const voice_engine_;
+  };
+
   bool initialized() const {
     return initialized_;
   }
@@ -206,16 +216,11 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   bool InitVideoEngine();
   bool VerifyApt(const VideoCodec& in, int expected_apt) const;
 
-  // webrtc::TraceCallback implementation.
-  virtual void Print(webrtc::TraceLevel level,
-                     const char* trace,
-                     int length) OVERRIDE;
-
   rtc::Thread* worker_thread_;
   rtc::scoped_ptr<ViEWrapper> vie_wrapper_;
   bool vie_wrapper_base_initialized_;
   rtc::scoped_ptr<ViETraceWrapper> tracing_;
-  WebRtcVoiceEngine* voice_engine_;
+  WebRtcVoiceEngine* const voice_engine_;
   rtc::scoped_ptr<webrtc::VideoRender> render_module_;
   rtc::scoped_ptr<WebRtcVideoEncoderFactory> simulcast_encoder_factory_;
   WebRtcVideoEncoderFactory* encoder_factory_;
@@ -224,6 +229,7 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   std::vector<VideoCodec> default_video_codec_list_;
   std::vector<RtpHeaderExtension> rtp_header_extensions_;
   VideoFormat default_codec_format_;
+  TraceCallbackImpl trace_callback_;
 
   bool initialized_;
   rtc::CriticalSection channels_crit_;

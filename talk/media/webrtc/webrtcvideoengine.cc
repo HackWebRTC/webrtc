@@ -1066,21 +1066,24 @@ static bool GetCpuOveruseOptions(const VideoOptions& options,
   return true;
 }
 
-WebRtcVideoEngine::WebRtcVideoEngine(WebRtcVoiceEngine* voice_engine) {
+WebRtcVideoEngine::WebRtcVideoEngine(WebRtcVoiceEngine* voice_engine)
+    : voice_engine_(voice_engine), trace_callback_(voice_engine) {
   Construct(new ViEWrapper(), new ViETraceWrapper(), voice_engine,
       new rtc::CpuMonitor(NULL));
 }
 
 WebRtcVideoEngine::WebRtcVideoEngine(WebRtcVoiceEngine* voice_engine,
                                      ViEWrapper* vie_wrapper,
-                                     rtc::CpuMonitor* cpu_monitor) {
+                                     rtc::CpuMonitor* cpu_monitor)
+    : voice_engine_(voice_engine), trace_callback_(voice_engine) {
   Construct(vie_wrapper, new ViETraceWrapper(), voice_engine, cpu_monitor);
 }
 
 WebRtcVideoEngine::WebRtcVideoEngine(WebRtcVoiceEngine* voice_engine,
                                      ViEWrapper* vie_wrapper,
                                      ViETraceWrapper* tracing,
-                                     rtc::CpuMonitor* cpu_monitor) {
+                                     rtc::CpuMonitor* cpu_monitor)
+    : voice_engine_(voice_engine), trace_callback_(voice_engine) {
   Construct(vie_wrapper, tracing, voice_engine, cpu_monitor);
 }
 
@@ -1093,7 +1096,6 @@ void WebRtcVideoEngine::Construct(ViEWrapper* vie_wrapper,
   vie_wrapper_.reset(vie_wrapper);
   vie_wrapper_base_initialized_ = false;
   tracing_.reset(tracing);
-  voice_engine_ = voice_engine;
   initialized_ = false;
   SetTraceFilter(SeverityToFilter(kDefaultLogSeverity));
   render_module_.reset(new WebRtcPassthroughRender());
@@ -1103,8 +1105,8 @@ void WebRtcVideoEngine::Construct(ViEWrapper* vie_wrapper,
   cpu_monitor_.reset(cpu_monitor);
 
   SetTraceOptions("");
-  if (tracing_->SetTraceCallback(this) != 0) {
-    LOG_RTCERR1(SetTraceCallback, this);
+  if (tracing_->SetTraceCallback(&trace_callback_) != 0) {
+    LOG_RTCERR1(SetTraceCallback, &trace_callback_);
   }
 
   default_video_codec_list_ = DefaultVideoCodecList();
@@ -1548,27 +1550,13 @@ bool WebRtcVideoEngine::RebuildCodecList(const VideoCodec& in_codec) {
   return true;
 }
 
-// Ignore spammy trace messages, mostly from the stats API when we haven't
-// gotten RTCP info yet from the remote side.
-bool WebRtcVideoEngine::ShouldIgnoreTrace(const std::string& trace) {
-  static const char* const kTracesToIgnore[] = {
-    NULL
-  };
-  for (const char* const* p = kTracesToIgnore; *p; ++p) {
-    if (trace.find(*p) == 0) {
-      return true;
-    }
-  }
-  return false;
-}
-
 int WebRtcVideoEngine::GetNumOfChannels() {
   rtc::CritScope cs(&channels_crit_);
   return static_cast<int>(channels_.size());
 }
 
-void WebRtcVideoEngine::Print(webrtc::TraceLevel level, const char* trace,
-                              int length) {
+void WebRtcVideoEngine::TraceCallbackImpl::Print(
+    webrtc::TraceLevel level, const char* trace, int length) {
   rtc::LoggingSeverity sev = rtc::LS_VERBOSE;
   if (level == webrtc::kTraceError || level == webrtc::kTraceCritical)
     sev = rtc::LS_ERROR;
@@ -1586,8 +1574,7 @@ void WebRtcVideoEngine::Print(webrtc::TraceLevel level, const char* trace,
     LOG_V(sev) << msg;
   } else {
     std::string msg(trace + 71, length - 72);
-    if (!ShouldIgnoreTrace(msg) &&
-        (!voice_engine_ || !voice_engine_->ShouldIgnoreTrace(msg))) {
+    if (!voice_engine_ || !voice_engine_->ShouldIgnoreTrace(msg)) {
       LOG_V(sev) << "webrtc: " << msg;
     }
   }
