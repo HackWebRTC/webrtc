@@ -137,7 +137,6 @@ enum FileFormats
 {
     kFileFormatWavFile        = 1,
     kFileFormatCompressedFile = 2,
-    kFileFormatAviFile        = 3,
     kFileFormatPreencodedFile = 4,
     kFileFormatPcm16kHzFile   = 7,
     kFileFormatPcm8kHzFile    = 8,

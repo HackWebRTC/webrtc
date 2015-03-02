@@ -83,10 +83,6 @@ config("common_config") {
     all_dependent_configs = [ "dbus-glib" ]
   }
 
-  if (rtc_enable_video) {
-    defines += [ "WEBRTC_MODULE_UTILITY_VIDEO" ]
-  }
-
   if (build_with_chromium) {
     defines += [ "LOGGING_INSIDE_WEBRTC" ]
   } else {

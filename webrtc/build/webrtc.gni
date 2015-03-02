@@ -26,11 +26,6 @@ declare_args() {
   # library that comes with WebRTC (i.e. rtc_build_ssl == 0).
   rtc_ssl_root = ""
 
-  # Adds video support to dependencies shared by voice and video engine.
-  # This should normally be enabled; the intended use is to disable only
-  # when building voice engine exclusively.
-  rtc_enable_video = true
-
   # Selects fixed-point code where possible.
   rtc_prefer_fixed_point = false
 

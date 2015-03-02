@@ -37,18 +37,6 @@
         'source/rtp_dump_impl.cc',
         'source/rtp_dump_impl.h',
       ],
-      'conditions': [
-        ['enable_video==1', {
-          'dependencies': [
-            'webrtc_video_coding',
-          ],
-          'sources': [
-            'source/frame_scaler.cc',
-            'source/video_coder.cc',
-            'source/video_frames_queue.cc',
-          ],
-        }],
-      ],
     },
   ], # targets
 }

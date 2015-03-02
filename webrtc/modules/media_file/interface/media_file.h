@@ -38,14 +38,6 @@ public:
         int8_t* audioBuffer,
         size_t& dataLengthInBytes) = 0;
 
-    // Put one video frame into videoBuffer. dataLengthInBytes is both an input
-    // and output parameter. As input parameter it indicates the size of
-    // videoBuffer. As output parameter it indicates the number of bytes written
-    // to videoBuffer.
-    virtual int32_t PlayoutAVIVideoData(
-        int8_t* videoBuffer,
-        size_t& dataLengthInBytes) = 0;
-
     // Put 10-60ms, depending on codec frame size, of audio data from file into
     // audioBufferLeft and audioBufferRight. The buffers contain the left and
     // right channel of played out stereo audio.
@@ -81,16 +73,6 @@ public:
         const CodecInst* codecInst              = NULL,
         const uint32_t startPointMs       = 0,
         const uint32_t stopPointMs        = 0) = 0;
-
-    // Open the file specified by fileName for reading (relative path is
-    // allowed). If loop is true the file will be played until StopPlaying() is
-    // called. When end of file is reached the file is read from the start.
-    // format specifies the type of file fileName refers to. Only video will be
-    // read if videoOnly is true.
-    virtual int32_t StartPlayingVideoFile(const char* fileName,
-                                                const bool loop,
-                                                bool videoOnly,
-                                                const FileFormats format) = 0;
 
     // Prepare for playing audio from stream.
     // FileCallback::PlayNotification(..) will be called after
@@ -130,16 +112,6 @@ public:
         const int8_t* audioBuffer,
         const size_t bufferLength) = 0;
 
-    // Write one video frame, i.e. the bufferLength first bytes of videoBuffer,
-    // to file.
-    // Note: videoBuffer can contain encoded data. The codec used must be the
-    // same as what was specified by videoCodecInst for the last successfull
-    // StartRecordingVideoFile(..) call. The videoBuffer must contain exactly
-    // one video frame.
-    virtual int32_t IncomingAVIVideoData(
-        const int8_t* videoBuffer,
-        const size_t bufferLength) = 0;
-
     // Open/creates file specified by fileName for writing (relative path is
     // allowed). FileCallback::RecordNotification(..) will be called after
     // notificationTimeMs of audio data has been recorded if
@@ -156,18 +128,6 @@ public:
         const CodecInst&     codecInst,
         const uint32_t notificationTimeMs = 0,
         const uint32_t maxSizeBytes       = 0) = 0;
-
-    // Open/create the file specified by fileName for writing audio/video data
-    // (relative path is allowed). format specifies the type of file fileName
-    // should be. codecInst specifies the encoding of the audio data.
-    // videoCodecInst specifies the encoding of the video data. Only video data
-    // will be recorded if videoOnly is true.
-    virtual int32_t StartRecordingVideoFile(
-        const char* fileName,
-        const FileFormats   format,
-        const CodecInst&    codecInst,
-        const VideoCodec&   videoCodecInst,
-        bool videoOnly = false) = 0;
 
     // Prepare for recording audio to stream.
     // FileCallback::RecordNotification(..) will be called after
@@ -211,10 +171,6 @@ public:
     // Update codecInst according to the current audio codec being used for
     // reading or writing.
     virtual int32_t codec_info(CodecInst& codecInst) const = 0;
-
-    // Update videoCodecInst according to the current video codec being used for
-    // reading or writing.
-    virtual int32_t VideoCodecInst(VideoCodec& videoCodecInst) const = 0;
 
 protected:
     MediaFile() {}

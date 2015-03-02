@@ -73,11 +73,6 @@
     # Remote bitrate estimator logging/plotting.
     'enable_bwe_test_logging%': 0,
 
-    # Adds video support to dependencies shared by voice and video engine.
-    # This should normally be enabled; the intended use is to disable only
-    # when building voice engine exclusively.
-    'enable_video%': 1,
-
     # Selects fixed-point code where possible.
     'prefer_fixed_point%': 0,
 
@@ -187,9 +182,6 @@
       }],
       ['rtc_relative_path==1', {
         'defines': ['EXPAT_RELATIVE_PATH',],
-      }],
-      ['enable_video==1', {
-        'defines': ['WEBRTC_MODULE_UTILITY_VIDEO',],
       }],
       ['build_with_chromium==1', {
         'defines': [

@@ -19,8 +19,6 @@
       'sources': [
         'interface/media_file.h',
         'interface/media_file_defines.h',
-        'source/avi_file.cc',
-        'source/avi_file.h',
         'source/media_file_impl.cc',
         'source/media_file_impl.h',
         'source/media_file_utility.cc',

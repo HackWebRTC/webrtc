@@ -18,7 +18,6 @@
 #include "webrtc/modules/media_file/interface/media_file_defines.h"
 
 namespace webrtc {
-class AviFile;
 class InStream;
 class OutStream;
 
@@ -28,61 +27,6 @@ public:
 
     ModuleFileUtility(const int32_t id);
     ~ModuleFileUtility();
-
-#ifdef WEBRTC_MODULE_UTILITY_VIDEO
-    // Open the file specified by fileName for reading (relative path is
-    // allowed). If loop is true the file will be played until StopPlaying() is
-    // called. When end of file is reached the file is read from the start.
-    // Only video will be read if videoOnly is true.
-    int32_t InitAviReading(const char* fileName, bool videoOnly, bool loop);
-
-    // Put 10-60ms of audio data from file into the outBuffer depending on
-    // codec frame size. bufferLengthInBytes indicates the size of outBuffer.
-    // The return value is the number of bytes written to audioBuffer.
-    // Note: This API only play mono audio but can be used on file containing
-    // audio with more channels (in which case the audio will be coverted to
-    // mono).
-    int32_t ReadAviAudioData(int8_t* outBuffer,
-                             size_t bufferLengthInBytes);
-
-    // Put one video frame into outBuffer. bufferLengthInBytes indicates the
-    // size of outBuffer.
-    // The return value is the number of bytes written to videoBuffer.
-    int32_t ReadAviVideoData(int8_t* videoBuffer,
-                             size_t bufferLengthInBytes);
-
-    // Open/create the file specified by fileName for writing audio/video data
-    // (relative path is allowed). codecInst specifies the encoding of the audio
-    // data. videoCodecInst specifies the encoding of the video data. Only video
-    // data will be recorded if videoOnly is true.
-    int32_t InitAviWriting(const char* filename,
-                           const CodecInst& codecInst,
-                           const VideoCodec& videoCodecInst,
-                           const bool videoOnly);
-
-    // Write one audio frame, i.e. the bufferLengthinBytes first bytes of
-    // audioBuffer, to file. The audio frame size is determined by the
-    // codecInst.pacsize parameter of the last sucessfull
-    // InitAviWriting(..) call.
-    // Note: bufferLength must be exactly one frame.
-    int32_t WriteAviAudioData(const int8_t* audioBuffer,
-                              size_t bufferLengthInBytes);
-
-
-    // Write one video frame, i.e. the bufferLength first bytes of videoBuffer,
-    // to file.
-    // Note: videoBuffer can contain encoded data. The codec used must be the
-    // same as what was specified by videoCodecInst for the last successfull
-    // InitAviWriting(..) call. The videoBuffer must contain exactly
-    // one video frame.
-    int32_t WriteAviVideoData(const int8_t* videoBuffer,
-                              size_t bufferLengthInBytes);
-
-    // Stop recording to file or stream.
-    int32_t CloseAviFile();
-
-    int32_t VideoCodecInst(VideoCodec& codecInst);
-#endif // #ifdef WEBRTC_MODULE_UTILITY_VIDEO
 
     // Prepare for playing audio from stream.
     // startPointMs and stopPointMs, unless zero, specify what part of the file
@@ -335,13 +279,6 @@ private:
 
     // Scratch buffer used for turning stereo audio to mono.
     uint8_t _tempData[WAV_MAX_BUFFER_SIZE];
-
-#ifdef WEBRTC_MODULE_UTILITY_VIDEO
-    AviFile* _aviAudioInFile;
-    AviFile* _aviVideoInFile;
-    AviFile* _aviOutFile;
-    VideoCodec _videoCodec;
-#endif
 };
 }  // namespace webrtc
 #endif // WEBRTC_MODULES_MEDIA_FILE_SOURCE_MEDIA_FILE_UTILITY_H_

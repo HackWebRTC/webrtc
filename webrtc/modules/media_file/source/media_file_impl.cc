@@ -102,21 +102,8 @@ int32_t MediaFileImpl::Process()
     return -1;
 }
 
-int32_t MediaFileImpl::PlayoutAVIVideoData(
-    int8_t* buffer,
-    size_t& dataLengthInBytes)
-{
-    return PlayoutData( buffer, dataLengthInBytes, true);
-}
-
 int32_t MediaFileImpl::PlayoutAudioData(int8_t* buffer,
                                         size_t& dataLengthInBytes)
-{
-    return PlayoutData( buffer, dataLengthInBytes, false);
-}
-
-int32_t MediaFileImpl::PlayoutData(int8_t* buffer, size_t& dataLengthInBytes,
-                                   bool video)
 {
     WEBRTC_TRACE(kTraceStream, kTraceFile, _id,
                "MediaFileImpl::PlayoutData(buffer= 0x%x, bufLen= %" PRIuS ")",
@@ -184,28 +171,12 @@ int32_t MediaFileImpl::PlayoutData(int8_t* buffer, size_t& dataLengthInBytes,
                     return 0;
                 }
                 break;
-            case kFileFormatAviFile:
+            default:
             {
-#ifdef WEBRTC_MODULE_UTILITY_VIDEO
-                if(video)
-                {
-                    bytesRead = _ptrFileUtilityObj->ReadAviVideoData(
-                        buffer,
-                        bufferLengthInBytes);
-                }
-                else
-                {
-                    bytesRead = _ptrFileUtilityObj->ReadAviAudioData(
-                        buffer,
-                        bufferLengthInBytes);
-                }
-                break;
-#else
                 WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                             "Invalid file format: %d", kFileFormatAviFile);
+                             "Invalid file format: %d", _fileFormat);
                 assert(false);
                 break;
-#endif
             }
         }
 
@@ -368,36 +339,6 @@ int32_t MediaFileImpl::StartPlayingAudioFile(
     const uint32_t startPointMs,
     const uint32_t stopPointMs)
 {
-    const bool videoOnly = false;
-    return StartPlayingFile(fileName, notificationTimeMs, loop, videoOnly,
-                            format, codecInst, startPointMs, stopPointMs);
-}
-
-
-int32_t MediaFileImpl::StartPlayingVideoFile(const char* fileName,
-                                             const bool loop,
-                                             bool videoOnly,
-                                             const FileFormats format)
-{
-
-    const uint32_t notificationTimeMs = 0;
-    const uint32_t startPointMs       = 0;
-    const uint32_t stopPointMs        = 0;
-    return StartPlayingFile(fileName, notificationTimeMs, loop, videoOnly,
-                            format, 0, startPointMs, stopPointMs);
-}
-
-int32_t MediaFileImpl::StartPlayingFile(
-    const char* fileName,
-    const uint32_t notificationTimeMs,
-    const bool loop,
-    bool videoOnly,
-    const FileFormats format,
-    const CodecInst* codecInst,
-    const uint32_t startPointMs,
-    const uint32_t stopPointMs)
-{
-
     if(!ValidFileName(fileName))
     {
         return -1;
@@ -432,27 +373,18 @@ int32_t MediaFileImpl::StartPlayingFile(
         return -1;
     }
 
-    // TODO (hellner): make all formats support reading from stream.
-    bool useStream = (format != kFileFormatAviFile);
-    if( useStream)
+    if(inputStream->OpenFile(fileName, true, loop) != 0)
     {
-        if(inputStream->OpenFile(fileName, true, loop) != 0)
-        {
-            delete inputStream;
-            WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                         "Could not open input file %s", fileName);
-            return -1;
-        }
+        delete inputStream;
+        WEBRTC_TRACE(kTraceError, kTraceFile, _id,
+                     "Could not open input file %s", fileName);
+        return -1;
     }
 
-    if(StartPlayingStream(*inputStream, fileName, loop, notificationTimeMs,
-                          format, codecInst, startPointMs, stopPointMs,
-                          videoOnly) == -1)
+    if(StartPlayingStream(*inputStream, loop, notificationTimeMs,
+                          format, codecInst, startPointMs, stopPointMs) == -1)
     {
-        if( useStream)
-        {
-            inputStream->CloseFile();
-        }
+        inputStream->CloseFile();
         delete inputStream;
         return -1;
     }
@@ -472,20 +404,18 @@ int32_t MediaFileImpl::StartPlayingAudioStream(
     const uint32_t startPointMs,
     const uint32_t stopPointMs)
 {
-    return StartPlayingStream(stream, 0, false, notificationTimeMs, format,
+    return StartPlayingStream(stream, false, notificationTimeMs, format,
                               codecInst, startPointMs, stopPointMs);
 }
 
 int32_t MediaFileImpl::StartPlayingStream(
     InStream& stream,
-    const char* filename,
     bool loop,
     const uint32_t notificationTimeMs,
     const FileFormats format,
     const CodecInst*  codecInst,
     const uint32_t startPointMs,
-    const uint32_t stopPointMs,
-    bool videoOnly)
+    const uint32_t stopPointMs)
 {
     if(!ValidFileFormat(format,codecInst))
     {
@@ -593,28 +523,12 @@ int32_t MediaFileImpl::StartPlayingStream(
             _fileFormat = kFileFormatPreencodedFile;
             break;
         }
-        case kFileFormatAviFile:
+        default:
         {
-#ifdef WEBRTC_MODULE_UTILITY_VIDEO
-            if(_ptrFileUtilityObj->InitAviReading( filename, videoOnly, loop))
-            {
-                WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                             "Not a valid AVI file!");
-                StopPlaying();
-
-                return -1;
-            }
-
-            _ptrFileUtilityObj->codec_info(codec_info_);
-
-            _fileFormat = kFileFormatAviFile;
-            break;
-#else
             WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                         "Invalid file format: %d", kFileFormatAviFile);
+                         "Invalid file format: %d", format);
             assert(false);
             break;
-#endif
         }
     }
     if(_ptrFileUtilityObj->codec_info(codec_info_) == -1)
@@ -687,21 +601,6 @@ int32_t MediaFileImpl::IncomingAudioData(
     const int8_t*  buffer,
     const size_t bufferLengthInBytes)
 {
-    return IncomingAudioVideoData( buffer, bufferLengthInBytes, false);
-}
-
-int32_t MediaFileImpl::IncomingAVIVideoData(
-    const int8_t*  buffer,
-    const size_t bufferLengthInBytes)
-{
-    return IncomingAudioVideoData( buffer, bufferLengthInBytes, true);
-}
-
-int32_t MediaFileImpl::IncomingAudioVideoData(
-    const int8_t*  buffer,
-    const size_t bufferLengthInBytes,
-    const bool video)
-{
     WEBRTC_TRACE(kTraceStream, kTraceFile, _id,
                  "MediaFile::IncomingData(buffer= 0x%x, bufLen= %" PRIuS,
                  buffer, bufferLengthInBytes);
@@ -772,24 +671,11 @@ int32_t MediaFileImpl::IncomingAudioVideoData(
                     bytesWritten = _ptrFileUtilityObj->WritePreEncodedData(
                         *_ptrOutStream, buffer, bufferLengthInBytes);
                     break;
-                case kFileFormatAviFile:
-#ifdef WEBRTC_MODULE_UTILITY_VIDEO
-                    if(video)
-                    {
-                        bytesWritten = _ptrFileUtilityObj->WriteAviVideoData(
-                            buffer, bufferLengthInBytes);
-                    }else
-                    {
-                        bytesWritten = _ptrFileUtilityObj->WriteAviAudioData(
-                            buffer, bufferLengthInBytes);
-                    }
-                    break;
-#else
+                default:
                     WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                                 "Invalid file format: %d", kFileFormatAviFile);
+                                 "Invalid file format: %d", _fileFormat);
                     assert(false);
                     break;
-#endif
             }
         } else {
             // TODO (hellner): quick look at the code makes me think that this
@@ -803,10 +689,7 @@ int32_t MediaFileImpl::IncomingAudioVideoData(
             }
         }
 
-        if(!video)
-        {
-            _recordDurationMs += samplesWritten / (codec_info_.plfreq / 1000);
-        }
+        _recordDurationMs += samplesWritten / (codec_info_.plfreq / 1000);
 
         // Check if it's time for RecordNotification(..).
         if(_notificationMs)
@@ -850,36 +733,6 @@ int32_t MediaFileImpl::StartRecordingAudioFile(
     const uint32_t notificationTimeMs,
     const uint32_t maxSizeBytes)
 {
-    VideoCodec dummyCodecInst;
-    return StartRecordingFile(fileName, format, codecInst, dummyCodecInst,
-                              notificationTimeMs, maxSizeBytes);
-}
-
-
-int32_t MediaFileImpl::StartRecordingVideoFile(
-    const char* fileName,
-    const FileFormats format,
-    const CodecInst& codecInst,
-    const VideoCodec& videoCodecInst,
-    bool videoOnly)
-{
-    const uint32_t notificationTimeMs = 0;
-    const uint32_t maxSizeBytes       = 0;
-
-    return StartRecordingFile(fileName, format, codecInst, videoCodecInst,
-                              notificationTimeMs, maxSizeBytes, videoOnly);
-}
-
-int32_t MediaFileImpl::StartRecordingFile(
-    const char* fileName,
-    const FileFormats format,
-    const CodecInst& codecInst,
-    const VideoCodec& videoCodecInst,
-    const uint32_t notificationTimeMs,
-    const uint32_t maxSizeBytes,
-    bool videoOnly)
-{
-
     if(!ValidFileName(fileName))
     {
         return -1;
@@ -897,32 +750,24 @@ int32_t MediaFileImpl::StartRecordingFile(
         return -1;
     }
 
-    // TODO (hellner): make all formats support writing to stream.
-    const bool useStream = ( format != kFileFormatAviFile);
-    if( useStream)
+    if(outputStream->OpenFile(fileName, false) != 0)
     {
-        if(outputStream->OpenFile(fileName, false) != 0)
-        {
-            delete outputStream;
-            WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                         "Could not open output file '%s' for writing!",
-                         fileName);
-            return -1;
-        }
+        delete outputStream;
+        WEBRTC_TRACE(kTraceError, kTraceFile, _id,
+                     "Could not open output file '%s' for writing!",
+                     fileName);
+        return -1;
     }
+
     if(maxSizeBytes)
     {
         outputStream->SetMaxFileSize(maxSizeBytes);
     }
 
-    if(StartRecordingStream(*outputStream, fileName, format, codecInst,
-                            videoCodecInst, notificationTimeMs,
-                            videoOnly) == -1)
+    if(StartRecordingAudioStream(*outputStream, format, codecInst,
+                                 notificationTimeMs) == -1)
     {
-        if( useStream)
-        {
-            outputStream->CloseFile();
-        }
+        outputStream->CloseFile();
         delete outputStream;
         return -1;
     }
@@ -940,21 +785,6 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
     const CodecInst& codecInst,
     const uint32_t notificationTimeMs)
 {
-    VideoCodec dummyCodecInst;
-    return StartRecordingStream(stream, 0, format, codecInst, dummyCodecInst,
-                                notificationTimeMs);
-}
-
-int32_t MediaFileImpl::StartRecordingStream(
-    OutStream& stream,
-    const char* fileName,
-    const FileFormats format,
-    const CodecInst& codecInst,
-    const VideoCodec& videoCodecInst,
-    const uint32_t notificationTimeMs,
-    bool videoOnly)
-{
-
     // Check codec info
     if(!ValidFileFormat(format,&codecInst))
     {
@@ -1055,25 +885,6 @@ int32_t MediaFileImpl::StartRecordingStream(
             _fileFormat = kFileFormatPreencodedFile;
             break;
         }
-#ifdef WEBRTC_MODULE_UTILITY_VIDEO
-        case kFileFormatAviFile:
-        {
-            if( (_ptrFileUtilityObj->InitAviWriting(
-                    fileName,
-                    codecInst,
-                    videoCodecInst,videoOnly) == -1) ||
-                    (_ptrFileUtilityObj->codec_info(tmpAudioCodec) != 0))
-            {
-                WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                             "Failed to initialize AVI file!");
-                delete _ptrFileUtilityObj;
-                _ptrFileUtilityObj = NULL;
-                return -1;
-            }
-            _fileFormat = kFileFormatAviFile;
-            break;
-        }
-#endif
         default:
         {
             WEBRTC_TRACE(kTraceError, kTraceFile, _id,
@@ -1136,12 +947,6 @@ int32_t MediaFileImpl::StopRecording()
         {
             _ptrFileUtilityObj->UpdateWavHeader(*_ptrOutStream);
         }
-#ifdef WEBRTC_MODULE_UTILITY_VIDEO
-        else if( _fileFormat == kFileFormatAviFile)
-        {
-            _ptrFileUtilityObj->CloseAviFile( );
-        }
-#endif
         delete _ptrFileUtilityObj;
         _ptrFileUtilityObj = NULL;
     }
@@ -1266,32 +1071,6 @@ int32_t MediaFileImpl::codec_info(CodecInst& codecInst) const
     }
     memcpy(&codecInst,&codec_info_,sizeof(CodecInst));
     return 0;
-}
-
-int32_t MediaFileImpl::VideoCodecInst(VideoCodec& codecInst) const
-{
-    CriticalSectionScoped lock(_crit);
-    if(!_playingActive && !_recordingActive)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                     "Neither playout nor recording has been initialized!");
-        return -1;
-    }
-    if( _ptrFileUtilityObj == NULL)
-    {
-        return -1;
-    }
-#ifdef WEBRTC_MODULE_UTILITY_VIDEO
-    VideoCodec videoCodec;
-    if( _ptrFileUtilityObj->VideoCodecInst( videoCodec) != 0)
-    {
-        return -1;
-    }
-    memcpy(&codecInst,&videoCodec,sizeof(VideoCodec));
-    return 0;
-#else
-    return -1;
-#endif
 }
 
 bool MediaFileImpl::ValidFileFormat(const FileFormats format,
