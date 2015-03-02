@@ -36,7 +36,6 @@ import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.appspot.apprtc.PeerConnectionClient;
 import org.appspot.apprtc.PeerConnectionClient.PeerConnectionEvents;
 import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
-import org.appspot.apprtc.util.LooperExecutor;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
@@ -51,8 +50,15 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     implements PeerConnectionEvents {
   private static final String TAG = "RTCClientTest";
   private static final String STUN_SERVER = "stun:stun.l.google.com:19302";
-  private static final int WAIT_TIMEOUT = 5000;
-  private static final int EXPECTED_VIDEO_FRAMES = 15;
+  private static final int WAIT_TIMEOUT = 7000;
+  private static final int CAMERA_SWITCH_ATTEMPTS = 3;
+  private static final int VIDEO_RESTART_ATTEMPTS = 3;
+  private static final int VIDEO_RESTART_TIMEOUT = 500;
+  private static final int EXPECTED_VIDEO_FRAMES = 10;
+  private static final String VIDEO_CODEC_VP8 = "VP8";
+  private static final String VIDEO_CODEC_VP9 = "VP9";
+  private static final String VIDEO_CODEC_H264 = "H264";
+  private static final int AUDIO_RUN_TIMEOUT = 1000;
 
   // The peer connection client is assumed to be thread safe in itself; the
   // reference is written by the test thread and read by worker threads.
@@ -78,9 +84,14 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     private boolean setSizeCalledBeforeRenderFrame = false;
 
     // Thread-safe in itself.
-    private final CountDownLatch doneRendering;
+    private CountDownLatch doneRendering;
 
     public MockRenderer(int expectedFrames) {
+      reset(expectedFrames);
+    }
+
+    // Resets render to wait for new amount of video frames.
+    public synchronized void reset(int expectedFrames) {
       doneRendering = new CountDownLatch(expectedFrames);
     }
 
@@ -127,8 +138,9 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
 
   @Override
   public void onIceCandidate(IceCandidate candidate) {
-    Log.d(TAG, "IceCandidate: " + candidate.sdp);
     synchronized(iceCandidateEvent) {
+      Log.d(TAG, "IceCandidate #" + iceCandidates.size() + " : "
+          + candidate.sdp);
       if (loopback) {
         pcClient.addRemoteIceCandidate(candidate);
       }
@@ -231,22 +243,22 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     return signalingParameters;
   }
 
-  PeerConnectionClient createPeerConnectionClient(MockRenderer localRenderer,
-                                                  MockRenderer remoteRenderer) {
+  PeerConnectionClient createPeerConnectionClient(
+      MockRenderer localRenderer, MockRenderer remoteRenderer,
+      boolean enableVideo, String videoCodec) {
     SignalingParameters signalingParameters = getTestSignalingParameters();
     PeerConnectionParameters peerConnectionParameters =
         new PeerConnectionParameters(
-            true, false,    // adding whatever parameters to make it compile
-            0, 0, 0, 0,
-            "VP8", true,
-            0, "opus",      // random audio codec
-            false);
+            enableVideo, true, // videoCallEnabled, loopback.
+            0, 0, 0, 0, videoCodec, true, // video codec parameters.
+            0, "OPUS", true); // audio codec parameters.
 
     PeerConnectionClient client = new PeerConnectionClient();
-    client.createPeerConnectionFactory(  // changed params to make it compile
-        getInstrumentation().getContext(), null, null, null);
-    client.createPeerConnection(null, null,
-        signalingParameters);   // changed paramaters to make it compile
+    client.createPeerConnectionFactory(
+        getInstrumentation().getContext(), null,
+        peerConnectionParameters, this);
+    client.createPeerConnection(
+        localRenderer, remoteRenderer, signalingParameters);
     client.createOffer();
     return client;
   }
@@ -255,7 +267,8 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
       throws InterruptedException {
     Log.d(TAG, "testSetLocalOfferMakesVideoFlowLocally");
     MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES);
-    pcClient = createPeerConnectionClient(localRenderer, new MockRenderer(0));
+    pcClient = createPeerConnectionClient(
+        localRenderer, new MockRenderer(0), true, VIDEO_CODEC_VP8);
 
     // Wait for local SDP and ice candidates set events.
     assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
@@ -276,7 +289,8 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
       throws InterruptedException {
     Log.d(TAG, "testSizeIsSetBeforeStartingToRender");
     MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES);
-    pcClient = createPeerConnectionClient(localRenderer, new MockRenderer(0));
+    pcClient = createPeerConnectionClient(
+        localRenderer, new MockRenderer(0), true, VIDEO_CODEC_VP8);
 
     waitForLocalSDP(WAIT_TIMEOUT);
     waitForIceCandidates(WAIT_TIMEOUT);
@@ -294,14 +308,20 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     Log.d(TAG, "testSizeIsSetBeforeStartingToRender Done.");
   }
 
-  public void testLoopback() throws InterruptedException {
-    Log.d(TAG, "testLoopback");
+  public void testLoopback(boolean enableVideo, String videoCodec)
+      throws InterruptedException {
     loopback = true;
-
-    MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES);
-    MockRenderer remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES);
-
-    pcClient = createPeerConnectionClient(localRenderer, remoteRenderer);
+    MockRenderer localRenderer = null;
+    MockRenderer remoteRenderer = null;
+    if (enableVideo) {
+      Log.d(TAG, "testLoopback for video " + videoCodec);
+      localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES);
+      remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES);
+    } else {
+      Log.d(TAG, "testLoopback for audio.");
+    }
+    pcClient = createPeerConnectionClient(
+        localRenderer, remoteRenderer, enableVideo, videoCodec);
 
     // Wait for local SDP, rename it to answer and set as remote SDP.
     assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
@@ -313,17 +333,131 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     // Wait for ICE connection.
     assertTrue("ICE connection failure.", waitForIceConnected(WAIT_TIMEOUT));
 
-    // Check that local video frames were rendered.
-    assertTrue("Local video frames were not rendered.",
-        localRenderer.waitForFramesRendered(WAIT_TIMEOUT));
-
-    // Check that remote video frames were rendered.
-    assertTrue("Remote video frames were not rendered.",
-        remoteRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+    if (enableVideo) {
+      // Check that local and remote video frames were rendered.
+      assertTrue("Local video frames were not rendered.",
+          localRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+      assertTrue("Remote video frames were not rendered.",
+          remoteRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+    } else {
+      // For audio just sleep for 1 sec.
+      // TODO(glaznev): check how we can detect that remote audio was rendered.
+      Thread.sleep(AUDIO_RUN_TIMEOUT);
+    }
 
     pcClient.close();
     assertTrue(waitForPeerConnectionClosed(WAIT_TIMEOUT));
-    Log.d(TAG, "testLoopback Done.");
+    Log.d(TAG, "testLoopback done.");
+  }
+
+  public void testLoopbackAudio() throws InterruptedException {
+    testLoopback(false, VIDEO_CODEC_VP8);
+  }
+
+  public void testLoopbackVp8() throws InterruptedException {
+    testLoopback(true, VIDEO_CODEC_VP8);
+  }
+
+  public void testLoopbackVp9() throws InterruptedException {
+    testLoopback(true, VIDEO_CODEC_VP9);
+  }
+
+  public void testLoopbackH264() throws InterruptedException {
+    testLoopback(true, VIDEO_CODEC_H264);
+  }
+
+  // Checks if default front camera can be switched to back camera and then
+  // again to front camera.
+  public void testCameraSwitch() throws InterruptedException {
+    Log.d(TAG, "testCameraSwitch");
+    loopback = true;
+
+    MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES);
+    MockRenderer remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES);
+
+    pcClient = createPeerConnectionClient(
+        localRenderer, remoteRenderer, true, VIDEO_CODEC_VP8);
+
+    // Wait for local SDP, rename it to answer and set as remote SDP.
+    assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
+    SessionDescription remoteSdp = new SessionDescription(
+        SessionDescription.Type.fromCanonicalForm("answer"),
+        localSdp.description);
+    pcClient.setRemoteDescription(remoteSdp);
+
+    // Wait for ICE connection.
+    assertTrue("ICE connection failure.", waitForIceConnected(WAIT_TIMEOUT));
+
+    // Check that local and remote video frames were rendered.
+    assertTrue("Local video frames were not rendered before camera switch.",
+        localRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+    assertTrue("Remote video frames were not rendered before camera switch.",
+        remoteRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+
+    for (int i = 0; i < CAMERA_SWITCH_ATTEMPTS; i++) {
+      // Try to switch camera
+      pcClient.switchCamera();
+
+      // Reset video renders and check that local and remote video frames
+      // were rendered after camera switch.
+      localRenderer.reset(EXPECTED_VIDEO_FRAMES);
+      remoteRenderer.reset(EXPECTED_VIDEO_FRAMES);
+      assertTrue("Local video frames were not rendered after camera switch.",
+          localRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+      assertTrue("Remote video frames were not rendered after camera switch.",
+          remoteRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+    }
+    pcClient.close();
+    assertTrue(waitForPeerConnectionClosed(WAIT_TIMEOUT));
+    Log.d(TAG, "testCameraSwitch done.");
+  }
+
+  // Checks if video source can be restarted - simulate app goes to
+  // background and back to foreground.
+  public void testVideoSourceRestart() throws InterruptedException {
+    Log.d(TAG, "testVideoSourceRestart");
+    loopback = true;
+
+    MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES);
+    MockRenderer remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES);
+
+    pcClient = createPeerConnectionClient(
+        localRenderer, remoteRenderer, true, VIDEO_CODEC_VP8);
+
+    // Wait for local SDP, rename it to answer and set as remote SDP.
+    assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
+    SessionDescription remoteSdp = new SessionDescription(
+        SessionDescription.Type.fromCanonicalForm("answer"),
+        localSdp.description);
+    pcClient.setRemoteDescription(remoteSdp);
+
+    // Wait for ICE connection.
+    assertTrue("ICE connection failure.", waitForIceConnected(WAIT_TIMEOUT));
+
+    // Check that local and remote video frames were rendered.
+    assertTrue("Local video frames were not rendered before video restart.",
+        localRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+    assertTrue("Remote video frames were not rendered before video restart.",
+        remoteRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+
+    // Stop and then start video source a few times.
+    for (int i = 0; i < VIDEO_RESTART_ATTEMPTS; i++) {
+      pcClient.stopVideoSource();
+      Thread.sleep(VIDEO_RESTART_TIMEOUT);
+      pcClient.startVideoSource();
+
+      // Reset video renders and check that local and remote video frames
+      // were rendered after video restart.
+      localRenderer.reset(EXPECTED_VIDEO_FRAMES);
+      remoteRenderer.reset(EXPECTED_VIDEO_FRAMES);
+      assertTrue("Local video frames were not rendered after video restart.",
+          localRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+      assertTrue("Remote video frames were not rendered after video restart.",
+          remoteRenderer.waitForFramesRendered(WAIT_TIMEOUT));
+    }
+    pcClient.close();
+    assertTrue(waitForPeerConnectionClosed(WAIT_TIMEOUT));
+    Log.d(TAG, "testVideoSourceRestart done.");
   }
 
 }
