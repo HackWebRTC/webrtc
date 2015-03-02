@@ -188,6 +188,7 @@
             'bitrate_controller/bitrate_controller_unittest.cc',
             'bitrate_controller/remb_suppressor_unittest.cc',
             'bitrate_controller/send_side_bandwidth_estimation_unittest.cc',
+            'bitrate_controller/send_time_history_unittest.cc',
             'desktop_capture/desktop_and_cursor_composer_unittest.cc',
             'desktop_capture/desktop_region_unittest.cc',
             'desktop_capture/differ_block_unittest.cc',

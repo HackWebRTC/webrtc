@@ -17,6 +17,8 @@ source_set("bitrate_controller") {
     "remb_suppressor.h",
     "send_side_bandwidth_estimation.cc",
     "send_side_bandwidth_estimation.h",
+    "send_time_history.cc",
+    "send_time_history.h",
   ]
 
   if (is_win) {
