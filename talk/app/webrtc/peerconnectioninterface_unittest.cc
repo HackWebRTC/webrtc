@@ -256,14 +256,6 @@ class PeerConnectionInterfaceTest : public testing::Test {
     // DTLS does not work in a loopback call, so is disabled for most of the
     // tests in this file. We only create a FakeIdentityService if the test
     // explicitly sets the constraint.
-    FakeConstraints default_constraints;
-    if (!constraints) {
-      constraints = &default_constraints;
-
-      default_constraints.AddMandatory(
-          webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, false);
-    }
-
     FakeIdentityService* dtls_service = NULL;
     bool dtls;
     if (FindConstraint(constraints,

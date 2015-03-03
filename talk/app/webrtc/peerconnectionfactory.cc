@@ -28,8 +28,6 @@
 #include "talk/app/webrtc/peerconnectionfactory.h"
 
 #include "talk/app/webrtc/audiotrack.h"
-#include "talk/app/webrtc/dtlsidentityservice.h"
-#include "talk/app/webrtc/dtlsidentitystore.h"
 #include "talk/app/webrtc/localaudiosource.h"
 #include "talk/app/webrtc/mediastreamproxy.h"
 #include "talk/app/webrtc/mediastreamtrackproxy.h"
@@ -163,11 +161,6 @@ bool PeerConnectionFactory::Initialize() {
   if (!channel_manager_->Init()) {
     return false;
   }
-
-  dtls_identity_store_.reset(
-      new DtlsIdentityStore(signaling_thread_, worker_thread_));
-  dtls_identity_store_->Initialize();
-
   return true;
 }
 
@@ -204,10 +197,6 @@ PeerConnectionFactory::CreatePeerConnection(
     PeerConnectionObserver* observer) {
   DCHECK(signaling_thread_->IsCurrent());
   DCHECK(allocator_factory || default_allocator_factory_);
-
-  if (!dtls_identity_service) {
-    dtls_identity_service = new DtlsIdentityService(dtls_identity_store_.get());
-  }
 
   PortAllocatorFactoryInterface* chosen_allocator_factory =
       allocator_factory ? allocator_factory : default_allocator_factory_.get();
