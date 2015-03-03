@@ -1415,7 +1415,7 @@ class VideoFrameTest : public testing::Test {
   }
 
   // Tests re-initing an existing image.
-  void Reset() {
+  void Reset(webrtc::VideoRotation rotation, bool apply_rotation) {
     T frame1, frame2;
     rtc::scoped_ptr<rtc::MemoryStream> ms(
         LoadSample(kImageFilename));
@@ -1428,9 +1428,32 @@ class VideoFrameTest : public testing::Test {
     EXPECT_TRUE(IsEqual(frame1, frame2, 0));
     EXPECT_TRUE(frame1.Reset(cricket::FOURCC_I420, kWidth, kHeight, kWidth,
                              kHeight, reinterpret_cast<uint8*>(ms->GetBuffer()),
-                             data_size, 1, 1, 0, 0, webrtc::kVideoRotation_0));
+                             data_size, 1, 1, 0, 0, rotation,
+                             apply_rotation));
+    if (apply_rotation)
+      EXPECT_EQ(webrtc::kVideoRotation_0, frame1.GetVideoRotation());
+    else
+      EXPECT_EQ(rotation, frame1.GetVideoRotation());
+
+    // Swapp width and height if the frame is rotated 90 or 270 degrees.
+    if (apply_rotation && (rotation == webrtc::kVideoRotation_90
+        || rotation == webrtc::kVideoRotation_270)) {
+      EXPECT_TRUE(kHeight == frame1.GetWidth());
+      EXPECT_TRUE(kWidth == frame1.GetHeight());
+    } else {
+      EXPECT_TRUE(kWidth == frame1.GetWidth());
+      EXPECT_TRUE(kHeight == frame1.GetHeight());
+    }
     EXPECT_FALSE(IsBlack(frame1));
     EXPECT_FALSE(IsEqual(frame1, frame2, 0));
+  }
+
+  void ResetAndApplyRotation() {
+    Reset(webrtc::kVideoRotation_90, true);
+  }
+
+  void ResetAndDontApplyRotation() {
+    Reset(webrtc::kVideoRotation_90, false);
   }
 
   //////////////////////

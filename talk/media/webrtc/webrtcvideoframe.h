@@ -65,7 +65,7 @@ class WebRtcVideoFrame : public VideoFrame {
             int64_t time_stamp,
             webrtc::VideoRotation rotation);
 
-  bool Init(const CapturedFrame* frame, int dw, int dh);
+  bool Init(const CapturedFrame* frame, int dw, int dh, bool apply_rotation);
 
   void InitToEmptyBuffer(int w, int h, size_t pixel_width, size_t pixel_height,
                          int64_t elapsed_time, int64_t time_stamp);
@@ -107,7 +107,8 @@ class WebRtcVideoFrame : public VideoFrame {
                      size_t pixel_height,
                      int64_t elapsed_time,
                      int64_t time_stamp,
-                     webrtc::VideoRotation rotation);
+                     webrtc::VideoRotation rotation,
+                     bool apply_rotation);
 
   virtual size_t GetWidth() const;
   virtual size_t GetHeight() const;
@@ -132,9 +133,6 @@ class WebRtcVideoFrame : public VideoFrame {
   virtual void SetTimeStamp(int64_t time_stamp) { time_stamp_ = time_stamp; }
 
   virtual webrtc::VideoRotation GetVideoRotation() const { return rotation_; }
-  virtual void SetRotation(webrtc::VideoRotation rotation) {
-    rotation_ = rotation;
-  }
 
   virtual VideoFrame* Copy() const;
   virtual bool IsExclusive() const;
@@ -195,7 +193,8 @@ class WebRtcVideoRenderFrame : public VideoFrame {
                      size_t pixel_height,
                      int64_t elapsed_time,
                      int64_t time_stamp,
-                     webrtc::VideoRotation rotation) OVERRIDE;
+                     webrtc::VideoRotation rotation,
+                     bool apply_rotation) OVERRIDE;
   virtual size_t GetWidth() const OVERRIDE;
   virtual size_t GetHeight() const OVERRIDE;
   virtual const uint8* GetYPlane() const OVERRIDE;

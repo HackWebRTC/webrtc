@@ -33,7 +33,9 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
   WebRtcVideoFrameTest() {
   }
 
-  void TestInit(int cropped_width, int cropped_height) {
+  void TestInit(int cropped_width, int cropped_height,
+                webrtc::VideoRotation frame_rotation,
+                bool apply_rotation) {
     const int frame_width = 1920;
     const int frame_height = 1080;
 
@@ -44,7 +46,7 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
     captured_frame.pixel_height = 1;
     captured_frame.elapsed_time = 1234;
     captured_frame.time_stamp = 5678;
-    captured_frame.rotation = webrtc::kVideoRotation_0;
+    captured_frame.rotation = frame_rotation;
     captured_frame.width = frame_width;
     captured_frame.height = frame_height;
     captured_frame.data_size = (frame_width * frame_height) +
@@ -55,17 +57,30 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
 
     // Create the new frame from the CapturedFrame.
     cricket::WebRtcVideoFrame frame;
-    EXPECT_TRUE(frame.Init(&captured_frame, cropped_width, cropped_height));
+    EXPECT_TRUE(
+        frame.Init(&captured_frame, cropped_width, cropped_height,
+                   apply_rotation));
 
     // Verify the new frame.
     EXPECT_EQ(1u, frame.GetPixelWidth());
     EXPECT_EQ(1u, frame.GetPixelHeight());
     EXPECT_EQ(1234, frame.GetElapsedTime());
     EXPECT_EQ(5678, frame.GetTimeStamp());
-    EXPECT_EQ(webrtc::kVideoRotation_0, frame.GetRotation());
+    if (apply_rotation)
+      EXPECT_EQ(webrtc::kVideoRotation_0, frame.GetRotation());
+    else
+      EXPECT_EQ(frame_rotation, frame.GetRotation());
     // The size of the new frame should have been cropped to multiple of 4.
-    EXPECT_EQ(static_cast<size_t>(cropped_width & ~3), frame.GetWidth());
-    EXPECT_EQ(static_cast<size_t>(cropped_height & ~3), frame.GetHeight());
+    // If |apply_rotation| and the frame rotation is 90 or 270, width and
+    // height are flipped.
+    if (apply_rotation && (frame_rotation == webrtc::kVideoRotation_90
+        || frame_rotation == webrtc::kVideoRotation_270)) {
+      EXPECT_EQ(static_cast<size_t>(cropped_width & ~3), frame.GetHeight());
+      EXPECT_EQ(static_cast<size_t>(cropped_height & ~3), frame.GetWidth() );
+    } else {
+      EXPECT_EQ(static_cast<size_t>(cropped_width & ~3), frame.GetWidth());
+      EXPECT_EQ(static_cast<size_t>(cropped_height & ~3), frame.GetHeight());
+    }
   }
 };
 
@@ -152,7 +167,8 @@ TEST_WEBRTCVIDEOFRAME(ValidateI420HugeSize)
 // Re-evaluate once WebRTC switches to libyuv
 // TEST_WEBRTCVIDEOFRAME(ConstructYuy2AllSizes)
 // TEST_WEBRTCVIDEOFRAME(ConstructARGBAllSizes)
-TEST_WEBRTCVIDEOFRAME(Reset)
+TEST_WEBRTCVIDEOFRAME(ResetAndApplyRotation)
+TEST_WEBRTCVIDEOFRAME(ResetAndDontApplyRotation)
 TEST_WEBRTCVIDEOFRAME(ConvertToABGRBuffer)
 TEST_WEBRTCVIDEOFRAME(ConvertToABGRBufferStride)
 TEST_WEBRTCVIDEOFRAME(ConvertToABGRBufferInverted)
@@ -274,17 +290,25 @@ TEST_F(WebRtcVideoFrameTest, Alias) {
 
 // Tests the Init function with different cropped size.
 TEST_F(WebRtcVideoFrameTest, InitEvenSize) {
-  TestInit(640, 360);
+  TestInit(640, 360, webrtc::kVideoRotation_0, true);
 }
 
 TEST_F(WebRtcVideoFrameTest, InitOddWidth) {
-  TestInit(601, 480);
+  TestInit(601, 480, webrtc::kVideoRotation_0, true);
 }
 
 TEST_F(WebRtcVideoFrameTest, InitOddHeight) {
-  TestInit(360, 765);
+  TestInit(360, 765, webrtc::kVideoRotation_0, true);
 }
 
 TEST_F(WebRtcVideoFrameTest, InitOddWidthHeight) {
-  TestInit(355, 1021);
+  TestInit(355, 1021, webrtc::kVideoRotation_0, true);
+}
+
+TEST_F(WebRtcVideoFrameTest, InitRotated90ApplyRotation) {
+  TestInit(640, 360, webrtc::kVideoRotation_90, true);
+}
+
+TEST_F(WebRtcVideoFrameTest, InitRotated90DontApplyRotation) {
+  TestInit(640, 360, webrtc::kVideoRotation_90, false);
 }

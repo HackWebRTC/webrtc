@@ -100,7 +100,7 @@ class VideoAdapterTest : public testing::Test {
                          const CapturedFrame* captured_frame) {
       WebRtcVideoFrame temp_i420;
       EXPECT_TRUE(temp_i420.Init(captured_frame,
-          captured_frame->width, abs(captured_frame->height)));
+          captured_frame->width, abs(captured_frame->height), true));
       VideoFrame* out_frame = NULL;
       rtc::CritScope lock(&crit_);
       EXPECT_TRUE(video_adapter_->AdaptFrame(&temp_i420, &out_frame));

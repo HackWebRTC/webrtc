@@ -85,7 +85,7 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
     // Check that captured_frame is actually our frame.
     DCHECK(captured_frame == &captured_frame_);
     scoped_ptr<WebRtcVideoFrame> frame(new WebRtcVideoFrame());
-    frame->Init(captured_frame, dst_width, dst_height);
+    frame->Init(captured_frame, dst_width, dst_height, apply_rotation_);
     return frame.release();
   }
 
