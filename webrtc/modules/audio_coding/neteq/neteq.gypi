@@ -26,7 +26,6 @@
     ],
     'neteq_dependencies': [
       '<@(codecs)',
-      '<(opus_dir)/opus.gyp:opus',
       '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
       '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       'audio_decoder_interface',
@@ -42,21 +41,6 @@
       ],
       'defines': [
         '<@(neteq_defines)',
-      ],
-      'include_dirs': [
-        # Need Opus header files for the audio classifier.
-        '<(DEPTH)/third_party/opus/src/celt',
-        '<(DEPTH)/third_party/opus/src/src',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          # Need Opus header files for the audio classifier.
-          '<(DEPTH)/third_party/opus/src/celt',
-          '<(DEPTH)/third_party/opus/src/src',
-        ],
-      },
-      'export_dependent_settings': [
-        '<(opus_dir)/opus.gyp:opus',
       ],
       'sources': [
         'interface/neteq.h',

@@ -147,6 +147,7 @@
       'type': 'executable',
       'dependencies': [
         'neteq',
+        'webrtc_opus',
       ],
       'sources': [
         'test/audio_classifier_test.cc',
