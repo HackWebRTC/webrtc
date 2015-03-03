@@ -53,7 +53,8 @@ AudioEncoderOpus::Config::Config()
       bitrate_bps(64000),
       fec_enabled(false),
       max_playback_rate_hz(48000),
-      complexity(kDefaultComplexity) {
+      complexity(kDefaultComplexity),
+      dtx_enabled(false) {
 }
 
 bool AudioEncoderOpus::Config::IsOk() const {
@@ -64,6 +65,8 @@ bool AudioEncoderOpus::Config::IsOk() const {
   if (bitrate_bps < kMinBitrateBps || bitrate_bps > kMaxBitrateBps)
     return false;
   if (complexity < 0 || complexity > 10)
+    return false;
+  if (dtx_enabled && application != kVoip)
     return false;
   return true;
 }
@@ -89,7 +92,11 @@ AudioEncoderOpus::AudioEncoderOpus(const Config& config)
   CHECK_EQ(0,
            WebRtcOpus_SetMaxPlaybackRate(inst_, config.max_playback_rate_hz));
   CHECK_EQ(0, WebRtcOpus_SetComplexity(inst_, config.complexity));
-
+  if (config.dtx_enabled) {
+    CHECK_EQ(0, WebRtcOpus_EnableDtx(inst_));
+  } else {
+    CHECK_EQ(0, WebRtcOpus_DisableDtx(inst_));
+  }
 }
 
 AudioEncoderOpus::~AudioEncoderOpus() {
@@ -193,6 +200,8 @@ void AudioEncoderOpus::EncodeInternal(uint32_t rtp_timestamp,
   info->encoded_bytes = r;
   info->encoded_timestamp = first_timestamp_in_buffer_;
   info->payload_type = payload_type_;
+  // Allows Opus to send empty packets.
+  info->send_even_if_empty = true;
 }
 
 }  // namespace webrtc

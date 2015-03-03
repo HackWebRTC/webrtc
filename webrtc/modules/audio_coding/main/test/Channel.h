@@ -111,6 +111,8 @@ class Channel : public AudioPacketizationCallback {
   WebRtcRTPHeader _rtpInfo;
   bool _leftChannel;
   uint32_t _lastInTimestamp;
+  bool _useLastFrameSize;
+  uint32_t _lastFrameSizeSample;
   // FEC Test variables
   int16_t _packetLoss;
   bool _useFECTestWithPacketLoss;

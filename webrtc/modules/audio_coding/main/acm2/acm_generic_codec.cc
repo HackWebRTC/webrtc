@@ -115,6 +115,7 @@ ACMGenericCodec::ACMGenericCodec(const CodecInst& codec_inst,
       max_playback_rate_hz_(48000),
       max_payload_size_bytes_(-1),
       max_rate_bps_(-1),
+      opus_dtx_enabled_(false),
       is_opus_(false),
       is_isac_(false),
       first_frame_(true),
@@ -275,10 +276,12 @@ int16_t ACMGenericCodec::InitEncoder(WebRtcACMCodecParams* codec_params,
   WriteLockScoped wl(codec_wrapper_lock_);
   bitrate_bps_ = 0;
   loss_rate_ = 0;
+  opus_dtx_enabled_ = false;
   acm_codec_params_ = *codec_params;
   if (force_initialization)
     opus_application_set_ = false;
-  opus_application_ = GetOpusApplication(codec_params->codec_inst.channels);
+  opus_application_ = GetOpusApplication(codec_params->codec_inst.channels,
+                                         opus_dtx_enabled_);
   opus_application_set_ = true;
   ResetAudioEncoder();
   return 0;
@@ -325,8 +328,9 @@ void ACMGenericCodec::ResetAudioEncoder() {
     config.fec_enabled = fec_enabled_;
     config.bitrate_bps = codec_inst.rate;
     config.max_playback_rate_hz = max_playback_rate_hz_;
+    config.dtx_enabled = opus_dtx_enabled_;
     config.payload_type = codec_inst.pltype;
-    switch (GetOpusApplication(config.num_channels)) {
+    switch (GetOpusApplication(config.num_channels, config.dtx_enabled)) {
       case kVoip:
         config.application = AudioEncoderOpus::ApplicationMode::kVoip;
         break;
@@ -478,10 +482,10 @@ void ACMGenericCodec::ResetAudioEncoder() {
 }
 
 OpusApplicationMode ACMGenericCodec::GetOpusApplication(
-    int num_channels) const {
+    int num_channels, bool enable_dtx) const {
   if (opus_application_set_)
     return opus_application_;
-  return num_channels == 1 ? kVoip : kAudio;
+  return num_channels == 1 || enable_dtx ? kVoip : kAudio;
 }
 
 int32_t ACMGenericCodec::Add10MsData(const uint32_t timestamp,
@@ -586,6 +590,28 @@ AudioDecoder* ACMGenericCodec::Decoder() {
   return decoder_proxy_.IsSet() ? &decoder_proxy_ : nullptr;
 }
 
+int ACMGenericCodec::EnableOpusDtx() {
+  WriteLockScoped wl(codec_wrapper_lock_);
+  if (!is_opus_)
+    return -1;  // Needed for tests to pass.
+  if (GetOpusApplication(encoder_->NumChannels(), true) != kVoip) {
+    // Opus DTX can only be enabled when application mode is KVoip.
+    return -1;
+  }
+  opus_dtx_enabled_ = true;
+  ResetAudioEncoder();
+  return 0;
+}
+
+int ACMGenericCodec::DisableOpusDtx() {
+  WriteLockScoped wl(codec_wrapper_lock_);
+  if (!is_opus_)
+    return -1;  // Needed for tests to pass.
+  opus_dtx_enabled_ = false;
+  ResetAudioEncoder();
+  return 0;
+}
+
 int ACMGenericCodec::SetFEC(bool enable_fec) {
   if (!HasInternalFEC())
     return enable_fec ? -1 : 0;
@@ -599,6 +625,10 @@ int ACMGenericCodec::SetFEC(bool enable_fec) {
 
 int ACMGenericCodec::SetOpusApplication(OpusApplicationMode application) {
   WriteLockScoped wl(codec_wrapper_lock_);
+  if (opus_dtx_enabled_ && application == kAudio) {
+    // Opus can only be set to kAudio when DTX is off.
+    return -1;
+  }
   opus_application_ = application;
   opus_application_set_ = true;
   ResetAudioEncoder();

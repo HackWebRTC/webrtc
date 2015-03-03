@@ -906,6 +906,30 @@ class AudioCodingModule {
   virtual int SetOpusMaxPlaybackRate(int frequency_hz) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
+  // int EnableOpusDtx()
+  // If current send codec is Opus, enables its internal DTX.
+  // Currently, this can be only called when Opus application mode is VOIP.
+  // Use SetOpusApplication() to switch to VOIP mode when necessary.
+  //
+  // Return value:
+  //   -1 if current send codec is not Opus or
+  //      error occurred in enabling DTX.
+  //    0 Opus DTX is enabled successfully.
+  //
+  virtual int EnableOpusDtx() = 0;
+
+  ///////////////////////////////////////////////////////////////////////////
+  // int DisableOpusDtx()
+  // If current send codec is Opus, disables its internal DTX.
+  //
+  // Return value:
+  //   -1 if current send codec is not Opus or
+  //      error occurred in disabling DTX.
+  //    0 Opus DTX is disabled successfully.
+  //
+  virtual int DisableOpusDtx() = 0;
+
+  ///////////////////////////////////////////////////////////////////////////
   //   statistics
   //
 

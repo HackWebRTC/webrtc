@@ -394,6 +394,23 @@ class ACMGenericCodec {
   int SetOpusMaxPlaybackRate(int /* frequency_hz */);
 
   ///////////////////////////////////////////////////////////////////////////
+  // EnableOpusDtx()
+  // Enable the DTX, if the codec is Opus. If current Opus application mode is
+  // audio, a failure will be triggered.
+  // Return value:
+  //   -1 if failed or on codecs other than Opus.
+  //    0 if succeeded.
+  int EnableOpusDtx();
+
+  ///////////////////////////////////////////////////////////////////////////
+  // DisbleOpusDtx()
+  // Disable the DTX, if the codec is Opus.
+  // Return value:
+  //   -1 if failed or on codecs other than Opus.
+  //    0 if succeeded.
+  int DisableOpusDtx();
+
+  ///////////////////////////////////////////////////////////////////////////
   // HasFrameToEncode()
   // Returns true if there is enough audio buffered for encoding, such that
   // calling Encode() will return a payload.
@@ -469,7 +486,8 @@ class ACMGenericCodec {
 
   void ResetAudioEncoder() EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
-  OpusApplicationMode GetOpusApplication(int num_channels) const
+  OpusApplicationMode GetOpusApplication(int num_channels,
+                                         bool enable_dtx) const
       EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   rtc::scoped_ptr<AudioEncoder> audio_encoder_ GUARDED_BY(codec_wrapper_lock_);
@@ -485,6 +503,7 @@ class ACMGenericCodec {
   int max_playback_rate_hz_ GUARDED_BY(codec_wrapper_lock_);
   int max_payload_size_bytes_ GUARDED_BY(codec_wrapper_lock_);
   int max_rate_bps_ GUARDED_BY(codec_wrapper_lock_);
+  bool opus_dtx_enabled_ GUARDED_BY(codec_wrapper_lock_);
   bool is_opus_ GUARDED_BY(codec_wrapper_lock_);
   bool is_isac_ GUARDED_BY(codec_wrapper_lock_);
   bool first_frame_ GUARDED_BY(codec_wrapper_lock_);

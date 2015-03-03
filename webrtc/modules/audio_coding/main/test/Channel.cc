@@ -43,7 +43,9 @@ int32_t Channel::SendData(FrameType frameType,
     rtpInfo.type.Audio.isCNG = false;
   }
   if (frameType == kFrameEmpty) {
-    // Skip this frame
+    // When frame is empty, we should not transmit it. The frame size of the
+    // next non-empty frame will be based on the previous frame size.
+    _useLastFrameSize = _lastFrameSizeSample > 0;
     return 0;
   }
 
@@ -101,6 +103,7 @@ int32_t Channel::SendData(FrameType frameType,
   if (!_isStereo) {
     CalcStatistics(rtpInfo, payloadSize);
   }
+  _useLastFrameSize = false;
   _lastInTimestamp = timeStamp;
   _totalBytes += payloadDataSize;
   _channelCritSect->Leave();
@@ -153,22 +156,31 @@ void Channel::CalcStatistics(WebRtcRTPHeader& rtpInfo, size_t payloadSize) {
 
   if (!newPayload) {
     if (!currentPayloadStr->newPacket) {
-      uint32_t lastFrameSizeSample = (uint32_t)(
-          (uint32_t) rtpInfo.header.timestamp
-              - (uint32_t) currentPayloadStr->lastTimestamp);
-      assert(lastFrameSizeSample > 0);
+      if (!_useLastFrameSize) {
+        _lastFrameSizeSample = (uint32_t) ((uint32_t) rtpInfo.header.timestamp -
+            (uint32_t) currentPayloadStr->lastTimestamp);
+      }
+      assert(_lastFrameSizeSample > 0);
       int k = 0;
-      while ((currentPayloadStr->frameSizeStats[k].frameSizeSample
-          != lastFrameSizeSample)
-          && (currentPayloadStr->frameSizeStats[k].frameSizeSample != 0)) {
-        k++;
+      for (; k < MAX_NUM_FRAMESIZES; ++k) {
+        if ((currentPayloadStr->frameSizeStats[k].frameSizeSample ==
+            _lastFrameSizeSample) ||
+            (currentPayloadStr->frameSizeStats[k].frameSizeSample == 0)) {
+          break;
+        }
+      }
+      if (k == MAX_NUM_FRAMESIZES) {
+        // New frame size found but no space to count statistics on it. Skip it.
+        printf("No memory to store statistics for payload %d : frame size %d\n",
+               _lastPayloadType, _lastFrameSizeSample);
+        return;
       }
       ACMTestFrameSizeStats* currentFrameSizeStats = &(currentPayloadStr
           ->frameSizeStats[k]);
-      currentFrameSizeStats->frameSizeSample = (int16_t) lastFrameSizeSample;
+      currentFrameSizeStats->frameSizeSample = (int16_t) _lastFrameSizeSample;
 
       // increment the number of encoded samples.
-      currentFrameSizeStats->totalEncodedSamples += lastFrameSizeSample;
+      currentFrameSizeStats->totalEncodedSamples += _lastFrameSizeSample;
       // increment the number of recveived packets
       currentFrameSizeStats->numPackets++;
       // increment the total number of bytes (this is based on
@@ -220,6 +232,8 @@ Channel::Channel(int16_t chID)
       _isStereo(false),
       _leftChannel(true),
       _lastInTimestamp(0),
+      _useLastFrameSize(false),
+      _lastFrameSizeSample(0),
       _packetLoss(0),
       _useFECTestWithPacketLoss(false),
       _beginTime(TickTime::MillisecondTimestamp()),

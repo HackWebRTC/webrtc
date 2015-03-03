@@ -39,6 +39,7 @@ class AudioEncoderOpus final : public AudioEncoder {
     bool fec_enabled;
     int max_playback_rate_hz;
     int complexity;
+    bool dtx_enabled;
   };
 
   explicit AudioEncoderOpus(const Config& config);

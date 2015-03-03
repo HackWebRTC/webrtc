@@ -223,6 +223,10 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // the receiver will render.
   virtual int SetOpusMaxPlaybackRate(int frequency_hz) OVERRIDE;
 
+  int EnableOpusDtx() override;
+
+  int DisableOpusDtx() override;
+
   virtual int UnregisterReceiveCodec(uint8_t payload_type) OVERRIDE;
 
   virtual int EnableNack(size_t max_nack_list_size) OVERRIDE;

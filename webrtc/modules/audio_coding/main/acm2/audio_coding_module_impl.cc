@@ -1374,6 +1374,22 @@ int AudioCodingModuleImpl::SetOpusMaxPlaybackRate(int frequency_hz) {
   return codecs_[current_send_codec_idx_]->SetOpusMaxPlaybackRate(frequency_hz);
 }
 
+int AudioCodingModuleImpl::EnableOpusDtx() {
+  CriticalSectionScoped lock(acm_crit_sect_);
+  if (!HaveValidEncoder("EnableOpusDtx")) {
+    return -1;
+  }
+  return codecs_[current_send_codec_idx_]->EnableOpusDtx();
+}
+
+int AudioCodingModuleImpl::DisableOpusDtx() {
+  CriticalSectionScoped lock(acm_crit_sect_);
+  if (!HaveValidEncoder("DisableOpusDtx")) {
+    return -1;
+  }
+  return codecs_[current_send_codec_idx_]->DisableOpusDtx();
+}
+
 int AudioCodingModuleImpl::PlayoutTimestamp(uint32_t* timestamp) {
   return receiver_.GetPlayoutTimestamp(timestamp) ? 0 : -1;
 }

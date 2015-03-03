@@ -100,6 +100,27 @@ TEST_F(AcmGenericCodecOpusTest, ResetWontChangeApplicationMode) {
   // Verify that the mode is still kVoip.
   EXPECT_EQ(AudioEncoderOpus::kVoip, GetAudioEncoderOpus()->application());
 }
+
+TEST_F(AcmGenericCodecOpusTest, ToggleDtx) {
+  // Create a stereo encoder.
+  acm_codec_params_.codec_inst.channels = 2;
+  CreateCodec();
+  // Verify that the mode is still kAudio.
+  EXPECT_EQ(AudioEncoderOpus::kAudio, GetAudioEncoderOpus()->application());
+
+  // DTX is not allowed in audio mode.
+  EXPECT_EQ(-1, codec_wrapper_->EnableOpusDtx());
+
+  EXPECT_EQ(0, codec_wrapper_->SetOpusApplication(kVoip));
+  EXPECT_EQ(0, codec_wrapper_->EnableOpusDtx());
+
+  // Audio mode is not allowed when DTX is on.
+  EXPECT_EQ(-1, codec_wrapper_->SetOpusApplication(kAudio));
+  EXPECT_EQ(AudioEncoderOpus::kVoip, GetAudioEncoderOpus()->application());
+
+  EXPECT_EQ(0, codec_wrapper_->DisableOpusDtx());
+  EXPECT_EQ(0, codec_wrapper_->SetOpusApplication(kAudio));
+}
 #endif  // WEBRTC_CODEC_OPUS
 
 }  // namespace acm2
