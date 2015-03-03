@@ -247,7 +247,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       json_format.put("framerate", (format.maxFramerate + 999) / 1000);
       json_formats.put(json_format);
     }
-    Log.d(TAG, "Supported formats: " + json_formats.toString(2));
+    Log.d(TAG, "Supported formats for camera " + id + ": "
+        +  json_formats.toString(2));
     return json_formats.toString();
   }
 
@@ -265,8 +266,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     if (listFpsRange != null)
       range = listFpsRange.get(listFpsRange.size() -1);
 
-    List<Camera.Size> supportedSizes =
-        parameters.getSupportedPreviewSizes();
+    List<Camera.Size> supportedSizes = parameters.getSupportedPreviewSizes();
     for (Camera.Size size : supportedSizes) {
       if (size.width % 16 != 0) {
         // If the width is not a multiple of 16, the frames received from the
@@ -394,7 +394,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
             range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
             range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
       }
-      parameters.setPictureSize(width, height);
+      Camera.Size pictureSize = getPictureSize(parameters, width, height);
+      parameters.setPictureSize(pictureSize.width, pictureSize.height);
       parameters.setPreviewSize(width, height);
       int format = ImageFormat.YV12;
       parameters.setPreviewFormat(format);
@@ -514,6 +515,22 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       }
     }
     return bestRange;
+  }
+
+  private static Camera.Size getPictureSize(Camera.Parameters parameters,
+      int width, int height) {
+    int bestAreaDiff = Integer.MAX_VALUE;
+    Camera.Size bestSize = null;
+    int requestedArea = width * height;
+    for (Camera.Size pictureSize : parameters.getSupportedPictureSizes()) {
+      int areaDiff = abs(requestedArea
+          - pictureSize.width * pictureSize.height);
+      if (areaDiff < bestAreaDiff) {
+        bestAreaDiff = areaDiff;
+        bestSize = pictureSize;
+      }
+    }
+    return bestSize;
   }
 
   // Called on cameraThread so must not "synchronized".
