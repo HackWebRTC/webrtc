@@ -42,14 +42,14 @@
         'interface/i420_video_frame.h',
         'interface/native_handle.h',
         'interface/texture_video_frame.h',
+        'interface/video_frame_buffer.h',
         'i420_video_frame.cc',
         'libyuv/include/webrtc_libyuv.h',
         'libyuv/include/scaler.h',
         'libyuv/webrtc_libyuv.cc',
         'libyuv/scaler.cc',
-        'plane.h',
-        'plane.cc',
-        'texture_video_frame.cc'
+        'texture_video_frame.cc',
+        'video_frame_buffer.cc',
       ],
     },
   ],  # targets

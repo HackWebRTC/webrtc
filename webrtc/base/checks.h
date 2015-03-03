@@ -185,6 +185,9 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 #define DCHECK_GT(v1, v2) EAT_STREAM_PARAMETERS((v1) > (v2))
 #endif
 
+#define RTC_UNREACHABLE_CODE_HIT false
+#define NOTREACHED() DCHECK(RTC_UNREACHABLE_CODE_HIT)
+
 // This is identical to LogMessageVoidify but in name.
 class FatalMessageVoidify {
  public:

@@ -45,8 +45,7 @@ class VideoFrameFactory {
 
   // The returned frame aliases the aliased_frame if the input color
   // space allows for aliasing, otherwise a color conversion will
-  // occur.  For safety, |input_frame| must outlive the returned
-  // frame.  Returns NULL if conversion fails.
+  // occur. Returns NULL if conversion fails.
 
   // The returned frame will be a center crop of |input_frame| with
   // size |cropped_width| x |cropped_height|.
@@ -56,9 +55,7 @@ class VideoFrameFactory {
 
   // The returned frame will be a center crop of |input_frame| with size
   // |cropped_width| x |cropped_height|, scaled to |output_width| x
-  // |output_height|. If scaling has taken place, i.e. cropped input
-  // resolution != output resolution, the returned frame will remain valid
-  // until this function is called again.
+  // |output_height|.
   virtual VideoFrame* CreateAliasedFrame(const CapturedFrame* input_frame,
                                          int cropped_input_width,
                                          int cropped_input_height,

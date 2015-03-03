@@ -393,7 +393,10 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
       return 0;
     }
 
-    WebRtcVideoRenderFrame cricket_frame(&webrtc_frame, elapsed_time_ms);
+    WebRtcVideoFrame cricket_frame(
+        webrtc_frame.video_frame_buffer(),
+        elapsed_time_ms * rtc::kNumNanosecsPerMillisec,
+        webrtc_frame.render_time_ms() * rtc::kNumNanosecsPerMillisec);
     return renderer_->RenderFrame(&cricket_frame) ? 0 : -1;
   }
 
