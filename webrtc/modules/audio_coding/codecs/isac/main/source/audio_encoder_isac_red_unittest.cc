@@ -36,13 +36,12 @@ TEST(AudioEncoderIsacRedTest, CompareRedAndNoRed) {
   AudioEncoderDecoderIsac::Config config;
   config.sample_rate_hz = kSampleRateHz;
   AudioEncoderDecoderIsac isac_encoder(config);
-  AudioEncoderDecoderIsac::Config red_config;
+  AudioEncoderDecoderIsacRed::Config red_config;
   red_config.sample_rate_hz = kSampleRateHz;
   red_config.red_payload_type = kRedPayloadType;
-  red_config.use_red = true;
   ASSERT_NE(red_config.red_payload_type, red_config.payload_type)
       << "iSAC and RED payload types must be different.";
-  AudioEncoderDecoderIsac isac_red_encoder(red_config);
+  AudioEncoderDecoderIsacRed isac_red_encoder(red_config);
   AudioEncoder::EncodedInfo info, red_info;
 
   // Note that we are not expecting any output from the redundant encoder until
