@@ -82,6 +82,7 @@
 #include "webrtc/base/socketaddress.h"
 
 namespace rtc {
+class SSLIdentity;
 class Thread;
 }
 
@@ -437,8 +438,14 @@ class PortAllocatorFactoryInterface : public rtc::RefCountInterface {
 class DTLSIdentityRequestObserver : public rtc::RefCountInterface {
  public:
   virtual void OnFailure(int error) = 0;
+  // TODO(jiayl): Unify the OnSuccess method once Chrome code is updated.
   virtual void OnSuccess(const std::string& der_cert,
                          const std::string& der_private_key) = 0;
+  // |identity| is a scoped_ptr because rtc::SSLIdentity is not copyable and the
+  // client has to get the ownership of the object to make use of it.
+  virtual void OnSuccessWithIdentityObj(
+      rtc::scoped_ptr<rtc::SSLIdentity> identity) = 0;
+
  protected:
   virtual ~DTLSIdentityRequestObserver() {}
 };
@@ -503,6 +510,7 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
 
   virtual void SetOptions(const Options& options) = 0;
 
+  // This method takes the ownership of |dtls_identity_service|.
   virtual rtc::scoped_refptr<PeerConnectionInterface>
       CreatePeerConnection(
           const PeerConnectionInterface::RTCConfiguration& configuration,
