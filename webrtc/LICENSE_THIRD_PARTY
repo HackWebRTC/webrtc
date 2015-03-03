@@ -15,7 +15,7 @@ modules/audio_device/mac/portaudio/pa_ringbuffer.c
 modules/audio_device/mac/portaudio/pa_ringbuffer.h
 modules/audio_processing/aec/aec_rdft.c
 modules/audio_processing/utility/fft4g.c
-system_wrappers/interface/scoped_ptr.h
+base/scoped_ptr.h
 system_wrappers/source/condition_variable_event_win.cc
 system_wrappers/source/set_thread_name_win.h
 system_wrappers/source/spreadsortlib/constants.hpp
@@ -245,7 +245,7 @@ License:
  */
 -------------------------------------------------------------------------------
 Files:
-system_wrappers/interface/scoped_ptr.h
+base/scoped_ptr.h
 
 License:
 //  (C) Copyright Greg Colvin and Beman Dawes 1998, 1999.
