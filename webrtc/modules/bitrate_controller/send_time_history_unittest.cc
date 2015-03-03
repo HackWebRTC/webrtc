@@ -127,4 +127,23 @@ TEST_F(SendTimeHistoryTest, HistorySizeWithWraparound) {
   EXPECT_TRUE(history_.GetSendTime(1, &timestamp, false));
 }
 
+TEST_F(SendTimeHistoryTest, InterlievedGetAndRemove) {
+  const uint16_t kSeqNo = 1;
+  const int64_t kTimestamp = 2;
+
+  history_.AddAndRemoveOldSendTimes(kSeqNo, kTimestamp);
+  history_.AddAndRemoveOldSendTimes(kSeqNo + 1, kTimestamp + 1);
+
+  int64_t time = 0;
+  EXPECT_TRUE(history_.GetSendTime(kSeqNo, &time, true));
+  EXPECT_EQ(kTimestamp, time);
+
+  history_.AddAndRemoveOldSendTimes(kSeqNo + 2, kTimestamp + 2);
+
+  EXPECT_TRUE(history_.GetSendTime(kSeqNo + 1, &time, true));
+  EXPECT_EQ(kTimestamp + 1, time);
+  EXPECT_TRUE(history_.GetSendTime(kSeqNo + 2, &time, true));
+  EXPECT_EQ(kTimestamp + 2, time);
+}
+
 }  // namespace webrtc

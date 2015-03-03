@@ -39,33 +39,33 @@ void SendTimeHistory::EraseOld(int64_t limit) {
   while (!history_.empty()) {
     auto it = history_.find(oldest_sequence_number_);
     assert(it != history_.end());
-    if (it->second <= limit) {
-      // Packet too old, remove it.
-      history_.erase(it);
-      // TODO(sprang): Warn if erasing (too many) old items?
-    } else {
-      // Oldest packet within age limit, return.
-      return;
-    }
 
-    if (history_.empty())
-      return;
+    if (it->second > limit)
+      return;  // Oldest packet within age limit, return.
 
-    // After removing element from the map, update oldest_sequence_number_ to
-    // the element with the lowest sequence number higher than the previous
-    // value (there might be gaps).
-    it = history_.upper_bound(oldest_sequence_number_);
-    if (it == history_.end()) {
-      // No element with higher sequence number than oldest_sequence_number_
-      // found, check wrap around. Note that history_.upper_bound(0) will not
-      // find 0 even if it is there, need to explicitly check for 0.
-      it = history_.find(0);
-      if (it == history_.end())
-        it = history_.upper_bound(0);
-    }
-    assert(it != history_.end());
-    oldest_sequence_number_ = it->first;
+    // TODO(sprang): Warn if erasing (too many) old items?
+    history_.erase(it);
+    UpdateOldestSequenceNumber();
   }
+}
+
+void SendTimeHistory::UpdateOldestSequenceNumber() {
+  // After removing an element from the map, update oldest_sequence_number_ to
+  // the element with the lowest sequence number higher than the previous
+  // value (there might be gaps).
+  if (history_.empty())
+    return;
+  auto it = history_.upper_bound(oldest_sequence_number_);
+  if (it == history_.end()) {
+    // No element with higher sequence number than oldest_sequence_number_
+    // found, check wrap around. Note that history_.upper_bound(0) will not
+    // find 0 even if it is there, need to explicitly check for 0.
+    it = history_.find(0);
+    if (it == history_.end())
+      it = history_.upper_bound(0);
+  }
+  assert(it != history_.end());
+  oldest_sequence_number_ = it->first;
 }
 
 bool SendTimeHistory::GetSendTime(uint16_t sequence_number,
@@ -75,8 +75,11 @@ bool SendTimeHistory::GetSendTime(uint16_t sequence_number,
   if (it == history_.end())
     return false;
   *timestamp = it->second;
-  if (remove)
+  if (remove) {
     history_.erase(it);
+    if (sequence_number == oldest_sequence_number_)
+      UpdateOldestSequenceNumber();
+  }
   return true;
 }
 

@@ -29,6 +29,7 @@ class SendTimeHistory {
 
  private:
   void EraseOld(int64_t limit);
+  void UpdateOldestSequenceNumber();
 
   const int64_t packet_age_limit_;
   uint16_t oldest_sequence_number_;  // Oldest may not be lowest.
