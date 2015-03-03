@@ -89,7 +89,8 @@ void ReceiveStatisticsProxy::DataCountersUpdated(
     const webrtc::StreamDataCounters& counters,
     uint32_t ssrc) {
   CriticalSectionScoped lock(crit_.get());
-
+  if (stats_.ssrc != ssrc)
+    return;
   stats_.rtp_stats = counters;
 }
 
