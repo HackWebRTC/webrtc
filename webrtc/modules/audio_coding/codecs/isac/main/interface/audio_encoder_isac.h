@@ -20,7 +20,6 @@ namespace webrtc {
 struct IsacFloat {
   typedef ISACStruct instance_type;
   static const bool has_swb = true;
-  static const bool has_redundant_encoder = false;
   static inline int16_t Control(instance_type* inst,
                                 int32_t rate,
                                 int16_t framesize) {
@@ -100,8 +99,7 @@ struct IsacFloat {
                                        rtp_seq_number, send_ts, arr_ts);
   }
   static inline int16_t GetRedPayload(instance_type* inst, uint8_t* encoded) {
-    FATAL() << "Should never be called.";
-    return -1;
+    return WebRtcIsac_GetRedPayload(inst, encoded);
   }
   static inline int16_t SetMaxPayloadSize(instance_type* inst,
                                           int16_t max_payload_size_bytes) {
@@ -113,16 +111,6 @@ struct IsacFloat {
 };
 
 typedef AudioEncoderDecoderIsacT<IsacFloat> AudioEncoderDecoderIsac;
-
-struct IsacRed : public IsacFloat {
-  static const bool has_redundant_encoder = true;
-
-  static inline int16_t GetRedPayload(instance_type* inst, uint8_t* encoded) {
-    return WebRtcIsac_GetRedPayload(inst, encoded);
-  }
-};
-
-typedef AudioEncoderDecoderIsacT<IsacRed> AudioEncoderDecoderIsacRed;
 
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_INTERFACE_AUDIO_ENCODER_ISAC_H_

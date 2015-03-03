@@ -41,6 +41,7 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
     int bit_rate;  // Limit on the short-term average bit rate, in bits/second.
     int max_bit_rate;
     int max_payload_size_bytes;
+    bool use_red;
   };
 
   // For constructing an encoder in channel-adaptive mode. Allowed combinations
@@ -60,6 +61,7 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
     int max_bit_rate;
     bool enforce_frame_size;  // Prevent adaptive changes to the frame size?
     int max_payload_size_bytes;
+    bool use_red;
   };
 
   explicit AudioEncoderDecoderIsacT(const Config& config);
@@ -108,6 +110,7 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
 
   const int payload_type_;
   const int red_payload_type_;
+  const bool use_red_;
 
   // iSAC encoder/decoder state, guarded by a mutex to ensure that encode calls
   // from one thread won't clash with decode calls from another thread.
@@ -131,11 +134,7 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
   uint32_t last_encoded_timestamp_ GUARDED_BY(lock_);
 
   // Redundant encoding from last time.
-  // Note: If has_redundant_encoder is false, we set the array length to 1,
-  // since zero-length arrays are not supported by all compilers.
-  uint8_t redundant_payload_[T::has_redundant_encoder
-                                 ? kSufficientEncodeBufferSizeBytes
-                                 : 1] GUARDED_BY(lock_);
+  const rtc::scoped_ptr<uint8_t[]> redundant_payload_ GUARDED_BY(lock_);
   size_t redundant_length_bytes_ GUARDED_BY(lock_);
 
   DISALLOW_COPY_AND_ASSIGN(AudioEncoderDecoderIsacT);
