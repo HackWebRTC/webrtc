@@ -24,3 +24,36 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#ifndef TALK_APP_WEBRTC_DTLSIDENTITYSERVICE_H_
+#define TALK_APP_WEBRTC_DTLSIDENTITYSERVICE_H_
+
+#include <string>
+
+#include "talk/app/webrtc/peerconnectioninterface.h"
+
+namespace webrtc {
+
+class DtlsIdentityStore;
+
+// This class forwards the request to DtlsIdentityStore to generate the
+// identity.
+class DtlsIdentityService : public webrtc::DTLSIdentityServiceInterface {
+ public:
+  explicit DtlsIdentityService(DtlsIdentityStore* store) : store_(store) {}
+
+  // DTLSIdentityServiceInterface impl.
+  // |identity_name| and |common_name| must equal to
+  // DtlsIdentityStore::kIdentityName, otherwise the request will fail and false
+  // will be returned.
+  bool RequestIdentity(const std::string& identity_name,
+                       const std::string& common_name,
+                       webrtc::DTLSIdentityRequestObserver* observer) override;
+
+ private:
+  DtlsIdentityStore* store_;
+};
+
+}  // namespace webrtc
+
+#endif  // TALK_APP_WEBRTC_DTLSIDENTITYSERVICE_H_

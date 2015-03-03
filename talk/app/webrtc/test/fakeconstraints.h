@@ -112,6 +112,7 @@ class FakeConstraints : public webrtc::MediaConstraintsInterface {
 
   void SetAllowRtpDataChannels() {
     SetMandatory(MediaConstraintsInterface::kEnableRtpDataChannels, true);
+    SetMandatory(MediaConstraintsInterface::kEnableDtlsSrtp, false);
   }
 
   void SetOptionalVAD(bool enable) {
