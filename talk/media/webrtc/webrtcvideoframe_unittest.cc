@@ -25,6 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string.h>
+
 #include "talk/media/base/videoframe_unittest.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
 
@@ -53,6 +55,8 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
         ((frame_width + 1) / 2) * ((frame_height + 1) / 2) * 2;
     rtc::scoped_ptr<uint8[]> captured_frame_buffer(
         new uint8[captured_frame.data_size]);
+    // Initialize memory to satisfy DrMemory tests.
+    memset(captured_frame_buffer.get(), 0, captured_frame.data_size);
     captured_frame.data = captured_frame_buffer.get();
 
     // Create the new frame from the CapturedFrame.
