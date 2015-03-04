@@ -64,7 +64,7 @@ const uint8_t* I420Buffer::data(PlaneType type) const {
       return data_.get() + stride_y_ * height_ +
              stride_u_ * ((height_ + 1) / 2);
     default:
-      NOTREACHED();
+      RTC_NOTREACHED();
       return nullptr;
   }
 }
@@ -84,7 +84,7 @@ int I420Buffer::stride(PlaneType type) const {
     case kVPlane:
       return stride_v_;
     default:
-      NOTREACHED();
+      RTC_NOTREACHED();
       return 0;
   }
 }
@@ -115,17 +115,17 @@ int TextureBuffer::height() const {
 }
 
 const uint8_t* TextureBuffer::data(PlaneType type) const {
-  NOTREACHED();  // Should not be called.
+  RTC_NOTREACHED();  // Should not be called.
   return nullptr;
 }
 
 uint8_t* TextureBuffer::data(PlaneType type) {
-  NOTREACHED();  // Should not be called.
+  RTC_NOTREACHED();  // Should not be called.
   return nullptr;
 }
 
 int TextureBuffer::stride(PlaneType type) const {
-  NOTREACHED();  // Should not be called.
+  RTC_NOTREACHED();  // Should not be called.
   return 0;
 }
 

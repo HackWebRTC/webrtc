@@ -186,7 +186,7 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 #endif
 
 #define RTC_UNREACHABLE_CODE_HIT false
-#define NOTREACHED() DCHECK(RTC_UNREACHABLE_CODE_HIT)
+#define RTC_NOTREACHED() DCHECK(RTC_UNREACHABLE_CODE_HIT)
 
 // This is identical to LogMessageVoidify but in name.
 class FatalMessageVoidify {
