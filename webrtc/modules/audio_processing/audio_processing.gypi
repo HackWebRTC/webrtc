@@ -194,7 +194,7 @@
             'aecm/aecm_core_mips.c',
           ],
           'conditions': [
-            ['mips_fpu==1', {
+            ['mips_float_abi=="hard"', {
               'sources': [
                 'aec/aec_core_mips.c',
                 'aec/aec_rdft_mips.c',

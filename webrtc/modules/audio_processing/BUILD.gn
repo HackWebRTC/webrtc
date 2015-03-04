@@ -185,7 +185,7 @@ source_set("audio_processing") {
 
   if (current_cpu == "mipsel") {
     sources += [ "aecm/aecm_core_mips.c" ]
-    if (mips_fpu)  {
+    if (mips_float_abi == "hard") {
       sources += [
         "aec/aec_core_mips.c",
         "aec/aec_rdft_mips.c",

@@ -139,28 +139,19 @@ config("common_config") {
 
   if (current_cpu == "mipsel") {
     defines += [ "MIPS32_LE" ]
-    if (mips_fpu) {
+    if (mips_float_abi == "hard") {
       defines += [ "MIPS_FPU_LE" ]
-      cflags += [ "-mhard-float" ]
-    } else {
-      cflags += [ "-msoft-float" ]
     }
     if (mips_arch_variant == "r2") {
       defines += [ "MIPS32_R2_LE" ]
-      cflags += [ "-mips32r2" ]
-      cflags_cc += [ "-mips32r2" ]
     }
     if (mips_dsp_rev == 1) {
       defines += [ "MIPS_DSP_R1_LE" ]
-      cflags += [ "-mdsp" ]
-      cflags_cc += [ "-mdsp" ]
     } else if (mips_dsp_rev == 2) {
       defines += [
         "MIPS_DSP_R1_LE",
         "MIPS_DSP_R2_LE",
       ]
-      cflags += [ "-mdspr2" ]
-      cflags_cc += [ "-mdspr2" ]
     }
   }
 
