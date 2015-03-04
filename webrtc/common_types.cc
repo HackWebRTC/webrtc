@@ -12,19 +12,11 @@
 
 #include <string.h>
 
-#include "webrtc/base/checks.h"
-
 namespace webrtc {
 
-int InStream::Rewind() {
-  DCHECK(false);
-  return -1;
-}
+int InStream::Rewind() { return -1; }
 
-int OutStream::Rewind() {
-  DCHECK(false);
-  return -1;
-}
+int OutStream::Rewind() { return -1; }
 
 StreamDataCounters::StreamDataCounters() : first_packet_time_ms(-1) {}
 
