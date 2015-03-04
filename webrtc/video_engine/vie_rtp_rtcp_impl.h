@@ -121,8 +121,6 @@ class ViERTP_RTCPImpl
   virtual int GetEstimatedReceiveBandwidth(
       const int video_channel,
       unsigned int* estimated_bandwidth) const;
-  virtual int GetReceiveBandwidthEstimatorStats(
-      const int video_channel, ReceiveBandwidthEstimatorStats* output) const;
   virtual int GetPacerQueuingDelayMs(const int video_channel,
                                      int64_t* delay_ms) const;
   virtual int StartRTPDump(const int video_channel,

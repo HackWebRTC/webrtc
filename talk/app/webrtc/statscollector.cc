@@ -280,19 +280,6 @@ void ExtractStats(const cricket::BandwidthEstimationInfo& info,
                    info.transmit_bitrate);
   report->AddValue(StatsReport::kStatsValueNameBucketDelay,
                    info.bucket_delay);
-  if (level >= PeerConnectionInterface::kStatsOutputLevelDebug) {
-    report->AddValue(
-        StatsReport::kStatsValueNameRecvPacketGroupPropagationDeltaSumDebug,
-        info.total_received_propagation_delta_ms);
-    if (info.recent_received_propagation_delta_ms.size() > 0) {
-      report->AddValue(
-          StatsReport::kStatsValueNameRecvPacketGroupPropagationDeltaDebug,
-          info.recent_received_propagation_delta_ms);
-      report->AddValue(
-          StatsReport::kStatsValueNameRecvPacketGroupArrivalTimeDebug,
-          info.recent_received_packet_group_arrival_time_ms);
-    }
-  }
 }
 
 void ExtractRemoteStats(const cricket::MediaSenderInfo& info,
@@ -817,12 +804,8 @@ void StatsCollector::ExtractVideoInfo(
   if (!session_->video_channel())
     return;
 
-  cricket::StatsOptions options;
-  options.include_received_propagation_stats =
-      (level >= PeerConnectionInterface::kStatsOutputLevelDebug) ?
-          true : false;
   cricket::VideoMediaInfo video_info;
-  if (!session_->video_channel()->GetStats(options, &video_info)) {
+  if (!session_->video_channel()->GetStats(&video_info)) {
     LOG(LS_ERROR) << "Failed to get video channel stats.";
     return;
   }

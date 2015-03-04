@@ -1681,7 +1681,7 @@ TEST_F(WebRtcVideoChannel2Test, EstimatesNtpStartTimeAndElapsedTimeCorrectly) {
 
   // Verify that NTP time has been correctly deduced.
   cricket::VideoMediaInfo info;
-  ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1u, info.receivers.size());
   EXPECT_EQ(kInitialNtpTimeMs, info.receivers[0].capture_start_ntp_time_ms);
 }
@@ -2074,7 +2074,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsReportsCpuOveruseMetrics) {
   stream->SetStats(stats);
 
   cricket::VideoMediaInfo info;
-  ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_TRUE(channel_->GetStats(&info));
   EXPECT_EQ(stats.avg_encode_time_ms, info.senders[0].avg_encode_ms);
   EXPECT_EQ(stats.encode_usage_percent, info.senders[0].encode_usage_percent);
 }
@@ -2091,7 +2091,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsReportsUpperResolution) {
   stream->SetStats(stats);
 
   cricket::VideoMediaInfo info;
-  ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1u, info.senders.size());
   EXPECT_EQ(123, info.senders[0].send_frame_width);
   EXPECT_EQ(90, info.senders[0].send_frame_height);
@@ -2127,7 +2127,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationStats) {
   // Capture format VGA -> adapt (OnCpuResolutionRequest downgrade) -> VGA/2.
   EXPECT_TRUE(video_capturer_vga.CaptureFrame());
   cricket::VideoMediaInfo info;
-  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
   EXPECT_EQ(1, info.senders[0].adapt_changes);
   EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_CPU,
@@ -2137,7 +2137,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationStats) {
   overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kUnderuse);
   EXPECT_TRUE(video_capturer_vga.CaptureFrame());
   info.Clear();
-  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
   EXPECT_EQ(2, info.senders[0].adapt_changes);
   EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_NONE,
@@ -2146,7 +2146,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationStats) {
   // No capturer (no adapter). Adapt changes from old adapter should be kept.
   EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], NULL));
   info.Clear();
-  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
   EXPECT_EQ(2, info.senders[0].adapt_changes);
   EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_NONE,
@@ -2163,7 +2163,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationStats) {
   overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
   EXPECT_TRUE(video_capturer_hd.CaptureFrame());
   info.Clear();
-  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
   EXPECT_EQ(3, info.senders[0].adapt_changes);
   EXPECT_EQ(CoordinatedVideoAdapter::ADAPTREASON_CPU,
@@ -2187,7 +2187,7 @@ TEST_F(WebRtcVideoChannel2Test,
   stream->SetStats(stats);
 
   cricket::VideoMediaInfo info;
-  ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_TRUE(channel_->GetStats(&info));
   EXPECT_EQ(7, info.senders[0].firs_rcvd);
   EXPECT_EQ(10, info.senders[0].nacks_rcvd);
   EXPECT_EQ(13, info.senders[0].plis_rcvd);
@@ -2203,7 +2203,7 @@ TEST_F(WebRtcVideoChannel2Test,
   stream->SetStats(stats);
 
   cricket::VideoMediaInfo info;
-  ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_TRUE(channel_->GetStats(&info));
   EXPECT_EQ(stats.rtcp_packet_type_counts.fir_packets,
             info.receivers[0].firs_sent);
   EXPECT_EQ(stats.rtcp_packet_type_counts.nack_packets,
@@ -2225,7 +2225,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTranslatesDecodeStatsCorrectly) {
   stream->SetStats(stats);
 
   cricket::VideoMediaInfo info;
-  ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_TRUE(channel_->GetStats(&info));
   EXPECT_EQ(stats.decode_ms, info.receivers[0].decode_ms);
   EXPECT_EQ(stats.max_decode_ms, info.receivers[0].max_decode_ms);
   EXPECT_EQ(stats.current_delay_ms, info.receivers[0].current_delay_ms);
@@ -2243,7 +2243,7 @@ TEST_F(WebRtcVideoChannel2Test, TranslatesCallStatsCorrectly) {
   fake_call_->SetStats(stats);
 
   cricket::VideoMediaInfo info;
-  ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(2u, info.senders.size());
   EXPECT_EQ(stats.rtt_ms, info.senders[0].rtt_ms);
   EXPECT_EQ(stats.rtt_ms, info.senders[1].rtt_ms);
@@ -2271,7 +2271,7 @@ TEST_F(WebRtcVideoChannel2Test, TranslatesSenderBitrateStatsCorrectly) {
   stream2->SetStats(stats2);
 
   cricket::VideoMediaInfo info;
-  ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  ASSERT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(2u, info.senders.size());
   // Assuming stream and stream2 corresponds to senders[0] and [1] respectively
   // is OK as std::maps are sorted and AddSendStream() gives increasing SSRCs.
@@ -2421,7 +2421,7 @@ class WebRtcVideoChannel2SimulcastTest : public WebRtcVideoEngine2SimulcastTest,
       }
     }
     cricket::VideoMediaInfo info;
-    ASSERT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+    ASSERT_TRUE(channel_->GetStats(&info));
     ASSERT_EQ(1u, info.senders.size());
     EXPECT_EQ(total_max_bitrate_bps, info.senders[0].preferred_bitrate);
 

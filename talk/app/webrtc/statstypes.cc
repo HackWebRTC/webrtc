@@ -402,12 +402,6 @@ const char* StatsReport::Value::display_name() const {
       return "googPreferredJitterBufferMs";
     case kStatsValueNameReadable:
       return "googReadable";
-    case kStatsValueNameRecvPacketGroupArrivalTimeDebug:
-      return "googReceivedPacketGroupArrivalTimeDebug";
-    case kStatsValueNameRecvPacketGroupPropagationDeltaDebug:
-      return "googReceivedPacketGroupPropagationDeltaDebug";
-    case kStatsValueNameRecvPacketGroupPropagationDeltaSumDebug:
-      return "googReceivedPacketGroupPropagationDeltaSumDebug";
     case kStatsValueNameRemoteAddress:
       return "googRemoteAddress";
     case kStatsValueNameRemoteCandidateId:

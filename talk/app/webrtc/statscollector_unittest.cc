@@ -47,7 +47,6 @@
 #include "webrtc/base/network.h"
 #include "webrtc/p2p/base/fakesession.h"
 
-using cricket::StatsOptions;
 using rtc::scoped_ptr;
 using testing::_;
 using testing::DoAll;
@@ -98,7 +97,7 @@ class MockVideoMediaChannel : public cricket::FakeVideoMediaChannel {
   MockVideoMediaChannel() : cricket::FakeVideoMediaChannel(NULL) {}
 
   // MOCK_METHOD0(transport_channel, cricket::TransportChannel*());
-  MOCK_METHOD2(GetStats, bool(const StatsOptions&, cricket::VideoMediaInfo*));
+  MOCK_METHOD1(GetStats, bool(cricket::VideoMediaInfo*));
 };
 
 class MockVoiceMediaChannel : public cricket::FakeVoiceMediaChannel {
@@ -809,8 +808,8 @@ TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
 
   EXPECT_CALL(session_, video_channel()).WillRepeatedly(Return(&video_channel));
   EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
-  EXPECT_CALL(*media_channel, GetStats(_, _))
-      .WillOnce(DoAll(SetArgPointee<1>(stats_read),
+  EXPECT_CALL(*media_channel, GetStats(_))
+      .WillOnce(DoAll(SetArgPointee<0>(stats_read),
                       Return(true)));
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
@@ -849,9 +848,8 @@ TEST_F(StatsCollectorTest, BandwidthEstimationInfoIsReported) {
 
   EXPECT_CALL(session_, video_channel()).WillRepeatedly(Return(&video_channel));
   EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
-  EXPECT_CALL(*media_channel, GetStats(_, _))
-    .WillOnce(DoAll(SetArgPointee<1>(stats_read),
-                    Return(true)));
+  EXPECT_CALL(*media_channel, GetStats(_))
+      .WillOnce(DoAll(SetArgPointee<0>(stats_read), Return(true)));
 
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
@@ -944,8 +942,8 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
 
   EXPECT_CALL(session_, video_channel()).WillRepeatedly(Return(&video_channel));
   EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
-  EXPECT_CALL(*media_channel, GetStats(_, _))
-    .WillOnce(DoAll(SetArgPointee<1>(stats_read),
+  EXPECT_CALL(*media_channel, GetStats(_))
+    .WillOnce(DoAll(SetArgPointee<0>(stats_read),
                     Return(true)));
 
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
@@ -1005,8 +1003,8 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
 
   EXPECT_CALL(session_, video_channel()).WillRepeatedly(Return(&video_channel));
   EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
-  EXPECT_CALL(*media_channel, GetStats(_, _))
-    .WillRepeatedly(DoAll(SetArgPointee<1>(stats_read),
+  EXPECT_CALL(*media_channel, GetStats(_))
+    .WillRepeatedly(DoAll(SetArgPointee<0>(stats_read),
                           Return(true)));
 
   InitSessionStats(kVcName);
@@ -1097,8 +1095,8 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
 
   EXPECT_CALL(session_, video_channel()).WillRepeatedly(Return(&video_channel));
   EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
-  EXPECT_CALL(*media_channel, GetStats(_, _))
-    .WillRepeatedly(DoAll(SetArgPointee<1>(stats_read),
+  EXPECT_CALL(*media_channel, GetStats(_))
+    .WillRepeatedly(DoAll(SetArgPointee<0>(stats_read),
                           Return(true)));
 
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
@@ -1134,8 +1132,8 @@ TEST_F(StatsCollectorTest, ReportsFromRemoteTrack) {
 
   EXPECT_CALL(session_, video_channel()).WillRepeatedly(Return(&video_channel));
   EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
-  EXPECT_CALL(*media_channel, GetStats(_, _))
-      .WillOnce(DoAll(SetArgPointee<1>(stats_read),
+  EXPECT_CALL(*media_channel, GetStats(_))
+      .WillOnce(DoAll(SetArgPointee<0>(stats_read),
                       Return(true)));
 
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
@@ -1413,52 +1411,6 @@ TEST_F(StatsCollectorTest, UnsupportedDigestIgnored) {
 
   TestCertificateReports(local_cert, std::vector<std::string>(1, local_der),
                          remote_cert, std::vector<std::string>());
-}
-
-// Verifies the correct optons are passed to the VideoMediaChannel when using
-// verbose output level.
-TEST_F(StatsCollectorTest, StatsOutputLevelVerbose) {
-  StatsCollectorForTest stats(&session_);
-
-  MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
-  cricket::VideoChannel video_channel(rtc::Thread::Current(),
-      media_engine_, media_channel, &session_, "", false, NULL);
-
-  cricket::VideoMediaInfo stats_read;
-  cricket::BandwidthEstimationInfo bwe;
-  bwe.total_received_propagation_delta_ms = 10;
-  bwe.recent_received_propagation_delta_ms.push_back(100);
-  bwe.recent_received_propagation_delta_ms.push_back(200);
-  bwe.recent_received_packet_group_arrival_time_ms.push_back(1000);
-  bwe.recent_received_packet_group_arrival_time_ms.push_back(2000);
-  stats_read.bw_estimations.push_back(bwe);
-
-  EXPECT_CALL(session_, video_channel())
-    .WillRepeatedly(Return(&video_channel));
-  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
-
-  StatsOptions options;
-  options.include_received_propagation_stats = true;
-  EXPECT_CALL(*media_channel, GetStats(
-      Field(&StatsOptions::include_received_propagation_stats, true),
-      _))
-    .WillOnce(DoAll(SetArgPointee<1>(stats_read),
-                    Return(true)));
-
-  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelDebug);
-  StatsReports reports;  // returned values.
-  stats.GetStats(NULL, &reports);
-  std::string result = ExtractBweStatsValue(
-      reports,
-      StatsReport::kStatsValueNameRecvPacketGroupPropagationDeltaSumDebug);
-  EXPECT_EQ("10", result);
-  result = ExtractBweStatsValue(
-      reports,
-      StatsReport::kStatsValueNameRecvPacketGroupPropagationDeltaDebug);
-  EXPECT_EQ("[100, 200]", result);
-  result = ExtractBweStatsValue(
-      reports, StatsReport::kStatsValueNameRecvPacketGroupArrivalTimeDebug);
-  EXPECT_EQ("[1000, 2000]", result);
 }
 
 // This test verifies that a local stats object can get statistics via

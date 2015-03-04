@@ -2520,8 +2520,7 @@ bool WebRtcVideoMediaChannel::SetRenderer(uint32 ssrc,
   return true;
 }
 
-bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
-                                       VideoMediaInfo* info) {
+bool WebRtcVideoMediaChannel::GetStats(VideoMediaInfo* info) {
   // Get sender statistics and build VideoSenderInfo.
   unsigned int total_bitrate_sent = 0;
   unsigned int video_bitrate_sent = 0;
@@ -2763,24 +2762,6 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
   // Build BandwidthEstimationInfo.
   // TODO(zhurunz): Add real unittest for this.
   BandwidthEstimationInfo bwe;
-
-  // TODO(jiayl): remove the condition when the necessary changes are available
-  // outside the dev branch.
-  if (options.include_received_propagation_stats) {
-    webrtc::ReceiveBandwidthEstimatorStats additional_stats;
-    // Only call for the default channel because the returned stats are
-    // collected for all the channels using the same estimator.
-    if (engine_->vie()->rtp()->GetReceiveBandwidthEstimatorStats(
-        GetDefaultRecvChannel()->channel_id(), &additional_stats) == 0) {
-      bwe.total_received_propagation_delta_ms =
-          additional_stats.total_propagation_time_delta_ms;
-      bwe.recent_received_propagation_delta_ms.swap(
-          additional_stats.recent_propagation_time_delta_ms);
-      bwe.recent_received_packet_group_arrival_time_ms.swap(
-          additional_stats.recent_arrival_time_ms);
-    }
-  }
-
   engine_->vie()->rtp()->GetPacerQueuingDelayMs(
       GetDefaultRecvChannel()->channel_id(), &bwe.bucket_delay);
 

@@ -789,19 +789,6 @@ int ViERTP_RTCPImpl::GetEstimatedReceiveBandwidth(
   return 0;
 }
 
-int ViERTP_RTCPImpl::GetReceiveBandwidthEstimatorStats(
-    const int video_channel,
-    ReceiveBandwidthEstimatorStats* output) const {
-  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
-  ViEChannel* vie_channel = cs.Channel(video_channel);
-  if (!vie_channel) {
-    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
-    return -1;
-  }
-  vie_channel->GetReceiveBandwidthEstimatorStats(output);
-  return 0;
-}
-
 int ViERTP_RTCPImpl::GetPacerQueuingDelayMs(
     const int video_channel, int64_t* delay_ms) const {
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));

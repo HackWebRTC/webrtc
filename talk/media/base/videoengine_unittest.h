@@ -845,7 +845,7 @@ class VideoMediaChannelTest : public testing::Test,
         EXPECT_FRAME_WAIT(frame + i * fps, codec.width, codec.height, kTimeout);
       }
       cricket::VideoMediaInfo info;
-      EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+      EXPECT_TRUE(channel_->GetStats(&info));
       // For webrtc, |framerate_sent| and |framerate_rcvd| depend on periodic
       // callbacks (1 sec).
       // Received |fraction_lost| and |packets_lost| are from sent RTCP packet.
@@ -867,7 +867,7 @@ class VideoMediaChannelTest : public testing::Test,
     SendReceiveManyAndGetStats(DefaultCodec(), kDurationSec, kFps);
 
     cricket::VideoMediaInfo info;
-    EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+    EXPECT_TRUE(channel_->GetStats(&info));
 
     ASSERT_EQ(1U, info.senders.size());
     // TODO(whyuan): bytes_sent and bytes_rcvd are different. Are both payload?
@@ -929,7 +929,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_FRAME_ON_RENDERER_WAIT(
         renderer2, 1, DefaultCodec().width, DefaultCodec().height, kTimeout);
     cricket::VideoMediaInfo info;
-    EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+    EXPECT_TRUE(channel_->GetStats(&info));
 
     ASSERT_EQ(1U, info.senders.size());
     // TODO(whyuan): bytes_sent and bytes_rcvd are different. Are both payload?
@@ -995,7 +995,7 @@ class VideoMediaChannelTest : public testing::Test,
     cricket::VideoMediaInfo info;
     for (uint32 i = 0; i < kTimeout; ++i) {
       rtc::Thread::Current()->ProcessMessages(1);
-      EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+      EXPECT_TRUE(channel_->GetStats(&info));
       ASSERT_EQ(2U, info.senders.size());
       if (info.senders[0].packets_sent + info.senders[1].packets_sent ==
           NumRtpPackets()) {

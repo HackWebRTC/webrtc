@@ -1745,7 +1745,7 @@ TEST_F(WebRtcVideoEngineTestFake, SendReceiveBitratesStats) {
   EXPECT_NE(first_receive_channel, second_receive_channel);
 
   cricket::VideoMediaInfo info;
-  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.bw_estimations.size());
   ASSERT_EQ(0, info.bw_estimations[0].actual_enc_bitrate);
   ASSERT_EQ(0, info.bw_estimations[0].transmit_bitrate);
@@ -1771,7 +1771,7 @@ TEST_F(WebRtcVideoEngineTestFake, SendReceiveBitratesStats) {
   vie_.SetReceiveBandwidthEstimate(first_receive_channel, receive_bandwidth);
 
   info.Clear();
-  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.bw_estimations.size());
   ASSERT_EQ(send_video_bitrate, info.bw_estimations[0].actual_enc_bitrate);
   ASSERT_EQ(send_total_bitrate, info.bw_estimations[0].transmit_bitrate);
@@ -1789,7 +1789,7 @@ TEST_F(WebRtcVideoEngineTestFake, SendReceiveBitratesStats) {
   EXPECT_EQ(0, vie_.StartReceive(second_receive_channel));
 
   info.Clear();
-  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.bw_estimations.size());
   ASSERT_EQ(2 * send_video_bitrate, info.bw_estimations[0].actual_enc_bitrate);
   ASSERT_EQ(2 * send_total_bitrate, info.bw_estimations[0].transmit_bitrate);
@@ -3729,7 +3729,7 @@ TEST_F(WebRtcVideoEngineSimulcastTestFake, GetStatsWithMultipleSsrcs) {
 
   // Get stats and verify there are 2 ssrcs.
   cricket::VideoMediaInfo info;
-  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
   ASSERT_EQ(2U, info.senders[0].ssrcs().size());
   EXPECT_EQ(1U, info.senders[0].ssrcs()[0]);
@@ -4176,7 +4176,7 @@ TEST_F(WebRtcVideoEngineSimulcastTestFake, GetAdaptStats) {
   // Capture format VGA -> adapt (OnCpuResolutionRequest downgrade) -> VGA/2.
   EXPECT_TRUE(video_capturer_vga.CaptureFrame());
   cricket::VideoMediaInfo info;
-  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
   EXPECT_EQ(1, info.senders[0].adapt_changes);
   EXPECT_EQ(cricket::CoordinatedVideoAdapter::ADAPTREASON_CPU,
@@ -4186,7 +4186,7 @@ TEST_F(WebRtcVideoEngineSimulcastTestFake, GetAdaptStats) {
   observer->NormalUsage();
   EXPECT_TRUE(video_capturer_vga.CaptureFrame());
   info.Clear();
-  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
   EXPECT_EQ(2, info.senders[0].adapt_changes);
   EXPECT_EQ(cricket::CoordinatedVideoAdapter::ADAPTREASON_NONE,
@@ -4196,7 +4196,7 @@ TEST_F(WebRtcVideoEngineSimulcastTestFake, GetAdaptStats) {
   EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], NULL));
   EXPECT_TRUE(vie_.GetCpuOveruseObserver(channel0) == NULL);
   info.Clear();
-  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
   EXPECT_EQ(2, info.senders[0].adapt_changes);
   EXPECT_EQ(cricket::CoordinatedVideoAdapter::ADAPTREASON_NONE,
@@ -4215,7 +4215,7 @@ TEST_F(WebRtcVideoEngineSimulcastTestFake, GetAdaptStats) {
   observer->OveruseDetected();
   EXPECT_TRUE(video_capturer_hd.CaptureFrame());
   info.Clear();
-  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
+  EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
   EXPECT_EQ(3, info.senders[0].adapt_changes);
   EXPECT_EQ(cricket::CoordinatedVideoAdapter::ADAPTREASON_CPU,

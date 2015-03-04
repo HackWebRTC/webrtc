@@ -279,8 +279,7 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   virtual bool AddRecvStream(const StreamParams& sp) OVERRIDE;
   virtual bool RemoveRecvStream(uint32 ssrc) OVERRIDE;
   virtual bool SetRenderer(uint32 ssrc, VideoRenderer* renderer) OVERRIDE;
-  virtual bool GetStats(const StatsOptions& options,
-                        VideoMediaInfo* info) OVERRIDE;
+  virtual bool GetStats(VideoMediaInfo* info) OVERRIDE;
   virtual bool SetCapturer(uint32 ssrc, VideoCapturer* capturer) OVERRIDE;
   virtual bool SendIntraFrame() OVERRIDE;
   virtual bool RequestIntraFrame() OVERRIDE;

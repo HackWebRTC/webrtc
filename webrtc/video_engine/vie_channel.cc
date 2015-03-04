@@ -1383,11 +1383,6 @@ void ViEChannel::RegisterSendBitrateObserver(
   send_bitrate_observer_.Set(observer);
 }
 
-void ViEChannel::GetReceiveBandwidthEstimatorStats(
-    ReceiveBandwidthEstimatorStats* output) const {
-  vie_receiver_.GetReceiveBandwidthEstimatorStats(output);
-}
-
 int32_t ViEChannel::StartRTPDump(const char file_nameUTF8[1024],
                                  RTPDirections direction) {
   if (direction == kRtpIncoming) {

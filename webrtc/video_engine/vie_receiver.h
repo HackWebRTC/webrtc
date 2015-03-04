@@ -84,9 +84,6 @@ class ViEReceiver : public RtpData {
   virtual bool OnRecoveredPacket(const uint8_t* packet,
                                  size_t packet_length) OVERRIDE;
 
-  void GetReceiveBandwidthEstimatorStats(
-      ReceiveBandwidthEstimatorStats* output) const;
-
   ReceiveStatistics* GetReceiveStatistics() const;
 
   void ReceivedBWEPacket(int64_t arrival_time_ms, size_t payload_size,

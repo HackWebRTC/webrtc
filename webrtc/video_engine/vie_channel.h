@@ -226,8 +226,6 @@ class ViEChannel
   // to avoid deadlocks.
   bool GetSendSideDelay(int* avg_send_delay, int* max_send_delay) const;
   void RegisterSendSideDelayObserver(SendSideDelayObserver* observer);
-  void GetReceiveBandwidthEstimatorStats(
-      ReceiveBandwidthEstimatorStats* output) const;
 
   // Called on any new send bitrate estimate.
   void RegisterSendBitrateObserver(BitrateStatisticsObserver* observer);

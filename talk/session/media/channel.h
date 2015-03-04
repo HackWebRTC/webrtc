@@ -529,7 +529,7 @@ class VideoChannel : public BaseChannel {
   int GetScreencastFps(uint32 ssrc);
   int GetScreencastMaxPixels(uint32 ssrc);
   // Get statistics about the current media session.
-  bool GetStats(const StatsOptions& options, VideoMediaInfo* stats);
+  bool GetStats(VideoMediaInfo* stats);
 
   sigslot::signal2<VideoChannel*, const std::vector<ConnectionInfo>&>
       SignalConnectionMonitor;

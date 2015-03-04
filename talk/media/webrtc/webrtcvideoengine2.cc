@@ -1001,8 +1001,7 @@ bool WebRtcVideoChannel2::GetRenderer(uint32 ssrc, VideoRenderer** renderer) {
   return true;
 }
 
-bool WebRtcVideoChannel2::GetStats(const StatsOptions& options,
-                                   VideoMediaInfo* info) {
+bool WebRtcVideoChannel2::GetStats(VideoMediaInfo* info) {
   info->Clear();
   FillSenderStats(info);
   FillReceiverStats(info);

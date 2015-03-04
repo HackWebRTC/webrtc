@@ -406,13 +406,6 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
       const int video_channel,
       unsigned int* estimated_bandwidth) const = 0;
 
-  // This function gets the receive-side bandwidth esitmator statistics.
-  // TODO(jiayl): remove the default impl when libjingle's FakeWebRtcVideoEngine
-  // is updated.
-  virtual int GetReceiveBandwidthEstimatorStats(
-      const int video_channel,
-      ReceiveBandwidthEstimatorStats* output) const { return -1; }
-
   // This function gets the PacedSender queuing delay for the last sent frame.
   // TODO(jiayl): remove the default impl when libjingle is updated.
   virtual int GetPacerQueuingDelayMs(
