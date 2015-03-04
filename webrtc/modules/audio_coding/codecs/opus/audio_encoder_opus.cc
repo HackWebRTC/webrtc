@@ -202,6 +202,7 @@ void AudioEncoderOpus::EncodeInternal(uint32_t rtp_timestamp,
   info->payload_type = payload_type_;
   // Allows Opus to send empty packets.
   info->send_even_if_empty = true;
+  info->speech = r > 0;
 }
 
 }  // namespace webrtc

@@ -261,6 +261,7 @@ TEST_F(AudioEncoderCngTest, EncodePassive) {
       if ((i % (config_.sid_frame_interval_ms / 10)) < kBlocksPerFrame) {
         // If so, verify that we got a CNG encoding.
         EXPECT_EQ(kCngPayloadType, encoded_info_.payload_type);
+        EXPECT_FALSE(encoded_info_.speech);
         EXPECT_EQ(static_cast<size_t>(config_.num_cng_coefficients) + 1,
                   encoded_info_.encoded_bytes);
         EXPECT_EQ(expected_timestamp, encoded_info_.encoded_timestamp);
@@ -282,19 +283,23 @@ TEST_F(AudioEncoderCngTest, MixedActivePassive) {
   EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
       .Times(6);
   EXPECT_TRUE(CheckMixedActivePassive(Vad::kActive, Vad::kActive));
+  EXPECT_TRUE(encoded_info_.speech);
 
   // First half of the frame is active speech.
   EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
       .Times(6);
   EXPECT_TRUE(CheckMixedActivePassive(Vad::kActive, Vad::kPassive));
+  EXPECT_TRUE(encoded_info_.speech);
 
   // Second half of the frame is active speech.
   EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
       .Times(6);
   EXPECT_TRUE(CheckMixedActivePassive(Vad::kPassive, Vad::kActive));
+  EXPECT_TRUE(encoded_info_.speech);
 
   // All of the frame is passive speech. Expect no calls to |mock_encoder_|.
   EXPECT_FALSE(CheckMixedActivePassive(Vad::kPassive, Vad::kPassive));
+  EXPECT_FALSE(encoded_info_.speech);
 }
 
 // These tests verify that the audio is partitioned into larger blocks before

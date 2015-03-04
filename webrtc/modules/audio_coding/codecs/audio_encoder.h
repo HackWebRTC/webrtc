@@ -27,12 +27,14 @@ class AudioEncoder {
         : encoded_bytes(0),
           encoded_timestamp(0),
           payload_type(0),
-          send_even_if_empty(false) {}
+          send_even_if_empty(false),
+          speech(true) {}
 
     size_t encoded_bytes;
     uint32_t encoded_timestamp;
     int payload_type;
     bool send_even_if_empty;
+    bool speech;
   };
 
   // This is the main struct for auxiliary encoding information. Each encoded

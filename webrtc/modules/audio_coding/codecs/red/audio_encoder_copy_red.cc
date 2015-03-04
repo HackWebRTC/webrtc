@@ -88,6 +88,7 @@ void AudioEncoderCopyRed::EncodeInternal(uint32_t rtp_timestamp,
     CHECK(secondary_encoded_);
     memcpy(secondary_encoded_.get(), encoded, info->encoded_bytes);
     secondary_info_ = *info;
+    DCHECK_EQ(info->speech, info->redundant[0].speech);
   }
   // Update main EncodedInfo.
   info->payload_type = red_payload_type_;

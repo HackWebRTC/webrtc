@@ -150,6 +150,7 @@ void AudioEncoderCng::EncodeInternal(uint32_t rtp_timestamp,
       info->encoded_timestamp = first_timestamp_in_buffer_;
       info->payload_type = cng_payload_type_;
       info->send_even_if_empty = true;
+      info->speech = false;
       last_frame_active_ = false;
       break;
     }
