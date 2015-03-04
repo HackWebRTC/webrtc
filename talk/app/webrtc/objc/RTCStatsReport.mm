@@ -55,9 +55,9 @@
     _timestamp = statsReport.timestamp();
     NSMutableArray* values =
         [NSMutableArray arrayWithCapacity:statsReport.values().size()];
-    for (const auto& v : statsReport.values()) {
-      RTCPair* pair = [[RTCPair alloc] initWithKey:@(v->display_name())
-                                             value:@(v->value.c_str())];
+    for (const auto& it : statsReport.values()) {
+      RTCPair* pair = [[RTCPair alloc] initWithKey:@(it.second->display_name())
+                                             value:@(it.second->value.c_str())];
       [values addObject:pair];
     }
     _values = values;

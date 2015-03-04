@@ -33,8 +33,8 @@
 
 #include <algorithm>
 #include <list>
+#include <map>
 #include <string>
-#include <vector>
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/linked_ptr.h"
@@ -241,7 +241,7 @@ class StatsReport {
     // Returns the string representation of |name|.
     const char* display_name() const;
     const std::string& ToString() const;
-
+    // TODO(tommi): Move |name| and |display_name| out of the Value struct.
     const StatsValueName name;
     // TODO(tommi): Support more value types than string.
     const std::string value;
@@ -251,7 +251,7 @@ class StatsReport {
   };
 
   typedef rtc::linked_ptr<Value> ValuePtr;
-  typedef std::vector<ValuePtr> Values;
+  typedef std::map<StatsValueName, ValuePtr> Values;
 
   // Ownership of |id| is passed to |this|.
   explicit StatsReport(rtc::scoped_ptr<Id> id);
@@ -272,17 +272,16 @@ class StatsReport {
   StatsType type() const { return id_->type(); }
   double timestamp() const { return timestamp_; }
   void set_timestamp(double t) { timestamp_ = t; }
+  bool empty() const { return values_.empty(); }
   const Values& values() const { return values_; }
 
   const char* TypeToString() const;
 
-  void AddValue(StatsValueName name, const std::string& value);
-  void AddValue(StatsValueName name, int64 value);
-  template <typename T>
-  void AddValue(StatsValueName name, const std::vector<T>& value);
+  void AddString(StatsValueName name, const std::string& value);
+  void AddInt64(StatsValueName name, int64 value);
+  void AddInt(StatsValueName name, int value);
+  void AddFloat(StatsValueName name, float value);
   void AddBoolean(StatsValueName name, bool value);
-
-  void ReplaceValue(StatsValueName name, const std::string& value);
 
   void ResetValues();
 

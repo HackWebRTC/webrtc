@@ -189,24 +189,21 @@ class MockStatsObserver : public webrtc::StatsObserver {
   bool GetIntValue(const StatsReport* report,
                    StatsReport::StatsValueName name,
                    int* value) {
-    for (const auto& v : report->values()) {
-      if (v->name == name) {
-        *value = rtc::FromString<int>(v->value);
-        return true;
-      }
+    const StatsReport::Value* v = report->FindValue(name);
+    if (v) {
+      // TODO(tommi): We should really just be using an int here :-/
+      *value = rtc::FromString<int>(v->ToString());
     }
-    return false;
+    return v != nullptr;
   }
+
   bool GetStringValue(const StatsReport* report,
                       StatsReport::StatsValueName name,
                       std::string* value) {
-    for (const auto& v : report->values()) {
-      if (v->name == name) {
-        *value = v->value;
-        return true;
-      }
-    }
-    return false;
+    const StatsReport::Value* v = report->FindValue(name);
+    if (v)
+      *value = v->ToString();
+    return v != nullptr;
   }
 
   bool called_;

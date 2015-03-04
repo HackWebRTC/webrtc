@@ -497,63 +497,26 @@ const char* StatsReport::TypeToString() const {
   return InternalTypeToString(id_->type());
 }
 
-void StatsReport::AddValue(StatsReport::StatsValueName name,
-                           const std::string& value) {
-  values_.push_back(ValuePtr(new Value(name, value)));
+void StatsReport::AddString(StatsReport::StatsValueName name,
+                            const std::string& value) {
+  values_[name] = ValuePtr(new Value(name, value));
 }
 
-void StatsReport::AddValue(StatsReport::StatsValueName name, int64 value) {
-  AddValue(name, rtc::ToString<int64>(value));
+void StatsReport::AddInt64(StatsReport::StatsValueName name, int64 value) {
+  AddString(name, rtc::ToString<int64>(value));
 }
 
-// TODO(tommi): Change the way we store vector values.
-template <typename T>
-void StatsReport::AddValue(StatsReport::StatsValueName name,
-                           const std::vector<T>& value) {
-  std::ostringstream oss;
-  oss << "[";
-  for (size_t i = 0; i < value.size(); ++i) {
-    oss << rtc::ToString<T>(value[i]);
-    if (i != value.size() - 1)
-      oss << ", ";
-  }
-  oss << "]";
-  AddValue(name, oss.str());
+void StatsReport::AddInt(StatsReport::StatsValueName name, int value) {
+  AddString(name, rtc::ToString<int>(value));
 }
 
-// Implementation specializations for the variants of AddValue that we use.
-// TODO(tommi): Converting these ints to strings and copying strings, is not
-// very efficient.  Figure out a way to reduce the string churn.
-template
-void StatsReport::AddValue<std::string>(
-    StatsReport::StatsValueName, const std::vector<std::string>&);
-
-template
-void StatsReport::AddValue<int>(
-    StatsReport::StatsValueName, const std::vector<int>&);
-
-template
-void StatsReport::AddValue<int64_t>(
-    StatsReport::StatsValueName, const std::vector<int64_t>&);
+void StatsReport::AddFloat(StatsReport::StatsValueName name, float value) {
+  AddString(name, rtc::ToString<float>(value));
+}
 
 void StatsReport::AddBoolean(StatsReport::StatsValueName name, bool value) {
   // TODO(tommi): Store bools as bool.
-  AddValue(name, value ? "true" : "false");
-}
-
-void StatsReport::ReplaceValue(StatsReport::StatsValueName name,
-                               const std::string& value) {
-  Values::iterator it = std::find_if(values_.begin(), values_.end(),
-      [&name](const ValuePtr& v)->bool { return v->name == name; });
-  // Values are const once added since they may be used outside of the stats
-  // collection. So we remove it from values_ when replacing and add a new one.
-  if (it != values_.end()) {
-    if ((*it)->value == value)
-      return;
-    values_.erase(it);
-  }
-
-  AddValue(name, value);
+  AddString(name, value ? "true" : "false");
 }
 
 void StatsReport::ResetValues() {
@@ -561,9 +524,8 @@ void StatsReport::ResetValues() {
 }
 
 const StatsReport::Value* StatsReport::FindValue(StatsValueName name) const {
-  Values::const_iterator it = std::find_if(values_.begin(), values_.end(),
-      [&name](const ValuePtr& v)->bool { return v->name == name; });
-  return it == values_.end() ? nullptr : (*it).get();
+  Values::const_iterator it = values_.find(name);
+  return it == values_.end() ? nullptr : it->second.get();
 }
 
 StatsCollection::StatsCollection() {

@@ -146,17 +146,14 @@ class FakeAudioTrack
   rtc::scoped_refptr<FakeAudioProcessor> processor_;
 };
 
-// TODO(tommi): Use FindValue().
 bool GetValue(const StatsReport* report,
               StatsReport::StatsValueName name,
               std::string* value) {
-  for (const auto& v : report->values()) {
-    if (v->name == name) {
-      *value = v->value;
-      return true;
-    }
-  }
-  return false;
+  const StatsReport::Value* v = report->FindValue(name);
+  if (!v)
+    return false;
+  *value = v->ToString();
+  return true;
 }
 
 std::string ExtractStatsValue(const StatsReport::StatsType& type,
