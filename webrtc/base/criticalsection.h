@@ -15,7 +15,12 @@
 #include "webrtc/base/thread_annotations.h"
 
 #if defined(WEBRTC_WIN)
-#include "webrtc/base/win32.h"
+// Include winsock2.h before including <windows.h> to maintain consistency with
+// win32.h.  We can't include win32.h directly here since it pulls in
+// headers such as basictypes.h which causes problems in Chromium where webrtc
+// exists as two separate projects, webrtc and libjingle.
+#include <winsock2.h>
+#include <windows.h>
 #endif
 
 #if defined(WEBRTC_POSIX)
