@@ -217,19 +217,19 @@ AudioCodingModuleImpl::~AudioCodingModuleImpl() {
                "Destroyed");
 }
 
-int32_t AudioCodingModuleImpl::Encode() {
+int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
   // Make room for 1 RED payload.
   uint8_t stream[2 * MAX_PAYLOAD_SIZE_BYTE];
   // TODO(turajs): |length_bytes| & |red_length_bytes| can be of type int if
   // ACMGenericCodec::Encode() & ACMGenericCodec::GetRedPayload() allows.
   int16_t length_bytes = 2 * MAX_PAYLOAD_SIZE_BYTE;
-  uint32_t rtp_timestamp;
   int status;
   WebRtcACMEncodingType encoding_type;
   FrameType frame_type = kAudioFrameSpeech;
   uint8_t current_payload_type = 0;
   bool has_data_to_send = false;
   RTPFragmentationHeader my_fragmentation;
+  AudioEncoder::EncodedInfo encoded_info;
 
   // Keep the scope of the ACM critical section limited.
   {
@@ -238,9 +238,10 @@ int32_t AudioCodingModuleImpl::Encode() {
     if (!HaveValidEncoder("Process")) {
       return -1;
     }
-    AudioEncoder::EncodedInfo encoded_info;
     status = codecs_[current_send_codec_idx_]->Encode(
-        stream, &length_bytes, &rtp_timestamp, &encoding_type, &encoded_info);
+        input_data.input_timestamp, input_data.audio,
+        input_data.length_per_channel, input_data.audio_channel, stream,
+        &length_bytes, &encoding_type, &encoded_info);
     if (status < 0) {
       // Encode failed.
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
@@ -294,14 +295,14 @@ int32_t AudioCodingModuleImpl::Encode() {
     if (packetization_callback_ != NULL) {
       if (my_fragmentation.fragmentationVectorSize > 0) {
         // Callback with payload data, including redundant data (RED).
-        packetization_callback_->SendData(frame_type, current_payload_type,
-                                          rtp_timestamp, stream, length_bytes,
-                                          &my_fragmentation);
+        packetization_callback_->SendData(
+            frame_type, current_payload_type, encoded_info.encoded_timestamp,
+            stream, length_bytes, &my_fragmentation);
       } else {
         // Callback with payload data.
         packetization_callback_->SendData(frame_type, current_payload_type,
-                                          rtp_timestamp, stream, length_bytes,
-                                          NULL);
+                                          encoded_info.encoded_timestamp,
+                                          stream, length_bytes, NULL);
       }
     }
 
@@ -745,11 +746,13 @@ int AudioCodingModuleImpl::RegisterTransportCallback(
 
 // Add 10MS of raw (PCM) audio data to the encoder.
 int AudioCodingModuleImpl::Add10MsData(const AudioFrame& audio_frame) {
-  int r = Add10MsDataInternal(audio_frame);
-  return r < 0 ? r : Encode();
+  InputData input_data;
+  int r = Add10MsDataInternal(audio_frame, &input_data);
+  return r < 0 ? r : Encode(input_data);
 }
 
-int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame) {
+int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame,
+                                               InputData* input_data) {
   if (audio_frame.samples_per_channel_ <= 0) {
     assert(false);
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
@@ -798,15 +801,12 @@ int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame) {
   // Check whether we need an up-mix or down-mix?
   bool remix = ptr_frame->num_channels_ != send_codec_inst_.channels;
 
-  // If a re-mix is required (up or down), this buffer will store re-mixed
-  // version of the input.
-  int16_t buffer[WEBRTC_10MS_PCM_AUDIO];
   if (remix) {
     if (ptr_frame->num_channels_ == 1) {
-      if (UpMix(*ptr_frame, WEBRTC_10MS_PCM_AUDIO, buffer) < 0)
+      if (UpMix(*ptr_frame, WEBRTC_10MS_PCM_AUDIO, input_data->buffer) < 0)
         return -1;
     } else {
-      if (DownMix(*ptr_frame, WEBRTC_10MS_PCM_AUDIO, buffer) < 0)
+      if (DownMix(*ptr_frame, WEBRTC_10MS_PCM_AUDIO, input_data->buffer) < 0)
         return -1;
     }
   }
@@ -817,12 +817,12 @@ int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame) {
 
   // For pushing data to primary, point the |ptr_audio| to correct buffer.
   if (send_codec_inst_.channels != ptr_frame->num_channels_)
-    ptr_audio = buffer;
+    ptr_audio = input_data->buffer;
 
-  if (codecs_[current_send_codec_idx_]->Add10MsData(
-      ptr_frame->timestamp_, ptr_audio, ptr_frame->samples_per_channel_,
-      send_codec_inst_.channels) < 0)
-    return -1;
+  input_data->input_timestamp = ptr_frame->timestamp_;
+  input_data->audio = ptr_audio;
+  input_data->length_per_channel = ptr_frame->samples_per_channel_;
+  input_data->audio_channel = send_codec_inst_.channels;
 
   return 0;
 }
@@ -1565,9 +1565,10 @@ const CodecInst* AudioCodingImpl::GetSenderCodecInst() {
 }
 
 int AudioCodingImpl::Add10MsAudio(const AudioFrame& audio_frame) {
-  if (acm_old_->Add10MsDataInternal(audio_frame) != 0)
+  acm2::AudioCodingModuleImpl::InputData input_data;
+  if (acm_old_->Add10MsDataInternal(audio_frame, &input_data) != 0)
     return -1;
-  return acm_old_->Encode();
+  return acm_old_->Encode(input_data);
 }
 
 const ReceiverInfo* AudioCodingImpl::GetReceiverInfo() const {

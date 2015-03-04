@@ -240,8 +240,18 @@ class AudioCodingModuleImpl : public AudioCodingModule {
       AudioDecodingCallStats* stats) const OVERRIDE;
 
  private:
-  int Add10MsDataInternal(const AudioFrame& audio_frame);
-  int Encode();
+  struct InputData {
+    uint32_t input_timestamp;
+    const int16_t* audio;
+    uint16_t length_per_channel;
+    uint8_t audio_channel;
+    // If a re-mix is required (up or down), this buffer will store a re-mixed
+    // version of the input.
+    int16_t buffer[WEBRTC_10MS_PCM_AUDIO];
+  };
+
+  int Add10MsDataInternal(const AudioFrame& audio_frame, InputData* input_data);
+  int Encode(const InputData& input_data);
 
   ACMGenericCodec* CreateCodec(const CodecInst& codec);
 

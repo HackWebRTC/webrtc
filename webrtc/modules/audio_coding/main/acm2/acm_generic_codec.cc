@@ -230,19 +230,32 @@ CNG_dec_inst* AudioDecoderProxy::CngDecoderInstance() {
   return decoder_->CngDecoderInstance();
 }
 
-int16_t ACMGenericCodec::Encode(uint8_t* bitstream,
+int16_t ACMGenericCodec::Encode(uint32_t input_timestamp,
+                                const int16_t* audio,
+                                uint16_t length_per_channel,
+                                uint8_t audio_channel,
+                                uint8_t* bitstream,
                                 int16_t* bitstream_len_byte,
-                                uint32_t* timestamp,
                                 WebRtcACMEncodingType* encoding_type,
                                 AudioEncoder::EncodedInfo* encoded_info) {
   WriteLockScoped wl(codec_wrapper_lock_);
-  CHECK(!input_.empty());
-  encoder_->Encode(rtp_timestamp_, &input_[0],
-                   input_.size() / encoder_->NumChannels(),
+  CHECK_EQ(length_per_channel, encoder_->SampleRateHz() / 100);
+  rtp_timestamp_ = first_frame_
+                       ? input_timestamp
+                       : last_rtp_timestamp_ +
+                             rtc::CheckedDivExact(
+                                 input_timestamp - last_timestamp_,
+                                 static_cast<uint32_t>(rtc::CheckedDivExact(
+                                     audio_encoder_->SampleRateHz(),
+                                     audio_encoder_->RtpTimestampRateHz())));
+  last_timestamp_ = input_timestamp;
+  last_rtp_timestamp_ = rtp_timestamp_;
+  first_frame_ = false;
+  CHECK_EQ(audio_channel, encoder_->NumChannels());
+
+  encoder_->Encode(rtp_timestamp_, audio, length_per_channel,
                    2 * MAX_PAYLOAD_SIZE_BYTE, bitstream, encoded_info);
-  input_.clear();
   *bitstream_len_byte = static_cast<int16_t>(encoded_info->encoded_bytes);
-  *timestamp = encoded_info->encoded_timestamp;
   if (encoded_info->encoded_bytes == 0) {
     *encoding_type = kNoEncoding;
     if (encoded_info->send_even_if_empty) {
@@ -464,32 +477,6 @@ OpusApplicationMode ACMGenericCodec::GetOpusApplication(
   if (opus_application_set_)
     return opus_application_;
   return num_channels == 1 || enable_dtx ? kVoip : kAudio;
-}
-
-int32_t ACMGenericCodec::Add10MsData(const uint32_t timestamp,
-                                     const int16_t* data,
-                                     const uint16_t length_per_channel,
-                                     const uint8_t audio_channel) {
-  WriteLockScoped wl(codec_wrapper_lock_);
-  CHECK(input_.empty());
-  CHECK_EQ(length_per_channel, encoder_->SampleRateHz() / 100);
-  for (int i = 0; i < length_per_channel * encoder_->NumChannels(); ++i) {
-    input_.push_back(data[i]);
-  }
-  rtp_timestamp_ = first_frame_
-                       ? timestamp
-                       : last_rtp_timestamp_ +
-                             rtc::CheckedDivExact(
-                                 timestamp - last_timestamp_,
-                                 static_cast<uint32_t>(rtc::CheckedDivExact(
-                                     audio_encoder_->SampleRateHz(),
-                                     audio_encoder_->RtpTimestampRateHz())));
-  last_timestamp_ = timestamp;
-  last_rtp_timestamp_ = rtp_timestamp_;
-  first_frame_ = false;
-
-  CHECK_EQ(audio_channel, encoder_->NumChannels());
-  return 0;
 }
 
 int16_t ACMGenericCodec::SetBitRate(const int32_t bitrate_bps) {

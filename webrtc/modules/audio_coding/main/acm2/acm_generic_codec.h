@@ -146,9 +146,12 @@ class ACMGenericCodec {
   //   -1 if error is occurred, otherwise the length of the bit-stream in
   //      bytes.
   //
-  int16_t Encode(uint8_t* bitstream,
+  int16_t Encode(uint32_t input_timestamp,
+                 const int16_t* audio,
+                 uint16_t length_per_channel,
+                 uint8_t audio_channel,
+                 uint8_t* bitstream,
                  int16_t* bitstream_len_byte,
-                 uint32_t* timestamp,
                  WebRtcACMEncodingType* encoding_type,
                  AudioEncoder::EncodedInfo* encoded_info);
 
@@ -195,30 +198,6 @@ class ACMGenericCodec {
   //
   int16_t InitEncoder(WebRtcACMCodecParams* codec_params,
                       bool force_initialization);
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int32_t Add10MsData(...)
-  // This function is called to add 10 ms of audio to the audio buffer of
-  // the codec.
-  //
-  // Inputs:
-  //   -timestamp          : the timestamp of the 10 ms audio. the timestamp
-  //                         is the sampling time of the
-  //                         first sample measured in number of samples.
-  //   -data               : a buffer that contains the audio. The codec
-  //                         expects to get the audio in correct sampling
-  //                         frequency
-  //   -length             : the length of the audio buffer
-  //   -audio_channel      : 0 for mono, 1 for stereo (not supported yet)
-  //
-  // Return values:
-  //   -1 if failed
-  //    0 otherwise.
-  //
-  int32_t Add10MsData(const uint32_t timestamp,
-                      const int16_t* data,
-                      const uint16_t length,
-                      const uint8_t audio_channel);
 
   ///////////////////////////////////////////////////////////////////////////
   // uint32_t NoMissedSamples()
@@ -495,7 +474,6 @@ class ACMGenericCodec {
   rtc::scoped_ptr<AudioEncoder> red_encoder_ GUARDED_BY(codec_wrapper_lock_);
   AudioEncoder* encoder_ GUARDED_BY(codec_wrapper_lock_);
   AudioDecoderProxy decoder_proxy_ GUARDED_BY(codec_wrapper_lock_);
-  std::vector<int16_t> input_ GUARDED_BY(codec_wrapper_lock_);
   WebRtcACMCodecParams acm_codec_params_ GUARDED_BY(codec_wrapper_lock_);
   int bitrate_bps_ GUARDED_BY(codec_wrapper_lock_);
   bool fec_enabled_ GUARDED_BY(codec_wrapper_lock_);

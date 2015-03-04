@@ -39,12 +39,6 @@ class AcmGenericCodecTest : public ::testing::Test {
     ASSERT_EQ(0, codec_->InitEncoder(&acm_codec_params_, true));
   }
 
-  void AddData() {
-    EXPECT_EQ(
-        0, codec_->Add10MsData(timestamp_, kZeroData, kDataLengthSamples, 1));
-    timestamp_ += kDataLengthSamples;
-  }
-
   void EncodeAndVerify(int expected_return_val,
                        size_t expected_out_length,
                        uint32_t expected_timestamp,
@@ -53,13 +47,12 @@ class AcmGenericCodecTest : public ::testing::Test {
                        int expected_send_even_if_empty) {
     uint8_t out[kDataLengthSamples];
     int16_t out_length;
-    uint32_t out_timestamp;
     WebRtcACMEncodingType encoding_type;
     AudioEncoder::EncodedInfo encoded_info;
     EXPECT_EQ(expected_return_val,
-              codec_->Encode(out, &out_length, &out_timestamp, &encoding_type,
-                             &encoded_info));
-    EXPECT_EQ(expected_timestamp, out_timestamp);
+              codec_->Encode(timestamp_, kZeroData, kDataLengthSamples, 1, out,
+                             &out_length,&encoding_type, &encoded_info));
+    timestamp_ += kDataLengthSamples;
     EXPECT_EQ(expected_encoding_type, encoding_type);
     EXPECT_TRUE(encoded_info.redundant.empty());
     EXPECT_EQ(expected_out_length, encoded_info.encoded_bytes);
@@ -89,28 +82,24 @@ TEST_F(AcmGenericCodecTest, VerifyCngFrames) {
   CreateCodec();
   uint32_t expected_timestamp = timestamp_;
   // Verify no frame.
-  AddData();
   {
     SCOPED_TRACE("First encoding");
     EncodeAndVerify(0, 0, expected_timestamp, kNoEncoding, -1, -1);
   }
 
   // Verify SID frame delivered.
-  AddData();
   {
     SCOPED_TRACE("Second encoding");
     EncodeAndVerify(9, 9, expected_timestamp, kPassiveDTXNB, kCngPt, 1);
   }
 
   // Verify no frame.
-  AddData();
   {
     SCOPED_TRACE("Third encoding");
     EncodeAndVerify(0, 0, expected_timestamp, kNoEncoding, -1, -1);
   }
 
   // Verify NoEncoding.
-  AddData();
   expected_timestamp += 2 * kDataLengthSamples;
   {
     SCOPED_TRACE("Fourth encoding");
