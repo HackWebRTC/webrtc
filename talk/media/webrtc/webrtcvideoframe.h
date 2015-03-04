@@ -181,7 +181,7 @@ class WebRtcVideoRenderFrame : public VideoFrame {
                            size_t pixel_width,
                            size_t pixel_height,
                            int64_t elapsed_time,
-                           int64_t time_stamp) OVERRIDE;
+                           int64_t time_stamp) override;
   virtual bool Reset(uint32 fourcc,
                      int w,
                      int h,
@@ -194,29 +194,29 @@ class WebRtcVideoRenderFrame : public VideoFrame {
                      int64_t elapsed_time,
                      int64_t time_stamp,
                      webrtc::VideoRotation rotation,
-                     bool apply_rotation) OVERRIDE;
-  virtual size_t GetWidth() const OVERRIDE;
-  virtual size_t GetHeight() const OVERRIDE;
-  virtual const uint8* GetYPlane() const OVERRIDE;
-  virtual const uint8* GetUPlane() const OVERRIDE;
-  virtual const uint8* GetVPlane() const OVERRIDE;
-  virtual uint8* GetYPlane() OVERRIDE;
-  virtual uint8* GetUPlane() OVERRIDE;
-  virtual uint8* GetVPlane() OVERRIDE;
-  virtual int32 GetYPitch() const OVERRIDE;
-  virtual int32 GetUPitch() const OVERRIDE;
-  virtual int32 GetVPitch() const OVERRIDE;
-  virtual void* GetNativeHandle() const OVERRIDE;
-  virtual size_t GetPixelWidth() const OVERRIDE;
-  virtual size_t GetPixelHeight() const OVERRIDE;
-  virtual int64_t GetElapsedTime() const OVERRIDE;
-  virtual int64_t GetTimeStamp() const OVERRIDE;
-  virtual void SetElapsedTime(int64_t elapsed_time) OVERRIDE;
-  virtual void SetTimeStamp(int64_t time_stamp) OVERRIDE;
-  virtual webrtc::VideoRotation GetVideoRotation() const OVERRIDE;
-  virtual VideoFrame* Copy() const OVERRIDE;
-  virtual bool MakeExclusive() OVERRIDE;
-  virtual size_t CopyToBuffer(uint8* buffer, size_t size) const OVERRIDE;
+                     bool apply_rotation) override;
+  virtual size_t GetWidth() const override;
+  virtual size_t GetHeight() const override;
+  virtual const uint8* GetYPlane() const override;
+  virtual const uint8* GetUPlane() const override;
+  virtual const uint8* GetVPlane() const override;
+  virtual uint8* GetYPlane() override;
+  virtual uint8* GetUPlane() override;
+  virtual uint8* GetVPlane() override;
+  virtual int32 GetYPitch() const override;
+  virtual int32 GetUPitch() const override;
+  virtual int32 GetVPitch() const override;
+  virtual void* GetNativeHandle() const override;
+  virtual size_t GetPixelWidth() const override;
+  virtual size_t GetPixelHeight() const override;
+  virtual int64_t GetElapsedTime() const override;
+  virtual int64_t GetTimeStamp() const override;
+  virtual void SetElapsedTime(int64_t elapsed_time) override;
+  virtual void SetTimeStamp(int64_t time_stamp) override;
+  virtual webrtc::VideoRotation GetVideoRotation() const override;
+  virtual VideoFrame* Copy() const override;
+  virtual bool MakeExclusive() override;
+  virtual size_t CopyToBuffer(uint8* buffer, size_t size) const override;
 
  protected:
   virtual VideoFrame* CreateEmptyFrame(int w,
@@ -224,7 +224,7 @@ class WebRtcVideoRenderFrame : public VideoFrame {
                                        size_t pixel_width,
                                        size_t pixel_height,
                                        int64_t elapsed_time,
-                                       int64_t time_stamp) const OVERRIDE;
+                                       int64_t time_stamp) const override;
 
  private:
   const webrtc::I420VideoFrame* const frame_;

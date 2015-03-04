@@ -36,7 +36,7 @@ class TextureVideoFrame : public I420VideoFrame {
                                int height,
                                int stride_y,
                                int stride_u,
-                               int stride_v) OVERRIDE;
+                               int stride_v) override;
   virtual int CreateFrame(int size_y,
                           const uint8_t* buffer_y,
                           int size_u,
@@ -47,7 +47,7 @@ class TextureVideoFrame : public I420VideoFrame {
                           int height,
                           int stride_y,
                           int stride_u,
-                          int stride_v) OVERRIDE;
+                          int stride_v) override;
   virtual int CreateFrame(int size_y,
                           const uint8_t* buffer_y,
                           int size_u,
@@ -59,20 +59,20 @@ class TextureVideoFrame : public I420VideoFrame {
                           int stride_y,
                           int stride_u,
                           int stride_v,
-                          webrtc::VideoRotation rotation) OVERRIDE;
-  virtual int CopyFrame(const I420VideoFrame& videoFrame) OVERRIDE;
-  virtual I420VideoFrame* CloneFrame() const OVERRIDE;
-  virtual void SwapFrame(I420VideoFrame* videoFrame) OVERRIDE;
-  virtual uint8_t* buffer(PlaneType type) OVERRIDE;
-  virtual const uint8_t* buffer(PlaneType type) const OVERRIDE;
-  virtual int allocated_size(PlaneType type) const OVERRIDE;
-  virtual int stride(PlaneType type) const OVERRIDE;
-  virtual bool IsZeroSize() const OVERRIDE;
-  virtual void* native_handle() const OVERRIDE;
+                          webrtc::VideoRotation rotation) override;
+  virtual int CopyFrame(const I420VideoFrame& videoFrame) override;
+  virtual I420VideoFrame* CloneFrame() const override;
+  virtual void SwapFrame(I420VideoFrame* videoFrame) override;
+  virtual uint8_t* buffer(PlaneType type) override;
+  virtual const uint8_t* buffer(PlaneType type) const override;
+  virtual int allocated_size(PlaneType type) const override;
+  virtual int stride(PlaneType type) const override;
+  virtual bool IsZeroSize() const override;
+  virtual void* native_handle() const override;
 
  protected:
   virtual int CheckDimensions(
-      int width, int height, int stride_y, int stride_u, int stride_v) OVERRIDE;
+      int width, int height, int stride_y, int stride_u, int stride_v) override;
 
  private:
   // An opaque handle that stores the underlying video frame.
