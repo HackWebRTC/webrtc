@@ -108,6 +108,9 @@ TEST(TestI420VideoFrame, CopyFrame) {
   // Frame of larger dimensions.
   EXPECT_EQ(0, small_frame.CreateEmptyFrame(width, height,
                                             stride_y, stride_u, stride_v));
+  memset(small_frame.buffer(kYPlane), 1, small_frame.allocated_size(kYPlane));
+  memset(small_frame.buffer(kUPlane), 2, small_frame.allocated_size(kUPlane));
+  memset(small_frame.buffer(kVPlane), 3, small_frame.allocated_size(kVPlane));
   EXPECT_EQ(0, big_frame.CopyFrame(small_frame));
   EXPECT_TRUE(EqualFrames(small_frame, big_frame));
 }
