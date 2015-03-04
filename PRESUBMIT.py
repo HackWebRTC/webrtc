@@ -134,10 +134,13 @@ def _CheckNoSourcesAboveGyp(input_api, gyp_files, output_api):
   for gyp_file in gyp_files:
     contents = input_api.ReadFile(gyp_file)
     for source_block_match in source_pattern.finditer(contents):
-      # Find all source list entries starting with ../ in the source block.
+      # Find all source list entries starting with ../ in the source block
+      # (exclude overrides entries).
       for file_list_match in file_pattern.finditer(source_block_match.group(0)):
-        violating_source_entries.append(file_list_match.group(0))
-        violating_gyp_files.add(gyp_file)
+        source_file = file_list_match.group(0)
+        if 'overrides/' not in source_file:
+          violating_source_entries.append(source_file)
+          violating_gyp_files.add(gyp_file)
   if violating_gyp_files:
     return [output_api.PresubmitError(
         'Referencing source files above the directory of the GYP file is not '
