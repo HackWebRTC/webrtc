@@ -185,9 +185,6 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 #define DCHECK_GT(v1, v2) EAT_STREAM_PARAMETERS((v1) > (v2))
 #endif
 
-#define RTC_UNREACHABLE_CODE_HIT false
-#define RTC_NOTREACHED() DCHECK(RTC_UNREACHABLE_CODE_HIT)
-
 // This is identical to LogMessageVoidify but in name.
 class FatalMessageVoidify {
  public:
@@ -198,6 +195,9 @@ class FatalMessageVoidify {
 };
 
 #endif  // WEBRTC_CHROMIUM_BUILD
+
+#define RTC_UNREACHABLE_CODE_HIT false
+#define RTC_NOTREACHED() DCHECK(RTC_UNREACHABLE_CODE_HIT)
 
 #define FATAL() rtc::FatalMessage(__FILE__, __LINE__).stream()
 // TODO(ajm): Consider adding NOTIMPLEMENTED and NOTREACHED macros when
