@@ -372,62 +372,40 @@ void ACMGenericCodec::ResetAudioEncoder() {
 #ifdef WEBRTC_CODEC_ISAC
   } else if (!STR_CASE_CMP(codec_inst.plname, "ISAC")) {
     is_isac_ = true;
-    if (copy_red_enabled_) {
-      using_codec_internal_red = true;
-      AudioEncoderDecoderIsacRed* enc_dec;
-      if (codec_inst.rate == -1) {
-        // Adaptive mode.
-        AudioEncoderDecoderIsacRed::ConfigAdaptive config;
-        config.sample_rate_hz = codec_inst.plfreq;
-        config.initial_frame_size_ms = rtc::CheckedDivExact(
-            1000 * codec_inst.pacsize, config.sample_rate_hz);
-        config.max_payload_size_bytes = max_payload_size_bytes_;
-        config.max_bit_rate = max_rate_bps_;
-        config.payload_type = codec_inst.pltype;
+    using_codec_internal_red = copy_red_enabled_;
+    AudioEncoderDecoderIsac* enc_dec;
+    if (codec_inst.rate == -1) {
+      // Adaptive mode.
+      AudioEncoderDecoderIsac::ConfigAdaptive config;
+      config.sample_rate_hz = codec_inst.plfreq;
+      config.initial_frame_size_ms = rtc::CheckedDivExact(
+          1000 * codec_inst.pacsize, config.sample_rate_hz);
+      config.max_payload_size_bytes = max_payload_size_bytes_;
+      config.max_bit_rate = max_rate_bps_;
+      config.payload_type = codec_inst.pltype;
+      if (copy_red_enabled_) {
         config.red_payload_type = red_payload_type_;
-        enc_dec = new AudioEncoderDecoderIsacRed(config);
-      } else {
-        // Channel independent mode.
-        AudioEncoderDecoderIsacRed::Config config;
-        config.sample_rate_hz = codec_inst.plfreq;
-        config.bit_rate = codec_inst.rate;
-        config.frame_size_ms = rtc::CheckedDivExact(1000 * codec_inst.pacsize,
-                                                    config.sample_rate_hz);
-        config.max_payload_size_bytes = max_payload_size_bytes_;
-        config.max_bit_rate = max_rate_bps_;
-        config.payload_type = codec_inst.pltype;
-        config.red_payload_type = red_payload_type_;
-        enc_dec = new AudioEncoderDecoderIsacRed(config);
+        config.use_red = true;
       }
-      audio_encoder_.reset(enc_dec);
-      decoder_proxy_.SetDecoder(enc_dec);
+      enc_dec = new AudioEncoderDecoderIsac(config);
     } else {
-      AudioEncoderDecoderIsac* enc_dec;
-      if (codec_inst.rate == -1) {
-        // Adaptive mode.
-        AudioEncoderDecoderIsac::ConfigAdaptive config;
-        config.sample_rate_hz = codec_inst.plfreq;
-        config.initial_frame_size_ms = rtc::CheckedDivExact(
-            1000 * codec_inst.pacsize, config.sample_rate_hz);
-        config.max_payload_size_bytes = max_payload_size_bytes_;
-        config.max_bit_rate = max_rate_bps_;
-        config.payload_type = codec_inst.pltype;
-        enc_dec = new AudioEncoderDecoderIsac(config);
-      } else {
-        // Channel independent mode.
-        AudioEncoderDecoderIsac::Config config;
-        config.sample_rate_hz = codec_inst.plfreq;
-        config.bit_rate = codec_inst.rate;
-        config.frame_size_ms = rtc::CheckedDivExact(1000 * codec_inst.pacsize,
-                                                    config.sample_rate_hz);
-        config.max_payload_size_bytes = max_payload_size_bytes_;
-        config.max_bit_rate = max_rate_bps_;
-        config.payload_type = codec_inst.pltype;
-        enc_dec = new AudioEncoderDecoderIsac(config);
+      // Channel independent mode.
+      AudioEncoderDecoderIsac::Config config;
+      config.sample_rate_hz = codec_inst.plfreq;
+      config.bit_rate = codec_inst.rate;
+      config.frame_size_ms = rtc::CheckedDivExact(1000 * codec_inst.pacsize,
+                                                  config.sample_rate_hz);
+      config.max_payload_size_bytes = max_payload_size_bytes_;
+      config.max_bit_rate = max_rate_bps_;
+      config.payload_type = codec_inst.pltype;
+      if (copy_red_enabled_) {
+        config.red_payload_type = red_payload_type_;
+        config.use_red = true;
       }
-      audio_encoder_.reset(enc_dec);
-      decoder_proxy_.SetDecoder(enc_dec);
+      enc_dec = new AudioEncoderDecoderIsac(config);
     }
+    audio_encoder_.reset(enc_dec);
+    decoder_proxy_.SetDecoder(enc_dec);
 #endif
   } else {
     FATAL();
