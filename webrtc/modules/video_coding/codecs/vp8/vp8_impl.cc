@@ -107,6 +107,7 @@ VP8EncoderImpl::VP8EncoderImpl()
       timestamp_(0),
       feedback_mode_(false),
       qp_max_(56),  // Setting for max quantizer.
+      cpu_speed_default_(-6),
       rc_max_intra_target_(0),
       token_partitions_(VP8_ONE_TOKENPARTITION),
       down_scale_requested_(false),
@@ -527,25 +528,14 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
       cpu_speed_[0] = -6;
       break;
   }
-  // Setting complexity for non-base streams based on resolution.
-  // Base stream (layer 0) is of highest resolution.
+  cpu_speed_default_ = cpu_speed_[0];
+  // Set encoding complexity (cpu_speed) based on resolution and/or platform.
+  cpu_speed_[0] = SetCpuSpeed(inst->width, inst->height);
   for (int i = 1; i < number_of_streams; ++i) {
-    int pixels_per_frame =
-        inst->simulcastStream[number_of_streams - 1 - i].width *
-        inst->simulcastStream[number_of_streams - 1 - i].height;
-      cpu_speed_[i] =  cpu_speed_[0];
-      // Increase complexity if below a CIF (default -6)
-      if (pixels_per_frame < 352 * 288) {
-        cpu_speed_[i] = -4;
-      }
+    cpu_speed_[i] =
+        SetCpuSpeed(inst->simulcastStream[number_of_streams - 1 - i].width,
+                    inst->simulcastStream[number_of_streams - 1 - i].height);
   }
-#if defined(WEBRTC_ARCH_ARM)
-  // On mobile platform, always set to -12 to leverage between cpu usage
-  // and video quality
-  for (int i = 0; i < number_of_streams; ++i) {
-    cpu_speed_[i] = -12;
-  }
-#endif
   configurations_[0].g_w = inst->width;
   configurations_[0].g_h = inst->height;
 
@@ -615,6 +605,22 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   quality_scaler_.ReportFramerate(codec_.maxFramerate);
 
   return InitAndSetControlSettings();
+}
+
+int VP8EncoderImpl::SetCpuSpeed(int width, int height) {
+#if defined(WEBRTC_ARCH_ARM)
+  // On mobile platform, always set to -12 to leverage between cpu usage
+  // and video quality.
+  return -12;
+#else
+  // For non-ARM, increase encoding complexity (i.e., use lower speed setting)
+  // if resolution is below CIF. Otherwise, keep the default/user setting
+  // (|cpu_speed_default_|) set on InitEncode via codecSpecific.VP8.complexity.
+  if (width * height < 352 * 288)
+    return (cpu_speed_default_ < -4) ? -4 : cpu_speed_default_;
+  else
+    return cpu_speed_default_;
+#endif
 }
 
 int VP8EncoderImpl::NumberOfThreads(int width, int height, int cpus) {
@@ -891,6 +897,10 @@ int VP8EncoderImpl::UpdateCodecFrameSize(
     const I420VideoFrame& input_image) {
   codec_.width = input_image.width();
   codec_.height = input_image.height();
+  // Update the cpu_speed setting for resolution change.
+  vpx_codec_control(&(encoders_[0]),
+                    VP8E_SET_CPUUSED,
+                    SetCpuSpeed(codec_.width, codec_.height));
   raw_images_[0].w = codec_.width;
   raw_images_[0].h = codec_.height;
   raw_images_[0].d_w = codec_.width;

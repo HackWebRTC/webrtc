@@ -59,6 +59,9 @@ class VP8EncoderImpl : public VP8Encoder {
   void SetupTemporalLayers(int num_streams, int num_temporal_layers,
                            const VideoCodec& codec);
 
+  // Set the cpu_speed setting for encoder based on resolution and/or platform.
+  int SetCpuSpeed(int width, int height);
+
   // Determine number of encoder threads to use.
   int NumberOfThreads(int width, int height, int number_of_cores);
 
@@ -94,6 +97,7 @@ class VP8EncoderImpl : public VP8Encoder {
   int64_t timestamp_;
   bool feedback_mode_;
   int qp_max_;
+  int cpu_speed_default_;
   uint32_t rc_max_intra_target_;
   int token_partitions_;
   ReferencePictureSelection rps_;
