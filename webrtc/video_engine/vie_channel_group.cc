@@ -13,7 +13,6 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common.h"
 #include "webrtc/experiments.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
@@ -137,12 +136,12 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 };
 }  // namespace
 
-ChannelGroup::ChannelGroup(ProcessThread* process_thread,
-                           const Config* config)
+ChannelGroup::ChannelGroup(ProcessThread* process_thread, const Config* config)
     : remb_(new VieRemb()),
+      bitrate_allocator_(new BitrateAllocator()),
       bitrate_controller_(
           BitrateController::CreateBitrateController(Clock::GetRealTimeClock(),
-                                                     true)),
+                                                     this)),
       call_stats_(new CallStats()),
       encoder_state_feedback_(new EncoderStateFeedback()),
       config_(config),
@@ -192,6 +191,10 @@ bool ChannelGroup::Empty() {
   return channels_.empty();
 }
 
+BitrateAllocator* ChannelGroup::GetBitrateAllocator() {
+  return bitrate_allocator_.get();
+}
+
 BitrateController* ChannelGroup::GetBitrateController() {
   return bitrate_controller_.get();
 }
@@ -226,5 +229,11 @@ void ChannelGroup::SetChannelRembStatus(int channel_id,
   } else {
     remb_->RemoveReceiveChannel(rtp_module);
   }
+}
+
+void ChannelGroup::OnNetworkChanged(uint32_t target_bitrate_bps,
+                                    uint8_t fraction_loss,
+                                    int64_t rtt) {
+  bitrate_allocator_->OnNetworkChanged(target_bitrate_bps, fraction_loss, rtt);
 }
 }  // namespace webrtc

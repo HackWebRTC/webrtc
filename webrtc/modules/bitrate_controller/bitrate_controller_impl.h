@@ -18,7 +18,6 @@
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 
 #include <list>
-#include <map>
 #include <utility>
 
 #include "webrtc/base/scoped_ptr.h"
@@ -30,60 +29,29 @@ namespace webrtc {
 
 class BitrateControllerImpl : public BitrateController {
  public:
-  BitrateControllerImpl(Clock* clock, bool enforce_min_bitrate);
+  BitrateControllerImpl(Clock* clock, BitrateObserver* observer);
   virtual ~BitrateControllerImpl();
 
-  virtual bool AvailableBandwidth(uint32_t* bandwidth) const OVERRIDE;
+  virtual bool AvailableBandwidth(uint32_t* bandwidth) const override;
 
-  virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver() OVERRIDE;
+  virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver() override;
 
-  virtual void SetBitrateObserver(BitrateObserver* observer,
-                                  uint32_t start_bitrate,
-                                  uint32_t min_bitrate,
-                                  uint32_t max_bitrate) OVERRIDE;
+  virtual void SetStartBitrate(int start_bitrate_bps) override;
+  virtual void SetMinMaxBitrate(int min_bitrate_bps,
+                                int max_bitrate_bps) override;
 
-  virtual void RemoveBitrateObserver(BitrateObserver* observer) OVERRIDE;
+  virtual void SetReservedBitrate(uint32_t reserved_bitrate_bps) override;
 
-  virtual void EnforceMinBitrate(bool enforce_min_bitrate) OVERRIDE;
-  virtual void SetReservedBitrate(uint32_t reserved_bitrate_bps) OVERRIDE;
-
-  virtual int64_t TimeUntilNextProcess() OVERRIDE;
-  virtual int32_t Process() OVERRIDE;
+  virtual int64_t TimeUntilNextProcess() override;
+  virtual int32_t Process() override;
 
   // Current bitrate actually being sent.
-  virtual void SetBitrateSent(uint32_t bitrate_sent_bps) OVERRIDE;
+  virtual void SetBitrateSent(uint32_t bitrate_sent_bps) override;
 
-  virtual void SetCodecMode(webrtc::VideoCodecMode mode) OVERRIDE;
+  virtual void SetCodecMode(webrtc::VideoCodecMode mode) override;
 
  private:
   class RtcpBandwidthObserverImpl;
-
-  struct BitrateConfiguration {
-    BitrateConfiguration(uint32_t start_bitrate,
-                         uint32_t min_bitrate,
-                         uint32_t max_bitrate)
-        : start_bitrate_(start_bitrate),
-          min_bitrate_(min_bitrate),
-          max_bitrate_(max_bitrate) {
-    }
-    uint32_t start_bitrate_;
-    uint32_t min_bitrate_;
-    uint32_t max_bitrate_;
-  };
-  struct ObserverConfiguration {
-    ObserverConfiguration(BitrateObserver* observer,
-                          uint32_t bitrate)
-        : observer_(observer),
-          min_bitrate_(bitrate) {
-    }
-    BitrateObserver* observer_;
-    uint32_t min_bitrate_;
-  };
-  typedef std::pair<BitrateObserver*, BitrateConfiguration*>
-      BitrateObserverConfiguration;
-  typedef std::list<BitrateObserverConfiguration> BitrateObserverConfList;
-
-  void UpdateMinMaxBitrate() EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
 
   // Called by BitrateObserver's direct from the RTCP module.
   void OnReceivedEstimatedBitrate(uint32_t bitrate);
@@ -93,37 +61,20 @@ class BitrateControllerImpl : public BitrateController {
                                     int number_of_packets,
                                     int64_t now_ms);
 
-  void MaybeTriggerOnNetworkChanged() EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
+  void MaybeTriggerOnNetworkChanged();
 
   void OnNetworkChanged(uint32_t bitrate,
                         uint8_t fraction_loss,  // 0 - 255.
                         int64_t rtt)
       EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
 
-  void NormalRateAllocation(uint32_t bitrate,
-                            uint8_t fraction_loss,
-                            int64_t rtt,
-                            uint32_t sum_min_bitrates)
-      EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
-
-  void LowRateAllocation(uint32_t bitrate,
-                         uint8_t fraction_loss,
-                         int64_t rtt,
-                         uint32_t sum_min_bitrates)
-      EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
-
-  typedef std::multimap<uint32_t, ObserverConfiguration*> ObserverSortingMap;
-
-  BitrateObserverConfList::iterator FindObserverConfigurationPair(
-      const BitrateObserver* observer) EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
-
   // Used by process thread.
   Clock* clock_;
+  BitrateObserver* observer_;
   int64_t last_bitrate_update_ms_;
 
   CriticalSectionWrapper* critsect_;
   SendSideBandwidthEstimation bandwidth_estimation_ GUARDED_BY(*critsect_);
-  BitrateObserverConfList bitrate_observers_ GUARDED_BY(*critsect_);
   bool enforce_min_bitrate_ GUARDED_BY(*critsect_);
   uint32_t reserved_bitrate_bps_ GUARDED_BY(*critsect_);
 
@@ -131,7 +82,6 @@ class BitrateControllerImpl : public BitrateController {
   uint8_t last_fraction_loss_ GUARDED_BY(*critsect_);
   int64_t last_rtt_ms_ GUARDED_BY(*critsect_);
   bool last_enforce_min_bitrate_ GUARDED_BY(*critsect_);
-  bool bitrate_observers_modified_ GUARDED_BY(*critsect_);
   uint32_t last_reserved_bitrate_bps_ GUARDED_BY(*critsect_);
   rtc::scoped_ptr<RembSuppressor> remb_suppressor_ GUARDED_BY(*critsect_);
 

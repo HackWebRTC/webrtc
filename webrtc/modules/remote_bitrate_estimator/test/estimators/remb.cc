@@ -24,13 +24,14 @@ namespace bwe {
 
 RembBweSender::RembBweSender(int kbps, BitrateObserver* observer, Clock* clock)
     : bitrate_controller_(
-          BitrateController::CreateBitrateController(clock, false)),
+          BitrateController::CreateBitrateController(clock, observer)),
       feedback_observer_(bitrate_controller_->CreateRtcpBandwidthObserver()),
       clock_(clock) {
   assert(kbps >= kMinBitrateKbps);
   assert(kbps <= kMaxBitrateKbps);
-  bitrate_controller_->SetBitrateObserver(
-      observer, 1000 * kbps, 1000 * kMinBitrateKbps, 1000 * kMaxBitrateKbps);
+  bitrate_controller_->SetStartBitrate(1000 * kbps);
+  bitrate_controller_->SetMinMaxBitrate(1000 * kMinBitrateKbps,
+                                        1000 * kMaxBitrateKbps);
 }
 
 RembBweSender::~RembBweSender() {

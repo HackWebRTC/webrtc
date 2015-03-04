@@ -18,6 +18,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/bitrate_controller/include/bitrate_allocator.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
@@ -58,6 +59,7 @@ class ViEEncoder
              uint32_t number_of_cores,
              const Config& config,
              ProcessThread& module_process_thread,
+             BitrateAllocator* bitrate_allocator,
              BitrateController* bitrate_controller,
              bool disable_default_encoder);
   ~ViEEncoder();
@@ -194,6 +196,7 @@ class ViEEncoder
                         int64_t capture_time_ms, bool retransmission);
   size_t TimeToSendPadding(size_t bytes);
  private:
+  int GetPaddingNeededBps(int bitrate_bps) const;
   bool EncoderPaused() const EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
   void TraceFrameDropStart() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
   void TraceFrameDropEnd() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
@@ -215,7 +218,8 @@ class ViEEncoder
   rtc::scoped_ptr<PacedSender> paced_sender_;
   rtc::scoped_ptr<ViEPacedSenderCallback> pacing_callback_;
 
-  BitrateController* bitrate_controller_;
+  BitrateAllocator* const bitrate_allocator_;
+  BitrateController* const bitrate_controller_;
 
   int64_t time_of_last_incoming_frame_ms_ GUARDED_BY(data_cs_);
   bool send_padding_ GUARDED_BY(data_cs_);

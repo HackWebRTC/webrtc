@@ -89,13 +89,11 @@ int ViEChannelManager::CreateChannel(int* channel_id,
   // Create a new channel group and add this channel.
   ChannelGroup* group = new ChannelGroup(module_process_thread_,
                                          channel_group_config);
+  BitrateAllocator* bitrate_allocator = group->GetBitrateAllocator();
   BitrateController* bitrate_controller = group->GetBitrateController();
-  ViEEncoder* vie_encoder = new ViEEncoder(new_channel_id,
-                                           number_of_cores_,
-                                           engine_config_,
-                                           *module_process_thread_,
-                                           bitrate_controller,
-                                           false);
+  ViEEncoder* vie_encoder = new ViEEncoder(
+      new_channel_id, number_of_cores_, engine_config_, *module_process_thread_,
+      bitrate_allocator, bitrate_controller, false);
 
   RtcpBandwidthObserver* bandwidth_observer =
       bitrate_controller->CreateRtcpBandwidthObserver();
@@ -153,6 +151,7 @@ int ViEChannelManager::CreateChannel(int* channel_id,
   if (new_channel_id == -1) {
     return -1;
   }
+  BitrateAllocator* bitrate_allocator = channel_group->GetBitrateAllocator();
   BitrateController* bitrate_controller = channel_group->GetBitrateController();
   RtcpBandwidthObserver* bandwidth_observer =
       bitrate_controller->CreateRtcpBandwidthObserver();
@@ -166,11 +165,10 @@ int ViEChannelManager::CreateChannel(int* channel_id,
   ViEEncoder* vie_encoder = NULL;
   if (sender) {
     // We need to create a new ViEEncoder.
-    vie_encoder = new ViEEncoder(new_channel_id, number_of_cores_,
-                                 engine_config_,
-                                 *module_process_thread_,
-                                 bitrate_controller,
-                                 disable_default_encoder);
+    vie_encoder =
+        new ViEEncoder(new_channel_id, number_of_cores_, engine_config_,
+                       *module_process_thread_, bitrate_allocator,
+                       bitrate_controller, disable_default_encoder);
     if (!(vie_encoder->Init() &&
         CreateChannelObject(
             new_channel_id,

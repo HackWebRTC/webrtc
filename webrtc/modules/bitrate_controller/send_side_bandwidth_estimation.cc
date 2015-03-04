@@ -96,8 +96,8 @@ void SendSideBandwidthEstimation::SetMinMaxBitrate(uint32_t min_bitrate,
   max_bitrate_configured_ = max_bitrate;
 }
 
-void SendSideBandwidthEstimation::SetMinBitrate(uint32_t min_bitrate) {
-  min_bitrate_configured_ = min_bitrate;
+uint32_t SendSideBandwidthEstimation::GetMinBitrate() const {
+  return min_bitrate_configured_;
 }
 
 void SendSideBandwidthEstimation::CurrentEstimate(uint32_t* bitrate,

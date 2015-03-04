@@ -185,6 +185,7 @@
             'audio_processing/transient/wpd_node_unittest.cc',
             'audio_processing/transient/wpd_tree_unittest.cc',
             'audio_processing/utility/delay_estimator_unittest.cc',
+            'bitrate_controller/bitrate_allocator_unittest.cc',
             'bitrate_controller/bitrate_controller_unittest.cc',
             'bitrate_controller/remb_suppressor_unittest.cc',
             'bitrate_controller/send_side_bandwidth_estimation_unittest.cc',
