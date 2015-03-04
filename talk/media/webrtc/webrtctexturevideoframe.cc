@@ -27,20 +27,165 @@
 
 #include "talk/media/webrtc/webrtctexturevideoframe.h"
 
-#include "webrtc/base/refcount.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stream.h"
+
+#define UNIMPLEMENTED \
+  LOG(LS_ERROR) << "Call to unimplemented function "<< __FUNCTION__; \
+  ASSERT(false)
 
 namespace cricket {
 
-WebRtcTextureVideoFrame::WebRtcTextureVideoFrame(webrtc::NativeHandle* handle,
-                                                 int width,
-                                                 int height,
-                                                 int64_t elapsed_time,
-                                                 int64_t time_stamp)
-    : WebRtcVideoFrame(new rtc::RefCountedObject<webrtc::TextureBuffer>(handle,
-                                                                        width,
-                                                                        height),
-                       elapsed_time,
-                       time_stamp) {
+WebRtcTextureVideoFrame::WebRtcTextureVideoFrame(
+    webrtc::NativeHandle* handle, int width, int height, int64_t elapsed_time,
+    int64_t time_stamp)
+    : handle_(handle), width_(width), height_(height),
+      elapsed_time_(elapsed_time), time_stamp_(time_stamp) {}
+
+WebRtcTextureVideoFrame::~WebRtcTextureVideoFrame() {}
+
+bool WebRtcTextureVideoFrame::InitToBlack(
+    int w, int h, size_t pixel_width, size_t pixel_height, int64_t elapsed_time,
+    int64_t time_stamp) {
+  UNIMPLEMENTED;
+  return false;
+}
+
+bool WebRtcTextureVideoFrame::Reset(uint32 fourcc,
+                                    int w,
+                                    int h,
+                                    int dw,
+                                    int dh,
+                                    uint8* sample,
+                                    size_t sample_size,
+                                    size_t pixel_width,
+                                    size_t pixel_height,
+                                    int64_t elapsed_time,
+                                    int64_t time_stamp,
+                                    webrtc::VideoRotation rotation) {
+  UNIMPLEMENTED;
+  return false;
+}
+
+const uint8* WebRtcTextureVideoFrame::GetYPlane() const {
+  UNIMPLEMENTED;
+  return NULL;
+}
+
+const uint8* WebRtcTextureVideoFrame::GetUPlane() const {
+  UNIMPLEMENTED;
+  return NULL;
+}
+
+const uint8* WebRtcTextureVideoFrame::GetVPlane() const {
+  UNIMPLEMENTED;
+  return NULL;
+}
+
+uint8* WebRtcTextureVideoFrame::GetYPlane() {
+  UNIMPLEMENTED;
+  return NULL;
+}
+
+uint8* WebRtcTextureVideoFrame::GetUPlane() {
+  UNIMPLEMENTED;
+  return NULL;
+}
+
+uint8* WebRtcTextureVideoFrame::GetVPlane() {
+  UNIMPLEMENTED;
+  return NULL;
+}
+
+int32 WebRtcTextureVideoFrame::GetYPitch() const {
+  UNIMPLEMENTED;
+  return width_;
+}
+
+int32 WebRtcTextureVideoFrame::GetUPitch() const {
+  UNIMPLEMENTED;
+  return (width_ + 1) / 2;
+}
+
+int32 WebRtcTextureVideoFrame::GetVPitch() const {
+  UNIMPLEMENTED;
+  return (width_ + 1) / 2;
+}
+
+VideoFrame* WebRtcTextureVideoFrame::Copy() const {
+  return new WebRtcTextureVideoFrame(
+      handle_, width_, height_, elapsed_time_, time_stamp_);
+}
+
+bool WebRtcTextureVideoFrame::MakeExclusive() {
+  UNIMPLEMENTED;
+  return false;
+}
+
+size_t WebRtcTextureVideoFrame::CopyToBuffer(uint8* buffer, size_t size) const {
+  UNIMPLEMENTED;
+  return 0;
+}
+
+size_t WebRtcTextureVideoFrame::ConvertToRgbBuffer(
+    uint32 to_fourcc, uint8* buffer, size_t size, int stride_rgb) const {
+  UNIMPLEMENTED;
+  return 0;
+}
+
+bool WebRtcTextureVideoFrame::CopyToPlanes(
+    uint8* dst_y, uint8* dst_u, uint8* dst_v, int32 dst_pitch_y,
+    int32 dst_pitch_u, int32 dst_pitch_v) const {
+  UNIMPLEMENTED;
+  return false;
+}
+
+void WebRtcTextureVideoFrame::CopyToFrame(VideoFrame* dst) const {
+  UNIMPLEMENTED;
+}
+
+rtc::StreamResult WebRtcTextureVideoFrame::Write(
+    rtc::StreamInterface* stream, int* error) {
+  UNIMPLEMENTED;
+  return rtc::SR_ERROR;
+}
+void WebRtcTextureVideoFrame::StretchToPlanes(
+    uint8* dst_y, uint8* dst_u, uint8* dst_v, int32 dst_pitch_y,
+    int32 dst_pitch_u, int32 dst_pitch_v, size_t width, size_t height,
+    bool interpolate, bool vert_crop) const {
+  UNIMPLEMENTED;
+}
+
+size_t WebRtcTextureVideoFrame::StretchToBuffer(
+    size_t dst_width, size_t dst_height, uint8* dst_buffer, size_t size,
+    bool interpolate, bool vert_crop) const {
+  UNIMPLEMENTED;
+  return 0;
+}
+
+void WebRtcTextureVideoFrame::StretchToFrame(
+    VideoFrame* dst, bool interpolate, bool vert_crop) const {
+  UNIMPLEMENTED;
+}
+
+VideoFrame* WebRtcTextureVideoFrame::Stretch(
+    size_t dst_width, size_t dst_height, bool interpolate,
+    bool vert_crop) const {
+  UNIMPLEMENTED;
+  return NULL;
+}
+
+bool WebRtcTextureVideoFrame::SetToBlack() {
+  UNIMPLEMENTED;
+  return false;
+}
+
+VideoFrame* WebRtcTextureVideoFrame::CreateEmptyFrame(
+    int w, int h, size_t pixel_width, size_t pixel_height, int64_t elapsed_time,
+    int64_t time_stamp) const {
+  UNIMPLEMENTED;
+  return NULL;
 }
 
 }  // namespace cricket

@@ -11,21 +11,42 @@
 #ifndef WEBRTC_VIDEO_FRAME_H_
 #define WEBRTC_VIDEO_FRAME_H_
 
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/common_video/interface/video_frame_buffer.h"
+#include <assert.h>
+
+#include "webrtc/common_video/plane.h"
+// TODO(pbos): Remove scoped_refptr include (and AddRef/Release if they're not
+// used).
+#include "webrtc/system_wrappers/interface/scoped_refptr.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/common_video/rotation.h"
 
 namespace webrtc {
 
+enum PlaneType {
+  kYPlane = 0,
+  kUPlane = 1,
+  kVPlane = 2,
+  kNumOfPlanes = 3
+};
+
 class I420VideoFrame {
  public:
   I420VideoFrame();
-  I420VideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
-                 uint32_t timestamp,
-                 int64_t render_time_ms,
-                 VideoRotation rotation);
   virtual ~I420VideoFrame();
+  // Infrastructure for refCount implementation.
+  // Implements dummy functions for reference counting so that non reference
+  // counted instantiation can be done. These functions should not be called
+  // when creating the frame with new I420VideoFrame().
+  // Note: do not pass a I420VideoFrame created with new I420VideoFrame() or
+  // equivalent to a scoped_refptr or memory leak will occur.
+  virtual int32_t AddRef() {
+    assert(false);
+    return -1;
+  }
+  virtual int32_t Release() {
+    assert(false);
+    return -1;
+  }
 
   // CreateEmptyFrame: Sets frame dimensions and allocates buffers based
   // on set dimensions - height and plane stride.
@@ -41,7 +62,6 @@ class I420VideoFrame {
   // CreateFrame: Sets the frame's members and buffers. If required size is
   // bigger than allocated one, new buffers of adequate size will be allocated.
   // Return value: 0 on success, -1 on error.
-  // TODO(magjed): Remove unnecessary buffer size arguments.
   virtual int CreateFrame(int size_y,
                           const uint8_t* buffer_y,
                           int size_u,
@@ -92,10 +112,10 @@ class I420VideoFrame {
   virtual int stride(PlaneType type) const;
 
   // Get frame width.
-  virtual int width() const;
+  virtual int width() const { return width_; }
 
   // Get frame height.
-  virtual int height() const;
+  virtual int height() const { return height_; }
 
   // Set frame timestamp (90kHz).
   virtual void set_timestamp(uint32_t timestamp) { timestamp_ = timestamp; }
@@ -142,13 +162,27 @@ class I420VideoFrame {
   // longer in use, so the underlying resource can be freed.
   virtual void* native_handle() const;
 
-  // Return the underlying buffer.
-  virtual rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer()
-      const;
+ protected:
+  // Verifies legality of parameters.
+  // Return value: 0 on success, -1 on error.
+  virtual int CheckDimensions(int width,
+                              int height,
+                              int stride_y,
+                              int stride_u,
+                              int stride_v);
+  // TODO(magjed): Move these to an internal frame buffer instead.
+  int width_;
+  int height_;
 
  private:
-  // An opaque reference counted handle that stores the pixel data.
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
+  // Get the pointer to a specific plane.
+  const Plane* GetPlane(PlaneType type) const;
+  // Overloading with non-const.
+  Plane* GetPlane(PlaneType type);
+
+  Plane y_plane_;
+  Plane u_plane_;
+  Plane v_plane_;
   uint32_t timestamp_;
   int64_t ntp_time_ms_;
   int64_t render_time_ms_;

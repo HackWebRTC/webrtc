@@ -135,8 +135,7 @@ TEST_F(ViECapturerTest, TestTextureFrames) {
   for (int i = 0 ; i < kNumFrame; ++i) {
     webrtc::RefCountImpl<FakeNativeHandle>* handle =
               new webrtc::RefCountImpl<FakeNativeHandle>();
-    // Add one to |i| so that width/height > 0.
-    input_frames_.push_back(new TextureVideoFrame(handle, i + 1, i + 1, i, i));
+    input_frames_.push_back(new TextureVideoFrame(handle, i, i, i, i));
     AddInputFrame(input_frames_[i]);
     WaitOutputFrame();
   }

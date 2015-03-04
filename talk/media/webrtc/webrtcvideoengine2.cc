@@ -1993,10 +1993,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
   LOG(LS_VERBOSE) << "RenderFrame: (" << frame.width() << "x" << frame.height()
                   << ")";
 
-  const WebRtcVideoFrame render_frame(
-      frame.video_frame_buffer(),
-      elapsed_time_ms * rtc::kNumNanosecsPerMillisec,
-      frame.render_time_ms() * rtc::kNumNanosecsPerMillisec);
+  const WebRtcVideoRenderFrame render_frame(&frame, elapsed_time_ms);
   renderer_->RenderFrame(&render_frame);
 }
 
