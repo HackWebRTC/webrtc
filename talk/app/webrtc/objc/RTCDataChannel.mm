@@ -39,11 +39,11 @@ class RTCDataChannelObserver : public DataChannelObserver {
  public:
   RTCDataChannelObserver(RTCDataChannel* channel) { _channel = channel; }
 
-  virtual void OnStateChange() OVERRIDE {
+  void OnStateChange() override {
     [_channel.delegate channelDidChangeState:_channel];
   }
 
-  virtual void OnMessage(const DataBuffer& buffer) OVERRIDE {
+  void OnMessage(const DataBuffer& buffer) override {
     if (!_channel.delegate) {
       return;
     }

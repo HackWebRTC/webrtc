@@ -1790,11 +1790,11 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
 
   // AudioRenderer::Sink implementation.
   // This method is called on the audio thread.
-  virtual void OnData(const void* audio_data,
-                      int bits_per_sample,
-                      int sample_rate,
-                      int number_of_channels,
-                      int number_of_frames) OVERRIDE {
+  void OnData(const void* audio_data,
+              int bits_per_sample,
+              int sample_rate,
+              int number_of_channels,
+              int number_of_frames) override {
     voe_audio_transport_->OnData(channel_,
                                  audio_data,
                                  bits_per_sample,
@@ -1805,7 +1805,7 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
 
   // Callback from the |renderer_| when it is going away. In case Start() has
   // never been called, this callback won't be triggered.
-  virtual void OnClose() OVERRIDE {
+  void OnClose() override {
     rtc::CritScope lock(&lock_);
     // Set |renderer_| to NULL to make sure no more callback will get into
     // the renderer.

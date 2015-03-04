@@ -100,7 +100,7 @@ class TestCodecObserver : public webrtc::ViEEncoderObserver,
     last_outgoing_bitrate_ += bitrate;
   }
 
-  virtual void SuspendChange(int video_channel, bool is_suspended) OVERRIDE {
+  void SuspendChange(int video_channel, bool is_suspended) override {
     suspend_change_called_++;
   }
 

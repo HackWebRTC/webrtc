@@ -403,7 +403,7 @@ class AdaptiveVideoSource : public VideoSource {
                       int64_t first_frame_offset_ms);
   virtual ~AdaptiveVideoSource() {}
 
-  virtual void SetBitrateBps(int bitrate_bps) OVERRIDE;
+  void SetBitrateBps(int bitrate_bps) override;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(AdaptiveVideoSource);
@@ -420,9 +420,9 @@ class PeriodicKeyFrameSource : public AdaptiveVideoSource {
   virtual ~PeriodicKeyFrameSource() {}
 
  protected:
-  virtual uint32_t NextFrameSize() OVERRIDE;
-  virtual uint32_t NextPacketSize(uint32_t frame_size,
-                                  uint32_t remaining_payload) OVERRIDE;
+  uint32_t NextFrameSize() override;
+  uint32_t NextPacketSize(uint32_t frame_size,
+                          uint32_t remaining_payload) override;
 
  private:
   int key_frame_interval_;

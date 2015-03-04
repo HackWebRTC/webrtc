@@ -59,8 +59,8 @@ class StatisticsProxy : public RtcpStatisticsCallback {
      ssrc_(ssrc) {}
   virtual ~StatisticsProxy() {}
 
-  virtual void StatisticsUpdated(const RtcpStatistics& statistics,
-                                 uint32_t ssrc) OVERRIDE {
+  void StatisticsUpdated(const RtcpStatistics& statistics,
+                         uint32_t ssrc) override {
     if (ssrc != ssrc_)
       return;
 
@@ -71,7 +71,7 @@ class StatisticsProxy : public RtcpStatisticsCallback {
     }
   }
 
-  virtual void CNameChanged(const char* cname, uint32_t ssrc) OVERRIDE {}
+  void CNameChanged(const char* cname, uint32_t ssrc) override {}
 
   void ResetStatistics() {
     CriticalSectionScoped cs(stats_lock_.get());
@@ -101,10 +101,9 @@ class VoERtcpObserver : public RtcpBandwidthObserver {
     // Not used for Voice Engine.
   }
 
-  virtual void OnReceivedRtcpReceiverReport(
-      const ReportBlockList& report_blocks,
-      int64_t rtt,
-      int64_t now_ms) override {
+  void OnReceivedRtcpReceiverReport(const ReportBlockList& report_blocks,
+                                    int64_t rtt,
+                                    int64_t now_ms) override {
     // TODO(mflodman): Do we need to aggregate reports here or can we jut send
     // what we get? I.e. do we ever get multiple reports bundled into one RTCP
     // report for VoiceEngine?

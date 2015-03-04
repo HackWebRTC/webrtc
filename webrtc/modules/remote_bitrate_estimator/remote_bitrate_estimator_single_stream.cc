@@ -36,16 +36,16 @@ class RemoteBitrateEstimatorImpl : public RemoteBitrateEstimator {
                              uint32_t min_bitrate_bps);
   virtual ~RemoteBitrateEstimatorImpl();
 
-  virtual void IncomingPacket(int64_t arrival_time_ms,
-                              size_t payload_size,
-                              const RTPHeader& header) OVERRIDE;
-  virtual int32_t Process() OVERRIDE;
-  virtual int64_t TimeUntilNextProcess() OVERRIDE;
-  virtual void OnRttUpdate(int64_t rtt) OVERRIDE;
-  virtual void RemoveStream(unsigned int ssrc) OVERRIDE;
-  virtual bool LatestEstimate(std::vector<unsigned int>* ssrcs,
-                              unsigned int* bitrate_bps) const OVERRIDE;
-  virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const OVERRIDE;
+  void IncomingPacket(int64_t arrival_time_ms,
+                      size_t payload_size,
+                      const RTPHeader& header) override;
+  int32_t Process() override;
+  int64_t TimeUntilNextProcess() override;
+  void OnRttUpdate(int64_t rtt) override;
+  void RemoveStream(unsigned int ssrc) override;
+  bool LatestEstimate(std::vector<unsigned int>* ssrcs,
+                      unsigned int* bitrate_bps) const override;
+  bool GetStats(ReceiveBandwidthEstimatorStats* output) const override;
 
  private:
   struct Detector {

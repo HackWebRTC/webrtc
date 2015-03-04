@@ -19,13 +19,9 @@ bool VP8EncoderFactoryConfig::use_simulcast_adapter_ = false;
 
 class VP8EncoderImplFactory : public VideoEncoderFactory {
  public:
-  virtual VideoEncoder* Create() OVERRIDE {
-    return new VP8EncoderImpl();
-  }
+  VideoEncoder* Create() override { return new VP8EncoderImpl(); }
 
-  virtual void Destroy(VideoEncoder* encoder) OVERRIDE {
-    delete encoder;
-  }
+  void Destroy(VideoEncoder* encoder) override { delete encoder; }
 
   virtual ~VP8EncoderImplFactory() {}
 };

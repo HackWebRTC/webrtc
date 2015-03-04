@@ -38,10 +38,10 @@ class VerifyingRtxReceiver : public NullRtpData
  public:
   VerifyingRtxReceiver() {}
 
-  virtual int32_t OnReceivedPayloadData(
+  int32_t OnReceivedPayloadData(
       const uint8_t* data,
       const size_t size,
-      const webrtc::WebRtcRTPHeader* rtp_header) OVERRIDE {
+      const webrtc::WebRtcRTPHeader* rtp_header) override {
     if (!sequence_numbers_.empty())
       EXPECT_EQ(kTestSsrc, rtp_header->header.ssrc);
     sequence_numbers_.push_back(rtp_header->header.sequenceNumber);
@@ -55,8 +55,7 @@ class TestRtpFeedback : public NullRtpFeedback {
   TestRtpFeedback(RtpRtcp* rtp_rtcp) : rtp_rtcp_(rtp_rtcp) {}
   virtual ~TestRtpFeedback() {}
 
-  virtual void OnIncomingSSRCChanged(const int32_t id,
-                                     const uint32_t ssrc) OVERRIDE {
+  void OnIncomingSSRCChanged(const int32_t id, const uint32_t ssrc) override {
     rtp_rtcp_->SetRemoteSSRC(ssrc);
   }
 
@@ -95,7 +94,7 @@ class RtxLoopBackTransport : public webrtc::Transport {
     packet_loss_ = 0;
   }
 
-  virtual int SendPacket(int channel, const void *data, size_t len) OVERRIDE {
+  int SendPacket(int channel, const void* data, size_t len) override {
     count_++;
     const unsigned char* ptr = static_cast<const unsigned  char*>(data);
     uint32_t ssrc = (ptr[8] << 24) + (ptr[9] << 16) + (ptr[10] << 8) + ptr[11];
@@ -146,9 +145,7 @@ class RtxLoopBackTransport : public webrtc::Transport {
     return static_cast<int>(len);
   }
 
-  virtual int SendRTCPPacket(int channel,
-                             const void *data,
-                             size_t len) OVERRIDE {
+  int SendRTCPPacket(int channel, const void* data, size_t len) override {
     if (module_->IncomingRtcpPacket((const uint8_t*)data, len) == 0) {
       return static_cast<int>(len);
     }
@@ -177,7 +174,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
         fake_clock(123456) {}
   ~RtpRtcpRtxNackTest() {}
 
-  virtual void SetUp() OVERRIDE {
+  void SetUp() override {
     RtpRtcp::Configuration configuration;
     configuration.id = kTestId;
     configuration.audio = false;
@@ -284,9 +281,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     receiver_.sequence_numbers_.sort();
   }
 
-  virtual void TearDown() OVERRIDE {
-    delete rtp_rtcp_module_;
-  }
+  void TearDown() override { delete rtp_rtcp_module_; }
 
   rtc::scoped_ptr<ReceiveStatistics> receive_statistics_;
   RTPPayloadRegistry rtp_payload_registry_;

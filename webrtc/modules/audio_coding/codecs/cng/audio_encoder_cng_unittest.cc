@@ -46,7 +46,7 @@ class AudioEncoderCngTest : public ::testing::Test {
     config_.payload_type = kCngPayloadType;
   }
 
-  virtual void TearDown() OVERRIDE {
+  void TearDown() override {
     EXPECT_CALL(*mock_vad_, Die()).Times(1);
     cng_.reset();
     // Don't expect the cng_ object to delete the AudioEncoder object. But it
@@ -407,7 +407,7 @@ class AudioEncoderCngDeathTest : public AudioEncoderCngTest {
   // Override AudioEncoderCngTest::TearDown, since that one expects a call to
   // the destructor of |mock_vad_|. In this case, that object is already
   // deleted.
-  virtual void TearDown() OVERRIDE {
+  void TearDown() override {
     cng_.reset();
     // Don't expect the cng_ object to delete the AudioEncoder object. But it
     // will be deleted with the test fixture. This is why we explicitly delete

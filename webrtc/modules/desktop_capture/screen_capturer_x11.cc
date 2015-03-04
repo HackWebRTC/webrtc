@@ -50,18 +50,18 @@ class ScreenCapturerLinux : public ScreenCapturer,
   bool Init(const DesktopCaptureOptions& options);
 
   // DesktopCapturer interface.
-  virtual void Start(Callback* delegate) OVERRIDE;
-  virtual void Capture(const DesktopRegion& region) OVERRIDE;
+  void Start(Callback* delegate) override;
+  void Capture(const DesktopRegion& region) override;
 
   // ScreenCapturer interface.
-  virtual bool GetScreenList(ScreenList* screens) OVERRIDE;
-  virtual bool SelectScreen(ScreenId id) OVERRIDE;
+  bool GetScreenList(ScreenList* screens) override;
+  bool SelectScreen(ScreenId id) override;
 
  private:
   Display* display() { return options_.x_display()->display(); }
 
   // SharedXDisplay::XEventHandler interface.
-  virtual bool HandleXEvent(const XEvent& event) OVERRIDE;
+  bool HandleXEvent(const XEvent& event) override;
 
   void InitXDamage();
 

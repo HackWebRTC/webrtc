@@ -151,8 +151,8 @@ class FileRenderPassthrough : public VideoRenderer {
   }
 
  private:
-  virtual void RenderFrame(const I420VideoFrame& video_frame,
-                           int time_to_render_ms) OVERRIDE {
+  void RenderFrame(const I420VideoFrame& video_frame,
+                   int time_to_render_ms) override {
     if (renderer_ != NULL)
       renderer_->RenderFrame(video_frame, time_to_render_ms);
     if (basename_ == "")
@@ -181,7 +181,7 @@ class FileRenderPassthrough : public VideoRenderer {
     PrintI420VideoFrame(video_frame, file_);
   }
 
-  virtual bool IsTextureSupported() const override { return false; }
+  bool IsTextureSupported() const override { return false; }
 
   const std::string basename_;
   VideoRenderer* const renderer_;

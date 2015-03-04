@@ -75,7 +75,7 @@ class AcmReceiveTestToggleOutputFreqOldApi : public AcmReceiveTestOldApi {
       NumOutputChannels exptected_output_channels);
 
  protected:
-  void AfterGetAudio() OVERRIDE;
+  void AfterGetAudio() override;
 
   const int output_freq_hz_1_;
   const int output_freq_hz_2_;

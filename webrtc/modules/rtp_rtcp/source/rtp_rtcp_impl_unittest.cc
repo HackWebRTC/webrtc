@@ -40,12 +40,8 @@ class RtcpRttStatsTestImpl : public RtcpRttStats {
   RtcpRttStatsTestImpl() : rtt_ms_(0) {}
   virtual ~RtcpRttStatsTestImpl() {}
 
-  virtual void OnRttUpdate(int64_t rtt_ms) OVERRIDE {
-    rtt_ms_ = rtt_ms;
-  }
-  virtual int64_t LastProcessedRtt() const OVERRIDE {
-    return rtt_ms_;
-  }
+  void OnRttUpdate(int64_t rtt_ms) override { rtt_ms_ = rtt_ms; }
+  int64_t LastProcessedRtt() const override { return rtt_ms_; }
   int64_t rtt_ms_;
 };
 
@@ -66,7 +62,7 @@ class SendTransport : public Transport,
     clock_ = clock;
     delay_ms_ = delay_ms;
   }
-  virtual int SendPacket(int /*ch*/, const void* data, size_t len) OVERRIDE {
+  int SendPacket(int /*ch*/, const void* data, size_t len) override {
     RTPHeader header;
     rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     EXPECT_TRUE(parser->Parse(static_cast<const uint8_t*>(data), len, &header));
@@ -74,9 +70,7 @@ class SendTransport : public Transport,
     last_rtp_header_ = header;
     return static_cast<int>(len);
   }
-  virtual int SendRTCPPacket(int /*ch*/,
-                             const void *data,
-                             size_t len) OVERRIDE {
+  int SendRTCPPacket(int /*ch*/, const void* data, size_t len) override {
     test::RtcpPacketParser parser;
     parser.Parse(static_cast<const uint8_t*>(data), len);
     last_nack_list_ = parser.nack_item()->last_nack_list();

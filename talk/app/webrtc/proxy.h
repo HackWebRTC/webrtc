@@ -312,72 +312,70 @@ class MethodCall5 : public rtc::Message,
   T5 a5_;
 };
 
-#define BEGIN_PROXY_MAP(c) \
-  class c##Proxy : public c##Interface {\
-   protected:\
-    typedef c##Interface C;\
-    c##Proxy(rtc::Thread* thread, C* c)\
-      : owner_thread_(thread), \
-        c_(c)  {}\
-    ~c##Proxy() {\
-      MethodCall0<c##Proxy, void> call(this, &c##Proxy::Release_s);\
-      call.Marshal(owner_thread_);\
-    }\
-   public:\
-    static rtc::scoped_refptr<C> Create(rtc::Thread* thread, \
-                                              C* c) {\
-      return new rtc::RefCountedObject<c##Proxy>(thread, c);\
-    }\
+#define BEGIN_PROXY_MAP(c)                                                \
+  class c##Proxy : public c##Interface {                                  \
+   protected:                                                             \
+    typedef c##Interface C;                                               \
+    c##Proxy(rtc::Thread* thread, C* c) : owner_thread_(thread), c_(c) {} \
+    ~c##Proxy() {                                                         \
+      MethodCall0<c##Proxy, void> call(this, &c##Proxy::Release_s);       \
+      call.Marshal(owner_thread_);                                        \
+    }                                                                     \
+                                                                          \
+   public:                                                                \
+    static rtc::scoped_refptr<C> Create(rtc::Thread* thread, C* c) {      \
+      return new rtc::RefCountedObject<c##Proxy>(thread, c);              \
+    }
 
-#define PROXY_METHOD0(r, method)\
-    r method() OVERRIDE {\
-      MethodCall0<C, r> call(c_.get(), &C::method);\
-      return call.Marshal(owner_thread_);\
-    }\
+#define PROXY_METHOD0(r, method)                  \
+  r method() override {                           \
+    MethodCall0<C, r> call(c_.get(), &C::method); \
+    return call.Marshal(owner_thread_);           \
+  }
 
-#define PROXY_CONSTMETHOD0(r, method)\
-    r method() const OVERRIDE {\
-      ConstMethodCall0<C, r> call(c_.get(), &C::method);\
-      return call.Marshal(owner_thread_);\
-     }\
+#define PROXY_CONSTMETHOD0(r, method)                  \
+  r method() const override {                          \
+    ConstMethodCall0<C, r> call(c_.get(), &C::method); \
+    return call.Marshal(owner_thread_);                \
+  }
 
-#define PROXY_METHOD1(r, method, t1)\
-    r method(t1 a1) OVERRIDE {\
-      MethodCall1<C, r, t1> call(c_.get(), &C::method, a1);\
-      return call.Marshal(owner_thread_);\
-    }\
+#define PROXY_METHOD1(r, method, t1)                      \
+  r method(t1 a1) override {                              \
+    MethodCall1<C, r, t1> call(c_.get(), &C::method, a1); \
+    return call.Marshal(owner_thread_);                   \
+  }
 
-#define PROXY_CONSTMETHOD1(r, method, t1)\
-    r method(t1 a1) const OVERRIDE {\
-      ConstMethodCall1<C, r, t1> call(c_.get(), &C::method, a1);\
-      return call.Marshal(owner_thread_);\
-    }\
+#define PROXY_CONSTMETHOD1(r, method, t1)                      \
+  r method(t1 a1) const override {                             \
+    ConstMethodCall1<C, r, t1> call(c_.get(), &C::method, a1); \
+    return call.Marshal(owner_thread_);                        \
+  }
 
-#define PROXY_METHOD2(r, method, t1, t2)\
-    r method(t1 a1, t2 a2) OVERRIDE {\
-      MethodCall2<C, r, t1, t2> call(c_.get(), &C::method, a1, a2);\
-      return call.Marshal(owner_thread_);\
-    }\
+#define PROXY_METHOD2(r, method, t1, t2)                          \
+  r method(t1 a1, t2 a2) override {                               \
+    MethodCall2<C, r, t1, t2> call(c_.get(), &C::method, a1, a2); \
+    return call.Marshal(owner_thread_);                           \
+  }
 
-#define PROXY_METHOD3(r, method, t1, t2, t3)\
-    r method(t1 a1, t2 a2, t3 a3) OVERRIDE {\
-      MethodCall3<C, r, t1, t2, t3> call(c_.get(), &C::method, a1, a2, a3);\
-      return call.Marshal(owner_thread_);\
-    }\
+#define PROXY_METHOD3(r, method, t1, t2, t3)                              \
+  r method(t1 a1, t2 a2, t3 a3) override {                                \
+    MethodCall3<C, r, t1, t2, t3> call(c_.get(), &C::method, a1, a2, a3); \
+    return call.Marshal(owner_thread_);                                   \
+  }
 
-#define PROXY_METHOD4(r, method, t1, t2, t3, t4)\
-    r method(t1 a1, t2 a2, t3 a3, t4 a4) OVERRIDE {\
-      MethodCall4<C, r, t1, t2, t3, t4> call(\
-          c_.get(), &C::method, a1, a2, a3, a4);\
-      return call.Marshal(owner_thread_);\
-    }\
+#define PROXY_METHOD4(r, method, t1, t2, t3, t4)                             \
+  r method(t1 a1, t2 a2, t3 a3, t4 a4) override {                            \
+    MethodCall4<C, r, t1, t2, t3, t4> call(c_.get(), &C::method, a1, a2, a3, \
+                                           a4);                              \
+    return call.Marshal(owner_thread_);                                      \
+  }
 
-#define PROXY_METHOD5(r, method, t1, t2, t3, t4, t5)\
-    r method(t1 a1, t2 a2, t3 a3, t4 a4, t5 a5) OVERRIDE {\
-      MethodCall5<C, r, t1, t2, t3, t4, t5> call(\
-          c_.get(), &C::method, a1, a2, a3, a4, a5);\
-      return call.Marshal(owner_thread_);\
-    }\
+#define PROXY_METHOD5(r, method, t1, t2, t3, t4, t5)                         \
+  r method(t1 a1, t2 a2, t3 a3, t4 a4, t5 a5) override {                     \
+    MethodCall5<C, r, t1, t2, t3, t4, t5> call(c_.get(), &C::method, a1, a2, \
+                                               a3, a4, a5);                  \
+    return call.Marshal(owner_thread_);                                      \
+  }
 
 #define END_PROXY() \
    private:\

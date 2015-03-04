@@ -295,7 +295,7 @@ class FakeTransportChannel : public TransportChannelImpl,
     }
   }
 
-  virtual bool GetStats(ConnectionInfos* infos) OVERRIDE {
+  bool GetStats(ConnectionInfos* infos) override {
     ConnectionInfo info;
     infos->clear();
     infos->push_back(info);

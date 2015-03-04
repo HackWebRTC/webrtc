@@ -33,22 +33,22 @@ class AudioEncoderCopyRed : public AudioEncoder {
   // Caller keeps ownership of the AudioEncoder object.
   explicit AudioEncoderCopyRed(const Config& config);
 
-  virtual ~AudioEncoderCopyRed();
+  ~AudioEncoderCopyRed() override;
 
-  virtual int SampleRateHz() const OVERRIDE;
+  int SampleRateHz() const override;
   int RtpTimestampRateHz() const override;
-  virtual int NumChannels() const OVERRIDE;
-  virtual int Num10MsFramesInNextPacket() const OVERRIDE;
-  virtual int Max10MsFramesInAPacket() const OVERRIDE;
+  int NumChannels() const override;
+  int Num10MsFramesInNextPacket() const override;
+  int Max10MsFramesInAPacket() const override;
   void SetTargetBitrate(int bits_per_second) override;
   void SetProjectedPacketLossRate(double fraction) override;
 
  protected:
-  virtual void EncodeInternal(uint32_t rtp_timestamp,
-                              const int16_t* audio,
-                              size_t max_encoded_bytes,
-                              uint8_t* encoded,
-                              EncodedInfo* info) OVERRIDE;
+  void EncodeInternal(uint32_t rtp_timestamp,
+                      const int16_t* audio,
+                      size_t max_encoded_bytes,
+                      uint8_t* encoded,
+                      EncodedInfo* info) override;
 
  private:
   AudioEncoder* speech_encoder_;

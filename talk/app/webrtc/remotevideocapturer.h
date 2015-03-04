@@ -47,14 +47,14 @@ class RemoteVideoCapturer : public cricket::VideoCapturer {
   virtual ~RemoteVideoCapturer();
 
   // cricket::VideoCapturer implementation.
-  virtual cricket::CaptureState Start(
-      const cricket::VideoFormat& capture_format) OVERRIDE;
-  virtual void Stop() OVERRIDE;
-  virtual bool IsRunning() OVERRIDE;
-  virtual bool GetPreferredFourccs(std::vector<uint32>* fourccs) OVERRIDE;
-  virtual bool GetBestCaptureFormat(const cricket::VideoFormat& desired,
-                                    cricket::VideoFormat* best_format) OVERRIDE;
-  virtual bool IsScreencast() const OVERRIDE;
+  cricket::CaptureState Start(
+      const cricket::VideoFormat& capture_format) override;
+  void Stop() override;
+  bool IsRunning() override;
+  bool GetPreferredFourccs(std::vector<uint32>* fourccs) override;
+  bool GetBestCaptureFormat(const cricket::VideoFormat& desired,
+                            cricket::VideoFormat* best_format) override;
+  bool IsScreencast() const override;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(RemoteVideoCapturer);

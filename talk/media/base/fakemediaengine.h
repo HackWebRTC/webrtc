@@ -432,14 +432,12 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
         renderer_->SetSink(NULL);
       }
     }
-    virtual void OnData(const void* audio_data,
-                        int bits_per_sample,
-                        int sample_rate,
-                        int number_of_channels,
-                        int number_of_frames) OVERRIDE {}
-    virtual void OnClose() OVERRIDE {
-      renderer_ = NULL;
-    }
+    void OnData(const void* audio_data,
+                int bits_per_sample,
+                int sample_rate,
+                int number_of_channels,
+                int number_of_frames) override {}
+    void OnClose() override { renderer_ = NULL; }
     AudioRenderer* renderer() const { return renderer_; }
 
    private:

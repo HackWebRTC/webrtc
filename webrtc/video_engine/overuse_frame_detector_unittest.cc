@@ -62,8 +62,7 @@ class OveruseFrameDetectorTest : public ::testing::Test,
     overuse_detector_->SetObserver(observer_.get());
   }
 
-  virtual void CpuOveruseMetricsUpdated(
-      const CpuOveruseMetrics& metrics) override {
+  void CpuOveruseMetricsUpdated(const CpuOveruseMetrics& metrics) override {
     metrics_ = metrics;
   }
 

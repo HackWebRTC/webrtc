@@ -46,73 +46,63 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
         running_(false),
         delay_(0) {
   }
-  virtual int64_t TimeUntilNextProcess() OVERRIDE {
-    return 0;
-  }
-  virtual int32_t Process() OVERRIDE {
-    return 0;
-  }
-  virtual void RegisterCaptureDataCallback(
-      webrtc::VideoCaptureDataCallback& callback) OVERRIDE {
+  int64_t TimeUntilNextProcess() override { return 0; }
+  int32_t Process() override { return 0; }
+  void RegisterCaptureDataCallback(
+      webrtc::VideoCaptureDataCallback& callback) override {
     callback_ = &callback;
   }
-  virtual void DeRegisterCaptureDataCallback() OVERRIDE { callback_ = NULL; }
-  virtual void RegisterCaptureCallback(
-      webrtc::VideoCaptureFeedBack& callback) OVERRIDE {
+  void DeRegisterCaptureDataCallback() override { callback_ = NULL; }
+  void RegisterCaptureCallback(
+      webrtc::VideoCaptureFeedBack& callback) override {
     // Not implemented.
   }
-  virtual void DeRegisterCaptureCallback() OVERRIDE {
+  void DeRegisterCaptureCallback() override {
     // Not implemented.
   }
-  virtual void SetCaptureDelay(int32_t delay) OVERRIDE { delay_ = delay; }
-  virtual int32_t CaptureDelay() OVERRIDE { return delay_; }
-  virtual void EnableFrameRateCallback(const bool enable) OVERRIDE {
+  void SetCaptureDelay(int32_t delay) override { delay_ = delay; }
+  int32_t CaptureDelay() override { return delay_; }
+  void EnableFrameRateCallback(const bool enable) override {
     // not implemented
   }
-  virtual void EnableNoPictureAlarm(const bool enable) OVERRIDE {
+  void EnableNoPictureAlarm(const bool enable) override {
     // not implemented
   }
-  virtual int32_t StartCapture(
-      const webrtc::VideoCaptureCapability& cap) OVERRIDE {
+  int32_t StartCapture(const webrtc::VideoCaptureCapability& cap) override {
     if (running_) return -1;
     cap_ = cap;
     running_ = true;
     return 0;
   }
-  virtual int32_t StopCapture() OVERRIDE {
+  int32_t StopCapture() override {
     running_ = false;
     return 0;
   }
-  virtual const char* CurrentDeviceName() const OVERRIDE {
+  const char* CurrentDeviceName() const override {
     return NULL;  // not implemented
   }
-  virtual bool CaptureStarted() OVERRIDE {
-    return running_;
-  }
-  virtual int32_t CaptureSettings(
-      webrtc::VideoCaptureCapability& settings) OVERRIDE {
+  bool CaptureStarted() override { return running_; }
+  int32_t CaptureSettings(webrtc::VideoCaptureCapability& settings) override {
     if (!running_) return -1;
     settings = cap_;
     return 0;
   }
 
-  virtual int32_t SetCaptureRotation(webrtc::VideoRotation rotation) OVERRIDE {
+  int32_t SetCaptureRotation(webrtc::VideoRotation rotation) override {
     return -1;  // not implemented
   }
-  virtual bool SetApplyRotation(bool enable) OVERRIDE {
+  bool SetApplyRotation(bool enable) override {
     return false;  // not implemented
   }
-  virtual bool GetApplyRotation() OVERRIDE {
+  bool GetApplyRotation() override {
     return true;  // Rotation compensation is turned on.
   }
-  virtual VideoCaptureEncodeInterface* GetEncodeInterface(
-      const webrtc::VideoCodec& codec) OVERRIDE {
+  VideoCaptureEncodeInterface* GetEncodeInterface(
+      const webrtc::VideoCodec& codec) override {
     return NULL;  // not implemented
   }
-  virtual int32_t AddRef() OVERRIDE {
-    return 0;
-  }
-  virtual int32_t Release() OVERRIDE {
+  int32_t AddRef() override { return 0; }
+  int32_t Release() override {
     delete this;
     return 0;
   }

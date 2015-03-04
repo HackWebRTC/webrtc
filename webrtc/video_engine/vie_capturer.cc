@@ -34,8 +34,7 @@ const int kThreadWaitTimeMs = 100;
 
 class RegistrableCpuOveruseMetricsObserver : public CpuOveruseMetricsObserver {
  public:
-  virtual void CpuOveruseMetricsUpdated(
-      const CpuOveruseMetrics& metrics) override {
+  void CpuOveruseMetricsUpdated(const CpuOveruseMetrics& metrics) override {
     rtc::CritScope lock(&crit_);
     if (observer_)
       observer_->CpuOveruseMetricsUpdated(metrics);

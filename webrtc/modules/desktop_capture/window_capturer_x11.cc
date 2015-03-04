@@ -92,16 +92,16 @@ class WindowCapturerLinux : public WindowCapturer,
   virtual ~WindowCapturerLinux();
 
   // WindowCapturer interface.
-  virtual bool GetWindowList(WindowList* windows) OVERRIDE;
-  virtual bool SelectWindow(WindowId id) OVERRIDE;
-  virtual bool BringSelectedWindowToFront() OVERRIDE;
+  bool GetWindowList(WindowList* windows) override;
+  bool SelectWindow(WindowId id) override;
+  bool BringSelectedWindowToFront() override;
 
   // DesktopCapturer interface.
-  virtual void Start(Callback* callback) OVERRIDE;
-  virtual void Capture(const DesktopRegion& region) OVERRIDE;
+  void Start(Callback* callback) override;
+  void Capture(const DesktopRegion& region) override;
 
   // SharedXDisplay::XEventHandler interface.
-  virtual bool HandleXEvent(const XEvent& event) OVERRIDE;
+  bool HandleXEvent(const XEvent& event) override;
 
  private:
   Display* display() { return x_display_->display(); }

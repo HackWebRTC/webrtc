@@ -85,10 +85,8 @@ public:
                         TbExternalTransport::SsrcChannelMap* receive_channels);
     ~TbExternalTransport(void);
 
-    virtual int SendPacket(int channel, const void *data, size_t len) OVERRIDE;
-    virtual int SendRTCPPacket(int channel,
-                               const void *data,
-                               size_t len) OVERRIDE;
+    int SendPacket(int channel, const void* data, size_t len) override;
+    int SendRTCPPacket(int channel, const void* data, size_t len) override;
 
     // Should only be called before/after traffic is being processed.
     // Only one observer can be set (multiple calls will overwrite each other).

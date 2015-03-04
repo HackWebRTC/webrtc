@@ -345,64 +345,55 @@ public:
     void SetVideoEngineBWETarget(ViENetwork* vie_network, int video_channel);
 
     // From AudioPacketizationCallback in the ACM
-    virtual int32_t SendData(
-        FrameType frameType,
-        uint8_t payloadType,
-        uint32_t timeStamp,
-        const uint8_t* payloadData,
-        size_t payloadSize,
-        const RTPFragmentationHeader* fragmentation) OVERRIDE;
+    int32_t SendData(FrameType frameType,
+                     uint8_t payloadType,
+                     uint32_t timeStamp,
+                     const uint8_t* payloadData,
+                     size_t payloadSize,
+                     const RTPFragmentationHeader* fragmentation) override;
 
     // From ACMVADCallback in the ACM
-    virtual int32_t InFrameType(int16_t frameType) OVERRIDE;
+    int32_t InFrameType(int16_t frameType) override;
 
     int32_t OnRxVadDetected(int vadDecision);
 
     // From RtpData in the RTP/RTCP module
-    virtual int32_t OnReceivedPayloadData(
-        const uint8_t* payloadData,
-        size_t payloadSize,
-        const WebRtcRTPHeader* rtpHeader) OVERRIDE;
-    virtual bool OnRecoveredPacket(const uint8_t* packet,
-                                   size_t packet_length) OVERRIDE;
+    int32_t OnReceivedPayloadData(const uint8_t* payloadData,
+                                  size_t payloadSize,
+                                  const WebRtcRTPHeader* rtpHeader) override;
+    bool OnRecoveredPacket(const uint8_t* packet,
+                           size_t packet_length) override;
 
     // From RtpFeedback in the RTP/RTCP module
-    virtual int32_t OnInitializeDecoder(
-        int32_t id,
-        int8_t payloadType,
-        const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-        int frequency,
-        uint8_t channels,
-        uint32_t rate) OVERRIDE;
-    virtual void OnIncomingSSRCChanged(int32_t id,
-                                       uint32_t ssrc) OVERRIDE;
-    virtual void OnIncomingCSRCChanged(int32_t id,
-                                       uint32_t CSRC, bool added) OVERRIDE;
-    virtual void ResetStatistics(uint32_t ssrc) OVERRIDE;
+    int32_t OnInitializeDecoder(int32_t id,
+                                int8_t payloadType,
+                                const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+                                int frequency,
+                                uint8_t channels,
+                                uint32_t rate) override;
+    void OnIncomingSSRCChanged(int32_t id, uint32_t ssrc) override;
+    void OnIncomingCSRCChanged(int32_t id, uint32_t CSRC, bool added) override;
+    void ResetStatistics(uint32_t ssrc) override;
 
     // From RtpAudioFeedback in the RTP/RTCP module
-    virtual void OnPlayTelephoneEvent(int32_t id,
-                                      uint8_t event,
-                                      uint16_t lengthMs,
-                                      uint8_t volume) OVERRIDE;
+    void OnPlayTelephoneEvent(int32_t id,
+                              uint8_t event,
+                              uint16_t lengthMs,
+                              uint8_t volume) override;
 
     // From Transport (called by the RTP/RTCP module)
-    virtual int SendPacket(int /*channel*/,
-                           const void *data,
-                           size_t len) OVERRIDE;
-    virtual int SendRTCPPacket(int /*channel*/,
-                               const void *data,
-                               size_t len) OVERRIDE;
+    int SendPacket(int /*channel*/, const void* data, size_t len) override;
+    int SendRTCPPacket(int /*channel*/, const void* data, size_t len) override;
 
     // From MixerParticipant
-    virtual int32_t GetAudioFrame(int32_t id, AudioFrame& audioFrame) OVERRIDE;
-    virtual int32_t NeededFrequency(int32_t id) OVERRIDE;
+    int32_t GetAudioFrame(int32_t id, AudioFrame& audioFrame) override;
+    int32_t NeededFrequency(int32_t id) override;
 
     // From FileCallback
-    virtual void PlayNotification(int32_t id, uint32_t durationMs) OVERRIDE;
-    virtual void RecordNotification(int32_t id, uint32_t durationMs) OVERRIDE;
-    virtual void PlayFileEnded(int32_t id) OVERRIDE;
-    virtual void RecordFileEnded(int32_t id) OVERRIDE;
+    void PlayNotification(int32_t id, uint32_t durationMs) override;
+    void RecordNotification(int32_t id, uint32_t durationMs) override;
+    void PlayFileEnded(int32_t id) override;
+    void RecordFileEnded(int32_t id) override;
 
     uint32_t InstanceId() const
     {

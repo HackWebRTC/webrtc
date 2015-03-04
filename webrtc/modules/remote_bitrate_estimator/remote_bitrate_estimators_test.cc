@@ -267,7 +267,7 @@ class BweFeedbackTest
   }
 
  protected:
-  virtual void SetUp() OVERRIDE { BweTest::SetUp(); }
+  void SetUp() override { BweTest::SetUp(); }
 
  private:
   DISALLOW_COPY_AND_ASSIGN(BweFeedbackTest);

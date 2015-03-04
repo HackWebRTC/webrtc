@@ -64,26 +64,27 @@ public:
     bool Init();
 
     // Module functions
-    virtual int64_t TimeUntilNextProcess() OVERRIDE;
-    virtual int32_t Process() OVERRIDE;
+    int64_t TimeUntilNextProcess() override;
+    int32_t Process() override;
 
     // AudioConferenceMixer functions
-    virtual int32_t RegisterMixedStreamCallback(
-        AudioMixerOutputReceiver& mixReceiver) OVERRIDE;
-    virtual int32_t UnRegisterMixedStreamCallback() OVERRIDE;
-    virtual int32_t RegisterMixerStatusCallback(
+    int32_t RegisterMixedStreamCallback(
+        AudioMixerOutputReceiver& mixReceiver) override;
+    int32_t UnRegisterMixedStreamCallback() override;
+    int32_t RegisterMixerStatusCallback(
         AudioMixerStatusReceiver& mixerStatusCallback,
-        const uint32_t amountOf10MsBetweenCallbacks) OVERRIDE;
-    virtual int32_t UnRegisterMixerStatusCallback() OVERRIDE;
-    virtual int32_t SetMixabilityStatus(MixerParticipant& participant,
-                                        bool mixable) OVERRIDE;
-    virtual int32_t MixabilityStatus(MixerParticipant& participant,
-                                     bool& mixable) OVERRIDE;
-    virtual int32_t SetMinimumMixingFrequency(Frequency freq) OVERRIDE;
-    virtual int32_t SetAnonymousMixabilityStatus(
-        MixerParticipant& participant, const bool mixable) OVERRIDE;
-    virtual int32_t AnonymousMixabilityStatus(
-        MixerParticipant& participant, bool& mixable) OVERRIDE;
+        const uint32_t amountOf10MsBetweenCallbacks) override;
+    int32_t UnRegisterMixerStatusCallback() override;
+    int32_t SetMixabilityStatus(MixerParticipant& participant,
+                                bool mixable) override;
+    int32_t MixabilityStatus(MixerParticipant& participant,
+                             bool& mixable) override;
+    int32_t SetMinimumMixingFrequency(Frequency freq) override;
+    int32_t SetAnonymousMixabilityStatus(MixerParticipant& participant,
+                                         const bool mixable) override;
+    int32_t AnonymousMixabilityStatus(MixerParticipant& participant,
+                                      bool& mixable) override;
+
 private:
     enum{DEFAULT_AUDIO_FRAME_POOLSIZE = 50};
 

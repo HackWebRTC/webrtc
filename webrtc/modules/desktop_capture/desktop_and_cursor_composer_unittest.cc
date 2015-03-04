@@ -74,11 +74,9 @@ class FakeScreenCapturer : public DesktopCapturer {
  public:
   FakeScreenCapturer() {}
 
-  virtual void Start(Callback* callback) OVERRIDE {
-    callback_ = callback;
-  }
+  void Start(Callback* callback) override { callback_ = callback; }
 
-  virtual void Capture(const DesktopRegion& region) OVERRIDE {
+  void Capture(const DesktopRegion& region) override {
     callback_->OnCaptureCompleted(next_frame_.release());
   }
 
@@ -107,11 +105,9 @@ class FakeMouseMonitor : public MouseCursorMonitor {
     hotspot_ = hotspot;
   }
 
-  virtual void Init(Callback* callback, Mode mode) OVERRIDE {
-    callback_ = callback;
-  }
+  void Init(Callback* callback, Mode mode) override { callback_ = callback; }
 
-  virtual void Capture() OVERRIDE {
+  void Capture() override {
     if (changed_) {
       rtc::scoped_ptr<DesktopFrame> image(
           new BasicDesktopFrame(DesktopSize(kCursorWidth, kCursorHeight)));
@@ -172,13 +168,9 @@ class DesktopAndCursorComposerTest : public testing::Test,
   }
 
   // DesktopCapturer::Callback interface
-  virtual SharedMemory* CreateSharedMemory(size_t size) OVERRIDE {
-    return NULL;
-  }
+  SharedMemory* CreateSharedMemory(size_t size) override { return NULL; }
 
-  virtual void OnCaptureCompleted(DesktopFrame* frame) OVERRIDE {
-    frame_.reset(frame);
-  }
+  void OnCaptureCompleted(DesktopFrame* frame) override { frame_.reset(frame); }
 
  protected:
   // Owned by |blender_|.

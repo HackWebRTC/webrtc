@@ -37,8 +37,9 @@ struct CapturedFrame;
 // Creates instances of cricket::WebRtcVideoFrame.
 class WebRtcVideoFrameFactory : public VideoFrameFactory {
  public:
-  virtual VideoFrame* CreateAliasedFrame(
-      const CapturedFrame* aliased_frame, int width, int height) const OVERRIDE;
+  VideoFrame* CreateAliasedFrame(const CapturedFrame* aliased_frame,
+                                 int width,
+                                 int height) const override;
 };
 
 }  // namespace cricket

@@ -27,14 +27,13 @@ class BitrateControllerImpl::RtcpBandwidthObserverImpl
   virtual ~RtcpBandwidthObserverImpl() {
   }
   // Received RTCP REMB or TMMBR.
-  virtual void OnReceivedEstimatedBitrate(uint32_t bitrate) OVERRIDE {
+  void OnReceivedEstimatedBitrate(uint32_t bitrate) override {
     owner_->OnReceivedEstimatedBitrate(bitrate);
   }
   // Received RTCP receiver block.
-  virtual void OnReceivedRtcpReceiverReport(
-      const ReportBlockList& report_blocks,
-      int64_t rtt,
-      int64_t now_ms) OVERRIDE {
+  void OnReceivedRtcpReceiverReport(const ReportBlockList& report_blocks,
+                                    int64_t rtt,
+                                    int64_t now_ms) override {
     if (report_blocks.empty())
       return;
 

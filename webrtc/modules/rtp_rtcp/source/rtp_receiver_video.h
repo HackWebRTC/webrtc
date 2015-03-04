@@ -26,34 +26,33 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
 
   virtual ~RTPReceiverVideo();
 
-  virtual int32_t ParseRtpPacket(WebRtcRTPHeader* rtp_header,
-                                 const PayloadUnion& specific_payload,
-                                 bool is_red,
-                                 const uint8_t* packet,
-                                 size_t packet_length,
-                                 int64_t timestamp,
-                                 bool is_first_packet) OVERRIDE;
+  int32_t ParseRtpPacket(WebRtcRTPHeader* rtp_header,
+                         const PayloadUnion& specific_payload,
+                         bool is_red,
+                         const uint8_t* packet,
+                         size_t packet_length,
+                         int64_t timestamp,
+                         bool is_first_packet) override;
 
   TelephoneEventHandler* GetTelephoneEventHandler() { return NULL; }
 
-  int GetPayloadTypeFrequency() const OVERRIDE;
+  int GetPayloadTypeFrequency() const override;
 
-  virtual RTPAliveType ProcessDeadOrAlive(
-      uint16_t last_payload_length) const OVERRIDE;
+  RTPAliveType ProcessDeadOrAlive(uint16_t last_payload_length) const override;
 
-  virtual bool ShouldReportCsrcChanges(uint8_t payload_type) const OVERRIDE;
+  bool ShouldReportCsrcChanges(uint8_t payload_type) const override;
 
-  virtual int32_t OnNewPayloadTypeCreated(
+  int32_t OnNewPayloadTypeCreated(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       int8_t payload_type,
-      uint32_t frequency) OVERRIDE;
+      uint32_t frequency) override;
 
-  virtual int32_t InvokeOnInitializeDecoder(
+  int32_t InvokeOnInitializeDecoder(
       RtpFeedback* callback,
       int32_t id,
       int8_t payload_type,
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      const PayloadUnion& specific_payload) const OVERRIDE;
+      const PayloadUnion& specific_payload) const override;
 
   void SetPacketOverHead(uint16_t packet_over_head);
 

@@ -44,10 +44,10 @@ public:
     void RegisterTransportCallback(VCMPacketizationCallback* transport);
     // Process encoded data received from the encoder, pass stream to the
     // VCMReceiver module
-    virtual int32_t SendData(uint8_t payloadType,
-                             const EncodedImage& encoded_image,
-                             const RTPFragmentationHeader& fragmentationHeader,
-                             const RTPVideoHeader* videoHdr) OVERRIDE;
+    int32_t SendData(uint8_t payloadType,
+                     const EncodedImage& encoded_image,
+                     const RTPFragmentationHeader& fragmentationHeader,
+                     const RTPVideoHeader* videoHdr) override;
     // Register exisitng VCM. Currently - encode and decode under same module.
     void RegisterReceiverVCM(VideoCodingModule *vcm) {_VCMReceiver = vcm;}
     // Return size of last encoded frame data (all frames in the sequence)
@@ -97,10 +97,10 @@ public:
     virtual ~VCMRTPEncodeCompleteCallback() {}
     // Process encoded data received from the encoder, pass stream to the
     // RTP module
-    virtual int32_t SendData(uint8_t payloadType,
-                             const EncodedImage& encoded_image,
-                             const RTPFragmentationHeader& fragmentationHeader,
-                             const RTPVideoHeader* videoHdr) OVERRIDE;
+    int32_t SendData(uint8_t payloadType,
+                     const EncodedImage& encoded_image,
+                     const RTPFragmentationHeader& fragmentationHeader,
+                     const RTPVideoHeader* videoHdr) override;
     // Return size of last encoded frame. Value good for one call
     // (resets to zero after call to inform test of frame drop)
     size_t EncodedBytes();
@@ -136,7 +136,7 @@ public:
         _decodedFile(decodedFile), _decodedBytes(0) {}
     virtual ~VCMDecodeCompleteCallback() {}
     // Write decoded frame into file
-    virtual int32_t FrameToRender(webrtc::I420VideoFrame& videoFrame) OVERRIDE;
+    int32_t FrameToRender(webrtc::I420VideoFrame& videoFrame) override;
     size_t DecodedBytes();
 private:
     FILE*       _decodedFile;
@@ -157,11 +157,9 @@ public:
 
     void SetRtpModule(RtpRtcp* rtp_module) { _rtp = rtp_module; }
     // Send Packet to receive side RTP module
-    virtual int SendPacket(int channel, const void *data, size_t len) OVERRIDE;
+    int SendPacket(int channel, const void* data, size_t len) override;
     // Send RTCP Packet to receive side RTP module
-    virtual int SendRTCPPacket(int channel,
-                               const void *data,
-                               size_t len) OVERRIDE;
+    int SendRTCPPacket(int channel, const void* data, size_t len) override;
     // Set percentage of channel loss in the network
     void SetLossPct(double lossPct);
     // Set average size of burst loss
@@ -203,8 +201,9 @@ class PacketRequester: public VCMPacketRequestCallback
 public:
     PacketRequester(RtpRtcp& rtp) :
         _rtp(rtp) {}
-    virtual int32_t ResendPackets(const uint16_t* sequenceNumbers,
-                                  uint16_t length) OVERRIDE;
+    int32_t ResendPackets(const uint16_t* sequenceNumbers,
+                          uint16_t length) override;
+
 private:
     webrtc::RtpRtcp& _rtp;
 };
@@ -213,7 +212,7 @@ private:
 class KeyFrameReqTest: public VCMFrameTypeCallback
 {
 public:
-    virtual int32_t RequestKeyFrame() OVERRIDE;
+ int32_t RequestKeyFrame() override;
 };
 
 
@@ -222,8 +221,8 @@ class SendStatsTest: public webrtc::VCMSendStatisticsCallback
 {
 public:
     SendStatsTest() : _framerate(15), _bitrate(500) {}
-    virtual int32_t SendStatistics(const uint32_t bitRate,
-                                   const uint32_t frameRate) OVERRIDE;
+    int32_t SendStatistics(const uint32_t bitRate,
+                           const uint32_t frameRate) override;
     void set_framerate(uint32_t frameRate) {_framerate = frameRate;}
     void set_bitrate(uint32_t bitrate) {_bitrate = bitrate;}
 private:
@@ -239,12 +238,11 @@ public:
     VideoProtectionCallback();
     virtual ~VideoProtectionCallback();
     void RegisterRtpModule(RtpRtcp* rtp) {_rtp = rtp;}
-    virtual int32_t ProtectionRequest(
-        const FecProtectionParams* delta_fec_params,
-        const FecProtectionParams* key_fec_params,
-        uint32_t* sent_video_rate_bps,
-        uint32_t* sent_nack_rate_bps,
-        uint32_t* sent_fec_rate_bps) OVERRIDE;
+    int32_t ProtectionRequest(const FecProtectionParams* delta_fec_params,
+                              const FecProtectionParams* key_fec_params,
+                              uint32_t* sent_video_rate_bps,
+                              uint32_t* sent_nack_rate_bps,
+                              uint32_t* sent_fec_rate_bps) override;
     FecProtectionParams DeltaFecParameters() const;
     FecProtectionParams KeyFecParameters() const;
 private:

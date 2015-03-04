@@ -66,42 +66,42 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
 
   explicit AudioEncoderDecoderIsacT(const Config& config);
   explicit AudioEncoderDecoderIsacT(const ConfigAdaptive& config);
-  virtual ~AudioEncoderDecoderIsacT() OVERRIDE;
+  ~AudioEncoderDecoderIsacT() override;
 
   // AudioEncoder public methods.
-  virtual int SampleRateHz() const OVERRIDE;
-  virtual int NumChannels() const OVERRIDE;
-  virtual int Num10MsFramesInNextPacket() const OVERRIDE;
-  virtual int Max10MsFramesInAPacket() const OVERRIDE;
+  int SampleRateHz() const override;
+  int NumChannels() const override;
+  int Num10MsFramesInNextPacket() const override;
+  int Max10MsFramesInAPacket() const override;
 
   // AudioDecoder methods.
-  virtual int Decode(const uint8_t* encoded,
-                     size_t encoded_len,
-                     int sample_rate_hz,
-                     int16_t* decoded,
-                     SpeechType* speech_type) OVERRIDE;
-  virtual int DecodeRedundant(const uint8_t* encoded,
-                              size_t encoded_len,
-                              int sample_rate_hz,
-                              int16_t* decoded,
-                              SpeechType* speech_type) OVERRIDE;
-  virtual bool HasDecodePlc() const OVERRIDE;
-  virtual int DecodePlc(int num_frames, int16_t* decoded) OVERRIDE;
-  virtual int Init() OVERRIDE;
-  virtual int IncomingPacket(const uint8_t* payload,
-                             size_t payload_len,
-                             uint16_t rtp_sequence_number,
-                             uint32_t rtp_timestamp,
-                             uint32_t arrival_timestamp) OVERRIDE;
-  virtual int ErrorCode() OVERRIDE;
+  int Decode(const uint8_t* encoded,
+             size_t encoded_len,
+             int sample_rate_hz,
+             int16_t* decoded,
+             SpeechType* speech_type) override;
+  int DecodeRedundant(const uint8_t* encoded,
+                      size_t encoded_len,
+                      int sample_rate_hz,
+                      int16_t* decoded,
+                      SpeechType* speech_type) override;
+  bool HasDecodePlc() const override;
+  int DecodePlc(int num_frames, int16_t* decoded) override;
+  int Init() override;
+  int IncomingPacket(const uint8_t* payload,
+                     size_t payload_len,
+                     uint16_t rtp_sequence_number,
+                     uint32_t rtp_timestamp,
+                     uint32_t arrival_timestamp) override;
+  int ErrorCode() override;
 
  protected:
   // AudioEncoder protected method.
-  virtual void EncodeInternal(uint32_t rtp_timestamp,
-                              const int16_t* audio,
-                              size_t max_encoded_bytes,
-                              uint8_t* encoded,
-                              EncodedInfo* info) OVERRIDE;
+  void EncodeInternal(uint32_t rtp_timestamp,
+                      const int16_t* audio,
+                      size_t max_encoded_bytes,
+                      uint8_t* encoded,
+                      EncodedInfo* info) override;
 
  private:
   // This value is taken from STREAM_SIZE_MAX_60 for iSAC float (60 ms) and

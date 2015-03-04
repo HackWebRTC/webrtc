@@ -28,20 +28,20 @@ class AudioEncoderG722 : public AudioEncoder {
   };
 
   explicit AudioEncoderG722(const Config& config);
-  virtual ~AudioEncoderG722();
+  ~AudioEncoderG722() override;
 
-  virtual int SampleRateHz() const OVERRIDE;
+  int SampleRateHz() const override;
   int RtpTimestampRateHz() const override;
-  virtual int NumChannels() const OVERRIDE;
-  virtual int Num10MsFramesInNextPacket() const OVERRIDE;
-  virtual int Max10MsFramesInAPacket() const OVERRIDE;
+  int NumChannels() const override;
+  int Num10MsFramesInNextPacket() const override;
+  int Max10MsFramesInAPacket() const override;
 
  protected:
-  virtual void EncodeInternal(uint32_t rtp_timestamp,
-                              const int16_t* audio,
-                              size_t max_encoded_bytes,
-                              uint8_t* encoded,
-                              EncodedInfo* info) OVERRIDE;
+  void EncodeInternal(uint32_t rtp_timestamp,
+                      const int16_t* audio,
+                      size_t max_encoded_bytes,
+                      uint8_t* encoded,
+                      EncodedInfo* info) override;
 
  private:
   // The encoder state for one channel.

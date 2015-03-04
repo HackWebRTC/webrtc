@@ -18,7 +18,7 @@ class ReportBlockStatsTest : public ::testing::Test {
  protected:
   ReportBlockStatsTest() : kSsrc1(0x12345), kSsrc2(0x23456) {}
 
-  virtual void SetUp() OVERRIDE {
+  void SetUp() override {
     // kSsrc1: block 1-3.
     block1_1_.cumulativeLost = 10;
     block1_1_.fractionLost = 123;

@@ -41,7 +41,7 @@ class RtpFileSource : public PacketSource {
 
   // Returns a pointer to the next packet. Returns NULL if end of file was
   // reached, or if a the data was corrupt.
-  virtual Packet* NextPacket() OVERRIDE;
+  Packet* NextPacket() override;
 
  private:
   static const int kFirstLineLength = 40;

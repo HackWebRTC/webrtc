@@ -46,13 +46,12 @@ class AcmSendTestOldApi : public AudioPacketizationCallback,
   Packet* NextPacket();
 
   // Inherited from AudioPacketizationCallback.
-  virtual int32_t SendData(
-      FrameType frame_type,
-      uint8_t payload_type,
-      uint32_t timestamp,
-      const uint8_t* payload_data,
-      size_t payload_len_bytes,
-      const RTPFragmentationHeader* fragmentation) OVERRIDE;
+  int32_t SendData(FrameType frame_type,
+                   uint8_t payload_type,
+                   uint32_t timestamp,
+                   const uint8_t* payload_data,
+                   size_t payload_len_bytes,
+                   const RTPFragmentationHeader* fragmentation) override;
 
   AudioCodingModule* acm() { return acm_.get(); }
 

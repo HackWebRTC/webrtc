@@ -32,7 +32,7 @@ class PacketReceiver : public PacketProcessor {
   ~PacketReceiver();
 
   // Implements PacketProcessor.
-  virtual void RunFor(int64_t time_ms, Packets* in_out) OVERRIDE;
+  void RunFor(int64_t time_ms, Packets* in_out) override;
 
   void LogStats();
 

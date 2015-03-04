@@ -36,19 +36,18 @@ int64_t Clock::NtpToMs(uint32_t ntp_secs, uint32_t ntp_frac) {
 class RealTimeClock : public Clock {
   // Return a timestamp in milliseconds relative to some arbitrary source; the
   // source is fixed for this clock.
-  virtual int64_t TimeInMilliseconds() const OVERRIDE {
+  int64_t TimeInMilliseconds() const override {
     return TickTime::MillisecondTimestamp();
   }
 
   // Return a timestamp in microseconds relative to some arbitrary source; the
   // source is fixed for this clock.
-  virtual int64_t TimeInMicroseconds() const OVERRIDE {
+  int64_t TimeInMicroseconds() const override {
     return TickTime::MicrosecondTimestamp();
   }
 
   // Retrieve an NTP absolute timestamp in seconds and fractions of a second.
-  virtual void CurrentNtp(uint32_t& seconds,
-                          uint32_t& fractions) const OVERRIDE {
+  void CurrentNtp(uint32_t& seconds, uint32_t& fractions) const override {
     timeval tv = CurrentTimeVal();
     double microseconds_in_seconds;
     Adjust(tv, &seconds, &microseconds_in_seconds);
@@ -57,7 +56,7 @@ class RealTimeClock : public Clock {
   }
 
   // Retrieve an NTP absolute timestamp in milliseconds.
-  virtual int64_t CurrentNtpInMilliseconds() const OVERRIDE {
+  int64_t CurrentNtpInMilliseconds() const override {
     timeval tv = CurrentTimeVal();
     uint32_t seconds;
     double microseconds_in_seconds;
@@ -103,7 +102,7 @@ class WindowsRealTimeClock : public RealTimeClock {
     LARGE_INTEGER counter_ms;
   };
 
-  virtual timeval CurrentTimeVal() const OVERRIDE {
+  timeval CurrentTimeVal() const override {
     const uint64_t FILETIME_1970 = 0x019db1ded53e8000;
 
     FILETIME StartTime;
@@ -191,10 +190,10 @@ class UnixRealTimeClock : public RealTimeClock {
  public:
   UnixRealTimeClock() {}
 
-  virtual ~UnixRealTimeClock() {}
+  ~UnixRealTimeClock() override {}
 
  protected:
-  virtual timeval CurrentTimeVal() const OVERRIDE {
+  timeval CurrentTimeVal() const override {
     struct timeval tv;
     struct timezone tz;
     tz.tz_minuteswest = 0;

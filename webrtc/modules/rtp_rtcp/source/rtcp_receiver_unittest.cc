@@ -39,24 +39,22 @@ class TestTransport : public Transport,
   void SetRTCPReceiver(RTCPReceiver* rtcp_receiver) {
     rtcp_receiver_ = rtcp_receiver;
   }
-  virtual int SendPacket(int /*ch*/,
-                         const void* /*data*/,
-                         size_t /*len*/) OVERRIDE {
+  int SendPacket(int /*ch*/, const void* /*data*/, size_t /*len*/) override {
     ADD_FAILURE();  // FAIL() gives a compile error.
     return -1;
   }
 
   // Injects an RTCP packet into the receiver.
-  virtual int SendRTCPPacket(int /* ch */,
-                             const void *packet,
-                             size_t packet_len) OVERRIDE {
+  int SendRTCPPacket(int /* ch */,
+                     const void* packet,
+                     size_t packet_len) override {
     ADD_FAILURE();
     return 0;
   }
 
-  virtual int OnReceivedPayloadData(const uint8_t* payloadData,
-                                    const size_t payloadSize,
-                                    const WebRtcRTPHeader* rtpHeader) OVERRIDE {
+  int OnReceivedPayloadData(const uint8_t* payloadData,
+                            const size_t payloadSize,
+                            const WebRtcRTPHeader* rtpHeader) override {
     ADD_FAILURE();
     return 0;
   }
@@ -966,13 +964,13 @@ TEST_F(RtcpReceiverTest, Callbacks) {
     RtcpCallbackImpl() : RtcpStatisticsCallback(), ssrc_(0) {}
     virtual ~RtcpCallbackImpl() {}
 
-    virtual void StatisticsUpdated(const RtcpStatistics& statistics,
-                                   uint32_t ssrc) OVERRIDE {
+    void StatisticsUpdated(const RtcpStatistics& statistics,
+                           uint32_t ssrc) override {
       stats_ = statistics;
       ssrc_ = ssrc;
     }
 
-    virtual void CNameChanged(const char* cname, uint32_t ssrc) OVERRIDE {}
+    void CNameChanged(const char* cname, uint32_t ssrc) override {}
 
     bool Matches(uint32_t ssrc, uint32_t extended_max, uint8_t fraction_loss,
                  uint32_t cumulative_loss, uint32_t jitter) {

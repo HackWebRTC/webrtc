@@ -46,7 +46,7 @@ class ScreenshareLayersFT : public ScreenshareLayers {
   virtual ~ScreenshareLayersFT() {}
 
  protected:
-  virtual bool TargetBitrateExperimentEnabled() OVERRIDE { return true; }
+  bool TargetBitrateExperimentEnabled() override { return true; }
 };
 
 class ScreenshareLayerTest : public ::testing::Test {

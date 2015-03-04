@@ -42,13 +42,12 @@ public:
                    size_t& encodedLengthInBytes);
 
 protected:
-    virtual int32_t SendData(
-        FrameType frameType,
-        uint8_t payloadType,
-        uint32_t timeStamp,
-        const uint8_t* payloadData,
-        size_t payloadSize,
-        const RTPFragmentationHeader* fragmentation) OVERRIDE;
+ int32_t SendData(FrameType frameType,
+                  uint8_t payloadType,
+                  uint32_t timeStamp,
+                  const uint8_t* payloadData,
+                  size_t payloadSize,
+                  const RTPFragmentationHeader* fragmentation) override;
 
 private:
  rtc::scoped_ptr<AudioCodingModule> _acm;

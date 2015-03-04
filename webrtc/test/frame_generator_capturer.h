@@ -42,8 +42,8 @@ class FrameGeneratorCapturer : public VideoCapturer {
                                                    Clock* clock);
   virtual ~FrameGeneratorCapturer();
 
-  virtual void Start() OVERRIDE;
-  virtual void Stop() OVERRIDE;
+  void Start() override;
+  void Stop() override;
 
   int64_t first_frame_capture_time() const { return first_frame_capture_time_; }
 

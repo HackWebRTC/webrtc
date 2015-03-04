@@ -75,10 +75,8 @@ class RTPSendCallback_SizeTest : public webrtc::Transport
 public:
     // constructor input: (receive side) rtp module to send encoded data to
     RTPSendCallback_SizeTest() : _maxPayloadSize(0), _payloadSizeSum(0), _nPackets(0) {}
-    virtual int SendPacket(int channel, const void *data, size_t len) OVERRIDE;
-    virtual int SendRTCPPacket(int channel,
-                               const void *data,
-                               size_t len) OVERRIDE {
+    int SendPacket(int channel, const void* data, size_t len) override;
+    int SendRTCPPacket(int channel, const void* data, size_t len) override {
       return 0;
     }
     void SetMaxPayloadSize(size_t maxPayloadSize);
@@ -94,11 +92,10 @@ class VCMEncComplete_KeyReqTest : public webrtc::VCMPacketizationCallback
 {
 public:
     VCMEncComplete_KeyReqTest(webrtc::VideoCodingModule &vcm) : _vcm(vcm), _seqNo(0), _timeStamp(0) {}
-    virtual int32_t SendData(
-        uint8_t payloadType,
-        const webrtc::EncodedImage& encoded_image,
-        const webrtc::RTPFragmentationHeader& fragmentationHeader,
-        const webrtc::RTPVideoHeader* videoHdr) OVERRIDE;
+    int32_t SendData(uint8_t payloadType,
+                     const webrtc::EncodedImage& encoded_image,
+                     const webrtc::RTPFragmentationHeader& fragmentationHeader,
+                     const webrtc::RTPVideoHeader* videoHdr) override;
 
 private:
     webrtc::VideoCodingModule& _vcm;

@@ -45,38 +45,37 @@ class ReceiveStatisticsProxy : public ViEDecoderObserver,
   void OnRenderedFrame();
 
   // Overrides VCMReceiveStatisticsCallback
-  virtual void OnReceiveRatesUpdated(uint32_t bitRate,
-                                     uint32_t frameRate) OVERRIDE;
-  virtual void OnFrameCountsUpdated(const FrameCounts& frame_counts) OVERRIDE;
-  virtual void OnDiscardedPacketsUpdated(int discarded_packets) OVERRIDE;
+  void OnReceiveRatesUpdated(uint32_t bitRate, uint32_t frameRate) override;
+  void OnFrameCountsUpdated(const FrameCounts& frame_counts) override;
+  void OnDiscardedPacketsUpdated(int discarded_packets) override;
 
   // Overrides ViEDecoderObserver.
-  virtual void IncomingCodecChanged(const int video_channel,
-                                    const VideoCodec& video_codec) OVERRIDE {}
-  virtual void IncomingRate(const int video_channel,
-                            const unsigned int framerate,
-                            const unsigned int bitrate_bps) OVERRIDE;
-  virtual void DecoderTiming(int decode_ms,
-                             int max_decode_ms,
-                             int current_delay_ms,
-                             int target_delay_ms,
-                             int jitter_buffer_ms,
-                             int min_playout_delay_ms,
-                             int render_delay_ms) OVERRIDE;
-  virtual void RequestNewKeyFrame(const int video_channel) OVERRIDE {}
+  void IncomingCodecChanged(const int video_channel,
+                            const VideoCodec& video_codec) override {}
+  void IncomingRate(const int video_channel,
+                    const unsigned int framerate,
+                    const unsigned int bitrate_bps) override;
+  void DecoderTiming(int decode_ms,
+                     int max_decode_ms,
+                     int current_delay_ms,
+                     int target_delay_ms,
+                     int jitter_buffer_ms,
+                     int min_playout_delay_ms,
+                     int render_delay_ms) override;
+  void RequestNewKeyFrame(const int video_channel) override {}
 
   // Overrides RtcpStatisticsCallback.
-  virtual void StatisticsUpdated(const webrtc::RtcpStatistics& statistics,
-                                 uint32_t ssrc) OVERRIDE;
-  virtual void CNameChanged(const char* cname, uint32_t ssrc) OVERRIDE;
+  void StatisticsUpdated(const webrtc::RtcpStatistics& statistics,
+                         uint32_t ssrc) override;
+  void CNameChanged(const char* cname, uint32_t ssrc) override;
 
   // Overrides RtcpPacketTypeCounterObserver
-  virtual void RtcpPacketTypesCounterUpdated(
+  void RtcpPacketTypesCounterUpdated(
       uint32_t ssrc,
-      const RtcpPacketTypeCounter& packet_counter) OVERRIDE;
+      const RtcpPacketTypeCounter& packet_counter) override;
   // Overrides StreamDataCountersCallback.
-  virtual void DataCountersUpdated(const webrtc::StreamDataCounters& counters,
-                                   uint32_t ssrc) OVERRIDE;
+  void DataCountersUpdated(const webrtc::StreamDataCounters& counters,
+                           uint32_t ssrc) override;
 
  private:
   Clock* const clock_;

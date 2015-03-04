@@ -26,72 +26,71 @@ public:
     MediaFileImpl(const int32_t id);
     ~MediaFileImpl();
 
-    virtual int32_t Process() OVERRIDE;
-    virtual int64_t TimeUntilNextProcess() OVERRIDE;
+    int32_t Process() override;
+    int64_t TimeUntilNextProcess() override;
 
     // MediaFile functions
-    virtual int32_t PlayoutAudioData(int8_t* audioBuffer,
-                                     size_t& dataLengthInBytes) OVERRIDE;
+    int32_t PlayoutAudioData(int8_t* audioBuffer,
+                             size_t& dataLengthInBytes) override;
 
-    virtual int32_t PlayoutStereoData(int8_t* audioBufferLeft,
-                                      int8_t* audioBufferRight,
-                                      size_t& dataLengthInBytes) OVERRIDE;
+    int32_t PlayoutStereoData(int8_t* audioBufferLeft,
+                              int8_t* audioBufferRight,
+                              size_t& dataLengthInBytes) override;
 
-    virtual int32_t StartPlayingAudioFile(
-        const char*  fileName,
+    int32_t StartPlayingAudioFile(
+        const char* fileName,
         const uint32_t notificationTimeMs = 0,
-        const bool           loop = false,
-        const FileFormats    format = kFileFormatPcm16kHzFile,
-        const CodecInst*     codecInst = NULL,
+        const bool loop = false,
+        const FileFormats format = kFileFormatPcm16kHzFile,
+        const CodecInst* codecInst = NULL,
         const uint32_t startPointMs = 0,
-        const uint32_t stopPointMs = 0) OVERRIDE;
+        const uint32_t stopPointMs = 0) override;
 
-    virtual int32_t StartPlayingAudioStream(InStream& stream,
+    int32_t StartPlayingAudioStream(
+        InStream& stream,
         const uint32_t notificationTimeMs = 0,
         const FileFormats format = kFileFormatPcm16kHzFile,
         const CodecInst* codecInst = NULL,
         const uint32_t startPointMs = 0,
-        const uint32_t stopPointMs = 0) OVERRIDE;
+        const uint32_t stopPointMs = 0) override;
 
-    virtual int32_t StopPlaying() OVERRIDE;
+    int32_t StopPlaying() override;
 
-    virtual bool IsPlaying() OVERRIDE;
+    bool IsPlaying() override;
 
-    virtual int32_t PlayoutPositionMs(uint32_t& positionMs) const OVERRIDE;
+    int32_t PlayoutPositionMs(uint32_t& positionMs) const override;
 
-    virtual int32_t IncomingAudioData(const int8_t* audioBuffer,
-                                      const size_t bufferLength) OVERRIDE;
+    int32_t IncomingAudioData(const int8_t* audioBuffer,
+                              const size_t bufferLength) override;
 
-    virtual int32_t StartRecordingAudioFile(
-        const char*  fileName,
-        const FileFormats    format,
-        const CodecInst&     codecInst,
-        const uint32_t notificationTimeMs = 0,
-        const uint32_t maxSizeBytes = 0) OVERRIDE;
+    int32_t StartRecordingAudioFile(const char* fileName,
+                                    const FileFormats format,
+                                    const CodecInst& codecInst,
+                                    const uint32_t notificationTimeMs = 0,
+                                    const uint32_t maxSizeBytes = 0) override;
 
-    virtual int32_t StartRecordingAudioStream(
-        OutStream&           stream,
-        const FileFormats    format,
-        const CodecInst&     codecInst,
-        const uint32_t notificationTimeMs = 0) OVERRIDE;
+    int32_t StartRecordingAudioStream(
+        OutStream& stream,
+        const FileFormats format,
+        const CodecInst& codecInst,
+        const uint32_t notificationTimeMs = 0) override;
 
-    virtual int32_t StopRecording() OVERRIDE;
+    int32_t StopRecording() override;
 
-    virtual bool IsRecording() OVERRIDE;
+    bool IsRecording() override;
 
-    virtual int32_t RecordDurationMs(uint32_t& durationMs) OVERRIDE;
+    int32_t RecordDurationMs(uint32_t& durationMs) override;
 
-    virtual bool IsStereo() OVERRIDE;
+    bool IsStereo() override;
 
-    virtual int32_t SetModuleFileCallback(FileCallback* callback) OVERRIDE;
+    int32_t SetModuleFileCallback(FileCallback* callback) override;
 
-    virtual int32_t FileDurationMs(
-        const char*  fileName,
-        uint32_t&      durationMs,
-        const FileFormats    format,
-        const uint32_t freqInHz = 16000) OVERRIDE;
+    int32_t FileDurationMs(const char* fileName,
+                           uint32_t& durationMs,
+                           const FileFormats format,
+                           const uint32_t freqInHz = 16000) override;
 
-    virtual int32_t codec_info(CodecInst& codecInst) const OVERRIDE;
+    int32_t codec_info(CodecInst& codecInst) const override;
 
 private:
     // Returns true if the combination of format and codecInst is valid.

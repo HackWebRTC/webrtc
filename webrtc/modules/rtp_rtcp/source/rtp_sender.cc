@@ -73,7 +73,7 @@ class BitrateAggregator {
         : aggregator_(aggregator) {}
 
     // Implements Bitrate::Observer.
-    virtual void BitrateUpdated(const BitrateStatistics& stats) OVERRIDE {
+    void BitrateUpdated(const BitrateStatistics& stats) override {
       statistics_ = stats;
       aggregator_.OnStatsUpdated();
     }

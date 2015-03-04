@@ -17,11 +17,11 @@ namespace {
 // Callback Function to add 3 to every sample in the signal.
 class PlusThreeBlockerCallback : public webrtc::BlockerCallback {
  public:
-  virtual void ProcessBlock(const float* const* input,
-                            int num_frames,
-                            int num_input_channels,
-                            int num_output_channels,
-                            float* const* output) OVERRIDE {
+  void ProcessBlock(const float* const* input,
+                    int num_frames,
+                    int num_input_channels,
+                    int num_output_channels,
+                    float* const* output) override {
     for (int i = 0; i < num_output_channels; ++i) {
       for (int j = 0; j < num_frames; ++j) {
         output[i][j] = input[i][j] + 3;
@@ -33,11 +33,11 @@ class PlusThreeBlockerCallback : public webrtc::BlockerCallback {
 // No-op Callback Function.
 class CopyBlockerCallback : public webrtc::BlockerCallback {
  public:
-  virtual void ProcessBlock(const float* const* input,
-                            int num_frames,
-                            int num_input_channels,
-                            int num_output_channels,
-                            float* const* output) OVERRIDE {
+  void ProcessBlock(const float* const* input,
+                    int num_frames,
+                    int num_input_channels,
+                    int num_output_channels,
+                    float* const* output) override {
     for (int i = 0; i < num_output_channels; ++i) {
       for (int j = 0; j < num_frames; ++j) {
         output[i][j] = input[i][j];

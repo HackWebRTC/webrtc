@@ -91,57 +91,55 @@ class AudioProcessingImpl : public AudioProcessing {
   virtual ~AudioProcessingImpl();
 
   // AudioProcessing methods.
-  virtual int Initialize() OVERRIDE;
-  virtual int Initialize(int input_sample_rate_hz,
-                         int output_sample_rate_hz,
-                         int reverse_sample_rate_hz,
-                         ChannelLayout input_layout,
-                         ChannelLayout output_layout,
-                         ChannelLayout reverse_layout) OVERRIDE;
-  virtual void SetExtraOptions(const Config& config) OVERRIDE;
-  virtual int set_sample_rate_hz(int rate) OVERRIDE;
-  virtual int input_sample_rate_hz() const OVERRIDE;
-  virtual int sample_rate_hz() const OVERRIDE;
-  virtual int proc_sample_rate_hz() const OVERRIDE;
-  virtual int proc_split_sample_rate_hz() const OVERRIDE;
-  virtual int num_input_channels() const OVERRIDE;
-  virtual int num_output_channels() const OVERRIDE;
-  virtual int num_reverse_channels() const OVERRIDE;
-  virtual void set_output_will_be_muted(bool muted) OVERRIDE;
-  virtual bool output_will_be_muted() const OVERRIDE;
-  virtual int ProcessStream(AudioFrame* frame) OVERRIDE;
-  virtual int ProcessStream(const float* const* src,
-                            int samples_per_channel,
-                            int input_sample_rate_hz,
-                            ChannelLayout input_layout,
-                            int output_sample_rate_hz,
-                            ChannelLayout output_layout,
-                            float* const* dest) OVERRIDE;
-  virtual int AnalyzeReverseStream(AudioFrame* frame) OVERRIDE;
-  virtual int AnalyzeReverseStream(const float* const* data,
-                                   int samples_per_channel,
-                                   int sample_rate_hz,
-                                   ChannelLayout layout) OVERRIDE;
-  virtual int set_stream_delay_ms(int delay) OVERRIDE;
-  virtual int stream_delay_ms() const OVERRIDE;
-  virtual bool was_stream_delay_set() const OVERRIDE;
-  virtual void set_delay_offset_ms(int offset) OVERRIDE;
-  virtual int delay_offset_ms() const OVERRIDE;
-  virtual void set_stream_key_pressed(bool key_pressed) OVERRIDE;
-  virtual bool stream_key_pressed() const OVERRIDE;
-  virtual int StartDebugRecording(
-      const char filename[kMaxFilenameSize]) OVERRIDE;
-  virtual int StartDebugRecording(FILE* handle) OVERRIDE;
-  virtual int StartDebugRecordingForPlatformFile(
-      rtc::PlatformFile handle) OVERRIDE;
-  virtual int StopDebugRecording() OVERRIDE;
-  virtual EchoCancellation* echo_cancellation() const OVERRIDE;
-  virtual EchoControlMobile* echo_control_mobile() const OVERRIDE;
-  virtual GainControl* gain_control() const OVERRIDE;
-  virtual HighPassFilter* high_pass_filter() const OVERRIDE;
-  virtual LevelEstimator* level_estimator() const OVERRIDE;
-  virtual NoiseSuppression* noise_suppression() const OVERRIDE;
-  virtual VoiceDetection* voice_detection() const OVERRIDE;
+  int Initialize() override;
+  int Initialize(int input_sample_rate_hz,
+                 int output_sample_rate_hz,
+                 int reverse_sample_rate_hz,
+                 ChannelLayout input_layout,
+                 ChannelLayout output_layout,
+                 ChannelLayout reverse_layout) override;
+  void SetExtraOptions(const Config& config) override;
+  int set_sample_rate_hz(int rate) override;
+  int input_sample_rate_hz() const override;
+  int sample_rate_hz() const override;
+  int proc_sample_rate_hz() const override;
+  int proc_split_sample_rate_hz() const override;
+  int num_input_channels() const override;
+  int num_output_channels() const override;
+  int num_reverse_channels() const override;
+  void set_output_will_be_muted(bool muted) override;
+  bool output_will_be_muted() const override;
+  int ProcessStream(AudioFrame* frame) override;
+  int ProcessStream(const float* const* src,
+                    int samples_per_channel,
+                    int input_sample_rate_hz,
+                    ChannelLayout input_layout,
+                    int output_sample_rate_hz,
+                    ChannelLayout output_layout,
+                    float* const* dest) override;
+  int AnalyzeReverseStream(AudioFrame* frame) override;
+  int AnalyzeReverseStream(const float* const* data,
+                           int samples_per_channel,
+                           int sample_rate_hz,
+                           ChannelLayout layout) override;
+  int set_stream_delay_ms(int delay) override;
+  int stream_delay_ms() const override;
+  bool was_stream_delay_set() const override;
+  void set_delay_offset_ms(int offset) override;
+  int delay_offset_ms() const override;
+  void set_stream_key_pressed(bool key_pressed) override;
+  bool stream_key_pressed() const override;
+  int StartDebugRecording(const char filename[kMaxFilenameSize]) override;
+  int StartDebugRecording(FILE* handle) override;
+  int StartDebugRecordingForPlatformFile(rtc::PlatformFile handle) override;
+  int StopDebugRecording() override;
+  EchoCancellation* echo_cancellation() const override;
+  EchoControlMobile* echo_control_mobile() const override;
+  GainControl* gain_control() const override;
+  HighPassFilter* high_pass_filter() const override;
+  LevelEstimator* level_estimator() const override;
+  NoiseSuppression* noise_suppression() const override;
+  VoiceDetection* voice_detection() const override;
 
  protected:
   // Overridden in a mock.

@@ -145,15 +145,13 @@ class MockVideoEncoder : public VideoEncoder {
 
 class MockVideoEncoderFactory : public VideoEncoderFactory {
  public:
-  virtual VideoEncoder* Create() OVERRIDE {
+  VideoEncoder* Create() override {
     MockVideoEncoder* encoder = new MockVideoEncoder();
     encoders_.push_back(encoder);
     return encoder;
   }
 
-  virtual void Destroy(VideoEncoder* encoder) OVERRIDE {
-    delete encoder;
-  }
+  void Destroy(VideoEncoder* encoder) override { delete encoder; }
 
   virtual ~MockVideoEncoderFactory() {}
 

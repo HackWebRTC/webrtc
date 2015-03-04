@@ -81,8 +81,8 @@ class OveruseFrameDetector : public Module {
   int FramesInQueue() const;
 
   // Implements Module.
-  virtual int64_t TimeUntilNextProcess() OVERRIDE;
-  virtual int32_t Process() OVERRIDE;
+  int64_t TimeUntilNextProcess() override;
+  int32_t Process() override;
 
  private:
   class EncodeTimeAvg;

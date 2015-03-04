@@ -19,6 +19,7 @@
 #include <string.h>
 #endif
 
+#include "webrtc/base/checks.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 
 namespace webrtc {
@@ -266,6 +267,11 @@ int FileWrapperImpl::FlushImpl() {
   if (id_ != NULL) {
     return fflush(id_);
   }
+  return -1;
+}
+
+int FileWrapper::Rewind() {
+  DCHECK(false);
   return -1;
 }
 

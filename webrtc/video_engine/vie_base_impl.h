@@ -35,13 +35,13 @@ class ViEBaseImpl
                                          CpuOveruseObserver* observer);
   virtual int SetCpuOveruseOptions(int channel,
                                    const CpuOveruseOptions& options);
-  virtual void RegisterCpuOveruseMetricsObserver(
+  void RegisterCpuOveruseMetricsObserver(
       int channel,
       CpuOveruseMetricsObserver* observer) override;
   virtual int GetCpuOveruseMetrics(int channel,
                                    CpuOveruseMetrics* metrics);
-  virtual void RegisterSendSideDelayObserver(int channel,
-      SendSideDelayObserver* observer) OVERRIDE;
+  void RegisterSendSideDelayObserver(int channel,
+                                     SendSideDelayObserver* observer) override;
   virtual int CreateChannel(int& video_channel);  // NOLINT
   virtual int CreateChannel(int& video_channel,  // NOLINT
                             const Config* config);
@@ -73,12 +73,12 @@ class ViEBaseImpl
   int CreateChannel(int& video_channel, int original_channel,  // NOLINT
                     bool sender, bool disable_default_encoder);
 
-  virtual void RegisterSendStatisticsProxy(
+  void RegisterSendStatisticsProxy(
       int channel,
-      SendStatisticsProxy* send_statistics_proxy) OVERRIDE;
-  virtual void RegisterReceiveStatisticsProxy(
+      SendStatisticsProxy* send_statistics_proxy) override;
+  void RegisterReceiveStatisticsProxy(
       int channel,
-      ReceiveStatisticsProxy* receive_statistics_proxy) OVERRIDE;
+      ReceiveStatisticsProxy* receive_statistics_proxy) override;
   // ViEBaseImpl owns ViESharedData used by all interface implementations.
   ViESharedData shared_data_;
 };

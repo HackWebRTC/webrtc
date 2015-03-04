@@ -154,12 +154,11 @@ class FakeMetricsObserver : public webrtc::MetricsObserverInterface {
            sizeof(peer_connection_metrics_name_));
   }
 
-  virtual void IncrementCounter(
-      webrtc::PeerConnectionMetricsCounter type) OVERRIDE {
+  void IncrementCounter(webrtc::PeerConnectionMetricsCounter type) override {
     peer_connection_metrics_counters_[type]++;
   }
-  virtual void AddHistogramSample(webrtc::PeerConnectionMetricsName type,
-                                  int value) OVERRIDE {
+  void AddHistogramSample(webrtc::PeerConnectionMetricsName type,
+                          int value) override {
     ASSERT(peer_connection_metrics_name_[type] == 0);
     peer_connection_metrics_name_[type] = value;
   }
@@ -168,8 +167,8 @@ class FakeMetricsObserver : public webrtc::MetricsObserverInterface {
       [webrtc::kPeerConnectionMetricsCounter_Max];
   int peer_connection_metrics_name_[webrtc::kPeerConnectionMetricsCounter_Max];
 
-  virtual int AddRef() OVERRIDE { return 1; }
-  virtual int Release() OVERRIDE { return 1; }
+  int AddRef() override { return 1; }
+  int Release() override { return 1; }
 };
 
 class MockIceObserver : public webrtc::IceObserver {
@@ -300,17 +299,15 @@ class FakeAudioRenderer : public cricket::AudioRenderer {
       sink_->OnClose();
   }
 
-  virtual void AddChannel(int channel_id) OVERRIDE {
+  void AddChannel(int channel_id) override {
     ASSERT(channel_id_ == -1);
     channel_id_ = channel_id;
   }
-  virtual void RemoveChannel(int channel_id) OVERRIDE {
+  void RemoveChannel(int channel_id) override {
     ASSERT(channel_id == channel_id_);
     channel_id_ = -1;
   }
-  virtual void SetSink(Sink* sink) OVERRIDE {
-    sink_ = sink;
-  }
+  void SetSink(Sink* sink) override { sink_ = sink; }
 
   int channel_id() const { return channel_id_; }
   cricket::AudioRenderer::Sink* sink() const { return sink_; }

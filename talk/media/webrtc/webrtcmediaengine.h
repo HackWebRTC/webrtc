@@ -97,90 +97,83 @@ class DelegatingWebRtcMediaEngine : public cricket::MediaEngineInterface {
   virtual ~DelegatingWebRtcMediaEngine() {
     DestroyWebRtcMediaEngine(delegate_);
   }
-  virtual bool Init(rtc::Thread* worker_thread) OVERRIDE {
+  bool Init(rtc::Thread* worker_thread) override {
     return delegate_->Init(worker_thread);
   }
-  virtual void Terminate() OVERRIDE {
-    delegate_->Terminate();
-  }
-  virtual int GetCapabilities() OVERRIDE {
-    return delegate_->GetCapabilities();
-  }
-  virtual VoiceMediaChannel* CreateChannel() OVERRIDE {
+  void Terminate() override { delegate_->Terminate(); }
+  int GetCapabilities() override { return delegate_->GetCapabilities(); }
+  VoiceMediaChannel* CreateChannel() override {
     return delegate_->CreateChannel();
   }
-  virtual VideoMediaChannel* CreateVideoChannel(
+  VideoMediaChannel* CreateVideoChannel(
       const VideoOptions& options,
-      VoiceMediaChannel* voice_media_channel) OVERRIDE {
+      VoiceMediaChannel* voice_media_channel) override {
     return delegate_->CreateVideoChannel(options, voice_media_channel);
   }
-  virtual SoundclipMedia* CreateSoundclip() OVERRIDE {
+  SoundclipMedia* CreateSoundclip() override {
     return delegate_->CreateSoundclip();
   }
-  virtual AudioOptions GetAudioOptions() const OVERRIDE {
+  AudioOptions GetAudioOptions() const override {
     return delegate_->GetAudioOptions();
   }
-  virtual bool SetAudioOptions(const AudioOptions& options) OVERRIDE {
+  bool SetAudioOptions(const AudioOptions& options) override {
     return delegate_->SetAudioOptions(options);
   }
-  virtual bool SetAudioDelayOffset(int offset) OVERRIDE {
+  bool SetAudioDelayOffset(int offset) override {
     return delegate_->SetAudioDelayOffset(offset);
   }
-  virtual bool SetDefaultVideoEncoderConfig(
-      const VideoEncoderConfig& config) OVERRIDE {
+  bool SetDefaultVideoEncoderConfig(const VideoEncoderConfig& config) override {
     return delegate_->SetDefaultVideoEncoderConfig(config);
   }
-  virtual bool SetSoundDevices(
-      const Device* in_device, const Device* out_device) OVERRIDE {
+  bool SetSoundDevices(const Device* in_device,
+                       const Device* out_device) override {
     return delegate_->SetSoundDevices(in_device, out_device);
   }
-  virtual bool GetOutputVolume(int* level) OVERRIDE {
+  bool GetOutputVolume(int* level) override {
     return delegate_->GetOutputVolume(level);
   }
-  virtual bool SetOutputVolume(int level) OVERRIDE {
+  bool SetOutputVolume(int level) override {
     return delegate_->SetOutputVolume(level);
   }
-  virtual int GetInputLevel() OVERRIDE {
-    return delegate_->GetInputLevel();
-  }
-  virtual bool SetLocalMonitor(bool enable) OVERRIDE {
+  int GetInputLevel() override { return delegate_->GetInputLevel(); }
+  bool SetLocalMonitor(bool enable) override {
     return delegate_->SetLocalMonitor(enable);
   }
-  virtual const std::vector<AudioCodec>& audio_codecs() OVERRIDE {
+  const std::vector<AudioCodec>& audio_codecs() override {
     return delegate_->audio_codecs();
   }
-  virtual const std::vector<RtpHeaderExtension>&
-      audio_rtp_header_extensions() OVERRIDE {
+  const std::vector<RtpHeaderExtension>& audio_rtp_header_extensions()
+      override {
     return delegate_->audio_rtp_header_extensions();
   }
-  virtual const std::vector<VideoCodec>& video_codecs() OVERRIDE {
+  const std::vector<VideoCodec>& video_codecs() override {
     return delegate_->video_codecs();
   }
-  virtual const std::vector<RtpHeaderExtension>&
-      video_rtp_header_extensions() OVERRIDE {
+  const std::vector<RtpHeaderExtension>& video_rtp_header_extensions()
+      override {
     return delegate_->video_rtp_header_extensions();
   }
-  virtual void SetVoiceLogging(int min_sev, const char* filter) OVERRIDE {
+  void SetVoiceLogging(int min_sev, const char* filter) override {
     delegate_->SetVoiceLogging(min_sev, filter);
   }
-  virtual void SetVideoLogging(int min_sev, const char* filter) OVERRIDE {
+  void SetVideoLogging(int min_sev, const char* filter) override {
     delegate_->SetVideoLogging(min_sev, filter);
   }
-  virtual bool StartAecDump(rtc::PlatformFile file) OVERRIDE {
+  bool StartAecDump(rtc::PlatformFile file) override {
     return delegate_->StartAecDump(file);
   }
-  virtual bool RegisterVoiceProcessor(
-      uint32 ssrc, VoiceProcessor* video_processor,
-      MediaProcessorDirection direction) OVERRIDE {
+  bool RegisterVoiceProcessor(uint32 ssrc,
+                              VoiceProcessor* video_processor,
+                              MediaProcessorDirection direction) override {
     return delegate_->RegisterVoiceProcessor(ssrc, video_processor, direction);
   }
-  virtual bool UnregisterVoiceProcessor(
-      uint32 ssrc, VoiceProcessor* video_processor,
-      MediaProcessorDirection direction) OVERRIDE {
+  bool UnregisterVoiceProcessor(uint32 ssrc,
+                                VoiceProcessor* video_processor,
+                                MediaProcessorDirection direction) override {
     return delegate_->UnregisterVoiceProcessor(ssrc, video_processor,
         direction);
   }
-  virtual VideoFormat GetStartCaptureFormat() const OVERRIDE {
+  VideoFormat GetStartCaptureFormat() const override {
     return delegate_->GetStartCaptureFormat();
   }
   virtual sigslot::repeater2<VideoCapturer*, CaptureState>&

@@ -23,31 +23,30 @@ class RWLockWrapper;
 class FileWrapperImpl : public FileWrapper {
  public:
   FileWrapperImpl();
-  virtual ~FileWrapperImpl();
+  ~FileWrapperImpl() override;
 
-  virtual int FileName(char* file_name_utf8,
-                       size_t size) const OVERRIDE;
+  int FileName(char* file_name_utf8, size_t size) const override;
 
-  virtual bool Open() const OVERRIDE;
+  bool Open() const override;
 
-  virtual int OpenFile(const char* file_name_utf8,
-                       bool read_only,
-                       bool loop = false,
-                       bool text = false) OVERRIDE;
+  int OpenFile(const char* file_name_utf8,
+               bool read_only,
+               bool loop = false,
+               bool text = false) override;
 
-  virtual int OpenFromFileHandle(FILE* handle,
-                                 bool manage_file,
-                                 bool read_only,
-                                 bool loop = false) OVERRIDE;
+  int OpenFromFileHandle(FILE* handle,
+                         bool manage_file,
+                         bool read_only,
+                         bool loop = false) override;
 
-  virtual int CloseFile() OVERRIDE;
-  virtual int SetMaxFileSize(size_t bytes) OVERRIDE;
-  virtual int Flush() OVERRIDE;
+  int CloseFile() override;
+  int SetMaxFileSize(size_t bytes) override;
+  int Flush() override;
 
-  virtual int Read(void* buf, size_t length) OVERRIDE;
-  virtual bool Write(const void* buf, size_t length) OVERRIDE;
-  virtual int WriteText(const char* format, ...) OVERRIDE;
-  virtual int Rewind() OVERRIDE;
+  int Read(void* buf, size_t length) override;
+  bool Write(const void* buf, size_t length) override;
+  int WriteText(const char* format, ...) override;
+  int Rewind() override;
 
  private:
   int CloseFileImpl();

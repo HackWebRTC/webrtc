@@ -26,12 +26,12 @@ class NullBweSender : public BweSender {
   NullBweSender() {}
   virtual ~NullBweSender() {}
 
-  virtual int GetFeedbackIntervalMs() const override { return 1000; }
-  virtual void GiveFeedback(const FeedbackPacket& feedback) override {}
-  virtual int64_t TimeUntilNextProcess() override {
+  int GetFeedbackIntervalMs() const override { return 1000; }
+  void GiveFeedback(const FeedbackPacket& feedback) override {}
+  int64_t TimeUntilNextProcess() override {
     return std::numeric_limits<int64_t>::max();
   }
-  virtual int Process() override { return 0; }
+  int Process() override { return 0; }
 
  private:
   DISALLOW_COPY_AND_ASSIGN(NullBweSender);

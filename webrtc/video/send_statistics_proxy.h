@@ -54,48 +54,48 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
 
  protected:
   // From CpuOveruseMetricsObserver.
-  void CpuOveruseMetricsUpdated(const CpuOveruseMetrics& metrics) OVERRIDE;
+  void CpuOveruseMetricsUpdated(const CpuOveruseMetrics& metrics) override;
   // From RtcpStatisticsCallback.
-  virtual void StatisticsUpdated(const RtcpStatistics& statistics,
-                                 uint32_t ssrc) OVERRIDE;
-  virtual void CNameChanged(const char *cname, uint32_t ssrc) OVERRIDE;
+  void StatisticsUpdated(const RtcpStatistics& statistics,
+                         uint32_t ssrc) override;
+  void CNameChanged(const char* cname, uint32_t ssrc) override;
   // From RtcpPacketTypeCounterObserver
-  virtual void RtcpPacketTypesCounterUpdated(
+  void RtcpPacketTypesCounterUpdated(
       uint32_t ssrc,
-      const RtcpPacketTypeCounter& packet_counter) OVERRIDE;
+      const RtcpPacketTypeCounter& packet_counter) override;
   // From StreamDataCountersCallback.
-  virtual void DataCountersUpdated(const StreamDataCounters& counters,
-                                   uint32_t ssrc) OVERRIDE;
+  void DataCountersUpdated(const StreamDataCounters& counters,
+                           uint32_t ssrc) override;
 
   // From BitrateStatisticsObserver.
-  virtual void Notify(const BitrateStatistics& total_stats,
-                      const BitrateStatistics& retransmit_stats,
-                      uint32_t ssrc) OVERRIDE;
+  void Notify(const BitrateStatistics& total_stats,
+              const BitrateStatistics& retransmit_stats,
+              uint32_t ssrc) override;
 
   // From FrameCountObserver.
-  virtual void FrameCountUpdated(const FrameCounts& frame_counts,
-                                 uint32_t ssrc) OVERRIDE;
+  void FrameCountUpdated(const FrameCounts& frame_counts,
+                         uint32_t ssrc) override;
 
   // From ViEEncoderObserver.
-  virtual void OutgoingRate(const int video_channel,
-                            const unsigned int framerate,
-                            const unsigned int bitrate) OVERRIDE;
+  void OutgoingRate(const int video_channel,
+                    const unsigned int framerate,
+                    const unsigned int bitrate) override;
 
-  virtual void SuspendChange(int video_channel, bool is_suspended) OVERRIDE;
+  void SuspendChange(int video_channel, bool is_suspended) override;
 
   // From ViECaptureObserver.
-  virtual void BrightnessAlarm(const int capture_id,
-                               const Brightness brightness) OVERRIDE {}
+  void BrightnessAlarm(const int capture_id,
+                       const Brightness brightness) override {}
 
-  virtual void CapturedFrameRate(const int capture_id,
-                                 const unsigned char frame_rate) OVERRIDE;
+  void CapturedFrameRate(const int capture_id,
+                         const unsigned char frame_rate) override;
 
-  virtual void NoPictureAlarm(const int capture_id,
-                              const CaptureAlarm alarm) OVERRIDE {}
+  void NoPictureAlarm(const int capture_id, const CaptureAlarm alarm) override {
+  }
 
-  virtual void SendSideDelayUpdated(int avg_delay_ms,
-                                    int max_delay_ms,
-                                    uint32_t ssrc) OVERRIDE;
+  void SendSideDelayUpdated(int avg_delay_ms,
+                            int max_delay_ms,
+                            uint32_t ssrc) override;
 
  private:
   struct StatsUpdateTimes {

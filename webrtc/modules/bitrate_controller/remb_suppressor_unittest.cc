@@ -20,7 +20,7 @@ class TestSuppressor : public webrtc::RembSuppressor {
   explicit TestSuppressor(webrtc::Clock* clock) : RembSuppressor(clock) {}
   virtual ~TestSuppressor() {}
 
-  virtual bool Enabled() OVERRIDE { return true; }
+  bool Enabled() override { return true; }
 };
 
 class RembSuppressorTest : public ::testing::Test {

@@ -107,17 +107,15 @@ class ViEEncoder
   int32_t ScaleInputImage(bool enable);
 
   // Implementing ViEFrameCallback.
-  virtual void DeliverFrame(int id,
-                            I420VideoFrame* video_frame,
-                            const std::vector<uint32_t>& csrcs) OVERRIDE;
-  virtual void DelayChanged(int id, int frame_delay) OVERRIDE;
-  virtual int GetPreferedFrameSettings(int* width,
-                                       int* height,
-                                       int* frame_rate) OVERRIDE;
+  void DeliverFrame(int id,
+                    I420VideoFrame* video_frame,
+                    const std::vector<uint32_t>& csrcs) override;
+  void DelayChanged(int id, int frame_delay) override;
+  int GetPreferedFrameSettings(int* width,
+                               int* height,
+                               int* frame_rate) override;
 
-  virtual void ProviderDestroyed(int id) OVERRIDE {
-    return;
-  }
+  void ProviderDestroyed(int id) override { return; }
 
   int32_t SendKeyFrame();
   int32_t SendCodecStatistics(uint32_t* num_key_frames,
@@ -137,23 +135,22 @@ class ViEEncoder
   void OnSetRates(uint32_t bitrate_bps, int framerate) override;
 
   // Implements VCMPacketizationCallback.
-  virtual int32_t SendData(uint8_t payload_type,
-                           const EncodedImage& encoded_image,
-                           const RTPFragmentationHeader& fragmentation_header,
-                           const RTPVideoHeader* rtp_video_hdr) OVERRIDE;
+  int32_t SendData(uint8_t payload_type,
+                   const EncodedImage& encoded_image,
+                   const RTPFragmentationHeader& fragmentation_header,
+                   const RTPVideoHeader* rtp_video_hdr) override;
 
   // Implements VideoSendStatisticsCallback.
-  virtual int32_t SendStatistics(const uint32_t bit_rate,
-                                 const uint32_t frame_rate) OVERRIDE;
+  int32_t SendStatistics(const uint32_t bit_rate,
+                         const uint32_t frame_rate) override;
 
   int32_t RegisterCodecObserver(ViEEncoderObserver* observer);
 
   // Implements RtcpIntraFrameObserver.
-  virtual void OnReceivedIntraFrameRequest(uint32_t ssrc) OVERRIDE;
-  virtual void OnReceivedSLI(uint32_t ssrc, uint8_t picture_id) OVERRIDE;
-  virtual void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id) OVERRIDE;
-  virtual void OnLocalSsrcChanged(uint32_t old_ssrc,
-                                  uint32_t new_ssrc) OVERRIDE;
+  void OnReceivedIntraFrameRequest(uint32_t ssrc) override;
+  void OnReceivedSLI(uint32_t ssrc, uint8_t picture_id) override;
+  void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id) override;
+  void OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) override;
 
   // Sets SSRCs for all streams.
   bool SetSsrcs(const std::list<unsigned int>& ssrcs);

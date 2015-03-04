@@ -39,7 +39,7 @@ class TestStunServer : StunServer {
   explicit TestStunServer(rtc::AsyncUDPSocket* socket) : StunServer(socket) {}
 
   void OnBindingRequest(StunMessage* msg,
-                        const rtc::SocketAddress& remote_addr) OVERRIDE {
+                        const rtc::SocketAddress& remote_addr) override {
     if (fake_stun_addr_.IsNil()) {
       StunServer::OnBindingRequest(msg, remote_addr);
     } else {

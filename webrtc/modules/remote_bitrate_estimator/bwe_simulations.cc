@@ -30,7 +30,7 @@ class BweSimulation : public BweTest,
   virtual ~BweSimulation() {}
 
  protected:
-  virtual void SetUp() OVERRIDE { BweTest::SetUp(); }
+  void SetUp() override { BweTest::SetUp(); }
 
  private:
   DISALLOW_COPY_AND_ASSIGN(BweSimulation);

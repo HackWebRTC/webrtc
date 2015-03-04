@@ -32,15 +32,15 @@ public:
     myTransportCB (RtpRtcp *rtpMod) : _rtpMod(rtpMod) {};
 protected:
     // Inherited from UdpTransportData
-    virtual void IncomingRTPPacket(const int8_t* incomingRtpPacket,
-                                   const size_t rtpPacketLength,
-                                   const int8_t* fromIP,
-                                   const uint16_t fromPort) OVERRIDE;
+ void IncomingRTPPacket(const int8_t* incomingRtpPacket,
+                        const size_t rtpPacketLength,
+                        const int8_t* fromIP,
+                        const uint16_t fromPort) override;
 
-    virtual void IncomingRTCPPacket(const int8_t* incomingRtcpPacket,
-                                    const size_t rtcpPacketLength,
-                                    const int8_t* fromIP,
-                                    const uint16_t fromPort) OVERRIDE;
+ void IncomingRTCPPacket(const int8_t* incomingRtcpPacket,
+                         const size_t rtcpPacketLength,
+                         const int8_t* fromIP,
+                         const uint16_t fromPort) override;
 
 private:
     RtpRtcp *_rtpMod;

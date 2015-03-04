@@ -67,9 +67,7 @@ class TraceObserver {
         : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
           done_(EventWrapper::Create()) {}
 
-    virtual void Print(TraceLevel level,
-                       const char* message,
-                       int length) OVERRIDE {
+    void Print(TraceLevel level, const char* message, int length) override {
       CriticalSectionScoped lock(crit_sect_.get());
       std::string msg(message);
       if (msg.find("BitrateEstimator") != std::string::npos) {

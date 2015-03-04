@@ -28,19 +28,19 @@ class CroppingWindowCapturer : public WindowCapturer,
   virtual ~CroppingWindowCapturer();
 
   // DesktopCapturer implementation.
-  virtual void Start(DesktopCapturer::Callback* callback) OVERRIDE;
-  virtual void Capture(const DesktopRegion& region) OVERRIDE;
-  virtual void SetExcludedWindow(WindowId window) OVERRIDE;
+  void Start(DesktopCapturer::Callback* callback) override;
+  void Capture(const DesktopRegion& region) override;
+  void SetExcludedWindow(WindowId window) override;
 
   // WindowCapturer implementation.
-  virtual bool GetWindowList(WindowList* windows) OVERRIDE;
-  virtual bool SelectWindow(WindowId id) OVERRIDE;
-  virtual bool BringSelectedWindowToFront() OVERRIDE;
+  bool GetWindowList(WindowList* windows) override;
+  bool SelectWindow(WindowId id) override;
+  bool BringSelectedWindowToFront() override;
 
   // DesktopCapturer::Callback implementation, passed to |screen_capturer_| to
   // intercept the capture result.
-  virtual SharedMemory* CreateSharedMemory(size_t size) OVERRIDE;
-  virtual void OnCaptureCompleted(DesktopFrame* frame) OVERRIDE;
+  SharedMemory* CreateSharedMemory(size_t size) override;
+  void OnCaptureCompleted(DesktopFrame* frame) override;
 
  protected:
   explicit CroppingWindowCapturer(const DesktopCaptureOptions& options);

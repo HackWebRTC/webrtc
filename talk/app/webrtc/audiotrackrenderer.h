@@ -47,8 +47,8 @@ class AudioTrackRenderer : public cricket::AudioRenderer {
   ~AudioTrackRenderer();
 
   // Implements cricket::AudioRenderer.
-  virtual void AddChannel(int channel_id) OVERRIDE;
-  virtual void RemoveChannel(int channel_id) OVERRIDE;
+  void AddChannel(int channel_id) override;
+  void RemoveChannel(int channel_id) override;
 
  private:
   int channel_id_;

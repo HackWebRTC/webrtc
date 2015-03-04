@@ -29,19 +29,19 @@ class AudioEncoderIlbc : public AudioEncoder {
   };
 
   explicit AudioEncoderIlbc(const Config& config);
-  virtual ~AudioEncoderIlbc();
+  ~AudioEncoderIlbc() override;
 
-  virtual int SampleRateHz() const OVERRIDE;
-  virtual int NumChannels() const OVERRIDE;
-  virtual int Num10MsFramesInNextPacket() const OVERRIDE;
-  virtual int Max10MsFramesInAPacket() const OVERRIDE;
+  int SampleRateHz() const override;
+  int NumChannels() const override;
+  int Num10MsFramesInNextPacket() const override;
+  int Max10MsFramesInAPacket() const override;
 
  protected:
-  virtual void EncodeInternal(uint32_t rtp_timestamp,
-                              const int16_t* audio,
-                              size_t max_encoded_bytes,
-                              uint8_t* encoded,
-                              EncodedInfo* info) OVERRIDE;
+  void EncodeInternal(uint32_t rtp_timestamp,
+                      const int16_t* audio,
+                      size_t max_encoded_bytes,
+                      uint8_t* encoded,
+                      EncodedInfo* info) override;
 
  private:
   static const int kMaxSamplesPerPacket = 480;

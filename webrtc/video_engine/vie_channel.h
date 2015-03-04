@@ -321,10 +321,9 @@ class ViEChannel
   virtual void IncomingCodecChanged(const VideoCodec& codec);
 
   // Implements VCMReceiveStatisticsCallback.
-  virtual void OnReceiveRatesUpdated(uint32_t bit_rate,
-                                     uint32_t frame_rate) OVERRIDE;
-  virtual void OnDiscardedPacketsUpdated(int discarded_packets) OVERRIDE;
-  virtual void OnFrameCountsUpdated(const FrameCounts& frame_counts) OVERRIDE;
+  void OnReceiveRatesUpdated(uint32_t bit_rate, uint32_t frame_rate) override;
+  void OnDiscardedPacketsUpdated(int discarded_packets) override;
+  void OnFrameCountsUpdated(const FrameCounts& frame_counts) override;
 
   // Implements VCMDecoderTimingCallback.
   virtual void OnDecoderTiming(int decode_ms,
@@ -456,9 +455,9 @@ class ViEChannel
 
   class RegisterableSendSideDelayObserver :
       public RegisterableCallback<SendSideDelayObserver> {
-    virtual void SendSideDelayUpdated(int avg_delay_ms,
-                                      int max_delay_ms,
-                                      uint32_t ssrc) OVERRIDE {
+    void SendSideDelayUpdated(int avg_delay_ms,
+                              int max_delay_ms,
+                              uint32_t ssrc) override {
       CriticalSectionScoped cs(critsect_.get());
       if (callback_)
         callback_->SendSideDelayUpdated(avg_delay_ms, max_delay_ms, ssrc);
@@ -468,7 +467,7 @@ class ViEChannel
   class RegisterableRtcpPacketTypeCounterObserver
       : public RegisterableCallback<RtcpPacketTypeCounterObserver> {
    public:
-    virtual void RtcpPacketTypesCounterUpdated(
+    void RtcpPacketTypesCounterUpdated(
         uint32_t ssrc,
         const RtcpPacketTypeCounter& packet_counter) override {
       CriticalSectionScoped cs(critsect_.get());

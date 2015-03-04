@@ -46,7 +46,7 @@ class AudioEncoderCopyRedTest : public ::testing::Test {
         .WillRepeatedly(Return(sample_rate_hz_));
   }
 
-  virtual void TearDown() OVERRIDE {
+  void TearDown() override {
     red_.reset();
     // Don't expect the red_ object to delete the AudioEncoder object. But it
     // will be deleted with the test fixture. This is why we explicitly delete

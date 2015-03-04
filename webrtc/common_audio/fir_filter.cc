@@ -25,7 +25,7 @@ class FIRFilterC : public FIRFilter {
   FIRFilterC(const float* coefficients,
              size_t coefficients_length);
 
-  virtual void Filter(const float* in, size_t length, float* out) OVERRIDE;
+  void Filter(const float* in, size_t length, float* out) override;
 
  private:
   size_t coefficients_length_;

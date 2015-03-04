@@ -33,13 +33,13 @@ class LossModel {
 
 class NoLoss : public LossModel {
  public:
-  virtual bool Lost() OVERRIDE;
+  bool Lost() override;
 };
 
 class UniformLoss : public LossModel {
  public:
   UniformLoss(double loss_rate);
-  virtual bool Lost() OVERRIDE;
+  bool Lost() override;
   void set_loss_rate(double loss_rate) { loss_rate_ = loss_rate; }
 
  private:
@@ -49,7 +49,7 @@ class UniformLoss : public LossModel {
 class GilbertElliotLoss : public LossModel {
  public:
   GilbertElliotLoss(double prob_trans_11, double prob_trans_01);
-  virtual bool Lost() OVERRIDE;
+  bool Lost() override;
 
  private:
   // Prob. of losing current packet, when previous packet is lost.
@@ -69,8 +69,8 @@ class NetEqQualityTest : public ::testing::Test {
                    int channels,
                    std::string in_filename,
                    std::string out_filename);
-  virtual void SetUp() OVERRIDE;
-  virtual void TearDown() OVERRIDE;
+  void SetUp() override;
+  void TearDown() override;
 
   // EncodeBlock(...) does the following:
   // 1. encodes a block of audio, saved in |in_data| and has a length of

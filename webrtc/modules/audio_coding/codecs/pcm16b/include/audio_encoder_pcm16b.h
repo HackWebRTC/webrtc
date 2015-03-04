@@ -28,9 +28,9 @@ class AudioEncoderPcm16B : public AudioEncoderPcm {
       : AudioEncoderPcm(config, config.sample_rate_hz) {}
 
  protected:
-  virtual int16_t EncodeCall(const int16_t* audio,
-                             size_t input_len,
-                             uint8_t* encoded) OVERRIDE;
+  int16_t EncodeCall(const int16_t* audio,
+                     size_t input_len,
+                     uint8_t* encoded) override;
 };
 
 }  // namespace webrtc

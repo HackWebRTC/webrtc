@@ -32,23 +32,23 @@ class BitrateControllerImpl : public BitrateController {
   BitrateControllerImpl(Clock* clock, BitrateObserver* observer);
   virtual ~BitrateControllerImpl();
 
-  virtual bool AvailableBandwidth(uint32_t* bandwidth) const override;
+  bool AvailableBandwidth(uint32_t* bandwidth) const override;
 
-  virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver() override;
+  RtcpBandwidthObserver* CreateRtcpBandwidthObserver() override;
 
-  virtual void SetStartBitrate(int start_bitrate_bps) override;
-  virtual void SetMinMaxBitrate(int min_bitrate_bps,
+  void SetStartBitrate(int start_bitrate_bps) override;
+  void SetMinMaxBitrate(int min_bitrate_bps,
                                 int max_bitrate_bps) override;
 
-  virtual void SetReservedBitrate(uint32_t reserved_bitrate_bps) override;
+  void SetReservedBitrate(uint32_t reserved_bitrate_bps) override;
 
-  virtual int64_t TimeUntilNextProcess() override;
-  virtual int32_t Process() override;
+  int64_t TimeUntilNextProcess() override;
+  int32_t Process() override;
 
   // Current bitrate actually being sent.
-  virtual void SetBitrateSent(uint32_t bitrate_sent_bps) override;
+  void SetBitrateSent(uint32_t bitrate_sent_bps) override;
 
-  virtual void SetCodecMode(webrtc::VideoCodecMode mode) override;
+  void SetCodecMode(webrtc::VideoCodecMode mode) override;
 
  private:
   class RtcpBandwidthObserverImpl;

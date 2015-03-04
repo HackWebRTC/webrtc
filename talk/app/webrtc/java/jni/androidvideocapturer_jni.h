@@ -57,7 +57,7 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
              webrtc::AndroidVideoCapturer* capturer) override;
   void Stop() override;
 
-  virtual void ReturnBuffer(int64 time_stamp) override;
+  void ReturnBuffer(int64 time_stamp) override;
 
   std::string GetSupportedFormats() override;
 

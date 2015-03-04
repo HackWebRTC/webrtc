@@ -83,12 +83,12 @@ class CpuOveruseObserverProxy : public webrtc::CpuOveruseObserver {
 
   virtual ~CpuOveruseObserverProxy() {}
 
-  virtual void OveruseDetected() OVERRIDE {
+  void OveruseDetected() override {
     CriticalSectionScoped lock(crit_.get());
     overuse_callback_->OnLoadUpdate(LoadObserver::kOveruse);
   }
 
-  virtual void NormalUsage() OVERRIDE {
+  void NormalUsage() override {
     CriticalSectionScoped lock(crit_.get());
     overuse_callback_->OnLoadUpdate(LoadObserver::kUnderuse);
   }
@@ -103,29 +103,27 @@ class Call : public webrtc::Call, public PacketReceiver {
   Call(webrtc::VideoEngine* video_engine, const Call::Config& config);
   virtual ~Call();
 
-  virtual PacketReceiver* Receiver() OVERRIDE;
+  PacketReceiver* Receiver() override;
 
-  virtual VideoSendStream* CreateVideoSendStream(
+  VideoSendStream* CreateVideoSendStream(
       const VideoSendStream::Config& config,
-      const VideoEncoderConfig& encoder_config) OVERRIDE;
+      const VideoEncoderConfig& encoder_config) override;
 
-  virtual void DestroyVideoSendStream(webrtc::VideoSendStream* send_stream)
-      OVERRIDE;
+  void DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) override;
 
-  virtual VideoReceiveStream* CreateVideoReceiveStream(
-      const VideoReceiveStream::Config& config) OVERRIDE;
+  VideoReceiveStream* CreateVideoReceiveStream(
+      const VideoReceiveStream::Config& config) override;
 
-  virtual void DestroyVideoReceiveStream(
-      webrtc::VideoReceiveStream* receive_stream) OVERRIDE;
+  void DestroyVideoReceiveStream(
+      webrtc::VideoReceiveStream* receive_stream) override;
 
-  virtual Stats GetStats() const OVERRIDE;
+  Stats GetStats() const override;
 
-  virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
-                                       size_t length) OVERRIDE;
+  DeliveryStatus DeliverPacket(const uint8_t* packet, size_t length) override;
 
-  virtual void SetBitrateConfig(
-      const webrtc::Call::Config::BitrateConfig& bitrate_config) OVERRIDE;
-  virtual void SignalNetworkState(NetworkState state) OVERRIDE;
+  void SetBitrateConfig(
+      const webrtc::Call::Config::BitrateConfig& bitrate_config) override;
+  void SignalNetworkState(NetworkState state) override;
 
  private:
   DeliveryStatus DeliverRtcp(const uint8_t* packet, size_t length);

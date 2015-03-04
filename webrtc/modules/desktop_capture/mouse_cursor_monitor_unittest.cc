@@ -28,12 +28,12 @@ class MouseCursorMonitorTest : public testing::Test,
   }
 
   // MouseCursorMonitor::Callback interface
-  virtual void OnMouseCursor(MouseCursor* cursor_image) OVERRIDE {
+  void OnMouseCursor(MouseCursor* cursor_image) override {
     cursor_image_.reset(cursor_image);
   }
 
-  virtual void OnMouseCursorPosition(MouseCursorMonitor::CursorState state,
-                                     const DesktopVector& position) OVERRIDE {
+  void OnMouseCursorPosition(MouseCursorMonitor::CursorState state,
+                             const DesktopVector& position) override {
     state_ = state;
     position_ = position;
     position_received_ = true;

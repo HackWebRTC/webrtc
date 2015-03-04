@@ -28,14 +28,14 @@ class FecReceiverImpl : public FecReceiver {
   FecReceiverImpl(RtpData* callback);
   virtual ~FecReceiverImpl();
 
-  virtual int32_t AddReceivedRedPacket(const RTPHeader& rtp_header,
-                                       const uint8_t* incoming_rtp_packet,
-                                       size_t packet_length,
-                                       uint8_t ulpfec_payload_type) OVERRIDE;
+  int32_t AddReceivedRedPacket(const RTPHeader& rtp_header,
+                               const uint8_t* incoming_rtp_packet,
+                               size_t packet_length,
+                               uint8_t ulpfec_payload_type) override;
 
-  virtual int32_t ProcessReceivedFec() OVERRIDE;
+  int32_t ProcessReceivedFec() override;
 
-  virtual FecPacketCounter GetPacketCounter() const OVERRIDE;
+  FecPacketCounter GetPacketCounter() const override;
 
  private:
   rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;

@@ -78,12 +78,14 @@ class LocalAudioSinkAdapter : public AudioTrackSinkInterface,
 
  private:
   // AudioSinkInterface implementation.
-  virtual void OnData(const void* audio_data, int bits_per_sample,
-                      int sample_rate, int number_of_channels,
-                      int number_of_frames) OVERRIDE;
+  void OnData(const void* audio_data,
+              int bits_per_sample,
+              int sample_rate,
+              int number_of_channels,
+              int number_of_frames) override;
 
   // cricket::AudioRenderer implementation.
-  virtual void SetSink(cricket::AudioRenderer::Sink* sink) OVERRIDE;
+  void SetSink(cricket::AudioRenderer::Sink* sink) override;
 
   cricket::AudioRenderer::Sink* sink_;
   // Critical section protecting |sink_|.
@@ -100,11 +102,11 @@ class LocalAudioTrackHandler : public TrackHandler {
                          AudioProviderInterface* provider);
   virtual ~LocalAudioTrackHandler();
 
-  virtual void Stop() OVERRIDE;
+  void Stop() override;
 
  protected:
-  virtual void OnStateChanged() OVERRIDE;
-  virtual void OnEnabledChanged() OVERRIDE;
+  void OnStateChanged() override;
+  void OnEnabledChanged() override;
 
  private:
   AudioTrackInterface* audio_track_;
@@ -125,15 +127,15 @@ class RemoteAudioTrackHandler : public AudioSourceInterface::AudioObserver,
                           uint32 ssrc,
                           AudioProviderInterface* provider);
   virtual ~RemoteAudioTrackHandler();
-  virtual void Stop() OVERRIDE;
+  void Stop() override;
 
  protected:
-  virtual void OnStateChanged() OVERRIDE;
-  virtual void OnEnabledChanged() OVERRIDE;
+  void OnStateChanged() override;
+  void OnEnabledChanged() override;
 
  private:
   // AudioSourceInterface::AudioObserver implementation.
-  virtual void OnSetVolume(double volume) OVERRIDE;
+  void OnSetVolume(double volume) override;
 
   AudioTrackInterface* audio_track_;
   AudioProviderInterface* provider_;
@@ -148,11 +150,11 @@ class LocalVideoTrackHandler : public TrackHandler {
                          uint32 ssrc,
                          VideoProviderInterface* provider);
   virtual ~LocalVideoTrackHandler();
-  virtual void Stop() OVERRIDE;
+  void Stop() override;
 
  protected:
-  virtual void OnStateChanged() OVERRIDE;
-  virtual void OnEnabledChanged() OVERRIDE;
+  void OnStateChanged() override;
+  void OnEnabledChanged() override;
 
  private:
   VideoTrackInterface* local_video_track_;
@@ -168,11 +170,11 @@ class RemoteVideoTrackHandler : public TrackHandler {
                           uint32 ssrc,
                           VideoProviderInterface* provider);
   virtual ~RemoteVideoTrackHandler();
-  virtual void Stop() OVERRIDE;
+  void Stop() override;
 
  protected:
-  virtual void OnStateChanged() OVERRIDE;
-  virtual void OnEnabledChanged() OVERRIDE;
+  void OnStateChanged() override;
+  void OnEnabledChanged() override;
 
  private:
   VideoTrackInterface* remote_video_track_;
@@ -192,7 +194,7 @@ class MediaStreamHandler : public ObserverInterface {
   virtual void AddVideoTrack(VideoTrackInterface* video_track, uint32 ssrc) = 0;
 
   virtual void RemoveTrack(MediaStreamTrackInterface* track);
-  virtual void OnChanged() OVERRIDE;
+  void OnChanged() override;
 
  protected:
   TrackHandler* FindTrackHandler(MediaStreamTrackInterface* track);
@@ -210,10 +212,8 @@ class LocalMediaStreamHandler : public MediaStreamHandler {
                           VideoProviderInterface* video_provider);
   ~LocalMediaStreamHandler();
 
-  virtual void AddAudioTrack(AudioTrackInterface* audio_track,
-                             uint32 ssrc) OVERRIDE;
-  virtual void AddVideoTrack(VideoTrackInterface* video_track,
-                             uint32 ssrc) OVERRIDE;
+  void AddAudioTrack(AudioTrackInterface* audio_track, uint32 ssrc) override;
+  void AddVideoTrack(VideoTrackInterface* video_track, uint32 ssrc) override;
 };
 
 class RemoteMediaStreamHandler : public MediaStreamHandler {
@@ -222,10 +222,8 @@ class RemoteMediaStreamHandler : public MediaStreamHandler {
                            AudioProviderInterface* audio_provider,
                            VideoProviderInterface* video_provider);
   ~RemoteMediaStreamHandler();
-  virtual void AddAudioTrack(AudioTrackInterface* audio_track,
-                             uint32 ssrc) OVERRIDE;
-  virtual void AddVideoTrack(VideoTrackInterface* video_track,
-                             uint32 ssrc) OVERRIDE;
+  void AddAudioTrack(AudioTrackInterface* audio_track, uint32 ssrc) override;
+  void AddVideoTrack(VideoTrackInterface* video_track, uint32 ssrc) override;
 };
 
 // Container for MediaStreamHandlers of currently known local and remote

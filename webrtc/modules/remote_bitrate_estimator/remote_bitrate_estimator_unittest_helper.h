@@ -29,8 +29,8 @@ class TestBitrateObserver : public RemoteBitrateObserver {
   TestBitrateObserver() : updated_(false), latest_bitrate_(0) {}
   virtual ~TestBitrateObserver() {}
 
-  virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
-                                       unsigned int bitrate) OVERRIDE;
+  void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
+                               unsigned int bitrate) override;
 
   void Reset() { updated_ = false; }
 

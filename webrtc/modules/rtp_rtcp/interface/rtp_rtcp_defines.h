@@ -307,24 +307,22 @@ class NullRtpFeedback : public RtpFeedback {
  public:
   virtual ~NullRtpFeedback() {}
 
-  virtual int32_t OnInitializeDecoder(
-      const int32_t id,
-      const int8_t payloadType,
-      const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-      const int frequency,
-      const uint8_t channels,
-      const uint32_t rate) OVERRIDE {
+  int32_t OnInitializeDecoder(const int32_t id,
+                              const int8_t payloadType,
+                              const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+                              const int frequency,
+                              const uint8_t channels,
+                              const uint32_t rate) override {
     return 0;
   }
 
-  virtual void OnIncomingSSRCChanged(const int32_t id,
-                                     const uint32_t ssrc) OVERRIDE {}
+  void OnIncomingSSRCChanged(const int32_t id, const uint32_t ssrc) override {}
 
-  virtual void OnIncomingCSRCChanged(const int32_t id,
-                                     const uint32_t CSRC,
-                                     const bool added) OVERRIDE {}
+  void OnIncomingCSRCChanged(const int32_t id,
+                             const uint32_t CSRC,
+                             const bool added) override {}
 
-  virtual void ResetStatistics(uint32_t ssrc) OVERRIDE {}
+  void ResetStatistics(uint32_t ssrc) override {}
 };
 
 // Null object version of RtpData.
@@ -332,15 +330,13 @@ class NullRtpData : public RtpData {
  public:
   virtual ~NullRtpData() {}
 
-  virtual int32_t OnReceivedPayloadData(
-      const uint8_t* payloadData,
-      const size_t payloadSize,
-      const WebRtcRTPHeader* rtpHeader) OVERRIDE {
+  int32_t OnReceivedPayloadData(const uint8_t* payloadData,
+                                const size_t payloadSize,
+                                const WebRtcRTPHeader* rtpHeader) override {
     return 0;
   }
 
-  virtual bool OnRecoveredPacket(const uint8_t* packet,
-                                 size_t packet_length) OVERRIDE {
+  bool OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override {
     return true;
   }
 };
@@ -350,10 +346,10 @@ class NullRtpAudioFeedback : public RtpAudioFeedback {
  public:
   virtual ~NullRtpAudioFeedback() {}
 
-  virtual void OnPlayTelephoneEvent(const int32_t id,
-                                    const uint8_t event,
-                                    const uint16_t lengthMs,
-                                    const uint8_t volume) OVERRIDE {}
+  void OnPlayTelephoneEvent(const int32_t id,
+                            const uint8_t event,
+                            const uint16_t lengthMs,
+                            const uint8_t volume) override {}
 };
 
 }  // namespace webrtc

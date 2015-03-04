@@ -54,19 +54,20 @@ class ViEToFileRenderer: public webrtc::ExternalRenderer {
   bool SaveOutputFile(const std::string& prefix);
 
   // Implementation of ExternalRenderer:
-  int FrameSizeChange(unsigned int width, unsigned int height,
-                      unsigned int number_of_streams) OVERRIDE;
+  int FrameSizeChange(unsigned int width,
+                      unsigned int height,
+                      unsigned int number_of_streams) override;
 
   int DeliverFrame(unsigned char* buffer,
                    size_t buffer_size,
                    uint32_t time_stamp,
                    int64_t ntp_time_ms,
                    int64_t render_time,
-                   void* handle) OVERRIDE;
+                   void* handle) override;
 
-  int DeliverI420Frame(const webrtc::I420VideoFrame& webrtc_frame) OVERRIDE;
+  int DeliverI420Frame(const webrtc::I420VideoFrame& webrtc_frame) override;
 
-  bool IsTextureSupported() OVERRIDE;
+  bool IsTextureSupported() override;
 
   const std::string GetFullOutputPath() const;
 

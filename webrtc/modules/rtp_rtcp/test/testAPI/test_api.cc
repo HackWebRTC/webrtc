@@ -89,7 +89,7 @@ class RtpRtcpAPITest : public ::testing::Test {
   }
   ~RtpRtcpAPITest() {}
 
-  virtual void SetUp() OVERRIDE {
+  void SetUp() override {
     RtpRtcp::Configuration configuration;
     configuration.id = test_id;
     configuration.audio = true;

@@ -32,19 +32,19 @@ class DesktopAndCursorComposer : public DesktopCapturer,
   virtual ~DesktopAndCursorComposer();
 
   // DesktopCapturer interface.
-  virtual void Start(DesktopCapturer::Callback* callback) OVERRIDE;
-  virtual void Capture(const DesktopRegion& region) OVERRIDE;
-  virtual void SetExcludedWindow(WindowId window) OVERRIDE;
+  void Start(DesktopCapturer::Callback* callback) override;
+  void Capture(const DesktopRegion& region) override;
+  void SetExcludedWindow(WindowId window) override;
 
  private:
   // DesktopCapturer::Callback interface.
-  virtual SharedMemory* CreateSharedMemory(size_t size) OVERRIDE;
-  virtual void OnCaptureCompleted(DesktopFrame* frame) OVERRIDE;
+  SharedMemory* CreateSharedMemory(size_t size) override;
+  void OnCaptureCompleted(DesktopFrame* frame) override;
 
   // MouseCursorMonitor::Callback interface.
-  virtual void OnMouseCursor(MouseCursor* cursor) OVERRIDE;
-  virtual void OnMouseCursorPosition(MouseCursorMonitor::CursorState state,
-                                     const DesktopVector& position) OVERRIDE;
+  void OnMouseCursor(MouseCursor* cursor) override;
+  void OnMouseCursorPosition(MouseCursorMonitor::CursorState state,
+                             const DesktopVector& position) override;
 
   rtc::scoped_ptr<DesktopCapturer> desktop_capturer_;
   rtc::scoped_ptr<MouseCursorMonitor> mouse_monitor_;

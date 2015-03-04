@@ -40,11 +40,11 @@ class RTCVideoRendererNativeAdapter : public VideoRendererInterface {
     _adapter = adapter;
   }
 
-  virtual void SetSize(int width, int height) OVERRIDE {
+  void SetSize(int width, int height) override {
     [_adapter.videoRenderer setSize:CGSizeMake(width, height)];
   }
 
-  virtual void RenderFrame(const cricket::VideoFrame* frame) OVERRIDE {
+  void RenderFrame(const cricket::VideoFrame* frame) override {
     RTCI420Frame* i420Frame = [[RTCI420Frame alloc] initWithVideoFrame:frame];
     [_adapter.videoRenderer renderFrame:i420Frame];
   }

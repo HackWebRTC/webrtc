@@ -113,8 +113,8 @@ class CroppingWindowCapturerWin : public CroppingWindowCapturer {
       : CroppingWindowCapturer(options) {}
 
  private:
-  virtual bool ShouldUseScreenCapturer() OVERRIDE;
-  virtual DesktopRect GetWindowRectInVirtualScreen() OVERRIDE;
+  bool ShouldUseScreenCapturer() override;
+  DesktopRect GetWindowRectInVirtualScreen() override;
 
   // The region from GetWindowRgn in the desktop coordinate if the region is
   // rectangular, or the rect from GetWindowRect if the region is not set.

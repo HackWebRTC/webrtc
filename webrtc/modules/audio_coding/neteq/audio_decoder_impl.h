@@ -233,7 +233,7 @@ class AudioDecoderCng : public AudioDecoder {
                              uint32_t rtp_timestamp,
                              uint32_t arrival_timestamp) { return -1; }
 
-  virtual CNG_dec_inst* CngDecoderInstance() OVERRIDE { return dec_state_; }
+  CNG_dec_inst* CngDecoderInstance() override { return dec_state_; }
 
  private:
   CNG_dec_inst* dec_state_;

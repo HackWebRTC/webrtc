@@ -212,7 +212,7 @@ class PCOJava : public PeerConnectionObserver {
 
   virtual ~PCOJava() {}
 
-  virtual void OnIceCandidate(const IceCandidateInterface* candidate) OVERRIDE {
+  void OnIceCandidate(const IceCandidateInterface* candidate) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     std::string sdp;
     CHECK(candidate->ToString(&sdp)) << "got so far: " << sdp;
@@ -230,8 +230,8 @@ class PCOJava : public PeerConnectionObserver {
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
 
-  virtual void OnSignalingChange(
-      PeerConnectionInterface::SignalingState new_state) OVERRIDE {
+  void OnSignalingChange(
+      PeerConnectionInterface::SignalingState new_state) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     jmethodID m = GetMethodID(
         jni(), *j_observer_class_, "onSignalingChange",
@@ -242,8 +242,8 @@ class PCOJava : public PeerConnectionObserver {
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
 
-  virtual void OnIceConnectionChange(
-      PeerConnectionInterface::IceConnectionState new_state) OVERRIDE {
+  void OnIceConnectionChange(
+      PeerConnectionInterface::IceConnectionState new_state) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     jmethodID m = GetMethodID(
         jni(), *j_observer_class_, "onIceConnectionChange",
@@ -254,8 +254,8 @@ class PCOJava : public PeerConnectionObserver {
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
 
-  virtual void OnIceGatheringChange(
-      PeerConnectionInterface::IceGatheringState new_state) OVERRIDE {
+  void OnIceGatheringChange(
+      PeerConnectionInterface::IceGatheringState new_state) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     jmethodID m = GetMethodID(
         jni(), *j_observer_class_, "onIceGatheringChange",
@@ -266,7 +266,7 @@ class PCOJava : public PeerConnectionObserver {
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
 
-  virtual void OnAddStream(MediaStreamInterface* stream) OVERRIDE {
+  void OnAddStream(MediaStreamInterface* stream) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     jobject j_stream = jni()->NewObject(
         *j_media_stream_class_, j_media_stream_ctor_, (jlong)stream);
@@ -322,7 +322,7 @@ class PCOJava : public PeerConnectionObserver {
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
 
-  virtual void OnRemoveStream(MediaStreamInterface* stream) OVERRIDE {
+  void OnRemoveStream(MediaStreamInterface* stream) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     NativeToJavaStreamsMap::iterator it = streams_.find(stream);
     CHECK(it != streams_.end()) << "unexpected stream: " << std::hex << stream;
@@ -338,7 +338,7 @@ class PCOJava : public PeerConnectionObserver {
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
 
-  virtual void OnDataChannel(DataChannelInterface* channel) OVERRIDE {
+  void OnDataChannel(DataChannelInterface* channel) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     jobject j_channel = jni()->NewObject(
         *j_data_channel_class_, j_data_channel_ctor_, (jlong)channel);
@@ -358,7 +358,7 @@ class PCOJava : public PeerConnectionObserver {
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
 
-  virtual void OnRenegotiationNeeded() OVERRIDE {
+  void OnRenegotiationNeeded() override {
     ScopedLocalRefFrame local_ref_frame(jni());
     jmethodID m =
         GetMethodID(jni(), *j_observer_class_, "onRenegotiationNeeded", "()V");
@@ -407,13 +407,9 @@ class ConstraintsWrapper : public MediaConstraintsInterface {
   virtual ~ConstraintsWrapper() {}
 
   // MediaConstraintsInterface.
-  virtual const Constraints& GetMandatory() const OVERRIDE {
-    return mandatory_;
-  }
+  const Constraints& GetMandatory() const override { return mandatory_; }
 
-  virtual const Constraints& GetOptional() const OVERRIDE {
-    return optional_;
-  }
+  const Constraints& GetOptional() const override { return optional_; }
 
  private:
   // Helper for translating a List<Pair<String, String>> to a Constraints.
@@ -493,7 +489,7 @@ class SdpObserverWrapper : public T {
 
   virtual ~SdpObserverWrapper() {}
 
-  // Can't mark OVERRIDE because of templating.
+  // Can't mark override because of templating.
   virtual void OnSuccess() {
     ScopedLocalRefFrame local_ref_frame(jni());
     jmethodID m = GetMethodID(jni(), *j_observer_class_, "onSetSuccess", "()V");
@@ -501,7 +497,7 @@ class SdpObserverWrapper : public T {
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
 
-  // Can't mark OVERRIDE because of templating.
+  // Can't mark override because of templating.
   virtual void OnSuccess(SessionDescriptionInterface* desc) {
     ScopedLocalRefFrame local_ref_frame(jni());
     jmethodID m = GetMethodID(
@@ -540,7 +536,7 @@ class CreateSdpObserverWrapper
                            ConstraintsWrapper* constraints)
       : SdpObserverWrapper(jni, j_observer, constraints) {}
 
-  virtual void OnFailure(const std::string& error) OVERRIDE {
+  void OnFailure(const std::string& error) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     SdpObserverWrapper::OnFailure(std::string("Create"), error);
   }
@@ -553,7 +549,7 @@ class SetSdpObserverWrapper
                         ConstraintsWrapper* constraints)
       : SdpObserverWrapper(jni, j_observer, constraints) {}
 
-  virtual void OnFailure(const std::string& error) OVERRIDE {
+  void OnFailure(const std::string& error) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     SdpObserverWrapper::OnFailure(std::string("Set"), error);
   }
@@ -577,13 +573,13 @@ class DataChannelObserverWrapper : public DataChannelObserver {
 
   virtual ~DataChannelObserverWrapper() {}
 
-  virtual void OnStateChange() OVERRIDE {
+  void OnStateChange() override {
     ScopedLocalRefFrame local_ref_frame(jni());
     jni()->CallVoidMethod(*j_observer_global_, j_on_state_change_mid_);
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
 
-  virtual void OnMessage(const DataBuffer& buffer) OVERRIDE {
+  void OnMessage(const DataBuffer& buffer) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     jobject byte_buffer =
         jni()->NewDirectByteBuffer(const_cast<char*>(buffer.data.data()),
@@ -628,7 +624,7 @@ class StatsObserverWrapper : public StatsObserver {
 
   virtual ~StatsObserverWrapper() {}
 
-  virtual void OnComplete(const StatsReports& reports) OVERRIDE {
+  void OnComplete(const StatsReports& reports) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     jobjectArray j_reports = ReportsToJava(jni(), reports);
     jmethodID m = GetMethodID(jni(), *j_observer_class_, "onComplete",
@@ -700,13 +696,13 @@ class VideoRendererWrapper : public VideoRendererInterface {
 
   virtual ~VideoRendererWrapper() {}
 
-  virtual void SetSize(int width, int height) OVERRIDE {
+  void SetSize(int width, int height) override {
     ScopedLocalRefFrame local_ref_frame(AttachCurrentThreadIfNeeded());
     const bool kNotReserved = false;  // What does this param mean??
     renderer_->SetSize(width, height, kNotReserved);
   }
 
-  virtual void RenderFrame(const cricket::VideoFrame* frame) OVERRIDE {
+  void RenderFrame(const cricket::VideoFrame* frame) override {
     ScopedLocalRefFrame local_ref_frame(AttachCurrentThreadIfNeeded());
     renderer_->RenderFrame(frame);
   }
@@ -742,13 +738,13 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
 
   virtual ~JavaVideoRendererWrapper() {}
 
-  virtual void SetSize(int width, int height) OVERRIDE {
+  void SetSize(int width, int height) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     jni()->CallVoidMethod(*j_callbacks_, j_set_size_id_, width, height);
     CHECK_EXCEPTION(jni());
   }
 
-  virtual void RenderFrame(const cricket::VideoFrame* frame) OVERRIDE {
+  void RenderFrame(const cricket::VideoFrame* frame) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     if (frame->GetNativeHandle() != NULL) {
       jobject j_frame = CricketToJavaTextureFrame(frame);

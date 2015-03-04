@@ -75,60 +75,49 @@ class GainControlForNewAgc : public GainControl, public VolumeCallbacks {
   }
 
   // GainControl implementation.
-  virtual int Enable(bool enable) OVERRIDE {
+  int Enable(bool enable) override {
     return real_gain_control_->Enable(enable);
   }
-  virtual bool is_enabled() const OVERRIDE {
-    return real_gain_control_->is_enabled();
-  }
-  virtual int set_stream_analog_level(int level) OVERRIDE {
+  bool is_enabled() const override { return real_gain_control_->is_enabled(); }
+  int set_stream_analog_level(int level) override {
     volume_ = level;
     return AudioProcessing::kNoError;
   }
-  virtual int stream_analog_level() OVERRIDE {
-    return volume_;
-  }
-  virtual int set_mode(Mode mode) OVERRIDE { return AudioProcessing::kNoError; }
-  virtual Mode mode() const OVERRIDE { return GainControl::kAdaptiveAnalog; }
-  virtual int set_target_level_dbfs(int level) OVERRIDE {
+  int stream_analog_level() override { return volume_; }
+  int set_mode(Mode mode) override { return AudioProcessing::kNoError; }
+  Mode mode() const override { return GainControl::kAdaptiveAnalog; }
+  int set_target_level_dbfs(int level) override {
     return AudioProcessing::kNoError;
   }
-  virtual int target_level_dbfs() const OVERRIDE {
+  int target_level_dbfs() const override {
     return real_gain_control_->target_level_dbfs();
   }
-  virtual int set_compression_gain_db(int gain) OVERRIDE {
+  int set_compression_gain_db(int gain) override {
     return AudioProcessing::kNoError;
   }
-  virtual int compression_gain_db() const OVERRIDE {
+  int compression_gain_db() const override {
     return real_gain_control_->compression_gain_db();
   }
-  virtual int enable_limiter(bool enable) OVERRIDE {
-    return AudioProcessing::kNoError;
-  }
-  virtual bool is_limiter_enabled() const OVERRIDE {
+  int enable_limiter(bool enable) override { return AudioProcessing::kNoError; }
+  bool is_limiter_enabled() const override {
     return real_gain_control_->is_limiter_enabled();
   }
-  virtual int set_analog_level_limits(int minimum,
-                                      int maximum) OVERRIDE {
+  int set_analog_level_limits(int minimum, int maximum) override {
     return AudioProcessing::kNoError;
   }
-  virtual int analog_level_minimum() const OVERRIDE {
+  int analog_level_minimum() const override {
     return real_gain_control_->analog_level_minimum();
   }
-  virtual int analog_level_maximum() const OVERRIDE {
+  int analog_level_maximum() const override {
     return real_gain_control_->analog_level_maximum();
   }
-  virtual bool stream_is_saturated() const OVERRIDE {
+  bool stream_is_saturated() const override {
     return real_gain_control_->stream_is_saturated();
   }
 
   // VolumeCallbacks implementation.
-  virtual void SetMicVolume(int volume) OVERRIDE {
-    volume_ = volume;
-  }
-  virtual int GetMicVolume() OVERRIDE {
-    return volume_;
-  }
+  void SetMicVolume(int volume) override { volume_ = volume; }
+  int GetMicVolume() override { return volume_; }
 
  private:
   GainControl* real_gain_control_;

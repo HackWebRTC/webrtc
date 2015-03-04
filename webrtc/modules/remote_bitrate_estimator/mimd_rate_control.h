@@ -25,18 +25,18 @@ class MimdRateControl : public RemoteRateControl {
   virtual ~MimdRateControl() {}
 
   // Implements RemoteRateControl.
-  virtual RateControlType GetControlType() const OVERRIDE;
-  virtual uint32_t GetMinBitrate() const OVERRIDE;
-  virtual bool ValidEstimate() const OVERRIDE;
-  virtual int64_t GetFeedbackInterval() const OVERRIDE;
-  virtual bool TimeToReduceFurther(
-      int64_t time_now, uint32_t incoming_bitrate_bps) const OVERRIDE;
-  virtual uint32_t LatestEstimate() const OVERRIDE;
-  virtual uint32_t UpdateBandwidthEstimate(int64_t now_ms) OVERRIDE;
-  virtual void SetRtt(int64_t rtt) OVERRIDE;
-  virtual RateControlRegion Update(const RateControlInput* input,
-                                   int64_t now_ms) OVERRIDE;
-  virtual void SetEstimate(int bitrate_bps, int64_t now_ms) OVERRIDE;
+  RateControlType GetControlType() const override;
+  uint32_t GetMinBitrate() const override;
+  bool ValidEstimate() const override;
+  int64_t GetFeedbackInterval() const override;
+  bool TimeToReduceFurther(int64_t time_now,
+                           uint32_t incoming_bitrate_bps) const override;
+  uint32_t LatestEstimate() const override;
+  uint32_t UpdateBandwidthEstimate(int64_t now_ms) override;
+  void SetRtt(int64_t rtt) override;
+  RateControlRegion Update(const RateControlInput* input,
+                           int64_t now_ms) override;
+  void SetEstimate(int bitrate_bps, int64_t now_ms) override;
 
  private:
   uint32_t ChangeBitRate(uint32_t current_bit_rate,

@@ -186,28 +186,26 @@ class SkipEncodingUnusedStreamsTest {
       return layers_->EncodeFlags(timestamp);
     }
 
-    virtual bool ConfigureBitrates(int bitrate_kbit,
-                                   int max_bitrate_kbit,
-                                   int framerate,
-                                   vpx_codec_enc_cfg_t* cfg) OVERRIDE {
+    bool ConfigureBitrates(int bitrate_kbit,
+                           int max_bitrate_kbit,
+                           int framerate,
+                           vpx_codec_enc_cfg_t* cfg) override {
       configured_bitrate_ = bitrate_kbit;
       return layers_->ConfigureBitrates(
           bitrate_kbit, max_bitrate_kbit, framerate, cfg);
     }
 
-    virtual void PopulateCodecSpecific(bool base_layer_sync,
-                                       CodecSpecificInfoVP8* vp8_info,
-                                       uint32_t timestamp) OVERRIDE {
+    void PopulateCodecSpecific(bool base_layer_sync,
+                               CodecSpecificInfoVP8* vp8_info,
+                               uint32_t timestamp) override {
       layers_->PopulateCodecSpecific(base_layer_sync, vp8_info, timestamp);
     }
 
-    virtual void FrameEncoded(unsigned int size, uint32_t timestamp) OVERRIDE {
+    void FrameEncoded(unsigned int size, uint32_t timestamp) override {
       layers_->FrameEncoded(size, timestamp);
     }
 
-    virtual int CurrentLayerId() const OVERRIDE {
-      return layers_->CurrentLayerId();
-    }
+    int CurrentLayerId() const override { return layers_->CurrentLayerId(); }
 
     int configured_bitrate_;
     TemporalLayers* layers_;
@@ -216,8 +214,8 @@ class SkipEncodingUnusedStreamsTest {
   class SpyingTemporalLayersFactory : public TemporalLayers::Factory {
    public:
     virtual ~SpyingTemporalLayersFactory() {}
-    virtual TemporalLayers* Create(int temporal_layers,
-                                   uint8_t initial_tl0_pic_idx) const OVERRIDE {
+    TemporalLayers* Create(int temporal_layers,
+                           uint8_t initial_tl0_pic_idx) const override {
       SpyingTemporalLayers* layers =
           new SpyingTemporalLayers(TemporalLayers::Factory::Create(
               temporal_layers, initial_tl0_pic_idx));

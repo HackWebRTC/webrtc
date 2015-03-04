@@ -73,7 +73,7 @@ class ViEAutotestEncoderObserver : public webrtc::ViEEncoderObserver {
               << " BR: " << bitrate << std::endl;
   }
 
-  virtual void SuspendChange(int video_channel, bool is_suspended) OVERRIDE {
+  void SuspendChange(int video_channel, bool is_suspended) override {
     std::cout << "SuspendChange: " << is_suspended << std::endl;
   }
 };

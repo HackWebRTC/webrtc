@@ -50,7 +50,7 @@ class FakeDtmfObserver : public DtmfSenderObserverInterface {
   FakeDtmfObserver() : completed_(false) {}
 
   // Implements DtmfSenderObserverInterface.
-  virtual void OnToneChange(const std::string& tone) OVERRIDE {
+  void OnToneChange(const std::string& tone) override {
     LOG(LS_VERBOSE) << "FakeDtmfObserver::OnToneChange '" << tone << "'.";
     tones_.push_back(tone);
     if (tone.empty()) {
@@ -90,12 +90,13 @@ class FakeDtmfProvider : public DtmfProviderInterface {
   }
 
   // Implements DtmfProviderInterface.
-  virtual bool CanInsertDtmf(const std::string&  track_label) OVERRIDE {
+  bool CanInsertDtmf(const std::string& track_label) override {
     return (can_insert_dtmf_tracks_.count(track_label) != 0);
   }
 
-  virtual bool InsertDtmf(const std::string& track_label,
-                          int code, int duration) OVERRIDE {
+  bool InsertDtmf(const std::string& track_label,
+                  int code,
+                  int duration) override {
     int gap = 0;
     // TODO(ronghuawu): Make the timer (basically the rtc::TimeNanos)
     // mockable and use a fake timer in the unit tests.

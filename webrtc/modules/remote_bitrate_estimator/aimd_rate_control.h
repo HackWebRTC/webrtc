@@ -27,22 +27,22 @@ class AimdRateControl : public RemoteRateControl {
   virtual ~AimdRateControl() {}
 
   // Implements RemoteRateControl.
-  virtual bool ValidEstimate() const OVERRIDE;
-  virtual RateControlType GetControlType() const OVERRIDE;
-  virtual uint32_t GetMinBitrate() const OVERRIDE;
-  virtual int64_t GetFeedbackInterval() const OVERRIDE;
+  bool ValidEstimate() const override;
+  RateControlType GetControlType() const override;
+  uint32_t GetMinBitrate() const override;
+  int64_t GetFeedbackInterval() const override;
   // Returns true if the bitrate estimate hasn't been changed for more than
   // an RTT, or if the incoming_bitrate is more than 5% above the current
   // estimate. Should be used to decide if we should reduce the rate further
   // when over-using.
-  virtual bool TimeToReduceFurther(
-      int64_t time_now, uint32_t incoming_bitrate_bps) const OVERRIDE;
-  virtual uint32_t LatestEstimate() const OVERRIDE;
-  virtual uint32_t UpdateBandwidthEstimate(int64_t now_ms) OVERRIDE;
-  virtual void SetRtt(int64_t rtt) OVERRIDE;
-  virtual RateControlRegion Update(const RateControlInput* input,
-                                   int64_t now_ms) OVERRIDE;
-  virtual void SetEstimate(int bitrate_bps, int64_t now_ms) OVERRIDE;
+  bool TimeToReduceFurther(int64_t time_now,
+                           uint32_t incoming_bitrate_bps) const override;
+  uint32_t LatestEstimate() const override;
+  uint32_t UpdateBandwidthEstimate(int64_t now_ms) override;
+  void SetRtt(int64_t rtt) override;
+  RateControlRegion Update(const RateControlInput* input,
+                           int64_t now_ms) override;
+  void SetEstimate(int bitrate_bps, int64_t now_ms) override;
 
  private:
   // Update the target bitrate according based on, among other things,

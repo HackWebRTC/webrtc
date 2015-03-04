@@ -21,14 +21,13 @@ class RtpHeaderParserImpl : public RtpHeaderParser {
   RtpHeaderParserImpl();
   virtual ~RtpHeaderParserImpl() {}
 
-  virtual bool Parse(const uint8_t* packet,
-                     size_t length,
-                     RTPHeader* header) const OVERRIDE;
+  bool Parse(const uint8_t* packet,
+             size_t length,
+             RTPHeader* header) const override;
 
-  virtual bool RegisterRtpHeaderExtension(RTPExtensionType type,
-                                          uint8_t id) OVERRIDE;
+  bool RegisterRtpHeaderExtension(RTPExtensionType type, uint8_t id) override;
 
-  virtual bool DeregisterRtpHeaderExtension(RTPExtensionType type) OVERRIDE;
+  bool DeregisterRtpHeaderExtension(RTPExtensionType type) override;
 
  private:
   rtc::scoped_ptr<CriticalSectionWrapper> critical_section_;

@@ -109,7 +109,7 @@ class SendTest : public BaseTest {
   explicit SendTest(unsigned int timeout_ms);
   SendTest(unsigned int timeout_ms, const FakeNetworkPipe::Config& config);
 
-  virtual bool ShouldCreateReceivers() const OVERRIDE;
+  bool ShouldCreateReceivers() const override;
 };
 
 class EndToEndTest : public BaseTest {
@@ -117,7 +117,7 @@ class EndToEndTest : public BaseTest {
   explicit EndToEndTest(unsigned int timeout_ms);
   EndToEndTest(unsigned int timeout_ms, const FakeNetworkPipe::Config& config);
 
-  virtual bool ShouldCreateReceivers() const OVERRIDE;
+  bool ShouldCreateReceivers() const override;
 };
 
 }  // namespace test

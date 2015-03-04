@@ -91,7 +91,7 @@ class PacketManipulatorImpl : public PacketManipulator {
                         const NetworkingConfig& config,
                         bool verbose);
   virtual ~PacketManipulatorImpl();
-  virtual int ManipulatePackets(webrtc::EncodedImage* encoded_image) OVERRIDE;
+  int ManipulatePackets(webrtc::EncodedImage* encoded_image) override;
   virtual void InitializeRandomSeed(unsigned int seed);
  protected:
   // Returns a uniformly distributed random value between 0.0 and 1.0

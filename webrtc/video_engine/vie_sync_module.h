@@ -45,8 +45,8 @@ class ViESyncModule : public Module {
   int SetTargetBufferingDelay(int target_delay_ms);
 
   // Implements Module.
-  virtual int64_t TimeUntilNextProcess() OVERRIDE;
-  virtual int32_t Process() OVERRIDE;
+  int64_t TimeUntilNextProcess() override;
+  int32_t Process() override;
 
  private:
   rtc::scoped_ptr<CriticalSectionWrapper> data_cs_;

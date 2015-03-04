@@ -79,7 +79,7 @@ class ViECapturer
   virtual int IncomingFrameI420(const ViEVideoFrameI420& video_frame,
                                 unsigned long long capture_time = 0);  // NOLINT
 
-  virtual void SwapFrame(I420VideoFrame* frame) OVERRIDE;
+  void SwapFrame(I420VideoFrame* frame) override;
 
   // Start/Stop.
   int32_t Start(

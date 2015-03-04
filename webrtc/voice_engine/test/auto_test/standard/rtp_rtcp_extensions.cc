@@ -29,7 +29,7 @@ class ExtensionVerifyTransport : public webrtc::Transport {
         audio_level_id_(-1),
         absolute_sender_time_id_(-1) {}
 
-  virtual int SendPacket(int channel, const void* data, size_t len) OVERRIDE {
+  int SendPacket(int channel, const void* data, size_t len) override {
     webrtc::RTPHeader header;
     if (parser_->Parse(reinterpret_cast<const uint8_t*>(data), len, &header)) {
       bool ok = true;
@@ -52,9 +52,7 @@ class ExtensionVerifyTransport : public webrtc::Transport {
     return static_cast<int>(len);
   }
 
-  virtual int SendRTCPPacket(int channel,
-                             const void* data,
-                             size_t len) OVERRIDE {
+  int SendRTCPPacket(int channel, const void* data, size_t len) override {
     return static_cast<int>(len);
   }
 
@@ -93,14 +91,12 @@ class ExtensionVerifyTransport : public webrtc::Transport {
 
 class SendRtpRtcpHeaderExtensionsTest : public BeforeStreamingFixture {
  protected:
-  virtual void SetUp() OVERRIDE {
+  void SetUp() override {
     EXPECT_EQ(0, voe_network_->DeRegisterExternalTransport(channel_));
     EXPECT_EQ(0, voe_network_->RegisterExternalTransport(channel_,
                                                          verifying_transport_));
   }
-  virtual void TearDown() OVERRIDE {
-    PausePlaying();
-  }
+  void TearDown() override { PausePlaying(); }
 
   ExtensionVerifyTransport verifying_transport_;
 };
@@ -176,7 +172,7 @@ class MockViENetwork : public webrtc::ViENetwork {
 
 class ReceiveRtpRtcpHeaderExtensionsTest : public BeforeStreamingFixture {
  protected:
-  virtual void SetUp() OVERRIDE {
+  void SetUp() override {
     EXPECT_EQ(0,
         voe_rtp_rtcp_->SetSendAbsoluteSenderTimeStatus(channel_, true, 11));
     EXPECT_EQ(0,

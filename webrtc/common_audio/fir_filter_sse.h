@@ -23,7 +23,7 @@ class FIRFilterSSE2 : public FIRFilter {
                 size_t coefficients_length,
                 size_t max_input_length);
 
-  virtual void Filter(const float* in, size_t length, float* out) OVERRIDE;
+  void Filter(const float* in, size_t length, float* out) override;
 
  private:
   size_t coefficients_length_;

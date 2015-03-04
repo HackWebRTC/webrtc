@@ -69,8 +69,8 @@ class WebRtcSoundclipStream : public webrtc::InStream {
   }
   void set_loop(bool loop) { loop_ = loop; }
 
-  virtual int Read(void* buf, size_t len) OVERRIDE;
-  virtual int Rewind() OVERRIDE;
+  int Read(void* buf, size_t len) override;
+  int Rewind() override;
 
  private:
   rtc::MemoryStream mem_;
@@ -80,9 +80,7 @@ class WebRtcSoundclipStream : public webrtc::InStream {
 // WebRtcMonitorStream is used to monitor a stream coming from WebRtc.
 // For now we just dump the data.
 class WebRtcMonitorStream : public webrtc::OutStream {
-  virtual bool Write(const void *buf, size_t len) OVERRIDE {
-    return true;
-  }
+  bool Write(const void* buf, size_t len) override { return true; }
 };
 
 class AudioDeviceModule;
@@ -152,12 +150,12 @@ class WebRtcVoiceEngine
                            MediaProcessorDirection direction);
 
   // Method from webrtc::VoEMediaProcess
-  virtual void Process(int channel,
-                       webrtc::ProcessingTypes type,
-                       int16_t audio10ms[],
-                       int length,
-                       int sampling_freq,
-                       bool is_stereo) OVERRIDE;
+  void Process(int channel,
+               webrtc::ProcessingTypes type,
+               int16_t audio10ms[],
+               int length,
+               int sampling_freq,
+               bool is_stereo) override;
 
   // For tracking WebRtc channels. Needed because we have to pause them
   // all when switching devices.
@@ -211,12 +209,10 @@ class WebRtcVoiceEngine
   bool ApplyOptions(const AudioOptions& options);
 
   // webrtc::TraceCallback:
-  virtual void Print(webrtc::TraceLevel level,
-                     const char* trace,
-                     int length) OVERRIDE;
+  void Print(webrtc::TraceLevel level, const char* trace, int length) override;
 
   // webrtc::VoiceEngineObserver:
-  virtual void CallbackOnError(int channel, int errCode) OVERRIDE;
+  void CallbackOnError(int channel, int errCode) override;
 
   // Given the device type, name, and id, find device id. Return true and
   // set the output parameter rtc_id if successful.
@@ -315,14 +311,12 @@ class WebRtcMediaChannel : public T, public webrtc::Transport {
 
  protected:
   // implements Transport interface
-  virtual int SendPacket(int channel, const void *data, size_t len) OVERRIDE {
+  int SendPacket(int channel, const void* data, size_t len) override {
     rtc::Buffer packet(data, len, kMaxRtpPacketLen);
     return T::SendPacket(&packet) ? static_cast<int>(len) : -1;
   }
 
-  virtual int SendRTCPPacket(int channel,
-                             const void* data,
-                             size_t len) OVERRIDE {
+  int SendRTCPPacket(int channel, const void* data, size_t len) override {
     rtc::Buffer packet(data, len, kMaxRtpPacketLen);
     return T::SendRtcp(&packet) ? static_cast<int>(len) : -1;
   }

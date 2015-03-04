@@ -378,7 +378,7 @@ TEST_F(LargeTimestampJumpTest, JumpLongerThanHalfRangeAndWrap) {
 
 class ShortTimestampJumpTest : public LargeTimestampJumpTest {
  protected:
-  void UpdateState(NetEqOutputType output_type) OVERRIDE {
+  void UpdateState(NetEqOutputType output_type) override {
     switch (test_state_) {
       case kInitialPhase: {
         if (output_type == kOutputNormal) {

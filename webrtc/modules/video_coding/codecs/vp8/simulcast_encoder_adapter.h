@@ -37,24 +37,21 @@ class SimulcastEncoderAdapter : public VP8Encoder,
   virtual ~SimulcastEncoderAdapter();
 
   // Implements VideoEncoder
-  virtual int Release() OVERRIDE;
-  virtual int InitEncode(const VideoCodec* inst,
-                         int number_of_cores,
-                         size_t max_payload_size) OVERRIDE;
-  virtual int Encode(const I420VideoFrame& input_image,
-                     const CodecSpecificInfo* codec_specific_info,
-                     const std::vector<VideoFrameType>* frame_types) OVERRIDE;
-  virtual int RegisterEncodeCompleteCallback(
-      EncodedImageCallback* callback) OVERRIDE;
-  virtual int SetChannelParameters(uint32_t packet_loss, int64_t rtt) OVERRIDE;
-  virtual int SetRates(uint32_t new_bitrate_kbit,
-                       uint32_t new_framerate) OVERRIDE;
+  int Release() override;
+  int InitEncode(const VideoCodec* inst,
+                 int number_of_cores,
+                 size_t max_payload_size) override;
+  int Encode(const I420VideoFrame& input_image,
+             const CodecSpecificInfo* codec_specific_info,
+             const std::vector<VideoFrameType>* frame_types) override;
+  int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;
+  int SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
+  int SetRates(uint32_t new_bitrate_kbit, uint32_t new_framerate) override;
 
   // Implements EncodedImageCallback
-  virtual int32_t Encoded(
-      const EncodedImage& encodedImage,
-      const CodecSpecificInfo* codecSpecificInfo = NULL,
-      const RTPFragmentationHeader* fragmentation = NULL) OVERRIDE;
+  int32_t Encoded(const EncodedImage& encodedImage,
+                  const CodecSpecificInfo* codecSpecificInfo = NULL,
+                  const RTPFragmentationHeader* fragmentation = NULL) override;
 
  private:
   struct StreamInfo {

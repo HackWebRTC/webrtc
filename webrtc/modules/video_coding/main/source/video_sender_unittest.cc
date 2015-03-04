@@ -70,7 +70,7 @@ MATCHER_P(MatchesVp8StreamInfo, expected, "") {
 
 class EmptyFrameGenerator : public FrameGenerator {
  public:
-  virtual I420VideoFrame* NextFrame() OVERRIDE {
+  I420VideoFrame* NextFrame() override {
     frame_.reset(new I420VideoFrame());
     return frame_.get();
   }
@@ -86,10 +86,10 @@ class PacketizationCallback : public VCMPacketizationCallback {
 
   virtual ~PacketizationCallback() {}
 
-  virtual int32_t SendData(uint8_t payload_type,
-                           const EncodedImage& encoded_image,
-                           const RTPFragmentationHeader& fragmentation_header,
-                           const RTPVideoHeader* rtp_video_header) OVERRIDE {
+  int32_t SendData(uint8_t payload_type,
+                   const EncodedImage& encoded_image,
+                   const RTPFragmentationHeader& fragmentation_header,
+                   const RTPVideoHeader* rtp_video_header) override {
     assert(rtp_video_header);
     frame_data_.push_back(FrameData(encoded_image._length, *rtp_video_header));
     return 0;
@@ -171,7 +171,7 @@ class TestVideoSender : public ::testing::Test {
   // a special case (e.g. frame rate in media optimization).
   TestVideoSender() : clock_(1000), packetization_callback_(&clock_) {}
 
-  virtual void SetUp() OVERRIDE {
+  void SetUp() override {
     sender_.reset(new VideoSender(&clock_, &post_encode_callback_, nullptr));
     EXPECT_EQ(0, sender_->InitializeSender());
     EXPECT_EQ(0, sender_->RegisterTransportCallback(&packetization_callback_));
@@ -197,7 +197,7 @@ class TestVideoSenderWithMockEncoder : public TestVideoSender {
   static const int kNumberOfLayers = 3;
   static const int kUnusedPayloadType = 10;
 
-  virtual void SetUp() OVERRIDE {
+  void SetUp() override {
     TestVideoSender::SetUp();
     generator_.reset(new EmptyFrameGenerator());
     EXPECT_EQ(
@@ -220,7 +220,7 @@ class TestVideoSenderWithMockEncoder : public TestVideoSender {
     EXPECT_EQ(0, sender_->RegisterSendCodec(&settings_, 1, 1200));
   }
 
-  virtual void TearDown() OVERRIDE { sender_.reset(); }
+  void TearDown() override { sender_.reset(); }
 
   void ExpectIntraRequest(int stream) {
     if (stream == -1) {
@@ -313,7 +313,7 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
   TestVideoSenderWithVp8()
       : codec_bitrate_kbps_(300), available_bitrate_kbps_(1000) {}
 
-  virtual void SetUp() OVERRIDE {
+  void SetUp() override {
     TestVideoSender::SetUp();
 
     const char* input_video = "foreman_cif";

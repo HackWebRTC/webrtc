@@ -38,7 +38,7 @@ class RtpDumpWriter : public RtpFileWriter {
     }
   }
 
-  virtual bool WritePacket(const RtpPacket* packet) OVERRIDE {
+  bool WritePacket(const RtpPacket* packet) override {
     uint16_t len = static_cast<uint16_t>(packet->length + kPacketHeaderSize);
     CHECK_GE(packet->original_length, packet->length);
     uint16_t plen = static_cast<uint16_t>(packet->original_length);

@@ -23,7 +23,8 @@ class ReceiverWithPacketLoss : public Receiver {
   void Setup(AudioCodingModule *acm, RTPStream *rtpStream,
              std::string out_file_name, int channels, int loss_rate,
              int burst_length);
-  bool IncomingPacket() OVERRIDE;
+  bool IncomingPacket() override;
+
  protected:
   bool PacketLost();
   int loss_rate_;

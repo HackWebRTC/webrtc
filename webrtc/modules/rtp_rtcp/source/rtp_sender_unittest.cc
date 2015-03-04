@@ -62,16 +62,14 @@ class LoopbackTransportTest : public webrtc::Transport {
  public:
   LoopbackTransportTest()
       : packets_sent_(0), last_sent_packet_len_(0), total_bytes_sent_(0) {}
-  virtual int SendPacket(int channel, const void *data, size_t len) OVERRIDE {
+  int SendPacket(int channel, const void* data, size_t len) override {
     packets_sent_++;
     memcpy(last_sent_packet_, data, len);
     last_sent_packet_len_ = len;
     total_bytes_sent_ += len;
     return static_cast<int>(len);
   }
-  virtual int SendRTCPPacket(int channel,
-                             const void *data,
-                             size_t len) OVERRIDE {
+  int SendRTCPPacket(int channel, const void* data, size_t len) override {
     return -1;
   }
   int packets_sent_;
@@ -93,7 +91,7 @@ class RtpSenderTest : public ::testing::Test {
         SendPacket(_, _, _, _, _, _)).WillRepeatedly(testing::Return(true));
   }
 
-  virtual void SetUp() OVERRIDE {
+  void SetUp() override {
     rtp_sender_.reset(new RTPSender(0, false, &fake_clock_, &transport_, NULL,
                                     &mock_paced_sender_, NULL, NULL, NULL));
     rtp_sender_->SetSequenceNumber(kSeqNum);
@@ -771,8 +769,8 @@ TEST_F(RtpSenderTest, FrameCountCallbacks) {
     TestCallback() : FrameCountObserver(), num_calls_(0), ssrc_(0) {}
     virtual ~TestCallback() {}
 
-    virtual void FrameCountUpdated(const FrameCounts& frame_counts,
-                                   uint32_t ssrc) OVERRIDE {
+    void FrameCountUpdated(const FrameCounts& frame_counts,
+                           uint32_t ssrc) override {
       ++num_calls_;
       ssrc_ = ssrc;
       frame_counts_ = frame_counts;
@@ -821,9 +819,9 @@ TEST_F(RtpSenderTest, BitrateCallbacks) {
     TestCallback() : BitrateStatisticsObserver(), num_calls_(0), ssrc_(0) {}
     virtual ~TestCallback() {}
 
-    virtual void Notify(const BitrateStatistics& total_stats,
-                        const BitrateStatistics& retransmit_stats,
-                        uint32_t ssrc) OVERRIDE {
+    void Notify(const BitrateStatistics& total_stats,
+                const BitrateStatistics& retransmit_stats,
+                uint32_t ssrc) override {
       ++num_calls_;
       ssrc_ = ssrc;
       total_stats_ = total_stats;
@@ -891,7 +889,7 @@ class RtpSenderAudioTest : public RtpSenderTest {
  protected:
   RtpSenderAudioTest() {}
 
-  virtual void SetUp() OVERRIDE {
+  void SetUp() override {
     payload_ = kAudioPayload;
     rtp_sender_.reset(new RTPSender(0, true, &fake_clock_, &transport_, NULL,
                                     &mock_paced_sender_, NULL, NULL, NULL));
@@ -906,8 +904,8 @@ TEST_F(RtpSenderTest, StreamDataCountersCallbacks) {
       : StreamDataCountersCallback(), ssrc_(0), counters_() {}
     virtual ~TestCallback() {}
 
-    virtual void DataCountersUpdated(const StreamDataCounters& counters,
-                                     uint32_t ssrc) OVERRIDE {
+    void DataCountersUpdated(const StreamDataCounters& counters,
+                             uint32_t ssrc) override {
       ssrc_ = ssrc;
       counters_ = counters;
     }

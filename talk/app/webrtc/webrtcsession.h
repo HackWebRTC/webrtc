@@ -180,21 +180,23 @@ class WebRtcSession : public cricket::BaseSession,
 
 
   // AudioMediaProviderInterface implementation.
-  virtual void SetAudioPlayout(uint32 ssrc, bool enable,
-                               cricket::AudioRenderer* renderer) OVERRIDE;
-  virtual void SetAudioSend(uint32 ssrc, bool enable,
-                            const cricket::AudioOptions& options,
-                            cricket::AudioRenderer* renderer) OVERRIDE;
-  virtual void SetAudioPlayoutVolume(uint32 ssrc, double volume) OVERRIDE;
+  void SetAudioPlayout(uint32 ssrc,
+                       bool enable,
+                       cricket::AudioRenderer* renderer) override;
+  void SetAudioSend(uint32 ssrc,
+                    bool enable,
+                    const cricket::AudioOptions& options,
+                    cricket::AudioRenderer* renderer) override;
+  void SetAudioPlayoutVolume(uint32 ssrc, double volume) override;
 
   // Implements VideoMediaProviderInterface.
-  virtual bool SetCaptureDevice(uint32 ssrc,
-                                cricket::VideoCapturer* camera) OVERRIDE;
-  virtual void SetVideoPlayout(uint32 ssrc,
-                               bool enable,
-                               cricket::VideoRenderer* renderer) OVERRIDE;
-  virtual void SetVideoSend(uint32 ssrc, bool enable,
-                            const cricket::VideoOptions* options) OVERRIDE;
+  bool SetCaptureDevice(uint32 ssrc, cricket::VideoCapturer* camera) override;
+  void SetVideoPlayout(uint32 ssrc,
+                       bool enable,
+                       cricket::VideoRenderer* renderer) override;
+  void SetVideoSend(uint32 ssrc,
+                    bool enable,
+                    const cricket::VideoOptions* options) override;
 
   // Implements DtmfProviderInterface.
   virtual bool CanInsertDtmf(const std::string& track_id);
@@ -203,19 +205,19 @@ class WebRtcSession : public cricket::BaseSession,
   virtual sigslot::signal0<>* GetOnDestroyedSignal();
 
   // Implements DataChannelProviderInterface.
-  virtual bool SendData(const cricket::SendDataParams& params,
-                        const rtc::Buffer& payload,
-                        cricket::SendDataResult* result) OVERRIDE;
-  virtual bool ConnectDataChannel(DataChannel* webrtc_data_channel) OVERRIDE;
-  virtual void DisconnectDataChannel(DataChannel* webrtc_data_channel) OVERRIDE;
-  virtual void AddSctpDataStream(int sid) OVERRIDE;
-  virtual void RemoveSctpDataStream(int sid) OVERRIDE;
-  virtual bool ReadyToSendData() const OVERRIDE;
+  bool SendData(const cricket::SendDataParams& params,
+                const rtc::Buffer& payload,
+                cricket::SendDataResult* result) override;
+  bool ConnectDataChannel(DataChannel* webrtc_data_channel) override;
+  void DisconnectDataChannel(DataChannel* webrtc_data_channel) override;
+  void AddSctpDataStream(int sid) override;
+  void RemoveSctpDataStream(int sid) override;
+  bool ReadyToSendData() const override;
 
   // Implements DataChannelFactory.
   rtc::scoped_refptr<DataChannel> CreateDataChannel(
       const std::string& label,
-      const InternalDataChannelInit* config) OVERRIDE;
+      const InternalDataChannelInit* config) override;
 
   cricket::DataChannelType data_channel_type() const;
 

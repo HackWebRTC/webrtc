@@ -43,11 +43,11 @@ class ScreenCapturerWinMagnifier : public ScreenCapturer {
   virtual ~ScreenCapturerWinMagnifier();
 
   // Overridden from ScreenCapturer:
-  virtual void Start(Callback* callback) OVERRIDE;
-  virtual void Capture(const DesktopRegion& region) OVERRIDE;
-  virtual bool GetScreenList(ScreenList* screens) OVERRIDE;
-  virtual bool SelectScreen(ScreenId id) OVERRIDE;
-  virtual void SetExcludedWindow(WindowId window) OVERRIDE;
+  void Start(Callback* callback) override;
+  void Capture(const DesktopRegion& region) override;
+  bool GetScreenList(ScreenList* screens) override;
+  bool SelectScreen(ScreenId id) override;
+  void SetExcludedWindow(WindowId window) override;
 
  private:
   typedef BOOL(WINAPI* MagImageScalingCallback)(HWND hwnd,

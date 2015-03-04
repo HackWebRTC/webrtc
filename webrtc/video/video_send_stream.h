@@ -53,21 +53,20 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   virtual ~VideoSendStream();
 
-  virtual void Start() OVERRIDE;
-  virtual void Stop() OVERRIDE;
+  void Start() override;
+  void Stop() override;
 
-  virtual bool ReconfigureVideoEncoder(
-      const VideoEncoderConfig& config) OVERRIDE;
+  bool ReconfigureVideoEncoder(const VideoEncoderConfig& config) override;
 
-  virtual Stats GetStats() OVERRIDE;
+  Stats GetStats() override;
 
   bool DeliverRtcp(const uint8_t* packet, size_t length);
 
   // From VideoSendStreamInput.
-  virtual void SwapFrame(I420VideoFrame* frame) OVERRIDE;
+  void SwapFrame(I420VideoFrame* frame) override;
 
   // From webrtc::VideoSendStream.
-  virtual VideoSendStreamInput* Input() OVERRIDE;
+  VideoSendStreamInput* Input() override;
 
   typedef std::map<uint32_t, RtpState> RtpStateMap;
   RtpStateMap GetRtpStates() const;

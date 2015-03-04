@@ -86,13 +86,12 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
         last_payload_type_(-1),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {}
 
-  virtual int32_t SendData(
-      FrameType frame_type,
-      uint8_t payload_type,
-      uint32_t timestamp,
-      const uint8_t* payload_data,
-      size_t payload_len_bytes,
-      const RTPFragmentationHeader* fragmentation) OVERRIDE {
+  int32_t SendData(FrameType frame_type,
+                   uint8_t payload_type,
+                   uint32_t timestamp,
+                   const uint8_t* payload_data,
+                   size_t payload_len_bytes,
+                   const RTPFragmentationHeader* fragmentation) override {
     CriticalSectionScoped lock(crit_sect_.get());
     ++num_calls_;
     last_frame_type_ = frame_type;
@@ -855,7 +854,7 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
   // Returns a pointer to the next packet. Returns NULL if the source is
   // depleted (i.e., the test duration is exceeded), or if an error occurred.
   // Inherited from test::PacketSource.
-  test::Packet* NextPacket() OVERRIDE {
+  test::Packet* NextPacket() override {
     // Get the next packet from AcmSendTest. Ownership of |packet| is
     // transferred to this method.
     test::Packet* packet = send_test_->NextPacket();
@@ -1185,7 +1184,7 @@ class AcmSwitchingOutputFrequencyOldApi : public ::testing::Test,
   }
 
   // Inherited from test::PacketSource.
-  test::Packet* NextPacket() OVERRIDE {
+  test::Packet* NextPacket() override {
     // Check if it is time to terminate the test. The packet source is of type
     // ConstantPcmPacketSource, which is infinite, so we must end the test
     // "manually".

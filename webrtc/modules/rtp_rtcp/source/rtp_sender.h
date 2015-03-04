@@ -81,7 +81,7 @@ class RTPSender : public RTPSenderInterface {
 
   void ProcessBitrate();
 
-  virtual uint16_t ActualSendBitrateKbit() const OVERRIDE;
+  uint16_t ActualSendBitrateKbit() const override;
 
   uint32_t VideoBitrateSent() const;
   uint32_t FecOverheadRate() const;
@@ -95,7 +95,7 @@ class RTPSender : public RTPSenderInterface {
   uint32_t GetTargetBitrate();
 
   // Includes size of RTP and FEC headers.
-  virtual size_t MaxDataPayloadLength() const OVERRIDE;
+  size_t MaxDataPayloadLength() const override;
 
   int32_t RegisterPayload(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
@@ -126,7 +126,7 @@ class RTPSender : public RTPSenderInterface {
   uint32_t GenerateNewSSRC();
   void SetSSRC(uint32_t ssrc);
 
-  virtual uint16_t SequenceNumber() const OVERRIDE;
+  uint16_t SequenceNumber() const override;
   void SetSequenceNumber(uint16_t seq);
 
   void SetCsrcs(const std::vector<uint32_t>& csrcs);
@@ -193,28 +193,29 @@ class RTPSender : public RTPSenderInterface {
   void SetRtxPayloadType(int payloadType);
 
   // Functions wrapping RTPSenderInterface.
-  virtual int32_t BuildRTPheader(
-      uint8_t* data_buffer,
-      int8_t payload_type,
-      bool marker_bit,
-      uint32_t capture_timestamp,
-      int64_t capture_time_ms,
-      const bool timestamp_provided = true,
-      const bool inc_sequence_number = true) OVERRIDE;
+  int32_t BuildRTPheader(uint8_t* data_buffer,
+                         int8_t payload_type,
+                         bool marker_bit,
+                         uint32_t capture_timestamp,
+                         int64_t capture_time_ms,
+                         const bool timestamp_provided = true,
+                         const bool inc_sequence_number = true) override;
 
-  virtual size_t RTPHeaderLength() const OVERRIDE;
-  virtual uint16_t IncrementSequenceNumber() OVERRIDE;
-  virtual size_t MaxPayloadLength() const OVERRIDE;
-  virtual uint16_t PacketOverHead() const OVERRIDE;
+  size_t RTPHeaderLength() const override;
+  uint16_t IncrementSequenceNumber() override;
+  size_t MaxPayloadLength() const override;
+  uint16_t PacketOverHead() const override;
 
   // Current timestamp.
-  virtual uint32_t Timestamp() const OVERRIDE;
-  virtual uint32_t SSRC() const OVERRIDE;
+  uint32_t Timestamp() const override;
+  uint32_t SSRC() const override;
 
-  virtual int32_t SendToNetwork(
-      uint8_t *data_buffer, size_t payload_length, size_t rtp_header_length,
-      int64_t capture_time_ms, StorageType storage,
-      PacedSender::Priority priority) OVERRIDE;
+  int32_t SendToNetwork(uint8_t* data_buffer,
+                        size_t payload_length,
+                        size_t rtp_header_length,
+                        int64_t capture_time_ms,
+                        StorageType storage,
+                        PacedSender::Priority priority) override;
 
   // Audio.
 

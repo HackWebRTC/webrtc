@@ -33,7 +33,7 @@ class ConstantPcmPacketSource : public PacketSource {
 
   // Returns a pointer to the next packet. Will never return NULL. That is,
   // the source is infinite.
-  Packet* NextPacket() OVERRIDE;
+  Packet* NextPacket() override;
 
  private:
   void WriteHeader(uint8_t* packet_memory);

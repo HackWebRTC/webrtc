@@ -37,14 +37,12 @@ class LoopBackTransport : public webrtc::Transport {
 
   ~LoopBackTransport() { thread_->Stop(); }
 
-  virtual int SendPacket(int channel, const void* data, size_t len) OVERRIDE {
+  int SendPacket(int channel, const void* data, size_t len) override {
     StorePacket(Packet::Rtp, channel, data, len);
     return static_cast<int>(len);
   }
 
-  virtual int SendRTCPPacket(int channel,
-                             const void* data,
-                             size_t len) OVERRIDE {
+  int SendRTCPPacket(int channel, const void* data, size_t len) override {
     StorePacket(Packet::Rtcp, channel, data, len);
     return static_cast<int>(len);
   }

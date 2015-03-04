@@ -25,10 +25,10 @@ using namespace webrtc;
 
 class VerifyingAudioReceiver : public NullRtpData {
  public:
-  virtual int32_t OnReceivedPayloadData(
+  int32_t OnReceivedPayloadData(
       const uint8_t* payloadData,
       const size_t payloadSize,
-      const webrtc::WebRtcRTPHeader* rtpHeader) OVERRIDE {
+      const webrtc::WebRtcRTPHeader* rtpHeader) override {
     if (rtpHeader->header.payloadType == 98 ||
         rtpHeader->header.payloadType == 99) {
       EXPECT_EQ(4u, payloadSize);
@@ -61,13 +61,12 @@ class VerifyingAudioReceiver : public NullRtpData {
 
 class RTPCallback : public NullRtpFeedback {
  public:
-  virtual int32_t OnInitializeDecoder(
-      const int32_t id,
-      const int8_t payloadType,
-      const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-      const int frequency,
-      const uint8_t channels,
-      const uint32_t rate) OVERRIDE {
+  int32_t OnInitializeDecoder(const int32_t id,
+                              const int8_t payloadType,
+                              const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+                              const int frequency,
+                              const uint8_t channels,
+                              const uint32_t rate) override {
     if (payloadType == 96) {
       EXPECT_EQ(test_rate, rate) <<
           "The rate should be 64K for this payloadType";
@@ -88,7 +87,7 @@ class RtpRtcpAudioTest : public ::testing::Test {
   }
   ~RtpRtcpAudioTest() {}
 
-  virtual void SetUp() OVERRIDE {
+  void SetUp() override {
     audioFeedback = new NullRtpAudioFeedback();
     data_receiver1 = new VerifyingAudioReceiver();
     data_receiver2 = new VerifyingAudioReceiver();
@@ -133,7 +132,7 @@ class RtpRtcpAudioTest : public ::testing::Test {
                               rtp_receiver1_.get(), receive_statistics1_.get());
   }
 
-  virtual void TearDown() OVERRIDE {
+  void TearDown() override {
     delete module1;
     delete module2;
     delete transport1;
