@@ -58,7 +58,7 @@ static const char kTurnIceServerUri[] = "turn:user@turn.example.org";
 static const char kTurnUsername[] = "user";
 static const char kTurnPassword[] = "password";
 static const char kTurnHostname[] = "turn.example.org";
-static const uint32 kTimeout = 5000U;
+static const uint32 kTimeout = 10000U;
 
 #define MAYBE_SKIP_TEST(feature)                    \
   if (!(feature())) {                               \
@@ -256,6 +256,14 @@ class PeerConnectionInterfaceTest : public testing::Test {
     // DTLS does not work in a loopback call, so is disabled for most of the
     // tests in this file. We only create a FakeIdentityService if the test
     // explicitly sets the constraint.
+    FakeConstraints default_constraints;
+    if (!constraints) {
+      constraints = &default_constraints;
+
+      default_constraints.AddMandatory(
+          webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, false);
+    }
+
     FakeIdentityService* dtls_service = NULL;
     bool dtls;
     if (FindConstraint(constraints,
