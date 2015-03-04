@@ -85,7 +85,7 @@ using webrtc::PeerConnectionInterface;
 using webrtc::SessionDescriptionInterface;
 using webrtc::StreamCollectionInterface;
 
-static const int kMaxWaitMs = 10000;
+static const int kMaxWaitMs = 2000;
 // Disable for TSan v2, see
 // https://code.google.com/p/webrtc/issues/detail?id=1205 for details.
 // This declaration is also #ifdef'd as it causes uninitialized-variable

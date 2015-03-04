@@ -38,8 +38,6 @@
 
 namespace webrtc {
 
-class DtlsIdentityStore;
-
 class PeerConnectionFactory : public PeerConnectionFactoryInterface {
  public:
   virtual void SetOptions(const Options& options) {
@@ -111,8 +109,6 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   // injected any. In that case, video engine will use the internal SW decoder.
   rtc::scoped_ptr<cricket::WebRtcVideoDecoderFactory>
       video_decoder_factory_;
-
-  rtc::scoped_ptr<webrtc::DtlsIdentityStore> dtls_identity_store_;
 };
 
 }  // namespace webrtc

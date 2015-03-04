@@ -50,14 +50,16 @@ class WebRtcIdentityRequestObserver : public DTLSIdentityRequestObserver,
                                       public sigslot::has_slots<> {
  public:
   // DTLSIdentityRequestObserver overrides.
-  void OnFailure(int error) override;
-  void OnSuccess(const std::string& der_cert,
-                 const std::string& der_private_key) override;
-  void OnSuccessWithIdentityObj(
-      rtc::scoped_ptr<rtc::SSLIdentity> identity) override;
+  virtual void OnFailure(int error) {
+    SignalRequestFailed(error);
+  }
+  virtual void OnSuccess(const std::string& der_cert,
+                         const std::string& der_private_key) {
+    SignalIdentityReady(der_cert, der_private_key);
+  }
 
   sigslot::signal1<int> SignalRequestFailed;
-  sigslot::signal1<rtc::SSLIdentity*> SignalIdentityReady;
+  sigslot::signal2<const std::string&, const std::string&> SignalIdentityReady;
 };
 
 struct CreateSessionDescriptionRequest {
@@ -141,6 +143,8 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
       SessionDescriptionInterface* description);
 
   void OnIdentityRequestFailed(int error);
+  void OnIdentityReady(const std::string& der_cert,
+                       const std::string& der_private_key);
   void SetIdentity(rtc::SSLIdentity* identity);
 
   std::queue<CreateSessionDescriptionRequest>

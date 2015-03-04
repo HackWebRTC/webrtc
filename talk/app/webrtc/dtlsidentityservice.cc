@@ -26,25 +26,3 @@
  */
 
 #include "talk/app/webrtc/dtlsidentityservice.h"
-
-#include "talk/app/webrtc/dtlsidentitystore.h"
-#include "webrtc/base/logging.h"
-
-namespace webrtc {
-
-bool DtlsIdentityService::RequestIdentity(
-    const std::string& identity_name,
-    const std::string& common_name,
-    webrtc::DTLSIdentityRequestObserver* observer) {
-  if (identity_name != DtlsIdentityStore::kIdentityName ||
-      common_name != DtlsIdentityStore::kIdentityName) {
-    LOG(LS_WARNING) << "DtlsIdentityService::RequestIdentity called with "
-                    << "unsupported params, identity_name=" << identity_name
-                    << ", common_name=" << common_name;
-    return false;
-  }
-  store_->RequestIdentity(observer);
-  return true;
-}
-
-}  // namespace webrtc
