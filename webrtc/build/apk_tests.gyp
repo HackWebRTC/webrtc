@@ -89,6 +89,20 @@
       ],
     },
     {
+      'target_name': 'rtc_unittests_apk',
+      'type': 'none',
+      'variables': {
+        'test_suite_name': 'rtc_unittests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)rtc_unittests<(SHARED_LIB_SUFFIX)',
+      },
+      'dependencies': [
+        '<(webrtc_root)/webrtc.gyp:rtc_unittests',
+      ],
+      'includes': [
+        '../../build/apk_test.gypi',
+      ],
+    },
+    {
       'target_name': 'system_wrappers_unittests_apk',
       'type': 'none',
       'variables': {

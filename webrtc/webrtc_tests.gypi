@@ -9,7 +9,7 @@
   'targets': [
     {
       'target_name': 'rtc_unittests',
-      'type': 'executable',
+      'type': '<(gtest_target_type)',
       'dependencies': [
         'base/base.gyp:rtc_base',
         'base/base_tests.gyp:rtc_base_tests_utils',
@@ -23,6 +23,13 @@
         'rtc_xmpp_unittest',
         'sound/sound.gyp:rtc_sound',
         '<(DEPTH)/testing/gtest.gyp:gtest',
+      ],
+      'conditions': [
+        ['OS=="android"', {
+          'dependencies': [
+            '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+          ],
+        }],
       ],
     },
     {
@@ -202,6 +209,13 @@
   'conditions': [
     ['OS=="android"', {
       'targets': [
+        {
+          'target_name': 'rtc_unittests_apk_target',
+          'type': 'none',
+          'dependencies': [
+            '<(apk_tests_path):rtc_unittests_apk',
+          ],
+        },
         {
           'target_name': 'video_engine_tests_apk_target',
           'type': 'none',
