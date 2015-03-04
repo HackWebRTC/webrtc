@@ -401,15 +401,9 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
   if (rtcp_sender_.TimeToSendRTCPReport(kVideoFrameKey == frame_type)) {
       rtcp_sender_.SendRTCP(GetFeedbackState(), kRtcpReport);
   }
-  return rtp_sender_.SendOutgoingData(frame_type,
-                                      payload_type,
-                                      time_stamp,
-                                      capture_time_ms,
-                                      payload_data,
-                                      payload_size,
-                                      fragmentation,
-                                      NULL,
-                                      &(rtp_video_hdr->codecHeader));
+  return rtp_sender_.SendOutgoingData(
+      frame_type, payload_type, time_stamp, capture_time_ms, payload_data,
+      payload_size, fragmentation, NULL, rtp_video_hdr);
 }
 
 bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,

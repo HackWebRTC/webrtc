@@ -27,6 +27,8 @@ const int kSendSideDelayWindowMs = 1000;
 
 namespace {
 
+const size_t kRtpHeaderLength = 12;
+
 const char* FrameTypeToString(FrameType frame_type) {
   switch (frame_type) {
     case kFrameEmpty: return "empty";
@@ -124,6 +126,7 @@ RTPSender::RTPSender(int32_t id,
       rtp_header_extension_map_(),
       transmission_time_offset_(0),
       absolute_send_time_(0),
+      rotation_(kVideoRotation_0),
       // NACK.
       nack_byte_count_times_(),
       nack_byte_count_(),
@@ -246,10 +249,20 @@ int32_t RTPSender::SetAbsoluteSendTime(uint32_t absolute_send_time) {
   return 0;
 }
 
+void RTPSender::SetVideoRotation(VideoRotation rotation) {
+  CriticalSectionScoped cs(send_critsect_.get());
+  rotation_ = rotation;
+}
+
 int32_t RTPSender::RegisterRtpHeaderExtension(RTPExtensionType type,
                                               uint8_t id) {
   CriticalSectionScoped cs(send_critsect_.get());
   return rtp_header_extension_map_.Register(type, id);
+}
+
+bool RTPSender::IsRtpHeaderExtensionRegistered(RTPExtensionType type) {
+  CriticalSectionScoped cs(send_critsect_.get());
+  return rtp_header_extension_map_.IsRegistered(type);
 }
 
 int32_t RTPSender::DeregisterRtpHeaderExtension(RTPExtensionType type) {
@@ -440,6 +453,25 @@ int32_t RTPSender::CheckPayloadType(int8_t payload_type,
   return 0;
 }
 
+// Please refer to http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/
+// 12.07.00_60/ts_126114v120700p.pdf Section 7.4.5. The rotation of a frame is
+// the clockwise angle the frames must be rotated in order to display the frames
+// correctly if the display is rotated in its natural orientation.
+uint8_t RTPSender::ConvertToCVOByte(VideoRotation rotation) {
+  switch (rotation) {
+    case kVideoRotation_0:
+      return 0;
+    case kVideoRotation_90:
+      return 1;
+    case kVideoRotation_180:
+      return 2;
+    case kVideoRotation_270:
+      return 3;
+  }
+  assert(false);
+  return 0;
+}
+
 int32_t RTPSender::SendOutgoingData(FrameType frame_type,
                                     int8_t payload_type,
                                     uint32_t capture_timestamp,
@@ -448,7 +480,7 @@ int32_t RTPSender::SendOutgoingData(FrameType frame_type,
                                     size_t payload_size,
                                     const RTPFragmentationHeader* fragmentation,
                                     VideoCodecInformation* codec_info,
-                                    const RTPVideoTypeHeader* rtp_type_hdr) {
+                                    const RTPVideoHeader* rtp_hdr) {
   uint32_t ssrc;
   {
     // Drop this packet if we're not sending media packets.
@@ -481,12 +513,10 @@ int32_t RTPSender::SendOutgoingData(FrameType frame_type,
     if (frame_type == kFrameEmpty)
       return 0;
 
-    ret_val = video_->SendVideo(video_type, frame_type, payload_type,
-                                capture_timestamp, capture_time_ms,
-                                payload_data, payload_size,
-                                fragmentation, codec_info,
-                                rtp_type_hdr);
-
+    ret_val =
+        video_->SendVideo(video_type, frame_type, payload_type,
+                          capture_timestamp, capture_time_ms, payload_data,
+                          payload_size, fragmentation, codec_info, rtp_hdr);
   }
 
   CriticalSectionScoped cs(statistics_crit_.get());
@@ -1040,7 +1070,7 @@ void RTPSender::ProcessBitrate() {
 
 size_t RTPSender::RTPHeaderLength() const {
   CriticalSectionScoped lock(send_critsect_.get());
-  size_t rtp_header_length = 12;
+  size_t rtp_header_length = kRtpHeaderLength;
   rtp_header_length += sizeof(uint32_t) * csrcs_.size();
   rtp_header_length += RtpHeaderExtensionTotalLength();
   return rtp_header_length;
@@ -1093,7 +1123,7 @@ size_t RTPSender::CreateRtpHeader(uint8_t* header,
   RtpUtility::AssignUWord16ToBuffer(header + 2, sequence_number);
   RtpUtility::AssignUWord32ToBuffer(header + 4, timestamp);
   RtpUtility::AssignUWord32ToBuffer(header + 8, ssrc);
-  int32_t rtp_header_length = 12;
+  int32_t rtp_header_length = kRtpHeaderLength;
 
   if (csrcs.size() > 0) {
     uint8_t *ptr = &header[rtp_header_length];
@@ -1107,7 +1137,8 @@ size_t RTPSender::CreateRtpHeader(uint8_t* header,
     rtp_header_length += sizeof(uint32_t) * csrcs.size();
   }
 
-  uint16_t len = BuildRTPHeaderExtension(header + rtp_header_length);
+  uint16_t len =
+      BuildRTPHeaderExtension(header + rtp_header_length, marker_bit);
   if (len > 0) {
     header[0] |= 0x10;  // Set extension bit.
     rtp_header_length += len;
@@ -1141,7 +1172,8 @@ int32_t RTPSender::BuildRTPheader(uint8_t* data_buffer,
                          timestamp_, sequence_number, csrcs_);
 }
 
-uint16_t RTPSender::BuildRTPHeaderExtension(uint8_t* data_buffer) const {
+uint16_t RTPSender::BuildRTPHeaderExtension(uint8_t* data_buffer,
+                                            bool marker_bit) const {
   if (rtp_header_extension_map_.Size() <= 0) {
     return 0;
   }
@@ -1178,6 +1210,12 @@ uint16_t RTPSender::BuildRTPHeaderExtension(uint8_t* data_buffer) const {
       case kRtpExtensionAbsoluteSendTime:
         block_length = BuildAbsoluteSendTimeExtension(
             data_buffer + kHeaderLength + total_block_length);
+        break;
+      case kRtpExtensionVideoRotation:
+        if (marker_bit) {
+          block_length = BuildVideoRotationExtension(
+              data_buffer + kHeaderLength + total_block_length);
+        }
         break;
       default:
         assert(false);
@@ -1301,6 +1339,78 @@ uint8_t RTPSender::BuildAbsoluteSendTimeExtension(uint8_t* data_buffer) const {
   return kAbsoluteSendTimeLength;
 }
 
+uint8_t RTPSender::BuildVideoRotationExtension(uint8_t* data_buffer) const {
+  // Coordination of Video Orientation in RTP streams.
+  //
+  // Coordination of Video Orientation consists in signalling of the current
+  // orientation of the image captured on the sender side to the receiver for
+  // appropriate rendering and displaying.
+  //
+  //    0                   1                   2                   3
+  //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+  //    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  //    |  ID   | len=0 |V|0 0 0 0 C F R R|      0x00     |     0x00    |
+  //    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  //
+  // Note that we always include 2 pad bytes, which will result in legal and
+  // correctly parsed RTP, but may be a bit wasteful if more short extensions
+  // are implemented. Right now the pad bytes would anyway be required at end
+  // of the extension block, so it makes no difference.
+  //
+
+  // Get id defined by user.
+  uint8_t id;
+  if (rtp_header_extension_map_.GetId(kRtpExtensionVideoRotation, &id) != 0) {
+    // Not registered.
+    return 0;
+  }
+  size_t pos = 0;
+  const uint8_t len = 0;
+  data_buffer[pos++] = (id << 4) + len;
+  data_buffer[pos++] = ConvertToCVOByte(rotation_);
+  data_buffer[pos++] = 0;  // padding
+  data_buffer[pos++] = 0;  // padding
+  assert(pos == kVideoRotationLength);
+  return kVideoRotationLength;
+}
+
+bool RTPSender::FindHeaderExtensionPosition(RTPExtensionType type,
+                                            const uint8_t* rtp_packet,
+                                            size_t rtp_packet_length,
+                                            const RTPHeader& rtp_header,
+                                            size_t* position) const {
+  // Get length until start of header extension block.
+  int extension_block_pos =
+      rtp_header_extension_map_.GetLengthUntilBlockStartInBytes(type);
+  if (extension_block_pos < 0) {
+    LOG(LS_WARNING) << "Failed to find extension position for " << type
+                    << " as it is not registered.";
+    return false;
+  }
+
+  HeaderExtension header_extension(type);
+
+  size_t block_pos =
+      kRtpHeaderLength + rtp_header.numCSRCs + extension_block_pos;
+  if (rtp_packet_length < block_pos + header_extension.length ||
+      rtp_header.headerLength < block_pos + header_extension.length) {
+    LOG(LS_WARNING) << "Failed to find extension position for " << type
+                    << " as the length is invalid.";
+    return false;
+  }
+
+  // Verify that header contains extension.
+  if (!((rtp_packet[kRtpHeaderLength + rtp_header.numCSRCs] == 0xBE) &&
+        (rtp_packet[kRtpHeaderLength + rtp_header.numCSRCs + 1] == 0xDE))) {
+    LOG(LS_WARNING) << "Failed to find extension position for " << type
+                    << "as hdr extension not found.";
+    return false;
+  }
+
+  *position = block_pos;
+  return true;
+}
+
 void RTPSender::UpdateTransmissionTimeOffset(uint8_t* rtp_packet,
                                              size_t rtp_packet_length,
                                              const RTPHeader& rtp_header,
@@ -1313,30 +1423,15 @@ void RTPSender::UpdateTransmissionTimeOffset(uint8_t* rtp_packet,
     // Not registered.
     return;
   }
-  // Get length until start of header extension block.
-  int extension_block_pos =
-      rtp_header_extension_map_.GetLengthUntilBlockStartInBytes(
-          kRtpExtensionTransmissionTimeOffset);
-  if (extension_block_pos < 0) {
-    LOG(LS_WARNING)
-        << "Failed to update transmission time offset, not registered.";
+
+  size_t block_pos = 0;
+  if (!FindHeaderExtensionPosition(kRtpExtensionTransmissionTimeOffset,
+                                   rtp_packet, rtp_packet_length, rtp_header,
+                                   &block_pos)) {
+    LOG(LS_WARNING) << "Failed to update transmission time offset.";
     return;
   }
-  size_t block_pos = 12 + rtp_header.numCSRCs + extension_block_pos;
-  if (rtp_packet_length < block_pos + kTransmissionTimeOffsetLength ||
-      rtp_header.headerLength <
-          block_pos + kTransmissionTimeOffsetLength) {
-    LOG(LS_WARNING)
-        << "Failed to update transmission time offset, invalid length.";
-    return;
-  }
-  // Verify that header contains extension.
-  if (!((rtp_packet[12 + rtp_header.numCSRCs] == 0xBE) &&
-        (rtp_packet[12 + rtp_header.numCSRCs + 1] == 0xDE))) {
-    LOG(LS_WARNING) << "Failed to update transmission time offset, hdr "
-                       "extension not found.";
-    return;
-  }
+
   // Verify first byte in block.
   const uint8_t first_block_byte = (id << 4) + 2;
   if (rtp_packet[block_pos] != first_block_byte) {
@@ -1361,26 +1456,14 @@ bool RTPSender::UpdateAudioLevel(uint8_t* rtp_packet,
     // Not registered.
     return false;
   }
-  // Get length until start of header extension block.
-  int extension_block_pos =
-      rtp_header_extension_map_.GetLengthUntilBlockStartInBytes(
-          kRtpExtensionAudioLevel);
-  if (extension_block_pos < 0) {
-    // The feature is not enabled.
+
+  size_t block_pos = 0;
+  if (!FindHeaderExtensionPosition(kRtpExtensionAudioLevel, rtp_packet,
+                                   rtp_packet_length, rtp_header, &block_pos)) {
+    LOG(LS_WARNING) << "Failed to update audio level.";
     return false;
   }
-  size_t block_pos = 12 + rtp_header.numCSRCs + extension_block_pos;
-  if (rtp_packet_length < block_pos + kAudioLevelLength ||
-      rtp_header.headerLength < block_pos + kAudioLevelLength) {
-    LOG(LS_WARNING) << "Failed to update audio level, invalid length.";
-    return false;
-  }
-  // Verify that header contains extension.
-  if (!((rtp_packet[12 + rtp_header.numCSRCs] == 0xBE) &&
-        (rtp_packet[12 + rtp_header.numCSRCs + 1] == 0xDE))) {
-    LOG(LS_WARNING) << "Failed to update audio level, hdr extension not found.";
-    return false;
-  }
+
   // Verify first byte in block.
   const uint8_t first_block_byte = (id << 4) + 0;
   if (rtp_packet[block_pos] != first_block_byte) {
@@ -1388,6 +1471,44 @@ bool RTPSender::UpdateAudioLevel(uint8_t* rtp_packet,
     return false;
   }
   rtp_packet[block_pos + 1] = (is_voiced ? 0x80 : 0x00) + (dBov & 0x7f);
+  return true;
+}
+
+bool RTPSender::UpdateVideoRotation(uint8_t* rtp_packet,
+                                    size_t rtp_packet_length,
+                                    const RTPHeader& rtp_header,
+                                    VideoRotation rotation) const {
+  CriticalSectionScoped cs(send_critsect_.get());
+
+  // Get id.
+  uint8_t id = 0;
+  if (rtp_header_extension_map_.GetId(kRtpExtensionVideoRotation, &id) != 0) {
+    // Not registered.
+    return false;
+  }
+
+  size_t block_pos = 0;
+  if (!FindHeaderExtensionPosition(kRtpExtensionVideoRotation, rtp_packet,
+                                   rtp_packet_length, rtp_header, &block_pos)) {
+    LOG(LS_WARNING) << "Failed to update video rotation (CVO).";
+    return false;
+  }
+  // Get length until start of header extension block.
+  int extension_block_pos =
+      rtp_header_extension_map_.GetLengthUntilBlockStartInBytes(
+          kRtpExtensionVideoRotation);
+  if (extension_block_pos < 0) {
+    // The feature is not enabled.
+    return false;
+  }
+
+  // Verify first byte in block.
+  const uint8_t first_block_byte = (id << 4) + 0;
+  if (rtp_packet[block_pos] != first_block_byte) {
+    LOG(LS_WARNING) << "Failed to update CVO.";
+    return false;
+  }
+  rtp_packet[block_pos + 1] = ConvertToCVOByte(rotation);
   return true;
 }
 
@@ -1412,15 +1533,16 @@ void RTPSender::UpdateAbsoluteSendTime(uint8_t* rtp_packet,
     // The feature is not enabled.
     return;
   }
-  size_t block_pos = 12 + rtp_header.numCSRCs + extension_block_pos;
+  size_t block_pos =
+      kRtpHeaderLength + rtp_header.numCSRCs + extension_block_pos;
   if (rtp_packet_length < block_pos + kAbsoluteSendTimeLength ||
       rtp_header.headerLength < block_pos + kAbsoluteSendTimeLength) {
     LOG(LS_WARNING) << "Failed to update absolute send time, invalid length.";
     return;
   }
   // Verify that header contains extension.
-  if (!((rtp_packet[12 + rtp_header.numCSRCs] == 0xBE) &&
-        (rtp_packet[12 + rtp_header.numCSRCs + 1] == 0xDE))) {
+  if (!((rtp_packet[kRtpHeaderLength + rtp_header.numCSRCs] == 0xBE) &&
+        (rtp_packet[kRtpHeaderLength + rtp_header.numCSRCs + 1] == 0xDE))) {
     LOG(LS_WARNING)
         << "Failed to update absolute send time, hdr extension not found.";
     return;

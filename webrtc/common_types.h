@@ -798,7 +798,9 @@ struct RTPHeaderExtension {
         hasAbsoluteSendTime(false),
         absoluteSendTime(0),
         hasAudioLevel(false),
-        audioLevel(0) {}
+        audioLevel(0),
+        hasVideoRotation(false),
+        videoRotation(0) {}
 
   bool hasTransmissionTimeOffset;
   int32_t transmissionTimeOffset;
@@ -809,6 +811,12 @@ struct RTPHeaderExtension {
   // https://datatracker.ietf.org/doc/draft-lennox-avt-rtp-audio-level-exthdr/
   bool hasAudioLevel;
   uint8_t audioLevel;
+
+  // For Coordination of Video Orientation. See
+  // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
+  // ts_126114v120700p.pdf
+  bool hasVideoRotation;
+  uint8_t videoRotation;
 };
 
 struct RTPHeader {

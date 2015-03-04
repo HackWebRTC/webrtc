@@ -64,6 +64,12 @@ class RTPSenderInterface {
       uint8_t *data_buffer, size_t payload_length, size_t rtp_header_length,
       int64_t capture_time_ms, StorageType storage,
       PacedSender::Priority priority) = 0;
+
+  virtual bool UpdateVideoRotation(uint8_t* rtp_packet,
+                                   size_t rtp_packet_length,
+                                   const RTPHeader& rtp_header,
+                                   VideoRotation rotation) const = 0;
+  virtual bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) = 0;
 };
 
 class RTPSender : public RTPSenderInterface {
@@ -141,29 +147,36 @@ class RTPSender : public RTPSenderInterface {
                            size_t payload_size,
                            const RTPFragmentationHeader* fragmentation,
                            VideoCodecInformation* codec_info = NULL,
-                           const RTPVideoTypeHeader* rtp_type_hdr = NULL);
+                           const RTPVideoHeader* rtp_hdr = NULL);
 
   // RTP header extension
   int32_t SetTransmissionTimeOffset(int32_t transmission_time_offset);
   int32_t SetAbsoluteSendTime(uint32_t absolute_send_time);
+  void SetVideoRotation(VideoRotation rotation);
 
   int32_t RegisterRtpHeaderExtension(RTPExtensionType type, uint8_t id);
-
+  virtual bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) override;
   int32_t DeregisterRtpHeaderExtension(RTPExtensionType type);
 
   size_t RtpHeaderExtensionTotalLength() const;
 
-  uint16_t BuildRTPHeaderExtension(uint8_t* data_buffer) const;
+  uint16_t BuildRTPHeaderExtension(uint8_t* data_buffer, bool marker_bit) const;
 
   uint8_t BuildTransmissionTimeOffsetExtension(uint8_t *data_buffer) const;
   uint8_t BuildAudioLevelExtension(uint8_t* data_buffer) const;
   uint8_t BuildAbsoluteSendTimeExtension(uint8_t* data_buffer) const;
+  uint8_t BuildVideoRotationExtension(uint8_t* data_buffer) const;
 
   bool UpdateAudioLevel(uint8_t* rtp_packet,
                         size_t rtp_packet_length,
                         const RTPHeader& rtp_header,
                         bool is_voiced,
                         uint8_t dBov) const;
+
+  virtual bool UpdateVideoRotation(uint8_t* rtp_packet,
+                                   size_t rtp_packet_length,
+                                   const RTPHeader& rtp_header,
+                                   VideoRotation rotation) const override;
 
   bool TimeToSendPacket(uint16_t sequence_number, int64_t capture_time_ms,
                         bool retransmission);
@@ -271,6 +284,8 @@ class RTPSender : public RTPSenderInterface {
   void SetRtxRtpState(const RtpState& rtp_state);
   RtpState GetRtxRtpState() const;
 
+  static uint8_t ConvertToCVOByte(VideoRotation rotation);
+
  protected:
   int32_t CheckPayloadType(int8_t payload_type, RtpVideoCodecTypes* video_type);
 
@@ -309,6 +324,14 @@ class RTPSender : public RTPSenderInterface {
   bool SendPacketToNetwork(const uint8_t *packet, size_t size);
 
   void UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms);
+
+  // Find the byte position of the RTP extension as indicated by |type| in
+  // |rtp_packet|. Return false if such extension doesn't exist.
+  bool FindHeaderExtensionPosition(RTPExtensionType type,
+                                   const uint8_t* rtp_packet,
+                                   size_t rtp_packet_length,
+                                   const RTPHeader& rtp_header,
+                                   size_t* position) const;
 
   void UpdateTransmissionTimeOffset(uint8_t* rtp_packet,
                                     size_t rtp_packet_length,
@@ -354,6 +377,7 @@ class RTPSender : public RTPSenderInterface {
   RtpHeaderExtensionMap rtp_header_extension_map_;
   int32_t transmission_time_offset_;
   uint32_t absolute_send_time_;
+  VideoRotation rotation_;
 
   // NACK
   uint32_t nack_byte_count_times_[NACK_BYTECOUNT_SIZE];

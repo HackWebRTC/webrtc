@@ -18,6 +18,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/common_types.h"
+#include "webrtc/common_video/rotation.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -76,9 +77,12 @@ enum RtpVideoCodecTypes {
   kRtpVideoVp8,
   kRtpVideoH264
 };
+// Since RTPVideoHeader is used as a member of a union, it can't have a
+// non-trivial default constructor.
 struct RTPVideoHeader {
   uint16_t width;  // size
   uint16_t height;
+  VideoRotation rotation;
 
   bool isFirstPacket;    // first packet in frame
   uint8_t simulcastIdx;  // Index if the simulcast encoder creating

@@ -74,12 +74,12 @@ enum StorageType {
   kAllowRetransmission
 };
 
-enum RTPExtensionType
-{
-   kRtpExtensionNone,
-   kRtpExtensionTransmissionTimeOffset,
-   kRtpExtensionAudioLevel,
-   kRtpExtensionAbsoluteSendTime
+enum RTPExtensionType {
+  kRtpExtensionNone,
+  kRtpExtensionTransmissionTimeOffset,
+  kRtpExtensionAudioLevel,
+  kRtpExtensionAbsoluteSendTime,
+  kRtpExtensionVideoRotation
 };
 
 enum RTCPAppSubTypes

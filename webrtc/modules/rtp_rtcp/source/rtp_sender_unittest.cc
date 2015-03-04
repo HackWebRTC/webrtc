@@ -14,6 +14,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/pacing/include/mock/mock_paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
@@ -21,6 +22,8 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
+#include "webrtc/system_wrappers/interface/stl_util.h"
 #include "webrtc/test/mock_transport.h"
 #include "webrtc/typedefs.h"
 
@@ -40,7 +43,8 @@ const uint8_t kAudioLevelExtensionId = 9;
 const int kAudioPayload = 103;
 const uint64_t kStartTime = 123456789;
 const size_t kMaxPaddingSize = 224u;
-}  // namespace
+const int kVideoRotationExtensionId = 5;
+const VideoRotation kRotation = kVideoRotation_270;
 
 using testing::_;
 
@@ -61,12 +65,21 @@ uint64_t ConvertMsToAbsSendTime(int64_t time_ms) {
 class LoopbackTransportTest : public webrtc::Transport {
  public:
   LoopbackTransportTest()
-      : packets_sent_(0), last_sent_packet_len_(0), total_bytes_sent_(0) {}
-  int SendPacket(int channel, const void* data, size_t len) override {
+      : packets_sent_(0),
+        last_sent_packet_len_(0),
+        total_bytes_sent_(0),
+        last_sent_packet_(NULL) {}
+
+  ~LoopbackTransportTest() {
+    STLDeleteContainerPointers(sent_packets_.begin(), sent_packets_.end());
+  }
+  int SendPacket(int channel, const void *data, size_t len) override {
     packets_sent_++;
-    memcpy(last_sent_packet_, data, len);
+    rtc::Buffer* buffer = new rtc::Buffer(data, len);
+    last_sent_packet_ = reinterpret_cast<uint8_t*>(buffer->data());
     last_sent_packet_len_ = len;
     total_bytes_sent_ += len;
+    sent_packets_.push_back(buffer);
     return static_cast<int>(len);
   }
   int SendRTCPPacket(int channel, const void* data, size_t len) override {
@@ -75,8 +88,11 @@ class LoopbackTransportTest : public webrtc::Transport {
   int packets_sent_;
   size_t last_sent_packet_len_;
   size_t total_bytes_sent_;
-  uint8_t last_sent_packet_[kMaxPacketLength];
+  uint8_t* last_sent_packet_;
+  std::vector<rtc::Buffer*> sent_packets_;
 };
+
+}  // namespace
 
 class RtpSenderTest : public ::testing::Test {
  protected:
@@ -106,7 +122,11 @@ class RtpSenderTest : public ::testing::Test {
   uint8_t packet_[kMaxPacketLength];
 
   void VerifyRTPHeaderCommon(const RTPHeader& rtp_header) {
-    EXPECT_EQ(kMarkerBit, rtp_header.markerBit);
+    VerifyRTPHeaderCommon(rtp_header, kMarkerBit);
+  }
+
+  void VerifyRTPHeaderCommon(const RTPHeader& rtp_header, bool marker_bit) {
+    EXPECT_EQ(marker_bit, rtp_header.markerBit);
     EXPECT_EQ(payload_, rtp_header.payloadType);
     EXPECT_EQ(kSeqNum, rtp_header.sequenceNumber);
     EXPECT_EQ(kTimestamp, rtp_header.timestamp);
@@ -131,6 +151,46 @@ class RtpSenderTest : public ::testing::Test {
                                             capture_time_ms,
                                             kAllowRetransmission,
                                             PacedSender::kNormalPriority));
+  }
+};
+
+class RtpSenderVideoTest : public RtpSenderTest {
+ protected:
+  virtual void SetUp() override {
+    RtpSenderTest::SetUp();
+    rtp_sender_video_.reset(
+        new RTPSenderVideo(&fake_clock_, rtp_sender_.get()));
+  }
+  rtc::scoped_ptr<RTPSenderVideo> rtp_sender_video_;
+
+  void VerifyCVOPacket(uint8_t* data,
+                       size_t len,
+                       bool expect_cvo,
+                       RtpHeaderExtensionMap* map,
+                       uint16_t seq_num,
+                       VideoRotation rotation) {
+    webrtc::RtpUtility::RtpHeaderParser rtp_parser(data, len);
+
+    webrtc::RTPHeader rtp_header;
+    size_t length = static_cast<size_t>(rtp_sender_->BuildRTPheader(
+        packet_, kPayload, expect_cvo /* marker_bit */, kTimestamp, 0));
+    if (expect_cvo) {
+      ASSERT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionTotalLength(),
+                length);
+    } else {
+      ASSERT_EQ(kRtpHeaderSize, length);
+    }
+    ASSERT_TRUE(rtp_parser.Parse(rtp_header, map));
+    ASSERT_FALSE(rtp_parser.RTCP());
+    EXPECT_EQ(expect_cvo, rtp_header.markerBit);
+    EXPECT_EQ(payload_, rtp_header.payloadType);
+    EXPECT_EQ(seq_num, rtp_header.sequenceNumber);
+    EXPECT_EQ(kTimestamp, rtp_header.timestamp);
+    EXPECT_EQ(rtp_sender_->SSRC(), rtp_header.ssrc);
+    EXPECT_EQ(0, rtp_header.numCSRCs);
+    EXPECT_EQ(0U, rtp_header.paddingLength);
+    EXPECT_EQ(RTPSender::ConvertToCVOByte(rotation),
+              rtp_header.extension.videoRotation);
   }
 };
 
@@ -182,16 +242,40 @@ TEST_F(RtpSenderTest, RegisterRtpHeaderExtensions) {
   EXPECT_EQ(kRtpOneByteHeaderLength + kTransmissionTimeOffsetLength +
       kAbsoluteSendTimeLength + kAudioLevelLength,
       rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionVideoRotation, kVideoRotationExtensionId));
+  EXPECT_EQ(kRtpOneByteHeaderLength + kTransmissionTimeOffsetLength +
+                kAbsoluteSendTimeLength + kAudioLevelLength +
+                kVideoRotationLength,
+            rtp_sender_->RtpHeaderExtensionTotalLength());
+
+  // Deregister starts.
   EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
       kRtpExtensionTransmissionTimeOffset));
   EXPECT_EQ(kRtpOneByteHeaderLength + kAbsoluteSendTimeLength +
-      kAudioLevelLength, rtp_sender_->RtpHeaderExtensionTotalLength());
+                kAudioLevelLength + kVideoRotationLength,
+            rtp_sender_->RtpHeaderExtensionTotalLength());
   EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
       kRtpExtensionAbsoluteSendTime));
-  EXPECT_EQ(kRtpOneByteHeaderLength + kAudioLevelLength,
-      rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(kRtpOneByteHeaderLength + kAudioLevelLength + kVideoRotationLength,
+            rtp_sender_->RtpHeaderExtensionTotalLength());
   EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
       kRtpExtensionAudioLevel));
+  EXPECT_EQ(kRtpOneByteHeaderLength + kVideoRotationLength,
+            rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(
+      0, rtp_sender_->DeregisterRtpHeaderExtension(kRtpExtensionVideoRotation));
+  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionTotalLength());
+}
+
+TEST_F(RtpSenderTest, RegisterRtpVideoRotationHeaderExtension) {
+  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionVideoRotation, kVideoRotationExtensionId));
+  EXPECT_EQ(kRtpOneByteHeaderLength + kVideoRotationLength,
+            rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(
+      0, rtp_sender_->DeregisterRtpHeaderExtension(kRtpExtensionVideoRotation));
   EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionTotalLength());
 }
 
@@ -216,6 +300,7 @@ TEST_F(RtpSenderTest, BuildRTPPacket) {
   EXPECT_EQ(0, rtp_header.extension.transmissionTimeOffset);
   EXPECT_EQ(0u, rtp_header.extension.absoluteSendTime);
   EXPECT_EQ(0u, rtp_header.extension.audioLevel);
+  EXPECT_EQ(0u, rtp_header.extension.videoRotation);
 }
 
 TEST_F(RtpSenderTest, BuildRTPPacketWithTransmissionOffsetExtension) {
@@ -317,6 +402,57 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithAbsoluteSendTimeExtension) {
   EXPECT_EQ(length, rtp_header2.headerLength);
   EXPECT_FALSE(rtp_header2.extension.hasAbsoluteSendTime);
   EXPECT_EQ(0u, rtp_header2.extension.absoluteSendTime);
+}
+
+// Test CVO header extension is only set when marker bit is true.
+TEST_F(RtpSenderTest, BuildRTPPacketWithVideoRotation_MarkerBit) {
+  rtp_sender_->SetVideoRotation(kRotation);
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionVideoRotation, kVideoRotationExtensionId));
+
+  RtpHeaderExtensionMap map;
+  map.Register(kRtpExtensionVideoRotation, kVideoRotationExtensionId);
+
+  size_t length = static_cast<size_t>(
+      rtp_sender_->BuildRTPheader(packet_, kPayload, true, kTimestamp, 0));
+  ASSERT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionTotalLength(),
+            length);
+
+  // Verify
+  webrtc::RtpUtility::RtpHeaderParser rtp_parser(packet_, length);
+  webrtc::RTPHeader rtp_header;
+
+  ASSERT_TRUE(rtp_parser.Parse(rtp_header, &map));
+  ASSERT_FALSE(rtp_parser.RTCP());
+  VerifyRTPHeaderCommon(rtp_header);
+  EXPECT_EQ(length, rtp_header.headerLength);
+  EXPECT_TRUE(rtp_header.extension.hasVideoRotation);
+  EXPECT_EQ(RTPSender::ConvertToCVOByte(kRotation),
+            rtp_header.extension.videoRotation);
+}
+
+// Test CVO header extension is not set when marker bit is false.
+TEST_F(RtpSenderTest, BuildRTPPacketWithVideoRotation_NoMarkerBit) {
+  rtp_sender_->SetVideoRotation(kRotation);
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionVideoRotation, kVideoRotationExtensionId));
+
+  RtpHeaderExtensionMap map;
+  map.Register(kRtpExtensionVideoRotation, kVideoRotationExtensionId);
+
+  size_t length = static_cast<size_t>(
+      rtp_sender_->BuildRTPheader(packet_, kPayload, false, kTimestamp, 0));
+  ASSERT_EQ(kRtpHeaderSize, length);
+
+  // Verify
+  webrtc::RtpUtility::RtpHeaderParser rtp_parser(packet_, length);
+  webrtc::RTPHeader rtp_header;
+
+  ASSERT_TRUE(rtp_parser.Parse(rtp_header, &map));
+  ASSERT_FALSE(rtp_parser.RTCP());
+  VerifyRTPHeaderCommon(rtp_header, false);
+  EXPECT_EQ(length, rtp_header.headerLength);
+  EXPECT_FALSE(rtp_header.extension.hasVideoRotation);
 }
 
 TEST_F(RtpSenderTest, BuildRTPPacketWithAudioLevelExtension) {
@@ -1167,5 +1303,35 @@ TEST_F(RtpSenderTest, BytesReportedCorrectly) {
   EXPECT_EQ(transport_.total_bytes_sent_,
             rtp_stats.transmitted.TotalBytes() +
             rtx_stats.transmitted.TotalBytes());
+}
+
+// Verify that only the last packet of a frame has CVO byte set.
+TEST_F(RtpSenderVideoTest, SendVideoWithCVO) {
+  RTPVideoHeader hdr = {0};
+  hdr.rotation = kVideoRotation_90;
+
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionVideoRotation, kVideoRotationExtensionId));
+  EXPECT_EQ(kRtpOneByteHeaderLength + kVideoRotationLength,
+            rtp_sender_->RtpHeaderExtensionTotalLength());
+
+  rtp_sender_video_->SendVideo(kRtpVideoGeneric, kVideoFrameKey, kPayload,
+                               kTimestamp, 0, packet_, sizeof(packet_), NULL,
+                               NULL, &hdr);
+
+  RtpHeaderExtensionMap map;
+  map.Register(kRtpExtensionVideoRotation, kVideoRotationExtensionId);
+
+  // Verify that this packet doesn't have CVO byte.
+  VerifyCVOPacket(
+      reinterpret_cast<uint8_t*>(transport_.sent_packets_[0]->data()),
+      transport_.sent_packets_[0]->length(), false, &map, kSeqNum,
+      kVideoRotation_0);
+
+  // Verify that this packet doesn't have CVO byte.
+  VerifyCVOPacket(
+      reinterpret_cast<uint8_t*>(transport_.sent_packets_[1]->data()),
+      transport_.sent_packets_[1]->length(), true, &map, kSeqNum + 1,
+      hdr.rotation);
 }
 }  // namespace webrtc

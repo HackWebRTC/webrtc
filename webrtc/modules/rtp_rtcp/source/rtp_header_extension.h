@@ -24,6 +24,7 @@ const size_t kRtpOneByteHeaderLength = 4;
 const size_t kTransmissionTimeOffsetLength = 4;
 const size_t kAudioLevelLength = 4;
 const size_t kAbsoluteSendTimeLength = 4;
+const size_t kVideoRotationLength = 4;
 
 struct HeaderExtension {
   HeaderExtension(RTPExtensionType extension_type)
@@ -41,6 +42,9 @@ struct HeaderExtension {
         break;
       case kRtpExtensionAbsoluteSendTime:
         length = kAbsoluteSendTimeLength;
+        break;
+      case kRtpExtensionVideoRotation:
+        length = kVideoRotationLength;
         break;
       default:
         assert(false);

@@ -259,7 +259,7 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
                                   const size_t payloadSize,
                                   const RTPFragmentationHeader* fragmentation,
                                   VideoCodecInformation* codecInfo,
-                                  const RTPVideoTypeHeader* rtpTypeHdr) {
+                                  const RTPVideoHeader* rtpHdr) {
   if (payloadSize == 0) {
     return -1;
   }
@@ -274,15 +274,8 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
   // Will be extracted in SendVP8 for VP8 codec; other codecs use 0
   _numberFirstPartition = 0;
 
-  return Send(videoType,
-              frameType,
-              payloadType,
-              captureTimeStamp,
-              capture_time_ms,
-              payloadData,
-              payloadSize,
-              fragmentation,
-              rtpTypeHdr)
+  return Send(videoType, frameType, payloadType, captureTimeStamp,
+              capture_time_ms, payloadData, payloadSize, fragmentation, rtpHdr)
              ? 0
              : -1;
 }
@@ -307,14 +300,14 @@ bool RTPSenderVideo::Send(const RtpVideoCodecTypes videoType,
                           const uint8_t* payloadData,
                           const size_t payloadSize,
                           const RTPFragmentationHeader* fragmentation,
-                          const RTPVideoTypeHeader* rtpTypeHdr) {
+                          const RTPVideoHeader* rtpHdr) {
   uint16_t rtp_header_length = _rtpSender.RTPHeaderLength();
   size_t payload_bytes_to_send = payloadSize;
   const uint8_t* data = payloadData;
   size_t max_payload_length = _rtpSender.MaxDataPayloadLength();
 
   rtc::scoped_ptr<RtpPacketizer> packetizer(RtpPacketizer::Create(
-      videoType, max_payload_length, rtpTypeHdr, frameType));
+      videoType, max_payload_length, &(rtpHdr->codecHeader), frameType));
 
   // TODO(changbin): we currently don't support to configure the codec to
   // output multiple partitions for VP8. Should remove below check after the
@@ -337,6 +330,31 @@ bool RTPSenderVideo::Send(const RtpVideoCodecTypes videoType,
     // Set marker bit true if this is the last packet in frame.
     _rtpSender.BuildRTPheader(
         dataBuffer, payloadType, last, captureTimeStamp, capture_time_ms);
+
+    // According to
+    // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
+    // ts_126114v120700p.pdf Section 7.4.5:
+    // The MTSI client shall add the payload bytes as defined in this clause
+    // onto the last RTP packet in each group of packets which make up a key
+    // frame (I-frame or IDR frame in H.264 (AVC), or an IRAP picture in H.265
+    // (HEVC)). The MTSI client may also add the payload bytes onto the last RTP
+    // packet in each group of packets which make up another type of frame
+    // (e.g. a P-Frame) only if the current value is different from the previous
+    // value sent.
+    // Here we are adding it to the last packet of every frame at this point.
+    if (!rtpHdr) {
+      assert(!_rtpSender.IsRtpHeaderExtensionRegistered(
+          kRtpExtensionVideoRotation));
+    } else if (last) {
+      // Checking whether CVO header extension is registered will require taking
+      // a lock. It'll be a no-op if it's not registered.
+      size_t packetSize = payloadSize + rtp_header_length;
+      RtpUtility::RtpHeaderParser rtp_parser(dataBuffer, packetSize);
+      RTPHeader rtp_header;
+      rtp_parser.Parse(rtp_header);
+      _rtpSender.UpdateVideoRotation(dataBuffer, packetSize, rtp_header,
+                                     rtpHdr->rotation);
+    }
     if (SendVideoPacket(dataBuffer,
                         payload_bytes_in_packet,
                         rtp_header_length,
