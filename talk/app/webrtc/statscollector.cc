@@ -715,6 +715,18 @@ void StatsCollector::ExtractSessionInfo() {
               StatsReport::kStatsValueNameRemoteCertificateId,
               remote_cert_report_id);
         }
+        const std::string& srtp_cipher = channel_iter->srtp_cipher;
+        if (!srtp_cipher.empty()) {
+          channel_report->AddValue(
+              StatsReport::kStatsValueNameSrtpCipher,
+              srtp_cipher);
+        }
+        const std::string& ssl_cipher = channel_iter->ssl_cipher;
+        if (!ssl_cipher.empty()) {
+          channel_report->AddValue(
+              StatsReport::kStatsValueNameDtlsCipher,
+              ssl_cipher);
+        }
         for (size_t i = 0;
              i < channel_iter->connection_infos.size();
              ++i) {
@@ -742,8 +754,6 @@ void StatsCollector::ExtractSessionInfo() {
                              info.writable);
           report->AddBoolean(StatsReport::kStatsValueNameReadable,
                              info.readable);
-          report->AddBoolean(StatsReport::kStatsValueNameActiveConnection,
-                             info.best_connection);
           report->AddValue(StatsReport::kStatsValueNameLocalCandidateId,
                            AddCandidateReport(info.local_candidate, true));
           report->AddValue(
@@ -760,6 +770,13 @@ void StatsCollector::ExtractSessionInfo() {
                            info.local_candidate.type());
           report->AddValue(StatsReport::kStatsValueNameRemoteCandidateType,
                            info.remote_candidate.type());
+          report->AddBoolean(StatsReport::kStatsValueNameActiveConnection,
+                             info.best_connection);
+          if (info.best_connection) {
+            channel_report->AddValue(
+                StatsReport::kStatsValueNameSelectedCandidatePairId,
+                report->id().ToString());
+          }
         }
       }
     }

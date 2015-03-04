@@ -644,6 +644,8 @@ class StatsCollectorTest : public testing::Test {
     // Fake stats to process.
     cricket::TransportChannelStats channel_stats;
     channel_stats.component = 1;
+    channel_stats.srtp_cipher = "the-srtp-cipher";
+    channel_stats.ssl_cipher = "the-ssl-cipher";
 
     cricket::TransportStats transport_stats;
     transport_stats.content_name = "audio";
@@ -713,6 +715,18 @@ class StatsCollectorTest : public testing::Test {
     } else {
       EXPECT_EQ(kNotFound, remote_certificate_id);
     }
+
+    // Check negotiated ciphers.
+    std::string dtls_cipher = ExtractStatsValue(
+        StatsReport::kStatsReportTypeComponent,
+        reports,
+        StatsReport::kStatsValueNameDtlsCipher);
+    EXPECT_EQ("the-ssl-cipher", dtls_cipher);
+    std::string srtp_cipher = ExtractStatsValue(
+        StatsReport::kStatsReportTypeComponent,
+        reports,
+        StatsReport::kStatsValueNameSrtpCipher);
+    EXPECT_EQ("the-srtp-cipher", srtp_cipher);
   }
 
   cricket::FakeMediaEngine* media_engine_;
@@ -1318,6 +1332,18 @@ TEST_F(StatsCollectorTest, NoTransport) {
       reports,
       StatsReport::kStatsValueNameRemoteCertificateId);
   ASSERT_EQ(kNotFound, remote_certificate_id);
+
+  // Check that the negotiated ciphers are absent.
+  std::string dtls_cipher = ExtractStatsValue(
+      StatsReport::kStatsReportTypeComponent,
+      reports,
+      StatsReport::kStatsValueNameDtlsCipher);
+  ASSERT_EQ(kNotFound, dtls_cipher);
+  std::string srtp_cipher = ExtractStatsValue(
+      StatsReport::kStatsReportTypeComponent,
+      reports,
+      StatsReport::kStatsValueNameSrtpCipher);
+  ASSERT_EQ(kNotFound, srtp_cipher);
 }
 
 // This test verifies that the stats are generated correctly when the transport

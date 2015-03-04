@@ -54,7 +54,7 @@ const char* InternalTypeToString(StatsReport::StatsType type) {
     case StatsReport::kStatsReportTypeIceRemoteCandidate:
       return "remotecandidate";
     case StatsReport::kStatsReportTypeTransport:
-      return "googTransport";
+      return "transport";
     case StatsReport::kStatsReportTypeComponent:
       return "googComponent";
     case StatsReport::kStatsReportTypeCandidatePair:
@@ -244,6 +244,8 @@ const char* StatsReport::Value::display_name() const {
       return "protocol";
     case kStatsValueNameTransportId:
       return "transportId";
+    case kStatsValueNameSelectedCandidatePairId:
+      return "selectedCandidatePairId";
     case kStatsValueNameSsrc:
       return "ssrc";
     case kStatsValueNameState:
@@ -310,6 +312,8 @@ const char* StatsReport::Value::display_name() const {
       return "googDecodingPLCCNG";
     case kStatsValueNameDer:
       return "googDerBase64";
+    case kStatsValueNameDtlsCipher:
+      return "dtlsCipher";
     case kStatsValueNameEchoCancellationQualityMin:
       return "googEchoCancellationQualityMin";
     case kStatsValueNameEchoDelayMedian:
@@ -383,7 +387,7 @@ const char* StatsReport::Value::display_name() const {
     case kStatsValueNameLocalCandidateType:
       return "googLocalCandidateType";
     case kStatsValueNameLocalCertificateId:
-      return "googLocalCertificateId";
+      return "localCertificateId";
     case kStatsValueNameAdaptationChanges:
       return "googAdaptationChanges";
     case kStatsValueNameNacksReceived:
@@ -411,7 +415,7 @@ const char* StatsReport::Value::display_name() const {
     case kStatsValueNameRemoteCandidateType:
       return "googRemoteCandidateType";
     case kStatsValueNameRemoteCertificateId:
-      return "googRemoteCertificateId";
+      return "remoteCertificateId";
     case kStatsValueNameRetransmitBitrate:
       return "googRetransmitBitrate";
     case kStatsValueNameRtt:
@@ -422,6 +426,8 @@ const char* StatsReport::Value::display_name() const {
       return "packetsDiscardedOnSend";
     case kStatsValueNameSpeechExpandRate:
       return "googSpeechExpandRate";
+    case kStatsValueNameSrtpCipher:
+      return "srtpCipher";
     case kStatsValueNameTargetEncBitrate:
       return "googTargetEncBitrate";
     case kStatsValueNameTransmitBitrate:

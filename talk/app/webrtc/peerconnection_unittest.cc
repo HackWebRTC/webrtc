@@ -102,6 +102,15 @@ static const char kVideoTrackLabelBase[] = "video_track";
 static const char kAudioTrackLabelBase[] = "audio_track";
 static const char kDataChannelLabel[] = "data_channel";
 
+// Disable for TSan v2, see
+// https://code.google.com/p/webrtc/issues/detail?id=1205 for details.
+// This declaration is also #ifdef'd as it causes unused-variable errors.
+#if !defined(THREAD_SANITIZER)
+// SRTP cipher name negotiated by the tests. This must be updated if the
+// default changes.
+static const char kDefaultSrtpCipher[] = "AES_CM_128_HMAC_SHA1_32";
+#endif
+
 static void RemoveLinesFromSdp(const std::string& line_start,
                                std::string* sdp) {
   const char kSdpLineEnd[] = "\r\n";
@@ -378,6 +387,24 @@ class PeerConnectionTestClientBase
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
     int bw = observer->AvailableReceiveBandwidth();
     return bw;
+  }
+
+  std::string GetDtlsCipherStats() {
+    rtc::scoped_refptr<MockStatsObserver>
+        observer(new rtc::RefCountedObject<MockStatsObserver>());
+    EXPECT_TRUE(peer_connection_->GetStats(
+        observer, NULL, PeerConnectionInterface::kStatsOutputLevelStandard));
+    EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
+    return observer->DtlsCipher();
+  }
+
+  std::string GetSrtpCipherStats() {
+    rtc::scoped_refptr<MockStatsObserver>
+        observer(new rtc::RefCountedObject<MockStatsObserver>());
+    EXPECT_TRUE(peer_connection_->GetStats(
+        observer, NULL, PeerConnectionInterface::kStatsOutputLevelStandard));
+    EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
+    return observer->SrtpCipher();
   }
 
   int rendered_width() {
@@ -1277,6 +1304,22 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetBytesSentStats) {
       local_streams->at(0)->GetVideoTracks()[0];
   EXPECT_TRUE_WAIT(
       initializing_client()->GetBytesSentStats(local_video_track) > 0,
+      kMaxWaitForStatsMs);
+}
+
+// Test that we can get negotiated ciphers.
+TEST_F(JsepPeerConnectionP2PTestClient, GetNegotiatedCiphersStats) {
+  ASSERT_TRUE(CreateTestClients());
+  LocalP2PTest();
+
+  EXPECT_EQ_WAIT(
+      rtc::SSLStreamAdapter::GetDefaultSslCipher(),
+      initializing_client()->GetDtlsCipherStats(),
+      kMaxWaitForStatsMs);
+
+  EXPECT_EQ_WAIT(
+      kDefaultSrtpCipher,
+      initializing_client()->GetSrtpCipherStats(),
       kMaxWaitForStatsMs);
 }
 
