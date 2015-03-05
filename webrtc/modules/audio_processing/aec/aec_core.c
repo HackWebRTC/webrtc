@@ -39,7 +39,7 @@ static const size_t kBufSizePartitions = 250;  // 1 second of audio in 16 kHz.
 // Metrics
 static const int subCountLen = 4;
 static const int countLen = 50;
-static const int kDelayMetricsAggregationWindow = 250;  // One second at 16 kHz.
+static const int kDelayMetricsAggregationWindow = 1250;  // 5 seconds at 16 kHz.
 
 // Quantities to control H band scaling for SWB input
 static const int flagHbandCn = 1;  // flag for adding comfort noise in H band
@@ -1249,10 +1249,9 @@ static void ProcessBlock(AecCore* aec) {
 
   // Block wise delay estimation used for logging
   if (aec->delay_logging_enabled) {
-    int delay_estimate = 0;
     if (WebRtc_AddFarSpectrumFloat(
             aec->delay_estimator_farend, abs_far_spectrum, PART_LEN1) == 0) {
-      delay_estimate = WebRtc_DelayEstimatorProcessFloat(
+      int delay_estimate = WebRtc_DelayEstimatorProcessFloat(
           aec->delay_estimator, abs_near_spectrum, PART_LEN1);
       if (delay_estimate >= 0) {
         // Update delay estimate buffer.
