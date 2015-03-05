@@ -2,13 +2,26 @@
 # It acts as a place holder for future additions for WebRTC.
 # It must exist for the Python wrapper script to work properly.
 
-# There are two kinds of suppressions in this file.
-# 1. webrtc stuff
-#
-# 2. libjingle stuff (talk folder)
+# There are three kinds of suppressions in this file.
+# 1. third_party libraries
+# 2. webrtc stuff
+# 3. libjingle stuff (talk folder)
 #-----------------------------------------------------------------------
 
-# 1. webrtc stuff
+# third_party libraries
+
+{
+   libnss_leak_hitting_trusty_machines
+   Memcheck:Leak
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libnss3.so
+   ...
+   fun:NSS_NoDB_Init
+   ...
+}
+
+#-----------------------------------------------------------------------
+# webrtc stuff
 {
    bug_3446
    Memcheck:Uninitialized
@@ -478,7 +491,7 @@
 }
 
 #-----------------------------------------------------------------------
-# 2. libjingle stuff (talk folder)
+# libjingle stuff (talk folder)
 {
    bug_2056_1
    Memcheck:Leak
