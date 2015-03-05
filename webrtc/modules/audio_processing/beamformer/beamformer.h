@@ -13,7 +13,7 @@
 
 #include "webrtc/common_audio/lapped_transform.h"
 #include "webrtc/modules/audio_processing/beamformer/complex_matrix.h"
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/audio_processing/beamformer/array_util.h"
 
 namespace webrtc {
 
@@ -94,7 +94,6 @@ class Beamformer : public LappedTransform::Callback {
   // Applies both sets of masks to |input| and store in |output|.
   void ApplyMasks(const complex_f* const* input, complex_f* const* output);
 
-  float MicSpacingFromGeometry(const std::vector<Point>& array_geometry);
   void EstimateTargetPresence();
 
   static const int kFftSize = 256;
@@ -108,7 +107,8 @@ class Beamformer : public LappedTransform::Callback {
   // Parameters exposed to the user.
   const int num_input_channels_;
   int sample_rate_hz_;
-  const float mic_spacing_;
+
+  const std::vector<Point> array_geometry_;
 
   // Calculated based on user-input and constants in the .cc file.
   int low_average_start_bin_;

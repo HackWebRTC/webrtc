@@ -21,97 +21,27 @@ namespace webrtc {
 
 using std::complex;
 
-TEST(CovarianceMatrixGeneratorTest, TestBoxcar) {
-  const float kWaveNumber = 10.3861f;
-  const int kNumberMics = 3;
-  const float kMicSpacing = 0.23f;
-  const float kHalfWidth = 0.001f;
-  const float kTolerance = 0.0001f;
-
-  ComplexMatrix<float> actual_boxcar(kNumberMics, kNumberMics);
-  CovarianceMatrixGenerator::Boxcar(
-      kWaveNumber, kNumberMics, kMicSpacing, kHalfWidth, &actual_boxcar);
-
-  complex<float>* const* actual_els = actual_boxcar.elements();
-
-  EXPECT_NEAR(actual_els[0][0].real(), 0.002f, kTolerance);
-  EXPECT_NEAR(actual_els[0][1].real(), 0.002f, kTolerance);
-  EXPECT_NEAR(actual_els[0][2].real(), 0.002f, kTolerance);
-  EXPECT_NEAR(actual_els[1][0].real(), 0.002f, kTolerance);
-  EXPECT_NEAR(actual_els[1][1].real(), 0.002f, kTolerance);
-  EXPECT_NEAR(actual_els[1][2].real(), 0.002f, kTolerance);
-  EXPECT_NEAR(actual_els[2][0].real(), 0.002f, kTolerance);
-  EXPECT_NEAR(actual_els[2][1].real(), 0.002f, kTolerance);
-  EXPECT_NEAR(actual_els[2][2].real(), 0.002f, kTolerance);
-
-  EXPECT_NEAR(actual_els[0][0].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[0][1].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[0][2].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[1][0].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[1][1].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[1][2].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[2][0].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[2][1].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[2][2].imag(), 0.f, kTolerance);
-}
-
-// Test Boxcar with large numbers to generate matrix with varying
-// numbers.
-TEST(CovarianceMatrixGeneratorTest, TestBoxcarLargeNumbers) {
-  const float kWaveNumber = 10.3861f;
-  const int kNumberMics = 3;
-  const float kMicSpacing = 3.f;
-  const float kHalfWidth = 0.1f;
-  const float kTolerance = 0.0001f;
-
-  ComplexMatrix<float> actual_boxcar(kNumberMics, kNumberMics);
-  CovarianceMatrixGenerator::Boxcar(
-      kWaveNumber, kNumberMics, kMicSpacing, kHalfWidth, &actual_boxcar);
-
-  complex<float>* const* actual_els = actual_boxcar.elements();
-
-  EXPECT_NEAR(actual_els[0][0].real(), 0.2f, kTolerance);
-  EXPECT_NEAR(actual_els[0][1].real(), 0.0017f, kTolerance);
-  EXPECT_NEAR(actual_els[0][2].real(), -0.0017f, kTolerance);
-  EXPECT_NEAR(actual_els[1][0].real(), 0.0017f, kTolerance);
-  EXPECT_NEAR(actual_els[1][1].real(), 0.2f, kTolerance);
-  EXPECT_NEAR(actual_els[1][2].real(), 0.0017f, kTolerance);
-  EXPECT_NEAR(actual_els[2][0].real(), -0.0017f, kTolerance);
-  EXPECT_NEAR(actual_els[2][1].real(), 0.0017f, kTolerance);
-  EXPECT_NEAR(actual_els[2][2].real(), 0.2f, kTolerance);
-
-  EXPECT_NEAR(actual_els[0][0].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[0][1].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[0][2].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[1][0].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[1][1].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[1][2].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[2][0].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[2][1].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[2][2].imag(), 0.f, kTolerance);
-}
-
-TEST(CovarianceMatrixGeneratorTest, TestGappedUniformCovarianceMatrix2Mics) {
+TEST(CovarianceMatrixGeneratorTest, TestUniformCovarianceMatrix2Mics) {
   const float kWaveNumber = 0.5775f;
   const int kNumberMics = 2;
   const float kMicSpacing = 0.05f;
-  const float kHalfWidth = 0.001f;
   const float kTolerance = 0.0001f;
-
+  std::vector<Point> geometry;
+  float first_mic = (kNumberMics - 1) * kMicSpacing / 2.f;
+  for (int i = 0; i < kNumberMics; ++i) {
+    geometry.push_back(Point(i * kMicSpacing - first_mic, 0.f, 0.f));
+  }
   ComplexMatrix<float> actual_covariance_matrix(kNumberMics, kNumberMics);
-  CovarianceMatrixGenerator::GappedUniformCovarianceMatrix(
-      kWaveNumber,
-      kNumberMics,
-      kMicSpacing,
-      kHalfWidth,
-      &actual_covariance_matrix);
+  CovarianceMatrixGenerator::UniformCovarianceMatrix(kWaveNumber,
+                                                     geometry,
+                                                     &actual_covariance_matrix);
 
   complex<float>* const* actual_els = actual_covariance_matrix.elements();
 
-  EXPECT_NEAR(actual_els[0][0].real(), 0.998f, kTolerance);
-  EXPECT_NEAR(actual_els[0][1].real(), 0.9978f, kTolerance);
-  EXPECT_NEAR(actual_els[1][0].real(), 0.9978f, kTolerance);
-  EXPECT_NEAR(actual_els[1][1].real(), 0.998f, kTolerance);
+  EXPECT_NEAR(actual_els[0][0].real(), 1.f, kTolerance);
+  EXPECT_NEAR(actual_els[0][1].real(), 0.9998f, kTolerance);
+  EXPECT_NEAR(actual_els[1][0].real(), 0.9998f, kTolerance);
+  EXPECT_NEAR(actual_els[1][1].real(), 1.f, kTolerance);
 
   EXPECT_NEAR(actual_els[0][0].imag(), 0.f, kTolerance);
   EXPECT_NEAR(actual_els[0][1].imag(), 0.f, kTolerance);
@@ -119,32 +49,32 @@ TEST(CovarianceMatrixGeneratorTest, TestGappedUniformCovarianceMatrix2Mics) {
   EXPECT_NEAR(actual_els[1][1].imag(), 0.f, kTolerance);
 }
 
-TEST(CovarianceMatrixGeneratorTest, TestGappedUniformCovarianceMatrix3Mics) {
+TEST(CovarianceMatrixGeneratorTest, TestUniformCovarianceMatrix3Mics) {
   const float kWaveNumber = 10.3861f;
   const int kNumberMics = 3;
   const float kMicSpacing = 0.04f;
-  const float kHalfWidth = 0.001f;
   const float kTolerance = 0.0001f;
-
+  std::vector<Point> geometry;
+  float first_mic = (kNumberMics - 1) * kMicSpacing / 2.f;
+  for (int i = 0; i < kNumberMics; ++i) {
+    geometry.push_back(Point(i * kMicSpacing - first_mic, 0.f, 0.f));
+  }
   ComplexMatrix<float> actual_covariance_matrix(kNumberMics, kNumberMics);
-  CovarianceMatrixGenerator::GappedUniformCovarianceMatrix(
-      kWaveNumber,
-      kNumberMics,
-      kMicSpacing,
-      kHalfWidth,
-      &actual_covariance_matrix);
+  CovarianceMatrixGenerator::UniformCovarianceMatrix(kWaveNumber,
+                                                     geometry,
+                                                     &actual_covariance_matrix);
 
   complex<float>* const* actual_els = actual_covariance_matrix.elements();
 
-  EXPECT_NEAR(actual_els[0][0].real(), 0.998f, kTolerance);
-  EXPECT_NEAR(actual_els[0][1].real(), 0.9553f, kTolerance);
-  EXPECT_NEAR(actual_els[0][2].real(), 0.8327f, kTolerance);
-  EXPECT_NEAR(actual_els[1][0].real(), 0.9553f, kTolerance);
-  EXPECT_NEAR(actual_els[1][1].real(), 0.998f, kTolerance);
-  EXPECT_NEAR(actual_els[1][2].real(), 0.9553f, kTolerance);
-  EXPECT_NEAR(actual_els[2][0].real(), 0.8327f, kTolerance);
-  EXPECT_NEAR(actual_els[2][1].real(), 0.9553f, kTolerance);
-  EXPECT_NEAR(actual_els[2][2].real(), 0.998f, kTolerance);
+  EXPECT_NEAR(actual_els[0][0].real(), 1.f, kTolerance);
+  EXPECT_NEAR(actual_els[0][1].real(), 0.9573f, kTolerance);
+  EXPECT_NEAR(actual_els[0][2].real(), 0.8347f, kTolerance);
+  EXPECT_NEAR(actual_els[1][0].real(), 0.9573f, kTolerance);
+  EXPECT_NEAR(actual_els[1][1].real(), 1.f, kTolerance);
+  EXPECT_NEAR(actual_els[1][2].real(), 0.9573f, kTolerance);
+  EXPECT_NEAR(actual_els[2][0].real(), 0.8347f, kTolerance);
+  EXPECT_NEAR(actual_els[2][1].real(), 0.9573f, kTolerance);
+  EXPECT_NEAR(actual_els[2][2].real(), 1.f, kTolerance);
 
   EXPECT_NEAR(actual_els[0][0].imag(), 0.f, kTolerance);
   EXPECT_NEAR(actual_els[0][1].imag(), 0.f, kTolerance);
@@ -155,6 +85,57 @@ TEST(CovarianceMatrixGeneratorTest, TestGappedUniformCovarianceMatrix3Mics) {
   EXPECT_NEAR(actual_els[2][0].imag(), 0.f, kTolerance);
   EXPECT_NEAR(actual_els[2][1].imag(), 0.f, kTolerance);
   EXPECT_NEAR(actual_els[2][2].imag(), 0.f, kTolerance);
+}
+
+TEST(CovarianceMatrixGeneratorTest, TestUniformCovarianceMatrix3DArray) {
+  const float kWaveNumber = 1.2345f;
+  const int kNumberMics = 4;
+  const float kTolerance = 0.0001f;
+  std::vector<Point> geometry;
+  geometry.push_back(Point(-0.025f, -0.05f, -0.075f));
+  geometry.push_back(Point(0.075f, -0.05f, -0.075f));
+  geometry.push_back(Point(-0.025f, 0.15f, -0.075f));
+  geometry.push_back(Point(-0.025f, -0.05f, 0.225f));
+  ComplexMatrix<float> actual_covariance_matrix(kNumberMics, kNumberMics);
+  CovarianceMatrixGenerator::UniformCovarianceMatrix(kWaveNumber,
+                                                     geometry,
+                                                     &actual_covariance_matrix);
+
+  complex<float>* const* actual_els = actual_covariance_matrix.elements();
+
+  EXPECT_NEAR(actual_els[0][0].real(), 1.f, kTolerance);
+  EXPECT_NEAR(actual_els[0][1].real(), 0.9962f, kTolerance);
+  EXPECT_NEAR(actual_els[0][2].real(), 0.9848f, kTolerance);
+  EXPECT_NEAR(actual_els[0][3].real(), 0.9660f, kTolerance);
+  EXPECT_NEAR(actual_els[1][0].real(), 0.9962f, kTolerance);
+  EXPECT_NEAR(actual_els[1][1].real(), 1.f, kTolerance);
+  EXPECT_NEAR(actual_els[1][2].real(), 0.9810f, kTolerance);
+  EXPECT_NEAR(actual_els[1][3].real(), 0.9623f, kTolerance);
+  EXPECT_NEAR(actual_els[2][0].real(), 0.9848f, kTolerance);
+  EXPECT_NEAR(actual_els[2][1].real(), 0.9810f, kTolerance);
+  EXPECT_NEAR(actual_els[2][2].real(), 1.f, kTolerance);
+  EXPECT_NEAR(actual_els[2][3].real(), 0.9511f, kTolerance);
+  EXPECT_NEAR(actual_els[3][0].real(), 0.9660f, kTolerance);
+  EXPECT_NEAR(actual_els[3][1].real(), 0.9623f, kTolerance);
+  EXPECT_NEAR(actual_els[3][2].real(), 0.9511f, kTolerance);
+  EXPECT_NEAR(actual_els[3][3].real(), 1.f, kTolerance);
+
+  EXPECT_NEAR(actual_els[0][0].imag(), 0.f, kTolerance);
+  EXPECT_NEAR(actual_els[0][1].imag(), 0.f, kTolerance);
+  EXPECT_NEAR(actual_els[0][2].imag(), 0.f, kTolerance);
+  EXPECT_NEAR(actual_els[0][3].imag(), 0.f, kTolerance);
+  EXPECT_NEAR(actual_els[1][0].imag(), 0.f, kTolerance);
+  EXPECT_NEAR(actual_els[1][1].imag(), 0.f, kTolerance);
+  EXPECT_NEAR(actual_els[1][2].imag(), 0.f, kTolerance);
+  EXPECT_NEAR(actual_els[1][3].imag(), 0.f, kTolerance);
+  EXPECT_NEAR(actual_els[2][0].imag(), 0.f, kTolerance);
+  EXPECT_NEAR(actual_els[2][1].imag(), 0.f, kTolerance);
+  EXPECT_NEAR(actual_els[2][2].imag(), 0.f, kTolerance);
+  EXPECT_NEAR(actual_els[2][3].imag(), 0.f, kTolerance);
+  EXPECT_NEAR(actual_els[3][0].imag(), 0.f, kTolerance);
+  EXPECT_NEAR(actual_els[3][1].imag(), 0.f, kTolerance);
+  EXPECT_NEAR(actual_els[3][2].imag(), 0.f, kTolerance);
+  EXPECT_NEAR(actual_els[3][3].imag(), 0.f, kTolerance);
 }
 
 TEST(CovarianceMatrixGeneratorTest, TestAngledCovarianceMatrix2Mics) {
@@ -167,6 +148,11 @@ TEST(CovarianceMatrixGeneratorTest, TestAngledCovarianceMatrix2Mics) {
   const int kNumberMics = 2;
   const float kMicSpacing = 0.04f;
   const float kTolerance = 0.0001f;
+  std::vector<Point> geometry;
+  float first_mic = (kNumberMics - 1) * kMicSpacing / 2.f;
+  for (int i = 0; i < kNumberMics; ++i) {
+    geometry.push_back(Point(i * kMicSpacing - first_mic, 0.f, 0.f));
+  }
   ComplexMatrix<float> actual_covariance_matrix(kNumberMics, kNumberMics);
   CovarianceMatrixGenerator::AngledCovarianceMatrix(kSpeedOfSound,
                                                     kAngle,
@@ -174,8 +160,7 @@ TEST(CovarianceMatrixGeneratorTest, TestAngledCovarianceMatrix2Mics) {
                                                     kFftSize,
                                                     kNumberFrequencyBins,
                                                     kSampleRate,
-                                                    kNumberMics,
-                                                    kMicSpacing,
+                                                    geometry,
                                                     &actual_covariance_matrix);
 
   complex<float>* const* actual_els = actual_covariance_matrix.elements();
@@ -201,7 +186,11 @@ TEST(CovarianceMatrixGeneratorTest, TestAngledCovarianceMatrix3Mics) {
   const int kNumberMics = 3;
   const float kMicSpacing = 0.05f;
   const float kTolerance = 0.0001f;
-
+  std::vector<Point> geometry;
+  float first_mic = (kNumberMics - 1) * kMicSpacing / 2.f;
+  for (int i = 0; i < kNumberMics; ++i) {
+    geometry.push_back(Point(i * kMicSpacing - first_mic, 0.f, 0.f));
+  }
   ComplexMatrix<float> actual_covariance_matrix(kNumberMics, kNumberMics);
   CovarianceMatrixGenerator::AngledCovarianceMatrix(kSpeedOfSound,
                                                     kAngle,
@@ -209,8 +198,7 @@ TEST(CovarianceMatrixGeneratorTest, TestAngledCovarianceMatrix3Mics) {
                                                     kFftSize,
                                                     kNumberFrequencyBins,
                                                     kSampleRate,
-                                                    kNumberMics,
-                                                    kMicSpacing,
+                                                    geometry,
                                                     &actual_covariance_matrix);
 
   complex<float>* const* actual_els = actual_covariance_matrix.elements();
@@ -234,27 +222,6 @@ TEST(CovarianceMatrixGeneratorTest, TestAngledCovarianceMatrix3Mics) {
   EXPECT_NEAR(actual_els[2][0].imag(), -0.8219f, kTolerance);
   EXPECT_NEAR(actual_els[2][1].imag(), -0.4639f, kTolerance);
   EXPECT_NEAR(actual_els[2][2].imag(), 0.f, kTolerance);
-}
-
-TEST(CovarianceMatrixGeneratorTest, TestDCCovarianceMatrix) {
-  const int kNumberMics = 2;
-  const float kHalfWidth = 0.01f;
-
-  ComplexMatrix<float> actual_covariance_matrix(kNumberMics, kNumberMics);
-  CovarianceMatrixGenerator::DCCovarianceMatrix(
-      kNumberMics, kHalfWidth, &actual_covariance_matrix);
-
-  complex<float>* const* actual_els = actual_covariance_matrix.elements();
-
-  EXPECT_NEAR(actual_els[0][0].real(), 0.98f, kTolerance);
-  EXPECT_NEAR(actual_els[0][1].real(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[1][0].real(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[1][1].real(), 0.98f, kTolerance);
-
-  EXPECT_NEAR(actual_els[0][0].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[0][1].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[1][0].imag(), 0.f, kTolerance);
-  EXPECT_NEAR(actual_els[1][1].imag(), 0.f, kTolerance);
 }
 
 // PhaseAlignmentMasks is tested by AngledCovarianceMatrix and by

@@ -17,6 +17,7 @@
 
 #include "webrtc/base/platform_file.h"
 #include "webrtc/common.h"
+#include "webrtc/modules/audio_processing/beamformer/array_util.h"
 #include "webrtc/typedefs.h"
 
 struct AecCore;
@@ -82,16 +83,6 @@ struct ExperimentalNs {
   ExperimentalNs() : enabled(false) {}
   explicit ExperimentalNs(bool enabled) : enabled(enabled) {}
   bool enabled;
-};
-
-// Coordinates in meters.
-struct Point {
-  Point(float x, float y, float z) {
-    c[0] = x;
-    c[1] = y;
-    c[2] = z;
-  }
-  float c[3];
 };
 
 // Use to enable beamforming. Must be provided through the constructor. It will

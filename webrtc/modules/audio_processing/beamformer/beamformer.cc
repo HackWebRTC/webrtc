@@ -30,15 +30,16 @@ const float kMaskMinimum = 0.01f;
 
 const float kSpeedOfSoundMeterSeconds = 343;
 
-// For both target and interference angles, 0 is perpendicular to the microphone
-// array, facing forwards. The positive direction goes counterclockwise.
+// For both target and interference angles, PI / 2 is perpendicular to the
+// microphone array, facing forwards. The positive direction goes
+// counterclockwise.
 // The angle at which we amplify sound.
-const float kTargetAngleRadians = 0.f;
+const float kTargetAngleRadians = static_cast<float>(M_PI) / 2.f;
 
-// The angle at which we suppress sound. Suppression is symmetric around 0
+// The angle at which we suppress sound. Suppression is symmetric around PI / 2
 // radians, so sound is suppressed at both +|kInterfAngleRadians| and
-// -|kInterfAngleRadians|. Since the beamformer is robust, this should
-// suppress sound coming from angles near +-|kInterfAngleRadians| as well.
+// PI - |kInterfAngleRadians|. Since the beamformer is robust, this should
+// suppress sound coming from close angles as well.
 const float kInterfAngleRadians = static_cast<float>(M_PI) / 4.f;
 
 // When calculating the interference covariance matrix, this is the weight for
@@ -49,15 +50,6 @@ const float kBalance = 0.4f;
 
 // TODO(claguna): need comment here.
 const float kBeamwidthConstant = 0.00002f;
-
-// Width of the boxcar.
-const float kBoxcarHalfWidth = 0.01f;
-
-// We put a gap in the covariance matrix where we expect the target to come
-// from. Warning: This must be very small, ex. < 0.01, because otherwise it can
-// cause the covariance matrix not to be positive semidefinite, and we require
-// that our covariance matrices are positive semidefinite.
-const float kCovUniformGapHalfWidth = 0.01f;
 
 // Alpha coefficient for mask smoothing.
 const float kMaskSmoothAlpha = 0.2f;
@@ -151,11 +143,40 @@ float SumSquares(const ComplexMatrix<float>& mat) {
   return sum_squares;
 }
 
+// Does |out| = |in|.' * conj(|in|) for row vector |in|.
+void TransposedConjugatedProduct(const ComplexMatrix<float>& in,
+                                 ComplexMatrix<float>* out) {
+  CHECK_EQ(in.num_rows(), 1);
+  CHECK_EQ(out->num_rows(), in.num_columns());
+  CHECK_EQ(out->num_columns(), in.num_columns());
+  const complex<float>* in_elements = in.elements()[0];
+  complex<float>* const* out_elements = out->elements();
+  for (int i = 0; i < out->num_rows(); ++i) {
+    for (int j = 0; j < out->num_columns(); ++j) {
+      out_elements[i][j] = in_elements[i] * conj(in_elements[j]);
+    }
+  }
+}
+
+std::vector<Point> GetCenteredArray(std::vector<Point> array_geometry) {
+  for (int dim = 0; dim < 3; ++dim) {
+    float center = 0.f;
+    for (size_t i = 0; i < array_geometry.size(); ++i) {
+      center += array_geometry[i].c[dim];
+    }
+    center /= array_geometry.size();
+    for (size_t i = 0; i < array_geometry.size(); ++i) {
+      array_geometry[i].c[dim] -= center;
+    }
+  }
+  return array_geometry;
+}
+
 }  // namespace
 
 Beamformer::Beamformer(const std::vector<Point>& array_geometry)
     : num_input_channels_(array_geometry.size()),
-      mic_spacing_(MicSpacingFromGeometry(array_geometry)) {
+      array_geometry_(GetCenteredArray(array_geometry)) {
   WindowGenerator::KaiserBesselDerived(kAlpha, kFftSize, window_);
 }
 
@@ -210,16 +231,14 @@ void Beamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
 }
 
 void Beamformer::InitDelaySumMasks() {
-  float sin_target = sin(kTargetAngleRadians);
   for (int f_ix = 0; f_ix < kNumFreqBins; ++f_ix) {
     delay_sum_masks_[f_ix].Resize(1, num_input_channels_);
     CovarianceMatrixGenerator::PhaseAlignmentMasks(f_ix,
                                                    kFftSize,
                                                    sample_rate_hz_,
                                                    kSpeedOfSoundMeterSeconds,
-                                                   mic_spacing_,
-                                                   num_input_channels_,
-                                                   sin_target,
+                                                   array_geometry_,
+                                                   kTargetAngleRadians,
                                                    &delay_sum_masks_[f_ix]);
 
     complex_f norm_factor = sqrt(
@@ -232,45 +251,23 @@ void Beamformer::InitDelaySumMasks() {
 }
 
 void Beamformer::InitTargetCovMats() {
-  target_cov_mats_[0].Resize(num_input_channels_, num_input_channels_);
-  CovarianceMatrixGenerator::DCCovarianceMatrix(
-      num_input_channels_, kBoxcarHalfWidth, &target_cov_mats_[0]);
-
-  complex_f normalization_factor = target_cov_mats_[0].Trace();
-  target_cov_mats_[0].Scale(1.f / normalization_factor);
-
-  for (int i = 1; i < kNumFreqBins; ++i) {
+  for (int i = 0; i < kNumFreqBins; ++i) {
     target_cov_mats_[i].Resize(num_input_channels_, num_input_channels_);
-    CovarianceMatrixGenerator::Boxcar(wave_numbers_[i],
-                                      num_input_channels_,
-                                      mic_spacing_,
-                                      kBoxcarHalfWidth,
-                                      &target_cov_mats_[i]);
-
+    TransposedConjugatedProduct(delay_sum_masks_[i], &target_cov_mats_[i]);
     complex_f normalization_factor = target_cov_mats_[i].Trace();
     target_cov_mats_[i].Scale(1.f / normalization_factor);
   }
 }
 
 void Beamformer::InitInterfCovMats() {
-  interf_cov_mats_[0].Resize(num_input_channels_, num_input_channels_);
-  CovarianceMatrixGenerator::DCCovarianceMatrix(
-      num_input_channels_, kCovUniformGapHalfWidth, &interf_cov_mats_[0]);
-
-  complex_f normalization_factor = interf_cov_mats_[0].Trace();
-  interf_cov_mats_[0].Scale(1.f / normalization_factor);
-  reflected_interf_cov_mats_[0].PointwiseConjugate(interf_cov_mats_[0]);
-  for (int i = 1; i < kNumFreqBins; ++i) {
+  for (int i = 0; i < kNumFreqBins; ++i) {
     interf_cov_mats_[i].Resize(num_input_channels_, num_input_channels_);
     ComplexMatrixF uniform_cov_mat(num_input_channels_, num_input_channels_);
     ComplexMatrixF angled_cov_mat(num_input_channels_, num_input_channels_);
 
-    CovarianceMatrixGenerator::GappedUniformCovarianceMatrix(
-        wave_numbers_[i],
-        num_input_channels_,
-        mic_spacing_,
-        kCovUniformGapHalfWidth,
-        &uniform_cov_mat);
+    CovarianceMatrixGenerator::UniformCovarianceMatrix(wave_numbers_[i],
+                                                       array_geometry_,
+                                                       &uniform_cov_mat);
 
     CovarianceMatrixGenerator::AngledCovarianceMatrix(kSpeedOfSoundMeterSeconds,
                                                       kInterfAngleRadians,
@@ -278,8 +275,7 @@ void Beamformer::InitInterfCovMats() {
                                                       kFftSize,
                                                       kNumFreqBins,
                                                       sample_rate_hz_,
-                                                      num_input_channels_,
-                                                      mic_spacing_,
+                                                      array_geometry_,
                                                       &angled_cov_mat);
     // Normalize matrices before averaging them.
     complex_f normalization_factor = uniform_cov_mat.Trace();
@@ -445,20 +441,6 @@ void Beamformer::ApplyHighFrequencyCorrection() {
   for (int i = high_average_end_bin_; i < kNumFreqBins; ++i) {
     postfilter_mask_[i] = high_pass_postfilter_mask_;
   }
-}
-
-// This method CHECKs for a uniform linear array.
-float Beamformer::MicSpacingFromGeometry(const std::vector<Point>& geometry) {
-  CHECK_GE(geometry.size(), 2u);
-  float mic_spacing = 0.f;
-  for (size_t i = 0u; i < 3u; ++i) {
-    float difference = geometry[1].c[i] - geometry[0].c[i];
-    for (size_t j = 2u; j < geometry.size(); ++j) {
-      CHECK_LT(geometry[j].c[i] - geometry[j - 1].c[i] - difference, 1e-6);
-    }
-    mic_spacing += difference * difference;
-  }
-  return sqrt(mic_spacing);
 }
 
 void Beamformer::EstimateTargetPresence() {

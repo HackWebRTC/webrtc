@@ -101,7 +101,7 @@ std::vector<Point> get_array_geometry(size_t num_mics) {
           "mic_spacing must a positive value when beamforming is enabled.\n");
     } else {
       for (size_t i = 0; i < num_mics; ++i) {
-        result.push_back(Point(0.0, i * FLAGS_mic_spacing, 0.0));
+        result.push_back(Point(i * FLAGS_mic_spacing, 0.f, 0.f));
       }
     }
   }
