@@ -54,7 +54,7 @@ using rtc::scoped_refptr;
 static bool ParseConstraintsForAnswer(
     const MediaConstraintsInterface* constraints,
     cricket::MediaSessionOptions* options) {
-  bool value;
+  bool value = false;
   size_t mandatory_constraints_satisfied = 0;
 
   // kOfferToReceiveAudio defaults to true according to spec.
@@ -67,6 +67,7 @@ static bool ParseConstraintsForAnswer(
   // kOfferToReceiveVideo defaults to false according to spec. But
   // if it is an answer and video is offered, we should still accept video
   // per default.
+  value = false;
   if (!FindConstraint(constraints,
                       MediaConstraintsInterface::kOfferToReceiveVideo,
                       &value, &mandatory_constraints_satisfied) || value) {
