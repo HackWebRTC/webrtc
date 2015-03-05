@@ -341,17 +341,18 @@ bool PeerConnection::Initialize(
   int portallocator_flags = port_allocator_->flags();
   portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_BUNDLE |
                          cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
-                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET;
+                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
+                         cricket::PORTALLOCATOR_ENABLE_IPV6;
   bool value;
   // If IPv6 flag was specified, we'll not override it by experiment.
   if (FindConstraint(
           constraints, MediaConstraintsInterface::kEnableIPv6, &value, NULL)) {
-    if (value) {
-      portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_IPV6;
+    if (!value) {
+      portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
     }
   } else if (webrtc::field_trial::FindFullName("WebRTC-IPv6Default") ==
-             "Enabled") {
-    portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_IPV6;
+             "Disabled") {
+    portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
   }
 
   port_allocator_->set_flags(portallocator_flags);
