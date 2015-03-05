@@ -26,6 +26,7 @@ import argparse
 import os
 import subprocess
 import sys
+import textwrap
 
 # Bump this whenever the algorithm changes and you need bots/devs to re-sync,
 # ignoring the .last_sync_chromium file
@@ -104,6 +105,9 @@ def main():
     else:
       cache_path = '/b/git-cache'
   else:
+    # Verbose, but not as verbose as on the buildbots.
+    args.append('-v')
+
     # Support developers setting the cache_dir in .gclient.
     cache_path = get_cache_dir()
 
@@ -143,6 +147,15 @@ def main():
   if target_os_list:
     args += ['--deps=' + target_os_list]
 
+  print textwrap.dedent("""\
+  +--------------------------------------------------------------------+
+  | NOTICE: This sync of Chromium will take a very long time the first |
+  |         time you checkout WebRTC as several gigabytes of data has  |
+  |         to be downloaded. Make sure you don't abort this download  |
+  |         or you will have to issue a 'gclient sync' followed by a   |
+  |         'git auto-svn' to complete the initial setup. If that      |
+  |         fails, you have to wipe everything clean and start over.   |
+  +--------------------------------------------------------------------+""")
   print 'Running "%s" in %s' % (' '.join(args), opts.chromium_dir)
   ret = subprocess.call(args, cwd=opts.chromium_dir, env=env)
   if ret == 0:
