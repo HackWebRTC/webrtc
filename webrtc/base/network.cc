@@ -601,6 +601,14 @@ bool BasicNetworkManager::IsIgnoredNetwork(const Network& network) const {
   if (network.prefix().family() == AF_INET) {
     return (network.prefix().v4AddressAsHostOrderInteger() < 0x01000000);
   }
+
+  // Linklocal addresses require scope id to be bound successfully. However, our
+  // IPAddress structure doesn't carry that so the information is lost and
+  // causes binding failure.
+  if (network.prefix().family() == AF_INET6 &&
+      IPIsLinkLocal(network.GetBestIP())) {
+    return true;
+  }
   return false;
 }
 
