@@ -285,13 +285,13 @@ TEST_F(NetworkTest, TestBasicMergeNetworkList) {
 void SetupNetworks(NetworkManager::NetworkList* list) {
   IPAddress ip;
   IPAddress prefix;
-  EXPECT_TRUE(IPFromString("abcd::1234:5678:abcd:ef12", &ip));
-  EXPECT_TRUE(IPFromString("abcd::", &prefix));
+  EXPECT_TRUE(IPFromString("fe80::1234:5678:abcd:ef12", &ip));
+  EXPECT_TRUE(IPFromString("fe80::", &prefix));
   // First, fake link-locals.
   Network ipv6_eth0_linklocalnetwork("test_eth0", "Test NetworkAdapter 1",
                                      prefix, 64);
   ipv6_eth0_linklocalnetwork.AddIP(ip);
-  EXPECT_TRUE(IPFromString("abcd::5678:abcd:ef12:3456", &ip));
+  EXPECT_TRUE(IPFromString("fe80::5678:abcd:ef12:3456", &ip));
   Network ipv6_eth1_linklocalnetwork("test_eth1", "Test NetworkAdapter 2",
                                      prefix, 64);
   ipv6_eth1_linklocalnetwork.AddIP(ip);

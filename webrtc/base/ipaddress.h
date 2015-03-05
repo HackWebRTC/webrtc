@@ -162,7 +162,6 @@ size_t HashIP(const IPAddress& ip);
 // These are only really applicable for IPv6 addresses.
 bool IPIs6Bone(const IPAddress& ip);
 bool IPIs6To4(const IPAddress& ip);
-bool IPIsLinkLocal(const IPAddress& ip);
 bool IPIsSiteLocal(const IPAddress& ip);
 bool IPIsTeredo(const IPAddress& ip);
 bool IPIsULA(const IPAddress& ip);

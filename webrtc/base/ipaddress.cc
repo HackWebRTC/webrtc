@@ -432,12 +432,6 @@ bool IPIs6To4(const IPAddress& ip) {
   return IPIsHelper(ip, k6To4Prefix, 16);
 }
 
-bool IPIsLinkLocal(const IPAddress& ip) {
-  // Can't use the helper because the prefix is 10 bits.
-  in6_addr addr = ip.ipv6_address();
-  return addr.s6_addr[0] == 0xFE && (addr.s6_addr[1] & 0x80) == 0x80;
-}
-
 bool IPIsSiteLocal(const IPAddress& ip) {
   // Can't use the helper because the prefix is 10 bits.
   in6_addr addr = ip.ipv6_address();
