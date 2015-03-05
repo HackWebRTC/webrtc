@@ -22,8 +22,16 @@ class MockProcessThread : public ProcessThread {
   MOCK_METHOD0(Start, void());
   MOCK_METHOD0(Stop, void());
   MOCK_METHOD1(WakeUp, void(Module* module));
+  MOCK_METHOD1(PostTask, void(ProcessTask* task));
   MOCK_METHOD1(RegisterModule, void(Module* module));
   MOCK_METHOD1(DeRegisterModule, void(Module* module));
+
+  // MOCK_METHOD1 gets confused with mocking this method, so we work around it
+  // by overriding the method from the interface and forwarding the call to a
+  // mocked, simpler method.
+  void PostTask(rtc::scoped_ptr<ProcessTask> task) override {
+    PostTask(task.get());
+  }
 };
 
 }  // namespace webrtc

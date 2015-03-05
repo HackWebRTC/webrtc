@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_UTILITY_SOURCE_PROCESS_THREAD_IMPL_H_
 
 #include <list>
+#include <queue>
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_checker.h"
@@ -31,6 +32,7 @@ class ProcessThreadImpl : public ProcessThread {
   void Stop() override;
 
   void WakeUp(Module* module) override;
+  void PostTask(rtc::scoped_ptr<ProcessTask> task) override;
 
   void RegisterModule(Module* module) override;
   void DeRegisterModule(Module* module) override;
@@ -64,13 +66,15 @@ class ProcessThreadImpl : public ProcessThread {
   // issues, but I haven't figured out what they are, if there are alignment
   // requirements for mutexes on Mac or if there's something else to it.
   // So be careful with changing the layout.
-  rtc::CriticalSection lock_;  // Used to guard modules_ and stop_.
+  rtc::CriticalSection lock_;  // Used to guard modules_, tasks_ and stop_.
 
   rtc::ThreadChecker thread_checker_;
   const rtc::scoped_ptr<EventWrapper> wake_up_;
   rtc::scoped_ptr<ThreadWrapper> thread_;
 
   ModuleList modules_;
+  // TODO(tommi): Support delayed tasks.
+  std::queue<ProcessTask*> queue_;
   bool stop_;
 };
 

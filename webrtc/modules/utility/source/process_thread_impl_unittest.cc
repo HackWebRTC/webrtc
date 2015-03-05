@@ -30,6 +30,15 @@ class MockModule : public Module {
   MOCK_METHOD1(ProcessThreadAttached, void(ProcessThread*));
 };
 
+class RaiseEventTask : public ProcessTask {
+ public:
+  RaiseEventTask(EventWrapper* event) : event_(event) {}
+  void Run() override { event_->Set(); }
+
+ private:
+  EventWrapper* event_;
+};
+
 ACTION_P(SetEvent, event) {
   event->Set();
 }
@@ -278,6 +287,18 @@ TEST(ProcessThreadImpl, WakeUp) {
   uint32_t diff = called_time - start_time;
   // We should have been called back much quicker than 1sec.
   EXPECT_LE(diff, 100u);
+}
+
+// Tests that we can post a task that gets run straight away on the worker
+// thread.
+TEST(ProcessThreadImpl, PostTask) {
+  ProcessThreadImpl thread;
+  rtc::scoped_ptr<EventWrapper> task_ran(EventWrapper::Create());
+  rtc::scoped_ptr<RaiseEventTask> task(new RaiseEventTask(task_ran.get()));
+  thread.Start();
+  thread.PostTask(task.Pass());
+  EXPECT_EQ(kEventSignaled, task_ran->Wait(100));
+  thread.Stop();
 }
 
 }  // namespace webrtc

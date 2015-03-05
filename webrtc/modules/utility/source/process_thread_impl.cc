@@ -51,6 +51,11 @@ ProcessThreadImpl::~ProcessThreadImpl() {
   DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK(!thread_.get());
   DCHECK(!stop_);
+
+  while (!queue_.empty()) {
+    delete queue_.front();
+    queue_.pop();
+  }
 }
 
 void ProcessThreadImpl::Start() {
@@ -98,6 +103,15 @@ void ProcessThreadImpl::WakeUp(Module* module) {
       if (m.module == module)
         m.next_callback = kCallProcessImmediately;
     }
+  }
+  wake_up_->Set();
+}
+
+void ProcessThreadImpl::PostTask(rtc::scoped_ptr<ProcessTask> task) {
+  // Allowed to be called on any thread.
+  {
+    rtc::CritScope lock(&lock_);
+    queue_.push(task.release());
   }
   wake_up_->Set();
 }
@@ -155,6 +169,7 @@ bool ProcessThreadImpl::Run(void* obj) {
 bool ProcessThreadImpl::Process() {
   int64_t now = TickTime::MillisecondTimestamp();
   int64_t next_checkpoint = now + (1000 * 60);
+
   {
     rtc::CritScope lock(&lock_);
     if (stop_)
@@ -179,6 +194,15 @@ bool ProcessThreadImpl::Process() {
 
       if (m.next_callback < next_checkpoint)
         next_checkpoint = m.next_callback;
+    }
+
+    while (!queue_.empty()) {
+      ProcessTask* task = queue_.front();
+      queue_.pop();
+      lock_.Leave();
+      task->Run();
+      delete task;
+      lock_.Enter();
     }
   }
 
