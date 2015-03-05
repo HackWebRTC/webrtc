@@ -81,7 +81,6 @@
           ],
         }],
         ['target_arch=="arm" and arm_version>=7', {
-          'dependencies': [ 'isac_neon', ],
           'sources': [
             'fix/source/lattice_armv7.S',
             'fix/source/pitch_filter_armv6.S',
@@ -89,6 +88,11 @@
           'sources!': [
             'fix/source/lattice_c.c',
             'fix/source/pitch_filter_c.c',
+          ],
+          'conditions': [
+            ['arm_neon==1 or arm_neon_optional==1', {
+              'dependencies': [ 'isac_neon' ],
+            }],
           ],
         }],
         ['target_arch=="mipsel" and mips_arch_variant!="r6" and android_webview_build==0', {
