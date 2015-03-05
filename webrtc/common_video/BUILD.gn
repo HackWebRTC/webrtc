@@ -21,13 +21,13 @@ source_set("common_video") {
     "interface/i420_video_frame.h",
     "interface/native_handle.h",
     "interface/texture_video_frame.h",
+    "interface/video_frame_buffer.h",
     "libyuv/include/scaler.h",
     "libyuv/include/webrtc_libyuv.h",
     "libyuv/scaler.cc",
     "libyuv/webrtc_libyuv.cc",
-    "plane.cc",
-    "plane.h",
-    "texture_video_frame.cc"
+    "texture_video_frame.cc",
+    "video_frame_buffer.cc",
   ]
 
   include_dirs = [ "../modules/interface" ]

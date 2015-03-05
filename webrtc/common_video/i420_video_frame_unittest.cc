@@ -14,8 +14,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
-#include "webrtc/system_wrappers/interface/ref_count.h"
-#include "webrtc/system_wrappers/interface/scoped_refptr.h"
 
 namespace webrtc {
 
@@ -240,15 +238,30 @@ TEST(TestI420VideoFrame, FrameSwap) {
   EXPECT_TRUE(EqualFrames(frame2_copy, frame1));
 }
 
-TEST(TestI420VideoFrame, RefCountedInstantiation) {
-  // Refcounted instantiation - ref_count should correspond to the number of
-  // instances.
-  scoped_refptr<I420VideoFrame> ref_count_frame(
-      new RefCountImpl<I420VideoFrame>());
-  EXPECT_EQ(2, ref_count_frame->AddRef());
-  EXPECT_EQ(3, ref_count_frame->AddRef());
-  EXPECT_EQ(2, ref_count_frame->Release());
-  EXPECT_EQ(1, ref_count_frame->Release());
+TEST(TestI420VideoFrame, ReuseAllocation) {
+  I420VideoFrame frame;
+  frame.CreateEmptyFrame(640, 320, 640, 320, 320);
+  const uint8_t* y = frame.buffer(kYPlane);
+  const uint8_t* u = frame.buffer(kUPlane);
+  const uint8_t* v = frame.buffer(kVPlane);
+  frame.CreateEmptyFrame(640, 320, 640, 320, 320);
+  EXPECT_EQ(y, frame.buffer(kYPlane));
+  EXPECT_EQ(u, frame.buffer(kUPlane));
+  EXPECT_EQ(v, frame.buffer(kVPlane));
+}
+
+TEST(TestI420VideoFrame, FailToReuseAllocation) {
+  I420VideoFrame frame1;
+  frame1.CreateEmptyFrame(640, 320, 640, 320, 320);
+  const uint8_t* y = frame1.buffer(kYPlane);
+  const uint8_t* u = frame1.buffer(kUPlane);
+  const uint8_t* v = frame1.buffer(kVPlane);
+  // Make a shallow copy of |frame1|.
+  I420VideoFrame frame2(frame1.video_frame_buffer(), 0, 0, kVideoRotation_0);
+  frame1.CreateEmptyFrame(640, 320, 640, 320, 320);
+  EXPECT_NE(y, frame1.buffer(kYPlane));
+  EXPECT_NE(u, frame1.buffer(kUPlane));
+  EXPECT_NE(v, frame1.buffer(kVPlane));
 }
 
 bool EqualPlane(const uint8_t* data1,

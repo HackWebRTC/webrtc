@@ -28,95 +28,15 @@
 #ifndef TALK_MEDIA_WEBRTC_WEBRTCTEXTUREVIDEOFRAME_H_
 #define TALK_MEDIA_WEBRTC_WEBRTCTEXTUREVIDEOFRAME_H_
 
-#include "talk/media/base/videoframe.h"
-#include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/common_video/interface/native_handle.h"
+#include "talk/media/webrtc/webrtcvideoframe.h"
 
 namespace cricket {
 
 // A video frame backed by the texture via a native handle.
-class WebRtcTextureVideoFrame : public VideoFrame {
+class WebRtcTextureVideoFrame : public WebRtcVideoFrame {
  public:
   WebRtcTextureVideoFrame(webrtc::NativeHandle* handle, int width, int height,
                           int64_t elapsed_time, int64_t time_stamp);
-  virtual ~WebRtcTextureVideoFrame();
-
-  // From base class VideoFrame.
-  virtual bool InitToBlack(int w, int h, size_t pixel_width,
-                           size_t pixel_height, int64_t elapsed_time,
-                           int64_t time_stamp);
-  virtual bool Reset(uint32 fourcc,
-                     int w,
-                     int h,
-                     int dw,
-                     int dh,
-                     uint8* sample,
-                     size_t sample_size,
-                     size_t pixel_width,
-                     size_t pixel_height,
-                     int64_t elapsed_time,
-                     int64_t time_stamp,
-                     webrtc::VideoRotation rotation);
-  virtual size_t GetWidth() const { return width_; }
-  virtual size_t GetHeight() const { return height_; }
-  virtual const uint8* GetYPlane() const;
-  virtual const uint8* GetUPlane() const;
-  virtual const uint8* GetVPlane() const;
-  virtual uint8* GetYPlane();
-  virtual uint8* GetUPlane();
-  virtual uint8* GetVPlane();
-  virtual int32 GetYPitch() const;
-  virtual int32 GetUPitch() const;
-  virtual int32 GetVPitch() const;
-  virtual size_t GetPixelWidth() const { return 1; }
-  virtual size_t GetPixelHeight() const { return 1; }
-  virtual int64_t GetElapsedTime() const { return elapsed_time_; }
-  virtual int64_t GetTimeStamp() const { return time_stamp_; }
-  virtual void SetElapsedTime(int64_t elapsed_time) {
-    elapsed_time_ = elapsed_time;
-  }
-  virtual void SetTimeStamp(int64_t time_stamp) { time_stamp_ = time_stamp; }
-  virtual webrtc::VideoRotation GetVideoRotation() const {
-    return webrtc::kVideoRotation_0;
-  }
-  virtual VideoFrame* Copy() const;
-  virtual bool MakeExclusive();
-  virtual size_t CopyToBuffer(uint8* buffer, size_t size) const;
-  virtual size_t ConvertToRgbBuffer(uint32 to_fourcc, uint8* buffer,
-                                    size_t size, int stride_rgb) const;
-  virtual void* GetNativeHandle() const { return handle_.get(); }
-
-  virtual bool CopyToPlanes(
-      uint8* dst_y, uint8* dst_u, uint8* dst_v,
-      int32 dst_pitch_y, int32 dst_pitch_u, int32 dst_pitch_v) const;
-  virtual void CopyToFrame(VideoFrame* target) const;
-  virtual rtc::StreamResult Write(rtc::StreamInterface* stream,
-                                        int* error);
-  virtual void StretchToPlanes(
-      uint8* y, uint8* u, uint8* v, int32 pitchY, int32 pitchU, int32 pitchV,
-      size_t width, size_t height, bool interpolate, bool crop) const;
-  virtual size_t StretchToBuffer(size_t w, size_t h, uint8* buffer, size_t size,
-                                 bool interpolate, bool crop) const;
-  virtual void StretchToFrame(VideoFrame* target, bool interpolate,
-                              bool crop) const;
-  virtual VideoFrame* Stretch(size_t w, size_t h, bool interpolate,
-                              bool crop) const;
-  virtual bool SetToBlack();
-
- protected:
-  virtual VideoFrame* CreateEmptyFrame(int w, int h, size_t pixel_width,
-                                       size_t pixel_height,
-                                       int64_t elapsed_time,
-                                       int64_t time_stamp) const;
-
- private:
-  // The handle of the underlying video frame.
-  rtc::scoped_refptr<webrtc::NativeHandle> handle_;
-  int width_;
-  int height_;
-  int64_t elapsed_time_;
-  int64_t time_stamp_;
 };
 
 }  // namespace cricket
