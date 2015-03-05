@@ -124,6 +124,10 @@ source_set("common_audio") {
     }
   }
 
+  if (current_cpu == "arm64") {
+    deps += [ ":common_audio_neon" ]
+  }
+
   if (current_cpu == "mipsel") {
     sources += [
       "signal_processing/include/spl_inl_mips.h",
@@ -194,30 +198,23 @@ if (current_cpu == "x86" || current_cpu == "x64") {
   }
 }
 
-if (rtc_build_armv7_neon) {
+if (rtc_build_armv7_neon || current_cpu == "arm64") {
   source_set("common_audio_neon") {
     sources = [
       "fir_filter_neon.cc",
       "resampler/sinc_resampler_neon.cc",
-      "signal_processing/cross_correlation_neon.S",
-      "signal_processing/downsample_fast_neon.S",
-      "signal_processing/min_max_operations_neon.S",
+      "signal_processing/cross_correlation_neon.c",
+      "signal_processing/downsample_fast_neon.c",
+      "signal_processing/min_max_operations_neon.c",
     ]
 
     configs += [ "..:common_config" ]
     public_configs = [ "..:common_inherited_config" ]
 
-
-    # Enable compilation for the ARM v7 Neon instruction set. This is needed
-    # since //build/config/arm.gni only enables Neon for iOS, not Android.
-    # This provides the same functionality as webrtc/build/arm_neon.gypi.
-    # TODO(kjellander): Investigate if this can be moved into webrtc.gni or
-    # //build/config/arm.gni instead, to reduce code duplication.
-    # Remove the -mfpu=vfpv3-d16 cflag.
-    configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
-    cflags = [
-      "-mfpu=neon",
-    ]
+    if (!arm_use_neon) {
+      configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
+      cflags = [ "-mfpu=neon" ]
+    }
 
     # Disable LTO in audio_processing_neon target due to compiler bug.
     if (rtc_use_lto) {

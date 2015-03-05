@@ -146,6 +146,9 @@
             }],
           ],  # conditions
         }],
+        ['target_arch=="arm64"', {
+          'dependencies': ['common_audio_neon',],
+        }],
         ['target_arch=="mipsel" and mips_arch_variant!="r6" and android_webview_build==0', {
           'sources': [
             'signal_processing/include/spl_inl_mips.h',
@@ -194,7 +197,7 @@
         },
       ],  # targets
     }],
-    ['target_arch=="arm" and arm_version>=7', {
+    ['target_arch=="arm" and arm_version>=7 or target_arch=="arm64"', {
       'targets': [
         {
           'target_name': 'common_audio_neon',
@@ -203,9 +206,9 @@
           'sources': [
             'fir_filter_neon.cc',
             'resampler/sinc_resampler_neon.cc',
-            'signal_processing/cross_correlation_neon.S',
-            'signal_processing/downsample_fast_neon.S',
-            'signal_processing/min_max_operations_neon.S',
+            'signal_processing/cross_correlation_neon.c',
+            'signal_processing/downsample_fast_neon.c',
+            'signal_processing/min_max_operations_neon.c',
           ],
           'conditions': [
             # Disable LTO in common_audio_neon target due to compiler bug
