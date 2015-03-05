@@ -77,6 +77,10 @@ VideoSender::VideoSender(Clock* clock,
       current_codec_(),
       qm_settings_callback_(NULL),
       protection_callback_(NULL) {
+  // Allow VideoSender to be created on one thread but used on another, post
+  // construction. This is currently how this class is being used by at least
+  // one external project (diffractor).
+  main_thread_.DetachFromThread();
 }
 
 VideoSender::~VideoSender() {
