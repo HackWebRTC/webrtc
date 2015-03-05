@@ -227,7 +227,7 @@ TEST_P(BweSimulation, SelfFairnessTest) {
   RateCounterFilter total_utilization(
       &uplink_, CreateFlowIds(kAllFlowIds, kNumFlows), "total_utilization");
 
-  scoped_ptr<PacketReceiver> receivers[kNumFlows];
+  rtc::scoped_ptr<PacketReceiver> receivers[kNumFlows];
   for (size_t i = 0; i < kNumFlows; ++i) {
     receivers[i].reset(new PacketReceiver(&uplink_, kAllFlowIds[i], GetParam(),
                                           i == 0, false));
@@ -264,7 +264,7 @@ TEST_P(BweSimulation, PacedSelfFairnessTest) {
   RateCounterFilter total_utilization(
       &uplink_, CreateFlowIds(kAllFlowIds, kNumFlows), "total_utilization");
 
-  scoped_ptr<PacketReceiver> receivers[kNumFlows];
+  rtc::scoped_ptr<PacketReceiver> receivers[kNumFlows];
   for (size_t i = 0; i < kNumFlows; ++i) {
     receivers[i].reset(new PacketReceiver(&uplink_, kAllFlowIds[i], GetParam(),
                                           i == 0, false));
