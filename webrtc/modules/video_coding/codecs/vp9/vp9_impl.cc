@@ -223,11 +223,12 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   // The number tile columns will be capped by the encoder based on image size
   // (minimum width of tile column is 256 pixels, maximum is 4096).
   vpx_codec_control(encoder_, VP9E_SET_TILE_COLUMNS, (config_->g_threads >> 1));
-  // TODO(marpan): Enable in future libvpx roll: waiting for SSE2 optimization.
-// #if !defined(WEBRTC_ARCH_ARM)
-  // vpx_codec_control(encoder_, VP9E_SET_NOISE_SENSITIVITY,
-  //                   inst->codecSpecific.VP9.denoisingOn ? 1 : 0);
-// #endif
+#if !defined(WEBRTC_ARCH_ARM)
+  // Note denoiser is still off by default until further testing/optimization,
+  // i.e., codecSpecific.VP9.denoisingOn == 0.
+  vpx_codec_control(encoder_, VP9E_SET_NOISE_SENSITIVITY,
+                    inst->codecSpecific.VP9.denoisingOn ? 1 : 0);
+#endif
   inited_ = true;
   return WEBRTC_VIDEO_CODEC_OK;
 }

@@ -703,6 +703,28 @@ TEST_F(VideoProcessorIntegrationTest,
                          rc_metrics);
 }
 
+// VP9: Run with no packet loss and denoiser on. One key frame (first frame).
+TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
+  // Bitrate and frame rate profile.
+  RateProfile rate_profile;
+  SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
+  rate_profile.frame_index_rate_update[1] = kNbrFramesShort + 1;
+  rate_profile.num_frames = kNbrFramesShort;
+  // Codec/network settings.
+  CodecConfigPars process_settings;
+  SetCodecParameters(&process_settings, kVideoCodecVP9, 0.0f, -1, 1, false,
+                     true, true, false);
+  // Metrics for expected quality.
+  QualityMetrics quality_metrics;
+  SetQualityMetrics(&quality_metrics, 36.8, 35.8, 0.92, 0.91);
+  // Metrics for rate control.
+  RateControlMetrics rc_metrics[1];
+  SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 20, 0);
+  ProcessFramesAndVerify(quality_metrics,
+                         rate_profile,
+                         process_settings,
+                         rc_metrics);
+}
 
 // TODO(marpan): Add temporal layer test for VP9, once changes are in
 // vp9 wrapper for this.
