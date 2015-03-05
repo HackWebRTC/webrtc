@@ -370,6 +370,13 @@ int32_t VideoSender::AddVideoFrame(const I420VideoFrame& videoFrame,
     return VCM_OK;
   }
   _mediaOpt.UpdateContentData(contentMetrics);
+  // TODO(pbos): Make sure setting send codec is synchronized with video
+  // processing so frame size always matches.
+  if (!_codecDataBase.MatchesCurrentResolution(videoFrame.width(),
+                                               videoFrame.height())) {
+    LOG(LS_ERROR) << "Incoming frame doesn't match set resolution. Dropping.";
+    return VCM_PARAMETER_ERROR;
+  }
   int32_t ret =
       _encoder->Encode(videoFrame, codecSpecificInfo, _nextFrameTypes);
   recorder_->Add(videoFrame);

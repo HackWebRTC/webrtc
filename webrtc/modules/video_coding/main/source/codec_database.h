@@ -146,6 +146,8 @@ class VCMCodecDataBase {
   // the encoded frames.
   bool SupportsRenderScheduling() const;
 
+  bool MatchesCurrentResolution(int width, int height) const;
+
  private:
   typedef std::map<uint8_t, VCMDecoderMapItem*> DecoderMap;
   typedef std::map<uint8_t, VCMExtDecoderMapItem*> ExternalDecoderMap;

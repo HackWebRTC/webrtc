@@ -640,6 +640,10 @@ bool VCMCodecDataBase::SupportsRenderScheduling() const {
   return render_timing;
 }
 
+bool VCMCodecDataBase::MatchesCurrentResolution(int width, int height) const {
+  return send_codec_.width == width && send_codec_.height == height;
+}
+
 VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
     uint8_t payload_type,
     VideoCodec* new_codec,

@@ -70,12 +70,17 @@ MATCHER_P(MatchesVp8StreamInfo, expected, "") {
 
 class EmptyFrameGenerator : public FrameGenerator {
  public:
+  EmptyFrameGenerator(int width, int height) : width_(width), height_(height) {}
   I420VideoFrame* NextFrame() override {
     frame_.reset(new I420VideoFrame());
+    frame_->CreateEmptyFrame(width_, height_, width_, (width_ + 1) / 2,
+                             (width_ + 1) / 2);
     return frame_.get();
   }
 
  private:
+  const int width_;
+  const int height_;
   rtc::scoped_ptr<I420VideoFrame> frame_;
 };
 
@@ -199,7 +204,6 @@ class TestVideoSenderWithMockEncoder : public TestVideoSender {
 
   void SetUp() override {
     TestVideoSender::SetUp();
-    generator_.reset(new EmptyFrameGenerator());
     EXPECT_EQ(
         0,
         sender_->RegisterExternalEncoder(&encoder_, kUnusedPayloadType, false));
@@ -217,6 +221,8 @@ class TestVideoSenderWithMockEncoder : public TestVideoSender {
     ConfigureStream(
         kDefaultWidth, kDefaultHeight, 1200, &settings_.simulcastStream[2]);
     settings_.plType = kUnusedPayloadType;  // Use the mocked encoder.
+    generator_.reset(
+        new EmptyFrameGenerator(settings_.width, settings_.height));
     EXPECT_EQ(0, sender_->RegisterSendCodec(&settings_, 1, 1200));
   }
 
