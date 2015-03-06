@@ -30,14 +30,10 @@
 
 #include "talk/media/webrtc/webrtcvideoframe.h"
 
+// TODO(magjed): Remove this when all external dependencies are updated.
 namespace cricket {
 
-// A video frame backed by the texture via a native handle.
-class WebRtcTextureVideoFrame : public WebRtcVideoFrame {
- public:
-  WebRtcTextureVideoFrame(webrtc::NativeHandle* handle, int width, int height,
-                          int64_t elapsed_time, int64_t time_stamp);
-};
+typedef WebRtcVideoFrame WebRtcTextureVideoFrame;
 
 }  // namespace cricket
 

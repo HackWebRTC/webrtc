@@ -46,7 +46,6 @@
 #include "talk/media/webrtc/constants.h"
 #include "talk/media/webrtc/simulcast.h"
 #include "talk/media/webrtc/webrtcpassthroughrender.h"
-#include "talk/media/webrtc/webrtctexturevideoframe.h"
 #include "talk/media/webrtc/webrtcvideocapturer.h"
 #include "talk/media/webrtc/webrtcvideodecoderfactory.h"
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"

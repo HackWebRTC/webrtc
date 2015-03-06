@@ -53,6 +53,22 @@ WebRtcVideoFrame::WebRtcVideoFrame(
       rotation_(webrtc::kVideoRotation_0) {
 }
 
+WebRtcVideoFrame::WebRtcVideoFrame(webrtc::NativeHandle* handle,
+                                   int width,
+                                   int height,
+                                   int64_t elapsed_time_ns,
+                                   int64_t time_stamp_ns)
+    : video_frame_buffer_(
+          new rtc::RefCountedObject<webrtc::TextureBuffer>(handle,
+                                                           width,
+                                                           height)),
+      pixel_width_(1),
+      pixel_height_(1),
+      elapsed_time_ns_(elapsed_time_ns),
+      time_stamp_ns_(time_stamp_ns),
+      rotation_(webrtc::kVideoRotation_0) {
+}
+
 WebRtcVideoFrame::~WebRtcVideoFrame() {}
 
 bool WebRtcVideoFrame::Init(uint32 format,

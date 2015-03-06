@@ -30,6 +30,19 @@
 #include "talk/media/base/videoframe_unittest.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
 
+class NativeHandleImpl : public webrtc::NativeHandle {
+ public:
+  NativeHandleImpl() : ref_count_(0) {}
+  virtual ~NativeHandleImpl() {}
+  virtual int32_t AddRef() { return ++ref_count_; }
+  virtual int32_t Release() { return --ref_count_; }
+  virtual void* GetHandle() { return NULL; }
+
+  int32_t ref_count() { return ref_count_; }
+ private:
+  int32_t ref_count_;
+};
+
 class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
  public:
   WebRtcVideoFrameTest() {
@@ -303,4 +316,30 @@ TEST_F(WebRtcVideoFrameTest, InitRotated90ApplyRotation) {
 
 TEST_F(WebRtcVideoFrameTest, InitRotated90DontApplyRotation) {
   TestInit(640, 360, webrtc::kVideoRotation_90, false);
+}
+
+TEST_F(WebRtcVideoFrameTest, TextureInitialValues) {
+  NativeHandleImpl handle;
+  cricket::WebRtcVideoFrame frame(&handle, 640, 480, 100, 200);
+  EXPECT_EQ(&handle, frame.GetNativeHandle());
+  EXPECT_EQ(640u, frame.GetWidth());
+  EXPECT_EQ(480u, frame.GetHeight());
+  EXPECT_EQ(100, frame.GetElapsedTime());
+  EXPECT_EQ(200, frame.GetTimeStamp());
+  frame.SetElapsedTime(300);
+  EXPECT_EQ(300, frame.GetElapsedTime());
+  frame.SetTimeStamp(400);
+  EXPECT_EQ(400, frame.GetTimeStamp());
+}
+
+TEST_F(WebRtcVideoFrameTest, CopyTextureFrame) {
+  NativeHandleImpl handle;
+  cricket::WebRtcVideoFrame frame1(&handle, 640, 480, 100, 200);
+  cricket::VideoFrame* frame2 = frame1.Copy();
+  EXPECT_EQ(frame1.GetNativeHandle(), frame2->GetNativeHandle());
+  EXPECT_EQ(frame1.GetWidth(), frame2->GetWidth());
+  EXPECT_EQ(frame1.GetHeight(), frame2->GetHeight());
+  EXPECT_EQ(frame1.GetElapsedTime(), frame2->GetElapsedTime());
+  EXPECT_EQ(frame1.GetTimeStamp(), frame2->GetTimeStamp());
+  delete frame2;
 }

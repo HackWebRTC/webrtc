@@ -463,8 +463,6 @@
         'media/webrtc/webrtcmediaengine.cc',
         'media/webrtc/webrtcpassthroughrender.cc',
         'media/webrtc/webrtcpassthroughrender.h',
-        'media/webrtc/webrtctexturevideoframe.cc',
-        'media/webrtc/webrtctexturevideoframe.h',
         'media/webrtc/webrtcvideocapturer.cc',
         'media/webrtc/webrtcvideocapturerfactory.h',
         'media/webrtc/webrtcvideocapturerfactory.cc',
