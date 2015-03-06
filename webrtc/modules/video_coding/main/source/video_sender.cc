@@ -193,6 +193,8 @@ VideoCodecType VideoSender::SendCodecBlocking() const {
 int32_t VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
                                              uint8_t payloadType,
                                              bool internalSource /*= false*/) {
+  DCHECK(main_thread_.CalledOnValidThread());
+
   CriticalSectionScoped cs(_sendCritSect);
 
   if (externalEncoder == NULL) {
@@ -229,7 +231,10 @@ int32_t VideoSender::SentFrameCount(VCMFrameCount* frameCount) {
 
 // Get encode bitrate
 int VideoSender::Bitrate(unsigned int* bitrate) const {
-  CriticalSectionScoped cs(_sendCritSect);
+  DCHECK(main_thread_.CalledOnValidThread());
+  // Since we're running on the thread that's the only thread known to modify
+  // the value of _encoder, we don't need to grab the lock here.
+
   // return the bit rate which the encoder is set to
   if (!_encoder) {
     return VCM_UNINITIALIZED;
@@ -240,7 +245,10 @@ int VideoSender::Bitrate(unsigned int* bitrate) const {
 
 // Get encode frame rate
 int VideoSender::FrameRate(unsigned int* framerate) const {
-  CriticalSectionScoped cs(_sendCritSect);
+  DCHECK(main_thread_.CalledOnValidThread());
+  // Since we're running on the thread that's the only thread known to modify
+  // the value of _encoder, we don't need to grab the lock here.
+
   // input frame rate, not compensated
   if (!_encoder) {
     return VCM_UNINITIALIZED;
@@ -249,32 +257,33 @@ int VideoSender::FrameRate(unsigned int* framerate) const {
   return 0;
 }
 
-// Set channel parameters
 int32_t VideoSender::SetChannelParameters(uint32_t target_bitrate,
                                           uint8_t lossRate,
                                           int64_t rtt) {
-  int32_t ret = 0;
-  {
-    CriticalSectionScoped sendCs(_sendCritSect);
-    uint32_t targetRate = _mediaOpt.SetTargetRates(target_bitrate,
-                                                   lossRate,
-                                                   rtt,
-                                                   protection_callback_,
-                                                   qm_settings_callback_);
-    if (_encoder != NULL) {
-      ret = _encoder->SetChannelParameters(lossRate, rtt);
-      if (ret < 0) {
-        return ret;
-      }
-      ret = (int32_t)_encoder->SetRates(targetRate, _mediaOpt.InputFrameRate());
-      if (ret < 0) {
-        return ret;
-      }
-    } else {
-      return VCM_UNINITIALIZED;
-    }  // encoder
-  }    // send side
-  return VCM_OK;
+  // TODO(tommi,mflodman): This method is called on the network thread via the
+  // OnNetworkChanged event (ViEEncoder::OnNetworkChanged). Could we instead
+  // post the updated information to the encoding thread and not grab a lock
+  // here?  This effectively means that the network thread will be blocked for
+  // as much as frame encoding period.
+
+  CriticalSectionScoped sendCs(_sendCritSect);
+  uint32_t target_rate = _mediaOpt.SetTargetRates(target_bitrate,
+                                                  lossRate,
+                                                  rtt,
+                                                  protection_callback_,
+                                                  qm_settings_callback_);
+  uint32_t input_frame_rate = _mediaOpt.InputFrameRate();
+
+  int32_t ret = VCM_UNINITIALIZED;
+  static_assert(VCM_UNINITIALIZED < 0, "VCM_UNINITIALIZED must be negative.");
+
+  if (_encoder != NULL) {
+    ret = _encoder->SetChannelParameters(lossRate, rtt);
+    if (ret >= 0) {
+      ret = _encoder->SetRates(target_rate, input_frame_rate);
+    }
+  }
+  return ret;
 }
 
 int32_t VideoSender::RegisterTransportCallback(
@@ -300,6 +309,9 @@ int32_t VideoSender::RegisterSendStatisticsCallback(
 int32_t VideoSender::RegisterVideoQMCallback(
     VCMQMSettingsCallback* qm_settings_callback) {
   CriticalSectionScoped cs(_sendCritSect);
+  DCHECK(qm_settings_callback_ == qm_settings_callback ||
+         !qm_settings_callback_ ||
+         !qm_settings_callback) << "Overwriting the previous callback?";
   qm_settings_callback_ = qm_settings_callback;
   _mediaOpt.EnableQM(qm_settings_callback_ != NULL);
   return VCM_OK;
@@ -310,6 +322,9 @@ int32_t VideoSender::RegisterVideoQMCallback(
 int32_t VideoSender::RegisterProtectionCallback(
     VCMProtectionCallback* protection_callback) {
   CriticalSectionScoped cs(_sendCritSect);
+  DCHECK(protection_callback_ == protection_callback ||
+         !protection_callback_ ||
+         !protection_callback) << "Overwriting the previous callback?";
   protection_callback_ = protection_callback;
   return VCM_OK;
 }
