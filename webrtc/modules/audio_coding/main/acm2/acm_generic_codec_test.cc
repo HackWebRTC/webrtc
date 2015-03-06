@@ -39,21 +39,16 @@ class AcmGenericCodecTest : public ::testing::Test {
     ASSERT_EQ(0, codec_->InitEncoder(&acm_codec_params_, true));
   }
 
-  void EncodeAndVerify(int expected_return_val,
-                       size_t expected_out_length,
+  void EncodeAndVerify(size_t expected_out_length,
                        uint32_t expected_timestamp,
-                       WebRtcACMEncodingType expected_encoding_type,
                        int expected_payload_type,
                        int expected_send_even_if_empty) {
     uint8_t out[kDataLengthSamples];
     int16_t out_length;
-    WebRtcACMEncodingType encoding_type;
     AudioEncoder::EncodedInfo encoded_info;
-    EXPECT_EQ(expected_return_val,
-              codec_->Encode(timestamp_, kZeroData, kDataLengthSamples, 1, out,
-                             &out_length,&encoding_type, &encoded_info));
+    codec_->Encode(timestamp_, kZeroData, kDataLengthSamples, 1, out,
+                   &out_length, &encoded_info);
     timestamp_ += kDataLengthSamples;
-    EXPECT_EQ(expected_encoding_type, encoding_type);
     EXPECT_TRUE(encoded_info.redundant.empty());
     EXPECT_EQ(expected_out_length, encoded_info.encoded_bytes);
     EXPECT_EQ(expected_out_length, rtc::checked_cast<size_t>(out_length));
@@ -75,35 +70,36 @@ class AcmGenericCodecTest : public ::testing::Test {
 // (which is signaled as 0 bytes output of type kNoEncoding). The next encode
 // call should produce one SID frame of 9 bytes. The third call should not
 // result in any output (just like the first one). The fourth and final encode
-// call should produce an "empty frame", which is like no output, but with the
-// return value from the encode function being 1. (The reason to produce an
-// empty frame is to drive sending of DTMF packets in the RTP/RTCP module.)
+// call should produce an "empty frame", which is like no output, but with
+// AudioEncoder::EncodedInfo::send_even_if_empty set to true. (The reason to
+// produce an empty frame is to drive sending of DTMF packets in the RTP/RTCP
+// module.)
 TEST_F(AcmGenericCodecTest, VerifyCngFrames) {
   CreateCodec();
   uint32_t expected_timestamp = timestamp_;
   // Verify no frame.
   {
     SCOPED_TRACE("First encoding");
-    EncodeAndVerify(0, 0, expected_timestamp, kNoEncoding, -1, -1);
+    EncodeAndVerify(0, expected_timestamp, -1, -1);
   }
 
   // Verify SID frame delivered.
   {
     SCOPED_TRACE("Second encoding");
-    EncodeAndVerify(9, 9, expected_timestamp, kPassiveDTXNB, kCngPt, 1);
+    EncodeAndVerify(9, expected_timestamp, kCngPt, 1);
   }
 
   // Verify no frame.
   {
     SCOPED_TRACE("Third encoding");
-    EncodeAndVerify(0, 0, expected_timestamp, kNoEncoding, -1, -1);
+    EncodeAndVerify(0, expected_timestamp, -1, -1);
   }
 
   // Verify NoEncoding.
   expected_timestamp += 2 * kDataLengthSamples;
   {
     SCOPED_TRACE("Fourth encoding");
-    EncodeAndVerify(1, 0, expected_timestamp, kNoEncoding, kCngPt, 1);
+    EncodeAndVerify(0, expected_timestamp, kCngPt, 1);
   }
 }
 

@@ -23,22 +23,18 @@ namespace webrtc {
 
 class ActivityMonitor : public ACMVADCallback {
  public:
-  static const int kPacketTypes = 6;
-
   ActivityMonitor();
-  int32_t InFrameType(int16_t frame_type);
+  int32_t InFrameType(FrameType frame_type);
   void PrintStatistics();
   void ResetStatistics();
   void GetStatistics(uint32_t* stats);
  private:
-  // Counting according to
-  //   counter_[0] - kNoEncoding,
-  //   counter_[1] - kActiveNormalEncoded,
-  //   counter_[2] - kPassiveNormalEncoded,
-  //   counter_[3] - kPassiveDTXNB,
-  //   counter_[4] - kPassiveDTXWB,
-  //   counter_[5] - kPassiveDTXSWB
-  uint32_t counter_[kPacketTypes];
+  // 0 - kFrameEmpty
+  // 1 - kAudioFrameSpeech
+  // 2 - kAudioFrameCN
+  // 3 - kVideoFrameKey (not used by audio)
+  // 4 - kVideoFrameDelta (not used by audio)
+  uint32_t counter_[5];
 };
 
 
@@ -49,7 +45,6 @@ class ActivityMonitor : public ACMVADCallback {
 class TestVadDtx : public ACMTest {
  public:
   static const int kOutputFreqHz = 16000;
-  static const int kPacketTypes = 6;
 
   TestVadDtx();
 
@@ -65,12 +60,11 @@ class TestVadDtx : public ACMTest {
   // 0  : there have been no packets of type |x|,
   // 1  : there have been packets of type |x|,
   // with |x| indicates the following packet types
-  // 0 - kNoEncoding
-  // 1 - kActiveNormalEncoded
-  // 2 - kPassiveNormalEncoded
-  // 3 - kPassiveDTXNB
-  // 4 - kPassiveDTXWB
-  // 5 - kPassiveDTXSWB
+  // 0 - kFrameEmpty
+  // 1 - kAudioFrameSpeech
+  // 2 - kAudioFrameCN
+  // 3 - kVideoFrameKey (not used by audio)
+  // 4 - kVideoFrameDelta (not used by audio)
   void Run(std::string in_filename, int frequency, int channels,
            std::string out_filename, bool append, const int* expects);
 

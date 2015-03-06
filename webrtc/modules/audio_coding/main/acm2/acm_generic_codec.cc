@@ -36,47 +36,27 @@ namespace webrtc {
 namespace {
 static const int kInvalidPayloadType = 255;
 
-std::map<int, std::pair<int, WebRtcACMEncodingType>>::iterator
-FindSampleRateInMap(
-    std::map<int, std::pair<int, WebRtcACMEncodingType>>* cng_pt_map,
-    int sample_rate_hz) {
+std::map<int, int>::iterator FindSampleRateInMap(std::map<int, int>* cng_pt_map,
+                                                 int sample_rate_hz) {
   return find_if(cng_pt_map->begin(), cng_pt_map->end(),
                  [sample_rate_hz](decltype(*cng_pt_map->begin()) p) {
-    return p.second.first == sample_rate_hz;
-  });
+                   return p.second == sample_rate_hz;
+                 });
 }
 
-void SetCngPtInMap(
-    std::map<int, std::pair<int, WebRtcACMEncodingType>>* cng_pt_map,
-    int sample_rate_hz,
-    int payload_type) {
+void SetCngPtInMap(std::map<int, int>* cng_pt_map,
+                   int sample_rate_hz,
+                   int payload_type) {
   if (payload_type == kInvalidPayloadType)
     return;
   CHECK_GE(payload_type, 0);
   CHECK_LT(payload_type, 128);
-  WebRtcACMEncodingType encoding_type;
-  switch (sample_rate_hz) {
-    case 8000:
-      encoding_type = kPassiveDTXNB;
-      break;
-    case 16000:
-      encoding_type = kPassiveDTXWB;
-      break;
-    case 32000:
-      encoding_type = kPassiveDTXSWB;
-      break;
-    case 48000:
-      encoding_type = kPassiveDTXFB;
-      break;
-    default:
-      FATAL() << "Unsupported frequency.";
-  }
   auto pt_iter = FindSampleRateInMap(cng_pt_map, sample_rate_hz);
   if (pt_iter != cng_pt_map->end()) {
     // Remove item in map with sample_rate_hz.
     cng_pt_map->erase(pt_iter);
   }
-  (*cng_pt_map)[payload_type] = std::make_pair(sample_rate_hz, encoding_type);
+  (*cng_pt_map)[payload_type] = sample_rate_hz;
 }
 }  // namespace
 
@@ -230,14 +210,13 @@ CNG_dec_inst* AudioDecoderProxy::CngDecoderInstance() {
   return decoder_->CngDecoderInstance();
 }
 
-int16_t ACMGenericCodec::Encode(uint32_t input_timestamp,
-                                const int16_t* audio,
-                                uint16_t length_per_channel,
-                                uint8_t audio_channel,
-                                uint8_t* bitstream,
-                                int16_t* bitstream_len_byte,
-                                WebRtcACMEncodingType* encoding_type,
-                                AudioEncoder::EncodedInfo* encoded_info) {
+void ACMGenericCodec::Encode(uint32_t input_timestamp,
+                             const int16_t* audio,
+                             uint16_t length_per_channel,
+                             uint8_t audio_channel,
+                             uint8_t* bitstream,
+                             int16_t* bitstream_len_byte,
+                             AudioEncoder::EncodedInfo* encoded_info) {
   WriteLockScoped wl(codec_wrapper_lock_);
   CHECK_EQ(length_per_channel, encoder_->SampleRateHz() / 100);
   rtp_timestamp_ = first_frame_
@@ -256,26 +235,6 @@ int16_t ACMGenericCodec::Encode(uint32_t input_timestamp,
   encoder_->Encode(rtp_timestamp_, audio, length_per_channel,
                    2 * MAX_PAYLOAD_SIZE_BYTE, bitstream, encoded_info);
   *bitstream_len_byte = static_cast<int16_t>(encoded_info->encoded_bytes);
-  if (encoded_info->encoded_bytes == 0) {
-    *encoding_type = kNoEncoding;
-    if (encoded_info->send_even_if_empty) {
-      bitstream[0] = 0;
-      return 1;
-    }
-    return 0;
-  }
-
-  int payload_type = encoded_info->payload_type;
-  if (!encoded_info->redundant.empty())
-    payload_type = encoded_info->redundant[0].payload_type;
-
-  auto cng_iter = cng_pt_.find(payload_type);
-  if (cng_iter == cng_pt_.end()) {
-    *encoding_type = kActiveNormalEncoded;
-  } else {
-    *encoding_type = cng_iter->second.second;
-  }
-  return *bitstream_len_byte;
 }
 
 int16_t ACMGenericCodec::EncoderParams(WebRtcACMCodecParams* enc_params) {

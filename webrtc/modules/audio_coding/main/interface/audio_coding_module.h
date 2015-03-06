@@ -58,7 +58,7 @@ class ACMVADCallback {
  public:
   virtual ~ACMVADCallback() {}
 
-  virtual int32_t InFrameType(int16_t frameType) = 0;
+  virtual int32_t InFrameType(FrameType frame_type) = 0;
 };
 
 // Callback class used for reporting receiver statistics

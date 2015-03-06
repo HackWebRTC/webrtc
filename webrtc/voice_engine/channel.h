@@ -353,7 +353,7 @@ public:
                      const RTPFragmentationHeader* fragmentation) override;
 
     // From ACMVADCallback in the ACM
-    int32_t InFrameType(int16_t frameType) override;
+    int32_t InFrameType(FrameType frame_type) override;
 
     int32_t OnRxVadDetected(int vadDecision);
 

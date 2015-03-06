@@ -122,38 +122,15 @@ class ACMGenericCodec {
   //   -timestamp          : contains the RTP timestamp, this is the
   //                         sampling time of the first sample encoded
   //                         (measured in number of samples).
-  //   -encoding_type       : contains the type of encoding applied on the
-  //                         audio samples. The alternatives are
-  //                         (c.f. acm_common_types.h)
-  //                         -kNoEncoding:
-  //                            there was not enough data to encode. or
-  //                            some error has happened that we could
-  //                            not do encoding.
-  //                         -kActiveNormalEncoded:
-  //                            the audio frame is active and encoded by
-  //                            the given codec.
-  //                         -kPassiveNormalEncoded:
-  //                            the audio frame is passive but coded with
-  //                            the given codec (NO DTX).
-  //                         -kPassiveDTXWB:
-  //                            The audio frame is passive and used
-  //                            wide-band CN to encode.
-  //                         -kPassiveDTXNB:
-  //                            The audio frame is passive and used
-  //                            narrow-band CN to encode.
   //
-  // Return value:
-  //   -1 if error is occurred, otherwise the length of the bit-stream in
-  //      bytes.
   //
-  int16_t Encode(uint32_t input_timestamp,
-                 const int16_t* audio,
-                 uint16_t length_per_channel,
-                 uint8_t audio_channel,
-                 uint8_t* bitstream,
-                 int16_t* bitstream_len_byte,
-                 WebRtcACMEncodingType* encoding_type,
-                 AudioEncoder::EncodedInfo* encoded_info);
+  void Encode(uint32_t input_timestamp,
+              const int16_t* audio,
+              uint16_t length_per_channel,
+              uint8_t audio_channel,
+              uint8_t* bitstream,
+              int16_t* bitstream_len_byte,
+              AudioEncoder::EncodedInfo* encoded_info);
 
   ///////////////////////////////////////////////////////////////////////////
   // bool EncoderInitialized();
@@ -487,9 +464,8 @@ class ACMGenericCodec {
   bool first_frame_ GUARDED_BY(codec_wrapper_lock_);
   uint32_t rtp_timestamp_ GUARDED_BY(codec_wrapper_lock_);
   uint32_t last_rtp_timestamp_ GUARDED_BY(codec_wrapper_lock_);
-  // Map from payload type to sample rate (Hz) and encoding type.
-  std::map<int, std::pair<int, WebRtcACMEncodingType>> cng_pt_
-      GUARDED_BY(codec_wrapper_lock_);
+  // Map from payload type to CNG sample rate (Hz).
+  std::map<int, int> cng_pt_ GUARDED_BY(codec_wrapper_lock_);
   int red_payload_type_ GUARDED_BY(codec_wrapper_lock_);
   OpusApplicationMode opus_application_ GUARDED_BY(codec_wrapper_lock_);
   bool opus_application_set_ GUARDED_BY(codec_wrapper_lock_);

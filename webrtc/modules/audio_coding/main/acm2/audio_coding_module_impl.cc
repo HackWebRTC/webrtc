@@ -223,8 +223,6 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
   // TODO(turajs): |length_bytes| & |red_length_bytes| can be of type int if
   // ACMGenericCodec::Encode() & ACMGenericCodec::GetRedPayload() allows.
   int16_t length_bytes = 2 * MAX_PAYLOAD_SIZE_BYTE;
-  int status;
-  WebRtcACMEncodingType encoding_type;
   FrameType frame_type = kAudioFrameSpeech;
   uint8_t current_payload_type = 0;
   bool has_data_to_send = false;
@@ -238,52 +236,24 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
     if (!HaveValidEncoder("Process")) {
       return -1;
     }
-    status = codecs_[current_send_codec_idx_]->Encode(
+    codecs_[current_send_codec_idx_]->Encode(
         input_data.input_timestamp, input_data.audio,
         input_data.length_per_channel, input_data.audio_channel, stream,
-        &length_bytes, &encoding_type, &encoded_info);
-    if (status < 0) {
-      // Encode failed.
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
-                   "Process(): Encoding Failed");
-      length_bytes = 0;
-      return -1;
-    } else if (status == 0) {
+        &length_bytes, &encoded_info);
+    if (encoded_info.encoded_bytes == 0 && !encoded_info.send_even_if_empty) {
       // Not enough data.
       return 0;
     } else {
-      switch (encoding_type) {
-        case kNoEncoding: {
-          current_payload_type = previous_pltype_;
-          frame_type = kFrameEmpty;
-          length_bytes = 0;
-          break;
-        }
-        case kActiveNormalEncoded:
-        case kPassiveNormalEncoded: {
-          frame_type = kAudioFrameSpeech;
-          break;
-        }
-        case kPassiveDTXNB: {
-          frame_type = kAudioFrameCN;
-          break;
-        }
-        case kPassiveDTXWB: {
-          frame_type = kAudioFrameCN;
-          break;
-        }
-        case kPassiveDTXSWB: {
-          frame_type = kAudioFrameCN;
-          break;
-        }
-        case kPassiveDTXFB: {
-          frame_type = kAudioFrameCN;
-          break;
-        }
+      if (encoded_info.encoded_bytes == 0 && encoded_info.send_even_if_empty) {
+        frame_type = kFrameEmpty;
+        current_payload_type = previous_pltype_;
+      } else {
+        DCHECK_GT(encoded_info.encoded_bytes, 0u);
+        frame_type = encoded_info.speech ? kAudioFrameSpeech : kAudioFrameCN;
+        current_payload_type = encoded_info.payload_type;
+        previous_pltype_ = current_payload_type;
       }
       has_data_to_send = true;
-      current_payload_type = encoded_info.payload_type;
-      previous_pltype_ = current_payload_type;
 
       ConvertEncodedInfoToFragmentationHeader(encoded_info, &my_fragmentation);
     }
@@ -308,7 +278,7 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
 
     if (vad_callback_ != NULL) {
       // Callback with VAD decision.
-      vad_callback_->InFrameType(static_cast<int16_t>(encoding_type));
+      vad_callback_->InFrameType(frame_type);
     }
   }
   return length_bytes;

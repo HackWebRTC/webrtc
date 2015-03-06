@@ -37,21 +37,18 @@ ActivityMonitor::ActivityMonitor() {
   ResetStatistics();
 }
 
-int32_t ActivityMonitor::InFrameType(int16_t frame_type) {
+int32_t ActivityMonitor::InFrameType(FrameType frame_type) {
   counter_[frame_type]++;
   return 0;
 }
 
 void ActivityMonitor::PrintStatistics() {
   printf("\n");
-  printf("kActiveNormalEncoded  kPassiveNormalEncoded  kPassiveDTXWB  ");
-  printf("kPassiveDTXNB kPassiveDTXSWB kNoEncoding\n");
-  printf("%19u", counter_[1]);
-  printf("%22u", counter_[2]);
-  printf("%14u", counter_[3]);
-  printf("%14u", counter_[4]);
-  printf("%14u", counter_[5]);
-  printf("%11u", counter_[0]);
+  printf("kFrameEmpty       %u\n", counter_[kFrameEmpty]);
+  printf("kAudioFrameSpeech %u\n", counter_[kAudioFrameSpeech]);
+  printf("kAudioFrameCN     %u\n", counter_[kAudioFrameCN]);
+  printf("kVideoFrameKey    %u\n", counter_[kVideoFrameKey]);
+  printf("kVideoFrameDelta  %u\n", counter_[kVideoFrameDelta]);
   printf("\n\n");
 }
 
@@ -71,7 +68,6 @@ TestVadDtx::TestVadDtx()
   EXPECT_EQ(0, acm_send_->RegisterTransportCallback(channel_.get()));
   channel_->RegisterReceiverACM(acm_receive_.get());
   EXPECT_EQ(0, acm_send_->RegisterVADCallback(monitor_.get()));
-  assert(monitor_->kPacketTypes == this->kPacketTypes);
 }
 
 void TestVadDtx::RegisterCodec(CodecInst codec_param) {
@@ -118,22 +114,19 @@ void TestVadDtx::Run(std::string in_filename, int frequency, int channels,
   monitor_->PrintStatistics();
 #endif
 
-  uint32_t stats[kPacketTypes];
+  uint32_t stats[5];
   monitor_->GetStatistics(stats);
   monitor_->ResetStatistics();
 
-  for (int i = 0; i < kPacketTypes; i++) {
+  for (const auto& st : stats) {
+    int i = &st - stats;  // Calculate the current position in stats.
     switch (expects[i]) {
       case 0: {
-        EXPECT_EQ(static_cast<uint32_t>(0), stats[i]) << "stats["
-                                                      << i
-                                                      << "] error.";
+        EXPECT_EQ(0u, st) << "stats[" << i << "] error.";
         break;
       }
       case 1: {
-        EXPECT_GT(stats[i], static_cast<uint32_t>(0)) << "stats["
-                                                      << i
-                                                      << "] error.";
+        EXPECT_GT(st, 0u) << "stats[" << i << "] error.";
         break;
       }
     }
@@ -198,14 +191,7 @@ void TestWebRtcVadDtx::RunTestCases() {
 
 // Set the expectation and run the test.
 void TestWebRtcVadDtx::Test(bool new_outfile) {
-  int expects[kPacketTypes];
-  int frequency = acm_send_->SendFrequency();
-  expects[0] = -1;  // Do not care.
-  expects[1] = 1;
-  expects[2] = vad_enabled_ && !use_webrtc_dtx_;
-  expects[3] = use_webrtc_dtx_ && (frequency == 8000);
-  expects[4] = use_webrtc_dtx_ && (frequency == 16000);
-  expects[5] = use_webrtc_dtx_ && (frequency == 32000);
+  int expects[] = {-1, 1, use_webrtc_dtx_, 0, 0};
   if (new_outfile) {
     output_file_num_++;
   }
@@ -251,7 +237,7 @@ void TestWebRtcVadDtx::SetVAD(bool enable_dtx, bool enable_vad,
 // Following is the implementation of TestOpusDtx.
 void TestOpusDtx::Perform() {
 #ifdef WEBRTC_CODEC_OPUS
-  int expects[kPacketTypes] = {0, 1, 0, 0, 0, 0};
+  int expects[] = {0, 1, 0, 0, 0};
 
   // Register Opus as send codec
   std::string out_filename = webrtc::test::OutputPath() +
@@ -263,7 +249,7 @@ void TestOpusDtx::Perform() {
       32000, 1, out_filename, false, expects);
 
   EXPECT_EQ(0, acm_send_->EnableOpusDtx());
-  expects[0] = 1;
+  expects[kFrameEmpty] = 1;
   Run(webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm"),
       32000, 1, out_filename, true, expects);
 
@@ -271,7 +257,7 @@ void TestOpusDtx::Perform() {
   out_filename = webrtc::test::OutputPath() + "testOpusDtx_outFile_stereo.pcm";
   RegisterCodec(kOpusStereo);
   EXPECT_EQ(0, acm_send_->DisableOpusDtx());
-  expects[0] = 0;
+  expects[kFrameEmpty] = 0;
   Run(webrtc::test::ResourcePath("audio_coding/teststereo32kHz", "pcm"),
       32000, 2, out_filename, false, expects);
 
@@ -279,7 +265,7 @@ void TestOpusDtx::Perform() {
   EXPECT_EQ(0, acm_send_->SetOpusApplication(kVoip));
   EXPECT_EQ(0, acm_send_->EnableOpusDtx());
 
-  expects[0] = 1;
+  expects[kFrameEmpty] = 1;
   Run(webrtc::test::ResourcePath("audio_coding/teststereo32kHz", "pcm"),
       32000, 2, out_filename, true, expects);
 #endif

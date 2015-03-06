@@ -195,14 +195,13 @@ Channel::SendData(FrameType frameType,
 }
 
 int32_t
-Channel::InFrameType(int16_t frameType)
+Channel::InFrameType(FrameType frame_type)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::InFrameType(frameType=%d)", frameType);
+                 "Channel::InFrameType(frame_type=%d)", frame_type);
 
     CriticalSectionScoped cs(&_callbackCritSect);
-    // 1 indicates speech
-    _sendFrameType = (frameType == 1) ? 1 : 0;
+    _sendFrameType = (frame_type == kAudioFrameSpeech);
     return 0;
 }
 
