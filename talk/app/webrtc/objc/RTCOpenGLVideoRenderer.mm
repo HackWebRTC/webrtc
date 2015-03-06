@@ -31,6 +31,10 @@
 
 #import "RTCOpenGLVideoRenderer.h"
 
+#include <string.h>
+
+#include "webrtc/base/scoped_ptr.h"
+
 #if TARGET_OS_IPHONE
 #import <OpenGLES/ES2/gl.h>
 #else
@@ -61,6 +65,17 @@
 #define FRAGMENT_SHADER_COLOR "fragColor"
 #define FRAGMENT_SHADER_TEXTURE "texture"
 #endif
+
+void CopyPlane(uint8_t* dst,
+               int dst_stride,
+               const uint8_t* src,
+               int src_stride,
+               int width,
+               int height) {
+  for (int y = 0; y < height; ++y) {
+    memcpy(dst + y * dst_stride, src + y * src_stride, width);
+  }
+}
 
 // Vertex shader doesn't do anything except pass coordinates through.
 static const char kVertexShaderSource[] =
@@ -367,9 +382,20 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
 - (BOOL)updateTextureDataForFrame:(RTCI420Frame*)frame {
   NSUInteger textureOffset = _currentTextureSet * 3;
   NSAssert(textureOffset + 3 <= kNumTextures, @"invalid offset");
-  NSParameterAssert(frame.yPitch == frame.width);
-  NSParameterAssert(frame.uPitch == frame.chromaWidth);
-  NSParameterAssert(frame.vPitch == frame.chromaWidth);
+
+  // TODO(magjed): Remove this frame copy, BUG=1128.
+  rtc::scoped_ptr<uint8_t[]> tmp;
+  if (frame.yPitch != frame.width || frame.uPitch != frame.chromaWidth ||
+      frame.vPitch != frame.chromaWidth) {
+    tmp.reset(new uint8_t[frame.width * frame.height]);
+  }
+
+  const uint8_t* yPlane = frame.yPlane;
+  if (frame.yPitch != frame.width) {
+    yPlane = tmp.get();
+    CopyPlane(tmp.get(), frame.width, frame.yPlane, frame.yPitch, frame.width,
+              frame.height);
+  }
 
   glActiveTexture(GL_TEXTURE0 + textureOffset);
   // When setting texture sampler uniforms, the texture index is used not
@@ -383,7 +409,14 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
                0,
                RTC_PIXEL_FORMAT,
                GL_UNSIGNED_BYTE,
-               frame.yPlane);
+               yPlane);
+
+  const uint8_t* uPlane = frame.uPlane;
+  if (frame.uPitch != frame.chromaWidth) {
+    uPlane = tmp.get();
+    CopyPlane(tmp.get(), frame.chromaWidth, frame.uPlane, frame.uPitch,
+              frame.chromaWidth, frame.chromaHeight);
+  }
 
   glActiveTexture(GL_TEXTURE0 + textureOffset + 1);
   glUniform1i(_uSampler, textureOffset + 1);
@@ -395,7 +428,14 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
                0,
                RTC_PIXEL_FORMAT,
                GL_UNSIGNED_BYTE,
-               frame.uPlane);
+               uPlane);
+
+  const uint8_t* vPlane = frame.vPlane;
+  if (frame.vPitch != frame.chromaWidth) {
+    vPlane = tmp.get();
+    CopyPlane(tmp.get(), frame.chromaWidth, frame.vPlane, frame.vPitch,
+              frame.chromaWidth, frame.chromaHeight);
+  }
 
   glActiveTexture(GL_TEXTURE0 + textureOffset + 2);
   glUniform1i(_vSampler, textureOffset + 2);
@@ -407,7 +447,7 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
                0,
                RTC_PIXEL_FORMAT,
                GL_UNSIGNED_BYTE,
-               frame.vPlane);
+               vPlane);
 
   _currentTextureSet = (_currentTextureSet + 1) % kNumTextureSets;
   return YES;
