@@ -37,7 +37,18 @@ I420VideoFrame::I420VideoFrame(
       rotation_(rotation) {
 }
 
-I420VideoFrame::~I420VideoFrame() {}
+I420VideoFrame::I420VideoFrame(NativeHandle* handle,
+                               int width,
+                               int height,
+                               uint32_t timestamp,
+                               int64_t render_time_ms)
+    : video_frame_buffer_(
+          new rtc::RefCountedObject<TextureBuffer>(handle, width, height)),
+      timestamp_(timestamp),
+      ntp_time_ms_(0),
+      render_time_ms_(render_time_ms),
+      rotation_(kVideoRotation_0) {
+}
 
 int I420VideoFrame::CreateEmptyFrame(int width, int height,
                                      int stride_y, int stride_u, int stride_v) {

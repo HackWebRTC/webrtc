@@ -15,7 +15,6 @@
 #include "webrtc/call.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/common_video/interface/native_handle.h"
-#include "webrtc/common_video/interface/texture_video_frame.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
@@ -1032,7 +1031,7 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndI420VideoFrames) {
   send_config_.pre_encode_callback = &observer;
   CreateStreams();
 
-  // Prepare five input frames. Send I420VideoFrame and TextureVideoFrame
+  // Prepare five input frames. Send ordinary I420VideoFrame and texture frames
   // alternatively.
   ScopedVector<I420VideoFrame> input_frames;
   int width = static_cast<int>(encoder_config_.streams[0].width);
@@ -1043,11 +1042,11 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndI420VideoFrames) {
       new webrtc::RefCountImpl<FakeNativeHandle>();
   webrtc::RefCountImpl<FakeNativeHandle>* handle3 =
       new webrtc::RefCountImpl<FakeNativeHandle>();
-  input_frames.push_back(new TextureVideoFrame(handle1, width, height, 1, 1));
-  input_frames.push_back(new TextureVideoFrame(handle2, width, height, 2, 2));
+  input_frames.push_back(new I420VideoFrame(handle1, width, height, 1, 1));
+  input_frames.push_back(new I420VideoFrame(handle2, width, height, 2, 2));
   input_frames.push_back(CreateI420VideoFrame(width, height, 1));
   input_frames.push_back(CreateI420VideoFrame(width, height, 2));
-  input_frames.push_back(new TextureVideoFrame(handle3, width, height, 3, 3));
+  input_frames.push_back(new I420VideoFrame(handle3, width, height, 3, 3));
 
   send_stream_->Start();
   for (size_t i = 0; i < input_frames.size(); i++) {

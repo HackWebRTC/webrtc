@@ -17,12 +17,27 @@
 
 namespace webrtc {
 
+class NativeHandleImpl : public NativeHandle {
+ public:
+  NativeHandleImpl() : ref_count_(0) {}
+  virtual ~NativeHandleImpl() {}
+  virtual int32_t AddRef() { return ++ref_count_; }
+  virtual int32_t Release() { return --ref_count_; }
+  virtual void* GetHandle() { return NULL; }
+
+  int32_t ref_count() { return ref_count_; }
+ private:
+  int32_t ref_count_;
+};
+
 bool EqualPlane(const uint8_t* data1,
                 const uint8_t* data2,
                 int stride,
                 int width,
                 int height);
 bool EqualFrames(const I420VideoFrame& frame1, const I420VideoFrame& frame2);
+bool EqualTextureFrames(const I420VideoFrame& frame1,
+                        const I420VideoFrame& frame2);
 int ExpectedSize(int plane_stride, int image_height, PlaneType type);
 
 TEST(TestI420VideoFrame, InitialValues) {
@@ -264,6 +279,38 @@ TEST(TestI420VideoFrame, FailToReuseAllocation) {
   EXPECT_NE(v, frame1.buffer(kVPlane));
 }
 
+TEST(TestI420VideoFrame, TextureInitialValues) {
+  NativeHandleImpl handle;
+  I420VideoFrame frame(&handle, 640, 480, 100, 10);
+  EXPECT_EQ(640, frame.width());
+  EXPECT_EQ(480, frame.height());
+  EXPECT_EQ(100u, frame.timestamp());
+  EXPECT_EQ(10, frame.render_time_ms());
+  EXPECT_EQ(&handle, frame.native_handle());
+
+  frame.set_timestamp(200);
+  EXPECT_EQ(200u, frame.timestamp());
+  frame.set_render_time_ms(20);
+  EXPECT_EQ(20, frame.render_time_ms());
+}
+
+TEST(TestI420VideoFrame, RefCount) {
+  NativeHandleImpl handle;
+  EXPECT_EQ(0, handle.ref_count());
+  I420VideoFrame *frame = new I420VideoFrame(&handle, 640, 480, 100, 200);
+  EXPECT_EQ(1, handle.ref_count());
+  delete frame;
+  EXPECT_EQ(0, handle.ref_count());
+}
+
+TEST(TestI420VideoFrame, CloneTextureFrame) {
+  NativeHandleImpl handle;
+  I420VideoFrame frame1(&handle, 640, 480, 100, 200);
+  rtc::scoped_ptr<I420VideoFrame> frame2(frame1.CloneFrame());
+  EXPECT_TRUE(frame2.get() != NULL);
+  EXPECT_TRUE(EqualTextureFrames(frame1, *frame2));
+}
+
 bool EqualPlane(const uint8_t* data1,
                 const uint8_t* data2,
                 int stride,
@@ -297,6 +344,15 @@ bool EqualFrames(const I420VideoFrame& frame1, const I420VideoFrame& frame2) {
                     frame1.stride(kUPlane), half_width, half_height) &&
          EqualPlane(frame1.buffer(kVPlane), frame2.buffer(kVPlane),
                     frame1.stride(kVPlane), half_width, half_height);
+}
+
+bool EqualTextureFrames(const I420VideoFrame& frame1,
+                        const I420VideoFrame& frame2) {
+  return ((frame1.native_handle() == frame2.native_handle()) &&
+          (frame1.width() == frame2.width()) &&
+          (frame1.height() == frame2.height()) &&
+          (frame1.timestamp() == frame2.timestamp()) &&
+          (frame1.render_time_ms() == frame2.render_time_ms()));
 }
 
 int ExpectedSize(int plane_stride, int image_height, PlaneType type) {

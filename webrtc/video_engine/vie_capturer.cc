@@ -10,7 +10,6 @@
 
 #include "webrtc/video_engine/vie_capturer.h"
 
-#include "webrtc/common_video/interface/texture_video_frame.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/utility/interface/process_thread.h"

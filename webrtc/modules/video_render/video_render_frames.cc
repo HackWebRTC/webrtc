@@ -12,7 +12,6 @@
 
 #include <assert.h>
 
-#include "webrtc/common_video/interface/texture_video_frame.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace.h"

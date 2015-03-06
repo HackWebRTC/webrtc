@@ -29,11 +29,11 @@
 #ifndef TALK_APP_WEBRTC_JAVA_JNI_NATIVE_HANDLE_IMPL_H_
 #define TALK_APP_WEBRTC_JAVA_JNI_NATIVE_HANDLE_IMPL_H_
 
-#include "webrtc/common_video/interface/texture_video_frame.h"
+#include "webrtc/common_video/interface/native_handle.h"
 
 namespace webrtc_jni {
 
-// Wrapper for texture object in TextureVideoFrame.
+// Wrapper for texture object in TextureBuffer.
 class NativeHandleImpl : public webrtc::NativeHandle {
  public:
   NativeHandleImpl() :

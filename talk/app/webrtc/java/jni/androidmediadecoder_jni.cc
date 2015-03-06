@@ -36,7 +36,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/common_video/interface/texture_video_frame.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/system_wrappers/interface/logcat_trace_context.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
@@ -54,7 +53,6 @@ using webrtc::DecodedImageCallback;
 using webrtc::EncodedImage;
 using webrtc::I420VideoFrame;
 using webrtc::RTPFragmentationHeader;
-using webrtc::TextureVideoFrame;
 using webrtc::TickTime;
 using webrtc::VideoCodec;
 using webrtc::VideoCodecType;
@@ -657,7 +655,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   int32_t callback_status = WEBRTC_VIDEO_CODEC_OK;
   if (use_surface_) {
     native_handle_.SetTextureObject(surface_texture_, texture_id);
-    TextureVideoFrame texture_image(
+    I420VideoFrame texture_image(
         &native_handle_, width, height, output_timestamp_, 0);
     texture_image.set_ntp_time_ms(output_ntp_time_ms_);
     callback_status = callback_->Decoded(texture_image);

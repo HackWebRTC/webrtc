@@ -19,7 +19,6 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
 #include "webrtc/common_video/interface/native_handle.h"
-#include "webrtc/common_video/interface/texture_video_frame.h"
 #include "webrtc/modules/utility/interface/mock/mock_process_thread.h"
 #include "webrtc/modules/video_capture/include/mock/mock_video_capture.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -136,7 +135,7 @@ TEST_F(ViECapturerTest, TestTextureFrames) {
     webrtc::RefCountImpl<FakeNativeHandle>* handle =
               new webrtc::RefCountImpl<FakeNativeHandle>();
     // Add one to |i| so that width/height > 0.
-    input_frames_.push_back(new TextureVideoFrame(handle, i + 1, i + 1, i, i));
+    input_frames_.push_back(new I420VideoFrame(handle, i + 1, i + 1, i, i));
     AddInputFrame(input_frames_[i]);
     WaitOutputFrame();
   }
@@ -167,7 +166,7 @@ TEST_F(ViECapturerTest, TestI420Frames) {
 TEST_F(ViECapturerTest, TestI420FrameAfterTextureFrame) {
   webrtc::RefCountImpl<FakeNativeHandle>* handle =
       new webrtc::RefCountImpl<FakeNativeHandle>();
-  input_frames_.push_back(new TextureVideoFrame(handle, 1, 1, 1, 1));
+  input_frames_.push_back(new I420VideoFrame(handle, 1, 1, 1, 1));
   AddInputFrame(input_frames_[0]);
   WaitOutputFrame();
 
@@ -189,7 +188,7 @@ TEST_F(ViECapturerTest, TestTextureFrameAfterI420Frame) {
 
   webrtc::RefCountImpl<FakeNativeHandle>* handle =
       new webrtc::RefCountImpl<FakeNativeHandle>();
-  input_frames_.push_back(new TextureVideoFrame(handle, 1, 1, 1, 1));
+  input_frames_.push_back(new I420VideoFrame(handle, 1, 1, 1, 1));
   AddInputFrame(input_frames_[1]);
   WaitOutputFrame();
 
