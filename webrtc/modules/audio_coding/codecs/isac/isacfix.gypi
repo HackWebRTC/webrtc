@@ -95,6 +95,9 @@
             }],
           ],
         }],
+        ['target_arch=="arm64"', {
+          'dependencies': ['isac_neon', ],
+        }],
         ['target_arch=="mipsel" and mips_arch_variant!="r6" and android_webview_build==0', {
           'sources': [
             'fix/source/entropy_coding_mips.c',
@@ -128,7 +131,7 @@
     },
   ],
   'conditions': [
-    ['target_arch=="arm" and arm_version>=7', {
+    ['target_arch=="arm" and arm_version>=7 or target_arch=="arm64"', {
       'targets': [
         {
           'target_name': 'isac_neon',
@@ -156,6 +159,21 @@
                 '-ffat-lto-objects',
               ],
             }],
+            ['target_arch=="arm64"', {
+              'sources!': [
+                'fix/source/filterbanks_neon.S',
+                'fix/source/filters_neon.S',
+                'fix/source/lattice_neon.S',
+                'fix/source/lpc_masking_model_neon.S',
+                'fix/source/transform_neon.S',
+              ],
+              'sources': [
+                'fix/source/filterbanks_neon.c',
+                'fix/source/filters_neon.c',
+                'fix/source/lattice_neon.c',
+                'fix/source/transform_neon.c',
+              ],
+            }]
           ],
         },
       ],
