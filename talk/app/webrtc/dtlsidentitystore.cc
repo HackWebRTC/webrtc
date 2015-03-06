@@ -63,8 +63,8 @@ void DtlsIdentityStore::Initialize() {
 }
 
 void DtlsIdentityStore::RequestIdentity(DTLSIdentityRequestObserver* observer) {
-  CHECK(rtc::Thread::Current() == signaling_thread_);
-  CHECK(observer);
+  DCHECK(rtc::Thread::Current() == signaling_thread_);
+  DCHECK(observer);
 
   // Must return the free identity async.
   if (free_identity_.get()) {
@@ -110,7 +110,7 @@ void DtlsIdentityStore::GenerateIdentity() {
 
 void DtlsIdentityStore::OnIdentityGenerated(
     rtc::scoped_ptr<rtc::SSLIdentity> identity) {
-  CHECK(rtc::Thread::Current() == signaling_thread_);
+  DCHECK(rtc::Thread::Current() == signaling_thread_);
 
   pending_jobs_--;
   LOG(LS_VERBOSE) << "A DTLS identity generation job returned, "
@@ -128,8 +128,8 @@ void DtlsIdentityStore::OnIdentityGenerated(
 
 void DtlsIdentityStore::ReturnIdentity(
     rtc::scoped_ptr<rtc::SSLIdentity> identity) {
-  CHECK(!free_identity_.get());
-  CHECK(!pending_observers_.empty());
+  DCHECK(!free_identity_.get());
+  DCHECK(!pending_observers_.empty());
 
   rtc::scoped_refptr<DTLSIdentityRequestObserver> observer =
       pending_observers_.front();
@@ -150,7 +150,7 @@ void DtlsIdentityStore::ReturnIdentity(
 }
 
 void DtlsIdentityStore::GenerateIdentity_w() {
-  CHECK(rtc::Thread::Current() == worker_thread_);
+  DCHECK(rtc::Thread::Current() == worker_thread_);
 
   rtc::SSLIdentity* identity = rtc::SSLIdentity::Generate(kIdentityName);
 
