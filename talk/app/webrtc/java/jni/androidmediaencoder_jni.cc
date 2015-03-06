@@ -822,7 +822,7 @@ int32_t MediaCodecVideoEncoder::NextNaluPosition(
       continue;
     }
     if (head[3] != 0x01) { // got 000000xx
-      head += 4; // xx != 1, continue searching.
+      head++; // xx != 1, continue searching.
       continue;
     }
     return (int32_t)(head - buffer);
