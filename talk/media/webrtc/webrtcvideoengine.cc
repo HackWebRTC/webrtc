@@ -294,15 +294,29 @@ WebRtcSimulcastEncoderFactory::~WebRtcSimulcastEncoderFactory() {
 
 bool WebRtcSimulcastEncoderFactory::UseSimulcastEncoderFactory(
     const std::vector<WebRtcVideoEncoderFactory::VideoCodec>& codecs) {
-  return codecs.size() == 1 && codecs[0].type == webrtc::kVideoCodecVP8;
+  // If any codec is VP8, use the simulcast factory. If asked to create a
+  // non-VP8 codec, we'll just return a contained factory encoder directly.
+  for (const auto& codec: codecs) {
+    if (codec.type == webrtc::kVideoCodecVP8) {
+      return true;
+    }
+  }
+  return false;
 }
 
 webrtc::VideoEncoder* WebRtcSimulcastEncoderFactory::CreateVideoEncoder(
     webrtc::VideoCodecType type) {
-  ASSERT(type == webrtc::kVideoCodecVP8);
   ASSERT(factory_ != NULL);
-  return new webrtc::SimulcastEncoderAdapter(
-      new EncoderFactoryAdapter(factory_));
+  // If it's a codec type we can simulcast, create a wrapped encoder.
+  if (type == webrtc::kVideoCodecVP8) {
+    return new webrtc::SimulcastEncoderAdapter(
+        new EncoderFactoryAdapter(factory_));
+  }
+  webrtc::VideoEncoder* encoder = factory_->CreateVideoEncoder(type);
+  if (encoder) {
+    non_simulcast_encoders_.push_back(encoder);
+  }
+  return encoder;
 }
 
 const std::vector<WebRtcVideoEncoderFactory::VideoCodec>&
@@ -312,6 +326,17 @@ WebRtcSimulcastEncoderFactory::codecs() const {
 
 void WebRtcSimulcastEncoderFactory::DestroyVideoEncoder(
     webrtc::VideoEncoder* encoder) {
+  // Check first to see if the encoder wasn't wrapped in a
+  // SimulcastEncoderAdapter. In that case, ask the factory to destroy it.
+  if (std::remove(non_simulcast_encoders_.begin(),
+                  non_simulcast_encoders_.end(), encoder) !=
+      non_simulcast_encoders_.end()) {
+    factory_->DestroyVideoEncoder(encoder);
+    return;
+  }
+
+  // Otherwise, SimulcastEncoderAdapter can be deleted directly, and will call
+  // DestroyVideoEncoder on the factory for individual encoder instances.
   delete encoder;
 }
 

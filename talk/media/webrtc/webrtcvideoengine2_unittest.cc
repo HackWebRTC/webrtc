@@ -683,6 +683,9 @@ TEST_F(WebRtcVideoEngine2Test, UsesSimulcastAdapterForVp8Factories) {
   }
 
   EXPECT_TRUE(channel->SetCapturer(ssrcs.front(), NULL));
+
+  channel.reset();
+  ASSERT_EQ(0u, encoder_factory.encoders().size());
 }
 
 TEST_F(WebRtcVideoEngine2Test, ChannelWithExternalH264CanChangeToInternalVp8) {
@@ -717,6 +720,66 @@ TEST_F(WebRtcVideoEngine2Test,
 
   EXPECT_TRUE(
       channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
+  // Make sure DestroyVideoEncoder was called on the factory.
+  ASSERT_EQ(0u, encoder_factory.encoders().size());
+}
+
+TEST_F(WebRtcVideoEngine2Test,
+       UsesSimulcastAdapterForVp8WithCombinedVP8AndH264Factory) {
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
+
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kVp8Codec);
+
+  rtc::scoped_ptr<VideoMediaChannel> channel(
+      SetUpForExternalEncoderFactory(&encoder_factory, codecs));
+
+  std::vector<uint32> ssrcs = MAKE_VECTOR(kSsrcs3);
+
+  EXPECT_TRUE(
+      channel->AddSendStream(CreateSimStreamParams("cname", ssrcs)));
+  EXPECT_TRUE(channel->SetSend(true));
+
+  // Send a fake frame, or else the media engine will configure the simulcast
+  // encoder adapter at a low-enough size that it'll only create a single
+  // encoder layer.
+  cricket::FakeVideoCapturer capturer;
+  EXPECT_TRUE(channel->SetCapturer(ssrcs.front(), &capturer));
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  EXPECT_TRUE(capturer.CaptureFrame());
+
+  ASSERT_GT(encoder_factory.encoders().size(), 1u);
+  EXPECT_EQ(webrtc::kVideoCodecVP8,
+            encoder_factory.encoders()[0]->GetCodecSettings().codecType);
+
+  channel.reset();
+  // Make sure DestroyVideoEncoder was called on the factory.
+  EXPECT_EQ(0u, encoder_factory.encoders().size());
+}
+
+TEST_F(WebRtcVideoEngine2Test,
+       DestroysNonSimulcastEncoderFromCombinedVP8AndH264Factory) {
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
+
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kH264Codec);
+
+  rtc::scoped_ptr<VideoMediaChannel> channel(
+      SetUpForExternalEncoderFactory(&encoder_factory, codecs));
+
+  EXPECT_TRUE(
+      channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
+  ASSERT_EQ(1u, encoder_factory.encoders().size());
+  EXPECT_EQ(webrtc::kVideoCodecH264,
+            encoder_factory.encoders()[0]->GetCodecSettings().codecType);
+
+  channel.reset();
+  // Make sure DestroyVideoEncoder was called on the factory.
   ASSERT_EQ(0u, encoder_factory.encoders().size());
 }
 
@@ -2652,12 +2715,6 @@ TEST_F(WebRtcVideoEngine2SimulcastTest,
 
 TEST_F(WebRtcVideoEngine2SimulcastTest,
        DISABLED_DontUseSimulcastAdapterOnNoneVp8Factory) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-TEST_F(WebRtcVideoEngine2SimulcastTest,
-       DISABLED_DontUseSimulcastAdapterOnMultipleCodecsFactory) {
   // TODO(pbos): Implement.
   FAIL() << "Not implemented.";
 }

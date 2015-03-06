@@ -4253,7 +4253,16 @@ TEST_F(WebRtcVideoEngineSimulcastTestFake,
 }
 
 TEST_F(WebRtcVideoEngineSimulcastTestFake,
-       DontUseSimulcastAdapterOnNoneVp8Factory) {
+       UsesSimulcastAdapterForVp8WithCombinedVP8AndH264Factory) {
+  encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecGeneric,
+                                              "H264");
+  TestSimulcastAdapter(kVP8Codec, true);
+}
+
+TEST_F(WebRtcVideoEngineSimulcastTestFake,
+       DontUseSimulcastAdapterForH264WithCombinedVP8AndH264Factory) {
+  encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
   encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecGeneric,
                                               "H264");
   static const cricket::VideoCodec kH264Codec(100, "H264", 640, 400, 30, 0);
@@ -4261,11 +4270,11 @@ TEST_F(WebRtcVideoEngineSimulcastTestFake,
 }
 
 TEST_F(WebRtcVideoEngineSimulcastTestFake,
-    DontUseSimulcastAdapterOnMultipleCodecsFactory) {
-  encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+       DontUseSimulcastAdapterOnNonVp8Factory) {
   encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecGeneric,
                                               "H264");
-  TestSimulcastAdapter(kVP8Codec, false);
+  static const cricket::VideoCodec kH264Codec(100, "H264", 640, 400, 30, 0);
+  TestSimulcastAdapter(kH264Codec, false);
 }
 
 // Flaky on Windows and tsan. https://code.google.com/p/webrtc/issues/detail?id=4135

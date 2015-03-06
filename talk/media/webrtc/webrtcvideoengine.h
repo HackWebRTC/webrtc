@@ -515,8 +515,11 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   int ratio_h_;
 };
 
-// Wrap encoder factory to a simulcast encoder factory. Exposed here for code to
-// be shared with WebRtcVideoEngine2, not to be used externally.
+// An encoder factory that wraps Create requests for simulcastable codec types
+// with a webrtc::SimulcastEncoderAdapter. Non simulcastable codec type
+// requests are just passed through to the contained encoder factory.
+// Exposed here for code to be shared with WebRtcVideoEngine2, not to be used
+// externally.
 class WebRtcSimulcastEncoderFactory
     : public cricket::WebRtcVideoEncoderFactory {
  public:
@@ -535,6 +538,9 @@ class WebRtcSimulcastEncoderFactory
 
  private:
   cricket::WebRtcVideoEncoderFactory* factory_;
+  // A list of encoders that were created without being wrapped in a
+  // SimulcastEncoderAdapter.
+  std::vector<webrtc::VideoEncoder*> non_simulcast_encoders_;
 };
 
 }  // namespace cricket
