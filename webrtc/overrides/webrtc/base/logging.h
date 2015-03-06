@@ -79,11 +79,11 @@ std::string ErrorName(int err, const ConstantLabel* err_table);
 // severity numbers than or equal to the current severity level are written to
 // file. Also, note that the values are explicitly defined here for convenience
 // since the command line flag must be set using numerical values.
-enum LoggingSeverity { LS_ERROR = 1,
-                       LS_WARNING = 2,
-                       LS_INFO = 3,
-                       LS_VERBOSE = 4,
-                       LS_SENSITIVE = 5,
+enum LoggingSeverity { LS_ERROR = logging::LOG_ERROR,
+                       LS_WARNING = logging::LOG_WARNING,
+                       LS_INFO = logging::LOG_INFO,
+                       LS_VERBOSE = logging::LOG_VERBOSE,
+                       LS_SENSITIVE = LS_VERBOSE - 1,
                        INFO = LS_INFO,
                        WARNING = LS_WARNING,
                        LERROR = LS_ERROR };
