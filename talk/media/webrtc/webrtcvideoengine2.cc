@@ -276,7 +276,7 @@ DefaultUnsignalledSsrcHandler::DefaultUnsignalledSsrcHandler()
     : default_recv_ssrc_(0), default_renderer_(NULL) {}
 
 UnsignalledSsrcHandler::Action DefaultUnsignalledSsrcHandler::OnUnsignalledSsrc(
-    VideoMediaChannel* channel,
+    WebRtcVideoChannel2* channel,
     uint32_t ssrc) {
   if (default_recv_ssrc_ != 0) {  // Already one default stream.
     LOG(LS_WARNING) << "Unknown SSRC, but default receive stream already set.";
@@ -286,7 +286,7 @@ UnsignalledSsrcHandler::Action DefaultUnsignalledSsrcHandler::OnUnsignalledSsrc(
   StreamParams sp;
   sp.ssrcs.push_back(ssrc);
   LOG(LS_INFO) << "Creating default receive stream for SSRC=" << ssrc << ".";
-  if (!channel->AddRecvStream(sp)) {
+  if (!channel->AddRecvStream(sp, true)) {
     LOG(LS_WARNING) << "Could not create default receive stream.";
   }
 
@@ -801,7 +801,7 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
   // ssrc.
   rtc::CritScope stream_lock(&stream_crit_);
   if (send_streams_.find(ssrc) != send_streams_.end()) {
-    LOG(LS_ERROR) << "Send stream with ssrc '" << ssrc << "' already exists.";
+    LOG(LS_ERROR) << "Send stream with SSRC '" << ssrc << "' already exists.";
     return false;
   }
 
@@ -875,6 +875,11 @@ bool WebRtcVideoChannel2::RemoveSendStream(uint32 ssrc) {
 }
 
 bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp) {
+  return AddRecvStream(sp, false);
+}
+
+bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
+                                        bool default_stream) {
   LOG(LS_INFO) << "AddRecvStream: " << sp.ToString();
   assert(sp.ssrcs.size() > 0);
 
@@ -883,9 +888,17 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp) {
 
   // TODO(pbos): Check if any of the SSRCs overlap.
   rtc::CritScope stream_lock(&stream_crit_);
-  if (receive_streams_.find(ssrc) != receive_streams_.end()) {
-    LOG(LS_ERROR) << "Receive stream for SSRC " << ssrc << "already exists.";
-    return false;
+  {
+    auto it = receive_streams_.find(ssrc);
+    if (it != receive_streams_.end()) {
+      if (default_stream || !it->second->IsDefaultStream()) {
+        LOG(LS_ERROR) << "Receive stream for SSRC '" << ssrc
+                      << "' already exists.";
+        return false;
+      }
+      delete it->second;
+      receive_streams_.erase(it);
+    }
   }
 
   webrtc::VideoReceiveStream::Config config;
@@ -902,8 +915,9 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp) {
         static_cast<WebRtcVoiceMediaChannel*>(voice_channel_)->voe_channel();
   }
 
-  receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
-      call_.get(), external_decoder_factory_, config, recv_codecs_);
+  receive_streams_[ssrc] =
+      new WebRtcVideoReceiveStream(call_.get(), external_decoder_factory_,
+                                   default_stream, config, recv_codecs_);
 
   return true;
 }
@@ -1098,8 +1112,9 @@ void WebRtcVideoChannel2::OnPacketReceived(
     return;
   }
 
-  // TODO(pbos): Make sure that the unsignalled SSRC uses the video payload.
-  // Also figure out whether RTX needs to be handled.
+  // TODO(pbos): Ignore unsignalled packets that don't use the video payload
+  // (prevent creating default receivers for RTX configured as if it would
+  // receive media payloads on those SSRCs).
   switch (unsignalled_ssrc_handler_->OnUnsignalledSsrc(this, ssrc)) {
     case UnsignalledSsrcHandler::kDropPacket:
       return;
@@ -1857,10 +1872,12 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     webrtc::Call* call,
     WebRtcVideoDecoderFactory* external_decoder_factory,
+    bool default_stream,
     const webrtc::VideoReceiveStream::Config& config,
     const std::vector<VideoCodecSettings>& recv_codecs)
     : call_(call),
       stream_(NULL),
+      default_stream_(default_stream),
       config_(config),
       external_decoder_factory_(external_decoder_factory),
       renderer_(NULL),
@@ -2002,6 +2019,10 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
 
 bool WebRtcVideoChannel2::WebRtcVideoReceiveStream::IsTextureSupported() const {
   return true;
+}
+
+bool WebRtcVideoChannel2::WebRtcVideoReceiveStream::IsDefaultStream() const {
+  return default_stream_;
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRenderer(

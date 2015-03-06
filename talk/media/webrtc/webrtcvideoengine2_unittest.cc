@@ -333,8 +333,21 @@ void FakeCall::DestroyVideoReceiveStream(
 }
 
 webrtc::PacketReceiver* FakeCall::Receiver() {
-  // TODO(pbos): Fix this.
-  return NULL;
+  return this;
+}
+
+FakeCall::DeliveryStatus FakeCall::DeliverPacket(const uint8_t* packet,
+                                                 size_t length) {
+  CHECK(length >= 12);
+  uint32_t ssrc;
+  if (!GetRtpSsrc(packet, length, &ssrc))
+    return DELIVERY_PACKET_ERROR;
+
+  for (auto& receiver: video_receive_streams_) {
+    if (receiver->GetConfig().rtp.remote_ssrc == ssrc)
+        return DELIVERY_OK;
+  }
+  return DELIVERY_UNKNOWN_SSRC;
 }
 
 void FakeCall::SetStats(const webrtc::Call::Stats& stats) {
@@ -2347,6 +2360,37 @@ TEST_F(WebRtcVideoChannel2Test, TranslatesSenderBitrateStatsCorrectly) {
       << "Bandwidth stats should take all streams into account.";
   EXPECT_EQ(2 + 4 + 6 + 8, info.bw_estimations[0].retransmit_bitrate)
       << "Bandwidth stats should take all streams into account.";
+}
+
+TEST_F(WebRtcVideoChannel2Test, DefaultReceiveStreamReconfiguresToUseRtx) {
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+
+  const std::vector<uint32> ssrcs = MAKE_VECTOR(kSsrcs1);
+  const std::vector<uint32> rtx_ssrcs = MAKE_VECTOR(kRtxSsrcs1);
+
+  ASSERT_EQ(0u, fake_call_->GetVideoReceiveStreams().size());
+  const size_t kDataLength = 12;
+  uint8_t data[kDataLength];
+  memset(data, 0, sizeof(data));
+  rtc::SetBE32(&data[8], ssrcs[0]);
+  rtc::Buffer packet(data, kDataLength);
+  rtc::PacketTime packet_time;
+  channel_->OnPacketReceived(&packet, packet_time);
+
+  ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size())
+      << "No default receive stream created.";
+  FakeVideoReceiveStream* recv_stream = fake_call_->GetVideoReceiveStreams()[0];
+  EXPECT_EQ(0u, recv_stream->GetConfig().rtp.rtx.size())
+      << "Default receive stream should not have configured RTX";
+
+  EXPECT_TRUE(channel_->AddRecvStream(
+      cricket::CreateSimWithRtxStreamParams("cname", ssrcs, rtx_ssrcs)));
+  ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size())
+      << "AddRecvStream should've reconfigured, not added a new receiver.";
+  recv_stream = fake_call_->GetVideoReceiveStreams()[0];
+  ASSERT_EQ(1u, recv_stream->GetConfig().rtp.rtx.size());
+  EXPECT_EQ(rtx_ssrcs[0],
+            recv_stream->GetConfig().rtp.rtx.begin()->second.ssrc);
 }
 
 class WebRtcVideoEngine2SimulcastTest : public testing::Test {

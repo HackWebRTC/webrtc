@@ -81,7 +81,7 @@ class UnsignalledSsrcHandler {
     kDropPacket,
     kDeliverPacket,
   };
-  virtual Action OnUnsignalledSsrc(VideoMediaChannel* engine,
+  virtual Action OnUnsignalledSsrc(WebRtcVideoChannel2* channel,
                                    uint32_t ssrc) = 0;
 };
 
@@ -89,7 +89,8 @@ class UnsignalledSsrcHandler {
 class DefaultUnsignalledSsrcHandler : public UnsignalledSsrcHandler {
  public:
   DefaultUnsignalledSsrcHandler();
-  Action OnUnsignalledSsrc(VideoMediaChannel* engine, uint32_t ssrc) override;
+  Action OnUnsignalledSsrc(WebRtcVideoChannel2* channel,
+                           uint32_t ssrc) override;
 
   VideoRenderer* GetDefaultRenderer() const;
   void SetDefaultRenderer(VideoMediaChannel* channel, VideoRenderer* renderer);
@@ -197,6 +198,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   bool AddSendStream(const StreamParams& sp) override;
   bool RemoveSendStream(uint32 ssrc) override;
   bool AddRecvStream(const StreamParams& sp) override;
+  bool AddRecvStream(const StreamParams& sp, bool default_stream);
   bool RemoveRecvStream(uint32 ssrc) override;
   bool SetRenderer(uint32 ssrc, VideoRenderer* renderer) override;
   bool GetStats(VideoMediaInfo* info) override;
@@ -387,6 +389,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     WebRtcVideoReceiveStream(
         webrtc::Call*,
         WebRtcVideoDecoderFactory* external_decoder_factory,
+        bool default_stream,
         const webrtc::VideoReceiveStream::Config& config,
         const std::vector<VideoCodecSettings>& recv_codecs);
     ~WebRtcVideoReceiveStream();
@@ -397,6 +400,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     void RenderFrame(const webrtc::I420VideoFrame& frame,
                      int time_to_render_ms) override;
     bool IsTextureSupported() const override;
+    bool IsDefaultStream() const;
 
     void SetRenderer(cricket::VideoRenderer* renderer);
     cricket::VideoRenderer* GetRenderer();
@@ -425,6 +429,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     webrtc::Call* const call_;
 
     webrtc::VideoReceiveStream* stream_;
+    const bool default_stream_;
     webrtc::VideoReceiveStream::Config config_;
 
     WebRtcVideoDecoderFactory* const external_decoder_factory_;

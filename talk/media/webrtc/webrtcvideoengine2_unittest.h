@@ -99,7 +99,7 @@ class FakeVideoReceiveStream : public webrtc::VideoReceiveStream {
   webrtc::VideoReceiveStream::Stats stats_;
 };
 
-class FakeCall : public webrtc::Call {
+class FakeCall : public webrtc::Call, public webrtc::PacketReceiver {
  public:
   FakeCall(const webrtc::Call::Config& config);
   ~FakeCall();
@@ -135,6 +135,7 @@ class FakeCall : public webrtc::Call {
   void DestroyVideoReceiveStream(
       webrtc::VideoReceiveStream* receive_stream) override;
   webrtc::PacketReceiver* Receiver() override;
+  DeliveryStatus DeliverPacket(const uint8_t* packet, size_t length) override;
 
   webrtc::Call::Stats GetStats() const override;
 
