@@ -130,6 +130,63 @@ TEST(TestI420VideoFrame, CopyFrame) {
   EXPECT_TRUE(EqualFrames(small_frame, big_frame));
 }
 
+TEST(TestI420VideoFrame, ShallowCopy) {
+  uint32_t timestamp = 1;
+  int64_t ntp_time_ms = 2;
+  int64_t render_time_ms = 3;
+  int stride_y = 15;
+  int stride_u = 10;
+  int stride_v = 10;
+  int width = 15;
+  int height = 15;
+
+  const int kSizeY = 400;
+  const int kSizeU = 100;
+  const int kSizeV = 100;
+  const VideoRotation kRotation = kVideoRotation_270;
+  uint8_t buffer_y[kSizeY];
+  uint8_t buffer_u[kSizeU];
+  uint8_t buffer_v[kSizeV];
+  memset(buffer_y, 16, kSizeY);
+  memset(buffer_u, 8, kSizeU);
+  memset(buffer_v, 4, kSizeV);
+  I420VideoFrame frame1;
+  EXPECT_EQ(0, frame1.CreateFrame(kSizeY, buffer_y, kSizeU, buffer_u, kSizeV,
+                                  buffer_v, width, height, stride_y, stride_u,
+                                  stride_v, kRotation));
+  frame1.set_timestamp(timestamp);
+  frame1.set_ntp_time_ms(ntp_time_ms);
+  frame1.set_render_time_ms(render_time_ms);
+  I420VideoFrame frame2;
+  frame2.ShallowCopy(frame1);
+
+  // To be able to access the buffers, we need const pointers to the frames.
+  const I420VideoFrame* const_frame1_ptr = &frame1;
+  const I420VideoFrame* const_frame2_ptr = &frame2;
+
+  EXPECT_TRUE(const_frame1_ptr->buffer(kYPlane) ==
+              const_frame2_ptr->buffer(kYPlane));
+  EXPECT_TRUE(const_frame1_ptr->buffer(kUPlane) ==
+              const_frame2_ptr->buffer(kUPlane));
+  EXPECT_TRUE(const_frame1_ptr->buffer(kVPlane) ==
+              const_frame2_ptr->buffer(kVPlane));
+
+  EXPECT_EQ(frame2.timestamp(), frame1.timestamp());
+  EXPECT_EQ(frame2.ntp_time_ms(), frame1.ntp_time_ms());
+  EXPECT_EQ(frame2.render_time_ms(), frame1.render_time_ms());
+  EXPECT_EQ(frame2.rotation(), frame1.rotation());
+
+  frame2.set_timestamp(timestamp + 1);
+  frame2.set_ntp_time_ms(ntp_time_ms + 1);
+  frame2.set_render_time_ms(render_time_ms + 1);
+  frame2.set_rotation(kVideoRotation_90);
+
+  EXPECT_NE(frame2.timestamp(), frame1.timestamp());
+  EXPECT_NE(frame2.ntp_time_ms(), frame1.ntp_time_ms());
+  EXPECT_NE(frame2.render_time_ms(), frame1.render_time_ms());
+  EXPECT_NE(frame2.rotation(), frame1.rotation());
+}
+
 TEST(TestI420VideoFrame, CloneFrame) {
   I420VideoFrame frame1;
   rtc::scoped_ptr<I420VideoFrame> frame2;

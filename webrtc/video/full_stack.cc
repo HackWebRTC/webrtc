@@ -144,7 +144,7 @@ class VideoAnalyzer : public PacketReceiver,
     return receiver_->DeliverPacket(packet, length);
   }
 
-  void SwapFrame(I420VideoFrame* video_frame) override {
+  void IncomingCapturedFrame(const I420VideoFrame& video_frame) override {
     I420VideoFrame* copy = NULL;
     {
       CriticalSectionScoped lock(crit_.get());
@@ -156,8 +156,8 @@ class VideoAnalyzer : public PacketReceiver,
     if (copy == NULL)
       copy = new I420VideoFrame();
 
-    copy->CopyFrame(*video_frame);
-    copy->set_timestamp(copy->render_time_ms() * 90);
+    copy->CopyFrame(video_frame);
+    copy->set_timestamp(copy->ntp_time_ms() * 90);
 
     {
       CriticalSectionScoped lock(crit_.get());
@@ -167,7 +167,7 @@ class VideoAnalyzer : public PacketReceiver,
       frames_.push_back(copy);
     }
 
-    input_->SwapFrame(video_frame);
+    input_->IncomingCapturedFrame(video_frame);
   }
 
   bool SendRtp(const uint8_t* packet, size_t length) override {

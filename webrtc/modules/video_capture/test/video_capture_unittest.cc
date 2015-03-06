@@ -104,8 +104,9 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
       printf("No of timing warnings %d\n", timing_warnings_);
   }
 
-  virtual void OnIncomingCapturedFrame(const int32_t id,
-                                       webrtc::I420VideoFrame& videoFrame) {
+  virtual void OnIncomingCapturedFrame(
+      const int32_t id,
+      const webrtc::I420VideoFrame& videoFrame) {
     CriticalSectionScoped cs(capture_cs_.get());
     int height = videoFrame.height();
     int width = videoFrame.width();
@@ -476,76 +477,6 @@ TEST_F(VideoCaptureExternalTest, TestExternalCapture) {
   webrtc::ExtractBuffer(test_frame_, length, test_buffer.get());
   EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
       length, capture_callback_.capability(), 0));
-  EXPECT_TRUE(capture_callback_.CompareLastFrame(test_frame_));
-}
-
-// Test input of planar I420 frames.
-// NOTE: flaky, sometimes fails on the last CompareLastFrame.
-// http://code.google.com/p/webrtc/issues/detail?id=777
-TEST_F(VideoCaptureExternalTest, DISABLED_TestExternalCaptureI420) {
-  webrtc::I420VideoFrame frame_i420;
-  frame_i420.CopyFrame(test_frame_);
-
-  EXPECT_EQ(0,
-            capture_input_interface_->IncomingI420VideoFrame(&frame_i420, 0));
-  EXPECT_TRUE(capture_callback_.CompareLastFrame(frame_i420));
-
-  // Test with a frame with pitch not equal to width
-  memset(test_frame_.buffer(webrtc::kYPlane), 0xAA,
-         test_frame_.allocated_size(webrtc::kYPlane));
-  memset(test_frame_.buffer(webrtc::kUPlane), 0xAA,
-         test_frame_.allocated_size(webrtc::kUPlane));
-  memset(test_frame_.buffer(webrtc::kVPlane), 0xAA,
-         test_frame_.allocated_size(webrtc::kVPlane));
-  webrtc::I420VideoFrame aligned_test_frame;
-  int y_pitch = kTestWidth + 2;
-  int u_pitch = kTestWidth / 2 + 1;
-  int v_pitch = u_pitch;
-  aligned_test_frame.CreateEmptyFrame(kTestWidth, kTestHeight,
-                                      y_pitch, u_pitch, v_pitch);
-  memset(aligned_test_frame.buffer(webrtc::kYPlane), 0,
-         kTestWidth * kTestHeight);
-  memset(aligned_test_frame.buffer(webrtc::kUPlane), 0,
-         (kTestWidth + 1) / 2  * (kTestHeight + 1) / 2);
-  memset(aligned_test_frame.buffer(webrtc::kVPlane), 0,
-         (kTestWidth + 1) / 2  * (kTestHeight + 1) / 2);
-  // Copy the test_frame_ to aligned_test_frame.
-  int y_width = kTestWidth;
-  int uv_width = kTestWidth / 2;
-  int y_rows = kTestHeight;
-  int uv_rows = kTestHeight / 2;
-  const webrtc::I420VideoFrame& const_test_frame = test_frame_;
-  const unsigned char* y_plane = const_test_frame.buffer(webrtc::kYPlane);
-  const unsigned char* u_plane = const_test_frame.buffer(webrtc::kUPlane);
-  const unsigned char* v_plane = const_test_frame.buffer(webrtc::kVPlane);
-  // Copy Y
-  unsigned char* current_pointer = aligned_test_frame.buffer(webrtc::kYPlane);
-  for (int i = 0; i < y_rows; ++i) {
-    memcpy(current_pointer, y_plane, y_width);
-    // Remove the alignment which ViE doesn't support.
-    current_pointer += y_pitch;
-    y_plane += y_width;
-  }
-  // Copy U
-  current_pointer = aligned_test_frame.buffer(webrtc::kUPlane);
-  for (int i = 0; i < uv_rows; ++i) {
-    memcpy(current_pointer, u_plane, uv_width);
-    // Remove the alignment which ViE doesn't support.
-    current_pointer += u_pitch;
-    u_plane += uv_width;
-  }
-  // Copy V
-  current_pointer = aligned_test_frame.buffer(webrtc::kVPlane);
-  for (int i = 0; i < uv_rows; ++i) {
-    memcpy(current_pointer, v_plane, uv_width);
-    // Remove the alignment which ViE doesn't support.
-    current_pointer += v_pitch;
-    v_plane += uv_width;
-  }
-  frame_i420.CopyFrame(aligned_test_frame);
-
-  EXPECT_EQ(0,
-            capture_input_interface_->IncomingI420VideoFrame(&frame_i420, 0));
   EXPECT_TRUE(capture_callback_.CompareLastFrame(test_frame_));
 }
 

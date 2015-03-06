@@ -353,8 +353,9 @@ bool WebRtcVideoCapturer::GetPreferredFourccs(
   return true;
 }
 
-void WebRtcVideoCapturer::OnIncomingCapturedFrame(const int32_t id,
-    webrtc::I420VideoFrame& sample) {
+void WebRtcVideoCapturer::OnIncomingCapturedFrame(
+    const int32_t id,
+    const webrtc::I420VideoFrame& sample) {
   // This would be a normal CritScope, except that it's possible that:
   // (1) whatever system component producing this frame has taken a lock, and
   // (2) Stop() probably calls back into that system component, which may take
@@ -395,7 +396,7 @@ void WebRtcVideoCapturer::OnCaptureDelayChanged(const int32_t id,
 }
 
 void WebRtcVideoCapturer::SignalFrameCapturedOnStartThread(
-    webrtc::I420VideoFrame* frame) {
+    const webrtc::I420VideoFrame* frame) {
   DCHECK(start_thread_->IsCurrent());
   // Signal down stream components on captured frame.
   // The CapturedFrame class doesn't support planes. We have to ExtractBuffer

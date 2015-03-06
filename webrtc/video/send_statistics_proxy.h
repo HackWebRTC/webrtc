@@ -13,6 +13,7 @@
 
 #include <string>
 
+#include "webrtc/base/ratetracker.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
@@ -35,7 +36,6 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
                             public BitrateStatisticsObserver,
                             public FrameCountObserver,
                             public ViEEncoderObserver,
-                            public ViECaptureObserver,
                             public VideoEncoderRateObserver,
                             public SendSideDelayObserver {
  public:
@@ -48,6 +48,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
 
   virtual void OnSendEncodedImage(const EncodedImage& encoded_image,
                                   const RTPVideoHeader* rtp_video_header);
+  // Used to update incoming frame rate.
+  void OnIncomingFrame();
 
   // From VideoEncoderRateObserver.
   void OnSetRates(uint32_t bitrate_bps, int framerate) override;
@@ -83,16 +85,6 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
 
   void SuspendChange(int video_channel, bool is_suspended) override;
 
-  // From ViECaptureObserver.
-  void BrightnessAlarm(const int capture_id,
-                       const Brightness brightness) override {}
-
-  void CapturedFrameRate(const int capture_id,
-                         const unsigned char frame_rate) override;
-
-  void NoPictureAlarm(const int capture_id, const CaptureAlarm alarm) override {
-  }
-
   void SendSideDelayUpdated(int avg_delay_ms,
                             int max_delay_ms,
                             uint32_t ssrc) override;
@@ -110,6 +102,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   const VideoSendStream::Config config_;
   rtc::scoped_ptr<CriticalSectionWrapper> crit_;
   VideoSendStream::Stats stats_ GUARDED_BY(crit_);
+  rtc::RateTracker input_frame_rate_tracker_ GUARDED_BY(crit_);
   std::map<uint32_t, StatsUpdateTimes> update_times_ GUARDED_BY(crit_);
 };
 

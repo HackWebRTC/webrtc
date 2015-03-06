@@ -113,7 +113,7 @@ class WEBRTC_DLLEXPORT ViEExternalCapture {
       const ViEVideoFrameI420& video_frame,
       unsigned long long capture_time = 0) = 0;
 
-  virtual void SwapFrame(I420VideoFrame* frame) {}
+  virtual void IncomingFrame(const I420VideoFrame& frame) {}
 };
 
 // This class declares an abstract interface for a user defined observer. It is
