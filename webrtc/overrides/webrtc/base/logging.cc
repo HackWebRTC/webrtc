@@ -156,12 +156,17 @@ DiagnosticLogMessage::DiagnosticLogMessage(const char* file,
 }
 
 DiagnosticLogMessage::~DiagnosticLogMessage() {
-  print_stream_ << extra_;
-  const std::string& str = print_stream_.str();
-  if (log_to_chrome_)
-    LOG_LAZY_STREAM_DIRECT(file_name_, line_, severity_) << str;
-  if (g_logging_delegate_function && severity_ <= LS_INFO) {
-    g_logging_delegate_function(str);
+  const bool call_delegate =
+      g_logging_delegate_function && severity_ <= LS_INFO;
+
+  if (call_delegate || log_to_chrome_) {
+    print_stream_ << extra_;
+    const std::string& str = print_stream_.str();
+    if (log_to_chrome_)
+      LOG_LAZY_STREAM_DIRECT(file_name_, line_, severity_) << str;
+    if (g_logging_delegate_function && severity_ <= LS_INFO) {
+      g_logging_delegate_function(str);
+    }
   }
 }
 
