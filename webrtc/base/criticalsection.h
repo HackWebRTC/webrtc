@@ -44,7 +44,13 @@
 #endif
 
 #ifdef _DEBUG
+#if defined(WEBRTC_MAC)
+// TODO(tommi): This is related to the comment above. It looks like the
+// pthread_t member might be throwing off the mac debug bots (10.9).
+#define CS_TRACK_OWNER 0
+#else
 #define CS_TRACK_OWNER 1
+#endif
 #endif  // _DEBUG
 
 #if CS_TRACK_OWNER
