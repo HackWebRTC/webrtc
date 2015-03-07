@@ -16,7 +16,6 @@
 
 #include <stdio.h>
 
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
@@ -75,9 +74,9 @@ class VCMGenericEncoder
 {
     friend class VCMCodecDataBase;
 public:
-    VCMGenericEncoder(VideoEncoder* encoder,
-                      VideoEncoderRateObserver* rate_observer,
-                      bool internalSource);
+ VCMGenericEncoder(VideoEncoder* encoder,
+                   VideoEncoderRateObserver* rate_observer,
+                   bool internalSource);
     ~VCMGenericEncoder();
     /**
     * Free encoder memory
@@ -103,9 +102,6 @@ public:
     * Set new target bitrate (bits/s) and framerate.
     * Return Value: new bit rate if OK, otherwise <0s.
     */
-    // TODO(tommi): We could replace BitRate and FrameRate below with a GetRates
-    // method that matches SetRates. For fetching current rates, we'd then only
-    // grab the lock once instead of twice.
     int32_t SetRates(uint32_t target_bitrate, uint32_t frameRate);
     /**
     * Set a new packet loss rate and a new round-trip time in milliseconds.
@@ -136,10 +132,11 @@ public:
 private:
     VideoEncoder* const encoder_;
     VideoEncoderRateObserver* const rate_observer_;
-    uint32_t bit_rate_;
-    uint32_t frame_rate_;
-    const bool internal_source_;
-    mutable rtc::CriticalSection rates_lock_;
+    VideoCodecType              _codecType;
+    VCMEncodedFrameCallback*    _VCMencodedFrameCallback;
+    uint32_t                    _bitRate;
+    uint32_t                    _frameRate;
+    bool                        _internalSource;
 }; // end of VCMGenericEncoder class
 
 }  // namespace webrtc

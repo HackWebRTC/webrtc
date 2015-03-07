@@ -60,9 +60,11 @@ VCMGenericEncoder::VCMGenericEncoder(VideoEncoder* encoder,
                                      bool internalSource)
     : encoder_(encoder),
       rate_observer_(rate_observer),
-      bit_rate_(0),
-      frame_rate_(0),
-      internal_source_(internalSource) {
+      _codecType(kVideoCodecUnknown),
+      _VCMencodedFrameCallback(NULL),
+      _bitRate(0),
+      _frameRate(0),
+      _internalSource(internalSource) {
 }
 
 VCMGenericEncoder::~VCMGenericEncoder()
@@ -71,12 +73,9 @@ VCMGenericEncoder::~VCMGenericEncoder()
 
 int32_t VCMGenericEncoder::Release()
 {
-    {
-      rtc::CritScope lock(&rates_lock_);
-      bit_rate_ = 0;
-      frame_rate_ = 0;
-    }
-
+    _bitRate = 0;
+    _frameRate = 0;
+    _VCMencodedFrameCallback = NULL;
     return encoder_->Release();
 }
 
@@ -85,12 +84,9 @@ VCMGenericEncoder::InitEncode(const VideoCodec* settings,
                               int32_t numberOfCores,
                               size_t maxPayloadSize)
 {
-    {
-      rtc::CritScope lock(&rates_lock_);
-      bit_rate_ = settings->startBitrate * 1000;
-      frame_rate_ = settings->maxFramerate;
-    }
-
+    _bitRate = settings->startBitrate * 1000;
+    _frameRate = settings->maxFramerate;
+    _codecType = settings->codecType;
     if (encoder_->InitEncode(settings, numberOfCores, maxPayloadSize) != 0) {
       LOG(LS_ERROR) << "Failed to initialize the encoder associated with "
                        "payload name: " << settings->plName;
@@ -124,13 +120,8 @@ VCMGenericEncoder::SetRates(uint32_t newBitRate, uint32_t frameRate)
     {
         return ret;
     }
-
-    {
-      rtc::CritScope lock(&rates_lock_);
-      bit_rate_ = newBitRate;
-      frame_rate_ = frameRate;
-    }
-
+    _bitRate = newBitRate;
+    _frameRate = frameRate;
     if (rate_observer_ != nullptr)
       rate_observer_->OnSetRates(newBitRate, frameRate);
     return VCM_OK;
@@ -149,14 +140,12 @@ VCMGenericEncoder::CodecConfigParameters(uint8_t* buffer, int32_t size)
 
 uint32_t VCMGenericEncoder::BitRate() const
 {
-    rtc::CritScope lock(&rates_lock_);
-    return bit_rate_;
+    return _bitRate;
 }
 
 uint32_t VCMGenericEncoder::FrameRate() const
 {
-    rtc::CritScope lock(&rates_lock_);
-    return frame_rate_;
+    return _frameRate;
 }
 
 int32_t
@@ -177,14 +166,15 @@ int32_t VCMGenericEncoder::RequestFrame(
 int32_t
 VCMGenericEncoder::RegisterEncodeCallback(VCMEncodedFrameCallback* VCMencodedFrameCallback)
 {
-    VCMencodedFrameCallback->SetInternalSource(internal_source_);
-    return encoder_->RegisterEncodeCompleteCallback(VCMencodedFrameCallback);
+   _VCMencodedFrameCallback = VCMencodedFrameCallback;
+   _VCMencodedFrameCallback->SetInternalSource(_internalSource);
+   return encoder_->RegisterEncodeCompleteCallback(_VCMencodedFrameCallback);
 }
 
 bool
 VCMGenericEncoder::InternalSource() const
 {
-    return internal_source_;
+    return _internalSource;
 }
 
  /***************************
