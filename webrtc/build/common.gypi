@@ -178,6 +178,26 @@
       ['rtc_relative_path==1', {
         'defines': ['EXPAT_RELATIVE_PATH',],
       }],
+      ['os_posix==1', {
+        'configurations': {
+          'Debug_Base': {
+            'defines': [
+              # Chromium's build/common.gypi defines _DEBUG for all posix
+              # _except_ for ios & mac.  The size of data types such as
+              # pthread_mutex_t varies between release and debug builds
+              # and is controlled via this flag.  Since we now share code
+              # between base/base.gyp and build/common.gypi (this file),
+              # both gyp(i) files, must consistently set this flag uniformly
+              # or else we'll run in to hard-to-figure-out problems where
+              # one compilation unit uses code from another but expects
+              # differently laid out types.
+              # For WebRTC, we want it there as well, because ASSERT and
+              # friends trigger off of it.
+              '_DEBUG',
+            ],
+          },
+        },
+      }],
       ['build_with_chromium==1', {
         'defines': [
           # Changes settings for Chromium build.
@@ -202,16 +222,6 @@
         ],
         'conditions': [
           ['os_posix==1', {
-            'configurations': {
-              'Debug_Base': {
-                'defines': [
-                  # Chromium's build/common.gypi defines this for all posix
-                  # _except_ for ios & mac.  We want it there as well, e.g.
-                  # because ASSERT and friends trigger off of it.
-                  '_DEBUG',
-                ],
-              },
-            },
             'conditions': [
               # -Wextra is currently disabled in Chromium's common.gypi. Enable
               # for targets that can handle it. For Android/arm64 right now
