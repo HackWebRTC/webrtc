@@ -52,11 +52,8 @@ class RegistrableCpuOveruseMetricsObserver : public CpuOveruseMetricsObserver {
   }
 
  private:
-  // TODO(pbos): Figure out why observer_ needs to be declared above crit_ on
-  // Mac. tommi@ also ran into this while debugging weird critical-section
-  // related alignment issues. Pushing this as a workaround to unblock rolling.
-  CpuOveruseMetricsObserver* observer_ GUARDED_BY(crit_) = nullptr;
   mutable rtc::CriticalSection crit_;
+  CpuOveruseMetricsObserver* observer_ GUARDED_BY(crit_) = nullptr;
   CpuOveruseMetrics metrics_ GUARDED_BY(crit_);
 };
 
