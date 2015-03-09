@@ -106,7 +106,7 @@ class Thread : public MessageQueue {
   // guarantee Stop() is explicitly called before the subclass is destroyed).
   // This is required to avoid a data race between the destructor modifying the
   // vtable, and the Thread::PreRun calling the virtual method Run().
-  virtual ~Thread();
+  ~Thread() override;
 
   static Thread* Current();
 
@@ -173,9 +173,10 @@ class Thread : public MessageQueue {
   }
 
   // From MessageQueue
-  virtual void Clear(MessageHandler *phandler, uint32 id = MQID_ANY,
-                     MessageList* removed = NULL);
-  virtual void ReceiveSends();
+  void Clear(MessageHandler* phandler,
+             uint32 id = MQID_ANY,
+             MessageList* removed = NULL) override;
+  void ReceiveSends() override;
 
   // ProcessMessages will process I/O and dispatch messages until:
   //  1) cms milliseconds have elapsed (returns true)
@@ -290,7 +291,7 @@ class Thread : public MessageQueue {
 class AutoThread : public Thread {
  public:
   explicit AutoThread(SocketServer* ss = 0);
-  virtual ~AutoThread();
+  ~AutoThread() override;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AutoThread);

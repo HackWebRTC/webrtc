@@ -34,6 +34,8 @@ TaskParent::TaskParent(TaskRunner *derived_instance)
   Initialize();
 }
 
+TaskParent::~TaskParent() = default;
+
 // Does common initialization of member variables
 void TaskParent::Initialize() {
   children_.reset(new ChildSet());

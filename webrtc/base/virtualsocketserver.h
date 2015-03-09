@@ -34,7 +34,7 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   // TODO: Add "owned" parameter.
   // If "owned" is set, the supplied socketserver will be deleted later.
   explicit VirtualSocketServer(SocketServer* ss);
-  virtual ~VirtualSocketServer();
+  ~VirtualSocketServer() override;
 
   SocketServer* socketserver() { return server_; }
 
@@ -89,16 +89,16 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   }
 
   // SocketFactory:
-  virtual Socket* CreateSocket(int type);
-  virtual Socket* CreateSocket(int family, int type);
+  Socket* CreateSocket(int type) override;
+  Socket* CreateSocket(int family, int type) override;
 
-  virtual AsyncSocket* CreateAsyncSocket(int type);
-  virtual AsyncSocket* CreateAsyncSocket(int family, int type);
+  AsyncSocket* CreateAsyncSocket(int type) override;
+  AsyncSocket* CreateAsyncSocket(int family, int type) override;
 
   // SocketServer:
-  virtual void SetMessageQueue(MessageQueue* queue);
-  virtual bool Wait(int cms, bool process_io);
-  virtual void WakeUp();
+  void SetMessageQueue(MessageQueue* queue) override;
+  bool Wait(int cms, bool process_io) override;
+  void WakeUp() override;
 
   typedef std::pair<double, double> Point;
   typedef std::vector<Point> Function;
@@ -238,10 +238,10 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
 class VirtualSocket : public AsyncSocket, public MessageHandler {
  public:
   VirtualSocket(VirtualSocketServer* server, int family, int type, bool async);
-  virtual ~VirtualSocket();
+  ~VirtualSocket() override;
 
-  virtual SocketAddress GetLocalAddress() const;
-  virtual SocketAddress GetRemoteAddress() const;
+  SocketAddress GetLocalAddress() const override;
+  SocketAddress GetRemoteAddress() const override;
 
   // Used by server sockets to set the local address without binding.
   void SetLocalAddress(const SocketAddress& addr);
@@ -251,23 +251,23 @@ class VirtualSocket : public AsyncSocket, public MessageHandler {
   // issue 3927 for more detail.
   void SetAlternativeLocalAddress(const SocketAddress& addr);
 
-  virtual int Bind(const SocketAddress& addr);
-  virtual int Connect(const SocketAddress& addr);
-  virtual int Close();
-  virtual int Send(const void* pv, size_t cb);
-  virtual int SendTo(const void* pv, size_t cb, const SocketAddress& addr);
-  virtual int Recv(void* pv, size_t cb);
-  virtual int RecvFrom(void* pv, size_t cb, SocketAddress* paddr);
-  virtual int Listen(int backlog);
-  virtual VirtualSocket* Accept(SocketAddress* paddr);
+  int Bind(const SocketAddress& addr) override;
+  int Connect(const SocketAddress& addr) override;
+  int Close() override;
+  int Send(const void* pv, size_t cb) override;
+  int SendTo(const void* pv, size_t cb, const SocketAddress& addr) override;
+  int Recv(void* pv, size_t cb) override;
+  int RecvFrom(void* pv, size_t cb, SocketAddress* paddr) override;
+  int Listen(int backlog) override;
+  VirtualSocket* Accept(SocketAddress* paddr) override;
 
-  virtual int GetError() const;
-  virtual void SetError(int error);
-  virtual ConnState GetState() const;
-  virtual int GetOption(Option opt, int* value);
-  virtual int SetOption(Option opt, int value);
-  virtual int EstimateMTU(uint16* mtu);
-  void OnMessage(Message* pmsg);
+  int GetError() const override;
+  void SetError(int error) override;
+  ConnState GetState() const override;
+  int GetOption(Option opt, int* value) override;
+  int SetOption(Option opt, int value) override;
+  int EstimateMTU(uint16* mtu) override;
+  void OnMessage(Message* pmsg) override;
 
   bool was_any() { return was_any_; }
   void set_was_any(bool was_any) { was_any_ = was_any; }

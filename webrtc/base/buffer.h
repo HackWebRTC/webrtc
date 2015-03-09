@@ -22,18 +22,11 @@ namespace rtc {
 // Unlike std::string/vector, does not initialize data when expanding capacity.
 class Buffer {
  public:
-  Buffer() {
-    Construct(NULL, 0, 0);
-  }
-  Buffer(const void* data, size_t length) {
-    Construct(data, length, length);
-  }
-  Buffer(const void* data, size_t length, size_t capacity) {
-    Construct(data, length, capacity);
-  }
-  Buffer(const Buffer& buf) {
-    Construct(buf.data(), buf.length(), buf.length());
-  }
+  Buffer();
+  Buffer(const void* data, size_t length);
+  Buffer(const void* data, size_t length, size_t capacity);
+  Buffer(const Buffer& buf);
+  ~Buffer();
 
   const char* data() const { return data_.get(); }
   char* data() { return data_.get(); }

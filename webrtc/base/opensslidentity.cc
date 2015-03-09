@@ -151,6 +151,11 @@ OpenSSLKeyPair::~OpenSSLKeyPair() {
   EVP_PKEY_free(pkey_);
 }
 
+OpenSSLKeyPair* OpenSSLKeyPair::GetReference() {
+  AddReference();
+  return new OpenSSLKeyPair(pkey_);
+}
+
 void OpenSSLKeyPair::AddReference() {
   CRYPTO_add(&pkey_->references, 1, CRYPTO_LOCK_EVP_PKEY);
 }
@@ -218,6 +223,13 @@ bool OpenSSLCertificate::GetSignatureDigestAlgorithm(
       EVP_get_digestbyobj(x509_->sig_alg->algorithm), algorithm);
 }
 
+bool OpenSSLCertificate::GetChain(SSLCertChain** chain) const {
+  // Chains are not yet supported when using OpenSSL.
+  // OpenSSLStreamAdapter::SSLVerifyCallback currently requires the remote
+  // certificate to be self-signed.
+  return false;
+}
+
 bool OpenSSLCertificate::ComputeDigest(const std::string& algorithm,
                                        unsigned char* digest,
                                        size_t size,
@@ -248,6 +260,10 @@ bool OpenSSLCertificate::ComputeDigest(const X509* x509,
 
 OpenSSLCertificate::~OpenSSLCertificate() {
   X509_free(x509_);
+}
+
+OpenSSLCertificate* OpenSSLCertificate::GetReference() const {
+  return new OpenSSLCertificate(x509_);
 }
 
 std::string OpenSSLCertificate::ToPEMString() const {
@@ -290,6 +306,15 @@ void OpenSSLCertificate::AddReference() const {
   ASSERT(x509_ != NULL);
   CRYPTO_add(&x509_->references, 1, CRYPTO_LOCK_X509);
 }
+
+OpenSSLIdentity::OpenSSLIdentity(OpenSSLKeyPair* key_pair,
+                                 OpenSSLCertificate* certificate)
+    : key_pair_(key_pair), certificate_(certificate) {
+  ASSERT(key_pair != NULL);
+  ASSERT(certificate != NULL);
+}
+
+OpenSSLIdentity::~OpenSSLIdentity() = default;
 
 OpenSSLIdentity* OpenSSLIdentity::GenerateInternal(
     const SSLIdentityParams& params) {
@@ -345,6 +370,15 @@ SSLIdentity* OpenSSLIdentity::FromPEMStrings(
 
   return new OpenSSLIdentity(new OpenSSLKeyPair(pkey),
                              cert.release());
+}
+
+const OpenSSLCertificate& OpenSSLIdentity::certificate() const {
+  return *certificate_;
+}
+
+OpenSSLIdentity* OpenSSLIdentity::GetReference() const {
+  return new OpenSSLIdentity(key_pair_->GetReference(),
+                             certificate_->GetReference());
 }
 
 bool OpenSSLIdentity::ConfigureIdentity(SSL_CTX* ctx) {

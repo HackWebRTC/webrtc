@@ -29,6 +29,8 @@ BandwidthSmoother::BandwidthSmoother(int initial_bandwidth_guess,
           std::min(1.0, std::max(0.0, min_sample_count_percent))) {
 }
 
+BandwidthSmoother::~BandwidthSmoother() = default;
+
 // Samples a new bandwidth measurement
 // returns true if the bandwidth estimation changed
 bool BandwidthSmoother::Sample(uint32 sample_time, int bandwidth) {

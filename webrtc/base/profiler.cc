@@ -86,9 +86,14 @@ double ProfilerEvent::standard_deviation() const {
     return sqrt(sum_of_squared_differences_ / (event_count_ - 1.0));
 }
 
+Profiler::~Profiler() = default;
+
 Profiler* Profiler::Instance() {
   LIBJINGLE_DEFINE_STATIC_LOCAL(Profiler, instance, ());
   return &instance;
+}
+
+Profiler::Profiler() {
 }
 
 void Profiler::StartEvent(const std::string& event_name) {

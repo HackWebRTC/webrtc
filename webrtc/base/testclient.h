@@ -38,7 +38,7 @@ class TestClient : public sigslot::has_slots<> {
   // Creates a client that will send and receive with the given socket and
   // will post itself messages with the given thread.
   explicit TestClient(AsyncPacketSocket* socket);
-  ~TestClient();
+  ~TestClient() override;
 
   SocketAddress address() const { return socket_->GetLocalAddress(); }
   SocketAddress remote_address() const { return socket_->GetRemoteAddress(); }

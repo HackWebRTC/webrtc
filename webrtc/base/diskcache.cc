@@ -43,7 +43,7 @@ public:
                    StreamInterface* stream)
   : StreamAdapterInterface(stream), cache_(cache), id_(id), index_(index)
   { }
-  virtual ~DiskCacheAdapter() {
+  ~DiskCacheAdapter() override {
     Close();
     cache_->ReleaseResource(id_, index_);
   }

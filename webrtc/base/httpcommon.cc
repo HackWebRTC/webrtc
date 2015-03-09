@@ -401,6 +401,11 @@ std::string HttpAddress(const SocketAddress& address, bool secure) {
 // HttpData
 //////////////////////////////////////////////////////////////////////
 
+HttpData::HttpData() : version(HVER_1_1) {
+}
+
+HttpData::~HttpData() = default;
+
 void
 HttpData::clear(bool release_document) {
   // Clear headers first, since releasing a document may have far-reaching

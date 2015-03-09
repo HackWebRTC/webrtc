@@ -111,6 +111,7 @@ static_library("rtc_base_approved") {
     "exp_filter.h",
     "md5.cc",
     "md5.h",
+    "md5digest.cc",
     "md5digest.h",
     "platform_file.cc",
     "platform_file.h",
@@ -158,6 +159,7 @@ static_library("rtc_base") {
     "asyncfile.h",
     "asynchttprequest.cc",
     "asynchttprequest.h",
+    "asyncpacketsocket.cc",
     "asyncpacketsocket.h",
     "asyncsocket.cc",
     "asyncsocket.h",
@@ -180,6 +182,7 @@ static_library("rtc_base") {
     "crc32.cc",
     "crc32.h",
     "criticalsection.h",
+    "cryptstring.cc",
     "cryptstring.h",
     "diskcache.cc",
     "diskcache.h",
@@ -235,9 +238,11 @@ static_library("rtc_base") {
     "scoped_ptr.h",
     "sha1.cc",
     "sha1.h",
+    "sha1digest.cc",
     "sha1digest.h",
     "signalthread.cc",
     "signalthread.h",
+    "sigslot.cc",
     "sigslot.h",
     "sigslotrepeater.h",
     "socket.h",
@@ -317,6 +322,7 @@ static_library("rtc_base") {
       "asyncinvoker.cc",
       "asyncinvoker.h",
       "asyncinvoker-inl.h",
+      "asyncresolverinterface.cc",
       "asyncresolverinterface.h",
       "atomicops.h",
       "bandwidthsmoother.cc",
@@ -324,6 +330,7 @@ static_library("rtc_base") {
       "basictypes.h",
       "bind.h",
       "bind.h.pump",
+      "buffer.cc",
       "buffer.h",
       "callback.h",
       "callback.h.pump",
@@ -437,12 +444,6 @@ static_library("rtc_base") {
       defines += [ "WEBRTC_EXTERNAL_JSON" ]
     }
   }  # !build_with_chromium
-
-  if (is_clang) {
-    # Suppress warnings from the Chrome Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
-  }
 
   # TODO(henrike): issue 3307, make rtc_base build with the Chromium default
   # compiler settings.

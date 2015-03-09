@@ -117,6 +117,13 @@ void BufferedReadAdapter::OnReadEvent(AsyncSocket * socket) {
   ProcessInput(buffer_, &data_len_);
 }
 
+AsyncProxyServerSocket::AsyncProxyServerSocket(AsyncSocket* socket,
+                                               size_t buffer_size)
+    : BufferedReadAdapter(socket, buffer_size) {
+}
+
+AsyncProxyServerSocket::~AsyncProxyServerSocket() = default;
+
 ///////////////////////////////////////////////////////////////////////////////
 
 // This is a SSL v2 CLIENT_HELLO message.
@@ -506,6 +513,8 @@ AsyncSocksProxySocket::AsyncSocksProxySocket(AsyncSocket* socket,
     : BufferedReadAdapter(socket, 1024), state_(SS_ERROR), proxy_(proxy),
       user_(username), pass_(password) {
 }
+
+AsyncSocksProxySocket::~AsyncSocksProxySocket() = default;
 
 int AsyncSocksProxySocket::Connect(const SocketAddress& addr) {
   int ret;

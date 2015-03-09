@@ -708,6 +708,8 @@ Network::Network(const std::string& name, const std::string& desc,
       ignored_(false), type_(type), preference_(0) {
 }
 
+Network::~Network() = default;
+
 // Sets the addresses of this network. Returns true if the address set changed.
 // Change detection is short circuited if the changed argument is true.
 bool Network::SetIPs(const std::vector<InterfaceAddress>& ips, bool changed) {

@@ -31,24 +31,24 @@ public:
   static bool CleanupSSL();
 
   OpenSSLAdapter(AsyncSocket* socket);
-  virtual ~OpenSSLAdapter();
+  ~OpenSSLAdapter() override;
 
-  virtual void SetMode(SSLMode mode);
-  virtual int StartSSL(const char* hostname, bool restartable);
-  virtual int Send(const void* pv, size_t cb);
-  virtual int SendTo(const void* pv, size_t cb, const SocketAddress& addr);
-  virtual int Recv(void* pv, size_t cb);
-  virtual int RecvFrom(void* pv, size_t cb, SocketAddress* paddr);
-  virtual int Close();
+  void SetMode(SSLMode mode) override;
+  int StartSSL(const char* hostname, bool restartable) override;
+  int Send(const void* pv, size_t cb) override;
+  int SendTo(const void* pv, size_t cb, const SocketAddress& addr) override;
+  int Recv(void* pv, size_t cb) override;
+  int RecvFrom(void* pv, size_t cb, SocketAddress* paddr) override;
+  int Close() override;
 
   // Note that the socket returns ST_CONNECTING while SSL is being negotiated.
-  virtual ConnState GetState() const;
+  ConnState GetState() const override;
 
 protected:
-  virtual void OnConnectEvent(AsyncSocket* socket);
-  virtual void OnReadEvent(AsyncSocket* socket);
-  virtual void OnWriteEvent(AsyncSocket* socket);
-  virtual void OnCloseEvent(AsyncSocket* socket, int err);
+ void OnConnectEvent(AsyncSocket* socket) override;
+ void OnReadEvent(AsyncSocket* socket) override;
+ void OnWriteEvent(AsyncSocket* socket) override;
+ void OnCloseEvent(AsyncSocket* socket, int err) override;
 
 private:
   enum SSLState {
@@ -62,7 +62,7 @@ private:
   void Error(const char* context, int err, bool signal = true);
   void Cleanup();
 
-  virtual void OnMessage(Message* msg);
+  void OnMessage(Message* msg) override;
 
   static bool VerifyServerName(SSL* ssl, const char* host,
                                bool ignore_bad_cert);

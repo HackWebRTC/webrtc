@@ -297,6 +297,20 @@ void MessageQueue::Post(MessageHandler *phandler, uint32 id,
   ss_->WakeUp();
 }
 
+void MessageQueue::PostDelayed(int cmsDelay,
+                               MessageHandler* phandler,
+                               uint32 id,
+                               MessageData* pdata) {
+  return DoDelayPost(cmsDelay, TimeAfter(cmsDelay), phandler, id, pdata);
+}
+
+void MessageQueue::PostAt(uint32 tstamp,
+                          MessageHandler* phandler,
+                          uint32 id,
+                          MessageData* pdata) {
+  return DoDelayPost(TimeUntil(tstamp), tstamp, phandler, id, pdata);
+}
+
 void MessageQueue::DoDelayPost(int cmsDelay, uint32 tstamp,
     MessageHandler *phandler, uint32 id, MessageData* pdata) {
   if (fStop_)

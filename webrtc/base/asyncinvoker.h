@@ -69,7 +69,7 @@ namespace rtc {
 class AsyncInvoker : public MessageHandler {
  public:
   AsyncInvoker();
-  virtual ~AsyncInvoker();
+  ~AsyncInvoker() override;
 
   // Call |functor| asynchronously on |thread|, with no callback upon
   // completion. Returns immediately.
@@ -120,7 +120,7 @@ class AsyncInvoker : public MessageHandler {
   sigslot::signal0<> SignalInvokerDestroyed;
 
  private:
-  virtual void OnMessage(Message* msg);
+  void OnMessage(Message* msg) override;
   void DoInvoke(Thread* thread, const scoped_refptr<AsyncClosure>& closure,
                 uint32 id);
 

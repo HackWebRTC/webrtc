@@ -101,6 +101,42 @@ void StreamInterface::PostEvent(int events, int err) {
   PostEvent(Thread::Current(), events, err);
 }
 
+const void* StreamInterface::GetReadData(size_t* data_len) {
+  return NULL;
+}
+
+void* StreamInterface::GetWriteBuffer(size_t* buf_len) {
+  return NULL;
+}
+
+bool StreamInterface::SetPosition(size_t position) {
+  return false;
+}
+
+bool StreamInterface::GetPosition(size_t* position) const {
+  return false;
+}
+
+bool StreamInterface::GetSize(size_t* size) const {
+  return false;
+}
+
+bool StreamInterface::GetAvailable(size_t* size) const {
+  return false;
+}
+
+bool StreamInterface::GetWriteRemaining(size_t* size) const {
+  return false;
+}
+
+bool StreamInterface::Flush() {
+  return false;
+}
+
+bool StreamInterface::ReserveSize(size_t size) {
+  return true;
+}
+
 StreamInterface::StreamInterface() {
 }
 
@@ -121,6 +157,53 @@ StreamAdapterInterface::StreamAdapterInterface(StreamInterface* stream,
     : stream_(stream), owned_(owned) {
   if (NULL != stream_)
     stream_->SignalEvent.connect(this, &StreamAdapterInterface::OnEvent);
+}
+
+StreamState StreamAdapterInterface::GetState() const {
+  return stream_->GetState();
+}
+StreamResult StreamAdapterInterface::Read(void* buffer,
+                                          size_t buffer_len,
+                                          size_t* read,
+                                          int* error) {
+  return stream_->Read(buffer, buffer_len, read, error);
+}
+StreamResult StreamAdapterInterface::Write(const void* data,
+                                           size_t data_len,
+                                           size_t* written,
+                                           int* error) {
+  return stream_->Write(data, data_len, written, error);
+}
+void StreamAdapterInterface::Close() {
+  stream_->Close();
+}
+
+bool StreamAdapterInterface::SetPosition(size_t position) {
+  return stream_->SetPosition(position);
+}
+
+bool StreamAdapterInterface::GetPosition(size_t* position) const {
+  return stream_->GetPosition(position);
+}
+
+bool StreamAdapterInterface::GetSize(size_t* size) const {
+  return stream_->GetSize(size);
+}
+
+bool StreamAdapterInterface::GetAvailable(size_t* size) const {
+  return stream_->GetAvailable(size);
+}
+
+bool StreamAdapterInterface::GetWriteRemaining(size_t* size) const {
+  return stream_->GetWriteRemaining(size);
+}
+
+bool StreamAdapterInterface::ReserveSize(size_t size) {
+  return stream_->ReserveSize(size);
+}
+
+bool StreamAdapterInterface::Flush() {
+  return stream_->Flush();
 }
 
 void StreamAdapterInterface::Attach(StreamInterface* stream, bool owned) {
@@ -147,6 +230,12 @@ StreamAdapterInterface::~StreamAdapterInterface() {
     delete stream_;
 }
 
+void StreamAdapterInterface::OnEvent(StreamInterface* stream,
+                                     int events,
+                                     int err) {
+  SignalEvent(this, events, err);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // StreamTap
 ///////////////////////////////////////////////////////////////////////////////
@@ -156,6 +245,8 @@ StreamTap::StreamTap(StreamInterface* stream, StreamInterface* tap)
         tap_error_(0) {
   AttachTap(tap);
 }
+
+StreamTap::~StreamTap() = default;
 
 void StreamTap::AttachTap(StreamInterface* tap) {
   tap_.reset(tap);
@@ -609,12 +700,23 @@ StreamResult CircularFileStream::Write(const void* data, size_t data_len,
   return result;
 }
 
+AsyncWriteStream::AsyncWriteStream(StreamInterface* stream,
+                                   rtc::Thread* write_thread)
+    : stream_(stream),
+      write_thread_(write_thread),
+      state_(stream ? stream->GetState() : SS_CLOSED) {
+}
+
 AsyncWriteStream::~AsyncWriteStream() {
   write_thread_->Clear(this, 0, NULL);
   ClearBufferAndWrite();
 
   CritScope cs(&crit_stream_);
   stream_.reset();
+}
+
+StreamState AsyncWriteStream::GetState() const {
+  return state_;
 }
 
 // This is needed by some stream writers, such as RtpDumpWriter.

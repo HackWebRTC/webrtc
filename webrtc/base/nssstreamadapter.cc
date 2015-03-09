@@ -614,6 +614,11 @@ void NSSStreamAdapter::Cleanup() {
   Thread::Current()->Clear(this, MSG_DTLS_TIMEOUT);
 }
 
+bool NSSStreamAdapter::GetDigestLength(const std::string& algorithm,
+                                       size_t* length) {
+  return NSSCertificate::GetDigestLength(algorithm, length);
+}
+
 StreamResult NSSStreamAdapter::Read(void* data, size_t data_len,
                                     size_t* read, int* error) {
   // SSL_CONNECTED sanity check.

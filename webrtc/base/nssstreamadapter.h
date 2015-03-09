@@ -52,28 +52,32 @@ class NSSContext {
 class NSSStreamAdapter : public SSLStreamAdapterHelper {
  public:
   explicit NSSStreamAdapter(StreamInterface* stream);
-  virtual ~NSSStreamAdapter();
+  ~NSSStreamAdapter() override;
   bool Init();
 
-  virtual StreamResult Read(void* data, size_t data_len,
-                            size_t* read, int* error);
-  virtual StreamResult Write(const void* data, size_t data_len,
-                             size_t* written, int* error);
-  void OnMessage(Message *msg);
+  StreamResult Read(void* data,
+                    size_t data_len,
+                    size_t* read,
+                    int* error) override;
+  StreamResult Write(const void* data,
+                     size_t data_len,
+                     size_t* written,
+                     int* error) override;
+  void OnMessage(Message* msg) override;
 
-  virtual bool GetSslCipher(std::string* cipher);
+  bool GetSslCipher(std::string* cipher) override;
 
   // Key Extractor interface
-  virtual bool ExportKeyingMaterial(const std::string& label,
-                                    const uint8* context,
-                                    size_t context_len,
-                                    bool use_context,
-                                    uint8* result,
-                                    size_t result_len);
+  bool ExportKeyingMaterial(const std::string& label,
+                            const uint8* context,
+                            size_t context_len,
+                            bool use_context,
+                            uint8* result,
+                            size_t result_len) override;
 
   // DTLS-SRTP interface
-  virtual bool SetDtlsSrtpCiphers(const std::vector<std::string>& ciphers);
-  virtual bool GetDtlsSrtpCipher(std::string* cipher);
+  bool SetDtlsSrtpCiphers(const std::vector<std::string>& ciphers) override;
+  bool GetDtlsSrtpCipher(std::string* cipher) override;
 
   // Capabilities interfaces
   static bool HaveDtls();
@@ -83,14 +87,12 @@ class NSSStreamAdapter : public SSLStreamAdapterHelper {
 
  protected:
   // Override SSLStreamAdapter
-  virtual void OnEvent(StreamInterface* stream, int events, int err);
+  void OnEvent(StreamInterface* stream, int events, int err) override;
 
   // Override SSLStreamAdapterHelper
-  virtual int BeginSSL();
-  virtual void Cleanup();
-  virtual bool GetDigestLength(const std::string& algorithm, size_t* length) {
-    return NSSCertificate::GetDigestLength(algorithm, length);
-  }
+  int BeginSSL() override;
+  void Cleanup() override;
+  bool GetDigestLength(const std::string& algorithm, size_t* length) override;
 
  private:
   int ContinueSSL();

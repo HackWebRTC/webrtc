@@ -121,9 +121,7 @@ class SSLStreamAdapter : public StreamAdapterInterface {
 
   // Retrieves the name of the cipher suite used for the connection
   // (e.g. "TLS_RSA_WITH_AES_128_CBC_SHA").
-  virtual bool GetSslCipher(std::string* cipher) {
-    return false;
-  }
+  virtual bool GetSslCipher(std::string* cipher);
 
   // Key Exporter interface from RFC 5705
   // Arguments are:
@@ -142,19 +140,11 @@ class SSLStreamAdapter : public StreamAdapterInterface {
                                     size_t context_len,
                                     bool use_context,
                                     uint8* result,
-                                    size_t result_len) {
-    return false;  // Default is unsupported
-  }
-
+                                    size_t result_len);
 
   // DTLS-SRTP interface
-  virtual bool SetDtlsSrtpCiphers(const std::vector<std::string>& ciphers) {
-    return false;
-  }
-
-  virtual bool GetDtlsSrtpCipher(std::string* cipher) {
-    return false;
-  }
+  virtual bool SetDtlsSrtpCiphers(const std::vector<std::string>& ciphers);
+  virtual bool GetDtlsSrtpCipher(std::string* cipher);
 
   // Capabilities testing
   static bool HaveDtls();

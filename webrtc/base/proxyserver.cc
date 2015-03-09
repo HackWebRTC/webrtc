@@ -74,6 +74,8 @@ ProxyBinding::ProxyBinding(AsyncProxyServerSocket* int_socket,
   ext_socket_->SignalCloseEvent.connect(this, &ProxyBinding::OnExternalClose);
 }
 
+ProxyBinding::~ProxyBinding() = default;
+
 void ProxyBinding::OnConnectRequest(AsyncProxyServerSocket* socket,
                                    const SocketAddress& addr) {
   ASSERT(!connected_ && ext_socket_.get() != NULL);
@@ -139,6 +141,10 @@ void ProxyBinding::Write(AsyncSocket* socket, FifoBuffer* buffer) {
 
 void ProxyBinding::Destroy() {
   SignalDestroyed(this);
+}
+
+AsyncProxyServerSocket* SocksProxyServer::WrapSocket(AsyncSocket* socket) {
+  return new AsyncSocksProxyServerSocket(socket);
 }
 
 }  // namespace rtc

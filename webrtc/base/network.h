@@ -103,10 +103,10 @@ class NetworkManager {
 class NetworkManagerBase : public NetworkManager {
  public:
   NetworkManagerBase();
-  virtual ~NetworkManagerBase();
+  ~NetworkManagerBase() override;
 
-  virtual void GetNetworks(std::vector<Network*>* networks) const;
-  virtual void GetAnyAddressNetworks(NetworkList* networks);
+  void GetNetworks(std::vector<Network*>* networks) const override;
+  void GetAnyAddressNetworks(NetworkList* networks) override;
   bool ipv6_enabled() const { return ipv6_enabled_; }
   void set_ipv6_enabled(bool enabled) { ipv6_enabled_ = enabled; }
 
@@ -147,16 +147,16 @@ class BasicNetworkManager : public NetworkManagerBase,
                             public MessageHandler {
  public:
   BasicNetworkManager();
-  virtual ~BasicNetworkManager();
+  ~BasicNetworkManager() override;
 
-  virtual void StartUpdating();
-  virtual void StopUpdating();
+  void StartUpdating() override;
+  void StopUpdating() override;
 
   // Logs the available networks.
-  virtual void DumpNetworks(bool include_ignored);
+  void DumpNetworks(bool include_ignored) override;
 
   // MessageHandler interface.
-  virtual void OnMessage(Message* msg);
+  void OnMessage(Message* msg) override;
   bool started() { return start_count_ > 0; }
 
   // Sets the network ignore list, which is empty by default. Any network on the
@@ -219,6 +219,7 @@ class Network {
 
   Network(const std::string& name, const std::string& description,
           const IPAddress& prefix, int prefix_length, AdapterType type);
+  ~Network();
 
   // Returns the name of the interface this network is associated wtih.
   const std::string& name() const { return name_; }

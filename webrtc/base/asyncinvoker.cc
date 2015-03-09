@@ -71,6 +71,10 @@ NotifyingAsyncClosureBase::NotifyingAsyncClosureBase(AsyncInvoker* invoker,
       this, &NotifyingAsyncClosureBase::CancelCallback);
 }
 
+NotifyingAsyncClosureBase::~NotifyingAsyncClosureBase() {
+  disconnect_all();
+}
+
 void NotifyingAsyncClosureBase::TriggerCallback() {
   CritScope cs(&crit_);
   if (!CallbackCanceled() && !callback_.empty()) {

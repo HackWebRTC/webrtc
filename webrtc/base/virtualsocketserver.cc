@@ -67,7 +67,7 @@ class Packet : public MessageData {
     memcpy(data_, data, size_);
   }
 
-  virtual ~Packet() {
+  ~Packet() override {
     delete[] data_;
   }
 

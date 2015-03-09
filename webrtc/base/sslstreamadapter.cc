@@ -45,6 +45,28 @@ SSLStreamAdapter* SSLStreamAdapter::Create(StreamInterface* stream) {
 #endif
 }
 
+bool SSLStreamAdapter::GetSslCipher(std::string* cipher) {
+  return false;
+}
+
+bool SSLStreamAdapter::ExportKeyingMaterial(const std::string& label,
+                                            const uint8* context,
+                                            size_t context_len,
+                                            bool use_context,
+                                            uint8* result,
+                                            size_t result_len) {
+  return false;  // Default is unsupported
+}
+
+bool SSLStreamAdapter::SetDtlsSrtpCiphers(
+    const std::vector<std::string>& ciphers) {
+  return false;
+}
+
+bool SSLStreamAdapter::GetDtlsSrtpCipher(std::string* cipher) {
+  return false;
+}
+
 // Note: this matches the logic above with SCHANNEL dominating
 #if SSL_USE_SCHANNEL
 bool SSLStreamAdapter::HaveDtls() { return false; }
