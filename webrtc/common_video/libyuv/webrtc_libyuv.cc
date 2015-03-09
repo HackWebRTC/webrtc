@@ -176,15 +176,15 @@ int ConvertRGB24ToARGB(const uint8_t* src_frame, uint8_t* dst_frame,
                              width, height);
 }
 
-libyuv::RotationMode ConvertRotationMode(VideoRotationMode rotation) {
+libyuv::RotationMode ConvertRotationMode(VideoRotation rotation) {
   switch(rotation) {
-    case kRotateNone:
+    case kVideoRotation_0:
       return libyuv::kRotate0;
-    case kRotate90:
+    case kVideoRotation_90:
       return libyuv::kRotate90;
-    case kRotate180:
+    case kVideoRotation_180:
       return libyuv::kRotate180;
-    case kRotate270:
+    case kVideoRotation_270:
       return libyuv::kRotate270;
   }
   assert(false);
@@ -231,16 +231,18 @@ int ConvertVideoType(VideoType video_type) {
 
 int ConvertToI420(VideoType src_video_type,
                   const uint8_t* src_frame,
-                  int crop_x, int crop_y,
-                  int src_width, int src_height,
+                  int crop_x,
+                  int crop_y,
+                  int src_width,
+                  int src_height,
                   size_t sample_size,
-                  VideoRotationMode rotation,
+                  VideoRotation rotation,
                   I420VideoFrame* dst_frame) {
   int dst_width = dst_frame->width();
   int dst_height = dst_frame->height();
   // LibYuv expects pre-rotation values for dst.
   // Stride values should correspond to the destination values.
-  if (rotation == kRotate90 || rotation == kRotate270) {
+  if (rotation == kVideoRotation_90 || rotation == kVideoRotation_270) {
     dst_width = dst_frame->height();
     dst_height =dst_frame->width();
   }

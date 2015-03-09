@@ -208,8 +208,8 @@ int I420Decoder::Decode(const EncodedImage& inputImage, bool /*missingFrames*/,
   _decodedImage.CreateEmptyFrame(_width, _height,
                                  _width, half_width, half_width);
   // Converting from buffer to plane representation.
-  int ret = ConvertToI420(kI420, buffer, 0, 0, _width, _height, 0, kRotateNone,
-                          &_decodedImage);
+  int ret = ConvertToI420(kI420, buffer, 0, 0, _width, _height, 0,
+                          kVideoRotation_0, &_decodedImage);
   if (ret < 0) {
     return WEBRTC_VIDEO_CODEC_MEMORY;
   }

@@ -80,14 +80,6 @@ enum StretchMode
     kStretchNone = 5
 };
 
-enum Rotation
-{
-    kRotation0 = 0,
-    kRotation90 = 1,
-    kRotation180 = 2,
-    kRotation270 = 3
-};
-
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_VIDEO_RENDER_MAIN_INTERFACE_VIDEO_RENDER_DEFINES_H_

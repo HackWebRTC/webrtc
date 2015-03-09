@@ -110,7 +110,8 @@ class YuvFileGenerator : public FrameGenerator {
         static_cast<int>((width_ + 1) / 2));
 
     ConvertToI420(kI420, frame_buffer_.get(), 0, 0, static_cast<int>(width_),
-                  static_cast<int>(height_), 0, kRotateNone, &last_read_frame_);
+                  static_cast<int>(height_), 0, kVideoRotation_0,
+                  &last_read_frame_);
   }
 
  private:

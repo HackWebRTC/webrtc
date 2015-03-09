@@ -17,6 +17,7 @@
 
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/common_video/rotation.h"
 #include "webrtc/modules/video_capture/include/video_capture.h"
 #include "webrtc/modules/video_capture/video_capture_config.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
@@ -128,7 +129,8 @@ private:
 
     TickTime _lastProcessFrameCount;
     TickTime _incomingFrameTimes[kFrameRateCountHistorySize];// timestamp for local captured frames
-    VideoRotationMode _rotateFrame; //Set if the frame should be rotated by the capture module.
+    VideoRotation _rotateFrame;  // Set if the frame should be rotated by the
+                                 // capture module.
 
     I420VideoFrame _captureFrame;
 

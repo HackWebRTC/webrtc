@@ -18,6 +18,7 @@
 #include <stdio.h>
 
 #include "webrtc/common_types.h"  // RawVideoTypes.
+#include "webrtc/common_video/rotation.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/typedefs.h"
 
@@ -49,15 +50,6 @@ const double kPerfectPSNR = 48.0f;
 // Conversion between the RawVideoType and the LibYuv videoType.
 // TODO(wu): Consolidate types into one type throughout WebRtc.
 VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type);
-
-// Supported rotation
-// Direction of rotation - clockwise.
-enum VideoRotationMode {
-  kRotateNone = 0,
-  kRotate90 = 90,
-  kRotate180 = 180,
-  kRotate270 = 270,
-};
 
 // Align integer values.
 // Input:
@@ -117,10 +109,12 @@ int ExtractBuffer(const I420VideoFrame& input_frame,
 
 int ConvertToI420(VideoType src_video_type,
                   const uint8_t* src_frame,
-                  int crop_x, int crop_y,
-                  int src_width, int src_height,
+                  int crop_x,
+                  int crop_y,
+                  int src_width,
+                  int src_height,
                   size_t sample_size,
-                  VideoRotationMode rotation,
+                  VideoRotation rotation,
                   I420VideoFrame* dst_frame);
 
 // Convert From I420

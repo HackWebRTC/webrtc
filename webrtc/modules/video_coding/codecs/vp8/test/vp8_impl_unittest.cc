@@ -137,9 +137,9 @@ class TestVp8Impl : public ::testing::Test {
                                   stride_y, stride_uv, stride_uv);
     input_frame_.set_timestamp(kTestTimestamp);
     // Using ConvertToI420 to add stride to the image.
-    EXPECT_EQ(
-        0, ConvertToI420(kI420, source_buffer_.get(), 0, 0, codec_inst_.width,
-                         codec_inst_.height, 0, kRotateNone, &input_frame_));
+    EXPECT_EQ(0, ConvertToI420(kI420, source_buffer_.get(), 0, 0,
+                               codec_inst_.width, codec_inst_.height, 0,
+                               kVideoRotation_0, &input_frame_));
   }
 
   void SetUpEncodeDecode() {

@@ -56,9 +56,9 @@ TEST_F(VideoProcessingModuleTest, Deflickering)
                frame_length_)
         {
             frameNum++;
-            EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0,
-                                       width_, height_,
-                                       0, kRotateNone, &video_frame_));
+            EXPECT_EQ(
+                0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_,
+                                 height_, 0, kVideoRotation_0, &video_frame_));
             video_frame_.set_timestamp(timeStamp);
 
             t0 = TickTime::Now();

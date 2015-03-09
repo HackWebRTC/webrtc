@@ -44,9 +44,8 @@ TEST_F(VideoProcessingModuleTest, ColorEnhancement)
         frame_length_)
     {
         // Using ConvertToI420 to add stride to the image.
-        EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0,
-                                   width_, height_,
-                                   0, kRotateNone, &video_frame_));
+      EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_,
+                                 height_, 0, kVideoRotation_0, &video_frame_));
         frameNum++;
         t0 = TickTime::Now();
         ASSERT_EQ(0, VideoProcessingModule::ColorEnhancement(&video_frame_));
@@ -91,14 +90,13 @@ TEST_F(VideoProcessingModuleTest, ColorEnhancement)
         frame_length_)
     {
         // Using ConvertToI420 to add stride to the image.
-        EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0,
-                                   width_, height_,
-                                   0, kRotateNone, &video_frame_));
+      EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_,
+                                 height_, 0, kVideoRotation_0, &video_frame_));
         ASSERT_EQ(frame_length_, fread(ref_buffer.get(), 1, frame_length_,
                                        refFile));
-        EXPECT_EQ(0, ConvertToI420(kI420, ref_buffer.get(), 0, 0,
-                                   width_, height_,
-                                    0, kRotateNone, &refVideoFrame));
+        EXPECT_EQ(
+            0, ConvertToI420(kI420, ref_buffer.get(), 0, 0, width_, height_, 0,
+                             kVideoRotation_0, &refVideoFrame));
         EXPECT_EQ(0, memcmp(video_frame_.buffer(kYPlane),
                             refVideoFrame.buffer(kYPlane),
                             size_y_));
@@ -123,9 +121,8 @@ TEST_F(VideoProcessingModuleTest, ColorEnhancement)
     I420VideoFrame testVideoFrame;
     testVideoFrame.CreateEmptyFrame(width_, height_,
                                     width_, half_width_, half_width_);
-    EXPECT_EQ(0, ConvertToI420(kI420, testFrame.get(), 0, 0,
-                               width_, height_, 0, kRotateNone,
-                               &testVideoFrame));
+    EXPECT_EQ(0, ConvertToI420(kI420, testFrame.get(), 0, 0, width_, height_, 0,
+                               kVideoRotation_0, &testVideoFrame));
 
     ASSERT_EQ(0, VideoProcessingModule::ColorEnhancement(&testVideoFrame));
 

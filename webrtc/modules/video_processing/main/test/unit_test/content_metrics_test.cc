@@ -27,9 +27,8 @@ TEST_F(VideoProcessingModuleTest, ContentAnalysis) {
   while (fread(video_buffer.get(), 1, frame_length_, source_file_)
        == frame_length_) {
     // Using ConvertToI420 to add stride to the image.
-    EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0,
-                               width_, height_,
-                               0, kRotateNone, &video_frame_));
+    EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
+                               0, kVideoRotation_0, &video_frame_));
     _cM_c   = ca__c.ComputeContentMetrics(video_frame_);
     _cM_SSE = ca__sse.ComputeContentMetrics(video_frame_);
 
