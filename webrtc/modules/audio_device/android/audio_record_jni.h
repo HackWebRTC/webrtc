@@ -48,11 +48,11 @@ class AudioRecordJni {
  public:
   // Use the invocation API to allow the native application to use the JNI
   // interface pointer to access VM features.
-  // |jvm| denotes the Java VM, |env| is a pointer to the JNI interface pointer
-  // and |context| corresponds to android.content.Context in Java.
+  // |jvm| denotes the Java VM and |context| corresponds to
+  // android.content.Context in Java.
   // This method also sets a global jclass object, |g_audio_record_class| for
   // the "org/webrtc/voiceengine/WebRtcAudioRecord"-class.
-  static void SetAndroidAudioDeviceObjects(void* jvm, void* env, void* context);
+  static void SetAndroidAudioDeviceObjects(void* jvm, void* context);
   // Always call this method after the object has been destructed. It deletes
   // existing global references and enables garbage collection.
   static void ClearAndroidAudioDeviceObjects();

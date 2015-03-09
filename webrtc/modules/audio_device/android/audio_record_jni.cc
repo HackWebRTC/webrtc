@@ -34,12 +34,10 @@ static JavaVM* g_jvm = NULL;
 static jobject g_context = NULL;
 static jclass g_audio_record_class = NULL;
 
-void AudioRecordJni::SetAndroidAudioDeviceObjects(void* jvm, void* env,
-                                                  void* context) {
+void AudioRecordJni::SetAndroidAudioDeviceObjects(void* jvm, void* context) {
   ALOGD("SetAndroidAudioDeviceObjects%s", GetThreadInfo().c_str());
 
   CHECK(jvm);
-  CHECK(env);
   CHECK(context);
 
   g_jvm = reinterpret_cast<JavaVM*>(jvm);
@@ -178,7 +176,7 @@ int32_t AudioRecordJni::StartRecording() {
 int32_t AudioRecordJni::StopRecording() {
   ALOGD("StopRecording%s", GetThreadInfo().c_str());
   DCHECK(thread_checker_.CalledOnValidThread());
-  if (!initialized_) {
+  if (!initialized_ || !recording_) {
     return 0;
   }
   AttachThreadScoped ats(g_jvm);
@@ -275,6 +273,10 @@ void JNICALL AudioRecordJni::DataIsRecorded(
 // the thread is 'AudioRecordThread'.
 void AudioRecordJni::OnDataIsRecorded(int length) {
   DCHECK(thread_checker_java_.CalledOnValidThread());
+  if (!audio_device_buffer_) {
+    ALOGE("AttachAudioBuffer has not been called!");
+    return;
+  }
   if (playout_delay_in_milliseconds_ == 0) {
     playout_delay_in_milliseconds_ = delay_provider_->PlayoutDelayMs();
     ALOGD("cached playout delay: %d", playout_delay_in_milliseconds_);
@@ -284,7 +286,9 @@ void AudioRecordJni::OnDataIsRecorded(int length) {
   audio_device_buffer_->SetVQEData(playout_delay_in_milliseconds_,
                                    kHardwareDelayInMilliseconds,
                                    0 /* clockDrift */);
-  audio_device_buffer_->DeliverRecordedData();
+  if (audio_device_buffer_->DeliverRecordedData() == 1) {
+    ALOGE("AudioDeviceBuffer::DeliverRecordedData failed!");
+  }
 }
 
 bool AudioRecordJni::HasDeviceObjects() {

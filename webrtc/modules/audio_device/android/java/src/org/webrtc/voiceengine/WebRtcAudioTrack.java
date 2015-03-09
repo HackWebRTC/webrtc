@@ -103,7 +103,7 @@ class WebRtcAudioTrack {
                                           AudioTrack.WRITE_BLOCKING);
         } else {
           bytesWritten = audioTrack.write(byteBuffer.array(),
-                                          0,
+                                          byteBuffer.arrayOffset(),
                                           sizeInBytes);
         }
         if (bytesWritten != sizeInBytes) {

@@ -84,8 +84,8 @@ class OpenSlRunner
       jobject obj,
       jobject context) {
     assert(!g_runner);  // Should only be called once.
-    OpenSlesInput::SetAndroidAudioDeviceObjects(g_vm, env, context);
-    OpenSlesOutput::SetAndroidAudioDeviceObjects(g_vm, env, context);
+    OpenSlesInput::SetAndroidAudioDeviceObjects(g_vm, context);
+    OpenSlesOutput::SetAndroidAudioDeviceObjects(g_vm, context);
     g_runner = new OpenSlRunner();
   }
 

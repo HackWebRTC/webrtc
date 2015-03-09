@@ -66,7 +66,6 @@ OpenSlesInput::~OpenSlesInput() {
 }
 
 int32_t OpenSlesInput::SetAndroidAudioDeviceObjects(void* javaVM,
-                                                    void* env,
                                                     void* context) {
   return 0;
 }

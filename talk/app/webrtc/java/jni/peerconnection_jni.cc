@@ -964,7 +964,7 @@ JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
       failure |= AndroidVideoCapturerJni::SetAndroidObjects(jni, context);
     }
     if (initialize_audio)
-      failure |= webrtc::VoiceEngine::SetAndroidObjects(GetJVM(), jni, context);
+      failure |= webrtc::VoiceEngine::SetAndroidObjects(GetJVM(), context);
     factory_static_initialized = true;
   }
   if (initialize_video) {

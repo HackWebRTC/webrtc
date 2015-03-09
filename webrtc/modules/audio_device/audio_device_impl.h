@@ -193,6 +193,10 @@ public:
 public:
     int32_t Id() {return _id;}
 
+    AudioDeviceBuffer* GetAudioDeviceBuffer() {
+        return &_audioDeviceBuffer;
+    }
+
 private:
     PlatformType Platform() const;
     AudioLayer PlatformAudioLayer() const;

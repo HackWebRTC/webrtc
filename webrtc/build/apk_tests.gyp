@@ -83,6 +83,7 @@
       },
       'dependencies': [
         '<(webrtc_root)/modules/modules.gyp:modules_unittests',
+        'audio_device_java',
       ],
       'includes': [
         '../../build/apk_test.gypi',
@@ -238,6 +239,17 @@
       'type': 'none',
       'variables': {
         'java_in_dir': '<(webrtc_root)/modules/video_capture/android/java',
+      },
+      'includes': [
+        '../../build/java.gypi',
+      ],
+    },
+    {
+      'target_name': 'audio_device_java',
+      'type': 'none',
+      'variables': {
+        'java_in_dir': '<(webrtc_root)/modules/audio_device/android/java',
+        'never_lint': 1,
       },
       'includes': [
         '../../build/java.gypi',

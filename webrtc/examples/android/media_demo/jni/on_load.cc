@@ -43,7 +43,7 @@ JOWW(void, NativeWebRtcContextRegistry_register)(
         "Failed to register android objects to video capture");
   CHECK(webrtc::SetRenderAndroidVM(g_vm) == 0,
         "Failed to register android objects to video render");
-  CHECK(webrtc::VoiceEngine::SetAndroidObjects(g_vm, jni, context) == 0,
+  CHECK(webrtc::VoiceEngine::SetAndroidObjects(g_vm, context) == 0,
         "Failed to register android objects to voice engine");
 }
 
@@ -54,7 +54,7 @@ JOWW(void, NativeWebRtcContextRegistry_unRegister)(
         "Failed to unregister android objects from video capture");
   CHECK(webrtc::SetRenderAndroidVM(NULL) == 0,
         "Failed to unregister android objects from video render");
-  CHECK(webrtc::VoiceEngine::SetAndroidObjects(NULL, NULL, NULL) == 0,
+  CHECK(webrtc::VoiceEngine::SetAndroidObjects(NULL, NULL) == 0,
         "Failed to unregister android objects from voice engine");
   webrtc_examples::ClearVieDeviceObjects();
   webrtc_examples::ClearVoeDeviceObjects();

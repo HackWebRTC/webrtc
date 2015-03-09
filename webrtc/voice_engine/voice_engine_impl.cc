@@ -152,7 +152,7 @@ bool VoiceEngine::Delete(VoiceEngine*& voiceEngine)
 }
 
 #if !defined(WEBRTC_CHROMIUM_BUILD)
-int VoiceEngine::SetAndroidObjects(void* javaVM, void* env, void* context)
+int VoiceEngine::SetAndroidObjects(void* javaVM, void* context)
 {
 #ifdef WEBRTC_ANDROID
 #ifdef WEBRTC_ANDROID_OPENSLES
@@ -162,8 +162,8 @@ int VoiceEngine::SetAndroidObjects(void* javaVM, void* env, void* context)
   typedef AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>
       AudioDeviceInstance;
 #endif
-  if (javaVM && env && context) {
-    AudioDeviceInstance::SetAndroidAudioDeviceObjects(javaVM, env, context);
+  if (javaVM && context) {
+    AudioDeviceInstance::SetAndroidAudioDeviceObjects(javaVM, context);
   } else {
     AudioDeviceInstance::ClearAndroidAudioDeviceObjects();
   }

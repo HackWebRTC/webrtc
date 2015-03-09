@@ -27,7 +27,7 @@ int ViEAutoTestAndroid::RunAutotest(int testSelection, int subTestSelection,
   webrtc::SetRenderAndroidVM(javaVM);
 #ifndef WEBRTC_ANDROID_OPENSLES
   // voice engine calls into ADM directly
-  webrtc::VoiceEngine::SetAndroidObjects(javaVM, env, context);
+  webrtc::VoiceEngine::SetAndroidObjects(javaVM, context);
 #endif
 
   if (subTestSelection == 0) {

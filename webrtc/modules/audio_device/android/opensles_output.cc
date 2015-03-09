@@ -67,9 +67,8 @@ OpenSlesOutput::~OpenSlesOutput() {
 }
 
 int32_t OpenSlesOutput::SetAndroidAudioDeviceObjects(void* javaVM,
-                                                     void* env,
                                                      void* context) {
-  AudioManagerJni::SetAndroidAudioDeviceObjects(javaVM, env, context);
+  AudioManagerJni::SetAndroidAudioDeviceObjects(javaVM, context);
   return 0;
 }
 

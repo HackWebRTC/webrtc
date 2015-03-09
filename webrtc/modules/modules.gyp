@@ -57,6 +57,7 @@
             'acm_receive_test',
             'acm_send_test',
             'audio_coding_module',
+            'audio_device'  ,
             'audio_processing',
             'bitrate_controller',
             'CNG',
@@ -351,6 +352,18 @@
             ['OS=="android"', {
               'dependencies': [
                 '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+              ],
+              # Need to disable error due to the line in
+              # base/android/jni_android.h triggering it:
+              # const BASE_EXPORT jobject GetApplicationContext()
+              # error: type qualifiers ignored on function return type
+              'cflags': [
+                '-Wno-ignored-qualifiers',
+              ],
+              'sources': [
+                'audio_device/android/audio_device_unittest.cc',
+                'audio_device/android/ensure_initialized.cc',
+                'audio_device/android/ensure_initialized.h',
               ],
             }],
           ],

@@ -270,7 +270,7 @@
             },
           ],
         }],
-        ['OS=="android" and enable_android_opensl==1', {
+        ['OS=="android"', {
           'targets': [
             {
               'target_name': 'audio_device_unittest',

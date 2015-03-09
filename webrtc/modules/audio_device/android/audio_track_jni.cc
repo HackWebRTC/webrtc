@@ -29,12 +29,10 @@ static JavaVM* g_jvm = NULL;
 static jobject g_context = NULL;
 static jclass g_audio_track_class = NULL;
 
-void AudioTrackJni::SetAndroidAudioDeviceObjects(void* jvm, void* env,
-                                                 void* context) {
+void AudioTrackJni::SetAndroidAudioDeviceObjects(void* jvm, void* context) {
   ALOGD("SetAndroidAudioDeviceObjects%s", GetThreadInfo().c_str());
 
   CHECK(jvm);
-  CHECK(env);
   CHECK(context);
 
   g_jvm = reinterpret_cast<JavaVM*>(jvm);
@@ -168,7 +166,7 @@ int32_t AudioTrackJni::StartPlayout() {
 int32_t AudioTrackJni::StopPlayout() {
   ALOGD("StopPlayout%s", GetThreadInfo().c_str());
   DCHECK(thread_checker_.CalledOnValidThread());
-  if (!initialized_) {
+  if (!initialized_ || !playing_) {
     return 0;
   }
   AttachThreadScoped ats(g_jvm);
@@ -245,10 +243,17 @@ void JNICALL AudioTrackJni::GetPlayoutData(
 // the thread is 'AudioRecordTrack'.
 void AudioTrackJni::OnGetPlayoutData(int length) {
   DCHECK(thread_checker_java_.CalledOnValidThread());
-  // ALOGD("OnGetPlayoutData(length=%d, delay=%d)", length);
   DCHECK_EQ(frames_per_buffer_, length / kBytesPerFrame);
+  if (!audio_device_buffer_) {
+    ALOGE("AttachAudioBuffer has not been called!");
+    return;
+  }
   // Pull decoded data (in 16-bit PCM format) from jitter buffer.
   int samples = audio_device_buffer_->RequestPlayoutData(frames_per_buffer_);
+  if (samples <= 0) {
+    ALOGE("AudioDeviceBuffer::RequestPlayoutData failed!");
+    return;
+  }
   DCHECK_EQ(samples, frames_per_buffer_);
   // Copy decoded data into common byte buffer to ensure that it can be
   // written to the Java based audio track.
