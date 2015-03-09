@@ -67,8 +67,8 @@ int Normal::Process(const int16_t* input,
     for (size_t channel_ix = 0; channel_ix < output->Channels(); ++channel_ix) {
       // Adjust muting factor (main muting factor times expand muting factor).
       external_mute_factor_array[channel_ix] = static_cast<int16_t>(
-          WEBRTC_SPL_MUL_16_16_RSFT(external_mute_factor_array[channel_ix],
-                                    expand_->MuteFactor(channel_ix), 14));
+          (external_mute_factor_array[channel_ix] *
+          expand_->MuteFactor(channel_ix)) >> 14);
 
       int16_t* signal = &(*output)[channel_ix][0];
       size_t length_per_channel = length / output->Channels();
