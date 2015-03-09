@@ -115,37 +115,4 @@ int32_t RTPReceiverVideo::InvokeOnInitializeDecoder(
   return 0;
 }
 
-int32_t RTPReceiverVideo::BuildRTPheader(const WebRtcRTPHeader* rtp_header,
-                                         uint8_t* data_buffer) const {
-  data_buffer[0] = static_cast<uint8_t>(0x80);  // version 2
-  data_buffer[1] = static_cast<uint8_t>(rtp_header->header.payloadType);
-  if (rtp_header->header.markerBit) {
-    data_buffer[1] |= kRtpMarkerBitMask;  // MarkerBit is 1
-  }
-  RtpUtility::AssignUWord16ToBuffer(data_buffer + 2,
-                                    rtp_header->header.sequenceNumber);
-  RtpUtility::AssignUWord32ToBuffer(data_buffer + 4,
-                                    rtp_header->header.timestamp);
-  RtpUtility::AssignUWord32ToBuffer(data_buffer + 8, rtp_header->header.ssrc);
-
-  int32_t rtp_header_length = 12;
-
-  // Add the CSRCs if any
-  if (rtp_header->header.numCSRCs > 0) {
-    if (rtp_header->header.numCSRCs > 16) {
-      // error
-      assert(false);
-    }
-    uint8_t* ptr = &data_buffer[rtp_header_length];
-    for (uint32_t i = 0; i < rtp_header->header.numCSRCs; ++i) {
-      RtpUtility::AssignUWord32ToBuffer(ptr, rtp_header->header.arrOfCSRCs[i]);
-      ptr += 4;
-    }
-    data_buffer[0] = (data_buffer[0] & 0xf0) | rtp_header->header.numCSRCs;
-    // Update length of header
-    rtp_header_length += sizeof(uint32_t) * rtp_header->header.numCSRCs;
-  }
-  return rtp_header_length;
-}
-
 }  // namespace webrtc

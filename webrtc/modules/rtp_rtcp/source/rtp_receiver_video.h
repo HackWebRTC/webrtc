@@ -55,10 +55,6 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
       const PayloadUnion& specific_payload) const override;
 
   void SetPacketOverHead(uint16_t packet_over_head);
-
- private:
-  int32_t BuildRTPheader(const WebRtcRTPHeader* rtp_header,
-                         uint8_t* data_buffer) const;
 };
 }  // namespace webrtc
 
