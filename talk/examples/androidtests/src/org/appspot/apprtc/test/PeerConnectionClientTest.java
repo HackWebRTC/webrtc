@@ -36,6 +36,7 @@ import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.appspot.apprtc.PeerConnectionClient;
 import org.appspot.apprtc.PeerConnectionClient.PeerConnectionEvents;
 import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
+import org.appspot.apprtc.util.LooperExecutor;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
@@ -49,7 +50,7 @@ import android.util.Log;
 public class PeerConnectionClientTest extends InstrumentationTestCase
     implements PeerConnectionEvents {
   private static final String TAG = "RTCClientTest";
-  private static final String STUN_SERVER = "stun:stun.l.google.com:19302";
+  private static final int ICE_CONNECTION_WAIT_TIMEOUT = 10000;
   private static final int WAIT_TIMEOUT = 7000;
   private static final int CAMERA_SWITCH_ATTEMPTS = 3;
   private static final int VIDEO_RESTART_ATTEMPTS = 3;
@@ -59,6 +60,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
   private static final String VIDEO_CODEC_VP9 = "VP9";
   private static final String VIDEO_CODEC_H264 = "H264";
   private static final int AUDIO_RUN_TIMEOUT = 1000;
+  private static final String DTLS_SRTP_KEY_AGREEMENT_CONSTRAINT = "DtlsSrtpKeyAgreement";
 
   // The peer connection client is assumed to be thread safe in itself; the
   // reference is written by the test thread and read by worker threads.
@@ -66,6 +68,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
   private volatile boolean loopback;
 
   // These are protected by their respective event objects.
+  private LooperExecutor signalingExecutor;
   private boolean isClosed;
   private boolean isIceConnected;
   private SessionDescription localSdp;
@@ -137,12 +140,18 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
   }
 
   @Override
-  public void onIceCandidate(IceCandidate candidate) {
+  public void onIceCandidate(final IceCandidate candidate) {
     synchronized(iceCandidateEvent) {
-      Log.d(TAG, "IceCandidate #" + iceCandidates.size() + " : "
-          + candidate.sdp);
+      Log.d(TAG, "IceCandidate #" + iceCandidates.size() + " : " + candidate.toString());
       if (loopback) {
-        pcClient.addRemoteIceCandidate(candidate);
+        // Loopback local ICE candidate in a separate thread to avoid adding
+        // remote ICE candidate in a local ICE candidate callback.
+        signalingExecutor.execute(new Runnable() {
+          @Override
+          public void run() {
+            pcClient.addRemoteIceCandidate(candidate);
+          }
+        });
       }
       iceCandidates.add(candidate);
       iceCandidateEvent.notifyAll();
@@ -212,6 +221,10 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
       if (!isIceConnected) {
         iceConnectedEvent.wait(timeoutMs);
       }
+      if (!isIceConnected) {
+        Log.e(TAG, "ICE connection failure");
+      }
+
       return isIceConnected;
     }
   }
@@ -229,10 +242,9 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
   private SignalingParameters getTestSignalingParameters() {
     List<PeerConnection.IceServer> iceServers =
         new LinkedList<PeerConnection.IceServer>();
-    PeerConnection.IceServer iceServer = new
-        PeerConnection.IceServer(STUN_SERVER, "", "");
-    iceServers.add(iceServer);
     MediaConstraints pcConstraints = new MediaConstraints();
+    pcConstraints.optional.add(
+        new MediaConstraints.KeyValuePair(DTLS_SRTP_KEY_AGREEMENT_CONSTRAINT, "false"));
     MediaConstraints videoConstraints = new MediaConstraints();
     MediaConstraints audioConstraints = new MediaConstraints();
     SignalingParameters signalingParameters = new SignalingParameters(
@@ -261,6 +273,17 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
         localRenderer, remoteRenderer, signalingParameters);
     client.createOffer();
     return client;
+  }
+
+  @Override
+  public void setUp() {
+    signalingExecutor = new LooperExecutor();
+    signalingExecutor.requestStart();
+  }
+
+  @Override
+  public void tearDown() {
+    signalingExecutor.requestStop();
   }
 
   public void testSetLocalOfferMakesVideoFlowLocally()
@@ -331,7 +354,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     pcClient.setRemoteDescription(remoteSdp);
 
     // Wait for ICE connection.
-    assertTrue("ICE connection failure.", waitForIceConnected(WAIT_TIMEOUT));
+    assertTrue("ICE connection failure.", waitForIceConnected(ICE_CONNECTION_WAIT_TIMEOUT));
 
     if (enableVideo) {
       // Check that local and remote video frames were rendered.
@@ -386,7 +409,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     pcClient.setRemoteDescription(remoteSdp);
 
     // Wait for ICE connection.
-    assertTrue("ICE connection failure.", waitForIceConnected(WAIT_TIMEOUT));
+    assertTrue("ICE connection failure.", waitForIceConnected(ICE_CONNECTION_WAIT_TIMEOUT));
 
     // Check that local and remote video frames were rendered.
     assertTrue("Local video frames were not rendered before camera switch.",
@@ -432,7 +455,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     pcClient.setRemoteDescription(remoteSdp);
 
     // Wait for ICE connection.
-    assertTrue("ICE connection failure.", waitForIceConnected(WAIT_TIMEOUT));
+    assertTrue("ICE connection failure.", waitForIceConnected(ICE_CONNECTION_WAIT_TIMEOUT));
 
     // Check that local and remote video frames were rendered.
     assertTrue("Local video frames were not rendered before video restart.",
