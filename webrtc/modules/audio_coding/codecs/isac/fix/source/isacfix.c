@@ -198,17 +198,14 @@ int16_t WebRtcIsacfix_FreeInternal(ISACFIX_MainStruct *ISAC_main_inst)
  * This function initializes function pointers for ARM Neon platform.
  */
 
-#if (defined WEBRTC_DETECT_ARM_NEON || defined WEBRTC_ARCH_ARM_NEON) || \
-  (defined WEBRTC_ARCH_ARM64_NEON)
+#if (defined WEBRTC_DETECT_ARM_NEON || defined WEBRTC_ARCH_ARM_NEON)
 static void WebRtcIsacfix_InitNeon(void) {
   WebRtcIsacfix_AutocorrFix = WebRtcIsacfix_AutocorrNeon;
   WebRtcIsacfix_FilterMaLoopFix = WebRtcIsacfix_FilterMaLoopNeon;
   WebRtcIsacfix_Spec2Time = WebRtcIsacfix_Spec2TimeNeon;
   WebRtcIsacfix_Time2Spec = WebRtcIsacfix_Time2SpecNeon;
-#if !(defined WEBRTC_ARCH_ARM64_NEON)
   WebRtcIsacfix_CalculateResidualEnergy =
       WebRtcIsacfix_CalculateResidualEnergyNeon;
-#endif
   WebRtcIsacfix_AllpassFilter2FixDec16 =
       WebRtcIsacfix_AllpassFilter2FixDec16Neon;
   WebRtcIsacfix_MatrixProduct1 = WebRtcIsacfix_MatrixProduct1Neon;
@@ -337,7 +334,7 @@ int16_t WebRtcIsacfix_EncoderInit(ISACFIX_MainStruct *ISAC_main_inst,
   if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {
     WebRtcIsacfix_InitNeon();
   }
-#elif defined(WEBRTC_ARCH_ARM_NEON) || defined(WEBRTC_ARCH_ARM64_NEON)
+#elif defined(WEBRTC_ARCH_ARM_NEON)
   WebRtcIsacfix_InitNeon();
 #endif
 
