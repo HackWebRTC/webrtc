@@ -211,7 +211,7 @@ int ViEBaseImpl::DeleteChannel(const int video_channel) {
 
     // Deregister the ViEEncoder if no other channel is using it.
     ViEEncoder* vie_encoder = cs.Encoder(video_channel);
-    if (cs.ChannelUsingViEEncoder(video_channel) == false) {
+    if (!cs.ChannelUsingViEEncoder(video_channel)) {
       ViEInputManagerScoped is(*(shared_data_.input_manager()));
       ViEFrameProviderBase* provider = is.FrameProvider(vie_encoder);
       if (provider) {

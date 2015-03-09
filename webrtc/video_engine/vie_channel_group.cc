@@ -10,6 +10,7 @@
 
 #include "webrtc/video_engine/vie_channel_group.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common.h"
 #include "webrtc/experiments.h"
@@ -20,9 +21,11 @@
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/video_engine/call_stats.h"
 #include "webrtc/video_engine/encoder_state_feedback.h"
+#include "webrtc/video_engine/payload_router.h"
 #include "webrtc/video_engine/vie_channel.h"
 #include "webrtc/video_engine/vie_encoder.h"
 #include "webrtc/video_engine/vie_remb.h"
+#include "webrtc/voice_engine/include/voe_video_sync.h"
 
 namespace webrtc {
 namespace {
@@ -151,7 +154,7 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread, const Config* config)
     own_config_.reset(new Config);
     config_ = own_config_.get();
   }
-  assert(config_);  // Must have a valid config pointer here.
+  DCHECK(config_);  // Must have a valid config pointer here.
 
   remote_bitrate_estimator_.reset(
       new WrappingBitrateEstimator(remb_.get(),
@@ -170,44 +173,248 @@ ChannelGroup::~ChannelGroup() {
   process_thread_->DeRegisterModule(call_stats_.get());
   process_thread_->DeRegisterModule(remote_bitrate_estimator_.get());
   call_stats_->DeregisterStatsObserver(remote_bitrate_estimator_.get());
-  assert(channels_.empty());
-  assert(!remb_->InUse());
+  DCHECK(channels_.empty());
+  DCHECK(channel_map_.empty());
+  DCHECK(!remb_->InUse());
+  DCHECK(vie_encoder_map_.empty());
+}
+
+bool ChannelGroup::CreateSendChannel(int channel_id,
+                                     int engine_id,
+                                     int number_of_cores,
+                                     bool disable_default_encoder) {
+  rtc::scoped_ptr<ViEEncoder> vie_encoder(new ViEEncoder(
+      channel_id, number_of_cores, *config_, *process_thread_,
+      bitrate_allocator_.get(), bitrate_controller_.get(), false));
+  if (!vie_encoder->Init()) {
+    return false;
+  }
+  ViEEncoder* encoder = vie_encoder.get();
+  if (!CreateChannel(channel_id, engine_id, number_of_cores,
+                     vie_encoder.release(), true, disable_default_encoder)) {
+    return false;
+  }
+  ViEChannel* channel = channel_map_[channel_id];
+  // Connect the encoder with the send packet router, to enable sending.
+  encoder->StartThreadsAndSetSharedMembers(channel->send_payload_router(),
+                                           channel->vcm_protection_callback());
+
+  // Register the ViEEncoder to get key frame requests for this channel.
+  unsigned int ssrc = 0;
+  int stream_idx = 0;
+  channel->GetLocalSSRC(stream_idx, &ssrc);
+  encoder_state_feedback_->AddEncoder(ssrc, encoder);
+  std::list<unsigned int> ssrcs;
+  ssrcs.push_back(ssrc);
+  encoder->SetSsrcs(ssrcs);
+  return true;
+}
+
+bool ChannelGroup::CreateReceiveChannel(int channel_id,
+                                        int engine_id,
+                                        int base_channel_id,
+                                        int number_of_cores,
+                                        bool disable_default_encoder) {
+  ViEEncoder* encoder = GetEncoder(base_channel_id);
+  return CreateChannel(channel_id, engine_id, number_of_cores, encoder, false,
+                       disable_default_encoder);
+}
+
+bool ChannelGroup::CreateChannel(int channel_id,
+                                 int engine_id,
+                                 int number_of_cores,
+                                 ViEEncoder* vie_encoder,
+                                 bool sender,
+                                 bool disable_default_encoder) {
+  DCHECK(vie_encoder);
+
+  rtc::scoped_ptr<ViEChannel> channel(new ViEChannel(
+      channel_id, engine_id, number_of_cores, *config_, *process_thread_,
+      encoder_state_feedback_->GetRtcpIntraFrameObserver(),
+      bitrate_controller_->CreateRtcpBandwidthObserver(),
+      remote_bitrate_estimator_.get(), call_stats_->rtcp_rtt_stats(),
+      vie_encoder->GetPacedSender(), sender, disable_default_encoder));
+  if (channel->Init() != 0) {
+    return false;
+  }
+  if (!disable_default_encoder) {
+    VideoCodec encoder;
+    if (vie_encoder->GetEncoder(&encoder) != 0) {
+      return false;
+    }
+    if (sender && channel->SetSendCodec(encoder) != 0) {
+      return false;
+    }
+  }
+
+  // Register the channel to receive stats updates.
+  call_stats_->RegisterStatsObserver(channel->GetStatsObserver());
+
+  // Store the channel, add it to the channel group and save the vie_encoder.
+  channel_map_[channel_id] = channel.release();
+  vie_encoder_map_[channel_id] = vie_encoder;
+
+  return true;
+}
+
+void ChannelGroup::DeleteChannel(int channel_id) {
+  ViEChannel* vie_channel = PopChannel(channel_id);
+
+  ViEEncoder* vie_encoder = GetEncoder(channel_id);
+  DCHECK(vie_encoder != NULL);
+
+  call_stats_->DeregisterStatsObserver(vie_channel->GetStatsObserver());
+  SetChannelRembStatus(channel_id, false, false, vie_channel);
+
+  // If we're owning the encoder, remove the feedback and stop all encoding
+  // threads and processing. This must be done before deleting the channel.
+  if (vie_encoder->channel_id() == channel_id) {
+    encoder_state_feedback_->RemoveEncoder(vie_encoder);
+    vie_encoder->StopThreadsAndRemoveSharedMembers();
+  }
+
+  unsigned int remote_ssrc = 0;
+  vie_channel->GetRemoteSSRC(&remote_ssrc);
+  RemoveChannel(channel_id);
+  remote_bitrate_estimator_->RemoveStream(remote_ssrc);
+
+  // Check if other channels are using the same encoder.
+  if (OtherChannelsUsingEncoder(channel_id)) {
+    vie_encoder = NULL;
+  } else {
+    // Delete later when we've released the critsect.
+  }
+
+  // We can't erase the item before we've checked for other channels using
+  // same ViEEncoder.
+  PopEncoder(channel_id);
+
+  delete vie_channel;
+  // Leave the write critsect before deleting the objects.
+  // Deleting a channel can cause other objects, such as renderers, to be
+  // deleted, which might take time.
+  // If statment just to show that this object is not always deleted.
+  if (vie_encoder) {
+    LOG(LS_VERBOSE) << "ViEEncoder deleted for channel " << channel_id;
+    delete vie_encoder;
+  }
+
+  LOG(LS_VERBOSE) << "Channel deleted " << channel_id;
 }
 
 void ChannelGroup::AddChannel(int channel_id) {
   channels_.insert(channel_id);
 }
 
-void ChannelGroup::RemoveChannel(int channel_id, unsigned int ssrc) {
+void ChannelGroup::RemoveChannel(int channel_id) {
   channels_.erase(channel_id);
-  remote_bitrate_estimator_->RemoveStream(ssrc);
 }
 
-bool ChannelGroup::HasChannel(int channel_id) {
+bool ChannelGroup::HasChannel(int channel_id) const {
   return channels_.find(channel_id) != channels_.end();
 }
 
-bool ChannelGroup::Empty() {
+bool ChannelGroup::Empty() const {
   return channels_.empty();
 }
 
-BitrateAllocator* ChannelGroup::GetBitrateAllocator() {
-  return bitrate_allocator_.get();
+ViEChannel* ChannelGroup::GetChannel(int channel_id) const {
+  ChannelMap::const_iterator it = channel_map_.find(channel_id);
+  if (it == channel_map_.end()) {
+    LOG(LS_ERROR) << "Channel doesn't exist " << channel_id;
+    return NULL;
+  }
+  return it->second;
 }
 
-BitrateController* ChannelGroup::GetBitrateController() {
+ViEEncoder* ChannelGroup::GetEncoder(int channel_id) const {
+  EncoderMap::const_iterator it = vie_encoder_map_.find(channel_id);
+  if (it == vie_encoder_map_.end()) {
+    printf("No encoder found: %d\n", channel_id);
+    return NULL;
+  }
+  return it->second;
+}
+
+ViEChannel* ChannelGroup::PopChannel(int channel_id) {
+  ChannelMap::iterator c_it = channel_map_.find(channel_id);
+  DCHECK(c_it != channel_map_.end());
+  ViEChannel* channel = c_it->second;
+  channel_map_.erase(c_it);
+
+  return channel;
+}
+
+ViEEncoder* ChannelGroup::PopEncoder(int channel_id) {
+  EncoderMap::iterator e_it = vie_encoder_map_.find(channel_id);
+  DCHECK(e_it != vie_encoder_map_.end());
+  ViEEncoder* encoder = e_it->second;
+  vie_encoder_map_.erase(e_it);
+
+  return encoder;
+}
+
+std::vector<int> ChannelGroup::GetChannelIds() const {
+  std::vector<int> ids;
+  for (auto channel : channel_map_)
+    ids.push_back(channel.first);
+  return ids;
+}
+
+bool ChannelGroup::OtherChannelsUsingEncoder(int channel_id) const {
+  EncoderMap::const_iterator orig_it = vie_encoder_map_.find(channel_id);
+  if (orig_it == vie_encoder_map_.end()) {
+    // No ViEEncoder for this channel.
+    return false;
+  }
+
+  // Loop through all other channels to see if anyone points at the same
+  // ViEEncoder.
+  for (EncoderMap::const_iterator comp_it = vie_encoder_map_.begin();
+       comp_it != vie_encoder_map_.end(); ++comp_it) {
+    // Make sure we're not comparing the same channel with itself.
+    if (comp_it->first != channel_id) {
+      if (comp_it->second == orig_it->second) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void ChannelGroup::SetSyncInterface(VoEVideoSync* sync_interface) {
+  for (auto channel : channel_map_) {
+    channel.second->SetVoiceChannel(-1, sync_interface);
+  }
+}
+
+void ChannelGroup::GetChannelsUsingEncoder(int channel_id,
+                                           ChannelList* channels) const {
+  EncoderMap::const_iterator orig_it = vie_encoder_map_.find(channel_id);
+
+  for (ChannelMap::const_iterator c_it = channel_map_.begin();
+       c_it != channel_map_.end(); ++c_it) {
+    EncoderMap::const_iterator comp_it = vie_encoder_map_.find(c_it->first);
+    DCHECK(comp_it != vie_encoder_map_.end());
+    if (comp_it->second == orig_it->second) {
+      channels->push_back(c_it->second);
+    }
+  }
+}
+
+BitrateController* ChannelGroup::GetBitrateController() const {
   return bitrate_controller_.get();
 }
 
-RemoteBitrateEstimator* ChannelGroup::GetRemoteBitrateEstimator() {
+RemoteBitrateEstimator* ChannelGroup::GetRemoteBitrateEstimator() const {
   return remote_bitrate_estimator_.get();
 }
 
-CallStats* ChannelGroup::GetCallStats() {
+CallStats* ChannelGroup::GetCallStats() const {
   return call_stats_.get();
 }
 
-EncoderStateFeedback* ChannelGroup::GetEncoderStateFeedback() {
+EncoderStateFeedback* ChannelGroup::GetEncoderStateFeedback() const {
   return encoder_state_feedback_.get();
 }
 

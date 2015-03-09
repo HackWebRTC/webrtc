@@ -14,17 +14,16 @@
 #include <list>
 #include <map>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
-#include "webrtc/video_engine/vie_channel_group.h"
 #include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/video_engine/vie_manager_base.h"
 #include "webrtc/video_engine/vie_remb.h"
 
 namespace webrtc {
 
+class ChannelGroup;
 class Config;
 class CriticalSectionWrapper;
 class ProcessThread;
@@ -36,8 +35,6 @@ class VoiceEngine;
 
 typedef std::list<ChannelGroup*> ChannelGroups;
 typedef std::list<ViEChannel*> ChannelList;
-typedef std::map<int, ViEChannel*> ChannelMap;
-typedef std::map<int, ViEEncoder*> EncoderMap;
 
 class ViEChannelManager: private ViEManagerBase {
   friend class ViEChannelManagerScoped;
@@ -90,17 +87,6 @@ class ViEChannelManager: private ViEManagerBase {
                                     uint32_t* estimated_bandwidth) const;
 
  private:
-  // Creates a channel object connected to |vie_encoder|. Assumed to be called
-  // protected.
-  bool CreateChannelObject(int channel_id,
-                           ViEEncoder* vie_encoder,
-                           RtcpBandwidthObserver* bandwidth_observer,
-                           RemoteBitrateEstimator* remote_bitrate_estimator,
-                           RtcpRttStats* rtcp_rtt_stats,
-                           RtcpIntraFrameObserver* intra_frame_observer,
-                           bool sender,
-                           bool disable_default_encoder);
-
   // Used by ViEChannelScoped, forcing a manager user to use scoped.
   // Returns a pointer to the channel with id 'channel_id'.
   ViEChannel* ViEChannelPtr(int channel_id) const;
@@ -128,8 +114,6 @@ class ViEChannelManager: private ViEManagerBase {
   int engine_id_;
   int number_of_cores_;
 
-  // TODO(mflodman) Make part of channel group.
-  ChannelMap channel_map_;
   bool* free_channel_ids_;
   int free_channel_ids_size_;
 
@@ -137,12 +121,9 @@ class ViEChannelManager: private ViEManagerBase {
   std::list<ChannelGroup*> channel_groups_;
 
   // TODO(mflodman) Make part of channel group.
-  // Maps Channel id -> ViEEncoder.
-  EncoderMap vie_encoder_map_;
   VoEVideoSync* voice_sync_interface_;
 
   ProcessThread* module_process_thread_;
-  const Config& engine_config_;
 };
 
 class ViEChannelManagerScoped: private ViEManagerScopedBase {
