@@ -81,7 +81,7 @@ class WebRtcVideoCapturer : public VideoCapturer,
  private:
   // Callback when a frame is captured by camera.
   virtual void OnIncomingCapturedFrame(const int32_t id,
-                                       const webrtc::I420VideoFrame& frame);
+                                       webrtc::I420VideoFrame& frame);
   virtual void OnCaptureDelayChanged(const int32_t id,
                                      const int32_t delay);
 
@@ -91,7 +91,7 @@ class WebRtcVideoCapturer : public VideoCapturer,
   // directly from OnIncomingCapturedFrame.
   // TODO(tommi): Remove this workaround when we've updated the WebRTC capturers
   // to follow the same contract.
-  void SignalFrameCapturedOnStartThread(const webrtc::I420VideoFrame* frame);
+  void SignalFrameCapturedOnStartThread(webrtc::I420VideoFrame* frame);
 
   rtc::scoped_ptr<WebRtcVcmFactoryInterface> factory_;
   webrtc::VideoCaptureModule* module_;

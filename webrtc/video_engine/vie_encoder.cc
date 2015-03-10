@@ -582,8 +582,16 @@ void ViEEncoder::DeliverFrame(int id,
     TraceFrameDropEnd();
   }
 
+  // Convert render time, in ms, to RTP timestamp.
+  const int kMsToRtpTimestamp = 90;
+  const uint32_t time_stamp =
+      kMsToRtpTimestamp *
+      static_cast<uint32_t>(video_frame->render_time_ms());
+
   TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", video_frame->render_time_ms(),
                           "Encode");
+  video_frame->set_timestamp(time_stamp);
+
   I420VideoFrame* decimated_frame = NULL;
   // TODO(wuchengli): support texture frames.
   if (video_frame->native_handle() == NULL) {

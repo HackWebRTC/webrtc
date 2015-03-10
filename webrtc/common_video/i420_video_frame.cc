@@ -139,14 +139,6 @@ int I420VideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
   return 0;
 }
 
-void I420VideoFrame::ShallowCopy(const I420VideoFrame& videoFrame) {
-  video_frame_buffer_ = videoFrame.video_frame_buffer();
-  timestamp_ = videoFrame.timestamp_;
-  ntp_time_ms_ = videoFrame.ntp_time_ms_;
-  render_time_ms_ = videoFrame.render_time_ms_;
-  rotation_ = videoFrame.rotation_;
-}
-
 I420VideoFrame* I420VideoFrame::CloneFrame() const {
   rtc::scoped_ptr<I420VideoFrame> new_frame(new I420VideoFrame());
   if (new_frame->CopyFrame(*this) == -1) {

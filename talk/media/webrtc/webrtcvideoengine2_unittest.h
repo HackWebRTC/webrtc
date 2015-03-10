@@ -54,7 +54,7 @@ class FakeVideoSendStream : public webrtc::VideoSendStream,
   void SetStats(const webrtc::VideoSendStream::Stats& stats);
 
  private:
-  void IncomingCapturedFrame(const webrtc::I420VideoFrame& frame) override;
+  void SwapFrame(webrtc::I420VideoFrame* frame) override;
   webrtc::VideoSendStream::Stats GetStats() override;
 
   bool ReconfigureVideoEncoder(

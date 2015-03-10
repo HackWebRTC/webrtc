@@ -69,17 +69,17 @@ class ViECapturer
   int FrameCallbackChanged();
 
   // Implements ExternalCapture.
-  int IncomingFrame(unsigned char* video_frame,
-                    size_t video_frame_length,
-                    uint16_t width,
-                    uint16_t height,
-                    RawVideoType video_type,
-                    unsigned long long capture_time = 0) override;
+  virtual int IncomingFrame(unsigned char* video_frame,
+                            size_t video_frame_length,
+                            uint16_t width,
+                            uint16_t height,
+                            RawVideoType video_type,
+                            unsigned long long capture_time = 0);  // NOLINT
 
-  int IncomingFrameI420(const ViEVideoFrameI420& video_frame,
-                        unsigned long long capture_time = 0) override;
+  virtual int IncomingFrameI420(const ViEVideoFrameI420& video_frame,
+                                unsigned long long capture_time = 0);  // NOLINT
 
-  void IncomingFrame(const I420VideoFrame& frame) override;
+  void SwapFrame(I420VideoFrame* frame) override;
 
   // Start/Stop.
   int32_t Start(
@@ -123,7 +123,7 @@ class ViECapturer
 
   // Implements VideoCaptureDataCallback.
   virtual void OnIncomingCapturedFrame(const int32_t id,
-                                       const I420VideoFrame& video_frame);
+                                       I420VideoFrame& video_frame);
   virtual void OnCaptureDelayChanged(const int32_t id,
                                      const int32_t delay);
 
@@ -172,10 +172,6 @@ class ViECapturer
   volatile int stop_;
 
   rtc::scoped_ptr<I420VideoFrame> captured_frame_;
-  // Used to make sure incoming time stamp is increasing for every frame.
-  int64_t last_captured_timestamp_;
-  // Delta used for translating between NTP and internal timestamps.
-  const int64_t delta_ntp_internal_ms_;
   rtc::scoped_ptr<I420VideoFrame> deliver_frame_;
 
   // Image processing.

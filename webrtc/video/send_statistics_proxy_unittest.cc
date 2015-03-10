@@ -128,6 +128,16 @@ TEST_F(SendStatisticsProxyTest, RtcpStatistics) {
   ExpectEqual(expected_, stats);
 }
 
+TEST_F(SendStatisticsProxyTest, CaptureFramerate) {
+  const int capture_fps = 31;
+
+  ViECaptureObserver* capture_observer = statistics_proxy_.get();
+  capture_observer->CapturedFrameRate(0, capture_fps);
+
+  VideoSendStream::Stats stats = statistics_proxy_->GetStats();
+  EXPECT_EQ(capture_fps, stats.input_frame_rate);
+}
+
 TEST_F(SendStatisticsProxyTest, EncodedBitrateAndFramerate) {
   const int media_bitrate_bps = 500;
   const int encode_fps = 29;

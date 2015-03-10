@@ -114,11 +114,11 @@ void FrameGeneratorCapturer::InsertFrame() {
     CriticalSectionScoped cs(lock_.get());
     if (sending_) {
       I420VideoFrame* frame = frame_generator_->NextFrame();
-      frame->set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
+      frame->set_render_time_ms(clock_->CurrentNtpInMilliseconds());
       if (first_frame_capture_time_ == -1) {
-        first_frame_capture_time_ = frame->ntp_time_ms();
+        first_frame_capture_time_ = frame->render_time_ms();
       }
-      input_->IncomingCapturedFrame(*frame);
+      input_->SwapFrame(frame);
     }
   }
   tick_->Wait(WEBRTC_EVENT_INFINITE);

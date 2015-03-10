@@ -170,7 +170,7 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
   // check that the callbacks are done after processing video.
   rtc::scoped_ptr<test::FrameGenerator> frame_generator(
       test::FrameGenerator::CreateChromaGenerator(kWidth, kHeight));
-  send_stream_->Input()->IncomingCapturedFrame(*frame_generator->NextFrame());
+  send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
   EXPECT_EQ(kEventSignaled, pre_render_callback.Wait())
       << "Timed out while waiting for pre-render callback.";
   EXPECT_EQ(kEventSignaled, renderer.Wait())
@@ -218,7 +218,7 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
   rtc::scoped_ptr<test::FrameGenerator> frame_generator(
       test::FrameGenerator::CreateChromaGenerator(
           encoder_config_.streams[0].width, encoder_config_.streams[0].height));
-  send_stream_->Input()->IncomingCapturedFrame(*frame_generator->NextFrame());
+  send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
 
   EXPECT_EQ(kEventSignaled, renderer.Wait())
       << "Timed out while waiting for the frame to render.";
@@ -833,7 +833,7 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
   // check that the callbacks are done after processing video.
   rtc::scoped_ptr<test::FrameGenerator> frame_generator(
       test::FrameGenerator::CreateChromaGenerator(kWidth / 2, kHeight / 2));
-  send_stream_->Input()->IncomingCapturedFrame(*frame_generator->NextFrame());
+  send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
 
   EXPECT_EQ(kEventSignaled, pre_encode_callback.Wait())
       << "Timed out while waiting for pre-encode callback.";
@@ -1263,7 +1263,7 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
   rtc::scoped_ptr<test::FrameGenerator> frame_generator(
       test::FrameGenerator::CreateChromaGenerator(
           encoder_config_.streams[0].width, encoder_config_.streams[0].height));
-  send_stream_->Input()->IncomingCapturedFrame(*frame_generator->NextFrame());
+  send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
 
   EXPECT_EQ(kEventSignaled, post_encode_observer.Wait())
       << "Timed out while waiting for send-side encoded-frame callback.";
