@@ -673,6 +673,7 @@ source_set("webrtc_opus") {
     public_configs = [ "../..:common_inherited_config" ]
 
     deps += [ rtc_opus_dir ]
+    forward_dependent_configs_from = [ rtc_opus_dir ]
   }
 }
 
@@ -760,8 +761,6 @@ source_set("neteq") {
     ":neteq_config",
   ]
 
-  forward_dependent_configs_from = [ rtc_opus_dir ]
-
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
@@ -780,6 +779,12 @@ source_set("neteq") {
     "../..:webrtc_common",
     "../../common_audio",
     "../../system_wrappers",
-    rtc_opus_dir,
   ]
+
+  defines = []
+
+  if (rtc_include_opus) {
+    defines += [ "WEBRTC_CODEC_OPUS" ]
+    deps += [ ":webrtc_opus" ]
+  }
 }
