@@ -73,14 +73,11 @@ static void WindowAndFFT(AecmCore* aecm,
   for (i = 0; i < PART_LEN; i++) {
     // Window time domain signal and insert into real part of
     // transformation array |fft|
-    fft[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(
-        (time_signal[i] << time_signal_scaling),
-        WebRtcAecm_kSqrtHanning[i],
-        14);
-    fft[PART_LEN + i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(
-        (time_signal[i + PART_LEN] << time_signal_scaling),
-        WebRtcAecm_kSqrtHanning[PART_LEN - i],
-        14);
+    int16_t scaled_time_signal = time_signal[i] << time_signal_scaling;
+    fft[i] = (int16_t)((scaled_time_signal * WebRtcAecm_kSqrtHanning[i]) >> 14);
+    scaled_time_signal = time_signal[i + PART_LEN] << time_signal_scaling;
+    fft[PART_LEN + i] = (int16_t)((
+        scaled_time_signal * WebRtcAecm_kSqrtHanning[PART_LEN - i]) >> 14);
   }
 
   // Do forward FFT, then take only the first PART_LEN complex samples,
@@ -124,9 +121,8 @@ static void InverseFFTAndWindow(AecmCore* aecm,
                                         tmp32no1 + aecm->outBuf[i],
                                         WEBRTC_SPL_WORD16_MIN);
 
-    tmp32no1 = WEBRTC_SPL_MUL_16_16_RSFT(ifft_out[PART_LEN + i],
-                                         WebRtcAecm_kSqrtHanning[PART_LEN - i],
-                                         14);
+    tmp32no1 = (ifft_out[PART_LEN + i] *
+        WebRtcAecm_kSqrtHanning[PART_LEN - i]) >> 14;
     tmp32no1 = WEBRTC_SPL_SHIFT_W32(tmp32no1,
                                     outCFFT - aecm->dfaCleanQDomain);
     aecm->outBuf[i] = (int16_t)WEBRTC_SPL_SAT(WEBRTC_SPL_WORD16_MAX,
@@ -250,8 +246,8 @@ static int TimeToFrequencyDomain(AecmCore* aecm,
         alpha = kAlpha3;
         beta = kBeta3;
       }
-      tmp16no1 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(max_value, alpha, 15);
-      tmp16no2 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(min_value, beta, 15);
+      tmp16no1 = (int16_t)((max_value * alpha) >> 15);
+      tmp16no2 = (int16_t)((min_value * beta) >> 15);
       freq_signal_abs[i] = (uint16_t)tmp16no1 + (uint16_t)tmp16no2;
 #else
 #ifdef WEBRTC_ARCH_ARM_V7
@@ -561,7 +557,7 @@ int WebRtcAecm_ProcessBlock(AecmCore* aecm,
     //               speech distortion in double-talk.
     for (i = 0; i < PART_LEN1; i++)
     {
-      hnl[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(hnl[i], hnl[i], 14);
+      hnl[i] = (int16_t)((hnl[i] * hnl[i]) >> 14);
     }
 
     for (i = kMinPrefBand; i <= kMaxPrefBand; i++)
@@ -609,7 +605,7 @@ int WebRtcAecm_ProcessBlock(AecmCore* aecm,
         hnl[i] = ONE_Q14;
       } else
       {
-        hnl[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(hnl[i], nlpGain, 14);
+        hnl[i] = (int16_t)((hnl[i] * nlpGain) >> 14);
       }
 
       // multiply with Wiener coefficients
@@ -744,9 +740,7 @@ static void ComfortNoise(AecmCore* aecm,
     noiseRShift16[i] = (int16_t)tmp32;
 
     tmp16 = ONE_Q14 - lambda[i];
-    noiseRShift16[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(tmp16,
-                                                          noiseRShift16[i],
-                                                          14);
+    noiseRShift16[i] = (int16_t)((tmp16 * noiseRShift16[i]) >> 14);
   }
 
   // Generate a uniform random array on [0 2^15-1].
@@ -758,15 +752,13 @@ static void ComfortNoise(AecmCore* aecm,
   for (i = 1; i < PART_LEN1; i++)
   {
     // Get a random index for the cos and sin tables over [0 359].
-    tmp16 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(359, randW16[i - 1], 15);
+    tmp16 = (int16_t)((359 * randW16[i - 1]) >> 15);
 
     // Tables are in Q13.
-    uReal[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(noiseRShift16[i],
-                                                  WebRtcAecm_kCosTable[tmp16],
-                                                  13);
-    uImag[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(-noiseRShift16[i],
-                                                  WebRtcAecm_kSinTable[tmp16],
-                                                  13);
+    uReal[i] = (int16_t)((noiseRShift16[i] * WebRtcAecm_kCosTable[tmp16]) >>
+        13);
+    uImag[i] = (int16_t)((-noiseRShift16[i] * WebRtcAecm_kSinTable[tmp16]) >>
+        13);
   }
   uImag[PART_LEN] = 0;
 
