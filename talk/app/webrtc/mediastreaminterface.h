@@ -115,26 +115,8 @@ class MediaStreamTrackInterface : public rtc::RefCountInterface,
 // Interface for rendering VideoFrames from a VideoTrack
 class VideoRendererInterface {
  public:
-  // TODO(guoweis): Remove this function.  Obsolete. The implementation of
-  // VideoRendererInterface should be able to handle different frame size as
-  // well as pending rotation. If it can't apply the frame rotation by itself,
-  // it should call |frame|.GetCopyWithRotationApplied() to get a frame that has
-  // the rotation applied.
-  virtual void SetSize(int width, int height) {}
-
-  // |frame| may have pending rotation. For clients which can't apply rotation,
-  // |frame|->GetCopyWithRotationApplied() will return a frame that has the
-  // rotation applied.
+  virtual void SetSize(int width, int height) = 0;
   virtual void RenderFrame(const cricket::VideoFrame* frame) = 0;
-
-  // TODO(guoweis): Remove this function. This is added as a temporary solution
-  // until chrome renderers can apply rotation.
-  // Whether the VideoRenderer has the ability to rotate the frame before being
-  // displayed. The rotation of a frame is carried by
-  // VideoFrame.GetVideoRotation() and is the clockwise angle the frames must be
-  // rotated in order to display the frames correctly. If returning false, the
-  // frame's rotation must be applied before being delivered by RenderFrame.
-  virtual bool CanApplyRotation() { return false; }
 
  protected:
   // The destructor is protected to prevent deletion via the interface.

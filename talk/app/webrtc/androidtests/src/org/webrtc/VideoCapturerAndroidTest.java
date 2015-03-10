@@ -41,7 +41,8 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     private int framesRendered = 0;
     private Object frameLock = 0;
 
-    private void setSize(int width, int height) {
+    @Override
+    public void setSize(int width, int height) {
     }
 
     @Override

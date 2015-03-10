@@ -53,9 +53,7 @@ GtkVideoRenderer::GtkVideoRenderer(int x, int y)
     : window_(NULL),
       draw_area_(NULL),
       initial_x_(x),
-      initial_y_(y),
-      width_(0),
-      height_(0) {
+      initial_y_(y) {
   g_type_init();
   // g_thread_init API is deprecated since glib 2.31.0, see release note:
   // http://mail.gnome.org/archives/gnome-announce-list/2011-October/msg00041.html
@@ -79,11 +77,6 @@ GtkVideoRenderer::~GtkVideoRenderer() {
 bool GtkVideoRenderer::SetSize(int width, int height, int reserved) {
   ScopedGdkLock lock;
 
-  // If the dimension is the same, no-op.
-  if (width_ == width && height_ == height) {
-    return true;
-  }
-
   // For the first frame, initialize the GTK window
   if ((!window_ && !Initialize(width, height)) || IsClosed()) {
     return false;
@@ -91,21 +84,11 @@ bool GtkVideoRenderer::SetSize(int width, int height, int reserved) {
 
   image_.reset(new uint8[width * height * 4]);
   gtk_widget_set_size_request(draw_area_, width, height);
-
-  width_ = width;
-  height_ = height;
   return true;
 }
 
-bool GtkVideoRenderer::RenderFrame(const VideoFrame* video_frame) {
-  if (!video_frame) {
-    return false;
-  }
-
-  const VideoFrame* frame = video_frame->GetCopyWithRotationApplied();
-
-  // Need to set size as the frame might be rotated.
-  if (!SetSize(frame->GetWidth(), frame->GetHeight(), 0)) {
+bool GtkVideoRenderer::RenderFrame(const VideoFrame* frame) {
+  if (!frame) {
     return false;
   }
 

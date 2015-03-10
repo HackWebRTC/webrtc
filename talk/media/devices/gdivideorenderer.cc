@@ -146,15 +146,8 @@ bool GdiVideoRenderer::VideoWindow::SetSize(int width, int height) {
   return true;
 }
 
-bool GdiVideoRenderer::VideoWindow::RenderFrame(const VideoFrame* video_frame) {
+bool GdiVideoRenderer::VideoWindow::RenderFrame(const VideoFrame* frame) {
   if (!handle()) {
-    return false;
-  }
-
-  const VideoFrame* frame = video_frame->GetCopyWithRotationApplied();
-
-  if (!SetSize(static_cast<int>(frame->GetWidth()),
-               static_cast<int>(frame->GetHeight()))) {
     return false;
   }
 

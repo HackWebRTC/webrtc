@@ -144,8 +144,7 @@ public class VideoRenderer {
 
   /** The real meat of VideoRendererInterface. */
   public static interface Callbacks {
-    // |frame| might have pending rotation and implementation of Callbacks
-    // should handle that by applying rotation during rendering.
+    public void setSize(int width, int height);
     public void renderFrame(I420Frame frame);
   }
 

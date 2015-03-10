@@ -33,9 +33,7 @@
 #include "libyuv/planar_functions.h"
 #include "libyuv/scale.h"
 #include "talk/media/base/videocommon.h"
-#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace cricket {
 
@@ -120,51 +118,6 @@ void VideoFrame::CopyToFrame(VideoFrame* dst) const {
 
   CopyToPlanes(dst->GetYPlane(), dst->GetUPlane(), dst->GetVPlane(),
                dst->GetYPitch(), dst->GetUPitch(), dst->GetVPitch());
-}
-
-const VideoFrame* VideoFrame::GetCopyWithRotationApplied() const {
-  // If the frame is not rotated, the caller should reuse this frame instead of
-  // making a redundant copy.
-  if (GetVideoRotation() == webrtc::kVideoRotation_0) {
-    return this;
-  }
-
-  // If the video frame is backed up by a native handle, it resides in the GPU
-  // memory which we can't rotate here. The assumption is that the renderers
-  // which uses GPU to render should be able to rotate themselves.
-  DCHECK(!GetNativeHandle());
-
-  if (rotated_frame_) {
-    return rotated_frame_.get();
-  }
-
-  int width = static_cast<int>(GetWidth());
-  int height = static_cast<int>(GetHeight());
-
-  int rotated_width = width;
-  int rotated_height = height;
-  if (GetVideoRotation() == webrtc::kVideoRotation_90 ||
-      GetVideoRotation() == webrtc::kVideoRotation_270) {
-    rotated_width = height;
-    rotated_height = width;
-  }
-
-  rotated_frame_.reset(CreateEmptyFrame(rotated_width, rotated_height,
-                                        GetPixelWidth(), GetPixelHeight(),
-                                        GetElapsedTime(), GetTimeStamp()));
-
-  // TODO(guoweis): Add a function in webrtc_libyuv.cc to convert from
-  // VideoRotation to libyuv::RotationMode.
-  int ret = libyuv::I420Rotate(
-      GetYPlane(), GetYPitch(), GetUPlane(), GetUPitch(), GetVPlane(),
-      GetVPitch(), rotated_frame_->GetYPlane(), rotated_frame_->GetYPitch(),
-      rotated_frame_->GetUPlane(), rotated_frame_->GetUPitch(),
-      rotated_frame_->GetVPlane(), rotated_frame_->GetVPitch(), width, height,
-      static_cast<libyuv::RotationMode>(GetVideoRotation()));
-  if (ret == 0) {
-    return rotated_frame_.get();
-  }
-  return nullptr;
 }
 
 size_t VideoFrame::ConvertToRgbBuffer(uint32 to_fourcc,

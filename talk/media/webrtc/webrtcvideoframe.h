@@ -124,9 +124,6 @@ class WebRtcVideoFrame : public VideoFrame {
   virtual size_t ConvertToRgbBuffer(uint32 to_fourcc, uint8* buffer,
                                     size_t size, int stride_rgb) const;
 
- protected:
-  void SetRotation(webrtc::VideoRotation rotation) { rotation_ = rotation; }
-
  private:
   virtual VideoFrame* CreateEmptyFrame(int w, int h, size_t pixel_width,
                                        size_t pixel_height,

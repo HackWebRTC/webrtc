@@ -33,7 +33,6 @@
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/media/base/videorenderer.h"
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -59,11 +58,14 @@ class VideoTrackRenderers : public cricket::VideoRenderer {
   struct RenderObserver {
     explicit RenderObserver(VideoRendererInterface* renderer)
         : renderer_(renderer),
-          can_apply_rotation_(renderer->CanApplyRotation()) {}
+          size_set_(false) {
+    }
     VideoRendererInterface* renderer_;
-    bool can_apply_rotation_;
+    bool size_set_;
   };
 
+  int width_;
+  int height_;
   bool enabled_;
   std::vector<RenderObserver> renderers_;
 
