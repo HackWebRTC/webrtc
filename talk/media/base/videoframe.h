@@ -29,6 +29,7 @@
 #define TALK_MEDIA_BASE_VIDEOFRAME_H_
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/common_video/rotation.h"
 
@@ -161,9 +162,7 @@ class VideoFrame {
 
   // Return a copy of frame which has its pending rotation applied. The
   // ownership of the returned frame is held by this frame.
-  virtual const VideoFrame* GetCopyWithRotationApplied() const {
-    return nullptr;
-  }
+  virtual const VideoFrame* GetCopyWithRotationApplied() const;
 
   // Writes the frame into the given stream and returns the StreamResult.
   // See webrtc/base/stream.h for a description of StreamResult and error.
@@ -229,6 +228,11 @@ class VideoFrame {
                                        size_t pixel_height,
                                        int64_t elapsed_time,
                                        int64_t time_stamp) const = 0;
+
+ private:
+  // This is mutable as the calculation is expensive but once calculated, it
+  // remains const.
+  mutable rtc::scoped_ptr<VideoFrame> rotated_frame_;
 };
 
 }  // namespace cricket
