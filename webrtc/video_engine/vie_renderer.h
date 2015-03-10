@@ -64,9 +64,6 @@ class ViERenderer: public ViEFrameCallback {
   int32_t StartRender();
   int32_t StopRender();
 
-  int32_t GetLastRenderedFrame(const int32_t renderID,
-                               I420VideoFrame& video_frame);
-
   int SetExpectedRenderDelay(int render_delay);
 
   int32_t ConfigureRenderer(const unsigned int z_order,

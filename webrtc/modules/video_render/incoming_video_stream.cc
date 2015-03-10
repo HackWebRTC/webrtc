@@ -50,7 +50,7 @@ IncomingVideoStream::IncomingVideoStream(const int32_t module_id,
       incoming_rate_(0),
       last_rate_calculation_time_ms_(0),
       num_frames_since_last_calculation_(0),
-      last_rendered_frame_(),
+      last_render_time_ms_(0),
       temp_frame_(),
       start_image_(),
       timeout_image_(),
@@ -286,13 +286,12 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
 
     if (!frame_to_render) {
       if (render_callback_) {
-        if (last_rendered_frame_.render_time_ms() == 0 &&
-            !start_image_.IsZeroSize()) {
+        if (last_render_time_ms_ == 0 && !start_image_.IsZeroSize()) {
           // We have not rendered anything and have a start image.
           temp_frame_.CopyFrame(start_image_);
           render_callback_->RenderFrame(stream_id_, temp_frame_);
         } else if (!timeout_image_.IsZeroSize() &&
-                   last_rendered_frame_.render_time_ms() + timeout_time_ <
+                   last_render_time_ms_ + timeout_time_ <
                        TickTime::MillisecondTimestamp()) {
           // Render a timeout image.
           temp_frame_.CopyFrame(timeout_image_);
@@ -326,17 +325,11 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
     // We're done with this frame, delete it.
     if (frame_to_render) {
       CriticalSectionScoped cs(&buffer_critsect_);
-      last_rendered_frame_.SwapFrame(frame_to_render);
+      last_render_time_ms_= frame_to_render->render_time_ms();
       render_buffers_.ReturnFrame(frame_to_render);
     }
   }
   return true;
-}
-
-int32_t IncomingVideoStream::GetLastRenderedFrame(
-    I420VideoFrame& video_frame) const {
-  CriticalSectionScoped cs(&buffer_critsect_);
-  return video_frame.CopyFrame(last_rendered_frame_);
 }
 
 }  // namespace webrtc

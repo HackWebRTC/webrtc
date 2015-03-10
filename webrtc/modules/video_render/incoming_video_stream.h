@@ -50,8 +50,6 @@ class IncomingVideoStream : public VideoRenderCallback {
   uint32_t StreamId() const;
   uint32_t IncomingRate() const;
 
-  int32_t GetLastRenderedFrame(I420VideoFrame& video_frame) const;
-
   int32_t SetStartImage(const I420VideoFrame& video_frame);
 
   int32_t SetTimeoutImage(const I420VideoFrame& video_frame,
@@ -89,7 +87,7 @@ class IncomingVideoStream : public VideoRenderCallback {
   uint32_t incoming_rate_;
   int64_t last_rate_calculation_time_ms_;
   uint16_t num_frames_since_last_calculation_;
-  I420VideoFrame last_rendered_frame_;
+  int64_t last_render_time_ms_;
   I420VideoFrame temp_frame_;
   I420VideoFrame start_image_;
   I420VideoFrame timeout_image_;

@@ -156,13 +156,6 @@ public:
             RegisterRawFrameCallback(const uint32_t streamId,
                                      VideoRenderCallback* callbackObj) = 0;
 
-    /*
-     * This method is usefull to get last rendered frame for the stream specified
-     */
-    virtual int32_t
-            GetLastRenderedFrame(const uint32_t streamId,
-                                 I420VideoFrame &frame) const = 0;
-
     /**************************************************************************
      *
      *   Start/Stop

@@ -49,11 +49,6 @@ int32_t ViERenderer::StopRender() {
   return render_module_.StopRender(render_id_);
 }
 
-int32_t ViERenderer::GetLastRenderedFrame(const int32_t renderID,
-                                          I420VideoFrame& video_frame) {
-  return render_module_.GetLastRenderedFrame(renderID, video_frame);
-}
-
 int ViERenderer::SetExpectedRenderDelay(int render_delay) {
   return render_module_.SetExpectedRenderDelay(render_id_, render_delay);
 }

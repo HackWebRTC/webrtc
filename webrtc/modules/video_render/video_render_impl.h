@@ -109,9 +109,6 @@ public:
             RegisterRawFrameCallback(const uint32_t streamId,
                                      VideoRenderCallback* callbackObj);
 
-    virtual int32_t GetLastRenderedFrame(const uint32_t streamId,
-                                         I420VideoFrame &frame) const;
-
     virtual int32_t SetExpectedRenderDelay(uint32_t stream_id,
                                            int32_t delay_ms);
 

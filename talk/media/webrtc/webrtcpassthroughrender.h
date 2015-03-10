@@ -93,11 +93,6 @@ class WebRtcPassthroughRender : public webrtc::VideoRender {
     return -1;
   }
 
-  int32_t GetLastRenderedFrame(const uint32_t stream_id,
-                               webrtc::I420VideoFrame& frame) const override {
-    return -1;
-  }
-
   int32_t StartRender(const uint32_t stream_id) override;
 
   int32_t StopRender(const uint32_t stream_id) override;
