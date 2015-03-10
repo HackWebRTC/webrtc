@@ -174,41 +174,22 @@ enum VideoFrameType {
 // TODO(pbos): Rename EncodedFrame and reformat this class' members.
 class EncodedImage {
  public:
-  EncodedImage()
-      : _encodedWidth(0),
-        _encodedHeight(0),
-        _timeStamp(0),
-        capture_time_ms_(0),
-        _frameType(kDeltaFrame),
-        _buffer(NULL),
-        _length(0),
-        _size(0),
-        _completeFrame(false) {}
-
+  EncodedImage() : EncodedImage(nullptr, 0, 0) {}
   EncodedImage(uint8_t* buffer, size_t length, size_t size)
-      : _encodedWidth(0),
-        _encodedHeight(0),
-        _timeStamp(0),
-        ntp_time_ms_(0),
-        capture_time_ms_(0),
-        _frameType(kDeltaFrame),
-        _buffer(buffer),
-        _length(length),
-        _size(size),
-        _completeFrame(false) {}
+      : _buffer(buffer), _length(length), _size(size) {}
 
-  uint32_t _encodedWidth;
-  uint32_t _encodedHeight;
-  uint32_t _timeStamp;
+  uint32_t _encodedWidth = 0;
+  uint32_t _encodedHeight = 0;
+  uint32_t _timeStamp = 0;
   // NTP time of the capture time in local timebase in milliseconds.
-  int64_t ntp_time_ms_;
-  int64_t capture_time_ms_;
+  int64_t ntp_time_ms_ = 0;
+  int64_t capture_time_ms_ = 0;
   // TODO(pbos): Use webrtc::FrameType directly (and remove VideoFrameType).
-  VideoFrameType _frameType;
+  VideoFrameType _frameType = kDeltaFrame;
   uint8_t* _buffer;
   size_t _length;
   size_t _size;
-  bool _completeFrame;
+  bool _completeFrame = false;
 };
 
 }  // namespace webrtc
