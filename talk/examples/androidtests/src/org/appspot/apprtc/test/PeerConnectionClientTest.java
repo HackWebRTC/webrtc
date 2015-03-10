@@ -98,8 +98,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
       doneRendering = new CountDownLatch(expectedFrames);
     }
 
-    @Override
-    public synchronized void setSize(int width, int height) {
+    private synchronized void setSize(int width, int height) {
       Log.d(TAG, "Set size: " + width + " x " + height);
       this.width = width;
       this.height = height;

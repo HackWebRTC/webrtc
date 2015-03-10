@@ -528,10 +528,14 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       }
     }
 
-    @Override
-    public void setSize(final int width, final int height) {
+    private void setSize(final int width, final int height) {
+      if (width == videoWidth && height == videoHeight) {
+          return;
+      }
+
       Log.d(TAG, "ID: " + id + ". YuvImageRenderer.setSize: " +
           width + " x " + height);
+
       videoWidth = width;
       videoHeight = height;
       int[] strides = { width, width / 2, width / 2  };
@@ -550,6 +554,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
     @Override
     public synchronized void renderFrame(I420Frame frame) {
+      setSize(frame.width, frame.height);
       long now = System.nanoTime();
       framesReceived++;
       // Skip rendering of this frame if setSize() was not called.

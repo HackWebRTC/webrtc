@@ -43,6 +43,27 @@ class NativeHandleImpl : public webrtc::NativeHandle {
   int32_t ref_count_;
 };
 
+namespace {
+
+class WebRtcVideoTestFrame : public cricket::WebRtcVideoFrame {
+ public:
+  using cricket::WebRtcVideoFrame::SetRotation;
+
+  virtual VideoFrame* CreateEmptyFrame(int w,
+                                       int h,
+                                       size_t pixel_width,
+                                       size_t pixel_height,
+                                       int64_t elapsed_time,
+                                       int64_t time_stamp) const override {
+    WebRtcVideoTestFrame* frame = new WebRtcVideoTestFrame();
+    frame->InitToBlack(w, h, pixel_width, pixel_height, elapsed_time,
+                       time_stamp);
+    return frame;
+  }
+};
+
+}  // namespace
+
 class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
  public:
   WebRtcVideoFrameTest() {
@@ -342,4 +363,32 @@ TEST_F(WebRtcVideoFrameTest, CopyTextureFrame) {
   EXPECT_EQ(frame1.GetElapsedTime(), frame2->GetElapsedTime());
   EXPECT_EQ(frame1.GetTimeStamp(), frame2->GetTimeStamp());
   delete frame2;
+}
+
+TEST_F(WebRtcVideoFrameTest, ApplyRotationToFrame) {
+  WebRtcVideoTestFrame applied0;
+  EXPECT_TRUE(IsNull(applied0));
+  rtc::scoped_ptr<rtc::MemoryStream> ms(CreateYuvSample(kWidth, kHeight, 12));
+  EXPECT_TRUE(
+      LoadFrame(ms.get(), cricket::FOURCC_I420, kWidth, kHeight, &applied0));
+
+  // Claim that this frame needs to be rotated for 90 degree.
+  applied0.SetRotation(webrtc::kVideoRotation_90);
+
+  // Apply rotation on frame 1. Output should be different from frame 1.
+  WebRtcVideoTestFrame* applied90 = const_cast<WebRtcVideoTestFrame*>(
+      static_cast<const WebRtcVideoTestFrame*>(
+          applied0.GetCopyWithRotationApplied()));
+  EXPECT_TRUE(applied90);
+  EXPECT_EQ(applied90->GetVideoRotation(), webrtc::kVideoRotation_0);
+  EXPECT_FALSE(IsEqual(applied0, *applied90, 0));
+
+  // Claim the frame 2 needs to be rotated for another 270 degree. The output
+  // from frame 2 rotation should be the same as frame 1.
+  applied90->SetRotation(webrtc::kVideoRotation_270);
+  const cricket::VideoFrame* applied360 =
+      applied90->GetCopyWithRotationApplied();
+  EXPECT_TRUE(applied360);
+  EXPECT_EQ(applied360->GetVideoRotation(), webrtc::kVideoRotation_0);
+  EXPECT_TRUE(IsEqual(applied0, *applied360, 0));
 }
