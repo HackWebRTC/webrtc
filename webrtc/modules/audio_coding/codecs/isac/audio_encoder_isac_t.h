@@ -71,6 +71,7 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
   // AudioEncoder public methods.
   int SampleRateHz() const override;
   int NumChannels() const override;
+  size_t MaxEncodedBytes() const override;
   int Num10MsFramesInNextPacket() const override;
   int Max10MsFramesInAPacket() const override;
 

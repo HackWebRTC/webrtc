@@ -10,9 +10,16 @@
 
 #include "webrtc/modules/audio_coding/codecs/cng/include/audio_encoder_cng.h"
 
+#include <algorithm>
 #include <limits>
 
 namespace webrtc {
+
+namespace {
+
+const int kMaxFrameSizeMs = 60;
+
+}  // namespace
 
 AudioEncoderCng::Config::Config()
     : num_channels(1),
@@ -77,6 +84,13 @@ int AudioEncoderCng::NumChannels() const {
   return 1;
 }
 
+size_t AudioEncoderCng::MaxEncodedBytes() const {
+  const size_t max_encoded_bytes_active = speech_encoder_->MaxEncodedBytes();
+  const size_t max_encoded_bytes_passive =
+      rtc::CheckedDivExact(kMaxFrameSizeMs, 10) * SamplesPer10msFrame();
+  return std::max(max_encoded_bytes_active, max_encoded_bytes_passive);
+}
+
 int AudioEncoderCng::Num10MsFramesInNextPacket() const {
   return speech_encoder_->Num10MsFramesInNextPacket();
 }
@@ -114,8 +128,9 @@ void AudioEncoderCng::EncodeInternal(uint32_t rtp_timestamp,
   if (frames_in_buffer_ < speech_encoder_->Num10MsFramesInNextPacket()) {
     return;
   }
-  CHECK_LE(frames_in_buffer_, 6)
-      << "Frame size cannot be larger than 60 ms when using VAD/CNG.";
+  CHECK_LE(frames_in_buffer_ * 10, kMaxFrameSizeMs)
+      << "Frame size cannot be larger than " << kMaxFrameSizeMs
+      << " ms when using VAD/CNG.";
   const size_t samples_per_10ms_frame = 10 * SampleRateHz() / 1000;
   CHECK_EQ(speech_buffer_.size(),
            static_cast<size_t>(frames_in_buffer_) * samples_per_10ms_frame);
@@ -146,11 +161,7 @@ void AudioEncoderCng::EncodeInternal(uint32_t rtp_timestamp,
 
   switch (activity) {
     case Vad::kPassive: {
-      EncodePassive(encoded, &info->encoded_bytes);
-      info->encoded_timestamp = first_timestamp_in_buffer_;
-      info->payload_type = cng_payload_type_;
-      info->send_even_if_empty = true;
-      info->speech = false;
+      EncodePassive(max_encoded_bytes, encoded, info);
       last_frame_active_ = false;
       break;
     }
@@ -169,10 +180,13 @@ void AudioEncoderCng::EncodeInternal(uint32_t rtp_timestamp,
   frames_in_buffer_ = 0;
 }
 
-void AudioEncoderCng::EncodePassive(uint8_t* encoded, size_t* encoded_bytes) {
+void AudioEncoderCng::EncodePassive(size_t max_encoded_bytes,
+                                    uint8_t* encoded,
+                                    EncodedInfo* info) {
   bool force_sid = last_frame_active_;
   bool output_produced = false;
-  const size_t samples_per_10ms_frame = 10 * SampleRateHz() / 1000;
+  const size_t samples_per_10ms_frame = SamplesPer10msFrame();
+  CHECK_GE(max_encoded_bytes, frames_in_buffer_ * samples_per_10ms_frame);
   for (int i = 0; i < frames_in_buffer_; ++i) {
     int16_t encoded_bytes_tmp = 0;
     CHECK_GE(WebRtcCng_Encode(cng_inst_.get(),
@@ -181,17 +195,21 @@ void AudioEncoderCng::EncodePassive(uint8_t* encoded, size_t* encoded_bytes) {
                               encoded, &encoded_bytes_tmp, force_sid), 0);
     if (encoded_bytes_tmp > 0) {
       CHECK(!output_produced);
-      *encoded_bytes = static_cast<size_t>(encoded_bytes_tmp);
+      info->encoded_bytes = static_cast<size_t>(encoded_bytes_tmp);
       output_produced = true;
       force_sid = false;
     }
   }
+  info->encoded_timestamp = first_timestamp_in_buffer_;
+  info->payload_type = cng_payload_type_;
+  info->send_even_if_empty = true;
+  info->speech = false;
 }
 
 void AudioEncoderCng::EncodeActive(size_t max_encoded_bytes,
                                    uint8_t* encoded,
                                    EncodedInfo* info) {
-  const size_t samples_per_10ms_frame = 10 * SampleRateHz() / 1000;
+  const size_t samples_per_10ms_frame = SamplesPer10msFrame();
   for (int i = 0; i < frames_in_buffer_; ++i) {
     speech_encoder_->Encode(first_timestamp_in_buffer_,
                             &speech_buffer_[i * samples_per_10ms_frame],
@@ -201,6 +219,10 @@ void AudioEncoderCng::EncodeActive(size_t max_encoded_bytes,
       CHECK_EQ(info->encoded_bytes, 0u) << "Encoder delivered data too early.";
     }
   }
+}
+
+size_t AudioEncoderCng::SamplesPer10msFrame() const {
+  return rtc::CheckedDivExact(10 * SampleRateHz(), 1000);
 }
 
 }  // namespace webrtc

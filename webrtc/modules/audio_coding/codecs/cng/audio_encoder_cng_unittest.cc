@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <vector>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/vad/mock/mock_vad.h"
@@ -23,7 +25,7 @@ using ::testing::Invoke;
 namespace webrtc {
 
 namespace {
-static const size_t kMaxEncodedBytes = 1000;
+static const size_t kMockMaxEncodedBytes = 1000;
 static const size_t kMaxNumSamples = 48 * 10 * 2;  // 10 ms @ 48 kHz stereo.
 static const size_t kMockReturnEncodedBytes = 17;
 static const int kCngPayloadType = 18;
@@ -36,7 +38,6 @@ class AudioEncoderCngTest : public ::testing::Test {
         timestamp_(4711),
         num_audio_samples_10ms_(0),
         sample_rate_hz_(8000) {
-    memset(encoded_, 0, kMaxEncodedBytes);
     memset(audio_, 0, kMaxNumSamples * 2);
     config_.speech_encoder = &mock_encoder_;
     EXPECT_CALL(mock_encoder_, NumChannels()).WillRepeatedly(Return(1));
@@ -66,14 +67,17 @@ class AudioEncoderCngTest : public ::testing::Test {
     // is not too small. The return value does not matter that much, as long as
     // it is smaller than 10.
     EXPECT_CALL(mock_encoder_, Max10MsFramesInAPacket()).WillOnce(Return(1));
+    EXPECT_CALL(mock_encoder_, MaxEncodedBytes())
+        .WillRepeatedly(Return(kMockMaxEncodedBytes));
     cng_.reset(new AudioEncoderCng(config_));
+    encoded_.resize(cng_->MaxEncodedBytes(), 0);
   }
 
   void Encode() {
     ASSERT_TRUE(cng_) << "Must call CreateCng() first.";
     encoded_info_ = AudioEncoder::EncodedInfo();
     cng_->Encode(timestamp_, audio_, num_audio_samples_10ms_,
-                 kMaxEncodedBytes, encoded_, &encoded_info_);
+                 encoded_.size(), &encoded_[0], &encoded_info_);
     timestamp_ += num_audio_samples_10ms_;
   }
 
@@ -182,7 +186,7 @@ class AudioEncoderCngTest : public ::testing::Test {
   uint32_t timestamp_;
   int16_t audio_[kMaxNumSamples];
   size_t num_audio_samples_10ms_;
-  uint8_t encoded_[kMaxEncodedBytes];
+  std::vector<uint8_t> encoded_;
   AudioEncoder::EncodedInfo encoded_info_;
   int sample_rate_hz_;
 };

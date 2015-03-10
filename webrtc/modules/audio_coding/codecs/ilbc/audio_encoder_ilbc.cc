@@ -46,12 +46,19 @@ AudioEncoderIlbc::~AudioEncoderIlbc() {
 int AudioEncoderIlbc::SampleRateHz() const {
   return kSampleRateHz;
 }
+
 int AudioEncoderIlbc::NumChannels() const {
   return 1;
 }
+
+size_t AudioEncoderIlbc::MaxEncodedBytes() const {
+  return RequiredOutputSizeBytes();
+}
+
 int AudioEncoderIlbc::Num10MsFramesInNextPacket() const {
   return num_10ms_frames_per_packet_;
 }
+
 int AudioEncoderIlbc::Max10MsFramesInAPacket() const {
   return num_10ms_frames_per_packet_;
 }
@@ -61,24 +68,7 @@ void AudioEncoderIlbc::EncodeInternal(uint32_t rtp_timestamp,
                                       size_t max_encoded_bytes,
                                       uint8_t* encoded,
                                       EncodedInfo* info) {
-  size_t expected_output_len;
-  switch (num_10ms_frames_per_packet_) {
-    case 2:
-      expected_output_len = 38;
-      break;
-    case 3:
-      expected_output_len = 50;
-      break;
-    case 4:
-      expected_output_len = 2 * 38;
-      break;
-    case 6:
-      expected_output_len = 2 * 50;
-      break;
-    default:
-      FATAL();
-  }
-  DCHECK_GE(max_encoded_bytes, expected_output_len);
+  DCHECK_GE(max_encoded_bytes, RequiredOutputSizeBytes());
 
   // Save timestamp if starting a new packet.
   if (num_10ms_frames_buffered_ == 0)
@@ -105,10 +95,20 @@ void AudioEncoderIlbc::EncodeInternal(uint32_t rtp_timestamp,
       kSampleRateHz / 100 * num_10ms_frames_per_packet_,
       encoded);
   CHECK_GE(output_len, 0);
-  DCHECK_EQ(output_len, static_cast<int>(expected_output_len));
   info->encoded_bytes = output_len;
+  DCHECK_EQ(info->encoded_bytes, RequiredOutputSizeBytes());
   info->encoded_timestamp = first_timestamp_in_buffer_;
   info->payload_type = payload_type_;
+}
+
+size_t AudioEncoderIlbc::RequiredOutputSizeBytes() const {
+  switch (num_10ms_frames_per_packet_) {
+    case 2:   return 38;
+    case 3:   return 50;
+    case 4:   return 2 * 38;
+    case 6:   return 2 * 50;
+    default:  FATAL();
+  }
 }
 
 }  // namespace webrtc

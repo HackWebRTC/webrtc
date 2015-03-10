@@ -111,6 +111,16 @@ int AudioEncoderOpus::NumChannels() const {
   return num_channels_;
 }
 
+size_t AudioEncoderOpus::MaxEncodedBytes() const {
+  // Calculate the number of bytes we expect the encoder to produce,
+  // then multiply by two to give a wide margin for error.
+  int frame_size_ms = num_10ms_frames_per_packet_ * 10;
+  int bytes_per_millisecond = bitrate_bps_ / (1000 * 8) + 1;
+  size_t approx_encoded_bytes =
+      static_cast<size_t>(frame_size_ms * bytes_per_millisecond);
+  return 2 * approx_encoded_bytes;
+}
+
 int AudioEncoderOpus::Num10MsFramesInNextPacket() const {
   return num_10ms_frames_per_packet_;
 }
@@ -120,10 +130,9 @@ int AudioEncoderOpus::Max10MsFramesInAPacket() const {
 }
 
 void AudioEncoderOpus::SetTargetBitrate(int bits_per_second) {
-  CHECK_EQ(WebRtcOpus_SetBitRate(
-               inst_, std::max(std::min(bits_per_second, kMaxBitrateBps),
-                               kMinBitrateBps)),
-           0);
+  bitrate_bps_ = std::max(std::min(bits_per_second, kMaxBitrateBps),
+                          kMinBitrateBps);
+  CHECK_EQ(WebRtcOpus_SetBitRate(inst_, bitrate_bps_), 0);
 }
 
 void AudioEncoderOpus::SetProjectedPacketLossRate(double fraction) {

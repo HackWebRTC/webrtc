@@ -34,6 +34,7 @@ class AudioEncoderPcm : public AudioEncoder {
 
   int SampleRateHz() const override;
   int NumChannels() const override;
+  size_t MaxEncodedBytes() const override;
   int Num10MsFramesInNextPacket() const override;
   int Max10MsFramesInAPacket() const override;
 
@@ -55,7 +56,7 @@ class AudioEncoderPcm : public AudioEncoder {
   const int num_channels_;
   const int payload_type_;
   const int num_10ms_frames_per_packet_;
-  const int16_t full_frame_samples_;
+  const size_t full_frame_samples_;
   std::vector<int16_t> speech_buffer_;
   uint32_t first_timestamp_in_buffer_;
 };

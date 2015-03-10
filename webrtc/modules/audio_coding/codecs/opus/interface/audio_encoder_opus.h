@@ -47,10 +47,12 @@ class AudioEncoderOpus final : public AudioEncoder {
 
   int SampleRateHz() const override;
   int NumChannels() const override;
+  size_t MaxEncodedBytes() const override;
   int Num10MsFramesInNextPacket() const override;
   int Max10MsFramesInAPacket() const override;
   void SetTargetBitrate(int bits_per_second) override;
   void SetProjectedPacketLossRate(double fraction) override;
+
   double packet_loss_rate() const { return packet_loss_rate_; }
   ApplicationMode application() const { return application_; }
 
@@ -66,6 +68,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   const int num_channels_;
   const int payload_type_;
   const ApplicationMode application_;
+  int bitrate_bps_;
   const int samples_per_10ms_frame_;
   std::vector<int16_t> input_buffer_;
   OpusEncInst* inst_;

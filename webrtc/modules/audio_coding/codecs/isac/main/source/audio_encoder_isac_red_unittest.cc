@@ -30,12 +30,11 @@ TEST(AudioEncoderIsacRedTest, CompareRedAndNoRed) {
     double r = rand();  // NOLINT(runtime/threadsafe_fn)
     input[i] = (r / RAND_MAX) * 2000 - 1000;
   }
-  static const size_t kMaxEncodedSizeBytes = 1000;
-  uint8_t encoded[kMaxEncodedSizeBytes];
-  uint8_t red_encoded[kMaxEncodedSizeBytes];
   AudioEncoderDecoderIsac::Config config;
   config.sample_rate_hz = kSampleRateHz;
   AudioEncoderDecoderIsac isac_encoder(config);
+  size_t max_encoded_bytes = isac_encoder.MaxEncodedBytes();
+  rtc::scoped_ptr<uint8_t[]> encoded(new uint8_t[max_encoded_bytes]);
   AudioEncoderDecoderIsac::Config red_config;
   red_config.sample_rate_hz = kSampleRateHz;
   red_config.red_payload_type = kRedPayloadType;
@@ -43,6 +42,8 @@ TEST(AudioEncoderIsacRedTest, CompareRedAndNoRed) {
   ASSERT_NE(red_config.red_payload_type, red_config.payload_type)
       << "iSAC and RED payload types must be different.";
   AudioEncoderDecoderIsac isac_red_encoder(red_config);
+  size_t max_red_encoded_bytes = isac_red_encoder.MaxEncodedBytes();
+  rtc::scoped_ptr<uint8_t[]> red_encoded(new uint8_t[max_red_encoded_bytes]);
   AudioEncoder::EncodedInfo info, red_info;
 
   // Note that we are not expecting any output from the redundant encoder until
@@ -52,10 +53,11 @@ TEST(AudioEncoderIsacRedTest, CompareRedAndNoRed) {
     EXPECT_EQ(0u, red_info.encoded_bytes);
     EXPECT_EQ(0u, red_info.redundant.size());
     const uint32_t timestamp = static_cast<uint32_t>(i);
-    isac_encoder.Encode(timestamp, input, k10MsSamples, kMaxEncodedSizeBytes,
-                        encoded, &info);
+    isac_encoder.Encode(timestamp, input, k10MsSamples, max_encoded_bytes,
+                        encoded.get(), &info);
     isac_red_encoder.Encode(timestamp, input, k10MsSamples,
-                            kMaxEncodedSizeBytes, red_encoded, &red_info);
+                            max_red_encoded_bytes, red_encoded.get(),
+                            &red_info);
   }
   EXPECT_GT(info.encoded_bytes, 0u)
       << "Regular codec did not produce any output";
@@ -65,7 +67,7 @@ TEST(AudioEncoderIsacRedTest, CompareRedAndNoRed) {
   ASSERT_EQ(info.encoded_bytes, red_info.redundant[0].encoded_bytes)
       << "Primary payload should be same length as non-redundant payload";
   // Check that |encoded| and the primary part of |red_encoded| are identical.
-  EXPECT_EQ(0, memcmp(encoded, red_encoded, info.encoded_bytes));
+  EXPECT_EQ(0, memcmp(encoded.get(), red_encoded.get(), info.encoded_bytes));
   EXPECT_GT(red_info.redundant[0].encoded_bytes,
             red_info.redundant[1].encoded_bytes)
       << "Redundant payload should be smaller than primary";

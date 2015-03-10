@@ -33,6 +33,7 @@ class AudioEncoderIlbc : public AudioEncoder {
 
   int SampleRateHz() const override;
   int NumChannels() const override;
+  size_t MaxEncodedBytes() const override;
   int Num10MsFramesInNextPacket() const override;
   int Max10MsFramesInAPacket() const override;
 
@@ -44,6 +45,8 @@ class AudioEncoderIlbc : public AudioEncoder {
                       EncodedInfo* info) override;
 
  private:
+  size_t RequiredOutputSizeBytes() const;
+
   static const int kMaxSamplesPerPacket = 480;
   const int payload_type_;
   const int num_10ms_frames_per_packet_;

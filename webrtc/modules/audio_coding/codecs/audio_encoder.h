@@ -74,6 +74,14 @@ class AudioEncoder {
   virtual int SampleRateHz() const = 0;
   virtual int NumChannels() const = 0;
 
+  // Return the maximum number of bytes that can be produced by the encoder
+  // at each Encode() call. The caller can use the return value to determine
+  // the size of the buffer that needs to be allocated. This value is allowed
+  // to depend on encoder parameters like bitrate, frame size etc., so if
+  // any of these change, the caller of Encode() is responsible for checking
+  // that the buffer is large enough by calling MaxEncodedBytes() again.
+  virtual size_t MaxEncodedBytes() const = 0;
+
   // Returns the rate with which the RTP timestamps are updated. By default,
   // this is the same as sample_rate_hz().
   virtual int RtpTimestampRateHz() const;

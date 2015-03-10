@@ -49,9 +49,15 @@ AudioEncoderPcm::~AudioEncoderPcm() {
 int AudioEncoderPcm::SampleRateHz() const {
   return sample_rate_hz_;
 }
+
 int AudioEncoderPcm::NumChannels() const {
   return num_channels_;
 }
+
+size_t AudioEncoderPcm::MaxEncodedBytes() const {
+  return full_frame_samples_;
+}
+
 int AudioEncoderPcm::Num10MsFramesInNextPacket() const {
   return num_10ms_frames_per_packet_;
 }
@@ -72,11 +78,12 @@ void AudioEncoderPcm::EncodeInternal(uint32_t rtp_timestamp,
   for (int i = 0; i < num_samples; ++i) {
     speech_buffer_.push_back(audio[i]);
   }
-  if (speech_buffer_.size() < static_cast<size_t>(full_frame_samples_)) {
+  if (speech_buffer_.size() < full_frame_samples_) {
     info->encoded_bytes = 0;
     return;
   }
-  CHECK_EQ(speech_buffer_.size(), static_cast<size_t>(full_frame_samples_));
+  CHECK_EQ(speech_buffer_.size(), full_frame_samples_);
+  CHECK_GE(max_encoded_bytes, full_frame_samples_);
   int16_t ret = EncodeCall(&speech_buffer_[0], full_frame_samples_, encoded);
   CHECK_GE(ret, 0);
   speech_buffer_.clear();

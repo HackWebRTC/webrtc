@@ -185,6 +185,11 @@ int AudioEncoderDecoderIsacT<T>::NumChannels() const {
 }
 
 template <typename T>
+size_t AudioEncoderDecoderIsacT<T>::MaxEncodedBytes() const {
+  return kSufficientEncodeBufferSizeBytes;
+}
+
+template <typename T>
 int AudioEncoderDecoderIsacT<T>::Num10MsFramesInNextPacket() const {
   CriticalSectionScoped cs(state_lock_.get());
   const int samples_in_next_packet = T::GetNewFrameLen(isac_state_);

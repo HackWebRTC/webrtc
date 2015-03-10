@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <vector>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -24,7 +26,7 @@ using ::testing::MockFunction;
 namespace webrtc {
 
 namespace {
-static const size_t kMaxEncodedBytes = 1000;
+static const size_t kMockMaxEncodedBytes = 1000;
 static const size_t kMaxNumSamples = 48 * 10 * 2;  // 10 ms @ 48 kHz stereo.
 }
 
@@ -39,11 +41,13 @@ class AudioEncoderCopyRedTest : public ::testing::Test {
     config.payload_type = red_payload_type_;
     config.speech_encoder = &mock_encoder_;
     red_.reset(new AudioEncoderCopyRed(config));
-    memset(encoded_, 0, sizeof(encoded_));
     memset(audio_, 0, sizeof(audio_));
     EXPECT_CALL(mock_encoder_, NumChannels()).WillRepeatedly(Return(1));
     EXPECT_CALL(mock_encoder_, SampleRateHz())
         .WillRepeatedly(Return(sample_rate_hz_));
+    EXPECT_CALL(mock_encoder_, MaxEncodedBytes())
+        .WillRepeatedly(Return(kMockMaxEncodedBytes));
+    encoded_.resize(red_->MaxEncodedBytes(), 0);
   }
 
   void TearDown() override {
@@ -58,7 +62,7 @@ class AudioEncoderCopyRedTest : public ::testing::Test {
     ASSERT_TRUE(red_.get() != NULL);
     encoded_info_ = AudioEncoder::EncodedInfo();
     red_->Encode(timestamp_, audio_, num_audio_samples_10ms,
-                 kMaxEncodedBytes, encoded_, &encoded_info_);
+                 encoded_.size(), &encoded_[0], &encoded_info_);
     timestamp_ += num_audio_samples_10ms;
   }
 
@@ -68,7 +72,7 @@ class AudioEncoderCopyRedTest : public ::testing::Test {
   int16_t audio_[kMaxNumSamples];
   const int sample_rate_hz_;
   size_t num_audio_samples_10ms;
-  uint8_t encoded_[kMaxEncodedBytes];
+  std::vector<uint8_t> encoded_;
   AudioEncoder::EncodedInfo encoded_info_;
   const int red_payload_type_;
 };

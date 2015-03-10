@@ -38,6 +38,10 @@ int AudioEncoderCopyRed::NumChannels() const {
   return speech_encoder_->NumChannels();
 }
 
+size_t AudioEncoderCopyRed::MaxEncodedBytes() const {
+  return 2 * speech_encoder_->MaxEncodedBytes();
+}
+
 int AudioEncoderCopyRed::Num10MsFramesInNextPacket() const {
   return speech_encoder_->Num10MsFramesInNextPacket();
 }
