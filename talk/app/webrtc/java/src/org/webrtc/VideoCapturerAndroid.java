@@ -98,6 +98,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     return names;
   }
 
+  // Returns number of cameras on device.
+  public static int getDeviceCount() {
+    return Camera.getNumberOfCameras();
+  }
+
   public static String getDeviceName(int index) {
     Camera.CameraInfo info = new Camera.CameraInfo();
     Camera.getCameraInfo(index, info);
@@ -114,7 +119,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT)
         return getDeviceName(i);
     }
-    throw new RuntimeException("Front facing camera does not exist.");
+    return null;
   }
 
   public static String getNameOfBackFacingDevice() {
@@ -124,7 +129,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK)
         return getDeviceName(i);
     }
-    throw new RuntimeException("Back facing camera does not exist.");
+    return null;
   }
 
   public static VideoCapturerAndroid create(String name) {

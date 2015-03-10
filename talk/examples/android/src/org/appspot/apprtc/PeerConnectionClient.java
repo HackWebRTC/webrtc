@@ -114,6 +114,7 @@ public class PeerConnectionClient {
   private boolean isInitiator;
   private SessionDescription localSdp = null; // either offer or answer SDP
   private MediaStream mediaStream = null;
+  private int numberOfCameras;
   private VideoCapturerAndroid videoCapturer = null;
   // enableVideo is set to true if video should be rendered and sent.
   private boolean renderVideo = true;
@@ -233,6 +234,12 @@ public class PeerConnectionClient {
     // parameters.
     videoConstraints = signalingParameters.videoConstraints;
     if (signalingParameters.videoConstraints == null) {
+      videoCallEnabled = false;
+    }
+    // Check if there is a camera on device and disable video call if not.
+    numberOfCameras = VideoCapturerAndroid.getDeviceCount();
+    if (numberOfCameras == 0) {
+      Log.w(TAG, "No camera on device. Switch to audio only call.");
       videoCallEnabled = false;
     }
     if (videoCallEnabled) {
@@ -365,8 +372,14 @@ public class PeerConnectionClient {
 
     mediaStream = factory.createLocalMediaStream("ARDAMS");
     if (videoCallEnabled) {
-      videoCapturer = VideoCapturerAndroid.create(
-          VideoCapturerAndroid.getNameOfFrontFacingDevice());
+      String cameraDeviceName = VideoCapturerAndroid.getDeviceName(0);
+      String frontCameraDeviceName =
+          VideoCapturerAndroid.getNameOfFrontFacingDevice();
+      if (numberOfCameras > 1 && frontCameraDeviceName != null) {
+        cameraDeviceName = frontCameraDeviceName;
+      }
+      Log.d(TAG, "Opening camera: " + cameraDeviceName);
+      videoCapturer = VideoCapturerAndroid.create(cameraDeviceName);
       mediaStream.addTrack(createVideoTrack(videoCapturer));
     }
 
@@ -735,8 +748,8 @@ public class PeerConnectionClient {
   }
 
   private void switchCameraInternal() {
-    if (!videoCallEnabled) {
-      return;  // No video is sent.
+    if (!videoCallEnabled || numberOfCameras < 2) {
+      return;  // No video is sent or only one camera is available.
     }
     Log.d(TAG, "Switch camera");
     videoCapturer.switchCamera();
