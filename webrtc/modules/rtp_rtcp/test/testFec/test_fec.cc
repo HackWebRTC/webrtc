@@ -161,8 +161,8 @@ TEST(FecTest, FecTest) {
              numFecPackets++) {
 
           // Loop over numImpPackets: usually <= (0.3*numMediaPackets).
-          // For this test we check up to ~ (0.5*numMediaPackets).
-          uint32_t maxNumImpPackets = numMediaPackets / 2 + 1;
+          // For this test we check up to ~ (numMediaPackets / 4).
+          uint32_t maxNumImpPackets = numMediaPackets / 4 + 1;
           for (uint32_t numImpPackets = 0; numImpPackets <= maxNumImpPackets &&
                                                numImpPackets <= packetMaskMax;
                numImpPackets++) {
