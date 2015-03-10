@@ -84,7 +84,8 @@ struct AudioParameters {
 class MockAudioTransport : public AudioTransport {
  public:
   explicit MockAudioTransport(int type)
-      : type_(type),
+      : num_callbacks_(0),
+        type_(type),
         play_count_(0),
         rec_count_(0),
         file_size_in_bytes_(0),
@@ -97,8 +98,10 @@ class MockAudioTransport : public AudioTransport {
   bool LoadFile(const std::string& file_name, int sample_rate) {
     file_size_in_bytes_ = test::GetFileSize(file_name);
     sample_rate_ = sample_rate;
-
-    EXPECT_GE(file_size_in_callbacks(), num_callbacks_);
+    EXPECT_NE(0, num_callbacks_)
+        << "Test must call HandleCallbacks before LoadFile.";
+    EXPECT_GE(file_size_in_callbacks(), num_callbacks_)
+        << "Size of test file is not large enough to last during the test.";
     const int num_16bit_samples =
         test::GetFileSize(file_name) / kBytesPerSample;
     file_.reset(new int16_t[num_16bit_samples]);
@@ -157,7 +160,7 @@ class MockAudioTransport : public AudioTransport {
                                       const uint32_t currentMicLevel,
                                       const bool keyPressed,
                                       uint32_t& newMicLevel) {
-    EXPECT_TRUE(rec_mode());
+    EXPECT_TRUE(rec_mode()) << "No test is expecting these callbacks.";
     rec_count_++;
     if (ReceivedEnoughCallbacks())
       test_is_done_->Set();
@@ -172,7 +175,7 @@ class MockAudioTransport : public AudioTransport {
                                uint32_t& nSamplesOut,
                                int64_t* elapsed_time_ms,
                                int64_t* ntp_time_ms) {
-    EXPECT_TRUE(play_mode());
+    EXPECT_TRUE(play_mode()) << "No test is expecting these callbacks.";
     nSamplesOut = nSamples;
     if (file_mode()) {
       // Read samples from file stored in memory (at construction) and copy
@@ -462,10 +465,10 @@ TEST_P(AudioDeviceTest, RunPlayoutWithFileAsSource) {
   // TODO(henrika): extend test when mono output is supported.
   EXPECT_EQ(1, playout_channels());
   NiceMock<MockAudioTransport> mock(kPlayout);
-  std::string file_name = GetFileName(playout_sample_rate());
-  mock.LoadFile(file_name, playout_sample_rate());
   mock.HandleCallbacks(test_is_done_.get(),
                        kFilePlayTimeInSec * kNumCallbacksPerSecond);
+  std::string file_name = GetFileName(playout_sample_rate());
+  mock.LoadFile(file_name, playout_sample_rate());
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   StartPlayout();
   test_is_done_->Wait(kTestTimeOutInMilliseconds);
