@@ -366,7 +366,7 @@ static void NoiseEstimationC(NoiseSuppressionFixedC* inst,
       log2 = (int16_t)(((31 - zeros) << 8)
                              + WebRtcNsx_kLogTableFrac[frac]);
       // log2(magn(i))*log(2)
-      lmagn[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(log2, log2_const, 15);
+      lmagn[i] = (int16_t)((log2 * log2_const) >> 15);
       // + log(2^stages)
       lmagn[i] += logval;
     } else {
@@ -401,7 +401,7 @@ static void NoiseEstimationC(NoiseSuppressionFixedC* inst,
       }
 
       // update log quantile estimate
-      tmp16 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(delta, countDiv, 14);
+      tmp16 = (int16_t)((delta * countDiv) >> 14);
       if (lmagn[i] > inst->noiseEstLogQuantile[offset + i]) {
         // +=QUANTILE*delta/(inst->counter[s]+1) QUANTILE=0.25, =1 in Q2
         // CounterDiv=1/(inst->counter[s]+1) in Q15
@@ -410,7 +410,8 @@ static void NoiseEstimationC(NoiseSuppressionFixedC* inst,
       } else {
         tmp16 += 1;
         // *(1-QUANTILE), in Q2 QUANTILE=0.25, 1-0.25=0.75=3 in Q2
-        tmp16no2 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(tmp16 / 2, 3, 1);
+        // TODO(bjornv): investigate why we need to truncate twice.
+        tmp16no2 = (int16_t)((tmp16 / 2) * 3 / 2);
         inst->noiseEstLogQuantile[offset + i] -= tmp16no2;
         if (inst->noiseEstLogQuantile[offset + i] < logval) {
           // This is the smallest fixed point representation we can
@@ -456,10 +457,10 @@ static void PrepareSpectrumC(NoiseSuppressionFixedC* inst, int16_t* freq_buf) {
   int i = 0, j = 0;
 
   for (i = 0; i < inst->magnLen; i++) {
-    inst->real[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(inst->real[i],
-        (int16_t)(inst->noiseSupFilter[i]), 14); // Q(normData-stages)
-    inst->imag[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(inst->imag[i],
-        (int16_t)(inst->noiseSupFilter[i]), 14); // Q(normData-stages)
+    inst->real[i] = (int16_t)((inst->real[i] *
+        (int16_t)(inst->noiseSupFilter[i])) >> 14);  // Q(normData-stages)
+    inst->imag[i] = (int16_t)((inst->imag[i] *
+        (int16_t)(inst->noiseSupFilter[i])) >> 14);  // Q(normData-stages)
   }
 
   freq_buf[0] = inst->real[0];
@@ -1366,11 +1367,10 @@ void WebRtcNsx_DataAnalysis(NoiseSuppressionFixedC* inst,
     if (inst->fs == 8000) {
       // Adjust values to shorter blocks in narrow band.
       tmp_1_w32 = (int32_t)matrix_determinant;
-      tmp_1_w32 += WEBRTC_SPL_MUL_16_16_RSFT(kSumLogIndex[65], sum_log_i, 9);
-      tmp_1_w32 -= WEBRTC_SPL_MUL_16_16_RSFT(kSumLogIndex[65], kSumLogIndex[65], 10);
+      tmp_1_w32 += (kSumLogIndex[65] * sum_log_i) >> 9;
+      tmp_1_w32 -= (kSumLogIndex[65] * kSumLogIndex[65]) >> 10;
       tmp_1_w32 -= (int32_t)sum_log_i_square << 4;
-      tmp_1_w32 -= WEBRTC_SPL_MUL_16_16_RSFT((int16_t)
-                       (inst->magnLen - kStartBand), kSumSquareLogIndex[65], 2);
+      tmp_1_w32 -= ((inst->magnLen - kStartBand) * kSumSquareLogIndex[65]) >> 2;
       matrix_determinant = (int16_t)tmp_1_w32;
       sum_log_i -= kSumLogIndex[65]; // Q5
       sum_log_i_square -= kSumSquareLogIndex[65]; // Q2
@@ -1488,10 +1488,9 @@ void WebRtcNsx_DataSynthesis(NoiseSuppressionFixedC* inst, short* outFrame) {
     //combine both scales with speech/noise prob: note prior (priorSpeechProb) is not frequency dependent
 
     // factor = inst->priorSpeechProb*factor1 + (1.0-inst->priorSpeechProb)*factor2; // original code
-    tmp16no1 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(16384 - inst->priorNonSpeechProb,
-                                                        gainFactor1, 14); // Q13 16384 = Q14(1.0)
-    tmp16no2 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(inst->priorNonSpeechProb,
-                                                        gainFactor2, 14); // Q13;
+    tmp16no1 = (int16_t)(((16384 - inst->priorNonSpeechProb) * gainFactor1) >>
+        14);  // in Q13, where 16384 = Q14(1.0)
+    tmp16no2 = (int16_t)((inst->priorNonSpeechProb * gainFactor2) >> 14);
     gainFactor = tmp16no1 + tmp16no2; // Q13
   }  // out of flag_gain_map==1
 
@@ -2100,7 +2099,7 @@ void WebRtcNsx_ProcessCore(NoiseSuppressionFixedC* inst,
       gainTimeDomainHB = (gainModHB << 1) + (avgFilterGainHB >> 1); // Q14
     } else {
       // "gain_time_domain = 0.25 * gain_mod + 0.75 * agv_filter_gain;"
-      gainTimeDomainHB = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(3, avgFilterGainHB, 2); // 3 = Q2(0.75); Q14
+      gainTimeDomainHB = (int16_t)((3 * avgFilterGainHB) >> 2);  // 3 = Q2(0.75)
       gainTimeDomainHB += gainModHB; // Q14
     }
     //make sure gain is within flooring range
@@ -2111,10 +2110,8 @@ void WebRtcNsx_ProcessCore(NoiseSuppressionFixedC* inst,
     //apply gain
     for (i = 0; i < num_high_bands; ++i) {
       for (j = 0; j < inst->blockLen10ms; j++) {
-        outFrameHB[i][j] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(
-            gainTimeDomainHB,
-            inst->dataBufHBFX[i][j],
-            14); // Q0
+        outFrameHB[i][j] = (int16_t)((gainTimeDomainHB *
+            inst->dataBufHBFX[i][j]) >> 14);  // Q0
       }
     }
   }  // end of H band gain computation

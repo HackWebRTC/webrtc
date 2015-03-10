@@ -134,7 +134,7 @@ void WebRtcNsx_SpeechNoiseProb(NoiseSuppressionFixedC* inst,
     tmp16no2 = kIndicatorTable[tableIndex];
     tmp16no1 = kIndicatorTable[tableIndex + 1] - kIndicatorTable[tableIndex];
     frac = (int16_t)(tmp32no1 & 0x00003fff); // Q14
-    tmp16no2 += (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(tmp16no1, frac, 14);
+    tmp16no2 += (int16_t)((tmp16no1 * frac) >> 14);
     if (tmpIndFX == 0) {
       tmpIndFX = 8192 - tmp16no2; // Q14
     } else {
@@ -166,7 +166,7 @@ void WebRtcNsx_SpeechNoiseProb(NoiseSuppressionFixedC* inst,
       tmp16no2 = kIndicatorTable[tableIndex];
       tmp16no1 = kIndicatorTable[tableIndex + 1] - kIndicatorTable[tableIndex];
       frac = (int16_t)(tmpU32no1 & 0x00003fff); // Q14
-      tmp16no2 += (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(tmp16no1, frac, 14);
+      tmp16no2 += (int16_t)((tmp16no1 * frac) >> 14);
       if (tmpIndFX) {
         tmpIndFX = 8192 + tmp16no2; // Q14
       } else {
@@ -236,8 +236,7 @@ void WebRtcNsx_SpeechNoiseProb(NoiseSuppressionFixedC* inst,
   // inst->priorNonSpeechProb += PRIOR_UPDATE *
   //                             (indPriorNonSpeech - inst->priorNonSpeechProb);
   tmp16 = indPriorFX16 - inst->priorNonSpeechProb; // Q14
-  inst->priorNonSpeechProb += (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(
-                                PRIOR_UPDATE_Q14, tmp16, 14); // Q14
+  inst->priorNonSpeechProb += (int16_t)((PRIOR_UPDATE_Q14 * tmp16) >> 14);
 
   //final speech probability: combine prior model with LR factor:
 

@@ -168,7 +168,7 @@ void WebRtcNsx_NoiseEstimationNeon(NoiseSuppressionFixedC* inst,
       log2 = (int16_t)(((31 - zeros) << 8)
                        + WebRtcNsx_kLogTableFrac[frac]);
       // log2(magn(i))*log(2)
-      lmagn[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(log2, log2_const, 15);
+      lmagn[i] = (int16_t)((log2 * log2_const) >> 15);
       // + log(2^stages)
       lmagn[i] += logval;
     } else {
@@ -226,7 +226,7 @@ void WebRtcNsx_NoiseEstimationNeon(NoiseSuppressionFixedC* inst,
 
       // Update log quantile estimate
 
-      // tmp16 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(delta, countDiv, 14);
+      // tmp16 = (int16_t)((delta * countDiv) >> 14);
       tmp32x4 = vmull_s16(vld1_s16(&deltaBuff[0]), countDiv_16x4);
       tmp16x4_1 = vshrn_n_s32(tmp32x4, 14);
       tmp32x4 = vmull_s16(vld1_s16(&deltaBuff[4]), countDiv_16x4);
@@ -247,11 +247,11 @@ void WebRtcNsx_NoiseEstimationNeon(NoiseSuppressionFixedC* inst,
       // tmp16_1 = (Word16)(tmp16>>1);
       tmp16x8_0 = vrshrq_n_s16(tmp16x8_0, 1);
 
-      // tmp16_2 = (Word16)WEBRTC_SPL_MUL_16_16_RSFT(tmp16_1,3,1);
+      // tmp16_2 = (int16_t)((tmp16_1 * 3) >> 1);
       tmp32x4 = vmull_s16(vget_low_s16(tmp16x8_0), Q3_16x4);
       tmp16x4_1 = vshrn_n_s32(tmp32x4, 1);
 
-      // tmp16_2 = (Word16)WEBRTC_SPL_MUL_16_16_RSFT(tmp16_1,3,1);
+      // tmp16_2 = (int16_t)((tmp16_1 * 3) >> 1);
       tmp32x4 = vmull_s16(vget_high_s16(tmp16x8_0), Q3_16x4);
       tmp16x4_0 = vshrn_n_s32(tmp32x4, 1);
 
@@ -299,7 +299,7 @@ void WebRtcNsx_NoiseEstimationNeon(NoiseSuppressionFixedC* inst,
       }
     }
     // update log quantile estimate
-    tmp16 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(delta, countDiv, 14);
+    tmp16 = (int16_t)((delta * countDiv) >> 14);
     if (lmagn[i] > inst->noiseEstLogQuantile[offset + i]) {
       // +=QUANTILE*delta/(inst->counter[s]+1) QUANTILE=0.25, =1 in Q2
       // CounterDiv=1/(inst->counter[s]+1) in Q15
@@ -308,7 +308,8 @@ void WebRtcNsx_NoiseEstimationNeon(NoiseSuppressionFixedC* inst,
     } else {
       tmp16 += 1;
       // *(1-QUANTILE), in Q2 QUANTILE=0.25, 1-0.25=0.75=3 in Q2
-      tmp16no2 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(tmp16 / 2, 3, 1);
+      // TODO(bjornv): investigate why we need to truncate twice.
+      tmp16no2 = (int16_t)((tmp16 / 2) * 3 / 2);
       inst->noiseEstLogQuantile[offset + i] -= tmp16no2;
       if (inst->noiseEstLogQuantile[offset + i] < logval) {
         // logval is the smallest fixed point representation we can have.
@@ -360,10 +361,10 @@ void WebRtcNsx_PrepareSpectrumNeon(NoiseSuppressionFixedC* inst,
 
   // Fixed point C code for the next block is as follows:
   // for (i = 0; i < inst->magnLen; i++) {
-  //   inst->real[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(inst->real[i],
-  //      (int16_t)(inst->noiseSupFilter[i]), 14); // Q(normData-stages)
-  //   inst->imag[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(inst->imag[i],
-  //      (int16_t)(inst->noiseSupFilter[i]), 14); // Q(normData-stages)
+  //   inst->real[i] = (int16_t)((inst->real[i] *
+  //      (int16_t)(inst->noiseSupFilter[i])) >> 14);  // Q(normData-stages)
+  //   inst->imag[i] = (int16_t)((inst->imag[i] *
+  //      (int16_t)(inst->noiseSupFilter[i])) >> 14);  // Q(normData-stages)
   // }
 
   int16_t* preal = &inst->real[0];
@@ -396,8 +397,8 @@ void WebRtcNsx_PrepareSpectrumNeon(NoiseSuppressionFixedC* inst,
   }
 
   // Filter the last element
-  *preal = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(*preal, *pns_filter, 14);
-  *pimag = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(*pimag, *pns_filter, 14);
+  *preal = (int16_t)((*preal * *pns_filter) >> 14);
+  *pimag = (int16_t)((*pimag * *pns_filter) >> 14);
 
   // (2) Create spectrum.
 

@@ -59,7 +59,7 @@ void WebRtcNsx_SpeechNoiseProb(NoiseSuppressionFixedC* inst,
     zeros = WebRtcSpl_NormU32(priorLocSnr[i]);
     frac32 = (int32_t)(((priorLocSnr[i] << zeros) & 0x7FFFFFFF) >> 19);
     tmp32 = (frac32 * frac32 * -43) >> 19;
-    tmp32 += WEBRTC_SPL_MUL_16_16_RSFT((int16_t)frac32, 5412, 12);
+    tmp32 += ((int16_t)frac32 * 5412) >> 12;
     frac32 = tmp32 + 37;
     // tmp32 = log2(priorLocSnr[i])
     tmp32 = (int32_t)(((31 - zeros) << 12) + frac32) - (11 << 12); // Q12
@@ -100,7 +100,7 @@ void WebRtcNsx_SpeechNoiseProb(NoiseSuppressionFixedC* inst,
     tmp16no2 = kIndicatorTable[tableIndex];
     tmp16no1 = kIndicatorTable[tableIndex + 1] - kIndicatorTable[tableIndex];
     frac = (int16_t)(tmp32no1 & 0x00003fff); // Q14
-    tmp16no2 += (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(tmp16no1, frac, 14);
+    tmp16no2 += (int16_t)((tmp16no1 * frac) >> 14);
     if (tmpIndFX == 0) {
       tmpIndFX = 8192 - tmp16no2; // Q14
     } else {
@@ -132,7 +132,7 @@ void WebRtcNsx_SpeechNoiseProb(NoiseSuppressionFixedC* inst,
       tmp16no2 = kIndicatorTable[tableIndex];
       tmp16no1 = kIndicatorTable[tableIndex + 1] - kIndicatorTable[tableIndex];
       frac = (int16_t)(tmpU32no1 & 0x00003fff); // Q14
-      tmp16no2 += (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(tmp16no1, frac, 14);
+      tmp16no2 += (int16_t)((tmp16no1 * frac) >> 14);
       if (tmpIndFX) {
         tmpIndFX = 8192 + tmp16no2; // Q14
       } else {
@@ -202,8 +202,7 @@ void WebRtcNsx_SpeechNoiseProb(NoiseSuppressionFixedC* inst,
   // inst->priorNonSpeechProb += PRIOR_UPDATE *
   //                             (indPriorNonSpeech - inst->priorNonSpeechProb);
   tmp16 = indPriorFX16 - inst->priorNonSpeechProb; // Q14
-  inst->priorNonSpeechProb += (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(
-                                PRIOR_UPDATE_Q14, tmp16, 14); // Q14
+  inst->priorNonSpeechProb += (int16_t)((PRIOR_UPDATE_Q14 * tmp16) >> 14);
 
   //final speech probability: combine prior model with LR factor:
 
@@ -229,7 +228,7 @@ void WebRtcNsx_SpeechNoiseProb(NoiseSuppressionFixedC* inst,
 
         // Quadratic approximation of 2^frac
         tmp32no2 = (frac * frac * 44) >> 19;  // Q12.
-        tmp32no2 += WEBRTC_SPL_MUL_16_16_RSFT(frac, 84, 7); // Q12
+        tmp32no2 += (frac * 84) >> 7;  // Q12
         invLrtFX = (1 << (8 + intPart)) +
             WEBRTC_SPL_SHIFT_W32(tmp32no2, intPart - 4); // Q8
 
