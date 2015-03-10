@@ -493,8 +493,7 @@ void WebRtcAgc_SaturationCtrl(LegacyAgc* stt,
     }
 
     /* stt->envSum *= 0.99; */
-    stt->envSum = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(stt->envSum,
-            (int16_t)32440, 15);
+    stt->envSum = (int16_t)((stt->envSum * 32440) >> 15);
 }
 
 void WebRtcAgc_ZeroCtrl(LegacyAgc* stt, int32_t* inMicLevel, int32_t* env) {
@@ -975,9 +974,8 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
                     WebRtcAgc_ExpCurve(volNormFIX, &index);
 
                     /* Compute weighting factor for the volume increase, 32^(-2*X)/2+1.05 */
-                    weightFIX = kOffset1[index]
-                              - (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(kSlope1[index],
-                                                                         volNormFIX, 13);
+                    weightFIX = kOffset1[index] -
+                        (int16_t)((kSlope1[index] * volNormFIX) >> 13);
 
                     /* stt->Rxx160_LPw32 *= 1.047 [~0.2 dB]; */
                     stt->Rxx160_LPw32 = (stt->Rxx160_LPw32 / 64) * 67;
@@ -1035,9 +1033,8 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
                     WebRtcAgc_ExpCurve(volNormFIX, &index);
 
                     /* Compute weighting factor for the volume increase, (3.^(-2.*X))/8+1 */
-                    weightFIX = kOffset2[index]
-                              - (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(kSlope2[index],
-                                                                         volNormFIX, 13);
+                    weightFIX = kOffset2[index] -
+                        (int16_t)((kSlope2[index] * volNormFIX) >> 13);
 
                     /* stt->Rxx160_LPw32 *= 1.047 [~0.2 dB]; */
                     stt->Rxx160_LPw32 = (stt->Rxx160_LPw32 / 64) * 67;
