@@ -182,21 +182,6 @@ private:
     virtual int32_t MicrophoneIsAvailable(bool& available);
     virtual int32_t SpeakerIsAvailable(bool& available);
 
-    void Lock() EXCLUSIVE_LOCK_FUNCTION(_critSect)
-    {
-        _critSect.Enter();
-    }
-    ;
-    void UnLock() UNLOCK_FUNCTION(_critSect)
-    {
-        _critSect.Leave();
-    }
-    ;
-    int32_t Id()
-    {
-        return _id;
-    }
-
     static void AtomicSet32(int32_t* theValue, int32_t newValue);
     static int32_t AtomicGet32(int32_t* theValue);
 
