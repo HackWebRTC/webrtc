@@ -147,14 +147,12 @@ class ViECapturer
   static bool ViECaptureThreadFunction(void* obj);
   bool ViECaptureProcess();
 
+ private:
   void DeliverI420Frame(I420VideoFrame* video_frame);
 
- private:
-  bool SwapCapturedAndDeliverFrameIfAvailable();
-
-  // Never take capture_cs_ before deliver_cs_!
+  // Never take capture_cs_ before effects_and_stats_cs_!
   rtc::scoped_ptr<CriticalSectionWrapper> capture_cs_;
-  rtc::scoped_ptr<CriticalSectionWrapper> deliver_cs_;
+  rtc::scoped_ptr<CriticalSectionWrapper> effects_and_stats_cs_;
   VideoCaptureModule* capture_module_;
   VideoCaptureExternal* external_capture_module_;
   ProcessThread& module_process_thread_;
@@ -171,15 +169,16 @@ class ViECapturer
 
   volatile int stop_;
 
-  rtc::scoped_ptr<I420VideoFrame> captured_frame_;
-  rtc::scoped_ptr<I420VideoFrame> deliver_frame_;
+  I420VideoFrame captured_frame_ GUARDED_BY(capture_cs_.get());
 
   // Image processing.
-  ViEEffectFilter* effect_filter_;
+  ViEEffectFilter* effect_filter_ GUARDED_BY(effects_and_stats_cs_.get());
   VideoProcessingModule* image_proc_module_;
   int image_proc_module_ref_counter_;
-  VideoProcessingModule::FrameStats* deflicker_frame_stats_;
-  VideoProcessingModule::FrameStats* brightness_frame_stats_;
+  VideoProcessingModule::FrameStats* deflicker_frame_stats_
+      GUARDED_BY(effects_and_stats_cs_.get());
+  VideoProcessingModule::FrameStats* brightness_frame_stats_
+      GUARDED_BY(effects_and_stats_cs_.get());
   Brightness current_brightness_level_;
   Brightness reported_brightness_level_;
 

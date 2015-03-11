@@ -266,35 +266,6 @@ class FakeReceiveStatistics : public NullReceiveStatistics {
   StatisticianMap stats_map_;
 };
 
-TEST_F(VideoSendStreamTest, SwapsI420VideoFrames) {
-  static const size_t kWidth = 320;
-  static const size_t kHeight = 240;
-
-  test::NullTransport transport;
-  Call::Config call_config(&transport);
-  CreateSenderCall(call_config);
-
-  CreateSendConfig(1);
-  CreateStreams();
-  send_stream_->Start();
-
-  I420VideoFrame frame;
-  const int stride_uv = (kWidth + 1) / 2;
-  frame.CreateEmptyFrame(kWidth, kHeight, kWidth, stride_uv, stride_uv);
-  uint8_t* old_y_buffer = frame.buffer(kYPlane);
-  // Initialize memory to avoid DrMemory errors.
-  const int half_height = (kHeight + 1) / 2;
-  memset(frame.buffer(kYPlane), 0, kWidth * kHeight);
-  memset(frame.buffer(kUPlane), 0, stride_uv * half_height);
-  memset(frame.buffer(kVPlane), 0, stride_uv * half_height);
-
-  send_stream_->Input()->SwapFrame(&frame);
-
-  EXPECT_NE(frame.buffer(kYPlane), old_y_buffer);
-
-  DestroyStreams();
-}
-
 TEST_F(VideoSendStreamTest, SupportsFec) {
   class FecObserver : public test::SendTest {
    public:

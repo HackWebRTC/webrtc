@@ -130,6 +130,21 @@ TEST(TestI420VideoFrame, CopyFrame) {
   EXPECT_TRUE(EqualFrames(small_frame, big_frame));
 }
 
+TEST(TestI420VideoFrame, Reset) {
+  I420VideoFrame frame;
+  ASSERT_TRUE(frame.CreateEmptyFrame(5, 5, 5, 5, 5) == 0);
+  frame.set_ntp_time_ms(1);
+  frame.set_timestamp(2);
+  frame.set_render_time_ms(3);
+  ASSERT_TRUE(frame.video_frame_buffer() != NULL);
+
+  frame.Reset();
+  EXPECT_EQ(0u, frame.ntp_time_ms());
+  EXPECT_EQ(0u, frame.render_time_ms());
+  EXPECT_EQ(0u, frame.timestamp());
+  EXPECT_TRUE(frame.video_frame_buffer() == NULL);
+}
+
 TEST(TestI420VideoFrame, CloneFrame) {
   I420VideoFrame frame1;
   rtc::scoped_ptr<I420VideoFrame> frame2;

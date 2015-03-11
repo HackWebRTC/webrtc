@@ -69,10 +69,10 @@ class I420Buffer : public VideoFrameBuffer {
   int stride(PlaneType type) const override;
   rtc::scoped_refptr<NativeHandle> native_handle() const override;
 
- private:
-  friend class rtc::RefCountedObject<I420Buffer>;
+ protected:
   ~I420Buffer() override;
 
+ private:
   const int width_;
   const int height_;
   const int stride_y_;

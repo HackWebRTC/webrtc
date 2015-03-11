@@ -62,7 +62,7 @@ ViECapturer::ViECapturer(int capture_id,
                          ProcessThread& module_process_thread)
     : ViEFrameProviderBase(capture_id, engine_id),
       capture_cs_(CriticalSectionWrapper::CreateCriticalSection()),
-      deliver_cs_(CriticalSectionWrapper::CreateCriticalSection()),
+      effects_and_stats_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       capture_module_(NULL),
       external_capture_module_(NULL),
       module_process_thread_(module_process_thread),
@@ -359,13 +359,7 @@ void ViECapturer::OnIncomingCapturedFrame(const int32_t capture_id,
   TRACE_EVENT_ASYNC_BEGIN1("webrtc", "Video", video_frame.render_time_ms(),
                            "render_time", video_frame.render_time_ms());
 
-  if (video_frame.native_handle() != NULL) {
-    captured_frame_.reset(video_frame.CloneFrame());
-  } else {
-    if (captured_frame_ == NULL || captured_frame_->native_handle() != NULL)
-      captured_frame_.reset(new I420VideoFrame());
-    captured_frame_->SwapFrame(&video_frame);
-  }
+  captured_frame_ = video_frame;
   capture_event_.Set();
 }
 
@@ -380,7 +374,7 @@ void ViECapturer::OnCaptureDelayChanged(const int32_t id,
 
 int32_t ViECapturer::RegisterEffectFilter(
     ViEEffectFilter* effect_filter) {
-  CriticalSectionScoped cs(deliver_cs_.get());
+  CriticalSectionScoped cs(effects_and_stats_cs_.get());
 
   if (effect_filter != NULL && effect_filter_ != NULL) {
     LOG_F(LS_ERROR) << "Effect filter already registered.";
@@ -415,7 +409,7 @@ int32_t ViECapturer::DecImageProcRefCount() {
 }
 
 int32_t ViECapturer::EnableDeflickering(bool enable) {
-  CriticalSectionScoped cs(deliver_cs_.get());
+  CriticalSectionScoped cs(effects_and_stats_cs_.get());
   if (enable) {
     if (deflicker_frame_stats_) {
       return -1;
@@ -436,7 +430,7 @@ int32_t ViECapturer::EnableDeflickering(bool enable) {
 }
 
 int32_t ViECapturer::EnableBrightnessAlarm(bool enable) {
-  CriticalSectionScoped cs(deliver_cs_.get());
+  CriticalSectionScoped cs(effects_and_stats_cs_.get());
   if (enable) {
     if (brightness_frame_stats_) {
       return -1;
@@ -468,15 +462,19 @@ bool ViECapturer::ViECaptureProcess() {
 
     overuse_detector_->FrameProcessingStarted();
     int64_t encode_start_time = -1;
-    deliver_cs_->Enter();
-    if (SwapCapturedAndDeliverFrameIfAvailable()) {
-      capture_time = deliver_frame_->render_time_ms();
-      encode_start_time = Clock::GetRealTimeClock()->TimeInMilliseconds();
-      DeliverI420Frame(deliver_frame_.get());
-      if (deliver_frame_->native_handle() != NULL)
-        deliver_frame_.reset();  // Release the texture so it can be reused.
+    I420VideoFrame deliver_frame;
+    {
+      CriticalSectionScoped cs(capture_cs_.get());
+      if (!captured_frame_.IsZeroSize()) {
+        deliver_frame = captured_frame_;
+        captured_frame_.Reset();
+      }
     }
-    deliver_cs_->Leave();
+    if (!deliver_frame.IsZeroSize()) {
+      capture_time = deliver_frame.render_time_ms();
+      encode_start_time = Clock::GetRealTimeClock()->TimeInMilliseconds();
+      DeliverI420Frame(&deliver_frame);
+    }
     if (current_brightness_level_ != reported_brightness_level_) {
       CriticalSectionScoped cs(observer_cs_.get());
       if (observer_) {
@@ -504,46 +502,49 @@ void ViECapturer::DeliverI420Frame(I420VideoFrame* video_frame) {
   }
 
   // Apply image enhancement and effect filter.
-  if (deflicker_frame_stats_) {
-    if (image_proc_module_->GetFrameStats(deflicker_frame_stats_,
-                                          *video_frame) == 0) {
-      image_proc_module_->Deflickering(video_frame, deflicker_frame_stats_);
-    } else {
-      LOG_F(LS_ERROR) << "Could not get frame stats.";
-    }
-  }
-  if (brightness_frame_stats_) {
-    if (image_proc_module_->GetFrameStats(brightness_frame_stats_,
-                                          *video_frame) == 0) {
-      int32_t brightness = image_proc_module_->BrightnessDetection(
-          *video_frame, *brightness_frame_stats_);
-
-      switch (brightness) {
-      case VideoProcessingModule::kNoWarning:
-        current_brightness_level_ = Normal;
-        break;
-      case VideoProcessingModule::kDarkWarning:
-        current_brightness_level_ = Dark;
-        break;
-      case VideoProcessingModule::kBrightWarning:
-        current_brightness_level_ = Bright;
-        break;
-      default:
-        break;
+  {
+    CriticalSectionScoped cs(effects_and_stats_cs_.get());
+    if (deflicker_frame_stats_) {
+      if (image_proc_module_->GetFrameStats(deflicker_frame_stats_,
+                                            *video_frame) == 0) {
+        image_proc_module_->Deflickering(video_frame, deflicker_frame_stats_);
+      } else {
+        LOG_F(LS_ERROR) << "Could not get frame stats.";
       }
     }
-  }
-  if (effect_filter_) {
-    size_t length =
-        CalcBufferSize(kI420, video_frame->width(), video_frame->height());
-    rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
-    ExtractBuffer(*video_frame, length, video_buffer.get());
-    effect_filter_->Transform(length,
-                              video_buffer.get(),
-                              video_frame->ntp_time_ms(),
-                              video_frame->timestamp(),
-                              video_frame->width(),
-                              video_frame->height());
+    if (brightness_frame_stats_) {
+      if (image_proc_module_->GetFrameStats(brightness_frame_stats_,
+                                            *video_frame) == 0) {
+        int32_t brightness = image_proc_module_->BrightnessDetection(
+            *video_frame, *brightness_frame_stats_);
+
+        switch (brightness) {
+          case VideoProcessingModule::kNoWarning:
+            current_brightness_level_ = Normal;
+            break;
+          case VideoProcessingModule::kDarkWarning:
+            current_brightness_level_ = Dark;
+            break;
+          case VideoProcessingModule::kBrightWarning:
+            current_brightness_level_ = Bright;
+            break;
+          default:
+            break;
+        }
+      }
+    }
+    if (effect_filter_) {
+      size_t length =
+          CalcBufferSize(kI420, video_frame->width(), video_frame->height());
+      rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
+      ExtractBuffer(*video_frame, length, video_buffer.get());
+      effect_filter_->Transform(length,
+                                video_buffer.get(),
+                                video_frame->ntp_time_ms(),
+                                video_frame->timestamp(),
+                                video_frame->width(),
+                                video_frame->height());
+    }
   }
   // Deliver the captured frame to all observers (channels, renderer or file).
   ViEFrameProviderBase::DeliverFrame(video_frame, std::vector<uint32_t>());
@@ -598,15 +599,6 @@ void ViECapturer::OnNoPictureAlarm(const int32_t id,
   CriticalSectionScoped cs(observer_cs_.get());
   CaptureAlarm vie_alarm = (alarm == Raised) ? AlarmRaised : AlarmCleared;
   observer_->NoPictureAlarm(id, vie_alarm);
-}
-
-bool ViECapturer::SwapCapturedAndDeliverFrameIfAvailable() {
-  CriticalSectionScoped cs(capture_cs_.get());
-  if (captured_frame_ == NULL)
-    return false;
-
-  deliver_frame_.reset(captured_frame_.release());
-  return true;
 }
 
 }  // namespace webrtc

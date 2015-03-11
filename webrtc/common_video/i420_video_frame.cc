@@ -18,11 +18,10 @@
 
 namespace webrtc {
 
-I420VideoFrame::I420VideoFrame()
-    : timestamp_(0),
-      ntp_time_ms_(0),
-      render_time_ms_(0),
-      rotation_(kVideoRotation_0) {
+I420VideoFrame::I420VideoFrame() {
+  // Intentionally using Reset instead of initializer list so that any missed
+  // fields in Reset will be caught by memory checkers.
+  Reset();
 }
 
 I420VideoFrame::I420VideoFrame(
@@ -154,6 +153,14 @@ void I420VideoFrame::SwapFrame(I420VideoFrame* videoFrame) {
   std::swap(ntp_time_ms_, videoFrame->ntp_time_ms_);
   std::swap(render_time_ms_, videoFrame->render_time_ms_);
   std::swap(rotation_, videoFrame->rotation_);
+}
+
+void I420VideoFrame::Reset() {
+  video_frame_buffer_ = nullptr;
+  timestamp_ = 0;
+  ntp_time_ms_ = 0;
+  render_time_ms_ = 0;
+  rotation_ = kVideoRotation_0;
 }
 
 uint8_t* I420VideoFrame::buffer(PlaneType type) {
