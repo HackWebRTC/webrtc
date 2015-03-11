@@ -401,7 +401,9 @@ void LogSimulcastSubstreams(const webrtc::VideoCodec& codec) {
                  << codec.simulcastStream[i].height << "@"
                  << codec.simulcastStream[i].minBitrate << "-"
                  << codec.simulcastStream[i].maxBitrate << "kbps"
-                 << " with " << codec.simulcastStream[i].numberOfTemporalLayers
+                 << " with "
+                 << static_cast<int>(
+                     codec.simulcastStream[i].numberOfTemporalLayers)
                  << " temporal layers";
   }
 }
