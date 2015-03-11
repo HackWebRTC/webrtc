@@ -132,6 +132,11 @@ PeerConnectionFactory::~PeerConnectionFactory() {
   DCHECK(signaling_thread_->IsCurrent());
   channel_manager_.reset(NULL);
   default_allocator_factory_ = NULL;
+
+  // Make sure |worker_thread_| and |signaling_thread_| outlive
+  // |dtls_identity_store_|.
+  dtls_identity_store_.reset(NULL);
+
   if (owns_ptrs_) {
     if (wraps_current_thread_)
       rtc::ThreadManager::Instance()->UnwrapCurrentThread();
