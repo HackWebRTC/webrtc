@@ -16,21 +16,21 @@
                 android:id="@+id/add_room_button"
                 android:background="@android:drawable/ic_menu_add"
                 android:contentDescription="@string/add_room_description"
-                android:layout_marginRight="20dp"
+                android:layout_marginEnd="20dp"
                 android:layout_width="48dp"
                 android:layout_height="48dp"/>
             <ImageButton
                 android:id="@+id/remove_room_button"
                 android:background="@android:drawable/ic_delete"
                 android:contentDescription="@string/remove_room_description"
-                android:layout_marginRight="20dp"
+                android:layout_marginEnd="20dp"
                 android:layout_width="48dp"
                 android:layout_height="48dp"/>
             <ImageButton
                 android:id="@+id/connect_button"
                 android:background="@android:drawable/sym_action_call"
                 android:contentDescription="@string/connect_description"
-                android:layout_marginRight="20dp"
+                android:layout_marginEnd="20dp"
                 android:layout_width="48dp"
                 android:layout_height="48dp"/>
             <ImageButton

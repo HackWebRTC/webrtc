@@ -331,7 +331,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     Log.d(TAG, "testSizeIsSetBeforeStartingToRender Done.");
   }
 
-  public void testLoopback(boolean enableVideo, String videoCodec)
+  private void testLoopback(boolean enableVideo, String videoCodec)
       throws InterruptedException {
     loopback = true;
     MockRenderer localRenderer = null;
