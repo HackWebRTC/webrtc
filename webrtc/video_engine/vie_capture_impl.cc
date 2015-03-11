@@ -139,13 +139,6 @@ int ViECaptureImpl::ConnectCaptureDevice(const int capture_id,
   LOG(LS_INFO) << "Connect capture id " << capture_id
                << " to channel " << video_channel;
 
-  ViEInputManagerScoped is(*(shared_data_->input_manager()));
-  ViECapturer* vie_capture = is.Capture(capture_id);
-  if (!vie_capture) {
-    shared_data_->SetLastError(kViECaptureDeviceDoesNotExist);
-    return -1;
-  }
-
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEEncoder* vie_encoder = cs.Encoder(video_channel);
   if (!vie_encoder) {
@@ -156,6 +149,13 @@ int ViECaptureImpl::ConnectCaptureDevice(const int capture_id,
   if (vie_encoder->Owner() != video_channel) {
     LOG(LS_ERROR) << "Can't connect capture device to a receive device.";
     shared_data_->SetLastError(kViECaptureDeviceInvalidChannelId);
+    return -1;
+  }
+
+  ViEInputManagerScoped is(*(shared_data_->input_manager()));
+  ViECapturer* vie_capture = is.Capture(capture_id);
+  if (!vie_capture) {
+    shared_data_->SetLastError(kViECaptureDeviceDoesNotExist);
     return -1;
   }
   //  Check if the encoder already has a connected frame provider
