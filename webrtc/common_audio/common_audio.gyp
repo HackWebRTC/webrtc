@@ -118,8 +118,10 @@
             'real_fourier.cc',
             'real_fourier.h',
           ],
-          'dependencies': [
-            '<(DEPTH)/third_party/openmax_dl/dl/dl.gyp:openmax_dl',
+          'conditions': [
+            ['build_openmax_dl==1', {
+              'dependencies': ['<(DEPTH)/third_party/openmax_dl/dl/dl.gyp:openmax_dl',],
+            }],
           ],
         }],
         ['target_arch=="ia32" or target_arch=="x64"', {
