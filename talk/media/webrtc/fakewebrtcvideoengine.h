@@ -374,11 +374,6 @@ class FakeWebRtcVideoEngine
       return 0;
     }
 
-    virtual void SwapFrame(webrtc::I420VideoFrame* frame) {
-      last_capture_time_ = frame->render_time_ms();
-      ++incoming_frame_num_;
-    }
-
    private:
     int channel_id_;
     bool denoising_;

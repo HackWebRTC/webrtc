@@ -164,11 +164,6 @@ void* WebRtcVideoFrame::GetNativeHandle() const {
   return video_frame_buffer_ ? video_frame_buffer_->native_handle() : nullptr;
 }
 
-rtc::scoped_refptr<webrtc::VideoFrameBuffer>
-WebRtcVideoFrame::GetVideoFrameBuffer() const {
-  return video_frame_buffer_;
-}
-
 VideoFrame* WebRtcVideoFrame::Copy() const {
   WebRtcVideoFrame* new_frame = new WebRtcVideoFrame(
       video_frame_buffer_, elapsed_time_ns_, time_stamp_ns_);

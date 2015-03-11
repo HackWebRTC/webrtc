@@ -376,6 +376,9 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     bool muted_ GUARDED_BY(lock_);
     VideoFormat format_ GUARDED_BY(lock_);
     int old_adapt_changes_ GUARDED_BY(lock_);
+
+    rtc::CriticalSection frame_lock_;
+    webrtc::I420VideoFrame video_frame_ GUARDED_BY(frame_lock_);
   };
 
   // Wrapper for the receiver part, contains configs etc. that are needed to

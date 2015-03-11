@@ -30,7 +30,6 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/stream.h"
-#include "webrtc/common_video/interface/video_frame_buffer.h"
 #include "webrtc/common_video/rotation.h"
 
 namespace cricket {
@@ -107,14 +106,6 @@ class VideoFrame {
   // frame is backed by a texture. The object should be destroyed when it is no
   // longer in use, so the underlying resource can be freed.
   virtual void* GetNativeHandle() const = 0;
-
-  // Returns the underlying video frame buffer. The default implementation
-  // returns a shallow wrapper, converting itself into a
-  // webrtc::VideoFrameBuffer. This function is ok to call multiple times, but
-  // the returned object will refer to the same memory.
-  // TODO(magjed): Make pure virtual when all subclasses implement this.
-  virtual rtc::scoped_refptr<webrtc::VideoFrameBuffer> GetVideoFrameBuffer()
-      const;
 
   // For retrieving the aspect ratio of each pixel. Usually this is 1x1, but
   // the aspect_ratio_idc parameter of H.264 can specify non-square pixels.

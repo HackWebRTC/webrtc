@@ -3276,8 +3276,18 @@ bool WebRtcVideoMediaChannel::SendFrame(
     frame_out = processed_frame.get();
   }
 
-  webrtc::I420VideoFrame webrtc_frame(frame_out->GetVideoFrameBuffer(), 0, 0,
-                                      frame_out->GetVideoRotation());
+  webrtc::ViEVideoFrameI420 frame_i420;
+  // TODO(ronghuawu): Update the webrtc::ViEVideoFrameI420
+  // to use const unsigned char*
+  frame_i420.y_plane = const_cast<unsigned char*>(frame_out->GetYPlane());
+  frame_i420.u_plane = const_cast<unsigned char*>(frame_out->GetUPlane());
+  frame_i420.v_plane = const_cast<unsigned char*>(frame_out->GetVPlane());
+  frame_i420.y_pitch = frame_out->GetYPitch();
+  frame_i420.u_pitch = frame_out->GetUPitch();
+  frame_i420.v_pitch = frame_out->GetVPitch();
+  frame_i420.width = static_cast<uint16>(frame_out->GetWidth());
+  frame_i420.height = static_cast<uint16>(frame_out->GetHeight());
+
   int64 timestamp_ntp_ms = 0;
   // TODO(justinlin): Reenable after Windows issues with clock drift are fixed.
   // Currently reverted to old behavior of discarding capture timestamp.
@@ -3298,9 +3308,9 @@ bool WebRtcVideoMediaChannel::SendFrame(
         rtc::UnixTimestampNanosecsToNtpMillisecs(frame_timestamp);
   }
 #endif
-  webrtc_frame.set_ntp_time_ms(timestamp_ntp_ms);
-  send_channel->external_capture()->SwapFrame(&webrtc_frame);
-  return true;
+
+  return send_channel->external_capture()->IncomingFrameI420(
+      frame_i420, timestamp_ntp_ms) == 0;
 }
 
 bool WebRtcVideoMediaChannel::CreateChannel(uint32 ssrc_key,
