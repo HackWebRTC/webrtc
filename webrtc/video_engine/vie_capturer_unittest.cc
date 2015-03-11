@@ -97,8 +97,7 @@ class ViECapturerTest : public ::testing::Test {
   void AddOutputFrame(const I420VideoFrame* frame) {
     if (frame->native_handle() == NULL)
       output_frame_ybuffers_.push_back(frame->buffer(kYPlane));
-    // Clone the frames because ViECapturer owns the frames.
-    output_frames_.push_back(frame->CloneFrame());
+    output_frames_.push_back(new I420VideoFrame(*frame));
     output_frame_event_->Set();
   }
 
@@ -128,6 +127,33 @@ class ViECapturerTest : public ::testing::Test {
   // the frame are swapped and not copied.
   std::vector<const uint8_t*> output_frame_ybuffers_;
 };
+
+TEST_F(ViECapturerTest, DoesNotRetainHandleNorCopyBuffer) {
+  // Indicate an output frame has arrived.
+  rtc::scoped_ptr<EventWrapper> frame_destroyed_event(EventWrapper::Create());
+  class TestBuffer : public webrtc::I420Buffer {
+   public:
+    TestBuffer(EventWrapper* event) : I420Buffer(5, 5), event_(event) {}
+
+   private:
+    friend class rtc::RefCountedObject<TestBuffer>;
+    ~TestBuffer() override { event_->Set(); }
+    EventWrapper* event_;
+  };
+
+  I420VideoFrame frame(
+      new rtc::RefCountedObject<TestBuffer>(frame_destroyed_event.get()), 1, 1,
+      kVideoRotation_0);
+
+  AddInputFrame(&frame);
+  WaitOutputFrame();
+
+  EXPECT_EQ(output_frames_[0]->video_frame_buffer().get(),
+            frame.video_frame_buffer().get());
+  output_frames_.clear();
+  frame.Reset();
+  EXPECT_EQ(kEventSignaled, frame_destroyed_event->Wait(FRAME_TIMEOUT_MS));
+}
 
 TEST_F(ViECapturerTest, TestTextureFrames) {
   const int kNumFrame = 3;
