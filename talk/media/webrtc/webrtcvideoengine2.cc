@@ -1374,32 +1374,14 @@ static void CreateBlackFrame(webrtc::I420VideoFrame* video_frame,
          video_frame->allocated_size(webrtc::kVPlane));
 }
 
-static void ConvertToI420VideoFrame(const VideoFrame& frame,
-                                    webrtc::I420VideoFrame* i420_frame) {
-  i420_frame->CreateFrame(
-      static_cast<int>(frame.GetYPitch() * frame.GetHeight()),
-      frame.GetYPlane(),
-      static_cast<int>(frame.GetUPitch() * ((frame.GetHeight() + 1) / 2)),
-      frame.GetUPlane(),
-      static_cast<int>(frame.GetVPitch() * ((frame.GetHeight() + 1) / 2)),
-      frame.GetVPlane(),
-      static_cast<int>(frame.GetWidth()),
-      static_cast<int>(frame.GetHeight()),
-      static_cast<int>(frame.GetYPitch()),
-      static_cast<int>(frame.GetUPitch()),
-      static_cast<int>(frame.GetVPitch()));
-}
-
 void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
     VideoCapturer* capturer,
     const VideoFrame* frame) {
   TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::InputFrame");
   LOG(LS_VERBOSE) << "InputFrame: " << frame->GetWidth() << "x"
                   << frame->GetHeight();
-  // Lock before copying, can be called concurrently when swapping input source.
-  rtc::CritScope frame_cs(&frame_lock_);
-  ConvertToI420VideoFrame(*frame, &video_frame_);
-
+  webrtc::I420VideoFrame video_frame(frame->GetVideoFrameBuffer(), 0, 0,
+                                     frame->GetVideoRotation());
   rtc::CritScope cs(&lock_);
   if (stream_ == NULL) {
     LOG(LS_WARNING) << "Capturer inputting frames before send codecs are "
@@ -1419,19 +1401,19 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
   }
   if (muted_) {
     // Create a black frame to transmit instead.
-    CreateBlackFrame(&video_frame_,
+    CreateBlackFrame(&video_frame,
                      static_cast<int>(frame->GetWidth()),
                      static_cast<int>(frame->GetHeight()));
   }
   // Reconfigure codec if necessary.
   SetDimensions(
-      video_frame_.width(), video_frame_.height(), capturer->IsScreencast());
+      video_frame.width(), video_frame.height(), capturer->IsScreencast());
 
-  LOG(LS_VERBOSE) << "SwapFrame: " << video_frame_.width() << "x"
-                  << video_frame_.height() << " -> (codec) "
+  LOG(LS_VERBOSE) << "SwapFrame: " << video_frame.width() << "x"
+                  << video_frame.height() << " -> (codec) "
                   << parameters_.encoder_config.streams.back().width << "x"
                   << parameters_.encoder_config.streams.back().height;
-  stream_->Input()->SwapFrame(&video_frame_);
+  stream_->Input()->SwapFrame(&video_frame);
 }
 
 bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(

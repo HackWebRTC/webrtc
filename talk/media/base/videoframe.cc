@@ -33,7 +33,66 @@
 #include "libyuv/planar_functions.h"
 #include "libyuv/scale.h"
 #include "talk/media/base/videocommon.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+
+namespace {
+
+// TODO(magjed): Remove this once all subclasses implements GetVideoFrameBuffer.
+// Wraps cricket::VideoFrame into webrtc::VideoFrameBuffer without deep copy.
+class CricketVideoFrameBuffer : public webrtc::VideoFrameBuffer {
+ public:
+  explicit CricketVideoFrameBuffer(const cricket::VideoFrame* frame)
+      // Note that cricket::VideoFrame::Copy is shallow. See declaration of that
+      // function for more info.
+      : frame_(frame->Copy()) {}
+
+  int width() const override { return static_cast<int>(frame_->GetWidth()); }
+  int height() const override { return static_cast<int>(frame_->GetHeight()); }
+
+  rtc::scoped_refptr<webrtc::NativeHandle> native_handle() const override {
+    return static_cast<webrtc::NativeHandle*>(frame_->GetNativeHandle());
+  }
+
+  const uint8_t* data(webrtc::PlaneType type) const override {
+    switch (type) {
+      case webrtc::kYPlane:
+        return frame_->GetYPlane();
+      case webrtc::kUPlane:
+        return frame_->GetUPlane();
+      case webrtc::kVPlane:
+        return frame_->GetVPlane();
+      default:
+        RTC_NOTREACHED();
+        return nullptr;
+    }
+  }
+
+  uint8_t* data(webrtc::PlaneType type) override {
+    LOG(LS_WARNING) << "Unsafe non-const pixel access.";
+    return const_cast<uint8_t*>(
+        static_cast<const CricketVideoFrameBuffer*>(this)->data(type));
+  }
+
+  int stride(webrtc::PlaneType type) const override {
+    switch (type) {
+      case webrtc::kYPlane:
+        return frame_->GetYPitch();
+      case webrtc::kUPlane:
+        return frame_->GetUPitch();
+      case webrtc::kVPlane:
+        return frame_->GetVPitch();
+      default:
+        RTC_NOTREACHED();
+        return 0;
+    }
+  }
+
+ private:
+  const rtc::scoped_ptr<const cricket::VideoFrame> frame_;
+};
+
+}  // namespace
 
 namespace cricket {
 
@@ -78,6 +137,11 @@ rtc::StreamResult VideoFrame::Write(rtc::StreamInterface* stream,
     }
   }
   return result;
+}
+
+rtc::scoped_refptr<webrtc::VideoFrameBuffer> VideoFrame::GetVideoFrameBuffer()
+    const {
+  return new rtc::RefCountedObject<CricketVideoFrameBuffer>(this);
 }
 
 size_t VideoFrame::CopyToBuffer(uint8* buffer, size_t size) const {
