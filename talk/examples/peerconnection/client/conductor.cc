@@ -140,6 +140,11 @@ bool Conductor::CreatePeerConnection(bool dtls) {
     constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                             "true");
   }
+  else
+  {
+    constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
+                            "false");
+  }
 
   peer_connection_ =
       peer_connection_factory_->CreatePeerConnection(servers,
