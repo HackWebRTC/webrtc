@@ -88,7 +88,7 @@ class TransportChannelProxy : public TransportChannel,
   std::string name_;
   rtc::Thread* worker_thread_;
   TransportChannelImpl* impl_;
-  OptionList pending_options_;
+  OptionList options_;
   std::vector<std::string> pending_srtp_ciphers_;
 
   DISALLOW_EVIL_CONSTRUCTORS(TransportChannelProxy);

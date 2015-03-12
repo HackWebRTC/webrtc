@@ -3546,6 +3546,54 @@ TEST_F(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesSeparated) {
   SetLocalDescriptionWithoutError(answer);
 }
 
+// This verifies that the voice channel after bundle has both options from video
+// and voice channels.
+TEST_F(WebRtcSessionTest, TestSetSocketOptionBeforeBundle) {
+  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyBalanced);
+  mediastream_signaling_.SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.use_rtp_mux = true;
+
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  SetLocalDescriptionWithoutError(offer);
+
+  session_->video_channel()->SetOption(cricket::BaseChannel::ST_RTP,
+                                       rtc::Socket::Option::OPT_SNDBUF, 4000);
+
+  session_->voice_channel()->SetOption(cricket::BaseChannel::ST_RTP,
+                                       rtc::Socket::Option::OPT_RCVBUF, 8000);
+
+  int option_val;
+  EXPECT_TRUE(session_->video_channel()->transport_channel()->GetOption(
+      rtc::Socket::Option::OPT_SNDBUF, &option_val));
+  EXPECT_EQ(4000, option_val);
+  EXPECT_FALSE(session_->voice_channel()->transport_channel()->GetOption(
+      rtc::Socket::Option::OPT_SNDBUF, &option_val));
+
+  EXPECT_TRUE(session_->voice_channel()->transport_channel()->GetOption(
+      rtc::Socket::Option::OPT_RCVBUF, &option_val));
+  EXPECT_EQ(8000, option_val);
+  EXPECT_FALSE(session_->video_channel()->transport_channel()->GetOption(
+      rtc::Socket::Option::OPT_RCVBUF, &option_val));
+
+  EXPECT_NE(session_->voice_channel()->transport_channel(),
+            session_->video_channel()->transport_channel());
+
+  mediastream_signaling_.SendAudioVideoStream2();
+  SessionDescriptionInterface* answer =
+      CreateRemoteAnswer(session_->local_description());
+  SetRemoteDescriptionWithoutError(answer);
+
+  EXPECT_TRUE(session_->voice_channel()->transport_channel()->GetOption(
+      rtc::Socket::Option::OPT_SNDBUF, &option_val));
+  EXPECT_EQ(4000, option_val);
+
+  EXPECT_TRUE(session_->voice_channel()->transport_channel()->GetOption(
+      rtc::Socket::Option::OPT_RCVBUF, &option_val));
+  EXPECT_EQ(8000, option_val);
+}
+
 // TODO(bemasc): Add a TestIceStatesBundle with BUNDLE enabled.  That test
 // currently fails because upon disconnection and reconnection OnIceComplete is
 // called more than once without returning to IceGatheringGathering.

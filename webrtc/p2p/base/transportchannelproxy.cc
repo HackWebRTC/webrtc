@@ -67,17 +67,14 @@ void TransportChannelProxy::SetImplementation(TransportChannelImpl* impl) {
         this, &TransportChannelProxy::OnReadyToSend);
     impl_->SignalRouteChange.connect(
         this, &TransportChannelProxy::OnRouteChange);
-    for (OptionList::iterator it = pending_options_.begin();
-         it != pending_options_.end();
-         ++it) {
-      impl_->SetOption(it->first, it->second);
+    for (const auto& pair : options_) {
+      impl_->SetOption(pair.first, pair.second);
     }
 
     // Push down the SRTP ciphers, if any were set.
     if (!pending_srtp_ciphers_.empty()) {
       impl_->SetSrtpCiphers(pending_srtp_ciphers_);
     }
-    pending_options_.clear();
   }
 
   // Post ourselves a message to see if we need to fire state callbacks.
@@ -97,8 +94,8 @@ int TransportChannelProxy::SendPacket(const char* data, size_t len,
 
 int TransportChannelProxy::SetOption(rtc::Socket::Option opt, int value) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
+  options_.push_back(OptionPair(opt, value));
   if (!impl_) {
-    pending_options_.push_back(OptionPair(opt, value));
     return 0;
   }
   return impl_->SetOption(opt, value);
@@ -110,9 +107,9 @@ bool TransportChannelProxy::GetOption(rtc::Socket::Option opt, int* value) {
     return impl_->GetOption(opt, value);
   }
 
-  for (const auto& pending : pending_options_) {
-    if (pending.first == opt) {
-      *value = pending.second;
+  for (const auto& pair : options_) {
+    if (pair.first == opt) {
+      *value = pair.second;
       return true;
     }
   }

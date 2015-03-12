@@ -230,6 +230,9 @@ class BaseChannel
   // Made public for easier testing.
   void SetReadyToSend(TransportChannel* channel, bool ready);
 
+  // Only public for unit tests.  Otherwise, consider protected.
+  virtual int SetOption(SocketType type, rtc::Socket::Option o, int val);
+
  protected:
   MediaEngineInterface* media_engine() const { return media_engine_; }
   virtual MediaChannel* media_channel() const { return media_channel_; }
@@ -254,7 +257,6 @@ class BaseChannel
                           rtc::DiffServCodePoint dscp);
   virtual bool SendRtcp(rtc::Buffer* packet,
                         rtc::DiffServCodePoint dscp);
-  virtual int SetOption(SocketType type, rtc::Socket::Option o, int val);
 
   // From TransportChannel
   void OnWritableState(TransportChannel* channel);
