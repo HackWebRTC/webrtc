@@ -320,18 +320,25 @@ class ACMGenericCodec {
   int32_t SetISACMaxRate(const uint32_t max_rate_bps);
 
   ///////////////////////////////////////////////////////////////////////////
-  // int SetOpusApplication()
+  // int SetOpusApplication(OpusApplicationMode application,
+  //                        bool disable_dtx_if_needed)
   // Sets the intended application for the Opus encoder. Opus uses this to
-  // optimize the encoding for applications like VOIP and music.
+  // optimize the encoding for applications like VOIP and music. Currently, two
+  // modes are supported: kVoip and kAudio. kAudio is only allowed when Opus
+  // DTX is switched off. If DTX is on, and |application| == kAudio, a failure
+  // will be triggered unless |disable_dtx_if_needed| == true, for which, the
+  // DTX will be forced off.
   //
   // Input:
-  //   - application      : intended application.
+  //   - application            : intended application.
+  //   - disable_dtx_if_needed  : whether to force Opus DTX to stop when needed.
   //
   // Return value:
   //   -1 if failed or on codecs other than Opus.
   //    0 if succeeded.
   //
-  int SetOpusApplication(OpusApplicationMode /*application*/);
+  int SetOpusApplication(OpusApplicationMode application,
+                         bool disable_dtx_if_needed);
 
   ///////////////////////////////////////////////////////////////////////////
   // int SetOpusMaxPlaybackRate()
@@ -344,19 +351,24 @@ class ACMGenericCodec {
   //   -frequency_hz      : maximum playback rate in Hz.
   //
   // Return value:
-  //   -1 if failed or on codecs other than Opus
+  //   -1 if failed or on codecs other than Opus.
   //    0 if succeeded.
   //
   int SetOpusMaxPlaybackRate(int /* frequency_hz */);
 
   ///////////////////////////////////////////////////////////////////////////
-  // EnableOpusDtx()
-  // Enable the DTX, if the codec is Opus. If current Opus application mode is
-  // audio, a failure will be triggered.
+  // EnableOpusDtx(bool force_voip)
+  // Enable the DTX, if the codec is Opus. Currently, DTX can only be enabled
+  // when the application mode is kVoip. If |force_voip| == true, the
+  // application mode will be forced to kVoip. Otherwise, a failure will be
+  // triggered if current application mode is kAudio.
+  // Input:
+  //   - force_voip  : whether to force application mode to kVoip.
   // Return value:
   //   -1 if failed or on codecs other than Opus.
   //    0 if succeeded.
-  int EnableOpusDtx();
+  //
+  int EnableOpusDtx(bool force_voip);
 
   ///////////////////////////////////////////////////////////////////////////
   // DisbleOpusDtx()
@@ -364,6 +376,7 @@ class ACMGenericCodec {
   // Return value:
   //   -1 if failed or on codecs other than Opus.
   //    0 if succeeded.
+  //
   int DisableOpusDtx();
 
   ///////////////////////////////////////////////////////////////////////////

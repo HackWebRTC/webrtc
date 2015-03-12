@@ -876,18 +876,26 @@ class AudioCodingModule {
       bool enforce_frame_size = false) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  // int SetOpusApplication()
-  // Sets the intended application for the Opus encoder. Opus uses this to
-  // optimize the encoding for applications like VOIP and music.
+  // int SetOpusApplication(OpusApplicationMode application,
+  //                        bool disable_dtx_if_needed)
+  // Sets the intended application if current send codec is Opus. Opus uses this
+  // to optimize the encoding for applications like VOIP and music. Currently,
+  // two modes are supported: kVoip and kAudio. kAudio is only allowed when Opus
+  // DTX is switched off. If DTX is on, and |application| == kAudio, a failure
+  // will be triggered unless |disable_dtx_if_needed| == true, for which, the
+  // DTX will be forced off.
   //
   // Input:
-  //   - application      : intended application.
+  //   - application            : intended application.
+  //   - disable_dtx_if_needed  : whether to force Opus DTX to stop.
   //
   // Return value:
-  //   -1 if failed or on codecs other than Opus.
-  //    0 if succeeded.
+  //   -1 if current send codec is not Opus or error occurred in setting the
+  //      Opus application mode.
+  //    0 if the Opus application mode is successfully set.
   //
-  virtual int SetOpusApplication(OpusApplicationMode /*application*/) = 0;
+  virtual int SetOpusApplication(OpusApplicationMode application,
+                                 bool force_dtx) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int SetOpusMaxPlaybackRate()
@@ -901,31 +909,31 @@ class AudioCodingModule {
   // Return value:
   //   -1 if current send codec is not Opus or
   //      error occurred in setting the maximum playback rate,
-  //    0 maximum bandwidth is set successfully.
+  //    0 if maximum bandwidth is set successfully.
   //
   virtual int SetOpusMaxPlaybackRate(int frequency_hz) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  // int EnableOpusDtx()
-  // If current send codec is Opus, enables its internal DTX.
-  // Currently, this can be only called when Opus application mode is VOIP.
-  // Use SetOpusApplication() to switch to VOIP mode when necessary.
-  //
+  // EnableOpusDtx(bool force_voip)
+  // Enable the DTX, if current send codec is Opus. Currently, DTX can only be
+  // enabled when the application mode is kVoip. If |force_voip| == true,
+  // the application mode will be forced to kVoip. Otherwise, a failure will be
+  // triggered if current application mode is kAudio.
+  // Input:
+  //   - force_application    : whether to force application mode to kVoip.
   // Return value:
-  //   -1 if current send codec is not Opus or
-  //      error occurred in enabling DTX.
-  //    0 Opus DTX is enabled successfully.
-  //
-  virtual int EnableOpusDtx() = 0;
+  //   -1 if current send codec is not Opus or error occurred in enabling the
+  //      Opus DTX.
+  //    0 if Opus DTX is enabled successfully..
+  virtual int EnableOpusDtx(bool force_application) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int DisableOpusDtx()
   // If current send codec is Opus, disables its internal DTX.
   //
   // Return value:
-  //   -1 if current send codec is not Opus or
-  //      error occurred in disabling DTX.
-  //    0 Opus DTX is disabled successfully.
+  //   -1 if current send codec is not Opus or error occurred in disabling DTX.
+  //    0 if Opus DTX is disabled successfully.
   //
   virtual int DisableOpusDtx() = 0;
 

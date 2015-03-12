@@ -236,6 +236,13 @@ void TestWebRtcVadDtx::SetVAD(bool enable_dtx, bool enable_vad,
 
 // Following is the implementation of TestOpusDtx.
 void TestOpusDtx::Perform() {
+#ifdef WEBRTC_CODEC_ISAC
+  // If we set other codec than Opus, DTX cannot be toggled.
+  RegisterCodec(kIsacWb);
+  EXPECT_EQ(-1, acm_send_->EnableOpusDtx(false));
+  EXPECT_EQ(-1, acm_send_->DisableOpusDtx());
+#endif
+
 #ifdef WEBRTC_CODEC_OPUS
   int expects[] = {0, 1, 0, 0, 0};
 
@@ -248,7 +255,7 @@ void TestOpusDtx::Perform() {
   Run(webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm"),
       32000, 1, out_filename, false, expects);
 
-  EXPECT_EQ(0, acm_send_->EnableOpusDtx());
+  EXPECT_EQ(0, acm_send_->EnableOpusDtx(false));
   expects[kFrameEmpty] = 1;
   Run(webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm"),
       32000, 1, out_filename, true, expects);
@@ -261,9 +268,10 @@ void TestOpusDtx::Perform() {
   Run(webrtc::test::ResourcePath("audio_coding/teststereo32kHz", "pcm"),
       32000, 2, out_filename, false, expects);
 
-  // Opus DTX should only work in Voip mode.
-  EXPECT_EQ(0, acm_send_->SetOpusApplication(kVoip));
-  EXPECT_EQ(0, acm_send_->EnableOpusDtx());
+  // Opus should be now in kAudio mode. Opus DTX should not be set without
+  // forcing kVoip mode.
+  EXPECT_EQ(-1, acm_send_->EnableOpusDtx(false));
+  EXPECT_EQ(0, acm_send_->EnableOpusDtx(true));
 
   expects[kFrameEmpty] = 1;
   Run(webrtc::test::ResourcePath("audio_coding/teststereo32kHz", "pcm"),

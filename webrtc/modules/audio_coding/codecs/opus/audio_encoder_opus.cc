@@ -77,6 +77,7 @@ AudioEncoderOpus::AudioEncoderOpus(const Config& config)
       num_channels_(config.num_channels),
       payload_type_(config.payload_type),
       application_(config.application),
+      dtx_enabled_(config.dtx_enabled),
       samples_per_10ms_frame_(rtc::CheckedDivExact(kSampleRateHz, 100) *
                               num_channels_),
       packet_loss_rate_(0.0) {
