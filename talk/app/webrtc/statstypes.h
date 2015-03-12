@@ -228,6 +228,9 @@ class StatsReport {
     virtual bool Equals(const Id& other) const;
     virtual std::string ToString() const = 0;
 
+    // TODO(tommi): Remove this after rolling into Chrome.
+    const Id* operator->() const { return this; }
+
    protected:
     Id(StatsType type);  // Only meant for derived classes.
     const StatsType type_;
