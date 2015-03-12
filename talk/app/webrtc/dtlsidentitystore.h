@@ -33,7 +33,6 @@
 
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "webrtc/base/messagehandler.h"
-#include "webrtc/base/messagequeue.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 
@@ -52,7 +51,7 @@ class DtlsIdentityStore : public rtc::MessageHandler {
 
   DtlsIdentityStore(rtc::Thread* signaling_thread,
                     rtc::Thread* worker_thread);
-  virtual ~DtlsIdentityStore();
+  ~DtlsIdentityStore();
 
   // Initialize will start generating the free identity in the background.
   void Initialize();
@@ -68,16 +67,11 @@ class DtlsIdentityStore : public rtc::MessageHandler {
   bool HasFreeIdentityForTesting() const;
 
  private:
-  sigslot::signal0<sigslot::multi_threaded_local> SignalDestroyed;
-  class WorkerTask;
-  typedef rtc::ScopedMessageData<DtlsIdentityStore::WorkerTask>
-      IdentityTaskMessageData;
-
   void GenerateIdentity();
   void OnIdentityGenerated(rtc::scoped_ptr<rtc::SSLIdentity> identity);
   void ReturnIdentity(rtc::scoped_ptr<rtc::SSLIdentity> identity);
 
-  void PostGenerateIdentityResult_w(rtc::scoped_ptr<rtc::SSLIdentity> identity);
+  void GenerateIdentity_w();
 
   rtc::Thread* signaling_thread_;
   rtc::Thread* worker_thread_;

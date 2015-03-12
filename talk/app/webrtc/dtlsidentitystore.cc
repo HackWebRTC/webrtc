@@ -44,47 +44,7 @@ enum {
 };
 
 typedef rtc::ScopedMessageData<rtc::SSLIdentity> IdentityResultMessageData;
-
 }  // namespace
-
-// This class runs on the worker thread to generate the identity. It's necessary
-// to separate this class from DtlsIdentityStore so that it can live on the
-// worker thread after DtlsIdentityStore is destroyed.
-class DtlsIdentityStore::WorkerTask : public sigslot::has_slots<>,
-                                      public rtc::MessageHandler {
- public:
-  explicit WorkerTask(DtlsIdentityStore* store) : store_(store) {
-    store_->SignalDestroyed.connect(this, &WorkerTask::OnStoreDestroyed);
-  };
-
-  void GenerateIdentity() {
-    rtc::scoped_ptr<rtc::SSLIdentity> identity(
-      rtc::SSLIdentity::Generate(DtlsIdentityStore::kIdentityName));
-
-    {
-      rtc::CritScope cs(&cs_);
-      if (store_) {
-        store_->PostGenerateIdentityResult_w(identity.Pass());
-      }
-    }
-  }
-
-  void OnMessage(rtc::Message* msg) override {
-    DCHECK(msg->message_id == MSG_GENERATE_IDENTITY);
-    GenerateIdentity();
-    // Deleting msg->pdata will destroy the WorkerTask.
-    delete msg->pdata;
-  }
-
- private:
-  void OnStoreDestroyed() {
-    rtc::CritScope cs(&cs_);
-    store_ = NULL;
-  }
-
-  rtc::CriticalSection cs_;
-  DtlsIdentityStore* store_;
-};
 
 // Arbitrary constant used as common name for the identity.
 // Chosen to make the certificates more readable.
@@ -96,9 +56,7 @@ DtlsIdentityStore::DtlsIdentityStore(rtc::Thread* signaling_thread,
       worker_thread_(worker_thread),
       pending_jobs_(0) {}
 
-DtlsIdentityStore::~DtlsIdentityStore() {
-  SignalDestroyed();
-}
+DtlsIdentityStore::~DtlsIdentityStore() {}
 
 void DtlsIdentityStore::Initialize() {
   GenerateIdentity();
@@ -121,6 +79,9 @@ void DtlsIdentityStore::RequestIdentity(DTLSIdentityRequestObserver* observer) {
 
 void DtlsIdentityStore::OnMessage(rtc::Message* msg) {
   switch (msg->message_id) {
+    case MSG_GENERATE_IDENTITY:
+      GenerateIdentity_w();
+      break;
     case MSG_GENERATE_IDENTITY_RESULT: {
       rtc::scoped_ptr<IdentityResultMessageData> pdata(
           static_cast<IdentityResultMessageData*>(msg->pdata));
@@ -144,12 +105,7 @@ void DtlsIdentityStore::GenerateIdentity() {
   pending_jobs_++;
   LOG(LS_VERBOSE) << "New DTLS identity generation is posted, "
                   << "pending_identities=" << pending_jobs_;
-
-  WorkerTask* task = new WorkerTask(this);
-  // The WorkerTask is owned by the message data to make sure it will not be
-  // leaked even if the task does not get run.
-  IdentityTaskMessageData* msg = new IdentityTaskMessageData(task);
-  worker_thread_->Post(task, MSG_GENERATE_IDENTITY, msg);
+  worker_thread_->Post(this, MSG_GENERATE_IDENTITY, NULL);
 }
 
 void DtlsIdentityStore::OnIdentityGenerated(
@@ -193,12 +149,13 @@ void DtlsIdentityStore::ReturnIdentity(
   }
 }
 
-void DtlsIdentityStore::PostGenerateIdentityResult_w(
-    rtc::scoped_ptr<rtc::SSLIdentity> identity) {
+void DtlsIdentityStore::GenerateIdentity_w() {
   DCHECK(rtc::Thread::Current() == worker_thread_);
 
-  IdentityResultMessageData* msg =
-      new IdentityResultMessageData(identity.release());
+  rtc::SSLIdentity* identity = rtc::SSLIdentity::Generate(kIdentityName);
+
+  IdentityResultMessageData* msg = new IdentityResultMessageData(identity);
   signaling_thread_->Post(this, MSG_GENERATE_IDENTITY_RESULT, msg);
 }
+
 }  // namespace webrtc
