@@ -168,12 +168,12 @@ std::string ExtractStatsValue(const StatsReport::StatsType& type,
   return kNotFound;
 }
 
-scoped_ptr<StatsReport::Id> TypedIdFromIdString(StatsReport::StatsType type,
-                                                const std::string& value) {
+StatsReport::Id TypedIdFromIdString(StatsReport::StatsType type,
+                                    const std::string& value) {
   EXPECT_FALSE(value.empty());
-  scoped_ptr<StatsReport::Id> id;
+  StatsReport::Id id;
   if (value.empty())
-    return id.Pass();
+    return id;
 
   // This has assumptions about how the ID is constructed.  As is, this is
   // OK since this is for testing purposes only, but if we ever need this
@@ -181,16 +181,15 @@ scoped_ptr<StatsReport::Id> TypedIdFromIdString(StatsReport::StatsType type,
   size_t index = value.find('_');
   EXPECT_NE(index, std::string::npos);
   if (index == std::string::npos || index == (value.length() - 1))
-    return id.Pass();
+    return id;
 
   id = StatsReport::NewTypedId(type, value.substr(index + 1));
   EXPECT_EQ(id->ToString(), value);
-  return id.Pass();
+  return id;
 }
 
-scoped_ptr<StatsReport::Id> IdFromCertIdString(const std::string& cert_id) {
-  return TypedIdFromIdString(StatsReport::kStatsReportTypeCertificate, cert_id)
-      .Pass();
+StatsReport::Id IdFromCertIdString(const std::string& cert_id) {
+  return TypedIdFromIdString(StatsReport::kStatsReportTypeCertificate, cert_id);
 }
 
 // Finds the |n|-th report of type |type| in |reports|.
@@ -210,7 +209,7 @@ const StatsReport* FindNthReportByType(
 const StatsReport* FindReportById(const StatsReports& reports,
                                   const StatsReport::Id& id) {
   for (const auto* r : reports) {
-    if (r->id().Equals(id))
+    if (r->id()->Equals(id))
       return r;
   }
   return nullptr;
@@ -244,7 +243,7 @@ std::vector<std::string> DersToPems(
 void CheckCertChainReports(const StatsReports& reports,
                            const std::vector<std::string>& ders,
                            const StatsReport::Id& start_id) {
-  scoped_ptr<StatsReport::Id> cert_id;
+  StatsReport::Id cert_id;
   const StatsReport::Id* certificate_id = &start_id;
   size_t i = 0;
   while (true) {
@@ -278,8 +277,8 @@ void CheckCertChainReports(const StatsReports& reports,
       break;
     }
 
-    cert_id = IdFromCertIdString(issuer_id).Pass();
-    certificate_id = cert_id.get();
+    cert_id = IdFromCertIdString(issuer_id);
+    certificate_id = &cert_id;
   }
   EXPECT_EQ(ders.size(), i);
 }
@@ -543,9 +542,9 @@ class StatsCollectorTest : public testing::Test {
         .WillOnce(DoAll(SetArgPointee<1>(kRemoteTrackId), Return(true)));
   }
 
-  std::string AddCandidateReport(StatsCollector* collector,
-                                 const cricket::Candidate& candidate,
-                                 bool local) {
+  StatsReport* AddCandidateReport(StatsCollector* collector,
+                                  const cricket::Candidate& candidate,
+                                  bool local) {
     return collector->AddCandidateReport(candidate, local);
   }
 
@@ -688,8 +687,8 @@ class StatsCollectorTest : public testing::Test {
         StatsReport::kStatsValueNameLocalCertificateId);
     if (local_ders.size() > 0) {
       EXPECT_NE(kNotFound, local_certificate_id);
-      scoped_ptr<StatsReport::Id> id(IdFromCertIdString(local_certificate_id));
-      CheckCertChainReports(reports, local_ders, *id.get());
+      StatsReport::Id id(IdFromCertIdString(local_certificate_id));
+      CheckCertChainReports(reports, local_ders, id);
     } else {
       EXPECT_EQ(kNotFound, local_certificate_id);
     }
@@ -701,8 +700,8 @@ class StatsCollectorTest : public testing::Test {
         StatsReport::kStatsValueNameRemoteCertificateId);
     if (remote_ders.size() > 0) {
       EXPECT_NE(kNotFound, remote_certificate_id);
-      scoped_ptr<StatsReport::Id> id(IdFromCertIdString(remote_certificate_id));
-      CheckCertChainReports(reports, remote_ders, *id.get());
+      StatsReport::Id id(IdFromCertIdString(remote_certificate_id));
+      CheckCertChainReports(reports, remote_ders, id);
     } else {
       EXPECT_EQ(kNotFound, remote_certificate_id);
     }
@@ -755,7 +754,7 @@ TEST_F(StatsCollectorTest, ExtractDataInfo) {
   const StatsReport* report =
       FindNthReportByType(reports, StatsReport::kStatsReportTypeDataChannel, 1);
 
-  scoped_ptr<StatsReport::Id> reportId = StatsReport::NewTypedIntId(
+  StatsReport::Id reportId = StatsReport::NewTypedIntId(
       StatsReport::kStatsReportTypeDataChannel, id);
 
   EXPECT_TRUE(reportId->Equals(report->id()));
@@ -780,9 +779,18 @@ TEST_F(StatsCollectorTest, ExtractDataInfo) {
 TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
   StatsCollectorForTest stats(&session_);
 
+  const char kVideoChannelName[] = "video";
+
+  InitSessionStats(kVideoChannelName);
+  EXPECT_CALL(session_, GetStats(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
+                            Return(true)));
+  EXPECT_CALL(session_, GetTransport(_))
+      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
+
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(rtc::Thread::Current(),
-      media_engine_, media_channel, &session_, "", false, NULL);
+      media_engine_, media_channel, &session_, kVideoChannelName, false, NULL);
   StatsReports reports;  // returned values.
   cricket::VideoSenderInfo video_sender_info;
   cricket::VideoMediaInfo stats_read;
@@ -814,9 +822,19 @@ TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
 TEST_F(StatsCollectorTest, BandwidthEstimationInfoIsReported) {
   StatsCollectorForTest stats(&session_);
 
+  const char kVideoChannelName[] = "video";
+
+  InitSessionStats(kVideoChannelName);
+  EXPECT_CALL(session_, GetStats(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
+                            Return(true)));
+  EXPECT_CALL(session_, GetTransport(_))
+      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
+
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(rtc::Thread::Current(),
-      media_engine_, media_channel, &session_, "", false, NULL);
+      media_engine_, media_channel, &session_, kVideoChannelName, false, NULL);
+
   StatsReports reports;  // returned values.
   cricket::VideoSenderInfo video_sender_info;
   cricket::VideoMediaInfo stats_read;
@@ -894,7 +912,7 @@ TEST_F(StatsCollectorTest, TrackObjectExistsWithoutUpdateStats) {
 
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(rtc::Thread::Current(),
-      media_engine_, media_channel, &session_, "", false, NULL);
+      media_engine_, media_channel, &session_, "video", false, NULL);
   AddOutgoingVideoTrackStats();
   stats.AddStream(stream_);
 
@@ -916,9 +934,17 @@ TEST_F(StatsCollectorTest, TrackObjectExistsWithoutUpdateStats) {
 TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
   StatsCollectorForTest stats(&session_);
 
+  const char kVideoChannelName[] = "video";
+  InitSessionStats(kVideoChannelName);
+  EXPECT_CALL(session_, GetStats(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
+                            Return(true)));
+  EXPECT_CALL(session_, GetTransport(_))
+      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
+
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(rtc::Thread::Current(),
-      media_engine_, media_channel, &session_, "", false, NULL);
+      media_engine_, media_channel, &session_, kVideoChannelName, false, NULL);
   AddOutgoingVideoTrackStats();
   stats.AddStream(stream_);
 
@@ -1022,9 +1048,9 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
   index = content.rfind('-');
   ASSERT_NE(std::string::npos, index);
   content = content.substr(0, index);
-  scoped_ptr<StatsReport::Id> id(StatsReport::NewComponentId(content, 1));
+  StatsReport::Id id(StatsReport::NewComponentId(content, 1));
   ASSERT_EQ(transport_id, id->ToString());
-  const StatsReport* transport_report = FindReportById(reports, *id.get());
+  const StatsReport* transport_report = FindReportById(reports, id);
   ASSERT_FALSE(transport_report == NULL);
 }
 
@@ -1106,9 +1132,17 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
 TEST_F(StatsCollectorTest, ReportsFromRemoteTrack) {
   StatsCollectorForTest stats(&session_);
 
+  const char kVideoChannelName[] = "video";
+  InitSessionStats(kVideoChannelName);
+  EXPECT_CALL(session_, GetStats(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
+                            Return(true)));
+  EXPECT_CALL(session_, GetTransport(_))
+      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
+
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(rtc::Thread::Current(),
-      media_engine_, media_channel, &session_, "", false, NULL);
+      media_engine_, media_channel, &session_, kVideoChannelName, false, NULL);
   AddIncomingVideoTrackStats();
   stats.AddStream(stream_);
 
@@ -1171,7 +1205,7 @@ TEST_F(StatsCollectorTest, IceCandidateReport) {
   c.set_address(local_address);
   c.set_priority(priority);
   c.set_network_type(network_type);
-  std::string report_id = AddCandidateReport(&stats, c, true);
+  std::string report_id = AddCandidateReport(&stats, c, true)->id()->ToString();
   EXPECT_EQ("Cand-" + c.id(), report_id);
 
   c = cricket::Candidate();
@@ -1181,7 +1215,7 @@ TEST_F(StatsCollectorTest, IceCandidateReport) {
   c.set_address(remote_address);
   c.set_priority(priority);
   c.set_network_type(network_type);
-  report_id = AddCandidateReport(&stats, c, false);
+  report_id = AddCandidateReport(&stats, c, false)->id()->ToString();
   EXPECT_EQ("Cand-" + c.id(), report_id);
 
   stats.GetStats(NULL, &reports);

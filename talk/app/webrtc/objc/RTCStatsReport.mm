@@ -50,14 +50,15 @@
 
 - (instancetype)initWithStatsReport:(const webrtc::StatsReport&)statsReport {
   if (self = [super init]) {
-    _reportId = @(statsReport.id().ToString().c_str());
+    _reportId = @(statsReport.id()->ToString().c_str());
     _type = @(statsReport.TypeToString());
     _timestamp = statsReport.timestamp();
     NSMutableArray* values =
         [NSMutableArray arrayWithCapacity:statsReport.values().size()];
     for (const auto& it : statsReport.values()) {
-      RTCPair* pair = [[RTCPair alloc] initWithKey:@(it.second->display_name())
-                                             value:@(it.second->value.c_str())];
+      RTCPair* pair =
+          [[RTCPair alloc] initWithKey:@(it.second->display_name())
+                                 value:@(it.second->ToString().c_str())];
       [values addObject:pair];
     }
     _values = values;

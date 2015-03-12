@@ -27,7 +27,17 @@
 
 #include "talk/app/webrtc/statstypes.h"
 
-using rtc::scoped_ptr;
+#include <string.h>
+
+#include "webrtc/base/checks.h"
+
+// TODO(tommi): Could we have a static map of value name -> expected type
+// and use this to DCHECK on correct usage (somewhat strongly typed values)?
+// Alternatively, we could define the names+type in a separate document and
+// generate strongly typed inline C++ code that forces the correct type to be
+// used for a given name at compile time.
+
+ using rtc::RefCountedObject;
 
 namespace webrtc {
 namespace {
@@ -64,23 +74,24 @@ const char* InternalTypeToString(StatsReport::StatsType type) {
     case StatsReport::kStatsReportTypeDataChannel:
       return "datachannel";
   }
-  ASSERT(false);
+  DCHECK(false);
   return nullptr;
 }
 
-class BandwidthEstimationId : public StatsReport::Id {
+class BandwidthEstimationId : public StatsReport::IdBase {
  public:
-  BandwidthEstimationId() : StatsReport::Id(StatsReport::kStatsReportTypeBwe) {}
+  BandwidthEstimationId()
+      : StatsReport::IdBase(StatsReport::kStatsReportTypeBwe) {}
   std::string ToString() const override { return kStatsReportVideoBweId; }
 };
 
-class TypedId : public StatsReport::Id {
+class TypedId : public StatsReport::IdBase {
  public:
   TypedId(StatsReport::StatsType type, const std::string& id)
-      : StatsReport::Id(type), id_(id) {}
+      : StatsReport::IdBase(type), id_(id) {}
 
-  bool Equals(const Id& other) const override {
-    return Id::Equals(other) &&
+  bool Equals(const IdBase& other) const override {
+    return IdBase::Equals(other) &&
            static_cast<const TypedId&>(other).id_ == id_;
   }
 
@@ -92,13 +103,13 @@ class TypedId : public StatsReport::Id {
   const std::string id_;
 };
 
-class TypedIntId : public StatsReport::Id {
+class TypedIntId : public StatsReport::IdBase {
  public:
   TypedIntId(StatsReport::StatsType type, int id)
-      : StatsReport::Id(type), id_(id) {}
+      : StatsReport::IdBase(type), id_(id) {}
 
-  bool Equals(const Id& other) const override {
-    return Id::Equals(other) &&
+  bool Equals(const IdBase& other) const override {
+    return IdBase::Equals(other) &&
            static_cast<const TypedIntId&>(other).id_ == id_;
   }
 
@@ -118,7 +129,7 @@ class IdWithDirection : public TypedId {
                   StatsReport::Direction direction)
       : TypedId(type, id), direction_(direction) {}
 
-  bool Equals(const Id& other) const override {
+  bool Equals(const IdBase& other) const override {
     return TypedId::Equals(other) &&
            static_cast<const IdWithDirection&>(other).direction_ == direction_;
   }
@@ -148,14 +159,14 @@ class CandidateId : public TypedId {
   }
 };
 
-class ComponentId : public StatsReport::Id {
+class ComponentId : public StatsReport::IdBase {
  public:
   ComponentId(const std::string& content_name, int component)
       : ComponentId(StatsReport::kStatsReportTypeComponent, content_name,
             component) {}
 
-  bool Equals(const Id& other) const override {
-    return Id::Equals(other) &&
+  bool Equals(const IdBase& other) const override {
+    return IdBase::Equals(other) &&
         static_cast<const ComponentId&>(other).component_ == component_ &&
         static_cast<const ComponentId&>(other).content_name_ == content_name_;
   }
@@ -167,7 +178,7 @@ class ComponentId : public StatsReport::Id {
  protected:
   ComponentId(StatsReport::StatsType type, const std::string& content_name,
               int component)
-      : Id(type),
+      : IdBase(type),
         content_name_(content_name),
         component_(component) {}
 
@@ -191,7 +202,7 @@ class CandidatePairId : public ComponentId {
             component),
         index_(index) {}
 
-  bool Equals(const Id& other) const override {
+  bool Equals(const IdBase& other) const override {
     return ComponentId::Equals(other) &&
         static_cast<const CandidatePairId&>(other).index_ == index_;
   }
@@ -209,17 +220,160 @@ class CandidatePairId : public ComponentId {
 
 }  // namespace
 
-StatsReport::Id::Id(StatsType type) : type_(type) {}
-StatsReport::Id::~Id() {}
+StatsReport::IdBase::IdBase(StatsType type) : type_(type) {}
+StatsReport::IdBase::~IdBase() {}
 
-StatsReport::StatsType StatsReport::Id::type() const { return type_; }
+StatsReport::StatsType StatsReport::IdBase::type() const { return type_; }
 
-bool StatsReport::Id::Equals(const Id& other) const {
+bool StatsReport::IdBase::Equals(const IdBase& other) const {
   return other.type_ == type_;
 }
 
+StatsReport::Value::Value(StatsValueName name, int64 value, Type int_type)
+    : name(name), type_(int_type) {
+  DCHECK(type_ == kInt || type_ == kInt64);
+  type_ == kInt ? value_.int_ = static_cast<int>(value) : value_.int64_ = value;
+}
+
+StatsReport::Value::Value(StatsValueName name, float f)
+    : name(name), type_(kFloat) {
+  value_.float_ = f;
+}
+
 StatsReport::Value::Value(StatsValueName name, const std::string& value)
-    : name(name), value(value) {
+    : name(name), type_(kString) {
+  value_.string_ = new std::string(value);
+}
+
+StatsReport::Value::Value(StatsValueName name, const char* value)
+    : name(name), type_(kStaticString) {
+  value_.static_string_ = value;
+}
+
+StatsReport::Value::Value(StatsValueName name, bool b)
+    : name(name), type_(kBool) {
+  value_.bool_ = b;
+}
+
+StatsReport::Value::Value(StatsValueName name, const Id& value)
+    : name(name), type_(kId) {
+  value_.id_ = new Id(value);
+}
+
+StatsReport::Value::~Value() {
+  switch (type_) {
+    case kInt:
+    case kInt64:
+    case kFloat:
+    case kBool:
+    case kStaticString:
+      break;
+    case kString:
+      delete value_.string_;
+      break;
+    case kId:
+      delete value_.id_;
+      break;
+  }
+}
+
+bool StatsReport::Value::Equals(const Value& other) const {
+  if (name != other.name)
+    return false;
+
+  // There's a 1:1 relation between a name and a type, so we don't have to
+  // check that.
+  DCHECK_EQ(type_, other.type_);
+
+  switch (type_) {
+    case kInt:
+      return value_.int_ == other.value_.int_;
+    case kInt64:
+      return value_.int64_ == other.value_.int64_;
+    case kFloat:
+      return value_.float_ == other.value_.float_;
+    case kStaticString: {
+#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
+      if (value_.static_string_ != other.value_.static_string_) {
+        DCHECK(strcmp(value_.static_string_, other.value_.static_string_) != 0)
+            << "Duplicate global?";
+      }
+#endif
+      return value_.static_string_ == other.value_.static_string_;
+    }
+    case kString:
+      return *value_.string_ == *other.value_.string_;
+    case kBool:
+      return value_.bool_ == other.value_.bool_;
+    case kId:
+      return (*value_.id_)->Equals(*other.value_.id_);
+  }
+  RTC_NOTREACHED();
+  return false;
+}
+
+bool StatsReport::Value::operator==(const std::string& value) const {
+  return (type_ == kString && value_.string_->compare(value) == 0) ||
+         (type_ == kStaticString && value.compare(value_.static_string_) == 0);
+}
+
+bool StatsReport::Value::operator==(const char* value) const {
+  if (type_ == kString)
+    return value_.string_->compare(value) == 0;
+  if (type_ != kStaticString)
+    return false;
+#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
+  if (value_.static_string_ != value)
+    DCHECK(strcmp(value_.static_string_, value) != 0) << "Duplicate global?";
+#endif
+  return value == value_.static_string_;
+}
+
+bool StatsReport::Value::operator==(int64 value) const {
+  return type_ == kInt ? value_.int_ == static_cast<int>(value) :
+      (type_ == kInt64 ? value_.int64_ == value : false);
+}
+
+bool StatsReport::Value::operator==(bool value) const {
+  return type_ == kBool && value_.bool_ == value;
+}
+
+bool StatsReport::Value::operator==(float value) const {
+  return type_ == kFloat && value_.float_ == value;
+}
+
+bool StatsReport::Value::operator==(const Id& value) const {
+  return type_ == kId && (*value_.id_)->Equals(value);
+}
+
+int StatsReport::Value::int_val() const {
+  DCHECK(type_ == kInt);
+  return value_.int_;
+}
+
+int64 StatsReport::Value::int64_val() const {
+  DCHECK(type_ == kInt64);
+  return value_.int64_;
+}
+
+float StatsReport::Value::float_val() const {
+  DCHECK(type_ == kFloat);
+  return value_.float_;
+}
+
+const char* StatsReport::Value::static_string_val() const {
+  DCHECK(type_ == kStaticString);
+  return value_.static_string_;
+}
+
+const std::string& StatsReport::Value::string_val() const {
+  DCHECK(type_ == kString);
+  return *value_.string_;
+}
+
+bool StatsReport::Value::bool_val() const {
+  DCHECK(type_ == kBool);
+  return value_.bool_;
 }
 
 const char* StatsReport::Value::display_name() const {
@@ -437,60 +591,75 @@ const char* StatsReport::Value::display_name() const {
     case kStatsValueNameWritable:
       return "googWritable";
     default:
-      ASSERT(false);
+      DCHECK(false);
       break;
   }
 
   return nullptr;
 }
 
-const std::string& StatsReport::Value::ToString() const {
-  return value;
+std::string StatsReport::Value::ToString() const {
+  switch (type_) {
+    case kInt:
+      return rtc::ToString(value_.int_);
+    case kInt64:
+      return rtc::ToString(value_.int64_);
+    case kFloat:
+      return rtc::ToString(value_.float_);
+    case kStaticString:
+      return std::string(value_.static_string_);
+    case kString:
+      return *value_.string_;
+    case kBool:
+      return value_.bool_ ? "true" : "false";
+    case kId:
+      return (*value_.id_)->ToString();
+  }
+  RTC_NOTREACHED();
+  return std::string();
 }
 
-StatsReport::StatsReport(scoped_ptr<Id> id) : id_(id.Pass()), timestamp_(0.0) {
-  ASSERT(id_.get());
+StatsReport::StatsReport(const Id& id) : id_(id), timestamp_(0.0) {
+  DCHECK(id_.get());
 }
 
 // static
-scoped_ptr<StatsReport::Id> StatsReport::NewBandwidthEstimationId() {
-  return scoped_ptr<Id>(new BandwidthEstimationId()).Pass();
+StatsReport::Id StatsReport::NewBandwidthEstimationId() {
+  return Id(new RefCountedObject<BandwidthEstimationId>());
 }
 
 // static
-scoped_ptr<StatsReport::Id> StatsReport::NewTypedId(
-    StatsType type, const std::string& id) {
-  return scoped_ptr<Id>(new TypedId(type, id)).Pass();
+StatsReport::Id StatsReport::NewTypedId(StatsType type, const std::string& id) {
+  return Id(new RefCountedObject<TypedId>(type, id));
 }
 
 // static
-scoped_ptr<StatsReport::Id> StatsReport::NewTypedIntId(StatsType type, int id) {
-  return scoped_ptr<Id>(new TypedIntId(type, id)).Pass();
+StatsReport::Id StatsReport::NewTypedIntId(StatsType type, int id) {
+  return Id(new RefCountedObject<TypedIntId>(type, id));
 }
 
 // static
-scoped_ptr<StatsReport::Id> StatsReport::NewIdWithDirection(
+StatsReport::Id StatsReport::NewIdWithDirection(
     StatsType type, const std::string& id, StatsReport::Direction direction) {
-  return scoped_ptr<Id>(new IdWithDirection(type, id, direction)).Pass();
+  return Id(new RefCountedObject<IdWithDirection>(type, id, direction));
 }
 
 // static
-scoped_ptr<StatsReport::Id> StatsReport::NewCandidateId(
-    bool local, const std::string& id) {
-  return scoped_ptr<Id>(new CandidateId(local, id)).Pass();
+StatsReport::Id StatsReport::NewCandidateId(bool local, const std::string& id) {
+  return Id(new RefCountedObject<CandidateId>(local, id));
 }
 
 // static
-scoped_ptr<StatsReport::Id> StatsReport::NewComponentId(
+StatsReport::Id StatsReport::NewComponentId(
     const std::string& content_name, int component) {
-  return scoped_ptr<Id>(new ComponentId(content_name, component)).Pass();
+  return Id(new RefCountedObject<ComponentId>(content_name, component));
 }
 
 // static
-scoped_ptr<StatsReport::Id> StatsReport::NewCandidatePairId(
+StatsReport::Id StatsReport::NewCandidatePairId(
     const std::string& content_name, int component, int index) {
-  return scoped_ptr<Id>(new CandidatePairId(content_name, component, index))
-      .Pass();
+  return Id(new RefCountedObject<CandidatePairId>(
+      content_name, component, index));
 }
 
 const char* StatsReport::TypeToString() const {
@@ -499,28 +668,47 @@ const char* StatsReport::TypeToString() const {
 
 void StatsReport::AddString(StatsReport::StatsValueName name,
                             const std::string& value) {
-  values_[name] = ValuePtr(new Value(name, value));
+  const Value* found = FindValue(name);
+  if (!found || !(*found == value))
+    values_[name] = ValuePtr(new Value(name, value));
+}
+
+void StatsReport::AddString(StatsReport::StatsValueName name,
+                            const char* value) {
+  const Value* found = FindValue(name);
+  if (!found || !(*found == value))
+    values_[name] = ValuePtr(new Value(name, value));
 }
 
 void StatsReport::AddInt64(StatsReport::StatsValueName name, int64 value) {
-  AddString(name, rtc::ToString<int64>(value));
+  const Value* found = FindValue(name);
+  if (!found || !(*found == value))
+    values_[name] = ValuePtr(new Value(name, value, Value::kInt64));
 }
 
 void StatsReport::AddInt(StatsReport::StatsValueName name, int value) {
-  AddString(name, rtc::ToString<int>(value));
+  const Value* found = FindValue(name);
+  if (!found || !(*found == static_cast<int64>(value)))
+    values_[name] = ValuePtr(new Value(name, value, Value::kInt));
 }
 
 void StatsReport::AddFloat(StatsReport::StatsValueName name, float value) {
-  AddString(name, rtc::ToString<float>(value));
+  const Value* found = FindValue(name);
+  if (!found || !(*found == value))
+    values_[name] = ValuePtr(new Value(name, value));
 }
 
 void StatsReport::AddBoolean(StatsReport::StatsValueName name, bool value) {
-  // TODO(tommi): Store bools as bool.
-  AddString(name, value ? "true" : "false");
+  const Value* found = FindValue(name);
+  if (!found || !(*found == value))
+    values_[name] = ValuePtr(new Value(name, value));
 }
 
-void StatsReport::ResetValues() {
-  values_.clear();
+void StatsReport::AddId(StatsReport::StatsValueName name,
+                        const Id& value) {
+  const Value* found = FindValue(name);
+  if (!found || !(*found == value))
+    values_[name] = ValuePtr(new Value(name, value));
 }
 
 const StatsReport::Value* StatsReport::FindValue(StatsValueName name) const {
@@ -548,41 +736,37 @@ size_t StatsCollection::size() const {
   return list_.size();
 }
 
-StatsReport* StatsCollection::InsertNew(scoped_ptr<StatsReport::Id> id) {
-  ASSERT(Find(*id.get()) == NULL);
-  StatsReport* report = new StatsReport(id.Pass());
+StatsReport* StatsCollection::InsertNew(const StatsReport::Id& id) {
+  DCHECK(Find(id) == nullptr);
+  StatsReport* report = new StatsReport(id);
   list_.push_back(report);
   return report;
 }
 
-StatsReport* StatsCollection::FindOrAddNew(scoped_ptr<StatsReport::Id> id) {
-  StatsReport* ret = Find(*id.get());
-  return ret ? ret : InsertNew(id.Pass());
+StatsReport* StatsCollection::FindOrAddNew(const StatsReport::Id& id) {
+  StatsReport* ret = Find(id);
+  return ret ? ret : InsertNew(id);
 }
 
-StatsReport* StatsCollection::ReplaceOrAddNew(scoped_ptr<StatsReport::Id> id) {
-  ASSERT(id.get());
+StatsReport* StatsCollection::ReplaceOrAddNew(const StatsReport::Id& id) {
+  DCHECK(id.get());
   Container::iterator it = std::find_if(list_.begin(), list_.end(),
-      [&id](const StatsReport* r)->bool { return r->id().Equals(*id.get()); });
+      [&id](const StatsReport* r)->bool { return r->id()->Equals(id); });
   if (it != end()) {
+    StatsReport* report = new StatsReport((*it)->id());
     delete *it;
-    StatsReport* report = new StatsReport(id.Pass());
     *it = report;
     return report;
   }
-  return InsertNew(id.Pass());
+  return InsertNew(id);
 }
 
 // Looks for a report with the given |id|.  If one is not found, NULL
 // will be returned.
 StatsReport* StatsCollection::Find(const StatsReport::Id& id) {
   Container::iterator it = std::find_if(list_.begin(), list_.end(),
-      [&id](const StatsReport* r)->bool { return r->id().Equals(id); });
+      [&id](const StatsReport* r)->bool { return r->id()->Equals(id); });
   return it == list_.end() ? nullptr : *it;
-}
-
-StatsReport* StatsCollection::Find(const scoped_ptr<StatsReport::Id>& id) {
-  return Find(*id.get());
 }
 
 }  // namespace webrtc

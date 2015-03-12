@@ -37,11 +37,11 @@
 #include <string>
 
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/linked_ptr.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/common.h"
-#include "webrtc/base/linked_ptr.h"
+#include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/linked_ptr.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/stringencode.h"
 
 namespace webrtc {
@@ -221,57 +221,129 @@ class StatsReport {
     kStatsValueNameWritable,
   };
 
-  class Id {
+  class IdBase : public rtc::RefCountInterface {
    public:
-    virtual ~Id();
+    ~IdBase() override;
     StatsType type() const;
-    virtual bool Equals(const Id& other) const;
+
+    // Users of IdBase will be using the Id typedef, which is compatible with
+    // this Equals() function.  It simply calls the protected (and overridden)
+    // Equals() method.
+    bool Equals(const rtc::scoped_refptr<IdBase>& other) const {
+      return Equals(*other.get());
+    }
+
     virtual std::string ToString() const = 0;
 
-    // TODO(tommi): Remove this after rolling into Chrome.
-    const Id* operator->() const { return this; }
-
    protected:
-    Id(StatsType type);  // Only meant for derived classes.
+    // Protected since users of the IdBase type will be using the Id typedef.
+    virtual bool Equals(const IdBase& other) const;
+
+    IdBase(StatsType type);  // Only meant for derived classes.
     const StatsType type_;
 
     static const char kSeparator = '_';
   };
 
+  typedef rtc::scoped_refptr<IdBase> Id;
+
   struct Value {
+    enum Type {
+      kInt, // int.
+      kInt64,  // int64.
+      kFloat,  // float.
+      kString,  // std::string
+      kStaticString,  // const char*.
+      kBool,  // bool.
+      kId,  // Id.
+    };
+
+    Value(StatsValueName name, int64 value, Type int_type);
+    Value(StatsValueName name, float f);
     Value(StatsValueName name, const std::string& value);
+    Value(StatsValueName name, const char* value);
+    Value(StatsValueName name, bool b);
+    Value(StatsValueName name, const Id& value);
+
+    ~Value();
+
+    // TODO(tommi): This compares name as well as value...
+    // I think we should only need to compare the value part and
+    // move the name part into a hash map.
+    bool Equals(const Value& other) const;
+
+    // Comparison operators. Return true iff the current instance is of the
+    // correct type and holds the same value.  No conversion is performed so
+    // a string value of "123" is not equal to an int value of 123 and an int
+    // value of 123 is not equal to a float value of 123.0f.
+    // One exception to this is that types kInt and kInt64 can be compared and
+    // kString and kStaticString too.
+    bool operator==(const std::string& value) const;
+    bool operator==(const char* value) const;
+    bool operator==(int64 value) const;
+    bool operator==(bool value) const;
+    bool operator==(float value) const;
+    bool operator==(const Id& value) const;
+
+    // Getters that allow getting the native value directly.
+    // The caller must know the type beforehand or else hit a check.
+    int int_val() const;
+    int64 int64_val() const;
+    float float_val() const;
+    const char* static_string_val() const;
+    const std::string& string_val() const;
+    bool bool_val() const;
+    const Id& id_val() const;
 
     // Returns the string representation of |name|.
     const char* display_name() const;
-    const std::string& ToString() const;
+
+    // Converts the native value to a string representation of the value.
+    std::string ToString() const;
+
+    Type type() const { return type_; }
+
     // TODO(tommi): Move |name| and |display_name| out of the Value struct.
     const StatsValueName name;
-    // TODO(tommi): Support more value types than string.
-    const std::string value;
+
+   private:
+    const Type type_;
+    // TODO(tommi): Use C++ 11 union and make value_ const.
+    union InternalType {
+      int int_;
+      int64 int64_;
+      float float_;
+      bool bool_;
+      std::string* string_;
+      const char* static_string_;
+      Id* id_;
+    } value_;
 
    private:
     DISALLOW_COPY_AND_ASSIGN(Value);
   };
 
+  // TODO(tommi): Consider using a similar approach to how we store Ids using
+  // scoped_refptr for values.
   typedef rtc::linked_ptr<Value> ValuePtr;
   typedef std::map<StatsValueName, ValuePtr> Values;
 
   // Ownership of |id| is passed to |this|.
-  explicit StatsReport(rtc::scoped_ptr<Id> id);
+  explicit StatsReport(const Id& id);
 
   // Factory functions for various types of stats IDs.
-  static rtc::scoped_ptr<Id> NewBandwidthEstimationId();
-  static rtc::scoped_ptr<Id> NewTypedId(StatsType type, const std::string& id);
-  static rtc::scoped_ptr<Id> NewTypedIntId(StatsType type, int id);
-  static rtc::scoped_ptr<Id> NewIdWithDirection(
+  static Id NewBandwidthEstimationId();
+  static Id NewTypedId(StatsType type, const std::string& id);
+  static Id NewTypedIntId(StatsType type, int id);
+  static Id NewIdWithDirection(
       StatsType type, const std::string& id, Direction direction);
-  static rtc::scoped_ptr<Id> NewCandidateId(bool local, const std::string& id);
-  static rtc::scoped_ptr<Id> NewComponentId(
+  static Id NewCandidateId(bool local, const std::string& id);
+  static Id NewComponentId(
       const std::string& content_name, int component);
-  static rtc::scoped_ptr<Id> NewCandidatePairId(
+  static Id NewCandidatePairId(
       const std::string& content_name, int component, int index);
 
-  const Id& id() const { return *id_.get(); }
+  const Id& id() const { return id_; }
   StatsType type() const { return id_->type(); }
   double timestamp() const { return timestamp_; }
   void set_timestamp(double t) { timestamp_ = t; }
@@ -281,12 +353,12 @@ class StatsReport {
   const char* TypeToString() const;
 
   void AddString(StatsValueName name, const std::string& value);
+  void AddString(StatsValueName name, const char* value);
   void AddInt64(StatsValueName name, int64 value);
   void AddInt(StatsValueName name, int value);
   void AddFloat(StatsValueName name, float value);
   void AddBoolean(StatsValueName name, bool value);
-
-  void ResetValues();
+  void AddId(StatsValueName name, const Id& value);
 
   const Value* FindValue(StatsValueName name) const;
 
@@ -294,7 +366,7 @@ class StatsReport {
   // The unique identifier for this object.
   // This is used as a key for this report in ordered containers,
   // so it must never be changed.
-  const rtc::scoped_ptr<Id> id_;
+  const Id id_;
   double timestamp_;  // Time since 1970-01-01T00:00:00Z in milliseconds.
   Values values_;
 
@@ -317,7 +389,6 @@ class StatsCollection {
   StatsCollection();
   ~StatsCollection();
 
-  // TODO(tommi): shared_ptr (or linked_ptr)?
   typedef std::list<StatsReport*> Container;
   typedef Container::iterator iterator;
   typedef Container::const_iterator const_iterator;
@@ -328,15 +399,13 @@ class StatsCollection {
 
   // Creates a new report object with |id| that does not already
   // exist in the list of reports.
-  StatsReport* InsertNew(rtc::scoped_ptr<StatsReport::Id> id);
-  StatsReport* FindOrAddNew(rtc::scoped_ptr<StatsReport::Id> id);
-  StatsReport* ReplaceOrAddNew(rtc::scoped_ptr<StatsReport::Id> id);
+  StatsReport* InsertNew(const StatsReport::Id& id);
+  StatsReport* FindOrAddNew(const StatsReport::Id& id);
+  StatsReport* ReplaceOrAddNew(const StatsReport::Id& id);
 
   // Looks for a report with the given |id|.  If one is not found, NULL
   // will be returned.
   StatsReport* Find(const StatsReport::Id& id);
-  // TODO(tommi): we should only need one of these.
-  StatsReport* Find(const rtc::scoped_ptr<StatsReport::Id>& id);
 
  private:
   Container list_;

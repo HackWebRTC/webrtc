@@ -641,7 +641,7 @@ class StatsObserverWrapper : public StatsObserver {
     int i = 0;
     for (const auto* report : reports) {
       ScopedLocalRefFrame local_ref_frame(jni);
-      jstring j_id = JavaStringFromStdString(jni, report->id().ToString());
+      jstring j_id = JavaStringFromStdString(jni, report->id()->ToString());
       jstring j_type = JavaStringFromStdString(jni, report->TypeToString());
       jobjectArray j_values = ValuesToJava(jni, report->values());
       jobject j_report = jni->NewObject(*j_stats_report_class_,
