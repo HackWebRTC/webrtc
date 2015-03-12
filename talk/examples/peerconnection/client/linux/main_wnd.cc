@@ -484,14 +484,25 @@ GtkMainWnd::VideoRenderer::~VideoRenderer() {
 
 void GtkMainWnd::VideoRenderer::SetSize(int width, int height) {
   gdk_threads_enter();
+
+  if (width_ == width && height_ == height) {
+    return;
+  }
+
   width_ = width;
   height_ = height;
   image_.reset(new uint8[width * height * 4]);
   gdk_threads_leave();
 }
 
-void GtkMainWnd::VideoRenderer::RenderFrame(const cricket::VideoFrame* frame) {
+void GtkMainWnd::VideoRenderer::RenderFrame(
+    const cricket::VideoFrame* video_frame) {
   gdk_threads_enter();
+
+  const cricket::VideoFrame* frame = video_frame->GetCopyWithRotationApplied();
+
+  SetSize(static_cast<int>(frame->GetWidth()),
+          static_cast<int>(frame->GetHeight()));
 
   int size = width_ * height_ * 4;
   // TODO: Convert directly to RGBA

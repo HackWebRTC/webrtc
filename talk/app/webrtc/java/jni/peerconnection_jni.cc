@@ -696,21 +696,23 @@ class VideoRendererWrapper : public VideoRendererInterface {
 
   virtual ~VideoRendererWrapper() {}
 
-  void SetSize(int width, int height) override {
+  // This wraps VideoRenderer which still has SetSize.
+  void RenderFrame(const cricket::VideoFrame* video_frame) override {
     ScopedLocalRefFrame local_ref_frame(AttachCurrentThreadIfNeeded());
-    const bool kNotReserved = false;  // What does this param mean??
-    renderer_->SetSize(width, height, kNotReserved);
-  }
-
-  void RenderFrame(const cricket::VideoFrame* frame) override {
-    ScopedLocalRefFrame local_ref_frame(AttachCurrentThreadIfNeeded());
+    const cricket::VideoFrame* frame =
+      video_frame->GetCopyWithRotationApplied();
+    if (width_ != frame->GetWidth() || height_ != frame->GetHeight()) {
+      width_ = frame->GetWidth();
+      height_ = frame->GetHeight();
+      renderer_->SetSize(width_, height_, 0);
+    }
     renderer_->RenderFrame(frame);
   }
 
  private:
   explicit VideoRendererWrapper(cricket::VideoRenderer* renderer)
-      : renderer_(renderer) {}
-
+    : renderer_(renderer), width_(0), height_(0) {}
+  int width_, height_;
   scoped_ptr<cricket::VideoRenderer> renderer_;
 };
 
@@ -720,8 +722,6 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
  public:
   JavaVideoRendererWrapper(JNIEnv* jni, jobject j_callbacks)
       : j_callbacks_(jni, j_callbacks),
-        j_set_size_id_(GetMethodID(
-            jni, GetObjectClass(jni, j_callbacks), "setSize", "(II)V")),
         j_render_frame_id_(GetMethodID(
             jni, GetObjectClass(jni, j_callbacks), "renderFrame",
             "(Lorg/webrtc/VideoRenderer$I420Frame;)V")),
@@ -738,14 +738,13 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
 
   virtual ~JavaVideoRendererWrapper() {}
 
-  void SetSize(int width, int height) override {
+  void RenderFrame(const cricket::VideoFrame* video_frame) override {
     ScopedLocalRefFrame local_ref_frame(jni());
-    jni()->CallVoidMethod(*j_callbacks_, j_set_size_id_, width, height);
-    CHECK_EXCEPTION(jni());
-  }
 
-  void RenderFrame(const cricket::VideoFrame* frame) override {
-    ScopedLocalRefFrame local_ref_frame(jni());
+    // TODO(guoweis): Remove once the java implementation supports rotation.
+    const cricket::VideoFrame* frame =
+      video_frame->GetCopyWithRotationApplied();
+
     if (frame->GetNativeHandle() != NULL) {
       jobject j_frame = CricketToJavaTextureFrame(frame);
       jni()->CallVoidMethod(*j_callbacks_, j_render_frame_id_, j_frame);
@@ -798,7 +797,6 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
   }
 
   ScopedGlobalRef<jobject> j_callbacks_;
-  jmethodID j_set_size_id_;
   jmethodID j_render_frame_id_;
   ScopedGlobalRef<jclass> j_frame_class_;
   jmethodID j_i420_frame_ctor_id_;

@@ -59,7 +59,6 @@ public class PeerConnectionTest {
     private int expectedIceCandidates = 0;
     private int expectedErrors = 0;
     private int expectedRenegotiations = 0;
-    private int expectedSetSize = 0;
     private int previouslySeenWidth = 0;
     private int previouslySeenHeight = 0;
     private int expectedFramesDelivered = 0;
@@ -113,19 +112,8 @@ public class PeerConnectionTest {
       gotIceCandidates.add(candidate);
     }
 
-    public synchronized void expectSetSize() {
-      if (RENDER_TO_GUI) {
-        // When new frames are delivered to the GUI renderer we don't get
-        // notified of frame size info.
-        return;
-      }
-      ++expectedSetSize;
-    }
-
-    @Override
-    public synchronized void setSize(int width, int height) {
+    private synchronized void setSize(int width, int height) {
       assertFalse(RENDER_TO_GUI);
-      assertTrue(--expectedSetSize >= 0);
       // Because different camera devices (fake & physical) produce different
       // resolutions, we only sanity-check the set sizes,
       assertTrue(width > 0);
@@ -146,6 +134,7 @@ public class PeerConnectionTest {
 
     @Override
     public synchronized void renderFrame(VideoRenderer.I420Frame frame) {
+      setSize(frame.width, frame.height);
       --expectedFramesDelivered;
     }
 
@@ -315,9 +304,6 @@ public class PeerConnectionTest {
         stillWaitingForExpectations.add(
             "expectedRemoveStreamLabels: " + expectedRemoveStreamLabels.size());
       }
-      if (expectedSetSize != 0) {
-        stillWaitingForExpectations.add("expectedSetSize");
-      }
       if (expectedFramesDelivered > 0) {
         stillWaitingForExpectations.add(
             "expectedFramesDelivered: " + expectedFramesDelivered);
@@ -436,8 +422,7 @@ public class PeerConnectionTest {
     public int height = -1;
     public int numFramesDelivered = 0;
 
-    @Override
-    public void setSize(int width, int height) {
+    private void setSize(int width, int height) {
       assertEquals(this.width, -1);
       assertEquals(this.height, -1);
       this.width = width;
@@ -542,7 +527,6 @@ public class PeerConnectionTest {
     VideoSource videoSource = factory.createVideoSource(
         VideoCapturer.create(""), new MediaConstraints());
 
-    offeringExpectations.expectSetSize();
     offeringExpectations.expectRenegotiationNeeded();
     WeakReference<MediaStream> oLMS = addTracksToPC(
         factory, offeringPC, videoSource, "offeredMediaStream",
@@ -574,7 +558,6 @@ public class PeerConnectionTest {
     assertTrue(sdpLatch.await());
     assertNull(sdpLatch.getSdp());
 
-    answeringExpectations.expectSetSize();
     answeringExpectations.expectRenegotiationNeeded();
     WeakReference<MediaStream> aLMS = addTracksToPC(
         factory, answeringPC, videoSource, "answeredMediaStream",
@@ -636,8 +619,6 @@ public class PeerConnectionTest {
       // chosen arbitrarily).
       offeringExpectations.expectFramesDelivered(10);
       answeringExpectations.expectFramesDelivered(10);
-      offeringExpectations.expectSetSize();
-      answeringExpectations.expectSetSize();
     }
 
     offeringExpectations.expectStateChange(DataChannel.State.OPEN);

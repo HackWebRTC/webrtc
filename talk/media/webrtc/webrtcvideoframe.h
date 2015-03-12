@@ -126,6 +126,11 @@ class WebRtcVideoFrame : public VideoFrame {
   virtual size_t ConvertToRgbBuffer(uint32 to_fourcc, uint8* buffer,
                                     size_t size, int stride_rgb) const;
 
+  const VideoFrame* GetCopyWithRotationApplied() const override;
+
+ protected:
+  void SetRotation(webrtc::VideoRotation rotation) { rotation_ = rotation; }
+
  private:
   virtual VideoFrame* CreateEmptyFrame(int w, int h, size_t pixel_width,
                                        size_t pixel_height,
@@ -139,6 +144,10 @@ class WebRtcVideoFrame : public VideoFrame {
   int64_t elapsed_time_ns_;
   int64_t time_stamp_ns_;
   webrtc::VideoRotation rotation_;
+
+  // This is mutable as the calculation is expensive but once calculated, it
+  // remains const.
+  mutable rtc::scoped_ptr<VideoFrame> rotated_frame_;
 };
 
 }  // namespace cricket

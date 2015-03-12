@@ -64,6 +64,9 @@ class GtkVideoRenderer : public VideoRenderer {
   // The initial position of the window.
   int initial_x_;
   int initial_y_;
+
+  int width_;
+  int height_;
 };
 
 }  // namespace cricket

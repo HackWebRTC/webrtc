@@ -603,6 +603,10 @@ MainWnd::VideoRenderer::~VideoRenderer() {
 void MainWnd::VideoRenderer::SetSize(int width, int height) {
   AutoLock<VideoRenderer> lock(this);
 
+  if (width == bmi_.bmiHeader.biWidth && height == bmi_.bmiHeader.biHeight) {
+    return;
+  }
+
   bmi_.bmiHeader.biWidth = width;
   bmi_.bmiHeader.biHeight = -height;
   bmi_.bmiHeader.biSizeImage = width * height *
@@ -610,12 +614,19 @@ void MainWnd::VideoRenderer::SetSize(int width, int height) {
   image_.reset(new uint8[bmi_.bmiHeader.biSizeImage]);
 }
 
-void MainWnd::VideoRenderer::RenderFrame(const cricket::VideoFrame* frame) {
-  if (!frame)
+void MainWnd::VideoRenderer::RenderFrame(
+    const cricket::VideoFrame* video_frame) {
+  if (!video_frame)
     return;
 
   {
     AutoLock<VideoRenderer> lock(this);
+
+    const cricket::VideoFrame* frame =
+        video_frame->GetCopyWithRotationApplied();
+
+    SetSize(static_cast<int>(frame->GetWidth()),
+            static_cast<int>(frame->GetHeight()));
 
     ASSERT(image_.get() != NULL);
     frame->ConvertToRgbBuffer(cricket::FOURCC_ARGB,

@@ -43,57 +43,132 @@ using webrtc::VideoSource;
 using webrtc::VideoTrack;
 using webrtc::VideoTrackInterface;
 
+namespace {
+
+class WebRtcVideoTestFrame : public cricket::WebRtcVideoFrame {
+ public:
+  using cricket::WebRtcVideoFrame::SetRotation;
+};
+
+}  // namespace
+
+class VideoTrackTest : public testing::Test {
+ public:
+  VideoTrackTest() {
+    static const char kVideoTrackId[] = "track_id";
+
+    channel_manager_.reset(new cricket::ChannelManager(
+        new cricket::FakeMediaEngine(), new cricket::FakeDeviceManager(),
+        rtc::Thread::Current()));
+    EXPECT_TRUE(channel_manager_->Init());
+    video_track_ = VideoTrack::Create(
+        kVideoTrackId,
+        VideoSource::Create(channel_manager_.get(),
+                            new webrtc::RemoteVideoCapturer(), NULL));
+  }
+
+ protected:
+  rtc::scoped_ptr<cricket::ChannelManager> channel_manager_;
+  rtc::scoped_refptr<VideoTrackInterface> video_track_;
+};
+
 // Test adding renderers to a video track and render to them by providing
 // frames to the source.
-TEST(VideoTrack, RenderVideo) {
-  static const char kVideoTrackId[] = "track_id";
-
-  rtc::scoped_ptr<cricket::ChannelManager> channel_manager_;
-  channel_manager_.reset(
-    new cricket::ChannelManager(new cricket::FakeMediaEngine(),
-                                new cricket::FakeDeviceManager(),
-                                rtc::Thread::Current()));
-  ASSERT_TRUE(channel_manager_->Init());
-  rtc::scoped_refptr<VideoTrackInterface> video_track(
-      VideoTrack::Create(kVideoTrackId,
-                         VideoSource::Create(channel_manager_.get(),
-                                             new webrtc::RemoteVideoCapturer(),
-                                             NULL)));
-  // FakeVideoTrackRenderer register itself to |video_track|
+TEST_F(VideoTrackTest, RenderVideo) {
+  // FakeVideoTrackRenderer register itself to |video_track_|
   rtc::scoped_ptr<FakeVideoTrackRenderer> renderer_1(
-      new FakeVideoTrackRenderer(video_track.get()));
+      new FakeVideoTrackRenderer(video_track_.get()));
 
-  cricket::VideoRenderer* render_input = video_track->GetSource()->FrameInput();
-  ASSERT_FALSE(render_input == NULL);
+  cricket::VideoRenderer* renderer_input =
+      video_track_->GetSource()->FrameInput();
+  ASSERT_FALSE(renderer_input == NULL);
 
   cricket::WebRtcVideoFrame frame;
   frame.InitToBlack(123, 123, 1, 1, 0, 0);
-  render_input->RenderFrame(&frame);
+  renderer_input->RenderFrame(&frame);
   EXPECT_EQ(1, renderer_1->num_rendered_frames());
 
-  EXPECT_EQ(1, renderer_1->num_set_sizes());
   EXPECT_EQ(123, renderer_1->width());
   EXPECT_EQ(123, renderer_1->height());
 
-  // FakeVideoTrackRenderer register itself to |video_track|
+  // FakeVideoTrackRenderer register itself to |video_track_|
   rtc::scoped_ptr<FakeVideoTrackRenderer> renderer_2(
-      new FakeVideoTrackRenderer(video_track.get()));
+      new FakeVideoTrackRenderer(video_track_.get()));
 
-  render_input->RenderFrame(&frame);
+  renderer_input->RenderFrame(&frame);
 
-  EXPECT_EQ(1, renderer_1->num_set_sizes());
   EXPECT_EQ(123, renderer_1->width());
   EXPECT_EQ(123, renderer_1->height());
-  EXPECT_EQ(1, renderer_2->num_set_sizes());
   EXPECT_EQ(123, renderer_2->width());
   EXPECT_EQ(123, renderer_2->height());
 
   EXPECT_EQ(2, renderer_1->num_rendered_frames());
   EXPECT_EQ(1, renderer_2->num_rendered_frames());
 
-  video_track->RemoveRenderer(renderer_1.get());
-  render_input->RenderFrame(&frame);
+  video_track_->RemoveRenderer(renderer_1.get());
+  renderer_input->RenderFrame(&frame);
 
   EXPECT_EQ(2, renderer_1->num_rendered_frames());
   EXPECT_EQ(2, renderer_2->num_rendered_frames());
+}
+
+// Test adding renderers which support and don't support rotation and receive
+// the right frame.
+TEST_F(VideoTrackTest, RenderVideoWithPendingRotation) {
+  const size_t kWidth = 800;
+  const size_t kHeight = 400;
+
+  // Add a renderer which supports rotation.
+  rtc::scoped_ptr<FakeVideoTrackRenderer> rotating_renderer(
+      new FakeVideoTrackRenderer(video_track_.get(), true));
+
+  cricket::VideoRenderer* renderer_input =
+      video_track_->GetSource()->FrameInput();
+  ASSERT_FALSE(renderer_input == NULL);
+
+  // Create a frame with rotation 90 degree.
+  WebRtcVideoTestFrame frame;
+  frame.InitToBlack(kWidth, kHeight, 1, 1, 0, 0);
+  frame.SetRotation(webrtc::kVideoRotation_90);
+
+  // rotating_renderer should see the frame unrotated.
+  renderer_input->RenderFrame(&frame);
+  EXPECT_EQ(1, rotating_renderer->num_rendered_frames());
+  EXPECT_EQ(kWidth, rotating_renderer->width());
+  EXPECT_EQ(kHeight, rotating_renderer->height());
+  EXPECT_EQ(&frame, rotating_renderer->last_frame());
+
+  // Add 2nd renderer which doesn't support rotation.
+  rtc::scoped_ptr<FakeVideoTrackRenderer> non_rotating_renderer(
+      new FakeVideoTrackRenderer(video_track_.get(), false));
+
+  // Render the same 90 degree frame.
+  renderer_input->RenderFrame(&frame);
+
+  // rotating_renderer should see the same frame.
+  EXPECT_EQ(kWidth, rotating_renderer->width());
+  EXPECT_EQ(kHeight, rotating_renderer->height());
+  EXPECT_EQ(&frame, rotating_renderer->last_frame());
+
+  // non_rotating_renderer should see the frame rotated.
+  EXPECT_EQ(kHeight, non_rotating_renderer->width());
+  EXPECT_EQ(kWidth, non_rotating_renderer->height());
+  EXPECT_NE(&frame, non_rotating_renderer->last_frame());
+
+  // Render the same 90 degree frame the 3rd time.
+  renderer_input->RenderFrame(&frame);
+
+  // Now render a frame without rotation.
+  frame.SetRotation(webrtc::kVideoRotation_0);
+  renderer_input->RenderFrame(&frame);
+
+  // rotating_renderer should still only have 1 setsize.
+  EXPECT_EQ(kWidth, rotating_renderer->width());
+  EXPECT_EQ(kHeight, rotating_renderer->height());
+  EXPECT_EQ(&frame, rotating_renderer->last_frame());
+
+  // render_2 should have a new size but should have the same frame.
+  EXPECT_EQ(kWidth, non_rotating_renderer->width());
+  EXPECT_EQ(kHeight, non_rotating_renderer->height());
+  EXPECT_EQ(&frame, non_rotating_renderer->last_frame());
 }

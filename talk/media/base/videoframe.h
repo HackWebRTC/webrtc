@@ -168,6 +168,12 @@ class VideoFrame {
   // Writes the frame into the target VideoFrame.
   virtual void CopyToFrame(VideoFrame* target) const;
 
+  // Return a copy of frame which has its pending rotation applied. The
+  // ownership of the returned frame is held by this frame.
+  virtual const VideoFrame* GetCopyWithRotationApplied() const {
+    return nullptr;
+  }
+
   // Writes the frame into the given stream and returns the StreamResult.
   // See webrtc/base/stream.h for a description of StreamResult and error.
   // Error may be NULL. If a non-success value is returned from

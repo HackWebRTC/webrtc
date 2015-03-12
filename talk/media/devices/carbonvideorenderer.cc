@@ -122,11 +122,17 @@ bool CarbonVideoRenderer::SetSize(int width, int height, int reserved) {
   return true;
 }
 
-bool CarbonVideoRenderer::RenderFrame(const VideoFrame* frame) {
-  if (!frame) {
+bool CarbonVideoRenderer::RenderFrame(const VideoFrame* video_frame) {
+  if (!video_frame) {
     return false;
   }
   {
+    const VideoFrame* frame = video_frame->GetCopyWithRotationApplied();
+
+    if (!SetSize(frame->GetWidth(), frame->GetHeight(), 0)) {
+      return false;
+    }
+
     // Grab the image lock so we are not trashing up the image being drawn.
     rtc::CritScope cs(&image_crit_);
     frame->ConvertToRgbBuffer(cricket::FOURCC_ABGR,

@@ -38,19 +38,23 @@ class RTCVideoRendererNativeAdapter : public VideoRendererInterface {
  public:
   RTCVideoRendererNativeAdapter(RTCVideoRendererAdapter* adapter) {
     _adapter = adapter;
+    _size = CGSizeZero;
   }
 
-  void SetSize(int width, int height) override {
-    [_adapter.videoRenderer setSize:CGSizeMake(width, height)];
-  }
-
-  void RenderFrame(const cricket::VideoFrame* frame) override {
+  void RenderFrame(const cricket::VideoFrame* videoFrame) override {
+    const cricket::VideoFrame* frame = videoFrame->GetCopyWithRotationApplied();
+    CGSize currentSize = CGSizeMake(frame->GetWidth(), frame->GetHeight());
+    if (!CGSizeEqualToSize(_size, currentSize)) {
+      _size = currentSize;
+      [_adapter.videoRenderer setSize:_size];
+    }
     RTCI420Frame* i420Frame = [[RTCI420Frame alloc] initWithVideoFrame:frame];
     [_adapter.videoRenderer renderFrame:i420Frame];
   }
 
  private:
   __weak RTCVideoRendererAdapter* _adapter;
+  CGSize _size;
 };
 }
 
