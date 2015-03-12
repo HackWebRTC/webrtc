@@ -330,43 +330,29 @@ int32_t VideoSender::RegisterProtectionCallback(
 }
 
 // Enable or disable a video protection method.
-// Note: This API should be deprecated, as it does not offer a distinction
-// between the protection method and decoding with or without errors. If such a
-// behavior is desired, use the following API: SetReceiverRobustnessMode.
-int32_t VideoSender::SetVideoProtection(VCMVideoProtection videoProtection,
-                                        bool enable) {
+void VideoSender::SetVideoProtection(bool enable,
+                                     VCMVideoProtection videoProtection) {
+  CriticalSectionScoped cs(_sendCritSect);
   switch (videoProtection) {
+    case kProtectionNone:
+      _mediaOpt.EnableProtectionMethod(enable, media_optimization::kNone);
+      break;
     case kProtectionNack:
-    case kProtectionNackSender: {
-      CriticalSectionScoped cs(_sendCritSect);
+    case kProtectionNackSender:
       _mediaOpt.EnableProtectionMethod(enable, media_optimization::kNack);
       break;
-    }
-
-    case kProtectionNackFEC: {
-      CriticalSectionScoped cs(_sendCritSect);
+    case kProtectionNackFEC:
       _mediaOpt.EnableProtectionMethod(enable, media_optimization::kNackFec);
       break;
-    }
-
-    case kProtectionFEC: {
-      CriticalSectionScoped cs(_sendCritSect);
+    case kProtectionFEC:
       _mediaOpt.EnableProtectionMethod(enable, media_optimization::kFec);
       break;
-    }
-
-    case kProtectionPeriodicKeyFrames: {
-      CriticalSectionScoped cs(_sendCritSect);
-      return _codecDataBase.SetPeriodicKeyFrames(enable) ? 0 : -1;
-      break;
-    }
     case kProtectionNackReceiver:
     case kProtectionKeyOnLoss:
     case kProtectionKeyOnKeyLoss:
-      // Ignore decoder modes.
-      return VCM_OK;
+      // Ignore receiver modes.
+      return;
   }
-  return VCM_OK;
 }
 // Add one raw video frame to the encoder, blocking.
 int32_t VideoSender::AddVideoFrame(const I420VideoFrame& videoFrame,
@@ -427,33 +413,6 @@ int32_t VideoSender::EnableFrameDropper(bool enable) {
   frame_dropper_enabled_ = enable;
   _mediaOpt.EnableFrameDropper(enable);
   return VCM_OK;
-}
-
-int VideoSender::SetSenderNackMode(SenderNackMode mode) {
-  switch (mode) {
-    case VideoCodingModule::kNackNone:
-      _mediaOpt.EnableProtectionMethod(false, media_optimization::kNack);
-      break;
-    case VideoCodingModule::kNackAll:
-      _mediaOpt.EnableProtectionMethod(true, media_optimization::kNack);
-      break;
-    case VideoCodingModule::kNackSelective:
-      return VCM_NOT_IMPLEMENTED;
-  }
-  return VCM_OK;
-}
-
-int VideoSender::SetSenderReferenceSelection(bool enable) {
-  return VCM_NOT_IMPLEMENTED;
-}
-
-int VideoSender::SetSenderFEC(bool enable) {
-  _mediaOpt.EnableProtectionMethod(enable, media_optimization::kFec);
-  return VCM_OK;
-}
-
-int VideoSender::SetSenderKeyFramePeriod(int periodMs) {
-  return VCM_NOT_IMPLEMENTED;
 }
 
 int VideoSender::StartDebugRecording(const char* file_name_utf8) {

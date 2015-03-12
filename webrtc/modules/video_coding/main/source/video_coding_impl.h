@@ -101,7 +101,7 @@ class VideoSender {
   int32_t RegisterSendStatisticsCallback(VCMSendStatisticsCallback* sendStats);
   int32_t RegisterVideoQMCallback(VCMQMSettingsCallback* videoQMSettings);
   int32_t RegisterProtectionCallback(VCMProtectionCallback* protection);
-  int32_t SetVideoProtection(VCMVideoProtection videoProtection, bool enable);
+  void SetVideoProtection(bool enable, VCMVideoProtection videoProtection);
 
   int32_t AddVideoFrame(const I420VideoFrame& videoFrame,
                         const VideoContentMetrics* _contentMetrics,
@@ -109,11 +109,6 @@ class VideoSender {
 
   int32_t IntraFrameRequest(int stream_index);
   int32_t EnableFrameDropper(bool enable);
-
-  int SetSenderNackMode(SenderNackMode mode);
-  int SetSenderReferenceSelection(bool enable);
-  int SetSenderFEC(bool enable);
-  int SetSenderKeyFramePeriod(int periodMs);
 
   int StartDebugRecording(const char* file_name_utf8);
   void StopDebugRecording();

@@ -245,15 +245,7 @@ public:
     // Input:
     //        - newMethodType    : New requested protection method type. If one
     //                           is already set, it will be deleted and replaced
-    // Return value:             Returns true on update
-    bool SetMethod(VCMProtectionMethodEnum newMethodType);
-
-    // Remove requested protection method
-    // Input:
-    //        - method          : method to be removed (if currently selected)
-    //
-    // Return value:             Returns true on update
-    bool RemoveMethod(VCMProtectionMethodEnum method);
+    void SetMethod(VCMProtectionMethodEnum newMethodType);
 
     // Return required bit rate per selected protectin method
     float RequiredBitRate() const;

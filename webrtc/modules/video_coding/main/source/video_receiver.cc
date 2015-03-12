@@ -236,9 +236,12 @@ int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
     }
     case kProtectionNackSender:
     case kProtectionFEC:
-    case kProtectionPeriodicKeyFrames:
       // Ignore encoder modes.
       return VCM_OK;
+    case kProtectionNone:
+      // TODO(pbos): Implement like sender and remove enable parameter. Ignored
+      // for now.
+      break;
   }
   return VCM_OK;
 }

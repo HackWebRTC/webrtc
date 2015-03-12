@@ -173,13 +173,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 
   int32_t SetVideoProtection(VCMVideoProtection videoProtection,
                              bool enable) override {
-    int32_t sender_return =
-        sender_->SetVideoProtection(videoProtection, enable);
-    int32_t receiver_return =
-        receiver_->SetVideoProtection(videoProtection, enable);
-    if (sender_return == VCM_OK)
-      return receiver_return;
-    return sender_return;
+    sender_->SetVideoProtection(enable, videoProtection);
+    return receiver_->SetVideoProtection(videoProtection, enable);
   }
 
   int32_t AddVideoFrame(const I420VideoFrame& videoFrame,
@@ -199,22 +194,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 
   int32_t SentFrameCount(VCMFrameCount& frameCount) const override {
     return sender_->SentFrameCount(&frameCount);
-  }
-
-  int SetSenderNackMode(SenderNackMode mode) override {
-    return sender_->SetSenderNackMode(mode);
-  }
-
-  int SetSenderReferenceSelection(bool enable) override {
-    return sender_->SetSenderReferenceSelection(enable);
-  }
-
-  int SetSenderFEC(bool enable) override {
-    return sender_->SetSenderFEC(enable);
-  }
-
-  int SetSenderKeyFramePeriod(int periodMs) override {
-    return sender_->SetSenderKeyFramePeriod(periodMs);
   }
 
   int StartDebugRecording(const char* file_name_utf8) override {

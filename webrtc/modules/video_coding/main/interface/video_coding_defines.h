@@ -46,6 +46,7 @@ namespace webrtc {
 enum { kDefaultStartBitrateKbps = 300 };
 
 enum VCMVideoProtection {
+  kProtectionNone,
   kProtectionNack,                // Both send-side and receive-side
   kProtectionNackSender,          // Send-side only
   kProtectionNackReceiver,        // Receive-side only
@@ -53,7 +54,6 @@ enum VCMVideoProtection {
   kProtectionNackFEC,
   kProtectionKeyOnLoss,
   kProtectionKeyOnKeyLoss,
-  kProtectionPeriodicKeyFrames
 };
 
 enum VCMTemporalDecimation {

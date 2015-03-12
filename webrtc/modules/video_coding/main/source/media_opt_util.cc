@@ -670,61 +670,30 @@ VCMLossProtectionLogic::~VCMLossProtectionLogic()
     Release();
 }
 
-bool
-VCMLossProtectionLogic::SetMethod(enum VCMProtectionMethodEnum newMethodType)
-{
-    if (_selectedMethod != NULL)
-    {
-        if (_selectedMethod->Type() == newMethodType)
-        {
-            // Nothing to update
-            return false;
-        }
-        // New method - delete existing one
-        delete _selectedMethod;
-    }
-    VCMProtectionMethod *newMethod = NULL;
-    switch (newMethodType)
-    {
-        case kNack:
-        {
-            newMethod = new VCMNackMethod();
-            break;
-        }
-        case kFec:
-        {
-            newMethod  = new VCMFecMethod();
-            break;
-        }
-        case kNackFec:
-        {
-            // Default to always having NACK enabled for the hybrid mode.
-            newMethod =  new VCMNackFecMethod(kLowRttNackMs, -1);
-            break;
-        }
-        default:
-        {
-          return false;
-          break;
-        }
+void VCMLossProtectionLogic::SetMethod(
+    enum VCMProtectionMethodEnum newMethodType) {
+  if (_selectedMethod != nullptr) {
+    if (_selectedMethod->Type() == newMethodType)
+      return;
+    // Remove old method.
+    delete _selectedMethod;
+  }
 
-    }
-    _selectedMethod = newMethod;
-    return true;
-}
-bool
-VCMLossProtectionLogic::RemoveMethod(enum VCMProtectionMethodEnum method)
-{
-    if (_selectedMethod == NULL)
-    {
-        return false;
-    }
-    else if (_selectedMethod->Type() == method)
-    {
-        delete _selectedMethod;
-        _selectedMethod = NULL;
-    }
-    return true;
+  switch(newMethodType) {
+    case kNack:
+      _selectedMethod = new VCMNackMethod();
+      break;
+    case kFec:
+      _selectedMethod = new VCMFecMethod();
+      break;
+    case kNackFec:
+      _selectedMethod = new VCMNackFecMethod(kLowRttNackMs, -1);
+      break;
+    case kNone:
+      _selectedMethod = nullptr;
+      break;
+  }
+  UpdateMethod();
 }
 
 float
@@ -924,10 +893,8 @@ VCMLossProtectionLogic::SelectedMethod() const
     return _selectedMethod;
 }
 
-VCMProtectionMethodEnum
-VCMLossProtectionLogic::SelectedType() const
-{
-    return _selectedMethod->Type();
+VCMProtectionMethodEnum VCMLossProtectionLogic::SelectedType() const {
+  return _selectedMethod == nullptr ? kNone : _selectedMethod->Type();
 }
 
 void

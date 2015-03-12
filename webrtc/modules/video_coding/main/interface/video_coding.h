@@ -528,38 +528,6 @@ public:
 
     // Robustness APIs
 
-    // Set the sender RTX/NACK mode.
-    // Input:
-    //      - mode       : the selected NACK mode.
-    //
-    // Return value      : VCM_OK, on success;
-    //                     < 0, on error.
-    virtual int SetSenderNackMode(SenderNackMode mode) = 0;
-
-    // Set the sender reference picture selection (RPS) mode.
-    // Input:
-    //      - enable     : true or false, for enable and disable, respectively.
-    //
-    // Return value      : VCM_OK, on success;
-    //                     < 0, on error.
-    virtual int SetSenderReferenceSelection(bool enable) = 0;
-
-    // Set the sender forward error correction (FEC) mode.
-    // Input:
-    //      - enable     : true or false, for enable and disable, respectively.
-    //
-    // Return value      : VCM_OK, on success;
-    //                     < 0, on error.
-    virtual int SetSenderFEC(bool enable) = 0;
-
-    // Set the key frame period, or disable periodic key frames (I-frames).
-    // Input:
-    //      - periodMs   : period in ms; <= 0 to disable periodic key frames.
-    //
-    // Return value      : VCM_OK, on success;
-    //                     < 0, on error.
-    virtual int SetSenderKeyFramePeriod(int periodMs) = 0;
-
     // Set the receiver robustness mode. The mode decides how the receiver
     // responds to losses in the stream. The type of counter-measure (soft or
     // hard NACK, dual decoder, RPS, etc.) is selected through the
