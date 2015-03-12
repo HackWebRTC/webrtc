@@ -119,16 +119,16 @@ TEST_F(AcmGenericCodecOpusTest, ToggleDtx) {
 
   // Audio mode is not allowed when DTX is on, and DTX forcing flag is false.
   EXPECT_EQ(-1, codec_wrapper_->SetOpusApplication(kAudio, false));
-  EXPECT_EQ(true, GetAudioEncoderOpus()->dtx_enabled());
+  EXPECT_TRUE(GetAudioEncoderOpus()->dtx_enabled());
 
   // Audio mode will be set, if DTX forcing flag is true. Then DTX is switched
   // off.
   EXPECT_EQ(0, codec_wrapper_->SetOpusApplication(kAudio, true));
-  EXPECT_EQ(false, GetAudioEncoderOpus()->dtx_enabled());
+  EXPECT_FALSE(GetAudioEncoderOpus()->dtx_enabled());
 
   // Now we set VOIP mode. The DTX forcing flag has no effect.
   EXPECT_EQ(0, codec_wrapper_->SetOpusApplication(kVoip, true));
-  EXPECT_EQ(false, GetAudioEncoderOpus()->dtx_enabled());
+  EXPECT_FALSE(GetAudioEncoderOpus()->dtx_enabled());
 
   // In VOIP mode, we can enable DTX with mode forcing flag being false.
   EXPECT_EQ(0, codec_wrapper_->EnableOpusDtx(false));
