@@ -42,14 +42,13 @@ class ChannelBuffer {
   ChannelBuffer(int num_frames,
                 int num_channels,
                 int num_bands = 1)
-      : data_(new T[num_frames * num_channels]),
+      : data_(new T[num_frames * num_channels]()),
         channels_(new T*[num_channels * num_bands]),
         bands_(new T*[num_channels * num_bands]),
         num_frames_(num_frames),
         num_frames_per_band_(num_frames / num_bands),
         num_channels_(num_channels),
         num_bands_(num_bands) {
-    memset(data_.get(), 0, size() * sizeof(T));
     for (int i = 0; i < num_channels_; ++i) {
       for (int j = 0; j < num_bands_; ++j) {
         channels_[j * num_channels_ + i] =

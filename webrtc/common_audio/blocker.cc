@@ -43,7 +43,7 @@ void CopyFrames(const float* const* src,
   for (int i = 0; i < num_channels; ++i) {
     memcpy(&dst[i][dst_start_index],
            &src[i][src_start_index],
-           num_frames * sizeof(float));
+           num_frames * sizeof(dst[i][dst_start_index]));
   }
 }
 
@@ -57,7 +57,7 @@ void MoveFrames(const float* const* src,
   for (int i = 0; i < num_channels; ++i) {
     memmove(&dst[i][dst_start_index],
             &src[i][src_start_index],
-            num_frames * sizeof(float));
+            num_frames * sizeof(dst[i][dst_start_index]));
   }
 }
 
@@ -66,7 +66,8 @@ void ZeroOut(float* const* buffer,
              int num_frames,
              int num_channels) {
   for (int i = 0; i < num_channels; ++i) {
-    memset(&buffer[i][starting_idx], 0, num_frames * sizeof(float));
+    memset(&buffer[i][starting_idx], 0,
+           num_frames * sizeof(buffer[i][starting_idx]));
   }
 }
 
@@ -118,7 +119,9 @@ Blocker::Blocker(int chunk_size,
       shift_amount_(shift_amount),
       callback_(callback) {
   CHECK_LE(num_output_channels_, num_input_channels_);
-  memcpy(window_.get(), window, block_size_ * sizeof(float));
+  CHECK(window);
+
+  memcpy(window_.get(), window, block_size_ * sizeof(*window_.get()));
   input_buffer_.MoveReadPosition(-initial_delay_);
 }
 

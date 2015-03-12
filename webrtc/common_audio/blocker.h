@@ -58,6 +58,9 @@ class BlockerCallback {
 //
 // A small amount of delay is added to the first received chunk to deal with
 // the difference in chunk/block sizes. This delay is <= chunk_size.
+//
+// Ownership of window is retained by the caller.  That is, Blocker makes a
+// copy of window and does not attempt to delete it.
 class Blocker {
  public:
   Blocker(int chunk_size,

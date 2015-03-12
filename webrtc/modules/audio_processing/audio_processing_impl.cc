@@ -278,9 +278,8 @@ int AudioProcessingImpl::InitializeLocked() {
                                        fwd_out_format_.samples_per_channel()));
 
   // Initialize all components.
-  std::list<ProcessingComponent*>::iterator it;
-  for (it = component_list_.begin(); it != component_list_.end(); ++it) {
-    int err = (*it)->Initialize();
+  for (auto item : component_list_) {
+    int err = item->Initialize();
     if (err != kNoError) {
       return err;
     }
@@ -412,9 +411,9 @@ int AudioProcessingImpl::MaybeInitializeLocked(int input_sample_rate_hz,
 
 void AudioProcessingImpl::SetExtraOptions(const Config& config) {
   CriticalSectionScoped crit_scoped(crit_);
-  std::list<ProcessingComponent*>::iterator it;
-  for (it = component_list_.begin(); it != component_list_.end(); ++it)
-    (*it)->SetExtraOptions(config);
+  for (auto item : component_list_) {
+    item->SetExtraOptions(config);
+  }
 
   if (transient_suppressor_enabled_ != config.Get<ExperimentalNs>().enabled) {
     transient_suppressor_enabled_ = config.Get<ExperimentalNs>().enabled;
@@ -915,9 +914,8 @@ bool AudioProcessingImpl::is_data_processed() const {
   }
 
   int enabled_count = 0;
-  std::list<ProcessingComponent*>::const_iterator it;
-  for (it = component_list_.begin(); it != component_list_.end(); it++) {
-    if ((*it)->is_component_enabled()) {
+  for (auto item : component_list_) {
+    if (item->is_component_enabled()) {
       enabled_count++;
     }
   }
