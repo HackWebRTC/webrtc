@@ -11,6 +11,7 @@ import argparse
 import collections
 import getpass
 import json
+import logging
 import os
 import re
 import shutil
@@ -22,10 +23,10 @@ import urllib2
 
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-CHROME_SRC = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
-sys.path.insert(1, os.path.join(CHROME_SRC, 'tools'))
+ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
+sys.path.insert(1, os.path.join(ROOT_DIR, 'tools'))
 import find_depot_tools
-sys.path.append(find_depot_tools.add_depot_tools_to_path())
+find_depot_tools.add_depot_tools_to_path()
 import rietveld
 from gclient import GClientKeywords
 from third_party import upload
@@ -33,14 +34,13 @@ from third_party import upload
 # Avoid depot_tools/third_party/upload.py print verbose messages.
 upload.verbosity = 0  # Errors only.
 
-# Use a shell for subcommands on Windows to get a PATH search.
-# TODO(kjellander): Remove the git-svn-id regex once we've rolled past the
-# revisions that doesn't have the Cr-Original-Commit-Position footer.
-GIT_SVN_ID_RE = re.compile('^git-svn-id: .*@([0-9]+) .*$')
-GIT_SVN_ID_RE2 = re.compile('^Cr-Original-Commit-Position: .*#([0-9]+).*$')
+CHROMIUM_GIT_URL = 'https://chromium.googlesource.com/chromium/src.git'
+GIT_SVN_ID_RE = re.compile('^Cr-Original-Commit-Position: .*#([0-9]+).*$')
 CL_ISSUE_RE = re.compile('^Issue number: ([0-9]+) \((.*)\)$')
 RIETVELD_URL_RE = re.compile('^https?://(.*)/(.*)')
 ROLL_BRANCH_NAME = 'special_webrtc_roll_branch'
+
+# Use a shell for subcommands on Windows to get a PATH search.
 USE_SHELL = sys.platform.startswith('win')
 WEBRTC_PATH = 'third_party/webrtc'
 LIBJINGLE_PATH = 'third_party/libjingle/source/talk'
@@ -64,57 +64,31 @@ CommitInfo = collections.namedtuple('CommitInfo', ['svn_revision',
 CLInfo = collections.namedtuple('CLInfo', ['issue', 'url', 'rietveld_server'])
 
 
-def RunInteractive(command):
-  p = subprocess.Popen(command, shell=USE_SHELL, cwd=CHROME_SRC,
-                       universal_newlines=True)
-  p.communicate()
-  if p.returncode != 0:
-    sys.exit(p.returncode)
-  return
-
-def RunCommand(command, working_dir=None, ignore_exit_code=False):
-  """Runs a command and returns the stdout from that command.
-  If the command fails (exit code != 0), the function will exit the process."""
-  working_dir = working_dir or CHROME_SRC
-  p = subprocess.Popen(command, stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE, shell=USE_SHELL,
-                       cwd=working_dir, universal_newlines=True)
-  output = p.stdout.read()
-  p.wait()
-  p.stdout.close()
-  p.stderr.close()
-
-  if not ignore_exit_code and p.returncode != 0:
-    print 'Command failed: %s\n' % str(command)
-    print output
-    sys.exit(p.returncode)
-
-  return output
-
-def ParseSvnRevisionFromGitDescription(description):
+def _ParseSvnRevisionFromGitDescription(description):
   for line in reversed(description.splitlines()):
     m = GIT_SVN_ID_RE.match(line.strip())
-    if not m:
-       m = GIT_SVN_ID_RE2.match(line.strip())
     if m:
       return m.group(1)
-  print 'Failed to parse svn revision id from:\n%s\n' % description
+  logging.error('Failed to parse svn revision id from:\n%s\n', description)
   sys.exit(-1)
 
-def ParseGitCommitFromDescription(description):
+
+def _ParseGitCommitFromDescription(description):
   # TODO(kjellander): Consider passing --format=%b to the git log command so we
   # don't need to have error-prone parsing like this.
   for line in description.splitlines():
     if line.startswith('commit '):
       return line.split()[1]
-  print 'Failed to parse git commit id from:\n%s\n' % description
+  logging.error('Failed to parse git commit id from:\n%s\n', description)
   sys.exit(-1)
   return None
 
-def ParseDepsFile(filename):
+
+def _ParseDepsFile(filename):
   with open(filename, 'rb') as f:
     deps_content = f.read()
   return _ParseDepsDict(deps_content)
+
 
 def _ParseDepsDict(deps_content):
   local_scope = {}
@@ -128,42 +102,8 @@ def _ParseDepsDict(deps_content):
   exec(deps_content, global_scope, local_scope)
   return local_scope
 
-def GetCommitInfo(folder, git_hash=None, git_repo_url=None):
-  RunCommand(['git', 'fetch', 'origin'], working_dir=folder)
-  revision_range = git_hash or 'origin'
-  ret = RunCommand(
-      ['git', '--no-pager', 'log', revision_range, '--pretty=full', '-1'],
-      working_dir=folder)
-  return CommitInfo(ParseSvnRevisionFromGitDescription(ret),
-                    ParseGitCommitFromDescription(ret), git_repo_url)
 
-def GetDepsCommitInfo(deps_dict, path_below_src):
-  entry = deps_dict['deps']['src/%s' % path_below_src]
-  at_index = entry.find('@')
-  git_repo_url = entry[:at_index]
-  git_hash = entry[at_index + 1:]
-  return GetCommitInfo(path_below_src, git_hash, git_repo_url)
-
-def GetCLInfo():
-  cl_output = RunCommand(['git', 'cl', 'issue'])
-  m = CL_ISSUE_RE.match(cl_output.strip())
-  if m:
-    issue_number = int(m.group(1))
-    url = m.group(2)
-
-    # Parse the Rietveld host from the URL.
-    m = RIETVELD_URL_RE.match(url)
-    if m:
-      rietveld_server = m.group(1)
-      return CLInfo(issue_number, url, rietveld_server)
-    else:
-      print ('Cannot parse Rietveld host from URL: %s' % url)
-      sys.exit(-1)
-  else:
-    print ('Cannot find any CL info. Output was:\n%s' % cl_output)
-    sys.exit(-1)
-
-def PrintTrybotStatus(issue, rietveld_server):
+def _PrintTrybotStatus(issue, rietveld_server):
   """Prints the status of all trybots for the specified issue.
 
   Returns:
@@ -182,8 +122,8 @@ def PrintTrybotStatus(issue, rietveld_server):
 
   tryjob_results = data['try_job_results']
   if len(tryjob_results) == 0:
-    print ('No trybots have yet been triggered for https://%s/%d' %
-           (rietveld_server, issue))
+    print 'No trybots have yet been triggered for https://%s/%d' % (
+        rietveld_server, issue)
     return False
 
   status_to_name = {}
@@ -192,37 +132,14 @@ def PrintTrybotStatus(issue, rietveld_server):
     status_to_name.setdefault(status, [])
     status_to_name[status].append(trybot_result['builder'])
 
+  # Print these to stdout instead of logging since they will be parsed.
   print ('Status for https://%s/%d:' % (rietveld_server, issue))
   for status,name_list in status_to_name.iteritems():
     print '%s: %s' % (status, ','.join(sorted(name_list)))
-  print ''
 
-def GetCurrentBranchName():
-  return RunCommand(
-      ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).splitlines()[0]
 
-def IsTreeClean():
-  lines = RunCommand(['git', 'status', '--porcelain']).splitlines()
-  if len(lines) == 0:
-    return True
-
-  print 'Found dirty/unversioned files:\n%s' % '\n'.join(lines)
-  return False
-
-def GitPull():
-  RunCommand(['git', 'pull'])
-
-def UpdateReadmeFile(path, new_revision):
-  readme = open(path, 'r+')
-  txt = readme.read()
-  m = re.sub(re.compile('.*^Revision\: ([0-9]*).*', re.MULTILINE),
-      ('Revision: %s' % new_revision), txt)
-  readme.seek(0)
-  readme.write(m)
-  readme.truncate()
-
-def GenerateCLDescription(webrtc_current, libjingle_current,
-                          webrtc_new, libjingle_new):
+def _GenerateCLDescription(webrtc_current, libjingle_current,
+                           webrtc_new, libjingle_new):
   delim = ''
   webrtc_str = ''
   def GetChangeLogURL(git_repo_url, current_hash, new_hash):
@@ -254,155 +171,256 @@ def GenerateCLDescription(webrtc_current, libjingle_current,
     description += 'Changes: %s\n' % libjingle_changelog_url
   return description
 
-def PrepareRoll(dry_run, ignore_checks):
-  # TODO(kjellander): use os.path.normcase, os.path.join etc for all paths for
-  # cross platform compatibility.
 
-  if not ignore_checks:
-    if GetCurrentBranchName() != 'master':
-      print 'Please checkout the master branch.'
-      return -1
-    if not IsTreeClean():
-      print 'Please make sure you don\'t have any modified files.'
-      return -1
+def _IsChromiumCheckout(checkout_dir):
+  """Checks if the provided directory path is a Chromium checkout."""
+  # Look for DEPS file and a chromium directory.
+  return (os.path.isfile(os.path.join(checkout_dir, 'DEPS')) and
+          os.path.isdir(os.path.join(checkout_dir, 'chrome')))
 
-  print 'Checking for a previous roll branch.'
-  # TODO(kjellander): switch to the stale branch, close the issue, switch back
-  # to master,
-  RunCommand(['git', 'branch', '-D', ROLL_BRANCH_NAME], ignore_exit_code=True)
-  print 'Pulling latest changes'
-  if not ignore_checks:
-    GitPull()
 
-  RunCommand(['git', 'checkout', '-b', ROLL_BRANCH_NAME])
+class AutoRoller(object):
+  def __init__(self, chromium_src, dry_run, ignore_checks):
+    self._chromium_src = chromium_src
+    self._dry_run = dry_run
+    self._ignore_checks = ignore_checks
 
-  # Modify Chromium's DEPS file.
+  def _RunCommand(self, command, working_dir=None, ignore_exit_code=False,
+                  extra_env=None):
+    """Runs a command and returns the stdout from that command.
 
-  # Parse current hashes.
-  deps = ParseDepsFile(os.path.join(CHROME_SRC, 'DEPS'))
-  webrtc_current = GetDepsCommitInfo(deps, WEBRTC_PATH)
-  libjingle_current = GetDepsCommitInfo(deps, LIBJINGLE_PATH)
+    If the command fails (exit code != 0), the function will exit the process.
+    """
+    working_dir = working_dir or self._chromium_src
+    logging.debug('cmd: %s cwd: %s', ' '.join(command), working_dir)
+    env = os.environ.copy()
+    if extra_env:
+      logging.debug('extra env: %s', extra_env)
+      env.update(extra_env)
+    p = subprocess.Popen(command, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, shell=USE_SHELL, env=env,
+                         cwd=working_dir, universal_newlines=True)
+    output = p.stdout.read()
+    p.wait()
+    p.stdout.close()
+    p.stderr.close()
 
-  # Find ToT revisions.
-  webrtc_latest = GetCommitInfo(WEBRTC_PATH)
-  libjingle_latest = GetCommitInfo(LIBJINGLE_PATH)
+    if not ignore_exit_code and p.returncode != 0:
+      logging.error('Command failed: %s\n%s', str(command), output)
+      sys.exit(p.returncode)
+    return output
 
-  RunCommand(['roll-dep', WEBRTC_PATH, webrtc_latest.git_commit])
-  RunCommand(['roll-dep', LIBJINGLE_PATH, libjingle_latest.git_commit])
+  def _GetCommitInfo(self, path_below_src, git_hash=None, git_repo_url=None):
+    working_dir = os.path.join(self._chromium_src, path_below_src)
+    self._RunCommand(['git', 'fetch', 'origin'], working_dir=working_dir)
+    revision_range = git_hash or 'origin'
+    ret = self._RunCommand(
+        ['git', '--no-pager', 'log', revision_range, '--pretty=full', '-1'],
+        working_dir=working_dir)
+    return CommitInfo(_ParseSvnRevisionFromGitDescription(ret),
+                      _ParseGitCommitFromDescription(ret), git_repo_url)
 
-  if IsTreeClean():
-    print 'No changes detected.'
-    RunCommand(['git', 'checkout', 'master'])
-    RunCommand(['git', 'branch', '-D', ROLL_BRANCH_NAME])
-  else:
-    UpdateReadmeFile(LIBJINGLE_README, libjingle_latest.svn_revision)
-    description = GenerateCLDescription(webrtc_current, libjingle_current,
-                                        webrtc_latest, libjingle_latest)
-    print 'Committing changes locally.'
-    RunCommand(['git', 'add', '--update', '.'])
-    RunCommand(['git', 'commit', '-m', description])
-    print 'Uploading changes...'
-    RunInteractive(['git', 'cl', 'upload', '-m', description])
-    cl_info = GetCLInfo()
-    print 'Issue: %d URL: %s' % (cl_info.issue, cl_info.url)
+  def _GetDepsCommitInfo(self, deps_dict, path_below_src):
+    entry = deps_dict['deps']['src/%s' % path_below_src]
+    at_index = entry.find('@')
+    git_repo_url = entry[:at_index]
+    git_hash = entry[at_index + 1:]
+    return self._GetCommitInfo(path_below_src, git_hash, git_repo_url)
 
-    if not dry_run:
-      print 'Starting try jobs...'
-      RunCommand(['git', 'cl', 'try'])
-      print 'Change in progress. Monitor here:\n%s' % cl_info.url
+  def _GetCLInfo(self):
+    cl_output = self._RunCommand(['git', 'cl', 'issue'])
+    m = CL_ISSUE_RE.match(cl_output.strip())
+    if not m:
+      logging.error('Cannot find any CL info. Output was:\n%s', cl_output)
+      sys.exit(-1)
+    issue_number = int(m.group(1))
+    url = m.group(2)
 
-  # TODO(kjellander): Checkout masters/previous branches again.
-  return 0
+    # Parse the Rietveld host from the URL.
+    m = RIETVELD_URL_RE.match(url)
+    if not m:
+      logging.error('Cannot parse Rietveld host from URL: %s', url)
+      sys.exit(-1)
+    rietveld_server = m.group(1)
+    return CLInfo(issue_number, url, rietveld_server)
 
-def GetBranches():
-  """Returns a tuple of active,branches where 'active' is the name of the
-  currently active branch and 'branches' is a list of all branches.
-  """
-  lines = RunCommand(['git', 'branch']).split('\n')
-  branches = []
-  active = ''
-  for l in lines:
-    if '*' in l:
-      # The assumption is that the first char will always be the '*'
-      active = l[1:].strip()
-      branches.append(active)
+  def _GetCurrentBranchName(self):
+    return self._RunCommand(
+        ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).splitlines()[0]
+
+  def _IsTreeClean(self):
+    lines = self._RunCommand(['git', 'status', '--porcelain']).splitlines()
+    if len(lines) == 0:
+      return True
+
+    logging.error('Found dirty/unversioned files:\n%s', '\n'.join(lines))
+    return False
+
+  def _UpdateReadmeFile(self, readme_path, new_revision):
+    readme = open(os.path.join(self._chromium_src, readme_path), 'r+')
+    txt = readme.read()
+    m = re.sub(re.compile('.*^Revision\: ([0-9]*).*', re.MULTILINE),
+        ('Revision: %s' % new_revision), txt)
+    readme.seek(0)
+    readme.write(m)
+    readme.truncate()
+
+  def PrepareRoll(self):
+    # TODO(kjellander): use os.path.normcase, os.path.join etc for all paths for
+    # cross platform compatibility.
+
+    if not self._ignore_checks:
+      if self._GetCurrentBranchName() != 'master':
+        logging.error('Please checkout the master branch.')
+        return -1
+      if not self._IsTreeClean():
+        logging.error('Please make sure you don\'t have any modified files.')
+        return -1
+
+    logging.debug('Checking for a previous roll branch.')
+    # TODO(kjellander): switch to the stale branch, close the issue, switch back
+    # to master,
+    self._RunCommand(['git', 'branch', '-D', ROLL_BRANCH_NAME],
+                     ignore_exit_code=True)
+    logging.debug('Pulling latest changes')
+    if not self._ignore_checks:
+      self._RunCommand(['git', 'pull'])
+
+    self._RunCommand(['git', 'checkout', '-b', ROLL_BRANCH_NAME])
+
+    # Modify Chromium's DEPS file.
+
+    # Parse current hashes.
+    deps = _ParseDepsFile(os.path.join(self._chromium_src, 'DEPS'))
+    webrtc_current = self._GetDepsCommitInfo(deps, WEBRTC_PATH)
+    libjingle_current = self._GetDepsCommitInfo(deps, LIBJINGLE_PATH)
+
+    # Find ToT revisions.
+    webrtc_latest = self._GetCommitInfo(WEBRTC_PATH)
+    libjingle_latest = self._GetCommitInfo(LIBJINGLE_PATH)
+
+    self._RunCommand(['roll-dep', WEBRTC_PATH, webrtc_latest.git_commit])
+    self._RunCommand(['roll-dep', LIBJINGLE_PATH, libjingle_latest.git_commit])
+
+    if self._IsTreeClean():
+      logging.debug('Tree is clean - no changes detected.')
+      self._RunCommand(['git', 'checkout', 'master'])
+      self._RunCommand(['git', 'branch', '-D', ROLL_BRANCH_NAME])
     else:
-      b = l.strip()
-      if b:
-        branches.append(b)
-  return (active, branches)
+      self._UpdateReadmeFile(LIBJINGLE_README, libjingle_latest.svn_revision)
+      description = _GenerateCLDescription(webrtc_current, libjingle_current,
+                                           webrtc_latest, libjingle_latest)
+      logging.debug('Committing changes locally.')
+      self._RunCommand(['git', 'add', '--update', '.'])
+      self._RunCommand(['git', 'commit', '-m', description])
+      logging.debug('Uploading changes...')
+      self._RunCommand(['git', 'cl', 'upload', '-m', description],
+                       extra_env={'EDITOR': 'true'})
+      cl_info = self._GetCLInfo()
+      logging.debug('Issue: %d URL: %s', cl_info.issue, cl_info.url)
 
-def Abort():
-  active_branch, branches = GetBranches()
-  if active_branch == ROLL_BRANCH_NAME:
-    active_branch = 'master'
-  if ROLL_BRANCH_NAME in branches:
-    print ('Aborting pending roll.')
-    RunCommand(['git', 'checkout', ROLL_BRANCH_NAME])
-    # Ignore an error here in case an issue wasn't created for some reason.
-    RunCommand(['git', 'cl', 'set_close'], ignore_exit_code=True)
-    RunCommand(['git', 'checkout', active_branch])
-    RunCommand(['git', 'branch', '-D', ROLL_BRANCH_NAME])
-  return 0
+      if not self._dry_run:
+        logging.debug('Starting try jobs...')
+        self._RunCommand(['git', 'cl', 'try'])
+        logging.debug('Change in progress. Monitor here:\n%s', cl_info.url)
 
-def PresubmitPassed(presubmit):
-  return presubmit.find('** Presubmit ERRORS **') == -1
+    # TODO(kjellander): Checkout masters/previous branches again.
+    return 0
 
-def Commit():
-  # First phase of two.  Run the presubmit step for both repos.
-  presubmit_passed = True
-  active_branch, branches = GetBranches()
-  if ROLL_BRANCH_NAME in branches and presubmit_passed:
-    RunCommand(['git', 'checkout', ROLL_BRANCH_NAME])
-    presubmit = RunCommand(['git', 'cl', 'presubmit'])
-    presubmit_passed = PresubmitPassed(presubmit)
+  def _GetBranches(self):
+    """Returns a tuple of active,branches.
+
+    The 'active' is the name of the currently active branch and 'branches' is a
+    list of all branches.
+    """
+    lines = self._RunCommand(['git', 'branch']).split('\n')
+    branches = []
+    active = ''
+    for l in lines:
+      if '*' in l:
+        # The assumption is that the first char will always be the '*'.
+        active = l[1:].strip()
+        branches.append(active)
+      else:
+        b = l.strip()
+        if b:
+          branches.append(b)
+    return (active, branches)
+
+  def Abort(self):
+    active_branch, branches = self._GetBranches()
+    if active_branch == ROLL_BRANCH_NAME:
+      active_branch = 'master'
+    if ROLL_BRANCH_NAME in branches:
+      print 'Aborting pending roll.'
+      self._RunCommand(['git', 'checkout', ROLL_BRANCH_NAME])
+      # Ignore an error here in case an issue wasn't created for some reason.
+      self._RunCommand(['git', 'cl', 'set_close'], ignore_exit_code=True)
+      self._RunCommand(['git', 'checkout', active_branch])
+      self._RunCommand(['git', 'branch', '-D', ROLL_BRANCH_NAME])
+    return 0
+
+  def Commit(self):
+    def PresubmitPassed(presubmit):
+      return presubmit.find('** Presubmit ERRORS **') == -1
+
+    # First phase of two.  Run the presubmit step for both repos.
+    presubmit_passed = True
+    active_branch, branches = self._GetBranches()
+    if ROLL_BRANCH_NAME in branches and presubmit_passed:
+      self._RunCommand(['git', 'checkout', ROLL_BRANCH_NAME])
+      presubmit = self._RunCommand(['git', 'cl', 'presubmit'])
+      presubmit_passed = PresubmitPassed(presubmit)
+      if not presubmit_passed:
+        logging.error('Presubmit errors\n%s', presubmit)
+      self._RunCommand(['git', 'checkout', active_branch])
+
     if not presubmit_passed:
-      print 'Presubmit errors\n%s' % presubmit
-    RunCommand(['git', 'checkout', active_branch])
+      return -1
 
-  if not presubmit_passed:
-    return -1
+    # Phase two, we've passed the presubmit test, so let's commit.
 
-  # Phase two, we've passed the presubmit test, so let's commit.
+    active_branch, branches = self._GetBranches()
+    if active_branch == ROLL_BRANCH_NAME:
+      active_branch = 'master'
+    if ROLL_BRANCH_NAME in branches and not self._dry_run:
+      print 'Committing change.'
+      self._RunCommand(['git', 'checkout', ROLL_BRANCH_NAME])
+      self._RunCommand(['git', 'rebase', 'master'])
+      self._RunCommand(['git', 'cl', 'land', '-f'])
+      # TODO(tommi): Verify that the issue was successfully closed.
+      self._RunCommand(['git', 'checkout', active_branch])
+      self._RunCommand(['git', 'branch', '-D', ROLL_BRANCH_NAME])
 
-  active_branch, branches = GetBranches()
-  if active_branch == ROLL_BRANCH_NAME:
-    active_branch = 'master'
-  if ROLL_BRANCH_NAME in branches:
-    print ('Committing change.')
-    RunCommand(['git', 'checkout', ROLL_BRANCH_NAME])
-    RunCommand(['git', 'rebase', 'master'])
-    RunInteractive(['git', 'cl', 'land'])
-    # TODO(tommi): Verify that the issue was successfully closed.
-    RunCommand(['git', 'checkout', active_branch])
-    RunCommand(['git', 'branch', '-D', ROLL_BRANCH_NAME])
+    return 0
 
-  return 0
+  def Status(self):
+    print '\n========== TRYJOBS STATUS =========='
+    active_branch, _ = self._GetBranches()
+    if active_branch != ROLL_BRANCH_NAME:
+      self._RunCommand(['git', 'checkout', ROLL_BRANCH_NAME])
+    cl_info = self._GetCLInfo()
+    _PrintTrybotStatus(cl_info.issue, cl_info.rietveld_server)
+    return 0
 
-def Status():
-  print '\n========== TRYJOBS STATUS =========='
-  active_branch, _ = GetBranches()
-  if active_branch != ROLL_BRANCH_NAME:
-    RunCommand(['git', 'checkout', ROLL_BRANCH_NAME])
-  cl_info = GetCLInfo()
-  PrintTrybotStatus(cl_info.issue, cl_info.rietveld_server)
-  return 0
 
 def main():
   if sys.platform in ('win32', 'cygwin'):
-    print >> sys.stderr, (
-        'Unfortunately this script is only supported on Linux and Mac.')
+    logging.error('Only Linux and Mac platforms are supported right now.')
     return -1
 
   parser = argparse.ArgumentParser(
       description='Find webrtc and libjingle revisions for roll.')
+  parser.add_argument('--chromium-checkout', type=str,
+    help=('Path to the Chromium checkout (src/ dir) to perform the roll in '
+          '(optional if the current working dir is a Chromium checkout).'))
   parser.add_argument('--abort',
-    help='Aborts a previously prepared roll. '\
-         'Closes any associated issues and deletes the roll branches',
+    help=('Aborts a previously prepared roll. '
+          'Closes any associated issues and deletes the roll branches'),
     action='store_true')
   parser.add_argument('--commit',
-    help='Commits a prepared roll (that\'s assumed to be green). '\
-         'Closes any associated issues and deletes the roll branches',
+    help=('Commits a prepared roll (that\'s assumed to be green). '
+          'Closes any associated issues and deletes the roll branches'),
     action='store_true')
   parser.add_argument('--status',
     help='Display tryjob status for a previously created roll.',
@@ -413,18 +431,41 @@ def main():
       help=('Skips checks for being on the master branch, dirty workspaces and '
             'the updating of the checkout. Will still delete and create local '
             'Git branches.'))
+  parser.add_argument('-v', '--verbose', action='store_true', default=False,
+      help='Be extra verbose in printing of log messages.')
   args = parser.parse_args()
 
-  if args.abort and not args.dry_run:
-    return Abort()
+  if args.verbose:
+    logging.basicConfig(level=logging.DEBUG)
+  else:
+    logging.basicConfig(level=logging.ERROR)
 
-  if args.commit and not args.dry_run:
-    return Commit()
+  if args.chromium_checkout:
+    if not _IsChromiumCheckout(args.chromium_checkout):
+      logging.error('Cannot find the specified Chromium checkout at: %s',
+                    args.chromium_checkout)
+      return -2
+  else:
+    # Try fallback on current working directory:
+    cwd = os.getcwd()
+    if _IsChromiumCheckout(cwd):
+      args.chromium_checkout = cwd
+    else:
+      logging.error(
+         '--chromium-checkout not specified and the current working directory '
+         ' is not a Chromium checkout. Fix either and try again.')
+      return -2
 
-  if args.status:
-    return Status()
-
-  return PrepareRoll(args.dry_run, args.ignore_checks)
+  autoroller = AutoRoller(args.chromium_checkout, args.dry_run,
+                          args.ignore_checks)
+  if args.abort:
+    return autoroller.Abort()
+  elif args.commit:
+    return autoroller.Commit()
+  elif args.status:
+    return autoroller.Status()
+  else:
+    return autoroller.PrepareRoll()
 
 if __name__ == '__main__':
   sys.exit(main())
