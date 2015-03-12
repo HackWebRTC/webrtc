@@ -25,7 +25,7 @@ int kRecordingBufferSize = kRecordingFixedSampleRate / 100
 
 FileAudioDevice::FileAudioDevice(const int32_t id,
                                  const char* inputFilename,
-                                 const char* outputFile):
+                                 const char* outputFilename):
     _ptrAudioBuffer(NULL),
     _recordingBuffer(NULL),
     _playoutBuffer(NULL),
@@ -45,17 +45,21 @@ FileAudioDevice::FileAudioDevice(const int32_t id,
     _lastCallRecordMillis(0),
     _outputFile(*FileWrapper::Create()),
     _inputFile(*FileWrapper::Create()),
-    _outputFilename(outputFile),
+    _outputFilename(outputFilename),
     _inputFilename(inputFilename),
     _clock(Clock::GetRealTimeClock()) {
 }
 
 FileAudioDevice::~FileAudioDevice() {
-  _outputFile.Flush();
-  _outputFile.CloseFile();
+  if (_outputFile.Open()) {
+      _outputFile.Flush();
+      _outputFile.CloseFile();
+  }
   delete &_outputFile;
-  _inputFile.Flush();
-  _inputFile.CloseFile();
+  if (_inputFile.Open()) {
+      _inputFile.Flush();
+      _inputFile.CloseFile();
+  }
   delete &_inputFile;
 }
 
@@ -144,8 +148,7 @@ int32_t FileAudioDevice::PlayoutIsAvailable(bool& available) {
 }
 
 int32_t FileAudioDevice::InitPlayout() {
-  if (_ptrAudioBuffer)
-  {
+  if (_ptrAudioBuffer) {
       // Update webrtc audio buffer with the selected parameters
       _ptrAudioBuffer->SetPlayoutSampleRate(kPlayoutFixedSampleRate);
       _ptrAudioBuffer->SetPlayoutChannels(kPlayoutNumChannels);
@@ -187,21 +190,20 @@ bool FileAudioDevice::RecordingIsInitialized() const {
 }
 
 int32_t FileAudioDevice::StartPlayout() {
-  if (_playing)
-  {
+  if (_playing) {
       return 0;
   }
 
+  _playoutFramesIn10MS = kPlayoutFixedSampleRate/100;
   _playing = true;
   _playoutFramesLeft = 0;
-  _playoutFramesIn10MS = kPlayoutFixedSampleRate/100;
 
-  if (!_playoutBuffer)
+  if (!_playoutBuffer) {
       _playoutBuffer = new int8_t[2 *
                                   kPlayoutNumChannels *
                                   kPlayoutFixedSampleRate/100];
-  if (!_playoutBuffer)
-  {
+  }
+  if (!_playoutBuffer) {
     _playing = false;
     return -1;
   }
@@ -212,17 +214,16 @@ int32_t FileAudioDevice::StartPlayout() {
                                                 this,
                                                 kRealtimePriority,
                                                 threadName);
-  if (_ptrThreadPlay == NULL)
-  {
+  if (_ptrThreadPlay == NULL) {
       _playing = false;
       delete [] _playoutBuffer;
       _playoutBuffer = NULL;
       return -1;
   }
 
-  if (_outputFile.OpenFile(_outputFilename.c_str(),
-                           false, false, false) == -1) {
-    printf("Failed to open playout file %s!", _outputFilename.c_str());
+  if (!_outputFilename.empty() && _outputFile.OpenFile(
+        _outputFilename.c_str(), false, false, false) == -1) {
+    printf("Failed to open playout file %s!\n", _outputFilename.c_str());
     _playing = false;
     delete [] _playoutBuffer;
     _playoutBuffer = NULL;
@@ -230,8 +231,7 @@ int32_t FileAudioDevice::StartPlayout() {
   }
 
   unsigned int threadID(0);
-  if (!_ptrThreadPlay->Start(threadID))
-  {
+  if (!_ptrThreadPlay->Start(threadID)) {
       _playing = false;
       delete _ptrThreadPlay;
       _ptrThreadPlay = NULL;
@@ -251,11 +251,9 @@ int32_t FileAudioDevice::StopPlayout() {
   }
 
   // stop playout thread first
-  if (_ptrThreadPlay && !_ptrThreadPlay->Stop())
-  {
+  if (_ptrThreadPlay && !_ptrThreadPlay->Stop()) {
       return -1;
-  }
-  else {
+  } else {
       delete _ptrThreadPlay;
       _ptrThreadPlay = NULL;
   }
@@ -265,8 +263,10 @@ int32_t FileAudioDevice::StopPlayout() {
   _playoutFramesLeft = 0;
   delete [] _playoutBuffer;
   _playoutBuffer = NULL;
-  _outputFile.Flush();
-  _outputFile.CloseFile();
+  if (_outputFile.Open()) {
+      _outputFile.Flush();
+      _outputFile.CloseFile();
+  }
    return 0;
 }
 
@@ -285,8 +285,8 @@ int32_t FileAudioDevice::StartRecording() {
       _recordingBuffer = new int8_t[_recordingBufferSizeIn10MS];
   }
 
-  if (_inputFile.OpenFile(_inputFilename.c_str(), true,
-                              true, false) == -1) {
+  if (!_inputFilename.empty() && _inputFile.OpenFile(
+        _inputFilename.c_str(), true, true, false) == -1) {
     printf("Failed to open audio input file %s!\n",
            _inputFilename.c_str());
     _recording = false;
@@ -300,8 +300,7 @@ int32_t FileAudioDevice::StartRecording() {
                                               this,
                                               kRealtimePriority,
                                               threadName);
-  if (_ptrThreadRec == NULL)
-  {
+  if (_ptrThreadRec == NULL) {
       _recording = false;
       delete [] _recordingBuffer;
       _recordingBuffer = NULL;
@@ -309,8 +308,7 @@ int32_t FileAudioDevice::StartRecording() {
   }
 
   unsigned int threadID(0);
-  if (!_ptrThreadRec->Start(threadID))
-  {
+  if (!_ptrThreadRec->Start(threadID)) {
       _recording = false;
       delete _ptrThreadRec;
       _ptrThreadRec = NULL;
@@ -330,19 +328,16 @@ int32_t FileAudioDevice::StopRecording() {
     _recording = false;
   }
 
-  if (_ptrThreadRec && !_ptrThreadRec->Stop())
-  {
+  if (_ptrThreadRec && !_ptrThreadRec->Stop()) {
       return -1;
-  }
-  else {
+  } else {
       delete _ptrThreadRec;
       _ptrThreadRec = NULL;
   }
 
   CriticalSectionScoped lock(&_critSect);
   _recordingFramesLeft = 0;
-  if (_recordingBuffer)
-  {
+  if (_recordingBuffer) {
       delete [] _recordingBuffer;
       _recordingBuffer = NULL;
   }
@@ -528,15 +523,14 @@ bool FileAudioDevice::RecThreadFunc(void* pThis)
 
 bool FileAudioDevice::PlayThreadProcess()
 {
-    if(!_playing)
+    if(!_playing) {
         return false;
-
+    }
     uint64_t currentTime = _clock->CurrentNtpInMilliseconds();
     _critSect.Enter();
 
     if (_lastCallPlayoutMillis == 0 ||
-        currentTime - _lastCallPlayoutMillis >= 10)
-    {
+        currentTime - _lastCallPlayoutMillis >= 10) {
         _critSect.Leave();
         _ptrAudioBuffer->RequestPlayoutData(_playoutFramesIn10MS);
         _critSect.Enter();
@@ -557,8 +551,9 @@ bool FileAudioDevice::PlayThreadProcess()
 
 bool FileAudioDevice::RecThreadProcess()
 {
-    if (!_recording)
+    if (!_recording) {
         return false;
+    }
 
     uint64_t currentTime = _clock->CurrentNtpInMilliseconds();
     _critSect.Enter();
