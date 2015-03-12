@@ -71,6 +71,7 @@ struct ViEVideoFrameI420 {
     v_pitch = 0;
     width = 0;
     height = 0;
+    rotation = kVideoRotation_0;
   }
 
   unsigned char* y_plane;
@@ -83,6 +84,7 @@ struct ViEVideoFrameI420 {
 
   unsigned short width;
   unsigned short height;
+  VideoRotation rotation;
 };
 
 // This class declares an abstract interface to be used when implementing

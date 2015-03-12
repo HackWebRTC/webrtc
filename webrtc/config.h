@@ -51,6 +51,7 @@ struct RtpExtension {
 
   static const char* kTOffset;
   static const char* kAbsSendTime;
+  static const char* kVideoRotation;
   std::string name;
   int id;
 };

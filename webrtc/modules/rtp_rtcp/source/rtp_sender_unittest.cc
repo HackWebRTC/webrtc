@@ -17,6 +17,7 @@
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/pacing/include/mock/mock_paced_sender.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
@@ -189,7 +190,7 @@ class RtpSenderVideoTest : public RtpSenderTest {
     EXPECT_EQ(rtp_sender_->SSRC(), rtp_header.ssrc);
     EXPECT_EQ(0, rtp_header.numCSRCs);
     EXPECT_EQ(0U, rtp_header.paddingLength);
-    EXPECT_EQ(RTPSender::ConvertToCVOByte(rotation),
+    EXPECT_EQ(ConvertVideoRotationToCVOByte(rotation),
               rtp_header.extension.videoRotation);
   }
 };
@@ -427,7 +428,7 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithVideoRotation_MarkerBit) {
   VerifyRTPHeaderCommon(rtp_header);
   EXPECT_EQ(length, rtp_header.headerLength);
   EXPECT_TRUE(rtp_header.extension.hasVideoRotation);
-  EXPECT_EQ(RTPSender::ConvertToCVOByte(kRotation),
+  EXPECT_EQ(ConvertVideoRotationToCVOByte(kRotation),
             rtp_header.extension.videoRotation);
 }
 

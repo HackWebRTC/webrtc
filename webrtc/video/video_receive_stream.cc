@@ -181,6 +181,9 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
     } else if (extension == RtpExtension::kAbsSendTime) {
       if (rtp_rtcp_->SetReceiveAbsoluteSendTimeStatus(channel_, true, id) != 0)
         abort();
+    } else if (extension == RtpExtension::kVideoRotation) {
+      if (rtp_rtcp_->SetReceiveVideoRotationStatus(channel_, true, id) != 0)
+        abort();
     } else {
       abort();  // Unsupported extension.
     }

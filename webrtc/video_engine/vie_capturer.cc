@@ -325,7 +325,8 @@ int ViECapturer::IncomingFrameI420(const ViEVideoFrameI420& video_frame,
                                        video_frame.height,
                                        video_frame.y_pitch,
                                        video_frame.u_pitch,
-                                       video_frame.v_pitch);
+                                       video_frame.v_pitch,
+                                       video_frame.rotation);
 
   if (ret < 0) {
     LOG_F(LS_ERROR) << "Could not create I420Frame.";

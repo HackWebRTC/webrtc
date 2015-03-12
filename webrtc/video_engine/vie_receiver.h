@@ -64,6 +64,7 @@ class ViEReceiver : public RtpData {
 
   bool SetReceiveTimestampOffsetStatus(bool enable, int id);
   bool SetReceiveAbsoluteSendTimeStatus(bool enable, int id);
+  bool SetReceiveVideoRotationStatus(bool enable, int id);
 
   void StartReceive();
   void StopReceive();
@@ -123,6 +124,7 @@ class ViEReceiver : public RtpData {
   uint8_t restored_packet_[kViEMaxMtu];
   bool restored_packet_in_use_;
   bool receiving_ast_enabled_;
+  bool receiving_cvo_enabled_;
   int64_t last_packet_log_ms_;
 };
 

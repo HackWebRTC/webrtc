@@ -284,8 +284,6 @@ class RTPSender : public RTPSenderInterface {
   void SetRtxRtpState(const RtpState& rtp_state);
   RtpState GetRtxRtpState() const;
 
-  static uint8_t ConvertToCVOByte(VideoRotation rotation);
-
  protected:
   int32_t CheckPayloadType(int8_t payload_type, RtpVideoCodecTypes* video_type);
 

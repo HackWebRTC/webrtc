@@ -245,6 +245,14 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
                                                bool enable,
                                                int id) = 0;
 
+  virtual int SetSendVideoRotationStatus(int video_channel,
+                                         bool enable,
+                                         int id) = 0;
+
+  virtual int SetReceiveVideoRotationStatus(int video_channel,
+                                            bool enable,
+                                            int id) = 0;
+
   // Enables/disables RTCP Receiver Reference Time Report Block extension/
   // DLRR Report Block extension (RFC 3611).
   virtual int SetRtcpXrRrtrStatus(int video_channel, bool enable) = 0;

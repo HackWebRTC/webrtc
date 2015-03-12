@@ -131,6 +131,8 @@ class ViEChannel
   int SetSendAbsoluteSendTimeStatus(bool enable, int id);
   int SetReceiveAbsoluteSendTimeStatus(bool enable, int id);
   bool GetReceiveAbsoluteSendTimeStatus() const;
+  int SetSendVideoRotationStatus(bool enable, int id);
+  int SetReceiveVideoRotationStatus(bool enable, int id);
   void SetRtcpXrRrtrStatus(bool enable);
   void SetTransmissionSmoothingStatus(bool enable);
   void EnableTMMBR(bool enable);
@@ -526,6 +528,7 @@ class ViEChannel
   rtc::scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;
   int send_timestamp_extension_id_;
   int absolute_send_time_extension_id_;
+  int video_rotation_extension_id_;
 
   Transport* external_transport_;
 

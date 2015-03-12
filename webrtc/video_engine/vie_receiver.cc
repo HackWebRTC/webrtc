@@ -16,6 +16,7 @@
 #include "webrtc/modules/rtp_rtcp/interface/fec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/interface/remote_ntp_time_estimator.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_receiver.h"
@@ -58,6 +59,7 @@ ViEReceiver::ViEReceiver(const int32_t channel_id,
       receiving_(false),
       restored_packet_in_use_(false),
       receiving_ast_enabled_(false),
+      receiving_cvo_enabled_(false),
       last_packet_log_ms_(-1) {
   assert(remote_bitrate_estimator);
 }
@@ -184,6 +186,22 @@ bool ViEReceiver::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
     receiving_ast_enabled_ = false;
     return rtp_header_parser_->DeregisterRtpHeaderExtension(
         kRtpExtensionAbsoluteSendTime);
+  }
+}
+
+bool ViEReceiver::SetReceiveVideoRotationStatus(bool enable, int id) {
+  if (enable) {
+    if (rtp_header_parser_->RegisterRtpHeaderExtension(
+            kRtpExtensionVideoRotation, id)) {
+      receiving_cvo_enabled_ = true;
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    receiving_cvo_enabled_ = false;
+    return rtp_header_parser_->DeregisterRtpHeaderExtension(
+        kRtpExtensionVideoRotation);
   }
 }
 
@@ -382,6 +400,11 @@ void ViEReceiver::NotifyReceiverOfFecPacket(const RTPHeader& header) {
     return;
   }
   rtp_header.type.Video.codec = payload_specific.Video.videoCodecType;
+  rtp_header.type.Video.rotation = kVideoRotation_0;
+  if (header.extension.hasVideoRotation) {
+    rtp_header.type.Video.rotation =
+        ConvertCVOByteToVideoRotation(header.extension.videoRotation);
+  }
   OnReceivedPayloadData(NULL, 0, &rtp_header);
 }
 

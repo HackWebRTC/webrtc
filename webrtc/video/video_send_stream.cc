@@ -144,6 +144,9 @@ VideoSendStream::VideoSendStream(
     } else if (extension == RtpExtension::kAbsSendTime) {
       if (rtp_rtcp_->SetSendAbsoluteSendTimeStatus(channel_, true, id) != 0)
         abort();
+    } else if (extension == RtpExtension::kVideoRotation) {
+      if (rtp_rtcp_->SetSendVideoRotationStatus(channel_, true, id) != 0)
+        abort();
     } else {
       abort();  // Unsupported extension.
     }

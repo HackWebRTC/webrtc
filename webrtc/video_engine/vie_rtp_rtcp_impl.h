@@ -90,6 +90,12 @@ class ViERTP_RTCPImpl
   virtual int SetReceiveAbsoluteSendTimeStatus(int video_channel,
                                                bool enable,
                                                int id);
+  virtual int SetSendVideoRotationStatus(int video_channel,
+                                         bool enable,
+                                         int id);
+  virtual int SetReceiveVideoRotationStatus(int video_channel,
+                                            bool enable,
+                                            int id);
   virtual int SetRtcpXrRrtrStatus(int video_channel, bool enable);
   virtual int SetTransmissionSmoothingStatus(int video_channel, bool enable);
   virtual int SetMinTransmitBitrate(int video_channel,

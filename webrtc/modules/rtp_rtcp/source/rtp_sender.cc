@@ -12,6 +12,7 @@
 
 #include <stdlib.h>  // srand
 
+#include "webrtc/modules/rtp_rtcp/interface/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -450,25 +451,6 @@ int32_t RTPSender::CheckPayloadType(int8_t payload_type,
     *video_type = payload->typeSpecific.Video.videoCodecType;
     video_->SetMaxConfiguredBitrateVideo(payload->typeSpecific.Video.maxRate);
   }
-  return 0;
-}
-
-// Please refer to http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/
-// 12.07.00_60/ts_126114v120700p.pdf Section 7.4.5. The rotation of a frame is
-// the clockwise angle the frames must be rotated in order to display the frames
-// correctly if the display is rotated in its natural orientation.
-uint8_t RTPSender::ConvertToCVOByte(VideoRotation rotation) {
-  switch (rotation) {
-    case kVideoRotation_0:
-      return 0;
-    case kVideoRotation_90:
-      return 1;
-    case kVideoRotation_180:
-      return 2;
-    case kVideoRotation_270:
-      return 3;
-  }
-  assert(false);
   return 0;
 }
 
@@ -1367,7 +1349,7 @@ uint8_t RTPSender::BuildVideoRotationExtension(uint8_t* data_buffer) const {
   size_t pos = 0;
   const uint8_t len = 0;
   data_buffer[pos++] = (id << 4) + len;
-  data_buffer[pos++] = ConvertToCVOByte(rotation_);
+  data_buffer[pos++] = ConvertVideoRotationToCVOByte(rotation_);
   data_buffer[pos++] = 0;  // padding
   data_buffer[pos++] = 0;  // padding
   assert(pos == kVideoRotationLength);
@@ -1508,7 +1490,7 @@ bool RTPSender::UpdateVideoRotation(uint8_t* rtp_packet,
     LOG(LS_WARNING) << "Failed to update CVO.";
     return false;
   }
-  rtp_packet[block_pos + 1] = ConvertToCVOByte(rotation);
+  rtp_packet[block_pos + 1] = ConvertVideoRotationToCVOByte(rotation);
   return true;
 }
 

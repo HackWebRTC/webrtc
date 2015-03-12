@@ -109,6 +109,11 @@ const int kRtpAbsoluteSenderTimeHeaderExtensionDefaultId = 3;
 const char kRtpAbsoluteSenderTimeHeaderExtension[] =
     "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
 
+const int kRtpVideoRotationHeaderExtensionDefaultId = 4;
+const char kRtpVideoRotationHeaderExtension[] = "urn:3gpp:video-orientation";
+const char kRtpVideoRotation6BitsHeaderExtensionForTesting[] =
+    "urn:3gpp:video-orientation:6";
+
 const int kNumDefaultUnsignalledVideoRecvStreams = 0;
 
 
