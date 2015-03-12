@@ -110,7 +110,7 @@ int32_t IncomingVideoStream::RenderFrame(const uint32_t stream_id,
 
   // Insert frame.
   CriticalSectionScoped csB(&buffer_critsect_);
-  if (render_buffers_.AddFrame(&video_frame) == 1)
+  if (render_buffers_.AddFrame(video_frame) == 1)
     deliver_buffer_event_.Set();
 
   return 0;
@@ -269,12 +269,9 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
       thread_critsect_.Leave();
       return false;
     }
-
-    I420VideoFrame* frame_to_render = NULL;
-
     // Get a new frame to render and the time for the frame after this one.
     buffer_critsect_.Enter();
-    frame_to_render = render_buffers_.FrameToRender();
+    I420VideoFrame frame_to_render = render_buffers_.FrameToRender();
     uint32_t wait_time = render_buffers_.TimeToNextFrameRelease();
     buffer_critsect_.Leave();
 
@@ -284,7 +281,7 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
     }
     deliver_buffer_event_.StartTimer(false, wait_time);
 
-    if (!frame_to_render) {
+    if (frame_to_render.IsZeroSize()) {
       if (render_callback_) {
         if (last_render_time_ms_ == 0 && !start_image_.IsZeroSize()) {
           // We have not rendered anything and have a start image.
@@ -308,25 +305,24 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
     if (external_callback_) {
       WEBRTC_TRACE(kTraceStream, kTraceVideoRenderer, module_id_,
                    "%s: executing external renderer callback to deliver frame",
-                   __FUNCTION__, frame_to_render->render_time_ms());
-      external_callback_->RenderFrame(stream_id_, *frame_to_render);
+                   __FUNCTION__, frame_to_render.render_time_ms());
+      external_callback_->RenderFrame(stream_id_, frame_to_render);
     } else {
       if (render_callback_) {
         WEBRTC_TRACE(kTraceStream, kTraceVideoRenderer, module_id_,
                      "%s: Render frame, time: ", __FUNCTION__,
-                     frame_to_render->render_time_ms());
-        render_callback_->RenderFrame(stream_id_, *frame_to_render);
+                     frame_to_render.render_time_ms());
+        render_callback_->RenderFrame(stream_id_, frame_to_render);
       }
     }
 
     // Release critsect before calling the module user.
     thread_critsect_.Leave();
 
-    // We're done with this frame, delete it.
-    if (frame_to_render) {
+    // We're done with this frame.
+    if (!frame_to_render.IsZeroSize()) {
       CriticalSectionScoped cs(&buffer_critsect_);
-      last_render_time_ms_= frame_to_render->render_time_ms();
-      render_buffers_.ReturnFrame(frame_to_render);
+      last_render_time_ms_= frame_to_render.render_time_ms();
     }
   }
   return true;
