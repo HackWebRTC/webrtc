@@ -27,7 +27,6 @@ ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
 sys.path.insert(1, os.path.join(ROOT_DIR, 'tools'))
 import find_depot_tools
 find_depot_tools.add_depot_tools_to_path()
-import rietveld
 from gclient import GClientKeywords
 from third_party import upload
 
@@ -45,18 +44,6 @@ USE_SHELL = sys.platform.startswith('win')
 WEBRTC_PATH = 'third_party/webrtc'
 LIBJINGLE_PATH = 'third_party/libjingle/source/talk'
 LIBJINGLE_README = 'third_party/libjingle/README.chromium'
-
-# Result codes from build/third_party/buildbot_8_4p1/buildbot/status/results.py
-# plus the -1 code which is used when there's no result yet.
-TRYJOB_STATUS = {
-  -1: 'RUNNING',
-  0: 'SUCCESS',
-  1: 'WARNINGS',
-  2: 'FAILURE',
-  3: 'SKIPPED',
-  4: 'EXCEPTION',
-  5: 'RETRY',
-}
 
 CommitInfo = collections.namedtuple('CommitInfo', ['svn_revision',
                                                    'git_commit',
@@ -103,40 +90,6 @@ def _ParseDepsDict(deps_content):
   return local_scope
 
 
-def _PrintTrybotStatus(issue, rietveld_server):
-  """Prints the status of all trybots for the specified issue.
-
-  Returns:
-    True if number of trybots > 0 and all are green. False otherwise.
-  """
-  assert type(issue) is int
-
-  remote = rietveld.Rietveld('https://' + rietveld_server, None, None)
-
-  # Get patches for the issue so we can use the latest one.
-  data = remote.get_issue_properties(issue, messages=False)
-  patchsets = data['patchsets']
-
-  # Get trybot status for the latest patch set.
-  data = remote.get_patchset_properties(issue, patchsets[-1])
-
-  tryjob_results = data['try_job_results']
-  if len(tryjob_results) == 0:
-    print 'No trybots have yet been triggered for https://%s/%d' % (
-        rietveld_server, issue)
-    return False
-
-  status_to_name = {}
-  for trybot_result in tryjob_results:
-    status = TRYJOB_STATUS.get(trybot_result['result'], 'UNKNOWN')
-    status_to_name.setdefault(status, [])
-    status_to_name[status].append(trybot_result['builder'])
-
-  # Print these to stdout instead of logging since they will be parsed.
-  print ('Status for https://%s/%d:' % (rietveld_server, issue))
-  for status,name_list in status_to_name.iteritems():
-    print '%s: %s' % (status, ','.join(sorted(name_list)))
-
 
 def _GenerateCLDescription(webrtc_current, libjingle_current,
                            webrtc_new, libjingle_new):
@@ -169,6 +122,7 @@ def _GenerateCLDescription(webrtc_current, libjingle_current,
   if libjingle_str:
     description += libjingle_str + '\n'
     description += 'Changes: %s\n' % libjingle_changelog_url
+  description += '\nTBR='
   return description
 
 
@@ -180,10 +134,11 @@ def _IsChromiumCheckout(checkout_dir):
 
 
 class AutoRoller(object):
-  def __init__(self, chromium_src, dry_run, ignore_checks):
+  def __init__(self, chromium_src, dry_run, ignore_checks, no_commit):
     self._chromium_src = chromium_src
     self._dry_run = dry_run
     self._ignore_checks = ignore_checks
+    self._no_commit = no_commit
 
   def _RunCommand(self, command, working_dir=None, ignore_exit_code=False,
                   extra_env=None):
@@ -253,7 +208,7 @@ class AutoRoller(object):
     if len(lines) == 0:
       return True
 
-    logging.error('Found dirty/unversioned files:\n%s', '\n'.join(lines))
+    logging.debug('Dirty/unversioned files:\n%s', '\n'.join(lines))
     return False
 
   def _UpdateReadmeFile(self, readme_path, new_revision):
@@ -304,8 +259,7 @@ class AutoRoller(object):
 
     if self._IsTreeClean():
       logging.debug('Tree is clean - no changes detected.')
-      self._RunCommand(['git', 'checkout', 'master'])
-      self._RunCommand(['git', 'branch', '-D', ROLL_BRANCH_NAME])
+      self._DeleteRollBranch()
     else:
       self._UpdateReadmeFile(LIBJINGLE_README, libjingle_latest.svn_revision)
       description = _GenerateCLDescription(webrtc_current, libjingle_current,
@@ -319,13 +273,20 @@ class AutoRoller(object):
       cl_info = self._GetCLInfo()
       logging.debug('Issue: %d URL: %s', cl_info.issue, cl_info.url)
 
-      if not self._dry_run:
-        logging.debug('Starting try jobs...')
-        self._RunCommand(['git', 'cl', 'try'])
-        logging.debug('Change in progress. Monitor here:\n%s', cl_info.url)
+      if not self._dry_run and not self._no_commit:
+        logging.debug('Sending the CL to the CQ...')
+        self._RunCommand(['git', 'cl', 'set_commit'])
+        logging.debug('Sent the CL to the CQ. Monitor here:\n%s', cl_info.url)
+        self._DeleteRollBranch()
 
     # TODO(kjellander): Checkout masters/previous branches again.
     return 0
+
+  def _DeleteRollBranch(self):
+     self._RunCommand(['git', 'checkout', 'master'])
+     self._RunCommand(['git', 'branch', '-D', ROLL_BRANCH_NAME])
+     logging.debug('Deleted the local roll branch (%s)', ROLL_BRANCH_NAME)
+
 
   def _GetBranches(self):
     """Returns a tuple of active,branches.
@@ -360,49 +321,6 @@ class AutoRoller(object):
       self._RunCommand(['git', 'branch', '-D', ROLL_BRANCH_NAME])
     return 0
 
-  def Commit(self):
-    def PresubmitPassed(presubmit):
-      return presubmit.find('** Presubmit ERRORS **') == -1
-
-    # First phase of two.  Run the presubmit step for both repos.
-    presubmit_passed = True
-    active_branch, branches = self._GetBranches()
-    if ROLL_BRANCH_NAME in branches and presubmit_passed:
-      self._RunCommand(['git', 'checkout', ROLL_BRANCH_NAME])
-      presubmit = self._RunCommand(['git', 'cl', 'presubmit'])
-      presubmit_passed = PresubmitPassed(presubmit)
-      if not presubmit_passed:
-        logging.error('Presubmit errors\n%s', presubmit)
-      self._RunCommand(['git', 'checkout', active_branch])
-
-    if not presubmit_passed:
-      return -1
-
-    # Phase two, we've passed the presubmit test, so let's commit.
-
-    active_branch, branches = self._GetBranches()
-    if active_branch == ROLL_BRANCH_NAME:
-      active_branch = 'master'
-    if ROLL_BRANCH_NAME in branches and not self._dry_run:
-      print 'Committing change.'
-      self._RunCommand(['git', 'checkout', ROLL_BRANCH_NAME])
-      self._RunCommand(['git', 'rebase', 'master'])
-      self._RunCommand(['git', 'cl', 'land', '-f'])
-      # TODO(tommi): Verify that the issue was successfully closed.
-      self._RunCommand(['git', 'checkout', active_branch])
-      self._RunCommand(['git', 'branch', '-D', ROLL_BRANCH_NAME])
-
-    return 0
-
-  def Status(self):
-    print '\n========== TRYJOBS STATUS =========='
-    active_branch, _ = self._GetBranches()
-    if active_branch != ROLL_BRANCH_NAME:
-      self._RunCommand(['git', 'checkout', ROLL_BRANCH_NAME])
-    cl_info = self._GetCLInfo()
-    _PrintTrybotStatus(cl_info.issue, cl_info.rietveld_server)
-    return 0
-
 
 def main():
   if sys.platform in ('win32', 'cygwin'):
@@ -418,12 +336,9 @@ def main():
     help=('Aborts a previously prepared roll. '
           'Closes any associated issues and deletes the roll branches'),
     action='store_true')
-  parser.add_argument('--commit',
-    help=('Commits a prepared roll (that\'s assumed to be green). '
-          'Closes any associated issues and deletes the roll branches'),
-    action='store_true')
-  parser.add_argument('--status',
-    help='Display tryjob status for a previously created roll.',
+  parser.add_argument('--no-commit',
+    help=('Don\'t send the CL to the CQ. This is useful if additional changes '
+          'are needed to the CL (like for API changes).'),
     action='store_true')
   parser.add_argument('--dry-run', action='store_true', default=False,
       help='Create branches and CLs but doesn\'t send tryjobs or commit.')
@@ -457,13 +372,9 @@ def main():
       return -2
 
   autoroller = AutoRoller(args.chromium_checkout, args.dry_run,
-                          args.ignore_checks)
+                          args.ignore_checks, args.no_commit)
   if args.abort:
     return autoroller.Abort()
-  elif args.commit:
-    return autoroller.Commit()
-  elif args.status:
-    return autoroller.Status()
   else:
     return autoroller.PrepareRoll()
 
