@@ -19,6 +19,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 import urllib2
 
 
@@ -27,6 +28,7 @@ ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
 sys.path.insert(1, os.path.join(ROOT_DIR, 'tools'))
 import find_depot_tools
 find_depot_tools.add_depot_tools_to_path()
+import rietveld
 from gclient import GClientKeywords
 from third_party import upload
 
@@ -38,12 +40,27 @@ GIT_SVN_ID_RE = re.compile('^Cr-Original-Commit-Position: .*#([0-9]+).*$')
 CL_ISSUE_RE = re.compile('^Issue number: ([0-9]+) \((.*)\)$')
 RIETVELD_URL_RE = re.compile('^https?://(.*)/(.*)')
 ROLL_BRANCH_NAME = 'special_webrtc_roll_branch'
+TRYJOB_STATUS_SLEEP_SECONDS = 30
 
 # Use a shell for subcommands on Windows to get a PATH search.
 USE_SHELL = sys.platform.startswith('win')
 WEBRTC_PATH = 'third_party/webrtc'
 LIBJINGLE_PATH = 'third_party/libjingle/source/talk'
 LIBJINGLE_README = 'third_party/libjingle/README.chromium'
+
+# Result codes from build/third_party/buildbot_8_4p1/buildbot/status/results.py
+# plus the -1 code which is used when there's no result yet.
+TRYJOB_STATUS = {
+  -1: 'RUNNING',
+  0: 'SUCCESS',
+  1: 'WARNINGS',
+  2: 'FAILURE',
+  3: 'SKIPPED',
+  4: 'EXCEPTION',
+  5: 'RETRY',
+}
+SUCCESS_STATUS = (0, 1, 3)
+FAILURE_STATUS = (2, 4, 5)
 
 CommitInfo = collections.namedtuple('CommitInfo', ['svn_revision',
                                                    'git_commit',
@@ -89,6 +106,55 @@ def _ParseDepsDict(deps_content):
   exec(deps_content, global_scope, local_scope)
   return local_scope
 
+
+def _WaitForTrybots(issue, rietveld_server):
+  """Wait until all trybots have passed or at least one have failed.
+
+  Returns:
+    An exit code of 0 if all trybots passed or non-zero otherwise.
+  """
+  assert type(issue) is int
+  print 'Trybot status for https://%s/%d:' % (rietveld_server, issue)
+  remote = rietveld.Rietveld('https://' + rietveld_server, None, None)
+
+  attempt = 0
+  max_tries = 60*60/TRYJOB_STATUS_SLEEP_SECONDS # Max one hour
+  while attempt < max_tries:
+    # Get patches for the issue so we can use the latest one.
+    data = remote.get_issue_properties(issue, messages=False)
+    patchsets = data['patchsets']
+
+    # Get trybot status for the latest patch set.
+    data = remote.get_patchset_properties(issue, patchsets[-1])
+
+    tryjob_results = data['try_job_results']
+    if len(tryjob_results) == 0:
+      logging.debug('No trybots have yet been triggered for https://%s/%d' ,
+                    rietveld_server, issue)
+    else:
+      _PrintTrybotsStatus(tryjob_results)
+      if any(r['result'] in FAILURE_STATUS for r in tryjob_results):
+        logging.error('Found failing tryjobs (see above)')
+        return 1
+      if all(r['result'] in SUCCESS_STATUS for r in tryjob_results):
+        return 0
+
+    logging.debug('Waiting for %d seconds before next check...',
+                  TRYJOB_STATUS_SLEEP_SECONDS)
+    time.sleep(TRYJOB_STATUS_SLEEP_SECONDS)
+    attempt += 1
+
+
+def _PrintTrybotsStatus(tryjob_results):
+  status_to_name = {}
+  for trybot_result in tryjob_results:
+    status = TRYJOB_STATUS.get(trybot_result['result'], 'UNKNOWN')
+    status_to_name.setdefault(status, [])
+    status_to_name[status].append(trybot_result['builder'])
+
+  print '\n========== TRYJOBS STATUS =========='
+  for status,name_list in status_to_name.iteritems():
+    print '%s: %s' % (status, ','.join(sorted(name_list)))
 
 
 def _GenerateCLDescription(webrtc_current, libjingle_current,
@@ -276,8 +342,7 @@ class AutoRoller(object):
       if not self._dry_run and not self._no_commit:
         logging.debug('Sending the CL to the CQ...')
         self._RunCommand(['git', 'cl', 'set_commit'])
-        logging.debug('Sent the CL to the CQ. Monitor here:\n%s', cl_info.url)
-        self._DeleteRollBranch()
+        logging.debug('Sent the CL to the CQ. Monitor here: %s', cl_info.url)
 
     # TODO(kjellander): Checkout masters/previous branches again.
     return 0
@@ -321,6 +386,13 @@ class AutoRoller(object):
       self._RunCommand(['git', 'branch', '-D', ROLL_BRANCH_NAME])
     return 0
 
+  def WaitForTrybots(self):
+    active_branch, _ = self._GetBranches()
+    if active_branch != ROLL_BRANCH_NAME:
+      self._RunCommand(['git', 'checkout', ROLL_BRANCH_NAME])
+    cl_info = self._GetCLInfo()
+    return _WaitForTrybots(cl_info.issue, cl_info.rietveld_server)
+
 
 def main():
   if sys.platform in ('win32', 'cygwin'):
@@ -339,6 +411,12 @@ def main():
   parser.add_argument('--no-commit',
     help=('Don\'t send the CL to the CQ. This is useful if additional changes '
           'are needed to the CL (like for API changes).'),
+    action='store_true')
+  parser.add_argument('--wait-for-trybots',
+    help=('Waits until all trybots from a previously created roll are either '
+          'successful or at least one has failed. This is useful to be able to '
+          'continuously run this script but not initiating new rolls until a '
+          'previous one is known to have passed or failed.'),
     action='store_true')
   parser.add_argument('--dry-run', action='store_true', default=False,
       help='Create branches and CLs but doesn\'t send tryjobs or commit.')
@@ -375,6 +453,8 @@ def main():
                           args.ignore_checks, args.no_commit)
   if args.abort:
     return autoroller.Abort()
+  elif args.wait_for_trybots:
+    return autoroller.WaitForTrybots()
   else:
     return autoroller.PrepareRoll()
 
