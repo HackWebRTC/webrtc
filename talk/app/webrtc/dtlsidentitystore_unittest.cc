@@ -80,12 +80,10 @@ class MockDtlsIdentityRequestObserver :
 class DtlsIdentityStoreTest : public testing::Test {
  protected:
   DtlsIdentityStoreTest()
-      : worker_thread_(new rtc::Thread()),
-        store_(new DtlsIdentityStore(rtc::Thread::Current(),
-                                     worker_thread_.get())),
+      : store_(new DtlsIdentityStore(rtc::Thread::Current(),
+                                     rtc::Thread::Current())),
         observer_(
             new rtc::RefCountedObject<MockDtlsIdentityRequestObserver>()) {
-    CHECK(worker_thread_->Start());
     store_->Initialize();
   }
   ~DtlsIdentityStoreTest() {}
@@ -97,7 +95,6 @@ class DtlsIdentityStoreTest : public testing::Test {
     rtc::CleanupSSL();
   }
 
-  rtc::scoped_ptr<rtc::Thread> worker_thread_;
   rtc::scoped_ptr<DtlsIdentityStore> store_;
   rtc::scoped_refptr<MockDtlsIdentityRequestObserver> observer_;
 };
@@ -109,21 +106,4 @@ TEST_F(DtlsIdentityStoreTest, RequestIdentitySuccess) {
   EXPECT_TRUE_WAIT(observer_->LastRequestSucceeded(), kTimeoutMs);
 
   EXPECT_TRUE_WAIT(store_->HasFreeIdentityForTesting(), kTimeoutMs);
-
-  observer_->Reset();
-
-  // Verifies that the callback is async when a free identity is ready.
-  store_->RequestIdentity(observer_.get());
-  EXPECT_FALSE(observer_->call_back_called());
-  EXPECT_TRUE_WAIT(observer_->LastRequestSucceeded(), kTimeoutMs);
-}
-
-TEST_F(DtlsIdentityStoreTest, DeleteStoreEarlyNoCrash) {
-  EXPECT_FALSE(store_->HasFreeIdentityForTesting());
-
-  store_->RequestIdentity(observer_.get());
-  store_.reset();
-
-  worker_thread_->Stop();
-  EXPECT_FALSE(observer_->call_back_called());
 }
