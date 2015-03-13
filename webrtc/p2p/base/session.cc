@@ -137,28 +137,6 @@ void TransportProxy::AddUnsentCandidates(const Candidates& candidates) {
   }
 }
 
-bool TransportProxy::GetChannelNameFromComponent(
-    int component, std::string* channel_name) const {
-  const TransportChannelProxy* channel = GetChannelProxy(component);
-  if (channel == NULL) {
-    return false;
-  }
-
-  *channel_name = channel->name();
-  return true;
-}
-
-bool TransportProxy::GetComponentFromChannelName(
-    const std::string& channel_name, int* component) const {
-  const TransportChannelProxy* channel = GetChannelProxyByName(channel_name);
-  if (channel == NULL) {
-    return false;
-  }
-
-  *component = channel->component();
-  return true;
-}
-
 TransportChannelProxy* TransportProxy::GetChannelProxy(int component) const {
   ChannelMap::const_iterator iter = channels_.find(component);
   return (iter != channels_.end()) ? iter->second : NULL;

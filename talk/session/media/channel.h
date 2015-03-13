@@ -135,17 +135,6 @@ class BaseChannel
     srtp_filter_.set_signal_silent_time(silent_time);
   }
 
-  void set_content_name(const std::string& content_name) {
-    ASSERT(signaling_thread()->IsCurrent());
-    ASSERT(!writable_);
-    if (session_->state() != BaseSession::STATE_INIT) {
-      LOG(LS_ERROR) << "Content name for a channel can be changed only "
-                    << "when BaseSession is in STATE_INIT state.";
-      return;
-    }
-    content_name_ = content_name;
-  }
-
   template <class T>
   void RegisterSendSink(T* sink,
                         void (T::*OnPacket)(const void*, size_t, bool),
@@ -374,7 +363,7 @@ class BaseChannel
   std::vector<StreamParams> local_streams_;
   std::vector<StreamParams> remote_streams_;
 
-  std::string content_name_;
+  const std::string content_name_;
   bool rtcp_;
   TransportChannel* transport_channel_;
   TransportChannel* rtcp_transport_channel_;

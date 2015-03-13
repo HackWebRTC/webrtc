@@ -44,8 +44,7 @@ TransportWrapper;
 
 typedef std::map<int, TransportChannelProxy*> ChannelMap;
 
-class TransportProxy : public sigslot::has_slots<>,
-                       public CandidateTranslator {
+class TransportProxy : public sigslot::has_slots<> {
  public:
   TransportProxy(
       rtc::Thread* worker_thread,
@@ -111,12 +110,6 @@ class TransportProxy : public sigslot::has_slots<>,
                                      std::string* error_desc);
   void OnSignalingReady();
   bool OnRemoteCandidates(const Candidates& candidates, std::string* error);
-
-  // CandidateTranslator methods.
-  virtual bool GetChannelNameFromComponent(
-      int component, std::string* channel_name) const;
-  virtual bool GetComponentFromChannelName(
-      const std::string& channel_name, int* component) const;
 
   // Called when a transport signals that it has new candidates.
   void OnTransportCandidatesReady(cricket::Transport* transport,
