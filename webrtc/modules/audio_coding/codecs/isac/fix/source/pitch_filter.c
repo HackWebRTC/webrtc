@@ -219,7 +219,7 @@ void WebRtcIsacfix_PitchFilterGains(const int16_t* indatQ0,
 
         tmpW32 = 0;
         for (m = 0; m < PITCH_FRACORDER; m++) {
-          tmpW32 += WEBRTC_SPL_MUL_16_16(ubufQQ[pos3QQ + m], fracoeffQQ[m]);
+          tmpW32 += ubufQQ[pos3QQ + m] * fracoeffQQ[m];
         }
 
         // Subtract from input and update buffer.
@@ -228,7 +228,7 @@ void WebRtcIsacfix_PitchFilterGains(const int16_t* indatQ0,
         tmp2W32 = WEBRTC_SPL_MUL_16_32_RSFT14(indatQ0[ind], tmpW32);
         tmpW32 += 8192;
         tmpW16 = (int16_t)(tmpW32 >> 14);
-        tmpW32 = WEBRTC_SPL_MUL_16_16(tmpW16, tmpW16);
+        tmpW32 = tmpW16 * tmpW16;
 
         if ((tmp2W32 > 1073700000) || (csum1QQ > 1073700000) ||
             (tmpW32 > 1073700000) || (esumxQQ > 1073700000)) {  // 2^30

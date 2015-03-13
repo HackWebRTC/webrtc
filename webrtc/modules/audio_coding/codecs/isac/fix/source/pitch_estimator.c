@@ -87,9 +87,9 @@ static __inline void Intrp1DQ8(int32_t *x, int32_t *fx, int32_t *y, int32_t *fy)
     /* fy = 0.5 * t * (t-1) * fx[0] + (1-t*t) * fx[1] + 0.5 * t * (t+1) * fx[2]; */
 
     /* Part I: 0.5 * t * (t-1) * fx[0] */
-    tmp16_1=(int16_t)WEBRTC_SPL_MUL_16_16(t16,t16); /* Q8*Q8=Q16 */
+    tmp16_1 = (int16_t)(t16 * t16);  /* Q8*Q8=Q16 */
     tmp16_1 >>= 2;  /* Q16>>2 = Q14 */
-    t16 = (int16_t)WEBRTC_SPL_MUL_16_16(t16, 64);           /* Q8<<6 = Q14  */
+    t16 <<= 6;  /* Q8<<6 = Q14  */
     tmp16 = tmp16_1-t16;
     *fy = WEBRTC_SPL_MUL_16_32_RSFT15(tmp16, fx[0]); /* (Q14 * Q8 >>15)/2 = Q8 */
 
@@ -191,7 +191,7 @@ void WebRtcIsacfix_InitialPitch(const int16_t *in, /* Q0 */
 
 
   /* copy old values from state buffer */
-  memcpy(buf_dec16, State->dec_buffer16, WEBRTC_SPL_MUL_16_16(sizeof(int16_t), (PITCH_CORR_LEN2+PITCH_CORR_STEP2+PITCH_MAX_LAG/2-PITCH_FRAME_LEN/2+2)));
+  memcpy(buf_dec16, State->dec_buffer16, sizeof(State->dec_buffer16));
 
   /* decimation; put result after the old values */
   WebRtcIsacfix_DecimateAllpass32(in, State->decimator_state32, PITCH_FRAME_LEN,

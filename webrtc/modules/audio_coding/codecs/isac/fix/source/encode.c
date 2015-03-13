@@ -338,9 +338,9 @@ int WebRtcIsacfix_EncodeImpl(int16_t      *in,
 
       // we compare bytesLeftQ5 with ratioQ5[]*arithLenDFTByte;
       idx = 4;
-      idx += (bytesLeftQ5 >= WEBRTC_SPL_MUL_16_16(ratioQ5[idx], arithLenDFTByte))? 2:-2;
-      idx += (bytesLeftQ5 >= WEBRTC_SPL_MUL_16_16(ratioQ5[idx], arithLenDFTByte))? 1:-1;
-      idx += (bytesLeftQ5 >= WEBRTC_SPL_MUL_16_16(ratioQ5[idx], arithLenDFTByte))? 0:-1;
+      idx += (bytesLeftQ5 >= ratioQ5[idx] * arithLenDFTByte) ? 2 : -2;
+      idx += (bytesLeftQ5 >= ratioQ5[idx] * arithLenDFTByte) ? 1 : -1;
+      idx += (bytesLeftQ5 >= ratioQ5[idx] * arithLenDFTByte) ? 0 : -1;
     }
     else
     {

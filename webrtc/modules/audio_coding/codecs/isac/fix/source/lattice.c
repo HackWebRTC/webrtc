@@ -115,11 +115,11 @@ void WebRtcIsacfix_NormLatticeFilterMa(int16_t orderCoef,
 
   for (u=0;u<SUBFRAMES;u++)
   {
-    int32_t temp1 = WEBRTC_SPL_MUL_16_16(u, HALF_SUBFRAMELEN);
+    int32_t temp1 = u * HALF_SUBFRAMELEN;
 
     /* set the Direct Form coefficients */
-    temp2 = (int16_t)WEBRTC_SPL_MUL_16_16(u, orderCoef);
-    temp3 = (int16_t)WEBRTC_SPL_MUL_16_16(2, u)+lo_hi;
+    temp2 = (int16_t)(u * orderCoef);
+    temp3 = (int16_t)(2 * u + lo_hi);
 
     /* compute lattice filter coefficients */
     memcpy(sthQ15, &filt_coefQ15[temp2], orderCoef * sizeof(int16_t));
@@ -238,11 +238,11 @@ void WebRtcIsacfix_NormLatticeFilterAr(int16_t orderCoef,
 
   for (u=0;u<SUBFRAMES;u++)
   {
-    int32_t temp1 = WEBRTC_SPL_MUL_16_16(u, HALF_SUBFRAMELEN);
+    int32_t temp1 = u * HALF_SUBFRAMELEN;
 
     //set the denominator and numerator of the Direct Form
-    temp2 = (int16_t)WEBRTC_SPL_MUL_16_16(u, orderCoef);
-    temp3 = (int16_t)WEBRTC_SPL_MUL_16_16(2, u) + lo_hi;
+    temp2 = (int16_t)(u * orderCoef);
+    temp3 = (int16_t)(2 * u + lo_hi);
 
     for (ii=0; ii<orderCoef; ii++) {
       sthQ15[ii] = filt_coefQ15[temp2+ii];

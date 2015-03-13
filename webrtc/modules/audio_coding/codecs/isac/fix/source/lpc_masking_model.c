@@ -38,12 +38,13 @@ void WebRtcSpl_AToK_JSK(
   k16[useOrder-1] = a16[useOrder] << 4;  // Q11<<4 => Q15
 
   for (m=useOrder-1; m>0; m--) {
-    tmp_inv_denum32 = ((int32_t) 1073741823) - WEBRTC_SPL_MUL_16_16(k16[m], k16[m]); // (1 - k^2) in Q30
+    // (1 - k^2) in Q30
+    tmp_inv_denum32 = 1073741823 - k16[m] * k16[m];
     tmp_inv_denum16 = (int16_t)(tmp_inv_denum32 >> 15);  // (1 - k^2) in Q15.
 
     for (k=1; k<=m; k++) {
       tmp32b = WEBRTC_SPL_LSHIFT_W32((int32_t)a16[k], 16) -
-          WEBRTC_SPL_LSHIFT_W32(WEBRTC_SPL_MUL_16_16(k16[m], a16[m-k+1]), 1);
+        WEBRTC_SPL_LSHIFT_W32(k16[m] * a16[m - k + 1], 1);
 
       tmp32[k] = WebRtcSpl_DivW32W16(tmp32b, tmp_inv_denum16); //Q27/Q15 = Q12
     }
@@ -371,19 +372,19 @@ void WebRtcIsacfix_GetVars(const int16_t *input, const int16_t *pitchGains_Q12,
   /* Calculate energies of first and second frame halfs */
   nrgQ[0]=0;
   for (k = QLOOKAHEAD/2; k < (FRAMESAMPLES/4 + QLOOKAHEAD) / 2; k++) {
-    nrgQ[0] +=WEBRTC_SPL_MUL_16_16(input[k],input[k]);
+    nrgQ[0] += (uint32_t)(input[k] * input[k]);
   }
   nrgQ[1]=0;
   for ( ; k < (FRAMESAMPLES/2 + QLOOKAHEAD) / 2; k++) {
-    nrgQ[1] +=WEBRTC_SPL_MUL_16_16(input[k],input[k]);
+    nrgQ[1] += (uint32_t)(input[k] * input[k]);
   }
   nrgQ[2]=0;
-  for ( ; k < (WEBRTC_SPL_MUL_16_16(FRAMESAMPLES, 3)/4 + QLOOKAHEAD) / 2; k++) {
-    nrgQ[2] +=WEBRTC_SPL_MUL_16_16(input[k],input[k]);
+  for ( ; k < (FRAMESAMPLES * 3 / 4 + QLOOKAHEAD) / 2; k++) {
+    nrgQ[2] += (uint32_t)(input[k] * input[k]);
   }
   nrgQ[3]=0;
   for ( ; k < (FRAMESAMPLES + QLOOKAHEAD) / 2; k++) {
-    nrgQ[3] +=WEBRTC_SPL_MUL_16_16(input[k],input[k]);
+    nrgQ[3] += (uint32_t)(input[k] * input[k]);
   }
 
   for ( k=0; k<4; k++) {
@@ -482,7 +483,7 @@ int32_t WebRtcIsacfix_CalculateResidualEnergyC(int lpc_order,
        *    a_polynomial[j] * corr_coeffs[i] * a_polynomial[j - i] * 2;
        */
 
-      tmp32 = WEBRTC_SPL_MUL_16_16(a_polynomial[j], a_polynomial[j - i]);
+      tmp32 = a_polynomial[j] * a_polynomial[j - i];
                                    /* tmp32 in Q(q_val_polynomial * 2). */
       if (i != 0) {
         tmp32 <<= 1;
@@ -622,7 +623,7 @@ void WebRtcIsacfix_GetLpcCoef(int16_t *inLoQ0,
       DataHiQ6[pos1] = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(
           maskdata->DataBufferHiQ0[pos1], kWindowAutocorr[pos1], 15); // Q0*Q21>>15 = Q6
     }
-    pos2 = (int16_t)(WEBRTC_SPL_MUL_16_16(k, UPDATE)/2);
+    pos2 = (int16_t)(k * UPDATE / 2);
     for (n = 0; n < UPDATE/2; n++, pos1++) {
       maskdata->DataBufferLoQ0[pos1] = inLoQ0[QLOOKAHEAD + pos2];
       maskdata->DataBufferHiQ0[pos1] = inHiQ0[pos2++];
@@ -830,15 +831,15 @@ void WebRtcIsacfix_GetLpcCoef(int16_t *inLoQ0,
 
     /* bandwidth expansion */
     for (n = 1; n <= ORDERLO; n++) {
-      a_LOQ11[n] = (int16_t) ((WEBRTC_SPL_MUL_16_16(
-          kPolyVecLo[n-1], a_LOQ11[n]) + ((int32_t) (1 << 14))) >> 15);
+      a_LOQ11[n] = (int16_t)((kPolyVecLo[n - 1] * a_LOQ11[n] + (1 << 14)) >>
+          15);
     }
 
 
     polyHI[0] = a_HIQ12[0];
     for (n = 1; n <= ORDERHI; n++) {
-      a_HIQ12[n] = (int16_t) ((WEBRTC_SPL_MUL_16_16(
-          kPolyVecHi[n-1], a_HIQ12[n]) + ((int32_t) (1 << 14))) >> 15);
+      a_HIQ12[n] = (int16_t)(((int32_t)(kPolyVecHi[n - 1] * a_HIQ12[n]) +
+        (1 << 14)) >> 15);
       polyHI[n] = a_HIQ12[n];
     }
 

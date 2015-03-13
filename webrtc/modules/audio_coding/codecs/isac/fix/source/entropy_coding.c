@@ -140,7 +140,7 @@ static int32_t CalcExpN(int16_t x) {
     axFRAC = ax&0x00FF;
     exp16 = WEBRTC_SPL_LSHIFT_W32(1, axINT); //Q0
     axFRAC = axFRAC+256; //Q8
-    exp = WEBRTC_SPL_MUL_16_16(exp16, axFRAC); // Q0*Q8 = Q8
+    exp = exp16 * axFRAC;  // Q0*Q8 = Q8
     exp = WEBRTC_SPL_LSHIFT_W32(exp, 9); //Q17
   } else {
     //  ax=(int16_t)WEBRTC_SPL_MUL_16_16_RSFT(x, 23637+700, 14); //Q8
@@ -150,7 +150,7 @@ static int32_t CalcExpN(int16_t x) {
     axFRAC = 0x00FF - (ax&0x00FF);
     exp16 = (int16_t)(32768 >> axINT);  // Q15
     axFRAC = axFRAC+256; //Q8
-    exp = WEBRTC_SPL_MUL_16_16(exp16, axFRAC); // Q15*Q8 = Q23
+    exp = exp16 * axFRAC;  // Q15*Q8 = Q23
     exp >>= 6;  // Q17
   }
 
@@ -1132,18 +1132,14 @@ static int EstCodeLpcCoef(int32_t *LPCCoefQ17,
   posg = 0;
   for (j=0; j<SUBFRAMES; j++) {
     // Q21 = Q6 * Q15
-    sumQQ = WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg],
-        WebRtcIsacfix_kT1GainQ15[0][0]);
-    sumQQ += WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg + 1],
-        WebRtcIsacfix_kT1GainQ15[0][2]);
+    sumQQ = tmpcoeffs_gQ6[offsg] * WebRtcIsacfix_kT1GainQ15[0][0] +
+        tmpcoeffs_gQ6[offsg + 1] * WebRtcIsacfix_kT1GainQ15[0][2];
     tmpcoeffs2_gQ21[posg] = sumQQ;
     posg++;
 
     // Q21 = Q6 * Q15
-    sumQQ = WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg],
-        WebRtcIsacfix_kT1GainQ15[0][1]);
-    sumQQ += WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg + 1],
-        WebRtcIsacfix_kT1GainQ15[0][3]);
+    sumQQ = tmpcoeffs_gQ6[offsg] * WebRtcIsacfix_kT1GainQ15[0][1] +
+        tmpcoeffs_gQ6[offsg + 1] * WebRtcIsacfix_kT1GainQ15[0][3];
     tmpcoeffs2_gQ21[posg] = sumQQ;
     posg++;
 
@@ -1384,17 +1380,13 @@ int WebRtcIsacfix_EstCodeLpcGain(int32_t *gain_lo_hiQ17,
   posg = 0;
   for (j=0; j<SUBFRAMES; j++) {
       // Q21 = Q6 * Q15
-      sumQQ = WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[j * 2],
-                                   WebRtcIsacfix_kT1GainQ15[0][0]);
-      sumQQ += WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[j * 2 + 1],
-                                    WebRtcIsacfix_kT1GainQ15[0][2]);
+      sumQQ = tmpcoeffs_gQ6[j * 2] * WebRtcIsacfix_kT1GainQ15[0][0] +
+          tmpcoeffs_gQ6[j * 2 + 1] * WebRtcIsacfix_kT1GainQ15[0][2];
       tmpcoeffs2_gQ21[posg] = sumQQ;
       posg++;
 
-      sumQQ = WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[j * 2],
-                                   WebRtcIsacfix_kT1GainQ15[0][1]);
-      sumQQ += WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[j * 2 + 1],
-                                    WebRtcIsacfix_kT1GainQ15[0][3]);
+      sumQQ = tmpcoeffs_gQ6[j * 2] * WebRtcIsacfix_kT1GainQ15[0][1] +
+          tmpcoeffs_gQ6[j * 2 + 1] * WebRtcIsacfix_kT1GainQ15[0][3];
       tmpcoeffs2_gQ21[posg] = sumQQ;
       posg++;
   }
@@ -2015,17 +2007,13 @@ void WebRtcIsacfix_TranscodeLpcCoef(int32_t *gain_lo_hiQ17,
   /* left transform */
   for (j = 0, offsg = 0; j < SUBFRAMES; j++, offsg += 2) {
     // Q21 = Q6 * Q15
-    sumQQ = WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg],
-                                 WebRtcIsacfix_kT1GainQ15[0][0]);
-    sumQQ += WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg + 1],
-                                  WebRtcIsacfix_kT1GainQ15[0][2]);
+    sumQQ = tmpcoeffs_gQ6[offsg] * WebRtcIsacfix_kT1GainQ15[0][0] +
+        tmpcoeffs_gQ6[offsg + 1] * WebRtcIsacfix_kT1GainQ15[0][2];
     tmpcoeffs2_gQ21[offsg] = sumQQ;
 
     // Q21 = Q6 * Q15
-    sumQQ = WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg],
-                                 WebRtcIsacfix_kT1GainQ15[0][1]);
-    sumQQ += WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg + 1],
-                                  WebRtcIsacfix_kT1GainQ15[0][3]);
+    sumQQ = tmpcoeffs_gQ6[offsg] * WebRtcIsacfix_kT1GainQ15[0][1] +
+        tmpcoeffs_gQ6[offsg + 1] * WebRtcIsacfix_kT1GainQ15[0][3];
     tmpcoeffs2_gQ21[offsg + 1] = sumQQ;
   }
 

@@ -181,7 +181,7 @@ int16_t WebRtcIsacfix_DecodeImpl(int16_t       *signal_out16,
 
     for (k = 0; k < FRAMESAMPLES/2; k++)
     {
-      Vector_Word32_1[k] = (int32_t) WEBRTC_SPL_LSHIFT_W32(WEBRTC_SPL_MUL_16_16(Vector_Word16_2[k], gainQ13), 3); // Q25
+      Vector_Word32_1[k] = (Vector_Word16_2[k] * gainQ13) << 3;  // Q25
     }
 
 

@@ -99,7 +99,7 @@ int WebRtcIsacfix_AutocorrNeon(int32_t* __restrict r,
 
     prod_tail = 0;
     while (x_start < x_end1) {
-      prod_tail += WEBRTC_SPL_MUL_16_16(*x_start, *y_start);
+      prod_tail += *x_start * *y_start;
       ++x_start;
       ++y_start;
     }

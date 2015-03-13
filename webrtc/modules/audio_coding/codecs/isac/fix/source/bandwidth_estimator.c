@@ -243,7 +243,7 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
   bweStr->countRecPkts++;
 
   /* Calculate framesize in msec */
-  frameSizeSampl = WEBRTC_SPL_MUL_16_16((int16_t)SAMPLES_PER_MSEC, frameSize);
+  frameSizeSampl = SAMPLES_PER_MSEC * frameSize;
 
   /* Check that it's not one of the first 9 packets */
   if ( bweStr->countUpdates > 0 ) {
@@ -269,7 +269,7 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
 
         /* If received number of packets is more than 90% of expected (922 = 0.9 in Q10): */
         /* do the update, else not                                                        */
-        if(WEBRTC_SPL_LSHIFT_W32(bweStr->countRecPkts, 10)  > WEBRTC_SPL_MUL_16_16(922, numPktsExpected)) {
+        if ((int32_t)bweStr->countRecPkts << 10 > 922 * numPktsExpected) {
           /* Q4 chosen to approx dividing by 16 */
           msec = (arrivalTime - bweStr->lastReduction);
 
@@ -378,7 +378,7 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
             pksize + HEADER_SIZE);
 
         /* 8389 is  ~ 1/128000 in Q30 */
-        byteSecondsPerBit = WEBRTC_SPL_MUL_16_16(arrTimeDiff, 8389);
+        byteSecondsPerBit = (uint32_t)(arrTimeDiff * 8389);
 
         /* get upper N bits */
         tempUpper = WEBRTC_SPL_RSHIFT_U32(byteSecondsPerBit, 15);
