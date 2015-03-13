@@ -73,7 +73,8 @@ enum SinkType {
 
 class BaseChannel
     : public rtc::MessageHandler, public sigslot::has_slots<>,
-      public MediaChannel::NetworkInterface {
+      public MediaChannel::NetworkInterface,
+      public ConnectionStatsGetter {
  public:
   BaseChannel(rtc::Thread* thread, MediaEngineInterface* media_engine,
               MediaChannel* channel, BaseSession* session,
@@ -130,6 +131,8 @@ class BaseChannel
   // Monitoring
   void StartConnectionMonitor(int cms);
   void StopConnectionMonitor();
+  // For ConnectionStatsGetter, used by ConnectionMonitor
+  virtual bool GetConnectionStats(ConnectionInfos* infos) override;
 
   void set_srtp_signal_silent_time(uint32 silent_time) {
     srtp_filter_.set_signal_silent_time(silent_time);
@@ -339,7 +342,7 @@ class BaseChannel
   // Handled in derived classes
   // Get the SRTP ciphers to use for RTP media
   virtual void GetSrtpCiphers(std::vector<std::string>* ciphers) const = 0;
-  virtual void OnConnectionMonitorUpdate(SocketMonitor* monitor,
+  virtual void OnConnectionMonitorUpdate(ConnectionMonitor* monitor,
       const std::vector<ConnectionInfo>& infos) = 0;
 
   // Helper function for invoking bool-returning methods on the worker thread.
@@ -370,7 +373,7 @@ class BaseChannel
   SrtpFilter srtp_filter_;
   RtcpMuxFilter rtcp_mux_filter_;
   BundleFilter bundle_filter_;
-  rtc::scoped_ptr<SocketMonitor> socket_monitor_;
+  rtc::scoped_ptr<ConnectionMonitor> connection_monitor_;
   bool enabled_;
   bool writable_;
   bool rtp_ready_to_send_;
@@ -480,7 +483,7 @@ class VoiceChannel : public BaseChannel {
   virtual void OnMessage(rtc::Message* pmsg);
   virtual void GetSrtpCiphers(std::vector<std::string>* ciphers) const;
   virtual void OnConnectionMonitorUpdate(
-      SocketMonitor* monitor, const std::vector<ConnectionInfo>& infos);
+      ConnectionMonitor* monitor, const std::vector<ConnectionInfo>& infos);
   virtual void OnMediaMonitorUpdate(
       VoiceMediaChannel* media_channel, const VoiceMediaInfo& info);
   void OnAudioMonitorUpdate(AudioMonitor* monitor, const AudioInfo& info);
@@ -569,7 +572,7 @@ class VideoChannel : public BaseChannel {
   virtual void OnMessage(rtc::Message* pmsg);
   virtual void GetSrtpCiphers(std::vector<std::string>* ciphers) const;
   virtual void OnConnectionMonitorUpdate(
-      SocketMonitor* monitor, const std::vector<ConnectionInfo>& infos);
+      ConnectionMonitor* monitor, const std::vector<ConnectionInfo>& infos);
   virtual void OnMediaMonitorUpdate(
       VideoMediaChannel* media_channel, const VideoMediaInfo& info);
   virtual void OnScreencastWindowEvent(uint32 ssrc,
@@ -688,7 +691,7 @@ class DataChannel : public BaseChannel {
   virtual void OnMessage(rtc::Message* pmsg);
   virtual void GetSrtpCiphers(std::vector<std::string>* ciphers) const;
   virtual void OnConnectionMonitorUpdate(
-      SocketMonitor* monitor, const std::vector<ConnectionInfo>& infos);
+      ConnectionMonitor* monitor, const std::vector<ConnectionInfo>& infos);
   virtual void OnMediaMonitorUpdate(
       DataMediaChannel* media_channel, const DataMediaInfo& info);
   virtual bool ShouldSetupDtlsSrtp() const;

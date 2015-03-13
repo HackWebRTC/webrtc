@@ -43,6 +43,7 @@
 #include "webrtc/p2p/base/stunserver.h"
 #include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/p2p/base/testturnserver.h"
+#include "webrtc/p2p/base/transportchannel.h"
 #include "webrtc/p2p/client/basicportallocator.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/mediasession.h"

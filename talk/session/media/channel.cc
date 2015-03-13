@@ -278,19 +278,26 @@ bool BaseChannel::SetRemoteContent(const MediaContentDescription* content,
 }
 
 void BaseChannel::StartConnectionMonitor(int cms) {
-  socket_monitor_.reset(new SocketMonitor(transport_channel_,
-                                          worker_thread(),
-                                          rtc::Thread::Current()));
-  socket_monitor_->SignalUpdate.connect(
+  // We pass in the BaseChannel instead of the transport_channel_
+  // because if the transport_channel_ changes, the ConnectionMonitor
+  // would be pointing to the wrong TransportChannel.
+  connection_monitor_.reset(new ConnectionMonitor(
+      this, worker_thread(), rtc::Thread::Current()));
+  connection_monitor_->SignalUpdate.connect(
       this, &BaseChannel::OnConnectionMonitorUpdate);
-  socket_monitor_->Start(cms);
+  connection_monitor_->Start(cms);
 }
 
 void BaseChannel::StopConnectionMonitor() {
-  if (socket_monitor_) {
-    socket_monitor_->Stop();
-    socket_monitor_.reset();
+  if (connection_monitor_) {
+    connection_monitor_->Stop();
+    connection_monitor_.reset();
   }
+}
+
+bool BaseChannel::GetConnectionStats(ConnectionInfos* infos) {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+  return transport_channel_->GetStats(infos);
 }
 
 void BaseChannel::set_rtcp_transport_channel(TransportChannel* channel) {
@@ -1597,7 +1604,7 @@ void VoiceChannel::OnMessage(rtc::Message *pmsg) {
 }
 
 void VoiceChannel::OnConnectionMonitorUpdate(
-    SocketMonitor* monitor, const std::vector<ConnectionInfo>& infos) {
+    ConnectionMonitor* monitor, const std::vector<ConnectionInfo>& infos) {
   SignalConnectionMonitor(this, infos);
 }
 
@@ -2003,7 +2010,7 @@ void VideoChannel::OnMessage(rtc::Message *pmsg) {
 }
 
 void VideoChannel::OnConnectionMonitorUpdate(
-    SocketMonitor *monitor, const std::vector<ConnectionInfo> &infos) {
+    ConnectionMonitor* monitor, const std::vector<ConnectionInfo> &infos) {
   SignalConnectionMonitor(this, infos);
 }
 
@@ -2372,7 +2379,7 @@ void DataChannel::OnMessage(rtc::Message *pmsg) {
 }
 
 void DataChannel::OnConnectionMonitorUpdate(
-    SocketMonitor* monitor, const std::vector<ConnectionInfo>& infos) {
+    ConnectionMonitor* monitor, const std::vector<ConnectionInfo>& infos) {
   SignalConnectionMonitor(this, infos);
 }
 

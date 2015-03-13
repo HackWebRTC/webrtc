@@ -13,36 +13,44 @@
 
 #include <vector>
 
-#include "webrtc/p2p/base/transportchannel.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/p2p/base/transport.h"  // for ConnectionInfos
+
+// TODO(pthatcher): Move these to connectionmonitor.h and
+// connectionmonitor.cc, or just move them into channel.cc
 
 namespace cricket {
 
-class SocketMonitor : public rtc::MessageHandler,
-                      public sigslot::has_slots<> {
+class ConnectionStatsGetter {
  public:
-  SocketMonitor(TransportChannel* channel,
-                rtc::Thread* worker_thread,
-                rtc::Thread* monitor_thread);
-  ~SocketMonitor();
+  virtual ~ConnectionStatsGetter() {}
+  virtual bool GetConnectionStats(ConnectionInfos* infos) = 0;
+};
+
+class ConnectionMonitor : public rtc::MessageHandler,
+                          public sigslot::has_slots<> {
+public:
+  ConnectionMonitor(ConnectionStatsGetter* stats_getter,
+                    rtc::Thread* worker_thread,
+                    rtc::Thread* monitoring_thread);
+  ~ConnectionMonitor();
 
   void Start(int cms);
   void Stop();
 
-  rtc::Thread* monitor_thread() { return monitoring_thread_; }
-
-  sigslot::signal2<SocketMonitor*,
+  sigslot::signal2<ConnectionMonitor*,
                    const std::vector<ConnectionInfo>&> SignalUpdate;
 
  protected:
   void OnMessage(rtc::Message* message);
-  void PollSocket(bool poll);
+ private:
+  void PollConnectionStats_w();
 
   std::vector<ConnectionInfo> connection_infos_;
-  TransportChannel* channel_;
-  rtc::Thread* channel_thread_;
+  ConnectionStatsGetter* stats_getter_;
+  rtc::Thread* worker_thread_;
   rtc::Thread* monitoring_thread_;
   rtc::CriticalSection crit_;
   uint32 rate_;
