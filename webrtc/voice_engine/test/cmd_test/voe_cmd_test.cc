@@ -232,6 +232,7 @@ void RunTest(std::string out_path) {
   bool typing_detection = false;
   bool muted = false;
   bool opus_stereo = false;
+  bool opus_dtx = false;
   bool experimental_ns_enabled = false;
   bool debug_recording_started = false;
 
@@ -447,6 +448,7 @@ void RunTest(std::string out_path) {
       printf("%i. Toggle Opus stereo (Opus must be selected again to apply "
              "the setting) \n", option_index++);
       printf("%i. Set Opus maximum playback rate \n", option_index++);
+      printf("%i. Toggle Opus DTX \n", option_index++);
       printf("%i. Set bit rate (only take effect on codecs that allow the "
              "change) \n", option_index++);
       printf("%i. Toggle debug recording \n", option_index++);
@@ -773,6 +775,11 @@ void RunTest(std::string out_path) {
         ASSERT_EQ(1, scanf("%i", &max_playback_rate));
         res = codec->SetOpusMaxPlaybackRate(chan, max_playback_rate);
         VALIDATE;
+      } else if (option_selection == option_index++) {
+        opus_dtx = !opus_dtx;
+        res = codec->SetOpusDtx(chan, opus_dtx);
+        VALIDATE;
+        printf("Opus DTX %s.\n", opus_dtx ? "enabled" : "disabled");
       } else if (option_selection == option_index++) {
         res = codec->GetSendCodec(chan, cinst);
         VALIDATE;

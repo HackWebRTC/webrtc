@@ -192,6 +192,7 @@ class FakeWebRtcVoiceEngine
           vad(false),
           codec_fec(false),
           max_encoding_bandwidth(0),
+          opus_dtx(false),
           red(false),
           nack(false),
           media_processor_registered(false),
@@ -222,6 +223,7 @@ class FakeWebRtcVoiceEngine
     bool vad;
     bool codec_fec;
     int max_encoding_bandwidth;
+    bool opus_dtx;
     bool red;
     bool nack;
     bool media_processor_registered;
@@ -661,6 +663,16 @@ class FakeWebRtcVoiceEngine
       channels_[channel]->max_encoding_bandwidth = kOpusBandwidthSwb;
     else
       channels_[channel]->max_encoding_bandwidth = kOpusBandwidthFb;
+    return 0;
+  }
+
+  WEBRTC_FUNC(SetOpusDtx, (int channel, bool enable_dtx)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    if (_stricmp(channels_[channel]->send_codec.plname, "opus") != 0) {
+      // Return -1 if current send codec is not Opus.
+      return -1;
+    }
+    channels_[channel]->opus_dtx = enable_dtx;
     return 0;
   }
 

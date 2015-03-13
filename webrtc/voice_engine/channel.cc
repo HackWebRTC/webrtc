@@ -1565,6 +1565,19 @@ int Channel::SetOpusMaxPlaybackRate(int frequency_hz) {
   return 0;
 }
 
+int Channel::SetOpusDtx(bool enable_dtx) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
+               "Channel::SetOpusDtx(%d)", enable_dtx);
+  int ret = enable_dtx ? audio_coding_->EnableOpusDtx(true)
+                       : audio_coding_->DisableOpusDtx();
+  if (ret != 0) {
+    _engineStatisticsPtr->SetLastError(
+        VE_AUDIO_CODING_MODULE_ERROR, kTraceError, "SetOpusDtx() failed");
+    return -1;
+  }
+  return 0;
+}
+
 int32_t Channel::RegisterExternalTransport(Transport& transport)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),

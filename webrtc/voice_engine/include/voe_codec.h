@@ -117,6 +117,10 @@ public:
       return -1;
     }
 
+    // If send codec is Opus on a specified |channel|, set its DTX. Returns 0 if
+    // success, and -1 if failed.
+    virtual int SetOpusDtx(int channel, bool enable_dtx) = 0;
+
     // Don't use. To be removed.
     virtual int SetAMREncFormat(int channel, AmrMode mode) { return -1; }
     virtual int SetAMRDecFormat(int channel, AmrMode mode) { return -1; }

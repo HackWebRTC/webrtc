@@ -158,6 +158,30 @@ TEST_F(CodecTest, OpusMaxPlaybackRateCannotBeSetForNonOpus) {
   }
 }
 
+TEST_F(CodecTest, OpusDtxCanBeSetForOpus) {
+  for (int i = 0; i < voe_codec_->NumOfCodecs(); ++i) {
+    voe_codec_->GetCodec(i, codec_instance_);
+    if (_stricmp("opus", codec_instance_.plname)) {
+      continue;
+    }
+    voe_codec_->SetSendCodec(channel_, codec_instance_);
+    EXPECT_EQ(0, voe_codec_->SetOpusDtx(channel_, false));
+    EXPECT_EQ(0, voe_codec_->SetOpusDtx(channel_, true));
+  }
+}
+
+TEST_F(CodecTest, OpusDtxCannotBeSetForNonOpus) {
+  for (int i = 0; i < voe_codec_->NumOfCodecs(); ++i) {
+    voe_codec_->GetCodec(i, codec_instance_);
+    if (!_stricmp("opus", codec_instance_.plname)) {
+      continue;
+    }
+    voe_codec_->SetSendCodec(channel_, codec_instance_);
+    EXPECT_EQ(-1, voe_codec_->SetOpusDtx(channel_, false));
+    EXPECT_EQ(-1, voe_codec_->SetOpusDtx(channel_, true));
+  }
+}
+
 // TODO(xians, phoglund): Re-enable when issue 372 is resolved.
 TEST_F(CodecTest, DISABLED_ManualVerifySendCodecsForAllPacketSizes) {
   for (int i = 0; i < voe_codec_->NumOfCodecs(); ++i) {

@@ -56,6 +56,8 @@ public:
 
     virtual int SetOpusMaxPlaybackRate(int channel, int frequency_hz);
 
+    virtual int SetOpusDtx(int channel, bool enable_dtx);
+
 protected:
     VoECodecImpl(voe::SharedData* shared);
     virtual ~VoECodecImpl();
