@@ -22,19 +22,16 @@
 namespace webrtc {
 
 const int kIsacPayloadType = 103;
-const int kInvalidPayloadType = -1;
 const int kDefaultBitRate = 32000;
 
 template <typename T>
 AudioEncoderDecoderIsacT<T>::Config::Config()
     : payload_type(kIsacPayloadType),
-      red_payload_type(kInvalidPayloadType),
       sample_rate_hz(16000),
       frame_size_ms(30),
       bit_rate(kDefaultBitRate),
       max_bit_rate(-1),
-      max_payload_size_bytes(-1),
-      use_red(false) {
+      max_payload_size_bytes(-1) {
 }
 
 template <typename T>
@@ -42,8 +39,6 @@ bool AudioEncoderDecoderIsacT<T>::Config::IsOk() const {
   if (max_bit_rate < 32000 && max_bit_rate != -1)
     return false;
   if (max_payload_size_bytes < 120 && max_payload_size_bytes != -1)
-    return false;
-  if (use_red && red_payload_type == kInvalidPayloadType)
     return false;
   switch (sample_rate_hz) {
     case 16000:
@@ -70,14 +65,12 @@ bool AudioEncoderDecoderIsacT<T>::Config::IsOk() const {
 template <typename T>
 AudioEncoderDecoderIsacT<T>::ConfigAdaptive::ConfigAdaptive()
     : payload_type(kIsacPayloadType),
-      red_payload_type(kInvalidPayloadType),
       sample_rate_hz(16000),
       initial_frame_size_ms(30),
       initial_bit_rate(kDefaultBitRate),
       max_bit_rate(-1),
       enforce_frame_size(false),
-      max_payload_size_bytes(-1),
-      use_red(false) {
+      max_payload_size_bytes(-1) {
 }
 
 template <typename T>
@@ -85,8 +78,6 @@ bool AudioEncoderDecoderIsacT<T>::ConfigAdaptive::IsOk() const {
   if (max_bit_rate < 32000 && max_bit_rate != -1)
     return false;
   if (max_payload_size_bytes < 120 && max_payload_size_bytes != -1)
-    return false;
-  if (use_red && red_payload_type == kInvalidPayloadType)
     return false;
   switch (sample_rate_hz) {
     case 16000:
@@ -113,15 +104,10 @@ bool AudioEncoderDecoderIsacT<T>::ConfigAdaptive::IsOk() const {
 template <typename T>
 AudioEncoderDecoderIsacT<T>::AudioEncoderDecoderIsacT(const Config& config)
     : payload_type_(config.payload_type),
-      red_payload_type_(config.red_payload_type),
-      use_red_(config.use_red),
       state_lock_(CriticalSectionWrapper::CreateCriticalSection()),
       decoder_sample_rate_hz_(0),
       lock_(CriticalSectionWrapper::CreateCriticalSection()),
-      packet_in_progress_(false),
-      redundant_payload_(
-          use_red_ ? new uint8_t[kSufficientEncodeBufferSizeBytes] : nullptr),
-      redundant_length_bytes_(0) {
+      packet_in_progress_(false) {
   CHECK(config.IsOk());
   CHECK_EQ(0, T::Create(&isac_state_));
   CHECK_EQ(0, T::EncoderInit(isac_state_, 1));
@@ -144,15 +130,10 @@ template <typename T>
 AudioEncoderDecoderIsacT<T>::AudioEncoderDecoderIsacT(
     const ConfigAdaptive& config)
     : payload_type_(config.payload_type),
-      red_payload_type_(config.red_payload_type),
-      use_red_(config.use_red),
       state_lock_(CriticalSectionWrapper::CreateCriticalSection()),
       decoder_sample_rate_hz_(0),
       lock_(CriticalSectionWrapper::CreateCriticalSection()),
-      packet_in_progress_(false),
-      redundant_payload_(
-          use_red_ ? new uint8_t[kSufficientEncodeBufferSizeBytes] : nullptr),
-      redundant_length_bytes_(0) {
+      packet_in_progress_(false) {
   CHECK(config.IsOk());
   CHECK_EQ(0, T::Create(&isac_state_));
   CHECK_EQ(0, T::EncoderInit(isac_state_, 0));
@@ -234,45 +215,6 @@ void AudioEncoderDecoderIsacT<T>::EncodeInternal(uint32_t rtp_timestamp,
   packet_in_progress_ = false;
   info->encoded_timestamp = packet_timestamp_;
   info->payload_type = payload_type_;
-
-  if (!use_red_)
-    return;
-
-  if (redundant_length_bytes_ == 0) {
-    // Do not emit the first output frame when using redundant encoding.
-    info->encoded_bytes = 0;
-  } else {
-    // When a redundant payload from the last Encode call is available, the
-    // resulting payload consists of the primary encoding followed by the
-    // redundant encoding from last time.
-    const size_t primary_length = info->encoded_bytes;
-    memcpy(&encoded[primary_length], redundant_payload_.get(),
-           redundant_length_bytes_);
-    // The EncodedInfo struct |info| will have one root node and two leaves.
-    // |info| will be implicitly cast to an EncodedInfoLeaf struct, effectively
-    // discarding the (empty) vector of redundant information. This is
-    // intentional.
-    info->redundant.push_back(*info);
-    EncodedInfoLeaf secondary_info;
-    secondary_info.payload_type = info->payload_type;
-    secondary_info.encoded_bytes = redundant_length_bytes_;
-    secondary_info.encoded_timestamp = last_encoded_timestamp_;
-    info->redundant.push_back(secondary_info);
-    info->encoded_bytes +=
-        redundant_length_bytes_;  // Sum of primary and secondary.
-    DCHECK_NE(red_payload_type_, kInvalidPayloadType)
-        << "Config.red_payload_type must be set for "
-           "AudioEncoderDecoderIsacRed.";
-    info->payload_type = red_payload_type_;
-  }
-  {
-    CriticalSectionScoped cs(state_lock_.get());
-    // Call the encoder's method to get redundant encoding.
-    redundant_length_bytes_ =
-        T::GetRedPayload(isac_state_, redundant_payload_.get());
-  }
-  DCHECK_GE(redundant_length_bytes_, 0u);
-  last_encoded_timestamp_ = packet_timestamp_;
 }
 
 template <typename T>
@@ -292,21 +234,6 @@ int AudioEncoderDecoderIsacT<T>::Decode(const uint8_t* encoded,
   int16_t ret =
       T::Decode(isac_state_, encoded, static_cast<int16_t>(encoded_len),
                 decoded, &temp_type);
-  *speech_type = ConvertSpeechType(temp_type);
-  return ret;
-}
-
-template <typename T>
-int AudioEncoderDecoderIsacT<T>::DecodeRedundant(const uint8_t* encoded,
-                                                 size_t encoded_len,
-                                                 int /*sample_rate_hz*/,
-                                                 int16_t* decoded,
-                                                 SpeechType* speech_type) {
-  CriticalSectionScoped cs(state_lock_.get());
-  int16_t temp_type = 1;  // Default is speech.
-  int16_t ret =
-      T::DecodeRcu(isac_state_, encoded, static_cast<int16_t>(encoded_len),
-                   decoded, &temp_type);
   *speech_type = ConvertSpeechType(temp_type);
   return ret;
 }

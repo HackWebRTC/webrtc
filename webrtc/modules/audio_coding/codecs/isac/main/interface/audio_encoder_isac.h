@@ -48,13 +48,6 @@ struct IsacFloat {
     return WebRtcIsac_DecodePlc(inst, decoded, num_lost_frames);
   }
 
-  static inline int16_t DecodeRcu(instance_type* inst,
-                                  const uint8_t* encoded,
-                                  int16_t len,
-                                  int16_t* decoded,
-                                  int16_t* speech_type) {
-    return WebRtcIsac_DecodeRcu(inst, encoded, len, decoded, speech_type);
-  }
   static inline int16_t DecoderInit(instance_type* inst) {
     return WebRtcIsac_DecoderInit(inst);
   }
@@ -97,9 +90,6 @@ struct IsacFloat {
                                          uint32_t arr_ts) {
     return WebRtcIsac_UpdateBwEstimate(inst, encoded, packet_size,
                                        rtp_seq_number, send_ts, arr_ts);
-  }
-  static inline int16_t GetRedPayload(instance_type* inst, uint8_t* encoded) {
-    return WebRtcIsac_GetRedPayload(inst, encoded);
   }
   static inline int16_t SetMaxPayloadSize(instance_type* inst,
                                           int16_t max_payload_size_bytes) {

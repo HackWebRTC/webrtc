@@ -35,13 +35,11 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
     Config();
     bool IsOk() const;
     int payload_type;
-    int red_payload_type;
     int sample_rate_hz;
     int frame_size_ms;
     int bit_rate;  // Limit on the short-term average bit rate, in bits/second.
     int max_bit_rate;
     int max_payload_size_bytes;
-    bool use_red;
   };
 
   // For constructing an encoder in channel-adaptive mode. Allowed combinations
@@ -54,14 +52,12 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
     ConfigAdaptive();
     bool IsOk() const;
     int payload_type;
-    int red_payload_type;
     int sample_rate_hz;
     int initial_frame_size_ms;
     int initial_bit_rate;
     int max_bit_rate;
     bool enforce_frame_size;  // Prevent adaptive changes to the frame size?
     int max_payload_size_bytes;
-    bool use_red;
   };
 
   explicit AudioEncoderDecoderIsacT(const Config& config);
@@ -81,11 +77,6 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
              int sample_rate_hz,
              int16_t* decoded,
              SpeechType* speech_type) override;
-  int DecodeRedundant(const uint8_t* encoded,
-                      size_t encoded_len,
-                      int sample_rate_hz,
-                      int16_t* decoded,
-                      SpeechType* speech_type) override;
   bool HasDecodePlc() const override;
   int DecodePlc(int num_frames, int16_t* decoded) override;
   int Init() override;
@@ -110,8 +101,6 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
   static const size_t kSufficientEncodeBufferSizeBytes = 400;
 
   const int payload_type_;
-  const int red_payload_type_;
-  const bool use_red_;
 
   // iSAC encoder/decoder state, guarded by a mutex to ensure that encode calls
   // from one thread won't clash with decode calls from another thread.
@@ -133,10 +122,6 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
 
   // Timestamp of the previously encoded packet.
   uint32_t last_encoded_timestamp_ GUARDED_BY(lock_);
-
-  // Redundant encoding from last time.
-  const rtc::scoped_ptr<uint8_t[]> redundant_payload_ GUARDED_BY(lock_);
-  size_t redundant_length_bytes_ GUARDED_BY(lock_);
 
   DISALLOW_COPY_AND_ASSIGN(AudioEncoderDecoderIsacT);
 };

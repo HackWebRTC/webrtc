@@ -261,7 +261,6 @@ int16_t ACMGenericCodec::InitEncoder(WebRtcACMCodecParams* codec_params,
 
 void ACMGenericCodec::ResetAudioEncoder() {
   const CodecInst& codec_inst = acm_codec_params_.codec_inst;
-  bool using_codec_internal_red = false;
   if (!STR_CASE_CMP(codec_inst.plname, "PCMU")) {
     AudioEncoderPcmU::Config config;
     config.num_channels = codec_inst.channels;
@@ -344,7 +343,6 @@ void ACMGenericCodec::ResetAudioEncoder() {
 #ifdef WEBRTC_CODEC_ISAC
   } else if (!STR_CASE_CMP(codec_inst.plname, "ISAC")) {
     is_isac_ = true;
-    using_codec_internal_red = copy_red_enabled_;
     AudioEncoderDecoderIsac* enc_dec;
     if (codec_inst.rate == -1) {
       // Adaptive mode.
@@ -355,10 +353,6 @@ void ACMGenericCodec::ResetAudioEncoder() {
       config.max_payload_size_bytes = max_payload_size_bytes_;
       config.max_bit_rate = max_rate_bps_;
       config.payload_type = codec_inst.pltype;
-      if (copy_red_enabled_) {
-        config.red_payload_type = red_payload_type_;
-        config.use_red = true;
-      }
       enc_dec = new AudioEncoderDecoderIsac(config);
     } else {
       // Channel independent mode.
@@ -370,10 +364,6 @@ void ACMGenericCodec::ResetAudioEncoder() {
       config.max_payload_size_bytes = max_payload_size_bytes_;
       config.max_bit_rate = max_rate_bps_;
       config.payload_type = codec_inst.pltype;
-      if (copy_red_enabled_) {
-        config.red_payload_type = red_payload_type_;
-        config.use_red = true;
-      }
       enc_dec = new AudioEncoderDecoderIsac(config);
     }
     audio_encoder_.reset(enc_dec);
@@ -388,7 +378,7 @@ void ACMGenericCodec::ResetAudioEncoder() {
   encoder_ = audio_encoder_.get();
 
   // Attach RED if needed.
-  if (copy_red_enabled_ && !using_codec_internal_red) {
+  if (copy_red_enabled_) {
     CHECK_NE(red_payload_type_, kInvalidPayloadType);
     AudioEncoderCopyRed::Config config;
     config.payload_type = red_payload_type_;
