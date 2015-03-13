@@ -40,6 +40,7 @@ import org.appspot.apprtc.util.LooperExecutor;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
+import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
 import org.webrtc.VideoRenderer;
@@ -120,6 +121,17 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
         throws InterruptedException {
       doneRendering.await(timeoutMs, TimeUnit.MILLISECONDS);
       return (doneRendering.getCount() <= 0);
+    }
+  }
+
+  // Test instance of the PeerConnectionClient class that overrides the options
+  // for the factory so we can run the test without an Internet connection.
+  class TestPeerConnectionClient extends PeerConnectionClient {
+    protected void configureFactory(PeerConnectionFactory factory) {
+      PeerConnectionFactory.Options options =
+          new PeerConnectionFactory.Options();
+      options.networkIgnoreMask = 0;
+      factory.setOptions(options);
     }
   }
 
@@ -259,7 +271,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
             0, 0, 0, 0, videoCodec, true, // video codec parameters.
             0, "OPUS", true); // audio codec parameters.
 
-    PeerConnectionClient client = new PeerConnectionClient();
+    PeerConnectionClient client = new TestPeerConnectionClient();
     client.createPeerConnectionFactory(
         getInstrumentation().getContext(), null,
         peerConnectionParameters, this);

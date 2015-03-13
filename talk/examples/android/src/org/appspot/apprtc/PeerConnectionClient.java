@@ -330,7 +330,14 @@ public class PeerConnectionClient {
       events.onPeerConnectionError("Failed to initializeAndroidGlobals");
     }
     factory = new PeerConnectionFactory();
+    configureFactory(factory);
     Log.d(TAG, "Peer connection factory created.");
+  }
+
+  /**
+   * Hook where tests can provide additional configuration for the factory.
+   */
+  protected void configureFactory(PeerConnectionFactory factory) {
   }
 
   private void createPeerConnectionInternal() {
