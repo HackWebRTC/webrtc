@@ -179,8 +179,8 @@
         ['rtc_use_openmax_dl==1', {
           'defines': ['WEBRTC_BEAMFORMER'],
           'sources': [
-            'beamformer/beamformer.cc',
-            'beamformer/beamformer.h',
+            'beamformer/nonlinear_beamformer.cc',
+            'beamformer/nonlinear_beamformer.h',
           ],
         }],
         ['target_arch=="ia32" or target_arch=="x64"', {

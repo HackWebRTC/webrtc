@@ -8,15 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/beamformer/mock_beamformer.h"
+#include "webrtc/modules/audio_processing/beamformer/mock_nonlinear_beamformer.h"
 
 #include <vector>
 
 namespace webrtc {
 
-MockBeamformer::MockBeamformer(const std::vector<Point>& array_geometry)
-    : Beamformer(array_geometry) {}
+MockNonlinearBeamformer::MockNonlinearBeamformer(
+    const std::vector<Point>& array_geometry)
+    : NonlinearBeamformer(array_geometry) {
+}
 
-MockBeamformer::~MockBeamformer() {}
+MockNonlinearBeamformer::~MockNonlinearBeamformer() {}
 
 }  // namespace webrtc

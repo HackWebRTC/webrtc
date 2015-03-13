@@ -10,10 +10,11 @@
 
 #define _USE_MATH_DEFINES
 
-#include "webrtc/modules/audio_processing/beamformer/beamformer.h"
+#include "webrtc/modules/audio_processing/beamformer/nonlinear_beamformer.h"
 
 #include <algorithm>
 #include <cmath>
+#include <vector>
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/common_audio/window_generator.h"
@@ -174,13 +175,14 @@ std::vector<Point> GetCenteredArray(std::vector<Point> array_geometry) {
 
 }  // namespace
 
-Beamformer::Beamformer(const std::vector<Point>& array_geometry)
-    : num_input_channels_(array_geometry.size()),
+NonlinearBeamformer::NonlinearBeamformer(
+    const std::vector<Point>& array_geometry)
+  : num_input_channels_(array_geometry.size()),
       array_geometry_(GetCenteredArray(array_geometry)) {
   WindowGenerator::KaiserBesselDerived(kAlpha, kFftSize, window_);
 }
 
-void Beamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
+void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
   chunk_length_ = sample_rate_hz / (1000.f / chunk_size_ms);
   sample_rate_hz_ = sample_rate_hz;
   low_average_start_bin_ =
@@ -230,7 +232,7 @@ void Beamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
   }
 }
 
-void Beamformer::InitDelaySumMasks() {
+void NonlinearBeamformer::InitDelaySumMasks() {
   for (int f_ix = 0; f_ix < kNumFreqBins; ++f_ix) {
     delay_sum_masks_[f_ix].Resize(1, num_input_channels_);
     CovarianceMatrixGenerator::PhaseAlignmentMasks(f_ix,
@@ -250,7 +252,7 @@ void Beamformer::InitDelaySumMasks() {
   }
 }
 
-void Beamformer::InitTargetCovMats() {
+void NonlinearBeamformer::InitTargetCovMats() {
   for (int i = 0; i < kNumFreqBins; ++i) {
     target_cov_mats_[i].Resize(num_input_channels_, num_input_channels_);
     TransposedConjugatedProduct(delay_sum_masks_[i], &target_cov_mats_[i]);
@@ -259,7 +261,7 @@ void Beamformer::InitTargetCovMats() {
   }
 }
 
-void Beamformer::InitInterfCovMats() {
+void NonlinearBeamformer::InitInterfCovMats() {
   for (int i = 0; i < kNumFreqBins; ++i) {
     interf_cov_mats_[i].Resize(num_input_channels_, num_input_channels_);
     ComplexMatrixF uniform_cov_mat(num_input_channels_, num_input_channels_);
@@ -291,7 +293,7 @@ void Beamformer::InitInterfCovMats() {
   }
 }
 
-void Beamformer::ProcessChunk(const ChannelBuffer<float>* input,
+void NonlinearBeamformer::ProcessChunk(const ChannelBuffer<float>* input,
                               ChannelBuffer<float>* output) {
   DCHECK_EQ(input->num_channels(), num_input_channels_);
   DCHECK_EQ(input->num_frames_per_band(), chunk_length_);
@@ -321,7 +323,7 @@ void Beamformer::ProcessChunk(const ChannelBuffer<float>* input,
   }
 }
 
-void Beamformer::ProcessAudioBlock(const complex_f* const* input,
+void NonlinearBeamformer::ProcessAudioBlock(const complex_f* const* input,
                                    int num_input_channels,
                                    int num_freq_bins,
                                    int num_output_channels,
@@ -371,11 +373,12 @@ void Beamformer::ProcessAudioBlock(const complex_f* const* input,
   EstimateTargetPresence();
 }
 
-float Beamformer::CalculatePostfilterMask(const ComplexMatrixF& interf_cov_mat,
-                                          float rpsiw,
-                                          float ratio_rxiw_rxim,
-                                          float rmw_r,
-                                          float mask_threshold) {
+float NonlinearBeamformer::CalculatePostfilterMask(
+    const ComplexMatrixF& interf_cov_mat,
+    float rpsiw,
+    float ratio_rxiw_rxim,
+    float rmw_r,
+    float mask_threshold) {
   float rpsim = Norm(interf_cov_mat, eig_m_);
 
   // Find lambda.
@@ -394,7 +397,7 @@ float Beamformer::CalculatePostfilterMask(const ComplexMatrixF& interf_cov_mat,
   return mask;
 }
 
-void Beamformer::ApplyMasks(const complex_f* const* input,
+void NonlinearBeamformer::ApplyMasks(const complex_f* const* input,
                             complex_f* const* output) {
   complex_f* output_channel = output[0];
   for (int f_ix = 0; f_ix < kNumFreqBins; ++f_ix) {
@@ -410,14 +413,14 @@ void Beamformer::ApplyMasks(const complex_f* const* input,
   }
 }
 
-void Beamformer::ApplyMaskSmoothing() {
+void NonlinearBeamformer::ApplyMaskSmoothing() {
   for (int i = 0; i < kNumFreqBins; ++i) {
     postfilter_mask_[i] = kMaskSmoothAlpha * new_mask_[i] +
                           (1.f - kMaskSmoothAlpha) * postfilter_mask_[i];
   }
 }
 
-void Beamformer::ApplyLowFrequencyCorrection() {
+void NonlinearBeamformer::ApplyLowFrequencyCorrection() {
   float low_frequency_mask = 0.f;
   for (int i = low_average_start_bin_; i < low_average_end_bin_; ++i) {
     low_frequency_mask += postfilter_mask_[i];
@@ -430,7 +433,7 @@ void Beamformer::ApplyLowFrequencyCorrection() {
   }
 }
 
-void Beamformer::ApplyHighFrequencyCorrection() {
+void NonlinearBeamformer::ApplyHighFrequencyCorrection() {
   high_pass_postfilter_mask_ = 0.f;
   for (int i = high_average_start_bin_; i < high_average_end_bin_; ++i) {
     high_pass_postfilter_mask_ += postfilter_mask_[i];
@@ -443,7 +446,7 @@ void Beamformer::ApplyHighFrequencyCorrection() {
   }
 }
 
-void Beamformer::EstimateTargetPresence() {
+void NonlinearBeamformer::EstimateTargetPresence() {
   const int quantile = (1.f - kMaskQuantile) * high_average_end_bin_ +
                        kMaskQuantile * low_average_start_bin_;
   std::nth_element(new_mask_ + low_average_start_bin_,

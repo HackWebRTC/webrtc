@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_BEAMFORMER_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_BEAMFORMER_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_NONLINEAR_BEAMFORMER_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_NONLINEAR_BEAMFORMER_H_
+
+#include <vector>
 
 #include "webrtc/common_audio/lapped_transform.h"
 #include "webrtc/modules/audio_processing/beamformer/complex_matrix.h"
@@ -25,15 +27,14 @@ namespace webrtc {
 // Beamforming Postprocessor" by Bastiaan Kleijn.
 //
 // TODO: Target angle assumed to be 0. Parameterize target angle.
-class Beamformer : public LappedTransform::Callback {
+class NonlinearBeamformer : public LappedTransform::Callback {
  public:
   // At the moment it only accepts uniform linear microphone arrays. Using the
   // first microphone as a reference position [0, 0, 0] is a natural choice.
-  explicit Beamformer(const std::vector<Point>& array_geometry);
-  virtual ~Beamformer() {};
+  explicit NonlinearBeamformer(const std::vector<Point>& array_geometry);
 
   // Sample rate corresponds to the lower band.
-  // Needs to be called before the Beamformer can be used.
+  // Needs to be called before the NonlinearBeamformer can be used.
   virtual void Initialize(int chunk_size_ms, int sample_rate_hz);
 
   // Process one time-domain chunk of audio. The audio is expected to be split
@@ -160,4 +161,4 @@ class Beamformer : public LappedTransform::Callback {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_BEAMFORMER_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_NONLINEAR_BEAMFORMER_H_

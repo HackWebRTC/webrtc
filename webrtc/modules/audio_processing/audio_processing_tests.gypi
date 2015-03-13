@@ -88,18 +88,18 @@
     ['rtc_use_openmax_dl==1', {
       'targets': [
         {
-          'target_name': 'beamformer_test',
+          'target_name': 'nonlinear_beamformer_test',
           'type': 'executable',
           'dependencies': [
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             '<(webrtc_root)/modules/modules.gyp:audio_processing',
           ],
           'sources': [
-            'beamformer/beamformer_test.cc',
+            'beamformer/nonlinear_beamformer_test.cc',
             'beamformer/pcm_utils.cc',
             'beamformer/pcm_utils.h',
           ],
-        }, # beamformer_test
+        }, # nonlinear_beamformer_test
       ],
     }],
   ],

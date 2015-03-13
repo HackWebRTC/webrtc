@@ -9,9 +9,10 @@
  */
 
 #include <iostream>
+#include <vector>
 
 #include "gflags/gflags.h"
-#include "webrtc/modules/audio_processing/beamformer/beamformer.h"
+#include "webrtc/modules/audio_processing/beamformer/nonlinear_beamformer.h"
 #include "webrtc/modules/audio_processing/beamformer/pcm_utils.h"
 
 DEFINE_int32(sample_rate,
@@ -59,7 +60,7 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < FLAGS_num_input_channels; ++i) {
     array_geometry.push_back(webrtc::Point(i * FLAGS_mic_spacing, 0.f, 0.f));
   }
-  webrtc::Beamformer bf(array_geometry);
+  webrtc::NonlinearBeamformer bf(array_geometry);
   bf.Initialize(kChunkTimeMilliseconds, FLAGS_sample_rate);
   while (true) {
     size_t samples_read = webrtc::PcmReadToFloat(read_file,

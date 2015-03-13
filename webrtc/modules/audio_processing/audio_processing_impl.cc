@@ -17,7 +17,7 @@
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_processing/agc/agc_manager_direct.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/beamformer/beamformer.h"
+#include "webrtc/modules/audio_processing/beamformer/nonlinear_beamformer.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/common.h"
 #include "webrtc/modules/audio_processing/echo_cancellation_impl.h"
@@ -45,7 +45,7 @@
 
 #define RETURN_ON_ERR(expr)  \
   do {                       \
-    int err = expr;          \
+    int err = (expr);        \
     if (err != kNoError) {   \
       return err;            \
     }                        \
@@ -134,7 +134,7 @@ AudioProcessing* AudioProcessing::Create(const Config& config) {
 }
 
 AudioProcessing* AudioProcessing::Create(const Config& config,
-                                         Beamformer* beamformer) {
+                                         NonlinearBeamformer* beamformer) {
   AudioProcessingImpl* apm = new AudioProcessingImpl(config, beamformer);
   if (apm->Initialize() != kNoError) {
     delete apm;
@@ -148,7 +148,7 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config)
     : AudioProcessingImpl(config, nullptr) {}
 
 AudioProcessingImpl::AudioProcessingImpl(const Config& config,
-                                         Beamformer* beamformer)
+                                         NonlinearBeamformer* beamformer)
     : echo_cancellation_(NULL),
       echo_control_mobile_(NULL),
       gain_control_(NULL),
@@ -988,7 +988,7 @@ void AudioProcessingImpl::InitializeBeamformer() {
   if (beamformer_enabled_) {
 #ifdef WEBRTC_BEAMFORMER
     if (!beamformer_) {
-      beamformer_.reset(new Beamformer(array_geometry_));
+      beamformer_.reset(new NonlinearBeamformer(array_geometry_));
     }
     beamformer_->Initialize(kChunkSizeMs, split_rate_);
 #else

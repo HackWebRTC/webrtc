@@ -25,7 +25,7 @@ struct AecCore;
 namespace webrtc {
 
 class AudioFrame;
-class Beamformer;
+class NonlinearBeamformer;
 class EchoCancellation;
 class EchoControlMobile;
 class GainControl;
@@ -201,7 +201,8 @@ class AudioProcessing {
   // Allows passing in an optional configuration at create-time.
   static AudioProcessing* Create(const Config& config);
   // Only for testing.
-  static AudioProcessing* Create(const Config& config, Beamformer* beamformer);
+  static AudioProcessing* Create(const Config& config,
+                                 NonlinearBeamformer* beamformer);
   virtual ~AudioProcessing() {}
 
   // Initializes internal states, while retaining all user settings. This

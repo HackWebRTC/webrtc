@@ -14,14 +14,14 @@
 #include <vector>
 
 #include "testing/gmock/include/gmock/gmock.h"
-#include "webrtc/modules/audio_processing/beamformer/beamformer.h"
+#include "webrtc/modules/audio_processing/beamformer/nonlinear_beamformer.h"
 
 namespace webrtc {
 
-class MockBeamformer : public Beamformer {
+class MockNonlinearBeamformer : public NonlinearBeamformer {
  public:
-  explicit MockBeamformer(const std::vector<Point>& array_geometry);
-  ~MockBeamformer() override;
+  explicit MockNonlinearBeamformer(const std::vector<Point>& array_geometry);
+  ~MockNonlinearBeamformer() override;
 
   MOCK_METHOD2(Initialize, void(int chunk_size_ms, int sample_rate_hz));
   MOCK_METHOD2(ProcessChunk, void(const ChannelBuffer<float>* input,

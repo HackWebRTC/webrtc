@@ -23,7 +23,7 @@ namespace webrtc {
 
 class AgcManagerDirect;
 class AudioBuffer;
-class Beamformer;
+class NonlinearBeamformer;
 class CriticalSectionWrapper;
 class EchoCancellationImpl;
 class EchoControlMobileImpl;
@@ -87,7 +87,7 @@ class AudioProcessingImpl : public AudioProcessing {
  public:
   explicit AudioProcessingImpl(const Config& config);
   // Only for testing.
-  AudioProcessingImpl(const Config& config, Beamformer* beamformer);
+  AudioProcessingImpl(const Config& config, NonlinearBeamformer* beamformer);
   virtual ~AudioProcessingImpl();
 
   // AudioProcessing methods.
@@ -218,7 +218,7 @@ class AudioProcessingImpl : public AudioProcessing {
   bool transient_suppressor_enabled_;
   rtc::scoped_ptr<TransientSuppressor> transient_suppressor_;
   const bool beamformer_enabled_;
-  rtc::scoped_ptr<Beamformer> beamformer_;
+  rtc::scoped_ptr<NonlinearBeamformer> beamformer_;
   const std::vector<Point> array_geometry_;
 
   const bool supports_48kHz_;
