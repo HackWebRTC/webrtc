@@ -393,7 +393,6 @@ _windowEventHandlerRef( NULL),
 _currentViewBounds( ),
 _lastViewBounds( ),
 _renderingIsPaused( false),
-_threadID( )
 
 {
     //WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s");
@@ -511,7 +510,6 @@ _windowEventHandlerRef( NULL),
 _currentViewBounds( ),
 _lastViewBounds( ),
 _renderingIsPaused( false),
-_threadID( )
 {
     //WEBRTC_TRACE(kTraceDebug, "%s:%d Constructor", __FUNCTION__, __LINE__);
     //    _renderCritSec = CriticalSectionWrapper::CreateCriticalSection();
@@ -744,8 +742,7 @@ int VideoRenderAGL::Init()
         //WEBRTC_TRACE(kTraceError, "%s:%d Thread not created", __FUNCTION__, __LINE__);
         return -1;
     }
-    unsigned int threadId;
-    _screenUpdateThread->Start(threadId);
+    _screenUpdateThread->Start();
 
     // Start the event triggering the render process
     unsigned int monitorFreq = 60;
@@ -1881,7 +1878,7 @@ int32_t VideoRenderAGL::StartRender()
         //WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s:%d Rendering is paused. Restarting now", __FUNCTION__, __LINE__);
 
         // we already have the thread. Most likely StopRender() was called and they were paused
-        if(FALSE == _screenUpdateThread->Start(_threadID))
+        if(FALSE == _screenUpdateThread->Start())
         {
             //WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s:%d Failed to start screenUpdateThread", __FUNCTION__, __LINE__);
             UnlockAGLCntx();
@@ -1907,7 +1904,7 @@ int32_t VideoRenderAGL::StartRender()
         return -1;
     }
 
-    _screenUpdateThread->Start(_threadID);
+    _screenUpdateThread->Start();
     _screenUpdateEvent->StartTimer(true, 1000/MONITOR_FREQ);
 
     //WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s:%d Started screenUpdateThread", __FUNCTION__, __LINE__);

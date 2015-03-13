@@ -76,9 +76,8 @@ TbExternalTransport::TbExternalTransport(
       previous_drop_(false)
 {
     srand((int) webrtc::TickTime::MicrosecondTimestamp());
-    unsigned int tId = 0;
     memset(&network_parameters_, 0, sizeof(NetworkParameters));
-    _thread.Start(tId);
+    _thread.Start();
 }
 
 TbExternalTransport::~TbExternalTransport()

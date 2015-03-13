@@ -183,8 +183,7 @@ int32_t TestSenderReceiver::Start()
         }
     }
 
-    unsigned int tid;
-    _procThread->Start(tid);
+    _procThread->Start();
 
     return 0;
 

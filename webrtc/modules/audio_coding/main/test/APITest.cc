@@ -38,8 +38,7 @@ namespace webrtc {
 #define MAX_FILE_NAME_LENGTH_BYTE 500
 #define CHECK_THREAD_NULLITY(myThread, S)                                      \
   if(myThread != NULL) {                                                       \
-    unsigned int i;                                                            \
-    (myThread)->Start(i);                                                      \
+    (myThread)->Start();                                                       \
   } else {                                                                     \
     ADD_FAILURE() << S;                                                        \
   }

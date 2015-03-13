@@ -222,7 +222,6 @@ private:
     HANDLE                                  _hSetCaptureVolumeEvent;
 
     ThreadWrapper*                          _ptrThread;
-    uint32_t                                _threadID;
 
     CriticalSectionWrapper&                 _critSectCb;
 

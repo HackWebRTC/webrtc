@@ -338,8 +338,7 @@ int VoEStressTest::MultipleThreadsTest() {
   const char* threadName = "StressTest Extra API Thread";
   _ptrExtraApiThread = ThreadWrapper::CreateThread(RunExtraApi, this,
                                                    kNormalPriority, threadName);
-  unsigned int id(0);
-  VALIDATE_STRESS(!_ptrExtraApiThread->Start(id));
+  VALIDATE_STRESS(!_ptrExtraApiThread->Start());
 
   //       Some possible extensions include:
   //       Add more API calls to randomize

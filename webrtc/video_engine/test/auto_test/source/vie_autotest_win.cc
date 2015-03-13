@@ -86,8 +86,7 @@ int ViEAutoTestWindowManager::CreateWindows(AutoTestRect window1Size,
   memcpy(_hwnd1Title, window1Title, TITLE_LENGTH);
   memcpy(_hwnd2Title, window2Title, TITLE_LENGTH);
 
-  unsigned int tId = 0;
-  _eventThread.Start(tId);
+  _eventThread.Start();
 
   do {
     _crit.Enter();

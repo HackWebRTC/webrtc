@@ -520,8 +520,7 @@ bool OpenSlesOutput::StartCbThreads() {
                                         SL_PLAYSTATE_PLAYING),
       false);
 
-  unsigned int thread_id = 0;
-  if (!play_thread_->Start(thread_id)) {
+  if (!play_thread_->Start()) {
     assert(false);
     return false;
   }

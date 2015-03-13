@@ -187,8 +187,6 @@ private:
 
     ThreadWrapper* _ptrThreadRec;
     ThreadWrapper* _ptrThreadPlay;
-    uint32_t _recThreadID;
-    uint32_t _playThreadID;
 
     int32_t _id;
 

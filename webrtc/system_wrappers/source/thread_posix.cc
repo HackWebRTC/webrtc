@@ -62,18 +62,8 @@ int ConvertToSystemPriority(ThreadPriority priority, int min_prio,
   return low_prio;
 }
 
-struct ThreadPosix::InitParams {
-  InitParams(ThreadPosix* thread)
-      : me(thread), started(EventWrapper::Create()) {
-  }
-  ThreadPosix* me;
-  rtc::scoped_ptr<EventWrapper> started;
-};
-
-// static
 void* ThreadPosix::StartThread(void* param) {
-  auto params = static_cast<InitParams*>(param);
-  params->me->Run(params);
+  static_cast<ThreadPosix*>(param)->Run();
   return 0;
 }
 
@@ -82,9 +72,9 @@ ThreadPosix::ThreadPosix(ThreadRunFunction func, ThreadObj obj,
     : run_function_(func),
       obj_(obj),
       prio_(prio),
+      started_(false),
       stop_event_(true, false),
       name_(thread_name ? thread_name : "webrtc"),
-      thread_id_(0),
       thread_(0) {
   DCHECK(name_.length() < kThreadMaxNameLength);
 }
@@ -97,44 +87,34 @@ ThreadPosix::~ThreadPosix() {
   DCHECK(thread_checker_.CalledOnValidThread());
 }
 
-bool ThreadPosix::Start(unsigned int& thread_id) {
+// TODO(pbos): Make Start void, calling code really doesn't support failures
+// here.
+bool ThreadPosix::Start() {
   DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(!thread_id_) << "Thread already started?";
 
   ThreadAttributes attr;
   // Set the stack stack size to 1M.
   pthread_attr_setstacksize(&attr, 1024 * 1024);
 
-  InitParams params(this);
-  int result = pthread_create(&thread_, &attr, &StartThread, &params);
-  if (result != 0)
-    return false;
-
-  CHECK_EQ(kEventSignaled, params.started->Wait(WEBRTC_EVENT_INFINITE));
-  DCHECK_NE(thread_id_, 0);
-
-  thread_id = thread_id_;
-
+  CHECK_EQ(0, pthread_create(&thread_, &attr, &StartThread, this));
+  started_ = true;
   return true;
 }
 
 bool ThreadPosix::Stop() {
   DCHECK(thread_checker_.CalledOnValidThread());
-  if (!thread_id_)
+  if (!started_)
     return true;
 
   stop_event_.Set();
   CHECK_EQ(0, pthread_join(thread_, nullptr));
-  thread_id_ = 0;
+  started_ = false;
   stop_event_.Reset();
 
   return true;
 }
 
-void ThreadPosix::Run(ThreadPosix::InitParams* params) {
-  thread_id_ = rtc::CurrentThreadId();
-  params->started->Set();
-
+void ThreadPosix::Run() {
   if (!name_.empty()) {
     // Setting the thread name may fail (harmlessly) if running inside a
     // sandbox. Ignore failures if they happen.

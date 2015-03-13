@@ -22,7 +22,6 @@ AudioDeviceIOS::AudioDeviceIOS(const int32_t id)
     _ptrAudioBuffer(NULL),
     _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _captureWorkerThread(NULL),
-    _captureWorkerThreadId(0),
     _id(id),
     _auVoiceProcessing(NULL),
     _audioInterruptionObserver(NULL),
@@ -120,9 +119,7 @@ int32_t AudioDeviceIOS::Init() {
             return -1;
         }
 
-        unsigned int threadID(0);
-        bool res = _captureWorkerThread->Start(threadID);
-        _captureWorkerThreadId = static_cast<uint32_t>(threadID);
+        bool res = _captureWorkerThread->Start();
         WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice,
                      _id, "CaptureWorkerThread started (res=%d)", res);
     } else {

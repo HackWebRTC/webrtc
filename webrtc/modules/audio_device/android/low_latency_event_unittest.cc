@@ -45,8 +45,7 @@ class LowLatencyEventTest : public testing::Test {
 
  private:
   void Start() {
-    unsigned int thread_id = 0;
-    EXPECT_TRUE(process_thread_->Start(thread_id));
+    EXPECT_TRUE(process_thread_->Start());
   }
   void Stop() {
     terminated_ = true;

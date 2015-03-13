@@ -109,8 +109,6 @@ AudioDeviceMac::AudioDeviceMac(const int32_t id) :
     _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _stopEventRec(*EventWrapper::Create()),
     _stopEvent(*EventWrapper::Create()),
-    capture_worker_thread_id_(0),
-    render_worker_thread_id_(0),
     _id(id),
     _mixerManager(id),
     _inputDeviceIndex(0),
@@ -1760,7 +1758,7 @@ int32_t AudioDeviceMac::StartRecording()
         ThreadWrapper::CreateThread(RunCapture, this, kRealtimePriority,
                                     "CaptureWorkerThread"));
     DCHECK(capture_worker_thread_.get());
-    capture_worker_thread_->Start(capture_worker_thread_id_);
+    capture_worker_thread_->Start();
 
     OSStatus err = noErr;
     if (_twoDevices)
@@ -1914,7 +1912,7 @@ int32_t AudioDeviceMac::StartPlayout()
     render_worker_thread_.reset(
         ThreadWrapper::CreateThread(RunRender, this, kRealtimePriority,
                                     "RenderWorkerThread"));
-    render_worker_thread_->Start(render_worker_thread_id_);
+    render_worker_thread_->Start();
 
     if (_twoDevices || !_recording)
     {

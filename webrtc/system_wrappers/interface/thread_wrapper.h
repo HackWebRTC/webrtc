@@ -73,8 +73,7 @@ class ThreadWrapper {
   // Additionally, it tries to set thread priority according to the priority
   // from when CreateThread was called. However, failure to set priority will
   // not result in a false return value.
-  // TODO(tommi): Remove the id parameter.
-  virtual bool Start(unsigned int& id) = 0;
+  virtual bool Start() = 0;
 
   // Stops the spawned thread and waits for it to be reclaimed with a timeout
   // of two seconds. Will return false if the thread was not reclaimed.

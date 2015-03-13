@@ -146,8 +146,7 @@ class CondVarTest : public ::testing::Test {
   virtual void SetUp() {
     thread_ = ThreadWrapper::CreateThread(&WaitingRunFunction,
                                           &baton_);
-    unsigned int id = 42;
-    ASSERT_TRUE(thread_->Start(id));
+    ASSERT_TRUE(thread_->Start());
   }
 
   virtual void TearDown() {

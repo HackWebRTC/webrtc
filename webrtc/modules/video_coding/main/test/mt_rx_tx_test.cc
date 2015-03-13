@@ -275,8 +275,7 @@ int MTRxTxTest(CmdArgs& args)
 
     if (mainSenderThread != NULL)
     {
-        unsigned int tid;
-        mainSenderThread->Start(tid);
+        mainSenderThread->Start();
     }
     else
     {
@@ -286,8 +285,7 @@ int MTRxTxTest(CmdArgs& args)
 
     if (intSenderThread != NULL)
     {
-        unsigned int tid;
-        intSenderThread->Start(tid);
+        intSenderThread->Start();
     }
     else
     {
@@ -303,8 +301,7 @@ int MTRxTxTest(CmdArgs& args)
 
     if (processingThread != NULL)
     {
-        unsigned int tid;
-        processingThread->Start(tid);
+        processingThread->Start();
     }
     else
     {
@@ -314,8 +311,7 @@ int MTRxTxTest(CmdArgs& args)
 
     if (decodeThread != NULL)
     {
-        unsigned int tid;
-        decodeThread->Start(tid);
+        decodeThread->Start();
     }
     else
     {

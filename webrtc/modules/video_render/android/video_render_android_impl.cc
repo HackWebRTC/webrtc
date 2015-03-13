@@ -152,10 +152,9 @@ int32_t VideoRenderAndroid::StartRender() {
     return -1;
   }
 
-  unsigned int tId = 0;
-  if (_javaRenderThread->Start(tId))
+  if (_javaRenderThread->Start())
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id,
-                 "%s: thread started: %u", __FUNCTION__, tId);
+                 "%s: thread started", __FUNCTION__);
   else {
     WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                  "%s: Could not start send thread", __FUNCTION__);

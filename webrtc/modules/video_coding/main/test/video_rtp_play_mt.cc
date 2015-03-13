@@ -123,10 +123,9 @@ int RtpPlayMT(const CmdArgs& args) {
       return -1;
     }
 
-    unsigned int dummy_thread_id;
-    player_thread->Start(dummy_thread_id);
-    processing_thread->Start(dummy_thread_id);
-    decode_thread->Start(dummy_thread_id);
+    player_thread->Start();
+    processing_thread->Start();
+    decode_thread->Start();
 
     wait_event->Wait(kConfigMaxRuntimeMs);
 

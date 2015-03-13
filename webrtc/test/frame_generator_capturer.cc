@@ -96,8 +96,7 @@ bool FrameGeneratorCapturer::Init() {
                                             "FrameGeneratorCapturer"));
   if (thread_.get() == NULL)
     return false;
-  unsigned int thread_id;
-  if (!thread_->Start(thread_id)) {
+  if (!thread_->Start()) {
     thread_.reset();
     return false;
   }

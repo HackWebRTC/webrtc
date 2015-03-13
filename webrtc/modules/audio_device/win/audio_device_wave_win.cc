@@ -57,7 +57,6 @@ AudioDeviceWindowsWave::AudioDeviceWindowsWave(const int32_t id) :
     _hShutdownSetVolumeEvent(NULL),
     _hSetCaptureVolumeEvent(NULL),
     _ptrThread(NULL),
-    _threadID(0),
     _critSectCb(*CriticalSectionWrapper::CreateCriticalSection()),
     _id(id),
     _mixerManager(id),
@@ -242,8 +241,7 @@ int32_t AudioDeviceWindowsWave::Init()
         return -1;
     }
 
-    unsigned int threadID(0);
-    if (!_ptrThread->Start(threadID))
+    if (!_ptrThread->Start())
     {
         WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
                      "failed to start the audio thread");
@@ -251,7 +249,6 @@ int32_t AudioDeviceWindowsWave::Init()
         _ptrThread = NULL;
         return -1;
     }
-    _threadID = threadID;
 
     const bool periodic(true);
     if (!_timeEvent.StartTimer(periodic, TIMER_PERIOD_MS))

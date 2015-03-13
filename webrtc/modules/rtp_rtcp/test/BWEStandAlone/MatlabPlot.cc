@@ -907,9 +907,7 @@ _numPlots(0)
 
     _running = true;
 
-    unsigned int tid;
-    _plotThread->Start(tid);
-
+    _plotThread->Start();
 }
 
 MatlabEngine::~MatlabEngine()

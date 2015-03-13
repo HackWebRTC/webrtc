@@ -64,8 +64,7 @@ bool ViEFakeCamera::StartCameraInNewThread(
   // thread-safe.
   camera_thread_ = webrtc::ThreadWrapper::CreateThread(
       StreamVideoFileRepeatedlyIntoCaptureDevice, file_capture_device_);
-  unsigned int id;
-  camera_thread_->Start(id);
+  camera_thread_->Start();
 
   return true;
 }

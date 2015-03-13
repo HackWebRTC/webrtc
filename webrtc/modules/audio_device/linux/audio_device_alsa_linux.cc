@@ -66,8 +66,6 @@ AudioDeviceLinuxALSA::AudioDeviceLinuxALSA(const int32_t id) :
     _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _ptrThreadRec(NULL),
     _ptrThreadPlay(NULL),
-    _recThreadID(0),
-    _playThreadID(0),
     _id(id),
     _mixerManager(id),
     _inputDeviceIndex(0),
@@ -1401,8 +1399,7 @@ int32_t AudioDeviceLinuxALSA::StartRecording()
         return -1;
     }
 
-    unsigned int threadID(0);
-    if (!_ptrThreadRec->Start(threadID))
+    if (!_ptrThreadRec->Start())
     {
         WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
                      "  failed to start the rec audio thread");
@@ -1413,7 +1410,6 @@ int32_t AudioDeviceLinuxALSA::StartRecording()
         _recordingBuffer = NULL;
         return -1;
     }
-    _recThreadID = threadID;
 
     errVal = LATE(snd_pcm_prepare)(_handleRecord);
     if (errVal < 0)
@@ -1573,8 +1569,7 @@ int32_t AudioDeviceLinuxALSA::StartPlayout()
         return -1;
     }
 
-    unsigned int threadID(0);
-    if (!_ptrThreadPlay->Start(threadID))
+    if (!_ptrThreadPlay->Start())
     {
         WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
                      "  failed to start the play audio thread");
@@ -1585,7 +1580,6 @@ int32_t AudioDeviceLinuxALSA::StartPlayout()
         _playoutBuffer = NULL;
         return -1;
     }
-    _playThreadID = threadID;
 
     int errVal = LATE(snd_pcm_prepare)(_handlePlayout);
     if (errVal < 0)

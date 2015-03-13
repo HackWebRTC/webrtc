@@ -111,8 +111,7 @@ class VideoAnalyzer : public PacketReceiver,
       ThreadWrapper* thread =
           ThreadWrapper::CreateThread(&FrameComparisonThread, this);
       comparison_thread_pool_.push_back(thread);
-      unsigned int id;
-      EXPECT_TRUE(thread->Start(id));
+      EXPECT_TRUE(thread->Start());
     }
   }
 

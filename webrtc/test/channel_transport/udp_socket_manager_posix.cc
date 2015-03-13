@@ -226,7 +226,6 @@ UdpSocketManagerPosixImpl::~UdpSocketManagerPosixImpl()
 
 bool UdpSocketManagerPosixImpl::Start()
 {
-    unsigned int id = 0;
     if (_thread == NULL)
     {
         return false;
@@ -234,7 +233,7 @@ bool UdpSocketManagerPosixImpl::Start()
 
     WEBRTC_TRACE(kTraceStateInfo,  kTraceTransport, -1,
                  "Start UdpSocketManagerPosix");
-    return _thread->Start(id);
+    return _thread->Start();
 }
 
 bool UdpSocketManagerPosixImpl::Stop()

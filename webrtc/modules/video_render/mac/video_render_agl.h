@@ -168,8 +168,6 @@ class VideoRenderAGL {
   HIRect _currentViewBounds;
   HIRect _lastViewBounds;
   bool _renderingIsPaused;
-  unsigned int _threadID;
-
 };
 
 }  // namespace webrtc

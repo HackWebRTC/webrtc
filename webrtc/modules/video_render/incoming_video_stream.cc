@@ -187,10 +187,9 @@ int32_t IncomingVideoStream::Start() {
     return -1;
   }
 
-  unsigned int t_id = 0;
-  if (incoming_render_thread_->Start(t_id)) {
+  if (incoming_render_thread_->Start()) {
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, module_id_,
-                 "%s: thread started: %u", __FUNCTION__, t_id);
+                 "%s: thread started", __FUNCTION__);
   } else {
     WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, module_id_,
                  "%s: Could not start send thread", __FUNCTION__);

@@ -180,8 +180,6 @@ class FileAudioDevice : public AudioDeviceGeneric {
 
   ThreadWrapper* _ptrThreadRec;
   ThreadWrapper* _ptrThreadPlay;
-  uint32_t _recThreadID;
-  uint32_t _playThreadID;
 
   bool _playing;
   bool _recording;

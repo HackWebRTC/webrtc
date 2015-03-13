@@ -30,23 +30,22 @@ class ThreadPosix : public ThreadWrapper {
   ~ThreadPosix() override;
 
   // From ThreadWrapper.
-  bool Start(unsigned int& id) override;
+  bool Start() override;
   bool Stop() override;
 
  private:
   static void* StartThread(void* param);
 
-  struct InitParams;
-  void Run(InitParams* params);
+  void Run();
 
   rtc::ThreadChecker thread_checker_;
   ThreadRunFunction const run_function_;
   void* const obj_;
   ThreadPriority prio_;
+  bool started_;
   rtc::Event stop_event_;
   const std::string name_;
 
-  pid_t thread_id_;
   pthread_t thread_;
 };
 

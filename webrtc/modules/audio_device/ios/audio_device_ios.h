@@ -215,7 +215,6 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   CriticalSectionWrapper& _critSect;
 
   ThreadWrapper* _captureWorkerThread;
-  uint32_t _captureWorkerThreadId;
 
   int32_t _id;
 

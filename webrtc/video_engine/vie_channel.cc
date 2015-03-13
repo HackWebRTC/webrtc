@@ -1846,8 +1846,7 @@ int32_t ViEChannel::StartDecodeThread() {
     return -1;
   }
 
-  unsigned int thread_id;
-  if (decode_thread_->Start(thread_id) == false) {
+  if (decode_thread_->Start() == false) {
     delete decode_thread_;
     decode_thread_ = NULL;
     LOG(LS_ERROR) << "Could not start decode thread.";

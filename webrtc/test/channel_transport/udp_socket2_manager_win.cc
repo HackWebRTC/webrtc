@@ -540,10 +540,9 @@ UdpSocket2WorkerWindows::~UdpSocket2WorkerWindows()
 
 bool UdpSocket2WorkerWindows::Start()
 {
-    unsigned int id = 0;
     WEBRTC_TRACE(kTraceStateInfo,  kTraceTransport, -1,
                  "Start UdpSocket2WorkerWindows");
-    return _pThread->Start(id);
+    return _pThread->Start();
 }
 
 bool UdpSocket2WorkerWindows::Stop()

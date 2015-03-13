@@ -59,8 +59,7 @@ int32_t FakeAudioDevice::Init() {
       FakeAudioDevice::Run, this, webrtc::kHighPriority, "FakeAudioDevice"));
   if (thread_.get() == NULL)
     return -1;
-  unsigned int thread_id;
-  if (!thread_->Start(thread_id)) {
+  if (!thread_->Start()) {
     thread_.reset();
     return -1;
   }

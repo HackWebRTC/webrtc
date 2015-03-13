@@ -42,8 +42,6 @@ AudioDeviceLinuxPulse::AudioDeviceLinuxPulse(const int32_t id) :
     _playStartEvent(*EventWrapper::Create()),
     _ptrThreadPlay(NULL),
     _ptrThreadRec(NULL),
-    _recThreadID(0),
-    _playThreadID(0),
     _id(id),
     _mixerManager(id),
     _inputDeviceIndex(0),
@@ -221,8 +219,7 @@ int32_t AudioDeviceLinuxPulse::Init()
         return -1;
     }
 
-    unsigned int threadID(0);
-    if (!_ptrThreadRec->Start(threadID))
+    if (!_ptrThreadRec->Start())
     {
         WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
                      "  failed to start the rec audio thread");
@@ -231,7 +228,6 @@ int32_t AudioDeviceLinuxPulse::Init()
         _ptrThreadRec = NULL;
         return -1;
     }
-    _recThreadID = threadID;
 
     // PLAYOUT
     threadName = "webrtc_audio_module_play_thread";
@@ -244,8 +240,7 @@ int32_t AudioDeviceLinuxPulse::Init()
         return -1;
     }
 
-    threadID = 0;
-    if (!_ptrThreadPlay->Start(threadID))
+    if (!_ptrThreadPlay->Start())
     {
         WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
                      "  failed to start the play audio thread");
@@ -254,7 +249,6 @@ int32_t AudioDeviceLinuxPulse::Init()
         _ptrThreadPlay = NULL;
         return -1;
     }
-    _playThreadID = threadID;
 
     _initialized = true;
 

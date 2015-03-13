@@ -31,8 +31,7 @@ FakeExternalTransport::FakeExternalTransport(webrtc::VoENetwork* ptr)
   thread_ = webrtc::ThreadWrapper::CreateThread(
       Run, this, webrtc::kHighPriority, thread_name);
   if (thread_) {
-    unsigned int id;
-    thread_->Start(id);
+    thread_->Start();
   }
 }
 

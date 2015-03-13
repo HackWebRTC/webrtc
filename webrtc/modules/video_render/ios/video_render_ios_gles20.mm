@@ -90,8 +90,7 @@ int VideoRenderIosGles20::Init() {
     return -1;
   }
 
-  unsigned int thread_id;
-  screen_update_thread_->Start(thread_id);
+  screen_update_thread_->Start();
 
   // Start the event triggering the render process
   unsigned int monitor_freq = 60;

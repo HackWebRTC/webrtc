@@ -551,8 +551,7 @@ int32_t VideoRenderDirect3D9::Init()
         WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Thread not created");
         return -1;
     }
-    unsigned int threadId;
-    _screenUpdateThread->Start(threadId);
+    _screenUpdateThread->Start();
 
     // Start the event triggering the render process
     unsigned int monitorFreq = 60;

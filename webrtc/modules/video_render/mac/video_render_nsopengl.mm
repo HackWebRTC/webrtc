@@ -377,7 +377,6 @@ _windowWidth( 0),
 _windowHeight( 0),
 _nsglChannels( ),
 _zOrderToChannel( ),
-_threadID (0),
 _renderingIsPaused (FALSE),
 _windowRefSuperView(NULL),
 _windowRefSuperViewFrame(NSMakeRect(0,0,0,0))
@@ -431,7 +430,7 @@ int32_t VideoRenderNSOpenGL::StartRender()
         WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, _id, "Restarting screenUpdateThread");
 
         // we already have the thread. Most likely StopRender() was called and they were paused
-        if(FALSE == _screenUpdateThread->Start(_threadID) ||
+        if(FALSE == _screenUpdateThread->Start() ||
                 FALSE == _screenUpdateEvent->StartTimer(true, 1000/MONITOR_FREQ))
         {
             WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "Failed to restart screenUpdateThread or screenUpdateEvent");
@@ -718,7 +717,7 @@ int VideoRenderNSOpenGL::Init()
         return -1;
     }
 
-    _screenUpdateThread->Start(_threadID);
+    _screenUpdateThread->Start();
 
     // Start the event triggering the render process
     unsigned int monitorFreq = 60;

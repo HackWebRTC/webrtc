@@ -65,8 +65,7 @@ bool ViEToFileRenderer::PrepareForRendering(
 
   output_filename_ = output_filename;
   output_path_ = output_path;
-  unsigned int tid;
-  return thread_->Start(tid);
+  return thread_->Start();
 }
 
 void ViEToFileRenderer::StopRendering() {

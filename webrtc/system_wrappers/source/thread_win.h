@@ -25,7 +25,7 @@ class ThreadWindows : public ThreadWrapper {
                 const char* thread_name);
   ~ThreadWindows() override;
 
-  bool Start(unsigned int& id) override;
+  bool Start() override;
   bool Stop() override;
 
  protected:

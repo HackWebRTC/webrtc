@@ -87,8 +87,7 @@ int32_t TestLoadGenerator::Start (const char *threadName)
 
     _running = true;
 
-    unsigned int tid;
-    _genThread->Start(tid);
+    _genThread->Start();
 
     return 0;
 }

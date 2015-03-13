@@ -71,8 +71,7 @@ void ProcessThreadImpl::Start() {
 
   thread_.reset(ThreadWrapper::CreateThread(
       &ProcessThreadImpl::Run, this, kNormalPriority, "ProcessThread"));
-  unsigned int id;
-  CHECK(thread_->Start(id));
+  CHECK(thread_->Start());
 }
 
 void ProcessThreadImpl::Stop() {

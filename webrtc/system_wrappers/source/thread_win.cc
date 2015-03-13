@@ -81,7 +81,7 @@ DWORD WINAPI ThreadWindows::StartThread(void* param) {
   return 0;
 }
 
-bool ThreadWindows::Start(unsigned int& id) {
+bool ThreadWindows::Start() {
   DCHECK(main_thread_.CalledOnValidThread());
   DCHECK(!thread_);
 
@@ -97,8 +97,6 @@ bool ThreadWindows::Start(unsigned int& id) {
     DCHECK(false) << "CreateThread failed";
     return false;
   }
-
-  id = thread_id;
 
   if (prio_ != kNormalPriority) {
     int priority = THREAD_PRIORITY_NORMAL;

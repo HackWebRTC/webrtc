@@ -205,8 +205,7 @@ bool EventPosix::StartTimer(bool periodic, unsigned long time) {
                                               thread_name);
   periodic_ = periodic;
   time_ = time;
-  unsigned int id = 0;
-  bool started = timer_thread_->Start(id);
+  bool started = timer_thread_->Start();
   pthread_mutex_unlock(&mutex_);
 
   return started;

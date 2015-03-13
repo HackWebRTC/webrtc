@@ -31,8 +31,7 @@ class LoopBackTransport : public webrtc::Transport {
         packet_event_(webrtc::EventWrapper::Create()),
         thread_(webrtc::ThreadWrapper::CreateThread(NetworkProcess, this)),
         voe_network_(voe_network), transmitted_packets_(0) {
-    unsigned int id;
-    thread_->Start(id);
+    thread_->Start();
   }
 
   ~LoopBackTransport() { thread_->Stop(); }

@@ -280,11 +280,9 @@ private:
 
     // Only valid/running between calls to StartRecording and StopRecording.
     rtc::scoped_ptr<ThreadWrapper> capture_worker_thread_;
-    unsigned int capture_worker_thread_id_;
 
     // Only valid/running between calls to StartPlayout and StopPlayout.
     rtc::scoped_ptr<ThreadWrapper> render_worker_thread_;
-    unsigned int render_worker_thread_id_;
 
     int32_t _id;
 

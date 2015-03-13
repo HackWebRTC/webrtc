@@ -179,7 +179,6 @@ private: // variables
     int _windowHeight;
     std::map<int, VideoChannelNSOpenGL*> _nsglChannels;
     std::multimap<int, int> _zOrderToChannel;
-    unsigned int _threadID;
     bool _renderingIsPaused;
     NSView* _windowRefSuperView;
     NSRect _windowRefSuperViewFrame;

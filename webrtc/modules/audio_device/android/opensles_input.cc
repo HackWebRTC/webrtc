@@ -475,8 +475,7 @@ bool OpenSlesInput::StartCbThreads() {
                                                 kRealtimePriority,
                                                 "opensl_rec_thread"));
   assert(rec_thread_.get());
-  unsigned int thread_id = 0;
-  if (!rec_thread_->Start(thread_id)) {
+  if (!rec_thread_->Start()) {
     assert(false);
     return false;
   }

@@ -281,8 +281,7 @@ int ThreadTest::RunTest()
 {
     if (_thread)
     {
-        unsigned int id;
-        _thread->Start(id);
+        _thread->Start();
     }
     return 0;
 }

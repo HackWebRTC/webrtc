@@ -37,8 +37,6 @@ FileAudioDevice::FileAudioDevice(const int32_t id,
     _playoutFramesIn10MS(0),
     _ptrThreadRec(NULL),
     _ptrThreadPlay(NULL),
-    _recThreadID(0),
-    _playThreadID(0),
     _playing(false),
     _recording(false),
     _lastCallPlayoutMillis(0),
@@ -230,8 +228,7 @@ int32_t FileAudioDevice::StartPlayout() {
     return -1;
   }
 
-  unsigned int threadID(0);
-  if (!_ptrThreadPlay->Start(threadID)) {
+  if (!_ptrThreadPlay->Start()) {
       _playing = false;
       delete _ptrThreadPlay;
       _ptrThreadPlay = NULL;
@@ -239,7 +236,6 @@ int32_t FileAudioDevice::StartPlayout() {
       _playoutBuffer = NULL;
       return -1;
   }
-  _playThreadID = threadID;
 
   return 0;
 }
@@ -307,8 +303,7 @@ int32_t FileAudioDevice::StartRecording() {
       return -1;
   }
 
-  unsigned int threadID(0);
-  if (!_ptrThreadRec->Start(threadID)) {
+  if (!_ptrThreadRec->Start()) {
       _recording = false;
       delete _ptrThreadRec;
       _ptrThreadRec = NULL;
@@ -316,7 +311,6 @@ int32_t FileAudioDevice::StartRecording() {
       _recordingBuffer = NULL;
       return -1;
   }
-  _recThreadID = threadID;
 
   return 0;
 }

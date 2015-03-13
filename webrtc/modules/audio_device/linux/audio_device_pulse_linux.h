@@ -290,8 +290,6 @@ private:
 
     ThreadWrapper* _ptrThreadPlay;
     ThreadWrapper* _ptrThreadRec;
-    uint32_t _recThreadID;
-    uint32_t _playThreadID;
     int32_t _id;
 
     AudioMixerManagerLinuxPulse _mixerManager;

@@ -314,10 +314,9 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
   }
 
   void StartThreads() {
-    unsigned int thread_id = 0;
-    ASSERT_TRUE(send_thread_->Start(thread_id));
-    ASSERT_TRUE(insert_packet_thread_->Start(thread_id));
-    ASSERT_TRUE(pull_audio_thread_->Start(thread_id));
+    ASSERT_TRUE(send_thread_->Start());
+    ASSERT_TRUE(insert_packet_thread_->Start());
+    ASSERT_TRUE(pull_audio_thread_->Start());
   }
 
   void TearDown() override {

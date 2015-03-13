@@ -358,8 +358,7 @@ int DataLogImpl::Init() {
                           "DataLog");
   if (file_writer_thread_ == NULL)
     return -1;
-  unsigned int thread_id = 0;
-  bool success = file_writer_thread_->Start(thread_id);
+  bool success = file_writer_thread_->Start();
   if (!success)
     return -1;
   return 0;
