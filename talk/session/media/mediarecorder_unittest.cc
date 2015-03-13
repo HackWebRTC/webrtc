@@ -334,11 +334,9 @@ void TestRecordHeaderAndMedia(BaseChannel* channel,
 
 TEST(MediaRecorderTest, TestMediaRecorderVoiceChannel) {
   // Create the voice channel.
-  FakeSession session(true);
   FakeMediaEngine media_engine;
   VoiceChannel channel(rtc::Thread::Current(), &media_engine,
-                       new FakeVoiceMediaChannel(NULL), &session, "", false);
-  EXPECT_TRUE(channel.Init());
+                       new FakeVoiceMediaChannel(NULL), NULL, "", false);
   TestMediaRecorder(&channel, NULL, PF_RTPPACKET);
   TestMediaRecorder(&channel, NULL, PF_RTPHEADER);
   TestRecordHeaderAndMedia(&channel, NULL);
@@ -346,12 +344,10 @@ TEST(MediaRecorderTest, TestMediaRecorderVoiceChannel) {
 
 TEST(MediaRecorderTest, TestMediaRecorderVideoChannel) {
   // Create the video channel.
-  FakeSession session(true);
   FakeMediaEngine media_engine;
   FakeVideoMediaChannel* media_channel = new FakeVideoMediaChannel(NULL);
   VideoChannel channel(rtc::Thread::Current(), &media_engine,
-                       media_channel, &session, "", false, NULL);
-  EXPECT_TRUE(channel.Init());
+                       media_channel, NULL, "", false, NULL);
   TestMediaRecorder(&channel, media_channel, PF_RTPPACKET);
   TestMediaRecorder(&channel, media_channel, PF_RTPHEADER);
   TestRecordHeaderAndMedia(&channel, media_channel);
