@@ -200,11 +200,8 @@ def _IsChromiumCheckout(checkout_dir):
 
 
 class AutoRoller(object):
-  def __init__(self, chromium_src, dry_run, ignore_checks, no_commit):
+  def __init__(self, chromium_src):
     self._chromium_src = chromium_src
-    self._dry_run = dry_run
-    self._ignore_checks = ignore_checks
-    self._no_commit = no_commit
 
   def _RunCommand(self, command, working_dir=None, ignore_exit_code=False,
                   extra_env=None):
@@ -286,11 +283,11 @@ class AutoRoller(object):
     readme.write(m)
     readme.truncate()
 
-  def PrepareRoll(self):
+  def PrepareRoll(self, dry_run, ignore_checks, no_commit, close_previous_roll):
     # TODO(kjellander): use os.path.normcase, os.path.join etc for all paths for
     # cross platform compatibility.
 
-    if not self._ignore_checks:
+    if not ignore_checks:
       if self._GetCurrentBranchName() != 'master':
         logging.error('Please checkout the master branch.')
         return -1
@@ -299,12 +296,11 @@ class AutoRoller(object):
         return -1
 
     logging.debug('Checking for a previous roll branch.')
-    # TODO(kjellander): switch to the stale branch, close the issue, switch back
-    # to master,
-    self._RunCommand(['git', 'branch', '-D', ROLL_BRANCH_NAME],
-                     ignore_exit_code=True)
+    if close_previous_roll:
+      self.Abort()
+
     logging.debug('Pulling latest changes')
-    if not self._ignore_checks:
+    if not ignore_checks:
       self._RunCommand(['git', 'pull'])
 
     self._RunCommand(['git', 'checkout', '-b', ROLL_BRANCH_NAME])
@@ -339,7 +335,7 @@ class AutoRoller(object):
       cl_info = self._GetCLInfo()
       logging.debug('Issue: %d URL: %s', cl_info.issue, cl_info.url)
 
-      if not self._dry_run and not self._no_commit:
+      if not dry_run and not no_commit:
         logging.debug('Sending the CL to the CQ...')
         self._RunCommand(['git', 'cl', 'set_commit'])
         logging.debug('Sent the CL to the CQ. Monitor here: %s', cl_info.url)
@@ -418,6 +414,8 @@ def main():
           'continuously run this script but not initiating new rolls until a '
           'previous one is known to have passed or failed.'),
     action='store_true')
+  parser.add_argument('--close-previous-roll', action='store_true',
+                      help='Abort a previous roll if one exists.')
   parser.add_argument('--dry-run', action='store_true', default=False,
       help='Create branches and CLs but doesn\'t send tryjobs or commit.')
   parser.add_argument('--ignore-checks', action='store_true', default=False,
@@ -449,14 +447,14 @@ def main():
          ' is not a Chromium checkout. Fix either and try again.')
       return -2
 
-  autoroller = AutoRoller(args.chromium_checkout, args.dry_run,
-                          args.ignore_checks, args.no_commit)
+  autoroller = AutoRoller(args.chromium_checkout)
   if args.abort:
     return autoroller.Abort()
   elif args.wait_for_trybots:
     return autoroller.WaitForTrybots()
   else:
-    return autoroller.PrepareRoll()
+    return autoroller.PrepareRoll(args.dry_run, args.ignore_checks,
+                                  args.no_commit, args.close_previous_roll)
 
 if __name__ == '__main__':
   sys.exit(main())
