@@ -317,10 +317,16 @@
         {
           'target_name': 'AppRTCDemo',
           'type': 'none',
+          'dependencies': [
+            'libjingle.gyp:libjingle_peerconnection_java',
+          ],
           'variables': {
             'apk_name': 'AppRTCDemo',
             'java_in_dir': 'examples/android',
+            'has_java_resources': 1,
             'resource_dir': 'examples/android/res',
+            'R_package': 'org.appspot.apprtc',
+            'R_package_relpath': 'org/appspot/apprtc',
             'input_jars_paths': [
               'examples/android/third_party/autobanh/autobanh.jar',
              ],
@@ -328,32 +334,35 @@
               'examples/android/third_party/autobanh/autobanh.jar',
              ],
             'native_lib_target': 'libjingle_peerconnection_so',
+            'add_to_dependents_classpaths':1,
           },
-          'dependencies': [
-            'libjingle.gyp:libjingle_peerconnection_java',
-          ],
           'includes': [ '../build/java_apk.gypi' ],
         },  # target AppRTCDemo
-      ],  # targets
-    }],  # OS=="android"
 
-    ['OS=="android"', {
-      'targets': [
+        {
+          # AppRTCDemo creates a .jar as a side effect. Any java targets
+          # that need that .jar in their classpath should depend on this target,
+          # AppRTCDemo_apk. Dependents of AppRTCDemo_apk receive its
+          # jar path in the variable 'apk_output_jar_path'.
+          # This target should only be used by targets which instrument
+          # AppRTCDemo_apk.
+          'target_name': 'AppRTCDemo_apk',
+          'type': 'none',
+          'dependencies': [
+             'AppRTCDemo',
+           ],
+           'includes': [ '../build/apk_fake_jar.gypi' ],
+        },  # target AppRTCDemo_apk
+
         {
           'target_name': 'AppRTCDemoTest',
           'type': 'none',
           'dependencies': [
-            'AppRTCDemo',
-          ],
+            'AppRTCDemo_apk',
+           ],
           'variables': {
             'apk_name': 'AppRTCDemoTest',
             'java_in_dir': 'examples/androidtests',
-            'additional_src_dirs': [
-              'examples/android',
-            ],
-            'input_jars_paths': [
-              'examples/android/third_party/autobanh/autobanh.jar',
-             ],
             'is_test_apk': 1,
           },
           'includes': [ '../build/java_apk.gypi' ],
