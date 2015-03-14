@@ -480,9 +480,19 @@ public class PeerConnectionTest {
   }
 
   void finalizeThreadCheck() throws Exception {
-    TreeSet<String> threadsAfterTest = allThreads();
-    assertEquals(threadsBeforeTest, threadsAfterTest);
-    Thread.sleep(100);
+    // TreeSet<String> threadsAfterTest = allThreads();
+
+    // TODO(tommi): Figure out a more reliable way to do this test.  As is
+    // we're seeing three possible 'normal' situations:
+    // 1.  before and after sets are equal.
+    // 2.  before contains 3 threads that do not exist in after.
+    // 3.  after contains 3 threads that do not exist in before.
+    //
+    // Maybe it would be better to do the thread enumeration from C++ and get
+    // the thread names as well, in order to determine what these 3 threads are.
+
+    // assertEquals(threadsBeforeTest, threadsAfterTest);
+    // Thread.sleep(100);
   }
 
   void doTest() throws Exception {
