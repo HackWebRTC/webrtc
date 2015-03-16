@@ -93,8 +93,7 @@ BitrateControllerImpl::BitrateControllerImpl(Clock* clock,
       last_bitrate_bps_(0),
       last_fraction_loss_(0),
       last_rtt_ms_(0),
-      last_reserved_bitrate_bps_(0),
-      remb_suppressor_(new RembSuppressor(clock)) {
+      last_reserved_bitrate_bps_(0) {
 }
 
 BitrateControllerImpl::~BitrateControllerImpl() {
@@ -127,9 +126,6 @@ void BitrateControllerImpl::SetReservedBitrate(uint32_t reserved_bitrate_bps) {
 void BitrateControllerImpl::OnReceivedEstimatedBitrate(uint32_t bitrate) {
   {
     CriticalSectionScoped cs(critsect_);
-    if (remb_suppressor_->SuppresNewRemb(bitrate)) {
-      return;
-    }
     bandwidth_estimation_.UpdateReceiverEstimate(bitrate);
   }
   MaybeTriggerOnNetworkChanged();
@@ -206,16 +202,6 @@ bool BitrateControllerImpl::AvailableBandwidth(uint32_t* bandwidth) const {
     return true;
   }
   return false;
-}
-
-void BitrateControllerImpl::SetBitrateSent(uint32_t bitrate_sent_bps) {
-  CriticalSectionScoped cs(critsect_);
-  remb_suppressor_->SetBitrateSent(bitrate_sent_bps);
-}
-
-void BitrateControllerImpl::SetCodecMode(webrtc::VideoCodecMode mode) {
-  CriticalSectionScoped cs(critsect_);
-  remb_suppressor_->SetEnabled(mode == kScreensharing);
 }
 
 }  // namespace webrtc

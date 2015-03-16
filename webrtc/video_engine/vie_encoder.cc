@@ -408,8 +408,6 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
                                              &new_bwe_max_bps);
   bitrate_controller_->SetMinMaxBitrate(new_bwe_min_bps, new_bwe_max_bps);
 
-  bitrate_controller_->SetCodecMode(video_codec.mode);
-
   int pad_up_to_bitrate_bps =
       GetPaddingNeededBps(1000 * video_codec.startBitrate);
   paced_sender_->UpdateBitrate(
@@ -796,7 +794,6 @@ int32_t ViEEncoder::SendData(
 
 int32_t ViEEncoder::SendStatistics(const uint32_t bit_rate,
                                    const uint32_t frame_rate) {
-  bitrate_controller_->SetBitrateSent(bit_rate);
   CriticalSectionScoped cs(callback_cs_.get());
   if (codec_observer_) {
     codec_observer_->OutgoingRate(channel_id_, frame_rate, bit_rate);

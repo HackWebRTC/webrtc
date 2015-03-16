@@ -20,8 +20,6 @@
         'bitrate_controller_impl.h',
         'include/bitrate_controller.h',
         'include/bitrate_allocator.h',
-        'remb_suppressor.cc',
-        'remb_suppressor.h',
         'send_side_bandwidth_estimation.cc',
         'send_side_bandwidth_estimation.h',
         'send_time_history.cc',
