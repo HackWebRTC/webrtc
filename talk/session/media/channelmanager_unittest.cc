@@ -172,7 +172,7 @@ TEST_F(ChannelManagerTest, NoTransportChannelTest) {
   // The test is useless unless the session does not fail creating
   // cricket::TransportChannel.
   ASSERT_TRUE(session_->CreateChannel(
-      "audio", "rtp", cricket::ICE_CANDIDATE_COMPONENT_RTP) == NULL);
+      "audio", cricket::ICE_CANDIDATE_COMPONENT_RTP) == NULL);
 
   cricket::VoiceChannel* voice_channel = cm_->CreateVoiceChannel(
       session_, cricket::CN_AUDIO, false);

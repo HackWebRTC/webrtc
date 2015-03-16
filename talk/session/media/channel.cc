@@ -187,39 +187,28 @@ BaseChannel::~BaseChannel() {
   // the media channel may try to send on the dead transport channel. NULLing
   // is not an effective strategy since the sends will come on another thread.
   delete media_channel_;
-  set_rtcp_transport_channel(NULL);
-  if (transport_channel_ != NULL)
-    session_->DestroyChannel(content_name_, transport_channel_->component());
+  set_transport_channel(nullptr);
+  set_rtcp_transport_channel(nullptr);
   LOG(LS_INFO) << "Destroyed channel";
 }
 
-bool BaseChannel::Init(TransportChannel* transport_channel,
-                       TransportChannel* rtcp_transport_channel) {
-  if (transport_channel == NULL) {
-    return false;
-  }
-  if (rtcp() && rtcp_transport_channel == NULL) {
-    return false;
-  }
-  transport_channel_ = transport_channel;
-
-  if (!SetDtlsSrtpCiphers(transport_channel_, false)) {
+bool BaseChannel::Init() {
+  if (!SetTransportChannels(session(), rtcp())) {
     return false;
   }
 
-  transport_channel_->SignalWritableState.connect(
-      this, &BaseChannel::OnWritableState);
-  transport_channel_->SignalReadPacket.connect(
-      this, &BaseChannel::OnChannelRead);
-  transport_channel_->SignalReadyToSend.connect(
-      this, &BaseChannel::OnReadyToSend);
+  if (!SetDtlsSrtpCiphers(transport_channel(), false)) {
+    return false;
+  }
+  if (rtcp() && !SetDtlsSrtpCiphers(rtcp_transport_channel(), true)) {
+    return false;
+  }
 
   session_->SignalNewLocalDescription.connect(
       this, &BaseChannel::OnNewLocalDescription);
   session_->SignalNewRemoteDescription.connect(
       this, &BaseChannel::OnNewRemoteDescription);
 
-  set_rtcp_transport_channel(rtcp_transport_channel);
   // Both RTP and RTCP channels are set, we can call SetInterface on
   // media channel and it can set network options.
   media_channel_->SetInterface(this);
@@ -228,6 +217,90 @@ bool BaseChannel::Init(TransportChannel* transport_channel,
 
 void BaseChannel::Deinit() {
   media_channel_->SetInterface(NULL);
+}
+
+bool BaseChannel::SetTransportChannels(BaseSession* session, bool rtcp) {
+  return worker_thread_->Invoke<bool>(Bind(
+      &BaseChannel::SetTransportChannels_w, this, session, rtcp));
+}
+
+bool BaseChannel::SetTransportChannels_w(BaseSession* session, bool rtcp) {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+
+  set_transport_channel(session->CreateChannel(
+      content_name(), cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  if (!transport_channel()) {
+    return false;
+  }
+  if (rtcp) {
+    set_rtcp_transport_channel(session->CreateChannel(
+        content_name(), cricket::ICE_CANDIDATE_COMPONENT_RTCP));
+    if (!rtcp_transport_channel()) {
+      return false;
+    }
+  } else {
+    set_rtcp_transport_channel(nullptr);
+  }
+
+  return true;
+}
+
+void BaseChannel::set_transport_channel(TransportChannel* new_tc) {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+
+  TransportChannel* old_tc = transport_channel_;
+
+  if (old_tc == new_tc) {
+    return;
+  }
+  if (old_tc) {
+    DisconnectFromTransportChannel(old_tc);
+    session()->DestroyChannel(
+        content_name(), cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  }
+
+  transport_channel_ = new_tc;
+
+  if (new_tc) {
+    ConnectToTransportChannel(new_tc);
+  }
+}
+
+void BaseChannel::set_rtcp_transport_channel(TransportChannel* new_tc) {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+
+  TransportChannel* old_tc = rtcp_transport_channel_;
+
+  if (old_tc == new_tc) {
+    return;
+  }
+  if (old_tc) {
+    DisconnectFromTransportChannel(old_tc);
+    session()->DestroyChannel(
+        content_name(), cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+  }
+
+  rtcp_transport_channel_ = new_tc;
+
+  if (new_tc) {
+    ConnectToTransportChannel(new_tc);
+  }
+}
+
+void BaseChannel::ConnectToTransportChannel(TransportChannel* tc) {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+
+  tc->SignalWritableState.connect(this, &BaseChannel::OnWritableState);
+  tc->SignalReadPacket.connect(this, &BaseChannel::OnChannelRead);
+  tc->SignalReadyToSend.connect(this, &BaseChannel::OnReadyToSend);
+}
+
+void BaseChannel::DisconnectFromTransportChannel(TransportChannel* tc) {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+
+  tc->SignalWritableState.disconnect(this);
+  tc->SignalReadPacket.disconnect(this);
+  tc->SignalReadyToSend.disconnect(this);
 }
 
 bool BaseChannel::Enable(bool enable) {
@@ -298,26 +371,6 @@ void BaseChannel::StopConnectionMonitor() {
 bool BaseChannel::GetConnectionStats(ConnectionInfos* infos) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   return transport_channel_->GetStats(infos);
-}
-
-void BaseChannel::set_rtcp_transport_channel(TransportChannel* channel) {
-  if (rtcp_transport_channel_ != channel) {
-    if (rtcp_transport_channel_) {
-      session_->DestroyChannel(
-          content_name_, rtcp_transport_channel_->component());
-    }
-    rtcp_transport_channel_ = channel;
-    if (rtcp_transport_channel_) {
-      // TODO(juberti): Propagate this error code
-      VERIFY(SetDtlsSrtpCiphers(rtcp_transport_channel_, true));
-      rtcp_transport_channel_->SignalWritableState.connect(
-          this, &BaseChannel::OnWritableState);
-      rtcp_transport_channel_->SignalReadPacket.connect(
-          this, &BaseChannel::OnChannelRead);
-      rtcp_transport_channel_->SignalReadyToSend.connect(
-          this, &BaseChannel::OnReadyToSend);
-    }
-  }
 }
 
 bool BaseChannel::IsReadyToReceive() const {
@@ -1271,11 +1324,7 @@ VoiceChannel::~VoiceChannel() {
 }
 
 bool VoiceChannel::Init() {
-  TransportChannel* rtcp_channel = rtcp() ? session()->CreateChannel(
-      content_name(), "rtcp", ICE_CANDIDATE_COMPONENT_RTCP) : NULL;
-  if (!BaseChannel::Init(session()->CreateChannel(
-          content_name(), "rtp", ICE_CANDIDATE_COMPONENT_RTP),
-          rtcp_channel)) {
+  if (!BaseChannel::Init()) {
     return false;
   }
   media_channel()->SignalMediaError.connect(
@@ -1665,11 +1714,7 @@ VideoChannel::VideoChannel(rtc::Thread* thread,
 }
 
 bool VideoChannel::Init() {
-  TransportChannel* rtcp_channel = rtcp() ? session()->CreateChannel(
-      content_name(), "video_rtcp", ICE_CANDIDATE_COMPONENT_RTCP) : NULL;
-  if (!BaseChannel::Init(session()->CreateChannel(
-          content_name(), "video_rtp", ICE_CANDIDATE_COMPONENT_RTP),
-          rtcp_channel)) {
+  if (!BaseChannel::Init()) {
     return false;
   }
   media_channel()->SignalMediaError.connect(
@@ -2118,11 +2163,7 @@ DataChannel::~DataChannel() {
 }
 
 bool DataChannel::Init() {
-  TransportChannel* rtcp_channel = rtcp() ? session()->CreateChannel(
-      content_name(), "data_rtcp", ICE_CANDIDATE_COMPONENT_RTCP) : NULL;
-  if (!BaseChannel::Init(session()->CreateChannel(
-          content_name(), "data_rtp", ICE_CANDIDATE_COMPONENT_RTP),
-          rtcp_channel)) {
+  if (!BaseChannel::Init()) {
     return false;
   }
   media_channel()->SignalDataReceived.connect(

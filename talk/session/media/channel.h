@@ -80,8 +80,7 @@ class BaseChannel
               MediaChannel* channel, BaseSession* session,
               const std::string& content_name, bool rtcp);
   virtual ~BaseChannel();
-  bool Init(TransportChannel* transport_channel,
-            TransportChannel* rtcp_transport_channel);
+  bool Init();
   // Deinit may be called multiple times and is simply ignored if it's alreay
   // done.
   void Deinit();
@@ -232,6 +231,13 @@ class BaseChannel
  protected:
   MediaEngineInterface* media_engine() const { return media_engine_; }
   virtual MediaChannel* media_channel() const { return media_channel_; }
+  // Sets the transport_channel_ and rtcp_transport_channel_.  If
+  // |rtcp| is false, set rtcp_transport_channel_ is set to NULL.  Get
+  // the transport channels from |session|.
+  // TODO(pthatcher): Pass in a Transport instead of a BaseSession.
+  bool SetTransportChannels(BaseSession* session, bool rtcp);
+  bool SetTransportChannels_w(BaseSession* session, bool rtcp);
+  void set_transport_channel(TransportChannel* transport);
   void set_rtcp_transport_channel(TransportChannel* transport);
   bool was_ever_writable() const { return was_ever_writable_; }
   void set_local_content_direction(MediaContentDirection direction) {
@@ -245,6 +251,9 @@ class BaseChannel
   rtc::Thread* signaling_thread() { return session_->signaling_thread(); }
   SrtpFilter* srtp_filter() { return &srtp_filter_; }
   bool rtcp() const { return rtcp_; }
+
+  void ConnectToTransportChannel(TransportChannel* tc);
+  void DisconnectFromTransportChannel(TransportChannel* tc);
 
   void FlushRtcpMessages();
 

@@ -46,15 +46,14 @@ TransportChannel* TransportProxy::GetChannel(int component) {
   return GetChannelProxy(component);
 }
 
-TransportChannel* TransportProxy::CreateChannel(const std::string& name,
-                                                int component) {
+TransportChannel* TransportProxy::CreateChannel(int component) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(GetChannel(component) == NULL);
   ASSERT(!transport_->get()->HasChannel(component));
 
   // We always create a proxy in case we need to change out the transport later.
   TransportChannelProxy* channel_proxy =
-      new TransportChannelProxy(content_name(), name, component);
+      new TransportChannelProxy(content_name(), component);
   channels_[component] = channel_proxy;
 
   // If we're already negotiated, create an impl and hook it up to the proxy
@@ -140,18 +139,6 @@ void TransportProxy::AddUnsentCandidates(const Candidates& candidates) {
 TransportChannelProxy* TransportProxy::GetChannelProxy(int component) const {
   ChannelMap::const_iterator iter = channels_.find(component);
   return (iter != channels_.end()) ? iter->second : NULL;
-}
-
-TransportChannelProxy* TransportProxy::GetChannelProxyByName(
-    const std::string& name) const {
-  for (ChannelMap::const_iterator iter = channels_.begin();
-       iter != channels_.end();
-       ++iter) {
-    if (iter->second->name() == name) {
-      return iter->second;
-    }
-  }
-  return NULL;
 }
 
 void TransportProxy::CreateChannelImpl(int component) {
@@ -474,13 +461,12 @@ bool BaseSession::PushdownRemoteTransportDescription(
 }
 
 TransportChannel* BaseSession::CreateChannel(const std::string& content_name,
-                                             const std::string& channel_name,
                                              int component) {
   // We create the proxy "on demand" here because we need to support
   // creating channels at any time, even before we send or receive
   // initiate messages, which is before we create the transports.
   TransportProxy* transproxy = GetOrCreateTransportProxy(content_name);
-  return transproxy->CreateChannel(channel_name, component);
+  return transproxy->CreateChannel(component);
 }
 
 TransportChannel* BaseSession::GetChannel(const std::string& content_name,

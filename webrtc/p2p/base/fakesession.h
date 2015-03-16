@@ -465,12 +465,11 @@ class FakeSession : public BaseSession {
 
   virtual TransportChannel* CreateChannel(
       const std::string& content_name,
-      const std::string& channel_name,
       int component) {
     if (fail_create_channel_) {
       return NULL;
     }
-    return BaseSession::CreateChannel(content_name, channel_name, component);
+    return BaseSession::CreateChannel(content_name, component);
   }
 
   void set_fail_channel_creation(bool fail_channel_creation) {

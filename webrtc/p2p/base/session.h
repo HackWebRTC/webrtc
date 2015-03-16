@@ -81,8 +81,7 @@ class TransportProxy : public sigslot::has_slots<> {
   }
 
   TransportChannel* GetChannel(int component);
-  TransportChannel* CreateChannel(const std::string& channel_name,
-                                  int component);
+  TransportChannel* CreateChannel(int component);
   bool HasChannel(int component);
   void DestroyChannel(int component);
 
@@ -130,7 +129,6 @@ class TransportProxy : public sigslot::has_slots<> {
 
  private:
   TransportChannelProxy* GetChannelProxy(int component) const;
-  TransportChannelProxy* GetChannelProxyByName(const std::string& name) const;
 
   // Creates a new channel on the Transport which causes the reference
   // count to increment.
@@ -306,7 +304,6 @@ class BaseSession : public sigslot::has_slots<>,
   // shouldn't be an issue since the main thread will be blocked in
   // Send when doing so.
   virtual TransportChannel* CreateChannel(const std::string& content_name,
-                                          const std::string& channel_name,
                                           int component);
 
   // Returns the channel with the given names.
