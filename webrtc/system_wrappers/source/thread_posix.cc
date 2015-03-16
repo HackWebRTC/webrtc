@@ -62,6 +62,7 @@ int ConvertToSystemPriority(ThreadPriority priority, int min_prio,
   return low_prio;
 }
 
+// static
 void* ThreadPosix::StartThread(void* param) {
   static_cast<ThreadPosix*>(param)->Run();
   return 0;
@@ -72,8 +73,7 @@ ThreadPosix::ThreadPosix(ThreadRunFunction func, ThreadObj obj,
     : run_function_(func),
       obj_(obj),
       prio_(prio),
-      started_(false),
-      stop_event_(true, false),
+      stop_event_(false, false),
       name_(thread_name ? thread_name : "webrtc"),
       thread_(0) {
   DCHECK(name_.length() < kThreadMaxNameLength);
@@ -91,25 +91,23 @@ ThreadPosix::~ThreadPosix() {
 // here.
 bool ThreadPosix::Start() {
   DCHECK(thread_checker_.CalledOnValidThread());
+  DCHECK(!thread_) << "Thread already started?";
 
   ThreadAttributes attr;
   // Set the stack stack size to 1M.
   pthread_attr_setstacksize(&attr, 1024 * 1024);
-
   CHECK_EQ(0, pthread_create(&thread_, &attr, &StartThread, this));
-  started_ = true;
   return true;
 }
 
 bool ThreadPosix::Stop() {
   DCHECK(thread_checker_.CalledOnValidThread());
-  if (!started_)
+  if (!thread_)
     return true;
 
   stop_event_.Set();
   CHECK_EQ(0, pthread_join(thread_, nullptr));
-  started_ = false;
-  stop_event_.Reset();
+  thread_ = 0;
 
   return true;
 }

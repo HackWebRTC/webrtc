@@ -1842,16 +1842,7 @@ int32_t ViEChannel::StartDecodeThread() {
   decode_thread_ = ThreadWrapper::CreateThread(ChannelDecodeThreadFunction,
                                                    this, kHighestPriority,
                                                    "DecodingThread");
-  if (!decode_thread_) {
-    return -1;
-  }
-
-  if (decode_thread_->Start() == false) {
-    delete decode_thread_;
-    decode_thread_ = NULL;
-    LOG(LS_ERROR) << "Could not start decode thread.";
-    return -1;
-  }
+  decode_thread_->Start();
   return 0;
 }
 
@@ -1862,12 +1853,10 @@ int32_t ViEChannel::StopDecodeThread() {
 
   vcm_->TriggerDecoderShutdown();
 
-  if (decode_thread_->Stop()) {
-    delete decode_thread_;
-  } else {
-    assert(false && "could not stop decode thread");
-  }
+  decode_thread_->Stop();
+  delete decode_thread_;
   decode_thread_ = NULL;
+
   return 0;
 }
 

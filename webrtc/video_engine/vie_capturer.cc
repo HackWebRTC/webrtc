@@ -88,9 +88,7 @@ ViECapturer::ViECapturer(int capture_id,
       overuse_detector_(
           new OveruseFrameDetector(Clock::GetRealTimeClock(),
                                    cpu_overuse_metrics_observer_.get())) {
-  if (!capture_thread_.Start()) {
-    assert(false);
-  }
+  capture_thread_.Start();
   module_process_thread_.RegisterModule(overuse_detector_.get());
 }
 

@@ -42,7 +42,6 @@ class ThreadPosix : public ThreadWrapper {
   ThreadRunFunction const run_function_;
   void* const obj_;
   ThreadPriority prio_;
-  bool started_;
   rtc::Event stop_event_;
   const std::string name_;
 
