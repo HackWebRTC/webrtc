@@ -252,6 +252,21 @@ struct VideoEncoderConfig {
   int cpu_profile;
 };
 
+// Get the codec setting associated with |payload_type|. If there
+// is no codec associated with that payload type it returns false.
+template <class Codec>
+bool FindCodecById(const std::vector<Codec>& codecs,
+                   int payload_type,
+                   Codec* codec_out) {
+  for (const auto& codec : codecs) {
+    if (codec.id == payload_type) {
+      *codec_out = codec;
+      return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace cricket
 
 #endif  // TALK_MEDIA_BASE_CODEC_H_

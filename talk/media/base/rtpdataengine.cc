@@ -66,20 +66,6 @@ DataMediaChannel* RtpDataEngine::CreateChannel(
   return new RtpDataMediaChannel(timing_.get());
 }
 
-// TODO(pthatcher): Should we move these find/get functions somewhere
-// common?
-bool FindCodecById(const std::vector<DataCodec>& codecs,
-                   int id, DataCodec* codec_out) {
-  std::vector<DataCodec>::const_iterator iter;
-  for (iter = codecs.begin(); iter != codecs.end(); ++iter) {
-    if (iter->id == id) {
-      *codec_out = *iter;
-      return true;
-    }
-  }
-  return false;
-}
-
 bool FindCodecByName(const std::vector<DataCodec>& codecs,
                      const std::string& name, DataCodec* codec_out) {
   std::vector<DataCodec>::const_iterator iter;

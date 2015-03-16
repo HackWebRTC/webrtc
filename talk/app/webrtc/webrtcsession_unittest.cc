@@ -136,6 +136,26 @@ static const char kTooLongIceUfragPwd[] =
     "IceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfrag"
     "IceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfrag";
 
+static const char kSdpWithRtx[] =
+    "v=0\r\n"
+    "o=- 4104004319237231850 2 IN IP4 127.0.0.1\r\n"
+    "s=-\r\n"
+    "t=0 0\r\n"
+    "a=msid-semantic: WMS stream1\r\n"
+    "m=video 9 RTP/SAVPF 0 96\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
+    "a=rtcp:9 IN IP4 0.0.0.0\r\n"
+    "a=ice-ufrag:CerjGp19G7wpXwl7\r\n"
+    "a=ice-pwd:cMvOlFvQ6ochez1ZOoC2uBEC\r\n"
+    "a=mid:video\r\n"
+    "a=sendrecv\r\n"
+    "a=rtcp-mux\r\n"
+    "a=crypto:1 AES_CM_128_HMAC_SHA1_80 "
+    "inline:5/4N5CDvMiyDArHtBByUM71VIkguH17ZNoX60GrA\r\n"
+    "a=rtpmap:0 fake_video_codec/90000\r\n"
+    "a=rtpmap:96 rtx/90000\r\n"
+    "a=fmtp:96 apt=0\r\n";
+
 // Add some extra |newlines| to the |message| after |line|.
 static void InjectAfter(const std::string& line,
                         const std::string& newlines,
@@ -3544,6 +3564,28 @@ TEST_F(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesSeparated) {
   EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate));
 
   answer = CreateAnswer(NULL);
+  SetLocalDescriptionWithoutError(answer);
+}
+// Tests that RTX codec is removed from the answer when it isn't supported
+// by local side.
+TEST_F(WebRtcSessionTest, TestRtxRemovedByCreateAnswer) {
+  Init();
+  mediastream_signaling_.SendAudioVideoStream1();
+  std::string offer_sdp(kSdpWithRtx);
+
+  SessionDescriptionInterface* offer =
+      CreateSessionDescription(JsepSessionDescription::kOffer, offer_sdp, NULL);
+  EXPECT_TRUE(offer->ToString(&offer_sdp));
+
+  // Offer SDP contains the RTX codec.
+  EXPECT_TRUE(offer_sdp.find("rtx") != std::string::npos);
+  SetRemoteDescriptionWithoutError(offer);
+
+  SessionDescriptionInterface* answer = CreateAnswer(NULL);
+  std::string answer_sdp;
+  answer->ToString(&answer_sdp);
+  // Answer SDP removes the unsupported RTX codec.
+  EXPECT_TRUE(answer_sdp.find("rtx") == std::string::npos);
   SetLocalDescriptionWithoutError(answer);
 }
 

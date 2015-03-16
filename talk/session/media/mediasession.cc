@@ -752,6 +752,24 @@ static bool CreateMediaContentOffer(
 }
 
 template <class C>
+static bool ReferencedCodecsMatch(const std::vector<C>& codecs1,
+                                  const std::string& codec1_id_str,
+                                  const std::vector<C>& codecs2,
+                                  const std::string& codec2_id_str) {
+  int codec1_id;
+  int codec2_id;
+  C codec1;
+  C codec2;
+  if (!rtc::FromString(codec1_id_str, &codec1_id) ||
+      !rtc::FromString(codec2_id_str, &codec2_id) ||
+      !FindCodecById(codecs1, codec1_id, &codec1) ||
+      !FindCodecById(codecs2, codec2_id, &codec2)) {
+    return false;
+  }
+  return codec1.Matches(codec2);
+}
+
+template <class C>
 static void NegotiateCodecs(const std::vector<C>& local_codecs,
                             const std::vector<C>& offered_codecs,
                             std::vector<C>* negotiated_codecs) {
@@ -765,15 +783,26 @@ static void NegotiateCodecs(const std::vector<C>& local_codecs,
         C negotiated = *ours;
         negotiated.IntersectFeedbackParams(*theirs);
         if (IsRtxCodec(negotiated)) {
-          // Only negotiate RTX if kCodecParamAssociatedPayloadType has been
-          // set.
-          std::string apt_value;
-          if (!theirs->GetParam(kCodecParamAssociatedPayloadType, &apt_value)) {
+          std::string offered_apt_value;
+          std::string local_apt_value;
+          if (!ours->GetParam(kCodecParamAssociatedPayloadType,
+                              &local_apt_value) ||
+              !theirs->GetParam(kCodecParamAssociatedPayloadType,
+                                &offered_apt_value)) {
             LOG(LS_WARNING) << "RTX missing associated payload type.";
             continue;
           }
-          negotiated.SetParam(kCodecParamAssociatedPayloadType, apt_value);
+          // Only negotiate RTX if kCodecParamAssociatedPayloadType has been
+          // set in local and remote codecs, and they match.
+          if (!ReferencedCodecsMatch(local_codecs, local_apt_value,
+                                     offered_codecs, offered_apt_value)) {
+            LOG(LS_WARNING) << "RTX associated codecs don't match.";
+            continue;
+          }
+          negotiated.SetParam(kCodecParamAssociatedPayloadType,
+                              offered_apt_value);
         }
+
         negotiated.id = theirs->id;
         // RFC3264: Although the answerer MAY list the formats in their desired
         // order of preference, it is RECOMMENDED that unless there is a

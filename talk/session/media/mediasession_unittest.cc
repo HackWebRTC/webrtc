@@ -197,6 +197,22 @@ GetMediaDirection(const ContentInfo* content) {
   return desc->direction();
 }
 
+static void AddRtxCodec(const VideoCodec& rtx_codec,
+                        std::vector<VideoCodec>* codecs) {
+  VideoCodec rtx;
+  ASSERT_FALSE(cricket::FindCodecById(*codecs, rtx_codec.id, &rtx));
+  codecs->push_back(rtx_codec);
+}
+
+template <class T>
+static std::vector<std::string> GetCodecNames(const std::vector<T>& codecs) {
+  std::vector<std::string> codec_names;
+  for (const auto& codec : codecs) {
+    codec_names.push_back(codec.name);
+  }
+  return codec_names;
+}
+
 class MediaSessionDescriptionFactoryTest : public testing::Test {
  public:
   MediaSessionDescriptionFactoryTest()
@@ -1545,25 +1561,13 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   opts.recv_video = true;
   opts.recv_audio = false;
   std::vector<VideoCodec> f1_codecs = MAKE_VECTOR(kVideoCodecs1);
-  VideoCodec rtx_f1;
-  rtx_f1.id = 126;
-  rtx_f1.name = cricket::kRtxCodecName;
-
   // This creates rtx for H264 with the payload type |f1_| uses.
-  rtx_f1.params[cricket::kCodecParamAssociatedPayloadType] =
-      rtc::ToString<int>(kVideoCodecs1[1].id);
-  f1_codecs.push_back(rtx_f1);
+  AddRtxCodec(VideoCodec::CreateRtxCodec(126, kVideoCodecs1[1].id), &f1_codecs);
   f1_.set_video_codecs(f1_codecs);
 
   std::vector<VideoCodec> f2_codecs = MAKE_VECTOR(kVideoCodecs2);
-  VideoCodec rtx_f2;
-  rtx_f2.id = 127;
-  rtx_f2.name = cricket::kRtxCodecName;
-
   // This creates rtx for H264 with the payload type |f2_| uses.
-  rtx_f2.params[cricket::kCodecParamAssociatedPayloadType] =
-      rtc::ToString<int>(kVideoCodecs2[0].id);
-  f2_codecs.push_back(rtx_f2);
+  AddRtxCodec(VideoCodec::CreateRtxCodec(125, kVideoCodecs2[0].id), &f2_codecs);
   f2_.set_video_codecs(f2_codecs);
 
   rtc::scoped_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
@@ -1575,7 +1579,8 @@ TEST_F(MediaSessionDescriptionFactoryTest,
       GetFirstVideoContentDescription(answer.get());
 
   std::vector<VideoCodec> expected_codecs = MAKE_VECTOR(kVideoCodecsAnswer);
-  expected_codecs.push_back(rtx_f1);
+  AddRtxCodec(VideoCodec::CreateRtxCodec(126, kVideoCodecs1[1].id),
+              &expected_codecs);
 
   EXPECT_EQ(expected_codecs, vcd->codecs());
 
@@ -1603,14 +1608,8 @@ TEST_F(MediaSessionDescriptionFactoryTest,
 TEST_F(MediaSessionDescriptionFactoryTest,
        RespondentCreatesOfferWithVideoAndRtxAfterCreatingAudioAnswer) {
   std::vector<VideoCodec> f1_codecs = MAKE_VECTOR(kVideoCodecs1);
-  VideoCodec rtx_f1;
-  rtx_f1.id = 126;
-  rtx_f1.name = cricket::kRtxCodecName;
-
   // This creates rtx for H264 with the payload type |f1_| uses.
-  rtx_f1.params[cricket::kCodecParamAssociatedPayloadType] =
-      rtc::ToString<int>(kVideoCodecs1[1].id);
-  f1_codecs.push_back(rtx_f1);
+  AddRtxCodec(VideoCodec::CreateRtxCodec(126, kVideoCodecs1[1].id), &f1_codecs);
   f1_.set_video_codecs(f1_codecs);
 
   MediaSessionOptions opts;
@@ -1634,12 +1633,7 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   std::vector<VideoCodec> f2_codecs = MAKE_VECTOR(kVideoCodecs2);
   int used_pl_type = acd->codecs()[0].id;
   f2_codecs[0].id = used_pl_type;  // Set the payload type for H264.
-  VideoCodec rtx_f2;
-  rtx_f2.id = 127;
-  rtx_f2.name = cricket::kRtxCodecName;
-  rtx_f2.params[cricket::kCodecParamAssociatedPayloadType] =
-      rtc::ToString<int>(used_pl_type);
-  f2_codecs.push_back(rtx_f2);
+  AddRtxCodec(VideoCodec::CreateRtxCodec(125, used_pl_type), &f2_codecs);
   f2_.set_video_codecs(f2_codecs);
 
   rtc::scoped_ptr<SessionDescription> updated_offer(
@@ -1671,22 +1665,13 @@ TEST_F(MediaSessionDescriptionFactoryTest, RtxWithoutApt) {
   opts.recv_video = true;
   opts.recv_audio = false;
   std::vector<VideoCodec> f1_codecs = MAKE_VECTOR(kVideoCodecs1);
-  VideoCodec rtx_f1;
-  rtx_f1.id = 126;
-  rtx_f1.name = cricket::kRtxCodecName;
-
-  f1_codecs.push_back(rtx_f1);
+  // This creates RTX without associated payload type parameter.
+  AddRtxCodec(VideoCodec(126, cricket::kRtxCodecName, 0, 0, 0, 0), &f1_codecs);
   f1_.set_video_codecs(f1_codecs);
 
   std::vector<VideoCodec> f2_codecs = MAKE_VECTOR(kVideoCodecs2);
-  VideoCodec rtx_f2;
-  rtx_f2.id = 127;
-  rtx_f2.name = cricket::kRtxCodecName;
-
-  // This creates rtx for H264 with the payload type |f2_| uses.
-  rtx_f2.SetParam(cricket::kCodecParamAssociatedPayloadType,
-                  rtc::ToString<int>(kVideoCodecs2[0].id));
-  f2_codecs.push_back(rtx_f2);
+  // This creates RTX for H264 with the payload type |f2_| uses.
+  AddRtxCodec(VideoCodec::CreateRtxCodec(125, kVideoCodecs2[0].id), &f2_codecs);
   f2_.set_video_codecs(f2_codecs);
 
   rtc::scoped_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
@@ -1711,13 +1696,75 @@ TEST_F(MediaSessionDescriptionFactoryTest, RtxWithoutApt) {
   rtc::scoped_ptr<SessionDescription> answer(
       f2_.CreateAnswer(offer.get(), opts, NULL));
 
+  std::vector<std::string> codec_names =
+      GetCodecNames(GetFirstVideoContentDescription(answer.get())->codecs());
+  EXPECT_EQ(codec_names.end(), std::find(codec_names.begin(), codec_names.end(),
+                                         cricket::kRtxCodecName));
+}
+
+// Test that RTX will be filtered out in the answer if its associated payload
+// type doesn't match the local value.
+TEST_F(MediaSessionDescriptionFactoryTest, FilterOutRtxIfAptDoesntMatch) {
+  MediaSessionOptions opts;
+  opts.recv_video = true;
+  opts.recv_audio = false;
+  std::vector<VideoCodec> f1_codecs = MAKE_VECTOR(kVideoCodecs1);
+  // This creates RTX for H264 in sender.
+  AddRtxCodec(VideoCodec::CreateRtxCodec(126, kVideoCodecs1[1].id), &f1_codecs);
+  f1_.set_video_codecs(f1_codecs);
+
+  std::vector<VideoCodec> f2_codecs = MAKE_VECTOR(kVideoCodecs2);
+  // This creates RTX for H263 in receiver.
+  AddRtxCodec(VideoCodec::CreateRtxCodec(125, kVideoCodecs2[1].id), &f2_codecs);
+  f2_.set_video_codecs(f2_codecs);
+
+  rtc::scoped_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+  // Associated payload type doesn't match, therefore, RTX codec is removed in
+  // the answer.
+  rtc::scoped_ptr<SessionDescription> answer(
+      f2_.CreateAnswer(offer.get(), opts, NULL));
+
+  std::vector<std::string> codec_names =
+      GetCodecNames(GetFirstVideoContentDescription(answer.get())->codecs());
+  EXPECT_EQ(codec_names.end(), std::find(codec_names.begin(), codec_names.end(),
+                                         cricket::kRtxCodecName));
+}
+
+// Test that when multiple RTX codecs are offered, only the matched RTX codec
+// is added in the answer, and the unsupported RTX codec is filtered out.
+TEST_F(MediaSessionDescriptionFactoryTest,
+       FilterOutUnsupportedRtxWhenCreatingAnswer) {
+  MediaSessionOptions opts;
+  opts.recv_video = true;
+  opts.recv_audio = false;
+  std::vector<VideoCodec> f1_codecs = MAKE_VECTOR(kVideoCodecs1);
+  // This creates RTX for H264-SVC in sender.
+  AddRtxCodec(VideoCodec::CreateRtxCodec(125, kVideoCodecs1[0].id), &f1_codecs);
+  f1_.set_video_codecs(f1_codecs);
+
+  // This creates RTX for H264 in sender.
+  AddRtxCodec(VideoCodec::CreateRtxCodec(126, kVideoCodecs1[1].id), &f1_codecs);
+  f1_.set_video_codecs(f1_codecs);
+
+  std::vector<VideoCodec> f2_codecs = MAKE_VECTOR(kVideoCodecs2);
+  // This creates RTX for H264 in receiver.
+  AddRtxCodec(VideoCodec::CreateRtxCodec(124, kVideoCodecs2[0].id), &f2_codecs);
+  f2_.set_video_codecs(f2_codecs);
+
+  // H264-SVC codec is removed in the answer, therefore, associated RTX codec
+  // for H264-SVC should also be removed.
+  rtc::scoped_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+  rtc::scoped_ptr<SessionDescription> answer(
+      f2_.CreateAnswer(offer.get(), opts, NULL));
   const VideoContentDescription* vcd =
       GetFirstVideoContentDescription(answer.get());
+  std::vector<VideoCodec> expected_codecs = MAKE_VECTOR(kVideoCodecsAnswer);
+  AddRtxCodec(VideoCodec::CreateRtxCodec(126, kVideoCodecs1[1].id),
+              &expected_codecs);
 
-  for (std::vector<VideoCodec>::const_iterator iter = vcd->codecs().begin();
-       iter != vcd->codecs().end(); ++iter) {
-    ASSERT_STRNE(iter->name.c_str(), cricket::kRtxCodecName);
-  }
+  EXPECT_EQ(expected_codecs, vcd->codecs());
 }
 
 // Create an updated offer after creating an answer to the original offer and
