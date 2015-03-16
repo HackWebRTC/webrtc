@@ -68,15 +68,15 @@ class Vp8SequenceCoderDecodeCallback : public webrtc::DecodedImageCallback {
  public:
   explicit Vp8SequenceCoderDecodeCallback(FILE* decoded_file)
       : decoded_file_(decoded_file) {}
-  int Decoded(webrtc::I420VideoFrame& frame);
+  int Decoded(webrtc::I420VideoFrame* frame);
   bool DecodeComplete();
 
  private:
   FILE* decoded_file_;
 };
 
-int Vp8SequenceCoderDecodeCallback::Decoded(webrtc::I420VideoFrame& image) {
-  EXPECT_EQ(0, webrtc::PrintI420VideoFrame(image, decoded_file_));
+int Vp8SequenceCoderDecodeCallback::Decoded(webrtc::I420VideoFrame* image) {
+  EXPECT_EQ(0, webrtc::PrintI420VideoFrame(*image, decoded_file_));
   return 0;
 }
 

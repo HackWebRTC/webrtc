@@ -312,7 +312,7 @@ double TestScaler::ComputeAvgSequencePSNR(FILE* input_file,
                                required_size, kVideoRotation_0, &in_frame));
     EXPECT_EQ(0, ConvertToI420(kI420, output_buffer, 0, 0, width, height,
                                required_size, kVideoRotation_0, &out_frame));
-    double psnr = I420PSNR(&in_frame, &out_frame);
+    double psnr = I420PSNR(in_frame, out_frame);
     avg_psnr += psnr;
   }
   avg_psnr = avg_psnr / frame_count;

@@ -130,7 +130,7 @@ TEST_F(VideoProcessingModuleTest, HandleBadSize) {
 
   EXPECT_EQ(VPM_PARAMETER_ERROR, vpm_->SetTargetResolution(0,0,0));
 
-  I420VideoFrame *out_frame = NULL;
+  I420VideoFrame* out_frame = NULL;
   EXPECT_EQ(VPM_PARAMETER_ERROR, vpm_->PreprocessFrame(bad_frame, &out_frame));
 }
 
@@ -358,7 +358,7 @@ void TestSize(const I420VideoFrame& source_frame,
   WriteProcessedFrameForVisualInspection(resampled_source_frame, *out_frame);
 
   // Compute PSNR against the cropped source frame and check expectation.
-  double psnr = I420PSNR(&cropped_source_frame, out_frame);
+  double psnr = I420PSNR(cropped_source_frame, *out_frame);
   EXPECT_GT(psnr, expected_psnr);
   printf("PSNR: %f. PSNR is between source of size %d %d, and a modified "
          "source which is scaled down/up to: %d %d, and back to source size \n",

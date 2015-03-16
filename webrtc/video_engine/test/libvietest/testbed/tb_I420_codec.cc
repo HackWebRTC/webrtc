@@ -246,7 +246,7 @@ int32_t TbI420Decoder::Decode(
 
     _decodedImage.set_timestamp(inputImage._timeStamp);
 
-    _decodeCompleteCallback->Decoded(_decodedImage);
+    _decodeCompleteCallback->Decoded(&_decodedImage);
     return WEBRTC_VIDEO_CODEC_OK;
 }
 

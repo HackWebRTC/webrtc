@@ -484,7 +484,7 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
                              img->stride[VPX_PLANE_U],
                              img->stride[VPX_PLANE_V]);
   decoded_image_.set_timestamp(timestamp);
-  int ret = decode_complete_callback_->Decoded(decoded_image_);
+  int ret = decode_complete_callback_->Decoded(&decoded_image_);
   if (ret != 0)
     return ret;
   return WEBRTC_VIDEO_CODEC_OK;

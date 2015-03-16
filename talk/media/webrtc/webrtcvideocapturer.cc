@@ -354,7 +354,7 @@ bool WebRtcVideoCapturer::GetPreferredFourccs(
 }
 
 void WebRtcVideoCapturer::OnIncomingCapturedFrame(const int32_t id,
-    webrtc::I420VideoFrame& sample) {
+    webrtc::I420VideoFrame* sample) {
   // This would be a normal CritScope, except that it's possible that:
   // (1) whatever system component producing this frame has taken a lock, and
   // (2) Stop() probably calls back into that system component, which may take
@@ -371,12 +371,12 @@ void WebRtcVideoCapturer::OnIncomingCapturedFrame(const int32_t id,
   // Log the size and pixel aspect ratio of the first captured frame.
   if (1 == captured_frames_) {
     LOG(LS_INFO) << "Captured frame size "
-                 << sample.width() << "x" << sample.height()
+                 << sample->width() << "x" << sample->height()
                  << ". Expected format " << GetCaptureFormat()->ToString();
   }
 
   if (start_thread_->IsCurrent()) {
-    SignalFrameCapturedOnStartThread(&sample);
+    SignalFrameCapturedOnStartThread(sample);
   } else {
     // This currently happens on with at least VideoCaptureModuleV4L2 and
     // possibly other implementations of WebRTC's VideoCaptureModule.
@@ -385,7 +385,7 @@ void WebRtcVideoCapturer::OnIncomingCapturedFrame(const int32_t id,
     // thread hop.
     start_thread_->Invoke<void>(
         rtc::Bind(&WebRtcVideoCapturer::SignalFrameCapturedOnStartThread,
-                  this, &sample));
+                  this, sample));
   }
 }
 

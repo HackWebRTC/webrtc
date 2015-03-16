@@ -169,7 +169,7 @@ uint32_t VideoProcessingModuleImpl::DecimatedHeight() const {
 
 int32_t VideoProcessingModuleImpl::PreprocessFrame(
     const I420VideoFrame& frame,
-    I420VideoFrame **processed_frame) {
+    I420VideoFrame** processed_frame) {
   CriticalSectionScoped mutex(&mutex_);
   return frame_pre_processor_.PreprocessFrame(frame, processed_frame);
 }

@@ -39,7 +39,7 @@ int32_t FakeDecoder::Decode(const EncodedImage& input,
   frame_.set_ntp_time_ms(input.ntp_time_ms_);
   frame_.set_render_time_ms(render_time_ms);
 
-  callback_->Decoded(frame_);
+  callback_->Decoded(&frame_);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }

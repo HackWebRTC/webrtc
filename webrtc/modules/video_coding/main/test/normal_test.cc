@@ -147,13 +147,13 @@ VCMNTDecodeCompleteCallback::~VCMNTDecodeCompleteCallback()
   fclose(_decodedFile);
 }
  int32_t
-VCMNTDecodeCompleteCallback::FrameToRender(webrtc::I420VideoFrame& videoFrame)
+VCMNTDecodeCompleteCallback::FrameToRender(webrtc::I420VideoFrame* videoFrame)
 {
-    if (videoFrame.width() != _currentWidth ||
-        videoFrame.height() != _currentHeight)
+    if (videoFrame->width() != _currentWidth ||
+        videoFrame->height() != _currentHeight)
     {
-        _currentWidth = videoFrame.width();
-        _currentHeight = videoFrame.height();
+        _currentWidth = videoFrame->width();
+        _currentHeight = videoFrame->height();
         if (_decodedFile != NULL)
         {
             fclose(_decodedFile);
@@ -161,11 +161,11 @@ VCMNTDecodeCompleteCallback::FrameToRender(webrtc::I420VideoFrame& videoFrame)
         }
         _decodedFile = fopen(_outname.c_str(), "wb");
     }
-    if (PrintI420VideoFrame(videoFrame, _decodedFile) < 0) {
+    if (PrintI420VideoFrame(*videoFrame, _decodedFile) < 0) {
       return -1;
     }
-    _decodedBytes += webrtc::CalcBufferSize(webrtc::kI420, videoFrame.width(),
-                                            videoFrame.height());
+    _decodedBytes += webrtc::CalcBufferSize(webrtc::kI420, videoFrame->width(),
+                                            videoFrame->height());
     return VCM_OK;
 }
 

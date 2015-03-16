@@ -52,7 +52,7 @@ class VideoChannelAGL : public VideoRenderCallback {
   int IsUpdated(bool& isUpdated);
   virtual int UpdateStretchSize(int stretchHeight, int stretchWidth);
   virtual int32_t RenderFrame(const uint32_t streamId,
-                              I420VideoFrame& videoFrame);
+                              I420VideoFrame* videoFrame);
 
  private:
 

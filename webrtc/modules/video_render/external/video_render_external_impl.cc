@@ -188,9 +188,8 @@ int32_t VideoRenderExternalImpl::SetBitmap(const void* bitMap,
 }
 
 // VideoRenderCallback
-int32_t VideoRenderExternalImpl::RenderFrame(
-                                                   const uint32_t streamId,
-                                                   I420VideoFrame& videoFrame)
+int32_t VideoRenderExternalImpl::RenderFrame(const uint32_t streamId,
+                                             I420VideoFrame* videoFrame)
 {
     return 0;
 }

@@ -24,10 +24,10 @@ VideoRenderIosChannel::VideoRenderIosChannel(VideoRenderIosView* view)
 VideoRenderIosChannel::~VideoRenderIosChannel() { delete current_frame_; }
 
 int32_t VideoRenderIosChannel::RenderFrame(const uint32_t stream_id,
-                                           I420VideoFrame& video_frame) {
-  video_frame.set_render_time_ms(0);
+                                           I420VideoFrame* video_frame) {
+  video_frame->set_render_time_ms(0);
 
-  current_frame_->CopyFrame(video_frame);
+  current_frame_->CopyFrame(*video_frame);
   buffer_is_updated_ = true;
 
   return 0;

@@ -1620,7 +1620,7 @@ CallStatsObserver* ViEChannel::GetStatsObserver() {
 // held the lock when calling VideoDecoder::Decode, Reset, or Release. Acquiring
 // the same lock in the path of decode callback can deadlock.
 int32_t ViEChannel::FrameToRender(
-    I420VideoFrame& video_frame) {  // NOLINT
+    I420VideoFrame* video_frame) {  // NOLINT
   CriticalSectionScoped cs(callback_cs_.get());
 
   if (decoder_reset_) {
@@ -1628,30 +1628,30 @@ int32_t ViEChannel::FrameToRender(
     if (codec_observer_) {
       // The codec set by RegisterReceiveCodec might not be the size we're
       // actually decoding.
-      receive_codec_.width = static_cast<uint16_t>(video_frame.width());
-      receive_codec_.height = static_cast<uint16_t>(video_frame.height());
+      receive_codec_.width = static_cast<uint16_t>(video_frame->width());
+      receive_codec_.height = static_cast<uint16_t>(video_frame->height());
       codec_observer_->IncomingCodecChanged(channel_id_, receive_codec_);
     }
     decoder_reset_ = false;
   }
   // Post processing is not supported if the frame is backed by a texture.
-  if (video_frame.native_handle() == NULL) {
+  if (video_frame->native_handle() == NULL) {
     if (pre_render_callback_ != NULL)
-      pre_render_callback_->FrameCallback(&video_frame);
+      pre_render_callback_->FrameCallback(video_frame);
     if (effect_filter_) {
       size_t length =
-          CalcBufferSize(kI420, video_frame.width(), video_frame.height());
+          CalcBufferSize(kI420, video_frame->width(), video_frame->height());
       rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
-      ExtractBuffer(video_frame, length, video_buffer.get());
+      ExtractBuffer(*video_frame, length, video_buffer.get());
       effect_filter_->Transform(length,
                                 video_buffer.get(),
-                                video_frame.ntp_time_ms(),
-                                video_frame.timestamp(),
-                                video_frame.width(),
-                                video_frame.height());
+                                video_frame->ntp_time_ms(),
+                                video_frame->timestamp(),
+                                video_frame->width(),
+                                video_frame->height());
     }
     if (color_enhancement_) {
-      VideoProcessingModule::ColorEnhancement(&video_frame);
+      VideoProcessingModule::ColorEnhancement(video_frame);
     }
   }
 
@@ -1662,7 +1662,7 @@ int32_t ViEChannel::FrameToRender(
     no_of_csrcs = 1;
   }
   std::vector<uint32_t> csrcs(arr_ofCSRC, arr_ofCSRC + no_of_csrcs);
-  DeliverFrame(&video_frame, csrcs);
+  DeliverFrame(video_frame, csrcs);
 
   return 0;
 }

@@ -124,7 +124,7 @@ int32_t ViERenderer::Init(const uint32_t z_order,
 void ViERenderer::DeliverFrame(int id,
                                I420VideoFrame* video_frame,
                                const std::vector<uint32_t>& csrcs) {
-  render_callback_->RenderFrame(render_id_, *video_frame);
+  render_callback_->RenderFrame(render_id_, video_frame);
 }
 
 void ViERenderer::DelayChanged(int id, int frame_delay) {}
@@ -156,15 +156,15 @@ int ViEExternalRendererImpl::SetViEExternalRenderer(
 }
 
 int32_t ViEExternalRendererImpl::RenderFrame(const uint32_t stream_id,
-                                             I420VideoFrame& video_frame) {
+                                             I420VideoFrame* video_frame) {
   if (external_renderer_format_ != kVideoI420)
     return ConvertAndRenderFrame(stream_id, video_frame);
 
   // Fast path for I420 without frame copy.
   NotifyFrameSizeChange(stream_id, video_frame);
-  if (video_frame.native_handle() == NULL ||
+  if (video_frame->native_handle() == NULL ||
       external_renderer_->IsTextureSupported()) {
-    external_renderer_->DeliverI420Frame(video_frame);
+    external_renderer_->DeliverI420Frame(*video_frame);
   } else {
     // TODO(wuchengli): readback the pixels and deliver the frame.
   }
@@ -173,17 +173,17 @@ int32_t ViEExternalRendererImpl::RenderFrame(const uint32_t stream_id,
 
 int32_t ViEExternalRendererImpl::ConvertAndRenderFrame(
     uint32_t stream_id,
-    I420VideoFrame& video_frame) {
-  if (video_frame.native_handle() != NULL) {
+    I420VideoFrame* video_frame) {
+  if (video_frame->native_handle() != NULL) {
     NotifyFrameSizeChange(stream_id, video_frame);
 
     if (external_renderer_->IsTextureSupported()) {
       external_renderer_->DeliverFrame(NULL,
                                        0,
-                                       video_frame.timestamp(),
-                                       video_frame.ntp_time_ms(),
-                                       video_frame.render_time_ms(),
-                                       video_frame.native_handle());
+                                       video_frame->timestamp(),
+                                       video_frame->ntp_time_ms(),
+                                       video_frame->render_time_ms(),
+                                       video_frame->native_handle());
     } else {
       // TODO(wuchengli): readback the pixels and deliver the frame.
     }
@@ -193,8 +193,8 @@ int32_t ViEExternalRendererImpl::ConvertAndRenderFrame(
   // Convert to requested format.
   VideoType type =
       RawVideoTypeToCommonVideoVideoType(external_renderer_format_);
-  size_t buffer_size = CalcBufferSize(type, video_frame.width(),
-                                      video_frame.height());
+  size_t buffer_size = CalcBufferSize(type, video_frame->width(),
+                                      video_frame->height());
   if (buffer_size == 0) {
     // Unsupported video format.
     assert(false);
@@ -212,7 +212,7 @@ int32_t ViEExternalRendererImpl::ConvertAndRenderFrame(
     case kVideoRGB565:
     case kVideoARGB4444:
     case kVideoARGB1555:
-      if (ConvertFromI420(video_frame, type, 0, out_frame) < 0)
+      if (ConvertFromI420(*video_frame, type, 0, out_frame) < 0)
         return -1;
       break;
     case kVideoIYUV:
@@ -229,9 +229,9 @@ int32_t ViEExternalRendererImpl::ConvertAndRenderFrame(
   if (out_frame) {
     external_renderer_->DeliverFrame(out_frame,
                                      converted_frame_.size(),
-                                     video_frame.timestamp(),
-                                     video_frame.ntp_time_ms(),
-                                     video_frame.render_time_ms(),
+                                     video_frame->timestamp(),
+                                     video_frame->ntp_time_ms(),
+                                     video_frame->render_time_ms(),
                                      NULL);
   }
   return 0;
@@ -239,11 +239,11 @@ int32_t ViEExternalRendererImpl::ConvertAndRenderFrame(
 
 void ViEExternalRendererImpl::NotifyFrameSizeChange(
     const uint32_t stream_id,
-    I420VideoFrame& video_frame) {
-  if (external_renderer_width_ != video_frame.width() ||
-      external_renderer_height_ != video_frame.height()) {
-    external_renderer_width_ = video_frame.width();
-    external_renderer_height_ = video_frame.height();
+    I420VideoFrame* video_frame) {
+  if (external_renderer_width_ != video_frame->width() ||
+      external_renderer_height_ != video_frame->height()) {
+    external_renderer_width_ = video_frame->width();
+    external_renderer_height_ = video_frame->height();
     external_renderer_->FrameSizeChange(
         external_renderer_width_, external_renderer_height_, stream_id);
   }

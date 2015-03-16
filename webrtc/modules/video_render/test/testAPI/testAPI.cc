@@ -262,7 +262,7 @@ public:
     }
     ;
     virtual int32_t RenderFrame(const uint32_t streamId,
-                                I420VideoFrame& videoFrame)
+                                I420VideoFrame* videoFrame)
     {
         _cnt++;
         if (_cnt % 100 == 0)
@@ -318,7 +318,7 @@ int TestSingleStream(VideoRender* renderModule) {
         // Render this frame with the specified delay
         videoFrame0.set_render_time_ms(TickTime::MillisecondTimestamp()
                                        + renderDelayMs);
-        renderCallback0->RenderFrame(streamId0, videoFrame0);
+        renderCallback0->RenderFrame(streamId0, &videoFrame0);
         SleepMs(1000/TEST_FRAME_RATE);
     }
 
@@ -392,7 +392,7 @@ int TestBitmapText(VideoRender* renderModule) {
         // Render this frame with the specified delay
         videoFrame0.set_render_time_ms(TickTime::MillisecondTimestamp() +
                                        renderDelayMs);
-        renderCallback0->RenderFrame(streamId0, videoFrame0);
+        renderCallback0->RenderFrame(streamId0, &videoFrame0);
         SleepMs(1000/TEST_FRAME_RATE);
     }
     // Sleep and let all frames be rendered before closing
@@ -477,22 +477,22 @@ int TestMultipleStreams(VideoRender* renderModule) {
 
       videoFrame0.set_render_time_ms(TickTime::MillisecondTimestamp() +
                                      renderDelayMs);
-      renderCallback0->RenderFrame(streamId0, videoFrame0);
+      renderCallback0->RenderFrame(streamId0, &videoFrame0);
 
       GetTestVideoFrame(&videoFrame1, TEST_STREAM1_START_COLOR);
       videoFrame1.set_render_time_ms(TickTime::MillisecondTimestamp() +
                                      renderDelayMs);
-      renderCallback1->RenderFrame(streamId1, videoFrame1);
+      renderCallback1->RenderFrame(streamId1, &videoFrame1);
 
       GetTestVideoFrame(&videoFrame2,  TEST_STREAM2_START_COLOR);
       videoFrame2.set_render_time_ms(TickTime::MillisecondTimestamp() +
                                      renderDelayMs);
-      renderCallback2->RenderFrame(streamId2, videoFrame2);
+      renderCallback2->RenderFrame(streamId2, &videoFrame2);
 
       GetTestVideoFrame(&videoFrame3, TEST_STREAM3_START_COLOR);
       videoFrame3.set_render_time_ms(TickTime::MillisecondTimestamp() +
                                      renderDelayMs);
-      renderCallback3->RenderFrame(streamId3, videoFrame3);
+      renderCallback3->RenderFrame(streamId3, &videoFrame3);
 
       SleepMs(1000/TEST_FRAME_RATE);
     }
@@ -550,7 +550,7 @@ int TestExternalRender(VideoRender* renderModule) {
     for (int i=0; i<frameCount; i++) {
         videoFrame0.set_render_time_ms(TickTime::MillisecondTimestamp() +
                                        renderDelayMs);
-        renderCallback0->RenderFrame(streamId0, videoFrame0);
+        renderCallback0->RenderFrame(streamId0, &videoFrame0);
         SleepMs(33);
     }
 

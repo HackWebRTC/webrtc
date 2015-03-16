@@ -49,7 +49,7 @@ class VideoRenderCallback
 {
 public:
     virtual int32_t RenderFrame(const uint32_t streamId,
-                                I420VideoFrame& videoFrame) = 0;
+                                I420VideoFrame* videoFrame) = 0;
 
 protected:
     virtual ~VideoRenderCallback()

@@ -44,15 +44,14 @@ VideoX11Channel::~VideoX11Channel()
 }
 
 int32_t VideoX11Channel::RenderFrame(const uint32_t streamId,
-                                     I420VideoFrame& videoFrame) {
+                                     I420VideoFrame* videoFrame) {
   CriticalSectionScoped cs(&_crit);
-  if (_width != videoFrame.width() || _height
-      != videoFrame.height()) {
-      if (FrameSizeChange(videoFrame.width(), videoFrame.height(), 1) == -1) {
+  if (_width != videoFrame->width() || _height != videoFrame->height()) {
+      if (FrameSizeChange(videoFrame->width(), videoFrame->height(), 1) == -1) {
         return -1;
     }
   }
-  return DeliverFrame(videoFrame);
+  return DeliverFrame(*videoFrame);
 }
 
 int32_t VideoX11Channel::FrameSizeChange(int32_t width,

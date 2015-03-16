@@ -148,11 +148,11 @@ int ConvertNV12ToRGB565(const uint8_t* src_frame,
 
 // Compute PSNR for an I420 frame (all planes).
 // Returns the PSNR in decibel, to a maximum of kInfinitePSNR.
-double I420PSNR(const I420VideoFrame* ref_frame,
-                const I420VideoFrame* test_frame);
+double I420PSNR(const I420VideoFrame& ref_frame,
+                const I420VideoFrame& test_frame);
 // Compute SSIM for an I420 frame (all planes).
-double I420SSIM(const I420VideoFrame* ref_frame,
-                const I420VideoFrame* test_frame);
+double I420SSIM(const I420VideoFrame& ref_frame,
+                const I420VideoFrame& test_frame);
 }
 
 #endif  // WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_

@@ -237,7 +237,7 @@ QualityModesTest::Perform(const CmdArgs& args)
   _vcm->EnableFrameDropper(false);
 
   I420VideoFrame sourceFrame;
-  I420VideoFrame *decimatedFrame = NULL;
+  I420VideoFrame* decimatedFrame = NULL;
   uint8_t* tmpBuffer = new uint8_t[_lengthSourceFrame];
   double startTime = clock()/(double)CLOCKS_PER_SEC;
   _vcm->SetChannelParameters(static_cast<uint32_t>(1000 * _bitRate), 0, 0);
@@ -483,18 +483,18 @@ VCMQMDecodeCompleteCallback::~VCMQMDecodeCompleteCallback()
  }
 
 int32_t
-VCMQMDecodeCompleteCallback::FrameToRender(I420VideoFrame& videoFrame)
+VCMQMDecodeCompleteCallback::FrameToRender(I420VideoFrame* videoFrame)
 {
   ++frames_cnt_since_drop_;
 
   // When receiving the first coded frame the last_frame variable is not set
   if (last_frame_.IsZeroSize()) {
-    last_frame_.CopyFrame(videoFrame);
+    last_frame_.CopyFrame(*videoFrame);
   }
 
    // Check if there were frames skipped.
   int num_frames_skipped = static_cast<int>( 0.5f +
-  (videoFrame.timestamp() - (last_frame_.timestamp() + (9e4 / frame_rate_))) /
+  (videoFrame->timestamp() - (last_frame_.timestamp() + (9e4 / frame_rate_))) /
   (9e4 / frame_rate_));
 
   // If so...put the last frames into the encoded stream to make up for the
@@ -510,9 +510,9 @@ VCMQMDecodeCompleteCallback::FrameToRender(I420VideoFrame& videoFrame)
   DataLog::InsertCell(
         feature_table_name_,"num frames since drop",frames_cnt_since_drop_);
 
-  if (_origWidth == videoFrame.width() && _origHeight == videoFrame.height())
+  if (_origWidth == videoFrame->width() && _origHeight == videoFrame->height())
   {
-    if (PrintI420VideoFrame(videoFrame, _decodedFile) < 0) {
+    if (PrintI420VideoFrame(*videoFrame, _decodedFile) < 0) {
       return -1;
     }
     _frameCnt++;
@@ -531,9 +531,9 @@ VCMQMDecodeCompleteCallback::FrameToRender(I420VideoFrame& videoFrame)
     return -1;
   }
 
-  _decodedBytes += CalcBufferSize(kI420, videoFrame.width(),
-                                  videoFrame.height());
-  videoFrame.SwapFrame(&last_frame_);
+  _decodedBytes += CalcBufferSize(kI420, videoFrame->width(),
+                                  videoFrame->height());
+  videoFrame->SwapFrame(&last_frame_);
   return VCM_OK;
 }
 

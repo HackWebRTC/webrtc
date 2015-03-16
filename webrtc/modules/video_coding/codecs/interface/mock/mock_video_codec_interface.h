@@ -49,7 +49,7 @@ class MockVideoEncoder : public VideoEncoder {
 class MockDecodedImageCallback : public DecodedImageCallback {
  public:
   MOCK_METHOD1(Decoded,
-               int32_t(I420VideoFrame& decodedImage));
+               int32_t(I420VideoFrame* decodedImage));
   MOCK_METHOD1(ReceivedDecodedReferenceFrame,
                int32_t(const uint64_t pictureId));
   MOCK_METHOD1(ReceivedDecodedFrame,

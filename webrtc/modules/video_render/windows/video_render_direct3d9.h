@@ -46,7 +46,7 @@ public:
     // A new frame is delivered.
     virtual int DeliverFrame(const I420VideoFrame& videoFrame);
     virtual int32_t RenderFrame(const uint32_t streamId,
-                                I420VideoFrame& videoFrame);
+                                I420VideoFrame* videoFrame);
 
     // Called to check if the video frame is updated.
     int IsUpdated(bool& isUpdated);

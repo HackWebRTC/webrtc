@@ -34,8 +34,8 @@ enum VideoMetricsType { kPSNR, kSSIM, kBoth };
 
 // Calculates metrics for a frame and adds statistics to the result for it.
 void CalculateFrame(VideoMetricsType video_metrics_type,
-                    const I420VideoFrame* ref,
-                    const I420VideoFrame* test,
+                    const I420VideoFrame& ref,
+                    const I420VideoFrame& test,
                     int frame_number,
                     QualityMetricsResult* result) {
   FrameResult frame_result = {0, 0};
@@ -129,17 +129,17 @@ int CalculateMetrics(VideoMetricsType video_metrics_type,
                   kVideoRotation_0, &test_frame);
     switch (video_metrics_type) {
       case kPSNR:
-        CalculateFrame(kPSNR, &ref_frame, &test_frame, frame_number,
+        CalculateFrame(kPSNR, ref_frame, test_frame, frame_number,
                        psnr_result);
         break;
       case kSSIM:
-        CalculateFrame(kSSIM, &ref_frame, &test_frame, frame_number,
+        CalculateFrame(kSSIM, ref_frame, test_frame, frame_number,
                        ssim_result);
         break;
       case kBoth:
-        CalculateFrame(kPSNR, &ref_frame, &test_frame, frame_number,
+        CalculateFrame(kPSNR, ref_frame, test_frame, frame_number,
                        psnr_result);
-        CalculateFrame(kSSIM, &ref_frame, &test_frame, frame_number,
+        CalculateFrame(kSSIM, ref_frame, test_frame, frame_number,
                        ssim_result);
         break;
     }

@@ -123,7 +123,7 @@ class ViECapturer
 
   // Implements VideoCaptureDataCallback.
   virtual void OnIncomingCapturedFrame(const int32_t id,
-                                       I420VideoFrame& video_frame);
+                                       I420VideoFrame* video_frame);
   virtual void OnCaptureDelayChanged(const int32_t id,
                                      const int32_t delay);
 

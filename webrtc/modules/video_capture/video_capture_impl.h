@@ -107,7 +107,7 @@ public:
 protected:
     VideoCaptureImpl(const int32_t id);
     virtual ~VideoCaptureImpl();
-    int32_t DeliverCapturedFrame(I420VideoFrame& captureFrame,
+    int32_t DeliverCapturedFrame(I420VideoFrame* captureFrame,
                                  int64_t capture_time);
 
     int32_t _id; // Module ID

@@ -215,7 +215,7 @@ int32_t VideoCaptureImpl::CaptureDelay()
     return _setCaptureDelay;
 }
 
-int32_t VideoCaptureImpl::DeliverCapturedFrame(I420VideoFrame& captureFrame,
+int32_t VideoCaptureImpl::DeliverCapturedFrame(I420VideoFrame* captureFrame,
                                                int64_t capture_time) {
   UpdateFrameCount();  // frame count used for local frame rate callback.
 
@@ -227,16 +227,16 @@ int32_t VideoCaptureImpl::DeliverCapturedFrame(I420VideoFrame& captureFrame,
 
   // Set the capture time
   if (capture_time != 0) {
-    captureFrame.set_render_time_ms(capture_time - delta_ntp_internal_ms_);
+    captureFrame->set_render_time_ms(capture_time - delta_ntp_internal_ms_);
   } else {
-    captureFrame.set_render_time_ms(TickTime::MillisecondTimestamp());
+    captureFrame->set_render_time_ms(TickTime::MillisecondTimestamp());
   }
 
-  if (captureFrame.render_time_ms() == last_capture_time_) {
+  if (captureFrame->render_time_ms() == last_capture_time_) {
     // We don't allow the same capture time for two frames, drop this one.
     return -1;
   }
-  last_capture_time_ = captureFrame.render_time_ms();
+  last_capture_time_ = captureFrame->render_time_ms();
 
   if (_dataCallBack) {
     if (callOnCaptureDelayChanged) {
@@ -322,7 +322,7 @@ int32_t VideoCaptureImpl::IncomingFrame(
           _captureFrame.set_rotation(kVideoRotation_0);
         }
 
-        DeliverCapturedFrame(_captureFrame, captureTime);
+        DeliverCapturedFrame(&_captureFrame, captureTime);
     }
     else // Encoded format
     {
@@ -338,7 +338,7 @@ int32_t VideoCaptureImpl::IncomingI420VideoFrame(I420VideoFrame* video_frame,
 
   CriticalSectionScoped cs(&_apiCs);
   CriticalSectionScoped cs2(&_callBackCs);
-  DeliverCapturedFrame(*video_frame, captureTime);
+  DeliverCapturedFrame(video_frame, captureTime);
 
   return 0;
 }

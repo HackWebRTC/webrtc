@@ -44,7 +44,7 @@ class PassthroughStream: public webrtc::VideoRenderCallback {
   virtual ~PassthroughStream() {
   }
   virtual int32_t RenderFrame(const uint32_t stream_id,
-                              webrtc::I420VideoFrame& videoFrame) {
+                              webrtc::I420VideoFrame* videoFrame) {
     rtc::CritScope cs(&stream_critical_);
     // Send frame for rendering directly
     if (running_ && renderer_) {

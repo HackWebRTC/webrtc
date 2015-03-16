@@ -46,7 +46,7 @@ VCMReceiveCallback* VCMDecodedFrameCallback::UserReceiveCallback()
     return _receiveCallback;
 }
 
-int32_t VCMDecodedFrameCallback::Decoded(I420VideoFrame& decodedImage)
+int32_t VCMDecodedFrameCallback::Decoded(I420VideoFrame* decodedImage)
 {
     // TODO(holmer): We should improve this so that we can handle multiple
     // callbacks from one call to Decode().
@@ -55,7 +55,7 @@ int32_t VCMDecodedFrameCallback::Decoded(I420VideoFrame& decodedImage)
     {
         CriticalSectionScoped cs(_critSect);
         frameInfo = static_cast<VCMFrameInformation*>(
-            _timestampMap.Pop(decodedImage.timestamp()));
+            _timestampMap.Pop(decodedImage->timestamp()));
         callback = _receiveCallback;
     }
 
@@ -66,14 +66,14 @@ int32_t VCMDecodedFrameCallback::Decoded(I420VideoFrame& decodedImage)
     }
 
     _timing.StopDecodeTimer(
-        decodedImage.timestamp(),
+        decodedImage->timestamp(),
         frameInfo->decodeStartTimeMs,
         _clock->TimeInMilliseconds(),
         frameInfo->renderTimeMs);
 
     if (callback != NULL)
     {
-        decodedImage.set_render_time_ms(frameInfo->renderTimeMs);
+        decodedImage->set_render_time_ms(frameInfo->renderTimeMs);
         callback->FrameToRender(decodedImage);
     }
     return WEBRTC_VIDEO_CODEC_OK;

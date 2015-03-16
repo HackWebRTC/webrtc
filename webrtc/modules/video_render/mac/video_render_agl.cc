@@ -81,7 +81,7 @@ VideoChannelAGL::~VideoChannelAGL()
 }
 
 int32_t VideoChannelAGL::RenderFrame(const uint32_t streamId,
-                                     I420VideoFrame& videoFrame) {
+                                     I420VideoFrame* videoFrame) {
   _owner->LockAGLCntx();
   if (_width != videoFrame.width() ||
       _height != videoFrame.height()) {
@@ -94,7 +94,7 @@ int32_t VideoChannelAGL::RenderFrame(const uint32_t streamId,
   }
 
   _owner->UnlockAGLCntx();
-  return DeliverFrame(videoFrame);
+  return DeliverFrame(*videoFrame);
 }
 
 int VideoChannelAGL::UpdateSize(int /*width*/, int /*height*/)

@@ -312,7 +312,7 @@ TEST(TestI420VideoFrame, TextureInitialValues) {
 TEST(TestI420VideoFrame, RefCount) {
   NativeHandleImpl handle;
   EXPECT_EQ(0, handle.ref_count());
-  I420VideoFrame *frame = new I420VideoFrame(&handle, 640, 480, 100, 200);
+  I420VideoFrame* frame = new I420VideoFrame(&handle, 640, 480, 100, 200);
   EXPECT_EQ(1, handle.ref_count());
   delete frame;
   EXPECT_EQ(0, handle.ref_count());

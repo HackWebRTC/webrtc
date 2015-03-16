@@ -66,7 +66,7 @@ public:
 
     // ********** new module functions ************ //
     virtual int32_t RenderFrame(const uint32_t streamId,
-                                I420VideoFrame& videoFrame);
+                                I420VideoFrame* videoFrame);
 
     // ********** new module helper functions ***** //
     int ChangeContext(NSOpenGLContext *nsglContext);

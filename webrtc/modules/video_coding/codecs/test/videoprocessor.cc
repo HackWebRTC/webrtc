@@ -413,8 +413,8 @@ VideoProcessorImpl::VideoProcessorEncodeCompleteCallback::Encoded(
 }
 int32_t
 VideoProcessorImpl::VideoProcessorDecodeCompleteCallback::Decoded(
-    I420VideoFrame& image) {
-  video_processor_->FrameDecoded(image);  // forward to parent class
+    I420VideoFrame* image) {
+  video_processor_->FrameDecoded(*image);  // forward to parent class
   return 0;
 }
 
