@@ -49,11 +49,13 @@ class AudioDecoderProxy final : public AudioDecoder {
   int Decode(const uint8_t* encoded,
              size_t encoded_len,
              int sample_rate_hz,
+             size_t max_decoded_bytes,
              int16_t* decoded,
              SpeechType* speech_type) override;
   int DecodeRedundant(const uint8_t* encoded,
                       size_t encoded_len,
                       int sample_rate_hz,
+                      size_t max_decoded_bytes,
                       int16_t* decoded,
                       SpeechType* speech_type) override;
   bool HasDecodePlc() const override;

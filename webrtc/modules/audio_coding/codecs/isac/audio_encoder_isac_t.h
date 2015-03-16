@@ -72,11 +72,6 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
   int Max10MsFramesInAPacket() const override;
 
   // AudioDecoder methods.
-  int Decode(const uint8_t* encoded,
-             size_t encoded_len,
-             int sample_rate_hz,
-             int16_t* decoded,
-             SpeechType* speech_type) override;
   bool HasDecodePlc() const override;
   int DecodePlc(int num_frames, int16_t* decoded) override;
   int Init() override;
@@ -94,6 +89,13 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
                       size_t max_encoded_bytes,
                       uint8_t* encoded,
                       EncodedInfo* info) override;
+
+  // AudioDecoder protected method.
+  int DecodeInternal(const uint8_t* encoded,
+                     size_t encoded_len,
+                     int sample_rate_hz,
+                     int16_t* decoded,
+                     SpeechType* speech_type) override;
 
  private:
   // This value is taken from STREAM_SIZE_MAX_60 for iSAC float (60 ms) and

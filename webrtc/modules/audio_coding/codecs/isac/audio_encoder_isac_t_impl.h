@@ -218,11 +218,11 @@ void AudioEncoderDecoderIsacT<T>::EncodeInternal(uint32_t rtp_timestamp,
 }
 
 template <typename T>
-int AudioEncoderDecoderIsacT<T>::Decode(const uint8_t* encoded,
-                                        size_t encoded_len,
-                                        int sample_rate_hz,
-                                        int16_t* decoded,
-                                        SpeechType* speech_type) {
+int AudioEncoderDecoderIsacT<T>::DecodeInternal(const uint8_t* encoded,
+                                                size_t encoded_len,
+                                                int sample_rate_hz,
+                                                int16_t* decoded,
+                                                SpeechType* speech_type) {
   CriticalSectionScoped cs(state_lock_.get());
   CHECK(sample_rate_hz == 16000 || sample_rate_hz == 32000)
       << "Unsupported sample rate " << sample_rate_hz;
@@ -232,8 +232,8 @@ int AudioEncoderDecoderIsacT<T>::Decode(const uint8_t* encoded,
   }
   int16_t temp_type = 1;  // Default is speech.
   int16_t ret =
-      T::Decode(isac_state_, encoded, static_cast<int16_t>(encoded_len),
-                decoded, &temp_type);
+      T::DecodeInternal(isac_state_, encoded, static_cast<int16_t>(encoded_len),
+                        decoded, &temp_type);
   *speech_type = ConvertSpeechType(temp_type);
   return ret;
 }

@@ -16,12 +16,40 @@
 
 namespace webrtc {
 
-int AudioDecoder::DecodeRedundant(const uint8_t* encoded,
-                                  size_t encoded_len,
-                                  int sample_rate_hz,
-                                  int16_t* decoded,
-                                  SpeechType* speech_type) {
-  return Decode(encoded, encoded_len, sample_rate_hz, decoded, speech_type);
+int AudioDecoder::Decode(const uint8_t* encoded, size_t encoded_len,
+                         int sample_rate_hz, size_t max_decoded_bytes,
+                         int16_t* decoded, SpeechType* speech_type) {
+  int duration = PacketDuration(encoded, encoded_len);
+  if (duration >= 0 && duration * sizeof(int16_t) > max_decoded_bytes) {
+    return -1;
+  }
+  return DecodeInternal(encoded, encoded_len, sample_rate_hz, decoded,
+                        speech_type);
+}
+
+int AudioDecoder::DecodeRedundant(const uint8_t* encoded, size_t encoded_len,
+                                  int sample_rate_hz, size_t max_decoded_bytes,
+                                  int16_t* decoded, SpeechType* speech_type) {
+  int duration = PacketDurationRedundant(encoded, encoded_len);
+  if (duration >= 0 && duration * sizeof(int16_t) > max_decoded_bytes) {
+    return -1;
+  }
+  return DecodeRedundantInternal(encoded, encoded_len, sample_rate_hz, decoded,
+                                 speech_type);
+}
+
+int AudioDecoder::DecodeInternal(const uint8_t* encoded, size_t encoded_len,
+                                 int sample_rate_hz, int16_t* decoded,
+                                 SpeechType* speech_type) {
+  return kNotImplemented;
+}
+
+int AudioDecoder::DecodeRedundantInternal(const uint8_t* encoded,
+                                          size_t encoded_len,
+                                          int sample_rate_hz, int16_t* decoded,
+                                          SpeechType* speech_type) {
+  return DecodeInternal(encoded, encoded_len, sample_rate_hz, decoded,
+                        speech_type);
 }
 
 bool AudioDecoder::HasDecodePlc() const { return false; }

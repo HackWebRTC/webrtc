@@ -22,9 +22,9 @@ class MockAudioDecoder : public AudioDecoder {
   MockAudioDecoder() {}
   virtual ~MockAudioDecoder() { Die(); }
   MOCK_METHOD0(Die, void());
-  MOCK_METHOD5(
+  MOCK_METHOD6(
       Decode,
-      int(const uint8_t*, size_t, int, int16_t*, AudioDecoder::SpeechType*));
+      int(const uint8_t*, size_t, int, size_t, int16_t*, SpeechType*));
   MOCK_CONST_METHOD0(HasDecodePlc, bool());
   MOCK_METHOD2(DecodePlc, int(int, int16_t*));
   MOCK_METHOD0(Init, int());

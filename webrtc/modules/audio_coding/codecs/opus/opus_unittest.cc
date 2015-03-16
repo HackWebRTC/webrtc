@@ -554,6 +554,54 @@ TEST_P(OpusTest, OpusDurationEstimation) {
   EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_decoder_));
 }
 
+TEST_P(OpusTest, OpusDecodeRepacketized) {
+  const int kPackets = 6;
+
+  PrepareSpeechData(channels_, 20, 20 * kPackets);
+
+  // Create encoder memory.
+  ASSERT_EQ(0, WebRtcOpus_EncoderCreate(&opus_encoder_,
+                                        channels_,
+                                        application_));
+  ASSERT_EQ(0, WebRtcOpus_DecoderCreate(&opus_decoder_,
+                                        channels_));
+
+  // Set bitrate.
+  EXPECT_EQ(0, WebRtcOpus_SetBitRate(opus_encoder_,
+                                     channels_ == 1 ? 32000 : 64000));
+
+  // Check number of channels for decoder.
+  EXPECT_EQ(channels_, WebRtcOpus_DecoderChannels(opus_decoder_));
+
+  // Encode & decode.
+  int16_t audio_type;
+  rtc::scoped_ptr<int16_t[]> output_data_decode(
+      new int16_t[kPackets * kOpus20msFrameSamples * channels_]);
+  OpusRepacketizer* rp = opus_repacketizer_create();
+
+  for (int idx = 0; idx < kPackets; idx++) {
+    encoded_bytes_ = WebRtcOpus_Encode(opus_encoder_,
+                                       speech_data_.GetNextBlock(),
+                                       kOpus20msFrameSamples, kMaxBytes,
+                                       bitstream_);
+    EXPECT_EQ(OPUS_OK, opus_repacketizer_cat(rp, bitstream_, encoded_bytes_));
+  }
+
+  encoded_bytes_ = opus_repacketizer_out(rp, bitstream_, kMaxBytes);
+
+  EXPECT_EQ(kOpus20msFrameSamples * kPackets,
+            WebRtcOpus_DurationEst(opus_decoder_, bitstream_, encoded_bytes_));
+
+  EXPECT_EQ(kOpus20msFrameSamples * kPackets,
+            WebRtcOpus_Decode(opus_decoder_, bitstream_, encoded_bytes_,
+                              output_data_decode.get(), &audio_type));
+
+  // Free memory.
+  opus_repacketizer_destroy(rp);
+  EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_encoder_));
+  EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_decoder_));
+}
+
 INSTANTIATE_TEST_CASE_P(VariousMode,
                         OpusTest,
                         Combine(Values(1, 2), Values(0, 1)));

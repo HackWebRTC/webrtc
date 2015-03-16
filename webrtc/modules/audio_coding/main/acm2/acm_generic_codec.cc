@@ -140,21 +140,23 @@ bool AudioDecoderProxy::IsSet() const {
 int AudioDecoderProxy::Decode(const uint8_t* encoded,
                               size_t encoded_len,
                               int sample_rate_hz,
+                              size_t max_decoded_bytes,
                               int16_t* decoded,
                               SpeechType* speech_type) {
   CriticalSectionScoped decoder_lock(decoder_lock_.get());
-  return decoder_->Decode(encoded, encoded_len, sample_rate_hz, decoded,
-                          speech_type);
+  return decoder_->Decode(encoded, encoded_len, sample_rate_hz,
+                          max_decoded_bytes, decoded, speech_type);
 }
 
 int AudioDecoderProxy::DecodeRedundant(const uint8_t* encoded,
                                        size_t encoded_len,
                                        int sample_rate_hz,
+                                       size_t max_decoded_bytes,
                                        int16_t* decoded,
                                        SpeechType* speech_type) {
   CriticalSectionScoped decoder_lock(decoder_lock_.get());
   return decoder_->DecodeRedundant(encoded, encoded_len, sample_rate_hz,
-                                   decoded, speech_type);
+                                   max_decoded_bytes, decoded, speech_type);
 }
 
 bool AudioDecoderProxy::HasDecodePlc() const {

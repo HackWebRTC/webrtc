@@ -35,22 +35,25 @@ class AudioDecoder {
   virtual ~AudioDecoder() {}
 
   // Decodes |encode_len| bytes from |encoded| and writes the result in
-  // |decoded|. The number of samples from all channels produced is in
-  // the return value. If the decoder produced comfort noise, |speech_type|
+  // |decoded|. The maximum bytes allowed to be written into |decoded| is
+  // |max_decoded_bytes|. The number of samples from all channels produced is
+  // in the return value. If the decoder produced comfort noise, |speech_type|
   // is set to kComfortNoise, otherwise it is kSpeech. The desired output
   // sample rate is provided in |sample_rate_hz|, which must be valid for the
   // codec at hand.
   virtual int Decode(const uint8_t* encoded,
                      size_t encoded_len,
                      int sample_rate_hz,
+                     size_t max_decoded_bytes,
                      int16_t* decoded,
-                     SpeechType* speech_type) = 0;
+                     SpeechType* speech_type);
 
   // Same as Decode(), but interfaces to the decoders redundant decode function.
   // The default implementation simply calls the regular Decode() method.
   virtual int DecodeRedundant(const uint8_t* encoded,
                               size_t encoded_len,
                               int sample_rate_hz,
+                              size_t max_decoded_bytes,
                               int16_t* decoded,
                               SpeechType* speech_type);
 
@@ -98,6 +101,18 @@ class AudioDecoder {
 
  protected:
   static SpeechType ConvertSpeechType(int16_t type);
+
+  virtual int DecodeInternal(const uint8_t* encoded,
+                             size_t encoded_len,
+                             int sample_rate_hz,
+                             int16_t* decoded,
+                             SpeechType* speech_type);
+
+  virtual int DecodeRedundantInternal(const uint8_t* encoded,
+                                      size_t encoded_len,
+                                      int sample_rate_hz,
+                                      int16_t* decoded,
+                                      SpeechType* speech_type);
 
   size_t channels_;
 
