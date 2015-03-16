@@ -37,7 +37,7 @@
 // generate strongly typed inline C++ code that forces the correct type to be
 // used for a given name at compile time.
 
- using rtc::RefCountedObject;
+using rtc::RefCountedObject;
 
 namespace webrtc {
 namespace {
