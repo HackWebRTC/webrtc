@@ -110,9 +110,9 @@ void TestLibYuv::SetUp() {
 
   EXPECT_EQ(frame_length_,
             fread(orig_buffer_.get(), 1, frame_length_, source_file_));
-  EXPECT_EQ(0, orig_frame_.CreateFrame(size_y_, orig_buffer_.get(),
-                                       size_uv_, orig_buffer_.get() + size_y_,
-                                       size_uv_, orig_buffer_.get() +
+  EXPECT_EQ(0, orig_frame_.CreateFrame(orig_buffer_.get(),
+                                       orig_buffer_.get() + size_y_,
+                                       orig_buffer_.get() +
                                        size_y_ + size_uv_,
                                        width_, height_,
                                        width_, (width_ + 1) / 2,
@@ -197,9 +197,9 @@ TEST_F(TestLibYuv, ConvertTest) {
   rtc::scoped_ptr<uint8_t[]> res_i420_buffer(new uint8_t[frame_length_]);
   I420VideoFrame yv12_frame;
   EXPECT_EQ(0, ConvertFromI420(orig_frame_, kYV12, 0, outYV120Buffer.get()));
-  yv12_frame.CreateFrame(size_y_, outYV120Buffer.get(),
-                         size_uv_, outYV120Buffer.get() + size_y_,
-                         size_uv_, outYV120Buffer.get() + size_y_ + size_uv_,
+  yv12_frame.CreateFrame(outYV120Buffer.get(),
+                         outYV120Buffer.get() + size_y_,
+                         outYV120Buffer.get() + size_y_ + size_uv_,
                          width_, height_,
                          width_, (width_ + 1) / 2, (width_ + 1) / 2);
   EXPECT_EQ(0, ConvertFromYV12(yv12_frame, kI420, 0, res_i420_buffer.get()));

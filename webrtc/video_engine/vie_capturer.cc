@@ -310,22 +310,16 @@ int ViECapturer::IncomingFrameI420(const ViEVideoFrameI420& video_frame,
     return -1;
   }
 
-  int size_y = video_frame.height * video_frame.y_pitch;
-  int size_u = video_frame.u_pitch * ((video_frame.height + 1) / 2);
-  int size_v = video_frame.v_pitch * ((video_frame.height + 1) / 2);
   CriticalSectionScoped cs(incoming_frame_cs_.get());
-  int ret = incoming_frame_.CreateFrame(size_y,
-                                       video_frame.y_plane,
-                                       size_u,
-                                       video_frame.u_plane,
-                                       size_v,
-                                       video_frame.v_plane,
-                                       video_frame.width,
-                                       video_frame.height,
-                                       video_frame.y_pitch,
-                                       video_frame.u_pitch,
-                                       video_frame.v_pitch,
-                                       video_frame.rotation);
+  int ret = incoming_frame_.CreateFrame(video_frame.y_plane,
+                                        video_frame.u_plane,
+                                        video_frame.v_plane,
+                                        video_frame.width,
+                                        video_frame.height,
+                                        video_frame.y_pitch,
+                                        video_frame.u_pitch,
+                                        video_frame.v_pitch,
+                                        video_frame.rotation);
 
   if (ret < 0) {
     LOG_F(LS_ERROR) << "Could not create I420Frame.";

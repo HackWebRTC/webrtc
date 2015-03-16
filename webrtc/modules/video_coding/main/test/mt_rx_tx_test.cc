@@ -63,9 +63,9 @@ MainSenderThread(void* obj)
         int half_width = (width + 1) / 2;
         int half_height = (height + 1) / 2;
         int size_uv = half_width * half_height;
-        sourceFrame.CreateFrame(size_y, tmpBuffer,
-                                size_uv, tmpBuffer + size_y,
-                                size_uv, tmpBuffer + size_y + size_uv,
+        sourceFrame.CreateFrame(tmpBuffer,
+                                tmpBuffer + size_y,
+                                tmpBuffer + size_y + size_uv,
                                 width, height,
                                 width, half_width, half_width);
         state->_timestamp += (uint32_t)(9e4 / frameRate);

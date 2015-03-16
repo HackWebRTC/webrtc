@@ -472,13 +472,9 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
     // Decoder OK and NULL image => No show frame.
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
-  int half_height = (img->d_h + 1) / 2;
-  int size_y = img->stride[VPX_PLANE_Y] * img->d_h;
-  int size_u = img->stride[VPX_PLANE_U] * half_height;
-  int size_v = img->stride[VPX_PLANE_V] * half_height;
-  decoded_image_.CreateFrame(size_y, img->planes[VPX_PLANE_Y],
-                             size_u, img->planes[VPX_PLANE_U],
-                             size_v, img->planes[VPX_PLANE_V],
+  decoded_image_.CreateFrame(img->planes[VPX_PLANE_Y],
+                             img->planes[VPX_PLANE_U],
+                             img->planes[VPX_PLANE_V],
                              img->d_w, img->d_h,
                              img->stride[VPX_PLANE_Y],
                              img->stride[VPX_PLANE_U],

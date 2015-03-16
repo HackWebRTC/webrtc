@@ -581,9 +581,8 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     // Create yuv420 frame.
     if (color_format == COLOR_FormatYUV420Planar) {
       decoded_image_.CreateFrame(
-          stride * slice_height, payload,
-          (stride * slice_height) / 4, payload + (stride * slice_height),
-          (stride * slice_height) / 4,
+          payload,
+          payload + (stride * slice_height),
           payload + (5 * stride * slice_height / 4),
           width, height,
           stride, stride / 2, stride / 2);

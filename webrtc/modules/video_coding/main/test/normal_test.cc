@@ -286,9 +286,9 @@ NormalTest::Perform(const CmdArgs& args)
     TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0 ||
          feof(_sourceFile));
     _frameCnt++;
-    sourceFrame.CreateFrame(size_y, tmpBuffer,
-                            size_uv, tmpBuffer + size_y,
-                            size_uv, tmpBuffer + size_y + size_uv,
+    sourceFrame.CreateFrame(tmpBuffer,
+                            tmpBuffer + size_y,
+                            tmpBuffer + size_y + size_uv,
                             _width, _height,
                             _width, half_width, half_width);
     _timeStamp +=

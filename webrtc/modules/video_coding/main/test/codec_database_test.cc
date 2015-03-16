@@ -120,9 +120,9 @@ CodecDataBaseTest::Perform(CmdArgs& args)
     int half_height = (_height + 1) / 2;
     int size_y = _width * _height;
     int size_uv = half_width * half_height;
-    sourceFrame.CreateFrame(size_y, tmpBuffer,
-                            size_uv, tmpBuffer + size_y,
-                            size_uv, tmpBuffer + size_y + size_uv,
+    sourceFrame.CreateFrame(tmpBuffer,
+                            tmpBuffer + size_y,
+                            tmpBuffer + size_y + size_uv,
                             _width, _height,
                             _width, half_width, half_width);
     _timeStamp += (uint32_t)(9e4 / _frameRate);
@@ -333,9 +333,9 @@ CodecDataBaseTest::Perform(CmdArgs& args)
             {
                 frameCnt++;
                 TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
-                sourceFrame.CreateFrame(size_y, tmpBuffer,
-                                        size_uv, tmpBuffer + size_y,
-                                        size_uv, tmpBuffer + size_y + size_uv,
+                sourceFrame.CreateFrame(tmpBuffer,
+                                        tmpBuffer + size_y,
+                                        tmpBuffer + size_y + size_uv,
                                         _width, _height,
                                         _width, half_width, half_width);
                 _timeStamp += (uint32_t)(9e4 / _frameRate);

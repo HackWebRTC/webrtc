@@ -112,8 +112,8 @@ TEST(TestI420VideoFrame, CopyFrame) {
   memset(buffer_v, 4, kSizeV);
   I420VideoFrame big_frame;
   EXPECT_EQ(0,
-            big_frame.CreateFrame(kSizeY, buffer_y, kSizeU, buffer_u, kSizeV,
-                                  buffer_v, width + 5, height + 5, stride_y + 5,
+            big_frame.CreateFrame(buffer_y, buffer_u, buffer_v,
+                                  width + 5, height + 5, stride_y + 5,
                                   stride_u, stride_v, kRotation));
   // Frame of smaller dimensions.
   EXPECT_EQ(0, small_frame.CopyFrame(big_frame));
@@ -157,8 +157,7 @@ TEST(TestI420VideoFrame, CloneFrame) {
   memset(buffer_y, 16, kSizeY);
   memset(buffer_u, 8, kSizeU);
   memset(buffer_v, 4, kSizeV);
-  frame1.CreateFrame(
-      kSizeY, buffer_y, kSizeU, buffer_u, kSizeV, buffer_v, 20, 20, 20, 10, 10);
+  frame1.CreateFrame(buffer_y, buffer_u, buffer_v, 20, 20, 20, 10, 10);
   frame1.set_timestamp(1);
   frame1.set_ntp_time_ms(2);
   frame1.set_render_time_ms(3);
@@ -184,9 +183,7 @@ TEST(TestI420VideoFrame, CopyBuffer) {
   memset(buffer_y, 16, kSizeY);
   memset(buffer_u, 8, kSizeUv);
   memset(buffer_v, 4, kSizeUv);
-  frame2.CreateFrame(kSizeY, buffer_y,
-                     kSizeUv, buffer_u,
-                     kSizeUv, buffer_v,
+  frame2.CreateFrame(buffer_y, buffer_u, buffer_v,
                      width, height, stride_y, stride_uv, stride_uv);
   // Expect exactly the same pixel data.
   EXPECT_TRUE(EqualPlane(buffer_y, frame2.buffer(kYPlane), stride_y, 15, 15));
@@ -236,9 +233,7 @@ TEST(TestI420VideoFrame, FrameSwap) {
   memset(buffer_y1, 2, kSizeY1);
   memset(buffer_u1, 4, kSizeU1);
   memset(buffer_v1, 8, kSizeV1);
-  frame1.CreateFrame(kSizeY1, buffer_y1,
-                     kSizeU1, buffer_u1,
-                     kSizeV1, buffer_v1,
+  frame1.CreateFrame(buffer_y1, buffer_u1, buffer_v1,
                      width1, height1, stride_y1, stride_u1, stride_v1);
   // Initialize frame2 values.
   EXPECT_EQ(0, frame2.CreateEmptyFrame(width2, height2,
@@ -253,9 +248,7 @@ TEST(TestI420VideoFrame, FrameSwap) {
   memset(buffer_y2, 0, kSizeY2);
   memset(buffer_u2, 1, kSizeU2);
   memset(buffer_v2, 2, kSizeV2);
-  frame2.CreateFrame(kSizeY2, buffer_y2,
-                     kSizeU2, buffer_u2,
-                     kSizeV2, buffer_v2,
+  frame2.CreateFrame(buffer_y2, buffer_u2, buffer_v2,
                      width2, height2, stride_y2, stride_u2, stride_v2);
   // Copy frames for subsequent comparison.
   I420VideoFrame frame1_copy, frame2_copy;

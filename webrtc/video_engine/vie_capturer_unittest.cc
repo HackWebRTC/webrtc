@@ -274,11 +274,10 @@ I420VideoFrame* CreateI420VideoFrame(uint8_t data) {
   const int width = 36;
   const int height = 24;
   const int kSizeY = width * height * 2;
-  const int kSizeUV = width * height;
   uint8_t buffer[kSizeY];
   memset(buffer, data, kSizeY);
   frame->CreateFrame(
-      kSizeY, buffer, kSizeUV, buffer, kSizeUV, buffer, width, height, width,
+      buffer, buffer, buffer, width, height, width,
       width / 2, width / 2);
   frame->set_timestamp(data);
   frame->set_ntp_time_ms(data);

@@ -149,9 +149,9 @@ GenericCodecTest::Perform(CmdArgs& args)
     int half_height = (_height + 1) / 2;
     int size_y = _width * _height;
     int size_uv = half_width * half_height;
-    sourceFrame.CreateFrame(size_y, tmpBuffer,
-                            size_uv, tmpBuffer + size_y,
-                            size_uv, tmpBuffer + size_y + size_uv,
+    sourceFrame.CreateFrame(tmpBuffer,
+                            tmpBuffer + size_y,
+                            tmpBuffer + size_y + size_uv,
                             _width, _height,
                             _width, half_width, half_width);
     sourceFrame.set_timestamp(_timeStamp++);
@@ -197,9 +197,9 @@ GenericCodecTest::Perform(CmdArgs& args)
     for (i = 0; i < _frameRate; i++)
     {
         TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
-        sourceFrame.CreateFrame(size_y, tmpBuffer,
-                                size_uv, tmpBuffer + size_y,
-                                size_uv, tmpBuffer + size_y + size_uv,
+        sourceFrame.CreateFrame(tmpBuffer,
+                                tmpBuffer + size_y,
+                                tmpBuffer + size_y + size_uv,
                                 _width, _height,
                                 _width, half_width, half_width);
         _timeStamp += (uint32_t)(9e4 / static_cast<float>(_frameRate));
@@ -322,9 +322,9 @@ GenericCodecTest::Perform(CmdArgs& args)
                 _lengthSourceFrame)
             {
                 _frameCnt++;
-                sourceFrame.CreateFrame(size_y, tmpBuffer,
-                                        size_uv, tmpBuffer + size_y,
-                                        size_uv, tmpBuffer + size_y + size_uv,
+                sourceFrame.CreateFrame(tmpBuffer,
+                                        tmpBuffer + size_y,
+                                        tmpBuffer + size_y + size_uv,
                                         _width, _height,
                                         _width, (_width + 1) / 2,
                                         (_width + 1) / 2);
@@ -387,9 +387,9 @@ GenericCodecTest::Perform(CmdArgs& args)
         {
             TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
             _frameCnt++;
-            sourceFrame.CreateFrame(size_y, tmpBuffer,
-                                    size_uv, tmpBuffer + size_y,
-                                    size_uv, tmpBuffer + size_y + size_uv,
+            sourceFrame.CreateFrame(tmpBuffer,
+                                    tmpBuffer + size_y,
+                                    tmpBuffer + size_y + size_uv,
                                     _width, _height,
                                     _width, half_width, half_width);
             _timeStamp += (uint32_t)(9e4 / static_cast<float>(_frameRate));
@@ -441,9 +441,9 @@ GenericCodecTest::Perform(CmdArgs& args)
     rewind(_sourceFile);
     while (fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) ==
         _lengthSourceFrame) {
-        sourceFrame.CreateFrame(size_y, tmpBuffer,
-                                size_uv, tmpBuffer + size_y,
-                                size_uv, tmpBuffer + size_y + size_uv,
+        sourceFrame.CreateFrame(tmpBuffer,
+                                tmpBuffer + size_y,
+                                tmpBuffer + size_y + size_uv,
                                 _width, _height,
                                 _width, half_width, half_width);
         _timeStamp += (uint32_t)(9e4 / static_cast<float>(_frameRate));

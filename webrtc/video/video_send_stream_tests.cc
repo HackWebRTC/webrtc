@@ -1090,14 +1090,10 @@ void ExpectEqualFramesVector(const std::vector<I420VideoFrame*>& frames1,
 I420VideoFrame* CreateI420VideoFrame(int width, int height, uint8_t data) {
   I420VideoFrame* frame = new I420VideoFrame();
   const int kSizeY = width * height * 2;
-  const int kSizeUV = width * height;
   rtc::scoped_ptr<uint8_t[]> buffer(new uint8_t[kSizeY]);
   memset(buffer.get(), data, kSizeY);
-  frame->CreateFrame(kSizeY,
+  frame->CreateFrame(buffer.get(),
                      buffer.get(),
-                     kSizeUV,
-                     buffer.get(),
-                     kSizeUV,
                      buffer.get(),
                      width,
                      height,

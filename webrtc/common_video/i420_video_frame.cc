@@ -80,21 +80,20 @@ int I420VideoFrame::CreateEmptyFrame(int width, int height,
   return 0;
 }
 
-int I420VideoFrame::CreateFrame(int size_y, const uint8_t* buffer_y,
-                                int size_u, const uint8_t* buffer_u,
-                                int size_v, const uint8_t* buffer_v,
+int I420VideoFrame::CreateFrame(const uint8_t* buffer_y,
+                                const uint8_t* buffer_u,
+                                const uint8_t* buffer_v,
                                 int width, int height,
-                                int stride_y, int stride_u, int stride_v) {
-  return CreateFrame(size_y, buffer_y, size_u, buffer_u, size_v, buffer_v,
+                                int stride_y,
+                                int stride_u,
+                                int stride_v) {
+  return CreateFrame(buffer_y, buffer_u, buffer_v,
                      width, height, stride_y, stride_u, stride_v,
                      kVideoRotation_0);
 }
 
-int I420VideoFrame::CreateFrame(int size_y,
-                                const uint8_t* buffer_y,
-                                int size_u,
+int I420VideoFrame::CreateFrame(const uint8_t* buffer_y,
                                 const uint8_t* buffer_u,
-                                int size_v,
                                 const uint8_t* buffer_v,
                                 int width,
                                 int height,
@@ -106,9 +105,6 @@ int I420VideoFrame::CreateFrame(int size_y,
   const int expected_size_y = height * stride_y;
   const int expected_size_u = half_height * stride_u;
   const int expected_size_v = half_height * stride_v;
-  CHECK_GE(size_y, expected_size_y);
-  CHECK_GE(size_u, expected_size_u);
-  CHECK_GE(size_v, expected_size_v);
   if (CreateEmptyFrame(width, height, stride_y, stride_u, stride_v) < 0)
     return -1;
   memcpy(buffer(kYPlane), buffer_y, expected_size_y);
@@ -123,9 +119,9 @@ int I420VideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
     video_frame_buffer_ = videoFrame.video_frame_buffer();
   } else {
     int ret = CreateFrame(
-        videoFrame.allocated_size(kYPlane), videoFrame.buffer(kYPlane),
-        videoFrame.allocated_size(kUPlane), videoFrame.buffer(kUPlane),
-        videoFrame.allocated_size(kVPlane), videoFrame.buffer(kVPlane),
+        videoFrame.buffer(kYPlane),
+        videoFrame.buffer(kUPlane),
+        videoFrame.buffer(kVPlane),
         videoFrame.width(), videoFrame.height(), videoFrame.stride(kYPlane),
         videoFrame.stride(kUPlane), videoFrame.stride(kVPlane));
     if (ret < 0)

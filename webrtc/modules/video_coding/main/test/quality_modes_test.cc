@@ -265,9 +265,9 @@ QualityModesTest::Perform(const CmdArgs& args)
       _frameCnt++;
       int size_y = _nativeWidth * _nativeHeight;
       int size_uv = ((_nativeWidth + 1) / 2) * ((_nativeHeight  + 1) / 2);
-      sourceFrame.CreateFrame(size_y, tmpBuffer,
-                              size_uv, tmpBuffer + size_y,
-                              size_uv, tmpBuffer + size_y + size_uv,
+      sourceFrame.CreateFrame(tmpBuffer,
+                              tmpBuffer + size_y,
+                              tmpBuffer + size_y + size_uv,
                               _nativeWidth, _nativeHeight,
                               _nativeWidth, (_nativeWidth + 1) / 2,
                               (_nativeWidth + 1) / 2);

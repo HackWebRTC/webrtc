@@ -46,12 +46,8 @@ class I420VideoFrame {
   // CreateFrame: Sets the frame's members and buffers. If required size is
   // bigger than allocated one, new buffers of adequate size will be allocated.
   // Return value: 0 on success, -1 on error.
-  // TODO(magjed): Remove unnecessary buffer size arguments.
-  int CreateFrame(int size_y,
-                  const uint8_t* buffer_y,
-                  int size_u,
+  int CreateFrame(const uint8_t* buffer_y,
                   const uint8_t* buffer_u,
-                  int size_v,
                   const uint8_t* buffer_v,
                   int width,
                   int height,
@@ -60,11 +56,8 @@ class I420VideoFrame {
                   int stride_v);
 
   // TODO(guoweis): remove the previous CreateFrame when chromium has this code.
-  int CreateFrame(int size_y,
-                  const uint8_t* buffer_y,
-                  int size_u,
+  int CreateFrame(const uint8_t* buffer_y,
                   const uint8_t* buffer_u,
-                  int size_v,
                   const uint8_t* buffer_v,
                   int width,
                   int height,

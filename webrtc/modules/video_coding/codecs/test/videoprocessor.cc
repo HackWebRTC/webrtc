@@ -185,9 +185,9 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
     int half_width = (config_.codec_settings->width + 1) / 2;
     int half_height = (config_.codec_settings->height + 1) / 2;
     int size_uv = half_width * half_height;
-    source_frame_.CreateFrame(size_y, source_buffer_,
-                              size_uv, source_buffer_ + size_y,
-                              size_uv, source_buffer_ + size_y + size_uv,
+    source_frame_.CreateFrame(source_buffer_,
+                              source_buffer_ + size_y,
+                              source_buffer_ + size_y + size_uv,
                               config_.codec_settings->width,
                               config_.codec_settings->height,
                               config_.codec_settings->width,
