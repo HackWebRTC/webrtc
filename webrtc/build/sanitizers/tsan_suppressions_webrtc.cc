@@ -74,10 +74,6 @@ char kTSanDefaultSuppressions[] =
 "deadlock:webrtc::ViEEncoder::OnLocalSsrcChanged\n"
 "deadlock:webrtc::ViESender::RegisterSendTransport\n"
 
-// third_party/libvpx race introduced in 33bbffe..080710f range.
-// TODO(kjellander): https://code.google.com/p/webm/issues/detail?id=962
-"race:vp9_reconintra.c\n"
-
 // TODO(pbos): Trace events are racy due to lack of proper POD atomics.
 // https://code.google.com/p/webrtc/issues/detail?id=2497
 "race:*trace_event_unique_catstatic*\n"
