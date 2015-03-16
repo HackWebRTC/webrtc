@@ -73,6 +73,8 @@ extern const char kSdpWithoutIceUfragPwd[];
 extern const char kSdpWithoutSdesAndDtlsDisabled[];
 extern const char kSessionError[];
 extern const char kSessionErrorDesc[];
+extern const char kDtlsSetupFailureRtp[];
+extern const char kDtlsSetupFailureRtcp[];
 // Maximum number of received video streams that will be processed by webrtc
 // even if they are not signalled beforehand.
 extern const int kMaxUnsignalledRecvStreams;
@@ -232,6 +234,7 @@ class WebRtcSession : public cricket::BaseSession,
   // Called when an SSLIdentity is generated or retrieved by
   // WebRTCSessionDescriptionFactory. Should happen before setLocalDescription.
   void OnIdentityReady(rtc::SSLIdentity* identity);
+  void OnDtlsSetupFailure(cricket::BaseChannel*, bool rtcp);
 
   // For unit test.
   bool waiting_for_identity() const;

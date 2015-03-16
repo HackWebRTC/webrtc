@@ -76,6 +76,10 @@ const char kSdpWithoutIceUfragPwd[] =
     "Called with SDP without ice-ufrag and ice-pwd.";
 const char kSessionError[] = "Session error code: ";
 const char kSessionErrorDesc[] = "Session error description: ";
+const char kDtlsSetupFailureRtp[] =
+    "Couldn't set up DTLS-SRTP on RTP channel.";
+const char kDtlsSetupFailureRtcp[] =
+    "Couldn't set up DTLS-SRTP on RTCP channel.";
 const int kMaxUnsignalledRecvStreams = 20;
 
 // Compares |answer| against |offer|. Comparision is done
@@ -495,15 +499,15 @@ WebRtcSession::WebRtcSession(
 WebRtcSession::~WebRtcSession() {
   // Destroy video_channel_ first since it may have a pointer to the
   // voice_channel_.
-  if (video_channel_.get()) {
+  if (video_channel_) {
     SignalVideoChannelDestroyed();
     channel_manager_->DestroyVideoChannel(video_channel_.release());
   }
-  if (voice_channel_.get()) {
+  if (voice_channel_) {
     SignalVoiceChannelDestroyed();
     channel_manager_->DestroyVoiceChannel(voice_channel_.release());
   }
-  if (data_channel_.get()) {
+  if (data_channel_) {
     SignalDataChannelDestroyed();
     channel_manager_->DestroyDataChannel(data_channel_.release());
   }
@@ -670,9 +674,9 @@ bool WebRtcSession::Initialize(
 void WebRtcSession::Terminate() {
   SetState(STATE_RECEIVEDTERMINATE);
   RemoveUnusedChannelsAndTransports(NULL);
-  ASSERT(voice_channel_.get() == NULL);
-  ASSERT(video_channel_.get() == NULL);
-  ASSERT(data_channel_.get() == NULL);
+  ASSERT(!voice_channel_);
+  ASSERT(!video_channel_);
+  ASSERT(!data_channel_);
 }
 
 bool WebRtcSession::StartCandidatesAllocation() {
@@ -1061,7 +1065,7 @@ bool WebRtcSession::SetCaptureDevice(uint32 ssrc,
                                      cricket::VideoCapturer* camera) {
   ASSERT(signaling_thread()->IsCurrent());
 
-  if (!video_channel_.get()) {
+  if (!video_channel_) {
     // |video_channel_| doesnt't exist. Probably because the remote end doesnt't
     // support video.
     LOG(LS_WARNING) << "Video not used in this call.";
@@ -1156,7 +1160,7 @@ sigslot::signal0<>* WebRtcSession::GetOnDestroyedSignal() {
 bool WebRtcSession::SendData(const cricket::SendDataParams& params,
                              const rtc::Buffer& payload,
                              cricket::SendDataResult* result) {
-  if (!data_channel_.get()) {
+  if (!data_channel_) {
     LOG(LS_ERROR) << "SendData called when data_channel_ is NULL.";
     return false;
   }
@@ -1164,7 +1168,7 @@ bool WebRtcSession::SendData(const cricket::SendDataParams& params,
 }
 
 bool WebRtcSession::ConnectDataChannel(DataChannel* webrtc_data_channel) {
-  if (!data_channel_.get()) {
+  if (!data_channel_) {
     LOG(LS_ERROR) << "ConnectDataChannel called when data_channel_ is NULL.";
     return false;
   }
@@ -1176,7 +1180,7 @@ bool WebRtcSession::ConnectDataChannel(DataChannel* webrtc_data_channel) {
 }
 
 void WebRtcSession::DisconnectDataChannel(DataChannel* webrtc_data_channel) {
-  if (!data_channel_.get()) {
+  if (!data_channel_) {
     LOG(LS_ERROR) << "DisconnectDataChannel called when data_channel_ is NULL.";
     return;
   }
@@ -1185,7 +1189,7 @@ void WebRtcSession::DisconnectDataChannel(DataChannel* webrtc_data_channel) {
 }
 
 void WebRtcSession::AddSctpDataStream(int sid) {
-  if (!data_channel_.get()) {
+  if (!data_channel_) {
     LOG(LS_ERROR) << "AddDataChannelStreams called when data_channel_ is NULL.";
     return;
   }
@@ -1196,7 +1200,7 @@ void WebRtcSession::AddSctpDataStream(int sid) {
 void WebRtcSession::RemoveSctpDataStream(int sid) {
   mediastream_signaling_->RemoveSctpDataChannel(sid);
 
-  if (!data_channel_.get()) {
+  if (!data_channel_) {
     LOG(LS_ERROR) << "RemoveDataChannelStreams called when data_channel_ is "
                   << "NULL.";
     return;
@@ -1206,7 +1210,7 @@ void WebRtcSession::RemoveSctpDataStream(int sid) {
 }
 
 bool WebRtcSession::ReadyToSendData() const {
-  return data_channel_.get() && data_channel_->ready_to_send_data();
+  return data_channel_ && data_channel_->ready_to_send_data();
 }
 
 rtc::scoped_refptr<DataChannel> WebRtcSession::CreateDataChannel(
@@ -1385,7 +1389,7 @@ void WebRtcSession::EnableChannels() {
   if (video_channel_ && !video_channel_->enabled())
     video_channel_->Enable(true);
 
-  if (data_channel_.get() && !data_channel_->enabled())
+  if (data_channel_ && !data_channel_->enabled())
     data_channel_->Enable(true);
 }
 
@@ -1566,7 +1570,7 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
 
   const cricket::ContentInfo* data = cricket::GetFirstDataContent(desc);
   if (data_channel_type_ != cricket::DCT_NONE &&
-      data && !data->rejected && !data_channel_.get()) {
+      data && !data->rejected && !data_channel_) {
     if (!CreateDataChannel(data)) {
       LOG(LS_ERROR) << "Failed to create data channel.";
       return false;
@@ -1579,26 +1583,36 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
 bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
   voice_channel_.reset(channel_manager_->CreateVoiceChannel(
       this, content->name, true));
-  if (!voice_channel_.get())
+  if (!voice_channel_) {
     return false;
+  }
 
   voice_channel_->SetChannelOptions(audio_options_);
+  voice_channel_->SignalDtlsSetupFailure.connect(
+      this, &WebRtcSession::OnDtlsSetupFailure);
   return true;
 }
 
 bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content) {
   video_channel_.reset(channel_manager_->CreateVideoChannel(
       this, content->name, true, video_options_, voice_channel_.get()));
-  return video_channel_.get() != NULL;
+  if (!video_channel_) {
+    return false;
+  }
+
+  video_channel_->SignalDtlsSetupFailure.connect(
+      this, &WebRtcSession::OnDtlsSetupFailure);
+  return true;
 }
 
 bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content) {
   bool sctp = (data_channel_type_ == cricket::DCT_SCTP);
   data_channel_.reset(channel_manager_->CreateDataChannel(
       this, content->name, !sctp, data_channel_type_));
-  if (!data_channel_.get()) {
+  if (!data_channel_) {
     return false;
   }
+
   if (sctp) {
     mediastream_signaling_->OnDataTransportCreatedForSctp();
     data_channel_->SignalDataReceived.connect(
@@ -1607,7 +1621,15 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content) {
         mediastream_signaling_,
         &MediaStreamSignaling::OnRemoteSctpDataChannelClosed);
   }
+
+  data_channel_->SignalDtlsSetupFailure.connect(
+      this, &WebRtcSession::OnDtlsSetupFailure);
   return true;
+}
+
+void WebRtcSession::OnDtlsSetupFailure(cricket::BaseChannel*, bool rtcp) {
+  SetError(BaseSession::ERROR_TRANSPORT, rtcp ? kDtlsSetupFailureRtcp :
+           kDtlsSetupFailureRtp);
 }
 
 void WebRtcSession::CopySavedCandidates(

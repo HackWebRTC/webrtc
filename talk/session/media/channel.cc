@@ -722,27 +722,13 @@ void BaseChannel::ChannelWritable_w() {
   // If we're doing DTLS-SRTP, now is the time.
   if (!was_ever_writable_ && ShouldSetupDtlsSrtp()) {
     if (!SetupDtlsSrtp(false)) {
-      const std::string error_desc =
-          "Couldn't set up DTLS-SRTP on RTP channel.";
-      // Sent synchronously.
-      signaling_thread()->Invoke<void>(Bind(
-          &SetSessionError,
-          session_,
-          BaseSession::ERROR_TRANSPORT,
-          error_desc));
+      SignalDtlsSetupFailure(this, false);
       return;
     }
 
     if (rtcp_transport_channel_) {
       if (!SetupDtlsSrtp(true)) {
-        const std::string error_desc =
-            "Couldn't set up DTLS-SRTP on RTCP channel";
-        // Sent synchronously.
-        signaling_thread()->Invoke<void>(Bind(
-            &SetSessionError,
-            session_,
-            BaseSession::ERROR_TRANSPORT,
-            error_desc));
+        SignalDtlsSetupFailure(this, true);
         return;
       }
     }
@@ -751,6 +737,17 @@ void BaseChannel::ChannelWritable_w() {
   was_ever_writable_ = true;
   writable_ = true;
   ChangeState();
+}
+
+void BaseChannel::SignalDtlsSetupFailure_w(bool rtcp) {
+  ASSERT(worker_thread() == rtc::Thread::Current());
+  signaling_thread()->Invoke<void>(Bind(
+      &BaseChannel::SignalDtlsSetupFailure_s, this, rtcp));
+}
+
+void BaseChannel::SignalDtlsSetupFailure_s(bool rtcp) {
+  ASSERT(signaling_thread() == rtc::Thread::Current());
+  SignalDtlsSetupFailure(this, rtcp);
 }
 
 bool BaseChannel::SetDtlsSrtpCiphers(TransportChannel *tc, bool rtcp) {

@@ -213,6 +213,10 @@ class BaseChannel
     return remote_streams_;
   }
 
+  sigslot::signal2<BaseChannel*, bool> SignalDtlsSetupFailure;
+  void SignalDtlsSetupFailure_w(bool rtcp);
+  void SignalDtlsSetupFailure_s(bool rtcp);
+
   // Used for latency measurements.
   sigslot::signal1<BaseChannel*> SignalFirstPacketReceived;
 
