@@ -108,6 +108,12 @@ class BaseChannel
   bool writable() const { return writable_; }
   bool IsStreamMuted(uint32 ssrc);
 
+  bool PushdownLocalDescription(const SessionDescription* local_desc,
+                                ContentAction action,
+                                std::string* error_desc);
+  bool PushdownRemoteDescription(const SessionDescription* remote_desc,
+                                ContentAction action,
+                                std::string* error_desc);
   // Channel control
   bool SetLocalContent(const MediaContentDescription* content,
                        ContentAction action,

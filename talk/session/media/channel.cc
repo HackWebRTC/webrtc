@@ -688,30 +688,48 @@ void BaseChannel::HandlePacket(bool rtcp, rtc::Buffer* packet,
 
 void BaseChannel::OnNewLocalDescription(
     BaseSession* session, ContentAction action) {
-  const ContentInfo* content_info =
-      GetFirstContent(session->local_description());
-  const MediaContentDescription* content_desc =
-      GetContentDescription(content_info);
   std::string error_desc;
-  if (content_desc && content_info && !content_info->rejected &&
-      !SetLocalContent(content_desc, action, &error_desc)) {
+  if (!PushdownLocalDescription(
+          session->local_description(), action, &error_desc))  {
     SetSessionError(session_, BaseSession::ERROR_CONTENT, error_desc);
-    LOG(LS_ERROR) << "Failure in SetLocalContent with action " << action;
   }
 }
 
 void BaseChannel::OnNewRemoteDescription(
     BaseSession* session, ContentAction action) {
-  const ContentInfo* content_info =
-      GetFirstContent(session->remote_description());
+  std::string error_desc;
+  if (!PushdownRemoteDescription(
+          session->remote_description(), action, &error_desc))  {
+    SetSessionError(session_, BaseSession::ERROR_CONTENT, error_desc);
+  }
+}
+
+bool BaseChannel::PushdownLocalDescription(
+    const SessionDescription* local_desc, ContentAction action,
+    std::string* error_desc) {
+  const ContentInfo* content_info = GetFirstContent(local_desc);
   const MediaContentDescription* content_desc =
       GetContentDescription(content_info);
-  std::string error_desc;
   if (content_desc && content_info && !content_info->rejected &&
-      !SetRemoteContent(content_desc, action, &error_desc)) {
-    SetSessionError(session_, BaseSession::ERROR_CONTENT, error_desc);
-    LOG(LS_ERROR) << "Failure in SetRemoteContent with action " << action;
+      !SetLocalContent(content_desc, action, error_desc)) {
+    LOG(LS_ERROR) << "Failure in SetLocalContent with action " << action;
+    return false;
   }
+  return true;
+}
+
+bool BaseChannel::PushdownRemoteDescription(
+    const SessionDescription* remote_desc, ContentAction action,
+    std::string* error_desc) {
+  const ContentInfo* content_info = GetFirstContent(remote_desc);
+  const MediaContentDescription* content_desc =
+      GetContentDescription(content_info);
+  if (content_desc && content_info && !content_info->rejected &&
+      !SetRemoteContent(content_desc, action, error_desc)) {
+    LOG(LS_ERROR) << "Failure in SetRemoteContent with action " << action;
+    return false;
+  }
+  return true;
 }
 
 void BaseChannel::EnableMedia_w() {

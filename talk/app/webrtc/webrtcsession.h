@@ -175,6 +175,15 @@ class WebRtcSession : public cricket::BaseSession,
   const SessionDescriptionInterface* remote_description() const {
     return remote_desc_.get();
   }
+  // TODO(pthatcher): Cleanup the distinction between
+  // SessionDescription and SessionDescriptionInterface and remove
+  // these if possible.
+  const cricket::SessionDescription* base_local_description() const {
+    return BaseSession::local_description();
+  }
+  const cricket::SessionDescription* base_remote_description() const {
+    return BaseSession::remote_description();
+  }
 
   // Get the id used as a media stream track's "id" field from ssrc.
   virtual bool GetLocalTrackIdBySsrc(uint32 ssrc, std::string* track_id);
@@ -244,6 +253,19 @@ class WebRtcSession : public cricket::BaseSession,
     metrics_observer_ = metrics_observer;
   }
 
+ protected:
+  // Don't fire a new description.  The only thing it's used for is to
+  // push new media descriptions to the BaseChannels.  But in
+  // WebRtcSession, we just push to the BaseChannels directly, so we
+  // don't need this (and it would cause the descriptions to be pushed
+  // down twice).
+  // TODO(pthatcher): Remove this method and signal completely from
+  // BaseSession once all the subclasses of BaseSession push to
+  // BaseChannels directly rather than relying on the signal, or once
+  // BaseChannel no longer listens to the event and requires
+  // descriptions to be pushed down.
+  virtual void SignalNewDescription() override {}
+
  private:
   // Indicates the type of SessionDescription in a call to SetLocalDescription
   // and SetRemoteDescription.
@@ -259,6 +281,12 @@ class WebRtcSession : public cricket::BaseSession,
   bool UpdateSessionState(Action action, cricket::ContentSource source,
                           std::string* err_desc);
   static Action GetAction(const std::string& type);
+  // Push the media parts of the local or remote session description
+  // down to all of the channels.
+  bool PushdownMediaDescription(cricket::ContentAction action,
+                                cricket::ContentSource source,
+                                std::string* error_desc);
+
 
   // Transport related callbacks, override from cricket::BaseSession.
   virtual void OnTransportRequestSignaling(cricket::Transport* transport);

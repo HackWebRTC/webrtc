@@ -409,6 +409,9 @@ class BaseSession : public sigslot::has_slots<>,
   Error error_;
   std::string error_desc_;
 
+  // Fires the new description signal according to the current state.
+  virtual void SignalNewDescription();
+
  private:
   // Helper methods to push local and remote transport descriptions.
   bool PushdownLocalTransportDescription(
@@ -434,9 +437,6 @@ class BaseSession : public sigslot::has_slots<>,
   static bool GetTransportDescription(const SessionDescription* description,
                                       const std::string& content_name,
                                       TransportDescription* info);
-
-  // Fires the new description signal according to the current state.
-  void SignalNewDescription();
 
   // Gets the ContentAction and ContentSource according to the session state.
   bool GetContentAction(ContentAction* action, ContentSource* source);

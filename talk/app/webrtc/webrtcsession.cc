@@ -874,6 +874,9 @@ bool WebRtcSession::UpdateSessionState(
     }
     SetState(source == cricket::CS_LOCAL ?
         STATE_SENTINITIATE : STATE_RECEIVEDINITIATE);
+    if (!PushdownMediaDescription(cricket::CA_OFFER, source, err_desc)) {
+      SetError(BaseSession::ERROR_CONTENT, *err_desc);
+    }
     if (error() != cricket::BaseSession::ERROR_NONE) {
       return BadOfferSdp(source, GetSessionErrorMsg(), err_desc);
     }
@@ -884,6 +887,9 @@ bool WebRtcSession::UpdateSessionState(
     EnableChannels();
     SetState(source == cricket::CS_LOCAL ?
         STATE_SENTPRACCEPT : STATE_RECEIVEDPRACCEPT);
+    if (!PushdownMediaDescription(cricket::CA_PRANSWER, source, err_desc)) {
+      SetError(BaseSession::ERROR_CONTENT, *err_desc);
+    }
     if (error() != cricket::BaseSession::ERROR_NONE) {
       return BadPranswerSdp(source, GetSessionErrorMsg(), err_desc);
     }
@@ -895,11 +901,35 @@ bool WebRtcSession::UpdateSessionState(
     EnableChannels();
     SetState(source == cricket::CS_LOCAL ?
         STATE_SENTACCEPT : STATE_RECEIVEDACCEPT);
+    if (!PushdownMediaDescription(cricket::CA_ANSWER, source, err_desc)) {
+      SetError(BaseSession::ERROR_CONTENT, *err_desc);
+    }
     if (error() != cricket::BaseSession::ERROR_NONE) {
       return BadAnswerSdp(source, GetSessionErrorMsg(), err_desc);
     }
   }
   return true;
+}
+
+bool WebRtcSession::PushdownMediaDescription(
+    cricket::ContentAction action,
+    cricket::ContentSource source,
+    std::string* err) {
+  auto set_content = [this, action, source, err](cricket::BaseChannel* ch) {
+    if (!ch) {
+      return true;
+    } else if (source == cricket::CS_LOCAL) {
+      return ch->PushdownLocalDescription(
+          base_local_description(), action, err);
+    } else {
+      return ch->PushdownRemoteDescription(
+          base_remote_description(), action, err);
+    }
+  };
+
+  return (set_content(voice_channel()) &&
+          set_content(video_channel()) &&
+          set_content(data_channel()));
 }
 
 WebRtcSession::Action WebRtcSession::GetAction(const std::string& type) {
@@ -986,17 +1016,15 @@ bool WebRtcSession::SetIceTransports(
 }
 
 bool WebRtcSession::GetLocalTrackIdBySsrc(uint32 ssrc, std::string* track_id) {
-  if (!BaseSession::local_description())
+  if (!base_local_description())
     return false;
-  return webrtc::GetTrackIdBySsrc(
-      BaseSession::local_description(), ssrc, track_id);
+  return webrtc::GetTrackIdBySsrc(base_local_description(), ssrc, track_id);
 }
 
 bool WebRtcSession::GetRemoteTrackIdBySsrc(uint32 ssrc, std::string* track_id) {
-  if (!BaseSession::remote_description())
+  if (!base_remote_description())
     return false;
-  return webrtc::GetTrackIdBySsrc(
-      BaseSession::remote_description(), ssrc, track_id);
+  return webrtc::GetTrackIdBySsrc(base_remote_description(), ssrc, track_id);
 }
 
 std::string WebRtcSession::BadStateErrMsg(State state) {
@@ -1124,7 +1152,7 @@ bool WebRtcSession::CanInsertDtmf(const std::string& track_id) {
   uint32 send_ssrc = 0;
   // The Dtmf is negotiated per channel not ssrc, so we only check if the ssrc
   // exists.
-  if (!GetAudioSsrcByTrackId(BaseSession::local_description(), track_id,
+  if (!GetAudioSsrcByTrackId(base_local_description(), track_id,
                              &send_ssrc)) {
     LOG(LS_ERROR) << "CanInsertDtmf: Track does not exist: " << track_id;
     return false;
@@ -1140,7 +1168,7 @@ bool WebRtcSession::InsertDtmf(const std::string& track_id,
     return false;
   }
   uint32 send_ssrc = 0;
-  if (!VERIFY(GetAudioSsrcByTrackId(BaseSession::local_description(),
+  if (!VERIFY(GetAudioSsrcByTrackId(base_local_description(),
                                     track_id, &send_ssrc))) {
     LOG(LS_ERROR) << "InsertDtmf: Track does not exist: " << track_id;
     return false;
@@ -1419,11 +1447,11 @@ void WebRtcSession::ProcessNewLocalCandidate(
 // Returns the media index for a local ice candidate given the content name.
 bool WebRtcSession::GetLocalCandidateMediaIndex(const std::string& content_name,
                                                 int* sdp_mline_index) {
-  if (!BaseSession::local_description() || !sdp_mline_index)
+  if (!base_local_description() || !sdp_mline_index)
     return false;
 
   bool content_found = false;
-  const ContentInfos& contents = BaseSession::local_description()->contents();
+  const ContentInfos& contents = base_local_description()->contents();
   for (size_t index = 0; index < contents.size(); ++index) {
     if (contents[index].name == content_name) {
       *sdp_mline_index = static_cast<int>(index);
@@ -1468,8 +1496,7 @@ bool WebRtcSession::UseCandidate(
     const IceCandidateInterface* candidate) {
 
   size_t mediacontent_index = static_cast<size_t>(candidate->sdp_mline_index());
-  size_t remote_content_size =
-      BaseSession::remote_description()->contents().size();
+  size_t remote_content_size = base_remote_description()->contents().size();
   if (mediacontent_index >= remote_content_size) {
     LOG(LS_ERROR)
         << "UseRemoteCandidateInSession: Invalid candidate media index.";
@@ -1477,7 +1504,7 @@ bool WebRtcSession::UseCandidate(
   }
 
   cricket::ContentInfo content =
-      BaseSession::remote_description()->contents()[mediacontent_index];
+      base_remote_description()->contents()[mediacontent_index];
   std::vector<cricket::Candidate> candidates;
   candidates.push_back(candidate->candidate());
   // Invoking BaseSession method to handle remote candidates.
