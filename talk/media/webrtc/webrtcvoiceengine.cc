@@ -824,6 +824,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
         // Disable internal software EC if device has its own built-in EC,
         // i.e., replace the software EC with the built-in EC.
         options.echo_cancellation.Set(false);
+        echo_cancellation = false;
         LOG(LS_INFO) << "Disabling EC since built-in EC will be used instead";
       }
     }
