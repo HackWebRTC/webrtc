@@ -910,6 +910,37 @@ WebRtcSession::Action WebRtcSession::GetAction(const std::string& type) {
   return WebRtcSession::kOffer;
 }
 
+bool WebRtcSession::GetTransportStats(cricket::SessionStats* stats) {
+  ASSERT(signaling_thread()->IsCurrent());
+
+  const auto get_transport_stats = [stats](const std::string& content_name,
+                                           cricket::Transport* transport) {
+    const std::string& transport_id = transport->content_name();
+    stats->proxy_to_transport[content_name] = transport_id;
+    if (stats->transport_stats.find(transport_id)
+        != stats->transport_stats.end()) {
+      // Transport stats already done for this transport.
+      return true;
+    }
+
+    cricket::TransportStats tstats;
+    if (!transport->GetStats(&tstats)) {
+      return false;
+    }
+
+    stats->transport_stats[transport_id] = tstats;
+    return true;
+  };
+
+  for (const auto& kv : transport_proxies()) {
+    cricket::Transport* transport = kv.second->impl();
+    if (transport && !get_transport_stats(kv.first, transport)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool WebRtcSession::ProcessIceMessage(const IceCandidateInterface* candidate) {
   if (state() == STATE_INIT) {
      LOG(LS_ERROR) << "ProcessIceMessage: ICE candidates can't be added "

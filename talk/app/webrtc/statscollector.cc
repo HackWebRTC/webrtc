@@ -667,80 +667,82 @@ void StatsCollector::ExtractSessionInfo() {
                      session_->initiator());
 
   cricket::SessionStats stats;
-  if (session_->GetStats(&stats)) {
-    // Store the proxy map away for use in SSRC reporting.
-    // TODO(tommi): This shouldn't be necessary if we post the stats back to the
-    // signaling thread after fetching them on the worker thread, then just use
-    // the proxy map directly from the session stats.
-    // As is, if GetStats() failed, we could be using old (incorrect?) proxy
-    // data.
-    proxy_to_transport_ = stats.proxy_to_transport;
+  if (!session_->GetTransportStats(&stats)) {
+    return;
+  }
 
-    for (const auto& transport_iter : stats.transport_stats) {
-      // Attempt to get a copy of the certificates from the transport and
-      // expose them in stats reports.  All channels in a transport share the
-      // same local and remote certificates.
-      //
-      // Note that Transport::GetIdentity and Transport::GetRemoteCertificate
-      // invoke method calls on the worker thread and block this thread, but
-      // messages are still processed on this thread, which may blow way the
-      // existing transports. So we cannot reuse |transport| after these calls.
-      StatsReport::Id local_cert_report_id, remote_cert_report_id;
+  // Store the proxy map away for use in SSRC reporting.
+  // TODO(tommi): This shouldn't be necessary if we post the stats back to the
+  // signaling thread after fetching them on the worker thread, then just use
+  // the proxy map directly from the session stats.
+  // As is, if GetStats() failed, we could be using old (incorrect?) proxy
+  // data.
+  proxy_to_transport_ = stats.proxy_to_transport;
 
-      cricket::Transport* transport =
-          session_->GetTransport(transport_iter.second.content_name);
-      rtc::scoped_ptr<rtc::SSLIdentity> identity;
-      if (transport && transport->GetIdentity(identity.accept())) {
-        StatsReport* r = AddCertificateReports(&(identity->certificate()));
-        if (r)
-          local_cert_report_id = r->id();
+  for (const auto& transport_iter : stats.transport_stats) {
+    // Attempt to get a copy of the certificates from the transport and
+    // expose them in stats reports.  All channels in a transport share the
+    // same local and remote certificates.
+    //
+    // Note that Transport::GetIdentity and Transport::GetRemoteCertificate
+    // invoke method calls on the worker thread and block this thread, but
+    // messages are still processed on this thread, which may blow way the
+    // existing transports. So we cannot reuse |transport| after these calls.
+    StatsReport::Id local_cert_report_id, remote_cert_report_id;
+
+    cricket::Transport* transport =
+        session_->GetTransport(transport_iter.second.content_name);
+    rtc::scoped_ptr<rtc::SSLIdentity> identity;
+    if (transport && transport->GetIdentity(identity.accept())) {
+      StatsReport* r = AddCertificateReports(&(identity->certificate()));
+      if (r)
+        local_cert_report_id = r->id();
+    }
+
+    transport = session_->GetTransport(transport_iter.second.content_name);
+    rtc::scoped_ptr<rtc::SSLCertificate> cert;
+    if (transport && transport->GetRemoteCertificate(cert.accept())) {
+      StatsReport* r = AddCertificateReports(cert.get());
+      if (r)
+        remote_cert_report_id = r->id();
+    }
+
+    for (const auto& channel_iter : transport_iter.second.channel_stats) {
+      StatsReport::Id id(StatsReport::NewComponentId(
+          transport_iter.second.content_name, channel_iter.component));
+      StatsReport* channel_report = reports_.ReplaceOrAddNew(id);
+      channel_report->set_timestamp(stats_gathering_started_);
+      channel_report->AddInt(StatsReport::kStatsValueNameComponent,
+                             channel_iter.component);
+      if (local_cert_report_id.get()) {
+        channel_report->AddId(StatsReport::kStatsValueNameLocalCertificateId,
+                              local_cert_report_id);
+      }
+      if (remote_cert_report_id.get()) {
+        channel_report->AddId(StatsReport::kStatsValueNameRemoteCertificateId,
+                              remote_cert_report_id);
+      }
+      const std::string& srtp_cipher = channel_iter.srtp_cipher;
+      if (!srtp_cipher.empty()) {
+        channel_report->AddString(StatsReport::kStatsValueNameSrtpCipher,
+                                  srtp_cipher);
+      }
+      const std::string& ssl_cipher = channel_iter.ssl_cipher;
+      if (!ssl_cipher.empty()) {
+        channel_report->AddString(StatsReport::kStatsValueNameDtlsCipher,
+                                  ssl_cipher);
       }
 
-      transport = session_->GetTransport(transport_iter.second.content_name);
-      rtc::scoped_ptr<rtc::SSLCertificate> cert;
-      if (transport && transport->GetRemoteCertificate(cert.accept())) {
-        StatsReport* r = AddCertificateReports(cert.get());
-        if (r)
-          remote_cert_report_id = r->id();
-      }
-
-      for (const auto& channel_iter : transport_iter.second.channel_stats) {
-        StatsReport::Id id(StatsReport::NewComponentId(
-            transport_iter.second.content_name, channel_iter.component));
-        StatsReport* channel_report = reports_.ReplaceOrAddNew(id);
-        channel_report->set_timestamp(stats_gathering_started_);
-        channel_report->AddInt(StatsReport::kStatsValueNameComponent,
-                               channel_iter.component);
-        if (local_cert_report_id.get()) {
-          channel_report->AddId(StatsReport::kStatsValueNameLocalCertificateId,
-                                local_cert_report_id);
-        }
-        if (remote_cert_report_id.get()) {
-          channel_report->AddId(StatsReport::kStatsValueNameRemoteCertificateId,
-                                remote_cert_report_id);
-        }
-        const std::string& srtp_cipher = channel_iter.srtp_cipher;
-        if (!srtp_cipher.empty()) {
-          channel_report->AddString(StatsReport::kStatsValueNameSrtpCipher,
-                                    srtp_cipher);
-        }
-        const std::string& ssl_cipher = channel_iter.ssl_cipher;
-        if (!ssl_cipher.empty()) {
-          channel_report->AddString(StatsReport::kStatsValueNameDtlsCipher,
-                                    ssl_cipher);
-        }
-
-        int connection_id = 0;
-        for (const cricket::ConnectionInfo& info :
-             channel_iter.connection_infos) {
-          StatsReport* connection_report = AddConnectionInfoReport(
-              transport_iter.first, channel_iter.component, connection_id++,
-              channel_report->id(), info);
-          if (info.best_connection) {
-            channel_report->AddId(
-                StatsReport::kStatsValueNameSelectedCandidatePairId,
-                connection_report->id());
-          }
+      int connection_id = 0;
+      for (const cricket::ConnectionInfo& info :
+               channel_iter.connection_infos) {
+        StatsReport* connection_report = AddConnectionInfoReport(
+            transport_iter.first, channel_iter.component, connection_id++,
+            channel_report->id(), info);
+        if (info.best_connection) {
+          channel_report->AddId(
+              StatsReport::kStatsValueNameSelectedCandidatePairId,
+              connection_report->id());
         }
       }
     }

@@ -166,6 +166,8 @@ typedef std::map<std::string, TransportProxy*> TransportMap;
 typedef std::map<std::string, TransportStats> TransportStatsMap;
 typedef std::map<std::string, std::string> ProxyTransportMap;
 
+// TODO(pthatcher): Think of a better name for this.  We already have
+// a TransportStats in transport.h.  Perhaps TransportsStats?
 struct SessionStats {
   ProxyTransportMap proxy_to_transport;
   TransportStatsMap transport_stats;
@@ -317,10 +319,6 @@ class BaseSession : public sigslot::has_slots<>,
   // Send when doing so.
   virtual void DestroyChannel(const std::string& content_name,
                               int component);
-
-  // Returns stats for all channels of all transports.
-  // This avoids exposing the internal structures used to track them.
-  virtual bool GetStats(SessionStats* stats);
 
   rtc::SSLIdentity* identity() { return identity_; }
 

@@ -88,7 +88,7 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
   // track.
   MOCK_METHOD2(GetLocalTrackIdBySsrc, bool(uint32, std::string*));
   MOCK_METHOD2(GetRemoteTrackIdBySsrc, bool(uint32, std::string*));
-  MOCK_METHOD1(GetStats, bool(cricket::SessionStats*));
+  MOCK_METHOD1(GetTransportStats, bool(cricket::SessionStats*));
   MOCK_METHOD1(GetTransport, cricket::Transport*(const std::string&));
 };
 
@@ -478,7 +478,7 @@ class StatsCollectorTest : public testing::Test {
       signaling_(channel_manager_.get()),
       session_(channel_manager_.get()) {
     // By default, we ignore session GetStats calls.
-    EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Return(false));
+    EXPECT_CALL(session_, GetTransportStats(_)).WillRepeatedly(Return(false));
     EXPECT_CALL(session_, mediastream_signaling()).WillRepeatedly(
         Return(&signaling_));
   }
@@ -565,7 +565,7 @@ class StatsCollectorTest : public testing::Test {
 
     // Instruct the session to return stats containing the transport channel.
     InitSessionStats(vc_name);
-    EXPECT_CALL(session_, GetStats(_))
+    EXPECT_CALL(session_, GetTransportStats(_))
         .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
                               Return(true)));
 
@@ -666,7 +666,7 @@ class StatsCollectorTest : public testing::Test {
     // Configure MockWebRtcSession
     EXPECT_CALL(session_, GetTransport(transport_stats.content_name))
       .WillRepeatedly(Return(transport.get()));
-    EXPECT_CALL(session_, GetStats(_))
+    EXPECT_CALL(session_, GetTransportStats(_))
       .WillOnce(DoAll(SetArgPointee<0>(session_stats),
                       Return(true)));
     EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
@@ -782,7 +782,7 @@ TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
   const char kVideoChannelName[] = "video";
 
   InitSessionStats(kVideoChannelName);
-  EXPECT_CALL(session_, GetStats(_))
+  EXPECT_CALL(session_, GetTransportStats(_))
       .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
                             Return(true)));
   EXPECT_CALL(session_, GetTransport(_))
@@ -825,7 +825,7 @@ TEST_F(StatsCollectorTest, BandwidthEstimationInfoIsReported) {
   const char kVideoChannelName[] = "video";
 
   InitSessionStats(kVideoChannelName);
-  EXPECT_CALL(session_, GetStats(_))
+  EXPECT_CALL(session_, GetTransportStats(_))
       .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
                             Return(true)));
   EXPECT_CALL(session_, GetTransport(_))
@@ -936,7 +936,7 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
 
   const char kVideoChannelName[] = "video";
   InitSessionStats(kVideoChannelName);
-  EXPECT_CALL(session_, GetStats(_))
+  EXPECT_CALL(session_, GetTransportStats(_))
       .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
                             Return(true)));
   EXPECT_CALL(session_, GetTransport(_))
@@ -1026,7 +1026,7 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
                           Return(true)));
 
   InitSessionStats(kVcName);
-  EXPECT_CALL(session_, GetStats(_))
+  EXPECT_CALL(session_, GetTransportStats(_))
       .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
                             Return(true)));
 
@@ -1096,7 +1096,7 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
 
   // Instruct the session to return stats containing the transport channel.
   InitSessionStats(kVcName);
-  EXPECT_CALL(session_, GetStats(_))
+  EXPECT_CALL(session_, GetTransportStats(_))
       .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
                             Return(true)));
 
@@ -1134,7 +1134,7 @@ TEST_F(StatsCollectorTest, ReportsFromRemoteTrack) {
 
   const char kVideoChannelName[] = "video";
   InitSessionStats(kVideoChannelName);
-  EXPECT_CALL(session_, GetStats(_))
+  EXPECT_CALL(session_, GetTransportStats(_))
       .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
                             Return(true)));
   EXPECT_CALL(session_, GetTransport(_))
@@ -1333,7 +1333,7 @@ TEST_F(StatsCollectorTest, NoTransport) {
   // Configure MockWebRtcSession
   EXPECT_CALL(session_, GetTransport(transport_stats.content_name))
     .WillRepeatedly(ReturnNull());
-  EXPECT_CALL(session_, GetStats(_))
+  EXPECT_CALL(session_, GetTransportStats(_))
     .WillOnce(DoAll(SetArgPointee<0>(session_stats),
                     Return(true)));
 
@@ -1399,7 +1399,7 @@ TEST_F(StatsCollectorTest, NoCertificates) {
   // Configure MockWebRtcSession
   EXPECT_CALL(session_, GetTransport(transport_stats.content_name))
     .WillRepeatedly(Return(transport.get()));
-  EXPECT_CALL(session_, GetStats(_))
+  EXPECT_CALL(session_, GetTransportStats(_))
     .WillOnce(DoAll(SetArgPointee<0>(session_stats),
                     Return(true)));
   EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
@@ -1519,7 +1519,7 @@ TEST_F(StatsCollectorTest, GetStatsAfterRemoveAudioStream) {
 
   // Instruct the session to return stats containing the transport channel.
   InitSessionStats(kVcName);
-  EXPECT_CALL(session_, GetStats(_))
+  EXPECT_CALL(session_, GetTransportStats(_))
       .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
                             Return(true)));
 
@@ -1589,7 +1589,7 @@ TEST_F(StatsCollectorTest, LocalAndRemoteTracksWithSameSsrc) {
 
   // Instruct the session to return stats containing the transport channel.
   InitSessionStats(kVcName);
-  EXPECT_CALL(session_, GetStats(_))
+  EXPECT_CALL(session_, GetTransportStats(_))
       .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
                             Return(true)));
 

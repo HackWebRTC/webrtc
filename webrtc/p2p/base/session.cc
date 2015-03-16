@@ -585,27 +585,6 @@ cricket::Transport* BaseSession::CreateTransport(
       port_allocator(), identity_);
 }
 
-bool BaseSession::GetStats(SessionStats* stats) {
-  for (TransportMap::iterator iter = transports_.begin();
-       iter != transports_.end(); ++iter) {
-    std::string proxy_id = iter->second->content_name();
-    // We are ignoring not-yet-instantiated transports.
-    if (iter->second->impl()) {
-      std::string transport_id = iter->second->impl()->content_name();
-      stats->proxy_to_transport[proxy_id] = transport_id;
-      if (stats->transport_stats.find(transport_id)
-          == stats->transport_stats.end()) {
-        TransportStats subinfos;
-        if (!iter->second->impl()->GetStats(&subinfos)) {
-          return false;
-        }
-        stats->transport_stats[transport_id] = subinfos;
-      }
-    }
-  }
-  return true;
-}
-
 void BaseSession::SetState(State state) {
   ASSERT(signaling_thread_->IsCurrent());
   if (state != state_) {

@@ -214,6 +214,10 @@ class WebRtcSession : public cricket::BaseSession,
   void RemoveSctpDataStream(int sid) override;
   bool ReadyToSendData() const override;
 
+  // Returns stats for all channels of all transports.
+  // This avoids exposing the internal structures used to track them.
+  virtual bool GetTransportStats(cricket::SessionStats* stats);
+
   // Implements DataChannelFactory.
   rtc::scoped_refptr<DataChannel> CreateDataChannel(
       const std::string& label,

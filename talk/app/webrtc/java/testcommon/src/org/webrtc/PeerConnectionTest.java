@@ -161,6 +161,11 @@ public class PeerConnectionTest {
         return;
       }
 
+      if (expectedIceConnectionChanges.isEmpty()) {
+        System.out.println(name + "Got an unexpected ice connection change " + newState);
+        return;
+      }
+
       assertEquals(expectedIceConnectionChanges.removeFirst(), newState);
     }
 
