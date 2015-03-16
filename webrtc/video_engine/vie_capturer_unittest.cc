@@ -91,7 +91,7 @@ class ViECapturerTest : public ::testing::Test {
   }
 
   void AddInputFrame(I420VideoFrame* frame) {
-    data_callback_->OnIncomingCapturedFrame(0, frame);
+    data_callback_->OnIncomingCapturedFrame(0, *frame);
   }
 
   void AddOutputFrame(const I420VideoFrame* frame) {

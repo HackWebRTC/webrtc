@@ -61,7 +61,7 @@ public:
     virtual ~VCMQMDecodeCompleteCallback();
     void SetUserReceiveCallback(webrtc::VCMReceiveCallback* receiveCallback);
     // will write decoded frame into file
-    int32_t FrameToRender(webrtc::I420VideoFrame* videoFrame);
+    int32_t FrameToRender(webrtc::I420VideoFrame& videoFrame);
     size_t DecodedBytes();
     void SetOriginalFrameDimensions(int32_t width, int32_t height);
     int32_t buildInterpolator();

@@ -105,10 +105,10 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
   }
 
   virtual void OnIncomingCapturedFrame(const int32_t id,
-                                       webrtc::I420VideoFrame* videoFrame) {
+                                       webrtc::I420VideoFrame& videoFrame) {
     CriticalSectionScoped cs(capture_cs_.get());
-    int height = videoFrame->height();
-    int width = videoFrame->width();
+    int height = videoFrame.height();
+    int width = videoFrame.width();
 #if ANDROID
     // Android camera frames may be rotated depending on test device
     // orientation.
@@ -126,21 +126,21 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
 #endif
     // RenderTimstamp should be the time now.
     EXPECT_TRUE(
-        videoFrame->render_time_ms() >= TickTime::MillisecondTimestamp()-30 &&
-        videoFrame->render_time_ms() <= TickTime::MillisecondTimestamp());
+        videoFrame.render_time_ms() >= TickTime::MillisecondTimestamp()-30 &&
+        videoFrame.render_time_ms() <= TickTime::MillisecondTimestamp());
 
-    if ((videoFrame->render_time_ms() >
+    if ((videoFrame.render_time_ms() >
             last_render_time_ms_ + (1000 * 1.1) / capability_.maxFPS &&
             last_render_time_ms_ > 0) ||
-        (videoFrame->render_time_ms() <
+        (videoFrame.render_time_ms() <
             last_render_time_ms_ + (1000 * 0.9) / capability_.maxFPS &&
             last_render_time_ms_ > 0)) {
       timing_warnings_++;
     }
 
     incoming_frames_++;
-    last_render_time_ms_ = videoFrame->render_time_ms();
-    last_frame_.CopyFrame(*videoFrame);
+    last_render_time_ms_ = videoFrame.render_time_ms();
+    last_frame_.CopyFrame(videoFrame);
   }
 
   virtual void OnCaptureDelayChanged(const int32_t id,

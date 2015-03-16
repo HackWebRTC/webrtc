@@ -68,7 +68,7 @@ public:
     void SetUserReceiveCallback(webrtc::VCMReceiveCallback* receiveCallback);
 
     // will write decoded frame into file
-    int32_t FrameToRender(webrtc::I420VideoFrame* videoFrame) override;
+    int32_t FrameToRender(webrtc::I420VideoFrame& videoFrame) override;
 
     size_t DecodedBytes();
 private:

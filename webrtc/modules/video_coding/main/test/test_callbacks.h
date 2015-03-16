@@ -136,7 +136,7 @@ public:
         _decodedFile(decodedFile), _decodedBytes(0) {}
     virtual ~VCMDecodeCompleteCallback() {}
     // Write decoded frame into file
-    int32_t FrameToRender(webrtc::I420VideoFrame* videoFrame) override;
+    int32_t FrameToRender(webrtc::I420VideoFrame& videoFrame) override;
     size_t DecodedBytes();
 private:
     FILE*       _decodedFile;

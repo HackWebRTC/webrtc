@@ -90,17 +90,18 @@ int32_t VideoChannelNSOpenGL::GetChannelProperties(float& left, float& top,
 }
 
 int32_t VideoChannelNSOpenGL::RenderFrame(
-  const uint32_t /*streamId*/, I420VideoFrame* videoFrame) {
+  const uint32_t /*streamId*/, I420VideoFrame& videoFrame) {
 
   _owner->LockAGLCntx();
 
-  if(_width != videoFrame->width() || _height != videoFrame->height()) {
-      if(FrameSizeChange(videoFrame->width(), videoFrame->height(), 1) == -1) {
+  if(_width != videoFrame.width() ||
+     _height != videoFrame.height()) {
+      if(FrameSizeChange(videoFrame.width(), videoFrame.height(), 1) == -1) {
         _owner->UnlockAGLCntx();
         return -1;
       }
   }
-  int ret = DeliverFrame(*videoFrame);
+  int ret = DeliverFrame(videoFrame);
 
   _owner->UnlockAGLCntx();
   return ret;

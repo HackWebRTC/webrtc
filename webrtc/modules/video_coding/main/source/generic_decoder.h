@@ -39,7 +39,7 @@ public:
     void SetUserReceiveCallback(VCMReceiveCallback* receiveCallback);
     VCMReceiveCallback* UserReceiveCallback();
 
-    virtual int32_t Decoded(I420VideoFrame* decodedImage);
+    virtual int32_t Decoded(I420VideoFrame& decodedImage);
     virtual int32_t ReceivedDecodedReferenceFrame(const uint64_t pictureId);
     virtual int32_t ReceivedDecodedFrame(const uint64_t pictureId);
 

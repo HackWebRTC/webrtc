@@ -185,13 +185,13 @@ VCMRTPEncodeCompleteCallback::EncodeComplete()
 // Decoded Frame Callback Implementation
 
 int32_t
-VCMDecodeCompleteCallback::FrameToRender(I420VideoFrame* videoFrame)
+VCMDecodeCompleteCallback::FrameToRender(I420VideoFrame& videoFrame)
 {
-  if (PrintI420VideoFrame(*videoFrame, _decodedFile) < 0) {
+  if (PrintI420VideoFrame(videoFrame, _decodedFile) < 0) {
     return -1;
   }
-  _decodedBytes += CalcBufferSize(kI420, videoFrame->width(),
-                                  videoFrame->height());
+  _decodedBytes += CalcBufferSize(kI420, videoFrame.width(),
+                                  videoFrame.height());
   return VCM_OK;
  }
 

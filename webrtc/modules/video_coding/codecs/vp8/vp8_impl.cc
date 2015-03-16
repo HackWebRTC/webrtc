@@ -1343,7 +1343,7 @@ int VP8DecoderImpl::ReturnFrame(const vpx_image_t* img,
                              img->stride[VPX_PLANE_V]);
   decoded_image_.set_timestamp(timestamp);
   decoded_image_.set_ntp_time_ms(ntp_time_ms);
-  int ret = decode_complete_callback_->Decoded(&decoded_image_);
+  int ret = decode_complete_callback_->Decoded(decoded_image_);
   if (ret != 0)
     return ret;
 

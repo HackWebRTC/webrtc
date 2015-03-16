@@ -143,17 +143,17 @@ int D3D9Channel::FrameSizeChange(int width, int height, int numberOfStreams)
 }
 
 int32_t D3D9Channel::RenderFrame(const uint32_t streamId,
-                                 I420VideoFrame* videoFrame)
+                                 I420VideoFrame& videoFrame)
 {
     CriticalSectionScoped cs(_critSect);
-    if (_width != videoFrame->width() || _height != videoFrame->height())
+    if (_width != videoFrame.width() || _height != videoFrame.height())
     {
-        if (FrameSizeChange(videoFrame->width(), videoFrame->height(), 1) == -1)
+        if (FrameSizeChange(videoFrame.width(), videoFrame.height(), 1) == -1)
         {
             return -1;
         }
     }
-    return DeliverFrame(*videoFrame);
+    return DeliverFrame(videoFrame);
 }
 
 // Called from video engine when a new frame should be rendered.

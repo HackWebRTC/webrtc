@@ -657,11 +657,11 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     I420VideoFrame texture_image(
         &native_handle_, width, height, output_timestamp_, 0);
     texture_image.set_ntp_time_ms(output_ntp_time_ms_);
-    callback_status = callback_->Decoded(&texture_image);
+    callback_status = callback_->Decoded(texture_image);
   } else {
     decoded_image_.set_timestamp(output_timestamp_);
     decoded_image_.set_ntp_time_ms(output_ntp_time_ms_);
-    callback_status = callback_->Decoded(&decoded_image_);
+    callback_status = callback_->Decoded(decoded_image_);
   }
   if (callback_status > 0) {
     ALOGE("callback error");

@@ -44,7 +44,7 @@ class WebRtcPassthroughRenderTest : public testing::Test {
     }
 
     virtual int32_t RenderFrame(const uint32_t stream_id,
-                                webrtc::I420VideoFrame* videoFrame) {
+                                webrtc::I420VideoFrame& videoFrame) {
       ++frame_num_;
       LOG(INFO) << "RenderFrame stream_id: " << stream_id
                 << " frame_num: " << frame_num_;
@@ -143,21 +143,21 @@ TEST_F(WebRtcPassthroughRenderTest, Renderer) {
   int test_frame_num = 10;
   // RenderFrame without starting the render
   for (int i = 0; i < test_frame_num; ++i) {
-    stream1->RenderFrame(stream_id1, &frame);
+    stream1->RenderFrame(stream_id1, frame);
   }
   EXPECT_EQ(0, renderer1.frame_num());
   // Start the render and test again.
   EXPECT_FALSE(StartRender(stream_id3));
   EXPECT_TRUE(StartRender(stream_id1));
   for (int i = 0; i < test_frame_num; ++i) {
-    stream1->RenderFrame(stream_id1, &frame);
+    stream1->RenderFrame(stream_id1, frame);
   }
   EXPECT_EQ(test_frame_num, renderer1.frame_num());
   // Stop the render and test again.
   EXPECT_FALSE(StopRender(stream_id3));
   EXPECT_TRUE(StopRender(stream_id1));
   for (int i = 0; i < test_frame_num; ++i) {
-    stream1->RenderFrame(stream_id1, &frame);
+    stream1->RenderFrame(stream_id1, frame);
   }
   // The frame number should not have changed.
   EXPECT_EQ(test_frame_num, renderer1.frame_num());
@@ -166,7 +166,7 @@ TEST_F(WebRtcPassthroughRenderTest, Renderer) {
   EXPECT_TRUE(StartRender(stream_id2));
   test_frame_num = 30;
   for (int i = 0; i < test_frame_num; ++i) {
-    stream2->RenderFrame(stream_id2, &frame);
+    stream2->RenderFrame(stream_id2, frame);
   }
   EXPECT_EQ(test_frame_num, renderer2.frame_num());
 }

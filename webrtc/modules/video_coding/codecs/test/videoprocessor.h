@@ -241,7 +241,7 @@ class VideoProcessorImpl : public VideoProcessor {
       explicit VideoProcessorDecodeCompleteCallback(VideoProcessorImpl* vp)
       : video_processor_(vp) {
     }
-      int32_t Decoded(webrtc::I420VideoFrame* image) override;
+      int32_t Decoded(webrtc::I420VideoFrame& image) override;
 
    private:
     VideoProcessorImpl* video_processor_;

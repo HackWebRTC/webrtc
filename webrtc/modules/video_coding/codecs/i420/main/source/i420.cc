@@ -215,7 +215,7 @@ int I420Decoder::Decode(const EncodedImage& inputImage, bool /*missingFrames*/,
   }
   _decodedImage.set_timestamp(inputImage._timeStamp);
 
-  _decodeCompleteCallback->Decoded(&_decodedImage);
+  _decodeCompleteCallback->Decoded(_decodedImage);
   return WEBRTC_VIDEO_CODEC_OK;
 }
 

@@ -124,16 +124,16 @@ class Vp8TestDecodedImageCallback : public DecodedImageCallback {
   Vp8TestDecodedImageCallback()
       : decoded_frames_(0) {
   }
-  virtual int32_t Decoded(I420VideoFrame* decoded_image) {
-    last_decoded_frame_.CopyFrame(*decoded_image);
-    for (int i = 0; i < decoded_image->width(); ++i) {
-      EXPECT_NEAR(kColorY, decoded_image->buffer(kYPlane)[i], 1);
+  virtual int32_t Decoded(I420VideoFrame& decoded_image) {
+    last_decoded_frame_.CopyFrame(decoded_image);
+    for (int i = 0; i < decoded_image.width(); ++i) {
+      EXPECT_NEAR(kColorY, decoded_image.buffer(kYPlane)[i], 1);
     }
 
     // TODO(mikhal): Verify the difference between U,V and the original.
-    for (int i = 0; i < ((decoded_image->width() + 1) / 2); ++i) {
-      EXPECT_NEAR(kColorU, decoded_image->buffer(kUPlane)[i], 4);
-      EXPECT_NEAR(kColorV, decoded_image->buffer(kVPlane)[i], 4);
+    for (int i = 0; i < ((decoded_image.width() + 1) / 2); ++i) {
+      EXPECT_NEAR(kColorU, decoded_image.buffer(kUPlane)[i], 4);
+      EXPECT_NEAR(kColorV, decoded_image.buffer(kVPlane)[i], 4);
     }
     decoded_frames_++;
     return 0;

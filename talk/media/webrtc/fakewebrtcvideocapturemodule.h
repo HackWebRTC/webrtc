@@ -115,7 +115,7 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
       return false;
     }
     if (callback_) {
-      callback_->OnIncomingCapturedFrame(id_, &sample);
+      callback_->OnIncomingCapturedFrame(id_, sample);
     }
     return true;
   }

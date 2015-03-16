@@ -38,16 +38,18 @@ int PrintBuffer(const uint8_t* buffer, int width, int height, int stride) {
 }
 
 
-int PrintFrame(const I420VideoFrame& frame, const char* str) {
-  printf("%s %dx%d \n", str, frame.width(), frame.height());
+int PrintFrame(const I420VideoFrame* frame, const char* str) {
+  if (frame == NULL)
+     return -1;
+  printf("%s %dx%d \n", str, frame->width(), frame->height());
 
   int ret = 0;
   for (int plane_num = 0; plane_num < kNumOfPlanes; ++plane_num) {
     PlaneType plane_type = static_cast<PlaneType>(plane_num);
-    int width = (plane_num ? (frame.width() + 1) / 2 : frame.width());
-    int height = (plane_num ? (frame.height() + 1) / 2 : frame.height());
-    ret += PrintBuffer(frame.buffer(plane_type), width, height,
-                       frame.stride(plane_type));
+    int width = (plane_num ? (frame->width() + 1) / 2 : frame->width());
+    int height = (plane_num ? (frame->height() + 1) / 2 : frame->height());
+    ret += PrintBuffer(frame->buffer(plane_type), width, height,
+                       frame->stride(plane_type));
   }
   return ret;
 }
@@ -154,7 +156,7 @@ TEST_F(TestLibYuv, ConvertTest) {
   if (PrintI420VideoFrame(res_i420_frame, output_file) < 0) {
     return;
   }
-  psnr = I420PSNR(orig_frame_, res_i420_frame);
+  psnr = I420PSNR(&orig_frame_, &res_i420_frame);
   EXPECT_EQ(48.0, psnr);
   j++;
 
@@ -174,7 +176,7 @@ TEST_F(TestLibYuv, ConvertTest) {
   if (PrintI420VideoFrame(res_i420_frame, output_file) < 0) {
     return;
   }
-  psnr = I420PSNR(orig_frame_, res_i420_frame);
+  psnr = I420PSNR(&orig_frame_, &res_i420_frame);
 
   // Optimization Speed- quality trade-off => 45 dB only (platform dependant).
   EXPECT_GT(ceil(psnr), 44);
@@ -185,7 +187,7 @@ TEST_F(TestLibYuv, ConvertTest) {
   EXPECT_EQ(0, ConvertFromI420(orig_frame_,  kUYVY, 0, out_uyvy_buffer.get()));
   EXPECT_EQ(0, ConvertToI420(kUYVY, out_uyvy_buffer.get(), 0, 0, width_,
                              height_, 0, kVideoRotation_0, &res_i420_frame));
-  psnr = I420PSNR(orig_frame_, res_i420_frame);
+  psnr = I420PSNR(&orig_frame_, &res_i420_frame);
   EXPECT_EQ(48.0, psnr);
   if (PrintI420VideoFrame(res_i420_frame, output_file) < 0) {
     return;
@@ -210,7 +212,7 @@ TEST_F(TestLibYuv, ConvertTest) {
 
   ConvertToI420(kI420, res_i420_buffer.get(), 0, 0, width_, height_, 0,
                 kVideoRotation_0, &res_i420_frame);
-  psnr = I420PSNR(orig_frame_, res_i420_frame);
+  psnr = I420PSNR(&orig_frame_, &res_i420_frame);
   EXPECT_EQ(48.0, psnr);
   j++;
 
@@ -225,7 +227,7 @@ TEST_F(TestLibYuv, ConvertTest) {
     return;
   }
 
-  psnr = I420PSNR(orig_frame_, res_i420_frame);
+  psnr = I420PSNR(&orig_frame_, &res_i420_frame);
   EXPECT_EQ(48.0, psnr);
   printf("\nConvert #%d I420 <-> RGB565\n", j);
   rtc::scoped_ptr<uint8_t[]> out_rgb565_buffer(
@@ -241,7 +243,7 @@ TEST_F(TestLibYuv, ConvertTest) {
   }
   j++;
 
-  psnr = I420PSNR(orig_frame_, res_i420_frame);
+  psnr = I420PSNR(&orig_frame_, &res_i420_frame);
   // TODO(leozwang) Investigate the right psnr should be set for I420ToRGB565,
   // Another example is I420ToRGB24, the psnr is 44
   // TODO(mikhal): Add psnr for RGB565, 1555, 4444, convert to ARGB.
@@ -260,7 +262,7 @@ TEST_F(TestLibYuv, ConvertTest) {
     return;
   }
 
-  psnr = I420PSNR(orig_frame_, res_i420_frame);
+  psnr = I420PSNR(&orig_frame_, &res_i420_frame);
   // TODO(leozwang) Investigate the right psnr should be set for I420ToARGB8888,
   EXPECT_GT(ceil(psnr), 42);
 
@@ -291,7 +293,7 @@ TEST_F(TestLibYuv, ConvertAlignedFrame) {
   if (PrintI420VideoFrame(res_i420_frame, output_file) < 0) {
     return;
   }
-  psnr = I420PSNR(orig_frame_, res_i420_frame);
+  psnr = I420PSNR(&orig_frame_, &res_i420_frame);
   EXPECT_EQ(48.0, psnr);
 }
 

@@ -201,7 +201,7 @@ class VideoAnalyzer : public PacketReceiver,
     CriticalSectionScoped lock(crit_.get());
     while (frames_.front()->timestamp() < send_timestamp) {
       AddFrameComparison(
-          *frames_.front(), last_rendered_frame_, true, render_time_ms);
+          frames_.front(), &last_rendered_frame_, true, render_time_ms);
       frame_pool_.push_back(frames_.front());
       frames_.pop_front();
     }
@@ -212,7 +212,7 @@ class VideoAnalyzer : public PacketReceiver,
     EXPECT_EQ(reference_frame->timestamp(), send_timestamp);
     assert(reference_frame->timestamp() == send_timestamp);
 
-    AddFrameComparison(*reference_frame, video_frame, false, render_time_ms);
+    AddFrameComparison(reference_frame, &video_frame, false, render_time_ms);
     frame_pool_.push_back(reference_frame);
 
     last_rendered_frame_.CopyFrame(video_frame);
@@ -253,8 +253,8 @@ class VideoAnalyzer : public PacketReceiver,
     FrameComparison()
         : dropped(false), send_time_ms(0), recv_time_ms(0), render_time_ms(0) {}
 
-    FrameComparison(const I420VideoFrame& reference,
-                    const I420VideoFrame& render,
+    FrameComparison(const I420VideoFrame* reference,
+                    const I420VideoFrame* render,
                     bool dropped,
                     int64_t send_time_ms,
                     int64_t recv_time_ms,
@@ -263,8 +263,8 @@ class VideoAnalyzer : public PacketReceiver,
           send_time_ms(send_time_ms),
           recv_time_ms(recv_time_ms),
           render_time_ms(render_time_ms) {
-      this->reference.CopyFrame(reference);
-      this->render.CopyFrame(render);
+      this->reference.CopyFrame(*reference);
+      this->render.CopyFrame(*render);
     }
 
     FrameComparison(const FrameComparison& compare)
@@ -295,15 +295,15 @@ class VideoAnalyzer : public PacketReceiver,
     int64_t render_time_ms;
   };
 
-  void AddFrameComparison(const I420VideoFrame& reference,
-                          const I420VideoFrame& render,
+  void AddFrameComparison(const I420VideoFrame* reference,
+                          const I420VideoFrame* render,
                           bool dropped,
                           int64_t render_time_ms)
       EXCLUSIVE_LOCKS_REQUIRED(crit_) {
-    int64_t send_time_ms = send_times_[reference.timestamp()];
-    send_times_.erase(reference.timestamp());
-    int64_t recv_time_ms = recv_times_[reference.timestamp()];
-    recv_times_.erase(reference.timestamp());
+    int64_t send_time_ms = send_times_[reference->timestamp()];
+    send_times_.erase(reference->timestamp());
+    int64_t recv_time_ms = recv_times_[reference->timestamp()];
+    recv_times_.erase(reference->timestamp());
 
     CriticalSectionScoped crit(comparison_lock_.get());
     comparisons_.push_back(FrameComparison(reference,
@@ -405,8 +405,8 @@ class VideoAnalyzer : public PacketReceiver,
 
   void PerformFrameComparison(const FrameComparison& comparison) {
     // Perform expensive psnr and ssim calculations while not holding lock.
-    double psnr = I420PSNR(comparison.reference, comparison.render);
-    double ssim = I420SSIM(comparison.reference, comparison.render);
+    double psnr = I420PSNR(&comparison.reference, &comparison.render);
+    double ssim = I420SSIM(&comparison.reference, &comparison.render);
 
     CriticalSectionScoped crit(comparison_lock_.get());
     psnr_.AddSample(psnr);

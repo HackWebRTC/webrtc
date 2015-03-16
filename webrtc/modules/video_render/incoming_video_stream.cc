@@ -85,11 +85,11 @@ VideoRenderCallback* IncomingVideoStream::ModuleCallback() {
 }
 
 int32_t IncomingVideoStream::RenderFrame(const uint32_t stream_id,
-                                         I420VideoFrame* video_frame) {
+                                         I420VideoFrame& video_frame) {
   CriticalSectionScoped csS(&stream_critsect_);
   WEBRTC_TRACE(kTraceStream, kTraceVideoRenderer, module_id_,
                "%s for stream %d, render time: %u", __FUNCTION__, stream_id_,
-               video_frame->render_time_ms());
+               video_frame.render_time_ms());
 
   if (!running_) {
     WEBRTC_TRACE(kTraceStream, kTraceVideoRenderer, module_id_,
@@ -110,7 +110,7 @@ int32_t IncomingVideoStream::RenderFrame(const uint32_t stream_id,
 
   // Insert frame.
   CriticalSectionScoped csB(&buffer_critsect_);
-  if (render_buffers_.AddFrame(*video_frame) == 1)
+  if (render_buffers_.AddFrame(video_frame) == 1)
     deliver_buffer_event_.Set();
 
   return 0;
@@ -285,13 +285,13 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
         if (last_render_time_ms_ == 0 && !start_image_.IsZeroSize()) {
           // We have not rendered anything and have a start image.
           temp_frame_.CopyFrame(start_image_);
-          render_callback_->RenderFrame(stream_id_, &temp_frame_);
+          render_callback_->RenderFrame(stream_id_, temp_frame_);
         } else if (!timeout_image_.IsZeroSize() &&
                    last_render_time_ms_ + timeout_time_ <
                        TickTime::MillisecondTimestamp()) {
           // Render a timeout image.
           temp_frame_.CopyFrame(timeout_image_);
-          render_callback_->RenderFrame(stream_id_, &temp_frame_);
+          render_callback_->RenderFrame(stream_id_, temp_frame_);
         }
       }
 
@@ -305,13 +305,13 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
       WEBRTC_TRACE(kTraceStream, kTraceVideoRenderer, module_id_,
                    "%s: executing external renderer callback to deliver frame",
                    __FUNCTION__, frame_to_render.render_time_ms());
-      external_callback_->RenderFrame(stream_id_, &frame_to_render);
+      external_callback_->RenderFrame(stream_id_, frame_to_render);
     } else {
       if (render_callback_) {
         WEBRTC_TRACE(kTraceStream, kTraceVideoRenderer, module_id_,
                      "%s: Render frame, time: ", __FUNCTION__,
                      frame_to_render.render_time_ms());
-        render_callback_->RenderFrame(stream_id_, &frame_to_render);
+        render_callback_->RenderFrame(stream_id_, frame_to_render);
       }
     }
 

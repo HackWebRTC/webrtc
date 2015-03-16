@@ -31,7 +31,7 @@ class IncomingVideoStream : public VideoRenderCallback {
   // Get callback to deliver frames to the module.
   VideoRenderCallback* ModuleCallback();
   virtual int32_t RenderFrame(const uint32_t stream_id,
-                              I420VideoFrame* video_frame);
+                              I420VideoFrame& video_frame);
 
   // Set callback to the platform dependent code.
   int32_t SetRenderCallback(VideoRenderCallback* render_callback);

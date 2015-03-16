@@ -113,7 +113,7 @@ FileOutputFrameReceiver::~FileOutputFrameReceiver() {
 }
 
 int32_t FileOutputFrameReceiver::FrameToRender(
-    webrtc::I420VideoFrame* video_frame) {
+    webrtc::I420VideoFrame& video_frame) {
   if (timing_file_ == NULL) {
     std::string basename;
     std::string extension;
@@ -123,14 +123,14 @@ int32_t FileOutputFrameReceiver::FrameToRender(
       return -1;
     }
   }
-  if (out_file_ == NULL || video_frame->width() != width_ ||
-      video_frame->height() != height_) {
+  if (out_file_ == NULL || video_frame.width() != width_ ||
+      video_frame.height() != height_) {
     if (out_file_) {
       fclose(out_file_);
     }
-    printf("New size: %dx%d\n", video_frame->width(), video_frame->height());
-    width_ = video_frame->width();
-    height_ = video_frame->height();
+    printf("New size: %dx%d\n", video_frame.width(), video_frame.height());
+    width_ = video_frame.width();
+    height_ = video_frame.height();
     std::string filename_with_width_height = AppendWidthHeightCount(
         out_filename_, width_, height_, count_);
     ++count_;
@@ -139,9 +139,9 @@ int32_t FileOutputFrameReceiver::FrameToRender(
       return -1;
     }
   }
-  fprintf(timing_file_, "%u, %u\n", video_frame->timestamp(),
-      webrtc::MaskWord64ToUWord32(video_frame->render_time_ms()));
-  if (PrintI420VideoFrame(*video_frame, out_file_) < 0) {
+  fprintf(timing_file_, "%u, %u\n", video_frame.timestamp(),
+      webrtc::MaskWord64ToUWord32(video_frame.render_time_ms()));
+  if (PrintI420VideoFrame(video_frame, out_file_) < 0) {
     return -1;
   }
   return 0;

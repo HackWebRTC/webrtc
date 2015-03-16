@@ -78,7 +78,7 @@ class Vp8UnitTestDecodeCompleteCallback : public webrtc::DecodedImageCallback {
  public:
   explicit Vp8UnitTestDecodeCompleteCallback(I420VideoFrame* frame)
       : decoded_frame_(frame), decode_complete(false) {}
-  int Decoded(webrtc::I420VideoFrame* frame);
+  int Decoded(webrtc::I420VideoFrame& frame);
   bool DecodeComplete();
 
  private:
@@ -94,8 +94,8 @@ bool Vp8UnitTestDecodeCompleteCallback::DecodeComplete() {
   return false;
 }
 
-int Vp8UnitTestDecodeCompleteCallback::Decoded(I420VideoFrame* image) {
-  decoded_frame_->CopyFrame(*image);
+int Vp8UnitTestDecodeCompleteCallback::Decoded(I420VideoFrame& image) {
+  decoded_frame_->CopyFrame(image);
   decode_complete = true;
   return 0;
 }
@@ -227,7 +227,7 @@ TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(AlignedStrideEncodeDecode)) {
             decoder_->Decode(encoded_frame_, false, NULL));
   EXPECT_GT(WaitForDecodedFrame(), 0u);
   // Compute PSNR on all planes (faster than SSIM).
-  EXPECT_GT(I420PSNR(input_frame_, decoded_frame_), 36);
+  EXPECT_GT(I420PSNR(&input_frame_, &decoded_frame_), 36);
   EXPECT_EQ(kTestTimestamp, decoded_frame_.timestamp());
   EXPECT_EQ(kTestNtpTimeMs, decoded_frame_.ntp_time_ms());
 }
@@ -249,7 +249,7 @@ TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(DecodeWithACompleteKeyFrame)) {
   encoded_frame_._frameType = kKeyFrame;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             decoder_->Decode(encoded_frame_, false, NULL));
-  EXPECT_GT(I420PSNR(input_frame_, decoded_frame_), 36);
+  EXPECT_GT(I420PSNR(&input_frame_, &decoded_frame_), 36);
 }
 
 TEST_F(TestVp8Impl, TestReset) {
