@@ -29,6 +29,7 @@ sys.path.insert(1, os.path.join(ROOT_DIR, 'tools'))
 import find_depot_tools
 find_depot_tools.add_depot_tools_to_path()
 import rietveld
+import roll_dep
 from gclient import GClientKeywords
 from third_party import upload
 
@@ -36,7 +37,7 @@ from third_party import upload
 upload.verbosity = 0  # Errors only.
 
 CHROMIUM_GIT_URL = 'https://chromium.googlesource.com/chromium/src.git'
-GIT_SVN_ID_RE = re.compile('^Cr-Original-Commit-Position: .*#([0-9]+).*$')
+COMMIT_POSITION_RE = re.compile('^Cr-Original-Commit-Position: .*#([0-9]+).*$')
 CL_ISSUE_RE = re.compile('^Issue number: ([0-9]+) \((.*)\)$')
 RIETVELD_URL_RE = re.compile('^https?://(.*)/(.*)')
 ROLL_BRANCH_NAME = 'special_webrtc_roll_branch'
@@ -62,24 +63,22 @@ TRYJOB_STATUS = {
 SUCCESS_STATUS = (0, 1, 3)
 FAILURE_STATUS = (2, 4, 5)
 
-CommitInfo = collections.namedtuple('CommitInfo', ['svn_revision',
+CommitInfo = collections.namedtuple('CommitInfo', ['commit_position',
                                                    'git_commit',
                                                    'git_repo_url'])
 CLInfo = collections.namedtuple('CLInfo', ['issue', 'url', 'rietveld_server'])
 
 
-def _ParseSvnRevisionFromGitDescription(description):
+def _ParseGitCommitPosition(description):
   for line in reversed(description.splitlines()):
-    m = GIT_SVN_ID_RE.match(line.strip())
+    m = COMMIT_POSITION_RE.match(line.strip())
     if m:
       return m.group(1)
   logging.error('Failed to parse svn revision id from:\n%s\n', description)
   sys.exit(-1)
 
 
-def _ParseGitCommitFromDescription(description):
-  # TODO(kjellander): Consider passing --format=%b to the git log command so we
-  # don't need to have error-prone parsing like this.
+def _ParseGitCommitHash(description):
   for line in description.splitlines():
     if line.startswith('commit '):
       return line.split()[1]
@@ -165,8 +164,8 @@ def _GenerateCLDescription(webrtc_current, libjingle_current,
     return '%s/+log/%s..%s' % (git_repo_url, current_hash[0:7], new_hash[0:7])
 
   if webrtc_current.git_commit != webrtc_new.git_commit:
-    webrtc_str = 'WebRTC %s:%s' % (webrtc_current.svn_revision,
-                                   webrtc_new.svn_revision)
+    webrtc_str = 'WebRTC %s:%s' % (webrtc_current.commit_position,
+                                   webrtc_new.commit_position)
     webrtc_changelog_url = GetChangeLogURL(webrtc_current.git_repo_url,
                                            webrtc_current.git_commit,
                                            webrtc_new.git_commit)
@@ -175,8 +174,8 @@ def _GenerateCLDescription(webrtc_current, libjingle_current,
   if libjingle_current.git_commit != libjingle_new.git_commit:
     if webrtc_str:
       delim += ', '
-    libjingle_str = 'Libjingle %s:%s' % (libjingle_current.svn_revision,
-                                         libjingle_new.svn_revision)
+    libjingle_str = 'Libjingle %s:%s' % (libjingle_current.commit_position,
+                                         libjingle_new.commit_position)
     libjingle_changelog_url = GetChangeLogURL(libjingle_current.git_repo_url,
                                               libjingle_current.git_commit,
                                               libjingle_new.git_commit)
@@ -235,8 +234,8 @@ class AutoRoller(object):
     ret = self._RunCommand(
         ['git', '--no-pager', 'log', revision_range, '--pretty=full', '-1'],
         working_dir=working_dir)
-    return CommitInfo(_ParseSvnRevisionFromGitDescription(ret),
-                      _ParseGitCommitFromDescription(ret), git_repo_url)
+    return CommitInfo(_ParseGitCommitPosition(ret), _ParseGitCommitHash(ret),
+                      git_repo_url)
 
   def _GetDepsCommitInfo(self, deps_dict, path_below_src):
     entry = deps_dict['deps']['src/%s' % path_below_src]
@@ -308,7 +307,8 @@ class AutoRoller(object):
     # Modify Chromium's DEPS file.
 
     # Parse current hashes.
-    deps = _ParseDepsFile(os.path.join(self._chromium_src, 'DEPS'))
+    deps_filename = os.path.join(self._chromium_src, 'DEPS')
+    deps = _ParseDepsFile(deps_filename)
     webrtc_current = self._GetDepsCommitInfo(deps, WEBRTC_PATH)
     libjingle_current = self._GetDepsCommitInfo(deps, LIBJINGLE_PATH)
 
@@ -316,14 +316,14 @@ class AutoRoller(object):
     webrtc_latest = self._GetCommitInfo(WEBRTC_PATH)
     libjingle_latest = self._GetCommitInfo(LIBJINGLE_PATH)
 
-    self._RunCommand(['roll-dep', WEBRTC_PATH, webrtc_latest.git_commit])
-    self._RunCommand(['roll-dep', LIBJINGLE_PATH, libjingle_latest.git_commit])
+    self._UpdateDep(deps_filename, WEBRTC_PATH, webrtc_latest)
+    self._UpdateDep(deps_filename, LIBJINGLE_PATH, libjingle_latest)
 
     if self._IsTreeClean():
       logging.debug('Tree is clean - no changes detected.')
       self._DeleteRollBranch()
     else:
-      self._UpdateReadmeFile(LIBJINGLE_README, libjingle_latest.svn_revision)
+      self._UpdateReadmeFile(LIBJINGLE_README, libjingle_latest.commit_position)
       description = _GenerateCLDescription(webrtc_current, libjingle_current,
                                            webrtc_latest, libjingle_latest)
       logging.debug('Committing changes locally.')
@@ -342,6 +342,18 @@ class AutoRoller(object):
 
     # TODO(kjellander): Checkout masters/previous branches again.
     return 0
+
+  def _UpdateDep(self, deps_filename, dep_relative_to_src, commit_info):
+    dep_name = os.path.join('src', dep_relative_to_src)
+    comment = 'commit position %s' % commit_info.commit_position
+
+    # roll_dep.py relies on cwd being the Chromium checkout, so let's
+    # temporarily change the working directory and then change back.
+    cwd = os.getcwd()
+    os.chdir(os.path.dirname(deps_filename))
+    roll_dep.update_deps(deps_filename, dep_relative_to_src, dep_name,
+                         commit_info.git_commit, comment)
+    os.chdir(cwd)
 
   def _DeleteRollBranch(self):
      self._RunCommand(['git', 'checkout', 'master'])
