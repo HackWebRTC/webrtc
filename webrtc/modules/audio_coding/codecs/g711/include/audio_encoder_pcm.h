@@ -41,11 +41,10 @@ class AudioEncoderPcm : public AudioEncoder {
  protected:
   AudioEncoderPcm(const Config& config, int sample_rate_hz);
 
-  void EncodeInternal(uint32_t rtp_timestamp,
-                      const int16_t* audio,
-                      size_t max_encoded_bytes,
-                      uint8_t* encoded,
-                      EncodedInfo* info) override;
+  EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
+                             const int16_t* audio,
+                             size_t max_encoded_bytes,
+                             uint8_t* encoded) override;
 
   virtual int16_t EncodeCall(const int16_t* audio,
                              size_t input_len,

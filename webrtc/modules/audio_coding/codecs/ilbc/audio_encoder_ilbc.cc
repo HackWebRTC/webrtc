@@ -63,11 +63,11 @@ int AudioEncoderIlbc::Max10MsFramesInAPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
-void AudioEncoderIlbc::EncodeInternal(uint32_t rtp_timestamp,
-                                      const int16_t* audio,
-                                      size_t max_encoded_bytes,
-                                      uint8_t* encoded,
-                                      EncodedInfo* info) {
+AudioEncoder::EncodedInfo AudioEncoderIlbc::EncodeInternal(
+    uint32_t rtp_timestamp,
+    const int16_t* audio,
+    size_t max_encoded_bytes,
+    uint8_t* encoded) {
   DCHECK_GE(max_encoded_bytes, RequiredOutputSizeBytes());
 
   // Save timestamp if starting a new packet.
@@ -82,8 +82,7 @@ void AudioEncoderIlbc::EncodeInternal(uint32_t rtp_timestamp,
   // If we don't yet have enough buffered input for a whole packet, we're done
   // for now.
   if (++num_10ms_frames_buffered_ < num_10ms_frames_per_packet_) {
-    info->encoded_bytes = 0;
-    return;
+    return kZeroEncodedBytes;
   }
 
   // Encode buffered input.
@@ -95,10 +94,12 @@ void AudioEncoderIlbc::EncodeInternal(uint32_t rtp_timestamp,
       kSampleRateHz / 100 * num_10ms_frames_per_packet_,
       encoded);
   CHECK_GE(output_len, 0);
-  info->encoded_bytes = output_len;
-  DCHECK_EQ(info->encoded_bytes, RequiredOutputSizeBytes());
-  info->encoded_timestamp = first_timestamp_in_buffer_;
-  info->payload_type = payload_type_;
+  EncodedInfo info;
+  info.encoded_bytes = output_len;
+  DCHECK_EQ(info.encoded_bytes, RequiredOutputSizeBytes());
+  info.encoded_timestamp = first_timestamp_in_buffer_;
+  info.payload_type = payload_type_;
+  return info;
 }
 
 size_t AudioEncoderIlbc::RequiredOutputSizeBytes() const {

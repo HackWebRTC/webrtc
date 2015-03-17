@@ -38,11 +38,10 @@ class AudioEncoderG722 : public AudioEncoder {
   int Max10MsFramesInAPacket() const override;
 
  protected:
-  void EncodeInternal(uint32_t rtp_timestamp,
-                      const int16_t* audio,
-                      size_t max_encoded_bytes,
-                      uint8_t* encoded,
-                      EncodedInfo* info) override;
+  EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
+                             const int16_t* audio,
+                             size_t max_encoded_bytes,
+                             uint8_t* encoded) override;
 
  private:
   // The encoder state for one channel.
