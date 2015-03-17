@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/rtp_rtcp/source/producer_fec.h"
 
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
@@ -61,7 +62,8 @@ void RedPacket::CreateHeader(const uint8_t* rtp_header, size_t header_length,
 
 void RedPacket::SetSeqNum(int seq_num) {
   assert(seq_num >= 0 && seq_num < (1<<16));
-  RtpUtility::AssignUWord16ToBuffer(&data_[2], seq_num);
+
+  ByteWriter<uint16_t>::WriteBigEndian(&data_[2], seq_num);
 }
 
 void RedPacket::AssignPayload(const uint8_t* payload, size_t length) {

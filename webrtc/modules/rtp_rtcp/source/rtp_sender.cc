@@ -13,6 +13,7 @@
 #include <stdlib.h>  // srand
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_cvo.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -1109,15 +1110,15 @@ size_t RTPSender::CreateRtpHeader(uint8_t* header,
   if (marker_bit) {
     header[1] |= kRtpMarkerBitMask;  // Marker bit is set.
   }
-  RtpUtility::AssignUWord16ToBuffer(header + 2, sequence_number);
-  RtpUtility::AssignUWord32ToBuffer(header + 4, timestamp);
-  RtpUtility::AssignUWord32ToBuffer(header + 8, ssrc);
+  ByteWriter<uint16_t>::WriteBigEndian(header + 2, sequence_number);
+  ByteWriter<uint32_t>::WriteBigEndian(header + 4, timestamp);
+  ByteWriter<uint32_t>::WriteBigEndian(header + 8, ssrc);
   int32_t rtp_header_length = kRtpHeaderLength;
 
   if (csrcs.size() > 0) {
     uint8_t *ptr = &header[rtp_header_length];
     for (size_t i = 0; i < csrcs.size(); ++i) {
-      RtpUtility::AssignUWord32ToBuffer(ptr, csrcs[i]);
+      ByteWriter<uint32_t>::WriteBigEndian(ptr, csrcs[i]);
       ptr += 4;
     }
     header[0] = (header[0] & 0xf0) | csrcs.size();
@@ -1179,7 +1180,8 @@ uint16_t RTPSender::BuildRTPHeaderExtension(uint8_t* data_buffer,
   const uint32_t kHeaderLength = kRtpOneByteHeaderLength;
 
   // Add extension ID (0xBEDE).
-  RtpUtility::AssignUWord16ToBuffer(data_buffer, kRtpOneByteHeaderExtensionId);
+  ByteWriter<uint16_t>::WriteBigEndian(data_buffer,
+                                       kRtpOneByteHeaderExtensionId);
 
   // Add extensions.
   uint16_t total_block_length = 0;
@@ -1223,8 +1225,8 @@ uint16_t RTPSender::BuildRTPHeaderExtension(uint8_t* data_buffer,
     total_block_length += padding_bytes;
   }
   // Set header length (in number of Word32, header excluded).
-  RtpUtility::AssignUWord16ToBuffer(data_buffer + kPosLength,
-                                    total_block_length / 4);
+  ByteWriter<uint16_t>::WriteBigEndian(data_buffer + kPosLength,
+                                       total_block_length / 4);
   // Total added length.
   return kHeaderLength + total_block_length;
 }
@@ -1258,8 +1260,8 @@ uint8_t RTPSender::BuildTransmissionTimeOffsetExtension(
   size_t pos = 0;
   const uint8_t len = 2;
   data_buffer[pos++] = (id << 4) + len;
-  RtpUtility::AssignUWord24ToBuffer(data_buffer + pos,
-                                    transmission_time_offset_);
+  ByteWriter<int32_t, 3>::WriteBigEndian(data_buffer + pos,
+                                         transmission_time_offset_);
   pos += 3;
   assert(pos == kTransmissionTimeOffsetLength);
   return kTransmissionTimeOffsetLength;
@@ -1320,7 +1322,8 @@ uint8_t RTPSender::BuildAbsoluteSendTimeExtension(uint8_t* data_buffer) const {
   size_t pos = 0;
   const uint8_t len = 2;
   data_buffer[pos++] = (id << 4) + len;
-  RtpUtility::AssignUWord24ToBuffer(data_buffer + pos, absolute_send_time_);
+  ByteWriter<uint32_t, 3>::WriteBigEndian(data_buffer + pos,
+                                          absolute_send_time_);
   pos += 3;
   assert(pos == kAbsoluteSendTimeLength);
   return kAbsoluteSendTimeLength;
@@ -1372,8 +1375,8 @@ uint8_t RTPSender::BuildTransportSequenceNumberExtension(
   size_t pos = 0;
   const uint8_t len = 1;
   data_buffer[pos++] = (id << 4) + len;
-  RtpUtility::AssignUWord16ToBuffer(data_buffer + pos,
-                                    transport_sequence_number_);
+  ByteWriter<uint16_t>::WriteBigEndian(data_buffer + pos,
+                                       transport_sequence_number_);
   pos += 2;
   assert(pos == kTransportSequenceNumberLength);
   return kTransportSequenceNumberLength;
@@ -1444,8 +1447,8 @@ void RTPSender::UpdateTransmissionTimeOffset(uint8_t* rtp_packet,
     return;
   }
   // Update transmission offset field (converting to a 90 kHz timestamp).
-  RtpUtility::AssignUWord24ToBuffer(rtp_packet + block_pos + 1,
-                                    time_diff_ms * 90);  // RTP timestamp.
+  ByteWriter<int32_t, 3>::WriteBigEndian(rtp_packet + block_pos + 1,
+                                         time_diff_ms * 90);  // RTP timestamp.
 }
 
 bool RTPSender::UpdateAudioLevel(uint8_t* rtp_packet,
@@ -1560,8 +1563,8 @@ void RTPSender::UpdateAbsoluteSendTime(uint8_t* rtp_packet,
   }
   // Update absolute send time field (convert ms to 24-bit unsigned with 18 bit
   // fractional part).
-  RtpUtility::AssignUWord24ToBuffer(rtp_packet + block_pos + 1,
-                                    ((now_ms << 18) / 1000) & 0x00ffffff);
+  ByteWriter<uint32_t, 3>::WriteBigEndian(rtp_packet + block_pos + 1,
+                                          ((now_ms << 18) / 1000) & 0x00ffffff);
 }
 
 void RTPSender::SetSendingStatus(bool enabled) {
@@ -1786,15 +1789,15 @@ void RTPSender::BuildRtxPacket(uint8_t* buffer, size_t* length,
 
   // Replace sequence number.
   uint8_t *ptr = data_buffer_rtx + 2;
-  RtpUtility::AssignUWord16ToBuffer(ptr, sequence_number_rtx_++);
+  ByteWriter<uint16_t>::WriteBigEndian(ptr, sequence_number_rtx_++);
 
   // Replace SSRC.
   ptr += 6;
-  RtpUtility::AssignUWord32ToBuffer(ptr, ssrc_rtx_);
+  ByteWriter<uint32_t>::WriteBigEndian(ptr, ssrc_rtx_);
 
   // Add OSN (original sequence number).
   ptr = data_buffer_rtx + rtp_header.headerLength;
-  RtpUtility::AssignUWord16ToBuffer(ptr, rtp_header.sequenceNumber);
+  ByteWriter<uint16_t>::WriteBigEndian(ptr, rtp_header.sequenceNumber);
   ptr += 2;
 
   // Add original payload data.

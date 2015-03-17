@@ -18,8 +18,8 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_video.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/rtp_rtcp/test/testAPI/test_api.h"
 
 namespace {
@@ -89,9 +89,9 @@ class RtpRtcpVideoTest : public ::testing::Test {
                          uint32_t sequence_number) {
     dataBuffer[0] = static_cast<uint8_t>(0x80);  // version 2
     dataBuffer[1] = static_cast<uint8_t>(kPayloadType);
-    RtpUtility::AssignUWord16ToBuffer(dataBuffer + 2, sequence_number);
-    RtpUtility::AssignUWord32ToBuffer(dataBuffer + 4, timestamp);
-    RtpUtility::AssignUWord32ToBuffer(dataBuffer + 8, 0x1234);  // SSRC.
+    ByteWriter<uint16_t>::WriteBigEndian(dataBuffer + 2, sequence_number);
+    ByteWriter<uint32_t>::WriteBigEndian(dataBuffer + 4, timestamp);
+    ByteWriter<uint32_t>::WriteBigEndian(dataBuffer + 8, 0x1234);  // SSRC.
     size_t rtpHeaderLength = 12;
     return rtpHeaderLength;
   }

@@ -29,6 +29,7 @@
 #include <stdio.h>
 #endif
 
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 
@@ -124,65 +125,6 @@ bool StringCompare(const char* str1, const char* str2,
   return (strncasecmp(str1, str2, length) == 0) ? true : false;
 }
 #endif
-
-/* for RTP/RTCP
-    All integer fields are carried in network byte order, that is, most
-    significant byte (octet) first.  AKA big-endian.
-*/
-void AssignUWord32ToBuffer(uint8_t* dataBuffer, uint32_t value) {
-#if defined(WEBRTC_ARCH_LITTLE_ENDIAN)
-  dataBuffer[0] = static_cast<uint8_t>(value >> 24);
-  dataBuffer[1] = static_cast<uint8_t>(value >> 16);
-  dataBuffer[2] = static_cast<uint8_t>(value >> 8);
-  dataBuffer[3] = static_cast<uint8_t>(value);
-#else
-  uint32_t* ptr = reinterpret_cast<uint32_t*>(dataBuffer);
-  ptr[0] = value;
-#endif
-}
-
-void AssignUWord24ToBuffer(uint8_t* dataBuffer, uint32_t value) {
-#if defined(WEBRTC_ARCH_LITTLE_ENDIAN)
-  dataBuffer[0] = static_cast<uint8_t>(value >> 16);
-  dataBuffer[1] = static_cast<uint8_t>(value >> 8);
-  dataBuffer[2] = static_cast<uint8_t>(value);
-#else
-  dataBuffer[0] = static_cast<uint8_t>(value);
-  dataBuffer[1] = static_cast<uint8_t>(value >> 8);
-  dataBuffer[2] = static_cast<uint8_t>(value >> 16);
-#endif
-}
-
-void AssignUWord16ToBuffer(uint8_t* dataBuffer, uint16_t value) {
-#if defined(WEBRTC_ARCH_LITTLE_ENDIAN)
-  dataBuffer[0] = static_cast<uint8_t>(value >> 8);
-  dataBuffer[1] = static_cast<uint8_t>(value);
-#else
-  uint16_t* ptr = reinterpret_cast<uint16_t*>(dataBuffer);
-  ptr[0] = value;
-#endif
-}
-
-uint16_t BufferToUWord16(const uint8_t* dataBuffer) {
-#if defined(WEBRTC_ARCH_LITTLE_ENDIAN)
-  return (dataBuffer[0] << 8) + dataBuffer[1];
-#else
-  return *reinterpret_cast<const uint16_t*>(dataBuffer);
-#endif
-}
-
-uint32_t BufferToUWord24(const uint8_t* dataBuffer) {
-  return (dataBuffer[0] << 16) + (dataBuffer[1] << 8) + dataBuffer[2];
-}
-
-uint32_t BufferToUWord32(const uint8_t* dataBuffer) {
-#if defined(WEBRTC_ARCH_LITTLE_ENDIAN)
-  return (dataBuffer[0] << 24) + (dataBuffer[1] << 16) + (dataBuffer[2] << 8) +
-      dataBuffer[3];
-#else
-  return *reinterpret_cast<const uint32_t*>(dataBuffer);
-#endif
-}
 
 size_t Word32Align(size_t size) {
   uint32_t remainder = size % 4;
@@ -294,10 +236,8 @@ bool RtpHeaderParser::ParseRtcp(RTPHeader* header) const {
   const size_t len = (_ptrRTPDataBegin[2] << 8) + _ptrRTPDataBegin[3];
   const uint8_t* ptr = &_ptrRTPDataBegin[4];
 
-  uint32_t SSRC = *ptr++ << 24;
-  SSRC += *ptr++ << 16;
-  SSRC += *ptr++ << 8;
-  SSRC += *ptr++;
+  uint32_t SSRC = ByteReader<uint32_t>::ReadBigEndian(ptr);
+  ptr += 4;
 
   header->payloadType  = PT;
   header->ssrc         = SSRC;
@@ -329,15 +269,11 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
 
   const uint8_t* ptr = &_ptrRTPDataBegin[4];
 
-  uint32_t RTPTimestamp = *ptr++ << 24;
-  RTPTimestamp += *ptr++ << 16;
-  RTPTimestamp += *ptr++ << 8;
-  RTPTimestamp += *ptr++;
+  uint32_t RTPTimestamp = ByteReader<uint32_t>::ReadBigEndian(ptr);
+  ptr += 4;
 
-  uint32_t SSRC = *ptr++ << 24;
-  SSRC += *ptr++ << 16;
-  SSRC += *ptr++ << 8;
-  SSRC += *ptr++;
+  uint32_t SSRC = ByteReader<uint32_t>::ReadBigEndian(ptr);
+  ptr += 4;
 
   if (V != kRtpExpectedVersion) {
     return false;
@@ -358,10 +294,8 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
   header.paddingLength  = P ? *(_ptrRTPDataEnd - 1) : 0;
 
   for (uint8_t i = 0; i < CC; ++i) {
-    uint32_t CSRC = *ptr++ << 24;
-    CSRC += *ptr++ << 16;
-    CSRC += *ptr++ << 8;
-    CSRC += *ptr++;
+    uint32_t CSRC = ByteReader<uint32_t>::ReadBigEndian(ptr);
+    ptr += 4;
     header.arrOfCSRCs[i] = CSRC;
   }
 
@@ -401,12 +335,13 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
 
     header.headerLength += 4;
 
-    uint16_t definedByProfile = *ptr++ << 8;
-    definedByProfile += *ptr++;
+    uint16_t definedByProfile = ByteReader<uint16_t>::ReadBigEndian(ptr);
+    ptr += 2;
 
-    size_t XLen = *ptr++ << 8;
-    XLen += *ptr++; // in 32 bit words
-    XLen *= 4; // in octs
+    // in 32 bit words
+    size_t XLen = ByteReader<uint16_t>::ReadBigEndian(ptr);
+    ptr += 2;
+    XLen *= 4;  // in bytes
 
     if (static_cast<size_t>(remain) < (4 + XLen)) {
       return false;
@@ -470,15 +405,8 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           // |  ID   | len=2 |              transmission offset              |
           // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-          int32_t transmissionTimeOffset = ptr[0] << 16;
-          transmissionTimeOffset += ptr[1] << 8;
-          transmissionTimeOffset += ptr[2];
           header.extension.transmissionTimeOffset =
-              transmissionTimeOffset;
-          if (transmissionTimeOffset & 0x800000) {
-            // Negative offset, correct sign for Word24 to Word32.
-            header.extension.transmissionTimeOffset |= 0xFF000000;
-          }
+              ByteReader<int32_t, 3>::ReadBigEndian(ptr);
           header.extension.hasTransmissionTimeOffset = true;
           break;
         }
@@ -515,10 +443,8 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           // |  ID   | len=2 |              absolute send time               |
           // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-          uint32_t absoluteSendTime = ptr[0] << 16;
-          absoluteSendTime += ptr[1] << 8;
-          absoluteSendTime += ptr[2];
-          header.extension.absoluteSendTime = absoluteSendTime;
+          header.extension.absoluteSendTime =
+              ByteReader<uint32_t, 3>::ReadBigEndian(ptr);
           header.extension.hasAbsoluteSendTime = true;
           break;
         }
@@ -528,11 +454,11 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
                 << "Incorrect coordination of video coordination len: " << len;
             return;
           }
-          //   0                   1
-          //   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
-          //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-          //  |  ID   | len=0 |0 0 0 0 C F R R|
-          //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          //  0                   1
+          //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+          // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          // |  ID   | len=0 |0 0 0 0 C F R R|
+          // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
           header.extension.hasVideoRotation = true;
           header.extension.videoRotation = ptr[0];
           break;

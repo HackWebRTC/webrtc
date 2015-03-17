@@ -15,10 +15,10 @@
 #include <string.h>
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/producer_fec.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp8.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
@@ -195,7 +195,7 @@ int32_t RTPSenderVideo::SendRTPIntraRequest() {
   data[2] = 0;
   data[3] = 1;  // length
 
-  RtpUtility::AssignUWord32ToBuffer(data + 4, _rtpSender.SSRC());
+  ByteWriter<uint32_t>::WriteBigEndian(data + 4, _rtpSender.SSRC());
 
   TRACE_EVENT_INSTANT1(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                        "Video::IntraRequest", "seqnum",

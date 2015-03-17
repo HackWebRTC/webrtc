@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/rtp_rtcp/source/fec_test_helper.h"
 
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
 namespace webrtc {
@@ -86,9 +87,9 @@ void FrameGenerator::BuildRtpHeader(uint8_t* data, const RTPHeader* header) {
   data[0] = 0x80;  // Version 2.
   data[1] = header->payloadType;
   data[1] |= (header->markerBit ? kRtpMarkerBitMask : 0);
-  RtpUtility::AssignUWord16ToBuffer(data + 2, header->sequenceNumber);
-  RtpUtility::AssignUWord32ToBuffer(data + 4, header->timestamp);
-  RtpUtility::AssignUWord32ToBuffer(data + 8, header->ssrc);
+  ByteWriter<uint16_t>::WriteBigEndian(data + 2, header->sequenceNumber);
+  ByteWriter<uint32_t>::WriteBigEndian(data + 4, header->timestamp);
+  ByteWriter<uint32_t>::WriteBigEndian(data + 8, header->ssrc);
 }
 
 }  // namespace webrtc

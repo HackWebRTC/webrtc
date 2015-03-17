@@ -13,6 +13,7 @@
 #include <assert.h> //assert
 #include <string.h> //memcpy
 
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
@@ -313,8 +314,8 @@ int32_t RTPSenderAudio::SendAudio(
           return -1;
         }
         uint32_t REDheader = (timestampOffset << 10) + blockLength;
-        RtpUtility::AssignUWord24ToBuffer(dataBuffer + rtpHeaderLength,
-                                          REDheader);
+        ByteWriter<uint32_t>::WriteBigEndian(dataBuffer + rtpHeaderLength,
+                                             REDheader);
         rtpHeaderLength += 3;
 
         dataBuffer[rtpHeaderLength++] = fragmentation->fragmentationPlType[0];
@@ -471,7 +472,7 @@ RTPSenderAudio::SendTelephoneEventPacket(bool ended,
         // First byte is Event number, equals key number
         dtmfbuffer[12] = _dtmfKey;
         dtmfbuffer[13] = E|R|volume;
-        RtpUtility::AssignUWord16ToBuffer(dtmfbuffer + 14, duration);
+        ByteWriter<uint16_t>::WriteBigEndian(dtmfbuffer + 14, duration);
 
         TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                              "Audio::SendTelephoneEvent", "timestamp",

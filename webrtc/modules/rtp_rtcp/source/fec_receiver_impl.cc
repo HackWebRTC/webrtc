@@ -13,8 +13,8 @@
 #include <assert.h>
 
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_video.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 
@@ -179,7 +179,7 @@ int32_t FecReceiverImpl::AddReceivedRedPacket(
         payload_data_length - REDHeaderLength);
     received_packet->pkt->length = payload_data_length - REDHeaderLength;
     received_packet->ssrc =
-        RtpUtility::BufferToUWord32(&incoming_rtp_packet[8]);
+        ByteReader<uint32_t>::ReadBigEndian(&incoming_rtp_packet[8]);
 
   } else {
     // copy the RTP header

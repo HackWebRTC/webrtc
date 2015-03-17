@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
 
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
@@ -260,9 +261,9 @@ bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t** restored_packet,
   *packet_length -= kRtxHeaderSize;
 
   // Replace the SSRC and the sequence number with the originals.
-  RtpUtility::AssignUWord16ToBuffer(*restored_packet + 2,
-                                    original_sequence_number);
-  RtpUtility::AssignUWord32ToBuffer(*restored_packet + 8, original_ssrc);
+  ByteWriter<uint16_t>::WriteBigEndian(*restored_packet + 2,
+                                       original_sequence_number);
+  ByteWriter<uint32_t>::WriteBigEndian(*restored_packet + 8, original_ssrc);
 
   CriticalSectionScoped cs(crit_sect_.get());
 

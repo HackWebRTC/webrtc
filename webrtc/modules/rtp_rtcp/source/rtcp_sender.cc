@@ -17,6 +17,7 @@
 #include <algorithm>  // min
 
 #include "webrtc/common_types.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
@@ -556,24 +557,24 @@ int32_t RTCPSender::BuildSR(const FeedbackState& feedback_state,
     pos++;
 
     // Add our own SSRC
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _SSRC);
     pos += 4;
     // NTP
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, NTPsec);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, NTPsec);
     pos += 4;
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, NTPfrac);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, NTPfrac);
     pos += 4;
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, RTPtime);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, RTPtime);
     pos += 4;
 
     //sender's packet count
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos,
-                                      feedback_state.packets_sent);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos,
+                                         feedback_state.packets_sent);
     pos += 4;
 
     //sender's octet count
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos,
-                                      feedback_state.media_bytes_sent);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos,
+                                         feedback_state.media_bytes_sent);
     pos += 4;
 
     uint8_t numberOfReportBlocks = 0;
@@ -589,7 +590,7 @@ int32_t RTCPSender::BuildSR(const FeedbackState& feedback_state,
     rtcpbuffer[posNumberOfReportBlocks] += numberOfReportBlocks;
 
     uint16_t len = uint16_t((pos/4) -1);
-    RtpUtility::AssignUWord16ToBuffer(rtcpbuffer + 2, len);
+    ByteWriter<uint16_t>::WriteBigEndian(rtcpbuffer + 2, len);
     return 0;
 }
 
@@ -615,7 +616,7 @@ int32_t RTCPSender::BuildSDEC(uint8_t* rtcpbuffer, int& pos) {
   pos++;
 
   // Add our own SSRC
-  RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
+  ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _SSRC);
   pos += 4;
 
   // CNAME = 1
@@ -650,7 +651,7 @@ int32_t RTCPSender::BuildSDEC(uint8_t* rtcpbuffer, int& pos) {
     uint32_t SSRC = it->first;
 
     // Add SSRC
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, SSRC);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, SSRC);
     pos += 4;
 
     // CNAME = 1
@@ -681,7 +682,8 @@ int32_t RTCPSender::BuildSDEC(uint8_t* rtcpbuffer, int& pos) {
   }
   // in 32-bit words minus one and we don't count the header
   uint16_t buffer_length = (SDESLength / 4) - 1;
-  RtpUtility::AssignUWord16ToBuffer(rtcpbuffer + SDESLengthPos, buffer_length);
+  ByteWriter<uint16_t>::WriteBigEndian(rtcpbuffer + SDESLengthPos,
+                                       buffer_length);
   return 0;
 }
 
@@ -704,7 +706,7 @@ int32_t RTCPSender::BuildRR(uint8_t* rtcpbuffer,
     pos++;
 
     // Add our own SSRC
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _SSRC);
     pos += 4;
 
     uint8_t numberOfReportBlocks = 0;
@@ -719,7 +721,7 @@ int32_t RTCPSender::BuildRR(uint8_t* rtcpbuffer,
     rtcpbuffer[posNumberOfReportBlocks] += numberOfReportBlocks;
 
     uint16_t len = uint16_t((pos)/4 -1);
-    RtpUtility::AssignUWord16ToBuffer(rtcpbuffer + 2, len);
+    ByteWriter<uint16_t>::WriteBigEndian(rtcpbuffer + 2, len);
     return 0;
 }
 
@@ -770,8 +772,8 @@ RTCPSender::BuildExtendedJitterReport(
     rtcpbuffer[pos++]=(uint8_t)(1);
 
     // Add inter-arrival jitter
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos,
-                                      jitterTransmissionTimeOffset);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos,
+                                         jitterTransmissionTimeOffset);
     pos += 4;
     return 0;
 }
@@ -794,11 +796,11 @@ RTCPSender::BuildPLI(uint8_t* rtcpbuffer, int& pos)
     rtcpbuffer[pos++]=(uint8_t)(2);
 
     // Add our own SSRC
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _SSRC);
     pos += 4;
 
     // Add the remote SSRC
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _remoteSSRC);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _remoteSSRC);
     pos += 4;
     return 0;
 }
@@ -824,7 +826,7 @@ int32_t RTCPSender::BuildFIR(uint8_t* rtcpbuffer,
   rtcpbuffer[pos++] = (uint8_t)(4);
 
   // Add our own SSRC
-  RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
+  ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _SSRC);
   pos += 4;
 
   // RFC 5104     4.3.1.2.  Semantics
@@ -835,7 +837,7 @@ int32_t RTCPSender::BuildFIR(uint8_t* rtcpbuffer,
   rtcpbuffer[pos++] = (uint8_t)0;
 
   // Additional Feedback Control Information (FCI)
-  RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _remoteSSRC);
+  ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _remoteSSRC);
   pos += 4;
 
   rtcpbuffer[pos++] = (uint8_t)(_sequenceNumberFIR);
@@ -868,18 +870,18 @@ int32_t RTCPSender::BuildSLI(uint8_t* rtcpbuffer, int& pos, uint8_t pictureID) {
     rtcpbuffer[pos++]=(uint8_t)(3);
 
     // Add our own SSRC
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _SSRC);
     pos += 4;
 
     // Add the remote SSRC
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _remoteSSRC);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _remoteSSRC);
     pos += 4;
 
     // Add first, number & picture ID 6 bits
     // first  = 0, 13 - bits
     // number = 0x1fff, 13 - bits only ones for now
     uint32_t sliField = (0x1fff << 6)+ (0x3f & pictureID);
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, sliField);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, sliField);
     pos += 4;
     return 0;
 }
@@ -931,11 +933,11 @@ int32_t RTCPSender::BuildRPSI(uint8_t* rtcpbuffer,
     rtcpbuffer[pos++]=size;
 
     // Add our own SSRC
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _SSRC);
     pos += 4;
 
     // Add the remote SSRC
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _remoteSSRC);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _remoteSSRC);
     pos += 4;
 
     // calc padding length
@@ -988,11 +990,11 @@ RTCPSender::BuildREMB(uint8_t* rtcpbuffer, int& pos)
     rtcpbuffer[pos++]=remb_ssrcs_.size() + 4;
 
     // Add our own SSRC
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _SSRC);
     pos += 4;
 
     // Remote SSRC must be 0
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, 0);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, 0);
     pos += 4;
 
     rtcpbuffer[pos++]='R';
@@ -1019,7 +1021,7 @@ RTCPSender::BuildREMB(uint8_t* rtcpbuffer, int& pos)
 
     for (size_t i = 0; i < remb_ssrcs_.size(); i++)
     {
-      RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, remb_ssrcs_[i]);
+      ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, remb_ssrcs_[i]);
       pos += 4;
     }
     return 0;
@@ -1105,7 +1107,7 @@ int32_t RTCPSender::BuildTMMBR(ModuleRtpRtcpImpl* rtp_rtcp_module,
         rtcpbuffer[pos++]=(uint8_t)(4);
 
         // Add our own SSRC
-        RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
+        ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _SSRC);
         pos += 4;
 
         // RFC 5104     4.2.1.2.  Semantics
@@ -1117,7 +1119,7 @@ int32_t RTCPSender::BuildTMMBR(ModuleRtpRtcpImpl* rtp_rtcp_module,
         rtcpbuffer[pos++]=(uint8_t)0;
 
         // Additional Feedback Control Information (FCI)
-        RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _remoteSSRC);
+        ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _remoteSSRC);
         pos += 4;
 
         uint32_t bitRate = _tmmbr_Send*1000;
@@ -1165,7 +1167,7 @@ RTCPSender::BuildTMMBN(uint8_t* rtcpbuffer, int& pos)
     pos++;
 
     // Add our own SSRC
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _SSRC);
     pos += 4;
 
     // RFC 5104     4.2.2.2.  Semantics
@@ -1183,7 +1185,7 @@ RTCPSender::BuildTMMBN(uint8_t* rtcpbuffer, int& pos)
         if (boundingSet->Tmmbr(n) > 0)
         {
             uint32_t tmmbrSSRC = boundingSet->Ssrc(n);
-            RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, tmmbrSSRC);
+            ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, tmmbrSSRC);
             pos += 4;
 
             uint32_t bitRate = boundingSet->Tmmbr(n) * 1000;
@@ -1236,11 +1238,11 @@ RTCPSender::BuildAPP(uint8_t* rtcpbuffer, int& pos)
     rtcpbuffer[pos++]=(uint8_t)(length);
 
     // Add our own SSRC
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _SSRC);
     pos += 4;
 
     // Add our application name
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _appName);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _appName);
     pos += 4;
 
     // Add the data
@@ -1272,11 +1274,11 @@ int32_t RTCPSender::BuildNACK(uint8_t* rtcpbuffer,
     rtcpbuffer[pos++]=(uint8_t)(3); //setting it to one kNACK signal as default
 
     // Add our own SSRC
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _SSRC);
     pos += 4;
 
     // Add the remote SSRC
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _remoteSSRC);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _remoteSSRC);
     pos += 4;
 
     // Build NACK bitmasks and write them to the RTCP message.
@@ -1300,9 +1302,9 @@ int32_t RTCPSender::BuildNACK(uint8_t* rtcpbuffer,
       }
       // Write the sequence number and the bitmask to the packet.
       assert(pos + 4 < IP_PACKET_SIZE);
-      RtpUtility::AssignUWord16ToBuffer(rtcpbuffer + pos, nack);
+      ByteWriter<uint16_t>::WriteBigEndian(rtcpbuffer + pos, nack);
       pos += 2;
-      RtpUtility::AssignUWord16ToBuffer(rtcpbuffer + pos, bitmask);
+      ByteWriter<uint16_t>::WriteBigEndian(rtcpbuffer + pos, bitmask);
       pos += 2;
       numOfNackFields++;
     }
@@ -1340,12 +1342,12 @@ int32_t RTCPSender::BuildBYE(uint8_t* rtcpbuffer, int& pos) {
   rtcpbuffer[pos++] = (uint8_t)(1 + csrcs_.size());
 
   // Add our own SSRC
-  RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
+  ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _SSRC);
   pos += 4;
 
   // add CSRCs
   for (size_t i = 0; i < csrcs_.size(); i++) {
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, csrcs_[i]);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, csrcs_[i]);
     pos += 4;
   }
 
@@ -1375,7 +1377,7 @@ int32_t RTCPSender::BuildReceiverReferenceTime(uint8_t* buffer,
   buffer[pos++] = 4;  // XR packet length.
 
   // Add our own SSRC.
-  RtpUtility::AssignUWord32ToBuffer(buffer + pos, _SSRC);
+  ByteWriter<uint32_t>::WriteBigEndian(buffer + pos, _SSRC);
   pos += 4;
 
   //    0                   1                   2                   3
@@ -1395,9 +1397,9 @@ int32_t RTCPSender::BuildReceiverReferenceTime(uint8_t* buffer,
   buffer[pos++] = 2;  // Block length.
 
   // NTP timestamp.
-  RtpUtility::AssignUWord32ToBuffer(buffer + pos, ntp_sec);
+  ByteWriter<uint32_t>::WriteBigEndian(buffer + pos, ntp_sec);
   pos += 4;
-  RtpUtility::AssignUWord32ToBuffer(buffer + pos, ntp_frac);
+  ByteWriter<uint32_t>::WriteBigEndian(buffer + pos, ntp_frac);
   pos += 4;
 
   return 0;
@@ -1418,7 +1420,7 @@ int32_t RTCPSender::BuildDlrr(uint8_t* buffer,
   buffer[pos++] = 5;  // XR packet length.
 
   // Add our own SSRC.
-  RtpUtility::AssignUWord32ToBuffer(buffer + pos, _SSRC);
+  ByteWriter<uint32_t>::WriteBigEndian(buffer + pos, _SSRC);
   pos += 4;
 
   //   0                   1                   2                   3
@@ -1443,11 +1445,11 @@ int32_t RTCPSender::BuildDlrr(uint8_t* buffer,
   buffer[pos++] = 3;  // Block length.
 
   // NTP timestamp.
-  RtpUtility::AssignUWord32ToBuffer(buffer + pos, info.sourceSSRC);
+  ByteWriter<uint32_t>::WriteBigEndian(buffer + pos, info.sourceSSRC);
   pos += 4;
-  RtpUtility::AssignUWord32ToBuffer(buffer + pos, info.lastRR);
+  ByteWriter<uint32_t>::WriteBigEndian(buffer + pos, info.lastRR);
   pos += 4;
-  RtpUtility::AssignUWord32ToBuffer(buffer + pos, info.delaySinceLastRR);
+  ByteWriter<uint32_t>::WriteBigEndian(buffer + pos, info.delaySinceLastRR);
   pos += 4;
 
   return 0;
@@ -1473,7 +1475,7 @@ RTCPSender::BuildVoIPMetric(uint8_t* rtcpbuffer, int& pos)
     pos++;
 
     // Add our own SSRC
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _SSRC);
     pos += 4;
 
     // Add a VoIP metrics block
@@ -1483,7 +1485,7 @@ RTCPSender::BuildVoIPMetric(uint8_t* rtcpbuffer, int& pos)
     rtcpbuffer[pos++]=8;
 
     // Add the remote SSRC
-    RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _remoteSSRC);
+    ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + pos, _remoteSSRC);
     pos += 4;
 
     rtcpbuffer[pos++] = _xrVoIPMetric.lossRate;
@@ -2034,33 +2036,33 @@ int32_t RTCPSender::WriteReportBlocksToBuffer(
     RTCPReportBlock* reportBlock = it->second;
     if (reportBlock) {
       // Remote SSRC
-      RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + position, remoteSSRC);
+      ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + position, remoteSSRC);
       position += 4;
 
       // fraction lost
       rtcpbuffer[position++] = reportBlock->fractionLost;
 
       // cumulative loss
-      RtpUtility::AssignUWord24ToBuffer(rtcpbuffer + position,
-                                        reportBlock->cumulativeLost);
+      ByteWriter<uint32_t, 3>::WriteBigEndian(rtcpbuffer + position,
+                                              reportBlock->cumulativeLost);
       position += 3;
 
       // extended highest seq_no, contain the highest sequence number received
-      RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + position,
-                                        reportBlock->extendedHighSeqNum);
+      ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + position,
+                                           reportBlock->extendedHighSeqNum);
       position += 4;
 
       // Jitter
-      RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + position,
-                                        reportBlock->jitter);
+      ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + position,
+                                           reportBlock->jitter);
       position += 4;
 
-      RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + position,
-                                        reportBlock->lastSR);
+      ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + position,
+                                           reportBlock->lastSR);
       position += 4;
 
-      RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + position,
-                                        reportBlock->delaySinceLastSR);
+      ByteWriter<uint32_t>::WriteBigEndian(rtcpbuffer + position,
+                                           reportBlock->delaySinceLastSR);
       position += 4;
     }
   }
