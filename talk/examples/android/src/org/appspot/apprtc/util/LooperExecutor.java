@@ -85,7 +85,7 @@ public class LooperExecutor extends Thread implements Executor {
     handler.post(new Runnable() {
       @Override
       public void run() {
-        Looper.myLooper().quitSafely();
+        Looper.myLooper().quit();
         Log.d(TAG, "Looper thread finished.");
       }
     });

@@ -40,6 +40,7 @@ import java.util.Scanner;
  */
 public class AsyncHttpURLConnection {
   private static final int HTTP_TIMEOUT_MS = 8000;
+  private static final String HTTP_ORIGIN = "https://apprtc.appspot.com";
   private final String method;
   private final String url;
   private final String message;
@@ -83,6 +84,8 @@ public class AsyncHttpURLConnection {
       connection.setDoInput(true);
       connection.setConnectTimeout(HTTP_TIMEOUT_MS);
       connection.setReadTimeout(HTTP_TIMEOUT_MS);
+      // TODO(glaznev) - query request origin from pref_room_server_url_key preferences.
+      connection.addRequestProperty("origin", HTTP_ORIGIN);
       boolean doOutput = false;
       if (method.equals("POST")) {
         doOutput = true;
@@ -102,6 +105,7 @@ public class AsyncHttpURLConnection {
       // Get response.
       int responseCode = connection.getResponseCode();
       if (responseCode != 200) {
+        connection.disconnect();
         events.onHttpError("Non-200 response to " + method + " to URL: "
             + url + " : " + connection.getHeaderField(null));
         return;
@@ -109,6 +113,7 @@ public class AsyncHttpURLConnection {
       InputStream responseStream = connection.getInputStream();
       String response = drainStream(responseStream);
       responseStream.close();
+      connection.disconnect();
       events.onHttpComplete(response);
     } catch (SocketTimeoutException e) {
       events.onHttpError("HTTP " + method + " to " + url + " timeout");

@@ -77,6 +77,7 @@ public class WebSocketRTCClient implements AppRTCClient,
     this.events = events;
     this.executor = executor;
     roomState = ConnectionState.NEW;
+    executor.requestStart();
   }
 
   // --------------------------------------------------------------------
@@ -86,7 +87,6 @@ public class WebSocketRTCClient implements AppRTCClient,
   @Override
   public void connectToRoom(RoomConnectionParameters connectionParameters) {
     this.connectionParameters = connectionParameters;
-    executor.requestStart();
     executor.execute(new Runnable() {
       @Override
       public void run() {
@@ -131,8 +131,7 @@ public class WebSocketRTCClient implements AppRTCClient,
       }
     };
 
-    new RoomParametersFetcher(connectionParameters.loopback, connectionUrl,
-        null, callbacks).makeRequest();
+    new RoomParametersFetcher(connectionUrl, null, callbacks).makeRequest();
   }
 
   // Disconnect from room and send bye messages - runs on a local looper thread.
@@ -193,9 +192,9 @@ public class WebSocketRTCClient implements AppRTCClient,
     // Fire connection and signaling parameters events.
     events.onConnectedToRoom(signalingParameters);
 
-    // Connect to WebSocket server.
-    wsClient.connect(signalingParameters.wssUrl, signalingParameters.wssPostUrl,
-        connectionParameters.roomId, signalingParameters.clientId);
+    // Connect and register WebSocket client.
+    wsClient.connect(signalingParameters.wssUrl, signalingParameters.wssPostUrl);
+    wsClient.register(connectionParameters.roomId, signalingParameters.clientId);
   }
 
   // Send local offer SDP to the other participant.
@@ -274,12 +273,6 @@ public class WebSocketRTCClient implements AppRTCClient,
   // WebSocketChannelEvents interface implementation.
   // All events are called by WebSocketChannelClient on a local looper thread
   // (passed to WebSocket client constructor).
-  @Override
-  public void onWebSocketOpen() {
-    Log.d(TAG, "Websocket connection completed. Registering...");
-    wsClient.register();
-  }
-
   @Override
   public void onWebSocketMessage(final String msg) {
     if (wsClient.getState() != WebSocketConnectionState.REGISTERED) {

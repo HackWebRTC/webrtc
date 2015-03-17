@@ -43,8 +43,8 @@ import org.webrtc.SessionDescription;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.LinkedList;
 import java.util.Scanner;
 
@@ -54,10 +54,10 @@ import java.util.Scanner;
  */
 public class RoomParametersFetcher {
   private static final String TAG = "RoomRTCClient";
+  private static final int TURN_HTTP_TIMEOUT_MS = 5000;
   private final RoomParametersFetcherEvents events;
-  private final boolean loopback;
-  private final String registerUrl;
-  private final String registerMessage;
+  private final String roomUrl;
+  private final String roomMessage;
   private AsyncHttpURLConnection httpConnection;
 
   /**
@@ -76,18 +76,17 @@ public class RoomParametersFetcher {
     public void onSignalingParametersError(final String description);
   }
 
-  public RoomParametersFetcher(boolean loopback, String registerUrl,
-      String registerMessage, final RoomParametersFetcherEvents events) {
-    this.loopback = loopback;
-    this.registerUrl = registerUrl;
-    this.registerMessage = registerMessage;
+  public RoomParametersFetcher(String roomUrl, String roomMessage,
+      final RoomParametersFetcherEvents events) {
+    this.roomUrl = roomUrl;
+    this.roomMessage = roomMessage;
     this.events = events;
   }
 
   public void makeRequest() {
-    Log.d(TAG, "Connecting to room: " + registerUrl);
+    Log.d(TAG, "Connecting to room: " + roomUrl);
     httpConnection = new AsyncHttpURLConnection(
-        "POST", registerUrl, registerMessage,
+        "POST", roomUrl, roomMessage,
         new AsyncHttpEvents() {
           @Override
           public void onHttpError(String errorMessage) {
@@ -161,6 +160,7 @@ public class RoomParametersFetcher {
           break;
         }
       }
+      // Request TURN servers.
       if (!isTurnPresent) {
         LinkedList<PeerConnection.IceServer> turnServers =
             requestTurnServers(roomJson.getString("turn_url"));
@@ -170,17 +170,13 @@ public class RoomParametersFetcher {
         }
       }
 
-      MediaConstraints pcConstraints = constraintsFromJSON(
-          roomJson.getString("pc_constraints"));
-      addDTLSConstraintIfMissing(pcConstraints, loopback);
+      MediaConstraints pcConstraints = constraintsFromJSON(roomJson.getString("pc_constraints"));
       Log.d(TAG, "pcConstraints: " + pcConstraints);
       MediaConstraints videoConstraints = constraintsFromJSON(
-          getAVConstraints("video",
-              roomJson.getString("media_constraints")));
+          getAVConstraints("video", roomJson.getString("media_constraints")));
       Log.d(TAG, "videoConstraints: " + videoConstraints);
       MediaConstraints audioConstraints = constraintsFromJSON(
-          getAVConstraints("audio",
-              roomJson.getString("media_constraints")));
+          getAVConstraints("audio", roomJson.getString("media_constraints")));
       Log.d(TAG, "audioConstraints: " + audioConstraints);
 
       SignalingParameters params = new SignalingParameters(
@@ -197,35 +193,10 @@ public class RoomParametersFetcher {
     }
   }
 
-  // Mimic Chrome and set DtlsSrtpKeyAgreement to true if not set to false by
-  // the web-app.
-  private void addDTLSConstraintIfMissing(
-      MediaConstraints pcConstraints, boolean loopback) {
-    for (MediaConstraints.KeyValuePair pair : pcConstraints.mandatory) {
-      if (pair.getKey().equals("DtlsSrtpKeyAgreement")) {
-        return;
-      }
-    }
-    for (MediaConstraints.KeyValuePair pair : pcConstraints.optional) {
-      if (pair.getKey().equals("DtlsSrtpKeyAgreement")) {
-        return;
-      }
-    }
-    // DTLS isn't being specified (e.g. for debug=loopback calls), so enable
-    // it for normal calls and disable for loopback calls.
-    if (loopback) {
-      pcConstraints.optional.add(
-          new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "false"));
-    } else {
-      pcConstraints.optional.add(
-          new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
-    }
-  }
-
   // Return the constraints specified for |type| of "audio" or "video" in
   // |mediaConstraintsString|.
   private String getAVConstraints (
-    String type, String mediaConstraintsString) throws JSONException {
+      String type, String mediaConstraintsString) throws JSONException {
     JSONObject json = new JSONObject(mediaConstraintsString);
     // Tricky handling of values that are allowed to be (boolean or
     // MediaTrackConstraints) by the getUserMedia() spec.  There are three
@@ -282,10 +253,17 @@ public class RoomParametersFetcher {
     LinkedList<PeerConnection.IceServer> turnServers =
         new LinkedList<PeerConnection.IceServer>();
     Log.d(TAG, "Request TURN from: " + url);
-    URLConnection connection = (new URL(url)).openConnection();
-    connection.addRequestProperty("user-agent", "Mozilla/5.0");
-    connection.addRequestProperty("origin", "https://apprtc.appspot.com");
-    String response = drainStream(connection.getInputStream());
+    HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+    connection.setConnectTimeout(TURN_HTTP_TIMEOUT_MS);
+    connection.setReadTimeout(TURN_HTTP_TIMEOUT_MS);
+    int responseCode = connection.getResponseCode();
+    if (responseCode != 200) {
+      throw new IOException("Non-200 response when requesting TURN server from "
+          + url + " : " + connection.getHeaderField(null));
+    }
+    InputStream responseStream = connection.getInputStream();
+    String response = drainStream(responseStream);
+    connection.disconnect();
     Log.d(TAG, "TURN response: " + response);
     JSONObject responseJSON = new JSONObject(response);
     String username = responseJSON.getString("username");
@@ -317,7 +295,7 @@ public class RoomParametersFetcher {
   }
 
   // Return the contents of an InputStream as a String.
-  private String drainStream(InputStream in) {
+  private static String drainStream(InputStream in) {
     Scanner s = new Scanner(in).useDelimiter("\\A");
     return s.hasNext() ? s.next() : "";
   }

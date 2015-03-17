@@ -43,7 +43,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
-import android.view.WindowManager;
+import android.view.WindowManager.LayoutParams;
 import android.widget.Toast;
 
 import org.webrtc.IceCandidate;
@@ -132,6 +132,7 @@ public class CallActivity extends Activity
   // Controls
   private GLSurfaceView videoView;
   CallFragment callFragment;
+  HudFragment hudFragment;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -142,8 +143,12 @@ public class CallActivity extends Activity
     // Set window styles for fullscreen-window size. Needs to be done before
     // adding content.
     requestWindowFeature(Window.FEATURE_NO_TITLE);
-    getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    getWindow().addFlags(
+        LayoutParams.FLAG_FULLSCREEN
+        | LayoutParams.FLAG_KEEP_SCREEN_ON
+        | LayoutParams.FLAG_DISMISS_KEYGUARD
+        | LayoutParams.FLAG_SHOW_WHEN_LOCKED
+        | LayoutParams.FLAG_TURN_SCREEN_ON);
     getWindow().getDecorView().setSystemUiVisibility(
         View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
         | View.SYSTEM_UI_FLAG_FULLSCREEN
@@ -157,6 +162,7 @@ public class CallActivity extends Activity
     // Create UI controls.
     videoView = (GLSurfaceView) findViewById(R.id.glview_call);
     callFragment = new CallFragment();
+    hudFragment = new HudFragment();
 
     // Create video renderers.
     VideoRendererGui.setView(videoView, new Runnable() {
@@ -219,11 +225,14 @@ public class CallActivity extends Activity
     roomConnectionParameters = new RoomConnectionParameters(
         roomUri.toString(), roomId, loopback);
 
-    // Send intent arguments to fragment.
+    // Send intent arguments to fragments.
     callFragment.setArguments(intent.getExtras());
-    // Activate call fragment and start the call.
-    getFragmentManager().beginTransaction()
-        .add(R.id.call_fragment_container, callFragment).commit();
+    hudFragment.setArguments(intent.getExtras());
+    // Activate call and HUD fragments and start the call.
+    FragmentTransaction ft = getFragmentManager().beginTransaction();
+    ft.add(R.id.call_fragment_container, callFragment);
+    ft.add(R.id.hud_fragment_container, hudFragment);
+    ft.commit();
     startCall();
 
     // For command line execution run connection for <runTimeMs> and exit.
@@ -296,8 +305,10 @@ public class CallActivity extends Activity
     FragmentTransaction ft = getFragmentManager().beginTransaction();
     if (callControlFragmentVisible) {
       ft.show(callFragment);
+      ft.show(hudFragment);
     } else {
       ft.hide(callFragment);
+      ft.hide(hudFragment);
     }
     ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
     ft.commit();
@@ -387,6 +398,7 @@ public class CallActivity extends Activity
 
   // Disconnect from remote resources, dispose of local resources, and exit.
   private void disconnect() {
+    activityRunning = false;
     if (appRtcClient != null) {
       appRtcClient.disconnectFromRoom();
       appRtcClient = null;
@@ -434,6 +446,18 @@ public class CallActivity extends Activity
     }
     logToast = Toast.makeText(this, msg, Toast.LENGTH_SHORT);
     logToast.show();
+  }
+
+  private void reportError(final String description) {
+    runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        if (!isError) {
+          isError = true;
+          disconnectWithErrorMessage(description);
+        }
+      }
+    });
   }
 
   // -----Implementation of AppRTCClient.AppRTCSignalingEvents ---------------
@@ -533,15 +557,7 @@ public class CallActivity extends Activity
 
   @Override
   public void onChannelError(final String description) {
-    runOnUiThread(new Runnable() {
-      @Override
-      public void run() {
-        if (!isError) {
-          isError = true;
-          disconnectWithErrorMessage(description);
-        }
-      }
-    });
+    reportError(description);
   }
 
   // -----Implementation of PeerConnectionClient.PeerConnectionEvents.---------
@@ -613,7 +629,7 @@ public class CallActivity extends Activity
       @Override
       public void run() {
         if (!isError && iceConnected) {
-          callFragment.updateEncoderStatistics(reports);
+          hudFragment.updateEncoderStatistics(reports);
         }
       }
     });
@@ -621,14 +637,6 @@ public class CallActivity extends Activity
 
   @Override
   public void onPeerConnectionError(final String description) {
-    runOnUiThread(new Runnable() {
-      @Override
-      public void run() {
-        if (!isError) {
-          isError = true;
-          disconnectWithErrorMessage(description);
-        }
-      }
-    });
+    reportError(description);
   }
 }

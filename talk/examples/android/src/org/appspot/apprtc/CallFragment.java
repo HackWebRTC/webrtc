@@ -30,36 +30,26 @@ package org.appspot.apprtc;
 import android.app.Activity;
 import android.app.Fragment;
 import android.os.Bundle;
-import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-import org.webrtc.StatsReport;
 import org.webrtc.VideoRendererGui.ScalingType;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Fragment for call control.
  */
 public class CallFragment extends Fragment {
   private View controlView;
-  private TextView encoderStatView;
-  private TextView roomIdView;
+  private TextView contactView;
   private ImageButton disconnectButton;
   private ImageButton cameraSwitchButton;
   private ImageButton videoScalingButton;
-  private ImageButton toggleDebugButton;
   private OnCallEvents callEvents;
   private ScalingType scalingType;
-  private boolean displayHud;
-  private volatile boolean isRunning;
-  private TextView hudView;
-  private final CpuMonitor cpuMonitor = new CpuMonitor();
+  private boolean videoCallEnabled = true;
 
   /**
    * Call control interface for container activity.
@@ -77,20 +67,14 @@ public class CallFragment extends Fragment {
         inflater.inflate(R.layout.fragment_call, container, false);
 
     // Create UI controls.
-    encoderStatView =
-        (TextView) controlView.findViewById(R.id.encoder_stat_call);
-    roomIdView =
+    contactView =
         (TextView) controlView.findViewById(R.id.contact_name_call);
-    hudView =
-        (TextView) controlView.findViewById(R.id.hud_stat_call);
     disconnectButton =
         (ImageButton) controlView.findViewById(R.id.button_call_disconnect);
     cameraSwitchButton =
         (ImageButton) controlView.findViewById(R.id.button_call_switch_camera);
     videoScalingButton =
         (ImageButton) controlView.findViewById(R.id.button_call_scaling_mode);
-    toggleDebugButton =
-        (ImageButton) controlView.findViewById(R.id.button_toggle_debug);
 
     // Add buttons click events.
     disconnectButton.setOnClickListener(new View.OnClickListener() {
@@ -124,17 +108,6 @@ public class CallFragment extends Fragment {
     });
     scalingType = ScalingType.SCALE_ASPECT_FILL;
 
-    toggleDebugButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View view) {
-        if (displayHud) {
-          int visibility = (hudView.getVisibility() == View.VISIBLE)
-              ? View.INVISIBLE : View.VISIBLE;
-          hudView.setVisibility(visibility);
-        }
-      }
-    });
-
     return controlView;
   }
 
@@ -144,22 +117,13 @@ public class CallFragment extends Fragment {
 
     Bundle args = getArguments();
     if (args != null) {
-      String roomId = args.getString(CallActivity.EXTRA_ROOMID);
-      roomIdView.setText(roomId);
-      displayHud = args.getBoolean(CallActivity.EXTRA_DISPLAY_HUD, false);
+      String contactName = args.getString(CallActivity.EXTRA_ROOMID);
+      contactView.setText(contactName);
+      videoCallEnabled = args.getBoolean(CallActivity.EXTRA_VIDEO_CALL, true);
     }
-    int visibility = displayHud ? View.VISIBLE : View.INVISIBLE;
-    encoderStatView.setVisibility(visibility);
-    toggleDebugButton.setVisibility(visibility);
-    hudView.setVisibility(View.INVISIBLE);
-    hudView.setTextSize(TypedValue.COMPLEX_UNIT_PT, 5);
-    isRunning = true;
-  }
-
-  @Override
-  public void onStop() {
-    isRunning = false;
-    super.onStop();
+    if (!videoCallEnabled) {
+      cameraSwitchButton.setVisibility(View.INVISIBLE);
+    }
   }
 
   @Override
@@ -168,73 +132,4 @@ public class CallFragment extends Fragment {
     callEvents = (OnCallEvents) activity;
   }
 
-  private Map<String, String> getReportMap(StatsReport report) {
-    Map<String, String> reportMap = new HashMap<String, String>();
-    for (StatsReport.Value value : report.values) {
-      reportMap.put(value.name, value.value);
-    }
-    return reportMap;
-  }
-
-  public void updateEncoderStatistics(final StatsReport[] reports) {
-    if (!isRunning || !displayHud) {
-      return;
-    }
-    String fps = null;
-    String targetBitrate = null;
-    String actualBitrate = null;
-    StringBuilder bweBuilder = new StringBuilder();
-    for (StatsReport report : reports) {
-      if (report.type.equals("ssrc") && report.id.contains("ssrc")
-          && report.id.contains("send")) {
-        Map<String, String> reportMap = getReportMap(report);
-        String trackId = reportMap.get("googTrackId");
-        if (trackId != null
-            && trackId.contains(PeerConnectionClient.VIDEO_TRACK_ID)) {
-          fps = reportMap.get("googFrameRateSent");
-        }
-      } else if (report.id.equals("bweforvideo")) {
-        Map<String, String> reportMap = getReportMap(report);
-        targetBitrate = reportMap.get("googTargetEncBitrate");
-        actualBitrate = reportMap.get("googActualEncBitrate");
-
-        for (StatsReport.Value value : report.values) {
-          String name = value.name.replace("goog", "")
-              .replace("Available", "").replace("Bandwidth", "")
-              .replace("Bitrate", "").replace("Enc", "");
-          bweBuilder.append(name).append("=").append(value.value)
-              .append(" ");
-        }
-        bweBuilder.append("\n");
-      }
-    }
-
-    StringBuilder stat = new StringBuilder(128);
-    if (fps != null) {
-      stat.append("Fps:  ")
-          .append(fps)
-          .append("\n");
-    }
-    if (targetBitrate != null) {
-      stat.append("Target BR: ")
-          .append(targetBitrate)
-          .append("\n");
-    }
-    if (actualBitrate != null) {
-      stat.append("Actual BR: ")
-          .append(actualBitrate)
-          .append("\n");
-    }
-
-    if (cpuMonitor.sampleCpuUtilization()) {
-      stat.append("CPU%: ")
-          .append(cpuMonitor.getCpuCurrent())
-          .append("/")
-          .append(cpuMonitor.getCpuAvg3())
-          .append("/")
-          .append(cpuMonitor.getCpuAvgAll());
-    }
-    encoderStatView.setText(stat.toString());
-    hudView.setText(bweBuilder.toString() + hudView.getText());
-  }
 }
