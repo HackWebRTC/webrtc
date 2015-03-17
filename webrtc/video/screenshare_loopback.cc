@@ -124,9 +124,9 @@ class ScreenshareLoopback : public test::Loopback {
     vp8_settings.numberOfTemporalLayers = 2;
     encoder_config.encoder_specific_settings = &vp8_settings;
     stream->temporal_layer_thresholds_bps.clear();
-    stream->temporal_layer_thresholds_bps.push_back(stream->target_bitrate_bps);
     stream->target_bitrate_bps =
         static_cast<int>(config_.start_bitrate_kbps) * 1000;
+    stream->temporal_layer_thresholds_bps.push_back(stream->target_bitrate_bps);
     return encoder_config;
   }
 
