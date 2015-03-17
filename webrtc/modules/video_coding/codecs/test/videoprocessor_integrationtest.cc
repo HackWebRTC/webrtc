@@ -704,8 +704,7 @@ TEST_F(VideoProcessorIntegrationTest,
 }
 
 // VP9: Run with no packet loss and denoiser on. One key frame (first frame).
-// Disabled due to crash in libvpx revision 763fe7a (webrtc:4418).
-TEST_F(VideoProcessorIntegrationTest, DISABLED_ProcessNoLossDenoiserOnVP9) {
+TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
