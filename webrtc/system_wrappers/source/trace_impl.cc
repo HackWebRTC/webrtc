@@ -32,7 +32,7 @@ namespace webrtc {
 const int Trace::kBoilerplateLength = 71;
 const int Trace::kTimestampPosition = 13;
 const int Trace::kTimestampLength = 12;
-uint32_t Trace::level_filter_ = kTraceDefault;
+volatile int Trace::level_filter_ = kTraceDefault;
 
 // Construct On First Use idiom. Avoids "static initialization order fiasco".
 TraceImpl* TraceImpl::StaticInstance(CountOperation count_operation,
@@ -518,14 +518,17 @@ bool TraceImpl::CreateFileName(
   return true;
 }
 
+// static
 void Trace::CreateTrace() {
   TraceImpl::StaticInstance(kAddRef);
 }
 
+// static
 void Trace::ReturnTrace() {
   TraceImpl::StaticInstance(kRelease);
 }
 
+// static
 int32_t Trace::TraceFile(char file_name[FileWrapper::kMaxFileNameSize]) {
   TraceImpl* trace = TraceImpl::GetTrace();
   if (trace) {
@@ -536,6 +539,17 @@ int32_t Trace::TraceFile(char file_name[FileWrapper::kMaxFileNameSize]) {
   return -1;
 }
 
+// static
+void Trace::set_level_filter(int filter) {
+  rtc::AtomicOps::Store(&level_filter_, filter);
+}
+
+// static
+int Trace::level_filter() {
+  return rtc::AtomicOps::Load(&level_filter_);
+}
+
+// static
 int32_t Trace::SetTraceFile(const char* file_name,
                             const bool add_file_counter) {
   TraceImpl* trace = TraceImpl::GetTrace();
