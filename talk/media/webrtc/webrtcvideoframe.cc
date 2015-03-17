@@ -39,7 +39,12 @@ using webrtc::kVPlane;
 
 namespace cricket {
 
-WebRtcVideoFrame::WebRtcVideoFrame() {}
+WebRtcVideoFrame::WebRtcVideoFrame():
+    pixel_width_(0),
+    pixel_height_(0),
+    elapsed_time_ns_(0),
+    time_stamp_ns_(0),
+    rotation_(webrtc::kVideoRotation_0) {}
 
 WebRtcVideoFrame::WebRtcVideoFrame(
     const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
