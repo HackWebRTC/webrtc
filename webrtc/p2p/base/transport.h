@@ -387,6 +387,7 @@ class Transport : public rtc::MessageHandler,
   void OnChannelReadableState_s();
   void OnChannelWritableState_s();
   void OnChannelRequestSignaling_s(int component);
+  void OnChannelRequestSignaling_w(int component);
   void OnConnecting_s();
   void OnChannelRouteChange_s(const TransportChannel* channel,
                               const Candidate& remote_candidate);
