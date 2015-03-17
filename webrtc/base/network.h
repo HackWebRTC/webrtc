@@ -195,7 +195,8 @@ class BasicNetworkManager : public NetworkManagerBase,
   // Creates a network object for each network available on the machine.
   bool CreateNetworks(bool include_ignored, NetworkList* networks) const;
 
-  // Determines if a network should be ignored.
+  // Determines if a network should be ignored. This should only be determined
+  // based on the network's property instead of any individual IP.
   bool IsIgnoredNetwork(const Network& network) const;
 
  private:
