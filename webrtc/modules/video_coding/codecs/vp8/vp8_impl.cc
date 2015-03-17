@@ -17,6 +17,7 @@
 
 // NOTE(ajm): Path provided by gyp.
 #include "libyuv/scale.h"  // NOLINT
+#include "libyuv/convert.h"  // NOLINT
 
 #include "webrtc/common.h"
 #include "webrtc/common_types.h"
@@ -1333,17 +1334,18 @@ int VP8DecoderImpl::ReturnFrame(const vpx_image_t* img,
   last_frame_width_ = img->d_w;
   last_frame_height_ = img->d_h;
   // Allocate memory for decoded image.
-  // TODO(mikhal): This does  a copy - need to SwapBuffers.
-  decoded_image_.CreateFrame(img->planes[VPX_PLANE_Y],
-                             img->planes[VPX_PLANE_U],
-                             img->planes[VPX_PLANE_V],
-                             img->d_w, img->d_h,
-                             img->stride[VPX_PLANE_Y],
-                             img->stride[VPX_PLANE_U],
-                             img->stride[VPX_PLANE_V]);
-  decoded_image_.set_timestamp(timestamp);
-  decoded_image_.set_ntp_time_ms(ntp_time_ms);
-  int ret = decode_complete_callback_->Decoded(decoded_image_);
+  I420VideoFrame decoded_image(buffer_pool_.CreateBuffer(img->d_w, img->d_h),
+                               timestamp, 0, kVideoRotation_0);
+  libyuv::I420Copy(
+      img->planes[VPX_PLANE_Y], img->stride[VPX_PLANE_Y],
+      img->planes[VPX_PLANE_U], img->stride[VPX_PLANE_U],
+      img->planes[VPX_PLANE_V], img->stride[VPX_PLANE_V],
+      decoded_image.buffer(kYPlane), decoded_image.stride(kYPlane),
+      decoded_image.buffer(kUPlane), decoded_image.stride(kUPlane),
+      decoded_image.buffer(kVPlane), decoded_image.stride(kVPlane),
+      img->d_w, img->d_h);
+  decoded_image.set_ntp_time_ms(ntp_time_ms);
+  int ret = decode_complete_callback_->Decoded(decoded_image);
   if (ret != 0)
     return ret;
 
@@ -1386,7 +1388,7 @@ VideoDecoder* VP8DecoderImpl::Copy() {
     assert(false);
     return NULL;
   }
-  if (decoded_image_.IsZeroSize()) {
+  if (last_frame_width_ == 0 || last_frame_height_ == 0) {
     // Nothing has been decoded before; cannot clone.
     return NULL;
   }
@@ -1409,13 +1411,13 @@ VideoDecoder* VP8DecoderImpl::Copy() {
     return NULL;
   }
   // Allocate memory for reference image copy
-  assert(decoded_image_.width() > 0);
-  assert(decoded_image_.height() > 0);
+  assert(last_frame_width_ > 0);
+  assert(last_frame_height_ > 0);
   assert(image_format_ > VPX_IMG_FMT_NONE);
   // Check if frame format has changed.
   if (ref_frame_ &&
-      (decoded_image_.width() != static_cast<int>(ref_frame_->img.d_w) ||
-          decoded_image_.height() != static_cast<int>(ref_frame_->img.d_h) ||
+      (last_frame_width_ != static_cast<int>(ref_frame_->img.d_w) ||
+          last_frame_height_ != static_cast<int>(ref_frame_->img.d_h) ||
           image_format_ != ref_frame_->img.fmt)) {
     vpx_img_free(&ref_frame_->img);
     delete ref_frame_;
@@ -1430,7 +1432,7 @@ VideoDecoder* VP8DecoderImpl::Copy() {
     // for the y plane, but only half of it to the u and v planes.
     if (!vpx_img_alloc(&ref_frame_->img,
                        static_cast<vpx_img_fmt_t>(image_format_),
-                       decoded_image_.width(), decoded_image_.height(),
+                       last_frame_width_, last_frame_height_,
                        kVp832ByteAlign)) {
       assert(false);
       delete copy;

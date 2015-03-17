@@ -22,6 +22,7 @@
 #include "vpx/vp8cx.h"
 #include "vpx/vp8dx.h"
 
+#include "webrtc/common_video/interface/i420_buffer_pool.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
@@ -154,7 +155,7 @@ class VP8DecoderImpl : public VP8Decoder {
                   uint32_t timeStamp,
                   int64_t ntp_time_ms);
 
-  I420VideoFrame decoded_image_;
+  I420BufferPool buffer_pool_;
   DecodedImageCallback* decode_complete_callback_;
   bool inited_;
   bool feedback_mode_;

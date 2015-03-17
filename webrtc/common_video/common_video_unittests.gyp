@@ -19,6 +19,7 @@
          '<(webrtc_root)/test/test.gyp:test_support_main',
       ],
       'sources': [
+        'i420_buffer_pool_unittest.cc',
         'i420_video_frame_unittest.cc',
         'libyuv/libyuv_unittest.cc',
         'libyuv/scaler_unittest.cc',
