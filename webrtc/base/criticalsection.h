@@ -163,31 +163,19 @@ class AtomicOps {
   static int Decrement(volatile int* i) {
     return ::InterlockedDecrement(reinterpret_cast<volatile LONG*>(i));
   }
-
-  // No barrier load.
   static int Load(volatile const int* i) {
     return *i;
   }
-
-  // No barrier store.
-  static void Store(volatile int* i, int value) {
-    *i = value;
-  }
 #else
   static int Increment(volatile int* i) {
-    return __atomic_add_fetch(i, 1, __ATOMIC_SEQ_CST);
+    return __sync_add_and_fetch(i, 1);
   }
   static int Decrement(volatile int* i) {
-    return __atomic_sub_fetch(i, 1, __ATOMIC_SEQ_CST);
+    return __sync_sub_and_fetch(i, 1);
   }
-  // No barrier load.
   static int Load(volatile const int* i) {
     // Adding 0 is a no-op, so const_cast is fine.
-    return __atomic_load_n(const_cast<volatile int*>(i), 0);
-  }
-  // No barrier store.
-  static void Store(volatile int* i, int value) {
-    __atomic_store_n(i, value, __ATOMIC_RELAXED);
+    return __sync_add_and_fetch(const_cast<volatile int*>(i), 0);
   }
 #endif
 };
