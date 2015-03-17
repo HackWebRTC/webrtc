@@ -153,6 +153,7 @@ class RTPSender : public RTPSenderInterface {
   int32_t SetTransmissionTimeOffset(int32_t transmission_time_offset);
   int32_t SetAbsoluteSendTime(uint32_t absolute_send_time);
   void SetVideoRotation(VideoRotation rotation);
+  int32_t SetTransportSequenceNumber(uint16_t sequence_number);
 
   int32_t RegisterRtpHeaderExtension(RTPExtensionType type, uint8_t id);
   virtual bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) override;
@@ -166,6 +167,7 @@ class RTPSender : public RTPSenderInterface {
   uint8_t BuildAudioLevelExtension(uint8_t* data_buffer) const;
   uint8_t BuildAbsoluteSendTimeExtension(uint8_t* data_buffer) const;
   uint8_t BuildVideoRotationExtension(uint8_t* data_buffer) const;
+  uint8_t BuildTransportSequenceNumberExtension(uint8_t* data_buffer) const;
 
   bool UpdateAudioLevel(uint8_t* rtp_packet,
                         size_t rtp_packet_length,
@@ -376,6 +378,7 @@ class RTPSender : public RTPSenderInterface {
   int32_t transmission_time_offset_;
   uint32_t absolute_send_time_;
   VideoRotation rotation_;
+  uint16_t transport_sequence_number_;
 
   // NACK
   uint32_t nack_byte_count_times_[NACK_BYTECOUNT_SIZE];

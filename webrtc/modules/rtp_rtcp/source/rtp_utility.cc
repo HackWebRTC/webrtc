@@ -184,6 +184,13 @@ uint32_t BufferToUWord32(const uint8_t* dataBuffer) {
 #endif
 }
 
+size_t Word32Align(size_t size) {
+  uint32_t remainder = size % 4;
+  if (remainder != 0)
+    return size + 4 - remainder;
+  return size;
+}
+
 uint32_t pow2(uint8_t exp) {
   return 1 << exp;
 }
@@ -480,11 +487,11 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
             LOG(LS_WARNING) << "Incorrect audio level len: " << len;
             return;
           }
-          //  0                   1                   2                   3
-          //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-          // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-          // |  ID   | len=0 |V|   level     |      0x00     |      0x00     |
-          // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          //  0                   1
+          //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+          // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          // |  ID   | len=0 |V|   level     |
+          // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
           //
 
           // Parse out the fields but only use it for debugging for now.
@@ -521,13 +528,31 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
                 << "Incorrect coordination of video coordination len: " << len;
             return;
           }
-          //  0                   1                   2                   3
-          //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-          //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-          //  |  ID   | len=0 |V|0 0 0 0 C F R R|      0x00     |     0x00    |
-          //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          //   0                   1
+          //   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+          //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          //  |  ID   | len=0 |0 0 0 0 C F R R|
+          //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
           header.extension.hasVideoRotation = true;
           header.extension.videoRotation = ptr[0];
+          break;
+        }
+        case kRtpExtensionTransportSequenceNumber: {
+          if (len != 1) {
+            LOG(LS_WARNING)
+                << "Incorrect peer connection sequence number len: " << len;
+            return;
+          }
+          //   0                   1                   2
+          //   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3
+          //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          //  |  ID   | L=1   |transport wide sequence number |
+          //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+          uint16_t sequence_number = ptr[0] << 8;
+          sequence_number += ptr[1];
+          header.extension.transportSequenceNumber = sequence_number;
+          header.extension.hasTransportSequenceNumber = true;
           break;
         }
         default: {

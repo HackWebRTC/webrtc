@@ -91,6 +91,9 @@ namespace RtpUtility {
      */
     uint32_t BufferToUWord32(const uint8_t* dataBuffer);
 
+    // Round up to the nearest size that is a multiple of 4.
+    size_t Word32Align(size_t size);
+
     class RtpHeaderParser {
     public:
      RtpHeaderParser(const uint8_t* rtpData, size_t rtpDataLength);

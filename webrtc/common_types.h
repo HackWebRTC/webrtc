@@ -792,20 +792,14 @@ struct PacketTime {
 };
 
 struct RTPHeaderExtension {
-  RTPHeaderExtension()
-      : hasTransmissionTimeOffset(false),
-        transmissionTimeOffset(0),
-        hasAbsoluteSendTime(false),
-        absoluteSendTime(0),
-        hasAudioLevel(false),
-        audioLevel(0),
-        hasVideoRotation(false),
-        videoRotation(0) {}
+  RTPHeaderExtension();
 
   bool hasTransmissionTimeOffset;
   int32_t transmissionTimeOffset;
   bool hasAbsoluteSendTime;
   uint32_t absoluteSendTime;
+  bool hasTransportSequenceNumber;
+  uint16_t transportSequenceNumber;
 
   // Audio Level includes both level in dBov and voiced/unvoiced bit. See:
   // https://datatracker.ietf.org/doc/draft-lennox-avt-rtp-audio-level-exthdr/

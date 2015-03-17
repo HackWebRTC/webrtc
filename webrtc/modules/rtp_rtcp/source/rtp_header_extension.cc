@@ -12,6 +12,7 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
 namespace webrtc {
 
@@ -119,6 +120,8 @@ size_t RtpHeaderExtensionMap::GetTotalLengthInBytes() const {
   if (length > 0) {
     length += kRtpOneByteHeaderLength;
   }
+  // Pad up to nearest 32bit word.
+  length = RtpUtility::Word32Align(length);
   return length;
 }
 

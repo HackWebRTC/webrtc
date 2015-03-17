@@ -128,6 +128,7 @@ RTPSender::RTPSender(int32_t id,
       transmission_time_offset_(0),
       absolute_send_time_(0),
       rotation_(kVideoRotation_0),
+      transport_sequence_number_(0),
       // NACK.
       nack_byte_count_times_(),
       nack_byte_count_(),
@@ -253,6 +254,12 @@ int32_t RTPSender::SetAbsoluteSendTime(uint32_t absolute_send_time) {
 void RTPSender::SetVideoRotation(VideoRotation rotation) {
   CriticalSectionScoped cs(send_critsect_.get());
   rotation_ = rotation;
+}
+
+int32_t RTPSender::SetTransportSequenceNumber(uint16_t sequence_number) {
+  CriticalSectionScoped cs(send_critsect_.get());
+  transport_sequence_number_ = sequence_number;
+  return 0;
 }
 
 int32_t RTPSender::RegisterRtpHeaderExtension(RTPExtensionType type,
@@ -1180,24 +1187,23 @@ uint16_t RTPSender::BuildRTPHeaderExtension(uint8_t* data_buffer,
   RTPExtensionType type = rtp_header_extension_map_.First();
   while (type != kRtpExtensionNone) {
     uint8_t block_length = 0;
+    uint8_t* extension_data = &data_buffer[kHeaderLength + total_block_length];
     switch (type) {
       case kRtpExtensionTransmissionTimeOffset:
-        block_length = BuildTransmissionTimeOffsetExtension(
-            data_buffer + kHeaderLength + total_block_length);
+        block_length = BuildTransmissionTimeOffsetExtension(extension_data);
         break;
       case kRtpExtensionAudioLevel:
-        block_length = BuildAudioLevelExtension(
-            data_buffer + kHeaderLength + total_block_length);
+        block_length = BuildAudioLevelExtension(extension_data);
         break;
       case kRtpExtensionAbsoluteSendTime:
-        block_length = BuildAbsoluteSendTimeExtension(
-            data_buffer + kHeaderLength + total_block_length);
+        block_length = BuildAbsoluteSendTimeExtension(extension_data);
         break;
       case kRtpExtensionVideoRotation:
-        if (marker_bit) {
-          block_length = BuildVideoRotationExtension(
-              data_buffer + kHeaderLength + total_block_length);
-        }
+        if (marker_bit)
+          block_length = BuildVideoRotationExtension(extension_data);
+        break;
+      case kRtpExtensionTransportSequenceNumber:
+        block_length = BuildTransportSequenceNumberExtension(extension_data);
         break;
       default:
         assert(false);
@@ -1209,8 +1215,14 @@ uint16_t RTPSender::BuildRTPHeaderExtension(uint8_t* data_buffer,
     // No extension added.
     return 0;
   }
+  // Add padding elements until we've filled a 32 bit block.
+  size_t padding_bytes =
+      RtpUtility::Word32Align(total_block_length) - total_block_length;
+  if (padding_bytes > 0) {
+    memset(&data_buffer[kHeaderLength + total_block_length], 0, padding_bytes);
+    total_block_length += padding_bytes;
+  }
   // Set header length (in number of Word32, header excluded).
-  assert(total_block_length % 4 == 0);
   RtpUtility::AssignUWord16ToBuffer(data_buffer + kPosLength,
                                     total_block_length / 4);
   // Total added length.
@@ -1260,16 +1272,12 @@ uint8_t RTPSender::BuildAudioLevelExtension(uint8_t* data_buffer) const {
   //
   // The form of the audio level extension block:
   //
-  //    0                   1                   2                   3
-  //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-  //    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  //    |  ID   | len=0 |V|   level     |      0x00     |      0x00     |
-  //    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  //    0                   1
+  //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+  //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  //   |  ID   | len=0 |V|   level     |
+  //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   //
-  // Note that we always include 2 pad bytes, which will result in legal and
-  // correctly parsed RTP, but may be a bit wasteful if more short extensions
-  // are implemented. Right now the pad bytes would anyway be required at end
-  // of the extension block, so it makes no difference.
 
   // Get id defined by user.
   uint8_t id;
@@ -1281,9 +1289,6 @@ uint8_t RTPSender::BuildAudioLevelExtension(uint8_t* data_buffer) const {
   const uint8_t len = 0;
   data_buffer[pos++] = (id << 4) + len;
   data_buffer[pos++] = (1 << 7) + 0;     // Voice, 0 dBov.
-  data_buffer[pos++] = 0;                // Padding.
-  data_buffer[pos++] = 0;                // Padding.
-  // kAudioLevelLength is including pad bytes.
   assert(pos == kAudioLevelLength);
   return kAudioLevelLength;
 }
@@ -1324,20 +1329,15 @@ uint8_t RTPSender::BuildAbsoluteSendTimeExtension(uint8_t* data_buffer) const {
 uint8_t RTPSender::BuildVideoRotationExtension(uint8_t* data_buffer) const {
   // Coordination of Video Orientation in RTP streams.
   //
-  // Coordination of Video Orientation consists in signalling of the current
+  // Coordination of Video Orientation consists in signaling of the current
   // orientation of the image captured on the sender side to the receiver for
   // appropriate rendering and displaying.
   //
-  //    0                   1                   2                   3
-  //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-  //    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  //    |  ID   | len=0 |V|0 0 0 0 C F R R|      0x00     |     0x00    |
-  //    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  //
-  // Note that we always include 2 pad bytes, which will result in legal and
-  // correctly parsed RTP, but may be a bit wasteful if more short extensions
-  // are implemented. Right now the pad bytes would anyway be required at end
-  // of the extension block, so it makes no difference.
+  //    0                   1
+  //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+  //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  //   |  ID   | len=0 |0 0 0 0 C F R R|
+  //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   //
 
   // Get id defined by user.
@@ -1350,10 +1350,33 @@ uint8_t RTPSender::BuildVideoRotationExtension(uint8_t* data_buffer) const {
   const uint8_t len = 0;
   data_buffer[pos++] = (id << 4) + len;
   data_buffer[pos++] = ConvertVideoRotationToCVOByte(rotation_);
-  data_buffer[pos++] = 0;  // padding
-  data_buffer[pos++] = 0;  // padding
   assert(pos == kVideoRotationLength);
   return kVideoRotationLength;
+}
+
+uint8_t RTPSender::BuildTransportSequenceNumberExtension(
+    uint8_t* data_buffer) const {
+  //   0                   1                   2
+  //   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3
+  //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  //  |  ID   | L=1   |transport wide sequence number |
+  //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+  // Get id defined by user.
+  uint8_t id;
+  if (rtp_header_extension_map_.GetId(kRtpExtensionTransportSequenceNumber,
+                                      &id) != 0) {
+    // Not registered.
+    return 0;
+  }
+  size_t pos = 0;
+  const uint8_t len = 1;
+  data_buffer[pos++] = (id << 4) + len;
+  RtpUtility::AssignUWord16ToBuffer(data_buffer + pos,
+                                    transport_sequence_number_);
+  pos += 2;
+  assert(pos == kTransportSequenceNumberLength);
+  return kTransportSequenceNumberLength;
 }
 
 bool RTPSender::FindHeaderExtensionPosition(RTPExtensionType type,
