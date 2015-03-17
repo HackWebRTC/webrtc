@@ -666,14 +666,14 @@ source_set("webrtc_opus") {
 
   deps = [ ":audio_encoder_interface" ]
 
-  if (build_with_mozilla) {
-    include_dirs = [ getenv("DIST") + "/include/opus" ]
-  } else {
+  if (rtc_build_opus) {
     configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     deps += [ rtc_opus_dir ]
     forward_dependent_configs_from = [ rtc_opus_dir ]
+  } else if (build_with_mozilla) {
+    include_dirs = [ getenv("DIST") + "/include/opus" ]
   }
 }
 

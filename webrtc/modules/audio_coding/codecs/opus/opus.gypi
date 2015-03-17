@@ -12,12 +12,7 @@
       'target_name': 'webrtc_opus',
       'type': 'static_library',
       'conditions': [
-        ['build_with_mozilla==1', {
-          # Mozilla provides its own build of the opus library.
-          'include_dirs': [
-            '$(DIST)/include/opus',
-           ]
-        }, {
+        ['build_opus==1', {
           'dependencies': [
             '<(opus_dir)/opus.gyp:opus'
           ],
@@ -30,6 +25,15 @@
               '<(opus_dir)/src/celt',
             ],
           },
+        }, {
+          'conditions': [
+            ['build_with_mozilla==1', {
+              # Mozilla provides its own build of the opus library.
+              'include_dirs': [
+                '$(DIST)/include/opus',
+              ]
+            }],
+          ],
         }],
       ],
       'dependencies': [

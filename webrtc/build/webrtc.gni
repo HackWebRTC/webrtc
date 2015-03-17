@@ -43,6 +43,7 @@ declare_args() {
   rtc_build_libvpx = true
   rtc_build_vp9 = true
   rtc_build_ssl = true
+  rtc_build_opus = true
 
   # Disable by default.
   rtc_have_dbus_glib = false

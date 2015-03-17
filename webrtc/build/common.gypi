@@ -91,6 +91,7 @@
     'build_vp9%': 1,
     'build_ssl%': 1,
     'build_openmax_dl%': 1,
+    'build_opus%': 1,
 
     # Disable by default
     'have_dbus_glib%': 0,
