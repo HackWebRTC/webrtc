@@ -616,6 +616,16 @@ class TestVp8Simulcast : public ::testing::Test {
     EXPECT_EQ(0, encoder_->InitEncode(&settings_, 1, 1200));
     encoder_->SetRates(settings_.startBitrate, 30);
     ExpectStreams(kKeyFrame, 1);
+    // Resize |input_frame_| to the new resolution.
+    half_width = (settings_.width + 1) / 2;
+    input_frame_.CreateEmptyFrame(settings_.width, settings_.height,
+                                  settings_.width, half_width, half_width);
+    memset(input_frame_.buffer(kYPlane), 0,
+        input_frame_.allocated_size(kYPlane));
+    memset(input_frame_.buffer(kUPlane), 0,
+        input_frame_.allocated_size(kUPlane));
+    memset(input_frame_.buffer(kVPlane), 0,
+        input_frame_.allocated_size(kVPlane));
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, &frame_types));
   }
 

@@ -21,6 +21,7 @@
 #include "vpx/vp8cx.h"
 #include "vpx/vp8dx.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/interface/module_common_types.h"
@@ -265,6 +266,8 @@ int VP9EncoderImpl::Encode(const I420VideoFrame& input_image,
   if (frame_types && frame_types->size() > 0) {
     frame_type = (*frame_types)[0];
   }
+  DCHECK_EQ(input_image.width(), static_cast<int>(raw_->d_w));
+  DCHECK_EQ(input_image.height(), static_cast<int>(raw_->d_h));
   // Image in vpx_image_t format.
   // Input image is const. VPX's raw image is not defined as const.
   raw_->planes[VPX_PLANE_Y] = const_cast<uint8_t*>(input_image.buffer(kYPlane));

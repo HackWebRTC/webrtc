@@ -19,6 +19,7 @@
 #include "libyuv/scale.h"  // NOLINT
 #include "libyuv/convert.h"  // NOLINT
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -742,6 +743,13 @@ int VP8EncoderImpl::Encode(
     if (ret < 0)
       return ret;
   }
+
+  // Since we are extracting raw pointers from |input_image| to
+  // |raw_images_[0]|, the resolution of these frames must match. Note that
+  // |input_image| might be scaled from |frame|. In that case, the resolution of
+  // |raw_images_[0]| should have been updated in UpdateCodecFrameSize.
+  DCHECK_EQ(input_image.width(), static_cast<int>(raw_images_[0].d_w));
+  DCHECK_EQ(input_image.height(), static_cast<int>(raw_images_[0].d_h));
 
   // Image in vpx_image_t format.
   // Input image is const. VP8's raw image is not defined as const.
