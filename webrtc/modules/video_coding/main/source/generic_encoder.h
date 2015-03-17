@@ -54,11 +54,14 @@ public:
     void SetPayloadType(uint8_t payloadType) { _payloadType = payloadType; };
     void SetInternalSource(bool internalSource) { _internalSource = internalSource; };
 
+    void SetRotation(VideoRotation rotation) { _rotation = rotation; }
+
 private:
     VCMPacketizationCallback* _sendCallback;
     media_optimization::MediaOptimization* _mediaOpt;
     uint8_t _payloadType;
     bool _internalSource;
+    VideoRotation _rotation;
 
     EncodedImageCallback* post_encode_callback_;
 
@@ -136,10 +139,12 @@ public:
 private:
     VideoEncoder* const encoder_;
     VideoEncoderRateObserver* const rate_observer_;
+    VCMEncodedFrameCallback*  vcm_encoded_frame_callback_;
     uint32_t bit_rate_;
     uint32_t frame_rate_;
     const bool internal_source_;
     mutable rtc::CriticalSection rates_lock_;
+    VideoRotation rotation_;
 }; // end of VCMGenericEncoder class
 
 }  // namespace webrtc

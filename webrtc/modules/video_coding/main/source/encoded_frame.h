@@ -70,6 +70,10 @@ public:
     */
     webrtc::FrameType FrameType() const {return ConvertFrameType(_frameType);}
     /**
+    *   Get frame rotation
+    */
+    VideoRotation rotation() const { return _rotation; }
+    /**
     *   True if this frame is complete, false otherwise
     */
     bool Complete() const { return _completeFrame; }
@@ -116,6 +120,12 @@ protected:
     CodecSpecificInfo             _codecSpecificInfo;
     webrtc::VideoCodecType        _codec;
     RTPFragmentationHeader        _fragmentation;
+    VideoRotation                 _rotation;
+
+    // Video rotation is only set along with the last packet for each frame
+    // (same as marker bit). This |_rotation_set| is only for debugging purpose
+    // to ensure we don't set it twice for a frame.
+    bool                          _rotation_set;
 };
 
 }  // namespace webrtc

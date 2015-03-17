@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/main/source/packet.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 
@@ -145,6 +146,18 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet,
     _length = Length() + static_cast<uint32_t>(retVal);
 
     _latestPacketTimeMs = timeInMs;
+
+    // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
+    // ts_126114v120700p.pdf Section 7.4.5.
+    // The MTSI client shall add the payload bytes as defined in this clause
+    // onto the last RTP packet in each group of packets which make up a key
+    // frame (I-frame or IDR frame in H.264 (AVC), or an IRAP picture in H.265
+    // (HEVC)).
+    if (packet.markerBit) {
+      DCHECK(!_rotation_set);
+      _rotation = packet.codecSpecificHeader.rotation;
+      _rotation_set = true;
+    }
 
     if (_sessionInfo.complete()) {
       SetState(kStateComplete);

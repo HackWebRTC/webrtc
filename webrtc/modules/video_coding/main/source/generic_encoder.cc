@@ -60,9 +60,11 @@ VCMGenericEncoder::VCMGenericEncoder(VideoEncoder* encoder,
                                      bool internalSource)
     : encoder_(encoder),
       rate_observer_(rate_observer),
+      vcm_encoded_frame_callback_(nullptr),
       bit_rate_(0),
       frame_rate_(0),
-      internal_source_(internalSource) {
+      internal_source_(internalSource),
+      rotation_(kVideoRotation_0) {
 }
 
 VCMGenericEncoder::~VCMGenericEncoder()
@@ -75,6 +77,7 @@ int32_t VCMGenericEncoder::Release()
       rtc::CritScope lock(&rates_lock_);
       bit_rate_ = 0;
       frame_rate_ = 0;
+      vcm_encoded_frame_callback_ = nullptr;
     }
 
     return encoder_->Release();
@@ -106,6 +109,16 @@ VCMGenericEncoder::Encode(const I420VideoFrame& inputFrame,
   std::vector<VideoFrameType> video_frame_types(frameTypes.size(),
                                                 kDeltaFrame);
   VCMEncodedFrame::ConvertFrameTypes(frameTypes, &video_frame_types);
+
+  rotation_ = inputFrame.rotation();
+
+  if (vcm_encoded_frame_callback_) {
+    // Keep track of the current frame rotation and apply to the output of the
+    // encoder. There might not be exact as the encoder could have one frame
+    // delay but it should be close enough.
+    vcm_encoded_frame_callback_->SetRotation(rotation_);
+  }
+
   return encoder_->Encode(inputFrame, codecSpecificInfo, &video_frame_types);
 }
 
@@ -178,6 +191,7 @@ int32_t
 VCMGenericEncoder::RegisterEncodeCallback(VCMEncodedFrameCallback* VCMencodedFrameCallback)
 {
     VCMencodedFrameCallback->SetInternalSource(internal_source_);
+    vcm_encoded_frame_callback_ = VCMencodedFrameCallback;
     return encoder_->RegisterEncodeCompleteCallback(VCMencodedFrameCallback);
 }
 
@@ -191,14 +205,16 @@ VCMGenericEncoder::InternalSource() const
   * Callback Implementation
   ***************************/
 VCMEncodedFrameCallback::VCMEncodedFrameCallback(
-    EncodedImageCallback* post_encode_callback):
-_sendCallback(),
-_mediaOpt(NULL),
-_payloadType(0),
-_internalSource(false),
-post_encode_callback_(post_encode_callback)
+    EncodedImageCallback* post_encode_callback)
+    : _sendCallback(),
+      _mediaOpt(NULL),
+      _payloadType(0),
+      _internalSource(false),
+      _rotation(kVideoRotation_0),
+      post_encode_callback_(post_encode_callback)
 #ifdef DEBUG_ENCODER_BIT_STREAM
-, _bitStreamAfterEncoder(NULL)
+      ,
+      _bitStreamAfterEncoder(NULL)
 #endif
 {
 #ifdef DEBUG_ENCODER_BIT_STREAM
@@ -241,6 +257,7 @@ int32_t VCMEncodedFrameCallback::Encoded(
   memset(&rtpVideoHeader, 0, sizeof(RTPVideoHeader));
   RTPVideoHeader* rtpVideoHeaderPtr = &rtpVideoHeader;
   CopyCodecSpecific(codecSpecificInfo, &rtpVideoHeaderPtr);
+  rtpVideoHeader.rotation = _rotation;
 
   int32_t callbackReturn = _sendCallback->SendData(
       _payloadType, encodedImage, *fragmentationHeader, rtpVideoHeaderPtr);
