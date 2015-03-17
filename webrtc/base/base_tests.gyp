@@ -60,6 +60,7 @@
           'cpumonitor_unittest.cc',
           'crc32_unittest.cc',
           'criticalsection_unittest.cc',
+          'event_tracer_unittest.cc',
           'event_unittest.cc',
           'exp_filter_unittest.cc',
           'filelock_unittest.cc',

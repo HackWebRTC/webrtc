@@ -33,6 +33,8 @@
         'checks.h',
         'event.cc',
         'event.h',
+        'event_tracer.cc',
+        'event_tracer.h',
         'exp_filter.cc',
         'exp_filter.h',
         'md5.cc',
@@ -54,6 +56,7 @@
         'thread_checker_impl.h',
         'timeutils.cc',
         'timeutils.h',
+        'trace_event.h',
       ],
     },
     {

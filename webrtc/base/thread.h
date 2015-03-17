@@ -167,8 +167,10 @@ class Thread : public MessageQueue {
   // See ScopedDisallowBlockingCalls for details.
   template <class ReturnT, class FunctorT>
   ReturnT Invoke(const FunctorT& functor) {
+    InvokeBegin();
     FunctorMessageHandler<ReturnT, FunctorT> handler(functor);
     Send(&handler);
+    InvokeEnd();
     return handler.result();
   }
 
@@ -261,6 +263,10 @@ class Thread : public MessageQueue {
   // The caller must lock |crit_| before calling.
   // Returns true if there is such a message.
   bool PopSendMessageFromThread(const Thread* source, _SendMessage* msg);
+
+  // Used for tracking performance of Invoke calls.
+  void InvokeBegin();
+  void InvokeEnd();
 
   std::list<_SendMessage> sendlist_;
   std::string name_;
