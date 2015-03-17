@@ -217,16 +217,11 @@ FakeCall::FakeCall(const webrtc::Call::Config& config)
       network_state_(kNetworkUp),
       num_created_send_streams_(0),
       num_created_receive_streams_(0) {
-  SetVideoCodecs(GetDefaultVideoCodecs());
 }
 
 FakeCall::~FakeCall() {
   EXPECT_EQ(0u, video_send_streams_.size());
   EXPECT_EQ(0u, video_receive_streams_.size());
-}
-
-void FakeCall::SetVideoCodecs(const std::vector<webrtc::VideoCodec> codecs) {
-  codecs_ = codecs;
 }
 
 webrtc::Call::Config FakeCall::GetConfig() const {
@@ -239,48 +234,6 @@ std::vector<FakeVideoSendStream*> FakeCall::GetVideoSendStreams() {
 
 std::vector<FakeVideoReceiveStream*> FakeCall::GetVideoReceiveStreams() {
   return video_receive_streams_;
-}
-
-webrtc::VideoCodec FakeCall::GetEmptyVideoCodec() {
-  webrtc::VideoCodec codec;
-  codec.minBitrate = 300;
-  codec.startBitrate = 800;
-  codec.maxBitrate = 1500;
-  codec.maxFramerate = 10;
-  codec.width = 640;
-  codec.height = 480;
-  codec.qpMax = 56;
-
-  return codec;
-}
-
-webrtc::VideoCodec FakeCall::GetVideoCodecVp8() {
-  webrtc::VideoCodec vp8_codec = GetEmptyVideoCodec();
-  vp8_codec.codecType = webrtc::kVideoCodecVP8;
-  rtc::strcpyn(
-      vp8_codec.plName, ARRAY_SIZE(vp8_codec.plName), kVp8Codec.name.c_str());
-  vp8_codec.plType = kVp8Codec.id;
-
-  return vp8_codec;
-}
-
-webrtc::VideoCodec FakeCall::GetVideoCodecVp9() {
-  webrtc::VideoCodec vp9_codec = GetEmptyVideoCodec();
-  // TODO(pbos): Add a correct codecType when webrtc has one.
-  vp9_codec.codecType = webrtc::kVideoCodecVP8;
-  rtc::strcpyn(
-      vp9_codec.plName, ARRAY_SIZE(vp9_codec.plName), kVp9Codec.name.c_str());
-  vp9_codec.plType = kVp9Codec.id;
-
-  return vp9_codec;
-}
-
-std::vector<webrtc::VideoCodec> FakeCall::GetDefaultVideoCodecs() {
-  std::vector<webrtc::VideoCodec> codecs;
-  codecs.push_back(GetVideoCodecVp8());
-  //    codecs.push_back(GetVideoCodecVp9());
-
-  return codecs;
 }
 
 webrtc::Call::NetworkState FakeCall::GetNetworkState() const {
