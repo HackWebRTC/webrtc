@@ -29,6 +29,7 @@
 #include "webrtc/modules/audio_coding/codecs/red/audio_encoder_copy_red.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
@@ -85,9 +86,6 @@ ACMGenericCodec::ACMGenericCodec(const CodecInst& codec_inst,
                                  int red_payload_type)
     : has_internal_fec_(false),
       copy_red_enabled_(enable_red),
-      codec_wrapper_lock_(*RWLockWrapper::CreateRWLock()),
-      last_timestamp_(0xD87F3F9F),
-      unique_id_(0),
       encoder_(NULL),
       bitrate_bps_(0),
       fec_enabled_(false),
@@ -98,12 +96,8 @@ ACMGenericCodec::ACMGenericCodec(const CodecInst& codec_inst,
       opus_dtx_enabled_(false),
       is_opus_(false),
       is_isac_(false),
-      first_frame_(true),
       red_payload_type_(red_payload_type),
       opus_application_set_(false) {
-  memset(&encoder_params_, 0, sizeof(WebRtcACMCodecParams));
-  encoder_params_.codec_inst.pltype = -1;
-
   acm_codec_params_.codec_inst = codec_inst;
   acm_codec_params_.enable_dtx = false;
   acm_codec_params_.enable_vad = false;
@@ -117,7 +111,6 @@ ACMGenericCodec::ACMGenericCodec(const CodecInst& codec_inst,
 }
 
 ACMGenericCodec::~ACMGenericCodec() {
-  delete &codec_wrapper_lock_;
 }
 
 AudioDecoderProxy::AudioDecoderProxy()
@@ -212,42 +205,13 @@ CNG_dec_inst* AudioDecoderProxy::CngDecoderInstance() {
   return decoder_->CngDecoderInstance();
 }
 
-void ACMGenericCodec::Encode(uint32_t input_timestamp,
-                             const int16_t* audio,
-                             uint16_t length_per_channel,
-                             uint8_t audio_channel,
-                             uint8_t* bitstream,
-                             int16_t* bitstream_len_byte,
-                             AudioEncoder::EncodedInfo* encoded_info) {
-  WriteLockScoped wl(codec_wrapper_lock_);
-  CHECK_EQ(length_per_channel, encoder_->SampleRateHz() / 100);
-  rtp_timestamp_ = first_frame_
-                       ? input_timestamp
-                       : last_rtp_timestamp_ +
-                             rtc::CheckedDivExact(
-                                 input_timestamp - last_timestamp_,
-                                 static_cast<uint32_t>(rtc::CheckedDivExact(
-                                     audio_encoder_->SampleRateHz(),
-                                     audio_encoder_->RtpTimestampRateHz())));
-  last_timestamp_ = input_timestamp;
-  last_rtp_timestamp_ = rtp_timestamp_;
-  first_frame_ = false;
-  CHECK_EQ(audio_channel, encoder_->NumChannels());
-
-  encoder_->Encode(rtp_timestamp_, audio, length_per_channel,
-                   2 * MAX_PAYLOAD_SIZE_BYTE, bitstream, encoded_info);
-  *bitstream_len_byte = static_cast<int16_t>(encoded_info->encoded_bytes);
-}
-
 int16_t ACMGenericCodec::EncoderParams(WebRtcACMCodecParams* enc_params) {
-  ReadLockScoped rl(codec_wrapper_lock_);
   *enc_params = acm_codec_params_;
   return 0;
 }
 
 int16_t ACMGenericCodec::InitEncoder(WebRtcACMCodecParams* codec_params,
                                      bool force_initialization) {
-  WriteLockScoped wl(codec_wrapper_lock_);
   bitrate_bps_ = 0;
   loss_rate_ = 0;
   opus_dtx_enabled_ = false;
@@ -431,7 +395,6 @@ OpusApplicationMode ACMGenericCodec::GetOpusApplication(
 }
 
 int16_t ACMGenericCodec::SetBitRate(const int32_t bitrate_bps) {
-  WriteLockScoped wl(codec_wrapper_lock_);
   encoder_->SetTargetBitrate(bitrate_bps);
   bitrate_bps_ = bitrate_bps;
   return 0;
@@ -440,7 +403,6 @@ int16_t ACMGenericCodec::SetBitRate(const int32_t bitrate_bps) {
 int16_t ACMGenericCodec::SetVAD(bool* enable_dtx,
                                 bool* enable_vad,
                                 ACMVADMode* mode) {
-  WriteLockScoped wl(codec_wrapper_lock_);
   if (is_opus_) {
     *enable_dtx = false;
     *enable_vad = false;
@@ -468,14 +430,12 @@ int16_t ACMGenericCodec::SetVAD(bool* enable_dtx,
 }
 
 void ACMGenericCodec::SetCngPt(int sample_rate_hz, int payload_type) {
-  WriteLockScoped wl(codec_wrapper_lock_);
   SetCngPtInMap(&cng_pt_, sample_rate_hz, payload_type);
   ResetAudioEncoder();
 }
 
 int32_t ACMGenericCodec::SetISACMaxPayloadSize(
     const uint16_t max_payload_len_bytes) {
-  WriteLockScoped wl(codec_wrapper_lock_);
   if (!is_isac_)
     return -1;  // Needed for tests to pass.
   max_payload_size_bytes_ = max_payload_len_bytes;
@@ -484,7 +444,6 @@ int32_t ACMGenericCodec::SetISACMaxPayloadSize(
 }
 
 int32_t ACMGenericCodec::SetISACMaxRate(const uint32_t max_rate_bps) {
-  WriteLockScoped wl(codec_wrapper_lock_);
   if (!is_isac_)
     return -1;  // Needed for tests to pass.
   max_rate_bps_ = max_rate_bps;
@@ -493,7 +452,6 @@ int32_t ACMGenericCodec::SetISACMaxRate(const uint32_t max_rate_bps) {
 }
 
 int ACMGenericCodec::SetOpusMaxPlaybackRate(int frequency_hz) {
-  WriteLockScoped wl(codec_wrapper_lock_);
   if (!is_opus_)
     return -1;  // Needed for tests to pass.
   max_playback_rate_hz_ = frequency_hz;
@@ -502,12 +460,10 @@ int ACMGenericCodec::SetOpusMaxPlaybackRate(int frequency_hz) {
 }
 
 AudioDecoder* ACMGenericCodec::Decoder() {
-  ReadLockScoped rl(codec_wrapper_lock_);
   return decoder_proxy_.IsSet() ? &decoder_proxy_ : nullptr;
 }
 
 int ACMGenericCodec::EnableOpusDtx(bool force_voip) {
-  WriteLockScoped wl(codec_wrapper_lock_);
   if (!is_opus_)
     return -1;  // Needed for tests to pass.
   if (!force_voip &&
@@ -523,7 +479,6 @@ int ACMGenericCodec::EnableOpusDtx(bool force_voip) {
 }
 
 int ACMGenericCodec::DisableOpusDtx() {
-  WriteLockScoped wl(codec_wrapper_lock_);
   if (!is_opus_)
     return -1;  // Needed for tests to pass.
   opus_dtx_enabled_ = false;
@@ -534,7 +489,6 @@ int ACMGenericCodec::DisableOpusDtx() {
 int ACMGenericCodec::SetFEC(bool enable_fec) {
   if (!HasInternalFEC())
     return enable_fec ? -1 : 0;
-  WriteLockScoped wl(codec_wrapper_lock_);
   if (fec_enabled_ != enable_fec) {
     fec_enabled_ = enable_fec;
     ResetAudioEncoder();
@@ -544,7 +498,6 @@ int ACMGenericCodec::SetFEC(bool enable_fec) {
 
 int ACMGenericCodec::SetOpusApplication(OpusApplicationMode application,
                                         bool disable_dtx_if_needed) {
-  WriteLockScoped wl(codec_wrapper_lock_);
   if (opus_dtx_enabled_ && application == kAudio) {
     if (disable_dtx_if_needed) {
       opus_dtx_enabled_ = false;
@@ -560,21 +513,18 @@ int ACMGenericCodec::SetOpusApplication(OpusApplicationMode application,
 }
 
 int ACMGenericCodec::SetPacketLossRate(int loss_rate) {
-  WriteLockScoped wl(codec_wrapper_lock_);
   encoder_->SetProjectedPacketLossRate(loss_rate / 100.0);
   loss_rate_ = loss_rate;
   return 0;
 }
 
 void ACMGenericCodec::EnableCopyRed(bool enable, int red_payload_type) {
-  WriteLockScoped wl(codec_wrapper_lock_);
   copy_red_enabled_ = enable;
   red_payload_type_ = red_payload_type;
   ResetAudioEncoder();
 }
 
-const AudioEncoder* ACMGenericCodec::GetAudioEncoder() const {
-  WriteLockScoped wl(codec_wrapper_lock_);
+AudioEncoder* ACMGenericCodec::GetAudioEncoder() {
   return encoder_;
 }
 

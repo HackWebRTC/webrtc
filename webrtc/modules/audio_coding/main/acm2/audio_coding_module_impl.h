@@ -346,6 +346,10 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   AudioFrame preprocess_frame_ GUARDED_BY(acm_crit_sect_);
   bool first_10ms_data_ GUARDED_BY(acm_crit_sect_);
 
+  bool first_frame_ GUARDED_BY(acm_crit_sect_);
+  uint32_t last_timestamp_ GUARDED_BY(acm_crit_sect_);
+  uint32_t last_rtp_timestamp_ GUARDED_BY(acm_crit_sect_);
+
   CriticalSectionWrapper* callback_crit_sect_;
   AudioPacketizationCallback* packetization_callback_
       GUARDED_BY(callback_crit_sect_);

@@ -145,6 +145,7 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
       aux_rtp_header_(NULL),
       receiver_initialized_(false),
       first_10ms_data_(false),
+      first_frame_(true),
       callback_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       packetization_callback_(NULL),
       vad_callback_(NULL) {
@@ -218,16 +219,9 @@ AudioCodingModuleImpl::~AudioCodingModuleImpl() {
 }
 
 int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
-  // Make room for 1 RED payload.
-  uint8_t stream[2 * MAX_PAYLOAD_SIZE_BYTE];
-  // TODO(turajs): |length_bytes| & |red_length_bytes| can be of type int if
-  // ACMGenericCodec::Encode() & ACMGenericCodec::GetRedPayload() allows.
-  int16_t length_bytes = 2 * MAX_PAYLOAD_SIZE_BYTE;
-  FrameType frame_type = kAudioFrameSpeech;
-  uint8_t current_payload_type = 0;
-  bool has_data_to_send = false;
-  RTPFragmentationHeader my_fragmentation;
+  uint8_t stream[2 * MAX_PAYLOAD_SIZE_BYTE];  // Make room for 1 RED payload.
   AudioEncoder::EncodedInfo encoded_info;
+  uint8_t previous_pltype;
 
   // Keep the scope of the ACM critical section limited.
   {
@@ -236,52 +230,63 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
     if (!HaveValidEncoder("Process")) {
       return -1;
     }
-    codecs_[current_send_codec_idx_]->Encode(
-        input_data.input_timestamp, input_data.audio,
-        input_data.length_per_channel, input_data.audio_channel, stream,
-        &length_bytes, &encoded_info);
+
+    AudioEncoder* audio_encoder =
+        codecs_[current_send_codec_idx_]->GetAudioEncoder();
+    // Scale the timestamp to the codec's RTP timestamp rate.
+    uint32_t rtp_timestamp =
+        first_frame_ ? input_data.input_timestamp
+                     : last_rtp_timestamp_ +
+                           rtc::CheckedDivExact(
+                               input_data.input_timestamp - last_timestamp_,
+                               static_cast<uint32_t>(rtc::CheckedDivExact(
+                                   audio_encoder->SampleRateHz(),
+                                   audio_encoder->RtpTimestampRateHz())));
+    last_timestamp_ = input_data.input_timestamp;
+    last_rtp_timestamp_ = rtp_timestamp;
+    first_frame_ = false;
+
+    audio_encoder->Encode(rtp_timestamp, input_data.audio,
+                          input_data.length_per_channel, sizeof(stream), stream,
+                          &encoded_info);
     if (encoded_info.encoded_bytes == 0 && !encoded_info.send_even_if_empty) {
       // Not enough data.
       return 0;
-    } else {
-      if (encoded_info.encoded_bytes == 0 && encoded_info.send_even_if_empty) {
-        frame_type = kFrameEmpty;
-        current_payload_type = previous_pltype_;
-      } else {
-        DCHECK_GT(encoded_info.encoded_bytes, 0u);
-        frame_type = encoded_info.speech ? kAudioFrameSpeech : kAudioFrameCN;
-        current_payload_type = encoded_info.payload_type;
-        previous_pltype_ = current_payload_type;
-      }
-      has_data_to_send = true;
-
-      ConvertEncodedInfoToFragmentationHeader(encoded_info, &my_fragmentation);
     }
+    previous_pltype = previous_pltype_;  // Read it while we have the critsect.
   }
 
-  if (has_data_to_send) {
-    CriticalSectionScoped lock(callback_crit_sect_);
+  RTPFragmentationHeader my_fragmentation;
+  ConvertEncodedInfoToFragmentationHeader(encoded_info, &my_fragmentation);
+  FrameType frame_type;
+  if (encoded_info.encoded_bytes == 0 && encoded_info.send_even_if_empty) {
+    frame_type = kFrameEmpty;
+    encoded_info.payload_type = previous_pltype;
+  } else {
+    DCHECK_GT(encoded_info.encoded_bytes, 0u);
+    frame_type = encoded_info.speech ? kAudioFrameSpeech : kAudioFrameCN;
+  }
 
-    if (packetization_callback_ != NULL) {
-      if (my_fragmentation.fragmentationVectorSize > 0) {
-        // Callback with payload data, including redundant data (RED).
-        packetization_callback_->SendData(
-            frame_type, current_payload_type, encoded_info.encoded_timestamp,
-            stream, length_bytes, &my_fragmentation);
-      } else {
-        // Callback with payload data.
-        packetization_callback_->SendData(frame_type, current_payload_type,
-                                          encoded_info.encoded_timestamp,
-                                          stream, length_bytes, NULL);
-      }
+  {
+    CriticalSectionScoped lock(callback_crit_sect_);
+    if (packetization_callback_) {
+      packetization_callback_->SendData(
+          frame_type, encoded_info.payload_type, encoded_info.encoded_timestamp,
+          stream, encoded_info.encoded_bytes,
+          my_fragmentation.fragmentationVectorSize > 0 ? &my_fragmentation
+              : nullptr);
     }
 
-    if (vad_callback_ != NULL) {
+    if (vad_callback_) {
       // Callback with VAD decision.
       vad_callback_->InFrameType(frame_type);
     }
   }
-  return length_bytes;
+  {
+    CriticalSectionScoped lock(acm_crit_sect_);
+    previous_pltype_ = encoded_info.payload_type;
+  }
+  return static_cast<int32_t>(encoded_info.encoded_bytes);
 }
 
 /////////////////////////////////////////

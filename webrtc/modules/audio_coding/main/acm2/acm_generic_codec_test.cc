@@ -17,9 +17,10 @@ namespace acm2 {
 
 namespace {
 const int kDataLengthSamples = 80;
+const int kPacketSizeSamples = 2 * kDataLengthSamples;
 const int16_t kZeroData[kDataLengthSamples] = {0};
 const CodecInst kDefaultCodecInst =
-    {0, "pcmu", 8000, 2 * kDataLengthSamples, 1, 64000};
+    {0, "pcmu", 8000, kPacketSizeSamples, 1, 64000};
 const int kCngPt = 13;
 const int kNoCngPt = 255;
 const int kRedPt = 255;  // Not using RED in this test.
@@ -43,15 +44,13 @@ class AcmGenericCodecTest : public ::testing::Test {
                        uint32_t expected_timestamp,
                        int expected_payload_type,
                        int expected_send_even_if_empty) {
-    uint8_t out[kDataLengthSamples];
-    int16_t out_length;
+    uint8_t out[kPacketSizeSamples];
     AudioEncoder::EncodedInfo encoded_info;
-    codec_->Encode(timestamp_, kZeroData, kDataLengthSamples, 1, out,
-                   &out_length, &encoded_info);
+    codec_->GetAudioEncoder()->Encode(timestamp_, kZeroData, kDataLengthSamples,
+                                      kPacketSizeSamples, out, &encoded_info);
     timestamp_ += kDataLengthSamples;
     EXPECT_TRUE(encoded_info.redundant.empty());
     EXPECT_EQ(expected_out_length, encoded_info.encoded_bytes);
-    EXPECT_EQ(expected_out_length, rtc::checked_cast<size_t>(out_length));
     EXPECT_EQ(expected_timestamp, encoded_info.encoded_timestamp);
     if (expected_payload_type >= 0)
       EXPECT_EQ(expected_payload_type, encoded_info.payload_type);

@@ -34,6 +34,7 @@ namespace webrtc {
 
 struct WebRtcACMCodecParams;
 struct CodecInst;
+class CriticalSectionWrapper;
 
 namespace acm2 {
 
@@ -94,45 +95,6 @@ class ACMGenericCodec {
   // The function will be used for FEC. It is not implemented yet.
   //
   ACMGenericCodec* CreateInstance();
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int16_t Encode()
-  // The function is called to perform an encoding of the audio stored in
-  // audio buffer. An encoding is performed only if enough audio, i.e. equal
-  // to the frame-size of the codec, exist. The audio frame will be processed
-  // by VAD and CN/DTX if required. There are few different cases.
-  //
-  // A) Neither VAD nor DTX is active; the frame is encoded by the encoder.
-  //
-  // B) VAD is enabled but not DTX; in this case the audio is processed by VAD
-  //    and encoded by the encoder. The "*encoding_type" will be either
-  //    "kActiveNormalEncode" or "kPassiveNormalEncode" if frame is active or
-  //    passive, respectively.
-  //
-  // C) DTX is enabled; if the codec has internal VAD/DTX we just encode the
-  //    frame by the encoder. Otherwise, the frame is passed through VAD and
-  //    if identified as passive, then it will be processed by CN/DTX. If the
-  //    frame is active it will be encoded by the encoder.
-  //
-  // This function acquires the appropriate locks and calls EncodeSafe() for
-  // the actual processing.
-  //
-  // Outputs:
-  //   -bitstream          : a buffer where bit-stream will be written to.
-  //   -bitstream_len_byte : contains the length of the bit-stream in
-  //                         bytes.
-  //   -timestamp          : contains the RTP timestamp, this is the
-  //                         sampling time of the first sample encoded
-  //                         (measured in number of samples).
-  //
-  //
-  void Encode(uint32_t input_timestamp,
-              const int16_t* audio,
-              uint16_t length_per_channel,
-              uint8_t audio_channel,
-              uint8_t* bitstream,
-              int16_t* bitstream_len_byte,
-              AudioEncoder::EncodedInfo* encoded_info);
 
   ///////////////////////////////////////////////////////////////////////////
   // bool EncoderInitialized();
@@ -269,8 +231,7 @@ class ACMGenericCodec {
   //   -1 if failed, or if this is meaningless for the given codec.
   //    0 if succeeded.
   //
-  int16_t UpdateEncoderSampFreq(uint16_t samp_freq_hz)
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
+  int16_t UpdateEncoderSampFreq(uint16_t samp_freq_hz);
 
   ///////////////////////////////////////////////////////////////////////////
   // EncoderSampFreq()
@@ -284,8 +245,7 @@ class ACMGenericCodec {
   //   -1 if failed to output sampling rate.
   //    0 if the sample rate is returned successfully.
   //
-  int16_t EncoderSampFreq(uint16_t* samp_freq_hz)
-      SHARED_LOCKS_REQUIRED(codec_wrapper_lock_);
+  int16_t EncoderSampFreq(uint16_t* samp_freq_hz);
 
   ///////////////////////////////////////////////////////////////////////////
   // SetISACMaxPayloadSize()
@@ -401,7 +361,6 @@ class ACMGenericCodec {
   //   false otherwise.
   //
   bool HasInternalFEC() const {
-    ReadLockScoped rl(codec_wrapper_lock_);
     return has_internal_fec_;
   }
 
@@ -438,52 +397,38 @@ class ACMGenericCodec {
   // Sets if CopyRed should be enabled.
   void EnableCopyRed(bool enable, int red_payload_type);
 
-  // This method is only for testing.
-  const AudioEncoder* GetAudioEncoder() const;
+  AudioEncoder* GetAudioEncoder();
 
  private:
-  bool has_internal_fec_ GUARDED_BY(codec_wrapper_lock_);
+  bool has_internal_fec_;
 
-  bool copy_red_enabled_ GUARDED_BY(codec_wrapper_lock_);
+  bool copy_red_enabled_;
 
-  WebRtcACMCodecParams encoder_params_ GUARDED_BY(codec_wrapper_lock_);
-
-  // Used to lock wrapper internal data
-  // such as buffers and state variables.
-  RWLockWrapper& codec_wrapper_lock_;
-
-  uint32_t last_timestamp_ GUARDED_BY(codec_wrapper_lock_);
-  uint32_t unique_id_;
-
-  void ResetAudioEncoder() EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
+  void ResetAudioEncoder();
 
   OpusApplicationMode GetOpusApplication(int num_channels,
-                                         bool enable_dtx) const
-      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
+                                         bool enable_dtx) const;
 
-  rtc::scoped_ptr<AudioEncoder> audio_encoder_ GUARDED_BY(codec_wrapper_lock_);
-  rtc::scoped_ptr<AudioEncoder> cng_encoder_ GUARDED_BY(codec_wrapper_lock_);
-  rtc::scoped_ptr<AudioEncoder> red_encoder_ GUARDED_BY(codec_wrapper_lock_);
-  AudioEncoder* encoder_ GUARDED_BY(codec_wrapper_lock_);
-  AudioDecoderProxy decoder_proxy_ GUARDED_BY(codec_wrapper_lock_);
-  WebRtcACMCodecParams acm_codec_params_ GUARDED_BY(codec_wrapper_lock_);
-  int bitrate_bps_ GUARDED_BY(codec_wrapper_lock_);
-  bool fec_enabled_ GUARDED_BY(codec_wrapper_lock_);
-  int loss_rate_ GUARDED_BY(codec_wrapper_lock_);
-  int max_playback_rate_hz_ GUARDED_BY(codec_wrapper_lock_);
-  int max_payload_size_bytes_ GUARDED_BY(codec_wrapper_lock_);
-  int max_rate_bps_ GUARDED_BY(codec_wrapper_lock_);
-  bool opus_dtx_enabled_ GUARDED_BY(codec_wrapper_lock_);
-  bool is_opus_ GUARDED_BY(codec_wrapper_lock_);
-  bool is_isac_ GUARDED_BY(codec_wrapper_lock_);
-  bool first_frame_ GUARDED_BY(codec_wrapper_lock_);
-  uint32_t rtp_timestamp_ GUARDED_BY(codec_wrapper_lock_);
-  uint32_t last_rtp_timestamp_ GUARDED_BY(codec_wrapper_lock_);
+  rtc::scoped_ptr<AudioEncoder> audio_encoder_;
+  rtc::scoped_ptr<AudioEncoder> cng_encoder_;
+  rtc::scoped_ptr<AudioEncoder> red_encoder_;
+  AudioEncoder* encoder_;
+  AudioDecoderProxy decoder_proxy_;
+  WebRtcACMCodecParams acm_codec_params_;
+  int bitrate_bps_;
+  bool fec_enabled_;
+  int loss_rate_;
+  int max_playback_rate_hz_;
+  int max_payload_size_bytes_;
+  int max_rate_bps_;
+  bool opus_dtx_enabled_;
+  bool is_opus_;
+  bool is_isac_;
   // Map from payload type to CNG sample rate (Hz).
-  std::map<int, int> cng_pt_ GUARDED_BY(codec_wrapper_lock_);
-  int red_payload_type_ GUARDED_BY(codec_wrapper_lock_);
-  OpusApplicationMode opus_application_ GUARDED_BY(codec_wrapper_lock_);
-  bool opus_application_set_ GUARDED_BY(codec_wrapper_lock_);
+  std::map<int, int> cng_pt_;
+  int red_payload_type_;
+  OpusApplicationMode opus_application_;
+  bool opus_application_set_;
 };
 
 }  // namespace acm2
