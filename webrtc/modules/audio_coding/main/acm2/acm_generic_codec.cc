@@ -234,8 +234,8 @@ void ACMGenericCodec::Encode(uint32_t input_timestamp,
   first_frame_ = false;
   CHECK_EQ(audio_channel, encoder_->NumChannels());
 
-  *encoded_info = encoder_->Encode(rtp_timestamp_, audio, length_per_channel,
-                                   2 * MAX_PAYLOAD_SIZE_BYTE, bitstream);
+  encoder_->Encode(rtp_timestamp_, audio, length_per_channel,
+                   2 * MAX_PAYLOAD_SIZE_BYTE, bitstream, encoded_info);
   *bitstream_len_byte = static_cast<int16_t>(encoded_info->encoded_bytes);
 }
 

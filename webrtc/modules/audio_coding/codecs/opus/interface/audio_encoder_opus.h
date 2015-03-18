@@ -58,10 +58,11 @@ class AudioEncoderOpus final : public AudioEncoder {
   bool dtx_enabled() const { return dtx_enabled_; }
 
  protected:
-  EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                             const int16_t* audio,
-                             size_t max_encoded_bytes,
-                             uint8_t* encoded) override;
+  void EncodeInternal(uint32_t rtp_timestamp,
+                      const int16_t* audio,
+                      size_t max_encoded_bytes,
+                      uint8_t* encoded,
+                      EncodedInfo* info) override;
 
  private:
   const int num_10ms_frames_per_packet_;

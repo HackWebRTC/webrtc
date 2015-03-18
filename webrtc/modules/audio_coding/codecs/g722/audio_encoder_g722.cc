@@ -77,11 +77,11 @@ int AudioEncoderG722::Max10MsFramesInAPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
-AudioEncoder::EncodedInfo AudioEncoderG722::EncodeInternal(
-    uint32_t rtp_timestamp,
-    const int16_t* audio,
-    size_t max_encoded_bytes,
-    uint8_t* encoded) {
+void AudioEncoderG722::EncodeInternal(uint32_t rtp_timestamp,
+                                      const int16_t* audio,
+                                      size_t max_encoded_bytes,
+                                      uint8_t* encoded,
+                                      EncodedInfo* info) {
   CHECK_GE(max_encoded_bytes, MaxEncodedBytes());
 
   if (num_10ms_frames_buffered_ == 0)
@@ -95,7 +95,8 @@ AudioEncoder::EncodedInfo AudioEncoderG722::EncodeInternal(
 
   // If we don't yet have enough samples for a packet, we're done for now.
   if (++num_10ms_frames_buffered_ < num_10ms_frames_per_packet_) {
-    return kZeroEncodedBytes;
+    info->encoded_bytes = 0;
+    return;
   }
 
   // Encode each channel separately.
@@ -123,11 +124,9 @@ AudioEncoder::EncodedInfo AudioEncoderG722::EncodeInternal(
       encoded[i * num_channels_ + j] =
           interleave_buffer_[2 * j] << 4 | interleave_buffer_[2 * j + 1];
   }
-  EncodedInfo info;
-  info.encoded_bytes = samples_per_channel / 2 * num_channels_;
-  info.encoded_timestamp = first_timestamp_in_buffer_;
-  info.payload_type = payload_type_;
-  return info;
+  info->encoded_bytes = samples_per_channel / 2 * num_channels_;
+  info->encoded_timestamp = first_timestamp_in_buffer_;
+  info->payload_type = payload_type_;
 }
 
 int AudioEncoderG722::SamplesPerChannel() const {

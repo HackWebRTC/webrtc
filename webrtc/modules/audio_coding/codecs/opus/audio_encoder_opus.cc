@@ -183,18 +183,19 @@ void AudioEncoderOpus::SetProjectedPacketLossRate(double fraction) {
   }
 }
 
-AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeInternal(
-    uint32_t rtp_timestamp,
-    const int16_t* audio,
-    size_t max_encoded_bytes,
-    uint8_t* encoded) {
+void AudioEncoderOpus::EncodeInternal(uint32_t rtp_timestamp,
+                                      const int16_t* audio,
+                                      size_t max_encoded_bytes,
+                                      uint8_t* encoded,
+                                      EncodedInfo* info) {
   if (input_buffer_.empty())
     first_timestamp_in_buffer_ = rtp_timestamp;
   input_buffer_.insert(input_buffer_.end(), audio,
                        audio + samples_per_10ms_frame_);
   if (input_buffer_.size() < (static_cast<size_t>(num_10ms_frames_per_packet_) *
                               samples_per_10ms_frame_)) {
-    return kZeroEncodedBytes;
+    info->encoded_bytes = 0;
+    return;
   }
   CHECK_EQ(input_buffer_.size(),
            static_cast<size_t>(num_10ms_frames_per_packet_) *
@@ -206,13 +207,12 @@ AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeInternal(
       ClampInt16(max_encoded_bytes), encoded);
   CHECK_GE(r, 0);  // Fails only if fed invalid data.
   input_buffer_.clear();
-  EncodedInfo info;
-  info.encoded_bytes = r;
-  info.encoded_timestamp = first_timestamp_in_buffer_;
-  info.payload_type = payload_type_;
-  info.send_even_if_empty = true;  // Allows Opus to send empty packets.
-  info.speech = r > 0;
-  return info;
+  info->encoded_bytes = r;
+  info->encoded_timestamp = first_timestamp_in_buffer_;
+  info->payload_type = payload_type_;
+  // Allows Opus to send empty packets.
+  info->send_even_if_empty = true;
+  info->speech = r > 0;
 }
 
 }  // namespace webrtc

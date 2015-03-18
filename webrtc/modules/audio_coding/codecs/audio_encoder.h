@@ -54,21 +54,20 @@ class AudioEncoder {
     std::vector<EncodedInfoLeaf> redundant;
   };
 
-  static const EncodedInfo kZeroEncodedBytes;
-
   virtual ~AudioEncoder() {}
 
   // Accepts one 10 ms block of input audio (i.e., sample_rate_hz() / 100 *
   // num_channels() samples). Multi-channel audio must be sample-interleaved.
-  // The encoder produces zero or more bytes of output in |encoded| and
-  // returns additional encoding information.
+  // The encoder produces zero or more bytes of output in |encoded|,
+  // and provides additional encoding information in |info|.
   // The caller is responsible for making sure that |max_encoded_bytes| is
   // not smaller than the number of bytes actually produced by the encoder.
-  EncodedInfo Encode(uint32_t rtp_timestamp,
-                     const int16_t* audio,
-                     size_t num_samples_per_channel,
-                     size_t max_encoded_bytes,
-                     uint8_t* encoded);
+  void Encode(uint32_t rtp_timestamp,
+              const int16_t* audio,
+              size_t num_samples_per_channel,
+              size_t max_encoded_bytes,
+              uint8_t* encoded,
+              EncodedInfo* info);
 
   // Return the input sample rate in Hz and the number of input channels.
   // These are constants set at instantiation time.
@@ -108,10 +107,11 @@ class AudioEncoder {
   virtual void SetProjectedPacketLossRate(double fraction) {}
 
  protected:
-  virtual EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                                     const int16_t* audio,
-                                     size_t max_encoded_bytes,
-                                     uint8_t* encoded) = 0;
+  virtual void EncodeInternal(uint32_t rtp_timestamp,
+                              const int16_t* audio,
+                              size_t max_encoded_bytes,
+                              uint8_t* encoded,
+                              EncodedInfo* info) = 0;
 };
 
 }  // namespace webrtc

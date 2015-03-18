@@ -60,8 +60,9 @@ class AudioEncoderCopyRedTest : public ::testing::Test {
 
   void Encode() {
     ASSERT_TRUE(red_.get() != NULL);
-    encoded_info_ = red_->Encode(timestamp_, audio_, num_audio_samples_10ms,
-                                 encoded_.size(), &encoded_[0]);
+    encoded_info_ = AudioEncoder::EncodedInfo();
+    red_->Encode(timestamp_, audio_, num_audio_samples_10ms,
+                 encoded_.size(), &encoded_[0], &encoded_info_);
     timestamp_ += num_audio_samples_10ms;
   }
 
@@ -82,16 +83,18 @@ class MockEncodeHelper {
     memset(&info_, 0, sizeof(info_));
   }
 
-  AudioEncoder::EncodedInfo Encode(uint32_t timestamp,
-                                   const int16_t* audio,
-                                   size_t max_encoded_bytes,
-                                   uint8_t* encoded) {
+  void Encode(uint32_t timestamp,
+              const int16_t* audio,
+              size_t max_encoded_bytes,
+              uint8_t* encoded,
+              AudioEncoder::EncodedInfo* info) {
     if (write_payload_) {
       CHECK(encoded);
       CHECK_LE(info_.encoded_bytes, max_encoded_bytes);
       memcpy(encoded, payload_, info_.encoded_bytes);
     }
-    return info_;
+    CHECK(info);
+    *info = info_;
   }
 
   AudioEncoder::EncodedInfo info_;
@@ -141,8 +144,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckImmediateEncode) {
   InSequence s;
   MockFunction<void(int check_point_id)> check;
   for (int i = 1; i <= 6; ++i) {
-    EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _))
-        .WillRepeatedly(Return(AudioEncoder::kZeroEncodedBytes));
+    EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _));
     EXPECT_CALL(check, Call(i));
     Encode();
     check.Call(i);
@@ -151,13 +153,13 @@ TEST_F(AudioEncoderCopyRedTest, CheckImmediateEncode) {
 
 // Checks that no output is produced if the underlying codec doesn't emit any
 // new data, even if the RED codec is loaded with a secondary encoding.
-TEST_F(AudioEncoderCopyRedTest, CheckNoOutput) {
+TEST_F(AudioEncoderCopyRedTest, CheckNoOuput) {
   // Start with one Encode() call that will produce output.
   static const size_t kEncodedSize = 17;
-  AudioEncoder::EncodedInfo nonZeroEncodedBytes;
-  nonZeroEncodedBytes.encoded_bytes = kEncodedSize;
-  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _))
-      .WillOnce(Return(nonZeroEncodedBytes));
+  AudioEncoder::EncodedInfo info;
+  info.encoded_bytes = kEncodedSize;
+  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
+      .WillOnce(SetArgPointee<4>(info));
   Encode();
   // First call is a special case, since it does not include a secondary
   // payload.
@@ -165,14 +167,16 @@ TEST_F(AudioEncoderCopyRedTest, CheckNoOutput) {
   EXPECT_EQ(kEncodedSize, encoded_info_.encoded_bytes);
 
   // Next call to the speech encoder will not produce any output.
-  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _))
-      .WillOnce(Return(AudioEncoder::kZeroEncodedBytes));
+  info.encoded_bytes = 0;
+  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
+      .WillOnce(SetArgPointee<4>(info));
   Encode();
   EXPECT_EQ(0u, encoded_info_.encoded_bytes);
 
   // Final call to the speech encoder will produce output.
-  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _))
-      .WillOnce(Return(nonZeroEncodedBytes));
+  info.encoded_bytes = kEncodedSize;
+  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
+      .WillOnce(SetArgPointee<4>(info));
   Encode();
   EXPECT_EQ(2 * kEncodedSize, encoded_info_.encoded_bytes);
   ASSERT_EQ(2u, encoded_info_.redundant.size());
@@ -188,8 +192,8 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes) {
   for (int encode_size = 1; encode_size <= kNumPackets; ++encode_size) {
     AudioEncoder::EncodedInfo info;
     info.encoded_bytes = encode_size;
-    EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _))
-        .WillOnce(Return(info));
+    EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
+        .WillOnce(SetArgPointee<4>(info));
   }
 
   // First call is a special case, since it does not include a secondary
@@ -214,7 +218,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckTimestamps) {
   helper.info_.encoded_bytes = 17;
   helper.info_.encoded_timestamp = timestamp_;
   uint32_t primary_timestamp = timestamp_;
-  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _))
+  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
       .WillRepeatedly(Invoke(&helper, &MockEncodeHelper::Encode));
 
   // First call is a special case, since it does not include a secondary
@@ -245,7 +249,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloads) {
     payload[i] = i;
   }
   helper.payload_ = payload;
-  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _))
+  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
       .WillRepeatedly(Invoke(&helper, &MockEncodeHelper::Encode));
 
   // First call is a special case, since it does not include a secondary
@@ -282,7 +286,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadType) {
   helper.info_.encoded_bytes = 17;
   const int primary_payload_type = red_payload_type_ + 1;
   helper.info_.payload_type = primary_payload_type;
-  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _))
+  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _, _))
       .WillRepeatedly(Invoke(&helper, &MockEncodeHelper::Encode));
 
   // First call is a special case, since it does not include a secondary

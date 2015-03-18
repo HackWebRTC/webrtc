@@ -29,11 +29,12 @@ class MockAudioEncoder : public AudioEncoder {
   MOCK_METHOD1(SetTargetBitrate, void(int));
   MOCK_METHOD1(SetProjectedPacketLossRate, void(double));
   // Note, we explicitly chose not to create a mock for the Encode method.
-  MOCK_METHOD4(EncodeInternal,
-               EncodedInfo(uint32_t timestamp,
-                           const int16_t* audio,
-                           size_t max_encoded_bytes,
-                           uint8_t* encoded));
+  MOCK_METHOD5(EncodeInternal,
+               void(uint32_t timestamp,
+                    const int16_t* audio,
+                    size_t max_encoded_bytes,
+                    uint8_t* encoded,
+                    EncodedInfo* info));
 };
 
 }  // namespace webrtc

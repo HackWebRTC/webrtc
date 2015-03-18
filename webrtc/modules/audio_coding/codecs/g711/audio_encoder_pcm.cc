@@ -66,11 +66,11 @@ int AudioEncoderPcm::Max10MsFramesInAPacket() const {
   return num_10ms_frames_per_packet_;
 }
 
-AudioEncoder::EncodedInfo AudioEncoderPcm::EncodeInternal(
-    uint32_t rtp_timestamp,
-    const int16_t* audio,
-    size_t max_encoded_bytes,
-    uint8_t* encoded) {
+void AudioEncoderPcm::EncodeInternal(uint32_t rtp_timestamp,
+                                     const int16_t* audio,
+                                     size_t max_encoded_bytes,
+                                     uint8_t* encoded,
+                                     EncodedInfo* info) {
   const int num_samples = SampleRateHz() / 100 * NumChannels();
   if (speech_buffer_.empty()) {
     first_timestamp_in_buffer_ = rtp_timestamp;
@@ -79,18 +79,17 @@ AudioEncoder::EncodedInfo AudioEncoderPcm::EncodeInternal(
     speech_buffer_.push_back(audio[i]);
   }
   if (speech_buffer_.size() < full_frame_samples_) {
-    return kZeroEncodedBytes;
+    info->encoded_bytes = 0;
+    return;
   }
   CHECK_EQ(speech_buffer_.size(), full_frame_samples_);
   CHECK_GE(max_encoded_bytes, full_frame_samples_);
   int16_t ret = EncodeCall(&speech_buffer_[0], full_frame_samples_, encoded);
   CHECK_GE(ret, 0);
   speech_buffer_.clear();
-  EncodedInfo info;
-  info.encoded_timestamp = first_timestamp_in_buffer_;
-  info.payload_type = payload_type_;
-  info.encoded_bytes = static_cast<size_t>(ret);
-  return info;
+  info->encoded_timestamp = first_timestamp_in_buffer_;
+  info->payload_type = payload_type_;
+  info->encoded_bytes = static_cast<size_t>(ret);
 }
 
 int16_t AudioEncoderPcmA::EncodeCall(const int16_t* audio,

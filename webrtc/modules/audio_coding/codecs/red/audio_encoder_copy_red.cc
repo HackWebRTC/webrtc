@@ -60,48 +60,48 @@ void AudioEncoderCopyRed::SetProjectedPacketLossRate(double fraction) {
   speech_encoder_->SetProjectedPacketLossRate(fraction);
 }
 
-AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeInternal(
-    uint32_t rtp_timestamp,
-    const int16_t* audio,
-    size_t max_encoded_bytes,
-    uint8_t* encoded) {
-  EncodedInfo info = speech_encoder_->Encode(
-      rtp_timestamp, audio, static_cast<size_t>(SampleRateHz() / 100),
-      max_encoded_bytes, encoded);
+void AudioEncoderCopyRed::EncodeInternal(uint32_t rtp_timestamp,
+                                         const int16_t* audio,
+                                         size_t max_encoded_bytes,
+                                         uint8_t* encoded,
+                                         EncodedInfo* info) {
+  speech_encoder_->Encode(rtp_timestamp, audio,
+                          static_cast<size_t>(SampleRateHz() / 100),
+                          max_encoded_bytes, encoded, info);
   CHECK_GE(max_encoded_bytes,
-           info.encoded_bytes + secondary_info_.encoded_bytes);
-  CHECK(info.redundant.empty()) << "Cannot use nested redundant encoders.";
+           info->encoded_bytes + secondary_info_.encoded_bytes);
+  CHECK(info->redundant.empty()) << "Cannot use nested redundant encoders.";
 
-  if (info.encoded_bytes > 0) {
+  if (info->encoded_bytes > 0) {
     // |info| will be implicitly cast to an EncodedInfoLeaf struct, effectively
     // discarding the (empty) vector of redundant information. This is
     // intentional.
-    info.redundant.push_back(info);
-    DCHECK_EQ(info.redundant.size(), 1u);
+    info->redundant.push_back(*info);
+    DCHECK_EQ(info->redundant.size(), 1u);
     if (secondary_info_.encoded_bytes > 0) {
-      memcpy(&encoded[info.encoded_bytes], secondary_encoded_.get(),
+      memcpy(&encoded[info->encoded_bytes], secondary_encoded_.get(),
              secondary_info_.encoded_bytes);
-      info.redundant.push_back(secondary_info_);
-      DCHECK_EQ(info.redundant.size(), 2u);
+      info->redundant.push_back(secondary_info_);
+      DCHECK_EQ(info->redundant.size(), 2u);
     }
     // Save primary to secondary.
-    if (secondary_allocated_ < info.encoded_bytes) {
-      secondary_encoded_.reset(new uint8_t[info.encoded_bytes]);
-      secondary_allocated_ = info.encoded_bytes;
+    if (secondary_allocated_ < info->encoded_bytes) {
+      secondary_encoded_.reset(new uint8_t[info->encoded_bytes]);
+      secondary_allocated_ = info->encoded_bytes;
     }
     CHECK(secondary_encoded_);
-    memcpy(secondary_encoded_.get(), encoded, info.encoded_bytes);
-    secondary_info_ = info;
-    DCHECK_EQ(info.speech, info.redundant[0].speech);
+    memcpy(secondary_encoded_.get(), encoded, info->encoded_bytes);
+    secondary_info_ = *info;
+    DCHECK_EQ(info->speech, info->redundant[0].speech);
   }
   // Update main EncodedInfo.
-  info.payload_type = red_payload_type_;
-  info.encoded_bytes = 0;
-  for (std::vector<EncodedInfoLeaf>::const_iterator it = info.redundant.begin();
-       it != info.redundant.end(); ++it) {
-    info.encoded_bytes += it->encoded_bytes;
+  info->payload_type = red_payload_type_;
+  info->encoded_bytes = 0;
+  for (std::vector<EncodedInfoLeaf>::const_iterator it =
+           info->redundant.begin();
+       it != info->redundant.end(); ++it) {
+    info->encoded_bytes += it->encoded_bytes;
   }
-  return info;
 }
 
 }  // namespace webrtc

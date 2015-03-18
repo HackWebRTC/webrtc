@@ -184,11 +184,11 @@ int AudioEncoderDecoderIsacT<T>::Max10MsFramesInAPacket() const {
 }
 
 template <typename T>
-AudioEncoder::EncodedInfo AudioEncoderDecoderIsacT<T>::EncodeInternal(
-    uint32_t rtp_timestamp,
-    const int16_t* audio,
-    size_t max_encoded_bytes,
-    uint8_t* encoded) {
+void AudioEncoderDecoderIsacT<T>::EncodeInternal(uint32_t rtp_timestamp,
+                                                 const int16_t* audio,
+                                                 size_t max_encoded_bytes,
+                                                 uint8_t* encoded,
+                                                 EncodedInfo* info) {
   CriticalSectionScoped cs_lock(lock_.get());
   if (!packet_in_progress_) {
     // Starting a new packet; remember the timestamp for later.
@@ -206,17 +206,15 @@ AudioEncoder::EncodedInfo AudioEncoderDecoderIsacT<T>::EncodeInternal(
   // buffer. All we can do is check for an overrun after the fact.
   CHECK(static_cast<size_t>(r) <= max_encoded_bytes);
 
+  info->encoded_bytes = r;
   if (r == 0)
-    return kZeroEncodedBytes;
+    return;
 
   // Got enough input to produce a packet. Return the saved timestamp from
   // the first chunk of input that went into the packet.
   packet_in_progress_ = false;
-  EncodedInfo info;
-  info.encoded_bytes = r;
-  info.encoded_timestamp = packet_timestamp_;
-  info.payload_type = payload_type_;
-  return info;
+  info->encoded_timestamp = packet_timestamp_;
+  info->payload_type = payload_type_;
 }
 
 template <typename T>
