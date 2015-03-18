@@ -964,6 +964,66 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
   RunBaseTest(&test);
 }
 
+TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
+  class StartBitrateObserver : public test::FakeEncoder {
+   public:
+    StartBitrateObserver()
+        : FakeEncoder(Clock::GetRealTimeClock()), start_bitrate_kbps_(0) {}
+    int32_t InitEncode(const VideoCodec* config,
+                       int32_t number_of_cores,
+                       size_t max_payload_size) override {
+      rtc::CritScope lock(&crit_);
+      start_bitrate_kbps_ = config->startBitrate;
+      return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
+    }
+
+    int32_t SetRates(uint32_t new_target_bitrate, uint32_t framerate) override {
+      rtc::CritScope lock(&crit_);
+      start_bitrate_kbps_ = new_target_bitrate;
+      return FakeEncoder::SetRates(new_target_bitrate, framerate);
+    }
+
+    int GetStartBitrateKbps() const {
+      rtc::CritScope lock(&crit_);
+      return start_bitrate_kbps_;
+    }
+
+   private:
+    mutable rtc::CriticalSection crit_;
+    int start_bitrate_kbps_ GUARDED_BY(crit_);
+  };
+
+  test::NullTransport transport;
+  CreateSenderCall(Call::Config(&transport));
+
+  CreateSendConfig(1);
+
+  Call::Config::BitrateConfig bitrate_config;
+  bitrate_config.start_bitrate_bps =
+      2 * encoder_config_.streams[0].max_bitrate_bps;
+  sender_call_->SetBitrateConfig(bitrate_config);
+
+  StartBitrateObserver encoder;
+  send_config_.encoder_settings.encoder = &encoder;
+
+  CreateStreams();
+
+  EXPECT_EQ(encoder_config_.streams[0].max_bitrate_bps / 1000,
+            encoder.GetStartBitrateKbps());
+
+  encoder_config_.streams[0].max_bitrate_bps =
+      2 * bitrate_config.start_bitrate_bps;
+  send_stream_->ReconfigureVideoEncoder(encoder_config_);
+
+  // New bitrate should be reconfigured above the previous max. As there's no
+  // network connection this shouldn't be flaky, as no bitrate should've been
+  // reported in between.
+  EXPECT_EQ(bitrate_config.start_bitrate_bps / 1000,
+            encoder.GetStartBitrateKbps());
+
+  DestroyStreams();
+}
+
 TEST_F(VideoSendStreamTest, CapturesTextureAndI420VideoFrames) {
   class FrameObserver : public I420FrameCallback {
    public:

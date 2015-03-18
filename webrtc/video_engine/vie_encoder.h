@@ -123,6 +123,7 @@ class ViEEncoder
 
   int64_t PacerQueuingDelayMs() const;
 
+  uint32_t LastObservedBitrateBps() const;
   int CodecTargetBitrate(uint32_t* bitrate) const;
   // Loss protection.
   int32_t UpdateProtectionMethod(bool nack, bool fec);
@@ -221,6 +222,7 @@ class ViEEncoder
   int64_t time_of_last_incoming_frame_ms_ GUARDED_BY(data_cs_);
   bool send_padding_ GUARDED_BY(data_cs_);
   int min_transmit_bitrate_kbps_ GUARDED_BY(data_cs_);
+  uint32_t last_observed_bitrate_bps_ GUARDED_BY(data_cs_);
   int target_delay_ms_ GUARDED_BY(data_cs_);
   bool network_is_transmitting_ GUARDED_BY(data_cs_);
   bool encoder_paused_ GUARDED_BY(data_cs_);

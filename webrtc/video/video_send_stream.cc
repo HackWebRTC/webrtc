@@ -405,9 +405,8 @@ bool VideoSendStream::ReconfigureVideoEncoder(
           static_cast<unsigned int>(bitrate_config_.max_bitrate_bps / 1000)) {
     video_codec.maxBitrate = bitrate_config_.max_bitrate_bps / 1000;
   }
-  unsigned int start_bitrate_bps;
-  if (codec_->GetCodecTargetBitrate(channel_, &start_bitrate_bps) != 0 ||
-      use_config_bitrate_) {
+  uint32_t start_bitrate_bps = codec_->GetLastObservedBitrateBps(channel_);
+  if (start_bitrate_bps == 0 || use_config_bitrate_) {
     start_bitrate_bps = bitrate_config_.start_bitrate_bps;
   }
   video_codec.startBitrate =
@@ -417,11 +416,6 @@ bool VideoSendStream::ReconfigureVideoEncoder(
     video_codec.minBitrate = kViEMinCodecBitrate;
   if (video_codec.maxBitrate < kViEMinCodecBitrate)
     video_codec.maxBitrate = kViEMinCodecBitrate;
-  if (video_codec.startBitrate < video_codec.minBitrate)
-    video_codec.startBitrate = video_codec.minBitrate;
-  if (video_codec.startBitrate > video_codec.maxBitrate)
-    video_codec.startBitrate = video_codec.maxBitrate;
-
   if (video_codec.startBitrate < video_codec.minBitrate)
     video_codec.startBitrate = video_codec.minBitrate;
   if (video_codec.startBitrate > video_codec.maxBitrate)

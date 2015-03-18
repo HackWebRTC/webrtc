@@ -148,6 +148,7 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
       time_of_last_incoming_frame_ms_(0),
       send_padding_(false),
       min_transmit_bitrate_kbps_(0),
+      last_observed_bitrate_bps_(0),
       target_delay_ms_(0),
       network_is_transmitting_(true),
       encoder_paused_(false),
@@ -690,6 +691,11 @@ int64_t ViEEncoder::PacerQueuingDelayMs() const {
   return paced_sender_->QueueInMs();
 }
 
+uint32_t ViEEncoder::LastObservedBitrateBps() const {
+  CriticalSectionScoped cs(data_cs_.get());
+  return last_observed_bitrate_bps_;
+}
+
 int ViEEncoder::CodecTargetBitrate(uint32_t* bitrate) const {
   if (vcm_.Bitrate(bitrate) != 0)
     return -1;
@@ -924,6 +930,7 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
 
   {
     CriticalSectionScoped cs(data_cs_.get());
+    last_observed_bitrate_bps_ = bitrate_bps;
     if (video_suspended_ == video_is_suspended)
       return;
     video_suspended_ = video_is_suspended;

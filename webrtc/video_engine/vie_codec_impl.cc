@@ -402,6 +402,12 @@ int ViECodecImpl::GetReceiveSideDelay(const int video_channel,
   return 0;
 }
 
+uint32_t ViECodecImpl::GetLastObservedBitrateBps(int video_channel) const {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  assert(vie_encoder != nullptr);
+  return vie_encoder->LastObservedBitrateBps();
+}
 
 int ViECodecImpl::GetCodecTargetBitrate(const int video_channel,
                                         unsigned int* bitrate) const {
