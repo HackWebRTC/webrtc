@@ -52,6 +52,12 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
       }
     }
 
+    // TODO(guoweis): Remove this once chrome code base is updated.
+    @Override
+    public boolean canApplyRotation() {
+      return false;
+    }
+
     public int WaitForNextFrameToRender() throws InterruptedException {
       synchronized (frameLock) {
         frameLock.wait();

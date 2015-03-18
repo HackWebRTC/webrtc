@@ -138,6 +138,12 @@ public class PeerConnectionTest {
       --expectedFramesDelivered;
     }
 
+    // TODO(guoweis): Remove this once chrome code base is updated.
+    @Override
+    public boolean canApplyRotation() {
+      return false;
+    }
+
     public synchronized void expectSignalingChange(SignalingState newState) {
       expectedSignalingChanges.add(newState);
     }
@@ -437,6 +443,12 @@ public class PeerConnectionTest {
     @Override
     public void renderFrame(VideoRenderer.I420Frame frame) {
       ++numFramesDelivered;
+    }
+
+    // TODO(guoweis): Remove this once chrome code base is updated.
+    @Override
+    public boolean canApplyRotation() {
+      return false;
     }
   }
 
