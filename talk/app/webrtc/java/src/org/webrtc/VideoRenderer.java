@@ -47,13 +47,18 @@ public class VideoRenderer {
     public Object textureObject;
     public int textureId;
 
+    // rotationDegree is the degree that the frame must be rotated clockwisely
+    // to be rendered correctly.
+    public int rotationDegree;
+
     /**
      * Construct a frame of the given dimensions with the specified planar
      * data.  If |yuvPlanes| is null, new planes of the appropriate sizes are
      * allocated.
      */
     public I420Frame(
-        int width, int height, int[] yuvStrides, ByteBuffer[] yuvPlanes) {
+        int width, int height, int rotationDegree,
+        int[] yuvStrides, ByteBuffer[] yuvPlanes) {
       this.width = width;
       this.height = height;
       this.yuvStrides = yuvStrides;
@@ -65,13 +70,15 @@ public class VideoRenderer {
       }
       this.yuvPlanes = yuvPlanes;
       this.yuvFrame = true;
+      this.rotationDegree = rotationDegree;
     }
 
     /**
      * Construct a texture frame of the given dimensions with data in SurfaceTexture
      */
     public I420Frame(
-        int width, int height, Object textureObject, int textureId) {
+        int width, int height, int rotationDegree,
+        Object textureObject, int textureId) {
       this.width = width;
       this.height = height;
       this.yuvStrides = null;
@@ -79,6 +86,7 @@ public class VideoRenderer {
       this.textureObject = textureObject;
       this.textureId = textureId;
       this.yuvFrame = false;
+      this.rotationDegree = rotationDegree;
     }
 
     /**
@@ -98,10 +106,12 @@ public class VideoRenderer {
             source.yuvStrides[1], yuvPlanes[1], yuvStrides[1]);
         nativeCopyPlane(source.yuvPlanes[2], width / 2, height / 2,
             source.yuvStrides[2], yuvPlanes[2], yuvStrides[2]);
+        rotationDegree = source.rotationDegree;
         return this;
       } else if (!source.yuvFrame && !yuvFrame) {
         textureObject = source.textureObject;
         textureId = source.textureId;
+        rotationDegree = source.rotationDegree;
         return this;
       } else {
         throw new RuntimeException("Mismatched frame types!  Source: " +
@@ -109,7 +119,7 @@ public class VideoRenderer {
       }
     }
 
-    public I420Frame copyFrom(byte[] yuvData) {
+    public I420Frame copyFrom(byte[] yuvData, int rotationDegree) {
       if (yuvData.length < width * height * 3 / 2) {
         throw new RuntimeException("Wrong arrays size: " + yuvData.length);
       }
@@ -128,6 +138,7 @@ public class VideoRenderer {
         yuvPlanes[i].position(0);
         yuvPlanes[i].limit(yuvPlanes[i].capacity());
       }
+      this.rotationDegree = rotationDegree;
       return this;
     }
 
@@ -147,6 +158,8 @@ public class VideoRenderer {
     // |frame| might have pending rotation and implementation of Callbacks
     // should handle that by applying rotation during rendering.
     public void renderFrame(I420Frame frame);
+    // TODO(guoweis): Remove this once chrome code base is updated.
+    public boolean canApplyRotation();
   }
 
   // |this| either wraps a native (GUI) renderer or a client-supplied Callbacks

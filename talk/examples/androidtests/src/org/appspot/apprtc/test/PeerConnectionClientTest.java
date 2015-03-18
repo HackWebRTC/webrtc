@@ -101,6 +101,12 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
       doneRendering = new CountDownLatch(expectedFrames);
     }
 
+    // TODO(guoweis): Remove this once chrome code base is updated.
+    @Override
+    public boolean canApplyRotation() {
+      return false;
+    }
+
     @Override
     public synchronized void renderFrame(VideoRenderer.I420Frame frame) {
       if (!renderFrameCalled) {
