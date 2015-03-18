@@ -108,16 +108,15 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
       EXPECT_EQ(webrtc::kVideoRotation_0, frame.GetRotation());
     else
       EXPECT_EQ(frame_rotation, frame.GetRotation());
-    // The size of the new frame should have been cropped to multiple of 4.
     // If |apply_rotation| and the frame rotation is 90 or 270, width and
     // height are flipped.
     if (apply_rotation && (frame_rotation == webrtc::kVideoRotation_90
         || frame_rotation == webrtc::kVideoRotation_270)) {
-      EXPECT_EQ(static_cast<size_t>(cropped_width & ~3), frame.GetHeight());
-      EXPECT_EQ(static_cast<size_t>(cropped_height & ~3), frame.GetWidth() );
+      EXPECT_EQ(static_cast<size_t>(cropped_width), frame.GetHeight());
+      EXPECT_EQ(static_cast<size_t>(cropped_height), frame.GetWidth());
     } else {
-      EXPECT_EQ(static_cast<size_t>(cropped_width & ~3), frame.GetWidth());
-      EXPECT_EQ(static_cast<size_t>(cropped_height & ~3), frame.GetHeight());
+      EXPECT_EQ(static_cast<size_t>(cropped_width), frame.GetWidth());
+      EXPECT_EQ(static_cast<size_t>(cropped_height), frame.GetHeight());
     }
   }
 };

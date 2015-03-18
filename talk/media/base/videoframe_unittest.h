@@ -987,7 +987,7 @@ class VideoFrameTest : public testing::Test {
                         y, 1, u, 1, v, 1, 0));
   }
 
-  // Test 5 pixel edge case image I420 buffer rounds down to 4.
+  // Test 5 pixel edge case image.
   void ConstructI4205Pixel() {
     T frame;
     uint8 pixels5x5[5 * 5 + ((5 + 1) / 2 * (5 + 1) / 2) *  2];
@@ -997,11 +997,11 @@ class VideoFrameTest : public testing::Test {
                              sizeof(pixels5x5), 1, 1, 0, 0,
                              webrtc::kVideoRotation_0));
     }
-    EXPECT_EQ(4u, frame.GetWidth());
-    EXPECT_EQ(4u, frame.GetHeight());
-    EXPECT_EQ(4, frame.GetYPitch());
-    EXPECT_EQ(2, frame.GetUPitch());
-    EXPECT_EQ(2, frame.GetVPitch());
+    EXPECT_EQ(5u, frame.GetWidth());
+    EXPECT_EQ(5u, frame.GetHeight());
+    EXPECT_EQ(5, frame.GetYPitch());
+    EXPECT_EQ(3, frame.GetUPitch());
+    EXPECT_EQ(3, frame.GetVPitch());
   }
 
   // Test 1 pixel edge case image ARGB buffer.

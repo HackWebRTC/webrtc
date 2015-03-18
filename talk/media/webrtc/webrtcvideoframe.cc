@@ -232,12 +232,6 @@ bool WebRtcVideoFrame::Reset(uint32 format,
   // Translate aliases to standard enums (e.g., IYUV -> I420).
   format = CanonicalFourCC(format);
 
-  // Round display width and height down to multiple of 4, to avoid webrtc
-  // size calculation error on odd sizes.
-  // TODO(Ronghua): Remove this once the webrtc allocator is fixed.
-  dw = (dw > 4) ? (dw & ~3) : dw;
-  dh = (dh > 4) ? (dh & ~3) : dh;
-
   // Set up a new buffer.
   // TODO(fbarchard): Support lazy allocation.
   int new_width = dw;
