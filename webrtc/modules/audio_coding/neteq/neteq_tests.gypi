@@ -189,7 +189,7 @@
     },
 
     {
-      'target_name': 'neteq_opus_fec_quality_test',
+      'target_name': 'neteq_opus_quality_test',
       'type': 'executable',
       'dependencies': [
         'neteq',
@@ -200,7 +200,7 @@
         '<(webrtc_root)/test/test.gyp:test_support_main',
       ],
       'sources': [
-        'test/neteq_opus_fec_quality_test.cc',
+        'test/neteq_opus_quality_test.cc',
       ],
     },
 
