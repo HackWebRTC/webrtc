@@ -1015,15 +1015,13 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndI420VideoFrames) {
       new webrtc::RefCountImpl<FakeNativeHandle>();
   input_frames.push_back(new I420VideoFrame(handle1, width, height, 1, 1));
   input_frames.push_back(new I420VideoFrame(handle2, width, height, 2, 2));
-  input_frames.push_back(CreateI420VideoFrame(width, height, 1));
-  input_frames.push_back(CreateI420VideoFrame(width, height, 2));
-  input_frames.push_back(new I420VideoFrame(handle3, width, height, 3, 3));
+  input_frames.push_back(CreateI420VideoFrame(width, height, 3));
+  input_frames.push_back(CreateI420VideoFrame(width, height, 4));
+  input_frames.push_back(new I420VideoFrame(handle3, width, height, 5, 5));
 
   send_stream_->Start();
   for (size_t i = 0; i < input_frames.size(); i++) {
-    // Make a copy of the input frame because the buffer will be swapped.
-    rtc::scoped_ptr<I420VideoFrame> frame(input_frames[i]->CloneFrame());
-    send_stream_->Input()->SwapFrame(frame.get());
+    send_stream_->Input()->IncomingCapturedFrame(*input_frames[i]);
     // Do not send the next frame too fast, so the frame dropper won't drop it.
     if (i < input_frames.size() - 1)
       SleepMs(1000 / encoder_config_.streams[0].max_framerate);
@@ -1053,6 +1051,7 @@ void ExpectEqualTextureFrames(const I420VideoFrame& frame1,
   EXPECT_EQ(frame1.native_handle(), frame2.native_handle());
   EXPECT_EQ(frame1.width(), frame2.width());
   EXPECT_EQ(frame1.height(), frame2.height());
+  EXPECT_EQ(frame1.render_time_ms(), frame2.render_time_ms());
 }
 
 void ExpectEqualBufferFrames(const I420VideoFrame& frame1,
@@ -1062,7 +1061,7 @@ void ExpectEqualBufferFrames(const I420VideoFrame& frame1,
   EXPECT_EQ(frame1.stride(kYPlane), frame2.stride(kYPlane));
   EXPECT_EQ(frame1.stride(kUPlane), frame2.stride(kUPlane));
   EXPECT_EQ(frame1.stride(kVPlane), frame2.stride(kVPlane));
-  EXPECT_EQ(frame1.ntp_time_ms(), frame2.ntp_time_ms());
+  EXPECT_EQ(frame1.render_time_ms(), frame2.render_time_ms());
   ASSERT_EQ(frame1.allocated_size(kYPlane), frame2.allocated_size(kYPlane));
   EXPECT_EQ(0,
             memcmp(frame1.buffer(kYPlane),
@@ -1101,7 +1100,6 @@ I420VideoFrame* CreateI420VideoFrame(int width, int height, uint8_t data) {
                      width / 2,
                      width / 2);
   frame->set_timestamp(data);
-  frame->set_ntp_time_ms(data);
   frame->set_render_time_ms(data);
   return frame;
 }

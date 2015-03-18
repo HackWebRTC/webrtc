@@ -66,10 +66,14 @@ class I420VideoFrame {
                   int stride_v,
                   VideoRotation rotation);
 
-  // Copy frame: If required size is bigger than allocated one, new buffers of
-  // adequate size will be allocated.
+  // Deep copy frame: If required size is bigger than allocated one, new
+  // buffers of adequate size will be allocated.
   // Return value: 0 on success, -1 on error.
   int CopyFrame(const I420VideoFrame& videoFrame);
+
+  // Creates a shallow copy of |videoFrame|, i.e, the this object will retain a
+  // reference to the video buffer also retained by |videoFrame|.
+  void ShallowCopy(const I420VideoFrame& videoFrame);
 
   // Make a copy of |this|. The caller owns the returned frame.
   // Return value: a new frame on success, NULL on error.

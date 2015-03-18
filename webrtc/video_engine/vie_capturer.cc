@@ -21,6 +21,7 @@
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video_engine/include/vie_image_process.h"
 #include "webrtc/video_engine/overuse_frame_detector.h"
@@ -75,6 +76,10 @@ ViECapturer::ViECapturer(int capture_id,
       capture_event_(*EventWrapper::Create()),
       deliver_event_(*EventWrapper::Create()),
       stop_(0),
+      last_captured_timestamp_(0),
+      delta_ntp_internal_ms_(
+          Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() -
+          TickTime::MillisecondTimestamp()),
       effect_filter_(NULL),
       image_proc_module_(NULL),
       image_proc_module_ref_counter_(0),
@@ -304,10 +309,6 @@ int ViECapturer::IncomingFrame(unsigned char* video_frame,
 
 int ViECapturer::IncomingFrameI420(const ViEVideoFrameI420& video_frame,
                                    unsigned long long capture_time) {  // NOLINT
-  if (!external_capture_module_) {
-    return -1;
-  }
-
   CriticalSectionScoped cs(incoming_frame_cs_.get());
   int ret = incoming_frame_.CreateFrame(video_frame.y_plane,
                                         video_frame.u_plane,
@@ -318,40 +319,60 @@ int ViECapturer::IncomingFrameI420(const ViEVideoFrameI420& video_frame,
                                         video_frame.u_pitch,
                                         video_frame.v_pitch,
                                         video_frame.rotation);
-
   if (ret < 0) {
     LOG_F(LS_ERROR) << "Could not create I420Frame.";
     return -1;
   }
+  incoming_frame_.set_ntp_time_ms(capture_time);
 
-  return external_capture_module_->IncomingI420VideoFrame(&incoming_frame_,
-                                                          capture_time);
+  OnIncomingCapturedFrame(-1, incoming_frame_);
+  return 0;
 }
 
-void ViECapturer::SwapFrame(I420VideoFrame* frame) {
-  external_capture_module_->IncomingI420VideoFrame(frame,
-                                                   frame->render_time_ms());
-  frame->set_timestamp(0);
-  frame->set_ntp_time_ms(0);
-  frame->set_render_time_ms(0);
+void ViECapturer::IncomingFrame(const I420VideoFrame& frame) {
+  OnIncomingCapturedFrame(-1, frame);
 }
 
 void ViECapturer::OnIncomingCapturedFrame(const int32_t capture_id,
-                                          I420VideoFrame& video_frame) {
+                                          const I420VideoFrame& video_frame) {
   CriticalSectionScoped cs(capture_cs_.get());
-  // Make sure we render this frame earlier since we know the render time set
-  // is slightly off since it's being set when the frame has been received from
-  // the camera, and not when the camera actually captured the frame.
-  video_frame.set_render_time_ms(video_frame.render_time_ms() - FrameDelay());
+  captured_frame_.ShallowCopy(video_frame);
 
-  overuse_detector_->FrameCaptured(video_frame.width(),
-                                   video_frame.height(),
-                                   video_frame.render_time_ms());
+  if (captured_frame_.ntp_time_ms() != 0) {
+    // If a ntp time stamp is set, this is the time stamp we will use.
+    captured_frame_.set_render_time_ms(
+        captured_frame_.ntp_time_ms() - delta_ntp_internal_ms_);
+  } else {  // ntp time stamp not set.
+    int64_t render_time = captured_frame_.render_time_ms() != 0 ?
+        captured_frame_.render_time_ms() : TickTime::MillisecondTimestamp();
+
+    // Make sure we render this frame earlier since we know the render time set
+    // is slightly off since it's being set when the frame was received
+    // from the camera, and not when the camera actually captured the frame.
+    render_time -= FrameDelay();
+    captured_frame_.set_render_time_ms(render_time);
+    captured_frame_.set_ntp_time_ms(
+        render_time + delta_ntp_internal_ms_);
+  }
+
+  if (captured_frame_.ntp_time_ms() <= last_captured_timestamp_) {
+    // We don't allow the same capture time for two frames, drop this one.
+    return;
+  }
+  last_captured_timestamp_ = captured_frame_.ntp_time_ms();
+
+  // Convert ntp time, in ms, to RTP timestamp.
+  const int kMsToRtpTimestamp = 90;
+  captured_frame_.set_timestamp(kMsToRtpTimestamp *
+      static_cast<uint32_t>(captured_frame_.ntp_time_ms()));
+
+  overuse_detector_->FrameCaptured(captured_frame_.width(),
+                                   captured_frame_.height(),
+                                   captured_frame_.render_time_ms());
 
   TRACE_EVENT_ASYNC_BEGIN1("webrtc", "Video", video_frame.render_time_ms(),
                            "render_time", video_frame.render_time_ms());
 
-  captured_frame_ = video_frame;
   capture_event_.Set();
 }
 

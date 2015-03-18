@@ -139,9 +139,10 @@ int FakeVideoSendStream::GetLastHeight() const {
   return last_frame_.height();
 }
 
-void FakeVideoSendStream::SwapFrame(webrtc::I420VideoFrame* frame) {
+void FakeVideoSendStream::IncomingCapturedFrame(
+    const webrtc::I420VideoFrame& frame) {
   ++num_swapped_frames_;
-  last_frame_.SwapFrame(frame);
+  last_frame_.ShallowCopy(frame);
 }
 
 void FakeVideoSendStream::SetStats(

@@ -240,7 +240,6 @@ VideoSendStream::VideoSendStream(
   rtp_rtcp_->RegisterSendFrameCountObserver(channel_, &stats_proxy_);
 
   codec_->RegisterEncoderObserver(channel_, stats_proxy_);
-  capture_->RegisterObserver(capture_id_, stats_proxy_);
 }
 
 VideoSendStream::~VideoSendStream() {
@@ -277,12 +276,13 @@ VideoSendStream::~VideoSendStream() {
   rtp_rtcp_->Release();
 }
 
-void VideoSendStream::SwapFrame(I420VideoFrame* frame) {
+void VideoSendStream::IncomingCapturedFrame(const I420VideoFrame& frame) {
   // TODO(pbos): Local rendering should not be done on the capture thread.
   if (config_.local_renderer != NULL)
-    config_.local_renderer->RenderFrame(*frame, 0);
+    config_.local_renderer->RenderFrame(frame, 0);
 
-  external_capture_->SwapFrame(frame);
+  stats_proxy_.OnIncomingFrame();
+  external_capture_->IncomingFrame(frame);
 }
 
 VideoSendStreamInput* VideoSendStream::Input() { return this; }

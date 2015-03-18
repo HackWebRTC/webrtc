@@ -1409,11 +1409,11 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
   SetDimensions(
       video_frame.width(), video_frame.height(), capturer->IsScreencast());
 
-  LOG(LS_VERBOSE) << "SwapFrame: " << video_frame.width() << "x"
+  LOG(LS_VERBOSE) << "IncomingCapturedFrame: " << video_frame.width() << "x"
                   << video_frame.height() << " -> (codec) "
                   << parameters_.encoder_config.streams.back().width << "x"
                   << parameters_.encoder_config.streams.back().height;
-  stream_->Input()->SwapFrame(&video_frame);
+  stream_->Input()->IncomingCapturedFrame(video_frame);
 }
 
 bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
@@ -1433,7 +1433,7 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
 
         CreateBlackFrame(&black_frame, last_dimensions_.width,
                          last_dimensions_.height);
-        stream_->Input()->SwapFrame(&black_frame);
+        stream_->Input()->IncomingCapturedFrame(black_frame);
       }
 
       capturer_ = NULL;

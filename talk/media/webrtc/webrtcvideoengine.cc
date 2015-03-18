@@ -3308,7 +3308,7 @@ bool WebRtcVideoMediaChannel::SendFrame(
   }
 #endif
   webrtc_frame.set_ntp_time_ms(timestamp_ntp_ms);
-  send_channel->external_capture()->SwapFrame(&webrtc_frame);
+  send_channel->external_capture()->IncomingFrame(webrtc_frame);
   return true;
 }
 

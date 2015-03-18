@@ -50,15 +50,11 @@ void SendStatisticsProxy::SuspendChange(int video_channel, bool is_suspended) {
   stats_.suspended = is_suspended;
 }
 
-void SendStatisticsProxy::CapturedFrameRate(const int capture_id,
-                                            const unsigned char frame_rate) {
-  CriticalSectionScoped lock(crit_.get());
-  stats_.input_frame_rate = frame_rate;
-}
-
 VideoSendStream::Stats SendStatisticsProxy::GetStats() {
   CriticalSectionScoped lock(crit_.get());
   PurgeOldStats();
+  stats_.input_frame_rate =
+      static_cast<int>(input_frame_rate_tracker_.units_second());
   return stats_;
 }
 
@@ -120,6 +116,11 @@ void SendStatisticsProxy::OnSendEncodedImage(
   stats->width = encoded_image._encodedWidth;
   stats->height = encoded_image._encodedHeight;
   update_times_[ssrc].resolution_update_ms = clock_->TimeInMilliseconds();
+}
+
+void SendStatisticsProxy::OnIncomingFrame() {
+  CriticalSectionScoped lock(crit_.get());
+  input_frame_rate_tracker_.Update(1);
 }
 
 void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(
