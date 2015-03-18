@@ -211,6 +211,7 @@ int main(int argc, char** argv) {
 
   // Init the parser and set the usage message.
   parser.Init(argc, argv);
+  parser.SetUsageMessage(usage);
 
   // Reset flags.
   parser.SetFlag("w", "352");
@@ -224,6 +225,7 @@ int main(int argc, char** argv) {
                  webrtc::test::OutputPath() + "vp8_encoded.vp8");
   parser.SetFlag("input_file", webrtc::test::ResourcePath("foreman_cif",
                                                           "yuv"));
+  parser.SetFlag("help", "false");
 
   parser.ProcessFlags();
   if (parser.GetFlag("help") == "true") {
