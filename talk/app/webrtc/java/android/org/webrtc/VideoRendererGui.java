@@ -37,7 +37,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import android.annotation.SuppressLint;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
 import android.opengl.EGLContext;
@@ -265,22 +264,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     private int videoWidth;
     private int videoHeight;
 
-    // This is the degree that the frame should be rotated clockwisely to have
-    // it rendered up right.
-    private int rotationDegree;
-
-    // Mapping array from original UV mapping to the rotated mapping. The number
-    // is the position where the original UV coordination should be mapped
-    // to. (0,1) is the left top coord. (2,3) is the top bottom. (4,5) is the
-    // right top. (6,7) is the right bottom. Note that this is the coordination
-    // that got rotated. For example, using the original left bottom (2,3) as
-    // the top left (0,1) means 90 degree clockwise rotation.
-    private static int rotation_matrix[][] =
-      { {0, 1, 2, 3, 4, 5, 6, 7},  //   0 degree
-        {2, 3, 6, 7, 0, 1, 4, 5},  //  90 degree (clockwise)
-        {6, 7, 4, 5, 2, 3, 0, 1},  // 180 degree (clockwise)
-        {4, 5, 0, 1, 6, 7, 2, 3} };// 270 degree (clockwise)
-
     private YuvImageRenderer(
         GLSurfaceView surface, int id,
         int x, int y, int width, int height,
@@ -309,7 +292,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       };
       textureCoords = directNativeFloatBuffer(textureCoordinatesFloat);
       updateTextureProperties = false;
-      rotationDegree = 0;
     }
 
     private void createTextures(int yuvProgram, int oesProgram) {
@@ -358,13 +340,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         if (displayWidth > 1 && displayHeight > 1 &&
             videoWidth > 1 && videoHeight > 1) {
           float displayAspectRatio = displayWidth / displayHeight;
-          // videoAspectRatio should be the one after rotation applied.
-          float videoAspectRatio = 0;
-          if (rotationDegree == 90 || rotationDegree == 270) {
-            videoAspectRatio = (float)videoHeight / videoWidth;
-          } else {
-            videoAspectRatio = (float)videoWidth / videoHeight;
-          }
+          float videoAspectRatio = (float)videoWidth / videoHeight;
           if (scalingType == ScalingType.SCALE_ASPECT_FIT) {
             // Need to re-adjust vertices width or height to match video AR.
             if (displayAspectRatio > videoAspectRatio) {
@@ -413,21 +389,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
             uRight, texOffsetV,        // right top
             uRight, 1.0f - texOffsetV  // right bottom
           };
-
-          float textureCoordinatesRotatedFloat[];
-          if (rotationDegree == 0) {
-            textureCoordinatesRotatedFloat = textureCoordinatesFloat;
-          } else {
-            textureCoordinatesRotatedFloat =
-              new float[textureCoordinatesFloat.length];
-            int index = rotationDegree / 90;
-            for(int i = 0; i < textureCoordinatesFloat.length; i++) {
-              textureCoordinatesRotatedFloat[rotation_matrix[index][i]] =
-                textureCoordinatesFloat[i];
-            }
-          }
-          textureCoords =
-            directNativeFloatBuffer(textureCoordinatesRotatedFloat);
+          textureCoords = directNativeFloatBuffer(textureCoordinatesFloat);
         }
         updateTextureProperties = false;
       }
@@ -566,19 +528,16 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       }
     }
 
-    private void setSize(final int width, final int height,
-                         final int rotation) {
-      if (width == videoWidth && height == videoHeight &&
-        rotation == rotationDegree) {
-        return;
+    private void setSize(final int width, final int height) {
+      if (width == videoWidth && height == videoHeight) {
+          return;
       }
 
       Log.d(TAG, "ID: " + id + ". YuvImageRenderer.setSize: " +
-        width + " x " + height + " rotation " + rotation);
+          width + " x " + height);
 
       videoWidth = width;
       videoHeight = height;
-      rotationDegree = rotation;
       int[] strides = { width, width / 2, width / 2  };
       // Frame re-allocation need to be synchronized with copying
       // frame to textures in draw() function to avoid re-allocating
@@ -587,17 +546,15 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         // Clear rendering queue.
         frameToRenderQueue.poll();
         // Re-allocate / allocate the frame.
-        yuvFrameToRender = new I420Frame(width, height, rotationDegree,
-                                         strides, null);
-        textureFrameToRender = new I420Frame(width, height, rotationDegree,
-                                             null, -1);
+        yuvFrameToRender = new I420Frame(width, height, strides, null);
+        textureFrameToRender = new I420Frame(width, height, null, -1);
         updateTextureProperties = true;
       }
     }
 
     @Override
     public synchronized void renderFrame(I420Frame frame) {
-      setSize(frame.width, frame.height, frame.rotationDegree);
+      setSize(frame.width, frame.height);
       long now = System.nanoTime();
       framesReceived++;
       // Skip rendering of this frame if setSize() was not called.
@@ -645,11 +602,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       surface.requestRender();
     }
 
-    // TODO(guoweis): Remove this once chrome code base is updated.
-    @Override
-    public boolean canApplyRotation() {
-      return true;
-    }
   }
 
   /** Passes GLSurfaceView to video renderer. */
@@ -760,7 +712,6 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     }
   }
 
-  @SuppressLint("NewApi")
   @Override
   public void onSurfaceCreated(GL10 unused, EGLConfig config) {
     Log.d(TAG, "VideoRendererGui.onSurfaceCreated");

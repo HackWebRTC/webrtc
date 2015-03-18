@@ -709,9 +709,6 @@ class VideoRendererWrapper : public VideoRendererInterface {
     renderer_->RenderFrame(frame);
   }
 
-  // TODO(guoweis): Remove this once chrome code base is updated.
-  bool CanApplyRotation() override { return true; }
-
  private:
   explicit VideoRendererWrapper(cricket::VideoRenderer* renderer)
     : renderer_(renderer), width_(0), height_(0) {}
@@ -728,19 +725,14 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
         j_render_frame_id_(GetMethodID(
             jni, GetObjectClass(jni, j_callbacks), "renderFrame",
             "(Lorg/webrtc/VideoRenderer$I420Frame;)V")),
-        j_can_apply_rotation_id_(GetMethodID(
-            jni, GetObjectClass(jni, j_callbacks),
-            "canApplyRotation", "()Z")),
         j_frame_class_(jni,
                        FindClass(jni, "org/webrtc/VideoRenderer$I420Frame")),
         j_i420_frame_ctor_id_(GetMethodID(
-            jni, *j_frame_class_, "<init>", "(III[I[Ljava/nio/ByteBuffer;)V")),
+            jni, *j_frame_class_, "<init>", "(II[I[Ljava/nio/ByteBuffer;)V")),
         j_texture_frame_ctor_id_(GetMethodID(
             jni, *j_frame_class_, "<init>",
-            "(IIILjava/lang/Object;I)V")),
-        j_byte_buffer_class_(jni, FindClass(jni, "java/nio/ByteBuffer")),
-        can_apply_rotation_set_(false),
-        can_apply_rotation_(false) {
+            "(IILjava/lang/Object;I)V")),
+        j_byte_buffer_class_(jni, FindClass(jni, "java/nio/ByteBuffer")) {
     CHECK_EXCEPTION(jni);
   }
 
@@ -749,12 +741,10 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
   void RenderFrame(const cricket::VideoFrame* video_frame) override {
     ScopedLocalRefFrame local_ref_frame(jni());
 
-    // Calling CanApplyRotation here to ensure can_apply_rotation_ is set.
-    CanApplyRotation();
-
+    // TODO(guoweis): Remove once the java implementation supports rotation.
     const cricket::VideoFrame* frame =
-        can_apply_rotation_ ? video_frame
-                            : video_frame->GetCopyWithRotationApplied();
+      video_frame->GetCopyWithRotationApplied();
+
     if (frame->GetNativeHandle() != NULL) {
       jobject j_frame = CricketToJavaTextureFrame(frame);
       jni()->CallVoidMethod(*j_callbacks_, j_render_frame_id_, j_frame);
@@ -764,21 +754,6 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
       jni()->CallVoidMethod(*j_callbacks_, j_render_frame_id_, j_frame);
       CHECK_EXCEPTION(jni());
     }
-  }
-
-  // TODO(guoweis): Report that rotation is supported as RenderFrame calls
-  // GetCopyWithRotationApplied.
-  virtual bool CanApplyRotation() override {
-    if (can_apply_rotation_set_) {
-      return can_apply_rotation_;
-    }
-    ScopedLocalRefFrame local_ref_frame(jni());
-    jboolean ret =
-        jni()->CallBooleanMethod(*j_callbacks_, j_can_apply_rotation_id_);
-    CHECK_EXCEPTION(jni());
-    can_apply_rotation_ = ret;
-    can_apply_rotation_set_ = true;
-    return ret;
   }
 
  private:
@@ -803,9 +778,7 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
     jni()->SetObjectArrayElement(planes, 2, v_buffer);
     return jni()->NewObject(
         *j_frame_class_, j_i420_frame_ctor_id_,
-        frame->GetWidth(), frame->GetHeight(),
-        static_cast<int>(frame->GetVideoRotation()),
-        strides, planes);
+        frame->GetWidth(), frame->GetHeight(), strides, planes);
   }
 
   // Return a VideoRenderer.I420Frame referring texture object in |frame|.
@@ -816,9 +789,7 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
     int texture_id = handle->GetTextureId();
     return jni()->NewObject(
         *j_frame_class_, j_texture_frame_ctor_id_,
-        frame->GetWidth(), frame->GetHeight(),
-        static_cast<int>(frame->GetVideoRotation()),
-        texture_object, texture_id);
+        frame->GetWidth(), frame->GetHeight(), texture_object, texture_id);
   }
 
   JNIEnv* jni() {
@@ -827,13 +798,10 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
 
   ScopedGlobalRef<jobject> j_callbacks_;
   jmethodID j_render_frame_id_;
-  jmethodID j_can_apply_rotation_id_;
   ScopedGlobalRef<jclass> j_frame_class_;
   jmethodID j_i420_frame_ctor_id_;
   jmethodID j_texture_frame_ctor_id_;
   ScopedGlobalRef<jclass> j_byte_buffer_class_;
-  bool can_apply_rotation_set_;
-  bool can_apply_rotation_;
 };
 
 
