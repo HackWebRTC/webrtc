@@ -45,20 +45,20 @@
 #import "RTCVideoCapturer.h"
 #import "RTCVideoTrack.h"
 
-static NSString *kARDDefaultSTUNServerUrl =
+static NSString * const kARDDefaultSTUNServerUrl =
     @"stun:stun.l.google.com:19302";
 // TODO(tkchin): figure out a better username for CEOD statistics.
-static NSString *kARDTurnRequestUrl =
+static NSString * const kARDTurnRequestUrl =
     @"https://computeengineondemand.appspot.com"
     @"/turn?username=iapprtc&key=4080218913";
 
-static NSString *kARDAppClientErrorDomain = @"ARDAppClient";
-static NSInteger kARDAppClientErrorUnknown = -1;
-static NSInteger kARDAppClientErrorRoomFull = -2;
-static NSInteger kARDAppClientErrorCreateSDP = -3;
-static NSInteger kARDAppClientErrorSetSDP = -4;
-static NSInteger kARDAppClientErrorInvalidClient = -5;
-static NSInteger kARDAppClientErrorInvalidRoom = -6;
+static NSString * const kARDAppClientErrorDomain = @"ARDAppClient";
+static NSInteger const kARDAppClientErrorUnknown = -1;
+static NSInteger const kARDAppClientErrorRoomFull = -2;
+static NSInteger const kARDAppClientErrorCreateSDP = -3;
+static NSInteger const kARDAppClientErrorSetSDP = -4;
+static NSInteger const kARDAppClientErrorInvalidClient = -5;
+static NSInteger const kARDAppClientErrorInvalidRoom = -6;
 
 @implementation ARDAppClient
 
@@ -80,6 +80,16 @@ static NSInteger kARDAppClientErrorInvalidRoom = -6;
 @synthesize webSocketRestURL = _websocketRestURL;
 @synthesize defaultPeerConnectionConstraints =
     _defaultPeerConnectionConstraints;
+
+- (instancetype)init {
+  if (self = [super init]) {
+    _roomServerClient = [[ARDAppEngineClient alloc] init];
+    NSURL *turnRequestURL = [NSURL URLWithString:kARDTurnRequestUrl];
+    _turnClient = [[ARDCEODTURNClient alloc] initWithURL:turnRequestURL];
+    [self configure];
+  }
+  return self;
+}
 
 - (instancetype)initWithDelegate:(id<ARDAppClientDelegate>)delegate {
   if (self = [super init]) {
@@ -219,6 +229,8 @@ static NSInteger kARDAppClientErrorInvalidRoom = -6;
   switch (message.type) {
     case kARDSignalingMessageTypeOffer:
     case kARDSignalingMessageTypeAnswer:
+      // Offers and answers must be processed before any other message, so we
+      // place them at the front of the queue.
       _hasReceivedSdp = YES;
       [_messageQueue insertObject:message atIndex:0];
       break;
@@ -226,6 +238,7 @@ static NSInteger kARDAppClientErrorInvalidRoom = -6;
       [_messageQueue addObject:message];
       break;
     case kARDSignalingMessageTypeBye:
+      // Disconnects can be processed immediately.
       [self processSignalingMessage:message];
       return;
   }
@@ -249,6 +262,8 @@ static NSInteger kARDAppClientErrorInvalidRoom = -6;
 }
 
 #pragma mark - RTCPeerConnectionDelegate
+// Callbacks for this delegate occur on non-main thread and need to be
+// dispatched back to main queue as needed.
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
     signalingStateChanged:(RTCSignalingState)stateChanged {
@@ -305,6 +320,8 @@ static NSInteger kARDAppClientErrorInvalidRoom = -6;
 }
 
 #pragma mark - RTCSessionDescriptionDelegate
+// Callbacks for this delegate occur on non-main thread and need to be
+// dispatched back to main queue as needed.
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
     didCreateSessionDescription:(RTCSessionDescription *)sdp
@@ -364,6 +381,11 @@ static NSInteger kARDAppClientErrorInvalidRoom = -6;
   return _clientId.length;
 }
 
+// Begins the peer connection connection process if we have both joined a room
+// on the room server and tried to obtain a TURN server. Otherwise does nothing.
+// A peer connection object will be created with a stream that contains local
+// audio and video capture. If this client is the caller, an offer is created as
+// well, otherwise the client will wait for an offer to arrive.
 - (void)startSignalingIfReady {
   if (!_isTurnComplete || !self.hasJoinedRoomServerRoom) {
     return;
@@ -375,24 +397,24 @@ static NSInteger kARDAppClientErrorInvalidRoom = -6;
   _peerConnection = [_factory peerConnectionWithICEServers:_iceServers
                                                constraints:constraints
                                                   delegate:self];
+  // Create AV media stream and add it to the peer connection.
   RTCMediaStream *localStream = [self createLocalMediaStream];
   [_peerConnection addStream:localStream];
   if (_isInitiator) {
-    [self sendOffer];
+    // Send offer.
+    [_peerConnection createOfferWithDelegate:self
+                                 constraints:[self defaultOfferConstraints]];
   } else {
-    [self waitForAnswer];
+    // Check if we've received an offer.
+    [self drainMessageQueueIfReady];
   }
 }
 
-- (void)sendOffer {
-  [_peerConnection createOfferWithDelegate:self
-                               constraints:[self defaultOfferConstraints]];
-}
-
-- (void)waitForAnswer {
-  [self drainMessageQueueIfReady];
-}
-
+// Processes the messages that we've received from the room server and the
+// signaling channel. The offer or answer message must be processed before other
+// signaling messages, however they can arrive out of order. Hence, this method
+// only processes pending messages if there is a peer connection object and
+// if we have received either an offer or answer.
 - (void)drainMessageQueueIfReady {
   if (!_peerConnection || !_hasReceivedSdp) {
     return;
@@ -403,6 +425,7 @@ static NSInteger kARDAppClientErrorInvalidRoom = -6;
   [_messageQueue removeAllObjects];
 }
 
+// Processes the given signaling message based on its type.
 - (void)processSignalingMessage:(ARDSignalingMessage *)message {
   NSParameterAssert(_peerConnection ||
       message.type == kARDSignalingMessageTypeBye);
@@ -431,6 +454,9 @@ static NSInteger kARDAppClientErrorInvalidRoom = -6;
   }
 }
 
+// Sends a signaling message to the other client. The caller will send messages
+// through the room server, whereas the callee will send messages over the
+// signaling channel.
 - (void)sendSignalingMessage:(ARDSignalingMessage *)message {
   if (_isInitiator) {
     __weak ARDAppClient *weakSelf = self;

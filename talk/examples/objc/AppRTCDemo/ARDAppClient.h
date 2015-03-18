@@ -39,6 +39,8 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 };
 
 @class ARDAppClient;
+// The delegate is informed of pertinent events and will be called on the
+// main queue.
 @protocol ARDAppClientDelegate <NSObject>
 
 - (void)appClient:(ARDAppClient *)client
@@ -58,12 +60,15 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 
 @end
 
-// Handles connections to the AppRTC server for a given room.
+// Handles connections to the AppRTC server for a given room. Methods on this
+// class should only be called from the main queue.
 @interface ARDAppClient : NSObject
 
 @property(nonatomic, readonly) ARDAppClientState state;
 @property(nonatomic, weak) id<ARDAppClientDelegate> delegate;
 
+// Convenience constructor since all expected use cases will need a delegate
+// in order to receive remote tracks.
 - (instancetype)initWithDelegate:(id<ARDAppClientDelegate>)delegate;
 
 // Establishes a connection with the AppRTC servers for the given room id.

@@ -33,17 +33,17 @@
 #import "ARDUtilities.h"
 
 // TODO(tkchin): move these to a configuration object.
-static NSString *kARDRoomServerHostUrl =
+static NSString * const kARDRoomServerHostUrl =
     @"https://apprtc.appspot.com";
-static NSString *kARDRoomServerJoinFormat =
+static NSString * const kARDRoomServerJoinFormat =
     @"https://apprtc.appspot.com/join/%@";
-static NSString *kARDRoomServerMessageFormat =
+static NSString * const kARDRoomServerMessageFormat =
     @"https://apprtc.appspot.com/message/%@/%@";
-static NSString *kARDRoomServerLeaveFormat =
+static NSString * const kARDRoomServerLeaveFormat =
     @"https://apprtc.appspot.com/leave/%@/%@";
 
-static NSString *kARDAppEngineClientErrorDomain = @"ARDAppEngineClient";
-static NSInteger kARDAppEngineClientErrorBadResponse = -1;
+static NSString * const kARDAppEngineClientErrorDomain = @"ARDAppEngineClient";
+static NSInteger const kARDAppEngineClientErrorBadResponse = -1;
 
 @implementation ARDAppEngineClient
 

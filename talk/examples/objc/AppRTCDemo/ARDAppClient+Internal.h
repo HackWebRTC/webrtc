@@ -38,6 +38,7 @@
 @interface ARDAppClient () <ARDSignalingChannelDelegate,
     RTCPeerConnectionDelegate, RTCSessionDescriptionDelegate>
 
+// All properties should only be mutated from the main queue.
 @property(nonatomic, strong) id<ARDRoomServerClient> roomServerClient;
 @property(nonatomic, strong) id<ARDSignalingChannel> channel;
 @property(nonatomic, strong) id<ARDTURNClient> turnClient;
