@@ -64,9 +64,6 @@
     'audio_processing': {
       'filepath': 'webrtc/modules/audio_processing/.*',
     },
-    'video_codecs': {
-      'filepath': 'webrtc/modules/video_coding/codecs/.*',
-    },
     'video_coding': {
       'filepath': 'webrtc/modules/video_coding/.*',
     },
@@ -121,7 +118,6 @@
                          'andrew@webrtc.org',
                          'bjornv@webrtc.org',
                          'kwiberg@webrtc.org'],
-    'video_codecs': ['henrik.lundin@webrtc.org'],
     'video_coding': ['stefan@webrtc.org',
                      'mflodman@webrtc.org'],
     'video_processing': ['stefan@webrtc.org'],
