@@ -47,15 +47,20 @@ I420VideoFrame::I420VideoFrame(NativeHandle* handle,
       ntp_time_ms_(0),
       render_time_ms_(render_time_ms),
       rotation_(kVideoRotation_0) {
+  DCHECK(handle != nullptr);
+  DCHECK_GT(width, 0);
+  DCHECK_GT(height, 0);
 }
 
 int I420VideoFrame::CreateEmptyFrame(int width, int height,
                                      int stride_y, int stride_u, int stride_v) {
   const int half_width = (width + 1) / 2;
-  if (width <= 0 || height <= 0 || stride_y < width || stride_u < half_width ||
-      stride_v < half_width) {
-    return -1;
-  }
+  DCHECK_GT(width, 0);
+  DCHECK_GT(height, 0);
+  DCHECK_GE(stride_y, width);
+  DCHECK_GE(stride_u, half_width);
+  DCHECK_GE(stride_v, half_width);
+
   // Creating empty frame - reset all values.
   timestamp_ = 0;
   ntp_time_ms_ = 0;
@@ -105,8 +110,7 @@ int I420VideoFrame::CreateFrame(const uint8_t* buffer_y,
   const int expected_size_y = height * stride_y;
   const int expected_size_u = half_height * stride_u;
   const int expected_size_v = half_height * stride_v;
-  if (CreateEmptyFrame(width, height, stride_y, stride_u, stride_v) < 0)
-    return -1;
+  CreateEmptyFrame(width, height, stride_y, stride_u, stride_v);
   memcpy(buffer(kYPlane), buffer_y, expected_size_y);
   memcpy(buffer(kUPlane), buffer_u, expected_size_u);
   memcpy(buffer(kVPlane), buffer_v, expected_size_v);
@@ -145,7 +149,9 @@ void I420VideoFrame::ShallowCopy(const I420VideoFrame& videoFrame) {
 I420VideoFrame* I420VideoFrame::CloneFrame() const {
   rtc::scoped_ptr<I420VideoFrame> new_frame(new I420VideoFrame());
   if (new_frame->CopyFrame(*this) == -1) {
-    // CopyFrame failed.
+    // TODO(pbos): Make void, not war.
+    // CopyFrame failed this shouldn't happen.
+    RTC_NOTREACHED();
     return NULL;
   }
   return new_frame.release();

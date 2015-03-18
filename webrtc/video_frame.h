@@ -32,6 +32,9 @@ class I420VideoFrame {
                  uint32_t timestamp,
                  int64_t render_time_ms);
 
+  // TODO(pbos): Make all create/copy functions void, they should not be able to
+  // fail (which should be DCHECK/CHECKed instead).
+
   // CreateEmptyFrame: Sets frame dimensions and allocates buffers based
   // on set dimensions - height and plane stride.
   // If required size is bigger than the allocated one, new buffers of adequate

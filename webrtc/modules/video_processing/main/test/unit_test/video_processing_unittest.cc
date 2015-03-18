@@ -114,26 +114,6 @@ TEST_F(VideoProcessingModuleTest, HandleBadStats) {
   EXPECT_EQ(-3, vpm_->BrightnessDetection(video_frame_, stats));
 }
 
-TEST_F(VideoProcessingModuleTest, HandleBadSize) {
-  VideoProcessingModule::FrameStats stats;
-
-  I420VideoFrame bad_frame;
-  bad_frame.CreateEmptyFrame(width_, 0, width_, (width_ + 1) / 2,
-                             (width_ + 1) / 2);
-  EXPECT_EQ(-3, vpm_->GetFrameStats(&stats, bad_frame));
-
-  EXPECT_EQ(-1, vpm_->ColorEnhancement(&bad_frame));
-
-  EXPECT_EQ(-1, vpm_->Deflickering(&bad_frame, &stats));
-
-  EXPECT_EQ(-3, vpm_->BrightnessDetection(bad_frame, stats));
-
-  EXPECT_EQ(VPM_PARAMETER_ERROR, vpm_->SetTargetResolution(0,0,0));
-
-  I420VideoFrame *out_frame = NULL;
-  EXPECT_EQ(VPM_PARAMETER_ERROR, vpm_->PreprocessFrame(bad_frame, &out_frame));
-}
-
 TEST_F(VideoProcessingModuleTest, IdenticalResultsAfterReset) {
   I420VideoFrame video_frame2;
   VideoProcessingModule::FrameStats stats;

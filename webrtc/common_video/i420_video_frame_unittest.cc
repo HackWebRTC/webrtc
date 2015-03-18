@@ -42,16 +42,8 @@ int ExpectedSize(int plane_stride, int image_height, PlaneType type);
 
 TEST(TestI420VideoFrame, InitialValues) {
   I420VideoFrame frame;
-  // Invalid arguments - one call for each variable.
   EXPECT_TRUE(frame.IsZeroSize());
   EXPECT_EQ(kVideoRotation_0, frame.rotation());
-  EXPECT_EQ(-1, frame.CreateEmptyFrame(0, 10, 10, 14, 14));
-  EXPECT_EQ(-1, frame.CreateEmptyFrame(10, -1, 10, 90, 14));
-  EXPECT_EQ(-1, frame.CreateEmptyFrame(10, 10, 0, 14, 18));
-  EXPECT_EQ(-1, frame.CreateEmptyFrame(10, 10, 10, -2, 13));
-  EXPECT_EQ(-1, frame.CreateEmptyFrame(10, 10, 10, 14, 0));
-  EXPECT_EQ(0, frame.CreateEmptyFrame(10, 10, 10, 14, 90));
-  EXPECT_FALSE(frame.IsZeroSize());
 }
 
 TEST(TestI420VideoFrame, WidthHeightValues) {
