@@ -121,7 +121,6 @@ AudioDecoderProxy::AudioDecoderProxy()
 void AudioDecoderProxy::SetDecoder(AudioDecoder* decoder) {
   CriticalSectionScoped decoder_lock(decoder_lock_.get());
   decoder_ = decoder;
-  channels_ = decoder->channels();
   CHECK_EQ(decoder_->Init(), 0);
 }
 
@@ -203,6 +202,11 @@ bool AudioDecoderProxy::PacketHasFec(const uint8_t* encoded,
 CNG_dec_inst* AudioDecoderProxy::CngDecoderInstance() {
   CriticalSectionScoped decoder_lock(decoder_lock_.get());
   return decoder_->CngDecoderInstance();
+}
+
+size_t AudioDecoderProxy::Channels() const {
+  CriticalSectionScoped decoder_lock(decoder_lock_.get());
+  return decoder_->Channels();
 }
 
 int16_t ACMGenericCodec::EncoderParams(WebRtcACMCodecParams* enc_params) {

@@ -81,6 +81,7 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
                      uint32_t rtp_timestamp,
                      uint32_t arrival_timestamp) override;
   int ErrorCode() override;
+  size_t Channels() const override { return 1; }
 
  protected:
   // AudioEncoder protected method.

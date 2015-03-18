@@ -54,7 +54,7 @@ int AudioDecoderPcmU::DecodeInternal(const uint8_t* encoded,
 int AudioDecoderPcmU::PacketDuration(const uint8_t* encoded,
                                      size_t encoded_len) const {
   // One encoded byte per sample per channel.
-  return static_cast<int>(encoded_len / channels_);
+  return static_cast<int>(encoded_len / Channels());
 }
 
 // PCMa
@@ -74,7 +74,7 @@ int AudioDecoderPcmA::DecodeInternal(const uint8_t* encoded,
 int AudioDecoderPcmA::PacketDuration(const uint8_t* encoded,
                                      size_t encoded_len) const {
   // One encoded byte per sample per channel.
-  return static_cast<int>(encoded_len / channels_);
+  return static_cast<int>(encoded_len / Channels());
 }
 
 // PCM16B
@@ -98,12 +98,12 @@ int AudioDecoderPcm16B::DecodeInternal(const uint8_t* encoded,
 int AudioDecoderPcm16B::PacketDuration(const uint8_t* encoded,
                                        size_t encoded_len) const {
   // Two encoded byte per sample per channel.
-  return static_cast<int>(encoded_len / (2 * channels_));
+  return static_cast<int>(encoded_len / (2 * Channels()));
 }
 
-AudioDecoderPcm16BMultiCh::AudioDecoderPcm16BMultiCh(int num_channels) {
+AudioDecoderPcm16BMultiCh::AudioDecoderPcm16BMultiCh(int num_channels)
+    : channels_(num_channels) {
   DCHECK(num_channels > 0);
-  channels_ = num_channels;
 }
 #endif
 
@@ -171,11 +171,10 @@ int AudioDecoderG722::Init() {
 int AudioDecoderG722::PacketDuration(const uint8_t* encoded,
                                      size_t encoded_len) const {
   // 1/2 encoded byte per sample per channel.
-  return static_cast<int>(2 * encoded_len / channels_);
+  return static_cast<int>(2 * encoded_len / Channels());
 }
 
 AudioDecoderG722Stereo::AudioDecoderG722Stereo() {
-  channels_ = 2;
   WebRtcG722_CreateDecoder(&dec_state_left_);
   WebRtcG722_CreateDecoder(&dec_state_right_);
 }
@@ -260,9 +259,8 @@ void AudioDecoderG722Stereo::SplitStereoPacket(const uint8_t* encoded,
 
 // Opus
 #ifdef WEBRTC_CODEC_OPUS
-AudioDecoderOpus::AudioDecoderOpus(int num_channels) {
+AudioDecoderOpus::AudioDecoderOpus(int num_channels) : channels_(num_channels) {
   DCHECK(num_channels == 1 || num_channels == 2);
-  channels_ = num_channels;
   WebRtcOpus_DecoderCreate(&dec_state_, static_cast<int>(channels_));
 }
 

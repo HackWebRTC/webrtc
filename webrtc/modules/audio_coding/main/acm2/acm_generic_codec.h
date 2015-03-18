@@ -73,6 +73,7 @@ class AudioDecoderProxy final : public AudioDecoder {
                               size_t encoded_len) const override;
   bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const override;
   CNG_dec_inst* CngDecoderInstance() override;
+  size_t Channels() const override;
 
  private:
   rtc::scoped_ptr<CriticalSectionWrapper> decoder_lock_;

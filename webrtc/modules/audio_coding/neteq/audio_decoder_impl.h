@@ -39,6 +39,7 @@ class AudioDecoderPcmU : public AudioDecoder {
   AudioDecoderPcmU() {}
   virtual int Init() { return 0; }
   virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len) const;
+  size_t Channels() const override { return 1; }
 
  protected:
   int DecodeInternal(const uint8_t* encoded,
@@ -56,6 +57,7 @@ class AudioDecoderPcmA : public AudioDecoder {
   AudioDecoderPcmA() {}
   virtual int Init() { return 0; }
   virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len) const;
+  size_t Channels() const override { return 1; }
 
  protected:
   int DecodeInternal(const uint8_t* encoded,
@@ -70,23 +72,27 @@ class AudioDecoderPcmA : public AudioDecoder {
 
 class AudioDecoderPcmUMultiCh : public AudioDecoderPcmU {
  public:
-  explicit AudioDecoderPcmUMultiCh(size_t channels) : AudioDecoderPcmU() {
+  explicit AudioDecoderPcmUMultiCh(size_t channels)
+      : AudioDecoderPcmU(), channels_(channels) {
     assert(channels > 0);
-    channels_ = channels;
   }
+  size_t Channels() const override { return channels_; }
 
  private:
+  const size_t channels_;
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmUMultiCh);
 };
 
 class AudioDecoderPcmAMultiCh : public AudioDecoderPcmA {
  public:
-  explicit AudioDecoderPcmAMultiCh(size_t channels) : AudioDecoderPcmA() {
+  explicit AudioDecoderPcmAMultiCh(size_t channels)
+      : AudioDecoderPcmA(), channels_(channels) {
     assert(channels > 0);
-    channels_ = channels;
   }
+  size_t Channels() const override { return channels_; }
 
  private:
+  const size_t channels_;
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmAMultiCh);
 };
 
@@ -98,6 +104,7 @@ class AudioDecoderPcm16B : public AudioDecoder {
   AudioDecoderPcm16B();
   virtual int Init() { return 0; }
   virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len) const;
+  size_t Channels() const override { return 1; }
 
  protected:
   int DecodeInternal(const uint8_t* encoded,
@@ -116,8 +123,10 @@ class AudioDecoderPcm16B : public AudioDecoder {
 class AudioDecoderPcm16BMultiCh : public AudioDecoderPcm16B {
  public:
   explicit AudioDecoderPcm16BMultiCh(int num_channels);
+  size_t Channels() const override { return channels_; }
 
  private:
+  const size_t channels_;
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcm16BMultiCh);
 };
 #endif
@@ -130,6 +139,7 @@ class AudioDecoderIlbc : public AudioDecoder {
   virtual bool HasDecodePlc() const { return true; }
   virtual int DecodePlc(int num_frames, int16_t* decoded);
   virtual int Init();
+  size_t Channels() const override { return 1; }
 
  protected:
   int DecodeInternal(const uint8_t* encoded,
@@ -152,6 +162,7 @@ class AudioDecoderG722 : public AudioDecoder {
   virtual bool HasDecodePlc() const { return false; }
   virtual int Init();
   virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len) const;
+  size_t Channels() const override { return 1; }
 
  protected:
   int DecodeInternal(const uint8_t* encoded,
@@ -177,6 +188,7 @@ class AudioDecoderG722Stereo : public AudioDecoder {
                      int sample_rate_hz,
                      int16_t* decoded,
                      SpeechType* speech_type) override;
+  size_t Channels() const override { return 2; }
 
  private:
   // Splits the stereo-interleaved payload in |encoded| into separate payloads
@@ -205,6 +217,7 @@ class AudioDecoderOpus : public AudioDecoder {
   virtual int PacketDurationRedundant(const uint8_t* encoded,
                                       size_t encoded_len) const;
   virtual bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const;
+  size_t Channels() const override { return channels_; }
 
  protected:
   int DecodeInternal(const uint8_t* encoded,
@@ -220,6 +233,7 @@ class AudioDecoderOpus : public AudioDecoder {
 
  private:
   OpusDecInst* dec_state_;
+  const size_t channels_;
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderOpus);
 };
 #endif
@@ -242,6 +256,7 @@ class AudioDecoderCng : public AudioDecoder {
                              uint32_t arrival_timestamp) { return -1; }
 
   CNG_dec_inst* CngDecoderInstance() override { return dec_state_; }
+  size_t Channels() const override { return 1; }
 
  protected:
   int DecodeInternal(const uint8_t* encoded,

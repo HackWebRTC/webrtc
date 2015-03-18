@@ -21,7 +21,7 @@ NetEqExternalDecoderTest::NetEqExternalDecoderTest(NetEqDecoder codec,
     : codec_(codec),
       decoder_(decoder),
       sample_rate_hz_(CodecSampleRateHz(codec_)),
-      channels_(static_cast<int>(decoder_->channels())) {
+      channels_(static_cast<int>(decoder_->Channels())) {
   NetEq::Config config;
   config.sample_rate_hz = sample_rate_hz_;
   neteq_.reset(NetEq::Create(config));

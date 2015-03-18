@@ -61,8 +61,8 @@ class MockAudioDecoderOpus : public AudioDecoderOpus {
                      int16_t* decoded,
                      SpeechType* speech_type) override {
     *speech_type = kSpeech;
-    memset(decoded, 0, sizeof(int16_t) * kPacketDuration * channels_);
-    return kPacketDuration * channels_;
+    memset(decoded, 0, sizeof(int16_t) * kPacketDuration * Channels());
+    return kPacketDuration * Channels();
   }
 
   int DecodeRedundantInternal(const uint8_t* encoded,

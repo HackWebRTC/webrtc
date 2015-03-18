@@ -270,6 +270,7 @@ TEST_F(NetEqImplTest, InsertPacket) {
 
   // Create a mock decoder object.
   MockAudioDecoder mock_decoder;
+  EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
   // BWE update function called with first packet.
   EXPECT_CALL(mock_decoder, IncomingPacket(_,
                                            kPayloadLength,
@@ -447,6 +448,8 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
       return 0;
     }
 
+    size_t Channels() const override { return 1; }
+
     uint16_t next_value() const { return next_value_; }
 
    private:
@@ -519,6 +522,7 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
   // Create a mock decoder object.
   MockAudioDecoder mock_decoder;
   EXPECT_CALL(mock_decoder, Init()).WillRepeatedly(Return(0));
+  EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
   EXPECT_CALL(mock_decoder, IncomingPacket(_, kPayloadLengthBytes, _, _, _))
       .WillRepeatedly(Return(0));
   int16_t dummy_output[kPayloadLengthSamples] = {0};
@@ -682,6 +686,7 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
   // Create a mock decoder object.
   MockAudioDecoder mock_decoder;
   EXPECT_CALL(mock_decoder, Init()).WillRepeatedly(Return(0));
+  EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
   EXPECT_CALL(mock_decoder, IncomingPacket(_, kPayloadLengthBytes, _, _, _))
       .WillRepeatedly(Return(0));
 
@@ -824,6 +829,7 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
     MOCK_CONST_METHOD2(PacketDuration, int(const uint8_t*, size_t));
     MOCK_METHOD5(DecodeInternal, int(const uint8_t*, size_t, int, int16_t*,
                                      SpeechType*));
+    size_t Channels() const override { return 1; }
   } decoder_;
 
   const uint8_t kFirstPayloadValue = 1;

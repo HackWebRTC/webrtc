@@ -644,8 +644,8 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
         decoder_database_->GetDecoderInfo(payload_type);
     assert(decoder_info);
     if (decoder_info->fs_hz != fs_hz_ ||
-        decoder->channels() != algorithm_buffer_->Channels())
-      SetSampleRateAndChannels(decoder_info->fs_hz, decoder->channels());
+        decoder->Channels() != algorithm_buffer_->Channels())
+      SetSampleRateAndChannels(decoder_info->fs_hz, decoder->Channels());
   }
 
   // TODO(hlundin): Move this code to DelayManager class.
@@ -1153,9 +1153,9 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
         // If sampling rate or number of channels has changed, we need to make
         // a reset.
         if (decoder_info->fs_hz != fs_hz_ ||
-            decoder->channels() != algorithm_buffer_->Channels()) {
+            decoder->Channels() != algorithm_buffer_->Channels()) {
           // TODO(tlegrand): Add unittest to cover this event.
-          SetSampleRateAndChannels(decoder_info->fs_hz, decoder->channels());
+          SetSampleRateAndChannels(decoder_info->fs_hz, decoder->Channels());
         }
         sync_buffer_->set_end_timestamp(timestamp_);
         playout_timestamp_ = timestamp_;
@@ -1219,7 +1219,7 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
     // since in this case, the we will increment the CNGplayedTS counter.
     // Increase with number of samples per channel.
     assert(*decoded_length == 0 ||
-           (decoder && decoder->channels() == sync_buffer_->Channels()));
+           (decoder && decoder->Channels() == sync_buffer_->Channels()));
     sync_buffer_->IncreaseEndTimestamp(
         *decoded_length / static_cast<int>(sync_buffer_->Channels()));
   }
@@ -1239,8 +1239,8 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
     assert(decoder);  // At this point, we must have a decoder object.
     // The number of channels in the |sync_buffer_| should be the same as the
     // number decoder channels.
-    assert(sync_buffer_->Channels() == decoder->channels());
-    assert(decoded_buffer_length_ >= kMaxFrameSize * decoder->channels());
+    assert(sync_buffer_->Channels() == decoder->Channels());
+    assert(decoded_buffer_length_ >= kMaxFrameSize * decoder->Channels());
     assert(*operation == kNormal || *operation == kAccelerate ||
            *operation == kMerge || *operation == kPreemptiveExpand);
     packet_list->pop_front();
@@ -1254,8 +1254,9 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
           ", pt=" << static_cast<int>(packet->header.payloadType) <<
           ", ssrc=" << packet->header.ssrc <<
           ", len=" << packet->payload_length;
-      memset(&decoded_buffer_[*decoded_length], 0, decoder_frame_length_ *
-             decoder->channels() * sizeof(decoded_buffer_[0]));
+      memset(&decoded_buffer_[*decoded_length], 0,
+             decoder_frame_length_ * decoder->Channels() *
+                 sizeof(decoded_buffer_[0]));
       decode_length = decoder_frame_length_;
     } else if (!packet->primary) {
       // This is a redundant payload; call the special decoder method.
@@ -1288,11 +1289,11 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
     if (decode_length > 0) {
       *decoded_length += decode_length;
       // Update |decoder_frame_length_| with number of samples per channel.
-      decoder_frame_length_ = decode_length /
-          static_cast<int>(decoder->channels());
-      LOG(LS_VERBOSE) << "Decoded " << decode_length << " samples (" <<
-          decoder->channels() << " channel(s) -> " << decoder_frame_length_ <<
-          " samples per channel)";
+      decoder_frame_length_ =
+          decode_length / static_cast<int>(decoder->Channels());
+      LOG(LS_VERBOSE) << "Decoded " << decode_length << " samples ("
+                      << decoder->Channels() << " channel(s) -> "
+                      << decoder_frame_length_ << " samples per channel)";
     } else if (decode_length < 0) {
       // Error.
       LOG_FERR2(LS_WARNING, Decode, decode_length, payload_length);

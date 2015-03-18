@@ -31,8 +31,8 @@ class AudioDecoder {
   // Used by PacketDuration below. Save the value -1 for errors.
   enum { kNotImplemented = -2 };
 
-  AudioDecoder() : channels_(1) {}
-  virtual ~AudioDecoder() {}
+  AudioDecoder() = default;
+  virtual ~AudioDecoder() = default;
 
   // Decodes |encode_len| bytes from |encoded| and writes the result in
   // |decoded|. The maximum bytes allowed to be written into |decoded| is
@@ -97,7 +97,7 @@ class AudioDecoder {
   // isn't a CNG decoder, don't call this method.
   virtual CNG_dec_inst* CngDecoderInstance();
 
-  size_t channels() const { return channels_; }
+  virtual size_t Channels() const = 0;
 
  protected:
   static SpeechType ConvertSpeechType(int16_t type);
@@ -113,8 +113,6 @@ class AudioDecoder {
                                       int sample_rate_hz,
                                       int16_t* decoded,
                                       SpeechType* speech_type);
-
-  size_t channels_;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AudioDecoder);
