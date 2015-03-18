@@ -206,8 +206,7 @@ class FakeWebRtcVideoEncoder : public webrtc::VideoEncoder {
 class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
  public:
   FakeWebRtcVideoEncoderFactory()
-      : num_created_encoders_(0) {
-  }
+      : num_created_encoders_(0), encoders_have_internal_sources_(false) {}
 
   virtual webrtc::VideoEncoder* CreateVideoEncoder(
       webrtc::VideoCodecType type) {
@@ -232,6 +231,15 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
     return codecs_;
   }
 
+  virtual bool EncoderTypeHasInternalSource(
+      webrtc::VideoCodecType type) const override {
+    return encoders_have_internal_sources_;
+  }
+
+  void set_encoders_have_internal_sources(bool internal_source) {
+    encoders_have_internal_sources_ = internal_source;
+  }
+
   void AddSupportedVideoCodecType(webrtc::VideoCodecType type,
                                   const std::string& name) {
     supported_codec_types_.insert(type);
@@ -252,6 +260,12 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
   std::vector<WebRtcVideoEncoderFactory::VideoCodec> codecs_;
   std::vector<FakeWebRtcVideoEncoder*> encoders_;
   int num_created_encoders_;
+  bool encoders_have_internal_sources_;
+};
+
+// Information associated with an external encoder.
+struct ExternalEncoderInfo {
+  bool internal_source;
 };
 
 class FakeWebRtcVideoEngine
@@ -336,7 +350,7 @@ class FakeWebRtcVideoEngine
     bool hybrid_nack_fec_;
     std::vector<webrtc::VideoCodec> recv_codecs;
     std::set<unsigned int> ext_decoder_pl_types_;
-    std::set<unsigned int> ext_encoder_pl_types_;
+    std::map<unsigned int, ExternalEncoderInfo> ext_encoders_;
     webrtc::VideoCodec send_codec;
     unsigned int send_video_bitrate_;
     unsigned int send_fec_bitrate_;
@@ -603,20 +617,27 @@ class FakeWebRtcVideoEngine
   bool ExternalEncoderRegistered(int channel,
                                  unsigned int pl_type) const {
     WEBRTC_ASSERT_CHANNEL(channel);
-    return channels_.find(channel)->second->
-        ext_encoder_pl_types_.count(pl_type) != 0;
+    return channels_.find(channel)->second->ext_encoders_.count(pl_type) != 0;
   };
   int GetNumExternalEncoderRegistered(int channel) const {
     WEBRTC_ASSERT_CHANNEL(channel);
     return static_cast<int>(
-        channels_.find(channel)->second->ext_encoder_pl_types_.size());
+        channels_.find(channel)->second->ext_encoders_.size());
+  };
+  bool ExternalEncoderHasInternalSource(int channel,
+                                        unsigned int pl_type) const {
+    WEBRTC_ASSERT_CHANNEL(channel);
+    ASSERT(channels_.find(channel)->second->ext_encoders_.count(pl_type) != 0);
+    return channels_.find(channel)
+        ->second->ext_encoders_[pl_type]
+        .internal_source;
   };
   int GetTotalNumExternalEncoderRegistered() const {
     std::map<int, Channel*>::const_iterator it;
     int total_num_registered = 0;
     for (it = channels_.begin(); it != channels_.end(); ++it)
       total_num_registered +=
-          static_cast<int>(it->second->ext_encoder_pl_types_.size());
+          static_cast<int>(it->second->ext_encoders_.size());
     return total_num_registered;
   }
   void SetSendBitrates(int channel, unsigned int video_bitrate,
@@ -1274,16 +1295,20 @@ class FakeWebRtcVideoEngine
   WEBRTC_VOID_STUB(DeRegisterPreRenderCallback, (int));
   // webrtc::ViEExternalCodec
   WEBRTC_FUNC(RegisterExternalSendCodec,
-      (const int channel, const unsigned char pl_type, webrtc::VideoEncoder*,
-          bool)) {
+              (const int channel,
+               const unsigned char pl_type,
+               webrtc::VideoEncoder*,
+               bool internal_source)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->ext_encoder_pl_types_.insert(pl_type);
+    ExternalEncoderInfo info;
+    info.internal_source = internal_source;
+    channels_[channel]->ext_encoders_[pl_type] = info;
     return 0;
   }
   WEBRTC_FUNC(DeRegisterExternalSendCodec,
       (const int channel, const unsigned char pl_type)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->ext_encoder_pl_types_.erase(pl_type);
+    channels_[channel]->ext_encoders_.erase(pl_type);
     return 0;
   }
   WEBRTC_FUNC(RegisterExternalReceiveCodec,

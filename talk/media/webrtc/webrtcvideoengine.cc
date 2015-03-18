@@ -323,6 +323,11 @@ WebRtcSimulcastEncoderFactory::codecs() const {
   return factory_->codecs();
 }
 
+bool WebRtcSimulcastEncoderFactory::EncoderTypeHasInternalSource(
+    webrtc::VideoCodecType type) const {
+  return factory_->EncoderTypeHasInternalSource(type);
+}
+
 void WebRtcSimulcastEncoderFactory::DestroyVideoEncoder(
     webrtc::VideoEncoder* encoder) {
   // Check first to see if the encoder wasn't wrapped in a
@@ -1623,10 +1628,13 @@ void WebRtcVideoEngine::DestroyExternalDecoder(webrtc::VideoDecoder* decoder) {
 }
 
 webrtc::VideoEncoder* WebRtcVideoEngine::CreateExternalEncoder(
-    webrtc::VideoCodecType type) {
+    webrtc::VideoCodecType type,
+    bool* internal_source) {
+  ASSERT(internal_source != NULL);
   if (!encoder_factory_) {
     return NULL;
   }
+  *internal_source = encoder_factory_->EncoderTypeHasInternalSource(type);
   return encoder_factory_->CreateVideoEncoder(type);
 }
 
@@ -1912,8 +1920,9 @@ bool WebRtcVideoMediaChannel::MaybeRegisterExternalEncoder(
     return true;
   }
 
+  bool internal_source;
   webrtc::VideoEncoder* encoder =
-      engine()->CreateExternalEncoder(codec.codecType);
+      engine()->CreateExternalEncoder(codec.codecType, &internal_source);
   if (!encoder) {
     // No external encoder created, so nothing to do.
     return true;
@@ -1921,7 +1930,7 @@ bool WebRtcVideoMediaChannel::MaybeRegisterExternalEncoder(
 
   const int channel_id = send_channel->channel_id();
   if (engine()->vie()->ext_codec()->RegisterExternalSendCodec(
-          channel_id, codec.plType, encoder, false) != 0) {
+          channel_id, codec.plType, encoder, internal_source) != 0) {
     LOG_RTCERR2(RegisterExternalSendCodec, channel_id, codec.plName);
     engine()->DestroyExternalEncoder(encoder);
     return false;

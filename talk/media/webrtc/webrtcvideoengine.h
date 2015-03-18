@@ -152,7 +152,12 @@ class WebRtcVideoEngine : public sigslot::has_slots<> {
   // Returns an external encoder for the given codec type. The return value
   // can be NULL if encoder factory is not given or it does not support the
   // codec type. The caller takes the ownership of the returned object.
-  webrtc::VideoEncoder* CreateExternalEncoder(webrtc::VideoCodecType type);
+  // On success, |internal_source| is set to true if the encoder has an internal
+  // frame source, meaning that it doesn't expect/require frames through the
+  // normal camera pipeline. See ViEExternalCodec::RegisterExternalSendCodec for
+  // more information.
+  webrtc::VideoEncoder* CreateExternalEncoder(webrtc::VideoCodecType type,
+                                              bool* internal_source);
   // Releases the encoder instance created by CreateExternalEncoder().
   void DestroyExternalEncoder(webrtc::VideoEncoder* encoder);
 
@@ -534,6 +539,7 @@ class WebRtcSimulcastEncoderFactory
   webrtc::VideoEncoder* CreateVideoEncoder(
       webrtc::VideoCodecType type) override;
   const std::vector<VideoCodec>& codecs() const override;
+  bool EncoderTypeHasInternalSource(webrtc::VideoCodecType type) const override;
   void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) override;
 
  private:

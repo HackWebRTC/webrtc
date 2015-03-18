@@ -63,6 +63,15 @@ class WebRtcVideoEncoderFactory {
   // Returns a list of supported codecs in order of preference.
   virtual const std::vector<VideoCodec>& codecs() const = 0;
 
+  // Returns true if encoders created by this factory of the given codec type
+  // will use internal camera sources, meaning that they don't require/expect
+  // frames to be delivered via webrtc::VideoEncoder::Encode. This flag is used
+  // as the internal_source parameter to
+  // webrtc::ViEExternalCodec::RegisterExternalSendCodec.
+  virtual bool EncoderTypeHasInternalSource(webrtc::VideoCodecType type) const {
+    return false;
+  }
+
   virtual void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) = 0;
 };
 
