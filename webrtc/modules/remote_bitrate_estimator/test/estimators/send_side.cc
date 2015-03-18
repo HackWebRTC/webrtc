@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/test/estimators/send_side.h"
 
+#include "webrtc/base/logging.h"
+
 namespace webrtc {
 namespace testing {
 namespace bwe {
@@ -20,7 +22,8 @@ FullBweSender::FullBweSender(int kbps, BitrateObserver* observer, Clock* clock)
       rbe_(AbsoluteSendTimeRemoteBitrateEstimatorFactory()
                .Create(this, clock, kAimdControl, 1000 * kMinBitrateKbps)),
       feedback_observer_(bitrate_controller_->CreateRtcpBandwidthObserver()),
-      clock_(clock) {
+      clock_(clock),
+      send_time_history_(10000) {
   assert(kbps >= kMinBitrateKbps);
   assert(kbps <= kMaxBitrateKbps);
   bitrate_controller_->SetStartBitrate(1000 * kbps);
@@ -40,7 +43,15 @@ void FullBweSender::GiveFeedback(const FeedbackPacket& feedback) {
       static_cast<const SendSideBweFeedback&>(feedback);
   if (fb.packet_feedback_vector().empty())
     return;
-  rbe_->IncomingPacketFeedbackVector(fb.packet_feedback_vector());
+  // TODO(sprang): Unconstify PacketInfo so we don't need temp copy?
+  std::vector<PacketInfo> packet_feedback_vector(fb.packet_feedback_vector());
+  for (PacketInfo& packet : packet_feedback_vector) {
+    if (!send_time_history_.GetSendTime(packet.sequence_number,
+                                        &packet.send_time_ms, true)) {
+      LOG(LS_WARNING) << "Ack arrived too late.";
+    }
+  }
+  rbe_->IncomingPacketFeedbackVector(packet_feedback_vector);
   // TODO(holmer): Handle losses in between feedback packets.
   int expected_packets = fb.packet_feedback_vector().back().sequence_number -
                          fb.packet_feedback_vector().front().sequence_number +
@@ -56,6 +67,17 @@ void FullBweSender::GiveFeedback(const FeedbackPacket& feedback) {
   feedback_observer_->OnReceivedRtcpReceiverReport(
       report_blocks, 0, clock_->TimeInMilliseconds());
   bitrate_controller_->Process();
+}
+
+void FullBweSender::OnPacketsSent(const Packets& packets) {
+  for (Packet* packet : packets) {
+    if (packet->GetPacketType() == Packet::kMedia) {
+      MediaPacket* media_packet = static_cast<MediaPacket*>(packet);
+      send_time_history_.AddAndRemoveOldSendTimes(
+          media_packet->header().sequenceNumber,
+          media_packet->GetAbsSendTimeInMs());
+    }
+  }
 }
 
 void FullBweSender::OnReceiveBitrateChanged(

@@ -57,12 +57,21 @@ class MediaPacket : public Packet {
   MediaPacket(int64_t send_time_us, uint32_t sequence_number);
   virtual ~MediaPacket() {}
 
-  int64_t GetAbsSendTimeInMs() const;
+  int64_t GetAbsSendTimeInMs() const {
+    int64_t timestamp = header_.extension.absoluteSendTime
+                        << kAbsSendTimeInterArrivalUpshift;
+    return 1000.0 * timestamp / static_cast<double>(1 << kInterArrivalShift);
+  }
   void SetAbsSendTimeMs(int64_t abs_send_time_ms);
   const RTPHeader& header() const { return header_; }
   virtual Packet::Type GetPacketType() const { return kMedia; }
 
  private:
+  static const int kAbsSendTimeFraction = 18;
+  static const int kAbsSendTimeInterArrivalUpshift = 8;
+  static const int kInterArrivalShift =
+      kAbsSendTimeFraction + kAbsSendTimeInterArrivalUpshift;
+
   RTPHeader header_;
 };
 

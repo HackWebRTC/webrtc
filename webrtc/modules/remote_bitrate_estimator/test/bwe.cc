@@ -28,6 +28,7 @@ class NullBweSender : public BweSender {
 
   int GetFeedbackIntervalMs() const override { return 1000; }
   void GiveFeedback(const FeedbackPacket& feedback) override {}
+  void OnPacketsSent(const Packets& packets) override {}
   int64_t TimeUntilNextProcess() override {
     return std::numeric_limits<int64_t>::max();
   }

@@ -321,6 +321,7 @@ class EncodedVideoData {
     if (data.payloadSize > 0) {
       payloadData = new uint8_t[data.payloadSize];
       memcpy(payloadData, data.payloadData, data.payloadSize);
+      bufferSize = data.payloadSize;
     } else {
       payloadData = NULL;
     }

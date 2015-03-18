@@ -33,6 +33,7 @@ class RembBweSender : public BweSender {
 
   int GetFeedbackIntervalMs() const override;
   void GiveFeedback(const FeedbackPacket& feedback) override;
+  void OnPacketsSent(const Packets& packets) override {}
   int64_t TimeUntilNextProcess() override;
   int Process() override;
 

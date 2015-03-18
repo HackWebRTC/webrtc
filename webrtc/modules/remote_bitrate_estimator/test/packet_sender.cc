@@ -22,14 +22,14 @@ namespace bwe {
 
 PacketSender::PacketSender(PacketProcessorListener* listener,
                            VideoSource* source,
-                           BandwidthEstimatorType estimator)
+                           BandwidthEstimatorType estimator_type)
     : PacketProcessor(listener, source->flow_id(), kSender),
       // For Packet::send_time_us() to be comparable with timestamps from
       // clock_, the clock of the PacketSender and the Source must be aligned.
       // We assume that both start at time 0.
       clock_(0),
       source_(source),
-      bwe_(CreateBweSender(estimator,
+      bwe_(CreateBweSender(estimator_type,
                            source_->bits_per_second() / 1000,
                            this,
                            &clock_)) {
@@ -49,7 +49,7 @@ void PacketSender::RunFor(int64_t time_ms, Packets* in_out) {
 void PacketSender::ProcessFeedbackAndGeneratePackets(
     int64_t time_ms,
     std::list<FeedbackPacket*>* feedbacks,
-    Packets* generated) {
+    Packets* packets) {
   do {
     // Make sure to at least run Process() below every 100 ms.
     int64_t time_to_run_ms = std::min<int64_t>(time_ms, 100);
@@ -60,7 +60,10 @@ void PacketSender::ProcessFeedbackAndGeneratePackets(
       time_to_run_ms =
           std::max<int64_t>(std::min(time_ms, time_until_feedback_ms), 0);
     }
-    source_->RunFor(time_to_run_ms, generated);
+    Packets generated;
+    source_->RunFor(time_to_run_ms, &generated);
+    bwe_->OnPacketsSent(generated);
+    packets->merge(generated, DereferencingComparator<Packet>);
     clock_.AdvanceTimeMilliseconds(time_to_run_ms);
     if (!feedbacks->empty()) {
       bwe_->GiveFeedback(*feedbacks->front());
@@ -222,6 +225,7 @@ void PacedVideoSender::QueuePackets(Packets* batch,
   }
   Packets to_transfer;
   to_transfer.splice(to_transfer.begin(), queue_, queue_.begin(), it);
+  bwe_->OnPacketsSent(to_transfer);
   batch->merge(to_transfer, DereferencingComparator<Packet>);
 }
 
