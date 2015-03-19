@@ -26,7 +26,6 @@
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 #include "webrtc/voice_engine/test/auto_test/voe_standard_test.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_defines.h"
@@ -368,7 +367,6 @@ int VoEStressTest::MultipleThreadsTest() {
 
   // Stop extra thread
   VALIDATE_STRESS(!_ptrExtraApiThread->Stop());
-  delete _ptrExtraApiThread;
 
   ///////////// End test /////////////
 

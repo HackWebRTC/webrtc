@@ -18,7 +18,6 @@
 
 FakeExternalTransport::FakeExternalTransport(webrtc::VoENetwork* ptr)
     : my_network_(ptr),
-      thread_(NULL),
       lock_(NULL),
       event_(NULL),
       length_(0),
@@ -38,14 +37,11 @@ FakeExternalTransport::FakeExternalTransport(webrtc::VoENetwork* ptr)
 FakeExternalTransport::~FakeExternalTransport() {
   if (thread_) {
     event_->Set();
-    if (thread_->Stop()) {
-      delete thread_;
-      thread_ = NULL;
-      delete event_;
-      event_ = NULL;
-      delete lock_;
-      lock_ = NULL;
-    }
+    thread_->Stop();
+    delete event_;
+    event_ = NULL;
+    delete lock_;
+    lock_ = NULL;
   }
 }
 

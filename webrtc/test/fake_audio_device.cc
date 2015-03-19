@@ -55,8 +55,8 @@ int32_t FakeAudioDevice::Init() {
 
   if (!tick_->StartTimer(true, 10))
     return -1;
-  thread_.reset(ThreadWrapper::CreateThread(
-      FakeAudioDevice::Run, this, webrtc::kHighPriority, "FakeAudioDevice"));
+  thread_ = ThreadWrapper::CreateThread(
+      FakeAudioDevice::Run, this, webrtc::kHighPriority, "FakeAudioDevice");
   if (thread_.get() == NULL)
     return -1;
   if (!thread_->Start()) {

@@ -23,10 +23,10 @@ bool NullRunFunction(void* obj) {
 }
 
 TEST(ThreadTest, StartStop) {
-  ThreadWrapper* thread = ThreadWrapper::CreateThread(&NullRunFunction, NULL);
+  rtc::scoped_ptr<ThreadWrapper> thread = ThreadWrapper::CreateThread(
+      &NullRunFunction, NULL);
   ASSERT_TRUE(thread->Start());
   EXPECT_TRUE(thread->Stop());
-  delete thread;
 }
 
 // Function that sets a boolean.
@@ -39,8 +39,8 @@ bool SetFlagRunFunction(void* obj) {
 
 TEST(ThreadTest, RunFunctionIsCalled) {
   bool flag = false;
-  ThreadWrapper* thread = ThreadWrapper::CreateThread(&SetFlagRunFunction,
-                                                      &flag);
+  rtc::scoped_ptr<ThreadWrapper> thread = ThreadWrapper::CreateThread(
+      &SetFlagRunFunction, &flag);
   ASSERT_TRUE(thread->Start());
 
   // At this point, the flag may be either true or false.
@@ -48,7 +48,6 @@ TEST(ThreadTest, RunFunctionIsCalled) {
 
   // We expect the thread to have run at least once.
   EXPECT_TRUE(flag);
-  delete thread;
 }
 
 }  // namespace webrtc

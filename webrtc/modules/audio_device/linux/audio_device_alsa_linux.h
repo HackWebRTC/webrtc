@@ -14,6 +14,7 @@
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/audio_device/linux/audio_mixer_manager_alsa_linux.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
 #if defined(USE_X11)
 #include <X11/Xlib.h>
@@ -26,7 +27,6 @@
 namespace webrtc
 {
 class EventWrapper;
-class ThreadWrapper;
 
 class AudioDeviceLinuxALSA : public AudioDeviceGeneric
 {
@@ -185,8 +185,8 @@ private:
 
     CriticalSectionWrapper& _critSect;
 
-    ThreadWrapper* _ptrThreadRec;
-    ThreadWrapper* _ptrThreadPlay;
+    rtc::scoped_ptr<ThreadWrapper> _ptrThreadRec;
+    rtc::scoped_ptr<ThreadWrapper> _ptrThreadPlay;
 
     int32_t _id;
 

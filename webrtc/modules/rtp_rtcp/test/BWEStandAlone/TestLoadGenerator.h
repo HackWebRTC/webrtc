@@ -14,13 +14,13 @@
 #include <stdlib.h>
 
 #include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/typedefs.h"
 
 class TestSenderReceiver;
 namespace webrtc {
 class CriticalSectionWrapper;
 class EventWrapper;
-class ThreadWrapper;
 }
 
 class TestLoadGenerator
@@ -44,7 +44,7 @@ protected:
 
     webrtc::CriticalSectionWrapper* _critSect;
     webrtc::EventWrapper *_eventPtr;
-    webrtc::ThreadWrapper* _genThread;
+    rtc::scoped_ptr<webrtc::ThreadWrapper> _genThread;
     int32_t _bitrateKbps;
     TestSenderReceiver *_sender;
     bool _running;

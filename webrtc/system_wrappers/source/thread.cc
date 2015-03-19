@@ -18,14 +18,17 @@
 
 namespace webrtc {
 
-ThreadWrapper* ThreadWrapper::CreateThread(ThreadRunFunction func,
-                                           void* obj, ThreadPriority prio,
-                                           const char* thread_name) {
 #if defined(_WIN32)
-  return new ThreadWindows(func, obj, prio, thread_name);
+typedef ThreadWindows ThreadType;
 #else
-  return new ThreadPosix(func, obj, prio, thread_name);
+typedef ThreadPosix ThreadType;
 #endif
+
+rtc::scoped_ptr<ThreadWrapper> ThreadWrapper::CreateThread(
+    ThreadRunFunction func, void* obj, ThreadPriority prio,
+    const char* thread_name) {
+  return rtc::scoped_ptr<ThreadWrapper>(
+      new ThreadType(func, obj, prio, thread_name)).Pass();
 }
 
 }  // namespace webrtc

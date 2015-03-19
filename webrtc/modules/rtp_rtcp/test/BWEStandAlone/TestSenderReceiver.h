@@ -13,6 +13,7 @@
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/channel_transport/udp_transport.h"
 #include "webrtc/typedefs.h"
 
@@ -20,7 +21,6 @@ class TestLoadGenerator;
 namespace webrtc {
 class CriticalSectionWrapper;
 class EventWrapper;
-class ThreadWrapper;
 }
 
 using namespace webrtc;
@@ -138,7 +138,7 @@ private:
     UdpTransport* _transport;
     webrtc::CriticalSectionWrapper* _critSect;
     webrtc::EventWrapper *_eventPtr;
-    webrtc::ThreadWrapper* _procThread;
+    rtc::scoped_ptr<webrtc::ThreadWrapper> _procThread;
     bool _running;
     int8_t _payloadType;
     TestLoadGenerator* _loadGenerator;

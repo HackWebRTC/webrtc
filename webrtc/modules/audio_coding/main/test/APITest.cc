@@ -531,39 +531,41 @@ void APITest::Perform() {
   //--- THREADS
   // A
   // PUSH
-  ThreadWrapper* myPushAudioThreadA = ThreadWrapper::CreateThread(
-      PushAudioThreadA, this, kNormalPriority, "PushAudioThreadA");
+  rtc::scoped_ptr<ThreadWrapper> myPushAudioThreadA =
+      ThreadWrapper::CreateThread(PushAudioThreadA, this, kNormalPriority,
+                                  "PushAudioThreadA");
   CHECK_THREAD_NULLITY(myPushAudioThreadA, "Unable to start A::PUSH thread");
   // PULL
-  ThreadWrapper* myPullAudioThreadA = ThreadWrapper::CreateThread(
-      PullAudioThreadA, this, kNormalPriority, "PullAudioThreadA");
+  rtc::scoped_ptr<ThreadWrapper> myPullAudioThreadA =
+      ThreadWrapper::CreateThread(PullAudioThreadA, this, kNormalPriority,
+                                  "PullAudioThreadA");
   CHECK_THREAD_NULLITY(myPullAudioThreadA, "Unable to start A::PULL thread");
   // Process
-  ThreadWrapper* myProcessThreadA = ThreadWrapper::CreateThread(
+  rtc::scoped_ptr<ThreadWrapper> myProcessThreadA = ThreadWrapper::CreateThread(
       ProcessThreadA, this, kNormalPriority, "ProcessThreadA");
   CHECK_THREAD_NULLITY(myProcessThreadA, "Unable to start A::Process thread");
   // API
-  ThreadWrapper* myAPIThreadA = ThreadWrapper::CreateThread(APIThreadA, this,
-                                                            kNormalPriority,
-                                                            "APIThreadA");
+  rtc::scoped_ptr<ThreadWrapper> myAPIThreadA = ThreadWrapper::CreateThread(
+      APIThreadA, this, kNormalPriority, "APIThreadA");
   CHECK_THREAD_NULLITY(myAPIThreadA, "Unable to start A::API thread");
   // B
   // PUSH
-  ThreadWrapper* myPushAudioThreadB = ThreadWrapper::CreateThread(
-      PushAudioThreadB, this, kNormalPriority, "PushAudioThreadB");
+  rtc::scoped_ptr<ThreadWrapper> myPushAudioThreadB =
+      ThreadWrapper::CreateThread(PushAudioThreadB, this, kNormalPriority,
+                                  "PushAudioThreadB");
   CHECK_THREAD_NULLITY(myPushAudioThreadB, "Unable to start B::PUSH thread");
   // PULL
-  ThreadWrapper* myPullAudioThreadB = ThreadWrapper::CreateThread(
-      PullAudioThreadB, this, kNormalPriority, "PullAudioThreadB");
+  rtc::scoped_ptr<ThreadWrapper> myPullAudioThreadB =
+      ThreadWrapper::CreateThread(PullAudioThreadB, this, kNormalPriority,
+                                  "PullAudioThreadB");
   CHECK_THREAD_NULLITY(myPullAudioThreadB, "Unable to start B::PULL thread");
   // Process
-  ThreadWrapper* myProcessThreadB = ThreadWrapper::CreateThread(
+  rtc::scoped_ptr<ThreadWrapper> myProcessThreadB = ThreadWrapper::CreateThread(
       ProcessThreadB, this, kNormalPriority, "ProcessThreadB");
   CHECK_THREAD_NULLITY(myProcessThreadB, "Unable to start B::Process thread");
   // API
-  ThreadWrapper* myAPIThreadB = ThreadWrapper::CreateThread(APIThreadB, this,
-                                                            kNormalPriority,
-                                                            "APIThreadB");
+  rtc::scoped_ptr<ThreadWrapper> myAPIThreadB = ThreadWrapper::CreateThread(
+      APIThreadB, this, kNormalPriority, "APIThreadB");
   CHECK_THREAD_NULLITY(myAPIThreadB, "Unable to start B::API thread");
 
   //_apiEventA->StartTimer(true, 5000);
@@ -603,20 +605,10 @@ void APITest::Perform() {
   myProcessThreadA->Stop();
   myAPIThreadA->Stop();
 
-  delete myPushAudioThreadA;
-  delete myPullAudioThreadA;
-  delete myProcessThreadA;
-  delete myAPIThreadA;
-
   myPushAudioThreadB->Stop();
   myPullAudioThreadB->Stop();
   myProcessThreadB->Stop();
   myAPIThreadB->Stop();
-
-  delete myPushAudioThreadB;
-  delete myPullAudioThreadB;
-  delete myProcessThreadB;
-  delete myAPIThreadB;
 }
 
 void APITest::CheckVADStatus(char side) {

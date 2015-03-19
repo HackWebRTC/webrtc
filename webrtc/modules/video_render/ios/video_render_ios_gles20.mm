@@ -15,7 +15,6 @@
 #include "webrtc/modules/video_render/ios/video_render_ios_gles20.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
 using namespace webrtc;
 
@@ -24,7 +23,6 @@ VideoRenderIosGles20::VideoRenderIosGles20(VideoRenderIosView* view,
                                            int render_id)
     : gles_crit_sec_(CriticalSectionWrapper::CreateCriticalSection()),
       screen_update_event_(0),
-      screen_update_thread_(0),
       view_(view),
       window_rect_(),
       window_width_(0),
@@ -42,16 +40,14 @@ VideoRenderIosGles20::VideoRenderIosGles20(VideoRenderIosView* view,
 
 VideoRenderIosGles20::~VideoRenderIosGles20() {
   // Signal event to exit thread, then delete it
-  ThreadWrapper* thread_wrapper = screen_update_thread_;
-  screen_update_thread_ = NULL;
+  ThreadWrapper* thread_wrapper = screen_update_thread_.release();
 
   if (thread_wrapper) {
     screen_update_event_->Set();
     screen_update_event_->StopTimer();
 
-    if (thread_wrapper->Stop()) {
-      delete thread_wrapper;
-    }
+    thread_wrapper->Stop();
+    delete thread_wrapper;
     delete screen_update_event_;
     screen_update_event_ = NULL;
     is_rendering_ = FALSE;
@@ -77,10 +73,6 @@ VideoRenderIosGles20::~VideoRenderIosGles20() {
 
 int VideoRenderIosGles20::Init() {
   CriticalSectionScoped cs(gles_crit_sec_.get());
-
-  if (!screen_update_thread_) {
-    return -1;
-  }
 
   if (!view_) {
     view_ = [[VideoRenderIosView alloc] init];

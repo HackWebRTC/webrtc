@@ -16,6 +16,7 @@
 #define WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_MAC_VIDEO_RENDER_AGL_H_
 
 #include "webrtc/modules/video_render/include/video_render_defines.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
 #define NEW_HIVIEW_PARENT_EVENT_HANDLER 1
 #define NEW_HIVIEW_EVENT_HANDLER 1
@@ -34,7 +35,6 @@ class VideoRenderAGL;
 namespace webrtc {
 class CriticalSectionWrapper;
 class EventWrapper;
-class ThreadWrapper;
 
 class VideoChannelAGL : public VideoRenderCallback {
  public:
@@ -143,7 +143,7 @@ class VideoRenderAGL {
   bool _fullScreen;
   int _id;
   webrtc::CriticalSectionWrapper& _renderCritSec;
-  webrtc::ThreadWrapper* _screenUpdateThread;
+  rtc::scoped_ptr<webrtc::ThreadWrapper> _screenUpdateThread;
   webrtc::EventWrapper* _screenUpdateEvent;
   bool _isHIViewRef;
   AGLContext _aglContext;

@@ -18,7 +18,6 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
@@ -368,7 +367,6 @@ _windowRef( windowRef),
 _fullScreen( fullscreen),
 _id( iId),
 _renderCritSec(*CriticalSectionWrapper::CreateCriticalSection()),
-_screenUpdateThread( 0),
 _screenUpdateEvent( 0),
 _isHIViewRef( false),
 _aglContext( 0),
@@ -485,7 +483,6 @@ _windowRef( 0),
 _fullScreen( fullscreen),
 _id( iId),
 _renderCritSec(*CriticalSectionWrapper::CreateCriticalSection()),
-_screenUpdateThread( 0),
 _screenUpdateEvent( 0),
 _isHIViewRef( false),
 _aglContext( 0),
@@ -678,18 +675,15 @@ VideoRenderAGL::~VideoRenderAGL()
 #endif
 
     // Signal event to exit thread, then delete it
-    ThreadWrapper* tmpPtr = _screenUpdateThread;
-    _screenUpdateThread = NULL;
+    ThreadWrapper* tmpPtr = _screenUpdateThread.release();
 
     if (tmpPtr)
     {
         _screenUpdateEvent->Set();
         _screenUpdateEvent->StopTimer();
 
-        if (tmpPtr->Stop())
-        {
-            delete tmpPtr;
-        }
+        tmpPtr->Stop();
+        delete tmpPtr;
         delete _screenUpdateEvent;
         _screenUpdateEvent = NULL;
     }
@@ -859,16 +853,15 @@ int VideoRenderAGL::DeleteAGLChannel(int channel)
 int VideoRenderAGL::StopThread()
 {
     CriticalSectionScoped cs(&_renderCritSec);
-    ThreadWrapper* tmpPtr = _screenUpdateThread;
-    //_screenUpdateThread = NULL;
+    ThreadWrapper* tmpPtr = _screenUpdateThread.release();
 
     if (tmpPtr)
     {
         _screenUpdateEvent->Set();
-        if (tmpPtr->Stop())
-        {
-            delete tmpPtr;
-        }
+        _renderCritSec.Leave();
+        tmpPtr->Stop();
+        delete tmpPtr;
+        _renderCritSec.Enter();
     }
 
     delete _screenUpdateEvent;

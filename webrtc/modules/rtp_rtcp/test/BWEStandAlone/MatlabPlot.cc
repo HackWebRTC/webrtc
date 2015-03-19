@@ -22,7 +22,6 @@
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 
 using namespace webrtc;
@@ -891,22 +890,14 @@ MatlabEngine::MatlabEngine()
 :
 _critSect(CriticalSectionWrapper::CreateCriticalSection()),
 _eventPtr(NULL),
-_plotThread(NULL),
 _running(false),
 _numPlots(0)
 {
     _eventPtr = EventWrapper::Create();
 
-    _plotThread = ThreadWrapper::CreateThread(MatlabEngine::PlotThread, this, kLowPriority, "MatlabPlot");
-
-    if (_plotThread == NULL)
-    {
-        throw "Unable to start MatlabEngine thread";
-        exit(1);
-    }
-
+    _plotThread = ThreadWrapper::CreateThread(MatlabEngine::PlotThread, this,
+                                              kLowPriority, "MatlabPlot");
     _running = true;
-
     _plotThread->Start();
 }
 
@@ -919,17 +910,10 @@ MatlabEngine::~MatlabEngine()
         _running = false;
         _eventPtr->Set();
 
-        while (!_plotThread->Stop())
-        {
-            ;
-        }
-
-        delete _plotThread;
+        _plotThread->Stop();
     }
 
     _plots.clear();
-
-    _plotThread = NULL;
 
     delete _eventPtr;
     _eventPtr = NULL;

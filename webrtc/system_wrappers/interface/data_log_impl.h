@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -31,7 +32,6 @@ class CriticalSectionWrapper;
 class EventWrapper;
 class LogTable;
 class RWLockWrapper;
-class ThreadWrapper;
 
 // All container classes need to implement a ToString-function to be
 // writable to file. Enforce this via the Container interface.
@@ -146,7 +146,7 @@ class DataLogImpl {
   int                       counter_;
   TableMap                  tables_;
   EventWrapper*             flush_event_;
-  ThreadWrapper*            file_writer_thread_;
+  rtc::scoped_ptr<ThreadWrapper> file_writer_thread_;
   RWLockWrapper*            tables_lock_;
 };
 

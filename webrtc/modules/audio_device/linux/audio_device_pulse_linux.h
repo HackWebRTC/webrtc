@@ -14,6 +14,7 @@
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/audio_device/linux/audio_mixer_manager_pulse_linux.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
 #include <X11/Xlib.h>
 #include <pulse/pulseaudio.h>
@@ -87,7 +88,6 @@ const uint32_t WEBRTC_PA_CAPTURE_BUFFER_LATENCY_ADJUSTMENT = 0;
 namespace webrtc
 {
 class EventWrapper;
-class ThreadWrapper;
 
 class AudioDeviceLinuxPulse: public AudioDeviceGeneric
 {
@@ -288,8 +288,8 @@ private:
     EventWrapper& _recStartEvent;
     EventWrapper& _playStartEvent;
 
-    ThreadWrapper* _ptrThreadPlay;
-    ThreadWrapper* _ptrThreadRec;
+    rtc::scoped_ptr<ThreadWrapper> _ptrThreadPlay;
+    rtc::scoped_ptr<ThreadWrapper> _ptrThreadRec;
     int32_t _id;
 
     AudioMixerManagerLinuxPulse _mixerManager;

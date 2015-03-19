@@ -72,7 +72,7 @@ class IncomingVideoStream : public VideoRenderCallback {
   CriticalSectionWrapper& stream_critsect_;
   CriticalSectionWrapper& thread_critsect_;
   CriticalSectionWrapper& buffer_critsect_;
-  ThreadWrapper* incoming_render_thread_;
+  rtc::scoped_ptr<ThreadWrapper> incoming_render_thread_;
   EventWrapper& deliver_buffer_event_;
   bool running_;
 

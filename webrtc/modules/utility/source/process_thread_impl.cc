@@ -69,8 +69,8 @@ void ProcessThreadImpl::Start() {
   for (ModuleCallback& m : modules_)
     m.module->ProcessThreadAttached(this);
 
-  thread_.reset(ThreadWrapper::CreateThread(
-      &ProcessThreadImpl::Run, this, kNormalPriority, "ProcessThread"));
+  thread_ = ThreadWrapper::CreateThread(
+      &ProcessThreadImpl::Run, this, kNormalPriority, "ProcessThread");
   CHECK(thread_->Start());
 }
 

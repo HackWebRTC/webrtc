@@ -178,8 +178,8 @@ class FileAudioDevice : public AudioDeviceGeneric {
   uint32_t _recordingFramesIn10MS;
   uint32_t _playoutFramesIn10MS;
 
-  ThreadWrapper* _ptrThreadRec;
-  ThreadWrapper* _ptrThreadPlay;
+  rtc::scoped_ptr<ThreadWrapper> _ptrThreadRec;
+  rtc::scoped_ptr<ThreadWrapper> _ptrThreadPlay;
 
   bool _playing;
   bool _recording;

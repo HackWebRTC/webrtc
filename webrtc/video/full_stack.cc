@@ -108,10 +108,10 @@ class VideoAnalyzer : public PacketReceiver,
     }
 
     for (uint32_t i = 0; i < num_cores; ++i) {
-      ThreadWrapper* thread =
+      rtc::scoped_ptr<ThreadWrapper> thread =
           ThreadWrapper::CreateThread(&FrameComparisonThread, this);
-      comparison_thread_pool_.push_back(thread);
       EXPECT_TRUE(thread->Start());
+      comparison_thread_pool_.push_back(thread.release());
     }
   }
 

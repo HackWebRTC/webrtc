@@ -15,7 +15,6 @@
 #include "webrtc/modules/audio_device/linux/audio_device_pulse_linux.h"
 
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 webrtc_adm_linux_pulse::PulseAudioSymbolTable PaSymbolTable;
@@ -40,8 +39,6 @@ AudioDeviceLinuxPulse::AudioDeviceLinuxPulse(const int32_t id) :
     _timeEventPlay(*EventWrapper::Create()),
     _recStartEvent(*EventWrapper::Create()),
     _playStartEvent(*EventWrapper::Create()),
-    _ptrThreadPlay(NULL),
-    _ptrThreadRec(NULL),
     _id(id),
     _mixerManager(id),
     _inputDeviceIndex(0),
@@ -212,20 +209,12 @@ int32_t AudioDeviceLinuxPulse::Init()
     const char* threadName = "webrtc_audio_module_rec_thread";
     _ptrThreadRec = ThreadWrapper::CreateThread(RecThreadFunc, this,
                                                 kRealtimePriority, threadName);
-    if (_ptrThreadRec == NULL)
-    {
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                     "  failed to create the rec audio thread");
-        return -1;
-    }
-
     if (!_ptrThreadRec->Start())
     {
         WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
                      "  failed to start the rec audio thread");
 
-        delete _ptrThreadRec;
-        _ptrThreadRec = NULL;
+        _ptrThreadRec.reset();
         return -1;
     }
 
@@ -233,20 +222,12 @@ int32_t AudioDeviceLinuxPulse::Init()
     threadName = "webrtc_audio_module_play_thread";
     _ptrThreadPlay = ThreadWrapper::CreateThread(PlayThreadFunc, this,
                                                  kRealtimePriority, threadName);
-    if (_ptrThreadPlay == NULL)
-    {
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                     "  failed to create the play audio thread");
-        return -1;
-    }
-
     if (!_ptrThreadPlay->Start())
     {
         WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
                      "  failed to start the play audio thread");
 
-        delete _ptrThreadPlay;
-        _ptrThreadPlay = NULL;
+        _ptrThreadPlay.reset();
         return -1;
     }
 
@@ -270,19 +251,12 @@ int32_t AudioDeviceLinuxPulse::Terminate()
     // RECORDING
     if (_ptrThreadRec)
     {
-        ThreadWrapper* tmpThread = _ptrThreadRec;
-        _ptrThreadRec = NULL;
+        ThreadWrapper* tmpThread = _ptrThreadRec.release();
         UnLock();
 
         _timeEventRec.Set();
-        if (tmpThread->Stop())
-        {
-            delete tmpThread;
-        } else
-        {
-            WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                         "  failed to close down the rec audio thread");
-        }
+        tmpThread->Stop();
+        delete tmpThread;
         // Lock again since we need to protect _ptrThreadPlay.
         Lock();
     }
@@ -290,19 +264,12 @@ int32_t AudioDeviceLinuxPulse::Terminate()
     // PLAYOUT
     if (_ptrThreadPlay)
     {
-        ThreadWrapper* tmpThread = _ptrThreadPlay;
-        _ptrThreadPlay = NULL;
+        ThreadWrapper* tmpThread = _ptrThreadPlay.release();
         _critSect.Leave();
 
         _timeEventPlay.Set();
-        if (tmpThread->Stop())
-        {
-            delete tmpThread;
-        } else
-        {
-            WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                         "  failed to close down the play audio thread");
-        }
+        tmpThread->Stop();
+        delete tmpThread;
     } else {
       UnLock();
     }

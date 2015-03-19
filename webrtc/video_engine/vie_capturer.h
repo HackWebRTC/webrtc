@@ -23,6 +23,7 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_capture.h"
@@ -37,7 +38,6 @@ class EventWrapper;
 class CpuOveruseObserver;
 class OveruseFrameDetector;
 class ProcessThread;
-class ThreadWrapper;
 class ViEEffectFilter;
 class ViEEncoder;
 struct ViEPicture;
@@ -163,7 +163,7 @@ class ViECapturer
   I420VideoFrame incoming_frame_;
 
   // Capture thread.
-  ThreadWrapper& capture_thread_;
+  rtc::scoped_ptr<ThreadWrapper> capture_thread_;
   EventWrapper& capture_event_;
   EventWrapper& deliver_event_;
 

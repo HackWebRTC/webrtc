@@ -11,7 +11,6 @@
 
 #include <assert.h>
 
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_engine/test/libvietest/include/vie_file_capture_device.h"
 
@@ -34,7 +33,6 @@ bool StreamVideoFileRepeatedlyIntoCaptureDevice(void* data) {
 ViEFakeCamera::ViEFakeCamera(webrtc::ViECapture* capture_interface)
     : capture_interface_(capture_interface),
       capture_id_(-1),
-      camera_thread_(NULL),
       file_capture_device_(NULL) {
 }
 
@@ -77,7 +75,7 @@ bool ViEFakeCamera::StopCamera() {
 
   int result = capture_interface_->ReleaseCaptureDevice(capture_id_);
 
-  delete camera_thread_;
+  camera_thread_.reset();
   delete file_capture_device_;
   camera_thread_ = NULL;
   file_capture_device_ = NULL;

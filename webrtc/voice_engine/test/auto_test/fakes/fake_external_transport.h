@@ -32,7 +32,7 @@ class FakeExternalTransport : public webrtc::Transport {
   static bool Run(void* ptr);
   bool Process();
  private:
-  webrtc::ThreadWrapper* thread_;
+  rtc::scoped_ptr<webrtc::ThreadWrapper> thread_;
   webrtc::CriticalSectionWrapper* lock_;
   webrtc::EventWrapper* event_;
  private:

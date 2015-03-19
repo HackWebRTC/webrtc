@@ -35,8 +35,6 @@ FileAudioDevice::FileAudioDevice(const int32_t id,
     _recordingBufferSizeIn10MS(0),
     _recordingFramesIn10MS(0),
     _playoutFramesIn10MS(0),
-    _ptrThreadRec(NULL),
-    _ptrThreadPlay(NULL),
     _playing(false),
     _recording(false),
     _lastCallPlayoutMillis(0),
@@ -208,16 +206,10 @@ int32_t FileAudioDevice::StartPlayout() {
 
   // PLAYOUT
   const char* threadName = "webrtc_audio_module_play_thread";
-  _ptrThreadPlay =  ThreadWrapper::CreateThread(PlayThreadFunc,
-                                                this,
-                                                kRealtimePriority,
-                                                threadName);
-  if (_ptrThreadPlay == NULL) {
-      _playing = false;
-      delete [] _playoutBuffer;
-      _playoutBuffer = NULL;
-      return -1;
-  }
+  _ptrThreadPlay = ThreadWrapper::CreateThread(PlayThreadFunc,
+                                               this,
+                                               kRealtimePriority,
+                                               threadName);
 
   if (!_outputFilename.empty() && _outputFile.OpenFile(
         _outputFilename.c_str(), false, false, false) == -1) {
@@ -229,9 +221,8 @@ int32_t FileAudioDevice::StartPlayout() {
   }
 
   if (!_ptrThreadPlay->Start()) {
+      _ptrThreadPlay.reset();
       _playing = false;
-      delete _ptrThreadPlay;
-      _ptrThreadPlay = NULL;
       delete [] _playoutBuffer;
       _playoutBuffer = NULL;
       return -1;
@@ -247,11 +238,9 @@ int32_t FileAudioDevice::StopPlayout() {
   }
 
   // stop playout thread first
-  if (_ptrThreadPlay && !_ptrThreadPlay->Stop()) {
-      return -1;
-  } else {
-      delete _ptrThreadPlay;
-      _ptrThreadPlay = NULL;
+  if (_ptrThreadPlay) {
+      _ptrThreadPlay->Stop();
+      _ptrThreadPlay.reset();
   }
 
   CriticalSectionScoped lock(&_critSect);
@@ -296,17 +285,10 @@ int32_t FileAudioDevice::StartRecording() {
                                               this,
                                               kRealtimePriority,
                                               threadName);
-  if (_ptrThreadRec == NULL) {
-      _recording = false;
-      delete [] _recordingBuffer;
-      _recordingBuffer = NULL;
-      return -1;
-  }
 
   if (!_ptrThreadRec->Start()) {
+      _ptrThreadRec.reset();
       _recording = false;
-      delete _ptrThreadRec;
-      _ptrThreadRec = NULL;
       delete [] _recordingBuffer;
       _recordingBuffer = NULL;
       return -1;
@@ -322,11 +304,9 @@ int32_t FileAudioDevice::StopRecording() {
     _recording = false;
   }
 
-  if (_ptrThreadRec && !_ptrThreadRec->Stop()) {
-      return -1;
-  } else {
-      delete _ptrThreadRec;
-      _ptrThreadRec = NULL;
+  if (_ptrThreadRec) {
+      _ptrThreadRec->Stop();
+      _ptrThreadRec.reset();
   }
 
   CriticalSectionScoped lock(&_critSect);

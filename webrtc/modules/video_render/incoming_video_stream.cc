@@ -215,11 +215,10 @@ int32_t IncomingVideoStream::Stop() {
   ThreadWrapper* thread = NULL;
   {
     CriticalSectionScoped cs_thread(&thread_critsect_);
-    if (incoming_render_thread_ != NULL) {
-      thread = incoming_render_thread_;
+    if (incoming_render_thread_) {
       // Setting the incoming render thread to NULL marks that we're performing
       // a shutdown and will make IncomingVideoStreamProcess abort after wakeup.
-      incoming_render_thread_ = NULL;
+      thread = incoming_render_thread_.release();
       deliver_buffer_event_.StopTimer();
       // Set the event to allow the thread to wake up and shut down without
       // waiting for a timeout.

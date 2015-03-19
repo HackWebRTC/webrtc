@@ -536,7 +536,7 @@ class ViEChannel
   // Current receive codec used for codec change callback.
   VideoCodec receive_codec_;
   bool wait_for_key_frame_;
-  ThreadWrapper* decode_thread_;
+  rtc::scoped_ptr<ThreadWrapper> decode_thread_;
 
   ViEEffectFilter* effect_filter_;
   bool color_enhancement_;

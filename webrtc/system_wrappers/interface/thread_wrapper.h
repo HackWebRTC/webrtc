@@ -16,6 +16,7 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_THREAD_WRAPPER_H_
 #define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_THREAD_WRAPPER_H_
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
 
@@ -37,6 +38,8 @@ enum ThreadPriority {
 // Represents a simple worker thread.  The implementation must be assumed
 // to be single threaded, meaning that all methods of the class, must be
 // called from the same thread, including instantiation.
+// TODO(tommi): There's no need for this to be a virtual interface since there's
+// only ever a single implementation of it.
 class ThreadWrapper {
  public:
   virtual ~ThreadWrapper() {}
@@ -51,10 +54,9 @@ class ThreadWrapper {
   //             debugger.
   // TODO(tommi): Remove the priority argument and provide a setter instead.
   // TODO(tommi): Make thread_name non-optional (i.e. no default value).
-  static ThreadWrapper* CreateThread(ThreadRunFunction func,
-                                     void* obj,
-                                     ThreadPriority prio = kNormalPriority,
-                                     const char* thread_name = 0);
+  static rtc::scoped_ptr<ThreadWrapper> CreateThread(ThreadRunFunction func,
+      void* obj, ThreadPriority prio = kNormalPriority,
+      const char* thread_name = 0);
 
   // Get the current thread's thread ID.
   // NOTE: This is a static method. It returns the id of the calling thread,

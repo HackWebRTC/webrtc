@@ -17,7 +17,6 @@
 #include "webrtc/modules/rtp_rtcp/test/BWEStandAlone/TestSenderReceiver.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 
 
@@ -37,7 +36,6 @@ TestLoadGenerator::TestLoadGenerator(TestSenderReceiver *sender, int32_t rtpSamp
 :
 _critSect(CriticalSectionWrapper::CreateCriticalSection()),
 _eventPtr(NULL),
-_genThread(NULL),
 _bitrateKbps(0),
 _sender(sender),
 _running(false),
@@ -78,13 +76,8 @@ int32_t TestLoadGenerator::Start (const char *threadName)
 
     _eventPtr = EventWrapper::Create();
 
-    _genThread = ThreadWrapper::CreateThread(SenderThreadFunction, this, kRealtimePriority, threadName);
-    if (_genThread == NULL)
-    {
-        throw "Unable to start generator thread";
-        exit(1);
-    }
-
+    _genThread = ThreadWrapper::CreateThread(SenderThreadFunction, this,
+                                             kRealtimePriority, threadName);
     _running = true;
 
     _genThread->Start();
@@ -102,20 +95,13 @@ int32_t TestLoadGenerator::Stop ()
         _running = false;
         _eventPtr->Set();
 
-        while (!_genThread->Stop())
-        {
-            _critSect.Leave();
-            _critSect.Enter();
-        }
-
-        delete _genThread;
-        _genThread = NULL;
+        _genThread->Stop();
+        _genThread.reset();
 
         delete _eventPtr;
         _eventPtr = NULL;
     }
 
-    _genThread = NULL;
     _critSect.Leave();
     return (0);
 }

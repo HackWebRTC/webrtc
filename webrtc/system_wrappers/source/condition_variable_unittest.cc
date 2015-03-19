@@ -158,14 +158,13 @@ class CondVarTest : public ::testing::Test {
     ASSERT_TRUE(baton_.Pass(kShortWaitMs));
     ASSERT_TRUE(baton_.Grab(kShortWaitMs));
     ASSERT_TRUE(thread_->Stop());
-    delete thread_;
   }
 
  protected:
   Baton baton_;
 
  private:
-  ThreadWrapper* thread_;
+  rtc::scoped_ptr<ThreadWrapper> thread_;
 };
 
 // The SetUp and TearDown functions use condition variables.

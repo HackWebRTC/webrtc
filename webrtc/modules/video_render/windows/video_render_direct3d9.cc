@@ -18,7 +18,6 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
@@ -287,7 +286,6 @@ VideoRenderDirect3D9::VideoRenderDirect3D9(Trace* trace,
     _pD3D(NULL),
     _d3dChannels(),
     _d3dZorder(),
-    _screenUpdateThread(NULL),
     _screenUpdateEvent(NULL),
     _logoLeft(0),
     _logoTop(0),
@@ -308,17 +306,14 @@ VideoRenderDirect3D9::~VideoRenderDirect3D9()
     //NOTE: we should not enter CriticalSection in here!
 
     // Signal event to exit thread, then delete it
-    ThreadWrapper* tmpPtr = _screenUpdateThread;
-    _screenUpdateThread = NULL;
+    ThreadWrapper* tmpPtr = _screenUpdateThread.release();
     if (tmpPtr)
     {
         _screenUpdateEvent->Set();
         _screenUpdateEvent->StopTimer();
 
-        if (tmpPtr->Stop())
-        {
-            delete tmpPtr;
-        }
+        tmpPtr->Stop();
+        delete tmpPtr;
     }
     delete _screenUpdateEvent;
 

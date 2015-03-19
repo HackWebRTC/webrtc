@@ -198,11 +198,6 @@ UdpSocketManagerPosixImpl::UdpSocketManagerPosixImpl()
 
 UdpSocketManagerPosixImpl::~UdpSocketManagerPosixImpl()
 {
-    if(_thread != NULL)
-    {
-        delete _thread;
-    }
-
     if (_critSectList != NULL)
     {
         UpdateSocketMap();
@@ -226,7 +221,7 @@ UdpSocketManagerPosixImpl::~UdpSocketManagerPosixImpl()
 
 bool UdpSocketManagerPosixImpl::Start()
 {
-    if (_thread == NULL)
+    if (!_thread)
     {
         return false;
     }
@@ -238,7 +233,7 @@ bool UdpSocketManagerPosixImpl::Start()
 
 bool UdpSocketManagerPosixImpl::Stop()
 {
-    if (_thread == NULL)
+    if (!_thread)
     {
         return true;
     }

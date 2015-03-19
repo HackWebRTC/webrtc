@@ -520,7 +520,6 @@ int32_t UdpSocket2WorkerWindows::_numOfWorkers = 0;
 
 UdpSocket2WorkerWindows::UdpSocket2WorkerWindows(HANDLE ioCompletionHandle)
     : _ioCompletionHandle(ioCompletionHandle),
-      _pThread(NULL),
       _init(false)
 {
     _workerNumber = _numOfWorkers++;
@@ -530,10 +529,6 @@ UdpSocket2WorkerWindows::UdpSocket2WorkerWindows(HANDLE ioCompletionHandle)
 
 UdpSocket2WorkerWindows::~UdpSocket2WorkerWindows()
 {
-    if(_pThread)
-    {
-        delete _pThread;
-    }
     WEBRTC_TRACE(kTraceMemory,  kTraceTransport, -1,
                  "UdpSocket2WorkerWindows deleted");
 }
@@ -559,16 +554,6 @@ int32_t UdpSocket2WorkerWindows::Init()
         const char* threadName = "UdpSocket2ManagerWindows_thread";
         _pThread = ThreadWrapper::CreateThread(Run, this, kRealtimePriority,
                                                threadName);
-        if(_pThread == NULL)
-        {
-            WEBRTC_TRACE(
-                kTraceError,
-                kTraceTransport,
-                -1,
-                "UdpSocket2WorkerWindows(%d)::Init(), error creating thread!",
-                _workerNumber);
-            return -1;
-        }
         _init = true;
     }
     return 0;

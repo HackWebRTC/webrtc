@@ -177,23 +177,16 @@ private:
     static bool Run(void* ptr);
     bool Process();
 private:
-    ThreadWrapper* _thread;
+    rtc::scoped_ptr<ThreadWrapper> _thread;
 };
 
 ThreadTest::~ThreadTest()
 {
     if (_thread)
-    {
-        if (_thread->Stop())
-        {
-            delete _thread;
-            _thread = NULL;
-        }
-    }
+        _thread->Stop();
 }
 
-ThreadTest::ThreadTest() :
-    _thread(NULL)
+ThreadTest::ThreadTest()
 {
     _thread = ThreadWrapper::CreateThread(Run, this, kNormalPriority,
                                           "ThreadTest thread");

@@ -470,10 +470,8 @@ void OpenSlesInput::RecorderSimpleBufferQueueCallbackHandler(
 }
 
 bool OpenSlesInput::StartCbThreads() {
-  rec_thread_.reset(ThreadWrapper::CreateThread(CbThread,
-                                                this,
-                                                kRealtimePriority,
-                                                "opensl_rec_thread"));
+  rec_thread_ = ThreadWrapper::CreateThread(CbThread, this, kRealtimePriority,
+                                            "opensl_rec_thread");
   assert(rec_thread_.get());
   if (!rec_thread_->Start()) {
     assert(false);

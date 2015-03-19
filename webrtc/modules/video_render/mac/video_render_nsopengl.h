@@ -169,7 +169,7 @@ private: // variables
     bool _fullScreen;
     int _id;
     CriticalSectionWrapper& _nsglContextCritSec;
-    ThreadWrapper* _screenUpdateThread;
+    rtc::scoped_ptr<ThreadWrapper> _screenUpdateThread;
     EventWrapper* _screenUpdateEvent;
     NSOpenGLContext* _nsglContext;
     NSOpenGLContext* _nsglFullScreenContext;

@@ -367,7 +367,6 @@ _windowRef( (CocoaRenderView*)windowRef),
 _fullScreen( fullScreen),
 _id( iId),
 _nsglContextCritSec( *CriticalSectionWrapper::CreateCriticalSection()),
-_screenUpdateThread( 0),
 _screenUpdateEvent( 0),
 _nsglContext( 0),
 _nsglFullScreenContext( 0),
@@ -658,8 +657,7 @@ VideoRenderNSOpenGL::~VideoRenderNSOpenGL()
     }
 
     // Signal event to exit thread, then delete it
-    ThreadWrapper* tmpPtr = _screenUpdateThread;
-    _screenUpdateThread = NULL;
+    ThreadWrapper* tmpPtr = _screenUpdateThread.release();
 
     if (tmpPtr)
     {
@@ -865,9 +863,9 @@ int32_t VideoRenderNSOpenGL::GetChannelProperties(const uint16_t streamId,
 int VideoRenderNSOpenGL::StopThread()
 {
 
-    ThreadWrapper* tmpPtr = _screenUpdateThread;
-    WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s Stopping thread ", __FUNCTION__, _screenUpdateThread);
-    _screenUpdateThread = NULL;
+    ThreadWrapper* tmpPtr = _screenUpdateThread.release();
+    WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id,
+                 "%s Stopping thread ", __FUNCTION__, tmpPtr);
 
     if (tmpPtr)
     {

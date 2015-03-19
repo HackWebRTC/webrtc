@@ -78,7 +78,7 @@ TEST_F(CritSectTest, ThreadWakesOnce) NO_THREAD_SAFETY_ANALYSIS {
   CriticalSectionWrapper* crit_sect =
       CriticalSectionWrapper::CreateCriticalSection();
   ProtectedCount count(crit_sect);
-  ThreadWrapper* thread = ThreadWrapper::CreateThread(
+  rtc::scoped_ptr<ThreadWrapper> thread = ThreadWrapper::CreateThread(
       &LockUnlockThenStopRunFunction, &count);
   crit_sect->Enter();
   ASSERT_TRUE(thread->Start());
@@ -91,7 +91,6 @@ TEST_F(CritSectTest, ThreadWakesOnce) NO_THREAD_SAFETY_ANALYSIS {
   crit_sect->Leave();  // This frees the thread to act.
   EXPECT_TRUE(WaitForCount(1, &count));
   EXPECT_TRUE(thread->Stop());
-  delete thread;
   delete crit_sect;
 }
 
@@ -106,8 +105,8 @@ TEST_F(CritSectTest, ThreadWakesTwice) NO_THREAD_SAFETY_ANALYSIS {
   CriticalSectionWrapper* crit_sect =
       CriticalSectionWrapper::CreateCriticalSection();
   ProtectedCount count(crit_sect);
-  ThreadWrapper* thread = ThreadWrapper::CreateThread(&LockUnlockRunFunction,
-                                                      &count);
+  rtc::scoped_ptr<ThreadWrapper> thread = ThreadWrapper::CreateThread(
+      &LockUnlockRunFunction, &count);
   crit_sect->Enter();  // Make sure counter stays 0 until we wait for it.
   ASSERT_TRUE(thread->Start());
   crit_sect->Leave();
@@ -130,7 +129,6 @@ TEST_F(CritSectTest, ThreadWakesTwice) NO_THREAD_SAFETY_ANALYSIS {
   SwitchProcess();
   EXPECT_TRUE(WaitForCount(count_before + 1, &count));
   EXPECT_TRUE(thread->Stop());
-  delete thread;
   delete crit_sect;
 }
 

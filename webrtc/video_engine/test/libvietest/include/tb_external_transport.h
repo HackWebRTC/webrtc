@@ -19,12 +19,12 @@
 #include <map>
 
 #include "webrtc/common_types.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
 namespace webrtc
 {
 class CriticalSectionWrapper;
 class EventWrapper;
-class ThreadWrapper;
 class ViENetwork;
 }
 
@@ -147,7 +147,7 @@ private:
     int sender_channel_;
     SsrcChannelMap* receive_channels_;
     webrtc::ViENetwork& _vieNetwork;
-    webrtc::ThreadWrapper& _thread;
+    rtc::scoped_ptr<webrtc::ThreadWrapper> _thread;
     webrtc::EventWrapper& _event;
     webrtc::CriticalSectionWrapper& _crit;
     webrtc::CriticalSectionWrapper& _statCrit;

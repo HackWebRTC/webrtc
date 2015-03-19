@@ -122,7 +122,6 @@ ViEChannel::ViEChannel(int32_t channel_id,
       external_transport_(NULL),
       decoder_reset_(true),
       wait_for_key_frame_(false),
-      decode_thread_(NULL),
       effect_filter_(NULL),
       color_enhancement_(false),
       mtu_(0),
@@ -1854,8 +1853,7 @@ int32_t ViEChannel::StopDecodeThread() {
   vcm_->TriggerDecoderShutdown();
 
   decode_thread_->Stop();
-  delete decode_thread_;
-  decode_thread_ = NULL;
+  decode_thread_.reset();
 
   return 0;
 }

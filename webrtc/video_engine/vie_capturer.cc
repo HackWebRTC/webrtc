@@ -20,7 +20,6 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video_engine/include/vie_image_process.h"
@@ -69,10 +68,10 @@ ViECapturer::ViECapturer(int capture_id,
       module_process_thread_(module_process_thread),
       capture_id_(capture_id),
       incoming_frame_cs_(CriticalSectionWrapper::CreateCriticalSection()),
-      capture_thread_(*ThreadWrapper::CreateThread(ViECaptureThreadFunction,
-                                                   this,
-                                                   kHighPriority,
-                                                   "ViECaptureThread")),
+      capture_thread_(ThreadWrapper::CreateThread(ViECaptureThreadFunction,
+                                                  this,
+                                                  kHighPriority,
+                                                  "ViECaptureThread")),
       capture_event_(*EventWrapper::Create()),
       deliver_event_(*EventWrapper::Create()),
       stop_(0),
@@ -93,7 +92,7 @@ ViECapturer::ViECapturer(int capture_id,
       overuse_detector_(
           new OveruseFrameDetector(Clock::GetRealTimeClock(),
                                    cpu_overuse_metrics_observer_.get())) {
-  capture_thread_.Start();
+  capture_thread_->Start();
   module_process_thread_.RegisterModule(overuse_detector_.get());
 }
 
@@ -111,14 +110,10 @@ ViECapturer::~ViECapturer() {
     capture_module_->Release();
     capture_module_ = NULL;
   }
-  if (capture_thread_.Stop()) {
-    // Thread stopped.
-    delete &capture_thread_;
-    delete &capture_event_;
-    delete &deliver_event_;
-  } else {
-    assert(false);
-  }
+
+  capture_thread_->Stop();
+  delete &capture_event_;
+  delete &deliver_event_;
 
   if (image_proc_module_) {
     VideoProcessingModule::Destroy(image_proc_module_);

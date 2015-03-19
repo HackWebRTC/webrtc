@@ -218,9 +218,7 @@ bool EventPosix::StopTimer() {
     if (!timer_thread_->Stop()) {
       return false;
     }
-
-    delete timer_thread_;
-    timer_thread_ = 0;
+    timer_thread_.reset();
   }
   if (timer_event_) {
     delete timer_event_;

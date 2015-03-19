@@ -24,7 +24,6 @@
 #include "webrtc/modules/video_capture/linux/video_capture_linux.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc
@@ -48,7 +47,6 @@ VideoCaptureModule* VideoCaptureImpl::Create(const int32_t id,
 
 VideoCaptureModuleV4L2::VideoCaptureModuleV4L2(const int32_t id)
     : VideoCaptureImpl(id),
-      _captureThread(NULL),
       _captureCritSect(CriticalSectionWrapper::CreateCriticalSection()),
       _deviceId(-1),
       _deviceFd(-1),
@@ -305,23 +303,14 @@ int32_t VideoCaptureModuleV4L2::StopCapture()
 {
     if (_captureThread) {
         // Make sure the capture thread stop stop using the critsect.
-        if (_captureThread->Stop()) {
-            delete _captureThread;
-            _captureThread = NULL;
-        } else
-        {
-            // Couldn't stop the thread, leak instead of crash.
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, -1,
-                         "%s: could not stop capture thread", __FUNCTION__);
-            assert(false);
-        }
+        _captureThread->Stop();
+        _captureThread.reset();
     }
 
     CriticalSectionScoped cs(_captureCritSect);
     if (_captureStarted)
     {
         _captureStarted = false;
-        _captureThread = NULL;
 
         DeAllocateVideoBuffers();
         close(_deviceFd);

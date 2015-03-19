@@ -49,7 +49,7 @@ class EventPosix : public EventWrapper {
   pthread_mutex_t mutex_;
   bool event_set_;
 
-  ThreadWrapper* timer_thread_;
+  rtc::scoped_ptr<ThreadWrapper> timer_thread_;
   EventPosix*    timer_event_;
   timespec       created_at_;
 
