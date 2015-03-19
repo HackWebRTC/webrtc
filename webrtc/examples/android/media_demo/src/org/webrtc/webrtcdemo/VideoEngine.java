@@ -84,6 +84,7 @@ public class VideoEngine {
   public native CameraDesc getCaptureDevice(int index);
   public native int allocateCaptureDevice(CameraDesc camera);
   public native int connectCaptureDevice(int cameraId, int channel);
+  public native int disconnectCaptureDevice(int channel);
   public native int startCapture(int cameraId);
   public native int stopCapture(int cameraId);
   public native int releaseCaptureDevice(int cameraId);

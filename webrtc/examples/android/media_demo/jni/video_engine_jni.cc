@@ -538,6 +538,12 @@ JOWW(jint, VideoEngine_connectCaptureDevice)(JNIEnv* jni, jobject j_vie,
   return vie_data->capture->ConnectCaptureDevice(camera_num, channel);
 }
 
+JOWW(jint, VideoEngine_disconnectCaptureDevice)(JNIEnv* jni, jobject j_vie,
+                                                jint channel) {
+  VideoEngineData* vie_data = GetVideoEngineData(jni, j_vie);
+  return vie_data->capture->DisconnectCaptureDevice(channel);
+}
+
 JOWW(jint, VideoEngine_startCapture)(JNIEnv* jni, jobject j_vie,
                                      jint camera_num) {
   VideoEngineData* vie_data = GetVideoEngineData(jni, j_vie);

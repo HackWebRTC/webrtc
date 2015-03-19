@@ -468,7 +468,6 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
       return;
     }
     check(vie.stopSend(videoChannel) == 0, "StopSend");
-    stopCamera();
     check(vie.stopReceive(videoChannel) == 0, "StopReceive");
     if (externalCodec != null) {
       check(vie.deRegisterExternalReceiveCodec(videoChannel,
@@ -480,6 +479,7 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
       check(vie.stopRender(videoChannel) == 0, "StopRender");
       check(vie.removeRenderer(videoChannel) == 0, "RemoveRenderer");
     }
+    stopCamera(); // Stop capturer after remote renderer.
     svRemote = null;
     vieRunning = false;
   }
@@ -612,6 +612,8 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
   private void stopCamera() {
     check(vie.stopCapture(currentCameraHandle) == 0, "Failed StopCapture");
     svLocal = null;
+    check(vie.disconnectCaptureDevice(videoChannel) == 0,
+        "Failed to disconnect capture device");
     check(vie.releaseCaptureDevice(currentCameraHandle) == 0,
         "Failed ReleaseCaptureDevice");
   }
