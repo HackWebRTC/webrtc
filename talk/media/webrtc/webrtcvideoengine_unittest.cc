@@ -2490,7 +2490,13 @@ TEST_F(WebRtcVideoMediaChannelTest, AddRemoveRecvStreams) {
   Base::AddRemoveRecvStreams();
 }
 
-TEST_F(WebRtcVideoMediaChannelTest, AddRemoveRecvStreamAndRender) {
+// Flaky on Linux only. See webrtc:4452.
+#if defined(WEBRTC_LINUX)
+#define MAYBE_AddRemoveRecvStreamAndRender DISABLED_AddRemoveRecvStreamAndRender
+#else
+#define MAYBE_AddRemoveRecvStreamAndRender AddRemoveRecvStreamAndRender
+#endif
+TEST_F(WebRtcVideoMediaChannelTest, MAYBE_AddRemoveRecvStreamAndRender) {
   Base::AddRemoveRecvStreamAndRender();
 }
 
