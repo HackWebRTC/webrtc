@@ -8,7 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "third_party/webrtc/overrides/webrtc/base/logging.h"
+// IMPORTANT
+// Since this file includes Chromium source files, it must not include
+// logging.h since logging.h defines some of the same macros as Chrome does
+// and we'll run into conflict.
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 #include <CoreServices/CoreServices.h>
@@ -25,6 +28,7 @@
 #include "third_party/webrtc/base/stringencode.h"
 #include "third_party/webrtc/base/stringutils.h"
 #include "third_party/webrtc/base/timeutils.h"
+#include "third_party/webrtc/overrides/webrtc/base/diagnostic_logging.h"
 
 // From this file we can't use VLOG since it expands into usage of the __FILE__
 // macro (for correct filtering). The actual logging call from DIAGNOSTIC_LOG in
