@@ -29,8 +29,6 @@
         ],
       },
       'sources': [
-        'channel_buffer.cc',
-        'channel_buffer.h',
         'audio_converter.cc',
         'audio_converter.h',
         'audio_ring_buffer.cc',
@@ -38,11 +36,21 @@
         'audio_util.cc',
         'blocker.cc',
         'blocker.h',
+        'channel_buffer.cc',
+        'channel_buffer.h',
+        'fft4g.c',
+        'fft4g.h',
         'fir_filter.cc',
         'fir_filter.h',
         'fir_filter_neon.h',
         'fir_filter_sse.h',
         'include/audio_util.h',
+        'lapped_transform.cc',
+        'lapped_transform.h',
+        'real_fourier.cc',
+        'real_fourier.h',
+        'real_fourier_ooura.cc',
+        'real_fourier_ooura.h',
         'resampler/include/push_resampler.h',
         'resampler/include/resampler.h',
         'resampler/push_resampler.cc',
@@ -113,11 +121,10 @@
       'conditions': [
         ['rtc_use_openmax_dl==1', {
           'sources': [
-            'lapped_transform.cc',
-            'lapped_transform.h',
-            'real_fourier.cc',
-            'real_fourier.h',
+            'real_fourier_openmax.cc',
+            'real_fourier_openmax.h',
           ],
+          'defines': ['RTC_USE_OPENMAX_DL',],
           'conditions': [
             ['build_openmax_dl==1', {
               'dependencies': ['<(DEPTH)/third_party/openmax_dl/dl/dl.gyp:openmax_dl',],
@@ -241,6 +248,8 @@
             'audio_util_unittest.cc',
             'blocker_unittest.cc',
             'fir_filter_unittest.cc',
+            'lapped_transform_unittest.cc',
+            'real_fourier_unittest.cc',
             'resampler/resampler_unittest.cc',
             'resampler/push_resampler_unittest.cc',
             'resampler/push_sinc_resampler_unittest.cc',
@@ -262,10 +271,7 @@
           ],
           'conditions': [
             ['rtc_use_openmax_dl==1', {
-              'sources': [
-                'lapped_transform_unittest.cc',
-                'real_fourier_unittest.cc',
-              ],
+              'defines': ['RTC_USE_OPENMAX_DL',],
             }],
             ['OS=="android"', {
               'dependencies': [

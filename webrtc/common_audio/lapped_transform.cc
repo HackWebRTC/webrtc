@@ -31,7 +31,8 @@ void LappedTransform::BlockThunk::ProcessBlock(const float* const* input,
   for (int i = 0; i < num_input_channels; ++i) {
     memcpy(parent_->real_buf_.Row(i), input[i],
            num_frames * sizeof(*input[0]));
-    parent_->fft_.Forward(parent_->real_buf_.Row(i), parent_->cplx_pre_.Row(i));
+    parent_->fft_->Forward(parent_->real_buf_.Row(i),
+                           parent_->cplx_pre_.Row(i));
   }
 
   int block_length = RealFourier::ComplexLength(
@@ -44,8 +45,8 @@ void LappedTransform::BlockThunk::ProcessBlock(const float* const* input,
                                                parent_->cplx_post_.Array());
 
   for (int i = 0; i < num_output_channels; ++i) {
-    parent_->fft_.Inverse(parent_->cplx_post_.Row(i),
-                          parent_->real_buf_.Row(i));
+    parent_->fft_->Inverse(parent_->cplx_post_.Row(i),
+                           parent_->real_buf_.Row(i));
     memcpy(output[i], parent_->real_buf_.Row(i),
            num_frames * sizeof(*input[0]));
   }
@@ -64,8 +65,8 @@ LappedTransform::LappedTransform(int in_channels, int out_channels,
       blocker_(
         chunk_length_, block_length_, in_channels_, out_channels_, window,
         shift_amount, &blocker_callback_),
-      fft_(RealFourier::FftOrder(block_length_)),
-      cplx_length_(RealFourier::ComplexLength(fft_.order())),
+      fft_(RealFourier::Create(RealFourier::FftOrder(block_length_))),
+      cplx_length_(RealFourier::ComplexLength(fft_->order())),
       real_buf_(in_channels, block_length_, RealFourier::kFftBufferAlignment),
       cplx_pre_(in_channels, cplx_length_, RealFourier::kFftBufferAlignment),
       cplx_post_(out_channels, cplx_length_, RealFourier::kFftBufferAlignment) {
@@ -81,7 +82,7 @@ LappedTransform::LappedTransform(int in_channels, int out_channels,
 void LappedTransform::ProcessChunk(const float* const* in_chunk,
                                    float* const* out_chunk) {
   blocker_.ProcessChunk(in_chunk, chunk_length_, in_channels_, out_channels_,
-                         out_chunk);
+                        out_chunk);
 }
 
 }  // namespace webrtc

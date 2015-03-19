@@ -126,8 +126,6 @@
         'utility/delay_estimator_internal.h',
         'utility/delay_estimator_wrapper.c',
         'utility/delay_estimator_wrapper.h',
-        'utility/fft4g.c',
-        'utility/fft4g.h',
         'voice_detection_impl.cc',
         'voice_detection_impl.h',
       ],

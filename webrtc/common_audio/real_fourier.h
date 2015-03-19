@@ -29,24 +29,23 @@ class RealFourier {
   typedef rtc::scoped_ptr<std::complex<float>[], AlignedFreeDeleter>
       fft_cplx_scoper;
 
-  // The maximum input order supported by this implementation.
-  static const int kMaxFftOrder;
-
   // The alignment required for all input and output buffers, in bytes.
   static const int kFftBufferAlignment;
 
   // Construct a wrapper instance for the given input order, which must be
   // between 1 and kMaxFftOrder, inclusively.
-  explicit RealFourier(int fft_order);
-  ~RealFourier();
+  static rtc::scoped_ptr<RealFourier> Create(int fft_order);
+  virtual ~RealFourier() {};
 
-  // Short helper to compute the smallest FFT order (a power of 2) which will
-  // contain the given input length. Returns -1 if the order would have been
-  // too big for the implementation.
+  // Helper to compute the smallest FFT order (a power of 2) which will contain
+  // the given input length.
   static int FftOrder(int length);
 
-  // Short helper to compute the exact length, in complex floats, of the
-  // transform output (i.e. |2^order / 2 + 1|).
+  // Helper to compute the input length from the FFT order.
+  static int FftLength(int order);
+
+  // Helper to compute the exact length, in complex floats, of the transform
+  // output (i.e. |2^order / 2 + 1|).
   static int ComplexLength(int order);
 
   // Buffer allocation helpers. The buffers are large enough to hold |count|
@@ -61,23 +60,13 @@ class RealFourier {
   // returned. Input and output must be properly aligned (e.g. through
   // AllocRealBuffer and AllocCplxBuffer) and input length must be
   // |2^order| (same as given at construction time).
-  void Forward(const float* src, std::complex<float>* dest) const;
+  virtual void Forward(const float* src, std::complex<float>* dest) const = 0;
 
   // Inverse transform. Same input format as output above, conjugate pairs
   // not needed.
-  void Inverse(const std::complex<float>* src, float* dest) const;
+  virtual void Inverse(const std::complex<float>* src, float* dest) const = 0;
 
-  int order() const {
-    return order_;
-  }
-
- private:
-  // Basically a forward declare of OMXFFTSpec_R_F32. To get rid of the
-  // dependency on openmax.
-  typedef void OMXFFTSpec_R_F32_;
-  const int order_;
-
-  OMXFFTSpec_R_F32_* omx_spec_;
+  virtual int order() const = 0;
 };
 
 }  // namespace webrtc

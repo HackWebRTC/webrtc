@@ -82,7 +82,7 @@ class LappedTransform {
   Callback* const block_processor_;
   Blocker blocker_;
 
-  RealFourier fft_;
+  rtc::scoped_ptr<RealFourier> fft_;
   const int cplx_length_;
   AlignedArray<float> real_buf_;
   AlignedArray<std::complex<float> > cplx_pre_;
