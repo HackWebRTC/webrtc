@@ -246,9 +246,9 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
     last_rtp_timestamp_ = rtp_timestamp;
     first_frame_ = false;
 
-    audio_encoder->Encode(rtp_timestamp, input_data.audio,
-                          input_data.length_per_channel, sizeof(stream), stream,
-                          &encoded_info);
+    encoded_info = audio_encoder->Encode(rtp_timestamp, input_data.audio,
+                                         input_data.length_per_channel,
+                                         sizeof(stream), stream);
     if (encoded_info.encoded_bytes == 0 && !encoded_info.send_even_if_empty) {
       // Not enough data.
       return 0;

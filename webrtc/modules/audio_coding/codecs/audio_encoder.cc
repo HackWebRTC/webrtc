@@ -19,16 +19,17 @@ AudioEncoder::EncodedInfo::EncodedInfo() : EncodedInfoLeaf() {
 AudioEncoder::EncodedInfo::~EncodedInfo() {
 }
 
-void AudioEncoder::Encode(uint32_t rtp_timestamp,
-                          const int16_t* audio,
-                          size_t num_samples_per_channel,
-                          size_t max_encoded_bytes,
-                          uint8_t* encoded,
-                          EncodedInfo* info) {
+AudioEncoder::EncodedInfo AudioEncoder::Encode(uint32_t rtp_timestamp,
+                                               const int16_t* audio,
+                                               size_t num_samples_per_channel,
+                                               size_t max_encoded_bytes,
+                                               uint8_t* encoded) {
   CHECK_EQ(num_samples_per_channel,
            static_cast<size_t>(SampleRateHz() / 100));
-  EncodeInternal(rtp_timestamp, audio, max_encoded_bytes, encoded, info);
-  CHECK_LE(info->encoded_bytes, max_encoded_bytes);
+  EncodedInfo info =
+      EncodeInternal(rtp_timestamp, audio, max_encoded_bytes, encoded);
+  CHECK_LE(info.encoded_bytes, max_encoded_bytes);
+  return info;
 }
 
 int AudioEncoder::RtpTimestampRateHz() const {

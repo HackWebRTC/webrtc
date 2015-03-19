@@ -150,9 +150,9 @@ class AudioDecoderTest : public ::testing::Test {
                                                  samples_per_10ms, channels_,
                                                  interleaved_input.get());
 
-      audio_encoder_->Encode(0, interleaved_input.get(),
-                             audio_encoder_->SampleRateHz() / 100,
-                             data_length_ * 2, output, &encoded_info_);
+      encoded_info_ = audio_encoder_->Encode(
+          0, interleaved_input.get(), audio_encoder_->SampleRateHz() / 100,
+          data_length_ * 2, output);
     }
     EXPECT_EQ(payload_type_, encoded_info_.payload_type);
     return static_cast<int>(encoded_info_.encoded_bytes);

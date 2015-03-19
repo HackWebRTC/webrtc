@@ -46,8 +46,8 @@ class AcmGenericCodecTest : public ::testing::Test {
                        int expected_send_even_if_empty) {
     uint8_t out[kPacketSizeSamples];
     AudioEncoder::EncodedInfo encoded_info;
-    codec_->GetAudioEncoder()->Encode(timestamp_, kZeroData, kDataLengthSamples,
-                                      kPacketSizeSamples, out, &encoded_info);
+    encoded_info = codec_->GetAudioEncoder()->Encode(
+        timestamp_, kZeroData, kDataLengthSamples, kPacketSizeSamples, out);
     timestamp_ += kDataLengthSamples;
     EXPECT_TRUE(encoded_info.redundant.empty());
     EXPECT_EQ(expected_out_length, encoded_info.encoded_bytes);

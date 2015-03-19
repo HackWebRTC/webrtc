@@ -85,11 +85,10 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
 
  protected:
   // AudioEncoder protected method.
-  void EncodeInternal(uint32_t rtp_timestamp,
-                      const int16_t* audio,
-                      size_t max_encoded_bytes,
-                      uint8_t* encoded,
-                      EncodedInfo* info) override;
+  EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
+                             const int16_t* audio,
+                             size_t max_encoded_bytes,
+                             uint8_t* encoded) override;
 
   // AudioDecoder protected method.
   int DecodeInternal(const uint8_t* encoded,
