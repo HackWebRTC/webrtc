@@ -40,7 +40,7 @@ class EventPosix : public EventWrapper {
  private:
   EventPosix();
 
-  static bool Run(ThreadObj obj);
+  static bool Run(void* obj);
   bool Process();
   EventTypeWrapper Wait(timespec* end_at);
 

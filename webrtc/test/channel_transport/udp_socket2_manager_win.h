@@ -101,7 +101,7 @@ public:
     virtual bool Stop();
     virtual int32_t Init();
 protected:
-    static bool Run(ThreadObj obj);
+    static bool Run(void* obj);
     bool Process();
 private:
     HANDLE _ioCompletionHandle;

@@ -164,7 +164,7 @@ bool EventPosix::StartTimer(bool periodic, unsigned long time) {
   return started;
 }
 
-bool EventPosix::Run(ThreadObj obj) {
+bool EventPosix::Run(void* obj) {
   return static_cast<EventPosix*>(obj)->Process();
 }
 

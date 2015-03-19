@@ -300,7 +300,7 @@ bool UdpSocketManagerPosixImpl::Process()
     return true;
 }
 
-bool UdpSocketManagerPosixImpl::Run(ThreadObj obj)
+bool UdpSocketManagerPosixImpl::Run(void* obj)
 {
     UdpSocketManagerPosixImpl* mgr =
         static_cast<UdpSocketManagerPosixImpl*>(obj);

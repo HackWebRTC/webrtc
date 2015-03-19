@@ -68,7 +68,7 @@ void* ThreadPosix::StartThread(void* param) {
   return 0;
 }
 
-ThreadPosix::ThreadPosix(ThreadRunFunction func, ThreadObj obj,
+ThreadPosix::ThreadPosix(ThreadRunFunction func, void* obj,
                          ThreadPriority prio, const char* thread_name)
     : run_function_(func),
       obj_(obj),
@@ -76,7 +76,7 @@ ThreadPosix::ThreadPosix(ThreadRunFunction func, ThreadObj obj,
       stop_event_(false, false),
       name_(thread_name ? thread_name : "webrtc"),
       thread_(0) {
-  DCHECK(name_.length() < kThreadMaxNameLength);
+  DCHECK(name_.length() < 64);
 }
 
 uint32_t ThreadWrapper::GetThreadId() {

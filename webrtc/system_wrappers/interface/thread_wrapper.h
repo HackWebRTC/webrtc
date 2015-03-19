@@ -21,11 +21,6 @@
 
 namespace webrtc {
 
-// Object that will be passed by the spawned thread when it enters the callback
-// function.
-// TODO(tommi): Remove this define.
-#define ThreadObj void*
-
 // Callback function that the spawned thread will enter once spawned.
 // A return value of false is interpreted as that the function has no
 // more work to do and that the thread can be released.
@@ -44,8 +39,6 @@ enum ThreadPriority {
 // called from the same thread, including instantiation.
 class ThreadWrapper {
  public:
-  enum {kThreadMaxNameLength = 64};
-
   virtual ~ThreadWrapper() {}
 
   // Factory method. Constructor disabled.

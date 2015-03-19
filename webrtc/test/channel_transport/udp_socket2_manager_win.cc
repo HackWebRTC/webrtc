@@ -574,7 +574,7 @@ int32_t UdpSocket2WorkerWindows::Init()
     return 0;
 }
 
-bool UdpSocket2WorkerWindows::Run(ThreadObj obj)
+bool UdpSocket2WorkerWindows::Run(void* obj)
 {
     UdpSocket2WorkerWindows* pWorker =
         static_cast<UdpSocket2WorkerWindows*>(obj);

@@ -54,7 +54,7 @@ void SetThreadName(DWORD dwThreadID, LPCSTR szThreadName) {
 
 }
 
-ThreadWindows::ThreadWindows(ThreadRunFunction func, ThreadObj obj,
+ThreadWindows::ThreadWindows(ThreadRunFunction func, void* obj,
                              ThreadPriority prio, const char* thread_name)
     : run_function_(func),
       obj_(obj),

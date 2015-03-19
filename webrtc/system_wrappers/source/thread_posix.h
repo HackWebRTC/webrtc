@@ -25,7 +25,7 @@ int ConvertToSystemPriority(ThreadPriority priority, int min_prio,
 
 class ThreadPosix : public ThreadWrapper {
  public:
-  ThreadPosix(ThreadRunFunction func, ThreadObj obj, ThreadPriority prio,
+  ThreadPosix(ThreadRunFunction func, void* obj, ThreadPriority prio,
               const char* thread_name);
   ~ThreadPosix() override;
 

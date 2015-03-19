@@ -19,7 +19,7 @@
 namespace webrtc {
 
 ThreadWrapper* ThreadWrapper::CreateThread(ThreadRunFunction func,
-                                           ThreadObj obj, ThreadPriority prio,
+                                           void* obj, ThreadPriority prio,
                                            const char* thread_name) {
 #if defined(_WIN32)
   return new ThreadWindows(func, obj, prio, thread_name);

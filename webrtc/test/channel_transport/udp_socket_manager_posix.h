@@ -68,7 +68,7 @@ public:
     virtual bool RemoveSocket(UdpSocketWrapper* s);
 
 protected:
-    static bool Run(ThreadObj obj);
+    static bool Run(void* obj);
     bool Process();
     void UpdateSocketMap();
 
