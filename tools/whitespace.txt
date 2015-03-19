@@ -13,4 +13,5 @@ Really cool.
 Testing Git updater.
 Testing updated refs to pending
 Final whitespace after gnumbd switch completed.
-And now it's time for getting rid of svn polling.
+And now it's time for getting rid of svn polling. A second try
+is sometimes required to get things working properly.
