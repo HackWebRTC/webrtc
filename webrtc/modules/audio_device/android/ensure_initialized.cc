@@ -38,9 +38,9 @@ void EnsureInitializedOnce() {
 
   // TODO(henrika): enable OpenSL ES when it has been refactored to avoid
   // crashes.
-  // using AudioDeviceOpenSLES
-  //     AudioDeviceTemplate<OpenSlesInput, OpenSlesOutput>;
-  // AudioDeviceOpenSLESInstance::SetAndroidAudioDeviceObjects(jvm, context);
+  // using AudioDeviceOpenSLES =
+  //    AudioDeviceTemplate<OpenSlesInput, OpenSlesOutput>;
+  // AudioDeviceOpenSLES::SetAndroidAudioDeviceObjects(jvm, context);
 }
 
 void EnsureInitialized() {
