@@ -166,6 +166,9 @@ class AtomicOps {
   static int Load(volatile const int* i) {
     return *i;
   }
+  static void Store(volatile int* i, int value) {
+    *i = value;
+  }
 #else
   static int Increment(volatile int* i) {
     return __sync_add_and_fetch(i, 1);
@@ -176,6 +179,10 @@ class AtomicOps {
   static int Load(volatile const int* i) {
     // Adding 0 is a no-op, so const_cast is fine.
     return __sync_add_and_fetch(const_cast<volatile int*>(i), 0);
+  }
+  static void Store(volatile int* i, int value) {
+    __sync_synchronize();
+    *i = value;
   }
 #endif
 };
