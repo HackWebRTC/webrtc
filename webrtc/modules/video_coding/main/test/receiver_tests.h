@@ -39,15 +39,5 @@ class RtpDataCallback : public webrtc::NullRtpData {
 };
 
 int RtpPlay(const CmdArgs& args);
-int RtpPlayMT(const CmdArgs& args);
-int ReceiverTimingTests(CmdArgs& args);
-int JitterBufferTest(CmdArgs& args);
-int DecodeFromStorageTest(const CmdArgs& args);
-
-// Thread functions:
-bool ProcessingThread(void* obj);
-bool RtpReaderThread(void* obj);
-bool DecodeThread(void* obj);
-bool NackThread(void* obj);
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_TEST_RECEIVER_TESTS_H_
