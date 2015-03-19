@@ -509,56 +509,56 @@ bool ViECapturer::ViECaptureProcess() {
 }
 
 void ViECapturer::DeliverI420Frame(I420VideoFrame* video_frame) {
-  CriticalSectionScoped cs(effects_and_stats_cs_.get());
-
   if (video_frame->native_handle() != NULL) {
     ViEFrameProviderBase::DeliverFrame(video_frame, std::vector<uint32_t>());
     return;
   }
 
   // Apply image enhancement and effect filter.
-  if (deflicker_frame_stats_) {
-    if (image_proc_module_->GetFrameStats(deflicker_frame_stats_,
-                                          *video_frame) == 0) {
-      image_proc_module_->Deflickering(video_frame, deflicker_frame_stats_);
-    } else {
-      LOG_F(LS_ERROR) << "Could not get frame stats.";
-    }
-  }
-  if (brightness_frame_stats_) {
-    if (image_proc_module_->GetFrameStats(brightness_frame_stats_,
-                                          *video_frame) == 0) {
-      int32_t brightness = image_proc_module_->BrightnessDetection(
-          *video_frame, *brightness_frame_stats_);
-
-      switch (brightness) {
-        case VideoProcessingModule::kNoWarning:
-          current_brightness_level_ = Normal;
-          break;
-        case VideoProcessingModule::kDarkWarning:
-          current_brightness_level_ = Dark;
-          break;
-        case VideoProcessingModule::kBrightWarning:
-          current_brightness_level_ = Bright;
-          break;
-        default:
-          break;
+  {
+    CriticalSectionScoped cs(effects_and_stats_cs_.get());
+    if (deflicker_frame_stats_) {
+      if (image_proc_module_->GetFrameStats(deflicker_frame_stats_,
+                                            *video_frame) == 0) {
+        image_proc_module_->Deflickering(video_frame, deflicker_frame_stats_);
+      } else {
+        LOG_F(LS_ERROR) << "Could not get frame stats.";
       }
     }
-  }
-  if (effect_filter_) {
-    size_t length =
-        CalcBufferSize(kI420, video_frame->width(), video_frame->height());
-    rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
-    ExtractBuffer(*video_frame, length, video_buffer.get());
-    effect_filter_->Transform(length,
-                              video_buffer.get(),
-                              video_frame->ntp_time_ms(),
-                              video_frame->timestamp(),
-                              video_frame->width(),
-                              video_frame->height());
-  }
+    if (brightness_frame_stats_) {
+      if (image_proc_module_->GetFrameStats(brightness_frame_stats_,
+                                            *video_frame) == 0) {
+        int32_t brightness = image_proc_module_->BrightnessDetection(
+            *video_frame, *brightness_frame_stats_);
 
+        switch (brightness) {
+          case VideoProcessingModule::kNoWarning:
+            current_brightness_level_ = Normal;
+            break;
+          case VideoProcessingModule::kDarkWarning:
+            current_brightness_level_ = Dark;
+            break;
+          case VideoProcessingModule::kBrightWarning:
+            current_brightness_level_ = Bright;
+            break;
+          default:
+            break;
+        }
+      }
+    }
+    if (effect_filter_) {
+      size_t length =
+          CalcBufferSize(kI420, video_frame->width(), video_frame->height());
+      rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
+      ExtractBuffer(*video_frame, length, video_buffer.get());
+      effect_filter_->Transform(length,
+                                video_buffer.get(),
+                                video_frame->ntp_time_ms(),
+                                video_frame->timestamp(),
+                                video_frame->width(),
+                                video_frame->height());
+    }
+  }
   // Deliver the captured frame to all observers (channels, renderer or file).
   ViEFrameProviderBase::DeliverFrame(video_frame, std::vector<uint32_t>());
 }
