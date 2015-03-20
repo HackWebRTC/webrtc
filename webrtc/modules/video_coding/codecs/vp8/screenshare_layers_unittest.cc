@@ -44,9 +44,6 @@ class ScreenshareLayersFT : public ScreenshareLayers {
                           tl0_frame_dropper,
                           tl1_frame_dropper) {}
   virtual ~ScreenshareLayersFT() {}
-
- protected:
-  bool TargetBitrateExperimentEnabled() override { return true; }
 };
 
 class ScreenshareLayerTest : public ::testing::Test {

@@ -49,9 +49,6 @@ class ScreenshareLayers : public TemporalLayers {
 
   virtual int CurrentLayerId() const;
 
- protected:
-  virtual bool TargetBitrateExperimentEnabled();
-
  private:
   void CalculateFramerate(uint32_t timestamp);
   bool TimeToSync(uint32_t timestamp) const;

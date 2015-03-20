@@ -14,7 +14,6 @@
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
-#include "webrtc/system_wrappers/interface/field_trial.h"
 
 namespace webrtc {
 
@@ -96,13 +95,13 @@ bool ScreenshareLayers::ConfigureBitrates(int bitrate_kbit,
                                           int max_bitrate_kbit,
                                           int framerate,
                                           vpx_codec_enc_cfg_t* cfg) {
-  if (framerate > 0) {
+  if (framerate > 0)
     framerate_ = framerate;
-  }
+
   tl0_frame_dropper_->SetRates(bitrate_kbit, framerate_);
   tl1_frame_dropper_->SetRates(max_bitrate_kbit, framerate_);
 
-  if (cfg != NULL && TargetBitrateExperimentEnabled()) {
+  if (cfg != nullptr) {
     // Calculate a codec target bitrate. This may be higher than TL0, gaining
     // quality at the expense of frame rate at TL0. Constraints:
     // - TL0 frame rate should not be less than framerate / kMaxTL0FpsReduction.
@@ -173,12 +172,6 @@ void ScreenshareLayers::CalculateFramerate(uint32_t timestamp) {
     framerate_ = (kOneSecond90Khz * (timestamp_list_.size() - 1) +
         timestamp_diff / 2) / timestamp_diff;
   }
-}
-
-bool ScreenshareLayers::TargetBitrateExperimentEnabled() {
-  std::string group =
-      field_trial::FindFullName("WebRTC-ScreencastTargetBitrateOvershoot");
-  return group == "Enabled";
 }
 
 }  // namespace webrtc
