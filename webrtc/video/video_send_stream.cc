@@ -349,6 +349,19 @@ bool VideoSendStream::ReconfigureVideoEncoder(
     video_codec.codecSpecific.VP8.numberOfTemporalLayers =
         static_cast<unsigned char>(
             streams.back().temporal_layer_thresholds_bps.size() + 1);
+  } else if (video_codec.codecType == kVideoCodecVP9) {
+    if (config.encoder_specific_settings != NULL) {
+      video_codec.codecSpecific.VP9 = *reinterpret_cast<const VideoCodecVP9*>(
+                                          config.encoder_specific_settings);
+    }
+    video_codec.codecSpecific.VP9.numberOfTemporalLayers =
+        static_cast<unsigned char>(
+            streams.back().temporal_layer_thresholds_bps.size() + 1);
+  } else if (video_codec.codecType == kVideoCodecH264) {
+    if (config.encoder_specific_settings != NULL) {
+      video_codec.codecSpecific.H264 = *reinterpret_cast<const VideoCodecH264*>(
+                                           config.encoder_specific_settings);
+    }
   } else {
     // TODO(pbos): Support encoder_settings codec-agnostically.
     assert(config.encoder_specific_settings == NULL);

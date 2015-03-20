@@ -1587,7 +1587,13 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(
 
   // Set RTX payload type if RTX is enabled.
   if (!parameters_.config.rtp.rtx.ssrcs.empty()) {
-    parameters_.config.rtp.rtx.payload_type = codec_settings.rtx_payload_type;
+    if (codec_settings.rtx_payload_type == -1) {
+      LOG(LS_WARNING) << "RTX SSRCs configured but there's no configured RTX "
+                         "payload type. Ignoring.";
+      parameters_.config.rtp.rtx.ssrcs.clear();
+    } else {
+      parameters_.config.rtp.rtx.payload_type = codec_settings.rtx_payload_type;
+    }
   }
 
   if (IsNackEnabled(codec_settings.codec)) {
@@ -1843,8 +1849,13 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
   parameters_.encoder_config.encoder_specific_settings =
       ConfigureVideoEncoderSettings(codec_settings.codec, parameters_.options);
 
-  stream_ = call_->CreateVideoSendStream(parameters_.config,
-                                         parameters_.encoder_config);
+  webrtc::VideoSendStream::Config config = parameters_.config;
+  if (!config.rtp.rtx.ssrcs.empty() && config.rtp.rtx.payload_type == -1) {
+    LOG(LS_WARNING) << "RTX SSRCs configured but there's no configured RTX "
+                       "payload type the set codec. Ignoring RTX.";
+    config.rtp.rtx.ssrcs.clear();
+  }
+  stream_ = call_->CreateVideoSendStream(config, parameters_.encoder_config);
 
   parameters_.encoder_config.encoder_specific_settings = NULL;
 
@@ -1905,6 +1916,11 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::CreateOrReuseVideoDecoder(
   if (type == webrtc::kVideoCodecVP8) {
     return AllocatedDecoder(
         webrtc::VideoDecoder::Create(webrtc::VideoDecoder::kVp8), type, false);
+  }
+
+  if (type == webrtc::kVideoCodecVP9) {
+    return AllocatedDecoder(
+        webrtc::VideoDecoder::Create(webrtc::VideoDecoder::kVp9), type, false);
   }
 
   // This shouldn't happen, we should not be trying to create something we don't
