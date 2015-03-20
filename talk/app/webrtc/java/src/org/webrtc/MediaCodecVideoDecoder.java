@@ -74,7 +74,7 @@ class MediaCodecVideoDecoder {
   private static final String H264_MIME_TYPE = "video/avc";
   // List of supported HW VP8 decoders.
   private static final String[] supportedVp8HwCodecPrefixes =
-    {"OMX.qcom.", "OMX.Nvidia.", "OMX.Exynos." };
+    {"OMX.qcom.", "OMX.Nvidia.", "OMX.Exynos.", "OMX.Intel." };
   // List of supported HW H.264 decoders.
   private static final String[] supportedH264HwCodecPrefixes =
     {"OMX.qcom." };
