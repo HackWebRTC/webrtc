@@ -577,7 +577,10 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
     WebRtcVideoEncoderFactory* external_encoder_factory,
     WebRtcVideoDecoderFactory* external_decoder_factory)
     : unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_),
-      voice_channel_(voice_channel),
+      voice_channel_id_(voice_channel != nullptr
+                            ? static_cast<WebRtcVoiceMediaChannel*>(
+                                  voice_channel)->voe_channel()
+                            : -1),
       external_encoder_factory_(external_encoder_factory),
       external_decoder_factory_(external_decoder_factory) {
   SetDefaultOptions();
@@ -909,10 +912,9 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
   // the SSRC of the remote audio channel in order to sync the correct webrtc
   // VoiceEngine channel. For now sync the first channel in non-conference to
   // match existing behavior in WebRtcVideoEngine.
-  if (voice_channel_ != NULL && receive_streams_.empty() &&
+  if (voice_channel_id_ != -1 && receive_streams_.empty() &&
       !options_.conference_mode.GetWithDefaultIfUnset(false)) {
-    config.audio_channel_id =
-        static_cast<WebRtcVoiceMediaChannel*>(voice_channel_)->voe_channel();
+    config.audio_channel_id = voice_channel_id_;
   }
 
   receive_streams_[ssrc] =

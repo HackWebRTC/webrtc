@@ -323,7 +323,7 @@ class WebRtcMediaChannel : public T, public webrtc::Transport {
 
  private:
   E *engine_;
-  int voe_channel_;
+  const int voe_channel_;
 };
 
 // WebRtcVoiceMediaChannel is an implementation of VoiceMediaChannel that uses

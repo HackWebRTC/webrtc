@@ -485,7 +485,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   Settable<VideoCodecSettings> send_codec_;
   std::vector<webrtc::RtpExtension> send_rtp_extensions_;
 
-  VoiceMediaChannel* const voice_channel_;
+  const int voice_channel_id_;
   WebRtcVideoEncoderFactory* const external_encoder_factory_;
   WebRtcVideoDecoderFactory* const external_decoder_factory_;
   std::vector<VideoCodecSettings> recv_codecs_;
