@@ -151,7 +151,7 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
       corr16[i] = (int16_t)WEBRTC_SPL_SHIFT_W32(corrmax[i], corrSh);
       corr16[i] = (int16_t)((corr16[i] * corr16[i]) >> 16);
       en16[i] = (int16_t)WEBRTC_SPL_SHIFT_W32(ener, enerSh);
-      totsh[i] = enerSh - WEBRTC_SPL_LSHIFT_W32(corrSh, 1);
+      totsh[i] = enerSh - (corrSh << 1);
     }
 
     /* Compare lagmax[0..3] for the (corr^2)/ener criteria */
@@ -278,8 +278,7 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
                                                       (int16_t)tmp1);
 
         /* Calculate the Sqrt of the energy in Q15 ((14+16)/2) */
-        SqrtEnChange = (int16_t)WebRtcSpl_SqrtFloor(
-            WEBRTC_SPL_LSHIFT_W32((int32_t)EnChange, 14));
+        SqrtEnChange = (int16_t)WebRtcSpl_SqrtFloor(EnChange << 14);
 
 
         /* Multiply first part of vector with 2*SqrtEnChange */

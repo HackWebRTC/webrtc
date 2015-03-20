@@ -48,7 +48,7 @@ int16_t WebRtcIlbcfix_GainQuant( /* (o) quantized gain value */
 
   /* Multiply the gain with 2^14 to make the comparison
      easier and with higher precision */
-  gainW32 = WEBRTC_SPL_LSHIFT_W32((int32_t)gain, 14);
+  gainW32 = gain << 14;
 
   /* Do a binary search, starting in the middle of the CB
      loc - defines the current position in the table

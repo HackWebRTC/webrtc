@@ -77,11 +77,11 @@ void WebRtcIlbcfix_HpInput(
     } else if (tmpW32<-268435456) {
       tmpW32 = WEBRTC_SPL_WORD32_MIN;
     } else {
-      tmpW32 = WEBRTC_SPL_LSHIFT_W32(tmpW32, 3);
+      tmpW32 <<= 3;
     }
 
     y[0] = (int16_t)(tmpW32 >> 16);
-    y[1] = (int16_t)((tmpW32 - WEBRTC_SPL_LSHIFT_W32((int32_t)y[0], 16))>>1);
+    y[1] = (int16_t)((tmpW32 - (y[0] << 16)) >> 1);
   }
 
   return;

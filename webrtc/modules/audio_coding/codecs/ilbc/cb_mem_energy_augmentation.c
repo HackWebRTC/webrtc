@@ -58,7 +58,7 @@ void WebRtcIlbcfix_CbMemEnergyAugmentation(
 
     /* Normalize the energy and store the number of shifts */
     (*enShPtr) = (int16_t)WebRtcSpl_NormW32(energy);
-    tmp32 = WEBRTC_SPL_LSHIFT_W32(energy, (*enShPtr));
+    tmp32 = energy << *enShPtr;
     *enPtr = (int16_t)(tmp32 >> 16);
     enShPtr++;
     enPtr++;

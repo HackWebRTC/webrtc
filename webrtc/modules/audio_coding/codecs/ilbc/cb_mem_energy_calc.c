@@ -58,7 +58,7 @@ void WebRtcIlbcfix_CbMemEnergyCalc(
     shft = (int16_t)WebRtcSpl_NormW32(energy);
     *eSh_ptr++ = shft;
 
-    tmp = WEBRTC_SPL_LSHIFT_W32(energy, shft);
+    tmp = energy << shft;
     *eW16_ptr++ = (int16_t)(tmp >> 16);
   }
 }
