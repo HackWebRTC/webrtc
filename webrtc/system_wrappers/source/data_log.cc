@@ -349,13 +349,11 @@ int DataLogImpl::CreateLog() {
 
 int DataLogImpl::Init() {
   file_writer_thread_ = ThreadWrapper::CreateThread(
-                          DataLogImpl::Run,
-                          instance_,
-                          kHighestPriority,
-                          "DataLog");
+      DataLogImpl::Run, instance_, "DataLog");
   bool success = file_writer_thread_->Start();
   if (!success)
     return -1;
+  file_writer_thread_->SetPriority(kHighestPriority);
   return 0;
 }
 

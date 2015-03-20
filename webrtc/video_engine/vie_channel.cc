@@ -1839,9 +1839,9 @@ int32_t ViEChannel::StartDecodeThread() {
     return 0;
   }
   decode_thread_ = ThreadWrapper::CreateThread(ChannelDecodeThreadFunction,
-                                                   this, kHighestPriority,
-                                                   "DecodingThread");
+                                               this, "DecodingThread");
   decode_thread_->Start();
+  decode_thread_->SetPriority(kHighestPriority);
   return 0;
 }
 

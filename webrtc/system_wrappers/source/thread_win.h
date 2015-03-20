@@ -21,12 +21,13 @@ namespace webrtc {
 
 class ThreadWindows : public ThreadWrapper {
  public:
-  ThreadWindows(ThreadRunFunction func, void* obj, ThreadPriority prio,
-                const char* thread_name);
+  ThreadWindows(ThreadRunFunction func, void* obj, const char* thread_name);
   ~ThreadWindows() override;
 
   bool Start() override;
   bool Stop() override;
+
+  bool SetPriority(ThreadPriority priority) override;
 
  protected:
   void Run();
@@ -37,8 +38,6 @@ class ThreadWindows : public ThreadWrapper {
   ThreadRunFunction const run_function_;
   void* const obj_;
   bool stop_;
-  // TODO(tommi): Consider having a SetPriority method instead of this variable.
-  ThreadPriority prio_;
   HANDLE thread_;
   const std::string name_;
   rtc::ThreadChecker main_thread_;

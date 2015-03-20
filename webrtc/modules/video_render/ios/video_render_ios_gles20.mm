@@ -33,7 +33,7 @@ VideoRenderIosGles20::VideoRenderIosGles20(VideoRenderIosView* view,
       gles_context_([view context]),
       is_rendering_(true) {
   screen_update_thread_ = ThreadWrapper::CreateThread(
-      ScreenUpdateThreadProc, this, kRealtimePriority);
+      ScreenUpdateThreadProc, this, "ScreenUpdateGles20");
   screen_update_event_ = EventWrapper::Create();
   GetWindowRect(window_rect_);
 }
@@ -83,6 +83,7 @@ int VideoRenderIosGles20::Init() {
   }
 
   screen_update_thread_->Start();
+  screen_update_thread_->SetPriority(kRealtimePriority);
 
   // Start the event triggering the render process
   unsigned int monitor_freq = 60;

@@ -179,8 +179,7 @@ int32_t IncomingVideoStream::Start() {
   assert(incoming_render_thread_ == NULL);
 
   incoming_render_thread_ = ThreadWrapper::CreateThread(
-      IncomingVideoStreamThreadFun, this, kRealtimePriority,
-      "IncomingVideoStreamThread");
+      IncomingVideoStreamThreadFun, this, "IncomingVideoStreamThread");
   if (!incoming_render_thread_) {
     WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, module_id_,
                  "%s: No thread", __FUNCTION__);
@@ -195,6 +194,7 @@ int32_t IncomingVideoStream::Start() {
                  "%s: Could not start send thread", __FUNCTION__);
     return -1;
   }
+  incoming_render_thread_->SetPriority(kRealtimePriority);
   deliver_buffer_event_.StartTimer(false, KEventStartupTimeMS);
 
   running_ = true;

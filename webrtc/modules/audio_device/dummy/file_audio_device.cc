@@ -205,12 +205,6 @@ int32_t FileAudioDevice::StartPlayout() {
   }
 
   // PLAYOUT
-  const char* threadName = "webrtc_audio_module_play_thread";
-  _ptrThreadPlay = ThreadWrapper::CreateThread(PlayThreadFunc,
-                                               this,
-                                               kRealtimePriority,
-                                               threadName);
-
   if (!_outputFilename.empty() && _outputFile.OpenFile(
         _outputFilename.c_str(), false, false, false) == -1) {
     printf("Failed to open playout file %s!\n", _outputFilename.c_str());
@@ -220,6 +214,9 @@ int32_t FileAudioDevice::StartPlayout() {
     return -1;
   }
 
+  const char* threadName = "webrtc_audio_module_play_thread";
+  _ptrThreadPlay = ThreadWrapper::CreateThread(PlayThreadFunc, this,
+                                               threadName);
   if (!_ptrThreadPlay->Start()) {
       _ptrThreadPlay.reset();
       _playing = false;
@@ -227,7 +224,7 @@ int32_t FileAudioDevice::StartPlayout() {
       _playoutBuffer = NULL;
       return -1;
   }
-
+  _ptrThreadPlay->SetPriority(kRealtimePriority);
   return 0;
 }
 
@@ -281,10 +278,7 @@ int32_t FileAudioDevice::StartRecording() {
   }
 
   const char* threadName = "webrtc_audio_module_capture_thread";
-  _ptrThreadRec = ThreadWrapper::CreateThread(RecThreadFunc,
-                                              this,
-                                              kRealtimePriority,
-                                              threadName);
+  _ptrThreadRec = ThreadWrapper::CreateThread(RecThreadFunc, this, threadName);
 
   if (!_ptrThreadRec->Start()) {
       _ptrThreadRec.reset();
@@ -293,6 +287,7 @@ int32_t FileAudioDevice::StartRecording() {
       _recordingBuffer = NULL;
       return -1;
   }
+  _ptrThreadRec->SetPriority(kRealtimePriority);
 
   return 0;
 }

@@ -70,7 +70,7 @@ void ProcessThreadImpl::Start() {
     m.module->ProcessThreadAttached(this);
 
   thread_ = ThreadWrapper::CreateThread(
-      &ProcessThreadImpl::Run, this, kNormalPriority, "ProcessThread");
+      &ProcessThreadImpl::Run, this, "ProcessThread");
   CHECK(thread_->Start());
 }
 

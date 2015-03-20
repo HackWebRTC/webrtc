@@ -380,7 +380,8 @@ _renderingIsPaused (FALSE),
 _windowRefSuperView(NULL),
 _windowRefSuperViewFrame(NSMakeRect(0,0,0,0))
 {
-    _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc, this, kRealtimePriority);
+    _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc,
+            this, "ScreenUpdateNSOpenGL");
     _screenUpdateEvent = EventWrapper::Create();
 }
 
@@ -436,6 +437,8 @@ int32_t VideoRenderNSOpenGL::StartRender()
             UnlockAGLCntx();
             return -1;
         }
+
+        _screenUpdateThread->SetPriority(kRealtimePriority);
 
         UnlockAGLCntx();
         return 0;
@@ -716,6 +719,7 @@ int VideoRenderNSOpenGL::Init()
     }
 
     _screenUpdateThread->Start();
+    _screenUpdateThread->SetPriority(kRealtimePriority);
 
     // Start the event triggering the render process
     unsigned int monitorFreq = 60;

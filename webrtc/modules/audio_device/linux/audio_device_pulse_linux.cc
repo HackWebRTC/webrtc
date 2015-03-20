@@ -208,7 +208,7 @@ int32_t AudioDeviceLinuxPulse::Init()
     // RECORDING
     const char* threadName = "webrtc_audio_module_rec_thread";
     _ptrThreadRec = ThreadWrapper::CreateThread(RecThreadFunc, this,
-                                                kRealtimePriority, threadName);
+                                                threadName);
     if (!_ptrThreadRec->Start())
     {
         WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
@@ -218,10 +218,12 @@ int32_t AudioDeviceLinuxPulse::Init()
         return -1;
     }
 
+    _ptrThreadRec->SetPriority(kRealtimePriority);
+
     // PLAYOUT
     threadName = "webrtc_audio_module_play_thread";
     _ptrThreadPlay = ThreadWrapper::CreateThread(PlayThreadFunc, this,
-                                                 kRealtimePriority, threadName);
+                                                 threadName);
     if (!_ptrThreadPlay->Start())
     {
         WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
@@ -230,6 +232,7 @@ int32_t AudioDeviceLinuxPulse::Init()
         _ptrThreadPlay.reset();
         return -1;
     }
+    _ptrThreadPlay->SetPriority(kRealtimePriority);
 
     _initialized = true;
 

@@ -61,7 +61,8 @@ bool ViEFakeCamera::StartCameraInNewThread(
   // Set up a thread which runs the fake camera. The capturer object is
   // thread-safe.
   camera_thread_ = webrtc::ThreadWrapper::CreateThread(
-      StreamVideoFileRepeatedlyIntoCaptureDevice, file_capture_device_);
+      StreamVideoFileRepeatedlyIntoCaptureDevice, file_capture_device_,
+      "StreamVideoFileRepeatedlyIntoCaptureDevice");
   camera_thread_->Start();
 
   return true;

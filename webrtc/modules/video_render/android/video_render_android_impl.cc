@@ -142,7 +142,6 @@ int32_t VideoRenderAndroid::StartRender() {
   }
 
   _javaRenderThread = ThreadWrapper::CreateThread(JavaRenderThreadFun, this,
-                                                  kRealtimePriority,
                                                   "AndroidRenderThread");
 
   if (_javaRenderThread->Start())
@@ -153,6 +152,7 @@ int32_t VideoRenderAndroid::StartRender() {
                  "%s: Could not start send thread", __FUNCTION__);
     return -1;
   }
+  _javaRenderThread->SetPriority(kRealtimePriority);
   return 0;
 }
 
