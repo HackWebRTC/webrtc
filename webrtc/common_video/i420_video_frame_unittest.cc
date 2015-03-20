@@ -46,6 +46,12 @@ TEST(TestI420VideoFrame, InitialValues) {
   EXPECT_EQ(kVideoRotation_0, frame.rotation());
 }
 
+TEST(TestI420VideoFrame, CopiesInitialFrameWithoutCrashing) {
+  I420VideoFrame frame;
+  I420VideoFrame frame2;
+  frame2.CopyFrame(frame);
+}
+
 TEST(TestI420VideoFrame, WidthHeightValues) {
   I420VideoFrame frame;
   const int valid_value = 10;

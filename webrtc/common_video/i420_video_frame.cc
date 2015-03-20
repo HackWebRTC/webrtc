@@ -119,18 +119,17 @@ int I420VideoFrame::CreateFrame(const uint8_t* buffer_y,
 }
 
 int I420VideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
-  if (videoFrame.native_handle()) {
+  if (videoFrame.IsZeroSize()) {
+    video_frame_buffer_ = nullptr;
+  } else if (videoFrame.native_handle()) {
     video_frame_buffer_ = videoFrame.video_frame_buffer();
   } else {
-    int ret = CreateFrame(
-        videoFrame.buffer(kYPlane),
-        videoFrame.buffer(kUPlane),
-        videoFrame.buffer(kVPlane),
-        videoFrame.width(), videoFrame.height(), videoFrame.stride(kYPlane),
-        videoFrame.stride(kUPlane), videoFrame.stride(kVPlane));
-    if (ret < 0)
-      return ret;
+    CreateFrame(videoFrame.buffer(kYPlane), videoFrame.buffer(kUPlane),
+                videoFrame.buffer(kVPlane), videoFrame.width(),
+                videoFrame.height(), videoFrame.stride(kYPlane),
+                videoFrame.stride(kUPlane), videoFrame.stride(kVPlane));
   }
+
   timestamp_ = videoFrame.timestamp_;
   ntp_time_ms_ = videoFrame.ntp_time_ms_;
   render_time_ms_ = videoFrame.render_time_ms_;
