@@ -376,20 +376,6 @@ class FakeWebRtcVideoEngine
     int incoming_frame_num() const { return incoming_frame_num_; }
 
     // From ViEExternalCapture
-    int IncomingFrame(unsigned char* videoFrame,
-                              size_t videoFrameLength,
-                              unsigned short width,
-                              unsigned short height,
-                              webrtc::RawVideoType videoType,
-                              unsigned long long captureTime) override {
-      return 0;
-    }
-    int IncomingFrameI420(
-        const webrtc::ViEVideoFrameI420& video_frame,
-        unsigned long long captureTime) override {
-      return 0;
-    }
-
     void IncomingFrame(const webrtc::I420VideoFrame& frame) override {
       last_capture_time_ = frame.render_time_ms();
       ++incoming_frame_num_;

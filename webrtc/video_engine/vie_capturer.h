@@ -69,16 +69,6 @@ class ViECapturer
   int FrameCallbackChanged();
 
   // Implements ExternalCapture.
-  int IncomingFrame(unsigned char* video_frame,
-                    size_t video_frame_length,
-                    uint16_t width,
-                    uint16_t height,
-                    RawVideoType video_type,
-                    unsigned long long capture_time = 0) override;
-
-  int IncomingFrameI420(const ViEVideoFrameI420& video_frame,
-                        unsigned long long capture_time = 0) override;
-
   void IncomingFrame(const I420VideoFrame& frame) override;
 
   // Start/Stop.
@@ -154,7 +144,7 @@ class ViECapturer
   rtc::scoped_ptr<CriticalSectionWrapper> capture_cs_;
   rtc::scoped_ptr<CriticalSectionWrapper> effects_and_stats_cs_;
   VideoCaptureModule* capture_module_;
-  VideoCaptureExternal* external_capture_module_;
+  bool use_external_capture_;
   ProcessThread& module_process_thread_;
   const int capture_id_;
 

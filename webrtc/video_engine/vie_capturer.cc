@@ -64,7 +64,7 @@ ViECapturer::ViECapturer(int capture_id,
       capture_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       effects_and_stats_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       capture_module_(NULL),
-      external_capture_module_(NULL),
+      use_external_capture_(false),
       module_process_thread_(module_process_thread),
       capture_id_(capture_id),
       incoming_frame_cs_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -170,8 +170,8 @@ int32_t ViECapturer::Init(const char* device_unique_idUTF8,
                           uint32_t device_unique_idUTF8Length) {
   assert(capture_module_ == NULL);
   if (device_unique_idUTF8 == NULL) {
-    capture_module_  = VideoCaptureFactory::Create(
-        ViEModuleId(engine_id_, capture_id_), external_capture_module_);
+    use_external_capture_ = true;
+    return 0;
   } else {
     capture_module_ = VideoCaptureFactory::Create(
         ViEModuleId(engine_id_, capture_id_), device_unique_idUTF8);
@@ -187,6 +187,8 @@ int32_t ViECapturer::Init(const char* device_unique_idUTF8,
 }
 
 int ViECapturer::FrameCallbackChanged() {
+  if (use_external_capture_)
+    return -1;
   if (Started() && !CaptureCapabilityFixed()) {
     // Reconfigure the camera if a new size is required and the capture device
     // does not provide encoded frames.
@@ -210,6 +212,8 @@ int ViECapturer::FrameCallbackChanged() {
 }
 
 int32_t ViECapturer::Start(const CaptureCapability& capture_capability) {
+  if (use_external_capture_)
+    return -1;
   int width;
   int height;
   int frame_rate;
@@ -246,15 +250,21 @@ int32_t ViECapturer::Start(const CaptureCapability& capture_capability) {
 }
 
 int32_t ViECapturer::Stop() {
+  if (use_external_capture_)
+    return -1;
   requested_capability_ = CaptureCapability();
   return capture_module_->StopCapture();
 }
 
 bool ViECapturer::Started() {
+  if (use_external_capture_)
+    return false;
   return capture_module_->CaptureStarted();
 }
 
 const char* ViECapturer::CurrentDeviceName() const {
+  if (use_external_capture_)
+    return "";
   return capture_module_->CurrentDeviceName();
 }
 
@@ -276,52 +286,16 @@ void ViECapturer::GetCpuOveruseMetrics(CpuOveruseMetrics* metrics) const {
 }
 
 int32_t ViECapturer::SetCaptureDelay(int32_t delay_ms) {
+  if (use_external_capture_)
+    return -1;
   capture_module_->SetCaptureDelay(delay_ms);
   return 0;
 }
 
 int32_t ViECapturer::SetVideoRotation(const VideoRotation rotation) {
+  if (use_external_capture_)
+    return -1;
   return capture_module_->SetCaptureRotation(rotation);
-}
-
-int ViECapturer::IncomingFrame(unsigned char* video_frame,
-                               size_t video_frame_length,
-                               uint16_t width,
-                               uint16_t height,
-                               RawVideoType video_type,
-                               unsigned long long capture_time) {  // NOLINT
-  if (!external_capture_module_) {
-    return -1;
-  }
-  VideoCaptureCapability capability;
-  capability.width = width;
-  capability.height = height;
-  capability.rawType = video_type;
-  return external_capture_module_->IncomingFrame(video_frame,
-                                                 video_frame_length,
-                                                 capability, capture_time);
-}
-
-int ViECapturer::IncomingFrameI420(const ViEVideoFrameI420& video_frame,
-                                   unsigned long long capture_time) {  // NOLINT
-  CriticalSectionScoped cs(incoming_frame_cs_.get());
-  int ret = incoming_frame_.CreateFrame(video_frame.y_plane,
-                                        video_frame.u_plane,
-                                        video_frame.v_plane,
-                                        video_frame.width,
-                                        video_frame.height,
-                                        video_frame.y_pitch,
-                                        video_frame.u_pitch,
-                                        video_frame.v_pitch,
-                                        video_frame.rotation);
-  if (ret < 0) {
-    LOG_F(LS_ERROR) << "Could not create I420Frame.";
-    return -1;
-  }
-  incoming_frame_.set_ntp_time_ms(capture_time);
-
-  OnIncomingCapturedFrame(-1, incoming_frame_);
-  return 0;
 }
 
 void ViECapturer::IncomingFrame(const I420VideoFrame& frame) {

@@ -69,6 +69,15 @@ class I420VideoFrame {
                   int stride_v,
                   VideoRotation rotation);
 
+  // CreateFrame: Sets the frame's members and buffers. If required size is
+  // bigger than allocated one, new buffers of adequate size will be allocated.
+  // |buffer| must be a packed I420 buffer.
+  // Return value: 0 on success, -1 on error.
+  int CreateFrame(const uint8_t* buffer,
+                  int width,
+                  int height,
+                  VideoRotation rotation);
+
   // Deep copy frame: If required size is bigger than allocated one, new
   // buffers of adequate size will be allocated.
   // Return value: 0 on success, -1 on error.

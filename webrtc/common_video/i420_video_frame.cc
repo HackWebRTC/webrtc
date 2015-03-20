@@ -118,6 +118,20 @@ int I420VideoFrame::CreateFrame(const uint8_t* buffer_y,
   return 0;
 }
 
+int I420VideoFrame::CreateFrame(const uint8_t* buffer,
+                                int width,
+                                int height,
+                                VideoRotation rotation) {
+  const int stride_y = width;
+  const int stride_uv = (width + 1) / 2;
+
+  const uint8_t* buffer_y = buffer;
+  const uint8_t* buffer_u = buffer_y + stride_y * height;
+  const uint8_t* buffer_v = buffer_u + stride_uv * ((height + 1) / 2);
+  return CreateFrame(buffer_y, buffer_u, buffer_v, width, height, stride_y,
+                     stride_uv, stride_uv, rotation);
+}
+
 int I420VideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
   if (videoFrame.IsZeroSize()) {
     video_frame_buffer_ = nullptr;

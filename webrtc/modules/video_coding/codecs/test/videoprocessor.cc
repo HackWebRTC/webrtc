@@ -181,17 +181,10 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
   }
   if (frame_reader_->ReadFrame(source_buffer_)) {
     // Copy the source frame to the newly read frame data.
-    int size_y = config_.codec_settings->width * config_.codec_settings->height;
-    int half_width = (config_.codec_settings->width + 1) / 2;
-    int half_height = (config_.codec_settings->height + 1) / 2;
-    int size_uv = half_width * half_height;
     source_frame_.CreateFrame(source_buffer_,
-                              source_buffer_ + size_y,
-                              source_buffer_ + size_y + size_uv,
                               config_.codec_settings->width,
                               config_.codec_settings->height,
-                              config_.codec_settings->width,
-                              half_width, half_width);
+                              kVideoRotation_0);
 
     // Ensure we have a new statistics data object we can fill:
     FrameStatistic& stat = stats_->NewFrame(frame_number);
