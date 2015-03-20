@@ -86,6 +86,8 @@
         'beamformer/covariance_matrix_generator.cc',
         'beamformer/covariance_matrix_generator.h',
         'beamformer/matrix.h',
+        'beamformer/nonlinear_beamformer.cc',
+        'beamformer/nonlinear_beamformer.h',
         'common.h',
         'echo_cancellation_impl.cc',
         'echo_cancellation_impl.h',
@@ -172,13 +174,6 @@
             'ns/ns_core.c',
             'ns/ns_core.h',
             'ns/windows_private.h',
-          ],
-        }],
-        ['rtc_use_openmax_dl==1', {
-          'defines': ['WEBRTC_BEAMFORMER'],
-          'sources': [
-            'beamformer/nonlinear_beamformer.cc',
-            'beamformer/nonlinear_beamformer.h',
           ],
         }],
         ['target_arch=="ia32" or target_arch=="x64"', {

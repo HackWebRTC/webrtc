@@ -599,12 +599,10 @@ int AudioProcessingImpl::ProcessStreamLocked() {
     ca->SplitIntoFrequencyBands();
   }
 
-#ifdef WEBRTC_BEAMFORMER
   if (beamformer_enabled_) {
     beamformer_->ProcessChunk(ca->split_data_f(), ca->split_data_f());
     ca->set_num_channels(1);
   }
-#endif
 
   RETURN_ON_ERR(high_pass_filter_->ProcessCaptureAudio(ca));
   RETURN_ON_ERR(gain_control_->AnalyzeCaptureAudio(ca));
@@ -986,14 +984,10 @@ int AudioProcessingImpl::InitializeTransient() {
 
 void AudioProcessingImpl::InitializeBeamformer() {
   if (beamformer_enabled_) {
-#ifdef WEBRTC_BEAMFORMER
     if (!beamformer_) {
       beamformer_.reset(new NonlinearBeamformer(array_geometry_));
     }
     beamformer_->Initialize(kChunkSizeMs, split_rate_);
-#else
-    assert(false);
-#endif
   }
 }
 

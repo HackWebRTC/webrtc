@@ -7,6 +7,48 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
+  'targets': [
+    {
+      'target_name': 'transient_suppression_test',
+      'type': 'executable',
+      'dependencies': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+        '<(webrtc_root)/test/test.gyp:test_support',
+        '<(webrtc_root)/modules/modules.gyp:audio_processing',
+      ],
+      'sources': [
+        'transient/transient_suppression_test.cc',
+        'transient/file_utils.cc',
+        'transient/file_utils.h',
+      ],
+    }, # transient_suppression_test
+    {
+      'target_name': 'click_annotate',
+      'type': 'executable',
+      'dependencies': [
+        '<(webrtc_root)/modules/modules.gyp:audio_processing',
+      ],
+      'sources': [
+        'transient/click_annotate.cc',
+        'transient/file_utils.cc',
+        'transient/file_utils.h',
+      ],
+    },  # click_annotate
+    {
+      'target_name': 'nonlinear_beamformer_test',
+      'type': 'executable',
+      'dependencies': [
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+        '<(webrtc_root)/modules/modules.gyp:audio_processing',
+      ],
+      'sources': [
+        'beamformer/nonlinear_beamformer_test.cc',
+        'beamformer/pcm_utils.cc',
+        'beamformer/pcm_utils.h',
+      ],
+    }, # nonlinear_beamformer_test
+  ],
   'conditions': [
     ['enable_protobuf==1', {
       'targets': [
@@ -56,50 +98,6 @@
           ],
           'sources': [ 'test/unpack.cc', ],
         },
-        {
-          'target_name': 'transient_suppression_test',
-          'type': 'executable',
-          'dependencies': [
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-            '<(webrtc_root)/test/test.gyp:test_support',
-            '<(webrtc_root)/modules/modules.gyp:audio_processing',
-          ],
-          'sources': [
-            'transient/transient_suppression_test.cc',
-            'transient/file_utils.cc',
-            'transient/file_utils.h',
-          ],
-        }, # transient_suppression_test
-        {
-          'target_name': 'click_annotate',
-          'type': 'executable',
-          'dependencies': [
-            '<(webrtc_root)/modules/modules.gyp:audio_processing',
-          ],
-          'sources': [
-            'transient/click_annotate.cc',
-            'transient/file_utils.cc',
-            'transient/file_utils.h',
-          ],
-        },  # click_annotate
-      ],
-    }],
-    ['rtc_use_openmax_dl==1', {
-      'targets': [
-        {
-          'target_name': 'nonlinear_beamformer_test',
-          'type': 'executable',
-          'dependencies': [
-            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-            '<(webrtc_root)/modules/modules.gyp:audio_processing',
-          ],
-          'sources': [
-            'beamformer/nonlinear_beamformer_test.cc',
-            'beamformer/pcm_utils.cc',
-            'beamformer/pcm_utils.h',
-          ],
-        }, # nonlinear_beamformer_test
       ],
     }],
   ],
