@@ -82,7 +82,6 @@ class VideoAnalyzer : public PacketReceiver,
         last_render_time_(0),
         rtp_timestamp_delta_(0),
         crit_(CriticalSectionWrapper::CreateCriticalSection()),
-        first_send_frame_(NULL),
         avg_psnr_threshold_(avg_psnr_threshold),
         avg_ssim_threshold_(avg_ssim_threshold),
         comparison_lock_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -120,12 +119,6 @@ class VideoAnalyzer : public PacketReceiver,
       EXPECT_TRUE(thread->Stop());
       delete thread;
     }
-
-    for (I420VideoFrame* frame : frames_)
-      delete frame;
-
-    for (I420VideoFrame* frame : frame_pool_)
-      delete frame;
   }
 
   virtual void SetReceiver(PacketReceiver* receiver) { receiver_ = receiver; }
@@ -144,23 +137,12 @@ class VideoAnalyzer : public PacketReceiver,
   }
 
   void IncomingCapturedFrame(const I420VideoFrame& video_frame) override {
-    I420VideoFrame* copy = NULL;
-    {
-      CriticalSectionScoped lock(crit_.get());
-      if (frame_pool_.size() > 0) {
-        copy = frame_pool_.front();
-        frame_pool_.pop_front();
-      }
-    }
-    if (copy == NULL)
-      copy = new I420VideoFrame();
-
-    copy->CopyFrame(video_frame);
-    copy->set_timestamp(copy->ntp_time_ms() * 90);
+    I420VideoFrame copy = video_frame;
+    copy.set_timestamp(copy.ntp_time_ms() * 90);
 
     {
       CriticalSectionScoped lock(crit_.get());
-      if (first_send_frame_ == NULL && rtp_timestamp_delta_ == 0)
+      if (first_send_frame_.IsZeroSize() && rtp_timestamp_delta_ == 0)
         first_send_frame_ = copy;
 
       frames_.push_back(copy);
@@ -178,8 +160,8 @@ class VideoAnalyzer : public PacketReceiver,
       CriticalSectionScoped lock(crit_.get());
       if (rtp_timestamp_delta_ == 0) {
         rtp_timestamp_delta_ =
-            header.timestamp - first_send_frame_->timestamp();
-        first_send_frame_ = NULL;
+            header.timestamp - first_send_frame_.timestamp();
+        first_send_frame_.Reset();
       }
       send_times_[header.timestamp - rtp_timestamp_delta_] =
           Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
@@ -199,23 +181,22 @@ class VideoAnalyzer : public PacketReceiver,
     uint32_t send_timestamp = video_frame.timestamp() - rtp_timestamp_delta_;
 
     CriticalSectionScoped lock(crit_.get());
-    while (frames_.front()->timestamp() < send_timestamp) {
-      AddFrameComparison(
-          frames_.front(), &last_rendered_frame_, true, render_time_ms);
-      frame_pool_.push_back(frames_.front());
+
+    while (frames_.front().timestamp() < send_timestamp) {
+      AddFrameComparison(frames_.front(), last_rendered_frame_, true,
+                         render_time_ms);
       frames_.pop_front();
     }
 
-    I420VideoFrame* reference_frame = frames_.front();
+    I420VideoFrame reference_frame = frames_.front();
     frames_.pop_front();
-    assert(reference_frame != NULL);
-    EXPECT_EQ(reference_frame->timestamp(), send_timestamp);
-    assert(reference_frame->timestamp() == send_timestamp);
+    assert(!reference_frame.IsZeroSize());
+    EXPECT_EQ(reference_frame.timestamp(), send_timestamp);
+    assert(reference_frame.timestamp() == send_timestamp);
 
-    AddFrameComparison(reference_frame, &video_frame, false, render_time_ms);
-    frame_pool_.push_back(reference_frame);
+    AddFrameComparison(reference_frame, video_frame, false, render_time_ms);
 
-    last_rendered_frame_.CopyFrame(video_frame);
+    last_rendered_frame_ = video_frame;
   }
 
   bool IsTextureSupported() const override { return false; }
@@ -253,39 +234,18 @@ class VideoAnalyzer : public PacketReceiver,
     FrameComparison()
         : dropped(false), send_time_ms(0), recv_time_ms(0), render_time_ms(0) {}
 
-    FrameComparison(const I420VideoFrame* reference,
-                    const I420VideoFrame* render,
+    FrameComparison(const I420VideoFrame& reference,
+                    const I420VideoFrame& render,
                     bool dropped,
                     int64_t send_time_ms,
                     int64_t recv_time_ms,
                     int64_t render_time_ms)
-        : dropped(dropped),
+        : reference(reference),
+          render(render),
+          dropped(dropped),
           send_time_ms(send_time_ms),
           recv_time_ms(recv_time_ms),
-          render_time_ms(render_time_ms) {
-      this->reference.CopyFrame(*reference);
-      this->render.CopyFrame(*render);
-    }
-
-    FrameComparison(const FrameComparison& compare)
-        : dropped(compare.dropped),
-          send_time_ms(compare.send_time_ms),
-          recv_time_ms(compare.recv_time_ms),
-          render_time_ms(compare.render_time_ms) {
-      this->reference.CopyFrame(compare.reference);
-      this->render.CopyFrame(compare.render);
-    }
-
-    void CloneStatsAndSwapFrames(FrameComparison* comparison) {
-      reference.SwapFrame(&comparison->reference);
-      render.SwapFrame(&comparison->render);
-      dropped = comparison->dropped;
-      send_time_ms = comparison->send_time_ms;
-      recv_time_ms = comparison->recv_time_ms;
-      render_time_ms = comparison->render_time_ms;
-    }
-
-    ~FrameComparison() {}
+          render_time_ms(render_time_ms) {}
 
     I420VideoFrame reference;
     I420VideoFrame render;
@@ -295,15 +255,15 @@ class VideoAnalyzer : public PacketReceiver,
     int64_t render_time_ms;
   };
 
-  void AddFrameComparison(const I420VideoFrame* reference,
-                          const I420VideoFrame* render,
+  void AddFrameComparison(const I420VideoFrame& reference,
+                          const I420VideoFrame& render,
                           bool dropped,
                           int64_t render_time_ms)
       EXCLUSIVE_LOCKS_REQUIRED(crit_) {
-    int64_t send_time_ms = send_times_[reference->timestamp()];
-    send_times_.erase(reference->timestamp());
-    int64_t recv_time_ms = recv_times_[reference->timestamp()];
-    recv_times_.erase(reference->timestamp());
+    int64_t send_time_ms = send_times_[reference.timestamp()];
+    send_times_.erase(reference.timestamp());
+    int64_t recv_time_ms = recv_times_[reference.timestamp()];
+    recv_times_.erase(reference.timestamp());
 
     CriticalSectionScoped crit(comparison_lock_.get());
     comparisons_.push_back(FrameComparison(reference,
@@ -360,7 +320,7 @@ class VideoAnalyzer : public PacketReceiver,
     if (comparisons_.empty() || AllFramesRecorded())
       return false;
 
-    comparison->CloneStatsAndSwapFrames(&comparisons_.front());
+    *comparison = comparisons_.front();
     comparisons_.pop_front();
 
     FrameRecorded();
@@ -452,12 +412,11 @@ class VideoAnalyzer : public PacketReceiver,
   uint32_t rtp_timestamp_delta_;
 
   const rtc::scoped_ptr<CriticalSectionWrapper> crit_;
-  std::deque<I420VideoFrame*> frames_ GUARDED_BY(crit_);
-  std::deque<I420VideoFrame*> frame_pool_ GUARDED_BY(crit_);
+  std::deque<I420VideoFrame> frames_ GUARDED_BY(crit_);
   I420VideoFrame last_rendered_frame_ GUARDED_BY(crit_);
   std::map<uint32_t, int64_t> send_times_ GUARDED_BY(crit_);
   std::map<uint32_t, int64_t> recv_times_ GUARDED_BY(crit_);
-  I420VideoFrame* first_send_frame_ GUARDED_BY(crit_);
+  I420VideoFrame first_send_frame_ GUARDED_BY(crit_);
   const double avg_psnr_threshold_;
   const double avg_ssim_threshold_;
 
