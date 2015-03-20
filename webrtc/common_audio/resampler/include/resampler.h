@@ -61,12 +61,12 @@ enum ResamplerMode
     kResamplerMode11To8
 };
 
+// All methods return 0 on success and -1 on failure.
 class Resampler
 {
 
 public:
     Resampler();
-    // TODO(andrew): use an init function instead.
     Resampler(int inFreq, int outFreq, ResamplerType type);
     ~Resampler();
 
