@@ -51,7 +51,12 @@ class PooledI420Buffer : public webrtc::VideoFrameBuffer {
 namespace webrtc {
 
 I420BufferPool::I420BufferPool() {
+  Release();
+}
+
+void I420BufferPool::Release() {
   thread_checker_.DetachFromThread();
+  buffers_.clear();
 }
 
 rtc::scoped_refptr<VideoFrameBuffer> I420BufferPool::CreateBuffer(int width,

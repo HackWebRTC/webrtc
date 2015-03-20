@@ -29,6 +29,9 @@ class I420BufferPool {
   // Returns a buffer from the pool, or creates a new buffer if no suitable
   // buffer exists in the pool.
   rtc::scoped_refptr<VideoFrameBuffer> CreateBuffer(int width, int height);
+  // Clears buffers_ and detaches the thread checker so that it can be reused
+  // later from another thread.
+  void Release();
 
  private:
   rtc::ThreadChecker thread_checker_;

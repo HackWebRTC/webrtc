@@ -1385,6 +1385,7 @@ int VP8DecoderImpl::Release() {
     delete ref_frame_;
     ref_frame_ = NULL;
   }
+  buffer_pool_.Release();
   inited_ = false;
   return WEBRTC_VIDEO_CODEC_OK;
 }
