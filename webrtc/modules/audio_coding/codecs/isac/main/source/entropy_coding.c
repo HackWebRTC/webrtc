@@ -128,7 +128,7 @@ static void FindInvArSpec(const int16_t* ARCoefQ12,
     sum >>= 15;
     CorrQ11[k] = (sum * tmpGain + round) >> shftVal;
   }
-  sum = WEBRTC_SPL_LSHIFT_W32(CorrQ11[0], 7);
+  sum = CorrQ11[0] << 7;
   for (n = 0; n < FRAMESAMPLES / 8; n++) {
     CurveQ16[n] = sum;
   }
@@ -163,8 +163,8 @@ static void FindInvArSpec(const int16_t* ARCoefQ12,
 
   for (k = 0; k < FRAMESAMPLES / 8; k++) {
     CurveQ16[FRAMESAMPLES_QUARTER - 1 - k] = CurveQ16[k] -
-        WEBRTC_SPL_LSHIFT_W32(diffQ16[k], shftVal);
-    CurveQ16[k] += WEBRTC_SPL_LSHIFT_W32(diffQ16[k], shftVal);
+        (diffQ16[k] << shftVal);
+    CurveQ16[k] += diffQ16[k] << shftVal;
   }
 }
 
