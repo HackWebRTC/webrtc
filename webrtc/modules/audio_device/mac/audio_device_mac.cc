@@ -1381,127 +1381,39 @@ int32_t AudioDeviceMac::InitPlayout()
     logCAMsg(kTraceInfo, kTraceAudioDevice, _id, "mFormatID",
              (const char *) &_outStreamFormat.mFormatID);
 
-    // Our preferred format to work with
-    _outDesiredFormat.mSampleRate = N_PLAY_SAMPLES_PER_SEC;
-    if (_outStreamFormat.mChannelsPerFrame >= 2 && (_playChannels == 2))
-    {
-        _outDesiredFormat.mChannelsPerFrame = 2;
-    } else
+    // Our preferred format to work with.
+    if (_outStreamFormat.mChannelsPerFrame < 2)
     {
         // Disable stereo playout when we only have one channel on the device.
-        _outDesiredFormat.mChannelsPerFrame = 1;
         _playChannels = 1;
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                      "Stereo playout unavailable on this device");
     }
+    WEBRTC_CA_RETURN_ON_ERR(SetDesiredPlayoutFormat());
 
-    if (_ptrAudioBuffer)
-    {
-        // Update audio buffer with the selected parameters
-        _ptrAudioBuffer->SetPlayoutSampleRate(N_PLAY_SAMPLES_PER_SEC);
-        _ptrAudioBuffer->SetPlayoutChannels((uint8_t) _playChannels);
-    }
-
-    _renderDelayOffsetSamples = _renderBufSizeSamples - N_BUFFERS_OUT
-        * ENGINE_PLAY_BUF_SIZE_IN_SAMPLES * _outDesiredFormat.mChannelsPerFrame;
-
-    _outDesiredFormat.mBytesPerPacket = _outDesiredFormat.mChannelsPerFrame
-        * sizeof(SInt16);
-    _outDesiredFormat.mFramesPerPacket = 1; // In uncompressed audio,
-    // a packet is one frame.
-    _outDesiredFormat.mBytesPerFrame = _outDesiredFormat.mChannelsPerFrame
-        * sizeof(SInt16);
-    _outDesiredFormat.mBitsPerChannel = sizeof(SInt16) * 8;
-
-    _outDesiredFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger
-        | kLinearPCMFormatFlagIsPacked;
-#ifdef WEBRTC_ARCH_BIG_ENDIAN
-    _outDesiredFormat.mFormatFlags |= kLinearPCMFormatFlagIsBigEndian;
-#endif
-    _outDesiredFormat.mFormatID = kAudioFormatLinearPCM;
-
-    WEBRTC_CA_RETURN_ON_ERR(AudioConverterNew(&_outDesiredFormat, &_outStreamFormat,
-            &_renderConverter));
-
-    // First try to set buffer size to desired value (_playBufDelayFixed)
-    UInt32 bufByteCount = (UInt32)((_outStreamFormat.mSampleRate / 1000.0)
-        * _playBufDelayFixed * _outStreamFormat.mChannelsPerFrame
-        * sizeof(Float32));
-    if (_outStreamFormat.mFramesPerPacket != 0)
-    {
-        if (bufByteCount % _outStreamFormat.mFramesPerPacket != 0)
-        {
-            bufByteCount = ((UInt32)(bufByteCount
-                / _outStreamFormat.mFramesPerPacket) + 1)
-                * _outStreamFormat.mFramesPerPacket;
-        }
-    }
-
-    // Ensure the buffer size is within the acceptable range provided by the device.
-    propertyAddress.mSelector = kAudioDevicePropertyBufferSizeRange;
-    AudioValueRange range;
-    size = sizeof(range);
-    WEBRTC_CA_RETURN_ON_ERR(AudioObjectGetPropertyData(_outputDeviceID,
-            &propertyAddress, 0, NULL, &size, &range));
-    if (range.mMinimum > bufByteCount)
-    {
-        bufByteCount = range.mMinimum;
-    } else if (range.mMaximum < bufByteCount)
-    {
-        bufByteCount = range.mMaximum;
-    }
-
-    propertyAddress.mSelector = kAudioDevicePropertyBufferSize;
-    size = sizeof(bufByteCount);
-    WEBRTC_CA_RETURN_ON_ERR(AudioObjectSetPropertyData(_outputDeviceID,
-            &propertyAddress, 0, NULL, size, &bufByteCount));
-
-    // Get render device latency
-    propertyAddress.mSelector = kAudioDevicePropertyLatency;
-    UInt32 latency = 0;
-    size = sizeof(UInt32);
-    WEBRTC_CA_RETURN_ON_ERR(AudioObjectGetPropertyData(_outputDeviceID,
-            &propertyAddress, 0, NULL, &size, &latency));
-    _renderLatencyUs = (uint32_t) ((1.0e6 * latency)
-        / _outStreamFormat.mSampleRate);
-
-    // Get render stream latency
-    propertyAddress.mSelector = kAudioDevicePropertyStreams;
-    AudioStreamID stream = 0;
-    size = sizeof(AudioStreamID);
-    WEBRTC_CA_RETURN_ON_ERR(AudioObjectGetPropertyData(_outputDeviceID,
-            &propertyAddress, 0, NULL, &size, &stream));
-    propertyAddress.mSelector = kAudioStreamPropertyLatency;
-    size = sizeof(UInt32);
-    latency = 0;
-    WEBRTC_CA_RETURN_ON_ERR(AudioObjectGetPropertyData(_outputDeviceID,
-            &propertyAddress, 0, NULL, &size, &latency));
-    _renderLatencyUs += (uint32_t) ((1.0e6 * latency)
-        / _outStreamFormat.mSampleRate);
-
-    // Listen for format changes
+    // Listen for format changes.
     propertyAddress.mSelector = kAudioDevicePropertyStreamFormat;
     WEBRTC_CA_RETURN_ON_ERR(AudioObjectAddPropertyListener(_outputDeviceID,
-            &propertyAddress, &objectListenerProc, this));
+                                                           &propertyAddress,
+                                                           &objectListenerProc,
+                                                           this));
 
-    // Listen for processor overloads
+    // Listen for processor overloads.
     propertyAddress.mSelector = kAudioDeviceProcessorOverload;
     WEBRTC_CA_LOG_WARN(AudioObjectAddPropertyListener(_outputDeviceID,
-            &propertyAddress, &objectListenerProc, this));
+                                                      &propertyAddress,
+                                                      &objectListenerProc,
+                                                      this));
 
     if (_twoDevices || !_recIsInitialized)
     {
         WEBRTC_CA_RETURN_ON_ERR(AudioDeviceCreateIOProcID(_outputDeviceID,
-                deviceIOProc, this, &_deviceIOProcID));
+                                                          deviceIOProc,
+                                                          this,
+                                                          &_deviceIOProcID));
     }
 
-    // Mark playout side as initialized
     _playIsInitialized = true;
-
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "  initial playout status: _renderDelayOffsetSamples=%d,"
-                 " _renderDelayUs=%d, _renderLatencyUs=%d",
-                 _renderDelayOffsetSamples, _renderDelayUs, _renderLatencyUs);
 
     return 0;
 }
@@ -2423,6 +2335,131 @@ int32_t AudioDeviceMac::InitDevice(const uint16_t userDeviceIndex,
     return 0;
 }
 
+OSStatus AudioDeviceMac::SetDesiredPlayoutFormat()
+{
+    // Our preferred format to work with.
+    _outDesiredFormat.mSampleRate = N_PLAY_SAMPLES_PER_SEC;
+    _outDesiredFormat.mChannelsPerFrame = _playChannels;
+
+    if (_ptrAudioBuffer)
+    {
+        // Update audio buffer with the selected parameters.
+        _ptrAudioBuffer->SetPlayoutSampleRate(N_PLAY_SAMPLES_PER_SEC);
+        _ptrAudioBuffer->SetPlayoutChannels((uint8_t) _playChannels);
+    }
+
+    _renderDelayOffsetSamples = _renderBufSizeSamples - N_BUFFERS_OUT *
+        ENGINE_PLAY_BUF_SIZE_IN_SAMPLES * _outDesiredFormat.mChannelsPerFrame;
+
+    _outDesiredFormat.mBytesPerPacket = _outDesiredFormat.mChannelsPerFrame *
+                                        sizeof(SInt16);
+    // In uncompressed audio, a packet is one frame.
+    _outDesiredFormat.mFramesPerPacket = 1;
+    _outDesiredFormat.mBytesPerFrame = _outDesiredFormat.mChannelsPerFrame *
+                                       sizeof(SInt16);
+    _outDesiredFormat.mBitsPerChannel = sizeof(SInt16) * 8;
+
+    _outDesiredFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger |
+                                     kLinearPCMFormatFlagIsPacked;
+#ifdef WEBRTC_ARCH_BIG_ENDIAN
+    _outDesiredFormat.mFormatFlags |= kLinearPCMFormatFlagIsBigEndian;
+#endif
+    _outDesiredFormat.mFormatID = kAudioFormatLinearPCM;
+
+    OSStatus err = noErr;
+    WEBRTC_CA_RETURN_ON_ERR(AudioConverterNew(&_outDesiredFormat,
+                                              &_outStreamFormat,
+                                              &_renderConverter));
+
+    // Try to set buffer size to desired value (_playBufDelayFixed).
+    UInt32 bufByteCount = static_cast<UInt32> ((_outStreamFormat.mSampleRate /
+                          1000.0) *
+                          _playBufDelayFixed *
+                          _outStreamFormat.mChannelsPerFrame *
+                          sizeof(Float32));
+    if (_outStreamFormat.mFramesPerPacket != 0)
+    {
+        if (bufByteCount % _outStreamFormat.mFramesPerPacket != 0)
+        {
+            bufByteCount = (static_cast<UInt32> (bufByteCount /
+                           _outStreamFormat.mFramesPerPacket) + 1) *
+                           _outStreamFormat.mFramesPerPacket;
+        }
+    }
+
+    // Ensure the buffer size is within the range provided by the device.
+    AudioObjectPropertyAddress propertyAddress =
+        {kAudioDevicePropertyDataSource,
+         kAudioDevicePropertyScopeOutput,
+         0};
+    propertyAddress.mSelector = kAudioDevicePropertyBufferSizeRange;
+    AudioValueRange range;
+    UInt32 size = sizeof(range);
+    WEBRTC_CA_RETURN_ON_ERR(AudioObjectGetPropertyData(_outputDeviceID,
+                                                       &propertyAddress,
+                                                       0,
+                                                       NULL,
+                                                       &size,
+                                                       &range));
+    if (range.mMinimum > bufByteCount)
+    {
+        bufByteCount = range.mMinimum;
+    } else if (range.mMaximum < bufByteCount)
+    {
+        bufByteCount = range.mMaximum;
+    }
+
+    propertyAddress.mSelector = kAudioDevicePropertyBufferSize;
+    size = sizeof(bufByteCount);
+    WEBRTC_CA_RETURN_ON_ERR(AudioObjectSetPropertyData(_outputDeviceID,
+                                                       &propertyAddress,
+                                                       0,
+                                                       NULL,
+                                                       size,
+                                                       &bufByteCount));
+
+    // Get render device latency.
+    propertyAddress.mSelector = kAudioDevicePropertyLatency;
+    UInt32 latency = 0;
+    size = sizeof(UInt32);
+    WEBRTC_CA_RETURN_ON_ERR(AudioObjectGetPropertyData(_outputDeviceID,
+                                                       &propertyAddress,
+                                                       0,
+                                                       NULL,
+                                                       &size,
+                                                       &latency));
+    _renderLatencyUs = static_cast<uint32_t> ((1.0e6 * latency) /
+                       _outStreamFormat.mSampleRate);
+
+    // Get render stream latency.
+    propertyAddress.mSelector = kAudioDevicePropertyStreams;
+    AudioStreamID stream = 0;
+    size = sizeof(AudioStreamID);
+    WEBRTC_CA_RETURN_ON_ERR(AudioObjectGetPropertyData(_outputDeviceID,
+                                                       &propertyAddress,
+                                                       0,
+                                                       NULL,
+                                                       &size,
+                                                       &stream));
+    propertyAddress.mSelector = kAudioStreamPropertyLatency;
+    size = sizeof(UInt32);
+    latency = 0;
+    WEBRTC_CA_RETURN_ON_ERR(AudioObjectGetPropertyData(_outputDeviceID,
+                                                       &propertyAddress,
+                                                       0,
+                                                       NULL,
+                                                       &size,
+                                                       &latency));
+    _renderLatencyUs += static_cast<uint32_t> ((1.0e6 * latency) /
+                        _outStreamFormat.mSampleRate);
+
+    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                 "  initial playout status: _renderDelayOffsetSamples=%d,"
+                 " _renderDelayUs=%d, _renderLatencyUs=%d",
+                 _renderDelayOffsetSamples, _renderDelayUs, _renderLatencyUs);
+    return 0;
+}
+
 OSStatus AudioDeviceMac::objectListenerProc(
     AudioObjectID objectId,
     UInt32 numberAddresses,
@@ -2635,37 +2672,15 @@ int32_t AudioDeviceMac::HandleStreamFormatChange(
     {
         memcpy(&_outStreamFormat, &streamFormat, sizeof(streamFormat));
 
-        if (_outStreamFormat.mChannelsPerFrame >= 2 && (_playChannels == 2))
+        // Our preferred format to work with
+        if (_outStreamFormat.mChannelsPerFrame < 2)
         {
-            _outDesiredFormat.mChannelsPerFrame = 2;
-        } else
-        {
-            // Disable stereo playout when we only have one channel on the device.
-            _outDesiredFormat.mChannelsPerFrame = 1;
             _playChannels = 1;
             WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                          "Stereo playout unavailable on this device");
         }
-
-        if (_ptrAudioBuffer)
-        {
-            // Update audio buffer with the selected parameters
-            _ptrAudioBuffer->SetPlayoutSampleRate(N_PLAY_SAMPLES_PER_SEC);
-            _ptrAudioBuffer->SetPlayoutChannels((uint8_t) _playChannels);
-        }
-
-        _renderDelayOffsetSamples = _renderBufSizeSamples - N_BUFFERS_OUT
-            * ENGINE_PLAY_BUF_SIZE_IN_SAMPLES
-            * _outDesiredFormat.mChannelsPerFrame;
-
-        // Recreate the converter with the new format
-        // TODO(xians): make this thread safe
-        WEBRTC_CA_RETURN_ON_ERR(AudioConverterDispose(_renderConverter));
-
-        WEBRTC_CA_RETURN_ON_ERR(AudioConverterNew(&_outDesiredFormat, &streamFormat,
-                &_renderConverter));
+        WEBRTC_CA_RETURN_ON_ERR(SetDesiredPlayoutFormat());
     }
-
     return 0;
 }
 

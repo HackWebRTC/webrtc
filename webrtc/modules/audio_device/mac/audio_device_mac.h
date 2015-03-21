@@ -200,6 +200,10 @@ private:
     int32_t InitDevice(uint16_t userDeviceIndex,
                        AudioDeviceID& deviceId, bool isInput);
 
+    // Always work with our preferred playout format inside VoE.
+    // Then convert the output to the OS setting using an AudioConverter.
+    OSStatus SetDesiredPlayoutFormat();
+
     static OSStatus
         objectListenerProc(AudioObjectID objectId, UInt32 numberAddresses,
                            const AudioObjectPropertyAddress addresses[],
