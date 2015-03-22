@@ -1667,10 +1667,10 @@ int32_t AudioDeviceMac::StartRecording()
 
     DCHECK(!capture_worker_thread_.get());
     capture_worker_thread_ =
-        ThreadWrapper::CreateThread(RunCapture, this, "CaptureWorkerThread");
+        ThreadWrapper::CreateThread(RunCapture, this, kRealtimePriority,
+                                    "CaptureWorkerThread");
     DCHECK(capture_worker_thread_.get());
     capture_worker_thread_->Start();
-    capture_worker_thread_->SetPriority(kRealtimePriority);
 
     OSStatus err = noErr;
     if (_twoDevices)
@@ -1822,9 +1822,9 @@ int32_t AudioDeviceMac::StartPlayout()
 
     DCHECK(!render_worker_thread_.get());
     render_worker_thread_ =
-        ThreadWrapper::CreateThread(RunRender, this, "RenderWorkerThread");
+        ThreadWrapper::CreateThread(RunRender, this, kRealtimePriority,
+                                    "RenderWorkerThread");
     render_worker_thread_->Start();
-    render_worker_thread_->SetPriority(kRealtimePriority);
 
     if (_twoDevices || !_recording)
     {

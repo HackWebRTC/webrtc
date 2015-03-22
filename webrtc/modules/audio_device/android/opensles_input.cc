@@ -470,14 +470,13 @@ void OpenSlesInput::RecorderSimpleBufferQueueCallbackHandler(
 }
 
 bool OpenSlesInput::StartCbThreads() {
-  rec_thread_ = ThreadWrapper::CreateThread(CbThread, this,
+  rec_thread_ = ThreadWrapper::CreateThread(CbThread, this, kRealtimePriority,
                                             "opensl_rec_thread");
   assert(rec_thread_.get());
   if (!rec_thread_->Start()) {
     assert(false);
     return false;
   }
-  rec_thread_->SetPriority(kRealtimePriority);
   OPENSL_RETURN_ON_FAILURE(
       (*sles_recorder_itf_)->SetRecordState(sles_recorder_itf_,
                                             SL_RECORDSTATE_RECORDING),

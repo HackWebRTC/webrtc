@@ -281,9 +281,8 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
     if (!_captureThread)
     {
         _captureThread = ThreadWrapper::CreateThread(
-            VideoCaptureModuleV4L2::CaptureThread, this, "CaptureThread");
+            VideoCaptureModuleV4L2::CaptureThread, this, kHighPriority);
         _captureThread->Start();
-        _captureThread->SetPriority(kHighPriority);
     }
 
     // Needed to start UVC camera - from the uvcview application

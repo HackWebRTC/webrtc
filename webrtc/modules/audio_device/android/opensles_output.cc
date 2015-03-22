@@ -510,7 +510,7 @@ void OpenSlesOutput::PlayerSimpleBufferQueueCallbackHandler(
 }
 
 bool OpenSlesOutput::StartCbThreads() {
-  play_thread_ = ThreadWrapper::CreateThread(CbThread, this,
+  play_thread_ = ThreadWrapper::CreateThread(CbThread, this, kRealtimePriority,
                                              "opensl_play_thread");
   assert(play_thread_.get());
   OPENSL_RETURN_ON_FAILURE(
@@ -522,7 +522,6 @@ bool OpenSlesOutput::StartCbThreads() {
     assert(false);
     return false;
   }
-  play_thread_->SetPriority(kRealtimePriority);
   return true;
 }
 

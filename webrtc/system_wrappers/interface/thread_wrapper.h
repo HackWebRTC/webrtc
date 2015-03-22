@@ -16,10 +16,6 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_THREAD_WRAPPER_H_
 #define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_THREAD_WRAPPER_H_
 
-#if defined(WEBRTC_WIN)
-#include <windows.h>
-#endif
-
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
@@ -32,19 +28,11 @@ namespace webrtc {
 typedef bool(*ThreadRunFunction)(void*);
 
 enum ThreadPriority {
-#ifdef WEBRTC_WIN
-  kLowPriority = THREAD_PRIORITY_BELOW_NORMAL,
-  kNormalPriority = THREAD_PRIORITY_NORMAL,
-  kHighPriority = THREAD_PRIORITY_ABOVE_NORMAL,
-  kHighestPriority = THREAD_PRIORITY_HIGHEST,
-  kRealtimePriority = THREAD_PRIORITY_TIME_CRITICAL
-#else
   kLowPriority = 1,
   kNormalPriority = 2,
   kHighPriority = 3,
   kHighestPriority = 4,
   kRealtimePriority = 5
-#endif
 };
 
 // Represents a simple worker thread.  The implementation must be assumed
@@ -64,8 +52,11 @@ class ThreadWrapper {
   // prio        Thread priority. May require root/admin rights.
   // thread_name  NULL terminated thread name, will be visable in the Windows
   //             debugger.
+  // TODO(tommi): Remove the priority argument and provide a setter instead.
+  // TODO(tommi): Make thread_name non-optional (i.e. no default value).
   static rtc::scoped_ptr<ThreadWrapper> CreateThread(ThreadRunFunction func,
-      void* obj, const char* thread_name);
+      void* obj, ThreadPriority prio = kNormalPriority,
+      const char* thread_name = 0);
 
   // Get the current thread's thread ID.
   // NOTE: This is a static method. It returns the id of the calling thread,
@@ -84,10 +75,6 @@ class ThreadWrapper {
   // Multiple tries to Stop are allowed (e.g. to wait longer than 2 seconds).
   // It's ok to call Stop() even if the spawned thread has been reclaimed.
   virtual bool Stop() = 0;
-
-  // Set the priority of the worker thread.  Must be called when thread
-  // is running.
-  virtual bool SetPriority(ThreadPriority priority) = 0;
 };
 
 }  // namespace webrtc

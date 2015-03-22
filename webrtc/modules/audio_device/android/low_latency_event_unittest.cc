@@ -22,8 +22,10 @@ static const int kEventMsg = 1;
 class LowLatencyEventTest : public testing::Test {
  public:
   LowLatencyEventTest()
-      : process_thread_(ThreadWrapper::CreateThread(
-            CbThread, this, "test_thread")),
+      : process_thread_(ThreadWrapper::CreateThread(CbThread,
+                                                    this,
+                                                    kRealtimePriority,
+                                                    "test_thread")),
         terminated_(false),
         iteration_count_(0),
         allowed_iterations_(0) {
@@ -44,7 +46,6 @@ class LowLatencyEventTest : public testing::Test {
  private:
   void Start() {
     EXPECT_TRUE(process_thread_->Start());
-    process_thread_->SetPriority(kRealtimePriority);
   }
   void Stop() {
     terminated_ = true;

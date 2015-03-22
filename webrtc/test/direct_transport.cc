@@ -20,8 +20,7 @@ namespace test {
 DirectTransport::DirectTransport()
     : lock_(CriticalSectionWrapper::CreateCriticalSection()),
       packet_event_(EventWrapper::Create()),
-      thread_(ThreadWrapper::CreateThread(
-          NetworkProcess, this, "NetworkProcess")),
+      thread_(ThreadWrapper::CreateThread(NetworkProcess, this)),
       clock_(Clock::GetRealTimeClock()),
       shutting_down_(false),
       fake_network_(FakeNetworkPipe::Config()) {
@@ -32,8 +31,7 @@ DirectTransport::DirectTransport(
     const FakeNetworkPipe::Config& config)
     : lock_(CriticalSectionWrapper::CreateCriticalSection()),
       packet_event_(EventWrapper::Create()),
-      thread_(ThreadWrapper::CreateThread(
-          NetworkProcess, this, "NetworkProcess")),
+      thread_(ThreadWrapper::CreateThread(NetworkProcess, this)),
       clock_(Clock::GetRealTimeClock()),
       shutting_down_(false),
       fake_network_(config) {

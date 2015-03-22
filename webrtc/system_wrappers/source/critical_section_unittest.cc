@@ -79,7 +79,7 @@ TEST_F(CritSectTest, ThreadWakesOnce) NO_THREAD_SAFETY_ANALYSIS {
       CriticalSectionWrapper::CreateCriticalSection();
   ProtectedCount count(crit_sect);
   rtc::scoped_ptr<ThreadWrapper> thread = ThreadWrapper::CreateThread(
-      &LockUnlockThenStopRunFunction, &count, "ThreadWakesOnce");
+      &LockUnlockThenStopRunFunction, &count);
   crit_sect->Enter();
   ASSERT_TRUE(thread->Start());
   SwitchProcess();
@@ -106,7 +106,7 @@ TEST_F(CritSectTest, ThreadWakesTwice) NO_THREAD_SAFETY_ANALYSIS {
       CriticalSectionWrapper::CreateCriticalSection();
   ProtectedCount count(crit_sect);
   rtc::scoped_ptr<ThreadWrapper> thread = ThreadWrapper::CreateThread(
-      &LockUnlockRunFunction, &count, "ThreadWakesTwice");
+      &LockUnlockRunFunction, &count);
   crit_sect->Enter();  // Make sure counter stays 0 until we wait for it.
   ASSERT_TRUE(thread->Start());
   crit_sect->Leave();

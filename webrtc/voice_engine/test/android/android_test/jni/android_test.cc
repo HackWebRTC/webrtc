@@ -188,7 +188,8 @@ ThreadTest::~ThreadTest()
 
 ThreadTest::ThreadTest()
 {
-    _thread = ThreadWrapper::CreateThread(Run, this, "ThreadTest thread");
+    _thread = ThreadWrapper::CreateThread(Run, this, kNormalPriority,
+                                          "ThreadTest thread");
 }
 
 bool ThreadTest::Run(void* ptr)

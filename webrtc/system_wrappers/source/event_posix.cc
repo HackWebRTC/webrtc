@@ -154,11 +154,11 @@ bool EventPosix::StartTimer(bool periodic, unsigned long time) {
   // Start the timer thread
   timer_event_ = static_cast<EventPosix*>(EventWrapper::Create());
   const char* thread_name = "WebRtc_event_timer_thread";
-  timer_thread_ = ThreadWrapper::CreateThread(Run, this, thread_name);
+  timer_thread_ = ThreadWrapper::CreateThread(Run, this, kRealtimePriority,
+                                              thread_name);
   periodic_ = periodic;
   time_ = time;
   bool started = timer_thread_->Start();
-  timer_thread_->SetPriority(kRealtimePriority);
   pthread_mutex_unlock(&mutex_);
 
   return started;

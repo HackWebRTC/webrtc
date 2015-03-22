@@ -164,7 +164,7 @@ int32_t TestSenderReceiver::Start()
     }
 
     _procThread = ThreadWrapper::CreateThread(ProcThreadFunction, this,
-                                              "TestSenderReceiver");
+        kRealtimePriority, "TestSenderReceiver");
 
     _running = true;
 
@@ -178,7 +178,6 @@ int32_t TestSenderReceiver::Start()
     }
 
     _procThread->Start();
-    _procThread->SetPriority(kRealtimePriority);
 
     return 0;
 

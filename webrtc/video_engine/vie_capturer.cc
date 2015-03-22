@@ -68,8 +68,10 @@ ViECapturer::ViECapturer(int capture_id,
       module_process_thread_(module_process_thread),
       capture_id_(capture_id),
       incoming_frame_cs_(CriticalSectionWrapper::CreateCriticalSection()),
-      capture_thread_(ThreadWrapper::CreateThread(
-          ViECaptureThreadFunction, this, "ViECaptureThread")),
+      capture_thread_(ThreadWrapper::CreateThread(ViECaptureThreadFunction,
+                                                  this,
+                                                  kHighPriority,
+                                                  "ViECaptureThread")),
       capture_event_(*EventWrapper::Create()),
       deliver_event_(*EventWrapper::Create()),
       stop_(0),
@@ -91,7 +93,6 @@ ViECapturer::ViECapturer(int capture_id,
           new OveruseFrameDetector(Clock::GetRealTimeClock(),
                                    cpu_overuse_metrics_observer_.get())) {
   capture_thread_->Start();
-  capture_thread_->SetPriority(kHighPriority);
   module_process_thread_.RegisterModule(overuse_detector_.get());
 }
 

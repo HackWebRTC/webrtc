@@ -295,8 +295,8 @@ VideoRenderDirect3D9::VideoRenderDirect3D9(Trace* trace,
     _totalMemory(0),
     _availableMemory(0)
 {
-    _screenUpdateThread = ThreadWrapper::CreateThread(
-        ScreenUpdateThreadProc, this, "ScreenUpdateThread");
+    _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc,
+                                                      this, kRealtimePriority);
     _screenUpdateEvent = EventWrapper::Create();
     SetRect(&_originalHwndRect, 0, 0, 0, 0);
 }
@@ -547,7 +547,6 @@ int32_t VideoRenderDirect3D9::Init()
         return -1;
     }
     _screenUpdateThread->Start();
-    _screenUpdateThread->SetPriority(kRealtimePriority);
 
     // Start the event triggering the render process
     unsigned int monitorFreq = 60;

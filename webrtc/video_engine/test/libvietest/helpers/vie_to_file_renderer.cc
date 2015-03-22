@@ -37,7 +37,8 @@ ViEToFileRenderer::ViEToFileRenderer()
       output_path_(),
       output_filename_(),
       thread_(webrtc::ThreadWrapper::CreateThread(
-          ViEToFileRenderer::RunRenderThread, this, "ViEToFileRendererThread")),
+          ViEToFileRenderer::RunRenderThread,
+          this, webrtc::kNormalPriority, "ViEToFileRendererThread")),
       frame_queue_cs_(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
       frame_render_event_(webrtc::EventWrapper::Create()),
       render_queue_(),

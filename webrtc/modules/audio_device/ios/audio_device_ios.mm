@@ -107,12 +107,12 @@ int32_t AudioDeviceIOS::Init() {
 
     // Create and start capture thread
     if (!_captureWorkerThread) {
-        _captureWorkerThread = ThreadWrapper::CreateThread(
-            RunCapture, this, "CaptureWorkerThread");
+        _captureWorkerThread
+            = ThreadWrapper::CreateThread(RunCapture, this, kRealtimePriority,
+                                          "CaptureWorkerThread");
         bool res = _captureWorkerThread->Start();
         WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice,
                      _id, "CaptureWorkerThread started (res=%d)", res);
-        _captureWorkerThread->SetPriority(kRealtimePriority);
     } else {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice,
                      _id, "Thread already created");
