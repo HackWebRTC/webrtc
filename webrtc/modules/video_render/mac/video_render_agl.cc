@@ -395,7 +395,8 @@ _renderingIsPaused( false),
 {
     //WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s");
 
-    _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc, this, kRealtimePriority);
+    _screenUpdateThread = ThreadWrapper::CreateThread(
+        ScreenUpdateThreadProc, this, "ScreenUpdate");
     _screenUpdateEvent = EventWrapper::Create();
 
     if(!IsValidWindowPtr(_windowRef))
@@ -511,7 +512,8 @@ _renderingIsPaused( false),
     //WEBRTC_TRACE(kTraceDebug, "%s:%d Constructor", __FUNCTION__, __LINE__);
     //    _renderCritSec = CriticalSectionWrapper::CreateCriticalSection();
 
-    _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc, this, kRealtimePriority);
+    _screenUpdateThread = ThreadWrapper::CreateThread(
+        ScreenUpdateThreadProc, this, "ScreenUpdateThread");
     _screenUpdateEvent = EventWrapper::Create();
 
     GetWindowRect(_windowRect);
@@ -737,6 +739,7 @@ int VideoRenderAGL::Init()
         return -1;
     }
     _screenUpdateThread->Start();
+    _screenUpdateThread->SetPriority(kRealtimePriority);
 
     // Start the event triggering the render process
     unsigned int monitorFreq = 60;
@@ -1877,6 +1880,7 @@ int32_t VideoRenderAGL::StartRender()
             UnlockAGLCntx();
             return -1;
         }
+        _screenUpdateThread->SetPriority(kRealtimePriority);
         if(FALSE == _screenUpdateEvent->StartTimer(true, 1000/MONITOR_FREQ))
         {
             //WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s:%d Failed to start screenUpdateEvent", __FUNCTION__, __LINE__);
@@ -1887,7 +1891,8 @@ int32_t VideoRenderAGL::StartRender()
         return 0;
     }
 
-    _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc, this, kRealtimePriority);
+    _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc,
+        this, "ScreenUpdate");
     _screenUpdateEvent = EventWrapper::Create();
 
     if (!_screenUpdateThread)
@@ -1898,6 +1903,7 @@ int32_t VideoRenderAGL::StartRender()
     }
 
     _screenUpdateThread->Start();
+    _screenUpdateThread->SetPriority(kRealtimePriority);
     _screenUpdateEvent->StartTimer(true, 1000/MONITOR_FREQ);
 
     //WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s:%d Started screenUpdateThread", __FUNCTION__, __LINE__);

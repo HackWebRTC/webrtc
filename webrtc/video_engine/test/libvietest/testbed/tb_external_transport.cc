@@ -41,8 +41,7 @@ TbExternalTransport::TbExternalTransport(
       receive_channels_(receive_channels),
       _vieNetwork(vieNetwork),
       _thread(webrtc::ThreadWrapper::CreateThread(
-          ViEExternalTransportRun, this, webrtc::kHighPriority,
-          "AutotestTransport")),
+          ViEExternalTransportRun, this, "AutotestTransport")),
       _event(*webrtc::EventWrapper::Create()),
       _crit(*webrtc::CriticalSectionWrapper::CreateCriticalSection()),
       _statCrit(*webrtc::CriticalSectionWrapper::CreateCriticalSection()),
@@ -77,6 +76,7 @@ TbExternalTransport::TbExternalTransport(
     srand((int) webrtc::TickTime::MicrosecondTimestamp());
     memset(&network_parameters_, 0, sizeof(NetworkParameters));
     _thread->Start();
+    _thread->SetPriority(webrtc::kHighPriority);
 }
 
 TbExternalTransport::~TbExternalTransport()

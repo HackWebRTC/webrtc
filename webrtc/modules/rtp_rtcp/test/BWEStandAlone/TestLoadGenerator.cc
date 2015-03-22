@@ -77,10 +77,11 @@ int32_t TestLoadGenerator::Start (const char *threadName)
     _eventPtr = EventWrapper::Create();
 
     _genThread = ThreadWrapper::CreateThread(SenderThreadFunction, this,
-                                             kRealtimePriority, threadName);
+                                             threadName);
     _running = true;
 
     _genThread->Start();
+    _genThread->SetPriority(kRealtimePriority);
 
     return 0;
 }

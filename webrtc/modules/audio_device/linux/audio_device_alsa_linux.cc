@@ -1365,10 +1365,8 @@ int32_t AudioDeviceLinuxALSA::StartRecording()
     }
     // RECORDING
     const char* threadName = "webrtc_audio_module_capture_thread";
-    _ptrThreadRec = ThreadWrapper::CreateThread(RecThreadFunc,
-                                                this,
-                                                kRealtimePriority,
-                                                threadName);
+    _ptrThreadRec = ThreadWrapper::CreateThread(
+        RecThreadFunc, this, threadName);
 
     if (!_ptrThreadRec->Start())
     {
@@ -1380,6 +1378,7 @@ int32_t AudioDeviceLinuxALSA::StartRecording()
         _recordingBuffer = NULL;
         return -1;
     }
+    _ptrThreadRec->SetPriority(kRealtimePriority);
 
     errVal = LATE(snd_pcm_prepare)(_handleRecord);
     if (errVal < 0)
@@ -1520,9 +1519,7 @@ int32_t AudioDeviceLinuxALSA::StartPlayout()
 
     // PLAYOUT
     const char* threadName = "webrtc_audio_module_play_thread";
-    _ptrThreadPlay =  ThreadWrapper::CreateThread(PlayThreadFunc,
-                                                  this,
-                                                  kRealtimePriority,
+    _ptrThreadPlay =  ThreadWrapper::CreateThread(PlayThreadFunc, this,
                                                   threadName);
     if (!_ptrThreadPlay->Start())
     {
@@ -1534,6 +1531,7 @@ int32_t AudioDeviceLinuxALSA::StartPlayout()
         _playoutBuffer = NULL;
         return -1;
     }
+    _ptrThreadPlay->SetPriority(kRealtimePriority);
 
     int errVal = LATE(snd_pcm_prepare)(_handlePlayout);
     if (errVal < 0)

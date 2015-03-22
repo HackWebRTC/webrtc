@@ -25,10 +25,9 @@ typedef ThreadPosix ThreadType;
 #endif
 
 rtc::scoped_ptr<ThreadWrapper> ThreadWrapper::CreateThread(
-    ThreadRunFunction func, void* obj, ThreadPriority prio,
-    const char* thread_name) {
+    ThreadRunFunction func, void* obj, const char* thread_name) {
   return rtc::scoped_ptr<ThreadWrapper>(
-      new ThreadType(func, obj, prio, thread_name)).Pass();
+      new ThreadType(func, obj, thread_name)).Pass();
 }
 
 }  // namespace webrtc

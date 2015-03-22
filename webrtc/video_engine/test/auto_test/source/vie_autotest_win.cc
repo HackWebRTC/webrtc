@@ -47,8 +47,7 @@ ViEAutoTestWindowManager::ViEAutoTestWindowManager()
       _window2(NULL),
       _terminate(false),
       _eventThread(webrtc::ThreadWrapper::CreateThread(
-          EventProcess, this, webrtc::kNormalPriority,
-          "ViEAutotestEventThread")),
+          EventProcess, this, "ViEAutotestEventThread")),
       _crit(*webrtc::CriticalSectionWrapper::CreateCriticalSection()),
       _hwnd1(NULL),
       _hwnd2(NULL),

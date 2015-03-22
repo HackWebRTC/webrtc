@@ -145,7 +145,7 @@ class CondVarTest : public ::testing::Test {
 
   virtual void SetUp() {
     thread_ = ThreadWrapper::CreateThread(&WaitingRunFunction,
-                                          &baton_);
+                                          &baton_, "CondVarTest");
     ASSERT_TRUE(thread_->Start());
   }
 

@@ -462,18 +462,11 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
 
   AudioCodingModuleMtTestOldApi()
       : AudioCodingModuleTestOldApi(),
-        send_thread_(ThreadWrapper::CreateThread(CbSendThread,
-                                                 this,
-                                                 kRealtimePriority,
-                                                 "send")),
-        insert_packet_thread_(ThreadWrapper::CreateThread(CbInsertPacketThread,
-                                                          this,
-                                                          kRealtimePriority,
-                                                          "insert_packet")),
-        pull_audio_thread_(ThreadWrapper::CreateThread(CbPullAudioThread,
-                                                       this,
-                                                       kRealtimePriority,
-                                                       "pull_audio")),
+        send_thread_(ThreadWrapper::CreateThread(CbSendThread, this, "send")),
+        insert_packet_thread_(ThreadWrapper::CreateThread(
+            CbInsertPacketThread, this, "insert_packet")),
+        pull_audio_thread_(ThreadWrapper::CreateThread(
+            CbPullAudioThread, this, "pull_audio")),
         test_complete_(EventWrapper::Create()),
         send_count_(0),
         insert_packet_count_(0),
@@ -492,8 +485,11 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
 
   void StartThreads() {
     ASSERT_TRUE(send_thread_->Start());
+    send_thread_->SetPriority(kRealtimePriority);
     ASSERT_TRUE(insert_packet_thread_->Start());
+    insert_packet_thread_->SetPriority(kRealtimePriority);
     ASSERT_TRUE(pull_audio_thread_->Start());
+    pull_audio_thread_->SetPriority(kRealtimePriority);
   }
 
   void TearDown() {

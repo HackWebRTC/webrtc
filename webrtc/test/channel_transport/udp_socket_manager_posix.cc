@@ -189,7 +189,6 @@ UdpSocketManagerPosixImpl::UdpSocketManagerPosixImpl()
 {
     _critSectList = CriticalSectionWrapper::CreateCriticalSection();
     _thread = ThreadWrapper::CreateThread(UdpSocketManagerPosixImpl::Run, this,
-                                          kRealtimePriority,
                                           "UdpSocketManagerPosixImplThread");
     FD_ZERO(&_readFds);
     WEBRTC_TRACE(kTraceMemory,  kTraceTransport, -1,
@@ -228,7 +227,10 @@ bool UdpSocketManagerPosixImpl::Start()
 
     WEBRTC_TRACE(kTraceStateInfo,  kTraceTransport, -1,
                  "Start UdpSocketManagerPosix");
-    return _thread->Start();
+    if (!_thread->Start())
+        return false;
+    _thread->SetPriority(kRealtimePriority);
+    return true;
 }
 
 bool UdpSocketManagerPosixImpl::Stop()

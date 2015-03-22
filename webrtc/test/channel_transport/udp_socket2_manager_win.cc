@@ -537,7 +537,11 @@ bool UdpSocket2WorkerWindows::Start()
 {
     WEBRTC_TRACE(kTraceStateInfo,  kTraceTransport, -1,
                  "Start UdpSocket2WorkerWindows");
-    return _pThread->Start();
+    if (!_pThread->Start())
+        return false;
+
+    _pThread->SetPriority(kRealtimePriority);
+    return true;
 }
 
 bool UdpSocket2WorkerWindows::Stop()
@@ -552,8 +556,7 @@ int32_t UdpSocket2WorkerWindows::Init()
     if(!_init)
     {
         const char* threadName = "UdpSocket2ManagerWindows_thread";
-        _pThread = ThreadWrapper::CreateThread(Run, this, kRealtimePriority,
-                                               threadName);
+        _pThread = ThreadWrapper::CreateThread(Run, this, threadName);
         _init = true;
     }
     return 0;

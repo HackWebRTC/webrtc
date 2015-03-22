@@ -24,7 +24,7 @@ bool NullRunFunction(void* obj) {
 
 TEST(ThreadTest, StartStop) {
   rtc::scoped_ptr<ThreadWrapper> thread = ThreadWrapper::CreateThread(
-      &NullRunFunction, NULL);
+      &NullRunFunction, nullptr, "ThreadTest");
   ASSERT_TRUE(thread->Start());
   EXPECT_TRUE(thread->Stop());
 }
@@ -40,7 +40,7 @@ bool SetFlagRunFunction(void* obj) {
 TEST(ThreadTest, RunFunctionIsCalled) {
   bool flag = false;
   rtc::scoped_ptr<ThreadWrapper> thread = ThreadWrapper::CreateThread(
-      &SetFlagRunFunction, &flag);
+      &SetFlagRunFunction, &flag, "RunFunctionIsCalled");
   ASSERT_TRUE(thread->Start());
 
   // At this point, the flag may be either true or false.

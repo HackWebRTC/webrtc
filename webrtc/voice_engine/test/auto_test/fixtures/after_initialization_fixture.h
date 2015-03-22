@@ -29,7 +29,8 @@ class LoopBackTransport : public webrtc::Transport {
   LoopBackTransport(webrtc::VoENetwork* voe_network)
       : crit_(webrtc::CriticalSectionWrapper::CreateCriticalSection()),
         packet_event_(webrtc::EventWrapper::Create()),
-        thread_(webrtc::ThreadWrapper::CreateThread(NetworkProcess, this)),
+        thread_(webrtc::ThreadWrapper::CreateThread(
+            NetworkProcess, this, "LoopBackTransport")),
         voe_network_(voe_network), transmitted_packets_(0) {
     thread_->Start();
   }

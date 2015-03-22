@@ -27,10 +27,10 @@ FakeExternalTransport::FakeExternalTransport(webrtc::VoENetwork* ptr)
   const char* thread_name = "external_thread";
   lock_ = webrtc::CriticalSectionWrapper::CreateCriticalSection();
   event_ = webrtc::EventWrapper::Create();
-  thread_ = webrtc::ThreadWrapper::CreateThread(
-      Run, this, webrtc::kHighPriority, thread_name);
+  thread_ = webrtc::ThreadWrapper::CreateThread(Run, this, thread_name);
   if (thread_) {
     thread_->Start();
+    thread_->SetPriority(webrtc::kHighPriority);
   }
 }
 
