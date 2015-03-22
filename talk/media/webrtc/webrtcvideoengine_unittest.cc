@@ -2491,7 +2491,7 @@ TEST_F(WebRtcVideoMediaChannelTest, AddRemoveRecvStreams) {
 }
 
 // Flaky on Linux and Windows. See webrtc:4452.
-#if defined(WEBRTC_WIN) || defined(WEBRTC_LINUX)
+#if defined(WEBRTC_WIN) || defined(WEBRTC_LINUX)
 #define MAYBE_AddRemoveRecvStreamAndRender DISABLED_AddRemoveRecvStreamAndRender
 #else
 #define MAYBE_AddRemoveRecvStreamAndRender AddRemoveRecvStreamAndRender
