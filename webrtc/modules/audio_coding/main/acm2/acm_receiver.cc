@@ -15,7 +15,6 @@
 #include <algorithm>  // sort
 #include <vector>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/common_types.h"
@@ -480,7 +479,7 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
                               uint8_t payload_type,
                               int channels,
                               AudioDecoder* audio_decoder) {
-  CHECK_GE(acm_codec_id, 0);
+  assert(acm_codec_id >= 0);
   NetEqDecoder neteq_decoder = ACMCodecDB::neteq_decoders_[acm_codec_id];
 
   // Make sure the right decoder is registered for Opus.
@@ -626,7 +625,7 @@ int AcmReceiver::LastAudioCodec(CodecInst* codec) const {
     return -1;
   }
   auto it = decoders_.find(last_audio_decoder_);
-  CHECK(it != decoders_.end());
+  assert(it != decoders_.end());
   memcpy(codec, &ACMCodecDB::database_[last_audio_decoder_], sizeof(CodecInst));
   codec->pltype = it->second.payload_type;
   codec->channels = it->second.channels;
