@@ -7,8 +7,8 @@ cd <path/to/webrtc>/src
 ninja -C out/Debug AppRTCDemoTest
 
 - Install AppRTCDemo and AppRTCDemoTest:
-adb install -r out/Debug/AppRTCDemo-debug.apk
-adb install -r out/Debug/AppRTCDemoTest-debug.apk
+adb install -r out/Debug/apks/AppRTCDemo.apk
+adb install -r out/Debug/apks/AppRTCDemoTest.apk
 
 - Run unit tests:
 adb shell am instrument -w org.appspot.apprtc.test/android.test.InstrumentationTestRunner
