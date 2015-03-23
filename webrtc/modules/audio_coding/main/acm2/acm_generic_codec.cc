@@ -45,19 +45,19 @@ std::map<int, int>::iterator FindSampleRateInMap(std::map<int, int>* cng_pt_map,
                  });
 }
 
-void SetCngPtInMap(std::map<int, int>* cng_pt_map,
-                   int sample_rate_hz,
-                   int payload_type) {
+void SetPtInMap(std::map<int, int>* pt_map,
+                int sample_rate_hz,
+                int payload_type) {
   if (payload_type == kInvalidPayloadType)
     return;
   CHECK_GE(payload_type, 0);
   CHECK_LT(payload_type, 128);
-  auto pt_iter = FindSampleRateInMap(cng_pt_map, sample_rate_hz);
-  if (pt_iter != cng_pt_map->end()) {
+  auto pt_iter = FindSampleRateInMap(pt_map, sample_rate_hz);
+  if (pt_iter != pt_map->end()) {
     // Remove item in map with sample_rate_hz.
-    cng_pt_map->erase(pt_iter);
+    pt_map->erase(pt_iter);
   }
-  (*cng_pt_map)[payload_type] = sample_rate_hz;
+  (*pt_map)[payload_type] = sample_rate_hz;
 }
 }  // namespace
 
@@ -83,7 +83,7 @@ ACMGenericCodec::ACMGenericCodec(const CodecInst& codec_inst,
                                  int cng_pt_swb,
                                  int cng_pt_fb,
                                  bool enable_red,
-                                 int red_payload_type)
+                                 int red_pt_nb)
     : has_internal_fec_(false),
       copy_red_enabled_(enable_red),
       encoder_(NULL),
@@ -96,16 +96,16 @@ ACMGenericCodec::ACMGenericCodec(const CodecInst& codec_inst,
       opus_dtx_enabled_(false),
       is_opus_(false),
       is_isac_(false),
-      red_payload_type_(red_payload_type),
       opus_application_set_(false) {
   acm_codec_params_.codec_inst = codec_inst;
   acm_codec_params_.enable_dtx = false;
   acm_codec_params_.enable_vad = false;
   acm_codec_params_.vad_mode = VADNormal;
-  SetCngPtInMap(&cng_pt_, 8000, cng_pt_nb);
-  SetCngPtInMap(&cng_pt_, 16000, cng_pt_wb);
-  SetCngPtInMap(&cng_pt_, 32000, cng_pt_swb);
-  SetCngPtInMap(&cng_pt_, 48000, cng_pt_fb);
+  SetPtInMap(&red_pt_, 8000, red_pt_nb);
+  SetPtInMap(&cng_pt_, 8000, cng_pt_nb);
+  SetPtInMap(&cng_pt_, 16000, cng_pt_wb);
+  SetPtInMap(&cng_pt_, 32000, cng_pt_swb);
+  SetPtInMap(&cng_pt_, 48000, cng_pt_fb);
   ResetAudioEncoder();
   CHECK(encoder_);
 }
@@ -348,20 +348,23 @@ void ACMGenericCodec::ResetAudioEncoder() {
   encoder_ = audio_encoder_.get();
 
   // Attach RED if needed.
-  if (copy_red_enabled_) {
-    CHECK_NE(red_payload_type_, kInvalidPayloadType);
+  auto pt_iter =
+      FindSampleRateInMap(&red_pt_, audio_encoder_->SampleRateHz());
+  if (copy_red_enabled_ && pt_iter != red_pt_.end()) {
+    CHECK_NE(pt_iter->first, kInvalidPayloadType);
     AudioEncoderCopyRed::Config config;
-    config.payload_type = red_payload_type_;
+    config.payload_type = pt_iter->first;
     config.speech_encoder = encoder_;
     red_encoder_.reset(new AudioEncoderCopyRed(config));
     encoder_ = red_encoder_.get();
   } else {
     red_encoder_.reset();
+    copy_red_enabled_ = false;
   }
 
   // Attach CNG if needed.
   // Reverse-lookup from sample rate to complete key-value pair.
-  auto pt_iter =
+  pt_iter =
       FindSampleRateInMap(&cng_pt_, audio_encoder_->SampleRateHz());
   if (acm_codec_params_.enable_dtx && pt_iter != cng_pt_.end()) {
     AudioEncoderCng::Config config;
@@ -434,7 +437,12 @@ int16_t ACMGenericCodec::SetVAD(bool* enable_dtx,
 }
 
 void ACMGenericCodec::SetCngPt(int sample_rate_hz, int payload_type) {
-  SetCngPtInMap(&cng_pt_, sample_rate_hz, payload_type);
+  SetPtInMap(&cng_pt_, sample_rate_hz, payload_type);
+  ResetAudioEncoder();
+}
+
+void ACMGenericCodec::SetRedPt(int sample_rate_hz, int payload_type) {
+  SetPtInMap(&red_pt_, sample_rate_hz, payload_type);
   ResetAudioEncoder();
 }
 
@@ -522,10 +530,10 @@ int ACMGenericCodec::SetPacketLossRate(int loss_rate) {
   return 0;
 }
 
-void ACMGenericCodec::EnableCopyRed(bool enable, int red_payload_type) {
+int ACMGenericCodec::SetCopyRed(bool enable) {
   copy_red_enabled_ = enable;
-  red_payload_type_ = red_payload_type;
   ResetAudioEncoder();
+  return copy_red_enabled_ == enable ? 0 : -1;
 }
 
 AudioEncoder* ACMGenericCodec::GetAudioEncoder() {

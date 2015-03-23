@@ -88,7 +88,7 @@ class ACMGenericCodec {
                   int cng_pt_swb,
                   int cng_pt_fb,
                   bool enable_red,
-                  int red_payload_type);
+                  int red_pt_nb);
   ~ACMGenericCodec();
 
   ///////////////////////////////////////////////////////////////////////////
@@ -215,6 +215,9 @@ class ACMGenericCodec {
 
   // Registers comfort noise at |sample_rate_hz| to use |payload_type|.
   void SetCngPt(int sample_rate_hz, int payload_type);
+
+  // Registers RED at |sample_rate_hz| to use |payload_type|.
+  void SetRedPt(int sample_rate_hz, int payload_type);
 
   ///////////////////////////////////////////////////////////////////////////
   // UpdateEncoderSampFreq()
@@ -395,8 +398,15 @@ class ACMGenericCodec {
   //
   int SetPacketLossRate(int /* loss_rate */);
 
-  // Sets if CopyRed should be enabled.
-  void EnableCopyRed(bool enable, int red_payload_type);
+  ///////////////////////////////////////////////////////////////////////////
+  // int SetCopyRed()
+  // Enable or disable copy RED. It fails if there is no RED payload that
+  // matches the codec, e.g., sample rate differs.
+  //
+  // Return value:
+  //   -1 if failed,
+  //    0 if succeeded.
+  int SetCopyRed(bool enable);
 
   AudioEncoder* GetAudioEncoder();
 
@@ -427,7 +437,8 @@ class ACMGenericCodec {
   bool is_isac_;
   // Map from payload type to CNG sample rate (Hz).
   std::map<int, int> cng_pt_;
-  int red_payload_type_;
+  // Map from payload type to RED sample rate (Hz).
+  std::map<int, int> red_pt_;
   OpusApplicationMode opus_application_;
   bool opus_application_set_;
 };

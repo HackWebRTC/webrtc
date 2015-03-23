@@ -297,7 +297,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   void SetCngPayloadType(int sample_rate_hz, int payload_type)
       EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
-  void EnableCopyRedForAllCodecs(bool enable)
+  void SetRedPayloadType(int sample_rate_hz, int payload_type)
       EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   CriticalSectionWrapper* acm_crit_sect_;
@@ -311,7 +311,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   uint8_t cng_swb_pltype_ GUARDED_BY(acm_crit_sect_);
   uint8_t cng_fb_pltype_ GUARDED_BY(acm_crit_sect_);
 
-  uint8_t red_pltype_ GUARDED_BY(acm_crit_sect_);
+  uint8_t red_nb_pltype_ GUARDED_BY(acm_crit_sect_);
   bool vad_enabled_ GUARDED_BY(acm_crit_sect_);
   bool dtx_enabled_ GUARDED_BY(acm_crit_sect_);
   ACMVADMode vad_mode_ GUARDED_BY(acm_crit_sect_);

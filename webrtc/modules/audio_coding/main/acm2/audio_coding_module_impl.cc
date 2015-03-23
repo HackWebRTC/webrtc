@@ -131,7 +131,7 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
       cng_wb_pltype_(255),
       cng_swb_pltype_(255),
       cng_fb_pltype_(255),
-      red_pltype_(255),
+      red_nb_pltype_(255),
       vad_enabled_(false),
       dtx_enabled_(false),
       vad_mode_(VADNormal),
@@ -163,8 +163,8 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
   // Register the default payload type for RED and for CNG at sampling rates of
   // 8, 16, 32 and 48 kHz.
   for (int i = (ACMCodecDB::kNumCodecs - 1); i >= 0; i--) {
-    if (IsCodecRED(i)) {
-      red_pltype_ = static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
+    if (IsCodecRED(i) && ACMCodecDB::database_[i].plfreq == 8000) {
+      red_nb_pltype_ = static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
     } else if (IsCodecCN(i)) {
       if (ACMCodecDB::database_[i].plfreq == 8000) {
         cng_nb_pltype_ = static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
@@ -319,7 +319,7 @@ ACMGenericCodec* AudioCodingModuleImpl::CreateCodec(const CodecInst& codec) {
   CriticalSectionScoped lock(acm_crit_sect_);
   my_codec = ACMCodecDB::CreateCodecInstance(
       codec, cng_nb_pltype_, cng_wb_pltype_, cng_swb_pltype_, cng_fb_pltype_,
-      red_enabled_, red_pltype_);
+      red_enabled_, red_nb_pltype_);
   if (my_codec == NULL) {
     // Error, could not create the codec.
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
@@ -426,7 +426,15 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
       return -1;
     }
     // Set RED payload type.
-    red_pltype_ = static_cast<uint8_t>(send_codec.pltype);
+    if (send_codec.plfreq == 8000) {
+      red_nb_pltype_ = static_cast<uint8_t>(send_codec.pltype);
+    } else {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
+                   "RegisterSendCodec() failed, invalid frequency for RED "
+                   "registration");
+      return -1;
+    }
+    SetRedPayloadType(send_codec.plfreq, send_codec.pltype);
     return 0;
   }
 
@@ -539,6 +547,13 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
     if (send_codec_registered_) {
       // If we change codec we start fresh with RED.
       // This is not strictly required by the standard.
+
+      if(codec_ptr->SetCopyRed(red_enabled_) < 0) {
+        // We tried to preserve the old red status, if failed, it means the
+        // red status has to be flipped.
+        red_enabled_ = !red_enabled_;
+      }
+
       codec_ptr->SetVAD(&dtx_enabled_, &vad_enabled_, &vad_mode_);
 
       if (!codec_ptr->HasInternalFEC()) {
@@ -906,7 +921,14 @@ int AudioCodingModuleImpl::SetREDStatus(
     return -1;
   }
 
-  EnableCopyRedForAllCodecs(enable_red);
+  // If a send codec is registered, set RED for the codec. We now only support
+  // copy red.
+  if (HaveValidEncoder("SetCopyRed") &&
+      codecs_[current_send_codec_idx_]->SetCopyRed(enable_red) < 0) {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
+                   "SetREDStatus failed");
+      return -1;
+  }
   red_enabled_ = enable_red;
   return 0;
 #else
@@ -1461,10 +1483,11 @@ void AudioCodingModuleImpl::SetCngPayloadType(int sample_rate_hz,
   }
 }
 
-void AudioCodingModuleImpl::EnableCopyRedForAllCodecs(bool enable) {
+void AudioCodingModuleImpl::SetRedPayloadType(int sample_rate_hz,
+                                              int payload_type) {
   for (auto* codec : codecs_) {
     if (codec) {
-      codec->EnableCopyRed(enable, red_pltype_);
+      codec->SetRedPt(sample_rate_hz, payload_type);
     }
   }
 }
