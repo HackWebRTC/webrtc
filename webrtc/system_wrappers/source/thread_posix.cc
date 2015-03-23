@@ -115,7 +115,7 @@ bool ThreadPosix::SetPriority(ThreadPriority priority) {
   DCHECK(thread_checker_.CalledOnValidThread());
   if (!thread_)
     return false;
-#if defined(WEBRTC_CHROMIUM_BUILD)
+#if defined(WEBRTC_CHROMIUM_BUILD) && defined(WEBRTC_LINUX)
   // TODO(tommi): Switch to the same mechanism as Chromium uses for
   // changing thread priorities.
   return true;
@@ -145,7 +145,7 @@ bool ThreadPosix::SetPriority(ThreadPriority priority) {
   }
 
   return true;
-#endif  // defined(WEBRTC_CHROMIUM_BUILD)
+#endif  // defined(WEBRTC_CHROMIUM_BUILD) && defined(WEBRTC_LINUX)
 }
 
 void ThreadPosix::Run() {
