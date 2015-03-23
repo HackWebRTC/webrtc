@@ -13,6 +13,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
@@ -48,7 +49,7 @@ class TraceObserver {
   }
 
   ~TraceObserver() {
-    Trace::SetTraceCallback(NULL);
+    Trace::SetTraceCallback(nullptr);
     Trace::ReturnTrace();
   }
 
@@ -143,7 +144,7 @@ class BitrateEstimatorTest : public test::CallTest {
     send_config_ = VideoSendStream::Config();
     send_config_.rtp.ssrcs.push_back(kSendSsrcs[0]);
     // Encoders will be set separately per stream.
-    send_config_.encoder_settings.encoder = NULL;
+    send_config_.encoder_settings.encoder = nullptr;
     send_config_.encoder_settings.payload_name = "FAKE";
     send_config_.encoder_settings.payload_type = kFakeSendPayloadType;
     encoder_config_.streams = test::CreateVideoStreams(1);
@@ -181,8 +182,8 @@ class BitrateEstimatorTest : public test::CallTest {
     explicit Stream(BitrateEstimatorTest* test)
         : test_(test),
           is_sending_receiving_(false),
-          send_stream_(NULL),
-          receive_stream_(NULL),
+          send_stream_(nullptr),
+          receive_stream_(nullptr),
           frame_generator_capturer_(),
           fake_encoder_(Clock::GetRealTimeClock()),
           fake_decoder_() {
@@ -190,7 +191,7 @@ class BitrateEstimatorTest : public test::CallTest {
       test_->send_config_.encoder_settings.encoder = &fake_encoder_;
       send_stream_ = test_->sender_call_->CreateVideoSendStream(
           test_->send_config_, test_->encoder_config_);
-      assert(test_->encoder_config_.streams.size() == 1);
+      DCHECK_EQ(1u, test_->encoder_config_.streams.size());
       frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
           send_stream_->Input(),
           test_->encoder_config_.streams[0].width,
@@ -215,11 +216,11 @@ class BitrateEstimatorTest : public test::CallTest {
     }
 
     ~Stream() {
-      frame_generator_capturer_.reset(NULL);
+      frame_generator_capturer_.reset(nullptr);
       test_->sender_call_->DestroyVideoSendStream(send_stream_);
-      send_stream_ = NULL;
+      send_stream_ = nullptr;
       test_->receiver_call_->DestroyVideoReceiveStream(receive_stream_);
-      receive_stream_ = NULL;
+      receive_stream_ = nullptr;
     }
 
     void StopSending() {

@@ -16,6 +16,7 @@
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -140,26 +141,26 @@ class FileRenderPassthrough : public VideoRenderer {
   FileRenderPassthrough(const std::string& basename, VideoRenderer* renderer)
       : basename_(basename),
         renderer_(renderer),
-        file_(NULL),
+        file_(nullptr),
         count_(0),
         last_width_(0),
         last_height_(0) {}
 
   ~FileRenderPassthrough() {
-    if (file_ != NULL)
+    if (file_ != nullptr)
       fclose(file_);
   }
 
  private:
   void RenderFrame(const I420VideoFrame& video_frame,
                    int time_to_render_ms) override {
-    if (renderer_ != NULL)
+    if (renderer_ != nullptr)
       renderer_->RenderFrame(video_frame, time_to_render_ms);
     if (basename_ == "")
       return;
     if (last_width_ != video_frame.width() ||
         last_height_ != video_frame.height()) {
-      if (file_ != NULL)
+      if (file_ != nullptr)
         fclose(file_);
       std::stringstream filename;
       filename << basename_;
@@ -168,7 +169,7 @@ class FileRenderPassthrough : public VideoRenderer {
       filename << '_' << video_frame.width() << 'x' << video_frame.height()
                << ".yuv";
       file_ = fopen(filename.str().c_str(), "wb");
-      if (file_ == NULL) {
+      if (file_ == nullptr) {
         fprintf(stderr,
                 "Couldn't open file for writing: %s\n",
                 filename.str().c_str());
@@ -176,7 +177,7 @@ class FileRenderPassthrough : public VideoRenderer {
     }
     last_width_ = video_frame.width();
     last_height_ = video_frame.height();
-    if (file_ == NULL)
+    if (file_ == nullptr)
       return;
     PrintI420VideoFrame(video_frame, file_);
   }
@@ -195,7 +196,7 @@ class DecoderBitstreamFileWriter : public EncodedFrameObserver {
  public:
   explicit DecoderBitstreamFileWriter(const char* filename)
       : file_(fopen(filename, "wb")) {
-    assert(file_ != NULL);
+    DCHECK(file_ != nullptr);
   }
   ~DecoderBitstreamFileWriter() { fclose(file_); }
 
@@ -259,17 +260,17 @@ void RtpReplay() {
 
   rtc::scoped_ptr<test::RtpFileReader> rtp_reader(test::RtpFileReader::Create(
       test::RtpFileReader::kRtpDump, flags::InputFile()));
-  if (rtp_reader.get() == NULL) {
+  if (rtp_reader.get() == nullptr) {
     rtp_reader.reset(test::RtpFileReader::Create(test::RtpFileReader::kPcap,
                                                  flags::InputFile()));
-    if (rtp_reader.get() == NULL) {
+    if (rtp_reader.get() == nullptr) {
       fprintf(stderr,
               "Couldn't open input file as either a rtpdump or .pcap. Note "
               "that .pcapng is not supported.\nTrying to interpret the file as "
               "length/packet interleaved.\n");
       rtp_reader.reset(test::RtpFileReader::Create(
           test::RtpFileReader::kLengthPacketInterleaved, flags::InputFile()));
-      if (rtp_reader.get() == NULL) {
+      if (rtp_reader.get() == nullptr) {
         fprintf(stderr,
                 "Unable to open input file with any supported format\n");
         return;

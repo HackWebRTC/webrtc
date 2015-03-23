@@ -10,6 +10,7 @@
 
 #include "webrtc/video/encoded_frame_callback_adapter.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 
 namespace webrtc {
@@ -25,7 +26,7 @@ int32_t EncodedFrameCallbackAdapter::Encoded(
     const EncodedImage& encodedImage,
     const CodecSpecificInfo* codecSpecificInfo,
     const RTPFragmentationHeader* fragmentation) {
-  assert(observer_ != NULL);
+  DCHECK(observer_ != nullptr);
   FrameType frame_type =
         VCMEncodedFrame::ConvertFrameType(encodedImage._frameType);
   const EncodedFrame frame(encodedImage._buffer,

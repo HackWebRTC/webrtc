@@ -73,7 +73,7 @@ class VideoAnalyzer : public PacketReceiver,
                 int duration_frames)
       : input_(input),
         transport_(transport),
-        receiver_(NULL),
+        receiver_(nullptr),
         test_label_(test_label),
         frames_to_process_(duration_frames),
         frames_recorded_(0),
@@ -95,7 +95,7 @@ class VideoAnalyzer : public PacketReceiver,
     // spare cores.
 
     uint32_t num_cores = CpuInfo::DetectNumberOfCores();
-    assert(num_cores >= 1);
+    DCHECK_GE(num_cores, 1u);
     static const uint32_t kMinCoresLeft = 4;
     static const uint32_t kMaxComparisonThreads = 8;
 
@@ -430,7 +430,7 @@ class VideoAnalyzer : public PacketReceiver,
 void FullStackTest::RunTest(const FullStackTestParams& params) {
   test::DirectTransport send_transport(params.link);
   test::DirectTransport recv_transport(params.link);
-  VideoAnalyzer analyzer(NULL, &send_transport, params.test_label,
+  VideoAnalyzer analyzer(nullptr, &send_transport, params.test_label,
                          params.avg_psnr_threshold, params.avg_ssim_threshold,
                          params.test_durations_secs * params.clip.fps);
 
@@ -505,7 +505,7 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
             params.clip.width, params.clip.height, params.clip.fps,
             Clock::GetRealTimeClock()));
 
-    ASSERT_TRUE(frame_generator_capturer_.get() != NULL)
+    ASSERT_TRUE(frame_generator_capturer_.get() != nullptr)
         << "Could not create capturer for " << params.clip.name
         << ".yuv. Is this resource file present?";
   }

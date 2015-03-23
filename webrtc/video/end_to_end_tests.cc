@@ -7,8 +7,6 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include <assert.h>
-
 #include <algorithm>
 #include <map>
 #include <sstream>
@@ -16,6 +14,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/frame_callback.h"
@@ -52,7 +51,7 @@ class EndToEndTest : public test::CallTest {
   EndToEndTest() {}
 
   virtual ~EndToEndTest() {
-    EXPECT_EQ(NULL, send_stream_);
+    EXPECT_EQ(nullptr, send_stream_);
     EXPECT_TRUE(receive_streams_.empty());
   }
 
@@ -1326,8 +1325,8 @@ TEST_F(EndToEndTest, VerifyBandwidthStats) {
    public:
     RtcpObserver()
         : EndToEndTest(kDefaultTimeoutMs),
-          sender_call_(NULL),
-          receiver_call_(NULL),
+          sender_call_(nullptr),
+          receiver_call_(nullptr),
           has_seen_pacer_delay_(false) {}
 
     DeliveryStatus DeliverPacket(const uint8_t* packet,
@@ -1611,7 +1610,7 @@ TEST_F(EndToEndTest, GetStats) {
    public:
     explicit StatsObserver(const FakeNetworkPipe::Config& config)
         : EndToEndTest(kLongTimeoutMs, config),
-          send_stream_(NULL),
+          send_stream_(nullptr),
           expected_send_ssrcs_(),
           check_stats_event_(EventWrapper::Create()) {}
 
@@ -1692,7 +1691,7 @@ TEST_F(EndToEndTest, GetStats) {
     }
 
     bool CheckSendStats() {
-      assert(send_stream_ != NULL);
+      DCHECK(send_stream_ != nullptr);
       VideoSendStream::Stats stats = send_stream_->GetStats();
 
       send_stats_filled_["NumStreams"] |=
@@ -1871,7 +1870,7 @@ TEST_F(EndToEndTest, TestReceivedRtpPacketStats) {
    public:
     ReceivedRtpStatsObserver()
         : EndToEndTest(kDefaultTimeoutMs),
-          receive_stream_(NULL),
+          receive_stream_(nullptr),
           sent_rtp_(0) {}
 
    private:
@@ -2079,7 +2078,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
 
   CreateCalls(Call::Config(observer.SendTransport()),
               Call::Config(observer.ReceiveTransport()));
-  observer.SetReceivers(sender_call_->Receiver(), NULL);
+  observer.SetReceivers(sender_call_->Receiver(), nullptr);
 
   CreateSendConfig(kNumSsrcs);
 

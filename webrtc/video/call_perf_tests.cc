@@ -7,14 +7,13 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include <assert.h>
-
 #include <algorithm>
 #include <sstream>
 #include <string>
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
@@ -226,7 +225,7 @@ void CallPerfTest::TestAudioVideoSync(bool fec) {
   ASSERT_STRNE("", audio_filename.c_str());
   test::FakeAudioDevice fake_audio_device(Clock::GetRealTimeClock(),
                                           audio_filename);
-  EXPECT_EQ(0, voe_base->Init(&fake_audio_device, NULL));
+  EXPECT_EQ(0, voe_base->Init(&fake_audio_device, nullptr));
   int channel = voe_base->CreateChannel();
 
   FakeNetworkPipe::Config net_config;
@@ -330,7 +329,7 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
           start_time_ms_(start_time_ms),
           run_time_ms_(run_time_ms),
           creation_time_ms_(clock_->TimeInMilliseconds()),
-          capturer_(NULL),
+          capturer_(nullptr),
           rtp_start_timestamp_set_(false),
           rtp_start_timestamp_(0) {}
 
@@ -511,8 +510,8 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
    public:
     explicit BitrateObserver(bool using_min_transmit_bitrate)
         : EndToEndTest(kLongTimeoutMs),
-          send_stream_(NULL),
-          send_transport_receiver_(NULL),
+          send_stream_(nullptr),
+          send_transport_receiver_(nullptr),
           pad_to_min_bitrate_(using_min_transmit_bitrate),
           num_bitrate_observations_in_range_(0) {}
 
@@ -527,7 +526,7 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
                                  size_t length) override {
       VideoSendStream::Stats stats = send_stream_->GetStats();
       if (stats.substreams.size() > 0) {
-        assert(stats.substreams.size() == 1);
+        DCHECK_EQ(1u, stats.substreams.size());
         int bitrate_kbps =
             stats.substreams.begin()->second.total_bitrate_bps / 1000;
         if (bitrate_kbps > 0) {
@@ -571,7 +570,7 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
       if (pad_to_min_bitrate_) {
         encoder_config->min_transmit_bitrate_bps = kMinTransmitBitrateBps;
       } else {
-        assert(encoder_config->min_transmit_bitrate_bps == 0);
+        DCHECK_EQ(0, encoder_config->min_transmit_bitrate_bps);
       }
     }
 

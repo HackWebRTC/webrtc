@@ -11,6 +11,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
@@ -53,7 +54,7 @@ class FakeNativeHandle : public NativeHandle {
  public:
   FakeNativeHandle() {}
   virtual ~FakeNativeHandle() {}
-  virtual void* GetHandle() { return NULL; }
+  virtual void* GetHandle() { return nullptr; }
 };
 
 class VideoSendStreamTest : public test::CallTest {
@@ -463,7 +464,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
           current_size_frame_(static_cast<int32_t>(start_size)) {
       // Fragmentation required, this test doesn't make sense without it.
       encoder_.SetFrameSize(start_size);
-      assert(stop_size > max_packet_size);
+      DCHECK_GT(stop_size, max_packet_size);
       transport_adapter_.Enable();
     }
 
@@ -810,7 +811,7 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
           transport_adapter_(ReceiveTransport()),
           crit_(CriticalSectionWrapper::CreateCriticalSection()),
           last_packet_time_ms_(-1),
-          capturer_(NULL) {
+          capturer_(nullptr) {
       transport_adapter_.Enable();
     }
 
@@ -914,7 +915,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
       RTPHeader header;
       if (!parser_->Parse(packet, length, &header))
         return DELIVERY_PACKET_ERROR;
-      assert(stream_ != NULL);
+      DCHECK(stream_ != nullptr);
       VideoSendStream::Stats stats = stream_->GetStats();
       if (!stats.substreams.empty()) {
         EXPECT_EQ(1u, stats.substreams.size());
@@ -1100,7 +1101,7 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndI420VideoFrames) {
 
 void ExpectEqualFrames(const I420VideoFrame& frame1,
                        const I420VideoFrame& frame2) {
-  if (frame1.native_handle() != NULL || frame2.native_handle() != NULL)
+  if (frame1.native_handle() != nullptr || frame2.native_handle() != nullptr)
     ExpectEqualTextureFrames(frame1, frame2);
   else
     ExpectEqualBufferFrames(frame1, frame2);
@@ -1645,8 +1646,8 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
         encoded._frameType = (*frame_types)[i];
         encoded._encodedWidth = kEncodedResolution[i].width;
         encoded._encodedHeight = kEncodedResolution[i].height;
-        assert(callback_ != NULL);
-        if (callback_->Encoded(encoded, &specifics, NULL) != 0)
+        DCHECK(callback_ != nullptr);
+        if (callback_->Encoded(encoded, &specifics, nullptr) != 0)
           return -1;
       }
 

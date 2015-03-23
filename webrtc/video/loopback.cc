@@ -16,6 +16,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
@@ -95,7 +96,7 @@ void Loopback::Run() {
     encoder.reset(VideoEncoder::Create(VideoEncoder::kVp9));
   } else {
     // Codec not supported.
-    assert(false && "Codec not supported!");
+    RTC_NOTREACHED() << "Codec not supported!";
     return;
   }
   send_config.encoder_settings.encoder = encoder.get();
