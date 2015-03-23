@@ -1,0 +1,126 @@
+#!/usr/bin/python
+#
+# libjingle
+# Copyright 2015 Google Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+#  1. Redistributions of source code must retain the above copyright notice,
+#     this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation
+#     and/or other materials provided with the distribution.
+#  3. The name of the author may not be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+# EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+"""Script for merging generated iOS libraries."""
+
+import optparse
+import os
+import re
+import subprocess
+import sys
+
+
+def MergeLibs(lib_base_dir):
+  """Merges generated iOS libraries for different archs.
+
+  Uses libtool to generate FAT archive files for each generated library.
+
+  Args:
+    lib_base_dir: directory whose subdirectories are named by architecture and
+                  contain the built libraries for that architecture
+
+  Returns:
+    Exit code of libtool.
+  """
+  output_dir_name = 'fat'
+  archs = [arch for arch in os.listdir(lib_base_dir)
+           if arch[:1] != '.' and arch != output_dir_name]
+  # For each arch, find (library name, libary path) for arch. We will merge
+  # all libraries with the same name.
+  libs = {}
+  for dirpath, _, filenames in os.walk(lib_base_dir):
+    if dirpath.endswith(output_dir_name):
+      continue
+    for filename in filenames:
+      if not filename.endswith('.a'):
+        continue
+      entry = libs.get(filename, [])
+      entry.append(os.path.join(dirpath, filename))
+      libs[filename] = entry
+  # Some sublibaries are only present in certain architectures. We merge
+  # them into their parent library so that the library list is consistent
+  # across architectures.
+  libs_copy = dict(libs)
+  for library, paths in libs.items():
+    if len(paths) < len(archs):
+      # Hacky: we find parent libraries by stripping off each name component.
+      components = library.strip('.a').split('_')[:-1]
+      found = False
+      while components:
+        parent_library = '_'.join(components) + '.a'
+        if (parent_library in libs_copy
+            and len(libs_copy[parent_library]) >= len(archs)):
+          libs[parent_library].extend(paths)
+          del libs[library]
+          found = True
+          break
+        components = components[:-1]
+      assert found
+
+  # Create output directory.
+  output_dir_path = os.path.join(lib_base_dir, output_dir_name)
+  if not os.path.exists(output_dir_path):
+    os.mkdir(output_dir_path)
+
+  # Use this so libtool merged binaries are always the same.
+  env = os.environ.copy()
+  env['ZERO_AR_DATE'] = '1'
+
+  # Ignore certain errors.
+  libtool_re = re.compile(r'^.*libtool:.*file: .* has no symbols$')
+
+  # Merge libraries using libtool.
+  for library, paths in libs.items():
+    cmd_list = ['libtool', '-static', '-v', '-o',
+                os.path.join(output_dir_path, library)] + paths
+    libtoolout = subprocess.Popen(cmd_list, stderr=subprocess.PIPE, env=env)
+    _, err = libtoolout.communicate()
+    for line in err.splitlines():
+      if not libtool_re.match(line):
+        print >>sys.stderr, line
+    # Unconditionally touch the output .a file on the command line if present
+    # and the command succeeded. A bit hacky.
+    if not libtoolout.returncode:
+      for i in range(len(cmd_list) - 1):
+        if cmd_list[i] == '-o' and cmd_list[i+1].endswith('.a'):
+          os.utime(cmd_list[i+1], None)
+          break
+    else:
+      return libtoolout.returncode
+  return libtoolout.returncode
+
+
+def Main():
+  parser = optparse.OptionParser()
+  _, args = parser.parse_args()
+  if len(args) != 1:
+    parser.error('Error: Exactly 1 argument required.')
+  lib_base_dir = args[0]
+  MergeLibs(lib_base_dir)
+
+if __name__ == '__main__':
+  sys.exit(Main())
