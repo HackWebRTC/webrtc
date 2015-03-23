@@ -1829,6 +1829,13 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithBitrates) {
                                      200000);
 }
 
+TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithHighMaxBitrate) {
+  SetSendCodecsShouldWorkForBitrates("", 0, "", -1, "10000", 10000000);
+  std::vector<webrtc::VideoStream> streams = AddSendStream()->GetVideoStreams();
+  ASSERT_EQ(1u, streams.size());
+  EXPECT_EQ(10000000, streams[0].max_bitrate_bps);
+}
+
 TEST_F(WebRtcVideoChannel2Test,
        SetSendCodecsWithoutBitratesUsesCorrectDefaults) {
   SetSendCodecsShouldWorkForBitrates(

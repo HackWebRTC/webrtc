@@ -246,7 +246,13 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoStreams(
       codec.framerate != 0 ? codec.framerate : kDefaultVideoMaxFramerate;
 
   stream.min_bitrate_bps = kMinVideoBitrate * 1000;
-  stream.target_bitrate_bps = stream.max_bitrate_bps = kMaxVideoBitrate * 1000;
+  int max_bitrate_kbps;
+  if (!codec.GetParam(kCodecParamMaxBitrate, &max_bitrate_kbps) ||
+      max_bitrate_kbps < kMaxVideoBitrate) {
+    max_bitrate_kbps = kMaxVideoBitrate;
+  }
+
+  stream.target_bitrate_bps = stream.max_bitrate_bps = max_bitrate_kbps * 1000;
 
   int max_qp = kDefaultQpMax;
   codec.GetParam(kCodecParamMaxQuantization, &max_qp);
