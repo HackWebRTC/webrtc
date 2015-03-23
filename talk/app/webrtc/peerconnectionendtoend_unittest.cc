@@ -272,8 +272,13 @@ class PeerConnectionEndToEndTest
 // https://code.google.com/p/webrtc/issues/detail?id=1205 for details.
 #if !defined(THREAD_SANITIZER)
 
-// Disabled per issue 4464.
-TEST_F(PeerConnectionEndToEndTest, DISABLED_Call) {
+// Flaky on Windows. Disabled per issue 4464.
+#ifdef WEBRTC_WIN
+#define MAYBE_Call DISABLED_Call
+#else
+#define MAYBE_Call Call
+#endif
+TEST_F(PeerConnectionEndToEndTest, MAYBE_Call) {
   CreatePcs();
   GetAndAddUserMedia();
   Negotiate();
