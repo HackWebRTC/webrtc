@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_RECEIVER_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_RECEIVER_H_
 
+#include <map>
 #include <vector>
 
 #include "webrtc/base/scoped_ptr.h"
@@ -39,7 +40,7 @@ class Nack;
 class AcmReceiver {
  public:
   struct Decoder {
-    bool registered;
+    int acm_codec_id;
     uint8_t payload_type;
     // This field is meaningful for codecs where both mono and
     // stereo versions are registered under the same ID.
@@ -334,7 +335,7 @@ class AcmReceiver {
   bool nack_enabled_ GUARDED_BY(crit_sect_);
   CallStatistics call_stats_ GUARDED_BY(crit_sect_);
   NetEq* neteq_;
-  Decoder decoders_[ACMCodecDB::kMaxNumCodecs];
+  std::map<int, Decoder> decoders_;  // keyed by ACM codec ID
   bool vad_enabled_;
   Clock* clock_;  // TODO(henrik.lundin) Make const if possible.
   bool resampled_last_output_frame_ GUARDED_BY(crit_sect_);

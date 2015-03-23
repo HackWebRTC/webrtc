@@ -15,6 +15,7 @@
 #include <algorithm>  // sort
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/common_types.h"
@@ -136,9 +137,6 @@ AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
       missing_packets_sync_stream_(),
       late_packets_sync_stream_() {
   assert(clock_);
-  for (int n = 0; n < ACMCodecDB::kMaxNumCodecs; ++n) {
-    decoders_[n].registered = false;
-  }
 
   // Make sure we are on the same page as NetEq. Post-decode VAD is disabled by
   // default in NetEq4, however, Audio Conference Mixer relies on VAD decision
@@ -279,7 +277,6 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
                       << " is not registered.";
       return -1;
     }
-    assert(codec_id < ACMCodecDB::kMaxNumCodecs);
     const int sample_rate_hz = ACMCodecDB::CodecFreq(codec_id);
     receive_timestamp = NowInTimestamp(sample_rate_hz);
 
@@ -483,7 +480,7 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
                               uint8_t payload_type,
                               int channels,
                               AudioDecoder* audio_decoder) {
-  assert(acm_codec_id >= 0 && acm_codec_id < ACMCodecDB::kMaxNumCodecs);
+  CHECK_GE(acm_codec_id, 0);
   NetEqDecoder neteq_decoder = ACMCodecDB::neteq_decoders_[acm_codec_id];
 
   // Make sure the right decoder is registered for Opus.
@@ -494,10 +491,12 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
   CriticalSectionScoped lock(crit_sect_.get());
 
   // The corresponding NetEq decoder ID.
-  // If this coder has been registered before.
-  if (decoders_[acm_codec_id].registered) {
-    if (decoders_[acm_codec_id].payload_type == payload_type &&
-        decoders_[acm_codec_id].channels == channels) {
+  // If this codec has been registered before.
+  auto it = decoders_.find(acm_codec_id);
+  if (it != decoders_.end()) {
+    const Decoder& decoder = it->second;
+    if (decoder.payload_type == payload_type &&
+        decoder.channels == channels) {
       // Re-registering the same codec with the same payload-type. Do nothing
       // and return.
       return 0;
@@ -505,12 +504,14 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
 
     // Changing the payload-type or number of channels for this codec.
     // First unregister. Then register with new payload-type/channels.
-    if (neteq_->RemovePayloadType(decoders_[acm_codec_id].payload_type) !=
+    if (neteq_->RemovePayloadType(decoder.payload_type) !=
         NetEq::kOK) {
       LOG_F(LS_ERROR) << "Cannot remove payload "
-                      << static_cast<int>(decoders_[acm_codec_id].payload_type);
+                      << static_cast<int>(decoder.payload_type);
       return -1;
     }
+
+    decoders_.erase(it);
   }
 
   int ret_val;
@@ -523,15 +524,14 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
   if (ret_val != NetEq::kOK) {
     LOG_FERR3(LS_ERROR, "AcmReceiver::AddCodec", acm_codec_id,
               static_cast<int>(payload_type), channels);
-    // Registration failed, delete the allocated space and set the pointer to
-    // NULL, for the record.
-    decoders_[acm_codec_id].registered = false;
     return -1;
   }
 
-  decoders_[acm_codec_id].registered = true;
-  decoders_[acm_codec_id].payload_type = payload_type;
-  decoders_[acm_codec_id].channels = channels;
+  Decoder decoder;
+  decoder.acm_codec_id = acm_codec_id;
+  decoder.payload_type = payload_type;
+  decoder.channels = channels;
+  decoders_[acm_codec_id] = decoder;
   return 0;
 }
 
@@ -556,23 +556,25 @@ void AcmReceiver::FlushBuffers() {
 int AcmReceiver::RemoveAllCodecs() {
   int ret_val = 0;
   CriticalSectionScoped lock(crit_sect_.get());
-  for (int n = 0; n < ACMCodecDB::kMaxNumCodecs; ++n) {
-    if (decoders_[n].registered) {
-      if (neteq_->RemovePayloadType(decoders_[n].payload_type) == 0) {
-        decoders_[n].registered = false;
-      } else {
-        LOG_F(LS_ERROR) << "Cannot remove payload "
-                        << static_cast<int>(decoders_[n].payload_type);
-        ret_val = -1;
-      }
+  for (auto it = decoders_.begin(); it != decoders_.end(); ) {
+    auto cur = it;
+    ++it;  // it will be valid even if we erase cur
+    if (neteq_->RemovePayloadType(cur->second.payload_type) == 0) {
+      decoders_.erase(cur);
+    } else {
+      LOG_F(LS_ERROR) << "Cannot remove payload "
+                      << static_cast<int>(cur->second.payload_type);
+      ret_val = -1;
     }
   }
+
   // No codec is registered, invalidate last audio decoder.
   last_audio_decoder_ = -1;
   return ret_val;
 }
 
 int AcmReceiver::RemoveCodec(uint8_t payload_type) {
+  CriticalSectionScoped lock(crit_sect_.get());
   int codec_index = PayloadType2CodecIndex(payload_type);
   if (codec_index < 0) {  // Such a payload-type is not registered.
     return 0;
@@ -582,8 +584,7 @@ int AcmReceiver::RemoveCodec(uint8_t payload_type) {
               static_cast<int>(payload_type));
     return -1;
   }
-  CriticalSectionScoped lock(crit_sect_.get());
-  decoders_[codec_index].registered = false;
+  decoders_.erase(codec_index);
   if (last_audio_decoder_ == codec_index)
     last_audio_decoder_ = -1;  // Codec is removed, invalidate last decoder.
   return 0;
@@ -611,12 +612,12 @@ int AcmReceiver::last_audio_codec_id() const {
 
 int AcmReceiver::RedPayloadType() const {
   CriticalSectionScoped lock(crit_sect_.get());
-  if (ACMCodecDB::kRED < 0 ||
-      !decoders_[ACMCodecDB::kRED].registered) {
+  auto it = decoders_.find(ACMCodecDB::kRED);
+  if (ACMCodecDB::kRED < 0 || it == decoders_.end()) {
     LOG_F(LS_WARNING) << "RED is not registered.";
     return -1;
   }
-  return decoders_[ACMCodecDB::kRED].payload_type;
+  return it->second.payload_type;
 }
 
 int AcmReceiver::LastAudioCodec(CodecInst* codec) const {
@@ -624,10 +625,11 @@ int AcmReceiver::LastAudioCodec(CodecInst* codec) const {
   if (last_audio_decoder_ < 0) {
     return -1;
   }
-  assert(decoders_[last_audio_decoder_].registered);
+  auto it = decoders_.find(last_audio_decoder_);
+  CHECK(it != decoders_.end());
   memcpy(codec, &ACMCodecDB::database_[last_audio_decoder_], sizeof(CodecInst));
-  codec->pltype = decoders_[last_audio_decoder_].payload_type;
-  codec->channels = decoders_[last_audio_decoder_].channels;
+  codec->pltype = it->second.payload_type;
+  codec->channels = it->second.channels;
   return 0;
 }
 
@@ -685,16 +687,18 @@ int AcmReceiver::DecoderByPayloadType(uint8_t payload_type,
     return -1;
   }
   memcpy(codec, &ACMCodecDB::database_[codec_index], sizeof(CodecInst));
-  codec->pltype = decoders_[codec_index].payload_type;
-  codec->channels = decoders_[codec_index].channels;
+  // Safe not to check the iterator
+  const Decoder& decoder = decoders_.find(codec_index)->second;
+  codec->pltype = decoder.payload_type;
+  codec->channels = decoder.channels;
   return 0;
 }
 
 int AcmReceiver::PayloadType2CodecIndex(uint8_t payload_type) const {
-  for (int n = 0; n < ACMCodecDB::kMaxNumCodecs; ++n) {
-    if (decoders_[n].registered && decoders_[n].payload_type == payload_type) {
-      return n;
-    }
+  for (const auto& decoder_pair : decoders_) {
+    const Decoder& decoder = decoder_pair.second;
+    if (decoder.payload_type == payload_type)
+      return decoder.acm_codec_id;
   }
   return -1;
 }
@@ -801,9 +805,10 @@ bool AcmReceiver::GetSilence(int desired_sample_rate_hz, AudioFrame* frame) {
 int AcmReceiver::RtpHeaderToCodecIndex(
     const RTPHeader &rtp_header, const uint8_t* payload) const {
   uint8_t payload_type = rtp_header.payloadType;
+  auto it = decoders_.find(ACMCodecDB::kRED);
   if (ACMCodecDB::kRED >= 0 &&  // This ensures that RED is defined in WebRTC.
-      decoders_[ACMCodecDB::kRED].registered &&
-      payload_type == decoders_[ACMCodecDB::kRED].payload_type) {
+      it != decoders_.end() &&
+      payload_type == it->second.payload_type) {
     // This is a RED packet, get the payload of the audio codec.
     payload_type = payload[0] & 0x7F;
   }
