@@ -121,7 +121,8 @@ VideoSendStream::VideoSendStream(
   // Duplicate assert checking of bitrate config. These should be checked in
   // Call but are added here for verbosity.
   assert(bitrate_config.min_bitrate_bps >= 0);
-  assert(bitrate_config.start_bitrate_bps >= bitrate_config.min_bitrate_bps);
+  if (bitrate_config.start_bitrate_bps > 0)
+    assert(bitrate_config.start_bitrate_bps >= bitrate_config.min_bitrate_bps);
   if (bitrate_config.max_bitrate_bps != -1)
     assert(bitrate_config.max_bitrate_bps >= bitrate_config.start_bitrate_bps);
 
