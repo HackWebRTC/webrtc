@@ -272,7 +272,8 @@ class PeerConnectionEndToEndTest
 // https://code.google.com/p/webrtc/issues/detail?id=1205 for details.
 #if !defined(THREAD_SANITIZER)
 
-TEST_F(PeerConnectionEndToEndTest, Call) {
+// Disabled per issue 4464.
+TEST_F(PeerConnectionEndToEndTest, DISABLED_Call) {
   CreatePcs();
   GetAndAddUserMedia();
   Negotiate();
