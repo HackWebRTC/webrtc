@@ -162,6 +162,10 @@ class I420VideoFrame {
   // Return the underlying buffer.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer() const;
 
+  // Set the underlying buffer.
+  void set_video_frame_buffer(
+      const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer);
+
  private:
   // An opaque reference counted handle that stores the pixel data.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
@@ -202,4 +206,3 @@ class EncodedImage {
 
 }  // namespace webrtc
 #endif  // WEBRTC_VIDEO_FRAME_H_
-

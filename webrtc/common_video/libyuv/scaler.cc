@@ -56,10 +56,8 @@ int Scaler::Scale(const I420VideoFrame& src_frame,
     return -2;
 
   // Making sure that destination frame is of sufficient size.
-  // Aligning stride values based on width.
-  dst_frame->CreateEmptyFrame(dst_width_, dst_height_,
-                              dst_width_, (dst_width_ + 1) / 2,
-                              (dst_width_ + 1) / 2);
+  dst_frame->set_video_frame_buffer(
+      buffer_pool_.CreateBuffer(dst_width_, dst_height_));
 
   // We want to preserve aspect ratio instead of stretching the frame.
   // Therefore, we need to crop the source frame. Calculate the largest center

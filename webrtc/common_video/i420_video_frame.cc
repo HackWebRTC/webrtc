@@ -226,4 +226,9 @@ rtc::scoped_refptr<VideoFrameBuffer> I420VideoFrame::video_frame_buffer()
   return video_frame_buffer_;
 }
 
+void I420VideoFrame::set_video_frame_buffer(
+    const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer) {
+  video_frame_buffer_ = buffer;
+}
+
 }  // namespace webrtc
