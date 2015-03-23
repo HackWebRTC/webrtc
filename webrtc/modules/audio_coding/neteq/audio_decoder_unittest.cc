@@ -521,8 +521,7 @@ TEST_F(AudioDecoderIsacFloatTest, EncodeDecode) {
   EXPECT_TRUE(CodecSupported(kDecoderISAC));
   EncodeDecodeTest(0, tolerance, mse, delay);
   ReInitTest();
-  EXPECT_TRUE(decoder_->HasDecodePlc());
-  DecodePlcTest();
+  EXPECT_FALSE(decoder_->HasDecodePlc());
 }
 
 TEST_F(AudioDecoderIsacSwbTest, EncodeDecode) {
@@ -532,8 +531,7 @@ TEST_F(AudioDecoderIsacSwbTest, EncodeDecode) {
   EXPECT_TRUE(CodecSupported(kDecoderISACswb));
   EncodeDecodeTest(0, tolerance, mse, delay);
   ReInitTest();
-  EXPECT_TRUE(decoder_->HasDecodePlc());
-  DecodePlcTest();
+  EXPECT_FALSE(decoder_->HasDecodePlc());
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4198
@@ -554,8 +552,7 @@ TEST_F(AudioDecoderIsacFixTest, MAYBE_EncodeDecode) {
 #endif
   EncodeDecodeTest(kEncodedBytes, tolerance, mse, delay);
   ReInitTest();
-  EXPECT_TRUE(decoder_->HasDecodePlc());
-  DecodePlcTest();
+  EXPECT_FALSE(decoder_->HasDecodePlc());
 }
 
 TEST_F(AudioDecoderG722Test, EncodeDecode) {

@@ -751,7 +751,7 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_8kHzOutput) {
   Run(8000,
       PlatformChecksum("dcee98c623b147ebe1b40dd30efa896e",
-                       "6ac89c7145072c26bfeba602cd661afb",
+                       "adc92e173f908f93b96ba5844209815a",
                        "908002dc01fc4eb1d2be24eb1d3f354b"));
 }
 
@@ -764,7 +764,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_8kHzOutput) {
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_16kHzOutput) {
   Run(16000,
       PlatformChecksum("f790e7a8cce4e2c8b7bb5e0e4c5dac0d",
-                       "3e888eb04f57db2c6ef952fe64f17fe6",
+                       "8cffa6abcb3e18e33b9d857666dff66a",
                        "a909560b5ca49fa472b17b7b277195e9"));
 }
 
@@ -777,7 +777,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_16kHzOutput) {
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_32kHzOutput) {
   Run(32000,
       PlatformChecksum("306e0d990ee6e92de3fbecc0123ece37",
-                       "aeca37e963310f5b6552b7edea23c2f1",
+                       "3e126fe894720c3f85edadcc91964ba5",
                        "441aab4b347fb3db4e9244337aca8d8e"));
 }
 
@@ -790,7 +790,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_32kHzOutput) {
 TEST_F(AcmReceiverBitExactnessOldApi, MAYBE_48kHzOutput) {
   Run(48000,
       PlatformChecksum("aa7c232f63a67b2a72703593bdd172e0",
-                       "76b9e99e0a3998aa28355e7a2bd836f7",
+                       "0155665e93067c4e89256b944dd11999",
                        "4ee2730fa1daae755e8a8fd3abd779ec"));
 }
 

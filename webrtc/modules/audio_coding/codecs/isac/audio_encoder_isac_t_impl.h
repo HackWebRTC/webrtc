@@ -242,7 +242,7 @@ int AudioEncoderDecoderIsacT<T>::DecodeInternal(const uint8_t* encoded,
 
 template <typename T>
 bool AudioEncoderDecoderIsacT<T>::HasDecodePlc() const {
-  return true;
+  return false;
 }
 
 template <typename T>
