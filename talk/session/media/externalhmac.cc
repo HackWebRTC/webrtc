@@ -31,11 +31,15 @@
 
 #include <stdlib.h>  // For malloc/free.
 
+extern "C" {
 #ifdef SRTP_RELATIVE_PATH
 #include "srtp.h"  // NOLINT
+#include "crypto_kernel.h"  // NOLINT
 #else
-#include "third_party/libsrtp/include/srtp.h"
+#include "third_party/libsrtp/srtp/include/srtp.h"
+#include "third_party/libsrtp/srtp/crypto/include/crypto_kernel.h"
 #endif  // SRTP_RELATIVE_PATH
+}
 
 #include "webrtc/base/logging.h"
 

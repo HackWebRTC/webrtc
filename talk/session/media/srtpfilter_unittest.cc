@@ -32,11 +32,15 @@
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/thread.h"
+extern "C" {
 #ifdef SRTP_RELATIVE_PATH
 #include "crypto/include/err.h"
+#include "crypto/include/datatypes.h"
 #else
-#include "third_party/libsrtp/crypto/include/err.h"
+#include "third_party/libsrtp/srtp/crypto/include/err.h"
+#include "third_party/libsrtp/srtp/crypto/include/datatypes.h"
 #endif
+}
 
 using cricket::CS_AES_CM_128_HMAC_SHA1_80;
 using cricket::CS_AES_CM_128_HMAC_SHA1_32;

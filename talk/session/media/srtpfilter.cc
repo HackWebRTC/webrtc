@@ -43,15 +43,15 @@
 // #define SRTP_DEBUG
 
 #ifdef HAVE_SRTP
+extern "C" {
 #ifdef SRTP_RELATIVE_PATH
 #include "srtp.h"  // NOLINT
-extern "C" srtp_stream_t srtp_get_stream(srtp_t srtp, uint32_t ssrc);
 #include "srtp_priv.h"  // NOLINT
 #else
-#include "third_party/libsrtp/include/srtp.h"
-extern "C" srtp_stream_t srtp_get_stream(srtp_t srtp, uint32_t ssrc);
-#include "third_party/libsrtp/include/srtp_priv.h"
+#include "third_party/libsrtp/srtp/include/srtp.h"
+#include "third_party/libsrtp/srtp/include/srtp_priv.h"
 #endif  // SRTP_RELATIVE_PATH
+}
 #ifdef  ENABLE_EXTERNAL_AUTH
 #include "talk/session/media/externalhmac.h"
 #endif  // ENABLE_EXTERNAL_AUTH
