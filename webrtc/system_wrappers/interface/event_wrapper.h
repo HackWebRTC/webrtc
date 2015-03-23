@@ -18,13 +18,15 @@ enum EventTypeWrapper {
   kEventTimeout = 3
 };
 
-#define WEBRTC_EVENT_10_SEC   10000
 #define WEBRTC_EVENT_INFINITE 0xffffffff
+
+class EventTimerWrapper;
 
 class EventWrapper {
  public:
   // Factory method. Constructor disabled.
   static EventWrapper* Create();
+
   virtual ~EventWrapper() {}
 
   // Releases threads who are calling Wait() and has started waiting. Please
@@ -43,6 +45,11 @@ class EventWrapper {
   // be released. It is possible that multiple (random) threads are released
   // Depending on timing.
   virtual EventTypeWrapper Wait(unsigned long max_time) = 0;
+};
+
+class EventTimerWrapper : public EventWrapper {
+ public:
+  static EventTimerWrapper* Create();
 
   // Starts a timer that will call a non-sticky version of Set() either once
   // or periodically. If the timer is periodic it ensures that there is no
@@ -52,6 +59,7 @@ class EventWrapper {
   virtual bool StopTimer() = 0;
 
 };
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_EVENT_WRAPPER_H_

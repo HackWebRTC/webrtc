@@ -30,7 +30,7 @@ FakeAudioDevice::FakeAudioDevice(Clock* clock, const std::string& filename)
       playout_buffer_(),
       last_playout_ms_(-1),
       clock_(clock),
-      tick_(EventWrapper::Create()),
+      tick_(EventTimerWrapper::Create()),
       lock_(CriticalSectionWrapper::CreateCriticalSection()),
       file_utility_(new ModuleFileUtility(0)),
       input_stream_(FileWrapper::Create()) {

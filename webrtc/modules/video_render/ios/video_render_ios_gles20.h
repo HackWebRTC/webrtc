@@ -22,7 +22,7 @@
 namespace webrtc {
 
 class CriticalSectionWrapper;
-class EventWrapper;
+class EventTimerWrapper;
 
 class VideoRenderIosGles20 {
  public:
@@ -63,7 +63,7 @@ class VideoRenderIosGles20 {
 
  private:
   rtc::scoped_ptr<CriticalSectionWrapper> gles_crit_sec_;
-  EventWrapper* screen_update_event_;
+  EventTimerWrapper* screen_update_event_;
   rtc::scoped_ptr<ThreadWrapper> screen_update_thread_;
 
   VideoRenderIosView* view_;

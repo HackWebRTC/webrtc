@@ -297,7 +297,7 @@ VideoRenderDirect3D9::VideoRenderDirect3D9(Trace* trace,
 {
     _screenUpdateThread = ThreadWrapper::CreateThread(
         ScreenUpdateThreadProc, this, "ScreenUpdateThread");
-    _screenUpdateEvent = EventWrapper::Create();
+    _screenUpdateEvent = EventTimerWrapper::Create();
     SetRect(&_originalHwndRect, 0, 0, 0, 0);
 }
 

@@ -27,7 +27,7 @@
 
 namespace webrtc {
 class CriticalSectionWrapper;
-class EventWrapper;
+class EventTimerWrapper;
 class Trace;
 
 class D3D9Channel: public VideoRenderCallback
@@ -205,7 +205,7 @@ private:
     CriticalSectionWrapper& _refD3DCritsect;
     Trace* _trace;
     rtc::scoped_ptr<ThreadWrapper> _screenUpdateThread;
-    EventWrapper* _screenUpdateEvent;
+    EventTimerWrapper* _screenUpdateEvent;
 
     HWND _hWnd;
     bool _fullScreen;
