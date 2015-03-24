@@ -34,6 +34,10 @@ class Buffer {
   size_t size() const { return size_; }
   size_t capacity() const { return capacity_; }
 
+  // For backwards compatibility. TODO(kwiberg): Remove once Chromium doesn't
+  // need it anymore.
+  size_t length() const { return size(); }
+
   Buffer& operator=(const Buffer& buf) {
     if (&buf != this) {
       Construct(buf.data(), buf.size(), buf.size());
