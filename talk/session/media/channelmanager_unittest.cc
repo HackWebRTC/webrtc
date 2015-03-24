@@ -28,7 +28,6 @@
 #include "talk/media/base/fakecapturemanager.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/fakemediaprocessor.h"
-#include "talk/media/base/nullvideorenderer.h"
 #include "talk/media/base/testutils.h"
 #include "talk/media/devices/fakedevicemanager.h"
 #include "webrtc/p2p/base/fakesession.h"
