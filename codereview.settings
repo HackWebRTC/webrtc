@@ -7,4 +7,4 @@ TRYSERVER_SVN_URL: svn://svn.chromium.org/chrome-try/try-webrtc
 TRYSERVER_PROJECT: webrtc
 TRYSERVER_ROOT: src
 PROJECT: webrtc
-FORCE_HTTPS_COMMIT_URL: True
+PENDING_REF_PREFIX: refs/pending/
