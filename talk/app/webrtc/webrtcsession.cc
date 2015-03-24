@@ -1571,13 +1571,6 @@ void WebRtcSession::RemoveUnusedChannelsAndTransports(
 // TODO(mallinath) - Add a correct error code if the channels are not creatued
 // due to BUNDLE is enabled but rtcp-mux is disabled.
 bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
-  // Disabling the BUNDLE flag in PortAllocator if offer disabled it.
-  bool bundle_enabled = desc->HasGroup(cricket::GROUP_TYPE_BUNDLE);
-  if (state() == STATE_INIT && !bundle_enabled) {
-    port_allocator()->set_flags(port_allocator()->flags() &
-                                ~cricket::PORTALLOCATOR_ENABLE_BUNDLE);
-  }
-
   // Creating the media channels and transport proxies.
   const cricket::ContentInfo* voice = cricket::GetFirstAudioContent(desc);
   if (voice && !voice->rejected && !voice_channel_) {
@@ -1600,6 +1593,21 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
       data && !data->rejected && !data_channel_) {
     if (!CreateDataChannel(data)) {
       LOG(LS_ERROR) << "Failed to create data channel.";
+      return false;
+    }
+  }
+
+  // Enable bundle before when kMaxBundle policy is in effect.
+  if (bundle_policy_ == PeerConnectionInterface::kBundlePolicyMaxBundle) {
+    const cricket::ContentGroup* local_bundle_group =
+        BaseSession::local_description()->GetGroupByName(
+            cricket::GROUP_TYPE_BUNDLE);
+    if (!local_bundle_group) {
+      LOG(LS_WARNING) << "max-bundle specified without BUNDLE specified";
+      return false;
+    }
+    if (!BaseSession::BundleContentGroup(local_bundle_group)) {
+      LOG(LS_WARNING) << "max-bundle failed to enable bundling.";
       return false;
     }
   }

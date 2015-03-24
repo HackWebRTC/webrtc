@@ -537,23 +537,6 @@ TransportProxy* BaseSession::GetTransportProxy(
   return (iter != transports_.end()) ? iter->second : NULL;
 }
 
-TransportProxy* BaseSession::GetTransportProxy(const Transport* transport) {
-  for (TransportMap::iterator iter = transports_.begin();
-       iter != transports_.end(); ++iter) {
-    TransportProxy* transproxy = iter->second;
-    if (transproxy->impl() == transport) {
-      return transproxy;
-    }
-  }
-  return NULL;
-}
-
-TransportProxy* BaseSession::GetFirstTransportProxy() {
-  if (transports_.empty())
-    return NULL;
-  return transports_.begin()->second;
-}
-
 void BaseSession::DestroyTransportProxy(
     const std::string& content_name) {
   TransportMap::iterator iter = transports_.find(content_name);
@@ -643,8 +626,9 @@ bool BaseSession::MaybeEnableMuxingSupport() {
   for (TransportMap::iterator iter = transports_.begin();
        iter != transports_.end(); ++iter) {
     ASSERT(iter->second->negotiated());
-    if (!iter->second->negotiated())
+    if (!iter->second->negotiated()) {
       return false;
+    }
   }
 
   // If both sides agree to BUNDLE, mux all the specified contents onto the
@@ -654,56 +638,63 @@ bool BaseSession::MaybeEnableMuxingSupport() {
   // BUNDLE the same way?
   bool candidates_allocated = IsCandidateAllocationDone();
   const ContentGroup* local_bundle_group =
-      local_description()->GetGroupByName(GROUP_TYPE_BUNDLE);
+      local_description_->GetGroupByName(GROUP_TYPE_BUNDLE);
   const ContentGroup* remote_bundle_group =
-      remote_description()->GetGroupByName(GROUP_TYPE_BUNDLE);
-  if (local_bundle_group && remote_bundle_group &&
-      local_bundle_group->FirstContentName()) {
-    const std::string* content_name = local_bundle_group->FirstContentName();
-    const ContentInfo* content =
-        local_description_->GetContentByName(*content_name);
-    if (!content) {
-      LOG(LS_WARNING) << "Content \"" << *content_name
-                      << "\" referenced in BUNDLE group is not present";
-      return false;
-    }
-
-    if (!SetSelectedProxy(content->name, local_bundle_group)) {
+      remote_description_->GetGroupByName(GROUP_TYPE_BUNDLE);
+  if (local_bundle_group && remote_bundle_group) {
+    if (!BundleContentGroup(local_bundle_group)) {
       LOG(LS_WARNING) << "Failed to set up BUNDLE";
       return false;
     }
 
     // If we weren't done gathering before, we might be done now, as a result
     // of enabling mux.
-    LOG(LS_INFO) << "Enabling BUNDLE, bundling onto transport: "
-                 << *content_name;
     if (!candidates_allocated) {
       MaybeCandidateAllocationDone();
     }
   } else {
-    LOG(LS_INFO) << "No BUNDLE information, not bundling.";
+    LOG(LS_INFO) << "BUNDLE group missing from remote or local description.";
   }
   return true;
 }
 
-bool BaseSession::SetSelectedProxy(const std::string& content_name,
-                                   const ContentGroup* muxed_group) {
-  TransportProxy* selected_proxy = GetTransportProxy(content_name);
-  if (!selected_proxy) {
+bool BaseSession::BundleContentGroup(const ContentGroup* bundle_group) {
+  const std::string* content_name = bundle_group->FirstContentName();
+  if (!content_name) {
+    LOG(LS_INFO) << "No content names specified in BUNDLE group.";
+    return true;
+  }
+
+  const ContentInfo* content =
+      local_description_->GetContentByName(*content_name);
+  if (!content) {
+    LOG(LS_WARNING) << "Content \"" << *content_name
+                    << "\" referenced in BUNDLE group"
+                    << " not present in local description";
     return false;
   }
 
-  ASSERT(selected_proxy->negotiated());
+  TransportProxy* selected_proxy = GetTransportProxy(*content_name);
+  if (!selected_proxy) {
+    LOG(LS_WARNING) << "No transport found for content \""
+                    << *content_name << "\".";
+    return false;
+  }
+
   for (TransportMap::iterator iter = transports_.begin();
        iter != transports_.end(); ++iter) {
     // If content is part of the mux group, then repoint its proxy at the
     // transport object that we have chosen to mux onto. If the proxy
     // is already pointing at the right object, it will be a no-op.
-    if (muxed_group->HasContentName(iter->first) &&
+    if (bundle_group->HasContentName(iter->first) &&
         !iter->second->SetupMux(selected_proxy)) {
+      LOG(LS_WARNING) << "Failed to bundle " << iter->first << " to "
+                      << *content_name;
       return false;
     }
+    LOG(LS_INFO) << "Bundling " << iter->first << " to " << *content_name;
   }
+
   return true;
 }
 

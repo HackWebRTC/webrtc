@@ -331,8 +331,6 @@ class BaseSession : public sigslot::has_slots<>,
   const TransportMap& transport_proxies() const { return transports_; }
   // Get a TransportProxy by content_name or transport. NULL if not found.
   TransportProxy* GetTransportProxy(const std::string& content_name);
-  TransportProxy* GetTransportProxy(const Transport* transport);
-  TransportProxy* GetFirstTransportProxy();
   void DestroyTransportProxy(const std::string& content_name);
   // TransportProxy is owned by session.  Return proxy just for convenience.
   TransportProxy* GetOrCreateTransportProxy(const std::string& content_name);
@@ -411,6 +409,10 @@ class BaseSession : public sigslot::has_slots<>,
 
   // Fires the new description signal according to the current state.
   virtual void SignalNewDescription();
+  // This method will delete the Transport and TransportChannelImpls
+  // and replace those with the Transport object of the first
+  // MediaContent in bundle_group.
+  bool BundleContentGroup(const ContentGroup* bundle_group);
 
  private:
   // Helper methods to push local and remote transport descriptions.
@@ -423,12 +425,6 @@ class BaseSession : public sigslot::has_slots<>,
 
   void MaybeCandidateAllocationDone();
 
-  // This method will delete the Transport and TransportChannelImpls and
-  // replace those with the selected Transport objects. Selection is done
-  // based on the content_name and in this case first MediaContent information
-  // is used for mux.
-  bool SetSelectedProxy(const std::string& content_name,
-                        const ContentGroup* muxed_group);
   // Log session state.
   void LogState(State old_state, State new_state);
 
