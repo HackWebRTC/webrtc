@@ -159,14 +159,6 @@ void I420VideoFrame::ShallowCopy(const I420VideoFrame& videoFrame) {
   rotation_ = videoFrame.rotation_;
 }
 
-void I420VideoFrame::SwapFrame(I420VideoFrame* videoFrame) {
-  video_frame_buffer_.swap(videoFrame->video_frame_buffer_);
-  std::swap(timestamp_, videoFrame->timestamp_);
-  std::swap(ntp_time_ms_, videoFrame->ntp_time_ms_);
-  std::swap(render_time_ms_, videoFrame->render_time_ms_);
-  std::swap(rotation_, videoFrame->rotation_);
-}
-
 void I420VideoFrame::Reset() {
   video_frame_buffer_ = nullptr;
   timestamp_ = 0;

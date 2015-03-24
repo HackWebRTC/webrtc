@@ -87,9 +87,6 @@ class I420VideoFrame {
   // reference to the video buffer also retained by |videoFrame|.
   void ShallowCopy(const I420VideoFrame& videoFrame);
 
-  // Swap Frame.
-  void SwapFrame(I420VideoFrame* videoFrame);
-
   // Release frame buffer and reset time stamps.
   void Reset();
 

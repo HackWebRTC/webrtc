@@ -125,7 +125,6 @@ class Vp8TestDecodedImageCallback : public DecodedImageCallback {
       : decoded_frames_(0) {
   }
   virtual int32_t Decoded(I420VideoFrame& decoded_image) {
-    last_decoded_frame_.CopyFrame(decoded_image);
     for (int i = 0; i < decoded_image.width(); ++i) {
       EXPECT_NEAR(kColorY, decoded_image.buffer(kYPlane)[i], 1);
     }
@@ -141,13 +140,9 @@ class Vp8TestDecodedImageCallback : public DecodedImageCallback {
   int DecodedFrames() {
     return decoded_frames_;
   }
-  void GetLastDecodedFrame(I420VideoFrame* decoded_frame) {
-    decoded_frame->SwapFrame(&last_decoded_frame_);
-  }
 
  private:
   int decoded_frames_;
-  I420VideoFrame last_decoded_frame_;
 };
 
 class SkipEncodingUnusedStreamsTest {
