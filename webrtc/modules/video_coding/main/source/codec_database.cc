@@ -12,6 +12,7 @@
 
 #include <assert.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/engine_configurations.h"
 #ifdef VIDEOCODEC_I420
 #include "webrtc/modules/video_coding/codecs/i420/main/interface/i420.h"
@@ -236,25 +237,15 @@ bool VCMCodecDataBase::SetSendCodec(
     int number_of_cores,
     size_t max_payload_size,
     VCMEncodedFrameCallback* encoded_frame_callback) {
-  if (!send_codec) {
-    return false;
-  }
+  DCHECK(send_codec);
   if (max_payload_size == 0) {
     max_payload_size = kDefaultPayloadSize;
   }
-  if (number_of_cores <= 0) {
-    return false;
-  }
-  if (send_codec->plType <= 0) {
-    return false;
-  }
+  DCHECK_GE(number_of_cores, 1);
+  DCHECK_GE(send_codec->plType, 1);
   // Make sure the start bit rate is sane...
-  if (send_codec->startBitrate > 1000000) {
-    return false;
-  }
-  if (send_codec->codecType == kVideoCodecUnknown) {
-    return false;
-  }
+  DCHECK_LE(send_codec->startBitrate, 1000000u);
+  DCHECK(send_codec->codecType != kVideoCodecUnknown);
   bool reset_required = pending_encoder_reset_;
   if (number_of_cores_ != number_of_cores) {
     number_of_cores_ = number_of_cores;
@@ -289,6 +280,7 @@ bool VCMCodecDataBase::SetSendCodec(
   if (!reset_required) {
     encoded_frame_callback->SetPayloadType(send_codec->plType);
     if (ptr_encoder_->RegisterEncodeCallback(encoded_frame_callback) < 0) {
+      LOG(LS_ERROR) << "Failed to register encoded-frame callback.";
       return false;
     }
     return true;
@@ -304,17 +296,18 @@ bool VCMCodecDataBase::SetSendCodec(
   } else {
     ptr_encoder_ = CreateEncoder(send_codec->codecType);
     current_enc_is_external_ = false;
-    if (!ptr_encoder_) {
+    if (!ptr_encoder_)
       return false;
-    }
   }
   encoded_frame_callback->SetPayloadType(send_codec->plType);
   if (ptr_encoder_->InitEncode(send_codec,
                                number_of_cores_,
                                max_payload_size_) < 0) {
+    LOG(LS_ERROR) << "Failed to initialize video encoder.";
     DeleteEncoder();
     return false;
   } else if (ptr_encoder_->RegisterEncodeCallback(encoded_frame_callback) < 0) {
+    LOG(LS_ERROR) << "Failed to register encoded-frame callback.";
     DeleteEncoder();
     return false;
   }
