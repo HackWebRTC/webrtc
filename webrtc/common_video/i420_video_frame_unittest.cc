@@ -199,28 +199,6 @@ TEST(TestI420VideoFrame, Reset) {
   EXPECT_TRUE(frame.video_frame_buffer() == NULL);
 }
 
-TEST(TestI420VideoFrame, CloneFrame) {
-  I420VideoFrame frame1;
-  rtc::scoped_ptr<I420VideoFrame> frame2;
-  const int kSizeY = 400;
-  const int kSizeU = 100;
-  const int kSizeV = 100;
-  uint8_t buffer_y[kSizeY];
-  uint8_t buffer_u[kSizeU];
-  uint8_t buffer_v[kSizeV];
-  memset(buffer_y, 16, kSizeY);
-  memset(buffer_u, 8, kSizeU);
-  memset(buffer_v, 4, kSizeV);
-  frame1.CreateFrame(buffer_y, buffer_u, buffer_v, 20, 20, 20, 10, 10);
-  frame1.set_timestamp(1);
-  frame1.set_ntp_time_ms(2);
-  frame1.set_render_time_ms(3);
-
-  frame2.reset(frame1.CloneFrame());
-  EXPECT_TRUE(frame2.get() != NULL);
-  EXPECT_TRUE(EqualFrames(frame1, *frame2));
-}
-
 TEST(TestI420VideoFrame, CopyBuffer) {
   I420VideoFrame frame1, frame2;
   int width = 15;
@@ -363,14 +341,6 @@ TEST(TestI420VideoFrame, RefCount) {
   EXPECT_EQ(1, handle.ref_count());
   delete frame;
   EXPECT_EQ(0, handle.ref_count());
-}
-
-TEST(TestI420VideoFrame, CloneTextureFrame) {
-  NativeHandleImpl handle;
-  I420VideoFrame frame1(&handle, 640, 480, 100, 200);
-  rtc::scoped_ptr<I420VideoFrame> frame2(frame1.CloneFrame());
-  EXPECT_TRUE(frame2.get() != NULL);
-  EXPECT_TRUE(EqualTextureFrames(frame1, *frame2));
 }
 
 bool EqualPlane(const uint8_t* data1,

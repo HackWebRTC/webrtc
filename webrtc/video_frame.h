@@ -87,10 +87,6 @@ class I420VideoFrame {
   // reference to the video buffer also retained by |videoFrame|.
   void ShallowCopy(const I420VideoFrame& videoFrame);
 
-  // Make a copy of |this|. The caller owns the returned frame.
-  // Return value: a new frame on success, NULL on error.
-  I420VideoFrame* CloneFrame() const;
-
   // Swap Frame.
   void SwapFrame(I420VideoFrame* videoFrame);
 

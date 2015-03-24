@@ -159,17 +159,6 @@ void I420VideoFrame::ShallowCopy(const I420VideoFrame& videoFrame) {
   rotation_ = videoFrame.rotation_;
 }
 
-I420VideoFrame* I420VideoFrame::CloneFrame() const {
-  rtc::scoped_ptr<I420VideoFrame> new_frame(new I420VideoFrame());
-  if (new_frame->CopyFrame(*this) == -1) {
-    // TODO(pbos): Make void, not war.
-    // CopyFrame failed this shouldn't happen.
-    RTC_NOTREACHED();
-    return NULL;
-  }
-  return new_frame.release();
-}
-
 void I420VideoFrame::SwapFrame(I420VideoFrame* videoFrame) {
   video_frame_buffer_.swap(videoFrame->video_frame_buffer_);
   std::swap(timestamp_, videoFrame->timestamp_);
