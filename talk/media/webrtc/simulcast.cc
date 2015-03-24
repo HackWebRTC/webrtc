@@ -57,6 +57,7 @@ struct SimulcastFormat {
 // simulcast layers at what bitrates (maximum, target, and minimum).
 // Important!! Keep this table from high resolution to low resolution.
 const SimulcastFormat kSimulcastFormats[] = {
+  {1920, 1080, 3, {5000, 5000, 5000}, {4000, 4000, 4000}, {800, 800, 800}},
   {1280, 720, 3, {1200, 1200, 2500}, {1200, 1200, 2500}, {500, 600, 600}},
   {960, 540, 3, {900, 900, 900}, {900, 900, 900}, {350, 450, 450}},
   {640, 360, 2, {500, 700, 700}, {500, 500, 500}, {100, 150, 150}},
