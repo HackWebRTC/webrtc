@@ -147,9 +147,9 @@ float VideoAdapter::FindLowerScale(int width, int height,
 
 // There are several frame sizes used by Adapter.  This explains them
 // input_format - set once by server to frame size expected from the camera.
-//   The input frame size is also updated in every call to AdaptFrame.
+//   The input frame size is also updated in AdaptFrameResolution.
 // output_format - size that output would like to be.  Includes framerate.
-//   The output frame size is also updated in every call to AdaptFrame.
+//   The output frame size is also updated in AdaptFrameResolution.
 // output_num_pixels - size that output should be constrained to.  Used to
 //   compute output_format from in_frame.
 // in_frame - actual camera captured frame size, which is typically the same
@@ -349,73 +349,10 @@ VideoFormat VideoAdapter::AdaptFrameResolution(int in_width, int in_height) {
   return output_format_;
 }
 
-// TODO(fbarchard): Add AdaptFrameRate function that only drops frames but
-// not resolution.
-bool VideoAdapter::AdaptFrame(VideoFrame* in_frame, VideoFrame** out_frame) {
-  if (!in_frame || !out_frame)
-    return false;
-
-  const VideoFormat adapted_format =
-      AdaptFrameResolution(static_cast<int>(in_frame->GetWidth()),
-                           static_cast<int>(in_frame->GetHeight()));
-
-  rtc::CritScope cs(&critical_section_);
-  if (adapted_format.IsSize0x0()) {
-    *out_frame = NULL;
-    return true;
-  }
-
-  if (in_frame->GetWidth() == static_cast<size_t>(adapted_format.width) &&
-      in_frame->GetHeight() == static_cast<size_t>(adapted_format.height)) {
-    // The dimensions are correct and we aren't muting, so use the input frame.
-    *out_frame = in_frame;
-  } else {
-    if (!StretchToOutputFrame(in_frame)) {
-      LOG(LS_VERBOSE) << "VAdapt Stretch Failed.";
-      return false;
-    }
-
-    *out_frame = output_frame_.get();
-  }
-
-  return true;
-}
-
 void VideoAdapter::set_scale_third(bool enable) {
   LOG(LS_INFO) << "Video Adapter third scaling is now "
                << (enable ? "enabled" : "disabled");
   scale_third_ = enable;
-}
-
-// Scale or Blacken the frame.  Returns true if successful.
-bool VideoAdapter::StretchToOutputFrame(const VideoFrame* in_frame) {
-  int output_width = output_format_.width;
-  int output_height = output_format_.height;
-
-  // Create and stretch the output frame if it has not been created yet or its
-  // size is not same as the expected.
-  bool stretched = false;
-  if (!output_frame_ ||
-      output_frame_->GetWidth() != static_cast<size_t>(output_width) ||
-      output_frame_->GetHeight() != static_cast<size_t>(output_height)) {
-    output_frame_.reset(
-        in_frame->Stretch(output_width, output_height, true, true));
-    if (!output_frame_) {
-      LOG(LS_WARNING) << "Adapter failed to stretch frame to "
-                      << output_width << "x" << output_height;
-      return false;
-    }
-    stretched = true;
-  }
-
-  if (!stretched) {
-    // The output frame does not need to be blacken and has not been stretched
-    // from the input frame yet, stretch the input frame. This is the most
-    // common case.
-    in_frame->StretchToFrame(output_frame_.get(), true, true);
-  }
-
-  return true;
 }
 
 ///////////////////////////////////////////////////////////////////////

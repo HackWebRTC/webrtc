@@ -53,25 +53,14 @@ class VideoAdapter {
   int GetOutputNumPixels() const;
 
   const VideoFormat& input_format();
-  // Returns true if the adapter is dropping frames in calls to AdaptFrame.
+  // Returns true if the adapter will always return zero size from
+  // AdaptFrameResolution.
   bool drops_all_frames() const;
   const VideoFormat& output_format();
 
   // Return the adapted resolution given the input resolution. The returned
   // resolution will be 0x0 if the frame should be dropped.
   VideoFormat AdaptFrameResolution(int in_width, int in_height);
-
-  // Adapt the input frame from the input format to the output format. Return
-  // true and set the output frame to NULL if the input frame is dropped. Return
-  // true and set the out frame to output_frame_ if the input frame is adapted
-  // successfully. Return false otherwise.
-  // Note that, if no adaptation is required, |out_frame| will refer directly
-  // in_frame. If a copy is always required, the caller must do an explicit
-  // copy.
-  // If a copy has taken place, |output_frame_| is owned by the VideoAdapter
-  // and will remain usable until the adapter is destroyed or AdaptFrame is
-  // called again.
-  bool AdaptFrame(VideoFrame* in_frame, VideoFrame** out_frame);
 
   void set_scale_third(bool enable);
   bool scale_third() const { return scale_third_; }
@@ -88,7 +77,6 @@ class VideoAdapter {
   float FindScale(const float* scale_factors,
                   const float upbias, int width, int height,
                   int target_num_pixels);
-  bool StretchToOutputFrame(const VideoFrame* in_frame);
 
   VideoFormat input_format_;
   VideoFormat output_format_;
@@ -101,7 +89,6 @@ class VideoAdapter {
   size_t previous_width_;  // Previous adapter output width.
   size_t previous_height_;  // Previous adapter output height.
   int64 interval_next_frame_;
-  rtc::scoped_ptr<VideoFrame> output_frame_;
   // The critical section to protect the above variables.
   rtc::CriticalSection critical_section_;
 
