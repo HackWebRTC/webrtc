@@ -76,7 +76,7 @@ struct DataBuffer {
       : data(text.data(), text.length()),
         binary(false) {
   }
-  size_t size() const { return data.length(); }
+  size_t size() const { return data.size(); }
 
   rtc::Buffer data;
   // Indicates if the received data contains UTF-8 or binary data.

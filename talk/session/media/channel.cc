@@ -131,8 +131,8 @@ static const char* PacketType(bool rtcp) {
 static bool ValidPacket(bool rtcp, const rtc::Buffer* packet) {
   // Check the packet size. We could check the header too if needed.
   return (packet &&
-      packet->length() >= (!rtcp ? kMinRtpPacketLen : kMinRtcpPacketLen) &&
-      packet->length() <= kMaxRtpPacketLen);
+          packet->size() >= (!rtcp ? kMinRtpPacketLen : kMinRtcpPacketLen) &&
+          packet->size() <= kMaxRtpPacketLen);
 }
 
 static bool IsReceiveContentDirection(MediaContentDirection direction) {
@@ -497,15 +497,15 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
   // Protect ourselves against crazy data.
   if (!ValidPacket(rtcp, packet)) {
     LOG(LS_ERROR) << "Dropping outgoing " << content_name_ << " "
-                  << PacketType(rtcp) << " packet: wrong size="
-                  << packet->length();
+                  << PacketType(rtcp)
+                  << " packet: wrong size=" << packet->size();
     return false;
   }
 
   // Signal to the media sink before protecting the packet.
   {
     rtc::CritScope cs(&signal_send_packet_cs_);
-    SignalSendPacketPreCrypto(packet->data(), packet->length(), rtcp);
+    SignalSendPacketPreCrypto(packet->data(), packet->size(), rtcp);
   }
 
   rtc::PacketOptions options(dscp);
@@ -513,7 +513,7 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
   if (srtp_filter_.IsActive()) {
     bool res;
     char* data = packet->data();
-    int len = static_cast<int>(packet->length());
+    int len = static_cast<int>(packet->size());
     if (!rtcp) {
     // If ENABLE_EXTERNAL_AUTH flag is on then packet authentication is not done
     // inside libsrtp for a RTP packet. A external HMAC module will be writing
@@ -566,7 +566,7 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
     }
 
     // Update the length of the packet now that we've added the auth tag.
-    packet->SetLength(len);
+    packet->SetSize(len);
   } else if (secure_required_) {
     // This is a double check for something that supposedly can't happen.
     LOG(LS_ERROR) << "Can't send outgoing " << PacketType(rtcp)
@@ -579,13 +579,14 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
   // Signal to the media sink after protecting the packet.
   {
     rtc::CritScope cs(&signal_send_packet_cs_);
-    SignalSendPacketPostCrypto(packet->data(), packet->length(), rtcp);
+    SignalSendPacketPostCrypto(packet->data(), packet->size(), rtcp);
   }
 
   // Bon voyage.
-  int ret = channel->SendPacket(packet->data(), packet->length(), options,
-      (secure() && secure_dtls()) ? PF_SRTP_BYPASS : 0);
-  if (ret != static_cast<int>(packet->length())) {
+  int ret =
+      channel->SendPacket(packet->data(), packet->size(), options,
+                          (secure() && secure_dtls()) ? PF_SRTP_BYPASS : 0);
+  if (ret != static_cast<int>(packet->size())) {
     if (channel->GetError() == EWOULDBLOCK) {
       LOG(LS_WARNING) << "Got EWOULDBLOCK from socket.";
       SetReadyToSend(channel, false);
@@ -599,13 +600,13 @@ bool BaseChannel::WantsPacket(bool rtcp, rtc::Buffer* packet) {
   // Protect ourselves against crazy data.
   if (!ValidPacket(rtcp, packet)) {
     LOG(LS_ERROR) << "Dropping incoming " << content_name_ << " "
-                  << PacketType(rtcp) << " packet: wrong size="
-                  << packet->length();
+                  << PacketType(rtcp)
+                  << " packet: wrong size=" << packet->size();
     return false;
   }
 
   // Bundle filter handles both rtp and rtcp packets.
-  return bundle_filter_.DemuxPacket(packet->data(), packet->length(), rtcp);
+  return bundle_filter_.DemuxPacket(packet->data(), packet->size(), rtcp);
 }
 
 void BaseChannel::HandlePacket(bool rtcp, rtc::Buffer* packet,
@@ -624,13 +625,13 @@ void BaseChannel::HandlePacket(bool rtcp, rtc::Buffer* packet,
   // Signal to the media sink before unprotecting the packet.
   {
     rtc::CritScope cs(&signal_recv_packet_cs_);
-    SignalRecvPacketPostCrypto(packet->data(), packet->length(), rtcp);
+    SignalRecvPacketPostCrypto(packet->data(), packet->size(), rtcp);
   }
 
   // Unprotect the packet, if needed.
   if (srtp_filter_.IsActive()) {
     char* data = packet->data();
-    int len = static_cast<int>(packet->length());
+    int len = static_cast<int>(packet->size());
     bool res;
     if (!rtcp) {
       res = srtp_filter_.UnprotectRtp(data, len, &len);
@@ -655,7 +656,7 @@ void BaseChannel::HandlePacket(bool rtcp, rtc::Buffer* packet,
       }
     }
 
-    packet->SetLength(len);
+    packet->SetSize(len);
   } else if (secure_required_) {
     // Our session description indicates that SRTP is required, but we got a
     // packet before our SRTP filter is active. This means either that
@@ -675,7 +676,7 @@ void BaseChannel::HandlePacket(bool rtcp, rtc::Buffer* packet,
   // Signal to the media sink after unprotecting the packet.
   {
     rtc::CritScope cs(&signal_recv_packet_cs_);
-    SignalRecvPacketPreCrypto(packet->data(), packet->length(), rtcp);
+    SignalRecvPacketPreCrypto(packet->data(), packet->size(), rtcp);
   }
 
   // Push it down to the media channel.
@@ -2213,7 +2214,7 @@ bool DataChannel::WantsPacket(bool rtcp, rtc::Buffer* packet) {
   if (data_channel_type_ == DCT_SCTP) {
     // TODO(pthatcher): Do this in a more robust way by checking for
     // SCTP or DTLS.
-    return !IsRtpPacket(packet->data(), packet->length());
+    return !IsRtpPacket(packet->data(), packet->size());
   } else if (data_channel_type_ == DCT_RTP) {
     return BaseChannel::WantsPacket(rtcp, packet);
   }

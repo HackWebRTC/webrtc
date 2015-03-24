@@ -2849,7 +2849,7 @@ void WebRtcVideoMediaChannel::OnPacketReceived(
   // any multiplexed streams, just send it to the default channel. Otherwise,
   // send it to the specific decoder instance for that stream.
   uint32 ssrc = 0;
-  if (!GetRtpSsrc(packet->data(), packet->length(), &ssrc))
+  if (!GetRtpSsrc(packet->data(), packet->size(), &ssrc))
     return;
   int processing_channel_id = GetRecvChannelId(ssrc);
   if (processing_channel_id == kChannelIdUnset) {
@@ -2865,9 +2865,7 @@ void WebRtcVideoMediaChannel::OnPacketReceived(
   }
 
   engine()->vie()->network()->ReceivedRTPPacket(
-      processing_channel_id,
-      packet->data(),
-      packet->length(),
+      processing_channel_id, packet->data(), packet->size(),
       webrtc::PacketTime(packet_time.timestamp, packet_time.not_before));
 }
 
@@ -2879,12 +2877,12 @@ void WebRtcVideoMediaChannel::OnRtcpReceived(
 // correct receiver reports.
 
   uint32 ssrc = 0;
-  if (!GetRtcpSsrc(packet->data(), packet->length(), &ssrc)) {
+  if (!GetRtcpSsrc(packet->data(), packet->size(), &ssrc)) {
     LOG(LS_WARNING) << "Failed to parse SSRC from received RTCP packet";
     return;
   }
   int type = 0;
-  if (!GetRtcpType(packet->data(), packet->length(), &type)) {
+  if (!GetRtcpType(packet->data(), packet->size(), &type)) {
     LOG(LS_WARNING) << "Failed to parse type from received RTCP packet";
     return;
   }
@@ -2894,9 +2892,7 @@ void WebRtcVideoMediaChannel::OnRtcpReceived(
     int recv_channel_id = GetRecvChannelId(ssrc);
     if (recv_channel_id != kChannelIdUnset && !IsDefaultChannelId(recv_channel_id)) {
       engine_->vie()->network()->ReceivedRTCPPacket(
-          recv_channel_id,
-          packet->data(),
-          packet->length());
+          recv_channel_id, packet->data(), packet->size());
     }
   }
   // SR may continue RR and any RR entry may correspond to any one of the send
@@ -2906,10 +2902,8 @@ void WebRtcVideoMediaChannel::OnRtcpReceived(
        iter != send_channels_.end(); ++iter) {
     WebRtcVideoChannelSendInfo* send_channel = iter->second;
     int channel_id = send_channel->channel_id();
-    engine_->vie()->network()->ReceivedRTCPPacket(
-        channel_id,
-        packet->data(),
-        packet->length());
+    engine_->vie()->network()->ReceivedRTCPPacket(channel_id, packet->data(),
+                                                  packet->size());
   }
 }
 

@@ -66,8 +66,8 @@ class FileNetworkInterface : public MediaChannel::NetworkInterface {
       media_channel_->OnPacketReceived(packet, rtc::PacketTime());
     }
     if (dump_writer_.get() &&
-        rtc::SR_SUCCESS != dump_writer_->WriteRtpPacket(
-            packet->data(), packet->length())) {
+        rtc::SR_SUCCESS !=
+            dump_writer_->WriteRtpPacket(packet->data(), packet->size())) {
       return false;
     }
 

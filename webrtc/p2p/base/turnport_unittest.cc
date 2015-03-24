@@ -437,8 +437,8 @@ class TurnPortTest : public testing::Test,
     ASSERT_EQ_WAIT(num_packets, turn_packets_.size(), kTimeout);
     ASSERT_EQ_WAIT(num_packets, udp_packets_.size(), kTimeout);
     for (size_t i = 0; i < num_packets; ++i) {
-      EXPECT_EQ(i + 1, turn_packets_[i].length());
-      EXPECT_EQ(i + 1, udp_packets_[i].length());
+      EXPECT_EQ(i + 1, turn_packets_[i].size());
+      EXPECT_EQ(i + 1, udp_packets_[i].size());
       EXPECT_EQ(turn_packets_[i], udp_packets_[i]);
     }
   }

@@ -16,16 +16,20 @@ Buffer::Buffer() {
   Construct(NULL, 0, 0);
 }
 
-Buffer::Buffer(const void* data, size_t length) {
-  Construct(data, length, length);
+Buffer::Buffer(size_t size) : Buffer() {
+  SetSize(size);
 }
 
-Buffer::Buffer(const void* data, size_t length, size_t capacity) {
-  Construct(data, length, capacity);
+Buffer::Buffer(const void* data, size_t size) {
+  Construct(data, size, size);
+}
+
+Buffer::Buffer(const void* data, size_t size, size_t capacity) {
+  Construct(data, size, capacity);
 }
 
 Buffer::Buffer(const Buffer& buf) {
-  Construct(buf.data(), buf.length(), buf.length());
+  Construct(buf.data(), buf.size(), buf.size());
 }
 
 Buffer::~Buffer() = default;

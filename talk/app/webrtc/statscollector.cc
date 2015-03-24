@@ -538,8 +538,8 @@ StatsReport* StatsCollector::AddOneCertificateReport(
   rtc::Buffer der_buffer;
   cert->ToDER(&der_buffer);
   std::string der_base64;
-  rtc::Base64::EncodeFromArray(
-      der_buffer.data(), der_buffer.length(), &der_base64);
+  rtc::Base64::EncodeFromArray(der_buffer.data(), der_buffer.size(),
+                               &der_base64);
 
   StatsReport::Id id(StatsReport::NewTypedId(
       StatsReport::kStatsReportTypeCertificate, fingerprint));

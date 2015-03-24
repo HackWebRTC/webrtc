@@ -216,7 +216,7 @@ bool RtpDataMediaChannel::RemoveRecvStream(uint32 ssrc) {
 void RtpDataMediaChannel::OnPacketReceived(
     rtc::Buffer* packet, const rtc::PacketTime& packet_time) {
   RtpHeader header;
-  if (!GetRtpHeader(packet->data(), packet->length(), &header)) {
+  if (!GetRtpHeader(packet->data(), packet->size(), &header)) {
     // Don't want to log for every corrupt packet.
     // LOG(LS_WARNING) << "Could not read rtp header from packet of length "
     //                 << packet->length() << ".";
@@ -224,7 +224,7 @@ void RtpDataMediaChannel::OnPacketReceived(
   }
 
   size_t header_length;
-  if (!GetRtpHeaderLen(packet->data(), packet->length(), &header_length)) {
+  if (!GetRtpHeaderLen(packet->data(), packet->size(), &header_length)) {
     // Don't want to log for every corrupt packet.
     // LOG(LS_WARNING) << "Could not read rtp header"
     //                 << length from packet of length "
@@ -232,7 +232,7 @@ void RtpDataMediaChannel::OnPacketReceived(
     return;
   }
   const char* data = packet->data() + header_length + sizeof(kReservedSpace);
-  size_t data_len = packet->length() - header_length - sizeof(kReservedSpace);
+  size_t data_len = packet->size() - header_length - sizeof(kReservedSpace);
 
   if (!receiving_) {
     LOG(LS_WARNING) << "Not receiving packet "
@@ -292,7 +292,7 @@ bool RtpDataMediaChannel::SendData(
   }
   if (!sending_) {
     LOG(LS_WARNING) << "Not sending packet with ssrc=" << params.ssrc
-                    << " len=" << payload.length() << " before SetSend(true).";
+                    << " len=" << payload.size() << " before SetSend(true).";
     return false;
   }
 
@@ -316,8 +316,8 @@ bool RtpDataMediaChannel::SendData(
     return false;
   }
 
-  size_t packet_len = (kMinRtpPacketLen + sizeof(kReservedSpace)
-                       + payload.length() + kMaxSrtpHmacOverhead);
+  size_t packet_len = (kMinRtpPacketLen + sizeof(kReservedSpace) +
+                       payload.size() + kMaxSrtpHmacOverhead);
   if (packet_len > kDataMaxRtpPacketLen) {
     return false;
   }
@@ -339,19 +339,18 @@ bool RtpDataMediaChannel::SendData(
 
   rtc::Buffer packet;
   packet.SetCapacity(packet_len);
-  packet.SetLength(kMinRtpPacketLen);
-  if (!SetRtpHeader(packet.data(), packet.length(), header)) {
+  packet.SetSize(kMinRtpPacketLen);
+  if (!SetRtpHeader(packet.data(), packet.size(), header)) {
     return false;
   }
   packet.AppendData(&kReservedSpace, sizeof(kReservedSpace));
-  packet.AppendData(payload.data(), payload.length());
+  packet.AppendData(payload.data(), payload.size());
 
   LOG(LS_VERBOSE) << "Sent RTP data packet: "
-                  << " stream=" << found_stream->id
-                  << " ssrc=" << header.ssrc
+                  << " stream=" << found_stream->id << " ssrc=" << header.ssrc
                   << ", seqnum=" << header.seq_num
                   << ", timestamp=" << header.timestamp
-                  << ", len=" << payload.length();
+                  << ", len=" << payload.size();
 
   MediaChannel::SendPacket(&packet);
   send_limiter_->Use(packet_len, now);

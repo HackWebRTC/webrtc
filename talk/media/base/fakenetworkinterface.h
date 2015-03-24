@@ -71,7 +71,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
     rtc::CritScope cs(&crit_);
     int bytes = 0;
     for (size_t i = 0; i < rtp_packets_.size(); ++i) {
-      bytes += static_cast<int>(rtp_packets_[i].length());
+      bytes += static_cast<int>(rtp_packets_[i].size());
     }
     return bytes;
   }
@@ -138,7 +138,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
     rtc::CritScope cs(&crit_);
 
     uint32 cur_ssrc = 0;
-    if (!GetRtpSsrc(packet->data(), packet->length(), &cur_ssrc)) {
+    if (!GetRtpSsrc(packet->data(), packet->size(), &cur_ssrc)) {
       return false;
     }
     sent_ssrcs_[cur_ssrc]++;
@@ -156,7 +156,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
     if (conf_) {
       rtc::Buffer buffer_copy(*packet);
       for (size_t i = 0; i < conf_sent_ssrcs_.size(); ++i) {
-        if (!SetRtpSsrc(buffer_copy.data(), buffer_copy.length(),
+        if (!SetRtpSsrc(buffer_copy.data(), buffer_copy.size(),
                         conf_sent_ssrcs_[i])) {
           return false;
         }
@@ -221,13 +221,13 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
     }
     uint32 cur_ssrc = 0;
     for (size_t i = 0; i < rtp_packets_.size(); ++i) {
-      if (!GetRtpSsrc(rtp_packets_[i].data(),
-                      rtp_packets_[i].length(), &cur_ssrc)) {
+      if (!GetRtpSsrc(rtp_packets_[i].data(), rtp_packets_[i].size(),
+                      &cur_ssrc)) {
         return;
       }
       if (ssrc == cur_ssrc) {
         if (bytes) {
-          *bytes += static_cast<int>(rtp_packets_[i].length());
+          *bytes += static_cast<int>(rtp_packets_[i].size());
         }
         if (packets) {
           ++(*packets);

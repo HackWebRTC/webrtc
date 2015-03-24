@@ -74,7 +74,7 @@ class SctpFakeNetworkInterface : public cricket::MediaChannel::NetworkInterface,
 
     // TODO(ldixon): Can/should we use Buffer.TransferTo here?
     // Note: this assignment does a deep copy of data from packet.
-    rtc::Buffer* buffer = new rtc::Buffer(packet->data(), packet->length());
+    rtc::Buffer* buffer = new rtc::Buffer(packet->data(), packet->size());
     thread_->Post(this, MSG_PACKET, rtc::WrapMessageData(buffer));
     LOG(LS_VERBOSE) << "SctpFakeNetworkInterface::SendPacket, Posted message.";
     return true;

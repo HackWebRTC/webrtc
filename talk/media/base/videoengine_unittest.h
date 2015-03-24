@@ -670,7 +670,7 @@ class VideoMediaChannelTest : public testing::Test,
   static bool ParseRtpPacket(const rtc::Buffer* p, bool* x, int* pt,
                              int* seqnum, uint32* tstamp, uint32* ssrc,
                              std::string* payload) {
-    rtc::ByteBuffer buf(p->data(), p->length());
+    rtc::ByteBuffer buf(p->data(), p->size());
     uint8 u08 = 0;
     uint16 u16 = 0;
     uint32 u32 = 0;
@@ -730,10 +730,10 @@ class VideoMediaChannelTest : public testing::Test,
     int count = 0;
     for (int i = start_index; i < stop_index; ++i) {
       rtc::scoped_ptr<const rtc::Buffer> p(GetRtcpPacket(i));
-      rtc::ByteBuffer buf(p->data(), p->length());
+      rtc::ByteBuffer buf(p->data(), p->size());
       size_t total_len = 0;
       // The packet may be a compound RTCP packet.
-      while (total_len < p->length()) {
+      while (total_len < p->size()) {
         // Read FMT, type and length.
         uint8 fmt = 0;
         uint8 type = 0;

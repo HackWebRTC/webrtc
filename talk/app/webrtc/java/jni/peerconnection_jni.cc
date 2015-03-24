@@ -581,9 +581,8 @@ class DataChannelObserverWrapper : public DataChannelObserver {
 
   void OnMessage(const DataBuffer& buffer) override {
     ScopedLocalRefFrame local_ref_frame(jni());
-    jobject byte_buffer =
-        jni()->NewDirectByteBuffer(const_cast<char*>(buffer.data.data()),
-                                   buffer.data.length());
+    jobject byte_buffer = jni()->NewDirectByteBuffer(
+        const_cast<char*>(buffer.data.data()), buffer.data.size());
     jobject j_buffer = jni()->NewObject(*j_buffer_class_, j_buffer_ctor_,
                                         byte_buffer, buffer.binary);
     jni()->CallVoidMethod(*j_observer_global_, j_on_message_mid_, j_buffer);

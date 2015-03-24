@@ -330,8 +330,8 @@ void DataChannel::OnDataReceived(cricket::DataChannel* channel,
   if (was_ever_writable_ && observer_) {
     observer_->OnMessage(*buffer.get());
   } else {
-    if (queued_received_data_.byte_count() + payload.length() >
-            kMaxQueuedReceivedDataBytes) {
+    if (queued_received_data_.byte_count() + payload.size() >
+        kMaxQueuedReceivedDataBytes) {
       LOG(LS_ERROR) << "Queued received data exceeds the max buffer size.";
 
       queued_received_data_.Clear();

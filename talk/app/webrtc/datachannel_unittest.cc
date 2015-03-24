@@ -145,7 +145,7 @@ TEST_F(SctpDataChannelTest, BufferedAmountWhenBlocked) {
   for (int i = 0; i < number_of_packets; ++i) {
     EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
   }
-  EXPECT_EQ(buffer.data.length() * number_of_packets,
+  EXPECT_EQ(buffer.data.size() * number_of_packets,
             webrtc_data_channel_->buffered_amount());
 }
 
@@ -359,10 +359,8 @@ TEST_F(SctpDataChannelTest, OpenAckRoleInitialization) {
 TEST_F(SctpDataChannelTest, ClosedWhenSendBufferFull) {
   SetChannelReady();
 
-  const size_t buffer_size = 1024;
-  rtc::Buffer buffer;
-  buffer.SetLength(buffer_size);
-  memset(buffer.data(), 0, buffer_size);
+  rtc::Buffer buffer(1024);
+  memset(buffer.data(), 0, buffer.size());
 
   webrtc::DataBuffer packet(buffer, true);
   provider_.set_send_blocked(true);
@@ -413,10 +411,8 @@ TEST_F(SctpDataChannelTest, RemotePeerRequestClose) {
 // Tests that the DataChannel is closed if the received buffer is full.
 TEST_F(SctpDataChannelTest, ClosedWhenReceivedBufferFull) {
   SetChannelReady();
-  const size_t buffer_size = 1024;
-  rtc::Buffer buffer;
-  buffer.SetLength(buffer_size);
-  memset(buffer.data(), 0, buffer_size);
+  rtc::Buffer buffer(1024);
+  memset(buffer.data(), 0, buffer.size());
 
   cricket::ReceiveDataParams params;
   params.ssrc = 0;

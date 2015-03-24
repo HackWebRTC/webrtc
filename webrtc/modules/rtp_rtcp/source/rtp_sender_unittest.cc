@@ -1354,13 +1354,13 @@ TEST_F(RtpSenderVideoTest, SendVideoWithCVO) {
   // Verify that this packet doesn't have CVO byte.
   VerifyCVOPacket(
       reinterpret_cast<uint8_t*>(transport_.sent_packets_[0]->data()),
-      transport_.sent_packets_[0]->length(), false, &map, kSeqNum,
+      transport_.sent_packets_[0]->size(), false, &map, kSeqNum,
       kVideoRotation_0);
 
   // Verify that this packet doesn't have CVO byte.
   VerifyCVOPacket(
       reinterpret_cast<uint8_t*>(transport_.sent_packets_[1]->data()),
-      transport_.sent_packets_[1]->length(), true, &map, kSeqNum + 1,
+      transport_.sent_packets_[1]->size(), true, &map, kSeqNum + 1,
       hdr.rotation);
 }
 }  // namespace webrtc

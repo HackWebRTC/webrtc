@@ -230,7 +230,7 @@ void RtpSenderReceiver::SetSendSsrc(uint32 ssrc) {
 
 void RtpSenderReceiver::OnPacketReceived(rtc::Buffer* packet) {
   if (rtp_dump_writer_) {
-    rtp_dump_writer_->WriteRtpPacket(packet->data(), packet->length());
+    rtp_dump_writer_->WriteRtpPacket(packet->data(), packet->size());
   }
 }
 

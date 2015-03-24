@@ -213,8 +213,7 @@ class FakeTransportChannel : public TransportChannelImpl,
   virtual void OnMessage(rtc::Message* msg) {
     PacketMessageData* data = static_cast<PacketMessageData*>(
         msg->pdata);
-    dest_->SignalReadPacket(dest_, data->packet.data(),
-                            data->packet.length(),
+    dest_->SignalReadPacket(dest_, data->packet.data(), data->packet.size(),
                             rtc::CreatePacketTime(0), 0);
     delete data;
   }

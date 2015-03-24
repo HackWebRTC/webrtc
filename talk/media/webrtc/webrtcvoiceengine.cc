@@ -3107,8 +3107,8 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
   // Pick which channel to send this packet to. If this packet doesn't match
   // any multiplexed streams, just send it to the default channel. Otherwise,
   // send it to the specific decoder instance for that stream.
-  int which_channel = GetReceiveChannelNum(
-      ParseSsrc(packet->data(), packet->length(), false));
+  int which_channel =
+      GetReceiveChannelNum(ParseSsrc(packet->data(), packet->size(), false));
   if (which_channel == -1) {
     which_channel = voe_channel();
   }
@@ -3131,9 +3131,7 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
 
   // Pass it off to the decoder.
   engine()->voe()->network()->ReceivedRTPPacket(
-      which_channel,
-      packet->data(),
-      packet->length(),
+      which_channel, packet->data(), packet->size(),
       webrtc::PacketTime(packet_time.timestamp, packet_time.not_before));
 }
 
@@ -3144,7 +3142,7 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
   // Receiving channels need sender reports in order to create
   // correct receiver reports.
   int type = 0;
-  if (!GetRtcpType(packet->data(), packet->length(), &type)) {
+  if (!GetRtcpType(packet->data(), packet->size(), &type)) {
     LOG(LS_WARNING) << "Failed to parse type from received RTCP packet";
     return;
   }
@@ -3152,13 +3150,11 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
   // If it is a sender report, find the channel that is listening.
   bool has_sent_to_default_channel = false;
   if (type == kRtcpTypeSR) {
-    int which_channel = GetReceiveChannelNum(
-        ParseSsrc(packet->data(), packet->length(), true));
+    int which_channel =
+        GetReceiveChannelNum(ParseSsrc(packet->data(), packet->size(), true));
     if (which_channel != -1) {
       engine()->voe()->network()->ReceivedRTCPPacket(
-          which_channel,
-          packet->data(),
-          packet->length());
+          which_channel, packet->data(), packet->size());
 
       if (IsDefaultChannel(which_channel))
         has_sent_to_default_channel = true;
@@ -3176,9 +3172,7 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
       continue;
 
     engine()->voe()->network()->ReceivedRTCPPacket(
-        iter->second->channel(),
-        packet->data(),
-        packet->length());
+        iter->second->channel(), packet->data(), packet->size());
   }
 }
 

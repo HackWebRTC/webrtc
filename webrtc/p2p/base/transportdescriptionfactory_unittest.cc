@@ -50,7 +50,7 @@ class TransportDescriptionFactoryTest : public testing::Test {
     } else {
       ASSERT_TRUE(desc->identity_fingerprint.get() != NULL);
       EXPECT_EQ(desc->identity_fingerprint->algorithm, dtls_alg);
-      EXPECT_GT(desc->identity_fingerprint->digest.length(), 0U);
+      EXPECT_GT(desc->identity_fingerprint->digest.size(), 0U);
     }
   }
 

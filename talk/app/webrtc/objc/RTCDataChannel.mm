@@ -149,7 +149,7 @@ std::string StdStringFromNSString(NSString* nsString) {
 
 - (NSData*)data {
   return [NSData dataWithBytes:_dataBuffer->data.data()
-                        length:_dataBuffer->data.length()];
+                        length:_dataBuffer->data.size()];
 }
 
 - (BOOL)isBinary {

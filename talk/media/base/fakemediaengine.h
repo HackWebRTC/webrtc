@@ -193,11 +193,11 @@ template <class Base> class RtpHelper : public Base {
   void set_playout(bool playout) { playout_ = playout; }
   virtual void OnPacketReceived(rtc::Buffer* packet,
                                 const rtc::PacketTime& packet_time) {
-    rtp_packets_.push_back(std::string(packet->data(), packet->length()));
+    rtp_packets_.push_back(std::string(packet->data(), packet->size()));
   }
   virtual void OnRtcpReceived(rtc::Buffer* packet,
                               const rtc::PacketTime& packet_time) {
-    rtcp_packets_.push_back(std::string(packet->data(), packet->length()));
+    rtcp_packets_.push_back(std::string(packet->data(), packet->size()));
   }
   virtual void OnReadyToSend(bool ready) {
     ready_to_send_ = ready;
@@ -686,7 +686,7 @@ class FakeDataMediaChannel : public RtpHelper<DataMediaChannel> {
       return false;
     } else {
       last_sent_data_params_ = params;
-      last_sent_data_ = std::string(payload.data(), payload.length());
+      last_sent_data_ = std::string(payload.data(), payload.size());
       return true;
     }
   }
