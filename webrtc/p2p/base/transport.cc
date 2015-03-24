@@ -563,24 +563,17 @@ TransportState Transport::GetTransportState_s(bool read) {
 
 void Transport::OnChannelRequestSignaling(TransportChannelImpl* channel) {
   ASSERT(worker_thread()->IsCurrent());
-  ChannelParams* params = new ChannelParams(channel->component());
-  signaling_thread()->Post(this, MSG_REQUESTSIGNALING, params);
-}
-
-void Transport::OnChannelRequestSignaling_s(int component) {
-  ASSERT(signaling_thread()->IsCurrent());
-  LOG(LS_INFO) << "Transport: " << content_name_ << ", allocating candidates";
   // Resetting ICE state for the channel.
-  worker_thread_->Invoke<void>(
-      Bind(&Transport::OnChannelRequestSignaling_w, this, component));
-  SignalRequestSignaling(this);
-}
-
-void Transport::OnChannelRequestSignaling_w(int component) {
-  ASSERT(worker_thread()->IsCurrent());
-  ChannelMap::iterator iter = channels_.find(component);
+  ChannelMap::iterator iter = channels_.find(channel->component());
   if (iter != channels_.end())
     iter->second.set_candidates_allocated(false);
+  signaling_thread()->Post(this, MSG_REQUESTSIGNALING, nullptr);
+}
+
+void Transport::OnChannelRequestSignaling_s() {
+  ASSERT(signaling_thread()->IsCurrent());
+  LOG(LS_INFO) << "Transport: " << content_name_ << ", allocating candidates";
+  SignalRequestSignaling(this);
 }
 
 void Transport::OnChannelCandidateReady(TransportChannelImpl* channel,
@@ -742,9 +735,10 @@ bool Transport::SetLocalTransportDescription_w(
   // point. |local_description_| seems to always be modified on the worker
   // thread, so we should be able to use it here without grabbing the lock.
   // However, we _might_ need it before the call to reset() below?
-  // Actually, if we ever give out a pointer to the local description to
-  // another thread, won't we run into trouble? (see local_description() in
-  // the header file - no thread check, so I'm not sure from where it's called).
+  // Raw access to |local_description_| is granted to derived transports outside
+  // of locking (see local_description() in the header file).
+  // The contract is that the derived implementations must be aware of when the
+  // description might change and do appropriate synchronization.
   rtc::CritScope cs(&crit_);
   if (local_description_ && IceCredentialsChanged(*local_description_, desc)) {
     IceRole new_ice_role = (action == CA_OFFER) ? ICEROLE_CONTROLLING
@@ -914,11 +908,8 @@ void Transport::OnMessage(rtc::Message* msg) {
     case MSG_WRITESTATE:
       OnChannelWritableState_s();
       break;
-    case MSG_REQUESTSIGNALING: {
-        ChannelParams* params = static_cast<ChannelParams*>(msg->pdata);
-        OnChannelRequestSignaling_s(params->component);
-        delete params;
-      }
+    case MSG_REQUESTSIGNALING:
+      OnChannelRequestSignaling_s();
       break;
     case MSG_CANDIDATEREADY:
       OnChannelCandidateReady_s();
