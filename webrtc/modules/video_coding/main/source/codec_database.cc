@@ -109,7 +109,6 @@ VCMCodecDataBase::VCMCodecDataBase(
       encoder_rate_observer_(encoder_rate_observer),
       ptr_encoder_(NULL),
       ptr_decoder_(NULL),
-      current_dec_is_external_(false),
       dec_map_(),
       dec_external_map_() {
 }
@@ -464,7 +463,6 @@ void VCMCodecDataBase::ResetReceiver() {
     delete (*external_it).second;
     dec_external_map_.erase(external_it);
   }
-  current_dec_is_external_ = false;
 }
 
 bool VCMCodecDataBase::DeregisterExternalDecoder(uint8_t payload_type) {
@@ -540,7 +538,6 @@ bool VCMCodecDataBase::DeregisterReceiveCodec(
   if (receive_codec_.plType == payload_type) {
     // This codec is currently in use.
     memset(&receive_codec_, 0, sizeof(VideoCodec));
-    current_dec_is_external_ = false;
   }
   return true;
 }
@@ -572,8 +569,7 @@ VCMGenericDecoder* VCMCodecDataBase::GetDecoder(
     ptr_decoder_ = NULL;
     memset(&receive_codec_, 0, sizeof(VideoCodec));
   }
-  ptr_decoder_ = CreateAndInitDecoder(payload_type, &receive_codec_,
-                                      &current_dec_is_external_);
+  ptr_decoder_ = CreateAndInitDecoder(payload_type, &receive_codec_);
   if (!ptr_decoder_) {
     return NULL;
   }
@@ -589,17 +585,6 @@ VCMGenericDecoder* VCMCodecDataBase::GetDecoder(
   return ptr_decoder_;
 }
 
-VCMGenericDecoder* VCMCodecDataBase::CreateDecoderCopy() const {
-  if (!ptr_decoder_) {
-    return NULL;
-  }
-  VideoDecoder* decoder_copy = ptr_decoder_->_decoder.Copy();
-  if (!decoder_copy) {
-    return NULL;
-  }
-  return new VCMGenericDecoder(*decoder_copy, ptr_decoder_->External());
-}
-
 void VCMCodecDataBase::ReleaseDecoder(VCMGenericDecoder* decoder) const {
   if (decoder) {
     assert(&decoder->_decoder);
@@ -611,26 +596,12 @@ void VCMCodecDataBase::ReleaseDecoder(VCMGenericDecoder* decoder) const {
   }
 }
 
-void VCMCodecDataBase::CopyDecoder(const VCMGenericDecoder& decoder) {
-  VideoDecoder* decoder_copy = decoder._decoder.Copy();
-  if (decoder_copy) {
-    VCMDecodedFrameCallback* cb = ptr_decoder_->_callback;
-    ReleaseDecoder(ptr_decoder_);
-    ptr_decoder_ = new VCMGenericDecoder(*decoder_copy, decoder.External());
-    if (cb && ptr_decoder_->RegisterDecodeCompleteCallback(cb)) {
-      assert(false);
-    }
-  }
-}
-
 bool VCMCodecDataBase::SupportsRenderScheduling() const {
-  bool render_timing = true;
-  if (current_dec_is_external_) {
-    const VCMExtDecoderMapItem* ext_item = FindExternalDecoderItem(
-        receive_codec_.plType);
-    render_timing = ext_item->internal_render_timing;
-  }
-  return render_timing;
+  const VCMExtDecoderMapItem* ext_item = FindExternalDecoderItem(
+      receive_codec_.plType);
+  if (ext_item == nullptr)
+    return true;
+  return ext_item->internal_render_timing;
 }
 
 bool VCMCodecDataBase::MatchesCurrentResolution(int width, int height) const {
@@ -639,9 +610,7 @@ bool VCMCodecDataBase::MatchesCurrentResolution(int width, int height) const {
 
 VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
     uint8_t payload_type,
-    VideoCodec* new_codec,
-    bool* external) const {
-  assert(external);
+    VideoCodec* new_codec) const {
   assert(new_codec);
   const VCMDecoderMapItem* decoder_item = FindDecoderItem(payload_type);
   if (!decoder_item) {
@@ -656,15 +625,12 @@ VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
     // External codec.
     ptr_decoder = new VCMGenericDecoder(
         *external_dec_item->external_decoder_instance, true);
-    *external = true;
   } else {
     // Create decoder.
     ptr_decoder = CreateDecoder(decoder_item->settings->codecType);
-    *external = false;
   }
-  if (!ptr_decoder) {
+  if (!ptr_decoder)
     return NULL;
-  }
 
   if (ptr_decoder->InitDecode(decoder_item->settings.get(),
                               decoder_item->number_of_cores) < 0) {

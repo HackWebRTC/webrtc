@@ -130,16 +130,9 @@ class VCMCodecDataBase {
   VCMGenericDecoder* GetDecoder(
       uint8_t payload_type, VCMDecodedFrameCallback* decoded_frame_callback);
 
-  // Returns a deep copy of the currently active decoder.
-  VCMGenericDecoder* CreateDecoderCopy() const;
-
   // Deletes the memory of the decoder instance |decoder|. Used to delete
   // deep copies returned by CreateDecoderCopy().
   void ReleaseDecoder(VCMGenericDecoder* decoder) const;
-
-  // Creates a deep copy of |decoder| and replaces the currently used decoder
-  // with it.
-  void CopyDecoder(const VCMGenericDecoder& decoder);
 
   // Returns true if the currently active decoder supports render scheduling,
   // that is, it is able to render frames according to the render timestamp of
@@ -153,8 +146,7 @@ class VCMCodecDataBase {
   typedef std::map<uint8_t, VCMExtDecoderMapItem*> ExternalDecoderMap;
 
   VCMGenericDecoder* CreateAndInitDecoder(uint8_t payload_type,
-                                          VideoCodec* new_codec,
-                                          bool* external) const;
+                                          VideoCodec* new_codec) const;
 
   // Determines whether a new codec has to be created or not.
   // Checks every setting apart from maxFramerate and startBitrate.
@@ -185,7 +177,6 @@ class VCMCodecDataBase {
   VideoEncoderRateObserver* const encoder_rate_observer_;
   VCMGenericEncoder* ptr_encoder_;
   VCMGenericDecoder* ptr_decoder_;
-  bool current_dec_is_external_;
   DecoderMap dec_map_;
   ExternalDecoderMap dec_external_map_;
 };  // VCMCodecDataBase
