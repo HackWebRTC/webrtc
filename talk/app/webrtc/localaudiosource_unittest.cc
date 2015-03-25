@@ -46,6 +46,8 @@ TEST(LocalAudioSourceTest, SetValidOptions) {
   constraints.AddMandatory(MediaConstraintsInterface::kEchoCancellation, false);
   constraints.AddOptional(
       MediaConstraintsInterface::kExperimentalEchoCancellation, true);
+  constraints.AddOptional(
+      MediaConstraintsInterface::kDAEchoCancellation, false);
   constraints.AddOptional(MediaConstraintsInterface::kAutoGainControl, true);
   constraints.AddOptional(
       MediaConstraintsInterface::kExperimentalAutoGainControl, true);
@@ -61,6 +63,8 @@ TEST(LocalAudioSourceTest, SetValidOptions) {
   EXPECT_FALSE(value);
   EXPECT_TRUE(source->options().experimental_aec.Get(&value));
   EXPECT_TRUE(value);
+  EXPECT_TRUE(source->options().delay_agnostic_aec.Get(&value));
+  EXPECT_FALSE(value);
   EXPECT_TRUE(source->options().auto_gain_control.Get(&value));
   EXPECT_TRUE(value);
   EXPECT_TRUE(source->options().experimental_agc.Get(&value));

@@ -250,6 +250,7 @@ static AudioOptions GetDefaultEngineOptions() {
   options.adjust_agc_delta.Set(0);
   options.experimental_agc.Set(false);
   options.experimental_aec.Set(false);
+  options.delay_agnostic_aec.Set(false);
   options.experimental_ns.Set(false);
   options.aec_dump.Set(false);
   return options;
@@ -806,6 +807,19 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   options.experimental_ns.Set(false);
 #endif
 
+  // Delay Agnostic AEC automatically turns on EC if not set except on iOS
+  // where the feature is not supported.
+  bool use_delay_agnostic_aec = false;
+#if !defined(IOS)
+  if (options.delay_agnostic_aec.Get(&use_delay_agnostic_aec)) {
+    if (use_delay_agnostic_aec) {
+      options.echo_cancellation.Set(true);
+      options.experimental_aec.Set(true);
+      ec_mode = webrtc::kEcConference;
+    }
+  }
+#endif
+
   LOG(LS_INFO) << "Applying audio options: " << options.ToString();
 
   webrtc::VoEAudioProcessing* voep = voe_wrapper_->processing();
@@ -818,10 +832,14 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     // in combination with Open SL ES audio.
     const bool built_in_aec = voe_wrapper_->hw()->BuiltInAECIsAvailable();
     if (built_in_aec) {
+      // Enabled built-in EC if the device has one and delay agnostic AEC is not
+      // enabled.
+      const bool enable_built_in_aec = echo_cancellation &
+          !use_delay_agnostic_aec;
       // Set mode of built-in EC according to the audio options.
-      voe_wrapper_->hw()->EnableBuiltInAEC(echo_cancellation);
-      if (echo_cancellation) {
-        // Disable internal software EC if device has its own built-in EC,
+      voe_wrapper_->hw()->EnableBuiltInAEC(enable_built_in_aec);
+      if (enable_built_in_aec) {
+        // Disable internal software EC if built-in EC is enabled,
         // i.e., replace the software EC with the built-in EC.
         options.echo_cancellation.Set(false);
         echo_cancellation = false;
@@ -947,6 +965,14 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   }
 
   webrtc::Config config;
+
+  delay_agnostic_aec_.SetFrom(options.delay_agnostic_aec);
+  bool delay_agnostic_aec;
+  if (delay_agnostic_aec_.Get(&delay_agnostic_aec)) {
+    LOG(LS_INFO) << "Delay agnostic aec is enabled? " << delay_agnostic_aec;
+    config.Set<webrtc::ReportedDelay>(
+        new webrtc::ReportedDelay(!delay_agnostic_aec));
+  }
 
   experimental_aec_.SetFrom(options.experimental_aec);
   bool experimental_aec;

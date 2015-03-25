@@ -2834,6 +2834,33 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_EQ(ec_mode, webrtc::kEcConference);
   EXPECT_EQ(ns_mode, webrtc::kNsHighSuppression);
 
+  // Turn on delay agnostic aec and make sure nothing change w.r.t. echo
+  // control.
+  options.delay_agnostic_aec.Set(true);
+  ASSERT_TRUE(engine_.SetOptions(options));
+  voe_.GetEcStatus(ec_enabled, ec_mode);
+  voe_.GetEcMetricsStatus(ec_metrics_enabled);
+  voe_.GetAecmMode(aecm_mode, cng_enabled);
+  EXPECT_TRUE(ec_enabled);
+  EXPECT_TRUE(ec_metrics_enabled);
+  EXPECT_EQ(ec_mode, webrtc::kEcConference);
+
+  // Turn off echo cancellation and delay agnostic aec.
+  options.delay_agnostic_aec.Set(false);
+  options.experimental_aec.Set(false);
+  options.echo_cancellation.Set(false);
+  ASSERT_TRUE(engine_.SetOptions(options));
+  voe_.GetEcStatus(ec_enabled, ec_mode);
+  EXPECT_FALSE(ec_enabled);
+  // Turning delay agnostic aec back on should also turn on echo cancellation.
+  options.delay_agnostic_aec.Set(true);
+  ASSERT_TRUE(engine_.SetOptions(options));
+  voe_.GetEcStatus(ec_enabled, ec_mode);
+  voe_.GetEcMetricsStatus(ec_metrics_enabled);
+  EXPECT_TRUE(ec_enabled);
+  EXPECT_TRUE(ec_metrics_enabled);
+  EXPECT_EQ(ec_mode, webrtc::kEcConference);
+
   // Turn off AGC
   options.auto_gain_control.Set(false);
   ASSERT_TRUE(engine_.SetOptions(options));
