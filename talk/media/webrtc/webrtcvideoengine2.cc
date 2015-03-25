@@ -86,6 +86,40 @@ static bool ValidateCodecFormats(const std::vector<VideoCodec>& codecs) {
   return true;
 }
 
+static bool ValidateStreamParams(const StreamParams& sp) {
+  if (sp.ssrcs.empty()) {
+    LOG(LS_ERROR) << "No SSRCs in stream parameters: " << sp.ToString();
+    return false;
+  }
+
+  std::vector<uint32> primary_ssrcs;
+  sp.GetPrimarySsrcs(&primary_ssrcs);
+  std::vector<uint32> rtx_ssrcs;
+  sp.GetFidSsrcs(primary_ssrcs, &rtx_ssrcs);
+  for (uint32_t rtx_ssrc : rtx_ssrcs) {
+    bool rtx_ssrc_present = false;
+    for (uint32_t sp_ssrc : sp.ssrcs) {
+      if (sp_ssrc == rtx_ssrc) {
+        rtx_ssrc_present = true;
+        break;
+      }
+    }
+    if (!rtx_ssrc_present) {
+      LOG(LS_ERROR) << "RTX SSRC '" << rtx_ssrc
+                    << "' missing from StreamParams ssrcs: " << sp.ToString();
+      return false;
+    }
+  }
+  if (!rtx_ssrcs.empty() && primary_ssrcs.size() != rtx_ssrcs.size()) {
+    LOG(LS_ERROR)
+        << "RTX SSRCs exist, but don't cover all SSRCs (unsupported): "
+        << sp.ToString();
+    return false;
+  }
+
+  return true;
+}
+
 static std::string RtpExtensionsToString(
     const std::vector<RtpHeaderExtension>& extensions) {
   std::stringstream out;
@@ -799,10 +833,8 @@ bool WebRtcVideoChannel2::SetSend(bool send) {
 
 bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
   LOG(LS_INFO) << "AddSendStream: " << sp.ToString();
-  if (sp.ssrcs.empty()) {
-    LOG(LS_ERROR) << "No SSRCs in stream parameters.";
+  if (!ValidateStreamParams(sp))
     return false;
-  }
 
   uint32 ssrc = sp.first_ssrc();
   assert(ssrc != 0);
@@ -811,17 +843,6 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
   rtc::CritScope stream_lock(&stream_crit_);
   if (send_streams_.find(ssrc) != send_streams_.end()) {
     LOG(LS_ERROR) << "Send stream with SSRC '" << ssrc << "' already exists.";
-    return false;
-  }
-
-  std::vector<uint32> primary_ssrcs;
-  sp.GetPrimarySsrcs(&primary_ssrcs);
-  std::vector<uint32> rtx_ssrcs;
-  sp.GetFidSsrcs(primary_ssrcs, &rtx_ssrcs);
-  if (!rtx_ssrcs.empty() && primary_ssrcs.size() != rtx_ssrcs.size()) {
-    LOG(LS_ERROR)
-        << "RTX SSRCs exist, but don't cover all SSRCs (unsupported): "
-        << sp.ToString();
     return false;
   }
 
@@ -889,8 +910,10 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp) {
 
 bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
                                         bool default_stream) {
-  LOG(LS_INFO) << "AddRecvStream: " << sp.ToString();
-  assert(sp.ssrcs.size() > 0);
+  LOG(LS_INFO) << "AddRecvStream" << (default_stream ? " (default stream)" : "")
+               << ": " << sp.ToString();
+  if (!ValidateStreamParams(sp))
+    return false;
 
   uint32 ssrc = sp.first_ssrc();
   assert(ssrc != 0);  // TODO(pbos): Is this ever valid?

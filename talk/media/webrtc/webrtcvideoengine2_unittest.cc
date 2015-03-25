@@ -2353,37 +2353,26 @@ TEST_F(WebRtcVideoChannel2Test, DefaultReceiveStreamReconfiguresToUseRtx) {
             recv_stream->GetConfig().rtp.rtx.begin()->second.ssrc);
 }
 
+TEST_F(WebRtcVideoChannel2Test, RejectsAddingStreamsWithMissingSsrcsForRtx) {
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+
+  const std::vector<uint32> ssrcs = MAKE_VECTOR(kSsrcs1);
+  const std::vector<uint32> rtx_ssrcs = MAKE_VECTOR(kRtxSsrcs1);
+
+  StreamParams sp =
+      cricket::CreateSimWithRtxStreamParams("cname", ssrcs, rtx_ssrcs);
+  sp.ssrcs = ssrcs;  // Without RTXs, this is the important part.
+
+  EXPECT_FALSE(channel_->AddSendStream(sp));
+  EXPECT_FALSE(channel_->AddRecvStream(sp));
+}
+
 class WebRtcVideoEngine2SimulcastTest : public testing::Test {
  public:
-  WebRtcVideoEngine2SimulcastTest()
-      : engine_(nullptr), engine_codecs_(engine_.codecs()) {
-    assert(!engine_codecs_.empty());
-
-    bool codec_set = false;
-    for (size_t i = 0; i < engine_codecs_.size(); ++i) {
-      if (engine_codecs_[i].name == "red") {
-        default_red_codec_ = engine_codecs_[i];
-      } else if (engine_codecs_[i].name == "ulpfec") {
-        default_ulpfec_codec_ = engine_codecs_[i];
-      } else if (engine_codecs_[i].name == "rtx") {
-        default_rtx_codec_ = engine_codecs_[i];
-      } else if (!codec_set) {
-        default_codec_ = engine_codecs_[i];
-        codec_set = true;
-      }
-    }
-
-    assert(codec_set);
-  }
+  WebRtcVideoEngine2SimulcastTest() : engine_(nullptr) {}
 
  protected:
   WebRtcVideoEngine2 engine_;
-  VideoCodec default_codec_;
-  VideoCodec default_red_codec_;
-  VideoCodec default_ulpfec_codec_;
-  VideoCodec default_rtx_codec_;
-  // TODO(pbos): Remove engine_codecs_ unless used a lot.
-  std::vector<VideoCodec> engine_codecs_;
 };
 
 class WebRtcVideoChannel2SimulcastTest : public WebRtcVideoEngine2SimulcastTest,
