@@ -141,7 +141,8 @@ static NSInteger const kARDAppEngineClientErrorBadResponse = -1;
   NSString *urlString =
       [NSString stringWithFormat:kARDRoomServerLeaveFormat, roomId, clientId];
   NSURL *url = [NSURL URLWithString:urlString];
-  NSURLRequest *request = [NSURLRequest requestWithURL:url];
+  NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+  request.HTTPMethod = @"POST";
   NSURLResponse *response = nil;
   NSError *error = nil;
   // We want a synchronous request so that we know that we've left the room on
