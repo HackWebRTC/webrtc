@@ -14,11 +14,11 @@
 
 #include "webrtc/base/platform_file.h"
 #include "webrtc/common_audio/include/audio_util.h"
+#include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_processing/agc/agc_manager_direct.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/beamformer/nonlinear_beamformer.h"
-#include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/common.h"
 #include "webrtc/modules/audio_processing/echo_cancellation_impl.h"
 #include "webrtc/modules/audio_processing/echo_control_mobile_impl.h"
@@ -134,7 +134,7 @@ AudioProcessing* AudioProcessing::Create(const Config& config) {
 }
 
 AudioProcessing* AudioProcessing::Create(const Config& config,
-                                         NonlinearBeamformer* beamformer) {
+                                         Beamformer<float>* beamformer) {
   AudioProcessingImpl* apm = new AudioProcessingImpl(config, beamformer);
   if (apm->Initialize() != kNoError) {
     delete apm;
@@ -148,7 +148,7 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config)
     : AudioProcessingImpl(config, nullptr) {}
 
 AudioProcessingImpl::AudioProcessingImpl(const Config& config,
-                                         NonlinearBeamformer* beamformer)
+                                         Beamformer<float>* beamformer)
     : echo_cancellation_(NULL),
       echo_control_mobile_(NULL),
       gain_control_(NULL),
@@ -600,7 +600,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
   }
 
   if (beamformer_enabled_) {
-    beamformer_->ProcessChunk(ca->split_data_f(), ca->split_data_f());
+    beamformer_->ProcessChunk(*ca->split_data_f(), ca->split_data_f());
     ca->set_num_channels(1);
   }
 

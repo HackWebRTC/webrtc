@@ -15,7 +15,6 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/beamformer/matrix.h"
 
 namespace webrtc {

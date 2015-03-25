@@ -13,7 +13,6 @@
 
 #include <complex>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/blocker.h"
 #include "webrtc/common_audio/real_fourier.h"

@@ -12,13 +12,13 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_MATRIX_H_
 
 #include <algorithm>
+#include <cstring>
 #include <string>
 #include <vector>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/common_audio/channel_buffer.h"
 
 namespace {
 

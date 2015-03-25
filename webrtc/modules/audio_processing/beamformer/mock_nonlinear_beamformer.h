@@ -21,10 +21,9 @@ namespace webrtc {
 class MockNonlinearBeamformer : public NonlinearBeamformer {
  public:
   explicit MockNonlinearBeamformer(const std::vector<Point>& array_geometry);
-  ~MockNonlinearBeamformer() override;
 
   MOCK_METHOD2(Initialize, void(int chunk_size_ms, int sample_rate_hz));
-  MOCK_METHOD2(ProcessChunk, void(const ChannelBuffer<float>* input,
+  MOCK_METHOD2(ProcessChunk, void(const ChannelBuffer<float>& input,
                                   ChannelBuffer<float>* output));
   MOCK_METHOD0(is_target_present, bool());
 };

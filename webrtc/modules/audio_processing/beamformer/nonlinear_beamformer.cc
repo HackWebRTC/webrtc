@@ -293,32 +293,32 @@ void NonlinearBeamformer::InitInterfCovMats() {
   }
 }
 
-void NonlinearBeamformer::ProcessChunk(const ChannelBuffer<float>* input,
+void NonlinearBeamformer::ProcessChunk(const ChannelBuffer<float>& input,
                               ChannelBuffer<float>* output) {
-  DCHECK_EQ(input->num_channels(), num_input_channels_);
-  DCHECK_EQ(input->num_frames_per_band(), chunk_length_);
+  DCHECK_EQ(input.num_channels(), num_input_channels_);
+  DCHECK_EQ(input.num_frames_per_band(), chunk_length_);
 
   float old_high_pass_mask = high_pass_postfilter_mask_;
-  lapped_transform_->ProcessChunk(input->channels(0), output->channels(0));
+  lapped_transform_->ProcessChunk(input.channels(0), output->channels(0));
   // Ramp up/down for smoothing. 1 mask per 10ms results in audible
   // discontinuities.
   const float ramp_increment =
       (high_pass_postfilter_mask_ - old_high_pass_mask) /
-      input->num_frames_per_band();
+      input.num_frames_per_band();
   // Apply delay and sum and post-filter in the time domain. WARNING: only works
   // because delay-and-sum is not frequency dependent.
-  for (int i = 1; i < input->num_bands(); ++i) {
+  for (int i = 1; i < input.num_bands(); ++i) {
     float smoothed_mask = old_high_pass_mask;
-    for (int j = 0; j < input->num_frames_per_band(); ++j) {
+    for (int j = 0; j < input.num_frames_per_band(); ++j) {
       smoothed_mask += ramp_increment;
 
       // Applying the delay and sum (at zero degrees, this is equivalent to
       // averaging).
       float sum = 0.f;
-      for (int k = 0; k < input->num_channels(); ++k) {
-        sum += input->channels(i)[k][j];
+      for (int k = 0; k < input.num_channels(); ++k) {
+        sum += input.channels(i)[k][j];
       }
-      output->channels(i)[0][j] = sum / input->num_channels() * smoothed_mask;
+      output->channels(i)[0][j] = sum / input.num_channels() * smoothed_mask;
     }
   }
 }

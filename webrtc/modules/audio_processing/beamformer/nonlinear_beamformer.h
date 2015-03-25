@@ -14,8 +14,10 @@
 #include <vector>
 
 #include "webrtc/common_audio/lapped_transform.h"
-#include "webrtc/modules/audio_processing/beamformer/complex_matrix.h"
+#include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/beamformer/array_util.h"
+#include "webrtc/modules/audio_processing/beamformer/beamformer.h"
+#include "webrtc/modules/audio_processing/beamformer/complex_matrix.h"
 
 namespace webrtc {
 
@@ -27,7 +29,9 @@ namespace webrtc {
 // Beamforming Postprocessor" by Bastiaan Kleijn.
 //
 // TODO: Target angle assumed to be 0. Parameterize target angle.
-class NonlinearBeamformer : public LappedTransform::Callback {
+class NonlinearBeamformer
+  : public Beamformer<float>,
+    public LappedTransform::Callback {
  public:
   // At the moment it only accepts uniform linear microphone arrays. Using the
   // first microphone as a reference position [0, 0, 0] is a natural choice.
@@ -35,19 +39,20 @@ class NonlinearBeamformer : public LappedTransform::Callback {
 
   // Sample rate corresponds to the lower band.
   // Needs to be called before the NonlinearBeamformer can be used.
-  virtual void Initialize(int chunk_size_ms, int sample_rate_hz);
+  void Initialize(int chunk_size_ms, int sample_rate_hz) override;
 
   // Process one time-domain chunk of audio. The audio is expected to be split
   // into frequency bands inside the ChannelBuffer. The number of frames and
   // channels must correspond to the constructor parameters. The same
   // ChannelBuffer can be passed in as |input| and |output|.
-  virtual void ProcessChunk(const ChannelBuffer<float>* input,
-                            ChannelBuffer<float>* output);
+  void ProcessChunk(const ChannelBuffer<float>& input,
+                    ChannelBuffer<float>* output) override;
+
   // After processing each block |is_target_present_| is set to true if the
   // target signal es present and to false otherwise. This methods can be called
   // to know if the data is target signal or interference and process it
   // accordingly.
-  virtual bool is_target_present() { return is_target_present_; }
+  bool is_target_present() override { return is_target_present_; }
 
  protected:
   // Process one frequency-domain block of audio. This is where the fun

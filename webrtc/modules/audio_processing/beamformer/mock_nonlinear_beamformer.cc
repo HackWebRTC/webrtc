@@ -19,6 +19,4 @@ MockNonlinearBeamformer::MockNonlinearBeamformer(
     : NonlinearBeamformer(array_geometry) {
 }
 
-MockNonlinearBeamformer::~MockNonlinearBeamformer() {}
-
 }  // namespace webrtc

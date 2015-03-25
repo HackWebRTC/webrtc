@@ -11,19 +11,21 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_PROCESSING_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_PROCESSING_IMPL_H_
 
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-
 #include <list>
 #include <string>
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc {
 
 class AgcManagerDirect;
 class AudioBuffer;
-class NonlinearBeamformer;
+
+template<typename T>
+class Beamformer;
+
 class CriticalSectionWrapper;
 class EchoCancellationImpl;
 class EchoControlMobileImpl;
@@ -86,8 +88,9 @@ class AudioFormat : public AudioRate {
 class AudioProcessingImpl : public AudioProcessing {
  public:
   explicit AudioProcessingImpl(const Config& config);
-  // Only for testing.
-  AudioProcessingImpl(const Config& config, NonlinearBeamformer* beamformer);
+
+  // AudioProcessingImpl takes ownership of beamformer.
+  AudioProcessingImpl(const Config& config, Beamformer<float>* beamformer);
   virtual ~AudioProcessingImpl();
 
   // AudioProcessing methods.
@@ -218,7 +221,7 @@ class AudioProcessingImpl : public AudioProcessing {
   bool transient_suppressor_enabled_;
   rtc::scoped_ptr<TransientSuppressor> transient_suppressor_;
   const bool beamformer_enabled_;
-  rtc::scoped_ptr<NonlinearBeamformer> beamformer_;
+  rtc::scoped_ptr<Beamformer<float>> beamformer_;
   const std::vector<Point> array_geometry_;
 
   const bool supports_48kHz_;
