@@ -10,52 +10,20 @@
 
 package org.webrtc.webrtcdemo;
 
-import org.webrtc.videoengine.ViERenderer;
-import org.webrtc.videoengine.VideoCaptureAndroid;
-
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.hardware.Camera.CameraInfo;
-import android.hardware.Camera;
-import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.os.Environment;
 import android.util.Log;
 import android.view.OrientationEventListener;
-import android.view.SurfaceView;
 import java.io.File;
 
-public class MediaEngine implements VideoDecodeEncodeObserver {
-  // TODO(henrike): Most of these should be moved to xml (since static).
-  private static final int VCM_VP8_PAYLOAD_TYPE = 100;
-  private static final int SEND_CODEC_FPS = 30;
-  // TODO(henrike): increase INIT_BITRATE_KBPS to 2000 and ensure that
-  // 720p30fps can be acheived (on hardware that can handle it). Note that
-  // setting 2000 currently leads to failure, so that has to be resolved first.
-  private static final int INIT_BITRATE_KBPS = 500;
-  private static final int MAX_BITRATE_KBPS = 3000;
+public class MediaEngine {
   private static final String LOG_DIR = "webrtc";
-  private static final int WIDTH_IDX = 0;
-  private static final int HEIGHT_IDX = 1;
-  private static final int[][] RESOLUTIONS = {
-    {176,144}, {320,240}, {352,288}, {640,480}, {1280,720}
-  };
-  // Arbitrary choice of 4/5 volume (204/256).
-  private static final int volumeLevel = 204;
-
-  public static int numberOfResolutions() { return RESOLUTIONS.length; }
-
-  public static String[] resolutionsAsString() {
-    String[] retVal = new String[numberOfResolutions()];
-    for (int i = 0; i < numberOfResolutions(); ++i) {
-      retVal[i] = RESOLUTIONS[i][0] + "x" + RESOLUTIONS[i][1];
-    }
-    return retVal;
-  }
 
   // Checks for and communicate failures to user (logcat and popup).
   private void check(boolean value, String message) {
@@ -78,21 +46,6 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
     alertDialog.show();
   }
 
-  // Converts device rotation to camera rotation. Rotation depends on if the
-  // camera is back facing and rotate with the device or front facing and
-  // rotating in the opposite direction of the device.
-  private static int rotationFromRealWorldUp(CameraInfo info,
-                                             int deviceRotation) {
-    int coarseDeviceOrientation =
-        (int)(Math.round((double)deviceRotation / 90) * 90) % 360;
-    if (info.facing == CameraInfo.CAMERA_FACING_FRONT) {
-      // The front camera rotates in the opposite direction of the
-      // device.
-      int inverseDeviceOrientation = 360 - coarseDeviceOrientation;
-      return (inverseDeviceOrientation + info.orientation) % 360;
-    }
-    return (coarseDeviceOrientation + info.orientation) % 360;
-  }
 
   // Shared Audio/Video members.
   private final Context context;
@@ -119,30 +72,6 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
   private boolean audioRtpDump;
   private boolean apmRecord;
 
-  // Video
-  private VideoEngine vie;
-  private int videoChannel;
-  private boolean receiveVideo;
-  private boolean sendVideo;
-  private boolean vieRunning;
-  private int videoCodecIndex;
-  private int resolutionIndex;
-  private int videoTxPort;
-  private int videoRxPort;
-
-  // Indexed by CameraInfo.CAMERA_FACING_{BACK,FRONT}.
-  private CameraInfo cameras[];
-  private boolean useFrontCamera;
-  private int currentCameraHandle;
-  private boolean enableNack;
-  // openGl, surfaceView or mediaCodec (integers.xml)
-  private int viewSelection;
-  private boolean videoRtpDump;
-
-  private SurfaceView svLocal;
-  private SurfaceView svRemote;
-  MediaCodecVideoDecoder externalCodec;
-
   private int inFps;
   private int inKbps;
   private int outFps;
@@ -150,49 +79,17 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
   private int inWidth;
   private int inHeight;
 
-  private OrientationEventListener orientationListener;
-  private int deviceOrientation = OrientationEventListener.ORIENTATION_UNKNOWN;
-
   public MediaEngine(Context context) {
     this.context = context;
     voe = new VoiceEngine();
     check(voe.init() == 0, "Failed voe Init");
     audioChannel = voe.createChannel();
     check(audioChannel >= 0, "Failed voe CreateChannel");
-    vie = new VideoEngine();
-    check(vie.init() == 0, "Failed voe Init");
-    check(vie.setVoiceEngine(voe) == 0, "Failed setVoiceEngine");
-    videoChannel = vie.createChannel();
     check(audioChannel >= 0, "Failed voe CreateChannel");
-    check(vie.connectAudioChannel(videoChannel, audioChannel) == 0,
-        "Failed ConnectAudioChannel");
 
-    cameras = new CameraInfo[2];
-    CameraInfo info = new CameraInfo();
-    for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
-      Camera.getCameraInfo(i, info);
-      cameras[info.facing] = info;
-    }
-    setDefaultCamera();
     check(voe.setAecmMode(VoiceEngine.AecmModes.SPEAKERPHONE, false) == 0,
         "VoE set Aecm speakerphone mode failed");
-    check(vie.setKeyFrameRequestMethod(videoChannel,
-            VideoEngine.VieKeyFrameRequestMethod.
-            KEY_FRAME_REQUEST_PLI_RTCP) == 0,
-        "Failed setKeyFrameRequestMethod");
-    check(vie.registerObserver(videoChannel, this) == 0,
-        "Failed registerObserver");
 
-    // TODO(hellner): SENSOR_DELAY_NORMAL?
-    // Listen to changes in device orientation.
-    orientationListener =
-        new OrientationEventListener(context, SensorManager.SENSOR_DELAY_UI) {
-          public void onOrientationChanged (int orientation) {
-            deviceOrientation = orientation;
-            compensateRotation();
-          }
-        };
-    orientationListener.enable();
     // Set audio mode to communication
     AudioManager audioManager =
         ((AudioManager) context.getSystemService(Context.AUDIO_SERVICE));
@@ -214,17 +111,6 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
   public void dispose() {
     check(!voeRunning && !voeRunning, "Engines must be stopped before dispose");
     context.unregisterReceiver(headsetListener);
-    orientationListener.disable();
-    check(vie.deregisterObserver(videoChannel) == 0,
-        "Failed deregisterObserver");
-    if (externalCodec != null) {
-      check(vie.deRegisterExternalReceiveCodec(videoChannel,
-              VCM_VP8_PAYLOAD_TYPE) == 0,
-          "Failed to deregister external decoder");
-      externalCodec = null;
-    }
-    check(vie.deleteChannel(videoChannel) == 0, "DeleteChannel");
-    vie.dispose();
     check(voe.deleteChannel(audioChannel) == 0, "VoE delete channel failed");
     voe.dispose();
   }
@@ -233,18 +119,14 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
     if (audioEnabled) {
       startVoE();
     }
-    if (receiveVideo || sendVideo) {
-      startViE();
-    }
   }
 
   public void stop() {
     stopVoe();
-    stopVie();
   }
 
   public boolean isRunning() {
-    return voeRunning || vieRunning;
+    return voeRunning;
   }
 
   public void setRemoteIp(String remoteIp) {
@@ -253,15 +135,6 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
   }
 
   public String remoteIp() { return remoteIp; }
-
-  public void setTrace(boolean enable) {
-    if (enable) {
-      vie.setTraceFile("/sdcard/trace.txt", false);
-      vie.setTraceFilter(VideoEngine.TraceLevel.TRACE_ALL);
-      return;
-    }
-    vie.setTraceFilter(VideoEngine.TraceLevel.TRACE_NONE);
-  }
 
   private String getDebugDirectory() {
     // Should create a folder in /scard/|LOG_DIR|
@@ -412,13 +285,13 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
   public void setIncomingVoeRtpDump(boolean enable) {
     audioRtpDump = enable;
     if (!enable) {
-      check(voe.stopRtpDump(videoChannel,
+      check(voe.stopRtpDump(audioChannel,
               VoiceEngine.RtpDirections.INCOMING) == 0,
           "voe stopping rtp dump");
       return;
     }
     String debugDirectory = getDebugDirectory();
-    check(voe.startRtpDump(videoChannel, debugDirectory +
+    check(voe.startRtpDump(audioChannel, debugDirectory +
             String.format("/voe_%d.rtp", System.currentTimeMillis()),
             VoiceEngine.RtpDirections.INCOMING) == 0,
         "voe starting rtp dump");
@@ -431,122 +304,6 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
     audioManager.setSpeakerphoneOn(useSpeaker);
   }
 
-  public void startViE() {
-    check(!vieRunning, "ViE already started");
-
-    if (receiveVideo) {
-      if (viewSelection ==
-          context.getResources().getInteger(R.integer.openGl)) {
-        svRemote = ViERenderer.CreateRenderer(context, true);
-      } else if (viewSelection ==
-          context.getResources().getInteger(R.integer.surfaceView)) {
-        svRemote = ViERenderer.CreateRenderer(context, false);
-      } else {
-        externalCodec = new MediaCodecVideoDecoder(context);
-        svRemote = externalCodec.getView();
-      }
-      if (externalCodec != null) {
-        check(vie.registerExternalReceiveCodec(videoChannel,
-                VCM_VP8_PAYLOAD_TYPE, externalCodec, true) == 0,
-            "Failed to register external decoder");
-      } else {
-        check(vie.addRenderer(videoChannel, svRemote,
-                0, 0, 0, 1, 1) == 0, "Failed AddRenderer");
-        check(vie.startRender(videoChannel) == 0, "Failed StartRender");
-      }
-      check(vie.startReceive(videoChannel) == 0, "Failed StartReceive");
-    }
-    if (sendVideo) {
-      startCamera();
-      check(vie.startSend(videoChannel) == 0, "Failed StartSend");
-    }
-    vieRunning = true;
-  }
-
-  private void stopVie() {
-    if (!vieRunning) {
-      return;
-    }
-    check(vie.stopSend(videoChannel) == 0, "StopSend");
-    check(vie.stopReceive(videoChannel) == 0, "StopReceive");
-    if (externalCodec != null) {
-      check(vie.deRegisterExternalReceiveCodec(videoChannel,
-              VCM_VP8_PAYLOAD_TYPE) == 0,
-              "Failed to deregister external decoder");
-      externalCodec.dispose();
-      externalCodec = null;
-    } else {
-      check(vie.stopRender(videoChannel) == 0, "StopRender");
-      check(vie.removeRenderer(videoChannel) == 0, "RemoveRenderer");
-    }
-    stopCamera(); // Stop capturer after remote renderer.
-    svRemote = null;
-    vieRunning = false;
-  }
-
-  public void setReceiveVideo(boolean receiveVideo) {
-    this.receiveVideo = receiveVideo;
-  }
-
-  public boolean receiveVideo() { return receiveVideo; }
-
-  public void setSendVideo(boolean sendVideo) { this.sendVideo = sendVideo; }
-
-  public boolean sendVideo() { return sendVideo; }
-
-  public int videoCodecIndex() { return videoCodecIndex; }
-
-  public void setVideoCodec(int codecNumber) {
-    videoCodecIndex = codecNumber;
-    updateVideoCodec();
-  }
-
-  public String[] videoCodecsAsString() {
-    String[] retVal = new String[vie.numberOfCodecs()];
-    for (int i = 0; i < vie.numberOfCodecs(); ++i) {
-      VideoCodecInst codec = vie.getCodec(i);
-      retVal[i] = codec.toString();
-      codec.dispose();
-    }
-    return retVal;
-  }
-
-  public int resolutionIndex() { return resolutionIndex; }
-
-  public void setResolutionIndex(int resolution) {
-    resolutionIndex = resolution;
-    updateVideoCodec();
-  }
-
-  private void updateVideoCodec() {
-    VideoCodecInst codec = getVideoCodec(videoCodecIndex, resolutionIndex);
-    check(vie.setSendCodec(videoChannel, codec) == 0, "Failed setReceiveCodec");
-    codec.dispose();
-  }
-
-  private VideoCodecInst getVideoCodec(int codecNumber, int resolution) {
-    VideoCodecInst retVal = vie.getCodec(codecNumber);
-    retVal.setStartBitRate(INIT_BITRATE_KBPS);
-    retVal.setMaxBitRate(MAX_BITRATE_KBPS);
-    retVal.setWidth(RESOLUTIONS[resolution][WIDTH_IDX]);
-    retVal.setHeight(RESOLUTIONS[resolution][HEIGHT_IDX]);
-    retVal.setMaxFrameRate(SEND_CODEC_FPS);
-    return retVal;
-  }
-
-  public void setVideoRxPort(int videoRxPort) {
-    this.videoRxPort = videoRxPort;
-    check(vie.setLocalReceiver(videoChannel, videoRxPort) == 0,
-        "Failed setLocalReceiver");
-  }
-
-  public int videoRxPort() { return videoRxPort; }
-
-  public void setVideoTxPort(int videoTxPort) {
-    this.videoTxPort = videoTxPort;
-    UpdateSendDestination();
-  }
-
   private void UpdateSendDestination() {
     if (remoteIp == null) {
       return;
@@ -555,195 +312,10 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
       check(voe.setSendDestination(audioChannel, audioTxPort,
               remoteIp) == 0, "VoE set send destination failed");
     }
-    if (videoTxPort != 0) {
-      check(vie.setSendDestination(videoChannel, videoTxPort, remoteIp) == 0,
-          "Failed setSendDestination");
-    }
-
-    // Setting localSSRC manually (arbitrary value) for loopback test,
-    // As otherwise we will get a clash and a new SSRC will be set,
-    // Which will reset the receiver and other minor issues.
-    if (remoteIp.equals("127.0.0.1")) {
-      check(vie.setLocalSSRC(videoChannel, 0x01234567) == 0,
-           "Failed setLocalSSRC");
-    }
-  }
-
-  public int videoTxPort() {
-    return videoTxPort;
-  }
-
-  public boolean hasMultipleCameras() {
-    return Camera.getNumberOfCameras() > 1;
-  }
-
-  public boolean frontCameraIsSet() {
-    return useFrontCamera;
-  }
-
-  // Set default camera to front if there is a front camera.
-  private void setDefaultCamera() {
-    useFrontCamera = hasFrontCamera();
-  }
-
-  public void toggleCamera() {
-    if (vieRunning) {
-      stopCamera();
-    }
-    useFrontCamera = !useFrontCamera;
-    if (vieRunning) {
-      startCamera();
-    }
-  }
-
-  private void startCamera() {
-    CameraDesc cameraInfo = vie.getCaptureDevice(getCameraId(getCameraIndex()));
-    currentCameraHandle = vie.allocateCaptureDevice(cameraInfo);
-    cameraInfo.dispose();
-    check(vie.connectCaptureDevice(currentCameraHandle, videoChannel) == 0,
-        "Failed to connect capture device");
-    // Camera and preview surface.
-    svLocal = new SurfaceView(context);
-    VideoCaptureAndroid.setLocalPreview(svLocal.getHolder());
-    check(vie.startCapture(currentCameraHandle) == 0, "Failed StartCapture");
-    compensateRotation();
-  }
-
-  private void stopCamera() {
-    check(vie.stopCapture(currentCameraHandle) == 0, "Failed StopCapture");
-    svLocal = null;
-    check(vie.disconnectCaptureDevice(videoChannel) == 0,
-        "Failed to disconnect capture device");
-    check(vie.releaseCaptureDevice(currentCameraHandle) == 0,
-        "Failed ReleaseCaptureDevice");
-  }
-
-  private boolean hasFrontCamera() {
-    return cameras[CameraInfo.CAMERA_FACING_FRONT] != null;
-  }
-
-  public SurfaceView getRemoteSurfaceView() {
-    return svRemote;
-  }
-
-  public SurfaceView getLocalSurfaceView() {
-    return svLocal;
-  }
-
-  public void setViewSelection(int viewSelection) {
-    this.viewSelection = viewSelection;
-  }
-
-  public int viewSelection() { return viewSelection; }
-
-  public boolean nackEnabled() { return enableNack; }
-
-  public void setNack(boolean enable) {
-    enableNack = enable;
-    check(vie.setNackStatus(videoChannel, enableNack) == 0,
-        "Failed setNackStatus");
-  }
-
-  // Collates current state into a multiline string.
-  public String sendReceiveState() {
-    int packetLoss = 0;
-    if (vieRunning) {
-      RtcpStatistics stats = vie.getReceivedRtcpStatistics(videoChannel);
-      if (stats != null) {
-        // Calculate % lost from fraction lost.
-        // Definition of fraction lost can be found in RFC3550.
-        packetLoss = (stats.fractionLost * 100) >> 8;
-      }
-    }
-    String retVal =
-        "fps in/out: " + inFps + "/" + outFps + "\n" +
-        "kBps in/out: " + inKbps / 1024 + "/ " + outKbps / 1024 + "\n" +
-        "resolution: " + inWidth + "x" + inHeight + "\n" +
-        "loss: " + packetLoss + "%";
-    return retVal;
   }
 
   MediaEngineObserver observer;
   public void setObserver(MediaEngineObserver observer) {
     this.observer = observer;
-  }
-
-  // Callbacks from the VideoDecodeEncodeObserver interface.
-  public void incomingRate(int videoChannel, int framerate, int bitrate) {
-    inFps = framerate;
-    inKbps = bitrate;
-    newStats();
-  }
-
-  public void incomingCodecChanged(int videoChannel,
-      VideoCodecInst videoCodec) {
-    inWidth = videoCodec.width();
-    inHeight = videoCodec.height();
-    videoCodec.dispose();
-    newStats();
-  }
-
-  public void requestNewKeyFrame(int videoChannel) {}
-
-  public void outgoingRate(int videoChannel, int framerate, int bitrate) {
-    outFps = framerate;
-    outKbps = bitrate;
-    newStats();
-  }
-
-  private void newStats() {
-    if (observer != null) {
-      observer.newStats(sendReceiveState());
-    }
-  }
-
-  // Debug helpers.
-  public boolean videoRtpDump() { return videoRtpDump; }
-
-  public void setIncomingVieRtpDump(boolean enable) {
-    videoRtpDump = enable;
-    if (!enable) {
-      check(vie.stopRtpDump(videoChannel,
-              VideoEngine.RtpDirections.INCOMING) == 0,
-          "vie StopRTPDump");
-      return;
-    }
-    String debugDirectory = getDebugDirectory();
-    check(vie.startRtpDump(videoChannel, debugDirectory +
-            String.format("/vie_%d.rtp", System.currentTimeMillis()),
-            VideoEngine.RtpDirections.INCOMING) == 0,
-        "vie StartRtpDump");
-  }
-
-  private int getCameraIndex() {
-    return useFrontCamera ? Camera.CameraInfo.CAMERA_FACING_FRONT :
-        Camera.CameraInfo.CAMERA_FACING_BACK;
-  }
-
-  private int getCameraId(int index) {
-    for (int i = Camera.getNumberOfCameras() - 1; i >= 0; --i) {
-      CameraInfo info = new CameraInfo();
-      Camera.getCameraInfo(i, info);
-      if (index == info.facing) {
-        return i;
-      }
-    }
-    throw new RuntimeException("Index does not match a camera");
-  }
-
-  private void compensateRotation() {
-    if (svLocal == null) {
-      // Not rendering (or sending).
-      return;
-    }
-    if (deviceOrientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
-      return;
-    }
-    int cameraRotation = rotationFromRealWorldUp(
-        cameras[getCameraIndex()], deviceOrientation);
-    // Egress streams should have real world up as up.
-    check(vie.setVideoRotations(currentCameraHandle, cameraRotation) == 0,
-            "Failed setVideoRotations: camera " + currentCameraHandle +
-            "rotation " + cameraRotation);
   }
 }

@@ -30,19 +30,12 @@ public class MainMenuFragment extends Fragment implements MediaEngineObserver {
   private Button btStartStopCall;
   private TextView tvStats;
 
-  // Remote and local stream displays.
-  private LinearLayout llRemoteSurface;
-  private LinearLayout llLocalSurface;
-
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container,
       Bundle savedInstanceState) {
     View v = inflater.inflate(R.layout.mainmenu, container, false);
 
     TAG = getResources().getString(R.string.tag);
-
-    llRemoteSurface = (LinearLayout) v.findViewById(R.id.llRemoteView);
-    llLocalSurface = (LinearLayout) v.findViewById(R.id.llLocalView);
 
     Button btStats = (Button) v.findViewById(R.id.btStats);
     boolean stats = getResources().getBoolean(R.bool.stats_enabled_default);
@@ -55,20 +48,6 @@ public class MainMenuFragment extends Fragment implements MediaEngineObserver {
         }
     });
     tvStats = (TextView) v.findViewById(R.id.tvStats);
-
-    Button btSwitchCamera = (Button) v.findViewById(R.id.btSwitchCamera);
-    if (getEngine().hasMultipleCameras()) {
-      btSwitchCamera.setOnClickListener(new View.OnClickListener() {
-        public void onClick(View button) {
-          toggleCamera((Button) button);
-        }
-        });
-    } else {
-      btSwitchCamera.setEnabled(false);
-    }
-    btSwitchCamera.setText(getEngine().frontCameraIsSet() ?
-        R.string.backCamera :
-        R.string.frontCamera);
 
     btStartStopCall = (Button) v.findViewById(R.id.btStartStopCall);
     btStartStopCall.setText(getEngine().isRunning() ?
@@ -109,28 +88,6 @@ public class MainMenuFragment extends Fragment implements MediaEngineObserver {
     return stateProvider.getEngine();
   }
 
-  private void setViews() {
-    SurfaceView remoteSurfaceView = getEngine().getRemoteSurfaceView();
-    if (remoteSurfaceView != null) {
-      llRemoteSurface.addView(remoteSurfaceView);
-    }
-    SurfaceView svLocal = getEngine().getLocalSurfaceView();
-    if (svLocal != null) {
-      llLocalSurface.addView(svLocal);
-    }
-  }
-
-  private void clearViews() {
-    SurfaceView remoteSurfaceView = getEngine().getRemoteSurfaceView();
-    if (remoteSurfaceView != null) {
-      llRemoteSurface.removeView(remoteSurfaceView);
-    }
-    SurfaceView svLocal = getEngine().getLocalSurfaceView();
-    if (svLocal != null) {
-      llLocalSurface.removeView(svLocal);
-    }
-  }
-
   private void enableStats(Button btStats, boolean enable) {
     if (enable) {
       getEngine().setObserver(this);
@@ -144,21 +101,6 @@ public class MainMenuFragment extends Fragment implements MediaEngineObserver {
     btStats.setText(enable ? R.string.statsOff : R.string.statsOn);
   }
 
-  private void toggleCamera(Button btSwitchCamera) {
-    SurfaceView svLocal = getEngine().getLocalSurfaceView();
-    boolean resetLocalView = svLocal != null;
-    if (resetLocalView) {
-      llLocalSurface.removeView(svLocal);
-    }
-    getEngine().toggleCamera();
-    if (resetLocalView) {
-      svLocal = getEngine().getLocalSurfaceView();
-      llLocalSurface.addView(svLocal);
-    }
-    btSwitchCamera.setText(getEngine().frontCameraIsSet() ?
-        R.string.backCamera :
-        R.string.frontCamera);
-  }
 
   public void toggleStart() {
     if (getEngine().isRunning()) {
@@ -172,12 +114,10 @@ public class MainMenuFragment extends Fragment implements MediaEngineObserver {
   }
 
   public void stopAll() {
-    clearViews();
     getEngine().stop();
   }
 
   private void startCall() {
     getEngine().start();
-    setViews();
   }
 }

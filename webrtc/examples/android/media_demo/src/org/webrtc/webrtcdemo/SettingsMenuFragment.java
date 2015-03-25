@@ -41,24 +41,6 @@ public class SettingsMenuFragment extends Fragment
 
     TAG = getResources().getString(R.string.tag);
 
-    CheckBox cbVideoReceive = (CheckBox) v.findViewById(R.id.cbVideoReceive);
-    cbVideoReceive.setChecked(getEngine().receiveVideo());
-    cbVideoReceive.setOnClickListener(new View.OnClickListener() {
-        public void onClick(View checkBox) {
-          CheckBox cbVideoReceive = (CheckBox) checkBox;
-          getEngine().setReceiveVideo(cbVideoReceive.isChecked());
-          cbVideoReceive.setChecked(getEngine().receiveVideo());
-        }
-      });
-    CheckBox cbVideoSend = (CheckBox) v.findViewById(R.id.cbVideoSend);
-    cbVideoSend.setChecked(getEngine().sendVideo());
-    cbVideoSend.setOnClickListener(new View.OnClickListener() {
-        public void onClick(View checkBox) {
-          CheckBox cbVideoSend = (CheckBox) checkBox;
-          getEngine().setSendVideo(cbVideoSend.isChecked());
-          cbVideoSend.setChecked(getEngine().sendVideo());
-        }
-      });
     CheckBox cbAudio = (CheckBox) v.findViewById(R.id.cbAudio);
     cbAudio.setChecked(getEngine().audioEnabled());
     cbAudio.setOnClickListener(new View.OnClickListener() {
@@ -87,19 +69,6 @@ public class SettingsMenuFragment extends Fragment
       });
     // Has to be after remote IP as loopback changes it.
     loopbackChanged(cbLoopback);
-    RadioGroup rRenderMechanism =
-        (RadioGroup) v.findViewById(R.id.rRenderMechanism);
-    rRenderMechanism.clearCheck();
-    if (getEngine().viewSelection() ==
-        getResources().getInteger(R.integer.openGl)) {
-      rRenderMechanism.check(R.id.rOpenGl);
-    } else if (getEngine().viewSelection() ==
-        getResources().getInteger(R.integer.surfaceView)) {
-      rRenderMechanism.check(R.id.rSurfaceView);
-    } else {
-      rRenderMechanism.check(R.id.rMediaCodec);
-    }
-    rRenderMechanism.setOnCheckedChangeListener(this);
     return v;
   }
 
@@ -154,22 +123,7 @@ public class SettingsMenuFragment extends Fragment
     return stateProvider.getEngine();
   }
 
+  @Override
   public void onCheckedChanged(RadioGroup group, int checkedId) {
-    switch (checkedId) {
-      case R.id.rOpenGl:
-        getEngine().setViewSelection(
-            getResources().getInteger(R.integer.openGl));
-        break;
-      case R.id.rSurfaceView:
-        getEngine().setViewSelection(
-            getResources().getInteger(R.integer.surfaceView));
-        break;
-      case R.id.rMediaCodec:
-        getEngine().setViewSelection(
-            getResources().getInteger(R.integer.mediaCodec));
-        break;
-      default:
-        break;
-    }
   }
 }

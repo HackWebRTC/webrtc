@@ -1,4 +1,4 @@
-This directory contains a sample app for sending and receiving video and audio
+This directory contains a sample app for sending and receiving audio
 on Android. It further lets you enable and disable some call quality
 enhancements such as echo cancellation, noise suppression etc.
 

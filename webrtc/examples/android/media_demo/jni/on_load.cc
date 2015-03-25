@@ -13,10 +13,7 @@
 #include <assert.h>
 
 #include "webrtc/examples/android/media_demo/jni/jni_helpers.h"
-#include "webrtc/examples/android/media_demo/jni/video_engine_jni.h"
 #include "webrtc/examples/android/media_demo/jni/voice_engine_jni.h"
-#include "webrtc/modules/video_capture/video_capture_internal.h"
-#include "webrtc/modules/video_render/video_render_internal.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 
 // Macro for native functions that can be found by way of jni-auto discovery.
@@ -38,11 +35,6 @@ JOWW(void, NativeWebRtcContextRegistry_register)(
     jclass,
     jobject context) {
   webrtc_examples::SetVoeDeviceObjects(g_vm);
-  webrtc_examples::SetVieDeviceObjects(g_vm);
-  CHECK(webrtc::SetCaptureAndroidVM(g_vm, context) == 0,
-        "Failed to register android objects to video capture");
-  CHECK(webrtc::SetRenderAndroidVM(g_vm) == 0,
-        "Failed to register android objects to video render");
   CHECK(webrtc::VoiceEngine::SetAndroidObjects(g_vm, context) == 0,
         "Failed to register android objects to voice engine");
 }
@@ -50,12 +42,7 @@ JOWW(void, NativeWebRtcContextRegistry_register)(
 JOWW(void, NativeWebRtcContextRegistry_unRegister)(
     JNIEnv* jni,
     jclass) {
-  CHECK(webrtc::SetCaptureAndroidVM(NULL, NULL) == 0,
-        "Failed to unregister android objects from video capture");
-  CHECK(webrtc::SetRenderAndroidVM(NULL) == 0,
-        "Failed to unregister android objects from video render");
   CHECK(webrtc::VoiceEngine::SetAndroidObjects(NULL, NULL) == 0,
         "Failed to unregister android objects from voice engine");
-  webrtc_examples::ClearVieDeviceObjects();
   webrtc_examples::ClearVoeDeviceObjects();
 }

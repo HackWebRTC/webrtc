@@ -13,16 +13,6 @@
   <LinearLayout android:orientation="horizontal"
                 android:layout_height="wrap_content"
                 android:layout_width="fill_parent">
-    <CheckBox android:id="@+id/cbVideoReceive"
-              android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:text="@string/enableVideoReceive">
-    </CheckBox>
-    <CheckBox android:id="@+id/cbVideoSend"
-              android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:text="@string/enableVideoSend">
-    </CheckBox>
     <CheckBox android:id="@+id/cbAudio"
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
@@ -43,29 +33,4 @@
             android:layout_width="fill_parent"
             android:imeOptions="actionDone">
   </EditText>
-  <LinearLayout android:orientation="horizontal"
-                android:layout_height="wrap_content"
-                android:layout_width="fill_parent">
-    <RadioGroup android:id="@+id/rRenderMechanism"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-      <RadioButton android:id="@+id/rOpenGl"
-                   android:layout_width="wrap_content"
-                   android:layout_height="wrap_content"
-                   android:text="OpenGL"
-                   android:checked="true"
-                   android:textColor="#fff"/>
-      <RadioButton android:id="@+id/rSurfaceView"
-                   android:layout_width="wrap_content"
-                   android:layout_height="wrap_content"
-                   android:text="SurfaceView"
-                   android:textColor="#fff" />
-      <RadioButton android:id="@+id/rMediaCodec"
-                   android:layout_width="wrap_content"
-                   android:layout_height="wrap_content"
-                   android:text="Android:MediaCodec"
-                   android:textColor="#fff" />
-    </RadioGroup>
-  </LinearLayout>
 </LinearLayout>

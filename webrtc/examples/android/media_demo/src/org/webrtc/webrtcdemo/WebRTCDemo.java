@@ -94,8 +94,6 @@ public class WebRTCDemo extends Activity implements MenuStateProvider {
     // Load all settings dictated in xml.
     mediaEngine = new MediaEngine(this);
     mediaEngine.setRemoteIp(getResources().getString(R.string.loopbackIp));
-    mediaEngine.setTrace(getResources().getBoolean(
-        R.bool.trace_enabled_default));
 
     mediaEngine.setAudio(getResources().getBoolean(
         R.bool.audio_enabled_default));
@@ -108,22 +106,6 @@ public class WebRTCDemo extends Activity implements MenuStateProvider {
         R.bool.speaker_enabled_default));
     mediaEngine.setDebuging(getResources().getBoolean(
         R.bool.apm_debug_enabled_default));
-
-    mediaEngine.setReceiveVideo(getResources().getBoolean(
-        R.bool.video_receive_enabled_default));
-    mediaEngine.setSendVideo(getResources().getBoolean(
-        R.bool.video_send_enabled_default));
-    mediaEngine.setVideoCodec(getResources().getInteger(
-        R.integer.video_codec_default));
-    // TODO(hellner): resolutions should probably be in the xml as well.
-    mediaEngine.setResolutionIndex(MediaEngine.numberOfResolutions() - 2);
-    mediaEngine.setVideoTxPort(getResources().getInteger(
-        R.integer.vTxPortDefault));
-    mediaEngine.setVideoRxPort(getResources().getInteger(
-        R.integer.vRxPortDefault));
-    mediaEngine.setNack(getResources().getBoolean(R.bool.nack_enabled_default));
-    mediaEngine.setViewSelection(getResources().getInteger(
-        R.integer.defaultView));
 
     // Create action bar with all tabs.
     ActionBar actionBar = getActionBar();
@@ -140,12 +122,6 @@ public class WebRTCDemo extends Activity implements MenuStateProvider {
         .setText("Settings")
         .setTabListener(new TabListener<SettingsMenuFragment>(
             this, "Settings", SettingsMenuFragment.class));
-    actionBar.addTab(tab);
-
-    tab = actionBar.newTab()
-        .setText("Video")
-        .setTabListener(new TabListener<VideoMenuFragment>(
-            this, "video", VideoMenuFragment.class));
     actionBar.addTab(tab);
 
     tab = actionBar.newTab()
