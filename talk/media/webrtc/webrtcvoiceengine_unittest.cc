@@ -1479,6 +1479,41 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsBitrate) {
   EXPECT_EQ(32000, gcodec.rate);
 }
 
+// Test that we could set packet size specified in kCodecParamPTime.
+TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsPTimeAsPacketSize) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kOpusCodec);
+  codecs[0].SetParam(cricket::kCodecParamPTime, 40);  // Value within range.
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  webrtc::CodecInst gcodec;
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(1920, gcodec.pacsize);  // Opus gets 40ms.
+
+  codecs[0].SetParam(cricket::kCodecParamPTime, 5);  // Value below range.
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(480, gcodec.pacsize);  // Opus gets 10ms.
+
+  codecs[0].SetParam(cricket::kCodecParamPTime, 80);  // Value beyond range.
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(2880, gcodec.pacsize);  // Opus gets 60ms.
+
+  codecs[0] = kIsacCodec;  // Also try Isac, and with unsupported size.
+  codecs[0].SetParam(cricket::kCodecParamPTime, 40);  // Value within range.
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(480, gcodec.pacsize);  // Isac gets 30ms as the next smallest value.
+
+  codecs[0] = kG722CodecSdp;  // Try G722 @8kHz as negotiated in SDP.
+  codecs[0].SetParam(cricket::kCodecParamPTime, 40);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(640, gcodec.pacsize);  // G722 gets 40ms @16kHz as defined in VoE.
+}
+
 // Test that we fail if no codecs are specified.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsNoCodecs) {
   EXPECT_TRUE(SetupEngine());
@@ -1613,7 +1648,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNNoMatch) {
   EXPECT_STREQ("PCMU", gcodec.plname);
   EXPECT_TRUE(voe_.GetVAD(channel_num));
   EXPECT_EQ(13, voe_.GetSendCNPayloadType(channel_num, false));
-   // Set ISAC(16K) and CN(8K). VAD should not be activated.
+  // Set ISAC(16K) and CN(8K). VAD should not be activated.
   codecs[0] = kIsacCodec;
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));

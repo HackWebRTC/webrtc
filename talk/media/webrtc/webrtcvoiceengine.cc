@@ -60,29 +60,31 @@
 
 namespace cricket {
 
+static const int kMaxNumPacketSize = 6;
 struct CodecPref {
   const char* name;
   int clockrate;
   int channels;
   int payload_type;
   bool is_multi_rate;
+  int packet_sizes_ms[kMaxNumPacketSize];
 };
-
+// Note: keep the supported packet sizes in ascending order.
 static const CodecPref kCodecPrefs[] = {
-  { "OPUS",   48000,  2, 111, true },
-  { "ISAC",   16000,  1, 103, true },
-  { "ISAC",   32000,  1, 104, true },
+  { kOpusCodecName,   48000, 2, 111, true,  { 10, 20, 40, 60 } },
+  { kIsacCodecName,   16000, 1, 103, true,  { 30, 60 } },
+  { kIsacCodecName,   32000, 1, 104, true,  { 30 } },
   // G722 should be advertised as 8000 Hz because of the RFC "bug".
-  { "G722",   8000,   1, 9,   false },
-  { "ILBC",   8000,   1, 102, false },
-  { "PCMU",   8000,   1, 0,   false },
-  { "PCMA",   8000,   1, 8,   false },
-  { "CN",     48000,  1, 107, false },
-  { "CN",     32000,  1, 106, false },
-  { "CN",     16000,  1, 105, false },
-  { "CN",     8000,   1, 13,  false },
-  { "red",    8000,   1, 127, false },
-  { "telephone-event", 8000, 1, 126, false },
+  { kG722CodecName,   8000,  1, 9,   false, { 10, 20, 30, 40, 50, 60 } },
+  { kIlbcCodecName,   8000,  1, 102, false, { 20, 30, 40, 60 } },
+  { kPcmuCodecName,   8000,  1, 0,   false, { 10, 20, 30, 40, 50, 60 } },
+  { kPcmaCodecName,   8000,  1, 8,   false, { 10, 20, 30, 40, 50, 60 } },
+  { kCnCodecName,     48000, 1, 107, false, { } },
+  { kCnCodecName,     32000, 1, 106, false, { } },
+  { kCnCodecName,     16000, 1, 105, false, { } },
+  { kCnCodecName,     8000,  1, 13,  false, { } },
+  { kRedCodecName,    8000,  1, 127, false, { } },
+  { kDtmfCodecName,   8000,  1, 126, false, { } },
 };
 
 // For Linux/Mac, using the default device is done by specifying index 0 for
@@ -106,10 +108,6 @@ static const int kDefaultSoundclipDeviceId = -2;
 #else
 static const int kDefaultAudioDeviceId = 0;
 #endif
-
-static const char kIsacCodecName[] = "ISAC";
-static const char kL16CodecName[] = "L16";
-static const char kG722CodecName[] = "G722";
 
 // Parameter used for NACK.
 // This value is equivalent to 5 seconds of audio data at 20 ms per packet.
@@ -235,6 +233,35 @@ static bool IsNackEnabled(const AudioCodec& codec) {
                                               kParamValueEmpty));
 }
 
+static int SelectPacketSize(const CodecPref& codec_pref, int ptime_ms) {
+  int selected_packet_size_ms = codec_pref.packet_sizes_ms[0];
+  for (int packet_size_ms : codec_pref.packet_sizes_ms) {
+    if (packet_size_ms && packet_size_ms <= ptime_ms) {
+      selected_packet_size_ms = packet_size_ms;
+    }
+  }
+  return selected_packet_size_ms;
+}
+
+// If the AudioCodec param kCodecParamPTime is set, then we will set it to codec
+// pacsize if it's valid, or we will pick the next smallest value we support.
+// TODO(Brave): Query supported packet sizes from ACM when the API is ready.
+static bool SetPTimeAsPacketSize(webrtc::CodecInst* codec, int ptime_ms) {
+  for (const CodecPref& codec_pref : kCodecPrefs) {
+    if ((_stricmp(codec_pref.name, codec->plname) == 0 &&
+        codec_pref.clockrate == codec->plfreq) ||
+        _stricmp(codec_pref.name, kG722CodecName) == 0) {
+      int packet_size_ms = SelectPacketSize(codec_pref, ptime_ms);
+      if (packet_size_ms) {
+        // Convert unit from milli-seconds to samples.
+        codec->pacsize = (codec->plfreq / 1000) * packet_size_ms;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 // Gets the default set of options applied to the engine. Historically, these
 // were supplied as a combination of flags from the channel manager (ec, agc,
 // ns, and highpass) and the rest hardcoded in InitInternal.
@@ -254,6 +281,102 @@ static AudioOptions GetDefaultEngineOptions() {
   options.experimental_ns.Set(false);
   options.aec_dump.Set(false);
   return options;
+}
+
+static bool IsOpus(const AudioCodec& codec) {
+  return (_stricmp(codec.name.c_str(), kOpusCodecName) == 0);
+}
+
+static bool IsIsac(const AudioCodec& codec) {
+  return (_stricmp(codec.name.c_str(), kIsacCodecName) == 0);
+}
+
+// True if params["stereo"] == "1"
+static bool IsOpusStereoEnabled(const AudioCodec& codec) {
+  int value;
+  return codec.GetParam(kCodecParamStereo, &value) && value == 1;
+}
+
+// Use params[kCodecParamMaxAverageBitrate] if it is defined, use codec.bitrate
+// otherwise. If the value (either from params or codec.bitrate) <=0, use the
+// default configuration. If the value is beyond feasible bit rate of Opus,
+// clamp it. Returns the Opus bit rate for operation.
+static int GetOpusBitrate(const AudioCodec& codec, int max_playback_rate) {
+  int bitrate = 0;
+  bool use_param = true;
+  if (!codec.GetParam(kCodecParamMaxAverageBitrate, &bitrate)) {
+    bitrate = codec.bitrate;
+    use_param = false;
+  }
+  if (bitrate <= 0) {
+    if (max_playback_rate <= 8000) {
+      bitrate = kOpusBitrateNb;
+    }
+    else if (max_playback_rate <= 16000) {
+      bitrate = kOpusBitrateWb;
+    }
+    else {
+      bitrate = kOpusBitrateFb;
+    }
+
+    if (IsOpusStereoEnabled(codec)) {
+      bitrate *= 2;
+    }
+  }
+  else if (bitrate < kOpusMinBitrate || bitrate > kOpusMaxBitrate) {
+    bitrate = (bitrate < kOpusMinBitrate) ? kOpusMinBitrate : kOpusMaxBitrate;
+    std::string rate_source =
+        use_param ? "Codec parameter \"maxaveragebitrate\"" :
+        "Supplied Opus bitrate";
+    LOG(LS_WARNING) << rate_source
+                    << " is invalid and is replaced by: "
+                    << bitrate;
+  }
+  return bitrate;
+}
+
+// Return true if params[kCodecParamUseInbandFec] == "1", false
+// otherwise.
+static bool IsOpusFecEnabled(const AudioCodec& codec) {
+  int value;
+  return codec.GetParam(kCodecParamUseInbandFec, &value) && value == 1;
+}
+
+// Returns kOpusDefaultPlaybackRate if params[kCodecParamMaxPlaybackRate] is not
+// defined. Returns the value of params[kCodecParamMaxPlaybackRate] otherwise.
+static int GetOpusMaxPlaybackRate(const AudioCodec& codec) {
+  int value;
+  if (codec.GetParam(kCodecParamMaxPlaybackRate, &value)) {
+    return value;
+  }
+  return kOpusDefaultMaxPlaybackRate;
+}
+
+static void GetOpusConfig(const AudioCodec& codec, webrtc::CodecInst* voe_codec,
+  bool* enable_codec_fec, int* max_playback_rate) {
+  *enable_codec_fec = IsOpusFecEnabled(codec);
+  *max_playback_rate = GetOpusMaxPlaybackRate(codec);
+
+  // If OPUS, change what we send according to the "stereo" codec
+  // parameter, and not the "channels" parameter.  We set
+  // voe_codec.channels to 2 if "stereo=1" and 1 otherwise.  If
+  // the bitrate is not specified, i.e. is <= zero, we set it to the
+  // appropriate default value for mono or stereo Opus.
+
+  voe_codec->channels = IsOpusStereoEnabled(codec) ? 2 : 1;
+  voe_codec->rate = GetOpusBitrate(codec, *max_playback_rate);
+}
+
+// Changes RTP timestamp rate of G722. This is due to the "bug" in the RFC
+// which says that G722 should be advertised as 8 kHz although it is a 16 kHz
+// codec.
+static void MaybeFixupG722(webrtc::CodecInst* voe_codec, int new_plfreq) {
+  if (_stricmp(voe_codec->plname, kG722CodecName) == 0) {
+    // If the ASSERT triggers, the codec definition in WebRTC VoiceEngine
+    // has changed, and this special case is no longer needed.
+    ASSERT(voe_codec->plfreq != new_plfreq);
+    voe_codec->plfreq = new_plfreq;
+  }
 }
 
 class WebRtcSoundclipMedia : public SoundclipMedia {
@@ -403,99 +526,6 @@ void WebRtcVoiceEngine::Construct() {
       RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
                          kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
   options_ = GetDefaultEngineOptions();
-}
-
-static bool IsOpus(const AudioCodec& codec) {
-  return (_stricmp(codec.name.c_str(), kOpusCodecName) == 0);
-}
-
-static bool IsIsac(const AudioCodec& codec) {
-  return (_stricmp(codec.name.c_str(), kIsacCodecName) == 0);
-}
-
-// True if params["stereo"] == "1"
-static bool IsOpusStereoEnabled(const AudioCodec& codec) {
-  int value;
-  return codec.GetParam(kCodecParamStereo, &value) && value == 1;
-}
-
-// Use params[kCodecParamMaxAverageBitrate] if it is defined, use codec.bitrate
-// otherwise. If the value (either from params or codec.bitrate) <=0, use the
-// default configuration. If the value is beyond feasible bit rate of Opus,
-// clamp it. Returns the Opus bit rate for operation.
-static int GetOpusBitrate(const AudioCodec& codec, int max_playback_rate) {
-  int bitrate = 0;
-  bool use_param = true;
-  if (!codec.GetParam(kCodecParamMaxAverageBitrate, &bitrate)) {
-    bitrate = codec.bitrate;
-    use_param = false;
-  }
-  if (bitrate <= 0) {
-    if (max_playback_rate <= 8000) {
-      bitrate = kOpusBitrateNb;
-    } else if (max_playback_rate <= 16000) {
-      bitrate = kOpusBitrateWb;
-    } else {
-      bitrate = kOpusBitrateFb;
-    }
-
-    if (IsOpusStereoEnabled(codec)) {
-      bitrate *= 2;
-    }
-  } else if (bitrate < kOpusMinBitrate || bitrate > kOpusMaxBitrate) {
-    bitrate = (bitrate < kOpusMinBitrate) ? kOpusMinBitrate : kOpusMaxBitrate;
-    std::string rate_source =
-        use_param ? "Codec parameter \"maxaveragebitrate\"" :
-            "Supplied Opus bitrate";
-    LOG(LS_WARNING) << rate_source
-                    << " is invalid and is replaced by: "
-                    << bitrate;
-  }
-  return bitrate;
-}
-
-// Return true if params[kCodecParamUseInbandFec] == "1", false
-// otherwise.
-static bool IsOpusFecEnabled(const AudioCodec& codec) {
-  int value;
-  return codec.GetParam(kCodecParamUseInbandFec, &value) && value == 1;
-}
-
-// Returns kOpusDefaultPlaybackRate if params[kCodecParamMaxPlaybackRate] is not
-// defined. Returns the value of params[kCodecParamMaxPlaybackRate] otherwise.
-static int GetOpusMaxPlaybackRate(const AudioCodec& codec) {
-  int value;
-  if (codec.GetParam(kCodecParamMaxPlaybackRate, &value)) {
-    return value;
-  }
-  return kOpusDefaultMaxPlaybackRate;
-}
-
-static void GetOpusConfig(const AudioCodec& codec, webrtc::CodecInst* voe_codec,
-                          bool* enable_codec_fec, int* max_playback_rate) {
-  *enable_codec_fec = IsOpusFecEnabled(codec);
-  *max_playback_rate = GetOpusMaxPlaybackRate(codec);
-
-  // If OPUS, change what we send according to the "stereo" codec
-  // parameter, and not the "channels" parameter.  We set
-  // voe_codec.channels to 2 if "stereo=1" and 1 otherwise.  If
-  // the bitrate is not specified, i.e. is <= zero, we set it to the
-  // appropriate default value for mono or stereo Opus.
-
-  voe_codec->channels = IsOpusStereoEnabled(codec) ? 2 : 1;
-  voe_codec->rate = GetOpusBitrate(codec, *max_playback_rate);
-}
-
-// Changes RTP timestamp rate of G722. This is due to the "bug" in the RFC
-// which says that G722 should be advertised as 8 kHz although it is a 16 kHz
-// codec.
-static void MaybeFixupG722(webrtc::CodecInst* voe_codec, int new_plfreq) {
-  if (_stricmp(voe_codec->plname, kG722CodecName) == 0) {
-    // If the ASSERT triggers, the codec definition in WebRTC VoiceEngine
-    // has changed, and this special case is no longer needed.
-    ASSERT(voe_codec->plfreq != new_plfreq);
-    voe_codec->plfreq = new_plfreq;
-  }
 }
 
 void WebRtcVoiceEngine::ConstructCodecs() {
@@ -2135,6 +2165,16 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       if (IsOpus(*it)) {
         GetOpusConfig(*it, &send_codec, &enable_codec_fec,
                       &opus_max_playback_rate);
+      }
+
+      // Set packet size if the AudioCodec param kCodecParamPTime is set.
+      int ptime_ms = 0;
+      if (it->GetParam(kCodecParamPTime, &ptime_ms)) {
+        if (!SetPTimeAsPacketSize(&send_codec, ptime_ms)) {
+          LOG(LS_WARNING) << "Failed to set packet size for codec "
+                          << send_codec.plname;
+          return false;
+        }
       }
     }
     found_send_codec = true;

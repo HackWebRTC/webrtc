@@ -51,6 +51,14 @@ extern const char kUlpfecCodecName[];
 extern const char kCodecParamAssociatedPayloadType[];
 
 extern const char kOpusCodecName[];
+extern const char kIsacCodecName[];
+extern const char kL16CodecName[];
+extern const char kG722CodecName[];
+extern const char kIlbcCodecName[];
+extern const char kPcmuCodecName[];
+extern const char kPcmaCodecName[];
+extern const char kCnCodecName[];
+extern const char kDtmfCodecName[];
 
 // Attribute parameters
 extern const char kCodecParamPTime[];

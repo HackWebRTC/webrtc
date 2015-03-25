@@ -46,6 +46,14 @@ const char kUlpfecCodecName[] = "ulpfec";
 const char kCodecParamAssociatedPayloadType[] = "apt";
 
 const char kOpusCodecName[] = "opus";
+const char kIsacCodecName[] = "isac";
+const char kL16CodecName[]  = "l16";
+const char kG722CodecName[] = "g722";
+const char kIlbcCodecName[] = "ilbc";
+const char kPcmuCodecName[] = "pcmu";
+const char kPcmaCodecName[] = "pcma";
+const char kCnCodecName[]   = "cn";
+const char kDtmfCodecName[] = "telephone-event";
 
 // draft-spittka-payload-rtp-opus-03.txt
 const char kCodecParamPTime[] = "ptime";
