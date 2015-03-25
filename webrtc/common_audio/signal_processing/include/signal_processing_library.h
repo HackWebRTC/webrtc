@@ -92,7 +92,7 @@
 #define WEBRTC_SPL_RSHIFT_U32(x, c)     ((uint32_t)(x) >> (c))
 
 #define WEBRTC_SPL_RAND(a) \
-    ((int16_t)(WEBRTC_SPL_MUL_16_16_RSFT((a), 18816, 7) & 0x00007fff))
+    ((int16_t)((((int16_t)a * 18816) >> 7) & 0x00007fff))
 
 #ifdef __cplusplus
 extern "C" {
