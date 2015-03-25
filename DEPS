@@ -6,7 +6,7 @@
 vars = {
   'extra_gyp_flag': '-Dextra_gyp_flag=0',
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': 'da9a1c015467f96cb216822c92ce7ce255e97c92',
+  'chromium_revision': '4d63ee8ca6807f481c0b7472580eb0c4c780149e',
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
@@ -72,6 +72,15 @@ hooks = [
     'pattern': '.',
     'action': ['python', 'src/setup_links.py'],
   },
+  {
+     # Pull sanitizer-instrumented third-party libraries if requested via
+     # GYP_DEFINES. This could be done as part of sync_chromium.py above
+     # but then we would need to run all the Chromium hooks each time,
+     # which will slow things down a lot.
+     'name': 'instrumented_libraries',
+     'pattern': '\\.sha1',
+     'action': ['python', 'src/third_party/instrumented_libraries/scripts/download_binaries.py'],
+   },
   {
     # Download test resources, i.e. video and audio files from Google Storage.
     'pattern': '.',
