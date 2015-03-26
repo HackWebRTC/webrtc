@@ -229,6 +229,8 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
 }
 
 Call::~Call() {
+  CHECK_EQ(0u, send_ssrcs_.size());
+  CHECK_EQ(0u, receive_ssrcs_.size());
   base_->DeleteChannel(base_channel_id_);
 
   render_->DeRegisterVideoRenderModule(*external_render_.get());
@@ -238,7 +240,7 @@ Call::~Call() {
   codec_->Release();
   render_->Release();
   rtp_rtcp_->Release();
-  webrtc::VideoEngine::Delete(video_engine_);
+  CHECK(webrtc::VideoEngine::Delete(video_engine_));
 }
 
 PacketReceiver* Call::Receiver() { return this; }
@@ -288,6 +290,7 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
       }
     }
   }
+  CHECK(send_stream_impl != nullptr);
 
   VideoSendStream::RtpStateMap rtp_state = send_stream_impl->GetRtpStates();
 
@@ -297,7 +300,6 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
     suspended_send_ssrcs_[it->first] = it->second;
   }
 
-  DCHECK(send_stream_impl != nullptr);
   delete send_stream_impl;
 }
 
@@ -352,8 +354,7 @@ void Call::DestroyVideoReceiveStream(
       }
     }
   }
-
-  DCHECK(receive_stream_impl != nullptr);
+  CHECK(receive_stream_impl != nullptr);
   delete receive_stream_impl;
 }
 
