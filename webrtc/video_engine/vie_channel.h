@@ -39,6 +39,7 @@ class CriticalSectionWrapper;
 class EncodedImageCallback;
 class I420FrameCallback;
 class PacedSender;
+class PacketRouter;
 class PayloadRouter;
 class ProcessThread;
 class ReceiveStatisticsProxy;
@@ -76,6 +77,7 @@ class ViEChannel
              RemoteBitrateEstimator* remote_bitrate_estimator,
              RtcpRttStats* rtt_stats,
              PacedSender* paced_sender,
+             PacketRouter* packet_router,
              bool sender,
              bool disable_default_encoder);
   ~ViEChannel();
@@ -524,6 +526,7 @@ class ViEChannel
   RtcpIntraFrameObserver* intra_frame_observer_;
   RtcpRttStats* rtt_stats_;
   PacedSender* paced_sender_;
+  PacketRouter* packet_router_;
 
   rtc::scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;
   int send_timestamp_extension_id_;

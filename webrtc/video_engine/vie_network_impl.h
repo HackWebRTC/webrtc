@@ -25,6 +25,10 @@ class ViENetworkImpl
  public:
   // Implements ViENetwork.
   int Release() override;
+  void SetBitrateConfig(int video_channel,
+                        int min_bitrate_bps,
+                        int start_bitrate_bps,
+                        int max_bitrate_bps) override;
   void SetNetworkTransmissionState(const int video_channel,
                                    const bool is_transmitting) override;
   int RegisterSendTransport(const int video_channel,

@@ -159,6 +159,7 @@ class MockViENetwork : public webrtc::ViENetwork {
   virtual ~MockViENetwork() {}
 
   MOCK_METHOD0(Release, int());
+  MOCK_METHOD4(SetBitrateConfig, void(int, int, int, int));
   MOCK_METHOD2(SetNetworkTransmissionState, void(const int, const bool));
   MOCK_METHOD2(RegisterSendTransport, int(const int, webrtc::Transport&));
   MOCK_METHOD1(DeregisterSendTransport, int(const int));

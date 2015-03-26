@@ -568,6 +568,13 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
       encoder_.SetFrameSize(static_cast<size_t>(current_size_frame_.Value()));
     }
 
+    Call::Config GetSenderCallConfig() override {
+      Call::Config config(SendTransport());
+      const int kMinBitrateBps = 30000;
+      config.bitrate_config.min_bitrate_bps = kMinBitrateBps;
+      return config;
+    }
+
     void ModifyConfigs(VideoSendStream::Config* send_config,
                        std::vector<VideoReceiveStream::Config>* receive_configs,
                        VideoEncoderConfig* encoder_config) override {
@@ -1511,7 +1518,7 @@ TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
   RunBaseTest(&test);
 }
 
-TEST_F(VideoSendStreamTest, UsesCallStreamBitratesAndCanReconfigureBitrates) {
+TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
   // These are chosen to be "kind of odd" to not be accidentally checked against
   // default values.
   static const int kMinBitrateKbps = 137;
@@ -1560,9 +1567,9 @@ TEST_F(VideoSendStreamTest, UsesCallStreamBitratesAndCanReconfigureBitrates) {
 
     Call::Config GetSenderCallConfig() override {
       Call::Config config(SendTransport());
-      config.stream_bitrates.min_bitrate_bps = kMinBitrateKbps * 1000;
-      config.stream_bitrates.start_bitrate_bps = kStartBitrateKbps * 1000;
-      config.stream_bitrates.max_bitrate_bps = kMaxBitrateKbps * 1000;
+      config.bitrate_config.min_bitrate_bps = kMinBitrateKbps * 1000;
+      config.bitrate_config.start_bitrate_bps = kStartBitrateKbps * 1000;
+      config.bitrate_config.max_bitrate_bps = kMaxBitrateKbps * 1000;
       return config;
     }
 
@@ -1572,35 +1579,46 @@ TEST_F(VideoSendStreamTest, UsesCallStreamBitratesAndCanReconfigureBitrates) {
       send_config->encoder_settings.encoder = this;
       // Set bitrates lower/higher than min/max to make sure they are properly
       // capped.
-      encoder_config->streams.front().min_bitrate_bps =
-          (kMinBitrateKbps - 10) * 1000;
-      encoder_config->streams.front().max_bitrate_bps =
-          (kIncreasedMaxBitrateKbps + 10) * 1000;
+      encoder_config->streams.front().min_bitrate_bps = kMinBitrateKbps * 1000;
+      encoder_config->streams.front().max_bitrate_bps = kMaxBitrateKbps * 1000;
+      encoder_config_ = *encoder_config;
     }
 
     void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
       call_ = sender_call;
     }
 
+    void OnStreamsCreated(
+        VideoSendStream* send_stream,
+        const std::vector<VideoReceiveStream*>& receive_streams) override {
+      send_stream_ = send_stream;
+    }
+
     void PerformTest() override {
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out while waiting encoder to be configured.";
       Call::Config::BitrateConfig bitrate_config;
-      bitrate_config.min_bitrate_bps = 0;
-      bitrate_config.start_bitrate_bps = -1;
-      bitrate_config.max_bitrate_bps = kLowerMaxBitrateKbps * 1000;
-      call_->SetBitrateConfig(bitrate_config);
-      EXPECT_EQ(2, num_initializations_)
-          << "Encoder should have been reconfigured with the new value.";
       bitrate_config.start_bitrate_bps = kIncreasedStartBitrateKbps * 1000;
       bitrate_config.max_bitrate_bps = kIncreasedMaxBitrateKbps * 1000;
       call_->SetBitrateConfig(bitrate_config);
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting encoder to be configured.";
+      encoder_config_.streams[0].min_bitrate_bps = 0;
+      encoder_config_.streams[0].max_bitrate_bps = kLowerMaxBitrateKbps * 1000;
+      send_stream_->ReconfigureVideoEncoder(encoder_config_);
+      EXPECT_EQ(2, num_initializations_)
+          << "Encoder should have been reconfigured with the new value.";
+      encoder_config_.streams[0].target_bitrate_bps =
+          encoder_config_.streams[0].min_bitrate_bps;
+      encoder_config_.streams[0].max_bitrate_bps =
+          kIncreasedMaxBitrateKbps * 1000;
+      send_stream_->ReconfigureVideoEncoder(encoder_config_);
       EXPECT_EQ(3, num_initializations_)
           << "Encoder should have been reconfigured with the new value.";
     }
 
     int num_initializations_;
     webrtc::Call* call_;
+    webrtc::VideoSendStream* send_stream_;
+    webrtc::VideoEncoderConfig encoder_config_;
   } test;
 
   RunBaseTest(&test);

@@ -321,7 +321,7 @@ webrtc::Call::Stats FakeCall::GetStats() const {
 
 void FakeCall::SetBitrateConfig(
     const webrtc::Call::Config::BitrateConfig& bitrate_config) {
-  config_.stream_bitrates = bitrate_config;
+  config_.bitrate_config = bitrate_config;
 }
 
 void FakeCall::SignalNetworkState(webrtc::Call::NetworkState state) {
@@ -1012,11 +1012,11 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test,
     EXPECT_TRUE(channel_->SetSendCodecs(codecs));
 
     EXPECT_EQ(expected_min_bitrate_bps,
-              fake_call_->GetConfig().stream_bitrates.min_bitrate_bps);
+              fake_call_->GetConfig().bitrate_config.min_bitrate_bps);
     EXPECT_EQ(expected_start_bitrate_bps,
-              fake_call_->GetConfig().stream_bitrates.start_bitrate_bps);
+              fake_call_->GetConfig().bitrate_config.start_bitrate_bps);
     EXPECT_EQ(expected_max_bitrate_bps,
-              fake_call_->GetConfig().stream_bitrates.max_bitrate_bps);
+              fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
   }
 
   void TestSetSendRtpHeaderExtensions(const std::string& cricket_ext,
@@ -1858,19 +1858,19 @@ TEST_F(WebRtcVideoChannel2Test,
   SetSendCodecsShouldWorkForBitrates("100", 100000, "150", 150000, "200",
                                      200000);
   channel_->SetMaxSendBandwidth(300000);
-  EXPECT_EQ(100000, fake_call_->GetConfig().stream_bitrates.min_bitrate_bps)
+  EXPECT_EQ(100000, fake_call_->GetConfig().bitrate_config.min_bitrate_bps)
       << "Setting max bitrate should keep previous min bitrate.";
-  EXPECT_EQ(-1, fake_call_->GetConfig().stream_bitrates.start_bitrate_bps)
+  EXPECT_EQ(-1, fake_call_->GetConfig().bitrate_config.start_bitrate_bps)
       << "Setting max bitrate should not reset start bitrate.";
-  EXPECT_EQ(300000, fake_call_->GetConfig().stream_bitrates.max_bitrate_bps);
+  EXPECT_EQ(300000, fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetMaxSendBandwidthShouldBeRemovable) {
   channel_->SetMaxSendBandwidth(300000);
-  EXPECT_EQ(300000, fake_call_->GetConfig().stream_bitrates.max_bitrate_bps);
+  EXPECT_EQ(300000, fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
   // <= 0 means disable (infinite) max bitrate.
   channel_->SetMaxSendBandwidth(0);
-  EXPECT_EQ(-1, fake_call_->GetConfig().stream_bitrates.max_bitrate_bps)
+  EXPECT_EQ(-1, fake_call_->GetConfig().bitrate_config.max_bitrate_bps)
       << "Setting zero max bitrate did not reset start bitrate.";
 }
 

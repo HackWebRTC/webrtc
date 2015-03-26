@@ -12,18 +12,21 @@
 
 #include <cmath>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/system_wrappers/interface/field_trial.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/metrics.h"
 
 namespace webrtc {
 namespace {
-enum { kBweIncreaseIntervalMs = 1000 };
-enum { kBweDecreaseIntervalMs = 300 };
-enum { kLimitNumPackets = 20 };
-enum { kAvgPacketSizeBytes = 1000 };
-enum { kStartPhaseMs = 2000 };
-enum { kBweConverganceTimeMs = 20000 };
+const int64_t kBweIncreaseIntervalMs = 1000;
+const int64_t kBweDecreaseIntervalMs = 300;
+const int64_t kStartPhaseMs = 2000;
+const int64_t kBweConverganceTimeMs = 20000;
+const int kLimitNumPackets = 20;
+const int kAvgPacketSizeBytes = 1000;
+const int kDefaultMinBitrateBps = 10000;
+const int kDefaultMaxBitrateBps = 1000000000;
 
 struct UmaRampUpMetric {
   const char* metric_name;
@@ -66,8 +69,8 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation()
     : accumulate_lost_packets_Q8_(0),
       accumulate_expected_packets_(0),
       bitrate_(0),
-      min_bitrate_configured_(0),
-      max_bitrate_configured_(0),
+      min_bitrate_configured_(kDefaultMinBitrateBps),
+      max_bitrate_configured_(kDefaultMaxBitrateBps),
       time_last_receiver_block_ms_(0),
       last_fraction_loss_(0),
       last_round_trip_time_ms_(0),
@@ -82,7 +85,8 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation()
 
 SendSideBandwidthEstimation::~SendSideBandwidthEstimation() {}
 
-void SendSideBandwidthEstimation::SetSendBitrate(uint32_t bitrate) {
+void SendSideBandwidthEstimation::SetSendBitrate(int bitrate) {
+  DCHECK_GT(bitrate, 0);
   bitrate_ = bitrate;
 
   // Clear last sent bitrate history so the new value can be used directly
@@ -90,17 +94,23 @@ void SendSideBandwidthEstimation::SetSendBitrate(uint32_t bitrate) {
   min_bitrate_history_.clear();
 }
 
-void SendSideBandwidthEstimation::SetMinMaxBitrate(uint32_t min_bitrate,
-                                                   uint32_t max_bitrate) {
-  min_bitrate_configured_ = min_bitrate;
-  max_bitrate_configured_ = max_bitrate;
+void SendSideBandwidthEstimation::SetMinMaxBitrate(int min_bitrate,
+                                                   int max_bitrate) {
+  DCHECK_GE(min_bitrate, 0);
+  min_bitrate_configured_ = std::max(min_bitrate, kDefaultMinBitrateBps);
+  if (max_bitrate > 0) {
+    max_bitrate_configured_ =
+        std::max<uint32_t>(min_bitrate_configured_, max_bitrate);
+  } else {
+    max_bitrate_configured_ = kDefaultMaxBitrateBps;
+  }
 }
 
-uint32_t SendSideBandwidthEstimation::GetMinBitrate() const {
+int SendSideBandwidthEstimation::GetMinBitrate() const {
   return min_bitrate_configured_;
 }
 
-void SendSideBandwidthEstimation::CurrentEstimate(uint32_t* bitrate,
+void SendSideBandwidthEstimation::CurrentEstimate(int* bitrate,
                                                   uint8_t* loss,
                                                   int64_t* rtt) const {
   *bitrate = bitrate_;

@@ -270,6 +270,9 @@ bool VCMCodecDataBase::SetSendCodec(
     }
   }
 
+  if (new_send_codec.startBitrate > new_send_codec.maxBitrate)
+    new_send_codec.startBitrate = new_send_codec.maxBitrate;
+
   if (!reset_required) {
     reset_required = RequiresEncoderReset(new_send_codec);
   }
@@ -277,7 +280,7 @@ bool VCMCodecDataBase::SetSendCodec(
   memcpy(&send_codec_, &new_send_codec, sizeof(send_codec_));
 
   if (!reset_required) {
-    encoded_frame_callback->SetPayloadType(send_codec->plType);
+    encoded_frame_callback->SetPayloadType(send_codec_.plType);
     if (ptr_encoder_->RegisterEncodeCallback(encoded_frame_callback) < 0) {
       LOG(LS_ERROR) << "Failed to register encoded-frame callback.";
       return false;
@@ -287,20 +290,19 @@ bool VCMCodecDataBase::SetSendCodec(
 
   // If encoder exists, will destroy it and create new one.
   DeleteEncoder();
-  if (send_codec->plType == external_payload_type_) {
+  if (send_codec_.plType == external_payload_type_) {
     // External encoder.
     ptr_encoder_ = new VCMGenericEncoder(
         external_encoder_, encoder_rate_observer_, internal_source_);
     current_enc_is_external_ = true;
   } else {
-    ptr_encoder_ = CreateEncoder(send_codec->codecType);
+    ptr_encoder_ = CreateEncoder(send_codec_.codecType);
     current_enc_is_external_ = false;
     if (!ptr_encoder_)
       return false;
   }
-  encoded_frame_callback->SetPayloadType(send_codec->plType);
-  if (ptr_encoder_->InitEncode(send_codec,
-                               number_of_cores_,
+  encoded_frame_callback->SetPayloadType(send_codec_.plType);
+  if (ptr_encoder_->InitEncode(&send_codec_, number_of_cores_,
                                max_payload_size_) < 0) {
     LOG(LS_ERROR) << "Failed to initialize video encoder.";
     DeleteEncoder();

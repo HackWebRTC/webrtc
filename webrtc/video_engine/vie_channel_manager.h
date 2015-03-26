@@ -86,6 +86,15 @@ class ViEChannelManager: private ViEManagerBase {
   bool GetEstimatedReceiveBandwidth(int channel_id,
                                     uint32_t* estimated_bandwidth) const;
 
+  bool GetPacerQueuingDelayMs(int channel_id, int64_t* delay_ms) const;
+
+  bool SetBitrateConfig(int channel_id,
+                        int min_bitrate_bps,
+                        int start_bitrate_bps,
+                        int max_bitrate_bps);
+
+  bool ReAllocateBitrates(int channel_id);
+
  private:
   // Used by ViEChannelScoped, forcing a manager user to use scoped.
   // Returns a pointer to the channel with id 'channel_id'.

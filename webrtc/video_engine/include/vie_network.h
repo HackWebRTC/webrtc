@@ -47,6 +47,11 @@ class WEBRTC_DLLEXPORT ViENetwork {
   // for all sub-API:s before the VideoEngine object can be safely deleted.
   virtual int Release() = 0;
 
+  virtual void SetBitrateConfig(int video_channel,
+                                int min_bitrate_bps,
+                                int start_bitrate_bps,
+                                int max_bitrate_bps) = 0;
+
   // Inform the engine about if the network adapter is currently transmitting
   // packets or not.
   virtual void SetNetworkTransmissionState(const int video_channel,

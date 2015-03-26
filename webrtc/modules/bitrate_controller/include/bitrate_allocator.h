@@ -30,7 +30,6 @@ class BitrateObserver;
 class BitrateAllocator {
  public:
   BitrateAllocator();
-  virtual ~BitrateAllocator();
 
   void OnNetworkChanged(uint32_t target_bitrate,
                         uint8_t fraction_loss,
@@ -39,17 +38,16 @@ class BitrateAllocator {
   // Set the start and max send bitrate used by the bandwidth management.
   //
   // observer, updates bitrates if already in use.
-  // min_bitrate_kbit = 0 equals no min bitrate.
-  // max_bitrate_kit = 0 equals no max bitrate.
-  //
-  // Returns a new suggested start bitrate computed from the start and min
-  // bitrates of the observers, or -1 if the start bitrate shouldn't be changed.
-  virtual int AddBitrateObserver(BitrateObserver* observer,
-                                 uint32_t start_bitrate,
-                                 uint32_t min_bitrate,
-                                 uint32_t max_bitrate);
+  // min_bitrate_bps = 0 equals no min bitrate.
+  // max_bitrate_bps = 0 equals no max bitrate.
+  // TODO(holmer): Remove start_bitrate_bps when old API is gone.
+  int AddBitrateObserver(BitrateObserver* observer,
+                         uint32_t start_bitrate_bps,
+                         uint32_t min_bitrate_bps,
+                         uint32_t max_bitrate_bps,
+                         int* new_observer_bitrate_bps);
 
-  virtual void RemoveBitrateObserver(BitrateObserver* observer);
+  void RemoveBitrateObserver(BitrateObserver* observer);
 
   void GetMinMaxBitrateSumBps(int* min_bitrate_sum_bps,
                               int* max_bitrate_sum_bps) const;
@@ -79,30 +77,30 @@ class BitrateAllocator {
     BitrateObserver* observer_;
     uint32_t min_bitrate_;
   };
-  typedef std::pair<BitrateObserver*, BitrateConfiguration*>
+  typedef std::pair<BitrateObserver*, BitrateConfiguration>
       BitrateObserverConfiguration;
   typedef std::list<BitrateObserverConfiguration> BitrateObserverConfList;
-  typedef std::multimap<uint32_t, ObserverConfiguration*> ObserverSortingMap;
-
-  void NormalRateAllocation(uint32_t bitrate,
-                            uint8_t fraction_loss,
-                            int64_t rtt,
-                            uint32_t sum_min_bitrates)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-
-  void LowRateAllocation(uint32_t bitrate,
-                         uint8_t fraction_loss,
-                         int64_t rtt,
-                         uint32_t sum_min_bitrates)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  typedef std::multimap<uint32_t, ObserverConfiguration> ObserverSortingMap;
+  typedef std::map<BitrateObserver*, int> ObserverBitrateMap;
 
   BitrateObserverConfList::iterator FindObserverConfigurationPair(
       const BitrateObserver* observer) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  ObserverBitrateMap AllocateBitrates() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  ObserverBitrateMap NormalRateAllocation(uint32_t bitrate,
+                                          uint32_t sum_min_bitrates)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+
+  ObserverBitrateMap LowRateAllocation(uint32_t bitrate)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  // Stored in a list to keep track of the insertion order.
   BitrateObserverConfList bitrate_observers_ GUARDED_BY(crit_sect_);
   bool bitrate_observers_modified_ GUARDED_BY(crit_sect_);
   bool enforce_min_bitrate_ GUARDED_BY(crit_sect_);
+  uint32_t last_bitrate_bps_ GUARDED_BY(crit_sect_);
+  uint8_t last_fraction_loss_ GUARDED_BY(crit_sect_);
+  int64_t last_rtt_ GUARDED_BY(crit_sect_);
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_ALLOCATOR_H_

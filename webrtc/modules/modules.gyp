@@ -206,6 +206,7 @@
             'module_common_types_unittest.cc',
             'pacing/bitrate_prober_unittest.cc',
             'pacing/paced_sender_unittest.cc',
+            'pacing/packet_router_unittest.cc',
             'remote_bitrate_estimator/bwe_simulations.cc',
             'remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h',
             'remote_bitrate_estimator/inter_arrival_unittest.cc',

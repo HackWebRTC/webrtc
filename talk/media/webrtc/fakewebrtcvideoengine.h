@@ -912,6 +912,7 @@ class FakeWebRtcVideoEngine
   WEBRTC_STUB(DeregisterObserver, (const int));
 
   // webrtc::ViENetwork
+  WEBRTC_VOID_STUB(SetBitrateConfig, (int, int, int, int));
   WEBRTC_VOID_FUNC(SetNetworkTransmissionState, (const int channel,
                                                  const bool is_transmitting)) {
     WEBRTC_ASSERT_CHANNEL(channel);

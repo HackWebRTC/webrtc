@@ -15,6 +15,7 @@
 #include <qos.h>
 #endif
 
+#include "webrtc/base/checks.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/video_engine/include/vie_errors.h"
@@ -51,6 +52,26 @@ int ViENetworkImpl::Release() {
   return ref_count;
 }
 
+ViENetworkImpl::ViENetworkImpl(ViESharedData* shared_data)
+    : shared_data_(shared_data) {
+}
+
+ViENetworkImpl::~ViENetworkImpl() {
+}
+
+void ViENetworkImpl::SetBitrateConfig(int video_channel,
+                                      int min_bitrate_bps,
+                                      int start_bitrate_bps,
+                                      int max_bitrate_bps) {
+  LOG_F(LS_INFO) << "channel: " << video_channel
+                 << " new bitrate config: min=" << min_bitrate_bps
+                 << ", start=" << start_bitrate_bps
+                 << ", max=" << max_bitrate_bps;
+  bool success = shared_data_->channel_manager()->SetBitrateConfig(
+      video_channel, min_bitrate_bps, start_bitrate_bps, max_bitrate_bps);
+  DCHECK(success);
+}
+
 void ViENetworkImpl::SetNetworkTransmissionState(const int video_channel,
                                                  const bool is_transmitting) {
   LOG_F(LS_INFO) << "channel: " << video_channel
@@ -63,11 +84,6 @@ void ViENetworkImpl::SetNetworkTransmissionState(const int video_channel,
   }
   vie_encoder->SetNetworkTransmissionState(is_transmitting);
 }
-
-ViENetworkImpl::ViENetworkImpl(ViESharedData* shared_data)
-    : shared_data_(shared_data) {}
-
-ViENetworkImpl::~ViENetworkImpl() {}
 
 int ViENetworkImpl::RegisterSendTransport(const int video_channel,
                                           Transport& transport) {

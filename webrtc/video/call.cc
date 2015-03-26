@@ -155,6 +155,7 @@ class Call : public webrtc::Call, public PacketReceiver {
   ViECodec* codec_;
   ViERender* render_;
   ViEBase* base_;
+  ViENetwork* network_;
   int base_channel_id_;
 
   rtc::scoped_ptr<VideoRender> external_render_;
@@ -187,12 +188,12 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
   DCHECK(video_engine != nullptr);
   DCHECK(config.send_transport != nullptr);
 
-  DCHECK_GE(config.stream_bitrates.min_bitrate_bps, 0);
-  DCHECK_GE(config.stream_bitrates.start_bitrate_bps,
-            config.stream_bitrates.min_bitrate_bps);
-  if (config.stream_bitrates.max_bitrate_bps != -1) {
-    DCHECK_GE(config.stream_bitrates.max_bitrate_bps,
-              config.stream_bitrates.start_bitrate_bps);
+  DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
+  DCHECK_GE(config.bitrate_config.start_bitrate_bps,
+            config.bitrate_config.min_bitrate_bps);
+  if (config.bitrate_config.max_bitrate_bps != -1) {
+    DCHECK_GE(config.bitrate_config.max_bitrate_bps,
+              config.bitrate_config.start_bitrate_bps);
   }
 
   if (config.overuse_callback) {
@@ -211,6 +212,8 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
   codec_ = ViECodec::GetInterface(video_engine_);
   DCHECK(codec_ != nullptr);
 
+  network_ = ViENetwork::GetInterface(video_engine_);
+
   // As a workaround for non-existing calls in the old API, create a base
   // channel used as default channel when creating send and receive streams.
   base_ = ViEBase::GetInterface(video_engine_);
@@ -218,6 +221,11 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
 
   base_->CreateChannel(base_channel_id_);
   DCHECK(base_channel_id_ != -1);
+
+  network_->SetBitrateConfig(base_channel_id_,
+                             config_.bitrate_config.min_bitrate_bps,
+                             config_.bitrate_config.start_bitrate_bps,
+                             config_.bitrate_config.max_bitrate_bps);
 }
 
 Call::~Call() {
@@ -226,6 +234,7 @@ Call::~Call() {
   render_->DeRegisterVideoRenderModule(*external_render_.get());
 
   base_->Release();
+  network_->Release();
   codec_->Release();
   render_->Release();
   rtp_rtcp_->Release();
@@ -245,8 +254,7 @@ VideoSendStream* Call::CreateVideoSendStream(
   // the call has already started.
   VideoSendStream* send_stream = new VideoSendStream(
       config_.send_transport, overuse_observer_proxy_.get(), video_engine_,
-      config, encoder_config, suspended_send_ssrcs_, base_channel_id_,
-      config_.stream_bitrates);
+      config, encoder_config, suspended_send_ssrcs_, base_channel_id_);
 
   // This needs to be taken before send_crit_ as both locks need to be held
   // while changing network state.
@@ -380,23 +388,20 @@ void Call::SetBitrateConfig(
   DCHECK_GE(bitrate_config.min_bitrate_bps, 0);
   if (bitrate_config.max_bitrate_bps != -1)
     DCHECK_GT(bitrate_config.max_bitrate_bps, 0);
-  if (config_.stream_bitrates.min_bitrate_bps ==
+  if (config_.bitrate_config.min_bitrate_bps ==
           bitrate_config.min_bitrate_bps &&
       (bitrate_config.start_bitrate_bps <= 0 ||
-       config_.stream_bitrates.start_bitrate_bps ==
+       config_.bitrate_config.start_bitrate_bps ==
            bitrate_config.start_bitrate_bps) &&
-      config_.stream_bitrates.max_bitrate_bps ==
+      config_.bitrate_config.max_bitrate_bps ==
           bitrate_config.max_bitrate_bps) {
     // Nothing new to set, early abort to avoid encoder reconfigurations.
     return;
   }
-  config_.stream_bitrates = bitrate_config;
-  ReadLockScoped read_lock(*send_crit_);
-  for (std::map<uint32_t, VideoSendStream*>::const_iterator it =
-           send_ssrcs_.begin();
-       it != send_ssrcs_.end(); ++it) {
-    it->second->SetBitrateConfig(bitrate_config);
-  }
+  config_.bitrate_config = bitrate_config;
+  network_->SetBitrateConfig(base_channel_id_, bitrate_config.min_bitrate_bps,
+                             bitrate_config.start_bitrate_bps,
+                             bitrate_config.max_bitrate_bps);
 }
 
 void Call::SignalNetworkState(NetworkState state) {

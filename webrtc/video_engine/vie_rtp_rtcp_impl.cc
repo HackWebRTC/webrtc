@@ -828,13 +828,10 @@ int ViERTP_RTCPImpl::GetEstimatedReceiveBandwidth(
 
 int ViERTP_RTCPImpl::GetPacerQueuingDelayMs(
     const int video_channel, int64_t* delay_ms) const {
-  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
-  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
-  if (!vie_encoder) {
-    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
+  if (!shared_data_->channel_manager()->GetPacerQueuingDelayMs(video_channel,
+                                                               delay_ms)) {
     return -1;
   }
-  *delay_ms = vie_encoder->PacerQueuingDelayMs();
   return 0;
 }
 

@@ -288,6 +288,31 @@ bool ViEChannelManager::GetEstimatedReceiveBandwidth(
   return true;
 }
 
+bool ViEChannelManager::GetPacerQueuingDelayMs(int channel_id,
+                                               int64_t* delay_ms) const {
+  CriticalSectionScoped cs(channel_id_critsect_);
+  ChannelGroup* group = FindGroup(channel_id);
+  if (!group)
+    return false;
+  *delay_ms = group->GetPacerQueuingDelayMs();
+  return true;
+}
+
+bool ViEChannelManager::SetBitrateConfig(int channel_id,
+                                         int min_bitrate_bps,
+                                         int start_bitrate_bps,
+                                         int max_bitrate_bps) {
+  CriticalSectionScoped cs(channel_id_critsect_);
+  ChannelGroup* group = FindGroup(channel_id);
+  if (!group)
+    return false;
+  BitrateController* bitrate_controller = group->GetBitrateController();
+  if (start_bitrate_bps > 0)
+    bitrate_controller->SetStartBitrate(start_bitrate_bps);
+  bitrate_controller->SetMinMaxBitrate(min_bitrate_bps, max_bitrate_bps);
+  return true;
+}
+
 ViEChannel* ViEChannelManager::ViEChannelPtr(int channel_id) const {
   CriticalSectionScoped cs(channel_id_critsect_);
   ChannelGroup* group = FindGroup(channel_id);

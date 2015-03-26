@@ -169,6 +169,10 @@ static const int kDefaultRtcpReceiverReportSsrc = 1;
 
 const char kH264CodecName[] = "H264";
 
+const int kMinBandwidthBps = 30000;
+const int kStartBandwidthBps = 300000;
+const int kMaxBandwidthBps = 2000000;
+
 static bool FindFirstMatchingCodec(const std::vector<VideoCodec>& codecs,
                                    const VideoCodec& requested_codec,
                                    VideoCodec* matching_codec) {
@@ -630,7 +634,9 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
   if (voice_engine != NULL) {
     config.voice_engine = voice_engine->voe()->engine();
   }
-
+  config.bitrate_config.min_bitrate_bps = kMinBandwidthBps;
+  config.bitrate_config.start_bitrate_bps = kStartBandwidthBps;
+  config.bitrate_config.max_bitrate_bps = kMaxBandwidthBps;
   call_.reset(call_factory->CreateCall(config));
 
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
@@ -763,6 +769,8 @@ bool WebRtcVideoChannel2::SetSendCodecs(const std::vector<VideoCodec>& codecs) {
     it->second->SetCodec(supported_codecs.front());
   }
 
+  // TODO(holmer): Changing the codec parameters shouldn't necessarily mean that
+  // we change the min/max of bandwidth estimation. Reevaluate this.
   VideoCodec codec = supported_codecs.front().codec;
   int bitrate_kbps;
   if (codec.GetParam(kCodecParamMinBitrate, &bitrate_kbps) &&

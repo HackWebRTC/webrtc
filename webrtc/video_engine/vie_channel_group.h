@@ -25,6 +25,8 @@ class BitrateAllocator;
 class CallStats;
 class Config;
 class EncoderStateFeedback;
+class PacedSender;
+class PacketRouter;
 class ProcessThread;
 class RemoteBitrateEstimator;
 class ViEChannel;
@@ -71,6 +73,7 @@ class ChannelGroup : public BitrateObserver {
   CallStats* GetCallStats() const;
   RemoteBitrateEstimator* GetRemoteBitrateEstimator() const;
   EncoderStateFeedback* GetEncoderStateFeedback() const;
+  int64_t GetPacerQueuingDelayMs() const;
 
   // Implements BitrateObserver.
   void OnNetworkChanged(uint32_t target_bitrate_bps,
@@ -93,20 +96,26 @@ class ChannelGroup : public BitrateObserver {
 
   rtc::scoped_ptr<VieRemb> remb_;
   rtc::scoped_ptr<BitrateAllocator> bitrate_allocator_;
-  rtc::scoped_ptr<BitrateController> bitrate_controller_;
   rtc::scoped_ptr<CallStats> call_stats_;
   rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
   rtc::scoped_ptr<EncoderStateFeedback> encoder_state_feedback_;
+  rtc::scoped_ptr<PacketRouter> packet_router_;
+  rtc::scoped_ptr<PacedSender> pacer_;
   ChannelSet channels_;
   ChannelMap channel_map_;
   // Maps Channel id -> ViEEncoder.
   EncoderMap vie_encoder_map_;
+  rtc::scoped_ptr<CriticalSectionWrapper> encoder_map_cs_;
+
   const Config* config_;
   // Placeholder for the case where this owns the config.
   rtc::scoped_ptr<Config> own_config_;
 
   // Registered at construct time and assumed to outlive this class.
   ProcessThread* process_thread_;
+  rtc::scoped_ptr<ProcessThread> pacer_thread_;
+
+  rtc::scoped_ptr<BitrateController> bitrate_controller_;
 };
 
 }  // namespace webrtc

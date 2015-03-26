@@ -625,6 +625,15 @@ void EndToEndTest::TestReceivedFecPacketsNotNacked(
       return SEND_PACKET;
     }
 
+    // TODO(holmer): Investigate why we don't send FEC packets when the bitrate
+    // is 10 kbps.
+    Call::Config GetSenderCallConfig() override {
+      Call::Config config(SendTransport());
+      const int kMinBitrateBps = 30000;
+      config.bitrate_config.min_bitrate_bps = kMinBitrateBps;
+      return config;
+    }
+
     void ModifyConfigs(VideoSendStream::Config* send_config,
                        std::vector<VideoReceiveStream::Config>* receive_configs,
                        VideoEncoderConfig* encoder_config) override {
@@ -1767,7 +1776,7 @@ TEST_F(EndToEndTest, GetStats) {
 
     Call::Config GetSenderCallConfig() override {
       Call::Config config = EndToEndTest::GetSenderCallConfig();
-      config.stream_bitrates.start_bitrate_bps = kStartBitrateBps;
+      config.bitrate_config.start_bitrate_bps = kStartBitrateBps;
       return config;
     }
 

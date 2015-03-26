@@ -29,7 +29,7 @@ namespace webrtc {
 class BitrateControllerImpl : public BitrateController {
  public:
   BitrateControllerImpl(Clock* clock, BitrateObserver* observer);
-  virtual ~BitrateControllerImpl();
+  virtual ~BitrateControllerImpl() {}
 
   bool AvailableBandwidth(uint32_t* bandwidth) const override;
 
@@ -57,6 +57,11 @@ class BitrateControllerImpl : public BitrateController {
 
   void MaybeTriggerOnNetworkChanged();
 
+  // Returns true if the parameters have changed since the last call.
+  bool GetNetworkParameters(uint32_t* bitrate,
+                            uint8_t* fraction_loss,
+                            int64_t* rtt);
+
   void OnNetworkChanged(uint32_t bitrate,
                         uint8_t fraction_loss,  // 0 - 255.
                         int64_t rtt)
@@ -67,7 +72,7 @@ class BitrateControllerImpl : public BitrateController {
   BitrateObserver* observer_;
   int64_t last_bitrate_update_ms_;
 
-  CriticalSectionWrapper* critsect_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> critsect_;
   SendSideBandwidthEstimation bandwidth_estimation_ GUARDED_BY(*critsect_);
   uint32_t reserved_bitrate_bps_ GUARDED_BY(*critsect_);
 

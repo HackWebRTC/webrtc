@@ -55,16 +55,6 @@ class PayloadRouter {
                     const RTPFragmentationHeader* fragmentation,
                     const RTPVideoHeader* rtp_video_hdr);
 
-  // Called when it's time to send a stored packet.
-  bool TimeToSendPacket(uint32_t ssrc,
-                        uint16_t sequence_number,
-                        int64_t capture_timestamp,
-                        bool retransmission);
-
-  // Called when it's time to send padding, returns the number of bytes actually
-  // sent.
-  size_t TimeToSendPadding(size_t bytes);
-
   // Configures current target bitrate per module. 'stream_bitrates' is assumed
   // to be in the same order as 'SetSendingRtpModules'.
   void SetTargetSendBitrates(const std::vector<uint32_t>& stream_bitrates);

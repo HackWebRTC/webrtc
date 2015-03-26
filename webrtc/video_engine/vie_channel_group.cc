@@ -14,6 +14,8 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common.h"
 #include "webrtc/experiments.h"
+#include "webrtc/modules/pacing/include/paced_sender.h"
+#include "webrtc/modules/pacing/include/packet_router.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
@@ -142,14 +144,25 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 ChannelGroup::ChannelGroup(ProcessThread* process_thread, const Config* config)
     : remb_(new VieRemb()),
       bitrate_allocator_(new BitrateAllocator()),
-      bitrate_controller_(
-          BitrateController::CreateBitrateController(Clock::GetRealTimeClock(),
-                                                     this)),
       call_stats_(new CallStats()),
       encoder_state_feedback_(new EncoderStateFeedback()),
+      packet_router_(new PacketRouter()),
+      pacer_(new PacedSender(Clock::GetRealTimeClock(),
+                             packet_router_.get(),
+                             BitrateController::kDefaultStartBitrateKbps,
+                             PacedSender::kDefaultPaceMultiplier *
+                                 BitrateController::kDefaultStartBitrateKbps,
+                             0)),
+      encoder_map_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       config_(config),
       own_config_(),
-      process_thread_(process_thread) {
+      process_thread_(process_thread),
+      pacer_thread_(ProcessThread::Create()),
+      // Constructed last as this object calls the provided callback on
+      // construction.
+      bitrate_controller_(
+          BitrateController::CreateBitrateController(Clock::GetRealTimeClock(),
+                                                     this)) {
   if (!config) {
     own_config_.reset(new Config);
     config_ = own_config_.get();
@@ -163,12 +176,17 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread, const Config* config)
 
   call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
 
+  pacer_thread_->RegisterModule(pacer_.get());
+  pacer_thread_->Start();
+
   process_thread->RegisterModule(remote_bitrate_estimator_.get());
   process_thread->RegisterModule(call_stats_.get());
   process_thread->RegisterModule(bitrate_controller_.get());
 }
 
 ChannelGroup::~ChannelGroup() {
+  pacer_thread_->Stop();
+  pacer_thread_->DeRegisterModule(pacer_.get());
   process_thread_->DeRegisterModule(bitrate_controller_.get());
   process_thread_->DeRegisterModule(call_stats_.get());
   process_thread_->DeRegisterModule(remote_bitrate_estimator_.get());
@@ -184,7 +202,7 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
                                      int number_of_cores,
                                      bool disable_default_encoder) {
   rtc::scoped_ptr<ViEEncoder> vie_encoder(new ViEEncoder(
-      channel_id, number_of_cores, *config_, *process_thread_,
+      channel_id, number_of_cores, *config_, *process_thread_, pacer_.get(),
       bitrate_allocator_.get(), bitrate_controller_.get(), false));
   if (!vie_encoder->Init()) {
     return false;
@@ -233,7 +251,7 @@ bool ChannelGroup::CreateChannel(int channel_id,
       encoder_state_feedback_->GetRtcpIntraFrameObserver(),
       bitrate_controller_->CreateRtcpBandwidthObserver(),
       remote_bitrate_estimator_.get(), call_stats_->rtcp_rtt_stats(),
-      vie_encoder->GetPacedSender(), sender, disable_default_encoder));
+      pacer_.get(), packet_router_.get(), sender, disable_default_encoder));
   if (channel->Init() != 0) {
     return false;
   }
@@ -252,7 +270,10 @@ bool ChannelGroup::CreateChannel(int channel_id,
 
   // Store the channel, add it to the channel group and save the vie_encoder.
   channel_map_[channel_id] = channel.release();
-  vie_encoder_map_[channel_id] = vie_encoder;
+  {
+    CriticalSectionScoped lock(encoder_map_cs_.get());
+    vie_encoder_map_[channel_id] = vie_encoder;
+  }
 
   return true;
 }
@@ -328,9 +349,9 @@ ViEChannel* ChannelGroup::GetChannel(int channel_id) const {
 }
 
 ViEEncoder* ChannelGroup::GetEncoder(int channel_id) const {
+  CriticalSectionScoped lock(encoder_map_cs_.get());
   EncoderMap::const_iterator it = vie_encoder_map_.find(channel_id);
   if (it == vie_encoder_map_.end()) {
-    printf("No encoder found: %d\n", channel_id);
     return NULL;
   }
   return it->second;
@@ -346,6 +367,7 @@ ViEChannel* ChannelGroup::PopChannel(int channel_id) {
 }
 
 ViEEncoder* ChannelGroup::PopEncoder(int channel_id) {
+  CriticalSectionScoped lock(encoder_map_cs_.get());
   EncoderMap::iterator e_it = vie_encoder_map_.find(channel_id);
   DCHECK(e_it != vie_encoder_map_.end());
   ViEEncoder* encoder = e_it->second;
@@ -362,6 +384,7 @@ std::vector<int> ChannelGroup::GetChannelIds() const {
 }
 
 bool ChannelGroup::OtherChannelsUsingEncoder(int channel_id) const {
+  CriticalSectionScoped lock(encoder_map_cs_.get());
   EncoderMap::const_iterator orig_it = vie_encoder_map_.find(channel_id);
   if (orig_it == vie_encoder_map_.end()) {
     // No ViEEncoder for this channel.
@@ -390,6 +413,7 @@ void ChannelGroup::SetSyncInterface(VoEVideoSync* sync_interface) {
 
 void ChannelGroup::GetChannelsUsingEncoder(int channel_id,
                                            ChannelList* channels) const {
+  CriticalSectionScoped lock(encoder_map_cs_.get());
   EncoderMap::const_iterator orig_it = vie_encoder_map_.find(channel_id);
 
   for (ChannelMap::const_iterator c_it = channel_map_.begin();
@@ -418,6 +442,10 @@ EncoderStateFeedback* ChannelGroup::GetEncoderStateFeedback() const {
   return encoder_state_feedback_.get();
 }
 
+int64_t ChannelGroup::GetPacerQueuingDelayMs() const {
+  return pacer_->QueueInMs();
+}
+
 void ChannelGroup::SetChannelRembStatus(int channel_id,
                                         bool sender,
                                         bool receiver,
@@ -442,5 +470,17 @@ void ChannelGroup::OnNetworkChanged(uint32_t target_bitrate_bps,
                                     uint8_t fraction_loss,
                                     int64_t rtt) {
   bitrate_allocator_->OnNetworkChanged(target_bitrate_bps, fraction_loss, rtt);
+  int pad_up_to_bitrate_bps = 0;
+  {
+    CriticalSectionScoped lock(encoder_map_cs_.get());
+    for (const auto& encoder : vie_encoder_map_) {
+      pad_up_to_bitrate_bps +=
+          encoder.second->GetPaddingNeededBps(target_bitrate_bps);
+    }
+  }
+  pacer_->UpdateBitrate(
+      target_bitrate_bps / 1000,
+      PacedSender::kDefaultPaceMultiplier * target_bitrate_bps / 1000,
+      pad_up_to_bitrate_bps / 1000);
 }
 }  // namespace webrtc

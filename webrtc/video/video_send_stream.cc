@@ -109,25 +109,15 @@ VideoSendStream::VideoSendStream(
     const VideoSendStream::Config& config,
     const VideoEncoderConfig& encoder_config,
     const std::map<uint32_t, RtpState>& suspended_ssrcs,
-    int base_channel,
-    Call::Config::BitrateConfig bitrate_config)
+    int base_channel)
     : transport_adapter_(transport),
       encoded_frame_proxy_(config.post_encode_callback),
       config_(config),
-      bitrate_config_(bitrate_config),
       suspended_ssrcs_(suspended_ssrcs),
       external_codec_(nullptr),
       channel_(-1),
       use_config_bitrate_(true),
       stats_proxy_(Clock::GetRealTimeClock(), config) {
-  // Duplicate checking of bitrate config. These should be checked in
-  // Call but are added here for verbosity.
-  DCHECK_GE(bitrate_config.min_bitrate_bps, 0);
-  if (bitrate_config.start_bitrate_bps > 0)
-    DCHECK_GE(bitrate_config.start_bitrate_bps, bitrate_config.min_bitrate_bps);
-  if (bitrate_config.max_bitrate_bps != -1)
-    DCHECK_GE(bitrate_config.max_bitrate_bps, bitrate_config.start_bitrate_bps);
-
   video_engine_base_ = ViEBase::GetInterface(video_engine);
   video_engine_base_->CreateChannelWithoutDefaultEncoder(channel_,
                                                          base_channel);
@@ -405,31 +395,15 @@ bool VideoSendStream::ReconfigureVideoEncoder(
     video_codec.qpMax = std::max(video_codec.qpMax,
                                  static_cast<unsigned int>(streams[i].max_qp));
   }
-  // Clamp bitrates to the bitrate config.
-  if (video_codec.minBitrate <
-      static_cast<unsigned int>(bitrate_config_.min_bitrate_bps / 1000)) {
-    video_codec.minBitrate = bitrate_config_.min_bitrate_bps / 1000;
-  }
-  if (bitrate_config_.max_bitrate_bps != -1 &&
-      video_codec.maxBitrate >
-          static_cast<unsigned int>(bitrate_config_.max_bitrate_bps / 1000)) {
-    video_codec.maxBitrate = bitrate_config_.max_bitrate_bps / 1000;
-  }
-  uint32_t start_bitrate_bps = codec_->GetLastObservedBitrateBps(channel_);
-  if (start_bitrate_bps == 0 || use_config_bitrate_) {
-    start_bitrate_bps = bitrate_config_.start_bitrate_bps;
-  }
-  video_codec.startBitrate =
-      static_cast<unsigned int>(start_bitrate_bps) / 1000;
+
+  // Set to zero to not update the bitrate controller from ViEEncoder, as
+  // the bitrate controller is already set from Call.
+  video_codec.startBitrate = 0;
 
   if (video_codec.minBitrate < kViEMinCodecBitrate)
     video_codec.minBitrate = kViEMinCodecBitrate;
   if (video_codec.maxBitrate < kViEMinCodecBitrate)
     video_codec.maxBitrate = kViEMinCodecBitrate;
-  if (video_codec.startBitrate < video_codec.minBitrate)
-    video_codec.startBitrate = video_codec.minBitrate;
-  if (video_codec.startBitrate > video_codec.maxBitrate)
-    video_codec.startBitrate = video_codec.maxBitrate;
 
   DCHECK_GT(streams[0].max_framerate, 0);
   video_codec.maxFramerate = streams[0].max_framerate;
@@ -499,19 +473,6 @@ std::map<uint32_t, RtpState> VideoSendStream::GetRtpStates() const {
   }
 
   return rtp_states;
-}
-
-void VideoSendStream::SetBitrateConfig(
-    const Call::Config::BitrateConfig& bitrate_config) {
-  int last_start_bitrate_bps = bitrate_config_.start_bitrate_bps;
-  bitrate_config_ = bitrate_config;
-  if (bitrate_config_.start_bitrate_bps <= 0) {
-    bitrate_config_.start_bitrate_bps = last_start_bitrate_bps;
-  } else {
-    // Override start bitrate with bitrate from config.
-    use_config_bitrate_ = true;
-  }
-  ReconfigureVideoEncoder(encoder_config_);
 }
 
 void VideoSendStream::SignalNetworkState(Call::NetworkState state) {

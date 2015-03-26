@@ -18,61 +18,77 @@
 
 namespace webrtc {
 
+// Allow packets to be transmitted in up to 2 times max video bitrate if the
+// bandwidth estimate allows it.
+const int kTransmissionMaxBitrateMultiplier = 2;
+const int kDefaultBitrateBps = 300000;
+
 BitrateAllocator::BitrateAllocator()
     : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       bitrate_observers_(),
-      enforce_min_bitrate_(true) {
+      enforce_min_bitrate_(true),
+      last_bitrate_bps_(kDefaultBitrateBps),
+      last_fraction_loss_(0),
+      last_rtt_(0) {
 }
 
-BitrateAllocator::~BitrateAllocator() {
-  for (auto& kv : bitrate_observers_)
-    delete kv.second;
-}
 
 void BitrateAllocator::OnNetworkChanged(uint32_t bitrate,
                                         uint8_t fraction_loss,
                                         int64_t rtt) {
   CriticalSectionScoped lock(crit_sect_.get());
-  // Sanity check.
+  last_bitrate_bps_ = bitrate;
+  last_fraction_loss_ = fraction_loss;
+  last_rtt_ = rtt;
+  ObserverBitrateMap allocation = AllocateBitrates();
+  for (const auto& kv : allocation)
+    kv.first->OnNetworkChanged(kv.second, last_fraction_loss_, last_rtt_);
+}
+
+BitrateAllocator::ObserverBitrateMap BitrateAllocator::AllocateBitrates() {
   if (bitrate_observers_.empty())
-    return;
+    return ObserverBitrateMap();
 
   uint32_t sum_min_bitrates = 0;
-  BitrateObserverConfList::iterator it;
-  for (auto& kv : bitrate_observers_)
-    sum_min_bitrates += kv.second->min_bitrate_;
-  if (bitrate <= sum_min_bitrates)
-    return LowRateAllocation(bitrate, fraction_loss, rtt, sum_min_bitrates);
+  for (const auto& observer : bitrate_observers_)
+    sum_min_bitrates += observer.second.min_bitrate_;
+  if (last_bitrate_bps_ <= sum_min_bitrates)
+    return LowRateAllocation(last_bitrate_bps_);
   else
-    return NormalRateAllocation(bitrate, fraction_loss, rtt, sum_min_bitrates);
+    return NormalRateAllocation(last_bitrate_bps_, sum_min_bitrates);
 }
 
 int BitrateAllocator::AddBitrateObserver(BitrateObserver* observer,
-                                         uint32_t start_bitrate,
-                                         uint32_t min_bitrate,
-                                         uint32_t max_bitrate) {
+                                         uint32_t start_bitrate_bps,
+                                         uint32_t min_bitrate_bps,
+                                         uint32_t max_bitrate_bps,
+                                         int* new_observer_bitrate_bps) {
   CriticalSectionScoped lock(crit_sect_.get());
 
   BitrateObserverConfList::iterator it =
       FindObserverConfigurationPair(observer);
 
-  int new_bwe_candidate_bps = -1;
+  // Allow the max bitrate to be exceeded for FEC and retransmissions.
+  // TODO(holmer): We have to get rid of this hack as it makes it difficult to
+  // properly allocate bitrate. The allocator should instead distribute any
+  // extra bitrate after all streams have maxed out.
+  max_bitrate_bps *= kTransmissionMaxBitrateMultiplier;
+  int new_bwe_candidate_bps = 0;
   if (it != bitrate_observers_.end()) {
     // Update current configuration.
-    it->second->start_bitrate_ = start_bitrate;
-    it->second->min_bitrate_ = min_bitrate;
-    it->second->max_bitrate_ = max_bitrate;
+    it->second.start_bitrate_ = start_bitrate_bps;
+    it->second.min_bitrate_ = min_bitrate_bps;
+    it->second.max_bitrate_ = max_bitrate_bps;
     // Set the send-side bandwidth to the max of the sum of start bitrates and
     // the current estimate, so that if the user wants to immediately use more
     // bandwidth, that can be enforced.
-    new_bwe_candidate_bps = 0;
-    for (auto& kv : bitrate_observers_)
-      new_bwe_candidate_bps += kv.second->start_bitrate_;
+    for (const auto& observer : bitrate_observers_)
+      new_bwe_candidate_bps += observer.second.start_bitrate_;
   } else {
     // Add new settings.
     bitrate_observers_.push_back(BitrateObserverConfiguration(
-        observer,
-        new BitrateConfiguration(start_bitrate, min_bitrate, max_bitrate)));
+        observer, BitrateConfiguration(start_bitrate_bps, min_bitrate_bps,
+                                       max_bitrate_bps)));
     bitrate_observers_modified_ = true;
 
     // TODO(andresp): This is a ugly way to set start bitrate.
@@ -81,9 +97,19 @@ int BitrateAllocator::AddBitrateObserver(BitrateObserver* observer,
     // you can only have one start bitrate, once we have our first estimate we
     // will adapt from there.
     if (bitrate_observers_.size() == 1)
-      new_bwe_candidate_bps = start_bitrate;
+      new_bwe_candidate_bps = start_bitrate_bps;
   }
-  return new_bwe_candidate_bps;
+
+  last_bitrate_bps_ = std::max<int>(new_bwe_candidate_bps, last_bitrate_bps_);
+
+  ObserverBitrateMap allocation = AllocateBitrates();
+  *new_observer_bitrate_bps = 0;
+  for (auto& kv : allocation) {
+    kv.first->OnNetworkChanged(kv.second, last_fraction_loss_, last_rtt_);
+    if (kv.first == observer)
+      *new_observer_bitrate_bps = kv.second;
+  }
+  return last_bitrate_bps_;
 }
 
 void BitrateAllocator::RemoveBitrateObserver(BitrateObserver* observer) {
@@ -91,7 +117,6 @@ void BitrateAllocator::RemoveBitrateObserver(BitrateObserver* observer) {
   BitrateObserverConfList::iterator it =
       FindObserverConfigurationPair(observer);
   if (it != bitrate_observers_.end()) {
-    delete it->second;
     bitrate_observers_.erase(it);
     bitrate_observers_modified_ = true;
   }
@@ -103,32 +128,19 @@ void BitrateAllocator::GetMinMaxBitrateSumBps(int* min_bitrate_sum_bps,
   *max_bitrate_sum_bps = 0;
 
   CriticalSectionScoped lock(crit_sect_.get());
-  BitrateObserverConfList::const_iterator it;
-  for (it = bitrate_observers_.begin(); it != bitrate_observers_.end(); ++it) {
-    *min_bitrate_sum_bps += it->second->min_bitrate_;
-    *max_bitrate_sum_bps += it->second->max_bitrate_;
-  }
-  if (*max_bitrate_sum_bps == 0) {
-    // No max configured use 1Gbit/s.
-    *max_bitrate_sum_bps = 1000000000;
-  }
-  // TODO(holmer): Enforcing a min bitrate should be per stream, allowing some
-  // streams to auto-mute while others keep sending.
-  if (!enforce_min_bitrate_) {
-    // If not enforcing min bitrate, allow the bandwidth estimation to
-    // go as low as 10 kbps.
-    *min_bitrate_sum_bps = std::min(*min_bitrate_sum_bps, 10000);
+  for (const auto& observer : bitrate_observers_) {
+    *min_bitrate_sum_bps += observer.second.min_bitrate_;
+    *max_bitrate_sum_bps += observer.second.max_bitrate_;
   }
 }
 
 BitrateAllocator::BitrateObserverConfList::iterator
 BitrateAllocator::FindObserverConfigurationPair(
     const BitrateObserver* observer) {
-  BitrateObserverConfList::iterator it = bitrate_observers_.begin();
-  for (; it != bitrate_observers_.end(); ++it) {
-    if (it->first == observer) {
+  for (auto it = bitrate_observers_.begin(); it != bitrate_observers_.end();
+       ++it) {
+    if (it->first == observer)
       return it;
-    }
   }
   return bitrate_observers_.end();
 }
@@ -138,26 +150,25 @@ void BitrateAllocator::EnforceMinBitrate(bool enforce_min_bitrate) {
   enforce_min_bitrate_ = enforce_min_bitrate;
 }
 
-void BitrateAllocator::NormalRateAllocation(uint32_t bitrate,
-                                            uint8_t fraction_loss,
-                                            int64_t rtt,
-                                            uint32_t sum_min_bitrates) {
+BitrateAllocator::ObserverBitrateMap BitrateAllocator::NormalRateAllocation(
+    uint32_t bitrate,
+    uint32_t sum_min_bitrates) {
   uint32_t number_of_observers = bitrate_observers_.size();
   uint32_t bitrate_per_observer =
       (bitrate - sum_min_bitrates) / number_of_observers;
   // Use map to sort list based on max bitrate.
   ObserverSortingMap list_max_bitrates;
-  BitrateObserverConfList::iterator it;
-  for (it = bitrate_observers_.begin(); it != bitrate_observers_.end(); ++it) {
-    list_max_bitrates.insert(std::pair<uint32_t, ObserverConfiguration*>(
-        it->second->max_bitrate_,
-        new ObserverConfiguration(it->first, it->second->min_bitrate_)));
+  for (const auto& observer : bitrate_observers_) {
+    list_max_bitrates.insert(std::pair<uint32_t, ObserverConfiguration>(
+        observer.second.max_bitrate_,
+        ObserverConfiguration(observer.first, observer.second.min_bitrate_)));
   }
+  ObserverBitrateMap allocation;
   ObserverSortingMap::iterator max_it = list_max_bitrates.begin();
   while (max_it != list_max_bitrates.end()) {
     number_of_observers--;
     uint32_t observer_allowance =
-        max_it->second->min_bitrate_ + bitrate_per_observer;
+        max_it->second.min_bitrate_ + bitrate_per_observer;
     if (max_it->first < observer_allowance) {
       // We have more than enough for this observer.
       // Carry the remainder forward.
@@ -165,41 +176,35 @@ void BitrateAllocator::NormalRateAllocation(uint32_t bitrate,
       if (number_of_observers != 0) {
         bitrate_per_observer += remainder / number_of_observers;
       }
-      max_it->second->observer_->OnNetworkChanged(max_it->first, fraction_loss,
-                                                  rtt);
+      allocation[max_it->second.observer_] = max_it->first;
     } else {
-      max_it->second->observer_->OnNetworkChanged(observer_allowance,
-                                                  fraction_loss, rtt);
+      allocation[max_it->second.observer_] = observer_allowance;
     }
-    delete max_it->second;
     list_max_bitrates.erase(max_it);
     // Prepare next iteration.
     max_it = list_max_bitrates.begin();
   }
+  return allocation;
 }
 
-void BitrateAllocator::LowRateAllocation(uint32_t bitrate,
-                                         uint8_t fraction_loss,
-                                         int64_t rtt,
-                                         uint32_t sum_min_bitrates) {
+BitrateAllocator::ObserverBitrateMap BitrateAllocator::LowRateAllocation(
+    uint32_t bitrate) {
+  ObserverBitrateMap allocation;
   if (enforce_min_bitrate_) {
     // Min bitrate to all observers.
-    BitrateObserverConfList::iterator it;
-    for (it = bitrate_observers_.begin(); it != bitrate_observers_.end();
-         ++it) {
-      it->first->OnNetworkChanged(it->second->min_bitrate_, fraction_loss, rtt);
-    }
+    for (const auto& observer : bitrate_observers_)
+      allocation[observer.first] = observer.second.min_bitrate_;
   } else {
     // Allocate up to |min_bitrate_| to one observer at a time, until
     // |bitrate| is depleted.
     uint32_t remainder = bitrate;
-    BitrateObserverConfList::iterator it;
-    for (it = bitrate_observers_.begin(); it != bitrate_observers_.end();
-         ++it) {
-      uint32_t allocation = std::min(remainder, it->second->min_bitrate_);
-      it->first->OnNetworkChanged(allocation, fraction_loss, rtt);
-      remainder -= allocation;
+    for (const auto& observer : bitrate_observers_) {
+      uint32_t allocated_bitrate =
+          std::min(remainder, observer.second.min_bitrate_);
+      allocation[observer.first] = allocated_bitrate;
+      remainder -= allocated_bitrate;
     }
   }
+  return allocation;
 }
 }  // namespace webrtc

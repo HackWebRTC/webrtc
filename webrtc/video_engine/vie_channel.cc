@@ -19,6 +19,7 @@
 #include "webrtc/experiments.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
+#include "webrtc/modules/pacing/include/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
@@ -91,6 +92,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
                        RemoteBitrateEstimator* remote_bitrate_estimator,
                        RtcpRttStats* rtt_stats,
                        PacedSender* paced_sender,
+                       PacketRouter* packet_router,
                        bool sender,
                        bool disable_default_encoder)
     : ViEFrameProviderBase(channel_id, engine_id),
@@ -115,6 +117,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
       intra_frame_observer_(intra_frame_observer),
       rtt_stats_(rtt_stats),
       paced_sender_(paced_sender),
+      packet_router_(packet_router),
       bandwidth_observer_(bandwidth_observer),
       send_timestamp_extension_id_(kInvalidRtpExtensionId),
       absolute_send_time_extension_id_(kInvalidRtpExtensionId),
@@ -153,9 +156,10 @@ int32_t ViEChannel::Init() {
     rtp_rtcp_->SetStorePacketsStatus(true, nack_history_size_sender_);
   }
   if (sender_) {
-     std::list<RtpRtcp*> send_rtp_modules(1, rtp_rtcp_.get());
-     send_payload_router_->SetSendingRtpModules(send_rtp_modules);
-     DCHECK(!send_payload_router_->active());
+    packet_router_->AddRtpModule(rtp_rtcp_.get());
+    std::list<RtpRtcp*> send_rtp_modules(1, rtp_rtcp_.get());
+    send_payload_router_->SetSendingRtpModules(send_rtp_modules);
+    DCHECK(!send_payload_router_->active());
   }
   if (vcm_->InitializeReceiver() != 0) {
     return -1;
@@ -203,9 +207,11 @@ ViEChannel::~ViEChannel() {
   module_process_thread_.DeRegisterModule(vcm_);
   module_process_thread_.DeRegisterModule(&vie_sync_);
   send_payload_router_->SetSendingRtpModules(std::list<RtpRtcp*>());
+  packet_router_->RemoveRtpModule(rtp_rtcp_.get());
   while (simulcast_rtp_rtcp_.size() > 0) {
     std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
     RtpRtcp* rtp_rtcp = *it;
+    packet_router_->RemoveRtpModule(rtp_rtcp);
     module_process_thread_.DeRegisterModule(rtp_rtcp);
     delete rtp_rtcp;
     simulcast_rtp_rtcp_.erase(it);
@@ -355,6 +361,9 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   bool router_was_active = send_payload_router_->active();
   send_payload_router_->set_active(false);
   send_payload_router_->SetSendingRtpModules(std::list<RtpRtcp*>());
+  packet_router_->RemoveRtpModule(rtp_rtcp_.get());
+  for (RtpRtcp* module : simulcast_rtp_rtcp_)
+    packet_router_->RemoveRtpModule(module);
   if (rtp_rtcp_->Sending() && new_stream) {
     restart_rtp = true;
     rtp_rtcp_->SetSendingStatus(false);
@@ -526,7 +535,11 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       (*it)->SetSendingMediaStatus(true);
     }
   }
-  // Update the packet router with the sending RTP RTCP modules.
+  // Update the packet and payload routers with the sending RTP RTCP modules.
+  packet_router_->AddRtpModule(rtp_rtcp_.get());
+  for (RtpRtcp* module : simulcast_rtp_rtcp_)
+    packet_router_->AddRtpModule(module);
+
   std::list<RtpRtcp*> active_send_modules;
   active_send_modules.push_back(rtp_rtcp_.get());
   for (std::list<RtpRtcp*>::const_iterator cit = simulcast_rtp_rtcp_.begin();

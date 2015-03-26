@@ -43,7 +43,6 @@ class ViEBitrateObserver;
 class ViEEffectFilter;
 class ViEEncoderObserver;
 class VideoCodingModule;
-class ViEPacedSenderCallback;
 
 class ViEEncoder
     : public RtcpIntraFrameObserver,
@@ -53,12 +52,12 @@ class ViEEncoder
       public ViEFrameCallback {
  public:
   friend class ViEBitrateObserver;
-  friend class ViEPacedSenderCallback;
 
   ViEEncoder(int32_t channel_id,
              uint32_t number_of_cores,
              const Config& config,
              ProcessThread& module_process_thread,
+             PacedSender* pacer,
              BitrateAllocator* bitrate_allocator,
              BitrateController* bitrate_controller,
              bool disable_default_encoder);
@@ -101,8 +100,6 @@ class ViEEncoder
     unsigned char config_parameters[kConfigParameterSize],
     unsigned char& config_parameters_size);
 
-  PacedSender* GetPacedSender();
-
   // Scale or crop/pad image.
   int32_t ScaleInputImage(bool enable);
 
@@ -120,8 +117,6 @@ class ViEEncoder
   int32_t SendKeyFrame();
   int32_t SendCodecStatistics(uint32_t* num_key_frames,
                               uint32_t* num_delta_frames);
-
-  int64_t PacerQueuingDelayMs() const;
 
   uint32_t LastObservedBitrateBps() const;
   int CodecTargetBitrate(uint32_t* bitrate) const;
@@ -183,18 +178,15 @@ class ViEEncoder
 
   int channel_id() const { return channel_id_; }
 
+  int GetPaddingNeededBps(int bitrate_bps) const;
+
  protected:
   // Called by BitrateObserver.
   void OnNetworkChanged(uint32_t bitrate_bps,
                         uint8_t fraction_lost,
                         int64_t round_trip_time_ms);
 
-  // Called by PacedSender.
-  bool TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
-                        int64_t capture_time_ms, bool retransmission);
-  size_t TimeToSendPadding(size_t bytes);
  private:
-  int GetPaddingNeededBps(int bitrate_bps) const;
   bool EncoderPaused() const EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
   void TraceFrameDropStart() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
   void TraceFrameDropEnd() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
@@ -213,9 +205,8 @@ class ViEEncoder
   rtc::scoped_ptr<CriticalSectionWrapper> callback_cs_;
   rtc::scoped_ptr<CriticalSectionWrapper> data_cs_;
   rtc::scoped_ptr<BitrateObserver> bitrate_observer_;
-  rtc::scoped_ptr<PacedSender> paced_sender_;
-  rtc::scoped_ptr<ViEPacedSenderCallback> pacing_callback_;
 
+  PacedSender* const pacer_;
   BitrateAllocator* const bitrate_allocator_;
   BitrateController* const bitrate_controller_;
 
@@ -236,7 +227,6 @@ class ViEEncoder
   ViEEncoderObserver* codec_observer_ GUARDED_BY(callback_cs_);
   ViEEffectFilter* effect_filter_ GUARDED_BY(callback_cs_);
   ProcessThread& module_process_thread_;
-  rtc::scoped_ptr<ProcessThread> pacer_thread_;
 
   bool has_received_sli_ GUARDED_BY(data_cs_);
   uint8_t picture_id_sli_ GUARDED_BY(data_cs_);

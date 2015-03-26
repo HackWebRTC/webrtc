@@ -24,7 +24,7 @@ class SendSideBandwidthEstimation {
   SendSideBandwidthEstimation();
   virtual ~SendSideBandwidthEstimation();
 
-  void CurrentEstimate(uint32_t* bitrate, uint8_t* loss, int64_t* rtt) const;
+  void CurrentEstimate(int* bitrate, uint8_t* loss, int64_t* rtt) const;
 
   // Call periodically to update estimate.
   void UpdateEstimate(int64_t now_ms);
@@ -38,9 +38,9 @@ class SendSideBandwidthEstimation {
                            int number_of_packets,
                            int64_t now_ms);
 
-  void SetSendBitrate(uint32_t bitrate);
-  void SetMinMaxBitrate(uint32_t min_bitrate, uint32_t max_bitrate);
-  uint32_t GetMinBitrate() const;
+  void SetSendBitrate(int bitrate);
+  void SetMinMaxBitrate(int min_bitrate, int max_bitrate);
+  int GetMinBitrate() const;
 
  private:
   enum UmaState { kNoUpdate, kFirstDone, kDone };

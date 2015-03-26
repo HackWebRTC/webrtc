@@ -48,8 +48,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
                   const VideoSendStream::Config& config,
                   const VideoEncoderConfig& encoder_config,
                   const std::map<uint32_t, RtpState>& suspended_ssrcs,
-                  int base_channel,
-                  Call::Config::BitrateConfig bitrate_config);
+                  int base_channel);
 
   virtual ~VideoSendStream();
 
@@ -71,7 +70,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
   typedef std::map<uint32_t, RtpState> RtpStateMap;
   RtpStateMap GetRtpStates() const;
 
-  void SetBitrateConfig(const Call::Config::BitrateConfig& bitrate_config);
   void SignalNetworkState(Call::NetworkState state);
 
   int64_t GetPacerQueuingDelayMs() const;
@@ -84,7 +82,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
   EncodedFrameCallbackAdapter encoded_frame_proxy_;
   const VideoSendStream::Config config_;
   VideoEncoderConfig encoder_config_;
-  Call::Config::BitrateConfig bitrate_config_;
   std::map<uint32_t, RtpState> suspended_ssrcs_;
 
   ViEBase* video_engine_base_;

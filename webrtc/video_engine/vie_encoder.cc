@@ -45,12 +45,6 @@ static const float kEncoderPausePacerMargin = 2.0f;
 // Don't stop the encoder unless the delay is above this configured value.
 static const int kMinPacingDelayMs = 200;
 
-// Allow packets to be transmitted in up to 2 times max video bitrate if the
-// bandwidth estimate allows it.
-// TODO(holmer): Expose transmission start, min and max bitrates in the
-// VideoEngine API and remove the kTransmissionMaxBitrateMultiplier.
-static const int kTransmissionMaxBitrateMultiplier = 2;
-
 static const float kStopPaddingThresholdMs = 2000;
 
 std::vector<uint32_t> AllocateStreamBitrates(
@@ -106,31 +100,11 @@ class ViEBitrateObserver : public BitrateObserver {
   ViEEncoder* owner_;
 };
 
-// TODO(mflodman): Move this observer to PayloadRouter class.
-class ViEPacedSenderCallback : public PacedSender::Callback {
- public:
-  explicit ViEPacedSenderCallback(ViEEncoder* owner)
-      : owner_(owner) {
-  }
-  virtual ~ViEPacedSenderCallback() {}
-  virtual bool TimeToSendPacket(uint32_t ssrc,
-                                uint16_t sequence_number,
-                                int64_t capture_time_ms,
-                                bool retransmission) {
-    return owner_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms,
-                                    retransmission);
-  }
-  virtual size_t TimeToSendPadding(size_t bytes) {
-    return owner_->TimeToSendPadding(bytes);
-  }
- private:
-  ViEEncoder* owner_;
-};
-
 ViEEncoder::ViEEncoder(int32_t channel_id,
                        uint32_t number_of_cores,
                        const Config& config,
                        ProcessThread& module_process_thread,
+                       PacedSender* pacer,
                        BitrateAllocator* bitrate_allocator,
                        BitrateController* bitrate_controller,
                        bool disable_default_encoder)
@@ -143,6 +117,7 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
       vcm_protection_callback_(NULL),
       callback_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       data_cs_(CriticalSectionWrapper::CreateCriticalSection()),
+      pacer_(pacer),
       bitrate_allocator_(bitrate_allocator),
       bitrate_controller_(bitrate_controller),
       time_of_last_incoming_frame_ms_(0),
@@ -158,7 +133,6 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
       codec_observer_(NULL),
       effect_filter_(NULL),
       module_process_thread_(module_process_thread),
-      pacer_thread_(ProcessThread::Create()),
       has_received_sli_(false),
       picture_id_sli_(0),
       has_received_rpsi_(false),
@@ -169,13 +143,6 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
       start_ms_(Clock::GetRealTimeClock()->TimeInMilliseconds()),
       send_statistics_proxy_(NULL) {
   bitrate_observer_.reset(new ViEBitrateObserver(this));
-  pacing_callback_.reset(new ViEPacedSenderCallback(this));
-  paced_sender_.reset(new PacedSender(
-      Clock::GetRealTimeClock(),
-      pacing_callback_.get(),
-      kDefaultStartBitrateKbps,
-      PacedSender::kDefaultPaceMultiplier * kDefaultStartBitrateKbps,
-      0));
 }
 
 bool ViEEncoder::Init() {
@@ -233,15 +200,11 @@ void ViEEncoder::StartThreadsAndSetSharedMembers(
   vcm_protection_callback_ = vcm_protection_callback;
 
   module_process_thread_.RegisterModule(&vcm_);
-  pacer_thread_->RegisterModule(paced_sender_.get());
-  pacer_thread_->Start();
 }
 
 void ViEEncoder::StopThreadsAndRemoveSharedMembers() {
   vcm_.RegisterProtectionCallback(NULL);
   vcm_protection_callback_ = NULL;
-  pacer_thread_->Stop();
-  pacer_thread_->DeRegisterModule(paced_sender_.get());
   module_process_thread_.DeRegisterModule(&vcm_);
   module_process_thread_.DeRegisterModule(&vpm_);
 }
@@ -283,9 +246,9 @@ void ViEEncoder::SetNetworkTransmissionState(bool is_transmitting) {
     network_is_transmitting_ = is_transmitting;
   }
   if (is_transmitting) {
-    paced_sender_->Resume();
+    pacer_->Resume();
   } else {
-    paced_sender_->Pause();
+    pacer_->Pause();
   }
 }
 
@@ -373,49 +336,46 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
     return -1;
   }
 
-  // Convert from kbps to bps.
-  std::vector<uint32_t> stream_bitrates = AllocateStreamBitrates(
-      video_codec.startBitrate * 1000,
-      video_codec.simulcastStream,
-      video_codec.numberOfSimulcastStreams);
-  send_payload_router_->SetTargetSendBitrates(stream_bitrates);
-
   {
     CriticalSectionScoped cs(data_cs_.get());
     send_padding_ = video_codec.numberOfSimulcastStreams > 1;
   }
+
+  // Add a bitrate observer to the allocator and update the start, max and
+  // min bitrates of the bitrate controller as needed.
+  int allocated_bitrate_bps;
+  int new_bwe_candidate_bps = bitrate_allocator_->AddBitrateObserver(
+      bitrate_observer_.get(), video_codec.startBitrate * 1000,
+      video_codec.minBitrate * 1000, video_codec.maxBitrate * 1000,
+      &allocated_bitrate_bps);
+
+  // Only set the start/min/max bitrate of the bitrate controller if the start
+  // bitrate is greater than zero. The new API sets these via the channel group
+  // and passes a zero start bitrate to SetSendCodec.
+  // TODO(holmer): Remove this when the new API has been launched.
+  if (video_codec.startBitrate > 0) {
+    if (new_bwe_candidate_bps > 0) {
+      uint32_t current_bwe_bps = 0;
+      bitrate_controller_->AvailableBandwidth(&current_bwe_bps);
+      bitrate_controller_->SetStartBitrate(std::max(
+          static_cast<uint32_t>(new_bwe_candidate_bps), current_bwe_bps));
+    }
+
+    int new_bwe_min_bps = 0;
+    int new_bwe_max_bps = 0;
+    bitrate_allocator_->GetMinMaxBitrateSumBps(&new_bwe_min_bps,
+                                               &new_bwe_max_bps);
+    bitrate_controller_->SetMinMaxBitrate(new_bwe_min_bps, new_bwe_max_bps);
+  }
+
+  webrtc::VideoCodec modified_video_codec = video_codec;
+  modified_video_codec.startBitrate = allocated_bitrate_bps / 1000;
+
   size_t max_data_payload_length = send_payload_router_->MaxPayloadLength();
-  if (vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
+  if (vcm_.RegisterSendCodec(&modified_video_codec, number_of_cores_,
                              max_data_payload_length) != VCM_OK) {
     return -1;
   }
-
-  // Add the a bitrate observer to the allocator and update the start, max and
-  // min bitrates of the bitrate controller as needed.
-  int new_bwe_candidate_bps = bitrate_allocator_->AddBitrateObserver(
-      bitrate_observer_.get(), video_codec.startBitrate * 1000,
-      video_codec.minBitrate * 1000,
-      kTransmissionMaxBitrateMultiplier * video_codec.maxBitrate * 1000);
-  if (new_bwe_candidate_bps > 0) {
-    uint32_t current_bwe_bps = 0;
-    bitrate_controller_->AvailableBandwidth(&current_bwe_bps);
-    bitrate_controller_->SetStartBitrate(std::max(
-        static_cast<uint32_t>(new_bwe_candidate_bps), current_bwe_bps));
-  }
-
-  int new_bwe_min_bps = 0;
-  int new_bwe_max_bps = 0;
-  bitrate_allocator_->GetMinMaxBitrateSumBps(&new_bwe_min_bps,
-                                             &new_bwe_max_bps);
-  bitrate_controller_->SetMinMaxBitrate(new_bwe_min_bps, new_bwe_max_bps);
-
-  int pad_up_to_bitrate_bps =
-      GetPaddingNeededBps(1000 * video_codec.startBitrate);
-  paced_sender_->UpdateBitrate(
-      video_codec.startBitrate,
-      PacedSender::kDefaultPaceMultiplier * video_codec.startBitrate,
-      pad_up_to_bitrate_bps / 1000);
-
   return 0;
 }
 
@@ -448,18 +408,6 @@ int32_t ViEEncoder::ScaleInputImage(bool enable) {
   vpm_.SetInputFrameResampleMode(resampling_mode);
 
   return 0;
-}
-
-bool ViEEncoder::TimeToSendPacket(uint32_t ssrc,
-                                  uint16_t sequence_number,
-                                  int64_t capture_time_ms,
-                                  bool retransmission) {
-  return send_payload_router_->TimeToSendPacket(
-      ssrc, sequence_number, capture_time_ms, retransmission);
-}
-
-size_t ViEEncoder::TimeToSendPadding(size_t bytes) {
-  return send_payload_router_->TimeToSendPadding(bytes);
 }
 
 int ViEEncoder::GetPaddingNeededBps(int bitrate_bps) const {
@@ -532,12 +480,12 @@ bool ViEEncoder::EncoderPaused() const {
     // Buffered mode.
     // TODO(pwestin): Workaround until nack is configured as a time and not
     // number of packets.
-    return paced_sender_->QueueInMs() >=
-        std::max(static_cast<int>(target_delay_ms_ * kEncoderPausePacerMargin),
-                 kMinPacingDelayMs);
+    return pacer_->QueueInMs() >=
+           std::max(
+               static_cast<int>(target_delay_ms_ * kEncoderPausePacerMargin),
+               kMinPacingDelayMs);
   }
-  if (paced_sender_->ExpectedQueueTimeMs() >
-      PacedSender::kDefaultMaxQueueLengthMs) {
+  if (pacer_->ExpectedQueueTimeMs() > PacedSender::kDefaultMaxQueueLengthMs) {
     // Too much data in pacer queue, drop frame.
     return true;
   }
@@ -685,10 +633,6 @@ int32_t ViEEncoder::SendCodecStatistics(
   *num_key_frames = sent_frames.numKeyFrames;
   *num_delta_frames = sent_frames.numDeltaFrames;
   return 0;
-}
-
-int64_t ViEEncoder::PacerQueuingDelayMs() const {
-  return paced_sender_->QueueInMs();
 }
 
 uint32_t ViEEncoder::LastObservedBitrateBps() const {
@@ -922,12 +866,6 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
       bitrate_bps, stream_configs, send_codec.numberOfSimulcastStreams);
   send_payload_router_->SetTargetSendBitrates(stream_bitrates);
 
-  int pad_up_to_bitrate_bps = GetPaddingNeededBps(bitrate_bps);
-  paced_sender_->UpdateBitrate(
-      bitrate_bps / 1000,
-      PacedSender::kDefaultPaceMultiplier * bitrate_bps / 1000,
-      pad_up_to_bitrate_bps / 1000);
-
   {
     CriticalSectionScoped cs(data_cs_.get());
     last_observed_bitrate_bps_ = bitrate_bps;
@@ -942,10 +880,6 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
                  << " for channel " << channel_id_;
     codec_observer_->SuspendChange(channel_id_, video_is_suspended);
   }
-}
-
-PacedSender* ViEEncoder::GetPacedSender() {
-  return paced_sender_.get();
 }
 
 int32_t ViEEncoder::RegisterEffectFilter(ViEEffectFilter* effect_filter) {
@@ -969,12 +903,6 @@ int ViEEncoder::StopDebugRecording() {
 void ViEEncoder::SuspendBelowMinBitrate() {
   vcm_.SuspendBelowMinBitrate();
   bitrate_allocator_->EnforceMinBitrate(false);
-  int min_bitrate_sum_bps;
-  int max_bitrate_sum_bps;
-  bitrate_allocator_->GetMinMaxBitrateSumBps(&min_bitrate_sum_bps,
-                                             &max_bitrate_sum_bps);
-  bitrate_controller_->SetMinMaxBitrate(min_bitrate_sum_bps,
-                                        max_bitrate_sum_bps);
 }
 
 void ViEEncoder::RegisterPreEncodeCallback(
