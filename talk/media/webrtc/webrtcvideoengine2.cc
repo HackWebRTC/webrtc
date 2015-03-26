@@ -1816,6 +1816,9 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
     for (uint32_t ssrc : parameters_.config.rtp.ssrcs)
       info.add_ssrc(ssrc);
 
+    VideoCodecSettings codec_settings;
+    if (parameters_.codec_settings.Get(&codec_settings))
+      info.codec_name = codec_settings.codec.name;
     for (size_t i = 0; i < parameters_.encoder_config.streams.size(); ++i) {
       if (i == parameters_.encoder_config.streams.size() - 1) {
         info.preferred_bitrate +=

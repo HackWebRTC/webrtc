@@ -2101,6 +2101,18 @@ TEST_F(WebRtcVideoChannel2Test, OnReadyToSendSignalsNetworkState) {
   EXPECT_EQ(webrtc::Call::kNetworkUp, fake_call_->GetNetworkState());
 }
 
+TEST_F(WebRtcVideoChannel2Test, GetStatsReportsSentCodecName) {
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kVp8Codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+
+  AddSendStream();
+
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(&info));
+  EXPECT_EQ(kVp8Codec.name, info.senders[0].codec_name);
+}
+
 TEST_F(WebRtcVideoChannel2Test, GetStatsReportsCpuOveruseMetrics) {
   FakeVideoSendStream* stream = AddSendStream();
   webrtc::VideoSendStream::Stats stats;
