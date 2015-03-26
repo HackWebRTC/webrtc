@@ -120,7 +120,7 @@ bool IsCng(int codec_id) {
 AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
     : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       id_(config.id),
-      last_audio_decoder_(-1),  // Invalid value.
+      last_audio_decoder_(nullptr),
       previous_audio_activity_(AudioFrame::kVadPassive),
       current_sample_rate_hz_(config.neteq_config.sample_rate_hz),
       audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
@@ -269,32 +269,29 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
   {
     CriticalSectionScoped lock(crit_sect_.get());
 
-    int codec_id = RtpHeaderToCodecIndex(*header, incoming_payload);
-    if (codec_id < 0) {
+    const Decoder* decoder = RtpHeaderToDecoder(*header, incoming_payload);
+    if (!decoder) {
       LOG_F(LS_ERROR) << "Payload-type "
                       << static_cast<int>(header->payloadType)
                       << " is not registered.";
       return -1;
     }
-    const int sample_rate_hz = ACMCodecDB::CodecFreq(codec_id);
+    const int sample_rate_hz = ACMCodecDB::CodecFreq(decoder->acm_codec_id);
     receive_timestamp = NowInTimestamp(sample_rate_hz);
 
-    if (IsCng(codec_id)) {
+    if (IsCng(decoder->acm_codec_id)) {
       // If this is a CNG while the audio codec is not mono skip pushing in
       // packets into NetEq.
-      if (last_audio_decoder_ >= 0 &&
-        decoders_[last_audio_decoder_].channels > 1)
+      if (last_audio_decoder_ && last_audio_decoder_->channels > 1)
         return 0;
       packet_type = InitialDelayManager::kCngPacket;
-    } else if (codec_id == ACMCodecDB::kAVT) {
+    } else if (decoder->acm_codec_id == ACMCodecDB::kAVT) {
       packet_type = InitialDelayManager::kAvtPacket;
     } else {
-      if (codec_id != last_audio_decoder_) {
+      if (decoder != last_audio_decoder_) {
         // This is either the first audio packet or send codec is changed.
         // Therefore, either NetEq buffer is empty or will be flushed when this
-        // packet inserted. Note that |last_audio_decoder_| is initialized to
-        // an invalid value (-1), hence, the above condition is true for the
-        // very first audio packet.
+        // packet is inserted.
         new_codec = true;
 
         // Updating NACK'sampling rate is required, either first packet is
@@ -305,7 +302,7 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
           nack_->Reset();
           nack_->UpdateSampleRate(sample_rate_hz);
         }
-        last_audio_decoder_ = codec_id;
+        last_audio_decoder_ = decoder;
       }
       packet_type = InitialDelayManager::kAudioPacket;
     }
@@ -491,22 +488,19 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
 
   // The corresponding NetEq decoder ID.
   // If this codec has been registered before.
-  auto it = decoders_.find(acm_codec_id);
+  auto it = decoders_.find(payload_type);
   if (it != decoders_.end()) {
     const Decoder& decoder = it->second;
-    if (decoder.payload_type == payload_type &&
-        decoder.channels == channels) {
-      // Re-registering the same codec with the same payload-type. Do nothing
-      // and return.
+    if (decoder.acm_codec_id == acm_codec_id && decoder.channels == channels) {
+      // Re-registering the same codec. Do nothing and return.
       return 0;
     }
 
-    // Changing the payload-type or number of channels for this codec.
-    // First unregister. Then register with new payload-type/channels.
-    if (neteq_->RemovePayloadType(decoder.payload_type) !=
-        NetEq::kOK) {
+    // Changing codec or number of channels. First unregister the old codec,
+    // then register the new one.
+    if (neteq_->RemovePayloadType(payload_type) != NetEq::kOK) {
       LOG_F(LS_ERROR) << "Cannot remove payload "
-                      << static_cast<int>(decoder.payload_type);
+                      << static_cast<int>(payload_type);
       return -1;
     }
 
@@ -530,7 +524,7 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
   decoder.acm_codec_id = acm_codec_id;
   decoder.payload_type = payload_type;
   decoder.channels = channels;
-  decoders_[acm_codec_id] = decoder;
+  decoders_[payload_type] = decoder;
   return 0;
 }
 
@@ -568,14 +562,14 @@ int AcmReceiver::RemoveAllCodecs() {
   }
 
   // No codec is registered, invalidate last audio decoder.
-  last_audio_decoder_ = -1;
+  last_audio_decoder_ = nullptr;
   return ret_val;
 }
 
 int AcmReceiver::RemoveCodec(uint8_t payload_type) {
   CriticalSectionScoped lock(crit_sect_.get());
-  int codec_index = PayloadType2CodecIndex(payload_type);
-  if (codec_index < 0) {  // Such a payload-type is not registered.
+  auto it = decoders_.find(payload_type);
+  if (it == decoders_.end()) {  // Such a payload-type is not registered.
     return 0;
   }
   if (neteq_->RemovePayloadType(payload_type) != NetEq::kOK) {
@@ -583,9 +577,9 @@ int AcmReceiver::RemoveCodec(uint8_t payload_type) {
               static_cast<int>(payload_type));
     return -1;
   }
-  decoders_.erase(codec_index);
-  if (last_audio_decoder_ == codec_index)
-    last_audio_decoder_ = -1;  // Codec is removed, invalidate last decoder.
+  if (last_audio_decoder_ == &it->second)
+    last_audio_decoder_ = nullptr;
+  decoders_.erase(it);
   return 0;
 }
 
@@ -606,29 +600,31 @@ bool AcmReceiver::GetPlayoutTimestamp(uint32_t* timestamp) {
 
 int AcmReceiver::last_audio_codec_id() const {
   CriticalSectionScoped lock(crit_sect_.get());
-  return last_audio_decoder_;
+  return last_audio_decoder_ ? last_audio_decoder_->acm_codec_id : -1;
 }
 
 int AcmReceiver::RedPayloadType() const {
-  CriticalSectionScoped lock(crit_sect_.get());
-  auto it = decoders_.find(ACMCodecDB::kRED);
-  if (ACMCodecDB::kRED < 0 || it == decoders_.end()) {
-    LOG_F(LS_WARNING) << "RED is not registered.";
-    return -1;
+  if (ACMCodecDB::kRED >= 0) {  // This ensures that RED is defined in WebRTC.
+    CriticalSectionScoped lock(crit_sect_.get());
+    for (const auto& decoder_pair : decoders_) {
+      const Decoder& decoder = decoder_pair.second;
+      if (decoder.acm_codec_id == ACMCodecDB::kRED)
+        return decoder.payload_type;
+    }
   }
-  return it->second.payload_type;
+  LOG_F(LS_WARNING) << "RED is not registered.";
+  return -1;
 }
 
 int AcmReceiver::LastAudioCodec(CodecInst* codec) const {
   CriticalSectionScoped lock(crit_sect_.get());
-  if (last_audio_decoder_ < 0) {
+  if (!last_audio_decoder_) {
     return -1;
   }
-  auto it = decoders_.find(last_audio_decoder_);
-  assert(it != decoders_.end());
-  memcpy(codec, &ACMCodecDB::database_[last_audio_decoder_], sizeof(CodecInst));
-  codec->pltype = it->second.payload_type;
-  codec->channels = it->second.channels;
+  memcpy(codec, &ACMCodecDB::database_[last_audio_decoder_->acm_codec_id],
+         sizeof(CodecInst));
+  codec->pltype = last_audio_decoder_->payload_type;
+  codec->channels = last_audio_decoder_->channels;
   return 0;
 }
 
@@ -679,27 +675,18 @@ void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) {
 int AcmReceiver::DecoderByPayloadType(uint8_t payload_type,
                                       CodecInst* codec) const {
   CriticalSectionScoped lock(crit_sect_.get());
-  int codec_index = PayloadType2CodecIndex(payload_type);
-  if (codec_index < 0) {
+  auto it = decoders_.find(payload_type);
+  if (it == decoders_.end()) {
     LOG_FERR1(LS_ERROR, "AcmReceiver::DecoderByPayloadType",
               static_cast<int>(payload_type));
     return -1;
   }
-  memcpy(codec, &ACMCodecDB::database_[codec_index], sizeof(CodecInst));
-  // Safe not to check the iterator
-  const Decoder& decoder = decoders_.find(codec_index)->second;
+  const Decoder& decoder = it->second;
+  memcpy(codec, &ACMCodecDB::database_[decoder.acm_codec_id],
+         sizeof(CodecInst));
   codec->pltype = decoder.payload_type;
   codec->channels = decoder.channels;
   return 0;
-}
-
-int AcmReceiver::PayloadType2CodecIndex(uint8_t payload_type) const {
-  for (const auto& decoder_pair : decoders_) {
-    const Decoder& decoder = decoder_pair.second;
-    if (decoder.payload_type == payload_type)
-      return decoder.acm_codec_id;
-  }
-  return -1;
 }
 
 int AcmReceiver::EnableNack(size_t max_nack_list_size) {
@@ -714,9 +701,9 @@ int AcmReceiver::EnableNack(size_t max_nack_list_size) {
 
     // Sampling rate might need to be updated if we change from disable to
     // enable. Do it if the receive codec is valid.
-    if (last_audio_decoder_ >= 0) {
+    if (last_audio_decoder_) {
       nack_->UpdateSampleRate(
-          ACMCodecDB::database_[last_audio_decoder_].plfreq);
+          ACMCodecDB::database_[last_audio_decoder_->acm_codec_id].plfreq);
     }
   }
   return nack_->SetMaxNackListSize(max_nack_list_size);
@@ -779,9 +766,10 @@ bool AcmReceiver::GetSilence(int desired_sample_rate_hz, AudioFrame* frame) {
   call_stats_.DecodedBySilenceGenerator();
 
   // Set the values if already got a packet, otherwise set to default values.
-  if (last_audio_decoder_ >= 0) {
-    current_sample_rate_hz_ = ACMCodecDB::database_[last_audio_decoder_].plfreq;
-    frame->num_channels_ = decoders_[last_audio_decoder_].channels;
+  if (last_audio_decoder_) {
+    current_sample_rate_hz_ =
+        ACMCodecDB::database_[last_audio_decoder_->acm_codec_id].plfreq;
+    frame->num_channels_ = last_audio_decoder_->channels;
   } else {
     frame->num_channels_ = 1;
   }
@@ -801,19 +789,18 @@ bool AcmReceiver::GetSilence(int desired_sample_rate_hz, AudioFrame* frame) {
   return true;
 }
 
-int AcmReceiver::RtpHeaderToCodecIndex(
-    const RTPHeader &rtp_header, const uint8_t* payload) const {
-  uint8_t payload_type = rtp_header.payloadType;
-  auto it = decoders_.find(ACMCodecDB::kRED);
+const AcmReceiver::Decoder* AcmReceiver::RtpHeaderToDecoder(
+    const RTPHeader& rtp_header,
+    const uint8_t* payload) const {
+  auto it = decoders_.find(rtp_header.payloadType);
   if (ACMCodecDB::kRED >= 0 &&  // This ensures that RED is defined in WebRTC.
-      it != decoders_.end() &&
-      payload_type == it->second.payload_type) {
+      it != decoders_.end() && ACMCodecDB::kRED == it->second.acm_codec_id) {
     // This is a RED packet, get the payload of the audio codec.
-    payload_type = payload[0] & 0x7F;
+    it = decoders_.find(payload[0] & 0x7F);
   }
 
   // Check if the payload is registered.
-  return PayloadType2CodecIndex(payload_type);
+  return it != decoders_.end() ? &it->second : nullptr;
 }
 
 uint32_t AcmReceiver::NowInTimestamp(int decoder_sampling_rate) const {

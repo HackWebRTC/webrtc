@@ -177,27 +177,45 @@ TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(AddCodecGetCodec)) {
 }
 
 TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(AddCodecChangePayloadType)) {
-  CodecInst ref_codec;
   const int codec_id = ACMCodecDB::kPCMA;
-  EXPECT_EQ(0, ACMCodecDB::Codec(codec_id, &ref_codec));
-  const int payload_type = ref_codec.pltype;
-  EXPECT_EQ(0, receiver_->AddCodec(codec_id, ref_codec.pltype,
-                                   ref_codec.channels, NULL));
+  CodecInst ref_codec1;
+  EXPECT_EQ(0, ACMCodecDB::Codec(codec_id, &ref_codec1));
+  CodecInst ref_codec2 = ref_codec1;
+  ++ref_codec2.pltype;
   CodecInst test_codec;
-  EXPECT_EQ(0, receiver_->DecoderByPayloadType(payload_type, &test_codec));
-  EXPECT_EQ(true, CodecsEqual(ref_codec, test_codec));
 
-  // Re-register the same codec with different payload.
-  ref_codec.pltype = payload_type + 1;
-  EXPECT_EQ(0, receiver_->AddCodec(codec_id, ref_codec.pltype,
-                                   ref_codec.channels, NULL));
+  // Register the same codec with different payloads.
+  EXPECT_EQ(0, receiver_->AddCodec(codec_id, ref_codec1.pltype,
+                                   ref_codec1.channels, NULL));
+  EXPECT_EQ(0, receiver_->AddCodec(codec_id, ref_codec2.pltype,
+                                   ref_codec2.channels, NULL));
 
-  // Payload type |payload_type| should not exist.
-  EXPECT_EQ(-1, receiver_->DecoderByPayloadType(payload_type, &test_codec));
+  // Both payload types should exist.
+  EXPECT_EQ(0, receiver_->DecoderByPayloadType(ref_codec1.pltype, &test_codec));
+  EXPECT_EQ(true, CodecsEqual(ref_codec1, test_codec));
+  EXPECT_EQ(0, receiver_->DecoderByPayloadType(ref_codec2.pltype, &test_codec));
+  EXPECT_EQ(true, CodecsEqual(ref_codec2, test_codec));
+}
 
-  // Payload type |payload_type + 1| should exist.
-  EXPECT_EQ(0, receiver_->DecoderByPayloadType(payload_type + 1, &test_codec));
-  EXPECT_TRUE(CodecsEqual(test_codec, ref_codec));
+TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(AddCodecChangeCodecId)) {
+  const int codec_id1 = ACMCodecDB::kPCMU;
+  CodecInst ref_codec1;
+  EXPECT_EQ(0, ACMCodecDB::Codec(codec_id1, &ref_codec1));
+  const int codec_id2 = ACMCodecDB::kPCMA;
+  CodecInst ref_codec2;
+  EXPECT_EQ(0, ACMCodecDB::Codec(codec_id2, &ref_codec2));
+  ref_codec2.pltype = ref_codec1.pltype;
+  CodecInst test_codec;
+
+  // Register the same payload type with different codec ID.
+  EXPECT_EQ(0, receiver_->AddCodec(codec_id1, ref_codec1.pltype,
+                                   ref_codec1.channels, NULL));
+  EXPECT_EQ(0, receiver_->AddCodec(codec_id2, ref_codec2.pltype,
+                                   ref_codec2.channels, NULL));
+
+  // Make sure that the last codec is used.
+  EXPECT_EQ(0, receiver_->DecoderByPayloadType(ref_codec2.pltype, &test_codec));
+  EXPECT_EQ(true, CodecsEqual(ref_codec2, test_codec));
 }
 
 TEST_F(AcmReceiverTestOldApi, DISABLED_ON_ANDROID(AddCodecRemoveCodec)) {
