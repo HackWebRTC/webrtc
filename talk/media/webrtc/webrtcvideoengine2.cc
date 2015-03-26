@@ -839,20 +839,41 @@ bool WebRtcVideoChannel2::SetSend(bool send) {
   return true;
 }
 
+bool WebRtcVideoChannel2::ValidateSendSsrcAvailability(
+    const StreamParams& sp) const {
+  for (uint32_t ssrc: sp.ssrcs) {
+    if (send_ssrcs_.find(ssrc) != send_ssrcs_.end()) {
+      LOG(LS_ERROR) << "Send stream with SSRC '" << ssrc << "' already exists.";
+      return false;
+    }
+  }
+  return true;
+}
+
+bool WebRtcVideoChannel2::ValidateReceiveSsrcAvailability(
+    const StreamParams& sp) const {
+  for (uint32_t ssrc: sp.ssrcs) {
+    if (receive_ssrcs_.find(ssrc) != receive_ssrcs_.end()) {
+      LOG(LS_ERROR) << "Receive stream with SSRC '" << ssrc
+                    << "' already exists.";
+      return false;
+    }
+  }
+  return true;
+}
+
 bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
   LOG(LS_INFO) << "AddSendStream: " << sp.ToString();
   if (!ValidateStreamParams(sp))
     return false;
 
-  uint32 ssrc = sp.first_ssrc();
-  assert(ssrc != 0);
-  // TODO(pbos): Make sure none of sp.ssrcs are used, not just the identifying
-  // ssrc.
   rtc::CritScope stream_lock(&stream_crit_);
-  if (send_streams_.find(ssrc) != send_streams_.end()) {
-    LOG(LS_ERROR) << "Send stream with SSRC '" << ssrc << "' already exists.";
+
+  if (!ValidateSendSsrcAvailability(sp))
     return false;
-  }
+
+  for (uint32 used_ssrc : sp.ssrcs)
+    send_ssrcs_.insert(used_ssrc);
 
   WebRtcVideoSendStream* stream =
       new WebRtcVideoSendStream(call_.get(),
@@ -862,6 +883,8 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
                                 sp,
                                 send_rtp_extensions_);
 
+  uint32 ssrc = sp.first_ssrc();
+  assert(ssrc != 0);
   send_streams_[ssrc] = stream;
 
   if (rtcp_receiver_report_ssrc_ == kDefaultRtcpReceiverReportSsrc) {
@@ -899,6 +922,9 @@ bool WebRtcVideoChannel2::RemoveSendStream(uint32 ssrc) {
       return false;
     }
 
+    for (uint32 old_ssrc : it->second->GetSsrcs())
+      send_ssrcs_.erase(old_ssrc);
+
     removed_stream = it->second;
     send_streams_.erase(it);
   }
@@ -910,6 +936,13 @@ bool WebRtcVideoChannel2::RemoveSendStream(uint32 ssrc) {
   }
 
   return true;
+}
+
+void WebRtcVideoChannel2::DeleteReceiveStream(
+    WebRtcVideoChannel2::WebRtcVideoReceiveStream* stream) {
+  for (uint32 old_ssrc : stream->GetSsrcs())
+    receive_ssrcs_.erase(old_ssrc);
+  delete stream;
 }
 
 bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp) {
@@ -926,20 +959,24 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
   uint32 ssrc = sp.first_ssrc();
   assert(ssrc != 0);  // TODO(pbos): Is this ever valid?
 
-  // TODO(pbos): Check if any of the SSRCs overlap.
   rtc::CritScope stream_lock(&stream_crit_);
-  {
-    auto it = receive_streams_.find(ssrc);
-    if (it != receive_streams_.end()) {
-      if (default_stream || !it->second->IsDefaultStream()) {
-        LOG(LS_ERROR) << "Receive stream for SSRC '" << ssrc
-                      << "' already exists.";
-        return false;
-      }
-      delete it->second;
-      receive_streams_.erase(it);
+  // Remove running stream if this was a default stream.
+  auto prev_stream = receive_streams_.find(ssrc);
+  if (prev_stream != receive_streams_.end()) {
+    if (default_stream || !prev_stream->second->IsDefaultStream()) {
+      LOG(LS_ERROR) << "Receive stream for SSRC '" << ssrc
+                    << "' already exists.";
+      return false;
     }
+    DeleteReceiveStream(prev_stream->second);
+    receive_streams_.erase(prev_stream);
   }
+
+  if (!ValidateReceiveSsrcAvailability(sp))
+    return false;
+
+  for (uint32 used_ssrc : sp.ssrcs)
+    receive_ssrcs_.insert(used_ssrc);
 
   webrtc::VideoReceiveStream::Config config;
   ConfigureReceiverRtp(&config, sp);
@@ -954,9 +991,9 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
     config.audio_channel_id = voice_channel_id_;
   }
 
-  receive_streams_[ssrc] =
-      new WebRtcVideoReceiveStream(call_.get(), external_decoder_factory_,
-                                   default_stream, config, recv_codecs_);
+  receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
+      call_.get(), sp.ssrcs, external_decoder_factory_, default_stream, config,
+      recv_codecs_);
 
   return true;
 }
@@ -1013,7 +1050,7 @@ bool WebRtcVideoChannel2::RemoveRecvStream(uint32 ssrc) {
     LOG(LS_ERROR) << "Stream not found for ssrc: " << ssrc;
     return false;
   }
-  delete stream->second;
+  DeleteReceiveStream(stream->second);
   receive_streams_.erase(stream);
 
   return true;
@@ -1370,6 +1407,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
     const StreamParams& sp,
     const std::vector<webrtc::RtpExtension>& rtp_extensions)
     : call_(call),
+      ssrcs_(sp.ssrcs),
       external_encoder_factory_(external_encoder_factory),
       stream_(NULL),
       parameters_(webrtc::VideoSendStream::Config(), options, codec_settings),
@@ -1532,6 +1570,11 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectCapturer() {
   }
   capturer->SignalVideoFrame.disconnect(this);
   return true;
+}
+
+const std::vector<uint32>&
+WebRtcVideoChannel2::WebRtcVideoSendStream::GetSsrcs() const {
+  return ssrcs_;
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::SetOptions(
@@ -1903,11 +1946,13 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
 
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     webrtc::Call* call,
+    const std::vector<uint32>& ssrcs,
     WebRtcVideoDecoderFactory* external_decoder_factory,
     bool default_stream,
     const webrtc::VideoReceiveStream::Config& config,
     const std::vector<VideoCodecSettings>& recv_codecs)
     : call_(call),
+      ssrcs_(ssrcs),
       stream_(NULL),
       default_stream_(default_stream),
       config_(config),
@@ -1925,6 +1970,11 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::~WebRtcVideoReceiveStream() {
   call_->DestroyVideoReceiveStream(stream_);
   ClearDecoders(&allocated_decoders_);
+}
+
+const std::vector<uint32>&
+WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetSsrcs() const {
+  return ssrcs_;
 }
 
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::AllocatedDecoder

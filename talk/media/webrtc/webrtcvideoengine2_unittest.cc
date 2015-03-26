@@ -2367,6 +2367,59 @@ TEST_F(WebRtcVideoChannel2Test, RejectsAddingStreamsWithMissingSsrcsForRtx) {
   EXPECT_FALSE(channel_->AddRecvStream(sp));
 }
 
+TEST_F(WebRtcVideoChannel2Test, RejectsAddingStreamsWithOverlappingRtxSsrcs) {
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+
+  const std::vector<uint32> ssrcs = MAKE_VECTOR(kSsrcs1);
+  const std::vector<uint32> rtx_ssrcs = MAKE_VECTOR(kRtxSsrcs1);
+
+  StreamParams sp =
+      cricket::CreateSimWithRtxStreamParams("cname", ssrcs, rtx_ssrcs);
+
+  EXPECT_TRUE(channel_->AddSendStream(sp));
+  EXPECT_TRUE(channel_->AddRecvStream(sp));
+
+  // The RTX SSRC is already used in previous streams, using it should fail.
+  sp = cricket::StreamParams::CreateLegacy(rtx_ssrcs[0]);
+  EXPECT_FALSE(channel_->AddSendStream(sp));
+  EXPECT_FALSE(channel_->AddRecvStream(sp));
+
+  // After removing the original stream this should be fine to add (makes sure
+  // that RTX ssrcs are not forever taken).
+  EXPECT_TRUE(channel_->RemoveSendStream(ssrcs[0]));
+  EXPECT_TRUE(channel_->RemoveRecvStream(ssrcs[0]));
+  EXPECT_TRUE(channel_->AddSendStream(sp));
+  EXPECT_TRUE(channel_->AddRecvStream(sp));
+}
+
+TEST_F(WebRtcVideoChannel2Test,
+       RejectsAddingStreamsWithOverlappingSimulcastSsrcs) {
+  static const uint32 kFirstStreamSsrcs[] = {1, 2, 3};
+  static const uint32 kOverlappingStreamSsrcs[] = {4, 3, 5};
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+
+  const std::vector<uint32> ssrcs = MAKE_VECTOR(kSsrcs3);
+
+  StreamParams sp =
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kFirstStreamSsrcs));
+
+  EXPECT_TRUE(channel_->AddSendStream(sp));
+  EXPECT_TRUE(channel_->AddRecvStream(sp));
+
+  // One of the SSRCs is already used in previous streams, using it should fail.
+  sp = cricket::CreateSimStreamParams("cname",
+                                      MAKE_VECTOR(kOverlappingStreamSsrcs));
+  EXPECT_FALSE(channel_->AddSendStream(sp));
+  EXPECT_FALSE(channel_->AddRecvStream(sp));
+
+  // After removing the original stream this should be fine to add (makes sure
+  // that RTX ssrcs are not forever taken).
+  EXPECT_TRUE(channel_->RemoveSendStream(ssrcs[0]));
+  EXPECT_TRUE(channel_->RemoveRecvStream(ssrcs[0]));
+  EXPECT_TRUE(channel_->AddSendStream(sp));
+  EXPECT_TRUE(channel_->AddRecvStream(sp));
+}
+
 class WebRtcVideoEngine2SimulcastTest : public testing::Test {
  public:
   WebRtcVideoEngine2SimulcastTest() : engine_(nullptr) {}
