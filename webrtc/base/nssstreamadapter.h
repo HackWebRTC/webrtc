@@ -19,6 +19,7 @@
 #include "secmodt.h"
 
 #include "webrtc/base/buffer.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/nssidentity.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/sslstreamadapter.h"
@@ -29,7 +30,7 @@ namespace rtc {
 // Singleton
 class NSSContext {
  public:
-  NSSContext() {}
+  explicit NSSContext(PK11SlotInfo* slot) : slot_(slot) {}
   ~NSSContext() {
   }
 
@@ -44,7 +45,7 @@ class NSSContext {
 
  private:
   PK11SlotInfo *slot_;                    // The PKCS-11 slot
-  static bool initialized;                // Was this initialized?
+  static GlobalLockPod lock;              // To protect the global context
   static NSSContext *global_nss_context;  // The global context
 };
 

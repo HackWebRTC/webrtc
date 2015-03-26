@@ -114,6 +114,7 @@
         'cpumonitor.h',
         'crc32.cc',
         'crc32.h',
+        'criticalsection.cc',
         'criticalsection.h',
         'cryptstring.cc',
         'cryptstring.h',

@@ -978,24 +978,26 @@ bool NSSStreamAdapter::GetDtlsSrtpCipher(std::string* cipher) {
 }
 
 
-bool NSSContext::initialized;
+GlobalLockPod NSSContext::lock;
 NSSContext *NSSContext::global_nss_context;
 
 // Static initialization and shutdown
 NSSContext *NSSContext::Instance() {
+  lock.Lock();
   if (!global_nss_context) {
-    scoped_ptr<NSSContext> new_ctx(new NSSContext());
-    new_ctx->slot_ = PK11_GetInternalSlot();
+    scoped_ptr<NSSContext> new_ctx(new NSSContext(PK11_GetInternalSlot()));
     if (new_ctx->slot_)
       global_nss_context = new_ctx.release();
   }
+  lock.Unlock();
+
   return global_nss_context;
 }
 
-
-
 bool NSSContext::InitializeSSL(VerificationCallback callback) {
   ASSERT(!callback);
+
+  static bool initialized = false;
 
   if (!initialized) {
     SECStatus rv;

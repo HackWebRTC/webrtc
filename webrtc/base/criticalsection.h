@@ -169,6 +169,11 @@ class AtomicOps {
   static void Store(volatile int* i, int value) {
     *i = value;
   }
+  static int CompareAndSwap(volatile int* i, int old_value, int new_value) {
+    return ::InterlockedCompareExchange(reinterpret_cast<volatile LONG*>(i),
+                                        new_value,
+                                        old_value);
+  }
 #else
   static int Increment(volatile int* i) {
     return __sync_add_and_fetch(i, 1);
@@ -184,7 +189,27 @@ class AtomicOps {
     __sync_synchronize();
     *i = value;
   }
+  static int CompareAndSwap(volatile int* i, int old_value, int new_value) {
+    return __sync_val_compare_and_swap(i, old_value, new_value);
+  }
 #endif
+};
+
+
+// A POD lock used to protect global variables. Do NOT use for other purposes.
+// No custom constructor or private data member should be added.
+class LOCKABLE GlobalLockPod {
+ public:
+  void Lock() EXCLUSIVE_LOCK_FUNCTION();
+
+  void Unlock() UNLOCK_FUNCTION();
+
+  volatile int lock_acquired;
+};
+
+class GlobalLock : public GlobalLockPod {
+ public:
+  GlobalLock();
 };
 
 } // namespace rtc
