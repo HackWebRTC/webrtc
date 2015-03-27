@@ -1342,89 +1342,141 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
   RunBaseTest(&test);
 }
 
+static const size_t kVideoCodecConfigObserverNumberOfTemporalLayers = 4;
+template <typename T>
+class VideoCodecConfigObserver : public test::SendTest,
+                                 public test::FakeEncoder {
+
+ public:
+  VideoCodecConfigObserver(VideoCodecType video_codec_type,
+                           const char* codec_name)
+      : SendTest(VideoSendStreamTest::kDefaultTimeoutMs),
+        FakeEncoder(Clock::GetRealTimeClock()),
+        video_codec_type_(video_codec_type),
+        codec_name_(codec_name),
+        num_initializations_(0) {
+    memset(&encoder_settings_, 0, sizeof(encoder_settings_));
+  }
+
+ private:
+  void ModifyConfigs(VideoSendStream::Config* send_config,
+                     std::vector<VideoReceiveStream::Config>* receive_configs,
+                     VideoEncoderConfig* encoder_config) override {
+    send_config->encoder_settings.encoder = this;
+    send_config->encoder_settings.payload_name = codec_name_;
+
+    for (size_t i = 0; i < encoder_config->streams.size(); ++i) {
+      encoder_config->streams[i].temporal_layer_thresholds_bps.resize(
+          kVideoCodecConfigObserverNumberOfTemporalLayers - 1);
+    }
+
+    encoder_config->encoder_specific_settings = &encoder_settings_;
+    encoder_config_ = *encoder_config;
+  }
+
+  void OnStreamsCreated(
+      VideoSendStream* send_stream,
+      const std::vector<VideoReceiveStream*>& receive_streams) override {
+    stream_ = send_stream;
+  }
+
+  int32_t InitEncode(const VideoCodec* config,
+                     int32_t number_of_cores,
+                     size_t max_payload_size) override {
+    EXPECT_EQ(video_codec_type_, config->codecType);
+    VerifyCodecSpecifics(*config);
+    ++num_initializations_;
+    return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
+  }
+
+  void VerifyCodecSpecifics(const VideoCodec& config) const;
+
+  void PerformTest() override {
+    EXPECT_EQ(1u, num_initializations_) << "VideoEncoder not initialized.";
+
+    encoder_settings_.frameDroppingOn = true;
+    stream_->ReconfigureVideoEncoder(encoder_config_);
+    EXPECT_EQ(2u, num_initializations_)
+        << "ReconfigureVideoEncoder did not reinitialize the encoder with "
+           "new encoder settings.";
+  }
+
+  int32_t Encode(const I420VideoFrame& input_image,
+                 const CodecSpecificInfo* codec_specific_info,
+                 const std::vector<VideoFrameType>* frame_types) override {
+    // Silently skip the encode, FakeEncoder::Encode doesn't produce VP8.
+    return 0;
+  }
+
+  T encoder_settings_;
+  const VideoCodecType video_codec_type_;
+  const char* const codec_name_;
+  size_t num_initializations_;
+  VideoSendStream* stream_;
+  VideoEncoderConfig encoder_config_;
+};
+
+template <>
+void VideoCodecConfigObserver<VideoCodecH264>::VerifyCodecSpecifics(
+    const VideoCodec& config) const {
+  EXPECT_EQ(0, memcmp(&config.codecSpecific.H264, &encoder_settings_,
+                      sizeof(encoder_settings_)));
+}
+template <>
+void VideoCodecConfigObserver<VideoCodecVP8>::VerifyCodecSpecifics(
+    const VideoCodec& config) const {
+  // Check that the number of temporal layers has propagated properly to
+  // VideoCodec.
+  EXPECT_EQ(kVideoCodecConfigObserverNumberOfTemporalLayers,
+            config.codecSpecific.VP8.numberOfTemporalLayers);
+
+  for (unsigned char i = 0; i < config.numberOfSimulcastStreams; ++i) {
+    EXPECT_EQ(kVideoCodecConfigObserverNumberOfTemporalLayers,
+              config.simulcastStream[i].numberOfTemporalLayers);
+  }
+
+  // Set expected temporal layers as they should have been set when
+  // reconfiguring the encoder and not match the set config.
+  VideoCodecVP8 encoder_settings = encoder_settings_;
+  encoder_settings.numberOfTemporalLayers =
+      kVideoCodecConfigObserverNumberOfTemporalLayers;
+  EXPECT_EQ(0, memcmp(&config.codecSpecific.VP8, &encoder_settings,
+                      sizeof(encoder_settings_)));
+}
+template <>
+void VideoCodecConfigObserver<VideoCodecVP9>::VerifyCodecSpecifics(
+    const VideoCodec& config) const {
+  // Check that the number of temporal layers has propagated properly to
+  // VideoCodec.
+  EXPECT_EQ(kVideoCodecConfigObserverNumberOfTemporalLayers,
+            config.codecSpecific.VP9.numberOfTemporalLayers);
+
+  for (unsigned char i = 0; i < config.numberOfSimulcastStreams; ++i) {
+    EXPECT_EQ(kVideoCodecConfigObserverNumberOfTemporalLayers,
+              config.simulcastStream[i].numberOfTemporalLayers);
+  }
+
+  // Set expected temporal layers as they should have been set when
+  // reconfiguring the encoder and not match the set config.
+  VideoCodecVP9 encoder_settings = encoder_settings_;
+  encoder_settings.numberOfTemporalLayers =
+      kVideoCodecConfigObserverNumberOfTemporalLayers;
+  EXPECT_EQ(0, memcmp(&config.codecSpecific.VP9, &encoder_settings,
+                      sizeof(encoder_settings_)));
+}
+
 TEST_F(VideoSendStreamTest, EncoderSetupPropagatesVp8Config) {
-  static const size_t kNumberOfTemporalLayers = 4;
-  class VideoCodecConfigObserver : public test::SendTest,
-                                   public test::FakeEncoder {
-   public:
-    VideoCodecConfigObserver()
-        : SendTest(kDefaultTimeoutMs),
-          FakeEncoder(Clock::GetRealTimeClock()),
-          num_initializations_(0) {
-      memset(&vp8_settings_, 0, sizeof(vp8_settings_));
-    }
+  VideoCodecConfigObserver<VideoCodecVP8> test(kVideoCodecVP8, "VP8");
+  RunBaseTest(&test);
+}
 
-   private:
-    void ModifyConfigs(VideoSendStream::Config* send_config,
-                       std::vector<VideoReceiveStream::Config>* receive_configs,
-                       VideoEncoderConfig* encoder_config) override {
-      send_config->encoder_settings.encoder = this;
-      send_config->encoder_settings.payload_name = "VP8";
+TEST_F(VideoSendStreamTest, EncoderSetupPropagatesVp9Config) {
+  VideoCodecConfigObserver<VideoCodecVP9> test(kVideoCodecVP9, "VP9");
+  RunBaseTest(&test);
+}
 
-      for (size_t i = 0; i < encoder_config->streams.size(); ++i) {
-        encoder_config->streams[i].temporal_layer_thresholds_bps.resize(
-            kNumberOfTemporalLayers - 1);
-      }
-
-      encoder_config->encoder_specific_settings = &vp8_settings_;
-      encoder_config_ = *encoder_config;
-    }
-
-    void OnStreamsCreated(
-        VideoSendStream* send_stream,
-        const std::vector<VideoReceiveStream*>& receive_streams) override {
-      stream_ = send_stream;
-    }
-
-    int32_t InitEncode(const VideoCodec* config,
-                       int32_t number_of_cores,
-                       size_t max_payload_size) override {
-      EXPECT_EQ(kVideoCodecVP8, config->codecType);
-
-      // Check that the number of temporal layers has propagated properly to
-      // VideoCodec.
-      EXPECT_EQ(kNumberOfTemporalLayers,
-                config->codecSpecific.VP8.numberOfTemporalLayers);
-
-      for (unsigned char i = 0; i < config->numberOfSimulcastStreams; ++i) {
-        EXPECT_EQ(kNumberOfTemporalLayers,
-                  config->simulcastStream[i].numberOfTemporalLayers);
-      }
-
-      // Set expected temporal layers as they should have been set when
-      // reconfiguring the encoder and not match the set config.
-      vp8_settings_.numberOfTemporalLayers = kNumberOfTemporalLayers;
-      EXPECT_EQ(0,
-                memcmp(&config->codecSpecific.VP8,
-                       &vp8_settings_,
-                       sizeof(vp8_settings_)));
-      ++num_initializations_;
-      return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
-    }
-
-    void PerformTest() override {
-      EXPECT_EQ(1u, num_initializations_) << "VideoEncoder not initialized.";
-
-      vp8_settings_.denoisingOn = true;
-      stream_->ReconfigureVideoEncoder(encoder_config_);
-      EXPECT_EQ(2u, num_initializations_)
-          << "ReconfigureVideoEncoder did not reinitialize the encoder with "
-             "new encoder settings.";
-    }
-
-    int32_t Encode(const I420VideoFrame& input_image,
-                   const CodecSpecificInfo* codec_specific_info,
-                   const std::vector<VideoFrameType>* frame_types) override {
-      // Silently skip the encode, FakeEncoder::Encode doesn't produce VP8.
-      return 0;
-    }
-
-    VideoCodecVP8 vp8_settings_;
-    size_t num_initializations_;
-    VideoSendStream* stream_;
-    VideoEncoderConfig encoder_config_;
-  } test;
-
+TEST_F(VideoSendStreamTest, EncoderSetupPropagatesH264Config) {
+  VideoCodecConfigObserver<VideoCodecH264> test(kVideoCodecH264, "H264");
   RunBaseTest(&test);
 }
 
