@@ -93,7 +93,6 @@ class WebRtcAudioManager {
     // Restore previously stored audio states.
     setSpeakerphoneOn(savedIsSpeakerPhoneOn);
     audioManager.setMode(savedAudioMode);
-    audioManager.abandonAudioFocus(null);
   }
 
   private void storeAudioParameters() {
