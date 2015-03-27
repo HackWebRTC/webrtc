@@ -41,7 +41,7 @@ enum {
 
 namespace webrtc {
 
-OpenSlesOutput::OpenSlesOutput()
+OpenSlesOutput::OpenSlesOutput(AudioManager* audio_manager)
     : initialized_(false),
       speaker_initialized_(false),
       play_initialized_(false),

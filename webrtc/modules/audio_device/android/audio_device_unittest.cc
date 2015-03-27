@@ -69,7 +69,7 @@ static const int kBitsPerSample = 16;
 static const int kBytesPerSample = kBitsPerSample / 8;
 // Run the full-duplex test during this time (unit is in seconds).
 // Note that first |kNumIgnoreFirstCallbacks| are ignored.
-static const int kFullDuplexTimeInSec = 10;
+static const int kFullDuplexTimeInSec = 5;
 // Wait for the callback sequence to stabilize by ignoring this amount of the
 // initial callbacks (avoids initial FIFO access).
 // Only used in the RunPlayoutAndRecordingInFullDuplex test.
@@ -592,6 +592,12 @@ class AudioDeviceTest
     return file_name;
   }
 
+  void SetMaxPlayoutVolume() {
+    uint32_t max_volume;
+    EXPECT_EQ(0, audio_device()->MaxSpeakerVolume(&max_volume));
+    EXPECT_EQ(0, audio_device()->SetSpeakerVolume(max_volume));
+  }
+
   void StartPlayout() {
     EXPECT_FALSE(audio_device()->PlayoutIsInitialized());
     EXPECT_FALSE(audio_device()->Playing());
@@ -620,6 +626,24 @@ class AudioDeviceTest
     EXPECT_FALSE(audio_device()->Recording());
   }
 
+  int GetMaxSpeakerVolume() const {
+    uint32_t max_volume(0);
+    EXPECT_EQ(0, audio_device()->MaxSpeakerVolume(&max_volume));
+    return max_volume;
+  }
+
+  int GetMinSpeakerVolume() const {
+    uint32_t min_volume(0);
+    EXPECT_EQ(0, audio_device()->MinSpeakerVolume(&min_volume));
+    return min_volume;
+  }
+
+  int GetSpeakerVolume() const {
+    uint32_t volume(0);
+    EXPECT_EQ(0, audio_device()->SpeakerVolume(&volume));
+    return volume;
+  }
+
   rtc::scoped_ptr<EventWrapper> test_is_done_;
   scoped_refptr<AudioDeviceModule> audio_device_;
   AudioParameters parameters_;
@@ -634,7 +658,7 @@ TEST_P(AudioDeviceTest, AudioParameters) {
   EXPECT_NE(0, playout_sample_rate());
   PRINT("%splayout_sample_rate: %d\n", kTag, playout_sample_rate());
   EXPECT_NE(0, recording_sample_rate());
-  PRINT("%splayout_sample_rate: %d\n", kTag, recording_sample_rate());
+  PRINT("%srecording_sample_rate: %d\n", kTag, recording_sample_rate());
   EXPECT_NE(0, playout_channels());
   PRINT("%splayout_channels: %d\n", kTag, playout_channels());
   EXPECT_NE(0, recording_channels());
@@ -657,6 +681,35 @@ TEST_P(AudioDeviceTest, Devices) {
 TEST_P(AudioDeviceTest, BuiltInAECIsAvailable) {
   PRINT("%sBuiltInAECIsAvailable: %s\n",
       kTag, audio_device()->BuiltInAECIsAvailable() ? "true" : "false");
+}
+
+TEST_P(AudioDeviceTest, SpeakerVolumeShouldBeAvailable) {
+  bool available;
+  EXPECT_EQ(0, audio_device()->SpeakerVolumeIsAvailable(&available));
+  EXPECT_TRUE(available);
+}
+
+TEST_P(AudioDeviceTest, MaxSpeakerVolumeIsPositive) {
+  EXPECT_GT(GetMaxSpeakerVolume(), 0);
+}
+
+TEST_P(AudioDeviceTest, MinSpeakerVolumeIsZero) {
+  EXPECT_EQ(GetMinSpeakerVolume(), 0);
+}
+
+TEST_P(AudioDeviceTest, DefaultSpeakerVolumeIsWithinMinMax) {
+  const int default_volume = GetSpeakerVolume();
+  EXPECT_GE(default_volume, GetMinSpeakerVolume());
+  EXPECT_LE(default_volume, GetMaxSpeakerVolume());
+}
+
+TEST_P(AudioDeviceTest, SetSpeakerVolumeActuallySetsVolume) {
+  const int default_volume = GetSpeakerVolume();
+  const int max_volume = GetMaxSpeakerVolume();
+  EXPECT_EQ(0, audio_device()->SetSpeakerVolume(max_volume));
+  int new_volume = GetSpeakerVolume();
+  EXPECT_EQ(new_volume, max_volume);
+  EXPECT_EQ(0, audio_device()->SetSpeakerVolume(default_volume));
 }
 
 // Tests that playout can be initiated, started and stopped.
@@ -752,6 +805,7 @@ TEST_P(AudioDeviceTest, RunPlayoutWithFileAsSource) {
   mock.HandleCallbacks(test_is_done_.get(),
                        file_audio_stream.get(),
                        num_callbacks);
+  SetMaxPlayoutVolume();
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   StartPlayout();
   test_is_done_->Wait(kTestTimeOutInMilliseconds);
@@ -780,6 +834,7 @@ TEST_P(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
   mock.HandleCallbacks(test_is_done_.get(),
                        fifo_audio_stream.get(),
                        kFullDuplexTimeInSec * kNumCallbacksPerSecond);
+  SetMaxPlayoutVolume();
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   StartRecording();
   StartPlayout();
@@ -810,6 +865,7 @@ TEST_P(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
                        latency_audio_stream.get(),
                        kMeasureLatencyTimeInSec * kNumCallbacksPerSecond);
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
+  SetMaxPlayoutVolume();
   StartRecording();
   StartPlayout();
   test_is_done_->Wait(std::max(kTestTimeOutInMilliseconds,

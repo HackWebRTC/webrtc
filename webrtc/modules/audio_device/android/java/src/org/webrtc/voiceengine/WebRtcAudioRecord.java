@@ -19,7 +19,6 @@ import android.media.AudioFormat;
 import android.media.audiofx.AcousticEchoCanceler;
 import android.media.audiofx.AudioEffect;
 import android.media.audiofx.AudioEffect.Descriptor;
-import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
 import android.os.Build;
@@ -32,16 +31,9 @@ class  WebRtcAudioRecord {
 
   private static final String TAG = "WebRtcAudioRecord";
 
-  // Mono recording is default.
-  private static final int CHANNELS = 1;
-
   // Default audio data format is PCM 16 bit per sample.
   // Guaranteed to be supported by all devices.
   private static final int BITS_PER_SAMPLE = 16;
-
-  // Number of bytes per audio frame.
-  // Example: 16-bit PCM in stereo => 2*(16/8)=4 [bytes/frame]
-  private static final int BYTES_PER_FRAME = CHANNELS * (BITS_PER_SAMPLE / 8);
 
   // Requested size of each recorded buffer provided to the client.
   private static final int CALLBACK_BUFFER_SIZE_MS = 10;
@@ -49,14 +41,10 @@ class  WebRtcAudioRecord {
   // Average number of callbacks per second.
   private static final int BUFFERS_PER_SECOND = 1000 / CALLBACK_BUFFER_SIZE_MS;
 
-  private ByteBuffer byteBuffer;
-  private final int bytesPerBuffer;
-  private final int framesPerBuffer;
-  private final int sampleRate;
-
   private final long nativeAudioRecord;
-  private final AudioManager audioManager;
   private final Context context;
+
+  private ByteBuffer byteBuffer;
 
   private AudioRecord audioRecord = null;
   private AudioRecordThread audioThread = null;
@@ -134,26 +122,9 @@ class  WebRtcAudioRecord {
     Logd("ctor" + WebRtcAudioUtils.getThreadInfo());
     this.context = context;
     this.nativeAudioRecord = nativeAudioRecord;
-    audioManager = (AudioManager) context.getSystemService(
-        Context.AUDIO_SERVICE);
-    sampleRate = GetNativeSampleRate();
-    bytesPerBuffer = BYTES_PER_FRAME * (sampleRate / BUFFERS_PER_SECOND);
-    framesPerBuffer = sampleRate / BUFFERS_PER_SECOND;
-    byteBuffer = byteBuffer.allocateDirect(bytesPerBuffer);
-    Logd("byteBuffer.capacity: " + byteBuffer.capacity());
-
-    // Rather than passing the ByteBuffer with every callback (requiring
-    // the potentially expensive GetDirectBufferAddress) we simply have the
-    // the native class cache the address to the memory once.
-    nativeCacheDirectBufferAddress(byteBuffer, nativeAudioRecord);
-
     if (DEBUG) {
       WebRtcAudioUtils.logDeviceInfo(TAG);
     }
-  }
-
-  private int GetNativeSampleRate() {
-    return WebRtcAudioUtils.GetNativeSampleRate(audioManager);
   }
 
   public static boolean BuiltInAECIsAvailable() {
@@ -187,8 +158,18 @@ class  WebRtcAudioRecord {
     return true;
   }
 
-  private int InitRecording(int sampleRate) {
-    Logd("InitRecording(sampleRate=" + sampleRate + ")");
+  private int InitRecording(int sampleRate, int channels) {
+    Logd("InitRecording(sampleRate=" + sampleRate + ", channels=" +
+        channels + ")");
+    final int bytesPerFrame = channels * (BITS_PER_SAMPLE / 8);
+    final int framesPerBuffer = sampleRate / BUFFERS_PER_SECOND;
+    byteBuffer = byteBuffer.allocateDirect(bytesPerFrame * framesPerBuffer);
+    Logd("byteBuffer.capacity: " + byteBuffer.capacity());
+    // Rather than passing the ByteBuffer with every callback (requiring
+    // the potentially expensive GetDirectBufferAddress) we simply have the
+    // the native class cache the address to the memory once.
+    nativeCacheDirectBufferAddress(byteBuffer, nativeAudioRecord);
+
     // Get the minimum buffer size required for the successful creation of
     // an AudioRecord object, in byte units.
     // Note that this size doesn't guarantee a smooth recording under load.

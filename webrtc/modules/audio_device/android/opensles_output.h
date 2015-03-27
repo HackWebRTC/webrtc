@@ -16,6 +16,7 @@
 #include <SLES/OpenSLES_AndroidConfiguration.h>
 
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/android/audio_manager_jni.h"
 #include "webrtc/modules/audio_device/android/low_latency_event.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
@@ -35,7 +36,8 @@ class ThreadWrapper;
 // to non-const methods require exclusive access to the object.
 class OpenSlesOutput : public PlayoutDelayProvider {
  public:
-  explicit OpenSlesOutput();
+  // TODO(henrika): use this new audio manager instead of old.
+  explicit OpenSlesOutput(AudioManager* audio_manager);
   virtual ~OpenSlesOutput();
 
   static int32_t SetAndroidAudioDeviceObjects(void* javaVM,

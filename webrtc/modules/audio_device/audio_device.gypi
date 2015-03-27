@@ -124,6 +124,8 @@
             'android/audio_device_template.h',
             'android/audio_device_utility_android.cc',
             'android/audio_device_utility_android.h',
+            'android/audio_manager.cc',
+            'android/audio_manager.h',
             'android/audio_manager_jni.cc',
             'android/audio_manager_jni.h',
             'android/audio_record_jni.cc',

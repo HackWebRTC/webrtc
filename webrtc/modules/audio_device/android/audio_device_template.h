@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_AUDIO_DEVICE_TEMPLATE_H_
 
 #include "webrtc/base/checks.h"
+#include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
@@ -24,6 +25,7 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
  public:
   static void SetAndroidAudioDeviceObjects(void* javaVM,
                                            void* context) {
+    AudioManager::SetAndroidAudioDeviceObjects(javaVM, context);
     OutputType::SetAndroidAudioDeviceObjects(javaVM, context);
     InputType::SetAndroidAudioDeviceObjects(javaVM, context);
   }
@@ -31,12 +33,14 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   static void ClearAndroidAudioDeviceObjects() {
     OutputType::ClearAndroidAudioDeviceObjects();
     InputType::ClearAndroidAudioDeviceObjects();
+    AudioManager::ClearAndroidAudioDeviceObjects();
   }
 
-  // TODO(henrika): remove id
+  // TODO(henrika): remove id.
   explicit AudioDeviceTemplate(const int32_t id)
-      : output_(),
-        input_(&output_) {
+      : audio_manager_(),
+        output_(&audio_manager_),
+        input_(&output_, &audio_manager_) {
   }
 
   virtual ~AudioDeviceTemplate() {
@@ -49,11 +53,11 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   };
 
   int32_t Init() override {
-    return output_.Init() | input_.Init();
+    return audio_manager_.Init() | output_.Init() | input_.Init();
   }
 
   int32_t Terminate() override {
-    return output_.Terminate() | input_.Terminate();
+    return output_.Terminate() | input_.Terminate() | audio_manager_.Close();
   }
 
   bool Initialized() const override {
@@ -198,33 +202,23 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t SpeakerVolumeIsAvailable(bool& available) override {
-    available = false;
-    FATAL() << "Should never be called";
-    return -1;
+    return output_.SpeakerVolumeIsAvailable(available);
   }
 
-  // TODO(henrika): add support  if/when needed.
   int32_t SetSpeakerVolume(uint32_t volume) override {
-    FATAL() << "Should never be called";
-    return -1;
+    return output_.SetSpeakerVolume(volume);
   }
 
-  // TODO(henrika): add support  if/when needed.
   int32_t SpeakerVolume(uint32_t& volume) const override {
-    FATAL() << "Should never be called";
-    return -1;
+    return output_.SpeakerVolume(volume);
   }
 
-  // TODO(henrika): add support  if/when needed.
   int32_t MaxSpeakerVolume(uint32_t& maxVolume) const override {
-    FATAL() << "Should never be called";
-    return -1;
+    return output_.MaxSpeakerVolume(maxVolume);
   }
 
-  // TODO(henrika): add support  if/when needed.
   int32_t MinSpeakerVolume(uint32_t& minVolume) const override {
-    FATAL() << "Should never be called";
-    return -1;
+    return output_.MinSpeakerVolume(minVolume);
   }
 
   int32_t SpeakerVolumeStepSize(uint16_t& stepSize) const override {
@@ -418,6 +412,7 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
  private:
+  AudioManager audio_manager_;
   OutputType output_;
   InputType input_;
 };

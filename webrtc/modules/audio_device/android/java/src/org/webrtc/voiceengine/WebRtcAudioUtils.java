@@ -50,18 +50,4 @@ public final class WebRtcAudioUtils {
         + "Model: " + Build.MODEL + ", "
         + "Product: " + Build.PRODUCT);
   }
-
-  /**
-   * Returns the native or optimal output sample rate for this device's
-   * primary output stream. Unit is in Hz.
-   */
-  public static int GetNativeSampleRate(AudioManager audioManager) {
-    if (!WebRtcAudioUtils.runningOnJellyBeanMR1OrHigher()) {
-      return SAMPLE_RATE_HZ;
-    }
-    String sampleRateString = audioManager.getProperty(
-        AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
-    return (sampleRateString == null) ?
-        SAMPLE_RATE_HZ : Integer.parseInt(sampleRateString);
-  }
 }

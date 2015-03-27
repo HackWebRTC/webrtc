@@ -25,17 +25,9 @@ class WebRtcAudioTrack {
 
   private static final String TAG = "WebRtcAudioTrack";
 
-  // Mono playout is default.
-  // TODO(henrika): add stereo support.
-  private static final int CHANNELS = 1;
-
   // Default audio data format is PCM 16 bit per sample.
   // Guaranteed to be supported by all devices.
   private static final int BITS_PER_SAMPLE = 16;
-
-  // Number of bytes per audio frame.
-  // Example: 16-bit PCM in stereo => 2*(16/8)=4 [bytes/frame]
-  private static final int BYTES_PER_FRAME = CHANNELS * (BITS_PER_SAMPLE / 8);
 
   // Requested size of each recorded buffer provided to the client.
   private static final int CALLBACK_BUFFER_SIZE_MS = 10;
@@ -43,12 +35,11 @@ class WebRtcAudioTrack {
   // Average number of callbacks per second.
   private static final int BUFFERS_PER_SECOND = 1000 / CALLBACK_BUFFER_SIZE_MS;
 
-  private ByteBuffer byteBuffer;
-  private final int sampleRate;
-
-  private final long nativeAudioTrack;
   private final Context context;
+  private final long nativeAudioTrack;
   private final AudioManager audioManager;
+
+  private ByteBuffer byteBuffer;
 
   private AudioTrack audioTrack = null;
   private AudioTrackThread audioThread = null;
@@ -149,26 +140,23 @@ class WebRtcAudioTrack {
     this.nativeAudioTrack = nativeAudioTrack;
     audioManager = (AudioManager) context.getSystemService(
         Context.AUDIO_SERVICE);
-    sampleRate = GetNativeSampleRate();
+    if (DEBUG) {
+      WebRtcAudioUtils.logDeviceInfo(TAG);
+    }
+  }
+
+  private int InitPlayout(int sampleRate, int channels) {
+    Logd("InitPlayout(sampleRate=" + sampleRate + ", channels=" +
+         channels + ")");
+    final int bytesPerFrame = channels * (BITS_PER_SAMPLE / 8);
     byteBuffer = byteBuffer.allocateDirect(
-        BYTES_PER_FRAME * (sampleRate / BUFFERS_PER_SECOND));
+        bytesPerFrame * (sampleRate / BUFFERS_PER_SECOND));
     Logd("byteBuffer.capacity: " + byteBuffer.capacity());
     // Rather than passing the ByteBuffer with every callback (requiring
     // the potentially expensive GetDirectBufferAddress) we simply have the
     // the native class cache the address to the memory once.
     nativeCacheDirectBufferAddress(byteBuffer, nativeAudioTrack);
 
-    if (DEBUG) {
-      WebRtcAudioUtils.logDeviceInfo(TAG);
-    }
-  }
-
-  private int GetNativeSampleRate() {
-    return WebRtcAudioUtils.GetNativeSampleRate(audioManager);
-  }
-
-  private int InitPlayout(int sampleRate) {
-    Logd("InitPlayout(sampleRate=" + sampleRate + ")");
     // Get the minimum buffer size required for the successful creation of an
     // AudioTrack object to be created in the MODE_STREAM mode.
     // Note that this size doesn't guarantee a smooth playback under load.
@@ -203,7 +191,9 @@ class WebRtcAudioTrack {
     assertTrue(audioTrack.getStreamType() == AudioManager.STREAM_VOICE_CALL);
 
     // Return a delay estimate in milliseconds given the minimum buffer size.
-    return (1000 * (minBufferSizeInBytes / BYTES_PER_FRAME) / sampleRate);
+    // TODO(henrika): improve estimate and use real measurements of total
+    // latency instead. We can most likely ignore this value.
+    return (1000 * (minBufferSizeInBytes / bytesPerFrame) / sampleRate);
   }
 
   private boolean StartPlayout() {
@@ -225,6 +215,32 @@ class WebRtcAudioTrack {
       audioTrack = null;
     }
     return true;
+  }
+
+  /** Get max possible volume index for a phone call audio stream. */
+  private int GetStreamMaxVolume() {
+    Logd("GetStreamMaxVolume");
+    assertTrue(audioManager != null);
+    return audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
+  }
+
+  /** Set current volume level for a phone call audio stream. */
+  private boolean SetStreamVolume(int volume) {
+    Logd("SetStreamVolume(" + volume + ")");
+    assertTrue(audioManager != null);
+    if (audioManager.isVolumeFixed()) {
+      Loge("The device implements a fixed volume policy.");
+      return false;
+    }
+    audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, volume, 0);
+    return true;
+  }
+
+  /** Get current volume level for a phone call audio stream. */
+  private int GetStreamVolume() {
+    Logd("GetStreamVolume");
+    assertTrue(audioManager != null);
+    return audioManager.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
   }
 
   /** Helper method which throws an exception  when an assertion has failed. */

@@ -41,7 +41,8 @@ enum {
 
 namespace webrtc {
 
-OpenSlesInput::OpenSlesInput(PlayoutDelayProvider* delay_provider)
+OpenSlesInput::OpenSlesInput(
+    PlayoutDelayProvider* delay_provider, AudioManager* audio_manager)
     : delay_provider_(delay_provider),
       initialized_(false),
       mic_initialized_(false),

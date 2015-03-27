@@ -15,6 +15,7 @@
 
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
+#include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/utility/interface/helpers_android.h"
@@ -51,7 +52,7 @@ class AudioTrackJni : public PlayoutDelayProvider {
   // existing global references and enables garbage collection.
   static void ClearAndroidAudioDeviceObjects();
 
-  AudioTrackJni();
+  AudioTrackJni(AudioManager* audio_manager);
   ~AudioTrackJni();
 
   int32_t Init();
@@ -64,8 +65,13 @@ class AudioTrackJni : public PlayoutDelayProvider {
   int32_t StopPlayout();
   bool Playing() const { return playing_; }
 
-  int32_t PlayoutDelay(uint16_t& delayMS) const;
+  int SpeakerVolumeIsAvailable(bool& available);
+  int SetSpeakerVolume(uint32_t volume);
+  int SpeakerVolume(uint32_t& volume) const;
+  int MaxSpeakerVolume(uint32_t& max_volume) const;
+  int MinSpeakerVolume(uint32_t& min_volume) const;
 
+  int32_t PlayoutDelay(uint16_t& delayMS) const;
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
 
  protected:
@@ -76,8 +82,7 @@ class AudioTrackJni : public PlayoutDelayProvider {
   // Called from Java side so we can cache the address of the Java-manged
   // |byte_buffer| in |direct_buffer_address_|. The size of the buffer
   // is also stored in |direct_buffer_capacity_in_bytes_|.
-  // This method will be called by the WebRtcAudioTrack constructor, i.e.,
-  // on the same thread that this object is created on.
+  // Called on the same thread as the creating thread.
   static void JNICALL CacheDirectBufferAddress(
     JNIEnv* env, jobject obj, jobject byte_buffer, jlong nativeAudioTrack);
   void OnCacheDirectBufferAddress(JNIEnv* env, jobject byte_buffer);
@@ -98,10 +103,6 @@ class AudioTrackJni : public PlayoutDelayProvider {
   // Called from the constructor. Defines the |j_audio_track_| member.
   void CreateJavaInstance();
 
-  // Returns the native, or optimal, sample rate reported by the audio input
-  // device.
-  int GetNativeSampleRate();
-
   // Stores thread ID in constructor.
   // We can then use ThreadChecker::CalledOnValidThread() to ensure that
   // other methods are called from the same thread.
@@ -110,6 +111,10 @@ class AudioTrackJni : public PlayoutDelayProvider {
   // Stores thread ID in first call to OnGetPlayoutData() from high-priority
   // thread in Java. Detached during construction of this object.
   rtc::ThreadChecker thread_checker_java_;
+
+  // Contains audio parameters provided to this class at construction by the
+  // AudioManager.
+  const AudioParameters audio_parameters_;
 
   // The Java WebRtcAudioTrack instance.
   jobject j_audio_track_;
@@ -135,11 +140,6 @@ class AudioTrackJni : public PlayoutDelayProvider {
   // The AudioDeviceBuffer is a member of the AudioDeviceModuleImpl instance
   // and therefore outlives this object.
   AudioDeviceBuffer* audio_device_buffer_;
-
-  // Native sample rate set in AttachAudioBuffer() which uses JNI to ask the
-  // Java layer for the best possible sample rate for this particular device
-  // and audio configuration.
-  int sample_rate_hz_;
 
   // Estimated playout delay caused by buffering in the Java based audio track.
   // We are using a fixed value here since measurements have shown that the

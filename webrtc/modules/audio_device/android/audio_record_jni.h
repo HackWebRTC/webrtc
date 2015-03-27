@@ -14,6 +14,7 @@
 #include <jni.h>
 
 #include "webrtc/base/thread_checker.h"
+#include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/utility/interface/helpers_android.h"
@@ -57,7 +58,8 @@ class AudioRecordJni {
   // existing global references and enables garbage collection.
   static void ClearAndroidAudioDeviceObjects();
 
-  AudioRecordJni(PlayoutDelayProvider* delay_provider);
+  AudioRecordJni(
+      PlayoutDelayProvider* delay_provider, AudioManager* audio_manager);
   ~AudioRecordJni();
 
   int32_t Init();
@@ -104,10 +106,6 @@ class AudioRecordJni {
   // Called from the constructor. Defines the |j_audio_record_| member.
   void CreateJavaInstance();
 
-  // Returns the native, or optimal, sample rate reported by the audio input
-  // device.
-  int GetNativeSampleRate();
-
   // Stores thread ID in constructor.
   // We can then use ThreadChecker::CalledOnValidThread() to ensure that
   // other methods are called from the same thread.
@@ -123,6 +121,10 @@ class AudioRecordJni {
   // shown that the estimated delay varies very little over time. It might be
   // possible to make improvements in this area.
   PlayoutDelayProvider* delay_provider_;
+
+  // Contains audio parameters provided to this class at construction by the
+  // AudioManager.
+  const AudioParameters audio_parameters_;
 
   // The Java WebRtcAudioRecord instance.
   jobject j_audio_record_;
@@ -146,11 +148,6 @@ class AudioRecordJni {
   // Raw pointer handle provided to us in AttachAudioBuffer(). Owned by the
   // AudioDeviceModuleImpl class and called by AudioDeviceModuleImpl::Create().
   AudioDeviceBuffer* audio_device_buffer_;
-
-  // Native sample rate set in AttachAudioBuffer() which uses JNI to ask the
-  // Java layer for the best possible sample rate for this particular device
-  // and audio configuration.
-  int sample_rate_hz_;
 
   // Contains a delay estimate from the playout side given by |delay_provider_|.
   int playout_delay_in_milliseconds_;
