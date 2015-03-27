@@ -314,6 +314,9 @@ class FakeWebRtcVoiceEngine
   bool GetVAD(int channel) {
     return channels_[channel]->vad;
   }
+  bool GetOpusDtx(int channel) {
+    return channels_[channel]->opus_dtx;
+  }
   bool GetRED(int channel) {
     return channels_[channel]->red;
   }

@@ -69,6 +69,7 @@ using cricket::kCodecParamSPropStereo;
 using cricket::kCodecParamStartBitrate;
 using cricket::kCodecParamStereo;
 using cricket::kCodecParamUseInbandFec;
+using cricket::kCodecParamUseDtx;
 using cricket::kCodecParamSctpProtocol;
 using cricket::kCodecParamSctpStreams;
 using cricket::kCodecParamMaxAverageBitrate;
@@ -1560,9 +1561,9 @@ void WriteFmtpParameters(const cricket::CodecParameterMap& parameters,
 bool IsFmtpParam(const std::string& name) {
   const char* kFmtpParams[] = {
     kCodecParamMinPTime, kCodecParamSPropStereo,
-    kCodecParamStereo, kCodecParamUseInbandFec, kCodecParamStartBitrate,
-    kCodecParamMaxBitrate, kCodecParamMinBitrate, kCodecParamMaxQuantization,
-    kCodecParamSctpProtocol, kCodecParamSctpStreams,
+    kCodecParamStereo, kCodecParamUseInbandFec, kCodecParamUseDtx,
+    kCodecParamStartBitrate, kCodecParamMaxBitrate, kCodecParamMinBitrate,
+    kCodecParamMaxQuantization, kCodecParamSctpProtocol, kCodecParamSctpStreams,
     kCodecParamMaxAverageBitrate, kCodecParamMaxPlaybackRate,
     kCodecParamAssociatedPayloadType
   };

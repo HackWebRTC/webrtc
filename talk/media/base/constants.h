@@ -68,6 +68,7 @@ extern const char kCodecParamMinPTime[];
 extern const char kCodecParamSPropStereo[];
 extern const char kCodecParamStereo[];
 extern const char kCodecParamUseInbandFec[];
+extern const char kCodecParamUseDtx[];
 extern const char kCodecParamMaxAverageBitrate[];
 extern const char kCodecParamMaxPlaybackRate[];
 extern const char kCodecParamSctpProtocol[];
@@ -87,6 +88,7 @@ extern const int kOpusDefaultMinPTime;
 extern const int kOpusDefaultSPropStereo;
 extern const int kOpusDefaultStereo;
 extern const int kOpusDefaultUseInbandFec;
+extern const int kOpusDefaultUseDtx;
 extern const int kOpusDefaultMaxPlaybackRate;
 
 // Prefered values in this code base. Note that they may differ from the default
