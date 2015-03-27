@@ -2639,10 +2639,8 @@ bool WebRtcVideoMediaChannel::GetStats(VideoMediaInfo* info) {
 
       webrtc::CpuOveruseMetrics metrics;
       engine()->vie()->base()->GetCpuOveruseMetrics(channel_id, &metrics);
-      sinfo.capture_jitter_ms = metrics.capture_jitter_ms;
       sinfo.avg_encode_ms = metrics.avg_encode_time_ms;
       sinfo.encode_usage_percent = metrics.encode_usage_percent;
-      sinfo.capture_queue_delay_ms_per_s = metrics.capture_queue_delay_ms_per_s;
 
       webrtc::RtcpPacketTypeCounter rtcp_sent;
       webrtc::RtcpPacketTypeCounter rtcp_received;

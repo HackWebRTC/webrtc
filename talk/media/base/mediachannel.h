@@ -832,10 +832,8 @@ struct VideoSenderInfo : public MediaSenderInfo {
         preferred_bitrate(0),
         adapt_reason(0),
         adapt_changes(0),
-        capture_jitter_ms(0),
         avg_encode_ms(0),
-        encode_usage_percent(0),
-        capture_queue_delay_ms_per_s(0) {
+        encode_usage_percent(0) {
   }
 
   std::vector<SsrcGroup> ssrc_groups;
@@ -853,10 +851,8 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int preferred_bitrate;
   int adapt_reason;
   int adapt_changes;
-  int capture_jitter_ms;
   int avg_encode_ms;
   int encode_usage_percent;
-  int capture_queue_delay_ms_per_s;
   VariableInfo<int> adapt_frame_drops;
   VariableInfo<int> effects_frame_drops;
   VariableInfo<double> capturer_frame_time;

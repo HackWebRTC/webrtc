@@ -223,9 +223,6 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
   const IntForAdd ints[] = {
     { StatsReport::kStatsValueNameAdaptationChanges, info.adapt_changes },
     { StatsReport::kStatsValueNameAvgEncodeMs, info.avg_encode_ms },
-    { StatsReport::kStatsValueNameCaptureJitterMs, info.capture_jitter_ms },
-    { StatsReport::kStatsValueNameCaptureQueueDelayMsPerS,
-      info.capture_queue_delay_ms_per_s },
     { StatsReport::kStatsValueNameEncodeUsagePercent,
       info.encode_usage_percent },
     { StatsReport::kStatsValueNameFirsReceived, info.firs_rcvd },

@@ -138,8 +138,6 @@ class StatsReport {
     kStatsValueNameAvgEncodeMs,
     kStatsValueNameBandwidthLimitedResolution,
     kStatsValueNameBucketDelay,
-    kStatsValueNameCaptureJitterMs,
-    kStatsValueNameCaptureQueueDelayMsPerS,
     kStatsValueNameCaptureStartNtpTimeMs,
     kStatsValueNameCandidateIPAddress,
     kStatsValueNameCandidateNetworkType,

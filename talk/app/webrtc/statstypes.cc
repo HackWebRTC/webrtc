@@ -422,10 +422,6 @@ const char* StatsReport::Value::display_name() const {
       return "googBucketDelay";
     case kStatsValueNameBandwidthLimitedResolution:
       return "googBandwidthLimitedResolution";
-    case kStatsValueNameCaptureJitterMs:
-      return "googCaptureJitterMs";
-    case kStatsValueNameCaptureQueueDelayMsPerS:
-      return "googCaptureQueueDelayMsPerS";
 
     // Candidate related attributes. Values are taken from
     // http://w3c.github.io/webrtc-stats/#rtcstatstype-enum*.
