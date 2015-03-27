@@ -50,8 +50,6 @@ class VideoFrame {
   // |dh| is destination height, like |dw|, but must be a positive number.
   // Returns whether the function succeeded or failed.
 
-  // TODO(guoweis): remove the implementation and the next Reset once chrome
-  // gets the code.
   virtual bool Reset(uint32 fourcc,
                      int w,
                      int h,
@@ -64,10 +62,9 @@ class VideoFrame {
                      int64_t elapsed_time,
                      int64_t time_stamp,
                      webrtc::VideoRotation rotation,
-                     bool apply_rotation) {
-    return false;
-  }
+                     bool apply_rotation) = 0;
 
+  // TODO(guoweis): Remove this once all external implementations are updated.
   virtual bool Reset(uint32 fourcc,
                      int w,
                      int h,
@@ -108,13 +105,10 @@ class VideoFrame {
   // longer in use, so the underlying resource can be freed.
   virtual void* GetNativeHandle() const = 0;
 
-  // Returns the underlying video frame buffer. The default implementation
-  // returns a shallow wrapper, converting itself into a
-  // webrtc::VideoFrameBuffer. This function is ok to call multiple times, but
-  // the returned object will refer to the same memory.
-  // TODO(magjed): Make pure virtual when all subclasses implement this.
+  // Returns the underlying video frame buffer. This function is ok to call
+  // multiple times, but the returned object will refer to the same memory.
   virtual rtc::scoped_refptr<webrtc::VideoFrameBuffer> GetVideoFrameBuffer()
-      const;
+      const = 0;
 
   // For retrieving the aspect ratio of each pixel. Usually this is 1x1, but
   // the aspect_ratio_idc parameter of H.264 can specify non-square pixels.
@@ -140,10 +134,8 @@ class VideoFrame {
   virtual VideoFrame *Copy() const = 0;
 
   // Since VideoFrame supports shallow copy and the internal frame buffer might
-  // be shared, this function can be used to check exclusive ownership. The
-  // default implementation is conservative and returns false. Subclasses with
-  // knowledge of implementation specific details can override this.
-  virtual bool IsExclusive() const { return false; }
+  // be shared, this function can be used to check exclusive ownership.
+  virtual bool IsExclusive() const = 0;
 
   // In case VideoFrame needs exclusive access of the frame buffer, user can
   // call MakeExclusive() to make sure the frame buffer is exclusively
@@ -170,9 +162,7 @@ class VideoFrame {
 
   // Return a copy of frame which has its pending rotation applied. The
   // ownership of the returned frame is held by this frame.
-  virtual const VideoFrame* GetCopyWithRotationApplied() const {
-    return nullptr;
-  }
+  virtual const VideoFrame* GetCopyWithRotationApplied() const = 0;
 
   // Writes the frame into the given stream and returns the StreamResult.
   // See webrtc/base/stream.h for a description of StreamResult and error.

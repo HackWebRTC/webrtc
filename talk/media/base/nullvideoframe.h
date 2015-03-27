@@ -46,7 +46,8 @@ class NullVideoFrame : public VideoFrame {
                      size_t pixel_height,
                      int64 elapsed_time,
                      int64 time_stamp,
-                     webrtc::VideoRotation rotation) {
+                     webrtc::VideoRotation rotation,
+                     bool apply_rotation) {
     return false;
   }
   virtual bool InitToBlack(int w, int h, size_t pixel_width,
@@ -79,6 +80,8 @@ class NullVideoFrame : public VideoFrame {
 
   virtual VideoFrame *Copy() const { return NULL; }
 
+  virtual bool IsExclusive() const { return false; }
+
   virtual bool MakeExclusive() { return false; }
 
   virtual size_t CopyToBuffer(uint8 *buffer, size_t size) const { return 0; }
@@ -92,11 +95,17 @@ class NullVideoFrame : public VideoFrame {
       uint8 *y, uint8 *u, uint8 *v, int32 pitchY, int32 pitchU, int32 pitchV,
       size_t width, size_t height, bool interpolate, bool crop) const {}
 
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> GetVideoFrameBuffer() const {
+    return NULL;
+  }
+
   virtual VideoFrame *CreateEmptyFrame(int w, int h, size_t pixel_width,
                                        size_t pixel_height, int64 elapsed_time,
                                        int64 time_stamp) const {
     return NULL;
   }
+
+  virtual const VideoFrame* GetCopyWithRotationApplied() const { return NULL; }
 };
 
 }  // namespace cricket
