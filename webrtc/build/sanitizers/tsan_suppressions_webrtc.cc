@@ -44,6 +44,7 @@ char kTSanDefaultSuppressions[] =
 
 // rtc_unittest
 // https://code.google.com/p/webrtc/issues/detail?id=3911 for details.
+"race:rtc::AsyncInvoker::OnMessage\n"
 "race:rtc::FireAndForgetAsyncClosure<FunctorB>::Execute\n"
 "race:rtc::MessageQueueManager::Clear\n"
 "race:rtc::Thread::Clear\n"
@@ -51,6 +52,8 @@ char kTSanDefaultSuppressions[] =
 "race:webrtc/base/logging.cc\n"
 "race:webrtc/base/sharedexclusivelock_unittest.cc\n"
 "race:webrtc/base/signalthread_unittest.cc\n"
+// https://code.google.com/p/webrtc/issues/detail?id=4456
+"deadlock:rtc::MessageQueueManager::ClearInternal\n"
 
 // libjingle_p2p_unittest
 // https://code.google.com/p/webrtc/issues/detail?id=2079
