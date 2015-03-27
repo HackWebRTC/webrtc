@@ -53,6 +53,7 @@ char kTSanDefaultSuppressions[] =
 "race:webrtc/base/sharedexclusivelock_unittest.cc\n"
 "race:webrtc/base/signalthread_unittest.cc\n"
 // https://code.google.com/p/webrtc/issues/detail?id=4456
+"deadlock:rtc::MessageQueueManager::Clear\n"
 "deadlock:rtc::MessageQueueManager::ClearInternal\n"
 
 // libjingle_p2p_unittest
