@@ -210,7 +210,7 @@ class AudioProcessingImpl : public AudioProcessing {
   int delay_offset_ms_;
   bool was_stream_delay_set_;
 
-  bool output_will_be_muted_;
+  bool output_will_be_muted_ GUARDED_BY(crit_);
 
   bool key_pressed_;
 

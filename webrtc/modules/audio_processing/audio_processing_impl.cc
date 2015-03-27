@@ -452,14 +452,15 @@ int AudioProcessingImpl::num_output_channels() const {
 }
 
 void AudioProcessingImpl::set_output_will_be_muted(bool muted) {
-  output_will_be_muted_ = muted;
   CriticalSectionScoped lock(crit_);
+  output_will_be_muted_ = muted;
   if (agc_manager_.get()) {
     agc_manager_->SetCaptureMuted(output_will_be_muted_);
   }
 }
 
 bool AudioProcessingImpl::output_will_be_muted() const {
+  CriticalSectionScoped lock(crit_);
   return output_will_be_muted_;
 }
 
