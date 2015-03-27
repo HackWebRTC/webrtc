@@ -103,31 +103,51 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     return Camera.getNumberOfCameras();
   }
 
+  // Returns the name of the camera with camera index. Returns null if the
+  // camera can not be used.
   public static String getDeviceName(int index) {
     Camera.CameraInfo info = new Camera.CameraInfo();
-    Camera.getCameraInfo(index, info);
+    try {
+      Camera.getCameraInfo(index, info);
+    } catch (Exception e) {
+      Log.e(TAG, "getCameraInfo failed on index " + index,e);
+      return null;
+    }
+
     String facing =
         (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) ? "front" : "back";
     return "Camera " + index + ", Facing " + facing
         + ", Orientation " + info.orientation;
   }
 
+  // Returns the name of the front facing camera. Returns null if the
+  // camera can not be used or does not exist.
   public static String getNameOfFrontFacingDevice() {
     for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
       Camera.CameraInfo info = new Camera.CameraInfo();
-      Camera.getCameraInfo(i, info);
-      if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT)
-        return getDeviceName(i);
+      try {
+        Camera.getCameraInfo(i, info);
+        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT)
+          return getDeviceName(i);
+      } catch (Exception e) {
+        Log.e(TAG, "getCameraInfo failed on index " + i, e);
+      }
     }
     return null;
   }
 
+  // Returns the name of the back facing camera. Returns null if the
+  // camera can not be used or does not exist.
   public static String getNameOfBackFacingDevice() {
     for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
       Camera.CameraInfo info = new Camera.CameraInfo();
-      Camera.getCameraInfo(i, info);
-      if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK)
-        return getDeviceName(i);
+      try {
+        Camera.getCameraInfo(i, info);
+        if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK)
+          return getDeviceName(i);
+      } catch (Exception e) {
+        Log.e(TAG, "getCameraInfo failed on index " + i, e);
+      }
     }
     return null;
   }
@@ -152,10 +172,10 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       return false;
     }
 
-    id = ++id % Camera.getNumberOfCameras();
+    int new_id = (id + 1) % Camera.getNumberOfCameras();
 
     CaptureFormat formatToUse  = null;
-    List<CaptureFormat> formats = supportedFormats.get(id);
+    List<CaptureFormat> formats = supportedFormats.get(new_id);
     for (CaptureFormat format : formats) {
       if (format.width == width && format.height == height) {
         formatToUse = format;
@@ -168,6 +188,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       return false;
     }
 
+    id = new_id;
     cameraThreadHandler.post(new Runnable() {
       @Override public void run() {
         switchCameraOnCameraThread();
@@ -188,7 +209,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   // compatible with the generic VideoCapturer class.
   boolean init(String deviceName) {
     Log.d(TAG, "init " + deviceName);
-    if (!initStatics())
+    if (deviceName == null || !initStatics())
       return false;
 
     boolean foundDevice = false;
@@ -197,7 +218,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       foundDevice = true;
     } else {
       for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
-        if (deviceName.equals(getDeviceName(i))) {
+        String existing_device = getDeviceName(i);
+        if (existing_device != null && deviceName.equals(existing_device)) {
           this.id = i;
           foundDevice = true;
         }
@@ -259,32 +281,42 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
   // Returns a list of CaptureFormat for the camera with index id.
   static ArrayList<CaptureFormat> getSupportedFormats(int id) {
-    Camera camera;
-    camera = Camera.open(id);
-    Camera.Parameters parameters;
-    parameters = camera.getParameters();
-
     ArrayList<CaptureFormat> formatList = new ArrayList<CaptureFormat>();
-    // getSupportedPreviewFpsRange returns a sorted list.
-    List<int[]> listFpsRange = parameters.getSupportedPreviewFpsRange();
-    int[] range = {0, 0};
-    if (listFpsRange != null)
-      range = listFpsRange.get(listFpsRange.size() -1);
 
-    List<Camera.Size> supportedSizes = parameters.getSupportedPreviewSizes();
-    for (Camera.Size size : supportedSizes) {
-      if (size.width % 16 != 0) {
-        // If the width is not a multiple of 16, the frames received from the
-        // camera will have a stride != width when YV12 is used. Since we
-        // currently only support tightly packed images, we simply ignore those
-        // resolutions.
-        continue;
-      }
-      formatList.add(new CaptureFormat(size.width, size.height,
-          range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
-          range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]));
+    Camera camera;
+    try {
+      camera = Camera.open(id);
+    } catch (Exception e) {
+      Log.e(TAG, "Open camera failed on id " + id, e);
+      return formatList;
     }
-    camera.release();
+
+    try {
+      Camera.Parameters parameters;
+      parameters = camera.getParameters();
+      // getSupportedPreviewFpsRange returns a sorted list.
+      List<int[]> listFpsRange = parameters.getSupportedPreviewFpsRange();
+      int[] range = {0, 0};
+      if (listFpsRange != null)
+        range = listFpsRange.get(listFpsRange.size() -1);
+
+      List<Camera.Size> supportedSizes = parameters.getSupportedPreviewSizes();
+      for (Camera.Size size : supportedSizes) {
+        if (size.width % 16 != 0) {
+          // If the width is not a multiple of 16, the frames received from the
+          // camera will have a stride != width when YV12 is used. Since we
+          // currently only support tightly packed images, we simply ignore
+          // those resolutions.
+          continue;
+        }
+        formatList.add(new CaptureFormat(size.width, size.height,
+            range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
+            range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]));
+      }
+      camera.release();
+    } catch (Exception e) {
+      Log.e(TAG, "getSupportedFormats failed on id " + id, e);
+    }
     return formatList;
   }
 
