@@ -267,6 +267,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
         webrtc::Call* call,
         WebRtcVideoEncoderFactory* external_encoder_factory,
         const VideoOptions& options,
+        int max_bitrate_bps,
         const Settable<VideoCodecSettings>& codec_settings,
         const StreamParams& sp,
         const std::vector<webrtc::RtpExtension>& rtp_extensions);
@@ -290,6 +291,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     VideoSenderInfo GetVideoSenderInfo();
     void FillBandwidthEstimationInfo(BandwidthEstimationInfo* bwe_info);
 
+    void SetMaxBitrateBps(int max_bitrate_bps);
+
     void OnCpuResolutionRequest(
         CoordinatedVideoAdapter::AdaptRequest adapt_request);
 
@@ -302,9 +305,11 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
       VideoSendStreamParameters(
           const webrtc::VideoSendStream::Config& config,
           const VideoOptions& options,
+          int max_bitrate_bps,
           const Settable<VideoCodecSettings>& codec_settings);
       webrtc::VideoSendStream::Config config;
       VideoOptions options;
+      int max_bitrate_bps;
       Settable<VideoCodecSettings> codec_settings;
       // Sent resolutions + bitrates etc. by the underlying VideoSendStream,
       // typically changes when setting a new resolution or reconfiguring
@@ -344,10 +349,12 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     static std::vector<webrtc::VideoStream> CreateVideoStreams(
         const VideoCodec& codec,
         const VideoOptions& options,
+        int max_bitrate_bps,
         size_t num_streams);
     static std::vector<webrtc::VideoStream> CreateSimulcastVideoStreams(
         const VideoCodec& codec,
         const VideoOptions& options,
+        int max_bitrate_bps,
         size_t num_streams);
 
     void* ConfigureVideoEncoderSettings(const VideoCodec& codec,

@@ -243,29 +243,14 @@ std::vector<webrtc::VideoStream>
 WebRtcVideoChannel2::WebRtcVideoSendStream::CreateSimulcastVideoStreams(
     const VideoCodec& codec,
     const VideoOptions& options,
+    int max_bitrate_bps,
     size_t num_streams) {
-  // Use default factory for non-simulcast.
   int max_qp = kDefaultQpMax;
   codec.GetParam(kCodecParamMaxQuantization, &max_qp);
 
-  int min_bitrate_kbps;
-  if (!codec.GetParam(kCodecParamMinBitrate, &min_bitrate_kbps) ||
-      min_bitrate_kbps < kMinVideoBitrate) {
-    min_bitrate_kbps = kMinVideoBitrate;
-  }
-
-  int max_bitrate_kbps;
-  if (!codec.GetParam(kCodecParamMaxBitrate, &max_bitrate_kbps)) {
-    max_bitrate_kbps = 0;
-  }
-
   return GetSimulcastConfig(
-      num_streams,
-      GetSimulcastBitrateMode(options),
-      codec.width,
-      codec.height,
-      max_bitrate_kbps * 1000,
-      max_qp,
+      num_streams, GetSimulcastBitrateMode(options), codec.width, codec.height,
+      max_bitrate_bps, max_qp,
       codec.framerate != 0 ? codec.framerate : kDefaultVideoMaxFramerate);
 }
 
@@ -273,9 +258,20 @@ std::vector<webrtc::VideoStream>
 WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoStreams(
     const VideoCodec& codec,
     const VideoOptions& options,
+    int max_bitrate_bps,
     size_t num_streams) {
-  if (num_streams != 1)
-    return CreateSimulcastVideoStreams(codec, options, num_streams);
+  int codec_max_bitrate_kbps;
+  if (codec.GetParam(kCodecParamMaxBitrate, &codec_max_bitrate_kbps)) {
+    max_bitrate_bps = codec_max_bitrate_kbps * 1000;
+  }
+  if (num_streams != 1) {
+    return CreateSimulcastVideoStreams(codec, options, max_bitrate_bps,
+                                       num_streams);
+  }
+
+  // For unset max bitrates set default bitrate for non-simulcast.
+  if (max_bitrate_bps <= 0)
+    max_bitrate_bps = kMaxVideoBitrate * 1000;
 
   webrtc::VideoStream stream;
   stream.width = codec.width;
@@ -284,13 +280,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoStreams(
       codec.framerate != 0 ? codec.framerate : kDefaultVideoMaxFramerate;
 
   stream.min_bitrate_bps = kMinVideoBitrate * 1000;
-  int max_bitrate_kbps;
-  if (!codec.GetParam(kCodecParamMaxBitrate, &max_bitrate_kbps) ||
-      max_bitrate_kbps < kMaxVideoBitrate) {
-    max_bitrate_kbps = kMaxVideoBitrate;
-  }
-
-  stream.target_bitrate_bps = stream.max_bitrate_bps = max_bitrate_kbps * 1000;
+  stream.target_bitrate_bps = stream.max_bitrate_bps = max_bitrate_bps;
 
   int max_qp = kDefaultQpMax;
   codec.GetParam(kCodecParamMaxQuantization, &max_qp);
@@ -653,19 +643,10 @@ void WebRtcVideoChannel2::SetDefaultOptions() {
 }
 
 WebRtcVideoChannel2::~WebRtcVideoChannel2() {
-  for (std::map<uint32, WebRtcVideoSendStream*>::iterator it =
-           send_streams_.begin();
-       it != send_streams_.end();
-       ++it) {
-    delete it->second;
-  }
-
-  for (std::map<uint32, WebRtcVideoReceiveStream*>::iterator it =
-           receive_streams_.begin();
-       it != receive_streams_.end();
-       ++it) {
-    delete it->second;
-  }
+  for (auto& kv : send_streams_)
+    delete kv.second;
+  for (auto& kv : receive_streams_)
+    delete kv.second;
 }
 
 bool WebRtcVideoChannel2::Init() { return true; }
@@ -879,6 +860,7 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
       new WebRtcVideoSendStream(call_.get(),
                                 external_encoder_factory_,
                                 options_,
+                                bitrate_config_.max_bitrate_bps,
                                 send_codec_,
                                 sp,
                                 send_rtp_extensions_);
@@ -1286,8 +1268,18 @@ bool WebRtcVideoChannel2::SetSendRtpHeaderExtensions(
   return true;
 }
 
+// Counter-intuitively this method doesn't only set global bitrate caps but also
+// per-stream codec max bitrates. This is to permit SetMaxSendBitrate (b=AS) to
+// raise bitrates above the 2000k default bitrate cap.
 bool WebRtcVideoChannel2::SetMaxSendBandwidth(int max_bitrate_bps) {
+  // TODO(pbos): Figure out whether b=AS means max bitrate for this
+  // WebRtcVideoChannel2 (in which case we're good), or per sender (SSRC), in
+  // which case this should not set a Call::BitrateConfig but rather reconfigure
+  // all senders.
   LOG(LS_INFO) << "SetMaxSendBandwidth: " << max_bitrate_bps << "bps.";
+  if (max_bitrate_bps == bitrate_config_.max_bitrate_bps)
+    return true;
+
   if (max_bitrate_bps <= 0) {
     // Unsetting max bitrate.
     max_bitrate_bps = -1;
@@ -1299,6 +1291,9 @@ bool WebRtcVideoChannel2::SetMaxSendBandwidth(int max_bitrate_bps) {
     bitrate_config_.min_bitrate_bps = max_bitrate_bps;
   }
   call_->SetBitrateConfig(bitrate_config_);
+  rtc::CritScope stream_lock(&stream_crit_);
+  for (auto& kv : send_streams_)
+    kv.second->SetMaxBitrateBps(max_bitrate_bps);
   return true;
 }
 
@@ -1395,14 +1390,19 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::VideoSendStreamParameters::
     VideoSendStreamParameters(
         const webrtc::VideoSendStream::Config& config,
         const VideoOptions& options,
+        int max_bitrate_bps,
         const Settable<VideoCodecSettings>& codec_settings)
-    : config(config), options(options), codec_settings(codec_settings) {
+    : config(config),
+      options(options),
+      max_bitrate_bps(max_bitrate_bps),
+      codec_settings(codec_settings) {
 }
 
 WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
     webrtc::Call* call,
     WebRtcVideoEncoderFactory* external_encoder_factory,
     const VideoOptions& options,
+    int max_bitrate_bps,
     const Settable<VideoCodecSettings>& codec_settings,
     const StreamParams& sp,
     const std::vector<webrtc::RtpExtension>& rtp_extensions)
@@ -1410,7 +1410,10 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       ssrcs_(sp.ssrcs),
       external_encoder_factory_(external_encoder_factory),
       stream_(NULL),
-      parameters_(webrtc::VideoSendStream::Config(), options, codec_settings),
+      parameters_(webrtc::VideoSendStream::Config(),
+                  options,
+                  max_bitrate_bps,
+                  codec_settings),
       allocated_encoder_(NULL, webrtc::kVideoCodecUnknown, false),
       capturer_(NULL),
       sending_(false),
@@ -1732,7 +1735,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   clamped_codec.height = height;
 
   encoder_config.streams = CreateVideoStreams(
-      clamped_codec, parameters_.options, parameters_.config.rtp.ssrcs.size());
+      clamped_codec, parameters_.options, parameters_.max_bitrate_bps,
+      parameters_.config.rtp.ssrcs.size());
 
   // Conference mode screencast uses 2 temporal layers split at 100kbit.
   if (parameters_.options.conference_mode.GetWithDefaultIfUnset(false) &&
@@ -1909,6 +1913,20 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::FillBandwidthEstimationInfo(
   bwe_info->actual_enc_bitrate += stats.media_bitrate_bps;
 }
 
+void WebRtcVideoChannel2::WebRtcVideoSendStream::SetMaxBitrateBps(
+    int max_bitrate_bps) {
+  rtc::CritScope cs(&lock_);
+  parameters_.max_bitrate_bps = max_bitrate_bps;
+
+  // No need to reconfigure if the stream hasn't been configured yet.
+  if (parameters_.encoder_config.streams.empty())
+    return;
+
+  // Force a stream reconfigure to set the new max bitrate.
+  int width = last_dimensions_.width;
+  last_dimensions_.width = 0;
+  SetDimensions(width, last_dimensions_.height, last_dimensions_.is_screencast);
+}
 void WebRtcVideoChannel2::WebRtcVideoSendStream::OnCpuResolutionRequest(
     CoordinatedVideoAdapter::AdaptRequest adapt_request) {
   rtc::CritScope cs(&lock_);

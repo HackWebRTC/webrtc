@@ -1887,6 +1887,58 @@ TEST_F(WebRtcVideoChannel2Test, SetMaxSendBandwidthShouldBeRemovable) {
       << "Setting zero max bitrate did not reset start bitrate.";
 }
 
+TEST_F(WebRtcVideoChannel2Test, SetMaxSendBitrateCanIncreaseSenderBitrate) {
+  std::vector<VideoCodec> codecs;
+  codecs.push_back(kVp8Codec720p);
+  ASSERT_TRUE(channel_->SetSendCodecs(codecs));
+  channel_->SetSend(true);
+
+  FakeVideoSendStream* stream = AddSendStream();
+
+  std::vector<webrtc::VideoStream> streams = stream->GetVideoStreams();
+  int initial_max_bitrate_bps = streams[0].max_bitrate_bps;
+  EXPECT_GT(initial_max_bitrate_bps, 0);
+
+  EXPECT_TRUE(channel_->SetMaxSendBandwidth(initial_max_bitrate_bps * 2));
+  streams = stream->GetVideoStreams();
+  EXPECT_EQ(initial_max_bitrate_bps * 2, streams[0].max_bitrate_bps);
+}
+
+TEST_F(WebRtcVideoChannel2Test,
+       SetMaxSendBitrateCanIncreaseSimulcastSenderBitrate) {
+  std::vector<VideoCodec> codecs;
+  codecs.push_back(kVp8Codec720p);
+  ASSERT_TRUE(channel_->SetSendCodecs(codecs));
+  channel_->SetSend(true);
+
+  FakeVideoSendStream* stream = AddSendStream(
+      cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs3)));
+
+  // Send a frame to make sure this scales up to >1 stream (simulcast).
+  cricket::FakeVideoCapturer capturer;
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], &capturer));
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  EXPECT_TRUE(capturer.CaptureFrame());
+
+  std::vector<webrtc::VideoStream> streams = stream->GetVideoStreams();
+  ASSERT_GT(streams.size(), 1u)
+      << "Without simulcast this test doesn't make sense.";
+  int initial_max_bitrate_bps = 0;
+  for (auto& video_stream : streams)
+    initial_max_bitrate_bps += video_stream.max_bitrate_bps;
+  EXPECT_GT(initial_max_bitrate_bps, 0);
+
+  EXPECT_TRUE(channel_->SetMaxSendBandwidth(initial_max_bitrate_bps * 2));
+  streams = stream->GetVideoStreams();
+  int increased_max_bitrate_bps = 0;
+  for (auto& video_stream : streams)
+    increased_max_bitrate_bps += video_stream.max_bitrate_bps;
+  EXPECT_EQ(initial_max_bitrate_bps * 2, increased_max_bitrate_bps);
+
+  EXPECT_TRUE(channel_->SetCapturer(kSsrcs3[0], nullptr));
+}
+
 TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithMaxQuantization) {
   static const char* kMaxQuantization = "21";
   std::vector<VideoCodec> codecs;
