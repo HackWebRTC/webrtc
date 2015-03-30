@@ -234,7 +234,7 @@
             'remote_bitrate_estimator/test/packet_receiver.h',
             'remote_bitrate_estimator/test/packet_sender.cc',
             'remote_bitrate_estimator/test/packet_sender.h',
-            'remote_bitrate_estimator/test/packets.h',
+            'remote_bitrate_estimator/test/packet.h',
             'remote_bitrate_estimator/test/estimators/nada.cc',
             'remote_bitrate_estimator/test/estimators/nada.h',
             'remote_bitrate_estimator/test/estimators/remb.cc',
