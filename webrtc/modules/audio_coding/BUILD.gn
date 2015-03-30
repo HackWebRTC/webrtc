@@ -32,6 +32,8 @@ source_set("audio_coding") {
     "main/acm2/audio_coding_module_impl.h",
     "main/acm2/call_statistics.cc",
     "main/acm2/call_statistics.h",
+    "main/acm2/codec_manager.cc",
+    "main/acm2/codec_manager.h",
     "main/acm2/initial_delay_manager.cc",
     "main/acm2/initial_delay_manager.h",
     "main/acm2/nack.cc",

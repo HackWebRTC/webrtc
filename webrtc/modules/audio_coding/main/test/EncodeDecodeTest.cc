@@ -53,7 +53,6 @@ Sender::Sender()
 
 void Sender::Setup(AudioCodingModule *acm, RTPStream *rtpStream,
                    std::string in_file_name, int sample_rate, int channels) {
-  acm->InitializeSender();
   struct CodecInst sendCodec;
   int noOfCodecs = acm->NumberOfCodecs();
   int codecNo;

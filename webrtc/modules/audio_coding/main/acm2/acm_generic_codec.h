@@ -120,7 +120,7 @@ class ACMGenericCodec {
   //   -1 if the encoder is not initialized,
   //    0 otherwise.
   //
-  int16_t EncoderParams(WebRtcACMCodecParams* enc_params);
+  int16_t EncoderParams(WebRtcACMCodecParams* enc_params) const;
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t InitEncoder(...)
@@ -409,6 +409,8 @@ class ACMGenericCodec {
   int SetCopyRed(bool enable);
 
   AudioEncoder* GetAudioEncoder();
+
+  const AudioEncoder* GetAudioEncoder() const;
 
  private:
   bool has_internal_fec_;

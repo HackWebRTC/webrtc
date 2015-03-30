@@ -209,7 +209,7 @@ size_t AudioDecoderProxy::Channels() const {
   return decoder_->Channels();
 }
 
-int16_t ACMGenericCodec::EncoderParams(WebRtcACMCodecParams* enc_params) {
+int16_t ACMGenericCodec::EncoderParams(WebRtcACMCodecParams* enc_params) const {
   *enc_params = acm_codec_params_;
   return 0;
 }
@@ -537,6 +537,10 @@ int ACMGenericCodec::SetCopyRed(bool enable) {
 }
 
 AudioEncoder* ACMGenericCodec::GetAudioEncoder() {
+  return encoder_;
+}
+
+const AudioEncoder* ACMGenericCodec::GetAudioEncoder() const {
   return encoder_;
 }
 

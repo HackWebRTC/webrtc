@@ -281,7 +281,6 @@ void TwoWayCommunication::Perform() {
   // In the middle of a session with data flowing between two sides, called A
   // and B, APIs will be called, like ResetEncoder(), and the code should
   // continue to run, and be able to recover.
-  bool expect_error_add = false;
   while (!_inFileA.EndOfFile() && !_inFileB.EndOfFile()) {
     msecPassed += 10;
     EXPECT_GT(_inFileA.Read10MsData(audioFrame), 0);
@@ -290,12 +289,7 @@ void TwoWayCommunication::Perform() {
 
     EXPECT_GT(_inFileB.Read10MsData(audioFrame), 0);
 
-    // Expect call to pass except for the time when no send codec is registered.
-    if (!expect_error_add) {
-      EXPECT_GE(_acmB->Add10MsData(audioFrame), 0);
-    } else {
-      EXPECT_EQ(-1, _acmB->Add10MsData(audioFrame));
-    }
+    EXPECT_GE(_acmB->Add10MsData(audioFrame), 0);
     EXPECT_GE(_acmRefB->Add10MsData(audioFrame), 0);
     EXPECT_EQ(0, _acmA->PlayoutData10Ms(outFreqHzA, &audioFrame));
     _outFileA.Write10MsData(audioFrame);
@@ -315,14 +309,11 @@ void TwoWayCommunication::Perform() {
     // side B.
     if (((secPassed % 5) == 4) && (msecPassed == 0)) {
       EXPECT_EQ(0, _acmA->ResetEncoder());
-      EXPECT_EQ(0, _acmB->InitializeSender());
-      expect_error_add = true;
     }
     // Re-register send codec on side B.
     if (((secPassed % 5) == 4) && (msecPassed >= 990)) {
       EXPECT_EQ(0, _acmB->RegisterSendCodec(codecInst_B));
       EXPECT_EQ(0, _acmB->SendCodec(&dummy));
-      expect_error_add = false;
     }
     // Reset decoder on side B, and initialize receiver on side A.
     if (((secPassed % 7) == 6) && (msecPassed == 0)) {

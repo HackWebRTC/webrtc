@@ -62,7 +62,6 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
     }
 
     acm_->InitializeReceiver();
-    acm_->InitializeSender();
     acm_->RegisterTransportCallback(this);
 
     rtp_header_.header.sequenceNumber = 0;

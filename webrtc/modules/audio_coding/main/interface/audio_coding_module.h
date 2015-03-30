@@ -191,20 +191,6 @@ class AudioCodingModule {
   //
 
   ///////////////////////////////////////////////////////////////////////////
-  // int32_t InitializeSender()
-  // Any encoder-related state of ACM will be initialized to the
-  // same state when ACM is created. This will not interrupt or
-  // effect decoding functionality of ACM. ACM will lose all the
-  // encoding-related settings by calling this function.
-  // For instance, a send codec has to be registered again.
-  //
-  // Return value:
-  //   -1 if failed to initialize,
-  //    0 if succeeded.
-  //
-  virtual int32_t InitializeSender() = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   // int32_t ResetEncoder()
   // This API resets the states of encoder. All the encoder settings, such as
   // send-codec or VAD/DTX, will be preserved.

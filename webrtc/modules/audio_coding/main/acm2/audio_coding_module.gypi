@@ -70,6 +70,8 @@
         'audio_coding_module_impl.h',
         'call_statistics.cc',
         'call_statistics.h',
+        'codec_manager.cc',
+        'codec_manager.h',
         'initial_delay_manager.cc',
         'initial_delay_manager.h',
         'nack.cc',

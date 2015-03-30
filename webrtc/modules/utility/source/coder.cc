@@ -21,7 +21,6 @@ AudioCoder::AudioCoder(uint32_t instanceID)
       _encodedLengthInBytes(0),
       _decodeTimestamp(0)
 {
-    _acm->InitializeSender();
     _acm->InitializeReceiver();
     _acm->RegisterTransportCallback(this);
 }

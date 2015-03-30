@@ -1144,9 +1144,6 @@ void APITest::ChangeCodec(char side) {
         WriteLockScoped wl(_apiTestRWLock);
         *thereIsEncoder = false;
       }
-      CHECK_ERROR_MT(myACM->InitializeSender());
-      Wait(1000);
-
       // After Initialization CN is lost, re-register them
       if (AudioCodingModule::Codec("CN", &myCodec, 8000, 1) >= 0) {
         CHECK_ERROR_MT(myACM->RegisterSendCodec(myCodec));

@@ -20,6 +20,7 @@
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_receiver.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_resampler.h"
+#include "webrtc/modules/audio_coding/main/acm2/codec_manager.h"
 
 namespace webrtc {
 
@@ -41,9 +42,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   /////////////////////////////////////////
   //   Sender
   //
-
-  // Initialize send codec.
-  int InitializeSender() override;
 
   // Reset send codec.
   int ResetEncoder() override;
@@ -134,6 +132,11 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   // Get current received codec.
   int ReceiveCodec(CodecInst* current_codec) const override;
+
+  int RegisterDecoder(int acm_codec_id,
+                      uint8_t payload_type,
+                      int channels,
+                      AudioDecoder* audio_decoder);
 
   // Incoming packet from network parsed and ready for decode.
   int IncomingPacket(const uint8_t* incoming_payload,
@@ -249,16 +252,9 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   int Add10MsDataInternal(const AudioFrame& audio_frame, InputData* input_data);
   int Encode(const InputData& input_data);
 
-  ACMGenericCodec* CreateCodec(const CodecInst& codec);
-
   int InitializeReceiverSafe() EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   bool HaveValidEncoder(const char* caller_name) const
-      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
-
-  // Set VAD/DTX status. This function does not acquire a lock, and it is
-  // created to be called only from inside a critical section.
-  int SetVADSafe(bool enable_dtx, bool enable_vad, ACMVADMode mode)
       EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   // Preprocessing of input audio, including resampling and down-mixing if
@@ -280,54 +276,13 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // to |index|.
   int UpdateUponReceivingCodec(int index);
 
-  // Get a pointer to AudioDecoder of the given codec. For some codecs, e.g.
-  // iSAC, encoding and decoding have to be performed on a shared
-  // codec-instance. By calling this method, we get the codec-instance that ACM
-  // owns, then pass that to NetEq. This way, we perform both encoding and
-  // decoding on the same codec-instance. Furthermore, ACM would have control
-  // over decoder functionality if required. If |codec| does not share an
-  // instance between encoder and decoder, the |*decoder| is set NULL.
-  // The field ACMCodecDB::CodecSettings.owns_decoder indicates that if a
-  // codec owns the decoder-instance. For such codecs |*decoder| should be a
-  // valid pointer, otherwise it will be NULL.
-  int GetAudioDecoder(const CodecInst& codec, int codec_id,
-                      int mirror_id, AudioDecoder** decoder)
-      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
-
-  void SetCngPayloadType(int sample_rate_hz, int payload_type)
-      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
-
-  void SetRedPayloadType(int sample_rate_hz, int payload_type)
-      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
-
   CriticalSectionWrapper* acm_crit_sect_;
   int id_;  // TODO(henrik.lundin) Make const.
   uint32_t expected_codec_ts_ GUARDED_BY(acm_crit_sect_);
   uint32_t expected_in_ts_ GUARDED_BY(acm_crit_sect_);
-  CodecInst send_codec_inst_ GUARDED_BY(acm_crit_sect_);
-
-  uint8_t cng_nb_pltype_ GUARDED_BY(acm_crit_sect_);
-  uint8_t cng_wb_pltype_ GUARDED_BY(acm_crit_sect_);
-  uint8_t cng_swb_pltype_ GUARDED_BY(acm_crit_sect_);
-  uint8_t cng_fb_pltype_ GUARDED_BY(acm_crit_sect_);
-
-  uint8_t red_nb_pltype_ GUARDED_BY(acm_crit_sect_);
-  bool vad_enabled_ GUARDED_BY(acm_crit_sect_);
-  bool dtx_enabled_ GUARDED_BY(acm_crit_sect_);
-  ACMVADMode vad_mode_ GUARDED_BY(acm_crit_sect_);
-  ACMGenericCodec* codecs_[ACMCodecDB::kMaxNumCodecs]
-      GUARDED_BY(acm_crit_sect_);
-  ACMGenericCodec* current_encoder_ GUARDED_BY(acm_crit_sect_);
-  int mirror_codec_idx_[ACMCodecDB::kMaxNumCodecs] GUARDED_BY(acm_crit_sect_);
-  bool stereo_send_ GUARDED_BY(acm_crit_sect_);
   ACMResampler resampler_ GUARDED_BY(acm_crit_sect_);
   AcmReceiver receiver_;  // AcmReceiver has it's own internal lock.
-
-  // RED.
-  bool red_enabled_ GUARDED_BY(acm_crit_sect_);
-
-  // Codec internal FEC
-  bool codec_fec_enabled_ GUARDED_BY(acm_crit_sect_);
+  CodecManager codec_manager_ GUARDED_BY(acm_crit_sect_);
 
   // This is to keep track of CN instances where we can send DTMFs.
   uint8_t previous_pltype_ GUARDED_BY(acm_crit_sect_);
