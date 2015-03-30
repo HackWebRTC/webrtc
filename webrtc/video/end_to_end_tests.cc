@@ -543,7 +543,13 @@ TEST_F(EndToEndTest, CanReceiveFec) {
   RunBaseTest(&test);
 }
 
-TEST_F(EndToEndTest, ReceivedFecPacketsNotNacked) {
+// Flacky on ASan and TSan. See webrtc:4328.
+#if defined(ADDRESS_SANITIZER) || defined(THREAD_SANITIZER)
+#define MAYBE_ReceivedFecPacketsNotNacked DISABLED_ReceivedFecPacketsNotNacked
+#else
+#define MAYBE_ReceivedFecPacketsNotNacked ReceivedFecPacketsNotNacked
+#endif
+TEST_F(EndToEndTest, MAYBE_ReceivedFecPacketsNotNacked) {
   // At low RTT (< kLowRttNackMs) -> NACK only, no FEC.
   // Configure some network delay.
   const int kNetworkDelayMs = 50;
