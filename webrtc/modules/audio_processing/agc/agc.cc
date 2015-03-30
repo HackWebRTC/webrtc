@@ -45,7 +45,7 @@ Agc::Agc()
       pitch_based_vad_(new PitchBasedVad()),
       standalone_vad_(StandaloneVad::Create()),
       // Initialize to the most common resampling situation.
-      resampler_(new Resampler(32000, kSampleRateHz, kResamplerSynchronous)) {
+      resampler_(new Resampler(32000, kSampleRateHz, 1)) {
   }
 
 Agc::~Agc() {}
@@ -69,9 +69,7 @@ int Agc::Process(const int16_t* audio, int length, int sample_rate_hz) {
   int16_t resampled[kLength10Ms];
   const int16_t* resampled_ptr = audio;
   if (sample_rate_hz != kSampleRateHz) {
-    if (resampler_->ResetIfNeeded(sample_rate_hz,
-                                  kSampleRateHz,
-                                  kResamplerSynchronous) != 0) {
+    if (resampler_->ResetIfNeeded(sample_rate_hz, kSampleRateHz, 1) != 0) {
       return -1;
     }
     resampler_->Push(audio, length, resampled, kLength10Ms, length);

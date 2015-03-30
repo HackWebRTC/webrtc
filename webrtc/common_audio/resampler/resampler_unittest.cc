@@ -16,14 +16,9 @@
 
 namespace webrtc {
 namespace {
-const ResamplerType kTypes[] = {
-  kResamplerSynchronous,
-  kResamplerAsynchronous,
-  kResamplerSynchronousStereo,
-  kResamplerAsynchronousStereo
-  // kResamplerInvalid excluded
-};
-const size_t kTypesSize = sizeof(kTypes) / sizeof(*kTypes);
+
+const int kNumChannels[] = {1, 2};
+const size_t kNumChannelsSize = sizeof(kNumChannels) / sizeof(*kNumChannels);
 
 // Rates we must support.
 const int kMaxRate = 96000;
@@ -78,15 +73,15 @@ TEST_F(ResamplerTest, Reset) {
   // Check that all required combinations are supported.
   for (size_t i = 0; i < kRatesSize; ++i) {
     for (size_t j = 0; j < kRatesSize; ++j) {
-      for (size_t k = 0; k < kTypesSize; ++k) {
+      for (size_t k = 0; k < kNumChannelsSize; ++k) {
         std::ostringstream ss;
         ss << "Input rate: " << kRates[i] << ", output rate: " << kRates[j]
-            << ", type: " << kTypes[k];
+            << ", channels: " << kNumChannels[k];
         SCOPED_TRACE(ss.str());
         if (ValidRates(kRates[i], kRates[j]))
-          EXPECT_EQ(0, rs_.Reset(kRates[i], kRates[j], kTypes[k]));
+          EXPECT_EQ(0, rs_.Reset(kRates[i], kRates[j], kNumChannels[k]));
         else
-          EXPECT_EQ(-1, rs_.Reset(kRates[i], kRates[j], kTypes[k]));
+          EXPECT_EQ(-1, rs_.Reset(kRates[i], kRates[j], kNumChannels[k]));
       }
     }
   }
@@ -94,7 +89,8 @@ TEST_F(ResamplerTest, Reset) {
 
 // TODO(tlegrand): Replace code inside the two tests below with a function
 // with number of channels and ResamplerType as input.
-TEST_F(ResamplerTest, Synchronous) {
+TEST_F(ResamplerTest, Mono) {
+  const int kChannels = 1;
   for (size_t i = 0; i < kRatesSize; ++i) {
     for (size_t j = 0; j < kRatesSize; ++j) {
       std::ostringstream ss;
@@ -104,19 +100,18 @@ TEST_F(ResamplerTest, Synchronous) {
       if (ValidRates(kRates[i], kRates[j])) {
         int in_length = kRates[i] / 100;
         int out_length = 0;
-        EXPECT_EQ(0, rs_.Reset(kRates[i], kRates[j], kResamplerSynchronous));
+        EXPECT_EQ(0, rs_.Reset(kRates[i], kRates[j], kChannels));
         EXPECT_EQ(0, rs_.Push(data_in_, in_length, data_out_, kDataSize,
                               out_length));
         EXPECT_EQ(kRates[j] / 100, out_length);
       } else {
-        EXPECT_EQ(-1, rs_.Reset(kRates[i], kRates[j], kResamplerSynchronous));
+        EXPECT_EQ(-1, rs_.Reset(kRates[i], kRates[j], kChannels));
       }
     }
   }
 }
 
-TEST_F(ResamplerTest, SynchronousStereo) {
-  // Number of channels is 2, stereo mode.
+TEST_F(ResamplerTest, Stereo) {
   const int kChannels = 2;
   for (size_t i = 0; i < kRatesSize; ++i) {
     for (size_t j = 0; j < kRatesSize; ++j) {
@@ -128,16 +123,17 @@ TEST_F(ResamplerTest, SynchronousStereo) {
         int in_length = kChannels * kRates[i] / 100;
         int out_length = 0;
         EXPECT_EQ(0, rs_.Reset(kRates[i], kRates[j],
-                               kResamplerSynchronousStereo));
+                               kChannels));
         EXPECT_EQ(0, rs_.Push(data_in_, in_length, data_out_, kDataSize,
                               out_length));
         EXPECT_EQ(kChannels * kRates[j] / 100, out_length);
       } else {
         EXPECT_EQ(-1, rs_.Reset(kRates[i], kRates[j],
-                                kResamplerSynchronousStereo));
+                                kChannels));
       }
     }
   }
 }
+
 }  // namespace
 }  // namespace webrtc

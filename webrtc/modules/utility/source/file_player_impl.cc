@@ -130,7 +130,7 @@ int32_t FilePlayerImpl::Get10msAudioFromFile(
         unresampledAudioFrame.samples_per_channel_ =
             (uint16_t)lengthInBytes >> 1;
 
-    }else {
+    } else {
         // Decode will generate 10 ms of audio data. PlayoutAudioData(..)
         // expects a full frame. If the frame size is larger than 10 ms,
         // PlayoutAudioData(..) data should be called proportionally less often.
@@ -158,7 +158,7 @@ int32_t FilePlayerImpl::Get10msAudioFromFile(
 
     int outLen = 0;
     if(_resampler.ResetIfNeeded(unresampledAudioFrame.sample_rate_hz_,
-                                frequencyInHz, kResamplerSynchronous))
+                                frequencyInHz, 1))
     {
         LOG(LS_WARNING) << "Get10msAudioFromFile() unexpected codec.";
 
