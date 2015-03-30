@@ -226,6 +226,10 @@ int AudioEncoderDecoderIsacT<T>::DecodeInternal(const uint8_t* encoded,
                                                 int16_t* decoded,
                                                 SpeechType* speech_type) {
   CriticalSectionScoped cs(state_lock_.get());
+  // We want to crate the illusion that iSAC supports 48000 Hz decoding, while
+  // in fact it outputs 32000 Hz. This is the iSAC fullband mode.
+  if (sample_rate_hz == 48000)
+    sample_rate_hz = 32000;
   CHECK(sample_rate_hz == 16000 || sample_rate_hz == 32000)
       << "Unsupported sample rate " << sample_rate_hz;
   if (sample_rate_hz != decoder_sample_rate_hz_) {
