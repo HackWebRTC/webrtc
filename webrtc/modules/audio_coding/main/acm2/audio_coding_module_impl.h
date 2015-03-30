@@ -317,10 +317,9 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   ACMVADMode vad_mode_ GUARDED_BY(acm_crit_sect_);
   ACMGenericCodec* codecs_[ACMCodecDB::kMaxNumCodecs]
       GUARDED_BY(acm_crit_sect_);
+  ACMGenericCodec* current_encoder_ GUARDED_BY(acm_crit_sect_);
   int mirror_codec_idx_[ACMCodecDB::kMaxNumCodecs] GUARDED_BY(acm_crit_sect_);
   bool stereo_send_ GUARDED_BY(acm_crit_sect_);
-  int current_send_codec_idx_ GUARDED_BY(acm_crit_sect_);
-  bool send_codec_registered_ GUARDED_BY(acm_crit_sect_);
   ACMResampler resampler_ GUARDED_BY(acm_crit_sect_);
   AcmReceiver receiver_;  // AcmReceiver has it's own internal lock.
 

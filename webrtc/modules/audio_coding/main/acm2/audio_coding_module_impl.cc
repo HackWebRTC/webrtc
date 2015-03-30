@@ -135,9 +135,8 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
       vad_enabled_(false),
       dtx_enabled_(false),
       vad_mode_(VADNormal),
+      current_encoder_(nullptr),
       stereo_send_(false),
-      current_send_codec_idx_(-1),
-      send_codec_registered_(false),
       receiver_(config),
       red_enabled_(false),
       codec_fec_enabled_(false),
@@ -188,7 +187,6 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
 AudioCodingModuleImpl::~AudioCodingModuleImpl() {
   {
     CriticalSectionScoped lock(acm_crit_sect_);
-    current_send_codec_idx_ = -1;
 
     for (int i = 0; i < ACMCodecDB::kMaxNumCodecs; i++) {
       if (codecs_[i] != NULL) {
@@ -231,8 +229,7 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
       return -1;
     }
 
-    AudioEncoder* audio_encoder =
-        codecs_[current_send_codec_idx_]->GetAudioEncoder();
+    AudioEncoder* audio_encoder = current_encoder_->GetAudioEncoder();
     // Scale the timestamp to the codec's RTP timestamp rate.
     uint32_t rtp_timestamp =
         first_frame_ ? input_data.input_timestamp
@@ -298,8 +295,7 @@ int AudioCodingModuleImpl::InitializeSender() {
   CriticalSectionScoped lock(acm_crit_sect_);
 
   // Start with invalid values.
-  send_codec_registered_ = false;
-  current_send_codec_idx_ = -1;
+  current_encoder_ = nullptr;
   send_codec_inst_.plname[0] = '\0';
 
   return 0;
@@ -406,10 +402,6 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
 
   // Check for reported errors from function IsValidSendCodec().
   if (codec_id < 0) {
-    if (!send_codec_registered_) {
-      // This values has to be NULL if there is no codec registered.
-      current_send_codec_idx_ = -1;
-    }
     return -1;
   }
 
@@ -485,7 +477,7 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
 
   // Check if the codec is already registered as send codec.
   bool is_send_codec;
-  if (send_codec_registered_) {
+  if (current_encoder_) {
     int send_codec_mirror_id;
     int send_codec_id = ACMCodecDB::CodecNumber(send_codec_inst_,
                                                 &send_codec_mirror_id);
@@ -526,8 +518,7 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
 
       // Check if already have a registered codec.
       // Depending on that different messages are logged.
-      if (!send_codec_registered_) {
-        current_send_codec_idx_ = -1;
+      if (!current_encoder_) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                      "Cannot Initialize the encoder No Encoder is registered");
       } else {
@@ -544,7 +535,7 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
     vad_mode_ = codec_params.vad_mode;
 
     // Everything is fine so we can replace the previous codec with this one.
-    if (send_codec_registered_) {
+    if (current_encoder_) {
       // If we change codec we start fresh with RED.
       // This is not strictly required by the standard.
 
@@ -567,8 +558,8 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
       }
     }
 
-    current_send_codec_idx_ = codec_id;
-    send_codec_registered_ = true;
+    current_encoder_ = codecs_[codec_id];
+    DCHECK(current_encoder_);
     memcpy(&send_codec_inst_, &send_codec, sizeof(CodecInst));
     return 0;
   } else {
@@ -621,8 +612,7 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
       codec_params.vad_mode = vad_mode_;
 
       // Force initialization.
-      if (codecs_[current_send_codec_idx_]->InitEncoder(&codec_params,
-                                                        true) < 0) {
+      if (current_encoder_->InitEncoder(&codec_params, true) < 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                      "Could not change the codec packet-size.");
         return -1;
@@ -668,13 +658,13 @@ int AudioCodingModuleImpl::SendCodec(
                "SendCodec()");
   CriticalSectionScoped lock(acm_crit_sect_);
 
-  if (!send_codec_registered_) {
+  if (!current_encoder_) {
     WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, id_,
                  "SendCodec Failed, no codec is registered");
     return -1;
   }
   WebRtcACMCodecParams encoder_param;
-  codecs_[current_send_codec_idx_]->EncoderParams(&encoder_param);
+  current_encoder_->EncoderParams(&encoder_param);
   encoder_param.codec_inst.pltype = send_codec_inst_.pltype;
   memcpy(current_codec, &(encoder_param.codec_inst), sizeof(CodecInst));
 
@@ -687,7 +677,7 @@ int AudioCodingModuleImpl::SendFrequency() const {
                "SendFrequency()");
   CriticalSectionScoped lock(acm_crit_sect_);
 
-  if (!send_codec_registered_) {
+  if (!current_encoder_) {
     WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, id_,
                  "SendFrequency Failed, no codec is registered");
     return -1;
@@ -703,14 +693,14 @@ int AudioCodingModuleImpl::SendFrequency() const {
 int AudioCodingModuleImpl::SendBitrate() const {
   CriticalSectionScoped lock(acm_crit_sect_);
 
-  if (!send_codec_registered_) {
+  if (!current_encoder_) {
     WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, id_,
                  "SendBitrate Failed, no codec is registered");
     return -1;
   }
 
   WebRtcACMCodecParams encoder_param;
-  codecs_[current_send_codec_idx_]->EncoderParams(&encoder_param);
+  current_encoder_->EncoderParams(&encoder_param);
 
   return encoder_param.codec_inst.rate;
 }
@@ -924,7 +914,7 @@ int AudioCodingModuleImpl::SetREDStatus(
   // If a send codec is registered, set RED for the codec. We now only support
   // copy red.
   if (HaveValidEncoder("SetCopyRed") &&
-      codecs_[current_send_codec_idx_]->SetCopyRed(enable_red) < 0) {
+      current_encoder_->SetCopyRed(enable_red) < 0) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                    "SetREDStatus failed");
       return -1;
@@ -959,7 +949,7 @@ int AudioCodingModuleImpl::SetCodecFEC(bool enable_codec_fec) {
 
   // Set codec FEC.
   if (HaveValidEncoder("SetCodecFEC") &&
-      codecs_[current_send_codec_idx_]->SetFEC(enable_codec_fec) < 0) {
+      current_encoder_->SetFEC(enable_codec_fec) < 0) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                    "Set codec internal FEC failed.");
     return -1;
@@ -971,7 +961,7 @@ int AudioCodingModuleImpl::SetCodecFEC(bool enable_codec_fec) {
 int AudioCodingModuleImpl::SetPacketLossRate(int loss_rate) {
   CriticalSectionScoped lock(acm_crit_sect_);
   if (HaveValidEncoder("SetPacketLossRate") &&
-      codecs_[current_send_codec_idx_]->SetPacketLossRate(loss_rate) < 0) {
+      current_encoder_->SetPacketLossRate(loss_rate) < 0) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                    "Set packet loss rate failed.");
     return -1;
@@ -1019,8 +1009,8 @@ int AudioCodingModuleImpl::SetVADSafe(bool enable_dtx,
   vad_mode_ = mode;
 
   // If a send codec is registered, set VAD/DTX for the codec.
-  if (HaveValidEncoder("SetVAD") && codecs_[current_send_codec_idx_]->SetVAD(
-      &dtx_enabled_, &vad_enabled_,  &vad_mode_) < 0) {
+  if (HaveValidEncoder("SetVAD") &&
+      current_encoder_->SetVAD(&dtx_enabled_, &vad_enabled_, &vad_mode_) < 0) {
       // SetVAD failed.
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                    "SetVAD failed");
@@ -1322,7 +1312,7 @@ int AudioCodingModuleImpl::SetISACMaxRate(int max_bit_per_sec) {
     return -1;
   }
 
-  return codecs_[current_send_codec_idx_]->SetISACMaxRate(max_bit_per_sec);
+  return current_encoder_->SetISACMaxRate(max_bit_per_sec);
 }
 
 // TODO(henrik.lundin): Remove? Only used in tests. Deprecated in VoiceEngine.
@@ -1333,8 +1323,7 @@ int AudioCodingModuleImpl::SetISACMaxPayloadSize(int max_size_bytes) {
     return -1;
   }
 
-  return codecs_[current_send_codec_idx_]->SetISACMaxPayloadSize(
-      max_size_bytes);
+  return current_encoder_->SetISACMaxPayloadSize(max_size_bytes);
 }
 
 // TODO(henrik.lundin): Remove? Only used in tests.
@@ -1360,8 +1349,8 @@ int AudioCodingModuleImpl::SetOpusApplication(OpusApplicationMode application,
   if (!HaveValidEncoder("SetOpusApplication")) {
     return -1;
   }
-  return codecs_[current_send_codec_idx_]->SetOpusApplication(
-      application, disable_dtx_if_needed);
+  return current_encoder_->SetOpusApplication(application,
+                                              disable_dtx_if_needed);
 }
 
 // Informs Opus encoder of the maximum playback rate the receiver will render.
@@ -1370,7 +1359,7 @@ int AudioCodingModuleImpl::SetOpusMaxPlaybackRate(int frequency_hz) {
   if (!HaveValidEncoder("SetOpusMaxPlaybackRate")) {
     return -1;
   }
-  return codecs_[current_send_codec_idx_]->SetOpusMaxPlaybackRate(frequency_hz);
+  return current_encoder_->SetOpusMaxPlaybackRate(frequency_hz);
 }
 
 int AudioCodingModuleImpl::EnableOpusDtx(bool force_voip) {
@@ -1378,7 +1367,7 @@ int AudioCodingModuleImpl::EnableOpusDtx(bool force_voip) {
   if (!HaveValidEncoder("EnableOpusDtx")) {
     return -1;
   }
-  return codecs_[current_send_codec_idx_]->EnableOpusDtx(force_voip);
+  return current_encoder_->EnableOpusDtx(force_voip);
 }
 
 int AudioCodingModuleImpl::DisableOpusDtx() {
@@ -1386,7 +1375,7 @@ int AudioCodingModuleImpl::DisableOpusDtx() {
   if (!HaveValidEncoder("DisableOpusDtx")) {
     return -1;
   }
-  return codecs_[current_send_codec_idx_]->DisableOpusDtx();
+  return current_encoder_->DisableOpusDtx();
 }
 
 int AudioCodingModuleImpl::PlayoutTimestamp(uint32_t* timestamp) {
@@ -1394,21 +1383,9 @@ int AudioCodingModuleImpl::PlayoutTimestamp(uint32_t* timestamp) {
 }
 
 bool AudioCodingModuleImpl::HaveValidEncoder(const char* caller_name) const {
-  if ((!send_codec_registered_) || (current_send_codec_idx_ < 0) ||
-      (current_send_codec_idx_ >= ACMCodecDB::kNumCodecs)) {
+  if (!current_encoder_) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                  "%s failed: No send codec is registered.", caller_name);
-    return false;
-  }
-  if ((current_send_codec_idx_ < 0) ||
-      (current_send_codec_idx_ >= ACMCodecDB::kNumCodecs)) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
-                 "%s failed: Send codec index out of range.", caller_name);
-    return false;
-  }
-  if (codecs_[current_send_codec_idx_] == NULL) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
-                 "%s failed: Send codec is NULL pointer.", caller_name);
     return false;
   }
   return true;
