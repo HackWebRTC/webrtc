@@ -106,6 +106,11 @@ TEST_F(SplTest, InlineTest) {
     EXPECT_EQ(15, WebRtcSpl_NormW16(-1));
     EXPECT_EQ(0, WebRtcSpl_NormW16(WEBRTC_SPL_WORD16_MIN));
     EXPECT_EQ(4, WebRtcSpl_NormW16(b32));
+    for (int ii = 0; ii < 15; ++ii) {
+      int16_t value = 1 << ii;
+      EXPECT_EQ(14 - ii, WebRtcSpl_NormW16(value));
+      EXPECT_EQ(15 - ii, WebRtcSpl_NormW16(-value));
+    }
 
     EXPECT_EQ(0, WebRtcSpl_NormU32(0u));
     EXPECT_EQ(0, WebRtcSpl_NormU32(0xffffffff));
