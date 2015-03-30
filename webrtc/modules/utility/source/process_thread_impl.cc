@@ -66,8 +66,15 @@ void ProcessThreadImpl::Start() {
 
   DCHECK(!stop_);
 
-  for (ModuleCallback& m : modules_)
-    m.module->ProcessThreadAttached(this);
+  {
+    // TODO(tommi): Since DeRegisterModule is currently being called from
+    // different threads in some cases (ChannelOwner), we need to lock access to
+    // the modules_ collection even on the controller thread.
+    // Once we've cleaned up those places, we can remove this lock.
+    rtc::CritScope lock(&lock_);
+    for (ModuleCallback& m : modules_)
+      m.module->ProcessThreadAttached(this);
+  }
 
   thread_ = ThreadWrapper::CreateThread(
       &ProcessThreadImpl::Run, this, "ProcessThread");
@@ -90,12 +97,18 @@ void ProcessThreadImpl::Stop() {
   thread_.reset();
   stop_ = false;
 
+  // TODO(tommi): Since DeRegisterModule is currently being called from
+  // different threads in some cases (ChannelOwner), we need to lock access to
+  // the modules_ collection even on the controller thread.
+  // Once we've cleaned up those places, we can remove this lock.
+  rtc::CritScope lock(&lock_);
   for (ModuleCallback& m : modules_)
     m.module->ProcessThreadAttached(nullptr);
 }
 
 void ProcessThreadImpl::WakeUp(Module* module) {
   // Allowed to be called on any thread.
+  // TODO(tommi): Disallow this ^^^
   {
     rtc::CritScope lock(&lock_);
     for (ModuleCallback& m : modules_) {
@@ -108,6 +121,7 @@ void ProcessThreadImpl::WakeUp(Module* module) {
 
 void ProcessThreadImpl::PostTask(rtc::scoped_ptr<ProcessTask> task) {
   // Allowed to be called on any thread.
+  // TODO(tommi): Disallow this ^^^
   {
     rtc::CritScope lock(&lock_);
     queue_.push(task.release());
