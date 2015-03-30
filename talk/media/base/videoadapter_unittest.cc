@@ -25,6 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// If we don't have a WebRtcVideoFrame, just skip all of these tests.
+#if defined(HAVE_WEBRTC_VIDEO)
 #include <limits.h>  // For INT_MAX
 #include <string>
 #include <vector>
@@ -1303,3 +1305,4 @@ TEST_F(VideoAdapterTest, CpuIgnoresSpikes) {
 }
 
 }  // namespace cricket
+#endif  // HAVE_WEBRTC_VIDEO
