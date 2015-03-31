@@ -90,7 +90,7 @@ int32_t VideoChannelNSOpenGL::GetChannelProperties(float& left, float& top,
 }
 
 int32_t VideoChannelNSOpenGL::RenderFrame(
-  const uint32_t /*streamId*/, I420VideoFrame& videoFrame) {
+  const uint32_t /*streamId*/, const I420VideoFrame& videoFrame) {
 
   _owner->LockAGLCntx();
 

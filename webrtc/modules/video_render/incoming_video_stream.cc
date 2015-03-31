@@ -85,7 +85,7 @@ VideoRenderCallback* IncomingVideoStream::ModuleCallback() {
 }
 
 int32_t IncomingVideoStream::RenderFrame(const uint32_t stream_id,
-                                         I420VideoFrame& video_frame) {
+                                         const I420VideoFrame& video_frame) {
   CriticalSectionScoped csS(&stream_critsect_);
   WEBRTC_TRACE(kTraceStream, kTraceVideoRenderer, module_id_,
                "%s for stream %d, render time: %u", __FUNCTION__, stream_id_,

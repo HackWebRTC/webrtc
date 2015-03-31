@@ -115,7 +115,7 @@ public:
 
     // VideoRenderCallback
     virtual int32_t RenderFrame(const uint32_t streamId,
-                                I420VideoFrame& videoFrame);
+                                const I420VideoFrame& videoFrame);
 
 private:
     CriticalSectionWrapper& _critSect;

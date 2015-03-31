@@ -142,7 +142,7 @@ int D3D9Channel::FrameSizeChange(int width, int height, int numberOfStreams)
 }
 
 int32_t D3D9Channel::RenderFrame(const uint32_t streamId,
-                                 I420VideoFrame& videoFrame)
+                                 const I420VideoFrame& videoFrame)
 {
     CriticalSectionScoped cs(_critSect);
     if (_width != videoFrame.width() || _height != videoFrame.height())

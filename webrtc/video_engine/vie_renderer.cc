@@ -155,8 +155,9 @@ int ViEExternalRendererImpl::SetViEExternalRenderer(
   return 0;
 }
 
-int32_t ViEExternalRendererImpl::RenderFrame(const uint32_t stream_id,
-                                             I420VideoFrame& video_frame) {
+int32_t ViEExternalRendererImpl::RenderFrame(
+    const uint32_t stream_id,
+    const I420VideoFrame& video_frame) {
   if (external_renderer_format_ != kVideoI420)
     return ConvertAndRenderFrame(stream_id, video_frame);
 
@@ -173,7 +174,7 @@ int32_t ViEExternalRendererImpl::RenderFrame(const uint32_t stream_id,
 
 int32_t ViEExternalRendererImpl::ConvertAndRenderFrame(
     uint32_t stream_id,
-    I420VideoFrame& video_frame) {
+    const I420VideoFrame& video_frame) {
   if (video_frame.native_handle() != NULL) {
     NotifyFrameSizeChange(stream_id, video_frame);
 
@@ -239,7 +240,7 @@ int32_t ViEExternalRendererImpl::ConvertAndRenderFrame(
 
 void ViEExternalRendererImpl::NotifyFrameSizeChange(
     const uint32_t stream_id,
-    I420VideoFrame& video_frame) {
+    const I420VideoFrame& video_frame) {
   if (external_renderer_width_ != video_frame.width() ||
       external_renderer_height_ != video_frame.height()) {
     external_renderer_width_ = video_frame.width();
