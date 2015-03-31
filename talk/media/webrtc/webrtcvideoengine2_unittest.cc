@@ -1301,7 +1301,7 @@ TEST_F(WebRtcVideoChannel2Test,
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSendRtpHeaderExtensionsRejectsIncorrectIds) {
-  const int kIncorrectIds[] = {-2, -1, 15, 16};
+  const int kIncorrectIds[] = {-2, -1, 0, 15, 16};
   for (size_t i = 0; i < arraysize(kIncorrectIds); ++i) {
     std::vector<cricket::RtpHeaderExtension> extensions;
     extensions.push_back(cricket::RtpHeaderExtension(
@@ -1312,7 +1312,7 @@ TEST_F(WebRtcVideoChannel2Test, SetSendRtpHeaderExtensionsRejectsIncorrectIds) {
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetRecvRtpHeaderExtensionsRejectsIncorrectIds) {
-  const int kIncorrectIds[] = {-2, -1, 15, 16};
+  const int kIncorrectIds[] = {-2, -1, 0, 15, 16};
   for (size_t i = 0; i < arraysize(kIncorrectIds); ++i) {
     std::vector<cricket::RtpHeaderExtension> extensions;
     extensions.push_back(cricket::RtpHeaderExtension(

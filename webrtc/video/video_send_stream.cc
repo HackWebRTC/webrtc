@@ -131,6 +131,9 @@ VideoSendStream::VideoSendStream(
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
     const std::string& extension = config_.rtp.extensions[i].name;
     int id = config_.rtp.extensions[i].id;
+    // One-byte-extension local identifiers are in the range 1-14 inclusive.
+    DCHECK_GE(id, 1);
+    DCHECK_LE(id, 14);
     if (extension == RtpExtension::kTOffset) {
       CHECK_EQ(0, rtp_rtcp_->SetSendTimestampOffsetStatus(channel_, true, id));
     } else if (extension == RtpExtension::kAbsSendTime) {

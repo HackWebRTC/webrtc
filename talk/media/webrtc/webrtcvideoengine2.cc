@@ -189,7 +189,7 @@ static bool ValidateRtpHeaderExtensionIds(
     const std::vector<RtpHeaderExtension>& extensions) {
   std::set<int> extensions_used;
   for (size_t i = 0; i < extensions.size(); ++i) {
-    if (extensions[i].id < 0 || extensions[i].id >= 15 ||
+    if (extensions[i].id <= 0 || extensions[i].id >= 15 ||
         !extensions_used.insert(extensions[i].id).second) {
       LOG(LS_ERROR) << "RTP extensions are with incorrect or duplicate ids.";
       return false;
