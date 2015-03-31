@@ -246,7 +246,7 @@ uint32_t MediaOptimization::SetTargetRates(
 
   // Update protection settings, when applicable.
   float sent_video_rate_kbps = 0.0f;
-  if (loss_prot_logic_->SelectedType() != kNone) {
+  if (selected_method) {
     // Update protection method with content metrics.
     selected_method->UpdateContentMetrics(content_->ShortTermAvgData());
 

@@ -403,7 +403,7 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
   }
   return rtp_sender_.SendOutgoingData(
       frame_type, payload_type, time_stamp, capture_time_ms, payload_data,
-      payload_size, fragmentation, rtp_video_hdr);
+      payload_size, fragmentation, NULL, rtp_video_hdr);
 }
 
 bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,

@@ -1346,7 +1346,7 @@ TEST_F(RtpSenderVideoTest, SendVideoWithCVO) {
 
   rtp_sender_video_->SendVideo(kRtpVideoGeneric, kVideoFrameKey, kPayload,
                                kTimestamp, 0, packet_, sizeof(packet_), NULL,
-                               &hdr);
+                               NULL, &hdr);
 
   RtpHeaderExtensionMap map;
   map.Register(kRtpExtensionVideoRotation, kVideoRotationExtensionId);

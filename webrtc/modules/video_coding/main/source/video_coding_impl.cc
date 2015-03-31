@@ -74,13 +74,11 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   VideoCodingModuleImpl(Clock* clock,
                         EventFactory* event_factory,
                         bool owns_event_factory,
-                        VideoEncoderRateObserver* encoder_rate_observer,
-                        VCMQMSettingsCallback* qm_settings_callback)
+                        VideoEncoderRateObserver* encoder_rate_observer)
       : VideoCodingModule(),
         sender_(new vcm::VideoSender(clock,
                                      &post_encode_callback_,
-                                     encoder_rate_observer,
-                                     qm_settings_callback)),
+                                     encoder_rate_observer)),
         receiver_(new vcm::VideoReceiver(clock, event_factory)),
         own_event_factory_(owns_event_factory ? event_factory : NULL) {}
 
@@ -161,6 +159,11 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   int32_t RegisterSendStatisticsCallback(
       VCMSendStatisticsCallback* sendStats) override {
     return sender_->RegisterSendStatisticsCallback(sendStats);
+  }
+
+  int32_t RegisterVideoQMCallback(
+      VCMQMSettingsCallback* videoQMSettings) override {
+    return sender_->RegisterVideoQMCallback(videoQMSettings);
   }
 
   int32_t RegisterProtectionCallback(
@@ -356,11 +359,10 @@ int32_t VideoCodingModule::Codec(VideoCodecType codecType, VideoCodec* codec) {
 }
 
 VideoCodingModule* VideoCodingModule::Create(
-    Clock* clock,
-    VideoEncoderRateObserver* encoder_rate_observer,
-    VCMQMSettingsCallback* qm_settings_callback) {
-  return new VideoCodingModuleImpl(clock, new EventFactoryImpl, true,
-                                   encoder_rate_observer, qm_settings_callback);
+    VideoEncoderRateObserver* encoder_rate_observer) {
+  return new VideoCodingModuleImpl(Clock::GetRealTimeClock(),
+                                   new EventFactoryImpl, true,
+                                   encoder_rate_observer);
 }
 
 VideoCodingModule* VideoCodingModule::Create(
@@ -368,8 +370,7 @@ VideoCodingModule* VideoCodingModule::Create(
     EventFactory* event_factory) {
   assert(clock);
   assert(event_factory);
-  return new VideoCodingModuleImpl(clock, event_factory, false, nullptr,
-                                   nullptr);
+  return new VideoCodingModuleImpl(clock, event_factory, false, nullptr);
 }
 
 void VideoCodingModule::Destroy(VideoCodingModule* module) {

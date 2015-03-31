@@ -197,10 +197,10 @@ class ViEEncoder
   const uint32_t number_of_cores_;
   const bool disable_default_encoder_;
 
-  const rtc::scoped_ptr<VideoProcessingModule> vpm_;
-  const rtc::scoped_ptr<QMVideoSettingsCallback> qm_callback_;
-  const rtc::scoped_ptr<VideoCodingModule> vcm_;
+  VideoCodingModule& vcm_;
+  VideoProcessingModule& vpm_;
   scoped_refptr<PayloadRouter> send_payload_router_;
+  VCMProtectionCallback* vcm_protection_callback_;
 
   rtc::scoped_ptr<CriticalSectionWrapper> callback_cs_;
   rtc::scoped_ptr<CriticalSectionWrapper> data_cs_;
@@ -234,6 +234,8 @@ class ViEEncoder
   uint64_t picture_id_rpsi_ GUARDED_BY(data_cs_);
   std::map<unsigned int, int> ssrc_streams_ GUARDED_BY(data_cs_);
 
+  // Quality modes callback
+  QMVideoSettingsCallback* qm_callback_;
   bool video_suspended_ GUARDED_BY(data_cs_);
   I420FrameCallback* pre_encode_callback_ GUARDED_BY(callback_cs_);
   const int64_t start_ms_;

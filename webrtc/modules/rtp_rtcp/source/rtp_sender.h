@@ -24,8 +24,8 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/ssrc_database.h"
+#include "webrtc/modules/rtp_rtcp/source/video_codec_information.h"
 
 #define MAX_INIT_RTP_SEQ_NUMBER 32767  // 2^15 -1.
 
@@ -53,10 +53,7 @@ class RTPSenderInterface {
                                  bool inc_sequence_number = true) = 0;
 
   virtual size_t RTPHeaderLength() const = 0;
-  // Returns the next sequence number to use for a packet and allocates
-  // 'packets_to_send' number of sequence numbers. It's important all allocated
-  // sequence numbers are used in sequence to avoid perceived packet loss.
-  virtual uint16_t AllocateSequenceNumber(uint16_t packets_to_send) = 0;
+  virtual uint16_t IncrementSequenceNumber() = 0;
   virtual uint16_t SequenceNumber() const = 0;
   virtual size_t MaxPayloadLength() const = 0;
   virtual size_t MaxDataPayloadLength() const = 0;
@@ -149,6 +146,7 @@ class RTPSender : public RTPSenderInterface {
                            const uint8_t* payload_data,
                            size_t payload_size,
                            const RTPFragmentationHeader* fragmentation,
+                           VideoCodecInformation* codec_info = NULL,
                            const RTPVideoHeader* rtp_hdr = NULL);
 
   // RTP header extension
@@ -219,7 +217,7 @@ class RTPSender : public RTPSenderInterface {
                          const bool inc_sequence_number = true) override;
 
   size_t RTPHeaderLength() const override;
-  uint16_t AllocateSequenceNumber(uint16_t packets_to_send) override;
+  uint16_t IncrementSequenceNumber() override;
   size_t MaxPayloadLength() const override;
   uint16_t PacketOverHead() const override;
 
@@ -252,6 +250,9 @@ class RTPSender : public RTPSenderInterface {
 
   // Get payload type for Redundant Audio Data RFC 2198.
   int32_t RED(int8_t *payload_type) const;
+
+  // Video.
+  VideoCodecInformation *CodecInformationVideo();
 
   RtpVideoCodecTypes VideoCodecType() const;
 
