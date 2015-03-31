@@ -179,6 +179,12 @@ std::string StdStringFromNSString(NSString* nsString) {
   BOOL _isObserverRegistered;
 }
 
+- (void)dealloc {
+  // Handles unregistering the observer properly. We need to do this because
+  // there may still be other references to the underlying data channel.
+  self.delegate = nil;
+}
+
 - (NSString*)label {
   return NSStringFromStdString(_dataChannel->label());
 }
