@@ -82,7 +82,9 @@ public:
     };
 
     static VideoCodingModule* Create(
-        VideoEncoderRateObserver* encoder_rate_observer);
+        Clock* clock,
+        VideoEncoderRateObserver* encoder_rate_observer,
+        VCMQMSettingsCallback* qm_settings_callback);
 
     static VideoCodingModule* Create(Clock* clock, EventFactory* event_factory);
 
@@ -266,16 +268,6 @@ public:
     //                     < 0,         on error.
     virtual int32_t RegisterSendStatisticsCallback(
                                      VCMSendStatisticsCallback* sendStats) = 0;
-
-    // Register a video quality settings callback which will be called when
-    // frame rate/dimensions need to be updated for video quality optimization
-    //
-    // Input:
-    //      - videoQMSettings  : The callback object to register.
-    //
-    // Return value      : VCM_OK, on success.
-    //                     < 0,         on error
-    virtual int32_t RegisterVideoQMCallback(VCMQMSettingsCallback* videoQMSettings) = 0;
 
     // Register a video protection callback which will be called to deliver
     // the requested FEC rate and NACK status (on/off).
