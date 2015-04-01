@@ -228,9 +228,11 @@ class WebRtcAudioTrack {
   private boolean SetStreamVolume(int volume) {
     Logd("SetStreamVolume(" + volume + ")");
     assertTrue(audioManager != null);
-    if (audioManager.isVolumeFixed()) {
-      Loge("The device implements a fixed volume policy.");
-      return false;
+    if (WebRtcAudioUtils.runningOnLollipopOrHigher()) {
+      if (audioManager.isVolumeFixed()) {
+        Loge("The device implements a fixed volume policy.");
+        return false;
+      }
     }
     audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, volume, 0);
     return true;
