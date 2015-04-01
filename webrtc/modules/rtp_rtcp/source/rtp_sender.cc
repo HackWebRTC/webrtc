@@ -129,6 +129,7 @@ RTPSender::RTPSender(int32_t id,
       transmission_time_offset_(0),
       absolute_send_time_(0),
       rotation_(kVideoRotation_0),
+      cvo_mode_(kCVONone),
       transport_sequence_number_(0),
       // NACK.
       nack_byte_count_times_(),
@@ -266,6 +267,10 @@ int32_t RTPSender::SetTransportSequenceNumber(uint16_t sequence_number) {
 int32_t RTPSender::RegisterRtpHeaderExtension(RTPExtensionType type,
                                               uint8_t id) {
   CriticalSectionScoped cs(send_critsect_.get());
+  if (type == kRtpExtensionVideoRotation) {
+    cvo_mode_ = kCVOInactive;
+    return rtp_header_extension_map_.RegisterInactive(type, id);
+  }
   return rtp_header_extension_map_.Register(type, id);
 }
 
@@ -460,6 +465,16 @@ int32_t RTPSender::CheckPayloadType(int8_t payload_type,
     video_->SetMaxConfiguredBitrateVideo(payload->typeSpecific.Video.maxRate);
   }
   return 0;
+}
+
+RTPSenderInterface::CVOMode RTPSender::ActivateCVORtpHeaderExtension() {
+  if (cvo_mode_ == kCVOInactive) {
+    CriticalSectionScoped cs(send_critsect_.get());
+    if (rtp_header_extension_map_.SetActive(kRtpExtensionVideoRotation, true)) {
+      cvo_mode_ = kCVOActivated;
+    }
+  }
+  return cvo_mode_;
 }
 
 int32_t RTPSender::SendOutgoingData(FrameType frame_type,
@@ -1201,8 +1216,7 @@ uint16_t RTPSender::BuildRTPHeaderExtension(uint8_t* data_buffer,
         block_length = BuildAbsoluteSendTimeExtension(extension_data);
         break;
       case kRtpExtensionVideoRotation:
-        if (marker_bit)
-          block_length = BuildVideoRotationExtension(extension_data);
+        block_length = BuildVideoRotationExtension(extension_data);
         break;
       case kRtpExtensionTransportSequenceNumber:
         block_length = BuildTransportSequenceNumberExtension(extension_data);

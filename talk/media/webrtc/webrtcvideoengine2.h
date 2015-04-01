@@ -284,6 +284,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     void MuteStream(bool mute);
     bool DisconnectCapturer();
 
+    void SetApplyRotation(bool apply_rotation);
+
     void Start();
     void Stop();
 

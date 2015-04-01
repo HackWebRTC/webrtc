@@ -425,7 +425,8 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     WebRtcVideoFrame cricket_frame(
         webrtc_frame.video_frame_buffer(),
         elapsed_time_ms * rtc::kNumNanosecsPerMillisec,
-        webrtc_frame.render_time_ms() * rtc::kNumNanosecsPerMillisec);
+        webrtc_frame.render_time_ms() * rtc::kNumNanosecsPerMillisec,
+        webrtc_frame.rotation());
     return renderer_->RenderFrame(&cricket_frame) ? 0 : -1;
   }
 
@@ -1161,6 +1162,9 @@ void WebRtcVideoEngine::Construct(ViEWrapper* vie_wrapper,
   rtp_header_extensions_.push_back(
       RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
                          kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
+  rtp_header_extensions_.push_back(
+      RtpHeaderExtension(kRtpVideoRotationHeaderExtension,
+                         kRtpVideoRotationHeaderExtensionDefaultId));
 }
 
 WebRtcVideoEngine::~WebRtcVideoEngine() {
@@ -2832,6 +2836,10 @@ bool WebRtcVideoMediaChannel::SetCapturer(uint32 ssrc,
     QueueBlackFrame(ssrc, timestamp,
                     VideoFormat::FpsToInterval(send_codec_->maxFramerate));
   }
+
+  capturer->SetApplyRotation(
+      !FindHeaderExtension(send_extensions_, kRtpVideoRotationHeaderExtension));
+
   return true;
 }
 
@@ -2929,6 +2937,8 @@ bool WebRtcVideoMediaChannel::SetRecvRtpHeaderExtensions(
       FindHeaderExtension(extensions, kRtpTimestampOffsetHeaderExtension);
   const RtpHeaderExtension* send_time_extension =
       FindHeaderExtension(extensions, kRtpAbsoluteSenderTimeHeaderExtension);
+  const RtpHeaderExtension* cvo_extension =
+      FindHeaderExtension(extensions, kRtpVideoRotationHeaderExtension);
 
   // Loop through all receive channels and enable/disable the extensions.
   for (RecvChannelMap::iterator channel_it = recv_channels_.begin();
@@ -2942,6 +2952,10 @@ bool WebRtcVideoMediaChannel::SetRecvRtpHeaderExtensions(
     if (!SetHeaderExtension(
         &webrtc::ViERTP_RTCP::SetReceiveAbsoluteSendTimeStatus, channel_id,
         send_time_extension)) {
+      return false;
+    }
+    if (!SetHeaderExtension(&webrtc::ViERTP_RTCP::SetReceiveVideoRotationStatus,
+                            channel_id, cvo_extension)) {
       return false;
     }
   }
@@ -2960,6 +2974,8 @@ bool WebRtcVideoMediaChannel::SetSendRtpHeaderExtensions(
       FindHeaderExtension(extensions, kRtpTimestampOffsetHeaderExtension);
   const RtpHeaderExtension* send_time_extension =
       FindHeaderExtension(extensions, kRtpAbsoluteSenderTimeHeaderExtension);
+  const RtpHeaderExtension* cvo_extension =
+      FindHeaderExtension(extensions, kRtpVideoRotationHeaderExtension);
 
   // Loop through all send channels and enable/disable the extensions.
   for (SendChannelMap::iterator channel_it = send_channels_.begin();
@@ -2975,6 +2991,10 @@ bool WebRtcVideoMediaChannel::SetSendRtpHeaderExtensions(
         send_time_extension)) {
       return false;
     }
+    if (!SetHeaderExtension(&webrtc::ViERTP_RTCP::SetSendVideoRotationStatus,
+                            channel_id, cvo_extension)) {
+      return false;
+    }
   }
 
   if (send_time_extension) {
@@ -2984,6 +3004,14 @@ bool WebRtcVideoMediaChannel::SetSendRtpHeaderExtensions(
     MediaChannel::SetOption(NetworkInterface::ST_RTP,
                             rtc::Socket::OPT_RTP_SENDTIME_EXTN_ID,
                             send_time_extension->id);
+  }
+
+  // For now assume that all streams want the same CVO setting.
+  // TODO(guoweis): Remove the need for this assumption.
+  for (const auto& kv : send_channels_) {
+    if (kv.second->video_capturer()) {
+      kv.second->video_capturer()->SetApplyRotation(!cvo_extension);
+    }
   }
 
   send_extensions_ = extensions;
@@ -3484,6 +3512,11 @@ bool WebRtcVideoMediaChannel::ConfigureReceiving(int channel_id,
       receive_extensions_, kRtpAbsoluteSenderTimeHeaderExtension)) {
     return false;
   }
+  if (!SetHeaderExtension(&webrtc::ViERTP_RTCP::SetReceiveVideoRotationStatus,
+                          channel_id, receive_extensions_,
+                          kRtpVideoRotationHeaderExtension)) {
+    return false;
+  }
 
   if (receiver_report_ssrc_ != kSsrcUnset) {
     if (engine()->vie()->rtp()->SetLocalSSRC(
@@ -3591,6 +3624,12 @@ bool WebRtcVideoMediaChannel::ConfigureSending(int channel_id,
 
   if (!SetHeaderExtension(&webrtc::ViERTP_RTCP::SetSendAbsoluteSendTimeStatus,
       channel_id, send_extensions_, kRtpAbsoluteSenderTimeHeaderExtension)) {
+    return false;
+  }
+
+  if (!SetHeaderExtension(&webrtc::ViERTP_RTCP::SetSendVideoRotationStatus,
+                          channel_id, send_extensions_,
+                          kRtpVideoRotationHeaderExtension)) {
     return false;
   }
 

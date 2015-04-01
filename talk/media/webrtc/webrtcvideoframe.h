@@ -44,12 +44,20 @@ class WebRtcVideoFrame : public VideoFrame {
   WebRtcVideoFrame();
   WebRtcVideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
                    int64_t elapsed_time_ns,
+                   int64_t time_stamp_ns,
+                   webrtc::VideoRotation rotation);
+
+  // TODO(guoweis): Remove this when chrome code base is updated.
+  WebRtcVideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
+                   int64_t elapsed_time_ns,
                    int64_t time_stamp_ns);
+
   WebRtcVideoFrame(webrtc::NativeHandle* handle,
                    int width,
                    int height,
                    int64_t elapsed_time_ns,
-                   int64_t time_stamp_ns);
+                   int64_t time_stamp_ns,
+                   webrtc::VideoRotation rotation);
   ~WebRtcVideoFrame();
 
   // Creates a frame from a raw sample with FourCC "format" and size "w" x "h".
