@@ -28,7 +28,7 @@ class Md5Digest : public MessageDigest {
   size_t Finish(void* buf, size_t len) override;
 
  private:
-  MD5_CTX ctx_;
+  MD5Context ctx_;
 };
 
 }  // namespace rtc
