@@ -101,6 +101,7 @@
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/testing/gmock.gyp:gmock',
+        '<(webrtc_root)/common.gyp:gtest_prod',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
@@ -110,7 +111,6 @@
         'testsupport/frame_reader.h',
         'testsupport/frame_writer.cc',
         'testsupport/frame_writer.h',
-        'testsupport/gtest_prod_util.h',
         'testsupport/gtest_disable.h',
         'testsupport/mock/mock_frame_reader.h',
         'testsupport/mock/mock_frame_writer.h',
