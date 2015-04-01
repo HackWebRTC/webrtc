@@ -17,7 +17,7 @@
 // filter routine for iSAC codec, optimized for ARM Neon platform.
 // It does:
 //  for 0 <= n < HALF_SUBFRAMELEN - 1:
-//    *ptr2 = input2 * (*ptr2) + input0 * (*ptr0));
+//    *ptr2 = input2 * ((*ptr2) + input0 * (*ptr0));
 //    *ptr1 = input1 * (*ptr0) + input0 * (*ptr2);
 // Output is not bit-exact with the reference C code, due to the replacement
 // of WEBRTC_SPL_MUL_16_32_RSFT15 and LATTICE_MUL_32_32_RSFT16 with Neon
@@ -41,6 +41,7 @@ void WebRtcIsacfix_FilterMaLoopNeon(int16_t input0,  // Filter coefficient
   int32x4_t ptr0va, ptr1va, ptr2va;
   int32x4_t ptr0vb, ptr1vb, ptr2vb;
 
+  int64x2_t tmp2al_low, tmp2al_high, tmp2bl_low, tmp2bl_high;
   // Unroll to process 8 samples at once.
   for (n = 0; n < loop; n++) {
     ptr0va = vld1q_s32(ptr0);
@@ -61,12 +62,25 @@ void WebRtcIsacfix_FilterMaLoopNeon(int16_t input0,  // Filter coefficient
     // Calculate tmp2 = tmp0 + *(ptr2).
     tmp2a = vaddq_s32(tmp0a, ptr2va);
     tmp2b = vaddq_s32(tmp0b, ptr2vb);
-    tmp2a = vshlq_n_s32(tmp2a, 15);
-    tmp2b = vshlq_n_s32(tmp2b, 15);
 
     // Calculate *ptr2 = input2 * tmp2.
-    ptr2va = vqrdmulhq_s32(tmp2a, input2_v);
-    ptr2vb = vqrdmulhq_s32(tmp2b, input2_v);
+    tmp2al_low = vmull_s32(vget_low_s32(tmp2a), vget_low_s32(input2_v));
+#if defined(WEBRTC_ARCH_ARM64)
+    tmp2al_high = vmull_high_s32(tmp2a, input2_v);
+#else
+    tmp2al_high = vmull_s32(vget_high_s32(tmp2a), vget_high_s32(input2_v));
+#endif
+    ptr2va = vcombine_s32(vrshrn_n_s64(tmp2al_low, 16),
+                          vrshrn_n_s64(tmp2al_high, 16));
+
+    tmp2bl_low = vmull_s32(vget_low_s32(tmp2b), vget_low_s32(input2_v));
+#if defined(WEBRTC_ARCH_ARM64)
+    tmp2bl_high = vmull_high_s32(tmp2b, input2_v);
+#else
+    tmp2bl_high = vmull_s32(vget_high_s32(tmp2b), vget_high_s32(input2_v));
+#endif
+    ptr2vb = vcombine_s32(vrshrn_n_s64(tmp2bl_low, 16),
+                          vrshrn_n_s64(tmp2bl_high, 16));
 
     vst1q_s32(ptr2, ptr2va);
     vst1q_s32(ptr2 + 4, ptr2vb);
@@ -99,10 +113,17 @@ void WebRtcIsacfix_FilterMaLoopNeon(int16_t input0,  // Filter coefficient
 
     // Calculate tmp2 = tmp0 + *(ptr2).
     tmp2a = vaddq_s32(tmp0a, ptr2va);
-    tmp2a = vshlq_n_s32(tmp2a, 15);
 
     // Calculate *ptr2 = input2 * tmp2.
-    ptr2va = vqrdmulhq_s32(tmp2a, input2_v);
+    tmp2al_low = vmull_s32(vget_low_s32(tmp2a), vget_low_s32(input2_v));
+
+#if defined(WEBRTC_ARCH_ARM64)
+    tmp2al_high = vmull_high_s32(tmp2a, input2_v);
+#else
+    tmp2al_high = vmull_s32(vget_high_s32(tmp2a), vget_high_s32(input2_v));
+#endif
+    ptr2va = vcombine_s32(vrshrn_n_s64(tmp2al_low, 16),
+                          vrshrn_n_s64(tmp2al_high, 16));
 
     vst1q_s32(ptr2, ptr2va);
     ptr2 += 4;
@@ -121,6 +142,7 @@ void WebRtcIsacfix_FilterMaLoopNeon(int16_t input0,  // Filter coefficient
   if (loop_tail & 0x2) {
     int32x2_t ptr0v_tail, ptr2v_tail, ptr1v_tail;
     int32x2_t tmp0_tail, tmp1_tail, tmp2_tail, tmp3_tail;
+    int64x2_t tmp2l_tail;
     ptr0v_tail = vld1_s32(ptr0);
     ptr2v_tail = vld1_s32(ptr2);
     ptr0 += 2;
@@ -133,10 +155,10 @@ void WebRtcIsacfix_FilterMaLoopNeon(int16_t input0,  // Filter coefficient
 
     // Calculate tmp2 = tmp0 + *(ptr2).
     tmp2_tail = vadd_s32(tmp0_tail, ptr2v_tail);
-    tmp2_tail = vshl_n_s32(tmp2_tail, 15);
 
     // Calculate *ptr2 = input2 * tmp2.
-    ptr2v_tail = vqrdmulh_s32(tmp2_tail, vget_low_s32(input2_v));
+    tmp2l_tail = vmull_s32(tmp2_tail, vget_low_s32(input2_v));
+    ptr2v_tail = vrshrn_n_s64(tmp2l_tail, 16);
 
     vst1_s32(ptr2, ptr2v_tail);
     ptr2 += 2;
