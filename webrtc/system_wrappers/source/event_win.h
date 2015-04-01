@@ -19,10 +19,10 @@
 
 namespace webrtc {
 
-class EventTimerWin : public EventTimerWrapper {
+class EventWindows : public EventWrapper {
  public:
-  EventTimerWin();
-  virtual ~EventTimerWin();
+  EventWindows();
+  virtual ~EventWindows();
 
   virtual EventTypeWrapper Wait(unsigned long max_time);
   virtual bool Set();

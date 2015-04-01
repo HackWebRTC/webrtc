@@ -31,13 +31,16 @@
 class Trace;
 
 namespace webrtc {
-class EventTimerWrapper;
+class EventWrapper;
 class ThreadWrapper;
 class VideoRenderNSOpenGL;
 class CriticalSectionWrapper;
 
-class VideoChannelNSOpenGL : public VideoRenderCallback {
+class VideoChannelNSOpenGL : public VideoRenderCallback
+{
+
 public:
+
     VideoChannelNSOpenGL(NSOpenGLContext *nsglContext, int iId, VideoRenderNSOpenGL* owner);
     virtual ~VideoChannelNSOpenGL();
 
@@ -167,7 +170,7 @@ private: // variables
     int _id;
     CriticalSectionWrapper& _nsglContextCritSec;
     rtc::scoped_ptr<ThreadWrapper> _screenUpdateThread;
-    EventTimerWrapper* _screenUpdateEvent;
+    EventWrapper* _screenUpdateEvent;
     NSOpenGLContext* _nsglContext;
     NSOpenGLContext* _nsglFullScreenContext;
     CocoaFullScreenWindow* _fullScreenWindow;

@@ -292,7 +292,7 @@ void ISACTest::EncodeDecode(int testNr, ACMTestISACConfig& wbISACConfig,
 
   char currentTime[500];
   CodecInst sendCodec;
-  EventTimerWrapper* myEvent = EventTimerWrapper::Create();
+  EventWrapper* myEvent = EventWrapper::Create();
   EXPECT_TRUE(myEvent->StartTimer(true, 10));
   while (!(_inFileA.EndOfFile() || _inFileA.Rewinded())) {
     Run10ms();

@@ -25,10 +25,11 @@ enum State {
   kDown = 2
 };
 
-class EventTimerPosix : public EventTimerWrapper {
+class EventPosix : public EventWrapper {
  public:
-  EventTimerPosix();
-  ~EventTimerPosix() override;
+  static EventWrapper* Create();
+
+  ~EventPosix() override;
 
   EventTypeWrapper Wait(unsigned long max_time) override;
   bool Set() override;
@@ -37,6 +38,8 @@ class EventTimerPosix : public EventTimerWrapper {
   bool StopTimer() override;
 
  private:
+  EventPosix();
+
   static bool Run(void* obj);
   bool Process();
   EventTypeWrapper Wait(timespec* end_at);
@@ -47,7 +50,7 @@ class EventTimerPosix : public EventTimerWrapper {
   bool event_set_;
 
   rtc::scoped_ptr<ThreadWrapper> timer_thread_;
-  rtc::scoped_ptr<EventTimerPosix> timer_event_;
+  EventPosix*    timer_event_;
   timespec       created_at_;
 
   bool          periodic_;

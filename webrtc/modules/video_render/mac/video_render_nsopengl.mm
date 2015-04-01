@@ -367,7 +367,7 @@ _windowRef( (CocoaRenderView*)windowRef),
 _fullScreen( fullScreen),
 _id( iId),
 _nsglContextCritSec( *CriticalSectionWrapper::CreateCriticalSection()),
-_screenUpdateEvent(EventTimerWrapper::Create()),
+_screenUpdateEvent( 0),
 _nsglContext( 0),
 _nsglFullScreenContext( 0),
 _fullScreenWindow( nil),
@@ -382,6 +382,7 @@ _windowRefSuperViewFrame(NSMakeRect(0,0,0,0))
 {
     _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc,
             this, "ScreenUpdateNSOpenGL");
+    _screenUpdateEvent = EventWrapper::Create();
 }
 
 int VideoRenderNSOpenGL::ChangeWindow(CocoaRenderView* newWindowRef)

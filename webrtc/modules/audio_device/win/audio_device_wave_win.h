@@ -18,7 +18,6 @@
 #pragma comment( lib, "winmm.lib" )
 
 namespace webrtc {
-class EventTimerWrapper;
 class EventWrapper;
 
 const uint32_t TIMER_PERIOD_MS = 2;
@@ -212,7 +211,7 @@ private:
     AudioDeviceBuffer*                      _ptrAudioBuffer;
 
     CriticalSectionWrapper&                 _critSect;
-    EventTimerWrapper&                      _timeEvent;
+    EventWrapper&                           _timeEvent;
     EventWrapper&                           _recStartEvent;
     EventWrapper&                           _playStartEvent;
 

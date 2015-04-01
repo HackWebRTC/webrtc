@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/system_wrappers/source/event_timer_posix.h"
+#include "webrtc/system_wrappers/source/event_posix.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -22,17 +22,17 @@
 
 namespace webrtc {
 
-// static
-EventTimerWrapper* EventTimerWrapper::Create() {
-  return new EventTimerPosix();
-}
-
 const long int E6 = 1000000;
 const long int E9 = 1000 * E6;
 
-EventTimerPosix::EventTimerPosix()
+EventWrapper* EventPosix::Create() {
+  return new EventPosix();
+}
+
+EventPosix::EventPosix()
     : event_set_(false),
       timer_thread_(nullptr),
+      timer_event_(0),
       created_at_(),
       periodic_(false),
       time_(0),
@@ -52,14 +52,14 @@ EventTimerPosix::EventTimerPosix()
 #endif
 }
 
-EventTimerPosix::~EventTimerPosix() {
+EventPosix::~EventPosix() {
   StopTimer();
   pthread_cond_destroy(&cond_);
   pthread_mutex_destroy(&mutex_);
 }
 
 // TODO(pbos): Make this void.
-bool EventTimerPosix::Set() {
+bool EventPosix::Set() {
   CHECK_EQ(0, pthread_mutex_lock(&mutex_));
   event_set_ = true;
   pthread_cond_signal(&cond_);
@@ -67,7 +67,7 @@ bool EventTimerPosix::Set() {
   return true;
 }
 
-EventTypeWrapper EventTimerPosix::Wait(unsigned long timeout) {
+EventTypeWrapper EventPosix::Wait(unsigned long timeout) {
   int ret_val = 0;
   CHECK_EQ(0, pthread_mutex_lock(&mutex_));
 
@@ -115,7 +115,7 @@ EventTypeWrapper EventTimerPosix::Wait(unsigned long timeout) {
   return ret_val == 0 ? kEventSignaled : kEventTimeout;
 }
 
-EventTypeWrapper EventTimerPosix::Wait(timespec* end_at) {
+EventTypeWrapper EventPosix::Wait(timespec* end_at) {
   int ret_val = 0;
   CHECK_EQ(0, pthread_mutex_lock(&mutex_));
 
@@ -134,7 +134,7 @@ EventTypeWrapper EventTimerPosix::Wait(timespec* end_at) {
   return ret_val == 0 ? kEventSignaled : kEventTimeout;
 }
 
-bool EventTimerPosix::StartTimer(bool periodic, unsigned long time) {
+bool EventPosix::StartTimer(bool periodic, unsigned long time) {
   pthread_mutex_lock(&mutex_);
   if (timer_thread_) {
     if (periodic_) {
@@ -152,7 +152,7 @@ bool EventTimerPosix::StartTimer(bool periodic, unsigned long time) {
   }
 
   // Start the timer thread
-  timer_event_.reset(new EventTimerPosix());
+  timer_event_ = static_cast<EventPosix*>(EventWrapper::Create());
   const char* thread_name = "WebRtc_event_timer_thread";
   timer_thread_ = ThreadWrapper::CreateThread(Run, this, thread_name);
   periodic_ = periodic;
@@ -164,11 +164,11 @@ bool EventTimerPosix::StartTimer(bool periodic, unsigned long time) {
   return started;
 }
 
-bool EventTimerPosix::Run(void* obj) {
-  return static_cast<EventTimerPosix*>(obj)->Process();
+bool EventPosix::Run(void* obj) {
+  return static_cast<EventPosix*>(obj)->Process();
 }
 
-bool EventTimerPosix::Process() {
+bool EventPosix::Process() {
   pthread_mutex_lock(&mutex_);
   if (created_at_.tv_sec == 0) {
 #ifndef WEBRTC_MAC
@@ -210,7 +210,7 @@ bool EventTimerPosix::Process() {
   return true;
 }
 
-bool EventTimerPosix::StopTimer() {
+bool EventPosix::StopTimer() {
   if (timer_event_) {
     timer_event_->Set();
   }
@@ -220,7 +220,10 @@ bool EventTimerPosix::StopTimer() {
     }
     timer_thread_.reset();
   }
-  timer_event_.reset();
+  if (timer_event_) {
+    delete timer_event_;
+    timer_event_ = 0;
+  }
 
   // Set time to zero to force new reference time for the timer.
   memset(&created_at_, 0, sizeof(created_at_));
