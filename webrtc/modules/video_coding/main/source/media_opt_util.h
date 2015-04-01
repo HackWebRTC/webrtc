@@ -48,7 +48,7 @@ struct VCMProtectionParameters
     VCMProtectionParameters() : rtt(0), lossPr(0.0f), bitRate(0.0f),
         packetsPerFrame(0.0f), packetsPerFrameKey(0.0f), frameRate(0.0f),
         keyFrameSize(0.0f), fecRateDelta(0), fecRateKey(0),
-        residualPacketLossFec(0.0f), codecWidth(0), codecHeight(0),
+        codecWidth(0), codecHeight(0),
         numLayers(1)
         {}
 
@@ -61,7 +61,6 @@ struct VCMProtectionParameters
     float               keyFrameSize;
     uint8_t       fecRateDelta;
     uint8_t       fecRateKey;
-    float               residualPacketLossFec;
     uint16_t      codecWidth;
     uint16_t      codecHeight;
     int                 numLayers;
@@ -110,12 +109,6 @@ public:
     // Return value                 : The protection type
     enum VCMProtectionMethodEnum Type() const { return _type; }
 
-    // Returns the bit rate required by this protection method
-    // during these conditions.
-    //
-    // Return value                 : Required bit rate
-    virtual float RequiredBitRate() { return _efficiency; }
-
     // Returns the effective packet loss for ER, required by this protection method
     //
     // Return value                 : Required effective packet loss
@@ -152,7 +145,6 @@ protected:
     uint8_t                        _protectionFactorK;
     uint8_t                        _protectionFactorD;
     // Estimation of residual loss after the FEC
-    float                                _residualPacketLossFec;
     float                                _scaleProtKey;
     int32_t                        _maxPayloadSize;
 
@@ -161,7 +153,6 @@ protected:
     bool                                 _useUepProtectionD;
     float                                _corrFecCost;
     enum VCMProtectionMethodEnum         _type;
-    float                                _efficiency;
 };
 
 class VCMNackMethod : public VCMProtectionMethod
@@ -247,21 +238,11 @@ public:
     //                           is already set, it will be deleted and replaced
     void SetMethod(VCMProtectionMethodEnum newMethodType);
 
-    // Return required bit rate per selected protectin method
-    float RequiredBitRate() const;
-
     // Update the round-trip time
     //
     // Input:
     //          - rtt           : Round-trip time in seconds.
     void UpdateRtt(int64_t rtt);
-
-    // Update residual packet loss
-    //
-    // Input:
-    //          - residualPacketLoss  : residual packet loss:
-    //                                  effective loss after FEC recovery
-    void UpdateResidualPacketLoss(float _residualPacketLoss);
 
     // Update the filtered packet loss.
     //
@@ -371,7 +352,6 @@ private:
     uint8_t _shortMaxLossPr255;
     rtc::ExpFilter _packetsPerFrame;
     rtc::ExpFilter _packetsPerFrameKey;
-    float _residualPacketLossFec;
     uint16_t _codecWidth;
     uint16_t _codecHeight;
     int _numLayers;

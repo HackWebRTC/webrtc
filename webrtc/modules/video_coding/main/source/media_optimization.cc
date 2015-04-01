@@ -214,7 +214,6 @@ uint32_t MediaOptimization::SetTargetRates(
   float target_bitrate_kbps = static_cast<float>(target_bitrate) / 1000.0f;
   loss_prot_logic_->UpdateBitRate(target_bitrate_kbps);
   loss_prot_logic_->UpdateRtt(round_trip_time_ms);
-  loss_prot_logic_->UpdateResidualPacketLoss(static_cast<float>(fraction_lost));
 
   // Get frame rate for encoder: this is the actual/sent frame rate.
   float actual_frame_rate = SentFrameRateInternal();
