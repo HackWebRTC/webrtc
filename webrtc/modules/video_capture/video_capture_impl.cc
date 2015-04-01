@@ -263,7 +263,10 @@ int32_t VideoCaptureImpl::IncomingFrame(
         int target_width = width;
         int target_height = height;
 
-        if (apply_rotation_) {
+        // SetApplyRotation doesn't take any lock. Make a local copy here.
+        bool apply_rotation = apply_rotation_;
+
+        if (apply_rotation) {
           // Rotating resolution when for 90/270 degree rotations.
           if (_rotateFrame == kVideoRotation_90 ||
               _rotateFrame == kVideoRotation_270) {
@@ -290,7 +293,7 @@ int32_t VideoCaptureImpl::IncomingFrame(
         const int conversionResult = ConvertToI420(
             commonVideoType, videoFrame, 0, 0,  // No cropping
             width, height, videoFrameLength,
-            apply_rotation_ ? _rotateFrame : kVideoRotation_0, &_captureFrame);
+            apply_rotation ? _rotateFrame : kVideoRotation_0, &_captureFrame);
         if (conversionResult < 0)
         {
           LOG(LS_ERROR) << "Failed to convert capture frame from type "
@@ -298,7 +301,7 @@ int32_t VideoCaptureImpl::IncomingFrame(
             return -1;
         }
 
-        if (!apply_rotation_) {
+        if (!apply_rotation) {
           _captureFrame.set_rotation(_rotateFrame);
         } else {
           _captureFrame.set_rotation(kVideoRotation_0);
@@ -335,8 +338,8 @@ void VideoCaptureImpl::EnableFrameRateCallback(const bool enable) {
 }
 
 bool VideoCaptureImpl::SetApplyRotation(bool enable) {
-  CriticalSectionScoped cs(&_apiCs);
-  CriticalSectionScoped cs2(&_callBackCs);
+  // We can't take any lock here as it'll cause deadlock with IncomingFrame.
+
   // The effect of this is the last caller wins.
   apply_rotation_ = enable;
   return true;

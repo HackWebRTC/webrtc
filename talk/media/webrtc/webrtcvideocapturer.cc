@@ -44,6 +44,7 @@
 
 #include "webrtc/base/win32.h"  // Need this to #include the impl files.
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"
+#include "webrtc/system_wrappers/interface/field_trial.h"
 
 namespace cricket {
 
@@ -260,9 +261,17 @@ bool WebRtcVideoCapturer::GetBestCaptureFormat(const VideoFormat& desired,
   return true;
 }
 bool WebRtcVideoCapturer::SetApplyRotation(bool enable) {
-  rtc::CritScope cs(&critical_section_stopping_);
-
+  // Can't take lock here as this will cause deadlock with
+  // OnIncomingCapturedFrame. In fact, the whole method, including methods it
+  // calls, can't take lock.
   assert(module_);
+
+  const std::string group_name =
+      webrtc::field_trial::FindFullName("WebRTC-CVO");
+
+  if (group_name == "Disabled") {
+    return true;
+  }
 
   if (!VideoCapturer::SetApplyRotation(enable)) {
     return false;

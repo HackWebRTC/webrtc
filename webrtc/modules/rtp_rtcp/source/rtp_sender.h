@@ -41,6 +41,14 @@ class RTPSenderInterface {
   RTPSenderInterface() {}
   virtual ~RTPSenderInterface() {}
 
+  enum CVOMode {
+    kCVONone,
+    kCVOInactive,  // CVO rtp header extension is registered but haven't
+                   // received any frame with rotation pending.
+    kCVOActivated,  // CVO rtp header extension will be present in the rtp
+                    // packets.
+  };
+
   virtual uint32_t SSRC() const = 0;
   virtual uint32_t Timestamp() const = 0;
 
@@ -70,6 +78,7 @@ class RTPSenderInterface {
                                    const RTPHeader& rtp_header,
                                    VideoRotation rotation) const = 0;
   virtual bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) = 0;
+  virtual CVOMode ActivateCVORtpHeaderExtension() = 0;
 };
 
 class RTPSender : public RTPSenderInterface {
@@ -285,6 +294,7 @@ class RTPSender : public RTPSenderInterface {
   RtpState GetRtpState() const;
   void SetRtxRtpState(const RtpState& rtp_state);
   RtpState GetRtxRtpState() const;
+  CVOMode ActivateCVORtpHeaderExtension() override;
 
  protected:
   int32_t CheckPayloadType(int8_t payload_type, RtpVideoCodecTypes* video_type);
@@ -378,6 +388,7 @@ class RTPSender : public RTPSenderInterface {
   int32_t transmission_time_offset_;
   uint32_t absolute_send_time_;
   VideoRotation rotation_;
+  CVOMode cvo_mode_;
   uint16_t transport_sequence_number_;
 
   // NACK

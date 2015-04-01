@@ -49,6 +49,19 @@ WebRtcVideoFrame::WebRtcVideoFrame():
 WebRtcVideoFrame::WebRtcVideoFrame(
     const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
     int64_t elapsed_time_ns,
+    int64_t time_stamp_ns,
+    webrtc::VideoRotation rotation)
+    : video_frame_buffer_(buffer),
+      pixel_width_(1),
+      pixel_height_(1),
+      elapsed_time_ns_(elapsed_time_ns),
+      time_stamp_ns_(time_stamp_ns),
+      rotation_(rotation) {
+}
+
+WebRtcVideoFrame::WebRtcVideoFrame(
+    const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
+    int64_t elapsed_time_ns,
     int64_t time_stamp_ns)
     : video_frame_buffer_(buffer),
       pixel_width_(1),
@@ -62,7 +75,8 @@ WebRtcVideoFrame::WebRtcVideoFrame(webrtc::NativeHandle* handle,
                                    int width,
                                    int height,
                                    int64_t elapsed_time_ns,
-                                   int64_t time_stamp_ns)
+                                   int64_t time_stamp_ns,
+                                   webrtc::VideoRotation rotation)
     : video_frame_buffer_(
           new rtc::RefCountedObject<webrtc::TextureBuffer>(handle,
                                                            width,
@@ -71,7 +85,7 @@ WebRtcVideoFrame::WebRtcVideoFrame(webrtc::NativeHandle* handle,
       pixel_height_(1),
       elapsed_time_ns_(elapsed_time_ns),
       time_stamp_ns_(time_stamp_ns),
-      rotation_(webrtc::kVideoRotation_0) {
+      rotation_(rotation) {
 }
 
 WebRtcVideoFrame::~WebRtcVideoFrame() {}
@@ -176,10 +190,9 @@ WebRtcVideoFrame::GetVideoFrameBuffer() const {
 
 VideoFrame* WebRtcVideoFrame::Copy() const {
   WebRtcVideoFrame* new_frame = new WebRtcVideoFrame(
-      video_frame_buffer_, elapsed_time_ns_, time_stamp_ns_);
+      video_frame_buffer_, elapsed_time_ns_, time_stamp_ns_, rotation_);
   new_frame->pixel_width_ = pixel_width_;
   new_frame->pixel_height_ = pixel_height_;
-  new_frame->rotation_ = rotation_;
   return new_frame;
 }
 
