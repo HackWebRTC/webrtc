@@ -301,13 +301,6 @@ bool RTPSenderVideo::Send(const RtpVideoCodecTypes videoType,
                           const size_t payloadSize,
                           const RTPFragmentationHeader* fragmentation,
                           const RTPVideoHeader* rtpHdr) {
-  // Register CVO rtp header extension at the first time when we receive a frame
-  // with pending rotation.
-  RTPSenderInterface::CVOMode cvo_mode = RTPSenderInterface::kCVONone;
-  if (rtpHdr && rtpHdr->rotation != kVideoRotation_0) {
-    cvo_mode = _rtpSender.ActivateCVORtpHeaderExtension();
-  }
-
   uint16_t rtp_header_length = _rtpSender.RTPHeaderLength();
   size_t payload_bytes_to_send = payloadSize;
   const uint8_t* data = payloadData;
@@ -348,16 +341,13 @@ bool RTPSenderVideo::Send(const RtpVideoCodecTypes videoType,
     // packet in each group of packets which make up another type of frame
     // (e.g. a P-Frame) only if the current value is different from the previous
     // value sent.
-    // Here we are adding it to every packet of every frame at this point.
+    // Here we are adding it to the last packet of every frame at this point.
     if (!rtpHdr) {
       assert(!_rtpSender.IsRtpHeaderExtensionRegistered(
           kRtpExtensionVideoRotation));
-    } else if (cvo_mode == RTPSenderInterface::kCVOActivated) {
+    } else if (last) {
       // Checking whether CVO header extension is registered will require taking
       // a lock. It'll be a no-op if it's not registered.
-      // TODO(guoweis): For now, all packets sent will carry the CVO such that
-      // the RTP header length is consistent, although the receiver side will
-      // only exam the packets with market bit set.
       size_t packetSize = payloadSize + rtp_header_length;
       RtpUtility::RtpHeaderParser rtp_parser(dataBuffer, packetSize);
       RTPHeader rtp_header;

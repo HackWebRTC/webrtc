@@ -254,8 +254,6 @@ bool VideoCapturer::MuteToBlackThenPause(bool muted) {
   return Pause(false);
 }
 
-// Note that the last caller decides whether rotation should be applied if there
-// are multiple send streams using the same camera.
 bool VideoCapturer::SetApplyRotation(bool enable) {
   apply_rotation_ = enable;
   if (frame_factory_) {

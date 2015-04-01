@@ -50,7 +50,6 @@
 
 using cricket::kRtpTimestampOffsetHeaderExtension;
 using cricket::kRtpAbsoluteSenderTimeHeaderExtension;
-using cricket::kRtpVideoRotationHeaderExtension;
 
 static const cricket::VideoCodec kVP8Codec720p(100, "VP8", 1280, 720, 30, 0);
 static const cricket::VideoCodec kVP8Codec360p(100, "VP8", 640, 360, 30, 0);
@@ -1004,14 +1003,6 @@ TEST_F(WebRtcVideoEngineTestFake, SendAbsoluteSendTimeHeaderExtensions) {
 }
 TEST_F(WebRtcVideoEngineTestFake, RecvAbsoluteSendTimeHeaderExtensions) {
   TestSetRecvRtpHeaderExtensions(kRtpAbsoluteSenderTimeHeaderExtension);
-}
-
-// Test support for Coordination of Video Orientation (CVO) header extension.
-TEST_F(WebRtcVideoEngineTestFake, SendVideoRotationHeaderExtensions) {
-  TestSetSendRtpHeaderExtensions(kRtpVideoRotationHeaderExtension);
-}
-TEST_F(WebRtcVideoEngineTestFake, RecvVideoRotationHeaderExtensions) {
-  TestSetRecvRtpHeaderExtensions(kRtpVideoRotationHeaderExtension);
 }
 
 TEST_F(WebRtcVideoEngineTestFake, LeakyBucketTest) {

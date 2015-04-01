@@ -186,6 +186,7 @@ class RtpSenderVideoTest : public RtpSenderTest {
     }
     ASSERT_TRUE(rtp_parser.Parse(rtp_header, map));
     ASSERT_FALSE(rtp_parser.RTCP());
+    EXPECT_EQ(expect_cvo, rtp_header.markerBit);
     EXPECT_EQ(payload_, rtp_header.payloadType);
     EXPECT_EQ(seq_num, rtp_header.sequenceNumber);
     EXPECT_EQ(kTimestamp, rtp_header.timestamp);
@@ -253,7 +254,6 @@ TEST_F(RtpSenderTest, RegisterRtpHeaderExtensions) {
             rtp_sender_->RtpHeaderExtensionTotalLength());
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionVideoRotation, kVideoRotationExtensionId));
-  EXPECT_TRUE(rtp_sender_->ActivateCVORtpHeaderExtension());
   EXPECT_EQ(RtpUtility::Word32Align(kRtpOneByteHeaderLength +
                                     kTransmissionTimeOffsetLength +
                                     kAbsoluteSendTimeLength +
@@ -286,9 +286,6 @@ TEST_F(RtpSenderTest, RegisterRtpVideoRotationHeaderExtension) {
   EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionTotalLength());
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionVideoRotation, kVideoRotationExtensionId));
-  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionTotalLength());
-
-  EXPECT_TRUE(rtp_sender_->ActivateCVORtpHeaderExtension());
   EXPECT_EQ(
       RtpUtility::Word32Align(kRtpOneByteHeaderLength + kVideoRotationLength),
       rtp_sender_->RtpHeaderExtensionTotalLength());
@@ -427,7 +424,6 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithVideoRotation_MarkerBit) {
   rtp_sender_->SetVideoRotation(kRotation);
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionVideoRotation, kVideoRotationExtensionId));
-  EXPECT_TRUE(rtp_sender_->ActivateCVORtpHeaderExtension());
 
   RtpHeaderExtensionMap map;
   map.Register(kRtpExtensionVideoRotation, kVideoRotationExtensionId);
@@ -451,11 +447,10 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithVideoRotation_MarkerBit) {
 }
 
 // Test CVO header extension is not set when marker bit is false.
-TEST_F(RtpSenderTest, DISABLED_BuildRTPPacketWithVideoRotation_NoMarkerBit) {
+TEST_F(RtpSenderTest, BuildRTPPacketWithVideoRotation_NoMarkerBit) {
   rtp_sender_->SetVideoRotation(kRotation);
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionVideoRotation, kVideoRotationExtensionId));
-  EXPECT_TRUE(rtp_sender_->ActivateCVORtpHeaderExtension());
 
   RtpHeaderExtensionMap map;
   map.Register(kRtpExtensionVideoRotation, kVideoRotationExtensionId);
@@ -1338,15 +1333,13 @@ TEST_F(RtpSenderTest, BytesReportedCorrectly) {
             rtx_stats.transmitted.TotalBytes());
 }
 
-// Verify that all packets of a frame have CVO byte set.
+// Verify that only the last packet of a frame has CVO byte set.
 TEST_F(RtpSenderVideoTest, SendVideoWithCVO) {
   RTPVideoHeader hdr = {0};
   hdr.rotation = kVideoRotation_90;
 
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionVideoRotation, kVideoRotationExtensionId));
-  EXPECT_TRUE(rtp_sender_->ActivateCVORtpHeaderExtension());
-
   EXPECT_EQ(
       RtpUtility::Word32Align(kRtpOneByteHeaderLength + kVideoRotationLength),
       rtp_sender_->RtpHeaderExtensionTotalLength());
@@ -1358,12 +1351,13 @@ TEST_F(RtpSenderVideoTest, SendVideoWithCVO) {
   RtpHeaderExtensionMap map;
   map.Register(kRtpExtensionVideoRotation, kVideoRotationExtensionId);
 
-  // Verify that this packet does have CVO byte.
+  // Verify that this packet doesn't have CVO byte.
   VerifyCVOPacket(
       reinterpret_cast<uint8_t*>(transport_.sent_packets_[0]->data()),
-      transport_.sent_packets_[0]->length(), true, &map, kSeqNum, hdr.rotation);
+      transport_.sent_packets_[0]->size(), false, &map, kSeqNum,
+      kVideoRotation_0);
 
-  // Verify that this packet does have CVO byte.
+  // Verify that this packet doesn't have CVO byte.
   VerifyCVOPacket(
       reinterpret_cast<uint8_t*>(transport_.sent_packets_[1]->data()),
       transport_.sent_packets_[1]->size(), true, &map, kSeqNum + 1,

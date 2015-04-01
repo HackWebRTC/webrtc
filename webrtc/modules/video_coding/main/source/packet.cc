@@ -99,9 +99,6 @@ void VCMPacket::Reset() {
 }
 
 void VCMPacket::CopyCodecSpecifics(const RTPVideoHeader& videoHeader) {
-  if (markerBit) {
-    codecSpecificHeader.rotation = videoHeader.rotation;
-  }
   switch (videoHeader.codec) {
     case kRtpVideoVp8:
       // Handle all packets within a frame as depending on the previous packet

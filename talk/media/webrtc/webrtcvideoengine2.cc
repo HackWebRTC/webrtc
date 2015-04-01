@@ -134,17 +134,6 @@ static std::string RtpExtensionsToString(
   return out.str();
 }
 
-inline const webrtc::RtpExtension* FindHeaderExtension(
-    const std::vector<webrtc::RtpExtension>& extensions,
-    const std::string& name) {
-  for (const auto& kv : extensions) {
-    if (kv.name == name) {
-      return &kv;
-    }
-  }
-  return NULL;
-}
-
 // Merges two fec configs and logs an error if a conflict arises
 // such that merging in diferent order would trigger a diferent output.
 static void MergeFecConfig(const webrtc::FecConfig& other,
@@ -379,9 +368,6 @@ WebRtcVideoEngine2::WebRtcVideoEngine2(WebRtcVoiceEngine* voice_engine)
   rtp_header_extensions_.push_back(
       RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
                          kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
-  rtp_header_extensions_.push_back(
-      RtpHeaderExtension(kRtpVideoRotationHeaderExtension,
-                         kRtpVideoRotationHeaderExtensionDefaultId));
 }
 
 WebRtcVideoEngine2::~WebRtcVideoEngine2() {
@@ -1149,16 +1135,7 @@ bool WebRtcVideoChannel2::SetCapturer(uint32 ssrc, VideoCapturer* capturer) {
     LOG(LS_ERROR) << "No sending stream on ssrc " << ssrc;
     return false;
   }
-  if (!send_streams_[ssrc]->SetCapturer(capturer)) {
-    return false;
-  }
-
-  if (capturer) {
-    capturer->SetApplyRotation(
-        !FindHeaderExtension(send_rtp_extensions_,
-                             kRtpVideoRotationHeaderExtension));
-  }
-  return true;
+  return send_streams_[ssrc]->SetCapturer(capturer);
 }
 
 bool WebRtcVideoChannel2::SendIntraFrame() {
@@ -1281,16 +1258,12 @@ bool WebRtcVideoChannel2::SetSendRtpHeaderExtensions(
 
   send_rtp_extensions_ = filtered_extensions;
 
-  const webrtc::RtpExtension* cvo_extension = FindHeaderExtension(
-      send_rtp_extensions_, kRtpVideoRotationHeaderExtension);
-
   rtc::CritScope stream_lock(&stream_crit_);
   for (std::map<uint32, WebRtcVideoSendStream*>::iterator it =
            send_streams_.begin();
        it != send_streams_.end();
        ++it) {
     it->second->SetRtpExtensions(send_rtp_extensions_);
-    it->second->SetApplyRotation(!cvo_extension);
   }
   return true;
 }
@@ -1605,15 +1578,6 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectCapturer() {
 const std::vector<uint32>&
 WebRtcVideoChannel2::WebRtcVideoSendStream::GetSsrcs() const {
   return ssrcs_;
-}
-
-void WebRtcVideoChannel2::WebRtcVideoSendStream::SetApplyRotation(
-    bool apply_rotation) {
-  rtc::CritScope cs(&lock_);
-  if (capturer_ == NULL)
-    return;
-
-  capturer_->SetApplyRotation(apply_rotation);
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::SetOptions(
@@ -2157,7 +2121,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
   const WebRtcVideoFrame render_frame(
       frame.video_frame_buffer(),
       elapsed_time_ms * rtc::kNumNanosecsPerMillisec,
-      frame.render_time_ms() * rtc::kNumNanosecsPerMillisec, frame.rotation());
+      frame.render_time_ms() * rtc::kNumNanosecsPerMillisec);
   renderer_->RenderFrame(&render_frame);
 }
 

@@ -340,8 +340,7 @@ TEST_F(WebRtcVideoFrameTest, InitRotated90DontApplyRotation) {
 
 TEST_F(WebRtcVideoFrameTest, TextureInitialValues) {
   NativeHandleImpl handle;
-  cricket::WebRtcVideoFrame frame(&handle, 640, 480, 100, 200,
-                                  webrtc::kVideoRotation_0);
+  cricket::WebRtcVideoFrame frame(&handle, 640, 480, 100, 200);
   EXPECT_EQ(&handle, frame.GetNativeHandle());
   EXPECT_EQ(640u, frame.GetWidth());
   EXPECT_EQ(480u, frame.GetHeight());
@@ -355,8 +354,7 @@ TEST_F(WebRtcVideoFrameTest, TextureInitialValues) {
 
 TEST_F(WebRtcVideoFrameTest, CopyTextureFrame) {
   NativeHandleImpl handle;
-  cricket::WebRtcVideoFrame frame1(&handle, 640, 480, 100, 200,
-                                   webrtc::kVideoRotation_0);
+  cricket::WebRtcVideoFrame frame1(&handle, 640, 480, 100, 200);
   cricket::VideoFrame* frame2 = frame1.Copy();
   EXPECT_EQ(frame1.GetNativeHandle(), frame2->GetNativeHandle());
   EXPECT_EQ(frame1.GetWidth(), frame2->GetWidth());

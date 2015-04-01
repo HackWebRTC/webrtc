@@ -271,15 +271,15 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
     // Mapping array from original UV mapping to the rotated mapping. The number
     // is the position where the original UV coordination should be mapped
-    // to. (0,1) is the top left coord. (2,3) is the bottom left. (4,5) is the
-    // top right. (6,7) is the bottom right.
+    // to. (0,1) is the left top coord. (2,3) is the top bottom. (4,5) is the
+    // right top. (6,7) is the right bottom. Note that this is the coordination
+    // that got rotated. For example, using the original left bottom (2,3) as
+    // the top left (0,1) means 90 degree clockwise rotation.
     private static int rotation_matrix[][] =
-        { {4, 5, 0, 1, 6, 7, 2, 3},   //  90 degree (clockwise)
-          {6, 7, 4, 5, 2, 3, 0, 1},   // 180 degree (clockwise)
-          {2, 3, 6, 7, 0, 1, 4, 5} }; // 270 degree (clockwise)
-
-    private static int mirror_matrix[] =
-        {4, 1, 6, 3, 0, 5, 2, 7}; // mirrored
+      { {0, 1, 2, 3, 4, 5, 6, 7},  //   0 degree
+        {2, 3, 6, 7, 0, 1, 4, 5},  //  90 degree (clockwise)
+        {6, 7, 4, 5, 2, 3, 0, 1},  // 180 degree (clockwise)
+        {4, 5, 0, 1, 6, 7, 2, 3} };// 270 degree (clockwise)
 
     private YuvImageRenderer(
         GLSurfaceView surface, int id,
@@ -381,21 +381,12 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
           }
           if (scalingType == ScalingType.SCALE_ASPECT_FILL) {
             // Need to re-adjust UV coordinates to match display AR.
-            boolean adjustU = true;
-            float ratio = 0;
             if (displayAspectRatio > videoAspectRatio) {
-              ratio = (1.0f - videoAspectRatio / displayAspectRatio) /
+              texOffsetV = (1.0f - videoAspectRatio / displayAspectRatio) /
                   2.0f;
-              adjustU = (rotationDegree == 90 || rotationDegree == 270);
             } else {
-              ratio = (1.0f - displayAspectRatio / videoAspectRatio) /
+              texOffsetU = (1.0f - displayAspectRatio / videoAspectRatio) /
                   2.0f;
-              adjustU = (rotationDegree == 0 || rotationDegree == 180);
-            }
-            if (adjustU) {
-              texOffsetU = ratio;
-            } else {
-              texOffsetV = ratio;
             }
           }
           Log.d(TAG, "  Texture vertices: (" + texLeft + "," + texBottom +
@@ -411,57 +402,35 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
           Log.d(TAG, "  Texture UV offsets: " + texOffsetU + ", " + texOffsetV);
           float uLeft = texOffsetU;
           float uRight = 1.0f - texOffsetU;
+          if (mirror) {
+            // Swap U coordinates for mirror image.
+            uLeft = 1.0f - texOffsetU;
+            uRight = texOffsetU;
+          }
           float textureCoordinatesFloat[] = new float[] {
-            uLeft, texOffsetV,         // top left
-            uLeft, 1.0f - texOffsetV,  // bottom left
-            uRight, texOffsetV,        // top right
-            uRight, 1.0f - texOffsetV  // bottom right
+            uLeft, texOffsetV,         // left top
+            uLeft, 1.0f - texOffsetV,  // left bottom
+            uRight, texOffsetV,        // right top
+            uRight, 1.0f - texOffsetV  // right bottom
           };
 
-          // Rotation needs to be done before mirroring.
-          textureCoordinatesFloat = applyRotation(textureCoordinatesFloat,
-                                                  rotationDegree);
-          textureCoordinatesFloat = applyMirror(textureCoordinatesFloat,
-                                                mirror);
+          float textureCoordinatesRotatedFloat[];
+          if (rotationDegree == 0) {
+            textureCoordinatesRotatedFloat = textureCoordinatesFloat;
+          } else {
+            textureCoordinatesRotatedFloat =
+              new float[textureCoordinatesFloat.length];
+            int index = rotationDegree / 90;
+            for(int i = 0; i < textureCoordinatesFloat.length; i++) {
+              textureCoordinatesRotatedFloat[rotation_matrix[index][i]] =
+                textureCoordinatesFloat[i];
+            }
+          }
           textureCoords =
-              directNativeFloatBuffer(textureCoordinatesFloat);
+            directNativeFloatBuffer(textureCoordinatesRotatedFloat);
         }
         updateTextureProperties = false;
       }
-    }
-
-
-    private float[] applyMirror(float textureCoordinatesFloat[],
-                                boolean mirror) {
-      if (!mirror) {
-        return textureCoordinatesFloat;
-      }
-
-      return applyMatrixOperation(textureCoordinatesFloat,
-                                  mirror_matrix);
-    }
-
-    private float[] applyRotation(float textureCoordinatesFloat[],
-                                  int rotationDegree) {
-      if (rotationDegree == 0) {
-        return textureCoordinatesFloat;
-      }
-
-      int index = rotationDegree / 90 - 1;
-      return applyMatrixOperation(textureCoordinatesFloat,
-                                  rotation_matrix[index]);
-    }
-
-    private float[] applyMatrixOperation(float textureCoordinatesFloat[],
-                                         int matrix_operation[]) {
-      float textureCoordinatesModifiedFloat[] =
-          new float[textureCoordinatesFloat.length];
-
-      for(int i = 0; i < textureCoordinatesFloat.length; i++) {
-        textureCoordinatesModifiedFloat[matrix_operation[i]] =
-            textureCoordinatesFloat[i];
-      }
-      return textureCoordinatesModifiedFloat;
     }
 
     private void draw() {

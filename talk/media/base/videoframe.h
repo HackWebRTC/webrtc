@@ -83,10 +83,8 @@ class VideoFrame {
   }
 
   // Basic accessors.
-  // Note this is the width and height without rotation applied.
   virtual size_t GetWidth() const = 0;
   virtual size_t GetHeight() const = 0;
-
   size_t GetChromaWidth() const { return (GetWidth() + 1) / 2; }
   size_t GetChromaHeight() const { return (GetHeight() + 1) / 2; }
   size_t GetChromaSize() const { return GetUPitch() * GetChromaHeight(); }
