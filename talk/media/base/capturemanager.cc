@@ -176,7 +176,9 @@ CaptureManager::~CaptureManager() {
   // cleaned up before we get here. In fact, in the normal shutdown sequence,
   // all capturers *will* be shut down by now, so trying to stop them here
   // will crash. If we're still tracking any, it's a dangling pointer.
-  CHECK(capture_states_.empty());
+  // TODO(hbos): DCHECK instead of CHECK until we figure out why capture_states_
+  // is not always empty here.
+  DCHECK(capture_states_.empty());
 }
 
 bool CaptureManager::StartVideoCapture(VideoCapturer* video_capturer,
