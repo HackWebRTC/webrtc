@@ -94,21 +94,22 @@ void ProcessThreadImpl::Stop() {
   wake_up_->Set();
 
   CHECK(thread_->Stop());
-  thread_.reset();
   stop_ = false;
 
   // TODO(tommi): Since DeRegisterModule is currently being called from
   // different threads in some cases (ChannelOwner), we need to lock access to
   // the modules_ collection even on the controller thread.
+  // Since DeRegisterModule also checks thread_, we also need to hold the
+  // lock for the .reset() operation.
   // Once we've cleaned up those places, we can remove this lock.
   rtc::CritScope lock(&lock_);
+  thread_.reset();
   for (ModuleCallback& m : modules_)
     m.module->ProcessThreadAttached(nullptr);
 }
 
 void ProcessThreadImpl::WakeUp(Module* module) {
   // Allowed to be called on any thread.
-  // TODO(tommi): Disallow this ^^^
   {
     rtc::CritScope lock(&lock_);
     for (ModuleCallback& m : modules_) {
@@ -121,7 +122,6 @@ void ProcessThreadImpl::WakeUp(Module* module) {
 
 void ProcessThreadImpl::PostTask(rtc::scoped_ptr<ProcessTask> task) {
   // Allowed to be called on any thread.
-  // TODO(tommi): Disallow this ^^^
   {
     rtc::CritScope lock(&lock_);
     queue_.push(task.release());
@@ -131,6 +131,7 @@ void ProcessThreadImpl::PostTask(rtc::scoped_ptr<ProcessTask> task) {
 
 void ProcessThreadImpl::RegisterModule(Module* module) {
   // Allowed to be called on any thread.
+  // TODO(tommi): Disallow this ^^^
   DCHECK(module);
 
 #if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
@@ -161,17 +162,26 @@ void ProcessThreadImpl::RegisterModule(Module* module) {
 
 void ProcessThreadImpl::DeRegisterModule(Module* module) {
   // Allowed to be called on any thread.
+  // TODO(tommi): Disallow this ^^^
   DCHECK(module);
+
   {
     rtc::CritScope lock(&lock_);
     modules_.remove_if([&module](const ModuleCallback& m) {
         return m.module == module;
       });
-  }
 
-  // Notify the module that it's been detached, while not holding the lock.
-  if (thread_.get())
-    module->ProcessThreadAttached(nullptr);
+    // TODO(tommi): we currently need to hold the lock while calling out to
+    // ProcessThreadAttached.  This is to make sure that the thread hasn't been
+    // destroyed while we attach the module.  Once we can make sure
+    // DeRegisterModule isn't being called on arbitrary threads, we can move the
+    // |if (thread_.get())| check and ProcessThreadAttached() call outside the
+    // lock scope.
+
+    // Notify the module that it's been detached.
+    if (thread_.get())
+      module->ProcessThreadAttached(nullptr);
+  }
 }
 
 // static
