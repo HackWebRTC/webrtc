@@ -10,6 +10,8 @@
 
 #include "webrtc/base/asyncinvoker.h"
 
+#include "webrtc/base/logging.h"
+
 namespace rtc {
 
 AsyncInvoker::AsyncInvoker() : destroying_(false) {}

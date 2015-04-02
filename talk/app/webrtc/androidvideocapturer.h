@@ -31,12 +31,13 @@
 #include <vector>
 
 #include "talk/media/base/videocapturer.h"
+#include "webrtc/base/thread_checker.h"
 
 namespace webrtc {
 
 class AndroidVideoCapturer;
 
-class AndroidVideoCapturerDelegate {
+class AndroidVideoCapturerDelegate : public rtc::RefCountInterface {
  public:
   virtual ~AndroidVideoCapturerDelegate() {}
   // Start capturing. The implementation of the delegate must call
@@ -49,7 +50,7 @@ class AndroidVideoCapturerDelegate {
   virtual void Stop() = 0;
 
   // Notify that a frame received in OnIncomingFrame with |time_stamp| has been
-  // processed and can be returned.
+  // processed and can be returned. May be called on an arbitrary thread.
   virtual void ReturnBuffer(int64 time_stamp) = 0;
 
   // Must returns a JSON string "{{width=xxx, height=xxx, framerate = xxx}}"
@@ -61,7 +62,7 @@ class AndroidVideoCapturerDelegate {
 class AndroidVideoCapturer : public cricket::VideoCapturer {
  public:
   explicit AndroidVideoCapturer(
-      rtc::scoped_ptr<AndroidVideoCapturerDelegate> delegate);
+      const rtc::scoped_refptr<AndroidVideoCapturerDelegate>& delegate);
   virtual ~AndroidVideoCapturer();
 
   // Called from JNI when the capturer has been started.
@@ -87,13 +88,9 @@ class AndroidVideoCapturer : public cricket::VideoCapturer {
   bool GetPreferredFourccs(std::vector<uint32>* fourccs) override;
 
   bool running_;
-  rtc::scoped_ptr<AndroidVideoCapturerDelegate> delegate_;
+  rtc::scoped_refptr<AndroidVideoCapturerDelegate> delegate_;
 
-  // |worker_thread_| is the thread that calls Start and is used for
-  // communication with the Java capturer.
-  // Video frames are delivered to cricket::VideoCapturer::SignalFrameCaptured
-  // on this thread.
-  rtc::Thread* worker_thread_;
+  rtc::ThreadChecker thread_checker_;
 
   class FrameFactory;
   FrameFactory* frame_factory_;  // Owned by cricket::VideoCapturer.

@@ -11,6 +11,7 @@
 #ifndef WEBRTC_VIDEO_FRAME_BUFFER_H_
 #define WEBRTC_VIDEO_FRAME_BUFFER_H_
 
+#include "webrtc/base/callback.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
@@ -102,6 +103,43 @@ class TextureBuffer : public VideoFrameBuffer {
   const rtc::scoped_refptr<NativeHandle> native_handle_;
   const int width_;
   const int height_;
+};
+
+class WrappedI420Buffer : public webrtc::VideoFrameBuffer {
+ public:
+  WrappedI420Buffer(int desired_width,
+                    int desired_height,
+                    int width,
+                    int height,
+                    const uint8_t* y_plane,
+                    int y_stride,
+                    const uint8_t* u_plane,
+                    int u_stride,
+                    const uint8_t* v_plane,
+                    int v_stride,
+                    const rtc::Callback0<void>& no_longer_used);
+  int width() const override;
+  int height() const override;
+
+  const uint8_t* data(PlaneType type) const override;
+  uint8_t* data(PlaneType type) override;
+
+  int stride(PlaneType type) const override;
+  rtc::scoped_refptr<NativeHandle> native_handle() const override;
+
+ private:
+  friend class rtc::RefCountedObject<WrappedI420Buffer>;
+  ~WrappedI420Buffer() override;
+
+  int width_;
+  int height_;
+  const uint8_t* y_plane_;
+  const uint8_t* u_plane_;
+  const uint8_t* v_plane_;
+  const int y_stride_;
+  const int u_stride_;
+  const int v_stride_;
+  rtc::Callback0<void> no_longer_used_cb_;
 };
 
 }  // namespace webrtc

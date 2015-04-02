@@ -44,11 +44,10 @@ namespace webrtc_jni {
 class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
  public:
   static int SetAndroidObjects(JNIEnv* jni, jobject appliction_context);
-  ~AndroidVideoCapturerJni();
 
   // Creates a new instance of AndroidVideoCapturerJni. Returns a nullptr if
   // it can't be created. This happens if |device_name| is invalid.
-  static rtc::scoped_ptr<AndroidVideoCapturerJni> Create(
+  static rtc::scoped_refptr<AndroidVideoCapturerJni> Create(
       JNIEnv* jni,
       jobject j_video_capture, // Instance of VideoCapturerAndroid
       jstring device_name); // Name of the camera to use.
@@ -67,9 +66,11 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
                        int length,
                        int rotation,
                        int64 time_stamp);
+protected:
+  AndroidVideoCapturerJni(JNIEnv* jni, jobject j_video_capturer);
+  ~AndroidVideoCapturerJni();
 
 private:
-  AndroidVideoCapturerJni(JNIEnv* jni, jobject j_video_capturer);
   bool Init(jstring device_name);
 
   void OnCapturerStarted_w(bool success);
@@ -78,6 +79,7 @@ private:
                          int length,
                          int rotation,
                          int64 time_stamp);
+  void ReturnBuffer_w(int64 time_stamp);
 
   JNIEnv* jni();
 

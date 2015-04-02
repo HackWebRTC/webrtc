@@ -47,16 +47,15 @@ int AndroidVideoCapturerJni::SetAndroidObjects(JNIEnv* jni,
 }
 
 // static
-rtc::scoped_ptr<AndroidVideoCapturerJni>
+rtc::scoped_refptr<AndroidVideoCapturerJni>
 AndroidVideoCapturerJni::Create(JNIEnv* jni,
                                 jobject j_video_capture,
                                 jstring device_name) {
-  rtc::scoped_ptr<AndroidVideoCapturerJni> capturer(
-      new AndroidVideoCapturerJni(jni,
-                                  j_video_capture));
+  rtc::scoped_refptr<AndroidVideoCapturerJni> capturer(
+      new rtc::RefCountedObject<AndroidVideoCapturerJni>(jni, j_video_capture));
 
   if (capturer->Init(device_name))
-    return capturer.Pass();
+    return capturer;
   return nullptr;
 }
 
@@ -123,15 +122,19 @@ void AndroidVideoCapturerJni::Stop() {
   jni()->CallVoidMethod(*j_capturer_global_, m);
   CHECK_EXCEPTION(jni()) << "error during VideoCapturerAndroid.stopCapture";
   DeleteGlobalRef(jni(), j_frame_observer_);
-  // Do not process frames in flight after stop have returned since
-  // the memory buffers they point to have been deleted.
-  rtc::MessageQueueManager::Clear(&invoker_);
 }
 
 void AndroidVideoCapturerJni::ReturnBuffer(int64 time_stamp) {
+  invoker_.AsyncInvoke<void>(
+      thread_,
+      rtc::Bind(&AndroidVideoCapturerJni::ReturnBuffer_w, this, time_stamp));
+}
+
+void AndroidVideoCapturerJni::ReturnBuffer_w(int64 time_stamp) {
   jmethodID m = GetMethodID(jni(), *j_video_capturer_class_,
                             "returnBuffer", "(J)V");
   jni()->CallVoidMethod(*j_capturer_global_, m, time_stamp);
+  CHECK_EXCEPTION(jni()) << "error during VideoCapturerAndroid.returnBuffer";
 }
 
 std::string AndroidVideoCapturerJni::GetSupportedFormats() {
