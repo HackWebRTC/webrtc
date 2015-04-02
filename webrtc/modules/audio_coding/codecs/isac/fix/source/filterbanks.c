@@ -144,11 +144,11 @@ void WebRtcIsacfix_HighpassFilterFixDec32C(int16_t *io,
     c = in + ((a1 + b1) >> 7);  // Q0.
     io[k] = (int16_t)WebRtcSpl_SatW32ToW16(c);  // Write output as Q0.
 
-    c = WEBRTC_SPL_LSHIFT_W32((int32_t)in, 2) - a2 - b2;  // In Q2.
+    c = (in << 2) - a2 - b2;  // In Q2.
     c = (int32_t)WEBRTC_SPL_SAT(536870911, c, -536870912);
 
     state1 = state0;
-    state0 = WEBRTC_SPL_LSHIFT_W32(c, 2);  // Write state as Q4
+    state0 = c << 2;  // Write state as Q4
   }
   state[0] = state0;
   state[1] = state1;

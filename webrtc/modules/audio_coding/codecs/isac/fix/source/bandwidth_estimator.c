@@ -259,7 +259,7 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
 
     /* Check send time difference between this packet and previous received      */
     sendTimeDiff = sendTime - bweStr->prevSendTime;
-    if (sendTimeDiff <= WEBRTC_SPL_LSHIFT_W32(frameSizeSampl, 1)) {
+    if (sendTimeDiff <= frameSizeSampl * 2) {
 
       /* Only update if 3 seconds has past since last update */
       if ((arrivalTime - bweStr->lastUpdate) > FS3) {
@@ -324,8 +324,7 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
       if (!(bweStr->highSpeedSend && bweStr->highSpeedRec)) {
         if (arrTimeDiff > frameSizeSampl) {
           if (sendTimeDiff > 0) {
-            lateDiff = arrTimeDiff - sendTimeDiff -
-                WEBRTC_SPL_LSHIFT_W32(frameSizeSampl, 1);
+            lateDiff = arrTimeDiff - sendTimeDiff - frameSizeSampl * 2;
           } else {
             lateDiff = arrTimeDiff - frameSizeSampl;
           }
@@ -433,11 +432,11 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
 
         /* difference between projected and actual arrival time differences */
         /* Q9 (only shift arrTimeDiff by 5 to simulate divide by 16 (need to revisit if change sampling rate) DH */
-        if (WEBRTC_SPL_LSHIFT_W32(arrTimeDiff, 6) > (int32_t)arrTimeProj) {
-          arrTimeNoise = WEBRTC_SPL_LSHIFT_W32(arrTimeDiff, 6) -  arrTimeProj;
+        if ((arrTimeDiff << 6) > (int32_t)arrTimeProj) {
+          arrTimeNoise = (arrTimeDiff << 6) - arrTimeProj;
           sign = 1;
         } else {
-          arrTimeNoise = arrTimeProj - WEBRTC_SPL_LSHIFT_W32(arrTimeDiff, 6);
+          arrTimeNoise = arrTimeProj - (arrTimeDiff << 6);
           sign = -1;
         }
 
@@ -446,8 +445,8 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
 
         /* long term averaged absolute jitter, Q15 */
         weight >>= 3;
-        bweStr->recJitter = WEBRTC_SPL_MUL(weight, WEBRTC_SPL_LSHIFT_W32(arrTimeNoiseAbs, 5))
-            +  WEBRTC_SPL_MUL(1024 - weight, bweStr->recJitter);
+        bweStr->recJitter = weight * (arrTimeNoiseAbs << 5) +
+            (1024 - weight) * bweStr->recJitter;
 
         /* remove the fractional portion */
         bweStr->recJitter >>= 10;
@@ -459,13 +458,13 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
 
         /* short term averaged absolute jitter */
         /* Calculation in Q13 products in Q23 */
-        bweStr->recJitterShortTermAbs = WEBRTC_SPL_MUL(51, WEBRTC_SPL_LSHIFT_W32(arrTimeNoiseAbs, 3)) +
+        bweStr->recJitterShortTermAbs = 51 * (arrTimeNoiseAbs << 3) +
             WEBRTC_SPL_MUL(973, bweStr->recJitterShortTermAbs);
         bweStr->recJitterShortTermAbs >>= 10;
 
         /* short term averaged jitter */
         /* Calculation in Q13 products in Q23 */
-        bweStr->recJitterShortTerm = WEBRTC_SPL_MUL(205, WEBRTC_SPL_LSHIFT_W32(arrTimeNoise, 3)) * sign +
+        bweStr->recJitterShortTerm = 205 * (arrTimeNoise << 3) * sign +
             WEBRTC_SPL_MUL(3891, bweStr->recJitterShortTerm);
 
         if (bweStr->recJitterShortTerm < 0) {
@@ -557,7 +556,7 @@ int16_t WebRtcIsacfix_UpdateUplinkBwRec(BwEstimatorstr *bweStr,
     /* compute the jitter estimate as decoded on the other side in Q9 */
     /* sendMaxDelayAvg = 0.9 * sendMaxDelayAvg + 0.1 * MAX_ISAC_MD */
     bweStr->sendMaxDelayAvg = WEBRTC_SPL_MUL(461, bweStr->sendMaxDelayAvg) +
-        WEBRTC_SPL_MUL(51, WEBRTC_SPL_LSHIFT_W32((int32_t)MAX_ISAC_MD, 9));
+        51 * (MAX_ISAC_MD << 9);
     bweStr->sendMaxDelayAvg >>= 9;
 
   } else {
@@ -565,7 +564,7 @@ int16_t WebRtcIsacfix_UpdateUplinkBwRec(BwEstimatorstr *bweStr,
     /* compute the jitter estimate as decoded on the other side in Q9 */
     /* sendMaxDelayAvg = 0.9 * sendMaxDelayAvg + 0.1 * MIN_ISAC_MD */
     bweStr->sendMaxDelayAvg = WEBRTC_SPL_MUL(461, bweStr->sendMaxDelayAvg) +
-        WEBRTC_SPL_MUL(51, WEBRTC_SPL_LSHIFT_W32((int32_t)MIN_ISAC_MD,9));
+        51 * (MIN_ISAC_MD << 9);
     bweStr->sendMaxDelayAvg >>= 9;
 
   }
@@ -648,7 +647,7 @@ uint16_t WebRtcIsacfix_GetDownlinkBwIndexImpl(BwEstimatorstr *bweStr)
   tempTermX = WEBRTC_SPL_UMUL(461, bweStr->recBwAvgQ) - tempTerm1;
 
   /* rate in Q16 */
-  tempTermY = WEBRTC_SPL_LSHIFT_W32((int32_t)rate, 16);
+  tempTermY = rate << 16;
 
   /* 0.1 * kQRateTable[rateInd] = KQRate01[rateInd] */
   tempTerm1 = tempTermX + KQRate01[rateInd] - tempTermY;
@@ -690,7 +689,7 @@ uint16_t WebRtcIsacfix_GetDownlinkBwIndexImpl(BwEstimatorstr *bweStr)
   tempMax = 652800; /* MAX_ISAC_MD * 0.1 in Q18 */
   tempMin = 130560; /* MIN_ISAC_MD * 0.1 in Q18 */
   tempTermX = WEBRTC_SPL_MUL((int32_t)bweStr->recMaxDelayAvgQ, (int32_t)461);
-  tempTermY = WEBRTC_SPL_LSHIFT_W32((int32_t)maxDelay, 18);
+  tempTermY = maxDelay << 18;
 
   tempTerm1 = tempTermX + tempMax - tempTermY;
   tempTerm2 = tempTermY - tempTermX - tempMin;

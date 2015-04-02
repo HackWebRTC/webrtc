@@ -46,9 +46,7 @@ static int16_t plc_filterma_Fast(
 {
   int i, j;
   int32_t o;
-  int32_t lim;
-
-  lim = WEBRTC_SPL_LSHIFT_W32( (int32_t)1, 15 + rshift )-1;
+  int32_t lim = (1 << (15 + rshift)) - 1;
 
   for (i = 0; i < len; i++)
   {
@@ -517,8 +515,7 @@ int16_t WebRtcIsacfix_DecodePlcImpl(int16_t *signal_out16,
         (int16_t) (7) );
 
     for( i = 0; i < FRAMESAMPLES_HALF; i++ )
-      Vector_Word32_2[i] = WEBRTC_SPL_LSHIFT_W32(
-          (int32_t)Vector_Word16_Extended_2[i], rshift );
+      Vector_Word32_2[i] = Vector_Word16_Extended_2[i] << rshift;
 
     Vector_Word16_1 = Vector_Word16_Extended_1;
   }
