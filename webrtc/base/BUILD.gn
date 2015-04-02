@@ -375,7 +375,6 @@ static_library("rtc_base") {
       "sharedexclusivelock.h",
       "sslconfig.h",
       "sslroots.h",
-      "stringdigest.h",
       "testclient.cc",
       "testclient.h",
       "transformadapter.cc",

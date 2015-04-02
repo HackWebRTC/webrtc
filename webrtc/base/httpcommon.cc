@@ -24,10 +24,10 @@
 #include "webrtc/base/base64.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/cryptstring.h"
-#include "webrtc/base/httpcommon.h"
 #include "webrtc/base/httpcommon-inl.h"
+#include "webrtc/base/httpcommon.h"
+#include "webrtc/base/messagedigest.h"
 #include "webrtc/base/socketaddress.h"
-#include "webrtc/base/stringdigest.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 
