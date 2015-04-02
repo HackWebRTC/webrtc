@@ -130,8 +130,7 @@ void ProcessThreadImpl::PostTask(rtc::scoped_ptr<ProcessTask> task) {
 }
 
 void ProcessThreadImpl::RegisterModule(Module* module) {
-  // Allowed to be called on any thread.
-  // TODO(tommi): Disallow this ^^^
+  DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK(module);
 
 #if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
