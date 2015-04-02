@@ -1163,6 +1163,14 @@ void P2PTransportChannel::OnPing() {
 
 // Is the connection in a state for us to even consider pinging the other side?
 bool P2PTransportChannel::IsPingable(Connection* conn) {
+  const Candidate& remote = conn->remote_candidate();
+  // We should never get this far with an empty remote ufrag.
+  ASSERT(!remote.username().empty());
+  if (remote.username().empty() || remote.password().empty()) {
+    // If we don't have an ICE ufrag and pwd, there's no way we can ping.
+    return false;
+  }
+
   // An unconnected connection cannot be written to at all, so pinging is out
   // of the question.
   if (!conn->connected())

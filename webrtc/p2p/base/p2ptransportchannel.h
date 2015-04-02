@@ -154,6 +154,9 @@ class P2PTransportChannel : public TransportChannelImpl,
   // Helper method used only in unittest.
   rtc::DiffServCodePoint DefaultDscpValue() const;
 
+  // Public for unit tests.
+  Connection* FindNextPingableConnection();
+
  private:
   rtc::Thread* thread() { return worker_thread_; }
   PortAllocatorSession* allocator_session() {
@@ -182,7 +185,6 @@ class P2PTransportChannel : public TransportChannelImpl,
   void RememberRemoteCandidate(const Candidate& remote_candidate,
                                PortInterface* origin_port);
   bool IsPingable(Connection* conn);
-  Connection* FindNextPingableConnection();
   void PingConnection(Connection* conn);
   void AddAllocatorSession(PortAllocatorSession* session);
   void AddConnection(Connection* connection);

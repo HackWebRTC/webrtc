@@ -1267,7 +1267,11 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
                      PORTALLOCATOR_ENABLE_SHARED_UFRAG,
                      kDefaultStepDelay, kDefaultStepDelay,
                      cricket::ICEPROTO_RFC5245);
+  // Emulate no remote credentials coming in.
+  set_clear_remote_candidates_ufrag_pwd(false);
   CreateChannels(1);
+  // Only have remote credentials come in for ep2, not ep1.
+  ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[3], kIcePwd[3]);
 
   // Pause sending ep2's candidates to ep1 until ep1 receives the peer reflexive
   // candidate.
@@ -1279,11 +1283,20 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
   WAIT((best_connection = ep1_ch1()->best_connection()) != NULL, 2000);
   EXPECT_EQ("prflx", ep1_ch1()->best_connection()->remote_candidate().type());
 
+  // Because we don't have a remote pwd, we don't ping yet.
+  EXPECT_EQ(kIceUfrag[1],
+            ep1_ch1()->best_connection()->remote_candidate().username());
+  EXPECT_EQ("", ep1_ch1()->best_connection()->remote_candidate().password());
+  EXPECT_TRUE(nullptr == ep1_ch1()->FindNextPingableConnection());
+
   ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
   ResumeCandidates(1);
 
-  WAIT(ep2_ch1()->best_connection() != NULL, 2000);
+  EXPECT_EQ(kIcePwd[1],
+            ep1_ch1()->best_connection()->remote_candidate().password());
+  EXPECT_TRUE(nullptr != ep1_ch1()->FindNextPingableConnection());
 
+  WAIT(ep2_ch1()->best_connection() != NULL, 2000);
   // Verify ep1's best connection is updated to use the 'local' candidate.
   EXPECT_EQ_WAIT(
       "local",
@@ -1301,7 +1314,11 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
                      PORTALLOCATOR_ENABLE_SHARED_UFRAG,
                      kDefaultStepDelay, kDefaultStepDelay,
                      cricket::ICEPROTO_RFC5245);
+  // Emulate no remote credentials coming in.
+  set_clear_remote_candidates_ufrag_pwd(false);
   CreateChannels(1);
+  // Only have remote credentials come in for ep2, not ep1.
+  ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[3], kIcePwd[3]);
   // Pause sending ep2's candidates to ep1 until ep1 receives the peer reflexive
   // candidate.
   PauseCandidates(1);
@@ -1311,8 +1328,18 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
   WAIT(ep1_ch1()->best_connection() != NULL, 2000);
   EXPECT_EQ("prflx", ep1_ch1()->best_connection()->remote_candidate().type());
 
+  // Because we don't have a remote pwd, we don't ping yet.
+  EXPECT_EQ(kIceUfrag[1],
+            ep1_ch1()->best_connection()->remote_candidate().username());
+  EXPECT_EQ("", ep1_ch1()->best_connection()->remote_candidate().password());
+  EXPECT_TRUE(nullptr == ep1_ch1()->FindNextPingableConnection());
+
   ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
   ResumeCandidates(1);
+
+  EXPECT_EQ(kIcePwd[1],
+            ep1_ch1()->best_connection()->remote_candidate().password());
+  EXPECT_TRUE(nullptr != ep1_ch1()->FindNextPingableConnection());
 
   const cricket::Connection* best_connection = NULL;
   WAIT((best_connection = ep2_ch1()->best_connection()) != NULL, 2000);
