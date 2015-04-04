@@ -50,7 +50,7 @@ class ScopedAutoreleasePool {
 
   NSAutoreleasePool* pool_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(ScopedAutoreleasePool);
+  DISALLOW_COPY_AND_ASSIGN(ScopedAutoreleasePool);
 };
 
 }  // namespace rtc

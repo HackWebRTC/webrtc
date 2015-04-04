@@ -228,7 +228,7 @@ class StreamInterface : public MessageHandler {
   void OnMessage(Message* msg) override;
 
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(StreamInterface);
+  DISALLOW_COPY_AND_ASSIGN(StreamInterface);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -305,7 +305,7 @@ class StreamAdapterInterface : public StreamInterface,
  private:
   StreamInterface* stream_;
   bool owned_;
-  DISALLOW_EVIL_CONSTRUCTORS(StreamAdapterInterface);
+  DISALLOW_COPY_AND_ASSIGN(StreamAdapterInterface);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -337,7 +337,7 @@ class StreamTap : public StreamAdapterInterface {
   scoped_ptr<StreamInterface> tap_;
   StreamResult tap_result_;
   int tap_error_;
-  DISALLOW_EVIL_CONSTRUCTORS(StreamTap);
+  DISALLOW_COPY_AND_ASSIGN(StreamTap);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -367,7 +367,7 @@ class StreamSegment : public StreamAdapterInterface {
 
  private:
   size_t start_, pos_, length_;
-  DISALLOW_EVIL_CONSTRUCTORS(StreamSegment);
+  DISALLOW_COPY_AND_ASSIGN(StreamSegment);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -445,7 +445,7 @@ class FileStream : public StreamInterface {
   FILE* file_;
 
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(FileStream);
+  DISALLOW_COPY_AND_ASSIGN(FileStream);
 };
 
 // A stream that caps the output at a certain size, dropping content from the
@@ -517,7 +517,7 @@ class AsyncWriteStream : public StreamInterface {
   mutable CriticalSection crit_stream_;
   CriticalSection crit_buffer_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(AsyncWriteStream);
+  DISALLOW_COPY_AND_ASSIGN(AsyncWriteStream);
 };
 
 
@@ -592,7 +592,7 @@ class MemoryStreamBase : public StreamInterface {
   size_t seek_position_;
 
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(MemoryStreamBase);
+  DISALLOW_COPY_AND_ASSIGN(MemoryStreamBase);
 };
 
 // MemoryStream dynamically resizes to accomodate written data.
@@ -690,7 +690,7 @@ class FifoBuffer : public StreamInterface {
   size_t read_position_;  // offset to the readable data
   Thread* owner_;  // stream callbacks are dispatched on this thread
   mutable CriticalSection crit_;  // object lock
-  DISALLOW_EVIL_CONSTRUCTORS(FifoBuffer);
+  DISALLOW_COPY_AND_ASSIGN(FifoBuffer);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -721,7 +721,7 @@ class LoggingAdapter : public StreamAdapterInterface {
   bool hex_mode_;
   LogMultilineState lms_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(LoggingAdapter);
+  DISALLOW_COPY_AND_ASSIGN(LoggingAdapter);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -804,7 +804,7 @@ class StreamReference : public StreamAdapterInterface {
     StreamInterface* stream_;
     int ref_count_;
     CriticalSection cs_;
-    DISALLOW_EVIL_CONSTRUCTORS(StreamRefCount);
+    DISALLOW_COPY_AND_ASSIGN(StreamRefCount);
   };
 
   // Constructor for adding references
@@ -812,7 +812,7 @@ class StreamReference : public StreamAdapterInterface {
                            StreamInterface* stream);
 
   StreamRefCount* stream_ref_count_;
-  DISALLOW_EVIL_CONSTRUCTORS(StreamReference);
+  DISALLOW_COPY_AND_ASSIGN(StreamReference);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

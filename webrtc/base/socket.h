@@ -180,7 +180,7 @@ class Socket {
   Socket() {}
 
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(Socket);
+  DISALLOW_COPY_AND_ASSIGN(Socket);
 };
 
 }  // namespace rtc

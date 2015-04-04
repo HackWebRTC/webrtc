@@ -150,7 +150,7 @@ class TransportChannel : public sigslot::has_slots<> {
   bool readable_;
   bool writable_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(TransportChannel);
+  DISALLOW_COPY_AND_ASSIGN(TransportChannel);
 };
 
 }  // namespace cricket

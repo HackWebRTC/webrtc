@@ -106,7 +106,7 @@ class SecureTunnelSessionClient : public TunnelSessionClient {
   // and used for SSL authentication.
   rtc::scoped_ptr<rtc::SSLIdentity> identity_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(SecureTunnelSessionClient);
+  DISALLOW_COPY_AND_ASSIGN(SecureTunnelSessionClient);
 };
 
 // SecureTunnelSession:
@@ -157,7 +157,7 @@ class SecureTunnelSession : public TunnelSession {
   // later.
   rtc::scoped_ptr<rtc::StreamReference> ssl_stream_reference_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(SecureTunnelSession);
+  DISALLOW_COPY_AND_ASSIGN(SecureTunnelSession);
 };
 
 }  // namespace cricket

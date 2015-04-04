@@ -225,7 +225,7 @@ class LogMessage {
   // are we in diagnostic mode (as defined by the app)?
   static bool is_diagnostic_mode_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(LogMessage);
+  DISALLOW_COPY_AND_ASSIGN(LogMessage);
 };
 
 //////////////////////////////////////////////////////////////////////

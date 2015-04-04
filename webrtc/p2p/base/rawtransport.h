@@ -36,7 +36,7 @@ class RawTransport : public Transport {
  private:
   friend class RawTransportChannel;  // For ParseAddress.
 
-  DISALLOW_EVIL_CONSTRUCTORS(RawTransport);
+  DISALLOW_COPY_AND_ASSIGN(RawTransport);
 };
 
 }  // namespace cricket

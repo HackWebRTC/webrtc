@@ -261,7 +261,7 @@ class WindowsCommandLineArguments {
   char **argv_;
 
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(WindowsCommandLineArguments);
+  DISALLOW_COPY_AND_ASSIGN(WindowsCommandLineArguments);
 };
 #endif  // WEBRTC_WIN 
 

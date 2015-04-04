@@ -130,7 +130,7 @@ class AsyncPacketSocket : public sigslot::has_slots<> {
   sigslot::signal2<AsyncPacketSocket*, AsyncPacketSocket*> SignalNewConnection;
 
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(AsyncPacketSocket);
+  DISALLOW_COPY_AND_ASSIGN(AsyncPacketSocket);
 };
 
 }  // namespace rtc

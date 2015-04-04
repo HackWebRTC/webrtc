@@ -41,7 +41,7 @@ class RawTransportParser : public TransportParser {
                        rtc::SocketAddress* addr,
                        ParseError* error);
 
-  DISALLOW_EVIL_CONSTRUCTORS(RawTransportParser);
+  DISALLOW_COPY_AND_ASSIGN(RawTransportParser);
 };
 
 }  // namespace cricket

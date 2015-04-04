@@ -139,7 +139,7 @@ class ProcessEnumerator : public ToolhelpEnumeratorBase<ToolhelpProcessTraits> {
   }
 
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(ProcessEnumerator);
+  DISALLOW_COPY_AND_ASSIGN(ProcessEnumerator);
 };
 
 class ToolhelpModuleTraits : public ToolhelpTraits {
@@ -164,7 +164,7 @@ class ModuleEnumerator : public ToolhelpEnumeratorBase<ToolhelpModuleTraits> {
   }
 
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(ModuleEnumerator);
+  DISALLOW_COPY_AND_ASSIGN(ModuleEnumerator);
 };
 
 }  // namespace rtc

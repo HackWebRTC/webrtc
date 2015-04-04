@@ -45,7 +45,7 @@ class OpenSSLKeyPair {
 
   EVP_PKEY* pkey_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(OpenSSLKeyPair);
+  DISALLOW_COPY_AND_ASSIGN(OpenSSLKeyPair);
 };
 
 // OpenSSLCertificate encapsulates an OpenSSL X509* certificate object,
@@ -92,7 +92,7 @@ class OpenSSLCertificate : public SSLCertificate {
 
   X509* x509_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(OpenSSLCertificate);
+  DISALLOW_COPY_AND_ASSIGN(OpenSSLCertificate);
 };
 
 // Holds a keypair and certificate together, and a method to generate
@@ -119,7 +119,7 @@ class OpenSSLIdentity : public SSLIdentity {
   scoped_ptr<OpenSSLKeyPair> key_pair_;
   scoped_ptr<OpenSSLCertificate> certificate_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(OpenSSLIdentity);
+  DISALLOW_COPY_AND_ASSIGN(OpenSSLIdentity);
 };
 
 

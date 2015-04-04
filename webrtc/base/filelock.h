@@ -45,7 +45,7 @@ class FileLock {
   std::string path_;
   scoped_ptr<FileStream> file_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(FileLock);
+  DISALLOW_COPY_AND_ASSIGN(FileLock);
 };
 
 }  // namespace rtc

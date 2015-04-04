@@ -53,7 +53,7 @@ class TaskParent {
   bool child_error_;
   typedef std::set<Task *> ChildSet;
   scoped_ptr<ChildSet> children_;
-  DISALLOW_EVIL_CONSTRUCTORS(TaskParent);
+  DISALLOW_COPY_AND_ASSIGN(TaskParent);
 };
 
 

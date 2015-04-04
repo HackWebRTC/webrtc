@@ -55,7 +55,7 @@ class ProxyBinding : public sigslot::has_slots<> {
   bool connected_;
   FifoBuffer out_buffer_;
   FifoBuffer in_buffer_;
-  DISALLOW_EVIL_CONSTRUCTORS(ProxyBinding);
+  DISALLOW_COPY_AND_ASSIGN(ProxyBinding);
 };
 
 class ProxyServer : public sigslot::has_slots<> {
@@ -75,7 +75,7 @@ class ProxyServer : public sigslot::has_slots<> {
   SocketAddress ext_ip_;
   scoped_ptr<AsyncSocket> server_socket_;
   BindingList bindings_;
-  DISALLOW_EVIL_CONSTRUCTORS(ProxyServer);
+  DISALLOW_COPY_AND_ASSIGN(ProxyServer);
 };
 
 // SocksProxyServer is a simple extension of ProxyServer to implement SOCKS.
@@ -87,7 +87,7 @@ class SocksProxyServer : public ProxyServer {
   }
  protected:
   AsyncProxyServerSocket* WrapSocket(AsyncSocket* socket) override;
-  DISALLOW_EVIL_CONSTRUCTORS(SocksProxyServer);
+  DISALLOW_COPY_AND_ASSIGN(SocksProxyServer);
 };
 
 }  // namespace rtc

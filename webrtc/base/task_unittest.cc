@@ -308,7 +308,7 @@ class AbortTask : public Task {
     return STATE_NEXT;
   }
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(AbortTask);
+  DISALLOW_COPY_AND_ASSIGN(AbortTask);
 };
 
 class TaskAbortTest : public sigslot::has_slots<> {
@@ -333,7 +333,7 @@ class TaskAbortTest : public sigslot::has_slots<> {
   }
 
   MyTaskRunner task_runner_;
-  DISALLOW_EVIL_CONSTRUCTORS(TaskAbortTest);
+  DISALLOW_COPY_AND_ASSIGN(TaskAbortTest);
 };
 
 TEST(start_task_test, Abort) {
@@ -363,7 +363,7 @@ class SetBoolOnDeleteTask : public Task {
 
  private:
   bool* set_when_deleted_;
-  DISALLOW_EVIL_CONSTRUCTORS(SetBoolOnDeleteTask);
+  DISALLOW_COPY_AND_ASSIGN(SetBoolOnDeleteTask);
 };
 
 class AbortShouldWakeTest : public sigslot::has_slots<> {
@@ -396,7 +396,7 @@ class AbortShouldWakeTest : public sigslot::has_slots<> {
   }
 
   MyTaskRunner task_runner_;
-  DISALLOW_EVIL_CONSTRUCTORS(AbortShouldWakeTest);
+  DISALLOW_COPY_AND_ASSIGN(AbortShouldWakeTest);
 };
 
 TEST(start_task_test, AbortShouldWake) {
@@ -477,7 +477,7 @@ class TimeoutChangeTest : public sigslot::has_slots<> {
   MyTaskRunner task_runner_;
   StuckTask* (stuck_tasks_[3]);
   int task_count_;
-  DISALLOW_EVIL_CONSTRUCTORS(TimeoutChangeTest);
+  DISALLOW_COPY_AND_ASSIGN(TimeoutChangeTest);
 };
 
 TEST(start_task_test, TimeoutChange) {
@@ -494,7 +494,7 @@ class DeleteTestTaskRunner : public TaskRunner {
     return GetCurrentTime();
   }
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(DeleteTestTaskRunner);
+  DISALLOW_COPY_AND_ASSIGN(DeleteTestTaskRunner);
 };
 
 TEST(unstarted_task_test, DeleteTask) {

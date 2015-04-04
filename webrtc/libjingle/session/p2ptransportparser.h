@@ -59,7 +59,7 @@ class P2PTransportParser : public TransportParser {
                             const std::string& username,
                             ParseError* error);
 
-  DISALLOW_EVIL_CONSTRUCTORS(P2PTransportParser);
+  DISALLOW_COPY_AND_ASSIGN(P2PTransportParser);
 };
 
 }  // namespace cricket

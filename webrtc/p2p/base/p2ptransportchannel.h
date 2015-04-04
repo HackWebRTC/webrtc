@@ -242,7 +242,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   uint64 tiebreaker_;
   uint32 remote_candidate_generation_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(P2PTransportChannel);
+  DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };
 
 }  // namespace cricket

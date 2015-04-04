@@ -440,7 +440,7 @@ class Transport : public rtc::MessageHandler,
   // Protects changes to channels and messages
   rtc::CriticalSection crit_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(Transport);
+  DISALLOW_COPY_AND_ASSIGN(Transport);
 };
 
 // Extract a TransportProtocol from a TransportDescription.

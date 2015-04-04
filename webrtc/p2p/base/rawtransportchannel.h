@@ -189,7 +189,7 @@ class RawTransportChannel : public TransportChannelImpl,
   // Handles a message to destroy unused ports.
   virtual void OnMessage(rtc::Message *msg);
 
-  DISALLOW_EVIL_CONSTRUCTORS(RawTransportChannel);
+  DISALLOW_COPY_AND_ASSIGN(RawTransportChannel);
 };
 
 }  // namespace cricket

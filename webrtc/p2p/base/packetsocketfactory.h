@@ -50,7 +50,7 @@ class PacketSocketFactory {
   virtual AsyncResolverInterface* CreateAsyncResolver() = 0;
 
  private:
-  DISALLOW_EVIL_CONSTRUCTORS(PacketSocketFactory);
+  DISALLOW_COPY_AND_ASSIGN(PacketSocketFactory);
 };
 
 }  // namespace rtc

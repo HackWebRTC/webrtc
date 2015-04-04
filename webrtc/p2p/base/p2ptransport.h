@@ -31,7 +31,7 @@ class P2PTransport : public Transport {
 
   friend class P2PTransportChannel;
 
-  DISALLOW_EVIL_CONSTRUCTORS(P2PTransport);
+  DISALLOW_COPY_AND_ASSIGN(P2PTransport);
 };
 
 }  // namespace cricket

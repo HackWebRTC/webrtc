@@ -54,7 +54,7 @@ class NATSocketFactory : public SocketFactory, public NATInternalSocketFactory {
  private:
   SocketFactory* factory_;
   SocketAddress nat_addr_;
-  DISALLOW_EVIL_CONSTRUCTORS(NATSocketFactory);
+  DISALLOW_COPY_AND_ASSIGN(NATSocketFactory);
 };
 
 // Creates sockets that will send traffic through a NAT depending on what
@@ -151,7 +151,7 @@ class NATSocketServer : public SocketServer, public NATInternalSocketFactory {
   SocketServer* server_;
   MessageQueue* msg_queue_;
   TranslatorMap nats_;
-  DISALLOW_EVIL_CONSTRUCTORS(NATSocketServer);
+  DISALLOW_COPY_AND_ASSIGN(NATSocketServer);
 };
 
 // Free-standing NAT helper functions.
