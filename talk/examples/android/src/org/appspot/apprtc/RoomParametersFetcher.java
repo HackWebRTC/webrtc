@@ -37,7 +37,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.IceCandidate;
-import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
 import org.webrtc.SessionDescription;
 
@@ -170,18 +169,8 @@ public class RoomParametersFetcher {
         }
       }
 
-      MediaConstraints pcConstraints = constraintsFromJSON(roomJson.getString("pc_constraints"));
-      Log.d(TAG, "pcConstraints: " + pcConstraints);
-      MediaConstraints videoConstraints = constraintsFromJSON(
-          getAVConstraints("video", roomJson.getString("media_constraints")));
-      Log.d(TAG, "videoConstraints: " + videoConstraints);
-      MediaConstraints audioConstraints = constraintsFromJSON(
-          getAVConstraints("audio", roomJson.getString("media_constraints")));
-      Log.d(TAG, "audioConstraints: " + audioConstraints);
-
       SignalingParameters params = new SignalingParameters(
           iceServers, initiator,
-          pcConstraints, videoConstraints, audioConstraints,
           clientId, wssUrl, wssPostUrl,
           offerSdp, iceCandidates);
       events.onSignalingParametersReady(params);
@@ -191,59 +180,6 @@ public class RoomParametersFetcher {
     } catch (IOException e) {
       events.onSignalingParametersError("Room IO error: " + e.toString());
     }
-  }
-
-  // Return the constraints specified for |type| of "audio" or "video" in
-  // |mediaConstraintsString|.
-  private String getAVConstraints (
-      String type, String mediaConstraintsString) throws JSONException {
-    JSONObject json = new JSONObject(mediaConstraintsString);
-    // Tricky handling of values that are allowed to be (boolean or
-    // MediaTrackConstraints) by the getUserMedia() spec.  There are three
-    // cases below.
-    if (!json.has(type) || !json.optBoolean(type, true)) {
-      // Case 1: "audio"/"video" is not present, or is an explicit "false"
-      // boolean.
-      return null;
-    }
-    if (json.optBoolean(type, false)) {
-      // Case 2: "audio"/"video" is an explicit "true" boolean.
-      return "{\"mandatory\": {}, \"optional\": []}";
-    }
-    // Case 3: "audio"/"video" is an object.
-    return json.getJSONObject(type).toString();
-  }
-
-  private MediaConstraints constraintsFromJSON(String jsonString)
-      throws JSONException {
-    if (jsonString == null) {
-      return null;
-    }
-    MediaConstraints constraints = new MediaConstraints();
-    JSONObject json = new JSONObject(jsonString);
-    JSONObject mandatoryJSON = json.optJSONObject("mandatory");
-    if (mandatoryJSON != null) {
-      JSONArray mandatoryKeys = mandatoryJSON.names();
-      if (mandatoryKeys != null) {
-        for (int i = 0; i < mandatoryKeys.length(); ++i) {
-          String key = mandatoryKeys.getString(i);
-          String value = mandatoryJSON.getString(key);
-          constraints.mandatory.add(
-              new MediaConstraints.KeyValuePair(key, value));
-        }
-      }
-    }
-    JSONArray optionalJSON = json.optJSONArray("optional");
-    if (optionalJSON != null) {
-      for (int i = 0; i < optionalJSON.length(); ++i) {
-        JSONObject keyValueDict = optionalJSON.getJSONObject(i);
-        String key = keyValueDict.names().getString(0);
-        String value = keyValueDict.getString(key);
-        constraints.optional.add(
-            new MediaConstraints.KeyValuePair(key, value));
-      }
-    }
-    return constraints;
   }
 
   // Requests & returns a TURN ICE Server based on a request URL.  Must be run

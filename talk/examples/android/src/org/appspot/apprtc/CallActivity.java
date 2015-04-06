@@ -383,7 +383,7 @@ public class CallActivity extends Activity
         if (peerConnectionClient == null) {
           final long delta = System.currentTimeMillis() - callStartedTimeMs;
           Log.d(TAG, "Creating peer connection factory, delay=" + delta + "ms");
-          peerConnectionClient = new PeerConnectionClient();
+          peerConnectionClient = PeerConnectionClient.getInstance();
           peerConnectionClient.createPeerConnectionFactory(CallActivity.this,
               VideoRendererGui.getEGLContext(), peerConnectionParameters,
               CallActivity.this);

@@ -127,7 +127,7 @@ public class WebSocketChannelClient {
     this.roomID = roomID;
     this.clientID = clientID;
     if (state != WebSocketConnectionState.CONNECTED) {
-      Log.d(TAG, "WebSocket register() in state " + state);
+      Log.w(TAG, "WebSocket register() in state " + state);
       return;
     }
     Log.d(TAG, "Registering WebSocket for room " + roomID + ". CLientID: " + clientID);
@@ -190,17 +190,16 @@ public class WebSocketChannelClient {
     checkIfCalledOnValidThread();
     Log.d(TAG, "Disonnect WebSocket. State: " + state);
     if (state == WebSocketConnectionState.REGISTERED) {
+      // Send "bye" to WebSocket server.
       send("{\"type\": \"bye\"}");
       state = WebSocketConnectionState.CONNECTED;
+      // Send http DELETE to http WebSocket server.
+      sendWSSMessage("DELETE", "");
     }
     // Close WebSocket in CONNECTED or ERROR states only.
     if (state == WebSocketConnectionState.CONNECTED
         || state == WebSocketConnectionState.ERROR) {
       ws.disconnect();
-
-      // Send DELETE to http WebSocket server.
-      sendWSSMessage("DELETE", "");
-
       state = WebSocketConnectionState.CLOSED;
 
       // Wait for websocket close event to prevent websocket library from

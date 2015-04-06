@@ -61,7 +61,6 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
   private static final String VIDEO_CODEC_VP9 = "VP9";
   private static final String VIDEO_CODEC_H264 = "H264";
   private static final int AUDIO_RUN_TIMEOUT = 1000;
-  private static final String DTLS_SRTP_KEY_AGREEMENT_CONSTRAINT = "DtlsSrtpKeyAgreement";
   private static final String LOCAL_RENDERER_NAME = "Local renderer";
   private static final String REMOTE_RENDERER_NAME = "Remote renderer";
 
@@ -127,17 +126,6 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
         throws InterruptedException {
       doneRendering.await(timeoutMs, TimeUnit.MILLISECONDS);
       return (doneRendering.getCount() <= 0);
-    }
-  }
-
-  // Test instance of the PeerConnectionClient class that overrides the options
-  // for the factory so we can run the test without an Internet connection.
-  class TestPeerConnectionClient extends PeerConnectionClient {
-    protected void configureFactory(PeerConnectionFactory factory) {
-      PeerConnectionFactory.Options options =
-          new PeerConnectionFactory.Options();
-      options.networkIgnoreMask = 0;
-      factory.setOptions(options);
     }
   }
 
@@ -251,33 +239,25 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     }
   }
 
-  private SignalingParameters getTestSignalingParameters() {
-    List<PeerConnection.IceServer> iceServers =
-        new LinkedList<PeerConnection.IceServer>();
-    MediaConstraints pcConstraints = new MediaConstraints();
-    pcConstraints.optional.add(
-        new MediaConstraints.KeyValuePair(DTLS_SRTP_KEY_AGREEMENT_CONSTRAINT, "false"));
-    MediaConstraints videoConstraints = new MediaConstraints();
-    MediaConstraints audioConstraints = new MediaConstraints();
-    SignalingParameters signalingParameters = new SignalingParameters(
-        iceServers, true,
-        pcConstraints, videoConstraints, audioConstraints,
-        null, null, null,
-        null, null);
-    return signalingParameters;
-  }
-
   PeerConnectionClient createPeerConnectionClient(
       MockRenderer localRenderer, MockRenderer remoteRenderer,
       boolean enableVideo, String videoCodec) {
-    SignalingParameters signalingParameters = getTestSignalingParameters();
+    List<PeerConnection.IceServer> iceServers =
+        new LinkedList<PeerConnection.IceServer>();
+    SignalingParameters signalingParameters = new SignalingParameters(
+        iceServers, true, // iceServers, initiator.
+        null, null, null, // clientId, wssUrl, wssPostUrl.
+        null, null); // offerSdp, iceCandidates.
     PeerConnectionParameters peerConnectionParameters =
         new PeerConnectionParameters(
             enableVideo, true, // videoCallEnabled, loopback.
             0, 0, 0, 0, videoCodec, true, // video codec parameters.
             0, "OPUS", true); // audio codec parameters.
 
-    PeerConnectionClient client = new TestPeerConnectionClient();
+    PeerConnectionClient client = PeerConnectionClient.getInstance();
+    PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
+    options.networkIgnoreMask = 0;
+    client.setPeerConnectionFactoryOptions(options);
     client.createPeerConnectionFactory(
         getInstrumentation().getContext(), null,
         peerConnectionParameters, this);

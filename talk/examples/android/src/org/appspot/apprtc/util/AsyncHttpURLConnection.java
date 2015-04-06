@@ -45,6 +45,7 @@ public class AsyncHttpURLConnection {
   private final String url;
   private final String message;
   private final AsyncHttpEvents events;
+  private String contentType;
 
   /**
    * Http requests callbacks.
@@ -60,6 +61,10 @@ public class AsyncHttpURLConnection {
     this.url = url;
     this.message = message;
     this.events = events;
+  }
+
+  public void setContentType(String contentType) {
+    this.contentType = contentType;
   }
 
   public void send() {
@@ -92,8 +97,11 @@ public class AsyncHttpURLConnection {
         connection.setDoOutput(true);
         connection.setFixedLengthStreamingMode(postData.length);
       }
-      connection.setRequestProperty(
-          "content-type", "text/plain; charset=utf-8");
+      if (contentType == null) {
+        connection.setRequestProperty("Content-Type", "text/plain; charset=utf-8");
+      } else {
+        connection.setRequestProperty("Content-Type", contentType);
+      }
 
       // Send POST request.
       if (doOutput && postData.length > 0) {
@@ -105,9 +113,9 @@ public class AsyncHttpURLConnection {
       // Get response.
       int responseCode = connection.getResponseCode();
       if (responseCode != 200) {
-        connection.disconnect();
         events.onHttpError("Non-200 response to " + method + " to URL: "
             + url + " : " + connection.getHeaderField(null));
+        connection.disconnect();
         return;
       }
       InputStream responseStream = connection.getInputStream();

@@ -113,7 +113,8 @@ class CpuMonitor {
         Scanner scanner = new Scanner(rdr).useDelimiter("[-\n]");
         scanner.nextInt();  // Skip leading number 0.
         cpusPresent = 1 + scanner.nextInt();
-      } catch (InputMismatchException e) {
+        scanner.close();
+      } catch (Exception e) {
         Log.e(TAG, "Cannot do CPU stats due to /sys/devices/system/cpu/present parsing problem");
       } finally {
         fin.close();
@@ -264,7 +265,8 @@ class CpuMonitor {
         BufferedReader rdr = new BufferedReader(fin);
         Scanner scannerC = new Scanner(rdr);
         number = scannerC.nextLong();
-      } catch (InputMismatchException e) {
+        scannerC.close();
+      } catch (Exception e) {
         // CPU presumably got offline just after we opened file.
       } finally {
         fin.close();
@@ -295,7 +297,8 @@ class CpuMonitor {
         long sys = scanner.nextLong();
         runTime = user + nice + sys;
         idleTime = scanner.nextLong();
-      } catch (InputMismatchException e) {
+        scanner.close();
+      } catch (Exception e) {
         Log.e(TAG, "Problems parsing /proc/stat");
         return null;
       } finally {
