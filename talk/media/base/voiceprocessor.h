@@ -28,11 +28,12 @@
 #ifndef TALK_MEDIA_BASE_VOICEPROCESSOR_H_
 #define TALK_MEDIA_BASE_VOICEPROCESSOR_H_
 
-#include "talk/media/base/audioframe.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/sigslot.h"
 
 namespace cricket {
+
+class AudioFrame;
 
 enum MediaProcessorDirection {
     MPD_INVALID = 0,

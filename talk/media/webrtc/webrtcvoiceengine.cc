@@ -38,6 +38,7 @@
 #include <string>
 #include <vector>
 
+#include "talk/media/base/audioframe.h"
 #include "talk/media/base/audiorenderer.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/streamparams.h"
