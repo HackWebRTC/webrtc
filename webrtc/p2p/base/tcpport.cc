@@ -8,6 +8,62 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+/*
+ *  This is a diagram of how TCP reconnect works for the active side. The
+ *  passive side just waits for an incoming connection.
+ *
+ *  - Connected: Indicate whether the TCP socket is connected.
+ *
+ *  - Writable: Whether the stun binding is completed. Sending a data packet
+ *    before stun binding completed will trigger IPC socket layer to shutdown
+ *    the connection.
+ *
+ *  - PendingTCP: |connection_pending_| indicates whether there is an
+ *    outstanding TCP connection in progress.
+ *
+ *  - PretendWri: Tracked by |pretending_to_be_writable_|. Marking connection as
+ *    WRITE_TIMEOUT will cause the connection be deleted. Instead, we're
+ *    "pretending" we're still writable for a period of time such that reconnect
+ *    could work.
+ *
+ *  Data could only be sent in state 3. Sening data during state 2 & 6 will get
+ *  EWOULDBLOCK, 4 & 5 EPIPE.
+ *
+ *                          7 -------------+
+ *                          |Connected: N  |
+ *         Timeout          |Writable:  N  |     Timeout
+ *     +------------------->|Connection is |<----------------+
+ *     |                    |Dead          |                 |
+ *     |                    +--------------+                 |
+ *     |                               ^                     |
+ *     |            OnClose            |                     |
+ *     |    +-----------------------+  |                     |
+ *     |    |                       |  |Timeout              |
+ *     |    v                       |  |                     |
+ *   4 +----------+          5 -----+--+--+           6 -----+-----+
+ *   |Connected: N|Send() or |Connected: N|           |Connected: Y|
+ *   |Writable:  Y|Ping()    |Writable:  Y|OnConnect  |Writable:  Y|
+ *   |PendingTCP:N+--------> |PendingTCP:Y+---------> |PendingTCP:N|
+ *   |PretendWri:Y|          |PretendWri:Y|           |PretendWri:Y|
+ *   +-----+------+          +------------+           +---+--+-----+
+ *     ^   ^                                              |  |
+ *     |   |                     OnClose                  |  |
+ *     |   +----------------------------------------------+  |
+ *     |                                                     |
+ *     |                              Stun Binding Completed |
+ *     |                                                     |
+ *     |                    OnClose                          |
+ *     +------------------------------------------------+    |
+ *                                                      |    v
+ *  1 -----------+           2 -----------+Stun      3 -----------+
+ *  |Connected: N|           |Connected: Y|Binding   |Connected: Y|
+ *  |Writable:  N|OnConnect  |Writable:  N|Completed |Writable:  Y|
+ *  |PendingTCP:Y+---------> |PendingTCP:N+--------> |PendingTCP:N|
+ *  |PretendWri:N|           |PretendWri:N|          |PretendWri:N|
+ *  +------------+           +------------+          +------------+
+ *
+ */
+
 #include "webrtc/p2p/base/tcpport.h"
 
 #include "webrtc/p2p/base/common.h"
@@ -134,7 +190,16 @@ int TCPPort::SendTo(const void* data, size_t size,
                     const rtc::PacketOptions& options,
                     bool payload) {
   rtc::AsyncPacketSocket * socket = NULL;
-  if (TCPConnection * conn = static_cast<TCPConnection*>(GetConnection(addr))) {
+  TCPConnection* conn = static_cast<TCPConnection*>(GetConnection(addr));
+
+  // For Connection, this is the code path used by Ping() to establish
+  // WRITABLE. It has to send through the socket directly as TCPConnection::Send
+  // checks writability.
+  if (conn) {
+    if (!conn->connected()) {
+      conn->MaybeReconnect();
+      return SOCKET_ERROR;
+    }
     socket = conn->socket();
   } else {
     socket = GetIncoming(addr);
@@ -142,12 +207,15 @@ int TCPPort::SendTo(const void* data, size_t size,
   if (!socket) {
     LOG_J(LS_ERROR, this) << "Attempted to send to an unknown destination, "
                           << addr.ToSensitiveString();
-    return -1;  // TODO: Set error_
+    return SOCKET_ERROR;  // TODO(tbd): Set error_
   }
 
   int sent = socket->Send(data, size, options);
   if (sent < 0) {
     error_ = socket->GetError();
+    // Error from this code path for a Connection (instead of from a bare
+    // socket) will not trigger reconnecting. In theory, this shouldn't matter
+    // as OnClose should always be called and set connected to false.
     LOG_J(LS_ERROR, this) << "TCP send of " << size
                           << " bytes failed with error " << error_;
   }
@@ -222,42 +290,29 @@ void TCPPort::OnAddressReady(rtc::AsyncPacketSocket* socket,
              ICE_TYPE_PREFERENCE_HOST_TCP, 0, true);
 }
 
-TCPConnection::TCPConnection(TCPPort* port, const Candidate& candidate,
+TCPConnection::TCPConnection(TCPPort* port,
+                             const Candidate& candidate,
                              rtc::AsyncPacketSocket* socket)
-    : Connection(port, 0, candidate), socket_(socket), error_(0) {
-  bool outgoing = (socket_ == NULL);
-  if (outgoing) {
-    // TODO: Handle failures here (unlikely since TCP).
-    int opts = (candidate.protocol() == SSLTCP_PROTOCOL_NAME) ?
-        rtc::PacketSocketFactory::OPT_SSLTCP : 0;
-    socket_ = port->socket_factory()->CreateClientTcpSocket(
-        rtc::SocketAddress(port->ip(), 0),
-        candidate.address(), port->proxy(), port->user_agent(), opts);
-    if (socket_) {
-      LOG_J(LS_VERBOSE, this) << "Connecting from "
-                              << socket_->GetLocalAddress().ToSensitiveString()
-                              << " to "
-                              << candidate.address().ToSensitiveString();
-      set_connected(false);
-      socket_->SignalConnect.connect(this, &TCPConnection::OnConnect);
-    } else {
-      LOG_J(LS_WARNING, this) << "Failed to create connection to "
-                              << candidate.address().ToSensitiveString();
-    }
+    : Connection(port, 0, candidate),
+      socket_(socket),
+      error_(0),
+      outgoing_(socket == NULL),
+      connection_pending_(false),
+      pretending_to_be_writable_(false),
+      reconnection_timeout_(cricket::CONNECTION_WRITE_CONNECT_TIMEOUT) {
+  if (outgoing_) {
+    CreateOutgoingTcpSocket();
   } else {
     // Incoming connections should match the network address.
+    LOG_J(LS_VERBOSE, this)
+        << "socket ipaddr: " << socket_->GetLocalAddress().ToString()
+        << ",port() ip:" << port->ip().ToString();
     ASSERT(socket_->GetLocalAddress().ipaddr() == port->ip());
-  }
-
-  if (socket_) {
-    socket_->SignalReadPacket.connect(this, &TCPConnection::OnReadPacket);
-    socket_->SignalReadyToSend.connect(this, &TCPConnection::OnReadyToSend);
-    socket_->SignalClose.connect(this, &TCPConnection::OnClose);
+    ConnectSocketSignals(socket);
   }
 }
 
 TCPConnection::~TCPConnection() {
-  delete socket_;
 }
 
 int TCPConnection::Send(const void* data, size_t size,
@@ -267,7 +322,18 @@ int TCPConnection::Send(const void* data, size_t size,
     return SOCKET_ERROR;
   }
 
-  if (write_state() != STATE_WRITABLE) {
+  // Sending after OnClose on active side will trigger a reconnect for a
+  // outgoing connection. Note that the write state is still WRITABLE as we want
+  // to spend a few seconds attempting a reconnect before saying we're
+  // unwritable.
+  if (!connected()) {
+    MaybeReconnect();
+    return SOCKET_ERROR;
+  }
+
+  // Note that this is important to put this after the previous check to give
+  // the connection a chance to reconnect.
+  if (pretending_to_be_writable_ || write_state() != STATE_WRITABLE) {
     // TODO: Should STATE_WRITE_TIMEOUT return a non-blocking error?
     error_ = EWOULDBLOCK;
     return SOCKET_ERROR;
@@ -287,6 +353,15 @@ int TCPConnection::GetError() {
   return error_;
 }
 
+void TCPConnection::OnConnectionRequestResponse(ConnectionRequest* req,
+                                                StunMessage* response) {
+  // Once we receive a binding response, we are really writable, and not just
+  // pretending to be writable.
+  pretending_to_be_writable_ = false;
+  Connection::OnConnectionRequestResponse(req, response);
+  ASSERT(write_state() == STATE_WRITABLE);
+}
+
 void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
   ASSERT(socket == socket_);
   // Do not use this connection if the socket bound to a different address than
@@ -298,6 +373,7 @@ void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
     LOG_J(LS_VERBOSE, this) << "Connection established to "
                             << socket->GetRemoteAddress().ToSensitiveString();
     set_connected(true);
+    connection_pending_ = false;
   } else {
     LOG_J(LS_WARNING, this) << "Dropping connection as TCP socket bound to IP "
                             << socket_ip.ToSensitiveString()
@@ -310,8 +386,48 @@ void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
 void TCPConnection::OnClose(rtc::AsyncPacketSocket* socket, int error) {
   ASSERT(socket == socket_);
   LOG_J(LS_INFO, this) << "Connection closed with error " << error;
-  set_connected(false);
-  set_write_state(STATE_WRITE_TIMEOUT);
+
+  // Guard against the condition where IPC socket will call OnClose for every
+  // packet it can't send.
+  if (connected()) {
+    set_connected(false);
+    pretending_to_be_writable_ = true;
+
+    // We don't attempt reconnect right here. This is to avoid a case where the
+    // shutdown is intentional and reconnect is not necessary. We only reconnect
+    // when the connection is used to Send() or Ping().
+    port()->thread()->PostDelayed(reconnection_timeout(), this,
+                                  MSG_TCPCONNECTION_DELAYED_ONCLOSE);
+  }
+}
+
+void TCPConnection::OnMessage(rtc::Message* pmsg) {
+  switch (pmsg->message_id) {
+    case MSG_TCPCONNECTION_DELAYED_ONCLOSE:
+      // If this connection can't become connected and writable again in 5
+      // seconds, it's time to tear this down. This is the case for the original
+      // TCP connection on passive side during a reconnect.
+      if (pretending_to_be_writable_) {
+        set_write_state(STATE_WRITE_TIMEOUT);
+      }
+      break;
+    default:
+      Connection::OnMessage(pmsg);
+  }
+}
+
+void TCPConnection::MaybeReconnect() {
+  // Only reconnect for an outgoing TCPConnection when OnClose was signaled and
+  // no outstanding reconnect is pending.
+  if (connected() || connection_pending_ || !outgoing_) {
+    return;
+  }
+
+  LOG_J(LS_INFO, this) << "TCP Connection with remote is closed, "
+                       << "trying to reconnect";
+
+  CreateOutgoingTcpSocket();
+  error_ = EPIPE;
 }
 
 void TCPConnection::OnReadPacket(
@@ -325,6 +441,37 @@ void TCPConnection::OnReadPacket(
 void TCPConnection::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
   ASSERT(socket == socket_);
   Connection::OnReadyToSend();
+}
+
+void TCPConnection::CreateOutgoingTcpSocket() {
+  ASSERT(outgoing_);
+  // TODO(guoweis): Handle failures here (unlikely since TCP).
+  int opts = (remote_candidate().protocol() == SSLTCP_PROTOCOL_NAME)
+                 ? rtc::PacketSocketFactory::OPT_SSLTCP
+                 : 0;
+  socket_.reset(port()->socket_factory()->CreateClientTcpSocket(
+      rtc::SocketAddress(port()->ip(), 0), remote_candidate().address(),
+      port()->proxy(), port()->user_agent(), opts));
+  if (socket_) {
+    LOG_J(LS_VERBOSE, this)
+        << "Connecting from " << socket_->GetLocalAddress().ToSensitiveString()
+        << " to " << remote_candidate().address().ToSensitiveString();
+    set_connected(false);
+    connection_pending_ = true;
+    ConnectSocketSignals(socket_.get());
+  } else {
+    LOG_J(LS_WARNING, this) << "Failed to create connection to "
+                            << remote_candidate().address().ToSensitiveString();
+  }
+}
+
+void TCPConnection::ConnectSocketSignals(rtc::AsyncPacketSocket* socket) {
+  if (outgoing_) {
+    socket->SignalConnect.connect(this, &TCPConnection::OnConnect);
+  }
+  socket->SignalReadPacket.connect(this, &TCPConnection::OnReadPacket);
+  socket->SignalReadyToSend.connect(this, &TCPConnection::OnReadyToSend);
+  socket->SignalClose.connect(this, &TCPConnection::OnClose);
 }
 
 }  // namespace cricket

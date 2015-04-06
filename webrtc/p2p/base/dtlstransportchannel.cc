@@ -398,7 +398,8 @@ void DtlsTransportChannelWrapper::OnReadableState(TransportChannel* channel) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(channel == channel_);
   LOG_J(LS_VERBOSE, this)
-      << "DTLSTransportChannelWrapper: channel readable state changed.";
+      << "DTLSTransportChannelWrapper: channel readable state changed to "
+      << channel_->readable();
 
   if (dtls_state_ == STATE_NONE || dtls_state_ == STATE_OPEN) {
     set_readable(channel_->readable());
@@ -410,7 +411,8 @@ void DtlsTransportChannelWrapper::OnWritableState(TransportChannel* channel) {
   ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(channel == channel_);
   LOG_J(LS_VERBOSE, this)
-      << "DTLSTransportChannelWrapper: channel writable state changed.";
+      << "DTLSTransportChannelWrapper: channel writable state changed to "
+      << channel_->writable();
 
   switch (dtls_state_) {
     case STATE_NONE:

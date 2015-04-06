@@ -9,6 +9,7 @@
  */
 
 #include <sstream>
+#include "webrtc/p2p/base/common.h"
 #include "webrtc/p2p/base/transportchannel.h"
 
 namespace cricket {
@@ -32,6 +33,8 @@ void TransportChannel::set_readable(bool readable) {
 
 void TransportChannel::set_writable(bool writable) {
   if (writable_ != writable) {
+    LOG_J(LS_VERBOSE, this) << "set_writable from:" << writable_ << " to "
+                            << writable;
     writable_ = writable;
     if (writable_) {
       SignalReadyToSend(this);

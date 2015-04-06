@@ -546,6 +546,8 @@ class Connection : public rtc::MessageHandler,
   void MaybeUpdatePeerReflexiveCandidate(const Candidate& new_candidate);
 
  protected:
+  enum { MSG_DELETE = 0, MSG_FIRST_AVAILABLE };
+
   // Constructs a new connection to the given remote port.
   Connection(Port* port, size_t index, const Candidate& candidate);
 
@@ -553,8 +555,8 @@ class Connection : public rtc::MessageHandler,
   void OnSendStunPacket(const void* data, size_t size, StunRequest* req);
 
   // Callbacks from ConnectionRequest
-  void OnConnectionRequestResponse(ConnectionRequest* req,
-                                   StunMessage* response);
+  virtual void OnConnectionRequestResponse(ConnectionRequest* req,
+                                           StunMessage* response);
   void OnConnectionRequestErrorResponse(ConnectionRequest* req,
                                         StunMessage* response);
   void OnConnectionRequestTimeout(ConnectionRequest* req);

@@ -95,9 +95,6 @@ const int RTT_RATIO = 3;  // 3 : 1
 
 // The delay before we begin checking if this port is useless.
 const int kPortTimeoutDelay = 30 * 1000;  // 30 seconds
-
-// Used by the Connection.
-const uint32 MSG_DELETE = 1;
 }
 
 namespace cricket {
@@ -948,7 +945,8 @@ void Connection::set_connected(bool value) {
   bool old_value = connected_;
   connected_ = value;
   if (value != old_value) {
-    LOG_J(LS_VERBOSE, this) << "set_connected";
+    LOG_J(LS_VERBOSE, this) << "set_connected from: " << old_value << " to "
+                            << value;
   }
 }
 
@@ -1178,7 +1176,6 @@ void Connection::UpdateState(uint32 now) {
 }
 
 void Connection::Ping(uint32 now) {
-  ASSERT(connected_);
   last_ping_sent_ = now;
   pings_since_last_response_.push_back(now);
   ConnectionRequest *req = new ConnectionRequest(this);
@@ -1372,7 +1369,6 @@ void Connection::MaybeUpdatePeerReflexiveCandidate(
 
 void Connection::OnMessage(rtc::Message *pmsg) {
   ASSERT(pmsg->message_id == MSG_DELETE);
-
   LOG_J(LS_INFO, this) << "Connection deleted due to read or write timeout";
   SignalDestroyed(this);
   delete this;

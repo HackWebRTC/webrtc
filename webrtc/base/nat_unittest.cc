@@ -249,6 +249,8 @@ TEST(NatTest, TestPhysicalIPv6) {
   }
 }
 
+namespace {
+
 class TestVirtualSocketServer : public VirtualSocketServer {
  public:
   explicit TestVirtualSocketServer(SocketServer* ss)
@@ -260,6 +262,8 @@ class TestVirtualSocketServer : public VirtualSocketServer {
  private:
   scoped_ptr<SocketServer> ss_;
 };
+
+}  // namespace
 
 void TestVirtualInternal(int family) {
   scoped_ptr<TestVirtualSocketServer> int_vss(new TestVirtualSocketServer(

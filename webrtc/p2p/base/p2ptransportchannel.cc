@@ -67,13 +67,46 @@ int CompareConnectionCandidates(cricket::Connection* a,
          (b->remote_candidate().generation() + b->port()->generation());
 }
 
-// Compare two connections based on their writability and static preferences.
+// Compare two connections based on their connected state, writability and
+// static preferences.
 int CompareConnections(cricket::Connection *a, cricket::Connection *b) {
   // Sort based on write-state.  Better states have lower values.
   if (a->write_state() < b->write_state())
     return 1;
   if (a->write_state() > b->write_state())
     return -1;
+
+  // WARNING: Some complexity here about TCP reconnecting.
+  // When a TCP connection fails because of a TCP socket disconnecting, the
+  // active side of the connection will attempt to reconnect for 5 seconds while
+  // pretending to be writable (the connection is not set to the unwritable
+  // state).  On the passive side, the connection also remains writable even
+  // though it is disconnected, and a new connection is created when the active
+  // side connects.  At that point, there are two TCP connections on the passive
+  // side: 1. the old, disconnected one that is pretending to be writable, and
+  // 2.  the new, connected one that is maybe not yet writable.  For purposes of
+  // pruning, pinging, and selecting the best connection, we want to treat the
+  // new connection as "better" than the old one.  We could add a method called
+  // something like Connection::ImReallyBadEvenThoughImWritable, but that is
+  // equivalent to the existing Connection::connected(), which we already have.
+  // So, in code throughout this file, we'll check whether the connection is
+  // connected() or not, and if it is not, treat it as "worse" than a connected
+  // one, even though it's writable.  In the code below, we're doing so to make
+  // sure we treat a new writable connection as better than an old disconnected
+  // connection.
+
+  // In the case where we reconnect TCP connections, the original best
+  // connection is disconnected without changing to WRITE_TIMEOUT. In this case,
+  // the new connection, when it becomes writable, should have higher priority.
+  if (a->write_state() == cricket::Connection::STATE_WRITABLE &&
+      b->write_state() == cricket::Connection::STATE_WRITABLE) {
+    if (a->connected() && !b->connected()) {
+      return 1;
+    }
+    if (!a->connected() && b->connected()) {
+      return -1;
+    }
+  }
 
   // Compare the candidate information.
   return CompareConnectionCandidates(a, b);
@@ -992,16 +1025,20 @@ void P2PTransportChannel::SortConnections() {
       SwitchBestConnectionTo(top_connection);
   }
 
-  // We can prune any connection for which there is a writable connection on
-  // the same network with better or equal priority.  We leave those with
-  // better priority just in case they become writable later (at which point,
-  // we would prune out the current best connection).  We leave connections on
-  // other networks because they may not be using the same resources and they
-  // may represent very distinct paths over which we can switch.
+  // We can prune any connection for which there is a connected, writable
+  // connection on the same network with better or equal priority.  We leave
+  // those with better priority just in case they become writable later (at
+  // which point, we would prune out the current best connection).  We leave
+  // connections on other networks because they may not be using the same
+  // resources and they may represent very distinct paths over which we can
+  // switch. If the |primier| connection is not connected, we may be
+  // reconnecting a TCP connection and temporarily do not prune connections in
+  // this network. See the big comment in CompareConnections.
   std::set<rtc::Network*>::iterator network;
   for (network = networks.begin(); network != networks.end(); ++network) {
     Connection* primier = GetBestConnectionOnNetwork(*network);
-    if (!primier || (primier->write_state() != Connection::STATE_WRITABLE))
+    if (!primier || (primier->write_state() != Connection::STATE_WRITABLE) ||
+        !primier->connected())
       continue;
 
     for (uint32 i = 0; i < connections_.size(); ++i) {
@@ -1162,6 +1199,8 @@ void P2PTransportChannel::OnPing() {
 }
 
 // Is the connection in a state for us to even consider pinging the other side?
+// We consider a connection pingable even if it's not connected because that's
+// how a TCP connection is kicked into reconnecting on the active side.
 bool P2PTransportChannel::IsPingable(Connection* conn) {
   const Candidate& remote = conn->remote_candidate();
   // We should never get this far with an empty remote ufrag.
@@ -1171,10 +1210,12 @@ bool P2PTransportChannel::IsPingable(Connection* conn) {
     return false;
   }
 
-  // An unconnected connection cannot be written to at all, so pinging is out
-  // of the question.
-  if (!conn->connected())
+  // An never connected connection cannot be written to at all, so pinging is
+  // out of the question. However, if it has become WRITABLE, it is in the
+  // reconnecting state so ping is needed.
+  if (!conn->connected() && conn->write_state() != Connection::STATE_WRITABLE) {
     return false;
+  }
 
   if (writable()) {
     // If we are writable, then we only want to ping connections that could be
@@ -1192,14 +1233,17 @@ bool P2PTransportChannel::IsPingable(Connection* conn) {
 }
 
 // Returns the next pingable connection to ping.  This will be the oldest
-// pingable connection unless we have a writable connection that is past the
-// maximum acceptable ping delay.
+// pingable connection unless we have a connected, writable connection that is
+// past the maximum acceptable ping delay. When reconnecting a TCP connection,
+// the best connection is disconnected, although still WRITABLE while
+// reconnecting. The newly created connection should be selected as the ping
+// target to become writable instead. See the big comment in CompareConnections.
 Connection* P2PTransportChannel::FindNextPingableConnection() {
   uint32 now = rtc::Time();
-  if (best_connection_ &&
+  if (best_connection_ && best_connection_->connected() &&
       (best_connection_->write_state() == Connection::STATE_WRITABLE) &&
-      (best_connection_->last_ping_sent()
-       + MAX_CURRENT_WRITABLE_DELAY <= now)) {
+      (best_connection_->last_ping_sent() + MAX_CURRENT_WRITABLE_DELAY <=
+       now)) {
     return best_connection_;
   }
 

@@ -606,6 +606,22 @@ void VirtualSocketServer::SetNextPortForTesting(uint16 port) {
   next_port_ = port;
 }
 
+bool VirtualSocketServer::CloseTcpConnections(
+    const SocketAddress& addr_local,
+    const SocketAddress& addr_remote) {
+  VirtualSocket* socket = LookupConnection(addr_local, addr_remote);
+  if (!socket) {
+    return false;
+  }
+  // Signal the close event on the local connection first.
+  socket->SignalCloseEvent(socket, 0);
+
+  // Trigger the remote connection's close event.
+  socket->Close();
+
+  return true;
+}
+
 int VirtualSocketServer::Bind(VirtualSocket* socket,
                               const SocketAddress& addr) {
   ASSERT(NULL != socket);
