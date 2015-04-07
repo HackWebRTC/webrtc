@@ -579,7 +579,7 @@ if (!_shared->statistics().Initialized()) {
 int VoEHardwareImpl::EnableBuiltInAEC(bool enable) {
 if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
-    return false;
+    return -1;
   }
   return _shared->audio_device()->EnableBuiltInAEC(enable);
 }
