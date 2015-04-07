@@ -135,7 +135,7 @@ class WrappedI420Buffer : public webrtc::VideoFrameBuffer {
   uint8_t* data(PlaneType type) override;
 
   int stride(PlaneType type) const override;
-  rtc::scoped_refptr<NativeHandle> native_handle() const override;
+  void* native_handle() const override;
 
  private:
   friend class rtc::RefCountedObject<WrappedI420Buffer>;

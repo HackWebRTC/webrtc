@@ -230,7 +230,7 @@ int WrappedI420Buffer::stride(PlaneType type) const {
   }
 }
 
-rtc::scoped_refptr<NativeHandle> WrappedI420Buffer::native_handle() const {
+void* WrappedI420Buffer::native_handle() const {
   return nullptr;
 }
 
