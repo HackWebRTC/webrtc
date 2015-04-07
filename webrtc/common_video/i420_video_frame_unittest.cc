@@ -12,21 +12,22 @@
 #include <string.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/bind.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
 
 namespace webrtc {
 
-class NativeHandleImpl {
+class NativeHandleImpl : public NativeHandle {
  public:
-  NativeHandleImpl() : no_longer_needed_(false) {}
+  NativeHandleImpl() : ref_count_(0) {}
   virtual ~NativeHandleImpl() {}
-  bool no_longer_needed() const { return no_longer_needed_; }
-  void SetNoLongerNeeded() { no_longer_needed_ = true; }
+  virtual int32_t AddRef() { return ++ref_count_; }
+  virtual int32_t Release() { return --ref_count_; }
+  virtual void* GetHandle() { return NULL; }
 
+  int32_t ref_count() { return ref_count_; }
  private:
-  bool no_longer_needed_;
+  int32_t ref_count_;
 };
 
 bool EqualPlane(const uint8_t* data1,
@@ -255,8 +256,7 @@ TEST(TestI420VideoFrame, FailToReuseAllocation) {
 
 TEST(TestI420VideoFrame, TextureInitialValues) {
   NativeHandleImpl handle;
-  I420VideoFrame frame(&handle, 640, 480, 100, 10, webrtc::kVideoRotation_0,
-                       rtc::Callback0<void>());
+  I420VideoFrame frame(&handle, 640, 480, 100, 10);
   EXPECT_EQ(640, frame.width());
   EXPECT_EQ(480, frame.height());
   EXPECT_EQ(100u, frame.timestamp());
@@ -269,15 +269,13 @@ TEST(TestI420VideoFrame, TextureInitialValues) {
   EXPECT_EQ(20, frame.render_time_ms());
 }
 
-TEST(TestI420VideoFrame, NoLongerNeeded) {
+TEST(TestI420VideoFrame, RefCount) {
   NativeHandleImpl handle;
-  ASSERT_FALSE(handle.no_longer_needed());
-  I420VideoFrame* frame = new I420VideoFrame(
-      &handle, 640, 480, 100, 200, webrtc::kVideoRotation_0,
-      rtc::Bind(&NativeHandleImpl::SetNoLongerNeeded, &handle));
-  EXPECT_FALSE(handle.no_longer_needed());
+  EXPECT_EQ(0, handle.ref_count());
+  I420VideoFrame *frame = new I420VideoFrame(&handle, 640, 480, 100, 200);
+  EXPECT_EQ(1, handle.ref_count());
   delete frame;
-  EXPECT_TRUE(handle.no_longer_needed());
+  EXPECT_EQ(0, handle.ref_count());
 }
 
 bool EqualPlane(const uint8_t* data1,

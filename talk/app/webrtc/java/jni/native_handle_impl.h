@@ -33,12 +33,19 @@
 
 namespace webrtc_jni {
 
-// Wrapper for texture object.
-class NativeHandleImpl {
+// Wrapper for texture object in TextureBuffer.
+class NativeHandleImpl : public webrtc::NativeHandle {
  public:
-  NativeHandleImpl() : texture_object_(NULL), texture_id_(-1) {}
-
-  void* GetHandle() {
+  NativeHandleImpl() :
+    ref_count_(0), texture_object_(NULL), texture_id_(-1) {}
+  virtual ~NativeHandleImpl() {}
+  virtual int32_t AddRef() {
+    return ++ref_count_;
+  }
+  virtual int32_t Release() {
+    return --ref_count_;
+  }
+  virtual void* GetHandle() {
     return texture_object_;
   }
   int GetTextureId() {
@@ -48,8 +55,12 @@ class NativeHandleImpl {
     texture_object_ = reinterpret_cast<jobject>(texture_object);
     texture_id_ = texture_id;
   }
+  int32_t ref_count() {
+    return ref_count_;
+  }
 
  private:
+  int32_t ref_count_;
   jobject texture_object_;
   int32_t texture_id_;
 };

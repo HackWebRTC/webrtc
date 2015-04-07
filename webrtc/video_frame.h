@@ -26,19 +26,11 @@ class I420VideoFrame {
                  uint32_t timestamp,
                  int64_t render_time_ms,
                  VideoRotation rotation);
-  // TODO(perkj): Remove this constructor once Chrome no longer use it.
   I420VideoFrame(NativeHandle* handle,
                  int width,
                  int height,
                  uint32_t timestamp,
                  int64_t render_time_ms);
-  I420VideoFrame(void* native_handle,
-                 int width,
-                 int height,
-                 uint32_t timestamp,
-                 int64_t render_time_ms,
-                 VideoRotation rotation,
-                 const rtc::Callback0<void>& no_longer_used);
 
   // TODO(pbos): Make all create/copy functions void, they should not be able to
   // fail (which should be DCHECK/CHECKed instead).

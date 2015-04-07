@@ -654,9 +654,8 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   int32_t callback_status = WEBRTC_VIDEO_CODEC_OK;
   if (use_surface_) {
     native_handle_.SetTextureObject(surface_texture_, texture_id);
-    I420VideoFrame texture_image(&native_handle_, width, height,
-                                 output_timestamp_, 0, webrtc::kVideoRotation_0,
-                                 rtc::Callback0<void>());
+    I420VideoFrame texture_image(
+        &native_handle_, width, height, output_timestamp_, 0);
     texture_image.set_ntp_time_ms(output_ntp_time_ms_);
     callback_status = callback_->Decoded(texture_image);
   } else {

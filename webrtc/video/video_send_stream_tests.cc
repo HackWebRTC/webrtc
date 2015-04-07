@@ -12,7 +12,6 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
@@ -51,15 +50,12 @@ void ExpectEqualFramesVector(const std::vector<I420VideoFrame>& frames1,
                              const std::vector<I420VideoFrame>& frames2);
 I420VideoFrame CreateI420VideoFrame(int width, int height, uint8_t data);
 
-class FakeNativeHandle {
+class FakeNativeHandle : public NativeHandle {
  public:
   FakeNativeHandle() {}
-  ~FakeNativeHandle() {}
+  virtual ~FakeNativeHandle() {}
+  virtual void* GetHandle() { return nullptr; }
 };
-
-void DeleteNativeHandle(FakeNativeHandle* handle) {
-  delete handle;
-}
 
 class VideoSendStreamTest : public test::CallTest {
  protected:
@@ -1078,20 +1074,17 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndI420VideoFrames) {
   std::vector<I420VideoFrame> input_frames;
   int width = static_cast<int>(encoder_config_.streams[0].width);
   int height = static_cast<int>(encoder_config_.streams[0].height);
-  FakeNativeHandle* handle1 = new FakeNativeHandle();
-  FakeNativeHandle* handle2 = new FakeNativeHandle();
-  FakeNativeHandle* handle3 = new FakeNativeHandle();
-  input_frames.push_back(
-      I420VideoFrame(handle1, width, height, 1, 1, kVideoRotation_0,
-                     rtc::Bind(&DeleteNativeHandle, handle1)));
-  input_frames.push_back(
-      I420VideoFrame(handle2, width, height, 2, 2, kVideoRotation_0,
-                     rtc::Bind(&DeleteNativeHandle, handle2)));
+  webrtc::RefCountImpl<FakeNativeHandle>* handle1 =
+      new webrtc::RefCountImpl<FakeNativeHandle>();
+  webrtc::RefCountImpl<FakeNativeHandle>* handle2 =
+      new webrtc::RefCountImpl<FakeNativeHandle>();
+  webrtc::RefCountImpl<FakeNativeHandle>* handle3 =
+      new webrtc::RefCountImpl<FakeNativeHandle>();
+  input_frames.push_back(I420VideoFrame(handle1, width, height, 1, 1));
+  input_frames.push_back(I420VideoFrame(handle2, width, height, 2, 2));
   input_frames.push_back(CreateI420VideoFrame(width, height, 3));
   input_frames.push_back(CreateI420VideoFrame(width, height, 4));
-  input_frames.push_back(
-      I420VideoFrame(handle3, width, height, 5, 5, kVideoRotation_0,
-                     rtc::Bind(&DeleteNativeHandle, handle3)));
+  input_frames.push_back(I420VideoFrame(handle3, width, height, 5, 5));
 
   send_stream_->Start();
   for (size_t i = 0; i < input_frames.size(); i++) {

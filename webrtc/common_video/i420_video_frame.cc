@@ -14,7 +14,6 @@
 
 #include <algorithm>  // swap
 
-#include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 
 namespace webrtc {
@@ -51,22 +50,6 @@ I420VideoFrame::I420VideoFrame(NativeHandle* handle,
   DCHECK(handle != nullptr);
   DCHECK_GT(width, 0);
   DCHECK_GT(height, 0);
-}
-
-I420VideoFrame::I420VideoFrame(void* native_handle,
-                               int width,
-                               int height,
-                               uint32_t timestamp,
-                               int64_t render_time_ms,
-                               VideoRotation rotation,
-                               const rtc::Callback0<void>& no_longer_used)
-    : I420VideoFrame(new rtc::RefCountedObject<TextureBuffer>(native_handle,
-                                                              width,
-                                                              height,
-                                                              no_longer_used),
-                     timestamp,
-                     render_time_ms,
-                     rotation) {
 }
 
 int I420VideoFrame::CreateEmptyFrame(int width, int height,
