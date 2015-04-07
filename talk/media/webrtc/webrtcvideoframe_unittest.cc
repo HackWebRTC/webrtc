@@ -30,19 +30,6 @@
 #include "talk/media/base/videoframe_unittest.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
 
-class NativeHandleImpl : public webrtc::NativeHandle {
- public:
-  NativeHandleImpl() : ref_count_(0) {}
-  virtual ~NativeHandleImpl() {}
-  virtual int32_t AddRef() { return ++ref_count_; }
-  virtual int32_t Release() { return --ref_count_; }
-  virtual void* GetHandle() { return NULL; }
-
-  int32_t ref_count() { return ref_count_; }
- private:
-  int32_t ref_count_;
-};
-
 namespace {
 
 class WebRtcVideoTestFrame : public cricket::WebRtcVideoFrame {
@@ -339,10 +326,12 @@ TEST_F(WebRtcVideoFrameTest, InitRotated90DontApplyRotation) {
 }
 
 TEST_F(WebRtcVideoFrameTest, TextureInitialValues) {
-  NativeHandleImpl handle;
-  cricket::WebRtcVideoFrame frame(&handle, 640, 480, 100, 200,
-                                  webrtc::kVideoRotation_0);
-  EXPECT_EQ(&handle, frame.GetNativeHandle());
+  void* dummy_handle = reinterpret_cast<void*>(0x1);
+  webrtc::TextureBuffer* buffer =
+      new rtc::RefCountedObject<webrtc::TextureBuffer>(dummy_handle, 640, 480,
+                                                       rtc::Callback0<void>());
+  cricket::WebRtcVideoFrame frame(buffer, 100, 200, webrtc::kVideoRotation_0);
+  EXPECT_EQ(dummy_handle, frame.GetNativeHandle());
   EXPECT_EQ(640u, frame.GetWidth());
   EXPECT_EQ(480u, frame.GetHeight());
   EXPECT_EQ(100, frame.GetElapsedTime());
@@ -354,9 +343,11 @@ TEST_F(WebRtcVideoFrameTest, TextureInitialValues) {
 }
 
 TEST_F(WebRtcVideoFrameTest, CopyTextureFrame) {
-  NativeHandleImpl handle;
-  cricket::WebRtcVideoFrame frame1(&handle, 640, 480, 100, 200,
-                                   webrtc::kVideoRotation_0);
+  void* dummy_handle = reinterpret_cast<void*>(0x1);
+  webrtc::TextureBuffer* buffer =
+      new rtc::RefCountedObject<webrtc::TextureBuffer>(dummy_handle, 640, 480,
+                                                       rtc::Callback0<void>());
+  cricket::WebRtcVideoFrame frame1(buffer, 100, 200, webrtc::kVideoRotation_0);
   cricket::VideoFrame* frame2 = frame1.Copy();
   EXPECT_EQ(frame1.GetNativeHandle(), frame2->GetNativeHandle());
   EXPECT_EQ(frame1.GetWidth(), frame2->GetWidth());

@@ -20,6 +20,9 @@ namespace webrtc {
 // TextureBuffer. This object keeps a reference to the handle. The reference
 // is cleared when the object is destroyed. It is important to destroy the
 // object as soon as possible so the texture can be recycled.
+
+// TODO(perkj): Remove this class once Chrome uses TextureBuffer directly
+// instead. This is just an extra level of indirection.
 class NativeHandle {
  public:
   virtual ~NativeHandle() {}

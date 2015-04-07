@@ -10,6 +10,7 @@
 
 #include "webrtc/common_video/interface/video_frame_buffer.h"
 
+#include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 
 // Aligning pointer to 64 bytes for improved performance, e.g. use SIMD.
@@ -89,21 +90,39 @@ int I420Buffer::stride(PlaneType type) const {
   }
 }
 
-rtc::scoped_refptr<NativeHandle> I420Buffer::native_handle() const {
+void* I420Buffer::native_handle() const {
   return nullptr;
+}
+
+TextureBuffer::TextureBuffer(void* native_handle,
+                             int width,
+                             int height,
+                             const rtc::Callback0<void>& no_longer_used)
+    : native_handle_(native_handle),
+      width_(width),
+      height_(height),
+      no_longer_used_cb_(no_longer_used) {
+  DCHECK(native_handle != nullptr);
+  DCHECK_GT(width, 0);
+  DCHECK_GT(height, 0);
+}
+
+static void ReleaseNativeHandle(
+    rtc::scoped_refptr<NativeHandle> native_handle) {
 }
 
 TextureBuffer::TextureBuffer(
     const rtc::scoped_refptr<NativeHandle>& native_handle,
     int width,
     int height)
-    : native_handle_(native_handle), width_(width), height_(height) {
-  DCHECK(native_handle.get());
-  DCHECK_GT(width, 0);
-  DCHECK_GT(height, 0);
+    : TextureBuffer(native_handle->GetHandle(),
+                    width,
+                    height,
+                    rtc::Bind(&ReleaseNativeHandle, native_handle)) {
 }
 
 TextureBuffer::~TextureBuffer() {
+  no_longer_used_cb_();
 }
 
 int TextureBuffer::width() const {
@@ -129,7 +148,7 @@ int TextureBuffer::stride(PlaneType type) const {
   return 0;
 }
 
-rtc::scoped_refptr<NativeHandle> TextureBuffer::native_handle() const {
+void* TextureBuffer::native_handle() const {
   return native_handle_;
 }
 

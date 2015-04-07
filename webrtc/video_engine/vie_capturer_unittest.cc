@@ -48,13 +48,6 @@ bool EqualFramesVector(const ScopedVector<I420VideoFrame>& frames1,
                        const ScopedVector<I420VideoFrame>& frames2);
 I420VideoFrame* CreateI420VideoFrame(uint8_t length);
 
-class FakeNativeHandle : public NativeHandle {
- public:
-  FakeNativeHandle() {}
-  virtual ~FakeNativeHandle() {}
-  virtual void* GetHandle() { return NULL; }
-};
-
 class ViECapturerTest : public ::testing::Test {
  protected:
   ViECapturerTest()
@@ -181,13 +174,14 @@ TEST_F(ViECapturerTest, TestRtpTimeStampSet) {
 TEST_F(ViECapturerTest, TestTextureFrames) {
   const int kNumFrame = 3;
   for (int i = 0 ; i < kNumFrame; ++i) {
-    webrtc::RefCountImpl<FakeNativeHandle>* handle =
-              new webrtc::RefCountImpl<FakeNativeHandle>();
+    void* dummy_handle = reinterpret_cast<void*>(i+1);
     // Add one to |i| so that width/height > 0.
     input_frames_.push_back(
-        new I420VideoFrame(handle, i + 1, i + 1, i + 1, i + 1));
+        new I420VideoFrame(dummy_handle, i + 1, i + 1, i + 1, i + 1,
+                           webrtc::kVideoRotation_0, rtc::Callback0<void>()));
     AddInputFrame(input_frames_[i]);
     WaitOutputFrame();
+    EXPECT_EQ(dummy_handle, output_frames_[i]->native_handle());
   }
 
   EXPECT_TRUE(EqualFramesVector(input_frames_, output_frames_));
@@ -211,11 +205,13 @@ TEST_F(ViECapturerTest, TestI420Frames) {
 }
 
 TEST_F(ViECapturerTest, TestI420FrameAfterTextureFrame) {
-  webrtc::RefCountImpl<FakeNativeHandle>* handle =
-      new webrtc::RefCountImpl<FakeNativeHandle>();
-  input_frames_.push_back(new I420VideoFrame(handle, 1, 1, 1, 1));
+  void* dummy_handle = &input_frames_;
+  input_frames_.push_back(new I420VideoFrame(dummy_handle, 1, 1, 1, 1,
+                                             webrtc::kVideoRotation_0,
+                                             rtc::Callback0<void>()));
   AddInputFrame(input_frames_[0]);
   WaitOutputFrame();
+  EXPECT_EQ(dummy_handle, output_frames_[0]->native_handle());
 
   input_frames_.push_back(CreateI420VideoFrame(2));
   AddInputFrame(input_frames_[1]);
@@ -229,9 +225,10 @@ TEST_F(ViECapturerTest, TestTextureFrameAfterI420Frame) {
   AddInputFrame(input_frames_[0]);
   WaitOutputFrame();
 
-  webrtc::RefCountImpl<FakeNativeHandle>* handle =
-      new webrtc::RefCountImpl<FakeNativeHandle>();
-  input_frames_.push_back(new I420VideoFrame(handle, 1, 1, 2, 2));
+  void* dummy_handle = &input_frames_;
+  input_frames_.push_back(new I420VideoFrame(dummy_handle, 1, 1, 2, 2,
+                                             webrtc::kVideoRotation_0,
+                                             rtc::Callback0<void>()));
   AddInputFrame(input_frames_[1]);
   WaitOutputFrame();
 
