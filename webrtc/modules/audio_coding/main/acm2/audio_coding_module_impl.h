@@ -37,7 +37,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   friend webrtc::AudioCodingImpl;
 
   explicit AudioCodingModuleImpl(const AudioCodingModule::Config& config);
-  ~AudioCodingModuleImpl();
+  ~AudioCodingModuleImpl() override;
 
   /////////////////////////////////////////
   //   Sender
@@ -168,10 +168,10 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   //
   // Configure Dtmf playout status i.e on/off playout the incoming outband Dtmf
   // tone.
-  int SetDtmfPlayoutStatus(bool enable) override { return 0; }
+  int SetDtmfPlayoutStatus(bool enable) override;
 
   // Get Dtmf playout status.
-  bool DtmfPlayoutStatus() const override { return true; }
+  bool DtmfPlayoutStatus() const override;
 
   // Estimate the Bandwidth based on the incoming stream, needed
   // for one way audio where the RTCP send the BW estimate.
@@ -314,19 +314,8 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
 class AudioCodingImpl : public AudioCoding {
  public:
-  AudioCodingImpl(const Config& config) {
-    AudioCodingModule::Config config_old = config.ToOldConfig();
-    acm_old_.reset(new acm2::AudioCodingModuleImpl(config_old));
-    acm_old_->RegisterTransportCallback(config.transport);
-    acm_old_->RegisterVADCallback(config.vad_callback);
-    acm_old_->SetDtmfPlayoutStatus(config.play_dtmf);
-    if (config.initial_playout_delay_ms > 0) {
-      acm_old_->SetInitialPlayoutDelay(config.initial_playout_delay_ms);
-    }
-    playout_frequency_hz_ = config.playout_frequency_hz;
-  }
-
-  ~AudioCodingImpl() override{};
+  AudioCodingImpl(const Config& config);
+  ~AudioCodingImpl() override;
 
   bool RegisterSendCodec(AudioEncoder* send_codec) override;
 

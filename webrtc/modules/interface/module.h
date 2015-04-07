@@ -73,7 +73,7 @@ class RefCountedModule : public Module {
   virtual int32_t Release() = 0;
 
  protected:
-  virtual ~RefCountedModule() {}
+  ~RefCountedModule() override = default;
 };
 
 }  // namespace webrtc

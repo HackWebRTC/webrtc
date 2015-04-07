@@ -59,7 +59,7 @@ class Nack {
   // Factory method.
   static Nack* Create(int nack_threshold_packets);
 
-  ~Nack() {}
+  ~Nack();
 
   // Set a maximum for the size of the NACK list. If the last received packet
   // has sequence number of N, then NACK list will not contain any element

@@ -45,6 +45,7 @@ class AcmReceiver;
 class AudioDecoderProxy final : public AudioDecoder {
  public:
   AudioDecoderProxy();
+  ~AudioDecoderProxy() override;
   void SetDecoder(AudioDecoder* decoder);
   bool IsSet() const;
   int Decode(const uint8_t* encoded,

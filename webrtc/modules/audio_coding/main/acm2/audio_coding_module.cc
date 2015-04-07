@@ -94,6 +94,17 @@ bool AudioCodingModule::IsCodecValid(const CodecInst& codec) {
   }
 }
 
+AudioCoding::Config::Config()
+    : neteq_config(),
+      clock(Clock::GetRealTimeClock()),
+      transport(nullptr),
+      vad_callback(nullptr),
+      play_dtmf(true),
+      initial_playout_delay_ms(0),
+      playout_channels(1),
+      playout_frequency_hz(32000) {
+}
+
 AudioCoding* AudioCoding::Create(const Config& config) {
   return new AudioCodingImpl(config);
 }

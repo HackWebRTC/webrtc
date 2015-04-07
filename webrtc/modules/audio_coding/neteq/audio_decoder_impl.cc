@@ -38,6 +38,14 @@
 namespace webrtc {
 
 // PCMu
+
+int AudioDecoderPcmU::Init() {
+  return 0;
+}
+size_t AudioDecoderPcmU::Channels() const {
+  return 1;
+}
+
 int AudioDecoderPcmU::DecodeInternal(const uint8_t* encoded,
                                      size_t encoded_len,
                                      int sample_rate_hz,
@@ -57,7 +65,19 @@ int AudioDecoderPcmU::PacketDuration(const uint8_t* encoded,
   return static_cast<int>(encoded_len / Channels());
 }
 
+size_t AudioDecoderPcmUMultiCh::Channels() const {
+  return channels_;
+}
+
 // PCMa
+
+int AudioDecoderPcmA::Init() {
+  return 0;
+}
+size_t AudioDecoderPcmA::Channels() const {
+  return 1;
+}
+
 int AudioDecoderPcmA::DecodeInternal(const uint8_t* encoded,
                                      size_t encoded_len,
                                      int sample_rate_hz,
@@ -77,9 +97,20 @@ int AudioDecoderPcmA::PacketDuration(const uint8_t* encoded,
   return static_cast<int>(encoded_len / Channels());
 }
 
+size_t AudioDecoderPcmAMultiCh::Channels() const {
+  return channels_;
+}
+
 // PCM16B
 #ifdef WEBRTC_CODEC_PCM16
 AudioDecoderPcm16B::AudioDecoderPcm16B() {}
+
+int AudioDecoderPcm16B::Init() {
+  return 0;
+}
+size_t AudioDecoderPcm16B::Channels() const {
+  return 1;
+}
 
 int AudioDecoderPcm16B::DecodeInternal(const uint8_t* encoded,
                                        size_t encoded_len,
@@ -105,6 +136,10 @@ AudioDecoderPcm16BMultiCh::AudioDecoderPcm16BMultiCh(int num_channels)
     : channels_(num_channels) {
   DCHECK(num_channels > 0);
 }
+
+size_t AudioDecoderPcm16BMultiCh::Channels() const {
+  return channels_;
+}
 #endif
 
 // iLBC
@@ -115,6 +150,10 @@ AudioDecoderIlbc::AudioDecoderIlbc() {
 
 AudioDecoderIlbc::~AudioDecoderIlbc() {
   WebRtcIlbcfix_DecoderFree(dec_state_);
+}
+
+bool AudioDecoderIlbc::HasDecodePlc() const {
+  return true;
 }
 
 int AudioDecoderIlbc::DecodeInternal(const uint8_t* encoded,
@@ -138,6 +177,10 @@ int AudioDecoderIlbc::DecodePlc(int num_frames, int16_t* decoded) {
 int AudioDecoderIlbc::Init() {
   return WebRtcIlbcfix_Decoderinit30Ms(dec_state_);
 }
+
+size_t AudioDecoderIlbc::Channels() const {
+  return 1;
+}
 #endif
 
 // G.722
@@ -148,6 +191,10 @@ AudioDecoderG722::AudioDecoderG722() {
 
 AudioDecoderG722::~AudioDecoderG722() {
   WebRtcG722_FreeDecoder(dec_state_);
+}
+
+bool AudioDecoderG722::HasDecodePlc() const {
+  return false;
 }
 
 int AudioDecoderG722::DecodeInternal(const uint8_t* encoded,
@@ -172,6 +219,10 @@ int AudioDecoderG722::PacketDuration(const uint8_t* encoded,
                                      size_t encoded_len) const {
   // 1/2 encoded byte per sample per channel.
   return static_cast<int>(2 * encoded_len / Channels());
+}
+
+size_t AudioDecoderG722::Channels() const {
+  return 1;
 }
 
 AudioDecoderG722Stereo::AudioDecoderG722Stereo() {
@@ -220,6 +271,10 @@ int AudioDecoderG722Stereo::DecodeInternal(const uint8_t* encoded,
   *speech_type = ConvertSpeechType(temp_type);
   delete [] encoded_deinterleaved;
   return ret;
+}
+
+size_t AudioDecoderG722Stereo::Channels() const {
+  return 2;
 }
 
 int AudioDecoderG722Stereo::Init() {
@@ -332,6 +387,10 @@ bool AudioDecoderOpus::PacketHasFec(const uint8_t* encoded,
   fec = WebRtcOpus_PacketHasFec(encoded, static_cast<int>(encoded_len));
   return (fec == 1);
 }
+
+size_t AudioDecoderOpus::Channels() const {
+  return channels_;
+}
 #endif
 
 AudioDecoderCng::AudioDecoderCng() {
@@ -344,6 +403,30 @@ AudioDecoderCng::~AudioDecoderCng() {
 
 int AudioDecoderCng::Init() {
   return WebRtcCng_InitDec(dec_state_);
+}
+
+int AudioDecoderCng::IncomingPacket(const uint8_t* payload,
+                                    size_t payload_len,
+                                    uint16_t rtp_sequence_number,
+                                    uint32_t rtp_timestamp,
+                                    uint32_t arrival_timestamp) {
+  return -1;
+}
+
+CNG_dec_inst* AudioDecoderCng::CngDecoderInstance() {
+  return dec_state_;
+}
+
+size_t AudioDecoderCng::Channels() const {
+  return 1;
+}
+
+int AudioDecoderCng::DecodeInternal(const uint8_t* encoded,
+                                    size_t encoded_len,
+                                    int sample_rate_hz,
+                                    int16_t* decoded,
+                                    SpeechType* speech_type) {
+  return -1;
 }
 
 bool CodecSupported(NetEqDecoder codec_type) {

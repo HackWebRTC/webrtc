@@ -40,6 +40,8 @@ Nack::Nack(int nack_threshold_packets)
       samples_per_packet_(sample_rate_khz_ * kDefaultPacketSizeMs),
       max_nack_list_size_(kNackListSizeLimit) {}
 
+Nack::~Nack() = default;
+
 Nack* Nack::Create(int nack_threshold_packets) {
   return new Nack(nack_threshold_packets);
 }

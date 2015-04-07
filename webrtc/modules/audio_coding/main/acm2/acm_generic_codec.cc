@@ -118,6 +118,8 @@ AudioDecoderProxy::AudioDecoderProxy()
       decoder_(nullptr) {
 }
 
+AudioDecoderProxy::~AudioDecoderProxy() = default;
+
 void AudioDecoderProxy::SetDecoder(AudioDecoder* decoder) {
   CriticalSectionScoped decoder_lock(decoder_lock_.get());
   decoder_ = decoder;

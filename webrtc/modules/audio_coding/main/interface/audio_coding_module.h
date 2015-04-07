@@ -997,15 +997,7 @@ class ReceiverInfo;
 class AudioCoding {
  public:
   struct Config {
-    Config()
-        : neteq_config(),
-          clock(Clock::GetRealTimeClock()),
-          transport(NULL),
-          vad_callback(NULL),
-          play_dtmf(true),
-          initial_playout_delay_ms(0),
-          playout_channels(1),
-          playout_frequency_hz(32000) {}
+    Config();
 
     AudioCodingModule::Config ToOldConfig() const {
       AudioCodingModule::Config old_config;
