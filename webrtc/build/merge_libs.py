@@ -36,7 +36,7 @@ def FindFiles(path, pattern):
   files = []
   for root, _, filenames in os.walk(path):
     for filename in fnmatch.filter(filenames, pattern):
-      if filename not in IGNORE_PATTERNS:
+      if all(pattern not in filename for pattern in IGNORE_PATTERNS):
         # We use the relative path here to avoid "argument list too
         # long" errors on Linux.  Note: This doesn't always work, so
         # we use the find command on Linux.
