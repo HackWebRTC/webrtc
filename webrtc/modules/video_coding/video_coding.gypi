@@ -30,7 +30,6 @@
         'main/source/content_metrics_processing.h',
         'main/source/decoding_state.h',
         'main/source/encoded_frame.h',
-        'main/source/er_tables_xor.h',
         'main/source/fec_tables_xor.h',
         'main/source/frame_buffer.h',
         'main/source/generic_decoder.h',
