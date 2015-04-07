@@ -176,6 +176,8 @@ void AndroidVideoCapturerJni::OnIncomingFrame_w(void* video_frame,
   DCHECK(thread_checker_.CalledOnValidThread());
   if (capturer_)
     capturer_->OnIncomingFrame(video_frame, length, rotation, time_stamp);
+  else
+    ReturnBuffer_w(time_stamp);
 }
 
 JNIEnv* AndroidVideoCapturerJni::jni() { return AttachCurrentThreadIfNeeded(); }
