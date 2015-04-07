@@ -478,7 +478,7 @@ bool ViECapturer::ViECaptureProcess() {
 
 void ViECapturer::DeliverI420Frame(I420VideoFrame* video_frame) {
   if (video_frame->native_handle() != NULL) {
-    ViEFrameProviderBase::DeliverFrame(video_frame, std::vector<uint32_t>());
+    ViEFrameProviderBase::DeliverFrame(*video_frame, std::vector<uint32_t>());
     return;
   }
 
@@ -528,7 +528,7 @@ void ViECapturer::DeliverI420Frame(I420VideoFrame* video_frame) {
     }
   }
   // Deliver the captured frame to all observers (channels, renderer or file).
-  ViEFrameProviderBase::DeliverFrame(video_frame, std::vector<uint32_t>());
+  ViEFrameProviderBase::DeliverFrame(*video_frame, std::vector<uint32_t>());
 }
 
 bool ViECapturer::CaptureCapabilityFixed() {

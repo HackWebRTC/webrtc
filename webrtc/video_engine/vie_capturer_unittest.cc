@@ -87,10 +87,10 @@ class ViECapturerTest : public ::testing::Test {
     data_callback_->OnIncomingCapturedFrame(0, *frame);
   }
 
-  void AddOutputFrame(const I420VideoFrame* frame) {
-    if (frame->native_handle() == NULL)
-      output_frame_ybuffers_.push_back(frame->buffer(kYPlane));
-    output_frames_.push_back(new I420VideoFrame(*frame));
+  void AddOutputFrame(const I420VideoFrame& frame) {
+    if (frame.native_handle() == NULL)
+      output_frame_ybuffers_.push_back(frame.buffer(kYPlane));
+    output_frames_.push_back(new I420VideoFrame(frame));
     output_frame_event_->Set();
   }
 

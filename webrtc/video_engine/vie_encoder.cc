@@ -510,7 +510,7 @@ void ViEEncoder::TraceFrameDropEnd() {
 }
 
 void ViEEncoder::DeliverFrame(int id,
-                              I420VideoFrame* video_frame,
+                              const I420VideoFrame& video_frame,
                               const std::vector<uint32_t>& csrcs) {
   DCHECK(send_payload_router_ != NULL);
   DCHECK(csrcs.empty());
@@ -529,29 +529,29 @@ void ViEEncoder::DeliverFrame(int id,
     TraceFrameDropEnd();
   }
 
-  TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", video_frame->render_time_ms(),
+  TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", video_frame.render_time_ms(),
                           "Encode");
   I420VideoFrame* decimated_frame = NULL;
   // TODO(wuchengli): support texture frames.
-  if (video_frame->native_handle() == NULL) {
+  if (video_frame.native_handle() == NULL) {
     {
       CriticalSectionScoped cs(callback_cs_.get());
       if (effect_filter_) {
         size_t length =
-            CalcBufferSize(kI420, video_frame->width(), video_frame->height());
+            CalcBufferSize(kI420, video_frame.width(), video_frame.height());
         rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
-        ExtractBuffer(*video_frame, length, video_buffer.get());
+        ExtractBuffer(video_frame, length, video_buffer.get());
         effect_filter_->Transform(length,
                                   video_buffer.get(),
-                                  video_frame->ntp_time_ms(),
-                                  video_frame->timestamp(),
-                                  video_frame->width(),
-                                  video_frame->height());
+                                  video_frame.ntp_time_ms(),
+                                  video_frame.timestamp(),
+                                  video_frame.width(),
+                                  video_frame.height());
       }
     }
 
     // Pass frame via preprocessor.
-    const int ret = vpm_.PreprocessFrame(*video_frame, &decimated_frame);
+    const int ret = vpm_.PreprocessFrame(video_frame, &decimated_frame);
     if (ret == 1) {
       // Drop this frame.
       return;
@@ -560,18 +560,28 @@ void ViEEncoder::DeliverFrame(int id,
       return;
     }
   }
-  // If the frame was not resampled or scaled => use original.
-  if (decimated_frame == NULL)  {
-    decimated_frame = video_frame;
-  }
 
+  // If we haven't resampled the frame and we have a FrameCallback, we need to
+  // make a deep copy of |video_frame|.
+  I420VideoFrame copied_frame;
   {
     CriticalSectionScoped cs(callback_cs_.get());
-    if (pre_encode_callback_)
+    if (pre_encode_callback_) {
+      // If the frame was not resampled or scaled => use copy of original.
+      if (decimated_frame == NULL) {
+        copied_frame.CopyFrame(video_frame);
+        decimated_frame = &copied_frame;
+      }
       pre_encode_callback_->FrameCallback(decimated_frame);
+    }
   }
 
-  if (video_frame->native_handle() != NULL) {
+  // If the frame was not resampled, scaled, or touched by FrameCallback => use
+  // original. The frame is const from here.
+  const I420VideoFrame* output_frame =
+      (decimated_frame != NULL) ? decimated_frame : &video_frame;
+
+  if (video_frame.native_handle() != NULL) {
     // TODO(wuchengli): add texture support. http://crbug.com/362437
     return;
   }
@@ -594,12 +604,12 @@ void ViEEncoder::DeliverFrame(int id,
       has_received_rpsi_ = false;
     }
 
-    vcm_.AddVideoFrame(*decimated_frame, vpm_.ContentMetrics(),
+    vcm_.AddVideoFrame(*output_frame, vpm_.ContentMetrics(),
                        &codec_specific_info);
     return;
   }
 #endif
-  vcm_.AddVideoFrame(*decimated_frame);
+  vcm_.AddVideoFrame(*output_frame);
 }
 
 void ViEEncoder::DelayChanged(int id, int frame_delay) {

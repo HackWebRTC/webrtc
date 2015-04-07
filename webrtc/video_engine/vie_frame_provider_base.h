@@ -29,7 +29,7 @@ class I420VideoFrame;
 class ViEFrameCallback {
  public:
   virtual void DeliverFrame(int id,
-                            I420VideoFrame* video_frame,
+                            const I420VideoFrame& video_frame,
                             const std::vector<uint32_t>& csrcs) = 0;
 
   // The capture delay has changed from the provider. |frame_delay| is given in
@@ -77,7 +77,7 @@ class ViEFrameProviderBase {
   virtual int FrameCallbackChanged() = 0;
 
  protected:
-  void DeliverFrame(I420VideoFrame* video_frame,
+  void DeliverFrame(const I420VideoFrame& video_frame,
                     const std::vector<uint32_t>& csrcs);
   void SetFrameDelay(int frame_delay);
   int FrameDelay();

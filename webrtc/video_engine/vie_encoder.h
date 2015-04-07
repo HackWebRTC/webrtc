@@ -105,7 +105,7 @@ class ViEEncoder
 
   // Implementing ViEFrameCallback.
   void DeliverFrame(int id,
-                    I420VideoFrame* video_frame,
+                    const I420VideoFrame& video_frame,
                     const std::vector<uint32_t>& csrcs) override;
   void DelayChanged(int id, int frame_delay) override;
   int GetPreferedFrameSettings(int* width,

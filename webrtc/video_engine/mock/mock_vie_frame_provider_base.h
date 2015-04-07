@@ -19,7 +19,7 @@ class MockViEFrameCallback : public ViEFrameCallback {
  public:
   MOCK_METHOD3(DeliverFrame,
                void(int id,
-                    I420VideoFrame* video_frame,
+                    const I420VideoFrame& video_frame,
                     const std::vector<uint32_t>& csrcs));
   MOCK_METHOD2(DelayChanged, void(int id, int frame_delay));
   MOCK_METHOD3(GetPreferedFrameSettings,

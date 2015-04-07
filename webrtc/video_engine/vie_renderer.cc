@@ -122,9 +122,9 @@ int32_t ViERenderer::Init(const uint32_t z_order,
 }
 
 void ViERenderer::DeliverFrame(int id,
-                               I420VideoFrame* video_frame,
+                               const I420VideoFrame& video_frame,
                                const std::vector<uint32_t>& csrcs) {
-  render_callback_->RenderFrame(render_id_, *video_frame);
+  render_callback_->RenderFrame(render_id_, video_frame);
 }
 
 void ViERenderer::DelayChanged(int id, int frame_delay) {}

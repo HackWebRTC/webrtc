@@ -97,7 +97,7 @@ class ViERenderer: public ViEFrameCallback {
 
   // Implement ViEFrameCallback
   virtual void DeliverFrame(int id,
-                            I420VideoFrame* video_frame,
+                            const I420VideoFrame& video_frame,
                             const std::vector<uint32_t>& csrcs);
   virtual void DelayChanged(int id, int frame_delay);
   virtual int GetPreferedFrameSettings(int* width,
