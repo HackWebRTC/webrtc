@@ -381,9 +381,15 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
     if (existing_network == current_networks.end()) {
       AdapterType adapter_type = ADAPTER_TYPE_UNKNOWN;
       if (cursor->ifa_flags & IFF_LOOPBACK) {
-        // TODO(phoglund): Need to recognize other types as well.
         adapter_type = ADAPTER_TYPE_LOOPBACK;
       }
+#if defined(WEBRTC_IOS)
+      // Cell networks are pdp_ipN on iOS.
+      if (strncmp(cursor->ifa_name, "pdp_ip", 6) == 0) {
+        adapter_type = ADAPTER_TYPE_CELLULAR;
+      }
+#endif
+      // TODO(phoglund): Need to recognize other types as well.
       scoped_ptr<Network> network(new Network(cursor->ifa_name,
                                               cursor->ifa_name,
                                               prefix,
