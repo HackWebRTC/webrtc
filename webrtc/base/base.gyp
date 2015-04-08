@@ -543,7 +543,7 @@
               'conditions': [
                 # On some platforms, the rest of NSS is bundled. On others,
                 # it's pulled from the system.
-                ['OS == "mac" or OS == "ios" or OS == "win"', {
+                ['OS == "mac" or OS == "ios"', {
                   'dependencies': [
                     '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
                     '<(DEPTH)/third_party/nss/nss.gyp:nspr',
