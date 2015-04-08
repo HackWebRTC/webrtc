@@ -1491,8 +1491,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
                                      frame->GetVideoRotation());
   rtc::CritScope cs(&lock_);
   if (stream_ == NULL) {
-    LOG(LS_WARNING) << "Capturer inputting frames before send codecs are "
-                       "configured, dropping.";
+    // Frame input before send codecs are configured, dropping frame.
     return;
   }
 
