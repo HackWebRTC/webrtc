@@ -78,17 +78,29 @@ if __name__ == '__main__':
   args.append('--check')
 
   supplemental_includes = GetSupplementalFiles()
-  gn_vars_dict = gyp_chromium.GetGypVars(supplemental_includes)
+  gyp_vars = gyp_chromium.GetGypVars(supplemental_includes)
 
   # Automatically turn on crosscompile support for platforms that need it.
   if all(('ninja' in os.environ.get('GYP_GENERATORS', ''),
-          gn_vars_dict.get('OS') in ['android', 'ios'],
+          gyp_vars.get('OS') in ['android', 'ios'],
           'GYP_CROSSCOMPILE' not in os.environ)):
     os.environ['GYP_CROSSCOMPILE'] = '1'
 
   args.extend(['-I' + i for i in
                gyp_chromium.additional_include_files(supplemental_includes,
                                                      args)])
+
+  # Set target_subarch for iOS builds if not already set.
+  if gyp_vars.get('OS') == 'ios' and 'target_subarch' not in gyp_vars:
+    os.environ.setdefault('GYP_DEFINES', '')
+    target_subarch = None
+    if gyp_vars.get('target_arch') == 'arm' :
+      target_subarch = 'arm32'
+    elif gyp_vars.get('target_arch') == 'arm64':
+      target_subarch = 'arm64'
+    if target_subarch:
+      print 'INFO: Appending target_subarch=%s to GYP_DEFINES' % target_subarch
+      os.environ['GYP_DEFINES'] += ' target_subarch=%s' % target_subarch
 
   # Set the gyp depth variable to the root of the checkout.
   args.append('--depth=' + os.path.relpath(checkout_root))
