@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/checks.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 #include "webrtc/modules/video_coding/main/source/generic_encoder.h"
@@ -19,35 +20,30 @@ namespace webrtc {
 namespace {
 // Map information from info into rtp. If no relevant information is found
 // in info, rtp is set to NULL.
-void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader** rtp) {
-  if (!info) {
-    *rtp = NULL;
-    return;
-  }
+void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
+  DCHECK(info);
   switch (info->codecType) {
     case kVideoCodecVP8: {
-      (*rtp)->codec = kRtpVideoVp8;
-      (*rtp)->codecHeader.VP8.InitRTPVideoHeaderVP8();
-      (*rtp)->codecHeader.VP8.pictureId = info->codecSpecific.VP8.pictureId;
-      (*rtp)->codecHeader.VP8.nonReference =
+      rtp->codec = kRtpVideoVp8;
+      rtp->codecHeader.VP8.InitRTPVideoHeaderVP8();
+      rtp->codecHeader.VP8.pictureId = info->codecSpecific.VP8.pictureId;
+      rtp->codecHeader.VP8.nonReference =
           info->codecSpecific.VP8.nonReference;
-      (*rtp)->codecHeader.VP8.temporalIdx = info->codecSpecific.VP8.temporalIdx;
-      (*rtp)->codecHeader.VP8.layerSync = info->codecSpecific.VP8.layerSync;
-      (*rtp)->codecHeader.VP8.tl0PicIdx = info->codecSpecific.VP8.tl0PicIdx;
-      (*rtp)->codecHeader.VP8.keyIdx = info->codecSpecific.VP8.keyIdx;
-      (*rtp)->simulcastIdx = info->codecSpecific.VP8.simulcastIdx;
+      rtp->codecHeader.VP8.temporalIdx = info->codecSpecific.VP8.temporalIdx;
+      rtp->codecHeader.VP8.layerSync = info->codecSpecific.VP8.layerSync;
+      rtp->codecHeader.VP8.tl0PicIdx = info->codecSpecific.VP8.tl0PicIdx;
+      rtp->codecHeader.VP8.keyIdx = info->codecSpecific.VP8.keyIdx;
+      rtp->simulcastIdx = info->codecSpecific.VP8.simulcastIdx;
       return;
     }
     case kVideoCodecH264:
-      (*rtp)->codec = kRtpVideoH264;
+      rtp->codec = kRtpVideoH264;
       return;
     case kVideoCodecGeneric:
-      (*rtp)->codec = kRtpVideoGeneric;
-      (*rtp)->simulcastIdx = info->codecSpecific.generic.simulcast_idx;
+      rtp->codec = kRtpVideoGeneric;
+      rtp->simulcastIdx = info->codecSpecific.generic.simulcast_idx;
       return;
     default:
-      // No codec specific info. Change RTP header pointer to NULL.
-      *rtp = NULL;
       return;
   }
 }
@@ -256,7 +252,9 @@ int32_t VCMEncodedFrameCallback::Encoded(
   RTPVideoHeader rtpVideoHeader;
   memset(&rtpVideoHeader, 0, sizeof(RTPVideoHeader));
   RTPVideoHeader* rtpVideoHeaderPtr = &rtpVideoHeader;
-  CopyCodecSpecific(codecSpecificInfo, &rtpVideoHeaderPtr);
+  if (codecSpecificInfo) {
+    CopyCodecSpecific(codecSpecificInfo, rtpVideoHeaderPtr);
+  }
   rtpVideoHeader.rotation = _rotation;
 
   int32_t callbackReturn = _sendCallback->SendData(
