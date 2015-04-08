@@ -38,6 +38,7 @@ namespace webrtc {
 namespace {
 
 enum {
+  MSG_DESTROY,
   MSG_GENERATE_IDENTITY,
   MSG_GENERATE_IDENTITY_RESULT,
   MSG_RETURN_FREE_IDENTITY
@@ -53,11 +54,12 @@ typedef rtc::ScopedMessageData<rtc::SSLIdentity> IdentityResultMessageData;
 class DtlsIdentityStore::WorkerTask : public sigslot::has_slots<>,
                                       public rtc::MessageHandler {
  public:
-  explicit WorkerTask(DtlsIdentityStore* store) : store_(store) {
+  explicit WorkerTask(DtlsIdentityStore* store)
+      : signaling_thread_(rtc::Thread::Current()), store_(store) {
     store_->SignalDestroyed.connect(this, &WorkerTask::OnStoreDestroyed);
   };
 
-  virtual ~WorkerTask() {}
+  virtual ~WorkerTask() { DCHECK(rtc::Thread::Current() == signaling_thread_); }
 
   void GenerateIdentity() {
     rtc::scoped_ptr<rtc::SSLIdentity> identity(
@@ -72,10 +74,20 @@ class DtlsIdentityStore::WorkerTask : public sigslot::has_slots<>,
   }
 
   void OnMessage(rtc::Message* msg) override {
-    DCHECK(msg->message_id == MSG_GENERATE_IDENTITY);
-    GenerateIdentity();
-    // Deleting msg->pdata will destroy the WorkerTask.
-    delete msg->pdata;
+    switch (msg->message_id) {
+      case MSG_GENERATE_IDENTITY:
+        GenerateIdentity();
+
+        // Must delete |this|, owned by msg->pdata, on the signaling thread to
+        // avoid races on disconnecting the signal.
+        signaling_thread_->Post(this, MSG_DESTROY, msg->pdata);
+        break;
+      case MSG_DESTROY:
+        delete msg->pdata;
+        break;
+      default:
+        CHECK(false) << "Unexpected message type";
+    }
   }
 
  private:
@@ -84,6 +96,7 @@ class DtlsIdentityStore::WorkerTask : public sigslot::has_slots<>,
     store_ = NULL;
   }
 
+  rtc::Thread* signaling_thread_;
   rtc::CriticalSection cs_;
   DtlsIdentityStore* store_;
 };

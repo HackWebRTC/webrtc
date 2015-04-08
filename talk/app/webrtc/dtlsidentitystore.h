@@ -68,7 +68,7 @@ class DtlsIdentityStore : public rtc::MessageHandler {
   bool HasFreeIdentityForTesting() const;
 
  private:
-  sigslot::signal0<sigslot::multi_threaded_local> SignalDestroyed;
+  sigslot::signal0<> SignalDestroyed;
   class WorkerTask;
   typedef rtc::ScopedMessageData<DtlsIdentityStore::WorkerTask>
       IdentityTaskMessageData;
