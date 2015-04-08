@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/checks.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 #include "webrtc/modules/video_coding/main/source/generic_encoder.h"
@@ -20,10 +21,7 @@ namespace {
 // Map information from info into rtp. If no relevant information is found
 // in info, rtp is set to NULL.
 void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader** rtp) {
-  if (!info) {
-    *rtp = NULL;
-    return;
-  }
+  DCHECK(info);
   switch (info->codecType) {
     case kVideoCodecVP8: {
       (*rtp)->codec = kRtpVideoVp8;
@@ -46,8 +44,6 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader** rtp) {
       (*rtp)->simulcastIdx = info->codecSpecific.generic.simulcast_idx;
       return;
     default:
-      // No codec specific info. Change RTP header pointer to NULL.
-      *rtp = NULL;
       return;
   }
 }
