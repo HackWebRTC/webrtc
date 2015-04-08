@@ -247,14 +247,14 @@ int16_t APITest::SetUp() {
 
   //--- EVENT TIMERS
   // A
-  _pullEventA = EventWrapper::Create();
-  _pushEventA = EventWrapper::Create();
-  _processEventA = EventWrapper::Create();
+  _pullEventA = EventTimerWrapper::Create();
+  _pushEventA = EventTimerWrapper::Create();
+  _processEventA = EventTimerWrapper::Create();
   _apiEventA = EventWrapper::Create();
   // B
-  _pullEventB = EventWrapper::Create();
-  _pushEventB = EventWrapper::Create();
-  _processEventB = EventWrapper::Create();
+  _pullEventB = EventTimerWrapper::Create();
+  _pushEventB = EventTimerWrapper::Create();
+  _processEventB = EventTimerWrapper::Create();
   _apiEventB = EventWrapper::Create();
 
   //--- I/O params
@@ -682,7 +682,7 @@ void APITest::TestDelay(char side) {
   AudioCodingModule* myACM;
   Channel* myChannel;
   int32_t* myMinDelay;
-  EventWrapper* myEvent = EventWrapper::Create();
+  EventTimerWrapper* myEvent = EventTimerWrapper::Create();
 
   uint32_t inTimestamp = 0;
   uint32_t outTimestamp = 0;

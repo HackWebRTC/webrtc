@@ -34,7 +34,7 @@ VideoRenderIosGles20::VideoRenderIosGles20(VideoRenderIosView* view,
       is_rendering_(true) {
   screen_update_thread_ = ThreadWrapper::CreateThread(
       ScreenUpdateThreadProc, this, "ScreenUpdateGles20");
-  screen_update_event_ = EventWrapper::Create();
+  screen_update_event_ = EventTimerWrapper::Create();
   GetWindowRect(window_rect_);
 }
 

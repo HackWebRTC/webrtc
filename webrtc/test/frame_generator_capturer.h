@@ -19,7 +19,7 @@
 namespace webrtc {
 
 class CriticalSectionWrapper;
-class EventWrapper;
+class EventTimerWrapper;
 class ThreadWrapper;
 
 namespace test {
@@ -60,7 +60,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
   Clock* const clock_;
   bool sending_;
 
-  rtc::scoped_ptr<EventWrapper> tick_;
+  rtc::scoped_ptr<EventTimerWrapper> tick_;
   rtc::scoped_ptr<CriticalSectionWrapper> lock_;
   rtc::scoped_ptr<ThreadWrapper> thread_;
   rtc::scoped_ptr<FrameGenerator> frame_generator_;

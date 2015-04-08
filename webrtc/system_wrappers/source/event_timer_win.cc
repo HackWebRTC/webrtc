@@ -8,13 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/system_wrappers/source/event_win.h"
+#include "webrtc/system_wrappers/source/event_timer_win.h"
 
 #include "Mmsystem.h"
 
 namespace webrtc {
 
-EventWindows::EventWindows()
+// static
+EventTimerWrapper* EventTimerWrapper::Create() {
+  return new EventTimerWin();
+}
+
+EventTimerWin::EventTimerWin()
     : event_(::CreateEvent(NULL,    // security attributes
                            FALSE,   // manual reset
                            FALSE,   // initial state
@@ -22,17 +27,17 @@ EventWindows::EventWindows()
     timerID_(NULL) {
 }
 
-EventWindows::~EventWindows() {
+EventTimerWin::~EventTimerWin() {
   StopTimer();
   CloseHandle(event_);
 }
 
-bool EventWindows::Set() {
+bool EventTimerWin::Set() {
   // Note: setting an event that is already set has no effect.
   return SetEvent(event_) == 1;
 }
 
-EventTypeWrapper EventWindows::Wait(unsigned long max_time) {
+EventTypeWrapper EventTimerWin::Wait(unsigned long max_time) {
   unsigned long res = WaitForSingleObject(event_, max_time);
   switch (res) {
     case WAIT_OBJECT_0:
@@ -44,7 +49,7 @@ EventTypeWrapper EventWindows::Wait(unsigned long max_time) {
   }
 }
 
-bool EventWindows::StartTimer(bool periodic, unsigned long time) {
+bool EventTimerWin::StartTimer(bool periodic, unsigned long time) {
   if (timerID_ != NULL) {
     timeKillEvent(timerID_);
     timerID_ = NULL;
@@ -61,7 +66,7 @@ bool EventWindows::StartTimer(bool periodic, unsigned long time) {
   return timerID_ != NULL;
 }
 
-bool EventWindows::StopTimer() {
+bool EventTimerWin::StopTimer() {
   if (timerID_ != NULL) {
     timeKillEvent(timerID_);
     timerID_ = NULL;

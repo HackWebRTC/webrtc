@@ -20,7 +20,7 @@ namespace webrtc {
 
 class Clock;
 class CriticalSectionWrapper;
-class EventWrapper;
+class EventTimerWrapper;
 class FileWrapper;
 class ModuleFileUtility;
 class ThreadWrapper;
@@ -57,7 +57,7 @@ class FakeAudioDevice : public FakeAudioDeviceModule {
   int64_t last_playout_ms_;
 
   Clock* clock_;
-  rtc::scoped_ptr<EventWrapper> tick_;
+  rtc::scoped_ptr<EventTimerWrapper> tick_;
   rtc::scoped_ptr<CriticalSectionWrapper> lock_;
   rtc::scoped_ptr<ThreadWrapper> thread_;
   rtc::scoped_ptr<ModuleFileUtility> file_utility_;

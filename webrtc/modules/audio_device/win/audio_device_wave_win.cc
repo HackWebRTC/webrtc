@@ -47,7 +47,7 @@ namespace webrtc {
 AudioDeviceWindowsWave::AudioDeviceWindowsWave(const int32_t id) :
     _ptrAudioBuffer(NULL),
     _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
-    _timeEvent(*EventWrapper::Create()),
+    _timeEvent(*EventTimerWrapper::Create()),
     _recStartEvent(*EventWrapper::Create()),
     _playStartEvent(*EventWrapper::Create()),
     _hGetCaptureVolumeThread(NULL),

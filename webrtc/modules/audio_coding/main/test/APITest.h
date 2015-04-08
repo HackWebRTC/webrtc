@@ -109,14 +109,14 @@ class APITest : public ACMTest {
   bool _writeToFile;
   //--- Events
   // A
-  EventWrapper* _pullEventA;      // pulling data from ACM
-  EventWrapper* _pushEventA;      // pushing data to ACM
-  EventWrapper* _processEventA;   // process
+  EventTimerWrapper* _pullEventA;      // pulling data from ACM
+  EventTimerWrapper* _pushEventA;      // pushing data to ACM
+  EventTimerWrapper* _processEventA;   // process
   EventWrapper* _apiEventA;       // API calls
   // B
-  EventWrapper* _pullEventB;      // pulling data from ACM
-  EventWrapper* _pushEventB;      // pushing data to ACM
-  EventWrapper* _processEventB;   // process
+  EventTimerWrapper* _pullEventB;      // pulling data from ACM
+  EventTimerWrapper* _pushEventB;      // pushing data to ACM
+  EventTimerWrapper* _processEventB;   // process
   EventWrapper* _apiEventB;       // API calls
 
   // keep track of the codec in either side.
