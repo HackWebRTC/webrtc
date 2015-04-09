@@ -64,10 +64,7 @@ class ChannelGroup : public BitrateObserver {
 
   void SetSyncInterface(VoEVideoSync* sync_interface);
 
-  void SetChannelRembStatus(int channel_id,
-                            bool sender,
-                            bool receiver,
-                            ViEChannel* channel);
+  void SetChannelRembStatus(bool sender, bool receiver, ViEChannel* channel);
 
   BitrateController* GetBitrateController() const;
   CallStats* GetCallStats() const;

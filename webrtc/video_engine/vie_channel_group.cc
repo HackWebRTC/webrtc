@@ -285,7 +285,7 @@ void ChannelGroup::DeleteChannel(int channel_id) {
   DCHECK(vie_encoder != NULL);
 
   call_stats_->DeregisterStatsObserver(vie_channel->GetStatsObserver());
-  SetChannelRembStatus(channel_id, false, false, vie_channel);
+  SetChannelRembStatus(false, false, vie_channel);
 
   // If we're owning the encoder, remove the feedback and stop all encoding
   // threads and processing. This must be done before deleting the channel.
@@ -446,8 +446,7 @@ int64_t ChannelGroup::GetPacerQueuingDelayMs() const {
   return pacer_->QueueInMs();
 }
 
-void ChannelGroup::SetChannelRembStatus(int channel_id,
-                                        bool sender,
+void ChannelGroup::SetChannelRembStatus(bool sender,
                                         bool receiver,
                                         ViEChannel* channel) {
   // Update the channel state.

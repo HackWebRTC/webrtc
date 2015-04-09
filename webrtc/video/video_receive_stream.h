@@ -22,6 +22,11 @@
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video/transport_adapter.h"
 #include "webrtc/video_engine/include/vie_render.h"
+#include "webrtc/video_engine/vie_channel.h"
+#include "webrtc/video_engine/vie_channel_group.h"
+#include "webrtc/video_engine/vie_encoder.h"
+#include "webrtc/video_engine/vie_render_manager.h"
+#include "webrtc/video_engine/vie_renderer.h"
 #include "webrtc/video_receive_stream.h"
 
 namespace webrtc {
@@ -43,6 +48,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public ExternalRenderer {
  public:
   VideoReceiveStream(webrtc::VideoEngine* video_engine,
+                     ChannelGroup* channel_group,
                      const VideoReceiveStream::Config& config,
                      newapi::Transport* transport,
                      webrtc::VoiceEngine* voice_engine,
@@ -82,13 +88,14 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   const VideoReceiveStream::Config config_;
   Clock* const clock_;
 
+  ChannelGroup* const channel_group_;
+  ViEChannel* vie_channel_;
+  ViERenderManager* vie_render_manager_;
+  ViERenderer* vie_renderer_;
+
   ViEBase* video_engine_base_;
-  ViECodec* codec_;
-  ViEExternalCodec* external_codec_;
-  ViENetwork* network_;
-  ViERender* render_;
-  ViERTP_RTCP* rtp_rtcp_;
-  ViEImageProcess* image_process_;
+
+  VoEVideoSync* voe_sync_interface_;
 
   rtc::scoped_ptr<ReceiveStatisticsProxy> stats_proxy_;
 

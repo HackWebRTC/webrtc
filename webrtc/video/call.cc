@@ -157,6 +157,7 @@ class Call : public webrtc::Call, public PacketReceiver {
   ViEBase* base_;
   ViENetwork* network_;
   int base_channel_id_;
+  ChannelGroup* channel_group_;
 
   rtc::scoped_ptr<VideoRender> external_render_;
 
@@ -165,9 +166,7 @@ class Call : public webrtc::Call, public PacketReceiver {
 }  // namespace internal
 
 Call* Call::Create(const Call::Config& config) {
-  VideoEngine* video_engine = config.webrtc_config != nullptr
-                                  ? VideoEngine::Create(*config.webrtc_config)
-                                  : VideoEngine::Create();
+  VideoEngine* video_engine = VideoEngine::Create();
   DCHECK(video_engine != nullptr);
 
   return new internal::Call(video_engine, config);
@@ -221,6 +220,7 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
 
   base_->CreateChannel(base_channel_id_);
   DCHECK(base_channel_id_ != -1);
+  channel_group_ = base_->GetChannelGroup(base_channel_id_);
 
   network_->SetBitrateConfig(base_channel_id_,
                              config_.bitrate_config.min_bitrate_bps,
@@ -309,6 +309,7 @@ VideoReceiveStream* Call::CreateVideoReceiveStream(
   LOG(LS_INFO) << "CreateVideoReceiveStream: " << config.ToString();
   VideoReceiveStream* receive_stream =
       new VideoReceiveStream(video_engine_,
+                             channel_group_,
                              config,
                              config_.send_transport,
                              config_.voice_engine,

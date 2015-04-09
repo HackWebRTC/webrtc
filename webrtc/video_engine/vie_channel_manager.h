@@ -59,6 +59,8 @@ class ViEChannelManager: private ViEManagerBase {
                     bool sender,
                     bool disable_default_encoder);
 
+  ChannelGroup* GetChannelGroup(int channel_id);
+
   // Deletes a channel.
   int DeleteChannel(int channel_id);
 

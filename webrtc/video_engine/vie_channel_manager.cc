@@ -12,6 +12,7 @@
 
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
@@ -134,6 +135,13 @@ int ViEChannelManager::CreateChannel(int* channel_id,
   return 0;
 }
 
+ChannelGroup* ViEChannelManager::GetChannelGroup(int channel_id) {
+  CriticalSectionScoped cs(channel_id_critsect_);
+  ChannelGroup* group = FindGroup(channel_id);
+  DCHECK(group);
+  return group;
+}
+
 int ViEChannelManager::DeleteChannel(int channel_id) {
   ChannelGroup* group = NULL;
   {
@@ -224,7 +232,7 @@ bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
   ViEChannel* channel = ViEChannelPtr(channel_id);
   assert(channel);
 
-  group->SetChannelRembStatus(channel_id, sender, receiver, channel);
+  group->SetChannelRembStatus(sender, receiver, channel);
   return true;
 }
 

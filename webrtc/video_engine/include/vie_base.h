@@ -28,6 +28,14 @@ class VoiceEngine;
 class ReceiveStatisticsProxy;
 class SendStatisticsProxy;
 
+// Internal-class forward declarations, used to break out implementations for
+// the new video API to remove interface dependencies to the VideoEngine API
+// See webrtc:1695.
+class ChannelGroup;
+class ViEChannel;
+class ViEEncoder;
+class ViERenderManager;
+
 // CpuOveruseObserver is called when a system overuse is detected and
 // VideoEngine cannot keep up the encoding frequency.
 class CpuOveruseObserver {
@@ -189,6 +197,11 @@ class WEBRTC_DLLEXPORT ViEBase {
 
   virtual int CreateChannelWithoutDefaultEncoder(int& video_channel,
                                                  int original_channel) = 0;
+
+  virtual ChannelGroup* GetChannelGroup(int channel_id) = 0;
+  virtual ViEChannel* GetChannel(int channel_id) = 0;
+  virtual ViEEncoder* GetEncoder(int channel_id) = 0;
+  virtual ViERenderManager* GetRenderManager() = 0;
 
   // Creates a new channel grouped together with |original_channel|. The channel
   // can only receive video and it is assumed the remote end-point is the same

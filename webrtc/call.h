@@ -62,14 +62,11 @@ class Call {
   };
   struct Config {
     explicit Config(newapi::Transport* send_transport)
-        : webrtc_config(NULL),
-          send_transport(send_transport),
+        : send_transport(send_transport),
           voice_engine(NULL),
           overuse_callback(NULL) {}
 
     static const int kDefaultStartBitrateBps;
-
-    webrtc::Config* webrtc_config;
 
     newapi::Transport* send_transport;
 
@@ -107,9 +104,6 @@ class Call {
   };
 
   static Call* Create(const Call::Config& config);
-
-  static Call* Create(const Call::Config& config,
-                      const webrtc::Config& webrtc_config);
 
   virtual VideoSendStream* CreateVideoSendStream(
       const VideoSendStream::Config& config,

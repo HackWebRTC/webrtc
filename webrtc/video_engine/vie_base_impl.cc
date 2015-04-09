@@ -13,6 +13,7 @@
 #include <string>
 #include <utility>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
@@ -193,6 +194,28 @@ int ViEBaseImpl::CreateChannelWithoutDefaultEncoder(
     int& video_channel,  // NOLINT
     int original_channel) {
   return CreateChannel(video_channel, original_channel, true, true);
+}
+
+ChannelGroup* ViEBaseImpl::GetChannelGroup(int channel_id) {
+  return shared_data_.channel_manager()->GetChannelGroup(channel_id);
+}
+
+ViEChannel* ViEBaseImpl::GetChannel(int channel_id) {
+  ViEChannelManagerScoped cs(*(shared_data_.channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(channel_id);
+  DCHECK(vie_channel);
+  return vie_channel;
+}
+
+ViEEncoder* ViEBaseImpl::GetEncoder(int channel_id) {
+  ViEChannelManagerScoped cs(*(shared_data_.channel_manager()));
+  ViEEncoder* vie_encoder = cs.Encoder(channel_id);
+  DCHECK(vie_encoder);
+  return vie_encoder;
+}
+
+ViERenderManager* ViEBaseImpl::GetRenderManager() {
+  return shared_data_.render_manager();
 }
 
 int ViEBaseImpl::CreateReceiveChannel(int& video_channel,  // NOLINT

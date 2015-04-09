@@ -132,6 +132,7 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
 }  // namespace
 
 VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
+                                       ChannelGroup* channel_group,
                                        const VideoReceiveStream::Config& config,
                                        newapi::Transport* transport,
                                        webrtc::VoiceEngine* voice_engine,
@@ -140,17 +141,19 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
       encoded_frame_proxy_(config.pre_decode_callback),
       config_(config),
       clock_(Clock::GetRealTimeClock()),
+      channel_group_(channel_group),
+      voe_sync_interface_(nullptr),
       channel_(-1) {
   video_engine_base_ = ViEBase::GetInterface(video_engine);
   video_engine_base_->CreateReceiveChannel(channel_, base_channel);
   DCHECK(channel_ != -1);
 
-  rtp_rtcp_ = ViERTP_RTCP::GetInterface(video_engine);
-  DCHECK(rtp_rtcp_ != nullptr);
+  vie_channel_ = video_engine_base_->GetChannel(channel_);
+  vie_render_manager_ = video_engine_base_->GetRenderManager();
 
   // TODO(pbos): This is not fine grained enough...
-  rtp_rtcp_->SetNACKStatus(channel_, config_.rtp.nack.rtp_history_ms > 0);
-  rtp_rtcp_->SetKeyFrameRequestMethod(channel_, kViEKeyFrameRequestPliRtcp);
+  vie_channel_->SetNACKStatus(config_.rtp.nack.rtp_history_ms > 0);
+  vie_channel_->SetKeyFrameRequestMethod(kKeyFrameReqPliRtcp);
   SetRtcpMode(config_.rtp.rtcp_mode);
 
   DCHECK(config_.rtp.remote_ssrc != 0);
@@ -158,18 +161,20 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   DCHECK(config_.rtp.local_ssrc != 0);
   DCHECK(config_.rtp.remote_ssrc != config_.rtp.local_ssrc);
 
-  rtp_rtcp_->SetLocalSSRC(channel_, config_.rtp.local_ssrc);
+  vie_channel_->SetSSRC(config_.rtp.local_ssrc, kViEStreamTypeNormal, 0);
   // TODO(pbos): Support multiple RTX, per video payload.
   Config::Rtp::RtxMap::const_iterator it = config_.rtp.rtx.begin();
   if (it != config_.rtp.rtx.end()) {
     DCHECK(it->second.ssrc != 0);
     DCHECK(it->second.payload_type != 0);
 
-    rtp_rtcp_->SetRemoteSSRCType(channel_, kViEStreamTypeRtx, it->second.ssrc);
-    rtp_rtcp_->SetRtxReceivePayloadType(channel_, it->second.payload_type);
+    vie_channel_->SetRemoteSSRCType(kViEStreamTypeRtx, it->second.ssrc);
+    vie_channel_->SetRtxReceivePayloadType(it->second.payload_type);
   }
 
-  rtp_rtcp_->SetRembStatus(channel_, false, config_.rtp.remb);
+  // TODO(pbos): Remove channel_group_ usage from VideoReceiveStream. This
+  // should be configured in call.cc.
+  channel_group_->SetChannelRembStatus(false, config_.rtp.remb, vie_channel_);
 
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
     const std::string& extension = config_.rtp.extensions[i].name;
@@ -178,24 +183,17 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
     DCHECK_GE(id, 1);
     DCHECK_LE(id, 14);
     if (extension == RtpExtension::kTOffset) {
-      CHECK_EQ(0,
-               rtp_rtcp_->SetReceiveTimestampOffsetStatus(channel_, true, id));
+      CHECK_EQ(0, vie_channel_->SetReceiveTimestampOffsetStatus(true, id));
     } else if (extension == RtpExtension::kAbsSendTime) {
-      CHECK_EQ(0,
-               rtp_rtcp_->SetReceiveAbsoluteSendTimeStatus(channel_, true, id));
+      CHECK_EQ(0, vie_channel_->SetReceiveAbsoluteSendTimeStatus(true, id));
     } else if (extension == RtpExtension::kVideoRotation) {
-      CHECK_EQ(0, rtp_rtcp_->SetReceiveVideoRotationStatus(channel_, true, id));
+      CHECK_EQ(0, vie_channel_->SetReceiveVideoRotationStatus(true, id));
     } else {
       RTC_NOTREACHED() << "Unsupported RTP extension.";
     }
   }
 
-  network_ = ViENetwork::GetInterface(video_engine);
-  DCHECK(network_ != nullptr);
-
-  network_->RegisterSendTransport(channel_, transport_adapter_);
-
-  codec_ = ViECodec::GetInterface(video_engine);
+  vie_channel_->RegisterSendTransport(&transport_adapter_);
 
   if (config_.rtp.fec.ulpfec_payload_type != -1) {
     // ULPFEC without RED doesn't make sense.
@@ -205,7 +203,7 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
     codec.codecType = kVideoCodecULPFEC;
     strcpy(codec.plName, "ulpfec");
     codec.plType = config_.rtp.fec.ulpfec_payload_type;
-    CHECK_EQ(0, codec_->SetReceiveCodec(channel_, codec));
+    CHECK_EQ(0, vie_channel_->SetReceiveCodec(codec));
   }
   if (config_.rtp.fec.red_payload_type != -1) {
     VideoCodec codec;
@@ -213,97 +211,86 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
     codec.codecType = kVideoCodecRED;
     strcpy(codec.plName, "red");
     codec.plType = config_.rtp.fec.red_payload_type;
-    CHECK_EQ(0, codec_->SetReceiveCodec(channel_, codec));
+    CHECK_EQ(0, vie_channel_->SetReceiveCodec(codec));
   }
+
+  if (config.rtp.rtcp_xr.receiver_reference_time_report)
+    vie_channel_->SetRtcpXrRrtrStatus(true);
 
   stats_proxy_.reset(
       new ReceiveStatisticsProxy(config_.rtp.remote_ssrc, clock_));
 
-  CHECK_EQ(0, rtp_rtcp_->RegisterReceiveChannelRtcpStatisticsCallback(
-                  channel_, stats_proxy_.get()));
-  CHECK_EQ(0, rtp_rtcp_->RegisterReceiveChannelRtpStatisticsCallback(
-                  channel_, stats_proxy_.get()));
-  CHECK_EQ(0, rtp_rtcp_->RegisterRtcpPacketTypeCounterObserver(
-                  channel_, stats_proxy_.get()));
-  CHECK_EQ(0, codec_->RegisterDecoderObserver(channel_, *stats_proxy_));
+  vie_channel_->RegisterReceiveChannelRtcpStatisticsCallback(
+      stats_proxy_.get());
+  vie_channel_->RegisterReceiveChannelRtpStatisticsCallback(stats_proxy_.get());
+  vie_channel_->RegisterRtcpPacketTypeCounterObserver(stats_proxy_.get());
+  vie_channel_->RegisterCodecObserver(stats_proxy_.get());
 
-  video_engine_base_->RegisterReceiveStatisticsProxy(channel_,
-                                                     stats_proxy_.get());
+  vie_channel_->RegisterReceiveStatisticsProxy(stats_proxy_.get());
 
-  external_codec_ = ViEExternalCodec::GetInterface(video_engine);
   DCHECK(!config_.decoders.empty());
   for (size_t i = 0; i < config_.decoders.size(); ++i) {
     const Decoder& decoder = config_.decoders[i];
-    CHECK_EQ(0, external_codec_->RegisterExternalReceiveCodec(
-                    channel_, decoder.payload_type, decoder.decoder,
-                    decoder.is_renderer, decoder.expected_delay_ms));
+    CHECK_EQ(0, vie_channel_->RegisterExternalDecoder(
+                    decoder.payload_type, decoder.decoder, decoder.is_renderer,
+                    decoder.expected_delay_ms));
 
     VideoCodec codec = CreateDecoderVideoCodec(decoder);
 
-    CHECK_EQ(0, codec_->SetReceiveCodec(channel_, codec));
+    CHECK_EQ(0, vie_channel_->SetReceiveCodec(codec));
   }
 
-  render_ = ViERender::GetInterface(video_engine);
-  DCHECK(render_ != nullptr);
-
-  render_->AddRenderer(channel_, kVideoI420, this);
+  // Register a renderer without a window handle, at depth 0, that covers the
+  // entire rendered area (0->1 both axes). This registers a renderer that
+  // renders the entire video.
+  vie_renderer_ = vie_render_manager_->AddRenderStream(channel_, nullptr, 0,
+                                                       0.0f, 0.0f, 1.0f, 1.0f);
+  vie_renderer_->SetExternalRenderer(channel_, kVideoI420, this);
+  vie_channel_->RegisterFrameCallback(channel_, vie_renderer_);
 
   if (voice_engine && config_.audio_channel_id != -1) {
-    video_engine_base_->SetVoiceEngine(voice_engine);
-    video_engine_base_->ConnectAudioChannel(channel_, config_.audio_channel_id);
+    voe_sync_interface_ = VoEVideoSync::GetInterface(voice_engine);
+    vie_channel_->SetVoiceChannel(config.audio_channel_id, voe_sync_interface_);
   }
 
-  image_process_ = ViEImageProcess::GetInterface(video_engine);
-  if (config.pre_decode_callback) {
-    image_process_->RegisterPreDecodeImageCallback(channel_,
-                                                   &encoded_frame_proxy_);
-  }
-  image_process_->RegisterPreRenderCallback(channel_, this);
-
-  if (config.rtp.rtcp_xr.receiver_reference_time_report) {
-    rtp_rtcp_->SetRtcpXrRrtrStatus(channel_, true);
-  }
+  if (config.pre_decode_callback)
+    vie_channel_->RegisterPreDecodeImageCallback(&encoded_frame_proxy_);
+  vie_channel_->RegisterPreRenderCallback(this);
 }
 
 VideoReceiveStream::~VideoReceiveStream() {
-  image_process_->DeRegisterPreRenderCallback(channel_);
-  image_process_->DeRegisterPreDecodeCallback(channel_);
+  vie_channel_->RegisterPreRenderCallback(nullptr);
+  vie_channel_->RegisterPreDecodeImageCallback(nullptr);
 
-  render_->RemoveRenderer(channel_);
+  vie_channel_->DeregisterFrameCallback(vie_renderer_);
+  vie_render_manager_->RemoveRenderStream(channel_);
 
-  for (size_t i = 0; i < config_.decoders.size(); ++i) {
-    external_codec_->DeRegisterExternalReceiveCodec(
-        channel_, config_.decoders[i].payload_type);
+  for (size_t i = 0; i < config_.decoders.size(); ++i)
+    vie_channel_->DeRegisterExternalDecoder(config_.decoders[i].payload_type);
+
+  vie_channel_->DeregisterSendTransport();
+
+  if (voe_sync_interface_ != nullptr) {
+    vie_channel_->SetVoiceChannel(-1, nullptr);
+    voe_sync_interface_->Release();
   }
-
-  network_->DeregisterSendTransport(channel_);
-
-  video_engine_base_->SetVoiceEngine(nullptr);
-  image_process_->Release();
-  external_codec_->Release();
-  codec_->DeregisterDecoderObserver(channel_);
-  rtp_rtcp_->DeregisterReceiveChannelRtpStatisticsCallback(channel_,
-                                                           stats_proxy_.get());
-  rtp_rtcp_->DeregisterReceiveChannelRtcpStatisticsCallback(channel_,
-                                                            stats_proxy_.get());
-  rtp_rtcp_->RegisterRtcpPacketTypeCounterObserver(channel_, nullptr);
-  codec_->Release();
-  network_->Release();
-  render_->Release();
-  rtp_rtcp_->Release();
+  vie_channel_->RegisterCodecObserver(nullptr);
+  vie_channel_->RegisterReceiveChannelRtpStatisticsCallback(nullptr);
+  vie_channel_->RegisterReceiveChannelRtcpStatisticsCallback(nullptr);
+  vie_channel_->RegisterRtcpPacketTypeCounterObserver(nullptr);
   video_engine_base_->DeleteChannel(channel_);
   video_engine_base_->Release();
 }
 
 void VideoReceiveStream::Start() {
   transport_adapter_.Enable();
-  CHECK_EQ(0, render_->StartRender(channel_));
-  CHECK_EQ(0, video_engine_base_->StartReceive(channel_));
+  vie_renderer_->StartRender();
+  vie_channel_->StartReceive();
 }
 
 void VideoReceiveStream::Stop() {
-  CHECK_EQ(0, render_->StopRender(channel_));
-  CHECK_EQ(0, video_engine_base_->StopReceive(channel_));
+  vie_renderer_->StopRender();
+  vie_channel_->StopReceive();
   transport_adapter_.Disable();
 }
 
@@ -312,12 +299,11 @@ VideoReceiveStream::Stats VideoReceiveStream::GetStats() const {
 }
 
 bool VideoReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
-  return network_->ReceivedRTCPPacket(channel_, packet, length) == 0;
+  return vie_channel_->ReceivedRTCPPacket(packet, length) == 0;
 }
 
 bool VideoReceiveStream::DeliverRtp(const uint8_t* packet, size_t length) {
-  return network_->ReceivedRTPPacket(channel_, packet, length, PacketTime()) ==
-      0;
+  return vie_channel_->ReceivedRTPPacket(packet, length, PacketTime()) == 0;
 }
 
 void VideoReceiveStream::FrameCallback(I420VideoFrame* video_frame) {
@@ -364,18 +350,17 @@ bool VideoReceiveStream::IsTextureSupported() {
 void VideoReceiveStream::SignalNetworkState(Call::NetworkState state) {
   if (state == Call::kNetworkUp)
     SetRtcpMode(config_.rtp.rtcp_mode);
-  network_->SetNetworkTransmissionState(channel_, state == Call::kNetworkUp);
   if (state == Call::kNetworkDown)
-    rtp_rtcp_->SetRTCPStatus(channel_, kRtcpNone);
+    vie_channel_->SetRTCPMode(kRtcpOff);
 }
 
 void VideoReceiveStream::SetRtcpMode(newapi::RtcpMode mode) {
   switch (mode) {
     case newapi::kRtcpCompound:
-      rtp_rtcp_->SetRTCPStatus(channel_, kRtcpCompound_RFC4585);
+      vie_channel_->SetRTCPMode(kRtcpCompound);
       break;
     case newapi::kRtcpReducedSize:
-      rtp_rtcp_->SetRTCPStatus(channel_, kRtcpNonCompound_RFC5506);
+      vie_channel_->SetRTCPMode(kRtcpNonCompound);
       break;
   }
 }

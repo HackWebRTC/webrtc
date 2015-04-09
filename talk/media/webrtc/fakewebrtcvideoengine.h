@@ -699,6 +699,13 @@ class FakeWebRtcVideoEngine
     return 0;
   }
   WEBRTC_STUB(CreateChannelWithoutDefaultEncoder, (int&, int original_channel));
+  webrtc::ChannelGroup* GetChannelGroup(int channel_id) override {
+    return nullptr;
+  }
+  webrtc::ViEChannel* GetChannel(int channel_id) override { return nullptr; }
+  webrtc::ViEEncoder* GetEncoder(int channel_id) override { return nullptr; }
+  webrtc::ViERenderManager* GetRenderManager() override { return nullptr; }
+
   WEBRTC_FUNC(CreateReceiveChannel, (int& channel, int original_channel)) {
     return CreateChannel(channel, original_channel);
   }

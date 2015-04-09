@@ -50,6 +50,11 @@ class ViEBaseImpl
   virtual int CreateChannelWithoutDefaultEncoder(int& video_channel,  // NOLINT
                                                  int original_channel);
 
+  ChannelGroup* GetChannelGroup(int channel_id) override;
+  ViEChannel* GetChannel(int channel_id) override;
+  ViEEncoder* GetEncoder(int channel_id) override;
+  ViERenderManager* GetRenderManager() override;
+
   virtual int CreateReceiveChannel(int& video_channel,  // NOLINT
                                    int original_channel);
   virtual int DeleteChannel(const int video_channel);
