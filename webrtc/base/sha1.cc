@@ -104,7 +104,7 @@
 
 namespace rtc {
 
-void SHA1Transform(uint32 state[5], const uint8 buffer[64]);
+namespace {
 
 #define rol(value, bits) (((value) << (bits)) | ((value) >> (32 - (bits))))
 
@@ -205,6 +205,8 @@ void SHA1Transform(uint32 state[5], const uint8 buffer[64]) {
   state[3] += d;
   state[4] += e;
 }
+
+}  // namespace
 
 // SHA1Init - Initialize new context.
 void SHA1Init(SHA1_CTX* context) {
