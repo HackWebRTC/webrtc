@@ -12,7 +12,6 @@
 #define WEBRTC_VIDEO_FRAME_H_
 
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/common_video/interface/native_handle.h"
 #include "webrtc/common_video/interface/video_frame_buffer.h"
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/typedefs.h"
@@ -26,11 +25,13 @@ class I420VideoFrame {
                  uint32_t timestamp,
                  int64_t render_time_ms,
                  VideoRotation rotation);
-  I420VideoFrame(NativeHandle* handle,
+  I420VideoFrame(void* native_handle,
                  int width,
                  int height,
                  uint32_t timestamp,
-                 int64_t render_time_ms);
+                 int64_t render_time_ms,
+                 VideoRotation rotation,
+                 const rtc::Callback0<void>& no_longer_used);
 
   // TODO(pbos): Make all create/copy functions void, they should not be able to
   // fail (which should be DCHECK/CHECKed instead).

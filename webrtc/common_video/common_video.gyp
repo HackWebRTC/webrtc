@@ -41,7 +41,6 @@
       'sources': [
         'interface/i420_buffer_pool.h',
         'interface/i420_video_frame.h',
-        'interface/native_handle.h',
         'interface/video_frame_buffer.h',
         'i420_buffer_pool.cc',
         'i420_video_frame.cc',

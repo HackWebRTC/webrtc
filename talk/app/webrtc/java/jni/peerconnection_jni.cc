@@ -105,7 +105,6 @@ using webrtc::DataChannelInit;
 using webrtc::DataChannelInterface;
 using webrtc::DataChannelObserver;
 using webrtc::IceCandidateInterface;
-using webrtc::NativeHandle;
 using webrtc::MediaConstraintsInterface;
 using webrtc::MediaSourceInterface;
 using webrtc::MediaStreamInterface;

@@ -38,9 +38,7 @@ class PooledI420Buffer : public webrtc::VideoFrameBuffer {
   int stride(webrtc::PlaneType type) const override {
     return buffer_->stride(type);
   }
-  rtc::scoped_refptr<webrtc::NativeHandle> native_handle() const override {
-    return nullptr;
-  }
+  void* native_handle() const override { return nullptr; }
 
   friend class rtc::RefCountedObject<PooledI420Buffer>;
   rtc::scoped_refptr<webrtc::I420Buffer> buffer_;
