@@ -70,6 +70,10 @@ cricket::MediaEngineInterface* CreateWebRtcMediaEngine(
     webrtc::AudioDeviceModule* adm_sc,
     cricket::WebRtcVideoEncoderFactory* encoder_factory,
     cricket::WebRtcVideoDecoderFactory* decoder_factory) {
+  if (webrtc::field_trial::FindFullName("WebRTC-NewVideoAPI") == "Disabled") {
+    return new cricket::WebRtcMediaEngine(adm, adm_sc, encoder_factory,
+                                          decoder_factory);
+  }
   return new cricket::WebRtcMediaEngine2(adm, adm_sc, encoder_factory,
                                          decoder_factory);
 }
