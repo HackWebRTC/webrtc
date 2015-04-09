@@ -156,7 +156,7 @@
             'ns/nsx_defines.h',
           ],
           'conditions': [
-            ['target_arch=="mipsel" and mips_arch_variant!="r6" and android_webview_build==0', {
+            ['target_arch=="mipsel" and mips_arch_variant!="r6"', {
               'sources': [
                 'ns/nsx_core_mips.c',
               ],
@@ -183,7 +183,7 @@
         ['(target_arch=="arm" and arm_version>=7) or target_arch=="arm64"', {
           'dependencies': ['audio_processing_neon',],
         }],
-        ['target_arch=="mipsel" and mips_arch_variant!="r6" and android_webview_build==0', {
+        ['target_arch=="mipsel" and mips_arch_variant!="r6"', {
           'sources': [
             'aecm/aecm_core_mips.c',
           ],

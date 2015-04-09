@@ -285,7 +285,7 @@
           }],
         ],
       }],
-      ['target_arch=="mipsel" and mips_arch_variant!="r6" and android_webview_build==0', {
+      ['target_arch=="mipsel" and mips_arch_variant!="r6"', {
         'defines': [
           'MIPS32_LE',
         ],

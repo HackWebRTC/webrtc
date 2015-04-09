@@ -158,7 +158,7 @@
         ['target_arch=="arm64"', {
           'dependencies': ['common_audio_neon',],
         }],
-        ['target_arch=="mipsel" and mips_arch_variant!="r6" and android_webview_build==0', {
+        ['target_arch=="mipsel" and mips_arch_variant!="r6"', {
           'sources': [
             'signal_processing/include/spl_inl_mips.h',
             'signal_processing/complex_bit_reverse_mips.c',

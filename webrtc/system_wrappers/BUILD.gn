@@ -224,11 +224,6 @@ if (is_android) {
 
     configs += [ "..:common_config" ]
     public_configs = [ "..:common_inherited_config" ]
-
-    if (is_android_webview_build) {
-      libs += [ "cpufeatures.a" ]
-    } else {
-      deps = [ "//third_party/android_tools:cpu_features" ]
-    }
+    deps = [ "//third_party/android_tools:cpu_features" ]
   }
 }
