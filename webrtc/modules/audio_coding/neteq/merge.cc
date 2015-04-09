@@ -24,6 +24,20 @@
 
 namespace webrtc {
 
+Merge::Merge(int fs_hz,
+             size_t num_channels,
+             Expand* expand,
+             SyncBuffer* sync_buffer)
+    : fs_hz_(fs_hz),
+      num_channels_(num_channels),
+      fs_mult_(fs_hz_ / 8000),
+      timestamps_per_call_(fs_hz_ / 100),
+      expand_(expand),
+      sync_buffer_(sync_buffer),
+      expanded_(num_channels_) {
+  assert(num_channels_ > 0);
+}
+
 int Merge::Process(int16_t* input, size_t input_length,
                    int16_t* external_mute_factor_array,
                    AudioMultiVector* output) {

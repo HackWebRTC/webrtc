@@ -16,6 +16,10 @@
 
 namespace webrtc {
 
+void TimestampScaler::Reset() {
+  first_packet_received_ = false;
+}
+
 void TimestampScaler::ToInternal(Packet* packet) {
   if (!packet) {
     return;

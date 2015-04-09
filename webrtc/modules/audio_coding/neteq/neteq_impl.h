@@ -73,7 +73,7 @@ class NetEqImpl : public webrtc::NetEq {
             PreemptiveExpandFactory* preemptive_expand_factory,
             bool create_components = true);
 
-  virtual ~NetEqImpl();
+  ~NetEqImpl() override;
 
   // Inserts a new packet into NetEq. The |receive_timestamp| is an indication
   // of the time when the packet was received, and should be measured with
@@ -133,11 +133,11 @@ class NetEqImpl : public webrtc::NetEq {
 
   int LeastRequiredDelayMs() const override;
 
-  int SetTargetDelay() override { return kNotImplemented; }
+  int SetTargetDelay() override;
 
-  int TargetDelay() override { return kNotImplemented; }
+  int TargetDelay() override;
 
-  int CurrentDelay() override { return kNotImplemented; }
+  int CurrentDelay() override;
 
   // Sets the playout mode to |mode|.
   // Deprecated.
@@ -174,9 +174,9 @@ class NetEqImpl : public webrtc::NetEq {
 
   bool GetPlayoutTimestamp(uint32_t* timestamp) override;
 
-  int SetTargetNumberOfChannels() override { return kNotImplemented; }
+  int SetTargetNumberOfChannels() override;
 
-  int SetTargetSampleRate() override { return kNotImplemented; }
+  int SetTargetSampleRate() override;
 
   // Returns the error code for the last occurred error. If no error has
   // occurred, 0 is returned.

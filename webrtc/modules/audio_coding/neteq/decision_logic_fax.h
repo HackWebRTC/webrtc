@@ -34,9 +34,6 @@ class DecisionLogicFax : public DecisionLogic {
                       buffer_level_filter) {
   }
 
-  // Destructor.
-  virtual ~DecisionLogicFax() {}
-
  protected:
   // Returns the operation that should be done next. |sync_buffer| and |expand|
   // are provided for reference. |decoder_frame_length| is the number of samples

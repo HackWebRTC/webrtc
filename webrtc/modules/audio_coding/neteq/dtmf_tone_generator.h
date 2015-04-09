@@ -31,7 +31,7 @@ class DtmfToneGenerator {
   virtual int Init(int fs, int event, int attenuation);
   virtual void Reset();
   virtual int Generate(int num_samples, AudioMultiVector* output);
-  virtual bool initialized() const { return initialized_; }
+  virtual bool initialized() const;
 
  private:
   static const int kCoeff1[4][16];  // 1st oscillator model coefficient table.

@@ -35,27 +35,9 @@ class Expand {
          SyncBuffer* sync_buffer,
          RandomVector* random_vector,
          int fs,
-         size_t num_channels)
-      : random_vector_(random_vector),
-        sync_buffer_(sync_buffer),
-        first_expand_(true),
-        fs_hz_(fs),
-        num_channels_(num_channels),
-        consecutive_expands_(0),
-        background_noise_(background_noise),
-        overlap_length_(5 * fs / 8000),
-        lag_index_direction_(0),
-        current_lag_index_(0),
-        stop_muting_(false),
-        channel_parameters_(new ChannelParameters[num_channels_]) {
-    assert(fs == 8000 || fs == 16000 || fs == 32000 || fs == 48000);
-    assert(fs <= kMaxSampleRate);  // Should not be possible.
-    assert(num_channels_ > 0);
-    memset(expand_lags_, 0, sizeof(expand_lags_));
-    Reset();
-  }
+         size_t num_channels);
 
-  virtual ~Expand() {}
+  virtual ~Expand();
 
   // Resets the object.
   virtual void Reset();
@@ -85,7 +67,7 @@ class Expand {
   }
 
   // Accessors and mutators.
-  virtual size_t overlap_length() const { return overlap_length_; }
+  virtual size_t overlap_length() const;
   int16_t max_lag() const { return max_lag_; }
 
  protected:
@@ -126,18 +108,7 @@ class Expand {
   static const int kNumLags = 3;
 
   struct ChannelParameters {
-    // Constructor.
-    ChannelParameters()
-        : mute_factor(16384),
-          ar_gain(0),
-          ar_gain_scale(0),
-          voice_mix_factor(0),
-          current_voice_mix_factor(0),
-          onset(false),
-          mute_slope(0) {
-      memset(ar_filter, 0, sizeof(ar_filter));
-      memset(ar_filter_state, 0, sizeof(ar_filter_state));
-    }
+    ChannelParameters();
     int16_t mute_factor;
     int16_t ar_filter[kUnvoicedLpcOrder + 1];
     int16_t ar_filter_state[kUnvoicedLpcOrder];

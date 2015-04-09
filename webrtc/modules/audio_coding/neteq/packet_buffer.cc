@@ -49,6 +49,10 @@ void PacketBuffer::Flush() {
   DeleteAllPackets(&buffer_);
 }
 
+bool PacketBuffer::Empty() const {
+  return buffer_.empty();
+}
+
 int PacketBuffer::InsertPacket(Packet* packet) {
   if (!packet || !packet->payload) {
     if (packet) {
@@ -227,6 +231,14 @@ int PacketBuffer::DiscardOldPackets(uint32_t timestamp_limit,
     }
   }
   return 0;
+}
+
+int PacketBuffer::DiscardAllOldPackets(uint32_t timestamp_limit) {
+  return DiscardOldPackets(timestamp_limit, 0);
+}
+
+int PacketBuffer::NumPacketsInBuffer() const {
+  return static_cast<int>(buffer_.size());
 }
 
 int PacketBuffer::NumSamplesInBuffer(DecoderDatabase* decoder_database,

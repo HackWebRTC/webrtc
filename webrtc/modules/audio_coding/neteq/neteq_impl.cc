@@ -281,6 +281,18 @@ int NetEqImpl::LeastRequiredDelayMs() const {
   return delay_manager_->least_required_delay_ms();
 }
 
+int NetEqImpl::SetTargetDelay() {
+  return kNotImplemented;
+}
+
+int NetEqImpl::TargetDelay() {
+  return kNotImplemented;
+}
+
+int NetEqImpl::CurrentDelay() {
+  return kNotImplemented;
+}
+
 // Deprecated.
 // TODO(henrik.lundin) Delete.
 void NetEqImpl::SetPlayoutMode(NetEqPlayoutMode mode) {
@@ -352,6 +364,14 @@ bool NetEqImpl::GetPlayoutTimestamp(uint32_t* timestamp) {
   }
   *timestamp = timestamp_scaler_->ToExternal(playout_timestamp_);
   return true;
+}
+
+int NetEqImpl::SetTargetNumberOfChannels() {
+  return kNotImplemented;
+}
+
+int NetEqImpl::SetTargetSampleRate() {
+  return kNotImplemented;
 }
 
 int NetEqImpl::LastError() const {

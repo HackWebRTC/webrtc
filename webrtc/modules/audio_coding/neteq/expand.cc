@@ -24,6 +24,32 @@
 
 namespace webrtc {
 
+Expand::Expand(BackgroundNoise* background_noise,
+               SyncBuffer* sync_buffer,
+               RandomVector* random_vector,
+               int fs,
+               size_t num_channels)
+    : random_vector_(random_vector),
+      sync_buffer_(sync_buffer),
+      first_expand_(true),
+      fs_hz_(fs),
+      num_channels_(num_channels),
+      consecutive_expands_(0),
+      background_noise_(background_noise),
+      overlap_length_(5 * fs / 8000),
+      lag_index_direction_(0),
+      current_lag_index_(0),
+      stop_muting_(false),
+      channel_parameters_(new ChannelParameters[num_channels_]) {
+  assert(fs == 8000 || fs == 16000 || fs == 32000 || fs == 48000);
+  assert(fs <= kMaxSampleRate);  // Should not be possible.
+  assert(num_channels_ > 0);
+  memset(expand_lags_, 0, sizeof(expand_lags_));
+  Reset();
+}
+
+Expand::~Expand() = default;
+
 void Expand::Reset() {
   first_expand_ = true;
   consecutive_expands_ = 0;
@@ -287,6 +313,10 @@ void Expand::SetParametersForMergeAfterExpand() {
   current_lag_index_ = -1; /* out of the 3 possible ones */
   lag_index_direction_ = 1; /* make sure we get the "optimal" lag */
   stop_muting_ = true;
+}
+
+size_t Expand::overlap_length() const {
+  return overlap_length_;
 }
 
 void Expand::InitializeForAnExpandPeriod() {
@@ -710,6 +740,18 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
       parameters.onset = false;
     }
   }
+}
+
+Expand::ChannelParameters::ChannelParameters()
+    : mute_factor(16384),
+      ar_gain(0),
+      ar_gain_scale(0),
+      voice_mix_factor(0),
+      current_voice_mix_factor(0),
+      onset(false),
+      mute_slope(0) {
+  memset(ar_filter, 0, sizeof(ar_filter));
+  memset(ar_filter_state, 0, sizeof(ar_filter_state));
 }
 
 int16_t Expand::Correlation(const int16_t* input, size_t input_length,

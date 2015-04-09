@@ -25,8 +25,6 @@ class SyncBuffer : public AudioMultiVector {
         end_timestamp_(0),
         dtmf_index_(0) {}
 
-  virtual ~SyncBuffer() {}
-
   // Returns the number of samples yet to play out form the buffer.
   size_t FutureLength() const;
 
@@ -34,7 +32,7 @@ class SyncBuffer : public AudioMultiVector {
   // the same number of samples from the beginning of the SyncBuffer, to
   // maintain a constant buffer size. The |next_index_| is updated to reflect
   // the move of the beginning of "future" data.
-  void PushBack(const AudioMultiVector& append_this);
+  void PushBack(const AudioMultiVector& append_this) override;
 
   // Adds |length| zeros to the beginning of each channel. Removes
   // the same number of samples from the end of the SyncBuffer, to

@@ -57,4 +57,9 @@ void BufferLevelFilter::SetTargetBufferLevel(int target_buffer_level) {
     level_factor_ = 254;
   }
 }
+
+int BufferLevelFilter::filtered_current_level() const {
+  return filtered_current_level_;
+}
+
 }  // namespace webrtc

@@ -38,8 +38,6 @@ class PreemptiveExpand : public TimeStretch {
         overlap_samples_(overlap_samples) {
   }
 
-  virtual ~PreemptiveExpand() {}
-
   // This method performs the actual PreemptiveExpand operation. The samples are
   // read from |input|, of length |input_length| elements, and are written to
   // |output|. The number of samples added through time-stretching is
@@ -54,16 +52,18 @@ class PreemptiveExpand : public TimeStretch {
  protected:
   // Sets the parameters |best_correlation| and |peak_index| to suitable
   // values when the signal contains no active speech.
-  virtual void SetParametersForPassiveSpeech(size_t len,
-                                             int16_t* w16_bestCorr,
-                                             int* w16_bestIndex) const;
+  void SetParametersForPassiveSpeech(size_t len,
+                                     int16_t* w16_bestCorr,
+                                     int* w16_bestIndex) const override;
 
   // Checks the criteria for performing the time-stretching operation and,
   // if possible, performs the time-stretching.
-  virtual ReturnCodes CheckCriteriaAndStretch(
-      const int16_t *pw16_decoded, size_t len, size_t w16_bestIndex,
-      int16_t w16_bestCorr, bool w16_VAD,
-      AudioMultiVector* output) const;
+  ReturnCodes CheckCriteriaAndStretch(const int16_t* pw16_decoded,
+                                      size_t len,
+                                      size_t w16_bestIndex,
+                                      int16_t w16_bestCorr,
+                                      bool w16_VAD,
+                                      AudioMultiVector* output) const override;
 
  private:
   int old_data_length_per_channel_;

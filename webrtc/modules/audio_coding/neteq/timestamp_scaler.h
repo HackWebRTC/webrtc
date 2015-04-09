@@ -36,7 +36,7 @@ class TimestampScaler {
   virtual ~TimestampScaler() {}
 
   // Start over.
-  virtual void Reset() { first_packet_received_ = false; }
+  virtual void Reset();
 
   // Scale the timestamp in |packet| from external to internal.
   virtual void ToInternal(Packet* packet);

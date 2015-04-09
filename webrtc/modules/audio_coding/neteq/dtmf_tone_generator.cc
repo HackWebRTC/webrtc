@@ -189,4 +189,8 @@ int DtmfToneGenerator::Generate(int num_samples,
   return num_samples;
 }
 
+bool DtmfToneGenerator::initialized() const {
+  return initialized_;
+}
+
 }  // namespace webrtc
