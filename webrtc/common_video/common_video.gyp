@@ -42,7 +42,6 @@
         'i420_buffer_pool.cc',
         'i420_video_frame.cc',
         'interface/i420_buffer_pool.h',
-        'interface/i420_video_frame.h',
         'interface/video_frame_buffer.h',
         'libyuv/include/scaler.h',
         'libyuv/include/webrtc_libyuv.h',
