@@ -28,7 +28,7 @@
 //      BWE_TEST_LOGGING_CONTEXT(i);
 //      BWE_TEST_LOGGING_LOG1("weight", "%f tonnes", weights_[i]);
 //      for (float j=0.0f; j<1.0; j+=0.4f) {
-//        BWE_TEST_LOGGING_PLOT("bps", -1, j);
+//        BWE_TEST_LOGGING_PLOT(0, "bps", -1, j);
 //      }
 //    }
 //  }
@@ -86,11 +86,12 @@
 #define BWE_TEST_LOGGING_LOG5(name, format, _1, _2, _3, _4, _5)
 
 // Print to stdout in tab-separated format suitable for plotting, e.g.:
-//   PLOT  Context1_Context2_Name  time  value
+//   PLOT figure Context1_Context2_Name  time  value
+// |figure| is a figure id. Different figures are plotted in different windows.
 // |name| is a char*, std::string or uint32_t to name the plotted value.
 // |time| is an int64_t time in ms, or -1 to inherit time from previous context.
 // |value| is a double precision float to be plotted.
-#define BWE_TEST_LOGGING_PLOT(name, time, value)
+#define BWE_TEST_LOGGING_PLOT(figure, name, time, value)
 
 #else  // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 
@@ -154,12 +155,12 @@
                                                         _4, _5); \
     } while (0);
 
-#define BWE_TEST_LOGGING_PLOT(name, time, value)\
-    do { \
-      __BWE_TEST_LOGGING_CONTEXT_DECLARE(__bwe_log_, __LINE__, name, \
-                                         static_cast<int64_t>(time), true); \
-      webrtc::testing::bwe::Logging::GetInstance()->Plot(value); \
-    } while (0);
+#define BWE_TEST_LOGGING_PLOT(figure, name, time, value)                  \
+  do {                                                                    \
+    __BWE_TEST_LOGGING_CONTEXT_DECLARE(__bwe_log_, __LINE__, name,        \
+                                       static_cast<int64_t>(time), true); \
+    webrtc::testing::bwe::Logging::GetInstance()->Plot(figure, value);    \
+  } while (0);
 
 namespace webrtc {
 
@@ -188,7 +189,7 @@ class Logging {
   void SetGlobalEnable(bool enabled);
 
   void Log(const char format[], ...);
-  void Plot(double value);
+  void Plot(int figure, double value);
 
  private:
   struct State {

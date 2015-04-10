@@ -104,7 +104,7 @@ class OveruseDetectorTest : public ::testing::Test {
                                  overuse_detector_->State());
       overuse_detector_->Detect(overuse_estimator_->offset(),
                                 timestamp_delta_ms,
-                                overuse_estimator_->num_of_deltas());
+                                overuse_estimator_->num_of_deltas(), 0);
     }
   }
 

@@ -117,8 +117,8 @@ FeedbackPacket* RembReceiver::GetFeedback(int64_t now_ms) {
     double estimated_kbps = static_cast<double>(estimated_bps) / 1000.0;
     RTC_UNUSED(estimated_kbps);
     if (plot_estimate_) {
-      BWE_TEST_LOGGING_PLOT(estimate_log_prefix_, clock_.TimeInMilliseconds(),
-                            estimated_kbps);
+      BWE_TEST_LOGGING_PLOT(0, estimate_log_prefix_,
+                            clock_.TimeInMilliseconds(), estimated_kbps);
     }
   }
   return feedback;

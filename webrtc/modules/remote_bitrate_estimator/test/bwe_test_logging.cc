@@ -16,6 +16,7 @@
 #include <stdio.h>
 
 #include <algorithm>
+#include <sstream>
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
@@ -27,14 +28,9 @@ namespace bwe {
 Logging Logging::g_Logging;
 
 static std::string ToString(uint32_t v) {
-  const size_t kBufferSize = 16;
-  char string_buffer[kBufferSize] = {0};
-#if defined(_MSC_VER) && defined(_WIN32)
-  _snprintf(string_buffer, kBufferSize - 1, "%08x", v);
-#else
-  snprintf(string_buffer, kBufferSize, "%08x", v);
-#endif
-  return string_buffer;
+  std::stringstream ss;
+  ss << v;
+  return ss.str();
 }
 
 Logging::Context::Context(uint32_t name, int64_t timestamp_ms, bool enabled) {
@@ -94,14 +90,14 @@ void Logging::Log(const char format[], ...) {
   }
 }
 
-void Logging::Plot(double value) {
+void Logging::Plot(int figure, double value) {
   CriticalSectionScoped cs(crit_sect_.get());
   ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
   assert(it != thread_map_.end());
   const State& state = it->second.stack.top();
   if (state.enabled) {
-    printf("PLOT\t%s\t%f\t%f\n", state.tag.c_str(), state.timestamp_ms * 0.001,
-           value);
+    printf("PLOT\t%d\t%s\t%f\t%f\n", figure, state.tag.c_str(),
+           state.timestamp_ms * 0.001, value);
   }
 }
 

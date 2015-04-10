@@ -137,8 +137,6 @@ void AimdRateControl::SetEstimate(int bitrate_bps, int64_t now_ms) {
 uint32_t AimdRateControl::ChangeBitrate(uint32_t current_bitrate_bps,
                                         uint32_t incoming_bitrate_bps,
                                         int64_t now_ms) {
-  BWE_TEST_LOGGING_PLOT("estimated_incoming#1", -1,
-                        incoming_bitrate_bps / 1000);
   if (!updated_) {
     return current_bitrate_bps_;
   }
@@ -172,15 +170,11 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t current_bitrate_bps,
         const int64_t response_time = rtt_ + 100;
         uint32_t additive_increase_bps = AdditiveRateIncrease(
             now_ms, time_last_bitrate_change_, response_time);
-        BWE_TEST_LOGGING_PLOT("add_increase#1", -1,
-                              additive_increase_bps / 1000);
         current_bitrate_bps += additive_increase_bps;
 
       } else {
         uint32_t multiplicative_increase_bps = MultiplicativeRateIncrease(
             now_ms, time_last_bitrate_change_, current_bitrate_bps);
-        BWE_TEST_LOGGING_PLOT("mult_increase#1", -1,
-                              multiplicative_increase_bps / 1000);
         current_bitrate_bps += multiplicative_increase_bps;
       }
 

@@ -146,7 +146,7 @@ void RemoteBitrateEstimatorImpl::IncomingPacket(
                                 estimator->detector.State());
     estimator->detector.Detect(estimator->estimator.offset(),
                                timestamp_delta_ms,
-                               estimator->estimator.num_of_deltas());
+                               estimator->estimator.num_of_deltas(), now_ms);
   }
   if (estimator->detector.State() == kBwOverusing) {
     uint32_t incoming_bitrate = incoming_bitrate_.Rate(now_ms);

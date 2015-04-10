@@ -50,14 +50,14 @@ void PacketReceiver::RunFor(int64_t time_ms, Packets* in_out) {
     // should only process a single flow id.
     // TODO(holmer): Break this out into a Demuxer which implements both
     // PacketProcessorListener and PacketProcessor.
+    BWE_TEST_LOGGING_CONTEXT("Receiver");
     if ((*it)->GetPacketType() == Packet::kMedia &&
         (*it)->flow_id() == *flow_ids().begin()) {
-      BWE_TEST_LOGGING_CONTEXT("Receiver");
+      BWE_TEST_LOGGING_CONTEXT(*flow_ids().begin());
       const MediaPacket* media_packet = static_cast<const MediaPacket*>(*it);
       // We're treating the send time (from previous filter) as the arrival
       // time once packet reaches the estimator.
       int64_t arrival_time_ms = (media_packet->send_time_us() + 500) / 1000;
-      BWE_TEST_LOGGING_TIME(arrival_time_ms);
       PlotDelay(arrival_time_ms,
                 (media_packet->creation_time_us() + 500) / 1000);
 
@@ -80,7 +80,7 @@ void PacketReceiver::PlotDelay(int64_t arrival_time_ms, int64_t send_time_ms) {
   if (!plot_delay_)
     return;
   if (arrival_time_ms - last_delay_plot_ms_ > kDelayPlotIntervalMs) {
-    BWE_TEST_LOGGING_PLOT(delay_log_prefix_, arrival_time_ms,
+    BWE_TEST_LOGGING_PLOT(0, delay_log_prefix_, arrival_time_ms,
                           arrival_time_ms - send_time_ms);
     last_delay_plot_ms_ = arrival_time_ms;
   }

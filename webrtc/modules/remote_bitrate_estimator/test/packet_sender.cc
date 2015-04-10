@@ -104,7 +104,7 @@ void PacketSender::OnNetworkChanged(uint32_t target_bitrate_bps,
   source_->SetBitrateBps(target_bitrate_bps);
   std::stringstream ss;
   ss << "SendEstimate_" << source_->flow_id() << "#1";
-  BWE_TEST_LOGGING_PLOT(ss.str(), clock_.TimeInMilliseconds(),
+  BWE_TEST_LOGGING_PLOT(0, ss.str(), clock_.TimeInMilliseconds(),
                         target_bitrate_bps / 1000);
 }
 
@@ -134,6 +134,8 @@ void PacedVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
   std::list<FeedbackPacket*> feedbacks =
       GetFeedbackPackets(in_out, end_time_ms);
   int64_t last_run_time_ms = -1;
+  BWE_TEST_LOGGING_CONTEXT("Sender");
+  BWE_TEST_LOGGING_CONTEXT(source_->flow_id());
   do {
     int64_t time_until_process_ms = TimeUntilNextProcess(modules_);
     int64_t time_until_feedback_ms = time_ms;

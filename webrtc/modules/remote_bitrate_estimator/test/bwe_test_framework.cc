@@ -198,8 +198,7 @@ bool IsTimeSorted(const Packets& packets) {
 PacketProcessor::PacketProcessor(PacketProcessorListener* listener,
                                  int flow_id,
                                  ProcessorType type)
-    : listener_(listener) {
-  flow_ids_.insert(flow_id);
+    : listener_(listener), flow_ids_(&flow_id, &flow_id + 1) {
   if (listener_) {
     listener_->AddPacketProcessor(this, type);
   }
@@ -270,7 +269,7 @@ Stats<double> RateCounterFilter::GetBitrateStats() const {
 
 void RateCounterFilter::Plot(int64_t timestamp_ms) {
   BWE_TEST_LOGGING_CONTEXT(name_.c_str());
-  BWE_TEST_LOGGING_PLOT("Throughput_#1", timestamp_ms,
+  BWE_TEST_LOGGING_PLOT(0, "Throughput_#1", timestamp_ms,
                         rate_counter_->bits_per_second() / 1000.0);
 }
 
@@ -549,7 +548,7 @@ void TraceBasedDeliveryFilter::Plot(int64_t timestamp_ms) {
   BWE_TEST_LOGGING_CONTEXT(name_.c_str());
   // This plots the max possible throughput of the trace-based delivery filter,
   // which will be reached if a packet sent on every packet slot of the trace.
-  BWE_TEST_LOGGING_PLOT("MaxThroughput_#1", timestamp_ms,
+  BWE_TEST_LOGGING_PLOT(0, "MaxThroughput_#1", timestamp_ms,
                         rate_counter_->bits_per_second() / 1000.0);
 }
 

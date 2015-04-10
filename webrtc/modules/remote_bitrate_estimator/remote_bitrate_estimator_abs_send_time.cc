@@ -409,7 +409,7 @@ void RemoteBitrateEstimatorAbsSendTimeImpl::IncomingPacketInfo(
     double ts_delta_ms = (1000.0 * ts_delta) / (1 << kInterArrivalShift);
     estimator_.Update(t_delta, ts_delta_ms, size_delta, detector_.State());
     detector_.Detect(estimator_.offset(), ts_delta_ms,
-                     estimator_.num_of_deltas());
+                     estimator_.num_of_deltas(), now_ms);
     UpdateStats(static_cast<int>(t_delta - ts_delta_ms), now_ms);
   }
   if (detector_.State() == kBwOverusing) {

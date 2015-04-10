@@ -31,8 +31,10 @@ class OveruseDetector {
   // offset was based on, representing the time between detector updates.
   // |num_of_deltas| is the number of deltas the offset estimate is based on.
   // Returns the state after the detection update.
-  BandwidthUsage Detect(double offset, double timestamp_delta,
-                        int num_of_deltas);
+  BandwidthUsage Detect(double offset,
+                        double timestamp_delta,
+                        int num_of_deltas,
+                        int64_t now_ms);
 
   // Returns the current detector state.
   BandwidthUsage State() const;

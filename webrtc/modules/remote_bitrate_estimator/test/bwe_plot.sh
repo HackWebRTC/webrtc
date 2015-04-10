@@ -16,48 +16,58 @@
 # --gtest_filter=*BweTest* | [trunk_path]/webrtc/modules/
 # remote_bitrate_estimator/bwe_plot.
 
-# bwe_plot.sh has a single y axis and a dual y axis mode. If any line specifies
-# a an axis by ending with "#<axis number (1 or 2)>" two y axis will be used,
-# the first will be assumed to represent bitrate (in kbps) and the second will
-# be assumed to represent time deltas (in ms).
+# bwe_plot.sh supports multiple figures (windows), the figure is specified as an
+# identifier at the first argument after the PLOT command. Each figure has a
+# single y axis and a dual y axis mode. If any line specifies an axis by ending
+# with "#<axis number (1 or 2)>" two y axis will be used, the first will be
+# assumed to represent bitrate (in kbps) and the second will be assumed to
+# represent time deltas (in ms).
 
 log=$(</dev/stdin)
 
 function gen_gnuplot_input {
   colors=(a7001f 0a60c2 b2582b 21a66c d6604d 4393c3 f4a582 92c5de edcbb7 b1c5d0)
-  data_sets=$(echo "$log" | grep "^PLOT" | cut -f 2 | sort | uniq)
-  linetypes=($(echo "$data_sets" | cut -d '#' -f 2 | cut -d ' ' -f 1))
-  echo -n "reset; "
-  echo -n "set terminal wxt size 1440,900 font \"Arial,9\"; "
-  echo -n "set xlabel \"Seconds\"; "
-  if [ -n $linetypes ]; then
-    echo -n "set ylabel 'bitrate (kbps)';"
-    echo -n "set ytics nomirror;"
-    echo -n "set y2label 'time delta (ms)';"
-    echo -n "set y2tics nomirror;"
-  fi
-  echo -n "plot "
-  i=0
-  for set in $data_sets ; do
-    (( i++ )) && echo -n ","
-    echo -n "'-' with "
-    echo -n "linespoints "
-    echo -n "ps 0.5 "
-    echo -n "lc rgbcolor \"#${colors[$(($i % 10))]}\" "
-    if [ -n ${linetypes[$i - 1]} ]; then
-      echo -n "axes x1y${linetypes[$i - 1]} "
-    elif [ -n $linestypes ]; then
-      # If no line type is specified, but line types are used, we will default
-      # to the bitrate axis.
-      echo -n "axes x1y1 "
+  plots=$(echo "$log" | grep "^PLOT")
+  figures=($(echo "$plots" | cut -f 2 | sort | uniq))
+
+  for figure in "${figures[@]}" ; do
+    data_sets=$(echo "$plots" | grep "^PLOT.$figure" | cut -f 3 | sort | uniq)
+    linetypes=($(echo "$data_sets" | grep "#" | cut -d '#' -f 2 | \
+      cut -d ' ' -f 1))
+    echo -n "reset; "
+    echo -n "set terminal wxt $figure size 1440,900 font \"Arial,9\"; "
+    echo -n "set xlabel \"Seconds\"; "
+    if (( "${#linetypes[@]}" > "0" )); then
+      echo -n "set ylabel 'bitrate (kbps)';"
+      echo -n "set ytics nomirror;"
+      echo -n "set y2label 'time delta (ms)';"
+      echo -n "set y2tics nomirror;"
     fi
-    echo -n "title \"$set\" "
-  done
-  echo
-  for set in $data_sets ; do
-    echo "$log" | grep "^PLOT.$set" | cut -f 3,4
-    echo "e"
+    echo -n "plot "
+    i=0
+    for set in $data_sets ; do
+      (( i++ )) && echo -n ","
+      echo -n "'-' with "
+      echo -n "linespoints "
+      echo -n "ps 0.5 "
+      echo -n "lc rgbcolor \"#${colors[$(($i % 10))]}\" "
+      if (( "${#linetypes[@]}" > "0" )); then
+        if (( "$i" <= "${#linetypes[@]}" )); then
+          echo -n "axes x1y${linetypes[$i - 1]} "
+        else
+          # If no line type is specified, but line types are used, we will
+          # default to the bitrate axis.
+          echo -n "axes x1y1 "
+        fi
+      fi
+      echo -n "title \"$set\" "
+    done
+    echo
+    for set in $data_sets ; do
+      echo "$log" | grep "^PLOT.$figure.$set" | cut -f 4,5
+      echo "e"
+    done
   done
 }
 
-gen_gnuplot_input "$log" | gnuplot -persist
+gen_gnuplot_input | gnuplot -persist

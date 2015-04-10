@@ -191,7 +191,7 @@ class PacketProcessor {
   // internal data.
   virtual void Plot(int64_t timestamp_ms) {}
 
-  // Run simulation for |time_ms| micro seconds, consuming packets from, and
+  // Run simulation for |time_ms| milliseconds, consuming packets from, and
   // producing packets into in_out. The outgoing packet list must be sorted on
   // |send_time_us_|. The simulation time |time_ms| is optional to use.
   virtual void RunFor(int64_t time_ms, Packets* in_out) = 0;
@@ -200,7 +200,7 @@ class PacketProcessor {
 
  private:
   PacketProcessorListener* listener_;
-  FlowIds flow_ids_;
+  const FlowIds flow_ids_;
 
   DISALLOW_COPY_AND_ASSIGN(PacketProcessor);
 };
