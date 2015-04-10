@@ -89,14 +89,12 @@ void WebRtcIsacfix_PitchFilter(int16_t* indatQQ, // Q10 if type is 1 or 4,
 
     // Make output more periodic.
     for (k = 0; k < PITCH_SUBFRAMES; k++) {
-      gainsQ12[k] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(
-          gainsQ12[k], Gain, 14);
+      gainsQ12[k] = (int16_t)(gainsQ12[k] * Gain >> 14);
     }
   }
 
   // No interpolation if pitch lag step is big.
-  if ((WEBRTC_SPL_MUL_16_16_RSFT(lagsQ7[0], 3, 1) < oldLagQ7) ||
-      (lagsQ7[0] > WEBRTC_SPL_MUL_16_16_RSFT(oldLagQ7, 3, 1))) {
+  if (((lagsQ7[0] * 3 >> 1) < oldLagQ7) || (lagsQ7[0] > (oldLagQ7 * 3 >> 1))) {
     oldLagQ7 = lagsQ7[0];
     oldGainQ12 = gainsQ12[0];
   }
@@ -110,8 +108,7 @@ void WebRtcIsacfix_PitchFilter(int16_t* indatQQ, // Q10 if type is 1 or 4,
                   lagdeltaQ7, kDivFactor, 15);
     curLagQ7 = oldLagQ7;
     gaindeltaQ12 = gainsQ12[k] - oldGainQ12;
-    gaindeltaQ12 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(
-                    gaindeltaQ12, kDivFactor, 15);
+    gaindeltaQ12 = (int16_t)(gaindeltaQ12 * kDivFactor >> 15);
 
     curGainQ12 = oldGainQ12;
     oldLagQ7 = lagsQ7[k];
@@ -173,8 +170,7 @@ void WebRtcIsacfix_PitchFilterGains(const int16_t* indatQ0,
   oldLagQ7 = pfp->oldlagQ7;
 
   // No interpolation if pitch lag step is big.
-  if ((WEBRTC_SPL_MUL_16_16_RSFT(lagsQ7[0], 3, 1) < oldLagQ7) ||
-      (lagsQ7[0] > WEBRTC_SPL_MUL_16_16_RSFT(oldLagQ7, 3, 1))) {
+  if (((lagsQ7[0] * 3 >> 1) < oldLagQ7) || (lagsQ7[0] > (oldLagQ7 * 3 >> 1))) {
     oldLagQ7 = lagsQ7[0];
   }
 

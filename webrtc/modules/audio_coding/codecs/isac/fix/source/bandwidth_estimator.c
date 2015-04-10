@@ -1005,13 +1005,17 @@ int16_t WebRtcIsacfix_GetSnr(int16_t bottle_neck, int16_t framesamples)
   /* find new SNR value */
   //consider BottleNeck to be in Q10 ( * 1 in Q10)
   switch(framesamples) {
+  // TODO(bjornv): The comments below confuses me. I don't know if there is a
+  // difference between frame lengths (in which case the implementation is
+  // wrong), or if it is frame length independent in which case we should
+  // correct the comment and simplify the implementation.
     case 480:
       /*s2nr = -1*(a_30 << 10) + ((b_30 * bottle_neck) >> 10);*/
-      s2nr = -22500 + (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(500, bottle_neck, 10); //* 0.001; //+ c_30 * bottle_neck * bottle_neck * 0.000001;
+      s2nr = -22500 + (int16_t)(500 * bottle_neck >> 10);
       break;
     case 960:
       /*s2nr = -1*(a_60 << 10) + ((b_60 * bottle_neck) >> 10);*/
-      s2nr = -22500 + (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(500, bottle_neck, 10); //* 0.001; //+ c_30 * bottle_neck * bottle_neck * 0.000001;
+      s2nr = -22500 + (int16_t)(500 * bottle_neck >> 10);
       break;
     default:
       s2nr = -1; /* Error */
