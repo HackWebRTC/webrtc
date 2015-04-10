@@ -42,6 +42,7 @@ class CallTest : public ::testing::Test {
   static const uint32_t kSendSsrcs[kNumSsrcs];
   static const uint32_t kReceiverLocalSsrc;
   static const int kNackRtpHistoryMs;
+  static const int kAbsSendTimeExtensionId;
 
  protected:
   void RunBaseTest(BaseTest* test);

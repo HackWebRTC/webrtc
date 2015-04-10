@@ -380,6 +380,7 @@ void RampUpTest::RunRampUpTest(bool rtx,
   }
 
   CreateSendConfig(num_streams);
+  send_config_.rtp.extensions.clear();
 
   rtc::scoped_ptr<RemoteBitrateEstimatorFactory> rbe_factory;
   RateControlType control_type;

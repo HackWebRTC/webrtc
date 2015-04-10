@@ -94,6 +94,8 @@ void CallTest::CreateSendConfig(size_t num_streams) {
   send_config_.encoder_settings.encoder = &fake_encoder_;
   send_config_.encoder_settings.payload_name = "FAKE";
   send_config_.encoder_settings.payload_type = kFakeSendPayloadType;
+  send_config_.rtp.extensions.push_back(
+      RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeExtensionId));
   encoder_config_.streams = test::CreateVideoStreams(num_streams);
   for (size_t i = 0; i < num_streams; ++i)
     send_config_.rtp.ssrcs.push_back(kSendSsrcs[i]);
@@ -107,6 +109,8 @@ void CallTest::CreateMatchingReceiveConfigs() {
   assert(allocated_decoders_.empty());
   VideoReceiveStream::Config config;
   config.rtp.local_ssrc = kReceiverLocalSsrc;
+  for (const RtpExtension& extension : send_config_.rtp.extensions)
+    config.rtp.extensions.push_back(extension);
   for (size_t i = 0; i < send_config_.rtp.ssrcs.size(); ++i) {
     VideoReceiveStream::Decoder decoder =
         test::CreateMatchingDecoder(send_config_.encoder_settings);
@@ -162,6 +166,7 @@ const uint32_t CallTest::kSendRtxSsrcs[kNumSsrcs] = {0xBADCAFD, 0xBADCAFE,
 const uint32_t CallTest::kSendSsrcs[kNumSsrcs] = {0xC0FFED, 0xC0FFEE, 0xC0FFEF};
 const uint32_t CallTest::kReceiverLocalSsrc = 0x123456;
 const int CallTest::kNackRtpHistoryMs = 1000;
+const int CallTest::kAbsSendTimeExtensionId = 7;
 
 BaseTest::BaseTest(unsigned int timeout_ms) : RtpRtcpObserver(timeout_ms) {
 }

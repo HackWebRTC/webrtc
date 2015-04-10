@@ -155,6 +155,7 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
     void ModifyConfigs(VideoSendStream::Config* send_config,
                        std::vector<VideoReceiveStream::Config>* receive_configs,
                        VideoEncoderConfig* encoder_config) override {
+      send_config->rtp.extensions.clear();
       send_config->rtp.extensions.push_back(
           RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeExtensionId));
     }
@@ -593,11 +594,9 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
       send_config->rtp.max_packet_size = kMaxPacketSize;
       send_config->post_encode_callback = this;
 
-      // Add an extension header, to make the RTP header larger than the base
-      // length of 12 bytes.
-      static const uint8_t kAbsSendTimeExtensionId = 13;
-      send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeExtensionId));
+      // Make sure there is at least one extension header, to make the RTP
+      // header larger than the base length of 12 bytes.
+      EXPECT_FALSE(send_config->rtp.extensions.empty());
     }
 
     void PerformTest() override {
