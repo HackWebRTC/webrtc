@@ -336,6 +336,7 @@ class NullVideoEngine {
   int GetCapabilities() { return 0; }
   // If you need this to return an actual channel, use FakeMediaEngine instead.
   VideoMediaChannel* CreateChannel(
+      const VideoOptions& options,
       VoiceMediaChannel* voice_media_channel) {
     return NULL;
   }
