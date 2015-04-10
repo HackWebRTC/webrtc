@@ -31,10 +31,10 @@
 #include <string>
 #include <vector>
 
+#include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/testutils.h"
 #include "talk/media/base/videoadapter.h"
-#include "talk/media/devices/filevideocapturer.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/sigslot.h"
@@ -55,9 +55,7 @@ namespace {
 class VideoAdapterTest : public testing::Test {
  public:
   virtual void SetUp() {
-    capturer_.reset(new FileVideoCapturer);
-    EXPECT_TRUE(capturer_->Init(GetTestFilePath(
-        "captured-320x240-2s-48.frames")));
+    capturer_.reset(new FakeVideoCapturer);
     capture_format_ = capturer_->GetSupportedFormats()->at(0);
     capture_format_.interval = VideoFormat::FpsToInterval(50);
     adapter_.reset(new VideoAdapter());
@@ -151,7 +149,7 @@ class VideoAdapterTest : public testing::Test {
     EXPECT_EQ(height, stats.adapted_height);
   }
 
-  rtc::scoped_ptr<FileVideoCapturer> capturer_;
+  rtc::scoped_ptr<FakeVideoCapturer> capturer_;
   rtc::scoped_ptr<VideoAdapter> adapter_;
   rtc::scoped_ptr<VideoCapturerListener> listener_;
   VideoFormat capture_format_;
@@ -172,8 +170,8 @@ TEST_F(VideoAdapterTest, AdaptInactive) {
 
   // Call Adapter with some frames.
   EXPECT_EQ(CS_RUNNING, capturer_->Start(capture_format_));
-  EXPECT_TRUE_WAIT(!capturer_->IsRunning() ||
-                   listener_->GetStats().captured_frames >= 10, kWaitTimeout);
+  for (int i = 0; i < 10; ++i)
+    capturer_->CaptureFrame();
 
   // Verify no frame drop and no resolution change.
   VideoCapturerListener::Stats stats = listener_->GetStats();
@@ -187,8 +185,8 @@ TEST_F(VideoAdapterTest, AdaptInactive) {
 TEST_F(VideoAdapterTest, AdaptNothing) {
   adapter_->SetOutputFormat(capture_format_);
   EXPECT_EQ(CS_RUNNING, capturer_->Start(capture_format_));
-  EXPECT_TRUE_WAIT(!capturer_->IsRunning() ||
-                   listener_->GetStats().captured_frames >= 10, kWaitTimeout);
+  for (int i = 0; i < 10; ++i)
+    capturer_->CaptureFrame();
 
   // Verify no frame drop and no resolution change.
   VideoCapturerListener::Stats stats = listener_->GetStats();
@@ -204,8 +202,8 @@ TEST_F(VideoAdapterTest, AdaptZeroInterval) {
   adapter_->SetInputFormat(format);
   adapter_->SetOutputFormat(format);
   EXPECT_EQ(CS_RUNNING, capturer_->Start(capture_format_));
-  EXPECT_TRUE_WAIT(!capturer_->IsRunning() ||
-                   listener_->GetStats().captured_frames >= 10, kWaitTimeout);
+  for (int i = 0; i < 10; ++i)
+    capturer_->CaptureFrame();
 
   // Verify no crash and that frames aren't dropped.
   VideoCapturerListener::Stats stats = listener_->GetStats();
@@ -221,8 +219,8 @@ TEST_F(VideoAdapterTest, AdaptFramerate) {
   request_format.interval *= 2;
   adapter_->SetOutputFormat(request_format);
   EXPECT_EQ(CS_RUNNING, capturer_->Start(capture_format_));
-  EXPECT_TRUE_WAIT(!capturer_->IsRunning() ||
-                   listener_->GetStats().captured_frames >= 10, kWaitTimeout);
+  for (int i = 0; i < 10; ++i)
+    capturer_->CaptureFrame();
 
   // Verify frame drop and no resolution change.
   VideoCapturerListener::Stats stats = listener_->GetStats();
@@ -238,8 +236,8 @@ TEST_F(VideoAdapterTest, AdaptFramerateVariable) {
   request_format.interval = request_format.interval * 3 / 2;
   adapter_->SetOutputFormat(request_format);
   EXPECT_EQ(CS_RUNNING, capturer_->Start(capture_format_));
-  EXPECT_TRUE_WAIT(!capturer_->IsRunning() ||
-                   listener_->GetStats().captured_frames >= 30, kWaitTimeout);
+  for (int i = 0; i < 30; ++i)
+    capturer_->CaptureFrame();
 
   // Verify frame drop and no resolution change.
   VideoCapturerListener::Stats stats = listener_->GetStats();
@@ -256,8 +254,8 @@ TEST_F(VideoAdapterTest, AdaptFramerateOntheFly) {
   VideoFormat request_format = capture_format_;
   adapter_->SetOutputFormat(request_format);
   EXPECT_EQ(CS_RUNNING, capturer_->Start(capture_format_));
-  EXPECT_TRUE_WAIT(!capturer_->IsRunning() ||
-                   listener_->GetStats().captured_frames >= 10, kWaitTimeout);
+  for (int i = 0; i < 10; ++i)
+    capturer_->CaptureFrame();
 
   // Verify no frame drop before adaptation.
   EXPECT_EQ(0, listener_->GetStats().dropped_frames);
@@ -266,8 +264,8 @@ TEST_F(VideoAdapterTest, AdaptFramerateOntheFly) {
   request_format.interval *= 2;
   adapter_->SetOutputFormat(request_format);
 
-  EXPECT_TRUE_WAIT(!capturer_->IsRunning() ||
-                   listener_->GetStats().captured_frames >= 20, kWaitTimeout);
+  for (int i = 0; i < 20; ++i)
+    capturer_->CaptureFrame();
 
   // Verify frame drop after adaptation.
   EXPECT_GT(listener_->GetStats().dropped_frames, 0);
@@ -327,8 +325,8 @@ TEST_F(VideoAdapterTest, AdaptResolution) {
   request_format.height /= 2;
   adapter_->SetOutputFormat(request_format);
   EXPECT_EQ(CS_RUNNING, capturer_->Start(capture_format_));
-  EXPECT_TRUE_WAIT(!capturer_->IsRunning() ||
-                   listener_->GetStats().captured_frames >= 10, kWaitTimeout);
+  for (int i = 0; i < 10; ++i)
+    capturer_->CaptureFrame();
 
   // Verify no frame drop and resolution change.
   VideoCapturerListener::Stats stats = listener_->GetStats();
@@ -343,11 +341,13 @@ TEST_F(VideoAdapterTest, AdaptResolutionNarrow) {
   adapter_->set_scale_third(true);
   adapter_->SetOutputFormat(request_format);
   EXPECT_EQ(CS_RUNNING, capturer_->Start(capture_format_));
-  EXPECT_TRUE_WAIT(!capturer_->IsRunning() ||
-                   listener_->GetStats().captured_frames >= 10, kWaitTimeout);
+  for (int i = 0; i < 10; ++i)
+    capturer_->CaptureFrame();
 
   // Verify resolution change.
-  VerifyAdaptedResolution(listener_->GetStats(), 213, 160);
+  VerifyAdaptedResolution(listener_->GetStats(),
+                          capture_format_.width * 2 / 3,
+                          capture_format_.height * 2 / 3);
 }
 
 // Adapt the frame resolution to half height. Expect resolution change.
@@ -357,11 +357,13 @@ TEST_F(VideoAdapterTest, AdaptResolutionWide) {
   adapter_->set_scale_third(true);
   adapter_->SetOutputFormat(request_format);
   EXPECT_EQ(CS_RUNNING, capturer_->Start(capture_format_));
-  EXPECT_TRUE_WAIT(!capturer_->IsRunning() ||
-                   listener_->GetStats().captured_frames >= 10, kWaitTimeout);
+  for (int i = 0; i < 10; ++i)
+    capturer_->CaptureFrame();
 
   // Verify resolution change.
-  VerifyAdaptedResolution(listener_->GetStats(), 213, 160);
+  VerifyAdaptedResolution(listener_->GetStats(),
+                          capture_format_.width * 2 / 3,
+                          capture_format_.height * 2 / 3);
 }
 
 // Adapt the frame resolution to be a quarter of the capture resolution after
@@ -371,8 +373,8 @@ TEST_F(VideoAdapterTest, AdaptResolutionOnTheFly) {
   VideoFormat request_format = capture_format_;
   adapter_->SetOutputFormat(request_format);
   EXPECT_EQ(CS_RUNNING, capturer_->Start(capture_format_));
-  EXPECT_TRUE_WAIT(!capturer_->IsRunning() ||
-                   listener_->GetStats().captured_frames >= 10, kWaitTimeout);
+  for (int i = 0; i < 10; ++i)
+    capturer_->CaptureFrame();
 
   // Verify no resolution change before adaptation.
   VerifyAdaptedResolution(
@@ -382,11 +384,8 @@ TEST_F(VideoAdapterTest, AdaptResolutionOnTheFly) {
   request_format.width /= 2;
   request_format.height /= 2;
   adapter_->SetOutputFormat(request_format);
-  int captured_frames = listener_->GetStats().captured_frames;
-  EXPECT_TRUE_WAIT(
-      !capturer_->IsRunning() ||
-          listener_->GetStats().captured_frames >= captured_frames + 10,
-      kWaitTimeout);
+  for (int i = 0; i < 10; ++i)
+    capturer_->CaptureFrame();
 
   // Verify resolution change after adaptation.
   VerifyAdaptedResolution(
@@ -398,8 +397,8 @@ TEST_F(VideoAdapterTest, DropAllFrames) {
   VideoFormat format;  // with resolution 0x0.
   adapter_->SetOutputFormat(format);
   EXPECT_EQ(CS_RUNNING, capturer_->Start(capture_format_));
-  EXPECT_TRUE_WAIT(!capturer_->IsRunning() ||
-                   listener_->GetStats().captured_frames >= 10, kWaitTimeout);
+  for (int i = 0; i < 10; ++i)
+    capturer_->CaptureFrame();
 
   // Verify all frames are dropped.
   VideoCapturerListener::Stats stats = listener_->GetStats();
