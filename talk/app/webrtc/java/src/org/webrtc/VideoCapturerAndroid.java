@@ -86,6 +86,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   private int width;
   private int height;
   private int framerate;
+  private volatile boolean pendingCameraSwitch;
   private CapturerObserver frameObserver = null;
   // List of formats supported by all cameras. This list is filled once in order
   // to be able to switch cameras.
@@ -165,12 +166,18 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   // the camera is running.
   // Returns true on success. False if the next camera does not support the
   // current resolution.
-  public synchronized boolean switchCamera() {
+  public synchronized boolean switchCamera(final Runnable switchDoneEvent) {
     if (Camera.getNumberOfCameras() < 2 )
       return false;
 
     if (cameraThread == null) {
       Log.e(TAG, "Camera has not been started");
+      return false;
+    }
+    if (pendingCameraSwitch) {
+      // Do not handle multiple camera switch request to avoid blocking
+      // camera thread by handling too many switch request from a queue.
+      Log.w(TAG, "Ignoring camera switch request.");
       return false;
     }
 
@@ -190,10 +197,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       return false;
     }
 
+    pendingCameraSwitch = true;
     id = new_id;
     cameraThreadHandler.post(new Runnable() {
       @Override public void run() {
-        switchCameraOnCameraThread();
+        switchCameraOnCameraThread(switchDoneEvent);
       }
     });
     return true;
@@ -347,6 +355,9 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     if (width % 16 != 0) {
       throw new RuntimeException("width must be a multiple of 16." );
     }
+    if (cameraThreadHandler != null) {
+      throw new RuntimeException("Camera has already been started.");
+    }
     this.width = width;
     this.height = height;
     this.framerate = framerate;
@@ -442,7 +453,6 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     Log.e(TAG, "startCapture failed", error);
     if (camera != null) {
       stopCaptureOnCameraThread();
-      frameObserver.OnCapturerStarted(false);
     }
     frameObserver.OnCapturerStarted(false);
     return;
@@ -450,6 +460,9 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
   // Called by native code.  Returns true when camera is known to be stopped.
   synchronized void stopCapture() throws InterruptedException {
+    if (cameraThreadHandler == null) {
+      throw new RuntimeException("Calling stopCapture() for already stopped camera.");
+    }
     Log.d(TAG, "stopCapture");
     cameraThreadHandler.post(new Runnable() {
         @Override public void run() {
@@ -488,12 +501,17 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
   }
 
-  private void switchCameraOnCameraThread() {
+  private void switchCameraOnCameraThread(Runnable switchDoneEvent) {
     Log.d(TAG, "switchCameraOnCameraThread");
 
     doStopCaptureOnCamerathread();
     startCaptureOnCameraThread(width, height, framerate, frameObserver,
         applicationContext);
+    pendingCameraSwitch = false;
+    Log.d(TAG, "switchCameraOnCameraThread done");
+    if (switchDoneEvent != null) {
+      switchDoneEvent.run();
+    }
   }
 
   synchronized void returnBuffer(final long timeStamp) {

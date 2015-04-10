@@ -818,7 +818,7 @@ public class PeerConnectionClient {
       return;  // No video is sent or only one camera is available or error happened.
     }
     Log.d(TAG, "Switch camera");
-    videoCapturer.switchCamera();
+    videoCapturer.switchCamera(null);
   }
 
   public void switchCamera() {
