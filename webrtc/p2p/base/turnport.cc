@@ -778,7 +778,9 @@ bool TurnPort::ScheduleRefresh(int lifetime) {
     return false;
   }
 
-  SendRequest(new TurnRefreshRequest(this), (lifetime - 60) * 1000);
+  int delay = (lifetime - 60) * 1000;
+  SendRequest(new TurnRefreshRequest(this), delay);
+  LOG_J(LS_INFO, this) << "Scheduled refresh in " << delay << "ms.";
   return true;
 }
 
@@ -1049,6 +1051,8 @@ void TurnRefreshRequest::Prepare(StunMessage* request) {
 }
 
 void TurnRefreshRequest::OnResponse(StunMessage* response) {
+  LOG_J(LS_INFO, port_) << "Refresh requested successfully.";
+
   // Check mandatory attributes as indicated in RFC5766, Section 7.3.
   const StunUInt32Attribute* lifetime_attr =
       response->GetUInt32(STUN_ATTR_TURN_LIFETIME);
@@ -1076,6 +1080,7 @@ void TurnRefreshRequest::OnErrorResponse(StunMessage* response) {
 }
 
 void TurnRefreshRequest::OnTimeout() {
+  LOG_J(LS_WARNING, port_) << "Refresh request timeout";
 }
 
 TurnCreatePermissionRequest::TurnCreatePermissionRequest(
@@ -1104,8 +1109,10 @@ void TurnCreatePermissionRequest::OnResponse(StunMessage* response) {
 }
 
 void TurnCreatePermissionRequest::OnErrorResponse(StunMessage* response) {
+  const StunErrorCodeAttribute* error_code = response->GetErrorCode();
+  LOG_J(LS_WARNING, port_) << "Allocate response error, code="
+                           << error_code->code();
   if (entry_) {
-    const StunErrorCodeAttribute* error_code = response->GetErrorCode();
     entry_->OnCreatePermissionError(response, error_code->code());
   }
 }
@@ -1148,7 +1155,9 @@ void TurnChannelBindRequest::OnResponse(StunMessage* response) {
     // threshold. The channel binding has a longer lifetime, but
     // this is the easiest way to keep both the channel and the
     // permission from expiring.
-    entry_->SendChannelBindRequest(TURN_PERMISSION_TIMEOUT - 60 * 1000);
+    int delay = TURN_PERMISSION_TIMEOUT - 60000;
+    entry_->SendChannelBindRequest(delay);
+    LOG_J(LS_INFO, port_) << "Scheduled channel bind in " << delay << "ms.";
   }
 }
 
