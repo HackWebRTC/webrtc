@@ -28,6 +28,7 @@
 package org.webrtc;
 
 import static java.lang.Math.abs;
+import static java.lang.Math.ceil;
 
 import android.content.Context;
 import android.graphics.ImageFormat;
@@ -303,13 +304,6 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
       List<Camera.Size> supportedSizes = parameters.getSupportedPreviewSizes();
       for (Camera.Size size : supportedSizes) {
-        if (size.width % 16 != 0) {
-          // If the width is not a multiple of 16, the frames received from the
-          // camera will have a stride != width when YV12 is used. Since we
-          // currently only support tightly packed images, we simply ignore
-          // those resolutions.
-          continue;
-        }
         formatList.add(new CaptureFormat(size.width, size.height,
             range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
             range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]));
@@ -660,8 +654,18 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         throw new RuntimeException("camera already set.");
 
       this.camera = camera;
-      int newframeSize =
-          width * height * ImageFormat.getBitsPerPixel(format) / 8;
+      int newframeSize = 0;
+      if (format == ImageFormat.YV12) {
+        int yStride   = (int) ceil(width / 16.0) * 16;
+        int uvStride  = (int) ceil( (yStride / 2) / 16.0) * 16;
+        int ySize     = yStride * height;
+        int uvSize    = uvStride * height / 2;
+        newframeSize  = ySize + uvSize * 2;
+      } else {
+        newframeSize  =
+            width * height * ImageFormat.getBitsPerPixel(format) / 8;
+      }
+
       int numberOfEnquedCameraBuffers = 0;
       if (newframeSize != frameSize) {
         // Create new frames and add to the camera.
