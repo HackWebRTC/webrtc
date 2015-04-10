@@ -50,6 +50,7 @@ class WebRtcAudioManager {
   private final AudioManager audioManager;
 
   private boolean initialized = false;
+  private boolean audioModeNeedsRestore = false;
   private int nativeSampleRate;
   private int nativeChannels;
   private int savedAudioMode = AudioManager.MODE_INVALID;
@@ -97,7 +98,9 @@ class WebRtcAudioManager {
       return;
     }
     // Restore previously stored audio states.
-    setSpeakerphoneOn(savedIsSpeakerPhoneOn);
+    if (audioModeNeedsRestore) {
+      setSpeakerphoneOn(savedIsSpeakerPhoneOn);
+    }
     audioManager.setMode(savedAudioMode);
   }
 
@@ -112,11 +115,14 @@ class WebRtcAudioManager {
       }
       // Switch to COMMUNICATION mode for best possible VoIP performance.
       audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-    } else {
+      audioModeNeedsRestore = true;
+      Logd("changing audio mode to: " + AUDIO_MODES[audioManager.getMode()]);
+    } else if (audioModeNeedsRestore) {
       // Restore audio mode that was stored in init().
       audioManager.setMode(savedAudioMode);
+      audioModeNeedsRestore = false;
+      Logd("restoring audio mode to: " + AUDIO_MODES[audioManager.getMode()]);
     }
-    Logd("changing audio mode to: " + AUDIO_MODES[audioManager.getMode()]);
   }
 
   private void storeAudioParameters() {

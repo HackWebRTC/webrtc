@@ -145,6 +145,9 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t StopPlayout() override {
+    // Avoid using audio manger (JNI/Java cost) if playout was inactive.
+    if (!Playing())
+      return 0;
     int32_t err = output_.StopPlayout();
     if (!Recording()) {
       // Restore initial audio mode since all audio streaming is disabled.
@@ -163,6 +166,9 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t StopRecording() override {
+    // Avoid using audio manger (JNI/Java cost) if recording was inactive.
+    if (!Recording())
+      return 0;
     int32_t err = input_.StopRecording();
     if (!Playing()) {
       // Restore initial audio mode since all audio streaming is disabled.
