@@ -71,7 +71,6 @@ class P2PTransportChannel : public TransportChannelImpl,
                                        const std::string& ice_pwd);
   virtual void SetRemoteIceMode(IceMode mode);
   virtual void Connect();
-  virtual void Reset();
   virtual void OnSignalingReady();
   virtual void OnCandidate(const Candidate& candidate);
 

@@ -371,39 +371,6 @@ void P2PTransportChannel::Connect() {
   thread()->Post(this, MSG_PING);
 }
 
-// Reset the socket, clear up any previous allocations and start over
-void P2PTransportChannel::Reset() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-
-  // Get rid of all the old allocators.  This should clean up everything.
-  for (uint32 i = 0; i < allocator_sessions_.size(); ++i)
-    delete allocator_sessions_[i];
-
-  allocator_sessions_.clear();
-  ports_.clear();
-  connections_.clear();
-  best_connection_ = NULL;
-
-  // Forget about all of the candidates we got before.
-  remote_candidates_.clear();
-
-  // Revert to the initial state.
-  set_readable(false);
-  set_writable(false);
-
-  // Reinitialize the rest of our state.
-  waiting_for_signaling_ = false;
-  sort_dirty_ = false;
-
-  // If we allocated before, start a new one now.
-  if (transport_->connect_requested())
-    Allocate();
-
-  // Start pinging as the ports come in.
-  thread()->Clear(this);
-  thread()->Post(this, MSG_PING);
-}
-
 // A new port is available, attempt to make connections for it
 void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
                                       PortInterface* port) {

@@ -121,21 +121,6 @@ void DtlsTransportChannelWrapper::Connect() {
   channel_->Connect();
 }
 
-void DtlsTransportChannelWrapper::Reset() {
-  channel_->Reset();
-  set_writable(false);
-  set_readable(false);
-
-  // Re-call SetupDtls()
-  if (!SetupDtls()) {
-    LOG_J(LS_ERROR, this) << "Error re-initializing DTLS";
-    dtls_state_ = STATE_CLOSED;
-    return;
-  }
-
-  dtls_state_ = STATE_ACCEPTED;
-}
-
 bool DtlsTransportChannelWrapper::SetLocalIdentity(
     rtc::SSLIdentity* identity) {
   if (dtls_state_ != STATE_NONE) {

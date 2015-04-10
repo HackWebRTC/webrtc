@@ -204,7 +204,6 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   }
 
   virtual void Connect();
-  virtual void Reset();
 
   virtual void OnSignalingReady() {
     channel_->OnSignalingReady();
