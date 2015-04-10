@@ -40,6 +40,8 @@ VideoFrame* VideoFrameFactory::CreateAliasedFrame(
     int output_height) const {
   rtc::scoped_ptr<VideoFrame> cropped_input_frame(CreateAliasedFrame(
       input_frame, cropped_input_width, cropped_input_height));
+  if (!cropped_input_frame)
+    return nullptr;
 
   if (cropped_input_width == output_width &&
       cropped_input_height == output_height) {
