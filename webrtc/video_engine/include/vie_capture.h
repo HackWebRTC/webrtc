@@ -19,8 +19,8 @@
 #define WEBRTC_VIDEO_ENGINE_INCLUDE_VIE_CAPTURE_H_
 
 #include "webrtc/common_types.h"
-#include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/common_video/rotation.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc {
 

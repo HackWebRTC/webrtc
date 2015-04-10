@@ -15,8 +15,8 @@
 
 #include <algorithm>  // min_element, max_element
 
-#include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc {
 namespace test {

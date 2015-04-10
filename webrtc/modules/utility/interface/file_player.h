@@ -12,10 +12,10 @@
 #define WEBRTC_MODULES_UTILITY_INTERFACE_FILE_PLAYER_H_
 
 #include "webrtc/common_types.h"
-#include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc {
 class FileCallback;

@@ -19,7 +19,6 @@ source_set("common_video") {
   sources = [
     "i420_buffer_pool.cc",
     "i420_video_frame.cc",
-    "interface/i420_video_frame.h",
     "interface/i420_buffer_pool.h",
     "interface/video_frame_buffer.h",
     "libyuv/include/scaler.h",

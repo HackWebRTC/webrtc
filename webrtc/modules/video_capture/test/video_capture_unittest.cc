@@ -15,7 +15,6 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
 #include "webrtc/modules/video_capture/ensure_initialized.h"
@@ -26,6 +25,7 @@
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
+#include "webrtc/video_frame.h"
 
 using rtc::scoped_ptr;
 using webrtc::CriticalSectionWrapper;

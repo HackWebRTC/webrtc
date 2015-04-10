@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/video_frame.h"
+
 #include <math.h>
 #include <string.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "webrtc/common_video/interface/i420_video_frame.h"
 
 namespace webrtc {
 
