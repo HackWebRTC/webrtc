@@ -121,6 +121,18 @@ bool AudioManager::Close() {
   return true;
 }
 
+void AudioManager::SetCommunicationMode(bool enable) {
+  ALOGD("SetCommunicationMode(%d)%s", enable, GetThreadInfo().c_str());
+  DCHECK(thread_checker_.CalledOnValidThread());
+  DCHECK(initialized_);
+  AttachThreadScoped ats(g_jvm);
+  JNIEnv* jni = ats.env();
+  jmethodID setcommID = GetMethodID(
+      jni, g_audio_manager_class, "setCommunicationMode", "(Z)V");
+  jni->CallVoidMethod(j_audio_manager_, setcommID, enable);
+  CHECK_EXCEPTION(jni);
+}
+
 void JNICALL AudioManager::CacheAudioParameters(JNIEnv* env, jobject obj,
     jint sample_rate, jint channels, jlong nativeAudioManager) {
   webrtc::AudioManager* this_object =

@@ -81,13 +81,14 @@ class AudioManager {
   AudioManager();
   ~AudioManager();
 
-  // Initializes the audio manager (changes mode to MODE_IN_COMMUNICATION,
-  // request audio focus etc.).
-  // It is possible to use this class without calling Init() if the calling
-  // application prefers to set up the audio environment on its own instead.
+  // Initializes the audio manager and stores the current audio mode.
   bool Init();
   // Revert any setting done by Init().
   bool Close();
+
+  // Sets audio mode to AudioManager.MODE_IN_COMMUNICATION if |enable| is true.
+  // Restores audio mode that was stored in Init() if |enable| is false.
+  void SetCommunicationMode(bool enable);
 
   // Native audio parameters stored during construction.
   AudioParameters GetPlayoutAudioParameters() const;

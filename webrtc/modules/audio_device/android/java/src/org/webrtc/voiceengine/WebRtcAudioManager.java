@@ -37,6 +37,14 @@ class WebRtcAudioManager {
   // TODO(henrika): add stereo support for playout.
   private static final int CHANNELS = 1;
 
+  // List of possible audio modes.
+  private static final String[] AUDIO_MODES = new String[] {
+      "MODE_NORMAL",
+      "MODE_RINGTONE",
+      "MODE_IN_CALL",
+      "MODE_IN_COMMUNICATION",
+    };
+
   private final long nativeAudioManager;
   private final Context context;
   private final AudioManager audioManager;
@@ -68,12 +76,10 @@ class WebRtcAudioManager {
       return true;
     }
 
-    // Store current audio state so we can restore it when close() is called.
+    // Store current audio state so we can restore it when close() or
+    // setCommunicationMode(false) is called.
     savedAudioMode = audioManager.getMode();
     savedIsSpeakerPhoneOn = audioManager.isSpeakerphoneOn();
-
-    // Switch to COMMUNICATION mode for best possible VoIP performance.
-    audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
 
     if (DEBUG) {
       Logd("savedAudioMode: " + savedAudioMode);
@@ -93,6 +99,24 @@ class WebRtcAudioManager {
     // Restore previously stored audio states.
     setSpeakerphoneOn(savedIsSpeakerPhoneOn);
     audioManager.setMode(savedAudioMode);
+  }
+
+  private void setCommunicationMode(boolean enable) {
+    Logd("setCommunicationMode(" + enable + ")"
+        + WebRtcAudioUtils.getThreadInfo());
+    assertTrue(initialized);
+    if (enable) {
+      // Avoid switching mode if MODE_IN_COMMUNICATION is already in use.
+      if (audioManager.getMode() == AudioManager.MODE_IN_COMMUNICATION) {
+        return;
+      }
+      // Switch to COMMUNICATION mode for best possible VoIP performance.
+      audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+    } else {
+      // Restore audio mode that was stored in init().
+      audioManager.setMode(savedAudioMode);
+    }
+    Logd("changing audio mode to: " + AUDIO_MODES[audioManager.getMode()]);
   }
 
   private void storeAudioParameters() {
