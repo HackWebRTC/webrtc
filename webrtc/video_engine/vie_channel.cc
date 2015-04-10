@@ -1752,6 +1752,8 @@ bool ViEChannel::ChannelDecodeThreadFunction(void* obj) {
 }
 
 bool ViEChannel::ChannelDecodeProcess() {
+  // TODO(pbos): Make sure the decoder thread doesn't run for send-only
+  // channels.
   vcm_->Decode(kMaxDecodeWaitTimeMs);
   return true;
 }

@@ -218,7 +218,6 @@ class VideoReceiver {
   Clock* const clock_;
   rtc::scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
   CriticalSectionWrapper* _receiveCritSect;
-  bool _receiverInited GUARDED_BY(_receiveCritSect);
   VCMTiming _timing;
   VCMReceiver _receiver;
   VCMDecodedFrameCallback _decodedFrameCallback;

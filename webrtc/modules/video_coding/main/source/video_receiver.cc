@@ -28,7 +28,6 @@ VideoReceiver::VideoReceiver(Clock* clock, EventFactory* event_factory)
     : clock_(clock),
       process_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       _receiveCritSect(CriticalSectionWrapper::CreateCriticalSection()),
-      _receiverInited(false),
       _timing(clock_),
       _receiver(&_timing, clock_, event_factory, true),
       _decodedFrameCallback(_timing, clock_),
@@ -257,7 +256,6 @@ int32_t VideoReceiver::InitializeReceiver() {
     CriticalSectionScoped receive_cs(_receiveCritSect);
     _codecDataBase.ResetReceiver();
     _timing.Reset();
-    _receiverInited = true;
   }
 
   {
@@ -349,12 +347,6 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
   bool supports_render_scheduling;
   {
     CriticalSectionScoped cs(_receiveCritSect);
-    if (!_receiverInited) {
-      return VCM_UNINITIALIZED;
-    }
-    if (!_codecDataBase.DecoderRegistered()) {
-      return VCM_NO_CODEC_REGISTERED;
-    }
     supports_render_scheduling = _codecDataBase.SupportsRenderScheduling();
   }
 
