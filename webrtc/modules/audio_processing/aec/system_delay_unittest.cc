@@ -73,7 +73,7 @@ void SystemDelayTest::SetUp() {
 
 void SystemDelayTest::TearDown() {
   // Free AEC
-  ASSERT_EQ(0, WebRtcAec_Free(handle_));
+  WebRtcAec_Free(handle_);
   handle_ = NULL;
 }
 

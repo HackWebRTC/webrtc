@@ -41,12 +41,8 @@ int WebRtcNs_Create(NsHandle** NS_inst);
  *
  * Input:
  *      - NS_inst       : Pointer to NS instance that should be freed
- *
- * Return value         :  0 - Ok
- *                        -1 - Error
  */
-int WebRtcNs_Free(NsHandle* NS_inst);
-
+void WebRtcNs_Free(NsHandle* NS_inst);
 
 /*
  * This function initializes a NS instance and has to be called before any other

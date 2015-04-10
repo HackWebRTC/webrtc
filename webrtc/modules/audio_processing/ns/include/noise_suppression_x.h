@@ -41,12 +41,8 @@ int WebRtcNsx_Create(NsxHandle** nsxInst);
  *
  * Input:
  *      - nsxInst       : Pointer to NS instance that should be freed
- *
- * Return value         :  0 - Ok
- *                        -1 - Error
  */
-int WebRtcNsx_Free(NsxHandle* nsxInst);
-
+void WebRtcNsx_Free(NsxHandle* nsxInst);
 
 /*
  * This function initializes a NS instance

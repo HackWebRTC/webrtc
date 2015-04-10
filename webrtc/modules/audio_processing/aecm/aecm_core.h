@@ -174,11 +174,7 @@ int WebRtcAecm_InitCore(AecmCore* const aecm, int samplingFreq);
 // Input:
 //      - aecm          : Pointer to the AECM instance
 //
-// Return value         :  0 - Ok
-//                        -1 - Error
-//           11001-11016: Error
-//
-int WebRtcAecm_FreeCore(AecmCore* aecm);
+void WebRtcAecm_FreeCore(AecmCore* aecm);
 
 int WebRtcAecm_Control(AecmCore* aecm, int delay, int nlpFlag);
 

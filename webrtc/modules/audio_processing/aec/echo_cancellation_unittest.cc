@@ -23,13 +23,13 @@ extern "C" {
 
 namespace webrtc {
 
-TEST(EchoCancellationTest, CreateAndFreeHandlesErrors) {
+TEST(EchoCancellationTest, CreateAndFreeHasExpectedBehavior) {
   EXPECT_EQ(-1, WebRtcAec_Create(NULL));
   void* handle = NULL;
   ASSERT_EQ(0, WebRtcAec_Create(&handle));
   EXPECT_TRUE(handle != NULL);
-  EXPECT_EQ(-1, WebRtcAec_Free(NULL));
-  EXPECT_EQ(0, WebRtcAec_Free(handle));
+  WebRtcAec_Free(nullptr);
+  WebRtcAec_Free(handle);
 }
 
 TEST(EchoCancellationTest, ApplyAecCoreHandle) {
@@ -44,7 +44,7 @@ TEST(EchoCancellationTest, ApplyAecCoreHandle) {
   int delay = 111;
   WebRtcAec_SetSystemDelay(aec_core, delay);
   EXPECT_EQ(delay, WebRtcAec_system_delay(aec_core));
-  EXPECT_EQ(0, WebRtcAec_Free(handle));
+  WebRtcAec_Free(handle);
 }
 
 }  // namespace webrtc

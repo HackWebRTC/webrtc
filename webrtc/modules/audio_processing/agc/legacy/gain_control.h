@@ -213,11 +213,8 @@ int WebRtcAgc_Create(void **agcInst);
  *
  * Input:
  *      - agcInst           : AGC instance.
- *
- * Return value             :  0 - Ok
- *                            -1 - Error
  */
-int WebRtcAgc_Free(void *agcInst);
+void WebRtcAgc_Free(void* agcInst);
 
 /*
  * This function initializes an AGC instance.

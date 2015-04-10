@@ -84,13 +84,8 @@ int32_t WebRtcAec_Create(void** aecInst);
  * Inputs                       Description
  * -------------------------------------------------------------------
  * void*        aecInst         Pointer to the AEC instance
- *
- * Outputs                      Description
- * -------------------------------------------------------------------
- * int32_t      return          0: OK
- *                             -1: error
  */
-int32_t WebRtcAec_Free(void* aecInst);
+void WebRtcAec_Free(void* aecInst);
 
 /*
  * Initializes an AEC instance.

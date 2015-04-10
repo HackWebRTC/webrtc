@@ -63,11 +63,9 @@ int WebRtcAec_InitResampler(void* resampInst, int deviceSampleRateHz) {
   return 0;
 }
 
-int WebRtcAec_FreeResampler(void* resampInst) {
+void WebRtcAec_FreeResampler(void* resampInst) {
   AecResampler* obj = (AecResampler*)resampInst;
   free(obj);
-
-  return 0;
 }
 
 void WebRtcAec_ResampleLinear(void* resampInst,

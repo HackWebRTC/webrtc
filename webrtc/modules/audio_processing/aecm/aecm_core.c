@@ -546,10 +546,9 @@ int WebRtcAecm_Control(AecmCore* aecm, int delay, int nlpFlag) {
     return 0;
 }
 
-int WebRtcAecm_FreeCore(AecmCore* aecm) {
-    if (aecm == NULL)
-    {
-        return -1;
+void WebRtcAecm_FreeCore(AecmCore* aecm) {
+    if (aecm == NULL) {
+      return;
     }
 
     WebRtc_FreeBuffer(aecm->farFrameBuf);
@@ -562,8 +561,6 @@ int WebRtcAecm_FreeCore(AecmCore* aecm) {
     WebRtcSpl_FreeRealFFT(aecm->real_fft);
 
     free(aecm);
-
-    return 0;
 }
 
 int WebRtcAecm_ProcessFrame(AecmCore* aecm,

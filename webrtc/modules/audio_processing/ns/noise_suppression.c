@@ -28,11 +28,9 @@ int WebRtcNs_Create(NsHandle** NS_inst) {
 
 }
 
-int WebRtcNs_Free(NsHandle* NS_inst) {
+void WebRtcNs_Free(NsHandle* NS_inst) {
   free(NS_inst);
-  return 0;
 }
-
 
 int WebRtcNs_Init(NsHandle* NS_inst, uint32_t fs) {
   return WebRtcNs_InitCore((NoiseSuppressionC*)NS_inst, fs);

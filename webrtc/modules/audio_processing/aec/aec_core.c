@@ -1471,10 +1471,10 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
   return 0;
 }
 
-int WebRtcAec_FreeAec(AecCore* aec) {
+void WebRtcAec_FreeAec(AecCore* aec) {
   int i;
   if (aec == NULL) {
-    return -1;
+    return;
   }
 
   WebRtc_FreeBuffer(aec->nearFrBuf);
@@ -1498,7 +1498,6 @@ int WebRtcAec_FreeAec(AecCore* aec) {
   WebRtc_FreeDelayEstimatorFarend(aec->delay_estimator_farend);
 
   free(aec);
-  return 0;
 }
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP

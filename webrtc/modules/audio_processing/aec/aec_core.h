@@ -52,7 +52,7 @@ typedef struct Stats {
 typedef struct AecCore AecCore;
 
 int WebRtcAec_CreateAec(AecCore** aec);
-int WebRtcAec_FreeAec(AecCore* aec);
+void WebRtcAec_FreeAec(AecCore* aec);
 int WebRtcAec_InitAec(AecCore* aec, int sampFreq);
 void WebRtcAec_InitAec_SSE2(void);
 #if defined(MIPS_FPU_LE)

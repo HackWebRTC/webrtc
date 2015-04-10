@@ -31,10 +31,9 @@ int WebRtcNsx_Create(NsxHandle** nsxInst) {
 
 }
 
-int WebRtcNsx_Free(NsxHandle* nsxInst) {
+void WebRtcNsx_Free(NsxHandle* nsxInst) {
   WebRtcSpl_FreeRealFFT(((NoiseSuppressionFixedC*)nsxInst)->real_fft);
   free(nsxInst);
-  return 0;
 }
 
 int WebRtcNsx_Init(NsxHandle* nsxInst, uint32_t fs) {

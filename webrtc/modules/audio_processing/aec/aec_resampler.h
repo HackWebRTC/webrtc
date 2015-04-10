@@ -23,7 +23,7 @@ enum {
 // Unless otherwise specified, functions return 0 on success and -1 on error
 int WebRtcAec_CreateResampler(void** resampInst);
 int WebRtcAec_InitResampler(void* resampInst, int deviceSampleRateHz);
-int WebRtcAec_FreeResampler(void* resampInst);
+void WebRtcAec_FreeResampler(void* resampInst);
 
 // Estimates skew from raw measurement.
 int WebRtcAec_GetSkew(void* resampInst, int rawSkew, float* skewEst);

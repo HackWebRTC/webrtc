@@ -61,13 +61,8 @@ int32_t WebRtcAecm_Create(void **aecmInst);
  * Inputs                       Description
  * -------------------------------------------------------------------
  * void*    aecmInst            Pointer to the AECM instance
- *
- * Outputs                      Description
- * -------------------------------------------------------------------
- * int32_t  return              0: OK
- *                             -1: error
  */
-int32_t WebRtcAecm_Free(void *aecmInst);
+void WebRtcAecm_Free(void* aecmInst);
 
 /*
  * Initializes an AECM instance.

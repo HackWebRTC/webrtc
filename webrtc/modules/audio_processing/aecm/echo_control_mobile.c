@@ -130,13 +130,11 @@ int32_t WebRtcAecm_Create(void **aecmInst)
     return 0;
 }
 
-int32_t WebRtcAecm_Free(void *aecmInst)
-{
+void WebRtcAecm_Free(void* aecmInst) {
   AecMobile* aecm = aecmInst;
 
-    if (aecm == NULL)
-    {
-        return -1;
+    if (aecm == NULL) {
+      return;
     }
 
 #ifdef AEC_DEBUG
@@ -153,8 +151,6 @@ int32_t WebRtcAecm_Free(void *aecmInst)
     WebRtcAecm_FreeCore(aecm->aecmCore);
     WebRtc_FreeBuffer(aecm->farendBuf);
     free(aecm);
-
-    return 0;
 }
 
 int32_t WebRtcAecm_Init(void *aecmInst, int32_t sampFreq)

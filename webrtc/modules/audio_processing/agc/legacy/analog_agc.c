@@ -1340,19 +1340,16 @@ int WebRtcAgc_Create(void **agcInst)
     return 0;
 }
 
-int WebRtcAgc_Free(void *state)
-{
+void WebRtcAgc_Free(void *state) {
   LegacyAgc* stt;
 
   stt = (LegacyAgc*)state;
 #ifdef WEBRTC_AGC_DEBUG_DUMP
-    fclose(stt->fpt);
-    fclose(stt->agcLog);
-    fclose(stt->digitalAgc.logFile);
+  fclose(stt->fpt);
+  fclose(stt->agcLog);
+  fclose(stt->digitalAgc.logFile);
 #endif
-    free(stt);
-
-    return 0;
+  free(stt);
 }
 
 /* minLevel     - Minimum volume level

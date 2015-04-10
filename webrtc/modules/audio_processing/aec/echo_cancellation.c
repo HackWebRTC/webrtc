@@ -171,11 +171,11 @@ int32_t WebRtcAec_Create(void** aecInst) {
   return 0;
 }
 
-int32_t WebRtcAec_Free(void* aecInst) {
+void WebRtcAec_Free(void* aecInst) {
   Aec* aecpc = aecInst;
 
   if (aecpc == NULL) {
-    return -1;
+    return;
   }
 
   WebRtc_FreeBuffer(aecpc->far_pre_buf);
@@ -189,8 +189,6 @@ int32_t WebRtcAec_Free(void* aecInst) {
   WebRtcAec_FreeAec(aecpc->aec);
   WebRtcAec_FreeResampler(aecpc->resampler);
   free(aecpc);
-
-  return 0;
 }
 
 int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq) {
