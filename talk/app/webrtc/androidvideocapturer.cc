@@ -34,11 +34,6 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/thread.h"
 
-static int RoundUp(int value, int alignment) {
-  DCHECK(value  > 0 && alignment > 0);
-  return ((value + (alignment - 1)) & ~(alignment - 1));
-}
-
 namespace webrtc {
 
 using cricket::WebRtcVideoFrame;
@@ -98,14 +93,12 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
     if (!apply_rotation_ || captured_frame->rotation == kVideoRotation_0) {
       DCHECK(captured_frame->fourcc == cricket::FOURCC_YV12);
       const uint8_t* y_plane = static_cast<uint8_t*>(captured_frame_.data);
-
-      // Android guarantee that the stride is a multiple of 16.
-      // http://developer.android.com/reference/android/hardware/Camera.Parameters.html#setPreviewFormat%28int%29
-      const int y_stride = RoundUp(captured_frame->width, 16);
-      const int uv_stride = RoundUp(y_stride / 2, 16);
-      const uint8_t* v_plane = y_plane + y_stride * captured_frame->height;
-      const uint8_t* u_plane =
-          v_plane + uv_stride * captured_frame->height / 2;
+      const int y_stride = captured_frame->width;
+      const uint8_t* v_plane = y_plane +
+          captured_frame->width * captured_frame->height;
+      const int uv_stride = (captured_frame->width + 1) / 2;
+      const int uv_height = (captured_frame->height + 1) / 2;
+      const uint8_t* u_plane = v_plane + uv_stride * uv_height;
 
       // Create a WrappedI420Buffer and bind the |no_longer_used| callback
       // to the static method ReturnFrame. The |delegate_| is bound as an
