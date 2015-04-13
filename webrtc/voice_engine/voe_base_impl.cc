@@ -10,7 +10,6 @@
 
 #include "webrtc/voice_engine/voe_base_impl.h"
 
-#include "webrtc/base/checks.h"
 #include "webrtc/common.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
@@ -195,8 +194,8 @@ void VoEBaseImpl::PullRenderData(int bits_per_sample, int sample_rate,
                                  void* audio_data,
                                  int64_t* elapsed_time_ms,
                                  int64_t* ntp_time_ms) {
-  CHECK_EQ(bits_per_sample, 16);
-  CHECK_EQ(number_of_frames, static_cast<int>(sample_rate / 100));
+  assert(bits_per_sample == 16);
+  assert(number_of_frames == static_cast<int>(sample_rate / 100));
 
   GetPlayoutData(sample_rate, number_of_channels, number_of_frames, false,
                  audio_data, elapsed_time_ms, ntp_time_ms);
@@ -665,7 +664,7 @@ int VoEBaseImpl::StopSend(int channel)
 
 int VoEBaseImpl::GetVersion(char version[1024])
 {
-    CHECK_EQ(kVoiceEngineVersionMaxMessageSize, 1024);
+    assert(kVoiceEngineVersionMaxMessageSize == 1024);
 
     if (version == NULL)
     {
@@ -686,7 +685,7 @@ int VoEBaseImpl::GetVersion(char version[1024])
     }
     versionPtr += len;
     accLen += len;
-    CHECK_LT(accLen, kVoiceEngineVersionMaxMessageSize);
+    assert(accLen < kVoiceEngineVersionMaxMessageSize);
 
 #ifdef WEBRTC_EXTERNAL_TRANSPORT
     len = AddExternalTransportBuild(versionPtr);
@@ -696,7 +695,7 @@ int VoEBaseImpl::GetVersion(char version[1024])
     }
     versionPtr += len;
     accLen += len;
-    CHECK_LT(accLen, kVoiceEngineVersionMaxMessageSize);
+    assert(accLen < kVoiceEngineVersionMaxMessageSize);
 #endif
 
     memcpy(version, versionBuf, accLen);
@@ -882,8 +881,8 @@ int VoEBaseImpl::ProcessRecordedDataWithAPM(
     int32_t clock_drift,
     uint32_t volume,
     bool key_pressed) {
-  CHECK(_shared->transmit_mixer());
-  CHECK(_shared->audio_device());
+  assert(_shared->transmit_mixer() != nullptr);
+  assert(_shared->audio_device() != nullptr);
 
   uint32_t max_volume = 0;
   uint16_t voe_mic_level = 0;
@@ -950,7 +949,7 @@ void VoEBaseImpl::GetPlayoutData(int sample_rate, int number_of_channels,
                                  void* audio_data,
                                  int64_t* elapsed_time_ms,
                                  int64_t* ntp_time_ms) {
-  CHECK(_shared->output_mixer());
+  assert(_shared->output_mixer() != nullptr);
 
   // TODO(andrew): if the device is running in mono, we should tell the mixer
   // here so that it will only request mono from AudioCodingModule.
@@ -964,8 +963,8 @@ void VoEBaseImpl::GetPlayoutData(int sample_rate, int number_of_channels,
   _shared->output_mixer()->GetMixedAudio(sample_rate, number_of_channels,
                                          &_audioFrame);
 
-  CHECK_EQ(number_of_frames, _audioFrame.samples_per_channel_);
-  CHECK_EQ(sample_rate, _audioFrame.sample_rate_hz_);
+  assert(number_of_frames == _audioFrame.samples_per_channel_);
+  assert(sample_rate == _audioFrame.sample_rate_hz_);
 
   // Deliver audio (PCM) samples to the ADM
   memcpy(audio_data, _audioFrame.data_,
