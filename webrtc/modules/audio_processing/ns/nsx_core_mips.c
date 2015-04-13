@@ -9,6 +9,7 @@
  */
 
 #include <assert.h>
+#include <string.h>
 
 #include "webrtc/modules/audio_processing/ns/include/noise_suppression_x.h"
 #include "webrtc/modules/audio_processing/ns/nsx_core.h"
@@ -340,11 +341,10 @@ void WebRtcNsx_AnalysisUpdate_mips(NoiseSuppressionFixedC* inst,
 #endif
 
   // For lower band update analysis buffer.
-  WEBRTC_SPL_MEMCPY_W16(inst->analysisBuffer,
-                        inst->analysisBuffer + inst->blockLen10ms,
-                        inst->anaLen - inst->blockLen10ms);
-  WEBRTC_SPL_MEMCPY_W16(inst->analysisBuffer
-      + inst->anaLen - inst->blockLen10ms, new_speech, inst->blockLen10ms);
+  memcpy(inst->analysisBuffer, inst->analysisBuffer + inst->blockLen10ms,
+      (inst->anaLen - inst->blockLen10ms) * sizeof(*inst->analysisBuffer));
+  memcpy(inst->analysisBuffer + inst->anaLen - inst->blockLen10ms, new_speech,
+      inst->blockLen10ms * sizeof(*inst->analysisBuffer));
 
   // Window data before FFT.
 #if defined(MIPS_DSP_R1_LE)
@@ -744,9 +744,8 @@ void WebRtcNsx_SynthesisUpdate_mips(NoiseSuppressionFixedC* inst,
   );
 
   // update synthesis buffer
-  WEBRTC_SPL_MEMCPY_W16(inst->synthesisBuffer,
-                        inst->synthesisBuffer + inst->blockLen10ms,
-                        inst->anaLen - inst->blockLen10ms);
+  memcpy(inst->synthesisBuffer, inst->synthesisBuffer + inst->blockLen10ms,
+      (inst->anaLen - inst->blockLen10ms) * sizeof(*inst->synthesisBuffer));
   WebRtcSpl_ZerosArrayW16(inst->synthesisBuffer
       + inst->anaLen - inst->blockLen10ms, inst->blockLen10ms);
 }

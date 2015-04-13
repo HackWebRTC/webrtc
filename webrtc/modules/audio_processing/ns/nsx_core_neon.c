@@ -541,9 +541,8 @@ void WebRtcNsx_AnalysisUpdateNeon(NoiseSuppressionFixedC* inst,
   assert(inst->anaLen % 16 == 0);
 
   // For lower band update analysis buffer.
-  // WEBRTC_SPL_MEMCPY_W16(inst->analysisBuffer,
-  //                      inst->analysisBuffer + inst->blockLen10ms,
-  //                      inst->anaLen - inst->blockLen10ms);
+  // memcpy(inst->analysisBuffer, inst->analysisBuffer + inst->blockLen10ms,
+  //     (inst->anaLen - inst->blockLen10ms) * sizeof(*inst->analysisBuffer));
   int16_t* p_start_src = inst->analysisBuffer + inst->blockLen10ms;
   int16_t* p_end_src = inst->analysisBuffer + inst->anaLen;
   int16_t* p_start_dst = inst->analysisBuffer;
@@ -555,8 +554,8 @@ void WebRtcNsx_AnalysisUpdateNeon(NoiseSuppressionFixedC* inst,
     p_start_dst += 8;
   }
 
-  // WEBRTC_SPL_MEMCPY_W16(inst->analysisBuffer
-  //    + inst->anaLen - inst->blockLen10ms, new_speech, inst->blockLen10ms);
+  // memcpy(inst->analysisBuffer + inst->anaLen - inst->blockLen10ms,
+  //     new_speech, inst->blockLen10ms * sizeof(*inst->analysisBuffer));
   p_start_src = new_speech;
   p_end_src = new_speech + inst->blockLen10ms;
   p_start_dst = inst->analysisBuffer + inst->anaLen - inst->blockLen10ms;
