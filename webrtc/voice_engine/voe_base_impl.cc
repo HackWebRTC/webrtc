@@ -10,6 +10,7 @@
 
 #include "webrtc/voice_engine/voe_base_impl.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
@@ -17,7 +18,7 @@
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/file_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/voice_engine/channel.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/output_mixer.h"
@@ -42,78 +43,55 @@ VoEBase* VoEBase::GetInterface(VoiceEngine* voiceEngine)
 VoEBaseImpl::VoEBaseImpl(voe::SharedData* shared) :
     _voiceEngineObserverPtr(NULL),
     _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
-    _voiceEngineObserver(false), _shared(shared)
+    _shared(shared)
 {
-    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "VoEBaseImpl() - ctor");
 }
 
 VoEBaseImpl::~VoEBaseImpl()
 {
-    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "~VoEBaseImpl() - dtor");
-
     TerminateInternal();
-
     delete &_callbackCritSect;
 }
 
 void VoEBaseImpl::OnErrorIsReported(ErrorCode error)
 {
     CriticalSectionScoped cs(&_callbackCritSect);
-    if (_voiceEngineObserver)
+    int errCode = 0;
+    if (error == AudioDeviceObserver::kRecordingError)
     {
-        if (_voiceEngineObserverPtr)
-        {
-            int errCode(0);
-            if (error == AudioDeviceObserver::kRecordingError)
-            {
-                errCode = VE_RUNTIME_REC_ERROR;
-                WEBRTC_TRACE(kTraceInfo, kTraceVoice,
-                    VoEId(_shared->instance_id(), -1),
-                    "VoEBaseImpl::OnErrorIsReported() => VE_RUNTIME_REC_ERROR");
-            }
-            else if (error == AudioDeviceObserver::kPlayoutError)
-            {
-                errCode = VE_RUNTIME_PLAY_ERROR;
-                WEBRTC_TRACE(kTraceInfo, kTraceVoice,
-                    VoEId(_shared->instance_id(), -1),
-                    "VoEBaseImpl::OnErrorIsReported() => "
-                    "VE_RUNTIME_PLAY_ERROR");
-            }
-            // Deliver callback (-1 <=> no channel dependency)
-            _voiceEngineObserverPtr->CallbackOnError(-1, errCode);
-        }
+        errCode = VE_RUNTIME_REC_ERROR;
+        LOG_F(LS_ERROR) << "VE_RUNTIME_REC_ERROR";
+    }
+    else if (error == AudioDeviceObserver::kPlayoutError)
+    {
+        errCode = VE_RUNTIME_PLAY_ERROR;
+        LOG_F(LS_ERROR) << "VE_RUNTIME_PLAY_ERROR";
+    }
+    if (_voiceEngineObserverPtr)
+    {
+        // Deliver callback (-1 <=> no channel dependency)
+        _voiceEngineObserverPtr->CallbackOnError(-1, errCode);
     }
 }
 
 void VoEBaseImpl::OnWarningIsReported(WarningCode warning)
 {
     CriticalSectionScoped cs(&_callbackCritSect);
-    if (_voiceEngineObserver)
+    int warningCode = 0;
+    if (warning == AudioDeviceObserver::kRecordingWarning)
     {
-        if (_voiceEngineObserverPtr)
-        {
-            int warningCode(0);
-            if (warning == AudioDeviceObserver::kRecordingWarning)
-            {
-                warningCode = VE_RUNTIME_REC_WARNING;
-                WEBRTC_TRACE(kTraceInfo, kTraceVoice,
-                    VoEId(_shared->instance_id(), -1),
-                    "VoEBaseImpl::OnErrorIsReported() => "
-                    "VE_RUNTIME_REC_WARNING");
-            }
-            else if (warning == AudioDeviceObserver::kPlayoutWarning)
-            {
-                warningCode = VE_RUNTIME_PLAY_WARNING;
-                WEBRTC_TRACE(kTraceInfo, kTraceVoice,
-                    VoEId(_shared->instance_id(), -1),
-                    "VoEBaseImpl::OnErrorIsReported() => "
-                    "VE_RUNTIME_PLAY_WARNING");
-            }
-            // Deliver callback (-1 <=> no channel dependency)
-            _voiceEngineObserverPtr->CallbackOnError(-1, warningCode);
-        }
+        warningCode = VE_RUNTIME_REC_WARNING;
+        LOG_F(LS_WARNING) << "VE_RUNTIME_REC_WARNING";
+    }
+    else if (warning == AudioDeviceObserver::kPlayoutWarning)
+    {
+        warningCode = VE_RUNTIME_PLAY_WARNING;
+        LOG_F(LS_WARNING) << "VE_RUNTIME_PLAY_WARNING";
+    }
+    if (_voiceEngineObserverPtr)
+    {
+        // Deliver callback (-1 <=> no channel dependency)
+        _voiceEngineObserverPtr->CallbackOnError(-1, warningCode);
     }
 }
 
@@ -129,16 +107,9 @@ int32_t VoEBaseImpl::RecordedDataIsAvailable(
         bool keyPressed,
         uint32_t& newMicLevel)
 {
-    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "VoEBaseImpl::RecordedDataIsAvailable(nSamples=%u, "
-                     "nBytesPerSample=%u, nChannels=%u, samplesPerSec=%u, "
-                     "totalDelayMS=%u, clockDrift=%d, micLevel=%u)",
-                 nSamples, nBytesPerSample, nChannels, samplesPerSec,
-                 totalDelayMS, clockDrift, micLevel);
     newMicLevel = static_cast<uint32_t>(ProcessRecordedDataWithAPM(
         NULL, 0, audioSamples, samplesPerSec, nChannels, nSamples,
         totalDelayMS, clockDrift, micLevel, keyPressed));
-
     return 0;
 }
 
@@ -152,18 +123,11 @@ int32_t VoEBaseImpl::NeedMorePlayData(
         int64_t* elapsed_time_ms,
         int64_t* ntp_time_ms)
 {
-  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "VoEBaseImpl::NeedMorePlayData(nSamples=%u, "
-               "nBytesPerSample=%d, nChannels=%d, samplesPerSec=%u)",
-               nSamples, nBytesPerSample, nChannels, samplesPerSec);
-
   GetPlayoutData(static_cast<int>(samplesPerSec),
                  static_cast<int>(nChannels),
                  static_cast<int>(nSamples), true, audioSamples,
                  elapsed_time_ms, ntp_time_ms);
-
   nSamplesOut = _audioFrame.samples_per_channel_;
-
   return 0;
 }
 
@@ -177,14 +141,6 @@ int VoEBaseImpl::OnDataAvailable(const int voe_channels[],
                                  int volume,
                                  bool key_pressed,
                                  bool need_audio_processing) {
-  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "VoEBaseImpl::OnDataAvailable(number_of_voe_channels=%d, "
-               "sample_rate=%d, number_of_channels=%d, number_of_frames=%d, "
-               "audio_delay_milliseconds=%d, volume=%d, "
-               "key_pressed=%d, need_audio_processing=%d)",
-               number_of_voe_channels, sample_rate, number_of_channels,
-               number_of_frames, audio_delay_milliseconds, volume,
-               key_pressed, need_audio_processing);
   if (number_of_voe_channels == 0)
     return 0;
 
@@ -239,8 +195,8 @@ void VoEBaseImpl::PullRenderData(int bits_per_sample, int sample_rate,
                                  void* audio_data,
                                  int64_t* elapsed_time_ms,
                                  int64_t* ntp_time_ms) {
-  assert(bits_per_sample == 16);
-  assert(number_of_frames == static_cast<int>(sample_rate / 100));
+  CHECK_EQ(bits_per_sample, 16);
+  CHECK_EQ(number_of_frames, static_cast<int>(sample_rate / 100));
 
   GetPlayoutData(sample_rate, number_of_channels, number_of_frames, false,
                  audio_data, elapsed_time_ms, ntp_time_ms);
@@ -248,8 +204,6 @@ void VoEBaseImpl::PullRenderData(int bits_per_sample, int sample_rate,
 
 int VoEBaseImpl::RegisterVoiceEngineObserver(VoiceEngineObserver& observer)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "RegisterVoiceEngineObserver(observer=0x%d)", &observer);
     CriticalSectionScoped cs(&_callbackCritSect);
     if (_voiceEngineObserverPtr)
     {
@@ -266,17 +220,12 @@ int VoEBaseImpl::RegisterVoiceEngineObserver(VoiceEngineObserver& observer)
     }
 
     _shared->transmit_mixer()->RegisterVoiceEngineObserver(observer);
-
     _voiceEngineObserverPtr = &observer;
-    _voiceEngineObserver = true;
-
     return 0;
 }
 
 int VoEBaseImpl::DeRegisterVoiceEngineObserver()
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "DeRegisterVoiceEngineObserver()");
     CriticalSectionScoped cs(&_callbackCritSect);
     if (!_voiceEngineObserverPtr)
     {
@@ -285,7 +234,6 @@ int VoEBaseImpl::DeRegisterVoiceEngineObserver()
         return 0;
     }
 
-    _voiceEngineObserver = false;
     _voiceEngineObserverPtr = NULL;
 
     // Deregister the observer in all active channels
@@ -301,8 +249,6 @@ int VoEBaseImpl::DeRegisterVoiceEngineObserver()
 int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
                       AudioProcessing* audioproc)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-        "Init(external_adm=0x%p)", external_adm);
     CriticalSectionScoped cs(_shared->crit_sec());
 
     WebRtcSpl_Init();
@@ -336,8 +282,8 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
     {
         // Use the already existing external ADM implementation.
         _shared->set_audio_device(external_adm);
-        WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-            "An external ADM implementation will be used in VoiceEngine");
+        LOG_F(LS_INFO) <<
+            "An external ADM implementation will be used in VoiceEngine";
     }
 
     // Register the ADM to the process thread, which will drive the error
@@ -480,15 +426,11 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
 
 int VoEBaseImpl::Terminate()
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "Terminate()");
     CriticalSectionScoped cs(_shared->crit_sec());
     return TerminateInternal();
 }
 
 int VoEBaseImpl::CreateChannel() {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "CreateChannel()");
   CriticalSectionScoped cs(_shared->crit_sec());
   if (!_shared->statistics().Initialized()) {
       _shared->SetLastError(VE_NOT_INITED, kTraceError);
@@ -496,7 +438,6 @@ int VoEBaseImpl::CreateChannel() {
   }
 
   voe::ChannelOwner channel_owner = _shared->channel_manager().CreateChannel();
-
   return InitializeChannel(&channel_owner);
 }
 
@@ -540,18 +481,12 @@ int VoEBaseImpl::InitializeChannel(voe::ChannelOwner* channel_owner)
       return -1;
     }
 
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-        VoEId(_shared->instance_id(), -1),
-        "CreateChannel() => %d", channel_owner->channel()->ChannelId());
     return channel_owner->channel()->ChannelId();
 }
 
 int VoEBaseImpl::DeleteChannel(int channel)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "DeleteChannel(channel=%d)", channel);
     CriticalSectionScoped cs(_shared->crit_sec());
-
     if (!_shared->statistics().Initialized())
     {
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
@@ -586,8 +521,6 @@ int VoEBaseImpl::DeleteChannel(int channel)
 
 int VoEBaseImpl::StartReceive(int channel)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "StartReceive(channel=%d)", channel);
     CriticalSectionScoped cs(_shared->crit_sec());
     if (!_shared->statistics().Initialized())
     {
@@ -607,8 +540,6 @@ int VoEBaseImpl::StartReceive(int channel)
 
 int VoEBaseImpl::StopReceive(int channel)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "StopListen(channel=%d)", channel);
     CriticalSectionScoped cs(_shared->crit_sec());
     if (!_shared->statistics().Initialized())
     {
@@ -628,8 +559,6 @@ int VoEBaseImpl::StopReceive(int channel)
 
 int VoEBaseImpl::StartPlayout(int channel)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "StartPlayout(channel=%d)", channel);
     CriticalSectionScoped cs(_shared->crit_sec());
     if (!_shared->statistics().Initialized())
     {
@@ -659,8 +588,6 @@ int VoEBaseImpl::StartPlayout(int channel)
 
 int VoEBaseImpl::StopPlayout(int channel)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "StopPlayout(channel=%d)", channel);
     CriticalSectionScoped cs(_shared->crit_sec());
     if (!_shared->statistics().Initialized())
     {
@@ -677,17 +604,14 @@ int VoEBaseImpl::StopPlayout(int channel)
     }
     if (channelPtr->StopPlayout() != 0)
     {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-            VoEId(_shared->instance_id(), -1),
-            "StopPlayout() failed to stop playout for channel %d", channel);
+      LOG_F(LS_WARNING)
+          << "StopPlayout() failed to stop playout for channel " << channel;
     }
     return StopPlayout();
 }
 
 int VoEBaseImpl::StartSend(int channel)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "StartSend(channel=%d)", channel);
     CriticalSectionScoped cs(_shared->crit_sec());
     if (!_shared->statistics().Initialized())
     {
@@ -717,8 +641,6 @@ int VoEBaseImpl::StartSend(int channel)
 
 int VoEBaseImpl::StopSend(int channel)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "StopSend(channel=%d)", channel);
     CriticalSectionScoped cs(_shared->crit_sec());
     if (!_shared->statistics().Initialized())
     {
@@ -735,18 +657,15 @@ int VoEBaseImpl::StopSend(int channel)
     }
     if (channelPtr->StopSend() != 0)
     {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-            VoEId(_shared->instance_id(), -1),
-            "StopSend() failed to stop sending for channel %d", channel);
+      LOG_F(LS_WARNING)
+          << "StopSend() failed to stop sending for channel " << channel;
     }
     return StopSend();
 }
 
 int VoEBaseImpl::GetVersion(char version[1024])
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "GetVersion(version=?)");
-    assert(kVoiceEngineVersionMaxMessageSize == 1024);
+    CHECK_EQ(kVoiceEngineVersionMaxMessageSize, 1024);
 
     if (version == NULL)
     {
@@ -767,7 +686,7 @@ int VoEBaseImpl::GetVersion(char version[1024])
     }
     versionPtr += len;
     accLen += len;
-    assert(accLen < kVoiceEngineVersionMaxMessageSize);
+    CHECK_LT(accLen, kVoiceEngineVersionMaxMessageSize);
 
 #ifdef WEBRTC_EXTERNAL_TRANSPORT
     len = AddExternalTransportBuild(versionPtr);
@@ -777,7 +696,7 @@ int VoEBaseImpl::GetVersion(char version[1024])
     }
     versionPtr += len;
     accLen += len;
-    assert(accLen < kVoiceEngineVersionMaxMessageSize);
+    CHECK_LT(accLen, kVoiceEngineVersionMaxMessageSize);
 #endif
 
     memcpy(version, versionBuf, accLen);
@@ -785,8 +704,6 @@ int VoEBaseImpl::GetVersion(char version[1024])
 
     // to avoid the truncation in the trace, split the string into parts
     char partOfVersion[256];
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-        VoEId(_shared->instance_id(), -1), "GetVersion() =>");
     for (int partStart = 0; partStart < accLen;)
     {
         memset(partOfVersion, 0, sizeof(partOfVersion));
@@ -804,8 +721,6 @@ int VoEBaseImpl::GetVersion(char version[1024])
             memcpy(partOfVersion, &version[partStart], accLen - partStart);
         }
         partStart = partEnd;
-        WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-            VoEId(_shared->instance_id(), -1), "%s", partOfVersion);
     }
 
     return 0;
@@ -825,15 +740,11 @@ int32_t VoEBaseImpl::AddExternalTransportBuild(char* str) const
 
 int VoEBaseImpl::LastError()
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "LastError()");
     return (_shared->statistics().LastError());
 }
 
 int32_t VoEBaseImpl::StartPlayout()
 {
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "VoEBaseImpl::StartPlayout()");
     if (_shared->audio_device()->Playing())
     {
         return 0;
@@ -842,16 +753,12 @@ int32_t VoEBaseImpl::StartPlayout()
     {
         if (_shared->audio_device()->InitPlayout() != 0)
         {
-            WEBRTC_TRACE(kTraceError, kTraceVoice,
-                VoEId(_shared->instance_id(), -1),
-                "StartPlayout() failed to initialize playout");
+            LOG_F(LS_ERROR) << "Failed to initialize playout";
             return -1;
         }
         if (_shared->audio_device()->StartPlayout() != 0)
         {
-            WEBRTC_TRACE(kTraceError, kTraceVoice,
-                VoEId(_shared->instance_id(), -1),
-                "StartPlayout() failed to start playout");
+            LOG_F(LS_ERROR) << "Failed to start playout";
             return -1;
         }
     }
@@ -859,10 +766,6 @@ int32_t VoEBaseImpl::StartPlayout()
 }
 
 int32_t VoEBaseImpl::StopPlayout() {
-  WEBRTC_TRACE(kTraceInfo,
-               kTraceVoice,
-               VoEId(_shared->instance_id(), -1),
-               "VoEBaseImpl::StopPlayout()");
   // Stop audio-device playing if no channel is playing out
   if (_shared->NumOfPlayingChannels() == 0) {
     if (_shared->audio_device()->StopPlayout() != 0) {
@@ -877,8 +780,6 @@ int32_t VoEBaseImpl::StopPlayout() {
 
 int32_t VoEBaseImpl::StartSend()
 {
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "VoEBaseImpl::StartSend()");
     if (_shared->audio_device()->Recording())
     {
         return 0;
@@ -887,16 +788,12 @@ int32_t VoEBaseImpl::StartSend()
     {
         if (_shared->audio_device()->InitRecording() != 0)
         {
-            WEBRTC_TRACE(kTraceError, kTraceVoice,
-                VoEId(_shared->instance_id(), -1),
-                "StartSend() failed to initialize recording");
+            LOG_F(LS_ERROR) << "Failed to initialize recording";
             return -1;
         }
         if (_shared->audio_device()->StartRecording() != 0)
         {
-            WEBRTC_TRACE(kTraceError, kTraceVoice,
-                VoEId(_shared->instance_id(), -1),
-                "StartSend() failed to start recording");
+            LOG_F(LS_ERROR) << "Failed to start recording";
             return -1;
         }
     }
@@ -906,9 +803,6 @@ int32_t VoEBaseImpl::StartSend()
 
 int32_t VoEBaseImpl::StopSend()
 {
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "VoEBaseImpl::StopSend()");
-
     if (_shared->NumOfSendingChannels() == 0 &&
         !_shared->transmit_mixer()->IsRecordingMic())
     {
@@ -927,9 +821,6 @@ int32_t VoEBaseImpl::StopSend()
 
 int32_t VoEBaseImpl::TerminateInternal()
 {
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "VoEBaseImpl::TerminateInternal()");
-
     // Delete any remaining channel objects
     _shared->channel_manager().DestroyAllChannels();
 
@@ -991,8 +882,8 @@ int VoEBaseImpl::ProcessRecordedDataWithAPM(
     int32_t clock_drift,
     uint32_t volume,
     bool key_pressed) {
-  assert(_shared->transmit_mixer() != NULL);
-  assert(_shared->audio_device() != NULL);
+  CHECK(_shared->transmit_mixer());
+  CHECK(_shared->audio_device());
 
   uint32_t max_volume = 0;
   uint16_t voe_mic_level = 0;
@@ -1059,7 +950,7 @@ void VoEBaseImpl::GetPlayoutData(int sample_rate, int number_of_channels,
                                  void* audio_data,
                                  int64_t* elapsed_time_ms,
                                  int64_t* ntp_time_ms) {
-  assert(_shared->output_mixer() != NULL);
+  CHECK(_shared->output_mixer());
 
   // TODO(andrew): if the device is running in mono, we should tell the mixer
   // here so that it will only request mono from AudioCodingModule.
@@ -1073,8 +964,8 @@ void VoEBaseImpl::GetPlayoutData(int sample_rate, int number_of_channels,
   _shared->output_mixer()->GetMixedAudio(sample_rate, number_of_channels,
                                          &_audioFrame);
 
-  assert(number_of_frames == _audioFrame.samples_per_channel_);
-  assert(sample_rate == _audioFrame.sample_rate_hz_);
+  CHECK_EQ(number_of_frames, _audioFrame.samples_per_channel_);
+  CHECK_EQ(sample_rate, _audioFrame.sample_rate_hz_);
 
   // Deliver audio (PCM) samples to the ADM
   memcpy(audio_data, _audioFrame.data_,

@@ -157,7 +157,6 @@ private:
     VoiceEngineObserver* _voiceEngineObserverPtr;
     CriticalSectionWrapper& _callbackCritSect;
 
-    bool _voiceEngineObserver;
     AudioFrame _audioFrame;
     voe::SharedData* _shared;
 };
