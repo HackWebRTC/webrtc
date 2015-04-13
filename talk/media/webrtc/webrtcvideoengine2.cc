@@ -633,6 +633,7 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
       external_decoder_factory_(external_decoder_factory) {
   SetDefaultOptions();
   options_.SetAll(options);
+  options_.cpu_overuse_detection.Get(&signal_cpu_adaptation_);
   webrtc::Call::Config config(this);
   config.overuse_callback = this;
   if (voice_engine != NULL) {
@@ -1144,19 +1145,25 @@ bool WebRtcVideoChannel2::SetCapturer(uint32 ssrc, VideoCapturer* capturer) {
   LOG(LS_INFO) << "SetCapturer: " << ssrc << " -> "
                << (capturer != NULL ? "(capturer)" : "NULL");
   assert(ssrc != 0);
-  rtc::CritScope stream_lock(&stream_crit_);
-  if (send_streams_.find(ssrc) == send_streams_.end()) {
-    LOG(LS_ERROR) << "No sending stream on ssrc " << ssrc;
-    return false;
-  }
-  if (!send_streams_[ssrc]->SetCapturer(capturer)) {
-    return false;
+  {
+    rtc::CritScope stream_lock(&stream_crit_);
+    if (send_streams_.find(ssrc) == send_streams_.end()) {
+      LOG(LS_ERROR) << "No sending stream on ssrc " << ssrc;
+      return false;
+    }
+    if (!send_streams_[ssrc]->SetCapturer(capturer)) {
+      return false;
+    }
   }
 
   if (capturer) {
     capturer->SetApplyRotation(
         !FindHeaderExtension(send_rtp_extensions_,
                              kRtpVideoRotationHeaderExtension));
+  }
+  {
+    rtc::CritScope lock(&capturer_crit_);
+    capturers_[ssrc] = capturer;
   }
   return true;
 }
@@ -1333,6 +1340,10 @@ bool WebRtcVideoChannel2::SetOptions(const VideoOptions& options) {
     // No new options to set.
     return true;
   }
+  {
+    rtc::CritScope lock(&capturer_crit_);
+    options_.cpu_overuse_detection.Get(&signal_cpu_adaptation_);
+  }
   rtc::DiffServCodePoint dscp = options_.dscp.GetWithDefaultIfUnset(false)
                                     ? rtc::DSCP_AF41
                                     : rtc::DSCP_DEFAULT;
@@ -1372,14 +1383,18 @@ void WebRtcVideoChannel2::OnMessage(rtc::Message* msg) {
 }
 
 void WebRtcVideoChannel2::OnLoadUpdate(Load load) {
-  rtc::CritScope stream_lock(&stream_crit_);
-  for (std::map<uint32, WebRtcVideoSendStream*>::iterator it =
-           send_streams_.begin();
-       it != send_streams_.end();
-       ++it) {
-    it->second->OnCpuResolutionRequest(load == kOveruse
-                                           ? CoordinatedVideoAdapter::DOWNGRADE
-                                           : CoordinatedVideoAdapter::UPGRADE);
+  // OnLoadUpdate can not take any locks that are held while creating streams
+  // etc. Doing so establishes lock-order inversions between the webrtc process
+  // thread on stream creation and locks such as stream_crit_ while calling out.
+  rtc::CritScope stream_lock(&capturer_crit_);
+  if (!signal_cpu_adaptation_)
+    return;
+  for (auto& kv : capturers_) {
+    if (kv.second != nullptr && kv.second->video_adapter() != nullptr) {
+      kv.second->video_adapter()->OnCpuResolutionRequest(
+          load == kOveruse ? CoordinatedVideoAdapter::DOWNGRADE
+                           : CoordinatedVideoAdapter::UPGRADE);
+    }
   }
 }
 
@@ -1961,18 +1976,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetMaxBitrateBps(
   int width = last_dimensions_.width;
   last_dimensions_.width = 0;
   SetDimensions(width, last_dimensions_.height, last_dimensions_.is_screencast);
-}
-void WebRtcVideoChannel2::WebRtcVideoSendStream::OnCpuResolutionRequest(
-    CoordinatedVideoAdapter::AdaptRequest adapt_request) {
-  rtc::CritScope cs(&lock_);
-  bool adapt_cpu;
-  parameters_.options.cpu_overuse_detection.Get(&adapt_cpu);
-  if (!adapt_cpu)
-    return;
-  if (capturer_ == NULL || capturer_->video_adapter() == NULL)
-    return;
-
-  capturer_->video_adapter()->OnCpuResolutionRequest(adapt_request);
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {

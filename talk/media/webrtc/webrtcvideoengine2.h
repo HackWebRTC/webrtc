@@ -295,9 +295,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
     void SetMaxBitrateBps(int max_bitrate_bps);
 
-    void OnCpuResolutionRequest(
-        CoordinatedVideoAdapter::AdaptRequest adapt_request);
-
    private:
     // Parameters needed to reconstruct the underlying stream.
     // webrtc::VideoSendStream doesn't support setting a lot of options on the
@@ -496,6 +493,13 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
   DefaultUnsignalledSsrcHandler default_unsignalled_ssrc_handler_;
   UnsignalledSsrcHandler* const unsignalled_ssrc_handler_;
+
+  // Separate list of set capturers used to signal CPU adaptation. These should
+  // not be locked while calling methods that take other locks to prevent
+  // lock-order inversions.
+  rtc::CriticalSection capturer_crit_;
+  bool signal_cpu_adaptation_ GUARDED_BY(capturer_crit_);
+  std::map<uint32, VideoCapturer*> capturers_ GUARDED_BY(capturer_crit_);
 
   rtc::CriticalSection stream_crit_;
   // Using primary-ssrc (first ssrc) as key.
