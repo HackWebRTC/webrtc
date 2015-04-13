@@ -95,11 +95,10 @@ static void AllPassFilter(const int16_t* data_in, int data_length,
   int32_t state32 = ((int32_t) (*filter_state) << 16);  // Q15
 
   for (i = 0; i < data_length; i++) {
-    tmp32 = state32 + WEBRTC_SPL_MUL_16_16(filter_coefficient, *data_in);
+    tmp32 = state32 + filter_coefficient * *data_in;
     tmp16 = (int16_t) (tmp32 >> 16);  // Q(-1)
     *data_out++ = tmp16;
-    state32 = (((int32_t) (*data_in)) << 14); // Q14
-    state32 -= WEBRTC_SPL_MUL_16_16(filter_coefficient, tmp16);  // Q14
+    state32 = (*data_in << 14) - filter_coefficient * tmp16;  // Q14
     state32 <<= 1;  // Q15.
     data_in += 2;
   }
