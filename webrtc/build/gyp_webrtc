@@ -94,9 +94,9 @@ if __name__ == '__main__':
   if gyp_vars.get('OS') == 'ios' and 'target_subarch' not in gyp_vars:
     os.environ.setdefault('GYP_DEFINES', '')
     target_subarch = None
-    if gyp_vars.get('target_arch') == 'arm' :
+    if gyp_vars.get('target_arch') in ('arm', 'ia32'):
       target_subarch = 'arm32'
-    elif gyp_vars.get('target_arch') == 'arm64':
+    elif gyp_vars.get('target_arch') in ('arm64', 'x64'):
       target_subarch = 'arm64'
     if target_subarch:
       print 'INFO: Appending target_subarch=%s to GYP_DEFINES' % target_subarch
