@@ -240,9 +240,6 @@ class ChannelManager : public rtc::MessageHandler,
   // This API is mainly a hook used by unittests.
   const std::string& video_device_name() const { return video_device_name_; }
 
-  // TODO(hellner): Remove this function once the engine capturer has been
-  // removed.
-  VideoFormat GetStartCaptureFormat();
 
  protected:
   // Adds non-transient parameters which can only be changed through the

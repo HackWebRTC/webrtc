@@ -149,9 +149,6 @@ class FileMediaEngine : public MediaEngineInterface {
                                         MediaProcessorDirection direction) {
     return true;
   }
-  VideoFormat GetStartCaptureFormat() const {
-    return VideoFormat();
-  }
 
   virtual sigslot::repeater2<VideoCapturer*, CaptureState>&
       SignalVideoCaptureStateChange() {

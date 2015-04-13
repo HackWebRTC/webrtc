@@ -180,8 +180,6 @@ class WebRtcVideoEngine : public sigslot::has_slots<> {
                                     webrtc::VideoCodec* out_codec);
   int GetNumOfChannels();
 
-  VideoFormat GetStartCaptureFormat() const { return default_codec_format_; }
-
   rtc::CpuMonitor* cpu_monitor() { return cpu_monitor_.get(); }
 
  protected:

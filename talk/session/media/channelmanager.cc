@@ -1013,11 +1013,6 @@ void ChannelManager::SetVideoCaptureDeviceMaxFormat(
   device_manager_->SetVideoCaptureDeviceMaxFormat(usb_id, max_format);
 }
 
-VideoFormat ChannelManager::GetStartCaptureFormat() {
-  return worker_thread_->Invoke<VideoFormat>(
-      Bind(&MediaEngineInterface::GetStartCaptureFormat, media_engine_.get()));
-}
-
 bool ChannelManager::StartAecDump(rtc::PlatformFile file) {
   return worker_thread_->Invoke<bool>(
       Bind(&MediaEngineInterface::StartAecDump, media_engine_.get(), file));

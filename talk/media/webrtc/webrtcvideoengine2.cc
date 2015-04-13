@@ -363,10 +363,6 @@ void DefaultUnsignalledSsrcHandler::SetDefaultRenderer(
 WebRtcVideoEngine2::WebRtcVideoEngine2(WebRtcVoiceEngine* voice_engine)
     : worker_thread_(NULL),
       voice_engine_(voice_engine),
-      default_codec_format_(kDefaultVideoMaxWidth,
-                            kDefaultVideoMaxHeight,
-                            FPS_TO_INTERVAL(kDefaultVideoMaxFramerate),
-                            FOURCC_ANY),
       initialized_(false),
       call_factory_(&default_call_factory_),
       external_decoder_factory_(NULL),
@@ -434,11 +430,6 @@ bool WebRtcVideoEngine2::SetDefaultEncoderConfig(
     return false;
   }
 
-  default_codec_format_ =
-      VideoFormat(codec.width,
-                  codec.height,
-                  VideoFormat::FpsToInterval(codec.framerate),
-                  FOURCC_ANY);
   return true;
 }
 

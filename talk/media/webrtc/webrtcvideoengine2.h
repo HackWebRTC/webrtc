@@ -152,8 +152,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   // Check whether the supplied trace should be ignored.
   bool ShouldIgnoreTrace(const std::string& trace);
 
-  VideoFormat GetStartCaptureFormat() const { return default_codec_format_; }
-
  private:
   std::vector<VideoCodec> GetSupportedCodecs() const;
 
@@ -161,7 +159,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   WebRtcVoiceEngine* voice_engine_;
   std::vector<VideoCodec> video_codecs_;
   std::vector<RtpHeaderExtension> rtp_header_extensions_;
-  VideoFormat default_codec_format_;
 
   bool initialized_;
 
