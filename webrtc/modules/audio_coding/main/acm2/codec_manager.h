@@ -72,7 +72,6 @@ class CodecManager final {
   // valid pointer, otherwise it will be NULL.
   int GetAudioDecoder(const CodecInst& codec,
                       int codec_id,
-                      int mirror_id,
                       AudioDecoder** decoder);
 
   AudioCodingModuleImpl* acm_;
@@ -90,8 +89,8 @@ class CodecManager final {
   CodecInst send_codec_inst_;
   bool red_enabled_;
   bool codec_fec_enabled_;
-  ACMGenericCodec* codecs_[ACMCodecDB::kMaxNumCodecs];
-  int mirror_codec_idx_[ACMCodecDB::kMaxNumCodecs];
+  rtc::scoped_ptr<ACMGenericCodec> isac_enc_dec_;
+  rtc::scoped_ptr<ACMGenericCodec> encoder_;
 
   DISALLOW_COPY_AND_ASSIGN(CodecManager);
 };

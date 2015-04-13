@@ -34,9 +34,7 @@ bool IsCodecCN(int index) {
 }
 
 // Check if the given codec is a valid to be registered as send codec.
-int IsValidSendCodec(const CodecInst& send_codec,
-                     bool is_primary_encoder,
-                     int* mirror_id) {
+int IsValidSendCodec(const CodecInst& send_codec, bool is_primary_encoder) {
   int dummy_id = 0;
   if ((send_codec.channels != 1) && (send_codec.channels != 2)) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
@@ -47,7 +45,7 @@ int IsValidSendCodec(const CodecInst& send_codec,
     return -1;
   }
 
-  int codec_id = ACMCodecDB::CodecNumber(send_codec, mirror_id);
+  int codec_id = ACMCodecDB::CodecNumber(send_codec);
   if (codec_id < 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
                  "Invalid codec setting for the send codec.");
@@ -68,7 +66,6 @@ int IsValidSendCodec(const CodecInst& send_codec,
   if (!STR_CASE_CMP(send_codec.plname, "telephone-event")) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
                  "telephone-event cannot be a send codec");
-    *mirror_id = -1;
     return -1;
   }
 
@@ -77,7 +74,6 @@ int IsValidSendCodec(const CodecInst& send_codec,
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
                  "%d number of channels not supportedn for %s.",
                  send_codec.channels, send_codec.plname);
-    *mirror_id = -1;
     return -1;
   }
 
@@ -87,18 +83,20 @@ int IsValidSendCodec(const CodecInst& send_codec,
     if (IsCodecRED(&send_codec)) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
                    "RED cannot be secondary codec");
-      *mirror_id = -1;
       return -1;
     }
 
     if (IsCodecCN(&send_codec)) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
                    "DTX cannot be secondary codec");
-      *mirror_id = -1;
       return -1;
     }
   }
   return codec_id;
+}
+
+bool IsIsac(const CodecInst& codec) {
+  return !STR_CASE_CMP(codec.plname, "isac");
 }
 
 const CodecInst kEmptyCodecInst = {-1, "noCodecRegistered", 0, 0, 0, 0};
@@ -119,11 +117,6 @@ CodecManager::CodecManager(AudioCodingModuleImpl* acm)
       send_codec_inst_(kEmptyCodecInst),
       red_enabled_(false),
       codec_fec_enabled_(false) {
-  for (int i = 0; i < ACMCodecDB::kMaxNumCodecs; i++) {
-    codecs_[i] = nullptr;
-    mirror_codec_idx_[i] = -1;
-  }
-
   // Register the default payload type for RED and for CNG at sampling rates of
   // 8, 16, 32 and 48 kHz.
   for (int i = (ACMCodecDB::kNumCodecs - 1); i >= 0; i--) {
@@ -144,25 +137,11 @@ CodecManager::CodecManager(AudioCodingModuleImpl* acm)
   thread_checker_.DetachFromThread();
 }
 
-CodecManager::~CodecManager() {
-  for (int i = 0; i < ACMCodecDB::kMaxNumCodecs; i++) {
-    if (codecs_[i] != NULL) {
-      // Mirror index holds the address of the codec memory.
-      assert(mirror_codec_idx_[i] > -1);
-      if (codecs_[mirror_codec_idx_[i]] != NULL) {
-        delete codecs_[mirror_codec_idx_[i]];
-        codecs_[mirror_codec_idx_[i]] = NULL;
-      }
-
-      codecs_[i] = NULL;
-    }
-  }
-}
+CodecManager::~CodecManager() = default;
 
 int CodecManager::RegisterSendCodec(const CodecInst& send_codec) {
   DCHECK(thread_checker_.CalledOnValidThread());
-  int mirror_id;
-  int codec_id = IsValidSendCodec(send_codec, true, &mirror_id);
+  int codec_id = IsValidSendCodec(send_codec, true);
 
   // Check for reported errors from function IsValidSendCodec().
   if (codec_id < 0) {
@@ -243,36 +222,31 @@ int CodecManager::RegisterSendCodec(const CodecInst& send_codec) {
   // Check if the codec is already registered as send codec.
   bool is_send_codec;
   if (current_encoder_) {
-    int send_codec_mirror_id;
-    int send_codec_id =
-        ACMCodecDB::CodecNumber(send_codec_inst_, &send_codec_mirror_id);
+    int send_codec_id = ACMCodecDB::CodecNumber(send_codec_inst_);
     assert(send_codec_id >= 0);
-    is_send_codec =
-        (send_codec_id == codec_id) || (mirror_id == send_codec_mirror_id);
+    is_send_codec = send_codec_id == codec_id;
   } else {
     is_send_codec = false;
   }
 
   // If new codec, or new settings, register.
   if (!is_send_codec) {
-    if (!codecs_[mirror_id]) {
-      codecs_[mirror_id] = ACMCodecDB::CreateCodecInstance(
+    ACMGenericCodec* new_codec;
+    if (!IsIsac(send_codec)) {
+      encoder_.reset(ACMCodecDB::CreateCodecInstance(
           send_codec, cng_nb_pltype_, cng_wb_pltype_, cng_swb_pltype_,
-          cng_fb_pltype_, red_enabled_, red_nb_pltype_);
-      if (!codecs_[mirror_id]) {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
-                     "Cannot Create the codec");
-        return -1;
+          cng_fb_pltype_, red_enabled_, red_nb_pltype_));
+      new_codec = encoder_.get();
+    } else {
+      if (!isac_enc_dec_) {
+        isac_enc_dec_.reset(ACMCodecDB::CreateCodecInstance(
+            send_codec, cng_nb_pltype_, cng_wb_pltype_, cng_swb_pltype_,
+            cng_fb_pltype_, red_enabled_, red_nb_pltype_));
       }
-      mirror_codec_idx_[mirror_id] = mirror_id;
+      new_codec = isac_enc_dec_.get();
     }
+    DCHECK(new_codec);
 
-    if (mirror_id != codec_id) {
-      codecs_[codec_id] = codecs_[mirror_id];
-      mirror_codec_idx_[codec_id] = mirror_id;
-    }
-
-    ACMGenericCodec* codec_ptr = codecs_[codec_id];
     WebRtcACMCodecParams codec_params;
 
     memcpy(&(codec_params.codec_inst), &send_codec, sizeof(CodecInst));
@@ -280,7 +254,7 @@ int CodecManager::RegisterSendCodec(const CodecInst& send_codec) {
     codec_params.enable_dtx = dtx_enabled_;
     codec_params.vad_mode = vad_mode_;
     // Force initialization.
-    if (codec_ptr->InitEncoder(&codec_params, true) < 0) {
+    if (new_codec->InitEncoder(&codec_params, true) < 0) {
       // Could not initialize the encoder.
 
       // Check if already have a registered codec.
@@ -306,18 +280,18 @@ int CodecManager::RegisterSendCodec(const CodecInst& send_codec) {
       // If we change codec we start fresh with RED.
       // This is not strictly required by the standard.
 
-      if (codec_ptr->SetCopyRed(red_enabled_) < 0) {
+      if (new_codec->SetCopyRed(red_enabled_) < 0) {
         // We tried to preserve the old red status, if failed, it means the
         // red status has to be flipped.
         red_enabled_ = !red_enabled_;
       }
 
-      codec_ptr->SetVAD(&dtx_enabled_, &vad_enabled_, &vad_mode_);
+      new_codec->SetVAD(&dtx_enabled_, &vad_enabled_, &vad_mode_);
 
-      if (!codec_ptr->HasInternalFEC()) {
+      if (!new_codec->HasInternalFEC()) {
         codec_fec_enabled_ = false;
       } else {
-        if (codec_ptr->SetFEC(codec_fec_enabled_) < 0) {
+        if (new_codec->SetFEC(codec_fec_enabled_) < 0) {
           WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
                        "Cannot set codec FEC");
           return -1;
@@ -325,7 +299,7 @@ int CodecManager::RegisterSendCodec(const CodecInst& send_codec) {
       }
     }
 
-    current_encoder_ = codecs_[codec_id];
+    current_encoder_ = new_codec;
     DCHECK(current_encoder_);
     memcpy(&send_codec_inst_, &send_codec, sizeof(CodecInst));
     return 0;
@@ -334,11 +308,6 @@ int CodecManager::RegisterSendCodec(const CodecInst& send_codec) {
     // has changed compared to the current values.
     // If any parameter is valid then apply it and record.
     bool force_init = false;
-
-    if (mirror_id != codec_id) {
-      codecs_[codec_id] = codecs_[mirror_id];
-      mirror_codec_idx_[codec_id] = mirror_id;
-    }
 
     // Check the payload type.
     if (send_codec.pltype != send_codec_inst_.pltype) {
@@ -396,7 +365,7 @@ int CodecManager::RegisterSendCodec(const CodecInst& send_codec) {
 
     // Check if a change in Rate is required.
     if (send_codec.rate != send_codec_inst_.rate) {
-      if (codecs_[codec_id]->SetBitRate(send_codec.rate) < 0) {
+      if (current_encoder_->SetBitRate(send_codec.rate) < 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
                      "Could not change the codec rate.");
         return -1;
@@ -404,10 +373,10 @@ int CodecManager::RegisterSendCodec(const CodecInst& send_codec) {
       send_codec_inst_.rate = send_codec.rate;
     }
 
-    if (!codecs_[codec_id]->HasInternalFEC()) {
+    if (!current_encoder_->HasInternalFEC()) {
       codec_fec_enabled_ = false;
     } else {
-      if (codecs_[codec_id]->SetFEC(codec_fec_enabled_) < 0) {
+      if (current_encoder_->SetFEC(codec_fec_enabled_) < 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
                      "Cannot set codec FEC");
         return -1;
@@ -445,8 +414,7 @@ int CodecManager::RegisterReceiveCodec(const CodecInst& codec) {
     return -1;
   }
 
-  int mirror_id;
-  int codec_id = ACMCodecDB::ReceiverCodecNumber(codec, &mirror_id);
+  int codec_id = ACMCodecDB::ReceiverCodecNumber(codec);
 
   if (codec_id < 0 || codec_id >= ACMCodecDB::kNumCodecs) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
@@ -464,7 +432,7 @@ int CodecManager::RegisterReceiveCodec(const CodecInst& codec) {
   AudioDecoder* decoder = NULL;
   // Get |decoder| associated with |codec|. |decoder| can be NULL if |codec|
   // does not own its decoder.
-  if (GetAudioDecoder(codec, codec_id, mirror_id, &decoder) < 0) {
+  if (GetAudioDecoder(codec, codec_id, &decoder) < 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
                  "Wrong codec params to be registered as receive codec");
     return -1;
@@ -554,57 +522,43 @@ int CodecManager::SetCodecFEC(bool enable_codec_fec) {
 }
 
 void CodecManager::SetCngPayloadType(int sample_rate_hz, int payload_type) {
-  for (auto* codec : codecs_) {
-    if (codec) {
-      codec->SetCngPt(sample_rate_hz, payload_type);
-    }
-  }
+  if (isac_enc_dec_)
+    isac_enc_dec_->SetCngPt(sample_rate_hz, payload_type);
+  if (encoder_)
+    encoder_->SetCngPt(sample_rate_hz, payload_type);
 }
 
 void CodecManager::SetRedPayloadType(int sample_rate_hz, int payload_type) {
-  for (auto* codec : codecs_) {
-    if (codec) {
-      codec->SetRedPt(sample_rate_hz, payload_type);
-    }
-  }
+  if (isac_enc_dec_)
+    isac_enc_dec_->SetRedPt(sample_rate_hz, payload_type);
+  if (encoder_)
+    encoder_->SetRedPt(sample_rate_hz, payload_type);
 }
 
 int CodecManager::GetAudioDecoder(const CodecInst& codec,
                                   int codec_id,
-                                  int mirror_id,
                                   AudioDecoder** decoder) {
-  if (ACMCodecDB::OwnsDecoder(codec_id)) {
-    // This codec has to own its own decoder. Therefore, it should create the
-    // corresponding AudioDecoder class and insert it into NetEq. If the codec
-    // does not exist create it.
-    //
-    // TODO(turajs): this part of the code is common with RegisterSendCodec(),
-    //               make a method for it.
-    if (codecs_[mirror_id] == NULL) {
-      codecs_[mirror_id] = ACMCodecDB::CreateCodecInstance(
-          codec, cng_nb_pltype_, cng_wb_pltype_, cng_swb_pltype_,
-          cng_fb_pltype_, red_enabled_, red_nb_pltype_);
-      if (codecs_[mirror_id] == NULL) {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
-                     "Cannot Create the codec");
-        return -1;
-      }
-      mirror_codec_idx_[mirror_id] = mirror_id;
-    }
-
-    if (mirror_id != codec_id) {
-      codecs_[codec_id] = codecs_[mirror_id];
-      mirror_codec_idx_[codec_id] = mirror_id;
-    }
-    *decoder = codecs_[codec_id]->Decoder();
-    if (!*decoder) {
-      assert(false);
-      return -1;
-    }
-  } else {
-    *decoder = NULL;
+  if (!ACMCodecDB::OwnsDecoder(codec_id)) {
+    DCHECK(!IsIsac(codec)) << "Codec must not be iSAC at this point.";
+    *decoder = nullptr;
+    return 0;
   }
-
+  DCHECK(IsIsac(codec)) << "Codec must be iSAC at this point.";
+  // This codec has to own its own decoder. Therefore, it should create the
+  // corresponding AudioDecoder class and insert it into NetEq. If the codec
+  // does not exist create it.
+  //
+  // TODO(turajs): this part of the code is common with RegisterSendCodec(),
+  //               make a method for it.
+  if (!isac_enc_dec_) {
+    isac_enc_dec_.reset(ACMCodecDB::CreateCodecInstance(
+        codec, cng_nb_pltype_, cng_wb_pltype_, cng_swb_pltype_, cng_fb_pltype_,
+        red_enabled_, red_nb_pltype_));
+    if (!isac_enc_dec_)
+      return -1;
+  }
+  *decoder = isac_enc_dec_->Decoder();
+  DCHECK(*decoder);
   return 0;
 }
 

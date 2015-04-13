@@ -227,7 +227,7 @@ enum {
 // Gets the codec id number from the database. If there is some mismatch in
 // the codec settings, the function will return an error code.
 // NOTE! The first mismatch found will generate the return value.
-int ACMCodecDB::CodecNumber(const CodecInst& codec_inst, int* mirror_id) {
+int ACMCodecDB::CodecNumber(const CodecInst& codec_inst) {
   // Look for a matching codec in the database.
   int codec_id = CodecId(codec_inst);
 
@@ -243,13 +243,11 @@ int ACMCodecDB::CodecNumber(const CodecInst& codec_inst, int* mirror_id) {
 
   // Comfort Noise is special case, packet-size & rate is not checked.
   if (STR_CASE_CMP(database_[codec_id].plname, "CN") == 0) {
-    *mirror_id = codec_id;
     return codec_id;
   }
 
   // RED is special case, packet-size & rate is not checked.
   if (STR_CASE_CMP(database_[codec_id].plname, "red") == 0) {
-    *mirror_id = codec_id;
     return codec_id;
   }
 
@@ -278,16 +276,8 @@ int ACMCodecDB::CodecNumber(const CodecInst& codec_inst, int* mirror_id) {
 
   // Check the validity of rate. Codecs with multiple rates have their own
   // function for this.
-  *mirror_id = codec_id;
   if (STR_CASE_CMP("isac", codec_inst.plname) == 0) {
-    if (IsISACRateValid(codec_inst.rate)) {
-      // Set mirrorID to iSAC WB which is only created once to be used both for
-      // iSAC WB and SWB, because they need to share struct.
-      *mirror_id = kISAC;
-      return  codec_id;
-    } else {
-      return kInvalidRate;
-    }
+    return IsISACRateValid(codec_inst.rate) ? codec_id : kInvalidRate;
   } else if (STR_CASE_CMP("ilbc", codec_inst.plname) == 0) {
     return IsILBCRateValid(codec_inst.rate, codec_inst.pacsize)
         ? codec_id : kInvalidRate;
@@ -350,22 +340,10 @@ int ACMCodecDB::CodecId(const char* payload_name, int frequency, int channels) {
   // We didn't find a matching codec.
   return -1;
 }
-// Gets codec id number, and mirror id, from database for the receiver.
-int ACMCodecDB::ReceiverCodecNumber(const CodecInst& codec_inst,
-                                    int* mirror_id) {
+// Gets codec id number from database for the receiver.
+int ACMCodecDB::ReceiverCodecNumber(const CodecInst& codec_inst) {
   // Look for a matching codec in the database.
-  int codec_id = CodecId(codec_inst);
-
-  // Set |mirror_id| to |codec_id|, except for iSAC. In case of iSAC we always
-  // set |mirror_id| to iSAC WB (kISAC) which is only created once to be used
-  // both for iSAC WB and SWB, because they need to share struct.
-  if (STR_CASE_CMP(codec_inst.plname, "ISAC") != 0) {
-    *mirror_id = codec_id;
-  } else {
-    *mirror_id = kISAC;
-  }
-
-  return codec_id;
+  return CodecId(codec_inst);
 }
 
 // Returns the codec sampling frequency for codec with id = "codec_id" in
@@ -392,16 +370,6 @@ int ACMCodecDB::BasicCodingBlock(int codec_id) {
 // Returns the NetEQ decoder database.
 const NetEqDecoder* ACMCodecDB::NetEQDecoders() {
   return neteq_decoders_;
-}
-
-// Gets mirror id. The Id is used for codecs sharing struct for settings that
-// need different payload types.
-int ACMCodecDB::MirrorID(int codec_id) {
-  if (STR_CASE_CMP(database_[codec_id].plname, "isac") == 0) {
-    return kISAC;
-  } else {
-    return codec_id;
-  }
 }
 
 // Creates memory/instance for storing codec state.
