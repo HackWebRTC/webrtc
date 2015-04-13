@@ -41,6 +41,7 @@
 /chromium/.gclient.tmp
 /chromium/.gclient.tmp_entries
 /chromium/.last_sync_chromium
+/chromium/_bad_scm
 /chromium/src
 /google_apis
 /gyp-mac-tool
