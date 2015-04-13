@@ -426,6 +426,11 @@ void RTPSender::SetRtxPayloadType(int payload_type) {
   payload_type_rtx_ = payload_type;
 }
 
+int RTPSender::RtxPayloadType() const {
+  CriticalSectionScoped cs(send_critsect_.get());
+  return payload_type_rtx_;
+}
+
 int32_t RTPSender::CheckPayloadType(int8_t payload_type,
                                     RtpVideoCodecTypes* video_type) {
   CriticalSectionScoped cs(send_critsect_.get());

@@ -215,6 +215,7 @@ class RTPSender : public RTPSenderInterface {
   void SetRtxSsrc(uint32_t ssrc);
 
   void SetRtxPayloadType(int payloadType);
+  int RtxPayloadType() const;
 
   // Functions wrapping RTPSenderInterface.
   int32_t BuildRTPheader(uint8_t* data_buffer,

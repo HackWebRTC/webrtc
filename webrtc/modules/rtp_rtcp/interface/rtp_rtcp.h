@@ -237,6 +237,9 @@ class RtpRtcp : public Module {
     // doesn't enable RTX, only the payload type is set.
     virtual void SetRtxSendPayloadType(int payload_type) = 0;
 
+    // Gets the payload type to use when sending RTX packets.
+    virtual int RtxSendPayloadType() const = 0;
+
     /*
     *   sends kRtcpByeCode when going from true to false
     *

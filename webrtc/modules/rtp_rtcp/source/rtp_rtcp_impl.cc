@@ -210,6 +210,10 @@ void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type) {
   rtp_sender_.SetRtxPayloadType(payload_type);
 }
 
+int ModuleRtpRtcpImpl::RtxSendPayloadType() const {
+  return rtp_sender_.RtxPayloadType();
+}
+
 int32_t ModuleRtpRtcpImpl::IncomingRtcpPacket(
     const uint8_t* rtcp_packet,
     const size_t length) {
