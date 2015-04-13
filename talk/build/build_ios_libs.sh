@@ -65,7 +65,7 @@ function build_webrtc {
   else
     FLAVOR="${FLAVOR}-iphonesimulator"
   fi
-  export GYP_DEFINES="OS=ios"
+  export GYP_DEFINES="OS=ios use_openssl=1"
   export GYP_DEFINES="${GYP_DEFINES} target_arch=${TARGET_ARCH}"
   if [[ -n ${TARGET_SUBARCH} ]]; then
     export GYP_DEFINES="${GYP_DEFINES} target_subarch=${TARGET_SUBARCH}"
@@ -79,8 +79,9 @@ function build_webrtc {
 }
 
 # Build all the common architectures.
-build_webrtc "out_ios_armv7" "Release" "armv7"
+build_webrtc "out_ios_armv7" "Release" "armv7" "arm32"
 build_webrtc "out_ios_arm64" "Release" "arm64" "arm64"
+build_webrtc "out_ios_ia32" "Release" "ia32" "arm32"
 build_webrtc "out_ios_x86_64" "Release" "x64" "arm64"
 
 popd
