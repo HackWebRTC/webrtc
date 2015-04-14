@@ -641,7 +641,7 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
 }
 
 void WebRtcVideoChannel2::SetDefaultOptions() {
-  options_.cpu_overuse_detection.Set(false);
+  options_.cpu_overuse_detection.Set(true);
   options_.dscp.Set(false);
   options_.suspend_below_min_bitrate.Set(false);
   options_.video_noise_reduction.Set(true);

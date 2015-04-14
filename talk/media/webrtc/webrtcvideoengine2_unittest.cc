@@ -1732,9 +1732,9 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse) {
   codecs.push_back(codec);
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
 
-  if (enable_overuse) {
+  if (!enable_overuse) {
     VideoOptions options;
-    options.cpu_overuse_detection.Set(true);
+    options.cpu_overuse_detection.Set(false);
     channel_->SetOptions(options);
   }
 
