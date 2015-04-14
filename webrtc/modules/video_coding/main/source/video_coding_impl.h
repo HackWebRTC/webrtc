@@ -58,7 +58,8 @@ class VideoSender {
 
   VideoSender(Clock* clock,
               EncodedImageCallback* post_encode_callback,
-              VideoEncoderRateObserver* encoder_rate_observer);
+              VideoEncoderRateObserver* encoder_rate_observer,
+              VCMQMSettingsCallback* qm_settings_callback);
 
   ~VideoSender();
 
@@ -99,7 +100,6 @@ class VideoSender {
 
   int32_t RegisterTransportCallback(VCMPacketizationCallback* transport);
   int32_t RegisterSendStatisticsCallback(VCMSendStatisticsCallback* sendStats);
-  int32_t RegisterVideoQMCallback(VCMQMSettingsCallback* videoQMSettings);
   int32_t RegisterProtectionCallback(VCMProtectionCallback* protection);
   void SetVideoProtection(bool enable, VCMVideoProtection videoProtection);
 
@@ -139,7 +139,7 @@ class VideoSender {
   VideoCodec current_codec_;
   rtc::ThreadChecker main_thread_;
 
-  VCMQMSettingsCallback* qm_settings_callback_;
+  VCMQMSettingsCallback* const qm_settings_callback_;
   VCMProtectionCallback* protection_callback_;
 };
 

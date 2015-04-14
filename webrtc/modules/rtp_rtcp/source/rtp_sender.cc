@@ -323,14 +323,14 @@ int32_t RTPSender::RegisterPayload(
     }
     return -1;
   }
-  int32_t ret_val = -1;
+  int32_t ret_val = 0;
   RtpUtility::Payload* payload = NULL;
   if (audio_configured_) {
+    // TODO(mflodman): Change to CreateAudioPayload and make static.
     ret_val = audio_->RegisterAudioPayload(payload_name, payload_number,
                                            frequency, channels, rate, payload);
   } else {
-    ret_val = video_->RegisterVideoPayload(payload_name, payload_number, rate,
-                                           payload);
+    payload = video_->CreateVideoPayload(payload_name, payload_number, rate);
   }
   if (payload) {
     payload_type_map_[payload_number] = payload;
@@ -489,7 +489,6 @@ int32_t RTPSender::SendOutgoingData(FrameType frame_type,
                                     const uint8_t* payload_data,
                                     size_t payload_size,
                                     const RTPFragmentationHeader* fragmentation,
-                                    VideoCodecInformation* codec_info,
                                     const RTPVideoHeader* rtp_hdr) {
   uint32_t ssrc;
   {
@@ -526,7 +525,7 @@ int32_t RTPSender::SendOutgoingData(FrameType frame_type,
     ret_val =
         video_->SendVideo(video_type, frame_type, payload_type,
                           capture_timestamp, capture_time_ms, payload_data,
-                          payload_size, fragmentation, codec_info, rtp_hdr);
+                          payload_size, fragmentation, rtp_hdr);
   }
 
   CriticalSectionScoped cs(statistics_crit_.get());
@@ -745,7 +744,8 @@ int RTPSender::SelectiveRetransmissions() const {
 int RTPSender::SetSelectiveRetransmissions(uint8_t settings) {
   if (!video_)
     return -1;
-  return video_->SetSelectiveRetransmissions(settings);
+  video_->SetSelectiveRetransmissions(settings);
+  return 0;
 }
 
 void RTPSender::OnReceivedNACK(const std::list<uint16_t>& nack_sequence_numbers,
@@ -1086,9 +1086,11 @@ size_t RTPSender::RTPHeaderLength() const {
   return rtp_header_length;
 }
 
-uint16_t RTPSender::IncrementSequenceNumber() {
+uint16_t RTPSender::AllocateSequenceNumber(uint16_t packets_to_send) {
   CriticalSectionScoped cs(send_critsect_.get());
-  return sequence_number_++;
+  uint16_t first_allocated_sequence_number = sequence_number_;
+  sequence_number_ += packets_to_send;
+  return first_allocated_sequence_number;
 }
 
 void RTPSender::ResetDataCounters() {
@@ -1729,14 +1731,6 @@ int32_t RTPSender::RED(int8_t *payload_type) const {
   return audio_->RED(*payload_type);
 }
 
-// Video
-VideoCodecInformation *RTPSender::CodecInformationVideo() {
-  if (audio_configured_) {
-    return NULL;
-  }
-  return video_->CodecInformationVideo();
-}
-
 RtpVideoCodecTypes RTPSender::VideoCodecType() const {
   assert(!audio_configured_ && "Sender is an audio stream!");
   return video_->VideoCodecType();
@@ -1762,8 +1756,8 @@ int32_t RTPSender::SetGenericFECStatus(bool enable,
   if (audio_configured_) {
     return -1;
   }
-  return video_->SetGenericFECStatus(enable, payload_type_red,
-                                     payload_type_fec);
+  video_->SetGenericFECStatus(enable, payload_type_red, payload_type_fec);
+  return 0;
 }
 
 int32_t RTPSender::GenericFECStatus(bool* enable,
@@ -1772,8 +1766,8 @@ int32_t RTPSender::GenericFECStatus(bool* enable,
   if (audio_configured_) {
     return -1;
   }
-  return video_->GenericFECStatus(
-      *enable, *payload_type_red, *payload_type_fec);
+  video_->GenericFECStatus(*enable, *payload_type_red, *payload_type_fec);
+  return 0;
 }
 
 int32_t RTPSender::SetFecParameters(
@@ -1782,7 +1776,8 @@ int32_t RTPSender::SetFecParameters(
   if (audio_configured_) {
     return -1;
   }
-  return video_->SetFecParameters(delta_params, key_params);
+  video_->SetFecParameters(delta_params, key_params);
+  return 0;
 }
 
 void RTPSender::BuildRtxPacket(uint8_t* buffer, size_t* length,

@@ -77,19 +77,19 @@ TEST_F(ProducerFecTest, OneFrameFec) {
   }
   EXPECT_TRUE(producer_->FecAvailable());
   uint16_t seq_num = generator_->NextSeqNum();
-  RedPacket* packet = producer_->GetFecPacket(kRedPayloadType,
-                                              kFecPayloadType,
-                                              seq_num,
-                                              kRtpHeaderSize);
+  std::vector<RedPacket*> packets = producer_->GetFecPackets(kRedPayloadType,
+                                                             kFecPayloadType,
+                                                             seq_num,
+                                                             kRtpHeaderSize);
   EXPECT_FALSE(producer_->FecAvailable());
-  ASSERT_TRUE(packet != NULL);
+  ASSERT_EQ(1u, packets.size());
   VerifyHeader(seq_num, last_timestamp,
-               kRedPayloadType, kFecPayloadType, packet, false);
+               kRedPayloadType, kFecPayloadType, packets.front(), false);
   while (!rtp_packets.empty()) {
     delete rtp_packets.front();
     rtp_packets.pop_front();
   }
-  delete packet;
+  delete packets.front();
 }
 
 TEST_F(ProducerFecTest, TwoFrameFec) {
@@ -120,39 +120,36 @@ TEST_F(ProducerFecTest, TwoFrameFec) {
   }
   EXPECT_TRUE(producer_->FecAvailable());
   uint16_t seq_num = generator_->NextSeqNum();
-  RedPacket* packet = producer_->GetFecPacket(kRedPayloadType,
-                                              kFecPayloadType,
-                                              seq_num,
-                                              kRtpHeaderSize);
+  std::vector<RedPacket*> packets = producer_->GetFecPackets(kRedPayloadType,
+                                                             kFecPayloadType,
+                                                             seq_num,
+                                                             kRtpHeaderSize);
   EXPECT_FALSE(producer_->FecAvailable());
-  EXPECT_TRUE(packet != NULL);
-  VerifyHeader(seq_num, last_timestamp,
-               kRedPayloadType, kFecPayloadType, packet, false);
+  ASSERT_EQ(1u, packets.size());
+  VerifyHeader(seq_num, last_timestamp, kRedPayloadType, kFecPayloadType,
+               packets.front(), false);
   while (!rtp_packets.empty()) {
     delete rtp_packets.front();
     rtp_packets.pop_front();
   }
-  delete packet;
+  delete packets.front();
 }
 
 TEST_F(ProducerFecTest, BuildRedPacket) {
   generator_->NewFrame(1);
   RtpPacket* packet = generator_->NextPacket(0, 10);
-  RedPacket* red_packet = producer_->BuildRedPacket(packet->data,
-                                                    packet->length -
-                                                    kRtpHeaderSize,
-                                                    kRtpHeaderSize,
-                                                    kRedPayloadType);
+  rtc::scoped_ptr<RedPacket> red_packet(producer_->BuildRedPacket(
+      packet->data, packet->length - kRtpHeaderSize, kRtpHeaderSize,
+      kRedPayloadType));
   EXPECT_EQ(packet->length + 1, red_packet->length());
   VerifyHeader(packet->header.header.sequenceNumber,
                packet->header.header.timestamp,
                kRedPayloadType,
                packet->header.header.payloadType,
-               red_packet,
+               red_packet.get(),
                true);  // Marker bit set.
   for (int i = 0; i < 10; ++i)
     EXPECT_EQ(i, red_packet->data()[kRtpHeaderSize + 1 + i]);
-  delete red_packet;
   delete packet;
 }
 
