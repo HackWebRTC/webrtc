@@ -54,7 +54,6 @@ class WebRtcAudioManager {
   private int nativeSampleRate;
   private int nativeChannels;
   private int savedAudioMode = AudioManager.MODE_INVALID;
-  private boolean savedIsSpeakerPhoneOn = false;
 
   WebRtcAudioManager(Context context, long nativeAudioManager) {
     Logd("ctor" + WebRtcAudioUtils.getThreadInfo());
@@ -80,11 +79,9 @@ class WebRtcAudioManager {
     // Store current audio state so we can restore it when close() or
     // setCommunicationMode(false) is called.
     savedAudioMode = audioManager.getMode();
-    savedIsSpeakerPhoneOn = audioManager.isSpeakerphoneOn();
 
     if (DEBUG) {
       Logd("savedAudioMode: " + savedAudioMode);
-      Logd("savedIsSpeakerPhoneOn: " + savedIsSpeakerPhoneOn);
       Logd("hasEarpiece: " + hasEarpiece());
     }
 
@@ -99,9 +96,8 @@ class WebRtcAudioManager {
     }
     // Restore previously stored audio states.
     if (audioModeNeedsRestore) {
-      setSpeakerphoneOn(savedIsSpeakerPhoneOn);
+      audioManager.setMode(savedAudioMode);
     }
-    audioManager.setMode(savedAudioMode);
   }
 
   private void setCommunicationMode(boolean enable) {
@@ -141,15 +137,6 @@ class WebRtcAudioManager {
     }
     Logd("nativeSampleRate: " + nativeSampleRate);
     Logd("nativeChannels: " + nativeChannels);
-  }
-
-  /** Sets the speaker phone mode. */
-  private void setSpeakerphoneOn(boolean on) {
-    boolean wasOn = audioManager.isSpeakerphoneOn();
-    if (wasOn == on) {
-      return;
-    }
-    audioManager.setSpeakerphoneOn(on);
   }
 
   /** Gets the current earpiece state. */
