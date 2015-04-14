@@ -85,6 +85,8 @@ source_set("common_audio") {
     "signal_processing/splitting_filter.c",
     "signal_processing/sqrt_of_one_minus_x_squared.c",
     "signal_processing/vector_scaling_operations.c",
+    "sparse_fir_filter.cc",
+    "sparse_fir_filter.h",
     "vad/include/vad.h",
     "vad/include/webrtc_vad.h",
     "vad/vad.cc",
