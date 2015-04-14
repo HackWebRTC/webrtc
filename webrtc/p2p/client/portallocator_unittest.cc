@@ -11,7 +11,6 @@
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/constants.h"
 #include "webrtc/p2p/base/p2ptransportchannel.h"
-#include "webrtc/p2p/base/portallocatorsessionproxy.h"
 #include "webrtc/p2p/base/testrelayserver.h"
 #include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/p2p/base/testturnserver.h"
@@ -686,89 +685,6 @@ TEST_F(PortAllocatorTest, TestCandidateFilterWithReflexiveOnlyAndNoNAT) {
   for (size_t i = 0; i < candidates_.size(); ++i) {
     EXPECT_EQ(std::string(cricket::LOCAL_PORT_TYPE), candidates_[i].type());
   }
-}
-
-TEST_F(PortAllocatorTest, TestBasicMuxFeatures) {
-  AddInterface(kClientAddr);
-  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_BUNDLE |
-      cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
-  // Session ID - session1.
-  rtc::scoped_ptr<cricket::PortAllocatorSession> session1(
-      CreateSession("session1", cricket::ICE_CANDIDATE_COMPONENT_RTP));
-  rtc::scoped_ptr<cricket::PortAllocatorSession> session2(
-      CreateSession("session1", cricket::ICE_CANDIDATE_COMPONENT_RTCP));
-  session1->StartGettingPorts();
-  session2->StartGettingPorts();
-  // Each session should receive two proxy ports of local and stun.
-  ASSERT_EQ_WAIT(14U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_EQ(8U, ports_.size());
-
-  rtc::scoped_ptr<cricket::PortAllocatorSession> session3(
-      CreateSession("session1", cricket::ICE_CANDIDATE_COMPONENT_RTP));
-  session3->StartGettingPorts();
-  // Already allocated candidates and ports will be sent to the newly
-  // allocated proxy session.
-  ASSERT_EQ_WAIT(21U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_EQ(12U, ports_.size());
-}
-
-// This test verifies by changing ice_ufrag and/or ice_pwd
-// will result in different set of candidates when BUNDLE is enabled.
-// If BUNDLE is disabled, CreateSession will always allocate new
-// set of candidates.
-TEST_F(PortAllocatorTest, TestBundleIceRestart) {
-  AddInterface(kClientAddr);
-  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_BUNDLE |
-      cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
-  // Session ID - session1.
-  rtc::scoped_ptr<cricket::PortAllocatorSession> session1(
-      CreateSession("session1", kContentName,
-                    cricket::ICE_CANDIDATE_COMPONENT_RTP,
-                    kIceUfrag0, kIcePwd0));
-  session1->StartGettingPorts();
-  ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_EQ(4U, ports_.size());
-
-  // Allocate a different session with sid |session1| and different ice_ufrag.
-  rtc::scoped_ptr<cricket::PortAllocatorSession> session2(
-      CreateSession("session1", kContentName,
-                    cricket::ICE_CANDIDATE_COMPONENT_RTP,
-                    "TestIceUfrag", kIcePwd0));
-  session2->StartGettingPorts();
-  ASSERT_EQ_WAIT(14U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_EQ(8U, ports_.size());
-  // Verifying the candidate address different from previously allocated
-  // address.
-  // Skipping verification of component id and candidate type.
-  EXPECT_NE(candidates_[0].address(), candidates_[7].address());
-  EXPECT_NE(candidates_[1].address(), candidates_[8].address());
-
-  // Allocating a different session with sid |session1| and
-  // different ice_pwd.
-  rtc::scoped_ptr<cricket::PortAllocatorSession> session3(
-      CreateSession("session1", kContentName,
-                    cricket::ICE_CANDIDATE_COMPONENT_RTP,
-                    kIceUfrag0, "TestIcePwd"));
-  session3->StartGettingPorts();
-  ASSERT_EQ_WAIT(21U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_EQ(12U, ports_.size());
-  // Verifying the candidate address different from previously
-  // allocated address.
-  EXPECT_NE(candidates_[7].address(), candidates_[14].address());
-  EXPECT_NE(candidates_[8].address(), candidates_[15].address());
-
-  // Allocating a session with by changing both ice_ufrag and ice_pwd.
-  rtc::scoped_ptr<cricket::PortAllocatorSession> session4(
-      CreateSession("session1", kContentName,
-                    cricket::ICE_CANDIDATE_COMPONENT_RTP,
-                    "TestIceUfrag", "TestIcePwd"));
-  session4->StartGettingPorts();
-  ASSERT_EQ_WAIT(28U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_EQ(16U, ports_.size());
-  // Verifying the candidate address different from previously
-  // allocated address.
-  EXPECT_NE(candidates_[14].address(), candidates_[21].address());
-  EXPECT_NE(candidates_[15].address(), candidates_[22].address());
 }
 
 // Test that when the PORTALLOCATOR_ENABLE_SHARED_UFRAG is enabled we got same

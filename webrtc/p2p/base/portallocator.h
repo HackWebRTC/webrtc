@@ -33,7 +33,6 @@ enum {
   PORTALLOCATOR_DISABLE_RELAY = 0x04,
   PORTALLOCATOR_DISABLE_TCP = 0x08,
   PORTALLOCATOR_ENABLE_SHAKER = 0x10,
-  PORTALLOCATOR_ENABLE_BUNDLE = 0x20,
   PORTALLOCATOR_ENABLE_IPV6 = 0x40,
   PORTALLOCATOR_ENABLE_SHARED_UFRAG = 0x80,
   PORTALLOCATOR_ENABLE_SHARED_SOCKET = 0x100,
@@ -56,8 +55,6 @@ enum {
   CF_RELAY = 0x4,
   CF_ALL = 0x7,
 };
-
-class PortAllocatorSessionMuxer;
 
 class PortAllocatorSession : public sigslot::has_slots<> {
  public:
@@ -116,7 +113,7 @@ class PortAllocator : public sigslot::has_slots<> {
       candidate_filter_(CF_ALL) {
     // This will allow us to have old behavior on non webrtc clients.
   }
-  virtual ~PortAllocator();
+  virtual ~PortAllocator() {}
 
   PortAllocatorSession* CreateSession(
       const std::string& sid,
@@ -124,9 +121,6 @@ class PortAllocator : public sigslot::has_slots<> {
       int component,
       const std::string& ice_ufrag,
       const std::string& ice_pwd);
-
-  PortAllocatorSessionMuxer* GetSessionMuxer(const std::string& key) const;
-  void OnSessionMuxerDestroyed(PortAllocatorSessionMuxer* session);
 
   uint32 flags() const { return flags_; }
   void set_flags(uint32 flags) { flags_ = flags; }
@@ -179,15 +173,12 @@ class PortAllocator : public sigslot::has_slots<> {
       const std::string& ice_ufrag,
       const std::string& ice_pwd) = 0;
 
-  typedef std::map<std::string, PortAllocatorSessionMuxer*> SessionMuxerMap;
-
   uint32 flags_;
   std::string agent_;
   rtc::ProxyInfo proxy_;
   int min_port_;
   int max_port_;
   uint32 step_delay_;
-  SessionMuxerMap muxers_;
   bool allow_tcp_listen_;
   uint32 candidate_filter_;
   std::string origin_;

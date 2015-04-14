@@ -18,7 +18,6 @@
           'base/fakesession.h',
           'base/p2ptransportchannel_unittest.cc',
           'base/port_unittest.cc',
-          'base/portallocatorsessionproxy_unittest.cc',
           'base/pseudotcp_unittest.cc',
           'base/relayport_unittest.cc',
           'base/relayserver_unittest.cc',

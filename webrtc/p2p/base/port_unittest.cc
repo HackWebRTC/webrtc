@@ -9,7 +9,6 @@
  */
 
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/base/portproxy.h"
 #include "webrtc/p2p/base/relayport.h"
 #include "webrtc/p2p/base/stunport.h"
 #include "webrtc/p2p/base/tcpport.h"
@@ -2207,21 +2206,6 @@ TEST_F(PortTest, TestComputeCandidatePriority) {
   ASSERT_EQ(expected_priority_teredo, port->Candidates()[6].priority());
   ASSERT_EQ(expected_priority_sitelocal, port->Candidates()[7].priority());
   ASSERT_EQ(expected_priority_6bone, port->Candidates()[8].priority());
-}
-
-TEST_F(PortTest, TestPortProxyProperties) {
-  rtc::scoped_ptr<TestPort> port(
-      CreateTestPort(kLocalAddr1, "name", "pass"));
-  port->SetIceRole(cricket::ICEROLE_CONTROLLING);
-  port->SetIceTiebreaker(kTiebreaker1);
-
-  // Create a proxy port.
-  rtc::scoped_ptr<PortProxy> proxy(new PortProxy());
-  proxy->set_impl(port.get());
-  EXPECT_EQ(port->Type(), proxy->Type());
-  EXPECT_EQ(port->Network(), proxy->Network());
-  EXPECT_EQ(port->GetIceRole(), proxy->GetIceRole());
-  EXPECT_EQ(port->IceTiebreaker(), proxy->IceTiebreaker());
 }
 
 // In the case of shared socket, one port may be shared by local and stun.
