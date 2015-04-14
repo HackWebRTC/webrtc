@@ -145,6 +145,7 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   rtc::scoped_ptr<RWLockWrapper> send_crit_;
   std::map<uint32_t, VideoSendStream*> send_ssrcs_ GUARDED_BY(send_crit_);
+  std::set<VideoSendStream*> send_streams_ GUARDED_BY(send_crit_);
 
   rtc::scoped_ptr<CpuOveruseObserverProxy> overuse_observer_proxy_;
 
@@ -230,6 +231,7 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
 
 Call::~Call() {
   CHECK_EQ(0u, send_ssrcs_.size());
+  CHECK_EQ(0u, send_streams_.size());
   CHECK_EQ(0u, receive_ssrcs_.size());
   base_->DeleteChannel(base_channel_id_);
 
@@ -262,6 +264,7 @@ VideoSendStream* Call::CreateVideoSendStream(
   // while changing network state.
   CriticalSectionScoped lock(network_enabled_crit_.get());
   WriteLockScoped write_lock(*send_crit_);
+  send_streams_.insert(send_stream);
   for (size_t i = 0; i < config.rtp.ssrcs.size(); ++i) {
     DCHECK(send_ssrcs_.find(config.rtp.ssrcs[i]) == send_ssrcs_.end());
     send_ssrcs_[config.rtp.ssrcs[i]] = send_stream;
@@ -289,6 +292,7 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
         ++it;
       }
     }
+    send_streams_.erase(send_stream_impl);
   }
   CHECK(send_stream_impl != nullptr);
 
@@ -440,22 +444,15 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(const uint8_t* packet,
   bool rtcp_delivered = false;
   {
     ReadLockScoped read_lock(*receive_crit_);
-    for (std::map<uint32_t, VideoReceiveStream*>::iterator it =
-             receive_ssrcs_.begin();
-         it != receive_ssrcs_.end();
-         ++it) {
-      if (it->second->DeliverRtcp(packet, length))
+    for (auto& kv : receive_ssrcs_) {
+      if (kv.second->DeliverRtcp(packet, length))
         rtcp_delivered = true;
     }
   }
-
   {
     ReadLockScoped read_lock(*send_crit_);
-    for (std::map<uint32_t, VideoSendStream*>::iterator it =
-             send_ssrcs_.begin();
-         it != send_ssrcs_.end();
-         ++it) {
-      if (it->second->DeliverRtcp(packet, length))
+    for (auto& stream : send_streams_) {
+      if (stream->DeliverRtcp(packet, length))
         rtcp_delivered = true;
     }
   }
