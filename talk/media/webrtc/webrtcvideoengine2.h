@@ -142,8 +142,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
       WebRtcVideoEncoderFactory* encoder_factory);
 
   bool EnableTimedRender();
-  // This is currently ignored.
-  sigslot::repeater2<VideoCapturer*, CaptureState> SignalCaptureStateChange;
 
   bool FindCodec(const VideoCodec& in);
   bool CanSendCodec(const VideoCodec& in,

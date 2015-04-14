@@ -128,8 +128,6 @@ class WebRtcVideoEngine : public sigslot::has_slots<> {
   const std::vector<RtpHeaderExtension>& rtp_header_extensions() const;
   void SetLogging(int min_sev, const char* filter);
 
-  sigslot::repeater2<VideoCapturer*, CaptureState> SignalCaptureStateChange;
-
   // Set a WebRtcVideoDecoderFactory for external decoding. Video engine does
   // not take the ownership of |decoder_factory|. The caller needs to make sure
   // that |decoder_factory| outlives the video engine.

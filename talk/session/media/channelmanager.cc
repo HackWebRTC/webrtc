@@ -131,10 +131,6 @@ void ChannelManager::Construct(MediaEngineInterface* me,
   SignalDevicesChange.repeat(device_manager_->SignalDevicesChange);
   device_manager_->Init();
 
-  // Camera is started asynchronously, request callbacks when startup
-  // completes to be able to forward them to the rendering manager.
-  media_engine_->SignalVideoCaptureStateChange().connect(
-      this, &ChannelManager::OnVideoCaptureStateChange);
   capture_manager_->SignalCapturerStateChange.connect(
       this, &ChannelManager::OnVideoCaptureStateChange);
 }

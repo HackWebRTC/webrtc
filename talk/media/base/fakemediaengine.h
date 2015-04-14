@@ -921,8 +921,6 @@ class FakeVideoEngine : public FakeBaseEngine {
     return true;
   }
 
-  sigslot::repeater2<VideoCapturer*, CaptureState> SignalCaptureStateChange;
-
  private:
   std::vector<FakeVideoMediaChannel*> channels_;
   std::vector<VideoCodec> codecs_;
