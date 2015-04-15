@@ -23,8 +23,8 @@
 #include "webrtc/test/testsupport/trace_to_stderr.h"
 #include "webrtc/tools/agc/agc_manager.h"
 #include "webrtc/tools/agc/test_utils.h"
-#include "webrtc/voice_engine/include/mock/fake_voe_external_media.h"
-#include "webrtc/voice_engine/include/mock/mock_voe_volume_control.h"
+#include "webrtc/voice_engine/mock/fake_voe_external_media.h"
+#include "webrtc/voice_engine/mock/mock_voe_volume_control.h"
 
 DEFINE_string(in, "in.pcm", "input filename");
 DEFINE_string(out, "out.pcm", "output filename");

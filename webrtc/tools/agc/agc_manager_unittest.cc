@@ -16,8 +16,8 @@
 #include "webrtc/modules/audio_processing/agc/mock_agc.h"
 #include "webrtc/modules/audio_processing/include/mock_audio_processing.h"
 #include "webrtc/system_wrappers/interface/trace.h"
-#include "webrtc/voice_engine/include/mock/fake_voe_external_media.h"
-#include "webrtc/voice_engine/include/mock/mock_voe_volume_control.h"
+#include "webrtc/voice_engine/mock/fake_voe_external_media.h"
+#include "webrtc/voice_engine/mock/mock_voe_volume_control.h"
 #include "webrtc/test/testsupport/trace_to_stderr.h"
 
 using ::testing::_;
