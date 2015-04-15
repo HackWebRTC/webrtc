@@ -325,7 +325,7 @@ def GetPreferredTryMasters(project, change):
   ]
   android_bots = [
       'android',
-      'android_arm64',
+      'android_arm64_rel',
       'android_rel',
       'android_clang',
   ] + android_gn_bots
