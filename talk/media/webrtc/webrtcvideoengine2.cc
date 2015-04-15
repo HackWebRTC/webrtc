@@ -733,7 +733,7 @@ bool WebRtcVideoChannel2::SetSendCodecs(const std::vector<VideoCodec>& codecs) {
       FilterSupportedCodecs(MapCodecs(codecs));
 
   if (supported_codecs.empty()) {
-    LOG(LS_ERROR) << "No video codecs supported by encoder factory.";
+    LOG(LS_ERROR) << "No video codecs supported.";
     return false;
   }
 
@@ -1741,7 +1741,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetRtpExtensions(
     const std::vector<webrtc::RtpExtension>& rtp_extensions) {
   rtc::CritScope cs(&lock_);
   parameters_.config.rtp.extensions = rtp_extensions;
-  RecreateWebRtcStream();
+  if (stream_ != nullptr)
+    RecreateWebRtcStream();
 }
 
 webrtc::VideoEncoderConfig
@@ -2096,7 +2097,8 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRecvCodecs(
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRtpExtensions(
     const std::vector<webrtc::RtpExtension>& extensions) {
   config_.rtp.extensions = extensions;
-  RecreateWebRtcStream();
+  if (stream_ != nullptr)
+    RecreateWebRtcStream();
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {
