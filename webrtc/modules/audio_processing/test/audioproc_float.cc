@@ -19,6 +19,7 @@
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
 
 DEFINE_string(dump, "", "The name of the debug dump file to read from.");
 DEFINE_string(c, "", "The name of the capture input file to read from.");
@@ -42,6 +43,8 @@ DEFINE_bool(bf, false, "Enable beamforming.");
 DEFINE_bool(all, false, "Enable all components.");
 
 DEFINE_int32(ns_level, -1, "Noise suppression level [0 - 3].");
+
+DEFINE_bool(perf, false, "Enable performance tests.");
 
 static const int kChunksPerSecond = 100;
 static const char kUsage[] =
@@ -183,11 +186,16 @@ int main(int argc, char* argv[]) {
       static_cast<size_t>(o_buf.num_channels() * o_buf.num_frames());
   rtc::scoped_ptr<float[]> c_interleaved(new float[c_length]);
   rtc::scoped_ptr<float[]> o_interleaved(new float[o_length]);
+  TickTime processing_start_time;
+  TickInterval accumulated_time;
+  int num_chunks = 0;
   while (c_file.ReadSamples(c_length, c_interleaved.get()) == c_length) {
     FloatS16ToFloat(c_interleaved.get(), c_length, c_interleaved.get());
     Deinterleave(c_interleaved.get(), c_buf.num_frames(),
                  c_buf.num_channels(), c_buf.channels());
-
+    if (FLAGS_perf) {
+      processing_start_time = TickTime::Now();
+    }
     CHECK_EQ(kNoErr,
         ap->ProcessStream(c_buf.channels(),
                           c_buf.num_frames(),
@@ -196,13 +204,19 @@ int main(int argc, char* argv[]) {
                           o_file.sample_rate(),
                           LayoutFromChannels(o_buf.num_channels()),
                           o_buf.channels()));
-
+    if (FLAGS_perf) {
+      accumulated_time += TickTime::Now() - processing_start_time;
+    }
     Interleave(o_buf.channels(), o_buf.num_frames(),
                o_buf.num_channels(), o_interleaved.get());
     FloatToFloatS16(o_interleaved.get(), o_length, o_interleaved.get());
     o_file.WriteSamples(o_interleaved.get(), o_length);
+    num_chunks++;
   }
-
+  if (FLAGS_perf) {
+    printf("Execution time: %.3fs\nFile time: %.2fs\n\n",
+           accumulated_time.Milliseconds() * 0.001f, num_chunks * 0.01f);
+  }
   return 0;
 }
 
