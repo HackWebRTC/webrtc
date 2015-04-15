@@ -774,17 +774,29 @@ int ViERTP_RTCPImpl::GetRtpStatistics(const int video_channel,
   return 0;
 }
 
-int ViERTP_RTCPImpl::GetRtcpPacketTypeCounters(
+int ViERTP_RTCPImpl::GetSendRtcpPacketTypeCounter(
     int video_channel,
-    RtcpPacketTypeCounter* packets_sent,
-    RtcpPacketTypeCounter* packets_received) const {
+    RtcpPacketTypeCounter* packet_counter) const {
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
-  vie_channel->GetRtcpPacketTypeCounters(packets_sent, packets_received);
+  vie_channel->GetSendRtcpPacketTypeCounter(packet_counter);
+  return 0;
+}
+
+int ViERTP_RTCPImpl::GetReceiveRtcpPacketTypeCounter(
+    int video_channel,
+    RtcpPacketTypeCounter* packet_counter) const {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
+    return -1;
+  }
+  vie_channel->GetReceiveRtcpPacketTypeCounter(packet_counter);
   return 0;
 }
 

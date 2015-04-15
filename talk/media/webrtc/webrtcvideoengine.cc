@@ -2646,13 +2646,12 @@ bool WebRtcVideoMediaChannel::GetStats(VideoMediaInfo* info) {
       sinfo.avg_encode_ms = metrics.avg_encode_time_ms;
       sinfo.encode_usage_percent = metrics.encode_usage_percent;
 
-      webrtc::RtcpPacketTypeCounter rtcp_sent;
-      webrtc::RtcpPacketTypeCounter rtcp_received;
-      if (engine()->vie()->rtp()->GetRtcpPacketTypeCounters(
-          channel_id, &rtcp_sent, &rtcp_received) == 0) {
-        sinfo.firs_rcvd = rtcp_received.fir_packets;
-        sinfo.plis_rcvd = rtcp_received.pli_packets;
-        sinfo.nacks_rcvd = rtcp_received.nack_packets;
+      webrtc::RtcpPacketTypeCounter rtcp_counter;
+      if (engine()->vie()->rtp()->GetSendRtcpPacketTypeCounter(
+          channel_id, &rtcp_counter) == 0) {
+        sinfo.firs_rcvd = rtcp_counter.fir_packets;
+        sinfo.plis_rcvd = rtcp_counter.pli_packets;
+        sinfo.nacks_rcvd = rtcp_counter.nack_packets;
       } else {
         sinfo.firs_rcvd = -1;
         sinfo.plis_rcvd = -1;
@@ -2753,13 +2752,12 @@ bool WebRtcVideoMediaChannel::GetStats(VideoMediaInfo* info) {
         channel->render_adapter()->capture_start_ntp_time_ms();
     channel->decoder_observer()->ExportTo(&rinfo);
 
-    webrtc::RtcpPacketTypeCounter rtcp_sent;
-    webrtc::RtcpPacketTypeCounter rtcp_received;
-    if (engine()->vie()->rtp()->GetRtcpPacketTypeCounters(
-        channel->channel_id(), &rtcp_sent, &rtcp_received) == 0) {
-      rinfo.firs_sent = rtcp_sent.fir_packets;
-      rinfo.plis_sent = rtcp_sent.pli_packets;
-      rinfo.nacks_sent = rtcp_sent.nack_packets;
+    webrtc::RtcpPacketTypeCounter rtcp_counter;
+    if (engine()->vie()->rtp()->GetReceiveRtcpPacketTypeCounter(
+        channel->channel_id(), &rtcp_counter) == 0) {
+      rinfo.firs_sent = rtcp_counter.fir_packets;
+      rinfo.plis_sent = rtcp_counter.pli_packets;
+      rinfo.nacks_sent = rtcp_counter.nack_packets;
     } else {
       rinfo.firs_sent = -1;
       rinfo.plis_sent = -1;

@@ -83,6 +83,18 @@
       ],
     },
     {
+      'target_name': 'histogram',
+      'type': 'static_library',
+      'sources': [
+        'histogram.cc',
+        'histogram.h',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+      ],
+    },
+    {
       'target_name': 'test_main',
       'type': 'static_library',
       'sources': [
@@ -90,9 +102,9 @@
       ],
       'dependencies': [
         'field_trial',
+        'histogram',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
       ],
     },
     {
@@ -129,11 +141,11 @@
       'type': 'static_library',
       'dependencies': [
         'field_trial',
+        'histogram',
         'test_support',
         '<(DEPTH)/testing/gmock.gyp:gmock',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
       ],
       'sources': [
         'run_all_unittests.cc',

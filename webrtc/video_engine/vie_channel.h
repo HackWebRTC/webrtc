@@ -219,8 +219,11 @@ class ViEChannel
   void RegisterReceiveChannelRtpStatisticsCallback(
       StreamDataCountersCallback* callback);
 
-  void GetRtcpPacketTypeCounters(RtcpPacketTypeCounter* packets_sent,
-                                 RtcpPacketTypeCounter* packets_received) const;
+  void GetSendRtcpPacketTypeCounter(
+      RtcpPacketTypeCounter* packet_counter) const;
+
+  void GetReceiveRtcpPacketTypeCounter(
+      RtcpPacketTypeCounter* packet_counter) const;
 
   void GetBandwidthUsage(uint32_t* total_bitrate_sent,
                          uint32_t* video_bitrate_sent,

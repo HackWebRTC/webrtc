@@ -232,23 +232,22 @@ ViEChannel::~ViEChannel() {
 
 void ViEChannel::UpdateHistograms() {
   int64_t now = Clock::GetRealTimeClock()->TimeInMilliseconds();
-  RtcpPacketTypeCounter rtcp_sent;
-  RtcpPacketTypeCounter rtcp_received;
-  GetRtcpPacketTypeCounters(&rtcp_sent, &rtcp_received);
 
   if (sender_) {
-    int64_t elapsed_sec = rtcp_received.TimeSinceFirstPacketInMs(now) / 1000;
+    RtcpPacketTypeCounter rtcp_counter;
+    GetSendRtcpPacketTypeCounter(&rtcp_counter);
+    int64_t elapsed_sec = rtcp_counter.TimeSinceFirstPacketInMs(now) / 1000;
     if (elapsed_sec > metrics::kMinRunTimeInSeconds) {
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.NackPacketsReceivedPerMinute",
-          rtcp_received.nack_packets * 60 / elapsed_sec);
+          rtcp_counter.nack_packets * 60 / elapsed_sec);
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FirPacketsReceivedPerMinute",
-          rtcp_received.fir_packets * 60 / elapsed_sec);
+          rtcp_counter.fir_packets * 60 / elapsed_sec);
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PliPacketsReceivedPerMinute",
-          rtcp_received.pli_packets * 60 / elapsed_sec);
-      if (rtcp_received.nack_requests > 0) {
+          rtcp_counter.pli_packets * 60 / elapsed_sec);
+      if (rtcp_counter.nack_requests > 0) {
         RTC_HISTOGRAM_PERCENTAGE(
             "WebRTC.Video.UniqueNackRequestsReceivedInPercent",
-                rtcp_received.UniqueNackRequestsInPercent());
+                rtcp_counter.UniqueNackRequestsInPercent());
       }
       int fraction_lost = report_block_stats_sender_->FractionLostInPercent();
       if (fraction_lost != -1) {
@@ -259,17 +258,19 @@ void ViEChannel::UpdateHistograms() {
   } else if (vie_receiver_.GetRemoteSsrc() > 0) {
     // Get receive stats if we are receiving packets, i.e. there is a remote
     // ssrc.
-    int64_t elapsed_sec = rtcp_sent.TimeSinceFirstPacketInMs(now) / 1000;
+    RtcpPacketTypeCounter rtcp_counter;
+    GetReceiveRtcpPacketTypeCounter(&rtcp_counter);
+    int64_t elapsed_sec = rtcp_counter.TimeSinceFirstPacketInMs(now) / 1000;
     if (elapsed_sec > metrics::kMinRunTimeInSeconds) {
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.NackPacketsSentPerMinute",
-          rtcp_sent.nack_packets * 60 / elapsed_sec);
+          rtcp_counter.nack_packets * 60 / elapsed_sec);
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FirPacketsSentPerMinute",
-          rtcp_sent.fir_packets * 60 / elapsed_sec);
+          rtcp_counter.fir_packets * 60 / elapsed_sec);
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PliPacketsSentPerMinute",
-          rtcp_sent.pli_packets * 60 / elapsed_sec);
-      if (rtcp_sent.nack_requests > 0) {
+          rtcp_counter.pli_packets * 60 / elapsed_sec);
+      if (rtcp_counter.nack_requests > 0) {
         RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.UniqueNackRequestsSentInPercent",
-            rtcp_sent.UniqueNackRequestsInPercent());
+            rtcp_counter.UniqueNackRequestsInPercent());
       }
       int fraction_lost = report_block_stats_receiver_->FractionLostInPercent();
       if (fraction_lost != -1) {
@@ -1357,27 +1358,35 @@ void ViEChannel::RegisterReceiveChannelRtpStatisticsCallback(
   vie_receiver_.GetReceiveStatistics()->RegisterRtpStatisticsCallback(callback);
 }
 
-void ViEChannel::GetRtcpPacketTypeCounters(
-    RtcpPacketTypeCounter* packets_sent,
-    RtcpPacketTypeCounter* packets_received) const {
+void ViEChannel::GetSendRtcpPacketTypeCounter(
+    RtcpPacketTypeCounter* packet_counter) const {
   std::map<uint32_t, RtcpPacketTypeCounter> counter_map =
       rtcp_packet_type_counter_observer_.GetPacketTypeCounterMap();
-  RtcpPacketTypeCounter sent_counter;
-  sent_counter.Add(counter_map[rtp_rtcp_->SSRC()]);
-  RtcpPacketTypeCounter received_counter;
-  received_counter.Add(counter_map[vie_receiver_.GetRemoteSsrc()]);
+
+  RtcpPacketTypeCounter counter;
+  counter.Add(counter_map[rtp_rtcp_->SSRC()]);
 
   CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end(); ++it) {
-    sent_counter.Add(counter_map[(*it)->SSRC()]);
+    counter.Add(counter_map[(*it)->SSRC()]);
   }
   for (std::list<RtpRtcp*>::const_iterator it = removed_rtp_rtcp_.begin();
        it != removed_rtp_rtcp_.end(); ++it) {
-    sent_counter.Add(counter_map[(*it)->SSRC()]);
+    counter.Add(counter_map[(*it)->SSRC()]);
   }
-  *packets_sent = sent_counter;
-  *packets_received = received_counter;
+  *packet_counter = counter;
+}
+
+void ViEChannel::GetReceiveRtcpPacketTypeCounter(
+    RtcpPacketTypeCounter* packet_counter) const {
+  std::map<uint32_t, RtcpPacketTypeCounter> counter_map =
+      rtcp_packet_type_counter_observer_.GetPacketTypeCounterMap();
+
+  RtcpPacketTypeCounter counter;
+  counter.Add(counter_map[vie_receiver_.GetRemoteSsrc()]);
+
+  *packet_counter = counter;
 }
 
 void ViEChannel::GetBandwidthUsage(uint32_t* total_bitrate_sent,

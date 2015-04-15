@@ -1176,8 +1176,10 @@ class FakeWebRtcVideoEngine
         reserved_transmit_bitrate_bps;
     return 0;
   }
-  WEBRTC_STUB_CONST(GetRtcpPacketTypeCounters, (int,
-      webrtc::RtcpPacketTypeCounter*, webrtc::RtcpPacketTypeCounter*));
+  WEBRTC_STUB_CONST(GetSendRtcpPacketTypeCounter, (int,
+      webrtc::RtcpPacketTypeCounter*));
+  WEBRTC_STUB_CONST(GetReceiveRtcpPacketTypeCounter, (int,
+      webrtc::RtcpPacketTypeCounter*));
   WEBRTC_STUB_CONST(GetReceivedRTCPStatistics, (const int, unsigned short&,
       unsigned int&, unsigned int&, unsigned int&, int64_t&));
   WEBRTC_STUB_CONST(GetSentRTCPStatistics, (const int, unsigned short&,

@@ -24,6 +24,7 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/metrics.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/direct_transport.h"
@@ -33,6 +34,7 @@
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator.h"
 #include "webrtc/test/frame_generator_capturer.h"
+#include "webrtc/test/histogram.h"
 #include "webrtc/test/null_transport.h"
 #include "webrtc/test/rtcp_packet_parser.h"
 #include "webrtc/test/rtp_rtcp_observer.h"
@@ -1374,6 +1376,115 @@ TEST_F(EndToEndTest, VerifyBandwidthStats) {
   } test;
 
   RunBaseTest(&test);
+}
+
+TEST_F(EndToEndTest, VerifyNackStats) {
+  static const int kPacketNumberToDrop = 200;
+  class NackObserver : public test::EndToEndTest {
+   public:
+    NackObserver()
+        : EndToEndTest(kLongTimeoutMs),
+          sent_rtp_packets_(0),
+          dropped_rtp_packet_(0),
+          dropped_rtp_packet_requested_(false),
+          send_stream_(nullptr),
+          start_runtime_ms_(-1) {}
+
+   private:
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      if (++sent_rtp_packets_ == kPacketNumberToDrop) {
+        rtc::scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+        RTPHeader header;
+        EXPECT_TRUE(parser->Parse(packet, length, &header));
+        dropped_rtp_packet_ = header.sequenceNumber;
+        return DROP_PACKET;
+      }
+      VerifyStats();
+      return SEND_PACKET;
+    }
+
+    Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
+      test::RtcpPacketParser rtcp_parser;
+      rtcp_parser.Parse(packet, length);
+      std::vector<uint16_t> nacks = rtcp_parser.nack_item()->last_nack_list();
+      if (!nacks.empty() && std::find(
+          nacks.begin(), nacks.end(), dropped_rtp_packet_) != nacks.end()) {
+        dropped_rtp_packet_requested_ = true;
+      }
+      return SEND_PACKET;
+    }
+
+    void VerifyStats() {
+      if (!dropped_rtp_packet_requested_)
+        return;
+      int send_stream_nack_packets = 0;
+      int receive_stream_nack_packets = 0;
+      VideoSendStream::Stats stats = send_stream_->GetStats();
+      for (std::map<uint32_t, VideoSendStream::StreamStats>::const_iterator it =
+           stats.substreams.begin(); it != stats.substreams.end(); ++it) {
+        const VideoSendStream::StreamStats& stream_stats = it->second;
+        send_stream_nack_packets +=
+            stream_stats.rtcp_packet_type_counts.nack_packets;
+      }
+      for (size_t i = 0; i < receive_streams_.size(); ++i) {
+        VideoReceiveStream::Stats stats = receive_streams_[i]->GetStats();
+        receive_stream_nack_packets +=
+            stats.rtcp_packet_type_counts.nack_packets;
+      }
+      if (send_stream_nack_packets >= 1 && receive_stream_nack_packets >= 1) {
+        // NACK packet sent on receive stream and received on sent stream.
+        if (MinMetricRunTimePassed())
+          observation_complete_->Set();
+      }
+    }
+
+    bool MinMetricRunTimePassed() {
+      int64_t now = Clock::GetRealTimeClock()->TimeInMilliseconds();
+      if (start_runtime_ms_ == -1) {
+        start_runtime_ms_ = now;
+        return false;
+      }
+      int64_t elapsed_sec = (now - start_runtime_ms_) / 1000;
+      return elapsed_sec > metrics::kMinRunTimeInSeconds;
+    }
+
+    void ModifyConfigs(VideoSendStream::Config* send_config,
+                       std::vector<VideoReceiveStream::Config>* receive_configs,
+                       VideoEncoderConfig* encoder_config) override {
+      send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+    }
+
+    void OnStreamsCreated(
+        VideoSendStream* send_stream,
+        const std::vector<VideoReceiveStream*>& receive_streams) override {
+      send_stream_ = send_stream;
+      receive_streams_ = receive_streams;
+    }
+
+    void PerformTest() override {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out waiting for packet to be NACKed.";
+    }
+
+    uint64_t sent_rtp_packets_;
+    uint16_t dropped_rtp_packet_;
+    bool dropped_rtp_packet_requested_;
+    std::vector<VideoReceiveStream*> receive_streams_;
+    VideoSendStream* send_stream_;
+    int64_t start_runtime_ms_;
+  } test;
+
+  RunBaseTest(&test);
+
+  EXPECT_NE(-1, test::LastHistogramSample(
+      "WebRTC.Video.UniqueNackRequestsSentInPercent"));
+  EXPECT_NE(-1, test::LastHistogramSample(
+      "WebRTC.Video.UniqueNackRequestsReceivedInPercent"));
+  EXPECT_GT(test::LastHistogramSample(
+      "WebRTC.Video.NackPacketsSentPerMinute"), 0);
+  EXPECT_GT(test::LastHistogramSample(
+      "WebRTC.Video.NackPacketsReceivedPerMinute"), 0);
 }
 
 void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
