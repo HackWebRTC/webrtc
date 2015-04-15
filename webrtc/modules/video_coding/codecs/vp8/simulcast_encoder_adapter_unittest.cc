@@ -120,6 +120,7 @@ class MockVideoEncoder : public VideoEncoder {
                  const std::vector<VideoFrameType>* frame_types) { return 0; }
 
   int32_t RegisterEncodeCompleteCallback(EncodedImageCallback* callback) {
+    callback_ = callback;
     return 0;
   }
 
@@ -139,8 +140,19 @@ class MockVideoEncoder : public VideoEncoder {
 
   const VideoCodec& codec() const { return codec_; }
 
+  void SendEncodedImage(int width, int height) {
+    // Sends a fake image of the given width/height.
+    EncodedImage image;
+    image._encodedWidth = width;
+    image._encodedHeight = height;
+    CodecSpecificInfo codecSpecificInfo;
+    memset(&codecSpecificInfo, 0, sizeof(codecSpecificInfo));
+    callback_->Encoded(image, &codecSpecificInfo, NULL);
+  }
+
  private:
   VideoCodec codec_;
+  EncodedImageCallback* callback_;
 };
 
 class MockVideoEncoderFactory : public VideoEncoderFactory {
@@ -188,18 +200,47 @@ class TestSimulcastEncoderAdapterFakeHelper {
 
 static const int kTestTemporalLayerProfile[3] = {3, 2, 1};
 
-class TestSimulcastEncoderAdapterFake : public ::testing::Test {
+class TestSimulcastEncoderAdapterFake : public ::testing::Test,
+                                        public EncodedImageCallback {
  public:
   TestSimulcastEncoderAdapterFake()
-     : helper_(new TestSimulcastEncoderAdapterFakeHelper()),
-       adapter_(helper_->CreateMockEncoderAdapter()) {}
+      : helper_(new TestSimulcastEncoderAdapterFakeHelper()),
+        adapter_(helper_->CreateMockEncoderAdapter()),
+        last_encoded_image_width_(-1),
+        last_encoded_image_height_(-1),
+        last_encoded_image_simulcast_index_(-1) {}
   virtual ~TestSimulcastEncoderAdapterFake() {}
+
+  int32_t Encoded(const EncodedImage& encodedImage,
+                  const CodecSpecificInfo* codecSpecificInfo = NULL,
+                  const RTPFragmentationHeader* fragmentation = NULL) override {
+    last_encoded_image_width_ = encodedImage._encodedWidth;
+    last_encoded_image_height_ = encodedImage._encodedHeight;
+    if (codecSpecificInfo) {
+      last_encoded_image_simulcast_index_ =
+          codecSpecificInfo->codecSpecific.VP8.simulcastIdx;
+    }
+    return 0;
+  }
+
+  bool GetLastEncodedImageInfo(int* out_width,
+                               int* out_height,
+                               int* out_simulcast_index) {
+    if (last_encoded_image_width_ == -1) {
+      return false;
+    }
+    *out_width = last_encoded_image_width_;
+    *out_height = last_encoded_image_height_;
+    *out_simulcast_index = last_encoded_image_simulcast_index_;
+    return true;
+  }
 
   void SetupCodec() {
     TestVp8Simulcast::DefaultSettings(
       &codec_,
       static_cast<const int*>(kTestTemporalLayerProfile));
     EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+    adapter_->RegisterEncodeCompleteCallback(this);
   }
 
   void VerifyCodec(const VideoCodec& ref, int stream_index) {
@@ -282,6 +323,9 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test {
   rtc::scoped_ptr<TestSimulcastEncoderAdapterFakeHelper> helper_;
   rtc::scoped_ptr<VP8Encoder> adapter_;
   VideoCodec codec_;
+  int last_encoded_image_width_;
+  int last_encoded_image_height_;
+  int last_encoded_image_simulcast_index_;
 };
 
 TEST_F(TestSimulcastEncoderAdapterFake, InitEncode) {
@@ -295,6 +339,37 @@ TEST_F(TestSimulcastEncoderAdapterFake, SetChannelParameters) {
   const int64_t rtt = 30;
   helper_->ExpectCallSetChannelParameters(packetLoss, rtt);
   adapter_->SetChannelParameters(packetLoss, rtt);
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake, EncodedCallbackForDifferentEncoders) {
+  SetupCodec();
+
+  // At this point, the simulcast encoder adapter should have 3 streams: HD,
+  // quarter HD, and quarter quarter HD. We're going to mostly ignore the exact
+  // resolutions, to test that the adapter forwards on the correct resolution
+  // and simulcast index values, going only off the encoder that generates the
+  // image.
+  EXPECT_EQ(3u, helper_->factory()->encoders().size());
+  helper_->factory()->encoders()[0]->SendEncodedImage(1152, 704);
+  int width;
+  int height;
+  int simulcast_index;
+  EXPECT_TRUE(GetLastEncodedImageInfo(&width, &height, &simulcast_index));
+  EXPECT_EQ(1152, width);
+  EXPECT_EQ(704, height);
+  EXPECT_EQ(0, simulcast_index);
+
+  helper_->factory()->encoders()[1]->SendEncodedImage(300, 620);
+  EXPECT_TRUE(GetLastEncodedImageInfo(&width, &height, &simulcast_index));
+  EXPECT_EQ(300, width);
+  EXPECT_EQ(620, height);
+  EXPECT_EQ(1, simulcast_index);
+
+  helper_->factory()->encoders()[2]->SendEncodedImage(120, 240);
+  EXPECT_TRUE(GetLastEncodedImageInfo(&width, &height, &simulcast_index));
+  EXPECT_EQ(120, width);
+  EXPECT_EQ(240, height);
+  EXPECT_EQ(2, simulcast_index);
 }
 
 }  // namespace testing
