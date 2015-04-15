@@ -41,12 +41,17 @@ class AgcManagerDirect {
  public:
   // AgcManagerDirect will configure GainControl internally. The user is
   // responsible for processing the audio using it after the call to Process.
-  AgcManagerDirect(GainControl* gctrl, VolumeCallbacks* volume_callbacks);
+  // The operating range of startup_min_level is [12, 255] and any input value
+  // outside that range will be clamped.
+  AgcManagerDirect(GainControl* gctrl,
+                   VolumeCallbacks* volume_callbacks,
+                   int startup_min_level);
   // Dependency injection for testing. Don't delete |agc| as the memory is owned
   // by the manager.
   AgcManagerDirect(Agc* agc,
                    GainControl* gctrl,
-                   VolumeCallbacks* volume_callbacks);
+                   VolumeCallbacks* volume_callbacks,
+                   int startup_min_level);
   ~AgcManagerDirect();
 
   int Initialize();
@@ -88,6 +93,7 @@ class AgcManagerDirect {
   bool capture_muted_;
   bool check_volume_on_next_process_;
   bool startup_;
+  int startup_min_level_;
 
   rtc::scoped_ptr<DebugFile> file_preproc_;
   rtc::scoped_ptr<DebugFile> file_postproc_;

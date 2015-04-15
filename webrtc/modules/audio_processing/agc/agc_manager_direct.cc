@@ -48,7 +48,6 @@ const float kCompressionGainStep = 0.05f;
 const int kMaxMicLevel = 255;
 static_assert(kGainMapSize > kMaxMicLevel, "gain map too small");
 const int kMinMicLevel = 12;
-const int kMinInitMicLevel = 85;
 
 // Prevent very large microphone level changes.
 const int kMaxResidualGainChange = 15;
@@ -56,6 +55,10 @@ const int kMaxResidualGainChange = 15;
 // Maximum additional gain allowed to compensate for microphone level
 // restrictions from clipping events.
 const int kSurplusCompressionGain = 6;
+
+int ClampLevel(int mic_level) {
+  return std::min(std::max(kMinMicLevel, mic_level), kMaxMicLevel);
+}
 
 int LevelFromGainError(int gain_error, int level) {
   assert(level >= 0 && level <= kMaxMicLevel);
@@ -109,7 +112,8 @@ class DebugFile {
 };
 
 AgcManagerDirect::AgcManagerDirect(GainControl* gctrl,
-                                   VolumeCallbacks* volume_callbacks)
+                                   VolumeCallbacks* volume_callbacks,
+                                   int startup_min_level)
     : agc_(new Agc()),
       gctrl_(gctrl),
       volume_callbacks_(volume_callbacks),
@@ -123,13 +127,15 @@ AgcManagerDirect::AgcManagerDirect(GainControl* gctrl,
       capture_muted_(false),
       check_volume_on_next_process_(true),  // Check at startup.
       startup_(true),
+      startup_min_level_(ClampLevel(startup_min_level)),
       file_preproc_(new DebugFile("agc_preproc.pcm")),
       file_postproc_(new DebugFile("agc_postproc.pcm")) {
 }
 
 AgcManagerDirect::AgcManagerDirect(Agc* agc,
                                    GainControl* gctrl,
-                                   VolumeCallbacks* volume_callbacks)
+                                   VolumeCallbacks* volume_callbacks,
+                                   int startup_min_level)
     : agc_(agc),
       gctrl_(gctrl),
       volume_callbacks_(volume_callbacks),
@@ -143,6 +149,7 @@ AgcManagerDirect::AgcManagerDirect(Agc* agc,
       capture_muted_(false),
       check_volume_on_next_process_(true),  // Check at startup.
       startup_(true),
+      startup_min_level_(ClampLevel(startup_min_level)),
       file_preproc_(new DebugFile("agc_preproc.pcm")),
       file_postproc_(new DebugFile("agc_postproc.pcm")) {
 }
@@ -336,7 +343,7 @@ int AgcManagerDirect::CheckVolumeAndReset() {
   }
   LOG(LS_INFO) << "[agc] Initial GetMicVolume()=" << level;
 
-  int minLevel = startup_ ? kMinInitMicLevel : kMinMicLevel;
+  int minLevel = startup_ ? startup_min_level_ : kMinMicLevel;
   if (level < minLevel) {
     level = minLevel;
     LOG(LS_INFO) << "[agc] Initial volume too low, raising to " << level;

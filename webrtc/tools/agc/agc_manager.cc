@@ -147,25 +147,28 @@ AgcManager::AgcManager(VoiceEngine* voe)
     config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
     audioproc_.reset(AudioProcessing::Create(config));
     direct_.reset(new AgcManagerDirect(audioproc_->gain_control(),
-                                       volume_callbacks_.get()));
+                                       volume_callbacks_.get(),
+                                       kAgcStartupMinVolume));
     media_callback_.reset(new MediaCallback(direct_.get(),
                                             audioproc_.get(),
                                             crit_.get()));
     preproc_callback_.reset(new PreprocCallback(direct_.get(), crit_.get()));
 }
 
-AgcManager::AgcManager(VoEExternalMedia* media, VoEVolumeControl* volume,
-                       Agc* agc, AudioProcessing* audioproc)
+AgcManager::AgcManager(VoEExternalMedia* media,
+                       VoEVolumeControl* volume,
+                       Agc* agc,
+                       AudioProcessing* audioproc)
     : media_(media),
       volume_callbacks_(new AgcManagerVolume(volume)),
       crit_(CriticalSectionWrapper::CreateCriticalSection()),
       audioproc_(audioproc),
       direct_(new AgcManagerDirect(agc,
                                    audioproc_->gain_control(),
-                                   volume_callbacks_.get())),
-      media_callback_(new MediaCallback(direct_.get(),
-                                        audioproc_.get(),
-                                        crit_.get())),
+                                   volume_callbacks_.get(),
+                                   kAgcStartupMinVolume)),
+      media_callback_(
+          new MediaCallback(direct_.get(), audioproc_.get(), crit_.get())),
       preproc_callback_(new PreprocCallback(direct_.get(), crit_.get())),
       enabled_(false),
       initialized_(false) {

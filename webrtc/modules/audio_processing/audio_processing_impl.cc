@@ -177,6 +177,7 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
 #else
       use_new_agc_(config.Get<ExperimentalAgc>().enabled),
 #endif
+      agc_startup_min_volume_(config.Get<ExperimentalAgc>().startup_min_volume),
       transient_suppressor_enabled_(config.Get<ExperimentalNs>().enabled),
       beamformer_enabled_(config.Get<Beamforming>().enabled),
       beamformer_(beamformer),
@@ -285,15 +286,9 @@ int AudioProcessingImpl::InitializeLocked() {
     }
   }
 
-  int err = InitializeExperimentalAgc();
-  if (err != kNoError) {
-    return err;
-  }
+  InitializeExperimentalAgc();
 
-  err = InitializeTransient();
-  if (err != kNoError) {
-    return err;
-  }
+  InitializeTransient();
 
   InitializeBeamformer();
 
@@ -959,19 +954,19 @@ bool AudioProcessingImpl::analysis_needed(bool is_data_processed) const {
   return false;
 }
 
-int AudioProcessingImpl::InitializeExperimentalAgc() {
+void AudioProcessingImpl::InitializeExperimentalAgc() {
   if (use_new_agc_) {
     if (!agc_manager_.get()) {
-      agc_manager_.reset(
-          new AgcManagerDirect(gain_control_, gain_control_for_new_agc_.get()));
+      agc_manager_.reset(new AgcManagerDirect(gain_control_,
+                                              gain_control_for_new_agc_.get(),
+                                              agc_startup_min_volume_));
     }
     agc_manager_->Initialize();
     agc_manager_->SetCaptureMuted(output_will_be_muted_);
   }
-  return kNoError;
 }
 
-int AudioProcessingImpl::InitializeTransient() {
+void AudioProcessingImpl::InitializeTransient() {
   if (transient_suppressor_enabled_) {
     if (!transient_suppressor_.get()) {
       transient_suppressor_.reset(new TransientSuppressor());
@@ -980,7 +975,6 @@ int AudioProcessingImpl::InitializeTransient() {
                                       split_rate_,
                                       fwd_out_format_.num_channels());
   }
-  return kNoError;
 }
 
 void AudioProcessingImpl::InitializeBeamformer() {

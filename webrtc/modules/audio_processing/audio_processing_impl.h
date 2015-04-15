@@ -170,8 +170,8 @@ class AudioProcessingImpl : public AudioProcessing {
   bool output_copy_needed(bool is_data_processed) const;
   bool synthesis_needed(bool is_data_processed) const;
   bool analysis_needed(bool is_data_processed) const;
-  int InitializeExperimentalAgc() EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  int InitializeTransient() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void InitializeExperimentalAgc() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void InitializeTransient() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void InitializeBeamformer() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   EchoCancellationImpl* echo_cancellation_;
@@ -217,6 +217,7 @@ class AudioProcessingImpl : public AudioProcessing {
   // Only set through the constructor's Config parameter.
   const bool use_new_agc_;
   rtc::scoped_ptr<AgcManagerDirect> agc_manager_ GUARDED_BY(crit_);
+  int agc_startup_min_volume_;
 
   bool transient_suppressor_enabled_;
   rtc::scoped_ptr<TransientSuppressor> transient_suppressor_;
