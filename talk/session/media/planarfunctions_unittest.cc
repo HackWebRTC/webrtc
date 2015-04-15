@@ -30,7 +30,6 @@
 #include "libyuv/convert.h"
 #include "libyuv/convert_from.h"
 #include "libyuv/convert_from_argb.h"
-#include "libyuv/format_conversion.h"
 #include "libyuv/mjpeg_decoder.h"
 #include "libyuv/planar_functions.h"
 #include "talk/media/base/testutils.h"
@@ -251,57 +250,6 @@ class PlanarFunctionsTest : public testing::TestWithParam<int> {
           }
         }
         break;
-      }
-    }
-    return image_pointer;
-  }
-  // Generate a Red-Green-Blue inter-weaving chessboard-like
-  // Q420 testing image.
-  // The pattern looks like c0 c1 c2 c3 ...
-  //                        c1 c2 c3 c4 ...
-  //                        c2 c3 c4 c5 ...
-  //                        ...............
-  // The size of each chrome block is (block_size) x (block_size).
-  uint8* CreateFakeQ420TestingImage(int height, int width, int block_size,
-      uint8* &y_pointer, uint8* &yuy2_pointer) {
-    if (height <= 0 || width <= 0 || block_size <= 0) { return NULL; }
-    // Regularize the width of the output to be even.
-    int awidth = (width + 1) & ~1;
-
-    uint8* image_pointer = new uint8[(height / 2) * awidth * 2 +
-        ((height + 1) / 2) * width + kAlignment];
-    y_pointer = ALIGNP(image_pointer, kAlignment);
-    yuy2_pointer = y_pointer + ((height + 1) / 2) * width;
-    uint8* current_yuy2_pointer = yuy2_pointer;
-    uint8* current_y_pointer = y_pointer;
-    for (int j = 0; j < height; ++j) {
-      if (j % 2 == 0) {
-        for (int i = 0; i < width; ++i) {
-          int color = ((i / block_size) + (j / block_size)) %
-              kTestingColorNum;
-          *(current_y_pointer++) = testing_color_y_[color];
-        }
-      } else {
-        for (int i = 0; i < awidth; i += 2, current_yuy2_pointer += 4) {
-          int color1 = ((i / block_size) + (j / block_size)) %
-              kTestingColorNum;
-          int color2 = (((i + 1) / block_size) + (j / block_size)) %
-              kTestingColorNum;
-          current_yuy2_pointer[0] = testing_color_y_[color1];
-          if (i < width) {
-            current_yuy2_pointer[1] = static_cast<uint8>(
-                (static_cast<uint32>(testing_color_u_[color1]) +
-                static_cast<uint32>(testing_color_u_[color2])) / 2);
-            current_yuy2_pointer[2] = testing_color_y_[color2];
-            current_yuy2_pointer[3] = static_cast<uint8>(
-                (static_cast<uint32>(testing_color_v_[color1]) +
-                static_cast<uint32>(testing_color_v_[color2])) / 2);
-          } else {
-            current_yuy2_pointer[1] = testing_color_u_[color1];
-            current_yuy2_pointer[2] = 0;
-            current_yuy2_pointer[3] = testing_color_v_[color1];
-          }
-        }
       }
     }
     return image_pointer;
@@ -596,53 +544,6 @@ TEST_F(PlanarFunctionsTest, I422ToI420) {
                      kWidth, kHeight);
   }
 
-  // Compare the output frame with what is expected; expect exactly the same.
-  // Note: MSE should be set to a larger threshold if an odd block width
-  // is used, since the conversion will be lossy.
-  EXPECT_TRUE(IsMemoryEqual(y_output_pointer, y_expected_pointer,
-      I420_SIZE(kHeight, kWidth), 1.e-6));
-
-  if (dump_) { DumpYuvImage(y_output_pointer, kWidth, kHeight); }
-}
-
-TEST_P(PlanarFunctionsTest, Q420ToI420) {
-  // Get the unalignment offset
-  int unalignment = GetParam();
-  uint8 *y_pointer = NULL, *yuy2_pointer = NULL;
-  int y_pitch = kWidth;
-  int yuy2_pitch = 2 * ((kWidth + 1) & ~1);
-  int u_pitch = (kWidth + 1) >> 1;
-  int v_pitch = (kWidth + 1) >> 1;
-  int y_size = kHeight * kWidth;
-  int uv_size = ((kHeight + 1) >> 1) * ((kWidth + 1) >> 1);
-  int block_size = 2;
-  // Generate a fake input image.
-  rtc::scoped_ptr<uint8[]> yuv_input(
-      CreateFakeQ420TestingImage(kHeight, kWidth, block_size,
-                                 y_pointer, yuy2_pointer));
-  // Allocate space for the output image.
-  rtc::scoped_ptr<uint8[]> yuv_output(
-      new uint8[I420_SIZE(kHeight, kWidth) + kAlignment + unalignment]);
-  uint8 *y_output_pointer = ALIGNP(yuv_output.get(), kAlignment) +
-      unalignment;
-  uint8 *u_output_pointer = y_output_pointer + y_size;
-  uint8 *v_output_pointer = u_output_pointer + uv_size;
-  // Generate the expected output.
-  uint8 *y_expected_pointer = NULL, *u_expected_pointer = NULL,
-        *v_expected_pointer = NULL;
-  rtc::scoped_ptr<uint8[]> yuv_output_expected(
-      CreateFakeYuvTestingImage(kHeight, kWidth, block_size,
-          libyuv::kJpegYuv420,
-          y_expected_pointer, u_expected_pointer, v_expected_pointer));
-
-  for (int i = 0; i < repeat_; ++i) {
-  libyuv::Q420ToI420(y_pointer, y_pitch,
-                     yuy2_pointer, yuy2_pitch,
-                     y_output_pointer, y_pitch,
-                     u_output_pointer, u_pitch,
-                     v_output_pointer, v_pitch,
-                     kWidth, kHeight);
-  }
   // Compare the output frame with what is expected; expect exactly the same.
   // Note: MSE should be set to a larger threshold if an odd block width
   // is used, since the conversion will be lossy.

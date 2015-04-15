@@ -33,7 +33,6 @@
 
 #include "libyuv/convert.h"
 #include "libyuv/convert_from.h"
-#include "libyuv/format_conversion.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 #include "talk/media/base/testutils.h"
@@ -630,15 +629,6 @@ class VideoFrameTest : public testing::Test {
                           kWidth, kHeight, &frame));
   }
 
-  void ConstructQ420() {
-    T frame;
-    rtc::scoped_ptr<rtc::MemoryStream> ms(
-        CreateYuvSample(kWidth, kHeight, 12));
-    ASSERT_TRUE(ms.get() != NULL);
-    EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_Q420,
-                          kWidth, kHeight, &frame));
-  }
-
   void ConstructNV21() {
     T frame;
     rtc::scoped_ptr<rtc::MemoryStream> ms(
@@ -788,38 +778,6 @@ class VideoFrameTest : public testing::Test {
                           kWidth, kHeight, &frame2));
     EXPECT_TRUE(IsEqual(frame1, frame2, 20));
   }
-
-  // Macro to help test different Bayer formats.
-  // Error threshold of 60 allows for Bayer format subsampling.
-  // TODO(fbarchard): Refactor this test to go from Bayer to I420 and
-  // back to bayer, which would be less lossy.
-  #define TEST_BYR(NAME, BAYER)                                                \
-  void NAME() {                                                                \
-    size_t bayer_size = kWidth * kHeight;                                      \
-    rtc::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
-        bayer_size + kAlignment]);                                             \
-    uint8* bayer = ALIGNP(bayerbuf.get(), kAlignment);                         \
-    T frame1, frame2;                                                          \
-    rtc::scoped_ptr<rtc::MemoryStream> ms(                         \
-        CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));               \
-    ASSERT_TRUE(ms.get() != NULL);                                             \
-    libyuv::ARGBToBayer##BAYER(reinterpret_cast<uint8* >(ms->GetBuffer()),     \
-                               kWidth * 4,                                     \
-                               bayer, kWidth,                                  \
-                               kWidth, kHeight);                               \
-    EXPECT_TRUE(LoadFrame(bayer, bayer_size, cricket::FOURCC_##BAYER,          \
-                          kWidth, kHeight,  &frame1));                         \
-    EXPECT_TRUE(ConvertRgb(ms.get(), cricket::FOURCC_ARGB, kWidth, kHeight,    \
-                           &frame2));                                          \
-    EXPECT_TRUE(IsEqual(frame1, frame2, 60));                                  \
-  }
-
-  // Test constructing an image from Bayer formats.
-  TEST_BYR(ConstructBayerGRBG, GRBG)
-  TEST_BYR(ConstructBayerGBRG, GBRG)
-  TEST_BYR(ConstructBayerBGGR, BGGR)
-  TEST_BYR(ConstructBayerRGGB, RGGB)
-
 
 // Macro to help test different rotations
 #define TEST_MIRROR(FOURCC, BPP)                                               \
@@ -1547,22 +1505,6 @@ class VideoFrameTest : public testing::Test {
     ConvertToBuffer(2, 0, false, TO, kError,
                     cricket::FOURCC_R444, libyuv::ARGB4444ToI420);
   }
-  void ConvertToBayerBGGRBuffer() {
-    ConvertToBuffer(1, 0, false, TO, kErrorHigh,
-                    cricket::FOURCC_BGGR, libyuv::BayerBGGRToI420);
-  }
-  void ConvertToBayerGBRGBuffer() {
-    ConvertToBuffer(1, 0, false, TO, kErrorHigh,
-                    cricket::FOURCC_GBRG, libyuv::BayerGBRGToI420);
-  }
-  void ConvertToBayerGRBGBuffer() {
-    ConvertToBuffer(1, 0, false, TO, kErrorHigh,
-                    cricket::FOURCC_GRBG, libyuv::BayerGRBGToI420);
-  }
-  void ConvertToBayerRGGBBuffer() {
-    ConvertToBuffer(1, 0, false, TO, kErrorHigh,
-                    cricket::FOURCC_RGGB, libyuv::BayerRGGBToI420);
-  }
   void ConvertToI400Buffer() {
     ConvertToBuffer(1, 0, false, TO, 128,
                     cricket::FOURCC_I400, libyuv::I400ToI420);
@@ -1608,22 +1550,6 @@ class VideoFrameTest : public testing::Test {
   void ConvertToARGB4444BufferStride() {
     ConvertToBuffer(2, kOddStride, false, TO, kError,
                     cricket::FOURCC_R444, libyuv::ARGB4444ToI420);
-  }
-  void ConvertToBayerBGGRBufferStride() {
-    ConvertToBuffer(1, kOddStride, false, TO, kErrorHigh,
-                    cricket::FOURCC_BGGR, libyuv::BayerBGGRToI420);
-  }
-  void ConvertToBayerGBRGBufferStride() {
-    ConvertToBuffer(1, kOddStride, false, TO, kErrorHigh,
-                    cricket::FOURCC_GBRG, libyuv::BayerGBRGToI420);
-  }
-  void ConvertToBayerGRBGBufferStride() {
-    ConvertToBuffer(1, kOddStride, false, TO, kErrorHigh,
-                    cricket::FOURCC_GRBG, libyuv::BayerGRBGToI420);
-  }
-  void ConvertToBayerRGGBBufferStride() {
-    ConvertToBuffer(1, kOddStride, false, TO, kErrorHigh,
-                    cricket::FOURCC_RGGB, libyuv::BayerRGGBToI420);
   }
   void ConvertToI400BufferStride() {
     ConvertToBuffer(1, kOddStride, false, TO, 128,
@@ -1671,22 +1597,6 @@ class VideoFrameTest : public testing::Test {
     ConvertToBuffer(2, 0, true, TO, kError,
                     cricket::FOURCC_R444, libyuv::ARGB4444ToI420);
   }
-  void ConvertToBayerBGGRBufferInverted() {
-    ConvertToBuffer(1, 0, true, TO, kErrorHigh,
-                    cricket::FOURCC_BGGR, libyuv::BayerBGGRToI420);
-  }
-  void ConvertToBayerGBRGBufferInverted() {
-    ConvertToBuffer(1, 0, true, TO, kErrorHigh,
-                    cricket::FOURCC_GBRG, libyuv::BayerGBRGToI420);
-  }
-  void ConvertToBayerGRBGBufferInverted() {
-    ConvertToBuffer(1, 0, true, TO, kErrorHigh,
-                    cricket::FOURCC_GRBG, libyuv::BayerGRBGToI420);
-  }
-  void ConvertToBayerRGGBBufferInverted() {
-    ConvertToBuffer(1, 0, true, TO, kErrorHigh,
-                    cricket::FOURCC_RGGB, libyuv::BayerRGGBToI420);
-  }
   void ConvertToI400BufferInverted() {
     ConvertToBuffer(1, 0, true, TO, 128,
                     cricket::FOURCC_I400, libyuv::I400ToI420);
@@ -1732,22 +1642,6 @@ class VideoFrameTest : public testing::Test {
   void ConvertFromARGB4444Buffer() {
     ConvertToBuffer(2, 0, false, FROM, kError,
                     cricket::FOURCC_R444, libyuv::ARGB4444ToI420);
-  }
-  void ConvertFromBayerBGGRBuffer() {
-    ConvertToBuffer(1, 0, false, FROM, kErrorHigh,
-                    cricket::FOURCC_BGGR, libyuv::BayerBGGRToI420);
-  }
-  void ConvertFromBayerGBRGBuffer() {
-    ConvertToBuffer(1, 0, false, FROM, kErrorHigh,
-                    cricket::FOURCC_GBRG, libyuv::BayerGBRGToI420);
-  }
-  void ConvertFromBayerGRBGBuffer() {
-    ConvertToBuffer(1, 0, false, FROM, kErrorHigh,
-                    cricket::FOURCC_GRBG, libyuv::BayerGRBGToI420);
-  }
-  void ConvertFromBayerRGGBBuffer() {
-    ConvertToBuffer(1, 0, false, FROM, kErrorHigh,
-                    cricket::FOURCC_RGGB, libyuv::BayerRGGBToI420);
   }
   void ConvertFromI400Buffer() {
     ConvertToBuffer(1, 0, false, FROM, 128,
@@ -1795,22 +1689,6 @@ class VideoFrameTest : public testing::Test {
     ConvertToBuffer(2, kOddStride, false, FROM, kError,
                     cricket::FOURCC_R444, libyuv::ARGB4444ToI420);
   }
-  void ConvertFromBayerBGGRBufferStride() {
-    ConvertToBuffer(1, kOddStride, false, FROM, kErrorHigh,
-                    cricket::FOURCC_BGGR, libyuv::BayerBGGRToI420);
-  }
-  void ConvertFromBayerGBRGBufferStride() {
-    ConvertToBuffer(1, kOddStride, false, FROM, kErrorHigh,
-                    cricket::FOURCC_GBRG, libyuv::BayerGBRGToI420);
-  }
-  void ConvertFromBayerGRBGBufferStride() {
-    ConvertToBuffer(1, kOddStride, false, FROM, kErrorHigh,
-                    cricket::FOURCC_GRBG, libyuv::BayerGRBGToI420);
-  }
-  void ConvertFromBayerRGGBBufferStride() {
-    ConvertToBuffer(1, kOddStride, false, FROM, kErrorHigh,
-                    cricket::FOURCC_RGGB, libyuv::BayerRGGBToI420);
-  }
   void ConvertFromI400BufferStride() {
     ConvertToBuffer(1, kOddStride, false, FROM, 128,
                     cricket::FOURCC_I400, libyuv::I400ToI420);
@@ -1857,22 +1735,6 @@ class VideoFrameTest : public testing::Test {
     ConvertToBuffer(2, 0, true, FROM, kError,
                     cricket::FOURCC_R444, libyuv::ARGB4444ToI420);
   }
-  void ConvertFromBayerBGGRBufferInverted() {
-    ConvertToBuffer(1, 0, true, FROM, kErrorHigh,
-                    cricket::FOURCC_BGGR, libyuv::BayerBGGRToI420);
-  }
-  void ConvertFromBayerGBRGBufferInverted() {
-    ConvertToBuffer(1, 0, true, FROM, kErrorHigh,
-                    cricket::FOURCC_GBRG, libyuv::BayerGBRGToI420);
-  }
-  void ConvertFromBayerGRBGBufferInverted() {
-    ConvertToBuffer(1, 0, true, FROM, kErrorHigh,
-                    cricket::FOURCC_GRBG, libyuv::BayerGRBGToI420);
-  }
-  void ConvertFromBayerRGGBBufferInverted() {
-    ConvertToBuffer(1, 0, true, FROM, kErrorHigh,
-                    cricket::FOURCC_RGGB, libyuv::BayerRGGBToI420);
-  }
   void ConvertFromI400BufferInverted() {
     ConvertToBuffer(1, 0, true, FROM, 128,
                     cricket::FOURCC_I400, libyuv::I400ToI420);
@@ -1909,110 +1771,6 @@ class VideoFrameTest : public testing::Test {
                             webrtc::kVideoRotation_0));
     EXPECT_TRUE(IsEqual(frame1, frame2, 1));
   }
-
-  #define TEST_TOBYR(NAME, BAYER)                                              \
-  void NAME() {                                                                \
-    size_t bayer_size = kWidth * kHeight;                                      \
-    rtc::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
-        bayer_size + kAlignment]);                                             \
-    uint8* bayer = ALIGNP(bayerbuf.get(), kAlignment);                         \
-    T frame;                                                                   \
-    rtc::scoped_ptr<rtc::MemoryStream> ms(                         \
-        CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));               \
-    ASSERT_TRUE(ms.get() != NULL);                                             \
-    for (int i = 0; i < repeat_; ++i) {                                        \
-      libyuv::ARGBToBayer##BAYER(reinterpret_cast<uint8*>(ms->GetBuffer()),    \
-                                 kWidth * 4,                                   \
-                                 bayer, kWidth,                                \
-                                 kWidth, kHeight);                             \
-    }                                                                          \
-    rtc::scoped_ptr<rtc::MemoryStream> ms2(                        \
-        CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));               \
-    size_t data_size;                                                          \
-    bool ret = ms2->GetSize(&data_size);                                       \
-    EXPECT_TRUE(ret);                                                          \
-    libyuv::Bayer##BAYER##ToARGB(bayer, kWidth,                                \
-                                 reinterpret_cast<uint8*>(ms2->GetBuffer()),   \
-                                 kWidth * 4,                                   \
-                                 kWidth, kHeight);                             \
-    EXPECT_TRUE(IsPlaneEqual("argb",                                           \
-        reinterpret_cast<uint8*>(ms->GetBuffer()), kWidth * 4,                 \
-        reinterpret_cast<uint8*>(ms2->GetBuffer()), kWidth * 4,                \
-        kWidth * 4, kHeight, 240));                                            \
-  }                                                                            \
-  void NAME##Unaligned() {                                                     \
-    size_t bayer_size = kWidth * kHeight;                                      \
-    rtc::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
-        bayer_size + 1 + kAlignment]);                                         \
-    uint8* bayer = ALIGNP(bayerbuf.get(), kAlignment) + 1;                     \
-    T frame;                                                                   \
-    rtc::scoped_ptr<rtc::MemoryStream> ms(                         \
-        CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));               \
-    ASSERT_TRUE(ms.get() != NULL);                                             \
-    for (int i = 0; i < repeat_; ++i) {                                        \
-      libyuv::ARGBToBayer##BAYER(reinterpret_cast<uint8*>(ms->GetBuffer()),    \
-                                 kWidth * 4,                                   \
-                                 bayer, kWidth,                                \
-                                 kWidth, kHeight);                             \
-    }                                                                          \
-    rtc::scoped_ptr<rtc::MemoryStream> ms2(                        \
-        CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));               \
-    size_t data_size;                                                          \
-    bool ret = ms2->GetSize(&data_size);                                       \
-    EXPECT_TRUE(ret);                                                          \
-    libyuv::Bayer##BAYER##ToARGB(bayer, kWidth,                                \
-                           reinterpret_cast<uint8*>(ms2->GetBuffer()),         \
-                           kWidth * 4,                                         \
-                           kWidth, kHeight);                                   \
-    EXPECT_TRUE(IsPlaneEqual("argb",                                           \
-        reinterpret_cast<uint8*>(ms->GetBuffer()), kWidth * 4,                 \
-        reinterpret_cast<uint8*>(ms2->GetBuffer()), kWidth * 4,                \
-        kWidth * 4, kHeight, 240));                                            \
-  }
-
-  // Tests ARGB to Bayer formats.
-  TEST_TOBYR(ConvertARGBToBayerGRBG, GRBG)
-  TEST_TOBYR(ConvertARGBToBayerGBRG, GBRG)
-  TEST_TOBYR(ConvertARGBToBayerBGGR, BGGR)
-  TEST_TOBYR(ConvertARGBToBayerRGGB, RGGB)
-
-  #define TEST_BYRTORGB(NAME, BAYER)                                           \
-  void NAME() {                                                                \
-    size_t bayer_size = kWidth * kHeight;                                      \
-    rtc::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
-        bayer_size + kAlignment]);                                             \
-    uint8* bayer1 = ALIGNP(bayerbuf.get(), kAlignment);                        \
-    for (int i = 0; i < kWidth * kHeight; ++i) {                               \
-      bayer1[i] = static_cast<uint8>(i * 33u + 183u);                          \
-    }                                                                          \
-    T frame;                                                                   \
-    rtc::scoped_ptr<rtc::MemoryStream> ms(                         \
-        CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));               \
-    ASSERT_TRUE(ms.get() != NULL);                                             \
-    for (int i = 0; i < repeat_; ++i) {                                        \
-      libyuv::Bayer##BAYER##ToARGB(bayer1, kWidth,                             \
-                             reinterpret_cast<uint8*>(ms->GetBuffer()),        \
-                             kWidth * 4,                                       \
-                             kWidth, kHeight);                                 \
-    }                                                                          \
-    rtc::scoped_ptr<uint8[]> bayer2buf(new uint8[                        \
-        bayer_size + kAlignment]);                                             \
-    uint8* bayer2 = ALIGNP(bayer2buf.get(), kAlignment);                       \
-    libyuv::ARGBToBayer##BAYER(reinterpret_cast<uint8*>(ms->GetBuffer()),      \
-                           kWidth * 4,                                         \
-                           bayer2, kWidth,                                     \
-                           kWidth, kHeight);                                   \
-    EXPECT_TRUE(IsPlaneEqual("bayer",                                          \
-        bayer1, kWidth,                                                        \
-        bayer2, kWidth,                                                        \
-        kWidth, kHeight, 0));                                                  \
-  }
-
-  // Tests Bayer formats to ARGB.
-  TEST_BYRTORGB(ConvertBayerGRBGToARGB, GRBG)
-  TEST_BYRTORGB(ConvertBayerGBRGToARGB, GBRG)
-  TEST_BYRTORGB(ConvertBayerBGGRToARGB, BGGR)
-  TEST_BYRTORGB(ConvertBayerRGGBToARGB, RGGB)
 
   ///////////////////
   // General tests //
