@@ -210,7 +210,10 @@ class ViEEncoder
   BitrateAllocator* const bitrate_allocator_;
   BitrateController* const bitrate_controller_;
 
-  int64_t time_of_last_incoming_frame_ms_ GUARDED_BY(data_cs_);
+  // The time we last received an input frame or encoded frame. This is used to
+  // track when video is stopped long enough that we also want to stop sending
+  // padding.
+  int64_t time_of_last_frame_activity_ms_ GUARDED_BY(data_cs_);
   bool send_padding_ GUARDED_BY(data_cs_);
   int min_transmit_bitrate_kbps_ GUARDED_BY(data_cs_);
   uint32_t last_observed_bitrate_bps_ GUARDED_BY(data_cs_);

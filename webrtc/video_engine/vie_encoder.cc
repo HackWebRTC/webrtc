@@ -122,7 +122,7 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
       pacer_(pacer),
       bitrate_allocator_(bitrate_allocator),
       bitrate_controller_(bitrate_controller),
-      time_of_last_incoming_frame_ms_(0),
+      time_of_last_frame_activity_ms_(0),
       send_padding_(false),
       min_transmit_bitrate_kbps_(0),
       last_observed_bitrate_bps_(0),
@@ -398,7 +398,7 @@ int32_t ViEEncoder::ScaleInputImage(bool enable) {
 }
 
 int ViEEncoder::GetPaddingNeededBps(int bitrate_bps) const {
-  int64_t time_of_last_incoming_frame_ms;
+  int64_t time_of_last_frame_activity_ms;
   int min_transmit_bitrate_bps;
   {
     CriticalSectionScoped cs(data_cs_.get());
@@ -406,7 +406,7 @@ int ViEEncoder::GetPaddingNeededBps(int bitrate_bps) const {
         send_padding_ || video_suspended_ || min_transmit_bitrate_kbps_ > 0;
     if (!send_padding)
       return 0;
-    time_of_last_incoming_frame_ms = time_of_last_incoming_frame_ms_;
+    time_of_last_frame_activity_ms = time_of_last_frame_activity_ms_;
     min_transmit_bitrate_bps = 1000 * min_transmit_bitrate_kbps_;
   }
 
@@ -441,9 +441,9 @@ int ViEEncoder::GetPaddingNeededBps(int bitrate_bps) const {
     pad_up_to_bitrate_bps = 0;
 
   // The amount of padding should decay to zero if no frames are being
-  // captured unless a min-transmit bitrate is used.
+  // captured/encoded unless a min-transmit bitrate is used.
   int64_t now_ms = TickTime::MillisecondTimestamp();
-  if (now_ms - time_of_last_incoming_frame_ms > kStopPaddingThresholdMs)
+  if (now_ms - time_of_last_frame_activity_ms > kStopPaddingThresholdMs)
     pad_up_to_bitrate_bps = 0;
 
   // Pad up to min bitrate.
@@ -508,7 +508,7 @@ void ViEEncoder::DeliverFrame(int id,
   }
   {
     CriticalSectionScoped cs(data_cs_.get());
-    time_of_last_incoming_frame_ms_ = TickTime::MillisecondTimestamp();
+    time_of_last_frame_activity_ms_ = TickTime::MillisecondTimestamp();
     if (EncoderPaused()) {
       TraceFrameDropStart();
       return;
@@ -711,6 +711,11 @@ int32_t ViEEncoder::SendData(
     const webrtc::RTPFragmentationHeader& fragmentation_header,
     const RTPVideoHeader* rtp_video_hdr) {
   DCHECK(send_payload_router_ != NULL);
+
+  {
+    CriticalSectionScoped cs(data_cs_.get());
+    time_of_last_frame_activity_ms_ = TickTime::MillisecondTimestamp();
+  }
 
   {
     CriticalSectionScoped cs(callback_cs_.get());
