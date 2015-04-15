@@ -5,6 +5,12 @@
     },
     'webrtc_root%': '<(webrtc_root)',
     'build_with_chromium': 0,
+    'conditions': [
+      ['OS=="ios"', {
+        # Default to using BoringSSL on iOS.
+        'use_openssl%': 1,
+      }],
+    ],
   },
   'target_defaults': {
     'target_conditions': [
