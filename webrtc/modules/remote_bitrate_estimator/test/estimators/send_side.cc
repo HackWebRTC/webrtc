@@ -59,7 +59,8 @@ void FullBweSender::GiveFeedback(const FeedbackPacket& feedback) {
   // Assuming no reordering for now.
   if (expected_packets <= 0)
     return;
-  int lost_packets = expected_packets - fb.packet_feedback_vector().size();
+  int lost_packets =
+      expected_packets - static_cast<int>(fb.packet_feedback_vector().size());
   report_block_.fractionLost = (lost_packets << 8) / expected_packets;
   report_block_.cumulativeLost += lost_packets;
   ReportBlockList report_blocks;

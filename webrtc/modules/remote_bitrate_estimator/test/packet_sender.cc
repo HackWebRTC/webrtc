@@ -285,7 +285,7 @@ void TcpSender::SendPackets(Packets* in_out) {
   int packets_to_send = std::max(cwnd - in_flight_, 0);
   if (packets_to_send > 0) {
     Packets generated = GeneratePackets(packets_to_send);
-    in_flight_ += generated.size();
+    in_flight_ += static_cast<int>(generated.size());
     in_out->merge(generated, DereferencingComparator<Packet>);
   }
 }
@@ -295,7 +295,7 @@ void TcpSender::UpdateCongestionControl(const FeedbackPacket* fb) {
   DCHECK(!tcp_fb->acked_packets().empty());
   ack_received_ = true;
 
-  in_flight_ -= tcp_fb->acked_packets().size();
+  in_flight_ -= static_cast<int>(tcp_fb->acked_packets().size());
   DCHECK_GE(in_flight_, 0);
 
   if (LossEvent(tcp_fb->acked_packets())) {

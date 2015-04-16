@@ -285,7 +285,8 @@ void RateCounterFilter::Plot(int64_t timestamp_ms) {
 void RateCounterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
   for (const Packet* packet : *in_out) {
-    rate_counter_->UpdateRates(packet->send_time_us(), packet->payload_size());
+    rate_counter_->UpdateRates(packet->send_time_us(),
+                               static_cast<int>(packet->payload_size()));
   }
   packets_per_second_stats_.Push(rate_counter_->packets_per_second());
   kbps_stats_.Push(rate_counter_->bits_per_second() / 1000.0);
