@@ -9,6 +9,17 @@
       ['OS=="ios"', {
         # Default to using BoringSSL on iOS.
         'use_openssl%': 1,
+
+        # Set target_subarch for if not already set. This is needed because the
+        # Chromium iOS toolchain relies on target_subarch being set.
+        'conditions': [
+          ['target_arch=="arm" or target_arch=="ia32"', {
+            'target_subarch%': 'arm32',
+          }],
+          ['target_arch=="arm64" or target_arch=="x64"', {
+            'target_subarch%': 'arm64',
+          }],
+        ],
       }],
     ],
   },
