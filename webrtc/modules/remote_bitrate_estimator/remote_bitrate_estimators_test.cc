@@ -36,14 +36,14 @@ INSTANTIATE_TEST_CASE_P(VideoSendersTest,
 
 TEST_P(DefaultBweTest, UnlimitedSpeed) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   RunFor(10 * 60 * 1000);
 }
 
 TEST_P(DefaultBweTest, SteadyLoss) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   LossFilter loss(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   loss.SetLoss(20.0);
@@ -52,7 +52,7 @@ TEST_P(DefaultBweTest, SteadyLoss) {
 
 TEST_P(DefaultBweTest, IncreasingLoss1) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   LossFilter loss(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   for (int i = 0; i < 76; ++i) {
@@ -63,7 +63,7 @@ TEST_P(DefaultBweTest, IncreasingLoss1) {
 
 TEST_P(DefaultBweTest, SteadyDelay) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   DelayFilter delay(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   delay.SetDelay(1000);
@@ -72,7 +72,7 @@ TEST_P(DefaultBweTest, SteadyDelay) {
 
 TEST_P(DefaultBweTest, IncreasingDelay1) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   DelayFilter delay(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   RunFor(10 * 60 * 1000);
@@ -85,7 +85,7 @@ TEST_P(DefaultBweTest, IncreasingDelay1) {
 
 TEST_P(DefaultBweTest, IncreasingDelay2) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   DelayFilter delay(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "");
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
@@ -100,7 +100,7 @@ TEST_P(DefaultBweTest, IncreasingDelay2) {
 
 TEST_P(DefaultBweTest, JumpyDelay1) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   DelayFilter delay(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   RunFor(10 * 60 * 1000);
@@ -116,7 +116,7 @@ TEST_P(DefaultBweTest, JumpyDelay1) {
 
 TEST_P(DefaultBweTest, SteadyJitter) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   JitterFilter jitter(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "");
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
@@ -126,7 +126,7 @@ TEST_P(DefaultBweTest, SteadyJitter) {
 
 TEST_P(DefaultBweTest, IncreasingJitter1) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   JitterFilter jitter(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   for (int i = 0; i < 2 * 60 * 2; ++i) {
@@ -138,7 +138,7 @@ TEST_P(DefaultBweTest, IncreasingJitter1) {
 
 TEST_P(DefaultBweTest, IncreasingJitter2) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   JitterFilter jitter(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   RunFor(30 * 1000);
@@ -152,7 +152,7 @@ TEST_P(DefaultBweTest, IncreasingJitter2) {
 
 TEST_P(DefaultBweTest, SteadyReorder) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ReorderFilter reorder(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   reorder.SetReorder(20.0);
@@ -161,7 +161,7 @@ TEST_P(DefaultBweTest, SteadyReorder) {
 
 TEST_P(DefaultBweTest, IncreasingReorder1) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ReorderFilter reorder(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   for (int i = 0; i < 76; ++i) {
@@ -172,7 +172,7 @@ TEST_P(DefaultBweTest, IncreasingReorder1) {
 
 TEST_P(DefaultBweTest, SteadyChoke) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter choke(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   choke.SetCapacity(140);
@@ -181,7 +181,7 @@ TEST_P(DefaultBweTest, SteadyChoke) {
 
 TEST_P(DefaultBweTest, IncreasingChoke1) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter choke(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   for (int i = 1200; i >= 100; i -= 100) {
@@ -192,7 +192,7 @@ TEST_P(DefaultBweTest, IncreasingChoke1) {
 
 TEST_P(DefaultBweTest, IncreasingChoke2) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter choke(&uplink_, 0);
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
   RunFor(60 * 1000);
@@ -204,7 +204,7 @@ TEST_P(DefaultBweTest, IncreasingChoke2) {
 
 TEST_P(DefaultBweTest, Multi1) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   DelayFilter delay(&uplink_, 0);
   ChokeFilter choke(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "");
@@ -222,7 +222,7 @@ TEST_P(DefaultBweTest, Multi1) {
 
 TEST_P(DefaultBweTest, Multi2) {
   VideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter choke(&uplink_, 0);
   JitterFilter jitter(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "");
@@ -280,7 +280,7 @@ INSTANTIATE_TEST_CASE_P(VideoSendersTest,
 
 TEST_P(BweFeedbackTest, Choke1000kbps500kbps1000kbps) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter filter(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "receiver_input");
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
@@ -299,7 +299,7 @@ TEST_P(BweFeedbackTest, Choke1000kbps500kbps1000kbps) {
 
 TEST_P(BweFeedbackTest, Choke200kbps30kbps200kbps) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter filter(&uplink_, 0);
   RateCounterFilter counter(&uplink_, 0, "receiver_input");
   PacketReceiver receiver(&uplink_, 0, GetParam(), false, false);
@@ -319,7 +319,7 @@ TEST_P(BweFeedbackTest, Choke200kbps30kbps200kbps) {
 
 TEST_P(BweFeedbackTest, Verizon4gDownlinkTest) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   RateCounterFilter counter1(&uplink_, 0, "sender_output");
   TraceBasedDeliveryFilter filter(&uplink_, 0, "link_capacity");
   RateCounterFilter counter2(&uplink_, 0, "receiver_input");
@@ -333,7 +333,7 @@ TEST_P(BweFeedbackTest, Verizon4gDownlinkTest) {
 // webrtc:3277
 TEST_P(BweFeedbackTest, DISABLED_GoogleWifiTrace3Mbps) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
-  PacketSender sender(&uplink_, &source, GetParam());
+  VideoSender sender(&uplink_, &source, GetParam());
   RateCounterFilter counter1(&uplink_, 0, "sender_output");
   TraceBasedDeliveryFilter filter(&uplink_, 0, "link_capacity");
   filter.SetMaxDelay(500);

@@ -241,6 +241,8 @@
             'remote_bitrate_estimator/test/estimators/remb.h',
             'remote_bitrate_estimator/test/estimators/send_side.cc',
             'remote_bitrate_estimator/test/estimators/send_side.h',
+            'remote_bitrate_estimator/test/estimators/tcp.cc',
+            'remote_bitrate_estimator/test/estimators/tcp.h',
             'rtp_rtcp/source/mock/mock_rtp_payload_strategy.h',
             'rtp_rtcp/source/byte_io_unittest.cc',
             'rtp_rtcp/source/fec_receiver_unittest.cc',

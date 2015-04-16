@@ -151,13 +151,22 @@ MediaPacket::MediaPacket() {
 MediaPacket::MediaPacket(int flow_id,
                          int64_t send_time_us,
                          size_t payload_size,
+                         uint16_t sequence_number)
+    : Packet(flow_id, send_time_us, payload_size) {
+  header_ = RTPHeader();
+  header_.sequenceNumber = sequence_number;
+}
+
+MediaPacket::MediaPacket(int flow_id,
+                         int64_t send_time_us,
+                         size_t payload_size,
                          const RTPHeader& header)
     : Packet(flow_id, send_time_us, payload_size), header_(header) {
 }
 
 MediaPacket::MediaPacket(int64_t send_time_us, uint32_t sequence_number)
     : Packet(0, send_time_us, 0) {
-  memset(&header_, 0, sizeof(header_));
+  header_ = RTPHeader();
   header_.sequenceNumber = sequence_number;
 }
 
@@ -636,6 +645,9 @@ uint32_t VideoSource::NextPacketSize(uint32_t frame_size,
 
 void VideoSource::RunFor(int64_t time_ms, Packets* in_out) {
   assert(in_out);
+  std::stringstream ss;
+  ss << "SendEstimate_" << flow_id_ << "#1";
+  BWE_TEST_LOGGING_PLOT(0, ss.str(), now_ms_, bits_per_second_ / 1000);
   now_ms_ += time_ms;
   Packets new_packets;
   while (now_ms_ >= next_frame_ms_) {

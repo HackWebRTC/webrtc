@@ -16,6 +16,7 @@
 #include "webrtc/modules/remote_bitrate_estimator/test/estimators/nada.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/estimators/remb.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/estimators/send_side.h"
+#include "webrtc/modules/remote_bitrate_estimator/test/estimators/tcp.h"
 
 namespace webrtc {
 namespace testing {
@@ -58,6 +59,8 @@ BweSender* CreateBweSender(BandwidthEstimatorType estimator,
       return new FullBweSender(kbps, observer, clock);
     case kNadaEstimator:
       return new NadaBweSender(kbps, observer, clock);
+    case kTcpEstimator:
+      FALLTHROUGH();
     case kNullEstimator:
       return new NullBweSender();
   }
@@ -75,6 +78,8 @@ BweReceiver* CreateBweReceiver(BandwidthEstimatorType type,
       return new SendSideBweReceiver(flow_id);
     case kNadaEstimator:
       return new NadaBweReceiver(flow_id);
+    case kTcpEstimator:
+      return new TcpBweReceiver(flow_id);
     case kNullEstimator:
       return new BweReceiver(flow_id);
   }

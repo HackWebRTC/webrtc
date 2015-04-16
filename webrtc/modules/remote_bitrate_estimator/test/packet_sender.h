@@ -24,19 +24,27 @@ namespace webrtc {
 namespace testing {
 namespace bwe {
 
-class PacketSender : public PacketProcessor, public BitrateObserver {
+class PacketSender : public PacketProcessor {
  public:
-  PacketSender(PacketProcessorListener* listener,
-               VideoSource* source,
-               BandwidthEstimatorType estimator);
-  virtual ~PacketSender();
-
+  PacketSender(PacketProcessorListener* listener, int flow_id)
+      : PacketProcessor(listener, flow_id, kSender) {}
+  virtual ~PacketSender() {}
   // Call GiveFeedback() with the returned interval in milliseconds, provided
   // there is a new estimate available.
   // Note that changing the feedback interval affects the timing of when the
   // output of the estimators is sampled and therefore the baseline files may
   // have to be regenerated.
-  virtual int GetFeedbackIntervalMs() const;
+  virtual int GetFeedbackIntervalMs() const = 0;
+};
+
+class VideoSender : public PacketSender, public BitrateObserver {
+ public:
+  VideoSender(PacketProcessorListener* listener,
+              VideoSource* source,
+              BandwidthEstimatorType estimator);
+  virtual ~VideoSender();
+
+  int GetFeedbackIntervalMs() const override;
   void RunFor(int64_t time_ms, Packets* in_out) override;
 
   virtual VideoSource* source() const { return source_; }
@@ -50,8 +58,6 @@ class PacketSender : public PacketProcessor, public BitrateObserver {
   void ProcessFeedbackAndGeneratePackets(int64_t time_ms,
                                          std::list<FeedbackPacket*>* feedbacks,
                                          Packets* generated);
-  std::list<FeedbackPacket*> GetFeedbackPackets(Packets* in_out,
-                                                int64_t end_time_ms);
 
   SimulatedClock clock_;
   VideoSource* source_;
@@ -60,10 +66,10 @@ class PacketSender : public PacketProcessor, public BitrateObserver {
   std::list<Module*> modules_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(PacketSender);
+  DISALLOW_COPY_AND_ASSIGN(VideoSender);
 };
 
-class PacedVideoSender : public PacketSender, public PacedSender::Callback {
+class PacedVideoSender : public VideoSender, public PacedSender::Callback {
  public:
   PacedVideoSender(PacketProcessorListener* listener,
                    VideoSource* source,
@@ -94,6 +100,36 @@ class PacedVideoSender : public PacketSender, public PacedSender::Callback {
   Packets pacer_queue_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(PacedVideoSender);
+};
+
+class TcpSender : public PacketSender {
+ public:
+  TcpSender(PacketProcessorListener* listener, int flow_id)
+      : PacketSender(listener, flow_id),
+        now_ms_(0),
+        in_slow_start_(false),
+        cwnd_(1),
+        in_flight_(0),
+        ack_received_(false),
+        last_acked_seq_num_(0),
+        next_sequence_number_(0) {}
+
+  void RunFor(int64_t time_ms, Packets* in_out) override;
+  int GetFeedbackIntervalMs() const override { return 10; }
+
+ private:
+  void SendPackets(Packets* in_out);
+  void UpdateCongestionControl(const FeedbackPacket* fb);
+  bool LossEvent(const std::vector<uint16_t>& acked_packets);
+  Packets GeneratePackets(size_t num_packets);
+
+  int64_t now_ms_;
+  bool in_slow_start_;
+  float cwnd_;
+  int in_flight_;
+  bool ack_received_;
+  uint16_t last_acked_seq_num_;
+  uint16_t next_sequence_number_;
 };
 }  // namespace bwe
 }  // namespace testing

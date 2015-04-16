@@ -53,6 +53,10 @@ class MediaPacket : public Packet {
   MediaPacket(int flow_id,
               int64_t send_time_us,
               size_t payload_size,
+              uint16_t sequence_number);
+  MediaPacket(int flow_id,
+              int64_t send_time_us,
+              size_t payload_size,
               const RTPHeader& header);
   MediaPacket(int64_t send_time_us, uint32_t sequence_number);
   virtual ~MediaPacket() {}
@@ -133,6 +137,20 @@ class NadaFeedback : public FeedbackPacket {
  private:
   int64_t congestion_signal_;
   float derivative_;
+};
+
+class TcpFeedback : public FeedbackPacket {
+ public:
+  TcpFeedback(int flow_id,
+              int64_t send_time_us,
+              const std::vector<uint16_t>& acked_packets)
+      : FeedbackPacket(flow_id, send_time_us), acked_packets_(acked_packets) {}
+  virtual ~TcpFeedback() {}
+
+  const std::vector<uint16_t>& acked_packets() const { return acked_packets_; }
+
+ private:
+  const std::vector<uint16_t> acked_packets_;
 };
 
 typedef std::list<Packet*> Packets;

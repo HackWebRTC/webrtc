@@ -53,7 +53,8 @@ enum BandwidthEstimatorType {
   kNullEstimator,
   kNadaEstimator,
   kRembEstimator,
-  kFullSendSideEstimator
+  kFullSendSideEstimator,
+  kTcpEstimator
 };
 
 int64_t GetAbsSendTimeInMs(uint32_t abs_send_time);
