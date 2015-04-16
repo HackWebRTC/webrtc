@@ -241,8 +241,10 @@ class BweFeedbackTest
   BweFeedbackTest() : BweTest() {}
   virtual ~BweFeedbackTest() {}
 
-  void PrintResults(double max_throughput_kbps, Stats<double> throughput_kbps,
-                    Stats<double> delay_ms) {
+  void PrintResults(double max_throughput_kbps,
+                    Stats<double> throughput_kbps,
+                    Stats<double> delay_ms,
+                    std::vector<Stats<double>> flow_throughput_kbps) {
     double utilization = throughput_kbps.GetMean() / max_throughput_kbps;
     webrtc::test::PrintResult("BwePerformance",
                               GetTestName(),
@@ -264,6 +266,16 @@ class BweFeedbackTest
                               delay_ms.AsString(),
                               "ms",
                               false);
+    double fairness_index = 0.0;
+    double squared_bitrate_sum = 0.0;
+    for (Stats<double> flow : flow_throughput_kbps) {
+      squared_bitrate_sum += flow.GetMean() * flow.GetMean();
+      fairness_index += flow.GetMean();
+    }
+    fairness_index *= fairness_index;
+    fairness_index /= flow_throughput_kbps.size() * squared_bitrate_sum;
+    webrtc::test::PrintResult("BwePerformance", GetTestName(), "Fairness",
+                              fairness_index * 100, "%", false);
   }
 
  protected:
@@ -294,7 +306,8 @@ TEST_P(BweFeedbackTest, Choke1000kbps500kbps1000kbps) {
   filter.SetCapacity(kHighCapacityKbps);
   RunFor(60 * 1000);
   PrintResults((2 * kHighCapacityKbps + kLowCapacityKbps) / 3.0,
-               counter.GetBitrateStats(), filter.GetDelayStats());
+               counter.GetBitrateStats(), filter.GetDelayStats(),
+               std::vector<Stats<double>>());
 }
 
 TEST_P(BweFeedbackTest, Choke200kbps30kbps200kbps) {
@@ -314,7 +327,8 @@ TEST_P(BweFeedbackTest, Choke200kbps30kbps200kbps) {
   RunFor(60 * 1000);
 
   PrintResults((2 * kHighCapacityKbps + kLowCapacityKbps) / 3.0,
-               counter.GetBitrateStats(), filter.GetDelayStats());
+               counter.GetBitrateStats(), filter.GetDelayStats(),
+               std::vector<Stats<double>>());
 }
 
 TEST_P(BweFeedbackTest, Verizon4gDownlinkTest) {
@@ -327,7 +341,7 @@ TEST_P(BweFeedbackTest, Verizon4gDownlinkTest) {
   ASSERT_TRUE(filter.Init(test::ResourcePath("verizon4g-downlink", "rx")));
   RunFor(22 * 60 * 1000);
   PrintResults(filter.GetBitrateStats().GetMean(), counter2.GetBitrateStats(),
-               filter.GetDelayStats());
+               filter.GetDelayStats(), std::vector<Stats<double>>());
 }
 
 // webrtc:3277
@@ -342,7 +356,50 @@ TEST_P(BweFeedbackTest, DISABLED_GoogleWifiTrace3Mbps) {
   ASSERT_TRUE(filter.Init(test::ResourcePath("google-wifi-3mbps", "rx")));
   RunFor(300 * 1000);
   PrintResults(filter.GetBitrateStats().GetMean(), counter2.GetBitrateStats(),
-               filter.GetDelayStats());
+               filter.GetDelayStats(), std::vector<Stats<double>>());
+}
+
+TEST_P(BweFeedbackTest, PacedSelfFairnessTest) {
+  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+  const int kAllFlowIds[] = {0, 1, 2, 3};
+  const size_t kNumFlows = sizeof(kAllFlowIds) / sizeof(kAllFlowIds[0]);
+  rtc::scoped_ptr<VideoSource> sources[kNumFlows];
+  rtc::scoped_ptr<PacketSender> senders[kNumFlows];
+
+  for (size_t i = 0; i < kNumFlows; ++i) {
+    // Streams started woth ramdp, pffsets tp give them different advantage when
+    // competing for the bandwidth.
+    sources[i].reset(new AdaptiveVideoSource(kAllFlowIds[i], 30, 300, 0,
+                                             i * (rand() % 40000)));
+    senders[i].reset(
+        new PacedVideoSender(&uplink_, sources[i].get(), GetParam()));
+  }
+
+  ChokeFilter choke(&uplink_, CreateFlowIds(kAllFlowIds, kNumFlows));
+  choke.SetCapacity(3000);
+  choke.SetMaxDelay(1000);
+
+  rtc::scoped_ptr<RateCounterFilter> rate_counters[kNumFlows];
+  for (size_t i = 0; i < kNumFlows; ++i) {
+    rate_counters[i].reset(new RateCounterFilter(
+        &uplink_, CreateFlowIds(&kAllFlowIds[i], 1), "receiver_input"));
+  }
+
+  RateCounterFilter total_utilization(
+      &uplink_, CreateFlowIds(kAllFlowIds, kNumFlows), "total_utilization");
+
+  rtc::scoped_ptr<PacketReceiver> receivers[kNumFlows];
+  for (size_t i = 0; i < kNumFlows; ++i) {
+    receivers[i].reset(new PacketReceiver(&uplink_, kAllFlowIds[i], GetParam(),
+                                          i == 0, false));
+  }
+  RunFor(15 * 60 * 1000);
+
+  std::vector<Stats<double>> flow_throughput_kbps;
+  for (size_t i = 0; i < kNumFlows; ++i)
+    flow_throughput_kbps.push_back(rate_counters[i]->GetBitrateStats());
+  PrintResults(3000, total_utilization.GetBitrateStats(), choke.GetDelayStats(),
+               flow_throughput_kbps);
 }
 }  // namespace bwe
 }  // namespace testing

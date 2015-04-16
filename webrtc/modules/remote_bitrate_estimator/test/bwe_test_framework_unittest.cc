@@ -615,7 +615,7 @@ class BweTestFramework_ChokeFilterTest : public ::testing::Test {
   void TestChoke(PacketProcessor* filter,
                  int64_t run_for_ms,
                  uint32_t packets_to_generate,
-                 uint32_t expected_kbit_transmitted) {
+                 size_t expected_kbit_transmitted) {
     // Generate a bunch of packets, apply choke, verify output is ordered.
     Packets packets;
     RTPHeader header;
@@ -634,7 +634,7 @@ class BweTestFramework_ChokeFilterTest : public ::testing::Test {
     ASSERT_TRUE(IsSequenceNumberSorted(output_packets_));
 
     // Sum up the transmitted bytes up until the current time.
-    uint32_t bytes_transmitted = 0;
+    size_t bytes_transmitted = 0;
     while (!output_packets_.empty()) {
       const Packet* packet = output_packets_.front();
       if (packet->send_time_us() > now_ms_ * 1000) {
@@ -769,7 +769,7 @@ void TestVideoSender(VideoSender* sender,
                      int64_t run_for_ms,
                      uint32_t expected_packets,
                      uint32_t expected_payload_size,
-                     uint32_t expected_total_payload_size) {
+                     size_t expected_total_payload_size) {
   assert(sender);
   Packets packets;
   sender->RunFor(run_for_ms, &packets);
@@ -777,7 +777,7 @@ void TestVideoSender(VideoSender* sender,
   ASSERT_TRUE(IsSequenceNumberSorted(packets));
   EXPECT_EQ(expected_packets, packets.size());
   int64_t send_time_us = -1;
-  uint32_t total_payload_size = 0;
+  size_t total_payload_size = 0;
   uint32_t absolute_send_time = 0;
   uint32_t absolute_send_time_wraps = 0;
   uint32_t rtp_timestamp = 0;
