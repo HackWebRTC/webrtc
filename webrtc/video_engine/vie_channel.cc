@@ -382,177 +382,184 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   uint8_t payload_type_fec;
   rtp_rtcp_->GenericFECStatus(fec_enabled, payload_type_red, payload_type_fec);
 
-  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+  std::vector<RtpRtcp*> registered_modules;
+  std::vector<RtpRtcp*> deregistered_modules;
+  {
+    CriticalSectionScoped cs(rtp_rtcp_cs_.get());
 
-  if (video_codec.numberOfSimulcastStreams > 0) {
-    // Set correct bitrate to base layer.
-    // Create our simulcast RTP modules.
-    int num_modules_to_add = video_codec.numberOfSimulcastStreams -
-        simulcast_rtp_rtcp_.size() - 1;
-    if (num_modules_to_add < 0) {
-      num_modules_to_add = 0;
-    }
-
-    // Add back removed rtp modules. Order is important (allocate from front of
-    // removed modules) to preserve RTP settings such as SSRCs for simulcast
-    // streams.
-    std::list<RtpRtcp*> new_rtp_modules;
-    for (; removed_rtp_rtcp_.size() > 0 && num_modules_to_add > 0;
-         --num_modules_to_add) {
-      new_rtp_modules.push_back(removed_rtp_rtcp_.front());
-      removed_rtp_rtcp_.pop_front();
-    }
-
-    for (int i = 0; i < num_modules_to_add; ++i)
-      new_rtp_modules.push_back(CreateRtpRtcpModule());
-
-    // Initialize newly added modules.
-    for (std::list<RtpRtcp*>::iterator it = new_rtp_modules.begin();
-         it != new_rtp_modules.end();
-         ++it) {
-      RtpRtcp* rtp_rtcp = *it;
-
-      rtp_rtcp->SetRTCPStatus(rtp_rtcp_->RTCP());
-
-      if (rtp_rtcp_->StorePackets()) {
-        rtp_rtcp->SetStorePacketsStatus(true, nack_history_size_sender_);
-      } else if (paced_sender_) {
-        rtp_rtcp->SetStorePacketsStatus(true, nack_history_size_sender_);
+    if (video_codec.numberOfSimulcastStreams > 0) {
+      // Set correct bitrate to base layer.
+      // Create our simulcast RTP modules.
+      int num_modules_to_add =
+          video_codec.numberOfSimulcastStreams - simulcast_rtp_rtcp_.size() - 1;
+      if (num_modules_to_add < 0) {
+        num_modules_to_add = 0;
       }
 
-      if (fec_enabled) {
-        rtp_rtcp->SetGenericFECStatus(
-            fec_enabled, payload_type_red, payload_type_fec);
+      // Add back removed rtp modules. Order is important (allocate from front
+      // of removed modules) to preserve RTP settings such as SSRCs for
+      // simulcast streams.
+      std::list<RtpRtcp*> new_rtp_modules;
+      for (; removed_rtp_rtcp_.size() > 0 && num_modules_to_add > 0;
+           --num_modules_to_add) {
+        new_rtp_modules.push_back(removed_rtp_rtcp_.front());
+        removed_rtp_rtcp_.pop_front();
       }
-      rtp_rtcp->SetSendingStatus(rtp_rtcp_->Sending());
-      rtp_rtcp->SetSendingMediaStatus(rtp_rtcp_->SendingMedia());
-      rtp_rtcp->SetRtxSendPayloadType(rtp_rtcp_->RtxSendPayloadType());
-      rtp_rtcp->SetRtxSendStatus(rtp_rtcp_->RtxSendStatus());
-      simulcast_rtp_rtcp_.push_back(rtp_rtcp);
 
-      // Silently ignore error.
-      module_process_thread_.RegisterModule(rtp_rtcp);
-    }
+      for (int i = 0; i < num_modules_to_add; ++i)
+        new_rtp_modules.push_back(CreateRtpRtcpModule());
 
-    // Remove last in list if we have too many.
-    for (int j = simulcast_rtp_rtcp_.size();
-         j > (video_codec.numberOfSimulcastStreams - 1);
-         j--) {
-      RtpRtcp* rtp_rtcp = simulcast_rtp_rtcp_.back();
-      module_process_thread_.DeRegisterModule(rtp_rtcp);
-      rtp_rtcp->SetSendingStatus(false);
-      rtp_rtcp->SetSendingMediaStatus(false);
-      rtp_rtcp->RegisterRtcpStatisticsCallback(NULL);
-      rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(NULL);
-      simulcast_rtp_rtcp_.pop_back();
-      removed_rtp_rtcp_.push_front(rtp_rtcp);
-    }
-    uint8_t idx = 0;
-    // Configure all simulcast modules.
-    for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
-         it != simulcast_rtp_rtcp_.end();
-         it++) {
-      idx++;
-      RtpRtcp* rtp_rtcp = *it;
-      rtp_rtcp->DeRegisterSendPayload(video_codec.plType);
-      if (rtp_rtcp->RegisterSendPayload(video_codec) != 0) {
-        return -1;
-      }
-      if (mtu_ != 0) {
-        rtp_rtcp->SetMaxTransferUnit(mtu_);
-      }
-      if (restart_rtp) {
-        rtp_rtcp->SetSendingStatus(true);
-        rtp_rtcp->SetSendingMediaStatus(true);
-      }
-      if (send_timestamp_extension_id_ != kInvalidRtpExtensionId) {
-        // Deregister in case the extension was previously enabled.
-        rtp_rtcp->DeregisterSendRtpHeaderExtension(
-            kRtpExtensionTransmissionTimeOffset);
-        if (rtp_rtcp->RegisterSendRtpHeaderExtension(
-            kRtpExtensionTransmissionTimeOffset,
-            send_timestamp_extension_id_) != 0) {
-          LOG(LS_WARNING) << "Register Transmission Time Offset failed";
+      // Initialize newly added modules.
+      for (std::list<RtpRtcp*>::iterator it = new_rtp_modules.begin();
+           it != new_rtp_modules.end(); ++it) {
+        RtpRtcp* rtp_rtcp = *it;
+
+        rtp_rtcp->SetRTCPStatus(rtp_rtcp_->RTCP());
+
+        if (rtp_rtcp_->StorePackets()) {
+          rtp_rtcp->SetStorePacketsStatus(true, nack_history_size_sender_);
+        } else if (paced_sender_) {
+          rtp_rtcp->SetStorePacketsStatus(true, nack_history_size_sender_);
         }
-      } else {
-        rtp_rtcp->DeregisterSendRtpHeaderExtension(
-            kRtpExtensionTransmissionTimeOffset);
-      }
-      if (absolute_send_time_extension_id_ != kInvalidRtpExtensionId) {
-        // Deregister in case the extension was previously enabled.
-        rtp_rtcp->DeregisterSendRtpHeaderExtension(
-            kRtpExtensionAbsoluteSendTime);
-        if (rtp_rtcp->RegisterSendRtpHeaderExtension(
-            kRtpExtensionAbsoluteSendTime,
-            absolute_send_time_extension_id_) != 0) {
-          LOG(LS_WARNING) << "Register Absolute Send Time failed";
-        }
-      } else {
-        rtp_rtcp->DeregisterSendRtpHeaderExtension(
-            kRtpExtensionAbsoluteSendTime);
-      }
-      if (video_rotation_extension_id_ != kInvalidRtpExtensionId) {
-        // Deregister in case the extension was previously enabled.
-        rtp_rtcp->DeregisterSendRtpHeaderExtension(kRtpExtensionVideoRotation);
-        if (rtp_rtcp->RegisterSendRtpHeaderExtension(
-                kRtpExtensionVideoRotation, video_rotation_extension_id_) !=
-            0) {
-          LOG(LS_WARNING) << "Register VideoRotation extension failed";
-        }
-      } else {
-        rtp_rtcp->DeregisterSendRtpHeaderExtension(kRtpExtensionVideoRotation);
-      }
-      rtp_rtcp->RegisterRtcpStatisticsCallback(
-          rtp_rtcp_->GetRtcpStatisticsCallback());
-      rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(
-          rtp_rtcp_->GetSendChannelRtpStatisticsCallback());
-    }
-    // |RegisterSimulcastRtpRtcpModules| resets all old weak pointers and old
-    // modules can be deleted after this step.
-    vie_receiver_.RegisterSimulcastRtpRtcpModules(simulcast_rtp_rtcp_);
-  } else {
-    while (!simulcast_rtp_rtcp_.empty()) {
-      RtpRtcp* rtp_rtcp = simulcast_rtp_rtcp_.back();
-      module_process_thread_.DeRegisterModule(rtp_rtcp);
-      rtp_rtcp->SetSendingStatus(false);
-      rtp_rtcp->SetSendingMediaStatus(false);
-      rtp_rtcp->RegisterRtcpStatisticsCallback(NULL);
-      rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(NULL);
-      simulcast_rtp_rtcp_.pop_back();
-      removed_rtp_rtcp_.push_front(rtp_rtcp);
-    }
-    // Clear any previous modules.
-    vie_receiver_.RegisterSimulcastRtpRtcpModules(simulcast_rtp_rtcp_);
-  }
 
-  // Don't log this error, no way to check in advance if this pl_type is
-  // registered or not...
-  rtp_rtcp_->DeRegisterSendPayload(video_codec.plType);
-  if (rtp_rtcp_->RegisterSendPayload(video_codec) != 0) {
-    return -1;
-  }
-  if (restart_rtp) {
-    rtp_rtcp_->SetSendingStatus(true);
-    for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
-         it != simulcast_rtp_rtcp_.end(); ++it) {
-      (*it)->SetSendingStatus(true);
-      (*it)->SetSendingMediaStatus(true);
-    }
-  }
-  // Update the packet and payload routers with the sending RTP RTCP modules.
-  packet_router_->AddRtpModule(rtp_rtcp_.get());
-  for (RtpRtcp* module : simulcast_rtp_rtcp_)
-    packet_router_->AddRtpModule(module);
+        if (fec_enabled) {
+          rtp_rtcp->SetGenericFECStatus(fec_enabled, payload_type_red,
+                                        payload_type_fec);
+        }
+        rtp_rtcp->SetSendingStatus(rtp_rtcp_->Sending());
+        rtp_rtcp->SetSendingMediaStatus(rtp_rtcp_->SendingMedia());
+        rtp_rtcp->SetRtxSendPayloadType(rtp_rtcp_->RtxSendPayloadType());
+        rtp_rtcp->SetRtxSendStatus(rtp_rtcp_->RtxSendStatus());
+        simulcast_rtp_rtcp_.push_back(rtp_rtcp);
 
-  std::list<RtpRtcp*> active_send_modules;
-  active_send_modules.push_back(rtp_rtcp_.get());
-  for (std::list<RtpRtcp*>::const_iterator cit = simulcast_rtp_rtcp_.begin();
-       cit != simulcast_rtp_rtcp_.end(); ++cit) {
-    active_send_modules.push_back(*cit);
+        // Silently ignore error.
+        registered_modules.push_back(rtp_rtcp);
+      }
+
+      // Remove last in list if we have too many.
+      for (int j = simulcast_rtp_rtcp_.size();
+           j > (video_codec.numberOfSimulcastStreams - 1); j--) {
+        RtpRtcp* rtp_rtcp = simulcast_rtp_rtcp_.back();
+        deregistered_modules.push_back(rtp_rtcp);
+        rtp_rtcp->SetSendingStatus(false);
+        rtp_rtcp->SetSendingMediaStatus(false);
+        rtp_rtcp->RegisterRtcpStatisticsCallback(NULL);
+        rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(NULL);
+        simulcast_rtp_rtcp_.pop_back();
+        removed_rtp_rtcp_.push_front(rtp_rtcp);
+      }
+      uint8_t idx = 0;
+      // Configure all simulcast modules.
+      for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
+           it != simulcast_rtp_rtcp_.end(); it++) {
+        idx++;
+        RtpRtcp* rtp_rtcp = *it;
+        rtp_rtcp->DeRegisterSendPayload(video_codec.plType);
+        if (rtp_rtcp->RegisterSendPayload(video_codec) != 0) {
+          return -1;
+        }
+        if (mtu_ != 0) {
+          rtp_rtcp->SetMaxTransferUnit(mtu_);
+        }
+        if (restart_rtp) {
+          rtp_rtcp->SetSendingStatus(true);
+          rtp_rtcp->SetSendingMediaStatus(true);
+        }
+        if (send_timestamp_extension_id_ != kInvalidRtpExtensionId) {
+          // Deregister in case the extension was previously enabled.
+          rtp_rtcp->DeregisterSendRtpHeaderExtension(
+              kRtpExtensionTransmissionTimeOffset);
+          if (rtp_rtcp->RegisterSendRtpHeaderExtension(
+                  kRtpExtensionTransmissionTimeOffset,
+                  send_timestamp_extension_id_) != 0) {
+            LOG(LS_WARNING) << "Register Transmission Time Offset failed";
+          }
+        } else {
+          rtp_rtcp->DeregisterSendRtpHeaderExtension(
+              kRtpExtensionTransmissionTimeOffset);
+        }
+        if (absolute_send_time_extension_id_ != kInvalidRtpExtensionId) {
+          // Deregister in case the extension was previously enabled.
+          rtp_rtcp->DeregisterSendRtpHeaderExtension(
+              kRtpExtensionAbsoluteSendTime);
+          if (rtp_rtcp->RegisterSendRtpHeaderExtension(
+                  kRtpExtensionAbsoluteSendTime,
+                  absolute_send_time_extension_id_) != 0) {
+            LOG(LS_WARNING) << "Register Absolute Send Time failed";
+          }
+        } else {
+          rtp_rtcp->DeregisterSendRtpHeaderExtension(
+              kRtpExtensionAbsoluteSendTime);
+        }
+        if (video_rotation_extension_id_ != kInvalidRtpExtensionId) {
+          // Deregister in case the extension was previously enabled.
+          rtp_rtcp->DeregisterSendRtpHeaderExtension(
+              kRtpExtensionVideoRotation);
+          if (rtp_rtcp->RegisterSendRtpHeaderExtension(
+                  kRtpExtensionVideoRotation, video_rotation_extension_id_) !=
+              0) {
+            LOG(LS_WARNING) << "Register VideoRotation extension failed";
+          }
+        } else {
+          rtp_rtcp->DeregisterSendRtpHeaderExtension(
+              kRtpExtensionVideoRotation);
+        }
+        rtp_rtcp->RegisterRtcpStatisticsCallback(
+            rtp_rtcp_->GetRtcpStatisticsCallback());
+        rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(
+            rtp_rtcp_->GetSendChannelRtpStatisticsCallback());
+      }
+      // |RegisterSimulcastRtpRtcpModules| resets all old weak pointers and old
+      // modules can be deleted after this step.
+      vie_receiver_.RegisterSimulcastRtpRtcpModules(simulcast_rtp_rtcp_);
+    } else {
+      while (!simulcast_rtp_rtcp_.empty()) {
+        RtpRtcp* rtp_rtcp = simulcast_rtp_rtcp_.back();
+        deregistered_modules.push_back(rtp_rtcp);
+        rtp_rtcp->SetSendingStatus(false);
+        rtp_rtcp->SetSendingMediaStatus(false);
+        rtp_rtcp->RegisterRtcpStatisticsCallback(NULL);
+        rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(NULL);
+        simulcast_rtp_rtcp_.pop_back();
+        removed_rtp_rtcp_.push_front(rtp_rtcp);
+      }
+      // Clear any previous modules.
+      vie_receiver_.RegisterSimulcastRtpRtcpModules(simulcast_rtp_rtcp_);
+    }
+
+    // Don't log this error, no way to check in advance if this pl_type is
+    // registered or not...
+    rtp_rtcp_->DeRegisterSendPayload(video_codec.plType);
+    if (rtp_rtcp_->RegisterSendPayload(video_codec) != 0) {
+      return -1;
+    }
+    if (restart_rtp) {
+      rtp_rtcp_->SetSendingStatus(true);
+      for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
+           it != simulcast_rtp_rtcp_.end(); ++it) {
+        (*it)->SetSendingStatus(true);
+        (*it)->SetSendingMediaStatus(true);
+      }
+    }
+    // Update the packet and payload routers with the sending RTP RTCP modules.
+    packet_router_->AddRtpModule(rtp_rtcp_.get());
+    for (RtpRtcp* module : simulcast_rtp_rtcp_)
+      packet_router_->AddRtpModule(module);
+
+    std::list<RtpRtcp*> active_send_modules;
+    active_send_modules.push_back(rtp_rtcp_.get());
+    for (std::list<RtpRtcp*>::const_iterator cit = simulcast_rtp_rtcp_.begin();
+         cit != simulcast_rtp_rtcp_.end(); ++cit) {
+      active_send_modules.push_back(*cit);
+    }
+    send_payload_router_->SetSendingRtpModules(active_send_modules);
+    if (router_was_active)
+      send_payload_router_->set_active(true);
   }
-  send_payload_router_->SetSendingRtpModules(active_send_modules);
-  if (router_was_active)
-    send_payload_router_->set_active(true);
+  for (RtpRtcp* rtp_rtcp : registered_modules)
+    module_process_thread_.RegisterModule(rtp_rtcp);
+  for (RtpRtcp* rtp_rtcp : deregistered_modules)
+    module_process_thread_.DeRegisterModule(rtp_rtcp);
   return 0;
 }
 
