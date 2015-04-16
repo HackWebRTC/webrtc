@@ -195,7 +195,9 @@ if (current_cpu == "x86" || current_cpu == "x64") {
       "resampler/sinc_resampler_sse.cc",
     ]
 
-    cflags = [ "-msse2" ]
+    if (is_posix) {
+      cflags = [ "-msse2" ]
+    }
 
     configs += [ "..:common_inherited_config" ]
 

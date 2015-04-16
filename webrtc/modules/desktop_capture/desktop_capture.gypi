@@ -146,10 +146,11 @@
             "differ_block_sse2.h",
           ],
           'conditions': [
-            [ 'os_posix == 1 and OS != "mac"', {
-              'cflags': [
-                '-msse2',
-              ],
+            ['os_posix==1', {
+              'cflags': [ '-msse2', ],
+              'xcode_settings': {
+                'OTHER_CFLAGS': [ '-msse2', ],
+              },
             }],
           ],
         },

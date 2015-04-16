@@ -201,10 +201,14 @@
             'fir_filter_sse.cc',
             'resampler/sinc_resampler_sse.cc',
           ],
-          'cflags': ['-msse2',],
-          'xcode_settings': {
-            'OTHER_CFLAGS': ['-msse2',],
-          },
+          'conditions': [
+            ['os_posix==1', {
+              'cflags': [ '-msse2', ],
+              'xcode_settings': {
+                'OTHER_CFLAGS': [ '-msse2', ],
+              },
+            }],
+          ],
         },
       ],  # targets
     }],
