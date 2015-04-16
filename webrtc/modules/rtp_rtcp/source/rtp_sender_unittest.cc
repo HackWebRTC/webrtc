@@ -1361,7 +1361,7 @@ TEST_F(RtpSenderVideoTest, SendVideoWithCVO) {
   // Verify that this packet does have CVO byte.
   VerifyCVOPacket(
       reinterpret_cast<uint8_t*>(transport_.sent_packets_[0]->data()),
-      transport_.sent_packets_[0]->length(), true, &map, kSeqNum, hdr.rotation);
+      transport_.sent_packets_[0]->size(), true, &map, kSeqNum, hdr.rotation);
 
   // Verify that this packet does have CVO byte.
   VerifyCVOPacket(
