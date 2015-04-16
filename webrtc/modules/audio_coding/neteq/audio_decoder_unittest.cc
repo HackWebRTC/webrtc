@@ -361,6 +361,7 @@ class AudioDecoderIsacFloatTest : public AudioDecoderTest {
     AudioEncoderDecoderIsac::Config config;
     config.payload_type = payload_type_;
     config.sample_rate_hz = codec_input_rate_hz_;
+    config.adaptive_mode = false;
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
 
@@ -380,6 +381,7 @@ class AudioDecoderIsacSwbTest : public AudioDecoderTest {
     AudioEncoderDecoderIsac::Config config;
     config.payload_type = payload_type_;
     config.sample_rate_hz = codec_input_rate_hz_;
+    config.adaptive_mode = false;
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
 
@@ -399,6 +401,7 @@ class AudioDecoderIsacFixTest : public AudioDecoderTest {
     AudioEncoderDecoderIsacFix::Config config;
     config.payload_type = payload_type_;
     config.sample_rate_hz = codec_input_rate_hz_;
+    config.adaptive_mode = false;
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
 

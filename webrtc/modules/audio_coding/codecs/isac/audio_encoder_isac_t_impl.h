@@ -22,16 +22,17 @@
 namespace webrtc {
 
 const int kIsacPayloadType = 103;
-const int kDefaultBitRate = 32000;
 
 template <typename T>
 AudioEncoderDecoderIsacT<T>::Config::Config()
     : payload_type(kIsacPayloadType),
       sample_rate_hz(16000),
       frame_size_ms(30),
-      bit_rate(kDefaultBitRate),
+      bit_rate(32000),
+      max_payload_size_bytes(-1),
       max_bit_rate(-1),
-      max_payload_size_bytes(-1) {
+      adaptive_mode(false),
+      enforce_frame_size(false) {
 }
 
 template <typename T>
@@ -47,7 +48,7 @@ bool AudioEncoderDecoderIsacT<T>::Config::IsOk() const {
       if (max_payload_size_bytes > 400)
         return false;
       return (frame_size_ms == 30 || frame_size_ms == 60) &&
-             ((bit_rate >= 10000 && bit_rate <= 32000) || bit_rate == 0);
+             (bit_rate >= 10000 && bit_rate <= 32000);
     case 32000:
     case 48000:
       if (max_bit_rate > 160000)
@@ -55,47 +56,7 @@ bool AudioEncoderDecoderIsacT<T>::Config::IsOk() const {
       if (max_payload_size_bytes > 600)
         return false;
       return T::has_swb &&
-             (frame_size_ms == 30 &&
-              ((bit_rate >= 10000 && bit_rate <= 56000) || bit_rate == 0));
-    default:
-      return false;
-  }
-}
-
-template <typename T>
-AudioEncoderDecoderIsacT<T>::ConfigAdaptive::ConfigAdaptive()
-    : payload_type(kIsacPayloadType),
-      sample_rate_hz(16000),
-      initial_frame_size_ms(30),
-      initial_bit_rate(kDefaultBitRate),
-      max_bit_rate(-1),
-      enforce_frame_size(false),
-      max_payload_size_bytes(-1) {
-}
-
-template <typename T>
-bool AudioEncoderDecoderIsacT<T>::ConfigAdaptive::IsOk() const {
-  if (max_bit_rate < 32000 && max_bit_rate != -1)
-    return false;
-  if (max_payload_size_bytes < 120 && max_payload_size_bytes != -1)
-    return false;
-  switch (sample_rate_hz) {
-    case 16000:
-      if (max_bit_rate > 53400)
-        return false;
-      if (max_payload_size_bytes > 400)
-        return false;
-      return (initial_frame_size_ms == 30 || initial_frame_size_ms == 60) &&
-             initial_bit_rate >= 10000 && initial_bit_rate <= 32000;
-    case 32000:
-    case 48000:
-      if (max_bit_rate > 160000)
-        return false;
-      if (max_payload_size_bytes > 600)
-        return false;
-      return T::has_swb &&
-             (initial_frame_size_ms == 30 && initial_bit_rate >= 10000 &&
-              initial_bit_rate <= 56000);
+             (frame_size_ms == 30 && bit_rate >= 10000 && bit_rate <= 56000);
     default:
       return false;
   }
@@ -110,11 +71,15 @@ AudioEncoderDecoderIsacT<T>::AudioEncoderDecoderIsacT(const Config& config)
       packet_in_progress_(false) {
   CHECK(config.IsOk());
   CHECK_EQ(0, T::Create(&isac_state_));
-  CHECK_EQ(0, T::EncoderInit(isac_state_, 1));
+  CHECK_EQ(0, T::EncoderInit(isac_state_, config.adaptive_mode ? 0 : 1));
   CHECK_EQ(0, T::SetEncSampRate(isac_state_, config.sample_rate_hz));
-  CHECK_EQ(0, T::Control(isac_state_, config.bit_rate == 0 ? kDefaultBitRate
-                                                           : config.bit_rate,
-                         config.frame_size_ms));
+  if (config.adaptive_mode) {
+    CHECK_EQ(0, T::ControlBwe(isac_state_, config.bit_rate,
+                              config.frame_size_ms, config.enforce_frame_size));
+
+  } else {
+    CHECK_EQ(0, T::Control(isac_state_, config.bit_rate, config.frame_size_ms));
+  }
   // When config.sample_rate_hz is set to 48000 Hz (iSAC-fb), the decoder is
   // still set to 32000 Hz, since there is no full-band mode in the decoder.
   CHECK_EQ(0, T::SetDecSampRate(isac_state_,
@@ -124,29 +89,7 @@ AudioEncoderDecoderIsacT<T>::AudioEncoderDecoderIsacT(const Config& config)
              T::SetMaxPayloadSize(isac_state_, config.max_payload_size_bytes));
   if (config.max_bit_rate != -1)
     CHECK_EQ(0, T::SetMaxRate(isac_state_, config.max_bit_rate));
-}
-
-template <typename T>
-AudioEncoderDecoderIsacT<T>::AudioEncoderDecoderIsacT(
-    const ConfigAdaptive& config)
-    : payload_type_(config.payload_type),
-      state_lock_(CriticalSectionWrapper::CreateCriticalSection()),
-      decoder_sample_rate_hz_(0),
-      lock_(CriticalSectionWrapper::CreateCriticalSection()),
-      packet_in_progress_(false) {
-  CHECK(config.IsOk());
-  CHECK_EQ(0, T::Create(&isac_state_));
-  CHECK_EQ(0, T::EncoderInit(isac_state_, 0));
-  CHECK_EQ(0, T::SetEncSampRate(isac_state_, config.sample_rate_hz));
-  CHECK_EQ(0, T::ControlBwe(isac_state_, config.initial_bit_rate,
-                            config.initial_frame_size_ms,
-                            config.enforce_frame_size));
-  CHECK_EQ(0, T::SetDecSampRate(isac_state_, config.sample_rate_hz));
-  if (config.max_payload_size_bytes != -1)
-    CHECK_EQ(0,
-             T::SetMaxPayloadSize(isac_state_, config.max_payload_size_bytes));
-  if (config.max_bit_rate != -1)
-    CHECK_EQ(0, T::SetMaxRate(isac_state_, config.max_bit_rate));
+  CHECK_EQ(0, T::DecoderInit(isac_state_));
 }
 
 template <typename T>
