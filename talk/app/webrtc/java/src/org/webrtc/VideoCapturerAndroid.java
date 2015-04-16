@@ -216,7 +216,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   // starts a thread to be used for capturing.
   // If deviceName is empty, the first available device is used in order to be
   // compatible with the generic VideoCapturer class.
-  boolean init(String deviceName) {
+  synchronized boolean init(String deviceName) {
     Log.d(TAG, "init " + deviceName);
     if (deviceName == null || !initStatics())
       return false;
@@ -241,6 +241,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     if (supportedFormats != null)
       return true;
     try {
+      Log.d(TAG, "Get supported formats.");
       supportedFormats =
           new ArrayList<List<CaptureFormat>>(Camera.getNumberOfCameras());
       for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
@@ -322,10 +323,10 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
             range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
             range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]));
       }
-      camera.release();
     } catch (Exception e) {
       Log.e(TAG, "getSupportedFormats failed on id " + id, e);
     }
+    camera.release();
     return formatList;
   }
 
@@ -387,8 +388,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     this.applicationContext = applicationContext;
     this.frameObserver = frameObserver;
     try {
-      this.camera = Camera.open(id);
-      this.info = new Camera.CameraInfo();
+      camera = Camera.open(id);
+      info = new Camera.CameraInfo();
       Camera.getCameraInfo(id, info);
       // No local renderer (we only care about onPreviewFrame() buffers, not a
       // directly-displayed UI element).  Camera won't capture without
@@ -417,6 +418,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
         camera.setPreviewTexture(cameraSurfaceTexture);
       } catch (IOException e) {
+        Log.e(TAG, "setPreviewTexture failed", error);
         throw new RuntimeException(e);
       }
 
@@ -457,9 +459,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       error = e;
     }
     Log.e(TAG, "startCapture failed", error);
-    if (camera != null) {
-      stopCaptureOnCameraThread();
-    }
+    stopCaptureOnCameraThread();
+    cameraThreadHandler = null;
     frameObserver.OnCapturerStarted(false);
     return;
   }
@@ -467,7 +468,8 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   // Called by native code.  Returns true when camera is known to be stopped.
   synchronized void stopCapture() throws InterruptedException {
     if (cameraThreadHandler == null) {
-      throw new RuntimeException("Calling stopCapture() for already stopped camera.");
+      Log.e(TAG, "Calling stopCapture() for already stopped camera.");
+      return;
     }
     Log.d(TAG, "stopCapture");
     cameraThreadHandler.post(new Runnable() {
@@ -488,7 +490,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
   }
 
   private void doStopCaptureOnCamerathread() {
+    if (camera == null) {
+      return;
+    }
     try {
+      Log.d(TAG, "Stop preview.");
       camera.stopPreview();
       camera.setPreviewCallbackWithBuffer(null);
       videoBuffers.stopReturnBuffersToCamera();
@@ -500,6 +506,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         cameraGlTextures = null;
       }
 
+      Log.d(TAG, "Release camera.");
       camera.release();
       camera = null;
     } catch (IOException e) {
