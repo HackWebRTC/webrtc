@@ -142,6 +142,7 @@ class Call : public webrtc::Call, public PacketReceiver {
   rtc::scoped_ptr<RWLockWrapper> receive_crit_;
   std::map<uint32_t, VideoReceiveStream*> receive_ssrcs_
       GUARDED_BY(receive_crit_);
+  std::set<VideoReceiveStream*> receive_streams_ GUARDED_BY(receive_crit_);
 
   rtc::scoped_ptr<RWLockWrapper> send_crit_;
   std::map<uint32_t, VideoSendStream*> send_ssrcs_ GUARDED_BY(send_crit_);
@@ -233,6 +234,7 @@ Call::~Call() {
   CHECK_EQ(0u, send_ssrcs_.size());
   CHECK_EQ(0u, send_streams_.size());
   CHECK_EQ(0u, receive_ssrcs_.size());
+  CHECK_EQ(0u, receive_streams_.size());
   base_->DeleteChannel(base_channel_id_);
 
   render_->DeRegisterVideoRenderModule(*external_render_.get());
@@ -330,6 +332,7 @@ VideoReceiveStream* Call::CreateVideoReceiveStream(
       config.rtp.rtx.begin();
   if (it != config.rtp.rtx.end())
     receive_ssrcs_[it->second.ssrc] = receive_stream;
+  receive_streams_.insert(receive_stream);
 
   if (!network_enabled_)
     receive_stream->SignalNetworkState(kNetworkDown);
@@ -358,6 +361,7 @@ void Call::DestroyVideoReceiveStream(
         ++it;
       }
     }
+    receive_streams_.erase(receive_stream_impl);
   }
   CHECK(receive_stream_impl != nullptr);
   delete receive_stream_impl;
@@ -444,14 +448,14 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(const uint8_t* packet,
   bool rtcp_delivered = false;
   {
     ReadLockScoped read_lock(*receive_crit_);
-    for (auto& kv : receive_ssrcs_) {
-      if (kv.second->DeliverRtcp(packet, length))
+    for (VideoReceiveStream* stream : receive_streams_) {
+      if (stream->DeliverRtcp(packet, length))
         rtcp_delivered = true;
     }
   }
   {
     ReadLockScoped read_lock(*send_crit_);
-    for (auto& stream : send_streams_) {
+    for (VideoSendStream* stream : send_streams_) {
       if (stream->DeliverRtcp(packet, length))
         rtcp_delivered = true;
     }
