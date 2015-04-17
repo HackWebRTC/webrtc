@@ -28,6 +28,7 @@
 package org.webrtc;
 
 import static java.lang.Math.abs;
+import static java.lang.Math.ceil;
 
 import android.content.Context;
 import android.graphics.ImageFormat;
@@ -264,6 +265,11 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     public final int height;
     public final int maxFramerate;
     public final int minFramerate;
+    // TODO(hbos): If VideoCapturerAndroid.startCapture is updated to support
+    // other image formats then this needs to be updated and
+    // VideoCapturerAndroid.getSupportedFormats need to return CaptureFormats of
+    // all imageFormats.
+    public final int imageFormat = ImageFormat.YV12;
 
     public CaptureFormat(int width, int height, int minFramerate,
         int maxFramerate) {
@@ -271,6 +277,33 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       this.height = height;
       this.minFramerate = minFramerate;
       this.maxFramerate = maxFramerate;
+    }
+
+    // Calculates the frame size of this capture format.
+    public int frameSize() {
+      return frameSize(width, height, imageFormat);
+    }
+
+    // Calculates the frame size of the specified image format. Currently only
+    // supporting ImageFormat.YV12. The YV12's stride is the closest rounded up
+    // multiple of 16 of the width and width and height are always even.
+    // Android guarantees this:
+    // http://developer.android.com/reference/android/hardware/Camera.Parameters.html#setPreviewFormat%28int%29
+    public static int frameSize(int width, int height, int imageFormat) {
+      if (imageFormat != ImageFormat.YV12) {
+        throw new UnsupportedOperationException("Don't know how to calculate "
+            + "the frame size of non-YV12 image formats.");
+      }
+      int yStride = roundUp(width, 16);
+      int uvStride = roundUp(yStride / 2, 16);
+      int ySize = yStride * height;
+      int uvSize = uvStride * height / 2;
+      return ySize + uvSize * 2;
+    }
+
+    // Rounds up |x| to the closest value that is a multiple of |alignment|.
+    private static int roundUp(int x, int alignment) {
+      return (int)ceil(x / (double)alignment) * alignment;
     }
   }
 
@@ -312,13 +345,6 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
 
       List<Camera.Size> supportedSizes = parameters.getSupportedPreviewSizes();
       for (Camera.Size size : supportedSizes) {
-        if (size.width % 16 != 0) {
-          // If the width is not a multiple of 16, the frames received from the
-          // camera will have a stride != width when YV12 is used. Since we
-          // currently only support tightly packed images, we simply ignore
-          // those resolutions.
-          continue;
-        }
         formatList.add(new CaptureFormat(size.width, size.height,
             range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
             range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]));
@@ -358,9 +384,6 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
     }
     if (frameObserver == null) {
       throw new RuntimeException("frameObserver not set.");
-    }
-    if (width % 16 != 0) {
-      throw new RuntimeException("width must be a multiple of 16." );
     }
     if (cameraThreadHandler != null) {
       throw new RuntimeException("Camera has already been started.");
@@ -444,6 +467,9 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
       Camera.Size pictureSize = getPictureSize(parameters, width, height);
       parameters.setPictureSize(pictureSize.width, pictureSize.height);
       parameters.setPreviewSize(width, height);
+      // TODO(hbos): If other ImageFormats are to be supported then
+      // CaptureFormat needs to be updated (currently hard-coded to say YV12,
+      // getSupportedFormats only returns YV12).
       int format = ImageFormat.YV12;
       parameters.setPreviewFormat(format);
       camera.setParameters(parameters);
@@ -685,14 +711,14 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
         throw new RuntimeException("camera already set.");
 
       this.camera = camera;
-      int newframeSize =
-          width * height * ImageFormat.getBitsPerPixel(format) / 8;
+      int newFrameSize = CaptureFormat.frameSize(width, height, format);
+
       int numberOfEnquedCameraBuffers = 0;
-      if (newframeSize != frameSize) {
+      if (newFrameSize != frameSize) {
         // Create new frames and add to the camera.
         // The old frames will be released when frames are returned.
         for (int i = 0; i < numCaptureBuffers; ++i) {
-          Frame frame = new Frame(newframeSize);
+          Frame frame = new Frame(newFrameSize);
           cameraFrames.add(frame);
           this.camera.addCallbackBuffer(frame.data());
         }
@@ -706,7 +732,7 @@ public class VideoCapturerAndroid extends VideoCapturer implements PreviewCallba
           }
         }
       }
-      frameSize = newframeSize;
+      frameSize = newFrameSize;
       Log.d(TAG, "queueCameraBuffers enqued " + numberOfEnquedCameraBuffers
           + " buffers of size " + frameSize + ".");
     }

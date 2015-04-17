@@ -260,7 +260,7 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
       assertTrue(observer.WaitForCapturerToStart());
       observer.WaitForNextCapturedFrame();
       // Check the frame size.
-      assertEquals((format.width*format.height*3)/2, observer.frameSize());
+      assertEquals(format.frameSize(), observer.frameSize());
       capturer.stopCapture();
     }
     capturer.dispose();
