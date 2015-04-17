@@ -60,8 +60,6 @@ class ViEReceiver : public RtpData {
 
   RtpReceiver* GetRtpReceiver() const;
 
-  void RegisterSimulcastRtpRtcpModules(const std::list<RtpRtcp*>& rtp_modules);
-
   bool SetReceiveTimestampOffsetStatus(bool enable, int id);
   bool SetReceiveAbsoluteSendTimeStatus(bool enable, int id);
   bool SetReceiveVideoRotationStatus(bool enable, int id);
@@ -113,7 +111,6 @@ class ViEReceiver : public RtpData {
   rtc::scoped_ptr<ReceiveStatistics> rtp_receive_statistics_;
   rtc::scoped_ptr<FecReceiver> fec_receiver_;
   RtpRtcp* rtp_rtcp_;
-  std::list<RtpRtcp*> rtp_rtcp_simulcast_;
   VideoCodingModule* vcm_;
   RemoteBitrateEstimator* remote_bitrate_estimator_;
 

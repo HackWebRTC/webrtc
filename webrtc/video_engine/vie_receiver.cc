@@ -151,18 +151,6 @@ RtpReceiver* ViEReceiver::GetRtpReceiver() const {
   return rtp_receiver_.get();
 }
 
-void ViEReceiver::RegisterSimulcastRtpRtcpModules(
-    const std::list<RtpRtcp*>& rtp_modules) {
-  CriticalSectionScoped cs(receive_cs_.get());
-  rtp_rtcp_simulcast_.clear();
-
-  if (!rtp_modules.empty()) {
-    rtp_rtcp_simulcast_.insert(rtp_rtcp_simulcast_.begin(),
-                               rtp_modules.begin(),
-                               rtp_modules.end());
-  }
-}
-
 bool ViEReceiver::SetReceiveTimestampOffsetStatus(bool enable, int id) {
   if (enable) {
     return rtp_header_parser_->RegisterRtpHeaderExtension(
@@ -418,12 +406,6 @@ int ViEReceiver::InsertRTCPPacket(const uint8_t* rtcp_packet,
 
     if (rtp_dump_) {
       rtp_dump_->DumpPacket(rtcp_packet, rtcp_packet_length);
-    }
-
-    std::list<RtpRtcp*>::iterator it = rtp_rtcp_simulcast_.begin();
-    while (it != rtp_rtcp_simulcast_.end()) {
-      RtpRtcp* rtp_rtcp = *it++;
-      rtp_rtcp->IncomingRtcpPacket(rtcp_packet, rtcp_packet_length);
     }
   }
   assert(rtp_rtcp_);  // Should be set by owner at construction time.
