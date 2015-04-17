@@ -25,7 +25,8 @@ class CriticalSectionWrapper;
 template <typename T>
 class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
  public:
-  // Allowed combinations of sample rate, frame size, and bit rate are
+  // For constructing an encoder in instantaneous mode. Allowed combinations
+  // are
   //  - 16000 Hz, 30 ms, 10000-32000 bps
   //  - 16000 Hz, 60 ms, 10000-32000 bps
   //  - 32000 Hz, 30 ms, 10000-56000 bps (if T has super-wideband support)
@@ -33,24 +34,34 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
   struct Config {
     Config();
     bool IsOk() const;
-
     int payload_type;
     int sample_rate_hz;
     int frame_size_ms;
-    int bit_rate;  // Limit on the short-term average bit rate, in bits/s.
-    int max_payload_size_bytes;
+    int bit_rate;  // Limit on the short-term average bit rate, in bits/second.
     int max_bit_rate;
+    int max_payload_size_bytes;
+  };
 
-    // If true, the encoder will dynamically adjust frame size and bit rate;
-    // the configured values are then merely the starting point.
-    bool adaptive_mode;
-
-    // In adaptive mode, prevent adaptive changes to the frame size. (Not used
-    // in nonadaptive mode.)
-    bool enforce_frame_size;
+  // For constructing an encoder in channel-adaptive mode. Allowed combinations
+  // are
+  //  - 16000 Hz, 30 ms, 10000-32000 bps
+  //  - 16000 Hz, 60 ms, 10000-32000 bps
+  //  - 32000 Hz, 30 ms, 10000-56000 bps (if T has super-wideband support)
+  //  - 48000 Hz, 30 ms, 10000-56000 bps (if T has super-wideband support)
+  struct ConfigAdaptive {
+    ConfigAdaptive();
+    bool IsOk() const;
+    int payload_type;
+    int sample_rate_hz;
+    int initial_frame_size_ms;
+    int initial_bit_rate;
+    int max_bit_rate;
+    bool enforce_frame_size;  // Prevent adaptive changes to the frame size?
+    int max_payload_size_bytes;
   };
 
   explicit AudioEncoderDecoderIsacT(const Config& config);
+  explicit AudioEncoderDecoderIsacT(const ConfigAdaptive& config);
   ~AudioEncoderDecoderIsacT() override;
 
   // AudioEncoder public methods.
