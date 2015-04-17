@@ -239,97 +239,14 @@ TEST_P(BweSimulation, SelfFairnessTest) {
 
 TEST_P(BweSimulation, PacedSelfFairnessTest) {
   VerboseLogging(true);
-  const int kAllFlowIds[] = {0, 1, 2};
-  const size_t kNumFlows = sizeof(kAllFlowIds) / sizeof(kAllFlowIds[0]);
-  rtc::scoped_ptr<PeriodicKeyFrameSource> sources[kNumFlows];
-  rtc::scoped_ptr<PacedVideoSender> senders[kNumFlows];
-
-  for (size_t i = 0; i < kNumFlows; ++i) {
-    // Streams started 20 seconds apart to give them different advantage when
-    // competing for the bandwidth.
-    sources[i].reset(new PeriodicKeyFrameSource(kAllFlowIds[i], 30, 300, 0,
-                                                i * 20000, 1000));
-    senders[i].reset(
-        new PacedVideoSender(&uplink_, sources[i].get(), GetParam()));
-  }
-
-  ChokeFilter choke(&uplink_, CreateFlowIds(kAllFlowIds, kNumFlows));
-  choke.SetCapacity(1000);
-
-  rtc::scoped_ptr<RateCounterFilter> rate_counters[kNumFlows];
-  for (size_t i = 0; i < kNumFlows; ++i) {
-    rate_counters[i].reset(new RateCounterFilter(
-        &uplink_, CreateFlowIds(&kAllFlowIds[i], 1), "receiver_input"));
-  }
-
-  RateCounterFilter total_utilization(
-      &uplink_, CreateFlowIds(kAllFlowIds, kNumFlows), "total_utilization");
-
-  rtc::scoped_ptr<PacketReceiver> receivers[kNumFlows];
-  for (size_t i = 0; i < kNumFlows; ++i) {
-    receivers[i].reset(new PacketReceiver(&uplink_, kAllFlowIds[i], GetParam(),
-                                          i == 0, false));
-  }
-
-  RunFor(30 * 60 * 1000);
+  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+  RunFairnessTest(GetParam(), 4, 0, 2000);
 }
 
 TEST_P(BweSimulation, PacedTcpFairnessTest) {
   VerboseLogging(true);
-
-  const int kAllFlowIds[] = {0, 1};
-  const size_t kNumFlows = sizeof(kAllFlowIds) / sizeof(kAllFlowIds[0]);
-
-  const int kAllMediaFlowIds[] = {0};
-  const size_t kNumMediaFlows =
-      sizeof(kAllMediaFlowIds) / sizeof(kAllMediaFlowIds[0]);
-
-  const int kAllTcpFlowIds[] = {1};
-  const size_t kNumTcpFlows =
-      sizeof(kAllTcpFlowIds) / sizeof(kAllTcpFlowIds[0]);
-
-  rtc::scoped_ptr<PeriodicKeyFrameSource> sources[kNumFlows];
-  rtc::scoped_ptr<PacketSender> senders[kNumFlows + kNumTcpFlows];
-
-  for (size_t i = 0; i < kNumMediaFlows; ++i) {
-    // Streams started 20 seconds apart to give them different advantage when
-    // competing for the bandwidth.
-    sources[i].reset(new PeriodicKeyFrameSource(kAllMediaFlowIds[i], 30, 300, 0,
-                                                i * 20000, 1000));
-    senders[i].reset(
-        new PacedVideoSender(&uplink_, sources[i].get(), GetParam()));
-  }
-
-  for (size_t i = 0; i < kNumTcpFlows; ++i) {
-    senders[kNumMediaFlows + i].reset(
-        new TcpSender(&uplink_, kAllTcpFlowIds[i]));
-  }
-
-  ChokeFilter choke(&uplink_, CreateFlowIds(kAllFlowIds, kNumFlows));
-  choke.SetCapacity(1000);
-  choke.SetMaxDelay(1000);
-
-  rtc::scoped_ptr<RateCounterFilter> rate_counters[kNumFlows];
-  for (size_t i = 0; i < kNumFlows; ++i) {
-    rate_counters[i].reset(new RateCounterFilter(
-        &uplink_, CreateFlowIds(&kAllFlowIds[i], 1), "receiver_input"));
-  }
-
-  RateCounterFilter total_utilization(
-      &uplink_, CreateFlowIds(kAllFlowIds, kNumFlows), "total_utilization");
-
-  rtc::scoped_ptr<PacketReceiver> receivers[kNumFlows];
-  for (size_t i = 0; i < kNumMediaFlows; ++i) {
-    receivers[i].reset(new PacketReceiver(&uplink_, kAllMediaFlowIds[i],
-                                          GetParam(), i == 0, false));
-  }
-
-  for (size_t i = 0; i < kNumTcpFlows; ++i) {
-    receivers[kNumMediaFlows + i].reset(new PacketReceiver(
-        &uplink_, kAllTcpFlowIds[i], kTcpEstimator, false, false));
-  }
-
-  RunFor(30 * 60 * 1000);
+  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+  RunFairnessTest(GetParam(), 1, 1, 3000);
 }
 #endif  // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 }  // namespace bwe

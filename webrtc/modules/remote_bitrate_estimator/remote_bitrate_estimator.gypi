@@ -89,6 +89,16 @@
             'test/estimators/tcp.cc',
             'test/estimators/tcp.h',
           ],
+          'conditions': [
+            ['enable_bwe_test_logging==1', {
+              'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1' ],
+            }, {
+              'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
+              'sources!': [
+                'remote_bitrate_estimator/test/bwe_test_logging.cc'
+              ],
+            }],
+          ],
         },
         {
           'target_name': 'bwe_tools_util',

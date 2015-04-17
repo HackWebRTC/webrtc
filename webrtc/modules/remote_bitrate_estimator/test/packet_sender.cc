@@ -312,15 +312,8 @@ void TcpSender::UpdateCongestionControl(const FeedbackPacket* fb) {
 }
 
 bool TcpSender::LossEvent(const std::vector<uint16_t>& acked_packets) {
-  int missing = 0;
-  for (int i = last_acked_seq_num_ + 1; i <= acked_packets.back(); ++i) {
-    if (std::find(acked_packets.begin(), acked_packets.end(), i) ==
-        acked_packets.end()) {
-      ++missing;
-    }
-  }
-  in_flight_ -= missing;
-  return missing > 0;
+  uint16_t expected = acked_packets.back() - last_acked_seq_num_;
+  return expected - static_cast<uint16_t>(acked_packets.size()) > 0;
 }
 
 Packets TcpSender::GeneratePackets(size_t num_packets) {

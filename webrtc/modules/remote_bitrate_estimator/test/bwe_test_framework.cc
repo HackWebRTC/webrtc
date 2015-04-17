@@ -235,7 +235,10 @@ RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
       rate_counter_(new RateCounter()),
       packets_per_second_stats_(),
       kbps_stats_(),
-      name_(name) {
+      name_() {
+  std::stringstream ss;
+  ss << name << "_" << flow_id;
+  name_ = ss.str();
 }
 
 RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
@@ -245,9 +248,9 @@ RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
       rate_counter_(new RateCounter()),
       packets_per_second_stats_(),
       kbps_stats_(),
-      name_(name) {
+      name_() {
   std::stringstream ss;
-  ss << name_ << "_";
+  ss << name << "_";
   for (int flow_id : flow_ids) {
     ss << flow_id << ",";
   }

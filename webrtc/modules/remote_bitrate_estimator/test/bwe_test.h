@@ -17,6 +17,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 
 namespace webrtc {
@@ -74,6 +75,16 @@ class BweTest {
   void VerboseLogging(bool enable);
   void RunFor(int64_t time_ms);
   std::string GetTestName() const;
+
+  void PrintResults(double max_throughput_kbps,
+                    Stats<double> throughput_kbps,
+                    Stats<double> delay_ms,
+                    std::vector<Stats<double>> flow_throughput_kbps);
+
+  void RunFairnessTest(BandwidthEstimatorType bwe_type,
+                       size_t num_media_flows,
+                       size_t num_tcp_flows,
+                       int capacity_kbps);
 
   Link downlink_;
   Link uplink_;
