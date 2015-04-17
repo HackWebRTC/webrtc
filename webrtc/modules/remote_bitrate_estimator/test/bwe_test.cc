@@ -239,7 +239,7 @@ void BweTest::RunFairnessTest(BandwidthEstimatorType bwe_type,
 
   ChokeFilter choke(&uplink_, all_flow_ids);
   choke.SetCapacity(capacity_kbps);
-  // choke.SetMaxDelay(1000);
+  choke.SetMaxDelay(1000);
 
   std::vector<RateCounterFilter*> rate_counters;
   for (int flow : all_flow_ids) {

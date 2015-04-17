@@ -313,7 +313,8 @@ void TcpSender::UpdateCongestionControl(const FeedbackPacket* fb) {
 
 bool TcpSender::LossEvent(const std::vector<uint16_t>& acked_packets) {
   uint16_t expected = acked_packets.back() - last_acked_seq_num_;
-  return expected - static_cast<uint16_t>(acked_packets.size()) > 0;
+  uint16_t missing = expected - static_cast<uint16_t>(acked_packets.size());
+  return missing > 0;
 }
 
 Packets TcpSender::GeneratePackets(size_t num_packets) {
