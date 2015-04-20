@@ -334,6 +334,8 @@ def GetPreferredTryMasters(project, change):
       'ios_arm64',
       'ios_arm64_rel',
       'ios_rel',
+      'ios32_sim',
+      'ios64_sim',
   ]
   linux_gn_bots = [
       'linux_gn',
