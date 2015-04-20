@@ -42,6 +42,10 @@ ByteBuffer::ByteBuffer(const char* bytes) {
   Construct(bytes, strlen(bytes), ORDER_NETWORK);
 }
 
+ByteBuffer::ByteBuffer(const Buffer& buf) {
+  Construct(buf.data<char>(), buf.size(), ORDER_NETWORK);
+}
+
 void ByteBuffer::Construct(const char* bytes, size_t len,
                            ByteOrder byte_order) {
   version_ = 0;

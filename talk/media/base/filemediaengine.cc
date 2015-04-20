@@ -276,7 +276,8 @@ bool RtpSenderReceiver::SendRtpPacket(const void* data, size_t len) {
   if (!media_channel_)
     return false;
 
-  rtc::Buffer packet(data, len, kMaxRtpPacketLen);
+  rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                     kMaxRtpPacketLen);
   return media_channel_->SendPacket(&packet);
 }
 

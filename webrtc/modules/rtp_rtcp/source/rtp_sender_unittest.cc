@@ -79,8 +79,9 @@ class LoopbackTransportTest : public webrtc::Transport {
   }
   int SendPacket(int channel, const void *data, size_t len) override {
     packets_sent_++;
-    rtc::Buffer* buffer = new rtc::Buffer(data, len);
-    last_sent_packet_ = reinterpret_cast<uint8_t*>(buffer->data());
+    rtc::Buffer* buffer =
+        new rtc::Buffer(reinterpret_cast<const uint8_t*>(data), len);
+    last_sent_packet_ = buffer->data<uint8_t>();
     last_sent_packet_len_ = len;
     total_bytes_sent_ += len;
     sent_packets_.push_back(buffer);

@@ -29,6 +29,8 @@
       'target_name': 'rtc_base_approved',
       'type': 'static_library',
       'sources': [
+        'buffer.cc',
+        'buffer.h',
         'checks.cc',
         'checks.h',
         'event.cc',
@@ -100,8 +102,6 @@
         'basictypes.h',
         'bind.h',
         'bind.h.pump',
-        'buffer.cc',
-        'buffer.h',
         'bytebuffer.cc',
         'bytebuffer.h',
         'byteorder.h',

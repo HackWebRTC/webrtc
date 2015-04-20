@@ -73,11 +73,13 @@ template <class Base> class RtpHelper : public Base {
     if (!sending_) {
       return false;
     }
-    rtc::Buffer packet(data, len, kMaxRtpPacketLen);
+    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                       kMaxRtpPacketLen);
     return Base::SendPacket(&packet);
   }
   bool SendRtcp(const void* data, int len) {
-    rtc::Buffer packet(data, len, kMaxRtpPacketLen);
+    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                       kMaxRtpPacketLen);
     return Base::SendRtcp(&packet);
   }
 
@@ -193,11 +195,11 @@ template <class Base> class RtpHelper : public Base {
   void set_playout(bool playout) { playout_ = playout; }
   virtual void OnPacketReceived(rtc::Buffer* packet,
                                 const rtc::PacketTime& packet_time) {
-    rtp_packets_.push_back(std::string(packet->data(), packet->size()));
+    rtp_packets_.push_back(std::string(packet->data<char>(), packet->size()));
   }
   virtual void OnRtcpReceived(rtc::Buffer* packet,
                               const rtc::PacketTime& packet_time) {
-    rtcp_packets_.push_back(std::string(packet->data(), packet->size()));
+    rtcp_packets_.push_back(std::string(packet->data<char>(), packet->size()));
   }
   virtual void OnReadyToSend(bool ready) {
     ready_to_send_ = ready;
@@ -686,7 +688,7 @@ class FakeDataMediaChannel : public RtpHelper<DataMediaChannel> {
       return false;
     } else {
       last_sent_data_params_ = params;
-      last_sent_data_ = std::string(payload.data(), payload.size());
+      last_sent_data_ = std::string(payload.data<char>(), payload.size());
       return true;
     }
   }

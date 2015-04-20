@@ -54,8 +54,7 @@ bool ParseDataChannelOpenMessage(const rtc::Buffer& payload,
   // Format defined at
   // http://tools.ietf.org/html/draft-jesup-rtcweb-data-protocol-04
 
-  rtc::ByteBuffer buffer(payload.data(), payload.size());
-
+  rtc::ByteBuffer buffer(payload);
   uint8 message_type;
   if (!buffer.ReadUInt8(&message_type)) {
     LOG(LS_WARNING) << "Could not read OPEN message type.";
@@ -126,8 +125,7 @@ bool ParseDataChannelOpenMessage(const rtc::Buffer& payload,
 }
 
 bool ParseDataChannelOpenAckMessage(const rtc::Buffer& payload) {
-  rtc::ByteBuffer buffer(payload.data(), payload.size());
-
+  rtc::ByteBuffer buffer(payload);
   uint8 message_type;
   if (!buffer.ReadUInt8(&message_type)) {
     LOG(LS_WARNING) << "Could not read OPEN_ACK message type.";

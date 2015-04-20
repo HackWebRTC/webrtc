@@ -14,6 +14,7 @@
 #include <string>
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/constructormagic.h"
 
 namespace rtc {
@@ -34,6 +35,8 @@ class ByteBuffer {
 
   // Initializes buffer from a zero-terminated string.
   explicit ByteBuffer(const char* bytes);
+
+  explicit ByteBuffer(const Buffer& buf);
 
   ~ByteBuffer();
 

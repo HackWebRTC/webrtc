@@ -144,7 +144,7 @@ class RtpDataMediaChannelTest : public testing::Test {
     rtc::scoped_ptr<const rtc::Buffer> packet(
         iface_->GetRtpPacket(index));
     if (packet->size() > 12) {
-      return std::string(packet->data() + 12, packet->size() - 12);
+      return std::string(packet->data<char>() + 12, packet->size() - 12);
     } else {
       return "";
     }

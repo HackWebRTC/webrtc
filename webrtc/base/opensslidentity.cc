@@ -285,7 +285,7 @@ std::string OpenSSLCertificate::ToPEMString() const {
 
 void OpenSSLCertificate::ToDER(Buffer* der_buffer) const {
   // In case of failure, make sure to leave the buffer empty.
-  der_buffer->SetData(NULL, 0);
+  der_buffer->SetSize(0);
 
   // Calculates the DER representation of the certificate, from scratch.
   BIO* bio = BIO_new(BIO_s_mem());

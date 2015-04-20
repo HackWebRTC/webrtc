@@ -313,12 +313,14 @@ class WebRtcMediaChannel : public T, public webrtc::Transport {
  protected:
   // implements Transport interface
   int SendPacket(int channel, const void* data, size_t len) override {
-    rtc::Buffer packet(data, len, kMaxRtpPacketLen);
+    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                       kMaxRtpPacketLen);
     return T::SendPacket(&packet) ? static_cast<int>(len) : -1;
   }
 
   int SendRTCPPacket(int channel, const void* data, size_t len) override {
-    rtc::Buffer packet(data, len, kMaxRtpPacketLen);
+    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                       kMaxRtpPacketLen);
     return T::SendRtcp(&packet) ? static_cast<int>(len) : -1;
   }
 

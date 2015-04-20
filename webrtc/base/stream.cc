@@ -755,7 +755,7 @@ StreamResult AsyncWriteStream::Write(const void* data, size_t data_len,
   {
     CritScope cs(&crit_buffer_);
     previous_buffer_length = buffer_.size();
-    buffer_.AppendData(data, data_len);
+    buffer_.AppendData(reinterpret_cast<const uint8_t*>(data), data_len);
   }
 
   if (previous_buffer_length == 0) {
@@ -790,7 +790,8 @@ void AsyncWriteStream::ClearBufferAndWrite() {
   Buffer to_write;
   {
     CritScope cs_buffer(&crit_buffer_);
-    buffer_.TransferTo(&to_write);
+    to_write = buffer_.Pass();
+    buffer_.Clear();
   }
 
   if (to_write.size() > 0) {

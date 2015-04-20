@@ -103,6 +103,8 @@ static_library("rtc_base_approved") {
   public_configs = [ "..:common_inherited_config" ]
 
   sources = [
+    "buffer.cc",
+    "buffer.h",
     "checks.cc",
     "checks.h",
     "event.cc",
@@ -177,8 +179,6 @@ static_library("rtc_base") {
     "base64.cc",
     "base64.h",
     "basicdefs.h",
-    "buffer.cc",
-    "buffer.h",
     "bytebuffer.cc",
     "bytebuffer.h",
     "byteorder.h",

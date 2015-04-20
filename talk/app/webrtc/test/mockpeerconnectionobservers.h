@@ -100,7 +100,7 @@ class MockDataChannelObserver : public webrtc::DataChannelObserver {
 
   virtual void OnStateChange() { state_ = channel_->state(); }
   virtual void OnMessage(const DataBuffer& buffer) {
-    last_message_.assign(buffer.data.data(), buffer.data.size());
+    last_message_.assign(buffer.data.data<char>(), buffer.data.size());
     ++received_message_count_;
   }
 

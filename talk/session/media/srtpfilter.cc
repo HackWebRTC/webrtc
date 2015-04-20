@@ -36,6 +36,7 @@
 #include "talk/media/base/rtputils.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/byteorder.h"
+#include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/timeutils.h"

@@ -231,7 +231,8 @@ void RtpDataMediaChannel::OnPacketReceived(
     //                 << packet->length() << ".";
     return;
   }
-  const char* data = packet->data() + header_length + sizeof(kReservedSpace);
+  const char* data =
+      packet->data<char>() + header_length + sizeof(kReservedSpace);
   size_t data_len = packet->size() - header_length - sizeof(kReservedSpace);
 
   if (!receiving_) {
@@ -337,14 +338,12 @@ bool RtpDataMediaChannel::SendData(
   rtp_clock_by_send_ssrc_[header.ssrc]->Tick(
       now, &header.seq_num, &header.timestamp);
 
-  rtc::Buffer packet;
-  packet.SetCapacity(packet_len);
-  packet.SetSize(kMinRtpPacketLen);
+  rtc::Buffer packet(kMinRtpPacketLen, packet_len);
   if (!SetRtpHeader(packet.data(), packet.size(), header)) {
     return false;
   }
-  packet.AppendData(&kReservedSpace, sizeof(kReservedSpace));
-  packet.AppendData(payload.data(), payload.size());
+  packet.AppendData(kReservedSpace);
+  packet.AppendData(payload);
 
   LOG(LS_VERBOSE) << "Sent RTP data packet: "
                   << " stream=" << found_stream->id << " ssrc=" << header.ssrc

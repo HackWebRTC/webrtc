@@ -478,7 +478,7 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
     // Avoid a copy by transferring the ownership of the packet data.
     int message_id = (!rtcp) ? MSG_RTPPACKET : MSG_RTCPPACKET;
     PacketMessageData* data = new PacketMessageData;
-    packet->TransferTo(&data->packet);
+    data->packet = packet->Pass();
     data->dscp = dscp;
     worker_thread_->Post(this, message_id, data);
     return true;
@@ -512,7 +512,7 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
   // Protect if needed.
   if (srtp_filter_.IsActive()) {
     bool res;
-    char* data = packet->data();
+    uint8_t* data = packet->data<uint8_t>();
     int len = static_cast<int>(packet->size());
     if (!rtcp) {
     // If ENABLE_EXTERNAL_AUTH flag is on then packet authentication is not done
@@ -584,7 +584,7 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
 
   // Bon voyage.
   int ret =
-      channel->SendPacket(packet->data(), packet->size(), options,
+      channel->SendPacket(packet->data<char>(), packet->size(), options,
                           (secure() && secure_dtls()) ? PF_SRTP_BYPASS : 0);
   if (ret != static_cast<int>(packet->size())) {
     if (channel->GetError() == EWOULDBLOCK) {
@@ -606,7 +606,7 @@ bool BaseChannel::WantsPacket(bool rtcp, rtc::Buffer* packet) {
   }
 
   // Bundle filter handles both rtp and rtcp packets.
-  return bundle_filter_.DemuxPacket(packet->data(), packet->size(), rtcp);
+  return bundle_filter_.DemuxPacket(packet->data<char>(), packet->size(), rtcp);
 }
 
 void BaseChannel::HandlePacket(bool rtcp, rtc::Buffer* packet,
@@ -630,7 +630,7 @@ void BaseChannel::HandlePacket(bool rtcp, rtc::Buffer* packet,
 
   // Unprotect the packet, if needed.
   if (srtp_filter_.IsActive()) {
-    char* data = packet->data();
+    char* data = packet->data<char>();
     int len = static_cast<int>(packet->size());
     bool res;
     if (!rtcp) {

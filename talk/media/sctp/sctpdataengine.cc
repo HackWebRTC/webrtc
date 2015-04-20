@@ -186,8 +186,8 @@ static int OnSctpOutboundPacket(void* addr, void* data, size_t length,
                   << "; tos: " << std::hex << static_cast<int>(tos)
                   << "; set_df: " << std::hex << static_cast<int>(set_df);
   // Note: We have to copy the data; the caller will delete it.
-  OutboundPacketMessage* msg =
-      new OutboundPacketMessage(new rtc::Buffer(data, length));
+  auto* msg = new OutboundPacketMessage(
+      new rtc::Buffer(reinterpret_cast<uint8_t*>(data), length));
   channel->worker_thread()->Post(channel, MSG_SCTPOUTBOUNDPACKET, msg);
   return 0;
 }
@@ -214,7 +214,7 @@ static int OnSctpInboundPacket(struct socket* sock, union sctp_sockstore addr,
                   << " on an SCTP packet.  Dropping.";
   } else {
     SctpInboundPacket* packet = new SctpInboundPacket;
-    packet->buffer.SetData(data, length);
+    packet->buffer.SetData(reinterpret_cast<uint8_t*>(data), length);
     packet->params.ssrc = rcv.rcv_sid;
     packet->params.seq_num = rcv.rcv_ssn;
     packet->params.timestamp = rcv.rcv_tsn;
@@ -630,7 +630,7 @@ void SctpDataMediaChannel::OnDataFromSctpToChannel(
                     << " on stream " << params.ssrc;
     // Reports all received messages to upper layers, no matter whether the sid
     // is known.
-    SignalDataReceived(params, buffer->data(), buffer->size());
+    SignalDataReceived(params, buffer->data<char>(), buffer->size());
   } else {
     LOG(LS_WARNING) << debug_name_ << "->OnDataFromSctpToChannel(...): "
                     << "Not receiving packet with sid=" << params.ssrc

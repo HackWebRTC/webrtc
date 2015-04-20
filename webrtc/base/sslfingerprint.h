@@ -13,6 +13,7 @@
 
 #include <string>
 
+#include "webrtc/base/basictypes.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/sslidentity.h"
 

@@ -168,7 +168,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(0, voe_.GetLocalSSRC(default_channel_num, default_send_ssrc));
   }
   void DeliverPacket(const void* data, int len) {
-    rtc::Buffer packet(data, len);
+    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len);
     channel_->OnPacketReceived(&packet, rtc::PacketTime());
   }
   virtual void TearDown() {

@@ -4123,14 +4123,16 @@ void WebRtcVideoMediaChannel::OnMessage(rtc::Message* msg) {
 
 int WebRtcVideoMediaChannel::SendPacket(int channel, const void* data,
                                         size_t len) {
-  rtc::Buffer packet(data, len, kMaxRtpPacketLen);
+  rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                     kMaxRtpPacketLen);
   return MediaChannel::SendPacket(&packet) ? static_cast<int>(len) : -1;
 }
 
 int WebRtcVideoMediaChannel::SendRTCPPacket(int channel,
                                             const void* data,
                                             size_t len) {
-  rtc::Buffer packet(data, len, kMaxRtpPacketLen);
+  rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                     kMaxRtpPacketLen);
   return MediaChannel::SendRtcp(&packet) ? static_cast<int>(len) : -1;
 }
 

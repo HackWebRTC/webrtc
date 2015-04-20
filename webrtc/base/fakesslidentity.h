@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "webrtc/base/common.h"
 #include "webrtc/base/messagedigest.h"
 #include "webrtc/base/sslidentity.h"
 

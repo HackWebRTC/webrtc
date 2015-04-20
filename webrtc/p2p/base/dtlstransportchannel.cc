@@ -209,7 +209,7 @@ bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
   }
 
   // At this point we know we are doing DTLS
-  remote_fingerprint_value.TransferTo(&remote_fingerprint_value_);
+  remote_fingerprint_value_ = remote_fingerprint_value.Pass();
   remote_fingerprint_algorithm_ = digest_alg;
 
   if (!SetupDtls()) {

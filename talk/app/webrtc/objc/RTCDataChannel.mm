@@ -141,7 +141,8 @@ std::string StdStringFromNSString(NSString* nsString) {
 - (instancetype)initWithData:(NSData*)data isBinary:(BOOL)isBinary {
   NSAssert(data, @"data cannot be nil");
   if (self = [super init]) {
-    rtc::Buffer buffer([data bytes], [data length]);
+    rtc::Buffer buffer(reinterpret_cast<const uint8_t*>([data bytes]),
+                       [data length]);
     _dataBuffer.reset(new webrtc::DataBuffer(buffer, isBinary));
   }
   return self;

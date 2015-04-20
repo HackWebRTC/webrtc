@@ -598,12 +598,12 @@ class scoped_ptr<T[], D> {
   template <class U> bool operator!=(scoped_ptr<U> const& p2) const;
 };
 
-}  // namespace rtc
-
 template <class T, class D>
 void swap(rtc::scoped_ptr<T, D>& p1, rtc::scoped_ptr<T, D>& p2) {
   p1.swap(p2);
 }
+
+}  // namespace rtc
 
 template <class T, class D>
 bool operator==(T* p1, const rtc::scoped_ptr<T, D>& p2) {
