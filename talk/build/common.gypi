@@ -133,7 +133,6 @@
         },
         'defines': [
           'HASH_NAMESPACE=__gnu_cxx',
-          'POSIX',
           'WEBRTC_POSIX',
           'DISABLE_DYNAMIC_CAST',
           # The POSIX standard says we have to define this.

@@ -51,7 +51,7 @@ rtc::AsyncSocket* CreateClientSocket(int family) {
   rtc::Win32Socket* sock = new rtc::Win32Socket();
   sock->CreateT(family, SOCK_STREAM);
   return sock;
-#elif defined(POSIX)
+#elif defined(WEBRTC_POSIX)
   rtc::Thread* thread = rtc::Thread::Current();
   ASSERT(thread != NULL);
   return thread->socketserver()->CreateAsyncSocket(family, SOCK_STREAM);

@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef POSIX
+#if defined(WEBRTC_POSIX)
 #include <errno.h>
-#endif  // POSIX
+#endif  // WEBRTC_POSIX
 
 #include <iostream>
 

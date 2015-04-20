@@ -29,11 +29,11 @@
 
 #include <assert.h>
 
-#ifdef POSIX
+#if defined(WEBRTC_POSIX)
 #include <signal.h>
 #include <termios.h>
 #include <unistd.h>
-#endif  // POSIX
+#endif  // WEBRTC_POSIX
 
 #include "talk/examples/call/callclient.h"
 #include "talk/examples/call/console.h"
@@ -41,7 +41,7 @@
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/stringutils.h"
 
-#ifdef POSIX
+#ifdef WEBRTC_POSIX
 static void DoNothing(int unused) {}
 #endif
 
@@ -147,7 +147,7 @@ void Console::RunConsole() {
 void Console::OnMessage(rtc::Message *msg) {
   switch (msg->message_id) {
     case MSG_START:
-#ifdef POSIX
+#if defined(WEBRTC_POSIX)
       // Install a no-op signal so that we can abort RunConsole() by raising
       // SIGUSR1.
       struct sigaction act;
