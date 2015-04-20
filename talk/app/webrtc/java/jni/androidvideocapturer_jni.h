@@ -86,6 +86,7 @@ private:
   const ScopedGlobalRef<jobject> j_capturer_global_;
   const ScopedGlobalRef<jclass> j_video_capturer_class_;
   const ScopedGlobalRef<jclass> j_observer_class_;
+  volatile bool valid_global_refs_;
   jobject j_frame_observer_;
 
   rtc::ThreadChecker thread_checker_;

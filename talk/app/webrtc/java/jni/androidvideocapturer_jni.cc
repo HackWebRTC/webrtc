@@ -68,7 +68,9 @@ AndroidVideoCapturerJni::AndroidVideoCapturerJni(JNIEnv* jni,
           jni,
           FindClass(jni,
                     "org/webrtc/VideoCapturerAndroid$NativeObserver")),
-      capturer_(nullptr) {
+      capturer_(nullptr),
+      thread_(nullptr),
+      valid_global_refs_(true) {
   LOG(LS_INFO) << "AndroidVideoCapturerJni ctor";
   thread_checker_.DetachFromThread();
 }
@@ -84,7 +86,12 @@ bool AndroidVideoCapturerJni::Init(jstring device_name) {
 }
 
 AndroidVideoCapturerJni::~AndroidVideoCapturerJni() {
-  LOG(LS_INFO) << "AndroidVideoCapturerJni dtor";
+  valid_global_refs_ = false;
+  if (thread_ != nullptr) {
+    LOG(LS_INFO) << "AndroidVideoCapturerJni dtor - flush invoker";
+    invoker_.Flush(thread_);
+  }
+  LOG(LS_INFO) << "AndroidVideoCapturerJni dtor done";
 }
 
 void AndroidVideoCapturerJni::Start(int width, int height, int framerate,
@@ -136,6 +143,10 @@ void AndroidVideoCapturerJni::ReturnBuffer(int64 time_stamp) {
 }
 
 void AndroidVideoCapturerJni::ReturnBuffer_w(int64 time_stamp) {
+  if (!valid_global_refs_) {
+    LOG(LS_ERROR) << "ReturnBuffer_w is called for invalid global refs.";
+    return;
+  }
   jmethodID m = GetMethodID(jni(), *j_video_capturer_class_,
                             "returnBuffer", "(J)V");
   jni()->CallVoidMethod(*j_capturer_global_, m, time_stamp);
@@ -174,7 +185,7 @@ void AndroidVideoCapturerJni::OnCapturerStarted_w(bool success) {
   if (capturer_) {
     capturer_->OnCapturerStarted(success);
   } else {
-    LOG(LS_ERROR) << "OnCapturerStarted_w is called for null capturer.";
+    LOG(LS_WARNING) << "OnCapturerStarted_w is called for closed capturer.";
   }
 }
 
@@ -187,7 +198,8 @@ void AndroidVideoCapturerJni::OnIncomingFrame_w(void* video_frame,
     capturer_->OnIncomingFrame(video_frame, length, rotation, time_stamp);
   } else {
     LOG(LS_INFO) <<
-        "Frame arrived after camera has been stopped: " << time_stamp;
+        "Frame arrived after camera has been stopped: " << time_stamp <<
+        ". Valid global refs: " << valid_global_refs_;
     ReturnBuffer_w(time_stamp);
   }
 }
