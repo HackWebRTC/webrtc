@@ -295,10 +295,12 @@ void TcpSender::UpdateCongestionControl(const FeedbackPacket* fb) {
   DCHECK(!tcp_fb->acked_packets().empty());
   ack_received_ = true;
 
-  in_flight_ -= static_cast<int>(tcp_fb->acked_packets().size());
-  DCHECK_GE(in_flight_, 0);
+  uint16_t expected = tcp_fb->acked_packets().back() - last_acked_seq_num_;
+  in_flight_ -= expected;
+  uint16_t missing =
+      expected - static_cast<uint16_t>(tcp_fb->acked_packets().size());
 
-  if (LossEvent(tcp_fb->acked_packets())) {
+  if (missing > 0) {
     cwnd_ /= 2.0f;
     in_slow_start_ = false;
   } else if (in_slow_start_) {
@@ -309,12 +311,6 @@ void TcpSender::UpdateCongestionControl(const FeedbackPacket* fb) {
 
   last_acked_seq_num_ =
       LatestSequenceNumber(tcp_fb->acked_packets().back(), last_acked_seq_num_);
-}
-
-bool TcpSender::LossEvent(const std::vector<uint16_t>& acked_packets) {
-  uint16_t expected = acked_packets.back() - last_acked_seq_num_;
-  uint16_t missing = expected - static_cast<uint16_t>(acked_packets.size());
-  return missing > 0;
 }
 
 Packets TcpSender::GeneratePackets(size_t num_packets) {

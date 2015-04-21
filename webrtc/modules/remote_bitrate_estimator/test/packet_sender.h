@@ -108,11 +108,13 @@ class TcpSender : public PacketSender {
       : PacketSender(listener, flow_id),
         now_ms_(0),
         in_slow_start_(false),
-        cwnd_(1),
+        cwnd_(10),
         in_flight_(0),
         ack_received_(false),
         last_acked_seq_num_(0),
         next_sequence_number_(0) {}
+
+  virtual ~TcpSender() {}
 
   void RunFor(int64_t time_ms, Packets* in_out) override;
   int GetFeedbackIntervalMs() const override { return 10; }
@@ -120,7 +122,6 @@ class TcpSender : public PacketSender {
  private:
   void SendPackets(Packets* in_out);
   void UpdateCongestionControl(const FeedbackPacket* fb);
-  bool LossEvent(const std::vector<uint16_t>& acked_packets);
   Packets GeneratePackets(size_t num_packets);
 
   int64_t now_ms_;
