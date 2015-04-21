@@ -189,8 +189,9 @@ void BweTest::PrintResults(
   ss << throughput_kbps.GetStdDev() / throughput_kbps.GetMean();
   webrtc::test::PrintResult("BwePerformance", GetTestName(),
                             "Utilization var coeff", ss.str(), "", false);
-  webrtc::test::PrintResult("BwePerformance", GetTestName(), "Average delay",
-                            delay_ms.AsString(), "ms", false);
+  webrtc::test::PrintResultMeanAndError("BwePerformance", GetTestName(),
+                                        "Average delay", delay_ms.AsString(),
+                                        "ms", false);
   double fairness_index = 0.0;
   double squared_bitrate_sum = 0.0;
   for (Stats<double> flow : flow_throughput_kbps) {
