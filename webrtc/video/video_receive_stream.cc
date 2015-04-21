@@ -164,12 +164,12 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   vie_channel_->SetSSRC(config_.rtp.local_ssrc, kViEStreamTypeNormal, 0);
   // TODO(pbos): Support multiple RTX, per video payload.
   Config::Rtp::RtxMap::const_iterator it = config_.rtp.rtx.begin();
-  if (it != config_.rtp.rtx.end()) {
+  for (; it != config_.rtp.rtx.end(); ++it) {
     DCHECK(it->second.ssrc != 0);
     DCHECK(it->second.payload_type != 0);
 
     vie_channel_->SetRemoteSSRCType(kViEStreamTypeRtx, it->second.ssrc);
-    vie_channel_->SetRtxReceivePayloadType(it->second.payload_type);
+    vie_channel_->SetRtxReceivePayloadType(it->second.payload_type, it->first);
   }
 
   // TODO(pbos): Remove channel_group_ usage from VideoReceiveStream. This
@@ -212,6 +212,11 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
     strcpy(codec.plName, "red");
     codec.plType = config_.rtp.fec.red_payload_type;
     CHECK_EQ(0, vie_channel_->SetReceiveCodec(codec));
+    if (config_.rtp.fec.red_rtx_payload_type != -1) {
+      vie_channel_->SetRtxReceivePayloadType(
+          config_.rtp.fec.red_rtx_payload_type,
+          config_.rtp.fec.red_payload_type);
+    }
   }
 
   if (config.rtp.rtcp_xr.receiver_reference_time_report)

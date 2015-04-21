@@ -231,6 +231,13 @@ VideoCodec::VideoCodec(int pt,
       framerate(fr) {
 }
 
+VideoCodec::VideoCodec(int pt, const std::string& nm)
+    : Codec(pt, nm, kVideoCodecClockrate, 0),
+      width(0),
+      height(0),
+      framerate(0) {
+}
+
 VideoCodec::VideoCodec() : Codec(), width(0), height(0), framerate(0) {
   clockrate = kVideoCodecClockrate;
 }
@@ -315,6 +322,20 @@ std::string DataCodec::ToString() const {
   std::ostringstream os;
   os << "DataCodec[" << id << ":" << name << "]";
   return os.str();
+}
+
+bool HasNack(const VideoCodec& codec) {
+  return codec.HasFeedbackParam(
+      FeedbackParam(kRtcpFbParamNack, kParamValueEmpty));
+}
+
+bool HasRemb(const VideoCodec& codec) {
+  return codec.HasFeedbackParam(
+      FeedbackParam(kRtcpFbParamRemb, kParamValueEmpty));
+}
+
+bool CodecNamesEq(const std::string& name1, const std::string& name2) {
+  return _stricmp(name1.c_str(), name2.c_str()) == 0;
 }
 
 }  // namespace cricket

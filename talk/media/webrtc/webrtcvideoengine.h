@@ -88,10 +88,7 @@ struct Device;
 // This set of methods is declared here for the sole purpose of sharing code
 // between webrtc video engine v1 and v2.
 std::vector<VideoCodec> DefaultVideoCodecList();
-bool CodecNameMatches(const std::string& name1, const std::string& name2);
 bool CodecIsInternallySupported(const std::string& codec_name);
-bool IsNackEnabled(const VideoCodec& codec);
-bool IsRembEnabled(const VideoCodec& codec);
 void AddDefaultFeedbackParams(VideoCodec* codec);
 
 class WebRtcVideoEngine : public sigslot::has_slots<> {
@@ -504,7 +501,8 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   // Global send side state.
   SendChannelMap send_channels_;
   rtc::scoped_ptr<webrtc::VideoCodec> send_codec_;
-  int send_rtx_type_;
+  // A map from RTX payload types to their associated payload types.
+  std::map<int, int> send_rtx_associated_types_;
   int send_red_type_;
   int send_fec_type_;
   bool sending_;

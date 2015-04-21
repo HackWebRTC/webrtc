@@ -126,6 +126,17 @@ const char kRtpVideoRotation6BitsHeaderExtensionForTesting[] =
 
 const int kNumDefaultUnsignalledVideoRecvStreams = 0;
 
+const char kVp8CodecName[] = "VP8";
+const char kVp9CodecName[] = "VP9";
 
+const int kDefaultVp8PlType = 100;
+const int kDefaultVp9PlType = 101;
+const int kDefaultRedPlType = 116;
+const int kDefaultUlpfecType = 117;
+const int kDefaultRtxVp8PlType = 96;
+
+const int kDefaultVideoMaxWidth = 640;
+const int kDefaultVideoMaxHeight = 400;
+const int kDefaultVideoMaxFramerate = 30;
 }  // namespace cricket
 

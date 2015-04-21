@@ -71,7 +71,7 @@ class EndToEndTest : public test::CallTest {
     }
   };
 
-  void DecodesRetransmittedFrame(bool retransmit_over_rtx);
+  void DecodesRetransmittedFrame(bool use_rtx, bool use_red);
   void ReceivesPliAndRecovers(int rtp_history_ms);
   void RespectsRtcpMode(newapi::RtcpMode rtcp_mode);
   void TestXrReceiverReferenceTimeReport(bool enable_rrtr);
@@ -671,16 +671,16 @@ void EndToEndTest::TestReceivedFecPacketsNotNacked(
 
 // This test drops second RTP packet with a marker bit set, makes sure it's
 // retransmitted and renders. Retransmission SSRCs are also checked.
-void EndToEndTest::DecodesRetransmittedFrame(bool retransmit_over_rtx) {
+void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
   static const int kDroppedFrameNumber = 2;
   class RetransmissionObserver : public test::EndToEndTest,
                                  public I420FrameCallback {
    public:
-    explicit RetransmissionObserver(bool expect_rtx)
+    explicit RetransmissionObserver(bool use_rtx, bool use_red)
         : EndToEndTest(kDefaultTimeoutMs),
-          retransmission_ssrc_(expect_rtx ? kSendRtxSsrcs[0] : kSendSsrcs[0]),
-          retransmission_payload_type_(expect_rtx ? kSendRtxPayloadType
-                                                  : kFakeSendPayloadType),
+          payload_type_(GetPayloadType(false, use_red)),
+          retransmission_ssrc_(use_rtx ? kSendRtxSsrcs[0] : kSendSsrcs[0]),
+          retransmission_payload_type_(GetPayloadType(use_rtx, use_red)),
           marker_bits_observed_(0),
           retransmitted_timestamp_(0),
           frame_retransmitted_(false) {}
@@ -698,7 +698,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool retransmit_over_rtx) {
       }
 
       EXPECT_EQ(kSendSsrcs[0], header.ssrc);
-      EXPECT_EQ(kFakeSendPayloadType, header.payloadType);
+      EXPECT_EQ(payload_type_, header.payloadType);
 
       // Found the second frame's final packet, drop this and expect a
       // retransmission.
@@ -724,12 +724,20 @@ void EndToEndTest::DecodesRetransmittedFrame(bool retransmit_over_rtx) {
       send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       (*receive_configs)[0].pre_render_callback = this;
       (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+
+      if (payload_type_ == kRedPayloadType) {
+        send_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+        send_config->rtp.fec.red_payload_type = kRedPayloadType;
+        (*receive_configs)[0].rtp.fec.red_payload_type = kRedPayloadType;
+        (*receive_configs)[0].rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+      }
+
       if (retransmission_ssrc_ == kSendRtxSsrcs[0]) {
         send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[0]);
         send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
-        (*receive_configs)[0].rtp.rtx[kSendRtxPayloadType].ssrc =
+        (*receive_configs)[0].rtp.rtx[kFakeSendPayloadType].ssrc =
             kSendRtxSsrcs[0];
-        (*receive_configs)[0].rtp.rtx[kSendRtxPayloadType].payload_type =
+        (*receive_configs)[0].rtp.rtx[kFakeSendPayloadType].payload_type =
             kSendRtxPayloadType;
       }
     }
@@ -739,22 +747,36 @@ void EndToEndTest::DecodesRetransmittedFrame(bool retransmit_over_rtx) {
           << "Timed out while waiting for retransmission to render.";
     }
 
+    int GetPayloadType(bool use_rtx, bool use_red) {
+      return use_rtx ? kSendRtxPayloadType
+                     : (use_red ? kRedPayloadType : kFakeSendPayloadType);
+    }
+
+    const int payload_type_;
     const uint32_t retransmission_ssrc_;
     const int retransmission_payload_type_;
     int marker_bits_observed_;
     uint32_t retransmitted_timestamp_;
     bool frame_retransmitted_;
-  } test(retransmit_over_rtx);
+  } test(use_rtx, use_red);
 
   RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, DecodesRetransmittedFrame) {
-  DecodesRetransmittedFrame(false);
+  DecodesRetransmittedFrame(false, false);
 }
 
 TEST_F(EndToEndTest, DecodesRetransmittedFrameOverRtx) {
-  DecodesRetransmittedFrame(true);
+  DecodesRetransmittedFrame(true, false);
+}
+
+TEST_F(EndToEndTest, DecodesRetransmittedFrameByRed) {
+  DecodesRetransmittedFrame(false, true);
+}
+
+TEST_F(EndToEndTest, DecodesRetransmittedFrameByRedOverRtx) {
+  DecodesRetransmittedFrame(true, true);
 }
 
 TEST_F(EndToEndTest, UsesFrameCallbacks) {
@@ -2589,5 +2611,4 @@ TEST_F(EndToEndTest, CanCreateAndDestroyManyVideoStreams) {
     call->DestroyVideoReceiveStream(receive_stream);
   }
 }
-
 }  // namespace webrtc

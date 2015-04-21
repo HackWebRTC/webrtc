@@ -15,8 +15,7 @@
 
 namespace webrtc {
 
-RTPPayloadRegistry::RTPPayloadRegistry(
-    RTPPayloadStrategy* rtp_payload_strategy)
+RTPPayloadRegistry::RTPPayloadRegistry(RTPPayloadStrategy* rtp_payload_strategy)
     : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       rtp_payload_strategy_(rtp_payload_strategy),
       red_payload_type_(-1),
@@ -25,8 +24,9 @@ RTPPayloadRegistry::RTPPayloadRegistry(
       last_received_payload_type_(-1),
       last_received_media_payload_type_(-1),
       rtx_(false),
-      payload_type_rtx_(-1),
-      ssrc_rtx_(0) {}
+      rtx_payload_type_(-1),
+      ssrc_rtx_(0) {
+}
 
 RTPPayloadRegistry::~RTPPayloadRegistry() {
   while (!payload_type_map_.empty()) {
@@ -256,18 +256,18 @@ bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t** restored_packet,
   ByteWriter<uint32_t>::WriteBigEndian(*restored_packet + 8, original_ssrc);
 
   CriticalSectionScoped cs(crit_sect_.get());
+  if (!rtx_)
+    return true;
 
-  if (payload_type_rtx_ != -1) {
-    if (header.payloadType == payload_type_rtx_ &&
-        incoming_payload_type_ != -1) {
-      (*restored_packet)[1] = static_cast<uint8_t>(incoming_payload_type_);
-      if (header.markerBit) {
-        (*restored_packet)[1] |= kRtpMarkerBitMask;  // Marker bit is set.
-      }
-    } else {
-      LOG(LS_WARNING) << "Incorrect RTX configuration, dropping packet.";
-      return false;
-    }
+  if (rtx_payload_type_ == -1 || incoming_payload_type_ == -1) {
+    LOG(LS_WARNING) << "Incorrect RTX configuration, dropping packet.";
+    return false;
+  }
+  // TODO(changbin): Will use RTX APT map for restoring packets,
+  // thus incoming_payload_type_ should be removed in future.
+  (*restored_packet)[1] = static_cast<uint8_t>(incoming_payload_type_);
+  if (header.markerBit) {
+    (*restored_packet)[1] |= kRtpMarkerBitMask;  // Marker bit is set.
   }
   return true;
 }
@@ -284,11 +284,17 @@ bool RTPPayloadRegistry::GetRtxSsrc(uint32_t* ssrc) const {
   return rtx_;
 }
 
-void RTPPayloadRegistry::SetRtxPayloadType(int payload_type) {
+void RTPPayloadRegistry::SetRtxPayloadType(int payload_type,
+                                           int associated_payload_type) {
   CriticalSectionScoped cs(crit_sect_.get());
-  assert(payload_type >= 0);
-  payload_type_rtx_ = payload_type;
+  if (payload_type < 0) {
+    LOG(LS_ERROR) << "Invalid RTX payload type: " << payload_type;
+    return;
+  }
+
+  rtx_payload_type_map_[payload_type] = associated_payload_type;
   rtx_ = true;
+  rtx_payload_type_ = payload_type;
 }
 
 bool RTPPayloadRegistry::IsRed(const RTPHeader& header) const {

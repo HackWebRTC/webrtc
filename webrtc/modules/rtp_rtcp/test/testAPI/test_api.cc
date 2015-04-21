@@ -174,9 +174,10 @@ TEST_F(RtpRtcpAPITest, RtxSender) {
 TEST_F(RtpRtcpAPITest, RtxReceiver) {
   const uint32_t kRtxSsrc = 1;
   const int kRtxPayloadType = 119;
+  const int kPayloadType = 100;
   EXPECT_FALSE(rtp_payload_registry_->RtxEnabled());
   rtp_payload_registry_->SetRtxSsrc(kRtxSsrc);
-  rtp_payload_registry_->SetRtxPayloadType(kRtxPayloadType);
+  rtp_payload_registry_->SetRtxPayloadType(kRtxPayloadType, kPayloadType);
   EXPECT_TRUE(rtp_payload_registry_->RtxEnabled());
   RTPHeader rtx_header;
   rtx_header.ssrc = kRtxSsrc;

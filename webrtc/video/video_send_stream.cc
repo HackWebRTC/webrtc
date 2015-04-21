@@ -163,6 +163,7 @@ VideoSendStream::VideoSendStream(
           static_cast<unsigned char>(config_.rtp.fec.red_payload_type),
           static_cast<unsigned char>(config_.rtp.fec.ulpfec_payload_type));
     }
+    // TODO(changbin): Should set RTX for RED mapping in RTP sender in future.
   } else {
     rtp_rtcp_->SetNACKStatus(channel_, config_.rtp.nack.rtp_history_ms > 0);
   }
@@ -460,7 +461,8 @@ void VideoSendStream::ConfigureSsrcs() {
   }
 
   DCHECK_GE(config_.rtp.rtx.payload_type, 0);
-  rtp_rtcp_->SetRtxSendPayloadType(channel_, config_.rtp.rtx.payload_type);
+  rtp_rtcp_->SetRtxSendPayloadType(channel_, config_.rtp.rtx.payload_type,
+                                   config_.encoder_settings.payload_type);
 }
 
 std::map<uint32_t, RtpState> VideoSendStream::GetRtpStates() const {

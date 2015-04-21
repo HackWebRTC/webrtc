@@ -206,11 +206,12 @@ void ModuleRtpRtcpImpl::SetRtxSsrc(uint32_t ssrc) {
   rtp_sender_.SetRtxSsrc(ssrc);
 }
 
-void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type) {
-  rtp_sender_.SetRtxPayloadType(payload_type);
+void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type,
+                                              int associated_payload_type) {
+  rtp_sender_.SetRtxPayloadType(payload_type, associated_payload_type);
 }
 
-int ModuleRtpRtcpImpl::RtxSendPayloadType() const {
+std::pair<int, int> ModuleRtpRtcpImpl::RtxSendPayloadType() const {
   return rtp_sender_.RtxPayloadType();
 }
 

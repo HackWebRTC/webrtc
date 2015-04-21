@@ -34,6 +34,7 @@
 #include "talk/media/webrtc/fakewebrtcvideoengine.h"
 #include "talk/media/webrtc/simulcast.h"
 #include "talk/media/webrtc/webrtcvideochannelfactory.h"
+#include "talk/media/webrtc/webrtcvideoengine.h"
 #include "talk/media/webrtc/webrtcvideoengine2.h"
 #include "talk/media/webrtc/webrtcvideoengine2_unittest.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
@@ -87,6 +88,19 @@ static void CreateBlackFrame(webrtc::I420VideoFrame* video_frame,
          video_frame->allocated_size(webrtc::kVPlane));
 }
 
+void VerifySendStreamHasRtxTypes(const webrtc::VideoSendStream::Config& config,
+                                 const std::map<int, int>& rtx_types) {
+  std::map<int, int>::const_iterator it;
+  it = rtx_types.find(config.encoder_settings.payload_type);
+  EXPECT_TRUE(it != rtx_types.end() &&
+              it->second == config.rtp.rtx.payload_type);
+
+  if (config.rtp.fec.red_rtx_payload_type != -1) {
+    it = rtx_types.find(config.rtp.fec.red_payload_type);
+    EXPECT_TRUE(it != rtx_types.end() &&
+                it->second == config.rtp.fec.red_rtx_payload_type);
+  }
+}
 }  // namespace
 
 namespace cricket {
@@ -342,7 +356,11 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
       } else if (engine_codecs[i].name == "ulpfec") {
         default_ulpfec_codec_ = engine_codecs[i];
       } else if (engine_codecs[i].name == "rtx") {
-        default_rtx_codec_ = engine_codecs[i];
+        int associated_payload_type;
+        if (engine_codecs[i].GetParam(kCodecParamAssociatedPayloadType,
+                                      &associated_payload_type)) {
+          default_apt_rtx_types_[associated_payload_type] = engine_codecs[i].id;
+        }
       } else if (!codec_set) {
         default_codec_ = engine_codecs[i];
         codec_set = true;
@@ -383,7 +401,7 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
   VideoCodec default_codec_;
   VideoCodec default_red_codec_;
   VideoCodec default_ulpfec_codec_;
-  VideoCodec default_rtx_codec_;
+  std::map<int, int> default_apt_rtx_types_;
 };
 
 class WebRtcVideoEngine2VoiceTest : public WebRtcVideoEngine2Test {
@@ -429,7 +447,7 @@ TEST_F(WebRtcVideoEngine2VoiceTest, ConfiguresAvSyncForFirstReceiveChannel) {
 
 TEST_F(WebRtcVideoEngine2Test, FindCodec) {
   const std::vector<cricket::VideoCodec>& c = engine_.codecs();
-  EXPECT_EQ(4U, c.size());
+  EXPECT_EQ(cricket::DefaultVideoCodecList().size(), c.size());
 
   cricket::VideoCodec vp8(104, "VP8", 320, 200, 30, 0);
   EXPECT_TRUE(engine_.FindCodec(vp8));
@@ -1840,7 +1858,7 @@ TEST_F(WebRtcVideoChannel2Test, SetDefaultSendCodecs) {
 
   EXPECT_EQ(1u, config.rtp.rtx.ssrcs.size());
   EXPECT_EQ(kRtxSsrcs1[0], config.rtp.rtx.ssrcs[0]);
-  EXPECT_EQ(default_rtx_codec_.id, config.rtp.rtx.payload_type);
+  VerifySendStreamHasRtxTypes(config, default_apt_rtx_types_);
   // TODO(juberti): Check RTCP, PLI, TMMBR.
 }
 

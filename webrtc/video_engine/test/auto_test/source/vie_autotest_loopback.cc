@@ -40,6 +40,7 @@
 const uint32_t kSsrc = 0x01234567;
 const uint32_t kRtxSsrc = 0x01234568;
 const int kRtxPayloadType = 98;
+const int kPayloadType = 100;
 #define VCM_RED_PAYLOAD_TYPE        96
 #define VCM_ULPFEC_PAYLOAD_TYPE     97
 
@@ -244,14 +245,15 @@ int VideoEngineSampleCode(void* window1, void* window2)
       return -1;
     }
 
-    error = ptrViERtpRtcp->SetRtxSendPayloadType(videoChannel, kRtxPayloadType);
+    error = ptrViERtpRtcp->SetRtxSendPayloadType(videoChannel, kRtxPayloadType,
+                                                 kPayloadType);
     if (error == -1) {
       printf("ERROR in ViERTP_RTCP::SetRtxSendPayloadType\n");
       return -1;
     }
 
-    error = ptrViERtpRtcp->SetRtxReceivePayloadType(videoChannel,
-                                                    kRtxPayloadType);
+    error = ptrViERtpRtcp->SetRtxReceivePayloadType(
+        videoChannel, kRtxPayloadType, kPayloadType);
     if (error == -1) {
       printf("ERROR in ViERTP_RTCP::SetRtxReceivePayloadType\n");
       return -1;

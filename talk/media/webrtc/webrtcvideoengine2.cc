@@ -146,7 +146,7 @@ inline const webrtc::RtpExtension* FindHeaderExtension(
 }
 
 // Merges two fec configs and logs an error if a conflict arises
-// such that merging in diferent order would trigger a diferent output.
+// such that merging in different order would trigger a different output.
 static void MergeFecConfig(const webrtc::FecConfig& other,
                            webrtc::FecConfig* output) {
   if (other.ulpfec_payload_type != -1) {
@@ -166,6 +166,15 @@ static void MergeFecConfig(const webrtc::FecConfig& other,
                       << other.red_payload_type;
     }
     output->red_payload_type = other.red_payload_type;
+  }
+  if (other.red_rtx_payload_type != -1) {
+    if (output->red_rtx_payload_type != -1 &&
+        output->red_rtx_payload_type != other.red_rtx_payload_type) {
+      LOG(LS_WARNING) << "Conflict merging red_rtx_payload_type configs: "
+                      << output->red_rtx_payload_type << " and "
+                      << other.red_rtx_payload_type;
+    }
+    output->red_rtx_payload_type = other.red_rtx_payload_type;
   }
 }
 }  // namespace
@@ -304,12 +313,12 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoStreams(
 void* WebRtcVideoChannel2::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
     const VideoCodec& codec,
     const VideoOptions& options) {
-  if (CodecNameMatches(codec.name, kVp8CodecName)) {
+  if (CodecNamesEq(codec.name, kVp8CodecName)) {
     encoder_settings_.vp8 = webrtc::VideoEncoder::GetDefaultVp8Settings();
     options.video_noise_reduction.Get(&encoder_settings_.vp8.denoisingOn);
     return &encoder_settings_.vp8;
   }
-  if (CodecNameMatches(codec.name, kVp9CodecName)) {
+  if (CodecNamesEq(codec.name, kVp9CodecName)) {
     encoder_settings_.vp9 = webrtc::VideoEncoder::GetDefaultVp9Settings();
     options.video_noise_reduction.Get(&encoder_settings_.vp9.denoisingOn);
     return &encoder_settings_.vp9;
@@ -415,7 +424,7 @@ bool WebRtcVideoEngine2::SetDefaultEncoderConfig(
   const VideoCodec& codec = config.max_codec;
   bool supports_codec = false;
   for (size_t i = 0; i < video_codecs_.size(); ++i) {
-    if (CodecNameMatches(video_codecs_[i].name, codec.name)) {
+    if (CodecNamesEq(video_codecs_[i].name, codec.name)) {
       video_codecs_[i].width = codec.width;
       video_codecs_[i].height = codec.height;
       video_codecs_[i].framerate = codec.framerate;
@@ -666,7 +675,7 @@ bool WebRtcVideoChannel2::CodecIsExternallySupported(
   const std::vector<WebRtcVideoEncoderFactory::VideoCodec> external_codecs =
       external_encoder_factory_->codecs();
   for (size_t c = 0; c < external_codecs.size(); ++c) {
-    if (CodecNameMatches(name, external_codecs[c].name)) {
+    if (CodecNamesEq(name, external_codecs[c].name)) {
       return true;
     }
   }
@@ -1639,11 +1648,11 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
 }
 
 webrtc::VideoCodecType CodecTypeFromName(const std::string& name) {
-  if (CodecNameMatches(name, kVp8CodecName)) {
+  if (CodecNamesEq(name, kVp8CodecName)) {
     return webrtc::kVideoCodecVP8;
-  } else if (CodecNameMatches(name, kVp9CodecName)) {
+  } else if (CodecNamesEq(name, kVp9CodecName)) {
     return webrtc::kVideoCodecVP9;
-  } else if (CodecNameMatches(name, kH264CodecName)) {
+  } else if (CodecNamesEq(name, kH264CodecName)) {
     return webrtc::kVideoCodecH264;
   }
   return webrtc::kVideoCodecUnknown;
@@ -1720,7 +1729,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(
     }
   }
 
-  if (IsNackEnabled(codec_settings.codec)) {
+  if (HasNack(codec_settings.codec)) {
     parameters_.config.rtp.nack.rtp_history_ms = kNackHistoryMs;
   }
 
@@ -2087,8 +2096,8 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRecvCodecs(
   // TODO(pbos): Reconfigure RTX based on incoming recv_codecs.
   config_.rtp.fec = recv_codecs.front().fec;
   config_.rtp.nack.rtp_history_ms =
-      IsNackEnabled(recv_codecs.begin()->codec) ? kNackHistoryMs : 0;
-  config_.rtp.remb = IsRembEnabled(recv_codecs.begin()->codec);
+      HasNack(recv_codecs.begin()->codec) ? kNackHistoryMs : 0;
+  config_.rtp.remb = HasRemb(recv_codecs.begin()->codec);
 
   ClearDecoders(&old_decoders);
   RecreateWebRtcStream();
@@ -2234,6 +2243,7 @@ bool WebRtcVideoChannel2::VideoCodecSettings::operator==(
   return codec == other.codec &&
          fec.ulpfec_payload_type == other.fec.ulpfec_payload_type &&
          fec.red_payload_type == other.fec.red_payload_type &&
+         fec.red_rtx_payload_type == other.fec.red_rtx_payload_type &&
          rtx_payload_type == other.rtx_payload_type;
 }
 
@@ -2309,17 +2319,22 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
       LOG(LS_ERROR) << "RTX mapped to payload not in codec list.";
       return std::vector<VideoCodecSettings>();
     }
-    if (payload_codec_type[it->first] != VideoCodec::CODEC_VIDEO) {
-      LOG(LS_ERROR) << "RTX not mapped to regular video codec.";
+    if (payload_codec_type[it->first] != VideoCodec::CODEC_VIDEO &&
+        payload_codec_type[it->first] != VideoCodec::CODEC_RED) {
+      LOG(LS_ERROR) << "RTX not mapped to regular video codec or RED codec.";
       return std::vector<VideoCodecSettings>();
+    }
+
+    if (it->first == fec_settings.red_payload_type) {
+      fec_settings.red_rtx_payload_type = it->second;
     }
   }
 
-  // TODO(pbos): Write tests that figure out that I have not verified that RTX
-  // codecs aren't mapped to bogus payloads.
   for (size_t i = 0; i < video_codecs.size(); ++i) {
     video_codecs[i].fec = fec_settings;
-    if (rtx_mapping[video_codecs[i].codec.id] != 0) {
+    if (rtx_mapping[video_codecs[i].codec.id] != 0 &&
+        rtx_mapping[video_codecs[i].codec.id] !=
+            fec_settings.red_payload_type) {
       video_codecs[i].rtx_payload_type = rtx_mapping[video_codecs[i].codec.id];
     }
   }

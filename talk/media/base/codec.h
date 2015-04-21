@@ -162,6 +162,7 @@ struct VideoCodec : public Codec {
 
   // Creates a codec with the given parameters.
   VideoCodec(int pt, const std::string& nm, int w, int h, int fr, int pr);
+  VideoCodec(int pt, const std::string& nm);
   // Creates an empty codec.
   VideoCodec();
   VideoCodec(const VideoCodec& c);
@@ -266,6 +267,10 @@ bool FindCodecById(const std::vector<Codec>& codecs,
   }
   return false;
 }
+
+bool CodecNamesEq(const std::string& name1, const std::string& name2);
+bool HasNack(const VideoCodec& codec);
+bool HasRemb(const VideoCodec& codec);
 
 }  // namespace cricket
 

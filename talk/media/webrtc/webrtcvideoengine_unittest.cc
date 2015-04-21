@@ -76,6 +76,9 @@ static const uint32 kSsrcs3[] = {1, 2, 3};
 static const uint32 kRtxSsrcs1[] = {4};
 static const uint32 kRtxSsrcs3[] = {4, 5, 6};
 
+static const int kPayloadTypes1[] = {96};
+static const int kPayloadTypes2[] = {96, 97};
+
 class FakeViEWrapper : public cricket::ViEWrapper {
  public:
   explicit FakeViEWrapper(cricket::FakeWebRtcVideoEngine* engine)
@@ -755,8 +758,8 @@ TEST_F(WebRtcVideoEngineTestFake, SetRecvCodecsWithRtx) {
   EXPECT_STREQ("rtx", wcodec.plName);
   EXPECT_FALSE(vie_.ReceiveCodecRegistered(channel_num, wcodec));
 
-  // The RTX payload type should have been set.
-  EXPECT_EQ(rtx_codec.id, vie_.GetRtxRecvPayloadType(channel_num));
+  EXPECT_EQ(vie_.GetRtxRecvPayloadTypes(channel_num),
+            MAKE_VECTOR(kPayloadTypes1));
 }
 
 // Test that RTX packets are routed to the default video channel if
@@ -2144,7 +2147,8 @@ TEST_F(WebRtcVideoEngineTestFake, SetSendCodecsWithExternalH264) {
   codecs.push_back(rtx_codec);
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
 
-  EXPECT_EQ(96, vie_.GetRtxSendPayloadType(channel_num));
+  EXPECT_EQ(vie_.GetRtxSendPayloadTypes(channel_num),
+            MAKE_VECTOR(kPayloadTypes1));
 
   cricket::StreamParams params =
     cricket::StreamParams::CreateLegacy(kSsrcs1[0]);
@@ -2181,8 +2185,8 @@ TEST_F(WebRtcVideoEngineTestFake, SetSendCodecsWithVP8AndExternalH264) {
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
 
   // The first matched codec should be set, i.e., H.264.
-
-  EXPECT_EQ(96, vie_.GetRtxSendPayloadType(channel_num));
+  EXPECT_EQ(vie_.GetRtxSendPayloadTypes(channel_num),
+            MAKE_VECTOR(kPayloadTypes1));
 
   cricket::StreamParams params =
     cricket::StreamParams::CreateLegacy(kSsrcs1[0]);
@@ -2219,7 +2223,8 @@ TEST_F(WebRtcVideoEngineTestFake, SetRecvCodecsWithExternalH264) {
   codecs.push_back(rtx_codec);
   EXPECT_TRUE(channel_->SetRecvCodecs(codecs));
 
-  EXPECT_EQ(96, vie_.GetRtxRecvPayloadType(channel_num));
+  EXPECT_EQ(vie_.GetRtxRecvPayloadTypes(channel_num),
+            MAKE_VECTOR(kPayloadTypes1));
 
   cricket::StreamParams params =
     cricket::StreamParams::CreateLegacy(kSsrcs1[0]);
@@ -2254,17 +2259,20 @@ TEST_F(WebRtcVideoEngineTestFake, SetRecvCodecsWithVP8AndExternalH264) {
   cricket::VideoCodec rtx_codec2(96, "rtx", 0, 0, 0, 0);
   rtx_codec2.SetParam("apt", kVP8Codec.id);
   codecs.push_back(kVP8Codec);
-  codecs.push_back(rtx_codec);
-  // Should fail since WebRTC only supports one RTX codec at a time.
-  EXPECT_FALSE(channel_->SetRecvCodecs(codecs));
+  codecs.push_back(rtx_codec2);
+  EXPECT_TRUE(channel_->SetRecvCodecs(codecs));
+  EXPECT_EQ(vie_.GetRtxRecvPayloadTypes(channel_num),
+            MAKE_VECTOR(kPayloadTypes2));
 
   codecs.pop_back();
-
   // One RTX codec should be fine.
   EXPECT_TRUE(channel_->SetRecvCodecs(codecs));
 
-  // The RTX payload type should have been set.
-  EXPECT_EQ(rtx_codec.id, vie_.GetRtxRecvPayloadType(channel_num));
+  // TODO(changbin): The Rtx key can still be found from the Rtx-Apt map
+  // if the new codec list doesn't assign it with a new value.
+  // Should pass a map to SetRtxRecvPayloadType in future.
+  EXPECT_EQ(vie_.GetRtxRecvPayloadTypes(channel_num),
+            MAKE_VECTOR(kPayloadTypes2));
 }
 
 // Tests that OnReadyToSend will be propagated into ViE.
@@ -2313,7 +2321,7 @@ TEST_F(WebRtcVideoEngineTestFake, CaptureFrameTimestampToNtpTimestamp) {
 TEST_F(WebRtcVideoEngineTest, FindCodec) {
   // We should not need to init engine in order to get codecs.
   const std::vector<cricket::VideoCodec>& c = engine_.codecs();
-  EXPECT_EQ(4U, c.size());
+  EXPECT_EQ(cricket::DefaultVideoCodecList().size(), c.size());
 
   cricket::VideoCodec vp8(104, "VP8", 320, 200, 30, 0);
   EXPECT_TRUE(engine_.FindCodec(vp8));
@@ -2360,7 +2368,7 @@ TEST_F(WebRtcVideoEngineTest, RtxCodecHasAptSet) {
   std::vector<cricket::VideoCodec>::const_iterator it;
   bool apt_checked = false;
   for (it = engine_.codecs().begin(); it != engine_.codecs().end(); ++it) {
-    if (_stricmp(cricket::kRtxCodecName, it->name.c_str()) && it->id != 96) {
+    if (_stricmp(cricket::kRtxCodecName, it->name.c_str()) || it->id != 96) {
       continue;
     }
     int apt;
@@ -3264,7 +3272,8 @@ TEST_F(WebRtcVideoEngineSimulcastTestFake, TestStreamWithRtx) {
   EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
 
   // RTX payload type should now be set.
-  EXPECT_EQ(96, vie_.GetRtxSendPayloadType(channel_num));
+  EXPECT_EQ(vie_.GetRtxSendPayloadTypes(channel_num),
+            MAKE_VECTOR(kPayloadTypes1));
 
   // Verify all SSRCs are set after SetSendCodecs.
   EXPECT_EQ(3, vie_.GetNumSsrcs(channel_num));

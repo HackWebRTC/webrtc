@@ -11,7 +11,9 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 
 #include <stdlib.h>  // srand
+#include <utility>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"
@@ -155,7 +157,7 @@ RTPSender::RTPSender(int32_t id,
       last_packet_marker_bit_(false),
       csrcs_(),
       rtx_(kRtxOff),
-      payload_type_rtx_(-1),
+      rtx_payload_type_(-1),
       target_bitrate_critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       target_bitrate_(0) {
   memset(nack_byte_count_times_, 0, sizeof(nack_byte_count_times_));
@@ -421,14 +423,28 @@ uint32_t RTPSender::RtxSsrc() const {
   return ssrc_rtx_;
 }
 
-void RTPSender::SetRtxPayloadType(int payload_type) {
+void RTPSender::SetRtxPayloadType(int payload_type,
+                                  int associated_payload_type) {
   CriticalSectionScoped cs(send_critsect_.get());
-  payload_type_rtx_ = payload_type;
+  DCHECK_LE(payload_type, 127);
+  DCHECK_LE(associated_payload_type, 127);
+  if (payload_type < 0) {
+    LOG(LS_ERROR) << "Invalid RTX payload type: " << payload_type;
+    return;
+  }
+
+  rtx_payload_type_map_[associated_payload_type] = payload_type;
+  rtx_payload_type_ = payload_type;
 }
 
-int RTPSender::RtxPayloadType() const {
+std::pair<int, int> RTPSender::RtxPayloadType() const {
   CriticalSectionScoped cs(send_critsect_.get());
-  return payload_type_rtx_;
+  for (const auto& kv : rtx_payload_type_map_) {
+    if (kv.second == rtx_payload_type_) {
+      return std::make_pair(rtx_payload_type_, kv.first);
+    }
+  }
+  return std::make_pair(-1, -1);
 }
 
 int32_t RTPSender::CheckPayloadType(int8_t payload_type,
@@ -637,8 +653,7 @@ size_t RTPSender::SendPadData(uint32_t timestamp,
         ssrc = ssrc_rtx_;
         sequence_number = sequence_number_rtx_;
         ++sequence_number_rtx_;
-        payload_type = ((rtx_ & kRtxRedundantPayloads) > 0) ? payload_type_rtx_
-                                                            : payload_type_;
+        payload_type = rtx_payload_type_;
         over_rtx = true;
       }
     }
@@ -1795,8 +1810,8 @@ void RTPSender::BuildRtxPacket(uint8_t* buffer, size_t* length,
   memcpy(data_buffer_rtx, buffer, rtp_header.headerLength);
 
   // Replace payload type, if a specific type is set for RTX.
-  if (payload_type_rtx_ != -1) {
-    data_buffer_rtx[1] = static_cast<uint8_t>(payload_type_rtx_);
+  if (rtx_payload_type_ != -1) {
+    data_buffer_rtx[1] = static_cast<uint8_t>(rtx_payload_type_);
     if (rtp_header.markerBit)
       data_buffer_rtx[1] |= kRtpMarkerBitMask;
   }
