@@ -35,7 +35,9 @@ VCMReceiver::VCMReceiver(VCMTiming* timing,
       timing_(timing),
       render_wait_event_(event_factory->CreateEvent()),
       state_(kPassive),
-      max_video_delay_ms_(kMaxVideoDelayMs) {}
+      max_video_delay_ms_(kMaxVideoDelayMs) {
+  Reset();
+}
 
 VCMReceiver::~VCMReceiver() {
   render_wait_event_->Set();
@@ -50,11 +52,6 @@ void VCMReceiver::Reset() {
     jitter_buffer_.Flush();
   }
   state_ = kReceiving;
-}
-
-int32_t VCMReceiver::Initialize() {
-  Reset();
-  return VCM_OK;
 }
 
 void VCMReceiver::UpdateRtt(int64_t rtt) {

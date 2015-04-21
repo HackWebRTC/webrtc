@@ -245,34 +245,6 @@ int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
   return VCM_OK;
 }
 
-// Initialize receiver, resets codec database etc
-int32_t VideoReceiver::InitializeReceiver() {
-  int32_t ret = _receiver.Initialize();
-  if (ret < 0) {
-    return ret;
-  }
-
-  {
-    CriticalSectionScoped receive_cs(_receiveCritSect);
-    _codecDataBase.ResetReceiver();
-    _timing.Reset();
-  }
-
-  {
-    CriticalSectionScoped process_cs(process_crit_sect_.get());
-    _decoder = NULL;
-    _decodedFrameCallback.SetUserReceiveCallback(NULL);
-    _frameTypeCallback = NULL;
-    _receiveStatsCallback = NULL;
-    _decoderTimingCallback = NULL;
-    _packetRequestCallback = NULL;
-    _keyRequestMode = kKeyOnError;
-    _scheduleKeyRequest = false;
-  }
-
-  return VCM_OK;
-}
-
 // Register a receive callback. Will be called whenever there is a new frame
 // ready for rendering.
 int32_t VideoReceiver::RegisterReceiveCallback(
@@ -486,7 +458,7 @@ int32_t VideoReceiver::ResetDecoder() {
   {
     CriticalSectionScoped cs(_receiveCritSect);
     if (_decoder != NULL) {
-      _receiver.Initialize();
+      _receiver.Reset();
       _timing.Reset();
       reset_key_request = true;
       _decoder->Reset();

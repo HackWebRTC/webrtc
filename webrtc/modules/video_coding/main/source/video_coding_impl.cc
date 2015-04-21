@@ -206,10 +206,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 
   bool VideoSuspended() const override { return sender_->VideoSuspended(); }
 
-  int32_t InitializeReceiver() override {
-    return receiver_->InitializeReceiver();
-  }
-
   int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,
                                int32_t numberOfCores,
                                bool requireKeyFrame) override {

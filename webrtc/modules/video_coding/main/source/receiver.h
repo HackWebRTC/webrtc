@@ -43,7 +43,6 @@ class VCMReceiver {
   ~VCMReceiver();
 
   void Reset();
-  int32_t Initialize();
   void UpdateRtt(int64_t rtt);
   int32_t InsertPacket(const VCMPacket& packet,
                        uint16_t frame_width,

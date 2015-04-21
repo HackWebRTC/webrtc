@@ -37,7 +37,6 @@ class VCMRobustnessTest : public ::testing::Test {
     ASSERT_TRUE(clock_.get() != NULL);
     vcm_ = VideoCodingModule::Create(clock_.get(), &event_factory_);
     ASSERT_TRUE(vcm_ != NULL);
-    ASSERT_EQ(0, vcm_->InitializeReceiver());
     const size_t kMaxNackListSize = 250;
     const int kMaxPacketAgeToNack = 450;
     vcm_->SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack, 0);

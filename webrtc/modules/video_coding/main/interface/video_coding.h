@@ -320,17 +320,6 @@ public:
     *   Receiver
     */
 
-    // The receiver state of the VCM will be initialized to the
-    // same state as when the VCM was created. This will not interrupt
-    // or effect the send side functionality of VCM. VCM will lose all the
-    // decoding-related settings by calling this function. All frames
-    // inside the jitter buffer are flushed and the delay is reset.
-    // For instance, a receive codec has to be registered again.
-    //
-    // Return value      : VCM_OK, on success.
-    //                     < 0,         on error.
-    virtual int32_t InitializeReceiver() = 0;
-
     // Register possible receive codecs, can be called multiple times for different codecs.
     // The module will automatically switch between registered codecs depending on the
     // payload type of incoming frames. The actual decoder will be created when needed.

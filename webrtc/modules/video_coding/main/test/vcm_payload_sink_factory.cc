@@ -134,9 +134,6 @@ PayloadSinkInterface* VcmPayloadSinkFactory::Create(
   if (vcm.get() == NULL) {
     return NULL;
   }
-  if (vcm->InitializeReceiver() < 0) {
-    return NULL;
-  }
 
   const PayloadTypes& plt = stream->payload_types();
   for (PayloadTypesIterator it = plt.begin(); it != plt.end();

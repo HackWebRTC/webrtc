@@ -148,7 +148,6 @@ class VideoReceiver {
   VideoReceiver(Clock* clock, EventFactory* event_factory);
   ~VideoReceiver();
 
-  int32_t InitializeReceiver();
   int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,
                                int32_t numberOfCores,
                                bool requireKeyFrame);
