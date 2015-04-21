@@ -197,6 +197,10 @@ VCMGenericEncoder::InternalSource() const
     return internal_source_;
 }
 
+void VCMGenericEncoder::OnDroppedFrame() {
+  encoder_->OnDroppedFrame();
+}
+
  /***************************
   * Callback Implementation
   ***************************/

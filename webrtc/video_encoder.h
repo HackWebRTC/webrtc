@@ -122,6 +122,7 @@ class VideoEncoder {
   virtual int32_t CodecConfigParameters(uint8_t* /*buffer*/, int32_t /*size*/) {
     return -1;
   }
+  virtual void OnDroppedFrame() {};
 };
 
 }  // namespace webrtc

@@ -1035,7 +1035,7 @@ int VP8EncoderImpl::GetEncodedPartitions(
     if (encoded_images_[0]._length > 0) {
       int qp;
       vpx_codec_control(&encoders_[0], VP8E_GET_LAST_QUANTIZER_64, &qp);
-      quality_scaler_.ReportEncodedFrame(qp);
+      quality_scaler_.ReportNormalizedQP(qp);
     } else {
       quality_scaler_.ReportDroppedFrame();
     }

@@ -55,6 +55,8 @@ class SimulcastEncoderAdapter : public VP8Encoder {
                   const CodecSpecificInfo* codecSpecificInfo = NULL,
                   const RTPFragmentationHeader* fragmentation = NULL);
 
+  void OnDroppedFrame() override;
+
  private:
   struct StreamInfo {
     StreamInfo()

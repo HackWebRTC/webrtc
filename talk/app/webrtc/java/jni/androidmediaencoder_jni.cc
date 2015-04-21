@@ -34,6 +34,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
 #include "webrtc/system_wrappers/interface/logcat_trace_context.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
 #include "third_party/libyuv/include/libyuv/convert_from.h"
@@ -95,6 +96,8 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
 
   // rtc::MessageHandler implementation.
   void OnMessage(rtc::Message* msg) override;
+
+  void OnDroppedFrame() override;
 
  private:
   // CHECK-fail if not running on |codec_thread_|.
@@ -171,7 +174,6 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int frames_received_;  // Number of frames received by encoder.
   int frames_encoded_;  // Number of frames encoded by encoder.
   int frames_dropped_;  // Number of frames dropped by encoder.
-  int frames_resolution_update_;  // Number of frames with new codec resolution.
   int frames_in_queue_;  // Number of frames in encoder queue.
   int64_t start_time_ms_;  // Start time for statistics.
   int current_frames_;  // Number of frames in the current statistics interval.
@@ -193,6 +195,11 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   bool drop_next_input_frame_;
   // Global references; must be deleted in Release().
   std::vector<jobject> input_buffers_;
+  scoped_ptr<webrtc::QualityScaler> quality_scaler_;
+  // Target frame size in bytes.
+  int target_framesize_;
+  // Dynamic resolution change, off by default.
+  bool scale_;
 };
 
 MediaCodecVideoEncoder::~MediaCodecVideoEncoder() {
@@ -207,6 +214,7 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(
     inited_(false),
     picture_id_(0),
     codec_thread_(new Thread()),
+    quality_scaler_(new webrtc::QualityScaler()),
     j_media_codec_video_encoder_class_(
         jni,
         FindClass(jni, "org/webrtc/MediaCodecVideoEncoder")),
@@ -270,6 +278,8 @@ int32_t MediaCodecVideoEncoder::InitEncode(
     const webrtc::VideoCodec* codec_settings,
     int32_t /* number_of_cores */,
     size_t /* max_payload_size */) {
+  const int kMinWidth = 320;
+  const int kMinHeight = 180;
   if (codec_settings == NULL) {
     ALOGE("NULL VideoCodec instance");
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
@@ -279,6 +289,16 @@ int32_t MediaCodecVideoEncoder::InitEncode(
       codec_settings->codecType << " for " << codecType_;
 
   ALOGD("InitEncode request");
+  scale_ = false;
+  quality_scaler_->Init(0);
+  quality_scaler_->SetMinResolution(kMinWidth, kMinHeight);
+  quality_scaler_->ReportFramerate(codec_settings->maxFramerate);
+  if (codec_settings->maxFramerate > 0) {
+    target_framesize_ = codec_settings->startBitrate * 1000 /
+        codec_settings->maxFramerate / 8;
+  } else {
+    target_framesize_ = 0;
+  }
   return codec_thread_->Invoke<int32_t>(
       Bind(&MediaCodecVideoEncoder::InitEncodeOnCodecThread,
            this,
@@ -317,6 +337,12 @@ int32_t MediaCodecVideoEncoder::SetChannelParameters(uint32_t /* packet_loss */,
 
 int32_t MediaCodecVideoEncoder::SetRates(uint32_t new_bit_rate,
                                          uint32_t frame_rate) {
+  quality_scaler_->ReportFramerate(frame_rate);
+  if (frame_rate > 0) {
+    target_framesize_ = new_bit_rate * 1000 / frame_rate / 8;
+  } else {
+    target_framesize_ = 0;
+  }
   return codec_thread_->Invoke<int32_t>(
       Bind(&MediaCodecVideoEncoder::SetRatesOnCodecThread,
            this,
@@ -384,7 +410,6 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   frames_received_ = 0;
   frames_encoded_ = 0;
   frames_dropped_ = 0;
-  frames_resolution_update_ = 0;
   frames_in_queue_ = 0;
   current_timestamp_us_ = 0;
   start_time_ms_ = GetCurrentTimeMs();
@@ -472,20 +497,18 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   }
 
   CHECK(frame_types->size() == 1) << "Unexpected stream count";
-  if (frame.width() != width_ || frame.height() != height_) {
-    frames_resolution_update_++;
-    ALOGD("Unexpected frame resolution change from %d x %d to %d x %d",
-        width_, height_, frame.width(), frame.height());
-    if (frames_resolution_update_ > 3) {
-      // Reset codec if we received more than 3 frames with new resolution.
-      width_ = frame.width();
-      height_ = frame.height();
-      frames_resolution_update_ = 0;
-      ResetCodec();
-    }
+  const I420VideoFrame& input_frame =
+      (scale_ && codecType_ == kVideoCodecVP8) ?
+      quality_scaler_->GetScaledFrame(frame) : frame;
+
+  if (input_frame.width() != width_ || input_frame.height() != height_) {
+    ALOGD("Frame resolution change from %d x %d to %d x %d",
+          width_, height_, input_frame.width(), input_frame.height());
+    width_ = input_frame.width();
+    height_ = input_frame.height();
+    ResetCodec();
     return WEBRTC_VIDEO_CODEC_OK;
   }
-  frames_resolution_update_ = 0;
 
   bool key_frame = frame_types->front() != webrtc::kDeltaFrame;
 
@@ -498,6 +521,8 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
       ALOGD("Drop frame - encoder is behind by %d ms. Q size: %d",
           encoder_latency_ms, frames_in_queue_);
       frames_dropped_++;
+      // Report dropped frame to quality_scaler_.
+      OnDroppedFrame();
       return WEBRTC_VIDEO_CODEC_OK;
     }
   }
@@ -509,6 +534,8 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     // Video codec falls behind - no input buffer available.
     ALOGV("Encoder drop frame - no input buffers available");
     frames_dropped_++;
+    // Report dropped frame to quality_scaler_.
+    OnDroppedFrame();
     return WEBRTC_VIDEO_CODEC_OK;  // TODO(fischman): see webrtc bug 2887.
   }
   if (j_input_buffer_index == -2) {
@@ -525,9 +552,12 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   CHECK_EXCEPTION(jni);
   CHECK(yuv_buffer) << "Indirect buffer??";
   CHECK(!libyuv::ConvertFromI420(
-          frame.buffer(webrtc::kYPlane), frame.stride(webrtc::kYPlane),
-          frame.buffer(webrtc::kUPlane), frame.stride(webrtc::kUPlane),
-          frame.buffer(webrtc::kVPlane), frame.stride(webrtc::kVPlane),
+          input_frame.buffer(webrtc::kYPlane),
+          input_frame.stride(webrtc::kYPlane),
+          input_frame.buffer(webrtc::kUPlane),
+          input_frame.stride(webrtc::kUPlane),
+          input_frame.buffer(webrtc::kVPlane),
+          input_frame.stride(webrtc::kVPlane),
           yuv_buffer, width_,
           width_, height_,
           encoder_fourcc_))
@@ -536,8 +566,8 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   frames_in_queue_++;
 
   // Save input image timestamps for later output
-  timestamps_.push_back(frame.timestamp());
-  render_times_ms_.push_back(frame.render_time_ms());
+  timestamps_.push_back(input_frame.timestamp());
+  render_times_ms_.push_back(input_frame.render_time_ms());
   frame_rtc_times_ms_.push_back(GetCurrentTimeMs());
 
   bool encode_status = jni->CallBooleanMethod(*j_media_codec_video_encoder_,
@@ -686,6 +716,17 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
         last_input_timestamp_ms_ - last_output_timestamp_ms_,
         frame_encoding_time_ms);
 
+    if (payload_size) {
+      double framesize_deviation = 0.0;
+      if (target_framesize_ > 0) {
+        framesize_deviation =
+          (double)abs((int)payload_size - target_framesize_) /
+          target_framesize_;
+      }
+      quality_scaler_->ReportNormalizedFrameSizeFluctuation(
+          framesize_deviation);
+    }
+
     // Calculate and print encoding statistics - every 3 seconds.
     frames_encoded_++;
     current_frames_++;
@@ -830,6 +871,9 @@ int32_t MediaCodecVideoEncoder::NextNaluPosition(
   return -1;
 }
 
+void MediaCodecVideoEncoder::OnDroppedFrame() {
+  quality_scaler_->ReportDroppedFrame();
+}
 
 MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory() {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();

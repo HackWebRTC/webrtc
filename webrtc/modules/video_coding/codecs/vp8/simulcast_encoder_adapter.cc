@@ -501,4 +501,8 @@ bool SimulcastEncoderAdapter::Initialized() const {
   return !streaminfos_.empty();
 }
 
+void SimulcastEncoderAdapter::OnDroppedFrame() {
+  streaminfos_[0].encoder->OnDroppedFrame();
+}
+
 }  // namespace webrtc

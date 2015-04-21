@@ -77,6 +77,8 @@ class I420Encoder : public VideoEncoder {
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
+  void OnDroppedFrame() override {}
+
  private:
   static uint8_t* InsertHeader(uint8_t* buffer, uint16_t width,
                                uint16_t height);

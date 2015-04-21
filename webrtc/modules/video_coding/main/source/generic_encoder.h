@@ -136,6 +136,8 @@ public:
 
     bool InternalSource() const;
 
+    void OnDroppedFrame();
+
 private:
     VideoEncoder* const encoder_;
     VideoEncoderRateObserver* const rate_observer_;

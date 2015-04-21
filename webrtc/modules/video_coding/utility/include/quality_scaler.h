@@ -11,9 +11,8 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_UTILITY_QUALITY_SCALER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_UTILITY_QUALITY_SCALER_H_
 
-#include <list>
-
 #include "webrtc/common_video/libyuv/include/scaler.h"
+#include "webrtc/modules/video_coding/utility/include/moving_average.h"
 
 namespace webrtc {
 class QualityScaler {
@@ -25,27 +24,20 @@ class QualityScaler {
 
   QualityScaler();
   void Init(int max_qp);
-
+  void SetMinResolution(int min_width, int min_height);
   void ReportFramerate(int framerate);
-  void ReportEncodedFrame(int qp);
-  void ReportDroppedFrame();
 
+  // Report QP for SW encoder, report framesize fluctuation for HW encoder,
+  // only one of these two functions should be called, framesize fluctuation
+  // is to be used only if qp isn't available.
+  void ReportNormalizedQP(int qp);
+  void ReportNormalizedFrameSizeFluctuation(double framesize_deviation);
+  void ReportDroppedFrame();
+  void Reset(int framerate, int bitrate, int width, int height);
   Resolution GetScaledResolution(const I420VideoFrame& frame);
   const I420VideoFrame& GetScaledFrame(const I420VideoFrame& frame);
 
  private:
-  class MovingAverage {
-   public:
-    MovingAverage();
-    void AddSample(int sample);
-    bool GetAverage(size_t num_samples, int* average);
-    void Reset();
-
-   private:
-    int sum_;
-    std::list<int> samples_;
-  };
-
   void AdjustScale(bool up);
   void ClearSamples();
 
@@ -53,11 +45,14 @@ class QualityScaler {
   I420VideoFrame scaled_frame_;
 
   size_t num_samples_;
+  int target_framesize_;
   int low_qp_threshold_;
-  MovingAverage average_qp_;
-  MovingAverage framedrop_percent_;
+  MovingAverage<int> framedrop_percent_;
+  MovingAverage<double> frame_quality_;
 
   int downscale_shift_;
+  int min_width_;
+  int min_height_;
 };
 
 }  // namespace webrtc

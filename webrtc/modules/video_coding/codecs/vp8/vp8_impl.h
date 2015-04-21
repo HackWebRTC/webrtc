@@ -27,7 +27,7 @@
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp8/reference_picture_selection.h"
 #include "webrtc/modules/video_coding/utility/include/frame_dropper.h"
-#include "webrtc/modules/video_coding/utility/quality_scaler.h"
+#include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
 #include "webrtc/video_frame.h"
 
 namespace webrtc {
@@ -55,6 +55,8 @@ class VP8EncoderImpl : public VP8Encoder {
   virtual int SetChannelParameters(uint32_t packet_loss, int64_t rtt);
 
   virtual int SetRates(uint32_t new_bitrate_kbit, uint32_t frame_rate);
+
+  void OnDroppedFrame() override {}
 
  private:
   void SetupTemporalLayers(int num_streams, int num_temporal_layers,

@@ -17,6 +17,7 @@
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 #include "webrtc/modules/video_coding/main/source/video_coding_impl.h"
+#include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 
@@ -346,6 +347,7 @@ int32_t VideoSender::AddVideoFrame(const I420VideoFrame& videoFrame,
     return VCM_OK;
   }
   if (_mediaOpt.DropFrame()) {
+    _encoder->OnDroppedFrame();
     return VCM_OK;
   }
   _mediaOpt.UpdateContentData(contentMetrics);

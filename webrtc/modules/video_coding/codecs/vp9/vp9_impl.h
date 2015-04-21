@@ -41,6 +41,8 @@ class VP9EncoderImpl : public VP9Encoder {
 
   int SetRates(uint32_t new_bitrate_kbit, uint32_t frame_rate) override;
 
+  void OnDroppedFrame() override {}
+
  private:
   // Determine number of encoder threads to use.
   int NumberOfThreads(int width, int height, int number_of_cores);

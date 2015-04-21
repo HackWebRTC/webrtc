@@ -94,8 +94,9 @@ source_set("video_coding_utility") {
   sources = [
     "utility/frame_dropper.cc",
     "utility/include/frame_dropper.h",
+    "utility/include/moving_average.h",
+    "utility/include/quality_scaler.h",
     "utility/quality_scaler.cc",
-    "utility/quality_scaler.h",
   ]
 
   configs += [ "../..:common_config" ]

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/utility/quality_scaler.h"
+#include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -40,7 +40,7 @@ class QualityScalerTest : public ::testing::Test {
     for (int i = 0; i < kFramerate * kNumSeconds; ++i) {
       switch (scale_direction) {
         case kScaleUp:
-          qs_.ReportEncodedFrame(kLowQp);
+          qs_.ReportNormalizedQP(kLowQp);
           break;
         case kScaleDown:
           qs_.ReportDroppedFrame();
@@ -93,7 +93,7 @@ TEST_F(QualityScalerTest, DownscalesAfterContinuousFramedrop) {
 
 TEST_F(QualityScalerTest, DownscalesAfterTwoThirdsFramedrop) {
   for (int i = 0; i < kFramerate * kNumSeconds / 3; ++i) {
-    qs_.ReportEncodedFrame(kNormalQp);
+    qs_.ReportNormalizedQP(kNormalQp);
     qs_.ReportDroppedFrame();
     qs_.ReportDroppedFrame();
     if (qs_.GetScaledResolution(input_frame_).width < input_frame_.width())
@@ -105,7 +105,7 @@ TEST_F(QualityScalerTest, DownscalesAfterTwoThirdsFramedrop) {
 
 TEST_F(QualityScalerTest, DoesNotDownscaleOnNormalQp) {
   for (int i = 0; i < kFramerate * kNumSeconds; ++i) {
-    qs_.ReportEncodedFrame(kNormalQp);
+    qs_.ReportNormalizedQP(kNormalQp);
     ASSERT_EQ(input_frame_.width(), qs_.GetScaledResolution(input_frame_).width)
         << "Unexpected scale on half framedrop.";
   }
@@ -113,7 +113,7 @@ TEST_F(QualityScalerTest, DoesNotDownscaleOnNormalQp) {
 
 TEST_F(QualityScalerTest, DoesNotDownscaleAfterHalfFramedrop) {
   for (int i = 0; i < kFramerate * kNumSeconds / 2; ++i) {
-    qs_.ReportEncodedFrame(kNormalQp);
+    qs_.ReportNormalizedQP(kNormalQp);
     ASSERT_EQ(input_frame_.width(), qs_.GetScaledResolution(input_frame_).width)
         << "Unexpected scale on half framedrop.";
 
@@ -153,7 +153,7 @@ void QualityScalerTest::ContinuouslyDownscalesByHalfDimensionsAndBackUp() {
 
   // Verify we don't start upscaling after further low use.
   for (int i = 0; i < kFramerate * kNumSeconds; ++i) {
-    qs_.ReportEncodedFrame(kLowQp);
+    qs_.ReportNormalizedQP(kLowQp);
     ExpectOriginalFrame();
   }
 }

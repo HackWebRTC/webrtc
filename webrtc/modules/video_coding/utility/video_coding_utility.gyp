@@ -20,8 +20,9 @@
       'sources': [
         'frame_dropper.cc',
         'include/frame_dropper.h',
+        'include/moving_average.h',
         'quality_scaler.cc',
-        'quality_scaler.h',
+        'include/quality_scaler.h',
       ],
     },
   ], # targets
