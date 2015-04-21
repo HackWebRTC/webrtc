@@ -509,6 +509,9 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
         rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(
             rtp_rtcp_->GetSendChannelRtpStatisticsCallback());
       }
+      // |RegisterSimulcastRtpRtcpModules| resets all old weak pointers and old
+      // modules can be deleted after this step.
+      vie_receiver_.RegisterSimulcastRtpRtcpModules(simulcast_rtp_rtcp_);
     } else {
       while (!simulcast_rtp_rtcp_.empty()) {
         RtpRtcp* rtp_rtcp = simulcast_rtp_rtcp_.back();
@@ -520,6 +523,8 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
         simulcast_rtp_rtcp_.pop_back();
         removed_rtp_rtcp_.push_front(rtp_rtcp);
       }
+      // Clear any previous modules.
+      vie_receiver_.RegisterSimulcastRtpRtcpModules(simulcast_rtp_rtcp_);
     }
 
     // Don't log this error, no way to check in advance if this pl_type is
@@ -1597,16 +1602,7 @@ int32_t ViEChannel::ReceivedRTCPPacket(
       return -1;
     }
   }
-  int ret = vie_receiver_.ReceivedRTCPPacket(rtcp_packet, rtcp_packet_length);
-  if (ret != 0)
-    return ret;
-
-  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
-  for (RtpRtcp* rtp_rtcp : simulcast_rtp_rtcp_) {
-    rtp_rtcp->IncomingRtcpPacket(static_cast<const uint8_t*>(rtcp_packet),
-                                 rtcp_packet_length);
-  }
-  return 0;
+  return vie_receiver_.ReceivedRTCPPacket(rtcp_packet, rtcp_packet_length);
 }
 
 int32_t ViEChannel::SetMTU(uint16_t mtu) {
