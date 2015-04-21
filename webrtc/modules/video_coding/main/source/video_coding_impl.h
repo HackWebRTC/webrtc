@@ -63,8 +63,6 @@ class VideoSender {
 
   ~VideoSender();
 
-  int32_t InitializeSender();
-
   // Register the send codec to be used.
   // This method must be called on the construction thread.
   int32_t RegisterSendCodec(const VideoCodec* sendCodec,

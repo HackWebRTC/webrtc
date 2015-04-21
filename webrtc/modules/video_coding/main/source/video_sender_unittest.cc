@@ -179,7 +179,6 @@ class TestVideoSender : public ::testing::Test {
   void SetUp() override {
     sender_.reset(
         new VideoSender(&clock_, &post_encode_callback_, nullptr, nullptr));
-    EXPECT_EQ(0, sender_->InitializeSender());
     EXPECT_EQ(0, sender_->RegisterTransportCallback(&packetization_callback_));
   }
 

@@ -119,18 +119,6 @@ public:
     *   Sender
     */
 
-    // Any encoder-related state of VCM will be initialized to the
-    // same state as when the VCM was created. This will not interrupt
-    // or effect decoding functionality of VCM. VCM will lose all the
-    // encoding-related settings by calling this function.
-    // For instance, a send codec has to be registered again.
-    //
-    // NOTE: Must be called on the thread that constructed the VCM instance.
-    //
-    // Return value      : VCM_OK, on success.
-    //                     < 0,         on error.
-    virtual int32_t InitializeSender() = 0;
-
     // Registers a codec to be used for encoding. Calling this
     // API multiple times overwrites any previously registered codecs.
     //

@@ -147,9 +147,6 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
 }
 
 bool ViEEncoder::Init() {
-  if (vcm_->InitializeSender() != 0) {
-    return false;
-  }
   vpm_->EnableTemporalDecimation(true);
 
   // Enable/disable content analysis: off by default for now.

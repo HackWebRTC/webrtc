@@ -67,7 +67,7 @@ VideoSender::VideoSender(Clock* clock,
       recorder_(new DebugRecorder()),
       process_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       _sendCritSect(CriticalSectionWrapper::CreateCriticalSection()),
-      _encoder(),
+      _encoder(nullptr),
       _encodedFrameCallback(post_encode_callback),
       _nextFrameTypes(1, kVideoFrameDelta),
       _mediaOpt(clock_),
@@ -82,6 +82,7 @@ VideoSender::VideoSender(Clock* clock,
   // construction. This is currently how this class is being used by at least
   // one external project (diffractor).
   _mediaOpt.EnableQM(qm_settings_callback_ != nullptr);
+  _mediaOpt.Reset();
   main_thread_.DetachFromThread();
 }
 
@@ -103,17 +104,6 @@ int32_t VideoSender::Process() {
   }
 
   return returnValue;
-}
-
-// Reset send side to initial state - all components
-int32_t VideoSender::InitializeSender() {
-  DCHECK(main_thread_.CalledOnValidThread());
-  CriticalSectionScoped cs(_sendCritSect);
-  _codecDataBase.ResetSender();
-  _encoder = nullptr;
-  _encodedFrameCallback.SetTransportCallback(nullptr);
-  _mediaOpt.Reset();  // Resetting frame dropper
-  return VCM_OK;
 }
 
 int64_t VideoSender::TimeUntilNextProcess() {

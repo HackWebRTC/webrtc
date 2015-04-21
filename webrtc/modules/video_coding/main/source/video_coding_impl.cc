@@ -106,8 +106,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_return;
   }
 
-  int32_t InitializeSender() override { return sender_->InitializeSender(); }
-
   int32_t RegisterSendCodec(const VideoCodec* sendCodec,
                             uint32_t numberOfCores,
                             uint32_t maxPayloadSize) override {
