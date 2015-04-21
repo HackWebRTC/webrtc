@@ -53,6 +53,7 @@
           'base64_unittest.cc',
           'basictypes_unittest.cc',
           'bind_unittest.cc',
+          'bitbuffer_unittest.cc',
           'buffer_unittest.cc',
           'bytebuffer_unittest.cc',
           'byteorder_unittest.cc',

@@ -102,6 +102,8 @@
         'basictypes.h',
         'bind.h',
         'bind.h.pump',
+        'bitbuffer.cc',
+        'bitbuffer.h',
         'bytebuffer.cc',
         'bytebuffer.h',
         'byteorder.h',

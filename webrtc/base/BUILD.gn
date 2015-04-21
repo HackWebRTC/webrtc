@@ -179,6 +179,8 @@ static_library("rtc_base") {
     "base64.cc",
     "base64.h",
     "basicdefs.h",
+    "bitbuffer.cc",
+    "bitbuffer.h",
     "bytebuffer.cc",
     "bytebuffer.h",
     "byteorder.h",
