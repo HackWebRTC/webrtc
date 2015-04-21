@@ -11,9 +11,9 @@
 #include "webrtc/voice_engine/include/voe_base.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_device/include/fake_audio_device.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/voice_engine/mock/mock_voe_observer.h"
 
 namespace webrtc {
 
@@ -21,30 +21,48 @@ class VoEBaseTest : public ::testing::Test {
  protected:
   VoEBaseTest() :
       voe_(VoiceEngine::Create()),
-      base_(VoEBase::GetInterface(voe_)),
-      adm_(new FakeAudioDeviceModule) {
+      base_(VoEBase::GetInterface(voe_)) {
+    EXPECT_NE(nullptr, base_);
+    EXPECT_EQ(0, base_->RegisterVoiceEngineObserver(observer_));
   }
 
   ~VoEBaseTest() {
-    base_->Release();
-    VoiceEngine::Delete(voe_);
+    EXPECT_EQ(0, base_->DeRegisterVoiceEngineObserver());
+    EXPECT_EQ(0, base_->Terminate());
+    EXPECT_EQ(1, base_->Release());
+    EXPECT_TRUE(VoiceEngine::Delete(voe_));
   }
 
   VoiceEngine* voe_;
   VoEBase* base_;
-  rtc::scoped_ptr<FakeAudioDeviceModule> adm_;
+  MockVoEObserver observer_;
+  FakeAudioDeviceModule adm_;
 };
 
-TEST_F(VoEBaseTest, AcceptsAudioProcessingPtr) {
+TEST_F(VoEBaseTest, InitWithExternalAudioDeviceAndAudioProcessing) {
   AudioProcessing* audioproc = AudioProcessing::Create();
-  EXPECT_EQ(0, base_->Init(adm_.get(), audioproc));
+  EXPECT_EQ(0, base_->Init(&adm_, audioproc));
   EXPECT_EQ(audioproc, base_->audio_processing());
+  EXPECT_EQ(0, base_->LastError());
 }
 
-TEST_F(VoEBaseTest, AudioProcessingCreatedAfterInit) {
-  EXPECT_TRUE(base_->audio_processing() == NULL);
-  EXPECT_EQ(0, base_->Init(adm_.get(), NULL));
-  EXPECT_TRUE(base_->audio_processing() != NULL);
+TEST_F(VoEBaseTest, InitWithExternalAudioDevice) {
+  EXPECT_EQ(nullptr, base_->audio_processing());
+  EXPECT_EQ(0, base_->Init(&adm_, nullptr));
+  EXPECT_NE(nullptr, base_->audio_processing());
+  EXPECT_EQ(0, base_->LastError());
+}
+
+TEST_F(VoEBaseTest, CreateChannelBeforeInitShouldFail) {
+  int channelID = base_->CreateChannel();
+  EXPECT_EQ(-1, channelID);
+}
+
+TEST_F(VoEBaseTest, CreateChannelAfterInitShouldPass) {
+  EXPECT_EQ(0, base_->Init(&adm_, nullptr));
+  int channelID = base_->CreateChannel();
+  EXPECT_NE(-1, channelID);
+  EXPECT_EQ(0, base_->DeleteChannel(channelID));
 }
 
 }  // namespace webrtc

@@ -109,11 +109,11 @@ public:
     virtual int Release() = 0;
 
     // Installs the observer class to enable runtime error control and
-    // warning notifications.
+    // warning notifications. Returns -1 in case of an error, 0 otherwise.
     virtual int RegisterVoiceEngineObserver(VoiceEngineObserver& observer) = 0;
 
     // Removes and disables the observer class for runtime error control
-    // and warning notifications.
+    // and warning notifications. Returns 0.
     virtual int DeRegisterVoiceEngineObserver() = 0;
 
     // Initializes all common parts of the VoiceEngine; e.g. all
@@ -125,6 +125,7 @@ public:
     // - The AudioProcessing module handles capture-side processing. VoiceEngine
     // takes ownership of this object.
     // If NULL is passed for any of these, VoiceEngine will create its own.
+    // Returns -1 in case of an error, 0 otherwise.
     // TODO(ajm): Remove default NULLs.
     virtual int Init(AudioDeviceModule* external_adm = NULL,
                      AudioProcessing* audioproc = NULL) = 0;
@@ -132,16 +133,19 @@ public:
     // Returns NULL before Init() is called.
     virtual AudioProcessing* audio_processing() = 0;
 
-    // Terminates all VoiceEngine functions and releses allocated resources.
+    // Terminates all VoiceEngine functions and releases allocated resources.
+    // Returns 0.
     virtual int Terminate() = 0;
 
     // Creates a new channel and allocates the required resources for it.
     // One can use |config| to configure the channel. Currently that is used for
     // choosing between ACM1 and ACM2, when creating Audio Coding Module.
+    // Returns channel ID or -1 in case of an error.
     virtual int CreateChannel() = 0;
     virtual int CreateChannel(const Config& config) = 0;
 
     // Deletes an existing channel and releases the utilized resources.
+    // Returns -1 in case of an error, 0 otherwise.
     virtual int DeleteChannel(int channel) = 0;
 
     // Prepares and initiates the VoiceEngine for reception of
