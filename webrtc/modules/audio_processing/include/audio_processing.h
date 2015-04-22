@@ -78,7 +78,11 @@ struct ReportedDelay {
 // [12, 255]. Here, 255 maps to 100%.
 //
 // Must be provided through AudioProcessing::Create(Confg&).
+#if defined(WEBRTC_CHROMIUM_BUILD)
 static const int kAgcStartupMinVolume = 85;
+#else
+static const int kAgcStartupMinVolume = 0;
+#endif  // defined(WEBRTC_CHROMIUM_BUILD)
 struct ExperimentalAgc {
   ExperimentalAgc() : enabled(true), startup_min_volume(kAgcStartupMinVolume) {}
   ExperimentalAgc(bool enabled)

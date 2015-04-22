@@ -388,8 +388,13 @@ TEST_F(AgcManagerUnitTest, ChangingDevicesChecksVolume) {
 
 TEST_F(AgcManagerUnitTest, LowInitialVolumeIsRaised) {
   ExpectCheckVolumeAndReset(11u);
-  // Should set MicVolume to kMinInitMicLevel = 85.
+#if defined(WEBRTC_CHROMIUM_BUILD)
+  // Should set MicVolume to kMinInitMicLevel = 85 if built with Chromium.
   EXPECT_CALL(volume_, SetMicVolume(Eq(85u))).WillOnce(Return(0));
+#else
+  // Otherwise it will raise to the kMinMicLevel = 12.
+  EXPECT_CALL(volume_, SetMicVolume(Eq(12u))).WillOnce(Return(0));
+#endif
   PostProcCallback(1);
   EXPECT_CALL(*agc_, GetRmsErrorDb(_))
     .WillOnce(Return(false));
