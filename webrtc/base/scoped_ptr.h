@@ -105,7 +105,6 @@
 #include <algorithm>  // For std::swap().
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/move.h"
 #include "webrtc/base/template_util.h"
 #include "webrtc/typedefs.h"
 
@@ -322,7 +321,6 @@ class scoped_ptr_impl {
 // types.
 template <class T, class D = rtc::DefaultDeleter<T> >
 class scoped_ptr {
-  RTC_MOVE_ONLY_TYPE_WITH_MOVE_CONSTRUCTOR_FOR_CPP_03(scoped_ptr)
 
   // TODO(ajm): If we ever import RefCountedBase, this check needs to be
   // enabled.
@@ -385,6 +383,13 @@ class scoped_ptr {
     reset();
     return *this;
   }
+
+  // Deleted copy constructor and copy assignment, to make the type move-only.
+  scoped_ptr(const scoped_ptr& other) = delete;
+  scoped_ptr& operator=(const scoped_ptr& other) = delete;
+
+  // Get an rvalue reference. (sp.Pass() does the same thing as std::move(sp).)
+  scoped_ptr&& Pass() { return static_cast<scoped_ptr&&>(*this); }
 
   // Reset.  Deletes the currently owned object, if any.
   // Then takes ownership of a new object, if given.
@@ -470,8 +475,6 @@ class scoped_ptr {
 
 template <class T, class D>
 class scoped_ptr<T[], D> {
-  RTC_MOVE_ONLY_TYPE_WITH_MOVE_CONSTRUCTOR_FOR_CPP_03(scoped_ptr)
-
  public:
   // The element and deleter types.
   typedef T element_type;
@@ -513,6 +516,13 @@ class scoped_ptr<T[], D> {
     reset();
     return *this;
   }
+
+  // Deleted copy constructor and copy assignment, to make the type move-only.
+  scoped_ptr(const scoped_ptr& other) = delete;
+  scoped_ptr& operator=(const scoped_ptr& other) = delete;
+
+  // Get an rvalue reference. (sp.Pass() does the same thing as std::move(sp).)
+  scoped_ptr&& Pass() { return static_cast<scoped_ptr&&>(*this); }
 
   // Reset.  Deletes the currently owned array, if any.
   // Then takes ownership of a new object, if given.

@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/move.h"
 #include "webrtc/system_wrappers/interface/stl_util.h"
 
 namespace webrtc {
@@ -25,8 +24,6 @@ namespace webrtc {
 // destructor.
 template <class T>
 class ScopedVector {
-  RTC_MOVE_ONLY_TYPE_FOR_CPP_03(ScopedVector, RValue)
-
  public:
   typedef typename std::vector<T*>::allocator_type allocator_type;
   typedef typename std::vector<T*>::size_type size_type;
@@ -44,12 +41,24 @@ class ScopedVector {
 
   ScopedVector() {}
   ~ScopedVector() { clear(); }
-  ScopedVector(RValue other) { swap(*other.object); }
 
-  ScopedVector& operator=(RValue rhs) {
-    swap(*rhs.object);
+  // Move construction and assignment.
+  ScopedVector(ScopedVector&& other) {
+    *this = static_cast<ScopedVector&&>(other);
+  }
+  ScopedVector& operator=(ScopedVector&& other) {
+    std::swap(v_, other.v_);  // The arguments are std::vectors, so std::swap
+                              // is the one that we want.
+    other.clear();
     return *this;
   }
+
+  // Deleted copy constructor and copy assignment, to make the type move-only.
+  ScopedVector(const ScopedVector& other) = delete;
+  ScopedVector& operator=(const ScopedVector& other) = delete;
+
+  // Get an rvalue reference. (sv.Pass() does the same thing as std::move(sv).)
+  ScopedVector&& Pass() { return static_cast<ScopedVector&&>(*this); }
 
   reference operator[](size_t index) { return v_[index]; }
   const_reference operator[](size_t index) const { return v_[index]; }
