@@ -718,6 +718,19 @@ bool WebRtcVideoChannel2::SetRecvCodecs(const std::vector<VideoCodec>& codecs) {
     return false;
   }
 
+  // Prevent reconfiguration when setting identical receive codecs.
+  if (recv_codecs_.size() == supported_codecs.size()) {
+    bool reconfigured = false;
+    for (size_t i = 0; i < supported_codecs.size(); ++i) {
+      if (recv_codecs_[i] != supported_codecs[i]) {
+        reconfigured = true;
+        break;
+      }
+    }
+    if (!reconfigured)
+      return true;
+  }
+
   recv_codecs_ = supported_codecs;
 
   rtc::CritScope stream_lock(&stream_crit_);
@@ -2248,6 +2261,11 @@ bool WebRtcVideoChannel2::VideoCodecSettings::operator==(
          fec.red_payload_type == other.fec.red_payload_type &&
          fec.red_rtx_payload_type == other.fec.red_rtx_payload_type &&
          rtx_payload_type == other.rtx_payload_type;
+}
+
+bool WebRtcVideoChannel2::VideoCodecSettings::operator!=(
+    const WebRtcVideoChannel2::VideoCodecSettings& other) const {
+  return !(*this == other);
 }
 
 std::vector<WebRtcVideoChannel2::VideoCodecSettings>
