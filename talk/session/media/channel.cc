@@ -1724,11 +1724,9 @@ VideoChannel::VideoChannel(rtc::Thread* thread,
                            VideoMediaChannel* media_channel,
                            BaseSession* session,
                            const std::string& content_name,
-                           bool rtcp,
-                           VoiceChannel* voice_channel)
+                           bool rtcp)
     : BaseChannel(thread, media_engine, media_channel, session, content_name,
                   rtcp),
-      voice_channel_(voice_channel),
       renderer_(NULL),
       previous_we_(rtc::WE_CLOSE) {
 }

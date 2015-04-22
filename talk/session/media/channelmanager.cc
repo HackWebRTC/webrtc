@@ -424,7 +424,7 @@ VideoChannel* ChannelManager::CreateVideoChannel_w(
 
   VideoChannel* video_channel = new VideoChannel(
       worker_thread_, media_engine_.get(), media_channel,
-      session, content_name, rtcp, voice_channel);
+      session, content_name, rtcp);
   if (!video_channel->Init()) {
     delete video_channel;
     return NULL;

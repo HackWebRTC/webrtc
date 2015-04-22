@@ -347,7 +347,7 @@ TEST(MediaRecorderTest, TestMediaRecorderVideoChannel) {
   FakeMediaEngine media_engine;
   FakeVideoMediaChannel* media_channel = new FakeVideoMediaChannel(NULL);
   VideoChannel channel(rtc::Thread::Current(), &media_engine,
-                       media_channel, NULL, "", false, NULL);
+                       media_channel, NULL, "", false);
   TestMediaRecorder(&channel, media_channel, PF_RTPPACKET);
   TestMediaRecorder(&channel, media_channel, PF_RTPHEADER);
   TestRecordHeaderAndMedia(&channel, media_channel);

@@ -522,8 +522,7 @@ class VideoChannel : public BaseChannel {
  public:
   VideoChannel(rtc::Thread* thread, MediaEngineInterface* media_engine,
                VideoMediaChannel* channel, BaseSession* session,
-               const std::string& content_name, bool rtcp,
-               VoiceChannel* voice_channel);
+               const std::string& content_name, bool rtcp);
   ~VideoChannel();
   bool Init();
 
@@ -602,7 +601,6 @@ class VideoChannel : public BaseChannel {
   void OnVideoChannelError(uint32 ssrc, VideoMediaChannel::Error error);
   void OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode, SrtpFilter::Error error);
 
-  VoiceChannel* voice_channel_;
   VideoRenderer* renderer_;
   ScreencastMap screencast_capturers_;
   rtc::scoped_ptr<VideoMediaMonitor> media_monitor_;
