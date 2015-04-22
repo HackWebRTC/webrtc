@@ -1853,7 +1853,6 @@ RtpRtcp::Configuration ViEChannel::CreateRtpRtcpConfiguration() {
   configuration.audio = false;
   configuration.outgoing_transport = &vie_sender_;
   configuration.intra_frame_callback = intra_frame_observer_;
-  configuration.bandwidth_callback = bandwidth_observer_.get();
   configuration.rtt_stats = rtt_stats_;
   configuration.rtcp_packet_type_counter_observer =
       &rtcp_packet_type_counter_observer_;
@@ -1861,6 +1860,8 @@ RtpRtcp::Configuration ViEChannel::CreateRtpRtcpConfiguration() {
   configuration.send_bitrate_observer = &send_bitrate_observer_;
   configuration.send_frame_count_observer = &send_frame_count_observer_;
   configuration.send_side_delay_observer = &send_side_delay_observer_;
+  if (sender_)
+    configuration.bandwidth_callback = bandwidth_observer_.get();
 
   return configuration;
 }
