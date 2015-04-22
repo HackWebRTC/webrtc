@@ -105,8 +105,13 @@ static_library("rtc_base_approved") {
   public_configs = [ "..:common_inherited_config" ]
 
   sources = [
+    "bitbuffer.cc",
+    "bitbuffer.h",
     "buffer.cc",
     "buffer.h",
+    "bytebuffer.cc",
+    "bytebuffer.h",
+    "byteorder.h",
     "checks.cc",
     "checks.h",
     "event.cc",
@@ -136,6 +141,18 @@ static_library("rtc_base_approved") {
     "timeutils.h",
     "trace_event.h",
   ]
+
+  if (build_with_chromium) {
+    sources += [
+      "../overrides/webrtc/base/basictypes.h",
+      "../overrides/webrtc/base/constructormagic.h",
+    ]
+  } else {
+    sources += [
+      "basictypes.h",
+      "constructormagic.h",
+    ]
+  }
 }
 
 static_library("rtc_base") {
@@ -181,11 +198,6 @@ static_library("rtc_base") {
     "base64.cc",
     "base64.h",
     "basicdefs.h",
-    "bitbuffer.cc",
-    "bitbuffer.h",
-    "bytebuffer.cc",
-    "bytebuffer.h",
-    "byteorder.h",
     "common.cc",
     "common.h",
     "cpumonitor.cc",
@@ -311,8 +323,6 @@ static_library("rtc_base") {
 
   if (build_with_chromium) {
     sources += [
-      "../overrides/webrtc/base/basictypes.h",
-      "../overrides/webrtc/base/constructormagic.h",
       "../overrides/webrtc/base/logging.cc",
       "../overrides/webrtc/base/logging.h",
     ]
@@ -337,12 +347,10 @@ static_library("rtc_base") {
       "atomicops.h",
       "bandwidthsmoother.cc",
       "bandwidthsmoother.h",
-      "basictypes.h",
       "bind.h",
       "bind.h.pump",
       "callback.h",
       "callback.h.pump",
-      "constructormagic.h",
       "filelock.cc",
       "filelock.h",
       "fileutils_mock.h",
