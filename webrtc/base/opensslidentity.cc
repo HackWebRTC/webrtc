@@ -219,8 +219,45 @@ OpenSSLCertificate* OpenSSLCertificate::FromPEMString(
 // and before CleanupSSL.
 bool OpenSSLCertificate::GetSignatureDigestAlgorithm(
     std::string* algorithm) const {
-  return OpenSSLDigest::GetDigestName(
-      EVP_get_digestbyobj(x509_->sig_alg->algorithm), algorithm);
+  int nid = OBJ_obj2nid(x509_->sig_alg->algorithm);
+  switch (nid) {
+    case NID_md5WithRSA:
+    case NID_md5WithRSAEncryption:
+      *algorithm = DIGEST_MD5;
+      break;
+    case NID_ecdsa_with_SHA1:
+    case NID_dsaWithSHA1:
+    case NID_dsaWithSHA1_2:
+    case NID_sha1WithRSA:
+    case NID_sha1WithRSAEncryption:
+      *algorithm = DIGEST_SHA_1;
+      break;
+    case NID_ecdsa_with_SHA224:
+    case NID_sha224WithRSAEncryption:
+    case NID_dsa_with_SHA224:
+      *algorithm = DIGEST_SHA_224;
+      break;
+    case NID_ecdsa_with_SHA256:
+    case NID_sha256WithRSAEncryption:
+    case NID_dsa_with_SHA256:
+      *algorithm = DIGEST_SHA_256;
+      break;
+    case NID_ecdsa_with_SHA384:
+    case NID_sha384WithRSAEncryption:
+      *algorithm = DIGEST_SHA_384;
+      break;
+    case NID_ecdsa_with_SHA512:
+    case NID_sha512WithRSAEncryption:
+      *algorithm = DIGEST_SHA_512;
+      break;
+    default:
+      // Unknown algorithm.  There are several unhandled options that are less
+      // common and more complex.
+      LOG(LS_ERROR) << "Unknown signature algorithm NID: " << nid;
+      algorithm->clear();
+      return false;
+  }
+  return true;
 }
 
 bool OpenSSLCertificate::GetChain(SSLCertChain** chain) const {
