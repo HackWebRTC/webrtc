@@ -21,9 +21,11 @@ config("rtc_base_config") {
     "LOGGING=1",
   ]
 
-  # TODO(henrike): issue 3307, make rtc_base build without disabling
-  # these flags.
-  cflags_cc = [ "-Wno-non-virtual-dtor" ]
+  if (is_posix) {
+    # TODO(henrike): issue 3307, make rtc_base build without disabling
+    # these flags.
+    cflags_cc = [ "-Wno-non-virtual-dtor" ]
+  }
 }
 
 config("rtc_base_chromium_config") {
