@@ -276,16 +276,25 @@ void TcpSender::RunFor(int64_t time_ms, Packets* in_out) {
     UpdateCongestionControl(fb);
     SendPackets(in_out);
   }
+
+  for (auto it = in_flight_.begin(); it != in_flight_.end();) {
+    if (it->time_ms < now_ms_ - 1000)
+      in_flight_.erase(it++);
+    else
+      ++it;
+  }
+
   SendPackets(in_out);
   now_ms_ += time_ms;
 }
 
 void TcpSender::SendPackets(Packets* in_out) {
   int cwnd = ceil(cwnd_);
-  int packets_to_send = std::max(cwnd - in_flight_, 0);
+  int packets_to_send = std::max(cwnd - static_cast<int>(in_flight_.size()), 0);
   if (packets_to_send > 0) {
     Packets generated = GeneratePackets(packets_to_send);
-    in_flight_ += static_cast<int>(generated.size());
+    for (Packet* packet : generated)
+      in_flight_.insert(InFlight(*static_cast<MediaPacket*>(packet)));
     in_out->merge(generated, DereferencingComparator<Packet>);
   }
 }
@@ -296,9 +305,11 @@ void TcpSender::UpdateCongestionControl(const FeedbackPacket* fb) {
   ack_received_ = true;
 
   uint16_t expected = tcp_fb->acked_packets().back() - last_acked_seq_num_;
-  in_flight_ -= expected;
   uint16_t missing =
       expected - static_cast<uint16_t>(tcp_fb->acked_packets().size());
+
+  for (uint16_t ack_seq_num : tcp_fb->acked_packets())
+    in_flight_.erase(InFlight(ack_seq_num, now_ms_));
 
   if (missing > 0) {
     cwnd_ /= 2.0f;

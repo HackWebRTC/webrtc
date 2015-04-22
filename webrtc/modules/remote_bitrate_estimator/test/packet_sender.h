@@ -109,7 +109,6 @@ class TcpSender : public PacketSender {
         now_ms_(0),
         in_slow_start_(false),
         cwnd_(10),
-        in_flight_(0),
         ack_received_(false),
         last_acked_seq_num_(0),
         next_sequence_number_(0) {}
@@ -120,6 +119,25 @@ class TcpSender : public PacketSender {
   int GetFeedbackIntervalMs() const override { return 10; }
 
  private:
+  struct InFlight {
+   public:
+    InFlight(const MediaPacket& packet)
+        : sequence_number(packet.header().sequenceNumber),
+          time_ms(packet.send_time_us() / 1000) {}
+
+    InFlight(uint16_t seq_num, int64_t now_ms)
+        : sequence_number(seq_num), time_ms(now_ms) {}
+
+    bool operator<(const InFlight& rhs) const {
+      return sequence_number < rhs.sequence_number;
+    }
+
+    uint16_t sequence_number;  // Sequence number of a packet in flight, or a
+                               // packet which has just been acked.
+    int64_t time_ms;  // Time of when the packet left the sender, or when the
+                      // ack was received.
+  };
+
   void SendPackets(Packets* in_out);
   void UpdateCongestionControl(const FeedbackPacket* fb);
   Packets GeneratePackets(size_t num_packets);
@@ -127,7 +145,7 @@ class TcpSender : public PacketSender {
   int64_t now_ms_;
   bool in_slow_start_;
   float cwnd_;
-  int in_flight_;
+  std::set<InFlight> in_flight_;
   bool ack_received_;
   uint16_t last_acked_seq_num_;
   uint16_t next_sequence_number_;
