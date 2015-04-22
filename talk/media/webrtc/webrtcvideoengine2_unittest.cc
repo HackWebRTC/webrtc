@@ -2457,6 +2457,30 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTranslatesDecodeStatsCorrectly) {
   EXPECT_EQ(stats.render_delay_ms, info.receivers[0].render_delay_ms);
 }
 
+TEST_F(WebRtcVideoChannel2Test, GetStatsTranslatesReceivePacketStatsCorrectly) {
+  FakeVideoReceiveStream* stream = AddRecvStream();
+  webrtc::VideoReceiveStream::Stats stats;
+  stats.rtp_stats.transmitted.payload_bytes = 2;
+  stats.rtp_stats.transmitted.header_bytes = 3;
+  stats.rtp_stats.transmitted.padding_bytes = 4;
+  stats.rtp_stats.transmitted.packets = 5;
+  stats.rtcp_stats.cumulative_lost = 6;
+  stats.rtcp_stats.fraction_lost = 7;
+  stream->SetStats(stats);
+
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(&info));
+  EXPECT_EQ(stats.rtp_stats.transmitted.payload_bytes +
+                stats.rtp_stats.transmitted.header_bytes +
+                stats.rtp_stats.transmitted.padding_bytes,
+            info.receivers[0].bytes_rcvd);
+  EXPECT_EQ(stats.rtp_stats.transmitted.packets,
+            info.receivers[0].packets_rcvd);
+  EXPECT_EQ(stats.rtcp_stats.cumulative_lost, info.receivers[0].packets_lost);
+  EXPECT_EQ(static_cast<float>(stats.rtcp_stats.fraction_lost) / (1 << 8),
+            info.receivers[0].fraction_lost);
+}
+
 TEST_F(WebRtcVideoChannel2Test, TranslatesCallStatsCorrectly) {
   AddSendStream();
   AddSendStream();
