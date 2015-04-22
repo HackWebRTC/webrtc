@@ -50,7 +50,7 @@ import java.nio.ByteBuffer;
 // This class is an implementation detail of the Java PeerConnection API.
 // MediaCodec is thread-hostile so this class must be operated on a single
 // thread.
-class MediaCodecVideoDecoder {
+public class MediaCodecVideoDecoder {
   // This class is constructed, operated, and destroyed by its C++ incarnation,
   // so the class and its methods have non-public visibility.  The API this
   // class exposes aims to mimic the webrtc::VideoDecoder API as closely as
@@ -182,11 +182,11 @@ class MediaCodecVideoDecoder {
     return (CURRENT_SDK_VERSION >= EGL14_SDK_VERSION);
   }
 
-  private static boolean isVp8HwSupported() {
+  public static boolean isVp8HwSupported() {
     return findDecoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes) != null;
   }
 
-  private static boolean isH264HwSupported() {
+  public static boolean isH264HwSupported() {
     return findDecoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes) != null;
   }
 
