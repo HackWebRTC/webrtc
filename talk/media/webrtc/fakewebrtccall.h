@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2014 Google Inc.
+ * Copyright 2015 Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,13 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_MEDIA_WEBRTC_WEBRTCVIDEOENGINE2_UNITTEST_H_
-#define TALK_MEDIA_WEBRTC_WEBRTCVIDEOENGINE2_UNITTEST_H_
+#ifndef TALK_MEDIA_WEBRTC_FAKEWEBRTCCALL_H_
+#define TALK_MEDIA_WEBRTC_FAKEWEBRTCCALL_H_
 
-#include <map>
 #include <vector>
 
 #include "webrtc/call.h"
+#include "webrtc/video_frame.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
@@ -101,7 +101,7 @@ class FakeVideoReceiveStream : public webrtc::VideoReceiveStream {
 
 class FakeCall : public webrtc::Call, public webrtc::PacketReceiver {
  public:
-  FakeCall(const webrtc::Call::Config& config);
+  explicit FakeCall(const webrtc::Call::Config& config);
   ~FakeCall();
 
   webrtc::Call::Config GetConfig() const;
@@ -117,15 +117,14 @@ class FakeCall : public webrtc::Call, public webrtc::PacketReceiver {
   webrtc::VideoSendStream* CreateVideoSendStream(
       const webrtc::VideoSendStream::Config& config,
       const webrtc::VideoEncoderConfig& encoder_config) override;
-
   void DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) override;
 
   webrtc::VideoReceiveStream* CreateVideoReceiveStream(
       const webrtc::VideoReceiveStream::Config& config) override;
-
   void DestroyVideoReceiveStream(
       webrtc::VideoReceiveStream* receive_stream) override;
   webrtc::PacketReceiver* Receiver() override;
+
   DeliveryStatus DeliverPacket(const uint8_t* packet, size_t length) override;
 
   webrtc::Call::Stats GetStats() const override;

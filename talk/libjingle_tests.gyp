@@ -59,6 +59,8 @@
         'media/base/testutils.h',
         'media/devices/fakedevicemanager.h',
         'media/webrtc/dummyinstantiation.cc',
+        'media/webrtc/fakewebrtccall.cc',
+        'media/webrtc/fakewebrtccall.h',
         'media/webrtc/fakewebrtccommon.h',
         'media/webrtc/fakewebrtcdeviceinfo.h',
         'media/webrtc/fakewebrtcvcmfactory.h',
@@ -103,7 +105,6 @@
         # 'media/devices/devicemanager_unittest.cc',
         'media/webrtc/webrtcvideoengine_unittest.cc',
         'media/webrtc/webrtcvideoengine2_unittest.cc',
-        'media/webrtc/webrtcvideoengine2_unittest.h',
         'media/webrtc/webrtcvoiceengine_unittest.cc',
       ],
       'conditions': [
