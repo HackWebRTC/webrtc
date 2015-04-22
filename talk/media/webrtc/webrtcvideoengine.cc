@@ -196,10 +196,13 @@ static int SeverityToFilter(int severity) {
   switch (severity) {
     case rtc::LS_VERBOSE:
       filter |= webrtc::kTraceAll;
+      FALLTHROUGH();
     case rtc::LS_INFO:
       filter |= (webrtc::kTraceStateInfo | webrtc::kTraceInfo);
+      FALLTHROUGH();
     case rtc::LS_WARNING:
       filter |= (webrtc::kTraceTerseInfo | webrtc::kTraceWarning);
+      FALLTHROUGH();
     case rtc::LS_ERROR:
       filter |= (webrtc::kTraceError | webrtc::kTraceCritical);
   }

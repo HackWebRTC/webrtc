@@ -712,7 +712,7 @@ class VideoRendererWrapper : public VideoRendererInterface {
 
  private:
   explicit VideoRendererWrapper(cricket::VideoRenderer* renderer)
-    : renderer_(renderer), width_(0), height_(0) {}
+    : width_(0), height_(0), renderer_(renderer) {}
   int width_, height_;
   scoped_ptr<cricket::VideoRenderer> renderer_;
 };

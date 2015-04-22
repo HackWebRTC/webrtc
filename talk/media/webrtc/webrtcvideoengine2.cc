@@ -1448,8 +1448,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
     const Settable<VideoCodecSettings>& codec_settings,
     const StreamParams& sp,
     const std::vector<webrtc::RtpExtension>& rtp_extensions)
-    : call_(call),
-      ssrcs_(sp.ssrcs),
+    : ssrcs_(sp.ssrcs),
+      call_(call),
       external_encoder_factory_(external_encoder_factory),
       stream_(NULL),
       parameters_(webrtc::VideoSendStream::Config(),

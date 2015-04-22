@@ -1063,6 +1063,7 @@ bool BaseChannel::SetRtcpMux_w(bool enable, ContentAction action,
     case CA_UPDATE:
       // No RTCP mux info.
       ret = true;
+      break;
     default:
       break;
   }

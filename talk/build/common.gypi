@@ -81,6 +81,9 @@
             'cflags': [
               '-Wall',
               '-Wextra',
+              '-Wimplicit-fallthrough',
+              '-Wmissing-braces',
+              '-Wreorder',
               '-Wunused-variable',
               # TODO(ronghuawu): Fix the warning caused by
               # LateBindingSymbolTable::TableInfo from

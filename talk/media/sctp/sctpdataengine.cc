@@ -379,7 +379,7 @@ bool SctpDataMediaChannel::OpenSctpSocket() {
   }
 
   // Disable MTU discovery
-  struct sctp_paddrparams params = {0};
+  struct sctp_paddrparams params = {{0}};
   params.spp_assoc_id = 0;
   params.spp_flags = SPP_PMTUD_DISABLE;
   params.spp_pathmtu = kSctpMtu;

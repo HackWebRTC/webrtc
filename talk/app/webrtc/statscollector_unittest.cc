@@ -475,8 +475,8 @@ class StatsCollectorTest : public testing::Test {
           new cricket::ChannelManager(media_engine_,
                                       new cricket::FakeDeviceManager(),
                                       rtc::Thread::Current())),
-      signaling_(channel_manager_.get()),
-      session_(channel_manager_.get()) {
+      session_(channel_manager_.get()),
+      signaling_(channel_manager_.get()) {
     // By default, we ignore session GetStats calls.
     EXPECT_CALL(session_, GetTransportStats(_)).WillRepeatedly(Return(false));
     EXPECT_CALL(session_, mediastream_signaling()).WillRepeatedly(
