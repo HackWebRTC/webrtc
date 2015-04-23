@@ -27,9 +27,9 @@
 #include <pthread.h>
 #endif
 
-#ifdef _DEBUG
+#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
 #define CS_TRACK_OWNER 1
-#endif  // _DEBUG
+#endif
 
 #if CS_TRACK_OWNER
 #define TRACK_OWNER(x) x
@@ -58,6 +58,8 @@ class LOCKABLE CriticalSection {
   bool CurrentThreadIsOwner() const {
     return crit_.OwningThread == reinterpret_cast<HANDLE>(GetCurrentThreadId());
   }
+  // Use only for DCHECKing.
+  bool IsLocked() { return crit_.LockCount != -1; }
 
  private:
   CRITICAL_SECTION crit_;
@@ -102,6 +104,10 @@ class LOCKABLE CriticalSection {
     return true;
 #endif  // CS_TRACK_OWNER
   }
+  // Use only for DCHECKing.
+#if CS_TRACK_OWNER
+  bool IsLocked() { return thread_ != 0; }
+#endif
 
  private:
   pthread_mutex_t mutex_;
