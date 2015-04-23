@@ -40,6 +40,7 @@ include_rules = [
   '+talk',
   '+testing',
   '+third_party',
+  '+unicode',
   '+webrtc',
 ]
 

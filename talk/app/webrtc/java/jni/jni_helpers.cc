@@ -33,6 +33,8 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
+#include "unicode/unistr.h"
+
 namespace webrtc_jni {
 
 static JavaVM* g_jvm = nullptr;

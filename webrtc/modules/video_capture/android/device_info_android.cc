@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "json/json.h"
-#include "third_party/icu/source/common/unicode/unistr.h"
+#include "unicode/unistr.h"
 #include "webrtc/modules/video_capture/android/video_capture_android.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"

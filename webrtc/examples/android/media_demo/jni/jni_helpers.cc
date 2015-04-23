@@ -12,7 +12,7 @@
 
 #include <limits>
 
-#include "third_party/icu/source/common/unicode/unistr.h"
+#include "unicode/unistr.h"
 
 using icu::UnicodeString;
 

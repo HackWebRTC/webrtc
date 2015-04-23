@@ -36,7 +36,6 @@
 #include <string>
 
 #include "webrtc/base/checks.h"
-#include "third_party/icu/source/common/unicode/unistr.h"
 
 // Abort the process if |jni| has a Java exception pending.
 // This macros uses the comma operator to execute ExceptionDescribe
