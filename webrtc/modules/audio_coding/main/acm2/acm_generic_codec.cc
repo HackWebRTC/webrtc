@@ -293,51 +293,34 @@ void ACMGenericCodec::ResetAudioEncoder() {
 #endif
 #ifdef WEBRTC_CODEC_ISACFX
   } else if (!STR_CASE_CMP(codec_inst.plname, "ISAC")) {
-    DCHECK_EQ(codec_inst.plfreq, 16000);
     is_isac_ = true;
-    AudioEncoderDecoderIsacFix* enc_dec;
-    if (codec_inst.rate == -1) {
-      // Adaptive mode.
-      AudioEncoderDecoderIsacFix::ConfigAdaptive config;
-      config.payload_type = codec_inst.pltype;
-      enc_dec = new AudioEncoderDecoderIsacFix(config);
-    } else {
-      // Channel independent mode.
-      AudioEncoderDecoderIsacFix::Config config;
+    AudioEncoderDecoderIsacFix::Config config;
+    config.payload_type = codec_inst.pltype;
+    config.sample_rate_hz = codec_inst.plfreq;
+    config.frame_size_ms = rtc::CheckedDivExact(codec_inst.pacsize, 16);
+    if (codec_inst.rate != -1)
       config.bit_rate = codec_inst.rate;
-      config.frame_size_ms = codec_inst.pacsize / 16;
-      config.payload_type = codec_inst.pltype;
-      enc_dec = new AudioEncoderDecoderIsacFix(config);
-    }
+    config.max_payload_size_bytes = max_payload_size_bytes_;
+    config.max_bit_rate = max_rate_bps_;
+    config.adaptive_mode = (codec_inst.rate == -1);
+    auto* enc_dec = new AudioEncoderDecoderIsacFix(config);
     decoder_proxy_.SetDecoder(enc_dec);
     audio_encoder_.reset(enc_dec);
 #endif
 #ifdef WEBRTC_CODEC_ISAC
   } else if (!STR_CASE_CMP(codec_inst.plname, "ISAC")) {
     is_isac_ = true;
-    AudioEncoderDecoderIsac* enc_dec;
-    if (codec_inst.rate == -1) {
-      // Adaptive mode.
-      AudioEncoderDecoderIsac::ConfigAdaptive config;
-      config.sample_rate_hz = codec_inst.plfreq;
-      config.initial_frame_size_ms = rtc::CheckedDivExact(
-          1000 * codec_inst.pacsize, config.sample_rate_hz);
-      config.max_payload_size_bytes = max_payload_size_bytes_;
-      config.max_bit_rate = max_rate_bps_;
-      config.payload_type = codec_inst.pltype;
-      enc_dec = new AudioEncoderDecoderIsac(config);
-    } else {
-      // Channel independent mode.
-      AudioEncoderDecoderIsac::Config config;
-      config.sample_rate_hz = codec_inst.plfreq;
+    AudioEncoderDecoderIsac::Config config;
+    config.payload_type = codec_inst.pltype;
+    config.sample_rate_hz = codec_inst.plfreq;
+    config.frame_size_ms =
+        rtc::CheckedDivExact(1000 * codec_inst.pacsize, config.sample_rate_hz);
+    if (codec_inst.rate != -1)
       config.bit_rate = codec_inst.rate;
-      config.frame_size_ms = rtc::CheckedDivExact(1000 * codec_inst.pacsize,
-                                                  config.sample_rate_hz);
-      config.max_payload_size_bytes = max_payload_size_bytes_;
-      config.max_bit_rate = max_rate_bps_;
-      config.payload_type = codec_inst.pltype;
-      enc_dec = new AudioEncoderDecoderIsac(config);
-    }
+    config.max_payload_size_bytes = max_payload_size_bytes_;
+    config.max_bit_rate = max_rate_bps_;
+    config.adaptive_mode = (codec_inst.rate == -1);
+    auto* enc_dec = new AudioEncoderDecoderIsac(config);
     decoder_proxy_.SetDecoder(enc_dec);
     audio_encoder_.reset(enc_dec);
 #endif
