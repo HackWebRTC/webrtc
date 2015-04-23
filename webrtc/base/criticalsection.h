@@ -105,9 +105,13 @@ class LOCKABLE CriticalSection {
 #endif  // CS_TRACK_OWNER
   }
   // Use only for DCHECKing.
+  bool IsLocked() {
 #if CS_TRACK_OWNER
-  bool IsLocked() { return thread_ != 0; }
+    return thread_ != 0;
+#else
+    return true;
 #endif
+  }
 
  private:
   pthread_mutex_t mutex_;
