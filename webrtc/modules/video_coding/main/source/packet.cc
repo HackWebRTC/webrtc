@@ -123,7 +123,7 @@ void VCMPacket::CopyCodecSpecifics(const RTPVideoHeader& videoHeader) {
       if (isFirstPacket)
         insertStartCode = true;
 
-      if (videoHeader.codecHeader.H264.single_nalu) {
+      if (isFirstPacket && markerBit) {
         completeNALU = kNaluComplete;
       } else if (isFirstPacket) {
         completeNALU = kNaluStart;

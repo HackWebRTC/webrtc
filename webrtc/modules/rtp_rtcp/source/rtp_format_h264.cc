@@ -46,14 +46,15 @@ void ParseSingleNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
   parsed_payload->type.Video.isFirstPacket = true;
   RTPVideoHeaderH264* h264_header =
       &parsed_payload->type.Video.codecHeader.H264;
-  h264_header->single_nalu = true;
-  h264_header->stap_a = false;
 
   uint8_t nal_type = payload_data[0] & kTypeMask;
   if (nal_type == kStapA) {
     nal_type = payload_data[3] & kTypeMask;
-    h264_header->stap_a = true;
+    h264_header->packetization_type = kH264StapA;
+  } else {
+    h264_header->packetization_type = kH264SingleNalu;
   }
+  h264_header->nalu_type = nal_type;
 
   switch (nal_type) {
     case kSps:
@@ -95,8 +96,8 @@ void ParseFuaNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
   parsed_payload->type.Video.isFirstPacket = first_fragment;
   RTPVideoHeaderH264* h264_header =
       &parsed_payload->type.Video.codecHeader.H264;
-  h264_header->single_nalu = false;
-  h264_header->stap_a = false;
+  h264_header->packetization_type = kH264FuA;
+  h264_header->nalu_type = original_nal_type;
 }
 }  // namespace
 

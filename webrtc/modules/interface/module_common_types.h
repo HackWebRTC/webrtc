@@ -61,9 +61,25 @@ struct RTPVideoHeaderVP8 {
                               // in a VP8 partition. Otherwise false
 };
 
+// The packetization types that we support: single, aggregated, and fragmented.
+enum H264PacketizationTypes {
+  kH264SingleNalu,  // This packet contains a single NAL unit.
+  kH264StapA,       // This packet contains STAP-A (single time
+                    // aggregation) packets. If this packet has an
+                    // associated NAL unit type, it'll be for the
+                    // first such aggregated packet.
+  kH264FuA,         // This packet contains a FU-A (fragmentation
+                    // unit) packet, meaning it is a part of a frame
+                    // that was too large to fit into a single packet.
+};
+
 struct RTPVideoHeaderH264 {
-  bool stap_a;
-  bool single_nalu;
+  uint8_t nalu_type;  // The NAL unit type. If this is a header for a
+                      // fragmented packet, it's the NAL unit type of
+                      // the original data. If this is the header for an
+                      // aggregated packet, it's the NAL unit type of
+                      // the first NAL unit in the packet.
+  H264PacketizationTypes packetization_type;
 };
 
 union RTPVideoTypeHeader {
