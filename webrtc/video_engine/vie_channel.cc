@@ -1851,8 +1851,10 @@ RtpRtcp::Configuration ViEChannel::CreateRtpRtcpConfiguration() {
   RtpRtcp::Configuration configuration;
   configuration.id = ViEModuleId(engine_id_, channel_id_);
   configuration.audio = false;
+  configuration.receiver_only = !sender_;
   configuration.outgoing_transport = &vie_sender_;
-  configuration.intra_frame_callback = intra_frame_observer_;
+  if (sender_)
+    configuration.intra_frame_callback = intra_frame_observer_;
   configuration.rtt_stats = rtt_stats_;
   configuration.rtcp_packet_type_counter_observer =
       &rtcp_packet_type_counter_observer_;

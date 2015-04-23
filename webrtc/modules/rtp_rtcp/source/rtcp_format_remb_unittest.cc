@@ -96,7 +96,7 @@ void RtcpFormatRembTest::SetUp() {
   dummy_rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
   rtcp_sender_ = new RTCPSender(0, false, system_clock_,
                                 receive_statistics_.get(), NULL);
-  rtcp_receiver_ = new RTCPReceiver(0, system_clock_, NULL, NULL, NULL,
+  rtcp_receiver_ = new RTCPReceiver(0, system_clock_, false, NULL, NULL, NULL,
                                     dummy_rtp_rtcp_impl_);
   test_transport_ = new TestTransport(rtcp_receiver_);
 

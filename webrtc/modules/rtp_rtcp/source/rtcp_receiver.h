@@ -31,6 +31,7 @@ class RTCPReceiver : public TMMBRHelp
 public:
  RTCPReceiver(int32_t id,
               Clock* clock,
+              bool receiver_only,
               RtcpPacketTypeCounterObserver* packet_type_counter_observer,
               RtcpBandwidthObserver* rtcp_bandwidth_observer,
               RtcpIntraFrameObserver* rtcp_intra_frame_observer,
@@ -231,7 +232,8 @@ protected:
       uint32_t remote_ssrc, uint32_t source_ssrc) const
           EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
-  Clock* _clock;
+  Clock* const _clock;
+  const bool receiver_only_;
   RTCPMethod _method;
   int64_t _lastReceived;
   ModuleRtpRtcpImpl& _rtpRtcp;

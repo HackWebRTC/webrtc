@@ -10,11 +10,12 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver.h"
 
-#include <assert.h> //assert
-#include <string.h> //memset
+#include <assert.h>
+#include <string.h>
 
 #include <algorithm>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -31,12 +32,14 @@ const int kRrTimeoutIntervals = 3;
 RTCPReceiver::RTCPReceiver(
     int32_t id,
     Clock* clock,
+    bool receiver_only,
     RtcpPacketTypeCounterObserver* packet_type_counter_observer,
     RtcpBandwidthObserver* rtcp_bandwidth_observer,
     RtcpIntraFrameObserver* rtcp_intra_frame_observer,
     ModuleRtpRtcpImpl* owner)
     : TMMBRHelp(),
       _clock(clock),
+      receiver_only_(receiver_only),
       _method(kRtcpOff),
       _lastReceived(0),
       _rtpRtcp(*owner),
@@ -781,7 +784,7 @@ void RTCPReceiver::HandleSDESChunk(RTCPUtility::RTCPParserV2& rtcpParser) {
 void RTCPReceiver::HandleNACK(RTCPUtility::RTCPParserV2& rtcpParser,
                               RTCPPacketInformation& rtcpPacketInformation) {
   const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
-  if (main_ssrc_ != rtcpPacket.NACK.MediaSSRC) {
+  if (receiver_only_ || main_ssrc_ != rtcpPacket.NACK.MediaSSRC) {
     // Not to us.
     rtcpParser.Iterate();
     return;
@@ -1311,16 +1314,18 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
     // Might trigger a OnReceivedBandwidthEstimateUpdate.
     UpdateTMMBR();
   }
-  unsigned int local_ssrc = 0;
+  unsigned int local_ssrc;
   {
     // We don't want to hold this critsect when triggering the callbacks below.
     CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
     local_ssrc = main_ssrc_;
   }
-  if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSrReq) {
+  if (!receiver_only_ &&
+      rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSrReq) {
     _rtpRtcp.OnRequestSendReport();
   }
-  if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpNack) {
+  if (!receiver_only_ &&
+      rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpNack) {
     if (rtcpPacketInformation.nackSequenceNumbers.size() > 0) {
       LOG(LS_VERBOSE) << "Incoming NACK length: "
                    << rtcpPacketInformation.nackSequenceNumbers.size();
@@ -1333,6 +1338,7 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
     // report can generate several RTCP packets, based on number relayed/mixed
     // a send report block should go out to all receivers.
     if (_cbRtcpIntraFrameObserver) {
+      DCHECK(!receiver_only_);
       if ((rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpPli) ||
           (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpFir)) {
         if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpPli) {
@@ -1354,6 +1360,7 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
       }
     }
     if (_cbRtcpBandwidthObserver) {
+      DCHECK(!receiver_only_);
       if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRemb) {
         LOG(LS_VERBOSE) << "Incoming REMB: "
                         << rtcpPacketInformation.receiverEstimatedMaxBitrate;
@@ -1371,7 +1378,7 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
     }
   }
 
-  {
+  if (!receiver_only_) {
     CriticalSectionScoped cs(_criticalSectionFeedbacks);
     if (stats_callback_) {
       for (ReportBlockList::const_iterator it =

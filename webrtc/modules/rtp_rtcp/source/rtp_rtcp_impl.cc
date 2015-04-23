@@ -29,6 +29,7 @@ namespace webrtc {
 RtpRtcp::Configuration::Configuration()
     : id(-1),
       audio(false),
+      receiver_only(false),
       clock(NULL),
       receive_statistics(NullObjectReceiveStatistics()),
       outgoing_transport(NULL),
@@ -74,6 +75,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                    configuration.rtcp_packet_type_counter_observer),
       rtcp_receiver_(configuration.id,
                      configuration.clock,
+                     configuration.receiver_only,
                      configuration.rtcp_packet_type_counter_observer,
                      configuration.bandwidth_callback,
                      configuration.intra_frame_callback,
@@ -85,7 +87,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       last_process_time_(configuration.clock->TimeInMilliseconds()),
       last_bitrate_process_time_(configuration.clock->TimeInMilliseconds()),
       last_rtt_process_time_(configuration.clock->TimeInMilliseconds()),
-      packet_overhead_(28),  // IPV4 UDP.
+      packet_overhead_(28),                     // IPV4 UDP.
       padding_index_(static_cast<size_t>(-1)),  // Start padding at first child.
       nack_method_(kNackOff),
       nack_last_time_sent_full_(0),

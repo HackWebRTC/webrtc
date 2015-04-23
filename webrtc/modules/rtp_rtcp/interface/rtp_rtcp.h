@@ -54,6 +54,7 @@ class RtpRtcp : public Module {
     */
     int32_t id;
     bool audio;
+    bool receiver_only;
     Clock* clock;
     ReceiveStatistics* receive_statistics;
     Transport* outgoing_transport;
