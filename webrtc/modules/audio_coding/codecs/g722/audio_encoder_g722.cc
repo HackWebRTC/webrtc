@@ -38,14 +38,14 @@ AudioEncoderG722::AudioEncoderG722(const Config& config)
       num_10ms_frames_buffered_(0),
       first_timestamp_in_buffer_(0),
       encoders_(new EncoderState[num_channels_]),
-      interleave_buffer_(new uint8_t[2 * num_channels_]) {
+      interleave_buffer_(2 * num_channels_) {
   CHECK_EQ(config.frame_size_ms % 10, 0)
       << "Frame size must be an integer multiple of 10 ms.";
   const int samples_per_channel =
       kSampleRateHz / 100 * num_10ms_frames_per_packet_;
   for (int i = 0; i < num_channels_; ++i) {
     encoders_[i].speech_buffer.reset(new int16_t[samples_per_channel]);
-    encoders_[i].encoded_buffer.reset(new uint8_t[samples_per_channel / 2]);
+    encoders_[i].encoded_buffer.SetSize(samples_per_channel / 2);
   }
 }
 
@@ -105,7 +105,7 @@ AudioEncoder::EncodedInfo AudioEncoderG722::EncodeInternal(
   for (int i = 0; i < num_channels_; ++i) {
     const int encoded = WebRtcG722_Encode(
         encoders_[i].encoder, encoders_[i].speech_buffer.get(),
-        samples_per_channel, encoders_[i].encoded_buffer.get());
+        samples_per_channel, encoders_[i].encoded_buffer.data<uint8_t>());
     CHECK_GE(encoded, 0);
     CHECK_EQ(encoded, samples_per_channel / 2);
   }
@@ -115,13 +115,13 @@ AudioEncoder::EncodedInfo AudioEncoderG722::EncodeInternal(
   // significant half first.
   for (int i = 0; i < samples_per_channel / 2; ++i) {
     for (int j = 0; j < num_channels_; ++j) {
-      uint8_t two_samples = encoders_[j].encoded_buffer[i];
-      interleave_buffer_[j] = two_samples >> 4;
-      interleave_buffer_[num_channels_ + j] = two_samples & 0xf;
+      uint8_t two_samples = encoders_[j].encoded_buffer.data()[i];
+      interleave_buffer_.data()[j] = two_samples >> 4;
+      interleave_buffer_.data()[num_channels_ + j] = two_samples & 0xf;
     }
     for (int j = 0; j < num_channels_; ++j)
-      encoded[i * num_channels_ + j] =
-          interleave_buffer_[2 * j] << 4 | interleave_buffer_[2 * j + 1];
+      encoded[i * num_channels_ + j] = interleave_buffer_.data()[2 * j] << 4 |
+                                       interleave_buffer_.data()[2 * j + 1];
   }
   EncodedInfo info;
   info.encoded_bytes = samples_per_channel / 2 * num_channels_;

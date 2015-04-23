@@ -18,8 +18,7 @@ namespace webrtc {
 
 AudioEncoderCopyRed::AudioEncoderCopyRed(const Config& config)
     : speech_encoder_(config.speech_encoder),
-      red_payload_type_(config.payload_type),
-      secondary_allocated_(0) {
+      red_payload_type_(config.payload_type) {
   CHECK(speech_encoder_) << "Speech encoder not provided.";
 }
 
@@ -79,18 +78,14 @@ AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeInternal(
     info.redundant.push_back(info);
     DCHECK_EQ(info.redundant.size(), 1u);
     if (secondary_info_.encoded_bytes > 0) {
-      memcpy(&encoded[info.encoded_bytes], secondary_encoded_.get(),
+      memcpy(&encoded[info.encoded_bytes], secondary_encoded_.data(),
              secondary_info_.encoded_bytes);
       info.redundant.push_back(secondary_info_);
       DCHECK_EQ(info.redundant.size(), 2u);
     }
     // Save primary to secondary.
-    if (secondary_allocated_ < info.encoded_bytes) {
-      secondary_encoded_.reset(new uint8_t[info.encoded_bytes]);
-      secondary_allocated_ = info.encoded_bytes;
-    }
-    CHECK(secondary_encoded_);
-    memcpy(secondary_encoded_.get(), encoded, info.encoded_bytes);
+    secondary_encoded_.SetSize(info.encoded_bytes);
+    memcpy(secondary_encoded_.data(), encoded, info.encoded_bytes);
     secondary_info_ = info;
     DCHECK_EQ(info.speech, info.redundant[0].speech);
   }

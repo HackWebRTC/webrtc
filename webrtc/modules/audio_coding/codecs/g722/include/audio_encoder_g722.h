@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_G722_INCLUDE_AUDIO_ENCODER_G722_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_G722_INCLUDE_AUDIO_ENCODER_G722_H_
 
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
@@ -48,7 +49,7 @@ class AudioEncoderG722 : public AudioEncoder {
   struct EncoderState {
     G722EncInst* encoder;
     rtc::scoped_ptr<int16_t[]> speech_buffer;   // Queued up for encoding.
-    rtc::scoped_ptr<uint8_t[]> encoded_buffer;  // Already encoded.
+    rtc::Buffer encoded_buffer;                 // Already encoded.
     EncoderState();
     ~EncoderState();
   };
@@ -61,7 +62,7 @@ class AudioEncoderG722 : public AudioEncoder {
   int num_10ms_frames_buffered_;
   uint32_t first_timestamp_in_buffer_;
   const rtc::scoped_ptr<EncoderState[]> encoders_;
-  const rtc::scoped_ptr<uint8_t[]> interleave_buffer_;
+  rtc::Buffer interleave_buffer_;
 };
 
 }  // namespace webrtc
