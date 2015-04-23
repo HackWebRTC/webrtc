@@ -464,18 +464,16 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
 
 class WebRtcDecoderObserver : public webrtc::ViEDecoderObserver {
  public:
-  explicit WebRtcDecoderObserver(int video_channel_id)
-       : video_channel_id_(video_channel_id),
-         framerate_(0),
-         bitrate_(0),
-         decode_ms_(0),
-         max_decode_ms_(0),
-         current_delay_ms_(0),
-         target_delay_ms_(0),
-         jitter_buffer_ms_(0),
-         min_playout_delay_ms_(0),
-         render_delay_ms_(0) {
-  }
+  explicit WebRtcDecoderObserver()
+      : framerate_(0),
+        bitrate_(0),
+        decode_ms_(0),
+        max_decode_ms_(0),
+        current_delay_ms_(0),
+        target_delay_ms_(0),
+        jitter_buffer_ms_(0),
+        min_playout_delay_ms_(0),
+        render_delay_ms_(0) {}
 
   // virtual functions from VieDecoderObserver.
   virtual void IncomingCodecChanged(const int video_channel_id,
@@ -484,7 +482,6 @@ class WebRtcDecoderObserver : public webrtc::ViEDecoderObserver {
                             const unsigned int framerate,
                             const unsigned int bitrate) {
     rtc::CritScope cs(&crit_);
-    ASSERT(video_channel_id_ == video_channel_id);
     framerate_ = framerate;
     bitrate_ = bitrate;
   }
@@ -523,7 +520,6 @@ class WebRtcDecoderObserver : public webrtc::ViEDecoderObserver {
 
  private:
   mutable rtc::CriticalSection crit_;
-  int video_channel_id_;
   int framerate_;
   int bitrate_;
   int decode_ms_;
@@ -537,26 +533,20 @@ class WebRtcDecoderObserver : public webrtc::ViEDecoderObserver {
 
 class WebRtcEncoderObserver : public webrtc::ViEEncoderObserver {
  public:
-  explicit WebRtcEncoderObserver(int video_channel_id)
-      : video_channel_id_(video_channel_id),
-        framerate_(0),
-        bitrate_(0),
-        suspended_(false) {
-  }
+  explicit WebRtcEncoderObserver()
+      : framerate_(0), bitrate_(0), suspended_(false) {}
 
   // virtual functions from VieEncoderObserver.
   virtual void OutgoingRate(const int video_channel_id,
                             const unsigned int framerate,
                             const unsigned int bitrate) {
     rtc::CritScope cs(&crit_);
-    ASSERT(video_channel_id_ == video_channel_id);
     framerate_ = framerate;
     bitrate_ = bitrate;
   }
 
   virtual void SuspendChange(int video_channel_id, bool is_suspended) {
     rtc::CritScope cs(&crit_);
-    ASSERT(video_channel_id_ == video_channel_id);
     suspended_ = is_suspended;
   }
 
@@ -575,7 +565,6 @@ class WebRtcEncoderObserver : public webrtc::ViEEncoderObserver {
 
  private:
   mutable rtc::CriticalSection crit_;
-  int video_channel_id_;
   int framerate_;
   int bitrate_;
   bool suspended_;
@@ -642,10 +631,7 @@ class WebRtcVideoChannelRecvInfo  {
  public:
   typedef std::map<int, webrtc::VideoDecoder*> DecoderMap;  // Key: payload type
   explicit WebRtcVideoChannelRecvInfo(int channel_id)
-      : channel_id_(channel_id),
-        render_adapter_(NULL, channel_id),
-        decoder_observer_(channel_id) {
-  }
+      : channel_id_(channel_id), render_adapter_(NULL, channel_id) {}
   int channel_id() { return channel_id_; }
   void SetRenderer(VideoRenderer* renderer) {
     render_adapter_.SetRenderer(renderer);
@@ -737,7 +723,6 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
         sending_(false),
         muted_(false),
         video_capturer_(NULL),
-        encoder_observer_(channel_id),
         external_capture_(external_capture),
         cpu_monitor_(cpu_monitor),
         old_adaptation_changes_(0),

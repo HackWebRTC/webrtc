@@ -37,10 +37,7 @@ namespace cricket {
 
 class PassthroughStream: public webrtc::VideoRenderCallback {
  public:
-  explicit PassthroughStream(const uint32_t stream_id)
-      : stream_id_(stream_id),
-        running_(false) {
-  }
+  PassthroughStream() : running_(false) {}
   virtual ~PassthroughStream() {
   }
   virtual int32_t RenderFrame(const uint32_t stream_id,
@@ -71,7 +68,6 @@ class PassthroughStream: public webrtc::VideoRenderCallback {
   }
 
  private:
-  uint32_t stream_id_;
   VideoRenderCallback* renderer_;
   rtc::CriticalSection stream_critical_;
   bool running_;
@@ -102,7 +98,7 @@ webrtc::VideoRenderCallback* WebRtcPassthroughRender::AddIncomingRenderStream(
     return NULL;
   }
 
-  PassthroughStream* stream = new PassthroughStream(stream_id);
+  PassthroughStream* stream = new PassthroughStream();
   // Store the stream
   stream_render_map_[stream_id] = stream;
   return stream;

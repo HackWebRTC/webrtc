@@ -91,6 +91,9 @@
               '-Wno-address-of-array-temporary',
               '-Wthread-safety',
             ],
+            'cflags_cc': [
+              '-Wunused-private-field',
+            ],
           }],
         ],
       }],
