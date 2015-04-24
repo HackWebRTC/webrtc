@@ -116,7 +116,9 @@ source_set("common_audio") {
       "real_fourier_openmax.h",
     ]
     defines += [ "RTC_USE_OPENMAX_DL" ]
-    deps += [ "//third_party/openmax_dl/dl" ]
+    if (rtc_build_openmax_dl) {
+      deps += [ "//third_party/openmax_dl/dl" ]
+    }
   }
 
   if (current_cpu == "arm") {
