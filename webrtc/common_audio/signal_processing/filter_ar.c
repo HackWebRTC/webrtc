@@ -51,13 +51,13 @@ int WebRtcSpl_FilterAR(const int16_t* a,
         stop = (i < a_length) ? i + 1 : a_length;
         for (j = 1; j < stop; j++)
         {
-            o -= WEBRTC_SPL_MUL_16_16(*a_ptr, *filtered_ptr--);
-            oLOW -= WEBRTC_SPL_MUL_16_16(*a_ptr++, *filtered_low_ptr--);
+          o -= *a_ptr * *filtered_ptr--;
+          oLOW -= *a_ptr++ * *filtered_low_ptr--;
         }
         for (j = i + 1; j < a_length; j++)
         {
-            o -= WEBRTC_SPL_MUL_16_16(*a_ptr, *state_ptr--);
-            oLOW -= WEBRTC_SPL_MUL_16_16(*a_ptr++, *state_low_ptr--);
+          o -= *a_ptr * *state_ptr--;
+          oLOW -= *a_ptr++ * *state_low_ptr--;
         }
 
         o += (oLOW >> 12);

@@ -27,7 +27,7 @@ void WebRtcSpl_SqrtOfOneMinusXSquared(int16_t *xQ15, int vector_length,
     for (m = 0; m < vector_length; m++)
     {
         tmp = xQ15[m];
-        sq = WEBRTC_SPL_MUL_16_16(tmp, tmp); // x^2 in Q30
+        sq = tmp * tmp;  // x^2 in Q30
         sq = 1073741823 - sq; // 1-x^2, where 1 ~= 0.99999999906 is 1073741823 in Q30
         sq = WebRtcSpl_Sqrt(sq); // sqrt(1-x^2) in Q15
         yQ15[m] = (int16_t)sq;

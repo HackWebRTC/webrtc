@@ -157,9 +157,8 @@ int WebRtcSpl_ScaleAndAddVectorsWithRoundC(const int16_t* in_vector1,
 
   for (i = 0; i < length; i++) {
     out_vector[i] = (int16_t)((
-        WEBRTC_SPL_MUL_16_16(in_vector1[i], in_vector1_scale)
-        + WEBRTC_SPL_MUL_16_16(in_vector2[i], in_vector2_scale)
-        + round_value) >> right_shifts);
+        in_vector1[i] * in_vector1_scale + in_vector2[i] * in_vector2_scale +
+        round_value) >> right_shifts);
   }
 
   return 0;
