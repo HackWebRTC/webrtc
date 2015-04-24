@@ -12,6 +12,7 @@
 
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/modules/rtp_rtcp/source/h264_sps_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_h264.h"
 
 namespace webrtc {
@@ -30,6 +31,7 @@ enum Nalu {
 static const size_t kNalHeaderSize = 1;
 static const size_t kFuAHeaderSize = 2;
 static const size_t kLengthFieldSize = 2;
+static const size_t kStapAHeaderSize = kNalHeaderSize + kLengthFieldSize;
 
 // Bit masks for FU (A and B) indicators.
 enum NalDefs { kFBit = 0x80, kNriMask = 0x60, kTypeMask = 0x1F };
@@ -47,15 +49,28 @@ void ParseSingleNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
   RTPVideoHeaderH264* h264_header =
       &parsed_payload->type.Video.codecHeader.H264;
 
+  const uint8_t* nalu_start = payload_data + kNalHeaderSize;
+  size_t nalu_length = payload_data_length - kNalHeaderSize;
   uint8_t nal_type = payload_data[0] & kTypeMask;
   if (nal_type == kStapA) {
-    nal_type = payload_data[3] & kTypeMask;
+    // Skip the StapA header (StapA nal type + length).
+    nal_type = payload_data[kStapAHeaderSize] & kTypeMask;
+    nalu_start += kStapAHeaderSize;
+    nalu_length -= kStapAHeaderSize;
     h264_header->packetization_type = kH264StapA;
   } else {
     h264_header->packetization_type = kH264SingleNalu;
   }
   h264_header->nalu_type = nal_type;
 
+  // We can read resolution out of sps packets.
+  if (nal_type == kSps) {
+    H264SpsParser parser(nalu_start, nalu_length);
+    if (parser.Parse()) {
+      parsed_payload->type.Video.width = parser.width();
+      parsed_payload->type.Video.height = parser.height();
+    }
+  }
   switch (nal_type) {
     case kSps:
     case kPps:
