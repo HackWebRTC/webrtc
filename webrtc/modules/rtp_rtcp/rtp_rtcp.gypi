@@ -74,8 +74,6 @@
         'source/forward_error_correction.h',
         'source/forward_error_correction_internal.cc',
         'source/forward_error_correction_internal.h',
-        'source/h264_sps_parser.cc',
-        'source/h264_sps_parser.h',
         'source/producer_fec.cc',
         'source/producer_fec.h',
         'source/rtp_packet_history.cc',
