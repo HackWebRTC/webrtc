@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_INCOMING_VIDEO_STREAM_H_
 #define WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_INCOMING_VIDEO_STREAM_H_
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/video_render/include/video_render.h"
 
 namespace webrtc {
@@ -22,11 +23,8 @@ class VideoRenderFrames;
 
 class IncomingVideoStream : public VideoRenderCallback {
  public:
-  IncomingVideoStream(const int32_t module_id,
-                      const uint32_t stream_id);
+  explicit IncomingVideoStream(uint32_t stream_id);
   ~IncomingVideoStream();
-
-  int32_t ChangeModuleId(const int32_t id);
 
   // Get callback to deliver frames to the module.
   VideoRenderCallback* ModuleCallback();
@@ -34,10 +32,10 @@ class IncomingVideoStream : public VideoRenderCallback {
                               const I420VideoFrame& video_frame);
 
   // Set callback to the platform dependent code.
-  int32_t SetRenderCallback(VideoRenderCallback* render_callback);
+  void SetRenderCallback(VideoRenderCallback* render_callback);
 
   // Callback for file recording, snapshot, ...
-  int32_t SetExternalCallback(VideoRenderCallback* render_object);
+  void SetExternalCallback(VideoRenderCallback* render_object);
 
   // Start/Stop.
   int32_t Start();
@@ -62,36 +60,33 @@ class IncomingVideoStream : public VideoRenderCallback {
   bool IncomingVideoStreamProcess();
 
  private:
-  enum { KEventStartupTimeMS = 10 };
-  enum { KEventMaxWaitTimeMs = 100 };
-  enum { KFrameRatePeriodMs = 1000 };
+  enum { kEventStartupTimeMs = 10 };
+  enum { kEventMaxWaitTimeMs = 100 };
+  enum { kFrameRatePeriodMs = 1000 };
 
-  int32_t module_id_;
-  uint32_t stream_id_;
+  uint32_t const stream_id_;
   // Critsects in allowed to enter order.
-  CriticalSectionWrapper& stream_critsect_;
-  CriticalSectionWrapper& thread_critsect_;
-  CriticalSectionWrapper& buffer_critsect_;
-  rtc::scoped_ptr<ThreadWrapper> incoming_render_thread_;
-  EventTimerWrapper& deliver_buffer_event_;
-  bool running_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> stream_critsect_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> thread_critsect_;
+  const rtc::scoped_ptr<CriticalSectionWrapper> buffer_critsect_;
+  rtc::scoped_ptr<ThreadWrapper> incoming_render_thread_
+      GUARDED_BY(thread_critsect_);
+  rtc::scoped_ptr<EventTimerWrapper> deliver_buffer_event_;
 
-  VideoRenderCallback* external_callback_;
-  VideoRenderCallback* render_callback_;
-  VideoRenderFrames& render_buffers_;
+  bool running_ GUARDED_BY(stream_critsect_);
+  VideoRenderCallback* external_callback_ GUARDED_BY(thread_critsect_);
+  VideoRenderCallback* render_callback_ GUARDED_BY(thread_critsect_);
+  const rtc::scoped_ptr<VideoRenderFrames> render_buffers_
+      GUARDED_BY(buffer_critsect_);
 
-  RawVideoType callbackVideoType_;
-  uint32_t callbackWidth_;
-  uint32_t callbackHeight_;
-
-  uint32_t incoming_rate_;
-  int64_t last_rate_calculation_time_ms_;
-  uint16_t num_frames_since_last_calculation_;
-  int64_t last_render_time_ms_;
-  I420VideoFrame temp_frame_;
-  I420VideoFrame start_image_;
-  I420VideoFrame timeout_image_;
-  uint32_t timeout_time_;
+  uint32_t incoming_rate_ GUARDED_BY(stream_critsect_);
+  int64_t last_rate_calculation_time_ms_ GUARDED_BY(stream_critsect_);
+  uint16_t num_frames_since_last_calculation_ GUARDED_BY(stream_critsect_);
+  int64_t last_render_time_ms_ GUARDED_BY(thread_critsect_);
+  I420VideoFrame temp_frame_ GUARDED_BY(thread_critsect_);
+  I420VideoFrame start_image_ GUARDED_BY(thread_critsect_);
+  I420VideoFrame timeout_image_ GUARDED_BY(thread_critsect_);
+  uint32_t timeout_time_ GUARDED_BY(thread_critsect_);
 };
 
 }  // namespace webrtc
