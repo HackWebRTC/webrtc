@@ -171,7 +171,7 @@ VCMJitterBuffer::~VCMJitterBuffer() {
 }
 
 void VCMJitterBuffer::UpdateHistograms() {
-  if (num_packets_ <= 0) {
+  if (num_packets_ <= 0 || !running_) {
     return;
   }
   int64_t elapsed_sec =

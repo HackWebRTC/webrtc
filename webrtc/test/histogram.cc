@@ -12,6 +12,8 @@
 
 #include <map>
 
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/system_wrappers/interface/metrics.h"
 
 // Test implementation of histogram methods in
@@ -19,8 +21,17 @@
 
 namespace webrtc {
 namespace {
-// Map holding the last added sample to a histogram (mapped by histogram name).
-std::map<std::string, int> histograms_;
+struct SampleInfo {
+  SampleInfo(int sample)
+      : last(sample), total(1) {}
+  int last;   // Last added sample.
+  int total;  // Total number of added samples.
+};
+
+rtc::CriticalSection histogram_crit_;
+// Map holding info about added samples to a histogram (mapped by the histogram
+// name).
+std::map<std::string, SampleInfo> histograms_ GUARDED_BY(histogram_crit_);
 }  // namespace
 
 namespace metrics {
@@ -32,17 +43,39 @@ Histogram* HistogramFactoryGetEnumeration(const std::string& name,
 
 void HistogramAdd(
     Histogram* histogram_pointer, const std::string& name, int sample) {
-  histograms_[name] = sample;
+  rtc::CritScope cs(&histogram_crit_);
+  auto it = histograms_.find(name);
+  if (it == histograms_.end()) {
+    histograms_.insert(std::make_pair(name, SampleInfo(sample)));
+    return;
+  }
+  it->second.last = sample;
+  ++it->second.total;
 }
 }  // namespace metrics
 
 namespace test {
 int LastHistogramSample(const std::string& name) {
-  std::map<std::string, int>::const_iterator it = histograms_.find(name);
+  rtc::CritScope cs(&histogram_crit_);
+  const auto it = histograms_.find(name);
   if (it == histograms_.end()) {
     return -1;
   }
-  return it->second;
+  return it->second.last;
+}
+
+int NumHistogramSamples(const std::string& name) {
+  rtc::CritScope cs(&histogram_crit_);
+  const auto it = histograms_.find(name);
+  if (it == histograms_.end()) {
+    return 0;
+  }
+  return it->second.total;
+}
+
+void ClearHistograms() {
+  rtc::CritScope cs(&histogram_crit_);
+  histograms_.clear();
 }
 }  // namespace test
 }  // namespace webrtc
