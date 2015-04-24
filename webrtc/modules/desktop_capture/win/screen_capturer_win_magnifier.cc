@@ -109,9 +109,9 @@ void ScreenCapturerWinMagnifier::Capture(const DesktopRegion& region) {
 
   bool succeeded = false;
 
-  // Do not try to use the magnfiier if it's capturing non-primary screen, or it
-  // failed before.
-  if (magnifier_initialized_ && IsCapturingPrimaryScreenOnly() &&
+  // Do not try to use the magnifier if it failed before and in multi-screen
+  // setup (where the API crashes sometimes).
+  if (magnifier_initialized_ && (GetSystemMetrics(SM_CMONITORS) == 1) &&
       magnifier_capture_succeeded_) {
     DesktopRect rect = GetScreenRect(current_screen_id_, current_device_key_);
     CreateCurrentFrameIfNecessary(rect.size());
@@ -434,13 +434,6 @@ void ScreenCapturerWinMagnifier::CreateCurrentFrameIfNecessary(
     }
     queue_.ReplaceCurrentFrame(buffer.release());
   }
-}
-
-bool ScreenCapturerWinMagnifier::IsCapturingPrimaryScreenOnly() const {
-  if (current_screen_id_ != kFullDesktopScreenId)
-    return current_screen_id_ == 0;  // the primary screen is always '0'.
-
-  return GetSystemMetrics(SM_CMONITORS) == 1;
 }
 
 void ScreenCapturerWinMagnifier::StartFallbackCapturer() {

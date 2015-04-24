@@ -96,9 +96,6 @@ class ScreenCapturerWinMagnifier : public ScreenCapturer {
   // Makes sure the current frame exists and matches |size|.
   void CreateCurrentFrameIfNecessary(const DesktopSize& size);
 
-  // Returns true if we are capturing the primary screen only.
-  bool IsCapturingPrimaryScreenOnly() const;
-
   // Start the fallback capturer and select the screen.
   void StartFallbackCapturer();
 
