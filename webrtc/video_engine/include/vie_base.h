@@ -201,7 +201,6 @@ class WEBRTC_DLLEXPORT ViEBase {
   virtual ChannelGroup* GetChannelGroup(int channel_id) = 0;
   virtual ViEChannel* GetChannel(int channel_id) = 0;
   virtual ViEEncoder* GetEncoder(int channel_id) = 0;
-  virtual ViERenderManager* GetRenderManager() = 0;
 
   // Creates a new channel grouped together with |original_channel|. The channel
   // can only receive video and it is assumed the remote end-point is the same

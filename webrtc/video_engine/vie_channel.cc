@@ -26,6 +26,7 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/modules/video_render/include/video_render_defines.h"
+#include "webrtc/modules/video_render/incoming_video_stream.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/metrics.h"
@@ -112,6 +113,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
       vie_sync_(vcm_, this),
       stats_observer_(new ChannelStatsObserver(this)),
       vcm_receive_stats_callback_(NULL),
+      incoming_video_stream_(nullptr),
       module_process_thread_(module_process_thread),
       codec_observer_(NULL),
       do_key_frame_callbackRequest_(false),
@@ -1689,6 +1691,12 @@ int32_t ViEChannel::FrameToRender(
     }
   }
 
+  // New API bypass.
+  if (incoming_video_stream_) {
+    incoming_video_stream_->RenderFrame(channel_id_, video_frame);
+    return 0;
+  }
+
   uint32_t arr_ofCSRC[kRtpCsrcSize];
   int32_t no_of_csrcs = vie_receiver_.GetCsrcs(arr_ofCSRC);
   if (no_of_csrcs <= 0) {
@@ -1993,5 +2001,11 @@ void ViEChannel::ReceivedBWEPacket(int64_t arrival_time_ms,
                                    size_t payload_size,
                                    const RTPHeader& header) {
   vie_receiver_.ReceivedBWEPacket(arrival_time_ms, payload_size, header);
+}
+
+void ViEChannel::SetIncomingVideoStream(
+    IncomingVideoStream* incoming_video_stream) {
+  CriticalSectionScoped cs(callback_cs_.get());
+  incoming_video_stream_ = incoming_video_stream;
 }
 }  // namespace webrtc

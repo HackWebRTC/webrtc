@@ -38,6 +38,7 @@ class Config;
 class CriticalSectionWrapper;
 class EncodedImageCallback;
 class I420FrameCallback;
+class IncomingVideoStream;
 class PacedSender;
 class PacketRouter;
 class PayloadRouter;
@@ -373,6 +374,7 @@ class ViEChannel
       ReceiveStatisticsProxy* receive_statistics_proxy);
   void ReceivedBWEPacket(int64_t arrival_time_ms, size_t payload_size,
                          const RTPHeader& header);
+  void SetIncomingVideoStream(IncomingVideoStream* incoming_video_stream);
 
  protected:
   static bool ChannelDecodeThreadFunction(void* obj);
@@ -522,6 +524,7 @@ class ViEChannel
   VCMReceiveStatisticsCallback* vcm_receive_stats_callback_
       GUARDED_BY(callback_cs_);
   FrameCounts receive_frame_counts_ GUARDED_BY(callback_cs_);
+  IncomingVideoStream* incoming_video_stream_ GUARDED_BY(callback_cs_);
   ProcessThread& module_process_thread_;
   ViEDecoderObserver* codec_observer_;
   bool do_key_frame_callbackRequest_;

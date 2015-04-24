@@ -214,10 +214,6 @@ ViEEncoder* ViEBaseImpl::GetEncoder(int channel_id) {
   return vie_encoder;
 }
 
-ViERenderManager* ViEBaseImpl::GetRenderManager() {
-  return shared_data_.render_manager();
-}
-
 int ViEBaseImpl::CreateReceiveChannel(int& video_channel,  // NOLINT
                                       int original_channel) {
   return CreateChannel(video_channel, original_channel, false, true);

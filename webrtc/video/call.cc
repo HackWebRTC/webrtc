@@ -313,13 +313,9 @@ VideoReceiveStream* Call::CreateVideoReceiveStream(
     const VideoReceiveStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateVideoReceiveStream");
   LOG(LS_INFO) << "CreateVideoReceiveStream: " << config.ToString();
-  VideoReceiveStream* receive_stream =
-      new VideoReceiveStream(video_engine_,
-                             channel_group_,
-                             config,
-                             config_.send_transport,
-                             config_.voice_engine,
-                             base_channel_id_);
+  VideoReceiveStream* receive_stream = new VideoReceiveStream(
+      video_engine_, channel_group_, config, config_.send_transport,
+      config_.voice_engine, base_channel_id_);
 
   // This needs to be taken before receive_crit_ as both locks need to be held
   // while changing network state.

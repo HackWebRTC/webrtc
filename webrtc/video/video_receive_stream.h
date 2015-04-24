@@ -17,6 +17,7 @@
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_render/include/video_render_defines.h"
+#include "webrtc/modules/video_render/incoming_video_stream.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
 #include "webrtc/video/receive_statistics_proxy.h"
@@ -25,8 +26,6 @@
 #include "webrtc/video_engine/vie_channel.h"
 #include "webrtc/video_engine/vie_channel_group.h"
 #include "webrtc/video_engine/vie_encoder.h"
-#include "webrtc/video_engine/vie_render_manager.h"
-#include "webrtc/video_engine/vie_renderer.h"
 #include "webrtc/video_receive_stream.h"
 
 namespace webrtc {
@@ -45,7 +44,7 @@ namespace internal {
 
 class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public I420FrameCallback,
-                           public ExternalRenderer {
+                           public VideoRenderCallback {
  public:
   VideoReceiveStream(webrtc::VideoEngine* video_engine,
                      ChannelGroup* channel_group,
@@ -62,23 +61,14 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   // Overrides I420FrameCallback.
   void FrameCallback(I420VideoFrame* video_frame) override;
 
-  // Overrides ExternalRenderer.
-  int FrameSizeChange(unsigned int width,
-                      unsigned int height,
-                      unsigned int number_of_streams) override;
-  int DeliverFrame(unsigned char* buffer,
-                   size_t buffer_size,
-                   uint32_t timestamp,
-                   int64_t ntp_time_ms,
-                   int64_t render_time_ms,
-                   void* handle) override;
-  int DeliverI420Frame(const I420VideoFrame& webrtc_frame) override;
-  bool IsTextureSupported() override;
+  // Overrides VideoRenderCallback.
+  int RenderFrame(const uint32_t /*stream_id*/,
+                  const I420VideoFrame& video_frame) override;
 
   void SignalNetworkState(Call::NetworkState state);
 
-  virtual bool DeliverRtcp(const uint8_t* packet, size_t length);
-  virtual bool DeliverRtp(const uint8_t* packet, size_t length);
+  bool DeliverRtcp(const uint8_t* packet, size_t length);
+  bool DeliverRtp(const uint8_t* packet, size_t length);
 
  private:
   void SetRtcpMode(newapi::RtcpMode mode);
@@ -90,8 +80,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   ChannelGroup* const channel_group_;
   ViEChannel* vie_channel_;
-  ViERenderManager* vie_render_manager_;
-  ViERenderer* vie_renderer_;
+  rtc::scoped_ptr<IncomingVideoStream> incoming_video_stream_;
 
   ViEBase* video_engine_base_;
 

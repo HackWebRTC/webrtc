@@ -77,7 +77,7 @@ class VideoReceiveStream {
     int target_delay_ms = 0;
     int jitter_buffer_ms = 0;
     int min_playout_delay_ms = 0;
-    int render_delay_ms = 0;
+    int render_delay_ms = 10;
 
     int total_bitrate_bps = 0;
     int discarded_packets = 0;
