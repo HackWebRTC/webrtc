@@ -263,6 +263,7 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
 }
 
 VideoReceiveStream::~VideoReceiveStream() {
+  incoming_video_stream_->Stop();
   vie_channel_->RegisterPreRenderCallback(nullptr);
   vie_channel_->RegisterPreDecodeImageCallback(nullptr);
 
