@@ -109,6 +109,8 @@
         'rms_level.h',
         'splitting_filter.cc',
         'splitting_filter.h',
+        'three_band_filter_bank.cc',
+        'three_band_filter_bank.h',
         'transient/common.h',
         'transient/daubechies_8_wavelet_coeffs.h',
         'transient/dyadic_decimator.h',

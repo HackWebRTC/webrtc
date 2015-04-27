@@ -18,6 +18,12 @@
 namespace webrtc {
 namespace {
 
+enum {
+  kSamplesPer16kHzChannel = 160,
+  kSamplesPer32kHzChannel = 320,
+  kSamplesPer48kHzChannel = 480
+};
+
 bool HasKeyboardChannel(AudioProcessing::ChannelLayout layout) {
   switch (layout) {
     case AudioProcessing::kMono:
@@ -122,7 +128,9 @@ AudioBuffer::AudioBuffer(int input_num_frames,
     split_data_.reset(new IFChannelBuffer(proc_num_frames_,
                                           num_proc_channels_,
                                           num_bands_));
-    splitting_filter_.reset(new SplittingFilter(num_proc_channels_));
+    splitting_filter_.reset(new SplittingFilter(num_proc_channels_,
+                                                num_bands_,
+                                                proc_num_frames_));
   }
 }
 

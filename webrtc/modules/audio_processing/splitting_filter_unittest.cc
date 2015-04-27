@@ -11,14 +11,21 @@
 // MSVC++ requires this to be set before any other includes to get M_PI.
 #define _USE_MATH_DEFINES
 
-#include <math.h>
+#include <cmath>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/splitting_filter.h"
-#include "webrtc/common_audio/include/audio_util.h"
 
 namespace webrtc {
+namespace {
+
+enum {
+  kSamplesPer16kHzChannel = 160,
+  kSamplesPer48kHzChannel = 480
+};
+
+}  // namespace
 
 // Generates a signal from presence or absence of sine waves of different
 // frequencies.
@@ -32,10 +39,13 @@ TEST(SplittingFilterTest, SplitsIntoThreeBandsAndReconstructs) {
   static const int kSampleRateHz = 48000;
   static const int kNumBands = 3;
   static const int kFrequenciesHz[kNumBands] = {1000, 12000, 18000};
-  static const float kAmplitude = 8192;
+  static const float kAmplitude = 8192.f;
   static const int kChunks = 8;
-  SplittingFilter splitting_filter(kChannels);
+  SplittingFilter splitting_filter(kChannels,
+                                   kNumBands,
+                                   kSamplesPer48kHzChannel);
   IFChannelBuffer in_data(kSamplesPer48kHzChannel, kChannels, kNumBands);
+  IFChannelBuffer bands(kSamplesPer48kHzChannel, kChannels, kNumBands);
   IFChannelBuffer out_data(kSamplesPer48kHzChannel, kChannels, kNumBands);
   for (int i = 0; i < kChunks; ++i) {
     // Input signal generation.
@@ -45,22 +55,22 @@ TEST(SplittingFilterTest, SplitsIntoThreeBandsAndReconstructs) {
            kSamplesPer48kHzChannel * sizeof(in_data.fbuf()->channels()[0][0]));
     for (int j = 0; j < kNumBands; ++j) {
       is_present[j] = i & (1 << j);
-      float amplitude = is_present[j] ? kAmplitude : 0;
+      float amplitude = is_present[j] ? kAmplitude : 0.f;
       for (int k = 0; k < kSamplesPer48kHzChannel; ++k) {
         in_data.fbuf()->channels()[0][k] +=
-            amplitude * sin(2 * M_PI * kFrequenciesHz[j] *
+            amplitude * sin(2.f * M_PI * kFrequenciesHz[j] *
                 (i * kSamplesPer48kHzChannel + k) / kSampleRateHz);
       }
     }
     // Three band splitting filter.
-    splitting_filter.Analysis(&in_data, &out_data);
+    splitting_filter.Analysis(&in_data, &bands);
     // Energy calculation.
     float energy[kNumBands];
     for (int j = 0; j < kNumBands; ++j) {
-      energy[j] = 0;
+      energy[j] = 0.f;
       for (int k = 0; k < kSamplesPer16kHzChannel; ++k) {
-        energy[j] += out_data.fbuf_const()->channels(j)[0][k] *
-                     out_data.fbuf_const()->channels(j)[0][k];
+        energy[j] += bands.fbuf_const()->channels(j)[0][k] *
+                     bands.fbuf_const()->channels(j)[0][k];
       }
       energy[j] /= kSamplesPer16kHzChannel;
       if (is_present[j]) {
@@ -70,14 +80,14 @@ TEST(SplittingFilterTest, SplitsIntoThreeBandsAndReconstructs) {
       }
     }
     // Three band merge.
-    splitting_filter.Synthesis(&out_data, &out_data);
+    splitting_filter.Synthesis(&bands, &out_data);
     // Delay and cross correlation estimation.
-    float xcorr = 0;
+    float xcorr = 0.f;
     for (int delay = 0; delay < kSamplesPer48kHzChannel; ++delay) {
-      float tmpcorr = 0;
+      float tmpcorr = 0.f;
       for (int j = delay; j < kSamplesPer48kHzChannel; ++j) {
-        tmpcorr += in_data.fbuf_const()->channels()[0][j] *
-                   out_data.fbuf_const()->channels()[0][j - delay];
+        tmpcorr += in_data.fbuf_const()->channels()[0][j - delay] *
+                   out_data.fbuf_const()->channels()[0][j];
       }
       tmpcorr /= kSamplesPer48kHzChannel;
       if (tmpcorr > xcorr) {

@@ -11,8 +11,6 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_BUFFER_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_BUFFER_H_
 
-#include <vector>
-
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/channel_buffer.h"
