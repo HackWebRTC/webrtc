@@ -78,6 +78,7 @@ class EndToEndTest : public test::CallTest {
   void TestSendsSetSsrcs(size_t num_ssrcs, bool send_single_ssrc_first);
   void TestRtpStatePreservation(bool use_rtx);
   void TestReceivedFecPacketsNotNacked(const FakeNetworkPipe::Config& config);
+  void VerifyHistogramStats(bool use_rtx, bool use_red);
 };
 
 TEST_F(EndToEndTest, ReceiverCanBeStartedTwice) {
@@ -1497,16 +1498,176 @@ TEST_F(EndToEndTest, VerifyNackStats) {
     int64_t start_runtime_ms_;
   } test;
 
+  test::ClearHistograms();
   RunBaseTest(&test);
 
-  EXPECT_NE(-1, test::LastHistogramSample(
+  EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.UniqueNackRequestsSentInPercent"));
-  EXPECT_NE(-1, test::LastHistogramSample(
+  EXPECT_EQ(1, test::NumHistogramSamples(
       "WebRTC.Video.UniqueNackRequestsReceivedInPercent"));
   EXPECT_GT(test::LastHistogramSample(
       "WebRTC.Video.NackPacketsSentPerMinute"), 0);
   EXPECT_GT(test::LastHistogramSample(
       "WebRTC.Video.NackPacketsReceivedPerMinute"), 0);
+}
+
+void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
+  class StatsObserver : public test::EndToEndTest, public PacketReceiver {
+   public:
+    StatsObserver(bool use_rtx, bool use_red)
+        : EndToEndTest(kLongTimeoutMs),
+          use_rtx_(use_rtx),
+          use_red_(use_red),
+          sender_call_(nullptr),
+          receiver_call_(nullptr),
+          start_runtime_ms_(-1) {}
+
+   private:
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      if (MinMetricRunTimePassed())
+        observation_complete_->Set();
+
+      return SEND_PACKET;
+    }
+
+    DeliveryStatus DeliverPacket(const uint8_t* packet,
+                                 size_t length) override {
+      // GetStats calls GetSendChannelRtcpStatistics
+      // (via VideoSendStream::GetRtt) which updates ReportBlockStats used by
+      // WebRTC.Video.SentPacketsLostInPercent.
+      // TODO(asapersson): Remove dependency on calling GetStats.
+      sender_call_->GetStats();
+      return receiver_call_->Receiver()->DeliverPacket(packet, length);
+    }
+
+    bool MinMetricRunTimePassed() {
+      int64_t now = Clock::GetRealTimeClock()->TimeInMilliseconds();
+      if (start_runtime_ms_ == -1) {
+        start_runtime_ms_ = now;
+        return false;
+      }
+      int64_t elapsed_sec = (now - start_runtime_ms_) / 1000;
+      return elapsed_sec > metrics::kMinRunTimeInSeconds * 2;
+    }
+
+    void ModifyConfigs(VideoSendStream::Config* send_config,
+                       std::vector<VideoReceiveStream::Config>* receive_configs,
+                       VideoEncoderConfig* encoder_config) override {
+      // NACK
+      send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      // FEC
+      if (use_red_) {
+        send_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+        send_config->rtp.fec.red_payload_type = kRedPayloadType;
+        (*receive_configs)[0].rtp.fec.red_payload_type = kRedPayloadType;
+        (*receive_configs)[0].rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+      }
+      // RTX
+      if (use_rtx_) {
+        send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[0]);
+        send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
+        (*receive_configs)[0].rtp.rtx[kFakeSendPayloadType].ssrc =
+            kSendRtxSsrcs[0];
+        (*receive_configs)[0].rtp.rtx[kFakeSendPayloadType].payload_type =
+            kSendRtxPayloadType;
+      }
+    }
+
+    void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
+      sender_call_ = sender_call;
+      receiver_call_ = receiver_call;
+    }
+
+    void SetReceivers(PacketReceiver* send_transport_receiver,
+                      PacketReceiver* receive_transport_receiver) override {
+      test::RtpRtcpObserver::SetReceivers(this, receive_transport_receiver);
+    }
+
+    void PerformTest() override {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out waiting for packet to be NACKed.";
+    }
+
+    bool use_rtx_;
+    bool use_red_;
+    Call* sender_call_;
+    Call* receiver_call_;
+    int64_t start_runtime_ms_;
+  } test(use_rtx, use_red);
+
+  test::ClearHistograms();
+  RunBaseTest(&test);
+
+  // Verify that stats have been updated once.
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.NackPacketsSentPerMinute"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.NackPacketsReceivedPerMinute"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.FirPacketsSentPerMinute"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.FirPacketsReceivedPerMinute"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.PliPacketsSentPerMinute"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.PliPacketsReceivedPerMinute"));
+
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.KeyFramesSentInPermille"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.KeyFramesReceivedInPermille"));
+
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.SentPacketsLostInPercent"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.ReceivedPacketsLostInPercent"));
+
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.DecodedFramesPerSecond"));
+
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.BitrateSentInKbps"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.BitrateReceivedInKbps"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.MediaBitrateSentInKbps"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.MediaBitrateReceivedInKbps"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.PaddingBitrateSentInKbps"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.PaddingBitrateReceivedInKbps"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.RetransmittedBitrateSentInKbps"));
+  EXPECT_EQ(1, test::NumHistogramSamples(
+      "WebRTC.Video.RetransmittedBitrateReceivedInKbps"));
+
+  int num_rtx_samples = use_rtx ? 1 : 0;
+  EXPECT_EQ(num_rtx_samples, test::NumHistogramSamples(
+      "WebRTC.Video.RtxBitrateSentInKbps"));
+  EXPECT_EQ(num_rtx_samples, test::NumHistogramSamples(
+      "WebRTC.Video.RtxBitrateReceivedInKbps"));
+
+  int num_red_samples = use_red ? 1 : 0;
+  EXPECT_EQ(num_red_samples, test::NumHistogramSamples(
+      "WebRTC.Video.FecBitrateSentInKbps"));
+  EXPECT_EQ(num_red_samples, test::NumHistogramSamples(
+      "WebRTC.Video.FecBitrateReceivedInKbps"));
+  EXPECT_EQ(num_red_samples, test::NumHistogramSamples(
+      "WebRTC.Video.ReceivedFecPacketsInPercent"));
+}
+
+TEST_F(EndToEndTest, VerifyHistogramStatsWithRtx) {
+  const bool kEnabledRtx = true;
+  const bool kEnabledRed = false;
+  VerifyHistogramStats(kEnabledRtx, kEnabledRed);
+}
+
+TEST_F(EndToEndTest, VerifyHistogramStatsWithRed) {
+  const bool kEnabledRtx = false;
+  const bool kEnabledRed = true;
+  VerifyHistogramStats(kEnabledRtx, kEnabledRed);
 }
 
 void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {

@@ -12,6 +12,7 @@
 
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/metrics.h"
 
 namespace webrtc {
 
@@ -24,7 +25,21 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(uint32_t ssrc, Clock* clock)
   stats_.ssrc = ssrc;
 }
 
-ReceiveStatisticsProxy::~ReceiveStatisticsProxy() {}
+ReceiveStatisticsProxy::~ReceiveStatisticsProxy() {
+  UpdateHistograms();
+}
+
+void ReceiveStatisticsProxy::UpdateHistograms() const {
+  int fraction_lost;
+  {
+    CriticalSectionScoped lock(crit_.get());
+    fraction_lost = report_block_stats_.FractionLostInPercent();
+  }
+  if (fraction_lost != -1) {
+    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.ReceivedPacketsLostInPercent",
+        fraction_lost);
+  }
+}
 
 VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
   CriticalSectionScoped lock(crit_.get());
@@ -74,6 +89,7 @@ void ReceiveStatisticsProxy::StatisticsUpdated(
   if (stats_.ssrc != ssrc)
     return;
   stats_.rtcp_stats = statistics;
+  report_block_stats_.Store(statistics, ssrc, 0);
 }
 
 void ReceiveStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {

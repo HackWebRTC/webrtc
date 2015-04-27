@@ -20,6 +20,7 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
+#include "webrtc/video_engine/report_block_stats.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_renderer.h"
 
@@ -78,12 +79,14 @@ class ReceiveStatisticsProxy : public ViEDecoderObserver,
                            uint32_t ssrc) override;
 
  private:
+  void UpdateHistograms() const;
   Clock* const clock_;
 
   rtc::scoped_ptr<CriticalSectionWrapper> crit_;
   VideoReceiveStream::Stats stats_ GUARDED_BY(crit_);
   RateStatistics decode_fps_estimator_ GUARDED_BY(crit_);
   RateStatistics renders_fps_estimator_ GUARDED_BY(crit_);
+  ReportBlockStats report_block_stats_ GUARDED_BY(crit_);
 };
 
 }  // namespace webrtc
