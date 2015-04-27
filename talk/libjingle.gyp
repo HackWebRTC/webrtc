@@ -47,7 +47,6 @@
           'type': 'shared_library',
           'dependencies': [
             'libjingle_peerconnection',
-            '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
           ],
           'sources': [
             'app/webrtc/java/jni/classreferenceholder.cc',
@@ -58,9 +57,14 @@
             'app/webrtc/java/jni/peerconnection_jni.cc',
           ],
           'include_dirs': [
-            '<(DEPTH)/third_party/libyuv/include',
+            '<(libyuv_dir)/include',
           ],
           'conditions': [
+            ['build_icu==1', {
+              'dependencies': [
+                '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
+              ],
+            }],
             ['OS=="linux"', {
               'defines': [
                 'HAVE_GTK',
@@ -69,12 +73,16 @@
                 '<(java_home)/include',
                 '<(java_home)/include/linux',
               ],
-              'link_settings': {
-                'libraries': [
-                  '<!@(pkg-config --libs-only-l gobject-2.0 gthread-2.0'
-                      ' gtk+-2.0)',
-                ],
-              },
+              'conditions': [
+                ['use_gtk==1', {
+                  'link_settings': {
+                    'libraries': [
+                      '<!@(pkg-config --libs-only-l gobject-2.0 gthread-2.0'
+                          ' gtk+-2.0)',
+                    ],
+                  },
+                }],
+              ],
             }],
             ['OS=="android"', {
               'sources': [
@@ -358,26 +366,31 @@
       'target_name': 'libjingle',
       'type': 'none',
       'dependencies': [
-        '<(DEPTH)/third_party/expat/expat.gyp:expat',
-        '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
         '<(webrtc_root)/base/base.gyp:rtc_base',
       ],
-      'export_dependent_settings': [
-        '<(DEPTH)/third_party/expat/expat.gyp:expat',
-        '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
+      'conditions': [
+        ['build_json==1', {
+          'dependencies': [
+            '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
+          ],
+          'export_dependent_settings': [
+            '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
+          ],
+        }],
+        ['build_expat==1', {
+          'dependencies': [
+            '<(DEPTH)/third_party/expat/expat.gyp:expat',
+          ],
+          'export_dependent_settings': [
+            '<(DEPTH)/third_party/expat/expat.gyp:expat',
+          ],
+        }],
       ],
     },  # target libjingle
     {
       'target_name': 'libjingle_media',
       'type': 'static_library',
-      'include_dirs': [
-        # TODO(jiayl): move this into the direct_dependent_settings of
-        # usrsctp.gyp.
-        '<(DEPTH)/third_party/usrsctp',
-      ],
       'dependencies': [
-        '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',
-        '<(DEPTH)/third_party/usrsctp/usrsctp.gyp:usrsctplib',
         '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/modules/modules.gyp:video_render_module',
         '<(webrtc_root)/webrtc.gyp:webrtc',
@@ -392,7 +405,7 @@
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '<(DEPTH)/third_party/libyuv/include',
+          '<(libyuv_dir)/include',
         ],
       },
       'sources': [
@@ -484,6 +497,19 @@
         'media/webrtc/webrtcvoiceengine.h',
       ],
       'conditions': [
+        ['build_libyuv==1', {
+          'dependencies': ['<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',],
+        }],
+        ['build_usrsctp==1', {
+          'include_dirs': [
+            # TODO(jiayl): move this into the direct_dependent_settings of
+            # usrsctp.gyp.
+            '<(DEPTH)/third_party/usrsctp',
+          ],
+          'dependencies': [
+            '<(DEPTH)/third_party/usrsctp/usrsctp.gyp:usrsctplib',
+          ],
+        }],
         ['build_with_chromium==1', {
           'dependencies': [
             '<(webrtc_root)/modules/modules.gyp:video_capture',
@@ -497,8 +523,6 @@
         }],
         ['OS=="linux"', {
           'sources': [
-            'media/devices/gtkvideorenderer.cc',
-            'media/devices/gtkvideorenderer.h',
             'media/devices/libudevsymboltable.cc',
             'media/devices/libudevsymboltable.h',
             'media/devices/linuxdeviceinfo.cc',
@@ -507,11 +531,19 @@
             'media/devices/v4llookup.cc',
             'media/devices/v4llookup.h',
           ],
+          'conditions': [
+            ['use_gtk==1', {
+              'sources': [
+                'media/devices/gtkvideorenderer.cc',
+                'media/devices/gtkvideorenderer.h',
+              ],
+              'cflags': [
+                '<!@(pkg-config --cflags gobject-2.0 gthread-2.0 gtk+-2.0)',
+              ],
+            }],
+          ],
           'include_dirs': [
             'third_party/libudev'
-          ],
-          'cflags': [
-            '<!@(pkg-config --cflags gobject-2.0 gthread-2.0 gtk+-2.0)',
           ],
           'libraries': [
             '-lrt',
@@ -601,9 +633,15 @@
       'target_name': 'libjingle_p2p',
       'type': 'static_library',
       'dependencies': [
-        '<(DEPTH)/third_party/libsrtp/libsrtp.gyp:libsrtp',
         'libjingle',
         'libjingle_media',
+      ],
+      'conditions': [
+        ['build_libsrtp==1', {
+          'dependencies': [
+            '<(DEPTH)/third_party/libsrtp/libsrtp.gyp:libsrtp',
+          ],
+        }],
       ],
       'include_dirs': [
         '<(DEPTH)/testing/gtest/include',

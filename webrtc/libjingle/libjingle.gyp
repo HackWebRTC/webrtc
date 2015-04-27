@@ -16,9 +16,15 @@
       'target_name': 'libjingle_xmpphelp',
       'type': 'static_library',
       'dependencies': [
-        '<(DEPTH)/third_party/expat/expat.gyp:expat',
         '<(talk_root)/libjingle.gyp:libjingle',
         '<(talk_root)/libjingle.gyp:libjingle_p2p',
+      ],
+      'conditions': [
+        ['build_expat==1', {
+          'dependencies': [
+            '<(DEPTH)/third_party/expat/expat.gyp:expat',
+          ],
+        }],
       ],
       'sources': [
         'xmpp/jingleinfotask.cc',
@@ -33,13 +39,9 @@
         '<(webrtc_root)/base/base.gyp:rtc_base',
         '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/libjingle/xmpp/xmpp.gyp:rtc_xmpp',
-        '<(DEPTH)/third_party/expat/expat.gyp:expat',
       ],
       'cflags_cc!': [
         '-Wnon-virtual-dtor',
-      ],
-      'export_dependent_settings': [
-        '<(DEPTH)/third_party/expat/expat.gyp:expat',
       ],
       'sources': [
         'session/constants.cc',
@@ -85,6 +87,14 @@
           'defines': [
             'FEATURE_ENABLE_VOICEMAIL',
             'FEATURE_ENABLE_PSTN',
+          ],
+        }],
+        ['build_expat==1', {
+          'dependencies': [
+            '<(DEPTH)/third_party/expat/expat.gyp:expat',
+          ],
+          'export_dependent_settings': [
+            '<(DEPTH)/third_party/expat/expat.gyp:expat',
           ],
         }],
       ],

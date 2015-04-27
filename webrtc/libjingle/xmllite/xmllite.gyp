@@ -14,10 +14,16 @@
       'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/base/base.gyp:rtc_base',
-        '<(DEPTH)/third_party/expat/expat.gyp:expat',
       ],
-      'export_dependent_settings': [
-        '<(DEPTH)/third_party/expat/expat.gyp:expat',
+      'conditions': [
+        ['build_expat==1', {
+          'dependencies': [
+            '<(DEPTH)/third_party/expat/expat.gyp:expat',
+          ],
+          'export_dependent_settings': [
+            '<(DEPTH)/third_party/expat/expat.gyp:expat',
+          ],
+        }],
       ],
       'sources': [
         'qname.cc',

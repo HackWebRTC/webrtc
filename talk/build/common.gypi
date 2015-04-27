@@ -40,6 +40,18 @@
         'java_home%': '<!(python -c "import os; dir=os.getenv(\'JAVA_HOME\', \'/usr/lib/jvm/java-7-openjdk-amd64\'); assert os.path.exists(os.path.join(dir, \'include/jni.h\')), \'Point \\$JAVA_HOME or the java_home gyp variable to a directory containing include/jni.h!\'; print dir")',
       }],
     ],
+    # Disable these to not build components which can be externally provided.
+    'build_expat%': 1,
+    'build_icu%': 1,
+    'build_json%': 1,
+    'build_libsrtp%': 1,
+    'build_libyuv%': 1,
+    'build_usrsctp%': 1,
+    # Make it possible to provide custom locations for some libraries.
+    'libyuv_dir%': '<(DEPTH)/third_party/libyuv',
+
+    # Disable this to skip building source requiring GTK.
+    'use_gtk%': 1,
   },
   'target_defaults': {
     'include_dirs': [

@@ -31,17 +31,21 @@
       'target_name': 'libjingle_unittest_main',
       'type': 'static_library',
       'dependencies': [
-        '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',
         '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
         '<@(libjingle_tests_additional_deps)',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '<(DEPTH)/third_party/libyuv/include',
+          '<(libyuv_dir)/include',
           '<(DEPTH)/testing/gtest/include',
           '<(DEPTH)/testing/gtest',
         ],
       },
+      'conditions': [
+        ['build_libyuv==1', {
+          'dependencies': ['<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',],
+        }],
+      ],
       'include_dirs': [
          '<(DEPTH)/testing/gtest/include',
          '<(DEPTH)/testing/gtest',
@@ -140,7 +144,6 @@
       'target_name': 'libjingle_p2p_unittest',
       'type': 'executable',
       'dependencies': [
-        '<(DEPTH)/third_party/libsrtp/libsrtp.gyp:libsrtp',
         '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
         'libjingle.gyp:libjingle',
         'libjingle.gyp:libjingle_p2p',
@@ -160,6 +163,11 @@
         'session/media/srtpfilter_unittest.cc',
       ],
       'conditions': [
+        ['build_libsrtp==1', {
+          'dependencies': [
+            '<(DEPTH)/third_party/libsrtp/libsrtp.gyp:libsrtp',
+          ],
+        }],
         ['OS=="win"', {
           'msvs_settings': {
             'VCLinkerTool': {

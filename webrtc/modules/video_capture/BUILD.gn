@@ -138,10 +138,12 @@ if (!build_with_chromium) {
         "android/video_capture_android.h",
       ]
 
-      deps += [
-        "//third_party/icu:icuuc",
-        "//third_party/jsoncpp",
-      ]
+      if (rtc_build_json) {
+        deps += [ "//third_party/jsoncpp" ]
+      }
+      if (rtc_build_icu) {
+        deps += [ "//third_party/icu:icuuc" ]
+      }
     }
     if (is_ios) {
       sources = [
