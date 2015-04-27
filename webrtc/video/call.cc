@@ -258,9 +258,10 @@ VideoSendStream* Call::CreateVideoSendStream(
 
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
   // the call has already started.
-  VideoSendStream* send_stream = new VideoSendStream(
-      config_.send_transport, overuse_observer_proxy_.get(), video_engine_,
-      config, encoder_config, suspended_send_ssrcs_, base_channel_id_);
+  VideoSendStream* send_stream =
+      new VideoSendStream(config_.send_transport, overuse_observer_proxy_.get(),
+                          video_engine_, channel_group_, config, encoder_config,
+                          suspended_send_ssrcs_, base_channel_id_);
 
   // This needs to be taken before send_crit_ as both locks need to be held
   // while changing network state.
@@ -372,14 +373,13 @@ Call::Stats Call::GetStats() const {
   uint32_t recv_bandwidth = 0;
   rtp_rtcp_->GetEstimatedReceiveBandwidth(base_channel_id_, &recv_bandwidth);
   stats.recv_bandwidth_bps = recv_bandwidth;
+  stats.pacer_delay_ms = channel_group_->GetPacerQueuingDelayMs();
   {
     ReadLockScoped read_lock(*send_crit_);
     for (std::map<uint32_t, VideoSendStream*>::const_iterator it =
              send_ssrcs_.begin();
          it != send_ssrcs_.end();
          ++it) {
-      stats.pacer_delay_ms =
-          std::max(it->second->GetPacerQueuingDelayMs(), stats.pacer_delay_ms);
       int rtt_ms = it->second->GetRtt();
       if (rtt_ms > 0)
         stats.rtt_ms = rtt_ms;

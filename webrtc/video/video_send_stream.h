@@ -31,11 +31,12 @@ class VideoEngine;
 class ViEBase;
 class ViECapture;
 class ViECodec;
+class ViEChannel;
+class ViEEncoder;
 class ViEExternalCapture;
 class ViEExternalCodec;
 class ViEImageProcess;
 class ViENetwork;
-class ViERTP_RTCP;
 
 namespace internal {
 
@@ -45,6 +46,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   VideoSendStream(newapi::Transport* transport,
                   CpuOveruseObserver* overuse_observer,
                   webrtc::VideoEngine* video_engine,
+                  ChannelGroup* channel_group,
                   const VideoSendStream::Config& config,
                   const VideoEncoderConfig& encoder_config,
                   const std::map<uint32_t, RtpState>& suspended_ssrcs,
@@ -72,8 +74,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   void SignalNetworkState(Call::NetworkState state);
 
-  int64_t GetPacerQueuingDelayMs() const;
-
   int64_t GetRtt() const;
 
  private:
@@ -84,13 +84,16 @@ class VideoSendStream : public webrtc::VideoSendStream,
   VideoEncoderConfig encoder_config_;
   std::map<uint32_t, RtpState> suspended_ssrcs_;
 
+  ChannelGroup* const channel_group_;
+
   ViEBase* video_engine_base_;
   ViECapture* capture_;
+  ViEChannel* vie_channel_;
   ViECodec* codec_;
+  ViEEncoder* vie_encoder_;
   ViEExternalCapture* external_capture_;
   ViEExternalCodec* external_codec_;
   ViENetwork* network_;
-  ViERTP_RTCP* rtp_rtcp_;
   ViEImageProcess* image_process_;
 
   int channel_;
