@@ -342,9 +342,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Get remote SequenceNumber.
   uint16_t RemoteSequenceNumber() const;
 
-  // Only for internal testing.
-  uint32_t LastSendReport(int64_t& last_rtcptime);
-
   RTPSender rtp_sender_;
 
   RTCPSender rtcp_sender_;

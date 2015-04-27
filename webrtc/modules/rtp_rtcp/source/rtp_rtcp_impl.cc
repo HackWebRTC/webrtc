@@ -500,12 +500,6 @@ void ModuleRtpRtcpImpl::SetRTCPStatus(const RTCPMethod method) {
   rtcp_receiver_.SetRTCPStatus(method);
 }
 
-// Only for internal test.
-uint32_t ModuleRtpRtcpImpl::LastSendReport(
-    int64_t& last_rtcptime) {
-  return rtcp_sender_.LastSendReport(last_rtcptime);
-}
-
 int32_t ModuleRtpRtcpImpl::SetCNAME(const char c_name[RTCP_CNAME_SIZE]) {
   return rtcp_sender_.SetCNAME(c_name);
 }
