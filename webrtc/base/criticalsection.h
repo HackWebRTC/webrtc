@@ -21,116 +21,56 @@
 // exists as two separate projects, webrtc and libjingle.
 #include <winsock2.h>
 #include <windows.h>
-#endif
+#include <sal.h>  // must come after windows headers.
+#endif  // defined(WEBRTC_WIN)
 
 #if defined(WEBRTC_POSIX)
 #include <pthread.h>
 #endif
 
 #if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
-#define CS_TRACK_OWNER 1
+#define CS_DEBUG_CHECKS 1
 #endif
 
-#if CS_TRACK_OWNER
-#define TRACK_OWNER(x) x
-#else  // !CS_TRACK_OWNER
-#define TRACK_OWNER(x)
-#endif  // !CS_TRACK_OWNER
+#if CS_DEBUG_CHECKS
+#define CS_DEBUG_CODE(x) x
+#else  // !CS_DEBUG_CHECKS
+#define CS_DEBUG_CODE(x)
+#endif  // !CS_DEBUG_CHECKS
 
 namespace rtc {
 
+class LOCKABLE CriticalSection {
+ public:
+  CriticalSection();
+  ~CriticalSection();
+
+  void Enter() EXCLUSIVE_LOCK_FUNCTION();
+  bool TryEnter() EXCLUSIVE_TRYLOCK_FUNCTION(true);
+  void Leave() UNLOCK_FUNCTION();
+
+  // Use only for DCHECKing.
+  bool CurrentThreadIsOwner() const;
+  // Use only for DCHECKing.
+  bool IsLocked() const;
+
+ private:
 #if defined(WEBRTC_WIN)
-class LOCKABLE CriticalSection {
- public:
-  CriticalSection() { InitializeCriticalSection(&crit_); }
-  ~CriticalSection() { DeleteCriticalSection(&crit_); }
-  void Enter() EXCLUSIVE_LOCK_FUNCTION() {
-    EnterCriticalSection(&crit_);
-  }
-  bool TryEnter() EXCLUSIVE_TRYLOCK_FUNCTION(true) {
-    return TryEnterCriticalSection(&crit_) != FALSE;
-  }
-  void Leave() UNLOCK_FUNCTION() {
-    LeaveCriticalSection(&crit_);
-  }
-
-  // Used for debugging.
-  bool CurrentThreadIsOwner() const {
-    return crit_.OwningThread == reinterpret_cast<HANDLE>(GetCurrentThreadId());
-  }
-  // Use only for DCHECKing.
-  bool IsLocked() { return crit_.LockCount != -1; }
-
- private:
   CRITICAL_SECTION crit_;
-};
-#endif // WEBRTC_WIN
-
-#if defined(WEBRTC_POSIX)
-class LOCKABLE CriticalSection {
- public:
-  CriticalSection() {
-    pthread_mutexattr_t mutex_attribute;
-    pthread_mutexattr_init(&mutex_attribute);
-    pthread_mutexattr_settype(&mutex_attribute, PTHREAD_MUTEX_RECURSIVE);
-    pthread_mutex_init(&mutex_, &mutex_attribute);
-    pthread_mutexattr_destroy(&mutex_attribute);
-    TRACK_OWNER(thread_ = 0);
-  }
-  ~CriticalSection() {
-    pthread_mutex_destroy(&mutex_);
-  }
-  void Enter() EXCLUSIVE_LOCK_FUNCTION() {
-    pthread_mutex_lock(&mutex_);
-    TRACK_OWNER(thread_ = pthread_self());
-  }
-  bool TryEnter() EXCLUSIVE_TRYLOCK_FUNCTION(true) {
-    if (pthread_mutex_trylock(&mutex_) == 0) {
-      TRACK_OWNER(thread_ = pthread_self());
-      return true;
-    }
-    return false;
-  }
-  void Leave() UNLOCK_FUNCTION() {
-    TRACK_OWNER(thread_ = 0);
-    pthread_mutex_unlock(&mutex_);
-  }
-
-  // Used for debugging.
-  bool CurrentThreadIsOwner() const {
-#if CS_TRACK_OWNER
-    return pthread_equal(thread_, pthread_self());
-#else
-    return true;
-#endif  // CS_TRACK_OWNER
-  }
-  // Use only for DCHECKing.
-  bool IsLocked() {
-#if CS_TRACK_OWNER
-    return thread_ != 0;
-#else
-    return true;
-#endif
-  }
-
- private:
+#elif defined(WEBRTC_POSIX)
   pthread_mutex_t mutex_;
-  TRACK_OWNER(pthread_t thread_);
+  CS_DEBUG_CODE(pthread_t thread_);
+  CS_DEBUG_CODE(int recursion_count_);
+#endif
 };
-#endif // WEBRTC_POSIX
 
 // CritScope, for serializing execution through a scope.
 class SCOPED_LOCKABLE CritScope {
  public:
-  explicit CritScope(CriticalSection *pcrit) EXCLUSIVE_LOCK_FUNCTION(pcrit) {
-    pcrit_ = pcrit;
-    pcrit_->Enter();
-  }
-  ~CritScope() UNLOCK_FUNCTION() {
-    pcrit_->Leave();
-  }
+  explicit CritScope(CriticalSection* cs) EXCLUSIVE_LOCK_FUNCTION(cs);
+  ~CritScope() UNLOCK_FUNCTION();
  private:
-  CriticalSection *pcrit_;
+  CriticalSection* const cs_;
   DISALLOW_COPY_AND_ASSIGN(CritScope);
 };
 
@@ -143,21 +83,17 @@ class SCOPED_LOCKABLE CritScope {
 // lock was taken. If you're not calling locked(), you're doing it wrong!
 class TryCritScope {
  public:
-  explicit TryCritScope(CriticalSection *pcrit) {
-    pcrit_ = pcrit;
-    locked_ = pcrit_->TryEnter();
-  }
-  ~TryCritScope() {
-    if (locked_) {
-      pcrit_->Leave();
-    }
-  }
-  bool locked() const {
-    return locked_;
-  }
+  explicit TryCritScope(CriticalSection* cs);
+  ~TryCritScope();
+#if defined(WEBRTC_WIN)
+  _Check_return_ bool locked() const;
+#else
+  bool locked() const __attribute__((warn_unused_result));
+#endif
  private:
-  CriticalSection *pcrit_;
-  bool locked_;
+  CriticalSection* const cs_;
+  const bool locked_;
+  CS_DEBUG_CODE(mutable bool lock_was_called_);
   DISALLOW_COPY_AND_ASSIGN(TryCritScope);
 };
 

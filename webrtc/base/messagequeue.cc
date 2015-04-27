@@ -59,7 +59,7 @@ void MessageQueueManager::AddInternal(MessageQueue *message_queue) {
   // MessageQueueManager methods should be non-reentrant, so we
   // ASSERT that is the case.  If any of these ASSERT, please
   // contact bpm or jbeda.
-#if CS_TRACK_OWNER  // CurrentThreadIsOwner returns true by default.
+#if CS_DEBUG_CHECKS  // CurrentThreadIsOwner returns true by default.
   ASSERT(!crit_.CurrentThreadIsOwner());
 #endif
   CritScope cs(&crit_);
@@ -73,7 +73,7 @@ void MessageQueueManager::Remove(MessageQueue *message_queue) {
   return Instance()->RemoveInternal(message_queue);
 }
 void MessageQueueManager::RemoveInternal(MessageQueue *message_queue) {
-#if CS_TRACK_OWNER  // CurrentThreadIsOwner returns true by default.
+#if CS_DEBUG_CHECKS  // CurrentThreadIsOwner returns true by default.
   ASSERT(!crit_.CurrentThreadIsOwner());  // See note above.
 #endif
   // If this is the last MessageQueue, destroy the manager as well so that
@@ -104,7 +104,7 @@ void MessageQueueManager::Clear(MessageHandler *handler) {
   return Instance()->ClearInternal(handler);
 }
 void MessageQueueManager::ClearInternal(MessageHandler *handler) {
-#if CS_TRACK_OWNER  // CurrentThreadIsOwner returns true by default.
+#if CS_DEBUG_CHECKS  // CurrentThreadIsOwner returns true by default.
   ASSERT(!crit_.CurrentThreadIsOwner());  // See note above.
 #endif
   CritScope cs(&crit_);

@@ -29,6 +29,8 @@
       'target_name': 'rtc_base_approved',
       'type': 'static_library',
       'sources': [
+        '../overrides/webrtc/base/basictypes.h',
+        '../overrides/webrtc/base/constructormagic.h',
         'basictypes.h',
         'bitbuffer.cc',
         'bitbuffer.h',
@@ -40,6 +42,8 @@
         'checks.cc',
         'checks.h',
         'constructormagic.h',
+        'criticalsection.cc',
+        'criticalsection.h',
         'event.cc',
         'event.h',
         'event_tracer.cc',
@@ -66,8 +70,6 @@
         'timeutils.cc',
         'timeutils.h',
         'trace_event.h',
-        '../overrides/webrtc/base/basictypes.h',
-        '../overrides/webrtc/base/constructormagic.h',
       ],
       'conditions': [
         ['build_with_chromium==1', {
@@ -134,8 +136,6 @@
         'cpumonitor.h',
         'crc32.cc',
         'crc32.h',
-        'criticalsection.cc',
-        'criticalsection.h',
         'cryptstring.cc',
         'cryptstring.h',
         'dbus.cc',
