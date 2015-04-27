@@ -412,11 +412,6 @@ void BasicPortAllocatorSession::DoAllocate() {
         break;
       }
 
-      // Disables phases that are not specified in this config.
-      if (!config || config->StunServers().empty()) {
-        // No STUN ports specified in this config.
-        sequence_flags |= PORTALLOCATOR_DISABLE_STUN;
-      }
       if (!config || config->relays.empty()) {
         // No relay ports specified in this config.
         sequence_flags |= PORTALLOCATOR_DISABLE_RELAY;
@@ -980,9 +975,6 @@ void AllocationSequence::CreateStunPorts() {
     return;
   }
 
-  // If BasicPortAllocatorSession::OnAllocate left STUN ports enabled then we
-  // ought to have an address for them here.
-  ASSERT(config_ && !config_->StunServers().empty());
   if (!(config_ && !config_->StunServers().empty())) {
     LOG(LS_WARNING)
         << "AllocationSequence: No STUN server configured, skipping.";

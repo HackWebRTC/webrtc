@@ -116,7 +116,9 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
         rtc::NAT_OPEN_CONE, vss_.get(), kNatAddr, vss_.get(), kNatAddr));
 
     ServerAddresses stun_servers;
-    stun_servers.insert(stun_server);
+    if (!stun_server.IsNil()) {
+      stun_servers.insert(stun_server);
+    }
     allocator_.reset(new cricket::BasicPortAllocator(
         &network_manager_, &nat_socket_factory_, stun_servers));
     allocator().set_step_delay(cricket::kMinimumStepDelay);
@@ -873,7 +875,8 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurn) {
 // 'relay' candidates.
 TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurnAsStun) {
   AddInterface(kClientAddr);
-  ResetWithNatServer(kTurnUdpIntAddr);
+  // Use an empty SocketAddress to add a NAT without STUN server.
+  ResetWithNatServer(SocketAddress());
   AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
 
   // Must set the step delay to 0 to make sure the relay allocation phase is
