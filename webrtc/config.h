@@ -91,9 +91,9 @@ struct VideoStream {
 };
 
 struct VideoEncoderConfig {
-  enum ContentType {
+  enum class ContentType {
     kRealtimeVideo,
-    kScreenshare,
+    kScreen,
   };
 
   VideoEncoderConfig();

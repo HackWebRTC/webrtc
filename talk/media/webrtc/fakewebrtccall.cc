@@ -64,7 +64,17 @@ bool FakeVideoSendStream::GetVp8Settings(
     return false;
   }
 
-  *settings = vp8_settings_;
+  *settings = vpx_settings_.vp8;
+  return true;
+}
+
+bool FakeVideoSendStream::GetVp9Settings(
+    webrtc::VideoCodecVP9* settings) const {
+  if (!codec_settings_set_) {
+    return false;
+  }
+
+  *settings = vpx_settings_.vp9;
   return true;
 }
 
@@ -99,9 +109,16 @@ bool FakeVideoSendStream::ReconfigureVideoEncoder(
     const webrtc::VideoEncoderConfig& config) {
   encoder_config_ = config;
   if (config.encoder_specific_settings != NULL) {
-    assert(config_.encoder_settings.payload_name == "VP8");
-    vp8_settings_ = *reinterpret_cast<const webrtc::VideoCodecVP8*>(
-                        config.encoder_specific_settings);
+    if (config_.encoder_settings.payload_name == "VP8") {
+      vpx_settings_.vp8 = *reinterpret_cast<const webrtc::VideoCodecVP8*>(
+                              config.encoder_specific_settings);
+    } else if (config_.encoder_settings.payload_name == "VP9") {
+      vpx_settings_.vp9 = *reinterpret_cast<const webrtc::VideoCodecVP9*>(
+                              config.encoder_specific_settings);
+    } else {
+      ADD_FAILURE() << "Unsupported encoder payload: "
+                    << config_.encoder_settings.payload_name;
+    }
   }
   codec_settings_set_ = config.encoder_specific_settings != NULL;
   return true;

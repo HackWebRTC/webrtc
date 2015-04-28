@@ -312,15 +312,29 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoStreams(
 
 void* WebRtcVideoChannel2::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
     const VideoCodec& codec,
-    const VideoOptions& options) {
+    const VideoOptions& options,
+    bool is_screencast) {
+  // No automatic resizing when using simulcast.
+  bool automatic_resize = !is_screencast && ssrcs_.size() == 1;
+  bool frame_dropping = !is_screencast;
+  bool denoising;
+  if (is_screencast) {
+    denoising = false;
+  } else {
+    options.video_noise_reduction.Get(&denoising);
+  }
+
   if (CodecNamesEq(codec.name, kVp8CodecName)) {
     encoder_settings_.vp8 = webrtc::VideoEncoder::GetDefaultVp8Settings();
-    options.video_noise_reduction.Get(&encoder_settings_.vp8.denoisingOn);
+    encoder_settings_.vp8.automaticResizeOn = automatic_resize;
+    encoder_settings_.vp8.denoisingOn = denoising;
+    encoder_settings_.vp8.frameDroppingOn = frame_dropping;
     return &encoder_settings_.vp8;
   }
   if (CodecNamesEq(codec.name, kVp9CodecName)) {
     encoder_settings_.vp9 = webrtc::VideoEncoder::GetDefaultVp9Settings();
-    options.video_noise_reduction.Get(&encoder_settings_.vp9.denoisingOn);
+    encoder_settings_.vp9.denoisingOn = denoising;
+    encoder_settings_.vp9.frameDroppingOn = frame_dropping;
     return &encoder_settings_.vp9;
   }
   return NULL;
@@ -1778,10 +1792,12 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
         &screencast_min_bitrate_kbps);
     encoder_config.min_transmit_bitrate_bps =
         screencast_min_bitrate_kbps * 1000;
-    encoder_config.content_type = webrtc::VideoEncoderConfig::kScreenshare;
+    encoder_config.content_type =
+        webrtc::VideoEncoderConfig::ContentType::kScreen;
   } else {
     encoder_config.min_transmit_bitrate_bps = 0;
-    encoder_config.content_type = webrtc::VideoEncoderConfig::kRealtimeVideo;
+    encoder_config.content_type =
+        webrtc::VideoEncoderConfig::ContentType::kRealtimeVideo;
   }
 
   // Restrict dimensions according to codec max.
@@ -1800,7 +1816,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
 
   encoder_config.streams = CreateVideoStreams(
       clamped_codec, parameters_.options, parameters_.max_bitrate_bps,
-      parameters_.config.rtp.ssrcs.size());
+      dimensions.is_screencast ? 1 : parameters_.config.rtp.ssrcs.size());
 
   // Conference mode screencast uses 2 temporal layers split at 100kbit.
   if (parameters_.options.conference_mode.GetWithDefaultIfUnset(false) &&
@@ -1844,8 +1860,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(
   webrtc::VideoEncoderConfig encoder_config =
       CreateVideoEncoderConfig(last_dimensions_, codec_settings.codec);
 
-  encoder_config.encoder_specific_settings =
-      ConfigureVideoEncoderSettings(codec_settings.codec, parameters_.options);
+  encoder_config.encoder_specific_settings = ConfigureVideoEncoderSettings(
+      codec_settings.codec, parameters_.options, is_screencast);
 
   bool stream_reconfigured = stream_->ReconfigureVideoEncoder(encoder_config);
 
@@ -2000,7 +2016,10 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
   VideoCodecSettings codec_settings;
   parameters_.codec_settings.Get(&codec_settings);
   parameters_.encoder_config.encoder_specific_settings =
-      ConfigureVideoEncoderSettings(codec_settings.codec, parameters_.options);
+      ConfigureVideoEncoderSettings(
+          codec_settings.codec, parameters_.options,
+          parameters_.encoder_config.content_type ==
+              webrtc::VideoEncoderConfig::ContentType::kScreen);
 
   webrtc::VideoSendStream::Config config = parameters_.config;
   if (!config.rtp.rtx.ssrcs.empty() && config.rtp.rtx.payload_type == -1) {

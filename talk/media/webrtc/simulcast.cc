@@ -460,6 +460,7 @@ bool ScreenshareLayerConfig::FromFieldTrialGroup(
 
 void ConfigureConferenceModeScreencastCodec(webrtc::VideoCodec* codec) {
   codec->codecSpecific.VP8.numberOfTemporalLayers = 2;
+  codec->codecSpecific.VP8.automaticResizeOn = false;
   ScreenshareLayerConfig config = ScreenshareLayerConfig::GetDefault();
 
   // For screenshare in conference mode, tl0 and tl1 bitrates are piggybacked

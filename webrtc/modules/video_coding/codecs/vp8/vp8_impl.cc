@@ -730,7 +730,7 @@ int VP8EncoderImpl::Encode(
   }
 
   // Only apply scaling to improve for single-layer streams. The scaling metrics
-  // use framedrops as a signal and is only applicable when we drop frames.
+  // use frame drops as a signal and is only applicable when we drop frames.
   const bool use_quality_scaler = encoders_.size() == 1 &&
                                   configurations_[0].rc_dropframe_thresh > 0 &&
                                   codec_.codecSpecific.VP8.automaticResizeOn;

@@ -63,9 +63,10 @@ std::string VideoStream::ToString() const {
 }
 
 VideoEncoderConfig::VideoEncoderConfig()
-    : content_type(kRealtimeVideo),
+    : content_type(ContentType::kRealtimeVideo),
       encoder_specific_settings(NULL),
-      min_transmit_bitrate_bps(0) {}
+      min_transmit_bitrate_bps(0) {
+}
 
 VideoEncoderConfig::~VideoEncoderConfig() = default;
 
@@ -81,10 +82,10 @@ std::string VideoEncoderConfig::ToString() const {
   ss << ']';
   ss << ", content_type: ";
   switch (content_type) {
-    case kRealtimeVideo:
+    case ContentType::kRealtimeVideo:
       ss << "kRealtimeVideo";
       break;
-    case kScreenshare:
+    case ContentType::kScreen:
       ss << "kScreenshare";
       break;
   }

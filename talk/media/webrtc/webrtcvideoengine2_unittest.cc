@@ -820,7 +820,7 @@ TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_SendVp8HdAndReceiveAdaptedVp8Vga) {
 class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test,
                                 public WebRtcCallFactory {
  public:
-  WebRtcVideoChannel2Test() : fake_call_(NULL) {}
+  WebRtcVideoChannel2Test() : fake_call_(NULL), last_ssrc_(0) {}
   void SetUp() override {
     engine_.SetCallFactory(this);
     engine_.Init(rtc::Thread::Current());
@@ -831,6 +831,10 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test,
   }
 
  protected:
+  virtual std::vector<cricket::VideoCodec> GetCodecs() {
+    return engine_.codecs();
+  }
+
   webrtc::Call* CreateCall(const webrtc::Call::Config& config) override {
     assert(fake_call_ == NULL);
     fake_call_ = new FakeCall(config);
@@ -970,6 +974,26 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test,
   }
 
   void TestCpuAdaptation(bool enable_overuse);
+
+  FakeVideoSendStream* SetDenoisingOption(bool enabled) {
+    VideoOptions options;
+    options.video_noise_reduction.Set(enabled);
+    channel_->SetOptions(options);
+    return fake_call_->GetVideoSendStreams().back();
+  }
+
+  FakeVideoSendStream* SetUpSimulcast(bool enabled) {
+    last_ssrc_ += 3;
+    if (enabled) {
+      std::vector<uint32_t> ssrcs;
+      ssrcs.push_back(last_ssrc_);
+      ssrcs.push_back(last_ssrc_ + 1);
+      ssrcs.push_back(last_ssrc_ + 2);
+      return AddSendStream(CreateSimStreamParams("cname", ssrcs));
+    } else {
+      return AddSendStream(StreamParams::CreateLegacy(last_ssrc_));
+    }
+  }
 
   FakeCall* fake_call_;
   rtc::scoped_ptr<VideoMediaChannel> channel_;
@@ -1374,7 +1398,7 @@ TEST_F(WebRtcVideoChannel2Test, UsesCorrectSettingsForScreencast) {
 
   // Verify non-screencast settings.
   webrtc::VideoEncoderConfig encoder_config = send_stream->GetEncoderConfig();
-  EXPECT_EQ(webrtc::VideoEncoderConfig::kRealtimeVideo,
+  EXPECT_EQ(webrtc::VideoEncoderConfig::ContentType::kRealtimeVideo,
             encoder_config.content_type);
   EXPECT_EQ(codec.width, encoder_config.streams.front().width);
   EXPECT_EQ(codec.height, encoder_config.streams.front().height);
@@ -1388,7 +1412,7 @@ TEST_F(WebRtcVideoChannel2Test, UsesCorrectSettingsForScreencast) {
 
   // Verify screencast settings.
   encoder_config = send_stream->GetEncoderConfig();
-  EXPECT_EQ(webrtc::VideoEncoderConfig::kScreenshare,
+  EXPECT_EQ(webrtc::VideoEncoderConfig::ContentType::kScreen,
             encoder_config.content_type);
   EXPECT_EQ(kScreenshareMinBitrateKbps * 1000,
             encoder_config.min_transmit_bitrate_bps);
@@ -1426,7 +1450,7 @@ TEST_F(WebRtcVideoChannel2Test,
 
   // Verify screencast settings.
   encoder_config = send_stream->GetEncoderConfig();
-  EXPECT_EQ(webrtc::VideoEncoderConfig::kScreenshare,
+  EXPECT_EQ(webrtc::VideoEncoderConfig::ContentType::kScreen,
             encoder_config.content_type);
   ASSERT_EQ(1u, encoder_config.streams.size());
   ASSERT_EQ(1u, encoder_config.streams[0].temporal_layer_thresholds_bps.size());
@@ -1472,22 +1496,143 @@ TEST_F(WebRtcVideoChannel2Test, Vp8DenoisingEnabledByDefault) {
   EXPECT_TRUE(vp8_settings.denoisingOn);
 }
 
-TEST_F(WebRtcVideoChannel2Test, SetOptionsWithDenoising) {
-  VideoOptions options;
-  options.video_noise_reduction.Set(false);
-  channel_->SetOptions(options);
+TEST_F(WebRtcVideoChannel2Test, VerifyVp8SpecificSettings) {
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kVp8Codec720p);
+  ASSERT_TRUE(channel_->SetSendCodecs(codecs));
 
-  FakeVideoSendStream* stream = AddSendStream();
+  FakeVideoSendStream* stream = SetUpSimulcast(false);
+
+  cricket::FakeVideoCapturer capturer;
+  capturer.SetScreencast(false);
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
+  channel_->SetSend(true);
+
+  EXPECT_TRUE(capturer.CaptureFrame());
+
+  stream = SetDenoisingOption(false);
+
   webrtc::VideoCodecVP8 vp8_settings;
   ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
   EXPECT_FALSE(vp8_settings.denoisingOn);
+  EXPECT_TRUE(vp8_settings.automaticResizeOn);
+  EXPECT_TRUE(vp8_settings.frameDroppingOn);
 
-  options.video_noise_reduction.Set(true);
-  channel_->SetOptions(options);
+  stream = SetDenoisingOption(true);
 
-  stream = fake_call_->GetVideoSendStreams()[0];
   ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
   EXPECT_TRUE(vp8_settings.denoisingOn);
+  EXPECT_TRUE(vp8_settings.automaticResizeOn);
+  EXPECT_TRUE(vp8_settings.frameDroppingOn);
+
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
+  stream = SetUpSimulcast(true);
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
+  channel_->SetSend(true);
+  EXPECT_TRUE(capturer.CaptureFrame());
+
+  EXPECT_EQ(3, stream->GetVideoStreams().size());
+  ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
+  // Autmatic resize off when using simulcast.
+  EXPECT_FALSE(vp8_settings.automaticResizeOn);
+  EXPECT_TRUE(vp8_settings.frameDroppingOn);
+
+  // In screen-share mode, denoising is forced off and simulcast disabled.
+  capturer.SetScreencast(true);
+  EXPECT_TRUE(capturer.CaptureFrame());
+  stream = SetDenoisingOption(false);
+
+  EXPECT_EQ(1, stream->GetVideoStreams().size());
+  ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
+  EXPECT_FALSE(vp8_settings.denoisingOn);
+  // Resizing and frame dropping always off for screen sharing.
+  EXPECT_FALSE(vp8_settings.automaticResizeOn);
+  EXPECT_FALSE(vp8_settings.frameDroppingOn);
+
+  stream = SetDenoisingOption(true);
+
+  ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
+  EXPECT_FALSE(vp8_settings.denoisingOn);
+  EXPECT_FALSE(vp8_settings.automaticResizeOn);
+  EXPECT_FALSE(vp8_settings.frameDroppingOn);
+
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
+}
+
+class Vp9SettingsTest : public WebRtcVideoChannel2Test {
+ public:
+  Vp9SettingsTest() : WebRtcVideoChannel2Test() {
+    encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecVP9, "VP9");
+  }
+  virtual ~Vp9SettingsTest() {}
+
+ protected:
+  void SetUp() override {
+    engine_.SetExternalEncoderFactory(&encoder_factory_);
+
+    WebRtcVideoChannel2Test::SetUp();
+  }
+
+  void TearDown() override {
+    // Remove references to encoder_factory_ since this will be destroyed
+    // before channel_ and engine_.
+    engine_.Terminate();
+    engine_.SetExternalEncoderFactory(nullptr);
+    ASSERT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+  }
+
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory_;
+};
+
+TEST_F(Vp9SettingsTest, VerifyVp9SpecificSettings) {
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kVp9Codec);
+  ASSERT_TRUE(channel_->SetSendCodecs(codecs));
+
+  FakeVideoSendStream* stream = SetUpSimulcast(false);
+
+  cricket::FakeVideoCapturer capturer;
+  capturer.SetScreencast(false);
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
+  channel_->SetSend(true);
+
+  EXPECT_TRUE(capturer.CaptureFrame());
+
+  stream = SetDenoisingOption(false);
+
+  webrtc::VideoCodecVP9 vp9_settings;
+  ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
+  EXPECT_FALSE(vp9_settings.denoisingOn);
+  // Frame dropping always on for real time video.
+  EXPECT_TRUE(vp9_settings.frameDroppingOn);
+
+  stream = SetDenoisingOption(true);
+
+  ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
+  EXPECT_TRUE(vp9_settings.denoisingOn);
+  EXPECT_TRUE(vp9_settings.frameDroppingOn);
+
+  // In screen-share mode, denoising is forced off.
+  capturer.SetScreencast(true);
+  EXPECT_TRUE(capturer.CaptureFrame());
+  stream = SetDenoisingOption(false);
+
+  ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
+  EXPECT_FALSE(vp9_settings.denoisingOn);
+  // Frame dropping always off for screen sharing.
+  EXPECT_FALSE(vp9_settings.frameDroppingOn);
+
+  stream = SetDenoisingOption(false);
+
+  ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
+  EXPECT_FALSE(vp9_settings.denoisingOn);
+  EXPECT_FALSE(vp9_settings.frameDroppingOn);
+
+  EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, NULL));
 }
 
 TEST_F(WebRtcVideoChannel2Test, DISABLED_MultipleSendStreamsWithOneCapturer) {

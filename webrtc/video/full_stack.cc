@@ -460,7 +460,7 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
   stream->max_framerate = params.clip.fps;
 
   if (params.screenshare) {
-    encoder_config_.content_type = VideoEncoderConfig::kScreenshare;
+    encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
     encoder_config_.min_transmit_bitrate_bps = 400 * 1000;
     VideoCodecVP8 vp8_settings = VideoEncoder::GetDefaultVp8Settings();
     vp8_settings.denoisingOn = false;

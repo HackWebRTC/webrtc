@@ -315,10 +315,10 @@ bool VideoSendStream::ReconfigureVideoEncoder(
   }
 
   switch (config.content_type) {
-    case VideoEncoderConfig::kRealtimeVideo:
+    case VideoEncoderConfig::ContentType::kRealtimeVideo:
       video_codec.mode = kRealtimeVideo;
       break;
-    case VideoEncoderConfig::kScreenshare:
+    case VideoEncoderConfig::ContentType::kScreen:
       video_codec.mode = kScreensharing;
       if (config.streams.size() == 1 &&
           config.streams[0].temporal_layer_thresholds_bps.size() == 1) {

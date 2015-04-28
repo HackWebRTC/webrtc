@@ -1332,7 +1332,7 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
     void PerformTest() override {
       EXPECT_EQ(1u, num_initializations_) << "VideoEncoder not initialized.";
 
-      encoder_config_.content_type = VideoEncoderConfig::kScreenshare;
+      encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
       stream_->ReconfigureVideoEncoder(encoder_config_);
       EXPECT_EQ(2u, num_initializations_)
           << "ReconfigureVideoEncoder did not reinitialize the encoder with "
@@ -1563,7 +1563,7 @@ TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
           encoder_config->streams[0].temporal_layer_thresholds_bps.empty());
       encoder_config->streams[0].temporal_layer_thresholds_bps.push_back(
           kScreencastTargetBitrateKbps * 1000);
-      encoder_config->content_type = VideoEncoderConfig::kScreenshare;
+      encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
     }
 
     void PerformTest() override {

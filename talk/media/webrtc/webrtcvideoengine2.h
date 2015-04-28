@@ -353,7 +353,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
         size_t num_streams);
 
     void* ConfigureVideoEncoderSettings(const VideoCodec& codec,
-                                        const VideoOptions& options)
+                                        const VideoOptions& options,
+                                        bool is_screencast)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
     AllocatedEncoder CreateVideoEncoder(const VideoCodec& codec)
