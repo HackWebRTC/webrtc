@@ -84,7 +84,9 @@ class BweTest {
   void RunFairnessTest(BandwidthEstimatorType bwe_type,
                        size_t num_media_flows,
                        size_t num_tcp_flows,
-                       int capacity_kbps);
+                       int64_t run_time_seconds,
+                       int capacity_kbps,
+                       int max_delay_ms);
 
   Link downlink_;
   Link uplink_;

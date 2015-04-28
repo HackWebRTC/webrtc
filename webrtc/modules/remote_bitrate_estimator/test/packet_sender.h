@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_SENDER_H_
 
 #include <list>
+#include <limits>
 #include <string>
 
 #include "webrtc/base/constructormagic.h"
@@ -104,14 +105,15 @@ class PacedVideoSender : public VideoSender, public PacedSender::Callback {
 
 class TcpSender : public PacketSender {
  public:
-  TcpSender(PacketProcessorListener* listener, int flow_id)
+  TcpSender(PacketProcessorListener* listener, int flow_id, int64_t offset_ms)
       : PacketSender(listener, flow_id),
         now_ms_(0),
-        in_slow_start_(false),
         cwnd_(10),
+        ssthresh_(std::numeric_limits<int>::max()),
         ack_received_(false),
         last_acked_seq_num_(0),
-        next_sequence_number_(0) {}
+        next_sequence_number_(0),
+        offset_ms_(offset_ms) {}
 
   virtual ~TcpSender() {}
 
@@ -140,15 +142,18 @@ class TcpSender : public PacketSender {
 
   void SendPackets(Packets* in_out);
   void UpdateCongestionControl(const FeedbackPacket* fb);
+  int TriggerTimeouts();
+  void HandleLoss();
   Packets GeneratePackets(size_t num_packets);
 
   int64_t now_ms_;
-  bool in_slow_start_;
   float cwnd_;
+  int ssthresh_;
   std::set<InFlight> in_flight_;
   bool ack_received_;
   uint16_t last_acked_seq_num_;
   uint16_t next_sequence_number_;
+  int64_t offset_ms_;
 };
 }  // namespace bwe
 }  // namespace testing

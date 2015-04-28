@@ -333,7 +333,7 @@ class BweTestFramework_DelayFilterTest : public ::testing::Test {
   }
 
   void TestDelayFilter(int64_t delay_ms) {
-    filter_.SetDelay(delay_ms);
+    filter_.SetDelayMs(delay_ms);
     TestDelayFilter(1, 0, 0);    // No input should yield no output
 
     // Single packet
@@ -341,7 +341,7 @@ class BweTestFramework_DelayFilterTest : public ::testing::Test {
     TestDelayFilter(delay_ms, 0, 0);
 
     for (int i = 0; i < delay_ms; ++i) {
-      filter_.SetDelay(i);
+      filter_.SetDelayMs(i);
       TestDelayFilter(1, 10, 10);
     }
     TestDelayFilter(0, 0, 0);
@@ -351,11 +351,11 @@ class BweTestFramework_DelayFilterTest : public ::testing::Test {
     TestDelayFilter(delay_ms, 0, 0);
 
     for (int i = 1; i < delay_ms + 1; ++i) {
-      filter_.SetDelay(i);
+      filter_.SetDelayMs(i);
       TestDelayFilter(1, 5, 5);
     }
     TestDelayFilter(0, 0, 0);
-    filter_.SetDelay(2 * delay_ms);
+    filter_.SetDelayMs(2 * delay_ms);
     TestDelayFilter(1, 0, 0);
     TestDelayFilter(delay_ms, 13, 13);
     TestDelayFilter(delay_ms, 0, 0);
@@ -364,11 +364,11 @@ class BweTestFramework_DelayFilterTest : public ::testing::Test {
     TestDelayFilter(delay_ms, 0, 0);
 
     for (int i = 0; i < 2 * delay_ms; ++i) {
-      filter_.SetDelay(2 * delay_ms - i - 1);
+      filter_.SetDelayMs(2 * delay_ms - i - 1);
       TestDelayFilter(1, 5, 5);
     }
     TestDelayFilter(0, 0, 0);
-    filter_.SetDelay(0);
+    filter_.SetDelayMs(0);
     TestDelayFilter(0, 7, 7);
 
     ASSERT_TRUE(IsTimeSorted(accumulated_packets_));
@@ -389,7 +389,7 @@ TEST_F(BweTestFramework_DelayFilterTest, Delay0) {
   TestDelayFilter(1, 0, 0);    // No input should yield no output
   TestDelayFilter(1, 10, 10);  // Expect no delay (delay time is zero)
   TestDelayFilter(1, 0, 0);    // Check no packets are still in buffer
-  filter_.SetDelay(0);
+  filter_.SetDelayMs(0);
   TestDelayFilter(1, 5, 5);    // Expect no delay (delay time is zero)
   TestDelayFilter(1, 0, 0);    // Check no packets are still in buffer
 }
@@ -416,7 +416,7 @@ TEST_F(BweTestFramework_DelayFilterTest, JumpToZeroDelay) {
   Packets packets;
 
   // Delay a bunch of packets, accumulate them to the 'acc' list.
-  delay.SetDelay(100.0f);
+  delay.SetDelayMs(100.0f);
   for (uint32_t i = 0; i < 10; ++i) {
     packets.push_back(new MediaPacket(i * 100, i));
   }
@@ -427,7 +427,7 @@ TEST_F(BweTestFramework_DelayFilterTest, JumpToZeroDelay) {
 
   // Drop delay to zero, send a few more packets through the delay, append them
   // to the 'acc' list and verify that it is all sorted.
-  delay.SetDelay(0.0f);
+  delay.SetDelayMs(0.0f);
   for (uint32_t i = 10; i < 50; ++i) {
     packets.push_back(new MediaPacket(i * 100, i));
   }
@@ -446,12 +446,12 @@ TEST_F(BweTestFramework_DelayFilterTest, IncreasingDelay) {
     TestDelayFilter(i);
   }
   // Reach a steady state.
-  filter_.SetDelay(100);
+  filter_.SetDelayMs(100);
   TestDelayFilter(1, 20, 20);
   TestDelayFilter(2, 0, 0);
   TestDelayFilter(99, 20, 20);
   // Drop delay back down to zero.
-  filter_.SetDelay(0);
+  filter_.SetDelayMs(0);
   TestDelayFilter(1, 100, 100);
   TestDelayFilter(23010, 0, 0);
   ASSERT_TRUE(IsTimeSorted(accumulated_packets_));

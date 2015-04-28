@@ -341,7 +341,7 @@ DelayFilter::DelayFilter(PacketProcessorListener* listener,
       last_send_time_us_(0) {
 }
 
-void DelayFilter::SetDelay(int64_t delay_ms) {
+void DelayFilter::SetDelayMs(int64_t delay_ms) {
   BWE_TEST_LOGGING_ENABLE(false);
   BWE_TEST_LOGGING_LOG1("Delay", "%d ms", static_cast<int>(delay_ms));
   assert(delay_ms >= 0);

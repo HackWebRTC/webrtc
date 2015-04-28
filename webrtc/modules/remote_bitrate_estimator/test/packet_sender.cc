@@ -138,8 +138,10 @@ void PacedVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
     int64_t time_until_process_ms = TimeUntilNextProcess(modules_);
     int64_t time_until_feedback_ms = time_ms;
     if (!feedbacks.empty())
-      time_until_feedback_ms = feedbacks.front()->send_time_us() / 1000 -
-                               clock_.TimeInMilliseconds();
+      time_until_feedback_ms =
+          std::max<int64_t>(feedbacks.front()->send_time_us() / 1000 -
+                                clock_.TimeInMilliseconds(),
+                            0);
 
     int64_t time_until_next_event_ms =
         std::min(time_until_feedback_ms, time_until_process_ms);
@@ -265,6 +267,10 @@ void PacedVideoSender::OnNetworkChanged(uint32_t target_bitrate_bps,
 }
 
 void TcpSender::RunFor(int64_t time_ms, Packets* in_out) {
+  if (now_ms_ + time_ms < offset_ms_) {
+    now_ms_ += time_ms;
+    return;
+  }
   BWE_TEST_LOGGING_CONTEXT("Sender");
   BWE_TEST_LOGGING_CONTEXT(*flow_ids().begin());
   std::list<FeedbackPacket*> feedbacks =
@@ -277,13 +283,6 @@ void TcpSender::RunFor(int64_t time_ms, Packets* in_out) {
     SendPackets(in_out);
   }
 
-  for (auto it = in_flight_.begin(); it != in_flight_.end();) {
-    if (it->time_ms < now_ms_ - 1000)
-      in_flight_.erase(it++);
-    else
-      ++it;
-  }
-
   SendPackets(in_out);
   now_ms_ += time_ms;
 }
@@ -291,6 +290,10 @@ void TcpSender::RunFor(int64_t time_ms, Packets* in_out) {
 void TcpSender::SendPackets(Packets* in_out) {
   int cwnd = ceil(cwnd_);
   int packets_to_send = std::max(cwnd - static_cast<int>(in_flight_.size()), 0);
+  int timed_out = TriggerTimeouts();
+  if (timed_out > 0) {
+    HandleLoss();
+  }
   if (packets_to_send > 0) {
     Packets generated = GeneratePackets(packets_to_send);
     for (Packet* packet : generated)
@@ -312,9 +315,8 @@ void TcpSender::UpdateCongestionControl(const FeedbackPacket* fb) {
     in_flight_.erase(InFlight(ack_seq_num, now_ms_));
 
   if (missing > 0) {
-    cwnd_ /= 2.0f;
-    in_slow_start_ = false;
-  } else if (in_slow_start_) {
+    HandleLoss();
+  } else if (cwnd_ <= ssthresh_) {
     cwnd_ += tcp_fb->acked_packets().size();
   } else {
     cwnd_ += 1.0f / cwnd_;
@@ -322,6 +324,24 @@ void TcpSender::UpdateCongestionControl(const FeedbackPacket* fb) {
 
   last_acked_seq_num_ =
       LatestSequenceNumber(tcp_fb->acked_packets().back(), last_acked_seq_num_);
+}
+
+int TcpSender::TriggerTimeouts() {
+  int timed_out = 0;
+  for (auto it = in_flight_.begin(); it != in_flight_.end();) {
+    if (it->time_ms < now_ms_ - 1000) {
+      in_flight_.erase(it++);
+      ++timed_out;
+    } else {
+      ++it;
+    }
+  }
+  return timed_out;
+}
+
+void TcpSender::HandleLoss() {
+  ssthresh_ = std::max(static_cast<int>(in_flight_.size() / 2), 2);
+  cwnd_ = ssthresh_;
 }
 
 Packets TcpSender::GeneratePackets(size_t num_packets) {

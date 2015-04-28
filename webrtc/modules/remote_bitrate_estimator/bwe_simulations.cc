@@ -87,7 +87,7 @@ TEST_P(BweSimulation, Choke1000kbps500kbps1000kbpsBiDirectional) {
   PacketReceiver receiver2(&downlink_, kFlowIds[1], GetParam(), true, false);
 
   choke2.SetCapacity(500);
-  delay.SetDelay(0);
+  delay.SetDelayMs(0);
 
   choke.SetCapacity(1000);
   choke.SetMaxDelay(500);
@@ -240,13 +240,33 @@ TEST_P(BweSimulation, SelfFairnessTest) {
 TEST_P(BweSimulation, PacedSelfFairnessTest) {
   VerboseLogging(true);
   srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
-  RunFairnessTest(GetParam(), 4, 0, 2000);
+  RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 50);
 }
 
 TEST_P(BweSimulation, PacedTcpFairnessTest) {
   VerboseLogging(true);
   srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
-  RunFairnessTest(GetParam(), 1, 1, 3000);
+  RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 500);
+}
+
+TEST_P(BweSimulation, PacedSelfFairness1000msTest) {
+  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+  RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 1000);
+}
+
+TEST_P(BweSimulation, TcpFairness50msTest) {
+  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+  RunFairnessTest(GetParam(), 1, 1, 1000, 2000, 50);
+}
+
+TEST_P(BweSimulation, TcpFairness500msTest) {
+  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+  RunFairnessTest(GetParam(), 1, 1, 1000, 2000, 500);
+}
+
+TEST_P(BweSimulation, TcpFairness1000msTest) {
+  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+  RunFairnessTest(GetParam(), 1, 1, 1000, 2000, 1000);
 }
 #endif  // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 }  // namespace bwe

@@ -192,14 +192,16 @@ void BweTest::PrintResults(
   webrtc::test::PrintResultMeanAndError("BwePerformance", GetTestName(),
                                         "Average delay", delay_ms.AsString(),
                                         "ms", false);
-  double fairness_index = 0.0;
-  double squared_bitrate_sum = 0.0;
-  for (Stats<double> flow : flow_throughput_kbps) {
-    squared_bitrate_sum += flow.GetMean() * flow.GetMean();
-    fairness_index += flow.GetMean();
+  double fairness_index = 1.0;
+  if (!flow_throughput_kbps.empty()) {
+    double squared_bitrate_sum = 0.0;
+    for (Stats<double> flow : flow_throughput_kbps) {
+      squared_bitrate_sum += flow.GetMean() * flow.GetMean();
+      fairness_index += flow.GetMean();
+    }
+    fairness_index *= fairness_index;
+    fairness_index /= flow_throughput_kbps.size() * squared_bitrate_sum;
   }
-  fairness_index *= fairness_index;
-  fairness_index /= flow_throughput_kbps.size() * squared_bitrate_sum;
   webrtc::test::PrintResult("BwePerformance", GetTestName(), "Fairness",
                             fairness_index * 100, "%", false);
 }
@@ -207,7 +209,9 @@ void BweTest::PrintResults(
 void BweTest::RunFairnessTest(BandwidthEstimatorType bwe_type,
                               size_t num_media_flows,
                               size_t num_tcp_flows,
-                              int capacity_kbps) {
+                              int64_t run_time_seconds,
+                              int capacity_kbps,
+                              int max_delay_ms) {
   std::set<int> all_flow_ids;
   std::set<int> media_flow_ids;
   std::set<int> tcp_flow_ids;
@@ -230,17 +234,22 @@ void BweTest::RunFairnessTest(BandwidthEstimatorType bwe_type,
   for (int media_flow : media_flow_ids) {
     // Streams started 20 seconds apart to give them different advantage when
     // competing for the bandwidth.
+    const int64_t kFlowStartOffsetMs = i++ * (rand() % 40000);
     sources.push_back(new AdaptiveVideoSource(media_flow, 30, 300, 0,
-                                              i++ * (rand() % 40000)));
+                                              kFlowStartOffsetMs));
     senders.push_back(new PacedVideoSender(&uplink_, sources.back(), bwe_type));
   }
 
+  const int64_t kTcpStartOffsetMs = 20000;
   for (int tcp_flow : tcp_flow_ids)
-    senders.push_back(new TcpSender(&uplink_, tcp_flow));
+    senders.push_back(new TcpSender(&uplink_, tcp_flow, kTcpStartOffsetMs));
 
   ChokeFilter choke(&uplink_, all_flow_ids);
   choke.SetCapacity(capacity_kbps);
-  choke.SetMaxDelay(1000);
+  choke.SetMaxDelay(max_delay_ms);
+
+  DelayFilter delay_uplink(&uplink_, all_flow_ids);
+  delay_uplink.SetDelayMs(25);
 
   std::vector<RateCounterFilter*> rate_counters;
   for (int flow : all_flow_ids) {
@@ -262,7 +271,10 @@ void BweTest::RunFairnessTest(BandwidthEstimatorType bwe_type,
         new PacketReceiver(&uplink_, tcp_flow, kTcpEstimator, false, false));
   }
 
-  RunFor(15 * 60 * 1000);
+  DelayFilter delay_downlink(&downlink_, all_flow_ids);
+  delay_downlink.SetDelayMs(25);
+
+  RunFor(run_time_seconds * 1000);
 
   std::vector<Stats<double>> flow_throughput_kbps;
   for (i = 0; i < all_flow_ids.size(); ++i)

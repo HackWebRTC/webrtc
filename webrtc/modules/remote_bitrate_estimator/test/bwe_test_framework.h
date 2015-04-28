@@ -254,7 +254,7 @@ class DelayFilter : public PacketProcessor {
   DelayFilter(PacketProcessorListener* listener, const FlowIds& flow_ids);
   virtual ~DelayFilter() {}
 
-  void SetDelay(int64_t delay_ms);
+  void SetDelayMs(int64_t delay_ms);
   virtual void RunFor(int64_t time_ms, Packets* in_out);
 
  private:
