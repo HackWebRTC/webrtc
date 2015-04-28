@@ -171,6 +171,7 @@ void void_main(int argc, char* argv[]) {
   bool raw_output = false;
   int extra_delay_ms = 0;
   int override_delay_ms = 0;
+  Config config;
 
   ASSERT_EQ(apm->kNoError, apm->level_estimator()->Enable(true));
   for (int i = 1; i < argc; i++) {
@@ -256,14 +257,10 @@ void void_main(int argc, char* argv[]) {
                         suppression_level)));
 
     } else if (strcmp(argv[i], "--extended_filter") == 0) {
-      Config config;
       config.Set<DelayCorrection>(new DelayCorrection(true));
-      apm->SetExtraOptions(config);
 
     } else if (strcmp(argv[i], "--no_reported_delay") == 0) {
-      Config config;
       config.Set<ReportedDelay>(new ReportedDelay(false));
-      apm->SetExtraOptions(config);
 
     } else if (strcmp(argv[i], "-aecm") == 0) {
       ASSERT_EQ(apm->kNoError, apm->echo_control_mobile()->Enable(true));
@@ -402,9 +399,7 @@ void void_main(int argc, char* argv[]) {
       vad_out_filename = argv[i];
 
     } else if (strcmp(argv[i], "-expns") == 0) {
-      Config config;
       config.Set<ExperimentalNs>(new ExperimentalNs(true));
-      apm->SetExtraOptions(config);
 
     } else if (strcmp(argv[i], "--noasm") == 0) {
       WebRtc_GetCPUInfo = WebRtc_GetCPUInfoNoASM;
@@ -440,6 +435,8 @@ void void_main(int argc, char* argv[]) {
       FAIL() << "Unrecognized argument " << argv[i];
     }
   }
+  apm->SetExtraOptions(config);
+
   // If we're reading a protobuf file, ensure a simulation hasn't also
   // been requested (which makes no sense...)
   ASSERT_FALSE(pb_filename && simulating);
