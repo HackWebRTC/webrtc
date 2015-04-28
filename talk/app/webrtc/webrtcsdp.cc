@@ -1770,6 +1770,8 @@ void BuildCandidate(const std::vector<Candidate>& candidates,
       type = kCandidateRelay;
     } else {
       ASSERT(false);
+      // Never write out candidates if we don't know the type.
+      continue;
     }
 
     InitAttrLine(kAttributeCandidate, &os);

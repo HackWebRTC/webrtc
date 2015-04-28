@@ -559,6 +559,12 @@ void Transport::OnChannelRequestSignaling_s() {
 
 void Transport::OnChannelCandidateReady(TransportChannelImpl* channel,
                                         const Candidate& candidate) {
+  // We should never signal peer-reflexive candidates.
+  if (candidate.type() == PRFLX_PORT_TYPE) {
+    ASSERT(false);
+    return;
+  }
+
   ASSERT(worker_thread()->IsCurrent());
   rtc::CritScope cs(&crit_);
   ready_candidates_.push_back(candidate);
