@@ -109,7 +109,12 @@ DEFINE_string(
 
 class ScreenshareLoopback : public test::Loopback {
  public:
-  explicit ScreenshareLoopback(const Config& config) : Loopback(config) {}
+  explicit ScreenshareLoopback(const Config& config) : Loopback(config) {
+    vp8_settings_ = VideoEncoder::GetDefaultVp8Settings();
+    vp8_settings_.denoisingOn = false;
+    vp8_settings_.frameDroppingOn = false;
+    vp8_settings_.numberOfTemporalLayers = 2;
+  }
   virtual ~ScreenshareLoopback() {}
 
  protected:
@@ -118,11 +123,7 @@ class ScreenshareLoopback : public test::Loopback {
     VideoStream* stream = &encoder_config.streams[0];
     encoder_config.content_type = VideoEncoderConfig::ContentType::kScreen;
     encoder_config.min_transmit_bitrate_bps = flags::MinTransmitBitrate();
-    VideoCodecVP8 vp8_settings = VideoEncoder::GetDefaultVp8Settings();
-    vp8_settings.denoisingOn = false;
-    vp8_settings.frameDroppingOn = false;
-    vp8_settings.numberOfTemporalLayers = 2;
-    encoder_config.encoder_specific_settings = &vp8_settings;
+    encoder_config.encoder_specific_settings = &vp8_settings_;
     stream->temporal_layer_thresholds_bps.clear();
     stream->target_bitrate_bps =
         static_cast<int>(config_.start_bitrate_kbps) * 1000;
@@ -145,6 +146,8 @@ class ScreenshareLoopback : public test::Loopback {
     EXPECT_TRUE(capturer->Init());
     return capturer;
   }
+
+  VideoCodecVP8 vp8_settings_;
 };
 
 void Loopback() {
