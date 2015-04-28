@@ -48,8 +48,8 @@ class FilterFormat:
         self.failures.append(self.tests[job_id])
         for line in self.outputs[job_id]:
           print line
-        print ("[%d/%d] %s returned/aborted with exit code %d (%d ms)"
-            % (self.finished_tests, self.total_tests, test, exit_code, time_ms))
+        print "[%d/%d] %s returned/aborted with exit code %d (%d ms)" \
+            % (self.finished_tests, self.total_tests, test, exit_code, time_ms)
     elif command == "TESTCNT":
       self.total_tests = int(arg.split(' ', 1)[1])
       print "[0/%d] Running tests...\r" % self.total_tests,
@@ -125,12 +125,14 @@ else:
 tests = []
 for test_binary in binaries:
   command = [test_binary]
-  if options.gtest_filter != '':
-    command += ['--gtest_filter=' + options.gtest_filter]
   if options.gtest_also_run_disabled_tests:
     command += ['--gtest_also_run_disabled_tests']
 
-  test_list = subprocess.Popen(command + ['--gtest_list_tests'],
+  list_command = list(command)
+  if options.gtest_filter != '':
+    list_command += ['--gtest_filter=' + options.gtest_filter]
+
+  test_list = subprocess.Popen(list_command + ['--gtest_list_tests'],
                                stdout=subprocess.PIPE).communicate()[0]
 
   command += additional_args
@@ -144,6 +146,9 @@ for test_binary in binaries:
       continue
     line = line.strip()
     if not options.gtest_also_run_disabled_tests and 'DISABLED' in line:
+      continue
+    line = line.split('#')[0].strip()
+    if not line:
       continue
 
     test = test_group + line
