@@ -1527,8 +1527,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
     VideoCapturer* capturer,
     const VideoFrame* frame) {
   TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::InputFrame");
-  LOG(LS_VERBOSE) << "InputFrame: " << frame->GetWidth() << "x"
-                  << frame->GetHeight();
   webrtc::I420VideoFrame video_frame(frame->GetVideoFrameBuffer(), 0, 0,
                                      frame->GetVideoRotation());
   rtc::CritScope cs(&lock_);
@@ -1557,10 +1555,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
   SetDimensions(
       video_frame.width(), video_frame.height(), capturer->IsScreencast());
 
-  LOG(LS_VERBOSE) << "IncomingCapturedFrame: " << video_frame.width() << "x"
-                  << video_frame.height() << " -> (codec) "
-                  << parameters_.encoder_config.streams.back().width << "x"
-                  << parameters_.encoder_config.streams.back().height;
   stream_->Input()->IncomingCapturedFrame(video_frame);
 }
 
@@ -2186,9 +2180,6 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
   if (frame.width() != last_width_ || frame.height() != last_height_) {
     SetSize(frame.width(), frame.height());
   }
-
-  LOG(LS_VERBOSE) << "RenderFrame: (" << frame.width() << "x" << frame.height()
-                  << ")";
 
   const WebRtcVideoFrame render_frame(
       frame.video_frame_buffer(),
