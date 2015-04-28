@@ -145,8 +145,9 @@ AudioEncoder::EncodedInfo AudioEncoderDecoderIsacT<T>::EncodeInternal(
   {
     CriticalSectionScoped cs(state_lock_.get());
     r = T::Encode(isac_state_, audio, encoded);
+    CHECK_GE(r, 0) << "Encode failed (error code "
+                   << T::GetErrorCode(isac_state_) << ")";
   }
-  CHECK_GE(r, 0);
 
   // T::Encode doesn't allow us to tell it the size of the output
   // buffer. All we can do is check for an overrun after the fact.
