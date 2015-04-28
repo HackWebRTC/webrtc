@@ -35,6 +35,20 @@ SCRIPT_VERSION = 4
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 CHROMIUM_NO_HISTORY = 'CHROMIUM_NO_HISTORY'
 
+# Duplicated from depot_tools/gclient.py since we cannot depend on that:
+DEPS_OS_CHOICES = {
+  "win32": "win",
+  "win": "win",
+  "cygwin": "win",
+  "darwin": "mac",
+  "mac": "mac",
+  "unix": "unix",
+  "linux": "unix",
+  "linux2": "unix",
+  "linux3": "unix",
+  "android": "android",
+}
+
 def _parse_gclient_dict():
   gclient_dict = {}
   try:
@@ -51,7 +65,12 @@ def get_cache_dir():
 
 
 def get_target_os_list():
-  return ','.join(_parse_gclient_dict().get('target_os', []))
+  # Always add the currently running OS since the --deps option will override
+  # that if specified:
+  target_os_list = [DEPS_OS_CHOICES.get(sys.platform, 'unix')]
+  # Add any target_os entries from .gclient.
+  target_os_list += _parse_gclient_dict().get('target_os', [])
+  return ','.join(target_os_list)
 
 
 def main():
