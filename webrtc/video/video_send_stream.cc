@@ -118,7 +118,6 @@ VideoSendStream::VideoSendStream(
       config_(config),
       suspended_ssrcs_(suspended_ssrcs),
       channel_group_(channel_group),
-      external_codec_(nullptr),
       channel_(-1),
       use_config_bitrate_(true),
       stats_proxy_(Clock::GetRealTimeClock(), config) {
@@ -203,10 +202,10 @@ VideoSendStream::VideoSendStream(
   DCHECK(config.encoder_settings.encoder != nullptr);
   DCHECK_GE(config.encoder_settings.payload_type, 0);
   DCHECK_LE(config.encoder_settings.payload_type, 127);
-  external_codec_ = ViEExternalCodec::GetInterface(video_engine);
-  CHECK_EQ(0, external_codec_->RegisterExternalSendCodec(
-                  channel_, config.encoder_settings.payload_type,
-                  config.encoder_settings.encoder, false));
+  // TODO(pbos): Wire up codec internal-source setting or remove setting.
+  CHECK_EQ(0, vie_encoder_->RegisterExternalEncoder(
+                  config.encoder_settings.encoder,
+                  config.encoder_settings.payload_type, false));
 
   codec_ = ViECodec::GetInterface(video_engine);
   CHECK(ReconfigureVideoEncoder(encoder_config));
@@ -257,8 +256,8 @@ VideoSendStream::~VideoSendStream() {
   capture_->DisconnectCaptureDevice(channel_);
   capture_->ReleaseCaptureDevice(capture_id_);
 
-  external_codec_->DeRegisterExternalSendCodec(
-      channel_, config_.encoder_settings.payload_type);
+  vie_encoder_->DeRegisterExternalEncoder(
+      config_.encoder_settings.payload_type);
 
   video_engine_base_->DeleteChannel(channel_);
 
@@ -266,8 +265,6 @@ VideoSendStream::~VideoSendStream() {
   video_engine_base_->Release();
   capture_->Release();
   codec_->Release();
-  if (external_codec_)
-    external_codec_->Release();
   network_->Release();
 }
 

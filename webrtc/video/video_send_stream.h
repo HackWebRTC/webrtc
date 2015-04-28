@@ -92,7 +92,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
   ViECodec* codec_;
   ViEEncoder* vie_encoder_;
   ViEExternalCapture* external_capture_;
-  ViEExternalCodec* external_codec_;
   ViENetwork* network_;
   ViEImageProcess* image_process_;
 
