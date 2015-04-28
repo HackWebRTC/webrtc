@@ -303,36 +303,39 @@ void ViECapturer::IncomingFrame(const I420VideoFrame& frame) {
 
 void ViECapturer::OnIncomingCapturedFrame(const int32_t capture_id,
                                           const I420VideoFrame& video_frame) {
-  CriticalSectionScoped cs(capture_cs_.get());
-  captured_frame_.ShallowCopy(video_frame);
+  I420VideoFrame incoming_frame = video_frame;
 
-  if (captured_frame_.ntp_time_ms() != 0) {
-    // If a ntp time stamp is set, this is the time stamp we will use.
-    captured_frame_.set_render_time_ms(
-        captured_frame_.ntp_time_ms() - delta_ntp_internal_ms_);
-  } else {  // ntp time stamp not set.
-    int64_t render_time = captured_frame_.render_time_ms() != 0 ?
-        captured_frame_.render_time_ms() : TickTime::MillisecondTimestamp();
+  if (incoming_frame.ntp_time_ms() != 0) {
+    // If a NTP time stamp is set, this is the time stamp we will use.
+    incoming_frame.set_render_time_ms(
+        incoming_frame.ntp_time_ms() - delta_ntp_internal_ms_);
+  } else {  // NTP time stamp not set.
+    int64_t render_time = incoming_frame.render_time_ms() != 0 ?
+        incoming_frame.render_time_ms() : TickTime::MillisecondTimestamp();
 
     // Make sure we render this frame earlier since we know the render time set
     // is slightly off since it's being set when the frame was received
     // from the camera, and not when the camera actually captured the frame.
     render_time -= FrameDelay();
-    captured_frame_.set_render_time_ms(render_time);
-    captured_frame_.set_ntp_time_ms(
+    incoming_frame.set_render_time_ms(render_time);
+    incoming_frame.set_ntp_time_ms(
         render_time + delta_ntp_internal_ms_);
   }
 
-  if (captured_frame_.ntp_time_ms() <= last_captured_timestamp_) {
+  // Convert NTP time, in ms, to RTP timestamp.
+  const int kMsToRtpTimestamp = 90;
+  incoming_frame.set_timestamp(kMsToRtpTimestamp *
+      static_cast<uint32_t>(incoming_frame.ntp_time_ms()));
+
+  CriticalSectionScoped cs(capture_cs_.get());
+  if (incoming_frame.ntp_time_ms() <= last_captured_timestamp_) {
     // We don't allow the same capture time for two frames, drop this one.
+    LOG(LS_WARNING) << "Same/old NTP timestamp for incoming frame. Dropping.";
     return;
   }
-  last_captured_timestamp_ = captured_frame_.ntp_time_ms();
 
-  // Convert ntp time, in ms, to RTP timestamp.
-  const int kMsToRtpTimestamp = 90;
-  captured_frame_.set_timestamp(kMsToRtpTimestamp *
-      static_cast<uint32_t>(captured_frame_.ntp_time_ms()));
+  captured_frame_.ShallowCopy(incoming_frame);
+  last_captured_timestamp_ = incoming_frame.ntp_time_ms();
 
   overuse_detector_->FrameCaptured(captured_frame_.width(),
                                    captured_frame_.height(),
