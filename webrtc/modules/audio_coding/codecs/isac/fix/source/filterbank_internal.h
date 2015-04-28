@@ -60,7 +60,12 @@ void WebRtcIsacfix_AllpassFilter2FixDec16C(
    int32_t *filter_state_ch1,
    int32_t *filter_state_ch2);
 
-#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
+// Disable AllpassFilter2FixDec16Neon function due to a clang bug.
+// Refer more details at:
+// https://code.google.com/p/webrtc/issues/detail?id=4567
+#if !(defined __clang__)
+#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON) || \
+  (defined WEBRTC_ARCH_ARM64_NEON)
 void WebRtcIsacfix_AllpassFilter2FixDec16Neon(
    int16_t *data_ch1,
    int16_t *data_ch2,
@@ -69,6 +74,7 @@ void WebRtcIsacfix_AllpassFilter2FixDec16Neon(
    const int length,
    int32_t *filter_state_ch1,
    int32_t *filter_state_ch2);
+#endif
 #endif
 
 #if defined(MIPS_DSP_R1_LE)

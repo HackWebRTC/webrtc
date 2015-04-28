@@ -95,6 +95,9 @@
             }],
           ],
         }],
+        ['target_arch=="arm64"', {
+          'dependencies': ['isac_neon', ],
+        }],
         ['target_arch=="mipsel" and mips_arch_variant!="r6"', {
           'sources': [
             'fix/source/entropy_coding_mips.c',
@@ -128,7 +131,7 @@
     },
   ],
   'conditions': [
-    ['target_arch=="arm" and arm_version>=7', {
+    ['target_arch=="arm" and arm_version>=7 or target_arch=="arm64"', {
       'targets': [
         {
           'target_name': 'isac_neon',
@@ -136,9 +139,6 @@
           'includes': ['../../../../build/arm_neon.gypi',],
           'dependencies': [
             '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
-          ],
-          'include_dirs': [
-            '<(webrtc_root)',
           ],
           'sources': [
             'fix/source/entropy_coding_neon.c',
@@ -156,6 +156,28 @@
                 '-ffat-lto-objects',
               ],
             }],
+            ['target_arch=="arm64"', {
+              'sources!': [
+                'fix/source/filterbanks_neon.S',
+                'fix/source/filters_neon.S',
+                'fix/source/lattice_neon.S',
+                'fix/source/lpc_masking_model_neon.S',
+                'fix/source/transform_neon.S',
+              ],
+              'sources': [
+                'fix/source/filters_neon.c',
+                'fix/source/lattice_neon.c',
+                'fix/source/transform_neon.c',
+              ],
+              'conditions': [
+                # Disable AllpassFilter2FixDec16Neon function due to a clang
+                # bug. Refer more details at:
+                # https://code.google.com/p/webrtc/issues/detail?id=4567
+                ['clang==0', {
+                  'sources': ['fix/source/filterbanks_neon.c',],
+                }],
+              ],
+            }]
           ],
         },
       ],
