@@ -16,13 +16,19 @@
 namespace rtc {
 
 // A class, similar to ByteBuffer, that can parse bit-sized data out of a set of
-// bytes. Has a similar API to the read-only parts of ByteBuffer, plus methods
-// for reading bit-sized data and processing exponential golomb encoded data.
+// bytes. Has a similar API to ByteBuffer, plus methods for reading bit-sized
+// and exponential golomb encoded data. For a writable version, use
+// BitBufferWriter. Unlike ByteBuffer, this class doesn't make a copy of the
+// source bytes, so it can be used on read-only data.
 // Sizes/counts specify bits/bytes, for clarity.
 // Byte order is assumed big-endian/network.
 class BitBuffer {
  public:
   BitBuffer(const uint8* bytes, size_t byte_count);
+
+  // Gets the current offset, in bytes/bits, from the start of the buffer. The
+  // bit offset is the offset into the current byte, in the range [0,7].
+  void GetCurrentOffset(size_t* out_byte_offset, size_t* out_bit_offset);
 
   // The remaining bits in the byte buffer.
   uint64 RemainingBitCount() const;
@@ -34,14 +40,15 @@ class BitBuffer {
   bool ReadUInt32(uint32* val);
 
   // Reads bit-sized values from the buffer. Returns false if there isn't enough
-  // data left for the specified type.
+  // data left for the specified bit count..
   bool ReadBits(uint32* val, size_t bit_count);
 
   // Peeks bit-sized values from the buffer. Returns false if there isn't enough
-  // data left for the specified type. Doesn't move the current read offset.
+  // data left for the specified number of bits. Doesn't move the current
+  // offset.
   bool PeekBits(uint32* val, size_t bit_count);
 
-  // Reads the exponential golomb encoded value at the current bit offset.
+  // Reads the exponential golomb encoded value at the current offset.
   // Exponential golomb values are encoded as:
   // 1) x = source val + 1
   // 2) In binary, write [countbits(x) - 1] 0s, then x
@@ -58,7 +65,11 @@ class BitBuffer {
   // there aren't enough bits left in the buffer.
   bool ConsumeBits(size_t bit_count);
 
- private:
+  // Sets the current offset to the provied byte/bit offsets. The bit
+  // offset is from the given byte, in the range [0,7].
+  bool Seek(size_t byte_offset, size_t bit_offset);
+
+ protected:
   const uint8* const bytes_;
   // The total size of |bytes_|.
   size_t byte_count_;
@@ -68,6 +79,35 @@ class BitBuffer {
   size_t bit_offset_;
 
   DISALLOW_COPY_AND_ASSIGN(BitBuffer);
+};
+
+// A BitBuffer API for write operations. Supports symmetric write APIs to the
+// reading APIs of BitBuffer. Note that the read/write offset is shared with the
+// BitBuffer API, so both reading and writing will consume bytes/bits.
+class BitBufferWriter : public BitBuffer {
+ public:
+  // Constructs a bit buffer for the writable buffer of |bytes|.
+  BitBufferWriter(uint8* bytes, size_t byte_count);
+
+  // Writes byte-sized values from the buffer. Returns false if there isn't
+  // enough data left for the specified type.
+  bool WriteUInt8(uint8 val);
+  bool WriteUInt16(uint16 val);
+  bool WriteUInt32(uint32 val);
+
+  // Writes bit-sized values to the buffer. Returns false if there isn't enough
+  // room left for the specified number of bits.
+  bool WriteBits(uint64 val, size_t bit_count);
+
+  // Writes the exponential golomb encoded version of the supplied value.
+  // Returns false if there isn't enough room left for the value.
+  bool WriteExponentialGolomb(uint32 val);
+
+ private:
+  // The buffer, as a writable array.
+  uint8* const writable_bytes_;
+
+  DISALLOW_COPY_AND_ASSIGN(BitBufferWriter);
 };
 
 }  // namespace rtc

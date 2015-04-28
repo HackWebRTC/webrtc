@@ -10,6 +10,7 @@
 
 #include "webrtc/base/bitbuffer.h"
 
+#include <algorithm>
 #include <limits>
 
 #include "webrtc/base/checks.h"
@@ -19,8 +20,7 @@ namespace {
 // Returns the lowest (right-most) |bit_count| bits in |byte|.
 uint8 LowestBits(uint8 byte, size_t bit_count) {
   DCHECK_LE(bit_count, 8u);
-  uint8 mask_shift = 8 - static_cast<uint8>(bit_count);
-  return byte & (0xFF >> mask_shift);
+  return byte & ((1 << bit_count) - 1);
 }
 
 // Returns the highest (left-most) |bit_count| bits in |byte|, shifted to the
@@ -30,6 +30,41 @@ uint8 HighestBits(uint8 byte, size_t bit_count) {
   uint8 shift = 8 - static_cast<uint8>(bit_count);
   uint8 mask = 0xFF << shift;
   return (byte & mask) >> shift;
+}
+
+// Returns the highest byte of |val| in a uint8.
+uint8 HighestByte(uint64 val) {
+  return static_cast<uint8>(val >> 56);
+}
+
+// Returns the result of writing partial data from |source|, of
+// |source_bit_count| size in the highest bits, to |target| at
+// |target_bit_offset| from the highest bit.
+uint8 WritePartialByte(uint8 source, size_t source_bit_count,
+                       uint8 target, size_t target_bit_offset) {
+  DCHECK(target_bit_offset < 8);
+  DCHECK(source_bit_count < 9);
+  DCHECK(source_bit_count <= (8 - target_bit_offset));
+  // Generate a mask for just the bits we're going to overwrite, so:
+  uint8 mask =
+      // The number of bits we want, in the most significant bits...
+      static_cast<uint8>(0xFF << (8 - source_bit_count))
+      // ...shifted over to the target offset from the most signficant bit.
+      >> target_bit_offset;
+
+  // We want the target, with the bits we'll overwrite masked off, or'ed with
+  // the bits from the source we want.
+  return (target & ~mask) | (source >> target_bit_offset);
+}
+
+// Counts the number of bits used in the binary representation of val.
+size_t CountBits(uint64 val) {
+  size_t bit_count = 0;
+  while (val != 0) {
+    bit_count++;
+    val >>= 1;
+  }
+  return bit_count;
 }
 
 }  // namespace
@@ -143,12 +178,104 @@ bool BitBuffer::ReadExponentialGolomb(uint32* val) {
   // read the value.
   size_t value_bit_count = zero_bit_count + 1;
   if (value_bit_count > 32 || !ReadBits(val, value_bit_count)) {
-    byte_offset_ = original_byte_offset;
-    bit_offset_ = original_bit_offset;
+    CHECK(Seek(original_byte_offset, original_bit_offset));
     return false;
   }
   *val -= 1;
   return true;
+}
+
+void BitBuffer::GetCurrentOffset(
+    size_t* out_byte_offset, size_t* out_bit_offset) {
+  CHECK(out_byte_offset != NULL);
+  CHECK(out_bit_offset != NULL);
+  *out_byte_offset = byte_offset_;
+  *out_bit_offset = bit_offset_;
+}
+
+bool BitBuffer::Seek(size_t byte_offset, size_t bit_offset) {
+  if (byte_offset > byte_count_ || bit_offset > 7 ||
+      (byte_offset == byte_count_ && bit_offset > 0)) {
+    return false;
+  }
+  byte_offset_ = byte_offset;
+  bit_offset_ = bit_offset;
+  return true;
+}
+
+BitBufferWriter::BitBufferWriter(uint8* bytes, size_t byte_count)
+  : BitBuffer(bytes, byte_count), writable_bytes_(bytes) {
+}
+
+bool BitBufferWriter::WriteUInt8(uint8 val) {
+  return WriteBits(val, sizeof(uint8) * 8);
+}
+
+bool BitBufferWriter::WriteUInt16(uint16 val) {
+  return WriteBits(val, sizeof(uint16) * 8);
+}
+
+bool BitBufferWriter::WriteUInt32(uint32 val) {
+  return WriteBits(val, sizeof(uint32) * 8);
+}
+
+bool BitBufferWriter::WriteBits(uint64 val, size_t bit_count) {
+  if (bit_count > RemainingBitCount()) {
+    return false;
+  }
+  size_t total_bits = bit_count;
+
+  // For simplicity, push the bits we want to read from val to the highest bits.
+  val <<= (sizeof(uint64) * 8 - bit_count);
+
+  uint8* bytes = writable_bytes_ + byte_offset_;
+
+  // The first byte is relatively special; the bit offset to write to may put us
+  // in the middle of the byte, and the total bit count to write may require we
+  // save the bits at the end of the byte.
+  size_t remaining_bits_in_current_byte = 8 - bit_offset_;
+  size_t bits_in_first_byte =
+      std::min(bit_count, remaining_bits_in_current_byte);
+  *bytes = WritePartialByte(
+      HighestByte(val), bits_in_first_byte, *bytes, bit_offset_);
+  if (bit_count <= remaining_bits_in_current_byte) {
+    // Nothing left to write, so quit early.
+    return ConsumeBits(total_bits);
+  }
+
+  // Subtract what we've written from the bit count, shift it off the value, and
+  // write the remaining full bytes.
+  val <<= bits_in_first_byte;
+  bytes++;
+  bit_count -= bits_in_first_byte;
+  while (bit_count >= 8) {
+    *bytes++ = HighestByte(val);
+    val <<= 8;
+    bit_count -= 8;
+  }
+
+  // Last byte may also be partial, so write the remaining bits from the top of
+  // val.
+  if (bit_count > 0) {
+    *bytes = WritePartialByte(HighestByte(val), bit_count, *bytes, 0);
+  }
+
+  // All done! Consume the bits we've written.
+  return ConsumeBits(total_bits);
+}
+
+bool BitBufferWriter::WriteExponentialGolomb(uint32 val) {
+  // We don't support reading UINT32_MAX, because it doesn't fit in a uint32
+  // when encoded, so don't support writing it either.
+  if (val == std::numeric_limits<uint32>::max()) {
+    return false;
+  }
+  uint64 val_to_encode = static_cast<uint64>(val) + 1;
+
+  // We need to write CountBits(val+1) 0s and then val+1. Since val (as a
+  // uint64) has leading zeros, we can just write the total golomb encoded size
+  // worth of bits, knowing the value will appear last.
+  return WriteBits(val_to_encode, CountBits(val_to_encode) * 2 - 1);
 }
 
 }  // namespace rtc

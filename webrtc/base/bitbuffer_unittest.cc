@@ -135,6 +135,39 @@ TEST(BitBufferTest, ReadBits) {
   EXPECT_FALSE(buffer.ReadBits(&val, 1));
 }
 
+TEST(BitBufferTest, SetOffsetValues) {
+  uint8 bytes[4] = {0};
+  BitBufferWriter buffer(bytes, 4);
+
+  size_t byte_offset, bit_offset;
+  // Bit offsets are [0,7].
+  EXPECT_TRUE(buffer.Seek(0, 0));
+  EXPECT_TRUE(buffer.Seek(0, 7));
+  buffer.GetCurrentOffset(&byte_offset, &bit_offset);
+  EXPECT_EQ(0u, byte_offset);
+  EXPECT_EQ(7u, bit_offset);
+  EXPECT_FALSE(buffer.Seek(0, 8));
+  buffer.GetCurrentOffset(&byte_offset, &bit_offset);
+  EXPECT_EQ(0u, byte_offset);
+  EXPECT_EQ(7u, bit_offset);
+  // Byte offsets are [0,length]. At byte offset length, the bit offset must be
+  // 0.
+  EXPECT_TRUE(buffer.Seek(0, 0));
+  EXPECT_TRUE(buffer.Seek(2, 4));
+  buffer.GetCurrentOffset(&byte_offset, &bit_offset);
+  EXPECT_EQ(2u, byte_offset);
+  EXPECT_EQ(4u, bit_offset);
+  EXPECT_TRUE(buffer.Seek(4, 0));
+  EXPECT_FALSE(buffer.Seek(5, 0));
+  buffer.GetCurrentOffset(&byte_offset, &bit_offset);
+  EXPECT_EQ(4u, byte_offset);
+  EXPECT_EQ(0u, bit_offset);
+  EXPECT_FALSE(buffer.Seek(4, 1));
+
+  // Passing a NULL out parameter is death.
+  EXPECT_DEATH(buffer.GetCurrentOffset(&byte_offset, NULL), "");
+}
+
 uint64 GolombEncoded(uint32 val) {
   val++;
   uint32 bit_counter = val;
@@ -146,19 +179,23 @@ uint64 GolombEncoded(uint32 val) {
   return static_cast<uint64>(val) << (64 - (bit_count * 2 - 1));
 }
 
-TEST(BitBufferTest, GolombString) {
-  char test_string[] = "my precious";
-  for (size_t i = 0; i < ARRAY_SIZE(test_string); ++i) {
-    uint64 encoded_val = GolombEncoded(test_string[i]);
-    // Use ByteBuffer to convert to bytes, to account for endianness (BitBuffer
-    // requires network order).
-    ByteBuffer byteBuffer;
+TEST(BitBufferTest, GolombUint32Values) {
+  ByteBuffer byteBuffer;
+  byteBuffer.Resize(16);
+  BitBuffer buffer(reinterpret_cast<const uint8*>(byteBuffer.Data()),
+                   byteBuffer.Capacity());
+  // Test over the uint32 range with a large enough step that the test doesn't
+  // take forever. Around 20,000 iterations should do.
+  const int kStep = std::numeric_limits<uint32>::max() / 20000;
+  for (uint32 i = 0; i < std::numeric_limits<uint32>::max() - kStep;
+       i += kStep) {
+    uint64 encoded_val = GolombEncoded(i);
+    byteBuffer.Clear();
     byteBuffer.WriteUInt64(encoded_val);
-    BitBuffer buffer(reinterpret_cast<const uint8*>(byteBuffer.Data()),
-                     byteBuffer.Length());
     uint32 decoded_val;
+    EXPECT_TRUE(buffer.Seek(0, 0));
     EXPECT_TRUE(buffer.ReadExponentialGolomb(&decoded_val));
-    EXPECT_EQ(test_string[i], static_cast<char>(decoded_val));
+    EXPECT_EQ(i, decoded_val);
   }
 }
 
@@ -178,6 +215,89 @@ TEST(BitBufferTest, NoGolombOverread) {
   // Golomb should have read 9 bits, so 0x01FF, and since it is golomb, the
   // result is 0x01FF - 1 = 0x01FE.
   EXPECT_EQ(0x01FEu, decoded_val);
+}
+
+TEST(BitBufferWriterTest, SymmetricReadWrite) {
+  uint8 bytes[16] = {0};
+  BitBufferWriter buffer(bytes, 4);
+
+  // Write some bit data at various sizes.
+  EXPECT_TRUE(buffer.WriteBits(0x2u, 3));
+  EXPECT_TRUE(buffer.WriteBits(0x1u, 2));
+  EXPECT_TRUE(buffer.WriteBits(0x53u, 7));
+  EXPECT_TRUE(buffer.WriteBits(0x0u, 2));
+  EXPECT_TRUE(buffer.WriteBits(0x1u, 1));
+  EXPECT_TRUE(buffer.WriteBits(0x1ABCDu, 17));
+  // That should be all that fits in the buffer.
+  EXPECT_FALSE(buffer.WriteBits(1, 1));
+
+  EXPECT_TRUE(buffer.Seek(0, 0));
+  uint32 val;
+  EXPECT_TRUE(buffer.ReadBits(&val, 3));
+  EXPECT_EQ(0x2u, val);
+  EXPECT_TRUE(buffer.ReadBits(&val, 2));
+  EXPECT_EQ(0x1u, val);
+  EXPECT_TRUE(buffer.ReadBits(&val, 7));
+  EXPECT_EQ(0x53u, val);
+  EXPECT_TRUE(buffer.ReadBits(&val, 2));
+  EXPECT_EQ(0x0u, val);
+  EXPECT_TRUE(buffer.ReadBits(&val, 1));
+  EXPECT_EQ(0x1u, val);
+  EXPECT_TRUE(buffer.ReadBits(&val, 17));
+  EXPECT_EQ(0x1ABCDu, val);
+  // And there should be nothing left.
+  EXPECT_FALSE(buffer.ReadBits(&val, 1));
+}
+
+TEST(BitBufferWriterTest, SymmetricBytesMisaligned) {
+  uint8 bytes[16] = {0};
+  BitBufferWriter buffer(bytes, 16);
+
+  // Offset 3, to get things misaligned.
+  EXPECT_TRUE(buffer.ConsumeBits(3));
+  EXPECT_TRUE(buffer.WriteUInt8(0x12u));
+  EXPECT_TRUE(buffer.WriteUInt16(0x3456u));
+  EXPECT_TRUE(buffer.WriteUInt32(0x789ABCDEu));
+
+  buffer.Seek(0, 3);
+  uint8 val8;
+  uint16 val16;
+  uint32 val32;
+  EXPECT_TRUE(buffer.ReadUInt8(&val8));
+  EXPECT_EQ(0x12u, val8);
+  EXPECT_TRUE(buffer.ReadUInt16(&val16));
+  EXPECT_EQ(0x3456u, val16);
+  EXPECT_TRUE(buffer.ReadUInt32(&val32));
+  EXPECT_EQ(0x789ABCDEu, val32);
+}
+
+TEST(BitBufferWriterTest, SymmetricGolomb) {
+  char test_string[] = "my precious";
+  uint8 bytes[64] = {0};
+  BitBufferWriter buffer(bytes, 64);
+  for (size_t i = 0; i < ARRAY_SIZE(test_string); ++i) {
+    EXPECT_TRUE(buffer.WriteExponentialGolomb(test_string[i]));
+  }
+  buffer.Seek(0, 0);
+  for (size_t i = 0; i < ARRAY_SIZE(test_string); ++i) {
+    uint32 val;
+    EXPECT_TRUE(buffer.ReadExponentialGolomb(&val));
+    EXPECT_LE(val, std::numeric_limits<uint8>::max());
+    EXPECT_EQ(test_string[i], static_cast<char>(val));
+  }
+}
+
+TEST(BitBufferWriterTest, WriteClearsBits) {
+  uint8 bytes[] = {0xFF, 0xFF};
+  BitBufferWriter buffer(bytes, 2);
+  EXPECT_TRUE(buffer.ConsumeBits(3));
+  EXPECT_TRUE(buffer.WriteBits(0, 1));
+  EXPECT_EQ(0xEFu, bytes[0]);
+  EXPECT_TRUE(buffer.WriteBits(0, 3));
+  EXPECT_EQ(0xE1u, bytes[0]);
+  EXPECT_TRUE(buffer.WriteBits(0, 2));
+  EXPECT_EQ(0xE0u, bytes[0]);
+  EXPECT_EQ(0x7F, bytes[1]);
 }
 
 }  // namespace rtc
