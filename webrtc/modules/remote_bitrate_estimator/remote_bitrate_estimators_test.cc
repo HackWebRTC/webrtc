@@ -8,6 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#ifndef WEBRTC_WIN
+#include <sys/types.h>
+#include <unistd.h>
+#endif
+
 #include <sstream>
 
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
@@ -241,7 +246,14 @@ class BweFeedbackTest
   virtual ~BweFeedbackTest() {}
 
  protected:
-  void SetUp() override { BweTest::SetUp(); }
+  void SetUp() override {
+    unsigned int seed = Clock::GetRealTimeClock()->TimeInMicroseconds();
+#ifndef WEBRTC_WIN
+    seed *= getpid();
+#endif
+    srand(seed);
+    BweTest::SetUp();
+  }
 
  private:
   DISALLOW_COPY_AND_ASSIGN(BweFeedbackTest);
@@ -321,28 +333,27 @@ TEST_P(BweFeedbackTest, DISABLED_GoogleWifiTrace3Mbps) {
                filter.GetDelayStats(), std::vector<Stats<double>>());
 }
 
-TEST_P(BweFeedbackTest, PacedSelfFairnessTest) {
-  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
+TEST_P(BweFeedbackTest, PacedSelfFairness50msTest) {
+  RunFairnessTest(GetParam(), 4, 0, 300, 3000, 50);
+}
+
+TEST_P(BweFeedbackTest, PacedSelfFairness500msTest) {
   RunFairnessTest(GetParam(), 4, 0, 300, 3000, 50);
 }
 
 TEST_P(BweFeedbackTest, PacedSelfFairness1000msTest) {
-  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
   RunFairnessTest(GetParam(), 4, 0, 300, 3000, 1000);
 }
 
 TEST_P(BweFeedbackTest, TcpFairness50msTest) {
-  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
   RunFairnessTest(GetParam(), 1, 1, 300, 2000, 50);
 }
 
 TEST_P(BweFeedbackTest, TcpFairness500msTest) {
-  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
   RunFairnessTest(GetParam(), 1, 1, 300, 2000, 500);
 }
 
 TEST_P(BweFeedbackTest, TcpFairness1000msTest) {
-  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
   RunFairnessTest(GetParam(), 1, 1, 300, 2000, 1000);
 }
 }  // namespace bwe
