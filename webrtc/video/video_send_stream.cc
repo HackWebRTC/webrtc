@@ -191,13 +191,10 @@ VideoSendStream::VideoSendStream(
   capture_->AllocateExternalCaptureDevice(capture_id_, external_capture_);
   capture_->ConnectCaptureDevice(capture_id_, channel_);
 
-  network_ = ViENetwork::GetInterface(video_engine);
-  DCHECK(network_ != nullptr);
-
-  network_->RegisterSendTransport(channel_, transport_adapter_);
+  vie_channel_->RegisterSendTransport(&transport_adapter_);
   // 28 to match packet overhead in ModuleRtpRtcpImpl.
-  network_->SetMTU(channel_,
-                   static_cast<unsigned int>(config_.rtp.max_packet_size + 28));
+  vie_channel_->SetMTU(
+      static_cast<unsigned int>(config_.rtp.max_packet_size + 28));
 
   DCHECK(config.encoder_settings.encoder != nullptr);
   DCHECK_GE(config.encoder_settings.payload_type, 0);
@@ -251,7 +248,7 @@ VideoSendStream::~VideoSendStream() {
 
   image_process_->DeRegisterPreEncodeCallback(channel_);
 
-  network_->DeregisterSendTransport(channel_);
+  vie_channel_->DeregisterSendTransport();
 
   capture_->DisconnectCaptureDevice(channel_);
   capture_->ReleaseCaptureDevice(capture_id_);
@@ -265,7 +262,6 @@ VideoSendStream::~VideoSendStream() {
   video_engine_base_->Release();
   capture_->Release();
   codec_->Release();
-  network_->Release();
 }
 
 void VideoSendStream::IncomingCapturedFrame(const I420VideoFrame& frame) {
@@ -426,7 +422,7 @@ bool VideoSendStream::ReconfigureVideoEncoder(
 }
 
 bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
-  return network_->ReceivedRTCPPacket(channel_, packet, length) == 0;
+  return vie_channel_->ReceivedRTCPPacket(packet, length) == 0;
 }
 
 VideoSendStream::Stats VideoSendStream::GetStats() {
@@ -485,7 +481,7 @@ void VideoSendStream::SignalNetworkState(Call::NetworkState state) {
   // sent due to the network state changed will not be dropped.
   if (state == Call::kNetworkUp)
     vie_channel_->SetRTCPMode(kRtcpCompound);
-  network_->SetNetworkTransmissionState(channel_, state == Call::kNetworkUp);
+  vie_encoder_->SetNetworkTransmissionState(state == Call::kNetworkUp);
   if (state == Call::kNetworkDown)
     vie_channel_->SetRTCPMode(kRtcpOff);
 }
