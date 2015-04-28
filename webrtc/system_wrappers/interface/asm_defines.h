@@ -38,6 +38,9 @@ bl _\name
 .hidden \name
 .endm
 .macro DEFINE_FUNCTION name
+#if defined(__linux__) && defined(__ELF__)
+.type \name,%function
+#endif
 \name:
 .endm
 .macro CALL_FUNCTION name
