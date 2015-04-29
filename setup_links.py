@@ -348,7 +348,8 @@ class WebRTCLinkSetup():
         if not self._dry_run:
           if os.path.exists(link_path):
             if sys.platform.startswith('win') and os.path.isdir(link_path):
-              subprocess.check_call(['rmdir', '/q', link_path], shell=True)
+              subprocess.check_call(['rmdir', '/q', '/s', link_path],
+                                    shell=True)
             else:
               os.remove(link_path)
           del self._links_db[source]
