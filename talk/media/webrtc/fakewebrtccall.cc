@@ -199,6 +199,14 @@ webrtc::Call::NetworkState FakeCall::GetNetworkState() const {
   return network_state_;
 }
 
+webrtc::AudioReceiveStream* FakeCall::CreateAudioReceiveStream(
+    const webrtc::AudioReceiveStream::Config& config) {
+  return nullptr;
+}
+void FakeCall::DestroyAudioReceiveStream(
+    webrtc::AudioReceiveStream* receive_stream) {
+}
+
 webrtc::VideoSendStream* FakeCall::CreateVideoSendStream(
     const webrtc::VideoSendStream::Config& config,
     const webrtc::VideoEncoderConfig& encoder_config) {
@@ -247,8 +255,11 @@ webrtc::PacketReceiver* FakeCall::Receiver() {
   return this;
 }
 
-FakeCall::DeliveryStatus FakeCall::DeliverPacket(const uint8_t* packet,
+FakeCall::DeliveryStatus FakeCall::DeliverPacket(webrtc::MediaType media_type,
+                                                 const uint8_t* packet,
                                                  size_t length) {
+  EXPECT_TRUE(media_type == webrtc::MediaType::ANY ||
+              media_type == webrtc::MediaType::VIDEO);
   EXPECT_GE(length, 12u);
   uint32_t ssrc;
   if (!GetRtpSsrc(packet, length, &ssrc))

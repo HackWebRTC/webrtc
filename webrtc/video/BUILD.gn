@@ -10,6 +10,8 @@ import("../build/webrtc.gni")
 
 source_set("video") {
   sources = [
+    "audio_receive_stream.cc",
+    "audio_receive_stream.h",
     "call.cc",
     "encoded_frame_callback_adapter.cc",
     "encoded_frame_callback_adapter.h",

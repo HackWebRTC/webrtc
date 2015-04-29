@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "webrtc/common_types.h"
+#include "webrtc/audio_receive_stream.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
@@ -23,6 +24,13 @@ class VoiceEngine;
 
 const char* Version();
 
+enum class MediaType {
+  ANY,
+  AUDIO,
+  VIDEO,
+  DATA
+};
+
 class PacketReceiver {
  public:
   enum DeliveryStatus {
@@ -31,9 +39,9 @@ class PacketReceiver {
     DELIVERY_PACKET_ERROR,
   };
 
-  virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
+  virtual DeliveryStatus DeliverPacket(MediaType media_type,
+                                       const uint8_t* packet,
                                        size_t length) = 0;
-
  protected:
   virtual ~PacketReceiver() {}
 };
@@ -105,10 +113,14 @@ class Call {
 
   static Call* Create(const Call::Config& config);
 
+  virtual AudioReceiveStream* CreateAudioReceiveStream(
+      const AudioReceiveStream::Config& config) = 0;
+  virtual void DestroyAudioReceiveStream(
+      AudioReceiveStream* receive_stream) = 0;
+
   virtual VideoSendStream* CreateVideoSendStream(
       const VideoSendStream::Config& config,
       const VideoEncoderConfig& encoder_config) = 0;
-
   virtual void DestroyVideoSendStream(VideoSendStream* send_stream) = 0;
 
   virtual VideoReceiveStream* CreateVideoReceiveStream(

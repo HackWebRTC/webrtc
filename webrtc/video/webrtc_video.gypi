@@ -11,6 +11,8 @@
       '<(webrtc_root)/video_engine/video_engine.gyp:video_engine_core',
     ],
     'webrtc_video_sources': [
+      'video/audio_receive_stream.cc',
+      'video/audio_receive_stream.h',
       'video/call.cc',
       'video/encoded_frame_callback_adapter.cc',
       'video/encoded_frame_callback_adapter.h',

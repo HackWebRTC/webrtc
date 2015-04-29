@@ -202,7 +202,8 @@ void FakeNetworkPipe::Process() {
   while (!packets_to_deliver.empty()) {
     NetworkPacket* packet = packets_to_deliver.front();
     packets_to_deliver.pop();
-    packet_receiver_->DeliverPacket(packet->data(), packet->data_length());
+    packet_receiver_->DeliverPacket(MediaType::ANY, packet->data(),
+                                    packet->data_length());
     delete packet;
   }
 }

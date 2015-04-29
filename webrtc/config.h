@@ -53,11 +53,13 @@ struct FecConfig {
 struct RtpExtension {
   RtpExtension(const std::string& name, int id) : name(name), id(id) {}
   std::string ToString() const;
-  static bool IsSupported(const std::string& name);
+  static bool IsSupportedForAudio(const std::string& name);
+  static bool IsSupportedForVideo(const std::string& name);
 
   static const char* kTOffset;
   static const char* kAbsSendTime;
   static const char* kVideoRotation;
+  static const char* kAudioLevel;
   std::string name;
   int id;
 };

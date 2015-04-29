@@ -29,6 +29,24 @@ std::string RtpExtension::ToString() const {
   return ss.str();
 }
 
+const char* RtpExtension::kTOffset = "urn:ietf:params:rtp-hdrext:toffset";
+const char* RtpExtension::kAbsSendTime =
+    "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
+const char* RtpExtension::kVideoRotation = "urn:3gpp:video-orientation";
+const char* RtpExtension::kAudioLevel =
+    "urn:ietf:params:rtp-hdrext:ssrc-audio-level";
+
+bool RtpExtension::IsSupportedForAudio(const std::string& name) {
+  return name == webrtc::RtpExtension::kAbsSendTime ||
+         name == webrtc::RtpExtension::kAudioLevel;
+}
+
+bool RtpExtension::IsSupportedForVideo(const std::string& name) {
+  return name == webrtc::RtpExtension::kTOffset ||
+         name == webrtc::RtpExtension::kAbsSendTime ||
+         name == webrtc::RtpExtension::kVideoRotation;
+}
+
 VideoStream::VideoStream()
     : width(0),
       height(0),

@@ -990,13 +990,13 @@ TEST_F(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
     }
 
    private:
-    DeliveryStatus DeliverPacket(const uint8_t* packet,
+    DeliveryStatus DeliverPacket(MediaType media_type, const uint8_t* packet,
                                  size_t length) override {
       if (RtpHeaderParser::IsRtcp(packet, length)) {
-        return receiver_->DeliverPacket(packet, length);
+        return receiver_->DeliverPacket(media_type, packet, length);
       } else {
         DeliveryStatus delivery_status =
-            receiver_->DeliverPacket(packet, length);
+            receiver_->DeliverPacket(media_type, packet, length);
         EXPECT_EQ(DELIVERY_UNKNOWN_SSRC, delivery_status);
         delivered_packet_->Set();
         return delivery_status;
@@ -1364,7 +1364,7 @@ TEST_F(EndToEndTest, VerifyBandwidthStats) {
           receiver_call_(nullptr),
           has_seen_pacer_delay_(false) {}
 
-    DeliveryStatus DeliverPacket(const uint8_t* packet,
+    DeliveryStatus DeliverPacket(MediaType media_type, const uint8_t* packet,
                                  size_t length) override {
       Call::Stats sender_stats = sender_call_->GetStats();
       Call::Stats receiver_stats = receiver_call_->GetStats();
@@ -1374,7 +1374,8 @@ TEST_F(EndToEndTest, VerifyBandwidthStats) {
           receiver_stats.recv_bandwidth_bps > 0 && has_seen_pacer_delay_) {
         observation_complete_->Set();
       }
-      return receiver_call_->Receiver()->DeliverPacket(packet, length);
+      return receiver_call_->Receiver()->DeliverPacket(media_type, packet,
+                                                       length);
     }
 
     void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
@@ -1530,14 +1531,15 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx, bool use_red) {
       return SEND_PACKET;
     }
 
-    DeliveryStatus DeliverPacket(const uint8_t* packet,
+    DeliveryStatus DeliverPacket(MediaType media_type, const uint8_t* packet,
                                  size_t length) override {
       // GetStats calls GetSendChannelRtcpStatistics
       // (via VideoSendStream::GetRtt) which updates ReportBlockStats used by
       // WebRTC.Video.SentPacketsLostInPercent.
       // TODO(asapersson): Remove dependency on calling GetStats.
       sender_call_->GetStats();
-      return receiver_call_->Receiver()->DeliverPacket(packet, length);
+      return receiver_call_->Receiver()->DeliverPacket(media_type, packet,
+                                                       length);
     }
 
     bool MinMetricRunTimePassed() {

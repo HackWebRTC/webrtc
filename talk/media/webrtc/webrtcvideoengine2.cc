@@ -230,7 +230,7 @@ static std::vector<webrtc::RtpExtension> FilterRtpExtensions(
   std::vector<webrtc::RtpExtension> webrtc_extensions;
   for (size_t i = 0; i < extensions.size(); ++i) {
     // Unsupported extensions will be ignored.
-    if (webrtc::RtpExtension::IsSupported(extensions[i].uri)) {
+    if (webrtc::RtpExtension::IsSupportedForVideo(extensions[i].uri)) {
       webrtc_extensions.push_back(webrtc::RtpExtension(
           extensions[i].uri, extensions[i].id));
     } else {
@@ -1211,7 +1211,7 @@ void WebRtcVideoChannel2::OnPacketReceived(
     rtc::Buffer* packet,
     const rtc::PacketTime& packet_time) {
   const webrtc::PacketReceiver::DeliveryStatus delivery_result =
-      call_->Receiver()->DeliverPacket(
+      call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO,
           reinterpret_cast<const uint8_t*>(packet->data()), packet->size());
   switch (delivery_result) {
     case webrtc::PacketReceiver::DELIVERY_OK:
@@ -1237,7 +1237,7 @@ void WebRtcVideoChannel2::OnPacketReceived(
       break;
   }
 
-  if (call_->Receiver()->DeliverPacket(
+  if (call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO,
           reinterpret_cast<const uint8_t*>(packet->data()), packet->size()) !=
       webrtc::PacketReceiver::DELIVERY_OK) {
     LOG(LS_WARNING) << "Failed to deliver RTP packet on re-delivery.";
@@ -1248,7 +1248,7 @@ void WebRtcVideoChannel2::OnPacketReceived(
 void WebRtcVideoChannel2::OnRtcpReceived(
     rtc::Buffer* packet,
     const rtc::PacketTime& packet_time) {
-  if (call_->Receiver()->DeliverPacket(
+  if (call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO,
           reinterpret_cast<const uint8_t*>(packet->data()), packet->size()) !=
       webrtc::PacketReceiver::DELIVERY_OK) {
     LOG(LS_WARNING) << "Failed to deliver RTCP packet.";

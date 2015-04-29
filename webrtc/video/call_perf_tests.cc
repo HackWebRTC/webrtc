@@ -197,8 +197,10 @@ void CallPerfTest::TestAudioVideoSync(bool fec) {
         : channel_(channel),
           voe_network_(voe_network),
           parser_(RtpHeaderParser::Create()) {}
-    DeliveryStatus DeliverPacket(const uint8_t* packet,
+    DeliveryStatus DeliverPacket(MediaType media_type, const uint8_t* packet,
                                  size_t length) override {
+      EXPECT_TRUE(media_type == MediaType::ANY ||
+                  media_type == MediaType::AUDIO);
       int ret;
       if (parser_->IsRtcp(packet, length)) {
         ret = voe_network_->ReceivedRTCPPacket(channel_, packet, length);
@@ -522,7 +524,7 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
       test::RtpRtcpObserver::SetReceivers(this, receive_transport_receiver);
     }
 
-    DeliveryStatus DeliverPacket(const uint8_t* packet,
+    DeliveryStatus DeliverPacket(MediaType media_type, const uint8_t* packet,
                                  size_t length) override {
       VideoSendStream::Stats stats = send_stream_->GetStats();
       if (stats.substreams.size() > 0) {
@@ -555,7 +557,8 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
             observation_complete_->Set();
         }
       }
-      return send_transport_receiver_->DeliverPacket(packet, length);
+      return send_transport_receiver_->DeliverPacket(media_type, packet,
+                                                     length);
     }
 
     void OnStreamsCreated(

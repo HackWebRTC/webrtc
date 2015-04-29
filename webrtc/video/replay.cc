@@ -287,7 +287,8 @@ void RtpReplay() {
     if (!rtp_reader->NextPacket(&packet))
       break;
     ++num_packets;
-    switch (call->Receiver()->DeliverPacket(packet.data, packet.length)) {
+    switch (call->Receiver()->DeliverPacket(webrtc::MediaType::ANY, packet.data,
+                                            packet.length)) {
       case PacketReceiver::DELIVERY_OK:
         break;
       case PacketReceiver::DELIVERY_UNKNOWN_SSRC: {
