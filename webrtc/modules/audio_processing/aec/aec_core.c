@@ -1607,10 +1607,11 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   // Default target suppression mode.
   aec->nlp_mode = 1;
 
-  // Sampling frequency multiplier
-  // SWB is processed as 160 frame size
+  // Sampling frequency multiplier w.r.t. 8 kHz.
+  // In case of multiple bands we process the lower band in 16 kHz, hence the
+  // multiplier is always 2.
   if (aec->num_bands > 1) {
-    aec->mult = (short)aec->sampFreq / 16000;
+    aec->mult = 2;
   } else {
     aec->mult = (short)aec->sampFreq / 8000;
   }
