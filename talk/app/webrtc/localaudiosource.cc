@@ -78,6 +78,8 @@ void FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
       options->typing_detection.Set(value);
     else if (iter->key == MediaConstraintsInterface::kAudioMirroring)
       options->stereo_swapping.Set(value);
+    else if (iter->key == MediaConstraintsInterface::kAecDump)
+      options->aec_dump.Set(value);
   }
 }
 
