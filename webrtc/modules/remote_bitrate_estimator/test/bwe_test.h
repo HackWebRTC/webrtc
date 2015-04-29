@@ -78,8 +78,14 @@ class BweTest {
 
   void PrintResults(double max_throughput_kbps,
                     Stats<double> throughput_kbps,
-                    Stats<double> delay_ms,
-                    std::vector<Stats<double>> flow_throughput_kbps);
+                    int flow_id,
+                    Stats<double> flow_delay_ms,
+                    Stats<double> flow_throughput_kbps);
+
+  void PrintResults(double max_throughput_kbps,
+                    Stats<double> throughput_kbps,
+                    std::map<int, Stats<double>> flow_delay_ms,
+                    std::map<int, Stats<double>> flow_throughput_kbps);
 
   void RunFairnessTest(BandwidthEstimatorType bwe_type,
                        size_t num_media_flows,

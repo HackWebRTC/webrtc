@@ -36,6 +36,8 @@ class PacketReceiver : public PacketProcessor {
 
   void LogStats();
 
+  Stats<double> GetDelayStats() const;
+
  protected:
   void PlotDelay(int64_t arrival_time_ms, int64_t send_time_ms);
 
@@ -43,6 +45,7 @@ class PacketReceiver : public PacketProcessor {
   std::string delay_log_prefix_;
   int64_t last_delay_plot_ms_;
   bool plot_delay_;
+  Stats<double> delay_stats_;
   rtc::scoped_ptr<BweReceiver> bwe_receiver_;
 
  private:

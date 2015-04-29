@@ -280,8 +280,8 @@ TEST_P(BweFeedbackTest, Choke1000kbps500kbps1000kbps) {
   filter.SetCapacity(kHighCapacityKbps);
   RunFor(60 * 1000);
   PrintResults((2 * kHighCapacityKbps + kLowCapacityKbps) / 3.0,
-               counter.GetBitrateStats(), filter.GetDelayStats(),
-               std::vector<Stats<double>>());
+               counter.GetBitrateStats(), 0, receiver.GetDelayStats(),
+               counter.GetBitrateStats());
 }
 
 TEST_P(BweFeedbackTest, Choke200kbps30kbps200kbps) {
@@ -301,8 +301,8 @@ TEST_P(BweFeedbackTest, Choke200kbps30kbps200kbps) {
   RunFor(60 * 1000);
 
   PrintResults((2 * kHighCapacityKbps + kLowCapacityKbps) / 3.0,
-               counter.GetBitrateStats(), filter.GetDelayStats(),
-               std::vector<Stats<double>>());
+               counter.GetBitrateStats(), 0, receiver.GetDelayStats(),
+               counter.GetBitrateStats());
 }
 
 TEST_P(BweFeedbackTest, Verizon4gDownlinkTest) {
@@ -315,7 +315,7 @@ TEST_P(BweFeedbackTest, Verizon4gDownlinkTest) {
   ASSERT_TRUE(filter.Init(test::ResourcePath("verizon4g-downlink", "rx")));
   RunFor(22 * 60 * 1000);
   PrintResults(filter.GetBitrateStats().GetMean(), counter2.GetBitrateStats(),
-               filter.GetDelayStats(), std::vector<Stats<double>>());
+               0, receiver.GetDelayStats(), counter2.GetBitrateStats());
 }
 
 // webrtc:3277
@@ -330,7 +330,7 @@ TEST_P(BweFeedbackTest, DISABLED_GoogleWifiTrace3Mbps) {
   ASSERT_TRUE(filter.Init(test::ResourcePath("google-wifi-3mbps", "rx")));
   RunFor(300 * 1000);
   PrintResults(filter.GetBitrateStats().GetMean(), counter2.GetBitrateStats(),
-               filter.GetDelayStats(), std::vector<Stats<double>>());
+               0, receiver.GetDelayStats(), counter2.GetBitrateStats());
 }
 
 TEST_P(BweFeedbackTest, PacedSelfFairness50msTest) {

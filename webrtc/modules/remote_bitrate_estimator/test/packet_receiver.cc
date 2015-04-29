@@ -58,8 +58,9 @@ void PacketReceiver::RunFor(int64_t time_ms, Packets* in_out) {
       // We're treating the send time (from previous filter) as the arrival
       // time once packet reaches the estimator.
       int64_t arrival_time_ms = (media_packet->send_time_us() + 500) / 1000;
-      PlotDelay(arrival_time_ms,
-                (media_packet->creation_time_us() + 500) / 1000);
+      int64_t send_time_ms = (media_packet->creation_time_us() + 500) / 1000;
+      delay_stats_.Push(arrival_time_ms - send_time_ms);
+      PlotDelay(arrival_time_ms, send_time_ms);
 
       bwe_receiver_->ReceivePacket(arrival_time_ms, *media_packet);
       FeedbackPacket* fb = bwe_receiver_->GetFeedback(arrival_time_ms);
@@ -84,6 +85,10 @@ void PacketReceiver::PlotDelay(int64_t arrival_time_ms, int64_t send_time_ms) {
                           arrival_time_ms - send_time_ms);
     last_delay_plot_ms_ = arrival_time_ms;
   }
+}
+
+Stats<double> PacketReceiver::GetDelayStats() const {
+  return delay_stats_;
 }
 }  // namespace bwe
 }  // namespace testing
