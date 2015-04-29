@@ -32,10 +32,12 @@ bool H264SpsParser::Parse() {
 
   const char* sps_bytes = reinterpret_cast<const char*>(sps_);
   // First, parse out rbsp, which is basically the source buffer minus emulation
-  // bytes (0x03). RBSP is defined in section 7.3.1 of the H.264 standard.
+  // bytes (the last byte of a 0x00 0x00 0x03 sequence). RBSP is defined in
+  // section 7.3.1 of the H.264 standard.
   rtc::ByteBuffer rbsp_buffer;
   for (size_t i = 0; i < byte_length_;) {
-    if (i < byte_length_ - 3 && sps_[i + 3] == 3) {
+    if (i < byte_length_ - 3 &&
+        sps_[i] == 0 && sps_[i + 1] == 0 && sps_[i + 2] == 3) {
       // Two rbsp bytes + the emulation byte.
       rbsp_buffer.WriteBytes(sps_bytes + i, 2);
       i += 3;
