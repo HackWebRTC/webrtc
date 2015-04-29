@@ -973,7 +973,7 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test,
     EXPECT_EQ(webrtc_ext, recv_stream->GetConfig().rtp.extensions[0].name);
   }
 
-  void TestCpuAdaptation(bool enable_overuse);
+  void TestCpuAdaptation(bool enable_overuse, bool is_screenshare);
 
   FakeVideoSendStream* SetDenoisingOption(bool enabled) {
     VideoOptions options;
@@ -1644,14 +1644,19 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_SendReceiveBitratesStats) {
 }
 
 TEST_F(WebRtcVideoChannel2Test, AdaptsOnOveruse) {
-  TestCpuAdaptation(true);
+  TestCpuAdaptation(true, false);
 }
 
 TEST_F(WebRtcVideoChannel2Test, DoesNotAdaptOnOveruseWhenDisabled) {
-  TestCpuAdaptation(false);
+  TestCpuAdaptation(false, false);
 }
 
-void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse) {
+TEST_F(WebRtcVideoChannel2Test, DoesNotAdaptOnOveruseWhenScreensharing) {
+  TestCpuAdaptation(true, true);
+}
+
+void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse,
+                                                bool is_screenshare) {
   cricket::VideoCodec codec = kVp8Codec720p;
   std::vector<cricket::VideoCodec> codecs;
   codecs.push_back(codec);
@@ -1666,6 +1671,7 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse) {
   AddSendStream();
 
   cricket::FakeVideoCapturer capturer;
+  capturer.SetScreencast(is_screenshare);
   EXPECT_TRUE(channel_->SetCapturer(last_ssrc_, &capturer));
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer.Start(capturer.GetSupportedFormats()->front()));
@@ -1684,7 +1690,7 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse) {
 
   EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
 
-  if (enable_overuse) {
+  if (enable_overuse && !is_screenshare) {
     EXPECT_LT(send_stream->GetLastWidth(), codec.width);
     EXPECT_LT(send_stream->GetLastHeight(), codec.height);
   } else {

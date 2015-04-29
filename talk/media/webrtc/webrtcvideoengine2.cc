@@ -1416,8 +1416,12 @@ void WebRtcVideoChannel2::OnLoadUpdate(Load load) {
   rtc::CritScope stream_lock(&capturer_crit_);
   if (!signal_cpu_adaptation_)
     return;
+  // Do not adapt resolution for screen content as this will likely result in
+  // blurry and unreadable text.
   for (auto& kv : capturers_) {
-    if (kv.second != nullptr && kv.second->video_adapter() != nullptr) {
+    if (kv.second != nullptr
+        && !kv.second->IsScreencast()
+        && kv.second->video_adapter() != nullptr) {
       kv.second->video_adapter()->OnCpuResolutionRequest(
           load == kOveruse ? CoordinatedVideoAdapter::DOWNGRADE
                            : CoordinatedVideoAdapter::UPGRADE);
