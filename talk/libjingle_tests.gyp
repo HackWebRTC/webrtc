@@ -250,10 +250,16 @@
   ],
   'conditions': [
     ['OS=="linux"', {
+      'variables': {
+        'junit_jar': '<(DEPTH)/third_party/junit-jar/junit-4.11.jar',
+      },
       'targets': [
         {
           'target_name': 'libjingle_peerconnection_test_jar',
           'type': 'none',
+          'dependencies': [
+            'libjingle.gyp:libjingle_peerconnection_jar',
+          ],
           'actions': [
             {
               'variables': {
@@ -269,7 +275,7 @@
                 '<@(java_files)',
                 '<(PRODUCT_DIR)/libjingle_peerconnection.jar',
                 '<(PRODUCT_DIR)/lib/libjingle_peerconnection_so.so',
-                '<(DEPTH)/third_party/junit/junit-4.11.jar',
+                '<(junit_jar)',
               ],
               'outputs': [
                 '<(PRODUCT_DIR)/libjingle_peerconnection_test.jar',
@@ -277,7 +283,7 @@
               'action': [
                 'build/build_jar.sh', '<(java_home)', '<@(_outputs)',
                 '<(INTERMEDIATE_DIR)',
-                '<(java_src_dir):<(PRODUCT_DIR)/libjingle_peerconnection.jar:<(DEPTH)/third_party/junit/junit-4.11.jar',
+                '<(java_src_dir):<(PRODUCT_DIR)/libjingle_peerconnection.jar:<(junit_jar)',
                 '<@(java_files)'
               ],
             },
@@ -292,7 +298,7 @@
               'inputs': [
                 'app/webrtc/javatests/libjingle_peerconnection_java_unittest.sh',
                 '<(PRODUCT_DIR)/libjingle_peerconnection_test_jar',
-                '<(DEPTH)/third_party/junit/junit-4.11.jar',
+                '<(junit_jar)',
               ],
               'outputs': [
                 '<(PRODUCT_DIR)/libjingle_peerconnection_java_unittest',
@@ -303,7 +309,7 @@
                 'sed -e "s@GYP_JAVA_HOME@<(java_home)@" '
                 '< app/webrtc/javatests/libjingle_peerconnection_java_unittest.sh '
                 '> <(PRODUCT_DIR)/libjingle_peerconnection_java_unittest && '
-                'cp <(DEPTH)/third_party/junit/junit-4.11.jar <(PRODUCT_DIR) && '
+                'cp <(junit_jar) <(PRODUCT_DIR) && '
                 'chmod u+x <(PRODUCT_DIR)/libjingle_peerconnection_java_unittest'
               ],
             },

@@ -6,7 +6,7 @@
 vars = {
   'extra_gyp_flag': '-Dextra_gyp_flag=0',
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': 'a12e1e10c4a910a4f8aa20e3ea8b611846f19ed9',
+  'chromium_revision': '0cb254911980cce90b2e5c7207a37a27420e9ea7',
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
@@ -17,7 +17,7 @@ deps = {
   'src/third_party/gflags/src':
     Var('chromium_git') + '/external/gflags/src@e7390f9185c75f8d902c05ed7d20bb94eb914d0c', # from svn revision 82
 
-  'src/third_party/junit':
+  'src/third_party/junit-jar':
     Var('chromium_git') + '/external/webrtc/deps/third_party/junit@f35596b476aa6e62fd3b3857b9942ddcd13ce35e', # from svn revision 3367
 }
 

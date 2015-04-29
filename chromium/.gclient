@@ -12,7 +12,6 @@ solutions = [{
     'src/third_party/cld_2/src': None,
     'src/third_party/ffmpeg': None,
     'src/third_party/hunspell_dictionaries': None,
-    'src/third_party/junit/src': None,
     'src/third_party/liblouis/src': None,
     'src/third_party/pdfium': None,
     'src/third_party/skia': None,
