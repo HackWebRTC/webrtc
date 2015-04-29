@@ -37,26 +37,6 @@ class ViEImageProcessImpl
   virtual int EnableDeflickering(const int capture_id, const bool enable);
   virtual int EnableColorEnhancement(const int video_channel,
                                      const bool enable);
-  void RegisterPreEncodeCallback(
-      int video_channel,
-      I420FrameCallback* pre_encode_callback) override;
-  void DeRegisterPreEncodeCallback(int video_channel) override;
-
-  void RegisterPostEncodeImageCallback(
-      int video_channel,
-      EncodedImageCallback* post_encode_callback) override;
-  void DeRegisterPostEncodeCallback(int video_channel) override;
-
-  void RegisterPreDecodeImageCallback(
-      int video_channel,
-      EncodedImageCallback* post_encode_callback) override;
-  void DeRegisterPreDecodeCallback(int video_channel) override;
-
-  void RegisterPreRenderCallback(
-      int video_channel,
-      I420FrameCallback* pre_render_callback) override;
-  void DeRegisterPreRenderCallback(int video_channel) override;
-
  protected:
   explicit ViEImageProcessImpl(ViESharedData* shared_data);
   virtual ~ViEImageProcessImpl();

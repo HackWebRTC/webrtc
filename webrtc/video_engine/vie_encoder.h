@@ -169,10 +169,8 @@ class ViEEncoder
 
   // New-style callbacks, used by VideoSendStream.
   void RegisterPreEncodeCallback(I420FrameCallback* pre_encode_callback);
-  void DeRegisterPreEncodeCallback();
   void RegisterPostEncodeImageCallback(
         EncodedImageCallback* post_encode_callback);
-  void DeRegisterPostEncodeImageCallback();
 
   void RegisterSendStatisticsProxy(SendStatisticsProxy* send_statistics_proxy);
 

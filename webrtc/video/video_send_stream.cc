@@ -216,13 +216,9 @@ VideoSendStream::VideoSendStream(
   video_engine_base_->RegisterSendSideDelayObserver(channel_, &stats_proxy_);
   video_engine_base_->RegisterSendStatisticsProxy(channel_, &stats_proxy_);
 
-  image_process_ = ViEImageProcess::GetInterface(video_engine);
-  image_process_->RegisterPreEncodeCallback(channel_,
-                                            config_.pre_encode_callback);
-  if (config_.post_encode_callback) {
-    image_process_->RegisterPostEncodeImageCallback(channel_,
-                                                    &encoded_frame_proxy_);
-  }
+  vie_encoder_->RegisterPreEncodeCallback(config_.pre_encode_callback);
+  if (config_.post_encode_callback)
+    vie_encoder_->RegisterPostEncodeImageCallback(&encoded_frame_proxy_);
 
   if (config_.suspend_below_min_bitrate)
     codec_->SuspendBelowMinBitrate(channel_);
@@ -246,7 +242,8 @@ VideoSendStream::~VideoSendStream() {
   vie_channel_->RegisterSendChannelRtpStatisticsCallback(nullptr);
   vie_channel_->RegisterSendChannelRtcpStatisticsCallback(nullptr);
 
-  image_process_->DeRegisterPreEncodeCallback(channel_);
+  vie_encoder_->RegisterPreEncodeCallback(nullptr);
+  vie_encoder_->RegisterPostEncodeImageCallback(nullptr);
 
   vie_channel_->DeregisterSendTransport();
 
@@ -258,7 +255,6 @@ VideoSendStream::~VideoSendStream() {
 
   video_engine_base_->DeleteChannel(channel_);
 
-  image_process_->Release();
   video_engine_base_->Release();
   capture_->Release();
   codec_->Release();

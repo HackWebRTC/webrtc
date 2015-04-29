@@ -35,7 +35,6 @@ class ViEChannel;
 class ViEEncoder;
 class ViEExternalCapture;
 class ViEExternalCodec;
-class ViEImageProcess;
 
 namespace internal {
 
@@ -91,7 +90,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
   ViECodec* codec_;
   ViEEncoder* vie_encoder_;
   ViEExternalCapture* external_capture_;
-  ViEImageProcess* image_process_;
 
   int channel_;
   int capture_id_;

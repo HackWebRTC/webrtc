@@ -904,18 +904,9 @@ void ViEEncoder::RegisterPreEncodeCallback(
   pre_encode_callback_ = pre_encode_callback;
 }
 
-void ViEEncoder::DeRegisterPreEncodeCallback() {
-  CriticalSectionScoped cs(callback_cs_.get());
-  pre_encode_callback_ = NULL;
-}
-
 void ViEEncoder::RegisterPostEncodeImageCallback(
       EncodedImageCallback* post_encode_callback) {
   vcm_->RegisterPostEncodeImageCallback(post_encode_callback);
-}
-
-void ViEEncoder::DeRegisterPostEncodeImageCallback() {
-  vcm_->RegisterPostEncodeImageCallback(NULL);
 }
 
 void ViEEncoder::RegisterSendStatisticsProxy(
