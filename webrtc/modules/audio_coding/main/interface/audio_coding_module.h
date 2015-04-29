@@ -264,6 +264,11 @@ class AudioCodingModule {
   virtual int32_t SendBitrate() const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
+  // Sets the bitrate to the specified value in bits/sec. If the value is not
+  // supported by the codec, it will choose another appropriate value.
+  virtual void SetBitRate(int bitrate_bps) = 0;
+
+  ///////////////////////////////////////////////////////////////////////////
   // int32_t SetReceivedEstimatedBandwidth()
   // Set available bandwidth [bits/sec] of the up-link channel.
   // This information is used for traffic shaping, and is currently only

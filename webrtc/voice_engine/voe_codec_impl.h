@@ -29,6 +29,8 @@ public:
 
     virtual int GetSendCodec(int channel, CodecInst& codec);
 
+    int SetBitRate(int channel, int bitrate_bps) override;
+
     virtual int GetRecCodec(int channel, CodecInst& codec);
 
     virtual int SetSendCNPayloadType(

@@ -64,6 +64,12 @@ public:
     // |channel|.
     virtual int GetSendCodec(int channel, CodecInst& codec) = 0;
 
+    // Sets the bitrate on a specified |channel| to the specified value
+    // (in bits/sec). If the value is not supported by the codec, the codec will
+    // choose an appropriate value.
+    // Returns -1 on failure and 0 on success.
+    virtual int SetBitRate(int channel, int bitrate_bps) = 0;
+
     // Gets the currently received |codec| for a specific |channel|.
     virtual int GetRecCodec(int channel, CodecInst& codec) = 0;
 

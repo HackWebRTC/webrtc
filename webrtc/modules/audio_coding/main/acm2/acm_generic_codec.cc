@@ -386,10 +386,9 @@ OpusApplicationMode ACMGenericCodec::GetOpusApplication(
   return num_channels == 1 || enable_dtx ? kVoip : kAudio;
 }
 
-int16_t ACMGenericCodec::SetBitRate(const int32_t bitrate_bps) {
+void ACMGenericCodec::SetBitRate(const int bitrate_bps) {
   encoder_->SetTargetBitrate(bitrate_bps);
   bitrate_bps_ = bitrate_bps;
-  return 0;
 }
 
 int16_t ACMGenericCodec::SetVAD(bool* enable_dtx,

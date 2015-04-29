@@ -365,11 +365,7 @@ int CodecManager::RegisterSendCodec(const CodecInst& send_codec) {
 
     // Check if a change in Rate is required.
     if (send_codec.rate != send_codec_inst_.rate) {
-      if (current_encoder_->SetBitRate(send_codec.rate) < 0) {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
-                     "Could not change the codec rate.");
-        return -1;
-      }
+      current_encoder_->SetBitRate(send_codec.rate);
       send_codec_inst_.rate = send_codec.rate;
     }
 

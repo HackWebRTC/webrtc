@@ -162,18 +162,14 @@ class ACMGenericCodec {
   void ResetNoMissedSamples();
 
   ///////////////////////////////////////////////////////////////////////////
-  // int16_t SetBitRate()
-  // The function is called to set the encoding rate.
+  // void SetBitRate()
+  // The function is called to set the encoding rate. If the value is not
+  // supported by the codec, another appropriate value is used.
   //
   // Input:
   //   -bitrate_bps        : encoding rate in bits per second
   //
-  // Return value:
-  //   -1 if failed to set the rate, due to invalid input or given
-  //      codec is not rate-adjustable.
-  //    0 if the rate is adjusted successfully
-  //
-  int16_t SetBitRate(const int32_t bitrate_bps);
+  void SetBitRate(const int bitrate_bps);
 
   ///////////////////////////////////////////////////////////////////////////
   // uint32_t EarliestTimestamp()

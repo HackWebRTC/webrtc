@@ -784,8 +784,9 @@ void RunTest(std::string out_path) {
         res = codec->GetSendCodec(chan, cinst);
         VALIDATE;
         printf("Current bit rate is %i bps, set to: ", cinst.rate);
-        ASSERT_EQ(1, scanf("%i", &cinst.rate));
-        res = codec->SetSendCodec(chan, cinst);
+        int new_bitrate_bps;
+        ASSERT_EQ(1, scanf("%i", &new_bitrate_bps));
+        res = codec->SetBitRate(chan, new_bitrate_bps);
         VALIDATE;
       } else if (option_selection == option_index++) {
         const char* kDebugFileName = "audio.aecdump";

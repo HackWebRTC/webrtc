@@ -287,6 +287,14 @@ int AudioCodingModuleImpl::SendBitrate() const {
   return encoder_param.codec_inst.rate;
 }
 
+void AudioCodingModuleImpl::SetBitRate(int bitrate_bps) {
+  CriticalSectionScoped lock(acm_crit_sect_);
+
+  if (codec_manager_.current_encoder()) {
+    codec_manager_.current_encoder()->SetBitRate(bitrate_bps);
+  }
+}
+
 // Set available bandwidth, inform the encoder about the estimated bandwidth
 // received from the remote party.
 // TODO(henrik.lundin): Remove; not used.

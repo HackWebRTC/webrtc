@@ -1342,6 +1342,12 @@ Channel::SetSendCodec(const CodecInst& codec)
     return 0;
 }
 
+void Channel::SetBitRate(int bitrate_bps) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
+               "Channel::SetBitRate(bitrate_bps=%d)", bitrate_bps);
+  audio_coding_->SetBitRate(bitrate_bps);
+}
+
 void Channel::OnIncomingFractionLoss(int fraction_lost) {
   network_predictor_->UpdatePacketLossRate(fraction_lost);
   uint8_t average_fraction_loss = network_predictor_->GetLossRate();

@@ -60,6 +60,11 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // codecs return there long-term average or their fixed rate.
   int SendBitrate() const override;
 
+  // Sets the bitrate to the specified value in bits/sec. In case the codec does
+  // not support the requested value it will choose an appropriate value
+  // instead.
+  void SetBitRate(int bitrate_bps) override;
+
   // Set available bandwidth, inform the encoder about the
   // estimated bandwidth received from the remote party.
   int SetReceivedEstimatedBandwidth(int bw) override;

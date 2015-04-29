@@ -180,6 +180,18 @@ int VoECodecImpl::GetSendCodec(int channel, CodecInst& codec)
     return 0;
 }
 
+int VoECodecImpl::SetBitRate(int channel, int bitrate_bps) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "SetBitRate(bitrate_bps=%d)", bitrate_bps);
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return -1;
+  }
+  _shared->channel_manager().GetChannel(channel).channel()->SetBitRate(
+      bitrate_bps);
+  return 0;
+}
+
 int VoECodecImpl::GetRecCodec(int channel, CodecInst& codec)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),

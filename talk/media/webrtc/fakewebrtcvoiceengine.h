@@ -540,6 +540,7 @@ class FakeWebRtcVoiceEngine
     codec = channels_[channel]->send_codec;
     return 0;
   }
+  WEBRTC_STUB(SetBitRate, (int channel, int bitrate_bps));
   WEBRTC_FUNC(GetRecCodec, (int channel, webrtc::CodecInst& codec)) {
     WEBRTC_CHECK_CHANNEL(channel);
     const Channel* c = channels_[channel];
