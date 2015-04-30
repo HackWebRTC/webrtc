@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TALK_APP_BASE_REFCOUNT_H_
-#define TALK_APP_BASE_REFCOUNT_H_
+#ifndef WEBRTC_BASE_REFCOUNT_H_
+#define WEBRTC_BASE_REFCOUNT_H_
 
 #include <string.h>
 
-#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/atomicops.h"
 
 namespace rtc {
 
@@ -126,4 +126,4 @@ class RefCountedObject : public T {
 
 }  // namespace rtc
 
-#endif  // TALK_APP_BASE_REFCOUNT_H_
+#endif  // WEBRTC_BASE_REFCOUNT_H_

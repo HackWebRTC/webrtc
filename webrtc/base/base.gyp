@@ -31,6 +31,7 @@
       'sources': [
         '../overrides/webrtc/base/basictypes.h',
         '../overrides/webrtc/base/constructormagic.h',
+        'atomicops.h',
         'basictypes.h',
         'bitbuffer.cc',
         'bitbuffer.h',
@@ -118,7 +119,6 @@
         'asynctcpsocket.h',
         'asyncudpsocket.cc',
         'asyncudpsocket.h',
-        'atomicops.h',
         'autodetectproxy.cc',
         'autodetectproxy.h',
         'bandwidthsmoother.cc',

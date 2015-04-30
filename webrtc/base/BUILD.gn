@@ -105,6 +105,7 @@ static_library("rtc_base_approved") {
   public_configs = [ "..:common_inherited_config" ]
 
   sources = [
+    "atomicops.h",
     "bitbuffer.cc",
     "bitbuffer.h",
     "buffer.cc",
@@ -344,7 +345,6 @@ static_library("rtc_base") {
       "asyncinvoker.cc",
       "asyncinvoker.h",
       "asyncinvoker-inl.h",
-      "atomicops.h",
       "bandwidthsmoother.cc",
       "bandwidthsmoother.h",
       "bind.h",

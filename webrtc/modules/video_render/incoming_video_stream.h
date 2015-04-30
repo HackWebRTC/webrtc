@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_INCOMING_VIDEO_STREAM_H_
 
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/video_render/include/video_render.h"
 
 namespace webrtc {

@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "webrtc/base/atomicops.h"
 #ifdef _WIN32
 #include "webrtc/system_wrappers/source/trace_win.h"
 #else

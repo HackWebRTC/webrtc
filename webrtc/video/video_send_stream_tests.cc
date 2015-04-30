@@ -14,6 +14,7 @@
 
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/call.h"
 #include "webrtc/frame_callback.h"
