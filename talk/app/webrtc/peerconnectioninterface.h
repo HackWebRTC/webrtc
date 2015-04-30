@@ -197,6 +197,11 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     kBundlePolicyMaxCompat
   };
 
+  enum TcpCandidatePolicy {
+    kTcpCandidatePolicyEnabled,
+    kTcpCandidatePolicyDisabled
+  };
+
   struct RTCConfiguration {
     // TODO(pthatcher): Rename this ice_transport_type, but update
     // Chromium at the same time.
@@ -205,8 +210,12 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // at the same time.
     IceServers servers;
     BundlePolicy bundle_policy;
+    TcpCandidatePolicy tcp_candidate_policy;
 
-    RTCConfiguration() : type(kAll), bundle_policy(kBundlePolicyBalanced) {}
+    RTCConfiguration()
+        : type(kAll),
+          bundle_policy(kBundlePolicyBalanced),
+          tcp_candidate_policy(kTcpCandidatePolicyEnabled) {}
   };
 
   struct RTCOfferAnswerOptions {

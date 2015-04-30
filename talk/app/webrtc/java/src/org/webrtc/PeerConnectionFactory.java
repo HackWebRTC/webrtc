@@ -77,7 +77,7 @@ public class PeerConnectionFactory {
   }
 
   public PeerConnection createPeerConnection(
-      List<PeerConnection.IceServer> iceServers,
+      PeerConnection.RTCConfiguration rtcConfig,
       MediaConstraints constraints,
       PeerConnection.Observer observer) {
     long nativeObserver = nativeCreateObserver(observer);
@@ -85,11 +85,20 @@ public class PeerConnectionFactory {
       return null;
     }
     long nativePeerConnection = nativeCreatePeerConnection(
-        nativeFactory, iceServers, constraints, nativeObserver);
+        nativeFactory, rtcConfig, constraints, nativeObserver);
     if (nativePeerConnection == 0) {
       return null;
     }
     return new PeerConnection(nativePeerConnection, nativeObserver);
+  }
+
+  public PeerConnection createPeerConnection(
+      List<PeerConnection.IceServer> iceServers,
+      MediaConstraints constraints,
+      PeerConnection.Observer observer) {
+    PeerConnection.RTCConfiguration rtcConfig =
+        new PeerConnection.RTCConfiguration(iceServers);
+    return createPeerConnection(rtcConfig, constraints, observer);
   }
 
   public MediaStream createLocalMediaStream(String label) {
@@ -133,7 +142,7 @@ public class PeerConnectionFactory {
       PeerConnection.Observer observer);
 
   private static native long nativeCreatePeerConnection(
-      long nativeFactory, List<PeerConnection.IceServer> iceServers,
+      long nativeFactory, PeerConnection.RTCConfiguration rtcConfig,
       MediaConstraints constraints, long nativeObserver);
 
   private static native long nativeCreateLocalMediaStream(
