@@ -129,6 +129,9 @@
             'voe_audio_processing_unittest.cc',
             'voe_base_unittest.cc',
             'voe_codec_unittest.cc',
+            'voe_network_unittest.cc',
+            'voice_engine_fixture.cc',
+            'voice_engine_fixture.h',
           ],
           'conditions': [
             ['OS=="android"', {
