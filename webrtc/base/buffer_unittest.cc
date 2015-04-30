@@ -137,11 +137,11 @@ TEST(BufferTest, TestEnsureCapacityLarger) {
 
 TEST(BufferTest, TestMoveConstruct) {
   Buffer buf1(kTestData, 3, 40);
-  const uint8_t* data = buf1.data();
+  const uint8_t* data = buf1.data<uint8_t>();
   Buffer buf2(buf1.Pass());
   EXPECT_EQ(buf2.size(), 3u);
   EXPECT_EQ(buf2.capacity(), 40u);
-  EXPECT_EQ(buf2.data(), data);
+  EXPECT_EQ(buf2.data<uint8_t>(), data);
   buf1.Clear();
   EXPECT_EQ(buf1.size(), 0u);
   EXPECT_EQ(buf1.capacity(), 0u);
@@ -150,12 +150,12 @@ TEST(BufferTest, TestMoveConstruct) {
 
 TEST(BufferTest, TestMoveAssign) {
   Buffer buf1(kTestData, 3, 40);
-  const uint8_t* data = buf1.data();
+  const uint8_t* data = buf1.data<uint8_t>();
   Buffer buf2(kTestData);
   buf2 = buf1.Pass();
   EXPECT_EQ(buf2.size(), 3u);
   EXPECT_EQ(buf2.capacity(), 40u);
-  EXPECT_EQ(buf2.data(), data);
+  EXPECT_EQ(buf2.data<uint8_t>(), data);
   buf1.Clear();
   EXPECT_EQ(buf1.size(), 0u);
   EXPECT_EQ(buf1.capacity(), 0u);
@@ -165,16 +165,16 @@ TEST(BufferTest, TestMoveAssign) {
 TEST(BufferTest, TestSwap) {
   Buffer buf1(kTestData, 3);
   Buffer buf2(kTestData, 6, 40);
-  uint8_t* data1 = buf1.data();
-  uint8_t* data2 = buf2.data();
+  uint8_t* data1 = buf1.data<uint8_t>();
+  uint8_t* data2 = buf2.data<uint8_t>();
   using std::swap;
   swap(buf1, buf2);
   EXPECT_EQ(buf1.size(), 6u);
   EXPECT_EQ(buf1.capacity(), 40u);
-  EXPECT_EQ(buf1.data(), data2);
+  EXPECT_EQ(buf1.data<uint8_t>(), data2);
   EXPECT_EQ(buf2.size(), 3u);
   EXPECT_EQ(buf2.capacity(), 3u);
-  EXPECT_EQ(buf2.data(), data1);
+  EXPECT_EQ(buf2.data<uint8_t>(), data1);
 }
 
 }  // namespace rtc
