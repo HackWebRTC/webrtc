@@ -49,6 +49,12 @@ class ViECapturer
       protected VideoCaptureDataCallback,
       protected VideoCaptureFeedBack {
  public:
+  ViECapturer(int capture_id,
+              int engine_id,
+              ProcessThread* module_process_thread);
+
+  static ViECapturer* CreateViECapturer(ProcessThread* module_process_thread);
+
   static ViECapturer* CreateViECapture(int capture_id,
                                        int engine_id,
                                        const Config& config,
@@ -102,11 +108,6 @@ class ViECapturer
   void GetCpuOveruseMetrics(CpuOveruseMetrics* metrics) const;
 
  protected:
-  ViECapturer(int capture_id,
-              int engine_id,
-              const Config& config,
-              ProcessThread& module_process_thread);
-
   int32_t Init(VideoCaptureModule* capture_module);
   int32_t Init(const char* device_unique_idUTF8,
                uint32_t device_unique_idUTF8Length);
@@ -145,7 +146,7 @@ class ViECapturer
   rtc::scoped_ptr<CriticalSectionWrapper> effects_and_stats_cs_;
   VideoCaptureModule* capture_module_;
   bool use_external_capture_;
-  ProcessThread& module_process_thread_;
+  ProcessThread* const module_process_thread_;
   const int capture_id_;
 
   // Frame used in IncomingFrameI420.

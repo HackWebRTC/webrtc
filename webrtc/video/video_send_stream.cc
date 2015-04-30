@@ -25,6 +25,7 @@
 #include "webrtc/video_engine/include/vie_external_codec.h"
 #include "webrtc/video_engine/include/vie_image_process.h"
 #include "webrtc/video_engine/include/vie_network.h"
+#include "webrtc/video_engine/vie_capturer.h"
 #include "webrtc/video_engine/vie_channel.h"
 #include "webrtc/video_engine/vie_channel_group.h"
 #include "webrtc/video_engine/vie_encoder.h"
@@ -109,6 +110,7 @@ VideoSendStream::VideoSendStream(
     CpuOveruseObserver* overuse_observer,
     webrtc::VideoEngine* video_engine,
     ChannelGroup* channel_group,
+    ProcessThread* module_process_thread,
     const VideoSendStream::Config& config,
     const VideoEncoderConfig& encoder_config,
     const std::map<uint32_t, RtpState>& suspended_ssrcs,
@@ -118,6 +120,7 @@ VideoSendStream::VideoSendStream(
       config_(config),
       suspended_ssrcs_(suspended_ssrcs),
       channel_group_(channel_group),
+      module_process_thread_(module_process_thread),
       channel_(-1),
       use_config_bitrate_(true),
       stats_proxy_(Clock::GetRealTimeClock(), config) {
@@ -187,9 +190,8 @@ VideoSendStream::VideoSendStream(
 
   vie_channel_->SetRTCPCName(rtcp_cname);
 
-  capture_ = ViECapture::GetInterface(video_engine);
-  capture_->AllocateExternalCaptureDevice(capture_id_, external_capture_);
-  capture_->ConnectCaptureDevice(capture_id_, channel_);
+  vie_capturer_ = ViECapturer::CreateViECapturer(module_process_thread_);
+  CHECK_EQ(0, vie_capturer_->RegisterFrameCallback(channel_, vie_encoder_));
 
   vie_channel_->RegisterSendTransport(&transport_adapter_);
   // 28 to match packet overhead in ModuleRtpRtcpImpl.
@@ -207,11 +209,11 @@ VideoSendStream::VideoSendStream(
   codec_ = ViECodec::GetInterface(video_engine);
   CHECK(ReconfigureVideoEncoder(encoder_config));
 
-  if (overuse_observer)
-    video_engine_base_->RegisterCpuOveruseObserver(channel_, overuse_observer);
+  if (overuse_observer) {
+    vie_capturer_->RegisterCpuOveruseObserver(overuse_observer);
+  }
   // Registered regardless of monitoring, used for stats.
-  video_engine_base_->RegisterCpuOveruseMetricsObserver(channel_,
-                                                        &stats_proxy_);
+  vie_capturer_->RegisterCpuOveruseMetricsObserver(&stats_proxy_);
 
   video_engine_base_->RegisterSendSideDelayObserver(channel_, &stats_proxy_);
   video_engine_base_->RegisterSendStatisticsProxy(channel_, &stats_proxy_);
@@ -233,7 +235,6 @@ VideoSendStream::VideoSendStream(
 }
 
 VideoSendStream::~VideoSendStream() {
-  capture_->DeregisterObserver(capture_id_);
   codec_->DeregisterEncoderObserver(channel_);
 
   vie_channel_->RegisterSendFrameCountObserver(nullptr);
@@ -247,8 +248,9 @@ VideoSendStream::~VideoSendStream() {
 
   vie_channel_->DeregisterSendTransport();
 
-  capture_->DisconnectCaptureDevice(channel_);
-  capture_->ReleaseCaptureDevice(capture_id_);
+  vie_capturer_->RegisterCpuOveruseObserver(nullptr);
+  vie_capturer_->DeregisterFrameCallback(vie_encoder_);
+  delete vie_capturer_;
 
   vie_encoder_->DeRegisterExternalEncoder(
       config_.encoder_settings.payload_type);
@@ -256,7 +258,6 @@ VideoSendStream::~VideoSendStream() {
   video_engine_base_->DeleteChannel(channel_);
 
   video_engine_base_->Release();
-  capture_->Release();
   codec_->Release();
 }
 
@@ -266,7 +267,7 @@ void VideoSendStream::IncomingCapturedFrame(const I420VideoFrame& frame) {
     config_.local_renderer->RenderFrame(frame, 0);
 
   stats_proxy_.OnIncomingFrame();
-  external_capture_->IncomingFrame(frame);
+  vie_capturer_->IncomingFrame(frame);
 }
 
 VideoSendStreamInput* VideoSendStream::Input() { return this; }

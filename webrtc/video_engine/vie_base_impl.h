@@ -67,11 +67,11 @@ class ViEBaseImpl
   virtual int GetVersion(char version[1024]);
   virtual int LastError();
 
+  ViESharedData* shared_data() { return &shared_data_; }
+
  protected:
   explicit ViEBaseImpl(const Config& config);
   virtual ~ViEBaseImpl();
-
-  ViESharedData* shared_data() { return &shared_data_; }
 
  private:
   int CreateChannel(int& video_channel, int original_channel,  // NOLINT

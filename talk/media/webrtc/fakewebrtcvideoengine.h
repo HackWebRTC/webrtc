@@ -718,6 +718,7 @@ class FakeWebRtcVideoEngine
   }
   webrtc::ViEChannel* GetChannel(int channel_id) override { return nullptr; }
   webrtc::ViEEncoder* GetEncoder(int channel_id) override { return nullptr; }
+  webrtc::ViESharedData* shared_data() override { return nullptr; }
 
   WEBRTC_FUNC(CreateReceiveChannel, (int& channel, int original_channel)) {
     return CreateChannel(channel, original_channel);

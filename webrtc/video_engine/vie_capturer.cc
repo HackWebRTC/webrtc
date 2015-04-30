@@ -10,6 +10,7 @@
 
 #include "webrtc/video_engine/vie_capturer.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
@@ -58,8 +59,7 @@ class RegistrableCpuOveruseMetricsObserver : public CpuOveruseMetricsObserver {
 
 ViECapturer::ViECapturer(int capture_id,
                          int engine_id,
-                         const Config& config,
-                         ProcessThread& module_process_thread)
+                         ProcessThread* module_process_thread)
     : ViEFrameProviderBase(capture_id, engine_id),
       capture_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       effects_and_stats_cs_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -92,11 +92,11 @@ ViECapturer::ViECapturer(int capture_id,
                                    cpu_overuse_metrics_observer_.get())) {
   capture_thread_->Start();
   capture_thread_->SetPriority(kHighPriority);
-  module_process_thread_.RegisterModule(overuse_detector_.get());
+  module_process_thread_->RegisterModule(overuse_detector_.get());
 }
 
 ViECapturer::~ViECapturer() {
-  module_process_thread_.DeRegisterModule(overuse_detector_.get());
+  module_process_thread_->DeRegisterModule(overuse_detector_.get());
 
   // Stop the thread.
   rtc::AtomicOps::Increment(&stop_);
@@ -104,7 +104,7 @@ ViECapturer::~ViECapturer() {
 
   // Stop the camera input.
   if (capture_module_) {
-    module_process_thread_.DeRegisterModule(capture_module_);
+    module_process_thread_->DeRegisterModule(capture_module_);
     capture_module_->DeRegisterCaptureDataCallback();
     capture_module_->Release();
     capture_module_ = NULL;
@@ -124,14 +124,22 @@ ViECapturer::~ViECapturer() {
   delete brightness_frame_stats_;
 }
 
+ViECapturer* ViECapturer::CreateViECapturer(
+    ProcessThread* module_process_thread) {
+  ViECapturer* capturer = new ViECapturer(0, 0, module_process_thread);
+  // Init with nullptr, 0 will set capture as an external capturer.
+  CHECK_EQ(0, capturer->Init(nullptr, 0));
+  return capturer;
+}
+
 ViECapturer* ViECapturer::CreateViECapture(
     int capture_id,
     int engine_id,
     const Config& config,
     VideoCaptureModule* capture_module,
     ProcessThread& module_process_thread) {
-  ViECapturer* capture = new ViECapturer(capture_id, engine_id, config,
-                                         module_process_thread);
+  ViECapturer* capture = new ViECapturer(capture_id, engine_id,
+                                         &module_process_thread);
   if (!capture || capture->Init(capture_module) != 0) {
     delete capture;
     capture = NULL;
@@ -144,7 +152,7 @@ int32_t ViECapturer::Init(VideoCaptureModule* capture_module) {
   capture_module_ = capture_module;
   capture_module_->RegisterCaptureDataCallback(*this);
   capture_module_->AddRef();
-  module_process_thread_.RegisterModule(capture_module_);
+  module_process_thread_->RegisterModule(capture_module_);
   return 0;
 }
 
@@ -155,8 +163,8 @@ ViECapturer* ViECapturer::CreateViECapture(
     const char* device_unique_idUTF8,
     const uint32_t device_unique_idUTF8Length,
     ProcessThread& module_process_thread) {
-  ViECapturer* capture = new ViECapturer(capture_id, engine_id, config,
-                                         module_process_thread);
+  ViECapturer* capture = new ViECapturer(capture_id, engine_id,
+                                         &module_process_thread);
   if (!capture ||
       capture->Init(device_unique_idUTF8, device_unique_idUTF8Length) != 0) {
     delete capture;
@@ -180,7 +188,7 @@ int32_t ViECapturer::Init(const char* device_unique_idUTF8,
   }
   capture_module_->AddRef();
   capture_module_->RegisterCaptureDataCallback(*this);
-  module_process_thread_.RegisterModule(capture_module_);
+  module_process_thread_->RegisterModule(capture_module_);
 
   return 0;
 }

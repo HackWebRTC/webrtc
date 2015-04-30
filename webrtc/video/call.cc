@@ -32,6 +32,7 @@
 #include "webrtc/video/audio_receive_stream.h"
 #include "webrtc/video/video_receive_stream.h"
 #include "webrtc/video/video_send_stream.h"
+#include "webrtc/video_engine/vie_shared_data.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
@@ -152,8 +153,8 @@ class Call : public webrtc::Call, public PacketReceiver {
   VideoSendStream::RtpStateMap suspended_video_send_ssrcs_;
 
   VideoEngine* video_engine_;
+  ViESharedData* vie_shared_data_;
   ViERTP_RTCP* rtp_rtcp_;
-  ViECodec* codec_;
   ViERender* render_;
   ViEBase* base_;
   ViENetwork* network_;
@@ -209,9 +210,6 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
   rtp_rtcp_ = ViERTP_RTCP::GetInterface(video_engine_);
   DCHECK(rtp_rtcp_ != nullptr);
 
-  codec_ = ViECodec::GetInterface(video_engine_);
-  DCHECK(codec_ != nullptr);
-
   network_ = ViENetwork::GetInterface(video_engine_);
 
   // As a workaround for non-existing calls in the old API, create a base
@@ -222,6 +220,7 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
   base_->CreateChannel(base_channel_id_);
   DCHECK(base_channel_id_ != -1);
   channel_group_ = base_->GetChannelGroup(base_channel_id_);
+  vie_shared_data_ = base_->shared_data();
 
   network_->SetBitrateConfig(base_channel_id_,
                              config_.bitrate_config.min_bitrate_bps,
@@ -241,7 +240,6 @@ Call::~Call() {
 
   base_->Release();
   network_->Release();
-  codec_->Release();
   render_->Release();
   rtp_rtcp_->Release();
   CHECK(webrtc::VideoEngine::Delete(video_engine_));
@@ -288,10 +286,10 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
 
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
   // the call has already started.
-  VideoSendStream* send_stream =
-      new VideoSendStream(config_.send_transport, overuse_observer_proxy_.get(),
-                          video_engine_, channel_group_, config, encoder_config,
-                          suspended_video_send_ssrcs_, base_channel_id_);
+  VideoSendStream* send_stream = new VideoSendStream(
+      config_.send_transport, overuse_observer_proxy_.get(), video_engine_,
+      channel_group_, vie_shared_data_->module_process_thread(), config,
+      encoder_config, suspended_video_send_ssrcs_, base_channel_id_);
 
   // This needs to be taken before send_crit_ as both locks need to be held
   // while changing network state.

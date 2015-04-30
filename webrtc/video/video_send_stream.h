@@ -27,14 +27,14 @@
 namespace webrtc {
 
 class CpuOveruseObserver;
-class VideoEngine;
+class ProcessThread;
 class ViEBase;
-class ViECapture;
-class ViECodec;
+class ViECapturer;
 class ViEChannel;
+class ViECodec;
 class ViEEncoder;
-class ViEExternalCapture;
 class ViEExternalCodec;
+class VideoEngine;
 
 namespace internal {
 
@@ -45,6 +45,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
                   CpuOveruseObserver* overuse_observer,
                   webrtc::VideoEngine* video_engine,
                   ChannelGroup* channel_group,
+                  ProcessThread* module_process_thread,
                   const VideoSendStream::Config& config,
                   const VideoEncoderConfig& encoder_config,
                   const std::map<uint32_t, RtpState>& suspended_ssrcs,
@@ -83,16 +84,15 @@ class VideoSendStream : public webrtc::VideoSendStream,
   std::map<uint32_t, RtpState> suspended_ssrcs_;
 
   ChannelGroup* const channel_group_;
+  ProcessThread* const module_process_thread_;
 
   ViEBase* video_engine_base_;
-  ViECapture* capture_;
   ViEChannel* vie_channel_;
   ViECodec* codec_;
   ViEEncoder* vie_encoder_;
-  ViEExternalCapture* external_capture_;
+  ViECapturer* vie_capturer_;
 
   int channel_;
-  int capture_id_;
 
   // Used as a workaround to indicate that we should be using the configured
   // start bitrate initially, instead of the one reported by VideoEngine (which

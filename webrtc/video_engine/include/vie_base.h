@@ -34,7 +34,7 @@ class SendStatisticsProxy;
 class ChannelGroup;
 class ViEChannel;
 class ViEEncoder;
-class ViERenderManager;
+class ViESharedData;
 
 // CpuOveruseObserver is called when a system overuse is detected and
 // VideoEngine cannot keep up the encoding frequency.
@@ -268,6 +268,8 @@ class WEBRTC_DLLEXPORT ViEBase {
   virtual void RegisterReceiveStatisticsProxy(
       int channel,
       ReceiveStatisticsProxy* receive_statistics_proxy) = 0;
+
+  virtual ViESharedData* shared_data() = 0;
 
  protected:
   ViEBase() {}

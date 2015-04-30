@@ -41,6 +41,9 @@ class ViESharedData {
   ViEChannelManager* channel_manager() { return channel_manager_.get(); }
   ViEInputManager* input_manager() { return input_manager_.get(); }
   ViERenderManager* render_manager() { return render_manager_.get(); }
+  ProcessThread* module_process_thread() {
+    return module_process_thread_.get();
+  }
 
   std::map<int, CpuOveruseObserver*>* overuse_observers() {
     return &overuse_observers_; }
