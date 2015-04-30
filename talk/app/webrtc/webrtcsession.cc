@@ -1599,14 +1599,13 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
 
   // Enable bundle before when kMaxBundle policy is in effect.
   if (bundle_policy_ == PeerConnectionInterface::kBundlePolicyMaxBundle) {
-    const cricket::ContentGroup* local_bundle_group =
-        BaseSession::local_description()->GetGroupByName(
-            cricket::GROUP_TYPE_BUNDLE);
-    if (!local_bundle_group) {
+    const cricket::ContentGroup* bundle_group = desc->GetGroupByName(
+        cricket::GROUP_TYPE_BUNDLE);
+    if (!bundle_group) {
       LOG(LS_WARNING) << "max-bundle specified without BUNDLE specified";
       return false;
     }
-    if (!BaseSession::BundleContentGroup(local_bundle_group)) {
+    if (!BaseSession::BundleContentGroup(bundle_group)) {
       LOG(LS_WARNING) << "max-bundle failed to enable bundling.";
       return false;
     }

@@ -2595,7 +2595,7 @@ TEST_F(WebRtcSessionTest, TestSetRemoteDescriptionInvalidIceCredentials) {
   EXPECT_FALSE(session_->SetRemoteDescription(modified_offer, &error));
 }
 
-// kBundlePolicyBalanced bundle policy with and answer contains BUNDLE.
+// kBundlePolicyBalanced bundle policy and answer contains BUNDLE.
 TEST_F(WebRtcSessionTest, TestBalancedBundleInAnswer) {
   InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyBalanced);
   mediastream_signaling_.SendAudioVideoStream1();
@@ -2622,6 +2622,7 @@ TEST_F(WebRtcSessionTest, TestBalancedBundleInAnswer) {
 TEST_F(WebRtcSessionTest, TestBalancedNoBundleInAnswer) {
   InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyBalanced);
   mediastream_signaling_.SendAudioVideoStream1();
+
   PeerConnectionInterface::RTCOfferAnswerOptions options;
   options.use_rtp_mux = true;
 
@@ -2674,6 +2675,7 @@ TEST_F(WebRtcSessionTest, TestMaxBundleBundleInAnswer) {
 TEST_F(WebRtcSessionTest, TestMaxBundleNoBundleInAnswer) {
   InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxBundle);
   mediastream_signaling_.SendAudioVideoStream1();
+
   PeerConnectionInterface::RTCOfferAnswerOptions options;
   options.use_rtp_mux = true;
 
@@ -2699,7 +2701,7 @@ TEST_F(WebRtcSessionTest, TestMaxBundleNoBundleInAnswer) {
             session_->GetTransportProxy("video")->impl());
 }
 
-// kBundlePolicyMaxCompat bundle policy with and answer contains BUNDLE.
+// kBundlePolicyMaxCompat bundle policy and answer contains BUNDLE.
 TEST_F(WebRtcSessionTest, TestMaxCompatBundleInAnswer) {
   InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxCompat);
   mediastream_signaling_.SendAudioVideoStream1();
@@ -2750,6 +2752,21 @@ TEST_F(WebRtcSessionTest, TestMaxCompatNoBundleInAnswer) {
   SetRemoteDescriptionWithoutError(modified_answer);  //
 
   EXPECT_NE(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
+}
+
+// kBundlePolicyMaxbundle and then we call SetRemoteDescription first.
+TEST_F(WebRtcSessionTest, TestMaxBundleWithSetRemoteDescriptionFirst) {
+  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyMaxBundle);
+  mediastream_signaling_.SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.use_rtp_mux = true;
+
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  SetRemoteDescriptionWithoutError(offer);
+
+  EXPECT_EQ(session_->GetTransportProxy("audio")->impl(),
             session_->GetTransportProxy("video")->impl());
 }
 

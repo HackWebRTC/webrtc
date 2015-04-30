@@ -665,15 +665,6 @@ bool BaseSession::BundleContentGroup(const ContentGroup* bundle_group) {
     return true;
   }
 
-  const ContentInfo* content =
-      local_description_->GetContentByName(*content_name);
-  if (!content) {
-    LOG(LS_WARNING) << "Content \"" << *content_name
-                    << "\" referenced in BUNDLE group"
-                    << " not present in local description";
-    return false;
-  }
-
   TransportProxy* selected_proxy = GetTransportProxy(*content_name);
   if (!selected_proxy) {
     LOG(LS_WARNING) << "No transport found for content \""
