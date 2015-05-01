@@ -64,12 +64,10 @@ class TraceObserver {
  private:
   class Callback : public TraceCallback {
    public:
-    Callback()
-        : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-          done_(EventWrapper::Create()) {}
+    Callback() : done_(EventWrapper::Create()) {}
 
     void Print(TraceLevel level, const char* message, int length) override {
-      CriticalSectionScoped lock(crit_sect_.get());
+      rtc::CritScope lock(&crit_sect_);
       std::string msg(message);
       if (msg.find("BitrateEstimator") != std::string::npos) {
         received_log_lines_.push_back(msg);
@@ -96,13 +94,13 @@ class TraceObserver {
     }
 
     void PushExpectedLogLine(const std::string& expected_log_line) {
-      CriticalSectionScoped lock(crit_sect_.get());
+      rtc::CritScope lock(&crit_sect_);
       expected_log_lines_.push_back(expected_log_line);
     }
 
    private:
     typedef std::list<std::string> Strings;
-    const rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
+    rtc::CriticalSection crit_sect_;
     Strings received_log_lines_ GUARDED_BY(crit_sect_);
     Strings expected_log_lines_ GUARDED_BY(crit_sect_);
     rtc::scoped_ptr<EventWrapper> done_;

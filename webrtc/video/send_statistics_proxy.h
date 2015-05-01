@@ -13,6 +13,7 @@
 
 #include <string>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/ratetracker.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
@@ -26,8 +27,6 @@
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
-
-class CriticalSectionWrapper;
 
 class SendStatisticsProxy : public CpuOveruseMetricsObserver,
                             public RtcpStatisticsCallback,
@@ -100,7 +99,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
 
   Clock* const clock_;
   const VideoSendStream::Config config_;
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  mutable rtc::CriticalSection crit_;
   VideoSendStream::Stats stats_ GUARDED_BY(crit_);
   rtc::RateTracker input_frame_rate_tracker_ GUARDED_BY(crit_);
   std::map<uint32_t, StatsUpdateTimes> update_times_ GUARDED_BY(crit_);

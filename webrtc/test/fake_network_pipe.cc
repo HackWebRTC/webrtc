@@ -16,7 +16,6 @@
 #include <algorithm>
 
 #include "webrtc/call.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 
 namespace webrtc {
@@ -71,10 +70,8 @@ class NetworkPacket {
   int64_t arrival_time_;
 };
 
-FakeNetworkPipe::FakeNetworkPipe(
-    const FakeNetworkPipe::Config& config)
-    : lock_(CriticalSectionWrapper::CreateCriticalSection()),
-      packet_receiver_(NULL),
+FakeNetworkPipe::FakeNetworkPipe(const FakeNetworkPipe::Config& config)
+    : packet_receiver_(NULL),
       config_(config),
       dropped_packets_(0),
       sent_packets_(0),
@@ -98,7 +95,7 @@ void FakeNetworkPipe::SetReceiver(PacketReceiver* receiver) {
 }
 
 void FakeNetworkPipe::SetConfig(const FakeNetworkPipe::Config& config) {
-  CriticalSectionScoped crit(lock_.get());
+  rtc::CritScope crit(&lock_);
   config_ = config;  // Shallow copy of the struct.
 }
 
@@ -107,7 +104,7 @@ void FakeNetworkPipe::SendPacket(const uint8_t* data, size_t data_length) {
   // packets.
   if (packet_receiver_ == NULL)
     return;
-  CriticalSectionScoped crit(lock_.get());
+  rtc::CritScope crit(&lock_);
   if (config_.queue_length_packets > 0 &&
       capacity_link_.size() >= config_.queue_length_packets) {
     // Too many packet on the link, drop this one.
@@ -135,7 +132,7 @@ void FakeNetworkPipe::SendPacket(const uint8_t* data, size_t data_length) {
 }
 
 float FakeNetworkPipe::PercentageLoss() {
-  CriticalSectionScoped crit(lock_.get());
+  rtc::CritScope crit(&lock_);
   if (sent_packets_ == 0)
     return 0;
 
@@ -144,7 +141,7 @@ float FakeNetworkPipe::PercentageLoss() {
 }
 
 int FakeNetworkPipe::AverageDelay() {
-  CriticalSectionScoped crit(lock_.get());
+  rtc::CritScope crit(&lock_);
   if (sent_packets_ == 0)
     return 0;
 
@@ -155,7 +152,7 @@ void FakeNetworkPipe::Process() {
   int64_t time_now = TickTime::MillisecondTimestamp();
   std::queue<NetworkPacket*> packets_to_deliver;
   {
-    CriticalSectionScoped crit(lock_.get());
+    rtc::CritScope crit(&lock_);
     // Check the capacity link first.
     while (capacity_link_.size() > 0 &&
            time_now >= capacity_link_.front()->arrival_time()) {
@@ -209,7 +206,7 @@ void FakeNetworkPipe::Process() {
 }
 
 int64_t FakeNetworkPipe::TimeUntilNextProcess() const {
-  CriticalSectionScoped crit(lock_.get());
+  rtc::CritScope crit(&lock_);
   const int64_t kDefaultProcessIntervalMs = 30;
   if (capacity_link_.size() == 0 || delay_link_.size() == 0)
     return kDefaultProcessIntervalMs;

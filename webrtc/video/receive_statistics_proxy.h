@@ -13,6 +13,7 @@
 
 #include <string>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/frame_callback.h"
@@ -27,7 +28,6 @@
 namespace webrtc {
 
 class Clock;
-class CriticalSectionWrapper;
 class ViECodec;
 class ViEDecoderObserver;
 
@@ -82,7 +82,7 @@ class ReceiveStatisticsProxy : public ViEDecoderObserver,
   void UpdateHistograms() const;
   Clock* const clock_;
 
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  mutable rtc::CriticalSection crit_;
   VideoReceiveStream::Stats stats_ GUARDED_BY(crit_);
   RateStatistics decode_fps_estimator_ GUARDED_BY(crit_);
   RateStatistics renders_fps_estimator_ GUARDED_BY(crit_);

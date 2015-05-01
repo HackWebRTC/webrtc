@@ -59,8 +59,7 @@ class CallPerfTest : public test::CallTest {
 class SyncRtcpObserver : public test::RtpRtcpObserver {
  public:
   explicit SyncRtcpObserver(const FakeNetworkPipe::Config& config)
-      : test::RtpRtcpObserver(CallPerfTest::kLongTimeoutMs, config),
-        crit_(CriticalSectionWrapper::CreateCriticalSection()) {}
+      : test::RtpRtcpObserver(CallPerfTest::kLongTimeoutMs, config) {}
 
   Action OnSendRtcp(const uint8_t* packet, size_t length) override {
     RTCPUtility::RTCPParserV2 parser(packet, length, true);
@@ -82,7 +81,7 @@ class SyncRtcpObserver : public test::RtpRtcpObserver {
   }
 
   int64_t RtpTimestampToNtp(uint32_t timestamp) const {
-    CriticalSectionScoped lock(crit_.get());
+    rtc::CritScope lock(&crit_);
     int64_t timestamp_in_ms = -1;
     if (ntp_rtp_pairs_.size() == 2) {
       // TODO(stefan): We can't EXPECT_TRUE on this call due to a bug in the
@@ -96,7 +95,7 @@ class SyncRtcpObserver : public test::RtpRtcpObserver {
 
  private:
   void StoreNtpRtpPair(RtcpMeasurement ntp_rtp_pair) {
-    CriticalSectionScoped lock(crit_.get());
+    rtc::CritScope lock(&crit_);
     for (RtcpList::iterator it = ntp_rtp_pairs_.begin();
          it != ntp_rtp_pairs_.end();
          ++it) {
@@ -114,7 +113,7 @@ class SyncRtcpObserver : public test::RtpRtcpObserver {
     ntp_rtp_pairs_.push_front(ntp_rtp_pair);
   }
 
-  const rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  mutable rtc::CriticalSection crit_;
   RtcpList ntp_rtp_pairs_ GUARDED_BY(crit_);
 };
 

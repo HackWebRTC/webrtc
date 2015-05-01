@@ -12,6 +12,7 @@
 
 #include <string>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_device/include/fake_audio_device.h"
 #include "webrtc/typedefs.h"
@@ -19,7 +20,6 @@
 namespace webrtc {
 
 class Clock;
-class CriticalSectionWrapper;
 class EventTimerWrapper;
 class FileWrapper;
 class ModuleFileUtility;
@@ -58,7 +58,7 @@ class FakeAudioDevice : public FakeAudioDeviceModule {
 
   Clock* clock_;
   rtc::scoped_ptr<EventTimerWrapper> tick_;
-  rtc::scoped_ptr<CriticalSectionWrapper> lock_;
+  mutable rtc::CriticalSection lock_;
   rtc::scoped_ptr<ThreadWrapper> thread_;
   rtc::scoped_ptr<ModuleFileUtility> file_utility_;
   rtc::scoped_ptr<FileWrapper> input_stream_;

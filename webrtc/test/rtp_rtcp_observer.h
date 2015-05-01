@@ -15,6 +15,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/typedefs.h"
@@ -52,16 +53,15 @@ class RtpRtcpObserver {
 
  protected:
   RtpRtcpObserver(unsigned int event_timeout_ms,
-      const FakeNetworkPipe::Config& configuration)
-      : crit_(CriticalSectionWrapper::CreateCriticalSection()),
-        observation_complete_(EventWrapper::Create()),
+                  const FakeNetworkPipe::Config& configuration)
+      : observation_complete_(EventWrapper::Create()),
         parser_(RtpHeaderParser::Create()),
-        send_transport_(crit_.get(),
+        send_transport_(&crit_,
                         this,
                         &RtpRtcpObserver::OnSendRtp,
                         &RtpRtcpObserver::OnSendRtcp,
                         configuration),
-        receive_transport_(crit_.get(),
+        receive_transport_(&crit_,
                            this,
                            &RtpRtcpObserver::OnReceiveRtp,
                            &RtpRtcpObserver::OnReceiveRtcp,
@@ -69,15 +69,14 @@ class RtpRtcpObserver {
         timeout_ms_(event_timeout_ms) {}
 
   explicit RtpRtcpObserver(unsigned int event_timeout_ms)
-      : crit_(CriticalSectionWrapper::CreateCriticalSection()),
-        observation_complete_(EventWrapper::Create()),
+      : observation_complete_(EventWrapper::Create()),
         parser_(RtpHeaderParser::Create()),
-        send_transport_(crit_.get(),
+        send_transport_(&crit_,
                         this,
                         &RtpRtcpObserver::OnSendRtp,
                         &RtpRtcpObserver::OnSendRtcp,
                         FakeNetworkPipe::Config()),
-        receive_transport_(crit_.get(),
+        receive_transport_(&crit_,
                            this,
                            &RtpRtcpObserver::OnReceiveRtp,
                            &RtpRtcpObserver::OnReceiveRtcp,
@@ -115,7 +114,7 @@ class RtpRtcpObserver {
     typedef Action (RtpRtcpObserver::*PacketTransportAction)(const uint8_t*,
                                                              size_t);
 
-    PacketTransport(CriticalSectionWrapper* lock,
+    PacketTransport(rtc::CriticalSection* lock,
                     RtpRtcpObserver* observer,
                     PacketTransportAction on_rtp,
                     PacketTransportAction on_rtcp,
@@ -131,7 +130,7 @@ class RtpRtcpObserver {
       EXPECT_FALSE(RtpHeaderParser::IsRtcp(packet, length));
       Action action;
       {
-        CriticalSectionScoped lock(crit_);
+        rtc::CritScope lock(crit_);
         action = (observer_->*on_rtp_)(packet, length);
       }
       switch (action) {
@@ -148,7 +147,7 @@ class RtpRtcpObserver {
       EXPECT_TRUE(RtpHeaderParser::IsRtcp(packet, length));
       Action action;
       {
-        CriticalSectionScoped lock(crit_);
+        rtc::CritScope lock(crit_);
         action = (observer_->*on_rtcp_)(packet, length);
       }
       switch (action) {
@@ -162,14 +161,14 @@ class RtpRtcpObserver {
     }
 
     // Pointer to shared lock instance protecting on_rtp_/on_rtcp_ calls.
-    CriticalSectionWrapper* const crit_;
+    rtc::CriticalSection* const crit_;
 
     RtpRtcpObserver* const observer_;
     const PacketTransportAction on_rtp_, on_rtcp_;
   };
 
  protected:
-  const rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  rtc::CriticalSection crit_;
   const rtc::scoped_ptr<EventWrapper> observation_complete_;
   const rtc::scoped_ptr<RtpHeaderParser> parser_;
 

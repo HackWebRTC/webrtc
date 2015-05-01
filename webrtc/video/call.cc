@@ -69,25 +69,24 @@ namespace internal {
 class CpuOveruseObserverProxy : public webrtc::CpuOveruseObserver {
  public:
   explicit CpuOveruseObserverProxy(LoadObserver* overuse_callback)
-      : crit_(CriticalSectionWrapper::CreateCriticalSection()),
-        overuse_callback_(overuse_callback) {
+      : overuse_callback_(overuse_callback) {
     DCHECK(overuse_callback != nullptr);
   }
 
   virtual ~CpuOveruseObserverProxy() {}
 
   void OveruseDetected() override {
-    CriticalSectionScoped lock(crit_.get());
+    rtc::CritScope lock(&crit_);
     overuse_callback_->OnLoadUpdate(LoadObserver::kOveruse);
   }
 
   void NormalUsage() override {
-    CriticalSectionScoped lock(crit_.get());
+    rtc::CritScope lock(&crit_);
     overuse_callback_->OnLoadUpdate(LoadObserver::kUnderuse);
   }
 
  private:
-  const rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  rtc::CriticalSection crit_;
   LoadObserver* overuse_callback_ GUARDED_BY(crit_);
 };
 
@@ -133,7 +132,7 @@ class Call : public webrtc::Call, public PacketReceiver {
   // Needs to be held while write-locking |receive_crit_| or |send_crit_|. This
   // ensures that we have a consistent network state signalled to all senders
   // and receivers.
-  rtc::scoped_ptr<CriticalSectionWrapper> network_enabled_crit_;
+  rtc::CriticalSection network_enabled_crit_;
   bool network_enabled_ GUARDED_BY(network_enabled_crit_);
 
   rtc::scoped_ptr<RWLockWrapper> receive_crit_;
@@ -178,7 +177,6 @@ namespace internal {
 
 Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
     : config_(config),
-      network_enabled_crit_(CriticalSectionWrapper::CreateCriticalSection()),
       network_enabled_(true),
       receive_crit_(RWLockWrapper::CreateRWLock()),
       send_crit_(RWLockWrapper::CreateRWLock()),
@@ -293,7 +291,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
 
   // This needs to be taken before send_crit_ as both locks need to be held
   // while changing network state.
-  CriticalSectionScoped lock(network_enabled_crit_.get());
+  rtc::CritScope lock(&network_enabled_crit_);
   WriteLockScoped write_lock(*send_crit_);
   for (uint32_t ssrc : config.rtp.ssrcs) {
     DCHECK(video_send_ssrcs_.find(ssrc) == video_send_ssrcs_.end());
@@ -349,7 +347,7 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
 
   // This needs to be taken before receive_crit_ as both locks need to be held
   // while changing network state.
-  CriticalSectionScoped lock(network_enabled_crit_.get());
+  rtc::CritScope lock(&network_enabled_crit_);
   WriteLockScoped write_lock(*receive_crit_);
   DCHECK(video_receive_ssrcs_.find(config.rtp.remote_ssrc) ==
       video_receive_ssrcs_.end());
@@ -439,7 +437,7 @@ void Call::SetBitrateConfig(
 void Call::SignalNetworkState(NetworkState state) {
   // Take crit for entire function, it needs to be held while updating streams
   // to guarantee a consistent state across streams.
-  CriticalSectionScoped lock(network_enabled_crit_.get());
+  rtc::CritScope lock(&network_enabled_crit_);
   network_enabled_ = state == kNetworkUp;
   {
     ReadLockScoped write_lock(*send_crit_);

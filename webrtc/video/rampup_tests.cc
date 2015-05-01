@@ -46,7 +46,6 @@ StreamObserver::StreamObserver(const SsrcMap& rtx_media_ssrcs,
       receive_stats_(ReceiveStatistics::Create(clock)),
       payload_registry_(
           new RTPPayloadRegistry(RTPPayloadStrategy::CreateStrategy(false))),
-      crit_(CriticalSectionWrapper::CreateCriticalSection()),
       expected_bitrate_bps_(0),
       start_bitrate_bps_(0),
       rtx_media_ssrcs_(rtx_media_ssrcs),
@@ -83,18 +82,18 @@ StreamObserver::StreamObserver(const SsrcMap& rtx_media_ssrcs,
 
 void StreamObserver::set_expected_bitrate_bps(
     unsigned int expected_bitrate_bps) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   expected_bitrate_bps_ = expected_bitrate_bps;
 }
 
 void StreamObserver::set_start_bitrate_bps(unsigned int start_bitrate_bps) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   start_bitrate_bps_ = start_bitrate_bps;
 }
 
 void StreamObserver::OnReceiveBitrateChanged(
     const std::vector<unsigned int>& ssrcs, unsigned int bitrate) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   DCHECK_GT(expected_bitrate_bps_, 0u);
   if (start_bitrate_bps_ != 0) {
     // For tests with an explicitly set start bitrate, verify the first
@@ -117,7 +116,7 @@ void StreamObserver::OnReceiveBitrateChanged(
 }
 
 bool StreamObserver::SendRtp(const uint8_t* packet, size_t length) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   RTPHeader header;
   EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));
   receive_stats_->IncomingPacket(header, length, false);
@@ -197,7 +196,6 @@ LowRateStreamObserver::LowRateStreamObserver(
       rtp_parser_(RtpHeaderParser::Create()),
       feedback_transport_(feedback_transport),
       receive_stats_(ReceiveStatistics::Create(clock)),
-      crit_(CriticalSectionWrapper::CreateCriticalSection()),
       send_stream_(nullptr),
       test_state_(kFirstRampup),
       state_start_ms_(clock_->TimeInMilliseconds()),
@@ -228,21 +226,21 @@ LowRateStreamObserver::LowRateStreamObserver(
 }
 
 void LowRateStreamObserver::SetSendStream(VideoSendStream* send_stream) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   send_stream_ = send_stream;
 }
 
 void LowRateStreamObserver::OnReceiveBitrateChanged(
     const std::vector<unsigned int>& ssrcs,
     unsigned int bitrate) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   rtp_rtcp_->SetREMBData(bitrate, ssrcs);
   rtp_rtcp_->Process();
   last_remb_bps_ = bitrate;
 }
 
 bool LowRateStreamObserver::SendRtp(const uint8_t* data, size_t length) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   sent_bytes_ += length;
   int64_t now_ms = clock_->TimeInMilliseconds();
   if (now_ms > interval_start_ms_ + 1000) {  // Let at least 1 second pass.
@@ -265,7 +263,7 @@ bool LowRateStreamObserver::SendRtp(const uint8_t* data, size_t length) {
 
 PacketReceiver::DeliveryStatus LowRateStreamObserver::DeliverPacket(
     MediaType media_type, const uint8_t* packet, size_t length) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   RTPHeader header;
   EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));
   receive_stats_->IncomingPacket(header, length, false);
@@ -298,7 +296,7 @@ std::string LowRateStreamObserver::GetModifierString() {
 
 void LowRateStreamObserver::EvolveTestState(unsigned int bitrate_bps) {
   int64_t now = clock_->TimeInMilliseconds();
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   DCHECK(send_stream_ != nullptr);
   switch (test_state_) {
     case kFirstRampup: {

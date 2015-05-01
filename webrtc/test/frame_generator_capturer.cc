@@ -10,9 +10,9 @@
 
 #include "webrtc/test/frame_generator_capturer.h"
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/test/frame_generator.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
@@ -66,7 +66,6 @@ FrameGeneratorCapturer::FrameGeneratorCapturer(Clock* clock,
       clock_(clock),
       sending_(false),
       tick_(EventTimerWrapper::Create()),
-      lock_(CriticalSectionWrapper::CreateCriticalSection()),
       frame_generator_(frame_generator),
       target_fps_(target_fps),
       first_frame_capture_time_(-1) {
@@ -109,7 +108,7 @@ bool FrameGeneratorCapturer::Run(void* obj) {
 
 void FrameGeneratorCapturer::InsertFrame() {
   {
-    CriticalSectionScoped cs(lock_.get());
+    rtc::CritScope cs(&lock_);
     if (sending_) {
       I420VideoFrame* frame = frame_generator_->NextFrame();
       frame->set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
@@ -123,12 +122,12 @@ void FrameGeneratorCapturer::InsertFrame() {
 }
 
 void FrameGeneratorCapturer::Start() {
-  CriticalSectionScoped cs(lock_.get());
+  rtc::CritScope cs(&lock_);
   sending_ = true;
 }
 
 void FrameGeneratorCapturer::Stop() {
-  CriticalSectionScoped cs(lock_.get());
+  rtc::CritScope cs(&lock_);
   sending_ = false;
 }
 }  // test

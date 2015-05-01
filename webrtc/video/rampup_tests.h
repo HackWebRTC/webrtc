@@ -29,7 +29,6 @@ static const int kAbsSendTimeExtensionId = 7;
 static const unsigned int kSingleStreamTargetBps = 1000000;
 
 class Clock;
-class CriticalSectionWrapper;
 class ReceiveStatistics;
 class RtpHeaderParser;
 class RTPPayloadRegistry;
@@ -73,7 +72,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
   const rtc::scoped_ptr<RTPPayloadRegistry> payload_registry_;
   rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
 
-  const rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  rtc::CriticalSection crit_;
   unsigned int expected_bitrate_bps_ GUARDED_BY(crit_);
   unsigned int start_bitrate_bps_ GUARDED_BY(crit_);
   SsrcMap rtx_media_ssrcs_ GUARDED_BY(crit_);
@@ -134,7 +133,7 @@ class LowRateStreamObserver : public test::DirectTransport,
   const rtc::scoped_ptr<ReceiveStatistics> receive_stats_;
   rtc::scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
 
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  rtc::CriticalSection crit_;
   VideoSendStream* send_stream_ GUARDED_BY(crit_);
   FakeNetworkPipe::Config forward_transport_config_ GUARDED_BY(crit_);
   TestStates test_state_ GUARDED_BY(crit_);

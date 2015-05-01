@@ -15,7 +15,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/media_file/source/media_file_utility.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/file_wrapper.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
@@ -31,7 +30,6 @@ FakeAudioDevice::FakeAudioDevice(Clock* clock, const std::string& filename)
       last_playout_ms_(-1),
       clock_(clock),
       tick_(EventTimerWrapper::Create()),
-      lock_(CriticalSectionWrapper::CreateCriticalSection()),
       file_utility_(new ModuleFileUtility(0)),
       input_stream_(FileWrapper::Create()) {
   memset(captured_audio_, 0, sizeof(captured_audio_));
@@ -49,7 +47,7 @@ FakeAudioDevice::~FakeAudioDevice() {
 }
 
 int32_t FakeAudioDevice::Init() {
-  CriticalSectionScoped cs(lock_.get());
+  rtc::CritScope cs(&lock_);
   if (file_utility_->InitPCMReading(*input_stream_.get()) != 0)
     return -1;
 
@@ -68,13 +66,13 @@ int32_t FakeAudioDevice::Init() {
 }
 
 int32_t FakeAudioDevice::RegisterAudioCallback(AudioTransport* callback) {
-  CriticalSectionScoped cs(lock_.get());
+  rtc::CritScope cs(&lock_);
   audio_callback_ = callback;
   return 0;
 }
 
 bool FakeAudioDevice::Playing() const {
-  CriticalSectionScoped cs(lock_.get());
+  rtc::CritScope cs(&lock_);
   return capturing_;
 }
 
@@ -84,7 +82,7 @@ int32_t FakeAudioDevice::PlayoutDelay(uint16_t* delay_ms) const {
 }
 
 bool FakeAudioDevice::Recording() const {
-  CriticalSectionScoped cs(lock_.get());
+  rtc::CritScope cs(&lock_);
   return capturing_;
 }
 
@@ -95,7 +93,7 @@ bool FakeAudioDevice::Run(void* obj) {
 
 void FakeAudioDevice::CaptureAudio() {
   {
-    CriticalSectionScoped cs(lock_.get());
+    rtc::CritScope cs(&lock_);
     if (capturing_) {
       int bytes_read = file_utility_->ReadPCMData(
           *input_stream_.get(), captured_audio_, kBufferSizeBytes);
@@ -138,12 +136,12 @@ void FakeAudioDevice::CaptureAudio() {
 }
 
 void FakeAudioDevice::Start() {
-  CriticalSectionScoped cs(lock_.get());
+  rtc::CritScope cs(&lock_);
   capturing_ = true;
 }
 
 void FakeAudioDevice::Stop() {
-  CriticalSectionScoped cs(lock_.get());
+  rtc::CritScope cs(&lock_);
   capturing_ = false;
 }
 }  // namespace test

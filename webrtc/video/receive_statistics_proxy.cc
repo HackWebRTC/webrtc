@@ -18,7 +18,6 @@ namespace webrtc {
 
 ReceiveStatisticsProxy::ReceiveStatisticsProxy(uint32_t ssrc, Clock* clock)
     : clock_(clock),
-      crit_(CriticalSectionWrapper::CreateCriticalSection()),
       // 1000ms window, scale 1000 for ms to s.
       decode_fps_estimator_(1000, 1000),
       renders_fps_estimator_(1000, 1000) {
@@ -32,7 +31,7 @@ ReceiveStatisticsProxy::~ReceiveStatisticsProxy() {
 void ReceiveStatisticsProxy::UpdateHistograms() const {
   int fraction_lost;
   {
-    CriticalSectionScoped lock(crit_.get());
+    rtc::CritScope lock(&crit_);
     fraction_lost = report_block_stats_.FractionLostInPercent();
   }
   if (fraction_lost != -1) {
@@ -42,14 +41,14 @@ void ReceiveStatisticsProxy::UpdateHistograms() const {
 }
 
 VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   return stats_;
 }
 
 void ReceiveStatisticsProxy::IncomingRate(const int video_channel,
                                           const unsigned int framerate,
                                           const unsigned int bitrate_bps) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   stats_.network_frame_rate = framerate;
   stats_.total_bitrate_bps = bitrate_bps;
 }
@@ -61,7 +60,7 @@ void ReceiveStatisticsProxy::DecoderTiming(int decode_ms,
                                            int jitter_buffer_ms,
                                            int min_playout_delay_ms,
                                            int render_delay_ms) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   stats_.decode_ms = decode_ms;
   stats_.max_decode_ms = max_decode_ms;
   stats_.current_delay_ms = current_delay_ms;
@@ -74,7 +73,7 @@ void ReceiveStatisticsProxy::DecoderTiming(int decode_ms,
 void ReceiveStatisticsProxy::RtcpPacketTypesCounterUpdated(
     uint32_t ssrc,
     const RtcpPacketTypeCounter& packet_counter) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   if (stats_.ssrc != ssrc)
     return;
   stats_.rtcp_packet_type_counts = packet_counter;
@@ -83,7 +82,7 @@ void ReceiveStatisticsProxy::RtcpPacketTypesCounterUpdated(
 void ReceiveStatisticsProxy::StatisticsUpdated(
     const webrtc::RtcpStatistics& statistics,
     uint32_t ssrc) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   // TODO(pbos): Handle both local and remote ssrcs here and DCHECK that we
   // receive stats from one of them.
   if (stats_.ssrc != ssrc)
@@ -93,7 +92,7 @@ void ReceiveStatisticsProxy::StatisticsUpdated(
 }
 
 void ReceiveStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   // TODO(pbos): Handle both local and remote ssrcs here and DCHECK that we
   // receive stats from one of them.
   if (stats_.ssrc != ssrc)
@@ -104,7 +103,7 @@ void ReceiveStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {
 void ReceiveStatisticsProxy::DataCountersUpdated(
     const webrtc::StreamDataCounters& counters,
     uint32_t ssrc) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   if (stats_.ssrc != ssrc)
     return;
   stats_.rtp_stats = counters;
@@ -113,7 +112,7 @@ void ReceiveStatisticsProxy::DataCountersUpdated(
 void ReceiveStatisticsProxy::OnDecodedFrame() {
   uint64_t now = clock_->TimeInMilliseconds();
 
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   decode_fps_estimator_.Update(1, now);
   stats_.decode_frame_rate = decode_fps_estimator_.Rate(now);
 }
@@ -121,7 +120,7 @@ void ReceiveStatisticsProxy::OnDecodedFrame() {
 void ReceiveStatisticsProxy::OnRenderedFrame() {
   uint64_t now = clock_->TimeInMilliseconds();
 
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   renders_fps_estimator_.Update(1, now);
   stats_.render_frame_rate = renders_fps_estimator_.Rate(now);
 }
@@ -132,12 +131,12 @@ void ReceiveStatisticsProxy::OnReceiveRatesUpdated(uint32_t bitRate,
 
 void ReceiveStatisticsProxy::OnFrameCountsUpdated(
     const FrameCounts& frame_counts) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   stats_.frame_counts = frame_counts;
 }
 
 void ReceiveStatisticsProxy::OnDiscardedPacketsUpdated(int discarded_packets) {
-  CriticalSectionScoped lock(crit_.get());
+  rtc::CritScope lock(&crit_);
   stats_.discarded_packets = discarded_packets;
 }
 

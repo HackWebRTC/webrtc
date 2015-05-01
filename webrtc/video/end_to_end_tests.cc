@@ -504,7 +504,7 @@ TEST_F(EndToEndTest, CanReceiveFec) {
 
     void RenderFrame(const I420VideoFrame& video_frame,
                      int time_to_render_ms) override {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       // Rendering frame with timestamp of packet that was dropped -> FEC
       // protection worked.
       if (protected_timestamps_.count(video_frame.timestamp()) != 0)
@@ -712,7 +712,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool use_rtx, bool use_red) {
     }
 
     void FrameCallback(I420VideoFrame* frame) override {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       if (frame->timestamp() == retransmitted_timestamp_) {
         EXPECT_TRUE(frame_retransmitted_);
         observation_complete_->Set();
@@ -935,7 +935,7 @@ void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
 
     void RenderFrame(const I420VideoFrame& video_frame,
                      int time_to_render_ms) override {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       if (received_pli_ &&
           video_frame.timestamp() > highest_dropped_timestamp_) {
         observation_complete_->Set();
@@ -1877,7 +1877,7 @@ TEST_F(EndToEndTest, ReportsSetEncoderRates) {
       // Make sure not to trigger on any default zero bitrates.
       if (new_target_bitrate == 0)
         return 0;
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       bitrate_kbps_ = new_target_bitrate;
       observation_complete_->Set();
       return 0;
@@ -1890,7 +1890,7 @@ TEST_F(EndToEndTest, ReportsSetEncoderRates) {
       for (unsigned int i = 0; i < kDefaultTimeoutMs; ++i) {
         VideoSendStream::Stats stats = send_stream_->GetStats();
         {
-          CriticalSectionScoped lock(crit_.get());
+          rtc::CritScope lock(&crit_);
           if ((stats.target_media_bitrate_bps + 500) / 1000 ==
               static_cast<int>(bitrate_kbps_)) {
             return;
@@ -2297,7 +2297,6 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
    public:
     explicit RtpSequenceObserver(bool use_rtx)
         : test::RtpRtcpObserver(kDefaultTimeoutMs),
-          crit_(CriticalSectionWrapper::CreateCriticalSection()),
           ssrcs_to_observe_(kNumSsrcs) {
       for (size_t i = 0; i < kNumSsrcs; ++i) {
         configured_ssrcs_[kSendSsrcs[i]] = true;
@@ -2307,7 +2306,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
     }
 
     void ResetExpectedSsrcs(size_t num_expected_ssrcs) {
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       ssrc_observed_.clear();
       ssrcs_to_observe_ = num_expected_ssrcs;
     }
@@ -2362,7 +2361,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
         last_observed_timestamp_[ssrc] = timestamp;
       }
 
-      CriticalSectionScoped lock(crit_.get());
+      rtc::CritScope lock(&crit_);
       // Wait for media packets on all ssrcs.
       if (!ssrc_observed_[ssrc] && !only_padding) {
         ssrc_observed_[ssrc] = true;
@@ -2377,7 +2376,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
     std::map<uint32_t, uint32_t> last_observed_timestamp_;
     std::map<uint32_t, bool> configured_ssrcs_;
 
-    rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+    rtc::CriticalSection crit_;
     size_t ssrcs_to_observe_ GUARDED_BY(crit_);
     std::map<uint32_t, bool> ssrc_observed_ GUARDED_BY(crit_);
   } observer(use_rtx);
@@ -2489,7 +2488,6 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
     NetworkStateTest()
         : EndToEndTest(kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
-          test_crit_(CriticalSectionWrapper::CreateCriticalSection()),
           encoded_frames_(EventWrapper::Create()),
           packet_event_(EventWrapper::Create()),
           sender_state_(Call::kNetworkUp),
@@ -2499,14 +2497,14 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
           down_frames_(0) {}
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      CriticalSectionScoped lock(test_crit_.get());
+      rtc::CritScope lock(&test_crit_);
       ++sender_rtp_;
       packet_event_->Set();
       return SEND_PACKET;
     }
 
     Action OnSendRtcp(const uint8_t* packet, size_t length) override {
-      CriticalSectionScoped lock(test_crit_.get());
+      rtc::CritScope lock(&test_crit_);
       ++sender_rtcp_;
       packet_event_->Set();
       return SEND_PACKET;
@@ -2518,7 +2516,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
     }
 
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
-      CriticalSectionScoped lock(test_crit_.get());
+      rtc::CritScope lock(&test_crit_);
       ++receiver_rtcp_;
       packet_event_->Set();
       return SEND_PACKET;
@@ -2544,7 +2542,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
       // Sender-side network down.
       sender_call_->SignalNetworkState(Call::kNetworkDown);
       {
-        CriticalSectionScoped lock(test_crit_.get());
+        rtc::CritScope lock(&test_crit_);
         // After network goes down we shouldn't be encoding more frames.
         sender_state_ = Call::kNetworkDown;
       }
@@ -2557,7 +2555,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
 
       // Network back up again for both.
       {
-        CriticalSectionScoped lock(test_crit_.get());
+        rtc::CritScope lock(&test_crit_);
         // It's OK to encode frames again, as we're about to bring up the
         // network.
         sender_state_ = Call::kNetworkUp;
@@ -2571,7 +2569,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
                    const CodecSpecificInfo* codec_specific_info,
                    const std::vector<VideoFrameType>* frame_types) override {
       {
-        CriticalSectionScoped lock(test_crit_.get());
+        rtc::CritScope lock(&test_crit_);
         if (sender_state_ == Call::kNetworkDown) {
           ++down_frames_;
           EXPECT_LE(down_frames_, 1)
@@ -2593,7 +2591,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
       int initial_sender_rtcp;
       int initial_receiver_rtcp;
       {
-        CriticalSectionScoped lock(test_crit_.get());
+        rtc::CritScope lock(&test_crit_);
         initial_sender_rtp = sender_rtp_;
         initial_sender_rtcp = sender_rtcp_;
         initial_receiver_rtcp = receiver_rtcp_;
@@ -2603,7 +2601,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
       while(!sender_done || !receiver_done) {
         packet_event_->Wait(kSilenceTimeoutMs);
         int64_t time_now_ms = clock_->TimeInMilliseconds();
-        CriticalSectionScoped lock(test_crit_.get());
+        rtc::CritScope lock(&test_crit_);
         if (sender_down) {
           ASSERT_LE(sender_rtp_ - initial_sender_rtp, kNumAcceptedDowntimeRtp)
               << "RTP sent during sender-side downtime.";
@@ -2633,7 +2631,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
       }
     }
 
-    const rtc::scoped_ptr<CriticalSectionWrapper> test_crit_;
+    rtc::CriticalSection test_crit_;
     const rtc::scoped_ptr<EventWrapper> encoded_frames_;
     const rtc::scoped_ptr<EventWrapper> packet_event_;
     Call* sender_call_;
