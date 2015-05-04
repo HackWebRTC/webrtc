@@ -17,30 +17,27 @@
 
 namespace webrtc {
 
-class VoEExternalMediaImpl : public VoEExternalMedia
-{
-public:
-    virtual int RegisterExternalMediaProcessing(
-        int channel,
-        ProcessingTypes type,
-        VoEMediaProcess& processObject);
+class VoEExternalMediaImpl : public VoEExternalMedia {
+ public:
+  int RegisterExternalMediaProcessing(int channel,
+                                      ProcessingTypes type,
+                                      VoEMediaProcess& processObject) override;
 
-    virtual int DeRegisterExternalMediaProcessing(
-        int channel,
-        ProcessingTypes type);
+  int DeRegisterExternalMediaProcessing(int channel,
+                                        ProcessingTypes type) override;
 
+  int GetAudioFrame(int channel,
+                    int desired_sample_rate_hz,
+                    AudioFrame* frame) override;
 
-    virtual int GetAudioFrame(int channel, int desired_sample_rate_hz,
-                              AudioFrame* frame);
+  int SetExternalMixing(int channel, bool enable) override;
 
-    virtual int SetExternalMixing(int channel, bool enable);
+ protected:
+  VoEExternalMediaImpl(voe::SharedData* shared);
+  ~VoEExternalMediaImpl() override;
 
-protected:
-    VoEExternalMediaImpl(voe::SharedData* shared);
-    virtual ~VoEExternalMediaImpl();
-
-private:
-    voe::SharedData* shared_;
+ private:
+  voe::SharedData* shared_;
 };
 
 }  // namespace webrtc

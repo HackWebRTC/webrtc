@@ -59,8 +59,7 @@ VoEAudioProcessing* VoEAudioProcessing::GetInterface(VoiceEngine* voiceEngine) {
 
 #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
 VoEAudioProcessingImpl::VoEAudioProcessingImpl(voe::SharedData* shared)
-    : _isAecMode(kDefaultEcMode == kEcAec),
-      _shared(shared) {
+    : _isAecMode(kDefaultEcMode == kEcAec), _shared(shared) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "VoEAudioProcessingImpl::VoEAudioProcessingImpl() - ctor");
 }
@@ -104,22 +103,22 @@ int VoEAudioProcessingImpl::SetNsStatus(bool enable, NsModes mode) {
       break;
   }
 
-  if (_shared->audio_processing()->noise_suppression()->
-          set_level(nsLevel) != 0) {
+  if (_shared->audio_processing()->noise_suppression()->set_level(nsLevel) !=
+      0) {
     _shared->SetLastError(VE_APM_ERROR, kTraceError,
-        "SetNsStatus() failed to set Ns mode");
+                          "SetNsStatus() failed to set Ns mode");
     return -1;
   }
   if (_shared->audio_processing()->noise_suppression()->Enable(enable) != 0) {
     _shared->SetLastError(VE_APM_ERROR, kTraceError,
-        "SetNsStatus() failed to set Ns state");
+                          "SetNsStatus() failed to set Ns state");
     return -1;
   }
 
   return 0;
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "SetNsStatus() Ns is not supported");
+                        "SetNsStatus() Ns is not supported");
   return -1;
 #endif
 }
@@ -157,7 +156,7 @@ int VoEAudioProcessingImpl::GetNsStatus(bool& enabled, NsModes& mode) {
   return 0;
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "GetNsStatus() Ns is not supported");
+                        "GetNsStatus() Ns is not supported");
   return -1;
 #endif
 }
@@ -174,7 +173,7 @@ int VoEAudioProcessingImpl::SetAgcStatus(bool enable, AgcModes mode) {
 #if defined(WEBRTC_IOS) || defined(ATA) || defined(WEBRTC_ANDROID)
   if (mode == kAgcAdaptiveAnalog) {
     _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
-        "SetAgcStatus() invalid Agc mode for mobile device");
+                          "SetAgcStatus() invalid Agc mode for mobile device");
     return -1;
   }
 #endif
@@ -200,12 +199,12 @@ int VoEAudioProcessingImpl::SetAgcStatus(bool enable, AgcModes mode) {
 
   if (_shared->audio_processing()->gain_control()->set_mode(agcMode) != 0) {
     _shared->SetLastError(VE_APM_ERROR, kTraceError,
-        "SetAgcStatus() failed to set Agc mode");
+                          "SetAgcStatus() failed to set Agc mode");
     return -1;
   }
   if (_shared->audio_processing()->gain_control()->Enable(enable) != 0) {
     _shared->SetLastError(VE_APM_ERROR, kTraceError,
-        "SetAgcStatus() failed to set Agc state");
+                          "SetAgcStatus() failed to set Agc state");
     return -1;
   }
 
@@ -215,15 +214,15 @@ int VoEAudioProcessingImpl::SetAgcStatus(bool enable, AgcModes mode) {
     // used since we want to be able to provide the APM with updated mic
     // levels when the user modifies the mic level manually.
     if (_shared->audio_device()->SetAGC(enable) != 0) {
-      _shared->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR,
-          kTraceWarning, "SetAgcStatus() failed to set Agc mode");
+      _shared->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR, kTraceWarning,
+                            "SetAgcStatus() failed to set Agc mode");
     }
   }
 
   return 0;
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "SetAgcStatus() Agc is not supported");
+                        "SetAgcStatus() Agc is not supported");
   return -1;
 #endif
 }
@@ -239,7 +238,7 @@ int VoEAudioProcessingImpl::GetAgcStatus(bool& enabled, AgcModes& mode) {
 
   enabled = _shared->audio_processing()->gain_control()->is_enabled();
   GainControl::Mode agcMode =
-    _shared->audio_processing()->gain_control()->mode();
+      _shared->audio_processing()->gain_control()->mode();
 
   switch (agcMode) {
     case GainControl::kFixedDigital:
@@ -258,7 +257,7 @@ int VoEAudioProcessingImpl::GetAgcStatus(bool& enabled, AgcModes& mode) {
   return 0;
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "GetAgcStatus() Agc is not supported");
+                        "GetAgcStatus() Agc is not supported");
   return -1;
 #endif
 }
@@ -273,22 +272,23 @@ int VoEAudioProcessingImpl::SetAgcConfig(AgcConfig config) {
   }
 
   if (_shared->audio_processing()->gain_control()->set_target_level_dbfs(
-      config.targetLeveldBOv) != 0) {
+          config.targetLeveldBOv) != 0) {
     _shared->SetLastError(VE_APM_ERROR, kTraceError,
-        "SetAgcConfig() failed to set target peak |level|"
-        " (or envelope) of the Agc");
+                          "SetAgcConfig() failed to set target peak |level|"
+                          " (or envelope) of the Agc");
     return -1;
   }
   if (_shared->audio_processing()->gain_control()->set_compression_gain_db(
-        config.digitalCompressionGaindB) != 0) {
+          config.digitalCompressionGaindB) != 0) {
     _shared->SetLastError(VE_APM_ERROR, kTraceError,
-        "SetAgcConfig() failed to set the range in |gain| "
-        "the digital compression stage may apply");
+                          "SetAgcConfig() failed to set the range in |gain| "
+                          "the digital compression stage may apply");
     return -1;
   }
   if (_shared->audio_processing()->gain_control()->enable_limiter(
-        config.limiterEnable) != 0) {
-    _shared->SetLastError(VE_APM_ERROR, kTraceError,
+          config.limiterEnable) != 0) {
+    _shared->SetLastError(
+        VE_APM_ERROR, kTraceError,
         "SetAgcConfig() failed to set hard limiter to the signal");
     return -1;
   }
@@ -296,7 +296,7 @@ int VoEAudioProcessingImpl::SetAgcConfig(AgcConfig config) {
   return 0;
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "SetAgcConfig() EC is not supported");
+                        "SetAgcConfig() EC is not supported");
   return -1;
 #endif
 }
@@ -311,23 +311,22 @@ int VoEAudioProcessingImpl::GetAgcConfig(AgcConfig& config) {
   }
 
   config.targetLeveldBOv =
-    _shared->audio_processing()->gain_control()->target_level_dbfs();
+      _shared->audio_processing()->gain_control()->target_level_dbfs();
   config.digitalCompressionGaindB =
-    _shared->audio_processing()->gain_control()->compression_gain_db();
+      _shared->audio_processing()->gain_control()->compression_gain_db();
   config.limiterEnable =
-    _shared->audio_processing()->gain_control()->is_limiter_enabled();
+      _shared->audio_processing()->gain_control()->is_limiter_enabled();
 
   WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetAgcConfig() => targetLeveldBOv=%u, "
-                  "digitalCompressionGaindB=%u, limiterEnable=%d",
-               config.targetLeveldBOv,
-               config.digitalCompressionGaindB,
+               "digitalCompressionGaindB=%u, limiterEnable=%d",
+               config.targetLeveldBOv, config.digitalCompressionGaindB,
                config.limiterEnable);
 
   return 0;
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "GetAgcConfig() EC is not supported");
+                        "GetAgcConfig() EC is not supported");
   return -1;
 #endif
 }
@@ -346,13 +345,13 @@ int VoEAudioProcessingImpl::SetRxNsStatus(int channel,
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == NULL) {
     _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-        "SetRxNsStatus() failed to locate channel");
+                          "SetRxNsStatus() failed to locate channel");
     return -1;
   }
   return channelPtr->SetRxNsStatus(enable, mode);
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "SetRxNsStatus() NS is not supported");
+                        "SetRxNsStatus() NS is not supported");
   return -1;
 #endif
 }
@@ -372,13 +371,13 @@ int VoEAudioProcessingImpl::GetRxNsStatus(int channel,
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == NULL) {
     _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-        "GetRxNsStatus() failed to locate channel");
+                          "GetRxNsStatus() failed to locate channel");
     return -1;
   }
   return channelPtr->GetRxNsStatus(enabled, mode);
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "GetRxNsStatus() NS is not supported");
+                        "GetRxNsStatus() NS is not supported");
   return -1;
 #endif
 }
@@ -387,8 +386,8 @@ int VoEAudioProcessingImpl::SetRxAgcStatus(int channel,
                                            bool enable,
                                            AgcModes mode) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "SetRxAgcStatus(channel=%d, enable=%d, mode=%d)",
-               channel, (int)enable, (int)mode);
+               "SetRxAgcStatus(channel=%d, enable=%d, mode=%d)", channel,
+               (int)enable, (int)mode);
 #ifdef WEBRTC_VOICE_ENGINE_AGC
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
@@ -399,13 +398,13 @@ int VoEAudioProcessingImpl::SetRxAgcStatus(int channel,
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == NULL) {
     _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-        "SetRxAgcStatus() failed to locate channel");
+                          "SetRxAgcStatus() failed to locate channel");
     return -1;
   }
   return channelPtr->SetRxAgcStatus(enable, mode);
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "SetRxAgcStatus() Agc is not supported");
+                        "SetRxAgcStatus() Agc is not supported");
   return -1;
 #endif
 }
@@ -425,19 +424,18 @@ int VoEAudioProcessingImpl::GetRxAgcStatus(int channel,
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == NULL) {
     _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-        "GetRxAgcStatus() failed to locate channel");
+                          "GetRxAgcStatus() failed to locate channel");
     return -1;
   }
   return channelPtr->GetRxAgcStatus(enabled, mode);
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "GetRxAgcStatus() Agc is not supported");
+                        "GetRxAgcStatus() Agc is not supported");
   return -1;
 #endif
 }
 
-int VoEAudioProcessingImpl::SetRxAgcConfig(int channel,
-                                           AgcConfig config) {
+int VoEAudioProcessingImpl::SetRxAgcConfig(int channel, AgcConfig config) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetRxAgcConfig(channel=%d)", channel);
 #ifdef WEBRTC_VOICE_ENGINE_AGC
@@ -450,13 +448,13 @@ int VoEAudioProcessingImpl::SetRxAgcConfig(int channel,
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == NULL) {
     _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-      "SetRxAgcConfig() failed to locate channel");
+                          "SetRxAgcConfig() failed to locate channel");
     return -1;
   }
   return channelPtr->SetRxAgcConfig(config);
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "SetRxAgcConfig() Agc is not supported");
+                        "SetRxAgcConfig() Agc is not supported");
   return -1;
 #endif
 }
@@ -474,13 +472,13 @@ int VoEAudioProcessingImpl::GetRxAgcConfig(int channel, AgcConfig& config) {
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == NULL) {
     _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-        "GetRxAgcConfig() failed to locate channel");
+                          "GetRxAgcConfig() failed to locate channel");
     return -1;
   }
   return channelPtr->GetRxAgcConfig(config);
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "GetRxAgcConfig() Agc is not supported");
+                        "GetRxAgcConfig() Agc is not supported");
   return -1;
 #endif
 }
@@ -498,7 +496,8 @@ int VoEAudioProcessingImpl::EnableDriftCompensation(bool enable) {
   WEBRTC_VOICE_INIT_CHECK();
 
   if (!DriftCompensationSupported()) {
-    _shared->SetLastError(VE_APM_ERROR, kTraceWarning,
+    _shared->SetLastError(
+        VE_APM_ERROR, kTraceWarning,
         "Drift compensation is not supported on this platform.");
     return -1;
   }
@@ -506,7 +505,7 @@ int VoEAudioProcessingImpl::EnableDriftCompensation(bool enable) {
   EchoCancellation* aec = _shared->audio_processing()->echo_cancellation();
   if (aec->enable_drift_compensation(enable) != 0) {
     _shared->SetLastError(VE_APM_ERROR, kTraceError,
-        "aec->enable_drift_compensation() failed");
+                          "aec->enable_drift_compensation() failed");
     return -1;
   }
   return 0;
@@ -530,41 +529,43 @@ int VoEAudioProcessingImpl::SetEcStatus(bool enable, EcModes mode) {
   }
 
   // AEC mode
-  if ((mode == kEcDefault) ||
-      (mode == kEcConference) ||
-      (mode == kEcAec) ||
-      ((mode == kEcUnchanged) &&
-       (_isAecMode == true))) {
+  if ((mode == kEcDefault) || (mode == kEcConference) || (mode == kEcAec) ||
+      ((mode == kEcUnchanged) && (_isAecMode == true))) {
     if (enable) {
       // Disable the AECM before enable the AEC
       if (_shared->audio_processing()->echo_control_mobile()->is_enabled()) {
         _shared->SetLastError(VE_APM_ERROR, kTraceWarning,
-            "SetEcStatus() disable AECM before enabling AEC");
-        if (_shared->audio_processing()->echo_control_mobile()->
-            Enable(false) != 0) {
+                              "SetEcStatus() disable AECM before enabling AEC");
+        if (_shared->audio_processing()->echo_control_mobile()->Enable(false) !=
+            0) {
           _shared->SetLastError(VE_APM_ERROR, kTraceError,
-              "SetEcStatus() failed to disable AECM");
+                                "SetEcStatus() failed to disable AECM");
           return -1;
         }
       }
     }
     if (_shared->audio_processing()->echo_cancellation()->Enable(enable) != 0) {
       _shared->SetLastError(VE_APM_ERROR, kTraceError,
-          "SetEcStatus() failed to set AEC state");
+                            "SetEcStatus() failed to set AEC state");
       return -1;
     }
     if (mode == kEcConference) {
-      if (_shared->audio_processing()->echo_cancellation()->
-          set_suppression_level(EchoCancellation::kHighSuppression) != 0) {
-        _shared->SetLastError(VE_APM_ERROR, kTraceError,
+      if (_shared->audio_processing()
+              ->echo_cancellation()
+              ->set_suppression_level(EchoCancellation::kHighSuppression) !=
+          0) {
+        _shared->SetLastError(
+            VE_APM_ERROR, kTraceError,
             "SetEcStatus() failed to set aggressiveness to high");
         return -1;
       }
     } else {
-      if (_shared->audio_processing()->echo_cancellation()->
-          set_suppression_level(
-            EchoCancellation::kModerateSuppression) != 0) {
-        _shared->SetLastError(VE_APM_ERROR, kTraceError,
+      if (_shared->audio_processing()
+              ->echo_cancellation()
+              ->set_suppression_level(EchoCancellation::kModerateSuppression) !=
+          0) {
+        _shared->SetLastError(
+            VE_APM_ERROR, kTraceError,
             "SetEcStatus() failed to set aggressiveness to moderate");
         return -1;
       }
@@ -572,38 +573,37 @@ int VoEAudioProcessingImpl::SetEcStatus(bool enable, EcModes mode) {
 
     _isAecMode = true;
   } else if ((mode == kEcAecm) ||
-             ((mode == kEcUnchanged) &&
-              (_isAecMode == false))) {
+             ((mode == kEcUnchanged) && (_isAecMode == false))) {
     if (enable) {
       // Disable the AEC before enable the AECM
       if (_shared->audio_processing()->echo_cancellation()->is_enabled()) {
         _shared->SetLastError(VE_APM_ERROR, kTraceWarning,
-            "SetEcStatus() disable AEC before enabling AECM");
-        if (_shared->audio_processing()->echo_cancellation()->
-            Enable(false) != 0) {
+                              "SetEcStatus() disable AEC before enabling AECM");
+        if (_shared->audio_processing()->echo_cancellation()->Enable(false) !=
+            0) {
           _shared->SetLastError(VE_APM_ERROR, kTraceError,
-              "SetEcStatus() failed to disable AEC");
+                                "SetEcStatus() failed to disable AEC");
           return -1;
         }
       }
     }
-    if (_shared->audio_processing()->echo_control_mobile()->
-        Enable(enable) != 0) {
+    if (_shared->audio_processing()->echo_control_mobile()->Enable(enable) !=
+        0) {
       _shared->SetLastError(VE_APM_ERROR, kTraceError,
-          "SetEcStatus() failed to set AECM state");
+                            "SetEcStatus() failed to set AECM state");
       return -1;
     }
     _isAecMode = false;
   } else {
     _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
-                                   "SetEcStatus() invalid EC mode");
+                          "SetEcStatus() invalid EC mode");
     return -1;
   }
 
   return 0;
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "SetEcStatus() EC is not supported");
+                        "SetEcStatus() EC is not supported");
   return -1;
 #endif
 }
@@ -622,17 +622,15 @@ int VoEAudioProcessingImpl::GetEcStatus(bool& enabled, EcModes& mode) {
     enabled = _shared->audio_processing()->echo_cancellation()->is_enabled();
   } else {
     mode = kEcAecm;
-    enabled = _shared->audio_processing()->echo_control_mobile()->
-              is_enabled();
+    enabled = _shared->audio_processing()->echo_control_mobile()->is_enabled();
   }
 
   WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetEcStatus() => enabled=%i, mode=%i",
-               enabled, (int)mode);
+               "GetEcStatus() => enabled=%i, mode=%i", enabled, (int)mode);
   return 0;
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "GetEcStatus() EC is not supported");
+                        "GetEcStatus() EC is not supported");
   return -1;
 #endif
 }
@@ -679,16 +677,16 @@ int VoEAudioProcessingImpl::SetAecmMode(AecmModes mode, bool enableCNG) {
       break;
   }
 
-
-  if (_shared->audio_processing()->echo_control_mobile()->
-      set_routing_mode(aecmMode) != 0) {
+  if (_shared->audio_processing()->echo_control_mobile()->set_routing_mode(
+          aecmMode) != 0) {
     _shared->SetLastError(VE_APM_ERROR, kTraceError,
-        "SetAECMMode() failed to set AECM routing mode");
+                          "SetAECMMode() failed to set AECM routing mode");
     return -1;
   }
-  if (_shared->audio_processing()->echo_control_mobile()->
-      enable_comfort_noise(enableCNG) != 0) {
-    _shared->SetLastError(VE_APM_ERROR, kTraceError,
+  if (_shared->audio_processing()->echo_control_mobile()->enable_comfort_noise(
+          enableCNG) != 0) {
+    _shared->SetLastError(
+        VE_APM_ERROR, kTraceError,
         "SetAECMMode() failed to set comfort noise state for AECM");
     return -1;
   }
@@ -696,7 +694,7 @@ int VoEAudioProcessingImpl::SetAecmMode(AecmModes mode, bool enableCNG) {
   return 0;
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "SetAECMMode() EC is not supported");
+                        "SetAECMMode() EC is not supported");
   return -1;
 #endif
 }
@@ -714,8 +712,9 @@ int VoEAudioProcessingImpl::GetAecmMode(AecmModes& mode, bool& enabledCNG) {
 
   EchoControlMobile::RoutingMode aecmMode =
       _shared->audio_processing()->echo_control_mobile()->routing_mode();
-  enabledCNG = _shared->audio_processing()->echo_control_mobile()->
-      is_comfort_noise_enabled();
+  enabledCNG = _shared->audio_processing()
+                   ->echo_control_mobile()
+                   ->is_comfort_noise_enabled();
 
   switch (aecmMode) {
     case EchoControlMobile::kQuietEarpieceOrHeadset:
@@ -738,7 +737,7 @@ int VoEAudioProcessingImpl::GetAecmMode(AecmModes& mode, bool& enabledCNG) {
   return 0;
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "GetAECMMode() EC is not supported");
+                        "GetAECMMode() EC is not supported");
   return -1;
 #endif
 }
@@ -749,7 +748,7 @@ int VoEAudioProcessingImpl::EnableHighPassFilter(bool enable) {
   if (_shared->audio_processing()->high_pass_filter()->Enable(enable) !=
       AudioProcessing::kNoError) {
     _shared->SetLastError(VE_APM_ERROR, kTraceError,
-        "HighPassFilter::Enable() failed.");
+                          "HighPassFilter::Enable() failed.");
     return -1;
   }
 
@@ -762,9 +761,8 @@ bool VoEAudioProcessingImpl::IsHighPassFilterEnabled() {
   return _shared->audio_processing()->high_pass_filter()->is_enabled();
 }
 
-int VoEAudioProcessingImpl::RegisterRxVadObserver(
-  int channel,
-  VoERxVadCallback& observer) {
+int VoEAudioProcessingImpl::RegisterRxVadObserver(int channel,
+                                                  VoERxVadCallback& observer) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "RegisterRxVadObserver()");
   if (!_shared->statistics().Initialized()) {
@@ -775,7 +773,7 @@ int VoEAudioProcessingImpl::RegisterRxVadObserver(
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == NULL) {
     _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-        "RegisterRxVadObserver() failed to locate channel");
+                          "RegisterRxVadObserver() failed to locate channel");
     return -1;
   }
   return channelPtr->RegisterRxVadObserver(observer);
@@ -792,7 +790,7 @@ int VoEAudioProcessingImpl::DeRegisterRxVadObserver(int channel) {
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == NULL) {
     _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-        "DeRegisterRxVadObserver() failed to locate channel");
+                          "DeRegisterRxVadObserver() failed to locate channel");
     return -1;
   }
 
@@ -811,7 +809,7 @@ int VoEAudioProcessingImpl::VoiceActivityIndicator(int channel) {
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == NULL) {
     _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-        "DeRegisterRxVadObserver() failed to locate channel");
+                          "DeRegisterRxVadObserver() failed to locate channel");
     return -1;
   }
   int activity(-1);
@@ -829,18 +827,18 @@ int VoEAudioProcessingImpl::SetEcMetricsStatus(bool enable) {
     return -1;
   }
 
-  if ((_shared->audio_processing()->echo_cancellation()->enable_metrics(enable)
-       != 0) ||
+  if ((_shared->audio_processing()->echo_cancellation()->enable_metrics(
+           enable) != 0) ||
       (_shared->audio_processing()->echo_cancellation()->enable_delay_logging(
-         enable) != 0)) {
+           enable) != 0)) {
     _shared->SetLastError(VE_APM_ERROR, kTraceError,
-        "SetEcMetricsStatus() unable to set EC metrics mode");
+                          "SetEcMetricsStatus() unable to set EC metrics mode");
     return -1;
   }
   return 0;
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "SetEcStatus() EC is not supported");
+                        "SetEcStatus() EC is not supported");
   return -1;
 #endif
 }
@@ -855,12 +853,14 @@ int VoEAudioProcessingImpl::GetEcMetricsStatus(bool& enabled) {
   }
 
   bool echo_mode =
-    _shared->audio_processing()->echo_cancellation()->are_metrics_enabled();
-  bool delay_mode = _shared->audio_processing()->echo_cancellation()->
-      is_delay_logging_enabled();
+      _shared->audio_processing()->echo_cancellation()->are_metrics_enabled();
+  bool delay_mode = _shared->audio_processing()
+                        ->echo_cancellation()
+                        ->is_delay_logging_enabled();
 
   if (echo_mode != delay_mode) {
-    _shared->SetLastError(VE_APM_ERROR, kTraceError,
+    _shared->SetLastError(
+        VE_APM_ERROR, kTraceError,
         "GetEcMetricsStatus() delay logging and echo mode are not the same");
     return -1;
   }
@@ -872,7 +872,7 @@ int VoEAudioProcessingImpl::GetEcMetricsStatus(bool& enabled) {
   return 0;
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "SetEcStatus() EC is not supported");
+                        "SetEcStatus() EC is not supported");
   return -1;
 #endif
 }
@@ -889,7 +889,8 @@ int VoEAudioProcessingImpl::GetEchoMetrics(int& ERL,
     return -1;
   }
   if (!_shared->audio_processing()->echo_cancellation()->is_enabled()) {
-    _shared->SetLastError(VE_APM_ERROR, kTraceWarning,
+    _shared->SetLastError(
+        VE_APM_ERROR, kTraceWarning,
         "GetEchoMetrics() AudioProcessingModule AEC is not enabled");
     return -1;
   }
@@ -910,12 +911,12 @@ int VoEAudioProcessingImpl::GetEchoMetrics(int& ERL,
   A_NLP = echoMetrics.a_nlp.instant;
 
   WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetEchoMetrics() => ERL=%d, ERLE=%d, RERL=%d, A_NLP=%d",
-               ERL, ERLE, RERL, A_NLP);
+               "GetEchoMetrics() => ERL=%d, ERLE=%d, RERL=%d, A_NLP=%d", ERL,
+               ERLE, RERL, A_NLP);
   return 0;
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "SetEcStatus() EC is not supported");
+                        "SetEcStatus() EC is not supported");
   return -1;
 #endif
 }
@@ -931,7 +932,8 @@ int VoEAudioProcessingImpl::GetEcDelayMetrics(int& delay_median,
     return -1;
   }
   if (!_shared->audio_processing()->echo_cancellation()->is_enabled()) {
-    _shared->SetLastError(VE_APM_ERROR, kTraceWarning,
+    _shared->SetLastError(
+        VE_APM_ERROR, kTraceWarning,
         "GetEcDelayMetrics() AudioProcessingModule AEC is not enabled");
     return -1;
   }
@@ -941,7 +943,7 @@ int VoEAudioProcessingImpl::GetEcDelayMetrics(int& delay_median,
   float poor_fraction = 0;
   // Get delay-logging values from Audio Processing Module.
   if (_shared->audio_processing()->echo_cancellation()->GetDelayMetrics(
-        &median, &std, &poor_fraction)) {
+          &median, &std, &poor_fraction)) {
     WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetEcDelayMetrics(), AudioProcessingModule delay-logging "
                  "error");
@@ -955,12 +957,12 @@ int VoEAudioProcessingImpl::GetEcDelayMetrics(int& delay_median,
 
   WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetEcDelayMetrics() => delay_median=%d, delay_std=%d, "
-               "fraction_poor_delays=%f", delay_median, delay_std,
-               fraction_poor_delays);
+               "fraction_poor_delays=%f",
+               delay_median, delay_std, fraction_poor_delays);
   return 0;
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "SetEcStatus() EC is not supported");
+                        "SetEcStatus() EC is not supported");
   return -1;
 #endif
 }
@@ -1014,12 +1016,13 @@ int VoEAudioProcessingImpl::SetTypingDetectionStatus(bool enable) {
 
   if (_shared->audio_processing()->voice_detection()->Enable(enable)) {
     _shared->SetLastError(VE_APM_ERROR, kTraceWarning,
-        "SetTypingDetectionStatus() failed to set VAD state");
+                          "SetTypingDetectionStatus() failed to set VAD state");
     return -1;
   }
   if (_shared->audio_processing()->voice_detection()->set_likelihood(
           VoiceDetection::kVeryLowLikelihood)) {
-    _shared->SetLastError(VE_APM_ERROR, kTraceWarning,
+    _shared->SetLastError(
+        VE_APM_ERROR, kTraceWarning,
         "SetTypingDetectionStatus() failed to set VAD likelihood to low");
     return -1;
   }
@@ -1043,8 +1046,7 @@ int VoEAudioProcessingImpl::GetTypingDetectionStatus(bool& enabled) {
   return 0;
 }
 
-
-int VoEAudioProcessingImpl::TimeSinceLastTyping(int &seconds) {
+int VoEAudioProcessingImpl::TimeSinceLastTyping(int& seconds) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "TimeSinceLastTyping()");
 #if !defined(WEBRTC_VOICE_ENGINE_TYPING_DETECTION)
@@ -1056,16 +1058,13 @@ int VoEAudioProcessingImpl::TimeSinceLastTyping(int &seconds) {
   }
   // Check if typing detection is enabled
   bool enabled = _shared->audio_processing()->voice_detection()->is_enabled();
-  if (enabled)
-  {
+  if (enabled) {
     _shared->transmit_mixer()->TimeSinceLastTyping(seconds);
     return 0;
-  }
-  else
-  {
+  } else {
     _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "SetTypingDetectionStatus is not enabled");
-  return -1;
+                          "SetTypingDetectionStatus is not enabled");
+    return -1;
   }
 #endif
 }
@@ -1084,8 +1083,9 @@ int VoEAudioProcessingImpl::SetTypingDetectionParameters(int timeWindow,
     _shared->statistics().SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
   }
-  return (_shared->transmit_mixer()->SetTypingDetectionParameters(timeWindow,
-      costPerTyping, reportingThreshold, penaltyDecay, typeEventDelay));
+  return (_shared->transmit_mixer()->SetTypingDetectionParameters(
+      timeWindow, costPerTyping, reportingThreshold, penaltyDecay,
+      typeEventDelay));
 #endif
 }
 

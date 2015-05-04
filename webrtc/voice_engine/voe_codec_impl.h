@@ -15,63 +15,61 @@
 
 #include "webrtc/voice_engine/shared_data.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
-class VoECodecImpl: public VoECodec
-{
-public:
-    virtual int NumOfCodecs();
+class VoECodecImpl : public VoECodec {
+ public:
+  int NumOfCodecs() override;
 
-    virtual int GetCodec(int index, CodecInst& codec);
+  int GetCodec(int index, CodecInst& codec) override;
 
-    virtual int SetSendCodec(int channel, const CodecInst& codec);
+  int SetSendCodec(int channel, const CodecInst& codec) override;
 
-    virtual int GetSendCodec(int channel, CodecInst& codec);
+  int GetSendCodec(int channel, CodecInst& codec) override;
 
-    int SetBitRate(int channel, int bitrate_bps) override;
+  int SetBitRate(int channel, int bitrate_bps) override;
 
-    virtual int GetRecCodec(int channel, CodecInst& codec);
+  int GetRecCodec(int channel, CodecInst& codec) override;
 
-    virtual int SetSendCNPayloadType(
-        int channel, int type,
-        PayloadFrequencies frequency = kFreq16000Hz);
+  int SetSendCNPayloadType(
+      int channel,
+      int type,
+      PayloadFrequencies frequency = kFreq16000Hz) override;
 
-    virtual int SetRecPayloadType(int channel,
-                                  const CodecInst& codec);
+  int SetRecPayloadType(int channel, const CodecInst& codec) override;
 
-    virtual int GetRecPayloadType(int channel, CodecInst& codec);
+  int GetRecPayloadType(int channel, CodecInst& codec) override;
 
-    virtual int SetFECStatus(int channel, bool enable);
+  int SetFECStatus(int channel, bool enable) override;
 
-    virtual int GetFECStatus(int channel, bool& enabled);
+  int GetFECStatus(int channel, bool& enabled) override;
 
-    virtual int SetVADStatus(int channel,
-                             bool enable,
-                             VadModes mode = kVadConventional,
-                             bool disableDTX = false);
+  int SetVADStatus(int channel,
+                   bool enable,
+                   VadModes mode = kVadConventional,
+                   bool disableDTX = false) override;
 
-    virtual int GetVADStatus(int channel,
-                             bool& enabled,
-                             VadModes& mode,
-                             bool& disabledDTX);
+  int GetVADStatus(int channel,
+                   bool& enabled,
+                   VadModes& mode,
+                   bool& disabledDTX) override;
 
-    virtual int SetOpusMaxPlaybackRate(int channel, int frequency_hz);
+  int SetOpusMaxPlaybackRate(int channel, int frequency_hz) override;
 
-    virtual int SetOpusDtx(int channel, bool enable_dtx);
+  int SetOpusDtx(int channel, bool enable_dtx) override;
 
-protected:
-    VoECodecImpl(voe::SharedData* shared);
-    virtual ~VoECodecImpl();
+ protected:
+  VoECodecImpl(voe::SharedData* shared);
+  ~VoECodecImpl() override;
 
-private:
-    void ACMToExternalCodecRepresentation(CodecInst& toInst,
-                                          const CodecInst& fromInst);
+ private:
+  void ACMToExternalCodecRepresentation(CodecInst& toInst,
+                                        const CodecInst& fromInst);
 
-    void ExternalToACMCodecRepresentation(CodecInst& toInst,
-                                          const CodecInst& fromInst);
+  void ExternalToACMCodecRepresentation(CodecInst& toInst,
+                                        const CodecInst& fromInst);
 
-    voe::SharedData* _shared;
+  voe::SharedData* _shared;
 };
 
 }  // namespace webrtc

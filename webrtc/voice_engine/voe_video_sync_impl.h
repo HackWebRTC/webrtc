@@ -17,38 +17,38 @@
 
 namespace webrtc {
 
-class VoEVideoSyncImpl : public VoEVideoSync
-{
-public:
-    virtual int GetPlayoutBufferSize(int& bufferMs);
+class VoEVideoSyncImpl : public VoEVideoSync {
+ public:
+  int GetPlayoutBufferSize(int& bufferMs) override;
 
-    virtual int SetMinimumPlayoutDelay(int channel, int delayMs);
+  int SetMinimumPlayoutDelay(int channel, int delayMs) override;
 
-    virtual int SetInitialPlayoutDelay(int channel, int delay_ms);
+  int SetInitialPlayoutDelay(int channel, int delay_ms) override;
 
-    virtual int GetDelayEstimate(int channel,
-                                 int* jitter_buffer_delay_ms,
-                                 int* playout_buffer_delay_ms);
+  int GetDelayEstimate(int channel,
+                       int* jitter_buffer_delay_ms,
+                       int* playout_buffer_delay_ms) override;
 
-    virtual int GetLeastRequiredDelayMs(int channel) const;
+  int GetLeastRequiredDelayMs(int channel) const override;
 
-    virtual int SetInitTimestamp(int channel, unsigned int timestamp);
+  int SetInitTimestamp(int channel, unsigned int timestamp) override;
 
-    virtual int SetInitSequenceNumber(int channel, short sequenceNumber);
+  int SetInitSequenceNumber(int channel, short sequenceNumber) override;
 
-    virtual int GetPlayoutTimestamp(int channel, unsigned int& timestamp);
+  int GetPlayoutTimestamp(int channel, unsigned int& timestamp) override;
 
-    virtual int GetRtpRtcp(int channel, RtpRtcp** rtpRtcpModule,
-                           RtpReceiver** rtp_receiver);
+  int GetRtpRtcp(int channel,
+                 RtpRtcp** rtpRtcpModule,
+                 RtpReceiver** rtp_receiver) override;
 
-protected:
-    VoEVideoSyncImpl(voe::SharedData* shared);
-    virtual ~VoEVideoSyncImpl();
+ protected:
+  VoEVideoSyncImpl(voe::SharedData* shared);
+  ~VoEVideoSyncImpl() override;
 
-private:
-    voe::SharedData* _shared;
+ private:
+  voe::SharedData* _shared;
 };
 
 }  // namespace webrtc
 
-#endif    // WEBRTC_VOICE_ENGINE_VOE_VIDEO_SYNC_IMPL_H
+#endif  // WEBRTC_VOICE_ENGINE_VOE_VIDEO_SYNC_IMPL_H

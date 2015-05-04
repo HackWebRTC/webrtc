@@ -15,30 +15,28 @@
 
 #include "webrtc/voice_engine/shared_data.h"
 
+namespace webrtc {
 
-namespace webrtc
-{
+class VoENetworkImpl : public VoENetwork {
+ public:
+  int RegisterExternalTransport(int channel, Transport& transport) override;
 
-class VoENetworkImpl: public VoENetwork
-{
-public:
- int RegisterExternalTransport(int channel, Transport& transport) override;
+  int DeRegisterExternalTransport(int channel) override;
 
- int DeRegisterExternalTransport(int channel) override;
+  int ReceivedRTPPacket(int channel, const void* data, size_t length) override;
+  int ReceivedRTPPacket(int channel,
+                        const void* data,
+                        size_t length,
+                        const PacketTime& packet_time) override;
 
- int ReceivedRTPPacket(int channel, const void* data, size_t length) override;
- int ReceivedRTPPacket(int channel,
-                       const void* data,
-                       size_t length,
-                       const PacketTime& packet_time) override;
+  int ReceivedRTCPPacket(int channel, const void* data, size_t length) override;
 
- int ReceivedRTCPPacket(int channel, const void* data, size_t length) override;
+ protected:
+  VoENetworkImpl(voe::SharedData* shared);
+  ~VoENetworkImpl() override;
 
-protected:
-    VoENetworkImpl(voe::SharedData* shared);
-    virtual ~VoENetworkImpl();
-private:
-    voe::SharedData* _shared;
+ private:
+  voe::SharedData* _shared;
 };
 
 }  // namespace webrtc

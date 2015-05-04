@@ -19,61 +19,54 @@
 
 namespace webrtc {
 
-VoENetEqStats* VoENetEqStats::GetInterface(VoiceEngine* voiceEngine)
-{
+VoENetEqStats* VoENetEqStats::GetInterface(VoiceEngine* voiceEngine) {
 #ifndef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
-    return NULL;
+  return NULL;
 #else
-    if (NULL == voiceEngine)
-    {
-        return NULL;
-    }
-    VoiceEngineImpl* s = static_cast<VoiceEngineImpl*>(voiceEngine);
-    s->AddRef();
-    return s;
+  if (NULL == voiceEngine) {
+    return NULL;
+  }
+  VoiceEngineImpl* s = static_cast<VoiceEngineImpl*>(voiceEngine);
+  s->AddRef();
+  return s;
 #endif
 }
 
 #ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
 
-VoENetEqStatsImpl::VoENetEqStatsImpl(voe::SharedData* shared) : _shared(shared)
-{
-    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "VoENetEqStatsImpl::VoENetEqStatsImpl() - ctor");
+VoENetEqStatsImpl::VoENetEqStatsImpl(voe::SharedData* shared)
+    : _shared(shared) {
+  WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "VoENetEqStatsImpl::VoENetEqStatsImpl() - ctor");
 }
 
-VoENetEqStatsImpl::~VoENetEqStatsImpl()
-{
-    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "VoENetEqStatsImpl::~VoENetEqStatsImpl() - dtor");
+VoENetEqStatsImpl::~VoENetEqStatsImpl() {
+  WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "VoENetEqStatsImpl::~VoENetEqStatsImpl() - dtor");
 }
 
 int VoENetEqStatsImpl::GetNetworkStatistics(int channel,
-                                            NetworkStatistics& stats)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "GetNetworkStatistics(channel=%d, stats=?)", channel);
+                                            NetworkStatistics& stats) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "GetNetworkStatistics(channel=%d, stats=?)", channel);
 
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
-    if (channelPtr == NULL)
-    {
-        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "GetNetworkStatistics() failed to locate channel");
-        return -1;
-    }
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return -1;
+  }
+  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
+  voe::Channel* channelPtr = ch.channel();
+  if (channelPtr == NULL) {
+    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+                          "GetNetworkStatistics() failed to locate channel");
+    return -1;
+  }
 
-    return channelPtr->GetNetworkStatistics(stats);
+  return channelPtr->GetNetworkStatistics(stats);
 }
 
 int VoENetEqStatsImpl::GetDecodingCallStatistics(
     int channel, AudioDecodingCallStats* stats) const {
-
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;

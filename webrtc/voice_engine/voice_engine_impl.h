@@ -47,8 +47,7 @@
 #include "webrtc/voice_engine/voe_volume_control_impl.h"
 #endif
 
-namespace webrtc
-{
+namespace webrtc {
 
 class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
                         public VoiceEngine,
@@ -83,11 +82,10 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
 #ifdef WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
                         public VoEVolumeControlImpl,
 #endif
-                        public VoEBaseImpl
-{
-public:
-    VoiceEngineImpl(const Config* config, bool owns_config) :
-        SharedData(*config),
+                        public VoEBaseImpl {
+ public:
+  VoiceEngineImpl(const Config* config, bool owns_config)
+      : SharedData(*config),
 #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
         VoEAudioProcessingImpl(this),
 #endif
@@ -121,24 +119,20 @@ public:
 #endif
         VoEBaseImpl(this),
         _ref_count(0),
-        own_config_(owns_config ? config : NULL)
-    {
-    }
-    virtual ~VoiceEngineImpl()
-    {
-        assert(_ref_count.Value() == 0);
-    }
+        own_config_(owns_config ? config : NULL) {
+  }
+  ~VoiceEngineImpl() override { assert(_ref_count.Value() == 0); }
 
-    int AddRef();
+  int AddRef();
 
-    // This implements the Release() method for all the inherited interfaces.
-    virtual int Release();
+  // This implements the Release() method for all the inherited interfaces.
+  int Release() override;
 
-private:
-    Atomic32 _ref_count;
-    rtc::scoped_ptr<const Config> own_config_;
+ private:
+  Atomic32 _ref_count;
+  rtc::scoped_ptr<const Config> own_config_;
 };
 
 }  // namespace webrtc
 
-#endif // WEBRTC_VOICE_ENGINE_VOICE_ENGINE_IMPL_H
+#endif  // WEBRTC_VOICE_ENGINE_VOICE_ENGINE_IMPL_H
