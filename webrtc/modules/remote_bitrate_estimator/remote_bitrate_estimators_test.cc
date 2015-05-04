@@ -319,7 +319,7 @@ TEST_P(BweFeedbackTest, Verizon4gDownlinkTest) {
 }
 
 // webrtc:3277
-TEST_P(BweFeedbackTest, DISABLED_GoogleWifiTrace3Mbps) {
+TEST_P(BweFeedbackTest, GoogleWifiTrace3Mbps) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
   VideoSender sender(&uplink_, &source, GetParam());
   RateCounterFilter counter1(&uplink_, 0, "sender_output");
