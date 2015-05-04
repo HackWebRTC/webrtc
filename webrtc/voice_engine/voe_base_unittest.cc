@@ -16,28 +16,28 @@
 
 namespace webrtc {
 
-class VoEBaseFixture : public VoiceEngineFixture {};
+class VoEBaseTest : public VoiceEngineFixture {};
 
-TEST_F(VoEBaseFixture, InitWithExternalAudioDeviceAndAudioProcessing) {
+TEST_F(VoEBaseTest, InitWithExternalAudioDeviceAndAudioProcessing) {
   AudioProcessing* audioproc = AudioProcessing::Create();
   EXPECT_EQ(0, base_->Init(&adm_, audioproc));
   EXPECT_EQ(audioproc, base_->audio_processing());
   EXPECT_EQ(0, base_->LastError());
 }
 
-TEST_F(VoEBaseFixture, InitWithExternalAudioDevice) {
+TEST_F(VoEBaseTest, InitWithExternalAudioDevice) {
   EXPECT_EQ(nullptr, base_->audio_processing());
   EXPECT_EQ(0, base_->Init(&adm_, nullptr));
   EXPECT_NE(nullptr, base_->audio_processing());
   EXPECT_EQ(0, base_->LastError());
 }
 
-TEST_F(VoEBaseFixture, CreateChannelBeforeInitShouldFail) {
+TEST_F(VoEBaseTest, CreateChannelBeforeInitShouldFail) {
   int channelID = base_->CreateChannel();
   EXPECT_EQ(channelID, -1);
 }
 
-TEST_F(VoEBaseFixture, CreateChannelAfterInit) {
+TEST_F(VoEBaseTest, CreateChannelAfterInit) {
   EXPECT_EQ(0, base_->Init(&adm_, nullptr));
   int channelID = base_->CreateChannel();
   EXPECT_NE(channelID, -1);
