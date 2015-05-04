@@ -40,20 +40,6 @@ struct ByteType {
   using t = decltype(F(static_cast<T*>(nullptr)));
 };
 
-// Deprecated: Accept void* in addition to the byte-sized types.
-// TODO(kwiberg): Remove once Chromium doesn't need this anymore.
-template <typename T>
-struct ByteTypeOrVoid {
- private:
-  static int F(uint8_t*);
-  static int F(int8_t*);
-  static int F(char*);
-  static int F(void*);
-
- public:
-  using t = decltype(F(static_cast<T*>(nullptr)));
-};
-
 }  // namespace internal
 
 // Basic buffer class, can be grown and shrunk dynamically.
@@ -70,10 +56,10 @@ class Buffer final {
 
   // Construct a buffer and copy the specified number of bytes into it. The
   // source array may be (const) uint8_t*, int8_t*, or char*.
-  template <typename T, typename internal::ByteTypeOrVoid<T>::t = 0>
+  template <typename T, typename internal::ByteType<T>::t = 0>
   Buffer(const T* data, size_t size)
       : Buffer(data, size, size) {}
-  template <typename T, typename internal::ByteTypeOrVoid<T>::t = 0>
+  template <typename T, typename internal::ByteType<T>::t = 0>
   Buffer(const T* data, size_t size, size_t capacity)
       : Buffer(size, capacity) {
     std::memcpy(data_.get(), data, size);
@@ -86,15 +72,14 @@ class Buffer final {
 
   ~Buffer();
 
-  // Get a pointer to the data. Just .data() will give you a (const) char*,
-  // but you may also use .data<int8_t>() and .data<uint8_t>().
-  // TODO(kwiberg): Change default to uint8_t
-  template <typename T = char, typename internal::ByteType<T>::t = 0>
+  // Get a pointer to the data. Just .data() will give you a (const) uint8_t*,
+  // but you may also use .data<int8_t>() and .data<char>().
+  template <typename T = uint8_t, typename internal::ByteType<T>::t = 0>
   const T* data() const {
     assert(IsConsistent());
     return reinterpret_cast<T*>(data_.get());
   }
-  template <typename T = char, typename internal::ByteType<T>::t = 0>
+  template <typename T = uint8_t, typename internal::ByteType<T>::t = 0>
   T* data() {
     assert(IsConsistent());
     return reinterpret_cast<T*>(data_.get());
@@ -133,7 +118,7 @@ class Buffer final {
 
   // Replace the contents of the buffer. Accepts the same types as the
   // constructors.
-  template <typename T, typename internal::ByteTypeOrVoid<T>::t = 0>
+  template <typename T, typename internal::ByteType<T>::t = 0>
   void SetData(const T* data, size_t size) {
     assert(IsConsistent());
     size_ = 0;
@@ -146,7 +131,7 @@ class Buffer final {
   void SetData(const Buffer& buf) { SetData(buf.data(), buf.size()); }
 
   // Append data to the buffer. Accepts the same types as the constructors.
-  template <typename T, typename internal::ByteTypeOrVoid<T>::t = 0>
+  template <typename T, typename internal::ByteType<T>::t = 0>
   void AppendData(const T* data, size_t size) {
     assert(IsConsistent());
     const size_t new_size = size_ + size;

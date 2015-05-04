@@ -82,7 +82,7 @@ class LoopbackTransportTest : public webrtc::Transport {
     packets_sent_++;
     rtc::Buffer* buffer =
         new rtc::Buffer(reinterpret_cast<const uint8_t*>(data), len);
-    last_sent_packet_ = buffer->data<uint8_t>();
+    last_sent_packet_ = buffer->data();
     last_sent_packet_len_ = len;
     total_bytes_sent_ += len;
     sent_packets_.push_back(buffer);

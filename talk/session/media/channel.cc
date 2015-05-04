@@ -512,7 +512,7 @@ bool BaseChannel::SendPacket(bool rtcp, rtc::Buffer* packet,
   // Protect if needed.
   if (srtp_filter_.IsActive()) {
     bool res;
-    uint8_t* data = packet->data<uint8_t>();
+    uint8_t* data = packet->data();
     int len = static_cast<int>(packet->size());
     if (!rtcp) {
     // If ENABLE_EXTERNAL_AUTH flag is on then packet authentication is not done
