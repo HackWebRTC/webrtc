@@ -32,6 +32,9 @@
 @class ARDVideoCallView;
 @protocol ARDVideoCallViewDelegate <NSObject>
 
+// Called when the camera switch button is pressed.
+- (void)videoCallViewDidSwitchCamera:(ARDVideoCallView *)view;
+
 // Called when the hangup button is pressed.
 - (void)videoCallViewDidHangup:(ARDVideoCallView *)view;
 

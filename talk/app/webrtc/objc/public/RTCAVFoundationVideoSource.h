@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013 Google Inc.
+ * Copyright 2015 Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,31 +25,25 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "RTCMediaStreamTrack.h"
+#import "RTCVideoSource.h"
 
-@protocol RTCVideoRenderer;
+@class AVCaptureSession;
+@class RTCMediaConstraints;
 @class RTCPeerConnectionFactory;
-@class RTCVideoSource;
 
-// RTCVideoTrack is an ObjectiveC wrapper for VideoTrackInterface.
-@interface RTCVideoTrack : RTCMediaStreamTrack
-
-@property(nonatomic, readonly) RTCVideoSource* source;
+// RTCAVFoundationVideoSource is a video source that uses
+// webrtc::AVFoundationVideoCapturer. We do not currently provide a wrapper for
+// that capturer because cricket::VideoCapturer is not ref counted and we cannot
+// guarantee its lifetime. Instead, we expose its properties through the ref
+// counted video source interface.
+@interface RTCAVFoundationVideoSource : RTCVideoSource
 
 - (instancetype)initWithFactory:(RTCPeerConnectionFactory*)factory
-                         source:(RTCVideoSource*)source
-                        trackId:(NSString*)trackId;
+                    constraints:(RTCMediaConstraints*)constraints;
 
-// Register a renderer that will render all frames received on this track.
-- (void)addRenderer:(id<RTCVideoRenderer>)renderer;
-
-// Deregister a renderer.
-- (void)removeRenderer:(id<RTCVideoRenderer>)renderer;
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Disallow init and don't add to documentation
-- (id)init __attribute__(
-    (unavailable("init is not a supported initializer for this class.")));
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
+// Switches the camera being used (either front or back).
+@property(nonatomic, assign) BOOL useBackCamera;
+// Returns the active capture session.
+@property(nonatomic, readonly) AVCaptureSession* captureSession;
 
 @end

@@ -32,19 +32,48 @@
 #import "RTCVideoTrack+Internal.h"
 
 #import "RTCMediaStreamTrack+Internal.h"
+#import "RTCPeerConnectionFactory+Internal.h"
 #import "RTCVideoRendererAdapter.h"
+#import "RTCMediaSource+Internal.h"
+#import "RTCVideoSource+Internal.h"
 
 @implementation RTCVideoTrack {
   NSMutableArray* _adapters;
 }
 
-- (id)initWithMediaTrack:
-          (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)
-      mediaTrack {
-  if (self = [super initWithMediaTrack:mediaTrack]) {
-    _adapters = [NSMutableArray array];
+@synthesize source = _source;
+
+- (instancetype)initWithFactory:(RTCPeerConnectionFactory*)factory
+                         source:(RTCVideoSource*)source
+                        trackId:(NSString*)trackId {
+  NSParameterAssert(factory);
+  NSParameterAssert(source);
+  NSParameterAssert(trackId.length);
+  rtc::scoped_refptr<webrtc::VideoTrackInterface> track =
+      factory.nativeFactory->CreateVideoTrack([trackId UTF8String],
+                                              source.videoSource);
+  if (self = [super initWithMediaTrack:track]) {
+    [self configure];
+    _source = source;
   }
   return self;
+}
+
+- (instancetype)initWithMediaTrack:
+    (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)mediaTrack {
+  if (self = [super initWithMediaTrack:mediaTrack]) {
+    [self configure];
+    rtc::scoped_refptr<webrtc::VideoSourceInterface> source =
+        self.nativeVideoTrack->GetSource();
+    if (source) {
+      _source = [[RTCVideoSource alloc] initWithMediaSource:source.get()];
+    }
+  }
+  return self;
+}
+
+- (void)configure {
+  _adapters = [NSMutableArray array];
 }
 
 - (void)dealloc {

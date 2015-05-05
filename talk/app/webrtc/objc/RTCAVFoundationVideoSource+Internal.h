@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013 Google Inc.
+ * Copyright 2015 Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,31 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "RTCMediaStreamTrack.h"
+#import "RTCAVFoundationVideoSource.h"
 
-@protocol RTCVideoRenderer;
-@class RTCPeerConnectionFactory;
-@class RTCVideoSource;
+#include "avfoundationvideocapturer.h"
 
-// RTCVideoTrack is an ObjectiveC wrapper for VideoTrackInterface.
-@interface RTCVideoTrack : RTCMediaStreamTrack
+@interface RTCAVFoundationVideoSource ()
 
-@property(nonatomic, readonly) RTCVideoSource* source;
-
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory*)factory
-                         source:(RTCVideoSource*)source
-                        trackId:(NSString*)trackId;
-
-// Register a renderer that will render all frames received on this track.
-- (void)addRenderer:(id<RTCVideoRenderer>)renderer;
-
-// Deregister a renderer.
-- (void)removeRenderer:(id<RTCVideoRenderer>)renderer;
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Disallow init and don't add to documentation
-- (id)init __attribute__(
-    (unavailable("init is not a supported initializer for this class.")));
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
+@property(nonatomic, readonly) webrtc::AVFoundationVideoCapturer* capturer;
 
 @end

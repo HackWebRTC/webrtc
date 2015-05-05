@@ -30,19 +30,20 @@
 #import <AVFoundation/AVFoundation.h>
 #import "UIImage+ARDUtilities.h"
 
-static CGFloat const kHangupButtonPadding = 16;
-static CGFloat const kHangupButtonSize = 48;
-static CGFloat const kLocalVideoViewWidth = 90;
-static CGFloat const kLocalVideoViewHeight = 120;
+static CGFloat const kButtonPadding = 16;
+static CGFloat const kButtonSize = 48;
+static CGFloat const kLocalVideoViewSize = 120;
 static CGFloat const kLocalVideoViewPadding = 8;
 
 @interface ARDVideoCallView () <RTCEAGLVideoViewDelegate>
 @end
 
 @implementation ARDVideoCallView {
+  UIButton *_cameraSwitchButton;
   UIButton *_hangupButton;
   CGSize _localVideoSize;
   CGSize _remoteVideoSize;
+  BOOL _useRearCamera;
 }
 
 @synthesize statusLabel = _statusLabel;
@@ -56,17 +57,30 @@ static CGFloat const kLocalVideoViewPadding = 8;
     _remoteVideoView.delegate = self;
     [self addSubview:_remoteVideoView];
 
+    // TODO(tkchin): replace this with a view that renders layer from
+    // AVCaptureSession.
     _localVideoView = [[RTCEAGLVideoView alloc] initWithFrame:CGRectZero];
-    _localVideoView.transform = CGAffineTransformMakeScale(-1, 1);
     _localVideoView.delegate = self;
     [self addSubview:_localVideoView];
 
+    // TODO(tkchin): don't display this if we can't actually do camera switch.
+    _cameraSwitchButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    _cameraSwitchButton.backgroundColor = [UIColor whiteColor];
+    _cameraSwitchButton.layer.cornerRadius = kButtonSize / 2;
+    _cameraSwitchButton.layer.masksToBounds = YES;
+    UIImage *image = [UIImage imageNamed:@"ic_switch_video_black_24dp.png"];
+    [_cameraSwitchButton setImage:image forState:UIControlStateNormal];
+    [_cameraSwitchButton addTarget:self
+                      action:@selector(onCameraSwitch:)
+            forControlEvents:UIControlEventTouchUpInside];
+    [self addSubview:_cameraSwitchButton];
+
     _hangupButton = [UIButton buttonWithType:UIButtonTypeCustom];
     _hangupButton.backgroundColor = [UIColor redColor];
-    _hangupButton.layer.cornerRadius = kHangupButtonSize / 2;
+    _hangupButton.layer.cornerRadius = kButtonSize / 2;
     _hangupButton.layer.masksToBounds = YES;
-    UIImage *image = [UIImage imageForName:@"ic_call_end_black_24dp.png"
-                                     color:[UIColor whiteColor]];
+    image = [UIImage imageForName:@"ic_call_end_black_24dp.png"
+                            color:[UIColor whiteColor]];
     [_hangupButton setImage:image forState:UIControlStateNormal];
     [_hangupButton addTarget:self
                       action:@selector(onHangup:)
@@ -104,21 +118,36 @@ static CGFloat const kLocalVideoViewPadding = 8;
     _remoteVideoView.frame = bounds;
   }
 
-  CGRect localVideoFrame = CGRectZero;
-  localVideoFrame.origin.x =
-      CGRectGetMaxX(bounds) - kLocalVideoViewWidth - kLocalVideoViewPadding;
-  localVideoFrame.origin.y =
-      CGRectGetMaxY(bounds) - kLocalVideoViewHeight - kLocalVideoViewPadding;
-  localVideoFrame.size.width = kLocalVideoViewWidth;
-  localVideoFrame.size.height = kLocalVideoViewHeight;
-  _localVideoView.frame = localVideoFrame;
+  if (_localVideoSize.width && _localVideoSize.height > 0) {
+    // Aspect fit local video view into a square box.
+    CGRect localVideoFrame =
+        CGRectMake(0, 0, kLocalVideoViewSize, kLocalVideoViewSize);
+    localVideoFrame =
+        AVMakeRectWithAspectRatioInsideRect(_localVideoSize, localVideoFrame);
 
+    // Place the view in the bottom right.
+    localVideoFrame.origin.x = CGRectGetMaxX(bounds)
+        - localVideoFrame.size.width - kLocalVideoViewPadding;
+    localVideoFrame.origin.y = CGRectGetMaxY(bounds)
+        - localVideoFrame.size.height - kLocalVideoViewPadding;
+    _localVideoView.frame = localVideoFrame;
+  } else {
+    _localVideoView.frame = bounds;
+  }
+
+  // Place hangup button in the bottom left.
   _hangupButton.frame =
-      CGRectMake(CGRectGetMinX(bounds) + kHangupButtonPadding,
-                 CGRectGetMaxY(bounds) - kHangupButtonPadding -
-                     kHangupButtonSize,
-                 kHangupButtonSize,
-                 kHangupButtonSize);
+      CGRectMake(CGRectGetMinX(bounds) + kButtonPadding,
+                 CGRectGetMaxY(bounds) - kButtonPadding -
+                     kButtonSize,
+                 kButtonSize,
+                 kButtonSize);
+
+  // Place button to the right of hangup button.
+  CGRect cameraSwitchFrame = _hangupButton.frame;
+  cameraSwitchFrame.origin.x =
+      CGRectGetMaxX(cameraSwitchFrame) + kButtonPadding;
+  _cameraSwitchButton.frame = cameraSwitchFrame;
 
   [_statusLabel sizeToFit];
   _statusLabel.center =
@@ -130,6 +159,7 @@ static CGFloat const kLocalVideoViewPadding = 8;
 - (void)videoView:(RTCEAGLVideoView*)videoView didChangeVideoSize:(CGSize)size {
   if (videoView == _localVideoView) {
     _localVideoSize = size;
+    _localVideoView.hidden = CGSizeEqualToSize(CGSizeZero, _localVideoSize);
   } else if (videoView == _remoteVideoView) {
     _remoteVideoSize = size;
   }
@@ -137,6 +167,10 @@ static CGFloat const kLocalVideoViewPadding = 8;
 }
 
 #pragma mark - Private
+
+- (void)onCameraSwitch:(id)sender {
+  [_delegate videoCallViewDidSwitchCamera:self];
+}
 
 - (void)onHangup:(id)sender {
   [_delegate videoCallViewDidHangup:self];

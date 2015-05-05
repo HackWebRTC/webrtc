@@ -29,7 +29,7 @@
 #error "This file requires ARC support."
 #endif
 
-#import "RTCPeerConnectionFactory.h"
+#import "RTCPeerConnectionFactory+Internal.h"
 
 #include <vector>
 
@@ -47,20 +47,12 @@
 
 #include "talk/app/webrtc/audiotrack.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
-#include "talk/app/webrtc/peerconnectionfactory.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/videosourceinterface.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/ssladapter.h"
 
-@interface RTCPeerConnectionFactory ()
-
-@property(nonatomic, assign) rtc::scoped_refptr<
-    webrtc::PeerConnectionFactoryInterface> nativeFactory;
-
-@end
 
 @implementation RTCPeerConnectionFactory {
   rtc::scoped_ptr<rtc::Thread> _signalingThread;

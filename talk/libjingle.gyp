@@ -325,8 +325,13 @@
           'conditions': [
             ['OS=="ios"', {
               'sources': [
+                'app/webrtc/objc/avfoundationvideocapturer.h',
+                'app/webrtc/objc/avfoundationvideocapturer.mm',
+                'app/webrtc/objc/RTCAVFoundationVideoSource+Internal.h',
+                'app/webrtc/objc/RTCAVFoundationVideoSource.mm',
                 'app/webrtc/objc/RTCEAGLVideoView.m',
                 'app/webrtc/objc/public/RTCEAGLVideoView.h',
+                'app/webrtc/objc/public/RTCAVFoundationVideoSource.h',
               ],
               'link_settings': {
                 'xcode_settings': {

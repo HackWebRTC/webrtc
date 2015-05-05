@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013 Google Inc.
+ * Copyright 2015 Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,31 +25,45 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "RTCMediaStreamTrack.h"
+#import "RTCAVFoundationVideoSource+Internal.h"
 
-@protocol RTCVideoRenderer;
-@class RTCPeerConnectionFactory;
-@class RTCVideoSource;
+#import "RTCMediaConstraints+Internal.h"
+#import "RTCMediaSource+Internal.h"
+#import "RTCPeerConnectionFactory+Internal.h"
+#import "RTCVideoSource+Internal.h"
 
-// RTCVideoTrack is an ObjectiveC wrapper for VideoTrackInterface.
-@interface RTCVideoTrack : RTCMediaStreamTrack
-
-@property(nonatomic, readonly) RTCVideoSource* source;
+@implementation RTCAVFoundationVideoSource
 
 - (instancetype)initWithFactory:(RTCPeerConnectionFactory*)factory
-                         source:(RTCVideoSource*)source
-                        trackId:(NSString*)trackId;
+                    constraints:(RTCMediaConstraints*)constraints {
+  NSParameterAssert(factory);
+  rtc::scoped_ptr<webrtc::AVFoundationVideoCapturer> capturer;
+  capturer.reset(new webrtc::AVFoundationVideoCapturer());
+  rtc::scoped_refptr<webrtc::VideoSourceInterface> source =
+      factory.nativeFactory->CreateVideoSource(capturer.release(),
+                                               constraints.constraints);
+  return [super initWithMediaSource:source];
+}
 
-// Register a renderer that will render all frames received on this track.
-- (void)addRenderer:(id<RTCVideoRenderer>)renderer;
+- (BOOL)useBackCamera {
+  return self.capturer->GetUseBackCamera();
+}
 
-// Deregister a renderer.
-- (void)removeRenderer:(id<RTCVideoRenderer>)renderer;
+- (void)setUseBackCamera:(BOOL)useBackCamera {
+  self.capturer->SetUseBackCamera(useBackCamera);
+}
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Disallow init and don't add to documentation
-- (id)init __attribute__(
-    (unavailable("init is not a supported initializer for this class.")));
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
+- (AVCaptureSession*)captureSession {
+  return self.capturer->GetCaptureSession();
+}
+
+- (webrtc::AVFoundationVideoCapturer*)capturer {
+  cricket::VideoCapturer* capturer = self.videoSource->GetVideoCapturer();
+  // This should be safe because no one should have changed the underlying video
+  // source.
+  webrtc::AVFoundationVideoCapturer* foundationCapturer =
+      static_cast<webrtc::AVFoundationVideoCapturer*>(capturer);
+  return foundationCapturer;
+}
 
 @end

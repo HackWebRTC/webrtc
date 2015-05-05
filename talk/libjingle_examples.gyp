@@ -226,6 +226,8 @@
                 'examples/objc/AppRTCDemo/ios/resources/ic_call_end_black_24dp@2x.png',
                 'examples/objc/AppRTCDemo/ios/resources/ic_clear_black_24dp.png',
                 'examples/objc/AppRTCDemo/ios/resources/ic_clear_black_24dp@2x.png',
+                'examples/objc/AppRTCDemo/ios/resources/ic_switch_video_black_24dp.png',
+                'examples/objc/AppRTCDemo/ios/resources/ic_switch_video_black_24dp@2x.png',
                 'examples/objc/Icon.png',
               ],
               'sources': [

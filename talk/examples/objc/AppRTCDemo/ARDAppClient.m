@@ -27,7 +27,15 @@
 
 #import "ARDAppClient+Internal.h"
 
-#import <AVFoundation/AVFoundation.h>
+#if defined(WEBRTC_IOS)
+#import "RTCAVFoundationVideoSource.h"
+#endif
+#import "RTCICEServer.h"
+#import "RTCMediaConstraints.h"
+#import "RTCMediaStream.h"
+#import "RTCPair.h"
+#import "RTCVideoCapturer.h"
+#import "RTCAVFoundationVideoSource.h"
 
 #import "ARDAppEngineClient.h"
 #import "ARDCEODTURNClient.h"
@@ -37,13 +45,8 @@
 #import "ARDUtilities.h"
 #import "ARDWebSocketChannel.h"
 #import "RTCICECandidate+JSON.h"
-#import "RTCICEServer.h"
-#import "RTCMediaConstraints.h"
-#import "RTCMediaStream.h"
-#import "RTCPair.h"
 #import "RTCSessionDescription+JSON.h"
-#import "RTCVideoCapturer.h"
-#import "RTCVideoTrack.h"
+
 
 static NSString * const kARDDefaultSTUNServerUrl =
     @"stun:stun.l.google.com:19302";
@@ -484,39 +487,33 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
 
 - (RTCMediaStream *)createLocalMediaStream {
   RTCMediaStream* localStream = [_factory mediaStreamWithLabel:@"ARDAMS"];
-  RTCVideoTrack* localVideoTrack = nil;
+  RTCVideoTrack* localVideoTrack = [self createLocalVideoTrack];
+  if (localVideoTrack) {
+    [localStream addVideoTrack:localVideoTrack];
+    [_delegate appClient:self didReceiveLocalVideoTrack:localVideoTrack];
+  }
+  [localStream addAudioTrack:[_factory audioTrackWithID:@"ARDAMSa0"]];
+  return localStream;
+}
 
+- (RTCVideoTrack *)createLocalVideoTrack {
+  RTCVideoTrack* localVideoTrack = nil;
   // The iOS simulator doesn't provide any sort of camera capture
   // support or emulation (http://goo.gl/rHAnC1) so don't bother
   // trying to open a local stream.
   // TODO(tkchin): local video capture for OSX. See
   // https://code.google.com/p/webrtc/issues/detail?id=3417.
 #if !TARGET_IPHONE_SIMULATOR && TARGET_OS_IPHONE
-  NSString *cameraID = nil;
-  for (AVCaptureDevice *captureDevice in
-       [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]) {
-    if (captureDevice.position == AVCaptureDevicePositionFront) {
-      cameraID = [captureDevice localizedName];
-      break;
-    }
-  }
-  NSAssert(cameraID, @"Unable to get the front camera id");
-
-  RTCVideoCapturer *capturer =
-      [RTCVideoCapturer capturerWithDeviceName:cameraID];
   RTCMediaConstraints *mediaConstraints = [self defaultMediaStreamConstraints];
-  RTCVideoSource *videoSource =
-      [_factory videoSourceWithCapturer:capturer
-                            constraints:mediaConstraints];
+  RTCAVFoundationVideoSource *source =
+      [[RTCAVFoundationVideoSource alloc] initWithFactory:_factory
+                                              constraints:mediaConstraints];
   localVideoTrack =
-      [_factory videoTrackWithID:@"ARDAMSv0" source:videoSource];
-  if (localVideoTrack) {
-    [localStream addVideoTrack:localVideoTrack];
-  }
-  [_delegate appClient:self didReceiveLocalVideoTrack:localVideoTrack];
+      [[RTCVideoTrack alloc] initWithFactory:_factory
+                                      source:source
+                                     trackId:@"ARDAMSv0"];
 #endif
-  [localStream addAudioTrack:[_factory audioTrackWithID:@"ARDAMSa0"]];
-  return localStream;
+  return localVideoTrack;
 }
 
 #pragma mark - Collider methods
