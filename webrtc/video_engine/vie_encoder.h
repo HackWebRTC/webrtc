@@ -11,7 +11,6 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_ENCODER_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_ENCODER_H_
 
-#include <list>
 #include <map>
 #include <vector>
 
@@ -149,7 +148,7 @@ class ViEEncoder
   void OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) override;
 
   // Sets SSRCs for all streams.
-  bool SetSsrcs(const std::list<unsigned int>& ssrcs);
+  bool SetSsrcs(const std::vector<uint32_t>& ssrcs);
 
   void SetMinTransmitBitrate(int min_transmit_bitrate_kbps);
 
@@ -233,7 +232,7 @@ class ViEEncoder
   uint8_t picture_id_sli_ GUARDED_BY(data_cs_);
   bool has_received_rpsi_ GUARDED_BY(data_cs_);
   uint64_t picture_id_rpsi_ GUARDED_BY(data_cs_);
-  std::map<unsigned int, int> ssrc_streams_ GUARDED_BY(data_cs_);
+  std::map<uint32_t, int> ssrc_streams_ GUARDED_BY(data_cs_);
 
   bool video_suspended_ GUARDED_BY(data_cs_);
   I420FrameCallback* pre_encode_callback_ GUARDED_BY(callback_cs_);

@@ -15,6 +15,7 @@
 #define WEBRTC_VIDEO_ENGINE_ENCODER_STATE_FEEDBACK_H_
 
 #include <map>
+#include <vector>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -33,6 +34,9 @@ class EncoderStateFeedback {
 
   EncoderStateFeedback();
   ~EncoderStateFeedback();
+
+  // Update SSRCs for an encoder.
+  void UpdateSsrcs(const std::vector<uint32_t>& ssrc, ViEEncoder* encoder);
 
   // Adds an encoder to receive feedback for a unique ssrc.
   bool AddEncoder(uint32_t ssrc, ViEEncoder* encoder);

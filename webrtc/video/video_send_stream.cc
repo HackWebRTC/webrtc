@@ -19,12 +19,8 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
+#include "webrtc/video_engine/encoder_state_feedback.h"
 #include "webrtc/video_engine/include/vie_base.h"
-#include "webrtc/video_engine/include/vie_capture.h"
-#include "webrtc/video_engine/include/vie_codec.h"
-#include "webrtc/video_engine/include/vie_external_codec.h"
-#include "webrtc/video_engine/include/vie_image_process.h"
-#include "webrtc/video_engine/include/vie_network.h"
 #include "webrtc/video_engine/vie_capturer.h"
 #include "webrtc/video_engine/vie_channel.h"
 #include "webrtc/video_engine/vie_channel_group.h"
@@ -206,7 +202,6 @@ VideoSendStream::VideoSendStream(
                   config.encoder_settings.encoder,
                   config.encoder_settings.payload_type, false));
 
-  codec_ = ViECodec::GetInterface(video_engine);
   CHECK(ReconfigureVideoEncoder(encoder_config));
 
   if (overuse_observer) {
@@ -222,8 +217,14 @@ VideoSendStream::VideoSendStream(
   if (config_.post_encode_callback)
     vie_encoder_->RegisterPostEncodeImageCallback(&encoded_frame_proxy_);
 
-  if (config_.suspend_below_min_bitrate)
-    codec_->SuspendBelowMinBitrate(channel_);
+  if (config_.suspend_below_min_bitrate) {
+    vie_encoder_->SuspendBelowMinBitrate();
+    // Must enable pacing when enabling SuspendBelowMinBitrate. Otherwise, no
+    // padding will be sent when the video is suspended so the video will be
+    // unable to recover.
+    // TODO(pbos): Pacing should probably be enabled outside of VideoSendStream.
+    vie_channel_->SetTransmissionSmoothingStatus(true);
+  }
 
   vie_channel_->RegisterSendChannelRtcpStatisticsCallback(&stats_proxy_);
   vie_channel_->RegisterSendChannelRtpStatisticsCallback(&stats_proxy_);
@@ -231,11 +232,11 @@ VideoSendStream::VideoSendStream(
   vie_channel_->RegisterSendBitrateObserver(&stats_proxy_);
   vie_channel_->RegisterSendFrameCountObserver(&stats_proxy_);
 
-  codec_->RegisterEncoderObserver(channel_, stats_proxy_);
+  vie_encoder_->RegisterCodecObserver(&stats_proxy_);
 }
 
 VideoSendStream::~VideoSendStream() {
-  codec_->DeregisterEncoderObserver(channel_);
+  vie_encoder_->RegisterCodecObserver(nullptr);
 
   vie_channel_->RegisterSendFrameCountObserver(nullptr);
   vie_channel_->RegisterSendBitrateObserver(nullptr);
@@ -258,7 +259,6 @@ VideoSendStream::~VideoSendStream() {
   video_engine_base_->DeleteChannel(channel_);
 
   video_engine_base_->Release();
-  codec_->Release();
 }
 
 void VideoSendStream::IncomingCapturedFrame(const I420VideoFrame& frame) {
@@ -399,15 +399,10 @@ bool VideoSendStream::ReconfigureVideoEncoder(
   // the bitrate controller is already set from Call.
   video_codec.startBitrate = 0;
 
-  if (video_codec.minBitrate < kViEMinCodecBitrate)
-    video_codec.minBitrate = kViEMinCodecBitrate;
-  if (video_codec.maxBitrate < kViEMinCodecBitrate)
-    video_codec.maxBitrate = kViEMinCodecBitrate;
-
   DCHECK_GT(streams[0].max_framerate, 0);
   video_codec.maxFramerate = streams[0].max_framerate;
 
-  if (codec_->SetSendCodec(channel_, video_codec) != 0)
+  if (!SetSendCodec(video_codec))
     return false;
 
   DCHECK_GE(config.min_transmit_bitrate_bps, 0);
@@ -497,5 +492,53 @@ int64_t VideoSendStream::GetRtt() const {
   }
   return -1;
 }
+
+bool VideoSendStream::SetSendCodec(VideoCodec video_codec) {
+  if (video_codec.maxBitrate == 0) {
+    // Unset max bitrate -> cap to one bit per pixel.
+    video_codec.maxBitrate =
+        (video_codec.width * video_codec.height * video_codec.maxFramerate) /
+        1000;
+  }
+
+  if (video_codec.minBitrate < kViEMinCodecBitrate)
+    video_codec.minBitrate = kViEMinCodecBitrate;
+  if (video_codec.maxBitrate < kViEMinCodecBitrate)
+    video_codec.maxBitrate = kViEMinCodecBitrate;
+
+  // Stop the media flow while reconfiguring.
+  vie_encoder_->Pause();
+
+  if (vie_encoder_->SetEncoder(video_codec) != 0) {
+    LOG(LS_ERROR) << "Failed to set encoder.";
+    return false;
+  }
+
+  if (vie_channel_->SetSendCodec(video_codec, false) != 0) {
+    LOG(LS_ERROR) << "Failed to set send codec.";
+    return false;
+  }
+
+  // Not all configured SSRCs have to be utilized (simulcast senders don't have
+  // to send on all SSRCs at once etc.)
+  std::vector<uint32_t> used_ssrcs = config_.rtp.ssrcs;
+  used_ssrcs.resize(static_cast<size_t>(video_codec.numberOfSimulcastStreams));
+
+  // Update used SSRCs.
+  vie_encoder_->SetSsrcs(used_ssrcs);
+  EncoderStateFeedback* encoder_state_feedback =
+      channel_group_->GetEncoderStateFeedback();
+  encoder_state_feedback->UpdateSsrcs(used_ssrcs, vie_encoder_);
+
+  // Update the protection mode, we might be switching NACK/FEC.
+  vie_encoder_->UpdateProtectionMethod(vie_encoder_->nack_enabled(),
+                                       vie_channel_->IsSendingFecEnabled());
+
+  // Restart the media flow
+  vie_encoder_->Restart();
+
+  return true;
+}
+
 }  // namespace internal
 }  // namespace webrtc

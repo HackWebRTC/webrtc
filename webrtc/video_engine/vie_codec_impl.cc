@@ -241,7 +241,8 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
       ssrcs.push_back(ssrc);
     }
   }
-  vie_encoder->SetSsrcs(ssrcs);
+  std::vector<uint32_t> ssrc_vector(ssrcs.begin(), ssrcs.end());
+  vie_encoder->SetSsrcs(ssrc_vector);
   shared_data_->channel_manager()->UpdateSsrcs(video_channel, ssrcs);
 
   // Update the protection mode, we might be switching NACK/FEC.

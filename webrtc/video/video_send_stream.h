@@ -31,9 +31,7 @@ class ProcessThread;
 class ViEBase;
 class ViECapturer;
 class ViEChannel;
-class ViECodec;
 class ViEEncoder;
-class ViEExternalCodec;
 class VideoEngine;
 
 namespace internal {
@@ -76,6 +74,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   int64_t GetRtt() const;
 
  private:
+  bool SetSendCodec(VideoCodec video_codec);
   void ConfigureSsrcs();
   TransportAdapter transport_adapter_;
   EncodedFrameCallbackAdapter encoded_frame_proxy_;
@@ -88,7 +87,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   ViEBase* video_engine_base_;
   ViEChannel* vie_channel_;
-  ViECodec* codec_;
   ViEEncoder* vie_encoder_;
   ViECapturer* vie_capturer_;
 

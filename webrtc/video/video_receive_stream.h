@@ -32,12 +32,6 @@ namespace webrtc {
 
 class VideoEngine;
 class ViEBase;
-class ViECodec;
-class ViEExternalCodec;
-class ViEImageProcess;
-class ViENetwork;
-class ViERender;
-class ViERTP_RTCP;
 class VoiceEngine;
 
 namespace internal {

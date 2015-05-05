@@ -222,7 +222,7 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
   int stream_idx = 0;
   channel->GetLocalSSRC(stream_idx, &ssrc);
   encoder_state_feedback_->AddEncoder(ssrc, encoder);
-  std::list<unsigned int> ssrcs;
+  std::vector<uint32_t> ssrcs;
   ssrcs.push_back(ssrc);
   encoder->SetSsrcs(ssrcs);
   return true;

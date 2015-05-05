@@ -21,13 +21,6 @@
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video_encoder.h"
 #include "webrtc/video_engine/include/vie_base.h"
-#include "webrtc/video_engine/include/vie_capture.h"
-#include "webrtc/video_engine/include/vie_codec.h"
-#include "webrtc/video_engine/include/vie_external_codec.h"
-#include "webrtc/video_engine/include/vie_image_process.h"
-#include "webrtc/video_engine/include/vie_network.h"
-#include "webrtc/video_engine/include/vie_render.h"
-#include "webrtc/video_engine/include/vie_rtp_rtcp.h"
 #include "webrtc/video_receive_stream.h"
 
 namespace webrtc {

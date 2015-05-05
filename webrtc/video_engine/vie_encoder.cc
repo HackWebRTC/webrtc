@@ -767,7 +767,7 @@ void ViEEncoder::OnReceivedIntraFrameRequest(uint32_t ssrc) {
   int idx = 0;
   {
     CriticalSectionScoped cs(data_cs_.get());
-    std::map<unsigned int, int>::iterator stream_it = ssrc_streams_.find(ssrc);
+    auto stream_it = ssrc_streams_.find(ssrc);
     if (stream_it == ssrc_streams_.end()) {
       LOG_F(LS_WARNING) << "ssrc not found: " << ssrc << ", map size "
                         << ssrc_streams_.size();
@@ -810,7 +810,7 @@ void ViEEncoder::OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) {
   time_last_intra_request_ms_[new_ssrc] = last_intra_request_ms;
 }
 
-bool ViEEncoder::SetSsrcs(const std::list<unsigned int>& ssrcs) {
+bool ViEEncoder::SetSsrcs(const std::vector<uint32_t>& ssrcs) {
   VideoCodec codec;
   if (vcm_->SendCodec(&codec) != 0)
     return false;
@@ -824,10 +824,8 @@ bool ViEEncoder::SetSsrcs(const std::list<unsigned int>& ssrcs) {
   ssrc_streams_.clear();
   time_last_intra_request_ms_.clear();
   int idx = 0;
-  for (std::list<unsigned int>::const_iterator it = ssrcs.begin();
-       it != ssrcs.end(); ++it, ++idx) {
-    unsigned int ssrc = *it;
-    ssrc_streams_[ssrc] = idx;
+  for (uint32_t ssrc : ssrcs) {
+    ssrc_streams_[ssrc] = idx++;
   }
   return true;
 }
