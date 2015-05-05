@@ -148,7 +148,7 @@ const RTPFragmentationHeader* VCMEncodedFrame::FragmentationHeader() const {
   return &_fragmentation;
 }
 
-void VCMEncodedFrame::VerifyAndAllocate(const uint32_t minimumSize)
+void VCMEncodedFrame::VerifyAndAllocate(size_t minimumSize)
 {
     if(minimumSize > _size)
     {

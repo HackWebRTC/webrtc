@@ -108,7 +108,7 @@ protected:
     * is copied to the new buffer.
     * Buffer size is updated to minimumSize.
     */
-    void VerifyAndAllocate(const uint32_t minimumSize);
+    void VerifyAndAllocate(size_t minimumSize);
 
     void Reset();
 
