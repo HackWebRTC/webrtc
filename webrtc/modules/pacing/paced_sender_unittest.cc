@@ -71,22 +71,26 @@ class PacedSenderProbing : public PacedSender::Callback {
                         uint16_t sequence_number,
                         int64_t capture_time_ms,
                         bool retransmission) {
+    ExpectAndCountPacket();
+    return true;
+  }
+
+  size_t TimeToSendPadding(size_t bytes) {
+    ExpectAndCountPacket();
+    return bytes;
+  }
+
+  void ExpectAndCountPacket() {
     ++packets_sent_;
     EXPECT_FALSE(expected_deltas_.empty());
     if (expected_deltas_.empty())
-      return false;
+      return;
     int64_t now_ms = clock_->TimeInMilliseconds();
     if (prev_packet_time_ms_ >= 0) {
       EXPECT_EQ(expected_deltas_.front(), now_ms - prev_packet_time_ms_);
       expected_deltas_.pop_front();
     }
     prev_packet_time_ms_ = now_ms;
-    return true;
-  }
-
-  size_t TimeToSendPadding(size_t bytes) {
-    EXPECT_TRUE(false);
-    return bytes;
   }
 
   int packets_sent() const { return packets_sent_; }
@@ -714,8 +718,6 @@ TEST_F(PacedSenderTest, ProbingWithInitialFrame) {
   std::list<int> expected_deltas_list(expected_deltas,
                                       expected_deltas + kNumPackets - 1);
   PacedSenderProbing callback(expected_deltas_list, &clock_);
-  // Probing implicitly enabled by creating a new PacedSender which defaults to
-  // probing on.
   send_bucket_.reset(
       new PacedSender(&clock_,
                       &callback,
@@ -739,6 +741,58 @@ TEST_F(PacedSenderTest, ProbingWithInitialFrame) {
       clock_.AdvanceTimeMilliseconds(time_until_process);
     }
   }
+}
+
+class ProbingPacedSender : public PacedSender {
+ public:
+  ProbingPacedSender(Clock* clock,
+                     Callback* callback,
+                     int bitrate_kbps,
+                     int max_bitrate_kbps,
+                     int min_bitrate_kbps)
+      : PacedSender(clock,
+                    callback,
+                    bitrate_kbps,
+                    max_bitrate_kbps,
+                    min_bitrate_kbps) {}
+
+  bool ProbingExperimentIsEnabled() const override { return true; }
+};
+
+TEST_F(PacedSenderTest, ProbingWithTooSmallInitialFrame) {
+  const int kNumPackets = 11;
+  const int kNumDeltas = kNumPackets - 1;
+  const size_t kPacketSize = 1200;
+  const int kInitialBitrateKbps = 300;
+  uint32_t ssrc = 12346;
+  uint16_t sequence_number = 1234;
+  const int expected_deltas[kNumDeltas] = {10, 10, 10, 10, 10, 5, 5, 5, 5, 5};
+  std::list<int> expected_deltas_list(expected_deltas,
+                                      expected_deltas + kNumPackets - 1);
+  PacedSenderProbing callback(expected_deltas_list, &clock_);
+  send_bucket_.reset(
+      new ProbingPacedSender(&clock_, &callback, kInitialBitrateKbps,
+                             kPaceMultiplier * kInitialBitrateKbps, 0));
+
+  for (int i = 0; i < kNumPackets - 5; ++i) {
+    EXPECT_FALSE(send_bucket_->SendPacket(
+        PacedSender::kNormalPriority, ssrc, sequence_number++,
+        clock_.TimeInMilliseconds(), kPacketSize, false));
+  }
+  while (callback.packets_sent() < kNumPackets) {
+    int time_until_process = send_bucket_->TimeUntilNextProcess();
+    if (time_until_process <= 0) {
+      send_bucket_->Process();
+    } else {
+      clock_.AdvanceTimeMilliseconds(time_until_process);
+    }
+  }
+
+  // Process one more time and make sure we don't send any more probes.
+  int time_until_process = send_bucket_->TimeUntilNextProcess();
+  clock_.AdvanceTimeMilliseconds(time_until_process);
+  send_bucket_->Process();
+  EXPECT_EQ(kNumPackets, callback.packets_sent());
 }
 
 TEST_F(PacedSenderTest, PriorityInversion) {

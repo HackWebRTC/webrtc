@@ -403,7 +403,8 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
       if (sent_rtp_packets_ % kPacketsBetweenLossBursts == 0)
         packets_left_to_drop_ = kLossBurstSize;
 
-      if (packets_left_to_drop_ > 0) {
+      // Never drop padding packets as those won't be retransmitted.
+      if (packets_left_to_drop_ > 0 && header.paddingLength == 0) {
         --packets_left_to_drop_;
         dropped_packets_.insert(header.sequenceNumber);
         return DROP_PACKET;
@@ -463,11 +464,15 @@ TEST_F(EndToEndTest, CanReceiveFec) {
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
-      EXPECT_EQ(kRedPayloadType, header.payloadType);
-      int encapsulated_payload_type =
-          static_cast<int>(packet[header.headerLength]);
-      if (encapsulated_payload_type != kFakeSendPayloadType)
-        EXPECT_EQ(kUlpfecPayloadType, encapsulated_payload_type);
+      int encapsulated_payload_type = -1;
+      if (header.payloadType == kRedPayloadType) {
+        encapsulated_payload_type =
+            static_cast<int>(packet[header.headerLength]);
+        if (encapsulated_payload_type != kFakeSendPayloadType)
+          EXPECT_EQ(kUlpfecPayloadType, encapsulated_payload_type);
+      } else {
+        EXPECT_EQ(kFakeSendPayloadType, header.payloadType);
+      }
 
       if (protected_sequence_numbers_.count(header.sequenceNumber) != 0) {
         // Retransmitted packet, should not count.
@@ -571,12 +576,16 @@ void EndToEndTest::TestReceivedFecPacketsNotNacked(
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
-      EXPECT_EQ(kRedPayloadType, header.payloadType);
 
-      int encapsulated_payload_type =
-          static_cast<int>(packet[header.headerLength]);
-      if (encapsulated_payload_type != kFakeSendPayloadType)
-        EXPECT_EQ(kUlpfecPayloadType, encapsulated_payload_type);
+      int encapsulated_payload_type = -1;
+      if (header.payloadType == kRedPayloadType) {
+        encapsulated_payload_type =
+            static_cast<int>(packet[header.headerLength]);
+        if (encapsulated_payload_type != kFakeSendPayloadType)
+          EXPECT_EQ(kUlpfecPayloadType, encapsulated_payload_type);
+      } else {
+        EXPECT_EQ(kFakeSendPayloadType, header.payloadType);
+      }
 
       if (has_last_sequence_number_ &&
           !IsNewerSequenceNumber(header.sequenceNumber,

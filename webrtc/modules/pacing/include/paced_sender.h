@@ -126,6 +126,9 @@ class PacedSender : public Module {
   // Process any pending packets in the queue(s).
   int32_t Process() override;
 
+ protected:
+  virtual bool ProbingExperimentIsEnabled() const;
+
  private:
   // Updates the number of bytes that can be sent for the next time interval.
   void UpdateBytesPerInterval(int64_t delta_time_in_ms)

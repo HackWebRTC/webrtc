@@ -11,6 +11,7 @@
 #include "webrtc/modules/pacing/bitrate_prober.h"
 
 #include <assert.h>
+#include <algorithm>
 #include <limits>
 #include <sstream>
 
@@ -107,7 +108,11 @@ int BitrateProber::TimeUntilNextProbe(int64_t now_ms) {
       time_until_probe_ms = 0;
     }
   }
-  return time_until_probe_ms;
+  return std::max(time_until_probe_ms, 0);
+}
+
+size_t BitrateProber::RecommendedPacketSize() const {
+  return packet_size_last_send_;
 }
 
 void BitrateProber::PacketSent(int64_t now_ms, size_t packet_size) {

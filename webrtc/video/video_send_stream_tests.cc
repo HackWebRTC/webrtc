@@ -306,14 +306,22 @@ TEST_F(VideoSendStreamTest, SupportsFec) {
         EXPECT_EQ(0, rtcp_sender.SendRTCP(feedback_state, kRtcpRr));
       }
 
-      EXPECT_EQ(kRedPayloadType, header.payloadType);
-
-      uint8_t encapsulated_payload_type = packet[header.headerLength];
-
-      if (encapsulated_payload_type == kUlpfecPayloadType) {
-        received_fec_ = true;
+      int encapsulated_payload_type = -1;
+      if (header.payloadType == kRedPayloadType) {
+        encapsulated_payload_type =
+            static_cast<int>(packet[header.headerLength]);
+        if (encapsulated_payload_type != kFakeSendPayloadType)
+          EXPECT_EQ(kUlpfecPayloadType, encapsulated_payload_type);
       } else {
-        received_media_ = true;
+        EXPECT_EQ(kFakeSendPayloadType, header.payloadType);
+      }
+
+      if (encapsulated_payload_type != -1) {
+        if (encapsulated_payload_type == kUlpfecPayloadType) {
+          received_fec_ = true;
+        } else {
+          received_media_ = true;
+        }
       }
 
       if (received_media_ && received_fec_)
