@@ -35,6 +35,9 @@ DEFINE_string(settings_file, "settings.txt", "The name of the settings file.");
 DEFINE_bool(full, false,
             "Unpack the full set of files (normally not needed).");
 DEFINE_bool(raw, false, "Write raw data instead of a WAV file.");
+DEFINE_bool(text,
+            false,
+            "Write non-audio files as text files instead of binary files.");
 
 namespace webrtc {
 
@@ -175,26 +178,42 @@ int do_main(int argc, char* argv[]) {
         if (msg.has_delay()) {
           static FILE* delay_file = OpenFile(FLAGS_delay_file, "wb");
           int32_t delay = msg.delay();
-          WriteData(&delay, sizeof(delay), delay_file, FLAGS_delay_file);
+          if (FLAGS_text) {
+            fprintf(delay_file, "%d\n", delay);
+          } else {
+            WriteData(&delay, sizeof(delay), delay_file, FLAGS_delay_file);
+          }
         }
 
         if (msg.has_drift()) {
           static FILE* drift_file = OpenFile(FLAGS_drift_file, "wb");
           int32_t drift = msg.drift();
-          WriteData(&drift, sizeof(drift), drift_file, FLAGS_drift_file);
+          if (FLAGS_text) {
+            fprintf(drift_file, "%d\n", drift);
+          } else {
+            WriteData(&drift, sizeof(drift), drift_file, FLAGS_drift_file);
+          }
         }
 
         if (msg.has_level()) {
           static FILE* level_file = OpenFile(FLAGS_level_file, "wb");
           int32_t level = msg.level();
-          WriteData(&level, sizeof(level), level_file, FLAGS_level_file);
+          if (FLAGS_text) {
+            fprintf(level_file, "%d\n", level);
+          } else {
+            WriteData(&level, sizeof(level), level_file, FLAGS_level_file);
+          }
         }
 
         if (msg.has_keypress()) {
           static FILE* keypress_file = OpenFile(FLAGS_keypress_file, "wb");
           bool keypress = msg.keypress();
-          WriteData(&keypress, sizeof(keypress), keypress_file,
-                    FLAGS_keypress_file);
+          if (FLAGS_text) {
+            fprintf(keypress_file, "%d\n", keypress);
+          } else {
+            WriteData(&keypress, sizeof(keypress), keypress_file,
+                      FLAGS_keypress_file);
+          }
         }
       }
     } else if (event_msg.type() == Event::INIT) {
