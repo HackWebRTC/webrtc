@@ -615,11 +615,10 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* self,
       ((value_best_candidate < self->minimum_probability) ||
           (value_best_candidate < self->last_delay_probability)));
 
+  UpdateRobustValidationStatistics(self, candidate_delay, valley_depth,
+                                   value_best_candidate);
   if (self->robust_validation_enabled) {
-    int is_histogram_valid = 0;
-    UpdateRobustValidationStatistics(self, candidate_delay, valley_depth,
-                                     value_best_candidate);
-    is_histogram_valid = HistogramBasedValidation(self, candidate_delay);
+    int is_histogram_valid = HistogramBasedValidation(self, candidate_delay);
     valid_candidate = RobustValidation(self, candidate_delay, valid_candidate,
                                        is_histogram_valid);
 
