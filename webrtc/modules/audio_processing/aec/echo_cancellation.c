@@ -789,9 +789,15 @@ static void ProcessExtended(Aec* self,
     // measurement.
     int startup_size_ms =
         reported_delay_ms < kFixedDelayMs ? kFixedDelayMs : reported_delay_ms;
-    int overhead_elements = (WebRtcAec_system_delay(self->aec) -
-                             startup_size_ms / 2 * self->rate_factor * 8) /
-                            PART_LEN;
+    int target_delay = startup_size_ms * self->rate_factor * 8;
+#if !defined(WEBRTC_ANDROID)
+    // To avoid putting the AEC in a non-causal state we're being slightly
+    // conservative and scale by 2. On Android we use a fixed delay and
+    // therefore there is no need to scale the target_delay.
+    target_delay /= 2;
+#endif
+    int overhead_elements =
+        (WebRtcAec_system_delay(self->aec) - target_delay) / PART_LEN;
     WebRtcAec_MoveFarReadPtr(self->aec, overhead_elements);
     self->startup_phase = 0;
   }
