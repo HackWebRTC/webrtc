@@ -58,11 +58,4 @@ class LpcMaskingModelTest : public testing::Test {
 
 TEST_F(LpcMaskingModelTest, CalculateResidualEnergyTest) {
   CalculateResidualEnergyTester(WebRtcIsacfix_CalculateResidualEnergyC);
-#ifdef WEBRTC_DETECT_ARM_NEON
-  if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {
-    CalculateResidualEnergyTester(WebRtcIsacfix_CalculateResidualEnergyNeon);
-  }
-#elif defined(WEBRTC_ARCH_ARM_NEON)
-  CalculateResidualEnergyTester(WebRtcIsacfix_CalculateResidualEnergyNeon);
-#endif
 }

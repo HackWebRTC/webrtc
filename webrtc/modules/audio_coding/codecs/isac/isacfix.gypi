@@ -142,11 +142,9 @@
           ],
           'sources': [
             'fix/source/entropy_coding_neon.c',
-            'fix/source/filterbanks_neon.S',
-            'fix/source/filters_neon.S',
-            'fix/source/lattice_neon.S',
-            'fix/source/lpc_masking_model_neon.S',
-            'fix/source/transform_neon.S',
+            'fix/source/filters_neon.c',
+            'fix/source/lattice_neon.c',
+            'fix/source/transform_neon.c',
           ],
           'conditions': [
             # Disable LTO in isac_neon target due to compiler bug
@@ -156,27 +154,11 @@
                 '-ffat-lto-objects',
               ],
             }],
-            ['target_arch=="arm64"', {
-              'sources!': [
-                'fix/source/filterbanks_neon.S',
-                'fix/source/filters_neon.S',
-                'fix/source/lattice_neon.S',
-                'fix/source/lpc_masking_model_neon.S',
-                'fix/source/transform_neon.S',
-              ],
-              'sources': [
-                'fix/source/filters_neon.c',
-                'fix/source/lattice_neon.c',
-                'fix/source/transform_neon.c',
-              ],
-              'conditions': [
-                # Disable AllpassFilter2FixDec16Neon function due to a clang
-                # bug. Refer more details at:
-                # https://code.google.com/p/webrtc/issues/detail?id=4567
-                ['clang==0', {
+            # Disable AllpassFilter2FixDec16Neon function due to a clang
+            # bug. Refer more details at:
+            # https://code.google.com/p/webrtc/issues/detail?id=4567
+            ['target_arch!="arm64" or clang==0', {
                   'sources': ['fix/source/filterbanks_neon.c',],
-                }],
-              ],
             }]
           ],
         },

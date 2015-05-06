@@ -591,17 +591,14 @@ source_set("isacfix") {
 
 if (rtc_build_armv7_neon || current_cpu == "arm64") {
   source_set("isac_neon") {
-    sources = [ "codecs/isac/fix/source/entropy_coding_neon.c" ]
+    sources = [
+      "codecs/isac/fix/source/entropy_coding_neon.c",
+      "codecs/isac/fix/source/filters_neon.c",
+      "codecs/isac/fix/source/lattice_neon.c",
+      "codecs/isac/fix/source/transform_neon.c",
+    ]
 
     if (rtc_build_armv7_neon) {
-      sources += [
-        "codecs/isac/fix/source/filterbanks_neon.S",
-        "codecs/isac/fix/source/filters_neon.S",
-        "codecs/isac/fix/source/lattice_neon.S",
-        "codecs/isac/fix/source/lpc_masking_model_neon.S",
-        "codecs/isac/fix/source/transform_neon.S",
-      ]
-
       # Enable compilation for the ARM v7 Neon instruction set. This is needed
       # since //build/config/arm.gni only enables Neon for iOS, not Android.
       # This provides the same functionality as webrtc/build/arm_neon.gypi.
@@ -614,18 +611,11 @@ if (rtc_build_armv7_neon || current_cpu == "arm64") {
       ]
     }
 
-    if (current_cpu == "arm64") {
-      sources += [
-        "codecs/isac/fix/source/filters_neon.c",
-        "codecs/isac/fix/source/lattice_neon.c",
-        "codecs/isac/fix/source/transform_neon.c",
-      ]
+    if (current_cpu != "arm64" || !is_clang) {
       # Disable AllpassFilter2FixDec16Neon function due to a clang bug.
       # Refer more details at:
       # https://code.google.com/p/webrtc/issues/detail?id=4567
-      if (!is_clang) {
         sources += [ "codecs/isac/fix/source/filterbanks_neon.c", ]
-      }
     }
 
     # Disable LTO in audio_processing_neon target due to compiler bug.

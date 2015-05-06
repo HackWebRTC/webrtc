@@ -205,10 +205,6 @@ static void WebRtcIsacfix_InitNeon(void) {
   WebRtcIsacfix_FilterMaLoopFix = WebRtcIsacfix_FilterMaLoopNeon;
   WebRtcIsacfix_Spec2Time = WebRtcIsacfix_Spec2TimeNeon;
   WebRtcIsacfix_Time2Spec = WebRtcIsacfix_Time2SpecNeon;
-#if !(defined WEBRTC_ARCH_ARM64_NEON)
-  WebRtcIsacfix_CalculateResidualEnergy =
-      WebRtcIsacfix_CalculateResidualEnergyNeon;
-#endif
 // Disable AllpassFilter2FixDec16Neon function due to a clang bug.
 // Refer more details at:
 // https://code.google.com/p/webrtc/issues/detail?id=4567
