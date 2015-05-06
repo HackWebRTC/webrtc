@@ -28,6 +28,8 @@
         ['build_vp9==1', {
           'sources': [
             'include/vp9.h',
+            'vp9_frame_buffer_pool.cc',
+            'vp9_frame_buffer_pool.h',
             'vp9_impl.cc',
             'vp9_impl.h',
           ],

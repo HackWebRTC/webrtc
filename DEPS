@@ -42,6 +42,7 @@ include_rules = [
   '+third_party',
   '+unicode',
   '+webrtc',
+  '+vpx',
 ]
 
 # checkdeps.py shouldn't check include paths for files in these dirs:

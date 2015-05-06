@@ -21,12 +21,24 @@
 #include "vpx/vp8cx.h"
 #include "vpx/vp8dx.h"
 
+#include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/common.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
+
+namespace {
+
+// VP9DecoderImpl::ReturnFrame helper function used with WrappedI420Buffer.
+static void WrappedI420BufferNoLongerUsedCb(
+    webrtc::Vp9FrameBufferPool::Vp9FrameBuffer* img_buffer) {
+  img_buffer->Release();
+}
+
+}  // anonymous namespace
 
 namespace webrtc {
 
@@ -388,6 +400,14 @@ VP9DecoderImpl::VP9DecoderImpl()
 VP9DecoderImpl::~VP9DecoderImpl() {
   inited_ = true;  // in order to do the actual release
   Release();
+  int num_buffers_in_use = frame_buffer_pool_.GetNumBuffersInUse();
+  if (num_buffers_in_use > 0) {
+    // The frame buffers are reference counted and frames are exposed after
+    // decoding. There may be valid usage cases where previous frames are still
+    // referenced after ~VP9DecoderImpl that is not a leak.
+    LOG(LS_INFO) << num_buffers_in_use << " Vp9FrameBuffers are still "
+                 << "referenced during ~VP9DecoderImpl.";
+  }
 }
 
 int VP9DecoderImpl::Reset() {
@@ -421,6 +441,11 @@ int VP9DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
     // Save VideoCodec instance for later; mainly for duplicating the decoder.
     codec_ = *inst;
   }
+
+  if (!frame_buffer_pool_.InitializeVpxUsePool(decoder_)) {
+    return WEBRTC_VIDEO_CODEC_MEMORY;
+  }
+
   inited_ = true;
   // Always start with a complete key frame.
   key_frame_required_ = true;
@@ -455,6 +480,8 @@ int VP9DecoderImpl::Decode(const EncodedImage& input_image,
   if (input_image._length == 0) {
     buffer = NULL;  // Triggers full frame concealment.
   }
+  // During decode libvpx may get and release buffers from |frame_buffer_pool_|.
+  // In practice libvpx keeps a few (~3-4) buffers alive at a time.
   if (vpx_codec_decode(decoder_,
                        buffer,
                        static_cast<unsigned int>(input_image._length),
@@ -462,6 +489,9 @@ int VP9DecoderImpl::Decode(const EncodedImage& input_image,
                        VPX_DL_REALTIME)) {
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
+  // |img->fb_priv| contains the image data, a reference counted Vp9FrameBuffer.
+  // It may be released by libvpx during future vpx_codec_decode or
+  // vpx_codec_destroy calls.
   img = vpx_codec_get_frame(decoder_, &iter);
   int ret = ReturnFrame(img, input_image._timeStamp);
   if (ret != 0) {
@@ -475,15 +505,32 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
     // Decoder OK and NULL image => No show frame.
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
-  decoded_image_.CreateFrame(img->planes[VPX_PLANE_Y],
-                             img->planes[VPX_PLANE_U],
-                             img->planes[VPX_PLANE_V],
-                             img->d_w, img->d_h,
-                             img->stride[VPX_PLANE_Y],
-                             img->stride[VPX_PLANE_U],
-                             img->stride[VPX_PLANE_V]);
-  decoded_image_.set_timestamp(timestamp);
-  int ret = decode_complete_callback_->Decoded(decoded_image_);
+
+  // This buffer contains all of |img|'s image data, a reference counted
+  // Vp9FrameBuffer. Performing AddRef/Release ensures it is not released and
+  // recycled during use (libvpx is done with the buffers after a few
+  // vpx_codec_decode calls or vpx_codec_destroy).
+  Vp9FrameBufferPool::Vp9FrameBuffer* img_buffer =
+      static_cast<Vp9FrameBufferPool::Vp9FrameBuffer*>(img->fb_priv);
+  img_buffer->AddRef();
+  // The buffer can be used directly by the I420VideoFrame (without copy) by
+  // using a WrappedI420Buffer.
+  rtc::scoped_refptr<WrappedI420Buffer> img_wrapped_buffer(
+      new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
+          img->d_w, img->d_h,
+          img->d_w, img->d_h,
+          img->planes[VPX_PLANE_Y], img->stride[VPX_PLANE_Y],
+          img->planes[VPX_PLANE_U], img->stride[VPX_PLANE_U],
+          img->planes[VPX_PLANE_V], img->stride[VPX_PLANE_V],
+          // WrappedI420Buffer's mechanism for allowing the release of its frame
+          // buffer is through a callback function. This is where we should
+          // release |img_buffer|.
+          rtc::Bind(&WrappedI420BufferNoLongerUsedCb, img_buffer)));
+
+  I420VideoFrame decoded_image;
+  decoded_image.set_video_frame_buffer(img_wrapped_buffer);
+  decoded_image.set_timestamp(timestamp);
+  int ret = decode_complete_callback_->Decoded(decoded_image);
   if (ret != 0)
     return ret;
   return WEBRTC_VIDEO_CODEC_OK;
@@ -497,12 +544,18 @@ int VP9DecoderImpl::RegisterDecodeCompleteCallback(
 
 int VP9DecoderImpl::Release() {
   if (decoder_ != NULL) {
+    // When a codec is destroyed libvpx will release any buffers of
+    // |frame_buffer_pool_| it is currently using.
     if (vpx_codec_destroy(decoder_)) {
       return WEBRTC_VIDEO_CODEC_MEMORY;
     }
     delete decoder_;
     decoder_ = NULL;
   }
+  // Releases buffers from the pool. Any buffers not in use are deleted. Buffers
+  // still referenced externally are deleted once fully released, not returning
+  // to the pool.
+  frame_buffer_pool_.ClearPool();
   inited_ = false;
   return WEBRTC_VIDEO_CODEC_OK;
 }

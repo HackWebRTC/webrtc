@@ -13,6 +13,7 @@
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP9_IMPL_H_
 
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
+#include "webrtc/modules/video_coding/codecs/vp9/vp9_frame_buffer_pool.h"
 
 #include "vpx/vpx_decoder.h"
 #include "vpx/vpx_encoder.h"
@@ -101,7 +102,8 @@ class VP9DecoderImpl : public VP9Decoder {
  private:
   int ReturnFrame(const vpx_image_t* img, uint32_t timeStamp);
 
-  I420VideoFrame decoded_image_;
+  // Memory pool used to share buffers between libvpx and webrtc.
+  Vp9FrameBufferPool frame_buffer_pool_;
   DecodedImageCallback* decode_complete_callback_;
   bool inited_;
   vpx_codec_ctx_t* decoder_;
