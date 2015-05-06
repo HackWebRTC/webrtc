@@ -126,9 +126,10 @@ void SendSideBweReceiver::ReceivePacket(int64_t arrival_time_ms,
 FeedbackPacket* SendSideBweReceiver::GetFeedback(int64_t now_ms) {
   if (now_ms - last_feedback_ms_ < 100)
     return NULL;
+  int64_t latest_send_time_ms = last_feedback_ms_;
   last_feedback_ms_ = now_ms;
-  FeedbackPacket* fb =
-      new SendSideBweFeedback(flow_id_, now_ms * 1000, packet_feedback_vector_);
+  FeedbackPacket* fb = new SendSideBweFeedback(
+      flow_id_, now_ms * 1000, latest_send_time_ms, packet_feedback_vector_);
   packet_feedback_vector_.clear();
   return fb;
 }

@@ -28,7 +28,11 @@ namespace bwe {
 class PacketSender : public PacketProcessor {
  public:
   PacketSender(PacketProcessorListener* listener, int flow_id)
-      : PacketProcessor(listener, flow_id, kSender) {}
+      : PacketProcessor(listener, flow_id, kSender),
+        // For Packet::send_time_us() to be comparable with timestamps from
+        // clock_, the clock of the PacketSender and the Source must be aligned.
+        // We assume that both start at time 0.
+        clock_(0) {}
   virtual ~PacketSender() {}
   // Call GiveFeedback() with the returned interval in milliseconds, provided
   // there is a new estimate available.
@@ -36,6 +40,10 @@ class PacketSender : public PacketProcessor {
   // output of the estimators is sampled and therefore the baseline files may
   // have to be regenerated.
   virtual int GetFeedbackIntervalMs() const = 0;
+  void SetSenderTimestamps(Packets* in_out);
+
+ protected:
+  SimulatedClock clock_;
 };
 
 class VideoSender : public PacketSender, public BitrateObserver {
@@ -60,7 +68,6 @@ class VideoSender : public PacketSender, public BitrateObserver {
                                          std::list<FeedbackPacket*>* feedbacks,
                                          Packets* generated);
 
-  SimulatedClock clock_;
   VideoSource* source_;
   rtc::scoped_ptr<BweSender> bwe_;
   int64_t start_of_run_ms_;
@@ -107,7 +114,6 @@ class TcpSender : public PacketSender {
  public:
   TcpSender(PacketProcessorListener* listener, int flow_id, int64_t offset_ms)
       : PacketSender(listener, flow_id),
-        now_ms_(0),
         cwnd_(10),
         ssthresh_(std::numeric_limits<int>::max()),
         ack_received_(false),
@@ -146,7 +152,6 @@ class TcpSender : public PacketSender {
   void HandleLoss();
   Packets GeneratePackets(size_t num_packets);
 
-  int64_t now_ms_;
   float cwnd_;
   int ssthresh_;
   std::set<InFlight> in_flight_;

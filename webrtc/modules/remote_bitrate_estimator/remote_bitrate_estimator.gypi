@@ -82,6 +82,7 @@
             'test/packet.h',
             'test/estimators/nada.cc',
             'test/estimators/nada.h',
+            'test/estimators/nada_unittest.cc',
             'test/estimators/remb.cc',
             'test/estimators/remb.h',
             'test/estimators/send_side.cc',

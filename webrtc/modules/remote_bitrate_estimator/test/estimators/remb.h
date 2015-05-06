@@ -70,6 +70,7 @@ class RembReceiver : public BweReceiver, public RemoteBitrateObserver {
   SimulatedClock clock_;
   rtc::scoped_ptr<ReceiveStatistics> recv_stats_;
   int64_t latest_estimate_bps_;
+  int64_t last_feedback_ms_;
   rtc::scoped_ptr<RemoteBitrateEstimator> estimator_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(RembReceiver);

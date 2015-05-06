@@ -39,12 +39,17 @@ class Packet {
   virtual int64_t send_time_us() const { return send_time_us_; }
   virtual size_t payload_size() const { return payload_size_; }
   virtual Packet::Type GetPacketType() const = 0;
+  void set_sender_timestamp_us(int64_t sender_timestamp_us) {
+    sender_timestamp_us_ = sender_timestamp_us;
+  }
+  int64_t sender_timestamp_us() const { return sender_timestamp_us_; }
 
- private:
+ protected:
   int flow_id_;
   int64_t creation_time_us_;  // Time when the packet was created.
   int64_t send_time_us_;  // Time the packet left last processor touching it.
-  size_t payload_size_;   // Size of the (non-existent, simulated) payload.
+  int64_t sender_timestamp_us_;  // Time the packet left the Sender.
+  size_t payload_size_;  // Size of the (non-existent, simulated) payload.
 };
 
 class MediaPacket : public Packet {
@@ -69,6 +74,8 @@ class MediaPacket : public Packet {
   void SetAbsSendTimeMs(int64_t abs_send_time_ms);
   const RTPHeader& header() const { return header_; }
   virtual Packet::Type GetPacketType() const { return kMedia; }
+  uint16_t sequence_number() const { return header_.sequenceNumber; }
+  int64_t send_time_ms() const { return send_time_us_ / 1000; }
 
  private:
   static const int kAbsSendTimeFraction = 18;
@@ -81,17 +88,25 @@ class MediaPacket : public Packet {
 
 class FeedbackPacket : public Packet {
  public:
-  FeedbackPacket(int flow_id, int64_t send_time_us)
-      : Packet(flow_id, send_time_us, 0) {}
+  FeedbackPacket(int flow_id,
+                 int64_t this_send_time_us,
+                 int64_t latest_send_time_ms)
+      : Packet(flow_id, this_send_time_us, 0),
+        latest_send_time_ms_(latest_send_time_ms) {}
   virtual ~FeedbackPacket() {}
 
   virtual Packet::Type GetPacketType() const { return kFeedback; }
+  int64_t latest_send_time_ms() const { return latest_send_time_ms_; }
+
+ private:
+  int64_t latest_send_time_ms_;  // Time stamp for the latest sent packet.
 };
 
 class RembFeedback : public FeedbackPacket {
  public:
   RembFeedback(int flow_id,
                int64_t send_time_us,
+               int64_t latest_send_time_ms,
                uint32_t estimated_bps,
                RTCPReportBlock report_block);
   virtual ~RembFeedback() {}
@@ -109,6 +124,7 @@ class SendSideBweFeedback : public FeedbackPacket {
   typedef std::map<uint16_t, int64_t> ArrivalTimesMap;
   SendSideBweFeedback(int flow_id,
                       int64_t send_time_us,
+                      int64_t latest_send_time_ms,
                       const std::vector<PacketInfo>& packet_feedback_vector);
   virtual ~SendSideBweFeedback() {}
 
@@ -123,28 +139,45 @@ class SendSideBweFeedback : public FeedbackPacket {
 class NadaFeedback : public FeedbackPacket {
  public:
   NadaFeedback(int flow_id,
-               int64_t send_time_us,
+               int64_t this_send_time_us,
+               int64_t exp_smoothed_delay_ms,
+               int64_t est_queuing_delay_signal_ms,
                int64_t congestion_signal,
-               float derivative)
-      : FeedbackPacket(flow_id, send_time_us),
+               float derivative,
+               float receiving_rate,
+               int64_t latest_send_time_ms)
+      : FeedbackPacket(flow_id, this_send_time_us, latest_send_time_ms),
+        exp_smoothed_delay_ms_(exp_smoothed_delay_ms),
+        est_queuing_delay_signal_ms_(est_queuing_delay_signal_ms),
         congestion_signal_(congestion_signal),
-        derivative_(derivative) {}
+        derivative_(derivative),
+        receiving_rate_(receiving_rate) {}
   virtual ~NadaFeedback() {}
 
+  int64_t exp_smoothed_delay_ms() const { return exp_smoothed_delay_ms_; }
+  int64_t est_queuing_delay_signal_ms() const {
+    return est_queuing_delay_signal_ms_;
+  }
   int64_t congestion_signal() const { return congestion_signal_; }
   float derivative() const { return derivative_; }
+  float receiving_rate() const { return receiving_rate_; }
 
  private:
-  int64_t congestion_signal_;
-  float derivative_;
+  int64_t exp_smoothed_delay_ms_;        // Referred as d_hat_n.
+  int64_t est_queuing_delay_signal_ms_;  // Referred as d_tilde_n.
+  int64_t congestion_signal_;            // Referred as x_n.
+  float derivative_;                     // Referred as x'_n.
+  float receiving_rate_;                 // Referred as R_r.
 };
 
 class TcpFeedback : public FeedbackPacket {
  public:
   TcpFeedback(int flow_id,
               int64_t send_time_us,
+              int64_t latest_send_time_ms,
               const std::vector<uint16_t>& acked_packets)
-      : FeedbackPacket(flow_id, send_time_us), acked_packets_(acked_packets) {}
+      : FeedbackPacket(flow_id, send_time_us, latest_send_time_ms),
+        acked_packets_(acked_packets) {}
   virtual ~TcpFeedback() {}
 
   const std::vector<uint16_t>& acked_packets() const { return acked_packets_; }
@@ -156,6 +189,7 @@ class TcpFeedback : public FeedbackPacket {
 typedef std::list<Packet*> Packets;
 typedef std::list<Packet*>::iterator PacketsIt;
 typedef std::list<Packet*>::const_iterator PacketsConstIt;
+
 }  // namespace bwe
 }  // namespace testing
 }  // namespace webrtc

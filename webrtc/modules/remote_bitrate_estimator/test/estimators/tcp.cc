@@ -35,10 +35,9 @@ void TcpBweReceiver::ReceivePacket(int64_t arrival_time_ms,
 }
 
 FeedbackPacket* TcpBweReceiver::GetFeedback(int64_t now_ms) {
-  // if (now_ms - last_feedback_ms_ < 100)
-  //   return NULL;
+  FeedbackPacket* fb =
+      new TcpFeedback(flow_id_, now_ms * 1000, last_feedback_ms_, acks_);
   last_feedback_ms_ = now_ms;
-  FeedbackPacket* fb = new TcpFeedback(flow_id_, now_ms * 1000, acks_);
   acks_.clear();
   return fb;
 }

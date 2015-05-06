@@ -111,8 +111,10 @@ FeedbackPacket* RembReceiver::GetFeedback(int64_t now_ms) {
     if (!statisticians.empty()) {
       report_block = BuildReportBlock(statisticians.begin()->second);
     }
-    feedback =
-        new RembFeedback(flow_id_, now_ms * 1000, estimated_bps, report_block);
+
+    feedback = new RembFeedback(flow_id_, now_ms * 1000, last_feedback_ms_,
+                                estimated_bps, report_block);
+    last_feedback_ms_ = now_ms;
 
     double estimated_kbps = static_cast<double>(estimated_bps) / 1000.0;
     RTC_UNUSED(estimated_kbps);

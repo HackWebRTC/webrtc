@@ -40,14 +40,16 @@ std::list<FeedbackPacket*> GetFeedbackPackets(Packets* in_out,
   return fb_packets;
 }
 
+void PacketSender::SetSenderTimestamps(Packets* in_out) {
+  for (auto it = in_out->begin(); it != in_out->end(); ++it) {
+    (*it)->set_sender_timestamp_us(clock_.TimeInMilliseconds() * 1000);
+  }
+}
+
 VideoSender::VideoSender(PacketProcessorListener* listener,
                          VideoSource* source,
                          BandwidthEstimatorType estimator_type)
     : PacketSender(listener, source->flow_id()),
-      // For Packet::send_time_us() to be comparable with timestamps from
-      // clock_, the clock of the VideoSender and the Source must be aligned.
-      // We assume that both start at time 0.
-      clock_(0),
       source_(source),
       bwe_(CreateBweSender(estimator_type,
                            source_->bits_per_second() / 1000,
@@ -60,10 +62,10 @@ VideoSender::~VideoSender() {
 }
 
 void VideoSender::RunFor(int64_t time_ms, Packets* in_out) {
-  int64_t now_ms = clock_.TimeInMilliseconds();
-  std::list<FeedbackPacket*> feedbacks =
-      GetFeedbackPackets(in_out, now_ms + time_ms, source_->flow_id());
+  std::list<FeedbackPacket*> feedbacks = GetFeedbackPackets(
+      in_out, clock_.TimeInMilliseconds() + time_ms, source_->flow_id());
   ProcessFeedbackAndGeneratePackets(time_ms, &feedbacks, in_out);
+  SetSenderTimestamps(in_out);
 }
 
 void VideoSender::ProcessFeedbackAndGeneratePackets(
@@ -190,6 +192,7 @@ void PacedVideoSender::RunFor(int64_t time_ms, Packets* in_out) {
     }
   } while (clock_.TimeInMilliseconds() < end_time_ms);
   QueuePackets(in_out, end_time_ms * 1000);
+  SetSenderTimestamps(in_out);
 }
 
 int64_t PacedVideoSender::TimeUntilNextProcess(
@@ -267,14 +270,15 @@ void PacedVideoSender::OnNetworkChanged(uint32_t target_bitrate_bps,
 }
 
 void TcpSender::RunFor(int64_t time_ms, Packets* in_out) {
-  if (now_ms_ + time_ms < offset_ms_) {
-    now_ms_ += time_ms;
+  if (clock_.TimeInMilliseconds() + time_ms < offset_ms_) {
+    clock_.AdvanceTimeMilliseconds(time_ms);
     return;
   }
   BWE_TEST_LOGGING_CONTEXT("Sender");
   BWE_TEST_LOGGING_CONTEXT(*flow_ids().begin());
-  std::list<FeedbackPacket*> feedbacks =
-      GetFeedbackPackets(in_out, now_ms_ + time_ms, *flow_ids().begin());
+
+  std::list<FeedbackPacket*> feedbacks = GetFeedbackPackets(
+      in_out, clock_.TimeInMilliseconds() + time_ms, *flow_ids().begin());
   // The number of packets which are sent in during time_ms depends on the
   // number of packets in_flight_ and the max number of packets in flight
   // (cwnd_). Therefore SendPackets() isn't directly dependent on time_ms.
@@ -283,8 +287,16 @@ void TcpSender::RunFor(int64_t time_ms, Packets* in_out) {
     SendPackets(in_out);
   }
 
+  for (auto it = in_flight_.begin(); it != in_flight_.end();) {
+    if (it->time_ms < clock_.TimeInMilliseconds() - 1000)
+      in_flight_.erase(it++);
+    else
+      ++it;
+  }
+
   SendPackets(in_out);
-  now_ms_ += time_ms;
+  clock_.AdvanceTimeMilliseconds(time_ms);
+  SetSenderTimestamps(in_out);
 }
 
 void TcpSender::SendPackets(Packets* in_out) {
@@ -298,6 +310,7 @@ void TcpSender::SendPackets(Packets* in_out) {
     Packets generated = GeneratePackets(packets_to_send);
     for (Packet* packet : generated)
       in_flight_.insert(InFlight(*static_cast<MediaPacket*>(packet)));
+
     in_out->merge(generated, DereferencingComparator<Packet>);
   }
 }
@@ -312,7 +325,7 @@ void TcpSender::UpdateCongestionControl(const FeedbackPacket* fb) {
       expected - static_cast<uint16_t>(tcp_fb->acked_packets().size());
 
   for (uint16_t ack_seq_num : tcp_fb->acked_packets())
-    in_flight_.erase(InFlight(ack_seq_num, now_ms_));
+    in_flight_.erase(InFlight(ack_seq_num, clock_.TimeInMilliseconds()));
 
   if (missing > 0) {
     HandleLoss();
@@ -329,7 +342,7 @@ void TcpSender::UpdateCongestionControl(const FeedbackPacket* fb) {
 int TcpSender::TriggerTimeouts() {
   int timed_out = 0;
   for (auto it = in_flight_.begin(); it != in_flight_.end();) {
-    if (it->time_ms < now_ms_ - 1000) {
+    if (it->time_ms < clock_.TimeInMilliseconds() - 1000) {
       in_flight_.erase(it++);
       ++timed_out;
     } else {
@@ -347,7 +360,8 @@ void TcpSender::HandleLoss() {
 Packets TcpSender::GeneratePackets(size_t num_packets) {
   Packets generated;
   for (size_t i = 0; i < num_packets; ++i) {
-    generated.push_back(new MediaPacket(*flow_ids().begin(), 1000 * now_ms_,
+    generated.push_back(new MediaPacket(*flow_ids().begin(),
+                                        1000 * clock_.TimeInMilliseconds(),
                                         1200, next_sequence_number_++));
   }
   return generated;
