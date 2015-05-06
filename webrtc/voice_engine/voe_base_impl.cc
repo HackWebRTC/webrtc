@@ -325,29 +325,30 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
   shared_->SetLastError(VE_APM_ERROR);
   // Configure AudioProcessing components.
   if (audioproc->high_pass_filter()->Enable(true) != 0) {
-    LOG_FERR1(LS_ERROR, high_pass_filter()->Enable, true);
+    LOG_F(LS_ERROR) << "Failed to enable high pass filter.";
     return -1;
   }
   if (audioproc->echo_cancellation()->enable_drift_compensation(false) != 0) {
-    LOG_FERR1(LS_ERROR, enable_drift_compensation, false);
+    LOG_F(LS_ERROR) << "Failed to disable drift compensation.";
     return -1;
   }
   if (audioproc->noise_suppression()->set_level(kDefaultNsMode) != 0) {
-    LOG_FERR1(LS_ERROR, noise_suppression()->set_level, kDefaultNsMode);
+    LOG_F(LS_ERROR) << "Failed to set noise suppression level: "
+        << kDefaultNsMode;
     return -1;
   }
   GainControl* agc = audioproc->gain_control();
   if (agc->set_analog_level_limits(kMinVolumeLevel, kMaxVolumeLevel) != 0) {
-    LOG_FERR2(LS_ERROR, agc->set_analog_level_limits, kMinVolumeLevel,
-              kMaxVolumeLevel);
+    LOG_F(LS_ERROR) << "Failed to set analog level limits with minimum: "
+        << kMinVolumeLevel << " and maximum: " << kMaxVolumeLevel;
     return -1;
   }
   if (agc->set_mode(kDefaultAgcMode) != 0) {
-    LOG_FERR1(LS_ERROR, agc->set_mode, kDefaultAgcMode);
+    LOG_F(LS_ERROR) << "Failed to set mode: " << kDefaultAgcMode;
     return -1;
   }
   if (agc->Enable(kDefaultAgcState) != 0) {
-    LOG_FERR1(LS_ERROR, agc->Enable, kDefaultAgcState);
+    LOG_F(LS_ERROR) << "Failed to set agc state: " << kDefaultAgcState;
     return -1;
   }
   shared_->SetLastError(0);  // Clear error state.
@@ -356,7 +357,7 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
   bool agc_enabled =
       agc->mode() == GainControl::kAdaptiveAnalog && agc->is_enabled();
   if (shared_->audio_device()->SetAGC(agc_enabled) != 0) {
-    LOG_FERR1(LS_ERROR, audio_device()->SetAGC, agc_enabled);
+    LOG_F(LS_ERROR) << "Failed to set agc to enabled: " << agc_enabled;
     shared_->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR);
     // TODO(ajm): No error return here due to
     // https://code.google.com/p/webrtc/issues/detail?id=1464

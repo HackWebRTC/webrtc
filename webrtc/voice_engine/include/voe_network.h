@@ -55,16 +55,17 @@ class WEBRTC_DLLEXPORT VoENetwork {
   virtual int Release() = 0;
 
   // Installs and enables a user-defined external transport protocol for a
-  // specified |channel|.
+  // specified |channel|. Returns -1 in case of an error, 0 otherwise.
   virtual int RegisterExternalTransport(int channel, Transport& transport) = 0;
 
   // Removes and disables a user-defined external transport protocol for a
-  // specified |channel|.
+  // specified |channel|. Returns -1 in case of an error, 0 otherwise.
   virtual int DeRegisterExternalTransport(int channel) = 0;
 
   // The packets received from the network should be passed to this
   // function when external transport is enabled. Note that the data
   // including the RTP-header must also be given to the VoiceEngine.
+  //  Returns -1 in case of an error, 0 otherwise.
   virtual int ReceivedRTPPacket(int channel,
                                 const void* data,
                                 size_t length) = 0;
@@ -78,6 +79,7 @@ class WEBRTC_DLLEXPORT VoENetwork {
   // The packets received from the network should be passed to this
   // function when external transport is enabled. Note that the data
   // including the RTCP-header must also be given to the VoiceEngine.
+  //  Returns -1 in case of an error, 0 otherwise.
   virtual int ReceivedRTCPPacket(int channel,
                                  const void* data,
                                  size_t length) = 0;

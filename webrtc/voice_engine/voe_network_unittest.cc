@@ -45,15 +45,6 @@ TEST_F(VoENetworkTest, RegisterAndDeRegisterExternalTransport) {
   EXPECT_EQ(0, network_->DeRegisterExternalTransport(channelID));
 }
 
-TEST_F(VoENetworkTest, RegisterExternalTransportBeforeInitShouldFail) {
-  EXPECT_NE(
-      0, network_->RegisterExternalTransport(kNonExistingChannel, transport_));
-}
-
-TEST_F(VoENetworkTest, DeRegisterExternalTransportBeforeInitShouldFail) {
-  EXPECT_NE(0, network_->DeRegisterExternalTransport(kNonExistingChannel));
-}
-
 TEST_F(VoENetworkTest,
        RegisterExternalTransportOnNonExistingChannelShouldFail) {
   EXPECT_EQ(0, base_->Init(&adm_, nullptr));
@@ -78,10 +69,6 @@ TEST_F(VoENetworkTest, ReceivedRTPPacketWithJunkDataShouldFail) {
   int channelID = CreateChannelAndRegisterExternalTransport();
   EXPECT_EQ(-1, network_->ReceivedRTPPacket(channelID, kPacketJunk,
                                             sizeof(kPacketJunk)));
-}
-
-TEST_F(VoENetworkTest, ReceivedRTPPacketBeforeInitShouldFail) {
-  EXPECT_EQ(-1, network_->ReceivedRTPPacket(0, kPacket, sizeof(kPacket)));
 }
 
 TEST_F(VoENetworkTest, ReceivedRTPPacketOnNonExistingChannelShouldFail) {
@@ -110,21 +97,11 @@ TEST_F(VoENetworkTest, ReceivedTooLargeRTPPacketShouldFail) {
                     channelID, kPacket, kMaxValidSizeOfRtpPacketInBytes + 1));
 }
 
-TEST_F(VoENetworkTest, ReceivedRTPPacketWithNullDataShouldFail) {
-  int channelID = CreateChannelAndRegisterExternalTransport();
-  EXPECT_EQ(-1, network_->ReceivedRTPPacket(channelID, nullptr, 0));
-}
-
 TEST_F(VoENetworkTest, ReceivedRTCPPacketWithJunkDataShouldFail) {
   int channelID = CreateChannelAndRegisterExternalTransport();
   EXPECT_EQ(0, network_->ReceivedRTCPPacket(channelID, kPacketJunk,
                                             sizeof(kPacketJunk)));
   EXPECT_EQ(VE_SOCKET_TRANSPORT_MODULE_ERROR, base_->LastError());
-}
-
-TEST_F(VoENetworkTest, ReceivedRTCPPacketBeforeInitShouldFail) {
-  EXPECT_EQ(-1, network_->ReceivedRTCPPacket(kNonExistingChannel, kPacket,
-                                             sizeof(kPacket)));
 }
 
 TEST_F(VoENetworkTest, ReceivedRTCPPacketOnNonExistingChannelShouldFail) {
@@ -145,11 +122,6 @@ TEST_F(VoENetworkTest, ReceivedTooSmallRTCPPacket4ShouldFail) {
   int channelID = CreateChannelAndRegisterExternalTransport();
   EXPECT_EQ(-1, network_->ReceivedRTCPPacket(
                     channelID, kPacket, kMinValidSizeOfRtcpPacketInBytes - 1));
-}
-
-TEST_F(VoENetworkTest, ReceivedRTCPPacketWithNullDataShouldFail) {
-  int channelID = CreateChannelAndRegisterExternalTransport();
-  EXPECT_EQ(-1, network_->ReceivedRTCPPacket(channelID, nullptr, 0));
 }
 
 }  // namespace webrtc

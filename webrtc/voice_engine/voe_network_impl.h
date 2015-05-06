@@ -20,7 +20,6 @@ namespace webrtc {
 class VoENetworkImpl : public VoENetwork {
  public:
   int RegisterExternalTransport(int channel, Transport& transport) override;
-
   int DeRegisterExternalTransport(int channel) override;
 
   int ReceivedRTPPacket(int channel, const void* data, size_t length) override;
