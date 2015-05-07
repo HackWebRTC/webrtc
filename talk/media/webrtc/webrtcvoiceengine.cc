@@ -375,7 +375,7 @@ class WebRtcSoundclipMedia : public SoundclipMedia {
     engine_->RegisterSoundclip(this);
   }
 
-  virtual ~WebRtcSoundclipMedia() {
+  ~WebRtcSoundclipMedia() override {
     engine_->UnregisterSoundclip(this);
     if (webrtc_channel_ != -1) {
       // We shouldn't have to call Disable() here. DeleteChannel() should call
@@ -419,7 +419,7 @@ class WebRtcSoundclipMedia : public SoundclipMedia {
     return true;
   }
 
-  virtual bool PlaySound(const char *buf, int len, int flags) {
+  bool PlaySound(const char* buf, int len, int flags) override {
     // The voe file api is not available in chrome.
     if (!engine_->voe_sc()->file()) {
       return false;
@@ -1796,9 +1796,7 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
         voe_audio_transport_(voe_audio_transport),
         renderer_(NULL) {
   }
-  virtual ~WebRtcVoiceChannelRenderer() {
-    Stop();
-  }
+  ~WebRtcVoiceChannelRenderer() override { Stop(); }
 
   // Starts the rendering by setting a sink to the renderer to get data
   // callback.

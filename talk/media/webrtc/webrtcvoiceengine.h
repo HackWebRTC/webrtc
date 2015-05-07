@@ -337,56 +337,58 @@ class WebRtcVoiceMediaChannel
     : public WebRtcMediaChannel<VoiceMediaChannel, WebRtcVoiceEngine> {
  public:
   explicit WebRtcVoiceMediaChannel(WebRtcVoiceEngine *engine);
-  virtual ~WebRtcVoiceMediaChannel();
-  virtual bool SetOptions(const AudioOptions& options);
-  virtual bool GetOptions(AudioOptions* options) const {
+  ~WebRtcVoiceMediaChannel() override;
+  bool SetOptions(const AudioOptions& options) override;
+  bool GetOptions(AudioOptions* options) const override {
     *options = options_;
     return true;
   }
-  virtual bool SetRecvCodecs(const std::vector<AudioCodec> &codecs);
-  virtual bool SetSendCodecs(const std::vector<AudioCodec> &codecs);
-  virtual bool SetRecvRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions);
-  virtual bool SetSendRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions);
-  virtual bool SetPlayout(bool playout);
+  bool SetRecvCodecs(const std::vector<AudioCodec>& codecs) override;
+  bool SetSendCodecs(const std::vector<AudioCodec>& codecs) override;
+  bool SetRecvRtpHeaderExtensions(
+      const std::vector<RtpHeaderExtension>& extensions) override;
+  bool SetSendRtpHeaderExtensions(
+      const std::vector<RtpHeaderExtension>& extensions) override;
+  bool SetPlayout(bool playout) override;
   bool PausePlayout();
   bool ResumePlayout();
-  virtual bool SetSend(SendFlags send);
+  bool SetSend(SendFlags send) override;
   bool PauseSend();
   bool ResumeSend();
-  virtual bool AddSendStream(const StreamParams& sp);
-  virtual bool RemoveSendStream(uint32 ssrc);
-  virtual bool AddRecvStream(const StreamParams& sp);
-  virtual bool RemoveRecvStream(uint32 ssrc);
-  virtual bool SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer);
-  virtual bool SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer);
-  virtual bool GetActiveStreams(AudioInfo::StreamList* actives);
-  virtual int GetOutputLevel();
-  virtual int GetTimeSinceLastTyping();
-  virtual void SetTypingDetectionParameters(int time_window,
-      int cost_per_typing, int reporting_threshold, int penalty_decay,
-      int type_event_delay);
-  virtual bool SetOutputScaling(uint32 ssrc, double left, double right);
-  virtual bool GetOutputScaling(uint32 ssrc, double* left, double* right);
+  bool AddSendStream(const StreamParams& sp) override;
+  bool RemoveSendStream(uint32 ssrc) override;
+  bool AddRecvStream(const StreamParams& sp) override;
+  bool RemoveRecvStream(uint32 ssrc) override;
+  bool SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer) override;
+  bool SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer) override;
+  bool GetActiveStreams(AudioInfo::StreamList* actives) override;
+  int GetOutputLevel() override;
+  int GetTimeSinceLastTyping() override;
+  void SetTypingDetectionParameters(int time_window,
+                                    int cost_per_typing,
+                                    int reporting_threshold,
+                                    int penalty_decay,
+                                    int type_event_delay) override;
+  bool SetOutputScaling(uint32 ssrc, double left, double right) override;
+  bool GetOutputScaling(uint32 ssrc, double* left, double* right) override;
 
-  virtual bool SetRingbackTone(const char *buf, int len);
-  virtual bool PlayRingbackTone(uint32 ssrc, bool play, bool loop);
-  virtual bool CanInsertDtmf();
-  virtual bool InsertDtmf(uint32 ssrc, int event, int duration, int flags);
+  bool SetRingbackTone(const char* buf, int len) override;
+  bool PlayRingbackTone(uint32 ssrc, bool play, bool loop) override;
+  bool CanInsertDtmf() override;
+  bool InsertDtmf(uint32 ssrc, int event, int duration, int flags) override;
 
-  virtual void OnPacketReceived(rtc::Buffer* packet,
-                                const rtc::PacketTime& packet_time);
-  virtual void OnRtcpReceived(rtc::Buffer* packet,
-                              const rtc::PacketTime& packet_time);
-  virtual void OnReadyToSend(bool ready) {}
-  virtual bool MuteStream(uint32 ssrc, bool on);
-  virtual bool SetMaxSendBandwidth(int bps);
-  virtual bool GetStats(VoiceMediaInfo* info);
+  void OnPacketReceived(rtc::Buffer* packet,
+                        const rtc::PacketTime& packet_time) override;
+  void OnRtcpReceived(rtc::Buffer* packet,
+                      const rtc::PacketTime& packet_time) override;
+  void OnReadyToSend(bool ready) override {}
+  bool MuteStream(uint32 ssrc, bool on) override;
+  bool SetMaxSendBandwidth(int bps) override;
+  bool GetStats(VoiceMediaInfo* info) override;
   // Gets last reported error from WebRtc voice engine.  This should be only
   // called in response a failure.
-  virtual void GetLastMediaError(uint32* ssrc,
-                                 VoiceMediaChannel::Error* error);
+  void GetLastMediaError(uint32* ssrc,
+                         VoiceMediaChannel::Error* error) override;
   bool FindSsrc(int channel_num, uint32* ssrc);
   void OnError(uint32 ssrc, int error);
 

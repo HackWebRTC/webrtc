@@ -87,16 +87,12 @@ class FakeVoEWrapper : public cricket::VoEWrapper {
 
 class FakeVoETraceWrapper : public cricket::VoETraceWrapper {
  public:
-  virtual int SetTraceFilter(const unsigned int filter) {
+  int SetTraceFilter(const unsigned int filter) override {
     filter_ = filter;
     return 0;
   }
-  virtual int SetTraceFile(const char* fileNameUTF8) {
-    return 0;
-  }
-  virtual int SetTraceCallback(webrtc::TraceCallback* callback) {
-    return 0;
-  }
+  int SetTraceFile(const char* fileNameUTF8) override { return 0; }
+  int SetTraceCallback(webrtc::TraceCallback* callback) override { return 0; }
   unsigned int filter_;
 };
 
@@ -172,7 +168,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len);
     channel_->OnPacketReceived(&packet, rtc::PacketTime());
   }
-  virtual void TearDown() {
+  void TearDown() override {
     delete soundclip_;
     delete channel_;
     engine_.Terminate();
