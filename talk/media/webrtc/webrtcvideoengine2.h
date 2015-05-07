@@ -40,6 +40,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/call.h"
 #include "webrtc/transport.h"
 #include "webrtc/video_frame.h"
@@ -71,6 +72,7 @@ class WebRtcRenderAdapter;
 class WebRtcVideoChannelRecvInfo;
 class WebRtcVideoChannelSendInfo;
 class WebRtcVoiceEngine;
+class WebRtcVoiceMediaChannel;
 
 struct CapturedFrame;
 struct Device;
@@ -178,7 +180,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
  public:
   WebRtcVideoChannel2(WebRtcCallFactory* call_factory,
                       WebRtcVoiceEngine* voice_engine,
-                      VoiceMediaChannel* voice_channel,
+                      WebRtcVoiceMediaChannel* voice_channel,
                       const VideoOptions& options,
                       WebRtcVideoEncoderFactory* external_encoder_factory,
                       WebRtcVideoDecoderFactory* external_decoder_factory);
@@ -186,6 +188,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   bool Init();
 
   // VideoMediaChannel implementation
+  void DetachVoiceChannel() override;
   bool SetRecvCodecs(const std::vector<VideoCodec>& codecs) override;
   bool SetSendCodecs(const std::vector<VideoCodec>& codecs) override;
   bool GetSendCodec(VideoCodec* send_codec) override;
@@ -484,6 +487,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   void FillBandwidthEstimationStats(const webrtc::Call::Stats& stats,
                                     VideoMediaInfo* info);
 
+  rtc::ThreadChecker thread_checker_;
+
   uint32_t rtcp_receiver_report_ssrc_;
   bool sending_;
   rtc::scoped_ptr<webrtc::Call> call_;
@@ -513,6 +518,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   Settable<VideoCodecSettings> send_codec_;
   std::vector<webrtc::RtpExtension> send_rtp_extensions_;
 
+  WebRtcVoiceMediaChannel* voice_channel_;
   const int voice_channel_id_;
   WebRtcVideoEncoderFactory* const external_encoder_factory_;
   WebRtcVideoDecoderFactory* const external_decoder_factory_;

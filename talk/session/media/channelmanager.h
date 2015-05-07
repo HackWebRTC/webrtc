@@ -107,7 +107,8 @@ class ChannelManager : public rtc::MessageHandler,
   VoiceChannel* CreateVoiceChannel(
       BaseSession* session, const std::string& content_name, bool rtcp);
   // Destroys a voice channel created with the Create API.
-  void DestroyVoiceChannel(VoiceChannel* voice_channel);
+  void DestroyVoiceChannel(VoiceChannel* voice_channel,
+                           VideoChannel* video_channel);
   // TODO(pbos): Remove as soon as all call sites specify VideoOptions.
   VideoChannel* CreateVideoChannel(BaseSession* session,
                                    const std::string& content_name,
@@ -264,7 +265,8 @@ class ChannelManager : public rtc::MessageHandler,
   void Terminate_w();
   VoiceChannel* CreateVoiceChannel_w(
       BaseSession* session, const std::string& content_name, bool rtcp);
-  void DestroyVoiceChannel_w(VoiceChannel* voice_channel);
+  void DestroyVoiceChannel_w(VoiceChannel* voice_channel,
+                             VideoChannel* video_channel);
   VideoChannel* CreateVideoChannel_w(BaseSession* session,
                                      const std::string& content_name,
                                      bool rtcp,

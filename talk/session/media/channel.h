@@ -526,6 +526,11 @@ class VideoChannel : public BaseChannel {
   ~VideoChannel();
   bool Init();
 
+  // downcasts a MediaChannel
+  virtual VideoMediaChannel* media_channel() const {
+    return static_cast<VideoMediaChannel*>(BaseChannel::media_channel());
+  }
+
   bool SetRenderer(uint32 ssrc, VideoRenderer* renderer);
   bool ApplyViewRequest(const ViewRequest& request);
 
@@ -558,12 +563,6 @@ class VideoChannel : public BaseChannel {
 
   // Configuration and setting.
   bool SetChannelOptions(const VideoOptions& options);
-
- protected:
-  // downcasts a MediaChannel
-  virtual VideoMediaChannel* media_channel() const {
-    return static_cast<VideoMediaChannel*>(BaseChannel::media_channel());
-  }
 
  private:
   typedef std::map<uint32, VideoCapturer*> ScreencastMap;

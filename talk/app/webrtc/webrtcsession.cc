@@ -505,7 +505,7 @@ WebRtcSession::~WebRtcSession() {
   }
   if (voice_channel_) {
     SignalVoiceChannelDestroyed();
-    channel_manager_->DestroyVoiceChannel(voice_channel_.release());
+    channel_manager_->DestroyVoiceChannel(voice_channel_.release(), nullptr);
   }
   if (data_channel_) {
     SignalDataChannelDestroyed();
@@ -1553,7 +1553,8 @@ void WebRtcSession::RemoveUnusedChannelsAndTransports(
     mediastream_signaling_->OnAudioChannelClose();
     SignalVoiceChannelDestroyed();
     const std::string content_name = voice_channel_->content_name();
-    channel_manager_->DestroyVoiceChannel(voice_channel_.release());
+    channel_manager_->DestroyVoiceChannel(voice_channel_.release(),
+                                          video_channel_.get());
     DestroyTransportProxy(content_name);
   }
 

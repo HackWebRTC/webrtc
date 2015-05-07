@@ -31,11 +31,27 @@
 #include <vector>
 
 #include "webrtc/call.h"
+#include "webrtc/audio_receive_stream.h"
 #include "webrtc/video_frame.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
 namespace cricket {
+class FakeAudioReceiveStream : public webrtc::AudioReceiveStream {
+ public:
+  explicit FakeAudioReceiveStream(
+      const webrtc::AudioReceiveStream::Config& config);
+
+  const webrtc::AudioReceiveStream::Config& GetConfig() const;
+
+  int received_packets() const { return received_packets_; }
+  void IncrementReceivedPackets();
+
+ private:
+  webrtc::AudioReceiveStream::Config config_;
+  int received_packets_;
+};
+
 class FakeVideoSendStream : public webrtc::VideoSendStream,
                             public webrtc::VideoSendStreamInput {
  public:
@@ -109,8 +125,11 @@ class FakeCall : public webrtc::Call, public webrtc::PacketReceiver {
   ~FakeCall();
 
   webrtc::Call::Config GetConfig() const;
-  std::vector<FakeVideoSendStream*> GetVideoSendStreams();
-  std::vector<FakeVideoReceiveStream*> GetVideoReceiveStreams();
+  const std::vector<FakeVideoSendStream*>& GetVideoSendStreams();
+  const std::vector<FakeVideoReceiveStream*>& GetVideoReceiveStreams();
+
+  const std::vector<FakeAudioReceiveStream*>& GetAudioReceiveStreams();
+  const FakeAudioReceiveStream* GetAudioReceiveStream(uint32_t ssrc);
 
   webrtc::Call::NetworkState GetNetworkState() const;
   int GetNumCreatedSendStreams() const;
@@ -148,6 +167,7 @@ class FakeCall : public webrtc::Call, public webrtc::PacketReceiver {
   webrtc::Call::Stats stats_;
   std::vector<FakeVideoSendStream*> video_send_streams_;
   std::vector<FakeVideoReceiveStream*> video_receive_streams_;
+  std::vector<FakeAudioReceiveStream*> audio_receive_streams_;
 
   int num_created_send_streams_;
   int num_created_receive_streams_;

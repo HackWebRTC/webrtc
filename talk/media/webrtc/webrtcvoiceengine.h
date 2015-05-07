@@ -43,6 +43,8 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stream.h"
+#include "webrtc/base/thread_checker.h"
+#include "webrtc/call.h"
 #include "webrtc/common.h"
 
 #if !defined(LIBPEERCONNECTION_LIB) && \
@@ -394,6 +396,7 @@ class WebRtcVoiceMediaChannel
 
   bool SetupSharedBandwidthEstimation(webrtc::VideoEngine* vie,
                                       int vie_channel);
+  void SetCall(webrtc::Call* call);
  protected:
   int GetLastEngineError() { return engine()->GetLastEngineError(); }
   int GetOutputLevel(int channel);
@@ -438,12 +441,17 @@ class WebRtcVoiceMediaChannel
                           const RtpHeaderExtension* extension);
   bool SetupSharedBweOnChannel(int voe_channel);
 
+  void TryAddAudioRecvStream(uint32 ssrc);
+  void TryRemoveAudioRecvStream(uint32 ssrc);
+
   bool SetChannelRecvRtpHeaderExtensions(
     int channel_id,
     const std::vector<RtpHeaderExtension>& extensions);
   bool SetChannelSendRtpHeaderExtensions(
     int channel_id,
     const std::vector<RtpHeaderExtension>& extensions);
+
+  rtc::ThreadChecker thread_checker_;
 
   rtc::scoped_ptr<WebRtcSoundclipStream> ringback_tone_;
   std::set<int> ringback_channels_;  // channels playing ringback
@@ -465,6 +473,7 @@ class WebRtcVoiceMediaChannel
   // to for Bandwidth Estimation purposes.
   webrtc::VideoEngine* shared_bwe_vie_;
   int shared_bwe_vie_channel_;
+  webrtc::Call* call_;
 
   // send_channels_ contains the channels which are being used for sending.
   // When the default channel (voe_channel) is used for sending, it is
@@ -476,11 +485,14 @@ class WebRtcVoiceMediaChannel
   // receive_channels_ and send_channels_ in non-conference mode and in that
   // case it will only be there if a non-zero default_receive_ssrc_ is set.
   ChannelMap receive_channels_;  // for multiple sources
+  std::map<uint32, webrtc::AudioReceiveStream*> receive_streams_;
   // receive_channels_ can be read from WebRtc callback thread.  Access from
   // the WebRtc thread must be synchronized with edits on the worker thread.
   // Reads on the worker thread are ok.
   //
   std::vector<RtpHeaderExtension> receive_extensions_;
+  std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
+
   // Do not lock this on the VoE media processor thread; potential for deadlock
   // exists.
   mutable rtc::CriticalSection receive_channels_cs_;

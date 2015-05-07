@@ -262,8 +262,8 @@ class FileVideoChannel : public VideoMediaChannel {
       rtc::StreamInterface* output_file_stream,
       rtc::Thread* rtp_sender_thread);
   virtual ~FileVideoChannel();
-
   // Implement pure virtual methods of VideoMediaChannel.
+  void DetachVoiceChannel() override {}
   virtual bool SetRecvCodecs(const std::vector<VideoCodec>& codecs) {
     return true;
   }

@@ -135,7 +135,7 @@ TEST_F(ChannelManagerTest, CreateDestroyChannels) {
                              false, cricket::DCT_RTP);
   EXPECT_TRUE(data_channel != NULL);
   cm_->DestroyVideoChannel(video_channel);
-  cm_->DestroyVoiceChannel(voice_channel);
+  cm_->DestroyVoiceChannel(voice_channel, nullptr);
   cm_->DestroyDataChannel(data_channel);
   cm_->Terminate();
 }
@@ -158,7 +158,7 @@ TEST_F(ChannelManagerTest, CreateDestroyChannelsOnThread) {
                              false, cricket::DCT_RTP);
   EXPECT_TRUE(data_channel != NULL);
   cm_->DestroyVideoChannel(video_channel);
-  cm_->DestroyVoiceChannel(voice_channel);
+  cm_->DestroyVoiceChannel(voice_channel, nullptr);
   cm_->DestroyDataChannel(data_channel);
   cm_->Terminate();
 }

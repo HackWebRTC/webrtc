@@ -27,10 +27,26 @@
 
 #include "talk/media/webrtc/fakewebrtccall.h"
 
+#include <algorithm>
+
 #include "talk/media/base/rtputils.h"
 #include "webrtc/base/gunit.h"
 
 namespace cricket {
+FakeAudioReceiveStream::FakeAudioReceiveStream(
+    const webrtc::AudioReceiveStream::Config& config)
+    : config_(config), received_packets_(0) {
+}
+
+const webrtc::AudioReceiveStream::Config&
+    FakeAudioReceiveStream::GetConfig() const {
+  return config_;
+}
+
+void FakeAudioReceiveStream::IncrementReceivedPackets() {
+  received_packets_++;
+}
+
 FakeVideoSendStream::FakeVideoSendStream(
     const webrtc::VideoSendStream::Config& config,
     const webrtc::VideoEncoderConfig& encoder_config)
@@ -181,18 +197,32 @@ FakeCall::FakeCall(const webrtc::Call::Config& config)
 FakeCall::~FakeCall() {
   EXPECT_EQ(0u, video_send_streams_.size());
   EXPECT_EQ(0u, video_receive_streams_.size());
+  EXPECT_EQ(0u, audio_receive_streams_.size());
 }
 
 webrtc::Call::Config FakeCall::GetConfig() const {
   return config_;
 }
 
-std::vector<FakeVideoSendStream*> FakeCall::GetVideoSendStreams() {
+const std::vector<FakeVideoSendStream*>& FakeCall::GetVideoSendStreams() {
   return video_send_streams_;
 }
 
-std::vector<FakeVideoReceiveStream*> FakeCall::GetVideoReceiveStreams() {
+const std::vector<FakeVideoReceiveStream*>& FakeCall::GetVideoReceiveStreams() {
   return video_receive_streams_;
+}
+
+const std::vector<FakeAudioReceiveStream*>& FakeCall::GetAudioReceiveStreams() {
+  return audio_receive_streams_;
+}
+
+const FakeAudioReceiveStream* FakeCall::GetAudioReceiveStream(uint32_t ssrc) {
+  for (const auto p : GetAudioReceiveStreams()) {
+    if (p->GetConfig().rtp.remote_ssrc == ssrc) {
+      return p;
+    }
+  }
+  return nullptr;
 }
 
 webrtc::Call::NetworkState FakeCall::GetNetworkState() const {
@@ -201,10 +231,22 @@ webrtc::Call::NetworkState FakeCall::GetNetworkState() const {
 
 webrtc::AudioReceiveStream* FakeCall::CreateAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config) {
-  return nullptr;
+  audio_receive_streams_.push_back(new FakeAudioReceiveStream(config));
+  ++num_created_receive_streams_;
+  return audio_receive_streams_.back();
 }
+
 void FakeCall::DestroyAudioReceiveStream(
     webrtc::AudioReceiveStream* receive_stream) {
+  auto it = std::find(audio_receive_streams_.begin(),
+                      audio_receive_streams_.end(),
+                      static_cast<FakeAudioReceiveStream*>(receive_stream));
+  if (it == audio_receive_streams_.end()) {
+    ADD_FAILURE() << "DestroyAudioReceiveStream called with unknown paramter.";
+  } else {
+    delete *it;
+    audio_receive_streams_.erase(it);
+  }
 }
 
 webrtc::VideoSendStream* FakeCall::CreateVideoSendStream(
@@ -218,37 +260,35 @@ webrtc::VideoSendStream* FakeCall::CreateVideoSendStream(
 }
 
 void FakeCall::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
-  FakeVideoSendStream* fake_stream =
-      static_cast<FakeVideoSendStream*>(send_stream);
-  for (size_t i = 0; i < video_send_streams_.size(); ++i) {
-    if (video_send_streams_[i] == fake_stream) {
-      delete video_send_streams_[i];
-      video_send_streams_.erase(video_send_streams_.begin() + i);
-      return;
-    }
+  auto it = std::find(video_send_streams_.begin(),
+                      video_send_streams_.end(),
+                      static_cast<FakeVideoSendStream*>(send_stream));
+  if (it == video_send_streams_.end()) {
+    ADD_FAILURE() << "DestroyVideoSendStream called with unknown paramter.";
+  } else {
+    delete *it;
+    video_send_streams_.erase(it);
   }
-  ADD_FAILURE() << "DestroyVideoSendStream called with unknown paramter.";
 }
 
 webrtc::VideoReceiveStream* FakeCall::CreateVideoReceiveStream(
     const webrtc::VideoReceiveStream::Config& config) {
   video_receive_streams_.push_back(new FakeVideoReceiveStream(config));
   ++num_created_receive_streams_;
-  return video_receive_streams_[video_receive_streams_.size() - 1];
+  return video_receive_streams_.back();
 }
 
 void FakeCall::DestroyVideoReceiveStream(
     webrtc::VideoReceiveStream* receive_stream) {
-  FakeVideoReceiveStream* fake_stream =
-      static_cast<FakeVideoReceiveStream*>(receive_stream);
-  for (size_t i = 0; i < video_receive_streams_.size(); ++i) {
-    if (video_receive_streams_[i] == fake_stream) {
-      delete video_receive_streams_[i];
-      video_receive_streams_.erase(video_receive_streams_.begin() + i);
-      return;
-    }
+  auto it = std::find(video_receive_streams_.begin(),
+                      video_receive_streams_.end(),
+                      static_cast<FakeVideoReceiveStream*>(receive_stream));
+  if (it == video_receive_streams_.end()) {
+    ADD_FAILURE() << "DestroyVideoReceiveStream called with unknown paramter.";
+  } else {
+    delete *it;
+    video_receive_streams_.erase(it);
   }
-  ADD_FAILURE() << "DestroyVideoReceiveStream called with unknown paramter.";
 }
 
 webrtc::PacketReceiver* FakeCall::Receiver() {
@@ -258,16 +298,26 @@ webrtc::PacketReceiver* FakeCall::Receiver() {
 FakeCall::DeliveryStatus FakeCall::DeliverPacket(webrtc::MediaType media_type,
                                                  const uint8_t* packet,
                                                  size_t length) {
-  EXPECT_TRUE(media_type == webrtc::MediaType::ANY ||
-              media_type == webrtc::MediaType::VIDEO);
   EXPECT_GE(length, 12u);
   uint32_t ssrc;
   if (!GetRtpSsrc(packet, length, &ssrc))
     return DELIVERY_PACKET_ERROR;
 
-  for (auto receiver : video_receive_streams_) {
-    if (receiver->GetConfig().rtp.remote_ssrc == ssrc)
+  if (media_type == webrtc::MediaType::ANY ||
+      media_type == webrtc::MediaType::VIDEO) {
+    for (auto receiver : video_receive_streams_) {
+      if (receiver->GetConfig().rtp.remote_ssrc == ssrc)
         return DELIVERY_OK;
+    }
+  }
+  if (media_type == webrtc::MediaType::ANY ||
+      media_type == webrtc::MediaType::AUDIO) {
+    for (auto receiver : audio_receive_streams_) {
+      if (receiver->GetConfig().rtp.remote_ssrc == ssrc) {
+        receiver->IncrementReceivedPackets();
+        return DELIVERY_OK;
+      }
+    }
   }
   return DELIVERY_UNKNOWN_SSRC;
 }

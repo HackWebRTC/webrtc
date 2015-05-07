@@ -1084,6 +1084,8 @@ class VideoMediaChannel : public MediaChannel {
 
   VideoMediaChannel() : renderer_(NULL) {}
   virtual ~VideoMediaChannel() {}
+  // Allow video channel to unhook itself from an associated voice channel.
+  virtual void DetachVoiceChannel() = 0;
   // Sets the codecs/payload types to be used for incoming media.
   virtual bool SetRecvCodecs(const std::vector<VideoCodec>& codecs) = 0;
   // Sets the codecs/payload types to be used for outgoing media.
