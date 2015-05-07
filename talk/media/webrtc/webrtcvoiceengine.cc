@@ -1871,10 +1871,9 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
 };
 
 // WebRtcVoiceMediaChannel
-WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(WebRtcVoiceEngine *engine)
-    : WebRtcMediaChannel<VoiceMediaChannel, WebRtcVoiceEngine>(
-          engine,
-          engine->CreateMediaVoiceChannel()),
+WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(WebRtcVoiceEngine* engine)
+    : engine_(engine),
+      voe_channel_(engine->CreateMediaVoiceChannel()),
       send_bitrate_setting_(false),
       send_bitrate_bps_(0),
       options_(),

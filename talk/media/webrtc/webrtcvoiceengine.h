@@ -301,43 +301,17 @@ class WebRtcVoiceEngine
   Settable<bool> experimental_ns_;
 };
 
-// WebRtcMediaChannel is a class that implements the common WebRtc channel
-// functionality.
-template <class T, class E>
-class WebRtcMediaChannel : public T, public webrtc::Transport {
- public:
-  WebRtcMediaChannel(E *engine, int channel)
-      : engine_(engine), voe_channel_(channel) {}
-  E *engine() { return engine_; }
-  int voe_channel() const { return voe_channel_; }
-  bool valid() const { return voe_channel_ != -1; }
-
- protected:
-  // implements Transport interface
-  int SendPacket(int channel, const void* data, size_t len) override {
-    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
-                       kMaxRtpPacketLen);
-    return T::SendPacket(&packet) ? static_cast<int>(len) : -1;
-  }
-
-  int SendRTCPPacket(int channel, const void* data, size_t len) override {
-    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
-                       kMaxRtpPacketLen);
-    return T::SendRtcp(&packet) ? static_cast<int>(len) : -1;
-  }
-
- private:
-  E *engine_;
-  const int voe_channel_;
-};
-
 // WebRtcVoiceMediaChannel is an implementation of VoiceMediaChannel that uses
 // WebRtc Voice Engine.
-class WebRtcVoiceMediaChannel
-    : public WebRtcMediaChannel<VoiceMediaChannel, WebRtcVoiceEngine> {
+class WebRtcVoiceMediaChannel : public VoiceMediaChannel,
+                                public webrtc::Transport {
  public:
   explicit WebRtcVoiceMediaChannel(WebRtcVoiceEngine *engine);
   ~WebRtcVoiceMediaChannel() override;
+
+  int voe_channel() const { return voe_channel_; }
+  bool valid() const { return voe_channel_ != -1; }
+
   bool SetOptions(const AudioOptions& options) override;
   bool GetOptions(AudioOptions* options) const override {
     *options = options_;
@@ -389,6 +363,20 @@ class WebRtcVoiceMediaChannel
   // called in response a failure.
   void GetLastMediaError(uint32* ssrc,
                          VoiceMediaChannel::Error* error) override;
+
+  // implements Transport interface
+  int SendPacket(int channel, const void* data, size_t len) override {
+    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                       kMaxRtpPacketLen);
+    return VoiceMediaChannel::SendPacket(&packet) ? static_cast<int>(len) : -1;
+  }
+
+  int SendRTCPPacket(int channel, const void* data, size_t len) override {
+    rtc::Buffer packet(reinterpret_cast<const uint8_t*>(data), len,
+                       kMaxRtpPacketLen);
+    return VoiceMediaChannel::SendRtcp(&packet) ? static_cast<int>(len) : -1;
+  }
+
   bool FindSsrc(int channel_num, uint32* ssrc);
   void OnError(uint32 ssrc, int error);
 
@@ -397,7 +385,9 @@ class WebRtcVoiceMediaChannel
   int GetSendChannelNum(uint32 ssrc);
 
   void SetCall(webrtc::Call* call);
- protected:
+
+ private:
+  WebRtcVoiceEngine* engine() { return engine_; }
   int GetLastEngineError() { return engine()->GetLastEngineError(); }
   int GetOutputLevel(int channel);
   bool GetRedSendCodec(const AudioCodec& red_codec,
@@ -409,7 +399,6 @@ class WebRtcVoiceMediaChannel
   static uint32 ParseSsrc(const void* data, size_t len, bool rtcp);
   static Error WebRtcErrorToChannelError(int err_code);
 
- private:
   class WebRtcVoiceChannelRenderer;
   // Map of ssrc to WebRtcVoiceChannelRenderer object.  A new object of
   // WebRtcVoiceChannelRenderer will be created for every new stream and
@@ -451,6 +440,8 @@ class WebRtcVoiceMediaChannel
 
   rtc::ThreadChecker thread_checker_;
 
+  WebRtcVoiceEngine* engine_;
+  const int voe_channel_;
   rtc::scoped_ptr<WebRtcSoundclipStream> ringback_tone_;
   std::set<int> ringback_channels_;  // channels playing ringback
   std::vector<AudioCodec> recv_codecs_;
