@@ -41,7 +41,6 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/video_engine/include/vie_network.h"
 
 namespace cricket {
 
@@ -203,8 +202,6 @@ class FakeWebRtcVoiceEngine
           dtmf_type(106),
           red_type(117),
           nack_max_packets(0),
-          vie_network(NULL),
-          video_channel(-1),
           send_ssrc(0),
           send_audio_level_ext_(-1),
           receive_audio_level_ext_(-1),
@@ -235,8 +232,6 @@ class FakeWebRtcVoiceEngine
     int dtmf_type;
     int red_type;
     int nack_max_packets;
-    webrtc::ViENetwork* vie_network;
-    int video_channel;
     uint32 send_ssrc;
     int send_audio_level_ext_;
     int receive_audio_level_ext_;
@@ -331,16 +326,6 @@ class FakeWebRtcVoiceEngine
   }
   int GetNACKMaxPackets(int channel) {
     return channels_[channel]->nack_max_packets;
-  }
-  webrtc::ViENetwork* GetViENetwork(int channel) {
-    WEBRTC_ASSERT_CHANNEL(channel);
-    // WARNING: This pointer is for verification purposes only. Calling
-    // functions on it may result in undefined behavior!
-    return channels_[channel]->vie_network;
-  }
-  int GetVideoChannel(int channel) {
-    WEBRTC_ASSERT_CHANNEL(channel);
-    return channels_[channel]->video_channel;
   }
   const webrtc::PacketTime& GetLastRtpPacketTime(int channel) {
     WEBRTC_ASSERT_CHANNEL(channel);
@@ -1028,19 +1013,9 @@ class FakeWebRtcVoiceEngine
                                      unsigned short payloadSize));
   WEBRTC_STUB(GetLastRemoteTimeStamp, (int channel,
                                        uint32_t* lastRemoteTimeStamp));
-  WEBRTC_FUNC(SetVideoEngineBWETarget, (int channel,
+  WEBRTC_STUB(SetVideoEngineBWETarget, (int channel,
                                         webrtc::ViENetwork* vie_network,
-                                        int video_channel)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->vie_network = vie_network;
-    channels_[channel]->video_channel = video_channel;
-    if (vie_network) {
-      // The interface is released here to avoid leaks. A test should not
-      // attempt to call functions on the interface stored in the channel.
-      vie_network->Release();
-    }
-    return 0;
-  }
+                                        int video_channel));
 
   // webrtc::VoEVideoSync
   WEBRTC_STUB(GetPlayoutBufferSize, (int& bufferMs));

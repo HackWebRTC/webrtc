@@ -394,8 +394,6 @@ class WebRtcVoiceMediaChannel
   int GetReceiveChannelNum(uint32 ssrc);
   int GetSendChannelNum(uint32 ssrc);
 
-  bool SetupSharedBandwidthEstimation(webrtc::VideoEngine* vie,
-                                      int vie_channel);
   void SetCall(webrtc::Call* call);
  protected:
   int GetLastEngineError() { return engine()->GetLastEngineError(); }
@@ -439,8 +437,6 @@ class WebRtcVoiceMediaChannel
 
   bool SetHeaderExtension(ExtensionSetterFunction setter, int channel_id,
                           const RtpHeaderExtension* extension);
-  bool SetupSharedBweOnChannel(int voe_channel);
-
   void TryAddAudioRecvStream(uint32 ssrc);
   void TryRemoveAudioRecvStream(uint32 ssrc);
 
@@ -468,11 +464,6 @@ class WebRtcVoiceMediaChannel
   bool typing_noise_detected_;
   SendFlags desired_send_;
   SendFlags send_;
-  // shared_bwe_vie_ and shared_bwe_vie_channel_ together identifies a WebRTC
-  // VideoEngine channel that this voice channel should forward incoming packets
-  // to for Bandwidth Estimation purposes.
-  webrtc::VideoEngine* shared_bwe_vie_;
-  int shared_bwe_vie_channel_;
   webrtc::Call* call_;
 
   // send_channels_ contains the channels which are being used for sending.

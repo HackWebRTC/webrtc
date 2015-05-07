@@ -1887,8 +1887,6 @@ WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(WebRtcVoiceEngine *engine)
       typing_noise_detected_(false),
       desired_send_(SEND_NOTHING),
       send_(SEND_NOTHING),
-      shared_bwe_vie_(NULL),
-      shared_bwe_vie_channel_(-1),
       call_(nullptr),
       default_receive_ssrc_(0) {
   engine->RegisterChannel(this);
@@ -1900,7 +1898,6 @@ WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(WebRtcVoiceEngine *engine)
 WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel() {
   LOG(LS_VERBOSE) << "WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel "
                   << voe_channel();
-  SetupSharedBandwidthEstimation(NULL, -1);
   DCHECK(receive_streams_.empty() || call_);
 
   // Remove any remaining send streams, the default channel will be deleted
@@ -2003,11 +2000,6 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
     }
   }
 
-  // Force update of Video Engine BWE forwarding to reflect experiment setting.
-  if (!SetupSharedBandwidthEstimation(shared_bwe_vie_,
-                                      shared_bwe_vie_channel_)) {
-    return false;
-  }
   SetCall(call_);
 
   LOG(LS_INFO) << "Set voice channel options.  Current options: "
@@ -2767,9 +2759,6 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
     receive_channels_.insert(std::make_pair(
         default_receive_ssrc_,
         new WebRtcVoiceChannelRenderer(voe_channel(), audio_transport)));
-    if (!SetupSharedBweOnChannel(voe_channel())) {
-      return false;
-    }
     return SetPlayout(voe_channel(), playout_);
   }
 
@@ -2854,11 +2843,6 @@ bool WebRtcVoiceMediaChannel::ConfigureRecvChannel(int channel) {
 
   // Set RTP header extension for the new channel.
   if (!SetChannelRecvRtpHeaderExtensions(channel, receive_extensions_)) {
-    return false;
-  }
-
-  // Set up channel to be able to forward incoming packets to video engine BWE.
-  if (!SetupSharedBweOnChannel(channel)) {
     return false;
   }
 
@@ -3639,34 +3623,12 @@ int WebRtcVoiceMediaChannel::GetSendChannelNum(uint32 ssrc) {
   return -1;
 }
 
-bool WebRtcVoiceMediaChannel::SetupSharedBandwidthEstimation(
-    webrtc::VideoEngine* vie, int vie_channel) {
-  shared_bwe_vie_ = vie;
-  shared_bwe_vie_channel_ = vie_channel;
-
-  if (!SetupSharedBweOnChannel(voe_channel())) {
-    return false;
-  }
-  for (ChannelMap::iterator it = receive_channels_.begin();
-      it != receive_channels_.end(); ++it) {
-    if (!SetupSharedBweOnChannel(it->second->channel())) {
-      return false;
-    }
-  }
-  return true;
-}
-
 void WebRtcVoiceMediaChannel::SetCall(webrtc::Call* call) {
   DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(!call || !shared_bwe_vie_);
-  DCHECK(!call || shared_bwe_vie_channel_ == -1);
-
   for (const auto& it : receive_channels_) {
     TryRemoveAudioRecvStream(it.first);
   }
-
   call_ = call;
-
   for (const auto& it : receive_channels_) {
     TryAddAudioRecvStream(it.first);
   }
@@ -3817,25 +3779,6 @@ bool WebRtcVoiceMediaChannel::SetHeaderExtension(ExtensionSetterFunction setter,
   if ((engine()->voe()->rtp()->*setter)(channel_id, enable, id) != 0) {
     LOG_RTCERR4(*setter, uri, channel_id, enable, id);
     return false;
-  }
-  return true;
-}
-
-bool WebRtcVoiceMediaChannel::SetupSharedBweOnChannel(int voe_channel) {
-  webrtc::ViENetwork* vie_network = NULL;
-  int vie_channel = -1;
-  if (options_.combined_audio_video_bwe.GetWithDefaultIfUnset(false) &&
-      shared_bwe_vie_ != NULL && shared_bwe_vie_channel_ != -1) {
-    vie_network = webrtc::ViENetwork::GetInterface(shared_bwe_vie_);
-    vie_channel = shared_bwe_vie_channel_;
-  }
-  if (engine()->voe()->rtp()->SetVideoEngineBWETarget(voe_channel, vie_network,
-      vie_channel) == -1) {
-    LOG_RTCERR3(SetVideoEngineBWETarget, voe_channel, vie_network, vie_channel);
-    if (vie_network != NULL) {
-      // Don't fail if we're tearing down.
-      return false;
-    }
   }
   return true;
 }
