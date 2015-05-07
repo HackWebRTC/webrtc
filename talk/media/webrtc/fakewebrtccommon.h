@@ -54,12 +54,6 @@ namespace cricket {
 #define WEBRTC_BOOL_FUNC(method, args) bool method args override
 
 #define WEBRTC_VOID_FUNC(method, args) void method args override
-
-#define WEBRTC_CHECK_CHANNEL(channel) \
-  if (channels_.find(channel) == channels_.end()) return -1;
-
-#define WEBRTC_ASSERT_CHANNEL(channel) \
-  ASSERT(channels_.find(channel) != channels_.end());
 }  // namespace cricket
 
 #endif  // TALK_SESSION_PHONE_FAKEWEBRTCCOMMON_H_

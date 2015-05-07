@@ -109,7 +109,7 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
   WebRtcVideoEngine2Test(WebRtcVoiceEngine* voice_engine)
       : engine_(voice_engine) {
     std::vector<VideoCodec> engine_codecs = engine_.codecs();
-    assert(!engine_codecs.empty());
+    DCHECK(!engine_codecs.empty());
     bool codec_set = false;
     for (size_t i = 0; i < engine_codecs.size(); ++i) {
       if (engine_codecs[i].name == "red") {
@@ -128,7 +128,7 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
       }
     }
 
-    assert(codec_set);
+    DCHECK(codec_set);
   }
 
  protected:
@@ -139,7 +139,7 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
 
    private:
     webrtc::Call* CreateCall(const webrtc::Call::Config& config) override {
-      assert(fake_call_ == NULL);
+      DCHECK(fake_call_ == NULL);
       fake_call_ = new FakeCall(config);
       return fake_call_;
     }
@@ -835,7 +835,7 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test,
   }
 
   webrtc::Call* CreateCall(const webrtc::Call::Config& config) override {
-    assert(fake_call_ == NULL);
+    DCHECK(fake_call_ == NULL);
     fake_call_ = new FakeCall(config);
     return fake_call_;
   }
@@ -2566,7 +2566,7 @@ class WebRtcVideoChannel2SimulcastTest : public WebRtcVideoEngine2SimulcastTest,
 
  protected:
   webrtc::Call* CreateCall(const webrtc::Call::Config& config) override {
-    assert(fake_call_ == NULL);
+    DCHECK(fake_call_ == NULL);
     fake_call_ = new FakeCall(config);
     return fake_call_;
   }
@@ -2585,7 +2585,7 @@ class WebRtcVideoChannel2SimulcastTest : public WebRtcVideoEngine2SimulcastTest,
     ASSERT_TRUE(channel_->SetSendCodecs(codecs));
 
     std::vector<uint32> ssrcs = MAKE_VECTOR(kSsrcs3);
-    assert(num_configured_streams <= ssrcs.size());
+    DCHECK(num_configured_streams <= ssrcs.size());
     ssrcs.resize(num_configured_streams);
 
     FakeVideoSendStream* stream =

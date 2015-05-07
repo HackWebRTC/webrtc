@@ -30,6 +30,7 @@
 #include <algorithm>
 
 #include "talk/media/base/rtputils.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/gunit.h"
 
 namespace cricket {
@@ -54,7 +55,7 @@ FakeVideoSendStream::FakeVideoSendStream(
       config_(config),
       codec_settings_set_(false),
       num_swapped_frames_(0) {
-  assert(config.encoder_settings.encoder != NULL);
+  DCHECK(config.encoder_settings.encoder != NULL);
   ReconfigureVideoEncoder(encoder_config);
 }
 

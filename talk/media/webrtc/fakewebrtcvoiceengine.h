@@ -38,6 +38,7 @@
 #include "talk/media/webrtc/fakewebrtccommon.h"
 #include "talk/media/webrtc/webrtcvoe.h"
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
@@ -82,6 +83,12 @@ static const webrtc::NetworkStatistics kNetStats = {
     98, // int maxWaitingTimeMs;
     7654,  // int addedSamples;
 };  // These random but non-trivial numbers are used for testing.
+
+#define WEBRTC_CHECK_CHANNEL(channel) \
+  if (channels_.find(channel) == channels_.end()) return -1;
+
+#define WEBRTC_ASSERT_CHANNEL(channel) \
+  DCHECK(channels_.find(channel) != channels_.end());
 
 // Verify the header extension ID, if enabled, is within the bounds specified in
 // [RFC5285]: 1-14 inclusive.
@@ -355,7 +362,7 @@ class FakeWebRtcVoiceEngine
     return channels_[channel]->packets.empty();
   }
   void TriggerCallbackOnError(int channel_num, int err_code) {
-    ASSERT(observer_ != NULL);
+    DCHECK(observer_ != NULL);
     observer_->CallbackOnError(channel_num, err_code);
   }
   void set_playout_fail_channel(int channel) {

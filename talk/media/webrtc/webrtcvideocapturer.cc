@@ -264,7 +264,7 @@ bool WebRtcVideoCapturer::SetApplyRotation(bool enable) {
   // Can't take lock here as this will cause deadlock with
   // OnIncomingCapturedFrame. In fact, the whole method, including methods it
   // calls, can't take lock.
-  assert(module_);
+  DCHECK(module_);
 
   const std::string group_name =
       webrtc::field_trial::FindFullName("WebRTC-CVO");

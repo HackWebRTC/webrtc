@@ -45,12 +45,6 @@
 
 namespace cricket {
 
-#define WEBRTC_CHECK_CAPTURER(capturer) \
-  if (capturers_.find(capturer) == capturers_.end()) return -1;
-
-#define WEBRTC_ASSERT_CAPTURER(capturer) \
-  ASSERT(capturers_.find(capturer) != capturers_.end());
-
 static const int kMinVideoBitrate = 100;
 static const int kStartVideoBitrate = 300;
 static const int kMaxVideoBitrate = 1000;

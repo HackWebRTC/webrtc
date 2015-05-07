@@ -338,7 +338,7 @@ static void MaybeFixupG722(webrtc::CodecInst* voe_codec, int new_plfreq) {
   if (IsCodec(*voe_codec, kG722CodecName)) {
     // If the ASSERT triggers, the codec definition in WebRTC VoiceEngine
     // has changed, and this special case is no longer needed.
-    ASSERT(voe_codec->plfreq != new_plfreq);
+    DCHECK(voe_codec->plfreq != new_plfreq);
     voe_codec->plfreq = new_plfreq;
   }
 }
@@ -600,14 +600,14 @@ WebRtcVoiceEngine::~WebRtcVoiceEngine() {
   }
 
   // Test to see if the media processor was deregistered properly
-  ASSERT(SignalRxMediaFrame.is_empty());
-  ASSERT(SignalTxMediaFrame.is_empty());
+  DCHECK(SignalRxMediaFrame.is_empty());
+  DCHECK(SignalTxMediaFrame.is_empty());
 
   tracing_->SetTraceCallback(NULL);
 }
 
 bool WebRtcVoiceEngine::Init(rtc::Thread* worker_thread) {
-  ASSERT(worker_thread == rtc::Thread::Current());
+  DCHECK(worker_thread == rtc::Thread::Current());
   LOG(LS_INFO) << "WebRtcVoiceEngine::Init";
   bool res = InitInternal();
   if (res) {
@@ -1223,7 +1223,7 @@ bool WebRtcVoiceEngine::GetOutputVolume(int* level) {
 }
 
 bool WebRtcVoiceEngine::SetOutputVolume(int level) {
-  ASSERT(level >= 0 && level <= 255);
+  DCHECK(level >= 0 && level <= 255);
   if (voe_wrapper_->volume()->SetSpeakerVolume(level) == -1) {
     LOG_RTCERR1(SetSpeakerVolume, level);
     return false;
@@ -1456,7 +1456,7 @@ void WebRtcVoiceEngine::CallbackOnError(int channel_num, int err_code) {
   LOG(LS_WARNING) << "VoiceEngine error " << err_code << " reported on channel "
                   << channel_num << ".";
   if (FindChannelAndSsrc(channel_num, &channel, &ssrc)) {
-    ASSERT(channel != NULL);
+    DCHECK(channel != NULL);
     channel->OnError(ssrc, err_code);
   } else {
     LOG(LS_ERROR) << "VoiceEngine channel " << channel_num
@@ -1466,14 +1466,14 @@ void WebRtcVoiceEngine::CallbackOnError(int channel_num, int err_code) {
 
 bool WebRtcVoiceEngine::FindChannelAndSsrc(
     int channel_num, WebRtcVoiceMediaChannel** channel, uint32* ssrc) const {
-  ASSERT(channel != NULL && ssrc != NULL);
+  DCHECK(channel != NULL && ssrc != NULL);
 
   *channel = NULL;
   *ssrc = 0;
   // Find corresponding channel and ssrc
   for (ChannelList::const_iterator it = channels_.begin();
       it != channels_.end(); ++it) {
-    ASSERT(*it != NULL);
+    DCHECK(*it != NULL);
     if ((*it)->FindSsrc(channel_num, ssrc)) {
       *channel = *it;
       return true;
@@ -1487,14 +1487,14 @@ bool WebRtcVoiceEngine::FindChannelAndSsrc(
 // obtain the voice engine's channel number.
 bool WebRtcVoiceEngine::FindChannelNumFromSsrc(
     uint32 ssrc, MediaProcessorDirection direction, int* channel_num) {
-  ASSERT(channel_num != NULL);
-  ASSERT(direction == MPD_RX || direction == MPD_TX);
+  DCHECK(channel_num != NULL);
+  DCHECK(direction == MPD_RX || direction == MPD_TX);
 
   *channel_num = -1;
   // Find corresponding channel for ssrc.
   for (ChannelList::const_iterator it = channels_.begin();
       it != channels_.end(); ++it) {
-    ASSERT(*it != NULL);
+    DCHECK(*it != NULL);
     if (direction & MPD_RX) {
       *channel_num = (*it)->GetReceiveChannelNum(ssrc);
     }
@@ -1804,9 +1804,9 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
   // TODO(xians): Make sure Start() is called only once.
   void Start(AudioRenderer* renderer) {
     rtc::CritScope lock(&lock_);
-    ASSERT(renderer != NULL);
+    DCHECK(renderer != NULL);
     if (renderer_ != NULL) {
-      ASSERT(renderer_ == renderer);
+      DCHECK(renderer_ == renderer);
       return;
     }
 
@@ -2575,7 +2575,7 @@ bool WebRtcVoiceMediaChannel::ChangeSend(int channel, SendFlags send) {
       return false;
     }
   } else {  // SEND_NOTHING
-    ASSERT(send == SEND_NOTHING);
+    DCHECK(send == SEND_NOTHING);
     if (engine()->voe()->base()->StopSend(channel) == -1) {
       LOG_RTCERR1(StopSend, channel);
       return false;
@@ -2866,7 +2866,7 @@ bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32 ssrc) {
   receive_channels_.erase(it);
 
   if (ssrc == default_receive_ssrc_) {
-    ASSERT(IsDefaultChannel(channel));
+    DCHECK(IsDefaultChannel(channel));
     // Recycle the default channel is for recv stream.
     if (playout_)
       SetPlayout(voe_channel(), false);
@@ -3546,15 +3546,15 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
 
 void WebRtcVoiceMediaChannel::GetLastMediaError(
     uint32* ssrc, VoiceMediaChannel::Error* error) {
-  ASSERT(ssrc != NULL);
-  ASSERT(error != NULL);
+  DCHECK(ssrc != NULL);
+  DCHECK(error != NULL);
   FindSsrc(voe_channel(), ssrc);
   *error = WebRtcErrorToChannelError(GetLastEngineError());
 }
 
 bool WebRtcVoiceMediaChannel::FindSsrc(int channel_num, uint32* ssrc) {
   rtc::CritScope lock(&receive_channels_cs_);
-  ASSERT(ssrc != NULL);
+  DCHECK(ssrc != NULL);
   if (channel_num == -1 && send_ != SEND_NOTHING) {
     // Sometimes the VoiceEngine core will throw error with channel_num = -1.
     // This means the error is not limited to a specific channel.  Signal the
