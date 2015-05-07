@@ -14,6 +14,7 @@
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
+#include "webrtc/modules/audio_coding/codecs/audio_encoder_mutable_impl.h"
 #include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
 
 namespace webrtc {
@@ -22,6 +23,7 @@ class AudioEncoderG722 : public AudioEncoder {
  public:
   struct Config {
     Config() : payload_type(9), frame_size_ms(20), num_channels(1) {}
+    bool IsOk() const;
 
     int payload_type;
     int frame_size_ms;
@@ -37,8 +39,6 @@ class AudioEncoderG722 : public AudioEncoder {
   int RtpTimestampRateHz() const override;
   int Num10MsFramesInNextPacket() const override;
   int Max10MsFramesInAPacket() const override;
-
- protected:
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
                              const int16_t* audio,
                              size_t max_encoded_bytes,
@@ -63,6 +63,14 @@ class AudioEncoderG722 : public AudioEncoder {
   uint32_t first_timestamp_in_buffer_;
   const rtc::scoped_ptr<EncoderState[]> encoders_;
   rtc::Buffer interleave_buffer_;
+};
+
+struct CodecInst;
+
+class AudioEncoderMutableG722
+    : public AudioEncoderMutableImpl<AudioEncoderG722> {
+ public:
+  explicit AudioEncoderMutableG722(const CodecInst& codec_inst);
 };
 
 }  // namespace webrtc

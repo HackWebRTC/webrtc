@@ -9,14 +9,41 @@
  */
 
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_encoder_pcm16b.h"
+
+#include "webrtc/base/checks.h"
+#include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
 
 namespace webrtc {
+
+bool AudioEncoderPcm16B::Config::IsOk() const {
+  if ((sample_rate_hz != 8000) && (sample_rate_hz != 16000) &&
+      (sample_rate_hz != 32000) && (sample_rate_hz != 48000))
+    return false;
+  return AudioEncoderPcm::Config::IsOk();
+}
 
 int16_t AudioEncoderPcm16B::EncodeCall(const int16_t* audio,
                                        size_t input_len,
                                        uint8_t* encoded) {
   return WebRtcPcm16b_Encode(audio, static_cast<int16_t>(input_len), encoded);
+}
+
+namespace {
+AudioEncoderPcm16B::Config CreateConfig(const CodecInst& codec_inst) {
+  AudioEncoderPcm16B::Config config;
+  config.num_channels = codec_inst.channels;
+  config.sample_rate_hz = codec_inst.plfreq;
+  config.frame_size_ms = rtc::CheckedDivExact(
+      codec_inst.pacsize, rtc::CheckedDivExact(config.sample_rate_hz, 1000));
+  config.payload_type = codec_inst.pltype;
+  return config;
+}
+}  // namespace
+
+AudioEncoderMutablePcm16B::AudioEncoderMutablePcm16B(
+    const CodecInst& codec_inst)
+    : AudioEncoderMutableImpl<AudioEncoderPcm16B>(CreateConfig(codec_inst)) {
 }
 
 }  // namespace webrtc

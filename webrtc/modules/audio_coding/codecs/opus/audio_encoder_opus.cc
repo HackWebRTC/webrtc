@@ -11,6 +11,7 @@
 #include "webrtc/modules/audio_coding/codecs/opus/interface/audio_encoder_opus.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
 
 namespace webrtc {
@@ -199,20 +200,73 @@ AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeInternal(
   CHECK_EQ(input_buffer_.size(),
            static_cast<size_t>(num_10ms_frames_per_packet_) *
            samples_per_10ms_frame_);
-  int16_t r = WebRtcOpus_Encode(
+  int16_t status = WebRtcOpus_Encode(
       inst_, &input_buffer_[0],
       rtc::CheckedDivExact(CastInt16(input_buffer_.size()),
                            static_cast<int16_t>(num_channels_)),
       ClampInt16(max_encoded_bytes), encoded);
-  CHECK_GE(r, 0);  // Fails only if fed invalid data.
+  CHECK_GE(status, 0);  // Fails only if fed invalid data.
   input_buffer_.clear();
   EncodedInfo info;
-  info.encoded_bytes = r;
+  info.encoded_bytes = status;
   info.encoded_timestamp = first_timestamp_in_buffer_;
   info.payload_type = payload_type_;
   info.send_even_if_empty = true;  // Allows Opus to send empty packets.
-  info.speech = r > 0;
+  info.speech = (status > 0);
   return info;
+}
+
+namespace {
+AudioEncoderOpus::Config CreateConfig(const CodecInst& codec_inst) {
+  AudioEncoderOpus::Config config;
+  config.frame_size_ms = rtc::CheckedDivExact(codec_inst.pacsize, 48);
+  config.num_channels = codec_inst.channels;
+  config.bitrate_bps = codec_inst.rate;
+  config.payload_type = codec_inst.pltype;
+  config.application = (config.num_channels == 1 ? AudioEncoderOpus::kVoip
+                                                 : AudioEncoderOpus::kAudio);
+  return config;
+}
+}  // namespace
+
+AudioEncoderMutableOpus::AudioEncoderMutableOpus(const CodecInst& codec_inst)
+    : AudioEncoderMutableImpl<AudioEncoderOpus>(CreateConfig(codec_inst)) {
+}
+
+bool AudioEncoderMutableOpus::SetFec(bool enable) {
+  auto conf = config();
+  conf.fec_enabled = enable;
+  return Reconstruct(conf);
+}
+
+bool AudioEncoderMutableOpus::SetDtx(bool enable, bool force) {
+  auto conf = config();
+  if (enable && force)
+    conf.application = AudioEncoderOpus::kVoip;
+  conf.dtx_enabled = enable;
+  return Reconstruct(conf);
+}
+
+bool AudioEncoderMutableOpus::SetApplication(Application application,
+                                             bool force) {
+  auto conf = config();
+  switch (application) {
+    case kApplicationSpeech:
+      conf.application = AudioEncoderOpus::kVoip;
+      break;
+    case kApplicationAudio:
+      if (force)
+        conf.dtx_enabled = false;
+      conf.application = AudioEncoderOpus::kAudio;
+      break;
+  }
+  return Reconstruct(conf);
+}
+
+bool AudioEncoderMutableOpus::SetMaxPlaybackRate(int frequency_hz) {
+  auto conf = config();
+  conf.max_playback_rate_hz = frequency_hz;
+  return Reconstruct(conf);
 }
 
 }  // namespace webrtc

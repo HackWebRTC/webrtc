@@ -44,8 +44,6 @@ class AudioEncoderCopyRed : public AudioEncoder {
   int Max10MsFramesInAPacket() const override;
   void SetTargetBitrate(int bits_per_second) override;
   void SetProjectedPacketLossRate(double fraction) override;
-
- protected:
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
                              const int16_t* audio,
                              size_t max_encoded_bytes,

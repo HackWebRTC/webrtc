@@ -13,6 +13,7 @@
 #include <limits>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/g711_interface.h"
 
 namespace webrtc {
@@ -27,6 +28,10 @@ int16_t NumSamplesPerFrame(int num_channels,
   return static_cast<int16_t>(samples_per_frame);
 }
 }  // namespace
+
+bool AudioEncoderPcm::Config::IsOk() const {
+  return (frame_size_ms % 10 == 0) && (num_channels >= 1);
+}
 
 AudioEncoderPcm::AudioEncoderPcm(const Config& config, int sample_rate_hz)
     : sample_rate_hz_(sample_rate_hz),
@@ -103,6 +108,27 @@ int16_t AudioEncoderPcmU::EncodeCall(const int16_t* audio,
                                      size_t input_len,
                                      uint8_t* encoded) {
   return WebRtcG711_EncodeU(audio, static_cast<int16_t>(input_len), encoded);
+}
+
+namespace {
+template <typename T>
+typename T::Config CreateConfig(const CodecInst& codec_inst) {
+  typename T::Config config;
+  config.frame_size_ms = codec_inst.pacsize / 8;
+  config.num_channels = codec_inst.channels;
+  config.payload_type = codec_inst.pltype;
+  return config;
+}
+}  // namespace
+
+AudioEncoderMutablePcmU::AudioEncoderMutablePcmU(const CodecInst& codec_inst)
+    : AudioEncoderMutableImpl<AudioEncoderPcmU>(
+          CreateConfig<AudioEncoderPcmU>(codec_inst)) {
+}
+
+AudioEncoderMutablePcmA::AudioEncoderMutablePcmA(const CodecInst& codec_inst)
+    : AudioEncoderMutableImpl<AudioEncoderPcmA>(
+          CreateConfig<AudioEncoderPcmA>(codec_inst)) {
 }
 
 }  // namespace webrtc

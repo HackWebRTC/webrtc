@@ -72,7 +72,6 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
   int ErrorCode() override;
   size_t Channels() const override { return 1; }
 
- protected:
   // AudioEncoder protected method.
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
                              const int16_t* audio,
@@ -115,6 +114,14 @@ class AudioEncoderDecoderIsacT : public AudioEncoder, public AudioDecoder {
   uint32_t last_encoded_timestamp_ GUARDED_BY(lock_);
 
   DISALLOW_COPY_AND_ASSIGN(AudioEncoderDecoderIsacT);
+};
+
+struct CodecInst;
+
+class AudioEncoderDecoderMutableIsac : public AudioEncoderMutable,
+                                       public AudioDecoder {
+ public:
+  virtual void UpdateSettings(const CodecInst& codec_inst) = 0;
 };
 
 }  // namespace webrtc

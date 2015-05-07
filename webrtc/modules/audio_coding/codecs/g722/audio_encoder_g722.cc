@@ -12,6 +12,7 @@
 
 #include <limits>
 #include "webrtc/base/checks.h"
+#include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
 
 namespace webrtc {
@@ -21,6 +22,10 @@ namespace {
 const int kSampleRateHz = 16000;
 
 }  // namespace
+
+bool AudioEncoderG722::Config::IsOk() const {
+  return (frame_size_ms % 10 == 0) && (num_channels >= 1);
+}
 
 AudioEncoderG722::EncoderState::EncoderState() {
   CHECK_EQ(0, WebRtcG722_CreateEncoder(&encoder));
@@ -39,8 +44,7 @@ AudioEncoderG722::AudioEncoderG722(const Config& config)
       first_timestamp_in_buffer_(0),
       encoders_(new EncoderState[num_channels_]),
       interleave_buffer_(2 * num_channels_) {
-  CHECK_EQ(config.frame_size_ms % 10, 0)
-      << "Frame size must be an integer multiple of 10 ms.";
+  CHECK(config.IsOk());
   const int samples_per_channel =
       kSampleRateHz / 100 * num_10ms_frames_per_packet_;
   for (int i = 0; i < num_channels_; ++i) {
@@ -132,6 +136,20 @@ AudioEncoder::EncodedInfo AudioEncoderG722::EncodeInternal(
 
 int AudioEncoderG722::SamplesPerChannel() const {
   return kSampleRateHz / 100 * num_10ms_frames_per_packet_;
+}
+
+namespace {
+AudioEncoderG722::Config CreateConfig(const CodecInst& codec_inst) {
+  AudioEncoderG722::Config config;
+  config.num_channels = codec_inst.channels;
+  config.frame_size_ms = codec_inst.pacsize / 16;
+  config.payload_type = codec_inst.pltype;
+  return config;
+}
+}  // namespace
+
+AudioEncoderMutableG722::AudioEncoderMutableG722(const CodecInst& codec_inst)
+    : AudioEncoderMutableImpl<AudioEncoderG722>(CreateConfig(codec_inst)) {
 }
 
 }  // namespace webrtc

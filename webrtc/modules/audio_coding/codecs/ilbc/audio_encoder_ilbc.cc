@@ -13,6 +13,7 @@
 #include <cstring>
 #include <limits>
 #include "webrtc/base/checks.h"
+#include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
 
 namespace webrtc {
@@ -23,15 +24,20 @@ const int kSampleRateHz = 8000;
 
 }  // namespace
 
+bool AudioEncoderIlbc::Config::IsOk() const {
+  if (!(frame_size_ms == 20 || frame_size_ms == 30 || frame_size_ms == 40 ||
+        frame_size_ms == 60))
+    return false;
+  if (kSampleRateHz / 100 * (frame_size_ms / 10) > kMaxSamplesPerPacket)
+    return false;
+  return true;
+}
+
 AudioEncoderIlbc::AudioEncoderIlbc(const Config& config)
     : payload_type_(config.payload_type),
       num_10ms_frames_per_packet_(config.frame_size_ms / 10),
       num_10ms_frames_buffered_(0) {
-  CHECK(config.frame_size_ms == 20 || config.frame_size_ms == 30 ||
-        config.frame_size_ms == 40 || config.frame_size_ms == 60)
-      << "Frame size must be 20, 30, 40, or 60 ms.";
-  DCHECK_LE(kSampleRateHz / 100 * num_10ms_frames_per_packet_,
-            kMaxSamplesPerPacket);
+  CHECK(config.IsOk());
   CHECK_EQ(0, WebRtcIlbcfix_EncoderCreate(&encoder_));
   const int encoder_frame_size_ms = config.frame_size_ms > 30
                                         ? config.frame_size_ms / 2
@@ -110,6 +116,19 @@ size_t AudioEncoderIlbc::RequiredOutputSizeBytes() const {
     case 6:   return 2 * 50;
     default:  FATAL();
   }
+}
+
+namespace {
+AudioEncoderIlbc::Config CreateConfig(const CodecInst& codec_inst) {
+  AudioEncoderIlbc::Config config;
+  config.frame_size_ms = codec_inst.pacsize / 8;
+  config.payload_type = codec_inst.pltype;
+  return config;
+}
+}  // namespace
+
+AudioEncoderMutableIlbc::AudioEncoderMutableIlbc(const CodecInst& codec_inst)
+    : AudioEncoderMutableImpl<AudioEncoderIlbc>(CreateConfig(codec_inst)) {
 }
 
 }  // namespace webrtc

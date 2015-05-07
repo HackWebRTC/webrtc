@@ -13,6 +13,8 @@
 
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/modules/audio_coding/codecs/audio_encoder_mutable_impl.h"
 #include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 
@@ -56,8 +58,6 @@ class AudioEncoderOpus final : public AudioEncoder {
   double packet_loss_rate() const { return packet_loss_rate_; }
   ApplicationMode application() const { return application_; }
   bool dtx_enabled() const { return dtx_enabled_; }
-
- protected:
   EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
                              const int16_t* audio,
                              size_t max_encoded_bytes,
@@ -75,6 +75,23 @@ class AudioEncoderOpus final : public AudioEncoder {
   OpusEncInst* inst_;
   uint32_t first_timestamp_in_buffer_;
   double packet_loss_rate_;
+};
+
+struct CodecInst;
+
+class AudioEncoderMutableOpus
+    : public AudioEncoderMutableImpl<AudioEncoderOpus> {
+ public:
+  explicit AudioEncoderMutableOpus(const CodecInst& codec_inst);
+  bool SetFec(bool enable) override;
+  bool SetDtx(bool enable, bool force) override;
+  bool SetApplication(Application application, bool force) override;
+  bool SetMaxPlaybackRate(int frequency_hz) override;
+  AudioEncoderOpus::ApplicationMode application() const {
+    return encoder()->application();
+  }
+  double packet_loss_rate() const { return encoder()->packet_loss_rate(); }
+  bool dtx_enabled() const { return encoder()->dtx_enabled(); }
 };
 
 }  // namespace webrtc
