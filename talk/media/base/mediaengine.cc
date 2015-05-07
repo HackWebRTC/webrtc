@@ -49,20 +49,6 @@ MediaEngineFactory::MediaEngineCreateFunction
   return old_function;
 }
 
-// TODO(pthatcher): Remove this method and require all the users of
-// media engines to choose one explictly, or at least remove the
-// default behavior and require calling SetCreateFunction explictly.
-MediaEngineInterface* MediaEngineFactory::Create() {
-  if (create_function_) {
-    return create_function_();
-  }
-#if defined(HAVE_WEBRTC_VOICE) && defined(HAVE_WEBRTC_VIDEO)
-  return WebRtcMediaEngineFactory::Create();
-#else
-  return new NullMediaEngine();
-#endif  // HAVE_WEBRTC_VIDEO && HAVE_WEBRTC_VOICE
-}
-
 };  // namespace cricket
 
 #endif  // DISABLE_MEDIA_ENGINE_FACTORY

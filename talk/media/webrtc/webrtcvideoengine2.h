@@ -75,6 +75,9 @@ class WebRtcVoiceEngine;
 struct CapturedFrame;
 struct Device;
 
+// Exposed here for unittests.
+std::vector<VideoCodec> DefaultVideoCodecList();
+
 class UnsignalledSsrcHandler {
  public:
   enum Action {

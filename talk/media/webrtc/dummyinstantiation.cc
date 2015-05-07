@@ -25,13 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/media/webrtc/fakewebrtcvideoengine.h"
 #include "talk/media/webrtc/fakewebrtcvoiceengine.h"
 
 static void EnsureAPIMatch() {
   new cricket::FakeWebRtcVoiceEngine(NULL, 0);
-  new cricket::FakeWebRtcVideoDecoder();
-  new cricket::FakeWebRtcVideoEncoder();
-  new cricket::FakeWebRtcVideoEngine(NULL, 0);
-  new cricket::FakeWebRtcVideoEngine::Capturer();
 }

@@ -488,8 +488,6 @@
         'media/webrtc/webrtcvideocapturer.h',
         'media/webrtc/webrtcvideodecoderfactory.h',
         'media/webrtc/webrtcvideoencoderfactory.h',
-        'media/webrtc/webrtcvideoengine.cc',
-        'media/webrtc/webrtcvideoengine.h',
         'media/webrtc/webrtcvideoengine2.cc',
         'media/webrtc/webrtcvideoengine2.h',
         'media/webrtc/webrtcvideoframe.cc',

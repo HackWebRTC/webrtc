@@ -35,7 +35,6 @@
 #include "talk/media/webrtc/fakewebrtcvideoengine.h"
 #include "talk/media/webrtc/simulcast.h"
 #include "talk/media/webrtc/webrtcvideochannelfactory.h"
-#include "talk/media/webrtc/webrtcvideoengine.h"
 #include "talk/media/webrtc/webrtcvideoengine2.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
 #include "webrtc/base/arraysize.h"

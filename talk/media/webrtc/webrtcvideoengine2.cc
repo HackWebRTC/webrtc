@@ -32,19 +32,20 @@
 #include <set>
 #include <string>
 
-#include "libyuv/convert_from.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videorenderer.h"
 #include "talk/media/webrtc/constants.h"
 #include "talk/media/webrtc/simulcast.h"
 #include "talk/media/webrtc/webrtcvideocapturer.h"
-#include "talk/media/webrtc/webrtcvideoengine.h"
+#include "talk/media/webrtc/webrtcvideoencoderfactory.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/call.h"
+#include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
+#include "webrtc/system_wrappers/interface/field_trial.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video_decoder.h"
 #include "webrtc/video_encoder.h"
@@ -55,6 +56,126 @@
 
 namespace cricket {
 namespace {
+
+// Wrap cricket::WebRtcVideoEncoderFactory as a webrtc::VideoEncoderFactory.
+class EncoderFactoryAdapter : public webrtc::VideoEncoderFactory {
+ public:
+  // EncoderFactoryAdapter doesn't take ownership of |factory|, which is owned
+  // by e.g. PeerConnectionFactory.
+  explicit EncoderFactoryAdapter(cricket::WebRtcVideoEncoderFactory* factory)
+      : factory_(factory) {}
+  virtual ~EncoderFactoryAdapter() {}
+
+  // Implement webrtc::VideoEncoderFactory.
+  webrtc::VideoEncoder* Create() override {
+    return factory_->CreateVideoEncoder(webrtc::kVideoCodecVP8);
+  }
+
+  void Destroy(webrtc::VideoEncoder* encoder) override {
+    return factory_->DestroyVideoEncoder(encoder);
+  }
+
+ private:
+  cricket::WebRtcVideoEncoderFactory* const factory_;
+};
+
+// An encoder factory that wraps Create requests for simulcastable codec types
+// with a webrtc::SimulcastEncoderAdapter. Non simulcastable codec type
+// requests are just passed through to the contained encoder factory.
+class WebRtcSimulcastEncoderFactory
+    : public cricket::WebRtcVideoEncoderFactory {
+ public:
+  // WebRtcSimulcastEncoderFactory doesn't take ownership of |factory|, which is
+  // owned by e.g. PeerConnectionFactory.
+  explicit WebRtcSimulcastEncoderFactory(
+      cricket::WebRtcVideoEncoderFactory* factory)
+      : factory_(factory) {}
+
+  static bool UseSimulcastEncoderFactory(
+      const std::vector<VideoCodec>& codecs) {
+    // If any codec is VP8, use the simulcast factory. If asked to create a
+    // non-VP8 codec, we'll just return a contained factory encoder directly.
+    for (const auto& codec : codecs) {
+      if (codec.type == webrtc::kVideoCodecVP8) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  webrtc::VideoEncoder* CreateVideoEncoder(
+      webrtc::VideoCodecType type) override {
+    ASSERT(factory_ != NULL);
+    // If it's a codec type we can simulcast, create a wrapped encoder.
+    if (type == webrtc::kVideoCodecVP8) {
+      return new webrtc::SimulcastEncoderAdapter(
+          new EncoderFactoryAdapter(factory_));
+    }
+    webrtc::VideoEncoder* encoder = factory_->CreateVideoEncoder(type);
+    if (encoder) {
+      non_simulcast_encoders_.push_back(encoder);
+    }
+    return encoder;
+  }
+
+  const std::vector<VideoCodec>& codecs() const override {
+    return factory_->codecs();
+  }
+
+  bool EncoderTypeHasInternalSource(
+      webrtc::VideoCodecType type) const override {
+    return factory_->EncoderTypeHasInternalSource(type);
+  }
+
+  void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) override {
+    // Check first to see if the encoder wasn't wrapped in a
+    // SimulcastEncoderAdapter. In that case, ask the factory to destroy it.
+    if (std::remove(non_simulcast_encoders_.begin(),
+                    non_simulcast_encoders_.end(),
+                    encoder) != non_simulcast_encoders_.end()) {
+      factory_->DestroyVideoEncoder(encoder);
+      return;
+    }
+
+    // Otherwise, SimulcastEncoderAdapter can be deleted directly, and will call
+    // DestroyVideoEncoder on the factory for individual encoder instances.
+    delete encoder;
+  }
+
+ private:
+  cricket::WebRtcVideoEncoderFactory* factory_;
+  // A list of encoders that were created without being wrapped in a
+  // SimulcastEncoderAdapter.
+  std::vector<webrtc::VideoEncoder*> non_simulcast_encoders_;
+};
+
+bool CodecIsInternallySupported(const std::string& codec_name) {
+  if (CodecNamesEq(codec_name, kVp8CodecName)) {
+    return true;
+  }
+  if (CodecNamesEq(codec_name, kVp9CodecName)) {
+    const std::string group_name =
+        webrtc::field_trial::FindFullName("WebRTC-SupportVP9");
+    return group_name == "Enabled" || group_name == "EnabledByFlag";
+  }
+  return false;
+}
+
+void AddDefaultFeedbackParams(VideoCodec* codec) {
+  codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamCcm, kRtcpFbCcmParamFir));
+  codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamNack, kParamValueEmpty));
+  codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamNack, kRtcpFbNackParamPli));
+  codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamRemb, kParamValueEmpty));
+}
+
+static VideoCodec MakeVideoCodecWithDefaultFeedbackParams(int payload_type,
+                                                          const char* name) {
+  VideoCodec codec(payload_type, name, kDefaultVideoMaxWidth,
+                   kDefaultVideoMaxHeight, kDefaultVideoMaxFramerate, 0);
+  AddDefaultFeedbackParams(&codec);
+  return codec;
+}
+
 static std::string CodecVectorToString(const std::vector<VideoCodec>& codecs) {
   std::stringstream out;
   out << '{';
@@ -179,6 +300,15 @@ static void MergeFecConfig(const webrtc::FecConfig& other,
 }
 }  // namespace
 
+// Constants defined in talk/media/webrtc/constants.h
+// TODO(pbos): Move these to a separate constants.cc file.
+const int kMinVideoBitrate = 30;
+const int kStartVideoBitrate = 300;
+const int kMaxVideoBitrate = 2000;
+
+const int kVideoMtu = 1200;
+const int kVideoRtpBufferSize = 65536;
+
 // This constant is really an on/off, lower-level configurable NACK history
 // duration hasn't been implemented.
 static const int kNackHistoryMs = 1000;
@@ -192,6 +322,22 @@ const char kH264CodecName[] = "H264";
 const int kMinBandwidthBps = 30000;
 const int kStartBandwidthBps = 300000;
 const int kMaxBandwidthBps = 2000000;
+
+std::vector<VideoCodec> DefaultVideoCodecList() {
+  std::vector<VideoCodec> codecs;
+  if (CodecIsInternallySupported(kVp9CodecName)) {
+    codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultVp9PlType,
+                                                             kVp9CodecName));
+    // TODO(andresp): Add rtx codec for vp9 and verify it works.
+  }
+  codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultVp8PlType,
+                                                           kVp8CodecName));
+  codecs.push_back(
+      VideoCodec::CreateRtxCodec(kDefaultRtxVp8PlType, kDefaultVp8PlType));
+  codecs.push_back(VideoCodec(kDefaultRedPlType, kRedCodecName));
+  codecs.push_back(VideoCodec(kDefaultUlpfecType, kUlpfecCodecName));
+  return codecs;
+}
 
 static bool FindFirstMatchingCodec(const std::vector<VideoCodec>& codecs,
                                    const VideoCodec& requested_codec,

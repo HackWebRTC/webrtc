@@ -76,16 +76,6 @@ static DataEngineInterface* ConstructDataEngine() {
 #endif
 }
 
-#if !defined(DISABLE_MEDIA_ENGINE_FACTORY)
-ChannelManager::ChannelManager(rtc::Thread* worker_thread) {
-  Construct(MediaEngineFactory::Create(),
-            ConstructDataEngine(),
-            cricket::DeviceManagerFactory::Create(),
-            new CaptureManager(),
-            worker_thread);
-}
-#endif
-
 ChannelManager::ChannelManager(MediaEngineInterface* me,
                                DataEngineInterface* dme,
                                DeviceManagerInterface* dm,
