@@ -31,7 +31,10 @@ class BweSimulation : public BweTest,
   virtual ~BweSimulation() {}
 
  protected:
-  void SetUp() override { BweTest::SetUp(); }
+  void SetUp() override {
+    BweTest::SetUp();
+    VerboseLogging(true);
+  }
 
  private:
   DISALLOW_COPY_AND_ASSIGN(BweSimulation);
@@ -44,7 +47,6 @@ INSTANTIATE_TEST_CASE_P(VideoSendersTest,
                                           kNadaEstimator));
 
 TEST_P(BweSimulation, SprintUplinkTest) {
-  VerboseLogging(true);
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
   VideoSender sender(&uplink_, &source, GetParam());
   RateCounterFilter counter1(&uplink_, 0, "sender_output");
@@ -56,7 +58,6 @@ TEST_P(BweSimulation, SprintUplinkTest) {
 }
 
 TEST_P(BweSimulation, Verizon4gDownlinkTest) {
-  VerboseLogging(true);
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
   VideoSender sender(&downlink_, &source, GetParam());
   RateCounterFilter counter1(&downlink_, 0, "sender_output");
@@ -68,7 +69,6 @@ TEST_P(BweSimulation, Verizon4gDownlinkTest) {
 }
 
 TEST_P(BweSimulation, Choke1000kbps500kbps1000kbpsBiDirectional) {
-  VerboseLogging(true);
 
   const int kFlowIds[] = {0, 1};
   const size_t kNumFlows = sizeof(kFlowIds) / sizeof(kFlowIds[0]);
@@ -99,7 +99,6 @@ TEST_P(BweSimulation, Choke1000kbps500kbps1000kbpsBiDirectional) {
 }
 
 TEST_P(BweSimulation, Choke1000kbps500kbps1000kbps) {
-  VerboseLogging(true);
 
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
   VideoSender sender(&uplink_, &source, GetParam());
@@ -117,7 +116,6 @@ TEST_P(BweSimulation, Choke1000kbps500kbps1000kbps) {
 }
 
 TEST_P(BweSimulation, PacerChoke1000kbps500kbps1000kbps) {
-  VerboseLogging(true);
   PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000);
   PacedVideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter filter(&uplink_, 0);
@@ -133,7 +131,6 @@ TEST_P(BweSimulation, PacerChoke1000kbps500kbps1000kbps) {
 }
 
 TEST_P(BweSimulation, PacerChoke10000kbps) {
-  VerboseLogging(true);
   PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000);
   PacedVideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter filter(&uplink_, 0);
@@ -145,7 +142,6 @@ TEST_P(BweSimulation, PacerChoke10000kbps) {
 }
 
 TEST_P(BweSimulation, PacerChoke200kbps30kbps200kbps) {
-  VerboseLogging(true);
   PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000);
   PacedVideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter filter(&uplink_, 0);
@@ -161,7 +157,6 @@ TEST_P(BweSimulation, PacerChoke200kbps30kbps200kbps) {
 }
 
 TEST_P(BweSimulation, Choke200kbps30kbps200kbps) {
-  VerboseLogging(true);
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
   VideoSender sender(&uplink_, &source, GetParam());
   ChokeFilter filter(&uplink_, 0);
@@ -177,7 +172,6 @@ TEST_P(BweSimulation, Choke200kbps30kbps200kbps) {
 }
 
 TEST_P(BweSimulation, GoogleWifiTrace3Mbps) {
-  VerboseLogging(true);
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
   VideoSender sender(&uplink_, &source, GetParam());
   RateCounterFilter counter1(&uplink_, 0, "sender_output");
@@ -190,7 +184,6 @@ TEST_P(BweSimulation, GoogleWifiTrace3Mbps) {
 }
 
 TEST_P(BweSimulation, PacerGoogleWifiTrace3Mbps) {
-  VerboseLogging(true);
   PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000);
   PacedVideoSender sender(&uplink_, &source, GetParam());
   RateCounterFilter counter1(&uplink_, 0, "sender_output");
@@ -203,7 +196,6 @@ TEST_P(BweSimulation, PacerGoogleWifiTrace3Mbps) {
 }
 
 TEST_P(BweSimulation, SelfFairnessTest) {
-  VerboseLogging(true);
   const int kAllFlowIds[] = {0, 1, 2};
   const size_t kNumFlows = sizeof(kAllFlowIds) / sizeof(kAllFlowIds[0]);
   rtc::scoped_ptr<AdaptiveVideoSource> sources[kNumFlows];
@@ -238,13 +230,11 @@ TEST_P(BweSimulation, SelfFairnessTest) {
 }
 
 TEST_P(BweSimulation, PacedSelfFairnessTest) {
-  VerboseLogging(true);
   srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
   RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 50);
 }
 
 TEST_P(BweSimulation, PacedTcpFairnessTest) {
-  VerboseLogging(true);
   srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
   RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 500);
 }

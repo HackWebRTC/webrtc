@@ -55,6 +55,11 @@ void FullBweSender::GiveFeedback(const FeedbackPacket& feedback) {
     }
   }
 
+  int64_t rtt_ms =
+      clock_->TimeInMilliseconds() - feedback.latest_send_time_ms();
+  rbe_->OnRttUpdate(rtt_ms);
+  BWE_TEST_LOGGING_PLOT(1, "RTT", clock_->TimeInMilliseconds(), rtt_ms);
+
   rbe_->IncomingPacketFeedbackVector(packet_feedback_vector);
   if (has_received_ack_) {
     int expected_packets = fb.packet_feedback_vector().back().sequence_number -
@@ -70,7 +75,7 @@ void FullBweSender::GiveFeedback(const FeedbackPacket& feedback) {
       ReportBlockList report_blocks;
       report_blocks.push_back(report_block_);
       feedback_observer_->OnReceivedRtcpReceiverReport(
-          report_blocks, 0, clock_->TimeInMilliseconds());
+          report_blocks, rtt_ms, clock_->TimeInMilliseconds());
     }
     bitrate_controller_->Process();
 
@@ -118,18 +123,19 @@ SendSideBweReceiver::~SendSideBweReceiver() {
 void SendSideBweReceiver::ReceivePacket(int64_t arrival_time_ms,
                                         const MediaPacket& media_packet) {
   packet_feedback_vector_.push_back(PacketInfo(
-      arrival_time_ms,
-      GetAbsSendTimeInMs(media_packet.header().extension.absoluteSendTime),
+      arrival_time_ms, media_packet.sender_timestamp_us() / 1000,
       media_packet.header().sequenceNumber, media_packet.payload_size()));
 }
 
 FeedbackPacket* SendSideBweReceiver::GetFeedback(int64_t now_ms) {
   if (now_ms - last_feedback_ms_ < 100)
     return NULL;
-  int64_t latest_send_time_ms = last_feedback_ms_;
   last_feedback_ms_ = now_ms;
+  int64_t corrected_send_time_ms =
+      packet_feedback_vector_.back().send_time_ms + now_ms -
+      packet_feedback_vector_.back().arrival_time_ms;
   FeedbackPacket* fb = new SendSideBweFeedback(
-      flow_id_, now_ms * 1000, latest_send_time_ms, packet_feedback_vector_);
+      flow_id_, now_ms * 1000, corrected_send_time_ms, packet_feedback_vector_);
   packet_feedback_vector_.clear();
   return fb;
 }

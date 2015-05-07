@@ -29,6 +29,7 @@ class TcpBweReceiver : public BweReceiver {
 
  private:
   int64_t last_feedback_ms_;
+  int64_t latest_owd_ms_;
   std::vector<uint16_t> acks_;
 };
 }  // namespace bwe

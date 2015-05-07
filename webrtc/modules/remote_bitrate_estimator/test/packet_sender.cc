@@ -274,6 +274,7 @@ void TcpSender::RunFor(int64_t time_ms, Packets* in_out) {
     clock_.AdvanceTimeMilliseconds(time_ms);
     return;
   }
+  int64_t start_time_ms = clock_.TimeInMilliseconds();
   BWE_TEST_LOGGING_CONTEXT("Sender");
   BWE_TEST_LOGGING_CONTEXT(*flow_ids().begin());
 
@@ -283,6 +284,9 @@ void TcpSender::RunFor(int64_t time_ms, Packets* in_out) {
   // number of packets in_flight_ and the max number of packets in flight
   // (cwnd_). Therefore SendPackets() isn't directly dependent on time_ms.
   for (FeedbackPacket* fb : feedbacks) {
+    clock_.AdvanceTimeMilliseconds(fb->send_time_us() / 1000 -
+                                   clock_.TimeInMilliseconds());
+    last_rtt_ms_ = fb->send_time_us() / 1000 - fb->latest_send_time_ms();
     UpdateCongestionControl(fb);
     SendPackets(in_out);
   }
@@ -294,8 +298,9 @@ void TcpSender::RunFor(int64_t time_ms, Packets* in_out) {
       ++it;
   }
 
+  clock_.AdvanceTimeMilliseconds(time_ms -
+                                 (clock_.TimeInMilliseconds() - start_time_ms));
   SendPackets(in_out);
-  clock_.AdvanceTimeMilliseconds(time_ms);
   SetSenderTimestamps(in_out);
 }
 
@@ -353,6 +358,9 @@ int TcpSender::TriggerTimeouts() {
 }
 
 void TcpSender::HandleLoss() {
+  if (clock_.TimeInMilliseconds() - last_reduction_time_ms_ < last_rtt_ms_)
+    return;
+  last_reduction_time_ms_ = clock_.TimeInMilliseconds();
   ssthresh_ = std::max(static_cast<int>(in_flight_.size() / 2), 2);
   cwnd_ = ssthresh_;
 }

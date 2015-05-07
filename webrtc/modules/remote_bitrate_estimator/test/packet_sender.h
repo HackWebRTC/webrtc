@@ -119,7 +119,9 @@ class TcpSender : public PacketSender {
         ack_received_(false),
         last_acked_seq_num_(0),
         next_sequence_number_(0),
-        offset_ms_(offset_ms) {}
+        offset_ms_(offset_ms),
+        last_reduction_time_ms_(-1),
+        last_rtt_ms_(0) {}
 
   virtual ~TcpSender() {}
 
@@ -159,6 +161,8 @@ class TcpSender : public PacketSender {
   uint16_t last_acked_seq_num_;
   uint16_t next_sequence_number_;
   int64_t offset_ms_;
+  int64_t last_reduction_time_ms_;
+  int64_t last_rtt_ms_;
 };
 }  // namespace bwe
 }  // namespace testing
