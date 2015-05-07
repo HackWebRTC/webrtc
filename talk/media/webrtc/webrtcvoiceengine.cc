@@ -850,9 +850,10 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     // TODO(henrika): investigate possibility to support built-in EC also
     // in combination with Open SL ES audio.
     const bool built_in_aec = voe_wrapper_->hw()->BuiltInAECIsAvailable();
-    if (built_in_aec) {
-      // Built-in EC exists on this device. Enable/Disable it according to the
-      // echo_cancellation audio option.
+    if (built_in_aec && !use_delay_agnostic_aec) {
+      // Built-in EC exists on this device and use_delay_agnostic_aec is not
+      // overriding it. Enable/Disable it according to the echo_cancellation
+      // audio option.
       if (voe_wrapper_->hw()->EnableBuiltInAEC(echo_cancellation) == 0 &&
           echo_cancellation) {
         // Disable internal software EC if built-in EC is enabled,
