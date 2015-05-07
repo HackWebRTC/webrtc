@@ -10,7 +10,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/safe_conversions.h"
-#include "webrtc/modules/audio_coding/main/acm2/acm_generic_codec.h"
+#include "webrtc/modules/audio_coding/main/acm2/codec_owner.h"
 
 namespace webrtc {
 namespace acm2 {
@@ -22,22 +22,14 @@ const int16_t kZeroData[kDataLengthSamples] = {0};
 const CodecInst kDefaultCodecInst =
     {0, "pcmu", 8000, kPacketSizeSamples, 1, 64000};
 const int kCngPt = 13;
-const int kNoCngPt = 255;
-const int kRedPt = 255;  // Not using RED in this test.
 }  // namespace
 
-class AcmGenericCodecTest : public ::testing::Test {
+class CodecOwnerTest : public ::testing::Test {
  protected:
-  AcmGenericCodecTest() : timestamp_(0) {
-    acm_codec_params_ = {kDefaultCodecInst, true, true, VADNormal};
-  }
+  CodecOwnerTest() : timestamp_(0) {}
 
   void CreateCodec() {
-    codec_.reset(new ACMGenericCodec(acm_codec_params_.codec_inst, kCngPt,
-                                     kNoCngPt, kNoCngPt, kNoCngPt,
-                                     false /* enable RED */, kRedPt));
-    ASSERT_TRUE(codec_);
-    ASSERT_EQ(0, codec_->InitEncoder(&acm_codec_params_, true));
+    codec_owner_.SetEncoders(kDefaultCodecInst, kCngPt, VADNormal, -1);
   }
 
   void EncodeAndVerify(size_t expected_out_length,
@@ -46,7 +38,7 @@ class AcmGenericCodecTest : public ::testing::Test {
                        int expected_send_even_if_empty) {
     uint8_t out[kPacketSizeSamples];
     AudioEncoder::EncodedInfo encoded_info;
-    encoded_info = codec_->GetAudioEncoder()->Encode(
+    encoded_info = codec_owner_.Encoder()->Encode(
         timestamp_, kZeroData, kDataLengthSamples, kPacketSizeSamples, out);
     timestamp_ += kDataLengthSamples;
     EXPECT_TRUE(encoded_info.redundant.empty());
@@ -59,8 +51,7 @@ class AcmGenericCodecTest : public ::testing::Test {
                 encoded_info.send_even_if_empty);
   }
 
-  WebRtcACMCodecParams acm_codec_params_;
-  rtc::scoped_ptr<ACMGenericCodec> codec_;
+  CodecOwner codec_owner_;
   uint32_t timestamp_;
 };
 
@@ -73,7 +64,7 @@ class AcmGenericCodecTest : public ::testing::Test {
 // AudioEncoder::EncodedInfo::send_even_if_empty set to true. (The reason to
 // produce an empty frame is to drive sending of DTMF packets in the RTP/RTCP
 // module.)
-TEST_F(AcmGenericCodecTest, VerifyCngFrames) {
+TEST_F(CodecOwnerTest, VerifyCngFrames) {
   CreateCodec();
   uint32_t expected_timestamp = timestamp_;
   // Verify no frame.

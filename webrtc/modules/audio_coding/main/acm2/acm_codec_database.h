@@ -17,7 +17,7 @@
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_CODEC_DATABASE_H_
 
 #include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/main/acm2/acm_generic_codec.h"
+#include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
 
 namespace webrtc {
@@ -146,7 +146,7 @@ class ACMCodecDB {
   //                        implement ACMGenericCodec::Decoder(), which returns
   //                        a pointer to AudioDecoder. This pointer is injected
   //                        into NetEq when this codec is registered as receive
-  //                        codec.
+  //                        codec. DEPRECATED.
   struct CodecSettings {
     int num_packet_sizes;
     int packet_sizes_samples[kMaxNumPacketSize];
@@ -201,22 +201,6 @@ class ACMCodecDB {
 
   // Returns the NetEQ decoder database.
   static const NetEqDecoder* NetEQDecoders();
-
-  // Creates a codec wrapper containing an AudioEncoder object (or an
-  // ACMGenericCodec subclass during the refactoring time). The type of
-  // AudioEncoder is decided by looking at the information in |codec_inst|.
-  // The |cng_pt_*| parameters should contain the RTP payload type used for each
-  // type of comfort noise; if not used (or not know when this function is
-  // called), -1 can be set. The parameter |enable_red| indicates that RED
-  // is enabled, and that |red_payload_type| should be used as RTP payload type
-  // for RED encodings.
-  static ACMGenericCodec* CreateCodecInstance(const CodecInst& codec_inst,
-                                              int cng_pt_nb,
-                                              int cng_pt_wb,
-                                              int cng_pt_swb,
-                                              int cng_pt_fb,
-                                              bool enable_red,
-                                              int red_payload_type);
 
   // Specifies if the codec specified by |codec_id| MUST own its own decoder.
   // This is the case for codecs which *should* share a single codec instance

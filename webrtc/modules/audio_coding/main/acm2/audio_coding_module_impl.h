@@ -30,7 +30,6 @@ class AudioCodingImpl;
 namespace acm2 {
 
 class ACMDTMFDetection;
-class ACMGenericCodec;
 
 class AudioCodingModuleImpl : public AudioCodingModule {
  public:

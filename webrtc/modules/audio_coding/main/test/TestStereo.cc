@@ -343,14 +343,6 @@ void TestStereo::Perform() {
   EXPECT_EQ(0, acm_a_->VAD(&dtx, &vad, &vad_mode));
   EXPECT_FALSE(dtx);
   EXPECT_FALSE(vad);
-  EXPECT_EQ(-1, acm_a_->SetVAD(true, false, VADNormal));
-  EXPECT_EQ(0, acm_a_->VAD(&dtx, &vad, &vad_mode));
-  EXPECT_FALSE(dtx);
-  EXPECT_FALSE(vad);
-  EXPECT_EQ(-1, acm_a_->SetVAD(false, true, VADNormal));
-  EXPECT_EQ(0, acm_a_->VAD(&dtx, &vad, &vad_mode));
-  EXPECT_FALSE(dtx);
-  EXPECT_FALSE(vad);
   EXPECT_EQ(0, acm_a_->SetVAD(false, false, VADNormal));
   EXPECT_EQ(0, acm_a_->VAD(&dtx, &vad, &vad_mode));
   EXPECT_FALSE(dtx);

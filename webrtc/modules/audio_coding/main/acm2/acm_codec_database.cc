@@ -372,48 +372,6 @@ const NetEqDecoder* ACMCodecDB::NetEQDecoders() {
   return neteq_decoders_;
 }
 
-// Creates memory/instance for storing codec state.
-ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst,
-                                                 int cng_pt_nb,
-                                                 int cng_pt_wb,
-                                                 int cng_pt_swb,
-                                                 int cng_pt_fb,
-                                                 bool enable_red,
-                                                 int red_payload_type) {
-  // All we have support for right now.
-  if (!STR_CASE_CMP(codec_inst.plname, "ISAC")) {
-#if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-    return new ACMGenericCodec(codec_inst, cng_pt_nb, cng_pt_wb, cng_pt_swb,
-                               cng_pt_fb, enable_red, red_payload_type);
-#endif
-  } else if (!STR_CASE_CMP(codec_inst.plname, "PCMU") ||
-             !STR_CASE_CMP(codec_inst.plname, "PCMA")) {
-    return new ACMGenericCodec(codec_inst, cng_pt_nb, cng_pt_wb, cng_pt_swb,
-                               cng_pt_fb, enable_red, red_payload_type);
-  } else if (!STR_CASE_CMP(codec_inst.plname, "ILBC")) {
-#ifdef WEBRTC_CODEC_ILBC
-    return new ACMGenericCodec(codec_inst, cng_pt_nb, cng_pt_wb, cng_pt_swb,
-                               cng_pt_fb, enable_red, red_payload_type);
-#endif
-  } else if (!STR_CASE_CMP(codec_inst.plname, "G722")) {
-#ifdef WEBRTC_CODEC_G722
-    return new ACMGenericCodec(codec_inst, cng_pt_nb, cng_pt_wb, cng_pt_swb,
-                               cng_pt_fb, enable_red, red_payload_type);
-#endif
-  } else if (!STR_CASE_CMP(codec_inst.plname, "opus")) {
-#ifdef WEBRTC_CODEC_OPUS
-    return new ACMGenericCodec(codec_inst, cng_pt_nb, cng_pt_wb, cng_pt_swb,
-                               cng_pt_fb, enable_red, red_payload_type);
-#endif
-  } else if (!STR_CASE_CMP(codec_inst.plname, "L16")) {
-#ifdef WEBRTC_CODEC_PCM16
-    return new ACMGenericCodec(codec_inst, cng_pt_nb, cng_pt_wb, cng_pt_swb,
-                               cng_pt_fb, enable_red, red_payload_type);
-#endif
-  }
-  return NULL;
-}
-
 // Checks if the bitrate is valid for the codec.
 bool ACMCodecDB::IsRateValid(int codec_id, int rate) {
   return database_[codec_id].rate == rate;

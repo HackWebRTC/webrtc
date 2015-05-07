@@ -12,25 +12,26 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/main/acm2/audio_coding_module_impl.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 namespace acm2 {
 
 namespace {
-bool IsCodecRED(const CodecInst* codec) {
-  return (STR_CASE_CMP(codec->plname, "RED") == 0);
+bool IsCodecRED(const CodecInst& codec) {
+  return (STR_CASE_CMP(codec.plname, "RED") == 0);
 }
 
 bool IsCodecRED(int index) {
-  return (IsCodecRED(&ACMCodecDB::database_[index]));
+  return (IsCodecRED(ACMCodecDB::database_[index]));
 }
 
-bool IsCodecCN(const CodecInst* codec) {
-  return (STR_CASE_CMP(codec->plname, "CN") == 0);
+bool IsCodecCN(const CodecInst& codec) {
+  return (STR_CASE_CMP(codec.plname, "CN") == 0);
 }
 
 bool IsCodecCN(int index) {
-  return (IsCodecCN(&ACMCodecDB::database_[index]));
+  return (IsCodecCN(ACMCodecDB::database_[index]));
 }
 
 // Check if the given codec is a valid to be registered as send codec.
@@ -80,13 +81,13 @@ int IsValidSendCodec(const CodecInst& send_codec, bool is_primary_encoder) {
   if (!is_primary_encoder) {
     // If registering the secondary encoder, then RED and CN are not valid
     // choices as encoder.
-    if (IsCodecRED(&send_codec)) {
+    if (IsCodecRED(send_codec)) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
                    "RED cannot be secondary codec");
       return -1;
     }
 
-    if (IsCodecCN(&send_codec)) {
+    if (IsCodecCN(send_codec)) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
                    "DTX cannot be secondary codec");
       return -1;
@@ -96,7 +97,56 @@ int IsValidSendCodec(const CodecInst& send_codec, bool is_primary_encoder) {
 }
 
 bool IsIsac(const CodecInst& codec) {
-  return !STR_CASE_CMP(codec.plname, "isac");
+  return
+#if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
+      !STR_CASE_CMP(codec.plname, "isac") ||
+#endif
+      false;
+}
+
+bool IsOpus(const CodecInst& codec) {
+  return
+#ifdef WEBRTC_CODEC_OPUS
+      !STR_CASE_CMP(codec.plname, "opus") ||
+#endif
+      false;
+}
+
+bool IsPcmU(const CodecInst& codec) {
+  return !STR_CASE_CMP(codec.plname, "pcmu");
+}
+
+bool IsPcmA(const CodecInst& codec) {
+  return !STR_CASE_CMP(codec.plname, "pcma");
+}
+
+bool IsPcm16B(const CodecInst& codec) {
+  return
+#ifdef WEBRTC_CODEC_PCM16
+      !STR_CASE_CMP(codec.plname, "l16") ||
+#endif
+      false;
+}
+
+bool IsIlbc(const CodecInst& codec) {
+  return
+#ifdef WEBRTC_CODEC_ILBC
+      !STR_CASE_CMP(codec.plname, "ilbc") ||
+#endif
+      false;
+}
+
+bool IsG722(const CodecInst& codec) {
+  return
+#ifdef WEBRTC_CODEC_G722
+      !STR_CASE_CMP(codec.plname, "g722") ||
+#endif
+      false;
+}
+
+bool CodecSupported(const CodecInst& codec) {
+  return IsOpus(codec) || IsPcmU(codec) || IsPcmA(codec) || IsPcm16B(codec) ||
+         IsIlbc(codec) || IsG722(codec) || IsIsac(codec);
 }
 
 const CodecInst kEmptyCodecInst = {-1, "noCodecRegistered", 0, 0, 0, 0};
@@ -110,10 +160,8 @@ CodecManager::CodecManager(AudioCodingModuleImpl* acm)
       cng_fb_pltype_(255),
       red_nb_pltype_(255),
       stereo_send_(false),
-      vad_enabled_(false),
       dtx_enabled_(false),
       vad_mode_(VADNormal),
-      current_encoder_(nullptr),
       send_codec_inst_(kEmptyCodecInst),
       red_enabled_(false),
       codec_fec_enabled_(false) {
@@ -151,7 +199,7 @@ int CodecManager::RegisterSendCodec(const CodecInst& send_codec) {
   int dummy_id = 0;
   // RED can be registered with other payload type. If not registered a default
   // payload type is used.
-  if (IsCodecRED(&send_codec)) {
+  if (IsCodecRED(send_codec)) {
     // TODO(tlegrand): Remove this check. Already taken care of in
     // ACMCodecDB::CodecNumber().
     // Check if the payload-type is valid
@@ -170,30 +218,29 @@ int CodecManager::RegisterSendCodec(const CodecInst& send_codec) {
                    "registration");
       return -1;
     }
-    SetRedPayloadType(send_codec.plfreq, send_codec.pltype);
     return 0;
   }
 
   // CNG can be registered with other payload type. If not registered the
   // default payload types from codec database will be used.
-  if (IsCodecCN(&send_codec)) {
+  if (IsCodecCN(send_codec)) {
     // CNG is registered.
     switch (send_codec.plfreq) {
       case 8000: {
         cng_nb_pltype_ = static_cast<uint8_t>(send_codec.pltype);
-        break;
+        return 0;
       }
       case 16000: {
         cng_wb_pltype_ = static_cast<uint8_t>(send_codec.pltype);
-        break;
+        return 0;
       }
       case 32000: {
         cng_swb_pltype_ = static_cast<uint8_t>(send_codec.pltype);
-        break;
+        return 0;
       }
       case 48000: {
         cng_fb_pltype_ = static_cast<uint8_t>(send_codec.pltype);
-        break;
+        return 0;
       }
       default: {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
@@ -202,185 +249,76 @@ int CodecManager::RegisterSendCodec(const CodecInst& send_codec) {
         return -1;
       }
     }
-    SetCngPayloadType(send_codec.plfreq, send_codec.pltype);
-    return 0;
   }
 
   // Set Stereo, and make sure VAD and DTX is turned off.
   if (send_codec.channels == 2) {
     stereo_send_ = true;
-    if (vad_enabled_ || dtx_enabled_) {
+    if (dtx_enabled_) {
       WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, dummy_id,
                    "VAD/DTX is turned off, not supported when sending stereo.");
     }
-    vad_enabled_ = false;
     dtx_enabled_ = false;
   } else {
     stereo_send_ = false;
   }
 
   // Check if the codec is already registered as send codec.
-  bool is_send_codec;
-  if (current_encoder_) {
-    int send_codec_id = ACMCodecDB::CodecNumber(send_codec_inst_);
-    assert(send_codec_id >= 0);
-    is_send_codec = send_codec_id == codec_id;
-  } else {
-    is_send_codec = false;
+  bool new_codec = true;
+  if (codec_owner_.Encoder()) {
+    int new_codec_id = ACMCodecDB::CodecNumber(send_codec_inst_);
+    DCHECK_GE(new_codec_id, 0);
+    new_codec = new_codec_id != codec_id;
   }
 
-  // If new codec, or new settings, register.
-  if (!is_send_codec) {
-    ACMGenericCodec* new_codec;
-    if (!IsIsac(send_codec)) {
-      encoder_.reset(ACMCodecDB::CreateCodecInstance(
-          send_codec, cng_nb_pltype_, cng_wb_pltype_, cng_swb_pltype_,
-          cng_fb_pltype_, red_enabled_, red_nb_pltype_));
-      new_codec = encoder_.get();
-    } else {
-      if (!isac_enc_dec_) {
-        isac_enc_dec_.reset(ACMCodecDB::CreateCodecInstance(
-            send_codec, cng_nb_pltype_, cng_wb_pltype_, cng_swb_pltype_,
-            cng_fb_pltype_, red_enabled_, red_nb_pltype_));
-      }
-      new_codec = isac_enc_dec_.get();
+  if (RedPayloadType(send_codec.plfreq) == -1) {
+    red_enabled_ = false;
+  }
+
+  if (new_codec) {
+    // This is a new codec. Register it and return.
+    DCHECK(CodecSupported(send_codec));
+    if (IsOpus(send_codec)) {
+      // VAD/DTX not supported.
+      dtx_enabled_ = false;
     }
-    DCHECK(new_codec);
+    codec_owner_.SetEncoders(
+        send_codec, dtx_enabled_ ? CngPayloadType(send_codec.plfreq) : -1,
+        vad_mode_, red_enabled_ ? RedPayloadType(send_codec.plfreq) : -1);
+    DCHECK(codec_owner_.Encoder());
 
-    WebRtcACMCodecParams codec_params;
+    codec_fec_enabled_ =
+        codec_fec_enabled_ &&
+        codec_owner_.SpeechEncoder()->SetFec(codec_fec_enabled_);
 
-    memcpy(&(codec_params.codec_inst), &send_codec, sizeof(CodecInst));
-    codec_params.enable_vad = vad_enabled_;
-    codec_params.enable_dtx = dtx_enabled_;
-    codec_params.vad_mode = vad_mode_;
-    // Force initialization.
-    if (new_codec->InitEncoder(&codec_params, true) < 0) {
-      // Could not initialize the encoder.
-
-      // Check if already have a registered codec.
-      // Depending on that different messages are logged.
-      if (!current_encoder_) {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
-                     "Cannot Initialize the encoder No Encoder is registered");
-      } else {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
-                     "Cannot Initialize the encoder, continue encoding with "
-                     "the previously registered codec");
-      }
-      return -1;
-    }
-
-    // Update states.
-    dtx_enabled_ = codec_params.enable_dtx;
-    vad_enabled_ = codec_params.enable_vad;
-    vad_mode_ = codec_params.vad_mode;
-
-    // Everything is fine so we can replace the previous codec with this one.
-    if (current_encoder_) {
-      // If we change codec we start fresh with RED.
-      // This is not strictly required by the standard.
-
-      if (new_codec->SetCopyRed(red_enabled_) < 0) {
-        // We tried to preserve the old red status, if failed, it means the
-        // red status has to be flipped.
-        red_enabled_ = !red_enabled_;
-      }
-
-      new_codec->SetVAD(&dtx_enabled_, &vad_enabled_, &vad_mode_);
-
-      if (!new_codec->HasInternalFEC()) {
-        codec_fec_enabled_ = false;
-      } else {
-        if (new_codec->SetFEC(codec_fec_enabled_) < 0) {
-          WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
-                       "Cannot set codec FEC");
-          return -1;
-        }
-      }
-    }
-
-    current_encoder_ = new_codec;
-    DCHECK(current_encoder_);
-    memcpy(&send_codec_inst_, &send_codec, sizeof(CodecInst));
-    return 0;
-  } else {
-    // If codec is the same as already registered check if any parameters
-    // has changed compared to the current values.
-    // If any parameter is valid then apply it and record.
-    bool force_init = false;
-
-    // Check the payload type.
-    if (send_codec.pltype != send_codec_inst_.pltype) {
-      // At this point check if the given payload type is valid.
-      // Record it later when the sampling frequency is changed
-      // successfully.
-      if (!ACMCodecDB::ValidPayloadType(send_codec.pltype)) {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
-                     "Out of range payload type");
-        return -1;
-      }
-    }
-
-    // If there is a codec that ONE instance of codec supports multiple
-    // sampling frequencies, then we need to take care of it here.
-    // one such a codec is iSAC. Both WB and SWB are encoded and decoded
-    // with one iSAC instance. Therefore, we need to update the encoder
-    // frequency if required.
-    if (send_codec_inst_.plfreq != send_codec.plfreq) {
-      force_init = true;
-    }
-
-    // If packet size or number of channels has changed, we need to
-    // re-initialize the encoder.
-    if (send_codec_inst_.pacsize != send_codec.pacsize) {
-      force_init = true;
-    }
-    if (send_codec_inst_.channels != send_codec.channels) {
-      force_init = true;
-    }
-
-    if (force_init) {
-      WebRtcACMCodecParams codec_params;
-
-      memcpy(&(codec_params.codec_inst), &send_codec, sizeof(CodecInst));
-      codec_params.enable_vad = vad_enabled_;
-      codec_params.enable_dtx = dtx_enabled_;
-      codec_params.vad_mode = vad_mode_;
-
-      // Force initialization.
-      if (current_encoder_->InitEncoder(&codec_params, true) < 0) {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
-                     "Could not change the codec packet-size.");
-        return -1;
-      }
-
-      send_codec_inst_.plfreq = send_codec.plfreq;
-      send_codec_inst_.pacsize = send_codec.pacsize;
-      send_codec_inst_.channels = send_codec.channels;
-    }
-
-    // If the change of sampling frequency has been successful then
-    // we store the payload-type.
-    send_codec_inst_.pltype = send_codec.pltype;
-
-    // Check if a change in Rate is required.
-    if (send_codec.rate != send_codec_inst_.rate) {
-      current_encoder_->SetBitRate(send_codec.rate);
-      send_codec_inst_.rate = send_codec.rate;
-    }
-
-    if (!current_encoder_->HasInternalFEC()) {
-      codec_fec_enabled_ = false;
-    } else {
-      if (current_encoder_->SetFEC(codec_fec_enabled_) < 0) {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, dummy_id,
-                     "Cannot set codec FEC");
-        return -1;
-      }
-    }
-
+    send_codec_inst_ = send_codec;
     return 0;
   }
+
+  // This is an existing codec; re-create it if any parameters have changed.
+  if (send_codec_inst_.plfreq != send_codec.plfreq ||
+      send_codec_inst_.pacsize != send_codec.pacsize ||
+      send_codec_inst_.channels != send_codec.channels) {
+    codec_owner_.SetEncoders(
+        send_codec, dtx_enabled_ ? CngPayloadType(send_codec.plfreq) : -1,
+        vad_mode_, red_enabled_ ? RedPayloadType(send_codec.plfreq) : -1);
+    DCHECK(codec_owner_.Encoder());
+  }
+  send_codec_inst_.plfreq = send_codec.plfreq;
+  send_codec_inst_.pacsize = send_codec.pacsize;
+  send_codec_inst_.channels = send_codec.channels;
+  send_codec_inst_.pltype = send_codec.pltype;
+
+  // Check if a change in Rate is required.
+  if (send_codec.rate != send_codec_inst_.rate) {
+    codec_owner_.SpeechEncoder()->SetTargetBitrate(send_codec.rate);
+    send_codec_inst_.rate = send_codec.rate;
+  }
+
+  codec_fec_enabled_ = codec_fec_enabled_ &&
+                       codec_owner_.SpeechEncoder()->SetFec(codec_fec_enabled_);
+
+  return 0;
 }
 
 int CodecManager::SendCodec(CodecInst* current_codec) const {
@@ -388,16 +326,12 @@ int CodecManager::SendCodec(CodecInst* current_codec) const {
   WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, dummy_id,
                "SendCodec()");
 
-  if (!current_encoder_) {
+  if (!codec_owner_.Encoder()) {
     WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, dummy_id,
                  "SendCodec Failed, no codec is registered");
     return -1;
   }
-  WebRtcACMCodecParams encoder_param;
-  current_encoder_->EncoderParams(&encoder_param);
-  encoder_param.codec_inst.pltype = send_codec_inst_.pltype;
-  memcpy(current_codec, &(encoder_param.codec_inst), sizeof(CodecInst));
-
+  *current_codec = send_codec_inst_;
   return 0;
 }
 
@@ -425,16 +359,11 @@ int CodecManager::RegisterReceiveCodec(const CodecInst& codec) {
     return -1;
   }
 
-  AudioDecoder* decoder = NULL;
   // Get |decoder| associated with |codec|. |decoder| can be NULL if |codec|
   // does not own its decoder.
-  if (GetAudioDecoder(codec, codec_id, &decoder) < 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
-                 "Wrong codec params to be registered as receive codec");
-    return -1;
-  }
-  uint8_t payload_type = static_cast<uint8_t>(codec.pltype);
-  return acm_->RegisterDecoder(codec_id, payload_type, codec.channels, decoder);
+  //  uint8_t payload_type = static_cast<uint8_t>(codec.pltype);
+  return acm_->RegisterDecoder(codec_id, codec.pltype, codec.channels,
+                               GetAudioDecoder(codec));
 }
 
 bool CodecManager::SetCopyRed(bool enable) {
@@ -443,51 +372,53 @@ bool CodecManager::SetCopyRed(bool enable) {
                  "Codec internal FEC and RED cannot be co-enabled.");
     return false;
   }
-  if (current_encoder_ && current_encoder_->SetCopyRed(enable) < 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
-                 "SetCopyRed failed");
+  if (enable && RedPayloadType(send_codec_inst_.plfreq) == -1) {
+    WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, 0,
+                 "Cannot enable RED at %i Hz.", send_codec_inst_.plfreq);
     return false;
   }
-  red_enabled_ = enable;
+  if (red_enabled_ != enable) {
+    red_enabled_ = enable;
+    if (codec_owner_.Encoder())
+      codec_owner_.SetEncoders(
+          send_codec_inst_,
+          dtx_enabled_ ? CngPayloadType(send_codec_inst_.plfreq) : -1,
+          vad_mode_,
+          red_enabled_ ? RedPayloadType(send_codec_inst_.plfreq) : -1);
+  }
   return true;
 }
 
-int CodecManager::SetVAD(bool enable_dtx, bool enable_vad, ACMVADMode mode) {
+int CodecManager::SetVAD(bool enable, ACMVADMode mode) {
   // Sanity check of the mode.
-  if ((mode != VADNormal) && (mode != VADLowBitrate) && (mode != VADAggr) &&
-      (mode != VADVeryAggr)) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
-                 "Invalid VAD Mode %d, no change is made to VAD/DTX status",
-                 mode);
-    return -1;
-  }
+  DCHECK(mode == VADNormal || mode == VADLowBitrate || mode == VADAggr ||
+         mode == VADVeryAggr);
 
   // Check that the send codec is mono. We don't support VAD/DTX for stereo
   // sending.
-  if ((enable_dtx || enable_vad) && stereo_send_) {
+  if (enable && stereo_send_) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
                  "VAD/DTX not supported for stereo sending");
     dtx_enabled_ = false;
-    vad_enabled_ = false;
-    vad_mode_ = mode;
     return -1;
   }
 
-  // Store VAD/DTX settings. Values can be changed in the call to "SetVAD"
-  // below.
-  dtx_enabled_ = enable_dtx;
-  vad_enabled_ = enable_vad;
-  vad_mode_ = mode;
-
   // If a send codec is registered, set VAD/DTX for the codec.
-  if (current_encoder_ &&
-      current_encoder_->SetVAD(&dtx_enabled_, &vad_enabled_, &vad_mode_) < 0) {
-    // SetVAD failed.
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
-                 "SetVAD failed");
-    vad_enabled_ = false;
+  if (IsOpus(send_codec_inst_)) {
+    // VAD/DTX not supported.
     dtx_enabled_ = false;
-    return -1;
+    return 0;
+  }
+
+  if (dtx_enabled_ != enable || vad_mode_ != mode) {
+    dtx_enabled_ = enable;
+    vad_mode_ = mode;
+    if (codec_owner_.Encoder())
+      codec_owner_.SetEncoders(
+          send_codec_inst_,
+          dtx_enabled_ ? CngPayloadType(send_codec_inst_.plfreq) : -1,
+          vad_mode_,
+          red_enabled_ ? RedPayloadType(send_codec_inst_.plfreq) : -1);
   }
   return 0;
 }
@@ -496,7 +427,7 @@ void CodecManager::VAD(bool* dtx_enabled,
                        bool* vad_enabled,
                        ACMVADMode* mode) const {
   *dtx_enabled = dtx_enabled_;
-  *vad_enabled = vad_enabled_;
+  *vad_enabled = dtx_enabled_;
   *mode = vad_mode_;
 }
 
@@ -507,55 +438,44 @@ int CodecManager::SetCodecFEC(bool enable_codec_fec) {
     return -1;
   }
 
-  // Set codec FEC.
-  if (current_encoder_ && current_encoder_->SetFEC(enable_codec_fec) < 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
-                 "Set codec internal FEC failed.");
-    return -1;
-  }
-  codec_fec_enabled_ = enable_codec_fec;
-  return 0;
+  CHECK(codec_owner_.SpeechEncoder());
+  codec_fec_enabled_ = codec_owner_.SpeechEncoder()->SetFec(enable_codec_fec) &&
+                       enable_codec_fec;
+  return codec_fec_enabled_ == enable_codec_fec ? 0 : -1;
 }
 
-void CodecManager::SetCngPayloadType(int sample_rate_hz, int payload_type) {
-  if (isac_enc_dec_)
-    isac_enc_dec_->SetCngPt(sample_rate_hz, payload_type);
-  if (encoder_)
-    encoder_->SetCngPt(sample_rate_hz, payload_type);
+AudioDecoder* CodecManager::GetAudioDecoder(const CodecInst& codec) {
+  return IsIsac(codec) ? codec_owner_.GetIsacDecoder() : nullptr;
 }
 
-void CodecManager::SetRedPayloadType(int sample_rate_hz, int payload_type) {
-  if (isac_enc_dec_)
-    isac_enc_dec_->SetRedPt(sample_rate_hz, payload_type);
-  if (encoder_)
-    encoder_->SetRedPt(sample_rate_hz, payload_type);
-}
-
-int CodecManager::GetAudioDecoder(const CodecInst& codec,
-                                  int codec_id,
-                                  AudioDecoder** decoder) {
-  if (!ACMCodecDB::OwnsDecoder(codec_id)) {
-    DCHECK(!IsIsac(codec)) << "Codec must not be iSAC at this point.";
-    *decoder = nullptr;
-    return 0;
-  }
-  DCHECK(IsIsac(codec)) << "Codec must be iSAC at this point.";
-  // This codec has to own its own decoder. Therefore, it should create the
-  // corresponding AudioDecoder class and insert it into NetEq. If the codec
-  // does not exist create it.
-  //
-  // TODO(turajs): this part of the code is common with RegisterSendCodec(),
-  //               make a method for it.
-  if (!isac_enc_dec_) {
-    isac_enc_dec_.reset(ACMCodecDB::CreateCodecInstance(
-        codec, cng_nb_pltype_, cng_wb_pltype_, cng_swb_pltype_, cng_fb_pltype_,
-        red_enabled_, red_nb_pltype_));
-    if (!isac_enc_dec_)
+int CodecManager::CngPayloadType(int sample_rate_hz) const {
+  switch (sample_rate_hz) {
+    case 8000:
+      return cng_nb_pltype_;
+    case 16000:
+      return cng_wb_pltype_;
+    case 32000:
+      return cng_swb_pltype_;
+    case 48000:
+      return cng_fb_pltype_;
+    default:
+      FATAL() << sample_rate_hz << " Hz is not supported";
       return -1;
   }
-  *decoder = isac_enc_dec_->Decoder();
-  DCHECK(*decoder);
-  return 0;
+}
+
+int CodecManager::RedPayloadType(int sample_rate_hz) const {
+  switch (sample_rate_hz) {
+    case 8000:
+      return red_nb_pltype_;
+    case 16000:
+    case 32000:
+    case 48000:
+      return -1;
+    default:
+      FATAL() << sample_rate_hz << " Hz is not supported";
+      return -1;
+  }
 }
 
 }  // namespace acm2
