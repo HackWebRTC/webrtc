@@ -156,6 +156,8 @@ static const char kSdpWithRtx[] =
     "a=rtpmap:96 rtx/90000\r\n"
     "a=fmtp:96 apt=0\r\n";
 
+static const int kAudioJitterBufferMaxPackets = 50;
+
 // Add some extra |newlines| to the |message| after |line|.
 static void InjectAfter(const std::string& line,
                         const std::string& newlines,
@@ -383,8 +385,7 @@ class WebRtcSessionTest : public testing::Test {
 
   void Init(
       DTLSIdentityServiceInterface* identity_service,
-      PeerConnectionInterface::IceTransportsType ice_transport_type,
-      PeerConnectionInterface::BundlePolicy bundle_policy) {
+      const PeerConnectionInterface::RTCConfiguration& rtc_configuration) {
     ASSERT_TRUE(session_.get() == NULL);
     session_.reset(new WebRtcSessionForTest(
         channel_manager_.get(), rtc::Thread::Current(),
@@ -398,33 +399,51 @@ class WebRtcSessionTest : public testing::Test {
         observer_.ice_gathering_state_);
 
     EXPECT_TRUE(session_->Initialize(options_, constraints_.get(),
-                                     identity_service, ice_transport_type,
-                                     bundle_policy));
+                                     identity_service, rtc_configuration));
     session_->set_metrics_observer(&metrics_observer_);
   }
 
   void Init() {
-    Init(NULL, PeerConnectionInterface::kAll,
-         PeerConnectionInterface::kBundlePolicyBalanced);
+    PeerConnectionInterface::RTCConfiguration configuration;
+    configuration.type = PeerConnectionInterface::kAll;
+    configuration.bundle_policy =
+        PeerConnectionInterface::kBundlePolicyBalanced;
+    configuration.audio_jitter_buffer_max_packets =
+        kAudioJitterBufferMaxPackets;
+    Init(NULL, configuration);
   }
 
   void InitWithIceTransport(
       PeerConnectionInterface::IceTransportsType ice_transport_type) {
-    Init(NULL, ice_transport_type,
-         PeerConnectionInterface::kBundlePolicyBalanced);
+    PeerConnectionInterface::RTCConfiguration configuration;
+    configuration.type = ice_transport_type;
+    configuration.bundle_policy =
+        PeerConnectionInterface::kBundlePolicyBalanced;
+    configuration.audio_jitter_buffer_max_packets =
+        kAudioJitterBufferMaxPackets;
+    Init(NULL, configuration);
   }
 
   void InitWithBundlePolicy(
       PeerConnectionInterface::BundlePolicy bundle_policy) {
-    Init(NULL, PeerConnectionInterface::kAll, bundle_policy);
+    PeerConnectionInterface::RTCConfiguration configuration;
+    configuration.type = PeerConnectionInterface::kAll;
+    configuration.bundle_policy = bundle_policy;
+    configuration.audio_jitter_buffer_max_packets =
+        kAudioJitterBufferMaxPackets;
+    Init(NULL, configuration);
   }
 
   void InitWithDtls(bool identity_request_should_fail = false) {
     FakeIdentityService* identity_service = new FakeIdentityService();
     identity_service->set_should_fail(identity_request_should_fail);
-    Init(identity_service,
-         PeerConnectionInterface::kAll,
-         PeerConnectionInterface::kBundlePolicyBalanced);
+    PeerConnectionInterface::RTCConfiguration configuration;
+    configuration.type = PeerConnectionInterface::kAll;
+    configuration.bundle_policy =
+        PeerConnectionInterface::kBundlePolicyBalanced;
+    configuration.audio_jitter_buffer_max_packets =
+        kAudioJitterBufferMaxPackets;
+    Init(identity_service, configuration);
   }
 
   void InitWithDtmfCodec() {

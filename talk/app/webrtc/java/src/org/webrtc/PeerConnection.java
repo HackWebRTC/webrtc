@@ -128,12 +128,14 @@ public class PeerConnection {
     public List<IceServer> iceServers;
     public BundlePolicy bundlePolicy;
     public TcpCandidatePolicy tcpCandidatePolicy;
+    public int audioJitterBufferMaxPackets;
 
     public RTCConfiguration(List<IceServer> iceServers) {
       iceTransportsType = IceTransportsType.ALL;
       bundlePolicy = BundlePolicy.BALANCED;
       tcpCandidatePolicy = TcpCandidatePolicy.ENABLED;
       this.iceServers = iceServers;
+      audioJitterBufferMaxPackets = 50;
     }
   };
 

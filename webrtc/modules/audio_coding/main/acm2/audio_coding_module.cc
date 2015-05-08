@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/main/acm2/audio_coding_module_impl.h"
@@ -20,13 +21,20 @@ namespace webrtc {
 
 // Create module
 AudioCodingModule* AudioCodingModule::Create(int id) {
-  return Create(id, Clock::GetRealTimeClock());
+  Config config;
+  config.id = id;
+  config.clock = Clock::GetRealTimeClock();
+  return Create(config);
 }
 
 AudioCodingModule* AudioCodingModule::Create(int id, Clock* clock) {
-  AudioCodingModule::Config config;
+  Config config;
   config.id = id;
   config.clock = clock;
+  return Create(config);
+}
+
+AudioCodingModule* AudioCodingModule::Create(const Config& config) {
   return new acm2::AudioCodingModuleImpl(config);
 }
 

@@ -10,9 +10,11 @@
 
 #include "webrtc/voice_engine/channel.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common.h"
+#include "webrtc/config.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/interface/module_common_types.h"
@@ -757,8 +759,6 @@ Channel::Channel(int32_t channelId,
         VoEModuleId(instanceId, channelId), Clock::GetRealTimeClock(), this,
         this, this, rtp_payload_registry_.get())),
     telephone_event_handler_(rtp_receiver_->GetTelephoneEventHandler()),
-    audio_coding_(AudioCodingModule::Create(
-        VoEModuleId(instanceId, channelId))),
     _rtpDumpIn(*RtpDump::CreateRtpDump()),
     _rtpDumpOut(*RtpDump::CreateRtpDump()),
     _outputAudioLevel(),
@@ -828,6 +828,15 @@ Channel::Channel(int32_t channelId,
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::Channel() - ctor");
+    AudioCodingModule::Config acm_config;
+    acm_config.id = VoEModuleId(instanceId, channelId);
+    if (config.Get<NetEqCapacityConfig>().enabled) {
+      acm_config.neteq_config.max_packets_in_buffer =
+          config.Get<NetEqCapacityConfig>().capacity;
+      CHECK_GT(acm_config.neteq_config.max_packets_in_buffer, 0);
+    }
+    audio_coding_.reset(AudioCodingModule::Create(acm_config));
+
     _inbandDtmfQueue.ResetDtmf();
     _inbandDtmfGenerator.Init();
     _outputAudioLevel.Clear();

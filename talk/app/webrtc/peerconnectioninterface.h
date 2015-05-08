@@ -211,11 +211,13 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     IceServers servers;
     BundlePolicy bundle_policy;
     TcpCandidatePolicy tcp_candidate_policy;
+    int audio_jitter_buffer_max_packets;
 
     RTCConfiguration()
         : type(kAll),
           bundle_policy(kBundlePolicyBalanced),
-          tcp_candidate_policy(kTcpCandidatePolicyEnabled) {}
+          tcp_candidate_policy(kTcpCandidatePolicyEnabled),
+          audio_jitter_buffer_max_packets(50) {}
   };
 
   struct RTCOfferAnswerOptions {
