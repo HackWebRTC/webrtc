@@ -176,6 +176,18 @@ static bool GetDataMediaType(
   }
 }
 
+// Log the packet in text2pcap format, if log level is at LS_VERBOSE.
+static void VerboseLogPacket(void *addr, size_t length, int direction) {
+  if (LOG_CHECK_LEVEL(LS_VERBOSE) && length > 0) {
+    char *dump_buf;
+    if ((dump_buf = usrsctp_dumppacket(
+             addr, length, direction)) != NULL) {
+      LOG(LS_VERBOSE) << dump_buf;
+      usrsctp_freedumpbuffer(dump_buf);
+    }
+  }
+}
+
 // This is the callback usrsctp uses when there's data to send on the network
 // that has been wrapped appropriatly for the SCTP protocol.
 static int OnSctpOutboundPacket(void* addr, void* data, size_t length,
@@ -185,6 +197,8 @@ static int OnSctpOutboundPacket(void* addr, void* data, size_t length,
                   << "addr: " << addr << "; length: " << length
                   << "; tos: " << std::hex << static_cast<int>(tos)
                   << "; set_df: " << std::hex << static_cast<int>(set_df);
+
+  VerboseLogPacket(addr, length, SCTP_DUMP_OUTBOUND);
   // Note: We have to copy the data; the caller will delete it.
   auto* msg = new OutboundPacketMessage(
       new rtc::Buffer(reinterpret_cast<uint8_t*>(data), length));
@@ -594,6 +608,8 @@ void SctpDataMediaChannel::OnPacketReceived(
     // Pass received packet to SCTP stack. Once processed by usrsctp, the data
     // will be will be given to the global OnSctpInboundData, and then,
     // marshalled by a Post and handled with OnMessage.
+
+    VerboseLogPacket(packet->data(), packet->size(), SCTP_DUMP_INBOUND);
     usrsctp_conninput(this, packet->data(), packet->size(), 0);
   } else {
     // TODO(ldixon): Consider caching the packet for very slightly better
