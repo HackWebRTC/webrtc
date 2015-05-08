@@ -81,7 +81,7 @@ class NetEq {
           background_noise_mode(kBgnOff),
           playout_mode(kPlayoutOn) {}
 
-    int sample_rate_hz;  // Initial vale. Will change with input data.
+    int sample_rate_hz;  // Initial value. Will change with input data.
     bool enable_audio_classifier;
     int max_packets_in_buffer;
     int max_delay_ms;

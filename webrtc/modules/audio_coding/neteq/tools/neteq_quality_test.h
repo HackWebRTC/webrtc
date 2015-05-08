@@ -12,10 +12,10 @@
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_QUALITY_TEST_H_
 
 #include <gflags/gflags.h>
-#include <string>
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
+#include "webrtc/modules/audio_coding/neteq/tools/audio_sink.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_generator.h"
 #include "webrtc/typedefs.h"
@@ -66,11 +66,8 @@ class NetEqQualityTest : public ::testing::Test {
                    int in_sampling_khz,
                    int out_sampling_khz,
                    enum NetEqDecoder decoder_type,
-                   int channels,
-                   std::string in_filename,
-                   std::string out_filename);
+                   int channels);
   void SetUp() override;
-  void TearDown() override;
 
   // EncodeBlock(...) does the following:
   // 1. encodes a block of audio, saved in |in_data| and has a length of
@@ -108,9 +105,6 @@ class NetEqQualityTest : public ::testing::Test {
   const int out_sampling_khz_;
   const enum NetEqDecoder decoder_type_;
   const int channels_;
-  const std::string in_filename_;
-  const std::string out_filename_;
-  const std::string log_filename_;
 
   // Number of samples per channel in a frame.
   const int in_size_samples_;
@@ -122,7 +116,7 @@ class NetEqQualityTest : public ::testing::Test {
   int max_payload_bytes_;
 
   rtc::scoped_ptr<InputAudioFile> in_file_;
-  FILE* out_file_;
+  rtc::scoped_ptr<AudioSink> output_;
   FILE* log_file_;
 
   rtc::scoped_ptr<RtpGenerator> rtp_generator_;

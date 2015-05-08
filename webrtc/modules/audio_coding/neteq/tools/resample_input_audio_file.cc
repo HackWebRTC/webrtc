@@ -37,5 +37,14 @@ bool ResampleInputAudioFile::Read(size_t samples,
   return true;
 }
 
+bool ResampleInputAudioFile::Read(size_t samples, int16_t* destination) {
+  CHECK_GT(output_rate_hz_, 0) << "Output rate not set.";
+  return Read(samples, output_rate_hz_, destination);
+}
+
+void ResampleInputAudioFile::set_output_rate_hz(int rate_hz) {
+  output_rate_hz_ = rate_hz;
+}
+
 }  // namespace test
 }  // namespace webrtc

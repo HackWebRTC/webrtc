@@ -10,7 +10,6 @@
 
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_quality_test.h"
-#include "webrtc/test/testsupport/fileutils.h"
 
 using google::RegisterFlagValidator;
 using google::ParseCommandLineFlags;
@@ -19,47 +18,12 @@ using testing::InitGoogleTest;
 
 namespace webrtc {
 namespace test {
-
+namespace {
 static const int kIsacBlockDurationMs = 30;
 static const int kIsacInputSamplingKhz = 16;
 static const int kIsacOutputSamplingKhz = 16;
 
-// Define switch for input file name.
-static bool ValidateInFilename(const char* flagname, const string& value) {
-  FILE* fid = fopen(value.c_str(), "rb");
-  if (fid != NULL) {
-    fclose(fid);
-    return true;
-  }
-  printf("Invalid input filename.");
-  return false;
-}
-
-DEFINE_string(in_filename,
-              ResourcePath("audio_coding/speech_mono_16kHz", "pcm"),
-              "Filename for input audio (should be 16 kHz sampled mono).");
-
-static const bool in_filename_dummy =
-    RegisterFlagValidator(&FLAGS_in_filename, &ValidateInFilename);
-
-// Define switch for output file name.
-static bool ValidateOutFilename(const char* flagname, const string& value) {
-  FILE* fid = fopen(value.c_str(), "wb");
-  if (fid != NULL) {
-    fclose(fid);
-    return true;
-  }
-  printf("Invalid output filename.");
-  return false;
-}
-
-DEFINE_string(out_filename, OutputPath() + "neteq4_isac_quality_test.pcm",
-              "Name of output audio file.");
-
-static const bool out_filename_dummy =
-    RegisterFlagValidator(&FLAGS_out_filename, &ValidateOutFilename);
-
-// Define switch for bir rate.
+// Define switch for bit rate.
 static bool ValidateBitRate(const char* flagname, int32_t value) {
   if (value >= 10 && value <= 32)
     return true;
@@ -85,6 +49,8 @@ DEFINE_int32(runtime_ms, 10000, "Simulated runtime (milliseconds).");
 static const bool runtime_dummy =
     RegisterFlagValidator(&FLAGS_runtime_ms, &ValidateRuntime);
 
+}  // namespace
+
 class NetEqIsacQualityTest : public NetEqQualityTest {
  protected:
   NetEqIsacQualityTest();
@@ -98,12 +64,11 @@ class NetEqIsacQualityTest : public NetEqQualityTest {
 };
 
 NetEqIsacQualityTest::NetEqIsacQualityTest()
-    : NetEqQualityTest(kIsacBlockDurationMs, kIsacInputSamplingKhz,
+    : NetEqQualityTest(kIsacBlockDurationMs,
+                       kIsacInputSamplingKhz,
                        kIsacOutputSamplingKhz,
                        kDecoderISAC,
-                       1,
-                       FLAGS_in_filename,
-                       FLAGS_out_filename),
+                       1),
       isac_encoder_(NULL),
       bit_rate_kbps_(FLAGS_bit_rate_kbps) {
 }

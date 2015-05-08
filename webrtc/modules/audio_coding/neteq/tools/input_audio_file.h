@@ -32,7 +32,7 @@ class InputAudioFile {
   // if the read was successful, otherwise false. If the file end is reached,
   // the file is rewound and reading continues from the beginning.
   // The output |destination| must have the capacity to hold |samples| elements.
-  bool Read(size_t samples, int16_t* destination);
+  virtual bool Read(size_t samples, int16_t* destination);
 
   // Creates a multi-channel signal from a mono signal. Each sample is repeated
   // |channels| times to create an interleaved multi-channel signal where all

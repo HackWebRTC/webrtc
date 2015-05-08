@@ -10,7 +10,14 @@
 
 #include <math.h>
 #include <stdio.h>
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_quality_test.h"
+#include "webrtc/modules/audio_coding/neteq/tools/output_audio_file.h"
+#include "webrtc/modules/audio_coding/neteq/tools/output_wav_file.h"
+#include "webrtc/modules/audio_coding/neteq/tools/resample_input_audio_file.h"
+#include "webrtc/test/testsupport/fileutils.h"
+
+using std::string;
 
 namespace webrtc {
 namespace test {
@@ -19,6 +26,61 @@ const uint8_t kPayloadType = 95;
 const int kOutputSizeMs = 10;
 const int kInitSeed = 0x12345678;
 const int kPacketLossTimeUnitMs = 10;
+
+// Common validator for file names.
+static bool ValidateFilename(const string& value, bool write) {
+  FILE* fid = write ? fopen(value.c_str(), "wb") : fopen(value.c_str(), "rb");
+  if (fid == nullptr)
+    return false;
+  fclose(fid);
+  return true;
+}
+
+// Define switch for input file name.
+static bool ValidateInFilename(const char* flagname, const string& value) {
+  if (!ValidateFilename(value, false)) {
+    printf("Invalid input filename.");
+    return false;
+  }
+  return true;
+}
+
+DEFINE_string(
+    in_filename,
+    ResourcePath("audio_coding/speech_mono_16kHz", "pcm"),
+    "Filename for input audio (specify sample rate with --input_sample_rate).");
+
+static const bool in_filename_dummy =
+    RegisterFlagValidator(&FLAGS_in_filename, &ValidateInFilename);
+
+// Define switch for sample rate.
+static bool ValidateSampleRate(const char* flagname, int32_t value) {
+  if (value == 8000 || value == 16000 || value == 32000 || value == 48000)
+    return true;
+  printf("Invalid sample rate should be 8000, 16000, 32000 or 48000 Hz.");
+  return false;
+}
+
+DEFINE_int32(input_sample_rate, 16000, "Sample rate of input file in Hz.");
+
+static const bool sample_rate_dummy =
+    RegisterFlagValidator(&FLAGS_input_sample_rate, &ValidateSampleRate);
+
+// Define switch for output file name.
+static bool ValidateOutFilename(const char* flagname, const string& value) {
+  if (!ValidateFilename(value, true)) {
+    printf("Invalid output filename.");
+    return false;
+  }
+  return true;
+}
+
+DEFINE_string(out_filename,
+              OutputPath() + "neteq_quality_test_out.pcm",
+              "Name of output audio file.");
+
+static const bool out_filename_dummy =
+    RegisterFlagValidator(&FLAGS_out_filename, &ValidateOutFilename);
 
 // Define switch for packet loss rate.
 static bool ValidatePacketLossRate(const char* /* flag_name */, int32_t value) {
@@ -120,9 +182,7 @@ NetEqQualityTest::NetEqQualityTest(int block_duration_ms,
                                    int in_sampling_khz,
                                    int out_sampling_khz,
                                    enum NetEqDecoder decoder_type,
-                                   int channels,
-                                   std::string in_filename,
-                                   std::string out_filename)
+                                   int channels)
     : decoded_time_ms_(0),
       decodable_time_ms_(0),
       drift_factor_(FLAGS_drift_factor),
@@ -132,19 +192,32 @@ NetEqQualityTest::NetEqQualityTest(int block_duration_ms,
       out_sampling_khz_(out_sampling_khz),
       decoder_type_(decoder_type),
       channels_(channels),
-      in_filename_(in_filename),
-      out_filename_(out_filename),
-      log_filename_(out_filename + ".log"),
       in_size_samples_(in_sampling_khz_ * block_duration_ms_),
       out_size_samples_(out_sampling_khz_ * kOutputSizeMs),
       payload_size_bytes_(0),
       max_payload_bytes_(0),
-      in_file_(new InputAudioFile(in_filename_)),
-      out_file_(NULL),
+      in_file_(new ResampleInputAudioFile(FLAGS_in_filename,
+                                          FLAGS_input_sample_rate,
+                                          in_sampling_khz * 1000)),
       log_file_(NULL),
-      rtp_generator_(new RtpGenerator(in_sampling_khz_, 0, 0,
-                                      decodable_time_ms_)),
+      rtp_generator_(
+          new RtpGenerator(in_sampling_khz_, 0, 0, decodable_time_ms_)),
       total_payload_size_bytes_(0) {
+  const std::string out_filename = FLAGS_out_filename;
+  const std::string log_filename = out_filename + ".log";
+  log_file_ = fopen(log_filename.c_str(), "wt");
+  CHECK(log_file_);
+
+  if (out_filename.size() >= 4 &&
+      out_filename.substr(out_filename.size() - 4) == ".wav") {
+    // Open a wav file.
+    output_.reset(
+        new webrtc::test::OutputWavFile(out_filename, 1000 * out_sampling_khz));
+  } else {
+    // Open a pcm file.
+    output_.reset(new webrtc::test::OutputAudioFile(out_filename));
+  }
+
   NetEq::Config config;
   config.sample_rate_hz = out_sampling_khz_ * 1000;
   neteq_.reset(NetEq::Create(config));
@@ -189,9 +262,6 @@ bool GilbertElliotLoss::Lost() {
 }
 
 void NetEqQualityTest::SetUp() {
-  out_file_ = fopen(out_filename_.c_str(), "wb");
-  log_file_ = fopen(log_filename_.c_str(), "wt");
-  ASSERT_TRUE(out_file_ != NULL);
   ASSERT_EQ(0, neteq_->RegisterPayloadType(decoder_type_, kPayloadType));
   rtp_generator_->set_drift_factor(drift_factor_);
 
@@ -245,10 +315,6 @@ void NetEqQualityTest::SetUp() {
   srand(kInitSeed);
 }
 
-void NetEqQualityTest::TearDown() {
-  fclose(out_file_);
-}
-
 bool NetEqQualityTest::PacketLost() {
   int cycles = block_duration_ms_ / kPacketLossTimeUnitMs;
 
@@ -297,7 +363,7 @@ int NetEqQualityTest::DecodeBlock() {
   } else {
     assert(channels == channels_);
     assert(samples == kOutputSizeMs * out_sampling_khz_);
-    fwrite(&out_data_[0], sizeof(int16_t), samples * channels, out_file_);
+    CHECK(output_->WriteArray(out_data_.get(), samples * channels));
     return samples;
   }
 }
