@@ -8,13 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <math.h>
-#include <limits>
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TEST_TEST_UTILS_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_TEST_TEST_UTILS_H_
 
-#include "webrtc/audio_processing/debug.pb.h"
+#include <math.h>
+#include <iterator>
+#include <limits>
+#include <string>
+#include <vector>
+
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/channel_buffer.h"
-#include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/interface/module_common_types.h"
@@ -24,84 +29,38 @@ namespace webrtc {
 static const AudioProcessing::Error kNoErr = AudioProcessing::kNoError;
 #define EXPECT_NOERR(expr) EXPECT_EQ(kNoErr, (expr))
 
-class RawFile {
+class RawFile final {
  public:
-  RawFile(const std::string& filename)
-      : file_handle_(fopen(filename.c_str(), "wb")) {}
+  explicit RawFile(const std::string& filename);
+  ~RawFile();
 
-  ~RawFile() {
-    fclose(file_handle_);
-  }
-
-  void WriteSamples(const int16_t* samples, size_t num_samples) {
-#ifndef WEBRTC_ARCH_LITTLE_ENDIAN
-#error "Need to convert samples to little-endian when writing to PCM file"
-#endif
-    fwrite(samples, sizeof(*samples), num_samples, file_handle_);
-  }
-
-  void WriteSamples(const float* samples, size_t num_samples) {
-    fwrite(samples, sizeof(*samples), num_samples, file_handle_);
-  }
+  void WriteSamples(const int16_t* samples, size_t num_samples);
+  void WriteSamples(const float* samples, size_t num_samples);
 
  private:
   FILE* file_handle_;
+
+  DISALLOW_COPY_AND_ASSIGN(RawFile);
 };
 
-static inline void WriteIntData(const int16_t* data,
-                                size_t length,
-                                WavWriter* wav_file,
-                                RawFile* raw_file) {
-  if (wav_file) {
-    wav_file->WriteSamples(data, length);
-  }
-  if (raw_file) {
-    raw_file->WriteSamples(data, length);
-  }
-}
+void WriteIntData(const int16_t* data,
+                  size_t length,
+                  WavWriter* wav_file,
+                  RawFile* raw_file);
 
-static inline void WriteFloatData(const float* const* data,
-                                  size_t samples_per_channel,
-                                  int num_channels,
-                                  WavWriter* wav_file,
-                                  RawFile* raw_file) {
-  size_t length = num_channels * samples_per_channel;
-  rtc::scoped_ptr<float[]> buffer(new float[length]);
-  Interleave(data, samples_per_channel, num_channels, buffer.get());
-  if (raw_file) {
-    raw_file->WriteSamples(buffer.get(), length);
-  }
-  // TODO(aluebs): Use ScaleToInt16Range() from audio_util
-  for (size_t i = 0; i < length; ++i) {
-    buffer[i] = buffer[i] > 0 ?
-                buffer[i] * std::numeric_limits<int16_t>::max() :
-                -buffer[i] * std::numeric_limits<int16_t>::min();
-  }
-  if (wav_file) {
-    wav_file->WriteSamples(buffer.get(), length);
-  }
-}
+void WriteFloatData(const float* const* data,
+                    int samples_per_channel,
+                    int num_channels,
+                    WavWriter* wav_file,
+                    RawFile* raw_file);
 
 // Exits on failure; do not use in unit tests.
-static inline FILE* OpenFile(const std::string& filename, const char* mode) {
-  FILE* file = fopen(filename.c_str(), mode);
-  if (!file) {
-    printf("Unable to open file %s\n", filename.c_str());
-    exit(1);
-  }
-  return file;
-}
+FILE* OpenFile(const std::string& filename, const char* mode);
 
-static inline int SamplesFromRate(int rate) {
-  return AudioProcessing::kChunkSizeMs * rate / 1000;
-}
+int SamplesFromRate(int rate);
 
-static inline void SetFrameSampleRate(AudioFrame* frame,
-                                      int sample_rate_hz) {
-  frame->sample_rate_hz_ = sample_rate_hz;
-  frame->samples_per_channel_ = AudioProcessing::kChunkSizeMs *
-      sample_rate_hz / 1000;
-}
+void SetFrameSampleRate(AudioFrame* frame,
+                        int sample_rate_hz);
 
 template <typename T>
 void SetContainerFormat(int sample_rate_hz,
@@ -113,47 +72,7 @@ void SetContainerFormat(int sample_rate_hz,
   cb->reset(new ChannelBuffer<T>(frame->samples_per_channel_, num_channels));
 }
 
-static inline AudioProcessing::ChannelLayout LayoutFromChannels(
-    int num_channels) {
-  switch (num_channels) {
-    case 1:
-      return AudioProcessing::kMono;
-    case 2:
-      return AudioProcessing::kStereo;
-    default:
-      assert(false);
-      return AudioProcessing::kMono;
-  }
-}
-
-// Allocates new memory in the scoped_ptr to fit the raw message and returns the
-// number of bytes read.
-static inline size_t ReadMessageBytesFromFile(
-    FILE* file,
-    rtc::scoped_ptr<uint8_t[]>* bytes) {
-  // The "wire format" for the size is little-endian. Assume we're running on
-  // a little-endian machine.
-  int32_t size = 0;
-  if (fread(&size, sizeof(size), 1, file) != 1)
-    return 0;
-  if (size <= 0)
-    return 0;
-
-  bytes->reset(new uint8_t[size]);
-  return fread(bytes->get(), sizeof((*bytes)[0]), size, file);
-}
-
-// Returns true on success, false on error or end-of-file.
-static inline bool ReadMessageFromFile(FILE* file,
-                                       ::google::protobuf::MessageLite* msg) {
-  rtc::scoped_ptr<uint8_t[]> bytes;
-  size_t size = ReadMessageBytesFromFile(file, &bytes);
-  if (!size)
-    return false;
-
-  msg->Clear();
-  return msg->ParseFromArray(bytes.get(), size);
-}
+AudioProcessing::ChannelLayout LayoutFromChannels(int num_channels);
 
 template <typename T>
 float ComputeSNR(const T* ref, const T* test, int length, float* variance) {
@@ -177,4 +96,28 @@ float ComputeSNR(const T* ref, const T* test, int length, float* variance) {
   return snr;
 }
 
+// Returns a vector<T> parsed from whitespace delimited values in to_parse,
+// or an empty vector if the string could not be parsed.
+template<typename T>
+std::vector<T> ParseList(const std::string& to_parse) {
+  std::vector<T> values;
+
+  std::istringstream str(to_parse);
+  std::copy(
+      std::istream_iterator<T>(str),
+      std::istream_iterator<T>(),
+      std::back_inserter(values));
+
+  return values;
+}
+
+// Parses the array geometry from the command line.
+//
+// If a vector with size != num_mics is returned, an error has occurred and an
+// appropriate error message has been printed to stdout.
+std::vector<Point> ParseArrayGeometry(const std::string& mic_positions,
+                                      size_t num_mics);
+
 }  // namespace webrtc
+
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_TEST_TEST_UTILS_H_

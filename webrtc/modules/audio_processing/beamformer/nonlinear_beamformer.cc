@@ -294,7 +294,7 @@ void NonlinearBeamformer::InitInterfCovMats() {
 }
 
 void NonlinearBeamformer::ProcessChunk(const ChannelBuffer<float>& input,
-                              ChannelBuffer<float>* output) {
+                                       ChannelBuffer<float>* output) {
   DCHECK_EQ(input.num_channels(), num_input_channels_);
   DCHECK_EQ(input.num_frames_per_band(), chunk_length_);
 
@@ -324,10 +324,10 @@ void NonlinearBeamformer::ProcessChunk(const ChannelBuffer<float>& input,
 }
 
 void NonlinearBeamformer::ProcessAudioBlock(const complex_f* const* input,
-                                   int num_input_channels,
-                                   int num_freq_bins,
-                                   int num_output_channels,
-                                   complex_f* const* output) {
+                                            int num_input_channels,
+                                            int num_freq_bins,
+                                            int num_output_channels,
+                                            complex_f* const* output) {
   CHECK_EQ(num_freq_bins, kNumFreqBins);
   CHECK_EQ(num_input_channels, num_input_channels_);
   CHECK_EQ(num_output_channels, 1);
@@ -398,7 +398,7 @@ float NonlinearBeamformer::CalculatePostfilterMask(
 }
 
 void NonlinearBeamformer::ApplyMasks(const complex_f* const* input,
-                            complex_f* const* output) {
+                                     complex_f* const* output) {
   complex_f* output_channel = output[0];
   for (int f_ix = 0; f_ix < kNumFreqBins; ++f_ix) {
     output_channel[f_ix] = complex_f(0.f, 0.f);

@@ -20,6 +20,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/audio_processing/test/protobuf_utils.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
@@ -905,7 +906,7 @@ void void_main(int argc, char* argv[]) {
             // not reaching end-of-file.
             EXPECT_EQ(0, fseek(near_file, read_count * sizeof(int16_t),
                       SEEK_CUR));
-            break; // This is expected.
+            break;  // This is expected.
           }
         } else {
           ASSERT_EQ(size, read_count);
@@ -948,7 +949,7 @@ void void_main(int argc, char* argv[]) {
         }
         if (simulating) {
           if (read_count != size) {
-            break; // This is expected.
+            break;  // This is expected.
           }
 
           delay_ms = 0;
@@ -1040,8 +1041,7 @@ void void_main(int argc, char* argv[]) {
                      size,
                      output_wav_file.get(),
                      output_raw_file.get());
-      }
-      else {
+      } else {
         FAIL() << "Event " << event << " is unrecognized";
       }
     }
@@ -1136,8 +1136,7 @@ void void_main(int argc, char* argv[]) {
 }  // namespace
 }  // namespace webrtc
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
   webrtc::void_main(argc, argv);
 
   // Optional, but removes memory leak noise from Valgrind.

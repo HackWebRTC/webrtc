@@ -18,17 +18,16 @@
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/audio_processing/test/protobuf_utils.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 
 DEFINE_string(dump, "", "The name of the debug dump file to read from.");
-DEFINE_string(c, "", "The name of the capture input file to read from.");
-DEFINE_string(o, "out.wav", "Name of the capture output file to write to.");
-DEFINE_int32(o_channels, 0, "Number of output channels. Defaults to input.");
-DEFINE_int32(o_sample_rate, 0, "Output sample rate in Hz. Defaults to input.");
-DEFINE_double(mic_spacing, 0.0,
-    "Alternate way to specify mic_positions. "
-    "Assumes uniform linear array with specified spacings.");
+DEFINE_string(i, "", "The name of the input file to read from.");
+DEFINE_string(o, "out.wav", "Name of the output file to write to.");
+DEFINE_int32(out_channels, 0, "Number of output channels. Defaults to input.");
+DEFINE_int32(out_sample_rate, 0,
+             "Output sample rate in Hz. Defaults to input.");
 DEFINE_string(mic_positions, "",
     "Space delimited cartesian coordinates of microphones in meters. "
     "The coordinates of each point are contiguous. "
@@ -46,8 +45,11 @@ DEFINE_int32(ns_level, -1, "Noise suppression level [0 - 3].");
 
 DEFINE_bool(perf, false, "Enable performance tests.");
 
-static const int kChunksPerSecond = 100;
-static const char kUsage[] =
+namespace webrtc {
+namespace {
+
+const int kChunksPerSecond = 100;
+const char kUsage[] =
     "Command-line tool to run audio processing on WAV files. Accepts either\n"
     "an input capture WAV file or protobuf debug dump and writes to an output\n"
     "WAV file.\n"
@@ -55,76 +57,15 @@ static const char kUsage[] =
     "All components are disabled by default. If any bi-directional components\n"
     "are enabled, only debug dump files are permitted.";
 
-namespace webrtc {
-
-namespace {
-
-// Returns a vector<T> parsed from whitespace delimited values in to_parse,
-// or an empty vector if the string could not be parsed.
-template<typename T>
-std::vector<T> parse_list(std::string to_parse) {
-  std::vector<T> values;
-
-  std::istringstream str(to_parse);
-  std::copy(
-      std::istream_iterator<T>(str),
-      std::istream_iterator<T>(),
-      std::back_inserter(values));
-
-  return values;
-}
-
-// Parses the array geometry from the command line.
-//
-// If a vector with size != num_mics is returned, an error has occurred and an
-// appropriate error message has been printed to stdout.
-std::vector<Point> get_array_geometry(size_t num_mics) {
-  std::vector<Point> result;
-  result.reserve(num_mics);
-
-  if (FLAGS_mic_positions.length()) {
-    CHECK(FLAGS_mic_spacing == 0.0 &&
-        "mic_positions and mic_spacing should not both be specified");
-
-    const std::vector<float> values = parse_list<float>(FLAGS_mic_positions);
-    if (values.size() != 3 * num_mics) {
-      fprintf(stderr,
-          "Could not parse mic_positions or incorrect number of points.\n");
-    } else {
-      for (size_t i = 0; i < values.size(); i += 3) {
-        double x = values[i + 0];
-        double y = values[i + 1];
-        double z = values[i + 2];
-        result.push_back(Point(x, y, z));
-      }
-    }
-  } else {
-    if (FLAGS_mic_spacing <= 0) {
-      fprintf(stderr,
-          "mic_spacing must a positive value when beamforming is enabled.\n");
-    } else {
-      for (size_t i = 0; i < num_mics; ++i) {
-        result.push_back(Point(i * FLAGS_mic_spacing, 0.f, 0.f));
-      }
-    }
-  }
-
-  return result;
-}
-
 }  // namespace
 
 int main(int argc, char* argv[]) {
-  {
-    const std::string program_name = argv[0];
-    const std::string usage = kUsage;
-    google::SetUsageMessage(usage);
-  }
+  google::SetUsageMessage(kUsage);
   google::ParseCommandLineFlags(&argc, &argv, true);
 
-  if (!((FLAGS_c == "") ^ (FLAGS_dump == ""))) {
+  if (!((FLAGS_i == "") ^ (FLAGS_dump == ""))) {
     fprintf(stderr,
-            "An input file must be specified with either -c or -dump.\n");
+            "An input file must be specified with either -i or -dump.\n");
     return 1;
   }
   if (FLAGS_dump != "") {
@@ -132,25 +73,22 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  WavReader c_file(FLAGS_c);
+  WavReader in_file(FLAGS_i);
   // If the output format is uninitialized, use the input format.
-  int o_channels = FLAGS_o_channels;
-  if (!o_channels)
-    o_channels = c_file.num_channels();
-  int o_sample_rate = FLAGS_o_sample_rate;
-  if (!o_sample_rate)
-    o_sample_rate = c_file.sample_rate();
-  WavWriter o_file(FLAGS_o, o_sample_rate, o_channels);
+  const int out_channels =
+      FLAGS_out_channels ? FLAGS_out_channels : in_file.num_channels();
+  const int out_sample_rate =
+      FLAGS_out_sample_rate ? FLAGS_out_sample_rate : in_file.sample_rate();
+  WavWriter out_file(FLAGS_o, out_sample_rate, out_channels);
 
   Config config;
   config.Set<ExperimentalNs>(new ExperimentalNs(FLAGS_ts || FLAGS_all));
 
   if (FLAGS_bf || FLAGS_all) {
-    const size_t num_mics = c_file.num_channels();
-    const std::vector<Point> array_geometry = get_array_geometry(num_mics);
-    if (array_geometry.size() != num_mics) {
-      return 1;
-    }
+    const size_t num_mics = in_file.num_channels();
+    const std::vector<Point> array_geometry =
+        ParseArrayGeometry(FLAGS_mic_positions, num_mics);
+    CHECK_EQ(array_geometry.size(), num_mics);
 
     config.Set<Beamforming>(new Beamforming(true, array_geometry));
   }
@@ -171,46 +109,49 @@ int main(int argc, char* argv[]) {
         static_cast<NoiseSuppression::Level>(FLAGS_ns_level)));
 
   printf("Input file: %s\nChannels: %d, Sample rate: %d Hz\n\n",
-         FLAGS_c.c_str(), c_file.num_channels(), c_file.sample_rate());
+         FLAGS_i.c_str(), in_file.num_channels(), in_file.sample_rate());
   printf("Output file: %s\nChannels: %d, Sample rate: %d Hz\n\n",
-         FLAGS_o.c_str(), o_file.num_channels(), o_file.sample_rate());
+         FLAGS_o.c_str(), out_file.num_channels(), out_file.sample_rate());
 
-  ChannelBuffer<float> c_buf(c_file.sample_rate() / kChunksPerSecond,
-                             c_file.num_channels());
-  ChannelBuffer<float> o_buf(o_file.sample_rate() / kChunksPerSecond,
-                             o_file.num_channels());
+  ChannelBuffer<float> in_buf(
+      rtc::CheckedDivExact(in_file.sample_rate(), kChunksPerSecond),
+      in_file.num_channels());
+  ChannelBuffer<float> out_buf(
+      rtc::CheckedDivExact(out_file.sample_rate(), kChunksPerSecond),
+      out_file.num_channels());
 
-  const size_t c_length =
-      static_cast<size_t>(c_buf.num_channels() * c_buf.num_frames());
-  const size_t o_length =
-      static_cast<size_t>(o_buf.num_channels() * o_buf.num_frames());
-  rtc::scoped_ptr<float[]> c_interleaved(new float[c_length]);
-  rtc::scoped_ptr<float[]> o_interleaved(new float[o_length]);
+  std::vector<float> in_interleaved(in_buf.size());
+  std::vector<float> out_interleaved(out_buf.size());
   TickTime processing_start_time;
   TickInterval accumulated_time;
   int num_chunks = 0;
-  while (c_file.ReadSamples(c_length, c_interleaved.get()) == c_length) {
-    FloatS16ToFloat(c_interleaved.get(), c_length, c_interleaved.get());
-    Deinterleave(c_interleaved.get(), c_buf.num_frames(),
-                 c_buf.num_channels(), c_buf.channels());
+  while (in_file.ReadSamples(in_interleaved.size(),
+                             &in_interleaved[0]) == in_interleaved.size()) {
+    FloatS16ToFloat(&in_interleaved[0], in_interleaved.size(),
+                    &in_interleaved[0]);
+    Deinterleave(&in_interleaved[0], in_buf.num_frames(),
+                 in_buf.num_channels(), in_buf.channels());
+
     if (FLAGS_perf) {
       processing_start_time = TickTime::Now();
     }
     CHECK_EQ(kNoErr,
-        ap->ProcessStream(c_buf.channels(),
-                          c_buf.num_frames(),
-                          c_file.sample_rate(),
-                          LayoutFromChannels(c_buf.num_channels()),
-                          o_file.sample_rate(),
-                          LayoutFromChannels(o_buf.num_channels()),
-                          o_buf.channels()));
+        ap->ProcessStream(in_buf.channels(),
+                          in_buf.num_frames(),
+                          in_file.sample_rate(),
+                          LayoutFromChannels(in_buf.num_channels()),
+                          out_file.sample_rate(),
+                          LayoutFromChannels(out_buf.num_channels()),
+                          out_buf.channels()));
     if (FLAGS_perf) {
       accumulated_time += TickTime::Now() - processing_start_time;
     }
-    Interleave(o_buf.channels(), o_buf.num_frames(),
-               o_buf.num_channels(), o_interleaved.get());
-    FloatToFloatS16(o_interleaved.get(), o_length, o_interleaved.get());
-    o_file.WriteSamples(o_interleaved.get(), o_length);
+
+    Interleave(out_buf.channels(), out_buf.num_frames(),
+               out_buf.num_channels(), &out_interleaved[0]);
+    FloatToFloatS16(&out_interleaved[0], out_interleaved.size(),
+                    &out_interleaved[0]);
+    out_file.WriteSamples(&out_interleaved[0], out_interleaved.size());
     num_chunks++;
   }
   if (FLAGS_perf) {

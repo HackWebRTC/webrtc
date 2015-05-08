@@ -22,6 +22,7 @@
 #include "webrtc/modules/audio_processing/beamformer/mock_nonlinear_beamformer.h"
 #include "webrtc/modules/audio_processing/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/audio_processing/test/protobuf_utils.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
