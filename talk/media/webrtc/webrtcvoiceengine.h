@@ -46,7 +46,6 @@
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/call.h"
 #include "webrtc/common.h"
-#include "webrtc/config.h"
 
 #if !defined(LIBPEERCONNECTION_LIB) && \
     !defined(LIBPEERCONNECTION_IMPLEMENTATION)
