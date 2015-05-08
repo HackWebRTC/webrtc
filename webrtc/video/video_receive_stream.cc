@@ -20,7 +20,6 @@
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video_encoder.h"
-#include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_receive_stream.h"
 
 namespace webrtc {
@@ -124,24 +123,24 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
 }
 }  // namespace
 
-VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
+VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
+                                       int base_channel_id,
                                        ChannelGroup* channel_group,
+                                       int channel_id,
                                        const VideoReceiveStream::Config& config,
                                        newapi::Transport* transport,
-                                       webrtc::VoiceEngine* voice_engine,
-                                       int base_channel)
+                                       webrtc::VoiceEngine* voice_engine)
     : transport_adapter_(transport),
       encoded_frame_proxy_(config.pre_decode_callback),
       config_(config),
       clock_(Clock::GetRealTimeClock()),
       channel_group_(channel_group),
-      voe_sync_interface_(nullptr),
-      channel_(-1) {
-  video_engine_base_ = ViEBase::GetInterface(video_engine);
-  video_engine_base_->CreateReceiveChannel(channel_, base_channel);
-  DCHECK(channel_ != -1);
+      channel_id_(channel_id),
+      voe_sync_interface_(nullptr) {
+  CHECK(channel_group_->CreateReceiveChannel(channel_id_, 0, base_channel_id,
+                                             num_cpu_cores, true));
 
-  vie_channel_ = video_engine_base_->GetChannel(channel_);
+  vie_channel_ = channel_group_->GetChannel(channel_id_);
 
   // TODO(pbos): This is not fine grained enough...
   vie_channel_->SetNACKStatus(config_.rtp.nack.rtp_history_ms > 0);
@@ -237,10 +236,7 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
     CHECK_EQ(0, vie_channel_->SetReceiveCodec(codec));
   }
 
-  // Register a renderer without a window handle, at depth 0, that covers the
-  // entire rendered area (0->1 both axes). This registers a renderer that
-  // renders the entire video.
-  incoming_video_stream_.reset(new IncomingVideoStream(channel_));
+  incoming_video_stream_.reset(new IncomingVideoStream(0));
   incoming_video_stream_->SetExpectedRenderDelay(config.render_delay_ms);
   incoming_video_stream_->SetExternalCallback(this);
   vie_channel_->SetIncomingVideoStream(incoming_video_stream_.get());
@@ -273,8 +269,7 @@ VideoReceiveStream::~VideoReceiveStream() {
   vie_channel_->RegisterReceiveChannelRtpStatisticsCallback(nullptr);
   vie_channel_->RegisterReceiveChannelRtcpStatisticsCallback(nullptr);
   vie_channel_->RegisterRtcpPacketTypeCounterObserver(nullptr);
-  video_engine_base_->DeleteChannel(channel_);
-  video_engine_base_->Release();
+  channel_group_->DeleteChannel(channel_id_);
 }
 
 void VideoReceiveStream::Start() {

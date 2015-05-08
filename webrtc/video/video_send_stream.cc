@@ -20,12 +20,11 @@
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video_engine/encoder_state_feedback.h"
-#include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/vie_capturer.h"
 #include "webrtc/video_engine/vie_channel.h"
 #include "webrtc/video_engine/vie_channel_group.h"
-#include "webrtc/video_engine/vie_encoder.h"
 #include "webrtc/video_engine/vie_defines.h"
+#include "webrtc/video_engine/vie_encoder.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
@@ -104,30 +103,25 @@ namespace internal {
 VideoSendStream::VideoSendStream(
     newapi::Transport* transport,
     CpuOveruseObserver* overuse_observer,
-    webrtc::VideoEngine* video_engine,
-    ChannelGroup* channel_group,
+    int num_cpu_cores,
     ProcessThread* module_process_thread,
+    ChannelGroup* channel_group,
+    int channel_id,
     const VideoSendStream::Config& config,
     const VideoEncoderConfig& encoder_config,
-    const std::map<uint32_t, RtpState>& suspended_ssrcs,
-    int base_channel)
+    const std::map<uint32_t, RtpState>& suspended_ssrcs)
     : transport_adapter_(transport),
       encoded_frame_proxy_(config.post_encode_callback),
       config_(config),
       suspended_ssrcs_(suspended_ssrcs),
-      channel_group_(channel_group),
       module_process_thread_(module_process_thread),
-      channel_(-1),
+      channel_group_(channel_group),
+      channel_id_(channel_id),
       use_config_bitrate_(true),
       stats_proxy_(Clock::GetRealTimeClock(), config) {
-  // TODO(pbos): Move channel creation out of vie_base as soon as these are no
-  // longer referenced by channel ids.
-  video_engine_base_ = ViEBase::GetInterface(video_engine);
-  video_engine_base_->CreateChannelWithoutDefaultEncoder(channel_,
-                                                         base_channel);
-  DCHECK(channel_ != -1);
-  vie_channel_ = video_engine_base_->GetChannel(channel_);
-  vie_encoder_ = video_engine_base_->GetEncoder(channel_);
+  CHECK(channel_group->CreateSendChannel(channel_id_, 0, num_cpu_cores, true));
+  vie_channel_ = channel_group_->GetChannel(channel_id_);
+  vie_encoder_ = channel_group_->GetEncoder(channel_id_);
 
   DCHECK(!config_.rtp.ssrcs.empty());
 
@@ -148,8 +142,7 @@ VideoSendStream::VideoSendStream(
     }
   }
 
-  // TODO(pbos): Remove channel_group_ usage from VideoSendStream. This should
-  // be configured in call.cc.
+  // TODO(pbos): Consider configuring REMB in Call.
   channel_group_->SetChannelRembStatus(true, false, vie_channel_);
 
   // Enable NACK, FEC or both.
@@ -187,7 +180,7 @@ VideoSendStream::VideoSendStream(
   vie_channel_->SetRTCPCName(rtcp_cname);
 
   vie_capturer_ = ViECapturer::CreateViECapturer(module_process_thread_);
-  CHECK_EQ(0, vie_capturer_->RegisterFrameCallback(channel_, vie_encoder_));
+  CHECK_EQ(0, vie_capturer_->RegisterFrameCallback(channel_id_, vie_encoder_));
 
   vie_channel_->RegisterSendTransport(&transport_adapter_);
   // 28 to match packet overhead in ModuleRtpRtcpImpl.
@@ -210,8 +203,8 @@ VideoSendStream::VideoSendStream(
   // Registered regardless of monitoring, used for stats.
   vie_capturer_->RegisterCpuOveruseMetricsObserver(&stats_proxy_);
 
-  video_engine_base_->RegisterSendSideDelayObserver(channel_, &stats_proxy_);
-  video_engine_base_->RegisterSendStatisticsProxy(channel_, &stats_proxy_);
+  vie_channel_->RegisterSendSideDelayObserver(&stats_proxy_);
+  vie_encoder_->RegisterSendStatisticsProxy(&stats_proxy_);
 
   vie_encoder_->RegisterPreEncodeCallback(config_.pre_encode_callback);
   if (config_.post_encode_callback)
@@ -256,9 +249,7 @@ VideoSendStream::~VideoSendStream() {
   vie_encoder_->DeRegisterExternalEncoder(
       config_.encoder_settings.payload_type);
 
-  video_engine_base_->DeleteChannel(channel_);
-
-  video_engine_base_->Release();
+  channel_group_->DeleteChannel(channel_id_);
 }
 
 void VideoSendStream::IncomingCapturedFrame(const I420VideoFrame& frame) {
@@ -274,13 +265,19 @@ VideoSendStreamInput* VideoSendStream::Input() { return this; }
 
 void VideoSendStream::Start() {
   transport_adapter_.Enable();
-  video_engine_base_->StartSend(channel_);
-  video_engine_base_->StartReceive(channel_);
+  vie_encoder_->Pause();
+  if (vie_channel_->StartSend() == 0) {
+    // Was not already started, trigger a keyframe.
+    vie_encoder_->SendKeyFrame();
+  }
+  vie_encoder_->Restart();
+  vie_channel_->StartReceive();
 }
 
 void VideoSendStream::Stop() {
-  video_engine_base_->StopSend(channel_);
-  video_engine_base_->StopReceive(channel_);
+  // TODO(pbos): Make sure the encoder stops here.
+  vie_channel_->StopSend();
+  vie_channel_->StopReceive();
   transport_adapter_.Disable();
 }
 

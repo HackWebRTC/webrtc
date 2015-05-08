@@ -22,7 +22,6 @@
 #include "webrtc/video/encoded_frame_callback_adapter.h"
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video/transport_adapter.h"
-#include "webrtc/video_engine/include/vie_render.h"
 #include "webrtc/video_engine/vie_channel.h"
 #include "webrtc/video_engine/vie_channel_group.h"
 #include "webrtc/video_engine/vie_encoder.h"
@@ -30,8 +29,6 @@
 
 namespace webrtc {
 
-class VideoEngine;
-class ViEBase;
 class VoiceEngine;
 
 namespace internal {
@@ -40,12 +37,13 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public I420FrameCallback,
                            public VideoRenderCallback {
  public:
-  VideoReceiveStream(webrtc::VideoEngine* video_engine,
+  VideoReceiveStream(int num_cpu_cores,
+                     int base_channel_id,
                      ChannelGroup* channel_group,
+                     int channel_id,
                      const VideoReceiveStream::Config& config,
                      newapi::Transport* transport,
-                     webrtc::VoiceEngine* voice_engine,
-                     int base_channel);
+                     webrtc::VoiceEngine* voice_engine);
   virtual ~VideoReceiveStream();
 
   void Start() override;
@@ -73,16 +71,14 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   Clock* const clock_;
 
   ChannelGroup* const channel_group_;
+  const int channel_id_;
+
   ViEChannel* vie_channel_;
   rtc::scoped_ptr<IncomingVideoStream> incoming_video_stream_;
-
-  ViEBase* video_engine_base_;
 
   VoEVideoSync* voe_sync_interface_;
 
   rtc::scoped_ptr<ReceiveStatisticsProxy> stats_proxy_;
-
-  int channel_;
 };
 }  // namespace internal
 }  // namespace webrtc
