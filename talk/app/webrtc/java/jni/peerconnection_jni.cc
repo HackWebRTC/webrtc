@@ -1304,6 +1304,9 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
       "Ljava/util/List;");
   jobject j_ice_servers = GetObjectField(jni, j_rtc_config, j_ice_servers_id);
 
+  jfieldID j_audio_jitter_buffer_max_packets_id = GetFieldID(
+      jni, j_rtc_config_class, "audioJitterBufferMaxPackets",
+      "I");
   PeerConnectionInterface::RTCConfiguration rtc_config;
 
   rtc_config.type =
@@ -1312,6 +1315,8 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
   rtc_config.tcp_candidate_policy =
       JavaTcpCandidatePolicyToNativeType(jni, j_tcp_candidate_policy);
   JavaIceServersToJsepIceServers(jni, j_ice_servers, &rtc_config.servers);
+  rtc_config.audio_jitter_buffer_max_packets =
+      GetIntField(jni, j_rtc_config, j_audio_jitter_buffer_max_packets_id);
 
   PCOJava* observer = reinterpret_cast<PCOJava*>(observer_p);
   observer->SetConstraints(new ConstraintsWrapper(jni, j_constraints));

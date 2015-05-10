@@ -99,6 +99,7 @@ class AudioCodingModule {
   //
   static AudioCodingModule* Create(int id);
   static AudioCodingModule* Create(int id, Clock* clock);
+  static AudioCodingModule* Create(const Config& config);
   virtual ~AudioCodingModule() {};
 
   ///////////////////////////////////////////////////////////////////////////

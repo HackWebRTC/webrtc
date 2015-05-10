@@ -521,9 +521,8 @@ bool WebRtcSession::Initialize(
     const PeerConnectionFactoryInterface::Options& options,
     const MediaConstraintsInterface*  constraints,
     DTLSIdentityServiceInterface* dtls_identity_service,
-    PeerConnectionInterface::IceTransportsType ice_transport_type,
-    PeerConnectionInterface::BundlePolicy bundle_policy) {
-  bundle_policy_ = bundle_policy;
+    const PeerConnectionInterface::RTCConfiguration& rtc_configuration) {
+  bundle_policy_ = rtc_configuration.bundle_policy;
 
   // TODO(perkj): Take |constraints| into consideration. Return false if not all
   // mandatory constraints can be fulfilled. Note that |constraints|
@@ -640,6 +639,9 @@ bool WebRtcSession::Initialize(
       MediaConstraintsInterface::kCombinedAudioVideoBwe,
       &audio_options_.combined_audio_video_bwe);
 
+  audio_options_.audio_jitter_buffer_max_packets.Set(
+      rtc_configuration.audio_jitter_buffer_max_packets);
+
   const cricket::VideoCodec default_codec(
       JsepSessionDescription::kDefaultVideoCodecId,
       JsepSessionDescription::kDefaultVideoCodecName,
@@ -667,7 +669,7 @@ bool WebRtcSession::Initialize(
     webrtc_session_desc_factory_->SetSdesPolicy(cricket::SEC_DISABLED);
   }
   port_allocator()->set_candidate_filter(
-      ConvertIceTransportTypeToCandidateFilter(ice_transport_type));
+      ConvertIceTransportTypeToCandidateFilter(rtc_configuration.type));
   return true;
 }
 
