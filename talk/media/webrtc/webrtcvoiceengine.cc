@@ -353,7 +353,6 @@ static AudioOptions GetDefaultEngineOptions() {
   options.noise_suppression.Set(true);
   options.highpass_filter.Set(true);
   options.stereo_swapping.Set(false);
-  options.audio_jitter_buffer_max_packets.Set(50);
   options.typing_detection.Set(true);
   options.conference_mode.Set(false);
   options.adjust_agc_delta.Set(0);
@@ -954,14 +953,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
       LOG_RTCERR1(EnableStereoChannelSwapping, stereo_swapping);
       return false;
     }
-  }
-
-  int audio_jitter_buffer_max_packets;
-  if (options.audio_jitter_buffer_max_packets.Get(
-          &audio_jitter_buffer_max_packets)) {
-    LOG(LS_INFO) << "NetEq capacity is " << audio_jitter_buffer_max_packets;
-    voe_config_.Set<webrtc::NetEqCapacityConfig>(
-        new webrtc::NetEqCapacityConfig(audio_jitter_buffer_max_packets));
   }
 
   bool typing_detection;

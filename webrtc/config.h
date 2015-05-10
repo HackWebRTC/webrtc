@@ -113,20 +113,6 @@ struct VideoEncoderConfig {
   int min_transmit_bitrate_bps;
 };
 
-// Controls the capacity of the packet buffer in NetEq. The capacity is the
-// maximum number of packets that the buffer can contain. If the limit is
-// exceeded, the buffer will be flushed. The capacity does not affect the actual
-// audio delay in the general case, since this is governed by the target buffer
-// level (calculated from the jitter profile). It is only in the rare case of
-// severe network freezes that a higher capacity will lead to a (transient)
-// increase in audio delay.
-struct NetEqCapacityConfig {
-  NetEqCapacityConfig() : enabled(false), capacity(0) {}
-  explicit NetEqCapacityConfig(int value) : enabled(true), capacity(value) {}
-  bool enabled;
-  int capacity;
-};
-
 }  // namespace webrtc
 
 #endif  // WEBRTC_CONFIG_H_
