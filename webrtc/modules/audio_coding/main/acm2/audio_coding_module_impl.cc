@@ -829,8 +829,7 @@ int AudioCodingModuleImpl::ConfigISACBandwidthEstimator(
 //      frame_size_ms, rate_bit_per_sec, enforce_frame_size);
 }
 
-int AudioCodingModuleImpl::SetOpusApplication(OpusApplicationMode application,
-                                              bool disable_dtx_if_needed) {
+int AudioCodingModuleImpl::SetOpusApplication(OpusApplicationMode application) {
   CriticalSectionScoped lock(acm_crit_sect_);
   if (!HaveValidEncoder("SetOpusApplication")) {
     return -1;
@@ -847,10 +846,7 @@ int AudioCodingModuleImpl::SetOpusApplication(OpusApplicationMode application,
       FATAL();
       return 0;
   }
-  return codec_manager_.CurrentSpeechEncoder()->SetApplication(
-             app, disable_dtx_if_needed)
-             ? 0
-             : -1;
+  return codec_manager_.CurrentSpeechEncoder()->SetApplication(app) ? 0 : -1;
 }
 
 // Informs Opus encoder of the maximum playback rate the receiver will render.
@@ -864,13 +860,12 @@ int AudioCodingModuleImpl::SetOpusMaxPlaybackRate(int frequency_hz) {
              : -1;
 }
 
-int AudioCodingModuleImpl::EnableOpusDtx(bool force_voip) {
+int AudioCodingModuleImpl::EnableOpusDtx() {
   CriticalSectionScoped lock(acm_crit_sect_);
   if (!HaveValidEncoder("EnableOpusDtx")) {
     return -1;
   }
-  return codec_manager_.CurrentSpeechEncoder()->SetDtx(true, force_voip) ? 0
-                                                                         : -1;
+  return codec_manager_.CurrentSpeechEncoder()->SetDtx(true) ? 0 : -1;
 }
 
 int AudioCodingModuleImpl::DisableOpusDtx() {
@@ -878,7 +873,7 @@ int AudioCodingModuleImpl::DisableOpusDtx() {
   if (!HaveValidEncoder("DisableOpusDtx")) {
     return -1;
   }
-  return codec_manager_.CurrentSpeechEncoder()->SetDtx(false, false) ? 0 : -1;
+  return codec_manager_.CurrentSpeechEncoder()->SetDtx(false) ? 0 : -1;
 }
 
 int AudioCodingModuleImpl::PlayoutTimestamp(uint32_t* timestamp) {

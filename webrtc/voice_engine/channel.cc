@@ -1574,7 +1574,7 @@ int Channel::SetOpusMaxPlaybackRate(int frequency_hz) {
 int Channel::SetOpusDtx(bool enable_dtx) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetOpusDtx(%d)", enable_dtx);
-  int ret = enable_dtx ? audio_coding_->EnableOpusDtx(true)
+  int ret = enable_dtx ? audio_coding_->EnableOpusDtx()
                        : audio_coding_->DisableOpusDtx();
   if (ret != 0) {
     _engineStatisticsPtr->SetLastError(

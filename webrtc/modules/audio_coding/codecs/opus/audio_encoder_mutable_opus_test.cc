@@ -47,7 +47,7 @@ TEST_F(AudioEncoderMutableOpusTest, DefaultApplicationModeStereo) {
 TEST_F(AudioEncoderMutableOpusTest, ChangeApplicationMode) {
   CreateCodec(2);
   EXPECT_TRUE(
-      encoder_->SetApplication(AudioEncoderMutable::kApplicationSpeech, false));
+      encoder_->SetApplication(AudioEncoderMutable::kApplicationSpeech));
   EXPECT_EQ(AudioEncoderOpus::kVoip, encoder_->application());
 }
 
@@ -61,7 +61,7 @@ TEST_F(AudioEncoderMutableOpusTest, ResetWontChangeApplicationMode) {
 
   // Now change to kVoip.
   EXPECT_TRUE(
-      encoder_->SetApplication(AudioEncoderMutable::kApplicationSpeech, false));
+      encoder_->SetApplication(AudioEncoderMutable::kApplicationSpeech));
   EXPECT_EQ(AudioEncoderOpus::kVoip, encoder_->application());
 
   // Trigger a reset again.
@@ -72,41 +72,12 @@ TEST_F(AudioEncoderMutableOpusTest, ResetWontChangeApplicationMode) {
 
 TEST_F(AudioEncoderMutableOpusTest, ToggleDtx) {
   CreateCodec(2);
-
-  // DTX is not allowed in audio mode, if mode forcing flag is false.
-  EXPECT_FALSE(encoder_->SetDtx(true, false));
+  // Enable DTX
+  EXPECT_TRUE(encoder_->SetDtx(true));
+  // Verify that the mode is still kAudio.
   EXPECT_EQ(AudioEncoderOpus::kAudio, encoder_->application());
-
-  // DTX will be on, if mode forcing flag is true. Then application mode is
-  // switched to kVoip.
-  EXPECT_TRUE(encoder_->SetDtx(true, true));
-  EXPECT_EQ(AudioEncoderOpus::kVoip, encoder_->application());
-
-  // Audio mode is not allowed when DTX is on, and DTX forcing flag is false.
-  EXPECT_FALSE(
-      encoder_->SetApplication(AudioEncoderMutable::kApplicationAudio, false));
-  EXPECT_TRUE(encoder_->dtx_enabled());
-
-  // Audio mode will be set, if DTX forcing flag is true. Then DTX is switched
-  // off.
-  EXPECT_TRUE(
-      encoder_->SetApplication(AudioEncoderMutable::kApplicationAudio, true));
-  EXPECT_FALSE(encoder_->dtx_enabled());
-
-  // Now we set VOIP mode. The DTX forcing flag has no effect.
-  EXPECT_TRUE(
-      encoder_->SetApplication(AudioEncoderMutable::kApplicationSpeech, true));
-  EXPECT_FALSE(encoder_->dtx_enabled());
-
-  // In VOIP mode, we can enable DTX with mode forcing flag being false.
-  EXPECT_TRUE(encoder_->SetDtx(true, false));
-
   // Turn off DTX.
-  EXPECT_TRUE(encoder_->SetDtx(false, false));
-
-  // When DTX is off, we can set Audio mode with DTX forcing flag being false.
-  EXPECT_TRUE(
-      encoder_->SetApplication(AudioEncoderMutable::kApplicationAudio, false));
+  EXPECT_TRUE(encoder_->SetDtx(false));
 }
 #endif  // WEBRTC_CODEC_OPUS
 

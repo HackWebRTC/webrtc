@@ -168,15 +168,29 @@ int16_t WebRtcOpus_DisableFec(OpusEncInst* inst) {
 }
 
 int16_t WebRtcOpus_EnableDtx(OpusEncInst* inst) {
-  if (inst) {
-    return opus_encoder_ctl(inst->encoder, OPUS_SET_DTX(1));
-  } else {
+  if (!inst) {
     return -1;
   }
+
+  // To prevent Opus from entering CELT-only mode by forcing signal type to
+  // voice to make sure that DTX behaves correctly. Currently, DTX does not
+  // last long during a pure silence, if the signal type is not forced.
+  // TODO(minyue): Remove the signal type forcing when Opus DTX works properly
+  // without it.
+  int ret = opus_encoder_ctl(inst->encoder,
+                             OPUS_SET_SIGNAL(OPUS_SIGNAL_VOICE));
+  if (ret != OPUS_OK)
+    return ret;
+
+  return opus_encoder_ctl(inst->encoder, OPUS_SET_DTX(1));
 }
 
 int16_t WebRtcOpus_DisableDtx(OpusEncInst* inst) {
   if (inst) {
+    int ret = opus_encoder_ctl(inst->encoder,
+                               OPUS_SET_SIGNAL(OPUS_AUTO));
+    if (ret != OPUS_OK)
+      return ret;
     return opus_encoder_ctl(inst->encoder, OPUS_SET_DTX(0));
   } else {
     return -1;

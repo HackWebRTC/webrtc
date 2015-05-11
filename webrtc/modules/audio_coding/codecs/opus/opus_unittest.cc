@@ -171,15 +171,49 @@ void OpusTest::TestDtxEffect(bool dtx) {
     }
   }
 
-  // DTX mode is maintained 400 ms.
-  for (int i = 0; i < 19; ++i) {
+  // When Opus is in DTX, it wakes up in a regular basis. It sends two packets,
+  // one with an arbitrary size and the other of 1-byte, then stops sending for
+  // 19 frames.
+  const int cycles = 5;
+  for (int j = 0; j < cycles; ++j) {
+    // DTX mode is maintained 19 frames.
+    for (int i = 0; i < 19; ++i) {
+      EXPECT_EQ(kOpus20msFrameSamples,
+                EncodeDecode(opus_encoder_, silence,
+                             kOpus20msFrameSamples, opus_decoder_,
+                             output_data_decode, &audio_type));
+      if (dtx) {
+        EXPECT_EQ(0, encoded_bytes_)  // Send 0 byte.
+            << "Opus should have entered DTX mode.";
+        EXPECT_EQ(1, opus_encoder_->in_dtx_mode);
+        EXPECT_EQ(1, opus_decoder_->in_dtx_mode);
+        EXPECT_EQ(2, audio_type);  // Comfort noise.
+      } else {
+        EXPECT_GT(encoded_bytes_, 1);
+        EXPECT_EQ(0, opus_encoder_->in_dtx_mode);
+        EXPECT_EQ(0, opus_decoder_->in_dtx_mode);
+        EXPECT_EQ(0, audio_type);  // Speech.
+      }
+    }
+
+    // Quit DTX after 19 frames.
+    EXPECT_EQ(kOpus20msFrameSamples,
+              EncodeDecode(opus_encoder_, silence,
+                           kOpus20msFrameSamples, opus_decoder_,
+                           output_data_decode, &audio_type));
+
+    EXPECT_GT(encoded_bytes_, 1);
+    EXPECT_EQ(0, opus_encoder_->in_dtx_mode);
+    EXPECT_EQ(0, opus_decoder_->in_dtx_mode);
+    EXPECT_EQ(0, audio_type);  // Speech.
+
+    // Enters DTX again immediately.
     EXPECT_EQ(kOpus20msFrameSamples,
               EncodeDecode(opus_encoder_, silence,
                            kOpus20msFrameSamples, opus_decoder_,
                            output_data_decode, &audio_type));
     if (dtx) {
-      EXPECT_EQ(0, encoded_bytes_)  // Send 0 byte.
-          << "Opus should have entered DTX mode.";
+      EXPECT_EQ(1, encoded_bytes_);  // Send 1 byte.
       EXPECT_EQ(1, opus_encoder_->in_dtx_mode);
       EXPECT_EQ(1, opus_decoder_->in_dtx_mode);
       EXPECT_EQ(2, audio_type);  // Comfort noise.
@@ -189,34 +223,6 @@ void OpusTest::TestDtxEffect(bool dtx) {
       EXPECT_EQ(0, opus_decoder_->in_dtx_mode);
       EXPECT_EQ(0, audio_type);  // Speech.
     }
-  }
-
-  // Quit DTX after 400 ms
-  EXPECT_EQ(kOpus20msFrameSamples,
-            EncodeDecode(opus_encoder_, silence,
-                         kOpus20msFrameSamples, opus_decoder_,
-                         output_data_decode, &audio_type));
-
-  EXPECT_GT(encoded_bytes_, 1);
-  EXPECT_EQ(0, opus_encoder_->in_dtx_mode);
-  EXPECT_EQ(0, opus_decoder_->in_dtx_mode);
-  EXPECT_EQ(0, audio_type);  // Speech.
-
-  // Enters DTX again immediately.
-  EXPECT_EQ(kOpus20msFrameSamples,
-            EncodeDecode(opus_encoder_, silence,
-                         kOpus20msFrameSamples, opus_decoder_,
-                         output_data_decode, &audio_type));
-  if (dtx) {
-    EXPECT_EQ(1, encoded_bytes_);  // Send 1 byte.
-    EXPECT_EQ(1, opus_encoder_->in_dtx_mode);
-    EXPECT_EQ(1, opus_decoder_->in_dtx_mode);
-    EXPECT_EQ(2, audio_type);  // Comfort noise.
-  } else {
-    EXPECT_GT(encoded_bytes_, 1);
-    EXPECT_EQ(0, opus_encoder_->in_dtx_mode);
-    EXPECT_EQ(0, opus_decoder_->in_dtx_mode);
-    EXPECT_EQ(0, audio_type);  // Speech.
   }
 
   silence[0] = 10000;
@@ -436,10 +442,6 @@ TEST_P(OpusTest, OpusDtxOff) {
 }
 
 TEST_P(OpusTest, OpusDtxOn) {
-  if (application_ == 1) {
-    // We do not check DTX under OPUS_APPLICATION_AUDIO mode.
-    return;
-  }
   TestDtxEffect(true);
 }
 

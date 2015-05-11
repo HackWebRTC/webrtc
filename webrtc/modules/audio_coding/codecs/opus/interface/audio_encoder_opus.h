@@ -84,8 +84,13 @@ class AudioEncoderMutableOpus
  public:
   explicit AudioEncoderMutableOpus(const CodecInst& codec_inst);
   bool SetFec(bool enable) override;
-  bool SetDtx(bool enable, bool force) override;
-  bool SetApplication(Application application, bool force) override;
+
+  // Set Opus DTX. Once enabled, Opus stops transmission, when it detects voice
+  // being inactive. During that, it still sends 2 packets (one for content, one
+  // for signaling) about every 400 ms.
+  bool SetDtx(bool enable) override;
+
+  bool SetApplication(Application application) override;
   bool SetMaxPlaybackRate(int frequency_hz) override;
   AudioEncoderOpus::ApplicationMode application() const {
     return encoder()->application();

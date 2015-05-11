@@ -67,8 +67,6 @@ bool AudioEncoderOpus::Config::IsOk() const {
     return false;
   if (complexity < 0 || complexity > 10)
     return false;
-  if (dtx_enabled && application != kVoip)
-    return false;
   return true;
 }
 
@@ -239,24 +237,19 @@ bool AudioEncoderMutableOpus::SetFec(bool enable) {
   return Reconstruct(conf);
 }
 
-bool AudioEncoderMutableOpus::SetDtx(bool enable, bool force) {
+bool AudioEncoderMutableOpus::SetDtx(bool enable) {
   auto conf = config();
-  if (enable && force)
-    conf.application = AudioEncoderOpus::kVoip;
   conf.dtx_enabled = enable;
   return Reconstruct(conf);
 }
 
-bool AudioEncoderMutableOpus::SetApplication(Application application,
-                                             bool force) {
+bool AudioEncoderMutableOpus::SetApplication(Application application) {
   auto conf = config();
   switch (application) {
     case kApplicationSpeech:
       conf.application = AudioEncoderOpus::kVoip;
       break;
     case kApplicationAudio:
-      if (force)
-        conf.dtx_enabled = false;
       conf.application = AudioEncoderOpus::kAudio;
       break;
   }

@@ -1156,7 +1156,7 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms) {
 TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Opus_stereo_20ms_voip) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
   // If not set, default will be kAudio in case of stereo.
-  EXPECT_EQ(0, send_test_->acm()->SetOpusApplication(kVoip, false));
+  EXPECT_EQ(0, send_test_->acm()->SetOpusApplication(kVoip));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "9b9e12bc3cc793740966e11cbfa8b35b",
           "57412a4b5771d19ff03ec35deffe7067",

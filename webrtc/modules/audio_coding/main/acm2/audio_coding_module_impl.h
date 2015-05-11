@@ -221,14 +221,13 @@ class AudioCodingModuleImpl : public AudioCodingModule {
                                    int rate_bit_per_sec,
                                    bool enforce_frame_size = false) override;
 
-  int SetOpusApplication(OpusApplicationMode application,
-                         bool disable_dtx_if_needed) override;
+  int SetOpusApplication(OpusApplicationMode application) override;
 
   // If current send codec is Opus, informs it about the maximum playback rate
   // the receiver will render.
   int SetOpusMaxPlaybackRate(int frequency_hz) override;
 
-  int EnableOpusDtx(bool force_voip) override;
+  int EnableOpusDtx() override;
 
   int DisableOpusDtx() override;
 

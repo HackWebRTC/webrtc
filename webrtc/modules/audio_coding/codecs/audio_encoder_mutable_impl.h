@@ -28,10 +28,9 @@ class AudioEncoderMutableImpl : public P {
 
   bool SetFec(bool enable) override { return false; }
 
-  bool SetDtx(bool enable, bool force) override { return false; }
+  bool SetDtx(bool enable) override { return false; }
 
-  bool SetApplication(AudioEncoderMutable::Application application,
-                      bool force) override {
+  bool SetApplication(AudioEncoderMutable::Application application) override {
     return false;
   }
 

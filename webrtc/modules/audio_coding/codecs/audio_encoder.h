@@ -124,14 +124,12 @@ class AudioEncoderMutable : public AudioEncoder {
   virtual bool SetFec(bool enable) = 0;
 
   // Enables or disables codec-internal VAD/DTX, if the implementation supports
-  // it. Otherwise, false is returned. If |force| is true, other configurations
-  // may be changed to allow the operation.
-  virtual bool SetDtx(bool enable, bool force) = 0;
+  // it.
+  virtual bool SetDtx(bool enable) = 0;
 
   // Sets the application mode. The implementation is free to disregard this
-  // setting. If |force| is true, other configurations may be changed to allow
-  // the operation.
-  virtual bool SetApplication(Application application, bool force) = 0;
+  // setting.
+  virtual bool SetApplication(Application application) = 0;
 
   // Sets an upper limit on the payload size produced by the encoder. The
   // implementation is free to disregard this setting.
