@@ -41,6 +41,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/config.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 namespace cricket {
@@ -213,7 +214,8 @@ class FakeWebRtcVoiceEngine
           send_audio_level_ext_(-1),
           receive_audio_level_ext_(-1),
           send_absolute_sender_time_ext_(-1),
-          receive_absolute_sender_time_ext_(-1) {
+          receive_absolute_sender_time_ext_(-1),
+          neteq_capacity(-1) {
       memset(&send_codec, 0, sizeof(send_codec));
       memset(&rx_agc_config, 0, sizeof(rx_agc_config));
     }
@@ -249,6 +251,7 @@ class FakeWebRtcVoiceEngine
     webrtc::CodecInst send_codec;
     webrtc::PacketTime last_rtp_packet_time;
     std::list<std::string> packets;
+    int neteq_capacity;
   };
 
   FakeWebRtcVoiceEngine(const cricket::AudioCodec* const* codecs,
@@ -391,7 +394,7 @@ class FakeWebRtcVoiceEngine
                                 true);
     }
   }
-  int AddChannel() {
+  int AddChannel(const webrtc::Config& config) {
     if (fail_create_channel_) {
       return -1;
     }
@@ -400,6 +403,9 @@ class FakeWebRtcVoiceEngine
       webrtc::CodecInst codec;
       GetCodec(i, codec);
       ch->recv_codecs.push_back(codec);
+    }
+    if (config.Get<webrtc::NetEqCapacityConfig>().enabled) {
+      ch->neteq_capacity = config.Get<webrtc::NetEqCapacityConfig>().capacity;
     }
     channels_[++last_channel_] = ch;
     return last_channel_;
@@ -447,10 +453,11 @@ class FakeWebRtcVoiceEngine
     return &audio_processing_;
   }
   WEBRTC_FUNC(CreateChannel, ()) {
-    return AddChannel();
+    webrtc::Config empty_config;
+    return AddChannel(empty_config);
   }
-  WEBRTC_FUNC(CreateChannel, (const webrtc::Config& /*config*/)) {
-    return AddChannel();
+  WEBRTC_FUNC(CreateChannel, (const webrtc::Config& config)) {
+    return AddChannel(config);
   }
   WEBRTC_FUNC(DeleteChannel, (int channel)) {
     WEBRTC_CHECK_CHANNEL(channel);
@@ -1243,6 +1250,11 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(GetAudioFrame, (int channel, int desired_sample_rate_hz,
                               webrtc::AudioFrame* frame));
   WEBRTC_STUB(SetExternalMixing, (int channel, bool enable));
+  int GetNetEqCapacity() const {
+    auto ch = channels_.find(last_channel_);
+    ASSERT(ch != channels_.end());
+    return ch->second->neteq_capacity;
+  }
 
  private:
   int GetNumDevices(int& num) {
