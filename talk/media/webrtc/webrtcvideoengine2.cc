@@ -937,12 +937,13 @@ bool WebRtcVideoChannel2::SetSendCodecs(const std::vector<VideoCodec>& codecs) {
   send_codec_.Set(supported_codecs.front());
 
   rtc::CritScope stream_lock(&stream_crit_);
-  for (std::map<uint32, WebRtcVideoSendStream*>::iterator it =
-           send_streams_.begin();
-       it != send_streams_.end();
-       ++it) {
-    DCHECK(it->second != NULL);
-    it->second->SetCodec(supported_codecs.front());
+  for (auto& kv : send_streams_) {
+    DCHECK(kv.second != nullptr);
+    kv.second->SetCodec(supported_codecs.front());
+  }
+  for (auto& kv : receive_streams_) {
+    DCHECK(kv.second != nullptr);
+    kv.second->SetRemb(HasRemb(supported_codecs.front().codec));
   }
 
   // TODO(holmer): Changing the codec parameters shouldn't necessarily mean that
@@ -1168,6 +1169,12 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
   if (voice_channel_id_ != -1 && receive_streams_.empty() &&
       !options_.conference_mode.GetWithDefaultIfUnset(false)) {
     config.audio_channel_id = voice_channel_id_;
+  }
+
+  config.rtp.remb = false;
+  VideoCodecSettings send_codec;
+  if (send_codec_.Get(&send_codec)) {
+    config.rtp.remb = HasRemb(send_codec.codec);
   }
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
@@ -2286,9 +2293,15 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRecvCodecs(
   config_.rtp.fec = recv_codecs.front().fec;
   config_.rtp.nack.rtp_history_ms =
       HasNack(recv_codecs.begin()->codec) ? kNackHistoryMs : 0;
-  config_.rtp.remb = HasRemb(recv_codecs.begin()->codec);
 
   ClearDecoders(&old_decoders);
+  RecreateWebRtcStream();
+}
+
+void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRemb(bool enabled) {
+  if (config_.rtp.remb == enabled)
+    return;
+  config_.rtp.remb = enabled;
   RecreateWebRtcStream();
 }
 
