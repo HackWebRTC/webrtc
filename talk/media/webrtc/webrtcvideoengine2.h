@@ -412,7 +412,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
     const std::vector<uint32>& GetSsrcs() const;
 
-    void SetRemb(bool enabled);
+    void SetNackAndRemb(bool nack_enabled, bool remb_enabled);
     void SetRecvCodecs(const std::vector<VideoCodecSettings>& recv_codecs);
     void SetRtpExtensions(const std::vector<webrtc::RtpExtension>& extensions);
 

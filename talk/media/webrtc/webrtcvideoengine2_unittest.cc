@@ -1313,21 +1313,30 @@ TEST_F(WebRtcVideoChannel2Test, NackIsEnabledByDefault) {
             recv_stream->GetConfig().rtp.nack.rtp_history_ms);
 }
 
-TEST_F(WebRtcVideoChannel2Test, NackCanBeDisabled) {
+TEST_F(WebRtcVideoChannel2Test, NackCanBeEnabledAndDisabled) {
+  FakeVideoReceiveStream* recv_stream = AddRecvStream();
+  FakeVideoSendStream* send_stream = AddSendStream();
+
+  EXPECT_GT(recv_stream->GetConfig().rtp.nack.rtp_history_ms, 0);
+  EXPECT_GT(send_stream->GetConfig().rtp.nack.rtp_history_ms, 0);
+
+  // Verify that NACK is turned off when send(!) codecs without NACK are set.
   std::vector<VideoCodec> codecs;
   codecs.push_back(kVp8Codec);
-
-  // Send side.
-  ASSERT_TRUE(channel_->SetSendCodecs(codecs));
-  FakeVideoSendStream* send_stream =
-      AddSendStream(cricket::StreamParams::CreateLegacy(1));
+  EXPECT_TRUE(codecs[0].feedback_params.params().empty());
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  recv_stream = fake_call_->GetVideoReceiveStreams()[0];
+  EXPECT_EQ(0, recv_stream->GetConfig().rtp.nack.rtp_history_ms);
+  send_stream = fake_call_->GetVideoSendStreams()[0];
   EXPECT_EQ(0, send_stream->GetConfig().rtp.nack.rtp_history_ms);
 
-  // Receiver side.
-  ASSERT_TRUE(channel_->SetRecvCodecs(codecs));
-  FakeVideoReceiveStream* recv_stream =
-      AddRecvStream(cricket::StreamParams::CreateLegacy(1));
-  EXPECT_EQ(0, recv_stream->GetConfig().rtp.nack.rtp_history_ms);
+  // Verify that NACK is turned on when setting default codecs since the
+  // default codecs have NACK enabled.
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+  recv_stream = fake_call_->GetVideoReceiveStreams()[0];
+  EXPECT_GT(recv_stream->GetConfig().rtp.nack.rtp_history_ms, 0);
+  send_stream = fake_call_->GetVideoSendStreams()[0];
+  EXPECT_GT(send_stream->GetConfig().rtp.nack.rtp_history_ms, 0);
 }
 
 TEST_F(WebRtcVideoChannel2Test, DISABLED_VideoProtectionInterop) {

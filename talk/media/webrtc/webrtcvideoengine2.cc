@@ -943,7 +943,8 @@ bool WebRtcVideoChannel2::SetSendCodecs(const std::vector<VideoCodec>& codecs) {
   }
   for (auto& kv : receive_streams_) {
     DCHECK(kv.second != nullptr);
-    kv.second->SetRemb(HasRemb(supported_codecs.front().codec));
+    kv.second->SetNackAndRemb(HasNack(supported_codecs.front().codec),
+                              HasRemb(supported_codecs.front().codec));
   }
 
   // TODO(holmer): Changing the codec parameters shouldn't necessarily mean that
@@ -1920,9 +1921,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(
     }
   }
 
-  if (HasNack(codec_settings.codec)) {
-    parameters_.config.rtp.nack.rtp_history_ms = kNackHistoryMs;
-  }
+  parameters_.config.rtp.nack.rtp_history_ms =
+      HasNack(codec_settings.codec) ? kNackHistoryMs : 0;
 
   options.suspend_below_min_bitrate.Get(
       &parameters_.config.suspend_below_min_bitrate);
@@ -2298,10 +2298,15 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRecvCodecs(
   RecreateWebRtcStream();
 }
 
-void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRemb(bool enabled) {
-  if (config_.rtp.remb == enabled)
+void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetNackAndRemb(
+    bool nack_enabled, bool remb_enabled) {
+  int nack_history_ms = nack_enabled ? kNackHistoryMs : 0;
+  if (config_.rtp.nack.rtp_history_ms == nack_history_ms &&
+      config_.rtp.remb == remb_enabled) {
     return;
-  config_.rtp.remb = enabled;
+  }
+  config_.rtp.remb = remb_enabled;
+  config_.rtp.nack.rtp_history_ms = nack_history_ms;
   RecreateWebRtcStream();
 }
 
