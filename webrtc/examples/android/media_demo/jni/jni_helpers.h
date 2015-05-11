@@ -18,6 +18,7 @@
 #include <android/log.h>
 #include <jni.h>
 
+#include <assert.h>
 #include <map>
 #include <string>
 
@@ -29,7 +30,7 @@
   } else {                                                             \
     __android_log_print(ANDROID_LOG_ERROR, TAG, "%s:%d: %s", __FILE__, \
                         __LINE__, msg);                                \
-    abort();                                                           \
+    assert(false);                                                     \
   }
 
 // Abort the process if |jni| has a Java exception pending, emitting |msg| to
