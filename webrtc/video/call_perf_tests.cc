@@ -66,9 +66,9 @@ class SyncRtcpObserver : public test::RtpRtcpObserver {
     EXPECT_TRUE(parser.IsValid());
 
     for (RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-         packet_type != RTCPUtility::kRtcpNotValidCode;
+         packet_type != RTCPUtility::RTCPPacketTypes::kInvalid;
          packet_type = parser.Iterate()) {
-      if (packet_type == RTCPUtility::kRtcpSrCode) {
+      if (packet_type == RTCPUtility::RTCPPacketTypes::kSr) {
         const RTCPUtility::RTCPPacket& packet = parser.Packet();
         RtcpMeasurement ntp_rtp_pair(
             packet.SR.NTPMostSignificant,

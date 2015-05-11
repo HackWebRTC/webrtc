@@ -49,9 +49,9 @@ RTCPUtility::RTCPParserV2::RTCPParserV2(const uint8_t* rtcpData,
       _validPacket(false),
       _ptrRTCPData(rtcpData),
       _ptrRTCPBlockEnd(NULL),
-      _state(State_TopLevel),
+      _state(ParseState::State_TopLevel),
       _numberOfBlocks(0),
-      _packetType(kRtcpNotValidCode) {
+      _packetType(RTCPPacketTypes::kInvalid) {
   Validate();
 }
 
@@ -88,58 +88,58 @@ RTCPUtility::RTCPPacketTypes
 RTCPUtility::RTCPParserV2::Iterate()
 {
     // Reset packet type
-    _packetType = kRtcpNotValidCode;
+  _packetType = RTCPPacketTypes::kInvalid;
 
     if (IsValid())
     {
         switch (_state)
         {
-        case State_TopLevel:
+          case ParseState::State_TopLevel:
             IterateTopLevel();
             break;
-        case State_ReportBlockItem:
+          case ParseState::State_ReportBlockItem:
             IterateReportBlockItem();
             break;
-        case State_SDESChunk:
+          case ParseState::State_SDESChunk:
             IterateSDESChunk();
             break;
-        case State_BYEItem:
+          case ParseState::State_BYEItem:
             IterateBYEItem();
             break;
-        case State_ExtendedJitterItem:
+          case ParseState::State_ExtendedJitterItem:
             IterateExtendedJitterItem();
             break;
-        case State_RTPFB_NACKItem:
+          case ParseState::State_RTPFB_NACKItem:
             IterateNACKItem();
             break;
-        case State_RTPFB_TMMBRItem:
+          case ParseState::State_RTPFB_TMMBRItem:
             IterateTMMBRItem();
             break;
-        case State_RTPFB_TMMBNItem:
+          case ParseState::State_RTPFB_TMMBNItem:
             IterateTMMBNItem();
             break;
-        case State_PSFB_SLIItem:
+          case ParseState::State_PSFB_SLIItem:
             IterateSLIItem();
             break;
-        case State_PSFB_RPSIItem:
+          case ParseState::State_PSFB_RPSIItem:
             IterateRPSIItem();
             break;
-        case State_PSFB_FIRItem:
+          case ParseState::State_PSFB_FIRItem:
             IterateFIRItem();
             break;
-        case State_PSFB_AppItem:
+          case ParseState::State_PSFB_AppItem:
             IteratePsfbAppItem();
             break;
-        case State_PSFB_REMBItem:
+          case ParseState::State_PSFB_REMBItem:
             IteratePsfbREMBItem();
             break;
-        case State_XRItem:
+          case ParseState::State_XRItem:
             IterateXrItem();
             break;
-        case State_XR_DLLRItem:
+          case ParseState::State_XR_DLLRItem:
             IterateXrDlrrItem();
             break;
-        case State_AppItem:
+          case ParseState::State_AppItem:
             IterateAppItem();
             break;
         default:
@@ -515,7 +515,7 @@ RTCPUtility::RTCPParserV2::ParseRR()
 
     _ptrRTCPData += 4; // Skip header
 
-    _packetType = kRtcpRrCode;
+    _packetType = RTCPPacketTypes::kRr;
 
     _packet.RR.SenderSSRC = *_ptrRTCPData++ << 24;
     _packet.RR.SenderSSRC += *_ptrRTCPData++ << 16;
@@ -525,7 +525,7 @@ RTCPUtility::RTCPParserV2::ParseRR()
     _packet.RR.NumberOfReportBlocks = _numberOfBlocks;
 
     // State transition
-    _state = State_ReportBlockItem;
+    _state = ParseState::State_ReportBlockItem;
 
     return true;
 }
@@ -543,7 +543,7 @@ RTCPUtility::RTCPParserV2::ParseSR()
 
     _ptrRTCPData += 4; // Skip header
 
-    _packetType = kRtcpSrCode;
+    _packetType = RTCPPacketTypes::kSr;
 
     _packet.SR.SenderSSRC = *_ptrRTCPData++ << 24;
     _packet.SR.SenderSSRC += *_ptrRTCPData++ << 16;
@@ -580,11 +580,11 @@ RTCPUtility::RTCPParserV2::ParseSR()
     // State transition
     if(_numberOfBlocks != 0)
     {
-        _state = State_ReportBlockItem;
+      _state = ParseState::State_ReportBlockItem;
     }else
     {
         // don't go to state report block item if 0 report blocks
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
         EndCurrentBlock();
     }
     return true;
@@ -597,7 +597,7 @@ RTCPUtility::RTCPParserV2::ParseReportBlockItem()
 
     if (length < 24 || _numberOfBlocks <= 0)
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
@@ -634,7 +634,7 @@ RTCPUtility::RTCPParserV2::ParseReportBlockItem()
     _packet.ReportBlockItem.DelayLastSR += *_ptrRTCPData++;
 
     _numberOfBlocks--;
-    _packetType = kRtcpReportBlockItemCode;
+    _packetType = RTCPPacketTypes::kReportBlockItem;
     return true;
 }
 
@@ -665,10 +665,10 @@ RTCPUtility::RTCPParserV2::ParseIJ()
 
     _ptrRTCPData += 4; // Skip header
 
-    _packetType = kRtcpExtendedIjCode;
+    _packetType = RTCPPacketTypes::kExtendedIj;
 
     // State transition
-    _state = State_ExtendedJitterItem;
+    _state = ParseState::State_ExtendedJitterItem;
     return true;
 }
 
@@ -679,7 +679,7 @@ RTCPUtility::RTCPParserV2::ParseIJItem()
 
     if (length < 4 || _numberOfBlocks <= 0)
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
         EndCurrentBlock();
         return false;
     }
@@ -690,7 +690,7 @@ RTCPUtility::RTCPParserV2::ParseIJItem()
     _packet.ExtendedJitterReportItem.Jitter += *_ptrRTCPData++;
 
     _numberOfBlocks--;
-    _packetType = kRtcpExtendedIjItemCode;
+    _packetType = RTCPPacketTypes::kExtendedIjItem;
     return true;
 }
 
@@ -701,15 +701,15 @@ RTCPUtility::RTCPParserV2::ParseSDES()
 
     if (length < 8)
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
     }
     _ptrRTCPData += 4; // Skip header
 
-    _state = State_SDESChunk;
-    _packetType = kRtcpSdesCode;
+    _state = ParseState::State_SDESChunk;
+    _packetType = RTCPPacketTypes::kSdes;
     return true;
 }
 
@@ -718,7 +718,7 @@ RTCPUtility::RTCPParserV2::ParseSDESChunk()
 {
     if(_numberOfBlocks <= 0)
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
@@ -731,7 +731,7 @@ RTCPUtility::RTCPParserV2::ParseSDESChunk()
         const ptrdiff_t dataLen = _ptrRTCPBlockEnd - _ptrRTCPData;
         if (dataLen < 4)
         {
-            _state = State_TopLevel;
+          _state = ParseState::State_TopLevel;
 
             EndCurrentBlock();
             return false;
@@ -749,7 +749,7 @@ RTCPUtility::RTCPParserV2::ParseSDESChunk()
             return true;
         }
     }
-    _state = State_TopLevel;
+    _state = ParseState::State_TopLevel;
 
     EndCurrentBlock();
     return false;
@@ -790,7 +790,7 @@ RTCPUtility::RTCPParserV2::ParseSDESItem()
                 // Sanity
                 if ((_ptrRTCPData + len) >= _ptrRTCPBlockEnd)
                 {
-                    _state = State_TopLevel;
+                  _state = ParseState::State_TopLevel;
 
                     EndCurrentBlock();
                     return false;
@@ -802,7 +802,7 @@ RTCPUtility::RTCPParserV2::ParseSDESItem()
                     if ((c < ' ') || (c > '{') || (c == '%') || (c == '\\'))
                     {
                         // Illegal char
-                        _state = State_TopLevel;
+                      _state = ParseState::State_TopLevel;
 
                         EndCurrentBlock();
                         return false;
@@ -811,7 +811,7 @@ RTCPUtility::RTCPParserV2::ParseSDESItem()
                 }
                 // Make sure we are null terminated.
                 _packet.CName.CName[i] = 0;
-                _packetType = kRtcpSdesChunkCode;
+                _packetType = RTCPPacketTypes::kSdesChunk;
 
                 foundCName = true;
             }
@@ -821,7 +821,7 @@ RTCPUtility::RTCPParserV2::ParseSDESItem()
     }
 
     // No end tag found!
-    _state = State_TopLevel;
+    _state = ParseState::State_TopLevel;
 
     EndCurrentBlock();
     return false;
@@ -832,7 +832,7 @@ RTCPUtility::RTCPParserV2::ParseBYE()
 {
     _ptrRTCPData += 4; // Skip header
 
-    _state = State_BYEItem;
+    _state = ParseState::State_BYEItem;
 
     return ParseBYEItem();
 }
@@ -843,13 +843,13 @@ RTCPUtility::RTCPParserV2::ParseBYEItem()
     const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
     if (length < 4 || _numberOfBlocks == 0)
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
     }
 
-    _packetType = kRtcpByeCode;
+    _packetType = RTCPPacketTypes::kBye;
 
     _packet.BYE.SenderSSRC = *_ptrRTCPData++ << 24;
     _packet.BYE.SenderSSRC += *_ptrRTCPData++ << 16;
@@ -894,8 +894,8 @@ bool RTCPUtility::RTCPParserV2::ParseXr()
     _packet.XR.OriginatorSSRC += *_ptrRTCPData++ << 8;
     _packet.XR.OriginatorSSRC += *_ptrRTCPData++;
 
-    _packetType = kRtcpXrHeaderCode;
-    _state = State_XRItem;
+    _packetType = RTCPPacketTypes::kXrHeader;
+    _state = ParseState::State_XRItem;
     return true;
 }
 
@@ -915,7 +915,7 @@ bool RTCPUtility::RTCPParserV2::ParseXrItem() {
   const int kBlockHeaderLengthInBytes = 4;
   const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
   if (length < kBlockHeaderLengthInBytes) {
-    _state = State_TopLevel;
+    _state = ParseState::State_TopLevel;
     EndCurrentBlock();
     return false;
   }
@@ -956,7 +956,7 @@ bool RTCPUtility::RTCPParserV2::ParseXrReceiverReferenceTimeItem(
   const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
   if (block_length_4bytes != kBlockLengthIn4Bytes ||
       length < kBlockLengthInBytes) {
-    _state = State_TopLevel;
+    _state = ParseState::State_TopLevel;
     EndCurrentBlock();
     return false;
   }
@@ -971,8 +971,8 @@ bool RTCPUtility::RTCPParserV2::ParseXrReceiverReferenceTimeItem(
   _packet.XRReceiverReferenceTimeItem.NTPLeastSignificant+= *_ptrRTCPData++<<8;
   _packet.XRReceiverReferenceTimeItem.NTPLeastSignificant+= *_ptrRTCPData++;
 
-  _packetType = kRtcpXrReceiverReferenceTimeCode;
-  _state = State_XRItem;
+  _packetType = RTCPPacketTypes::kXrReceiverReferenceTime;
+  _state = ParseState::State_XRItem;
   return true;
 }
 
@@ -997,25 +997,25 @@ bool RTCPUtility::RTCPParserV2::ParseXrDlrr(int block_length_4bytes) {
   const int kSubBlockLengthIn4Bytes = 3;
   if (block_length_4bytes < 0 ||
       (block_length_4bytes % kSubBlockLengthIn4Bytes) != 0) {
-    _state = State_TopLevel;
+    _state = ParseState::State_TopLevel;
     EndCurrentBlock();
     return false;
   }
-  _packetType = kRtcpXrDlrrReportBlockCode;
-  _state = State_XR_DLLRItem;
+  _packetType = RTCPPacketTypes::kXrDlrrReportBlock;
+  _state = ParseState::State_XR_DLLRItem;
   _numberOfBlocks = block_length_4bytes / kSubBlockLengthIn4Bytes;
   return true;
 }
 
 bool RTCPUtility::RTCPParserV2::ParseXrDlrrItem() {
   if (_numberOfBlocks == 0) {
-    _state = State_XRItem;
+    _state = ParseState::State_XRItem;
     return false;
   }
   const int kSubBlockLengthInBytes = 12;
   const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
   if (length < kSubBlockLengthInBytes) {
-    _state = State_TopLevel;
+    _state = ParseState::State_TopLevel;
     EndCurrentBlock();
     return false;
   }
@@ -1035,9 +1035,9 @@ bool RTCPUtility::RTCPParserV2::ParseXrDlrrItem() {
   _packet.XRDLRRReportBlockItem.DelayLastRR += *_ptrRTCPData++ << 8;
   _packet.XRDLRRReportBlockItem.DelayLastRR += *_ptrRTCPData++;
 
-  _packetType = kRtcpXrDlrrReportBlockItemCode;
+  _packetType = RTCPPacketTypes::kXrDlrrReportBlockItem;
   --_numberOfBlocks;
-  _state = State_XR_DLLRItem;
+  _state = ParseState::State_XR_DLLRItem;
   return true;
 }
 /*  VoIP Metrics Report Block.
@@ -1070,7 +1070,7 @@ bool RTCPUtility::RTCPParserV2::ParseXrVoipMetricItem(int block_length_4bytes) {
   const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
   if (block_length_4bytes != kBlockLengthIn4Bytes ||
       length < kBlockLengthInBytes) {
-    _state = State_TopLevel;
+    _state = ParseState::State_TopLevel;
     EndCurrentBlock();
     return false;
   }
@@ -1117,8 +1117,8 @@ bool RTCPUtility::RTCPParserV2::ParseXrVoipMetricItem(int block_length_4bytes) {
   _packet.XRVOIPMetricItem.JBabsMax = *_ptrRTCPData++ << 8;
   _packet.XRVOIPMetricItem.JBabsMax += *_ptrRTCPData++;
 
-  _packetType = kRtcpXrVoipMetricCode;
-  _state = State_XRItem;
+  _packetType = RTCPPacketTypes::kXrVoipMetric;
+  _state = ParseState::State_XRItem;
   return true;
 }
 
@@ -1127,13 +1127,13 @@ bool RTCPUtility::RTCPParserV2::ParseXrUnsupportedBlockType(
   const int32_t kBlockLengthInBytes = block_length_4bytes * 4;
   const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
   if (length < kBlockLengthInBytes) {
-    _state = State_TopLevel;
+    _state = ParseState::State_TopLevel;
     EndCurrentBlock();
     return false;
   }
   // Skip block.
   _ptrRTCPData += kBlockLengthInBytes;
-  _state = State_XRItem;
+  _state = ParseState::State_XRItem;
   return false;
 }
 
@@ -1171,11 +1171,11 @@ RTCPUtility::RTCPParserV2::ParseFBCommon(const RTCPCommonHeader& header)
         case 1:
         {
             // NACK
-            _packetType             = kRtcpRtpfbNackCode;
+          _packetType = RTCPPacketTypes::kRtpfbNack;
             _packet.NACK.SenderSSRC = senderSSRC;
             _packet.NACK.MediaSSRC  = mediaSSRC;
 
-            _state = State_RTPFB_NACKItem;
+            _state = ParseState::State_RTPFB_NACKItem;
 
             return true;
         }
@@ -1188,22 +1188,22 @@ RTCPUtility::RTCPParserV2::ParseFBCommon(const RTCPCommonHeader& header)
         case 3:
         {
             // TMMBR
-            _packetType              = kRtcpRtpfbTmmbrCode;
+          _packetType = RTCPPacketTypes::kRtpfbTmmbr;
             _packet.TMMBR.SenderSSRC = senderSSRC;
             _packet.TMMBR.MediaSSRC  = mediaSSRC;
 
-            _state = State_RTPFB_TMMBRItem;
+            _state = ParseState::State_RTPFB_TMMBRItem;
 
             return true;
         }
         case 4:
         {
             // TMMBN
-            _packetType              = kRtcpRtpfbTmmbnCode;
+          _packetType = RTCPPacketTypes::kRtpfbTmmbn;
             _packet.TMMBN.SenderSSRC = senderSSRC;
             _packet.TMMBN.MediaSSRC  = mediaSSRC;
 
-            _state = State_RTPFB_TMMBNItem;
+            _state = ParseState::State_RTPFB_TMMBNItem;
 
             return true;
         }
@@ -1212,7 +1212,7 @@ RTCPUtility::RTCPParserV2::ParseFBCommon(const RTCPCommonHeader& header)
             // RTCP-SR-REQ Rapid Synchronisation of RTP Flows
             // draft-perkins-avt-rapid-rtp-sync-03.txt
             // trigger a new RTCP SR
-            _packetType = kRtcpRtpfbSrReqCode;
+          _packetType = RTCPPacketTypes::kRtpfbSrReq;
 
             // Note: No state transition, SR REQ is empty!
             return true;
@@ -1230,7 +1230,7 @@ RTCPUtility::RTCPParserV2::ParseFBCommon(const RTCPCommonHeader& header)
         {
         case 1:
             // PLI
-            _packetType            = kRtcpPsfbPliCode;
+          _packetType = RTCPPacketTypes::kPsfbPli;
             _packet.PLI.SenderSSRC = senderSSRC;
             _packet.PLI.MediaSSRC  = mediaSSRC;
 
@@ -1238,34 +1238,34 @@ RTCPUtility::RTCPParserV2::ParseFBCommon(const RTCPCommonHeader& header)
             return true;
         case 2:
             // SLI
-            _packetType            = kRtcpPsfbSliCode;
+          _packetType = RTCPPacketTypes::kPsfbSli;
             _packet.SLI.SenderSSRC = senderSSRC;
             _packet.SLI.MediaSSRC  = mediaSSRC;
 
-            _state = State_PSFB_SLIItem;
+            _state = ParseState::State_PSFB_SLIItem;
 
             return true;
         case 3:
-            _packetType             = kRtcpPsfbRpsiCode;
+          _packetType = RTCPPacketTypes::kPsfbRpsi;
             _packet.RPSI.SenderSSRC = senderSSRC;
             _packet.RPSI.MediaSSRC  = mediaSSRC;
 
-            _state = State_PSFB_RPSIItem;
+            _state = ParseState::State_PSFB_RPSIItem;
             return true;
         case 4:
             // FIR
-            _packetType            = kRtcpPsfbFirCode;
+          _packetType = RTCPPacketTypes::kPsfbFir;
             _packet.FIR.SenderSSRC = senderSSRC;
             _packet.FIR.MediaSSRC  = mediaSSRC;
 
-            _state = State_PSFB_FIRItem;
+            _state = ParseState::State_PSFB_FIRItem;
             return true;
         case 15:
-            _packetType                = kRtcpPsfbAppCode;
+          _packetType = RTCPPacketTypes::kPsfbApp;
             _packet.PSFBAPP.SenderSSRC = senderSSRC;
             _packet.PSFBAPP.MediaSSRC  = mediaSSRC;
 
-            _state = State_PSFB_AppItem;
+            _state = ParseState::State_PSFB_AppItem;
             return true;
         default:
             break;
@@ -1298,19 +1298,19 @@ bool RTCPUtility::RTCPParserV2::ParseRPSIItem() {
     const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
 
     if (length < 4) {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
     }
     if (length > 2 + RTCP_RPSI_DATA_SIZE) {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
     }
 
-    _packetType = kRtcpPsfbRpsiCode;
+    _packetType = RTCPPacketTypes::kPsfbRpsi;
 
     uint8_t padding_bits = *_ptrRTCPData++;
     _packet.RPSI.PayloadType = *_ptrRTCPData++;
@@ -1332,13 +1332,13 @@ RTCPUtility::RTCPParserV2::ParseNACKItem()
 
     if (length < 4)
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
     }
 
-    _packetType = kRtcpRtpfbNackItemCode;
+    _packetType = RTCPPacketTypes::kRtpfbNackItem;
 
     _packet.NACKItem.PacketID = *_ptrRTCPData++ << 8;
     _packet.NACKItem.PacketID += *_ptrRTCPData++;
@@ -1356,41 +1356,41 @@ RTCPUtility::RTCPParserV2::ParsePsfbAppItem()
 
     if (length < 4)
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
     }
     if(*_ptrRTCPData++ != 'R')
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
     }
     if(*_ptrRTCPData++ != 'E')
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
     }
     if(*_ptrRTCPData++ != 'M')
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
     }
     if(*_ptrRTCPData++ != 'B')
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
     }
-    _packetType = kRtcpPsfbRembCode;
-    _state = State_PSFB_REMBItem;
+    _packetType = RTCPPacketTypes::kPsfbRemb;
+    _state = ParseState::State_PSFB_REMBItem;
     return true;
 }
 
@@ -1401,7 +1401,7 @@ RTCPUtility::RTCPParserV2::ParsePsfbREMBItem()
 
     if (length < 4)
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
@@ -1420,13 +1420,13 @@ RTCPUtility::RTCPParserV2::ParsePsfbREMBItem()
     const ptrdiff_t length_ssrcs = _ptrRTCPBlockEnd - _ptrRTCPData;
     if (length_ssrcs < 4 * _packet.REMBItem.NumberOfSSRCs)
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
     }
 
-    _packetType = kRtcpPsfbRembItemCode;
+    _packetType = RTCPPacketTypes::kPsfbRembItem;
 
     for (int i = 0; i < _packet.REMBItem.NumberOfSSRCs; i++)
     {
@@ -1447,13 +1447,13 @@ RTCPUtility::RTCPParserV2::ParseTMMBRItem()
 
     if (length < 8)
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
     }
 
-    _packetType = kRtcpRtpfbTmmbrItemCode;
+    _packetType = RTCPPacketTypes::kRtpfbTmmbrItem;
 
     _packet.TMMBRItem.SSRC = *_ptrRTCPData++ << 24;
     _packet.TMMBRItem.SSRC += *_ptrRTCPData++ << 16;
@@ -1486,13 +1486,13 @@ RTCPUtility::RTCPParserV2::ParseTMMBNItem()
 
     if (length < 8)
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
     }
 
-    _packetType = kRtcpRtpfbTmmbnItemCode;
+    _packetType = RTCPPacketTypes::kRtpfbTmmbnItem;
 
     _packet.TMMBNItem.SSRC = *_ptrRTCPData++ << 24;
     _packet.TMMBNItem.SSRC += *_ptrRTCPData++ << 16;
@@ -1532,12 +1532,12 @@ RTCPUtility::RTCPParserV2::ParseSLIItem()
 
     if (length < 4)
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
     }
-    _packetType = kRtcpPsfbSliItemCode;
+    _packetType = RTCPPacketTypes::kPsfbSliItem;
 
     uint32_t buffer;
     buffer = *_ptrRTCPData++ << 24;
@@ -1561,13 +1561,13 @@ RTCPUtility::RTCPParserV2::ParseFIRItem()
 
     if (length < 8)
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
     }
 
-    _packetType = kRtcpPsfbFirItemCode;
+    _packetType = RTCPPacketTypes::kPsfbFirItem;
 
     _packet.FIRItem.SSRC = *_ptrRTCPData++ << 24;
     _packet.FIRItem.SSRC += *_ptrRTCPData++ << 16;
@@ -1604,12 +1604,12 @@ RTCPUtility::RTCPParserV2::ParseAPP( const RTCPCommonHeader& header)
 
     length  = _ptrRTCPBlockEnd - _ptrRTCPData;
 
-    _packetType = kRtcpAppCode;
+    _packetType = RTCPPacketTypes::kApp;
 
     _packet.APP.SubType = header.IC;
     _packet.APP.Name = name;
 
-    _state = State_AppItem;
+    _state = ParseState::State_AppItem;
     return true;
 }
 
@@ -1619,12 +1619,12 @@ RTCPUtility::RTCPParserV2::ParseAPPItem()
     const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
     if (length < 4)
     {
-        _state = State_TopLevel;
+      _state = ParseState::State_TopLevel;
 
         EndCurrentBlock();
         return false;
     }
-    _packetType = kRtcpAppItemCode;
+    _packetType = RTCPPacketTypes::kAppItem;
 
     if(length > kRtcpAppCode_DATA_SIZE)
     {

@@ -418,8 +418,8 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
       EXPECT_TRUE(parser.IsValid());
 
       RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      while (packet_type != RTCPUtility::kRtcpNotValidCode) {
-        if (packet_type == RTCPUtility::kRtcpRtpfbNackCode) {
+      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
+        if (packet_type == RTCPUtility::RTCPPacketTypes::kRtpfbNack) {
           --nacks_left_;
           break;
         }
@@ -929,12 +929,12 @@ void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
       EXPECT_TRUE(parser.IsValid());
 
       for (RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-           packet_type != RTCPUtility::kRtcpNotValidCode;
+           packet_type != RTCPUtility::RTCPPacketTypes::kInvalid;
            packet_type = parser.Iterate()) {
         if (!nack_enabled_)
-          EXPECT_NE(packet_type, RTCPUtility::kRtcpRtpfbNackCode);
+          EXPECT_NE(packet_type, RTCPUtility::RTCPPacketTypes::kRtpfbNack);
 
-        if (packet_type == RTCPUtility::kRtcpPsfbPliCode) {
+        if (packet_type == RTCPUtility::RTCPPacketTypes::kPsfbPli) {
           received_pli_ = true;
           break;
         }
@@ -1070,9 +1070,9 @@ void EndToEndTest::RespectsRtcpMode(newapi::RtcpMode rtcp_mode) {
 
       RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
       bool has_report_block = false;
-      while (packet_type != RTCPUtility::kRtcpNotValidCode) {
-        EXPECT_NE(RTCPUtility::kRtcpSrCode, packet_type);
-        if (packet_type == RTCPUtility::kRtcpRrCode) {
+      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
+        EXPECT_NE(RTCPUtility::RTCPPacketTypes::kSr, packet_type);
+        if (packet_type == RTCPUtility::RTCPPacketTypes::kRr) {
           has_report_block = true;
           break;
         }
@@ -1336,12 +1336,12 @@ TEST_F(EndToEndTest, ReceiveStreamSendsRemb) {
       bool received_psfb = false;
       bool received_remb = false;
       RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      while (packet_type != RTCPUtility::kRtcpNotValidCode) {
-        if (packet_type == RTCPUtility::kRtcpPsfbRembCode) {
+      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
+        if (packet_type == RTCPUtility::RTCPPacketTypes::kPsfbRemb) {
           const RTCPUtility::RTCPPacket& packet = parser.Packet();
           EXPECT_EQ(packet.PSFBAPP.SenderSSRC, kReceiverLocalSsrc);
           received_psfb = true;
-        } else if (packet_type == RTCPUtility::kRtcpPsfbRembItemCode) {
+        } else if (packet_type == RTCPUtility::RTCPPacketTypes::kPsfbRembItem) {
           const RTCPUtility::RTCPPacket& packet = parser.Packet();
           EXPECT_GT(packet.REMBItem.BitRate, 0u);
           EXPECT_EQ(packet.REMBItem.NumberOfSSRCs, 1u);
@@ -1700,15 +1700,16 @@ void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
       EXPECT_TRUE(parser.IsValid());
 
       RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      while (packet_type != RTCPUtility::kRtcpNotValidCode) {
-        if (packet_type == RTCPUtility::kRtcpRrCode) {
+      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
+        if (packet_type == RTCPUtility::RTCPPacketTypes::kRr) {
           ++sent_rtcp_rr_;
         } else if (packet_type ==
-                   RTCPUtility::kRtcpXrReceiverReferenceTimeCode) {
+                   RTCPUtility::RTCPPacketTypes::kXrReceiverReferenceTime) {
           ++sent_rtcp_rrtr_;
         }
-        EXPECT_NE(packet_type, RTCPUtility::kRtcpSrCode);
-        EXPECT_NE(packet_type, RTCPUtility::kRtcpXrDlrrReportBlockItemCode);
+        EXPECT_NE(packet_type, RTCPUtility::RTCPPacketTypes::kSr);
+        EXPECT_NE(packet_type,
+                  RTCPUtility::RTCPPacketTypes::kXrDlrrReportBlockItem);
         packet_type = parser.Iterate();
       }
       return SEND_PACKET;
@@ -1719,13 +1720,15 @@ void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
       EXPECT_TRUE(parser.IsValid());
 
       RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      while (packet_type != RTCPUtility::kRtcpNotValidCode) {
-        if (packet_type == RTCPUtility::kRtcpSrCode) {
+      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
+        if (packet_type == RTCPUtility::RTCPPacketTypes::kSr) {
           ++sent_rtcp_sr_;
-        } else if (packet_type == RTCPUtility::kRtcpXrDlrrReportBlockItemCode) {
+        } else if (packet_type ==
+                   RTCPUtility::RTCPPacketTypes::kXrDlrrReportBlockItem) {
           ++sent_rtcp_dlrr_;
         }
-        EXPECT_NE(packet_type, RTCPUtility::kRtcpXrReceiverReferenceTimeCode);
+        EXPECT_NE(packet_type,
+                  RTCPUtility::RTCPPacketTypes::kXrReceiverReferenceTime);
         packet_type = parser.Iterate();
       }
       if (sent_rtcp_sr_ > kNumRtcpReportPacketsToObserve &&

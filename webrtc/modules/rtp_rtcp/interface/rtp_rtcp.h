@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_H_
 #define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_H_
 
+#include <set>
 #include <vector>
 
 #include "webrtc/modules/interface/module.h"
@@ -390,12 +391,20 @@ class RtpRtcp : public Module {
 
     /*
     *   Force a send of a RTCP packet
-    *   normal SR and RR are triggered via the process function
+    *   periodic SR and RR are triggered via the process function
     *
     *   return -1 on failure else 0
     */
-    virtual int32_t SendRTCP(
-        uint32_t rtcpPacketType = kRtcpReport) = 0;
+    virtual int32_t SendRTCP(RTCPPacketType rtcpPacketType) = 0;
+
+    /*
+    *   Force a send of a RTCP packet with more than one packet type.
+    *   periodic SR and RR are triggered via the process function
+    *
+    *   return -1 on failure else 0
+    */
+    virtual int32_t SendCompoundRTCP(
+        const std::set<RTCPPacketType>& rtcpPacketTypes) = 0;
 
     /*
     *    Good state of RTP receiver inform sender

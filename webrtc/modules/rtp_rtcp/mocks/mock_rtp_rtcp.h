@@ -156,8 +156,9 @@ class MockRtpRtcp : public RtpRtcp {
               int64_t* avgRTT,
               int64_t* minRTT,
               int64_t* maxRTT));
-  MOCK_METHOD1(SendRTCP,
-      int32_t(uint32_t rtcpPacketType));
+  MOCK_METHOD1(SendRTCP, int32_t(RTCPPacketType packetType));
+  MOCK_METHOD1(SendCompoundRTCP,
+               int32_t(const std::set<RTCPPacketType>& packetTypes));
   MOCK_METHOD1(SendRTCPReferencePictureSelection,
       int32_t(const uint64_t pictureID));
   MOCK_METHOD1(SendRTCPSliceLossIndication,

@@ -104,8 +104,8 @@ TEST_F(VideoSendStreamTest, SupportsCName) {
       EXPECT_TRUE(parser.IsValid());
 
       RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      while (packet_type != RTCPUtility::kRtcpNotValidCode) {
-        if (packet_type == RTCPUtility::kRtcpSdesChunkCode) {
+      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
+        if (packet_type == RTCPUtility::RTCPPacketTypes::kSdesChunk) {
           EXPECT_EQ(parser.Packet().CName.CName, kCName);
           observation_complete_->Set();
         }
@@ -1514,8 +1514,8 @@ TEST_F(VideoSendStreamTest, RtcpSenderReportContainsMediaBytesSent) {
       EXPECT_TRUE(parser.IsValid());
 
       RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      while (packet_type != RTCPUtility::kRtcpNotValidCode) {
-        if (packet_type == RTCPUtility::kRtcpSrCode) {
+      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
+        if (packet_type == RTCPUtility::RTCPPacketTypes::kSr) {
           // Only compare sent media bytes if SenderPacketCount matches the
           // number of sent rtp packets (a new rtp packet could be sent before
           // the rtcp packet).
