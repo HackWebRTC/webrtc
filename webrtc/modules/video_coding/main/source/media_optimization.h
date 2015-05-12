@@ -41,10 +41,10 @@ class MediaOptimization {
   // Informs media optimization of initial encoding state.
   void SetEncodingData(VideoCodecType send_codec_type,
                        int32_t max_bit_rate,
-                       uint32_t frame_rate,
                        uint32_t bit_rate,
                        uint16_t width,
                        uint16_t height,
+                       uint32_t frame_rate,
                        int num_temporal_layers,
                        int32_t mtu);
 

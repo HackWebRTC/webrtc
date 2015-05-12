@@ -142,10 +142,10 @@ void MediaOptimization::Reset() {
 
 void MediaOptimization::SetEncodingData(VideoCodecType send_codec_type,
                                         int32_t max_bit_rate,
-                                        uint32_t frame_rate,
                                         uint32_t target_bitrate,
                                         uint16_t width,
                                         uint16_t height,
+                                        uint32_t frame_rate,
                                         int num_layers,
                                         int32_t mtu) {
   CriticalSectionScoped lock(crit_sect_.get());
