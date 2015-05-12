@@ -60,7 +60,6 @@
             'audio_device'  ,
             'audio_processing',
             'audioproc_test_utils',
-            'audioproc_protobuf_utils',
             'bitrate_controller',
             'bwe_simulator',
             'CNG',
@@ -313,6 +312,7 @@
             ['enable_protobuf==1', {
               'defines': [ 'WEBRTC_AUDIOPROC_DEBUG_DUMP' ],
               'dependencies': [
+                'audioproc_protobuf_utils',
                 'audioproc_unittest_proto',
               ],
               'sources': [
