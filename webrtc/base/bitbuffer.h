@@ -11,7 +11,10 @@
 #ifndef WEBRTC_BASE_BITBUFFER_H_
 #define WEBRTC_BASE_BITBUFFER_H_
 
-#include "webrtc/base/common.h"
+#include <stdint.h>  // For integer types.
+#include <stddef.h>  // For size_t.
+
+#include "webrtc/base/constructormagic.h"
 
 namespace rtc {
 
@@ -24,29 +27,29 @@ namespace rtc {
 // Byte order is assumed big-endian/network.
 class BitBuffer {
  public:
-  BitBuffer(const uint8* bytes, size_t byte_count);
+  BitBuffer(const uint8_t* bytes, size_t byte_count);
 
   // Gets the current offset, in bytes/bits, from the start of the buffer. The
   // bit offset is the offset into the current byte, in the range [0,7].
   void GetCurrentOffset(size_t* out_byte_offset, size_t* out_bit_offset);
 
   // The remaining bits in the byte buffer.
-  uint64 RemainingBitCount() const;
+  uint64_t RemainingBitCount() const;
 
   // Reads byte-sized values from the buffer. Returns false if there isn't
   // enough data left for the specified type.
-  bool ReadUInt8(uint8* val);
-  bool ReadUInt16(uint16* val);
-  bool ReadUInt32(uint32* val);
+  bool ReadUInt8(uint8_t* val);
+  bool ReadUInt16(uint16_t* val);
+  bool ReadUInt32(uint32_t* val);
 
   // Reads bit-sized values from the buffer. Returns false if there isn't enough
   // data left for the specified bit count..
-  bool ReadBits(uint32* val, size_t bit_count);
+  bool ReadBits(uint32_t* val, size_t bit_count);
 
   // Peeks bit-sized values from the buffer. Returns false if there isn't enough
   // data left for the specified number of bits. Doesn't move the current
   // offset.
-  bool PeekBits(uint32* val, size_t bit_count);
+  bool PeekBits(uint32_t* val, size_t bit_count);
 
   // Reads the exponential golomb encoded value at the current offset.
   // Exponential golomb values are encoded as:
@@ -55,8 +58,8 @@ class BitBuffer {
   // To decode, we count the number of leading 0 bits, read that many + 1 bits,
   // and increment the result by 1.
   // Returns false if there isn't enough data left for the specified type, or if
-  // the value wouldn't fit in a uint32.
-  bool ReadExponentialGolomb(uint32* val);
+  // the value wouldn't fit in a uint32_t.
+  bool ReadExponentialGolomb(uint32_t* val);
 
   // Moves current position |byte_count| bytes forward. Returns false if
   // there aren't enough bytes left in the buffer.
@@ -70,7 +73,7 @@ class BitBuffer {
   bool Seek(size_t byte_offset, size_t bit_offset);
 
  protected:
-  const uint8* const bytes_;
+  const uint8_t* const bytes_;
   // The total size of |bytes_|.
   size_t byte_count_;
   // The current offset, in bytes, from the start of |bytes_|.
@@ -87,25 +90,25 @@ class BitBuffer {
 class BitBufferWriter : public BitBuffer {
  public:
   // Constructs a bit buffer for the writable buffer of |bytes|.
-  BitBufferWriter(uint8* bytes, size_t byte_count);
+  BitBufferWriter(uint8_t* bytes, size_t byte_count);
 
   // Writes byte-sized values from the buffer. Returns false if there isn't
   // enough data left for the specified type.
-  bool WriteUInt8(uint8 val);
-  bool WriteUInt16(uint16 val);
-  bool WriteUInt32(uint32 val);
+  bool WriteUInt8(uint8_t val);
+  bool WriteUInt16(uint16_t val);
+  bool WriteUInt32(uint32_t val);
 
   // Writes bit-sized values to the buffer. Returns false if there isn't enough
   // room left for the specified number of bits.
-  bool WriteBits(uint64 val, size_t bit_count);
+  bool WriteBits(uint64_t val, size_t bit_count);
 
   // Writes the exponential golomb encoded version of the supplied value.
   // Returns false if there isn't enough room left for the value.
-  bool WriteExponentialGolomb(uint32 val);
+  bool WriteExponentialGolomb(uint32_t val);
 
  private:
   // The buffer, as a writable array.
-  uint8* const writable_bytes_;
+  uint8_t* const writable_bytes_;
 
   DISALLOW_COPY_AND_ASSIGN(BitBufferWriter);
 };
