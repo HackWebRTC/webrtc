@@ -90,6 +90,19 @@ static bool ValidatePacketLossRate(const char* /* flag_name */, int32_t value) {
   return false;
 }
 
+// Define switch for runtime.
+static bool ValidateRuntime(const char* flagname, int32_t value) {
+  if (value > 0)
+    return true;
+  printf("Invalid runtime, should be greater than 0.");
+  return false;
+}
+
+DEFINE_int32(runtime_ms, 10000, "Simulated runtime (milliseconds).");
+
+static const bool runtime_dummy =
+    RegisterFlagValidator(&FLAGS_runtime_ms, &ValidateRuntime);
+
 DEFINE_int32(packet_loss_rate, 10, "Percentile of packet loss.");
 
 static const bool packet_loss_rate_dummy =
@@ -368,10 +381,10 @@ int NetEqQualityTest::DecodeBlock() {
   }
 }
 
-void NetEqQualityTest::Simulate(int end_time_ms) {
+void NetEqQualityTest::Simulate() {
   int audio_size_samples;
 
-  while (decoded_time_ms_ < end_time_ms) {
+  while (decoded_time_ms_ < FLAGS_runtime_ms) {
     // Assume 10 packets in packets buffer.
     while (decodable_time_ms_ - 10 * block_duration_ms_ < decoded_time_ms_) {
       ASSERT_TRUE(in_file_->Read(in_size_samples_ * channels_, &in_data_[0]));
@@ -386,7 +399,7 @@ void NetEqQualityTest::Simulate(int end_time_ms) {
       decoded_time_ms_ += audio_size_samples / out_sampling_khz_;
     }
   }
-  fprintf(log_file_, "%f", 8.0f * total_payload_size_bytes_ / end_time_ms);
+  fprintf(log_file_, "%f", 8.0f * total_payload_size_bytes_ / FLAGS_runtime_ms);
 }
 
 }  // namespace test

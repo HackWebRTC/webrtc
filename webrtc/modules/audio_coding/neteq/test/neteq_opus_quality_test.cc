@@ -78,18 +78,6 @@ DEFINE_int32(reported_loss_rate, 10, "Reported percentile of packet loss.");
 static const bool reported_loss_rate_dummy =
     RegisterFlagValidator(&FLAGS_reported_loss_rate, &ValidatePacketLossRate);
 
-// Define switch for runtime.
-static bool ValidateRuntime(const char* flagname, int32_t value) {
-  if (value > 0)
-    return true;
-  printf("Invalid runtime, should be greater than 0.");
-  return false;
-}
-
-DEFINE_int32(runtime_ms, 10000, "Simulated runtime (milliseconds).");
-static const bool runtime_dummy =
-    RegisterFlagValidator(&FLAGS_runtime_ms, &ValidateRuntime);
-
 DEFINE_bool(fec, true, "Whether to enable FEC for encoding.");
 
 DEFINE_bool(dtx, true, "Whether to enable DTX for encoding.");
@@ -197,7 +185,7 @@ int NetEqOpusQualityTest::EncodeBlock(int16_t* in_data,
 }
 
 TEST_F(NetEqOpusQualityTest, Test) {
-  Simulate(FLAGS_runtime_ms);
+  Simulate();
 }
 
 }  // namespace test

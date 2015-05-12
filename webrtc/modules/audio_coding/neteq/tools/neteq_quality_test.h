@@ -90,10 +90,8 @@ class NetEqQualityTest : public ::testing::Test {
   // |neteq_|.
   int Transmit();
 
-  // Simulate(...) runs encoding / transmitting / decoding up to |end_time_ms|
-  // (miliseconds), the resulted audio is stored in the file with the name of
-  // |out_filename_|.
-  void Simulate(int end_time_ms);
+  // Runs encoding / transmitting / decoding.
+  void Simulate();
 
  private:
   int decoded_time_ms_;

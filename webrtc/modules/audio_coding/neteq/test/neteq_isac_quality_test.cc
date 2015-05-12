@@ -36,19 +36,6 @@ DEFINE_int32(bit_rate_kbps, 32, "Target bit rate (kbps).");
 static const bool bit_rate_dummy =
     RegisterFlagValidator(&FLAGS_bit_rate_kbps, &ValidateBitRate);
 
-// Define switch for runtime.
-static bool ValidateRuntime(const char* flagname, int32_t value) {
-  if (value > 0)
-    return true;
-  printf("Invalid runtime, should be greater than 0.");
-  return false;
-}
-
-DEFINE_int32(runtime_ms, 10000, "Simulated runtime (milliseconds).");
-
-static const bool runtime_dummy =
-    RegisterFlagValidator(&FLAGS_runtime_ms, &ValidateRuntime);
-
 }  // namespace
 
 class NetEqIsacQualityTest : public NetEqQualityTest {
@@ -110,7 +97,7 @@ int NetEqIsacQualityTest::EncodeBlock(int16_t* in_data,
 }
 
 TEST_F(NetEqIsacQualityTest, Test) {
-  Simulate(FLAGS_runtime_ms);
+  Simulate();
 }
 
 }  // namespace test
