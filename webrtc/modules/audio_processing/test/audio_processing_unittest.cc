@@ -324,9 +324,6 @@ class ApmTest : public ::testing::Test {
 
   static void SetUpTestCase() {
     Trace::CreateTrace();
-    std::string trace_filename =
-        test::TempFilename(test::OutputPath(), "audioproc_trace");
-    ASSERT_EQ(0, Trace::SetTraceFile(trace_filename.c_str()));
   }
 
   static void TearDownTestCase() {
@@ -1745,6 +1742,8 @@ void ApmTest::VerifyDebugDumpTest(Format format) {
   EXPECT_NE(0, feof(out_file));
   ASSERT_EQ(0, fclose(ref_file));
   ASSERT_EQ(0, fclose(out_file));
+  remove(ref_filename.c_str());
+  remove(out_filename.c_str());
 }
 
 TEST_F(ApmTest, VerifyDebugDumpInt) {
