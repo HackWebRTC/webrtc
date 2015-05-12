@@ -161,37 +161,32 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
   AudioEncoder::EncodedInfo encoded_info;
   uint8_t previous_pltype;
 
-  // Keep the scope of the ACM critical section limited.
-  {
-    CriticalSectionScoped lock(acm_crit_sect_);
-    // Check if there is an encoder before.
-    if (!HaveValidEncoder("Process")) {
-      return -1;
-    }
+  // Check if there is an encoder before.
+  if (!HaveValidEncoder("Process"))
+    return -1;
 
-    AudioEncoder* audio_encoder = codec_manager_.CurrentEncoder();
-    // Scale the timestamp to the codec's RTP timestamp rate.
-    uint32_t rtp_timestamp =
-        first_frame_ ? input_data.input_timestamp
-                     : last_rtp_timestamp_ +
-                           rtc::CheckedDivExact(
-                               input_data.input_timestamp - last_timestamp_,
-                               static_cast<uint32_t>(rtc::CheckedDivExact(
-                                   audio_encoder->SampleRateHz(),
-                                   audio_encoder->RtpTimestampRateHz())));
-    last_timestamp_ = input_data.input_timestamp;
-    last_rtp_timestamp_ = rtp_timestamp;
-    first_frame_ = false;
+  AudioEncoder* audio_encoder = codec_manager_.CurrentEncoder();
+  // Scale the timestamp to the codec's RTP timestamp rate.
+  uint32_t rtp_timestamp =
+      first_frame_ ? input_data.input_timestamp
+                   : last_rtp_timestamp_ +
+                         rtc::CheckedDivExact(
+                             input_data.input_timestamp - last_timestamp_,
+                             static_cast<uint32_t>(rtc::CheckedDivExact(
+                                 audio_encoder->SampleRateHz(),
+                                 audio_encoder->RtpTimestampRateHz())));
+  last_timestamp_ = input_data.input_timestamp;
+  last_rtp_timestamp_ = rtp_timestamp;
+  first_frame_ = false;
 
-    encoded_info = audio_encoder->Encode(rtp_timestamp, input_data.audio,
-                                         input_data.length_per_channel,
-                                         sizeof(stream), stream);
-    if (encoded_info.encoded_bytes == 0 && !encoded_info.send_even_if_empty) {
-      // Not enough data.
-      return 0;
-    }
-    previous_pltype = previous_pltype_;  // Read it while we have the critsect.
+  encoded_info = audio_encoder->Encode(rtp_timestamp, input_data.audio,
+                                       input_data.length_per_channel,
+                                       sizeof(stream), stream);
+  if (encoded_info.encoded_bytes == 0 && !encoded_info.send_even_if_empty) {
+    // Not enough data.
+    return 0;
   }
+  previous_pltype = previous_pltype_;  // Read it while we have the critsect.
 
   RTPFragmentationHeader my_fragmentation;
   ConvertEncodedInfoToFragmentationHeader(encoded_info, &my_fragmentation);
@@ -219,10 +214,7 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
       vad_callback_->InFrameType(frame_type);
     }
   }
-  {
-    CriticalSectionScoped lock(acm_crit_sect_);
-    previous_pltype_ = encoded_info.payload_type;
-  }
+  previous_pltype_ = encoded_info.payload_type;
   return static_cast<int32_t>(encoded_info.encoded_bytes);
 }
 
@@ -316,6 +308,7 @@ int AudioCodingModuleImpl::RegisterTransportCallback(
 // Add 10MS of raw (PCM) audio data to the encoder.
 int AudioCodingModuleImpl::Add10MsData(const AudioFrame& audio_frame) {
   InputData input_data;
+  CriticalSectionScoped lock(acm_crit_sect_);
   int r = Add10MsDataInternal(audio_frame, &input_data);
   return r < 0 ? r : Encode(input_data);
 }
@@ -352,7 +345,6 @@ int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame,
     return -1;
   }
 
-  CriticalSectionScoped lock(acm_crit_sect_);
   // Do we have a codec registered?
   if (!HaveValidEncoder("Add10MsData")) {
     return -1;
@@ -1009,6 +1001,7 @@ const CodecInst* AudioCodingImpl::GetSenderCodecInst() {
 
 int AudioCodingImpl::Add10MsAudio(const AudioFrame& audio_frame) {
   acm2::AudioCodingModuleImpl::InputData input_data;
+  CriticalSectionScoped lock(acm_old_->acm_crit_sect_);
   if (acm_old_->Add10MsDataInternal(audio_frame, &input_data) != 0)
     return -1;
   return acm_old_->Encode(input_data);

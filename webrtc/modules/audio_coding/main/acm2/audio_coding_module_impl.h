@@ -252,8 +252,10 @@ class AudioCodingModuleImpl : public AudioCodingModule {
     int16_t buffer[WEBRTC_10MS_PCM_AUDIO];
   };
 
-  int Add10MsDataInternal(const AudioFrame& audio_frame, InputData* input_data);
-  int Encode(const InputData& input_data);
+  int Add10MsDataInternal(const AudioFrame& audio_frame, InputData* input_data)
+      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
+  int Encode(const InputData& input_data)
+      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   int InitializeReceiverSafe() EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
