@@ -36,12 +36,14 @@
 #include "talk/media/webrtc/fakewebrtccommon.h"
 #include "talk/media/webrtc/webrtcvideodecoderfactory.h"
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"
-#include "talk/media/webrtc/webrtcvie.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/video_coding/codecs/interface/video_error_codes.h"
+#include "webrtc/video_decoder.h"
+#include "webrtc/video_encoder.h"
 
 namespace cricket {
 

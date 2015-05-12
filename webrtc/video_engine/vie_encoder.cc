@@ -31,8 +31,6 @@
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video/send_statistics_proxy.h"
-#include "webrtc/video_engine/include/vie_codec.h"
-#include "webrtc/video_engine/include/vie_image_process.h"
 #include "webrtc/video_engine/payload_router.h"
 #include "webrtc/video_engine/vie_defines.h"
 
@@ -133,7 +131,6 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
       fec_enabled_(false),
       nack_enabled_(false),
       codec_observer_(NULL),
-      effect_filter_(NULL),
       module_process_thread_(module_process_thread),
       has_received_sli_(false),
       picture_id_sli_(0),
@@ -518,22 +515,6 @@ void ViEEncoder::DeliverFrame(int id,
   I420VideoFrame* decimated_frame = NULL;
   // TODO(wuchengli): support texture frames.
   if (video_frame.native_handle() == NULL) {
-    {
-      CriticalSectionScoped cs(callback_cs_.get());
-      if (effect_filter_) {
-        size_t length =
-            CalcBufferSize(kI420, video_frame.width(), video_frame.height());
-        rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
-        ExtractBuffer(video_frame, length, video_buffer.get());
-        effect_filter_->Transform(length,
-                                  video_buffer.get(),
-                                  video_frame.ntp_time_ms(),
-                                  video_frame.timestamp(),
-                                  video_frame.width(),
-                                  video_frame.height());
-      }
-    }
-
     // Pass frame via preprocessor.
     const int ret = vpm_->PreprocessFrame(video_frame, &decimated_frame);
     if (ret == 1) {
@@ -871,16 +852,6 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
                  << " for channel " << channel_id_;
     codec_observer_->SuspendChange(channel_id_, video_is_suspended);
   }
-}
-
-int32_t ViEEncoder::RegisterEffectFilter(ViEEffectFilter* effect_filter) {
-  CriticalSectionScoped cs(callback_cs_.get());
-  if (effect_filter != NULL && effect_filter_ != NULL) {
-    LOG_F(LS_ERROR) << "Filter already set.";
-    return -1;
-  }
-  effect_filter_ = effect_filter;
-  return 0;
 }
 
 int ViEEncoder::StartDebugRecording(const char* fileNameUTF8) {

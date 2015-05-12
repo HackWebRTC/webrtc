@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/video_engine/overuse_frame_detector.h"
+
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/video_engine/include/vie_base.h"
-#include "webrtc/video_engine/overuse_frame_detector.h"
 
 namespace webrtc {
 namespace {

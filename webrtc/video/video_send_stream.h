@@ -26,6 +26,7 @@
 
 namespace webrtc {
 
+class ChannelGroup;
 class CpuOveruseObserver;
 class ProcessThread;
 class ViECapturer;

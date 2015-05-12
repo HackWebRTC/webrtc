@@ -24,7 +24,6 @@
     },
     'documented_interfaces': {
       'filepath': 'webrtc/[^/]*\.h$|'\
-                  'webrtc/video_engine/include/.*|'\
                   'webrtc/voice_engine/include/.*',
     },
     'build_files': {

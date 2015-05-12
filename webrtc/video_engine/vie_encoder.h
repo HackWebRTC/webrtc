@@ -43,6 +43,26 @@ class ViEEffectFilter;
 class ViEEncoderObserver;
 class VideoCodingModule;
 
+// This class declares an abstract interface for a user defined observer. It is
+// up to the VideoEngine user to implement a derived class which implements the
+// observer class. The observer is registered using RegisterEncoderObserver()
+// and deregistered using DeregisterEncoderObserver().
+class ViEEncoderObserver {
+ public:
+  // This method is called once per second with the current encoded frame rate
+  // and bit rate.
+  virtual void OutgoingRate(const int video_channel,
+                            const unsigned int framerate,
+                            const unsigned int bitrate) = 0;
+
+  // This method is called whenever the state of the SuspendBelowMinBitrate
+  // changes, i.e., when |is_suspended| toggles.
+  virtual void SuspendChange(int video_channel, bool is_suspended) = 0;
+
+ protected:
+  virtual ~ViEEncoderObserver() {}
+};
+
 class ViEEncoder
     : public RtcpIntraFrameObserver,
       public VideoEncoderRateObserver,
@@ -152,9 +172,6 @@ class ViEEncoder
 
   void SetMinTransmitBitrate(int min_transmit_bitrate_kbps);
 
-  // Effect filter.
-  int32_t RegisterEffectFilter(ViEEffectFilter* effect_filter);
-
   // Enables recording of debugging information.
   int StartDebugRecording(const char* fileNameUTF8);
 
@@ -225,7 +242,6 @@ class ViEEncoder
   bool nack_enabled_;
 
   ViEEncoderObserver* codec_observer_ GUARDED_BY(callback_cs_);
-  ViEEffectFilter* effect_filter_ GUARDED_BY(callback_cs_);
   ProcessThread& module_process_thread_;
 
   bool has_received_sli_ GUARDED_BY(data_cs_);

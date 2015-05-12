@@ -29,7 +29,6 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace.h"
-#include "webrtc/video_engine/include/vie_network.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_external_media.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
@@ -814,8 +813,6 @@ Channel::Channel(int32_t channelId,
     _lastPayloadType(0),
     _includeAudioLevelIndication(false),
     _outputSpeechType(AudioFrame::kNormalSpeech),
-    vie_network_(NULL),
-    video_channel_(-1),
     _average_jitter_buffer_delay_us(0),
     least_required_delay_ms_(0),
     _previousTimestamp(0),
@@ -928,10 +925,6 @@ Channel::~Channel()
     // End of modules shutdown
 
     // Delete other objects
-    if (vie_network_) {
-      vie_network_->Release();
-      vie_network_ = NULL;
-    }
     RtpDump::DestroyRtpDump(&_rtpDumpIn);
     RtpDump::DestroyRtpDump(&_rtpDumpOut);
     delete &_callbackCritSect;
@@ -1667,22 +1660,6 @@ int32_t Channel::ReceivedRTPPacket(const int8_t* data, size_t length,
   rtp_receive_statistics_->IncomingPacket(header, length,
       IsPacketRetransmitted(header, in_order));
   rtp_payload_registry_->SetIncomingPayloadType(header);
-
-  // Forward any packets to ViE bandwidth estimator, if enabled.
-  {
-    CriticalSectionScoped cs(&_callbackCritSect);
-    if (vie_network_) {
-      int64_t arrival_time_ms;
-      if (packet_time.timestamp != -1) {
-        arrival_time_ms = (packet_time.timestamp + 500) / 1000;
-      } else {
-        arrival_time_ms = TickTime::MillisecondTimestamp();
-      }
-      size_t payload_length = length - header.headerLength;
-      vie_network_->ReceivedBWEPacket(video_channel_, arrival_time_ms,
-                                      payload_length, header);
-    }
-  }
 
   return ReceivePacket(received_packet, length, header, in_order) ? 0 : -1;
 }
@@ -3466,21 +3443,6 @@ Channel::RTPDumpIsActive(RTPDirections direction)
     RtpDump* rtpDumpPtr = (direction == kRtpIncoming) ?
         &_rtpDumpIn : &_rtpDumpOut;
     return rtpDumpPtr->IsActive();
-}
-
-void Channel::SetVideoEngineBWETarget(ViENetwork* vie_network,
-                                      int video_channel) {
-  CriticalSectionScoped cs(&_callbackCritSect);
-  if (vie_network_) {
-    vie_network_->Release();
-    vie_network_ = NULL;
-  }
-  video_channel_ = -1;
-
-  if (vie_network != NULL && video_channel != -1) {
-    vie_network_ = vie_network;
-    video_channel_ = video_channel;
-  }
 }
 
 uint32_t

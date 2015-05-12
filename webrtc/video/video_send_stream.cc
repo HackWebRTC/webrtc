@@ -171,16 +171,14 @@ VideoSendStream::VideoSendStream(
 
   ConfigureSsrcs();
 
-  char rtcp_cname[ViERTP_RTCP::KMaxRTCPCNameLength];
-  DCHECK_LT(config_.rtp.c_name.length(),
-            static_cast<size_t>(ViERTP_RTCP::KMaxRTCPCNameLength));
+  char rtcp_cname[RTCP_CNAME_SIZE];
+  DCHECK_LT(config_.rtp.c_name.length(), sizeof(rtcp_cname));
   strncpy(rtcp_cname, config_.rtp.c_name.c_str(), sizeof(rtcp_cname) - 1);
   rtcp_cname[sizeof(rtcp_cname) - 1] = '\0';
 
   vie_channel_->SetRTCPCName(rtcp_cname);
 
-  vie_capturer_ = ViECapturer::CreateViECapturer(module_process_thread_);
-  CHECK_EQ(0, vie_capturer_->RegisterFrameCallback(channel_id_, vie_encoder_));
+  vie_capturer_ = new ViECapturer(module_process_thread_, vie_encoder_);
 
   vie_channel_->RegisterSendTransport(&transport_adapter_);
   // 28 to match packet overhead in ModuleRtpRtcpImpl.
@@ -243,7 +241,6 @@ VideoSendStream::~VideoSendStream() {
   vie_channel_->DeregisterSendTransport();
 
   vie_capturer_->RegisterCpuOveruseObserver(nullptr);
-  vie_capturer_->DeregisterFrameCallback(vie_encoder_);
   delete vie_capturer_;
 
   vie_encoder_->DeRegisterExternalEncoder(

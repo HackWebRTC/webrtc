@@ -86,27 +86,6 @@
 #define WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
 
 // ============================================================================
-//                                 VideoEngine
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-//  Settings for special VideoEngine configurations
-// ----------------------------------------------------------------------------
-// ----------------------------------------------------------------------------
-//  VideoEngine sub-API:s
-// ----------------------------------------------------------------------------
-
-#define WEBRTC_VIDEO_ENGINE_CAPTURE_API
-#define WEBRTC_VIDEO_ENGINE_CODEC_API
-#define WEBRTC_VIDEO_ENGINE_IMAGE_PROCESS_API
-#define WEBRTC_VIDEO_ENGINE_RENDER_API
-#define WEBRTC_VIDEO_ENGINE_RTP_RTCP_API
-#define WEBRTC_VIDEO_ENGINE_EXTERNAL_CODEC_API
-
-// Now handled by gyp:
-// WEBRTC_VIDEO_ENGINE_FILE_API
-
-// ============================================================================
 //                       Platform specific configurations
 // ============================================================================
 

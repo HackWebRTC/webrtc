@@ -1027,9 +1027,6 @@ class FakeWebRtcVoiceEngine
                                      unsigned short payloadSize));
   WEBRTC_STUB(GetLastRemoteTimeStamp, (int channel,
                                        uint32_t* lastRemoteTimeStamp));
-  WEBRTC_STUB(SetVideoEngineBWETarget, (int channel,
-                                        webrtc::ViENetwork* vie_network,
-                                        int video_channel));
 
   // webrtc::VoEVideoSync
   WEBRTC_STUB(GetPlayoutBufferSize, (int& bufferMs));

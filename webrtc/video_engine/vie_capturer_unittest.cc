@@ -50,40 +50,28 @@ I420VideoFrame* CreateI420VideoFrame(uint8_t length);
 class ViECapturerTest : public ::testing::Test {
  protected:
   ViECapturerTest()
-      : mock_capture_module_(new NiceMock<MockVideoCaptureModule>()),
-        mock_process_thread_(new NiceMock<MockProcessThread>),
+      : mock_process_thread_(new NiceMock<MockProcessThread>),
         mock_frame_callback_(new NiceMock<MockViEFrameCallback>),
-        data_callback_(NULL),
-        output_frame_event_(EventWrapper::Create()) {
-  }
+        output_frame_event_(EventWrapper::Create()) {}
 
   virtual void SetUp() {
-    EXPECT_CALL(*mock_capture_module_, RegisterCaptureDataCallback(_))
-        .WillRepeatedly(Invoke(this, &ViECapturerTest::SetCaptureDataCallback));
     EXPECT_CALL(*mock_frame_callback_, DeliverFrame(_, _, _))
         .WillRepeatedly(
             WithArg<1>(Invoke(this, &ViECapturerTest::AddOutputFrame)));
 
     Config config;
-    vie_capturer_.reset(
-        ViECapturer::CreateViECapture(
-            0, 0, config, mock_capture_module_.get(), *mock_process_thread_));
-    vie_capturer_->RegisterFrameCallback(0, mock_frame_callback_.get());
+    vie_capturer_.reset(new ViECapturer(mock_process_thread_.get(),
+                                        mock_frame_callback_.get()));
   }
 
   virtual void TearDown() {
-    vie_capturer_->DeregisterFrameCallback(mock_frame_callback_.get());
     // ViECapturer accesses |mock_process_thread_| in destructor and should
     // be deleted first.
     vie_capturer_.reset();
   }
 
-  void SetCaptureDataCallback(VideoCaptureDataCallback& data_callback) {
-    data_callback_ = &data_callback;
-  }
-
   void AddInputFrame(I420VideoFrame* frame) {
-    data_callback_->OnIncomingCapturedFrame(0, *frame);
+    vie_capturer_->IncomingFrame(*frame);
   }
 
   void AddOutputFrame(const I420VideoFrame& frame) {
@@ -97,13 +85,10 @@ class ViECapturerTest : public ::testing::Test {
     EXPECT_EQ(kEventSignaled, output_frame_event_->Wait(FRAME_TIMEOUT_MS));
   }
 
-  rtc::scoped_ptr<MockVideoCaptureModule> mock_capture_module_;
   rtc::scoped_ptr<MockProcessThread> mock_process_thread_;
   rtc::scoped_ptr<MockViEFrameCallback> mock_frame_callback_;
 
   // Used to send input capture frames to ViECapturer.
-  VideoCaptureDataCallback* data_callback_;
-
   rtc::scoped_ptr<ViECapturer> vie_capturer_;
 
   // Input capture frames of ViECapturer.

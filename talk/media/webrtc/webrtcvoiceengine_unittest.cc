@@ -39,7 +39,6 @@
 #include "talk/media/base/fakertp.h"
 #include "talk/media/webrtc/fakewebrtccall.h"
 #include "talk/media/webrtc/fakewebrtcvoiceengine.h"
-#include "talk/media/webrtc/webrtcvie.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
 #include "webrtc/p2p/base/fakesession.h"
 #include "talk/session/media/channel.h"

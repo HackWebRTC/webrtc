@@ -89,10 +89,6 @@ class VoERTP_RTCPImpl : public VoERTP_RTCP {
   int RTPDumpIsActive(int channel,
                       RTPDirections direction = kRtpIncoming) override;
 
-  int SetVideoEngineBWETarget(int channel,
-                              ViENetwork* vie_network,
-                              int video_channel) override;
-
  protected:
   VoERTP_RTCPImpl(voe::SharedData* shared);
   ~VoERTP_RTCPImpl() override;

@@ -57,7 +57,6 @@ class RtpReceiver;
 class RTPReceiverAudio;
 class RtpRtcp;
 class TelephoneEventHandler;
-class ViENetwork;
 class VoEMediaProcess;
 class VoERTPObserver;
 class VoiceEngineObserver;
@@ -343,8 +342,6 @@ public:
     int StartRTPDump(const char fileNameUTF8[1024], RTPDirections direction);
     int StopRTPDump(RTPDirections direction);
     bool RTPDumpIsActive(RTPDirections direction);
-    // Takes ownership of the ViENetwork.
-    void SetVideoEngineBWETarget(ViENetwork* vie_network, int video_channel);
 
     // From AudioPacketizationCallback in the ACM
     int32_t SendData(FrameType frameType,
@@ -562,8 +559,6 @@ private:
     bool _includeAudioLevelIndication;
     // VoENetwork
     AudioFrame::SpeechType _outputSpeechType;
-    ViENetwork* vie_network_;
-    int video_channel_;
     // VoEVideoSync
     uint32_t _average_jitter_buffer_delay_us;
     int least_required_delay_ms_;

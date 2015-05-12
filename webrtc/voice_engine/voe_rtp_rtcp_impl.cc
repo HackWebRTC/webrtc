@@ -11,7 +11,6 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/file_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
-#include "webrtc/video_engine/include/vie_network.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/voe_rtp_rtcp_impl.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
@@ -498,28 +497,6 @@ int VoERTP_RTCPImpl::RTPDumpIsActive(int channel, RTPDirections direction) {
     return -1;
   }
   return channelPtr->RTPDumpIsActive(direction);
-}
-
-int VoERTP_RTCPImpl::SetVideoEngineBWETarget(int channel,
-                                             ViENetwork* vie_network,
-                                             int video_channel) {
-  WEBRTC_TRACE(
-      kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-      "SetVideoEngineBWETarget(channel=%d, vie_network=?, video_channel=%d)",
-      channel, vie_network, video_channel);
-
-  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == NULL) {
-    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "SetVideoEngineBWETarget() failed to locate channel");
-    if (vie_network) {
-      vie_network->Release();
-    }
-    return -1;
-  }
-  channelPtr->SetVideoEngineBWETarget(vie_network, video_channel);
-  return 0;
 }
 
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_RTP_RTCP_API

@@ -33,10 +33,6 @@
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video_engine/call_stats.h"
-#include "webrtc/video_engine/include/vie_codec.h"
-#include "webrtc/video_engine/include/vie_errors.h"
-#include "webrtc/video_engine/include/vie_image_process.h"
-#include "webrtc/video_engine/include/vie_rtp_rtcp.h"
 #include "webrtc/video_engine/payload_router.h"
 #include "webrtc/video_engine/report_block_stats.h"
 #include "webrtc/video_engine/vie_defines.h"
@@ -117,7 +113,6 @@ ViEChannel::ViEChannel(int32_t channel_id,
       module_process_thread_(module_process_thread),
       codec_observer_(NULL),
       do_key_frame_callbackRequest_(false),
-      rtp_observer_(NULL),
       intra_frame_observer_(intra_frame_observer),
       rtt_stats_(rtt_stats),
       paced_sender_(paced_sender),
@@ -129,7 +124,6 @@ ViEChannel::ViEChannel(int32_t channel_id,
       external_transport_(NULL),
       decoder_reset_(true),
       wait_for_key_frame_(false),
-      effect_filter_(NULL),
       color_enhancement_(false),
       mtu_(0),
       sender_(sender),
@@ -1123,20 +1117,6 @@ int32_t ViEChannel::GetRemoteRTCPCName(char rtcp_cname[]) {
   return rtp_rtcp_->RemoteCNAME(remoteSSRC, rtcp_cname);
 }
 
-int32_t ViEChannel::RegisterRtpObserver(ViERTPObserver* observer) {
-  CriticalSectionScoped cs(callback_cs_.get());
-  if (observer) {
-    if (rtp_observer_) {
-      LOG_F(LS_ERROR) << "Observer already registered.";
-      return -1;
-    }
-    rtp_observer_ = observer;
-  } else {
-    rtp_observer_ = NULL;
-  }
-  return 0;
-}
-
 int32_t ViEChannel::SendApplicationDefinedRTCPPacket(
     const uint8_t sub_type,
     uint32_t name,
@@ -1490,7 +1470,7 @@ int32_t ViEChannel::StartSend() {
   rtp_rtcp_->SetSendingMediaStatus(true);
 
   if (rtp_rtcp_->Sending()) {
-    return kViEBaseAlreadySending;
+    return -1;
   }
   if (rtp_rtcp_->SetSendingStatus(true) != 0) {
     return -1;
@@ -1519,7 +1499,7 @@ int32_t ViEChannel::StopSend() {
     rtp_rtcp->SetSendingMediaStatus(false);
   }
   if (!rtp_rtcp_->Sending()) {
-    return kViEBaseNotSending;
+    return -1;
   }
 
   // Reset.
@@ -1674,18 +1654,6 @@ int32_t ViEChannel::FrameToRender(
   if (video_frame.native_handle() == NULL) {
     if (pre_render_callback_ != NULL)
       pre_render_callback_->FrameCallback(&video_frame);
-    if (effect_filter_) {
-      size_t length =
-          CalcBufferSize(kI420, video_frame.width(), video_frame.height());
-      rtc::scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
-      ExtractBuffer(video_frame, length, video_buffer.get());
-      effect_filter_->Transform(length,
-                                video_buffer.get(),
-                                video_frame.ntp_time_ms(),
-                                video_frame.timestamp(),
-                                video_frame.width(),
-                                video_frame.height());
-    }
     if (color_enhancement_) {
       VideoProcessingModule::ColorEnhancement(&video_frame);
     }
@@ -1918,16 +1886,6 @@ int32_t ViEChannel::VoiceChannel() {
   return vie_sync_.VoiceChannel();
 }
 
-int32_t ViEChannel::RegisterEffectFilter(ViEEffectFilter* effect_filter) {
-  CriticalSectionScoped cs(callback_cs_.get());
-  if (effect_filter && effect_filter_) {
-    LOG(LS_ERROR) << "Effect filter already registered.";
-    return -1;
-  }
-  effect_filter_ = effect_filter;
-  return 0;
-}
-
 void ViEChannel::RegisterPreRenderCallback(
     I420FrameCallback* pre_render_callback) {
   CriticalSectionScoped cs(callback_cs_.get());
@@ -1959,12 +1917,6 @@ void ViEChannel::OnIncomingSSRCChanged(const int32_t id, const uint32_t ssrc) {
   assert(channel_id_ == ChannelId(id));
   rtp_rtcp_->SetRemoteSSRC(ssrc);
 
-  CriticalSectionScoped cs(callback_cs_.get());
-  {
-    if (rtp_observer_) {
-      rtp_observer_->IncomingSSRCChanged(channel_id_, ssrc);
-    }
-  }
 }
 
 void ViEChannel::OnIncomingCSRCChanged(const int32_t id,
@@ -1972,11 +1924,6 @@ void ViEChannel::OnIncomingCSRCChanged(const int32_t id,
                                        const bool added) {
   assert(channel_id_ == ChannelId(id));
   CriticalSectionScoped cs(callback_cs_.get());
-  {
-    if (rtp_observer_) {
-      rtp_observer_->IncomingCSRCChanged(channel_id_, CSRC, added);
-    }
-  }
 }
 
 void ViEChannel::ResetStatistics(uint32_t ssrc) {
@@ -1995,12 +1942,6 @@ void ViEChannel::RegisterReceiveStatisticsProxy(
     ReceiveStatisticsProxy* receive_statistics_proxy) {
   CriticalSectionScoped cs(callback_cs_.get());
   vcm_receive_stats_callback_ = receive_statistics_proxy;
-}
-
-void ViEChannel::ReceivedBWEPacket(int64_t arrival_time_ms,
-                                   size_t payload_size,
-                                   const RTPHeader& header) {
-  vie_receiver_.ReceivedBWEPacket(arrival_time_ms, payload_size, header);
 }
 
 void ViEChannel::SetIncomingVideoStream(

@@ -44,7 +44,6 @@
 
 namespace webrtc {
 
-class ViENetwork;
 class VoiceEngine;
 
 // VoERTPObserver
@@ -239,15 +238,6 @@ class WEBRTC_DLLEXPORT VoERTP_RTCP {
   // |channel| and |direction|.
   virtual int RTPDumpIsActive(int channel,
                               RTPDirections direction = kRtpIncoming) = 0;
-
-  // Sets video engine channel to receive incoming audio packets for
-  // aggregated bandwidth estimation. Takes ownership of the ViENetwork
-  // interface.
-  virtual int SetVideoEngineBWETarget(int channel,
-                                      ViENetwork* vie_network,
-                                      int video_channel) {
-    return 0;
-  }
 
   // Will be removed. Don't use.
   virtual int RegisterRTPObserver(int channel, VoERTPObserver& observer) {

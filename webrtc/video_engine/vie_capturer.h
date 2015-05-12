@@ -25,114 +25,39 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_engine/include/vie_base.h"
-#include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/video_engine/vie_frame_provider_base.h"
 
 namespace webrtc {
 
 class Config;
+class CpuOveruseMetricsObserver;
+class CpuOveruseObserver;
 class CriticalSectionWrapper;
 class EventWrapper;
-class CpuOveruseObserver;
 class OveruseFrameDetector;
 class ProcessThread;
-class ViEEffectFilter;
-class ViEEncoder;
-struct ViEPicture;
 class RegistrableCpuOveruseMetricsObserver;
+class ViEEffectFilter;
+class ViEFrameCallback;
 
-class ViECapturer
-    : public ViEFrameProviderBase,
-      public ViEExternalCapture,
-      protected VideoCaptureDataCallback,
-      protected VideoCaptureFeedBack {
+class ViECapturer {
  public:
-  ViECapturer(int capture_id,
-              int engine_id,
-              ProcessThread* module_process_thread);
-
-  static ViECapturer* CreateViECapturer(ProcessThread* module_process_thread);
-
-  static ViECapturer* CreateViECapture(int capture_id,
-                                       int engine_id,
-                                       const Config& config,
-                                       VideoCaptureModule* capture_module,
-                                       ProcessThread& module_process_thread);
-
-  static ViECapturer* CreateViECapture(
-      int capture_id,
-      int engine_id,
-      const Config& config,
-      const char* device_unique_idUTF8,
-      uint32_t device_unique_idUTF8Length,
-      ProcessThread& module_process_thread);
-
+  ViECapturer(ProcessThread* module_process_thread,
+              ViEFrameCallback* frame_callback);
   ~ViECapturer();
 
-  // Implements ViEFrameProviderBase.
-  int FrameCallbackChanged();
-
-  // Implements ExternalCapture.
-  void IncomingFrame(const I420VideoFrame& frame) override;
-
-  // Start/Stop.
-  int32_t Start(
-      const CaptureCapability& capture_capability = CaptureCapability());
-  int32_t Stop();
-  bool Started();
-
-  // Overrides the capture delay.
-  int32_t SetCaptureDelay(int32_t delay_ms);
-
-  // Sets rotation of the incoming captured frame.
-  int32_t SetVideoRotation(const VideoRotation rotation);
-
-  // Effect filter.
-  int32_t RegisterEffectFilter(ViEEffectFilter* effect_filter);
-  int32_t EnableDeflickering(bool enable);
-  int32_t EnableBrightnessAlarm(bool enable);
-
-  // Statistics observer.
-  int32_t RegisterObserver(ViECaptureObserver* observer);
-  int32_t DeRegisterObserver();
-  bool IsObserverRegistered();
-
-  // Information.
-  const char* CurrentDeviceName() const;
+  void IncomingFrame(const I420VideoFrame& frame);
 
   void RegisterCpuOveruseObserver(CpuOveruseObserver* observer);
-  void SetCpuOveruseOptions(const CpuOveruseOptions& options);
   void RegisterCpuOveruseMetricsObserver(CpuOveruseMetricsObserver* observer);
-  void GetCpuOveruseMetrics(CpuOveruseMetrics* metrics) const;
 
  protected:
-  int32_t Init(VideoCaptureModule* capture_module);
-  int32_t Init(const char* device_unique_idUTF8,
-               uint32_t device_unique_idUTF8Length);
-
-  // Implements VideoCaptureDataCallback.
-  virtual void OnIncomingCapturedFrame(const int32_t id,
-                                       const I420VideoFrame& video_frame);
-  virtual void OnCaptureDelayChanged(const int32_t id,
-                                     const int32_t delay);
-
-  // Returns true if the capture capability has been set in |StartCapture|
-  // function and may not be changed.
-  bool CaptureCapabilityFixed();
-
   // Help function used for keeping track of VideoImageProcesingModule.
   // Creates the module if it is needed, returns 0 on success and guarantees
   // that the image proc module exist.
   int32_t IncImageProcRefCount();
   int32_t DecImageProcRefCount();
-
-  // Implements VideoCaptureFeedBack
-  virtual void OnCaptureFrameRate(const int32_t id,
-                                  const uint32_t frame_rate);
-  virtual void OnNoPictureAlarm(const int32_t id,
-                                const VideoCaptureAlarm alarm);
 
   // Thread functions for deliver captured frames to receivers.
   static bool ViECaptureThreadFunction(void* obj);
@@ -141,13 +66,10 @@ class ViECapturer
  private:
   void DeliverI420Frame(I420VideoFrame* video_frame);
 
-  // Never take capture_cs_ before effects_and_stats_cs_!
   rtc::scoped_ptr<CriticalSectionWrapper> capture_cs_;
-  rtc::scoped_ptr<CriticalSectionWrapper> effects_and_stats_cs_;
-  VideoCaptureModule* capture_module_;
-  bool use_external_capture_;
   ProcessThread* const module_process_thread_;
-  const int capture_id_;
+
+  ViEFrameCallback* const frame_callback_;
 
   // Frame used in IncomingFrameI420.
   rtc::scoped_ptr<CriticalSectionWrapper> incoming_frame_cs_;
@@ -155,6 +77,7 @@ class ViECapturer
 
   // Capture thread.
   rtc::scoped_ptr<ThreadWrapper> capture_thread_;
+  // TODO(pbos): scoped_ptr
   EventWrapper& capture_event_;
   EventWrapper& deliver_event_;
 
@@ -165,23 +88,6 @@ class ViECapturer
   int64_t last_captured_timestamp_;
   // Delta used for translating between NTP and internal timestamps.
   const int64_t delta_ntp_internal_ms_;
-
-  // Image processing.
-  ViEEffectFilter* effect_filter_ GUARDED_BY(effects_and_stats_cs_.get());
-  VideoProcessingModule* image_proc_module_;
-  int image_proc_module_ref_counter_;
-  VideoProcessingModule::FrameStats* deflicker_frame_stats_
-      GUARDED_BY(effects_and_stats_cs_.get());
-  VideoProcessingModule::FrameStats* brightness_frame_stats_
-      GUARDED_BY(effects_and_stats_cs_.get());
-  Brightness current_brightness_level_;
-  Brightness reported_brightness_level_;
-
-  // Statistics observer.
-  rtc::scoped_ptr<CriticalSectionWrapper> observer_cs_;
-  ViECaptureObserver* observer_ GUARDED_BY(observer_cs_.get());
-
-  CaptureCapability requested_capability_;
 
   // Must be declared before overuse_detector_ where it's registered.
   const rtc::scoped_ptr<RegistrableCpuOveruseMetricsObserver>

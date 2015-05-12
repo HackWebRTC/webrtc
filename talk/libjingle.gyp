@@ -494,7 +494,6 @@
         'media/webrtc/webrtcvideoframe.h',
         'media/webrtc/webrtcvideoframefactory.cc',
         'media/webrtc/webrtcvideoframefactory.h',
-        'media/webrtc/webrtcvie.h',
         'media/webrtc/webrtcvoe.h',
         'media/webrtc/webrtcvoiceengine.cc',
         'media/webrtc/webrtcvoiceengine.h',
