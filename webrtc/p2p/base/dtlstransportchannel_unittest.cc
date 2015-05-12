@@ -126,14 +126,24 @@ class DtlsTestClient : public sigslot::has_slots<> {
     rtc::scoped_ptr<rtc::SSLFingerprint> local_fingerprint;
     rtc::scoped_ptr<rtc::SSLFingerprint> remote_fingerprint;
     if (local_identity) {
+      std::string digest_algorithm;
+      ASSERT_TRUE(local_identity->certificate().GetSignatureDigestAlgorithm(
+          &digest_algorithm));
+      ASSERT_FALSE(digest_algorithm.empty());
       local_fingerprint.reset(rtc::SSLFingerprint::Create(
-          rtc::DIGEST_SHA_1, local_identity));
+          digest_algorithm, local_identity));
       ASSERT_TRUE(local_fingerprint.get() != NULL);
+      EXPECT_EQ(rtc::DIGEST_SHA_256, digest_algorithm);
     }
     if (remote_identity) {
+      std::string digest_algorithm;
+      ASSERT_TRUE(remote_identity->certificate().GetSignatureDigestAlgorithm(
+          &digest_algorithm));
+      ASSERT_FALSE(digest_algorithm.empty());
       remote_fingerprint.reset(rtc::SSLFingerprint::Create(
-          rtc::DIGEST_SHA_1, remote_identity));
+          digest_algorithm, remote_identity));
       ASSERT_TRUE(remote_fingerprint.get() != NULL);
+      EXPECT_EQ(rtc::DIGEST_SHA_256, digest_algorithm);
     }
 
     if (use_dtls_srtp_ && !(flags & NF_REOFFER)) {

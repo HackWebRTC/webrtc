@@ -406,7 +406,7 @@ NSSIdentity* NSSIdentity::GenerateInternal(const SSLIdentityParams& params) {
   arena = certificate->arena;
 
   rv = SECOID_SetAlgorithmID(arena, &certificate->signature,
-                             SEC_OID_PKCS1_SHA1_WITH_RSA_ENCRYPTION, NULL);
+                             SEC_OID_PKCS1_SHA256_WITH_RSA_ENCRYPTION, NULL);
   if (rv != SECSuccess)
     goto fail;
 
@@ -420,7 +420,7 @@ NSSIdentity* NSSIdentity::GenerateInternal(const SSLIdentityParams& params) {
 
   rv = SEC_DerSignData(arena, &signed_cert, inner_der.data, inner_der.len,
                        keypair->privkey(),
-                       SEC_OID_PKCS1_SHA1_WITH_RSA_ENCRYPTION);
+                       SEC_OID_PKCS1_SHA256_WITH_RSA_ENCRYPTION);
   if (rv != SECSuccess) {
     LOG(LS_ERROR) << "Couldn't sign certificate";
     goto fail;

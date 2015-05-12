@@ -60,13 +60,13 @@ class SSLIdentityTest : public testing::Test {
   void TestGetSignatureDigestAlgorithm() {
     std::string digest_algorithm;
     // Both NSSIdentity::Generate and OpenSSLIdentity::Generate are
-    // hard-coded to generate RSA-SHA1 certificates.
+    // hard-coded to generate RSA-SHA256 certificates.
     ASSERT_TRUE(identity1_->certificate().GetSignatureDigestAlgorithm(
         &digest_algorithm));
-    ASSERT_EQ(rtc::DIGEST_SHA_1, digest_algorithm);
+    ASSERT_EQ(rtc::DIGEST_SHA_256, digest_algorithm);
     ASSERT_TRUE(identity2_->certificate().GetSignatureDigestAlgorithm(
         &digest_algorithm));
-    ASSERT_EQ(rtc::DIGEST_SHA_1, digest_algorithm);
+    ASSERT_EQ(rtc::DIGEST_SHA_256, digest_algorithm);
 
     // The test certificate has an MD5-based signature.
     ASSERT_TRUE(test_cert_->GetSignatureDigestAlgorithm(&digest_algorithm));
