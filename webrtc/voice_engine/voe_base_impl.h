@@ -51,6 +51,8 @@ class VoEBaseImpl : public VoEBase,
 
   AudioTransport* audio_transport() override { return this; }
 
+  int AssociateSendChannel(int channel, int accociate_send_channel) override;
+
   // AudioTransport
   int32_t RecordedDataIsAvailable(const void* audioSamples, uint32_t nSamples,
                                   uint8_t nBytesPerSample, uint8_t nChannels,

@@ -215,6 +215,7 @@ class FakeWebRtcVoiceEngine
           receive_audio_level_ext_(-1),
           send_absolute_sender_time_ext_(-1),
           receive_absolute_sender_time_ext_(-1),
+          associate_send_channel(-1),
           neteq_capacity(-1) {
       memset(&send_codec, 0, sizeof(send_codec));
       memset(&rx_agc_config, 0, sizeof(rx_agc_config));
@@ -246,6 +247,7 @@ class FakeWebRtcVoiceEngine
     int receive_audio_level_ext_;
     int send_absolute_sender_time_ext_;
     int receive_absolute_sender_time_ext_;
+    int associate_send_channel;
     DtmfInfo dtmf_info;
     std::vector<webrtc::CodecInst> recv_codecs;
     webrtc::CodecInst send_codec;
@@ -431,6 +433,10 @@ class FakeWebRtcVoiceEngine
 
   int GetNumSetSendCodecs() const { return num_set_send_codecs_; }
 
+  int GetAssociateSendChannel(int channel) {
+    return channels_[channel]->associate_send_channel;
+  }
+
   WEBRTC_STUB(Release, ());
 
   // webrtc::VoEBase
@@ -461,6 +467,11 @@ class FakeWebRtcVoiceEngine
   }
   WEBRTC_FUNC(DeleteChannel, (int channel)) {
     WEBRTC_CHECK_CHANNEL(channel);
+    for (const auto& ch : channels_) {
+      if (ch.second->associate_send_channel == channel) {
+        ch.second->associate_send_channel = -1;
+      }
+    }
     delete channels_[channel];
     channels_.erase(channel);
     return 0;
@@ -503,6 +514,12 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(LastError, ());
   WEBRTC_STUB(SetOnHoldStatus, (int, bool, webrtc::OnHoldModes));
   WEBRTC_STUB(GetOnHoldStatus, (int, bool&, webrtc::OnHoldModes&));
+  WEBRTC_FUNC(AssociateSendChannel, (int channel,
+                                     int accociate_send_channel)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    channels_[channel]->associate_send_channel = accociate_send_channel;
+    return 0;
+  }
 
   // webrtc::VoECodec
   WEBRTC_FUNC(NumOfCodecs, ()) {

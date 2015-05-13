@@ -837,4 +837,33 @@ void VoEBaseImpl::GetPlayoutData(int sample_rate, int number_of_channels,
   *ntp_time_ms = audioFrame_.ntp_time_ms_;
 }
 
+int VoEBaseImpl::AssociateSendChannel(int channel,
+                                      int accociate_send_channel) {
+  CriticalSectionScoped cs(shared_->crit_sec());
+
+  if (!shared_->statistics().Initialized()) {
+      shared_->SetLastError(VE_NOT_INITED, kTraceError);
+      return -1;
+  }
+
+  voe::ChannelOwner ch = shared_->channel_manager().GetChannel(channel);
+  voe::Channel* channel_ptr = ch.channel();
+  if (channel_ptr == NULL) {
+    shared_->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+        "AssociateSendChannel() failed to locate channel");
+    return -1;
+  }
+
+  ch = shared_->channel_manager().GetChannel(accociate_send_channel);
+  voe::Channel* accociate_send_channel_ptr = ch.channel();
+  if (accociate_send_channel_ptr == NULL) {
+    shared_->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+        "AssociateSendChannel() failed to locate accociate_send_channel");
+    return -1;
+  }
+
+  channel_ptr->set_associate_send_channel(ch);
+  return 0;
+}
+
 }  // namespace webrtc

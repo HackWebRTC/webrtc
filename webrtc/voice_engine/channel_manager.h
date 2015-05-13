@@ -52,8 +52,9 @@ class ChannelOwner {
 
   ChannelOwner& operator=(const ChannelOwner& other);
 
-  Channel* channel() { return channel_ref_->channel.get(); }
+  Channel* channel() const { return channel_ref_->channel.get(); }
   bool IsValid() { return channel_ref_->channel.get() != NULL; }
+  int use_count() const { return channel_ref_->ref_count.Value(); }
  private:
   // Shared instance of a Channel. Copying ChannelOwners increase the reference
   // count and destroying ChannelOwners decrease references. Channels are

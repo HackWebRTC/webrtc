@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common.h"
 #include "webrtc/voice_engine/channel_manager.h"
 
+#include "webrtc/common.h"
 #include "webrtc/voice_engine/channel.h"
 
 namespace webrtc {
@@ -94,15 +94,20 @@ void ChannelManager::DestroyChannel(int32_t channel_id) {
   ChannelOwner reference(NULL);
   {
     CriticalSectionScoped crit(lock_.get());
+    std::vector<ChannelOwner>::iterator to_delete = channels_.end();
+    for (auto it = channels_.begin(); it != channels_.end(); ++it) {
+      Channel* channel = it->channel();
+      // For channels associated with the channel to be deleted, disassociate
+      // with that channel.
+      channel->DisassociateSendChannel(channel_id);
 
-    for (std::vector<ChannelOwner>::iterator it = channels_.begin();
-         it != channels_.end();
-         ++it) {
-      if (it->channel()->ChannelId() == channel_id) {
-        reference = *it;
-        channels_.erase(it);
-        break;
+      if (channel->ChannelId() == channel_id) {
+        to_delete = it;
       }
+    }
+    if (to_delete != channels_.end()) {
+      reference = *to_delete;
+      channels_.erase(to_delete);
     }
   }
 }

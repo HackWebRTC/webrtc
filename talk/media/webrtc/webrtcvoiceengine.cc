@@ -2809,6 +2809,13 @@ bool WebRtcVoiceMediaChannel::ConfigureRecvChannel(int channel) {
     return false;
   }
 
+  // Associate receive channel to default channel (so the receive channel can
+  // obtain RTT from the send channel)
+  engine()->voe()->base()->AssociateSendChannel(channel, voe_channel());
+  LOG(LS_INFO) << "VoiceEngine channel #"
+               << channel << " is associated with channel #"
+               << voe_channel() << ".";
+
   // Use the same recv payload types as our default channel.
   ResetRecvCodecs(channel);
   if (!recv_codecs_.empty()) {

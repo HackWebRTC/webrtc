@@ -442,6 +442,17 @@ public:
     uint32_t PrepareEncodeAndSend(int mixingFrequency);
     uint32_t EncodeAndSend();
 
+    // Associate to a send channel.
+    // Used for obtaining RTT for a receive-only channel.
+    void set_associate_send_channel(const ChannelOwner& channel) {
+      assert(_channelId != channel.channel()->ChannelId());
+      CriticalSectionScoped lock(assoc_send_channel_lock_.get());
+      associate_send_channel_ = channel;
+    }
+
+    // Disassociate a send channel if it was associated.
+    void DisassociateSendChannel(int channel_id);
+
 protected:
     void OnIncomingFractionLoss(int fraction_lost);
 
@@ -467,7 +478,7 @@ private:
                                   unsigned char id);
 
     int32_t GetPlayoutFrequency();
-    int64_t GetRTT() const;
+    int64_t GetRTT(bool allow_associate_channel) const;
 
     CriticalSectionWrapper& _fileCritSect;
     CriticalSectionWrapper& _callbackCritSect;
@@ -572,6 +583,9 @@ private:
     // RtcpBandwidthObserver
     rtc::scoped_ptr<VoERtcpObserver> rtcp_observer_;
     rtc::scoped_ptr<NetworkPredictor> network_predictor_;
+    // An associated send channel.
+    rtc::scoped_ptr<CriticalSectionWrapper> assoc_send_channel_lock_;
+    ChannelOwner associate_send_channel_ GUARDED_BY(assoc_send_channel_lock_);
 };
 
 }  // namespace voe

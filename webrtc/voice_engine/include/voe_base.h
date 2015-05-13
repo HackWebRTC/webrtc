@@ -177,6 +177,13 @@ class WEBRTC_DLLEXPORT VoEBase {
   // implements the interface in its FakeWebRtcVoiceEngine.
   virtual AudioTransport* audio_transport() { return NULL; }
 
+  // Associate a send channel to a receive channel.
+  // Used for obtaining RTT for a receive-only channel.
+  // One should be careful not to crate a circular association, e.g.,
+  // 1 <- 2 <- 1.
+  virtual int AssociateSendChannel(int channel, int accociate_send_channel) =
+      0;
+
   // To be removed. Don't use.
   virtual int SetOnHoldStatus(int channel,
                               bool enable,

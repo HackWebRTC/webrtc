@@ -822,7 +822,9 @@ Channel::Channel(int32_t channelId,
     _rxNsIsEnabled(false),
     restored_packet_in_use_(false),
     rtcp_observer_(new VoERtcpObserver(this)),
-    network_predictor_(new NetworkPredictor(Clock::GetRealTimeClock()))
+    network_predictor_(new NetworkPredictor(Clock::GetRealTimeClock())),
+    assoc_send_channel_lock_(CriticalSectionWrapper::CreateCriticalSection()),
+    associate_send_channel_(ChannelOwner(nullptr))
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::Channel() - ctor");
@@ -1757,21 +1759,22 @@ int32_t Channel::ReceivedRTCPPacket(const int8_t* data, size_t length) {
         "Channel::IncomingRTPPacket() RTCP packet is invalid");
   }
 
+  int64_t rtt = GetRTT(true);
+  if (rtt == 0) {
+    // Waiting for valid RTT.
+    return 0;
+  }
+  uint32_t ntp_secs = 0;
+  uint32_t ntp_frac = 0;
+  uint32_t rtp_timestamp = 0;
+  if (0 != _rtpRtcpModule->RemoteNTP(&ntp_secs, &ntp_frac, NULL, NULL,
+                                     &rtp_timestamp)) {
+    // Waiting for RTCP.
+    return 0;
+  }
+
   {
     CriticalSectionScoped lock(ts_stats_lock_.get());
-    int64_t rtt = GetRTT();
-    if (rtt == 0) {
-      // Waiting for valid RTT.
-      return 0;
-    }
-    uint32_t ntp_secs = 0;
-    uint32_t ntp_frac = 0;
-    uint32_t rtp_timestamp = 0;
-    if (0 != _rtpRtcpModule->RemoteNTP(&ntp_secs, &ntp_frac, NULL, NULL,
-                                       &rtp_timestamp)) {
-      // Waiting for RTCP.
-      return 0;
-    }
     ntp_estimator_.UpdateRtcpTimestamp(rtt, ntp_secs, ntp_frac, rtp_timestamp);
   }
   return 0;
@@ -3226,7 +3229,7 @@ Channel::GetRTPStatistics(CallStatistics& stats)
                  stats.jitterSamples);
 
     // --- RTT
-    stats.rttMs = GetRTT();
+    stats.rttMs = GetRTT(true);
     if (stats.rttMs == 0) {
       WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                    "GetRTPStatistics() failed to get RTT");
@@ -3562,6 +3565,17 @@ Channel::EncodeAndSend()
 
     _timeStamp += _audioFrame.samples_per_channel_;
     return 0;
+}
+
+void Channel::DisassociateSendChannel(int channel_id) {
+  CriticalSectionScoped lock(assoc_send_channel_lock_.get());
+  Channel* channel = associate_send_channel_.channel();
+  if (channel && channel->ChannelId() == channel_id) {
+    // If this channel is associated with a send channel of the specified
+    // Channel ID, disassociate with it.
+    ChannelOwner ref(NULL);
+    associate_send_channel_ = ref;
+  }
 }
 
 int Channel::RegisterExternalMediaProcessing(
@@ -4197,15 +4211,29 @@ int32_t Channel::GetPlayoutFrequency() {
   return playout_frequency;
 }
 
-int64_t Channel::GetRTT() const {
+int64_t Channel::GetRTT(bool allow_associate_channel) const {
   RTCPMethod method = _rtpRtcpModule->RTCP();
   if (method == kRtcpOff) {
     return 0;
   }
   std::vector<RTCPReportBlock> report_blocks;
   _rtpRtcpModule->RemoteRTCPStat(&report_blocks);
+
+  int64_t rtt = 0;
   if (report_blocks.empty()) {
-    return 0;
+    if (allow_associate_channel) {
+      CriticalSectionScoped lock(assoc_send_channel_lock_.get());
+      Channel* channel = associate_send_channel_.channel();
+      // Tries to get RTT from an associated channel. This is important for
+      // receive-only channels.
+      if (channel) {
+        // To prevent infinite recursion and deadlock, calling GetRTT of
+        // associate channel should always use "false" for argument:
+        // |allow_associate_channel|.
+        rtt = channel->GetRTT(false);
+      }
+    }
+    return rtt;
   }
 
   uint32_t remoteSSRC = rtp_receiver_->SSRC();
@@ -4221,7 +4249,7 @@ int64_t Channel::GetRTT() const {
     // the SSRC of the other end.
     remoteSSRC = report_blocks[0].remoteSSRC;
   }
-  int64_t rtt = 0;
+
   int64_t avg_rtt = 0;
   int64_t max_rtt= 0;
   int64_t min_rtt = 0;

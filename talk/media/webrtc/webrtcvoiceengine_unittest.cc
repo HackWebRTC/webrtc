@@ -3605,3 +3605,72 @@ TEST_F(WebRtcVoiceEngineTestFake, DeliverAudioPacket_Call) {
 
   media_channel->SetCall(nullptr);
 }
+
+// Associate channel should not set on 1:1 call, since the receive channel also
+// sends RTCP SR.
+TEST_F(WebRtcVoiceEngineTestFake, AssociateChannelUnset1On1) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(1)));
+  int recv_ch = voe_.GetLastChannel();
+  EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch), -1);
+}
+
+// This test is an extension of AssociateChannelUnset1On1. We create two receive
+// channels. The second should be associated with the default channel, since it
+// does not send RTCP SR.
+TEST_F(WebRtcVoiceEngineTestFake, AssociateDefaultChannelOnSecondRecvChannel) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::WebRtcVoiceMediaChannel* media_channel =
+      static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
+  int default_channel = media_channel->voe_channel();
+  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(1)));
+  int recv_ch_1 = voe_.GetLastChannel();
+  EXPECT_EQ(recv_ch_1, default_channel);
+  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(2)));
+  int recv_ch_2 = voe_.GetLastChannel();
+  EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch_1), -1);
+  EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch_2), default_channel);
+  // Add send stream, the association remains.
+  EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(3)));
+  EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch_1), -1);
+  EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch_2), default_channel);
+}
+
+// In conference mode, all receive channels should be associated with the
+// default channel, since they do not send RTCP SR.
+TEST_F(WebRtcVoiceEngineTestFake, AssociateDefaultChannelOnConference) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->SetOptions(options_conference_));
+  cricket::WebRtcVoiceMediaChannel* media_channel =
+      static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
+  int default_channel = media_channel->voe_channel();
+  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(1)));
+  int recv_ch = voe_.GetLastChannel();
+  EXPECT_NE(recv_ch, default_channel);
+  EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch), default_channel);
+  EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(2)));
+  EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch), default_channel);
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, AssociateChannelResetUponDeleteChannnel) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->SetOptions(options_conference_));
+
+  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(1)));
+  int recv_ch = voe_.GetLastChannel();
+
+  EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(2)));
+  int send_ch = voe_.GetLastChannel();
+
+  // Manually associate |recv_ch| to |send_ch|. This test is to verify a
+  // deleting logic, i.e., deleting |send_ch| will reset the associate send
+  // channel of |recv_ch|.This is not a common case, since， normally, only the
+  // default channel can be associated. However, the default is not deletable.
+  // So we force the |recv_ch| to associate with a non-default channel.
+  EXPECT_EQ(0, voe_.AssociateSendChannel(recv_ch, send_ch));
+  EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch), send_ch);
+
+  EXPECT_TRUE(channel_->RemoveSendStream(2));
+  EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch), -1);
+}
+
