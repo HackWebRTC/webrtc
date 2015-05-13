@@ -102,6 +102,7 @@ class ChannelGroup : public BitrateObserver {
   ChannelMap channel_map_;
   // Maps Channel id -> ViEEncoder.
   EncoderMap vie_encoder_map_;
+  EncoderMap send_encoders_;
   rtc::scoped_ptr<CriticalSectionWrapper> encoder_map_cs_;
 
   const Config* config_;
