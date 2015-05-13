@@ -8,12 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_VIDEO_RENDER_FRAMES_H_  // NOLINT
-#define WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_VIDEO_RENDER_FRAMES_H_  // NOLINT
+#ifndef WEBRTC_COMMON_VIDEO_VIDEO_RENDER_FRAMES_H_
+#define WEBRTC_COMMON_VIDEO_VIDEO_RENDER_FRAMES_H_
+
+#include <stdint.h>
 
 #include <list>
 
-#include "webrtc/modules/video_render/include/video_render.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc {
 
@@ -54,4 +56,4 @@ class VideoRenderFrames {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_VIDEO_RENDER_FRAMES_H_  // NOLINT
+#endif  // WEBRTC_COMMON_VIDEO_VIDEO_RENDER_FRAMES_H_

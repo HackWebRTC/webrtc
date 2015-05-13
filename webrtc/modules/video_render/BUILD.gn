@@ -15,10 +15,6 @@ source_set("video_render_module") {
     "i_video_render.h",
     "include/video_render.h",
     "include/video_render_defines.h",
-    "incoming_video_stream.cc",
-    "incoming_video_stream.h",
-    "video_render_frames.cc",
-    "video_render_frames.h",
     "video_render_impl.h",
   ]
 

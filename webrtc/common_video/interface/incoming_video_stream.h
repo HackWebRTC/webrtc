@@ -8,19 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_INCOMING_VIDEO_STREAM_H_
-#define WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_INCOMING_VIDEO_STREAM_H_
+#ifndef WEBRTC_COMMON_VIDEO_INTERFACE_INCOMING_VIDEO_STREAM_H_
+#define WEBRTC_COMMON_VIDEO_INTERFACE_INCOMING_VIDEO_STREAM_H_
 
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/modules/video_render/include/video_render.h"
+#include "webrtc/common_video/video_render_frames.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;
 class EventTimerWrapper;
 class ThreadWrapper;
-class VideoRenderCallback;
-class VideoRenderFrames;
+
+class VideoRenderCallback {
+ public:
+  virtual int32_t RenderFrame(const uint32_t streamId,
+                              const I420VideoFrame& videoFrame) = 0;
+ protected:
+  virtual ~VideoRenderCallback() {}
+};
 
 class IncomingVideoStream : public VideoRenderCallback {
  public:
@@ -92,4 +98,4 @@ class IncomingVideoStream : public VideoRenderCallback {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_INCOMING_VIDEO_STREAM_H_
+#endif  // WEBRTC_COMMON_VIDEO_INTERFACE_INCOMING_VIDEO_STREAM_H_

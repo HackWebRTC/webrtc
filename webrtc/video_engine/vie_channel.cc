@@ -15,6 +15,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/common.h"
+#include "webrtc/common_video/interface/incoming_video_stream.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/experiments.h"
 #include "webrtc/frame_callback.h"
@@ -26,7 +27,6 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/modules/video_render/include/video_render_defines.h"
-#include "webrtc/modules/video_render/incoming_video_stream.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/metrics.h"
