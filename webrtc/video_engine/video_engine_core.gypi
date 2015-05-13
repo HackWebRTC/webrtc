@@ -35,17 +35,6 @@
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
-        # interface
-        'include/vie_base.h',
-        'include/vie_capture.h',
-        'include/vie_codec.h',
-        'include/vie_errors.h',
-        'include/vie_external_codec.h',
-        'include/vie_image_process.h',
-        'include/vie_network.h',
-        'include/vie_render.h',
-        'include/vie_rtp_rtcp.h',
-
         # headers
         'call_stats.h',
         'encoder_state_feedback.h',

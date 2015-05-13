@@ -70,6 +70,13 @@ if __name__ == '__main__':
   if not os.environ.get('GYP_GENERATORS'):
     os.environ['GYP_GENERATORS'] = 'ninja'
 
+  # Enable check for missing sources in GYP files on Windows.
+  if sys.platform.startswith('win'):
+    gyp_generator_flags = os.getenv('GYP_GENERATOR_FLAGS', '')
+    if not 'msvs_error_on_missing_sources' in gyp_generator_flags:
+      os.environ['GYP_GENERATOR_FLAGS'] = (
+          gyp_generator_flags + ' msvs_error_on_missing_sources=1')
+
   vs2013_runtime_dll_dirs = None
   if int(os.environ.get('DEPOT_TOOLS_WIN_TOOLCHAIN', '1')):
     vs2013_runtime_dll_dirs = vs_toolchain.SetEnvironmentAndGetRuntimeDllDirs()
