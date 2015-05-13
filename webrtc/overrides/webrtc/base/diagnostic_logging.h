@@ -70,6 +70,23 @@ enum LoggingSeverity { LS_ERROR = 1,
                        WARNING = LS_WARNING,
                        LERROR = LS_ERROR };
 
+inline int WebRtcSevToChromeSev(LoggingSeverity sev) {
+  switch (sev) {
+    case LS_ERROR:
+      return ::logging::LOG_ERROR;
+    case LS_WARNING:
+      return ::logging::LOG_WARNING;
+    case LS_INFO:
+      return ::logging::LOG_INFO;
+    case LS_VERBOSE:
+    case LS_SENSITIVE:
+      return ::logging::LOG_VERBOSE;
+    default:
+      NOTREACHED();
+      return ::logging::LOG_FATAL;
+  }
+}
+
 // LogErrorContext assists in interpreting the meaning of an error value.
 enum LogErrorContext {
   ERRCTX_NONE,

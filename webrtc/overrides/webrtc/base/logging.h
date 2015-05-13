@@ -38,13 +38,15 @@
 
 #if defined(LOGGING_INSIDE_WEBRTC)
 
+#define WEBRTC_VLOG_IS_ON(sev) VLOG_IS_ON(rtc::WebRtcSevToChromeSev(sev))
+
 #define DIAGNOSTIC_LOG(sev, ctx, err, ...) \
   rtc::DiagnosticLogMessage( \
-      __FILE__, __LINE__, sev, VLOG_IS_ON(sev), \
+      __FILE__, __LINE__, sev, WEBRTC_VLOG_IS_ON(sev), \
       rtc::ERRCTX_ ## ctx, err, ##__VA_ARGS__).stream()
 
-#define LOG_CHECK_LEVEL(sev) VLOG_IS_ON(rtc::sev)
-#define LOG_CHECK_LEVEL_V(sev) VLOG_IS_ON(sev)
+#define LOG_CHECK_LEVEL(sev) WEBRTC_VLOG_IS_ON(rtc::sev)
+#define LOG_CHECK_LEVEL_V(sev) WEBRTC_VLOG_IS_ON(sev)
 
 #define LOG_V(sev) DIAGNOSTIC_LOG(sev, NONE, 0)
 #undef LOG
