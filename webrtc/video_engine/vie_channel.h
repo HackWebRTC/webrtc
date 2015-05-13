@@ -343,8 +343,6 @@ class ViEChannel
   int32_t SetMaxPacketBurstSize(uint16_t max_number_of_packets);
   int32_t SetPacketBurstSpreadState(bool enable, const uint16_t frame_periodMS);
 
-  int32_t EnableColorEnhancement(bool enable);
-
   // Gets the modules used by the channel.
   RtpRtcp* rtp_rtcp();
   scoped_refptr<PayloadRouter> send_payload_router();
@@ -576,8 +574,6 @@ class ViEChannel
   VideoCodec receive_codec_;
   bool wait_for_key_frame_;
   rtc::scoped_ptr<ThreadWrapper> decode_thread_;
-
-  bool color_enhancement_;
 
   // User set MTU, -1 if not set.
   uint16_t mtu_;

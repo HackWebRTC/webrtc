@@ -137,15 +137,6 @@ class VideoProcessingModule : public Module {
   static void ClearFrameStats(FrameStats* stats);
 
   /**
-     Enhances the color of an image through a constant mapping. Only the
-     chrominance is altered. Has a fixed-point implementation.
-
-     \param[in,out] frame
-         Pointer to the video frame.
-  */
-  static int32_t ColorEnhancement(I420VideoFrame* frame);
-
-  /**
      Increases/decreases the luminance value.
 
      \param[in,out] frame

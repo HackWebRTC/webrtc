@@ -124,7 +124,6 @@ ViEChannel::ViEChannel(int32_t channel_id,
       external_transport_(NULL),
       decoder_reset_(true),
       wait_for_key_frame_(false),
-      color_enhancement_(false),
       mtu_(0),
       sender_(sender),
       disable_default_encoder_(disable_default_encoder),
@@ -1609,12 +1608,6 @@ uint16_t ViEChannel::MaxDataPayloadLength() const {
   return rtp_rtcp_->MaxDataPayloadLength();
 }
 
-int32_t ViEChannel::EnableColorEnhancement(bool enable) {
-  CriticalSectionScoped cs(callback_cs_.get());
-  color_enhancement_ = enable;
-  return 0;
-}
-
 RtpRtcp* ViEChannel::rtp_rtcp() {
   return rtp_rtcp_.get();
 }
@@ -1654,9 +1647,6 @@ int32_t ViEChannel::FrameToRender(
   if (video_frame.native_handle() == NULL) {
     if (pre_render_callback_ != NULL)
       pre_render_callback_->FrameCallback(&video_frame);
-    if (color_enhancement_) {
-      VideoProcessingModule::ColorEnhancement(&video_frame);
-    }
   }
 
   // New API bypass.

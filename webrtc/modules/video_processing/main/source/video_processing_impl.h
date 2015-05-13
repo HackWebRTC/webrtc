@@ -14,7 +14,6 @@
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/modules/video_processing/main/source/brighten.h"
 #include "webrtc/modules/video_processing/main/source/brightness_detection.h"
-#include "webrtc/modules/video_processing/main/source/color_enhancement.h"
 #include "webrtc/modules/video_processing/main/source/deflickering.h"
 #include "webrtc/modules/video_processing/main/source/frame_preprocessor.h"
 

@@ -111,10 +111,6 @@ void VideoProcessingModule::ClearFrameStats(FrameStats* stats) {
   memset(stats->hist, 0, sizeof(stats->hist));
 }
 
-int32_t VideoProcessingModule::ColorEnhancement(I420VideoFrame* frame) {
-  return VideoProcessing::ColorEnhancement(frame);
-}
-
 int32_t VideoProcessingModule::Brighten(I420VideoFrame* frame, int delta) {
   return VideoProcessing::Brighten(frame, delta);
 }

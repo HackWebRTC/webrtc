@@ -94,8 +94,6 @@ TEST_F(VideoProcessingModuleTest, HandleNullBuffer) {
 
   EXPECT_EQ(-3, vpm_->GetFrameStats(&stats, videoFrame));
 
-  EXPECT_EQ(-1, vpm_->ColorEnhancement(&videoFrame));
-
   EXPECT_EQ(-1, vpm_->Deflickering(&videoFrame, &stats));
 
   EXPECT_EQ(-3, vpm_->BrightnessDetection(videoFrame, stats));

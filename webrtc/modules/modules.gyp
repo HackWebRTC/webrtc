@@ -276,7 +276,6 @@
             'video_coding/main/source/test/stream_generator.h',
             'video_coding/utility/quality_scaler_unittest.cc',
             'video_processing/main/test/unit_test/brightness_detection_test.cc',
-            'video_processing/main/test/unit_test/color_enhancement_test.cc',
             'video_processing/main/test/unit_test/content_metrics_test.cc',
             'video_processing/main/test/unit_test/deflickering_test.cc',
             'video_processing/main/test/unit_test/video_processing_unittest.cc',
