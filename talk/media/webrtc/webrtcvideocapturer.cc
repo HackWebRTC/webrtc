@@ -200,15 +200,12 @@ bool WebRtcVideoCapturer::Init(const Device& device) {
     }
   }
   factory_->DestroyDeviceInfo(info);
-// TODO(fischman): Remove the following check
-// when capabilities for iOS are implemented
-// https://code.google.com/p/webrtc/issues/detail?id=2968
-#if !defined(IOS)
+
   if (supported.empty()) {
     LOG(LS_ERROR) << "Failed to find usable formats for id: " << device.id;
     return false;
   }
-#endif
+
   module_ = factory_->Create(0, vcm_id);
   if (!module_) {
     LOG(LS_ERROR) << "Failed to create capturer for id: " << device.id;
