@@ -37,7 +37,7 @@
 // DIAGNOSTIC_LOG.
 #define LOG_LAZY_STREAM_DIRECT(file_name, line_number, sev) \
   LAZY_STREAM(logging::LogMessage(file_name, line_number, \
-                                  -sev).stream(), true)
+                                  sev).stream(), true)
 
 namespace rtc {
 

@@ -38,7 +38,7 @@
 
 #if defined(LOGGING_INSIDE_WEBRTC)
 
-#define WEBRTC_VLOG_IS_ON(sev) VLOG_IS_ON(rtc::WebRtcSevToChromeSev(sev))
+#define WEBRTC_VLOG_IS_ON(sev) VLOG_IS_ON(rtc::WebRtcVerbosityLevel(sev))
 
 #define DIAGNOSTIC_LOG(sev, ctx, err, ...) \
   rtc::DiagnosticLogMessage( \
