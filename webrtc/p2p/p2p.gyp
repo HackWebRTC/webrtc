@@ -108,6 +108,34 @@
           ],
         }],
       ],
+    },
+    {
+      'target_name': 'libstunprober',
+      'type': 'static_library',
+      'dependencies': [
+        '<(webrtc_root)/base/base.gyp:rtc_base',
+        '<(webrtc_root)/common.gyp:webrtc_common',
+      ],
+      'cflags_cc!': [
+        '-Wnon-virtual-dtor',
+      ],
+      'sources': [
+        'stunprober/stunprober.cc',
+      ],
+    },
+    {
+      'target_name': 'stun_prober',
+      'type': 'executable',
+      'dependencies': [
+        'libstunprober',
+        'rtc_p2p'
+      ],
+      'cflags_cc!': [
+        '-Wnon-virtual-dtor',
+      ],
+      'sources': [
+        'stunprober/main.cc',
+      ],
     }],
 }
 

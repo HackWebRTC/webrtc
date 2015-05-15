@@ -17,12 +17,14 @@
         'libjingle/xmllite/xmllite.gyp:rtc_xmllite',
         'libjingle/xmpp/xmpp.gyp:rtc_xmpp',
         'p2p/p2p.gyp:rtc_p2p',
+        'p2p/p2p.gyp:libstunprober',
         'rtc_p2p_unittest',
         'rtc_sound_tests',
         'rtc_xmllite_unittest',
         'rtc_xmpp_unittest',
         'sound/sound.gyp:rtc_sound',
         '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/testing/gmock.gyp:gmock',
       ],
       'conditions': [
         ['OS=="android"', {

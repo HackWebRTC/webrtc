@@ -34,6 +34,7 @@
           'client/connectivitychecker_unittest.cc',
           'client/fakeportallocator.h',
           'client/portallocator_unittest.cc',
+          'stunprober/stunprober_unittest.cc',
         ],
       },
     },
