@@ -88,11 +88,17 @@
           'LINUX',
           'WEBRTC_LINUX',
         ],
+        # Remove Chromium's disabling of the -Wformat warning.
+        'cflags!': [
+          '-Wno-format',
+        ],
         'conditions': [
           ['clang==1', {
             'cflags': [
               '-Wall',
               '-Wextra',
+              '-Wformat',
+              '-Wformat-security',
               '-Wimplicit-fallthrough',
               '-Wmissing-braces',
               '-Wreorder',
