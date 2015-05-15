@@ -623,15 +623,20 @@ void P2PTransportChannel::OnUseCandidate(Connection* conn) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   ASSERT(ice_role_ == ICEROLE_CONTROLLED);
   ASSERT(protocol_type_ == ICEPROTO_RFC5245);
+
   if (conn->write_state() == Connection::STATE_WRITABLE) {
     if (best_connection_ != conn) {
       pending_best_connection_ = NULL;
+      LOG(LS_INFO) << "Switching best connection on controlled side: "
+                   << conn->ToString();
       SwitchBestConnectionTo(conn);
       // Now we have selected the best connection, time to prune other existing
       // connections and update the read/write state of the channel.
       RequestSort();
     }
   } else {
+    LOG(LS_INFO) << "Not switching the best connection on controlled side yet,"
+                 << " because it's not writable: " << conn->ToString();
     pending_best_connection_ = conn;
   }
 }
@@ -988,8 +993,11 @@ void P2PTransportChannel::SortConnections() {
 
   // If necessary, switch to the new choice.
   if (protocol_type_ != ICEPROTO_RFC5245 || ice_role_ == ICEROLE_CONTROLLING) {
-    if (ShouldSwitch(best_connection_, top_connection))
+    if (ShouldSwitch(best_connection_, top_connection)) {
+      LOG(LS_INFO) << "Switching best connection on controlling side: "
+                   << top_connection->ToString();
       SwitchBestConnectionTo(top_connection);
+    }
   }
 
   // We can prune any connection for which there is a connected, writable
@@ -1265,6 +1273,8 @@ void P2PTransportChannel::OnConnectionStateChange(Connection* connection) {
   if (protocol_type_ == ICEPROTO_RFC5245 && ice_role_ == ICEROLE_CONTROLLED) {
     if (connection == pending_best_connection_ && connection->writable()) {
       pending_best_connection_ = NULL;
+      LOG(LS_INFO) << "Switching best connection on controlled side"
+                   << " because it's now writable: " << connection->ToString();
       SwitchBestConnectionTo(connection);
     }
   }
@@ -1301,6 +1311,7 @@ void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
   // Since this connection is no longer an option, we can just set best to NULL
   // and re-choose a best assuming that there was no best connection.
   if (best_connection_ == connection) {
+    LOG(LS_INFO) << "Best connection destroyed.  Will choose a new one.";
     SwitchBestConnectionTo(NULL);
     RequestSort();
   }

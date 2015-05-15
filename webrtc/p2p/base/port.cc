@@ -1319,16 +1319,17 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
     ReceivedPing();
   }
 
-  // TODO(pthatcher): Figure out how to use LOG_CHECK_LEVEL with a
-  // variable.  rtc:LogCheckLevel doesn't work within Chrome.
   if (LOG_CHECK_LEVEL_V(sev)) {
+    bool use_candidate = (
+        response->GetByteString(STUN_ATTR_USE_CANDIDATE) != nullptr);
     std::string pings;
     PrintPingsSinceLastResponse(&pings, 5);
     LOG_JV(sev, this) << "Received STUN ping response"
-                        << ", id=" << rtc::hex_encode(request->id())
-                        << ", code=0"  // Makes logging easier to parse.
-                        << ", rtt=" << rtt
-                        << ", pings_since_last_response=" << pings;
+                      << ", id=" << rtc::hex_encode(request->id())
+                      << ", code=0"  // Makes logging easier to parse.
+                      << ", rtt=" << rtt
+                      << ", use_candidate=" << use_candidate
+                      << ", pings_since_last_response=" << pings;
   }
 
   pings_since_last_response_.clear();
@@ -1388,8 +1389,10 @@ void Connection::OnConnectionRequestTimeout(ConnectionRequest* request) {
 void Connection::OnConnectionRequestSent(ConnectionRequest* request) {
   // Log at LS_INFO if we send a ping on an unwritable connection.
   rtc::LoggingSeverity sev = !writable() ? rtc::LS_INFO : rtc::LS_VERBOSE;
+  bool use_candidate = use_candidate_attr();
   LOG_JV(sev, this) << "Sent STUN ping"
-                    << ", id=" << rtc::hex_encode(request->id());
+                    << ", id=" << rtc::hex_encode(request->id())
+                    << ", use_candidate=" << use_candidate;
 }
 
 void Connection::CheckTimeout() {
