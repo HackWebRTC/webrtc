@@ -1146,7 +1146,7 @@ void Connection::PrintPingsSinceLastResponse(std::string* s, size_t max) {
 void Connection::UpdateState(uint32 now) {
   uint32 rtt = ConservativeRTTEstimate(rtt_);
 
-  if (rtc::LogCheckLevel(rtc::LS_VERBOSE)) {
+  if (LOG_CHECK_LEVEL(LS_VERBOSE)) {
     std::string pings;
     PrintPingsSinceLastResponse(&pings, 5);
     LOG_J(LS_VERBOSE, this) << "UpdateState()"
@@ -1319,7 +1319,9 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
     ReceivedPing();
   }
 
-  if (rtc::LogCheckLevel(sev)) {
+  // TODO(pthatcher): Figure out how to use LOG_CHECK_LEVEL with a
+  // variable.  rtc:LogCheckLevel doesn't work within Chrome.
+  if (LOG_CHECK_LEVEL_V(sev)) {
     std::string pings;
     PrintPingsSinceLastResponse(&pings, 5);
     LOG_JV(sev, this) << "Received STUN ping response"
