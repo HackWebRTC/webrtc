@@ -539,27 +539,11 @@ static bool AddSsrcLine(uint32 ssrc_id, const std::string& attribute,
   return AddLine(os.str(), message);
 }
 
-// Split the message into two parts by the first delimiter.
-static bool SplitByDelimiter(const std::string& message,
-                             const char delimiter,
-                             std::string* field1,
-                             std::string* field2) {
-  // Find the first delimiter
-  size_t pos = message.find(delimiter);
-  if (pos == std::string::npos) {
-    return false;
-  }
-  *field1 = message.substr(0, pos);
-  // The rest is the value.
-  *field2 = message.substr(pos + 1);
-  return true;
-}
-
 // Get value only from <attribute>:<value>.
 static bool GetValue(const std::string& message, const std::string& attribute,
                      std::string* value, SdpParseError* error) {
   std::string leftpart;
-  if (!SplitByDelimiter(message, kSdpDelimiterColon, &leftpart, value)) {
+  if (!rtc::tokenize_first(message, kSdpDelimiterColon, &leftpart, value)) {
     return ParseFailedGetValue(message, attribute, error);
   }
   // The left part should end with the expected attribute.
@@ -972,7 +956,8 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
   // Makes sure |message| contains only one line.
   if (message.size() > first_line.size()) {
     std::string left, right;
-    if (SplitByDelimiter(message, kNewLine, &left, &right) && !right.empty()) {
+    if (rtc::tokenize_first(message, kNewLine, &left, &right) &&
+        !right.empty()) {
       return ParseFailed(message, 0, "Expect one line only", error);
     }
   }
@@ -989,7 +974,7 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
   std::string candidate_value;
 
   // |first_line| must be in the form of "candidate:<value>".
-  if (!SplitByDelimiter(first_line, kSdpDelimiterColon,
+  if (!rtc::tokenize_first(first_line, kSdpDelimiterColon,
                         &attribute_candidate, &candidate_value) ||
       attribute_candidate != kAttributeCandidate) {
     if (is_raw) {
@@ -2749,7 +2734,7 @@ bool ParseSsrcAttribute(const std::string& line, SsrcInfoVec* ssrc_infos,
   // a=ssrc:<ssrc-id> <attribute>
   // a=ssrc:<ssrc-id> <attribute>:<value>
   std::string field1, field2;
-  if (!SplitByDelimiter(line.substr(kLinePrefixLength),
+  if (!rtc::tokenize_first(line.substr(kLinePrefixLength),
                         kSdpDelimiterSpace,
                         &field1,
                         &field2)) {
@@ -2769,7 +2754,7 @@ bool ParseSsrcAttribute(const std::string& line, SsrcInfoVec* ssrc_infos,
 
   std::string attribute;
   std::string value;
-  if (!SplitByDelimiter(field2, kSdpDelimiterColon,
+  if (!rtc::tokenize_first(field2, kSdpDelimiterColon,
                         &attribute, &value)) {
     std::ostringstream description;
     description << "Failed to get the ssrc attribute value from " << field2
@@ -3016,22 +3001,13 @@ bool ParseRtpmapAttribute(const std::string& line,
   return true;
 }
 
-void PruneRight(const char delimiter, std::string* message) {
-  size_t trailing = message->find(delimiter);
-  if (trailing != std::string::npos) {
-    *message = message->substr(0, trailing);
-  }
-}
-
 bool ParseFmtpParam(const std::string& line, std::string* parameter,
                     std::string* value, SdpParseError* error) {
-  if (!SplitByDelimiter(line, kSdpDelimiterEqual, parameter, value)) {
+  if (!rtc::tokenize_first(line, kSdpDelimiterEqual, parameter, value)) {
     ParseFailed(line, "Unable to parse fmtp parameter. \'=\' missing.", error);
     return false;
   }
   // a=fmtp:<payload_type> <param1>=<value1>; <param2>=<value2>; ...
-  // When parsing the values the trailing ";" gets picked up. Remove them.
-  PruneRight(kSdpDelimiterSemicolon, value);
   return true;
 }
 
@@ -3042,44 +3018,52 @@ bool ParseFmtpAttributes(const std::string& line, const MediaType media_type,
       media_type != cricket::MEDIA_TYPE_VIDEO) {
     return true;
   }
-  std::vector<std::string> fields;
-  rtc::split(line.substr(kLinePrefixLength),
-                   kSdpDelimiterSpace, &fields);
+
+  std::string line_payload;
+  std::string line_params;
 
   // RFC 5576
   // a=fmtp:<format> <format specific parameters>
   // At least two fields, whereas the second one is any of the optional
   // parameters.
-  if (fields.size() < 2) {
+  if(!rtc::tokenize_first(line.substr(kLinePrefixLength), kSdpDelimiterSpace,
+                       &line_payload, &line_params)) {
     ParseFailedExpectMinFieldNum(line, 2, error);
     return false;
   }
 
+  // Parse out the payload information.
   std::string payload_type_str;
-  if (!GetValue(fields[0], kAttributeFmtp, &payload_type_str, error)) {
+  if (!GetValue(line_payload, kAttributeFmtp, &payload_type_str, error)) {
     return false;
   }
 
+  int payload_type = 0;
+  if (!GetPayloadTypeFromString(line_payload, payload_type_str,
+                                &payload_type, error)) {
+    return false;
+  }
+
+  // Parse out format specific parameters.
+  std::vector<std::string> fields;
+  rtc::split(line_params, kSdpDelimiterSemicolon, &fields);
+
   cricket::CodecParameterMap codec_params;
-  for (std::vector<std::string>::const_iterator iter = fields.begin() + 1;
-       iter != fields.end(); ++iter) {
-    std::string name;
-    std::string value;
-    if (iter->find(kSdpDelimiterEqual) == std::string::npos) {
+  for (auto &iter : fields) {
+    if (iter.find(kSdpDelimiterEqual) == std::string::npos) {
       // Only fmtps with equals are currently supported. Other fmtp types
       // should be ignored. Unknown fmtps do not constitute an error.
       continue;
     }
-    if (!ParseFmtpParam(*iter, &name, &value, error)) {
+
+    std::string name;
+    std::string value;
+    if (!ParseFmtpParam(rtc::string_trim(iter), &name, &value, error)) {
       return false;
     }
     codec_params[name] = value;
   }
 
-  int payload_type = 0;
-  if (!GetPayloadTypeFromString(line, payload_type_str, &payload_type, error)) {
-    return false;
-  }
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
     UpdateCodec<AudioContentDescription, cricket::AudioCodec>(
         media_desc, payload_type, codec_params);

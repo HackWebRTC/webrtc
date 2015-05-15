@@ -298,6 +298,52 @@ TEST(TokenizeTest, TokenizeWithMarks) {
   ASSERT_STREQ("E F", fields.at(3).c_str());
 }
 
+TEST(TokenizeFirstTest, NoLeadingSpaces) {
+  std::string token;
+  std::string rest;
+
+  ASSERT_TRUE(tokenize_first("A &*${}", ' ', &token, &rest));
+  ASSERT_STREQ("A", token.c_str());
+  ASSERT_STREQ("&*${}", rest.c_str());
+
+  ASSERT_TRUE(tokenize_first("A B& *${}", ' ', &token, &rest));
+  ASSERT_STREQ("A", token.c_str());
+  ASSERT_STREQ("B& *${}", rest.c_str());
+
+  ASSERT_TRUE(tokenize_first("A    B& *${}    ", ' ', &token, &rest));
+  ASSERT_STREQ("A", token.c_str());
+  ASSERT_STREQ("B& *${}    ", rest.c_str());
+}
+
+TEST(TokenizeFirstTest, LeadingSpaces) {
+  std::string token;
+  std::string rest;
+
+  ASSERT_TRUE(tokenize_first("     A B C", ' ', &token, &rest));
+  ASSERT_STREQ("", token.c_str());
+  ASSERT_STREQ("A B C", rest.c_str());
+
+  ASSERT_TRUE(tokenize_first("     A    B   C    ", ' ', &token, &rest));
+  ASSERT_STREQ("", token.c_str());
+  ASSERT_STREQ("A    B   C    ", rest.c_str());
+}
+
+TEST(TokenizeFirstTest, SingleToken) {
+  std::string token;
+  std::string rest;
+
+  // In the case where we cannot find delimiter the whole string is a token.
+  ASSERT_FALSE(tokenize_first("ABC", ' ', &token, &rest));
+
+  ASSERT_TRUE(tokenize_first("ABC    ", ' ', &token, &rest));
+  ASSERT_STREQ("ABC", token.c_str());
+  ASSERT_STREQ("", rest.c_str());
+
+  ASSERT_TRUE(tokenize_first("    ABC    ", ' ', &token, &rest));
+  ASSERT_STREQ("", token.c_str());
+  ASSERT_STREQ("ABC    ", rest.c_str());
+}
+
 // Tests counting substrings.
 TEST(SplitTest, CountSubstrings) {
   std::vector<std::string> fields;
