@@ -58,17 +58,15 @@ VideoSendStream::Stats SendStatisticsProxy::GetStats() {
 }
 
 void SendStatisticsProxy::PurgeOldStats() {
-  int64_t current_time_ms = clock_->TimeInMilliseconds();
+  int64_t old_stats_ms = clock_->TimeInMilliseconds() - kStatsTimeoutMs;
   for (std::map<uint32_t, VideoSendStream::StreamStats>::iterator it =
            stats_.substreams.begin();
        it != stats_.substreams.end(); ++it) {
     uint32_t ssrc = it->first;
-    if (update_times_[ssrc].resolution_update_ms + kStatsTimeoutMs >
-        current_time_ms)
-      continue;
-
-    it->second.width = 0;
-    it->second.height = 0;
+    if (update_times_[ssrc].resolution_update_ms <= old_stats_ms) {
+      it->second.width = 0;
+      it->second.height = 0;
+    }
   }
 }
 
@@ -88,6 +86,18 @@ VideoSendStream::StreamStats* SendStatisticsProxy::GetStatsEntry(
   }
 
   return &stats_.substreams[ssrc];  // Insert new entry and return ptr.
+}
+
+void SendStatisticsProxy::OnInactiveSsrc(uint32_t ssrc) {
+  rtc::CritScope lock(&crit_);
+  VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
+  if (stats == nullptr)
+    return;
+
+  stats->total_bitrate_bps = 0;
+  stats->retransmit_bitrate_bps = 0;
+  stats->height = 0;
+  stats->width = 0;
 }
 
 void SendStatisticsProxy::OnSetRates(uint32_t bitrate_bps, int framerate) {

@@ -399,6 +399,12 @@ bool VideoSendStream::ReconfigureVideoEncoder(
   if (!SetSendCodec(video_codec))
     return false;
 
+  // Clear stats for disabled layers.
+  for (size_t i = video_codec.numberOfSimulcastStreams;
+       i < config_.rtp.ssrcs.size(); ++i) {
+    stats_proxy_.OnInactiveSsrc(config_.rtp.ssrcs[i]);
+  }
+
   DCHECK_GE(config.min_transmit_bitrate_bps, 0);
   vie_encoder_->SetMinTransmitBitrate(config.min_transmit_bitrate_bps / 1000);
 

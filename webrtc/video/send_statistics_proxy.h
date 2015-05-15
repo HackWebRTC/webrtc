@@ -52,6 +52,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   // From VideoEncoderRateObserver.
   void OnSetRates(uint32_t bitrate_bps, int framerate) override;
 
+  void OnInactiveSsrc(uint32_t ssrc);
+
  protected:
   // From CpuOveruseMetricsObserver.
   void CpuOveruseMetricsUpdated(const CpuOveruseMetrics& metrics) override;
@@ -91,6 +93,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   struct StatsUpdateTimes {
     StatsUpdateTimes() : resolution_update_ms(0) {}
     int64_t resolution_update_ms;
+    int64_t bitrate_update_ms;
   };
   void PurgeOldStats() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   VideoSendStream::StreamStats* GetStatsEntry(uint32_t ssrc)
