@@ -1207,8 +1207,7 @@ class WebRtcSdpTest : public testing::Test {
         "a=fmtp:111 0-15,66,70\r\n"
         "a=fmtp:111 ";
     std::ostringstream os;
-    os << "minptime=" << params.min_ptime
-       << "; stereo=" << params.stereo
+    os << "minptime=" << params.min_ptime << "; stereo=" << params.stereo
        << "; sprop-stereo=" << params.sprop_stereo
        << "; useinbandfec=" << params.useinband
        << "; maxaveragebitrate=" << params.maxaveragebitrate << "\r\n"
@@ -2508,8 +2507,8 @@ TEST_F(WebRtcSdpTest, DeserializeVideoFmtp) {
 
   // Deserialize
   SdpParseError error;
-  EXPECT_TRUE(webrtc::SdpDeserialize(kSdpWithFmtpString, &jdesc_output,
-                                     &error));
+  EXPECT_TRUE(
+      webrtc::SdpDeserialize(kSdpWithFmtpString, &jdesc_output, &error));
 
   const ContentInfo* vc = GetFirstVideoContent(jdesc_output.description());
   ASSERT_TRUE(vc != NULL);

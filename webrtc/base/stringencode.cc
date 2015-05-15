@@ -611,8 +611,10 @@ size_t tokenize(const std::string& source, char delimiter, char start_mark,
   return tokenize_append(remain_source, delimiter, fields);
 }
 
-bool tokenize_first(const std::string& source, const char delimiter,
-                           std::string* token, std::string* rest) {
+bool tokenize_first(const std::string& source,
+                    const char delimiter,
+                    std::string* token,
+                    std::string* rest) {
   // Find the first delimiter
   size_t left_pos = source.find(delimiter);
   if (left_pos == std::string::npos) {
@@ -621,7 +623,7 @@ bool tokenize_first(const std::string& source, const char delimiter,
 
   // Look for additional occurrances of delimiter.
   size_t right_pos = left_pos + 1;
-  while(source[right_pos] == delimiter) {
+  while (source[right_pos] == delimiter) {
     right_pos++;
   }
 

@@ -974,8 +974,8 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
   std::string candidate_value;
 
   // |first_line| must be in the form of "candidate:<value>".
-  if (!rtc::tokenize_first(first_line, kSdpDelimiterColon,
-                        &attribute_candidate, &candidate_value) ||
+  if (!rtc::tokenize_first(first_line, kSdpDelimiterColon, &attribute_candidate,
+                           &candidate_value) ||
       attribute_candidate != kAttributeCandidate) {
     if (is_raw) {
       std::ostringstream description;
@@ -2734,10 +2734,8 @@ bool ParseSsrcAttribute(const std::string& line, SsrcInfoVec* ssrc_infos,
   // a=ssrc:<ssrc-id> <attribute>
   // a=ssrc:<ssrc-id> <attribute>:<value>
   std::string field1, field2;
-  if (!rtc::tokenize_first(line.substr(kLinePrefixLength),
-                        kSdpDelimiterSpace,
-                        &field1,
-                        &field2)) {
+  if (!rtc::tokenize_first(line.substr(kLinePrefixLength), kSdpDelimiterSpace,
+                           &field1, &field2)) {
     const size_t expected_fields = 2;
     return ParseFailedExpectFieldNum(line, expected_fields, error);
   }
@@ -2754,8 +2752,7 @@ bool ParseSsrcAttribute(const std::string& line, SsrcInfoVec* ssrc_infos,
 
   std::string attribute;
   std::string value;
-  if (!rtc::tokenize_first(field2, kSdpDelimiterColon,
-                        &attribute, &value)) {
+  if (!rtc::tokenize_first(field2, kSdpDelimiterColon, &attribute, &value)) {
     std::ostringstream description;
     description << "Failed to get the ssrc attribute value from " << field2
                 << ". Expected format <attribute>:<value>.";
@@ -3026,8 +3023,8 @@ bool ParseFmtpAttributes(const std::string& line, const MediaType media_type,
   // a=fmtp:<format> <format specific parameters>
   // At least two fields, whereas the second one is any of the optional
   // parameters.
-  if(!rtc::tokenize_first(line.substr(kLinePrefixLength), kSdpDelimiterSpace,
-                       &line_payload, &line_params)) {
+  if (!rtc::tokenize_first(line.substr(kLinePrefixLength), kSdpDelimiterSpace,
+                           &line_payload, &line_params)) {
     ParseFailedExpectMinFieldNum(line, 2, error);
     return false;
   }
@@ -3039,8 +3036,8 @@ bool ParseFmtpAttributes(const std::string& line, const MediaType media_type,
   }
 
   int payload_type = 0;
-  if (!GetPayloadTypeFromString(line_payload, payload_type_str,
-                                &payload_type, error)) {
+  if (!GetPayloadTypeFromString(line_payload, payload_type_str, &payload_type,
+                                error)) {
     return false;
   }
 
@@ -3049,7 +3046,7 @@ bool ParseFmtpAttributes(const std::string& line, const MediaType media_type,
   rtc::split(line_params, kSdpDelimiterSemicolon, &fields);
 
   cricket::CodecParameterMap codec_params;
-  for (auto &iter : fields) {
+  for (auto& iter : fields) {
     if (iter.find(kSdpDelimiterEqual) == std::string::npos) {
       // Only fmtps with equals are currently supported. Other fmtp types
       // should be ignored. Unknown fmtps do not constitute an error.

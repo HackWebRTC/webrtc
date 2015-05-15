@@ -163,8 +163,10 @@ size_t tokenize(const std::string& source, char delimiter, char start_mark,
 // Extract the first token from source as separated by delimiter, with
 // duplicates of delimiter ignored. Return false if the delimiter could not be
 // found, otherwise return true.
-bool tokenize_first(const std::string& source, const char delimiter,
-                      std::string* token, std::string* rest);
+bool tokenize_first(const std::string& source,
+                    const char delimiter,
+                    std::string* token,
+                    std::string* rest);
 
 // Safe sprintf to std::string
 //void sprintf(std::string& value, size_t maxlen, const char * format, ...)
