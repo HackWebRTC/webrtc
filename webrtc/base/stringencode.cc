@@ -466,6 +466,10 @@ size_t hex_encode_with_delimiter(char* buffer, size_t buflen,
   return bufpos;
 }
 
+std::string hex_encode(const std::string& str) {
+  return hex_encode(str.c_str(), str.size());
+}
+
 std::string hex_encode(const char* source, size_t srclen) {
   return hex_encode_with_delimiter(source, srclen, 0);
 }

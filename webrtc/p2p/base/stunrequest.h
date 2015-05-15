@@ -105,7 +105,10 @@ class StunRequest : public rtc::MessageHandler {
   virtual void OnResponse(StunMessage* response) {}
   virtual void OnErrorResponse(StunMessage* response) {}
   virtual void OnTimeout() {}
-  virtual int GetNextDelay();
+  // Called when the message is sent.
+  virtual void OnSent();
+  // Returns the next delay for resends.
+  virtual int resend_delay();
 
  private:
   void set_manager(StunRequestManager* manager);

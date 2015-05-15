@@ -14,6 +14,7 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/stringencode.h"
 
 namespace cricket {
 
@@ -76,8 +77,11 @@ void StunRequestManager::Clear() {
 
 bool StunRequestManager::CheckResponse(StunMessage* msg) {
   RequestMap::iterator iter = requests_.find(msg->transaction_id());
-  if (iter == requests_.end())
+  if (iter == requests_.end()) {
+    LOG(LS_WARNING) << "Ignoring STUN response for unknown request "
+                    << rtc::hex_encode(msg->transaction_id());
     return false;
+  }
 
   StunRequest* request = iter->second;
   if (msg->type() == GetStunSuccessResponseType(request->type())) {
@@ -106,15 +110,20 @@ bool StunRequestManager::CheckResponse(const char* data, size_t size) {
   id.append(data + kStunTransactionIdOffset, kStunTransactionIdLength);
 
   RequestMap::iterator iter = requests_.find(id);
-  if (iter == requests_.end())
+  if (iter == requests_.end()) {
+    LOG(LS_WARNING) << "Ignoring STUN response for unknown request "
+                    << rtc::hex_encode(id);
     return false;
+  }
 
   // Parse the STUN message and continue processing as usual.
 
   rtc::ByteBuffer buf(data, size);
   rtc::scoped_ptr<StunMessage> response(iter->second->msg_->CreateNew());
-  if (!response->Read(&buf))
+  if (!response->Read(&buf)) {
+    LOG(LS_WARNING) << "Failed to read STUN response " << rtc::hex_encode(id);
     return false;
+  }
 
   return CheckResponse(response.get());
 }
@@ -188,16 +197,21 @@ void StunRequest::OnMessage(rtc::Message* pmsg) {
   msg_->Write(&buf);
   manager_->SignalSendPacket(buf.Data(), buf.Length(), this);
 
-  int delay = GetNextDelay();
-  manager_->thread_->PostDelayed(delay, this, MSG_STUN_SEND, NULL);
+  OnSent();
+  manager_->thread_->PostDelayed(resend_delay(), this, MSG_STUN_SEND, NULL);
 }
 
-int StunRequest::GetNextDelay() {
-  int delay = DELAY_UNIT * std::min(1 << count_, DELAY_MAX_FACTOR);
+void StunRequest::OnSent() {
   count_ += 1;
   if (count_ == MAX_SENDS)
     timeout_ = true;
-  return delay;
+}
+
+int StunRequest::resend_delay() {
+  if (count_ == 0) {
+    return 0;
+  }
+  return DELAY_UNIT * std::min(1 << (count_-1), DELAY_MAX_FACTOR);
 }
 
 }  // namespace cricket

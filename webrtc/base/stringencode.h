@@ -11,8 +11,8 @@
 #ifndef WEBRTC_BASE_STRINGENCODE_H_
 #define WEBRTC_BASE_STRINGENCODE_H_
 
-#include <string>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "webrtc/base/checks.h"
@@ -95,6 +95,7 @@ size_t hex_encode_with_delimiter(char* buffer, size_t buflen,
                                  char delimiter);
 
 // Helper functions for hex_encode.
+std::string hex_encode(const std::string& str);
 std::string hex_encode(const char* source, size_t srclen);
 std::string hex_encode_with_delimiter(const char* source, size_t srclen,
                                       char delimiter);

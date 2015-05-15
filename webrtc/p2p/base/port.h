@@ -402,6 +402,15 @@ class Port : public PortInterface, public rtc::MessageHandler,
 class Connection : public rtc::MessageHandler,
     public sigslot::has_slots<> {
  public:
+  struct SentPing {
+    SentPing(const std::string id, uint32 sent_time)
+        : id(id),
+          sent_time(sent_time) {}
+
+    std::string id;
+    uint32 sent_time;
+  };
+
   // States are from RFC 5245. http://tools.ietf.org/html/rfc5245#section-5.7.4
   enum State {
     STATE_WAITING = 0,  // Check has not been performed, Waiting pair on CL.
@@ -520,6 +529,8 @@ class Connection : public rtc::MessageHandler,
   std::string ToDebugId() const;
   std::string ToString() const;
   std::string ToSensitiveString() const;
+  // Prints pings_since_last_response_ into a string.
+  void PrintPingsSinceLastResponse(std::string* pings, size_t max);
 
   bool reported() const { return reported_; }
   void set_reported(bool reported) { reported_ = reported;}
@@ -560,6 +571,7 @@ class Connection : public rtc::MessageHandler,
   void OnConnectionRequestErrorResponse(ConnectionRequest* req,
                                         StunMessage* response);
   void OnConnectionRequestTimeout(ConnectionRequest* req);
+  void OnConnectionRequestSent(ConnectionRequest* req);
 
   // Changes the state and signals if necessary.
   void set_read_state(ReadState value);
@@ -592,7 +604,7 @@ class Connection : public rtc::MessageHandler,
                                // side
   uint32 last_data_received_;
   uint32 last_ping_response_received_;
-  std::vector<uint32> pings_since_last_response_;
+  std::vector<SentPing> pings_since_last_response_;
 
   rtc::RateTracker recv_rate_tracker_;
   rtc::RateTracker send_rate_tracker_;
