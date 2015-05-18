@@ -78,8 +78,8 @@ void StunRequestManager::Clear() {
 bool StunRequestManager::CheckResponse(StunMessage* msg) {
   RequestMap::iterator iter = requests_.find(msg->transaction_id());
   if (iter == requests_.end()) {
-    LOG(LS_WARNING) << "Ignoring STUN response for unknown request "
-                    << rtc::hex_encode(msg->transaction_id());
+    // TODO(pthatcher): Log unknown responses without being too spammy
+    // in the logs.
     return false;
   }
 
@@ -111,8 +111,8 @@ bool StunRequestManager::CheckResponse(const char* data, size_t size) {
 
   RequestMap::iterator iter = requests_.find(id);
   if (iter == requests_.end()) {
-    LOG(LS_WARNING) << "Ignoring STUN response for unknown request "
-                    << rtc::hex_encode(id);
+    // TODO(pthatcher): Log unknown responses without being too spammy
+    // in the logs.
     return false;
   }
 
