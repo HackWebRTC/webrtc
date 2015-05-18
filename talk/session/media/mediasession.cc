@@ -436,8 +436,8 @@ static bool AddStreamParams(
     StreamParamsVec* current_streams,
     MediaContentDescriptionImpl<C>* content_description,
     const bool add_legacy_stream) {
-  const bool include_rtx_stream =
-    ContainsRtxCodec(content_description->codecs());
+  const bool include_rtx_streams =
+      ContainsRtxCodec(content_description->codecs());
 
   if (streams.empty() && add_legacy_stream) {
     // TODO(perkj): Remove this legacy stream when all apps use StreamParams.
@@ -445,10 +445,10 @@ static bool AddStreamParams(
     if (IsSctp(content_description)) {
       GenerateSctpSids(*current_streams, &ssrcs);
     } else {
-      int num_ssrcs = include_rtx_stream ? 2 : 1;
+      int num_ssrcs = include_rtx_streams ? 2 : 1;
       GenerateSsrcs(*current_streams, num_ssrcs, &ssrcs);
     }
-    if (include_rtx_stream) {
+    if (include_rtx_streams) {
       content_description->AddLegacyStream(ssrcs[0], ssrcs[1]);
       content_description->set_multistream(true);
     } else {
@@ -492,11 +492,15 @@ static bool AddStreamParams(
         SsrcGroup group(kSimSsrcGroupSemantics, stream_param.ssrcs);
         stream_param.ssrc_groups.push_back(group);
       }
-      // Generate an extra ssrc for include_rtx_stream case.
-      if (include_rtx_stream) {
-        std::vector<uint32> rtx_ssrc;
-        GenerateSsrcs(*current_streams, 1, &rtx_ssrc);
-        stream_param.AddFidSsrc(ssrcs[0], rtx_ssrc[0]);
+      // Generate extra ssrcs for include_rtx_streams case.
+      if (include_rtx_streams) {
+        // Generate an RTX ssrc for every ssrc in the group.
+        std::vector<uint32> rtx_ssrcs;
+        GenerateSsrcs(*current_streams, static_cast<int>(ssrcs.size()),
+                      &rtx_ssrcs);
+        for (size_t i = 0; i < ssrcs.size(); ++i) {
+          stream_param.AddFidSsrc(ssrcs[i], rtx_ssrcs[i]);
+        }
         content_description->set_multistream(true);
       }
       stream_param.cname = cname;

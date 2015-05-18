@@ -1767,6 +1767,47 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   EXPECT_EQ(expected_codecs, vcd->codecs());
 }
 
+// Test that when RTX is used in conjunction with simulcast, an RTX ssrc is
+// generated for each simulcast ssrc and correctly grouped.
+TEST_F(MediaSessionDescriptionFactoryTest, SimSsrcsGenerateMultipleRtxSsrcs) {
+  MediaSessionOptions opts;
+  opts.recv_video = true;
+  opts.recv_audio = false;
+
+  // Add simulcast streams.
+  opts.AddSendVideoStream("stream1", "stream1label", 3);
+
+  // Use a single real codec, and then add RTX for it.
+  std::vector<VideoCodec> f1_codecs;
+  f1_codecs.push_back(VideoCodec(97, "H264", 320, 200, 30, 1));
+  AddRtxCodec(VideoCodec::CreateRtxCodec(125, 97), &f1_codecs);
+  f1_.set_video_codecs(f1_codecs);
+
+  // Ensure that the offer has an RTX ssrc for each regular ssrc, and that there
+  // is a FID ssrc + grouping for each.
+  rtc::scoped_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+  VideoContentDescription* desc = static_cast<VideoContentDescription*>(
+      offer->GetContentDescriptionByName(cricket::CN_VIDEO));
+  ASSERT_TRUE(desc != NULL);
+  EXPECT_TRUE(desc->multistream());
+  const StreamParamsVec& streams = desc->streams();
+  // Single stream.
+  ASSERT_EQ(1u, streams.size());
+  // Stream should have 6 ssrcs: 3 for video, 3 for RTX.
+  EXPECT_EQ(6u, streams[0].ssrcs.size());
+  // And should have a SIM group for the simulcast.
+  EXPECT_TRUE(streams[0].has_ssrc_group("SIM"));
+  // And a FID group for RTX.
+  EXPECT_TRUE(streams[0].has_ssrc_group("FID"));
+  std::vector<uint32> primary_ssrcs;
+  streams[0].GetPrimarySsrcs(&primary_ssrcs);
+  EXPECT_EQ(3u, primary_ssrcs.size());
+  std::vector<uint32> fid_ssrcs;
+  streams[0].GetFidSsrcs(primary_ssrcs, &fid_ssrcs);
+  EXPECT_EQ(3u, fid_ssrcs.size());
+}
+
 // Create an updated offer after creating an answer to the original offer and
 // verify that the RTP header extensions that were part of the original answer
 // are not changed in the updated offer.
