@@ -57,6 +57,8 @@
         'md5digest.h',
         'platform_file.cc',
         'platform_file.h',
+        'platform_thread.cc',
+        'platform_thread.h',
         'safe_conversions.h',
         'safe_conversions_impl.h',
         'stringencode.cc',
