@@ -18,22 +18,24 @@
 
 namespace webrtc {
 
-int BlockDifference_C(const uint8_t* image1,
-                      const uint8_t* image2,
-                      int stride) {
+bool BlockDifference_C(const uint8_t* image1,
+                       const uint8_t* image2,
+                       int stride) {
   int width_bytes = kBlockSize * kBytesPerPixel;
 
   for (int y = 0; y < kBlockSize; y++) {
     if (memcmp(image1, image2, width_bytes) != 0)
-      return 1;
+      return true;
     image1 += stride;
     image2 += stride;
   }
-  return 0;
+  return false;
 }
 
-int BlockDifference(const uint8_t* image1, const uint8_t* image2, int stride) {
-  static int (*diff_proc)(const uint8_t*, const uint8_t*, int) = NULL;
+bool BlockDifference(const uint8_t* image1,
+                     const uint8_t* image2,
+                     int stride) {
+  static bool (*diff_proc)(const uint8_t*, const uint8_t*, int) = NULL;
 
   if (!diff_proc) {
 #if defined(ARCH_CPU_ARM_FAMILY) || defined(ARCH_CPU_MIPS_FAMILY)
