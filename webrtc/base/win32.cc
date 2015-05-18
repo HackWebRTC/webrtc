@@ -460,7 +460,7 @@ void SetCurrentThreadName(const char* name) {
     LPCSTR szName;
     DWORD dwThreadID;
     DWORD dwFlags;
-  } threadname_info = {0x100, name, static_cast<DWORD>(-1), 0};
+  } threadname_info = {0x1000, name, static_cast<DWORD>(-1), 0};
 
   __try {
     ::RaiseException(0x406D1388, 0, sizeof(threadname_info) / sizeof(DWORD),
