@@ -34,6 +34,17 @@ class CodecOwner {
                    ACMVADMode vad_mode,
                    int red_payload_type);
 
+  void SetEncoders(AudioEncoderMutable* external_speech_encoder,
+                   int cng_payload_type,
+                   ACMVADMode vad_mode,
+                   int red_payload_type);
+
+  void ChangeCngAndRed(int cng_payload_type,
+                       ACMVADMode vad_mode,
+                       int red_payload_type);
+
+  // Returns a pointer to an iSAC decoder owned by the CodecOwner. The decoder
+  // will live as long as the CodecOwner exists.
   AudioDecoder* GetIsacDecoder();
 
   AudioEncoder* Encoder();
@@ -42,13 +53,20 @@ class CodecOwner {
   const AudioEncoderMutable* SpeechEncoder() const;
 
  private:
-  // If iSAC is registered as an encoder, |isac_is_encoder_| is true,
-  // |isac_codec_| is valid and |speech_encoder_| is null. If another encoder
-  // is registered, |isac_is_encoder_| is false, |speech_encoder_| is valid
-  // and |isac_codec_| is valid iff iSAC has been registered as a decoder.
+  // There are three main cases for the state of the encoder members below:
+  // 1. An external encoder is used. |external_speech_encoder_| points to it.
+  //    |speech_encoder_| is null, and |isac_is_encoder_| is false.
+  // 2. The internal iSAC codec is used as encoder. |isac_codec_| points to it
+  //    and |isac_is_encoder_| is true. |external_speech_encoder_| and
+  //    |speech_encoder_| are null.
+  // 3. Another internal encoder is used. |speech_encoder_| points to it.
+  //    |external_speech_encoder_| is null, and |isac_is_encoder_| is false.
+  // In addition to case 2, |isac_codec_| is valid when GetIsacDecoder has been
+  // called.
   rtc::scoped_ptr<AudioEncoderMutable> speech_encoder_;
   rtc::scoped_ptr<AudioEncoderDecoderMutableIsac> isac_codec_;
   bool isac_is_encoder_;
+  AudioEncoderMutable* external_speech_encoder_;
 
   // |cng_encoder_| and |red_encoder_| are valid iff CNG or RED, respectively,
   // are active.

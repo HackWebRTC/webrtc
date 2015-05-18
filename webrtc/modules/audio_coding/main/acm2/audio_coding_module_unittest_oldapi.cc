@@ -15,6 +15,9 @@
 #include "webrtc/base/md5digest.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
+#include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
+#include "webrtc/modules/audio_coding/codecs/mock/mock_audio_encoder.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_receive_test_oldapi.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_send_test_oldapi.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
@@ -34,6 +37,10 @@
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
+
+using ::testing::AtLeast;
+using ::testing::Invoke;
+using ::testing::_;
 
 namespace webrtc {
 
@@ -849,6 +856,15 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
                                      frame_size_samples);
   }
 
+  bool RegisterExternalSendCodec(AudioEncoderMutable* external_speech_encoder,
+                                 int payload_type) {
+    payload_type_ = payload_type;
+    frame_size_rtp_timestamps_ =
+        external_speech_encoder->Num10MsFramesInNextPacket() *
+        external_speech_encoder->RtpTimestampRateHz() / 100;
+    return send_test_->RegisterExternalCodec(external_speech_encoder);
+  }
+
   // Runs the test. SetUpSender() and RegisterSendCodec() must have been called
   // before calling this method.
   void Run(const std::string& audio_checksum_ref,
@@ -940,6 +956,13 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
                                   payload_type,
                                   codec_frame_size_samples,
                                   codec_frame_size_rtp_timestamps));
+  }
+
+  void SetUpTestExternalEncoder(AudioEncoderMutable* external_speech_encoder,
+                                int payload_type) {
+    ASSERT_TRUE(SetUpSender());
+    ASSERT_TRUE(
+        RegisterExternalSendCodec(external_speech_encoder, payload_type));
   }
 
   rtc::scoped_ptr<test::AcmSendTestOldApi> send_test_;
@@ -1353,6 +1376,39 @@ TEST_F(AcmChangeBitRateOldApi, Pcm16_8khz_10ms_8kbps) {
 TEST_F(AcmChangeBitRateOldApi, Pcm16_8khz_10ms_32kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 8000, 1, 107, 80, 80));
   Run(32000, 64000, 64000);
+}
+
+TEST_F(AcmSenderBitExactnessOldApi, External_Pcmu_20ms) {
+  CodecInst codec_inst;
+  codec_inst.channels = 1;
+  codec_inst.pacsize = 160;
+  codec_inst.pltype = 0;
+  AudioEncoderMutablePcmU encoder(codec_inst);
+  MockAudioEncoderMutable mock_encoder;
+  // Set expectations on the mock encoder and also delegate the calls to the
+  // real encoder.
+  EXPECT_CALL(mock_encoder, Num10MsFramesInNextPacket())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(
+          &encoder, &AudioEncoderMutablePcmU::Num10MsFramesInNextPacket));
+  EXPECT_CALL(mock_encoder, Max10MsFramesInAPacket())
+      .Times(AtLeast(1))
+      .WillRepeatedly(
+          Invoke(&encoder, &AudioEncoderMutablePcmU::Max10MsFramesInAPacket));
+  EXPECT_CALL(mock_encoder, SampleRateHz())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&encoder, &AudioEncoderMutablePcmU::SampleRateHz));
+  EXPECT_CALL(mock_encoder, NumChannels())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&encoder, &AudioEncoderMutablePcmU::NumChannels));
+  EXPECT_CALL(mock_encoder, EncodeInternal(_, _, _, _))
+      .Times(AtLeast(1))
+      .WillRepeatedly(
+          Invoke(&encoder, &AudioEncoderMutablePcmU::EncodeInternal));
+  ASSERT_NO_FATAL_FAILURE(
+      SetUpTestExternalEncoder(&mock_encoder, codec_inst.pltype));
+  Run("81a9d4c0bb72e9becc43aef124c981e9", "8f9b8750bd80fe26b6cbf6659b89f0f9",
+      50, test::AcmReceiveTestOldApi::kMonoOutput);
 }
 
 // This test fixture is implemented to run ACM and change the desired output

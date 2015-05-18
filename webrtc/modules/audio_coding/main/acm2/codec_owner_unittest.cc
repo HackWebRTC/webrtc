@@ -9,11 +9,16 @@
  */
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/safe_conversions.h"
+#include "webrtc/modules/audio_coding/codecs/mock/mock_audio_encoder.h"
 #include "webrtc/modules/audio_coding/main/acm2/codec_owner.h"
 
 namespace webrtc {
 namespace acm2 {
+
+using ::testing::Return;
+using ::testing::InSequence;
 
 namespace {
 const int kDataLengthSamples = 80;
@@ -91,6 +96,54 @@ TEST_F(CodecOwnerTest, VerifyCngFrames) {
     SCOPED_TRACE("Fourth encoding");
     EncodeAndVerify(0, expected_timestamp, kCngPt, 1);
   }
+}
+
+TEST_F(CodecOwnerTest, ExternalEncoder) {
+  MockAudioEncoderMutable external_encoder;
+  codec_owner_.SetEncoders(&external_encoder, -1, VADNormal, -1);
+  const int kSampleRateHz = 8000;
+  const int kPacketSizeSamples = kSampleRateHz / 100;
+  int16_t audio[kPacketSizeSamples] = {0};
+  uint8_t encoded[kPacketSizeSamples];
+  AudioEncoder::EncodedInfo info;
+  EXPECT_CALL(external_encoder, SampleRateHz())
+      .WillRepeatedly(Return(kSampleRateHz));
+
+  {
+    InSequence s;
+    info.encoded_timestamp = 0;
+    EXPECT_CALL(external_encoder,
+                EncodeInternal(0, audio, arraysize(encoded), encoded))
+        .WillOnce(Return(info));
+    EXPECT_CALL(external_encoder, Reset());
+    EXPECT_CALL(external_encoder, Reset());
+    info.encoded_timestamp = 2;
+    EXPECT_CALL(external_encoder,
+                EncodeInternal(2, audio, arraysize(encoded), encoded))
+        .WillOnce(Return(info));
+    EXPECT_CALL(external_encoder, Reset());
+  }
+
+  info = codec_owner_.Encoder()->Encode(0, audio, arraysize(audio),
+                                        arraysize(encoded), encoded);
+  EXPECT_EQ(0u, info.encoded_timestamp);
+  external_encoder.Reset();  // Dummy call to mark the sequence of expectations.
+
+  // Change to internal encoder.
+  CodecInst codec_inst = kDefaultCodecInst;
+  codec_inst.pacsize = kPacketSizeSamples;
+  codec_owner_.SetEncoders(codec_inst, -1, VADNormal, -1);
+  // Don't expect any more calls to the external encoder.
+  info = codec_owner_.Encoder()->Encode(1, audio, arraysize(audio),
+                                        arraysize(encoded), encoded);
+  external_encoder.Reset();  // Dummy call to mark the sequence of expectations.
+
+  // Change back to external encoder again.
+  codec_owner_.SetEncoders(&external_encoder, -1, VADNormal, -1);
+  info = codec_owner_.Encoder()->Encode(2, audio, arraysize(audio),
+                                        arraysize(encoded), encoded);
+  EXPECT_EQ(2u, info.encoded_timestamp);
+  external_encoder.Reset();  // Dummy call to mark the sequence of expectations.
 }
 
 }  // namespace acm2

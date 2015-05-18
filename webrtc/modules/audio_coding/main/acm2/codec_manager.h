@@ -31,9 +31,11 @@ class CodecManager final {
   CodecManager();
   ~CodecManager();
 
-  int RegisterSendCodec(const CodecInst& send_codec);
+  int RegisterEncoder(const CodecInst& send_codec);
 
-  int SendCodec(CodecInst* current_codec) const;
+  void RegisterEncoder(AudioEncoderMutable* external_speech_encoder);
+
+  int GetCodecInst(CodecInst* current_codec) const;
 
   bool SetCopyRed(bool enable);
 

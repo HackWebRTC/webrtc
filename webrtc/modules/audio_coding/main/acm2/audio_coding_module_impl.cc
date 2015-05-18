@@ -234,13 +234,19 @@ int AudioCodingModuleImpl::ResetEncoder() {
 // Can be called multiple times for Codec, CNG, RED.
 int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
   CriticalSectionScoped lock(acm_crit_sect_);
-  return codec_manager_.RegisterSendCodec(send_codec);
+  return codec_manager_.RegisterEncoder(send_codec);
+}
+
+void AudioCodingModuleImpl::RegisterExternalSendCodec(
+    AudioEncoderMutable* external_speech_encoder) {
+  CriticalSectionScoped lock(acm_crit_sect_);
+  codec_manager_.RegisterEncoder(external_speech_encoder);
 }
 
 // Get current send codec.
 int AudioCodingModuleImpl::SendCodec(CodecInst* current_codec) const {
   CriticalSectionScoped lock(acm_crit_sect_);
-  return codec_manager_.SendCodec(current_codec);
+  return codec_manager_.GetCodecInst(current_codec);
 }
 
 // Get current send frequency.

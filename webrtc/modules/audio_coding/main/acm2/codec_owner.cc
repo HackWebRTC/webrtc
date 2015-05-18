@@ -75,7 +75,8 @@ bool IsG722(const CodecInst& codec) {
 }
 }  // namespace
 
-CodecOwner::CodecOwner() : isac_is_encoder_(false) {
+CodecOwner::CodecOwner()
+    : isac_is_encoder_(false), external_speech_encoder_(nullptr) {
 }
 
 CodecOwner::~CodecOwner() = default;
@@ -92,7 +93,7 @@ AudioEncoderDecoderMutableIsac* CreateIsacCodec(const CodecInst& speech_inst) {
 #endif
 }
 
-AudioEncoder* CreateSpeechEncoder(
+void CreateSpeechEncoder(
     const CodecInst& speech_inst,
     rtc::scoped_ptr<AudioEncoderMutable>* speech_encoder,
     rtc::scoped_ptr<AudioEncoderDecoderMutableIsac>* isac_codec,
@@ -105,7 +106,7 @@ AudioEncoder* CreateSpeechEncoder(
     }
     *isac_is_encoder = true;
     speech_encoder->reset();
-    return isac_codec->get();
+    return;
   }
   if (IsOpus(speech_inst)) {
     speech_encoder->reset(new AudioEncoderMutableOpus(speech_inst));
@@ -123,7 +124,6 @@ AudioEncoder* CreateSpeechEncoder(
     FATAL();
   }
   *isac_is_encoder = false;
-  return speech_encoder->get();
 }
 
 AudioEncoder* CreateRedEncoder(int red_payload_type,
@@ -140,13 +140,13 @@ AudioEncoder* CreateRedEncoder(int red_payload_type,
   return red_encoder->get();
 }
 
-AudioEncoder* CreateCngEncoder(int cng_payload_type,
-                               ACMVADMode vad_mode,
-                               AudioEncoder* encoder,
-                               rtc::scoped_ptr<AudioEncoder>* cng_encoder) {
+void CreateCngEncoder(int cng_payload_type,
+                      ACMVADMode vad_mode,
+                      AudioEncoder* encoder,
+                      rtc::scoped_ptr<AudioEncoder>* cng_encoder) {
   if (cng_payload_type == -1) {
     cng_encoder->reset();
-    return encoder;
+    return;
   }
   AudioEncoderCng::Config config;
   config.num_channels = encoder->NumChannels();
@@ -169,7 +169,6 @@ AudioEncoder* CreateCngEncoder(int cng_payload_type,
       FATAL();
   }
   cng_encoder->reset(new AudioEncoderCng(config));
-  return cng_encoder->get();
 }
 }  // namespace
 
@@ -177,12 +176,31 @@ void CodecOwner::SetEncoders(const CodecInst& speech_inst,
                              int cng_payload_type,
                              ACMVADMode vad_mode,
                              int red_payload_type) {
-  AudioEncoder* encoder = CreateSpeechEncoder(speech_inst, &speech_encoder_,
-                                              &isac_codec_, &isac_is_encoder_);
-  encoder = CreateRedEncoder(red_payload_type, encoder, &red_encoder_);
-  encoder =
-      CreateCngEncoder(cng_payload_type, vad_mode, encoder, &cng_encoder_);
-  DCHECK(!speech_encoder_ || !isac_is_encoder_);
+  CreateSpeechEncoder(speech_inst, &speech_encoder_, &isac_codec_,
+                      &isac_is_encoder_);
+  external_speech_encoder_ = nullptr;
+  ChangeCngAndRed(cng_payload_type, vad_mode, red_payload_type);
+}
+
+void CodecOwner::SetEncoders(AudioEncoderMutable* external_speech_encoder,
+                             int cng_payload_type,
+                             ACMVADMode vad_mode,
+                             int red_payload_type) {
+  external_speech_encoder_ = external_speech_encoder;
+  speech_encoder_.reset();
+  isac_is_encoder_ = false;
+  ChangeCngAndRed(cng_payload_type, vad_mode, red_payload_type);
+}
+
+void CodecOwner::ChangeCngAndRed(int cng_payload_type,
+                                 ACMVADMode vad_mode,
+                                 int red_payload_type) {
+  AudioEncoder* encoder =
+      CreateRedEncoder(red_payload_type, SpeechEncoder(), &red_encoder_);
+  CreateCngEncoder(cng_payload_type, vad_mode, encoder, &cng_encoder_);
+  int num_true =
+      !!speech_encoder_ + !!external_speech_encoder_ + isac_is_encoder_;
+  DCHECK_EQ(num_true, 1);
   DCHECK(!isac_is_encoder_ || isac_codec_);
 }
 
@@ -219,8 +237,12 @@ AudioEncoderMutable* CodecOwner::SpeechEncoder() {
 }
 
 const AudioEncoderMutable* CodecOwner::SpeechEncoder() const {
-  DCHECK(!speech_encoder_ || !isac_is_encoder_);
-  DCHECK(!isac_is_encoder_ || isac_codec_);
+  int num_true =
+      !!speech_encoder_ + !!external_speech_encoder_ + isac_is_encoder_;
+  DCHECK_GE(num_true, 0);
+  DCHECK_LE(num_true, 1);
+  if (external_speech_encoder_)
+    return external_speech_encoder_;
   if (speech_encoder_)
     return speech_encoder_.get();
   return isac_is_encoder_ ? isac_codec_.get() : nullptr;

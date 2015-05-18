@@ -36,6 +36,31 @@ class MockAudioEncoder : public AudioEncoder {
                            uint8_t* encoded));
 };
 
+class MockAudioEncoderMutable : public AudioEncoderMutable {
+ public:
+  MOCK_CONST_METHOD0(SampleRateHz, int());
+  MOCK_CONST_METHOD0(NumChannels, int());
+  MOCK_CONST_METHOD0(MaxEncodedBytes, size_t());
+  MOCK_CONST_METHOD0(Num10MsFramesInNextPacket, int());
+  MOCK_CONST_METHOD0(Max10MsFramesInAPacket, int());
+  MOCK_METHOD1(SetTargetBitrate, void(int));
+  MOCK_METHOD1(SetProjectedPacketLossRate, void(double));
+  // Note, we explicitly chose not to create a mock for the Encode method.
+  MOCK_METHOD4(EncodeInternal,
+               EncodedInfo(uint32_t timestamp,
+                           const int16_t* audio,
+                           size_t max_encoded_bytes,
+                           uint8_t* encoded));
+
+  MOCK_METHOD0(Reset, void());
+  MOCK_METHOD1(SetFec, bool(bool enable));
+  MOCK_METHOD1(SetDtx, bool(bool enable));
+  MOCK_METHOD1(SetApplication, bool(Application application));
+  MOCK_METHOD1(SetMaxPayloadSize, void(int max_payload_size_bytes));
+  MOCK_METHOD1(SetMaxRate, void(int max_rate_bps));
+  MOCK_METHOD1(SetMaxPlaybackRate, bool(int frequency_hz));
+};
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_MOCK_MOCK_AUDIO_ENCODER_H_

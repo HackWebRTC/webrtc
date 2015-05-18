@@ -16,6 +16,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet.h"
@@ -50,16 +51,25 @@ bool AcmSendTestOldApi::RegisterCodec(const char* payload_name,
                                       int channels,
                                       int payload_type,
                                       int frame_size_samples) {
-  CHECK_EQ(0,
-           AudioCodingModule::Codec(
-               payload_name, &codec_, sampling_freq_hz, channels));
-  codec_.pltype = payload_type;
-  codec_.pacsize = frame_size_samples;
-  codec_registered_ = (acm_->RegisterSendCodec(codec_) == 0);
+  CodecInst codec;
+  CHECK_EQ(0, AudioCodingModule::Codec(payload_name, &codec, sampling_freq_hz,
+                                       channels));
+  codec.pltype = payload_type;
+  codec.pacsize = frame_size_samples;
+  codec_registered_ = (acm_->RegisterSendCodec(codec) == 0);
   input_frame_.num_channels_ = channels;
   assert(input_block_size_samples_ * input_frame_.num_channels_ <=
          AudioFrame::kMaxDataSizeSamples);
   return codec_registered_;
+}
+
+bool AcmSendTestOldApi::RegisterExternalCodec(
+    AudioEncoderMutable* external_speech_encoder) {
+  acm_->RegisterExternalSendCodec(external_speech_encoder);
+  input_frame_.num_channels_ = external_speech_encoder->NumChannels();
+  assert(input_block_size_samples_ * input_frame_.num_channels_ <=
+         AudioFrame::kMaxDataSizeSamples);
+  return codec_registered_ = true;
 }
 
 Packet* AcmSendTestOldApi::NextPacket() {

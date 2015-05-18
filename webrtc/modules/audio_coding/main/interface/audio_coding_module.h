@@ -28,6 +28,7 @@ struct CodecInst;
 struct WebRtcRTPHeader;
 class AudioFrame;
 class RTPFragmentationHeader;
+class AudioEncoderMutable;
 
 #define WEBRTC_10MS_PCM_AUDIO 960  // 16 bits super wideband 48 kHz
 
@@ -230,6 +231,11 @@ class AudioCodingModule {
   //    0 if succeeded.
   //
   virtual int32_t RegisterSendCodec(const CodecInst& send_codec) = 0;
+
+  // Registers |external_speech_encoder| as encoder. The new encoder will
+  // replace any previously registered speech encoder (internal or external).
+  virtual void RegisterExternalSendCodec(
+      AudioEncoderMutable* external_speech_encoder) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t SendCodec()

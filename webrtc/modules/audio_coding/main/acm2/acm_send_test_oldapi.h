@@ -20,6 +20,7 @@
 #include "webrtc/system_wrappers/interface/clock.h"
 
 namespace webrtc {
+class AudioEncoderMutable;
 
 namespace test {
 class InputAudioFile;
@@ -39,6 +40,9 @@ class AcmSendTestOldApi : public AudioPacketizationCallback,
                      int channels,
                      int payload_type,
                      int frame_size_samples);
+
+  // Registers an external send codec. Returns true on success, false otherwise.
+  bool RegisterExternalCodec(AudioEncoderMutable* external_speech_encoder);
 
   // Returns the next encoded packet. Returns NULL if the test duration was
   // exceeded. Ownership of the packet is handed over to the caller.
@@ -69,7 +73,6 @@ class AcmSendTestOldApi : public AudioPacketizationCallback,
   int source_rate_hz_;
   const int input_block_size_samples_;
   AudioFrame input_frame_;
-  CodecInst codec_;
   bool codec_registered_;
   int test_duration_ms_;
   // The following member variables are set whenever SendData() is called.
