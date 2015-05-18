@@ -21,6 +21,7 @@ source_set("video") {
     "send_statistics_proxy.h",
     "transport_adapter.cc",
     "transport_adapter.h",
+    "video_decoder.cc",
     "video_receive_stream.cc",
     "video_receive_stream.h",
     "video_send_stream.cc",

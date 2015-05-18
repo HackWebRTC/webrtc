@@ -22,6 +22,7 @@
       'video/receive_statistics_proxy.h',
       'video/transport_adapter.cc',
       'video/transport_adapter.h',
+      'video/video_decoder.cc',
       'video/video_receive_stream.cc',
       'video/video_receive_stream.h',
       'video/video_send_stream.cc',

@@ -2223,6 +2223,21 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
   SetRecvCodecs(recv_codecs);
 }
 
+WebRtcVideoChannel2::WebRtcVideoReceiveStream::AllocatedDecoder::
+    AllocatedDecoder(webrtc::VideoDecoder* decoder,
+                     webrtc::VideoCodecType type,
+                     bool external)
+    : decoder(decoder),
+      external_decoder(nullptr),
+      type(type),
+      external(external) {
+  if (external) {
+    external_decoder = decoder;
+    this->decoder =
+        new webrtc::VideoDecoderSoftwareFallbackWrapper(type, external_decoder);
+  }
+}
+
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::~WebRtcVideoReceiveStream() {
   call_->DestroyVideoReceiveStream(stream_);
   ClearDecoders(&allocated_decoders_);
@@ -2330,10 +2345,9 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ClearDecoders(
   for (size_t i = 0; i < allocated_decoders->size(); ++i) {
     if ((*allocated_decoders)[i].external) {
       external_decoder_factory_->DestroyVideoDecoder(
-          (*allocated_decoders)[i].decoder);
-    } else {
-      delete (*allocated_decoders)[i].decoder;
+          (*allocated_decoders)[i].external_decoder);
     }
+    delete (*allocated_decoders)[i].decoder;
   }
   allocated_decoders->clear();
 }

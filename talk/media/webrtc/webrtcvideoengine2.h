@@ -430,9 +430,10 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     struct AllocatedDecoder {
       AllocatedDecoder(webrtc::VideoDecoder* decoder,
                        webrtc::VideoCodecType type,
-                       bool external)
-          : decoder(decoder), type(type), external(external) {}
+                       bool external);
       webrtc::VideoDecoder* decoder;
+      // Decoder wrapped into a fallback decoder to permit software fallback.
+      webrtc::VideoDecoder* external_decoder;
       webrtc::VideoCodecType type;
       bool external;
     };
