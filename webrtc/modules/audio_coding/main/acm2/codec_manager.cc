@@ -11,7 +11,8 @@
 #include "webrtc/modules/audio_coding/main/acm2/codec_manager.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_coding/main/acm2/audio_coding_module_impl.h"
+#include "webrtc/engine_configurations.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
@@ -152,9 +153,8 @@ bool CodecSupported(const CodecInst& codec) {
 const CodecInst kEmptyCodecInst = {-1, "noCodecRegistered", 0, 0, 0, 0};
 }  // namespace
 
-CodecManager::CodecManager(AudioCodingModuleImpl* acm)
-    : acm_(acm),
-      cng_nb_pltype_(255),
+CodecManager::CodecManager()
+    : cng_nb_pltype_(255),
       cng_wb_pltype_(255),
       cng_swb_pltype_(255),
       cng_fb_pltype_(255),
@@ -333,37 +333,6 @@ int CodecManager::SendCodec(CodecInst* current_codec) const {
   }
   *current_codec = send_codec_inst_;
   return 0;
-}
-
-// Register possible receive codecs, can be called multiple times,
-// for codecs, CNG (NB, WB and SWB), DTMF, RED.
-int CodecManager::RegisterReceiveCodec(const CodecInst& codec) {
-  if (codec.channels > 2 || codec.channels < 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
-                 "Unsupported number of channels, %d.", codec.channels);
-    return -1;
-  }
-
-  int codec_id = ACMCodecDB::ReceiverCodecNumber(codec);
-
-  if (codec_id < 0 || codec_id >= ACMCodecDB::kNumCodecs) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
-                 "Wrong codec params to be registered as receive codec");
-    return -1;
-  }
-
-  // Check if the payload-type is valid.
-  if (!ACMCodecDB::ValidPayloadType(codec.pltype)) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
-                 "Invalid payload-type %d for %s.", codec.pltype, codec.plname);
-    return -1;
-  }
-
-  // Get |decoder| associated with |codec|. |decoder| can be NULL if |codec|
-  // does not own its decoder.
-  //  uint8_t payload_type = static_cast<uint8_t>(codec.pltype);
-  return acm_->RegisterDecoder(codec_id, codec.pltype, codec.channels,
-                               GetAudioDecoder(codec));
 }
 
 bool CodecManager::SetCopyRed(bool enable) {

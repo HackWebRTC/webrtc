@@ -14,9 +14,6 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
-#include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
-#include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/main/acm2/codec_owner.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
 #include "webrtc/common_types.h"
@@ -24,21 +21,19 @@
 namespace webrtc {
 
 class AudioDecoder;
+class AudioEncoder;
+class AudioEncoderMutable;
 
 namespace acm2 {
 
-class AudioCodingModuleImpl;
-
 class CodecManager final {
  public:
-  explicit CodecManager(AudioCodingModuleImpl* acm);
+  CodecManager();
   ~CodecManager();
 
   int RegisterSendCodec(const CodecInst& send_codec);
 
   int SendCodec(CodecInst* current_codec) const;
-
-  int RegisterReceiveCodec(const CodecInst& receive_codec);
 
   bool SetCopyRed(bool enable);
 
@@ -47,6 +42,13 @@ class CodecManager final {
   void VAD(bool* dtx_enabled, bool* vad_enabled, ACMVADMode* mode) const;
 
   int SetCodecFEC(bool enable_codec_fec);
+
+  // Returns a pointer to AudioDecoder of the given codec. For iSAC, encoding
+  // and decoding have to be performed on a shared codec instance. By calling
+  // this method, we get the codec instance that ACM owns.
+  // If |codec| does not share an instance between encoder and decoder, returns
+  // null.
+  AudioDecoder* GetAudioDecoder(const CodecInst& codec);
 
   bool stereo_send() const { return stereo_send_; }
 
@@ -61,18 +63,10 @@ class CodecManager final {
   const AudioEncoder* CurrentEncoder() const { return codec_owner_.Encoder(); }
 
  private:
-  // Returns a pointer to AudioDecoder of the given codec. For iSAC, encoding
-  // and decoding have to be performed on a shared codec instance. By calling
-  // this method, we get the codec instance that ACM owns.
-  // If |codec| does not share an instance between encoder and decoder, returns
-  // null.
-  AudioDecoder* GetAudioDecoder(const CodecInst& codec);
-
   int CngPayloadType(int sample_rate_hz) const;
 
   int RedPayloadType(int sample_rate_hz) const;
 
-  AudioCodingModuleImpl* acm_;
   rtc::ThreadChecker thread_checker_;
   uint8_t cng_nb_pltype_;
   uint8_t cng_wb_pltype_;

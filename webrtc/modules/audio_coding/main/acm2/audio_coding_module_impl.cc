@@ -22,6 +22,7 @@
 #include "webrtc/modules/audio_coding/main/acm2/acm_resampler.h"
 #include "webrtc/modules/audio_coding/main/acm2/call_statistics.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/typedefs.h"
@@ -125,7 +126,6 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
       expected_codec_ts_(0xD87F3F9F),
       expected_in_ts_(0xD87F3F9F),
       receiver_(config),
-      codec_manager_(this),
       previous_pltype_(255),
       aux_rtp_header_(NULL),
       receiver_initialized_(false),
@@ -617,21 +617,34 @@ int AudioCodingModuleImpl::PlayoutFrequency() const {
 int AudioCodingModuleImpl::RegisterReceiveCodec(const CodecInst& codec) {
   CriticalSectionScoped lock(acm_crit_sect_);
   DCHECK(receiver_initialized_);
-  return codec_manager_.RegisterReceiveCodec(codec);
+  if (codec.channels > 2 || codec.channels < 0) {
+    LOG_F(LS_ERROR) << "Unsupported number of channels: " << codec.channels;
+    return -1;
+  }
+
+  int codec_id = ACMCodecDB::ReceiverCodecNumber(codec);
+  if (codec_id < 0 || codec_id >= ACMCodecDB::kNumCodecs) {
+    LOG_F(LS_ERROR) << "Wrong codec params to be registered as receive codec";
+    return -1;
+  }
+
+  // Check if the payload-type is valid.
+  if (!ACMCodecDB::ValidPayloadType(codec.pltype)) {
+    LOG_F(LS_ERROR) << "Invalid payload type " << codec.pltype << " for "
+                    << codec.plname;
+    return -1;
+  }
+
+  // Get |decoder| associated with |codec|. |decoder| is NULL if |codec| does
+  // not own its decoder.
+  return receiver_.AddCodec(codec_id, codec.pltype, codec.channels,
+                            codec_manager_.GetAudioDecoder(codec));
 }
 
 // Get current received codec.
 int AudioCodingModuleImpl::ReceiveCodec(CodecInst* current_codec) const {
   CriticalSectionScoped lock(acm_crit_sect_);
   return receiver_.LastAudioCodec(current_codec);
-}
-
-int AudioCodingModuleImpl::RegisterDecoder(int acm_codec_id,
-                                           uint8_t payload_type,
-                                           int channels,
-                                           AudioDecoder* audio_decoder) {
-  return receiver_.AddCodec(acm_codec_id, payload_type, channels,
-                            audio_decoder);
 }
 
 // Incoming packet from network parsed and ready for decode.

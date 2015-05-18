@@ -137,11 +137,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // Get current received codec.
   int ReceiveCodec(CodecInst* current_codec) const override;
 
-  int RegisterDecoder(int acm_codec_id,
-                      uint8_t payload_type,
-                      int channels,
-                      AudioDecoder* audio_decoder);
-
   // Incoming packet from network parsed and ready for decode.
   int IncomingPacket(const uint8_t* incoming_payload,
                      const size_t payload_length,
