@@ -126,9 +126,6 @@ inline bool IsCurrentProcessLowIntegrity() {
 
 bool AdjustCurrentProcessPrivilege(const TCHAR* privilege, bool to_enable);
 
-// Sets the current thread name for the windows debugger.
-void SetCurrentThreadName(const char* name);
-
 }  // namespace rtc
 
 #endif  // WEBRTC_WIN

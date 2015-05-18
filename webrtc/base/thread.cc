@@ -22,6 +22,7 @@
 
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/timeutils.h"
 
@@ -350,41 +351,10 @@ void Thread::AssertBlockingIsAllowedOnCurrentThread() {
 #endif
 }
 
-#if defined(WEBRTC_WIN)
-// As seen on MSDN.
-// http://msdn.microsoft.com/en-us/library/xcb2z8hs(VS.71).aspx
-#define MSDEV_SET_THREAD_NAME  0x406D1388
-typedef struct tagTHREADNAME_INFO {
-  DWORD dwType;
-  LPCSTR szName;
-  DWORD dwThreadID;
-  DWORD dwFlags;
-} THREADNAME_INFO;
-
-void SetThreadName(DWORD dwThreadID, LPCSTR szThreadName) {
-  THREADNAME_INFO info;
-  info.dwType = 0x1000;
-  info.szName = szThreadName;
-  info.dwThreadID = dwThreadID;
-  info.dwFlags = 0;
-
-  __try {
-    RaiseException(MSDEV_SET_THREAD_NAME, 0, sizeof(info) / sizeof(DWORD),
-                   reinterpret_cast<ULONG_PTR*>(&info));
-  }
-  __except(EXCEPTION_CONTINUE_EXECUTION) {
-  }
-}
-#endif  // WEBRTC_WIN
-
 void* Thread::PreRun(void* pv) {
   ThreadInit* init = static_cast<ThreadInit*>(pv);
   ThreadManager::Instance()->SetCurrentThread(init->thread);
-#if defined(WEBRTC_WIN)
-  SetThreadName(GetCurrentThreadId(), init->thread->name_.c_str());
-#elif defined(WEBRTC_POSIX)
-  // TODO: See if naming exists for pthreads.
-#endif
+  rtc::SetCurrentThreadName(init->thread->name_.c_str());
 #if __has_feature(objc_arc)
   @autoreleasepool
 #elif defined(WEBRTC_MAC)

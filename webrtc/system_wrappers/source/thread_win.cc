@@ -15,6 +15,7 @@
 #include <windows.h>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
@@ -22,36 +23,6 @@ namespace {
 void CALLBACK RaiseFlag(ULONG_PTR param) {
   *reinterpret_cast<bool*>(param) = true;
 }
-
-// TODO(tommi): This is borrowed from webrtc/base/thread.cc, but we can't
-// include thread.h from here since thread.h pulls in libjingle dependencies.
-// Would be good to consolidate.
-
-// As seen on MSDN.
-// http://msdn.microsoft.com/en-us/library/xcb2z8hs(VS.71).aspx
-#define MSDEV_SET_THREAD_NAME  0x406D1388
-typedef struct tagTHREADNAME_INFO {
-  DWORD dwType;
-  LPCSTR szName;
-  DWORD dwThreadID;
-  DWORD dwFlags;
-} THREADNAME_INFO;
-
-void SetThreadName(DWORD dwThreadID, LPCSTR szThreadName) {
-  THREADNAME_INFO info;
-  info.dwType = 0x1000;
-  info.szName = szThreadName;
-  info.dwThreadID = dwThreadID;
-  info.dwFlags = 0;
-
-  __try {
-    RaiseException(MSDEV_SET_THREAD_NAME, 0, sizeof(info) / sizeof(DWORD),
-                   reinterpret_cast<ULONG_PTR*>(&info));
-  }
-  __except(EXCEPTION_CONTINUE_EXECUTION) {
-  }
-}
-
 }
 
 ThreadWindows::ThreadWindows(ThreadRunFunction func, void* obj,
@@ -120,7 +91,7 @@ bool ThreadWindows::SetPriority(ThreadPriority priority) {
 
 void ThreadWindows::Run() {
   if (!name_.empty())
-    SetThreadName(static_cast<DWORD>(-1), name_.c_str());
+    rtc::SetCurrentThreadName(name_.c_str());
 
   do {
     // The interface contract of Start/Stop is that for a successfull call to

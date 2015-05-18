@@ -235,7 +235,6 @@ private:    // thread functions
     static DWORD WINAPI SetCaptureVolumeThread(LPVOID context);
     DWORD DoSetCaptureVolumeThread();
 
-    void _SetThreadName(DWORD dwThreadID, LPCSTR szThreadName);
     void _Lock() { _critSect.Enter(); };
     void _UnLock() { _critSect.Leave(); };
 

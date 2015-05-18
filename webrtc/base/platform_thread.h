@@ -35,6 +35,9 @@ PlatformThreadRef CurrentThreadRef();
 // Compares two thread identifiers for equality.
 bool IsThreadRefEqual(const PlatformThreadRef& a, const PlatformThreadRef& b);
 
+// Sets the current thread name.
+void SetCurrentThreadName(const char* name);
+
 }  // namespace rtc
 
 #endif  // WEBRTC_BASE_PLATFORM_THREAD_H_

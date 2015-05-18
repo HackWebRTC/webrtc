@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/video_capture/windows/sink_filter_ds.h"
 
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/video_capture/windows/help_functions_ds.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
@@ -328,24 +329,8 @@ CaptureInputPin::Receive ( IN IMediaSample * pIMediaSample )
         HANDLE handle= GetCurrentThread();
         SetThreadPriority(handle, THREAD_PRIORITY_HIGHEST);
         _threadHandle = handle;
-        // See http://msdn.microsoft.com/en-us/library/xcb2z8hs(VS.71).aspx for details on the code
-        // in this function. Name od article is "Setting a Thread Name (Unmanaged)".
 
-        THREADNAME_INFO info;
-        info.dwType = 0x1000;
-        info.szName = "capture_thread";
-        info.dwThreadID = (DWORD)-1;
-        info.dwFlags = 0;
-
-        __try
-        {
-            RaiseException( 0x406D1388, 0, sizeof(info)/sizeof(DWORD),
-                            (DWORD_PTR*)&info );
-        }
-        __except (EXCEPTION_CONTINUE_EXECUTION)
-        {
-        }
-
+        rtc::SetCurrentThreadName("webrtc_video_capture");
     }
 
     reinterpret_cast <CaptureSinkFilter *>(m_pFilter)->LockReceive();
