@@ -21,8 +21,6 @@
 
 namespace webrtc {
 
-class PlayoutDelayProvider;
-
 // Implements 16-bit mono PCM audio input support for Android using the Java
 // AudioRecord interface. Most of the work is done by its Java counterpart in
 // WebRtcAudioRecord.java. This class is created and lives on a thread in
@@ -58,8 +56,7 @@ class AudioRecordJni {
   // existing global references and enables garbage collection.
   static void ClearAndroidAudioDeviceObjects();
 
-  AudioRecordJni(
-      PlayoutDelayProvider* delay_provider, AudioManager* audio_manager);
+  explicit AudioRecordJni(AudioManager* audio_manager);
   ~AudioRecordJni();
 
   int32_t Init();
@@ -72,11 +69,8 @@ class AudioRecordJni {
   int32_t StopRecording ();
   bool Recording() const { return recording_; }
 
-  int32_t RecordingDelay(uint16_t& delayMS) const;
-
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
 
-  bool BuiltInAECIsAvailable() const;
   int32_t EnableBuiltInAEC(bool enable);
 
  private:
@@ -116,15 +110,17 @@ class AudioRecordJni {
   // thread in Java. Detached during construction of this object.
   rtc::ThreadChecker thread_checker_java_;
 
-  // Returns the current playout delay.
-  // TODO(henrika): this value is currently fixed since initial tests have
-  // shown that the estimated delay varies very little over time. It might be
-  // possible to make improvements in this area.
-  PlayoutDelayProvider* delay_provider_;
+  // Raw pointer to the audio manger.
+  const AudioManager* audio_manager_;
 
   // Contains audio parameters provided to this class at construction by the
   // AudioManager.
   const AudioParameters audio_parameters_;
+
+  // Delay estimate of the total round-trip delay (input + output).
+  // Fixed value set once in AttachAudioBuffer() and it can take one out of two
+  // possible values. See audio_common.h for details.
+  int total_delay_in_milliseconds_;
 
   // The Java WebRtcAudioRecord instance.
   jobject j_audio_record_;
@@ -148,9 +144,6 @@ class AudioRecordJni {
   // Raw pointer handle provided to us in AttachAudioBuffer(). Owned by the
   // AudioDeviceModuleImpl class and called by AudioDeviceModuleImpl::Create().
   AudioDeviceBuffer* audio_device_buffer_;
-
-  // Contains a delay estimate from the playout side given by |delay_provider_|.
-  int playout_delay_in_milliseconds_;
 };
 
 }  // namespace webrtc

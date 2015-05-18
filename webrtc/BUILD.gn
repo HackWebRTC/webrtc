@@ -55,9 +55,6 @@ config("common_inherited_config") {
       "WEBRTC_LINUX",
       "WEBRTC_ANDROID",
     ]
-    if (rtc_enable_android_opensl) {
-      defines += [ "WEBRTC_ANDROID_OPENSLES" ]
-    }
   }
 }
 

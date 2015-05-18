@@ -39,7 +39,7 @@ namespace webrtc {
 // detach when method goes out of scope. We do so because this class does not
 // own the thread is is created and called on and other objects on the same
 // thread might put us in a detached state at any time.
-class AudioTrackJni : public PlayoutDelayProvider {
+class AudioTrackJni {
  public:
   // Use the invocation API to allow the native application to use the JNI
   // interface pointer to access VM features.
@@ -71,12 +71,7 @@ class AudioTrackJni : public PlayoutDelayProvider {
   int MaxSpeakerVolume(uint32_t& max_volume) const;
   int MinSpeakerVolume(uint32_t& min_volume) const;
 
-  int32_t PlayoutDelay(uint16_t& delayMS) const;
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
-
- protected:
-  // PlayoutDelayProvider implementation.
-  virtual int PlayoutDelayMs();
 
  private:
   // Called from Java side so we can cache the address of the Java-manged
@@ -140,12 +135,6 @@ class AudioTrackJni : public PlayoutDelayProvider {
   // The AudioDeviceBuffer is a member of the AudioDeviceModuleImpl instance
   // and therefore outlives this object.
   AudioDeviceBuffer* audio_device_buffer_;
-
-  // Estimated playout delay caused by buffering in the Java based audio track.
-  // We are using a fixed value here since measurements have shown that the
-  // variations are very small (~10ms) and it is not worth the extra complexity
-  // to update this estimate on a continuous basis.
-  int delay_in_milliseconds_;
 };
 
 }  // namespace webrtc

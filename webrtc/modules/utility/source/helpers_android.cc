@@ -31,17 +31,40 @@ JNIEnv* GetEnv(JavaVM* jvm) {
   return reinterpret_cast<JNIEnv*>(env);
 }
 
+// Return a |jlong| that will correctly convert back to |ptr|.  This is needed
+// because the alternative (of silently passing a 32-bit pointer to a vararg
+// function expecting a 64-bit param) picks up garbage in the high 32 bits.
+jlong PointerTojlong(void* ptr) {
+  static_assert(sizeof(intptr_t) <= sizeof(jlong),
+                "Time to rethink the use of jlongs");
+  // Going through intptr_t to be obvious about the definedness of the
+  // conversion from pointer to integral type.  intptr_t to jlong is a standard
+  // widening by the static_assert above.
+  jlong ret = reinterpret_cast<intptr_t>(ptr);
+  DCHECK(reinterpret_cast<void*>(ret) == ptr);
+  return ret;
+}
+
 jmethodID GetMethodID (
-    JNIEnv* jni, jclass c, const std::string& name, const char* signature) {
-  jmethodID m = jni->GetMethodID(c, name.c_str(), signature);
+    JNIEnv* jni, jclass c, const char* name, const char* signature) {
+  jmethodID m = jni->GetMethodID(c, name, signature);
   CHECK_EXCEPTION(jni) << "Error during GetMethodID: " << name << ", "
                        << signature;
   CHECK(m) << name << ", " << signature;
   return m;
 }
 
-jclass FindClass(JNIEnv* jni, const std::string& name) {
-  jclass c = jni->FindClass(name.c_str());
+jmethodID GetStaticMethodID (
+    JNIEnv* jni, jclass c, const char* name, const char* signature) {
+  jmethodID m = jni->GetStaticMethodID(c, name, signature);
+  CHECK_EXCEPTION(jni) << "Error during GetStaticMethodID: " << name << ", "
+                       << signature;
+  CHECK(m) << name << ", " << signature;
+  return m;
+}
+
+jclass FindClass(JNIEnv* jni, const char* name) {
+  jclass c = jni->FindClass(name);
   CHECK_EXCEPTION(jni) << "Error during FindClass: " << name;
   CHECK(c) << name;
   return c;

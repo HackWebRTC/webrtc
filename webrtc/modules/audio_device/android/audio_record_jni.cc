@@ -25,11 +25,6 @@
 
 namespace webrtc {
 
-// We are unable to obtain exact measurements of the hardware delay on Android.
-// Instead, a lower bound (based on measurements) is used.
-// TODO(henrika): is it possible to improve this?
-static const int kHardwareDelayInMilliseconds = 100;
-
 static JavaVM* g_jvm = NULL;
 static jobject g_context = NULL;
 static jclass g_audio_record_class = NULL;
@@ -82,18 +77,17 @@ void AudioRecordJni::ClearAndroidAudioDeviceObjects() {
   g_jvm = NULL;
 }
 
-AudioRecordJni::AudioRecordJni(
-    PlayoutDelayProvider* delay_provider, AudioManager* audio_manager)
-    : delay_provider_(delay_provider),
+AudioRecordJni::AudioRecordJni(AudioManager* audio_manager)
+    : audio_manager_(audio_manager),
       audio_parameters_(audio_manager->GetRecordAudioParameters()),
+      total_delay_in_milliseconds_(0),
       j_audio_record_(NULL),
       direct_buffer_address_(NULL),
       direct_buffer_capacity_in_bytes_(0),
       frames_per_buffer_(0),
       initialized_(false),
       recording_(false),
-      audio_device_buffer_(NULL),
-      playout_delay_in_milliseconds_(0) {
+      audio_device_buffer_(NULL) {
   ALOGD("ctor%s", GetThreadInfo().c_str());
   DCHECK(audio_parameters_.is_valid());
   CHECK(HasDeviceObjects());
@@ -150,7 +144,7 @@ int32_t AudioRecordJni::InitRecording() {
   ALOGD("frames_per_buffer: %d", frames_per_buffer_);
   CHECK_EQ(direct_buffer_capacity_in_bytes_,
            frames_per_buffer_ * kBytesPerFrame);
-  CHECK_EQ(frames_per_buffer_, audio_parameters_.frames_per_buffer());
+  CHECK_EQ(frames_per_buffer_, audio_parameters_.frames_per_10ms_buffer());
   initialized_ = true;
   return 0;
 }
@@ -201,12 +195,6 @@ int32_t AudioRecordJni::StopRecording() {
   return 0;
 }
 
-int32_t AudioRecordJni::RecordingDelay(uint16_t& delayMS) const {  // NOLINT
-  // TODO(henrika): is it possible to improve this estimate?
-  delayMS = kHardwareDelayInMilliseconds;
-  return 0;
-}
-
 void AudioRecordJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   ALOGD("AttachAudioBuffer");
   DCHECK(thread_checker_.CalledOnValidThread());
@@ -217,20 +205,10 @@ void AudioRecordJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   const int channels = audio_parameters_.channels();
   ALOGD("SetRecordingChannels(%d)", channels);
   audio_device_buffer_->SetRecordingChannels(channels);
-}
-
-bool AudioRecordJni::BuiltInAECIsAvailable() const {
-  ALOGD("BuiltInAECIsAvailable%s", GetThreadInfo().c_str());
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID builtInAECIsAvailable = jni->GetStaticMethodID(
-      g_audio_record_class, "BuiltInAECIsAvailable", "()Z");
-  CHECK_EXCEPTION(jni);
-  CHECK(builtInAECIsAvailable);
-  jboolean hw_aec = jni->CallStaticBooleanMethod(g_audio_record_class,
-                                                 builtInAECIsAvailable);
-  CHECK_EXCEPTION(jni);
-  return hw_aec;
+  total_delay_in_milliseconds_ =
+      audio_manager_->GetDelayEstimateInMilliseconds();
+  DCHECK_GT(total_delay_in_milliseconds_, 0);
+  ALOGD("total_delay_in_milliseconds: %d", total_delay_in_milliseconds_);
 }
 
 int32_t AudioRecordJni::EnableBuiltInAEC(bool enable) {
@@ -283,16 +261,15 @@ void AudioRecordJni::OnDataIsRecorded(int length) {
     ALOGE("AttachAudioBuffer has not been called!");
     return;
   }
-  if (playout_delay_in_milliseconds_ == 0) {
-    playout_delay_in_milliseconds_ = delay_provider_->PlayoutDelayMs();
-    ALOGD("cached playout delay: %d", playout_delay_in_milliseconds_);
-  }
   audio_device_buffer_->SetRecordedBuffer(direct_buffer_address_,
                                           frames_per_buffer_);
-  audio_device_buffer_->SetVQEData(playout_delay_in_milliseconds_,
-                                   kHardwareDelayInMilliseconds,
-                                   0 /* clockDrift */);
-  if (audio_device_buffer_->DeliverRecordedData() == 1) {
+  // We provide one (combined) fixed delay estimate for the APM and use the
+  // |playDelayMs| parameter only. Components like the AEC only sees the sum
+  // of |playDelayMs| and |recDelayMs|, hence the distributions does not matter.
+  audio_device_buffer_->SetVQEData(total_delay_in_milliseconds_,
+                                   0,    // recDelayMs
+                                   0 );  // clockDrift
+  if (audio_device_buffer_->DeliverRecordedData() == -1) {
     ALOGE("AudioDeviceBuffer::DeliverRecordedData failed!");
   }
 }

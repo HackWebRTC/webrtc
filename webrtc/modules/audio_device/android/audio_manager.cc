@@ -14,6 +14,7 @@
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
 #include "webrtc/modules/utility/interface/helpers_android.h"
 
@@ -26,79 +27,87 @@
 
 namespace webrtc {
 
-static JavaVM* g_jvm = NULL;
-static jobject g_context = NULL;
-static jclass g_audio_manager_class = NULL;
-
-void AudioManager::SetAndroidAudioDeviceObjects(void* jvm, void* context) {
-  ALOGD("SetAndroidAudioDeviceObjects%s", GetThreadInfo().c_str());
-
-  CHECK(jvm);
-  CHECK(context);
-
-  g_jvm = reinterpret_cast<JavaVM*>(jvm);
-  JNIEnv* jni = GetEnv(g_jvm);
-  CHECK(jni) << "AttachCurrentThread must be called on this tread";
-
-  g_context = NewGlobalRef(jni, reinterpret_cast<jobject>(context));
-  jclass local_class = FindClass(
-      jni, "org/webrtc/voiceengine/WebRtcAudioManager");
-  g_audio_manager_class = reinterpret_cast<jclass>(
-      NewGlobalRef(jni, local_class));
-  CHECK_EXCEPTION(jni);
-
-  // Register native methods with the WebRtcAudioManager class. These methods
-  // are declared private native in WebRtcAudioManager.java.
-  JNINativeMethod native_methods[] = {
-      {"nativeCacheAudioParameters", "(IIJ)V",
-       reinterpret_cast<void*>(&webrtc::AudioManager::CacheAudioParameters)}};
-  jni->RegisterNatives(g_audio_manager_class,
-                       native_methods, arraysize(native_methods));
-  CHECK_EXCEPTION(jni) << "Error during RegisterNatives";
+// AudioManager::JavaAudioManager implementation
+AudioManager::JavaAudioManager::JavaAudioManager(
+    NativeRegistration* native_reg, rtc::scoped_ptr<GlobalRef> audio_manager)
+    : audio_manager_(audio_manager.Pass()),
+      init_(native_reg->GetMethodId("init", "()Z")),
+      dispose_(native_reg->GetMethodId("dispose", "()V")),
+      set_communication_mode_(
+          native_reg->GetMethodId("setCommunicationMode", "(Z)V")) {
+  ALOGD("JavaAudioManager::ctor%s", GetThreadInfo().c_str());
 }
 
-void AudioManager::ClearAndroidAudioDeviceObjects() {
-  ALOGD("ClearAndroidAudioDeviceObjects%s", GetThreadInfo().c_str());
-  JNIEnv* jni = GetEnv(g_jvm);
-  CHECK(jni) << "AttachCurrentThread must be called on this tread";
-  jni->UnregisterNatives(g_audio_manager_class);
-  CHECK_EXCEPTION(jni) << "Error during UnregisterNatives";
-  DeleteGlobalRef(jni, g_audio_manager_class);
-  g_audio_manager_class = NULL;
-  DeleteGlobalRef(jni, g_context);
-  g_context = NULL;
-  g_jvm = NULL;
+AudioManager::JavaAudioManager::~JavaAudioManager() {
+  ALOGD("JavaAudioManager::dtor%s", GetThreadInfo().c_str());
 }
 
+bool AudioManager::JavaAudioManager::Init() {
+  return audio_manager_->CallBooleanMethod(init_);
+}
+
+void AudioManager::JavaAudioManager::Close() {
+  audio_manager_->CallVoidMethod(dispose_);
+}
+
+void AudioManager::JavaAudioManager::SetCommunicationMode(bool enable) {
+  audio_manager_->CallVoidMethod(set_communication_mode_, enable);
+}
+
+// AudioManager implementation
 AudioManager::AudioManager()
-    : j_audio_manager_(NULL),
-      initialized_(false) {
+    : j_environment_(JVM::GetInstance()->environment()),
+      audio_layer_(AudioDeviceModule::kPlatformDefaultAudio),
+      initialized_(false),
+      hardware_aec_(false),
+      low_latency_playout_(false),
+      delay_estimate_in_milliseconds_(0) {
   ALOGD("ctor%s", GetThreadInfo().c_str());
-  CHECK(HasDeviceObjects());
-  CreateJavaInstance();
+  CHECK(j_environment_);
+  JNINativeMethod native_methods[] = {
+      {"nativeCacheAudioParameters",
+       "(IIZZIIJ)V",
+       reinterpret_cast<void*>(&webrtc::AudioManager::CacheAudioParameters)}};
+  j_native_registration_ = j_environment_->RegisterNatives(
+      "org/webrtc/voiceengine/WebRtcAudioManager",
+      native_methods, arraysize(native_methods));
+  j_audio_manager_.reset(new JavaAudioManager(
+      j_native_registration_.get(),
+      j_native_registration_->NewObject(
+          "<init>", "(Landroid/content/Context;J)V",
+          JVM::GetInstance()->context(), PointerTojlong(this))));
 }
 
 AudioManager::~AudioManager() {
   ALOGD("~dtor%s", GetThreadInfo().c_str());
   DCHECK(thread_checker_.CalledOnValidThread());
   Close();
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jni->DeleteGlobalRef(j_audio_manager_);
-  j_audio_manager_ = NULL;
+}
+
+void AudioManager::SetActiveAudioLayer(
+    AudioDeviceModule::AudioLayer audio_layer) {
+  ALOGD("SetActiveAudioLayer(%d)%s", audio_layer, GetThreadInfo().c_str());
+  DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK(!initialized_);
+  // Store the currenttly utilized audio layer.
+  audio_layer_ = audio_layer;
+  // The delay estimate can take one of two fixed values depending on if the
+  // device supports low-latency output or not. However, it is also possible
+  // that the user explicitly selects the high-latency audio path, hence we use
+  // the selected |audio_layer| here to set the delay estimate.
+  delay_estimate_in_milliseconds_ =
+      (audio_layer == AudioDeviceModule::kAndroidJavaAudio) ?
+      kHighLatencyModeDelayEstimateInMilliseconds :
+      kLowLatencyModeDelayEstimateInMilliseconds;
+  ALOGD("delay_estimate_in_milliseconds: %d", delay_estimate_in_milliseconds_);
 }
 
 bool AudioManager::Init() {
   ALOGD("Init%s", GetThreadInfo().c_str());
   DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK(!initialized_);
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID initID = GetMethodID(jni, g_audio_manager_class, "init", "()Z");
-  jboolean res = jni->CallBooleanMethod(j_audio_manager_, initID);
-  CHECK_EXCEPTION(jni);
-  if (!res) {
+  DCHECK_NE(audio_layer_, AudioDeviceModule::kPlatformDefaultAudio);
+  if (!j_audio_manager_->Init()) {
     ALOGE("init failed!");
     return false;
   }
@@ -111,12 +120,7 @@ bool AudioManager::Close() {
   DCHECK(thread_checker_.CalledOnValidThread());
   if (!initialized_)
     return true;
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID disposeID = GetMethodID(
-      jni, g_audio_manager_class, "dispose", "()V");
-  jni->CallVoidMethod(j_audio_manager_, disposeID);
-  CHECK_EXCEPTION(jni);
+  j_audio_manager_->Close();
   initialized_ = false;
   return true;
 }
@@ -125,61 +129,72 @@ void AudioManager::SetCommunicationMode(bool enable) {
   ALOGD("SetCommunicationMode(%d)%s", enable, GetThreadInfo().c_str());
   DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK(initialized_);
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID setcommID = GetMethodID(
-      jni, g_audio_manager_class, "setCommunicationMode", "(Z)V");
-  jni->CallVoidMethod(j_audio_manager_, setcommID, enable);
-  CHECK_EXCEPTION(jni);
+  j_audio_manager_->SetCommunicationMode(enable);
 }
 
-void JNICALL AudioManager::CacheAudioParameters(JNIEnv* env, jobject obj,
-    jint sample_rate, jint channels, jlong nativeAudioManager) {
+bool AudioManager::IsAcousticEchoCancelerSupported() const {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  return hardware_aec_;
+}
+
+bool AudioManager::IsLowLatencyPlayoutSupported() const {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  ALOGD("IsLowLatencyPlayoutSupported()");
+  return low_latency_playout_;
+}
+
+int AudioManager::GetDelayEstimateInMilliseconds() const {
+  return delay_estimate_in_milliseconds_;
+}
+
+void JNICALL AudioManager::CacheAudioParameters(JNIEnv* env,
+                                                jobject obj,
+                                                jint sample_rate,
+                                                jint channels,
+                                                jboolean hardware_aec,
+                                                jboolean low_latency_output,
+                                                jint output_buffer_size,
+                                                jint input_buffer_size,
+                                                jlong native_audio_manager) {
   webrtc::AudioManager* this_object =
-      reinterpret_cast<webrtc::AudioManager*> (nativeAudioManager);
-  this_object->OnCacheAudioParameters(env, sample_rate, channels);
+      reinterpret_cast<webrtc::AudioManager*>(native_audio_manager);
+  this_object->OnCacheAudioParameters(
+      env, sample_rate, channels, hardware_aec, low_latency_output,
+      output_buffer_size, input_buffer_size);
 }
 
-void AudioManager::OnCacheAudioParameters(
-    JNIEnv* env, jint sample_rate, jint channels) {
+void AudioManager::OnCacheAudioParameters(JNIEnv* env,
+                                          jint sample_rate,
+                                          jint channels,
+                                          jboolean hardware_aec,
+                                          jboolean low_latency_output,
+                                          jint output_buffer_size,
+                                          jint input_buffer_size) {
   ALOGD("OnCacheAudioParameters%s", GetThreadInfo().c_str());
+  ALOGD("hardware_aec: %d", hardware_aec);
+  ALOGD("low_latency_output: %d", low_latency_output);
   ALOGD("sample_rate: %d", sample_rate);
   ALOGD("channels: %d", channels);
+  ALOGD("output_buffer_size: %d", output_buffer_size);
+  ALOGD("input_buffer_size: %d", input_buffer_size);
   DCHECK(thread_checker_.CalledOnValidThread());
-  // TODO(henrika): add support stereo output.
-  playout_parameters_.reset(sample_rate, channels);
-  record_parameters_.reset(sample_rate, channels);
+  hardware_aec_ = hardware_aec;
+  low_latency_playout_ = low_latency_output;
+  // TODO(henrika): add support for stereo output.
+  playout_parameters_.reset(sample_rate, channels, output_buffer_size);
+  record_parameters_.reset(sample_rate, channels, input_buffer_size);
 }
 
-AudioParameters AudioManager::GetPlayoutAudioParameters() const {
+const AudioParameters& AudioManager::GetPlayoutAudioParameters() {
   CHECK(playout_parameters_.is_valid());
+  DCHECK(thread_checker_.CalledOnValidThread());
   return playout_parameters_;
 }
 
-AudioParameters AudioManager::GetRecordAudioParameters() const {
+const AudioParameters& AudioManager::GetRecordAudioParameters() {
   CHECK(record_parameters_.is_valid());
+  DCHECK(thread_checker_.CalledOnValidThread());
   return record_parameters_;
-}
-
-bool AudioManager::HasDeviceObjects() {
-  return (g_jvm && g_context && g_audio_manager_class);
-}
-
-void AudioManager::CreateJavaInstance() {
-  ALOGD("CreateJavaInstance");
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID constructorID = GetMethodID(
-      jni, g_audio_manager_class, "<init>", "(Landroid/content/Context;J)V");
-  j_audio_manager_ = jni->NewObject(g_audio_manager_class,
-                                    constructorID,
-                                    g_context,
-                                    reinterpret_cast<intptr_t>(this));
-  CHECK_EXCEPTION(jni) << "Error during NewObject";
-  CHECK(j_audio_manager_);
-  j_audio_manager_ = jni->NewGlobalRef(j_audio_manager_);
-  CHECK_EXCEPTION(jni) << "Error during NewGlobalRef";
-  CHECK(j_audio_manager_);
 }
 
 }  // namespace webrtc

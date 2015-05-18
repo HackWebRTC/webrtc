@@ -145,7 +145,7 @@ class WebRtcAudioTrack {
     }
   }
 
-  private int InitPlayout(int sampleRate, int channels) {
+  private void InitPlayout(int sampleRate, int channels) {
     Logd("InitPlayout(sampleRate=" + sampleRate + ", channels=" +
          channels + ")");
     final int bytesPerFrame = channels * (BITS_PER_SAMPLE / 8);
@@ -184,16 +184,11 @@ class WebRtcAudioTrack {
                                   AudioTrack.MODE_STREAM);
     } catch (IllegalArgumentException e) {
       Logd(e.getMessage());
-      return -1;
+      return;
     }
     assertTrue(audioTrack.getState() == AudioTrack.STATE_INITIALIZED);
     assertTrue(audioTrack.getPlayState() == AudioTrack.PLAYSTATE_STOPPED);
     assertTrue(audioTrack.getStreamType() == AudioManager.STREAM_VOICE_CALL);
-
-    // Return a delay estimate in milliseconds given the minimum buffer size.
-    // TODO(henrika): improve estimate and use real measurements of total
-    // latency instead. We can most likely ignore this value.
-    return (1000 * (minBufferSizeInBytes / bytesPerFrame) / sampleRate);
   }
 
   private boolean StartPlayout() {

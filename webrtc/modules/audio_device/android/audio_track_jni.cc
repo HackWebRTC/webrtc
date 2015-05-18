@@ -84,8 +84,7 @@ AudioTrackJni::AudioTrackJni(AudioManager* audio_manager)
       frames_per_buffer_(0),
       initialized_(false),
       playing_(false),
-      audio_device_buffer_(NULL),
-      delay_in_milliseconds_(0) {
+      audio_device_buffer_(NULL) {
   ALOGD("ctor%s", GetThreadInfo().c_str());
   DCHECK(audio_parameters_.is_valid());
   CHECK(HasDeviceObjects());
@@ -129,17 +128,10 @@ int32_t AudioTrackJni::InitPlayout() {
   AttachThreadScoped ats(g_jvm);
   JNIEnv* jni = ats.env();
   jmethodID initPlayoutID = GetMethodID(
-      jni, g_audio_track_class, "InitPlayout", "(II)I");
-  jint delay_in_milliseconds = jni->CallIntMethod(
-      j_audio_track_, initPlayoutID, audio_parameters_.sample_rate(),
-      audio_parameters_.channels());
+      jni, g_audio_track_class, "InitPlayout", "(II)V");
+  jni->CallVoidMethod(j_audio_track_, initPlayoutID,
+      audio_parameters_.sample_rate(), audio_parameters_.channels());
   CHECK_EXCEPTION(jni);
-  if (delay_in_milliseconds < 0) {
-    ALOGE("InitPlayout failed!");
-    return -1;
-  }
-  delay_in_milliseconds_ = delay_in_milliseconds;
-  ALOGD("delay_in_milliseconds: %d", delay_in_milliseconds);
   initialized_ = true;
   return 0;
 }
@@ -252,20 +244,6 @@ void AudioTrackJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   const int channels = audio_parameters_.channels();
   ALOGD("SetPlayoutChannels(%d)", channels);
   audio_device_buffer_->SetPlayoutChannels(channels);
-}
-
-int32_t AudioTrackJni::PlayoutDelay(uint16_t& delayMS) const {
-  // No need for thread check or locking since we set |delay_in_milliseconds_|
-  // only once  (on the creating thread) during initialization.
-  delayMS = delay_in_milliseconds_;
-  return 0;
-}
-
-int AudioTrackJni::PlayoutDelayMs() {
-  // This method can be called from the Java based AudioRecordThread but we
-  // don't need locking since it is only set once (on the main thread) during
-  // initialization.
-  return delay_in_milliseconds_;
 }
 
 void JNICALL AudioTrackJni::CacheDirectBufferAddress(

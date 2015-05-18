@@ -127,23 +127,9 @@ class  WebRtcAudioRecord {
     }
   }
 
-  public static boolean BuiltInAECIsAvailable() {
-    // AcousticEchoCanceler was added in API level 16 (Jelly Bean).
-    if (!WebRtcAudioUtils.runningOnJellyBeanOrHigher()) {
-      return false;
-    }
-    // TODO(henrika): add black-list based on device name. We could also
-    // use uuid to exclude devices but that would require a session ID from
-    // an existing AudioRecord object.
-    return AcousticEchoCanceler.isAvailable();
-  }
-
   private boolean EnableBuiltInAEC(boolean enable) {
     Logd("EnableBuiltInAEC(" + enable + ')');
-    // AcousticEchoCanceler was added in API level 16 (Jelly Bean).
-    if (!WebRtcAudioUtils.runningOnJellyBeanOrHigher()) {
-      return false;
-    }
+    assertTrue(WebRtcAudioUtils.isAcousticEchoCancelerApproved());
     // Store the AEC state.
     useBuiltInAEC = enable;
     // Set AEC state if AEC has already been created.
@@ -206,11 +192,18 @@ class  WebRtcAudioRecord {
           "audio format: " + audioRecord.getAudioFormat() + ", " +
           "channels: " + audioRecord.getChannelCount() + ", " +
           "sample rate: " + audioRecord.getSampleRate());
-    Logd("AcousticEchoCanceler.isAvailable: " + BuiltInAECIsAvailable());
-    if (!BuiltInAECIsAvailable()) {
+    Logd("AcousticEchoCanceler.isAvailable: " + builtInAECIsAvailable());
+    if (!builtInAECIsAvailable()) {
       return framesPerBuffer;
     }
-
+    if (WebRtcAudioUtils.deviceIsBlacklistedForHwAecUsage()) {
+      // Just in case, ensure that no attempt has been done to enable the
+      // HW AEC on a blacklisted device.
+      assertTrue(!useBuiltInAEC);
+    }
+    // We create an AEC also for blacklisted devices since it is possible that
+    // HW EAC is enabled by default. Hence, the AEC object is needed to be
+    // able to check the current state and to disable the AEC if enabled.
     aec = AcousticEchoCanceler.create(audioRecord.getAudioSessionId());
     if (aec == null) {
       Loge("AcousticEchoCanceler.create failed");
@@ -253,7 +246,13 @@ class  WebRtcAudioRecord {
     return true;
   }
 
-  /** Helper method which throws an exception  when an assertion has failed. */
+  // Returns true if built-in AEC is available. Does not take blacklisting
+  // into account.
+  private static boolean builtInAECIsAvailable() {
+    return WebRtcAudioUtils.isAcousticEchoCancelerSupported();
+  }
+
+  // Helper method which throws an exception  when an assertion has failed.
   private static void assertTrue(boolean condition) {
     if (!condition) {
       throw new AssertionError("Expected condition to be true");

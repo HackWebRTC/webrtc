@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <algorithm>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_device/audio_device_buffer.h"
 
 namespace webrtc {
@@ -47,7 +48,7 @@ void FineAudioBuffer::GetBufferData(int8_t* buffer) {
            desired_frame_size_bytes_);
     cached_buffer_start_ += desired_frame_size_bytes_;
     cached_bytes_ -= desired_frame_size_bytes_;
-    assert(cached_buffer_start_ + cached_bytes_ < bytes_per_10_ms_);
+    CHECK_LT(cached_buffer_start_ + cached_bytes_, bytes_per_10_ms_);
     return;
   }
   memcpy(buffer, &cache_buffer_.get()[cached_buffer_start_], cached_bytes_);
@@ -62,15 +63,15 @@ void FineAudioBuffer::GetBufferData(int8_t* buffer) {
     device_buffer_->RequestPlayoutData(samples_per_10_ms_);
     int num_out = device_buffer_->GetPlayoutData(unwritten_buffer);
     if (num_out != samples_per_10_ms_) {
-      assert(num_out == 0);
+      CHECK_EQ(num_out, 0);
       cached_bytes_ = 0;
       return;
     }
     unwritten_buffer += bytes_per_10_ms_;
-    assert(bytes_left >= 0);
+    CHECK_GE(bytes_left, 0);
     bytes_left -= bytes_per_10_ms_;
   }
-  assert(bytes_left <= 0);
+  CHECK_LE(bytes_left, 0);
   // Put the samples that were written to |buffer| but are not used in the
   // cache.
   int cache_location = desired_frame_size_bytes_;
@@ -79,8 +80,8 @@ void FineAudioBuffer::GetBufferData(int8_t* buffer) {
       (desired_frame_size_bytes_ - cached_bytes_);
   // If cached_bytes_ is larger than the cache buffer, uninitialized memory
   // will be read.
-  assert(cached_bytes_ <= bytes_per_10_ms_);
-  assert(-bytes_left == cached_bytes_);
+  CHECK_LE(cached_bytes_, bytes_per_10_ms_);
+  CHECK_EQ(-bytes_left, cached_bytes_);
   cached_buffer_start_ = 0;
   memcpy(cache_buffer_.get(), cache_ptr, cached_bytes_);
 }

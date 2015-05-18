@@ -23,13 +23,13 @@
     #include "audio_device_core_win.h"
  #endif
 #elif defined(WEBRTC_ANDROID)
-    #include <stdlib.h>
-    #include "audio_device_utility_android.h"
-    #include "webrtc/modules/audio_device/android/audio_device_template.h"
-    #include "webrtc/modules/audio_device/android/audio_record_jni.h"
-    #include "webrtc/modules/audio_device/android/audio_track_jni.h"
-    #include "webrtc/modules/audio_device/android/opensles_input.h"
-    #include "webrtc/modules/audio_device/android/opensles_output.h"
+#include <stdlib.h>
+#include "audio_device_utility_android.h"
+#include "webrtc/modules/audio_device/android/audio_device_template.h"
+#include "webrtc/modules/audio_device/android/audio_manager.h"
+#include "webrtc/modules/audio_device/android/audio_record_jni.h"
+#include "webrtc/modules/audio_device/android/audio_track_jni.h"
+#include "webrtc/modules/audio_device/android/opensles_player.h"
 #elif defined(WEBRTC_LINUX)
     #include "audio_device_utility_linux.h"
  #if defined(LINUX_ALSA)
@@ -269,24 +269,35 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
     }
 #endif  // #if defined(_WIN32)
 
-    // Create the *Android OpenSLES* implementation of the Audio Device
-    //
 #if defined(WEBRTC_ANDROID)
-#ifdef WEBRTC_ANDROID_OPENSLES
-    // Force default audio layer to OpenSL ES if the special compiler flag
-    // (enable_android_opensl) has been set to one.
+    // Create an Android audio manager.
+    _audioManagerAndroid.reset(new AudioManager());
+    // Select best possible combination of audio layers.
     if (audioLayer == kPlatformDefaultAudio) {
-      audioLayer =  kAndroidOpenSLESAudio;
+        if (_audioManagerAndroid->IsLowLatencyPlayoutSupported()) {
+          // Always use OpenSL ES for output on devices that supports the
+          // low-latency output audio path.
+          audioLayer = kAndroidJavaInputAndOpenSLESOutputAudio;
+        } else {
+          // Use Java-based audio in both directions when low-latency output
+          // is not supported.
+          audioLayer =  kAndroidJavaAudio;
+        }
     }
-#endif
-    if (audioLayer == kPlatformDefaultAudio ||
-        audioLayer == kAndroidJavaAudio) {
-        ptrAudioDevice =
-            new AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>(Id());
-    } else if (audioLayer == kAndroidOpenSLESAudio) {
-      // AudioRecordJni provides hardware AEC and OpenSlesOutput low latency.
-      ptrAudioDevice =
-        new AudioDeviceTemplate<OpenSlesInput, OpenSlesOutput>(Id());
+    AudioManager* audio_manager = _audioManagerAndroid.get();
+    if (audioLayer == kAndroidJavaAudio) {
+      // Java audio for both input and output audio.
+      ptrAudioDevice = new AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>(
+          audioLayer, audio_manager);
+    } else if (audioLayer == kAndroidJavaInputAndOpenSLESOutputAudio) {
+      // Java audio for input and OpenSL ES for output audio (i.e. mixed APIs).
+      // This combination provides low-latency output audio and at the same
+      // time support for HW AEC using the AudioRecord Java API.
+      ptrAudioDevice = new AudioDeviceTemplate<AudioRecordJni, OpenSLESPlayer>(
+          audioLayer, audio_manager);
+    } else {
+      // Invalid audio layer.
+      ptrAudioDevice = NULL;
     }
 
     if (ptrAudioDevice != NULL) {
@@ -549,36 +560,13 @@ int32_t AudioDeviceModuleImpl::Process()
 //  ActiveAudioLayer
 // ----------------------------------------------------------------------------
 
-int32_t AudioDeviceModuleImpl::ActiveAudioLayer(AudioLayer* audioLayer) const
-{
-
-    AudioLayer activeAudio;
-
-    if (_ptrAudioDevice->ActiveAudioLayer(activeAudio) == -1)
-    {
-        return -1;
-    }
-
-    *audioLayer = activeAudio;
-
-    if (*audioLayer == AudioDeviceModule::kWindowsWaveAudio)
-    {
-        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: kWindowsWaveAudio");
-    }
-    else if (*audioLayer == AudioDeviceModule::kWindowsCoreAudio)
-    {
-        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: kWindowsCoreAudio");
-    }
-    else if (*audioLayer == AudioDeviceModule::kLinuxAlsaAudio)
-    {
-        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: kLinuxAlsaAudio");
-    }
-    else
-    {
-        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: NOT_SUPPORTED");
-    }
-
-    return 0;
+int32_t AudioDeviceModuleImpl::ActiveAudioLayer(AudioLayer* audioLayer) const {
+  AudioLayer activeAudio;
+  if (_ptrAudioDevice->ActiveAudioLayer(activeAudio) == -1) {
+    return -1;
+  }
+  *audioLayer = activeAudio;
+  return 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -2004,35 +1992,6 @@ AudioDeviceModuleImpl::PlatformType AudioDeviceModuleImpl::Platform() const
 
 AudioDeviceModule::AudioLayer AudioDeviceModuleImpl::PlatformAudioLayer() const
 {
-
-    switch (_platformAudioLayer)
-    {
-    case kPlatformDefaultAudio:
-        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
-                     "output: kPlatformDefaultAudio");
-        break;
-    case kWindowsWaveAudio:
-        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
-                     "output: kWindowsWaveAudio");
-        break;
-    case kWindowsCoreAudio:
-        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
-                     "output: kWindowsCoreAudio");
-        break;
-    case kLinuxAlsaAudio:
-        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
-                     "output: kLinuxAlsaAudio");
-        break;
-    case kDummyAudio:
-        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
-                     "output: kDummyAudio");
-        break;
-    default:
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                     "output: INVALID");
-        break;
-    }
-
     return _platformAudioLayer;
 }
 

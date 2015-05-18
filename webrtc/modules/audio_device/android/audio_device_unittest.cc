@@ -13,8 +13,11 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/modules/audio_device/android/audio_common.h"
+#include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/android/ensure_initialized.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
@@ -45,14 +48,6 @@ using ::testing::TestWithParam;
 
 namespace webrtc {
 
-// Perform all tests for the different audio layers listed in this array.
-// See the INSTANTIATE_TEST_CASE_P statement for details.
-// TODO(henrika): the test framework supports both Java and OpenSL ES based
-// audio backends but there are currently some issues (crashes) in the
-// OpenSL ES implementation, hence it is not added to kAudioLayers yet.
-static const AudioDeviceModule::AudioLayer kAudioLayers[] = {
-    AudioDeviceModule::kAndroidJavaAudio
-    /*, AudioDeviceModule::kAndroidOpenSLESAudio */};
 // Number of callbacks (input or output) the tests waits for before we set
 // an event indicating that the test was OK.
 static const int kNumCallbacks = 10;
@@ -62,9 +57,6 @@ static const int kTestTimeOutInMilliseconds = 10 * 1000;
 static const int kNumCallbacksPerSecond = 100;
 // Play out a test file during this time (unit is in seconds).
 static const int kFilePlayTimeInSec = 5;
-// Fixed value for the recording delay using Java based audio backend.
-// TODO(henrika): harmonize with OpenSL ES and look for possible improvements.
-static const uint32_t kFixedRecordingDelay = 100;
 static const int kBitsPerSample = 16;
 static const int kBytesPerSample = kBitsPerSample / 8;
 // Run the full-duplex test during this time (unit is in seconds).
@@ -80,26 +72,12 @@ static const int kImpulseFrequencyInHz = 1;
 // is kImpulseFrequencyInHz * kMeasureLatencyTimeInSec - 1.
 static const int kMeasureLatencyTimeInSec = 11;
 // Utilized in round-trip latency measurements to avoid capturing noise samples.
-static const int kImpulseThreshold = 500;
+static const int kImpulseThreshold = 1000;
 static const char kTag[] = "[..........] ";
 
 enum TransportType {
   kPlayout = 0x1,
   kRecording = 0x2,
-};
-
-// Simple helper struct for device specific audio parameters.
-struct AudioParameters {
-  int playout_frames_per_buffer() const {
-    return playout_sample_rate / 100;  // WebRTC uses 10 ms as buffer size.
-  }
-  int recording_frames_per_buffer() const {
-    return recording_sample_rate / 100;
-  }
-  int playout_sample_rate;
-  int recording_sample_rate;
-  int playout_channels;
-  int recording_channels;
 };
 
 // Interface for processing the audio stream. Real implementations can e.g.
@@ -185,7 +163,6 @@ class FifoAudioStream : public AudioStreamInterface {
 
   ~FifoAudioStream() {
     Flush();
-    PRINTD("[%4.3f]\n", average_size());
   }
 
   // Allocate new memory, copy |num_frames| samples from |source| into memory
@@ -510,9 +487,8 @@ class MockAudioTransport : public AudioTransport {
   rtc::scoped_ptr<LatencyMeasuringAudioStream> latency_audio_stream_;
 };
 
-// AudioDeviceTest is a value-parameterized test.
-class AudioDeviceTest
-    : public testing::TestWithParam<AudioDeviceModule::AudioLayer> {
+// AudioDeviceTest test fixture.
+class AudioDeviceTest : public ::testing::Test {
  protected:
   AudioDeviceTest()
       : test_is_done_(EventWrapper::Create()) {
@@ -520,54 +496,66 @@ class AudioDeviceTest
     // can do calls between C++ and Java. Initializes both Java and OpenSL ES
     // implementations.
     webrtc::audiodevicemodule::EnsureInitialized();
-    // Creates an audio device based on the test parameter. See
-    // INSTANTIATE_TEST_CASE_P() for details.
-    audio_device_ = CreateAudioDevice();
+    // Creates an audio device using a default audio layer.
+    audio_device_ = CreateAudioDevice(AudioDeviceModule::kPlatformDefaultAudio);
     EXPECT_NE(audio_device_.get(), nullptr);
     EXPECT_EQ(0, audio_device_->Init());
-    CacheAudioParameters();
+    playout_parameters_ = audio_manager()->GetPlayoutAudioParameters();
+    record_parameters_ = audio_manager()->GetRecordAudioParameters();
   }
   virtual ~AudioDeviceTest() {
     EXPECT_EQ(0, audio_device_->Terminate());
   }
 
   int playout_sample_rate() const {
-    return parameters_.playout_sample_rate;
+    return playout_parameters_.sample_rate();
   }
-  int recording_sample_rate() const {
-    return parameters_.recording_sample_rate;
+  int record_sample_rate() const {
+    return record_parameters_.sample_rate();
   }
   int playout_channels() const {
-    return parameters_.playout_channels;
+    return playout_parameters_.channels();
   }
-  int recording_channels() const {
-    return parameters_.playout_channels;
+  int record_channels() const {
+    return record_parameters_.channels();
   }
-  int playout_frames_per_buffer() const {
-    return parameters_.playout_frames_per_buffer();
+  int playout_frames_per_10ms_buffer() const {
+    return playout_parameters_.frames_per_10ms_buffer();
   }
-  int recording_frames_per_buffer() const {
-    return parameters_.recording_frames_per_buffer();
+  int record_frames_per_10ms_buffer() const {
+    return record_parameters_.frames_per_10ms_buffer();
+  }
+
+  int total_delay_ms() const {
+    return audio_manager()->GetDelayEstimateInMilliseconds();
   }
 
   scoped_refptr<AudioDeviceModule> audio_device() const {
     return audio_device_;
   }
 
-  scoped_refptr<AudioDeviceModule> CreateAudioDevice() {
-    scoped_refptr<AudioDeviceModule> module(
-        AudioDeviceModuleImpl::Create(0, GetParam()));
-    return module;
+  AudioDeviceModuleImpl* audio_device_impl() const {
+    return static_cast<AudioDeviceModuleImpl*>(audio_device_.get());
   }
 
-  void CacheAudioParameters() {
-    AudioDeviceBuffer* audio_buffer =
-        static_cast<AudioDeviceModuleImpl*> (
-            audio_device_.get())->GetAudioDeviceBuffer();
-    parameters_.playout_sample_rate = audio_buffer->PlayoutSampleRate();
-    parameters_.recording_sample_rate = audio_buffer->RecordingSampleRate();
-    parameters_.playout_channels = audio_buffer->PlayoutChannels();
-    parameters_.recording_channels = audio_buffer->RecordingChannels();
+  AudioManager* audio_manager() const {
+    return audio_device_impl()->GetAndroidAudioManagerForTest();
+  }
+
+  AudioManager* GetAudioManager(AudioDeviceModule* adm) const {
+    return static_cast<AudioDeviceModuleImpl*>(adm)->
+        GetAndroidAudioManagerForTest();
+  }
+
+  AudioDeviceBuffer* audio_device_buffer() const {
+    return audio_device_impl()->GetAudioDeviceBuffer();
+  }
+
+  scoped_refptr<AudioDeviceModule> CreateAudioDevice(
+      AudioDeviceModule::AudioLayer audio_layer) {
+    scoped_refptr<AudioDeviceModule> module(
+        AudioDeviceModuleImpl::Create(0, audio_layer));
+    return module;
   }
 
   // Returns file name relative to the resource root given a sample rate.
@@ -592,10 +580,51 @@ class AudioDeviceTest
     return file_name;
   }
 
+  AudioDeviceModule::AudioLayer GetActiveAudioLayer() const {
+    AudioDeviceModule::AudioLayer audio_layer;
+    EXPECT_EQ(0, audio_device()->ActiveAudioLayer(&audio_layer));
+    return audio_layer;
+  }
+
+  int TestDelayOnAudioLayer(
+      const AudioDeviceModule::AudioLayer& layer_to_test) {
+    scoped_refptr<AudioDeviceModule> audio_device;
+    audio_device = CreateAudioDevice(layer_to_test);
+    EXPECT_NE(audio_device.get(), nullptr);
+    AudioManager* audio_manager = GetAudioManager(audio_device.get());
+    EXPECT_NE(audio_manager, nullptr);
+    return audio_manager->GetDelayEstimateInMilliseconds();
+  }
+
+  AudioDeviceModule::AudioLayer TestActiveAudioLayer(
+      const AudioDeviceModule::AudioLayer& layer_to_test) {
+    scoped_refptr<AudioDeviceModule> audio_device;
+    audio_device = CreateAudioDevice(layer_to_test);
+    EXPECT_NE(audio_device.get(), nullptr);
+    AudioDeviceModule::AudioLayer active;
+    EXPECT_EQ(0, audio_device->ActiveAudioLayer(&active));
+    return active;
+  }
+
+  // Volume control is currently only supported for the Java output audio layer.
+  // For OpenSL ES, the internal stream volume is always on max level and there
+  // is no need for this test to set it to max.
+  bool AudioLayerSupportsVolumeControl() const {
+    return GetActiveAudioLayer() == AudioDeviceModule::kAndroidJavaAudio;
+  }
+
   void SetMaxPlayoutVolume() {
+    if (!AudioLayerSupportsVolumeControl())
+      return;
     uint32_t max_volume;
     EXPECT_EQ(0, audio_device()->MaxSpeakerVolume(&max_volume));
     EXPECT_EQ(0, audio_device()->SetSpeakerVolume(max_volume));
+  }
+
+  void DisableBuiltInAECIfAvailable() {
+    if (audio_device()->BuiltInAECIsAvailable()) {
+      EXPECT_EQ(0, audio_device()->EnableBuiltInAEC(false));
+    }
   }
 
   void StartPlayout() {
@@ -610,6 +639,7 @@ class AudioDeviceTest
   void StopPlayout() {
     EXPECT_EQ(0, audio_device()->StopPlayout());
     EXPECT_FALSE(audio_device()->Playing());
+    EXPECT_FALSE(audio_device()->PlayoutIsInitialized());
   }
 
   void StartRecording() {
@@ -646,64 +676,129 @@ class AudioDeviceTest
 
   rtc::scoped_ptr<EventWrapper> test_is_done_;
   scoped_refptr<AudioDeviceModule> audio_device_;
-  AudioParameters parameters_;
+  AudioParameters playout_parameters_;
+  AudioParameters record_parameters_;
 };
 
-TEST_P(AudioDeviceTest, ConstructDestruct) {
+TEST_F(AudioDeviceTest, ConstructDestruct) {
   // Using the test fixture to create and destruct the audio device module.
 }
 
-// Create an audio device instance and print out the native audio parameters.
-TEST_P(AudioDeviceTest, AudioParameters) {
-  EXPECT_NE(0, playout_sample_rate());
-  PRINT("%splayout_sample_rate: %d\n", kTag, playout_sample_rate());
-  EXPECT_NE(0, recording_sample_rate());
-  PRINT("%srecording_sample_rate: %d\n", kTag, recording_sample_rate());
-  EXPECT_NE(0, playout_channels());
-  PRINT("%splayout_channels: %d\n", kTag, playout_channels());
-  EXPECT_NE(0, recording_channels());
-  PRINT("%srecording_channels: %d\n", kTag, recording_channels());
+// We always ask for a default audio layer when the ADM is constructed. But the
+// ADM will then internally set the best suitable combination of audio layers,
+// for input and output based on if low-latency output audio in combination
+// with OpenSL ES is supported or not. This test ensures that the correct
+// selection is done.
+TEST_F(AudioDeviceTest, VerifyDefaultAudioLayer) {
+  const AudioDeviceModule::AudioLayer audio_layer = GetActiveAudioLayer();
+  bool low_latency_output = audio_manager()->IsLowLatencyPlayoutSupported();
+  AudioDeviceModule::AudioLayer expected_audio_layer = low_latency_output ?
+      AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio :
+      AudioDeviceModule::kAndroidJavaAudio;
+  EXPECT_EQ(expected_audio_layer, audio_layer);
 }
 
-TEST_P(AudioDeviceTest, InitTerminate) {
+// Verify that it is possible to explicitly create the two types of supported
+// ADMs. These two tests overrides the default selection of native audio layer
+// by ignoring if the device supports low-latency output or not.
+TEST_F(AudioDeviceTest, CorrectAudioLayerIsUsedForCombinedJavaOpenSLCombo) {
+  AudioDeviceModule::AudioLayer expected_layer =
+      AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio;
+  AudioDeviceModule::AudioLayer active_layer = TestActiveAudioLayer(
+      expected_layer);
+  EXPECT_EQ(expected_layer, active_layer);
+}
+
+TEST_F(AudioDeviceTest, CorrectAudioLayerIsUsedForJavaInBothDirections) {
+  AudioDeviceModule::AudioLayer expected_layer =
+      AudioDeviceModule::kAndroidJavaAudio;
+  AudioDeviceModule::AudioLayer active_layer = TestActiveAudioLayer(
+      expected_layer);
+  EXPECT_EQ(expected_layer, active_layer);
+}
+
+// The Android ADM supports two different delay reporting modes. One for the
+// low-latency output path (in combination with OpenSL ES), and one for the
+// high-latency output path (Java backends in both directions). These two tests
+// verifies that the audio manager reports correct delay estimate given the
+// selected audio layer. Note that, this delay estimate will only be utilized
+// if the HW AEC is disabled.
+TEST_F(AudioDeviceTest, UsesCorrectDelayEstimateForHighLatencyOutputPath) {
+  EXPECT_EQ(kHighLatencyModeDelayEstimateInMilliseconds,
+            TestDelayOnAudioLayer(AudioDeviceModule::kAndroidJavaAudio));
+}
+
+TEST_F(AudioDeviceTest, UsesCorrectDelayEstimateForLowLatencyOutputPath) {
+  EXPECT_EQ(kLowLatencyModeDelayEstimateInMilliseconds,
+            TestDelayOnAudioLayer(
+      AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio));
+}
+
+// Ensure that the ADM internal audio device buffer is configured to use the
+// correct set of parameters.
+TEST_F(AudioDeviceTest, VerifyAudioDeviceBufferParameters) {
+  EXPECT_EQ(playout_parameters_.sample_rate(),
+            audio_device_buffer()->PlayoutSampleRate());
+  EXPECT_EQ(record_parameters_.sample_rate(),
+            audio_device_buffer()->RecordingSampleRate());
+  EXPECT_EQ(playout_parameters_.channels(),
+            audio_device_buffer()->PlayoutChannels());
+  EXPECT_EQ(record_parameters_.channels(),
+            audio_device_buffer()->RecordingChannels());
+}
+
+
+TEST_F(AudioDeviceTest, InitTerminate) {
   // Initialization is part of the test fixture.
   EXPECT_TRUE(audio_device()->Initialized());
   EXPECT_EQ(0, audio_device()->Terminate());
   EXPECT_FALSE(audio_device()->Initialized());
 }
 
-TEST_P(AudioDeviceTest, Devices) {
+TEST_F(AudioDeviceTest, Devices) {
   // Device enumeration is not supported. Verify fixed values only.
   EXPECT_EQ(1, audio_device()->PlayoutDevices());
   EXPECT_EQ(1, audio_device()->RecordingDevices());
 }
 
-TEST_P(AudioDeviceTest, BuiltInAECIsAvailable) {
-  PRINT("%sBuiltInAECIsAvailable: %s\n",
-      kTag, audio_device()->BuiltInAECIsAvailable() ? "true" : "false");
-}
-
-TEST_P(AudioDeviceTest, SpeakerVolumeShouldBeAvailable) {
+TEST_F(AudioDeviceTest, SpeakerVolumeShouldBeAvailable) {
+  // The OpenSL ES output audio path does not support volume control.
+  if (!AudioLayerSupportsVolumeControl())
+    return;
   bool available;
   EXPECT_EQ(0, audio_device()->SpeakerVolumeIsAvailable(&available));
   EXPECT_TRUE(available);
 }
 
-TEST_P(AudioDeviceTest, MaxSpeakerVolumeIsPositive) {
+TEST_F(AudioDeviceTest, MaxSpeakerVolumeIsPositive) {
+  // The OpenSL ES output audio path does not support volume control.
+  if (!AudioLayerSupportsVolumeControl())
+    return;
+  StartPlayout();
   EXPECT_GT(GetMaxSpeakerVolume(), 0);
+  StopPlayout();
 }
 
-TEST_P(AudioDeviceTest, MinSpeakerVolumeIsZero) {
+TEST_F(AudioDeviceTest, MinSpeakerVolumeIsZero) {
+  // The OpenSL ES output audio path does not support volume control.
+  if (!AudioLayerSupportsVolumeControl())
+    return;
   EXPECT_EQ(GetMinSpeakerVolume(), 0);
 }
 
-TEST_P(AudioDeviceTest, DefaultSpeakerVolumeIsWithinMinMax) {
+TEST_F(AudioDeviceTest, DefaultSpeakerVolumeIsWithinMinMax) {
+  // The OpenSL ES output audio path does not support volume control.
+  if (!AudioLayerSupportsVolumeControl())
+    return;
   const int default_volume = GetSpeakerVolume();
   EXPECT_GE(default_volume, GetMinSpeakerVolume());
   EXPECT_LE(default_volume, GetMaxSpeakerVolume());
 }
 
-TEST_P(AudioDeviceTest, SetSpeakerVolumeActuallySetsVolume) {
+TEST_F(AudioDeviceTest, SetSpeakerVolumeActuallySetsVolume) {
+  // The OpenSL ES output audio path does not support volume control.
+  if (!AudioLayerSupportsVolumeControl())
+    return;
   const int default_volume = GetSpeakerVolume();
   const int max_volume = GetMaxSpeakerVolume();
   EXPECT_EQ(0, audio_device()->SetSpeakerVolume(max_volume));
@@ -712,18 +807,31 @@ TEST_P(AudioDeviceTest, SetSpeakerVolumeActuallySetsVolume) {
   EXPECT_EQ(0, audio_device()->SetSpeakerVolume(default_volume));
 }
 
-// Tests that playout can be initiated, started and stopped.
-TEST_P(AudioDeviceTest, StartStopPlayout) {
+// Tests that playout can be initiated, started and stopped. No audio callback
+// is registered in this test.
+TEST_F(AudioDeviceTest, StartStopPlayout) {
+  StartPlayout();
+  StopPlayout();
   StartPlayout();
   StopPlayout();
 }
 
+// Verify that calling StopPlayout() will leave us in an uninitialized state
+// which will require a new call to InitPlayout(). This test does not call
+// StartPlayout() while being uninitialized since doing so will hit a DCHECK.
+TEST_F(AudioDeviceTest, StopPlayoutRequiresInitToRestart) {
+  EXPECT_EQ(0, audio_device()->InitPlayout());
+  EXPECT_EQ(0, audio_device()->StartPlayout());
+  EXPECT_EQ(0, audio_device()->StopPlayout());
+  EXPECT_FALSE(audio_device()->PlayoutIsInitialized());
+}
+
 // Start playout and verify that the native audio layer starts asking for real
 // audio samples to play out using the NeedMorePlayData callback.
-TEST_P(AudioDeviceTest, StartPlayoutVerifyCallbacks) {
+TEST_F(AudioDeviceTest, StartPlayoutVerifyCallbacks) {
   MockAudioTransport mock(kPlayout);
   mock.HandleCallbacks(test_is_done_.get(), nullptr, kNumCallbacks);
-  EXPECT_CALL(mock, NeedMorePlayData(playout_frames_per_buffer(),
+  EXPECT_CALL(mock, NeedMorePlayData(playout_frames_per_10ms_buffer(),
                                      kBytesPerSample,
                                      playout_channels(),
                                      playout_sample_rate(),
@@ -738,15 +846,15 @@ TEST_P(AudioDeviceTest, StartPlayoutVerifyCallbacks) {
 
 // Start recording and verify that the native audio layer starts feeding real
 // audio samples via the RecordedDataIsAvailable callback.
-TEST_P(AudioDeviceTest, StartRecordingVerifyCallbacks) {
+TEST_F(AudioDeviceTest, StartRecordingVerifyCallbacks) {
   MockAudioTransport mock(kRecording);
   mock.HandleCallbacks(test_is_done_.get(), nullptr, kNumCallbacks);
   EXPECT_CALL(mock, RecordedDataIsAvailable(NotNull(),
-                                            recording_frames_per_buffer(),
+                                            record_frames_per_10ms_buffer(),
                                             kBytesPerSample,
-                                            recording_channels(),
-                                            recording_sample_rate(),
-                                            kFixedRecordingDelay,
+                                            record_channels(),
+                                            record_sample_rate(),
+                                            total_delay_ms(),
                                             0,
                                             0,
                                             false,
@@ -762,10 +870,10 @@ TEST_P(AudioDeviceTest, StartRecordingVerifyCallbacks) {
 
 // Start playout and recording (full-duplex audio) and verify that audio is
 // active in both directions.
-TEST_P(AudioDeviceTest, StartPlayoutAndRecordingVerifyCallbacks) {
+TEST_F(AudioDeviceTest, StartPlayoutAndRecordingVerifyCallbacks) {
   MockAudioTransport mock(kPlayout | kRecording);
   mock.HandleCallbacks(test_is_done_.get(), nullptr,  kNumCallbacks);
-  EXPECT_CALL(mock, NeedMorePlayData(playout_frames_per_buffer(),
+  EXPECT_CALL(mock, NeedMorePlayData(playout_frames_per_10ms_buffer(),
                                      kBytesPerSample,
                                      playout_channels(),
                                      playout_sample_rate(),
@@ -773,11 +881,11 @@ TEST_P(AudioDeviceTest, StartPlayoutAndRecordingVerifyCallbacks) {
                                      _, _, _))
       .Times(AtLeast(kNumCallbacks));
   EXPECT_CALL(mock, RecordedDataIsAvailable(NotNull(),
-                                            recording_frames_per_buffer(),
+                                            record_frames_per_10ms_buffer(),
                                             kBytesPerSample,
-                                            recording_channels(),
-                                            recording_sample_rate(),
-                                            Gt(kFixedRecordingDelay),
+                                            record_channels(),
+                                            record_sample_rate(),
+                                            total_delay_ms(),
                                             0,
                                             0,
                                             false,
@@ -794,7 +902,7 @@ TEST_P(AudioDeviceTest, StartPlayoutAndRecordingVerifyCallbacks) {
 // Start playout and read audio from an external PCM file when the audio layer
 // asks for data to play out. Real audio is played out in this test but it does
 // not contain any explicit verification that the audio quality is perfect.
-TEST_P(AudioDeviceTest, RunPlayoutWithFileAsSource) {
+TEST_F(AudioDeviceTest, RunPlayoutWithFileAsSource) {
   // TODO(henrika): extend test when mono output is supported.
   EXPECT_EQ(1, playout_channels());
   NiceMock<MockAudioTransport> mock(kPlayout);
@@ -805,7 +913,7 @@ TEST_P(AudioDeviceTest, RunPlayoutWithFileAsSource) {
   mock.HandleCallbacks(test_is_done_.get(),
                        file_audio_stream.get(),
                        num_callbacks);
-  SetMaxPlayoutVolume();
+  // SetMaxPlayoutVolume();
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   StartPlayout();
   test_is_done_->Wait(kTestTimeOutInMilliseconds);
@@ -825,12 +933,12 @@ TEST_P(AudioDeviceTest, RunPlayoutWithFileAsSource) {
 // recording side and decreased by the playout side.
 // TODO(henrika): tune the final test parameters after running tests on several
 // different devices.
-TEST_P(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
-  EXPECT_EQ(recording_channels(), playout_channels());
-  EXPECT_EQ(recording_sample_rate(), playout_sample_rate());
+TEST_F(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
+  EXPECT_EQ(record_channels(), playout_channels());
+  EXPECT_EQ(record_sample_rate(), playout_sample_rate());
   NiceMock<MockAudioTransport> mock(kPlayout | kRecording);
   rtc::scoped_ptr<FifoAudioStream> fifo_audio_stream(
-      new FifoAudioStream(playout_frames_per_buffer()));
+      new FifoAudioStream(playout_frames_per_10ms_buffer()));
   mock.HandleCallbacks(test_is_done_.get(),
                        fifo_audio_stream.get(),
                        kFullDuplexTimeInSec * kNumCallbacksPerSecond);
@@ -855,17 +963,18 @@ TEST_P(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
 // - Store time differences in a vector and calculate min, max and average.
 // This test requires a special hardware called Audio Loopback Dongle.
 // See http://source.android.com/devices/audio/loopback.html for details.
-TEST_P(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
-  EXPECT_EQ(recording_channels(), playout_channels());
-  EXPECT_EQ(recording_sample_rate(), playout_sample_rate());
+TEST_F(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
+  EXPECT_EQ(record_channels(), playout_channels());
+  EXPECT_EQ(record_sample_rate(), playout_sample_rate());
   NiceMock<MockAudioTransport> mock(kPlayout | kRecording);
   rtc::scoped_ptr<LatencyMeasuringAudioStream> latency_audio_stream(
-      new LatencyMeasuringAudioStream(playout_frames_per_buffer()));
+      new LatencyMeasuringAudioStream(playout_frames_per_10ms_buffer()));
   mock.HandleCallbacks(test_is_done_.get(),
                        latency_audio_stream.get(),
                        kMeasureLatencyTimeInSec * kNumCallbacksPerSecond);
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   SetMaxPlayoutVolume();
+  DisableBuiltInAECIfAvailable();
   StartRecording();
   StartPlayout();
   test_is_done_->Wait(std::max(kTestTimeOutInMilliseconds,
@@ -877,8 +986,5 @@ TEST_P(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
             kImpulseFrequencyInHz * kMeasureLatencyTimeInSec - 1);
   latency_audio_stream->PrintResults();
 }
-
-INSTANTIATE_TEST_CASE_P(AudioDeviceTest, AudioDeviceTest,
-  ::testing::ValuesIn(kAudioLayers));
 
 }  // namespace webrtc

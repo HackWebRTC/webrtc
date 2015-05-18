@@ -338,8 +338,10 @@
               ],
               'sources': [
                 'audio_device/android/audio_device_unittest.cc',
+                'audio_device/android/audio_manager_unittest.cc',
                 'audio_device/android/ensure_initialized.cc',
                 'audio_device/android/ensure_initialized.h',
+                'audio_device/android/fine_audio_buffer_unittest.cc',
               ],
             }],
           ],

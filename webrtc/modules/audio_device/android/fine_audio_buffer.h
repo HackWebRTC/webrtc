@@ -49,7 +49,8 @@ class FineAudioBuffer {
  private:
   // Device buffer that provides 10ms chunks of data.
   AudioDeviceBuffer* device_buffer_;
-  int desired_frame_size_bytes_;  // Number of bytes delivered per GetBufferData
+  // Number of bytes delivered per GetBufferData
+  int desired_frame_size_bytes_;
   int sample_rate_;
   int samples_per_10_ms_;
   // Convenience parameter to avoid converting from samples
@@ -57,8 +58,10 @@ class FineAudioBuffer {
 
   // Storage for samples that are not yet asked for.
   rtc::scoped_ptr<int8_t[]> cache_buffer_;
-  int cached_buffer_start_;  // Location of first unread sample.
-  int cached_bytes_;  // Number of bytes stored in cache.
+  // Location of first unread sample.
+  int cached_buffer_start_;
+  // Number of bytes stored in cache.
+  int cached_bytes_;
 };
 
 }  // namespace webrtc

@@ -363,11 +363,6 @@
           'WEBRTC_ANDROID',
          ],
          'conditions': [
-           ['enable_android_opensl==1', {
-             'defines': [
-               'WEBRTC_ANDROID_OPENSLES',
-             ],
-           }],
            ['clang!=1', {
              # The Android NDK doesn't provide optimized versions of these
              # functions. Ensure they are disabled for all compilers.
@@ -430,13 +425,6 @@
           'defines': [
             'WEBRTC_LINUX',
             'WEBRTC_ANDROID',
-           ],
-           'conditions': [
-             ['enable_android_opensl==1', {
-               'defines': [
-                 'WEBRTC_ANDROID_OPENSLES',
-               ],
-             }]
            ],
         }],
         ['os_posix==1', {

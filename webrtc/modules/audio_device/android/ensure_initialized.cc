@@ -17,8 +17,7 @@
 #include "webrtc/modules/audio_device/android/audio_device_template.h"
 #include "webrtc/modules/audio_device/android/audio_record_jni.h"
 #include "webrtc/modules/audio_device/android/audio_track_jni.h"
-#include "webrtc/modules/audio_device/android/opensles_input.h"
-#include "webrtc/modules/audio_device/android/opensles_output.h"
+#include "webrtc/modules/utility/interface/jvm_android.h"
 
 namespace webrtc {
 namespace audiodevicemodule {
@@ -32,15 +31,14 @@ void EnsureInitializedOnce() {
   CHECK_EQ(0, jni->GetJavaVM(&jvm));
   jobject context = ::base::android::GetApplicationContext();
 
-  // Provide JVM and context to Java and OpenSL ES implementations.
+  // Initialize the Java environment (currently only used by the audio manager).
+  webrtc::JVM::Initialize(jvm, context);
+  // TODO(henrika): remove this call when AudioRecordJni and AudioTrackJni
+  // are modified to use the same sort of Java initialization as the audio
+  // manager.
   using AudioDeviceJava = AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>;
   AudioDeviceJava::SetAndroidAudioDeviceObjects(jvm, context);
 
-  // TODO(henrika): enable OpenSL ES when it has been refactored to avoid
-  // crashes.
-  // using AudioDeviceOpenSLES =
-  //    AudioDeviceTemplate<OpenSlesInput, OpenSlesOutput>;
-  // AudioDeviceOpenSLES::SetAndroidAudioDeviceObjects(jvm, context);
 }
 
 void EnsureInitialized() {

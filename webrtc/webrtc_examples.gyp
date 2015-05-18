@@ -90,68 +90,6 @@
             },
           ],
         },
-        {
-          'target_name': 'libopensl-demo-jni',
-          'type': 'loadable_module',
-          'dependencies': [
-            '<(webrtc_root)/modules/modules.gyp:audio_device',
-          ],
-          'sources': [
-            'examples/android/opensl_loopback/jni/opensl_runner.cc',
-            'examples/android/opensl_loopback/fake_audio_device_buffer.cc',
-          ],
-          'link_settings': {
-            'libraries': [
-              '-llog',
-              '-lOpenSLES',
-            ],
-          },
-        },
-        {
-          'target_name': 'OpenSlDemo',
-          'type': 'none',
-          'dependencies': [
-            'libopensl-demo-jni',
-            '<(modules_java_gyp_path):*',
-          ],
-          'actions': [
-            {
-              # TODO(henrik): Convert building of the demo to a proper GYP
-              # target so this action is not needed once chromium's
-              # apk-building machinery can be used. (crbug.com/225101)
-              'action_name': 'build_opensldemo_apk',
-              'variables': {
-                'android_opensl_demo_root': '<(webrtc_root)/examples/android/opensl_loopback',
-                'ant_log': '../../../<(INTERMEDIATE_DIR)/ant.log', # ../../.. to compensate for the cd below.
-              },
-              'inputs' : [
-                '<(PRODUCT_DIR)/lib.java/audio_device_module_java.jar',
-                '<(PRODUCT_DIR)/libopensl-demo-jni.so',
-                '<!@(find <(android_opensl_demo_root)/src -name "*.java")',
-                '<!@(find <(android_opensl_demo_root)/res -name "*.xml")',
-                '<!@(find <(android_opensl_demo_root)/res -name "*.png")',
-                '<(android_opensl_demo_root)/AndroidManifest.xml',
-                '<(android_opensl_demo_root)/build.xml',
-                '<(android_opensl_demo_root)/project.properties',
-              ],
-              'outputs': ['<(PRODUCT_DIR)/OpenSlDemo-debug.apk'],
-              'action': [
-                'bash', '-ec',
-                'rm -fr <(_outputs) <(android_opensl_demo_root)/{bin,libs,gen,obj} && '
-                'mkdir -p <(android_opensl_demo_root)/libs/<(android_app_abi) && '
-                'mkdir -p <(INTERMEDIATE_DIR) && ' # Must happen _before_ the cd below
-                '<(android_strip) -o <(android_opensl_demo_root)/libs/<(android_app_abi)/libopensl-demo-jni.so <(PRODUCT_DIR)/libopensl-demo-jni.so && '
-                'cp <(PRODUCT_DIR)/lib.java/audio_device_module_java.jar <(android_opensl_demo_root)/libs/ &&'
-                'cd <(android_opensl_demo_root) && '
-                '{ ANDROID_SDK_ROOT=<(android_sdk_root) '
-                'ant debug > <(ant_log) 2>&1 || '
-                '  { cat <(ant_log) ; exit 1; } } && '
-                'cd - > /dev/null && '
-                'cp <(android_opensl_demo_root)/bin/OpenSlDemo-debug.apk <(_outputs)'
-              ],
-            },
-          ],
-        },
       ],
     }],
   ],

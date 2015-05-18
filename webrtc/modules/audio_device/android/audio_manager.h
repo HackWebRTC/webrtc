@@ -13,11 +13,13 @@
 
 #include <jni.h>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/utility/interface/helpers_android.h"
+#include "webrtc/modules/utility/interface/jvm_android.h"
 
 namespace webrtc {
 
@@ -28,21 +30,25 @@ class AudioParameters {
       : sample_rate_(0),
         channels_(0),
         frames_per_buffer_(0),
+        frames_per_10ms_buffer_(0),
         bits_per_sample_(kBitsPerSample) {}
-  AudioParameters(int sample_rate, int channels)
+  AudioParameters(int sample_rate, int channels, int frames_per_buffer)
       : sample_rate_(sample_rate),
         channels_(channels),
-        frames_per_buffer_(sample_rate / 100),
+        frames_per_buffer_(frames_per_buffer),
+        frames_per_10ms_buffer_(sample_rate / 100),
         bits_per_sample_(kBitsPerSample) {}
-  void reset(int sample_rate, int channels) {
+  void reset(int sample_rate, int channels, int frames_per_buffer) {
     sample_rate_ = sample_rate;
     channels_ = channels;
-    // WebRTC uses a fixed buffer size equal to 10ms.
-    frames_per_buffer_ = (sample_rate / 100);
+    frames_per_buffer_ = frames_per_buffer;
+    frames_per_10ms_buffer_ = (sample_rate / 100);
   }
   int sample_rate() const { return sample_rate_; }
   int channels() const { return channels_; }
   int frames_per_buffer() const { return frames_per_buffer_; }
+  int frames_per_10ms_buffer() const { return frames_per_10ms_buffer_; }
+  int bits_per_sample() const { return bits_per_sample_; }
   bool is_valid() const {
     return ((sample_rate_ > 0) && (channels_ > 0) && (frames_per_buffer_ > 0));
   }
@@ -50,12 +56,25 @@ class AudioParameters {
   int GetBytesPerBuffer() const {
     return frames_per_buffer_ * GetBytesPerFrame();
   }
+  int GetBytesPer10msBuffer() const {
+    return frames_per_10ms_buffer_ * GetBytesPerFrame();
+  }
+  float GetBufferSizeInMilliseconds() const {
+    if (sample_rate_ == 0)
+      return 0.0f;
+    return frames_per_buffer_ / (sample_rate_ / 1000.0f);
+  }
 
  private:
   int sample_rate_;
   int channels_;
+  // Lowest possible size of native audio buffer. Measured in number of frames.
+  // This size is injected into the OpenSL ES output (since it does not "talk
+  // Java") implementation but is currently not utilized by the Java
+  // implementation since it aquires the same value internally.
   int frames_per_buffer_;
-  const int bits_per_sample_;
+  int frames_per_10ms_buffer_;
+  int bits_per_sample_;
 };
 
 // Implements support for functions in the WebRTC audio stack for Android that
@@ -64,22 +83,35 @@ class AudioParameters {
 // construction. This class does not make any audio-related modifications
 // unless Init() is called. Caching audio parameters makes no changes but only
 // reads data from the Java side.
-// TODO(henrika): expand this class when adding support for low-latency
-// OpenSL ES. Currently, it only contains very basic functionality.
 class AudioManager {
  public:
-  // Use the invocation API to allow the native application to use the JNI
-  // interface pointer to access VM features. |jvm| denotes the Java VM and
-  // |context| corresponds to android.content.Context in Java.
-  // This method also sets a global jclass object, |g_audio_manager_class| for
-  // the "org/webrtc/voiceengine/WebRtcAudioManager"-class.
-  static void SetAndroidAudioDeviceObjects(void* jvm, void* context);
-  // Always call this method after the object has been destructed. It deletes
-  // existing global references and enables garbage collection.
-  static void ClearAndroidAudioDeviceObjects();
+  // Wraps the Java specific parts of the AudioManager into one helper class.
+  // Stores method IDs for all supported methods at construction and then
+  // allows calls like JavaAudioManager::Close() while hiding the Java/JNI
+  // parts that are associated with this call.
+  class JavaAudioManager {
+   public:
+    JavaAudioManager(NativeRegistration* native_registration,
+                     rtc::scoped_ptr<GlobalRef> audio_manager);
+   ~JavaAudioManager();
+
+   bool Init();
+   void Close();
+   void SetCommunicationMode(bool enable);
+
+  private:
+   rtc::scoped_ptr<GlobalRef> audio_manager_;
+   jmethodID init_;
+   jmethodID dispose_;
+   jmethodID set_communication_mode_;
+  };
 
   AudioManager();
   ~AudioManager();
+
+  // Sets the currently active audio layer combination. Must be called before
+  // Init().
+  void SetActiveAudioLayer(AudioDeviceModule::AudioLayer audio_layer);
 
   // Initializes the audio manager and stores the current audio mode.
   bool Init();
@@ -91,36 +123,78 @@ class AudioManager {
   void SetCommunicationMode(bool enable);
 
   // Native audio parameters stored during construction.
-  AudioParameters GetPlayoutAudioParameters() const;
-  AudioParameters GetRecordAudioParameters() const;
+  const AudioParameters& GetPlayoutAudioParameters();
+  const AudioParameters& GetRecordAudioParameters();
 
-  bool initialized() const { return initialized_; }
+  // Returns true if the device supports a built-in Acoustic Echo Canceler.
+  // Some devices can also be blacklisted for use in combination with an AEC
+  // and these devices will return false.
+  // Can currently only be used in combination with a Java based audio backend
+  // for the recoring side (i.e. using the android.media.AudioRecord API).
+  bool IsAcousticEchoCancelerSupported() const;
+
+  // Returns true if the device supports the low-latency audio paths in
+  // combination with OpenSL ES.
+  bool IsLowLatencyPlayoutSupported() const;
+
+  // Returns the estimated total delay of this device. Unit is in milliseconds.
+  // The vaule is set once at construction and never changes after that.
+  // Possible values are webrtc::kLowLatencyModeDelayEstimateInMilliseconds and
+  // webrtc::kHighLatencyModeDelayEstimateInMilliseconds.
+  int GetDelayEstimateInMilliseconds() const;
 
  private:
   // Called from Java side so we can cache the native audio parameters.
   // This method will be called by the WebRtcAudioManager constructor, i.e.
   // on the same thread that this object is created on.
-  static void JNICALL CacheAudioParameters(JNIEnv* env, jobject obj,
-      jint sample_rate, jint channels, jlong nativeAudioManager);
-  void OnCacheAudioParameters(JNIEnv* env, jint sample_rate, jint channels);
-
-  // Returns true if SetAndroidAudioDeviceObjects() has been called
-  // successfully.
-  bool HasDeviceObjects();
-
-  // Called from the constructor. Defines the |j_audio_manager_| member.
-  void CreateJavaInstance();
+  static void JNICALL CacheAudioParameters(JNIEnv* env,
+                                           jobject obj,
+                                           jint sample_rate,
+                                           jint channels,
+                                           jboolean hardware_aec,
+                                           jboolean low_latency_output,
+                                           jint output_buffer_size,
+                                           jint input_buffer_size,
+                                           jlong native_audio_manager);
+  void OnCacheAudioParameters(JNIEnv* env,
+                              jint sample_rate,
+                              jint channels,
+                              jboolean hardware_aec,
+                              jboolean low_latency_output,
+                              jint output_buffer_size,
+                              jint input_buffer_size);
 
   // Stores thread ID in the constructor.
   // We can then use ThreadChecker::CalledOnValidThread() to ensure that
   // other methods are called from the same thread.
   rtc::ThreadChecker thread_checker_;
 
-  // The Java WebRtcAudioManager instance.
-  jobject j_audio_manager_;
+  // Calls AttachCurrentThread() if this thread is not attached at construction.
+  // Also ensures that DetachCurrentThread() is called at destruction.
+  AttachCurrentThreadIfNeeded attach_thread_if_needed_;
+
+  rtc::scoped_ptr<JNIEnvironment> j_environment_;
+
+  // TODO(henrika): add comments...
+  rtc::scoped_ptr<NativeRegistration> j_native_registration_;
+
+  // TODO(henrika): add comments...
+  rtc::scoped_ptr<AudioManager::JavaAudioManager> j_audio_manager_;
+
+  AudioDeviceModule::AudioLayer audio_layer_;
 
   // Set to true by Init() and false by Close().
   bool initialized_;
+
+  // True if device supports hardware (or built-in) AEC.
+  bool hardware_aec_;
+
+  // True if device supports the low-latency OpenSL ES audio path.
+  bool low_latency_playout_;
+
+  // The delay estimate can take one of two fixed values depending on if the
+  // device supports low-latency output or not.
+  int delay_estimate_in_milliseconds_;
 
   // Contains native parameters (e.g. sample rate, channel configuration).
   // Set at construction in OnCacheAudioParameters() which is called from

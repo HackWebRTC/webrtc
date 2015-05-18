@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_AUDIO_DEVICE_TEMPLATE_H_
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -20,12 +21,19 @@ namespace webrtc {
 
 // InputType/OutputType can be any class that implements the capturing/rendering
 // part of the AudioDeviceGeneric API.
+// Construction and destruction must be done on one and the same thread. Each
+// internal implementation of InputType and OutputType will DCHECK if that is
+// not the case. All implemented methods must also be called on the same thread.
+// See comments in each InputType/OutputType class for more
+// It is possible to call the two static methods (SetAndroidAudioDeviceObjects
+// and ClearAndroidAudioDeviceObjects) from a different thread but both will
+// CHECK that the calling thread is attached to a Java VM.
+
 template <class InputType, class OutputType>
 class AudioDeviceTemplate : public AudioDeviceGeneric {
  public:
   static void SetAndroidAudioDeviceObjects(void* javaVM,
                                            void* context) {
-    AudioManager::SetAndroidAudioDeviceObjects(javaVM, context);
     OutputType::SetAndroidAudioDeviceObjects(javaVM, context);
     InputType::SetAndroidAudioDeviceObjects(javaVM, context);
   }
@@ -33,14 +41,17 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   static void ClearAndroidAudioDeviceObjects() {
     OutputType::ClearAndroidAudioDeviceObjects();
     InputType::ClearAndroidAudioDeviceObjects();
-    AudioManager::ClearAndroidAudioDeviceObjects();
   }
 
-  // TODO(henrika): remove id.
-  explicit AudioDeviceTemplate(const int32_t id)
-      : audio_manager_(),
-        output_(&audio_manager_),
-        input_(&output_, &audio_manager_) {
+  AudioDeviceTemplate(AudioDeviceModule::AudioLayer audio_layer,
+                      AudioManager* audio_manager)
+      : audio_layer_(audio_layer),
+        audio_manager_(audio_manager),
+        output_(audio_manager_),
+        input_(audio_manager_),
+        initialized_(false) {
+    CHECK(audio_manager);
+    audio_manager_->SetActiveAudioLayer(audio_layer);
   }
 
   virtual ~AudioDeviceTemplate() {
@@ -48,20 +59,27 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
 
   int32_t ActiveAudioLayer(
       AudioDeviceModule::AudioLayer& audioLayer) const override {
-    audioLayer = AudioDeviceModule::kPlatformDefaultAudio;
+    audioLayer = audio_layer_;
     return 0;
-  };
+  }
 
   int32_t Init() override {
-    return audio_manager_.Init() | output_.Init() | input_.Init();
+    DCHECK(thread_checker_.CalledOnValidThread());
+    DCHECK(!initialized_);
+    initialized_ = audio_manager_->Init() || output_.Init() || input_.Init();
+    return initialized_ ? 0 : -1;
   }
 
   int32_t Terminate() override {
-    return output_.Terminate() | input_.Terminate() | audio_manager_.Close();
+    DCHECK(thread_checker_.CalledOnValidThread());
+    initialized_ =
+        !(output_.Terminate() || input_.Terminate() || audio_manager_->Close());
+    return !initialized_ ? 0 : -1;
   }
 
   bool Initialized() const override {
-    return true;
+    DCHECK(thread_checker_.CalledOnValidThread());
+    return initialized_;
   }
 
   int16_t PlayoutDevices() override {
@@ -118,7 +136,12 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t InitPlayout() override {
-    audio_manager_.SetCommunicationMode(true);
+    // Switches the Android audio mode to MODE_IN_COMMUNICATION to ensure that
+    // audio routing, volume control and echo performance are the best possible
+    // for VoIP. InitRecording() does the same type of call but only the first
+    // call has any effect.
+    // This call does nothing if MODE_IN_COMMUNICATION was already set.
+    audio_manager_->SetCommunicationMode(true);
     return output_.InitPlayout();
   }
 
@@ -132,7 +155,12 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t InitRecording() override {
-    audio_manager_.SetCommunicationMode(true);
+    // Switches the Android audio mode to MODE_IN_COMMUNICATION to ensure that
+    // audio routing, volume control and echo performance are the best possible
+    // for VoIP. InitRecording() does the same type of call but only the first
+    // call has any effect.
+    // This call does nothing if MODE_IN_COMMUNICATION was already set.
+    audio_manager_->SetCommunicationMode(true);
     return input_.InitRecording();
   }
 
@@ -152,7 +180,7 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     if (!Recording()) {
       // Restore initial audio mode since all audio streaming is disabled.
       // The default mode was stored in Init().
-      audio_manager_.SetCommunicationMode(false);
+      audio_manager_->SetCommunicationMode(false);
     }
     return err;
   }
@@ -173,7 +201,7 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     if (!Playing()) {
       // Restore initial audio mode since all audio streaming is disabled.
       // The default mode was is stored in Init().
-      audio_manager_.SetCommunicationMode(false);
+      audio_manager_->SetCommunicationMode(false);
     }
     return err;
   }
@@ -365,12 +393,18 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     return -1;
   }
 
-  int32_t PlayoutDelay(uint16_t& delayMS) const override {
-    return output_.PlayoutDelay(delayMS);
+  int32_t PlayoutDelay(uint16_t& delay_ms) const override {
+    // Best guess we can do is to use half of the estimated total delay.
+    delay_ms = audio_manager_->GetDelayEstimateInMilliseconds() / 2;
+    DCHECK_GT(delay_ms, 0);
+    return 0;
   }
 
-  int32_t RecordingDelay(uint16_t& delayMS) const override {
-    return input_.RecordingDelay(delayMS);
+  int32_t RecordingDelay(uint16_t& delay_ms) const override {
+    // Best guess we can do is to use half of the estimated total delay.
+    delay_ms = audio_manager_->GetDelayEstimateInMilliseconds() / 2;
+    DCHECK_GT(delay_ms, 0);
+    return 0;
   }
 
   int32_t CPULoad(uint16_t& load) const override {
@@ -423,18 +457,35 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     return -1;
   }
 
+  // Returns true if the device both supports built in AEC and the device
+  // is not blacklisted.
   bool BuiltInAECIsAvailable() const override {
-    return input_.BuiltInAECIsAvailable();
+    return audio_manager_->IsAcousticEchoCancelerSupported();
   }
 
   int32_t EnableBuiltInAEC(bool enable) override {
+    CHECK(BuiltInAECIsAvailable()) << "HW AEC is not available";
     return input_.EnableBuiltInAEC(enable);
   }
 
  private:
-  AudioManager audio_manager_;
+  rtc::ThreadChecker thread_checker_;
+
+  // Local copy of the audio layer set during construction of the
+  // AudioDeviceModuleImpl instance. Read only value.
+  const AudioDeviceModule::AudioLayer audio_layer_;
+
+  // Non-owning raw pointer to AudioManager instance given to use at
+  // construction. The real object is owned by AudioDeviceModuleImpl and the
+  // life time is the same as that of the AudioDeviceModuleImpl, hence there
+  // is no risk of reading a NULL pointer at any time in this class.
+  AudioManager* const audio_manager_;
+
   OutputType output_;
+
   InputType input_;
+
+  bool initialized_;
 };
 
 }  // namespace webrtc
