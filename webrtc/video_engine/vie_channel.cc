@@ -130,8 +130,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
       nack_history_size_sender_(kSendSidePacketHistorySize),
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
       pre_render_callback_(NULL),
-      report_block_stats_sender_(new ReportBlockStats()),
-      report_block_stats_receiver_(new ReportBlockStats()) {
+      report_block_stats_sender_(new ReportBlockStats()) {
   RtpRtcp::Configuration configuration = CreateRtpRtcpConfiguration();
   configuration.remote_bitrate_estimator = remote_bitrate_estimator;
   configuration.receive_statistics = vie_receiver_.GetReceiveStatistics();
@@ -263,11 +262,6 @@ void ViEChannel::UpdateHistograms() {
       if (rtcp_counter.nack_requests > 0) {
         RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.UniqueNackRequestsSentInPercent",
             rtcp_counter.UniqueNackRequestsInPercent());
-      }
-      int fraction_lost = report_block_stats_receiver_->FractionLostInPercent();
-      if (fraction_lost != -1) {
-        RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.ReceivedPacketsLostInPercent",
-            fraction_lost);
       }
     }
 
@@ -574,13 +568,6 @@ int32_t ViEChannel::SetReceiveCodec(const VideoCodec& video_codec) {
   return 0;
 }
 
-int32_t ViEChannel::GetReceiveCodec(VideoCodec* video_codec) {
-  if (vcm_->ReceiveCodec(video_codec) != 0) {
-    return -1;
-  }
-  return 0;
-}
-
 int32_t ViEChannel::RegisterCodecObserver(ViEDecoderObserver* observer) {
   CriticalSectionScoped cs(callback_cs_.get());
   if (observer) {
@@ -673,10 +660,6 @@ void ViEChannel::SetRTCPMode(const RTCPMethod rtcp_mode) {
     rtp_rtcp->SetRTCPStatus(rtcp_mode);
   }
   rtp_rtcp_->SetRTCPStatus(rtcp_mode);
-}
-
-RTCPMethod ViEChannel::GetRTCPMode() const {
-  return rtp_rtcp_->RTCP();
 }
 
 int32_t ViEChannel::SetNACKStatus(const bool enable) {
@@ -1022,17 +1005,6 @@ int32_t ViEChannel::GetRemoteSSRC(uint32_t* ssrc) {
   return 0;
 }
 
-int32_t ViEChannel::GetRemoteCSRC(uint32_t CSRCs[kRtpCsrcSize]) {
-  uint32_t arrayCSRC[kRtpCsrcSize];
-  memset(arrayCSRC, 0, sizeof(arrayCSRC));
-
-  int num_csrcs = vie_receiver_.GetCsrcs(arrayCSRC);
-  if (num_csrcs > 0) {
-    memcpy(CSRCs, arrayCSRC, num_csrcs * sizeof(uint32_t));
-  }
-  return 0;
-}
-
 int ViEChannel::SetRtxSendPayloadType(int payload_type,
                                       int associated_payload_type) {
   rtp_rtcp_->SetRtxSendPayloadType(payload_type, associated_payload_type);
@@ -1209,38 +1181,6 @@ void ViEChannel::RegisterSendChannelRtcpStatisticsCallback(
   }
 }
 
-// TODO(holmer): This is a bad function name as it implies that it returns the
-// received RTCP, while it actually returns the statistics which will be sent
-// in the RTCP.
-int32_t ViEChannel::GetReceivedRtcpStatistics(uint16_t* fraction_lost,
-                                              uint32_t* cumulative_lost,
-                                              uint32_t* extended_max,
-                                              uint32_t* jitter_samples,
-                                              int64_t* rtt_ms) {
-  uint32_t remote_ssrc = vie_receiver_.GetRemoteSsrc();
-  StreamStatistician* statistician =
-      vie_receiver_.GetReceiveStatistics()->GetStatistician(remote_ssrc);
-  RtcpStatistics receive_stats;
-  if (!statistician || !statistician->GetStatistics(
-      &receive_stats, rtp_rtcp_->RTCP() == kRtcpOff)) {
-    return -1;
-  }
-  *fraction_lost = receive_stats.fraction_lost;
-  *cumulative_lost = receive_stats.cumulative_lost;
-  *extended_max = receive_stats.extended_max_sequence_number;
-  *jitter_samples = receive_stats.jitter;
-
-  // TODO(asapersson): Change report_block_stats to not rely on
-  // GetReceivedRtcpStatistics to be called.
-  report_block_stats_receiver_->Store(receive_stats, remote_ssrc, 0);
-
-  int64_t dummy = 0;
-  int64_t rtt = 0;
-  rtp_rtcp_->RTT(remote_ssrc, &rtt, &dummy, &dummy, &dummy);
-  *rtt_ms = rtt;
-  return 0;
-}
-
 void ViEChannel::RegisterReceiveChannelRtcpStatisticsCallback(
     RtcpStatisticsCallback* callback) {
   vie_receiver_.GetReceiveStatistics()->RegisterRtcpStatisticsCallback(
@@ -1251,42 +1191,6 @@ void ViEChannel::RegisterReceiveChannelRtcpStatisticsCallback(
 void ViEChannel::RegisterRtcpPacketTypeCounterObserver(
     RtcpPacketTypeCounterObserver* observer) {
   rtcp_packet_type_counter_observer_.Set(observer);
-}
-
-int32_t ViEChannel::GetRtpStatistics(size_t* bytes_sent,
-                                     uint32_t* packets_sent,
-                                     size_t* bytes_received,
-                                     uint32_t* packets_received) const {
-  StreamStatistician* statistician = vie_receiver_.GetReceiveStatistics()->
-      GetStatistician(vie_receiver_.GetRemoteSsrc());
-  *bytes_received = 0;
-  *packets_received = 0;
-  if (statistician)
-    statistician->GetDataCounters(bytes_received, packets_received);
-  if (rtp_rtcp_->DataCountersRTP(bytes_sent, packets_sent) != 0) {
-    return -1;
-  }
-  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
-  for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
-       it != simulcast_rtp_rtcp_.end();
-       it++) {
-    size_t bytes_sent_temp = 0;
-    uint32_t packets_sent_temp = 0;
-    RtpRtcp* rtp_rtcp = *it;
-    rtp_rtcp->DataCountersRTP(&bytes_sent_temp, &packets_sent_temp);
-    *bytes_sent += bytes_sent_temp;
-    *packets_sent += packets_sent_temp;
-  }
-  for (std::list<RtpRtcp*>::const_iterator it = removed_rtp_rtcp_.begin();
-       it != removed_rtp_rtcp_.end(); ++it) {
-    size_t bytes_sent_temp = 0;
-    uint32_t packets_sent_temp = 0;
-    RtpRtcp* rtp_rtcp = *it;
-    rtp_rtcp->DataCountersRTP(&bytes_sent_temp, &packets_sent_temp);
-    *bytes_sent += bytes_sent_temp;
-    *packets_sent += packets_sent_temp;
-  }
-  return 0;
 }
 
 void ViEChannel::GetSendStreamDataCounters(
@@ -1378,59 +1282,6 @@ void ViEChannel::GetReceiveRtcpPacketTypeCounter(
   counter.Add(counter_map[vie_receiver_.GetRemoteSsrc()]);
 
   *packet_counter = counter;
-}
-
-void ViEChannel::GetBandwidthUsage(uint32_t* total_bitrate_sent,
-                                   uint32_t* video_bitrate_sent,
-                                   uint32_t* fec_bitrate_sent,
-                                   uint32_t* nackBitrateSent) const {
-  rtp_rtcp_->BitrateSent(total_bitrate_sent, video_bitrate_sent,
-                         fec_bitrate_sent, nackBitrateSent);
-  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
-  for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
-       it != simulcast_rtp_rtcp_.end(); it++) {
-    uint32_t stream_rate = 0;
-    uint32_t video_rate = 0;
-    uint32_t fec_rate = 0;
-    uint32_t nackRate = 0;
-    RtpRtcp* rtp_rtcp = *it;
-    rtp_rtcp->BitrateSent(&stream_rate, &video_rate, &fec_rate, &nackRate);
-    *total_bitrate_sent += stream_rate;
-    *video_bitrate_sent += video_rate;
-    *fec_bitrate_sent += fec_rate;
-    *nackBitrateSent += nackRate;
-  }
-}
-
-bool ViEChannel::GetSendSideDelay(int* avg_send_delay,
-                                  int* max_send_delay) const {
-  *avg_send_delay = 0;
-  *max_send_delay = 0;
-  bool valid_estimate = false;
-  int num_send_delays = 0;
-  if (rtp_rtcp_->GetSendSideDelay(avg_send_delay, max_send_delay)) {
-    ++num_send_delays;
-    valid_estimate = true;
-  }
-  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
-  for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
-       it != simulcast_rtp_rtcp_.end(); it++) {
-    RtpRtcp* rtp_rtcp = *it;
-    int sub_stream_avg_delay = 0;
-    int sub_stream_max_delay = 0;
-    if (rtp_rtcp->GetSendSideDelay(&sub_stream_avg_delay,
-                                   &sub_stream_max_delay)) {
-      *avg_send_delay += sub_stream_avg_delay;
-      *max_send_delay = std::max(*max_send_delay, sub_stream_max_delay);
-      ++num_send_delays;
-    }
-  }
-  if (num_send_delays > 0) {
-    valid_estimate = true;
-    *avg_send_delay = *avg_send_delay / num_send_delays;
-    *avg_send_delay = (*avg_send_delay + num_send_delays / 2) / num_send_delays;
-  }
-  return valid_estimate;
 }
 
 void ViEChannel::RegisterSendSideDelayObserver(
