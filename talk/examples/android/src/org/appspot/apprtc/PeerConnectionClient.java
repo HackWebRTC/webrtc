@@ -439,7 +439,7 @@ public class PeerConnectionClient {
         cameraDeviceName = frontCameraDeviceName;
       }
       Log.d(TAG, "Opening camera: " + cameraDeviceName);
-      videoCapturer = VideoCapturerAndroid.create(cameraDeviceName);
+      videoCapturer = VideoCapturerAndroid.create(cameraDeviceName, null);
       if (videoCapturer == null) {
         reportError("Failed to open camera");
         return;

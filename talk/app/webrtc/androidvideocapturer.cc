@@ -89,10 +89,10 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
     // |captured_frame_.data| is only guaranteed to be valid during the scope
     // of |AndroidVideoCapturer::OnIncomingFrame_w|.
     // Check that captured_frame is actually our frame.
-    DCHECK(captured_frame == &captured_frame_);
+    CHECK(captured_frame == &captured_frame_);
 
     if (!apply_rotation_ || captured_frame->rotation == kVideoRotation_0) {
-      DCHECK(captured_frame->fourcc == cricket::FOURCC_YV12);
+      CHECK(captured_frame->fourcc == cricket::FOURCC_YV12);
       const uint8_t* y_plane = static_cast<uint8_t*>(captured_frame_.data);
 
       // Android guarantees that the stride is a multiple of 16.
@@ -160,7 +160,7 @@ AndroidVideoCapturer::AndroidVideoCapturer(
   std::vector<cricket::VideoFormat> formats;
   for (Json::ArrayIndex i = 0; i < json_values.size(); ++i) {
       const Json::Value& json_value = json_values[i];
-      DCHECK(!json_value["width"].isNull() && !json_value["height"].isNull() &&
+      CHECK(!json_value["width"].isNull() && !json_value["height"].isNull() &&
              !json_value["framerate"].isNull());
       cricket::VideoFormat format(
           json_value["width"].asInt(),
@@ -173,16 +173,16 @@ AndroidVideoCapturer::AndroidVideoCapturer(
 }
 
 AndroidVideoCapturer::~AndroidVideoCapturer() {
-  DCHECK(!running_);
+  CHECK(!running_);
 }
 
 cricket::CaptureState AndroidVideoCapturer::Start(
     const cricket::VideoFormat& capture_format) {
-  DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(!running_);
-
   LOG(LS_INFO) << " AndroidVideoCapturer::Start w = " << capture_format.width
                << " h = " << capture_format.height;
+  CHECK(thread_checker_.CalledOnValidThread());
+  CHECK(!running_);
+
   frame_factory_ = new AndroidVideoCapturer::FrameFactory(
       capture_format.width, capture_format.height, delegate_.get());
   set_frame_factory(frame_factory_);
@@ -197,9 +197,9 @@ cricket::CaptureState AndroidVideoCapturer::Start(
 }
 
 void AndroidVideoCapturer::Stop() {
-  DCHECK(thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << " AndroidVideoCapturer::Stop ";
-  DCHECK(running_);
+  CHECK(thread_checker_.CalledOnValidThread());
+  CHECK(running_);
   running_ = false;
   SetCaptureFormat(NULL);
 
@@ -209,18 +209,18 @@ void AndroidVideoCapturer::Stop() {
 }
 
 bool AndroidVideoCapturer::IsRunning() {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  CHECK(thread_checker_.CalledOnValidThread());
   return running_;
 }
 
 bool AndroidVideoCapturer::GetPreferredFourccs(std::vector<uint32>* fourccs) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  CHECK(thread_checker_.CalledOnValidThread());
   fourccs->push_back(cricket::FOURCC_YV12);
   return true;
 }
 
 void AndroidVideoCapturer::OnCapturerStarted(bool success) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  CHECK(thread_checker_.CalledOnValidThread());
   cricket::CaptureState new_state =
       success ? cricket::CS_RUNNING : cricket::CS_FAILED;
   if (new_state == current_state_)
@@ -237,7 +237,7 @@ void AndroidVideoCapturer::OnIncomingFrame(void* frame_data,
                                            int length,
                                            int rotation,
                                            int64 time_stamp) {
-  DCHECK(thread_checker_.CalledOnValidThread());
+  CHECK(thread_checker_.CalledOnValidThread());
   frame_factory_->UpdateCapturedFrame(frame_data, length, rotation, time_stamp);
   SignalFrameCaptured(this, frame_factory_->GetCapturedFrame());
 }

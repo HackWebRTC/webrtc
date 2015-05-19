@@ -54,8 +54,10 @@ AndroidVideoCapturerJni::Create(JNIEnv* jni,
   rtc::scoped_refptr<AndroidVideoCapturerJni> capturer(
       new rtc::RefCountedObject<AndroidVideoCapturerJni>(jni, j_video_capture));
 
-  if (capturer->Init(device_name))
+  if (capturer->Init(device_name)) {
     return capturer;
+  }
+  LOG(LS_ERROR) << "AndroidVideoCapturerJni init fails";
   return nullptr;
 }
 
