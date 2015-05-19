@@ -29,6 +29,7 @@ public final class WebRtcAudioUtils {
   // native WebRTC AEC instead. The device name is given by Build.MODEL.
   private static final String[] BLACKLISTED_AEC_MODELS = new String[] {
       "Nexus 5", // Nexus 5
+      "D6503",   // Sony Xperia Z2 D6503
   };
 
   // Use 44.1kHz as the default sampling rate.
