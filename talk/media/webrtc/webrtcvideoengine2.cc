@@ -1634,6 +1634,21 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::VideoSendStreamParameters::
       codec_settings(codec_settings) {
 }
 
+WebRtcVideoChannel2::WebRtcVideoSendStream::AllocatedEncoder::AllocatedEncoder(
+    webrtc::VideoEncoder* encoder,
+    webrtc::VideoCodecType type,
+    bool external)
+    : encoder(encoder),
+      external_encoder(nullptr),
+      type(type),
+      external(external) {
+  if (external) {
+    external_encoder = encoder;
+    this->encoder =
+        new webrtc::VideoEncoderSoftwareFallbackWrapper(type, encoder);
+  }
+}
+
 WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
     webrtc::Call* call,
     WebRtcVideoEncoderFactory* external_encoder_factory,
@@ -1885,10 +1900,9 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoder(
 void WebRtcVideoChannel2::WebRtcVideoSendStream::DestroyVideoEncoder(
     AllocatedEncoder* encoder) {
   if (encoder->external) {
-    external_encoder_factory_->DestroyVideoEncoder(encoder->encoder);
-  } else {
-    delete encoder->encoder;
+    external_encoder_factory_->DestroyVideoEncoder(encoder->external_encoder);
   }
+  delete encoder->encoder;
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(

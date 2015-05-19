@@ -321,9 +321,9 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     struct AllocatedEncoder {
       AllocatedEncoder(webrtc::VideoEncoder* encoder,
                        webrtc::VideoCodecType type,
-                       bool external)
-          : encoder(encoder), type(type), external(external) {}
+                       bool external);
       webrtc::VideoEncoder* encoder;
+      webrtc::VideoEncoder* external_encoder;
       webrtc::VideoCodecType type;
       bool external;
     };
