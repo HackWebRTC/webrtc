@@ -353,8 +353,6 @@ static_library("rtc_base") {
       "bind.h.pump",
       "callback.h",
       "callback.h.pump",
-      "filelock.cc",
-      "filelock.h",
       "fileutils_mock.h",
       "genericslot.h",
       "genericslot.h.pump",
