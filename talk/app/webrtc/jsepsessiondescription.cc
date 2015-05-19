@@ -62,10 +62,11 @@ const int JsepSessionDescription::kDefaultVideoCodecId = 100;
 const int JsepSessionDescription::kDefaultVideoCodecFramerate = 60;
 const char JsepSessionDescription::kDefaultVideoCodecName[] = "VP8";
 // Used as default max video codec size before we have it in signaling.
-#if defined(ANDROID)
+#if defined(ANDROID) || defined(WEBRTC_IOS)
 // Limit default max video codec size for Android to avoid
 // HW VP8 codec initialization failure for resolutions higher
 // than 1280x720 or 720x1280.
+// Same patch for iOS to support 720P in portrait mode.
 const int JsepSessionDescription::kMaxVideoCodecWidth = 1280;
 const int JsepSessionDescription::kMaxVideoCodecHeight = 1280;
 #else
