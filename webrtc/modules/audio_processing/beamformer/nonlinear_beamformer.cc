@@ -60,8 +60,8 @@ const float kMaskSmoothAlpha = 0.2f;
 const int kLowAverageStartHz = 200;
 const int kLowAverageEndHz = 400;
 
-const int kHighAverageStartHz = 6000;
-const int kHighAverageEndHz = 6500;
+const int kHighAverageStartHz = 3000;
+const int kHighAverageEndHz = 5000;
 
 // Quantile of mask values which is used to estimate target presence.
 const float kMaskQuantile = 0.3f;
