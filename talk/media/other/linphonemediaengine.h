@@ -68,7 +68,6 @@ class LinphoneMediaEngine : public MediaEngineInterface {
   virtual int GetCapabilities();
   virtual VoiceMediaChannel* CreateChannel();
   virtual VideoMediaChannel* CreateVideoChannel(VoiceMediaChannel* voice_ch);
-  virtual SoundclipMedia* CreateSoundclip() { return NULL; }
   virtual bool SetAudioOptions(int options) { return true; }
   virtual bool SetDefaultVideoEncoderConfig(const VideoEncoderConfig& config) {
     return true;

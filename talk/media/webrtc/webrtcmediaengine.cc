@@ -37,10 +37,9 @@ class WebRtcMediaEngine2
     : public CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine2> {
  public:
   WebRtcMediaEngine2(webrtc::AudioDeviceModule* adm,
-                     webrtc::AudioDeviceModule* adm_sc,
                      WebRtcVideoEncoderFactory* encoder_factory,
                      WebRtcVideoDecoderFactory* decoder_factory) {
-    voice_.SetAudioDeviceModule(adm, adm_sc);
+    voice_.SetAudioDeviceModule(adm);
     video_.SetExternalDecoderFactory(decoder_factory);
     video_.SetExternalEncoderFactory(encoder_factory);
   }
@@ -51,10 +50,9 @@ class WebRtcMediaEngine2
 WRME_EXPORT
 cricket::MediaEngineInterface* CreateWebRtcMediaEngine(
     webrtc::AudioDeviceModule* adm,
-    webrtc::AudioDeviceModule* adm_sc,
     cricket::WebRtcVideoEncoderFactory* encoder_factory,
     cricket::WebRtcVideoDecoderFactory* decoder_factory) {
-  return new cricket::WebRtcMediaEngine2(adm, adm_sc, encoder_factory,
+  return new cricket::WebRtcMediaEngine2(adm, encoder_factory,
                                          decoder_factory);
 }
 
@@ -69,10 +67,9 @@ namespace cricket {
 // ChannelManager.
 MediaEngineInterface* WebRtcMediaEngineFactory::Create(
     webrtc::AudioDeviceModule* adm,
-    webrtc::AudioDeviceModule* adm_sc,
     WebRtcVideoEncoderFactory* encoder_factory,
     WebRtcVideoDecoderFactory* decoder_factory) {
-  return CreateWebRtcMediaEngine(adm, adm_sc, encoder_factory, decoder_factory);
+  return CreateWebRtcMediaEngine(adm, encoder_factory, decoder_factory);
 }
 
 }  // namespace cricket

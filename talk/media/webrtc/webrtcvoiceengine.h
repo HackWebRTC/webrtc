@@ -91,7 +91,6 @@ class AudioRenderer;
 class VoETraceWrapper;
 class VoEWrapper;
 class VoiceProcessor;
-class WebRtcSoundclipMedia;
 class WebRtcVoiceMediaChannel;
 
 // WebRtcVoiceEngine is a class to be used with CompositeMediaEngine.
@@ -103,17 +102,13 @@ class WebRtcVoiceEngine
  public:
   WebRtcVoiceEngine();
   // Dependency injection for testing.
-  WebRtcVoiceEngine(VoEWrapper* voe_wrapper,
-                    VoEWrapper* voe_wrapper_sc,
-                    VoETraceWrapper* tracing);
+  WebRtcVoiceEngine(VoEWrapper* voe_wrapper, VoETraceWrapper* tracing);
   ~WebRtcVoiceEngine();
   bool Init(rtc::Thread* worker_thread);
   void Terminate();
 
   int GetCapabilities();
   VoiceMediaChannel* CreateChannel();
-
-  SoundclipMedia* CreateSoundclip();
 
   AudioOptions GetOptions() const { return options_; }
   bool SetOptions(const AudioOptions& options);
@@ -166,21 +161,15 @@ class WebRtcVoiceEngine
   void RegisterChannel(WebRtcVoiceMediaChannel *channel);
   void UnregisterChannel(WebRtcVoiceMediaChannel *channel);
 
-  // May only be called by WebRtcSoundclipMedia.
-  void RegisterSoundclip(WebRtcSoundclipMedia *channel);
-  void UnregisterSoundclip(WebRtcSoundclipMedia *channel);
-
   // Called by WebRtcVoiceMediaChannel to set a gain offset from
   // the default AGC target level.
   bool AdjustAgcLevel(int delta);
 
   VoEWrapper* voe() { return voe_wrapper_.get(); }
-  VoEWrapper* voe_sc() { return voe_wrapper_sc_.get(); }
   int GetLastEngineError();
 
-  // Set the external ADMs. This can only be called before Init.
-  bool SetAudioDeviceModule(webrtc::AudioDeviceModule* adm,
-                            webrtc::AudioDeviceModule* adm_sc);
+  // Set the external ADM. This can only be called before Init.
+  bool SetAudioDeviceModule(webrtc::AudioDeviceModule* adm);
 
   // Starts AEC dump using existing file.
   bool StartAecDump(rtc::PlatformFile file);
@@ -190,10 +179,8 @@ class WebRtcVoiceEngine
 
   // Create a VoiceEngine Channel.
   int CreateMediaVoiceChannel();
-  int CreateSoundclipVoiceChannel();
 
  private:
-  typedef std::vector<WebRtcSoundclipMedia *> SoundclipList;
   typedef std::vector<WebRtcVoiceMediaChannel *> ChannelList;
   typedef sigslot::
       signal3<uint32, MediaProcessorDirection, AudioFrame*> FrameSignal;
@@ -202,7 +189,6 @@ class WebRtcVoiceEngine
   void ConstructCodecs();
   bool GetVoeCodec(int index, webrtc::CodecInst* codec);
   bool InitInternal();
-  bool EnsureSoundclipEngineInit();
   void SetTraceFilter(int filter);
   void SetTraceOptions(const std::string& options);
   // Applies either options or overrides.  Every option that is "set"
@@ -250,13 +236,9 @@ class WebRtcVoiceEngine
 
   // The primary instance of WebRtc VoiceEngine.
   rtc::scoped_ptr<VoEWrapper> voe_wrapper_;
-  // A secondary instance, for playing out soundclips (on the 'ring' device).
-  rtc::scoped_ptr<VoEWrapper> voe_wrapper_sc_;
-  bool voe_wrapper_sc_initialized_;
   rtc::scoped_ptr<VoETraceWrapper> tracing_;
   // The external audio device manager
   webrtc::AudioDeviceModule* adm_;
-  webrtc::AudioDeviceModule* adm_sc_;
   int log_filter_;
   std::string log_options_;
   bool is_dumping_aec_;
@@ -264,7 +246,6 @@ class WebRtcVoiceEngine
   std::vector<RtpHeaderExtension> rtp_header_extensions_;
   bool desired_local_monitor_enable_;
   rtc::scoped_ptr<WebRtcMonitorStream> monitor_;
-  SoundclipList soundclips_;
   ChannelList channels_;
   // channels_ can be read from WebRtc callback thread. We need a lock on that
   // callback as well as the RegisterChannel/UnregisterChannel.

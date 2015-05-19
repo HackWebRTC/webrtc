@@ -630,11 +630,6 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   int max_bps_;
 };
 
-class FakeSoundclipMedia : public SoundclipMedia {
- public:
-  virtual bool PlaySound(const char* buf, int len, int flags) { return true; }
-};
-
 class FakeDataMediaChannel : public RtpHelper<DataMediaChannel> {
  public:
   explicit FakeDataMediaChannel(void* unused)
@@ -784,7 +779,6 @@ class FakeVoiceEngine : public FakeBaseEngine {
   void UnregisterChannel(VoiceMediaChannel* channel) {
     channels_.erase(std::find(channels_.begin(), channels_.end(), channel));
   }
-  SoundclipMedia* CreateSoundclip() { return new FakeSoundclipMedia(); }
 
   const std::vector<AudioCodec>& codecs() { return codecs_; }
   void SetCodecs(const std::vector<AudioCodec> codecs) { codecs_ = codecs; }

@@ -276,7 +276,7 @@ rtc::Thread* PeerConnectionFactory::worker_thread() {
 cricket::MediaEngineInterface* PeerConnectionFactory::CreateMediaEngine_w() {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   return cricket::WebRtcMediaEngineFactory::Create(
-      default_adm_.get(), NULL, video_encoder_factory_.get(),
+      default_adm_.get(), video_encoder_factory_.get(),
       video_decoder_factory_.get());
 }
 

@@ -673,8 +673,6 @@
         'session/media/mediasink.h',
         'session/media/rtcpmuxfilter.cc',
         'session/media/rtcpmuxfilter.h',
-        'session/media/soundclip.cc',
-        'session/media/soundclip.h',
         'session/media/srtpfilter.cc',
         'session/media/srtpfilter.h',
         'session/media/typingmonitor.cc',

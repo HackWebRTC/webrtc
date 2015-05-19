@@ -446,22 +446,6 @@ struct VideoOptions {
   Settable<int> screencast_min_bitrate;
 };
 
-// A class for playing out soundclips.
-class SoundclipMedia {
- public:
-  enum SoundclipFlags {
-    SF_LOOP = 1,
-  };
-
-  virtual ~SoundclipMedia() {}
-
-  // Plays a sound out to the speakers with the given audio stream. The stream
-  // must be 16-bit little-endian 16 kHz PCM. If a stream is already playing
-  // on this SoundclipMedia, it is stopped. If clip is NULL, nothing is played.
-  // Returns whether it was successful.
-  virtual bool PlaySound(const char *clip, int len, int flags) = 0;
-};
-
 struct RtpHeaderExtension {
   RtpHeaderExtension() : id(0) {}
   RtpHeaderExtension(const std::string& u, int i) : uri(u), id(i) {}

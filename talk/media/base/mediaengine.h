@@ -84,9 +84,6 @@ class MediaEngineInterface {
       const VideoOptions& options,
       VoiceMediaChannel* voice_media_channel) = 0;
 
-  // Creates a soundclip object for playing sounds on. Returns NULL on failure.
-  virtual SoundclipMedia *CreateSoundclip() = 0;
-
   // Configuration
   // Gets global audio options.
   virtual AudioOptions GetAudioOptions() const = 0;
@@ -101,7 +98,6 @@ class MediaEngineInterface {
       = 0;
 
   // Device selection
-  // TODO(tschmelcher): Add method for selecting the soundclip device.
   virtual bool SetSoundDevices(const Device* in_device,
                                const Device* out_device) = 0;
 
@@ -193,9 +189,6 @@ class CompositeMediaEngine : public MediaEngineInterface {
                                                 VoiceMediaChannel* channel) {
     return video_.CreateChannel(options, channel);
   }
-  virtual SoundclipMedia *CreateSoundclip() {
-    return voice_.CreateSoundclip();
-  }
 
   virtual AudioOptions GetAudioOptions() const {
     return voice_.GetOptions();
@@ -277,9 +270,6 @@ class NullVoiceEngine {
   int GetCapabilities() { return 0; }
   // If you need this to return an actual channel, use FakeMediaEngine instead.
   VoiceMediaChannel* CreateChannel() {
-    return NULL;
-  }
-  SoundclipMedia* CreateSoundclip() {
     return NULL;
   }
   bool SetDelayOffset(int offset) { return true; }

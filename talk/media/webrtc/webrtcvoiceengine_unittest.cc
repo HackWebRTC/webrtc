@@ -128,12 +128,10 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
 
   WebRtcVoiceEngineTestFake()
       : voe_(kAudioCodecs, ARRAY_SIZE(kAudioCodecs)),
-        voe_sc_(kAudioCodecs, ARRAY_SIZE(kAudioCodecs)),
         trace_wrapper_(new FakeVoETraceWrapper()),
         engine_(new FakeVoEWrapper(&voe_),
-                new FakeVoEWrapper(&voe_sc_),
                 trace_wrapper_),
-        channel_(NULL), soundclip_(NULL) {
+        channel_(NULL) {
     options_conference_.conference_mode.Set(true);
     options_adjust_agc_.adjust_agc_delta.Set(-10);
   }
@@ -168,7 +166,6 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     channel_->OnPacketReceived(&packet, rtc::PacketTime());
   }
   void TearDown() override {
-    delete soundclip_;
     delete channel_;
     engine_.Terminate();
   }
@@ -335,11 +332,9 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
 
  protected:
   cricket::FakeWebRtcVoiceEngine voe_;
-  cricket::FakeWebRtcVoiceEngine voe_sc_;
   FakeVoETraceWrapper* trace_wrapper_;
   cricket::WebRtcVoiceEngine engine_;
   cricket::VoiceMediaChannel* channel_;
-  cricket::SoundclipMedia* soundclip_;
 
   cricket::AudioOptions options_conference_;
   cricket::AudioOptions options_adjust_agc_;
@@ -348,14 +343,10 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
 // Tests that our stub library "works".
 TEST_F(WebRtcVoiceEngineTestFake, StartupShutdown) {
   EXPECT_FALSE(voe_.IsInited());
-  EXPECT_FALSE(voe_sc_.IsInited());
   EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
   EXPECT_TRUE(voe_.IsInited());
-  // The soundclip engine is lazily initialized.
-  EXPECT_FALSE(voe_sc_.IsInited());
   engine_.Terminate();
   EXPECT_FALSE(voe_.IsInited());
-  EXPECT_FALSE(voe_sc_.IsInited());
 }
 
 // Tests that we can create and destroy a channel.
@@ -2650,35 +2641,6 @@ TEST_F(WebRtcVoiceEngineTestFake, PlayRingbackWithMultipleStreams) {
   rtc::SetBE32(packet + 8, 2);
   DeliverPacket(packet, sizeof(packet));
   EXPECT_EQ(0, voe_.IsPlayingFileLocally(channel_num));
-}
-
-// Tests creating soundclips, and make sure they come from the right engine.
-TEST_F(WebRtcVoiceEngineTestFake, CreateSoundclip) {
-  EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  EXPECT_FALSE(voe_sc_.IsInited());
-  soundclip_ = engine_.CreateSoundclip();
-  EXPECT_TRUE(voe_sc_.IsInited());
-  ASSERT_TRUE(soundclip_ != NULL);
-  EXPECT_EQ(0, voe_.GetNumChannels());
-  EXPECT_EQ(1, voe_sc_.GetNumChannels());
-  int channel_num = voe_sc_.GetLastChannel();
-  EXPECT_TRUE(voe_sc_.GetPlayout(channel_num));
-  delete soundclip_;
-  soundclip_ = NULL;
-  EXPECT_EQ(0, voe_sc_.GetNumChannels());
-  // Make sure the soundclip engine is uninitialized on shutdown, now that
-  // we've initialized it by creating a soundclip.
-  engine_.Terminate();
-  EXPECT_FALSE(voe_sc_.IsInited());
-}
-
-// Tests playing out a fake sound.
-TEST_F(WebRtcVoiceEngineTestFake, PlaySoundclip) {
-  static const char kZeroes[16000] = {};
-  EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
-  soundclip_ = engine_.CreateSoundclip();
-  ASSERT_TRUE(soundclip_ != NULL);
-  EXPECT_TRUE(soundclip_->PlaySound(kZeroes, sizeof(kZeroes), 0));
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, MediaEngineCallbackOnError) {

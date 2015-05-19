@@ -45,7 +45,7 @@ class WebRtcVideoEncoderFactory;
 
 WRME_EXPORT
 cricket::MediaEngineInterface* CreateWebRtcMediaEngine(
-    webrtc::AudioDeviceModule* adm, webrtc::AudioDeviceModule* adm_sc,
+    webrtc::AudioDeviceModule* adm,
     cricket::WebRtcVideoEncoderFactory* encoder_factory,
     cricket::WebRtcVideoDecoderFactory* decoder_factory);
 
@@ -69,7 +69,6 @@ class WebRtcMediaEngineFactory {
         // !defined(LIBPEERCONNECTION_IMPLEMENTATION)
   static MediaEngineInterface* Create(
       webrtc::AudioDeviceModule* adm,
-      webrtc::AudioDeviceModule* adm_sc,
       WebRtcVideoEncoderFactory* encoder_factory,
       WebRtcVideoDecoderFactory* decoder_factory);
 };
@@ -88,11 +87,10 @@ class DelegatingWebRtcMediaEngine : public cricket::MediaEngineInterface {
  public:
   DelegatingWebRtcMediaEngine(
       webrtc::AudioDeviceModule* adm,
-      webrtc::AudioDeviceModule* adm_sc,
       WebRtcVideoEncoderFactory* encoder_factory,
       WebRtcVideoDecoderFactory* decoder_factory)
       : delegate_(CreateWebRtcMediaEngine(
-          adm, adm_sc, encoder_factory, decoder_factory)) {
+          adm, encoder_factory, decoder_factory)) {
   }
   virtual ~DelegatingWebRtcMediaEngine() {
     DestroyWebRtcMediaEngine(delegate_);
@@ -109,9 +107,6 @@ class DelegatingWebRtcMediaEngine : public cricket::MediaEngineInterface {
       const VideoOptions& options,
       VoiceMediaChannel* voice_media_channel) override {
     return delegate_->CreateVideoChannel(options, voice_media_channel);
-  }
-  SoundclipMedia* CreateSoundclip() override {
-    return delegate_->CreateSoundclip();
   }
   AudioOptions GetAudioOptions() const override {
     return delegate_->GetAudioOptions();
@@ -186,11 +181,10 @@ class DelegatingWebRtcMediaEngine : public cricket::MediaEngineInterface {
 // ChannelManager.
 MediaEngineInterface* WebRtcMediaEngineFactory::Create(
     webrtc::AudioDeviceModule* adm,
-    webrtc::AudioDeviceModule* adm_sc,
     WebRtcVideoEncoderFactory* encoder_factory,
     WebRtcVideoDecoderFactory* decoder_factory) {
   return new cricket::DelegatingWebRtcMediaEngine(
-      adm, adm_sc, encoder_factory, decoder_factory);
+      adm, encoder_factory, decoder_factory);
 }
 
 }  // namespace cricket

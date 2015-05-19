@@ -41,7 +41,6 @@
 #ifdef HAVE_SCTP
 #include "talk/media/sctp/sctpdataengine.h"
 #endif
-#include "talk/session/media/soundclip.h"
 #include "talk/session/media/srtpfilter.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/common.h"
@@ -311,9 +310,6 @@ void ChannelManager::Terminate_w() {
   while (!voice_channels_.empty()) {
     DestroyVoiceChannel_w(voice_channels_.back(), nullptr);
   }
-  while (!soundclips_.empty()) {
-    DestroySoundclip_w(soundclips_.back());
-  }
   if (!SetCaptureDevice_w(NULL)) {
     LOG(LS_WARNING) << "failed to delete video capturer";
   }
@@ -502,45 +498,6 @@ void ChannelManager::DestroyDataChannel_w(DataChannel* data_channel) {
 
   data_channels_.erase(it);
   delete data_channel;
-}
-
-Soundclip* ChannelManager::CreateSoundclip() {
-  return worker_thread_->Invoke<Soundclip*>(
-      Bind(&ChannelManager::CreateSoundclip_w, this));
-}
-
-Soundclip* ChannelManager::CreateSoundclip_w() {
-  ASSERT(initialized_);
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-
-  SoundclipMedia* soundclip_media = media_engine_->CreateSoundclip();
-  if (!soundclip_media) {
-    return NULL;
-  }
-
-  Soundclip* soundclip = new Soundclip(worker_thread_, soundclip_media);
-  soundclips_.push_back(soundclip);
-  return soundclip;
-}
-
-void ChannelManager::DestroySoundclip(Soundclip* soundclip) {
-  if (soundclip) {
-    worker_thread_->Invoke<void>(
-        Bind(&ChannelManager::DestroySoundclip_w, this, soundclip));
-  }
-}
-
-void ChannelManager::DestroySoundclip_w(Soundclip* soundclip) {
-  // Destroy soundclip.
-  ASSERT(initialized_);
-  Soundclips::iterator it = std::find(soundclips_.begin(),
-      soundclips_.end(), soundclip);
-  ASSERT(it != soundclips_.end());
-  if (it == soundclips_.end())
-    return;
-
-  soundclips_.erase(it);
-  delete soundclip;
 }
 
 bool ChannelManager::GetAudioOptions(std::string* in_name,

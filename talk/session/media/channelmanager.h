@@ -44,7 +44,6 @@ namespace cricket {
 
 const int kDefaultAudioDelayOffset = 0;
 
-class Soundclip;
 class VideoProcessor;
 class VoiceChannel;
 class VoiceProcessor;
@@ -129,15 +128,9 @@ class ChannelManager : public rtc::MessageHandler,
   // Destroys a data channel created with the Create API.
   void DestroyDataChannel(DataChannel* data_channel);
 
-  // Creates a soundclip.
-  Soundclip* CreateSoundclip();
-  // Destroys a soundclip created with the Create API.
-  void DestroySoundclip(Soundclip* soundclip);
-
   // Indicates whether any channels exist.
   bool has_channels() const {
-    return (!voice_channels_.empty() || !video_channels_.empty() ||
-            !soundclips_.empty());
+    return (!voice_channels_.empty() || !video_channels_.empty());
   }
 
   // Configures the audio and video devices. A null pointer can be passed to
@@ -253,7 +246,6 @@ class ChannelManager : public rtc::MessageHandler,
   typedef std::vector<VoiceChannel*> VoiceChannels;
   typedef std::vector<VideoChannel*> VideoChannels;
   typedef std::vector<DataChannel*> DataChannels;
-  typedef std::vector<Soundclip*> Soundclips;
 
   void Construct(MediaEngineInterface* me,
                  DataEngineInterface* dme,
@@ -277,8 +269,6 @@ class ChannelManager : public rtc::MessageHandler,
       BaseSession* session, const std::string& content_name,
       bool rtcp, DataChannelType data_channel_type);
   void DestroyDataChannel_w(DataChannel* data_channel);
-  Soundclip* CreateSoundclip_w();
-  void DestroySoundclip_w(Soundclip* soundclip);
   bool SetAudioOptions_w(const AudioOptions& options, int delay_offset,
                          const Device* in_dev, const Device* out_dev);
   bool SetEngineAudioOptions_w(const AudioOptions& options);
@@ -306,7 +296,6 @@ class ChannelManager : public rtc::MessageHandler,
   VoiceChannels voice_channels_;
   VideoChannels video_channels_;
   DataChannels data_channels_;
-  Soundclips soundclips_;
 
   std::string audio_in_device_;
   std::string audio_out_device_;
