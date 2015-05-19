@@ -195,15 +195,12 @@ public:
 
 public:
     int32_t Id() {return _id;}
+#if defined(WEBRTC_ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
     // Only use this acccessor for test purposes on Android.
     AudioManager* GetAndroidAudioManagerForTest() {
-#if defined(WEBRTC_ANDROID)
       return _audioManagerAndroid.get();
-#else
-      CHECK(false) << "Invalid usage of GetAndroidAudioManagerForTest";
-      return nullptr;
-#endif
     }
+#endif
     AudioDeviceBuffer* GetAudioDeviceBuffer() {
       return &_audioDeviceBuffer;
     }
@@ -223,7 +220,7 @@ private:
     AudioDeviceGeneric*          _ptrAudioDevice;
 
     AudioDeviceBuffer            _audioDeviceBuffer;
-#if defined(WEBRTC_ANDROID)
+#if defined(WEBRTC_ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
     rtc::scoped_ptr<AudioManager> _audioManagerAndroid;
 #endif
     int32_t                      _id;
