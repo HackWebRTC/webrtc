@@ -38,8 +38,8 @@ namespace {
 const rtc::SocketAddress kLocalAddr("192.168.0.1", 0);
 const rtc::SocketAddress kStunAddr1("1.1.1.1", 3478);
 const rtc::SocketAddress kStunAddr2("1.1.1.2", 3478);
-const rtc::SocketAddress kStunMappedAddr1("77.77.77.77", 0);
-const rtc::SocketAddress kStunMappedAddr2("88.77.77.77", 0);
+const rtc::SocketAddress kFailedStunAddr("1.1.1.3", 3478);
+const rtc::SocketAddress kStunMappedAddr("77.77.77.77", 0);
 
 class TestSocketServer : public rtc::VirtualSocketServer {
  public:
@@ -76,13 +76,13 @@ class FakeHostNameResolver : public HostNameResolverInterface {
  public:
   FakeHostNameResolver() {}
   void set_result(int ret) { ret_ = ret; }
-  void set_addresses(const std::vector<rtc::IPAddress>& addresses) {
+  void set_addresses(const std::vector<rtc::SocketAddress>& addresses) {
     server_ips_ = addresses;
   }
-  const std::vector<rtc::IPAddress>& get_addresses() { return server_ips_; }
-  void add_address(const rtc::IPAddress& ip) { server_ips_.push_back(ip); }
+  const std::vector<rtc::SocketAddress>& get_addresses() { return server_ips_; }
+  void add_address(const rtc::SocketAddress& ip) { server_ips_.push_back(ip); }
   void Resolve(const rtc::SocketAddress& addr,
-               std::vector<rtc::IPAddress>* addresses,
+               std::vector<rtc::SocketAddress>* addresses,
                stunprober::AsyncCallback callback) override {
     *addresses = server_ips_;
     callback(ret_);
@@ -90,7 +90,7 @@ class FakeHostNameResolver : public HostNameResolverInterface {
 
  private:
   int ret_ = 0;
-  std::vector<rtc::IPAddress> server_ips_;
+  std::vector<rtc::SocketAddress> server_ips_;
 };
 
 }  // namespace
@@ -107,8 +107,8 @@ class StunProberTest : public testing::Test {
                                                        kStunAddr1)),
         stun_server_2_(cricket::TestStunServer::Create(rtc::Thread::Current(),
                                                        kStunAddr2)) {
-    stun_server_1_->set_fake_stun_addr(kStunMappedAddr1);
-    stun_server_2_->set_fake_stun_addr(kStunMappedAddr2);
+    stun_server_1_->set_fake_stun_addr(kStunMappedAddr);
+    stun_server_2_->set_fake_stun_addr(kStunMappedAddr);
     rtc::InitializeSSL();
   }
 
@@ -116,13 +116,14 @@ class StunProberTest : public testing::Test {
 
   void StartProbing(HostNameResolverInterface* resolver,
                     SocketFactoryInterface* socket_factory,
-                    const std::string& server,
-                    uint16 port,
+                    const rtc::SocketAddress& addr,
                     bool shared_socket,
                     uint16 interval,
                     uint16 pings_per_ip) {
+    std::vector<rtc::SocketAddress> addrs;
+    addrs.push_back(addr);
     prober.reset(new StunProber(resolver, socket_factory, new TaskRunner()));
-    prober->Start(server, port, shared_socket, interval, pings_per_ip,
+    prober->Start(addrs, shared_socket, interval, pings_per_ip,
                   100 /* timeout_ms */,
                   [this](int result) { this->StopCallback(result); });
   }
@@ -131,11 +132,14 @@ class StunProberTest : public testing::Test {
     const int pings_per_ip = 3;
     const uint16 port = kStunAddr1.port();
     rtc::SocketAddress addr("stun.l.google.com", port);
+    std::vector<rtc::SocketAddress> addrs;
 
     // Set up the resolver for 2 stun server addresses.
     rtc::scoped_ptr<FakeHostNameResolver> resolver(new FakeHostNameResolver());
-    resolver->add_address(kStunAddr1.ipaddr());
-    resolver->add_address(kStunAddr2.ipaddr());
+    resolver->add_address(kStunAddr1);
+    resolver->add_address(kStunAddr2);
+    // Add a non-existing server. This shouldn't pollute the result.
+    resolver->add_address(kFailedStunAddr);
 
     rtc::scoped_ptr<SocketFactory> socket_factory(new SocketFactory());
 
@@ -145,14 +149,18 @@ class StunProberTest : public testing::Test {
 
     // Set up the expected results for verification.
     std::set<std::string> srflx_addresses;
-    srflx_addresses.insert(kStunMappedAddr1.ipaddr().ToString());
-    srflx_addresses.insert(kStunMappedAddr2.ipaddr().ToString());
-    const uint32 total_pings =
+    srflx_addresses.insert(kStunMappedAddr.ToString());
+    const uint32 total_pings_tried =
         static_cast<uint32>(pings_per_ip * resolver->get_addresses().size());
-    size_t total_sockets = shared_mode ? pings_per_ip : total_pings;
 
-    StartProbing(resolver.release(), socket_factory.release(), addr.hostname(),
-                 addr.port(), shared_mode, 3, pings_per_ip);
+    // The reported total_pings should not count for pings sent to the
+    // kFailedStunAddr.
+    const uint32 total_pings_reported = total_pings_tried - pings_per_ip;
+
+    size_t total_sockets = shared_mode ? pings_per_ip : total_pings_tried;
+
+    StartProbing(resolver.release(), socket_factory.release(), addr,
+                 shared_mode, 3, pings_per_ip);
 
     WAIT(stopped_, 1000);
 
@@ -162,9 +170,11 @@ class StunProberTest : public testing::Test {
     EXPECT_EQ(stats.success_percent, 100);
     EXPECT_TRUE(stats.behind_nat);
     EXPECT_EQ(stats.host_ip, kLocalAddr.ipaddr().ToString());
-    EXPECT_EQ(stats.srflx_ips, srflx_addresses);
-    EXPECT_EQ(static_cast<uint32>(stats.num_request_sent), total_pings);
-    EXPECT_EQ(static_cast<uint32>(stats.num_response_received), total_pings);
+    EXPECT_EQ(stats.srflx_addrs, srflx_addresses);
+    EXPECT_EQ(static_cast<uint32>(stats.num_request_sent),
+              total_pings_reported);
+    EXPECT_EQ(static_cast<uint32>(stats.num_response_received),
+              total_pings_reported);
   }
 
  private:
@@ -191,10 +201,10 @@ TEST_F(StunProberTest, DNSFailure) {
 
   set_expected_result(StunProber::RESOLVE_FAILED);
 
-  // None 0 value is treated as failure.
+  // Non-0 value is treated as failure.
   resolver->set_result(1);
-  StartProbing(resolver.release(), socket_factory.release(), addr.hostname(),
-               addr.port(), false, 10, 30);
+  StartProbing(resolver.release(), socket_factory.release(), addr, false, 10,
+               30);
 }
 
 TEST_F(StunProberTest, NonSharedMode) {

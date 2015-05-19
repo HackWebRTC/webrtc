@@ -9,6 +9,7 @@
  */
 
 #include <iostream>
+#include <map>
 #include <set>
 #include <string>
 
@@ -21,15 +22,23 @@
 
 namespace stunprober {
 
-StunProber::Requester::Requester(StunProber* prober,
-                                 ServerSocketInterface* socket,
-                                 const std::vector<rtc::IPAddress> server_ips,
-                                 uint16 port)
+namespace {
+
+void IncrementCounterByAddress(std::map<rtc::IPAddress, int>* counter_per_ip,
+                               const rtc::IPAddress& ip) {
+  counter_per_ip->insert(std::make_pair(ip, 0)).first->second++;
+}
+
+}  // namespace
+
+StunProber::Requester::Requester(
+    StunProber* prober,
+    ServerSocketInterface* socket,
+    const std::vector<rtc::SocketAddress>& server_ips)
     : prober_(prober),
       socket_(socket),
       response_packet_(new rtc::ByteBuffer(nullptr, kMaxUdpBufferSize)),
       server_ips_(server_ips),
-      port_(port),
       thread_checker_(prober->thread_checker_) {
 }
 
@@ -62,7 +71,7 @@ void StunProber::Requester::SendStunRequest() {
     return;
   }
 
-  auto addr = rtc::SocketAddress(server_ips_[num_request_sent_], port_);
+  auto addr = server_ips_[num_request_sent_];
   request.server_addr = addr.ipaddr();
 
   int rv = 0;
@@ -92,7 +101,7 @@ void StunProber::Requester::SendStunRequest() {
     return;
   }
 
-  request.sent_time_ns = rtc::Time();
+  request.sent_time_ms = rtc::Time();
 
   // Post a read waiting for response. For share mode, the subsequent read will
   // be posted inside OnStunResponseReceived.
@@ -128,7 +137,7 @@ void StunProber::Requester::Request::ProcessResponse(
   cricket::StunMessage stun_response;
   if (!stun_response.Read(message)) {
     // Invalid or incomplete STUN packet.
-    received_time_ns = 0;
+    received_time_ms = 0;
     return;
   }
 
@@ -145,12 +154,12 @@ void StunProber::Requester::Request::ProcessResponse(
     return;
   }
 
-  received_time_ns = now;
+  received_time_ms = now;
 
-  srflx_ip = addr_attr->ipaddr().ToString();
+  srflx_addr = addr_attr->GetAddress();
 
   // Calculate behind_nat.
-  behind_nat = (srflx_ip.compare(local_addr.ToString()) != 0);
+  behind_nat = (srflx_addr.ipaddr() != local_addr);
 }
 
 void StunProber::Requester::OnStunResponseReceived(int result) {
@@ -213,8 +222,7 @@ StunProber::~StunProber() {
   }
 }
 
-bool StunProber::Start(const std::string& server,
-                       uint16 port,
+bool StunProber::Start(const std::vector<rtc::SocketAddress>& servers,
                        bool shared_socket_mode,
                        int interval_ms,
                        int num_request_per_ip,
@@ -225,28 +233,45 @@ bool StunProber::Start(const std::string& server,
   shared_socket_mode_ = shared_socket_mode;
 
   requests_per_ip_ = num_request_per_ip;
-  if (requests_per_ip_ == 0) {
+  if (requests_per_ip_ == 0 || servers.size() == 0) {
     return false;
   }
 
   timeout_ms_ = timeout_ms;
-  server_ = rtc::SocketAddress(server, port);
+  servers_ = servers;
   finished_callback_ = callback;
-  resolver_->Resolve(server_, &server_ips_,
-                     [this](int result) { this->OnServerResolved(result); });
+  resolver_->Resolve(servers_[0], &resolved_ips_,
+                     [this](int result) { this->OnServerResolved(0, result); });
   return true;
 }
 
-void StunProber::OnServerResolved(int result) {
+void StunProber::OnServerResolved(int index, int result) {
   DCHECK(thread_checker_.CalledOnValidThread());
-  if (result != 0 || server_ips_.size() == 0) {
+
+  if (result == 0) {
+    all_servers_ips_.insert(all_servers_ips_.end(), resolved_ips_.begin(),
+                            resolved_ips_.end());
+    resolved_ips_.clear();
+  }
+
+  index++;
+
+  if (static_cast<size_t>(index) < servers_.size()) {
+    resolver_->Resolve(
+        servers_[index], &resolved_ips_,
+        [this, index](int result) { this->OnServerResolved(index, result); });
+    return;
+  }
+
+  if (all_servers_ips_.size() == 0) {
     End(RESOLVE_FAILED, result);
     return;
   }
 
   // Dedupe.
-  std::set<rtc::IPAddress> addrs(server_ips_.begin(), server_ips_.end());
-  server_ips_.assign(addrs.begin(), addrs.end());
+  std::set<rtc::SocketAddress> addrs(all_servers_ips_.begin(),
+                                     all_servers_ips_.end());
+  all_servers_ips_.assign(addrs.begin(), addrs.end());
 
   rtc::IPAddress addr;
   if (GetLocalAddress(&addr) != 0) {
@@ -263,8 +288,7 @@ int StunProber::GetLocalAddress(rtc::IPAddress* addr) {
     rtc::SocketAddress sock_addr;
     rtc::scoped_ptr<ClientSocketInterface> socket(
         socket_factory_->CreateClientSocket());
-    int rv =
-        socket->Connect(rtc::SocketAddress(server_ips_[0], server_.port()));
+    int rv = socket->Connect(all_servers_ips_[0]);
     if (rv != SUCCESS) {
       End(GENERIC_FAILURE, rv);
       return rv;
@@ -290,11 +314,12 @@ StunProber::Requester* StunProber::CreateRequester() {
     return nullptr;
   }
   if (shared_socket_mode_) {
-    return new Requester(this, socket.release(), server_ips_, server_.port());
+    return new Requester(this, socket.release(), all_servers_ips_);
   } else {
-    std::vector<rtc::IPAddress> server_ip;
-    server_ip.push_back(server_ips_[(num_request_sent_ % server_ips_.size())]);
-    return new Requester(this, socket.release(), server_ip, server_.port());
+    std::vector<rtc::SocketAddress> server_ip;
+    server_ip.push_back(
+        all_servers_ips_[(num_request_sent_ % all_servers_ips_.size())]);
+    return new Requester(this, socket.release(), server_ip);
   }
 }
 
@@ -339,28 +364,38 @@ bool StunProber::GetStats(StunProber::Stats* prob_stats) {
 
   StunProber::Stats stats;
 
-  int num_sent = 0, num_received = 0;
   int rtt_sum = 0;
   bool behind_nat_set = false;
   int64 first_sent_time = 0;
   int64 last_sent_time = 0;
 
+  // Track of how many srflx IP that we have seen.
+  std::set<rtc::IPAddress> srflx_ips;
+
+  // If we're not receiving any response on a given IP, all requests sent to
+  // that IP should be ignored as this could just be an DNS error.
+  std::map<rtc::IPAddress, int> num_response_per_ip;
+  std::map<rtc::IPAddress, int> num_request_per_ip;
+
   for (auto* requester : requesters_) {
     for (auto request : requester->requests()) {
-      if (request->sent_time_ns <= 0) {
+      if (request->sent_time_ms <= 0) {
         continue;
       }
-      num_sent++;
+
+      IncrementCounterByAddress(&num_request_per_ip, request->server_addr);
 
       if (!first_sent_time) {
-        first_sent_time = request->sent_time_ns;
+        first_sent_time = request->sent_time_ms;
       }
-      last_sent_time = request->sent_time_ns;
+      last_sent_time = request->sent_time_ms;
 
-      if (request->received_time_ns < request->sent_time_ns) {
+      if (request->received_time_ms < request->sent_time_ms) {
         continue;
       }
-      num_received++;
+
+      IncrementCounterByAddress(&num_response_per_ip, request->server_addr);
+
       rtt_sum += request->rtt();
       if (!behind_nat_set) {
         stats.behind_nat = request->behind_nat;
@@ -369,9 +404,37 @@ bool StunProber::GetStats(StunProber::Stats* prob_stats) {
         // Detect the inconsistency in NAT presence.
         return false;
       }
-      stats.srflx_ips.insert(request->srflx_ip);
+      stats.srflx_addrs.insert(request->srflx_addr.ToString());
+      srflx_ips.insert(request->srflx_addr.ipaddr());
     }
   }
+
+  // We're probably not behind a regular NAT. We have more than 1 distinct
+  // server reflexive IPs.
+  if (srflx_ips.size() > 1) {
+    return false;
+  }
+
+  int num_sent = 0;
+  int num_received = 0;
+  int num_server_ip_with_response = 0;
+
+  for (const auto& kv : num_response_per_ip) {
+    DCHECK_GT(kv.second, 0);
+    num_server_ip_with_response++;
+    num_received += kv.second;
+    num_sent += num_request_per_ip[kv.first];
+  }
+
+  // Not receiving any response, the trial is inconclusive.
+  if (!num_received) {
+    return false;
+  }
+
+  // Shared mode is only true if we use the shared socket and there are more
+  // than 1 responding servers.
+  stats.shared_socket_mode =
+      shared_socket_mode_ && (num_server_ip_with_response > 1);
 
   stats.host_ip = local_addr_.ToString();
   stats.num_request_sent = num_sent;
@@ -384,7 +447,7 @@ bool StunProber::GetStats(StunProber::Stats* prob_stats) {
 
   if (num_sent > 1) {
     stats.actual_request_interval_ns =
-        (100 * (last_sent_time - first_sent_time)) / (num_sent - 1);
+        (1000 * (last_sent_time - first_sent_time)) / (num_sent - 1);
   }
 
   if (num_received) {

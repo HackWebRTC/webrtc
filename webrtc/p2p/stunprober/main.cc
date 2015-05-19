@@ -47,24 +47,23 @@ DEFINE_int(pings_per_ip,
 DEFINE_int(timeout,
            1000,
            "Milliseconds of wait after the last ping sent before exiting");
-DEFINE_int(port, 3478, "STUN server port");
-DEFINE_string(server, "stun.voxgratia.org", "STUN server address");
+DEFINE_string(
+    servers,
+    "stun.l.google.com:19302,stun1.l.google.com:19302,stun2.l.google.com:19302",
+    "Comma separated STUN server addresses with ports");
 
 namespace {
 
 class HostNameResolver : public HostNameResolverInterface,
                          public sigslot::has_slots<> {
  public:
-  HostNameResolver() { resolver_ = new rtc::AsyncResolver(); }
-  virtual ~HostNameResolver() {
-    // rtc::AsyncResolver inherits from SignalThread which requires explicit
-    // Release().
-    resolver_->Release();
-  }
+  HostNameResolver() {}
+  virtual ~HostNameResolver() {}
 
   void Resolve(const rtc::SocketAddress& addr,
-               std::vector<rtc::IPAddress>* addresses,
+               std::vector<rtc::SocketAddress>* addresses,
                AsyncCallback callback) override {
+    resolver_ = new rtc::AsyncResolver();
     DCHECK(callback_.empty());
     addr_ = addr;
     callback_ = callback;
@@ -78,23 +77,30 @@ class HostNameResolver : public HostNameResolverInterface,
     int rv = resolver_->GetError();
     LOG(LS_INFO) << "ResolveResult for " << addr_.ToString() << " : " << rv;
     if (rv == 0 && result_) {
-      *result_ = resolver_->addresses();
-
-      for (auto& ip : *result_) {
+      for (auto addr : resolver_->addresses()) {
+        rtc::SocketAddress ip(addr, addr_.port());
+        result_->push_back(ip);
         LOG(LS_INFO) << "\t" << ip.ToString();
       }
     }
     if (!callback_.empty()) {
       // Need to be the last statement as the object could be deleted by the
       // callback_ in the failure case.
-      callback_(rv);
+      AsyncCallback callback = callback_;
+      callback_ = AsyncCallback();
+
+      // rtc::AsyncResolver inherits from SignalThread which requires explicit
+      // Release().
+      resolver_->Release();
+      resolver_ = nullptr;
+      callback(rv);
     }
   }
 
  private:
   AsyncCallback callback_;
   rtc::SocketAddress addr_;
-  std::vector<rtc::IPAddress>* result_;
+  std::vector<rtc::SocketAddress>* result_;
 
   // Not using smart ptr here as this requires specific release pattern.
   rtc::AsyncResolver* resolver_;
@@ -119,17 +125,18 @@ void PrintStats(StunProber* prober) {
     return;
   }
 
+  LOG(LS_INFO) << "Shared Socket Mode: " << stats.shared_socket_mode;
   LOG(LS_INFO) << "Requests sent: " << stats.num_request_sent;
   LOG(LS_INFO) << "Responses received: " << stats.num_response_received;
   LOG(LS_INFO) << "Target interval (ns): " << stats.target_request_interval_ns;
   LOG(LS_INFO) << "Actual interval (ns): " << stats.actual_request_interval_ns;
   LOG(LS_INFO) << "Behind NAT: " << stats.behind_nat;
   if (stats.behind_nat) {
-    LOG(LS_INFO) << "NAT is symmetrical: " << (stats.srflx_ips.size() > 1);
+    LOG(LS_INFO) << "NAT is symmetrical: " << (stats.srflx_addrs.size() > 1);
   }
   LOG(LS_INFO) << "Host IP: " << stats.host_ip;
   LOG(LS_INFO) << "Server-reflexive ips: ";
-  for (auto& ip : stats.srflx_ips) {
+  for (auto& ip : stats.srflx_addrs) {
     LOG(LS_INFO) << "\t" << ip;
   }
 
@@ -165,11 +172,16 @@ int main(int argc, char** argv) {
     return 0;
   }
 
-  // Abort if the user specifies a port that is outside the allowed
-  // range [1, 65535].
-  if ((FLAG_port < 1) || (FLAG_port > 65535)) {
-    printf("Error: %i is not a valid port.\n", FLAG_port);
-    return -1;
+  std::vector<rtc::SocketAddress> server_addresses;
+  std::istringstream servers(FLAG_servers);
+  std::string server;
+  while (getline(servers, server, ',')) {
+    rtc::SocketAddress addr;
+    if (!addr.FromString(server)) {
+      LOG(LS_ERROR) << "Parsing " << server << " failed.";
+      return -1;
+    }
+    server_addresses.push_back(addr);
   }
 
   rtc::InitializeSSL();
@@ -179,7 +191,7 @@ int main(int argc, char** argv) {
                                       new SocketFactory(), new TaskRunner());
   auto finish_callback =
       [thread, prober](int result) { StopTrial(thread, prober, result); };
-  prober->Start(FLAG_server, FLAG_port, FLAG_shared_socket, FLAG_interval,
+  prober->Start(server_addresses, FLAG_shared_socket, FLAG_interval,
                 FLAG_pings_per_ip, FLAG_timeout,
                 AsyncCallback(finish_callback));
   thread->Run();

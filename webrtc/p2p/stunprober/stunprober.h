@@ -33,8 +33,11 @@ typedef rtc::Callback1<void, int> AsyncCallback;
 class HostNameResolverInterface {
  public:
   HostNameResolverInterface() {}
+
+  // Resolve should allow re-entry as |callback| could trigger another
+  // Resolve().
   virtual void Resolve(const rtc::SocketAddress& addr,
-                       std::vector<rtc::IPAddress>* addresses,
+                       std::vector<rtc::SocketAddress>* addresses,
                        AsyncCallback callback) = 0;
 
   virtual ~HostNameResolverInterface() {}
@@ -135,12 +138,18 @@ class StunProber {
     int success_percent = 0;
     int target_request_interval_ns = 0;
     int actual_request_interval_ns = 0;
+
+    // Also report whether this trial can't be considered truly as shared
+    // mode. Share mode only makes sense when we have multiple IP resolved and
+    // successfully probed.
+    bool shared_socket_mode = false;
+
     std::string host_ip;
 
-    // If the srflx_ips has more than 1 element, the NAT is symmetric.
-    std::set<std::string> srflx_ips;
+    // If the srflx_addrs has more than 1 element, the NAT is symmetric.
+    std::set<std::string> srflx_addrs;
 
-    bool symmetric_nat() { return srflx_ips.size() > 1; }
+    bool symmetric_nat() { return srflx_addrs.size() > 1; }
   };
 
   // StunProber is not thread safe. It's task_runner's responsibility to ensure
@@ -150,7 +159,7 @@ class StunProber {
              TaskRunnerInterface* task_runner);
   virtual ~StunProber();
 
-  // Begin performing the probe test against the |server| with |port|. If
+  // Begin performing the probe test against the |servers|. If
   // |shared_socket_mode| is false, each request will be done with a new socket.
   // Otherwise, a unique socket will be used for a single round of requests
   // against all resolved IPs. No single socket will be used against a given IP
@@ -162,8 +171,7 @@ class StunProber {
   // (the number of sockets to be created) equals to |requests_per_ip|. In
   // non-shared mode, (the number of sockets) equals to requests_per_ip * (the
   // number of resolved IP addresses).
-  bool Start(const std::string& server,
-             uint16 port,
+  bool Start(const std::vector<rtc::SocketAddress>& servers,
              bool shared_socket_mode,
              int stun_ta_interval_ms,
              int requests_per_ip,
@@ -183,20 +191,20 @@ class StunProber {
     // Each Request maps to a request and response.
     struct Request {
       // Actual time the STUN bind request was sent.
-      int64 sent_time_ns = 0;
+      int64 sent_time_ms = 0;
       // Time the response was received.
-      int64 received_time_ns = 0;
+      int64 received_time_ms = 0;
 
       // See whether the observed address returned matches the
       // local address as in StunProber.local_addr_.
       bool behind_nat = false;
 
       // Server reflexive address from STUN response for this given request.
-      std::string srflx_ip;
+      rtc::SocketAddress srflx_addr;
 
       rtc::IPAddress server_addr;
 
-      int64 rtt() { return received_time_ns - sent_time_ns; }
+      int64 rtt() { return received_time_ms - sent_time_ms; }
       void ProcessResponse(rtc::ByteBuffer* message,
                            int buf_len,
                            const rtc::IPAddress& local_addr);
@@ -207,8 +215,7 @@ class StunProber {
     // it'll just be a single address.
     Requester(StunProber* prober,
               ServerSocketInterface* socket,
-              const std::vector<rtc::IPAddress> server_ips,
-              uint16 port);
+              const std::vector<rtc::SocketAddress>& server_ips);
     virtual ~Requester();
 
     // There is no callback for SendStunRequest as the underneath socket send is
@@ -242,10 +249,9 @@ class StunProber {
     rtc::scoped_ptr<rtc::ByteBuffer> response_packet_;
 
     std::vector<Request*> requests_;
-    std::vector<rtc::IPAddress> server_ips_;
+    std::vector<rtc::SocketAddress> server_ips_;
     int16 num_request_sent_ = 0;
     int16 num_response_received_ = 0;
-    uint16 port_ = 0;
 
     rtc::ThreadChecker& thread_checker_;
 
@@ -253,10 +259,10 @@ class StunProber {
   };
 
  private:
-  void OnServerResolved(int result);
+  void OnServerResolved(int index, int result);
 
   bool Done() {
-    return num_request_sent_ >= requests_per_ip_ * server_ips_.size();
+    return num_request_sent_ >= requests_per_ip_ * all_servers_ips_.size();
   }
 
   bool SendNextRequest();
@@ -298,7 +304,7 @@ class StunProber {
   int timeout_ms_;
 
   // STUN server name to be resolved.
-  rtc::SocketAddress server_;
+  std::vector<rtc::SocketAddress> servers_;
 
   // The local address that each probing socket will be bound to.
   rtc::IPAddress local_addr_;
@@ -308,9 +314,11 @@ class StunProber {
   rtc::scoped_ptr<HostNameResolverInterface> resolver_;
   rtc::scoped_ptr<TaskRunnerInterface> task_runner_;
 
-  // Addresses filled out by HostNameResolver after host resolution is
-  // completed.
-  std::vector<rtc::IPAddress> server_ips_;
+  // Addresses filled out by HostNameResolver for a single server.
+  std::vector<rtc::SocketAddress> resolved_ips_;
+
+  // Accumulate all resolved IPs.
+  std::vector<rtc::SocketAddress> all_servers_ips_;
 
   // Caller-supplied callback executed when testing is completed, called by
   // End().
