@@ -131,7 +131,9 @@ class WebRtcVideoFrame : public VideoFrame {
   const VideoFrame* GetCopyWithRotationApplied() const override;
 
  protected:
-  void SetRotation(webrtc::VideoRotation rotation) { rotation_ = rotation; }
+  void SetRotation(webrtc::VideoRotation rotation) override {
+    rotation_ = rotation;
+  }
 
  private:
   virtual VideoFrame* CreateEmptyFrame(int w, int h, size_t pixel_width,

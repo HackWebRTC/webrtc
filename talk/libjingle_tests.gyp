@@ -103,6 +103,7 @@
         'media/webrtc/webrtcvideocapturer_unittest.cc',
         'media/base/videoframe_unittest.h',
         'media/webrtc/webrtcvideoframe_unittest.cc',
+        'media/webrtc/webrtcvideoframefactory_unittest.cc',
 
         # Disabled because some tests fail.
         # TODO(ronghuawu): Reenable these tests.

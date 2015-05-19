@@ -190,28 +190,6 @@ void VideoFrame::StretchToPlanes(
                 static_cast<int>(width), static_cast<int>(height), interpolate);
 }
 
-size_t VideoFrame::StretchToBuffer(size_t dst_width, size_t dst_height,
-                                   uint8* dst_buffer, size_t size,
-                                   bool interpolate, bool vert_crop) const {
-  if (!dst_buffer) {
-    LOG(LS_ERROR) << "NULL dst_buffer pointer.";
-    return 0;
-  }
-
-  size_t needed = SizeOf(dst_width, dst_height);
-  if (needed <= size) {
-    uint8* dst_y = dst_buffer;
-    uint8* dst_u = dst_y + dst_width * dst_height;
-    uint8* dst_v = dst_u + ((dst_width + 1) >> 1) * ((dst_height + 1) >> 1);
-    StretchToPlanes(dst_y, dst_u, dst_v,
-                    static_cast<int32>(dst_width),
-                    static_cast<int32>((dst_width + 1) >> 1),
-                    static_cast<int32>((dst_width + 1) >> 1),
-                    dst_width, dst_height, interpolate, vert_crop);
-  }
-  return needed;
-}
-
 void VideoFrame::StretchToFrame(VideoFrame* dst,
                                 bool interpolate, bool vert_crop) const {
   if (!dst) {
@@ -225,6 +203,8 @@ void VideoFrame::StretchToFrame(VideoFrame* dst,
                   interpolate, vert_crop);
   dst->SetElapsedTime(GetElapsedTime());
   dst->SetTimeStamp(GetTimeStamp());
+  // Stretched frame should have the same rotation as the source.
+  dst->SetRotation(GetVideoRotation());
 }
 
 VideoFrame* VideoFrame::Stretch(size_t dst_width, size_t dst_height,

@@ -188,16 +188,6 @@ class VideoFrame {
       uint8 *y, uint8 *u, uint8 *v, int32 pitchY, int32 pitchU, int32 pitchV,
       size_t width, size_t height, bool interpolate, bool crop) const;
 
-  // Writes the frame into the given frame buffer, stretched to the given width
-  // and height, provided that it is of sufficient size. Returns the frame's
-  // actual size, regardless of whether it was written or not (like snprintf).
-  // If there is insufficient space, nothing is written. The parameter
-  // "interpolate" controls whether to interpolate or just take the
-  // nearest-point. The parameter "crop" controls whether to crop this frame to
-  // the aspect ratio of the given dimensions before stretching.
-  virtual size_t StretchToBuffer(size_t w, size_t h, uint8 *buffer, size_t size,
-                                 bool interpolate, bool crop) const;
-
   // Writes the frame into the target VideoFrame, stretched to the size of that
   // frame. The parameter "interpolate" controls whether to interpolate or just
   // take the nearest-point. The parameter "crop" controls whether to crop this
@@ -230,6 +220,7 @@ class VideoFrame {
                                        size_t pixel_height,
                                        int64_t elapsed_time,
                                        int64_t time_stamp) const = 0;
+  virtual void SetRotation(webrtc::VideoRotation rotation) = 0;
 };
 
 }  // namespace cricket
