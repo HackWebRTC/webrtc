@@ -9,10 +9,10 @@
  */
 
 #include "webrtc/modules/audio_device/audio_device_config.h"
-#include "webrtc/modules/audio_device/audio_device_utility.h"
 #include "webrtc/modules/audio_device/win/audio_device_wave_win.h"
 
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 #include <windows.h>
@@ -206,7 +206,7 @@ int32_t AudioDeviceWindowsWave::Init()
         return 0;
     }
 
-    const uint32_t nowTime(AudioDeviceUtility::GetTimeInMS());
+    const uint32_t nowTime(TickTime::MillisecondTimestamp());
 
     _recordedBytes = 0;
     _prevRecByteCheckTime = nowTime;
@@ -3052,7 +3052,7 @@ bool AudioDeviceWindowsWave::ThreadProcess()
         return true;
     }
 
-    time = AudioDeviceUtility::GetTimeInMS();
+    time = TickTime::MillisecondTimestamp();
 
     if (_startPlay)
     {

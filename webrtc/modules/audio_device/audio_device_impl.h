@@ -20,7 +20,6 @@ namespace webrtc
 {
 
 class AudioDeviceGeneric;
-class AudioDeviceUtility;
 class AudioManager;
 class CriticalSectionWrapper;
 
@@ -216,7 +215,6 @@ private:
 
     AudioDeviceObserver*         _ptrCbAudioDeviceObserver;
 
-    AudioDeviceUtility*          _ptrAudioDeviceUtility;
     AudioDeviceGeneric*          _ptrAudioDevice;
 
     AudioDeviceBuffer            _audioDeviceBuffer;
@@ -225,7 +223,7 @@ private:
 #endif
     int32_t                      _id;
     AudioLayer                   _platformAudioLayer;
-    uint32_t                     _lastProcessTime;
+    int64_t                      _lastProcessTime;
     PlatformType                 _platformType;
     bool                         _initialized;
     mutable ErrorCode            _lastError;

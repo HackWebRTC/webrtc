@@ -14,7 +14,6 @@
 #include <string.h>
 
 #include "webrtc/modules/audio_device/audio_device_config.h"
-#include "webrtc/modules/audio_device/audio_device_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace.h"

@@ -11,8 +11,6 @@
 #ifndef WEBRTC_AUDIO_DEVICE_FUNC_TEST_MANAGER_H
 #define WEBRTC_AUDIO_DEVICE_FUNC_TEST_MANAGER_H
 
-#include "webrtc/modules/audio_device/audio_device_utility.h"
-
 #include <list>
 #include <string>
 
@@ -22,20 +20,6 @@
 #include "webrtc/system_wrappers/interface/file_wrapper.h"
 #include "webrtc/typedefs.h"
 
-#if defined(WEBRTC_IOS) || defined(ANDROID)
-#define USE_SLEEP_AS_PAUSE
-#else
-//#define USE_SLEEP_AS_PAUSE
-#endif
-
-// Sets the default pause time if using sleep as pause
-#define DEFAULT_PAUSE_TIME 5000
-
-#if defined(USE_SLEEP_AS_PAUSE)
-#define PAUSE(a) SleepMs(a);
-#else
-#define PAUSE(a) AudioDeviceUtility::WaitForKey();
-#endif
 
 #define ADM_AUDIO_LAYER AudioDeviceModule::kPlatformDefaultAudio
 //#define ADM_AUDIO_LAYER AudioDeviceModule::kLinuxPulseAudio

@@ -11,7 +11,6 @@
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
-#include "webrtc/modules/audio_device/audio_device_utility.h"
 #include "webrtc/modules/audio_device/mac/audio_device_mac.h"
 #include "webrtc/modules/audio_device/mac/portaudio/pa_ringbuffer.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"

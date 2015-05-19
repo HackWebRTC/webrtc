@@ -19,7 +19,6 @@
 
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
-#include "webrtc/modules/audio_device/audio_device_utility.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 
 // Helper functions

@@ -12,37 +12,33 @@
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
 
 #include <assert.h>
 #include <string.h>
 
 #if defined(_WIN32)
-    #include "audio_device_utility_win.h"
     #include "audio_device_wave_win.h"
  #if defined(WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
     #include "audio_device_core_win.h"
  #endif
 #elif defined(WEBRTC_ANDROID)
 #include <stdlib.h>
-#include "audio_device_utility_android.h"
 #include "webrtc/modules/audio_device/android/audio_device_template.h"
 #include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/android/audio_record_jni.h"
 #include "webrtc/modules/audio_device/android/audio_track_jni.h"
 #include "webrtc/modules/audio_device/android/opensles_player.h"
 #elif defined(WEBRTC_LINUX)
-    #include "audio_device_utility_linux.h"
  #if defined(LINUX_ALSA)
-    #include "audio_device_alsa_linux.h"
+   #include "audio_device_alsa_linux.h"
  #endif
- #if defined(LINUX_PULSE)
+#if defined(LINUX_PULSE)
     #include "audio_device_pulse_linux.h"
- #endif
+#endif
 #elif defined(WEBRTC_IOS)
-    #include "audio_device_utility_ios.h"
     #include "audio_device_ios.h"
 #elif defined(WEBRTC_MAC)
-    #include "audio_device_utility_mac.h"
     #include "audio_device_mac.h"
 #endif
 
@@ -51,7 +47,6 @@
 #endif
 
 #include "webrtc/modules/audio_device/dummy/audio_device_dummy.h"
-#include "webrtc/modules/audio_device/dummy/audio_device_utility_dummy.h"
 #include "webrtc/modules/audio_device/dummy/file_audio_device.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -77,7 +72,6 @@ AudioDeviceModule* CreateAudioDeviceModule(
     int32_t id, AudioDeviceModule::AudioLayer audioLayer) {
   return AudioDeviceModuleImpl::Create(id, audioLayer);
 }
-
 
 // ============================================================================
 //                                   Static methods
@@ -134,11 +128,10 @@ AudioDeviceModuleImpl::AudioDeviceModuleImpl(const int32_t id, const AudioLayer 
     _critSectEventCb(*CriticalSectionWrapper::CreateCriticalSection()),
     _critSectAudioCb(*CriticalSectionWrapper::CreateCriticalSection()),
     _ptrCbAudioDeviceObserver(NULL),
-    _ptrAudioDeviceUtility(NULL),
     _ptrAudioDevice(NULL),
     _id(id),
     _platformAudioLayer(audioLayer),
-    _lastProcessTime(AudioDeviceUtility::GetTimeInMS()),
+    _lastProcessTime(TickTime::MillisecondTimestamp()),
     _platformType(kPlatformNotSupported),
     _initialized(false),
     _lastError(kAdmErrNone)
@@ -198,24 +191,14 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s", __FUNCTION__);
 
     AudioDeviceGeneric* ptrAudioDevice(NULL);
-    AudioDeviceUtility* ptrAudioDeviceUtility(NULL);
 
 #if defined(WEBRTC_DUMMY_AUDIO_BUILD)
     ptrAudioDevice = new AudioDeviceDummy(Id());
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Dummy Audio APIs will be utilized");
-
-    if (ptrAudioDevice != NULL)
-    {
-        ptrAudioDeviceUtility = new AudioDeviceUtilityDummy(Id());
-    }
 #elif defined(WEBRTC_DUMMY_FILE_DEVICES)
     ptrAudioDevice = FileAudioDeviceFactory::CreateFileAudioDevice(Id());
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                  "Will use file-playing dummy device.");
-    if (ptrAudioDevice != NULL)
-    {
-        ptrAudioDeviceUtility = new AudioDeviceUtilityDummy(Id());
-    }
 #else
     AudioLayer audioLayer(PlatformAudioLayer());
 
@@ -259,14 +242,6 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
         }
     }
 #endif // defined(WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
-    if (ptrAudioDevice != NULL)
-    {
-        // Create the Windows implementation of the Device Utility.
-        // This class is independent of the selected audio layer
-        // for Windows.
-        //
-        ptrAudioDeviceUtility = new AudioDeviceUtilityWindows(Id());
-    }
 #endif  // #if defined(_WIN32)
 
 #if defined(WEBRTC_ANDROID)
@@ -298,11 +273,6 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
     } else {
       // Invalid audio layer.
       ptrAudioDevice = NULL;
-    }
-
-    if (ptrAudioDevice != NULL) {
-        // Create the Android implementation of the Device Utility.
-        ptrAudioDeviceUtility = new AudioDeviceUtilityAndroid(Id());
     }
     // END #if defined(WEBRTC_ANDROID)
 
@@ -347,15 +317,6 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Linux ALSA APIs will be utilized");
 #endif
     }
-
-    if (ptrAudioDevice != NULL)
-    {
-        // Create the Linux implementation of the Device Utility.
-        // This class is independent of the selected audio layer
-        // for Linux.
-        //
-        ptrAudioDeviceUtility = new AudioDeviceUtilityLinux(Id());
-    }
 #endif  // #if defined(WEBRTC_LINUX)
 
     // Create the *iPhone* implementation of the Audio Device
@@ -366,12 +327,6 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
         // Create iOS Audio Device implementation.
         ptrAudioDevice = new AudioDeviceIOS(Id());
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "iPhone Audio APIs will be utilized");
-    }
-
-    if (ptrAudioDevice != NULL)
-    {
-        // Create iOS Device Utility implementation.
-        ptrAudioDeviceUtility = new AudioDeviceUtilityIOS(Id());
     }
     // END #if defined(WEBRTC_IOS)
 
@@ -384,12 +339,6 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
         ptrAudioDevice = new AudioDeviceMac(Id());
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Mac OS X Audio APIs will be utilized");
     }
-
-    if (ptrAudioDevice != NULL)
-    {
-        // Create the Mac implementation of the Device Utility.
-        ptrAudioDeviceUtility = new AudioDeviceUtilityMac(Id());
-    }
 #endif  // WEBRTC_MAC
 
     // Create the *Dummy* implementation of the Audio Device
@@ -401,11 +350,6 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
         assert(!ptrAudioDevice);
         ptrAudioDevice = new AudioDeviceDummy(Id());
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Dummy Audio APIs will be utilized");
-
-        if (ptrAudioDevice != NULL)
-        {
-            ptrAudioDeviceUtility = new AudioDeviceUtilityDummy(Id());
-        }
     }
 #endif  // if defined(WEBRTC_DUMMY_AUDIO_BUILD)
 
@@ -415,16 +359,9 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
         return -1;
     }
 
-    if (ptrAudioDeviceUtility == NULL)
-    {
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id, "unable to create the platform specific audio device utility");
-        return -1;
-    }
-
     // Store valid output pointers
     //
     _ptrAudioDevice = ptrAudioDevice;
-    _ptrAudioDeviceUtility = ptrAudioDeviceUtility;
 
     return 0;
 }
@@ -460,12 +397,6 @@ AudioDeviceModuleImpl::~AudioDeviceModuleImpl()
         _ptrAudioDevice = NULL;
     }
 
-    if (_ptrAudioDeviceUtility)
-    {
-        delete _ptrAudioDeviceUtility;
-        _ptrAudioDeviceUtility = NULL;
-    }
-
     delete &_critSect;
     delete &_critSectEventCb;
     delete &_critSectAudioCb;
@@ -484,9 +415,9 @@ AudioDeviceModuleImpl::~AudioDeviceModuleImpl()
 
 int64_t AudioDeviceModuleImpl::TimeUntilNextProcess()
 {
-    uint32_t now = AudioDeviceUtility::GetTimeInMS();
-    int32_t deltaProcess = kAdmMaxIdleTimeProcess - (now - _lastProcessTime);
-    return (deltaProcess);
+    int64_t now = TickTime::MillisecondTimestamp();
+    int64_t deltaProcess = kAdmMaxIdleTimeProcess - (now - _lastProcessTime);
+    return deltaProcess;
 }
 
 // ----------------------------------------------------------------------------
@@ -499,7 +430,7 @@ int64_t AudioDeviceModuleImpl::TimeUntilNextProcess()
 int32_t AudioDeviceModuleImpl::Process()
 {
 
-    _lastProcessTime = AudioDeviceUtility::GetTimeInMS();
+    _lastProcessTime = TickTime::MillisecondTimestamp();
 
     // kPlayoutWarning
     if (_ptrAudioDevice->PlayoutWarning())
@@ -588,13 +519,8 @@ int32_t AudioDeviceModuleImpl::Init()
     if (_initialized)
         return 0;
 
-    if (!_ptrAudioDeviceUtility)
-        return -1;
-
     if (!_ptrAudioDevice)
         return -1;
-
-    _ptrAudioDeviceUtility->Init();
 
     if (_ptrAudioDevice->Init() == -1)
     {
