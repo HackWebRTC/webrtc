@@ -71,6 +71,7 @@ DIRECTORIES = [
   'tools/python',
   'tools/swarming_client',
   'tools/valgrind',
+  'tools/vim',
   'tools/win',
 ]
 
