@@ -822,7 +822,7 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
                                   uint8_t fraction_lost,
                                   int64_t round_trip_time_ms) {
   LOG(LS_VERBOSE) << "OnNetworkChanged, bitrate" << bitrate_bps
-                  << " packet loss " << fraction_lost
+                  << " packet loss " << static_cast<int>(fraction_lost)
                   << " rtt " << round_trip_time_ms;
   DCHECK(send_payload_router_ != NULL);
   vcm_->SetChannelParameters(bitrate_bps, fraction_lost, round_trip_time_ms);
