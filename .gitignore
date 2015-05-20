@@ -146,6 +146,7 @@
 /tools/swarming_client
 /tools/tsan_suppressions
 /tools/valgrind
+/tools/vim
 /tools/win
 /tools/whitespace.txt
 /webrtc/examples/android/media_demo/bin
