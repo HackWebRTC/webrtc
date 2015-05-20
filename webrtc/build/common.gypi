@@ -129,7 +129,6 @@
 
         # Exclude internal ADM since Chromium uses its own IO handling.
         'include_internal_audio_device%': 0,
-
       }, {  # Settings for the standalone (not-in-Chromium) build.
         # TODO(andrew): For now, disable the Chrome plugins, which causes a
         # flood of chromium-style warnings. Investigate enabling them:
@@ -369,6 +368,11 @@
              ],
            }],
          ],
+      }],
+      ['include_internal_audio_device==1', {
+        'defines': [
+          'WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE',
+        ],
       }],
     ], # conditions
     'direct_dependent_settings': {

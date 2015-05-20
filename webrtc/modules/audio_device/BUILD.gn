@@ -24,8 +24,6 @@ source_set("audio_device") {
     "audio_device_buffer.h",
     "audio_device_generic.cc",
     "audio_device_generic.h",
-    "audio_device_impl.cc",
-    "audio_device_impl.h",
     "audio_device_config.h",
     "dummy/audio_device_dummy.cc",
     "dummy/audio_device_dummy.h",
@@ -50,6 +48,7 @@ source_set("audio_device") {
     include_dirs += [ "android" ]
   }
   if (rtc_include_internal_audio_device) {
+    defines += [ "WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE" ]
     sources += [
       "android/audio_device_template.h",
       "android/audio_manager.cc",
@@ -64,6 +63,8 @@ source_set("audio_device") {
       "android/opensles_common.h",
       "android/opensles_player.cc",
       "android/opensles_player.h",
+      "audio_device_impl.cc",
+      "audio_device_impl.h",
       "ios/audio_device_ios.h",
       "ios/audio_device_ios.mm",
       "linux/alsasymboltable_linux.cc",

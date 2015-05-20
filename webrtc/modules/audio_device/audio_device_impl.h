@@ -11,6 +11,8 @@
 #ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_IMPL_H
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_IMPL_H
 
+#if defined(WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_device/audio_device_buffer.h"
@@ -194,7 +196,7 @@ public:
 
 public:
     int32_t Id() {return _id;}
-#if defined(WEBRTC_ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
+#if defined(WEBRTC_ANDROID)
     // Only use this acccessor for test purposes on Android.
     AudioManager* GetAndroidAudioManagerForTest() {
       return _audioManagerAndroid.get();
@@ -218,7 +220,7 @@ private:
     AudioDeviceGeneric*          _ptrAudioDevice;
 
     AudioDeviceBuffer            _audioDeviceBuffer;
-#if defined(WEBRTC_ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
+#if defined(WEBRTC_ANDROID)
     rtc::scoped_ptr<AudioManager> _audioManagerAndroid;
 #endif
     int32_t                      _id;
@@ -230,5 +232,7 @@ private:
 };
 
 }  // namespace webrtc
+
+#endif  // defined(WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
 
 #endif  // WEBRTC_MODULES_INTERFACE_AUDIO_DEVICE_IMPL_H_
