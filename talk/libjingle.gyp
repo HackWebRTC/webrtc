@@ -470,7 +470,6 @@
         'media/devices/videorendererfactory.h',
         'media/devices/yuvframescapturer.cc',
         'media/devices/yuvframescapturer.h',
-        'media/other/linphonemediaengine.h',
         'media/sctp/sctpdataengine.cc',
         'media/sctp/sctpdataengine.h',
         'media/webrtc/simulcast.cc',
