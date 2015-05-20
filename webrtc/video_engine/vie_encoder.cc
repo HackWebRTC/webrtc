@@ -854,14 +854,6 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
   }
 }
 
-int ViEEncoder::StartDebugRecording(const char* fileNameUTF8) {
-  return vcm_->StartDebugRecording(fileNameUTF8);
-}
-
-int ViEEncoder::StopDebugRecording() {
-  return vcm_->StopDebugRecording();
-}
-
 void ViEEncoder::SuspendBelowMinBitrate() {
   vcm_->SuspendBelowMinBitrate();
   bitrate_allocator_->EnforceMinBitrate(false);

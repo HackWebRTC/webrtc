@@ -34,8 +34,6 @@ class EncodedFrameObserver;
 
 namespace vcm {
 
-class DebugRecorder;
-
 class VCMProcessTimer {
  public:
   VCMProcessTimer(int64_t periodMs, Clock* clock)
@@ -108,9 +106,6 @@ class VideoSender {
   int32_t IntraFrameRequest(int stream_index);
   int32_t EnableFrameDropper(bool enable);
 
-  int StartDebugRecording(const char* file_name_utf8);
-  void StopDebugRecording();
-
   void SuspendBelowMinBitrate();
   bool VideoSuspended() const;
 
@@ -119,8 +114,6 @@ class VideoSender {
 
  private:
   Clock* clock_;
-
-  rtc::scoped_ptr<DebugRecorder> recorder_;
 
   rtc::scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
   CriticalSectionWrapper* _sendCritSect;

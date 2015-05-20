@@ -191,15 +191,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return sender_->SentFrameCount(&frameCount);
   }
 
-  int StartDebugRecording(const char* file_name_utf8) override {
-    return sender_->StartDebugRecording(file_name_utf8);
-  }
-
-  int StopDebugRecording() override {
-    sender_->StopDebugRecording();
-    return VCM_OK;
-  }
-
   void SuspendBelowMinBitrate() override {
     return sender_->SuspendBelowMinBitrate();
   }

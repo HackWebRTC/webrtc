@@ -172,12 +172,6 @@ class ViEEncoder
 
   void SetMinTransmitBitrate(int min_transmit_bitrate_kbps);
 
-  // Enables recording of debugging information.
-  int StartDebugRecording(const char* fileNameUTF8);
-
-  // Disables recording of debugging information.
-  int StopDebugRecording();
-
   // Lets the sender suspend video when the rate drops below
   // |threshold_bps|, and turns back on when the rate goes back up above
   // |threshold_bps| + |window_bps|.
