@@ -128,20 +128,15 @@ void SincResampler::InitializeCPUSpecificFeatures() {
   convolve_proc_ = WebRtc_GetCPUInfo(kSSE2) ? Convolve_SSE : Convolve_C;
 }
 #endif
-#elif defined(WEBRTC_DETECT_ARM_NEON) || defined(WEBRTC_ARCH_ARM_NEON)
-#if defined(WEBRTC_ARCH_ARM_NEON)
+#elif defined(WEBRTC_HAS_NEON)
 #define CONVOLVE_FUNC Convolve_NEON
 void SincResampler::InitializeCPUSpecificFeatures() {}
-#else
-// ARM CPU detection required.  Function will be set by
-// InitializeCPUSpecificFeatures().
+#elif defined(WEBRTC_DETECT_NEON)
 #define CONVOLVE_FUNC convolve_proc_
-
 void SincResampler::InitializeCPUSpecificFeatures() {
   convolve_proc_ = WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON ?
       Convolve_NEON : Convolve_C;
 }
-#endif
 #else
 // Unknown architecture.
 #define CONVOLVE_FUNC Convolve_C

@@ -105,9 +105,9 @@ extern "C" {
 #include "webrtc/common_audio/signal_processing/include/spl_inl.h"
 
 // Initialize SPL. Currently it contains only function pointer initialization.
-// If the underlying platform is known to be ARM-Neon (WEBRTC_ARCH_ARM_NEON
-// defined), the pointers will be assigned to code optimized for Neon; otherwise
-// if run-time Neon detection (WEBRTC_DETECT_ARM_NEON) is enabled, the pointers
+// If the underlying platform is known to be ARM-Neon (WEBRTC_HAS_NEON defined),
+// the pointers will be assigned to code optimized for Neon; otherwise
+// if run-time Neon detection (WEBRTC_DETECT_NEON) is enabled, the pointers
 // will be assigned to either Neon code or generic C code; otherwise, generic C
 // code will be assigned.
 // Note that this function MUST be called in any application that uses SPL
@@ -154,8 +154,7 @@ void WebRtcSpl_ZerosArrayW32(int32_t* vector,
 typedef int16_t (*MaxAbsValueW16)(const int16_t* vector, int length);
 extern MaxAbsValueW16 WebRtcSpl_MaxAbsValueW16;
 int16_t WebRtcSpl_MaxAbsValueW16C(const int16_t* vector, int length);
-#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON) || \
-  (defined WEBRTC_ARCH_ARM64_NEON)
+#if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
 int16_t WebRtcSpl_MaxAbsValueW16Neon(const int16_t* vector, int length);
 #endif
 #if defined(MIPS32_LE)
@@ -173,8 +172,7 @@ int16_t WebRtcSpl_MaxAbsValueW16_mips(const int16_t* vector, int length);
 typedef int32_t (*MaxAbsValueW32)(const int32_t* vector, int length);
 extern MaxAbsValueW32 WebRtcSpl_MaxAbsValueW32;
 int32_t WebRtcSpl_MaxAbsValueW32C(const int32_t* vector, int length);
-#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON) || \
-  (defined WEBRTC_ARCH_ARM64_NEON)
+#if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
 int32_t WebRtcSpl_MaxAbsValueW32Neon(const int32_t* vector, int length);
 #endif
 #if defined(MIPS_DSP_R1_LE)
@@ -194,8 +192,7 @@ int32_t WebRtcSpl_MaxAbsValueW32_mips(const int32_t* vector, int length);
 typedef int16_t (*MaxValueW16)(const int16_t* vector, int length);
 extern MaxValueW16 WebRtcSpl_MaxValueW16;
 int16_t WebRtcSpl_MaxValueW16C(const int16_t* vector, int length);
-#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON) || \
-  (defined WEBRTC_ARCH_ARM64_NEON)
+#if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
 int16_t WebRtcSpl_MaxValueW16Neon(const int16_t* vector, int length);
 #endif
 #if defined(MIPS32_LE)
@@ -215,8 +212,7 @@ int16_t WebRtcSpl_MaxValueW16_mips(const int16_t* vector, int length);
 typedef int32_t (*MaxValueW32)(const int32_t* vector, int length);
 extern MaxValueW32 WebRtcSpl_MaxValueW32;
 int32_t WebRtcSpl_MaxValueW32C(const int32_t* vector, int length);
-#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON) || \
-  (defined WEBRTC_ARCH_ARM64_NEON)
+#if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
 int32_t WebRtcSpl_MaxValueW32Neon(const int32_t* vector, int length);
 #endif
 #if defined(MIPS32_LE)
@@ -236,8 +232,7 @@ int32_t WebRtcSpl_MaxValueW32_mips(const int32_t* vector, int length);
 typedef int16_t (*MinValueW16)(const int16_t* vector, int length);
 extern MinValueW16 WebRtcSpl_MinValueW16;
 int16_t WebRtcSpl_MinValueW16C(const int16_t* vector, int length);
-#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON) || \
-  (defined WEBRTC_ARCH_ARM64_NEON)
+#if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
 int16_t WebRtcSpl_MinValueW16Neon(const int16_t* vector, int length);
 #endif
 #if defined(MIPS32_LE)
@@ -257,8 +252,7 @@ int16_t WebRtcSpl_MinValueW16_mips(const int16_t* vector, int length);
 typedef int32_t (*MinValueW32)(const int32_t* vector, int length);
 extern MinValueW32 WebRtcSpl_MinValueW32;
 int32_t WebRtcSpl_MinValueW32C(const int32_t* vector, int length);
-#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON) || \
-  (defined WEBRTC_ARCH_ARM64_NEON)
+#if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
 int32_t WebRtcSpl_MinValueW32Neon(const int32_t* vector, int length);
 #endif
 #if defined(MIPS32_LE)
@@ -558,8 +552,7 @@ void WebRtcSpl_CrossCorrelationC(int32_t* cross_correlation,
                                  int16_t dim_cross_correlation,
                                  int16_t right_shifts,
                                  int16_t step_seq2);
-#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON) || \
-  (defined WEBRTC_ARCH_ARM64_NEON)
+#if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
 void WebRtcSpl_CrossCorrelationNeon(int32_t* cross_correlation,
                                     const int16_t* seq1,
                                     const int16_t* seq2,
@@ -724,8 +717,7 @@ int WebRtcSpl_DownsampleFastC(const int16_t* data_in,
                               int coefficients_length,
                               int factor,
                               int delay);
-#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON) || \
-  (defined WEBRTC_ARCH_ARM64_NEON)
+#if (defined WEBRTC_DETECT_NEON) || (defined WEBRTC_HAS_NEON)
 int WebRtcSpl_DownsampleFastNeon(const int16_t* data_in,
                                  int data_in_length,
                                  int16_t* data_out,

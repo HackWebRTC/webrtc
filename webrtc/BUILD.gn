@@ -113,13 +113,8 @@ config("common_config") {
   }
 
   if (current_cpu == "arm64") {
-    defines += [ "WEBRTC_ARCH_ARM" ]
-    # TODO(zhongwei) Defining an unique WEBRTC_NEON and
-    # distinguishing ARMv7 NEON and ARM64 NEON by
-    # WEBRTC_ARCH_ARM_V7 and WEBRTC_ARCH_ARM64 should be better.
-
-    # This macro is used to distinguish ARMv7 NEON and ARM64 NEON
-    defines += [ "WEBRTC_ARCH_ARM64_NEON" ]
+    defines += [ "WEBRTC_ARCH_ARM64" ]
+    defines += [ "WEBRTC_HAS_NEON" ]
   }
 
   if (current_cpu == "arm") {
@@ -127,9 +122,9 @@ config("common_config") {
     if (arm_version >= 7) {
       defines += [ "WEBRTC_ARCH_ARM_V7" ]
       if (arm_use_neon) {
-        defines += [ "WEBRTC_ARCH_ARM_NEON" ]
-      } else if (is_android) {
-        defines += [ "WEBRTC_DETECT_ARM_NEON" ]
+        defines += [ "WEBRTC_HAS_NEON" ]
+      } else if (arm_optionally_use_neon) {
+        defines += [ "WEBRTC_DETECT_NEON" ]
       }
     }
   }

@@ -107,7 +107,7 @@ class SincResampler {
   static float Convolve_SSE(const float* input_ptr, const float* k1,
                             const float* k2,
                             double kernel_interpolation_factor);
-#elif defined(WEBRTC_ARCH_ARM_V7) || defined(WEBRTC_ARCH_ARM64_NEON)
+#elif defined(WEBRTC_DETECT_NEON) || defined(WEBRTC_HAS_NEON)
   static float Convolve_NEON(const float* input_ptr, const float* k1,
                              const float* k2,
                              double kernel_interpolation_factor);

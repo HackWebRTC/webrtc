@@ -198,8 +198,7 @@ int16_t WebRtcIsacfix_FreeInternal(ISACFIX_MainStruct *ISAC_main_inst)
  * This function initializes function pointers for ARM Neon platform.
  */
 
-#if (defined WEBRTC_DETECT_ARM_NEON || defined WEBRTC_ARCH_ARM_NEON) || \
-  (defined WEBRTC_ARCH_ARM64_NEON)
+#if defined(WEBRTC_DETECT_NEON) || defined(WEBRTC_HAS_NEON)
 static void WebRtcIsacfix_InitNeon(void) {
   WebRtcIsacfix_AutocorrFix = WebRtcIsacfix_AutocorrNeon;
   WebRtcIsacfix_FilterMaLoopFix = WebRtcIsacfix_FilterMaLoopNeon;
@@ -208,7 +207,7 @@ static void WebRtcIsacfix_InitNeon(void) {
 // Disable AllpassFilter2FixDec16Neon function due to a clang bug.
 // Refer more details at:
 // https://code.google.com/p/webrtc/issues/detail?id=4567
-#if !(defined __clang__)
+#if !defined(__clang__) || !defined(WEBRTC_ARCH_ARM64)
   WebRtcIsacfix_AllpassFilter2FixDec16 =
       WebRtcIsacfix_AllpassFilter2FixDec16Neon;
 #endif
@@ -334,11 +333,11 @@ int16_t WebRtcIsacfix_EncoderInit(ISACFIX_MainStruct *ISAC_main_inst,
   WebRtcIsacfix_MatrixProduct1 = WebRtcIsacfix_MatrixProduct1C;
   WebRtcIsacfix_MatrixProduct2 = WebRtcIsacfix_MatrixProduct2C;
 
-#ifdef WEBRTC_DETECT_ARM_NEON
+#ifdef WEBRTC_DETECT_NEON
   if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {
     WebRtcIsacfix_InitNeon();
   }
-#elif defined(WEBRTC_ARCH_ARM_NEON) || defined(WEBRTC_ARCH_ARM64_NEON)
+#elif defined(WEBRTC_HAS_NEON)
   WebRtcIsacfix_InitNeon();
 #endif
 

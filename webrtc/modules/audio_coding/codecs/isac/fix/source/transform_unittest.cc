@@ -175,22 +175,22 @@ class TransformTest : public testing::Test {
 
 TEST_F(TransformTest, Time2SpecTest) {
   Time2SpecTester(WebRtcIsacfix_Time2SpecC);
-#ifdef WEBRTC_DETECT_ARM_NEON
+#ifdef WEBRTC_DETECT_NEON
   if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {
     Time2SpecTester(WebRtcIsacfix_Time2SpecNeon);
   }
-#elif defined(WEBRTC_ARCH_ARM_NEON)
+#elif defined(WEBRTC_HAS_NEON)
   Time2SpecTester(WebRtcIsacfix_Time2SpecNeon);
 #endif
 }
 
 TEST_F(TransformTest, Spec2TimeTest) {
   Spec2TimeTester(WebRtcIsacfix_Spec2TimeC);
-#ifdef WEBRTC_DETECT_ARM_NEON
+#ifdef WEBRTC_DETECT_NEON
   if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {
     Spec2TimeTester(WebRtcIsacfix_Spec2TimeNeon);
   }
-#elif defined(WEBRTC_ARCH_ARM_NEON)
+#elif defined(WEBRTC_HAS_NEON)
   Spec2TimeTester(WebRtcIsacfix_Spec2TimeNeon);
 #endif
 }

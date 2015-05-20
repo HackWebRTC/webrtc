@@ -555,7 +555,7 @@ class AcmReceiverBitExactness : public ::testing::Test {
 };
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_8kHzOutput DISABLED_8kHzOutput
 #else
 #define MAYBE_8kHzOutput 8kHzOutput
@@ -568,7 +568,7 @@ TEST_F(AcmReceiverBitExactness, MAYBE_8kHzOutput) {
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_16kHzOutput DISABLED_16kHzOutput
 #else
 #define MAYBE_16kHzOutput 16kHzOutput
@@ -581,7 +581,7 @@ TEST_F(AcmReceiverBitExactness, MAYBE_16kHzOutput) {
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_32kHzOutput DISABLED_32kHzOutput
 #else
 #define MAYBE_32kHzOutput 32kHzOutput
@@ -594,7 +594,7 @@ TEST_F(AcmReceiverBitExactness, MAYBE_32kHzOutput) {
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_48kHzOutput DISABLED_48kHzOutput
 #else
 #define MAYBE_48kHzOutput 48kHzOutput
@@ -760,7 +760,7 @@ class AcmSenderBitExactness : public ::testing::Test,
 };
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_IsacWb30ms DISABLED_IsacWb30ms
 #else
 #define MAYBE_IsacWb30ms IsacWb30ms
@@ -780,7 +780,7 @@ TEST_F(AcmSenderBitExactness, MAYBE_IsacWb30ms) {
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_IsacWb60ms DISABLED_IsacWb60ms
 #else
 #define MAYBE_IsacWb60ms IsacWb60ms
@@ -944,7 +944,7 @@ TEST_F(AcmSenderBitExactness, DISABLED_ON_ANDROID(G722_stereo_20ms)) {
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4199
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_Opus_stereo_20ms DISABLED_Opus_stereo_20ms
 #else
 #define MAYBE_Opus_stereo_20ms Opus_stereo_20ms

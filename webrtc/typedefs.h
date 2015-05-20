@@ -55,8 +55,10 @@
 #error Define either WEBRTC_ARCH_LITTLE_ENDIAN or WEBRTC_ARCH_BIG_ENDIAN
 #endif
 
-#if (defined(WEBRTC_ARCH_X86_FAMILY) && !defined(__SSE2__)) ||  \
-    (defined(WEBRTC_ARCH_ARM_V7) && !defined(WEBRTC_ARCH_ARM_NEON))
+// TODO(zhongwei.yao): WEBRTC_CPU_DETECTION is only used in one place; we should
+// probably just remove it.
+#if (defined(WEBRTC_ARCH_X86_FAMILY) && !defined(__SSE2__)) || \
+    defined(WEBRTC_DETECT_NEON)
 #define WEBRTC_CPU_DETECTION
 #endif
 

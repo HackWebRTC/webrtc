@@ -23,7 +23,7 @@
 #include "webrtc/typedefs.h"
 
 // Square root of Hanning window in Q14.
-#if defined(WEBRTC_DETECT_ARM_NEON) || defined(WEBRTC_ARCH_ARM_NEON)
+#if defined(WEBRTC_DETECT_NEON) || defined(WEBRTC_HAS_NEON)
 // Table is defined in an ARM assembly file.
 extern const ALIGN8_BEG int16_t WebRtcAecm_kSqrtHanning[] ALIGN8_END;
 #else

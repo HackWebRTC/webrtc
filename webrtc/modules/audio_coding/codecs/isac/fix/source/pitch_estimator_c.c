@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/pitch_estimator.h"
 
-#ifdef WEBRTC_ARCH_ARM_NEON
+#ifdef WEBRTC_HAS_NEON
 #include <arm_neon.h>
 #endif
 
@@ -56,7 +56,10 @@ void WebRtcIsacfix_PCorr2Q32(const int16_t* in, int32_t* logcorQ8) {
     ysum32 -= in[k - 1] * in[k - 1] >> scaling;
     ysum32 += in[PITCH_CORR_LEN2 + k - 1] * in[PITCH_CORR_LEN2 + k - 1] >>
         scaling;
-#ifdef WEBRTC_ARCH_ARM_NEON
+
+    // TODO(zhongwei.yao): Move this function into a separate NEON code file so
+    // that WEBRTC_DETECT_NEON could take advantage of it.
+#ifdef WEBRTC_HAS_NEON
     {
       int32_t vbuff[4];
       int32x4_t int_32x4_sum = vmovq_n_s32(0);

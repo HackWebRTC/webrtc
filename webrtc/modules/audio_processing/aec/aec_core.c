@@ -1458,9 +1458,9 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
   WebRtcAec_InitAec_mips();
 #endif
 
-#if defined(WEBRTC_ARCH_ARM_NEON)
+#if defined(WEBRTC_HAS_NEON)
   WebRtcAec_InitAec_neon();
-#elif defined(WEBRTC_DETECT_ARM_NEON)
+#elif defined(WEBRTC_DETECT_NEON)
   if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {
     WebRtcAec_InitAec_neon();
   }

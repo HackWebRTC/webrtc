@@ -538,7 +538,7 @@ TEST_F(AudioDecoderIsacSwbTest, EncodeDecode) {
 }
 
 // Fails Android ARM64. https://code.google.com/p/webrtc/issues/detail?id=4198
-#if defined(WEBRTC_ANDROID) && defined(__aarch64__)
+#if defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM64)
 #define MAYBE_EncodeDecode DISABLED_EncodeDecode
 #else
 #define MAYBE_EncodeDecode EncodeDecode

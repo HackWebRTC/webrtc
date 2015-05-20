@@ -78,7 +78,7 @@ static void FilterFarNEON(AecCore* aec, float yf[2][PART_LEN1]) {
 }
 
 // ARM64's arm_neon.h has already defined vdivq_f32 vsqrtq_f32.
-#if !defined (WEBRTC_ARCH_ARM64_NEON)
+#if !defined (WEBRTC_ARCH_ARM64)
 static float32x4_t vdivq_f32(float32x4_t a, float32x4_t b) {
   int i;
   float32x4_t x = vrecpeq_f32(b);
@@ -120,7 +120,7 @@ static float32x4_t vsqrtq_f32(float32x4_t s) {
   // sqrt(s) = s * 1/sqrt(s)
   return vmulq_f32(s, x);;
 }
-#endif  // WEBRTC_ARCH_ARM64_NEON
+#endif  // WEBRTC_ARCH_ARM64
 
 static void ScaleErrorSignalNEON(AecCore* aec, float ef[2][PART_LEN1]) {
   const float mu = aec->extended_filter_enabled ? kExtendedMu : aec->normal_mu;
