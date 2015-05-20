@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 
+#include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/common_audio/channel_buffer.h"
@@ -96,11 +97,6 @@ AudioBuffer::AudioBuffer(int input_num_frames,
   assert(num_input_channels_ > 0 && num_input_channels_ <= 2);
   assert(num_proc_channels_ > 0 && num_proc_channels_ <= num_input_channels_);
 
-  if (num_input_channels_ == 2 && num_proc_channels_ == 1) {
-    input_buffer_.reset(new ChannelBuffer<float>(input_num_frames_,
-                                                 num_proc_channels_));
-  }
-
   if (input_num_frames_ != proc_num_frames_ ||
       output_num_frames_ != proc_num_frames_) {
     // Create an intermediate buffer for resampling.
@@ -142,6 +138,12 @@ void AudioBuffer::CopyFrom(const float* const* data,
   assert(num_frames == input_num_frames_);
   assert(ChannelsFromLayout(layout) == num_input_channels_);
   InitForNewData();
+  // Initialized lazily because there's a different condition in
+  // DeinterleaveFrom.
+  if ((num_input_channels_ == 2 && num_proc_channels_ == 1) && !input_buffer_) {
+    input_buffer_.reset(
+        new IFChannelBuffer(input_num_frames_, num_proc_channels_));
+  }
 
   if (HasKeyboardChannel(layout)) {
     keyboard_data_ = data[KeyboardChannelIndex(layout)];
@@ -152,9 +154,9 @@ void AudioBuffer::CopyFrom(const float* const* data,
   if (num_input_channels_ == 2 && num_proc_channels_ == 1) {
     StereoToMono(data[0],
                  data[1],
-                 input_buffer_->channels()[0],
+                 input_buffer_->fbuf()->channels()[0],
                  input_num_frames_);
-    data_ptr = input_buffer_->channels();
+    data_ptr = input_buffer_->fbuf_const()->channels();
   }
 
   // Resample.
@@ -394,30 +396,44 @@ int AudioBuffer::num_bands() const {
   return num_bands_;
 }
 
-// TODO(andrew): Do deinterleaving and mixing in one step?
+// The resampler is only for supporting 48kHz to 16kHz in the reverse stream.
 void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
-  assert(proc_num_frames_ == input_num_frames_);
   assert(frame->num_channels_ == num_input_channels_);
-  assert(frame->samples_per_channel_ ==  proc_num_frames_);
+  assert(frame->samples_per_channel_ ==  input_num_frames_);
   InitForNewData();
+  // Initialized lazily because there's a different condition in CopyFrom.
+  if ((input_num_frames_ != proc_num_frames_) && !input_buffer_) {
+    input_buffer_.reset(
+        new IFChannelBuffer(input_num_frames_, num_proc_channels_));
+  }
   activity_ = frame->vad_activity_;
 
+  int16_t* const* deinterleaved;
+  if (input_num_frames_ == proc_num_frames_) {
+    deinterleaved = data_->ibuf()->channels();
+  } else {
+    deinterleaved = input_buffer_->ibuf()->channels();
+  }
   if (num_input_channels_ == 2 && num_proc_channels_ == 1) {
     // Downmix directly; no explicit deinterleaving needed.
-    int16_t* downmixed = data_->ibuf()->channels()[0];
     for (int i = 0; i < input_num_frames_; ++i) {
-      downmixed[i] = (frame->data_[i * 2] + frame->data_[i * 2 + 1]) / 2;
+      deinterleaved[0][i] = (frame->data_[i * 2] + frame->data_[i * 2 + 1]) / 2;
     }
   } else {
     assert(num_proc_channels_ == num_input_channels_);
-    int16_t* interleaved = frame->data_;
+    Deinterleave(frame->data_,
+                 input_num_frames_,
+                 num_proc_channels_,
+                 deinterleaved);
+  }
+
+  // Resample.
+  if (input_num_frames_ != proc_num_frames_) {
     for (int i = 0; i < num_proc_channels_; ++i) {
-      int16_t* deinterleaved = data_->ibuf()->channels()[i];
-      int interleaved_idx = i;
-      for (int j = 0; j < proc_num_frames_; ++j) {
-        deinterleaved[j] = interleaved[interleaved_idx];
-        interleaved_idx += num_proc_channels_;
-      }
+      input_resamplers_[i]->Resample(input_buffer_->fbuf_const()->channels()[i],
+                                     input_num_frames_,
+                                     data_->fbuf()->channels()[i],
+                                     proc_num_frames_);
     }
   }
 }
@@ -433,15 +449,10 @@ void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) const {
     return;
   }
 
-  int16_t* interleaved = frame->data_;
-  for (int i = 0; i < num_channels_; i++) {
-    int16_t* deinterleaved = data_->ibuf()->channels()[i];
-    int interleaved_idx = i;
-    for (int j = 0; j < proc_num_frames_; j++) {
-      interleaved[interleaved_idx] = deinterleaved[j];
-      interleaved_idx += num_channels_;
-    }
-  }
+  Interleave(data_->ibuf()->channels(),
+             proc_num_frames_,
+             num_channels_,
+             frame->data_);
 }
 
 void AudioBuffer::CopyLowPassToReference() {
