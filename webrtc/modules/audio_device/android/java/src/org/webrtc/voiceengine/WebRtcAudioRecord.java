@@ -69,13 +69,6 @@ class  WebRtcAudioRecord {
     public void run() {
       Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
       Logd("AudioRecordThread" + WebRtcAudioUtils.getThreadInfo());
-
-      try {
-        audioRecord.startRecording();
-      } catch (IllegalStateException e) {
-          Loge("AudioRecord.startRecording failed: " + e.getMessage());
-        return;
-      }
       assertTrue(audioRecord.getRecordingState()
           == AudioRecord.RECORDSTATE_RECORDING);
 
@@ -227,6 +220,16 @@ class  WebRtcAudioRecord {
     Logd("StartRecording");
     assertTrue(audioRecord != null);
     assertTrue(audioThread == null);
+    try {
+      audioRecord.startRecording();
+    } catch (IllegalStateException e) {
+      Loge("AudioRecord.startRecording failed: " + e.getMessage());
+      return false;
+    }
+    if (audioRecord.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
+      Loge("AudioRecord.startRecording failed");
+      return false;
+    }
     audioThread = new AudioRecordThread("AudioRecordJavaThread");
     audioThread.start();
     return true;
