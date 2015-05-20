@@ -185,8 +185,8 @@ int VoEHardwareImpl::GetRecordingDeviceName(int index,
   const uint16_t strLen = 128;
 
   // Check if length has been changed in module
-  assert(strLen == kAdmMaxDeviceNameSize);
-  assert(strLen == kAdmMaxGuidSize);
+  static_assert(strLen == kAdmMaxDeviceNameSize, "");
+  static_assert(strLen == kAdmMaxGuidSize, "");
 
   char name[strLen];
   char guid[strLen];
@@ -235,8 +235,8 @@ int VoEHardwareImpl::GetPlayoutDeviceName(int index,
   const uint16_t strLen = 128;
 
   // Check if length has been changed in module
-  assert(strLen == kAdmMaxDeviceNameSize);
-  assert(strLen == kAdmMaxGuidSize);
+  static_assert(strLen == kAdmMaxDeviceNameSize, "");
+  static_assert(strLen == kAdmMaxGuidSize, "");
 
   char name[strLen];
   char guid[strLen];

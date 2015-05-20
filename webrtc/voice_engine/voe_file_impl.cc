@@ -60,7 +60,7 @@ int VoEFileImpl::StartPlayingFileLocally(int channel,
                " stopPointMs=%d)",
                channel, fileNameUTF8, loop, format, volumeScaling, startPointMs,
                stopPointMs);
-  assert(1024 == FileWrapper::kMaxFileNameSize);
+  static_assert(1024 == FileWrapper::kMaxFileNameSize, "");
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -152,7 +152,7 @@ int VoEFileImpl::StartPlayingFileAsMicrophone(int channel,
                "volumeScaling=%5.3f)",
                channel, fileNameUTF8, loop, mixWithMicrophone, format,
                volumeScaling);
-  assert(1024 == FileWrapper::kMaxFileNameSize);
+  static_assert(1024 == FileWrapper::kMaxFileNameSize, "");
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -310,7 +310,7 @@ int VoEFileImpl::StartRecordingPlayout(int channel,
                "StartRecordingPlayout(channel=%d, fileNameUTF8=%s, "
                "compression, maxSizeBytes=%d)",
                channel, fileNameUTF8, maxSizeBytes);
-  assert(1024 == FileWrapper::kMaxFileNameSize);
+  static_assert(1024 == FileWrapper::kMaxFileNameSize, "");
 
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
@@ -384,7 +384,7 @@ int VoEFileImpl::StartRecordingMicrophone(const char* fileNameUTF8,
                "StartRecordingMicrophone(fileNameUTF8=%s, compression, "
                "maxSizeBytes=%d)",
                fileNameUTF8, maxSizeBytes);
-  assert(1024 == FileWrapper::kMaxFileNameSize);
+  static_assert(1024 == FileWrapper::kMaxFileNameSize, "");
 
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);

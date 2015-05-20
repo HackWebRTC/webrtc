@@ -572,7 +572,7 @@ int VoEBaseImpl::StopSend(int channel) {
 }
 
 int VoEBaseImpl::GetVersion(char version[1024]) {
-  assert(kVoiceEngineVersionMaxMessageSize == 1024);
+  static_assert(kVoiceEngineVersionMaxMessageSize == 1024, "");
 
   if (version == nullptr) {
     shared_->SetLastError(VE_INVALID_ARGUMENT, kTraceError);

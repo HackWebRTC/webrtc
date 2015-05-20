@@ -450,7 +450,7 @@ int VoERTP_RTCPImpl::StartRTPDump(int channel,
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "StartRTPDump(channel=%d, fileNameUTF8=%s, direction=%d)",
                channel, fileNameUTF8, direction);
-  assert(1024 == FileWrapper::kMaxFileNameSize);
+  static_assert(1024 == FileWrapper::kMaxFileNameSize, "");
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;

@@ -791,7 +791,7 @@ int AudioProcessingImpl::delay_offset_ms() const {
 int AudioProcessingImpl::StartDebugRecording(
     const char filename[AudioProcessing::kMaxFilenameSize]) {
   CriticalSectionScoped crit_scoped(crit_);
-  assert(kMaxFilenameSize == FileWrapper::kMaxFileNameSize);
+  static_assert(kMaxFilenameSize == FileWrapper::kMaxFileNameSize, "");
 
   if (filename == NULL) {
     return kNullPointerError;
