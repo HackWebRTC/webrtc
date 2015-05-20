@@ -87,7 +87,8 @@ DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
       downward_(NULL),
       dtls_state_(STATE_NONE),
       local_identity_(NULL),
-      ssl_role_(rtc::SSL_CLIENT) {
+      ssl_role_(rtc::SSL_CLIENT),
+      ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_10) {
   channel_->SignalReadableState.connect(this,
       &DtlsTransportChannelWrapper::OnReadableState);
   channel_->SignalWritableState.connect(this,
@@ -151,6 +152,17 @@ bool DtlsTransportChannelWrapper::GetLocalIdentity(
 
   *identity = local_identity_->GetReference();
   return true;
+}
+
+void DtlsTransportChannelWrapper::SetMaxProtocolVersion(
+    rtc::SSLProtocolVersion version) {
+  if (dtls_state_ != STATE_NONE) {
+    LOG(LS_ERROR) << "Not changing max. protocol version "
+                  << "while DTLS is negotiating";
+    return;
+  }
+
+  ssl_max_version_ = version;
 }
 
 bool DtlsTransportChannelWrapper::SetSslRole(rtc::SSLRole role) {
@@ -244,6 +256,7 @@ bool DtlsTransportChannelWrapper::SetupDtls() {
 
   dtls_->SetIdentity(local_identity_->GetReference());
   dtls_->SetMode(rtc::SSL_MODE_DTLS);
+  dtls_->SetMaxProtocolVersion(ssl_max_version_);
   dtls_->SetServerRole(ssl_role_);
   dtls_->SignalEvent.connect(this, &DtlsTransportChannelWrapper::OnDtlsEvent);
   if (!dtls_->SetPeerCertificateDigest(

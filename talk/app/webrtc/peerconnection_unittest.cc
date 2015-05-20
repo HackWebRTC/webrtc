@@ -1312,8 +1312,10 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetNegotiatedCiphersStats) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
 
+  // TODO(jbauch): this should check for DTLS 1.0 / 1.2 when we have a way to
+  // enable DTLS 1.2 on peer connections.
   EXPECT_EQ_WAIT(
-      rtc::SSLStreamAdapter::GetDefaultSslCipher(),
+      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_10),
       initializing_client()->GetDtlsCipherStats(),
       kMaxWaitForStatsMs);
 

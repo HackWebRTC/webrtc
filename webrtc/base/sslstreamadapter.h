@@ -36,6 +36,13 @@ namespace rtc {
 
 enum SSLRole { SSL_CLIENT, SSL_SERVER };
 enum SSLMode { SSL_MODE_TLS, SSL_MODE_DTLS };
+enum SSLProtocolVersion {
+  SSL_PROTOCOL_TLS_10,
+  SSL_PROTOCOL_TLS_11,
+  SSL_PROTOCOL_TLS_12,
+  SSL_PROTOCOL_DTLS_10 = SSL_PROTOCOL_TLS_11,
+  SSL_PROTOCOL_DTLS_12 = SSL_PROTOCOL_TLS_12,
+};
 
 // Errors for Read -- in the high range so no conflict with OpenSSL.
 enum { SSE_MSG_TRUNC = 0xff0001 };
@@ -73,6 +80,13 @@ class SSLStreamAdapter : public StreamAdapterInterface {
 
   // Do DTLS or TLS
   virtual void SetMode(SSLMode mode) = 0;
+
+  // Set maximum supported protocol version. The highest version supported by
+  // both ends will be used for the connection, i.e. if one party supports
+  // DTLS 1.0 and the other DTLS 1.2, DTLS 1.0 will be used.
+  // If requested version is not supported by underlying crypto library, the
+  // next lower will be used.
+  virtual void SetMaxProtocolVersion(SSLProtocolVersion version) = 0;
 
   // The mode of operation is selected by calling either
   // StartSSLWithServer or StartSSLWithPeer.
@@ -151,9 +165,9 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
 
-  // Returns the default Ssl cipher used between streams of this class.
-  // This is used by the unit tests.
-  static std::string GetDefaultSslCipher();
+  // Returns the default Ssl cipher used between streams of this class
+  // for the given protocol version. This is used by the unit tests.
+  static std::string GetDefaultSslCipher(SSLProtocolVersion version);
 
  private:
   // If true, the server certificate need not match the configured

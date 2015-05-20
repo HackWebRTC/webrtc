@@ -74,6 +74,7 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   int StartSSLWithServer(const char* server_name) override;
   int StartSSLWithPeer() override;
   void SetMode(SSLMode mode) override;
+  void SetMaxProtocolVersion(SSLProtocolVersion version) override;
 
   StreamResult Read(void* data,
                     size_t data_len,
@@ -109,7 +110,7 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   static bool HaveDtls();
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
-  static std::string GetDefaultSslCipher();
+  static std::string GetDefaultSslCipher(SSLProtocolVersion version);
 
  protected:
   void OnEvent(StreamInterface* stream, int events, int err) override;
@@ -201,6 +202,9 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
 
   // Do DTLS or not
   SSLMode ssl_mode_;
+
+  // Max. allowed protocol version
+  SSLProtocolVersion ssl_max_version_;
 };
 
 /////////////////////////////////////////////////////////////////////////////

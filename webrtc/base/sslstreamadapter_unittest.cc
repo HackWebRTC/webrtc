@@ -271,6 +271,12 @@ class SSLStreamAdapterTestBase : public testing::Test,
     identities_set_ = true;
   }
 
+  void SetupProtocolVersions(rtc::SSLProtocolVersion server_version,
+                             rtc::SSLProtocolVersion client_version) {
+    server_ssl_->SetMaxProtocolVersion(server_version);
+    client_ssl_->SetMaxProtocolVersion(client_version);
+  }
+
   void TestHandshake(bool expect_success = true) {
     server_ssl_->SetMode(dtls_ ? rtc::SSL_MODE_DTLS :
                          rtc::SSL_MODE_TLS);
@@ -948,8 +954,10 @@ TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
 }
 
 // Test getting the used DTLS ciphers.
+// DTLS 1.2 enabled for neither client nor server -> DTLS 1.0 will be used.
 TEST_F(SSLStreamAdapterTestDTLS, TestGetSslCipher) {
   MAYBE_SKIP_TEST(HaveDtls);
+  SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_10);
   TestHandshake();
 
   std::string client_cipher;
@@ -958,5 +966,59 @@ TEST_F(SSLStreamAdapterTestDTLS, TestGetSslCipher) {
   ASSERT_TRUE(GetSslCipher(false, &server_cipher));
 
   ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_EQ(rtc::SSLStreamAdapter::GetDefaultSslCipher(), client_cipher);
+  ASSERT_EQ(
+      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_10),
+      client_cipher);
+}
+
+// Test getting the used DTLS 1.2 ciphers.
+// DTLS 1.2 enabled for client and server -> DTLS 1.2 will be used.
+TEST_F(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Both) {
+  MAYBE_SKIP_TEST(HaveDtls);
+  SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_12);
+  TestHandshake();
+
+  std::string client_cipher;
+  ASSERT_TRUE(GetSslCipher(true, &client_cipher));
+  std::string server_cipher;
+  ASSERT_TRUE(GetSslCipher(false, &server_cipher));
+
+  ASSERT_EQ(client_cipher, server_cipher);
+  ASSERT_EQ(
+      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_12),
+      client_cipher);
+}
+
+// DTLS 1.2 enabled for client only -> DTLS 1.0 will be used.
+TEST_F(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Client) {
+  MAYBE_SKIP_TEST(HaveDtls);
+  SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_12);
+  TestHandshake();
+
+  std::string client_cipher;
+  ASSERT_TRUE(GetSslCipher(true, &client_cipher));
+  std::string server_cipher;
+  ASSERT_TRUE(GetSslCipher(false, &server_cipher));
+
+  ASSERT_EQ(client_cipher, server_cipher);
+  ASSERT_EQ(
+      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_10),
+      client_cipher);
+}
+
+// DTLS 1.2 enabled for server only -> DTLS 1.0 will be used.
+TEST_F(SSLStreamAdapterTestDTLS, TestGetSslCipherDtls12Server) {
+  MAYBE_SKIP_TEST(HaveDtls);
+  SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_10);
+  TestHandshake();
+
+  std::string client_cipher;
+  ASSERT_TRUE(GetSslCipher(true, &client_cipher));
+  std::string server_cipher;
+  ASSERT_TRUE(GetSslCipher(false, &server_cipher));
+
+  ASSERT_EQ(client_cipher, server_cipher);
+  ASSERT_EQ(
+      rtc::SSLStreamAdapter::GetDefaultSslCipher(rtc::SSL_PROTOCOL_DTLS_10),
+      client_cipher);
 }

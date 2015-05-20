@@ -68,7 +68,8 @@ static const SrtpCipherMapEntry kSrtpCipherMap[] = {
 
 // Default cipher used between NSS stream adapters.
 // This needs to be updated when the default of the SSL library changes.
-static const char kDefaultSslCipher[] = "TLS_RSA_WITH_AES_128_CBC_SHA";
+static const char kDefaultSslCipher10[] = "TLS_RSA_WITH_AES_128_CBC_SHA";
+static const char kDefaultSslCipher12[] = "TLS_RSA_WITH_AES_128_GCM_SHA256";
 
 
 // Implementation of NSPR methods
@@ -501,10 +502,33 @@ int NSSStreamAdapter::BeginSSL() {
 
   // Set the version range.
   SSLVersionRange vrange;
-  vrange.min =  (ssl_mode_ == SSL_MODE_DTLS) ?
-      SSL_LIBRARY_VERSION_TLS_1_1 :
-      SSL_LIBRARY_VERSION_TLS_1_0;
-  vrange.max = SSL_LIBRARY_VERSION_TLS_1_1;
+  if (ssl_mode_ == SSL_MODE_DTLS) {
+    vrange.min = SSL_LIBRARY_VERSION_TLS_1_1;
+    switch (ssl_max_version_) {
+      case SSL_PROTOCOL_DTLS_10:
+        vrange.max = SSL_LIBRARY_VERSION_TLS_1_1;
+        break;
+      case SSL_PROTOCOL_DTLS_12:
+      default:
+        vrange.max = SSL_LIBRARY_VERSION_TLS_1_2;
+        break;
+    }
+  } else {
+    // SSL_MODE_TLS
+    vrange.min = SSL_LIBRARY_VERSION_TLS_1_0;
+    switch (ssl_max_version_) {
+      case SSL_PROTOCOL_TLS_10:
+        vrange.max = SSL_LIBRARY_VERSION_TLS_1_0;
+        break;
+      case SSL_PROTOCOL_TLS_11:
+        vrange.max = SSL_LIBRARY_VERSION_TLS_1_1;
+        break;
+      case SSL_PROTOCOL_TLS_12:
+      default:
+        vrange.max = SSL_LIBRARY_VERSION_TLS_1_2;
+        break;
+    }
+  }
 
   rv = SSL_VersionRangeSet(ssl_fd_, &vrange);
   if (rv != SECSuccess) {
@@ -1043,8 +1067,15 @@ bool NSSStreamAdapter::HaveExporter() {
   return true;
 }
 
-std::string NSSStreamAdapter::GetDefaultSslCipher() {
-  return kDefaultSslCipher;
+std::string NSSStreamAdapter::GetDefaultSslCipher(SSLProtocolVersion version) {
+  switch (version) {
+    case SSL_PROTOCOL_TLS_10:
+    case SSL_PROTOCOL_TLS_11:
+      return kDefaultSslCipher10;
+    case SSL_PROTOCOL_TLS_12:
+    default:
+      return kDefaultSslCipher12;
+  }
 }
 
 }  // namespace rtc
