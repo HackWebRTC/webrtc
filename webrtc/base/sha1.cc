@@ -91,6 +91,11 @@
  *   84983E44 1C3BD26E BAAE4AA1 F95129E5 E54670F1
  * A million repetitions of "a"
  *   34AA973C D4C4DAA4 F61EEB2B DBAD2731 6534016F
+ *
+ * -----------------
+ * Modified 05/2015
+ * By Sergey Ulanov <sergeyu@chromium.org>
+ * Removed static buffer to make computation thread-safe.
  */
 
 // Enabling SHA1HANDSOFF preserves the caller's data buffer.
@@ -157,7 +162,7 @@ void SHA1Transform(uint32 state[5], const uint8 buffer[64]) {
     uint32 l[16];
   };
 #ifdef SHA1HANDSOFF
-  static uint8 workspace[64];
+  uint8 workspace[64];
   memcpy(workspace, buffer, 64);
   CHAR64LONG16* block = reinterpret_cast<CHAR64LONG16*>(workspace);
 #else
