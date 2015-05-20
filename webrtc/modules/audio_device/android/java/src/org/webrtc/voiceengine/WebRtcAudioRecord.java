@@ -140,6 +140,11 @@ class  WebRtcAudioRecord {
   private int InitRecording(int sampleRate, int channels) {
     Logd("InitRecording(sampleRate=" + sampleRate + ", channels=" +
         channels + ")");
+    if (!WebRtcAudioUtils.hasPermission(
+        context, android.Manifest.permission.RECORD_AUDIO)) {
+      Loge("RECORD_AUDIO permission is missing");
+      return -1;
+    }
     final int bytesPerFrame = channels * (BITS_PER_SAMPLE / 8);
     final int framesPerBuffer = sampleRate / BUFFERS_PER_SECOND;
     byteBuffer = byteBuffer.allocateDirect(bytesPerFrame * framesPerBuffer);

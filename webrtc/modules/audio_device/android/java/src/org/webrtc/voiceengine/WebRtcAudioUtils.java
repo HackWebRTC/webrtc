@@ -10,11 +10,14 @@
 
 package org.webrtc.voiceengine;
 
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.media.audiofx.AcousticEchoCanceler;
 import android.media.audiofx.AudioEffect;
 import android.media.audiofx.AudioEffect.Descriptor;
 import android.media.AudioManager;
 import android.os.Build;
+import android.os.Process;
 import android.util.Log;
 
 import java.lang.Thread;
@@ -96,4 +99,12 @@ public final class WebRtcAudioUtils {
         + "Model: " + Build.MODEL + ", "
         + "Product: " + Build.PRODUCT);
   }
+
+  // Checks if the process has as specified permission or not.
+  public static boolean hasPermission(Context context, String permission) {
+    return context.checkPermission(
+        permission,
+        Process.myPid(),
+        Process.myUid()) == PackageManager.PERMISSION_GRANTED;
+    }
 }
