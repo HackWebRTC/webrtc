@@ -1035,10 +1035,6 @@ class FakeWebRtcVoiceEngine
     channels_[channel]->nack_max_packets = maxNoPackets;
     return 0;
   }
-  WEBRTC_STUB(StartRTPDump, (int channel, const char* fileNameUTF8,
-                             webrtc::RTPDirections direction));
-  WEBRTC_STUB(StopRTPDump, (int channel, webrtc::RTPDirections direction));
-  WEBRTC_STUB(RTPDumpIsActive, (int channel, webrtc::RTPDirections direction));
   WEBRTC_STUB(InsertExtraRTPPacket, (int channel, unsigned char payloadType,
                                      bool markerBit, const char* payloadData,
                                      unsigned short payloadSize));

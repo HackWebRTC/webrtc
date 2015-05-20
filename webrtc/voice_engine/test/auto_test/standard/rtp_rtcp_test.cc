@@ -117,23 +117,3 @@ TEST_F(RtpRtcpTest, DISABLED_ON_LINUX(SSRCPropagatesCorrectly)) {
   EXPECT_EQ(0, voe_rtp_rtcp_->GetRemoteSSRC(channel_, ssrc));
   EXPECT_EQ(local_ssrc, ssrc);
 }
-
-// TODO(xians, phoglund): Re-enable when issue 372 is resolved.
-TEST_F(RtpRtcpTest, DISABLED_CanCreateRtpDumpFilesWithoutError) {
-  // Create two RTP dump files (3 seconds long). You can verify these after
-  // the test using rtpplay or NetEqRTPplay if you like.
-  std::string output_path = webrtc::test::OutputPath();
-  std::string incoming_filename = output_path + "dump_in_3sec.rtp";
-  std::string outgoing_filename = output_path + "dump_out_3sec.rtp";
-
-  EXPECT_EQ(0, voe_rtp_rtcp_->StartRTPDump(
-      channel_, incoming_filename.c_str(), webrtc::kRtpIncoming));
-  EXPECT_EQ(0, voe_rtp_rtcp_->StartRTPDump(
-      channel_, outgoing_filename.c_str(), webrtc::kRtpOutgoing));
-
-  Sleep(3000);
-
-  EXPECT_EQ(0, voe_rtp_rtcp_->StopRTPDump(channel_, webrtc::kRtpIncoming));
-  EXPECT_EQ(0, voe_rtp_rtcp_->StopRTPDump(channel_, webrtc::kRtpOutgoing));
-}
-

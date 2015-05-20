@@ -444,61 +444,6 @@ int VoERTP_RTCPImpl::SetNACKStatus(int channel, bool enable, int maxNoPackets) {
   return 0;
 }
 
-int VoERTP_RTCPImpl::StartRTPDump(int channel,
-                                  const char fileNameUTF8[1024],
-                                  RTPDirections direction) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "StartRTPDump(channel=%d, fileNameUTF8=%s, direction=%d)",
-               channel, fileNameUTF8, direction);
-  static_assert(1024 == FileWrapper::kMaxFileNameSize, "");
-  if (!_shared->statistics().Initialized()) {
-    _shared->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == NULL) {
-    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "StartRTPDump() failed to locate channel");
-    return -1;
-  }
-  return channelPtr->StartRTPDump(fileNameUTF8, direction);
-}
-
-int VoERTP_RTCPImpl::StopRTPDump(int channel, RTPDirections direction) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "StopRTPDump(channel=%d, direction=%d)", channel, direction);
-  if (!_shared->statistics().Initialized()) {
-    _shared->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == NULL) {
-    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "StopRTPDump() failed to locate channel");
-    return -1;
-  }
-  return channelPtr->StopRTPDump(direction);
-}
-
-int VoERTP_RTCPImpl::RTPDumpIsActive(int channel, RTPDirections direction) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "RTPDumpIsActive(channel=%d, direction=%d)", channel, direction);
-  if (!_shared->statistics().Initialized()) {
-    _shared->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == NULL) {
-    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "StopRTPDump() failed to locate channel");
-    return -1;
-  }
-  return channelPtr->RTPDumpIsActive(direction);
-}
-
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_RTP_RTCP_API
 
 }  // namespace webrtc

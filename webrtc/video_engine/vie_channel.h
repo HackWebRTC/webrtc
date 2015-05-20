@@ -248,10 +248,6 @@ class ViEChannel
   // Called on any new send bitrate estimate.
   void RegisterSendBitrateObserver(BitrateStatisticsObserver* observer);
 
-  int32_t StartRTPDump(const char file_nameUTF8[1024],
-                       RTPDirections direction);
-  int32_t StopRTPDump(RTPDirections direction);
-
   // Implements RtpFeedback.
   virtual int32_t OnInitializeDecoder(
       const int32_t id,

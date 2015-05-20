@@ -10,28 +10,15 @@
 
 #include "webrtc/video_engine/vie_sender.h"
 
-#include <assert.h>
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
-
-#include "webrtc/modules/utility/interface/rtp_dump.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
-ViESender::ViESender(int channel_id)
-    : channel_id_(channel_id),
-      critsect_(CriticalSectionWrapper::CreateCriticalSection()),
-      transport_(NULL),
-      rtp_dump_(NULL) {
-}
-
-ViESender::~ViESender() {
-  if (rtp_dump_) {
-    rtp_dump_->Stop();
-    RtpDump::DestroyRtpDump(rtp_dump_);
-    rtp_dump_ = NULL;
-  }
+ViESender::ViESender()
+    : critsect_(CriticalSectionWrapper::CreateCriticalSection()),
+      transport_(NULL) {
 }
 
 int ViESender::RegisterSendTransport(Transport* transport) {
@@ -52,66 +39,22 @@ int ViESender::DeregisterSendTransport() {
   return 0;
 }
 
-int ViESender::StartRTPDump(const char file_nameUTF8[1024]) {
-  CriticalSectionScoped cs(critsect_.get());
-  if (rtp_dump_) {
-    // Packet dump is already started, restart it.
-    rtp_dump_->Stop();
-  } else {
-    rtp_dump_ = RtpDump::CreateRtpDump();
-    if (rtp_dump_ == NULL) {
-      return -1;
-    }
-  }
-  if (rtp_dump_->Start(file_nameUTF8) != 0) {
-    RtpDump::DestroyRtpDump(rtp_dump_);
-    rtp_dump_ = NULL;
-    return -1;
-  }
-  return 0;
-}
-
-int ViESender::StopRTPDump() {
-  CriticalSectionScoped cs(critsect_.get());
-  if (rtp_dump_) {
-    if (rtp_dump_->IsActive()) {
-      rtp_dump_->Stop();
-    }
-    RtpDump::DestroyRtpDump(rtp_dump_);
-    rtp_dump_ = NULL;
-  } else {
-    return -1;
-  }
-  return 0;
-}
-
-int ViESender::SendPacket(int vie_id, const void* data, size_t len) {
+int ViESender::SendPacket(int id, const void* data, size_t len) {
   CriticalSectionScoped cs(critsect_.get());
   if (!transport_) {
     // No transport
     return -1;
   }
-  assert(ChannelId(vie_id) == channel_id_);
-
-  if (rtp_dump_) {
-    rtp_dump_->DumpPacket(static_cast<const uint8_t*>(data), len);
-  }
-
-  return transport_->SendPacket(channel_id_, data, len);
+  return transport_->SendPacket(id, data, len);
 }
 
-int ViESender::SendRTCPPacket(int vie_id, const void* data, size_t len) {
+int ViESender::SendRTCPPacket(int id, const void* data, size_t len) {
   CriticalSectionScoped cs(critsect_.get());
   if (!transport_) {
     return -1;
   }
-  assert(ChannelId(vie_id) == channel_id_);
 
-  if (rtp_dump_) {
-    rtp_dump_->DumpPacket(static_cast<const uint8_t*>(data), len);
-  }
-
-  return transport_->SendRTCPPacket(channel_id_, data, len);
+  return transport_->SendRTCPPacket(id, data, len);
 }
 
 }  // namespace webrtc

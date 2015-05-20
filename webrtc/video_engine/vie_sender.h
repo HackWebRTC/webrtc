@@ -22,34 +22,25 @@
 namespace webrtc {
 
 class CriticalSectionWrapper;
-class RtpDump;
 class Transport;
 class VideoCodingModule;
 
 class ViESender: public Transport {
  public:
-  explicit ViESender(const int32_t channel_id);
-  ~ViESender();
+  ViESender();
 
   // Registers transport to use for sending RTP and RTCP.
   int RegisterSendTransport(Transport* transport);
   int DeregisterSendTransport();
-
-  // Stores all incoming packets to file.
-  int StartRTPDump(const char file_nameUTF8[1024]);
-  int StopRTPDump();
 
   // Implements Transport.
   int SendPacket(int vie_id, const void* data, size_t len) override;
   int SendRTCPPacket(int vie_id, const void* data, size_t len) override;
 
  private:
-  const int32_t channel_id_;
-
   rtc::scoped_ptr<CriticalSectionWrapper> critsect_;
 
   Transport* transport_;
-  RtpDump* rtp_dump_;
 };
 
 }  // namespace webrtc

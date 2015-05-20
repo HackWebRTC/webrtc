@@ -105,7 +105,6 @@ ViEChannel::ViEChannel(int32_t channel_id,
                                      nullptr,
                                      nullptr)),
       vie_receiver_(channel_id, vcm_, remote_bitrate_estimator, this),
-      vie_sender_(channel_id),
       vie_sync_(vcm_, this),
       stats_observer_(new ChannelStatsObserver(this)),
       vcm_receive_stats_callback_(NULL),
@@ -1292,23 +1291,6 @@ void ViEChannel::RegisterSendSideDelayObserver(
 void ViEChannel::RegisterSendBitrateObserver(
     BitrateStatisticsObserver* observer) {
   send_bitrate_observer_.Set(observer);
-}
-
-int32_t ViEChannel::StartRTPDump(const char file_nameUTF8[1024],
-                                 RTPDirections direction) {
-  if (direction == kRtpIncoming) {
-    return vie_receiver_.StartRTPDump(file_nameUTF8);
-  } else {
-    return vie_sender_.StartRTPDump(file_nameUTF8);
-  }
-}
-
-int32_t ViEChannel::StopRTPDump(RTPDirections direction) {
-  if (direction == kRtpIncoming) {
-    return vie_receiver_.StopRTPDump();
-  } else {
-    return vie_sender_.StopRTPDump();
-  }
 }
 
 int32_t ViEChannel::StartSend() {

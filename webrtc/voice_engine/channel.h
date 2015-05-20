@@ -51,7 +51,6 @@ class FileWrapper;
 class ProcessThread;
 class ReceiveStatistics;
 class RemoteNtpTimeEstimator;
-class RtpDump;
 class RTPPayloadRegistry;
 class RtpReceiver;
 class RTPReceiverAudio;
@@ -339,9 +338,6 @@ public:
     int SetCodecFECStatus(bool enable);
     bool GetCodecFECStatus();
     void SetNACKStatus(bool enable, int maxNumberOfPackets);
-    int StartRTPDump(const char fileNameUTF8[1024], RTPDirections direction);
-    int StopRTPDump(RTPDirections direction);
-    bool RTPDumpIsActive(RTPDirections direction);
 
     // From AudioPacketizationCallback in the ACM
     int32_t SendData(FrameType frameType,
@@ -496,8 +492,6 @@ private:
     TelephoneEventHandler* telephone_event_handler_;
     rtc::scoped_ptr<RtpRtcp> _rtpRtcpModule;
     rtc::scoped_ptr<AudioCodingModule> audio_coding_;
-    RtpDump& _rtpDumpIn;
-    RtpDump& _rtpDumpOut;
     AudioLevel _outputAudioLevel;
     bool _externalTransport;
     AudioFrame _audioFrame;

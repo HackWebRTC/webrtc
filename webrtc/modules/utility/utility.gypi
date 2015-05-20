@@ -24,7 +24,6 @@
         'interface/helpers_android.h',
         'interface/jvm_android.h',
         'interface/process_thread.h',
-        'interface/rtp_dump.h',
         'source/audio_frame_operations.cc',
         'source/coder.cc',
         'source/coder.h',
@@ -36,8 +35,6 @@
         'source/jvm_android.cc',
         'source/process_thread_impl.cc',
         'source/process_thread_impl.h',
-        'source/rtp_dump_impl.cc',
-        'source/rtp_dump_impl.h',
       ],
     },
   ], # targets

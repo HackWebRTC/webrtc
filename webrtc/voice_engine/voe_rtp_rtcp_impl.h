@@ -79,16 +79,6 @@ class VoERTP_RTCPImpl : public VoERTP_RTCP {
   // NACK
   int SetNACKStatus(int channel, bool enable, int maxNoPackets) override;
 
-  // Store RTP and RTCP packets and dump to file (compatible with rtpplay)
-  int StartRTPDump(int channel,
-                   const char fileNameUTF8[1024],
-                   RTPDirections direction = kRtpIncoming) override;
-
-  int StopRTPDump(int channel, RTPDirections direction = kRtpIncoming) override;
-
-  int RTPDumpIsActive(int channel,
-                      RTPDirections direction = kRtpIncoming) override;
-
  protected:
   VoERTP_RTCPImpl(voe::SharedData* shared);
   ~VoERTP_RTCPImpl() override;

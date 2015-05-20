@@ -25,7 +25,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 #include "webrtc/modules/utility/interface/audio_frame_operations.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
-#include "webrtc/modules/utility/interface/rtp_dump.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -245,14 +244,6 @@ Channel::SendPacket(int channel, const void *data, size_t len)
     uint8_t* bufferToSendPtr = (uint8_t*)data;
     size_t bufferLength = len;
 
-    // Dump the RTP packet to a file (if RTP dump is enabled).
-    if (_rtpDumpOut.DumpPacket((const uint8_t*)data, len) == -1)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                     VoEId(_instanceId,_channelId),
-                     "Channel::SendPacket() RTP dump to output file failed");
-    }
-
     int n = _transportPtr->SendPacket(channel, bufferToSendPtr,
                                       bufferLength);
     if (n < 0) {
@@ -289,14 +280,6 @@ Channel::SendRTCPPacket(int channel, const void *data, size_t len)
 
     uint8_t* bufferToSendPtr = (uint8_t*)data;
     size_t bufferLength = len;
-
-    // Dump the RTCP packet to a file (if RTP dump is enabled).
-    if (_rtpDumpOut.DumpPacket((const uint8_t*)data, len) == -1)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                     VoEId(_instanceId,_channelId),
-                     "Channel::SendPacket() RTCP dump to output file failed");
-    }
 
     int n = _transportPtr->SendRTCPPacket(channel,
                                           bufferToSendPtr,
@@ -759,8 +742,6 @@ Channel::Channel(int32_t channelId,
         VoEModuleId(instanceId, channelId), Clock::GetRealTimeClock(), this,
         this, this, rtp_payload_registry_.get())),
     telephone_event_handler_(rtp_receiver_->GetTelephoneEventHandler()),
-    _rtpDumpIn(*RtpDump::CreateRtpDump()),
-    _rtpDumpOut(*RtpDump::CreateRtpDump()),
     _outputAudioLevel(),
     _externalTransport(false),
     _inputFilePlayerPtr(NULL),
@@ -927,8 +908,6 @@ Channel::~Channel()
     // End of modules shutdown
 
     // Delete other objects
-    RtpDump::DestroyRtpDump(&_rtpDumpIn);
-    RtpDump::DestroyRtpDump(&_rtpDumpOut);
     delete &_callbackCritSect;
     delete &_fileCritSect;
     delete &volume_settings_critsect_;
@@ -1640,13 +1619,6 @@ int32_t Channel::ReceivedRTPPacket(const int8_t* data, size_t length,
   // Store playout timestamp for the received RTP packet
   UpdatePlayoutTimestamp(false);
 
-  // Dump the RTP packet to a file (if RTP dump is enabled).
-  if (_rtpDumpIn.DumpPacket((const uint8_t*)data,
-                            (uint16_t)length) == -1) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                 VoEId(_instanceId,_channelId),
-                 "Channel::SendPacket() RTP dump to input file failed");
-  }
   const uint8_t* received_packet = reinterpret_cast<const uint8_t*>(data);
   RTPHeader header;
   if (!rtp_header_parser_->Parse(received_packet, length, &header)) {
@@ -1744,13 +1716,6 @@ int32_t Channel::ReceivedRTCPPacket(const int8_t* data, size_t length) {
                "Channel::ReceivedRTCPPacket()");
   // Store playout timestamp for the received RTCP packet
   UpdatePlayoutTimestamp(true);
-
-  // Dump the RTCP packet to a file (if RTP dump is enabled).
-  if (_rtpDumpIn.DumpPacket((const uint8_t*)data, length) == -1) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                 VoEId(_instanceId,_channelId),
-                 "Channel::SendPacket() RTCP dump to input file failed");
-  }
 
   // Deliver RTCP packet to RTP/RTCP module for parsing
   if (_rtpRtcpModule->IncomingRtcpPacket((const uint8_t*)data, length) == -1) {
@@ -3370,82 +3335,6 @@ void Channel::SetNACKStatus(bool enable, int maxNumberOfPackets) {
 // Called when we are missing one or more packets.
 int Channel::ResendPackets(const uint16_t* sequence_numbers, int length) {
   return _rtpRtcpModule->SendNACK(sequence_numbers, length);
-}
-
-int
-Channel::StartRTPDump(const char fileNameUTF8[1024],
-                      RTPDirections direction)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-                 "Channel::StartRTPDump()");
-    if ((direction != kRtpIncoming) && (direction != kRtpOutgoing))
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_ARGUMENT, kTraceError,
-            "StartRTPDump() invalid RTP direction");
-        return -1;
-    }
-    RtpDump* rtpDumpPtr = (direction == kRtpIncoming) ?
-        &_rtpDumpIn : &_rtpDumpOut;
-    if (rtpDumpPtr == NULL)
-    {
-        assert(false);
-        return -1;
-    }
-    if (rtpDumpPtr->IsActive())
-    {
-        rtpDumpPtr->Stop();
-    }
-    if (rtpDumpPtr->Start(fileNameUTF8) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_BAD_FILE, kTraceError,
-            "StartRTPDump() failed to create file");
-        return -1;
-    }
-    return 0;
-}
-
-int
-Channel::StopRTPDump(RTPDirections direction)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-                 "Channel::StopRTPDump()");
-    if ((direction != kRtpIncoming) && (direction != kRtpOutgoing))
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_ARGUMENT, kTraceError,
-            "StopRTPDump() invalid RTP direction");
-        return -1;
-    }
-    RtpDump* rtpDumpPtr = (direction == kRtpIncoming) ?
-        &_rtpDumpIn : &_rtpDumpOut;
-    if (rtpDumpPtr == NULL)
-    {
-        assert(false);
-        return -1;
-    }
-    if (!rtpDumpPtr->IsActive())
-    {
-        return 0;
-    }
-    return rtpDumpPtr->Stop();
-}
-
-bool
-Channel::RTPDumpIsActive(RTPDirections direction)
-{
-    if ((direction != kRtpIncoming) &&
-        (direction != kRtpOutgoing))
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_ARGUMENT, kTraceError,
-            "RTPDumpIsActive() invalid RTP direction");
-        return false;
-    }
-    RtpDump* rtpDumpPtr = (direction == kRtpIncoming) ?
-        &_rtpDumpIn : &_rtpDumpOut;
-    return rtpDumpPtr->IsActive();
 }
 
 uint32_t

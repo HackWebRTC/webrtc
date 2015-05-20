@@ -27,7 +27,6 @@ class FecReceiver;
 class RemoteNtpTimeEstimator;
 class ReceiveStatistics;
 class RemoteBitrateEstimator;
-class RtpDump;
 class RtpHeaderParser;
 class RTPPayloadRegistry;
 class RtpReceiver;
@@ -67,9 +66,6 @@ class ViEReceiver : public RtpData {
 
   void StartReceive();
   void StopReceive();
-
-  int StartRTPDump(const char file_nameUTF8[1024]);
-  int StopRTPDump();
 
   // Receives packets from external transport.
   int ReceivedRTPPacket(const void* rtp_packet, size_t rtp_packet_length,
@@ -115,7 +111,6 @@ class ViEReceiver : public RtpData {
 
   rtc::scoped_ptr<RemoteNtpTimeEstimator> ntp_estimator_;
 
-  RtpDump* rtp_dump_;
   bool receiving_;
   uint8_t restored_packet_[kViEMaxMtu];
   bool restored_packet_in_use_;
