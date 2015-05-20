@@ -35,7 +35,6 @@
 
 #include "talk/media/base/rtputils.h"
 #include "talk/media/webrtc/webrtccommon.h"
-#include "talk/media/webrtc/webrtcexport.h"
 #include "talk/media/webrtc/webrtcvoe.h"
 #include "talk/session/media/channel.h"
 #include "webrtc/base/buffer.h"
@@ -47,15 +46,6 @@
 #include "webrtc/call.h"
 #include "webrtc/common.h"
 #include "webrtc/config.h"
-
-#if !defined(LIBPEERCONNECTION_LIB) && \
-    !defined(LIBPEERCONNECTION_IMPLEMENTATION)
-// If you hit this, then you've tried to include this header from outside
-// the shared library.  An instance of this class must only be created from
-// within the library that actually implements it.  Otherwise use the
-// WebRtcMediaEngine to construct an instance.
-#error "Bogus include."
-#endif
 
 namespace webrtc {
 class VideoEngine;

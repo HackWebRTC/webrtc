@@ -475,7 +475,6 @@
         'media/webrtc/simulcast.cc',
         'media/webrtc/simulcast.h',
         'media/webrtc/webrtccommon.h',
-        'media/webrtc/webrtcexport.h',
         'media/webrtc/webrtcmediaengine.cc',
         'media/webrtc/webrtcmediaengine.h',
         'media/webrtc/webrtcmediaengine.cc',

@@ -25,8 +25,6 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if defined(LIBPEERCONNECTION_LIB) || defined(LIBPEERCONNECTION_IMPLEMENTATION)
-
 #include "talk/media/webrtc/webrtcmediaengine.h"
 #include "talk/media/webrtc/webrtcvideoengine2.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
@@ -47,7 +45,6 @@ class WebRtcMediaEngine2
 
 }  // namespace cricket
 
-WRME_EXPORT
 cricket::MediaEngineInterface* CreateWebRtcMediaEngine(
     webrtc::AudioDeviceModule* adm,
     cricket::WebRtcVideoEncoderFactory* encoder_factory,
@@ -56,7 +53,6 @@ cricket::MediaEngineInterface* CreateWebRtcMediaEngine(
                                          decoder_factory);
 }
 
-WRME_EXPORT
 void DestroyWebRtcMediaEngine(cricket::MediaEngineInterface* media_engine) {
   delete media_engine;
 }
@@ -73,6 +69,3 @@ MediaEngineInterface* WebRtcMediaEngineFactory::Create(
 }
 
 }  // namespace cricket
-
-#endif  // defined(LIBPEERCONNECTION_LIB) ||
-        // defined(LIBPEERCONNECTION_IMPLEMENTATION)
