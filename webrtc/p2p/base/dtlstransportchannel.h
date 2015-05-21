@@ -16,6 +16,7 @@
 
 #include "webrtc/p2p/base/transportchannelimpl.h"
 #include "webrtc/base/buffer.h"
+#include "webrtc/base/bufferqueue.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/stream.h"
@@ -24,15 +25,9 @@ namespace cricket {
 
 // A bridge between a packet-oriented/channel-type interface on
 // the bottom and a StreamInterface on the top.
-class StreamInterfaceChannel : public rtc::StreamInterface,
-                               public sigslot::has_slots<> {
+class StreamInterfaceChannel : public rtc::StreamInterface {
  public:
-  StreamInterfaceChannel(rtc::Thread* owner, TransportChannel* channel)
-      : channel_(channel),
-        state_(rtc::SS_OPEN),
-        fifo_(kFifoSize, owner) {
-    fifo_.SignalEvent.connect(this, &StreamInterfaceChannel::OnEvent);
-  }
+  StreamInterfaceChannel(TransportChannel* channel);
 
   // Push in a packet; this gets pulled out from Read().
   bool OnPacketReceived(const char* data, size_t size);
@@ -46,14 +41,9 @@ class StreamInterfaceChannel : public rtc::StreamInterface,
                                         size_t* written, int* error);
 
  private:
-  static const size_t kFifoSize = 8192;
-
-  // Forward events
-  virtual void OnEvent(rtc::StreamInterface* stream, int sig, int err);
-
   TransportChannel* channel_;  // owned by DtlsTransportChannelWrapper
   rtc::StreamState state_;
-  rtc::FifoBuffer fifo_;
+  rtc::BufferQueue packets_;
 
   DISALLOW_COPY_AND_ASSIGN(StreamInterfaceChannel);
 };

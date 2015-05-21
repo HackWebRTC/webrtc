@@ -37,6 +37,8 @@
         'bitbuffer.h',
         'buffer.cc',
         'buffer.h',
+        'bufferqueue.cc',
+        'bufferqueue.h',
         'bytebuffer.cc',
         'bytebuffer.h',
         'byteorder.h',

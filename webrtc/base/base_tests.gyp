@@ -55,6 +55,7 @@
           'bind_unittest.cc',
           'bitbuffer_unittest.cc',
           'buffer_unittest.cc',
+          'bufferqueue_unittest.cc',
           'bytebuffer_unittest.cc',
           'byteorder_unittest.cc',
           'callback_unittest.cc',
