@@ -66,10 +66,18 @@ static const SrtpCipherMapEntry kSrtpCipherMap[] = {
 };
 #endif
 
+// Ciphers to enable to get ECDHE encryption with endpoints that support it.
+static const uint32_t kEnabledCiphers[] = {
+  TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+  TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+};
+
 // Default cipher used between NSS stream adapters.
 // This needs to be updated when the default of the SSL library changes.
-static const char kDefaultSslCipher10[] = "TLS_RSA_WITH_AES_128_CBC_SHA";
-static const char kDefaultSslCipher12[] = "TLS_RSA_WITH_AES_128_GCM_SHA256";
+static const char kDefaultSslCipher10[] =
+    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA";
+static const char kDefaultSslCipher12[] =
+    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256";
 
 
 // Implementation of NSPR methods
@@ -548,6 +556,15 @@ int NSSStreamAdapter::BeginSSL() {
     }
   }
 #endif
+
+  // Enable additional ciphers.
+  for (size_t i = 0; i < ARRAY_SIZE(kEnabledCiphers); i++) {
+    rv = SSL_CipherPrefSet(ssl_fd_, kEnabledCiphers[i], PR_TRUE);
+    if (rv != SECSuccess) {
+      Error("BeginSSL", -1, false);
+      return -1;
+    }
+  }
 
   // Certificate validation
   rv = SSL_AuthCertificateHook(ssl_fd_, AuthCertificateHook, this);
