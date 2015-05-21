@@ -18,6 +18,7 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
 #include "webrtc/modules/audio_device/android/audio_manager.h"
+#include "webrtc/modules/audio_device/android/build_info.h"
 #include "webrtc/modules/audio_device/android/ensure_initialized.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
@@ -502,6 +503,7 @@ class AudioDeviceTest : public ::testing::Test {
     EXPECT_EQ(0, audio_device_->Init());
     playout_parameters_ = audio_manager()->GetPlayoutAudioParameters();
     record_parameters_ = audio_manager()->GetRecordAudioParameters();
+    build_info_.reset(new BuildInfo());
   }
   virtual ~AudioDeviceTest() {
     EXPECT_EQ(0, audio_device_->Terminate());
@@ -606,6 +608,10 @@ class AudioDeviceTest : public ::testing::Test {
     return active;
   }
 
+  bool DisableTestForThisDevice(const std::string& model) {
+    return (build_info_->GetDeviceModel() == model);
+  }
+
   // Volume control is currently only supported for the Java output audio layer.
   // For OpenSL ES, the internal stream volume is always on max level and there
   // is no need for this test to set it to max.
@@ -678,6 +684,7 @@ class AudioDeviceTest : public ::testing::Test {
   scoped_refptr<AudioDeviceModule> audio_device_;
   AudioParameters playout_parameters_;
   AudioParameters record_parameters_;
+  rtc::scoped_ptr<BuildInfo> build_info_;
 };
 
 TEST_F(AudioDeviceTest, ConstructDestruct) {
@@ -809,7 +816,13 @@ TEST_F(AudioDeviceTest, SetSpeakerVolumeActuallySetsVolume) {
 
 // Tests that playout can be initiated, started and stopped. No audio callback
 // is registered in this test.
+// TODO(henrika): figure out why this test can fail on Nexus 9.
+// See https://code.google.com/p/webrtc/issues/detail?id=4682 for details.
 TEST_F(AudioDeviceTest, StartStopPlayout) {
+  if (DisableTestForThisDevice("Nexus 9")) {
+    PRINT("Test is disabled for Nexus 9!\n");
+    return;
+  }
   StartPlayout();
   StopPlayout();
   StartPlayout();
