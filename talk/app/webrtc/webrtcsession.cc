@@ -523,6 +523,7 @@ bool WebRtcSession::Initialize(
     DTLSIdentityServiceInterface* dtls_identity_service,
     const PeerConnectionInterface::RTCConfiguration& rtc_configuration) {
   bundle_policy_ = rtc_configuration.bundle_policy;
+  rtcp_mux_policy_ = rtc_configuration.rtcp_mux_policy;
 
   // TODO(perkj): Take |constraints| into consideration. Return false if not all
   // mandatory constraints can be fulfilled. Note that |constraints|
@@ -1597,6 +1598,18 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
     if (!CreateDataChannel(data)) {
       LOG(LS_ERROR) << "Failed to create data channel.";
       return false;
+    }
+  }
+
+  if (rtcp_mux_policy_ == PeerConnectionInterface::kRtcpMuxPolicyRequire) {
+    if (voice_channel()) {
+      voice_channel()->ActivateRtcpMux();
+    }
+    if (video_channel()) {
+      video_channel()->ActivateRtcpMux();
+    }
+    if (data_channel()) {
+      data_channel()->ActivateRtcpMux();
     }
   }
 

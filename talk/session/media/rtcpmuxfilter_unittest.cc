@@ -212,3 +212,44 @@ TEST(RtcpMuxFilterTest, KeepFilterDisabledDuringUpdate) {
   EXPECT_TRUE(filter.SetAnswer(false, cricket::CS_LOCAL));
   EXPECT_FALSE(filter.IsActive());
 }
+
+// Test that we can SetActive and then can't deactivate.
+TEST(RtcpMuxFilterTest, SetActiveCantDeactivate) {
+  cricket::RtcpMuxFilter filter;
+  const char data[] = { 0, 73, 0, 0 };
+  const int len = 4;
+
+  filter.SetActive();
+  EXPECT_TRUE(filter.IsActive());
+  EXPECT_TRUE(filter.DemuxRtcp(data, len));
+
+  EXPECT_FALSE(filter.SetOffer(false, cricket::CS_LOCAL));
+  EXPECT_TRUE(filter.IsActive());
+  EXPECT_TRUE(filter.SetOffer(true, cricket::CS_LOCAL));
+  EXPECT_TRUE(filter.IsActive());
+
+  EXPECT_FALSE(filter.SetProvisionalAnswer(false, cricket::CS_REMOTE));
+  EXPECT_TRUE(filter.IsActive());
+  EXPECT_TRUE(filter.SetProvisionalAnswer(true, cricket::CS_REMOTE));
+  EXPECT_TRUE(filter.IsActive());
+
+  EXPECT_FALSE(filter.SetAnswer(false, cricket::CS_REMOTE));
+  EXPECT_TRUE(filter.IsActive());
+  EXPECT_TRUE(filter.SetAnswer(true, cricket::CS_REMOTE));
+  EXPECT_TRUE(filter.IsActive());
+
+  EXPECT_FALSE(filter.SetOffer(false, cricket::CS_REMOTE));
+  EXPECT_TRUE(filter.IsActive());
+  EXPECT_TRUE(filter.SetOffer(true, cricket::CS_REMOTE));
+  EXPECT_TRUE(filter.IsActive());
+
+  EXPECT_FALSE(filter.SetProvisionalAnswer(false, cricket::CS_LOCAL));
+  EXPECT_TRUE(filter.IsActive());
+  EXPECT_TRUE(filter.SetProvisionalAnswer(true, cricket::CS_LOCAL));
+  EXPECT_TRUE(filter.IsActive());
+
+  EXPECT_FALSE(filter.SetAnswer(false, cricket::CS_LOCAL));
+  EXPECT_TRUE(filter.IsActive());
+  EXPECT_TRUE(filter.SetAnswer(true, cricket::CS_LOCAL));
+  EXPECT_TRUE(filter.IsActive());
+}

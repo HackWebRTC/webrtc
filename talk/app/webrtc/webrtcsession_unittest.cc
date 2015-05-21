@@ -156,8 +156,6 @@ static const char kSdpWithRtx[] =
     "a=rtpmap:96 rtx/90000\r\n"
     "a=fmtp:96 apt=0\r\n";
 
-static const int kAudioJitterBufferMaxPackets = 50;
-
 // Add some extra |newlines| to the |message| after |line|.
 static void InjectAfter(const std::string& line,
                         const std::string& newlines,
@@ -405,11 +403,6 @@ class WebRtcSessionTest : public testing::Test {
 
   void Init() {
     PeerConnectionInterface::RTCConfiguration configuration;
-    configuration.type = PeerConnectionInterface::kAll;
-    configuration.bundle_policy =
-        PeerConnectionInterface::kBundlePolicyBalanced;
-    configuration.audio_jitter_buffer_max_packets =
-        kAudioJitterBufferMaxPackets;
     Init(NULL, configuration);
   }
 
@@ -417,20 +410,20 @@ class WebRtcSessionTest : public testing::Test {
       PeerConnectionInterface::IceTransportsType ice_transport_type) {
     PeerConnectionInterface::RTCConfiguration configuration;
     configuration.type = ice_transport_type;
-    configuration.bundle_policy =
-        PeerConnectionInterface::kBundlePolicyBalanced;
-    configuration.audio_jitter_buffer_max_packets =
-        kAudioJitterBufferMaxPackets;
     Init(NULL, configuration);
   }
 
   void InitWithBundlePolicy(
       PeerConnectionInterface::BundlePolicy bundle_policy) {
     PeerConnectionInterface::RTCConfiguration configuration;
-    configuration.type = PeerConnectionInterface::kAll;
     configuration.bundle_policy = bundle_policy;
-    configuration.audio_jitter_buffer_max_packets =
-        kAudioJitterBufferMaxPackets;
+    Init(NULL, configuration);
+  }
+
+  void InitWithRtcpMuxPolicy(
+      PeerConnectionInterface::RtcpMuxPolicy rtcp_mux_policy) {
+    PeerConnectionInterface::RTCConfiguration configuration;
+    configuration.rtcp_mux_policy = rtcp_mux_policy;
     Init(NULL, configuration);
   }
 
@@ -438,11 +431,6 @@ class WebRtcSessionTest : public testing::Test {
     FakeIdentityService* identity_service = new FakeIdentityService();
     identity_service->set_should_fail(identity_request_should_fail);
     PeerConnectionInterface::RTCConfiguration configuration;
-    configuration.type = PeerConnectionInterface::kAll;
-    configuration.bundle_policy =
-        PeerConnectionInterface::kBundlePolicyBalanced;
-    configuration.audio_jitter_buffer_max_packets =
-        kAudioJitterBufferMaxPackets;
     Init(identity_service, configuration);
   }
 
@@ -2787,6 +2775,46 @@ TEST_F(WebRtcSessionTest, TestMaxBundleWithSetRemoteDescriptionFirst) {
 
   EXPECT_EQ(session_->GetTransportProxy("audio")->impl(),
             session_->GetTransportProxy("video")->impl());
+}
+
+TEST_F(WebRtcSessionTest, TestRequireRtcpMux) {
+  InitWithRtcpMuxPolicy(PeerConnectionInterface::kRtcpMuxPolicyRequire);
+  mediastream_signaling_.SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  SetLocalDescriptionWithoutError(offer);
+
+  EXPECT_FALSE(session_->GetTransportProxy("audio")->impl()->HasChannel(2));
+  EXPECT_FALSE(session_->GetTransportProxy("video")->impl()->HasChannel(2));
+
+  mediastream_signaling_.SendAudioVideoStream2();
+  SessionDescriptionInterface* answer =
+      CreateRemoteAnswer(session_->local_description());
+  SetRemoteDescriptionWithoutError(answer);
+
+  EXPECT_FALSE(session_->GetTransportProxy("audio")->impl()->HasChannel(2));
+  EXPECT_FALSE(session_->GetTransportProxy("video")->impl()->HasChannel(2));
+}
+
+TEST_F(WebRtcSessionTest, TestNegotiateRtcpMux) {
+  InitWithRtcpMuxPolicy(PeerConnectionInterface::kRtcpMuxPolicyNegotiate);
+  mediastream_signaling_.SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  SessionDescriptionInterface* offer = CreateOffer(options);
+  SetLocalDescriptionWithoutError(offer);
+
+  EXPECT_TRUE(session_->GetTransportProxy("audio")->impl()->HasChannel(2));
+  EXPECT_TRUE(session_->GetTransportProxy("video")->impl()->HasChannel(2));
+
+  mediastream_signaling_.SendAudioVideoStream2();
+  SessionDescriptionInterface* answer =
+      CreateRemoteAnswer(session_->local_description());
+  SetRemoteDescriptionWithoutError(answer);
+
+  EXPECT_FALSE(session_->GetTransportProxy("audio")->impl()->HasChannel(2));
+  EXPECT_FALSE(session_->GetTransportProxy("video")->impl()->HasChannel(2));
 }
 
 // This test verifies that SetLocalDescription and SetRemoteDescription fails

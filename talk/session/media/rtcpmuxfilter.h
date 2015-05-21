@@ -41,6 +41,9 @@ class RtcpMuxFilter {
   // Whether the filter is active, i.e. has RTCP mux been properly negotiated.
   bool IsActive() const;
 
+  // Make the filter active, regardless of the current state.
+  void SetActive();
+
   // Specifies whether the offer indicates the use of RTCP mux.
   bool SetOffer(bool offer_enable, ContentSource src);
 

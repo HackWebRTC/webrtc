@@ -197,6 +197,12 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     kBundlePolicyMaxCompat
   };
 
+  // https://tools.ietf.org/html/draft-ietf-rtcweb-jsep-09#section-4.1.1
+  enum RtcpMuxPolicy {
+    kRtcpMuxPolicyNegotiate,
+    kRtcpMuxPolicyRequire,
+  };
+
   enum TcpCandidatePolicy {
     kTcpCandidatePolicyEnabled,
     kTcpCandidatePolicyDisabled
@@ -210,12 +216,14 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // at the same time.
     IceServers servers;
     BundlePolicy bundle_policy;
+    RtcpMuxPolicy rtcp_mux_policy;
     TcpCandidatePolicy tcp_candidate_policy;
     int audio_jitter_buffer_max_packets;
 
     RTCConfiguration()
         : type(kAll),
           bundle_policy(kBundlePolicyBalanced),
+          rtcp_mux_policy(kRtcpMuxPolicyNegotiate),
           tcp_candidate_policy(kTcpCandidatePolicyEnabled),
           audio_jitter_buffer_max_packets(50) {}
   };

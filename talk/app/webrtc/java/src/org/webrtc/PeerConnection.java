@@ -117,7 +117,11 @@ public class PeerConnection {
     BALANCED, MAXBUNDLE, MAXCOMPAT
   };
 
-  /** Java version of PeerConnectionInterface.BundlePolicy */
+  /** Java version of PeerConnectionInterface.RtcpMuxPolicy */
+  public enum RtcpMuxPolicy {
+    NEGOTIATE, REQUIRE
+  };
+  /** Java version of PeerConnectionInterface.TcpCandidatePolicy */
   public enum TcpCandidatePolicy {
     ENABLED, DISABLED
   };
@@ -127,12 +131,14 @@ public class PeerConnection {
     public IceTransportsType iceTransportsType;
     public List<IceServer> iceServers;
     public BundlePolicy bundlePolicy;
+    public RtcpMuxPolicy rtcpMuxPolicy;
     public TcpCandidatePolicy tcpCandidatePolicy;
     public int audioJitterBufferMaxPackets;
 
     public RTCConfiguration(List<IceServer> iceServers) {
       iceTransportsType = IceTransportsType.ALL;
       bundlePolicy = BundlePolicy.BALANCED;
+      rtcpMuxPolicy = RtcpMuxPolicy.NEGOTIATE;
       tcpCandidatePolicy = TcpCandidatePolicy.ENABLED;
       this.iceServers = iceServers;
       audioJitterBufferMaxPackets = 50;

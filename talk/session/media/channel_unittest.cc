@@ -1140,6 +1140,89 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(CheckNoRtcp2());
   }
 
+  // Check that RTP and RTCP are transmitted ok when both sides
+  // support mux and one the offerer requires mux.
+  void SendRequireRtcpMuxToRtcpMux() {
+    CreateChannels(RTCP | RTCP_MUX, RTCP | RTCP_MUX);
+    channel1_->ActivateRtcpMux();
+    EXPECT_TRUE(SendInitiate());
+    EXPECT_EQ(1U, GetTransport1()->channels().size());
+    EXPECT_EQ(1U, GetTransport2()->channels().size());
+    EXPECT_TRUE(SendAccept());
+    EXPECT_TRUE(SendRtp1());
+    EXPECT_TRUE(SendRtp2());
+    EXPECT_TRUE(SendRtcp1());
+    EXPECT_TRUE(SendRtcp2());
+    EXPECT_TRUE(CheckRtp1());
+    EXPECT_TRUE(CheckRtp2());
+    EXPECT_TRUE(CheckNoRtp1());
+    EXPECT_TRUE(CheckNoRtp2());
+    EXPECT_TRUE(CheckRtcp1());
+    EXPECT_TRUE(CheckRtcp2());
+    EXPECT_TRUE(CheckNoRtcp1());
+    EXPECT_TRUE(CheckNoRtcp2());
+  }
+
+  // Check that RTP and RTCP are transmitted ok when both sides
+  // support mux and one the answerer requires rtcp mux.
+  void SendRtcpMuxToRequireRtcpMux() {
+    CreateChannels(RTCP | RTCP_MUX, RTCP | RTCP_MUX);
+    channel2_->ActivateRtcpMux();
+    EXPECT_TRUE(SendInitiate());
+    EXPECT_EQ(2U, GetTransport1()->channels().size());
+    EXPECT_EQ(1U, GetTransport2()->channels().size());
+    EXPECT_TRUE(SendAccept());
+    EXPECT_EQ(1U, GetTransport1()->channels().size());
+    EXPECT_TRUE(SendRtp1());
+    EXPECT_TRUE(SendRtp2());
+    EXPECT_TRUE(SendRtcp1());
+    EXPECT_TRUE(SendRtcp2());
+    EXPECT_TRUE(CheckRtp1());
+    EXPECT_TRUE(CheckRtp2());
+    EXPECT_TRUE(CheckNoRtp1());
+    EXPECT_TRUE(CheckNoRtp2());
+    EXPECT_TRUE(CheckRtcp1());
+    EXPECT_TRUE(CheckRtcp2());
+    EXPECT_TRUE(CheckNoRtcp1());
+    EXPECT_TRUE(CheckNoRtcp2());
+  }
+
+  // Check that RTP and RTCP are transmitted ok when both sides
+  // require mux.
+  void SendRequireRtcpMuxToRequireRtcpMux() {
+    CreateChannels(RTCP | RTCP_MUX, RTCP | RTCP_MUX);
+    channel1_->ActivateRtcpMux();
+    channel2_->ActivateRtcpMux();
+    EXPECT_TRUE(SendInitiate());
+    EXPECT_EQ(1U, GetTransport1()->channels().size());
+    EXPECT_EQ(1U, GetTransport2()->channels().size());
+    EXPECT_TRUE(SendAccept());
+    EXPECT_EQ(1U, GetTransport1()->channels().size());
+    EXPECT_TRUE(SendRtp1());
+    EXPECT_TRUE(SendRtp2());
+    EXPECT_TRUE(SendRtcp1());
+    EXPECT_TRUE(SendRtcp2());
+    EXPECT_TRUE(CheckRtp1());
+    EXPECT_TRUE(CheckRtp2());
+    EXPECT_TRUE(CheckNoRtp1());
+    EXPECT_TRUE(CheckNoRtp2());
+    EXPECT_TRUE(CheckRtcp1());
+    EXPECT_TRUE(CheckRtcp2());
+    EXPECT_TRUE(CheckNoRtcp1());
+    EXPECT_TRUE(CheckNoRtcp2());
+  }
+
+  // Check that SendAccept fails if the answerer doesn't support mux
+  // and the offerer requires it.
+  void SendRequireRtcpMuxToNoRtcpMux() {
+    CreateChannels(RTCP | RTCP_MUX, RTCP);
+    channel1_->ActivateRtcpMux();
+    EXPECT_TRUE(SendInitiate());
+    EXPECT_EQ(1U, GetTransport1()->channels().size());
+    EXPECT_EQ(2U, GetTransport2()->channels().size());
+    EXPECT_FALSE(SendAccept());
+  }
+
   // Check that RTCP data sent by the initiator before the accept is not muxed.
   void SendEarlyRtcpMuxToRtcp() {
     CreateChannels(RTCP | RTCP_MUX, RTCP);
@@ -2085,6 +2168,22 @@ TEST_F(VoiceChannelTest, SendRtcpMuxToRtcpMux) {
   Base::SendRtcpMuxToRtcpMux();
 }
 
+TEST_F(VoiceChannelTest, SendRequireRtcpMuxToRtcpMux) {
+  Base::SendRequireRtcpMuxToRtcpMux();
+}
+
+TEST_F(VoiceChannelTest, SendRtcpMuxToRequireRtcpMux) {
+  Base::SendRtcpMuxToRequireRtcpMux();
+}
+
+TEST_F(VoiceChannelTest, SendRequireRtcpMuxToRequireRtcpMux) {
+  Base::SendRequireRtcpMuxToRequireRtcpMux();
+}
+
+TEST_F(VoiceChannelTest, SendRequireRtcpMuxToNoRtcpMux) {
+  Base::SendRequireRtcpMuxToNoRtcpMux();
+}
+
 TEST_F(VoiceChannelTest, SendEarlyRtcpMuxToRtcp) {
   Base::SendEarlyRtcpMuxToRtcp();
 }
@@ -2505,6 +2604,22 @@ TEST_F(VideoChannelTest, SendRtcpMuxToRtcp) {
 
 TEST_F(VideoChannelTest, SendRtcpMuxToRtcpMux) {
   Base::SendRtcpMuxToRtcpMux();
+}
+
+TEST_F(VideoChannelTest, SendRequireRtcpMuxToRtcpMux) {
+  Base::SendRequireRtcpMuxToRtcpMux();
+}
+
+TEST_F(VideoChannelTest, SendRtcpMuxToRequireRtcpMux) {
+  Base::SendRtcpMuxToRequireRtcpMux();
+}
+
+TEST_F(VideoChannelTest, SendRequireRtcpMuxToRequireRtcpMux) {
+  Base::SendRequireRtcpMuxToRequireRtcpMux();
+}
+
+TEST_F(VideoChannelTest, SendRequireRtcpMuxToNoRtcpMux) {
+  Base::SendRequireRtcpMuxToNoRtcpMux();
 }
 
 TEST_F(VideoChannelTest, SendEarlyRtcpMuxToRtcp) {

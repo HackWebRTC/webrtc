@@ -40,7 +40,16 @@ bool RtcpMuxFilter::IsActive() const {
          state_ == ST_ACTIVE;
 }
 
+void RtcpMuxFilter::SetActive() {
+  state_ = ST_ACTIVE;
+}
+
 bool RtcpMuxFilter::SetOffer(bool offer_enable, ContentSource src) {
+  if (state_ == ST_ACTIVE) {
+    // Fail if we try to deactivate and no-op if we try and activate.
+    return offer_enable;
+  }
+
   if (!ExpectOffer(offer_enable, src)) {
     LOG(LS_ERROR) << "Invalid state for change of RTCP mux offer";
     return false;
@@ -53,6 +62,11 @@ bool RtcpMuxFilter::SetOffer(bool offer_enable, ContentSource src) {
 
 bool RtcpMuxFilter::SetProvisionalAnswer(bool answer_enable,
                                          ContentSource src) {
+  if (state_ == ST_ACTIVE) {
+    // Fail if we try to deactivate and no-op if we try and activate.
+    return answer_enable;
+  }
+
   if (!ExpectAnswer(src)) {
     LOG(LS_ERROR) << "Invalid state for RTCP mux provisional answer";
     return false;
@@ -83,6 +97,11 @@ bool RtcpMuxFilter::SetProvisionalAnswer(bool answer_enable,
 }
 
 bool RtcpMuxFilter::SetAnswer(bool answer_enable, ContentSource src) {
+  if (state_ == ST_ACTIVE) {
+    // Fail if we try to deactivate and no-op if we try and activate.
+    return answer_enable;
+  }
+
   if (!ExpectAnswer(src)) {
     LOG(LS_ERROR) << "Invalid state for RTCP mux answer";
     return false;
@@ -100,19 +119,24 @@ bool RtcpMuxFilter::SetAnswer(bool answer_enable, ContentSource src) {
   return true;
 }
 
-bool RtcpMuxFilter::DemuxRtcp(const char* data, int len) {
-  // If we're muxing RTP/RTCP, we must inspect each packet delivered and
-  // determine whether it is RTP or RTCP. We do so by checking the packet type,
-  // and assuming RTP if type is 0-63 or 96-127. For additional details, see
-  // http://tools.ietf.org/html/rfc5761.
-  // Note that if we offer RTCP mux, we may receive muxed RTCP before we
-  // receive the answer, so we operate in that state too.
-  if (!offer_enable_ || state_ < ST_SENTOFFER) {
+// Check the RTP payload type.  If 63 < payload type < 96, it's RTCP.
+// For additional details, see http://tools.ietf.org/html/rfc5761.
+bool IsRtcp(const char* data, int len) {
+  if (len < 2) {
     return false;
   }
+  char pt = data[1] & 0x7F;
+  return (63 < pt) && (pt < 96);
+}
 
-  int type = (len >= 2) ? (static_cast<uint8>(data[1]) & 0x7F) : 0;
-  return (type >= 64 && type < 96);
+bool RtcpMuxFilter::DemuxRtcp(const char* data, int len) {
+  // If we're muxing RTP/RTCP, we must inspect each packet delivered
+  // and determine whether it is RTP or RTCP. We do so by looking at
+  // the RTP payload type (see IsRtcp).  Note that if we offer RTCP
+  // mux, we may receive muxed RTCP before we receive the answer, so
+  // we operate in that state too.
+  bool offered_mux = ((state_ == ST_SENTOFFER) && offer_enable_);
+  return (IsActive() || offered_mux) && IsRtcp(data, len);
 }
 
 bool RtcpMuxFilter::ExpectOffer(bool offer_enable, ContentSource source) {

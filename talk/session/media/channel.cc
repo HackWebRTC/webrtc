@@ -1042,6 +1042,18 @@ bool BaseChannel::SetSrtp_w(const std::vector<CryptoParams>& cryptos,
   return true;
 }
 
+void BaseChannel::ActivateRtcpMux() {
+  worker_thread_->Invoke<void>(Bind(
+      &BaseChannel::ActivateRtcpMux_w, this));
+}
+
+void BaseChannel::ActivateRtcpMux_w() {
+  if (!rtcp_mux_filter_.IsActive()) {
+    rtcp_mux_filter_.SetActive();
+    set_rtcp_transport_channel(NULL);
+  }
+}
+
 bool BaseChannel::SetRtcpMux_w(bool enable, ContentAction action,
                                ContentSource src,
                                std::string* error_desc) {

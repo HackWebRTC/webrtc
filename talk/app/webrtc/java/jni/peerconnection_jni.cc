@@ -1216,6 +1216,22 @@ JavaBundlePolicyToNativeType(JNIEnv* jni, jobject j_bundle_policy) {
   return PeerConnectionInterface::kBundlePolicyBalanced;
 }
 
+static PeerConnectionInterface::RtcpMuxPolicy
+JavaRtcpMuxPolicyToNativeType(JNIEnv* jni, jobject j_rtcp_mux_policy) {
+  std::string enum_name = GetJavaEnumName(
+      jni, "org/webrtc/PeerConnection$RtcpMuxPolicy",
+      j_rtcp_mux_policy);
+
+  if (enum_name == "NEGOTIATE")
+    return PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
+
+  if (enum_name == "REQUIRE")
+    return PeerConnectionInterface::kRtcpMuxPolicyRequire;
+
+  CHECK(false) << "Unexpected RtcpMuxPolicy enum_name " << enum_name;
+  return PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
+}
+
 static PeerConnectionInterface::TcpCandidatePolicy
 JavaTcpCandidatePolicyToNativeType(
     JNIEnv* jni, jobject j_tcp_candidate_policy) {
@@ -1292,6 +1308,12 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
   jobject j_bundle_policy = GetObjectField(
       jni, j_rtc_config, j_bundle_policy_id);
 
+  jfieldID j_rtcp_mux_policy_id = GetFieldID(
+      jni, j_rtc_config_class, "rtcpMuxPolicy",
+      "Lorg/webrtc/PeerConnection$RtcpMuxPolicy;");
+  jobject j_rtcp_mux_policy = GetObjectField(
+      jni, j_rtc_config, j_rtcp_mux_policy_id);
+
   jfieldID j_tcp_candidate_policy_id = GetFieldID(
       jni, j_rtc_config_class, "tcpCandidatePolicy",
       "Lorg/webrtc/PeerConnection$TcpCandidatePolicy;");
@@ -1311,6 +1333,8 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
   rtc_config.type =
       JavaIceTransportsTypeToNativeType(jni, j_ice_transports_type);
   rtc_config.bundle_policy = JavaBundlePolicyToNativeType(jni, j_bundle_policy);
+  rtc_config.rtcp_mux_policy =
+      JavaRtcpMuxPolicyToNativeType(jni, j_rtcp_mux_policy);
   rtc_config.tcp_candidate_policy =
       JavaTcpCandidatePolicyToNativeType(jni, j_tcp_candidate_policy);
   JavaIceServersToJsepIceServers(jni, j_ice_servers, &rtc_config.servers);

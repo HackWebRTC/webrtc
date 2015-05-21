@@ -108,6 +108,11 @@ class BaseChannel
   bool writable() const { return writable_; }
   bool IsStreamMuted(uint32 ssrc);
 
+  // Activate RTCP mux, regardless of the state so far.  Once
+  // activated, it can not be deactivated, and if the remote
+  // description doesn't support RTCP mux, setting the remote
+  // description will fail.
+  void ActivateRtcpMux();
   bool PushdownLocalDescription(const SessionDescription* local_desc,
                                 ContentAction action,
                                 std::string* error_desc);
@@ -350,6 +355,7 @@ class BaseChannel
                  ContentAction action,
                  ContentSource src,
                  std::string* error_desc);
+  void ActivateRtcpMux_w();
   bool SetRtcpMux_w(bool enable,
                     ContentAction action,
                     ContentSource src,
