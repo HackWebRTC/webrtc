@@ -104,11 +104,9 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
                        ProcessThread& module_process_thread,
                        PacedSender* pacer,
                        BitrateAllocator* bitrate_allocator,
-                       BitrateController* bitrate_controller,
-                       bool disable_default_encoder)
+                       BitrateController* bitrate_controller)
     : channel_id_(channel_id),
       number_of_cores_(number_of_cores),
-      disable_default_encoder_(disable_default_encoder),
       vpm_(VideoProcessingModule::Create(ViEModuleId(-1, channel_id))),
       qm_callback_(new QMVideoSettingsCallback(vpm_.get())),
       vcm_(VideoCodingModule::Create(Clock::GetRealTimeClock(),
@@ -149,26 +147,6 @@ bool ViEEncoder::Init() {
   // Enable/disable content analysis: off by default for now.
   vpm_->EnableContentAnalysis(false);
 
-  if (!disable_default_encoder_) {
-#ifdef VIDEOCODEC_VP8
-    VideoCodecType codec_type = webrtc::kVideoCodecVP8;
-#else
-    VideoCodecType codec_type = webrtc::kVideoCodecI420;
-#endif
-    VideoCodec video_codec;
-    if (vcm_->Codec(codec_type, &video_codec) != VCM_OK) {
-      return false;
-    }
-    {
-      CriticalSectionScoped cs(data_cs_.get());
-      send_padding_ = video_codec.numberOfSimulcastStreams > 1;
-    }
-    if (vcm_->RegisterSendCodec(&video_codec, number_of_cores_,
-                                PayloadRouter::DefaultMaxPayloadLength()) !=
-        0) {
-      return false;
-    }
-  }
   if (vcm_->RegisterTransportCallback(this) != 0) {
     return false;
   }
@@ -282,30 +260,6 @@ int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
     return -1;
   }
 
-  if (disable_default_encoder_)
-    return 0;
-
-  // If the external encoder is the current send codec, use vcm internal
-  // encoder.
-  if (current_send_codec.plType == pl_type) {
-    {
-      CriticalSectionScoped cs(data_cs_.get());
-      send_padding_ = current_send_codec.numberOfSimulcastStreams > 1;
-    }
-    // TODO(mflodman): Unfortunately the VideoCodec that VCM has cached a
-    // raw pointer to an |extra_options| that's long gone.  Clearing it here is
-    // a hack to prevent the following code from crashing.  This should be fixed
-    // for realz.  https://code.google.com/p/chromium/issues/detail?id=348222
-    current_send_codec.extra_options = NULL;
-    size_t max_data_payload_length = send_payload_router_->MaxPayloadLength();
-    if (vcm_->RegisterSendCodec(&current_send_codec, number_of_cores_,
-                                max_data_payload_length) != VCM_OK) {
-      LOG(LS_INFO) << "De-registered the currently used external encoder ("
-                   << static_cast<int>(pl_type) << ") and therefore tried to "
-                   << "register the corresponding internal encoder, but none "
-                   << "was supported.";
-    }
-  }
   return 0;
 }
 

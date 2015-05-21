@@ -78,8 +78,7 @@ class ViEEncoder
              ProcessThread& module_process_thread,
              PacedSender* pacer,
              BitrateAllocator* bitrate_allocator,
-             BitrateController* bitrate_controller,
-             bool disable_default_encoder);
+             BitrateController* bitrate_controller);
   ~ViEEncoder();
 
   bool Init();
@@ -203,7 +202,6 @@ class ViEEncoder
 
   const int channel_id_;
   const uint32_t number_of_cores_;
-  const bool disable_default_encoder_;
 
   const rtc::scoped_ptr<VideoProcessingModule> vpm_;
   const rtc::scoped_ptr<QMVideoSettingsCallback> qm_callback_;

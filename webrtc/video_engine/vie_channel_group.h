@@ -44,13 +44,11 @@ class ChannelGroup : public BitrateObserver {
   ~ChannelGroup();
   bool CreateSendChannel(int channel_id,
                          int engine_id,
-                         int number_of_cores,
-                         bool disable_default_encoder);
+                         int number_of_cores);
   bool CreateReceiveChannel(int channel_id,
                             int engine_id,
                             int base_channel_id,
-                            int number_of_cores,
-                            bool disable_default_encoder);
+                            int number_of_cores);
   void DeleteChannel(int channel_id);
   void AddChannel(int channel_id);
   void RemoveChannel(int channel_id);
@@ -86,8 +84,7 @@ class ChannelGroup : public BitrateObserver {
                      int engine_id,
                      int number_of_cores,
                      ViEEncoder* vie_encoder,
-                     bool sender,
-                     bool disable_default_encoder);
+                     bool sender);
   ViEChannel* PopChannel(int channel_id);
   ViEEncoder* PopEncoder(int channel_id);
 
