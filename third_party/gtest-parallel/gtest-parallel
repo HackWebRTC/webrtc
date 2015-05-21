@@ -23,8 +23,46 @@ import threading
 import time
 import zlib
 
+# Return the width of the terminal, or None if it couldn't be
+# determined (e.g. because we're not being run interactively).
+def term_width(out):
+  if not out.isatty():
+    return None
+  try:
+    p = subprocess.Popen(["stty", "size"],
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (out, err) = p.communicate()
+    if p.returncode != 0 or err:
+      return None
+    return int(out.split()[1])
+  except (IndexError, OSError, ValueError):
+    return None
+
+# Output transient and permanent lines of text. If several transient
+# lines are written in sequence, the new will overwrite the old. We
+# use this to ensure that lots of unimportant info (tests passing)
+# won't drown out important info (tests failing).
+class Outputter(object):
+  def __init__(self, out_file):
+    self.__out_file = out_file
+    self.__previous_line_was_transient = False
+    self.__width = term_width(out_file)  # Line width, or None if not a tty.
+  def transient_line(self, msg):
+    if self.__width is None:
+      self.__out_file.write(msg + "\n")
+    else:
+      self.__out_file.write("\r" + msg[:self.__width].ljust(self.__width))
+      self.__previous_line_was_transient = True
+  def permanent_line(self, msg):
+    if self.__previous_line_was_transient:
+      self.__out_file.write("\n")
+      self.__previous_line_was_transient = False
+    self.__out_file.write(msg + "\n")
+
 stdout_lock = threading.Lock()
+
 class FilterFormat:
+  out = Outputter(sys.stdout)
   total_tests = 0
   finished_tests = 0
 
@@ -33,10 +71,9 @@ class FilterFormat:
   failures = []
 
   def print_test_status(self, last_finished_test, time_ms):
-    print "[%d/%d] %s (%d ms)" % (self.finished_tests,
-                                  self.total_tests,
-                                  last_finished_test,
-                                  time_ms)
+    self.out.transient_line("[%d/%d] %s (%d ms)"
+                            % (self.finished_tests, self.total_tests,
+                               last_finished_test, time_ms))
 
   def handle_meta(self, job_id, args):
     (command, arg) = args.split(' ', 1)
@@ -52,12 +89,13 @@ class FilterFormat:
       if exit_code != 0:
         self.failures.append(self.tests[job_id])
         for line in self.outputs[job_id]:
-          print line
-        print "[%d/%d] %s returned/aborted with exit code %d (%d ms)" \
-            % (self.finished_tests, self.total_tests, test, exit_code, time_ms)
+          self.out.permanent_line(line)
+        self.out.permanent_line(
+          "[%d/%d] %s returned/aborted with exit code %d (%d ms)"
+          % (self.finished_tests, self.total_tests, test, exit_code, time_ms))
     elif command == "TESTCNT":
       self.total_tests = int(arg.split(' ', 1)[1])
-      print "[0/%d] Running tests...\r" % self.total_tests,
+      self.out.transient_line("[0/%d] Running tests..." % self.total_tests)
 
   def add_stdout(self, job_id, output):
     self.outputs[job_id].append(output)
@@ -74,9 +112,10 @@ class FilterFormat:
 
   def end(self):
     if self.failures:
-      print "FAILED TESTS (%d/%d):" % (len(self.failures), self.total_tests)
+      self.out.permanent_line("FAILED TESTS (%d/%d):"
+                              % (len(self.failures), self.total_tests))
       for (binary, test) in self.failures:
-        print " ", binary + ": " + test
+        self.out.permanent_line(" " + binary + ": " + test)
 
 class RawFormat:
   def log(self, line):
@@ -221,7 +260,10 @@ logger.log(str(-1) + ': TESTCNT ' + ' ' + str(len(tests)))
 
 exit_code = 0
 
-# Run the specified job. Returns the elapsed time in milliseconds.
+# Run the specified job. Return the elapsed time in milliseconds if
+# the job succeeds, or a very large number (larger than any reasonable
+# elapsed time) if the job fails. (This ensures that failing tests
+# will run first the next time.)
 def run_job((command, job_id, test)):
   begin = time.time()
   sub = subprocess.Popen(command + ['--gtest_filter=' + test] +
@@ -238,10 +280,11 @@ def run_job((command, job_id, test)):
   code = sub.wait()
   runtime_ms = int(1000 * (time.time() - begin))
   logger.log("%s: EXIT %s %d" % (job_id, code, runtime_ms))
-  if code != 0:
-    global exit_code
-    exit_code = code
-  return runtime_ms
+  if code == 0:
+    return runtime_ms
+  global exit_code
+  exit_code = code
+  return sys.maxint
 
 def worker():
   global job_id
