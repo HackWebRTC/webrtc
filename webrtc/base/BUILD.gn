@@ -528,6 +528,11 @@ static_library("rtc_base") {
 
   if (is_ios) {
     all_dependent_configs += [ ":ios_config" ]
+
+    sources += [
+      "macconversion.cc",
+      "macconversion.h",
+    ]
   }
 
   if (use_x11) {

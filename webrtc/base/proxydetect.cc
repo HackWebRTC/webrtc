@@ -13,7 +13,7 @@
 #if defined(WEBRTC_WIN)
 #include "webrtc/base/win32.h"
 #include <shlobj.h>
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -24,6 +24,11 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreServices/CoreServices.h>
 #include <Security/Security.h>
+#include "macconversion.h"
+#endif
+
+#ifdef WEBRTC_IOS
+#include <CFNetwork/CFNetwork.h>
 #include "macconversion.h"
 #endif
 
@@ -40,7 +45,7 @@
 #define _TRY_JSPROXY 0
 #define _TRY_WM_FINDPROXY 0
 #define _TRY_IE_LAN_SETTINGS 1
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 // For all platforms try Firefox.
 #define _TRY_FIREFOX 1
@@ -193,7 +198,7 @@ typedef std::string tstring;
 std::string Utf8String(const tstring& str) { return str; }
 
 #endif  // !_UNICODE
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 bool ProxyItemMatch(const Url<char>& url, char * item, size_t len) {
   // hostname:443
@@ -407,7 +412,7 @@ bool GetFirefoxProfilePath(Pathname* path) {
   path->SetFolder(std::string(user_home));
   path->AppendFolder(".mozilla");
   path->AppendFolder("firefox");
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
   return true;
 }
 
@@ -939,7 +944,7 @@ bool GetIeProxySettings(const char* agent, const char* url, ProxyInfo* proxy) {
   return true;
 }
 
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)  // WEBRTC_MAC && !defined(WEBRTC_IOS) specific implementation for reading system wide
             // proxy settings.
@@ -1179,6 +1184,56 @@ bool GetMacProxySettings(ProxyInfo* proxy) {
 }
 #endif  // WEBRTC_MAC && !defined(WEBRTC_IOS)
 
+#ifdef WEBRTC_IOS
+// iOS has only http proxy
+bool GetiOSProxySettings(ProxyInfo* proxy) {
+
+  bool result = false;
+
+  CFDictionaryRef proxy_dict = CFNetworkCopySystemProxySettings();
+  if (!proxy_dict) {
+    LOG(LS_ERROR) << "CFNetworkCopySystemProxySettings failed";
+    return false;
+  }
+
+  CFNumberRef proxiesHTTPEnable = (CFNumberRef)CFDictionaryGetValue(
+    proxy_dict, kCFNetworkProxiesHTTPEnable);
+  if (!p_isCFNumberTrue(proxiesHTTPEnable)) {
+    CFRelease(proxy_dict);
+    return false;
+  }
+
+  CFStringRef proxy_address = (CFStringRef)CFDictionaryGetValue(
+    proxy_dict, kCFNetworkProxiesHTTPProxy);
+  CFNumberRef proxy_port = (CFNumberRef)CFDictionaryGetValue(
+    proxy_dict, kCFNetworkProxiesHTTPPort);
+
+  // the data we need to construct the SocketAddress for the proxy.
+  std::string hostname;
+  int port;
+  if (p_convertHostCFStringRefToCPPString(proxy_address, hostname) &&
+      p_convertCFNumberToInt(proxy_port, &port)) {
+      // We have something enabled, with a hostname and a port.
+      // That's sufficient to set up the proxy info.
+      // Finally, try HTTP proxy. Note that flute doesn't
+      // differentiate between HTTPS and HTTP, hence we are using the
+      // same flute type here, ie. PROXY_HTTPS.
+      proxy->type = PROXY_HTTPS;
+
+      proxy->address.SetIP(hostname);
+      proxy->address.SetPort(port);
+      result = true;
+  }
+
+  // We created the dictionary with something that had the
+  // word 'copy' in it, so we have to release it, according
+  // to the Carbon memory management standards.
+  CFRelease(proxy_dict);
+
+  return result;
+}
+#endif // WEBRTC_IOS
+
 bool AutoDetectProxySettings(const char* agent, const char* url,
                              ProxyInfo* proxy) {
 #if defined(WEBRTC_WIN)
@@ -1195,6 +1250,8 @@ bool GetSystemDefaultProxySettings(const char* agent, const char* url,
   return GetIeProxySettings(agent, url, proxy);
 #elif defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
   return GetMacProxySettings(proxy);
+#elif defined(WEBRTC_IOS)
+  return GetiOSProxySettings(proxy);
 #else
   // TODO: Get System settings if browser is not firefox.
   return GetFirefoxProxySettings(url, proxy);
@@ -1222,7 +1279,7 @@ bool GetProxySettingsForUrl(const char* agent, const char* url,
         result = GetIeProxySettings(agent, url, proxy);
       }
       break;
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
     default:
       result = GetSystemDefaultProxySettings(agent, url, proxy);
       break;

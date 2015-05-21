@@ -581,6 +581,9 @@
           ],
         }],
         ['OS=="ios"', {
+          'sources/': [
+            ['include', 'macconversion.*'],
+          ],
           'all_dependent_settings': {
             'xcode_settings': {
               'OTHER_LDFLAGS': [
