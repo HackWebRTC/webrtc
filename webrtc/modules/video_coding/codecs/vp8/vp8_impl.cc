@@ -603,7 +603,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   }
 
   rps_.Init();
-  quality_scaler_.Init(codec_.qpMax);
+  quality_scaler_.Init(codec_.qpMax / kDefaultLowQpDenominator);
   quality_scaler_.ReportFramerate(codec_.maxFramerate);
 
   return InitAndSetControlSettings();
@@ -1035,7 +1035,7 @@ int VP8EncoderImpl::GetEncodedPartitions(
     if (encoded_images_[0]._length > 0) {
       int qp;
       vpx_codec_control(&encoders_[0], VP8E_GET_LAST_QUANTIZER_64, &qp);
-      quality_scaler_.ReportNormalizedQP(qp);
+      quality_scaler_.ReportQP(qp);
     } else {
       quality_scaler_.ReportDroppedFrame();
     }

@@ -15,6 +15,7 @@
 #include "webrtc/modules/video_coding/utility/include/moving_average.h"
 
 namespace webrtc {
+const int kDefaultLowQpDenominator = 3;
 class QualityScaler {
  public:
   struct Resolution {
@@ -23,15 +24,10 @@ class QualityScaler {
   };
 
   QualityScaler();
-  void Init(int max_qp);
+  void Init(int low_qp_threshold);
   void SetMinResolution(int min_width, int min_height);
   void ReportFramerate(int framerate);
-
-  // Report QP for SW encoder, report framesize fluctuation for HW encoder,
-  // only one of these two functions should be called, framesize fluctuation
-  // is to be used only if qp isn't available.
-  void ReportNormalizedQP(int qp);
-  void ReportNormalizedFrameSizeFluctuation(double framesize_deviation);
+  void ReportQP(int qp);
   void ReportDroppedFrame();
   void Reset(int framerate, int bitrate, int width, int height);
   Resolution GetScaledResolution(const I420VideoFrame& frame);
@@ -45,10 +41,9 @@ class QualityScaler {
   I420VideoFrame scaled_frame_;
 
   size_t num_samples_;
-  int target_framesize_;
   int low_qp_threshold_;
   MovingAverage<int> framedrop_percent_;
-  MovingAverage<double> frame_quality_;
+  MovingAverage<int> average_qp_;
 
   int downscale_shift_;
   int min_width_;

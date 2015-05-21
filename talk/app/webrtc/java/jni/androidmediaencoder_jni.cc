@@ -35,6 +35,7 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/utility/include/quality_scaler.h"
+#include "webrtc/modules/video_coding/utility/include/vp8_header_parser.h"
 #include "webrtc/system_wrappers/interface/logcat_trace_context.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
 #include "third_party/libyuv/include/libyuv/convert_from.h"
@@ -196,8 +197,6 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   // Global references; must be deleted in Release().
   std::vector<jobject> input_buffers_;
   scoped_ptr<webrtc::QualityScaler> quality_scaler_;
-  // Target frame size in bytes.
-  int target_framesize_;
   // Dynamic resolution change, off by default.
   bool scale_;
 };
@@ -280,6 +279,11 @@ int32_t MediaCodecVideoEncoder::InitEncode(
     size_t /* max_payload_size */) {
   const int kMinWidth = 320;
   const int kMinHeight = 180;
+  // QP is obtained from VP8-bitstream for HW, so the QP corresponds to the
+  // (internal) range: [0, 127]. And we cannot change QP_max in HW, so it is
+  // always = 127. Note that in SW, QP is that of the user-level range [0, 63].
+  const int kMaxQP = 127;
+  const int kLowQpThresholdDenominator = 3;
   if (codec_settings == NULL) {
     ALOGE("NULL VideoCodec instance");
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
@@ -290,14 +294,10 @@ int32_t MediaCodecVideoEncoder::InitEncode(
 
   ALOGD("InitEncode request");
   scale_ = false;
-  quality_scaler_->Init(0);
-  quality_scaler_->SetMinResolution(kMinWidth, kMinHeight);
-  quality_scaler_->ReportFramerate(codec_settings->maxFramerate);
-  if (codec_settings->maxFramerate > 0) {
-    target_framesize_ = codec_settings->startBitrate * 1000 /
-        codec_settings->maxFramerate / 8;
-  } else {
-    target_framesize_ = 0;
+  if (codecType_ == kVideoCodecVP8) {
+    quality_scaler_->Init(kMaxQP / kLowQpThresholdDenominator);
+    quality_scaler_->SetMinResolution(kMinWidth, kMinHeight);
+    quality_scaler_->ReportFramerate(codec_settings->maxFramerate);
   }
   return codec_thread_->Invoke<int32_t>(
       Bind(&MediaCodecVideoEncoder::InitEncodeOnCodecThread,
@@ -337,12 +337,8 @@ int32_t MediaCodecVideoEncoder::SetChannelParameters(uint32_t /* packet_loss */,
 
 int32_t MediaCodecVideoEncoder::SetRates(uint32_t new_bit_rate,
                                          uint32_t frame_rate) {
-  quality_scaler_->ReportFramerate(frame_rate);
-  if (frame_rate > 0) {
-    target_framesize_ = new_bit_rate * 1000 / frame_rate / 8;
-  } else {
-    target_framesize_ = 0;
-  }
+  if (codecType_ == kVideoCodecVP8)
+    quality_scaler_->ReportFramerate(frame_rate);
   return codec_thread_->Invoke<int32_t>(
       Bind(&MediaCodecVideoEncoder::SetRatesOnCodecThread,
            this,
@@ -716,16 +712,8 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
         last_input_timestamp_ms_ - last_output_timestamp_ms_,
         frame_encoding_time_ms);
 
-    if (payload_size) {
-      double framesize_deviation = 0.0;
-      if (target_framesize_ > 0) {
-        framesize_deviation =
-          (double)abs((int)payload_size - target_framesize_) /
-          target_framesize_;
-      }
-      quality_scaler_->ReportNormalizedFrameSizeFluctuation(
-          framesize_deviation);
-    }
+    if (payload_size && codecType_ == kVideoCodecVP8)
+      quality_scaler_->ReportQP(webrtc::vp8::GetQP(payload));
 
     // Calculate and print encoding statistics - every 3 seconds.
     frames_encoded_++;
@@ -872,7 +860,8 @@ int32_t MediaCodecVideoEncoder::NextNaluPosition(
 }
 
 void MediaCodecVideoEncoder::OnDroppedFrame() {
-  quality_scaler_->ReportDroppedFrame();
+  if (codecType_ == kVideoCodecVP8)
+    quality_scaler_->ReportDroppedFrame();
 }
 
 MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory() {

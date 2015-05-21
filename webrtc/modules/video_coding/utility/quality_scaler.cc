@@ -14,17 +14,15 @@ namespace webrtc {
 static const int kMinFps = 10;
 static const int kMeasureSeconds = 5;
 static const int kFramedropPercentThreshold = 60;
-static const int kLowQpThresholdDenominator = 3;
-static const double kFramesizeFlucThreshold = 0.11;
 
 QualityScaler::QualityScaler()
     : num_samples_(0), low_qp_threshold_(-1), downscale_shift_(0),
       min_width_(0), min_height_(0) {
 }
 
-void QualityScaler::Init(int max_qp) {
+void QualityScaler::Init(int low_qp_threshold) {
   ClearSamples();
-  low_qp_threshold_ = max_qp / kLowQpThresholdDenominator;
+  low_qp_threshold_ = low_qp_threshold;
 }
 
 void QualityScaler::SetMinResolution(int min_width, int min_height) {
@@ -32,24 +30,15 @@ void QualityScaler::SetMinResolution(int min_width, int min_height) {
   min_height_ = min_height;
 }
 
-// TODO(jackychen): target_framesize should be calculated from average bitrate
-// in the measured period of time.
-// Report framerate(fps) and target_bitrate(kbit/s) to estimate # of samples
-// and get target_framesize_.
+// Report framerate(fps) to estimate # of samples.
 void QualityScaler::ReportFramerate(int framerate) {
   num_samples_ = static_cast<size_t>(
       kMeasureSeconds * (framerate < kMinFps ? kMinFps : framerate));
 }
 
-void QualityScaler::ReportNormalizedQP(int qp) {
+void QualityScaler::ReportQP(int qp) {
   framedrop_percent_.AddSample(0);
-  frame_quality_.AddSample(static_cast<double>(qp) / low_qp_threshold_);
-}
-
-void QualityScaler::ReportNormalizedFrameSizeFluctuation(
-    double framesize_deviation) {
-  framedrop_percent_.AddSample(0);
-  frame_quality_.AddSample(framesize_deviation / kFramesizeFlucThreshold);
+  average_qp_.AddSample(qp);
 }
 
 void QualityScaler::ReportDroppedFrame() {
@@ -67,13 +56,12 @@ QualityScaler::Resolution QualityScaler::GetScaledResolution(
   res.height = frame.height();
 
   // Update scale factor.
-  int avg_drop;
-  double avg_quality;
+  int avg_drop, avg_qp;
   if (framedrop_percent_.GetAverage(num_samples_, &avg_drop) &&
       avg_drop >= kFramedropPercentThreshold) {
     AdjustScale(false);
-  } else if (frame_quality_.GetAverage(num_samples_, &avg_quality) &&
-      avg_quality <= 1.0) {
+  } else if (average_qp_.GetAverage(num_samples_, &avg_qp) &&
+      avg_qp <= low_qp_threshold_) {
     AdjustScale(true);
   }
 
@@ -119,7 +107,7 @@ const I420VideoFrame& QualityScaler::GetScaledFrame(
 
 void QualityScaler::ClearSamples() {
   framedrop_percent_.Reset();
-  frame_quality_.Reset();
+  average_qp_.Reset();
 }
 
 void QualityScaler::AdjustScale(bool up) {

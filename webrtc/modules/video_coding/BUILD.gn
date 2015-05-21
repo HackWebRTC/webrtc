@@ -96,7 +96,9 @@ source_set("video_coding_utility") {
     "utility/include/frame_dropper.h",
     "utility/include/moving_average.h",
     "utility/include/quality_scaler.h",
+    "utility/include/vp8_header_parser.h",
     "utility/quality_scaler.cc",
+    "utility/vp8_header_parser.cc",
   ]
 
   configs += [ "../..:common_config" ]
