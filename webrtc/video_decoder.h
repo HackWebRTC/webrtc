@@ -62,13 +62,6 @@ class VideoDecoder {
 
   virtual int32_t Release() = 0;
   virtual int32_t Reset() = 0;
-
-  virtual int32_t SetCodecConfigParameters(const uint8_t* /*buffer*/,
-                                           int32_t /*size*/) {
-    return -1;
-  }
-
-  virtual VideoDecoder* Copy() { return NULL; }
 };
 
 // Class used to wrap external VideoDecoders to provide a fallback option on

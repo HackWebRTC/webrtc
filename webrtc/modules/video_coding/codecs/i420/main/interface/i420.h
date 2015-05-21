@@ -102,11 +102,6 @@ class I420Decoder : public VideoDecoder {
   int InitDecode(const VideoCodec* codecSettings,
                  int /*numberOfCores*/) override;
 
-  int SetCodecConfigParameters(const uint8_t* /*buffer*/,
-                               int /*size*/) override {
-    return WEBRTC_VIDEO_CODEC_OK;
-  }
-
 // Decode encoded image (as a part of a video stream). The decoded image
 // will be returned to the user through the decode complete callback.
 //

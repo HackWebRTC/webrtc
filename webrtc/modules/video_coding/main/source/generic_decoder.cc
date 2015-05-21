@@ -186,11 +186,6 @@ int32_t VCMGenericDecoder::Reset()
     return _decoder.Reset();
 }
 
-int32_t VCMGenericDecoder::SetCodecConfigParameters(const uint8_t* buffer, int32_t size)
-{
-    return _decoder.SetCodecConfigParameters(buffer, size);
-}
-
 int32_t VCMGenericDecoder::RegisterDecodeCompleteCallback(VCMDecodedFrameCallback* callback)
 {
     _callback = callback;

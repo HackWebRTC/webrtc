@@ -128,21 +128,17 @@ class VP8DecoderImpl : public VP8Decoder {
 
   virtual ~VP8DecoderImpl();
 
-  virtual int InitDecode(const VideoCodec* inst, int number_of_cores);
+  int InitDecode(const VideoCodec* inst, int number_of_cores) override;
 
-  virtual int Decode(const EncodedImage& input_image,
+  int Decode(const EncodedImage& input_image,
                      bool missing_frames,
                      const RTPFragmentationHeader* fragmentation,
                      const CodecSpecificInfo* codec_specific_info,
-                     int64_t /*render_time_ms*/);
+                     int64_t /*render_time_ms*/) override;
 
-  virtual int RegisterDecodeCompleteCallback(DecodedImageCallback* callback);
-
-  virtual int Release();
-
-  virtual int Reset();
-
-  virtual VideoDecoder* Copy();
+  int RegisterDecodeCompleteCallback(DecodedImageCallback* callback) override;
+  int Release() override;
+  int Reset() override;
 
  private:
   // Copy reference image from this _decoder to the _decoder in copyTo. Set
