@@ -56,7 +56,8 @@ QualityScaler::Resolution QualityScaler::GetScaledResolution(
   res.height = frame.height();
 
   // Update scale factor.
-  int avg_drop, avg_qp;
+  int avg_drop = 0;
+  int avg_qp = 0;
   if (framedrop_percent_.GetAverage(num_samples_, &avg_drop) &&
       avg_drop >= kFramedropPercentThreshold) {
     AdjustScale(false);
