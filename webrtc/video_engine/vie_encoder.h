@@ -25,8 +25,8 @@
 #include "webrtc/typedefs.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/system_wrappers/interface/scoped_refptr.h"
+#include "webrtc/video_engine/vie_capturer.h"
 #include "webrtc/video_engine/vie_defines.h"
-#include "webrtc/video_engine/vie_frame_provider_base.h"
 
 namespace webrtc {
 
@@ -122,15 +122,7 @@ class ViEEncoder
   int32_t ScaleInputImage(bool enable);
 
   // Implementing ViEFrameCallback.
-  void DeliverFrame(int id,
-                    const I420VideoFrame& video_frame,
-                    const std::vector<uint32_t>& csrcs) override;
-  void DelayChanged(int id, int frame_delay) override;
-  int GetPreferedFrameSettings(int* width,
-                               int* height,
-                               int* frame_rate) override;
-
-  void ProviderDestroyed(int id) override { return; }
+  void DeliverFrame(I420VideoFrame video_frame) override;
 
   int32_t SendKeyFrame();
   int32_t SendCodecStatistics(uint32_t* num_key_frames,

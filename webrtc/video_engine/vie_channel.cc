@@ -91,8 +91,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
                        PacedSender* paced_sender,
                        PacketRouter* packet_router,
                        bool sender)
-    : ViEFrameProviderBase(channel_id, engine_id),
-      channel_id_(channel_id),
+    : channel_id_(channel_id),
       engine_id_(engine_id),
       number_of_cores_(number_of_cores),
       num_socket_threads_(kViESocketThreads),
@@ -104,7 +103,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
                                      nullptr,
                                      nullptr)),
       vie_receiver_(channel_id, vcm_, remote_bitrate_estimator, this),
-      vie_sync_(vcm_, this),
+      vie_sync_(vcm_),
       stats_observer_(new ChannelStatsObserver(this)),
       vcm_receive_stats_callback_(NULL),
       incoming_video_stream_(nullptr),
@@ -1462,21 +1461,7 @@ int32_t ViEChannel::FrameToRender(
       pre_render_callback_->FrameCallback(&video_frame);
   }
 
-  // New API bypass.
-  if (incoming_video_stream_) {
-    incoming_video_stream_->RenderFrame(channel_id_, video_frame);
-    return 0;
-  }
-
-  uint32_t arr_ofCSRC[kRtpCsrcSize];
-  int32_t no_of_csrcs = vie_receiver_.GetCsrcs(arr_ofCSRC);
-  if (no_of_csrcs <= 0) {
-    arr_ofCSRC[0] = vie_receiver_.GetRemoteSsrc();
-    no_of_csrcs = 1;
-  }
-  std::vector<uint32_t> csrcs(arr_ofCSRC, arr_ofCSRC + no_of_csrcs);
-  DeliverFrame(video_frame, csrcs);
-
+  incoming_video_stream_->RenderFrame(channel_id_, video_frame);
   return 0;
 }
 

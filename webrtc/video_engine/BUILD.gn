@@ -35,8 +35,6 @@ source_set("video_engine_core") {
     "vie_defines.h",
     "vie_encoder.cc",
     "vie_encoder.h",
-    "vie_frame_provider_base.cc",
-    "vie_frame_provider_base.h",
     "vie_receiver.cc",
     "vie_receiver.h",
     "vie_remb.cc",

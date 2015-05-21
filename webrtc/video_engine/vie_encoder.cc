@@ -444,11 +444,8 @@ void ViEEncoder::TraceFrameDropEnd() {
   encoder_paused_and_dropped_frame_ = false;
 }
 
-void ViEEncoder::DeliverFrame(int id,
-                              const I420VideoFrame& video_frame,
-                              const std::vector<uint32_t>& csrcs) {
+void ViEEncoder::DeliverFrame(I420VideoFrame video_frame) {
   DCHECK(send_payload_router_ != NULL);
-  DCHECK(csrcs.empty());
   if (!send_payload_router_->active()) {
     // We've paused or we have no channels attached, don't waste resources on
     // encoding.
@@ -529,24 +526,6 @@ void ViEEncoder::DeliverFrame(int id,
   }
 #endif
   vcm_->AddVideoFrame(*output_frame);
-}
-
-void ViEEncoder::DelayChanged(int id, int frame_delay) {
-}
-
-int ViEEncoder::GetPreferedFrameSettings(int* width,
-                                         int* height,
-                                         int* frame_rate) {
-  webrtc::VideoCodec video_codec;
-  memset(&video_codec, 0, sizeof(video_codec));
-  if (vcm_->SendCodec(&video_codec) != VCM_OK) {
-    return -1;
-  }
-
-  *width = video_codec.width;
-  *height = video_codec.height;
-  *frame_rate = video_codec.maxFramerate;
-  return 0;
 }
 
 int ViEEncoder::SendKeyFrame() {

@@ -42,13 +42,14 @@ struct ViESyncDelay {
   int network_delay;
 };
 
-StreamSynchronization::StreamSynchronization(int audio_channel_id,
-                                             int video_channel_id)
+StreamSynchronization::StreamSynchronization(uint32_t video_primary_ssrc,
+                                             int audio_channel_id)
     : channel_delay_(new ViESyncDelay),
+      video_primary_ssrc_(video_primary_ssrc),
       audio_channel_id_(audio_channel_id),
-      video_channel_id_(video_channel_id),
       base_target_delay_ms_(0),
-      avg_diff_ms_(0) {}
+      avg_diff_ms_(0) {
+}
 
 StreamSynchronization::~StreamSynchronization() {
   delete channel_delay_;
@@ -193,8 +194,8 @@ bool StreamSynchronization::ComputeDelays(int relative_delay_ms,
   channel_delay_->last_audio_delay_ms = new_audio_delay_ms;
 
   LOG(LS_VERBOSE) << "Sync video delay " << new_video_delay_ms
+                  << " for video primary SSRC " << video_primary_ssrc_
                   << " and audio delay " << channel_delay_->extra_audio_delay_ms
-                  << " for video channel " << video_channel_id_
                   << " for audio channel " << audio_channel_id_;
 
   // Return values.

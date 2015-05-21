@@ -29,7 +29,7 @@ class StreamSynchronization {
     uint32_t latest_timestamp;
   };
 
-  StreamSynchronization(int audio_channel_id, int video_channel_id);
+  StreamSynchronization(uint32_t video_primary_ssrc, int audio_channel_id);
   ~StreamSynchronization();
 
   bool ComputeDelays(int relative_delay_ms,
@@ -49,8 +49,8 @@ class StreamSynchronization {
 
  private:
   ViESyncDelay* channel_delay_;
-  int audio_channel_id_;
-  int video_channel_id_;
+  const uint32_t video_primary_ssrc_;
+  const int audio_channel_id_;
   int base_target_delay_ms_;
   int avg_diff_ms_;
 };

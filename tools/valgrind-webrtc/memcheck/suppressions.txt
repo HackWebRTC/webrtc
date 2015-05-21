@@ -186,24 +186,6 @@
 }
 
 {
-   bug_329_4
-   Memcheck:Param
-   socketcall.sendto(msg)
-   obj:*libpthread-*.so
-   fun:_ZN6webrtc14UdpSocketPosix6SendToEPKaiRKNS_13SocketAddressE
-   ...
-   fun:_ZN6webrtc17ModuleRtpRtcpImpl16SendOutgoingDataENS_9FrameTypeEajlPKhjPKNS_22RTPFragmentationHeaderEPKNS_14RTPVideoHeaderE
-   ...
-   fun:_ZN6webrtc10ViEEncoder12DeliverFrameEiPNS_10VideoFrameEiPKj
-   fun:_ZN6webrtc20ViEFrameProviderBase12DeliverFrameEPNS_10VideoFrameEiPKj
-   fun:_ZN6webrtc11ViECapturer16DeliverI420FrameEPNS_10VideoFrameE
-   fun:_ZN6webrtc11ViECapturer17ViECaptureProcessEv
-   fun:_ZN6webrtc11ViECapturer24ViECaptureThreadFunctionEPv
-   fun:_ZN6webrtc11ThreadPosix3RunEv
-   fun:StartThread
-}
-
-{
    bug_329_5
    Memcheck:Param
    socketcall.sendto(msg)
@@ -218,19 +200,6 @@
    fun:_ZN6webrtc17ProcessThreadImpl3RunEPv
    fun:_ZN6webrtc11ThreadPosix3RunEv
    fun:StartThread
-}
-
-{
-   bug_329_6
-   Memcheck:Param
-   socketcall.sendto(msg)
-   obj:*libpthread-*.so
-   fun:_ZN6webrtc14UdpSocketPosix6SendToEPKaiRKNS_13SocketAddressE
-   ...
-   fun:_ZN6webrtc10ViEEncoder12DeliverFrameEiPNS_10VideoFrameEiPKj
-   fun:_ZN6webrtc20ViEFrameProviderBase12DeliverFrameEPNS_10VideoFrameEiPKj
-   fun:_ZN6webrtc11ViECapturer16DeliverI420FrameEPNS_10VideoFrameE
-   fun:_ZN6webrtc11ViECapturer17ViECaptureProcessEv
 }
 
 {

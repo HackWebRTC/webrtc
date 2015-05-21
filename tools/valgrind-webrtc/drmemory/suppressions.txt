@@ -160,23 +160,6 @@ name=https://code.google.com/p/webrtc/issues/detail?id=3158 (2)
 *!WebRtcVideoMediaChannelTest_TwoStreamsSendAndFailUnsignalledRecv_Test::TestBody
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<>
 
-UNINITIALIZED READ
-name=https://code.google.com/p/webrtc/issues/detail?id=3158 (3)
-*!_output_l
-*!_vsnprintf_l
-*!_vsnprintf
-*!webrtc::Trace::Add
-*!webrtc::ViEEncoder::DeliverFrame
-*!webrtc::ViEFrameProviderBase::DeliverFrame
-*!webrtc::ViECapturer::DeliverI420Frame
-*!webrtc::ViECapturer::ViECaptureProcess
-*!webrtc::ViECapturer::ViECaptureThreadFunction
-*!webrtc::ThreadWindows::Run
-*!webrtc::ThreadWindows::StartThread
-*!_callthreadstartex
-*!_threadstartex
-KERNEL32.dll!BaseThreadInitThunk
-
 # rtc_unittest, fails on Win DrMemory Full
 UNINITIALIZED READ
 name=https://code.google.com/p/webrtc/issues/detail?id=3158 (4)

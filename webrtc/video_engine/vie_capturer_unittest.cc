@@ -24,7 +24,6 @@
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
 #include "webrtc/system_wrappers/interface/scoped_vector.h"
-#include "webrtc/video_engine/mock/mock_vie_frame_provider_base.h"
 
 using ::testing::_;
 using ::testing::Invoke;
@@ -36,6 +35,11 @@ using ::testing::WithArg;
 #define FRAME_TIMEOUT_MS 500
 
 namespace webrtc {
+
+class MockViEFrameCallback : public ViEFrameCallback {
+ public:
+  MOCK_METHOD1(DeliverFrame, void(I420VideoFrame video_frame));
+};
 
 bool EqualFrames(const I420VideoFrame& frame1,
                  const I420VideoFrame& frame2);
@@ -55,9 +59,9 @@ class ViECapturerTest : public ::testing::Test {
         output_frame_event_(EventWrapper::Create()) {}
 
   virtual void SetUp() {
-    EXPECT_CALL(*mock_frame_callback_, DeliverFrame(_, _, _))
+    EXPECT_CALL(*mock_frame_callback_, DeliverFrame(_))
         .WillRepeatedly(
-            WithArg<1>(Invoke(this, &ViECapturerTest::AddOutputFrame)));
+            WithArg<0>(Invoke(this, &ViECapturerTest::AddOutputFrame)));
 
     Config config;
     vie_capturer_.reset(new ViECapturer(mock_process_thread_.get(),

@@ -30,8 +30,7 @@ class VoEVideoSync;
 
 class ViESyncModule : public Module {
  public:
-  ViESyncModule(VideoCodingModule* vcm,
-                ViEChannel* vie_channel);
+  explicit ViESyncModule(VideoCodingModule* vcm);
   ~ViESyncModule();
 
   int ConfigureSync(int voe_channel_id,
@@ -50,8 +49,7 @@ class ViESyncModule : public Module {
 
  private:
   rtc::scoped_ptr<CriticalSectionWrapper> data_cs_;
-  VideoCodingModule* vcm_;
-  ViEChannel* vie_channel_;
+  VideoCodingModule* const vcm_;
   RtpReceiver* video_receiver_;
   RtpRtcp* video_rtp_rtcp_;
   int voe_channel_id_;

@@ -23,7 +23,6 @@
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/vie_defines.h"
-#include "webrtc/video_engine/vie_frame_provider_base.h"
 #include "webrtc/video_engine/vie_receiver.h"
 #include "webrtc/video_engine/vie_sender.h"
 #include "webrtc/video_engine/vie_sync_module.h"
@@ -92,14 +91,12 @@ class ViEDecoderObserver {
  protected:
   virtual ~ViEDecoderObserver() {}
 };
-class ViEChannel
-    : public VCMFrameTypeCallback,
-      public VCMReceiveCallback,
-      public VCMReceiveStatisticsCallback,
-      public VCMDecoderTimingCallback,
-      public VCMPacketRequestCallback,
-      public RtpFeedback,
-      public ViEFrameProviderBase {
+class ViEChannel : public VCMFrameTypeCallback,
+                   public VCMReceiveCallback,
+                   public VCMReceiveStatisticsCallback,
+                   public VCMDecoderTimingCallback,
+                   public VCMPacketRequestCallback,
+                   public RtpFeedback {
  public:
   friend class ChannelStatsObserver;
   friend class ViEChannelProtectionCallback;
@@ -338,9 +335,6 @@ class ViEChannel
   int32_t SetVoiceChannel(int32_t ve_channel_id,
                           VoEVideoSync* ve_sync_interface);
   int32_t VoiceChannel();
-
-  // Implements ViEFrameProviderBase.
-  virtual int FrameCallbackChanged() {return -1;}
 
   // New-style callbacks, used by VideoReceiveStream.
   void RegisterPreRenderCallback(I420FrameCallback* pre_render_callback);

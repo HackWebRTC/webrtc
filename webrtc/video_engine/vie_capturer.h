@@ -26,7 +26,6 @@
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/vie_defines.h"
-#include "webrtc/video_engine/vie_frame_provider_base.h"
 
 namespace webrtc {
 
@@ -39,7 +38,13 @@ class OveruseFrameDetector;
 class ProcessThread;
 class RegistrableCpuOveruseMetricsObserver;
 class ViEEffectFilter;
-class ViEFrameCallback;
+
+class ViEFrameCallback {
+ public:
+  virtual ~ViEFrameCallback() {}
+
+  virtual void DeliverFrame(I420VideoFrame video_frame) = 0;
+};
 
 class ViECapturer {
  public:

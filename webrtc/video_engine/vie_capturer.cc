@@ -167,7 +167,7 @@ bool ViECapturer::ViECaptureProcess() {
     if (!deliver_frame.IsZeroSize()) {
       capture_time = deliver_frame.render_time_ms();
       encode_start_time = Clock::GetRealTimeClock()->TimeInMilliseconds();
-      frame_callback_->DeliverFrame(0, deliver_frame, std::vector<uint32_t>());
+      frame_callback_->DeliverFrame(deliver_frame);
     }
     // Update the overuse detector with the duration.
     if (encode_start_time != -1) {
