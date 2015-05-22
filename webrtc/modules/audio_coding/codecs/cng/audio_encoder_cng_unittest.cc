@@ -80,6 +80,21 @@ class AudioEncoderCngTest : public ::testing::Test {
     timestamp_ += num_audio_samples_10ms_;
   }
 
+  // Expect |num_calls| calls to the encoder, all successful. The last call
+  // claims to have encoded |kMockMaxEncodedBytes| bytes, and all the preceding
+  // ones 0 bytes.
+  void ExpectEncodeCalls(int num_calls) {
+    InSequence s;
+    AudioEncoder::EncodedInfo info;
+    for (int j = 0; j < num_calls - 1; ++j) {
+      EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _))
+          .WillOnce(Return(info));
+    }
+    info.encoded_bytes = kMockReturnEncodedBytes;
+    EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _))
+        .WillOnce(Return(info));
+  }
+
   // Verifies that the cng_ object waits until it has collected
   // |blocks_per_frame| blocks of audio, and then dispatches all of them to
   // the underlying codec (speech or cng).
@@ -96,20 +111,8 @@ class AudioEncoderCngTest : public ::testing::Test {
       Encode();
       EXPECT_EQ(0u, encoded_info_.encoded_bytes);
     }
-    if (active_speech) {
-      // Now expect |blocks_per_frame| calls to the encoder in sequence.
-      // Let the speech codec mock return true and set the number of encoded
-      // bytes to |kMockReturnEncodedBytes|.
-      InSequence s;
-      AudioEncoder::EncodedInfo info;
-      for (int j = 0; j < blocks_per_frame - 1; ++j) {
-        EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _))
-            .WillOnce(Return(info));
-      }
-      info.encoded_bytes = kMockReturnEncodedBytes;
-      EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _))
-          .WillOnce(Return(info));
-    }
+    if (active_speech)
+      ExpectEncodeCalls(blocks_per_frame);
     Encode();
     if (active_speech) {
       EXPECT_EQ(kMockReturnEncodedBytes, encoded_info_.encoded_bytes);
@@ -283,23 +286,17 @@ TEST_F(AudioEncoderCngTest, MixedActivePassive) {
   CreateCng();
 
   // All of the frame is active speech.
-  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _))
-      .Times(6)
-      .WillRepeatedly(Return(AudioEncoder::EncodedInfo()));
+  ExpectEncodeCalls(6);
   EXPECT_TRUE(CheckMixedActivePassive(Vad::kActive, Vad::kActive));
   EXPECT_TRUE(encoded_info_.speech);
 
   // First half of the frame is active speech.
-  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _))
-      .Times(6)
-      .WillRepeatedly(Return(AudioEncoder::EncodedInfo()));
+  ExpectEncodeCalls(6);
   EXPECT_TRUE(CheckMixedActivePassive(Vad::kActive, Vad::kPassive));
   EXPECT_TRUE(encoded_info_.speech);
 
   // Second half of the frame is active speech.
-  EXPECT_CALL(mock_encoder_, EncodeInternal(_, _, _, _))
-      .Times(6)
-      .WillRepeatedly(Return(AudioEncoder::EncodedInfo()));
+  ExpectEncodeCalls(6);
   EXPECT_TRUE(CheckMixedActivePassive(Vad::kPassive, Vad::kActive));
   EXPECT_TRUE(encoded_info_.speech);
 
