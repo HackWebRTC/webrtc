@@ -375,8 +375,10 @@ void CaptureManager::UnregisterVideoCapturer(
   // for the CaptureManager it doesn't matter as it will no longer receive any
   // frames from the VideoCapturer.
   SignalCapturerStateChange.stop(video_capturer->SignalStateChange);
-  video_capturer->Stop();
-  SignalCapturerStateChange(video_capturer, CS_STOPPED);
+  if (video_capturer->IsRunning()) {
+    video_capturer->Stop();
+    SignalCapturerStateChange(video_capturer, CS_STOPPED);
+  }
 }
 
 bool CaptureManager::StartWithBestCaptureFormat(
