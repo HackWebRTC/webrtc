@@ -259,6 +259,13 @@ bool TransportProxy::OnRemoteCandidates(const Candidates& candidates,
   // TODO(juberti): Remove this once everybody calls SetLocalTD.
   CompleteNegotiation();
 
+  // Ignore candidates for if the proxy content_name doesn't match the content
+  // name of the actual transport. This stops video candidates from being sent
+  // down to the audio transport when BUNDLE is enabled.
+  if (content_name_ != transport_->get()->content_name()) {
+    return true;
+  }
+
   // Verify each candidate before passing down to transport layer.
   for (Candidates::const_iterator cand = candidates.begin();
        cand != candidates.end(); ++cand) {
