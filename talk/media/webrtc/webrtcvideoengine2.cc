@@ -1053,6 +1053,8 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
 
   if (rtcp_receiver_report_ssrc_ == kDefaultRtcpReceiverReportSsrc) {
     rtcp_receiver_report_ssrc_ = ssrc;
+    for (auto& kv : receive_streams_)
+      kv.second->SetLocalSsrc(ssrc);
   }
   if (default_send_ssrc_ == 0) {
     default_send_ssrc_ = ssrc;
@@ -2312,6 +2314,19 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRecvCodecs(
   RecreateWebRtcStream();
 }
 
+void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetLocalSsrc(
+    uint32_t local_ssrc) {
+  // TODO(pbos): Consider turning this sanity check into a DCHECK. You should
+  // not be able to create a sender with the same SSRC as a receiver, but right
+  // now this can't be done due to unittests depending on receiving what they
+  // are sending from the same MediaChannel.
+  if (local_ssrc == config_.rtp.remote_ssrc)
+    return;
+
+  config_.rtp.local_ssrc = local_ssrc;
+  RecreateWebRtcStream();
+}
+
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetNackAndRemb(
     bool nack_enabled, bool remb_enabled) {
   int nack_history_ms = nack_enabled ? kNackHistoryMs : 0;
@@ -2327,8 +2342,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetNackAndRemb(
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRtpExtensions(
     const std::vector<webrtc::RtpExtension>& extensions) {
   config_.rtp.extensions = extensions;
-  if (stream_ != nullptr)
-    RecreateWebRtcStream();
+  RecreateWebRtcStream();
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {

@@ -971,6 +971,7 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test,
   }
 
   void TestCpuAdaptation(bool enable_overuse, bool is_screenshare);
+  void TestReceiverLocalSsrcConfiguration(bool receiver_first);
 
   FakeVideoSendStream* SetDenoisingOption(bool enabled) {
     VideoOptions options;
@@ -1312,8 +1313,8 @@ TEST_F(WebRtcVideoChannel2Test, NackIsEnabledByDefault) {
 }
 
 TEST_F(WebRtcVideoChannel2Test, NackCanBeEnabledAndDisabled) {
-  FakeVideoReceiveStream* recv_stream = AddRecvStream();
   FakeVideoSendStream* send_stream = AddSendStream();
+  FakeVideoReceiveStream* recv_stream = AddRecvStream();
 
   EXPECT_GT(recv_stream->GetConfig().rtp.nack.rtp_history_ms, 0);
   EXPECT_GT(send_stream->GetConfig().rtp.nack.rtp_history_ms, 0);
@@ -2526,8 +2527,6 @@ TEST_F(WebRtcVideoChannel2Test,
   static const uint32 kOverlappingStreamSsrcs[] = {4, 3, 5};
   EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
 
-  const std::vector<uint32> ssrcs = MAKE_VECTOR(kSsrcs3);
-
   StreamParams sp =
       cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kFirstStreamSsrcs));
 
@@ -2542,10 +2541,42 @@ TEST_F(WebRtcVideoChannel2Test,
 
   // After removing the original stream this should be fine to add (makes sure
   // that RTX ssrcs are not forever taken).
-  EXPECT_TRUE(channel_->RemoveSendStream(ssrcs[0]));
-  EXPECT_TRUE(channel_->RemoveRecvStream(ssrcs[0]));
+  EXPECT_TRUE(channel_->RemoveSendStream(kFirstStreamSsrcs[0]));
+  EXPECT_TRUE(channel_->RemoveRecvStream(kFirstStreamSsrcs[0]));
   EXPECT_TRUE(channel_->AddSendStream(sp));
   EXPECT_TRUE(channel_->AddRecvStream(sp));
+}
+
+void WebRtcVideoChannel2Test::TestReceiverLocalSsrcConfiguration(
+    bool receiver_first) {
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+
+  const uint32_t kSenderSsrc = 0xC0FFEE;
+  const uint32_t kReceiverSsrc = 0x4711;
+
+  if (receiver_first) {
+    AddRecvStream(StreamParams::CreateLegacy(kReceiverSsrc));
+    std::vector<FakeVideoReceiveStream*> receive_streams =
+        fake_call_->GetVideoReceiveStreams();
+    ASSERT_EQ(1u, receive_streams.size());
+    // Bogus local SSRC when we have no sender.
+    EXPECT_EQ(1, receive_streams[0]->GetConfig().rtp.local_ssrc);
+  }
+  AddSendStream(StreamParams::CreateLegacy(kSenderSsrc));
+  if (!receiver_first)
+    AddRecvStream(StreamParams::CreateLegacy(kReceiverSsrc));
+  std::vector<FakeVideoReceiveStream*> receive_streams =
+      fake_call_->GetVideoReceiveStreams();
+  ASSERT_EQ(1u, receive_streams.size());
+  EXPECT_EQ(kSenderSsrc, receive_streams[0]->GetConfig().rtp.local_ssrc);
+}
+
+TEST_F(WebRtcVideoChannel2Test, ConfiguresLocalSsrc) {
+  TestReceiverLocalSsrcConfiguration(false);
+}
+
+TEST_F(WebRtcVideoChannel2Test, ConfiguresLocalSsrcOnExistingReceivers) {
+  TestReceiverLocalSsrcConfiguration(true);
 }
 
 class WebRtcVideoEngine2SimulcastTest : public testing::Test {
