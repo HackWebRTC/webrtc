@@ -206,8 +206,9 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
       stream_codec.numberOfSimulcastStreams = 1;
     } else {
       bool highest_resolution_stream = (i == (number_of_streams - 1));
-      PopulateStreamCodec(&codec_, i, highest_resolution_stream,
-                          &stream_codec, &send_stream);
+      PopulateStreamCodec(&codec_, i, number_of_streams,
+                          highest_resolution_stream, &stream_codec,
+                          &send_stream);
     }
 
     // TODO(ronghuawu): Remove once this is handled in VP8EncoderImpl.
@@ -354,9 +355,8 @@ int SimulcastEncoderAdapter::SetRates(uint32_t new_bitrate_kbit,
   bool send_stream = true;
   uint32_t stream_bitrate = 0;
   for (size_t stream_idx = 0; stream_idx < streaminfos_.size(); ++stream_idx) {
-    stream_bitrate = GetStreamBitrate(stream_idx,
-                                      new_bitrate_kbit,
-                                      &send_stream);
+    stream_bitrate = GetStreamBitrate(stream_idx, streaminfos_.size(),
+                                      new_bitrate_kbit, &send_stream);
     // Need a key frame if we have not sent this stream before.
     if (send_stream && !streaminfos_[stream_idx].send_stream) {
       streaminfos_[stream_idx].key_frame_request = true;
@@ -412,10 +412,12 @@ int32_t SimulcastEncoderAdapter::Encoded(
   }
 }
 
-uint32_t SimulcastEncoderAdapter::GetStreamBitrate(int stream_idx,
-                                                   uint32_t new_bitrate_kbit,
-                                                   bool* send_stream) const {
-  if (streaminfos_.size() == 1) {
+uint32_t SimulcastEncoderAdapter::GetStreamBitrate(
+    int stream_idx,
+    size_t total_number_of_streams,
+    uint32_t new_bitrate_kbit,
+    bool* send_stream) const {
+  if (total_number_of_streams == 1) {
     *send_stream = true;
     return new_bitrate_kbit;
   }
@@ -460,6 +462,7 @@ uint32_t SimulcastEncoderAdapter::GetStreamBitrate(int stream_idx,
 void SimulcastEncoderAdapter::PopulateStreamCodec(
     const webrtc::VideoCodec* inst,
     int stream_index,
+    size_t total_number_of_streams,
     bool highest_resolution_stream,
     webrtc::VideoCodec* stream_codec,
     bool* send_stream) {
@@ -491,9 +494,8 @@ void SimulcastEncoderAdapter::PopulateStreamCodec(
   }
   // TODO(ronghuawu): what to do with targetBitrate.
 
-  int stream_bitrate = GetStreamBitrate(stream_index,
-                                        inst->startBitrate,
-                                        send_stream);
+  int stream_bitrate = GetStreamBitrate(stream_index, total_number_of_streams,
+                                        inst->startBitrate, send_stream);
   stream_codec->startBitrate = stream_bitrate;
 }
 
