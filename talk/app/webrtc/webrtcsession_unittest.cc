@@ -40,13 +40,10 @@
 #include "talk/media/base/fakevideorenderer.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/devices/fakedevicemanager.h"
-#include "webrtc/p2p/base/p2ptransportchannel.h"
-#include "webrtc/p2p/base/dtlstransportchannel.h"
 #include "webrtc/p2p/base/stunserver.h"
 #include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/p2p/base/testturnserver.h"
 #include "webrtc/p2p/base/transportchannel.h"
-#include "webrtc/p2p/base/transportchannelproxy.h"
 #include "webrtc/p2p/client/basicportallocator.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/mediasession.h"
@@ -2603,58 +2600,6 @@ TEST_F(WebRtcSessionTest, TestSetRemoteDescriptionInvalidIceCredentials) {
   modified_offer = CreateSessionDescription(JsepSessionDescription::kOffer, sdp,
                                             NULL);
   EXPECT_FALSE(session_->SetRemoteDescription(modified_offer, &error));
-}
-
-// Test that candidates sent to the "video" transport do not get pushed down to
-// the "audio" transport channel when bundling using TransportProxy.
-TEST_F(WebRtcSessionTest, TestBalancedBundleCandidateMisuse) {
-  AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
-
-  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyBalanced);
-  mediastream_signaling_.SendAudioVideoStream1();
-
-  PeerConnectionInterface::RTCOfferAnswerOptions options;
-  options.use_rtp_mux = true;
-
-  SessionDescriptionInterface* offer = CreateRemoteOffer();
-  SetRemoteDescriptionWithoutError(offer);
-
-  SessionDescriptionInterface* answer = CreateAnswer(NULL);
-  SetLocalDescriptionWithoutError(answer);
-
-  EXPECT_EQ(session_->GetTransportProxy("audio")->impl(),
-            session_->GetTransportProxy("video")->impl());
-
-  cricket::Candidate candidate0;
-  candidate0.set_address(rtc::SocketAddress("1.1.1.1", 5000));
-  candidate0.set_component(1);
-  candidate0.set_protocol("udp");
-  JsepIceCandidate ice_candidate0(kMediaContentName0, kMediaContentIndex0,
-                                  candidate0);
-  EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate0));
-  // Let the candidate get processed completely.
-  rtc::Thread::Current()->ProcessMessages(100);
-
-  cricket::Transport* t = session_->GetTransport("audio");
-  cricket::TransportStats stats;
-
-  t->GetStats(&stats);
-  EXPECT_EQ(1, stats.channel_stats.size());
-  EXPECT_EQ(2, stats.channel_stats[0].connection_infos.size());
-
-  cricket::Candidate candidate1;
-  candidate1.set_address(rtc::SocketAddress("1.1.1.1", 5001));
-  candidate1.set_component(1);
-  candidate1.set_protocol("udp");
-  JsepIceCandidate ice_candidate1(kMediaContentName1, kMediaContentIndex1,
-                                  candidate1);
-  EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate1));
-  // Let the candidate get processed completely.
-  rtc::Thread::Current()->ProcessMessages(100);
-
-  t->GetStats(&stats);
-  EXPECT_EQ(1, stats.channel_stats.size());
-  EXPECT_EQ(2, stats.channel_stats[0].connection_infos.size());
 }
 
 // kBundlePolicyBalanced bundle policy and answer contains BUNDLE.

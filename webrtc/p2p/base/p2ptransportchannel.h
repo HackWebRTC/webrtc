@@ -156,9 +156,6 @@ class P2PTransportChannel : public TransportChannelImpl,
   // Public for unit tests.
   Connection* FindNextPingableConnection();
 
-  // Public for unit tests only.
-  size_t RemoteCandidateCount() const { return remote_candidates_.size(); }
-
  private:
   rtc::Thread* thread() { return worker_thread_; }
   PortAllocatorSession* allocator_session() {
