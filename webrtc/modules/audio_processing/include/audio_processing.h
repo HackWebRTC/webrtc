@@ -116,7 +116,7 @@ struct Beamforming {
 // constructor. It will have no impact if used with
 // AudioProcessing::SetExtraOptions().
 struct AudioProcessing48kHzSupport {
-  AudioProcessing48kHzSupport() : enabled(false) {}
+  AudioProcessing48kHzSupport() : enabled(true) {}
   explicit AudioProcessing48kHzSupport(bool enabled) : enabled(enabled) {}
   bool enabled;
 };
