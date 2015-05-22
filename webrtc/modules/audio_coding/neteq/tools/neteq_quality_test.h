@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_QUALITY_TEST_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_QUALITY_TEST_H_
 
+#include <fstream>
 #include <gflags/gflags.h>
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -65,8 +66,9 @@ class NetEqQualityTest : public ::testing::Test {
   NetEqQualityTest(int block_duration_ms,
                    int in_sampling_khz,
                    int out_sampling_khz,
-                   enum NetEqDecoder decoder_type,
-                   int channels);
+                   enum NetEqDecoder decoder_type);
+  virtual ~NetEqQualityTest();
+
   void SetUp() override;
 
   // EncodeBlock(...) does the following:
@@ -93,6 +95,12 @@ class NetEqQualityTest : public ::testing::Test {
   // Runs encoding / transmitting / decoding.
   void Simulate();
 
+  // Write to log file. Usage Log() << ...
+  std::ofstream& Log();
+
+  enum NetEqDecoder decoder_type_;
+  const int channels_;
+
  private:
   int decoded_time_ms_;
   int decodable_time_ms_;
@@ -101,8 +109,6 @@ class NetEqQualityTest : public ::testing::Test {
   const int block_duration_ms_;
   const int in_sampling_khz_;
   const int out_sampling_khz_;
-  const enum NetEqDecoder decoder_type_;
-  const int channels_;
 
   // Number of samples per channel in a frame.
   const int in_size_samples_;
@@ -115,7 +121,7 @@ class NetEqQualityTest : public ::testing::Test {
 
   rtc::scoped_ptr<InputAudioFile> in_file_;
   rtc::scoped_ptr<AudioSink> output_;
-  FILE* log_file_;
+  std::ofstream log_file_;
 
   rtc::scoped_ptr<RtpGenerator> rtp_generator_;
   rtc::scoped_ptr<NetEq> neteq_;

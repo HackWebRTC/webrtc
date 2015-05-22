@@ -47,11 +47,15 @@ class NetEqPcmuQualityTest : public NetEqQualityTest {
       : NetEqQualityTest(FLAGS_frame_size_ms,
                          kInputSampleRateKhz,
                          kOutputSampleRateKhz,
-                         kDecoderPCMu,
-                         1) {
+                         kDecoderPCMu) {
+  }
+
+  void SetUp() override {
+    ASSERT_EQ(1, channels_) << "PCMu supports only mono audio.";
     AudioEncoderPcmU::Config config;
     config.frame_size_ms = FLAGS_frame_size_ms;
     encoder_.reset(new AudioEncoderPcmU(config));
+    NetEqQualityTest::SetUp();
   }
 
   int EncodeBlock(int16_t* in_data,

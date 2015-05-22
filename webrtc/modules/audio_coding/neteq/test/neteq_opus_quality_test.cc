@@ -24,34 +24,6 @@ namespace {
 static const int kOpusBlockDurationMs = 20;
 static const int kOpusSamplingKhz = 48;
 
-// Define switch for sample rate.
-static bool ValidateSampleRate(const char* flagname, int32_t value) {
-  if (value == 8000 || value == 16000 || value == 32000 || value == 48000)
-    return true;
-  printf("Invalid sample rate should be 8000, 16000, 32000 or 48000 Hz.");
-  return false;
-}
-
-DEFINE_int32(input_sample_rate,
-             kOpusSamplingKhz * 1000,
-             "Sample rate of input file.");
-
-static const bool sample_rate_dummy =
-    RegisterFlagValidator(&FLAGS_input_sample_rate, &ValidateSampleRate);
-
-// Define switch for channels.
-static bool ValidateChannels(const char* flagname, int32_t value) {
-  if (value == 1 || value == 2)
-    return true;
-  printf("Invalid number of channels, should be either 1 or 2.");
-  return false;
-}
-
-DEFINE_int32(channels, 1, "Number of channels in input audio.");
-
-static const bool channels_dummy =
-    RegisterFlagValidator(&FLAGS_channels, &ValidateChannels);
-
 // Define switch for bit rate.
 static bool ValidateBitRate(const char* flagname, int32_t value) {
   if (value >= 6 && value <= 510)
@@ -64,6 +36,37 @@ DEFINE_int32(bit_rate_kbps, 32, "Target bit rate (kbps).");
 
 static const bool bit_rate_dummy =
     RegisterFlagValidator(&FLAGS_bit_rate_kbps, &ValidateBitRate);
+
+// Define switch for complexity.
+static bool ValidateComplexity(const char* flagname, int32_t value) {
+  if (value >= -1 && value <= 10)
+    return true;
+  printf("Invalid complexity setting, should be between 0 and 10.");
+  return false;
+}
+
+DEFINE_int32(complexity, 10, "Complexity: 0 ~ 10 -- defined as in Opus"
+    "specification.");
+
+static const bool complexity_dummy =
+    RegisterFlagValidator(&FLAGS_complexity, &ValidateComplexity);
+
+// Define switch for maxplaybackrate
+DEFINE_int32(maxplaybackrate, 48000, "Maximum playback rate (Hz).");
+
+// Define switch for application mode.
+static bool ValidateApplication(const char* flagname, int32_t value) {
+  if (value != 0 && value != 1) {
+    printf("Invalid application mode, should be 0 or 1.");
+    return false;
+  }
+  return true;
+}
+
+DEFINE_int32(application, 0, "Application mode: 0 -- VOIP, 1 -- Audio.");
+
+static const bool application_dummy =
+    RegisterFlagValidator(&FLAGS_application, &ValidateApplication);
 
 // Define switch for reported packet loss rate.
 static bool ValidatePacketLossRate(const char* flagname, int32_t value) {
@@ -106,36 +109,41 @@ class NetEqOpusQualityTest : public NetEqQualityTest {
   WebRtcOpusEncInst* opus_encoder_;
   OpusRepacketizer* repacketizer_;
   int sub_block_size_samples_;
-  int channels_;
   int bit_rate_kbps_;
   bool fec_;
   bool dtx_;
+  int complexity_;
+  int maxplaybackrate_;
   int target_loss_rate_;
   int sub_packets_;
+  int application_;
 };
 
 NetEqOpusQualityTest::NetEqOpusQualityTest()
     : NetEqQualityTest(kOpusBlockDurationMs * FLAGS_sub_packets,
                        kOpusSamplingKhz,
                        kOpusSamplingKhz,
-                       (FLAGS_channels == 1) ? kDecoderOpus : kDecoderOpus_2ch,
-                       FLAGS_channels),
+                       kDecoderOpus),
       opus_encoder_(NULL),
       repacketizer_(NULL),
       sub_block_size_samples_(kOpusBlockDurationMs * kOpusSamplingKhz),
-      channels_(FLAGS_channels),
       bit_rate_kbps_(FLAGS_bit_rate_kbps),
       fec_(FLAGS_fec),
       dtx_(FLAGS_dtx),
+      complexity_(FLAGS_complexity),
+      maxplaybackrate_(FLAGS_maxplaybackrate),
       target_loss_rate_(FLAGS_reported_loss_rate),
       sub_packets_(FLAGS_sub_packets) {
+  // Redefine decoder type if input is stereo.
+  if (channels_ > 1) {
+    decoder_type_ = kDecoderOpus_2ch;
+  }
+  application_ = FLAGS_application;
 }
 
 void NetEqOpusQualityTest::SetUp() {
-  // If channels_ == 1, use Opus VOIP mode, otherwise, audio mode.
-  int app = channels_ == 1 ? 0 : 1;
   // Create encoder memory.
-  WebRtcOpus_EncoderCreate(&opus_encoder_, channels_, app);
+  WebRtcOpus_EncoderCreate(&opus_encoder_, channels_, application_);
   ASSERT_TRUE(opus_encoder_);
 
   // Create repacketizer.
@@ -150,6 +158,8 @@ void NetEqOpusQualityTest::SetUp() {
   if (dtx_) {
     EXPECT_EQ(0, WebRtcOpus_EnableDtx(opus_encoder_));
   }
+  EXPECT_EQ(0, WebRtcOpus_SetComplexity(opus_encoder_, complexity_));
+  EXPECT_EQ(0, WebRtcOpus_SetMaxPlaybackRate(opus_encoder_, maxplaybackrate_));
   EXPECT_EQ(0, WebRtcOpus_SetPacketLossRate(opus_encoder_,
                                             target_loss_rate_));
   NetEqQualityTest::SetUp();
@@ -172,6 +182,9 @@ int NetEqOpusQualityTest::EncodeBlock(int16_t* in_data,
   for (int idx = 0; idx < sub_packets_; idx++) {
     value = WebRtcOpus_Encode(opus_encoder_, pointer, sub_block_size_samples_,
                               max_bytes, payload);
+    Log() << "Encoded a frame with Opus mode "
+          << (value == 0 ? 0 : payload[0] >> 3)
+          << std::endl;
     if (OPUS_OK != opus_repacketizer_cat(repacketizer_, payload, value)) {
       opus_repacketizer_init(repacketizer_);
       // If the repacketization fails, we discard this frame.

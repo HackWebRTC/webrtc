@@ -48,7 +48,8 @@ static bool ValidateInFilename(const char* flagname, const string& value) {
 DEFINE_string(
     in_filename,
     ResourcePath("audio_coding/speech_mono_16kHz", "pcm"),
-    "Filename for input audio (specify sample rate with --input_sample_rate).");
+    "Filename for input audio (specify sample rate with --input_sample_rate ,"
+    "and channels with --channels).");
 
 static const bool in_filename_dummy =
     RegisterFlagValidator(&FLAGS_in_filename, &ValidateInFilename);
@@ -65,6 +66,19 @@ DEFINE_int32(input_sample_rate, 16000, "Sample rate of input file in Hz.");
 
 static const bool sample_rate_dummy =
     RegisterFlagValidator(&FLAGS_input_sample_rate, &ValidateSampleRate);
+
+// Define switch for channels.
+static bool ValidateChannels(const char* flagname, int32_t value) {
+  if (value == 1)
+    return true;
+  printf("Invalid number of channels, current support only 1.");
+  return false;
+}
+
+DEFINE_int32(channels, 1, "Number of channels in input audio.");
+
+static const bool channels_dummy =
+    RegisterFlagValidator(&FLAGS_channels, &ValidateChannels);
 
 // Define switch for output file name.
 static bool ValidateOutFilename(const char* flagname, const string& value) {
@@ -194,17 +208,16 @@ static double ProbTrans00Solver(int units, double loss_rate,
 NetEqQualityTest::NetEqQualityTest(int block_duration_ms,
                                    int in_sampling_khz,
                                    int out_sampling_khz,
-                                   enum NetEqDecoder decoder_type,
-                                   int channels)
-    : decoded_time_ms_(0),
+                                   enum NetEqDecoder decoder_type)
+    : decoder_type_(decoder_type),
+      channels_(FLAGS_channels),
+      decoded_time_ms_(0),
       decodable_time_ms_(0),
       drift_factor_(FLAGS_drift_factor),
       packet_loss_rate_(FLAGS_packet_loss_rate),
       block_duration_ms_(block_duration_ms),
       in_sampling_khz_(in_sampling_khz),
       out_sampling_khz_(out_sampling_khz),
-      decoder_type_(decoder_type),
-      channels_(channels),
       in_size_samples_(in_sampling_khz_ * block_duration_ms_),
       out_size_samples_(out_sampling_khz_ * kOutputSizeMs),
       payload_size_bytes_(0),
@@ -212,14 +225,13 @@ NetEqQualityTest::NetEqQualityTest(int block_duration_ms,
       in_file_(new ResampleInputAudioFile(FLAGS_in_filename,
                                           FLAGS_input_sample_rate,
                                           in_sampling_khz * 1000)),
-      log_file_(NULL),
       rtp_generator_(
           new RtpGenerator(in_sampling_khz_, 0, 0, decodable_time_ms_)),
       total_payload_size_bytes_(0) {
   const std::string out_filename = FLAGS_out_filename;
   const std::string log_filename = out_filename + ".log";
-  log_file_ = fopen(log_filename.c_str(), "wt");
-  CHECK(log_file_);
+  log_file_.open(log_filename.c_str(), std::ofstream::out);
+  CHECK(log_file_.is_open());
 
   if (out_filename.size() >= 4 &&
       out_filename.substr(out_filename.size() - 4) == ".wav") {
@@ -238,6 +250,10 @@ NetEqQualityTest::NetEqQualityTest(int block_duration_ms,
   in_data_.reset(new int16_t[in_size_samples_ * channels_]);
   payload_.reset(new uint8_t[max_payload_bytes_]);
   out_data_.reset(new int16_t[out_size_samples_ * channels_]);
+}
+
+NetEqQualityTest::~NetEqQualityTest() {
+  log_file_.close();
 }
 
 bool NoLoss::Lost() {
@@ -328,6 +344,10 @@ void NetEqQualityTest::SetUp() {
   srand(kInitSeed);
 }
 
+std::ofstream& NetEqQualityTest::Log() {
+  return log_file_;
+}
+
 bool NetEqQualityTest::PacketLost() {
   int cycles = block_duration_ms_ / kPacketLossTimeUnitMs;
 
@@ -349,19 +369,24 @@ int NetEqQualityTest::Transmit() {
   int packet_input_time_ms =
       rtp_generator_->GetRtpHeader(kPayloadType, in_size_samples_,
                                    &rtp_header_);
+  Log() << "Packet of size "
+        << payload_size_bytes_
+        << " bytes, for frame at "
+        << packet_input_time_ms
+        << " ms ";
   if (payload_size_bytes_ > 0) {
-    fprintf(log_file_, "Packet at %d ms", packet_input_time_ms);
     if (!PacketLost()) {
       int ret = neteq_->InsertPacket(rtp_header_, &payload_[0],
                                      payload_size_bytes_,
                                      packet_input_time_ms * in_sampling_khz_);
       if (ret != NetEq::kOK)
         return -1;
-      fprintf(log_file_, " OK.\n");
+      Log() << "was sent.";
     } else {
-      fprintf(log_file_, " Lost.\n");
+      Log() << "was lost.";
     }
   }
+  Log() << std::endl;
   return packet_input_time_ms;
 }
 
@@ -399,7 +424,10 @@ void NetEqQualityTest::Simulate() {
       decoded_time_ms_ += audio_size_samples / out_sampling_khz_;
     }
   }
-  fprintf(log_file_, "%f", 8.0f * total_payload_size_bytes_ / FLAGS_runtime_ms);
+  Log() << "Average bit rate was "
+        << 8.0f * total_payload_size_bytes_ / FLAGS_runtime_ms
+        << " kbps"
+        << std::endl;
 }
 
 }  // namespace test
