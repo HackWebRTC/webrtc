@@ -214,6 +214,12 @@ class VCMJitterBuffer {
   // all decodable frames into account.
   bool IsContinuous(const VCMFrameBuffer& frame) const
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  // Looks for frames in |incomplete_frames_| which are continuous in the
+  // provided |decoded_state|. Starts the search from the timestamp of
+  // |decoded_state|.
+  void FindAndInsertContinuousFramesWithState(
+      const VCMDecodingState& decoded_state)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   // Looks for frames in |incomplete_frames_| which are continuous in
   // |last_decoded_state_| taking all decodable frames into account. Starts
   // the search from |new_frame|.

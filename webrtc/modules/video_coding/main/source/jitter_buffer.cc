@@ -573,6 +573,9 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
     last_decoded_state_.UpdateOldPacket(&packet);
     DropPacketsFromNackList(last_decoded_state_.sequence_num());
 
+    // Also see if this old packet made more incomplete frames continuous.
+    FindAndInsertContinuousFramesWithState(last_decoded_state_);
+
     if (num_consecutive_old_packets_ > kMaxConsecutiveOldPackets) {
       LOG(LS_WARNING)
           << num_consecutive_old_packets_
@@ -749,6 +752,16 @@ void VCMJitterBuffer::FindAndInsertContinuousFrames(
   VCMDecodingState decoding_state;
   decoding_state.CopyFrom(last_decoded_state_);
   decoding_state.SetState(&new_frame);
+  FindAndInsertContinuousFramesWithState(decoding_state);
+}
+
+void VCMJitterBuffer::FindAndInsertContinuousFramesWithState(
+    const VCMDecodingState& original_decoded_state) {
+  // Copy original_decoded_state so we can move the state forward with each
+  // decodable frame we find.
+  VCMDecodingState decoding_state;
+  decoding_state.CopyFrom(original_decoded_state);
+
   // When temporal layers are available, we search for a complete or decodable
   // frame until we hit one of the following:
   // 1. Continuous base or sync layer.
@@ -756,7 +769,8 @@ void VCMJitterBuffer::FindAndInsertContinuousFrames(
   for (FrameList::iterator it = incomplete_frames_.begin();
        it != incomplete_frames_.end();)  {
     VCMFrameBuffer* frame = it->second;
-    if (IsNewerTimestamp(new_frame.TimeStamp(), frame->TimeStamp())) {
+    if (IsNewerTimestamp(original_decoded_state.time_stamp(),
+                         frame->TimeStamp())) {
       ++it;
       continue;
     }

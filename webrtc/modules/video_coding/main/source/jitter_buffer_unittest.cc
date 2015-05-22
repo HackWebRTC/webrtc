@@ -552,6 +552,63 @@ TEST_F(TestBasicJitterBuffer, FrameReordering2Frames2PacketsEach) {
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
+TEST_F(TestBasicJitterBuffer, TestReorderingWithPadding) {
+  packet_->frameType = kVideoFrameKey;
+  packet_->isFirstPacket = true;
+  packet_->markerBit = true;
+
+  // Send in an initial good packet/frame (Frame A) to start things off.
+  bool retransmitted = false;
+  EXPECT_EQ(kCompleteSession,
+            jitter_buffer_->InsertPacket(*packet_, &retransmitted));
+  VCMEncodedFrame* frame_out = DecodeCompleteFrame();
+  EXPECT_TRUE(frame_out != NULL);
+  jitter_buffer_->ReleaseFrame(frame_out);
+
+  // Now send in a complete delta frame (Frame C), but with a sequence number
+  // gap. No pic index either, so no temporal scalability cheating :)
+  packet_->frameType = kVideoFrameDelta;
+  // Leave a gap of 2 sequence numbers and two frames.
+  packet_->seqNum = seq_num_ + 3;
+  packet_->timestamp = timestamp_ + (66 * 90);
+  // Still isFirst = marker = true.
+  // Session should be complete (frame is complete), but there's nothing to
+  // decode yet.
+  EXPECT_EQ(kCompleteSession,
+            jitter_buffer_->InsertPacket(*packet_, &retransmitted));
+  frame_out = DecodeCompleteFrame();
+  EXPECT_TRUE(frame_out == NULL);
+
+  // Now send in a complete delta frame (Frame B) that is continuous from A, but
+  // doesn't fill the full gap to C. The rest of the gap is going to be padding.
+  packet_->seqNum = seq_num_ + 1;
+  packet_->timestamp = timestamp_ + (33 * 90);
+  // Still isFirst = marker = true.
+  EXPECT_EQ(kCompleteSession,
+            jitter_buffer_->InsertPacket(*packet_, &retransmitted));
+  frame_out = DecodeCompleteFrame();
+  EXPECT_TRUE(frame_out != NULL);
+  jitter_buffer_->ReleaseFrame(frame_out);
+
+  // But Frame C isn't continuous yet.
+  frame_out = DecodeCompleteFrame();
+  EXPECT_TRUE(frame_out == NULL);
+
+  // Add in the padding. These are empty packets (data length is 0) with no
+  // marker bit and matching the timestamp of Frame B.
+  VCMPacket empty_packet(data_, 0, seq_num_ + 2, timestamp_ + (33 * 90), false);
+  EXPECT_EQ(kOldPacket,
+            jitter_buffer_->InsertPacket(empty_packet, &retransmitted));
+  empty_packet.seqNum += 1;
+  EXPECT_EQ(kOldPacket,
+            jitter_buffer_->InsertPacket(empty_packet, &retransmitted));
+
+  // But now Frame C should be ready!
+  frame_out = DecodeCompleteFrame();
+  EXPECT_TRUE(frame_out != NULL);
+  jitter_buffer_->ReleaseFrame(frame_out);
+}
+
 TEST_F(TestBasicJitterBuffer, DuplicatePackets) {
   packet_->frameType = kVideoFrameKey;
   packet_->isFirstPacket = true;
