@@ -711,9 +711,6 @@ class FakeBaseEngine {
       : loglevel_(-1),
         options_changed_(false),
         fail_create_channel_(false) {}
-  bool Init(rtc::Thread* worker_thread) { return true; }
-  void Terminate() {}
-
   void SetLogging(int level, const char* filter) {
     loglevel_ = level;
     logfilter_ = filter;
@@ -751,6 +748,8 @@ class FakeVoiceEngine : public FakeBaseEngine {
     // sanity checks against that.
     codecs_.push_back(AudioCodec(101, "fake_audio_codec", 0, 0, 1, 0));
   }
+  bool Init(rtc::Thread* worker_thread) { return true; }
+  void Terminate() {}
   int GetCapabilities() { return AUDIO_SEND | AUDIO_RECV; }
   AudioOptions GetAudioOptions() const {
     return options_;
@@ -861,6 +860,7 @@ class FakeVideoEngine : public FakeBaseEngine {
     // sanity checks against that.
     codecs_.push_back(VideoCodec(0, "fake_video_codec", 0, 0, 0, 0));
   }
+  void Init() {}
   bool GetOptions(VideoOptions* options) const {
     *options = options_;
     return true;

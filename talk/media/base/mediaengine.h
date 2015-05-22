@@ -168,14 +168,10 @@ class CompositeMediaEngine : public MediaEngineInterface {
   virtual bool Init(rtc::Thread* worker_thread) {
     if (!voice_.Init(worker_thread))
       return false;
-    if (!video_.Init(worker_thread)) {
-      voice_.Terminate();
-      return false;
-    }
+    video_.Init();
     return true;
   }
   virtual void Terminate() {
-    video_.Terminate();
     voice_.Terminate();
   }
 

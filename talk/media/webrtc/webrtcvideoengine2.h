@@ -123,8 +123,7 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   void SetCallFactory(WebRtcCallFactory* call_factory);
 
   // Basic video engine implementation.
-  bool Init(rtc::Thread* worker_thread);
-  void Terminate();
+  void Init();
 
   int GetCapabilities();
   bool SetDefaultEncoderConfig(const VideoEncoderConfig& config);
@@ -158,7 +157,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
  private:
   std::vector<VideoCodec> GetSupportedCodecs() const;
 
-  rtc::Thread* worker_thread_;
   WebRtcVoiceEngine* voice_engine_;
   std::vector<VideoCodec> video_codecs_;
   std::vector<RtpHeaderExtension> rtp_header_extensions_;

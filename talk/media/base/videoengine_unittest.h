@@ -496,7 +496,7 @@ class VideoMediaChannelTest : public testing::Test,
 
   virtual void SetUp() {
     cricket::Device device("test", "device");
-    EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
+    engine_.Init();
     channel_.reset(engine_.CreateChannel(cricket::VideoOptions(), NULL));
     EXPECT_TRUE(channel_.get() != NULL);
     ConnectVideoChannelError();
@@ -551,7 +551,6 @@ class VideoMediaChannelTest : public testing::Test,
   }
   virtual void TearDown() {
     channel_.reset();
-    engine_.Terminate();
   }
   void ConnectVideoChannelError() {
     channel_->SignalMediaError.connect(this,

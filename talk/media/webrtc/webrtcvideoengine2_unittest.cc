@@ -173,9 +173,8 @@ class WebRtcVideoEngine2VoiceTest : public WebRtcVideoEngine2Test {
 TEST_F(WebRtcVideoEngine2VoiceTest, ConfiguresAvSyncForFirstReceiveChannel) {
   FakeCallFactory call_factory;
   engine_.SetCallFactory(&call_factory);
-
   voice_engine_.Init(rtc::Thread::Current());
-  engine_.Init(rtc::Thread::Current());
+  engine_.Init();
 
   rtc::scoped_ptr<VoiceMediaChannel> voice_channel(
       voice_engine_.CreateChannel());
@@ -386,7 +385,7 @@ TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionAfterCapturer) {
 }
 
 TEST_F(WebRtcVideoEngine2Test, SetSendFailsBeforeSettingCodecs) {
-  engine_.Init(rtc::Thread::Current());
+  engine_.Init();
   rtc::scoped_ptr<VideoMediaChannel> channel(
       engine_.CreateChannel(cricket::VideoOptions(), NULL));
 
@@ -399,7 +398,7 @@ TEST_F(WebRtcVideoEngine2Test, SetSendFailsBeforeSettingCodecs) {
 }
 
 TEST_F(WebRtcVideoEngine2Test, GetStatsWithoutSendCodecsSetDoesNotCrash) {
-  engine_.Init(rtc::Thread::Current());
+  engine_.Init();
   rtc::scoped_ptr<VideoMediaChannel> channel(
       engine_.CreateChannel(cricket::VideoOptions(), NULL));
   EXPECT_TRUE(channel->AddSendStream(StreamParams::CreateLegacy(123)));
@@ -461,7 +460,7 @@ VideoMediaChannel* WebRtcVideoEngine2Test::SetUpForExternalEncoderFactory(
     cricket::WebRtcVideoEncoderFactory* encoder_factory,
     const std::vector<VideoCodec>& codecs) {
   engine_.SetExternalEncoderFactory(encoder_factory);
-  engine_.Init(rtc::Thread::Current());
+  engine_.Init();
 
   VideoMediaChannel* channel =
       engine_.CreateChannel(cricket::VideoOptions(), NULL);
@@ -474,7 +473,7 @@ VideoMediaChannel* WebRtcVideoEngine2Test::SetUpForExternalDecoderFactory(
     cricket::WebRtcVideoDecoderFactory* decoder_factory,
     const std::vector<VideoCodec>& codecs) {
   engine_.SetExternalDecoderFactory(decoder_factory);
-  engine_.Init(rtc::Thread::Current());
+  engine_.Init();
 
   VideoMediaChannel* channel =
       engine_.CreateChannel(cricket::VideoOptions(), NULL);
@@ -623,8 +622,7 @@ TEST_F(WebRtcVideoEngine2Test, ReportSupportedExternalCodecs) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
   encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
   engine_.SetExternalEncoderFactory(&encoder_factory);
-
-  engine_.Init(rtc::Thread::Current());
+  engine_.Init();
 
   std::vector<cricket::VideoCodec> codecs(engine_.codecs());
   ASSERT_GE(codecs.size(), 2u);
@@ -822,7 +820,7 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test,
   WebRtcVideoChannel2Test() : fake_call_(NULL), last_ssrc_(0) {}
   void SetUp() override {
     engine_.SetCallFactory(this);
-    engine_.Init(rtc::Thread::Current());
+    engine_.Init();
     channel_.reset(engine_.CreateChannel(cricket::VideoOptions(), NULL));
     ASSERT_TRUE(fake_call_ != NULL) << "Call not created through factory.";
     last_ssrc_ = 123;
@@ -1586,8 +1584,6 @@ class Vp9SettingsTest : public WebRtcVideoChannel2Test {
   void TearDown() override {
     // Remove references to encoder_factory_ since this will be destroyed
     // before channel_ and engine_.
-    engine_.Terminate();
-    engine_.SetExternalEncoderFactory(nullptr);
     ASSERT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
   }
 
@@ -2567,7 +2563,7 @@ class WebRtcVideoChannel2SimulcastTest : public WebRtcVideoEngine2SimulcastTest,
 
   void SetUp() override {
     engine_.SetCallFactory(this);
-    engine_.Init(rtc::Thread::Current());
+    engine_.Init();
     channel_.reset(engine_.CreateChannel(VideoOptions(), NULL));
     ASSERT_TRUE(fake_call_ != NULL) << "Call not created through factory.";
     last_ssrc_ = 123;

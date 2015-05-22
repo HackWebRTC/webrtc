@@ -530,8 +530,7 @@ void DefaultUnsignalledSsrcHandler::SetDefaultRenderer(
 }
 
 WebRtcVideoEngine2::WebRtcVideoEngine2(WebRtcVoiceEngine* voice_engine)
-    : worker_thread_(NULL),
-      voice_engine_(voice_engine),
+    : voice_engine_(voice_engine),
       initialized_(false),
       call_factory_(&default_call_factory_),
       external_decoder_factory_(NULL),
@@ -551,10 +550,6 @@ WebRtcVideoEngine2::WebRtcVideoEngine2(WebRtcVoiceEngine* voice_engine)
 
 WebRtcVideoEngine2::~WebRtcVideoEngine2() {
   LOG(LS_INFO) << "WebRtcVideoEngine2::~WebRtcVideoEngine2";
-
-  if (initialized_) {
-    Terminate();
-  }
 }
 
 void WebRtcVideoEngine2::SetCallFactory(WebRtcCallFactory* call_factory) {
@@ -562,19 +557,9 @@ void WebRtcVideoEngine2::SetCallFactory(WebRtcCallFactory* call_factory) {
   call_factory_ = call_factory;
 }
 
-bool WebRtcVideoEngine2::Init(rtc::Thread* worker_thread) {
+void WebRtcVideoEngine2::Init() {
   LOG(LS_INFO) << "WebRtcVideoEngine2::Init";
-  worker_thread_ = worker_thread;
-  DCHECK(worker_thread_ != NULL);
-
   initialized_ = true;
-  return true;
-}
-
-void WebRtcVideoEngine2::Terminate() {
-  LOG(LS_INFO) << "WebRtcVideoEngine2::Terminate";
-
-  initialized_ = false;
 }
 
 int WebRtcVideoEngine2::GetCapabilities() { return VIDEO_RECV | VIDEO_SEND; }
