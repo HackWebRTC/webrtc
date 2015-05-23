@@ -36,7 +36,7 @@
 namespace rtc {
 
 ThreadManager* ThreadManager::Instance() {
-  LIBJINGLE_DEFINE_STATIC_LOCAL(ThreadManager, thread_manager, ());
+  RTC_DEFINE_STATIC_LOCAL(ThreadManager, thread_manager, ());
   return &thread_manager;
 }
 

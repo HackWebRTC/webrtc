@@ -180,8 +180,8 @@ namespace {
 // This round about way of creating a global RNG is to safe-guard against
 // indeterminant static initialization order.
 scoped_ptr<RandomGenerator>& GetGlobalRng() {
-  LIBJINGLE_DEFINE_STATIC_LOCAL(scoped_ptr<RandomGenerator>, global_rng,
-                                (new SecureRandomGenerator()));
+  RTC_DEFINE_STATIC_LOCAL(scoped_ptr<RandomGenerator>, global_rng,
+                          (new SecureRandomGenerator()));
   return global_rng;
 }
 

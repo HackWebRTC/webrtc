@@ -86,14 +86,15 @@ typedef int socklen_t;
 #else  // !WEBRTC_WIN
 #define alignof(t) __alignof__(t)
 #endif  // !WEBRTC_WIN
-#define RTC_IS_ALIGNED(p, a) (0==(reinterpret_cast<uintptr_t>(p) & ((a)-1)))
+#ifndef ALIGNP
 #define ALIGNP(p, t) \
   (reinterpret_cast<uint8*>(((reinterpret_cast<uintptr_t>(p) + \
   ((t)-1)) & ~((t)-1))))
+#endif
+#define RTC_IS_ALIGNED(p, a) (0==(reinterpret_cast<uintptr_t>(p) & ((a)-1)))
 
-// LIBJINGLE_DEFINE_STATIC_LOCAL() is a libjingle's copy
-// of CR_DEFINE_STATIC_LOCAL().
-#define LIBJINGLE_DEFINE_STATIC_LOCAL(type, name, arguments) \
+// RTC_DEFINE_STATIC_LOCAL() is libjingle's copy of CR_DEFINE_STATIC_LOCAL().
+#define RTC_DEFINE_STATIC_LOCAL(type, name, arguments) \
   CR_DEFINE_STATIC_LOCAL(type, name, arguments)
 
 #endif // OVERRIDES_WEBRTC_BASE_BASICTYPES_H__

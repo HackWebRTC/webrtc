@@ -622,7 +622,7 @@ class PosixSignalHandler {
   // sort of user-defined void * parameter, so they can't access anything that
   // isn't global.)
   static PosixSignalHandler* Instance() {
-    LIBJINGLE_DEFINE_STATIC_LOCAL(PosixSignalHandler, instance, ());
+    RTC_DEFINE_STATIC_LOCAL(PosixSignalHandler, instance, ());
     return &instance;
   }
 

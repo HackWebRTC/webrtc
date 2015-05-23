@@ -770,7 +770,7 @@ void SrtpSession::HandleEventThunk(srtp_event_data_t* ev) {
 }
 
 std::list<SrtpSession*>* SrtpSession::sessions() {
-  LIBJINGLE_DEFINE_STATIC_LOCAL(std::list<SrtpSession*>, sessions, ());
+  RTC_DEFINE_STATIC_LOCAL(std::list<SrtpSession*>, sessions, ());
   return &sessions;
 }
 

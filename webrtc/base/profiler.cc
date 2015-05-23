@@ -89,7 +89,7 @@ double ProfilerEvent::standard_deviation() const {
 Profiler::~Profiler() = default;
 
 Profiler* Profiler::Instance() {
-  LIBJINGLE_DEFINE_STATIC_LOCAL(Profiler, instance, ());
+  RTC_DEFINE_STATIC_LOCAL(Profiler, instance, ());
   return &instance;
 }
 

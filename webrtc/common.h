@@ -13,6 +13,8 @@
 
 #include <map>
 
+#include "webrtc/base/basictypes.h"
+
 namespace webrtc {
 
 // Class Config is designed to ease passing a set of options across webrtc code.
@@ -86,7 +88,7 @@ class Config {
   // locks.
   template<typename T>
   static const T& default_value() {
-    static const T def;
+    RTC_DEFINE_STATIC_LOCAL(const T, def, ());
     return def;
   }
 
