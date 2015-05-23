@@ -907,7 +907,10 @@ JOW(void, Logging_nativeEnableTracing)(
     }
 #endif
   }
-  rtc::LogMessage::LogToDebug(nativeSeverity);
+  if (nativeSeverity >= rtc::LS_SENSITIVE && nativeSeverity <= rtc::LS_ERROR) {
+    rtc::LogMessage::LogToDebug(
+        static_cast<rtc::LoggingSeverity>(nativeSeverity));
+  }
 }
 
 JOW(void, PeerConnection_freePeerConnection)(JNIEnv*, jclass, jlong j_p) {

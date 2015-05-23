@@ -3203,30 +3203,6 @@ TEST(WebRtcVoiceEngineTest, StartupShutdown) {
   engine.Terminate();
 }
 
-// Tests that the logging from the library is cleartext.
-TEST(WebRtcVoiceEngineTest, DISABLED_HasUnencryptedLogging) {
-  cricket::WebRtcVoiceEngine engine;
-  rtc::scoped_ptr<rtc::MemoryStream> stream(
-      new rtc::MemoryStream);
-  size_t size = 0;
-  bool cleartext = true;
-  rtc::LogMessage::AddLogToStream(stream.get(), rtc::LS_VERBOSE);
-  engine.SetLogging(rtc::LS_VERBOSE, "");
-  EXPECT_TRUE(engine.Init(rtc::Thread::Current()));
-  EXPECT_TRUE(stream->GetSize(&size));
-  EXPECT_GT(size, 0U);
-  engine.Terminate();
-  rtc::LogMessage::RemoveLogToStream(stream.get());
-  const char* buf = stream->GetBuffer();
-  for (size_t i = 0; i < size && cleartext; ++i) {
-    int ch = static_cast<int>(buf[i]);
-    ASSERT_GE(ch, 0) << "Out of bounds character in WebRtc VoE log: "
-                     << std::hex << ch;
-    cleartext = (isprint(ch) || isspace(ch));
-  }
-  EXPECT_TRUE(cleartext);
-}
-
 // Tests that the library is configured with the codecs we want.
 TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
   cricket::WebRtcVoiceEngine engine;

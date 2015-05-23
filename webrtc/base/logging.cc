@@ -35,7 +35,7 @@ static const int kMaxLogLineSize = 1024 - 60;
 #include <vector>
 
 #include "webrtc/base/logging.h"
-#include "webrtc/base/stream.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/timeutils.h"
@@ -73,23 +73,17 @@ std::string ErrorName(int err, const ConstantLabel * err_table) {
 // LogMessage
 /////////////////////////////////////////////////////////////////////////////
 
-const int LogMessage::NO_LOGGING = LS_ERROR + 1;
-
+// By default, release builds don't log, debug builds at info level
 #if _DEBUG
-static const int LOG_DEFAULT = LS_INFO;
+LoggingSeverity LogMessage::min_sev_ = LS_INFO;
+LoggingSeverity LogMessage::dbg_sev_ = LS_INFO;
 #else  // !_DEBUG
-static const int LOG_DEFAULT = LogMessage::NO_LOGGING;
+LoggingSeverity LogMessage::min_sev_ = LS_NONE;
+LoggingSeverity LogMessage::dbg_sev_ = LS_NONE;
 #endif  // !_DEBUG
 
 // Global lock for log subsystem, only needed to serialize access to streams_.
 CriticalSection LogMessage::crit_;
-
-// By default, release builds don't log, debug builds at info level
-int LogMessage::min_sev_ = LOG_DEFAULT;
-int LogMessage::dbg_sev_ = LOG_DEFAULT;
-
-// Don't bother printing context for the ubiquitous INFO log messages
-int LogMessage::ctx_sev_ = LS_WARNING;
 
 // The list of logging streams currently configured.
 // Note: we explicitly do not clean this up, because of the uncertain ordering
@@ -121,12 +115,7 @@ LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
 #if defined(WEBRTC_WIN)
     DWORD id = GetCurrentThreadId();
     print_stream_ << "[" << std::hex << id << std::dec << "] ";
-#endif  // WEBRTC_WIN 
-  }
-
-  if (severity_ >= ctx_sev_) {
-    print_stream_ << Describe(sev) << "(" << DescribeFile(file)
-                  << ":" << line << "): ";
+#endif  // WEBRTC_WIN
   }
 
   if (err_ctx != ERRCTX_NONE) {
@@ -155,7 +144,7 @@ LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
         }
         break;
       }
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
       case ERRCTX_OSSTATUS: {
         tmp << " " << nonnull(GetMacOSStatusErrorString(err), "Unknown error");
@@ -187,7 +176,7 @@ LogMessage::~LogMessage() {
   CritScope cs(&crit_);
   for (StreamList::iterator it = streams_.begin(); it != streams_.end(); ++it) {
     if (severity_ >= it->second) {
-      OutputToStream(it->first, str);
+      it->first->OnLogMessage(str);
     }
   }
   uint32 delay = TimeSince(before);
@@ -213,10 +202,6 @@ uint32 LogMessage::WallClockStartTime() {
   return g_start_wallclock;
 }
 
-void LogMessage::LogContext(int min_sev) {
-  ctx_sev_ = min_sev;
-}
-
 void LogMessage::LogThreads(bool on) {
   thread_ = on;
 }
@@ -225,12 +210,12 @@ void LogMessage::LogTimestamps(bool on) {
   timestamp_ = on;
 }
 
-void LogMessage::LogToDebug(int min_sev) {
+void LogMessage::LogToDebug(LoggingSeverity min_sev) {
   dbg_sev_ = min_sev;
   UpdateMinLogSeverity();
 }
 
-void LogMessage::LogToStream(StreamInterface* stream, int min_sev) {
+void LogMessage::LogToStream(LogSink* stream, LoggingSeverity min_sev) {
   CritScope cs(&crit_);
   // Discard and delete all previously installed streams
   for (StreamList::iterator it = streams_.begin(); it != streams_.end(); ++it) {
@@ -243,9 +228,9 @@ void LogMessage::LogToStream(StreamInterface* stream, int min_sev) {
   }
 }
 
-int LogMessage::GetLogToStream(StreamInterface* stream) {
+int LogMessage::GetLogToStream(LogSink* stream) {
   CritScope cs(&crit_);
-  int sev = NO_LOGGING;
+  LoggingSeverity sev = LS_NONE;
   for (StreamList::iterator it = streams_.begin(); it != streams_.end(); ++it) {
     if (!stream || stream == it->first) {
       sev = std::min(sev, it->second);
@@ -254,13 +239,13 @@ int LogMessage::GetLogToStream(StreamInterface* stream) {
   return sev;
 }
 
-void LogMessage::AddLogToStream(StreamInterface* stream, int min_sev) {
+void LogMessage::AddLogToStream(LogSink* stream, LoggingSeverity min_sev) {
   CritScope cs(&crit_);
   streams_.push_back(std::make_pair(stream, min_sev));
   UpdateMinLogSeverity();
 }
 
-void LogMessage::RemoveLogToStream(StreamInterface* stream) {
+void LogMessage::RemoveLogToStream(LogSink* stream) {
   CritScope cs(&crit_);
   for (StreamList::iterator it = streams_.begin(); it != streams_.end(); ++it) {
     if (stream == it->first) {
@@ -271,48 +256,45 @@ void LogMessage::RemoveLogToStream(StreamInterface* stream) {
   UpdateMinLogSeverity();
 }
 
-void LogMessage::ConfigureLogging(const char* params, const char* filename) {
-  int current_level = LS_VERBOSE;
-  int debug_level = GetLogToDebug();
-  int file_level = GetLogToStream();
+void LogMessage::ConfigureLogging(const char* params) {
+  LoggingSeverity current_level = LS_VERBOSE;
+  LoggingSeverity debug_level = GetLogToDebug();
 
   std::vector<std::string> tokens;
   tokenize(params, ' ', &tokens);
 
-  for (size_t i = 0; i < tokens.size(); ++i) {
-    if (tokens[i].empty())
+  for (const std::string& token : tokens) {
+    if (token.empty())
       continue;
 
     // Logging features
-    if (tokens[i] == "tstamp") {
+    if (token == "tstamp") {
       LogTimestamps();
-    } else if (tokens[i] == "thread") {
+    } else if (token == "thread") {
       LogThreads();
 
     // Logging levels
-    } else if (tokens[i] == "sensitive") {
+    } else if (token == "sensitive") {
       current_level = LS_SENSITIVE;
-    } else if (tokens[i] == "verbose") {
+    } else if (token == "verbose") {
       current_level = LS_VERBOSE;
-    } else if (tokens[i] == "info") {
+    } else if (token == "info") {
       current_level = LS_INFO;
-    } else if (tokens[i] == "warning") {
+    } else if (token == "warning") {
       current_level = LS_WARNING;
-    } else if (tokens[i] == "error") {
+    } else if (token == "error") {
       current_level = LS_ERROR;
-    } else if (tokens[i] == "none") {
-      current_level = NO_LOGGING;
+    } else if (token == "none") {
+      current_level = LS_NONE;
 
     // Logging targets
-    } else if (tokens[i] == "file") {
-      file_level = current_level;
-    } else if (tokens[i] == "debug") {
+    } else if (token == "debug") {
       debug_level = current_level;
     }
   }
 
 #if defined(WEBRTC_WIN)
-  if ((NO_LOGGING != debug_level) && !::IsDebuggerPresent()) {
+  if ((LS_NONE != debug_level) && !::IsDebuggerPresent()) {
     // First, attempt to attach to our parent's console... so if you invoke
     // from the command line, we'll see the output there.  Otherwise, create
     // our own console window.
@@ -331,67 +313,17 @@ void LogMessage::ConfigureLogging(const char* params, const char* filename) {
       ::AllocConsole();
     }
   }
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
   LogToDebug(debug_level);
-
-#if !defined(__native_client__)  // No logging to file in NaCl.
-  scoped_ptr<FileStream> stream;
-  if (NO_LOGGING != file_level) {
-    stream.reset(new FileStream);
-    if (!stream->Open(filename, "wb", NULL) || !stream->DisableBuffering()) {
-      stream.reset();
-    }
-  }
-
-  LogToStream(stream.release(), file_level);
-#endif
-}
-
-int LogMessage::ParseLogSeverity(const std::string& value) {
-  int level = NO_LOGGING;
-  if (value == "LS_SENSITIVE") {
-    level = LS_SENSITIVE;
-  } else if (value == "LS_VERBOSE") {
-    level = LS_VERBOSE;
-  } else if (value == "LS_INFO") {
-    level = LS_INFO;
-  } else if (value == "LS_WARNING") {
-    level = LS_WARNING;
-  } else if (value == "LS_ERROR") {
-    level = LS_ERROR;
-  } else if (isdigit(value[0])) {
-    level = atoi(value.c_str());  // NOLINT
-  }
-  return level;
 }
 
 void LogMessage::UpdateMinLogSeverity() {
-  int min_sev = dbg_sev_;
+  LoggingSeverity min_sev = dbg_sev_;
   for (StreamList::iterator it = streams_.begin(); it != streams_.end(); ++it) {
     min_sev = std::min(dbg_sev_, it->second);
   }
   min_sev_ = min_sev;
-}
-
-const char* LogMessage::Describe(LoggingSeverity sev) {
-  switch (sev) {
-  case LS_SENSITIVE: return "Sensitive";
-  case LS_VERBOSE:   return "Verbose";
-  case LS_INFO:      return "Info";
-  case LS_WARNING:   return "Warning";
-  case LS_ERROR:     return "Error";
-  default:           return "<unknown>";
-  }
-}
-
-const char* LogMessage::DescribeFile(const char* file) {
-  const char* end1 = ::strrchr(file, '/');
-  const char* end2 = ::strrchr(file, '\\');
-  if (!end1 && !end2)
-    return file;
-  else
-    return (end1 > end2) ? end1 + 1 : end2 + 1;
 }
 
 void LogMessage::OutputToDebug(const std::string& str,
@@ -430,7 +362,7 @@ void LogMessage::OutputToDebug(const std::string& str,
                   &written, 0);
     }
   }
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 #if defined(WEBRTC_ANDROID)
   // Android's logging facility uses severity to log messages but we
   // need to map libjingle's severity levels to Android ones first.
@@ -485,12 +417,6 @@ void LogMessage::OutputToDebug(const std::string& str,
     fprintf(stderr, "%s", str.c_str());
     fflush(stderr);
   }
-}
-
-void LogMessage::OutputToStream(StreamInterface* stream,
-                                const std::string& str) {
-  // If write isn't fully successful, what are we going to do, log it? :)
-  stream->WriteAll(str.data(), str.size(), NULL, NULL);
 }
 
 //////////////////////////////////////////////////////////////////////

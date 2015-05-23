@@ -18,13 +18,35 @@
 
 namespace rtc {
 
+template <typename Base>
+class LogSinkImpl
+    : public LogSink,
+      public Base {
+ public:
+  LogSinkImpl() {}
+
+  // The non-const reference constructor is required because of StringStream.
+  // TODO(tommi): Fix StringStream to accept a pointer for non-const.
+  template<typename P>
+  explicit LogSinkImpl(P& p) : Base(p) {}
+
+  template<typename P>
+  explicit LogSinkImpl(const P& p) : Base(p) {}
+
+ private:
+  void OnLogMessage(const std::string& message) override {
+    static_cast<Base*>(this)->WriteAll(
+        message.data(), message.size(), nullptr, nullptr);
+  }
+};
+
 // Test basic logging operation. We should get the INFO log but not the VERBOSE.
 // We should restore the correct global state at the end.
 TEST(LogTest, SingleStream) {
   int sev = LogMessage::GetLogToStream(NULL);
 
   std::string str;
-  StringStream stream(str);
+  LogSinkImpl<StringStream> stream(str);
   LogMessage::AddLogToStream(&stream, LS_INFO);
   EXPECT_EQ(LS_INFO, LogMessage::GetLogToStream(&stream));
 
@@ -34,7 +56,7 @@ TEST(LogTest, SingleStream) {
   EXPECT_EQ(std::string::npos, str.find("VERBOSE"));
 
   LogMessage::RemoveLogToStream(&stream);
-  EXPECT_EQ(LogMessage::NO_LOGGING, LogMessage::GetLogToStream(&stream));
+  EXPECT_EQ(LS_NONE, LogMessage::GetLogToStream(&stream));
 
   EXPECT_EQ(sev, LogMessage::GetLogToStream(NULL));
 }
@@ -46,7 +68,7 @@ TEST(LogTest, MultipleStreams) {
   int sev = LogMessage::GetLogToStream(NULL);
 
   std::string str1, str2;
-  StringStream stream1(str1), stream2(str2);
+  LogSinkImpl<StringStream> stream1(str1), stream2(str2);
   LogMessage::AddLogToStream(&stream1, LS_INFO);
   LogMessage::AddLogToStream(&stream2, LS_VERBOSE);
   EXPECT_EQ(LS_INFO, LogMessage::GetLogToStream(&stream1));
@@ -62,8 +84,8 @@ TEST(LogTest, MultipleStreams) {
 
   LogMessage::RemoveLogToStream(&stream2);
   LogMessage::RemoveLogToStream(&stream1);
-  EXPECT_EQ(LogMessage::NO_LOGGING, LogMessage::GetLogToStream(&stream2));
-  EXPECT_EQ(LogMessage::NO_LOGGING, LogMessage::GetLogToStream(&stream1));
+  EXPECT_EQ(LS_NONE, LogMessage::GetLogToStream(&stream2));
+  EXPECT_EQ(LS_NONE, LogMessage::GetLogToStream(&stream1));
 
   EXPECT_EQ(sev, LogMessage::GetLogToStream(NULL));
 }
@@ -91,7 +113,7 @@ TEST(LogTest, MultipleThreads) {
   thread2.Start();
   thread3.Start();
 
-  NullStream stream1, stream2, stream3;
+  LogSinkImpl<NullStream> stream1, stream2, stream3;
   for (int i = 0; i < 1000; ++i) {
     LogMessage::AddLogToStream(&stream1, LS_INFO);
     LogMessage::AddLogToStream(&stream2, LS_VERBOSE);
@@ -117,7 +139,7 @@ TEST(LogTest, Perf) {
   EXPECT_TRUE(Filesystem::GetTemporaryFolder(path, true, NULL));
   path.SetPathname(Filesystem::TempFilename(path, "ut"));
 
-  FileStream stream;
+  LogSinkImpl<FileStream> stream;
   EXPECT_TRUE(stream.Open(path.pathname(), "wb", NULL));
   stream.DisableBuffering();
   LogMessage::AddLogToStream(&stream, LS_SENSITIVE);

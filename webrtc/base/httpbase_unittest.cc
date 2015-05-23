@@ -404,7 +404,7 @@ TEST_F(HttpBaseTest, SupportsReceiveViaStreamPull) {
 TEST_F(HttpBaseTest, DISABLED_AllowsCloseStreamBeforeDocumentIsComplete) {
 
   // TODO: Remove extra logging once test failure is understood
-  int old_sev = rtc::LogMessage::GetLogToDebug();
+  LoggingSeverity old_sev = rtc::LogMessage::GetLogToDebug();
   rtc::LogMessage::LogToDebug(LS_VERBOSE);
 
 

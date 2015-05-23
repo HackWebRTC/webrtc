@@ -51,7 +51,7 @@ int TestCrtReportHandler(int report_type, char* msg, int* retval) {
     return TRUE;
   }
 }
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
     _crtBreakAlloc = FLAG_crt_break_alloc;
   }
 #endif  // _DEBUG
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
   rtc::Filesystem::SetOrganizationName("google");
   rtc::Filesystem::SetApplicationName("unittest");
@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
   // By default, log timestamps. Allow overrides by used of a --log flag.
   rtc::LogMessage::LogTimestamps();
   if (*FLAG_log != '\0') {
-    rtc::LogMessage::ConfigureLogging(FLAG_log, "unittest.log");
+    rtc::LogMessage::ConfigureLogging(FLAG_log);
   }
 
   // Initialize SSL which are used by several tests.
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
   rtc::CleanupSSL();
 
   // clean up logging so we don't appear to leak memory.
-  rtc::LogMessage::ConfigureLogging("", "");
+  rtc::LogMessage::ConfigureLogging("");
 
 #if defined(WEBRTC_WIN)
   // Unhook crt function so that we don't ever log after statics have been
