@@ -1132,11 +1132,11 @@ TEST_F(WebRtcVideoChannel2Test, IdenticalRecvExtensionsDoesntRecreateStream) {
       kRtpVideoRotationHeaderExtension, kVideoRotationId));
 
   EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
-  FakeVideoReceiveStream* send_stream =
+  FakeVideoReceiveStream* recv_stream =
       AddRecvStream(cricket::StreamParams::CreateLegacy(123));
 
   EXPECT_EQ(1, fake_call_->GetNumCreatedReceiveStreams());
-  ASSERT_EQ(3u, send_stream->GetConfig().rtp.extensions.size());
+  ASSERT_EQ(3u, recv_stream->GetConfig().rtp.extensions.size());
 
   // Setting the same extensions (even if in different order) shouldn't
   // reallocate the stream.
@@ -2890,16 +2890,6 @@ TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_TestAdaptToOutputFormat) {
   FAIL() << "Not implemented.";
 }
 
-TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_TestAdaptToCpuLoad) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-TEST_F(WebRtcVideoEngine2SimulcastTest, DISABLED_TestAdaptToCpuLoadDisabled) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
 TEST_F(WebRtcVideoEngine2SimulcastTest,
        DISABLED_TestAdaptWithCpuOveruseObserver) {
   // TODO(pbos): Implement.
@@ -2920,7 +2910,7 @@ TEST_F(WebRtcVideoEngine2SimulcastTest,
 }
 
 TEST_F(WebRtcVideoEngine2SimulcastTest,
-       DISABLED_DontUseSimulcastAdapterOnNoneVp8Factory) {
+       DISABLED_DontUseSimulcastAdapterOnNonVp8Factory) {
   // TODO(pbos): Implement.
   FAIL() << "Not implemented.";
 }
@@ -2960,8 +2950,7 @@ TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_SimulcastSend_480x300) {
   FAIL() << "Not implemented.";
 }
 
-TEST_F(WebRtcVideoChannel2SimulcastTest,
-       DISABLED_DISABLED_SimulcastSend_480x270) {
+TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_SimulcastSend_480x270) {
   // TODO(pbos): Implement.
   FAIL() << "Not implemented.";
 }
@@ -2972,14 +2961,6 @@ TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_SimulcastSend_320x200) {
 }
 
 TEST_F(WebRtcVideoChannel2SimulcastTest, DISABLED_SimulcastSend_320x180) {
-  // TODO(pbos): Implement.
-  FAIL() << "Not implemented.";
-}
-
-// Test reset send codec with simulcast.
-// Disabled per b/6773425
-TEST_F(WebRtcVideoChannel2SimulcastTest,
-       DISABLED_DISABLED_SimulcastResetSendCodec) {
   // TODO(pbos): Implement.
   FAIL() << "Not implemented.";
 }
