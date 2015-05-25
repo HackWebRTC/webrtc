@@ -25,7 +25,7 @@ CHROMIUM_BUILD_ANDROID_DIR = os.path.join(SRC_DIR, 'build', 'android')
 sys.path.insert(0, CHROMIUM_BUILD_ANDROID_DIR)
 
 
-import test_runner
+import test_runner  # pylint: disable=W0406
 from pylib.gtest import gtest_config
 from pylib.gtest import setup
 

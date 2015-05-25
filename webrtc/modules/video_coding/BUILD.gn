@@ -44,9 +44,9 @@ source_set("video_coding") {
     "main/source/nack_fec_tables.h",
     "main/source/packet.cc",
     "main/source/packet.h",
-    "main/source/qm_select_data.h",
     "main/source/qm_select.cc",
     "main/source/qm_select.h",
+    "main/source/qm_select_data.h",
     "main/source/receiver.cc",
     "main/source/receiver.h",
     "main/source/rtt_filter.cc",
@@ -110,13 +110,15 @@ source_set("video_coding_utility") {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  deps = [ "../../system_wrappers" ]
+  deps = [
+    "../../system_wrappers",
+  ]
 }
 
 source_set("webrtc_i420") {
   sources = [
-    "codecs/i420/main/source/i420.cc",
     "codecs/i420/main/interface/i420.h",
+    "codecs/i420/main/source/i420.cc",
   ]
 
   configs += [ "../..:common_config" ]
@@ -128,7 +130,9 @@ source_set("webrtc_i420") {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  deps = [ "../../system_wrappers" ]
+  deps = [
+    "../../system_wrappers",
+  ]
 }
 
 source_set("webrtc_vp8") {
@@ -174,9 +178,7 @@ source_set("webrtc_vp8") {
     "../../system_wrappers",
   ]
   if (rtc_build_libvpx) {
-    deps += [
-      rtc_libvpx_dir,
-    ]
+    deps += [ rtc_libvpx_dir ]
   }
 }
 
@@ -190,7 +192,9 @@ source_set("webrtc_vp9") {
       "codecs/vp9/vp9_impl.h",
     ]
   } else {
-    sources = [ "codecs/vp9/vp9_dummy_impl.cc" ]
+    sources = [
+      "codecs/vp9/vp9_dummy_impl.cc",
+    ]
   }
 
   configs += [ "../..:common_config" ]
@@ -208,8 +212,6 @@ source_set("webrtc_vp9") {
     "../../system_wrappers",
   ]
   if (rtc_build_libvpx) {
-    deps += [
-      rtc_libvpx_dir,
-    ]
+    deps += [ rtc_libvpx_dir ]
   }
 }

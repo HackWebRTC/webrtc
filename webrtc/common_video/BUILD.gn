@@ -53,7 +53,9 @@ source_set("common_video") {
 
   if (rtc_build_libyuv) {
     deps += [ "$rtc_libyuv_dir" ]
-    public_deps = [ "$rtc_libyuv_dir" ]
+    public_deps = [
+      "$rtc_libyuv_dir",
+    ]
   } else {
     # Need to add a directory normally exported by libyuv.
     include_dirs += [ "$rtc_libyuv_dir/include" ]

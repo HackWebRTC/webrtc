@@ -18,7 +18,7 @@ class Test(unittest.TestCase):
                          {'frame_number': 1, 'ssim': 0.55, 'psnr': 30.55}]
     self.frame_data_1 = [{'frame_number': 0, 'ssim': 0.6, 'psnr': 30.6},
                          {'frame_number': 0, 'ssim': 0.66, 'psnr': 30.66}]
-    self.all_data = [ self.frame_data_0, self.frame_data_1 ]
+    self.all_data = [self.frame_data_0, self.frame_data_1]
 
     # Test with frame_number column in a non-first position sice we need to
     # support reordering that to be able to use the gviz_api as we want.

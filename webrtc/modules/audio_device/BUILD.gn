@@ -18,17 +18,17 @@ config("audio_device_config") {
 
 source_set("audio_device") {
   sources = [
-    "include/audio_device.h",
-    "include/audio_device_defines.h",
     "audio_device_buffer.cc",
     "audio_device_buffer.h",
+    "audio_device_config.h",
     "audio_device_generic.cc",
     "audio_device_generic.h",
-    "audio_device_config.h",
     "dummy/audio_device_dummy.cc",
     "dummy/audio_device_dummy.h",
     "dummy/file_audio_device.cc",
     "dummy/file_audio_device.h",
+    "include/audio_device.h",
+    "include/audio_device_defines.h",
   ]
 
   include_dirs = []
@@ -149,7 +149,7 @@ source_set("audio_device") {
   configs += [ "../..:common_config" ]
   public_configs = [
     "../..:common_inherited_config",
-     ":audio_device_config",
+    ":audio_device_config",
   ]
 
   if (is_clang) {
@@ -166,5 +166,3 @@ source_set("audio_device") {
     "../utility",
   ]
 }
-
-

@@ -51,9 +51,6 @@ source_set("common_audio") {
     "resampler/sinc_resampler.h",
     "ring_buffer.c",
     "ring_buffer.h",
-    "signal_processing/include/real_fft.h",
-    "signal_processing/include/signal_processing_library.h",
-    "signal_processing/include/spl_inl.h",
     "signal_processing/auto_corr_to_refl_coef.c",
     "signal_processing/auto_correlation.c",
     "signal_processing/complex_fft_tables.h",
@@ -68,12 +65,15 @@ source_set("common_audio") {
     "signal_processing/get_hanning_window.c",
     "signal_processing/get_scaling_square.c",
     "signal_processing/ilbc_specific_functions.c",
+    "signal_processing/include/real_fft.h",
+    "signal_processing/include/signal_processing_library.h",
+    "signal_processing/include/spl_inl.h",
     "signal_processing/levinson_durbin.c",
     "signal_processing/lpc_to_refl_coef.c",
     "signal_processing/min_max_operations.c",
     "signal_processing/randomization_functions.c",
-    "signal_processing/refl_coef_to_lpc.c",
     "signal_processing/real_fft.c",
+    "signal_processing/refl_coef_to_lpc.c",
     "signal_processing/resample.c",
     "signal_processing/resample_48khz.c",
     "signal_processing/resample_by_2.c",
@@ -90,7 +90,6 @@ source_set("common_audio") {
     "vad/include/vad.h",
     "vad/include/webrtc_vad.h",
     "vad/vad.cc",
-    "vad/webrtc_vad.c",
     "vad/vad_core.c",
     "vad/vad_core.h",
     "vad/vad_filterbank.c",
@@ -99,15 +98,18 @@ source_set("common_audio") {
     "vad/vad_gmm.h",
     "vad/vad_sp.c",
     "vad/vad_sp.h",
-    "wav_header.cc",
-    "wav_header.h",
+    "vad/webrtc_vad.c",
     "wav_file.cc",
     "wav_file.h",
+    "wav_header.cc",
+    "wav_header.h",
     "window_generator.cc",
     "window_generator.h",
   ]
 
-  deps = [ "../system_wrappers" ]
+  deps = [
+    "../system_wrappers",
+  ]
 
   defines = []
   if (rtc_use_openmax_dl) {
@@ -141,12 +143,12 @@ source_set("common_audio") {
 
   if (current_cpu == "mipsel") {
     sources += [
-      "signal_processing/include/spl_inl_mips.h",
       "signal_processing/complex_bit_reverse_mips.c",
       "signal_processing/complex_fft_mips.c",
       "signal_processing/cross_correlation_mips.c",
       "signal_processing/downsample_fast_mips.c",
       "signal_processing/filter_ar_fast_q12_mips.c",
+      "signal_processing/include/spl_inl_mips.h",
       "signal_processing/min_max_operations_mips.c",
       "signal_processing/resample_by_2_mips.c",
       "signal_processing/spl_sqrt_floor_mips.c",
@@ -167,9 +169,7 @@ source_set("common_audio") {
   }
 
   if (is_win) {
-    cflags = [
-      "/wd4334",  # Ignore warning on shift operator promotion.
-    ]
+    cflags = [ "/wd4334" ]  # Ignore warning on shift operator promotion.
   }
 
   configs += [ "..:common_config" ]

@@ -129,7 +129,9 @@ source_set("audio_processing") {
   public_configs = [ "../..:common_inherited_config" ]
 
   defines = []
-  deps = [ "../..:webrtc_common" ]
+  deps = [
+    "../..:webrtc_common",
+  ]
 
   if (aec_debug_dump) {
     defines += [ "WEBRTC_AEC_DEBUG_DUMP" ]
@@ -212,7 +214,9 @@ source_set("audio_processing") {
 
 if (rtc_enable_protobuf) {
   proto_library("audioproc_debug_proto") {
-    sources = [ "debug.proto" ]
+    sources = [
+      "debug.proto",
+    ]
 
     proto_out_dir = "webrtc/audio_processing"
   }
@@ -246,7 +250,9 @@ if (rtc_build_armv7_neon || current_cpu == "arm64") {
     configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
-    deps = [ "../../common_audio" ]
+    deps = [
+      "../../common_audio",
+    ]
 
     # Enable compilation for the ARM v7 Neon instruction set. This is needed
     # since //build/config/arm.gni only enables Neon for iOS, not Android.
@@ -258,7 +264,7 @@ if (rtc_build_armv7_neon || current_cpu == "arm64") {
 
     # "-mfpu=neon" is not requried for arm64 in GCC.
     if (current_cpu != "arm64") {
-       cflags = [ "-mfpu=neon" ]
+      cflags = [ "-mfpu=neon" ]
     }
 
     # Disable LTO in audio_processing_neon target due to compiler bug.

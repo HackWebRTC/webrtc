@@ -16,12 +16,12 @@ source_set("tools") {
 
 source_set("command_line_parser") {
   sources = [
-    "simple_command_line_parser.h",
     "simple_command_line_parser.cc",
+    "simple_command_line_parser.h",
   ]
 
   configs += [ "..:common_config" ]
-  public_configs = [ "..:common_inherited_config"]
+  public_configs = [ "..:common_inherited_config" ]
 }
 
 # TODO(kjellander): Convert all of tools.gyp into GN here.
@@ -35,7 +35,7 @@ if (!build_with_chromium) {
     ]
 
     configs += [ "..:common_config" ]
-    public_configs = [ "..:common_inherited_config"]
+    public_configs = [ "..:common_inherited_config" ]
 
     deps = [
       ":command_line_parser",

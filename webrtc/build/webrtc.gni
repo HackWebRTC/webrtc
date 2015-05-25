@@ -68,7 +68,6 @@ declare_args() {
 
     # Exclude internal ADM since Chromium uses its own IO handling.
     rtc_include_internal_audio_device = false
-
   } else {
     # Settings for the standalone (not-in-Chromium) build.
 
@@ -109,7 +108,7 @@ declare_args() {
   # WebRTC builds ARM v7 Neon instruction set optimized code for both iOS and
   # Android, which is why we currently cannot use the variables in
   # //build/config/arm.gni (since it disables Neon for Android).
-  rtc_build_armv7_neon = (current_cpu == "arm" && arm_version >= 7)
+  rtc_build_armv7_neon = current_cpu == "arm" && arm_version >= 7
 }
 
 # Make it possible to provide custom locations for some libraries (move these

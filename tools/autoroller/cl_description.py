@@ -24,6 +24,7 @@ CHROMIUM_COMMIT_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s'
 CHROMIUM_FILE_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s/%s'
 
 GIT_NUMBER_RE = re.compile('^Cr-Commit-Position: .*#([0-9]+).*$')
+CLANG_REVISION_RE = re.compile(r'^CLANG_REVISION=(\d+)$')
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CHECKOUT_ROOT_DIR = os.path.join(SCRIPT_DIR, os.pardir, os.pardir)
 sys.path.append(CHECKOUT_ROOT_DIR)
@@ -156,8 +157,11 @@ def calculate_changed_deps(current_deps, new_deps):
 
 def calculate_changed_clang(new_cr_rev):
   def get_clang_rev(lines):
-    key = 'CLANG_REVISION='
-    return filter(lambda x: x.startswith(key), lines)[0][len(key):].strip()
+    for line in lines:
+      match = CLANG_REVISION_RE.match(line)
+      if match:
+        return match.group(1)
+    return None
 
   chromium_src_path = os.path.join(CHECKOUT_ROOT_DIR, 'chromium', 'src',
                                    CLANG_UPDATE_SCRIPT_LOCAL_PATH)

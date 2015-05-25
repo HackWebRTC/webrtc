@@ -37,7 +37,7 @@ def main():
   page_template_filename = '../templates/chart_page_template.html'
   # The data files must be located in the project tree for app engine being
   # able to access them.
-  data_filenames = [ '../data/vp8_sw.py', '../data/vp8_hw.py' ]
+  data_filenames = ['../data/vp8_sw.py', '../data/vp8_hw.py']
   # Will contain info/error messages to be displayed on the resulting page.
   messages = []
   # Load the page HTML template.

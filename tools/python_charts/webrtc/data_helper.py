@@ -89,7 +89,7 @@ class DataHelper(object):
     # We're going to have one dictionary per row.
     # Create that and copy frame_number values from the first data set
     for source_row in self.data_list[0]:
-      row_dict = { 'frame_number': source_row['frame_number'] }
+      row_dict = {'frame_number': source_row['frame_number']}
       result_data_table.append(row_dict)
 
     # Pick target field data points from the all data tables

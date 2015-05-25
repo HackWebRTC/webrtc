@@ -54,7 +54,9 @@ source_set("video_processing") {
 
 if (build_video_processing_sse2) {
   source_set("video_processing_sse2") {
-    sources = [ "main/source/content_analysis_sse2.cc" ]
+    sources = [
+      "main/source/content_analysis_sse2.cc",
+    ]
 
     configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]

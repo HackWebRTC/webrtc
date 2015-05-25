@@ -24,7 +24,7 @@ source_set("bitrate_controller") {
   if (is_win) {
     cflags = [
       # TODO(jschuh): Bug 1348: fix this warning.
-      "/wd4267"  # size_t to int truncations
+      "/wd4267",  # size_t to int truncations
     ]
   }
 
@@ -37,5 +37,7 @@ source_set("bitrate_controller") {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  deps = [ "../../system_wrappers" ]
+  deps = [
+    "../../system_wrappers",
+  ]
 }

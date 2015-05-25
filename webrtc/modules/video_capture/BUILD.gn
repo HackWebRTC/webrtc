@@ -128,7 +128,7 @@ if (!build_with_chromium) {
 
       libs = [ "Strmiids.lib" ]
 
-      deps += [ "//third_party/winsdk_samples"]
+      deps += [ "//third_party/winsdk_samples" ]
     }
     if (is_android) {
       sources = [
@@ -159,6 +159,7 @@ if (!build_with_chromium) {
 
       cflags = [
         "-fobjc-arc",  # CLANG_ENABLE_OBJC_ARC = YES.
+
         # To avoid warnings for deprecated videoMinFrameDuration and
         # videoMaxFrameDuration properties in iOS 7.0.
         # See webrtc:3705 for more details.

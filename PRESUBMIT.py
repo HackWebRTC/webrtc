@@ -24,11 +24,11 @@ def _CheckNoIOStreamInHeaders(input_api, output_api):
       files.append(f)
 
   if len(files):
-    return [ output_api.PresubmitError(
+    return [output_api.PresubmitError(
         'Do not #include <iostream> in header files, since it inserts static ' +
         'initialization into every file including the header. Instead, ' +
         '#include <ostream>. See http://crbug.com/94794',
-        files) ]
+        files)]
   return []
 
 
@@ -79,8 +79,8 @@ def _CheckApprovedFilesLintClean(input_api, output_api,
   verbosity_level = 1
   files = []
   for f in input_api.AffectedSourceFiles(source_file_filter):
-    # Note that moved/renamed files also count as added for svn.
-    if (f.Action() == 'A'):
+    # Note that moved/renamed files also count as added.
+    if f.Action() == 'A':
       files.append(f.AbsoluteLocalPath())
 
   for file_name in files:
@@ -202,7 +202,7 @@ def _CheckUnwantedDependencies(input_api, output_api):
     if not CppChecker.IsCppFile(f.LocalPath()):
       continue
 
-    changed_lines = [line for _line_num, line in f.ChangedContents()]
+    changed_lines = [line for _, line in f.ChangedContents()]
     added_includes.append([f.LocalPath(), changed_lines])
 
   deps_checker = checkdeps.DepsChecker(input_api.PresubmitLocalPath())
@@ -233,7 +233,6 @@ def _CheckUnwantedDependencies(input_api, output_api):
 
 def _CommonChecks(input_api, output_api):
   """Checks common to both upload and commit."""
-  # TODO(kjellander): Use presubmit_canned_checks.PanProjectChecks too.
   results = []
   results.extend(input_api.canned_checks.RunPylint(input_api, output_api,
       black_list=(r'^.*gviz_api\.py$',
@@ -243,13 +242,11 @@ def _CommonChecks(input_api, output_api):
                   r'^buildtools/.*\.py$',
                   r'^chromium/.*\.py$',
                   r'^out.*/.*\.py$',
-                  r'^talk/site_scons/site_tools/talk_linux.py$',
                   r'^testing/.*\.py$',
                   r'^third_party/.*\.py$',
                   r'^tools/clang/.*\.py$',
                   r'^tools/gn/.*\.py$',
                   r'^tools/gyp/.*\.py$',
-                  r'^tools/perf_expectations/.*\.py$',
                   r'^tools/protoc_wrapper/.*\.py$',
                   r'^tools/python/.*\.py$',
                   r'^tools/python_charts/data/.*\.py$',
@@ -258,14 +255,15 @@ def _CommonChecks(input_api, output_api):
                   # TODO(phoglund): should arguably be checked.
                   r'^tools/valgrind-webrtc/.*\.py$',
                   r'^tools/valgrind/.*\.py$',
-                  # TODO(phoglund): should arguably be checked.
-                  r'^webrtc/build/.*\.py$',
                   r'^xcodebuild.*/.*\.py$',),
-
       disabled_warnings=['F0401',  # Failed to import x
                          'E0611',  # No package y in x
                          'W0232',  # Class has no __init__ method
-                        ]))
+                        ],
+      pylintrc='pylintrc'))
+  # WebRTC can't use the presubmit_canned_checks.PanProjectChecks function since
+  # we need to have different license checks in talk/ and webrtc/ directories.
+  # Instead, hand-picked checks are included below.
   results.extend(input_api.canned_checks.CheckLongLines(
       input_api, output_api, maxlen=80))
   results.extend(input_api.canned_checks.CheckChangeHasNoTabs(
@@ -285,6 +283,8 @@ def _CommonChecks(input_api, output_api):
 def CheckChangeOnUpload(input_api, output_api):
   results = []
   results.extend(_CommonChecks(input_api, output_api))
+  results.extend(
+      input_api.canned_checks.CheckGNFormatted(input_api, output_api))
   return results
 
 
@@ -312,7 +312,7 @@ def GetDefaultTryConfigs(bots=None):
   For WebRTC purposes, we always return an empty list of tests, since we want
   to run all tests by default on all our trybots.
   """
-  return { 'tryserver.webrtc': dict((bot, []) for bot in bots)}
+  return {'tryserver.webrtc': dict((bot, []) for bot in bots)}
 
 
 # pylint: disable=W0613
@@ -377,7 +377,7 @@ def GetPreferredTryMasters(project, change):
   if all(re.search(r'[\\/]BUILD.gn$', f) for f in files):
     return GetDefaultTryConfigs(android_gn_bots + linux_gn_bots + mac_gn_bots +
                                 win_gn_bots)
-  if all(re.search('\.(m|mm)$|(^|[/_])mac[/_.]', f) for f in files):
+  if all(re.search('[/_])mac[/_.]', f) for f in files):
     return GetDefaultTryConfigs(mac_bots)
   if all(re.search('(^|[/_])win[/_.]', f) for f in files):
     return GetDefaultTryConfigs(win_bots)

@@ -9,7 +9,9 @@
 import("../build/webrtc.gni")
 
 source_set("video_engine") {
-  deps = [ ":video_engine_core" ]
+  deps = [
+    ":video_engine_core",
+  ]
 }
 
 source_set("video_engine_core") {
@@ -29,9 +31,9 @@ source_set("video_engine_core") {
     "vie_capturer.cc",
     "vie_capturer.h",
     "vie_channel.cc",
+    "vie_channel.h",
     "vie_channel_group.cc",
     "vie_channel_group.h",
-    "vie_channel.h",
     "vie_defines.h",
     "vie_encoder.cc",
     "vie_encoder.h",
@@ -58,6 +60,7 @@ source_set("video_engine_core") {
     cflags = [
       # TODO(jschuh): Bug 1348: fix size_t to int truncations.
       "/wd4267",  # size_t to int truncation.
+
       # Bug 261.
       "/wd4373",  # legacy warning for ignoring const / volatile in signatures.
     ]

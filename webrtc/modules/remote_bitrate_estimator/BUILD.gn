@@ -14,7 +14,7 @@ source_set("remote_bitrate_estimator") {
     "rate_statistics.h",
   ]
 
-  configs += [ "../../:common_inherited_config"]
+  configs += [ "../../:common_inherited_config" ]
 
   deps = [
     ":rbe_components",
@@ -43,7 +43,9 @@ source_set("rbe_components") {
 
   configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
-  deps = [ "../..:webrtc_common" ]
+  deps = [
+    "../..:webrtc_common",
+  ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
