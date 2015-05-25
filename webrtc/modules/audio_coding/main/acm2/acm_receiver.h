@@ -45,6 +45,7 @@ class AcmReceiver {
     // This field is meaningful for codecs where both mono and
     // stereo versions are registered under the same ID.
     int channels;
+    int sample_rate_hz;
   };
 
   // Constructor of the class
@@ -94,6 +95,7 @@ class AcmReceiver {
   // Input:
   //   - acm_codec_id        : ACM codec ID.
   //   - payload_type        : payload type.
+  //   - sample_rate_hz      : sample rate.
   //   - audio_decoder       : pointer to a decoder object. If it is NULL
   //                           then NetEq will internally create the decoder
   //                           object. Otherwise, NetEq will store this pointer
@@ -113,6 +115,7 @@ class AcmReceiver {
   int AddCodec(int acm_codec_id,
                uint8_t payload_type,
                int channels,
+               int sample_rate_hz,
                AudioDecoder* audio_decoder);
 
   //

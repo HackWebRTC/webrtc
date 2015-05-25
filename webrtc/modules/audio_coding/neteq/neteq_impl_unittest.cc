@@ -457,8 +457,8 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
   } decoder_;
 
   EXPECT_EQ(NetEq::kOK,
-            neteq_->RegisterExternalDecoder(
-                &decoder_, kDecoderPCM16B, kPayloadType));
+            neteq_->RegisterExternalDecoder(&decoder_, kDecoderPCM16B,
+                                            kPayloadType, kSampleRateHz));
 
   // Insert one packet.
   EXPECT_EQ(NetEq::kOK,
@@ -535,8 +535,8 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
                       SetArgPointee<5>(AudioDecoder::kSpeech),
                       Return(kPayloadLengthSamples)));
   EXPECT_EQ(NetEq::kOK,
-            neteq_->RegisterExternalDecoder(
-                &mock_decoder, kDecoderPCM16B, kPayloadType));
+            neteq_->RegisterExternalDecoder(&mock_decoder, kDecoderPCM16B,
+                                            kPayloadType, kSampleRateHz));
 
   // Insert one packet.
   EXPECT_EQ(NetEq::kOK,
@@ -719,9 +719,9 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
                       SetArgPointee<5>(AudioDecoder::kSpeech),
                       Return(kPayloadLengthSamples)));
 
-  EXPECT_EQ(NetEq::kOK,
-            neteq_->RegisterExternalDecoder(
-                &mock_decoder, kDecoderOpus, kPayloadType));
+  EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
+                            &mock_decoder, kDecoderOpus, kPayloadType,
+                            kSampleRateKhz * 1000));
 
   // Insert one packet (decoder will return speech).
   EXPECT_EQ(NetEq::kOK,
@@ -860,8 +860,8 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
     .WillRepeatedly(Return(kNetEqMaxFrameSize));
 
   EXPECT_EQ(NetEq::kOK,
-            neteq_->RegisterExternalDecoder(
-                &decoder_, kDecoderPCM16B, kPayloadType));
+            neteq_->RegisterExternalDecoder(&decoder_, kDecoderPCM16B,
+                                            kPayloadType, kSampleRateHz));
 
   // Insert one packet.
   payload[0] = kFirstPayloadValue;  // This will make Decode() fail.

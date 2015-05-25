@@ -109,7 +109,8 @@ class AcmReceiverTest : public AudioPacketizationCallback,
     int n = 0;
     while (id[n] >= 0) {
       ASSERT_EQ(0, receiver_->AddCodec(id[n], codecs_[id[n]].pltype,
-                                       codecs_[id[n]].channels, NULL));
+                                       codecs_[id[n]].channels,
+                                       codecs_[id[n]].plfreq, NULL));
       ++n;
     }
   }
@@ -157,8 +158,9 @@ TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(AddCodecGetCodec)) {
   // Add codec.
   for (int n = 0; n < ACMCodecDB::kNumCodecs; ++n) {
     if (n & 0x1)  // Just add codecs with odd index.
-      EXPECT_EQ(0, receiver_->AddCodec(n, codecs_[n].pltype,
-                                       codecs_[n].channels, NULL));
+      EXPECT_EQ(0,
+                receiver_->AddCodec(n, codecs_[n].pltype, codecs_[n].channels,
+                                    codecs_[n].plfreq, NULL));
   }
   // Get codec and compare.
   for (int n = 0; n < ACMCodecDB::kNumCodecs; ++n) {
@@ -185,10 +187,12 @@ TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(AddCodecChangePayloadType)) {
   CodecInst test_codec;
 
   // Register the same codec with different payload types.
-  EXPECT_EQ(0, receiver_->AddCodec(codec_id, ref_codec1.pltype,
-                                   ref_codec1.channels, NULL));
-  EXPECT_EQ(0, receiver_->AddCodec(codec_id, ref_codec2.pltype,
-                                   ref_codec2.channels, NULL));
+  EXPECT_EQ(
+      0, receiver_->AddCodec(codec_id, ref_codec1.pltype, ref_codec1.channels,
+                             ref_codec1.plfreq, NULL));
+  EXPECT_EQ(
+      0, receiver_->AddCodec(codec_id, ref_codec2.pltype, ref_codec2.channels,
+                             ref_codec2.plfreq, NULL));
 
   // Both payload types should exist.
   EXPECT_EQ(0, receiver_->DecoderByPayloadType(ref_codec1.pltype, &test_codec));
@@ -208,10 +212,12 @@ TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(AddCodecChangeCodecId)) {
   CodecInst test_codec;
 
   // Register the same payload type with different codec ID.
-  EXPECT_EQ(0, receiver_->AddCodec(codec_id1, ref_codec1.pltype,
-                                   ref_codec1.channels, NULL));
-  EXPECT_EQ(0, receiver_->AddCodec(codec_id2, ref_codec2.pltype,
-                                   ref_codec2.channels, NULL));
+  EXPECT_EQ(
+      0, receiver_->AddCodec(codec_id1, ref_codec1.pltype, ref_codec1.channels,
+                             ref_codec1.plfreq, NULL));
+  EXPECT_EQ(
+      0, receiver_->AddCodec(codec_id2, ref_codec2.pltype, ref_codec2.channels,
+                             ref_codec2.plfreq, NULL));
 
   // Make sure that the last codec is used.
   EXPECT_EQ(0, receiver_->DecoderByPayloadType(ref_codec2.pltype, &test_codec));
@@ -223,8 +229,8 @@ TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(AddCodecRemoveCodec)) {
   const int codec_id = ACMCodecDB::kPCMA;
   EXPECT_EQ(0, ACMCodecDB::Codec(codec_id, &codec));
   const int payload_type = codec.pltype;
-  EXPECT_EQ(0, receiver_->AddCodec(codec_id, codec.pltype,
-                                   codec.channels, NULL));
+  EXPECT_EQ(0, receiver_->AddCodec(codec_id, codec.pltype, codec.channels,
+                                   codec.plfreq, NULL));
 
   // Remove non-existing codec should not fail. ACM1 legacy.
   EXPECT_EQ(0, receiver_->RemoveCodec(payload_type + 1));
@@ -280,7 +286,7 @@ TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(PostdecodingVad)) {
 
   const int id = ACMCodecDB::kPCM16Bwb;
   ASSERT_EQ(0, receiver_->AddCodec(id, codecs_[id].pltype, codecs_[id].channels,
-                                   NULL));
+                                   codecs_[id].plfreq, NULL));
   const int kNumPackets = 5;
   const int num_10ms_frames = codecs_[id].pacsize / (codecs_[id].plfreq / 100);
   AudioFrame frame;

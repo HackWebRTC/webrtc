@@ -575,7 +575,8 @@ int AudioCodingModuleImpl::InitializeReceiverSafe() {
   for (int i = 0; i < ACMCodecDB::kNumCodecs; i++) {
     if (IsCodecRED(i) || IsCodecCN(i)) {
       uint8_t pl_type = static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
-      if (receiver_.AddCodec(i, pl_type, 1, NULL) < 0) {
+      int fs = ACMCodecDB::database_[i].plfreq;
+      if (receiver_.AddCodec(i, pl_type, 1, fs, NULL) < 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                      "Cannot register master codec.");
         return -1;
@@ -644,6 +645,7 @@ int AudioCodingModuleImpl::RegisterReceiveCodec(const CodecInst& codec) {
   // Get |decoder| associated with |codec|. |decoder| is NULL if |codec| does
   // not own its decoder.
   return receiver_.AddCodec(codec_id, codec.pltype, codec.channels,
+                            codec.plfreq,
                             codec_manager_.GetAudioDecoder(codec));
 }
 

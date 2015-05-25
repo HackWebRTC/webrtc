@@ -475,6 +475,7 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
 int32_t AcmReceiver::AddCodec(int acm_codec_id,
                               uint8_t payload_type,
                               int channels,
+                              int sample_rate_hz,
                               AudioDecoder* audio_decoder) {
   assert(acm_codec_id >= 0);
   NetEqDecoder neteq_decoder = ACMCodecDB::neteq_decoders_[acm_codec_id];
@@ -491,7 +492,8 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
   auto it = decoders_.find(payload_type);
   if (it != decoders_.end()) {
     const Decoder& decoder = it->second;
-    if (decoder.acm_codec_id == acm_codec_id && decoder.channels == channels) {
+    if (decoder.acm_codec_id == acm_codec_id && decoder.channels == channels &&
+        decoder.sample_rate_hz == sample_rate_hz) {
       // Re-registering the same codec. Do nothing and return.
       return 0;
     }
@@ -511,8 +513,8 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
   if (!audio_decoder) {
     ret_val = neteq_->RegisterPayloadType(neteq_decoder, payload_type);
   } else {
-    ret_val = neteq_->RegisterExternalDecoder(
-        audio_decoder, neteq_decoder, payload_type);
+    ret_val = neteq_->RegisterExternalDecoder(audio_decoder, neteq_decoder,
+                                              payload_type, sample_rate_hz);
   }
   if (ret_val != NetEq::kOK) {
     LOG_FERR3(LS_ERROR, "AcmReceiver::AddCodec", acm_codec_id,
@@ -524,6 +526,7 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
   decoder.acm_codec_id = acm_codec_id;
   decoder.payload_type = payload_type;
   decoder.channels = channels;
+  decoder.sample_rate_hz = sample_rate_hz;
   decoders_[payload_type] = decoder;
   return 0;
 }
@@ -625,6 +628,7 @@ int AcmReceiver::LastAudioCodec(CodecInst* codec) const {
          sizeof(CodecInst));
   codec->pltype = last_audio_decoder_->payload_type;
   codec->channels = last_audio_decoder_->channels;
+  codec->plfreq = last_audio_decoder_->sample_rate_hz;
   return 0;
 }
 
@@ -686,6 +690,7 @@ int AcmReceiver::DecoderByPayloadType(uint8_t payload_type,
          sizeof(CodecInst));
   codec->pltype = decoder.payload_type;
   codec->channels = decoder.channels;
+  codec->plfreq = decoder.sample_rate_hz;
   return 0;
 }
 
