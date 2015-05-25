@@ -248,7 +248,6 @@ int main(int argc, char **argv) {
   DEFINE_string(datachannel, "",
                 "Enable a data channel, and choose the type: rtp or sctp.");
   DEFINE_bool(d, false, "Turn on debugging.");
-  DEFINE_string(log, "", "Turn on debugging to a file.");
   DEFINE_bool(debugsrtp, false, "Enable debugging for srtp.");
   DEFINE_bool(help, false, "Prints this message");
   DEFINE_bool(multisession, false,
@@ -265,7 +264,6 @@ int main(int argc, char **argv) {
 
   bool auto_accept = FLAG_a;
   bool debug = FLAG_d;
-  std::string log = FLAG_log;
   std::string signaling = FLAG_signaling;
   std::string transport = FLAG_transport;
   bool test_server = FLAG_testserver;
@@ -289,17 +287,6 @@ int main(int argc, char **argv) {
   // Set up debugging.
   if (debug) {
     rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
-  }
-
-  if (!log.empty()) {
-    rtc::StreamInterface* stream =
-        rtc::Filesystem::OpenFile(log, "a");
-    if (stream) {
-      rtc::LogMessage::LogToStream(stream, rtc::LS_VERBOSE);
-    } else {
-      Print(("Cannot open debug log " + log + "\n").c_str());
-      return 1;
-    }
   }
 
   if (debugsrtp) {

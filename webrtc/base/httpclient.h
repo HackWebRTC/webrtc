@@ -68,7 +68,7 @@ public:
 
   void set_agent(const std::string& agent) { agent_ = agent; }
   const std::string& agent() const { return agent_; }
-  
+
   void set_proxy(const ProxyInfo& proxy) { proxy_ = proxy; }
   const ProxyInfo& proxy() const { return proxy_; }
 
@@ -99,22 +99,20 @@ public:
   // reset clears the server, request, and response structures.  It will also
   // abort an active request.
   void reset();
-  
+
   void set_server(const SocketAddress& address);
   const SocketAddress& server() const { return server_; }
 
   // Note: in order for HttpClient to retry a POST in response to
   // an authentication challenge, a redirect response, or socket disconnection,
   // the request document must support 'replaying' by calling Rewind() on it.
-  // In the case where just a subset of a stream should be used as the request
-  // document, the stream may be wrapped with the StreamSegment adapter.
   HttpTransaction* transaction() { return transaction_; }
   const HttpTransaction* transaction() const { return transaction_; }
   HttpRequestData& request() { return transaction_->request; }
   const HttpRequestData& request() const { return transaction_->request; }
   HttpResponseData& response() { return transaction_->response; }
   const HttpResponseData& response() const { return transaction_->response; }
-  
+
   // convenience methods
   void prepare_get(const std::string& url);
   void prepare_post(const std::string& url, const std::string& content_type,
@@ -125,7 +123,7 @@ public:
 
   // After you finish setting up your request, call start.
   void start();
-  
+
   // Signalled when the header has finished downloading, before the document
   // content is processed.  You may change the response document in response
   // to this signal.  The second parameter indicates whether this is an

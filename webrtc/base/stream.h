@@ -341,36 +341,6 @@ class StreamTap : public StreamAdapterInterface {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// StreamSegment adapts a read stream, to expose a subset of the adapted
-// stream's data.  This is useful for cases where a stream contains multiple
-// documents concatenated together.  StreamSegment can expose a subset of
-// the data as an independent stream, including support for rewinding and
-// seeking.
-///////////////////////////////////////////////////////////////////////////////
-
-class StreamSegment : public StreamAdapterInterface {
- public:
-  // The current position of the adapted stream becomes the beginning of the
-  // segment.  If a length is specified, it bounds the length of the segment.
-  explicit StreamSegment(StreamInterface* stream);
-  explicit StreamSegment(StreamInterface* stream, size_t length);
-
-  // StreamAdapterInterface Interface
-  StreamResult Read(void* buffer,
-                    size_t buffer_len,
-                    size_t* read,
-                    int* error) override;
-  bool SetPosition(size_t position) override;
-  bool GetPosition(size_t* position) const override;
-  bool GetSize(size_t* size) const override;
-  bool GetAvailable(size_t* size) const override;
-
- private:
-  size_t start_, pos_, length_;
-  DISALLOW_COPY_AND_ASSIGN(StreamSegment);
-};
-
-///////////////////////////////////////////////////////////////////////////////
 // NullStream gives errors on read, and silently discards all written data.
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -447,110 +417,6 @@ class FileStream : public StreamInterface {
  private:
   DISALLOW_COPY_AND_ASSIGN(FileStream);
 };
-
-// A stream that caps the output at a certain size, dropping content from the
-// middle of the logical stream and maintaining equal parts of the start/end of
-// the logical stream.
-class CircularFileStream : public FileStream {
- public:
-  explicit CircularFileStream(size_t max_size);
-
-  bool Open(const std::string& filename, const char* mode, int* error) override;
-  StreamResult Read(void* buffer,
-                    size_t buffer_len,
-                    size_t* read,
-                    int* error) override;
-  StreamResult Write(const void* data,
-                     size_t data_len,
-                     size_t* written,
-                     int* error) override;
-
- private:
-  enum ReadSegment {
-    READ_MARKED,  // Read 0 .. marked_position_
-    READ_MIDDLE,  // Read position_ .. file_size
-    READ_LATEST,  // Read marked_position_ .. position_ if the buffer was
-                  // overwritten or 0 .. position_ otherwise.
-  };
-
-  size_t max_write_size_;
-  size_t position_;
-  size_t marked_position_;
-  size_t last_write_position_;
-  ReadSegment read_segment_;
-  size_t read_segment_available_;
-};
-
-// A stream which pushes writes onto a separate thread and
-// returns from the write call immediately.
-class AsyncWriteStream : public StreamInterface {
- public:
-  // Takes ownership of the stream, but not the thread.
-  AsyncWriteStream(StreamInterface* stream, rtc::Thread* write_thread);
-  ~AsyncWriteStream() override;
-
-  // StreamInterface Interface
-  StreamState GetState() const override;
-  // This is needed by some stream writers, such as RtpDumpWriter.
-  bool GetPosition(size_t* position) const override;
-  StreamResult Read(void* buffer,
-                    size_t buffer_len,
-                    size_t* read,
-                    int* error) override;
-  StreamResult Write(const void* data,
-                     size_t data_len,
-                     size_t* written,
-                     int* error) override;
-  void Close() override;
-  bool Flush() override;
-
- protected:
-  // From MessageHandler
-  void OnMessage(rtc::Message* pmsg) override;
-  virtual void ClearBufferAndWrite();
-
- private:
-  rtc::scoped_ptr<StreamInterface> stream_;
-  Thread* write_thread_;
-  StreamState state_;
-  Buffer buffer_;
-  mutable CriticalSection crit_stream_;
-  CriticalSection crit_buffer_;
-
-  DISALLOW_COPY_AND_ASSIGN(AsyncWriteStream);
-};
-
-
-#if defined(WEBRTC_POSIX) && !defined(__native_client__)
-// A FileStream that is actually not a file, but the output or input of a
-// sub-command. See "man 3 popen" for documentation of the underlying OS popen()
-// function.
-class POpenStream : public FileStream {
- public:
-  POpenStream() : wait_status_(-1) {}
-  ~POpenStream() override;
-
-  bool Open(const std::string& subcommand,
-            const char* mode,
-            int* error) override;
-  // Same as Open(). shflag is ignored.
-  bool OpenShare(const std::string& subcommand,
-                 const char* mode,
-                 int shflag,
-                 int* error) override;
-
-  // Returns the wait status from the last Close() of an Open()'ed stream, or
-  // -1 if no Open()+Close() has been done on this object. Meaning of the number
-  // is documented in "man 2 wait".
-  int GetWaitStatus() const { return wait_status_; }
-
- protected:
-  void DoClose() override;
-
- private:
-  int wait_status_;
-};
-#endif  // WEBRTC_POSIX
 
 ///////////////////////////////////////////////////////////////////////////////
 // MemoryStream is a simple implementation of a StreamInterface over in-memory
@@ -730,7 +596,7 @@ class LoggingAdapter : public StreamAdapterInterface {
 
 class StringStream : public StreamInterface {
  public:
-  explicit StringStream(std::string& str);
+  explicit StringStream(std::string* str);
   explicit StringStream(const std::string& str);
 
   StreamState GetState() const override;

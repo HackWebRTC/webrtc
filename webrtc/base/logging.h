@@ -56,6 +56,7 @@
 #include <utility>
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/thread_annotations.h"
 
 namespace rtc {
 
@@ -153,6 +154,7 @@ class LogMessage {
 
   //  LogThreads: Display the thread identifier of the current thread
   static void LogThreads(bool on = true);
+
   //  LogTimestamps: Display the elapsed time of the program
   static void LogTimestamps(bool on = true);
 
@@ -168,7 +170,6 @@ class LogMessage {
   //   GetLogToStream gets the severity for the specified stream, of if none
   //   is specified, the minimum stream severity.
   //   RemoveLogToStream removes the specified stream, without destroying it.
-  static void LogToStream(LogSink* stream, LoggingSeverity min_sev);
   static int GetLogToStream(LogSink* stream = NULL);
   static void AddLogToStream(LogSink* stream, LoggingSeverity min_sev);
   static void RemoveLogToStream(LogSink* stream);
@@ -176,9 +177,6 @@ class LogMessage {
   // Testing against MinLogSeverity allows code to avoid potentially expensive
   // logging operations by pre-checking the logging level.
   static int GetMinLogSeverity() { return min_sev_; }
-
-  static void SetDiagnosticMode(bool f) { is_diagnostic_mode_ = f; }
-  static bool IsDiagnosticMode() { return is_diagnostic_mode_; }
 
   // Parses the provided parameter stream to configure the options above.
   // Useful for configuring logging from the command line.
@@ -189,7 +187,7 @@ class LogMessage {
   typedef std::list<StreamAndSeverity> StreamList;
 
   // Updates min_sev_ appropriately when debug sinks change.
-  static void UpdateMinLogSeverity();
+  static void UpdateMinLogSeverity() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // These write out the actual log messages.
   static void OutputToDebug(const std::string& msg, LoggingSeverity severity_);
@@ -223,9 +221,6 @@ class LogMessage {
 
   // Flags for formatting options
   static bool thread_, timestamp_;
-
-  // are we in diagnostic mode (as defined by the app)?
-  static bool is_diagnostic_mode_;
 
   DISALLOW_COPY_AND_ASSIGN(LogMessage);
 };
@@ -293,6 +288,7 @@ class LogMessageVoidify {
   rtc::LogCheckLevel(rtc::sev)
 #define LOG_CHECK_LEVEL_V(sev) \
   rtc::LogCheckLevel(sev)
+
 inline bool LogCheckLevel(LoggingSeverity sev) {
   return (LogMessage::GetMinLogSeverity() <= sev);
 }

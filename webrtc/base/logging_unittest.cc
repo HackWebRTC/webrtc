@@ -25,13 +25,8 @@ class LogSinkImpl
  public:
   LogSinkImpl() {}
 
-  // The non-const reference constructor is required because of StringStream.
-  // TODO(tommi): Fix StringStream to accept a pointer for non-const.
   template<typename P>
-  explicit LogSinkImpl(P& p) : Base(p) {}
-
-  template<typename P>
-  explicit LogSinkImpl(const P& p) : Base(p) {}
+  explicit LogSinkImpl(P* p) : Base(p) {}
 
  private:
   void OnLogMessage(const std::string& message) override {
@@ -46,7 +41,7 @@ TEST(LogTest, SingleStream) {
   int sev = LogMessage::GetLogToStream(NULL);
 
   std::string str;
-  LogSinkImpl<StringStream> stream(str);
+  LogSinkImpl<StringStream> stream(&str);
   LogMessage::AddLogToStream(&stream, LS_INFO);
   EXPECT_EQ(LS_INFO, LogMessage::GetLogToStream(&stream));
 
@@ -68,7 +63,7 @@ TEST(LogTest, MultipleStreams) {
   int sev = LogMessage::GetLogToStream(NULL);
 
   std::string str1, str2;
-  LogSinkImpl<StringStream> stream1(str1), stream2(str2);
+  LogSinkImpl<StringStream> stream1(&str1), stream2(&str2);
   LogMessage::AddLogToStream(&stream1, LS_INFO);
   LogMessage::AddLogToStream(&stream2, LS_VERBOSE);
   EXPECT_EQ(LS_INFO, LogMessage::GetLogToStream(&stream1));

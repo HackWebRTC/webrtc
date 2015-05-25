@@ -91,13 +91,10 @@ CriticalSection LogMessage::crit_;
 // Note: we explicitly do not clean this up, because of the uncertain ordering
 // of destructors at program exit.  Let the person who sets the stream trigger
 // cleanup by setting to NULL, or let it leak (safe at program exit).
-LogMessage::StreamList LogMessage::streams_;
+LogMessage::StreamList LogMessage::streams_ GUARDED_BY(LogMessage::crit_);
 
 // Boolean options default to false (0)
 bool LogMessage::thread_, LogMessage::timestamp_;
-
-// If we're in diagnostic mode, we'll be explicitly set that way; default=false.
-bool LogMessage::is_diagnostic_mode_ = false;
 
 LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
                        LogErrorContext err_ctx, int err, const char* module)
@@ -214,20 +211,8 @@ void LogMessage::LogTimestamps(bool on) {
 
 void LogMessage::LogToDebug(LoggingSeverity min_sev) {
   dbg_sev_ = min_sev;
-  UpdateMinLogSeverity();
-}
-
-void LogMessage::LogToStream(LogSink* stream, LoggingSeverity min_sev) {
   CritScope cs(&crit_);
-  // Discard and delete all previously installed streams
-  for (StreamList::iterator it = streams_.begin(); it != streams_.end(); ++it) {
-    delete it->first;
-  }
-  streams_.clear();
-  // Install the new stream, if specified
-  if (stream) {
-    AddLogToStream(stream, min_sev);
-  }
+  UpdateMinLogSeverity();
 }
 
 int LogMessage::GetLogToStream(LogSink* stream) {
@@ -320,7 +305,7 @@ void LogMessage::ConfigureLogging(const char* params) {
   LogToDebug(debug_level);
 }
 
-void LogMessage::UpdateMinLogSeverity() {
+void LogMessage::UpdateMinLogSeverity() EXCLUSIVE_LOCKS_REQUIRED(crit_) {
   LoggingSeverity min_sev = dbg_sev_;
   for (StreamList::iterator it = streams_.begin(); it != streams_.end(); ++it) {
     min_sev = std::min(dbg_sev_, it->second);
