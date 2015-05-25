@@ -36,8 +36,8 @@ class AudioDecoder {
 
   // Decodes |encode_len| bytes from |encoded| and writes the result in
   // |decoded|. The maximum bytes allowed to be written into |decoded| is
-  // |max_decoded_bytes|. The number of samples from all channels produced is
-  // in the return value. If the decoder produced comfort noise, |speech_type|
+  // |max_decoded_bytes|. Returns the total number of samples across all
+  // channels. If the decoder produced comfort noise, |speech_type|
   // is set to kComfortNoise, otherwise it is kSpeech. The desired output
   // sample rate is provided in |sample_rate_hz|, which must be valid for the
   // codec at hand.
@@ -77,14 +77,14 @@ class AudioDecoder {
   // Returns the last error code from the decoder.
   virtual int ErrorCode();
 
-  // Returns the duration in samples of the payload in |encoded| which is
-  // |encoded_len| bytes long. Returns kNotImplemented if no duration estimate
-  // is available, or -1 in case of an error.
+  // Returns the duration in samples-per-channel of the payload in |encoded|
+  // which is |encoded_len| bytes long. Returns kNotImplemented if no duration
+  // estimate is available, or -1 in case of an error.
   virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len) const;
 
-  // Returns the duration in samples of the redandant payload in |encoded| which
-  // is |encoded_len| bytes long. Returns kNotImplemented if no duration
-  // estimate is available, or -1 in case of an error.
+  // Returns the duration in samples-per-channel of the redandant payload in
+  // |encoded| which is |encoded_len| bytes long. Returns kNotImplemented if no
+  // duration estimate is available, or -1 in case of an error.
   virtual int PacketDurationRedundant(const uint8_t* encoded,
                                       size_t encoded_len) const;
 

@@ -288,7 +288,8 @@ int16_t WebRtcOpus_DecodeFec(OpusDecInst* inst, const uint8_t* encoded,
  *        - payload              : Encoded data pointer
  *        - payload_length_bytes : Bytes of encoded data
  *
- * Return value                  : The duration of the packet, in samples.
+ * Return value                  : The duration of the packet, in samples per
+ *                                 channel.
  */
 int WebRtcOpus_DurationEst(OpusDecInst* inst,
                            const uint8_t* payload,
@@ -308,7 +309,7 @@ int WebRtcOpus_DurationEst(OpusDecInst* inst,
  *        - payload_length_bytes : Bytes of encoded data
  *
  * Return value                  : >0 - The duration of the FEC data in the
- *                                 packet in samples.
+ *                                 packet in samples per channel.
  *                                  0 - No FEC data in the packet.
  */
 int WebRtcOpus_FecDurationEst(const uint8_t* payload,

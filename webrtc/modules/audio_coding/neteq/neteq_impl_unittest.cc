@@ -805,16 +805,16 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
   UseNoMocks();
   CreateInstance();
   static const size_t kNetEqMaxFrameSize = 2880;  // 60 ms @ 48 kHz.
+  static const int kChannels = 2;
 
   const uint8_t kPayloadType = 17;   // Just an arbitrary number.
   const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
   const int kSampleRateHz = 8000;
-  const int kChannles = 1;
 
   const int kPayloadLengthSamples = 10 * kSampleRateHz / 1000;  // 10 ms.
   const size_t kPayloadLengthBytes = 1;
   uint8_t payload[kPayloadLengthBytes]= {0};
-  int16_t dummy_output[kPayloadLengthSamples] = {0};
+  int16_t dummy_output[kPayloadLengthSamples * kChannels] = {0};
   WebRtcRTPHeader rtp_header;
   rtp_header.header.payloadType = kPayloadType;
   rtp_header.header.sequenceNumber = 0x1234;
@@ -829,7 +829,7 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
     MOCK_CONST_METHOD2(PacketDuration, int(const uint8_t*, size_t));
     MOCK_METHOD5(DecodeInternal, int(const uint8_t*, size_t, int, int16_t*,
                                      SpeechType*));
-    size_t Channels() const override { return 1; }
+    size_t Channels() const override { return kChannels; }
   } decoder_;
 
   const uint8_t kFirstPayloadValue = 1;
@@ -838,7 +838,7 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
   EXPECT_CALL(decoder_, PacketDuration(Pointee(kFirstPayloadValue),
                                        kPayloadLengthBytes))
     .Times(AtLeast(1))
-    .WillRepeatedly(Return(kNetEqMaxFrameSize * kChannles + 1));
+    .WillRepeatedly(Return(kNetEqMaxFrameSize + 1));
 
   EXPECT_CALL(decoder_,
               DecodeInternal(Pointee(kFirstPayloadValue), _, _, _, _))
@@ -849,14 +849,15 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
                                        kSampleRateHz, _, _))
       .Times(1)
       .WillOnce(DoAll(SetArrayArgument<3>(dummy_output,
-                                          dummy_output + kPayloadLengthSamples),
+                                          dummy_output +
+                                          kPayloadLengthSamples * kChannels),
                       SetArgPointee<4>(AudioDecoder::kSpeech),
-                      Return(kPayloadLengthSamples)));
+                      Return(kPayloadLengthSamples * kChannels)));
 
   EXPECT_CALL(decoder_, PacketDuration(Pointee(kSecondPayloadValue),
                                        kPayloadLengthBytes))
     .Times(AtLeast(1))
-    .WillRepeatedly(Return(kNetEqMaxFrameSize * kChannles));
+    .WillRepeatedly(Return(kNetEqMaxFrameSize));
 
   EXPECT_EQ(NetEq::kOK,
             neteq_->RegisterExternalDecoder(
@@ -878,7 +879,7 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
             neteq_->InsertPacket(
                 rtp_header, payload, kPayloadLengthBytes, kReceiveTime));
 
-  const int kMaxOutputSize = 10 * kSampleRateHz / 1000;
+  const int kMaxOutputSize = 10 * kSampleRateHz / 1000 * kChannels;
   int16_t output[kMaxOutputSize];
   int samples_per_channel;
   int num_channels;
@@ -888,14 +889,14 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
                                            &samples_per_channel, &num_channels,
                                            &type));
   EXPECT_EQ(NetEq::kOtherDecoderError, neteq_->LastError());
-  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
-  EXPECT_EQ(kChannles, num_channels);
+  EXPECT_EQ(kMaxOutputSize, samples_per_channel * kChannels);
+  EXPECT_EQ(kChannels, num_channels);
 
   EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(kMaxOutputSize, output,
                                          &samples_per_channel, &num_channels,
                                          &type));
-  EXPECT_EQ(kMaxOutputSize, samples_per_channel);
-  EXPECT_EQ(kChannles, num_channels);
+  EXPECT_EQ(kMaxOutputSize, samples_per_channel * kChannels);
+  EXPECT_EQ(kChannels, num_channels);
 }
 
 }  // namespace webrtc
