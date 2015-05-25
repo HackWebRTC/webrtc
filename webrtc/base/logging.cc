@@ -9,7 +9,9 @@
  */
 
 #if defined(WEBRTC_WIN)
+#if !defined(WIN32_LEAN_AND_MEAN)
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #define snprintf _snprintf
 #undef ERROR  // wingdi.h

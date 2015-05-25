@@ -53,6 +53,8 @@
         'event_tracer.h',
         'exp_filter.cc',
         'exp_filter.h',
+        'logging.cc',
+        'logging.h',
         'md5.cc',
         'md5.h',
         'md5digest.cc',
@@ -84,6 +86,8 @@
           'sources!': [
             'basictypes.h',
             'constructormagic.h',
+            'logging.cc',
+            'logging.h',
           ],
         }, {
           'sources!': [
@@ -184,8 +188,6 @@
         'linuxfdwalk.c',
         'linuxfdwalk.h',
         'linked_ptr.h',
-        'logging.cc',
-        'logging.h',
         'macasyncsocket.cc',
         'macasyncsocket.h',
         'maccocoasocketserver.h',

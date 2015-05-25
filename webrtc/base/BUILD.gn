@@ -158,6 +158,8 @@ static_library("rtc_base_approved") {
     sources += [
       "basictypes.h",
       "constructormagic.h",
+      "logging.cc",
+      "logging.h",
     ]
   }
 }
@@ -362,8 +364,6 @@ static_library("rtc_base") {
       "httpserver.h",
       "json.cc",
       "json.h",
-      "logging.cc",
-      "logging.h",
       "mathutils.h",
       "multipart.cc",
       "multipart.h",
