@@ -377,7 +377,7 @@ def GetPreferredTryMasters(project, change):
   if all(re.search(r'[\\/]BUILD.gn$', f) for f in files):
     return GetDefaultTryConfigs(android_gn_bots + linux_gn_bots + mac_gn_bots +
                                 win_gn_bots)
-  if all(re.search('[/_])mac[/_.]', f) for f in files):
+  if all(re.search('[/_]mac[/_.]', f) for f in files):
     return GetDefaultTryConfigs(mac_bots)
   if all(re.search('(^|[/_])win[/_.]', f) for f in files):
     return GetDefaultTryConfigs(win_bots)
