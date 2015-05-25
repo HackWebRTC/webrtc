@@ -32,17 +32,6 @@ namespace webrtc {
 template <class InputType, class OutputType>
 class AudioDeviceTemplate : public AudioDeviceGeneric {
  public:
-  static void SetAndroidAudioDeviceObjects(void* javaVM,
-                                           void* context) {
-    OutputType::SetAndroidAudioDeviceObjects(javaVM, context);
-    InputType::SetAndroidAudioDeviceObjects(javaVM, context);
-  }
-
-  static void ClearAndroidAudioDeviceObjects() {
-    OutputType::ClearAndroidAudioDeviceObjects();
-    InputType::ClearAndroidAudioDeviceObjects();
-  }
-
   AudioDeviceTemplate(AudioDeviceModule::AudioLayer audio_layer,
                       AudioManager* audio_manager)
       : audio_layer_(audio_layer),

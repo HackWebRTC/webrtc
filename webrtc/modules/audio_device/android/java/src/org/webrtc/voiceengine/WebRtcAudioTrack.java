@@ -21,7 +21,7 @@ import android.os.Process;
 import android.util.Log;
 
 class WebRtcAudioTrack {
-  private static final boolean DEBUG = false;
+  private static final boolean DEBUG = true;
 
   private static final String TAG = "WebRtcAudioTrack";
 

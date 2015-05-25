@@ -25,73 +25,65 @@
 
 namespace webrtc {
 
-static JavaVM* g_jvm = NULL;
-static jobject g_context = NULL;
-static jclass g_audio_record_class = NULL;
-
-void AudioRecordJni::SetAndroidAudioDeviceObjects(void* jvm, void* context) {
-  ALOGD("SetAndroidAudioDeviceObjects%s", GetThreadInfo().c_str());
-
-  CHECK(jvm);
-  CHECK(context);
-
-  g_jvm = reinterpret_cast<JavaVM*>(jvm);
-  JNIEnv* jni = GetEnv(g_jvm);
-  CHECK(jni) << "AttachCurrentThread must be called on this tread";
-
-  // Protect context from being deleted during garbage collection.
-  g_context = NewGlobalRef(jni, reinterpret_cast<jobject>(context));
-
-  // Load the locally-defined WebRtcAudioRecord class and create a new global
-  // reference to it.
-  jclass local_class = FindClass(
-      jni, "org/webrtc/voiceengine/WebRtcAudioRecord");
-  g_audio_record_class = reinterpret_cast<jclass>(
-      NewGlobalRef(jni, local_class));
-  jni->DeleteLocalRef(local_class);
-  CHECK_EXCEPTION(jni);
-
-  // Register native methods with the WebRtcAudioRecord class. These methods
-  // are declared private native in WebRtcAudioRecord.java.
-  JNINativeMethod native_methods[] = {
-      {"nativeCacheDirectBufferAddress", "(Ljava/nio/ByteBuffer;J)V",
-          reinterpret_cast<void*>(
-       &webrtc::AudioRecordJni::CacheDirectBufferAddress)},
-      {"nativeDataIsRecorded", "(IJ)V",
-          reinterpret_cast<void*>(&webrtc::AudioRecordJni::DataIsRecorded)}};
-  jni->RegisterNatives(g_audio_record_class,
-                       native_methods, arraysize(native_methods));
-  CHECK_EXCEPTION(jni) << "Error during RegisterNatives";
+// AudioRecordJni::JavaAudioRecord implementation.
+AudioRecordJni::JavaAudioRecord::JavaAudioRecord(
+    NativeRegistration* native_reg, rtc::scoped_ptr<GlobalRef> audio_record)
+    : audio_record_(audio_record.Pass()),
+      init_recording_(native_reg->GetMethodId("InitRecording", "(II)I")),
+      start_recording_(native_reg->GetMethodId("StartRecording", "()Z")),
+      stop_recording_(native_reg->GetMethodId("StopRecording", "()Z")),
+      enable_built_in_aec_(native_reg->GetMethodId(
+          "EnableBuiltInAEC", "(Z)Z")) {
 }
 
-void AudioRecordJni::ClearAndroidAudioDeviceObjects() {
-  ALOGD("ClearAndroidAudioDeviceObjects%s", GetThreadInfo().c_str());
-  JNIEnv* jni = GetEnv(g_jvm);
-  CHECK(jni) << "AttachCurrentThread must be called on this tread";
-  jni->UnregisterNatives(g_audio_record_class);
-  CHECK_EXCEPTION(jni) << "Error during UnregisterNatives";
-  DeleteGlobalRef(jni, g_audio_record_class);
-  g_audio_record_class = NULL;
-  DeleteGlobalRef(jni, g_context);
-  g_context = NULL;
-  g_jvm = NULL;
+AudioRecordJni::JavaAudioRecord::~JavaAudioRecord() {}
+
+int AudioRecordJni::JavaAudioRecord::InitRecording(
+    int sample_rate, int channels) {
+  return audio_record_->CallIntMethod(init_recording_, sample_rate, channels);
 }
 
+bool AudioRecordJni::JavaAudioRecord::StartRecording() {
+  return audio_record_->CallBooleanMethod(start_recording_);
+}
+
+bool AudioRecordJni::JavaAudioRecord::StopRecording() {
+  return audio_record_->CallBooleanMethod(stop_recording_);
+}
+
+bool AudioRecordJni::JavaAudioRecord::EnableBuiltInAEC(bool enable) {
+  return audio_record_->CallBooleanMethod(enable_built_in_aec_, enable);
+}
+
+// AudioRecordJni implementation.
 AudioRecordJni::AudioRecordJni(AudioManager* audio_manager)
-    : audio_manager_(audio_manager),
+    : j_environment_(JVM::GetInstance()->environment()),
+      audio_manager_(audio_manager),
       audio_parameters_(audio_manager->GetRecordAudioParameters()),
       total_delay_in_milliseconds_(0),
-      j_audio_record_(NULL),
-      direct_buffer_address_(NULL),
+      direct_buffer_address_(nullptr),
       direct_buffer_capacity_in_bytes_(0),
       frames_per_buffer_(0),
       initialized_(false),
       recording_(false),
-      audio_device_buffer_(NULL) {
+      audio_device_buffer_(nullptr) {
   ALOGD("ctor%s", GetThreadInfo().c_str());
   DCHECK(audio_parameters_.is_valid());
-  CHECK(HasDeviceObjects());
-  CreateJavaInstance();
+  CHECK(j_environment_);
+  JNINativeMethod native_methods[] = {
+      {"nativeCacheDirectBufferAddress", "(Ljava/nio/ByteBuffer;J)V",
+      reinterpret_cast<void*>(
+          &webrtc::AudioRecordJni::CacheDirectBufferAddress)},
+      {"nativeDataIsRecorded", "(IJ)V",
+      reinterpret_cast<void*>(&webrtc::AudioRecordJni::DataIsRecorded)}};
+  j_native_registration_ = j_environment_->RegisterNatives(
+      "org/webrtc/voiceengine/WebRtcAudioRecord",
+      native_methods, arraysize(native_methods));
+  j_audio_record_.reset(new JavaAudioRecord(
+      j_native_registration_.get(),
+      j_native_registration_->NewObject(
+          "<init>", "(Landroid/content/Context;J)V",
+          JVM::GetInstance()->context(), PointerTojlong(this))));
   // Detach from this thread since we want to use the checker to verify calls
   // from the Java based audio thread.
   thread_checker_java_.DetachFromThread();
@@ -101,10 +93,6 @@ AudioRecordJni::~AudioRecordJni() {
   ALOGD("~dtor%s", GetThreadInfo().c_str());
   DCHECK(thread_checker_.CalledOnValidThread());
   Terminate();
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jni->DeleteGlobalRef(j_audio_record_);
-  j_audio_record_ = NULL;
 }
 
 int32_t AudioRecordJni::Init() {
@@ -125,17 +113,8 @@ int32_t AudioRecordJni::InitRecording() {
   DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK(!initialized_);
   DCHECK(!recording_);
-  if (initialized_ || recording_) {
-    return -1;
-  }
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID initRecordingID = GetMethodID(
-      jni, g_audio_record_class, "InitRecording", "(II)I");
-  jint frames_per_buffer = jni->CallIntMethod(
-      j_audio_record_, initRecordingID, audio_parameters_.sample_rate(),
-      audio_parameters_.channels());
-  CHECK_EXCEPTION(jni);
+  int frames_per_buffer = j_audio_record_->InitRecording(
+      audio_parameters_.sample_rate(), audio_parameters_.channels());
   if (frames_per_buffer < 0) {
     ALOGE("InitRecording failed!");
     return -1;
@@ -154,16 +133,7 @@ int32_t AudioRecordJni::StartRecording() {
   DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK(initialized_);
   DCHECK(!recording_);
-  if (!initialized_ || recording_) {
-    return -1;
-  }
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID startRecordingID = GetMethodID(
-      jni, g_audio_record_class, "StartRecording", "()Z");
-  jboolean res = jni->CallBooleanMethod(j_audio_record_, startRecordingID);
-  CHECK_EXCEPTION(jni);
-  if (!res) {
+  if (!j_audio_record_->StartRecording()) {
     ALOGE("StartRecording failed!");
     return -1;
   }
@@ -177,13 +147,7 @@ int32_t AudioRecordJni::StopRecording() {
   if (!initialized_ || !recording_) {
     return 0;
   }
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID stopRecordingID = GetMethodID(
-      jni, g_audio_record_class, "StopRecording", "()Z");
-  jboolean res = jni->CallBooleanMethod(j_audio_record_, stopRecordingID);
-  CHECK_EXCEPTION(jni);
-  if (!res) {
+  if (!j_audio_record_->StopRecording()) {
     ALOGE("StopRecording failed!");
     return -1;
   }
@@ -214,18 +178,7 @@ void AudioRecordJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
 int32_t AudioRecordJni::EnableBuiltInAEC(bool enable) {
   ALOGD("EnableBuiltInAEC%s", GetThreadInfo().c_str());
   DCHECK(thread_checker_.CalledOnValidThread());
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID enableBuiltInAEC = GetMethodID(
-      jni, g_audio_record_class, "EnableBuiltInAEC", "(Z)Z");
-  jboolean res = jni->CallBooleanMethod(
-      j_audio_record_, enableBuiltInAEC, enable);
-  CHECK_EXCEPTION(jni);
-  if (!res) {
-    ALOGE("EnableBuiltInAEC failed!");
-    return -1;
-  }
-  return 0;
+  return j_audio_record_->EnableBuiltInAEC(enable) ? 0 : -1;
 }
 
 void JNICALL AudioRecordJni::CacheDirectBufferAddress(
@@ -239,6 +192,7 @@ void AudioRecordJni::OnCacheDirectBufferAddress(
     JNIEnv* env, jobject byte_buffer) {
   ALOGD("OnCacheDirectBufferAddress");
   DCHECK(thread_checker_.CalledOnValidThread());
+  DCHECK(!direct_buffer_address_);
   direct_buffer_address_ =
       env->GetDirectBufferAddress(byte_buffer);
   jlong capacity = env->GetDirectBufferCapacity(byte_buffer);
@@ -267,32 +221,11 @@ void AudioRecordJni::OnDataIsRecorded(int length) {
   // |playDelayMs| parameter only. Components like the AEC only sees the sum
   // of |playDelayMs| and |recDelayMs|, hence the distributions does not matter.
   audio_device_buffer_->SetVQEData(total_delay_in_milliseconds_,
-                                   0,    // recDelayMs
-                                   0 );  // clockDrift
+                                   0,   // recDelayMs
+                                   0);  // clockDrift
   if (audio_device_buffer_->DeliverRecordedData() == -1) {
     ALOGE("AudioDeviceBuffer::DeliverRecordedData failed!");
   }
-}
-
-bool AudioRecordJni::HasDeviceObjects() {
-  return (g_jvm && g_context && g_audio_record_class);
-}
-
-void AudioRecordJni::CreateJavaInstance() {
-  ALOGD("CreateJavaInstance");
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID constructorID = GetMethodID(
-      jni, g_audio_record_class, "<init>", "(Landroid/content/Context;J)V");
-  j_audio_record_ = jni->NewObject(g_audio_record_class,
-                                   constructorID,
-                                   g_context,
-                                   reinterpret_cast<intptr_t>(this));
-  CHECK_EXCEPTION(jni) << "Error during NewObject";
-  CHECK(j_audio_record_);
-  j_audio_record_ = jni->NewGlobalRef(j_audio_record_);
-  CHECK_EXCEPTION(jni) << "Error during NewGlobalRef";
-  CHECK(j_audio_record_);
 }
 
 }  // namespace webrtc

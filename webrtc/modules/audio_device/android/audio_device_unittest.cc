@@ -8,8 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <algorithm>
+#include <limits>
 #include <list>
 #include <numeric>
+#include <string>
+#include <vector>
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -117,11 +121,11 @@ class FileAudioStream : public AudioStreamInterface {
   }
 
   // AudioStreamInterface::Write() is not implemented.
-  virtual void Write(const void* source, int num_frames) override {}
+  void Write(const void* source, int num_frames) override {}
 
   // Read samples from file stored in memory (at construction) and copy
   // |num_frames| (<=> 10ms) to the |destination| byte buffer.
-  virtual void Read(void* destination, int num_frames) override {
+  void Read(void* destination, int num_frames) override {
     memcpy(destination,
            static_cast<int16_t*> (&file_[file_pos_]),
            num_frames * sizeof(int16_t));
@@ -169,7 +173,7 @@ class FifoAudioStream : public AudioStreamInterface {
   // Allocate new memory, copy |num_frames| samples from |source| into memory
   // and add pointer to the memory location to end of the list.
   // Increases the size of the FIFO by one element.
-  virtual void Write(const void* source, int num_frames) override {
+  void Write(const void* source, int num_frames) override {
     ASSERT_EQ(num_frames, frames_per_buffer_);
     PRINTD("+");
     if (write_count_++ < kNumIgnoreFirstCallbacks) {
@@ -192,7 +196,7 @@ class FifoAudioStream : public AudioStreamInterface {
   // Read pointer to data buffer from front of list, copy |num_frames| of stored
   // data into |destination| and delete the utilized memory allocation.
   // Decreases the size of the FIFO by one element.
-  virtual void Read(void* destination, int num_frames) override {
+  void Read(void* destination, int num_frames) override {
     ASSERT_EQ(num_frames, frames_per_buffer_);
     PRINTD("-");
     rtc::CritScope lock(&lock_);
@@ -255,7 +259,7 @@ class LatencyMeasuringAudioStream : public AudioStreamInterface {
   }
 
   // Insert periodic impulses in first two samples of |destination|.
-  virtual void Read(void* destination, int num_frames) override {
+  void Read(void* destination, int num_frames) override {
     ASSERT_EQ(num_frames, frames_per_buffer_);
     if (play_count_ == 0) {
       PRINT("[");
@@ -277,7 +281,7 @@ class LatencyMeasuringAudioStream : public AudioStreamInterface {
 
   // Detect received impulses in |source|, derive time between transmission and
   // detection and add the calculated delay to list of latencies.
-  virtual void Write(const void* source, int num_frames) override {
+  void Write(const void* source, int num_frames) override {
     ASSERT_EQ(num_frames, frames_per_buffer_);
     rec_count_++;
     if (pulse_time_ == 0) {

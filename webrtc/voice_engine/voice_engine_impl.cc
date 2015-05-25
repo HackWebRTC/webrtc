@@ -146,16 +146,6 @@ int VoiceEngine::SetAndroidObjects(void* javaVM, void* context) {
 #ifdef WEBRTC_ANDROID
   webrtc::JVM::Initialize(reinterpret_cast<JavaVM*>(javaVM),
                           reinterpret_cast<jobject>(context));
-  // The Android ADM implementation supports dynamic selection of the audio
-  // layer in both directions if a default audio layer is selected. Both
-  // Java-based audio backends are initialized here to ensure that the user
-  // can switch backend dynamically as well.
-  typedef AudioDeviceTemplate<AudioRecordJni, AudioTrackJni> AudioDevice;
-  if (javaVM && context) {
-    AudioDevice::SetAndroidAudioDeviceObjects(javaVM, context);
-  } else {
-    AudioDevice::ClearAndroidAudioDeviceObjects();
-  }
   return 0;
 #else
   return -1;

@@ -25,70 +25,72 @@
 
 namespace webrtc {
 
-static JavaVM* g_jvm = NULL;
-static jobject g_context = NULL;
-static jclass g_audio_track_class = NULL;
-
-void AudioTrackJni::SetAndroidAudioDeviceObjects(void* jvm, void* context) {
-  ALOGD("SetAndroidAudioDeviceObjects%s", GetThreadInfo().c_str());
-
-  CHECK(jvm);
-  CHECK(context);
-
-  g_jvm = reinterpret_cast<JavaVM*>(jvm);
-  JNIEnv* jni = GetEnv(g_jvm);
-  CHECK(jni) << "AttachCurrentThread must be called on this tread";
-
-  g_context = NewGlobalRef(jni, reinterpret_cast<jobject>(context));
-  jclass local_class = FindClass(
-      jni, "org/webrtc/voiceengine/WebRtcAudioTrack");
-  g_audio_track_class = reinterpret_cast<jclass>(
-      NewGlobalRef(jni, local_class));
-  jni->DeleteLocalRef(local_class);
-  CHECK_EXCEPTION(jni);
-
-  // Register native methods with the WebRtcAudioTrack class. These methods
-  // are declared private native in WebRtcAudioTrack.java.
-  JNINativeMethod native_methods[] = {
-      {"nativeCacheDirectBufferAddress", "(Ljava/nio/ByteBuffer;J)V",
-          reinterpret_cast<void*>(
-       &webrtc::AudioTrackJni::CacheDirectBufferAddress)},
-      {"nativeGetPlayoutData", "(IJ)V",
-          reinterpret_cast<void*>(&webrtc::AudioTrackJni::GetPlayoutData)}};
-  jni->RegisterNatives(g_audio_track_class,
-                       native_methods, arraysize(native_methods));
-  CHECK_EXCEPTION(jni) << "Error during RegisterNatives";
+// AudioTrackJni::JavaAudioTrack implementation.
+AudioTrackJni::JavaAudioTrack::JavaAudioTrack(
+    NativeRegistration* native_reg, rtc::scoped_ptr<GlobalRef> audio_track)
+    : audio_track_(audio_track.Pass()),
+      init_playout_(native_reg->GetMethodId("InitPlayout", "(II)V")),
+      start_playout_(native_reg->GetMethodId("StartPlayout", "()Z")),
+      stop_playout_(native_reg->GetMethodId("StopPlayout", "()Z")),
+      set_stream_volume_(native_reg->GetMethodId("SetStreamVolume", "(I)Z")),
+      get_stream_max_volume_(native_reg->GetMethodId(
+          "GetStreamMaxVolume", "()I")),
+      get_stream_volume_(native_reg->GetMethodId("GetStreamVolume", "()I")) {
 }
 
-// TODO(henrika): figure out if it is required to call this method? If so,
-// ensure that is is always called as part of the destruction phase.
-void AudioTrackJni::ClearAndroidAudioDeviceObjects() {
-  ALOGD("ClearAndroidAudioDeviceObjects%s", GetThreadInfo().c_str());
-  JNIEnv* jni = GetEnv(g_jvm);
-  CHECK(jni) << "AttachCurrentThread must be called on this tread";
-  jni->UnregisterNatives(g_audio_track_class);
-  CHECK_EXCEPTION(jni) << "Error during UnregisterNatives";
-  DeleteGlobalRef(jni, g_audio_track_class);
-  g_audio_track_class = NULL;
-  DeleteGlobalRef(jni, g_context);
-  g_context = NULL;
-  g_jvm = NULL;
+AudioTrackJni::JavaAudioTrack::~JavaAudioTrack() {}
+
+void AudioTrackJni::JavaAudioTrack::InitPlayout(int sample_rate, int channels) {
+  audio_track_->CallVoidMethod(init_playout_, sample_rate, channels);
+}
+
+bool AudioTrackJni::JavaAudioTrack::StartPlayout() {
+  return audio_track_->CallBooleanMethod(start_playout_);
+}
+
+bool AudioTrackJni::JavaAudioTrack::StopPlayout() {
+  return audio_track_->CallBooleanMethod(stop_playout_);
+}
+
+bool AudioTrackJni::JavaAudioTrack::SetStreamVolume(int volume) {
+  return audio_track_->CallBooleanMethod(set_stream_volume_, volume);
+}
+
+int AudioTrackJni::JavaAudioTrack::GetStreamMaxVolume() {
+  return audio_track_->CallIntMethod(get_stream_max_volume_);
+}
+
+int AudioTrackJni::JavaAudioTrack::GetStreamVolume() {
+  return audio_track_->CallIntMethod(get_stream_volume_);
 }
 
 // TODO(henrika): possible extend usage of AudioManager and add it as member.
 AudioTrackJni::AudioTrackJni(AudioManager* audio_manager)
-    : audio_parameters_(audio_manager->GetPlayoutAudioParameters()),
-      j_audio_track_(NULL),
-      direct_buffer_address_(NULL),
+    : j_environment_(JVM::GetInstance()->environment()),
+      audio_parameters_(audio_manager->GetPlayoutAudioParameters()),
+      direct_buffer_address_(nullptr),
       direct_buffer_capacity_in_bytes_(0),
       frames_per_buffer_(0),
       initialized_(false),
       playing_(false),
-      audio_device_buffer_(NULL) {
+      audio_device_buffer_(nullptr) {
   ALOGD("ctor%s", GetThreadInfo().c_str());
   DCHECK(audio_parameters_.is_valid());
-  CHECK(HasDeviceObjects());
-  CreateJavaInstance();
+  CHECK(j_environment_);
+  JNINativeMethod native_methods[] = {
+      {"nativeCacheDirectBufferAddress", "(Ljava/nio/ByteBuffer;J)V",
+      reinterpret_cast<void*>(
+          &webrtc::AudioTrackJni::CacheDirectBufferAddress)},
+      {"nativeGetPlayoutData", "(IJ)V",
+      reinterpret_cast<void*>(&webrtc::AudioTrackJni::GetPlayoutData)}};
+  j_native_registration_ = j_environment_->RegisterNatives(
+      "org/webrtc/voiceengine/WebRtcAudioTrack",
+      native_methods, arraysize(native_methods));
+  j_audio_track_.reset(new JavaAudioTrack(
+      j_native_registration_.get(),
+      j_native_registration_->NewObject(
+          "<init>", "(Landroid/content/Context;J)V",
+          JVM::GetInstance()->context(), PointerTojlong(this))));
   // Detach from this thread since we want to use the checker to verify calls
   // from the Java based audio thread.
   thread_checker_java_.DetachFromThread();
@@ -98,10 +100,6 @@ AudioTrackJni::~AudioTrackJni() {
   ALOGD("~dtor%s", GetThreadInfo().c_str());
   DCHECK(thread_checker_.CalledOnValidThread());
   Terminate();
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jni->DeleteGlobalRef(j_audio_track_);
-  j_audio_track_ = NULL;
 }
 
 int32_t AudioTrackJni::Init() {
@@ -122,16 +120,8 @@ int32_t AudioTrackJni::InitPlayout() {
   DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK(!initialized_);
   DCHECK(!playing_);
-  if (initialized_ || playing_) {
-    return -1;
-  }
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID initPlayoutID = GetMethodID(
-      jni, g_audio_track_class, "InitPlayout", "(II)V");
-  jni->CallVoidMethod(j_audio_track_, initPlayoutID,
+  j_audio_track_->InitPlayout(
       audio_parameters_.sample_rate(), audio_parameters_.channels());
-  CHECK_EXCEPTION(jni);
   initialized_ = true;
   return 0;
 }
@@ -141,16 +131,7 @@ int32_t AudioTrackJni::StartPlayout() {
   DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK(initialized_);
   DCHECK(!playing_);
-  if (!initialized_ || playing_) {
-    return -1;
-  }
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID startPlayoutID = GetMethodID(
-      jni, g_audio_track_class, "StartPlayout", "()Z");
-  jboolean res = jni->CallBooleanMethod(j_audio_track_, startPlayoutID);
-  CHECK_EXCEPTION(jni);
-  if (!res) {
+  if (!j_audio_track_->StartPlayout()) {
     ALOGE("StartPlayout failed!");
     return -1;
   }
@@ -164,13 +145,7 @@ int32_t AudioTrackJni::StopPlayout() {
   if (!initialized_ || !playing_) {
     return 0;
   }
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID stopPlayoutID = GetMethodID(
-      jni, g_audio_track_class, "StopPlayout", "()Z");
-  jboolean res = jni->CallBooleanMethod(j_audio_track_, stopPlayoutID);
-  CHECK_EXCEPTION(jni);
-  if (!res) {
+  if (!j_audio_track_->StopPlayout()) {
     ALOGE("StopPlayout failed!");
     return -1;
   }
@@ -190,26 +165,13 @@ int AudioTrackJni::SpeakerVolumeIsAvailable(bool& available) {
 int AudioTrackJni::SetSpeakerVolume(uint32_t volume) {
   ALOGD("SetSpeakerVolume(%d)%s", volume, GetThreadInfo().c_str());
   DCHECK(thread_checker_.CalledOnValidThread());
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID setStreamVolume = GetMethodID(
-      jni, g_audio_track_class, "SetStreamVolume", "(I)Z");
-  jboolean res = jni->CallBooleanMethod(
-      j_audio_track_, setStreamVolume, volume);
-  CHECK_EXCEPTION(jni);
-  return res ? 0 : -1;
+  return j_audio_track_->SetStreamVolume(volume) ? 0 : -1;
 }
 
 int AudioTrackJni::MaxSpeakerVolume(uint32_t& max_volume) const {
   ALOGD("MaxSpeakerVolume%s", GetThreadInfo().c_str());
   DCHECK(thread_checker_.CalledOnValidThread());
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID getStreamMaxVolume = GetMethodID(
-      jni, g_audio_track_class, "GetStreamMaxVolume", "()I");
-  jint max_vol = jni->CallIntMethod(j_audio_track_, getStreamMaxVolume);
-  CHECK_EXCEPTION(jni);
-  max_volume = max_vol;
+  max_volume = j_audio_track_->GetStreamMaxVolume();
   return 0;
 }
 
@@ -223,13 +185,7 @@ int AudioTrackJni::MinSpeakerVolume(uint32_t& min_volume) const {
 int AudioTrackJni::SpeakerVolume(uint32_t& volume) const {
   ALOGD("SpeakerVolume%s", GetThreadInfo().c_str());
   DCHECK(thread_checker_.CalledOnValidThread());
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID getStreamVolume = GetMethodID(
-      jni, g_audio_track_class, "GetStreamVolume", "()I");
-  jint stream_volume = jni->CallIntMethod(j_audio_track_, getStreamVolume);
-  CHECK_EXCEPTION(jni);
-  volume = stream_volume;
+  volume = j_audio_track_->GetStreamVolume();
   return 0;
 }
 
@@ -293,27 +249,6 @@ void AudioTrackJni::OnGetPlayoutData(int length) {
   // written to the Java based audio track.
   samples = audio_device_buffer_->GetPlayoutData(direct_buffer_address_);
   DCHECK_EQ(length, kBytesPerFrame * samples);
-}
-
-bool AudioTrackJni::HasDeviceObjects() {
-  return (g_jvm && g_context && g_audio_track_class);
-}
-
-void AudioTrackJni::CreateJavaInstance() {
-  ALOGD("CreateJavaInstance");
-  AttachThreadScoped ats(g_jvm);
-  JNIEnv* jni = ats.env();
-  jmethodID constructorID = GetMethodID(
-      jni, g_audio_track_class, "<init>", "(Landroid/content/Context;J)V");
-  j_audio_track_ = jni->NewObject(g_audio_track_class,
-                                  constructorID,
-                                  g_context,
-                                  reinterpret_cast<intptr_t>(this));
-  CHECK_EXCEPTION(jni) << "Error during NewObject";
-  CHECK(j_audio_track_);
-  j_audio_track_ = jni->NewGlobalRef(j_audio_track_);
-  CHECK_EXCEPTION(jni) << "Error during NewGlobalRef";
-  CHECK(j_audio_track_);
 }
 
 }  // namespace webrtc

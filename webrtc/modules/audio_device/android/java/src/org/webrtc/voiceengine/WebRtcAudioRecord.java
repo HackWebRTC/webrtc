@@ -147,7 +147,7 @@ class  WebRtcAudioRecord {
     }
     final int bytesPerFrame = channels * (BITS_PER_SAMPLE / 8);
     final int framesPerBuffer = sampleRate / BUFFERS_PER_SECOND;
-    byteBuffer = byteBuffer.allocateDirect(bytesPerFrame * framesPerBuffer);
+    byteBuffer = ByteBuffer.allocateDirect(bytesPerFrame * framesPerBuffer);
     Logd("byteBuffer.capacity: " + byteBuffer.capacity());
     // Rather than passing the ByteBuffer with every callback (requiring
     // the potentially expensive GetDirectBufferAddress) we simply have the

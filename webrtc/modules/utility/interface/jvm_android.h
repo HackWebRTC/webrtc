@@ -45,6 +45,7 @@ class GlobalRef {
   ~GlobalRef();
 
   jboolean CallBooleanMethod(jmethodID methodID, ...);
+  jint CallIntMethod(jmethodID methodID, ...);
   void CallVoidMethod(jmethodID methodID, ...);
 
  private:

@@ -173,12 +173,13 @@ class AudioManager {
   // Also ensures that DetachCurrentThread() is called at destruction.
   AttachCurrentThreadIfNeeded attach_thread_if_needed_;
 
+  // Wraps the JNI interface pointer and methods associated with it.
   rtc::scoped_ptr<JNIEnvironment> j_environment_;
 
-  // TODO(henrika): add comments...
+  // Contains factory method for creating the Java object.
   rtc::scoped_ptr<NativeRegistration> j_native_registration_;
 
-  // TODO(henrika): add comments...
+  // Wraps the Java specific parts of the AudioManager.
   rtc::scoped_ptr<AudioManager::JavaAudioManager> j_audio_manager_;
 
   AudioDeviceModule::AudioLayer audio_layer_;

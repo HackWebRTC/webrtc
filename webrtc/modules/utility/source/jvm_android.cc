@@ -27,8 +27,10 @@ struct {
   const char* name;
   jclass clazz;
 } loaded_classes[] = {
-  {"org/webrtc/voiceengine/WebRtcAudioManager", nullptr},
   {"org/webrtc/voiceengine/BuildInfo", nullptr},
+  {"org/webrtc/voiceengine/WebRtcAudioManager", nullptr},
+  {"org/webrtc/voiceengine/WebRtcAudioRecord", nullptr},
+  {"org/webrtc/voiceengine/WebRtcAudioTrack", nullptr},
 };
 
 // Android's FindClass() is trickier than usual because the app-specific
@@ -102,16 +104,27 @@ GlobalRef::~GlobalRef() {
 jboolean GlobalRef::CallBooleanMethod(jmethodID methodID, ...) {
   va_list args;
   va_start(args, methodID);
-  jboolean res = jni_->CallBooleanMethod(j_object_, methodID, args);
+  jboolean res = jni_->CallBooleanMethodV(j_object_, methodID, args);
   CHECK_EXCEPTION(jni_) << "Error during CallBooleanMethod";
+  va_end(args);
+  return res;
+}
+
+jint GlobalRef::CallIntMethod(jmethodID methodID, ...) {
+  va_list args;
+  va_start(args, methodID);
+  jint res = jni_->CallIntMethodV(j_object_, methodID, args);
+  CHECK_EXCEPTION(jni_) << "Error during CallIntMethod";
+  va_end(args);
   return res;
 }
 
 void GlobalRef::CallVoidMethod(jmethodID methodID, ...) {
   va_list args;
   va_start(args, methodID);
-  jni_->CallVoidMethod(j_object_, methodID, args);
+  jni_->CallVoidMethodV(j_object_, methodID, args);
   CHECK_EXCEPTION(jni_) << "Error during CallVoidMethod";
+  va_end(args);
 }
 
 // NativeRegistration implementation.

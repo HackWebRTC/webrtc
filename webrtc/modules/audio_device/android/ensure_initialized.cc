@@ -33,12 +33,6 @@ void EnsureInitializedOnce() {
 
   // Initialize the Java environment (currently only used by the audio manager).
   webrtc::JVM::Initialize(jvm, context);
-  // TODO(henrika): remove this call when AudioRecordJni and AudioTrackJni
-  // are modified to use the same sort of Java initialization as the audio
-  // manager.
-  using AudioDeviceJava = AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>;
-  AudioDeviceJava::SetAndroidAudioDeviceObjects(jvm, context);
-
 }
 
 void EnsureInitialized() {
