@@ -15,8 +15,10 @@
 #ifndef OVERRIDES_WEBRTC_BASE_BASICTYPES_H__
 #define OVERRIDES_WEBRTC_BASE_BASICTYPES_H__
 
-#include "base/basictypes.h"
-#include "build/build_config.h"
+// We can't include these files directly via "base/foo.h" since we might
+// inadvertently include the very files we're overriding.
+#include "../../../../../base/basictypes.h"
+#include "../../../../../build/build_config.h"
 
 #ifndef INT_TYPES_DEFINED
 #define INT_TYPES_DEFINED
