@@ -94,6 +94,7 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
       playout_mode_(config.playout_mode),
       decoded_packet_sequence_number_(-1),
       decoded_packet_timestamp_(0) {
+  LOG(LS_INFO) << "NetEq config: " << config.ToString();
   int fs = config.sample_rate_hz;
   if (fs != 8000 && fs != 16000 && fs != 32000 && fs != 48000) {
     LOG(LS_ERROR) << "Sample rate " << fs << " Hz not supported. " <<

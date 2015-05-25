@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
 
+#include <sstream>
+
 #include "webrtc/modules/audio_coding/neteq/accelerate.h"
 #include "webrtc/modules/audio_coding/neteq/buffer_level_filter.h"
 #include "webrtc/modules/audio_coding/neteq/decoder_database.h"
@@ -25,6 +27,16 @@
 #include "webrtc/modules/audio_coding/neteq/timestamp_scaler.h"
 
 namespace webrtc {
+
+std::string NetEq::Config::ToString() const {
+  std::stringstream ss;
+  ss << "sample_rate_hz=" << sample_rate_hz << ", enable_audio_classifier="
+     << (enable_audio_classifier ? "true" : "false")
+     << ", max_packets_in_buffer=" << max_packets_in_buffer
+     << ", background_noise_mode=" << background_noise_mode
+     << ", playout_mode=" << playout_mode;
+  return ss.str();
+}
 
 // Creates all classes needed and inject them into a new NetEqImpl object.
 // Return the new object.

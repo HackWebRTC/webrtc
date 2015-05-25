@@ -13,6 +13,7 @@
 
 #include <string.h>  // Provide access to size_t.
 
+#include <string>
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
@@ -80,6 +81,8 @@ class NetEq {
           max_delay_ms(2000),
           background_noise_mode(kBgnOff),
           playout_mode(kPlayoutOn) {}
+
+    std::string ToString() const;
 
     int sample_rate_hz;  // Initial value. Will change with input data.
     bool enable_audio_classifier;
