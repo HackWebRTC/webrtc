@@ -119,7 +119,7 @@ VideoSendStream::VideoSendStream(
       channel_id_(channel_id),
       use_config_bitrate_(true),
       stats_proxy_(Clock::GetRealTimeClock(), config) {
-  CHECK(channel_group->CreateSendChannel(channel_id_, 0, num_cpu_cores));
+  CHECK(channel_group->CreateSendChannel(channel_id_, 0, num_cpu_cores, true));
   vie_channel_ = channel_group_->GetChannel(channel_id_);
   vie_encoder_ = channel_group_->GetEncoder(channel_id_);
 

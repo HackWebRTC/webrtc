@@ -200,16 +200,17 @@ ChannelGroup::~ChannelGroup() {
 
 bool ChannelGroup::CreateSendChannel(int channel_id,
                                      int engine_id,
-                                     int number_of_cores) {
+                                     int number_of_cores,
+                                     bool disable_default_encoder) {
   rtc::scoped_ptr<ViEEncoder> vie_encoder(new ViEEncoder(
       channel_id, number_of_cores, *config_, *process_thread_, pacer_.get(),
-      bitrate_allocator_.get(), bitrate_controller_.get()));
+      bitrate_allocator_.get(), bitrate_controller_.get(), false));
   if (!vie_encoder->Init()) {
     return false;
   }
   ViEEncoder* encoder = vie_encoder.get();
   if (!CreateChannel(channel_id, engine_id, number_of_cores,
-                     vie_encoder.release(), true)) {
+                     vie_encoder.release(), true, disable_default_encoder)) {
     return false;
   }
   ViEChannel* channel = channel_map_[channel_id];
@@ -231,16 +232,19 @@ bool ChannelGroup::CreateSendChannel(int channel_id,
 bool ChannelGroup::CreateReceiveChannel(int channel_id,
                                         int engine_id,
                                         int base_channel_id,
-                                        int number_of_cores) {
+                                        int number_of_cores,
+                                        bool disable_default_encoder) {
   ViEEncoder* encoder = GetEncoder(base_channel_id);
-  return CreateChannel(channel_id, engine_id, number_of_cores, encoder, false);
+  return CreateChannel(channel_id, engine_id, number_of_cores, encoder, false,
+                       disable_default_encoder);
 }
 
 bool ChannelGroup::CreateChannel(int channel_id,
                                  int engine_id,
                                  int number_of_cores,
                                  ViEEncoder* vie_encoder,
-                                 bool sender) {
+                                 bool sender,
+                                 bool disable_default_encoder) {
   DCHECK(vie_encoder);
 
   rtc::scoped_ptr<ViEChannel> channel(new ViEChannel(
@@ -248,9 +252,18 @@ bool ChannelGroup::CreateChannel(int channel_id,
       encoder_state_feedback_->GetRtcpIntraFrameObserver(),
       bitrate_controller_->CreateRtcpBandwidthObserver(),
       remote_bitrate_estimator_.get(), call_stats_->rtcp_rtt_stats(),
-      pacer_.get(), packet_router_.get(), sender));
+      pacer_.get(), packet_router_.get(), sender, disable_default_encoder));
   if (channel->Init() != 0) {
     return false;
+  }
+  if (!disable_default_encoder) {
+    VideoCodec encoder;
+    if (vie_encoder->GetEncoder(&encoder) != 0) {
+      return false;
+    }
+    if (sender && channel->SetSendCodec(encoder) != 0) {
+      return false;
+    }
   }
 
   // Register the channel to receive stats updates.

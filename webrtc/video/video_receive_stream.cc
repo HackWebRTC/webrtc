@@ -138,7 +138,7 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
       channel_id_(channel_id),
       voe_sync_interface_(nullptr) {
   CHECK(channel_group_->CreateReceiveChannel(channel_id_, 0, base_channel_id,
-                                             num_cpu_cores));
+                                             num_cpu_cores, true));
 
   vie_channel_ = channel_group_->GetChannel(channel_id_);
 

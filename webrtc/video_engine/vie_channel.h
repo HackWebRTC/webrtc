@@ -112,7 +112,8 @@ class ViEChannel : public VCMFrameTypeCallback,
              RtcpRttStats* rtt_stats,
              PacedSender* paced_sender,
              PacketRouter* packet_router,
-             bool sender);
+             bool sender,
+             bool disable_default_encoder);
   ~ViEChannel();
 
   int32_t Init();
@@ -521,6 +522,8 @@ class ViEChannel : public VCMFrameTypeCallback,
   // User set MTU, -1 if not set.
   uint16_t mtu_;
   const bool sender_;
+  // Used to skip default encoder in the new API.
+  const bool disable_default_encoder_;
 
   int nack_history_size_sender_;
   int max_nack_reordering_threshold_;
