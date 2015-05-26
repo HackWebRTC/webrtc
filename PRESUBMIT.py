@@ -231,6 +231,25 @@ def _CheckUnwantedDependencies(input_api, output_api):
   return results
 
 
+def _RunPythonTests(input_api, output_api):
+  def join(*args):
+    return input_api.os_path.join(input_api.PresubmitLocalPath(), *args)
+
+  test_directories = [
+    join('tools', 'autoroller', 'unittests'),
+  ]
+
+  tests = []
+  for directory in test_directories:
+    tests.extend(
+      input_api.canned_checks.GetUnitTestsInDirectory(
+          input_api,
+          output_api,
+          directory,
+          whitelist=[r'.+_test\.py$']))
+  return input_api.RunTests(tests, parallel=True)
+
+
 def _CommonChecks(input_api, output_api):
   """Checks common to both upload and commit."""
   results = []
@@ -277,6 +296,7 @@ def _CommonChecks(input_api, output_api):
   results.extend(_CheckNoFRIEND_TEST(input_api, output_api))
   results.extend(_CheckGypChanges(input_api, output_api))
   results.extend(_CheckUnwantedDependencies(input_api, output_api))
+  results.extend(_RunPythonTests(input_api, output_api))
   return results
 
 
