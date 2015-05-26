@@ -2986,7 +2986,6 @@ bool AudioDeviceLinuxPulse::RecThreadProcess()
             // Read data and provide it to VoiceEngine
             if (ReadRecordedData(sampleData, sampleDataSize) == -1)
             {
-                UnLock();
                 return true;
             }
             PaLock();
