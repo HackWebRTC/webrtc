@@ -82,12 +82,6 @@ class WEBRTC_DLLEXPORT VoEDtmf {
                            int lengthMs = 200,
                            int attenuationDb = 10) = 0;
 
-  // To be removed. Don't use.
-  virtual int StartPlayingDtmfTone(int eventCode, int attenuationDb = 10) {
-    return -1;
-  }
-  virtual int StopPlayingDtmfTone() { return -1; }
-
  protected:
   VoEDtmf() {}
   virtual ~VoEDtmf() {}

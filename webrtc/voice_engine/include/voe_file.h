@@ -134,49 +134,6 @@ class WEBRTC_DLLEXPORT VoEFile {
   // Stops recording the microphone signal.
   virtual int StopRecordingMicrophone() = 0;
 
-  // Don't use. To be removed.
-  virtual int ScaleLocalFilePlayout(int channel, float scale) { return -1; }
-  virtual int ScaleFileAsMicrophonePlayout(int channel, float scale) {
-    return -1;
-  }
-  virtual int GetFileDuration(const char* fileNameUTF8,
-                              int& durationMs,
-                              FileFormats format = kFileFormatPcm16kHzFile) {
-    return -1;
-  }
-  virtual int GetPlaybackPosition(int channel, int& positionMs) { return -1; }
-  virtual int ConvertPCMToWAV(const char* fileNameInUTF8,
-                              const char* fileNameOutUTF8) {
-    return -1;
-  }
-  virtual int ConvertPCMToWAV(InStream* streamIn, OutStream* streamOut) {
-    return -1;
-  }
-  virtual int ConvertWAVToPCM(const char* fileNameInUTF8,
-                              const char* fileNameOutUTF8) {
-    return -1;
-  }
-  virtual int ConvertWAVToPCM(InStream* streamIn, OutStream* streamOut) {
-    return -1;
-  }
-  virtual int ConvertPCMToCompressed(const char* fileNameInUTF8,
-                                     const char* fileNameOutUTF8,
-                                     CodecInst* compression) {
-    return -1;
-  }
-  virtual int ConvertPCMToCompressed(InStream* streamIn,
-                                     OutStream* streamOut,
-                                     CodecInst* compression) {
-    return -1;
-  }
-  virtual int ConvertCompressedToPCM(const char* fileNameInUTF8,
-                                     const char* fileNameOutUTF8) {
-    return -1;
-  }
-  virtual int ConvertCompressedToPCM(InStream* streamIn, OutStream* streamOut) {
-    return -1;
-  }
-
  protected:
   VoEFile() {}
   virtual ~VoEFile() {}

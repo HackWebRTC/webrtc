@@ -104,12 +104,6 @@ class WEBRTC_DLLEXPORT VoEVolumeControl {
   // Gets the current left and right scaling factors.
   virtual int GetOutputVolumePan(int channel, float& left, float& right) = 0;
 
-  // Don't use. Will be removed.
-  virtual int SetSystemOutputMute(bool enable) { return -1; }
-  virtual int GetSystemOutputMute(bool& enabled) { return -1; }
-  virtual int SetSystemInputMute(bool enable) { return -1; }
-  virtual int GetSystemInputMute(bool& enabled) { return -1; }
-
  protected:
   VoEVolumeControl(){};
   virtual ~VoEVolumeControl(){};

@@ -75,22 +75,6 @@ class WEBRTC_DLLEXPORT VoEExternalMedia {
   // Sets the state of external mixing. Cannot be changed during playback.
   virtual int SetExternalMixing(int channel, bool enable) = 0;
 
-  // Don't use. To be removed.
-  virtual int SetExternalRecordingStatus(bool enable) { return -1; }
-  virtual int SetExternalPlayoutStatus(bool enable) { return -1; }
-  virtual int ExternalRecordingInsertData(const int16_t speechData10ms[],
-                                          int lengthSamples,
-                                          int samplingFreqHz,
-                                          int current_delay_ms) {
-    return -1;
-  }
-  virtual int ExternalPlayoutGetData(int16_t speechData10ms[],
-                                     int samplingFreqHz,
-                                     int current_delay_ms,
-                                     int& lengthSamples) {
-    return -1;
-  }
-
  protected:
   VoEExternalMedia() {}
   virtual ~VoEExternalMedia() {}

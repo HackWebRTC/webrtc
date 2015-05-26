@@ -228,52 +228,6 @@
         },
       ], # targets
       'conditions': [
-        # TODO(kjellander): Support UseoFMFC on VS2010.
-        # http://code.google.com/p/webrtc/issues/detail?id=709
-        ['OS=="win" and MSVS_VERSION < "2010"', {
-          'targets': [
-            # WinTest - GUI test for Windows
-            {
-              'target_name': 'voe_ui_win_test',
-              'type': 'executable',
-              'dependencies': [
-                'voice_engine',
-                '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-                '<(webrtc_root)/test/test.gyp:test_support',
-              ],
-              'sources': [
-                'test/win_test/Resource.h',
-                'test/win_test/WinTest.cc',
-                'test/win_test/WinTest.h',
-                'test/win_test/WinTest.rc',
-                'test/win_test/WinTestDlg.cc',
-                'test/win_test/WinTestDlg.h',
-                'test/win_test/res/WinTest.ico',
-                'test/win_test/res/WinTest.rc2',
-                'test/win_test/stdafx.cc',
-                'test/win_test/stdafx.h',
-              ],
-              'configurations': {
-                'Common_Base': {
-                  'msvs_configuration_attributes': {
-                    'conditions': [
-                      ['component=="shared_library"', {
-                        'UseOfMFC': '2',  # Shared DLL
-                      },{
-                        'UseOfMFC': '1',  # Static
-                      }],
-                    ],
-                  },
-                },
-              },
-              'msvs_settings': {
-                'VCLinkerTool': {
-                  'SubSystem': '2',   # Windows
-                },
-              },
-            },
-          ],  # targets
-        }],
         ['OS=="android"', {
           'targets': [
             {

@@ -221,37 +221,6 @@ class WEBRTC_DLLEXPORT VoERTP_RTCP {
   // If using NACK, NACK should be enabled on both endpoints in a call.
   virtual int SetNACKStatus(int channel, bool enable, int maxNoPackets) = 0;
 
-  // Will be removed. Don't use.
-  virtual int RegisterRTPObserver(int channel, VoERTPObserver& observer) {
-    return -1;
-  };
-  virtual int DeRegisterRTPObserver(int channel) { return -1; };
-  virtual int GetRemoteCSRCs(int channel, unsigned int arrCSRC[15]) {
-    return -1;
-  };
-  virtual int InsertExtraRTPPacket(int channel,
-                                   unsigned char payloadType,
-                                   bool markerBit,
-                                   const char* payloadData,
-                                   unsigned short payloadSize) {
-    return -1;
-  };
-  virtual int GetRemoteRTCPSenderInfo(int channel, SenderInfo* sender_info) {
-    return -1;
-  };
-  virtual int SendApplicationDefinedRTCPPacket(
-      int channel,
-      unsigned char subType,
-      unsigned int name,
-      const char* data,
-      unsigned short dataLengthInBytes) {
-    return -1;
-  };
-  virtual int GetLastRemoteTimeStamp(int channel,
-                                     uint32_t* lastRemoteTimeStamp) {
-    return -1;
-  };
-
  protected:
   VoERTP_RTCP() {}
   virtual ~VoERTP_RTCP() {}

@@ -94,20 +94,6 @@ class WEBRTC_DLLEXPORT VoEHardware {
   virtual bool BuiltInAECIsAvailable() const = 0;
   virtual int EnableBuiltInAEC(bool enable) = 0;
 
-  // To be removed. Don't use.
-  virtual bool BuiltInAECIsEnabled() const { return false; }
-  virtual int GetRecordingDeviceStatus(bool& isAvailable) { return -1; }
-  virtual int GetPlayoutDeviceStatus(bool& isAvailable) { return -1; }
-  virtual int ResetAudioDevice() { return -1; }
-  virtual int AudioDeviceControl(unsigned int par1,
-                                 unsigned int par2,
-                                 unsigned int par3) {
-    return -1;
-  }
-  virtual int SetLoudspeakerStatus(bool enable) { return -1; }
-  virtual int GetLoudspeakerStatus(bool& enabled) { return -1; }
-  virtual int GetCPULoad(int& loadPercent) { return -1; }
-
  protected:
   VoEHardware() {}
   virtual ~VoEHardware() {}

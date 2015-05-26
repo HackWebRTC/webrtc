@@ -35,14 +35,6 @@ class FakeVoEExternalMedia : public VoEExternalMedia {
     callback_map_.erase(type);
     return 0;
   }
-  WEBRTC_STUB(SetExternalRecordingStatus, (bool enable));
-  WEBRTC_STUB(SetExternalPlayoutStatus, (bool enable));
-  WEBRTC_STUB(ExternalRecordingInsertData,
-      (const int16_t speechData10ms[], int lengthSamples,
-       int samplingFreqHz, int current_delay_ms));
-  WEBRTC_STUB(ExternalPlayoutGetData,
-      (int16_t speechData10ms[], int samplingFreqHz,
-       int current_delay_ms, int& lengthSamples));
   WEBRTC_STUB(GetAudioFrame, (int channel, int desired_sample_rate_hz,
                               AudioFrame* frame));
   WEBRTC_STUB(SetExternalMixing, (int channel, bool enable));

@@ -23,14 +23,10 @@ class MockVoEVolumeControl : public VoEVolumeControl {
   MOCK_METHOD0(Release, int());
   MOCK_METHOD1(SetSpeakerVolume, int(unsigned int volume));
   MOCK_METHOD1(GetSpeakerVolume, int(unsigned int& volume));
-  MOCK_METHOD1(SetSystemOutputMute, int(bool enable));
-  MOCK_METHOD1(GetSystemOutputMute, int(bool &enabled));
   MOCK_METHOD1(SetMicVolume, int(unsigned int volume));
   MOCK_METHOD1(GetMicVolume, int(unsigned int& volume));
   MOCK_METHOD2(SetInputMute, int(int channel, bool enable));
   MOCK_METHOD2(GetInputMute, int(int channel, bool& enabled));
-  MOCK_METHOD1(SetSystemInputMute, int(bool enable));
-  MOCK_METHOD1(GetSystemInputMute, int(bool& enabled));
   MOCK_METHOD1(GetSpeechInputLevel, int(unsigned int& level));
   MOCK_METHOD2(GetSpeechOutputLevel, int(int channel, unsigned int& level));
   MOCK_METHOD1(GetSpeechInputLevelFullRange, int(unsigned int& level));

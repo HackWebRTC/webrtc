@@ -131,19 +131,6 @@ class WEBRTC_DLLEXPORT VoECodec {
   // success, and -1 if failed.
   virtual int SetOpusDtx(int channel, bool enable_dtx) = 0;
 
-  // Don't use. To be removed.
-  virtual int SetAMREncFormat(int channel, AmrMode mode) { return -1; }
-  virtual int SetAMRDecFormat(int channel, AmrMode mode) { return -1; }
-  virtual int SetAMRWbEncFormat(int channel, AmrMode mode) { return -1; }
-  virtual int SetAMRWbDecFormat(int channel, AmrMode mode) { return -1; }
-  virtual int SetISACInitTargetRate(int channel,
-                                    int rateBps,
-                                    bool useFixedFrameSize = false) {
-    return -1;
-  }
-  virtual int SetISACMaxRate(int channel, int rateBps) { return -1; }
-  virtual int SetISACMaxPayloadSize(int channel, int sizeBytes) { return -1; }
-
  protected:
   VoECodec() {}
   virtual ~VoECodec() {}

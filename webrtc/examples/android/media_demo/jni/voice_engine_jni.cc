@@ -273,12 +273,6 @@ JOWW(jint, VoiceEngine_setSpeakerVolume)(JNIEnv* jni, jobject j_voe,
   return voe_data->volume->SetSpeakerVolume(level);
 }
 
-JOWW(jint, VoiceEngine_setLoudspeakerStatus)(JNIEnv* jni, jobject j_voe,
-                                             jboolean enable) {
-  VoiceEngineData* voe_data = GetVoiceEngineData(jni, j_voe);
-  return voe_data->hardware->SetLoudspeakerStatus(enable);
-}
-
 JOWW(jint, VoiceEngine_startPlayingFileLocally)(JNIEnv* jni, jobject j_voe,
                                                 jint channel,
                                                 jstring j_filename,
