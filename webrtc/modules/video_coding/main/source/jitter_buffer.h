@@ -54,8 +54,8 @@ struct VCMJitterSample {
 
 class TimestampLessThan {
  public:
-  bool operator() (const uint32_t& timestamp1,
-                   const uint32_t& timestamp2) const {
+  bool operator() (uint32_t timestamp1,
+                   uint32_t timestamp2) const {
     return IsNewerTimestamp(timestamp2, timestamp1);
   }
 };
@@ -78,7 +78,7 @@ class VCMJitterBuffer {
  public:
   VCMJitterBuffer(Clock* clock,
                   EventFactory* event_factory);
-  virtual ~VCMJitterBuffer();
+  ~VCMJitterBuffer();
 
   // Initializes and starts jitter buffer.
   void Start();
