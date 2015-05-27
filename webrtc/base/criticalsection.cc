@@ -152,4 +152,13 @@ GlobalLock::GlobalLock() {
   lock_acquired = 0;
 }
 
+GlobalLockScope::GlobalLockScope(GlobalLockPod* lock)
+    : lock_(lock) {
+  lock_->Lock();
+}
+
+GlobalLockScope::~GlobalLockScope() {
+  lock_->Unlock();
+}
+
 }  // namespace rtc

@@ -114,6 +114,16 @@ class GlobalLock : public GlobalLockPod {
   GlobalLock();
 };
 
+// GlobalLockScope, for serializing execution through a scope.
+class SCOPED_LOCKABLE GlobalLockScope {
+ public:
+  explicit GlobalLockScope(GlobalLockPod* lock) EXCLUSIVE_LOCK_FUNCTION(lock);
+  ~GlobalLockScope() UNLOCK_FUNCTION();
+ private:
+  GlobalLockPod* const lock_;
+  DISALLOW_COPY_AND_ASSIGN(GlobalLockScope);
+};
+
 } // namespace rtc
 
 #endif // WEBRTC_BASE_CRITICALSECTION_H_

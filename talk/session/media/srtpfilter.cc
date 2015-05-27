@@ -474,6 +474,7 @@ bool SrtpFilter::ParseKeyParams(const std::string& key_params,
 #ifdef HAVE_SRTP
 
 bool SrtpSession::inited_ = false;
+rtc::GlobalLockPod SrtpSession::lock_;
 
 SrtpSession::SrtpSession()
     : session_(NULL),
@@ -691,6 +692,7 @@ bool SrtpSession::SetKey(int type, const std::string& cs,
 
   int err = srtp_create(&session_, &policy);
   if (err != err_status_ok) {
+    session_ = NULL;
     LOG(LS_ERROR) << "Failed to create SRTP session, err=" << err;
     return false;
   }
@@ -702,6 +704,8 @@ bool SrtpSession::SetKey(int type, const std::string& cs,
 }
 
 bool SrtpSession::Init() {
+  rtc::GlobalLockScope ls(&lock_);
+
   if (!inited_) {
     int err;
     err = srtp_init();
@@ -729,6 +733,8 @@ bool SrtpSession::Init() {
 }
 
 void SrtpSession::Terminate() {
+  rtc::GlobalLockScope ls(&lock_);
+
   if (inited_) {
     int err = srtp_shutdown();
     if (err) {

@@ -36,6 +36,7 @@
 #include "talk/media/base/cryptoparams.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslotrepeater.h"
 
@@ -242,6 +243,7 @@ class SrtpSession {
   int rtcp_auth_tag_len_;
   rtc::scoped_ptr<SrtpStat> srtp_stat_;
   static bool inited_;
+  static rtc::GlobalLockPod lock_;
   int last_send_seq_num_;
   DISALLOW_COPY_AND_ASSIGN(SrtpSession);
 };
