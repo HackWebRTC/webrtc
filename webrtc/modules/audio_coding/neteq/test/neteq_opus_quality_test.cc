@@ -81,9 +81,9 @@ DEFINE_int32(reported_loss_rate, 10, "Reported percentile of packet loss.");
 static const bool reported_loss_rate_dummy =
     RegisterFlagValidator(&FLAGS_reported_loss_rate, &ValidatePacketLossRate);
 
-DEFINE_bool(fec, true, "Whether to enable FEC for encoding.");
+DEFINE_bool(fec, false, "Enable FEC for encoding (-nofec to disable).");
 
-DEFINE_bool(dtx, true, "Whether to enable DTX for encoding.");
+DEFINE_bool(dtx, false, "Enable DTX for encoding (-nodtx to disable).");
 
 // Define switch for number of sub packets to repacketize.
 static bool ValidateSubPackets(const char* flagname, int32_t value) {
