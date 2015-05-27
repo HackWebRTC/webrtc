@@ -54,12 +54,6 @@ class Expand {
   // a period of expands.
   virtual void SetParametersForMergeAfterExpand();
 
-  // Sets the mute factor for |channel| to |value|.
-  void SetMuteFactor(int16_t value, size_t channel) {
-    assert(channel < num_channels_);
-    channel_parameters_[channel].mute_factor = value;
-  }
-
   // Returns the mute factor for |channel|.
   int16_t MuteFactor(size_t channel) {
     assert(channel < num_channels_);
