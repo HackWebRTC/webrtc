@@ -92,7 +92,7 @@ class VideoReceiveStream {
   struct Config {
     Config()
         : renderer(NULL),
-          render_delay_ms(0),
+          render_delay_ms(10),
           audio_channel_id(-1),
           pre_decode_callback(NULL),
           pre_render_callback(NULL),

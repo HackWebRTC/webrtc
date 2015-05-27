@@ -1924,6 +1924,7 @@ TEST_F(EndToEndTest, ReportsSetEncoderRates) {
 
 TEST_F(EndToEndTest, GetStats) {
   static const int kStartBitrateBps = 3000000;
+  static const int kExpectedRenderDelayMs = 20;
   class StatsObserver : public test::EndToEndTest, public I420FrameCallback {
    public:
     explicit StatsObserver(const FakeNetworkPipe::Config& config)
@@ -1970,6 +1971,9 @@ TEST_F(EndToEndTest, GetStats) {
         // always filled for all receivers.
         receive_stats_filled_["IncomingRate"] |=
             stats.network_frame_rate != 0 || stats.total_bitrate_bps != 0;
+
+        receive_stats_filled_["RenderDelayAsHighAsExpected"] |=
+            stats.render_delay_ms >= kExpectedRenderDelayMs;
 
         receive_stats_filled_["FrameCallback"] |= stats.decode_frame_rate != 0;
 
@@ -2100,6 +2104,7 @@ TEST_F(EndToEndTest, GetStats) {
         expected_send_ssrcs_.insert(ssrcs[i]);
         expected_receive_ssrcs_.push_back(
             (*receive_configs)[i].rtp.remote_ssrc);
+        (*receive_configs)[i].render_delay_ms = kExpectedRenderDelayMs;
       }
     }
 

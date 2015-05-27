@@ -229,7 +229,8 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
     const Decoder& decoder = config_.decoders[i];
     CHECK_EQ(0, vie_channel_->RegisterExternalDecoder(
                     decoder.payload_type, decoder.decoder, decoder.is_renderer,
-                    decoder.expected_delay_ms));
+                    decoder.is_renderer ? decoder.expected_delay_ms
+                                        : config.render_delay_ms));
 
     VideoCodec codec = CreateDecoderVideoCodec(decoder);
 
