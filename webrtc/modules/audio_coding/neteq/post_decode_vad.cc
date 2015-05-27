@@ -20,7 +20,8 @@ PostDecodeVad::~PostDecodeVad() {
 void PostDecodeVad::Enable() {
   if (!vad_instance_) {
     // Create the instance.
-    if (WebRtcVad_Create(&vad_instance_) != 0) {
+    vad_instance_ = WebRtcVad_Create();
+    if (vad_instance_ == nullptr) {
       // Failed to create instance.
       Disable();
       return;

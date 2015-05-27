@@ -14,6 +14,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
 #include "webrtc/typedefs.h"
@@ -57,7 +58,7 @@ TEST_F(VadTest, ApiTest) {
   // This API test runs through the APIs for all possible valid and invalid
   // combinations.
 
-  VadInst* handle = NULL;
+  VadInst* handle = WebRtcVad_Create();
   int16_t zeros[kMaxFrameLength] = { 0 };
 
   // Construct a speech signal that will trigger the VAD in all modes. It is
@@ -67,14 +68,14 @@ TEST_F(VadTest, ApiTest) {
     speech[i] = (i * i);
   }
 
-  // NULL instance tests
-  EXPECT_EQ(-1, WebRtcVad_Create(NULL));
-  EXPECT_EQ(-1, WebRtcVad_Init(NULL));
-  EXPECT_EQ(-1, WebRtcVad_set_mode(NULL, kModes[0]));
-  EXPECT_EQ(-1, WebRtcVad_Process(NULL, kRates[0], speech, kFrameLengths[0]));
+  // nullptr instance tests
+  EXPECT_EQ(-1, WebRtcVad_Init(nullptr));
+  EXPECT_EQ(-1, WebRtcVad_set_mode(nullptr, kModes[0]));
+  EXPECT_EQ(-1,
+            WebRtcVad_Process(nullptr, kRates[0], speech, kFrameLengths[0]));
 
   // WebRtcVad_Create()
-  ASSERT_EQ(0, WebRtcVad_Create(&handle));
+  CHECK(handle);
 
   // Not initialized tests
   EXPECT_EQ(-1, WebRtcVad_Process(handle, kRates[0], speech, kFrameLengths[0]));
@@ -93,8 +94,9 @@ TEST_F(VadTest, ApiTest) {
                                                          kModesSize) + 1));
 
   // WebRtcVad_Process() tests
-  // NULL speech pointer
-  EXPECT_EQ(-1, WebRtcVad_Process(handle, kRates[0], NULL, kFrameLengths[0]));
+  // nullptr as speech pointer
+  EXPECT_EQ(-1,
+            WebRtcVad_Process(handle, kRates[0], nullptr, kFrameLengths[0]));
   // Invalid sampling rate
   EXPECT_EQ(-1, WebRtcVad_Process(handle, 9999, speech, kFrameLengths[0]));
   // All zeros as input should work

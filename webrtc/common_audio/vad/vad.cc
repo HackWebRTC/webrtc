@@ -15,7 +15,8 @@
 namespace webrtc {
 
 Vad::Vad(enum Aggressiveness mode) {
-  CHECK_EQ(WebRtcVad_Create(&handle_), 0);
+  handle_ = WebRtcVad_Create();
+  CHECK(handle_);
   CHECK_EQ(WebRtcVad_Init(handle_), 0);
   CHECK_EQ(WebRtcVad_set_mode(handle_, mode), 0);
 }

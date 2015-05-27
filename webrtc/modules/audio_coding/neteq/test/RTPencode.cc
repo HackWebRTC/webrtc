@@ -908,8 +908,8 @@ int NetEQTest_init_coders(webrtc::NetEqDecoder coder, int enc_frameSize, int bit
 	
     for (int k = 0; k < numChannels; k++) 
     {
-        ok=WebRtcVad_Create(&VAD_inst[k]);
-        if (ok!=0) {
+        VAD_inst[k] = WebRtcVad_Create();
+        if (!VAD_inst[k]) {
             printf("Error: Couldn't allocate memory for VAD instance\n");
             exit(0);
         }

@@ -148,14 +148,7 @@ int VoiceDetectionImpl::Initialize() {
 }
 
 void* VoiceDetectionImpl::CreateHandle() const {
-  Handle* handle = NULL;
-  if (WebRtcVad_Create(&handle) != apm_->kNoError) {
-    handle = NULL;
-  } else {
-    assert(handle != NULL);
-  }
-
-  return handle;
+  return WebRtcVad_Create();
 }
 
 void VoiceDetectionImpl::DestroyHandle(void* handle) const {

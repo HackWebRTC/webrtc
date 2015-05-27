@@ -31,15 +31,15 @@ StandaloneVad::~StandaloneVad() {
 }
 
 StandaloneVad* StandaloneVad::Create() {
-  VadInst* vad = NULL;
-  if (WebRtcVad_Create(&vad) < 0)
-    return NULL;
+  VadInst* vad = WebRtcVad_Create();
+  if (!vad)
+    return nullptr;
 
   int err = WebRtcVad_Init(vad);
   err |= WebRtcVad_set_mode(vad, kDefaultStandaloneVadMode);
   if (err != 0) {
     WebRtcVad_Free(vad);
-    return NULL;
+    return nullptr;
   }
   return new StandaloneVad(vad);
 }
