@@ -34,7 +34,8 @@ std::string NetEq::Config::ToString() const {
      << (enable_audio_classifier ? "true" : "false")
      << ", max_packets_in_buffer=" << max_packets_in_buffer
      << ", background_noise_mode=" << background_noise_mode
-     << ", playout_mode=" << playout_mode;
+     << ", playout_mode=" << playout_mode
+     << ", enable_fast_accelerate=" << enable_fast_accelerate;
   return ss.str();
 }
 

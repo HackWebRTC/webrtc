@@ -80,7 +80,8 @@ class NetEq {
           // |max_delay_ms| has the same effect as calling SetMaximumDelay().
           max_delay_ms(2000),
           background_noise_mode(kBgnOff),
-          playout_mode(kPlayoutOn) {}
+          playout_mode(kPlayoutOn),
+          enable_fast_accelerate(false) {}
 
     std::string ToString() const;
 
@@ -90,6 +91,7 @@ class NetEq {
     int max_delay_ms;
     BackgroundNoiseMode background_noise_mode;
     NetEqPlayoutMode playout_mode;
+    bool enable_fast_accelerate;
   };
 
   enum ReturnCodes {

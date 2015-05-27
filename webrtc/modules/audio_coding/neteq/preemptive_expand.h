@@ -58,11 +58,12 @@ class PreemptiveExpand : public TimeStretch {
 
   // Checks the criteria for performing the time-stretching operation and,
   // if possible, performs the time-stretching.
-  ReturnCodes CheckCriteriaAndStretch(const int16_t* pw16_decoded,
-                                      size_t len,
-                                      size_t w16_bestIndex,
-                                      int16_t w16_bestCorr,
-                                      bool w16_VAD,
+  ReturnCodes CheckCriteriaAndStretch(const int16_t* input,
+                                      size_t input_length,
+                                      size_t peak_index,
+                                      int16_t best_correlation,
+                                      bool active_speech,
+                                      bool /*fast_mode*/,
                                       AudioMultiVector* output) const override;
 
  private:

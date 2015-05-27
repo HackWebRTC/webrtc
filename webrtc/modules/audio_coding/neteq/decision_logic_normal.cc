@@ -132,15 +132,13 @@ Operations DecisionLogicNormal::ExpectedPacketAvailable(Modes prev_mode,
     // Check criterion for time-stretching.
     int low_limit, high_limit;
     delay_manager_->BufferLimits(&low_limit, &high_limit);
-    if ((buffer_level_filter_->filtered_current_level() >= high_limit &&
-        TimescaleAllowed()) ||
-        buffer_level_filter_->filtered_current_level() >= high_limit << 2) {
-      // Buffer level higher than limit and time-scaling allowed,
-      // or buffer level really high.
-      return kAccelerate;
-    } else if ((buffer_level_filter_->filtered_current_level() < low_limit)
-        && TimescaleAllowed()) {
-      return kPreemptiveExpand;
+    if (buffer_level_filter_->filtered_current_level() >= high_limit << 2)
+      return kFastAccelerate;
+    if (TimescaleAllowed()) {
+      if (buffer_level_filter_->filtered_current_level() >= high_limit)
+        return kAccelerate;
+      if (buffer_level_filter_->filtered_current_level() < low_limit)
+        return kPreemptiveExpand;
     }
   }
   return kNormal;

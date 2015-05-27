@@ -34,7 +34,8 @@ PreemptiveExpand::ReturnCodes PreemptiveExpand::Process(
     output->PushBackInterleaved(input, input_length);
     return kError;
   }
-  return TimeStretch::Process(input, input_length, output,
+  const bool kFastMode = false;  // Fast mode is not available for PE Expand.
+  return TimeStretch::Process(input, input_length, kFastMode, output,
                               length_change_samples);
 }
 
@@ -54,8 +55,12 @@ void PreemptiveExpand::SetParametersForPassiveSpeech(size_t len,
 }
 
 PreemptiveExpand::ReturnCodes PreemptiveExpand::CheckCriteriaAndStretch(
-    const int16_t *input, size_t input_length, size_t peak_index,
-    int16_t best_correlation, bool active_speech,
+    const int16_t* input,
+    size_t input_length,
+    size_t peak_index,
+    int16_t best_correlation,
+    bool active_speech,
+    bool /*fast_mode*/,
     AudioMultiVector* output) const {
   // Pre-calculate common multiplication with |fs_mult_|.
   // 120 corresponds to 15 ms.

@@ -58,6 +58,7 @@ class TimeStretch {
   // PreemptiveExpand.
   ReturnCodes Process(const int16_t* input,
                       size_t input_len,
+                      bool fast_mode,
                       AudioMultiVector* output,
                       int16_t* length_change_samples);
 
@@ -73,8 +74,12 @@ class TimeStretch {
   // if possible, performs the time-stretching. This method must be implemented
   // by the sub-classes.
   virtual ReturnCodes CheckCriteriaAndStretch(
-      const int16_t* input, size_t input_length, size_t peak_index,
-      int16_t best_correlation, bool active_speech,
+      const int16_t* input,
+      size_t input_length,
+      size_t peak_index,
+      int16_t best_correlation,
+      bool active_speech,
+      bool fast_mode,
       AudioMultiVector* output) const = 0;
 
   static const int kCorrelationLen = 50;

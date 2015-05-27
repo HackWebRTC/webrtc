@@ -92,6 +92,7 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
       decoder_error_code_(0),
       background_noise_mode_(config.background_noise_mode),
       playout_mode_(config.playout_mode),
+      enable_fast_accelerate_(config.enable_fast_accelerate),
       decoded_packet_sequence_number_(-1),
       decoded_packet_timestamp_(0) {
   LOG(LS_INFO) << "NetEq config: " << config.ToString();
@@ -745,9 +746,12 @@ int NetEqImpl::GetAudioInternal(size_t max_length, int16_t* output,
       return_value = DoExpand(play_dtmf);
       break;
     }
-    case kAccelerate: {
+    case kAccelerate:
+    case kFastAccelerate: {
+      const bool fast_accelerate =
+          enable_fast_accelerate_ && (operation == kFastAccelerate);
       return_value = DoAccelerate(decoded_buffer_.get(), length, speech_type,
-                                  play_dtmf);
+                                  play_dtmf, fast_accelerate);
       break;
     }
     case kPreemptiveExpand: {
@@ -956,9 +960,8 @@ int NetEqImpl::GetDecision(Operations* operation,
   // Check if we already have enough samples in the |sync_buffer_|. If so,
   // change decision to normal, unless the decision was merge, accelerate, or
   // preemptive expand.
-  if (samples_left >= output_size_samples_ &&
-      *operation != kMerge &&
-      *operation != kAccelerate &&
+  if (samples_left >= output_size_samples_ && *operation != kMerge &&
+      *operation != kAccelerate && *operation != kFastAccelerate &&
       *operation != kPreemptiveExpand) {
     *operation = kNormal;
     return 0;
@@ -1034,8 +1037,9 @@ int NetEqImpl::GetDecision(Operations* operation,
       decision_logic_->set_generated_noise_samples(0);
       return 0;
     }
-    case kAccelerate: {
-      // In order to do a accelerate we need at least 30 ms of audio data.
+    case kAccelerate:
+    case kFastAccelerate: {
+      // In order to do an accelerate we need at least 30 ms of audio data.
       if (samples_left >= samples_30_ms) {
         // Already have enough data, so we do not need to extract any more.
         decision_logic_->set_sample_memory(samples_left);
@@ -1124,13 +1128,13 @@ int NetEqImpl::GetDecision(Operations* operation,
     }
   }
 
-  if (*operation == kAccelerate ||
+  if (*operation == kAccelerate || *operation == kFastAccelerate ||
       *operation == kPreemptiveExpand) {
     decision_logic_->set_sample_memory(samples_left + extracted_samples);
     decision_logic_->set_prev_time_scale(true);
   }
 
-  if (*operation == kAccelerate) {
+  if (*operation == kAccelerate || *operation == kFastAccelerate) {
     // Check that we have enough data (30ms) to do accelerate.
     if (extracted_samples + samples_left < samples_30_ms) {
       // TODO(hlundin): Write test for this.
@@ -1263,7 +1267,8 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
     assert(sync_buffer_->Channels() == decoder->Channels());
     assert(decoded_buffer_length_ >= kMaxFrameSize * decoder->Channels());
     assert(*operation == kNormal || *operation == kAccelerate ||
-           *operation == kMerge || *operation == kPreemptiveExpand);
+           *operation == kFastAccelerate || *operation == kMerge ||
+           *operation == kPreemptiveExpand);
     packet_list->pop_front();
     size_t payload_length = packet->payload_length;
     int16_t decode_length;
@@ -1427,9 +1432,11 @@ int NetEqImpl::DoExpand(bool play_dtmf) {
   return 0;
 }
 
-int NetEqImpl::DoAccelerate(int16_t* decoded_buffer, size_t decoded_length,
+int NetEqImpl::DoAccelerate(int16_t* decoded_buffer,
+                            size_t decoded_length,
                             AudioDecoder::SpeechType speech_type,
-                            bool play_dtmf) {
+                            bool play_dtmf,
+                            bool fast_accelerate) {
   const size_t required_samples = 240 * fs_mult_;  // Must have 30 ms.
   size_t borrowed_samples_per_channel = 0;
   size_t num_channels = algorithm_buffer_->Channels();
@@ -1447,9 +1454,9 @@ int NetEqImpl::DoAccelerate(int16_t* decoded_buffer, size_t decoded_length,
   }
 
   int16_t samples_removed;
-  Accelerate::ReturnCodes return_code = accelerate_->Process(
-      decoded_buffer, decoded_length, algorithm_buffer_.get(),
-      &samples_removed);
+  Accelerate::ReturnCodes return_code =
+      accelerate_->Process(decoded_buffer, decoded_length, fast_accelerate,
+                           algorithm_buffer_.get(), &samples_removed);
   stats_.AcceleratedSamples(samples_removed);
   switch (return_code) {
     case Accelerate::kSuccess:

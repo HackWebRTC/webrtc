@@ -38,9 +38,12 @@ class Accelerate : public TimeStretch {
   // read from |input|, of length |input_length| elements, and are written to
   // |output|. The number of samples removed through time-stretching is
   // is provided in the output |length_change_samples|. The method returns
-  // the outcome of the operation as an enumerator value.
+  // the outcome of the operation as an enumerator value. If |fast_accelerate|
+  // is true, the algorithm will relax the requirements on finding strong
+  // correlations, and may remove multiple pitch periods if possible.
   ReturnCodes Process(const int16_t* input,
                       size_t input_length,
+                      bool fast_accelerate,
                       AudioMultiVector* output,
                       int16_t* length_change_samples);
 
@@ -58,6 +61,7 @@ class Accelerate : public TimeStretch {
                                       size_t peak_index,
                                       int16_t best_correlation,
                                       bool active_speech,
+                                      bool fast_mode,
                                       AudioMultiVector* output) const override;
 
  private:
