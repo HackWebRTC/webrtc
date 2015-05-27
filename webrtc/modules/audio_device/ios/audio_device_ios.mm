@@ -1189,20 +1189,26 @@ int32_t AudioDeviceIOS::InitPlayOrRecord() {
                      "Could not set preferred sample rate: %s", errorString);
     }
     error = nil;
-    [session setMode:AVAudioSessionModeVoiceChat
-               error:&error];
-    if (error != nil) {
+    // Make the setMode:error: and setCategory:error: calls only if necessary.
+    // Non-obviously, setting them to the value they already have will clear
+    // transient properties (such as PortOverride) that some other component may
+    // have set up.
+    if (session.mode != AVAudioSessionModeVoiceChat) {
+      [session setMode:AVAudioSessionModeVoiceChat error:&error];
+      if (error != nil) {
         const char* errorString = [[error localizedDescription] UTF8String];
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                      "Could not set mode: %s", errorString);
+      }
     }
     error = nil;
-    [session setCategory:AVAudioSessionCategoryPlayAndRecord
-                   error:&error];
-    if (error != nil) {
+    if (session.category != AVAudioSessionCategoryPlayAndRecord) {
+      [session setCategory:AVAudioSessionCategoryPlayAndRecord error:&error];
+      if (error != nil) {
         const char* errorString = [[error localizedDescription] UTF8String];
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                      "Could not set category: %s", errorString);
+      }
     }
 
     //////////////////////
