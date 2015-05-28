@@ -155,12 +155,12 @@ class VCMJitterBuffer {
   // Updates the round-trip time estimate.
   void UpdateRtt(int64_t rtt_ms);
 
-  // Set the NACK mode. |highRttNackThreshold| is an RTT threshold in ms above
-  // which NACK will be disabled if the NACK mode is |kNackHybrid|, -1 meaning
-  // that NACK is always enabled in the hybrid mode.
-  // |lowRttNackThreshold| is an RTT threshold in ms below which we expect to
-  // rely on NACK only, and therefore are using larger buffers to have time to
-  // wait for retransmissions.
+  // Set the NACK mode. |high_rtt_nack_threshold_ms| is an RTT threshold in ms
+  // above which NACK will be disabled if the NACK mode is |kNackHybrid|, -1
+  // meaning that NACK is always enabled in the hybrid mode.
+  // |low_rtt_nack_threshold_ms| is an RTT threshold in ms below which we expect
+  // to rely on NACK only, and therefore are using larger buffers to have time
+  // to wait for retransmissions.
   void SetNackMode(VCMNackMode mode, int64_t low_rtt_nack_threshold_ms,
                    int64_t high_rtt_nack_threshold_ms);
 
@@ -172,6 +172,8 @@ class VCMJitterBuffer {
   VCMNackMode nack_mode() const;
 
   // Returns a list of the sequence numbers currently missing.
+  // WARNING: GetNackList() returns a pointer to an internal buffer that is only
+  // valid until the next GetNackList() call.
   uint16_t* GetNackList(uint16_t* nack_list_size, bool* request_key_frame);
 
   // Set decode error mode - Should not be changed in the middle of the
