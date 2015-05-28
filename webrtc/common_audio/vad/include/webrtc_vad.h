@@ -25,7 +25,6 @@ extern "C" {
 #endif
 
 // Creates an instance to the VAD structure.
-// Returns a null pointer if create was unsuccessful.
 VadInst* WebRtcVad_Create();
 
 // Frees the dynamic memory of a specified VAD instance.
