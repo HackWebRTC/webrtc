@@ -183,12 +183,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   int32_t RemoteRTCPStat(
       std::vector<RTCPReportBlock>* receive_blocks) const override;
 
-  // Set received RTCP report block.
-  int32_t AddRTCPReportBlock(uint32_t ssrc,
-                             const RTCPReportBlock* receive_block) override;
-
-  int32_t RemoveRTCPReportBlock(uint32_t ssrc) override;
-
   // (REMB) Receiver Estimated Max Bitrate.
   bool REMB() const override;
 

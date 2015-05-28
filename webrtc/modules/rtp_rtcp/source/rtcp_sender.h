@@ -121,11 +121,6 @@ public:
                           bool repeat = false,
                           uint64_t pictureID = 0);
 
- int32_t AddExternalReportBlock(uint32_t SSRC,
-                                const RTCPReportBlock* receiveBlock);
-
- int32_t RemoveExternalReportBlock(uint32_t SSRC);
-
  bool REMB() const;
 
  void SetREMBStatus(bool enable);
@@ -272,8 +267,6 @@ private:
  ReceiveStatistics* receive_statistics_
      GUARDED_BY(critical_section_rtcp_sender_);
  std::map<uint32_t, RTCPReportBlock*> internal_report_blocks_
-     GUARDED_BY(critical_section_rtcp_sender_);
- std::map<uint32_t, RTCPReportBlock*> external_report_blocks_
      GUARDED_BY(critical_section_rtcp_sender_);
  std::map<uint32_t, RTCPUtility::RTCPCnameInformation*> csrc_cnames_
      GUARDED_BY(critical_section_rtcp_sender_);

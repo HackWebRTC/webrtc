@@ -628,17 +628,6 @@ int32_t ModuleRtpRtcpImpl::RemoteRTCPStat(
   return rtcp_receiver_.StatisticsReceived(receive_blocks);
 }
 
-int32_t ModuleRtpRtcpImpl::AddRTCPReportBlock(
-    const uint32_t ssrc,
-    const RTCPReportBlock* report_block) {
-  return rtcp_sender_.AddExternalReportBlock(ssrc, report_block);
-}
-
-int32_t ModuleRtpRtcpImpl::RemoveRTCPReportBlock(
-  const uint32_t ssrc) {
-  return rtcp_sender_.RemoveExternalReportBlock(ssrc);
-}
-
 // (REMB) Receiver Estimated Max Bitrate.
 bool ModuleRtpRtcpImpl::REMB() const {
   return rtcp_sender_.REMB();

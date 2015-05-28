@@ -184,9 +184,6 @@ RTCPSender::~RTCPSender() {
   for (auto it : internal_report_blocks_)
     delete it.second;
 
-  for (auto it : external_report_blocks_)
-    delete it.second;
-
   for (auto it : csrc_cnames_)
     delete it.second;
 }
@@ -467,13 +464,6 @@ bool RTCPSender::SendTimeOfXrRrReport(uint32_t mid_ntp,
   return true;
 }
 
-int32_t RTCPSender::AddExternalReportBlock(
-    uint32_t SSRC,
-    const RTCPReportBlock* reportBlock) {
-  CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
-  return AddReportBlock(SSRC, &external_report_blocks_, reportBlock);
-}
-
 int32_t RTCPSender::AddReportBlock(
     uint32_t SSRC,
     std::map<uint32_t, RTCPReportBlock*>* report_blocks,
@@ -493,20 +483,6 @@ int32_t RTCPSender::AddReportBlock(
   RTCPReportBlock* copyReportBlock = new RTCPReportBlock();
   memcpy(copyReportBlock, reportBlock, sizeof(RTCPReportBlock));
   (*report_blocks)[SSRC] = copyReportBlock;
-  return 0;
-}
-
-int32_t RTCPSender::RemoveExternalReportBlock(uint32_t SSRC) {
-  CriticalSectionScoped lock(critical_section_rtcp_sender_.get());
-
-  std::map<uint32_t, RTCPReportBlock*>::iterator it =
-      external_report_blocks_.find(SSRC);
-
-  if (it == external_report_blocks_.end()) {
-    return -1;
-  }
-  delete it->second;
-  external_report_blocks_.erase(it);
   return 0;
 }
 
@@ -716,13 +692,6 @@ RTCPSender::BuildResult RTCPSender::BuildRR(RtcpContext* ctx) {
 
 RTCPSender::BuildResult RTCPSender::BuildExtendedJitterReport(
     RtcpContext* ctx) {
-  if (external_report_blocks_.size() > 0) {
-    // TODO(andresp): Remove external report blocks since they are not
-    // supported.
-    LOG(LS_ERROR) << "Handling of external report blocks not implemented.";
-    return BuildResult::kError;
-  }
-
   // sanity
   if (ctx->position + 8 >= IP_PACKET_SIZE)
     return BuildResult::kTruncated;
@@ -1661,8 +1630,7 @@ bool RTCPSender::RtcpXrReceiverReferenceTime() const {
 RTCPSender::BuildResult RTCPSender::WriteAllReportBlocksToBuffer(
     RtcpContext* ctx,
     uint8_t* numberOfReportBlocks) {
-  *numberOfReportBlocks = external_report_blocks_.size();
-  *numberOfReportBlocks += internal_report_blocks_.size();
+  *numberOfReportBlocks = internal_report_blocks_.size();
   if ((ctx->position + *numberOfReportBlocks * 24) >= IP_PACKET_SIZE) {
     LOG(LS_WARNING) << "Can't fit all report blocks.";
     return BuildResult::kError;
@@ -1672,7 +1640,6 @@ RTCPSender::BuildResult RTCPSender::WriteAllReportBlocksToBuffer(
     delete internal_report_blocks_.begin()->second;
     internal_report_blocks_.erase(internal_report_blocks_.begin());
   }
-  WriteReportBlocksToBuffer(ctx, external_report_blocks_);
   return BuildResult::kSuccess;
 }
 

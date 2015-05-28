@@ -457,21 +457,6 @@ class RtpRtcp : public Module {
         std::vector<RTCPReportBlock>* receiveBlocks) const = 0;
 
     /*
-    *   Set received RTCP report block
-    *
-    *   return -1 on failure else 0
-    */
-    virtual int32_t AddRTCPReportBlock(uint32_t SSRC,
-                                       const RTCPReportBlock* receiveBlock) = 0;
-
-    /*
-    *   RemoveRTCPReportBlock
-    *
-    *   return -1 on failure else 0
-    */
-    virtual int32_t RemoveRTCPReportBlock(uint32_t SSRC) = 0;
-
-    /*
     *   (APP) Application specific data
     *
     *   return -1 on failure else 0
