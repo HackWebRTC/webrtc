@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numeric>
 #include <vector>
 
 #include "webrtc/base/arraysize.h"
@@ -24,7 +25,7 @@ namespace webrtc {
 namespace {
 
 // Alpha for the Kaiser Bessel Derived window.
-const float kAlpha = 1.5f;
+const float kKbdAlpha = 1.5f;
 
 // The minimum value a post-processing mask can take.
 const float kMaskMinimum = 0.01f;
@@ -52,19 +53,20 @@ const float kBalance = 0.4f;
 // TODO(claguna): need comment here.
 const float kBeamwidthConstant = 0.00002f;
 
-// Alpha coefficient for mask smoothing.
-const float kMaskSmoothAlpha = 0.2f;
+// Alpha coefficients for mask smoothing.
+const float kMaskTimeSmoothAlpha = 0.2f;
+const float kMaskFrequencySmoothAlpha = 0.6f;
 
 // The average mask is computed from masks in this mid-frequency range. If these
 // ranges are changed |kMaskQuantile| might need to be adjusted.
-const int kLowAverageStartHz = 200;
-const int kLowAverageEndHz = 400;
+const int kLowMeanStartHz = 200;
+const int kLowMeanEndHz = 400;
 
-const int kHighAverageStartHz = 3000;
-const int kHighAverageEndHz = 5000;
+const int kHighMeanStartHz = 3000;
+const int kHighMeanEndHz = 5000;
 
 // Quantile of mask values which is used to estimate target presence.
-const float kMaskQuantile = 0.3f;
+const float kMaskQuantile = 0.7f;
 // Mask threshold over which the data is considered signal and not interference.
 const float kMaskTargetThreshold = 0.3f;
 // Time in seconds after which the data is considered interference if the mask
@@ -179,29 +181,37 @@ NonlinearBeamformer::NonlinearBeamformer(
     const std::vector<Point>& array_geometry)
   : num_input_channels_(array_geometry.size()),
       array_geometry_(GetCenteredArray(array_geometry)) {
-  WindowGenerator::KaiserBesselDerived(kAlpha, kFftSize, window_);
+  WindowGenerator::KaiserBesselDerived(kKbdAlpha, kFftSize, window_);
 }
 
 void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
   chunk_length_ = sample_rate_hz / (1000.f / chunk_size_ms);
   sample_rate_hz_ = sample_rate_hz;
-  low_average_start_bin_ =
-      Round(kLowAverageStartHz * kFftSize / sample_rate_hz_);
-  low_average_end_bin_ =
-      Round(kLowAverageEndHz * kFftSize / sample_rate_hz_);
-  high_average_start_bin_ =
-      Round(kHighAverageStartHz * kFftSize / sample_rate_hz_);
-  high_average_end_bin_ =
-      Round(kHighAverageEndHz * kFftSize / sample_rate_hz_);
+  low_mean_start_bin_ = Round(kLowMeanStartHz * kFftSize / sample_rate_hz_);
+  low_mean_end_bin_ = Round(kLowMeanEndHz * kFftSize / sample_rate_hz_);
+  high_mean_start_bin_ = Round(kHighMeanStartHz * kFftSize / sample_rate_hz_);
+  high_mean_end_bin_ = Round(kHighMeanEndHz * kFftSize / sample_rate_hz_);
+  // These bin indexes determine the regions over which a mean is taken. This
+  // is applied as a constant value over the adjacent end "frequency correction"
+  // regions.
+  //
+  //             low_mean_start_bin_     high_mean_start_bin_
+  //                   v                         v              constant
+  // |----------------|--------|----------------|-------|----------------|
+  //   constant               ^                        ^
+  //             low_mean_end_bin_       high_mean_end_bin_
+  //
+  DCHECK_GT(low_mean_start_bin_, 0);
+  DCHECK_LT(low_mean_start_bin_, low_mean_end_bin_);
+  DCHECK_LT(low_mean_end_bin_, high_mean_end_bin_);
+  DCHECK_LT(high_mean_start_bin_, high_mean_end_bin_);
+  DCHECK_LT(high_mean_end_bin_, kNumFreqBins - 1);
+
   high_pass_postfilter_mask_ = 1.f;
   is_target_present_ = false;
   hold_target_blocks_ = kHoldTargetSeconds * 2 * sample_rate_hz / kFftSize;
   interference_blocks_count_ = hold_target_blocks_;
 
-  DCHECK_LE(low_average_end_bin_, kNumFreqBins);
-  DCHECK_LT(low_average_start_bin_, low_average_end_bin_);
-  DCHECK_LE(high_average_end_bin_, kNumFreqBins);
-  DCHECK_LT(high_average_start_bin_, high_average_end_bin_);
 
   lapped_transform_.reset(new LappedTransform(num_input_channels_,
                                               1,
@@ -211,7 +221,8 @@ void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
                                               kFftSize / 2,
                                               this));
   for (int i = 0; i < kNumFreqBins; ++i) {
-    postfilter_mask_[i] = 1.f;
+    time_smooth_mask_[i] = 1.f;
+    final_mask_[i] = 1.f;
     float freq_hz = (static_cast<float>(i) / kFftSize) * sample_rate_hz_;
     wave_numbers_[i] = 2 * M_PI * freq_hz / kSpeedOfSoundMeterSeconds;
     mask_thresholds_[i] = num_input_channels_ * num_input_channels_ *
@@ -335,7 +346,7 @@ void NonlinearBeamformer::ProcessAudioBlock(const complex_f* const* input,
   // Calculating the post-filter masks. Note that we need two for each
   // frequency bin to account for the positive and negative interferer
   // angle.
-  for (int i = low_average_start_bin_; i < high_average_end_bin_; ++i) {
+  for (int i = low_mean_start_bin_; i <= high_mean_end_bin_; ++i) {
     eig_m_.CopyFromColumn(input, i, num_input_channels_);
     float eig_m_norm_factor = std::sqrt(SumSquares(eig_m_));
     if (eig_m_norm_factor != 0.f) {
@@ -365,12 +376,12 @@ void NonlinearBeamformer::ProcessAudioBlock(const complex_f* const* input,
                                             mask_thresholds_[i]);
   }
 
-  ApplyMaskSmoothing();
+  ApplyMaskTimeSmoothing();
+  EstimateTargetPresence();
   ApplyLowFrequencyCorrection();
   ApplyHighFrequencyCorrection();
+  ApplyMaskFrequencySmoothing();
   ApplyMasks(input, output);
-
-  EstimateTargetPresence();
 }
 
 float NonlinearBeamformer::CalculatePostfilterMask(
@@ -409,49 +420,78 @@ void NonlinearBeamformer::ApplyMasks(const complex_f* const* input,
       output_channel[f_ix] += input[c_ix][f_ix] * delay_sum_mask_els[c_ix];
     }
 
-    output_channel[f_ix] *= postfilter_mask_[f_ix];
+    output_channel[f_ix] *= final_mask_[f_ix];
   }
 }
 
-void NonlinearBeamformer::ApplyMaskSmoothing() {
-  for (int i = 0; i < kNumFreqBins; ++i) {
-    postfilter_mask_[i] = kMaskSmoothAlpha * new_mask_[i] +
-                          (1.f - kMaskSmoothAlpha) * postfilter_mask_[i];
+// Smooth new_mask_ into time_smooth_mask_.
+void NonlinearBeamformer::ApplyMaskTimeSmoothing() {
+  for (int i = low_mean_start_bin_; i <= high_mean_end_bin_; ++i) {
+    time_smooth_mask_[i] = kMaskTimeSmoothAlpha * new_mask_[i] +
+                           (1 - kMaskTimeSmoothAlpha) * time_smooth_mask_[i];
   }
 }
 
+// Copy time_smooth_mask_ to final_mask_ and smooth over frequency.
+void NonlinearBeamformer::ApplyMaskFrequencySmoothing() {
+  // Smooth over frequency in both directions. The "frequency correction"
+  // regions have constant value, but we enter them to smooth over the jump
+  // that exists at the boundary. However, this does mean when smoothing "away"
+  // from the region that we only need to use the last element.
+  //
+  // Upward smoothing:
+  //   low_mean_start_bin_
+  //         v
+  // |------|------------|------|
+  //       ^------------------>^
+  //
+  // Downward smoothing:
+  //         high_mean_end_bin_
+  //                    v
+  // |------|------------|------|
+  //  ^<------------------^
+  std::copy(time_smooth_mask_, time_smooth_mask_ + kNumFreqBins, final_mask_);
+  for (int i = low_mean_start_bin_; i < kNumFreqBins; ++i) {
+    final_mask_[i] = kMaskFrequencySmoothAlpha * final_mask_[i] +
+                     (1 - kMaskFrequencySmoothAlpha) * final_mask_[i - 1];
+  }
+  for (int i = high_mean_end_bin_; i >= 0; --i) {
+    final_mask_[i] = kMaskFrequencySmoothAlpha * final_mask_[i] +
+                     (1 - kMaskFrequencySmoothAlpha) * final_mask_[i + 1];
+  }
+}
+
+// Apply low frequency correction to time_smooth_mask_.
 void NonlinearBeamformer::ApplyLowFrequencyCorrection() {
-  float low_frequency_mask = 0.f;
-  for (int i = low_average_start_bin_; i < low_average_end_bin_; ++i) {
-    low_frequency_mask += postfilter_mask_[i];
-  }
-
-  low_frequency_mask /= low_average_end_bin_ - low_average_start_bin_;
-
-  for (int i = 0; i < low_average_start_bin_; ++i) {
-    postfilter_mask_[i] = low_frequency_mask;
-  }
+  const float low_frequency_mask =
+      MaskRangeMean(low_mean_start_bin_, low_mean_end_bin_ + 1);
+  std::fill(time_smooth_mask_, time_smooth_mask_ + low_mean_start_bin_,
+            low_frequency_mask);
 }
 
+// Apply high frequency correction to time_smooth_mask_. Update
+// high_pass_postfilter_mask_ to use for the high frequency time-domain bands.
 void NonlinearBeamformer::ApplyHighFrequencyCorrection() {
-  high_pass_postfilter_mask_ = 0.f;
-  for (int i = high_average_start_bin_; i < high_average_end_bin_; ++i) {
-    high_pass_postfilter_mask_ += postfilter_mask_[i];
-  }
+  high_pass_postfilter_mask_ =
+      MaskRangeMean(high_mean_start_bin_, high_mean_end_bin_ + 1);
+  std::fill(time_smooth_mask_ + high_mean_end_bin_ + 1,
+            time_smooth_mask_ + kNumFreqBins, high_pass_postfilter_mask_);
+}
 
-  high_pass_postfilter_mask_ /= high_average_end_bin_ - high_average_start_bin_;
-
-  for (int i = high_average_end_bin_; i < kNumFreqBins; ++i) {
-    postfilter_mask_[i] = high_pass_postfilter_mask_;
-  }
+// Compute mean over the given range of time_smooth_mask_, [first, last).
+float NonlinearBeamformer::MaskRangeMean(int first, int last) {
+  DCHECK_GT(last, first);
+  const float sum = std::accumulate(time_smooth_mask_ + first,
+                                    time_smooth_mask_ + last, 0.f);
+  return sum / (last - first);
 }
 
 void NonlinearBeamformer::EstimateTargetPresence() {
-  const int quantile = (1.f - kMaskQuantile) * high_average_end_bin_ +
-                       kMaskQuantile * low_average_start_bin_;
-  std::nth_element(new_mask_ + low_average_start_bin_,
-                   new_mask_ + quantile,
-                   new_mask_ + high_average_end_bin_);
+  const int quantile =
+      (high_mean_end_bin_ - low_mean_start_bin_) * kMaskQuantile +
+      low_mean_start_bin_;
+  std::nth_element(new_mask_ + low_mean_start_bin_, new_mask_ + quantile,
+                   new_mask_ + high_mean_end_bin_ + 1);
   if (new_mask_[quantile] > kMaskTargetThreshold) {
     is_target_present_ = true;
     interference_blocks_count_ = 0;
