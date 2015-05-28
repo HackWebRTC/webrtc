@@ -29,8 +29,6 @@
 
 #include <string>
 
-#include "talk/media/webrtc/webrtcvideocapturer.h"
-
 namespace webrtc {
 
 static const char kVideoTrackKind[] = "video";
