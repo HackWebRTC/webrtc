@@ -435,6 +435,15 @@ bool NSSStreamAdapter::Init() {
     return false;
   }
 
+  // Disable reusing of ECDHE keys. By default NSS, when in server mode, uses
+  // the same key for multiple connections, so disable this behaviour to get
+  // ephemeral keys.
+  rv = SSL_OptionSet(ssl_fd, SSL_REUSE_SERVER_ECDHE_KEY, PR_FALSE);
+  if (rv != SECSuccess) {
+    LOG(LS_ERROR) << "Error disabling ECDHE key reuse";
+    return false;
+  }
+
   ssl_fd_ = ssl_fd;
 
   return true;
