@@ -12,11 +12,19 @@
 
 #include <string>
 
+#include <gflags/gflags.h>
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
+
+namespace {
+
+// Define command line flag 'gen_files' (default value: false).
+DEFINE_bool(gen_files, false, "Output files for visual inspection.");
+
+}  // namespace
 
 static void PreprocessFrameAndVerify(const I420VideoFrame& source,
                                      int target_width,
@@ -41,8 +49,8 @@ static void TestSize(const I420VideoFrame& source_frame,
                      int target_height,
                      double expected_psnr,
                      VideoProcessingModule* vpm);
-bool CompareFrames(const webrtc::I420VideoFrame& frame1,
-                   const webrtc::I420VideoFrame& frame2);
+static bool CompareFrames(const webrtc::I420VideoFrame& frame1,
+                          const webrtc::I420VideoFrame& frame2);
 static void WriteProcessedFrameForVisualInspection(
     const I420VideoFrame& source,
     const I420VideoFrame& processed);
@@ -362,6 +370,9 @@ bool CompareFrames(const webrtc::I420VideoFrame& frame1,
 
 void WriteProcessedFrameForVisualInspection(const I420VideoFrame& source,
                                             const I420VideoFrame& processed) {
+  // Skip if writing to files is not enabled.
+  if (!FLAGS_gen_files)
+    return;
   // Write the processed frame to file for visual inspection.
   std::ostringstream filename;
   filename << webrtc::test::OutputPath() << "Resampler_from_" << source.width()
