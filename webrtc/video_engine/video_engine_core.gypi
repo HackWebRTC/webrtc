@@ -49,7 +49,6 @@
         'vie_channel_group.h',
         'vie_encoder.h',
         'vie_receiver.h',
-        'vie_sender.h',
         'vie_sync_module.h',
 
         # ViE
@@ -65,7 +64,6 @@
         'vie_encoder.cc',
         'vie_receiver.cc',
         'vie_remb.cc',
-        'vie_sender.cc',
         'vie_sync_module.cc',
       ], # source
       # TODO(jschuh): Bug 1348: fix size_t to int truncations.

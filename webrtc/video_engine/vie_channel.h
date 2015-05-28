@@ -24,7 +24,6 @@
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/video_engine/vie_receiver.h"
-#include "webrtc/video_engine/vie_sender.h"
 #include "webrtc/video_engine/vie_sync_module.h"
 
 namespace webrtc {
@@ -105,6 +104,7 @@ class ViEChannel : public VCMFrameTypeCallback,
              int32_t engine_id,
              uint32_t number_of_cores,
              const Config& config,
+             Transport* transport,
              ProcessThread& module_process_thread,
              RtcpIntraFrameObserver* intra_frame_observer,
              RtcpBandwidthObserver* bandwidth_observer,
@@ -268,15 +268,9 @@ class ViEChannel : public VCMFrameTypeCallback,
   int32_t StartReceive();
   int32_t StopReceive();
 
-  int32_t RegisterSendTransport(Transport* transport);
-  int32_t DeregisterSendTransport();
-
-  // Incoming packet from external transport.
   int32_t ReceivedRTPPacket(const void* rtp_packet,
                             const size_t rtp_packet_length,
                             const PacketTime& packet_time);
-
-  // Incoming packet from external transport.
   int32_t ReceivedRTCPPacket(const void* rtcp_packet,
                              const size_t rtcp_packet_length);
 
@@ -487,7 +481,6 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   VideoCodingModule* const vcm_;
   ViEReceiver vie_receiver_;
-  ViESender vie_sender_;
   ViESyncModule vie_sync_;
 
   // Helper to report call statistics.
@@ -511,7 +504,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   int absolute_send_time_extension_id_;
   int video_rotation_extension_id_;
 
-  Transport* external_transport_;
+  Transport* const transport_;
 
   bool decoder_reset_;
   // Current receive codec used for codec change callback.

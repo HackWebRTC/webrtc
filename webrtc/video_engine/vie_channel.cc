@@ -83,6 +83,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
                        int32_t engine_id,
                        uint32_t number_of_cores,
                        const Config& config,
+                       Transport* transport,
                        ProcessThread& module_process_thread,
                        RtcpIntraFrameObserver* intra_frame_observer,
                        RtcpBandwidthObserver* bandwidth_observer,
@@ -119,7 +120,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
       send_timestamp_extension_id_(kInvalidRtpExtensionId),
       absolute_send_time_extension_id_(kInvalidRtpExtensionId),
       video_rotation_extension_id_(kInvalidRtpExtensionId),
-      external_transport_(NULL),
+      transport_(transport),
       decoder_reset_(true),
       wait_for_key_frame_(false),
       mtu_(0),
@@ -1294,10 +1295,6 @@ void ViEChannel::RegisterSendBitrateObserver(
 
 int32_t ViEChannel::StartSend() {
   CriticalSectionScoped cs(callback_cs_.get());
-  if (!external_transport_) {
-    LOG(LS_ERROR) << "No transport set.";
-    return -1;
-  }
   rtp_rtcp_->SetSendingMediaStatus(true);
 
   if (rtp_rtcp_->Sending()) {
@@ -1368,56 +1365,15 @@ int32_t ViEChannel::StopReceive() {
   return 0;
 }
 
-int32_t ViEChannel::RegisterSendTransport(Transport* transport) {
-  if (rtp_rtcp_->Sending()) {
-    return -1;
-  }
-
-  CriticalSectionScoped cs(callback_cs_.get());
-  if (external_transport_) {
-    LOG_F(LS_ERROR) << "Transport already registered.";
-    return -1;
-  }
-  external_transport_ = transport;
-  vie_sender_.RegisterSendTransport(transport);
-  return 0;
-}
-
-int32_t ViEChannel::DeregisterSendTransport() {
-  CriticalSectionScoped cs(callback_cs_.get());
-  if (!external_transport_) {
-    return 0;
-  }
-  if (rtp_rtcp_->Sending()) {
-    LOG_F(LS_ERROR) << "Can't deregister transport when sending.";
-    return -1;
-  }
-  external_transport_ = NULL;
-  vie_sender_.DeregisterSendTransport();
-  return 0;
-}
-
-int32_t ViEChannel::ReceivedRTPPacket(
-    const void* rtp_packet, const size_t rtp_packet_length,
-    const PacketTime& packet_time) {
-  {
-    CriticalSectionScoped cs(callback_cs_.get());
-    if (!external_transport_) {
-      return -1;
-    }
-  }
+int32_t ViEChannel::ReceivedRTPPacket(const void* rtp_packet,
+                                      size_t rtp_packet_length,
+                                      const PacketTime& packet_time) {
   return vie_receiver_.ReceivedRTPPacket(
       rtp_packet, rtp_packet_length, packet_time);
 }
 
-int32_t ViEChannel::ReceivedRTCPPacket(
-  const void* rtcp_packet, const size_t rtcp_packet_length) {
-  {
-    CriticalSectionScoped cs(callback_cs_.get());
-    if (!external_transport_) {
-      return -1;
-    }
-  }
+int32_t ViEChannel::ReceivedRTCPPacket(const void* rtcp_packet,
+                                       size_t rtcp_packet_length) {
   return vie_receiver_.ReceivedRTCPPacket(rtcp_packet, rtcp_packet_length);
 }
 
@@ -1636,7 +1592,7 @@ RtpRtcp::Configuration ViEChannel::CreateRtpRtcpConfiguration() {
   configuration.id = ViEModuleId(engine_id_, channel_id_);
   configuration.audio = false;
   configuration.receiver_only = !sender_;
-  configuration.outgoing_transport = &vie_sender_;
+  configuration.outgoing_transport = transport_;
   if (sender_)
     configuration.intra_frame_callback = intra_frame_observer_;
   configuration.rtt_stats = rtt_stats_;

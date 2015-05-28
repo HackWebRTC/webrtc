@@ -40,15 +40,17 @@ typedef std::list<ViEChannel*> ChannelList;
 // group are assumed to send/receive data to the same end-point.
 class ChannelGroup : public BitrateObserver {
  public:
-  ChannelGroup(ProcessThread* process_thread, const Config* config);
+  explicit ChannelGroup(ProcessThread* process_thread);
   ~ChannelGroup();
   bool CreateSendChannel(int channel_id,
                          int engine_id,
+                         Transport* transport,
                          int number_of_cores,
                          bool disable_default_encoder);
   bool CreateReceiveChannel(int channel_id,
                             int engine_id,
                             int base_channel_id,
+                            Transport* transport,
                             int number_of_cores,
                             bool disable_default_encoder);
   void DeleteChannel(int channel_id);
@@ -84,6 +86,7 @@ class ChannelGroup : public BitrateObserver {
 
   bool CreateChannel(int channel_id,
                      int engine_id,
+                     Transport* transport,
                      int number_of_cores,
                      ViEEncoder* vie_encoder,
                      bool sender,
@@ -105,9 +108,7 @@ class ChannelGroup : public BitrateObserver {
   EncoderMap send_encoders_;
   rtc::scoped_ptr<CriticalSectionWrapper> encoder_map_cs_;
 
-  const Config* config_;
-  // Placeholder for the case where this owns the config.
-  rtc::scoped_ptr<Config> own_config_;
+  const rtc::scoped_ptr<Config> config_;
 
   // Registered at construct time and assumed to outlive this class.
   ProcessThread* process_thread_;

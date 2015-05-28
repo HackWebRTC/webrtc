@@ -119,7 +119,8 @@ VideoSendStream::VideoSendStream(
       channel_id_(channel_id),
       use_config_bitrate_(true),
       stats_proxy_(Clock::GetRealTimeClock(), config) {
-  CHECK(channel_group->CreateSendChannel(channel_id_, 0, num_cpu_cores, true));
+  CHECK(channel_group->CreateSendChannel(channel_id_, 0, &transport_adapter_,
+                                         num_cpu_cores, true));
   vie_channel_ = channel_group_->GetChannel(channel_id_);
   vie_encoder_ = channel_group_->GetEncoder(channel_id_);
 
@@ -180,7 +181,6 @@ VideoSendStream::VideoSendStream(
 
   vie_capturer_ = new ViECapturer(module_process_thread_, vie_encoder_);
 
-  vie_channel_->RegisterSendTransport(&transport_adapter_);
   // 28 to match packet overhead in ModuleRtpRtcpImpl.
   vie_channel_->SetMTU(
       static_cast<unsigned int>(config_.rtp.max_packet_size + 28));
@@ -237,8 +237,6 @@ VideoSendStream::~VideoSendStream() {
 
   vie_encoder_->RegisterPreEncodeCallback(nullptr);
   vie_encoder_->RegisterPostEncodeImageCallback(nullptr);
-
-  vie_channel_->DeregisterSendTransport();
 
   vie_capturer_->RegisterCpuOveruseObserver(nullptr);
   delete vie_capturer_;

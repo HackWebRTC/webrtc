@@ -41,8 +41,6 @@ source_set("video_engine_core") {
     "vie_receiver.h",
     "vie_remb.cc",
     "vie_remb.h",
-    "vie_sender.cc",
-    "vie_sender.h",
     "vie_sync_module.cc",
     "vie_sync_module.h",
   ]

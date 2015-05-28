@@ -138,7 +138,8 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
       channel_id_(channel_id),
       voe_sync_interface_(nullptr) {
   CHECK(channel_group_->CreateReceiveChannel(channel_id_, 0, base_channel_id,
-                                             num_cpu_cores, true));
+                                             &transport_adapter_, num_cpu_cores,
+                                             true));
 
   vie_channel_ = channel_group_->GetChannel(channel_id_);
 
@@ -183,8 +184,6 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
       RTC_NOTREACHED() << "Unsupported RTP extension.";
     }
   }
-
-  vie_channel_->RegisterSendTransport(&transport_adapter_);
 
   if (config_.rtp.fec.ulpfec_payload_type != -1) {
     // ULPFEC without RED doesn't make sense.
@@ -259,8 +258,6 @@ VideoReceiveStream::~VideoReceiveStream() {
 
   for (size_t i = 0; i < config_.decoders.size(); ++i)
     vie_channel_->DeRegisterExternalDecoder(config_.decoders[i].payload_type);
-
-  vie_channel_->DeregisterSendTransport();
 
   if (voe_sync_interface_ != nullptr) {
     vie_channel_->SetVoiceChannel(-1, nullptr);
