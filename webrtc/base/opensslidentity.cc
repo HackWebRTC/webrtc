@@ -157,7 +157,11 @@ OpenSSLKeyPair* OpenSSLKeyPair::GetReference() {
 }
 
 void OpenSSLKeyPair::AddReference() {
+#if defined(OPENSSL_IS_BORINGSSL)
+  EVP_PKEY_up_ref(pkey_);
+#else
   CRYPTO_add(&pkey_->references, 1, CRYPTO_LOCK_EVP_PKEY);
+#endif
 }
 
 #ifdef _DEBUG
@@ -341,7 +345,11 @@ void OpenSSLCertificate::ToDER(Buffer* der_buffer) const {
 
 void OpenSSLCertificate::AddReference() const {
   ASSERT(x509_ != NULL);
+#if defined(OPENSSL_IS_BORINGSSL)
+  X509_up_ref(x509_);
+#else
   CRYPTO_add(&x509_->references, 1, CRYPTO_LOCK_X509);
+#endif
 }
 
 OpenSSLIdentity::OpenSSLIdentity(OpenSSLKeyPair* key_pair,
