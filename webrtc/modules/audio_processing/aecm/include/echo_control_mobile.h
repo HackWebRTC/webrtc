@@ -42,18 +42,9 @@ extern "C" {
 /*
  * Allocates the memory needed by the AECM. The memory needs to be
  * initialized separately using the WebRtcAecm_Init() function.
- *
- * Inputs                           Description
- * -------------------------------------------------------------------
- * void**  aecmInst                 Pointer to the AECM instance to be
- *                                  created and initialized
- *
- * Outputs                          Description
- * -------------------------------------------------------------------
- * int32_t return                   0: OK
- *                                 -1: error
+ * Returns a pointer to the instance and a nullptr at failure.
  */
-int32_t WebRtcAecm_Create(void **aecmInst);
+void* WebRtcAecm_Create();
 
 /*
  * This function releases the memory allocated by WebRtcAecm_Create()

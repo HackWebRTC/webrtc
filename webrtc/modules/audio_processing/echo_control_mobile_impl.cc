@@ -250,14 +250,7 @@ int EchoControlMobileImpl::Initialize() {
 }
 
 void* EchoControlMobileImpl::CreateHandle() const {
-  Handle* handle = NULL;
-  if (WebRtcAecm_Create(&handle) != apm_->kNoError) {
-    handle = NULL;
-  } else {
-    assert(handle != NULL);
-  }
-
-  return handle;
+  return WebRtcAecm_Create();
 }
 
 void EchoControlMobileImpl::DestroyHandle(void* handle) const {
