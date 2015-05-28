@@ -179,6 +179,12 @@ class WebRtcAudioManager {
 
   // Returns the native output sample rate for this device's output stream.
   private int getNativeOutputSampleRate() {
+    // Override this if we're running on an old emulator image which only
+    // supports 8 kHz and doesn't support PROPERTY_OUTPUT_SAMPLE_RATE.
+    if (WebRtcAudioUtils.runningOnEmulator()) {
+      Logd("Running on old emulator, overriding sampling rate to 8 kHz.");
+      return 8000;
+    }
     if (!WebRtcAudioUtils.runningOnJellyBeanMR1OrHigher()) {
       return SAMPLE_RATE_HZ;
     }

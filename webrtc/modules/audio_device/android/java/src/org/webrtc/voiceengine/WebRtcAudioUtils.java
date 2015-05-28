@@ -64,6 +64,12 @@ public final class WebRtcAudioUtils {
         + ", id=" + Thread.currentThread().getId() + "]";
   }
 
+  // Returns true if we're running on emulator.
+  public static boolean runningOnEmulator() {
+    return Build.HARDWARE.equals("goldfish") &&
+        Build.BRAND.startsWith("generic_");
+  }
+
   // Returns true if the device is blacklisted for HW AEC usage.
   public static boolean deviceIsBlacklistedForHwAecUsage() {
     List<String> blackListedModels = Arrays.asList(BLACKLISTED_AEC_MODELS);
