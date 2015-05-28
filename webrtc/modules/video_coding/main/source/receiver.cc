@@ -27,14 +27,12 @@ enum { kMaxReceiverDelayMs = 10000 };
 
 VCMReceiver::VCMReceiver(VCMTiming* timing,
                          Clock* clock,
-                         EventFactory* event_factory,
-                         bool master)
+                         EventFactory* event_factory)
     : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       clock_(clock),
       jitter_buffer_(clock_, event_factory),
       timing_(timing),
       render_wait_event_(event_factory->CreateEvent()),
-      state_(kPassive),
       max_video_delay_ms_(kMaxVideoDelayMs) {
   Reset();
 }
@@ -51,7 +49,6 @@ void VCMReceiver::Reset() {
   } else {
     jitter_buffer_.Flush();
   }
-  state_ = kReceiving;
 }
 
 void VCMReceiver::UpdateRtt(int64_t rtt) {
@@ -219,6 +216,9 @@ VCMNackStatus VCMReceiver::NackList(uint16_t* nack_list,
   uint16_t* internal_nack_list = jitter_buffer_.GetNackList(
       nack_list_length, &request_key_frame);
   assert(*nack_list_length <= size);
+  if (*nack_list_length > size) {
+    *nack_list_length = size;
+  }
   if (internal_nack_list != NULL && *nack_list_length > 0) {
     memcpy(nack_list, internal_nack_list, *nack_list_length * sizeof(uint16_t));
   }
@@ -226,11 +226,6 @@ VCMNackStatus VCMReceiver::NackList(uint16_t* nack_list,
     return kNackKeyFrameRequest;
   }
   return kNackOk;
-}
-
-VCMReceiverState VCMReceiver::State() const {
-  CriticalSectionScoped cs(crit_sect_);
-  return state_;
 }
 
 void VCMReceiver::SetDecodeErrorMode(VCMDecodeErrorMode decode_error_mode) {

@@ -29,7 +29,7 @@ VideoReceiver::VideoReceiver(Clock* clock, EventFactory* event_factory)
       process_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       _receiveCritSect(CriticalSectionWrapper::CreateCriticalSection()),
       _timing(clock_),
-      _receiver(&_timing, clock_, event_factory, true),
+      _receiver(&_timing, clock_, event_factory),
       _decodedFrameCallback(_timing, clock_),
       _frameTypeCallback(NULL),
       _receiveStatsCallback(NULL),

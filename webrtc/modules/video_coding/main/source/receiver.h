@@ -28,18 +28,11 @@ enum VCMNackStatus {
   kNackKeyFrameRequest
 };
 
-enum VCMReceiverState {
-  kReceiving,
-  kPassive,
-  kWaitForPrimaryDecode
-};
-
 class VCMReceiver {
  public:
   VCMReceiver(VCMTiming* timing,
               Clock* clock,
-              EventFactory* event_factory,
-              bool master);
+              EventFactory* event_factory);
   ~VCMReceiver();
 
   void Reset();
@@ -64,7 +57,6 @@ class VCMReceiver {
   VCMNackMode NackMode() const;
   VCMNackStatus NackList(uint16_t* nackList, uint16_t size,
                          uint16_t* nack_list_length);
-  VCMReceiverState State() const;
 
   // Receiver video delay.
   int SetMinReceiverDelay(int desired_delay_ms);
@@ -83,17 +75,12 @@ class VCMReceiver {
   void TriggerDecoderShutdown();
 
  private:
-  static int32_t GenerateReceiverId();
-
   CriticalSectionWrapper* crit_sect_;
   Clock* const clock_;
   VCMJitterBuffer jitter_buffer_;
   VCMTiming* timing_;
   rtc::scoped_ptr<EventWrapper> render_wait_event_;
-  VCMReceiverState state_;
   int max_video_delay_ms_;
-
-  static int32_t receiver_id_counter_;
 };
 
 }  // namespace webrtc

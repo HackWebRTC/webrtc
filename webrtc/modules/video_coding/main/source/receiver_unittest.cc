@@ -24,17 +24,15 @@ namespace webrtc {
 
 class TestVCMReceiver : public ::testing::Test {
  protected:
-  enum { kDataBufferSize = 10 };
   enum { kWidth = 640 };
   enum { kHeight = 480 };
 
   TestVCMReceiver()
       : clock_(new SimulatedClock(0)),
         timing_(clock_.get()),
-        receiver_(&timing_, clock_.get(), &event_factory_, true) {
+        receiver_(&timing_, clock_.get(), &event_factory_) {
     stream_generator_.reset(new
         StreamGenerator(0, 0, clock_->TimeInMilliseconds()));
-    memset(data_buffer_, 0, kDataBufferSize);
   }
 
   virtual void SetUp() {
@@ -43,18 +41,15 @@ class TestVCMReceiver : public ::testing::Test {
 
   int32_t InsertPacket(int index) {
     VCMPacket packet;
-    packet.dataPtr = data_buffer_;
     bool packet_available = stream_generator_->GetPacket(&packet, index);
     EXPECT_TRUE(packet_available);
     if (!packet_available)
       return kGeneralError;  // Return here to avoid crashes below.
-    // Arbitrary width and height.
-    return receiver_.InsertPacket(packet, 640, 480);
+    return receiver_.InsertPacket(packet, kWidth, kHeight);
   }
 
   int32_t InsertPacketAndPop(int index) {
     VCMPacket packet;
-    packet.dataPtr = data_buffer_;
     bool packet_available = stream_generator_->PopPacket(&packet, index);
     EXPECT_TRUE(packet_available);
     if (!packet_available)
@@ -94,7 +89,6 @@ class TestVCMReceiver : public ::testing::Test {
   NullEventFactory event_factory_;
   VCMReceiver receiver_;
   rtc::scoped_ptr<StreamGenerator> stream_generator_;
-  uint8_t data_buffer_[kDataBufferSize];
 };
 
 TEST_F(TestVCMReceiver, RenderBufferSize_AllComplete) {
