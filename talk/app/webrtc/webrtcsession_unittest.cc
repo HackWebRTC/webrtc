@@ -2602,6 +2602,89 @@ TEST_F(WebRtcSessionTest, TestSetRemoteDescriptionInvalidIceCredentials) {
   EXPECT_FALSE(session_->SetRemoteDescription(modified_offer, &error));
 }
 
+// Test that candidates sent to the "video" transport do not get pushed down to
+// the "audio" transport channel when bundling using TransportProxy.
+TEST_F(WebRtcSessionTest, TestIgnoreCandidatesForUnusedTransportWhenBundling) {
+  AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
+
+  InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyBalanced);
+  mediastream_signaling_.SendAudioVideoStream1();
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.use_rtp_mux = true;
+
+  SessionDescriptionInterface* offer = CreateRemoteOffer();
+  SetRemoteDescriptionWithoutError(offer);
+
+  SessionDescriptionInterface* answer = CreateAnswer(NULL);
+  SetLocalDescriptionWithoutError(answer);
+
+  EXPECT_EQ(session_->GetTransportProxy("audio")->impl(),
+            session_->GetTransportProxy("video")->impl());
+
+  cricket::Transport* t = session_->GetTransport("audio");
+
+  // Checks if one of the transport channels contains a connection using a given
+  // port.
+  auto connection_with_remote_port = [t](int port) {
+    cricket::TransportStats stats;
+    t->GetStats(&stats);
+    for (auto& chan_stat : stats.channel_stats) {
+      for (auto& conn_info : chan_stat.connection_infos) {
+        if (conn_info.remote_candidate.address().port() == port) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  EXPECT_FALSE(connection_with_remote_port(5000));
+  EXPECT_FALSE(connection_with_remote_port(5001));
+  EXPECT_FALSE(connection_with_remote_port(6000));
+
+  // The way the *_WAIT checks work is they only wait if the condition fails,
+  // which does not help in the case where state is not changing. This is
+  // problematic in this test since we want to verify that adding a video
+  // candidate does _not_ change state. So we interleave candidates and assume
+  // that messages are executed in the order they were posted.
+
+  // First audio candidate.
+  cricket::Candidate candidate0;
+  candidate0.set_address(rtc::SocketAddress("1.1.1.1", 5000));
+  candidate0.set_component(1);
+  candidate0.set_protocol("udp");
+  JsepIceCandidate ice_candidate0(kMediaContentName0, kMediaContentIndex0,
+                                  candidate0);
+  EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate0));
+
+  // Video candidate.
+  cricket::Candidate candidate1;
+  candidate1.set_address(rtc::SocketAddress("1.1.1.1", 6000));
+  candidate1.set_component(1);
+  candidate1.set_protocol("udp");
+  JsepIceCandidate ice_candidate1(kMediaContentName1, kMediaContentIndex1,
+                                  candidate1);
+  EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate1));
+
+  // Second audio candidate.
+  cricket::Candidate candidate2;
+  candidate2.set_address(rtc::SocketAddress("1.1.1.1", 5001));
+  candidate2.set_component(1);
+  candidate2.set_protocol("udp");
+  JsepIceCandidate ice_candidate2(kMediaContentName0, kMediaContentIndex0,
+                                  candidate2);
+  EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate2));
+
+  EXPECT_TRUE_WAIT(connection_with_remote_port(5000), 1000);
+  EXPECT_TRUE_WAIT(connection_with_remote_port(5001), 1000);
+
+  // No need here for a _WAIT check since we are checking that state hasn't
+  // changed: if this is false we would be doing waits for nothing and if this
+  // is true then there will be no messages processed anyways.
+  EXPECT_FALSE(connection_with_remote_port(6000));
+}
+
 // kBundlePolicyBalanced bundle policy and answer contains BUNDLE.
 TEST_F(WebRtcSessionTest, TestBalancedBundleInAnswer) {
   InitWithBundlePolicy(PeerConnectionInterface::kBundlePolicyBalanced);
@@ -3459,7 +3542,7 @@ TEST_F(WebRtcSessionTest, TestSctpDataChannelSendPortParsing) {
   ASSERT_TRUE(ch != NULL);
   ASSERT_EQ(1UL, ch->send_codecs().size());
   EXPECT_EQ(cricket::kGoogleSctpDataCodecId, ch->send_codecs()[0].id);
-  EXPECT_TRUE(!strcmp(cricket::kGoogleSctpDataCodecName,
+  EXPECT_EQ(0, strcmp(cricket::kGoogleSctpDataCodecName,
                       ch->send_codecs()[0].name.c_str()));
   EXPECT_TRUE(ch->send_codecs()[0].GetParam(cricket::kCodecParamPort,
                                             &portnum));
@@ -3467,7 +3550,7 @@ TEST_F(WebRtcSessionTest, TestSctpDataChannelSendPortParsing) {
 
   ASSERT_EQ(1UL, ch->recv_codecs().size());
   EXPECT_EQ(cricket::kGoogleSctpDataCodecId, ch->recv_codecs()[0].id);
-  EXPECT_TRUE(!strcmp(cricket::kGoogleSctpDataCodecName,
+  EXPECT_EQ(0, strcmp(cricket::kGoogleSctpDataCodecName,
                       ch->recv_codecs()[0].name.c_str()));
   EXPECT_TRUE(ch->recv_codecs()[0].GetParam(cricket::kCodecParamPort,
                                             &portnum));
