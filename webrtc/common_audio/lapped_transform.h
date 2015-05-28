@@ -57,6 +57,14 @@ class LappedTransform {
   // |out_chunk|. Both buffers are caller-owned.
   void ProcessChunk(const float* const* in_chunk, float* const* out_chunk);
 
+  // Get the chunk length.
+  //
+  // The chunk length is the number of samples per channel that must be passed
+  // to ProcessChunk via the parameter in_chunk.
+  //
+  // Returns the same chunk_length passed to the LappedTransform constructor.
+  int get_chunk_length() const { return chunk_length_; }
+
  private:
   // Internal middleware callback, given to the blocker. Transforms each block
   // and hands it over to the processing method given at construction time.

@@ -177,5 +177,27 @@ TEST(LappedTransformTest, Callbacks) {
   ASSERT_EQ(kChunkLength / kBlockLength, call.block_num());
 }
 
-}  // namespace webrtc
+TEST(LappedTransformTest, get_chunk_length) {
+  const int kBlockLength = 64;
+  FftCheckerCallback call;
+  const float window[kBlockLength] = {};
 
+  // Make sure that get_chunk_length returns the same value passed to the
+  // LappedTransform constructor.
+  {
+    const int kExpectedChunkLength = 512;
+    const LappedTransform trans(1, 1, kExpectedChunkLength, window,
+                                kBlockLength, kBlockLength, &call);
+
+    EXPECT_EQ(kExpectedChunkLength, trans.get_chunk_length());
+  }
+  {
+    const int kExpectedChunkLength = 160;
+    const LappedTransform trans(1, 1, kExpectedChunkLength, window,
+                                kBlockLength, kBlockLength, &call);
+
+    EXPECT_EQ(kExpectedChunkLength, trans.get_chunk_length());
+  }
+}
+
+}  // namespace webrtc
