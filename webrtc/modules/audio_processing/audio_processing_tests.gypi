@@ -109,6 +109,7 @@
             'audioproc_debug_proto',
             'audioproc_test_utils',
             'audioproc_protobuf_utils',
+            '<(webrtc_root)/test/test.gyp:test_support',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
           ],
           'sources': [ 'test/audioproc_float.cc', ],
