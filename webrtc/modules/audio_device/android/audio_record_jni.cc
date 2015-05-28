@@ -40,7 +40,9 @@ AudioRecordJni::JavaAudioRecord::~JavaAudioRecord() {}
 
 int AudioRecordJni::JavaAudioRecord::InitRecording(
     int sample_rate, int channels) {
-  return audio_record_->CallIntMethod(init_recording_, sample_rate, channels);
+  return audio_record_->CallIntMethod(init_recording_,
+                                      static_cast<jint>(sample_rate),
+                                      static_cast<jint>(channels));
 }
 
 bool AudioRecordJni::JavaAudioRecord::StartRecording() {
@@ -52,7 +54,8 @@ bool AudioRecordJni::JavaAudioRecord::StopRecording() {
 }
 
 bool AudioRecordJni::JavaAudioRecord::EnableBuiltInAEC(bool enable) {
-  return audio_record_->CallBooleanMethod(enable_built_in_aec_, enable);
+  return audio_record_->CallBooleanMethod(enable_built_in_aec_,
+                                          static_cast<jboolean>(enable));
 }
 
 // AudioRecordJni implementation.

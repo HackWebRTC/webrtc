@@ -51,7 +51,8 @@ void AudioManager::JavaAudioManager::Close() {
 }
 
 void AudioManager::JavaAudioManager::SetCommunicationMode(bool enable) {
-  audio_manager_->CallVoidMethod(set_communication_mode_, enable);
+  audio_manager_->CallVoidMethod(set_communication_mode_,
+                                 static_cast<jboolean>(enable));
 }
 
 // AudioManager implementation

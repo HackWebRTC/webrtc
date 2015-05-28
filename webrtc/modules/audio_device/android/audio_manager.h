@@ -93,17 +93,17 @@ class AudioManager {
    public:
     JavaAudioManager(NativeRegistration* native_registration,
                      rtc::scoped_ptr<GlobalRef> audio_manager);
-   ~JavaAudioManager();
+    ~JavaAudioManager();
 
-   bool Init();
-   void Close();
-   void SetCommunicationMode(bool enable);
+    bool Init();
+    void Close();
+    void SetCommunicationMode(bool enable);
 
-  private:
-   rtc::scoped_ptr<GlobalRef> audio_manager_;
-   jmethodID init_;
-   jmethodID dispose_;
-   jmethodID set_communication_mode_;
+   private:
+    rtc::scoped_ptr<GlobalRef> audio_manager_;
+    jmethodID init_;
+    jmethodID dispose_;
+    jmethodID set_communication_mode_;
   };
 
   AudioManager();
