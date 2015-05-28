@@ -195,8 +195,14 @@ void CodecOwner::SetEncoders(AudioEncoderMutable* external_speech_encoder,
 void CodecOwner::ChangeCngAndRed(int cng_payload_type,
                                  ACMVADMode vad_mode,
                                  int red_payload_type) {
+  AudioEncoderMutable* speech_encoder = SpeechEncoder();
+  if (cng_payload_type != -1 || red_payload_type != -1) {
+    // The RED and CNG encoders need to be in sync with the speech encoder, so
+    // reset the latter to ensure its buffer is empty.
+    speech_encoder->Reset();
+  }
   AudioEncoder* encoder =
-      CreateRedEncoder(red_payload_type, SpeechEncoder(), &red_encoder_);
+      CreateRedEncoder(red_payload_type, speech_encoder, &red_encoder_);
   CreateCngEncoder(cng_payload_type, vad_mode, encoder, &cng_encoder_);
   int num_true =
       !!speech_encoder_ + !!external_speech_encoder_ + isac_is_encoder_;
