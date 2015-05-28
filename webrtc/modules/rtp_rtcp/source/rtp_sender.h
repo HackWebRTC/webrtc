@@ -104,10 +104,6 @@ class RTPSender : public RTPSenderInterface {
   uint32_t FecOverheadRate() const;
   uint32_t NackOverheadRate() const;
 
-  // Returns true if the statistics have been calculated, and false if no frame
-  // was sent within the statistics window.
-  bool GetSendSideDelay(int* avg_send_delay_ms, int* max_send_delay_ms) const;
-
   void SetTargetBitrate(uint32_t bitrate);
   uint32_t GetTargetBitrate();
 

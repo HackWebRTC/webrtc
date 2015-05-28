@@ -122,9 +122,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // less than |bytes|.
   size_t TimeToSendPadding(size_t bytes) override;
 
-  bool GetSendSideDelay(int* avg_send_delay_ms,
-                        int* max_send_delay_ms) const override;
-
   // RTCP part.
 
   // Get RTCP status.

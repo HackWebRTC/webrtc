@@ -219,23 +219,6 @@ uint32_t RTPSender::NackOverheadRate() const {
   return nack_bitrate_.BitrateLast();
 }
 
-bool RTPSender::GetSendSideDelay(int* avg_send_delay_ms,
-                                 int* max_send_delay_ms) const {
-  CriticalSectionScoped lock(statistics_crit_.get());
-  SendDelayMap::const_iterator it = send_delays_.upper_bound(
-      clock_->TimeInMilliseconds() - kSendSideDelayWindowMs);
-  if (it == send_delays_.end())
-    return false;
-  int num_delays = 0;
-  for (; it != send_delays_.end(); ++it) {
-    *max_send_delay_ms = std::max(*max_send_delay_ms, it->second);
-    *avg_send_delay_ms += it->second;
-    ++num_delays;
-  }
-  *avg_send_delay_ms = (*avg_send_delay_ms + num_delays / 2) / num_delays;
-  return true;
-}
-
 int32_t RTPSender::SetTransmissionTimeOffset(int32_t transmission_time_offset) {
   if (transmission_time_offset > (0x800000 - 1) ||
       transmission_time_offset < -(0x800000 - 1)) {  // Word24.
@@ -1061,6 +1044,9 @@ int32_t RTPSender::SendToNetwork(
 }
 
 void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
+  if (!send_side_delay_observer_)
+    return;
+
   uint32_t ssrc;
   int avg_delay_ms = 0;
   int max_delay_ms = 0;
@@ -1075,12 +1061,19 @@ void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
     send_delays_.erase(send_delays_.begin(),
                        send_delays_.lower_bound(now_ms -
                        kSendSideDelayWindowMs));
+    int num_delays = 0;
+    for (auto it = send_delays_.upper_bound(now_ms - kSendSideDelayWindowMs);
+         it != send_delays_.end(); ++it) {
+      max_delay_ms = std::max(max_delay_ms, it->second);
+      avg_delay_ms += it->second;
+      ++num_delays;
+    }
+    if (num_delays == 0)
+      return;
+    avg_delay_ms = (avg_delay_ms + num_delays / 2) / num_delays;
   }
-  if (send_side_delay_observer_ &&
-      GetSendSideDelay(&avg_delay_ms, &max_delay_ms)) {
-    send_side_delay_observer_->SendSideDelayUpdated(avg_delay_ms,
-        max_delay_ms, ssrc);
-  }
+  send_side_delay_observer_->SendSideDelayUpdated(avg_delay_ms, max_delay_ms,
+                                                  ssrc);
 }
 
 void RTPSender::ProcessBitrate() {

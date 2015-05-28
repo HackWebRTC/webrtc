@@ -73,7 +73,6 @@ char kTSanDefaultSuppressions[] =
 "deadlock:webrtc::vcm::VideoReceiver::RegisterPacketRequestCallback\n"
 "deadlock:webrtc::ViECaptureImpl::ConnectCaptureDevice\n"
 "deadlock:webrtc::ViEChannel::StartSend\n"
-"deadlock:webrtc::ViECodecImpl::GetSendSideDelay\n"
 "deadlock:webrtc::ViEEncoder::OnLocalSsrcChanged\n"
 
 // TODO(pbos): Trace events are racy due to lack of proper POD atomics.

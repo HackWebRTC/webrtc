@@ -429,13 +429,6 @@ size_t ModuleRtpRtcpImpl::TimeToSendPadding(size_t bytes) {
   return rtp_sender_.TimeToSendPadding(bytes);
 }
 
-bool ModuleRtpRtcpImpl::GetSendSideDelay(int* avg_send_delay_ms,
-                                         int* max_send_delay_ms) const {
-  DCHECK(avg_send_delay_ms);
-  DCHECK(max_send_delay_ms);
-  return rtp_sender_.GetSendSideDelay(avg_send_delay_ms, max_send_delay_ms);
-}
-
 uint16_t ModuleRtpRtcpImpl::MaxPayloadLength() const {
   return rtp_sender_.MaxPayloadLength();
 }
