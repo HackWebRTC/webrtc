@@ -474,6 +474,8 @@ bool SrtpFilter::ParseKeyParams(const std::string& key_params,
 #ifdef HAVE_SRTP
 
 bool SrtpSession::inited_ = false;
+
+// This lock protects SrtpSession::inited_ and SrtpSession::sessions_.
 rtc::GlobalLockPod SrtpSession::lock_;
 
 SrtpSession::SrtpSession()
@@ -482,12 +484,18 @@ SrtpSession::SrtpSession()
       rtcp_auth_tag_len_(0),
       srtp_stat_(new SrtpStat()),
       last_send_seq_num_(-1) {
-  sessions()->push_back(this);
+  {
+    rtc::GlobalLockScope ls(&lock_);
+    sessions()->push_back(this);
+  }
   SignalSrtpError.repeat(srtp_stat_->SignalSrtpError);
 }
 
 SrtpSession::~SrtpSession() {
-  sessions()->erase(std::find(sessions()->begin(), sessions()->end(), this));
+  {
+    rtc::GlobalLockScope ls(&lock_);
+    sessions()->erase(std::find(sessions()->begin(), sessions()->end(), this));
+  }
   if (session_) {
     srtp_dealloc(session_);
   }
@@ -766,6 +774,8 @@ void SrtpSession::HandleEvent(const srtp_event_data_t* ev) {
 }
 
 void SrtpSession::HandleEventThunk(srtp_event_data_t* ev) {
+  rtc::GlobalLockScope ls(&lock_);
+
   for (std::list<SrtpSession*>::iterator it = sessions()->begin();
        it != sessions()->end(); ++it) {
     if ((*it)->session_ == ev->session) {
