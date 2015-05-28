@@ -41,7 +41,7 @@ public:
     bool                    markerBit;
 
     FrameType               frameType;
-    webrtc::VideoCodecType  codec;
+    VideoCodecType          codec;
 
     bool isFirstPacket;                 // Is this first packet in a frame.
     VCMNaluCompleteness completeNALU;   // Default is kNaluIncomplete.
