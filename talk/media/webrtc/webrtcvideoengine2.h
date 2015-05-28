@@ -376,6 +376,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
     const std::vector<uint32> ssrcs_;
+    const std::vector<SsrcGroup> ssrc_groups_;
     webrtc::Call* const call_;
     WebRtcVideoEncoderFactory* const external_encoder_factory_
         GUARDED_BY(lock_);
@@ -400,8 +401,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   class WebRtcVideoReceiveStream : public webrtc::VideoRenderer {
    public:
     WebRtcVideoReceiveStream(
-        webrtc::Call*,
-        const std::vector<uint32>& ssrcs,
+        webrtc::Call* call,
+        const StreamParams& sp,
         WebRtcVideoDecoderFactory* external_decoder_factory,
         bool default_stream,
         const webrtc::VideoReceiveStream::Config& config,
@@ -447,6 +448,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
     webrtc::Call* const call_;
     const std::vector<uint32> ssrcs_;
+    const std::vector<SsrcGroup> ssrc_groups_;
 
     webrtc::VideoReceiveStream* stream_;
     const bool default_stream_;

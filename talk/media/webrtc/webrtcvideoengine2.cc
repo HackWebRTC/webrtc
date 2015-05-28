@@ -1165,7 +1165,7 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
   }
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
-      call_.get(), sp.ssrcs, external_decoder_factory_, default_stream, config,
+      call_.get(), sp, external_decoder_factory_, default_stream, config,
       recv_codecs_);
 
   return true;
@@ -1644,6 +1644,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
     const StreamParams& sp,
     const std::vector<webrtc::RtpExtension>& rtp_extensions)
     : ssrcs_(sp.ssrcs),
+      ssrc_groups_(sp.ssrc_groups),
       call_(call),
       external_encoder_factory_(external_encoder_factory),
       stream_(NULL),
@@ -2100,6 +2101,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
       }
     }
   }
+  info.ssrc_groups = ssrc_groups_;
   info.framerate_input = stats.input_frame_rate;
   info.framerate_sent = stats.encode_frame_rate;
   info.avg_encode_ms = stats.avg_encode_time_ms;
@@ -2202,13 +2204,14 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
 
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     webrtc::Call* call,
-    const std::vector<uint32>& ssrcs,
+    const StreamParams& sp,
     WebRtcVideoDecoderFactory* external_decoder_factory,
     bool default_stream,
     const webrtc::VideoReceiveStream::Config& config,
     const std::vector<VideoCodecSettings>& recv_codecs)
     : call_(call),
-      ssrcs_(ssrcs),
+      ssrcs_(sp.ssrcs),
+      ssrc_groups_(sp.ssrc_groups),
       stream_(NULL),
       default_stream_(default_stream),
       config_(config),
@@ -2432,6 +2435,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetSize(int width,
 VideoReceiverInfo
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo() {
   VideoReceiverInfo info;
+  info.ssrc_groups = ssrc_groups_;
   info.add_ssrc(config_.rtp.remote_ssrc);
   webrtc::VideoReceiveStream::Stats stats = stream_->GetStats();
   info.bytes_rcvd = stats.rtp_stats.transmitted.payload_bytes +

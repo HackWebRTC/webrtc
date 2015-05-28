@@ -2547,6 +2547,35 @@ TEST_F(WebRtcVideoChannel2Test,
   EXPECT_TRUE(channel_->AddRecvStream(sp));
 }
 
+TEST_F(WebRtcVideoChannel2Test, ReportsSsrcGroupsInStats) {
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+
+  static const uint32_t kSenderSsrcs[] = {4, 7, 10};
+  static const uint32_t kSenderRtxSsrcs[] = {5, 8, 11};
+
+  StreamParams sender_sp = cricket::CreateSimWithRtxStreamParams(
+      "cname", MAKE_VECTOR(kSenderSsrcs), MAKE_VECTOR(kSenderRtxSsrcs));
+
+  EXPECT_TRUE(channel_->AddSendStream(sender_sp));
+
+  static const uint32_t kReceiverSsrcs[] = {3};
+  static const uint32_t kReceiverRtxSsrcs[] = {2};
+
+  StreamParams receiver_sp = cricket::CreateSimWithRtxStreamParams(
+      "cname", MAKE_VECTOR(kReceiverSsrcs), MAKE_VECTOR(kReceiverRtxSsrcs));
+  EXPECT_TRUE(channel_->AddRecvStream(receiver_sp));
+
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(&info));
+
+  ASSERT_EQ(1u, info.senders.size());
+  ASSERT_EQ(1u, info.receivers.size());
+
+  EXPECT_NE(sender_sp.ssrc_groups, receiver_sp.ssrc_groups);
+  EXPECT_EQ(sender_sp.ssrc_groups, info.senders[0].ssrc_groups);
+  EXPECT_EQ(receiver_sp.ssrc_groups, info.receivers[0].ssrc_groups);
+}
+
 void WebRtcVideoChannel2Test::TestReceiverLocalSsrcConfiguration(
     bool receiver_first) {
   EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
