@@ -166,9 +166,10 @@ typedef webrtc::PortAllocatorFactoryInterface::StunConfiguration
 typedef webrtc::PortAllocatorFactoryInterface::TurnConfiguration
     TurnConfiguration;
 
-bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
-                     std::vector<StunConfiguration>* stun_config,
-                     std::vector<TurnConfiguration>* turn_config) {
+bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
+                       const std::string& url,
+                       std::vector<StunConfiguration>* stun_config,
+                       std::vector<TurnConfiguration>* turn_config) {
   // draft-nandakumar-rtcweb-stun-uri-01
   // stunURI       = scheme ":" stun-host [ ":" stun-port ]
   // scheme        = "stun" / "stuns"
@@ -183,103 +184,119 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
   // transport-ext = 1*unreserved
   // turn-host     = IP-literal / IPv4address / reg-name
   // turn-port     = *DIGIT
-  for (size_t i = 0; i < configuration.size(); ++i) {
-    webrtc::PeerConnectionInterface::IceServer server = configuration[i];
-    if (server.uri.empty()) {
-      LOG(WARNING) << "Empty uri.";
-      continue;
-    }
-    std::vector<std::string> tokens;
-    std::string turn_transport_type = kUdpTransportType;
-    rtc::tokenize(server.uri, '?', &tokens);
-    std::string uri_without_transport = tokens[0];
-    // Let's look into transport= param, if it exists.
-    if (tokens.size() == kTurnTransportTokensNum) {  // ?transport= is present.
-      std::string uri_transport_param = tokens[1];
-      rtc::tokenize(uri_transport_param, '=', &tokens);
-      if (tokens[0] == kTransport) {
-        // As per above grammar transport param will be consist of lower case
-        // letters.
-        if (tokens[1] != kUdpTransportType && tokens[1] != kTcpTransportType) {
-          LOG(LS_WARNING) << "Transport param should always be udp or tcp.";
-          continue;
-        }
-        turn_transport_type = tokens[1];
+  std::vector<std::string> tokens;
+  std::string turn_transport_type = kUdpTransportType;
+  rtc::tokenize(url, '?', &tokens);
+  std::string uri_without_transport = tokens[0];
+  // Let's look into transport= param, if it exists.
+  if (tokens.size() == kTurnTransportTokensNum) {  // ?transport= is present.
+    std::string uri_transport_param = tokens[1];
+    rtc::tokenize(uri_transport_param, '=', &tokens);
+    if (tokens[0] == kTransport) {
+      // As per above grammar transport param will be consist of lower case
+      // letters.
+      if (tokens[1] != kUdpTransportType && tokens[1] != kTcpTransportType) {
+        LOG(LS_WARNING) << "Transport param should always be udp or tcp.";
+        return true;
       }
+      turn_transport_type = tokens[1];
     }
+  }
 
-    std::string hoststring;
-    ServiceType service_type = INVALID;
-    if (!GetServiceTypeAndHostnameFromUri(uri_without_transport,
-                                         &service_type,
-                                         &hoststring)) {
-      LOG(LS_WARNING) << "Invalid transport parameter in ICE URI: "
-                      << uri_without_transport;
-      continue;
-    }
+  std::string hoststring;
+  ServiceType service_type = INVALID;
+  if (!GetServiceTypeAndHostnameFromUri(uri_without_transport,
+                                       &service_type,
+                                       &hoststring)) {
+    LOG(LS_WARNING) << "Invalid transport parameter in ICE URI: "
+                    << uri_without_transport;
+    return true;
+  }
 
-    ASSERT(!hoststring.empty());
+  ASSERT(!hoststring.empty());
 
-    // Let's break hostname.
-    tokens.clear();
-    rtc::tokenize(hoststring, '@', &tokens);
-    ASSERT(!tokens.empty());
-    // TODO(pthatcher): What's the right thing to do if tokens.size() is >2?
-    // E.g. a string like "foo@bar@bat".
-    if (tokens.size() >= kTurnHostTokensNum) {
-      server.username = rtc::s_url_decode(tokens[0]);
-      hoststring = tokens[1];
-    } else {
-      hoststring = tokens[0];
-    }
+  // Let's break hostname.
+  tokens.clear();
+  rtc::tokenize(hoststring, '@', &tokens);
+  ASSERT(!tokens.empty());
+  std::string username(server.username);
+  // TODO(pthatcher): What's the right thing to do if tokens.size() is >2?
+  // E.g. a string like "foo@bar@bat".
+  if (tokens.size() >= kTurnHostTokensNum) {
+    username.assign(rtc::s_url_decode(tokens[0]));
+    hoststring = tokens[1];
+  } else {
+    hoststring = tokens[0];
+  }
 
-    int port = kDefaultStunPort;
-    if (service_type == TURNS) {
-      port = kDefaultStunTlsPort;
-      turn_transport_type = kTcpTransportType;
-    }
+  int port = kDefaultStunPort;
+  if (service_type == TURNS) {
+    port = kDefaultStunTlsPort;
+    turn_transport_type = kTcpTransportType;
+  }
 
-    std::string address;
-    if (!ParseHostnameAndPortFromString(hoststring, &address, &port)) {
-      LOG(WARNING) << "Invalid Hostname format: " << uri_without_transport;
-      continue;
-    }
+  std::string address;
+  if (!ParseHostnameAndPortFromString(hoststring, &address, &port)) {
+    LOG(WARNING) << "Invalid Hostname format: " << uri_without_transport;
+    return true;
+  }
 
-    if (port <= 0 || port > 0xffff) {
-      LOG(WARNING) << "Invalid port: " << port;
-      continue;
-    }
+  if (port <= 0 || port > 0xffff) {
+    LOG(WARNING) << "Invalid port: " << port;
+    return true;
+  }
 
-    switch (service_type) {
-      case STUN:
-      case STUNS:
-        stun_config->push_back(StunConfiguration(address, port));
-        break;
-      case TURN:
-      case TURNS: {
-        if (server.username.empty()) {
-          // Turn url example from the spec |url:"turn:user@turn.example.org"|.
-          std::vector<std::string> turn_tokens;
-          rtc::tokenize(address, '@', &turn_tokens);
-          if (turn_tokens.size() == kTurnHostTokensNum) {
-            server.username = rtc::s_url_decode(turn_tokens[0]);
-            address = turn_tokens[1];
-          }
+  switch (service_type) {
+    case STUN:
+    case STUNS:
+      stun_config->push_back(StunConfiguration(address, port));
+      break;
+    case TURN:
+    case TURNS: {
+      if (username.empty()) {
+        // Turn url example from the spec |url:"turn:user@turn.example.org"|.
+        std::vector<std::string> turn_tokens;
+        rtc::tokenize(address, '@', &turn_tokens);
+        if (turn_tokens.size() == kTurnHostTokensNum) {
+          username.assign(rtc::s_url_decode(turn_tokens[0]));
+          address = turn_tokens[1];
         }
-
-        bool secure = (service_type == TURNS);
-
-        turn_config->push_back(TurnConfiguration(address, port,
-                                                 server.username,
-                                                 server.password,
-                                                 turn_transport_type,
-                                                 secure));
-        break;
       }
-      case INVALID:
-      default:
-        LOG(WARNING) << "Configuration not supported: " << server.uri;
+
+      bool secure = (service_type == TURNS);
+
+      turn_config->push_back(TurnConfiguration(address, port,
+                                               username,
+                                               server.password,
+                                               turn_transport_type,
+                                               secure));
+      break;
+    }
+    case INVALID:
+    default:
+      LOG(WARNING) << "Configuration not supported: " << url;
+      return false;
+  }
+  return true;
+}
+
+bool ParseIceServers(const PeerConnectionInterface::IceServers& servers,
+                     std::vector<StunConfiguration>* stun_config,
+                     std::vector<TurnConfiguration>* turn_config) {
+  for (const webrtc::PeerConnectionInterface::IceServer& server : servers) {
+    if (!server.urls.empty()) {
+      for (const std::string& url : server.urls) {
+        if (!ParseIceServerUrl(server, url, stun_config, turn_config)) {
+          return false;
+        }
+      }
+    } else if (!server.uri.empty()) {
+      // Fallback to old .uri if new .urls isn't present.
+      if (!ParseIceServerUrl(server, server.uri, stun_config, turn_config)) {
         return false;
+      }
+    } else {
+      LOG(WARNING) << "Empty uri.";
     }
   }
   return true;

@@ -199,6 +199,37 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIceServers) {
 }
 
 // This test verifies creation of PeerConnection with valid STUN and TURN
+// configuration. Also verifies the list of URL's parsed correctly as expected.
+TEST_F(PeerConnectionFactoryTest, CreatePCUsingIceServersUrls) {
+  PeerConnectionInterface::RTCConfiguration config;
+  webrtc::PeerConnectionInterface::IceServer ice_server;
+  ice_server.urls.push_back(kStunIceServer);
+  ice_server.urls.push_back(kTurnIceServer);
+  ice_server.urls.push_back(kTurnIceServerWithTransport);
+  ice_server.password = kTurnPassword;
+  config.servers.push_back(ice_server);
+  rtc::scoped_refptr<PeerConnectionInterface> pc(
+      factory_->CreatePeerConnection(config, NULL,
+                                     allocator_factory_.get(),
+                                     new FakeIdentityService(),
+                                     &observer_));
+  EXPECT_TRUE(pc.get() != NULL);
+  StunConfigurations stun_configs;
+  webrtc::PortAllocatorFactoryInterface::StunConfiguration stun1(
+      "stun.l.google.com", 19302);
+  stun_configs.push_back(stun1);
+  VerifyStunConfigurations(stun_configs);
+  TurnConfigurations turn_configs;
+  webrtc::PortAllocatorFactoryInterface::TurnConfiguration turn1(
+      "test.com", 1234, "test@hello.com", kTurnPassword, "udp", false);
+  turn_configs.push_back(turn1);
+  webrtc::PortAllocatorFactoryInterface::TurnConfiguration turn2(
+      "hello.com", kDefaultStunPort, "test", kTurnPassword, "tcp", false);
+  turn_configs.push_back(turn2);
+  VerifyTurnConfigurations(turn_configs);
+}
+
+// This test verifies creation of PeerConnection with valid STUN and TURN
 // configuration. Also verifies the URL's parsed correctly as expected.
 // This version doesn't use RTCConfiguration.
 // TODO(mallinath) - Remove this method after clients start using RTCConfig.

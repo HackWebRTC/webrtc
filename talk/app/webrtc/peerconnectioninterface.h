@@ -175,7 +175,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   };
 
   struct IceServer {
+    // TODO(jbauch): Remove uri when all code using it has switched to urls.
     std::string uri;
+    std::vector<std::string> urls;
     std::string username;
     std::string password;
   };
