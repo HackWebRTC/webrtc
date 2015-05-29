@@ -186,6 +186,7 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
   // turn-port     = *DIGIT
   std::vector<std::string> tokens;
   std::string turn_transport_type = kUdpTransportType;
+  ASSERT(!url.empty());
   rtc::tokenize(url, '?', &tokens);
   std::string uri_without_transport = tokens[0];
   // Let's look into transport= param, if it exists.
@@ -286,6 +287,10 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& servers,
   for (const webrtc::PeerConnectionInterface::IceServer& server : servers) {
     if (!server.urls.empty()) {
       for (const std::string& url : server.urls) {
+        if (url.empty()) {
+          LOG(WARNING) << "Empty uri.";
+          continue;
+        }
         if (!ParseIceServerUrl(server, url, stun_config, turn_config)) {
           return false;
         }

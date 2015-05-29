@@ -203,6 +203,7 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIceServers) {
 TEST_F(PeerConnectionFactoryTest, CreatePCUsingIceServersUrls) {
   PeerConnectionInterface::RTCConfiguration config;
   webrtc::PeerConnectionInterface::IceServer ice_server;
+  ice_server.urls.push_back("");  // Empty URLs should be ignored.
   ice_server.urls.push_back(kStunIceServer);
   ice_server.urls.push_back(kTurnIceServer);
   ice_server.urls.push_back(kTurnIceServerWithTransport);
