@@ -41,6 +41,7 @@
 #import "RTCMediaStreamTrack+Internal.h"
 #import "RTCPeerConnection+Internal.h"
 #import "RTCPeerConnectionDelegate.h"
+#import "RTCPeerConnectionInterface+Internal.h"
 #import "RTCVideoCapturer+Internal.h"
 #import "RTCVideoSource+Internal.h"
 #import "RTCVideoTrack+Internal.h"
@@ -86,6 +87,15 @@
     // rtc::LogMessage::LogToDebug(rtc::LS_SENSITIVE);
   }
   return self;
+}
+
+- (RTCPeerConnection *)peerConnectionWithConfiguration:(RTCConfiguration *)configuration
+                                           constraints:(RTCMediaConstraints *)constraints
+                                              delegate:(id<RTCPeerConnectionDelegate>)delegate {
+  return [[RTCPeerConnection alloc] initWithFactory:self.nativeFactory.get()
+                                             config:configuration.nativeConfiguration
+                                        constraints:constraints.constraints
+                                           delegate:delegate];
 }
 
 - (RTCPeerConnection*)

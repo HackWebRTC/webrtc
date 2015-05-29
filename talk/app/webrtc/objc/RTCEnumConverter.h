@@ -25,14 +25,16 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import <Foundation/Foundation.h>
-
+// TODO(tkchin): remove this in favor of having objc headers mirror their C++ counterparts.
+// TODO(tkchin): see if we can move C++ enums into their own file so we can avoid all this
+// conversion code.
 #import "RTCTypes.h"
 
-#include "talk/app/webrtc/peerconnectioninterface.h"
+#import "talk/app/webrtc/objc/RTCPeerConnectionInterface+Internal.h"
 
 @interface RTCEnumConverter : NSObject
 
+// TODO(tkchin): rename these.
 + (RTCICEConnectionState)convertIceConnectionStateToObjC:
         (webrtc::PeerConnectionInterface::IceConnectionState)nativeState;
 
@@ -53,5 +55,29 @@
 
 + (RTCTrackState)convertTrackStateToObjC:
         (webrtc::MediaStreamTrackInterface::TrackState)nativeState;
+
++ (RTCIceTransportsType)iceTransportsTypeForNativeEnum:
+        (webrtc::PeerConnectionInterface::IceTransportsType)nativeEnum;
+
++ (webrtc::PeerConnectionInterface::IceTransportsType)nativeEnumForIceTransportsType:
+        (RTCIceTransportsType)iceTransportsType;
+
++ (RTCBundlePolicy)bundlePolicyForNativeEnum:
+        (webrtc::PeerConnectionInterface::BundlePolicy)nativeEnum;
+
++ (webrtc::PeerConnectionInterface::BundlePolicy)nativeEnumForBundlePolicy:
+        (RTCBundlePolicy)bundlePolicy;
+
++ (RTCRtcpMuxPolicy)rtcpMuxPolicyForNativeEnum:
+        (webrtc::PeerConnectionInterface::RtcpMuxPolicy)nativeEnum;
+
++ (webrtc::PeerConnectionInterface::RtcpMuxPolicy)nativeEnumForRtcpMuxPolicy:
+        (RTCRtcpMuxPolicy)rtcpMuxPolicy;
+
++ (RTCTcpCandidatePolicy)tcpCandidatePolicyForNativeEnum:
+        (webrtc::PeerConnectionInterface::TcpCandidatePolicy)nativeEnum;
+
++ (webrtc::PeerConnectionInterface::TcpCandidatePolicy)nativeEnumForTcpCandidatePolicy:
+        (RTCTcpCandidatePolicy)tcpCandidatePolicy;
 
 @end

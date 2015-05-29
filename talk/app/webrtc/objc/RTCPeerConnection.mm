@@ -285,6 +285,21 @@ class RTCStatsObserver : public StatsObserver {
   return self;
 }
 
+- (instancetype)initWithFactory:(webrtc::PeerConnectionFactoryInterface *)factory
+                         config:(const webrtc::PeerConnectionInterface::RTCConfiguration &)config
+                    constraints:(const webrtc::MediaConstraintsInterface *)constraints
+                       delegate:(id<RTCPeerConnectionDelegate>)delegate {
+  NSParameterAssert(factory);
+  if (self = [super init]) {
+    _observer.reset(new webrtc::RTCPeerConnectionObserver(self));
+    _peerConnection =
+        factory->CreatePeerConnection(config, constraints, nullptr, nullptr, _observer.get());
+    _localStreams = [[NSMutableArray alloc] init];
+    _delegate = delegate;
+  }
+  return self;
+}
+
 - (rtc::scoped_refptr<webrtc::PeerConnectionInterface>)peerConnection {
   return _peerConnection;
 }

@@ -34,6 +34,7 @@
 #import "RTCMediaConstraints.h"
 #import "RTCMediaStream.h"
 #import "RTCPair.h"
+#import "RTCPeerConnectionInterface.h"
 #import "RTCVideoCapturer.h"
 #import "RTCAVFoundationVideoSource.h"
 
@@ -397,9 +398,11 @@ static NSInteger const kARDAppClientErrorInvalidRoom = -6;
 
   // Create peer connection.
   RTCMediaConstraints *constraints = [self defaultPeerConnectionConstraints];
-  _peerConnection = [_factory peerConnectionWithICEServers:_iceServers
-                                               constraints:constraints
-                                                  delegate:self];
+  RTCConfiguration *config = [[RTCConfiguration alloc] init];
+  config.iceServers = _iceServers;
+  _peerConnection = [_factory peerConnectionWithConfiguration:config
+                                                  constraints:constraints
+                                                     delegate:self];
   // Create AV media stream and add it to the peer connection.
   RTCMediaStream *localStream = [self createLocalMediaStream];
   [_peerConnection addStream:localStream];

@@ -133,4 +133,96 @@
   }
 }
 
++ (RTCIceTransportsType)iceTransportsTypeForNativeEnum:
+        (webrtc::PeerConnectionInterface::IceTransportsType)nativeEnum {
+  switch (nativeEnum) {
+    case webrtc::PeerConnectionInterface::kNone:
+      return kRTCIceTransportsTypeNone;
+    case webrtc::PeerConnectionInterface::kRelay:
+      return kRTCIceTransportsTypeRelay;
+    case webrtc::PeerConnectionInterface::kNoHost:
+      return kRTCIceTransportsTypeNoHost;
+    case webrtc::PeerConnectionInterface::kAll:
+      return kRTCIceTransportsTypeAll;
+  }
+}
+
++ (webrtc::PeerConnectionInterface::IceTransportsType)nativeEnumForIceTransportsType:
+        (RTCIceTransportsType)iceTransportsType {
+  switch (iceTransportsType) {
+    case kRTCIceTransportsTypeNone:
+      return webrtc::PeerConnectionInterface::kNone;
+    case kRTCIceTransportsTypeRelay:
+      return webrtc::PeerConnectionInterface::kRelay;
+    case kRTCIceTransportsTypeNoHost:
+      return webrtc::PeerConnectionInterface::kNoHost;
+    case kRTCIceTransportsTypeAll:
+      return webrtc::PeerConnectionInterface::kAll;
+  }
+}
+
++ (RTCBundlePolicy)bundlePolicyForNativeEnum:
+        (webrtc::PeerConnectionInterface::BundlePolicy)nativeEnum {
+  switch (nativeEnum) {
+    case webrtc::PeerConnectionInterface::kBundlePolicyBalanced:
+      return kRTCBundlePolicyBalanced;
+    case webrtc::PeerConnectionInterface::kBundlePolicyMaxBundle:
+      return kRTCBundlePolicyMaxBundle;
+    case webrtc::PeerConnectionInterface::kBundlePolicyMaxCompat:
+      return kRTCBundlePolicyMaxCompat;
+  }
+}
+
++ (webrtc::PeerConnectionInterface::BundlePolicy)nativeEnumForBundlePolicy:
+        (RTCBundlePolicy)bundlePolicy {
+  switch (bundlePolicy) {
+    case kRTCBundlePolicyBalanced:
+      return webrtc::PeerConnectionInterface::kBundlePolicyBalanced;
+    case kRTCBundlePolicyMaxBundle:
+      return webrtc::PeerConnectionInterface::kBundlePolicyMaxBundle;
+    case kRTCBundlePolicyMaxCompat:
+      return webrtc::PeerConnectionInterface::kBundlePolicyMaxCompat;
+  }
+}
+
++ (RTCRtcpMuxPolicy)rtcpMuxPolicyForNativeEnum:
+        (webrtc::PeerConnectionInterface::RtcpMuxPolicy)nativeEnum {
+  switch (nativeEnum) {
+    case webrtc::PeerConnectionInterface::kRtcpMuxPolicyNegotiate:
+      return kRTCRtcpMuxPolicyNegotiate;
+    case webrtc::PeerConnectionInterface::kRtcpMuxPolicyRequire:
+      return kRTCRtcpMuxPolicyRequire;
+  }
+}
+
++ (webrtc::PeerConnectionInterface::RtcpMuxPolicy)nativeEnumForRtcpMuxPolicy:
+        (RTCRtcpMuxPolicy)rtcpMuxPolicy {
+  switch (rtcpMuxPolicy) {
+    case kRTCRtcpMuxPolicyNegotiate:
+      return webrtc::PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
+    case kRTCRtcpMuxPolicyRequire:
+      return webrtc::PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  }
+}
+
++ (RTCTcpCandidatePolicy)tcpCandidatePolicyForNativeEnum:
+        (webrtc::PeerConnectionInterface::TcpCandidatePolicy)nativeEnum {
+  switch (nativeEnum) {
+    case webrtc::PeerConnectionInterface::kTcpCandidatePolicyEnabled:
+      return kRTCTcpCandidatePolicyEnabled;
+    case webrtc::PeerConnectionInterface::kTcpCandidatePolicyDisabled:
+      return kRTCTcpCandidatePolicyDisabled;
+  }
+}
+
++ (webrtc::PeerConnectionInterface::TcpCandidatePolicy)nativeEnumForTcpCandidatePolicy:
+        (RTCTcpCandidatePolicy)tcpCandidatePolicy {
+  switch (tcpCandidatePolicy) {
+    case kRTCTcpCandidatePolicyEnabled:
+      return webrtc::PeerConnectionInterface::kTcpCandidatePolicyEnabled;
+    case kRTCTcpCandidatePolicyDisabled:
+      return webrtc::PeerConnectionInterface::kTcpCandidatePolicyDisabled;
+  }
+}
+
 @end
