@@ -85,7 +85,7 @@ class FileMediaEngine : public MediaEngineInterface {
   }
   virtual void Terminate() {}
   virtual int GetCapabilities();
-  virtual VoiceMediaChannel* CreateChannel();
+  virtual VoiceMediaChannel* CreateChannel(const AudioOptions& options);
   virtual VideoMediaChannel* CreateVideoChannel(const VideoOptions& options,
                                                 VoiceMediaChannel* voice_ch);
   virtual AudioOptions GetAudioOptions() const { return AudioOptions(); }

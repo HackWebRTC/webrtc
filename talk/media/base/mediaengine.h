@@ -77,7 +77,7 @@ class MediaEngineInterface {
 
   // MediaChannel creation
   // Creates a voice media channel. Returns NULL on failure.
-  virtual VoiceMediaChannel *CreateChannel() = 0;
+  virtual VoiceMediaChannel* CreateChannel(const AudioOptions& options) = 0;
   // Creates a video media channel, paired with the specified voice channel.
   // Returns NULL on failure.
   virtual VideoMediaChannel* CreateVideoChannel(
@@ -178,8 +178,8 @@ class CompositeMediaEngine : public MediaEngineInterface {
   virtual int GetCapabilities() {
     return (voice_.GetCapabilities() | video_.GetCapabilities());
   }
-  virtual VoiceMediaChannel *CreateChannel() {
-    return voice_.CreateChannel();
+  virtual VoiceMediaChannel* CreateChannel(const AudioOptions& options) {
+    return voice_.CreateChannel(options);
   }
   virtual VideoMediaChannel* CreateVideoChannel(const VideoOptions& options,
                                                 VoiceMediaChannel* channel) {
@@ -265,8 +265,8 @@ class NullVoiceEngine {
   void Terminate() {}
   int GetCapabilities() { return 0; }
   // If you need this to return an actual channel, use FakeMediaEngine instead.
-  VoiceMediaChannel* CreateChannel() {
-    return NULL;
+  VoiceMediaChannel* CreateChannel(const AudioOptions& options) {
+    return nullptr;
   }
   bool SetDelayOffset(int offset) { return true; }
   AudioOptions GetOptions() const { return AudioOptions(); }

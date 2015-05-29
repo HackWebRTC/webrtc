@@ -269,7 +269,7 @@ bool Call::AddSession(Session* session, const SessionDescription* offer) {
   // Create voice channel and start a media monitor.
   media_session.voice_channel =
       session_client_->channel_manager()->CreateVoiceChannel(
-          session, audio_offer->name, has_video_);
+          session, audio_offer->name, has_video_, AudioOptions());
   // voice_channel can be NULL in case of NullVoiceEngine.
   if (media_session.voice_channel) {
     media_session.voice_channel->SignalMediaMonitor.connect(

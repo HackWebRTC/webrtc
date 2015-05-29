@@ -763,12 +763,13 @@ class FakeVoiceEngine : public FakeBaseEngine {
     return true;
   }
 
-  VoiceMediaChannel* CreateChannel() {
+  VoiceMediaChannel* CreateChannel(const AudioOptions& options) {
     if (fail_create_channel_) {
-      return NULL;
+      return nullptr;
     }
 
     FakeVoiceMediaChannel* ch = new FakeVoiceMediaChannel(this);
+    ch->SetOptions(options);
     channels_.push_back(ch);
     return ch;
   }

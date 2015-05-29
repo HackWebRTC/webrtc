@@ -1633,12 +1633,11 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
 
 bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
   voice_channel_.reset(channel_manager_->CreateVoiceChannel(
-      this, content->name, true));
+      this, content->name, true, audio_options_));
   if (!voice_channel_) {
     return false;
   }
 
-  voice_channel_->SetChannelOptions(audio_options_);
   voice_channel_->SignalDtlsSetupFailure.connect(
       this, &WebRtcSession::OnDtlsSetupFailure);
   return true;

@@ -177,8 +177,8 @@ TEST_F(WebRtcVideoEngine2VoiceTest, ConfiguresAvSyncForFirstReceiveChannel) {
   engine_.Init();
 
   rtc::scoped_ptr<VoiceMediaChannel> voice_channel(
-      voice_engine_.CreateChannel());
-  ASSERT_TRUE(voice_channel.get() != NULL);
+      voice_engine_.CreateChannel(cricket::AudioOptions()));
+  ASSERT_TRUE(voice_channel.get() != nullptr);
   WebRtcVoiceMediaChannel* webrtc_voice_channel =
       static_cast<WebRtcVoiceMediaChannel*>(voice_channel.get());
   ASSERT_NE(webrtc_voice_channel->voe_channel(), -1);
@@ -186,11 +186,11 @@ TEST_F(WebRtcVideoEngine2VoiceTest, ConfiguresAvSyncForFirstReceiveChannel) {
       engine_.CreateChannel(cricket::VideoOptions(), voice_channel.get()));
 
   FakeCall* fake_call = call_factory.GetCall();
-  ASSERT_TRUE(fake_call != NULL);
+  ASSERT_TRUE(fake_call != nullptr);
 
   webrtc::Call::Config call_config = fake_call->GetConfig();
 
-  ASSERT_TRUE(voice_engine_.voe()->engine() != NULL);
+  ASSERT_TRUE(voice_engine_.voe()->engine() != nullptr);
   ASSERT_EQ(voice_engine_.voe()->engine(), call_config.voice_engine);
 
   EXPECT_TRUE(channel->AddRecvStream(StreamParams::CreateLegacy(kSsrc)));

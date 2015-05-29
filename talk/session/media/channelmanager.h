@@ -103,8 +103,10 @@ class ChannelManager : public rtc::MessageHandler,
   // The operations below all occur on the worker thread.
 
   // Creates a voice channel, to be associated with the specified session.
-  VoiceChannel* CreateVoiceChannel(
-      BaseSession* session, const std::string& content_name, bool rtcp);
+  VoiceChannel* CreateVoiceChannel(BaseSession* session,
+                                   const std::string& content_name,
+                                   bool rtcp,
+                                   const AudioOptions& options);
   // Destroys a voice channel created with the Create API.
   void DestroyVoiceChannel(VoiceChannel* voice_channel,
                            VideoChannel* video_channel);
@@ -141,8 +143,6 @@ class ChannelManager : public rtc::MessageHandler,
   bool SetAudioOptions(const std::string& wave_in_device,
                        const std::string& wave_out_device,
                        const AudioOptions& options);
-  // Sets Engine-specific audio options according to enabled experiments.
-  bool SetEngineAudioOptions(const AudioOptions& options);
   bool GetOutputVolume(int* level);
   bool SetOutputVolume(int level);
   bool IsSameCapturer(const std::string& capturer_name,
@@ -255,8 +255,10 @@ class ChannelManager : public rtc::MessageHandler,
   bool InitMediaEngine_w();
   void DestructorDeletes_w();
   void Terminate_w();
-  VoiceChannel* CreateVoiceChannel_w(
-      BaseSession* session, const std::string& content_name, bool rtcp);
+  VoiceChannel* CreateVoiceChannel_w(BaseSession* session,
+                                     const std::string& content_name,
+                                     bool rtcp,
+                                     const AudioOptions& options);
   void DestroyVoiceChannel_w(VoiceChannel* voice_channel,
                              VideoChannel* video_channel);
   VideoChannel* CreateVideoChannel_w(BaseSession* session,
@@ -271,7 +273,6 @@ class ChannelManager : public rtc::MessageHandler,
   void DestroyDataChannel_w(DataChannel* data_channel);
   bool SetAudioOptions_w(const AudioOptions& options, int delay_offset,
                          const Device* in_dev, const Device* out_dev);
-  bool SetEngineAudioOptions_w(const AudioOptions& options);
   bool SetCaptureDevice_w(const Device* cam_device);
   void OnVideoCaptureStateChange(VideoCapturer* capturer,
                                  CaptureState result);

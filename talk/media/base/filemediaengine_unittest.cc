@@ -136,8 +136,8 @@ class FileMediaEngineTest : public testing::Test {
     engine_->set_video_output_filename(video_out);
     engine_->set_rtp_sender_thread(rtc::Thread::Current());
 
-    voice_channel_.reset(engine_->CreateChannel());
-    video_channel_.reset(engine_->CreateVideoChannel(VideoOptions(), NULL));
+    voice_channel_.reset(engine_->CreateChannel(AudioOptions()));
+    video_channel_.reset(engine_->CreateVideoChannel(VideoOptions(), nullptr));
   }
 
   bool GetTempFilename(std::string* filename) {
@@ -240,8 +240,8 @@ TEST_F(FileMediaEngineTest, TestBadFilePath) {
   engine_.reset(new FileMediaEngine);
   engine_->set_voice_input_filename(kFakeFileName);
   engine_->set_video_input_filename(kFakeFileName);
-  EXPECT_TRUE(engine_->CreateChannel() == NULL);
-  EXPECT_TRUE(engine_->CreateVideoChannel(VideoOptions(), NULL) == NULL);
+  EXPECT_TRUE(engine_->CreateChannel(AudioOptions()) == nullptr);
+  EXPECT_TRUE(engine_->CreateVideoChannel(VideoOptions(), nullptr) == nullptr);
 }
 
 TEST_F(FileMediaEngineTest, TestCodecs) {

@@ -317,26 +317,32 @@ void ChannelManager::Terminate_w() {
 }
 
 VoiceChannel* ChannelManager::CreateVoiceChannel(
-    BaseSession* session, const std::string& content_name, bool rtcp) {
+    BaseSession* session,
+    const std::string& content_name,
+    bool rtcp,
+    const AudioOptions& options) {
   return worker_thread_->Invoke<VoiceChannel*>(
-      Bind(&ChannelManager::CreateVoiceChannel_w, this,
-           session, content_name, rtcp));
+      Bind(&ChannelManager::CreateVoiceChannel_w, this, session, content_name,
+           rtcp, options));
 }
 
 VoiceChannel* ChannelManager::CreateVoiceChannel_w(
-    BaseSession* session, const std::string& content_name, bool rtcp) {
+    BaseSession* session,
+    const std::string& content_name,
+    bool rtcp,
+    const AudioOptions& options) {
   ASSERT(initialized_);
   ASSERT(worker_thread_ == rtc::Thread::Current());
-  VoiceMediaChannel* media_channel = media_engine_->CreateChannel();
-  if (media_channel == NULL)
-    return NULL;
+  VoiceMediaChannel* media_channel = media_engine_->CreateChannel(options);
+  if (!media_channel)
+    return nullptr;
 
   VoiceChannel* voice_channel = new VoiceChannel(
       worker_thread_, media_engine_.get(), media_channel,
       session, content_name, rtcp);
   if (!voice_channel->Init()) {
     delete voice_channel;
-    return NULL;
+    return nullptr;
   }
   voice_channels_.push_back(voice_channel);
   return voice_channel;
@@ -570,29 +576,6 @@ bool ChannelManager::SetAudioOptions_w(
   }
 
   return ret;
-}
-
-// Sets Engine-specific audio options according to enabled experiments.
-bool ChannelManager::SetEngineAudioOptions(const AudioOptions& options) {
-  // If we're initialized, pass the settings to the media engine.
-  bool ret = false;
-  if (initialized_) {
-    ret = worker_thread_->Invoke<bool>(
-        Bind(&ChannelManager::SetEngineAudioOptions_w, this, options));
-  }
-
-  // If all worked well, save the audio options.
-  if (ret) {
-    audio_options_ = options;
-  }
-  return ret;
-}
-
-bool ChannelManager::SetEngineAudioOptions_w(const AudioOptions& options) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-  ASSERT(initialized_);
-
-  return media_engine_->SetAudioOptions(options);
 }
 
 bool ChannelManager::GetOutputVolume(int* level) {

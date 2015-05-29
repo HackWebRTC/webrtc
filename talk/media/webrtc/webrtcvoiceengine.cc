@@ -584,11 +584,15 @@ int WebRtcVoiceEngine::GetCapabilities() {
   return AUDIO_SEND | AUDIO_RECV;
 }
 
-VoiceMediaChannel *WebRtcVoiceEngine::CreateChannel() {
+VoiceMediaChannel* WebRtcVoiceEngine::CreateChannel(
+    const AudioOptions& options) {
   WebRtcVoiceMediaChannel* ch = new WebRtcVoiceMediaChannel(this);
   if (!ch->valid()) {
     delete ch;
-    ch = NULL;
+    return nullptr;
+  }
+  if (!ch->SetOptions(options)) {
+    LOG(LS_WARNING) << "Failed to set options while creating channel.";
   }
   return ch;
 }

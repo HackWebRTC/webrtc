@@ -61,18 +61,18 @@ int FileMediaEngine::GetCapabilities() {
   return capabilities;
 }
 
-VoiceMediaChannel* FileMediaEngine::CreateChannel() {
-  rtc::FileStream* input_file_stream = NULL;
-  rtc::FileStream* output_file_stream = NULL;
+VoiceMediaChannel* FileMediaEngine::CreateChannel(const AudioOptions& options) {
+  rtc::FileStream* input_file_stream = nullptr;
+  rtc::FileStream* output_file_stream = nullptr;
 
   if (voice_input_filename_.empty() && voice_output_filename_.empty())
-    return NULL;
+    return nullptr;
   if (!voice_input_filename_.empty()) {
     input_file_stream = rtc::Filesystem::OpenFile(
         rtc::Pathname(voice_input_filename_), "rb");
     if (!input_file_stream) {
       LOG(LS_ERROR) << "Not able to open the input audio stream file.";
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -82,12 +82,14 @@ VoiceMediaChannel* FileMediaEngine::CreateChannel() {
     if (!output_file_stream) {
       delete input_file_stream;
       LOG(LS_ERROR) << "Not able to open the output audio stream file.";
-      return NULL;
+      return nullptr;
     }
   }
 
-  return new FileVoiceChannel(input_file_stream, output_file_stream,
-                              rtp_sender_thread_);
+  FileVoiceChannel* channel = new FileVoiceChannel(
+      input_file_stream, output_file_stream, rtp_sender_thread_);
+  channel->SetOptions(options);
+  return channel;
 }
 
 VideoMediaChannel* FileMediaEngine::CreateVideoChannel(
