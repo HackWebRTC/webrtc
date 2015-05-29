@@ -141,7 +141,10 @@ bool AudioManager::IsAcousticEchoCancelerSupported() const {
 bool AudioManager::IsLowLatencyPlayoutSupported() const {
   DCHECK(thread_checker_.CalledOnValidThread());
   ALOGD("IsLowLatencyPlayoutSupported()");
-  return low_latency_playout_;
+  // TODO(henrika): enable again once issue in b/21485703 has been sorted out.
+  // This is just a temporary fix.
+  ALOGW("NOTE: OpenSL ES output is currently disabled!");
+  return false;
 }
 
 int AudioManager::GetDelayEstimateInMilliseconds() const {
