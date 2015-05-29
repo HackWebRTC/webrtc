@@ -262,10 +262,9 @@ static dispatch_queue_t kBackgroundQueue = nil;
   AVCaptureVideoOrientation orientation = AVCaptureVideoOrientationPortrait;
   switch ([UIDevice currentDevice].orientation) {
     case UIDeviceOrientationPortrait:
-      orientation = AVCaptureVideoOrientationPortrait;
-      break;
-    case UIDeviceOrientationPortraitUpsideDown:
       orientation = AVCaptureVideoOrientationPortraitUpsideDown;
+    case UIDeviceOrientationPortraitUpsideDown:
+      orientation = AVCaptureVideoOrientationPortrait;
       break;
     case UIDeviceOrientationLandscapeLeft:
       orientation = AVCaptureVideoOrientationLandscapeRight;

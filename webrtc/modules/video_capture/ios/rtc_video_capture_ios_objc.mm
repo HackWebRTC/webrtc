@@ -250,11 +250,10 @@ using namespace webrtc::videocapturemodule;
   switch ([UIDevice currentDevice].orientation) {
     case UIDeviceOrientationPortrait:
       _connection.videoOrientation =
-          AVCaptureVideoOrientationPortrait;
-      break;
+          AVCaptureVideoOrientationPortraitUpsideDown;
     case UIDeviceOrientationPortraitUpsideDown:
       _connection.videoOrientation =
-          AVCaptureVideoOrientationPortraitUpsideDown;
+          AVCaptureVideoOrientationPortrait;
       break;
     case UIDeviceOrientationLandscapeLeft:
       _connection.videoOrientation =
