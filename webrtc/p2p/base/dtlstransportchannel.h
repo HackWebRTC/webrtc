@@ -129,7 +129,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
     return channel_->SessionId();
   }
 
-  virtual void SetMaxProtocolVersion(rtc::SSLProtocolVersion version);
+  virtual bool SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version);
 
   // Set up the ciphers to use for DTLS-SRTP. If this method is not called
   // before DTLS starts, or |ciphers| is empty, SRTP keys won't be negotiated.

@@ -90,7 +90,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
           static_cast<cricket::DtlsTransportChannelWrapper*>(
               transport_->CreateChannel(i));
       ASSERT_TRUE(channel != NULL);
-      channel->SetMaxProtocolVersion(ssl_max_version_);
+      channel->SetSslMaxProtocolVersion(ssl_max_version_);
       channel->SignalWritableState.connect(this,
         &DtlsTestClient::OnTransportChannelWritableState);
       channel->SignalReadPacket.connect(this,

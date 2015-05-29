@@ -33,7 +33,8 @@ class DtlsTransport : public Base {
                 rtc::SSLIdentity* identity)
       : Base(signaling_thread, worker_thread, content_name, allocator),
         identity_(identity),
-        secure_role_(rtc::SSL_CLIENT) {
+        secure_role_(rtc::SSL_CLIENT),
+        ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_10) {
   }
 
   ~DtlsTransport() {
@@ -47,6 +48,11 @@ class DtlsTransport : public Base {
       return false;
 
     *identity = identity_->GetReference();
+    return true;
+  }
+
+  virtual bool SetSslMaxProtocolVersion_w(rtc::SSLProtocolVersion version) {
+    ssl_max_version_ = version;
     return true;
   }
 
@@ -189,8 +195,10 @@ class DtlsTransport : public Base {
   }
 
   virtual DtlsTransportChannelWrapper* CreateTransportChannel(int component) {
-    return new DtlsTransportChannelWrapper(
+    DtlsTransportChannelWrapper* channel = new DtlsTransportChannelWrapper(
         this, Base::CreateTransportChannel(component));
+    channel->SetSslMaxProtocolVersion(ssl_max_version_);
+    return channel;
   }
 
   virtual void DestroyTransportChannel(TransportChannelImpl* channel) {
@@ -231,6 +239,7 @@ class DtlsTransport : public Base {
 
   rtc::SSLIdentity* identity_;
   rtc::SSLRole secure_role_;
+  rtc::SSLProtocolVersion ssl_max_version_;
   rtc::scoped_ptr<rtc::SSLFingerprint> remote_fingerprint_;
 };
 

@@ -264,6 +264,9 @@ class Transport : public rtc::MessageHandler,
 
   virtual bool GetSslRole(rtc::SSLRole* ssl_role) const;
 
+  // Must be called before channel is starting to connect.
+  virtual bool SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version);
+
  protected:
   // These are called by Create/DestroyChannel above in order to create or
   // destroy the appropriate type of channel.
@@ -317,6 +320,10 @@ class Transport : public rtc::MessageHandler,
       TransportChannelImpl* channel, std::string* error_desc);
 
   virtual bool GetSslRole_w(rtc::SSLRole* ssl_role) const {
+    return false;
+  }
+
+  virtual bool SetSslMaxProtocolVersion_w(rtc::SSLProtocolVersion version) {
     return false;
   }
 

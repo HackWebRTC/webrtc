@@ -342,6 +342,7 @@ BaseSession::BaseSession(rtc::Thread* signaling_thread,
       transport_type_(NS_GINGLE_P2P),
       initiator_(initiator),
       identity_(NULL),
+      ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_10),
       ice_tiebreaker_(rtc::CreateRandomId64()),
       role_switch_(false) {
   ASSERT(signaling_thread->IsCurrent());
@@ -401,6 +402,15 @@ bool BaseSession::SetIdentity(rtc::SSLIdentity* identity) {
        iter != transports_.end(); ++iter) {
     iter->second->SetIdentity(identity_);
   }
+  return true;
+}
+
+bool BaseSession::SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version) {
+  if (state_ != STATE_INIT) {
+    return false;
+  }
+
+  ssl_max_version_ = version;
   return true;
 }
 
@@ -501,6 +511,7 @@ TransportProxy* BaseSession::GetOrCreateTransportProxy(
   Transport* transport = CreateTransport(content_name);
   transport->SetIceRole(initiator_ ? ICEROLE_CONTROLLING : ICEROLE_CONTROLLED);
   transport->SetIceTiebreaker(ice_tiebreaker_);
+  transport->SetSslMaxProtocolVersion(ssl_max_version_);
   // TODO: Connect all the Transport signals to TransportProxy
   // then to the BaseSession.
   transport->SignalConnecting.connect(

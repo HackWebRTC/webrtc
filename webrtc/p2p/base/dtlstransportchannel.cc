@@ -163,15 +163,16 @@ bool DtlsTransportChannelWrapper::GetLocalIdentity(
   return true;
 }
 
-void DtlsTransportChannelWrapper::SetMaxProtocolVersion(
+bool DtlsTransportChannelWrapper::SetSslMaxProtocolVersion(
     rtc::SSLProtocolVersion version) {
   if (dtls_state_ != STATE_NONE) {
     LOG(LS_ERROR) << "Not changing max. protocol version "
                   << "while DTLS is negotiating";
-    return;
+    return false;
   }
 
   ssl_max_version_ = version;
+  return true;
 }
 
 bool DtlsTransportChannelWrapper::SetSslRole(rtc::SSLRole role) {

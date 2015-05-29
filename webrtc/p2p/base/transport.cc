@@ -458,6 +458,11 @@ bool Transport::GetSslRole(rtc::SSLRole* ssl_role) const {
       &Transport::GetSslRole_w, this, ssl_role));
 }
 
+bool Transport::SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version) {
+  return worker_thread_->Invoke<bool>(Bind(
+      &Transport::SetSslMaxProtocolVersion_w, this, version));
+}
+
 void Transport::OnRemoteCandidates(const std::vector<Candidate>& candidates) {
   for (std::vector<Candidate>::const_iterator iter = candidates.begin();
        iter != candidates.end();

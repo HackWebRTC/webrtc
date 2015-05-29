@@ -323,6 +323,8 @@ class BaseSession : public sigslot::has_slots<>,
   // Specifies the identity to use in this session.
   bool SetIdentity(rtc::SSLIdentity* identity);
 
+  bool SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version);
+
   bool PushdownTransportDescription(ContentSource source,
                                     ContentAction action,
                                     std::string* error_desc);
@@ -445,6 +447,7 @@ class BaseSession : public sigslot::has_slots<>,
   const std::string transport_type_;
   bool initiator_;
   rtc::SSLIdentity* identity_;
+  rtc::SSLProtocolVersion ssl_max_version_;
   rtc::scoped_ptr<const SessionDescription> local_description_;
   rtc::scoped_ptr<SessionDescription> remote_description_;
   uint64 ice_tiebreaker_;

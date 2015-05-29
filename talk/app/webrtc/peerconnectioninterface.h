@@ -79,6 +79,7 @@
 #include "talk/app/webrtc/umametrics.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/network.h"
+#include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/socketaddress.h"
 
 namespace rtc {
@@ -518,7 +519,8 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
     Options() :
       disable_encryption(false),
       disable_sctp_data_channels(false),
-      network_ignore_mask(rtc::kDefaultNetworkIgnoreMask) {
+      network_ignore_mask(rtc::kDefaultNetworkIgnoreMask),
+      ssl_max_version(rtc::SSL_PROTOCOL_DTLS_10) {
     }
     bool disable_encryption;
     bool disable_sctp_data_channels;
@@ -527,6 +529,11 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
     // ADAPTER_TYPE_ETHERNET | ADAPTER_TYPE_LOOPBACK will ignore Ethernet and
     // loopback interfaces.
     int network_ignore_mask;
+
+    // Sets the maximum supported protocol version. The highest version
+    // supported by both ends will be used for the connection, i.e. if one
+    // party supports DTLS 1.0 and the other DTLS 1.2, DTLS 1.0 will be used.
+    rtc::SSLProtocolVersion ssl_max_version;
   };
 
   virtual void SetOptions(const Options& options) = 0;
