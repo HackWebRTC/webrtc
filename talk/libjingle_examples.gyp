@@ -290,6 +290,9 @@
                 # warning so we can compile successfully.
                 'CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS': 'NO',
                 'MACOSX_DEPLOYMENT_TARGET' : '10.8',
+                # SRWebSocket.m uses code with partial availability.
+                # https://code.google.com/p/webrtc/issues/detail?id=4695
+                'WARNING_CFLAGS!': ['-Wpartial-availability'],
               },
             }],
           ],

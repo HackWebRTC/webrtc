@@ -351,6 +351,9 @@
                 # Need to build against 10.7 framework for full ARC support
                 # on OSX.
                 'MACOSX_DEPLOYMENT_TARGET' : '10.7',
+                # RTCVideoTrack.mm uses code with partial availability.
+                # https://code.google.com/p/webrtc/issues/detail?id=4695
+                'WARNING_CFLAGS!': ['-Wpartial-availability'],
               },
               'link_settings': {
                 'xcode_settings': {
@@ -598,6 +601,10 @@
               # deprecated functions and remove this flag.
               '-Wno-deprecated-declarations',
             ],
+            # Disable partial availability warning to prevent errors
+            # in macdevicemanagermm.mm using AVFoundation.
+            # https://code.google.com/p/webrtc/issues/detail?id=4695
+            'WARNING_CFLAGS!': ['-Wpartial-availability'],
           },
           'link_settings': {
             'xcode_settings': {
