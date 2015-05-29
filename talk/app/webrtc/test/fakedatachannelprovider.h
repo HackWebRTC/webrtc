@@ -91,11 +91,15 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
   void set_send_blocked(bool blocked) {
     send_blocked_ = blocked;
     if (!blocked) {
-      std::set<webrtc::DataChannel*>::iterator it;
-      for (it = connected_channels_.begin();
-           it != connected_channels_.end();
-           ++it) {
-        (*it)->OnChannelReady(true);
+      // Take a snapshot of the connected channels and check to see whether
+      // each value is still in connected_channels_ before calling
+      // OnChannelReady().  This avoids problems where the set gets modified
+      // in response to OnChannelReady().
+      for (webrtc::DataChannel *ch : std::set<webrtc::DataChannel*>(
+               connected_channels_.begin(), connected_channels_.end())) {
+        if (connected_channels_.count(ch)) {
+          ch->OnChannelReady(true);
+        }
       }
     }
   }

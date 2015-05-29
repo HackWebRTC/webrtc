@@ -269,6 +269,41 @@ TEST_F(SctpDataChannelTest, SendUnorderedAfterReceiveData) {
   EXPECT_FALSE(provider_.last_send_data_params().ordered);
 }
 
+// Tests that the channel can't open until it's successfully sent the OPEN
+// message.
+TEST_F(SctpDataChannelTest, OpenWaitsForOpenMesssage) {
+  webrtc::DataBuffer buffer("foo");
+
+  provider_.set_send_blocked(true);
+  SetChannelReady();
+  EXPECT_EQ(webrtc::DataChannelInterface::kConnecting,
+            webrtc_data_channel_->state());
+  provider_.set_send_blocked(false);
+  EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kOpen,
+                 webrtc_data_channel_->state(), 1000);
+  EXPECT_EQ(cricket::DMT_CONTROL, provider_.last_send_data_params().type);
+}
+
+// Tests that close first makes sure all queued data gets sent.
+TEST_F(SctpDataChannelTest, QueuedCloseFlushes) {
+  webrtc::DataBuffer buffer("foo");
+
+  provider_.set_send_blocked(true);
+  SetChannelReady();
+  EXPECT_EQ(webrtc::DataChannelInterface::kConnecting,
+            webrtc_data_channel_->state());
+  provider_.set_send_blocked(false);
+  EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kOpen,
+                 webrtc_data_channel_->state(), 1000);
+  provider_.set_send_blocked(true);
+  webrtc_data_channel_->Send(buffer);
+  webrtc_data_channel_->Close();
+  provider_.set_send_blocked(false);
+  EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kClosed,
+                 webrtc_data_channel_->state(), 1000);
+  EXPECT_EQ(cricket::DMT_TEXT, provider_.last_send_data_params().type);
+}
+
 // Tests that messages are sent with the right ssrc.
 TEST_F(SctpDataChannelTest, SendDataSsrc) {
   webrtc_data_channel_->SetSctpSid(1);
@@ -369,8 +404,9 @@ TEST_F(SctpDataChannelTest, ClosedWhenSendBufferFull) {
     EXPECT_TRUE(webrtc_data_channel_->Send(packet));
   }
 
-  EXPECT_EQ(webrtc::DataChannelInterface::kClosed,
-            webrtc_data_channel_->state());
+  EXPECT_TRUE(
+      webrtc::DataChannelInterface::kClosed == webrtc_data_channel_->state() ||
+      webrtc::DataChannelInterface::kClosing == webrtc_data_channel_->state());
 }
 
 // Tests that the DataChannel is closed on transport errors.

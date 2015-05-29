@@ -204,11 +204,20 @@ class DataChannel : public DataChannelInterface,
     size_t byte_count_;
   };
 
+  // The OPEN(_ACK) signaling state.
+  enum HandshakeState {
+    kHandshakeInit,
+    kHandshakeShouldSendOpen,
+    kHandshakeShouldSendAck,
+    kHandshakeWaitingForAck,
+    kHandshakeReady
+  };
+
   bool Init(const InternalDataChannelInit& config);
   void DoClose();
   void UpdateState();
   void SetState(DataState state);
-  void DisconnectFromTransport();
+  void DisconnectFromProvider();
 
   void DeliverQueuedReceivedData();
 
@@ -226,11 +235,11 @@ class DataChannel : public DataChannelInterface,
   DataState state_;
   cricket::DataChannelType data_channel_type_;
   DataChannelProviderInterface* provider_;
-  bool waiting_for_open_ack_;
-  bool was_ever_writable_;
+  HandshakeState handshake_state_;
   bool connected_to_provider_;
   bool send_ssrc_set_;
   bool receive_ssrc_set_;
+  bool writable_;
   uint32 send_ssrc_;
   uint32 receive_ssrc_;
   // Control messages that always have to get sent out before any queued
