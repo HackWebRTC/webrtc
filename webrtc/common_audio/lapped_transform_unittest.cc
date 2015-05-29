@@ -177,26 +177,26 @@ TEST(LappedTransformTest, Callbacks) {
   ASSERT_EQ(kChunkLength / kBlockLength, call.block_num());
 }
 
-TEST(LappedTransformTest, get_chunk_length) {
+TEST(LappedTransformTest, chunk_length) {
   const int kBlockLength = 64;
   FftCheckerCallback call;
   const float window[kBlockLength] = {};
 
-  // Make sure that get_chunk_length returns the same value passed to the
+  // Make sure that chunk_length returns the same value passed to the
   // LappedTransform constructor.
   {
     const int kExpectedChunkLength = 512;
     const LappedTransform trans(1, 1, kExpectedChunkLength, window,
                                 kBlockLength, kBlockLength, &call);
 
-    EXPECT_EQ(kExpectedChunkLength, trans.get_chunk_length());
+    EXPECT_EQ(kExpectedChunkLength, trans.chunk_length());
   }
   {
     const int kExpectedChunkLength = 160;
     const LappedTransform trans(1, 1, kExpectedChunkLength, window,
                                 kBlockLength, kBlockLength, &call);
 
-    EXPECT_EQ(kExpectedChunkLength, trans.get_chunk_length());
+    EXPECT_EQ(kExpectedChunkLength, trans.chunk_length());
   }
 }
 

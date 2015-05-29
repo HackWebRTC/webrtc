@@ -35,8 +35,8 @@ class LappedTransform {
     virtual ~Callback() {}
 
     virtual void ProcessAudioBlock(const std::complex<float>* const* in_block,
-                                   int in_channels, int frames,
-                                   int out_channels,
+                                   int num_in_channels, int frames,
+                                   int num_out_channels,
                                    std::complex<float>* const* out_block) = 0;
   };
 
@@ -46,7 +46,7 @@ class LappedTransform {
   // |block_length| defines the length of a block, in samples.
   // |shift_amount| is in samples. |callback| is the caller-owned audio
   // processing function called for each block of the input chunk.
-  LappedTransform(int in_channels, int out_channels, int chunk_length,
+  LappedTransform(int num_in_channels, int num_out_channels, int chunk_length,
                   const float* window, int block_length, int shift_amount,
                   Callback* callback);
   ~LappedTransform() {}
@@ -63,7 +63,24 @@ class LappedTransform {
   // to ProcessChunk via the parameter in_chunk.
   //
   // Returns the same chunk_length passed to the LappedTransform constructor.
-  int get_chunk_length() const { return chunk_length_; }
+  int chunk_length() const { return chunk_length_; }
+
+  // Get the number of input channels.
+  //
+  // This is the number of arrays that must be passed to ProcessChunk via
+  // in_chunk.
+  //
+  // Returns the same num_in_channels passed to the LappedTransform constructor.
+  int num_in_channels() const { return num_in_channels_; }
+
+  // Get the number of output channels.
+  //
+  // This is the number of arrays that must be passed to ProcessChunk via
+  // out_chunk.
+  //
+  // Returns the same num_out_channels passed to the LappedTransform
+  // constructor.
+  int num_out_channels() const { return num_out_channels_; }
 
  private:
   // Internal middleware callback, given to the blocker. Transforms each block
@@ -80,8 +97,8 @@ class LappedTransform {
     LappedTransform* const parent_;
   } blocker_callback_;
 
-  const int in_channels_;
-  const int out_channels_;
+  const int num_in_channels_;
+  const int num_out_channels_;
 
   const int block_length_;
   const int chunk_length_;

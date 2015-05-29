@@ -24,8 +24,8 @@ void LappedTransform::BlockThunk::ProcessBlock(const float* const* input,
                                                int num_input_channels,
                                                int num_output_channels,
                                                float* const* output) {
-  CHECK_EQ(num_input_channels, parent_->in_channels_);
-  CHECK_EQ(num_output_channels, parent_->out_channels_);
+  CHECK_EQ(num_input_channels, parent_->num_in_channels_);
+  CHECK_EQ(num_output_channels, parent_->num_out_channels_);
   CHECK_EQ(parent_->block_length_, num_frames);
 
   for (int i = 0; i < num_input_channels; ++i) {
@@ -52,25 +52,38 @@ void LappedTransform::BlockThunk::ProcessBlock(const float* const* input,
   }
 }
 
-LappedTransform::LappedTransform(int in_channels, int out_channels,
-                                 int chunk_length, const float* window,
-                                 int block_length, int shift_amount,
+LappedTransform::LappedTransform(int num_in_channels,
+                                 int num_out_channels,
+                                 int chunk_length,
+                                 const float* window,
+                                 int block_length,
+                                 int shift_amount,
                                  Callback* callback)
     : blocker_callback_(this),
-      in_channels_(in_channels),
-      out_channels_(out_channels),
+      num_in_channels_(num_in_channels),
+      num_out_channels_(num_out_channels),
       block_length_(block_length),
       chunk_length_(chunk_length),
       block_processor_(callback),
-      blocker_(
-        chunk_length_, block_length_, in_channels_, out_channels_, window,
-        shift_amount, &blocker_callback_),
+      blocker_(chunk_length_,
+               block_length_,
+               num_in_channels_,
+               num_out_channels_,
+               window,
+               shift_amount,
+               &blocker_callback_),
       fft_(RealFourier::Create(RealFourier::FftOrder(block_length_))),
       cplx_length_(RealFourier::ComplexLength(fft_->order())),
-      real_buf_(in_channels, block_length_, RealFourier::kFftBufferAlignment),
-      cplx_pre_(in_channels, cplx_length_, RealFourier::kFftBufferAlignment),
-      cplx_post_(out_channels, cplx_length_, RealFourier::kFftBufferAlignment) {
-  CHECK(in_channels_ > 0 && out_channels_ > 0);
+      real_buf_(num_in_channels,
+                block_length_,
+                RealFourier::kFftBufferAlignment),
+      cplx_pre_(num_in_channels,
+                cplx_length_,
+                RealFourier::kFftBufferAlignment),
+      cplx_post_(num_out_channels,
+                 cplx_length_,
+                 RealFourier::kFftBufferAlignment) {
+  CHECK(num_in_channels_ > 0 && num_out_channels_ > 0);
   CHECK_GT(block_length_, 0);
   CHECK_GT(chunk_length_, 0);
   CHECK(block_processor_);
@@ -81,9 +94,8 @@ LappedTransform::LappedTransform(int in_channels, int out_channels,
 
 void LappedTransform::ProcessChunk(const float* const* in_chunk,
                                    float* const* out_chunk) {
-  blocker_.ProcessChunk(in_chunk, chunk_length_, in_channels_, out_channels_,
-                        out_chunk);
+  blocker_.ProcessChunk(in_chunk, chunk_length_, num_in_channels_,
+                        num_out_channels_, out_chunk);
 }
 
 }  // namespace webrtc
-
