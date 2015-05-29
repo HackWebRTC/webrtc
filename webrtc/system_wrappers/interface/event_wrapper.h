@@ -39,7 +39,7 @@ class EventWrapper {
 
   // Puts the calling thread into a wait state. The thread may be released
   // by a Set() call depending on if other threads are waiting and if so on
-  // timing. The thread that was released will call Reset() before leaving
+  // timing. The thread that was released will reset the event before leaving
   // preventing more threads from being released. If multiple threads
   // are waiting for the same Set(), only one (random) thread is guaranteed to
   // be released. It is possible that multiple (random) threads are released
