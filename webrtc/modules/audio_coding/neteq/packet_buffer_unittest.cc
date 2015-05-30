@@ -531,9 +531,14 @@ void TestIsObsoleteTimestamp(uint32_t limit_timestamp) {
   // 1 sample ahead is not old.
   EXPECT_FALSE(PacketBuffer::IsObsoleteTimestamp(
       limit_timestamp + 1, limit_timestamp, kZeroHorizon));
-  // 2^31 samples ahead is not old.
+  // If |t1-t2|=2^31 and t1>t2, t2 is older than t1 but not the opposite.
+  uint32_t other_timestamp = limit_timestamp + (1 << 31);
+  uint32_t lowest_timestamp = std::min(limit_timestamp, other_timestamp);
+  uint32_t highest_timestamp = std::max(limit_timestamp, other_timestamp);
+  EXPECT_TRUE(PacketBuffer::IsObsoleteTimestamp(
+      lowest_timestamp, highest_timestamp, kZeroHorizon));
   EXPECT_FALSE(PacketBuffer::IsObsoleteTimestamp(
-      limit_timestamp + (1 << 31), limit_timestamp, kZeroHorizon));
+      highest_timestamp, lowest_timestamp, kZeroHorizon));
 
   // Fixed horizon at 10 samples.
   static const uint32_t kHorizon = 10;

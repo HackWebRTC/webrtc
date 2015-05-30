@@ -183,6 +183,44 @@ TEST_P(BweSimulation, GoogleWifiTrace3Mbps) {
   RunFor(300 * 1000);
 }
 
+TEST_P(BweSimulation, LinearIncreasingCapacity) {
+  PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000000);
+  PacedVideoSender sender(&uplink_, &source, GetParam());
+  ChokeFilter filter(&uplink_, 0);
+  RateCounterFilter counter(&uplink_, 0, "receiver_input");
+  PacketReceiver receiver(&uplink_, 0, GetParam(), true, true);
+  filter.SetMaxDelay(500);
+  const int kStartingCapacityKbps = 150;
+  const int kEndingCapacityKbps = 1500;
+  const int kStepKbps = 5;
+  const int kStepTimeMs = 1000;
+
+  for (int i = kStartingCapacityKbps; i <= kEndingCapacityKbps;
+       i += kStepKbps) {
+    filter.SetCapacity(i);
+    RunFor(kStepTimeMs);
+  }
+}
+
+TEST_P(BweSimulation, LinearDecreasingCapacity) {
+  PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000000);
+  PacedVideoSender sender(&uplink_, &source, GetParam());
+  ChokeFilter filter(&uplink_, 0);
+  RateCounterFilter counter(&uplink_, 0, "receiver_input");
+  PacketReceiver receiver(&uplink_, 0, GetParam(), true, true);
+  filter.SetMaxDelay(500);
+  const int kStartingCapacityKbps = 1500;
+  const int kEndingCapacityKbps = 150;
+  const int kStepKbps = -5;
+  const int kStepTimeMs = 1000;
+
+  for (int i = kStartingCapacityKbps; i >= kEndingCapacityKbps;
+       i += kStepKbps) {
+    filter.SetCapacity(i);
+    RunFor(kStepTimeMs);
+  }
+}
+
 TEST_P(BweSimulation, PacerGoogleWifiTrace3Mbps) {
   PeriodicKeyFrameSource source(0, 30, 300, 0, 0, 1000);
   PacedVideoSender sender(&uplink_, &source, GetParam());
@@ -234,11 +272,6 @@ TEST_P(BweSimulation, PacedSelfFairnessTest) {
   RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 50);
 }
 
-TEST_P(BweSimulation, PacedTcpFairnessTest) {
-  srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
-  RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 500);
-}
-
 TEST_P(BweSimulation, PacedSelfFairness1000msTest) {
   srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
   RunFairnessTest(GetParam(), 4, 0, 1000, 3000, 1000);
@@ -258,6 +291,7 @@ TEST_P(BweSimulation, TcpFairness1000msTest) {
   srand(Clock::GetRealTimeClock()->TimeInMicroseconds());
   RunFairnessTest(GetParam(), 1, 1, 1000, 2000, 1000);
 }
+
 #endif  // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 }  // namespace bwe
 }  // namespace testing

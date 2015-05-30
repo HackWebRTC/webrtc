@@ -509,6 +509,18 @@ inline AudioFrame& AudioFrame::Append(const AudioFrame& rhs) {
   return *this;
 }
 
+namespace {
+inline int16_t ClampToInt16(int32_t input) {
+  if (input < -0x00008000) {
+    return -0x8000;
+  } else if (input > 0x00007FFF) {
+    return 0x7FFF;
+  } else {
+    return static_cast<int16_t>(input);
+  }
+}
+}
+
 inline AudioFrame& AudioFrame::operator+=(const AudioFrame& rhs) {
   // Sanity check
   assert((num_channels_ > 0) && (num_channels_ < 3));
@@ -541,15 +553,9 @@ inline AudioFrame& AudioFrame::operator+=(const AudioFrame& rhs) {
   } else {
     // IMPROVEMENT this can be done very fast in assembly
     for (int i = 0; i < samples_per_channel_ * num_channels_; i++) {
-      int32_t wrapGuard =
+      int32_t wrap_guard =
           static_cast<int32_t>(data_[i]) + static_cast<int32_t>(rhs.data_[i]);
-      if (wrapGuard < -32768) {
-        data_[i] = -32768;
-      } else if (wrapGuard > 32767) {
-        data_[i] = 32767;
-      } else {
-        data_[i] = (int16_t)wrapGuard;
-      }
+      data_[i] = ClampToInt16(wrap_guard);
     }
   }
   energy_ = 0xffffffff;
@@ -572,15 +578,9 @@ inline AudioFrame& AudioFrame::operator-=(const AudioFrame& rhs) {
   speech_type_ = kUndefined;
 
   for (int i = 0; i < samples_per_channel_ * num_channels_; i++) {
-    int32_t wrapGuard =
+    int32_t wrap_guard =
         static_cast<int32_t>(data_[i]) - static_cast<int32_t>(rhs.data_[i]);
-    if (wrapGuard < -32768) {
-      data_[i] = -32768;
-    } else if (wrapGuard > 32767) {
-      data_[i] = 32767;
-    } else {
-      data_[i] = (int16_t)wrapGuard;
-    }
+    data_[i] = ClampToInt16(wrap_guard);
   }
   energy_ = 0xffffffff;
   return *this;
@@ -588,11 +588,24 @@ inline AudioFrame& AudioFrame::operator-=(const AudioFrame& rhs) {
 
 inline bool IsNewerSequenceNumber(uint16_t sequence_number,
                                   uint16_t prev_sequence_number) {
+  // Distinguish between elements that are exactly 0x8000 apart.
+  // If s1>s2 and |s1-s2| = 0x8000: IsNewer(s1,s2)=true, IsNewer(s2,s1)=false
+  // rather than having IsNewer(s1,s2) = IsNewer(s2,s1) = false.
+  if (static_cast<uint16_t>(sequence_number - prev_sequence_number) == 0x8000) {
+    return sequence_number > prev_sequence_number;
+  }
   return sequence_number != prev_sequence_number &&
          static_cast<uint16_t>(sequence_number - prev_sequence_number) < 0x8000;
 }
 
 inline bool IsNewerTimestamp(uint32_t timestamp, uint32_t prev_timestamp) {
+  // Distinguish between elements that are exactly 0x80000000 apart.
+  // If t1>t2 and |t1-t2| = 0x80000000: IsNewer(t1,t2)=true,
+  // IsNewer(t2,t1)=false
+  // rather than having IsNewer(t1,t2) = IsNewer(t2,t1) = false.
+  if (static_cast<uint32_t>(timestamp - prev_timestamp) == 0x80000000) {
+    return timestamp > prev_timestamp;
+  }
   return timestamp != prev_timestamp &&
          static_cast<uint32_t>(timestamp - prev_timestamp) < 0x80000000;
 }

@@ -38,6 +38,11 @@ TEST(IsNewerSequenceNumber, BackwardWrap) {
   EXPECT_FALSE(IsNewerSequenceNumber(0xFF00, 0x00FF));
 }
 
+TEST(IsNewerSequenceNumber, HalfWayApart) {
+  EXPECT_TRUE(IsNewerSequenceNumber(0x8000, 0x0000));
+  EXPECT_FALSE(IsNewerSequenceNumber(0x0000, 0x8000));
+}
+
 TEST(IsNewerTimestamp, Equal) {
   EXPECT_FALSE(IsNewerTimestamp(0x00000001, 0x000000001));
 }
@@ -60,6 +65,11 @@ TEST(IsNewerTimestamp, BackwardWrap) {
   EXPECT_FALSE(IsNewerTimestamp(0xFFFF0000, 0x00000000));
   EXPECT_FALSE(IsNewerTimestamp(0xFFFFFFFF, 0x0000FFFF));
   EXPECT_FALSE(IsNewerTimestamp(0xFFFF0000, 0x0000FFFF));
+}
+
+TEST(IsNewerTimestamp, HalfWayApart) {
+  EXPECT_TRUE(IsNewerTimestamp(0x80000000, 0x00000000));
+  EXPECT_FALSE(IsNewerTimestamp(0x00000000, 0x80000000));
 }
 
 TEST(LatestSequenceNumber, NoWrap) {
@@ -101,4 +111,15 @@ TEST(LatestTimestamp, Wrap) {
   EXPECT_EQ(0x0000FFFFu, LatestTimestamp(0xFFFFFFFF, 0x0000FFFF));
   EXPECT_EQ(0x0000FFFFu, LatestTimestamp(0xFFFF0000, 0x0000FFFF));
 }
+
+TEST(ClampToInt16, TestCases) {
+  EXPECT_EQ(0x0000, ClampToInt16(0x00000000));
+  EXPECT_EQ(0x0001, ClampToInt16(0x00000001));
+  EXPECT_EQ(0x7FFF, ClampToInt16(0x00007FFF));
+  EXPECT_EQ(0x7FFF, ClampToInt16(0x7FFFFFFF));
+  EXPECT_EQ(-0x0001, ClampToInt16(-0x00000001));
+  EXPECT_EQ(-0x8000, ClampToInt16(-0x8000));
+  EXPECT_EQ(-0x8000, ClampToInt16(-0x7FFFFFFF));
+}
+
 }  // namespace webrtc

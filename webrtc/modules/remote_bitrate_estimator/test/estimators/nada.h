@@ -38,15 +38,15 @@ struct PacketIdentifierNode {
                        int64_t send_time_ms,
                        int64_t arrival_time_ms,
                        size_t payload_size)
-      : sequence_number_(sequence_number),
-        send_time_ms_(send_time_ms),
-        arrival_time_ms_(arrival_time_ms),
-        payload_size_(payload_size) {}
+      : sequence_number(sequence_number),
+        send_time_ms(send_time_ms),
+        arrival_time_ms(arrival_time_ms),
+        payload_size(payload_size) {}
 
-  uint16_t sequence_number_;
-  int64_t send_time_ms_;
-  int64_t arrival_time_ms_;
-  size_t payload_size_;
+  uint16_t sequence_number;
+  int64_t send_time_ms;
+  int64_t arrival_time_ms;
+  size_t payload_size;
 };
 
 typedef std::list<PacketIdentifierNode*>::iterator PacketNodeIt;
@@ -106,6 +106,14 @@ class NadaBweReceiver : public BweReceiver {
                                             int64_t last_smoothed_value,
                                             float alpha);
 
+  // With the assumption that packet loss is lower than 97%, the max gap
+  // between elements in the set is lower than 0x8000, hence we have a
+  // total order in the set. For (x,y,z) subset of the LinkedSet,
+  // (x<=y and y<=z) ==> x<=z so the set can be sorted.
+  static const int kSetCapacity = 1000;
+  static const int64_t kPacketLossTimeWindowMs = 500;
+  static const int64_t kReceivingRateTimeWindowMs = 500;
+
  private:
   SimulatedClock clock_;
   int64_t last_feedback_ms_;
@@ -116,8 +124,8 @@ class NadaBweReceiver : public BweReceiver {
   int last_delays_index_;
   int64_t exp_smoothed_delay_ms_;        // Referred as d_hat_n.
   int64_t est_queuing_delay_signal_ms_;  // Referred as d_tilde_n.
+
   // Deals with packets sent more than once.
-  static const int kSetCapacity = 10000;  // Lower than 0xFFFF / 2.
   LinkedSet* received_packets_ = new LinkedSet(kSetCapacity);
   static const int kMedian = 5;      // Used for k-points Median Filter.
   int64_t last_delays_ms_[kMedian];  // Used for Median Filter.
@@ -135,22 +143,36 @@ class NadaBweSender : public BweSender {
   void OnPacketsSent(const Packets& packets) override {}
   int64_t TimeUntilNextProcess() override;
   int Process() override;
-  void AcceleratedRampUp(const NadaFeedback& fb, const int kMaxRefRateKbps);
+  void AcceleratedRampUp(const NadaFeedback& fb);
+  void AcceleratedRampDown(const NadaFeedback& fb);
   void GradualRateUpdate(const NadaFeedback& fb,
-                         const int kMaxRefRateKbps,
-                         const float delta_s);
+                         float delta_s,
+                         double smoothing_factor);
+
+  int bitrate_kbps() const { return bitrate_kbps_; }
+  void set_bitrate_kbps(int bitrate_kbps) { bitrate_kbps_ = bitrate_kbps; }
+  bool original_operating_mode() const { return original_operating_mode_; }
+  void set_original_operating_mode(bool original_operating_mode) {
+    original_operating_mode_ = original_operating_mode;
+  }
+  int64_t NowMs() const { return clock_->TimeInMilliseconds(); }
+
+  static const int kMinRefRateKbps = 150;   // Referred as R_min.
+  static const int kMaxRefRateKbps = 1500;  // Referred as R_max.
 
  private:
   Clock* const clock_;
   BitrateObserver* const observer_;
+  // Used as an upper bound for calling AcceleratedRampDown.
+  const float kMaxCongestionSignalMs = 40.0f + kMinRefRateKbps / 15;
   // Referred as R_min, default initialization for bitrate R_n.
-  const int kMinRefRateKbps = 150;
   int bitrate_kbps_;  // Referred as "Reference Rate" = R_n.
   int64_t last_feedback_ms_ = 0;
   // Referred as delta_0, initialized as an upper bound.
-  int64_t min_feedback_delay_ms_ = 5000;
+  int64_t min_feedback_delay_ms_ = 200;
   // Referred as RTT_0, initialized as an upper bound.
-  int64_t min_round_trip_time_ms_ = 500;
+  int64_t min_round_trip_time_ms_ = 100;
+  bool original_operating_mode_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(NadaBweSender);
 };
